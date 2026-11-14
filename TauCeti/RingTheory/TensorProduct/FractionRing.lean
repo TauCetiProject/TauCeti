@@ -21,6 +21,8 @@ locally together with `right_isScalarTower`; all maps to the fraction field are 
 usual scalar-tower maps. The linear-disjointness argument follows Jz Pan's
 `Subalgebra.LinearDisjoint.exists_field_of_isDomain_of_injective` in Mathlib,
 using `Subalgebra.LinearDisjoint.include_range` and transport along the fraction map.
+Conversely, `TauCeti.productMap_injective_iff_linearDisjoint` characterizes injectivity of the
+multiplication map `F ⊗[k] K → E` into any common overfield by linear disjointness over `k`.
 
 ## References
 
@@ -92,5 +94,29 @@ theorem linearDisjoint_of_isFractionRing_tensorProduct :
     apply AlgHom.toRingHom_injective
     exact (IsScalarTower.algebraMap_eq K (F ⊗[k] K) Q).symm
   simpa only [← AlgHom.range_comp, hleft, hright] using H.symm
+
+section ProductMap
+
+variable {k F K E : Type*} [Field k] [Field F] [Field K] [Field E]
+  [Algebra k F] [Algebra k K] [Algebra k E] [Algebra F E] [Algebra K E]
+  [IsScalarTower k F E] [IsScalarTower k K E]
+
+/-- Multiplication `F ⊗[k] K → E` into a common overfield is injective if and only if
+the image of `K` and `F` are linearly disjoint over `k`. -/
+theorem productMap_injective_iff_linearDisjoint :
+    Function.Injective (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k F E)
+      (IsScalarTower.toAlgHom k K E)) ↔
+      (IsScalarTower.toAlgHom k K E).fieldRange.LinearDisjoint F := by
+  let fF := IsScalarTower.toAlgHom k F E
+  let fK := IsScalarTower.toAlgHom k K E
+  rw [IntermediateField.linearDisjoint_iff, AlgHom.fieldRange_toSubalgebra,
+    Subalgebra.linearDisjoint_comm, Subalgebra.linearDisjoint_iff_injective]
+  let e := Algebra.TensorProduct.congr (AlgEquiv.ofInjective fF fF.injective)
+    (AlgEquiv.ofInjective fK fK.injective)
+  have h : Algebra.TensorProduct.productMap fF fK =
+      (fF.range.mulMap fK.range).comp e.toAlgHom := by ext x <;> rfl
+  rw [h, AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.Injective.of_comp_iff' _ e.bijective]
+
+end ProductMap
 
 end TauCeti

@@ -60,6 +60,8 @@ equivalence is needed and equality of places *is* equality of valuations
   another place is that place (Stichtenoth, Theorem 1.1.13(d)).
 * `TauCeti.Place.mem_integers_of_isIntegral`: the valuation ring of a place is integrally closed
   in `F`.
+* `TauCeti.Place.isTrivialOn_iff_integers_comap_eq_top`: a place is trivial on a subfield `R`
+  precisely when its valuation ring contains the image of `R`.
 * `TauCeti.Place.degree_eq_one_iff_algebraMap_surjective` and
   `TauCeti.Place.degree_eq_one_iff_forall_exists_valuation_sub_lt_one`: the rational places are
   those whose residue field is exhausted by the constants, equivalently those at which every
@@ -382,6 +384,22 @@ theorem eq_of_valuation_sub_lt_one {f : F} {a b : k} (ha : P.valuation (f - alge
   have h := Valuation.map_sub_lt P.valuation hb ha
   rw [sub_sub_sub_cancel_left, ← _root_.map_sub, P.isTrivialOn.eq_one _ (sub_ne_zero.mpr hne)] at h
   exact lt_irrefl _ h
+
+/-- A place of `F / k` is trivial on a subfield `R` precisely when its valuation ring contains the
+image of `R`. -/
+theorem isTrivialOn_iff_integers_comap_eq_top {R : Type*} [Field R] [Algebra R F] :
+    P.valuation.IsTrivialOn R ↔ P.integers.comap (algebraMap R F) = ⊤ := by
+  refine ⟨fun h ↦ ValuationSubring.ext _ _ fun f ↦ ⟨fun _ ↦ trivial, fun _ ↦ ?_⟩,
+    fun h ↦ ⟨fun f hf ↦ ?_⟩⟩
+  · rw [ValuationSubring.mem_comap, P.mem_integers_iff]
+    rcases eq_or_ne f 0 with rfl | hf; · simp
+    exact (h.eq_one f hf).le
+  · have hmem (x : R) : P.valuation (algebraMap R F x) ≤ 1 :=
+      P.mem_integers_iff.mp (ValuationSubring.mem_comap.mp (h.symm ▸ ValuationSubring.mem_top x))
+    have h2 := hmem f⁻¹
+    rw [map_inv₀, map_inv₀, inv_le_one₀ (zero_lt_iff.mpr ((P.valuation.ne_zero_iff).mpr
+      ((map_ne_zero (algebraMap R F)).mpr hf)))] at h2
+    exact le_antisymm (hmem f) h2
 
 end Constants
 
