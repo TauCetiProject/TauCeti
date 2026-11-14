@@ -131,7 +131,8 @@ namespace IntegralLattice
 
 variable (n : ℕ)
 
-/-- The carrier of the checkerboard lattice. -/
+/-- The carrier of the checkerboard lattice: the integer vectors of `ℚⁿ` whose coordinate sum is
+even (see `mem_checkerboardCarrier_iff`). -/
 def checkerboardCarrier : Submodule ℤ (Fin n → ℚ) where
   carrier := {x | (∀ i, ∃ z : ℤ, x i = (z : ℚ)) ∧ ∃ m : ℤ, ∑ i, x i = 2 * (m : ℚ)}
   add_mem' := by
@@ -685,13 +686,15 @@ theorem checkerboardCospinor_notMem_checkerboardCarrier :
   notMem_checkerboardCarrier_of_two_mul_odd ⊤ (-1)
     (by rw [checkerboardCospinor_top]; norm_num)
 
-/-- The cospinor and vector representatives differ by a half-integral vector. -/
+/-- The difference `c - v` of the cospinor and vector representatives is not a lattice vector: it
+is half-integral. -/
 theorem checkerboardCospinor_sub_checkerboardVector_notMem_checkerboardCarrier :
     checkerboardCospinor n - checkerboardVector n ∉ checkerboardCarrier n :=
   notMem_checkerboardCarrier_of_two_mul_odd ⊤ (-2)
     (by rw [Pi.sub_apply, checkerboardCospinor_top, checkerboardVector_top]; norm_num)
 
-/-- The spinor and cospinor representatives differ by a vector of odd coordinate sum. -/
+/-- The difference `s - c` of the spinor and cospinor representatives is not a lattice vector: its
+coordinate sum is odd. -/
 theorem checkerboardSpinor_sub_checkerboardCospinor_notMem_checkerboardCarrier :
     checkerboardSpinor n - checkerboardCospinor n ∉ checkerboardCarrier n := by
   rw [checkerboardCospinor, sub_sub_cancel]
