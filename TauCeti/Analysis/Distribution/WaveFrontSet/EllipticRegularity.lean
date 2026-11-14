@@ -152,7 +152,7 @@ theorem constCoeffPrincipalSymbol_smul {ι : Type*} (s : Finset ι) (c : ι → 
   ring
 
 /-- The characteristic set is conic in the frequency variable. -/
-theorem mk_smul_mem_constCoeffCharacteristicSet_iff {ι : Type*} {s : Finset ι} {c : ι → ℂ}
+theorem smul_mem_constCoeffCharacteristicSet_iff {ι : Type*} {s : Finset ι} {c : ι → ℂ}
     {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ} {x ξ : E} {t : ℝ} (ht : t ≠ 0) :
     (x, t • ξ) ∈ constCoeffCharacteristicSet s c m M ↔
       (x, ξ) ∈ constCoeffCharacteristicSet s c m M := by
@@ -215,6 +215,30 @@ private theorem prod_two_pi_I_inner {r : ℕ} (m : Fin r → E) (η : E) :
     ∏ l, (2 * π * I * ⟪m l, η⟫ : ℂ) = (2 * π * I) ^ r * ∏ l, (⟪m l, η⟫ : ℂ) := by
   rw [← Finset.pow_card_mul_prod, Finset.card_univ, Fintype.card_fin]
 
+/-- **The terms of lower order.** If all orders are at most `M`, the terms of the full symbol of
+order less than `M` are `O(‖η‖ ^ (M - 1))` for `‖η‖ ≥ 1`. -/
+private theorem norm_sum_filter_ne_mul_le {ι : Type*} {s : Finset ι} {c : ι → ℂ} {k : ι → ℕ}
+    {m : ∀ i, Fin (k i) → E} {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M) {η : E} (h1 : 1 ≤ ‖η‖) :
+    ‖∑ i ∈ s with k i ≠ M, c i * ∏ l, (2 * π * I * ⟪m i l, η⟫ : ℂ)‖ * ‖η‖ ≤
+      (∑ i ∈ s with k i ≠ M, ‖c i‖ * ((2 * π) ^ k i * ∏ l, ‖m i l‖)) * ‖η‖ ^ M := by
+  have h2π : ‖(2 * π * I : ℂ)‖ = 2 * π := by simp [abs_of_pos pi_pos]
+  refine (mul_le_mul_of_nonneg_right (norm_sum_le _ _) (norm_nonneg _)).trans ?_
+  rw [Finset.sum_mul, Finset.sum_mul]
+  refine Finset.sum_le_sum fun i hi ↦ ?_
+  have hki : k i + 1 ≤ M := by
+    have := hk i (Finset.mem_filter.1 hi).1
+    have := (Finset.mem_filter.1 hi).2
+    omega
+  rw [prod_two_pi_I_inner, norm_mul, norm_mul, norm_pow, h2π]
+  calc ‖c i‖ * ((2 * π) ^ k i * ‖∏ l, (⟪m i l, η⟫ : ℂ)‖) * ‖η‖
+      ≤ ‖c i‖ * ((2 * π) ^ k i * ((∏ l, ‖m i l‖) * ‖η‖ ^ k i)) * ‖η‖ := by
+        gcongr
+        rw [← ofReal_prod, norm_real]
+        simpa using TauCeti.norm_prod_inner_le (𝕜 := ℝ) Finset.univ (m i) η
+    _ = ‖c i‖ * ((2 * π) ^ k i * ∏ l, ‖m i l‖) * ‖η‖ ^ (k i + 1) := by ring
+    _ ≤ ‖c i‖ * ((2 * π) ^ k i * ∏ l, ‖m i l‖) * ‖η‖ ^ M :=
+        mul_le_mul_of_nonneg_left (pow_le_pow_right₀ h1 hki) (by positivity)
+
 /-- **The full symbol is elliptic at large frequencies.** If all orders are at most `M` and the
 principal symbol is bounded below by `c₀ ‖η‖ ^ M` on `Γ`, then the full symbol
 `∑ i ∈ s, c i ∏ₗ 2πi ⟪m i l, η⟫` is bounded below by a multiple of `(1 + ‖η‖) ^ M` on `Γ` outside a
@@ -244,23 +268,8 @@ private theorem exists_le_norm_symbol {ι : Type*} {s : Finset ι} {c : ι → �
     ring
   -- The terms of order less than `M` are bounded by `A ‖η‖ ^ M / ‖η‖`.
   have hlow : ‖∑ i ∈ s with ¬k i = M, c i * ∏ l, (2 * π * I * ⟪m i l, η⟫ : ℂ)‖ * ‖η‖ ≤
-      A * ‖η‖ ^ M := by
-    refine (mul_le_mul_of_nonneg_right (norm_sum_le _ _) (norm_nonneg _)).trans ?_
-    rw [Finset.sum_mul, Finset.sum_mul]
-    refine Finset.sum_le_sum fun i hi ↦ ?_
-    have hki : k i + 1 ≤ M := by
-      have := hk i (Finset.mem_filter.1 hi).1
-      have := (Finset.mem_filter.1 hi).2
-      omega
-    rw [prod_two_pi_I_inner, norm_mul, norm_mul, norm_pow, h2π]
-    calc ‖c i‖ * ((2 * π) ^ k i * ‖∏ l, (⟪m i l, η⟫ : ℂ)‖) * ‖η‖
-        ≤ ‖c i‖ * ((2 * π) ^ k i * ((∏ l, ‖m i l‖) * ‖η‖ ^ k i)) * ‖η‖ := by
-          gcongr
-          rw [← ofReal_prod, norm_real]
-          simpa using TauCeti.norm_prod_inner_le (𝕜 := ℝ) Finset.univ (m i) η
-      _ = ‖c i‖ * ((2 * π) ^ k i * ∏ l, ‖m i l‖) * ‖η‖ ^ (k i + 1) := by ring
-      _ ≤ ‖c i‖ * ((2 * π) ^ k i * ∏ l, ‖m i l‖) * ‖η‖ ^ M :=
-          mul_le_mul_of_nonneg_left (pow_le_pow_right₀ h1 hki) (by positivity)
+      A * ‖η‖ ^ M :=
+    norm_sum_filter_ne_mul_le hk h1
   set L := ‖∑ i ∈ s with ¬k i = M, c i * ∏ l, (2 * π * I * ⟪m i l, η⟫ : ℂ)‖
   have hL : L ≤ B / 2 * ‖η‖ ^ M := by
     refine le_of_mul_le_mul_right ?_ (zero_lt_one.trans_le h1)
