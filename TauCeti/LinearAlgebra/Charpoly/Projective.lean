@@ -320,7 +320,7 @@ theorem aeval_reflect_projectiveCharpolyRev_eq_zero_of_rankAtStalk_eq {d : ℕ}
     hpoly, aeval_self_charpoly, LinearMap.zero_apply] using hbase.symm
 
 /-- If `M` has constant rank equal to the degree of `Q = projectiveCharpolyRev f` on `Spec R`,
-for instance when the leading coefficient of `Q` is a unit, the reversal `Q.reverse` kills `f`. -/
+the reversal `Q.reverse` kills `f`. -/
 theorem aeval_reverse_projectiveCharpolyRev_eq_zero_of_rankAtStalk_eq {f : Module.End R M}
     (hd : ∀ p, rankAtStalk (R := R) M p = (projectiveCharpolyRev f).natDegree) :
     aeval f (projectiveCharpolyRev f).reverse = 0 :=

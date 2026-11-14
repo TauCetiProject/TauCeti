@@ -33,11 +33,6 @@ topologically and linearly with `range E'`
 (`ContinuousLinearMap.IsRieszColemanProjection.equivRangeOfRetract`) and transporting the Fredholm
 factors `H_(uE) = Q`, `H_(u(1-E)) = S`, and `det (1 - X (u|_{range E})) = Q` to `M`.
 
-## Main definitions
-
-* `ContinuousLinearMap.IsRieszColemanProjection.equivRangeOfRetract`: continuous linear equivalence
-  `E.range ≃L[R] E'.range` induced by a continuous linear retract `r ∘ i = id`.
-
 ## Main results
 
 * `ContinuousLinearMap.IsRieszColemanProjection.isPrCompact`: Riesz–Coleman projections of
@@ -124,61 +119,6 @@ theorem IsRieszColemanProjection.projective_ker_aeval_reverse_of_isPrCompact
   exact hE.projective_range_of_isPrCompact hQ hu
 
 end Compact
-
-section RetractEquiv
-
-variable {R M N : Type*} [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
-  [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
-  [NormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
-  {u E : M →L[R] M} {E' : N →L[R] N} {Q : R[X]}
-  {i : M →L[R] N} {r : N →L[R] M}
-
-/-- Along a continuous linear retract `r ∘ i = id`, `i` and `r` restrict to a continuous linear
-equivalence between the ranges of the Riesz–Coleman projections of `u` and `i ∘ u ∘ r`. -/
-noncomputable def IsRieszColemanProjection.equivRangeOfRetract (hri : r.comp i = .id R M)
-    (hE : IsRieszColemanProjection u Q E)
-    (hE' : IsRieszColemanProjection (i.comp (u.comp r)) Q E')
-    (hQ : IsUnit Q.leadingCoeff) : E.range ≃L[R] E'.range :=
-  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
-  have hi_semi : Function.Semiconj i u (i.comp (u.comp r)) := fun x ↦ by simp [hri']
-  have hr_semi : Function.Semiconj r (i.comp (u.comp r)) u := fun y ↦ by simp [hri']
-  have hi : ∀ x ∈ E.range, i x ∈ E'.range :=
-    fun _ hx ↦ hE.mapsTo_range_of_semiconj hE' i.toLinearMap hi_semi hx
-  have hr : ∀ y ∈ E'.range, r y ∈ E.range :=
-    fun _ hy ↦ hE'.mapsTo_range_of_semiconj hE r.toLinearMap hr_semi hy
-  ContinuousLinearEquiv.equivOfInverse (i.restrict hi) (r.restrict hr)
-    (fun ⟨x, _⟩ ↦ Subtype.ext (hri' x))
-    (fun ⟨y, hy⟩ ↦ Subtype.ext <| by
-      have hEy : E' y = y :=
-        (LinearMap.IsIdempotentElem.mem_range_iff
-          (ContinuousLinearMap.IsIdempotentElem.toLinearMap hE'.isIdempotentElem)).mp hy
-      have hE_eq : E = r.comp (E'.comp i) := hE.unique (hE'.comp_comp_of_retract hri)
-      have hE'_eq : i.comp (E.comp r) = E' := hE_eq ▸ hE'.comp_comp_eq_of_retract hri hQ
-      have h1 : i (r (E' y)) = E' y := calc
-        i (r (E' y)) = i (E (r y)) := congrArg i (hE'.semiconj hE r.toLinearMap hr_semi y)
-        _ = (i.comp (E.comp r)) y := rfl
-        _ = E' y := DFunLike.congr_fun hE'_eq y
-      rwa [hEy] at h1)
-
-/-- The retract range equivalence `equivRangeOfRetract` acts in the forward direction by `i`. -/
-@[simp]
-theorem IsRieszColemanProjection.coe_equivRangeOfRetract_apply (hri : r.comp i = .id R M)
-    (hE : IsRieszColemanProjection u Q E)
-    (hE' : IsRieszColemanProjection (i.comp (u.comp r)) Q E')
-    (hQ : IsUnit Q.leadingCoeff) (x : E.range) :
-    ((hE.equivRangeOfRetract hri hE' hQ x : N)) = i x :=
-  (rfl)
-
-/-- The inverse retract range equivalence `equivRangeOfRetract.symm` acts by `r`. -/
-@[simp]
-theorem IsRieszColemanProjection.coe_equivRangeOfRetract_symm_apply (hri : r.comp i = .id R M)
-    (hE : IsRieszColemanProjection u Q E)
-    (hE' : IsRieszColemanProjection (i.comp (u.comp r)) Q E')
-    (hQ : IsUnit Q.leadingCoeff) (y : E'.range) :
-    (((hE.equivRangeOfRetract hri hE' hQ).symm y : M)) = r y :=
-  (rfl)
-
-end RetractEquiv
 
 section Decomposition
 
@@ -347,11 +287,13 @@ variable {K M : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Comple
 module with property `(Pr)` has dimension `Q.natDegree`. -/
 theorem IsRieszColemanProjection.finrank_range_of_isPrCompact {u E : M →L[K] M} {Q : K[X]}
     {S : K⟦X⟧} (hE : IsRieszColemanProjection u Q E) (hu : u.IsPrCompact)
-    (hQ0 : Q.coeff 0 = 1) (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire)
+    (hQ0 : Q.coeff 0 = 1) (hS : S.IsEntire)
     (hQS : u.charPowerSeries = (Q : K⟦X⟧) * S)
     (hcop : IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ :
       IsEntire.subring K) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     Module.finrank K E.range = Q.natDegree := by
+  have hQ : IsUnit Q.leadingCoeff :=
+    IsUnit.mk0 _ (leadingCoeff_ne_zero.mpr fun h ↦ by simp [h] at hQ0)
   have hr := hE.rankAtStalk_range_of_isPrCompact hu hQ0 hQ hS hQS hcop ⟨⊥, Ideal.isPrime_bot⟩
   let : AddCommGroup E.range := inferInstance
   rwa [Module.rankAtStalk_eq_finrank_of_free] at hr
@@ -360,14 +302,16 @@ theorem IsRieszColemanProjection.finrank_range_of_isPrCompact {u E : M →L[K] M
 `Q.natDegree` whenever `H_u = Q * S` is a coprime factorisation into a polynomial `Q` with
 `Q(0) = 1` and an entire series `S`. -/
 theorem IsPrCompact.finrank_ker_aeval_reverse {u : M →L[K] M} (hu : u.IsPrCompact)
-    {Q : K[X]} {S : K⟦X⟧} (hQ0 : Q.coeff 0 = 1) (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire)
+    {Q : K[X]} {S : K⟦X⟧} (hQ0 : Q.coeff 0 = 1) (hS : S.IsEntire)
     (hQS : u.charPowerSeries = (Q : K⟦X⟧) * S)
     (hcop : IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ :
       IsEntire.subring K) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     Module.finrank K (Polynomial.aeval u Q.reverse : M →L[K] M).ker = Q.natDegree := by
+  have hQ : IsUnit Q.leadingCoeff :=
+    IsUnit.mk0 _ (leadingCoeff_ne_zero.mpr fun h ↦ by simp [h] at hQ0)
   obtain ⟨E, hE⟩ := hu.exists_isRieszColemanProjection hQ0 hQ hS hQS hcop
   rw [← hE.range_eq_ker]
-  exact hE.finrank_range_of_isPrCompact hu hQ0 hQ hS hQS hcop
+  exact hE.finrank_range_of_isPrCompact hu hQ0 hS hQS hcop
 
 end Field
 

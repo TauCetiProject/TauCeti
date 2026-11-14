@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 
 /-!
@@ -13,7 +14,8 @@ public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 A bounded unital ring homomorphism `f : R →+* S` extends the matrix of an operator
 `C₀(J, R) →L[R] C₀(I, R)` coefficientwise to an operator over `S`. Null columns and a
 uniform entry bound ensure that the extended matrix defines a continuous linear map.
-The construction respects identities, addition, scalar multiplication and composition,
+The construction respects identities, addition, scalar multiplication, composition and polynomial
+evaluation (`ContinuousLinearMap.aeval_mapCoeffs`),
 including composition of coefficient homomorphisms. Its matrix characterizes it uniquely.
 Over Tate target scalars it is Lipschitz in operator norm, so it preserves operator-norm sums
 and sends the closure of the polynomials in an endomorphism `u` into the closure of the
@@ -170,6 +172,19 @@ theorem mapCoeffs_pow (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
   induction n with
   | zero => simp
   | succ n ih => rw [pow_succ, mapCoeffs_mul, ih, pow_succ]
+
+/-- Polynomial evaluation on `C₀(J, R) →L[R] C₀(J, R)` commutes with bounded coefficient
+extension. -/
+theorem aeval_mapCoeffs (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (P : Polynomial R) :
+    Polynomial.aeval (u.mapCoeffs f hf) (P.map f) = (Polynomial.aeval u P).mapCoeffs f hf := by
+  induction P using Polynomial.induction_on' with
+  | add p q hp hq =>
+    rw [Polynomial.map_add, map_add, map_add, mapCoeffs_add, hp, hq]
+  | monomial n a =>
+    rw [Polynomial.map_monomial, Polynomial.aeval_monomial, Polynomial.aeval_monomial,
+      Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul,
+      smul_mul_assoc, one_mul, mapCoeffs_smul, mapCoeffs_pow]
 
 section Topology
 
