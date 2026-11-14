@@ -13,7 +13,7 @@ import TauCeti.Topology.Instances.Matrix
 /-!
 # The interior Calderón–Zygmund estimate for continuous coefficients
 
-Let `0 < n`, `1 < p < ∞`, and let `Ω ⊆ ℝⁿ` be open. This file proves the interior `W^{2,p}`
+Let `1 < p < ∞`, and let `Ω ⊆ ℝⁿ` be open. This file proves the interior `W^{2,p}`
 estimate for strong solutions of a non-divergence-form equation
 `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu + ⟪b, ∇u⟫ + c u = f` whose principal coefficients are continuous on `Ω` and whose
 lower-order coefficients are bounded, in
@@ -104,7 +104,7 @@ around an elliptic matrix `A` by at most `δ λ`, the interior estimate on balls
 `B(x₀, r)` by the `Lᵖ(Ω)` norms of `f` and `u`, with the coefficient bound
 `Λ = ∑ᵢⱼ |Aᵢⱼ| + δ λ` on `B(x₀, 2r)` and the bounds `β` and `γ` on the lower-order
 coefficients. -/
-private theorem exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm (hn : 0 < n)
+private theorem exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm
     (hp : 1 < p) (hp_top : p ≠ ⊤) :
     ∃ C₀ : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧ ∀ {A : Matrix (Fin n) (Fin n) ℝ} {lam : ℝ}, 0 < lam →
       (∀ ξ : EuclideanSpace ℝ (Fin n), lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
@@ -130,7 +130,8 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm (hn : 0
           C₀ * (4 / lam + (1 + (∑ i, ∑ j, |A i j| + δ * lam + β * (2 * r) +
             γ * (2 * r) ^ 2) / lam) ^ 2 / r ^ 2) * (‖f‖ + ‖Wkp.value 2 u‖) := by
   obtain ⟨C₀, δ, hδ, hball⟩ :=
-    exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_add_mul_eq hn hp hp_top
+    exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_add_mul_eq (n := n) hp
+      hp_top
   refine ⟨C₀, δ, hδ, fun {A lam} hl0 hA {Omega x₀ r} hr0 hR {a b c β γ} ha hosc hb hbβ hc hcγ
     u f heq => ?_⟩
   set Λ := ∑ i, ∑ j, |A i j| + δ * lam
@@ -157,8 +158,8 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm (hn : 0
     (lpNorm_mono_measure (Lp.memLp f) (Measure.restrict_mono hR le_rfl))
     (lpNorm_mono_measure (Lp.memLp _) (Measure.restrict_mono hR le_rfl)) key
 
-/-- **The interior Calderón–Zygmund estimate for continuous coefficients.** Let `0 < n` and
-`1 < p < ∞`, let `Ω ⊆ ℝⁿ` be open and `K ⊆ Ω` compact, and let `a` be a matrix-valued coefficient,
+/-- **The interior Calderón–Zygmund estimate for continuous coefficients.** Let `1 < p < ∞`,
+let `Ω ⊆ ℝⁿ` be open and `K ⊆ Ω` compact, and let `a` be a matrix-valued coefficient,
 measurable on `Ω` and continuous at each `x ∈ K`, such that `a x` is elliptic at each `x ∈ K`,
 that is, `λₓ ‖ξ‖² ≤ ξᵀ a(x) ξ` for some `λₓ > 0`. Let `b` and `c` be measurable lower-order
 coefficients with `‖b(x)‖ ≤ β` and `|c(x)| ≤ γ` for almost every `x ∈ Ω`. Then there is a
@@ -172,7 +173,7 @@ where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u` and `∇u` t
 `TauCeti.Wkp.iteratedGradient 0 (TauCeti.Wkp.lowerOrder 1 u)`. No boundary condition on `u`
 and no regularity of `Ω` are assumed, and the gradient of `u` does not appear on the right. -/
 theorem exists_lpNorm_iteratedGradient_le_of_sum_mul_inner_add_inner_add_mul_eq_of_continuousAt
-    (hn : 0 < n) (hp : 1 < p) (hp_top : p ≠ ⊤) {Omega : Opens (EuclideanSpace ℝ (Fin n))}
+    (hp : 1 < p) (hp_top : p ≠ ⊤) {Omega : Opens (EuclideanSpace ℝ (Fin n))}
     {K : Set (EuclideanSpace ℝ (Fin n))} (hK : IsCompact K) (hKΩ : K ⊆ Omega)
     {a : EuclideanSpace ℝ (Fin n) → Matrix (Fin n) (Fin n) ℝ}
     (ha : AEStronglyMeasurable a (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin n)))))
@@ -195,7 +196,7 @@ theorem exists_lpNorm_iteratedGradient_le_of_sum_mul_inner_add_inner_add_mul_eq_
       lpNorm (Wkp.iteratedGradient 1 u) p (volume.restrict K) ≤
         C * (‖f‖ + ‖Wkp.value 2 u‖) := by
   obtain ⟨C₀, δ, hδ, hball⟩ :=
-    exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm hn hp hp_top
+    exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm (n := n) hp hp_top
   -- Around each point of `K`, a ball in `Ω` on which `a` oscillates by at most `δ λₓ`.
   choose! lam hlam hA using hell
   have hsmall : ∀ x ∈ K, ∃ r : ℝ, 0 < r ∧ ball x (2 * r) ⊆ Omega ∧

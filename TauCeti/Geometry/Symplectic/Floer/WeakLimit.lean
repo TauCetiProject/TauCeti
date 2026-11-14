@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.UniformLimit
-public import TauCeti.Geometry.Symplectic.Floer.Compactness
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -21,7 +21,7 @@ Cauchy–Riemann equation of Hamiltonian Floer theory reads
 `∂ₜu - X(z, u) i = J(z, u) (∂ₛu - X(z, u) 1)`,
 
 for a domain-dependent almost complex structure `J` and the Hamiltonian one-form `X`, as in
-`TauCeti.Geometry.Symplectic.Floer.Compactness`. The compactness theorem
+`TauCeti.Geometry.Symplectic.Floer.Compactness.Basic`. The compactness theorem
 `TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset` extracts from a
 sequence of solutions with bounded energy a subsequence that converges locally uniformly off a
 finite set of bubbling points, with derivatives bounded on compact subsets of the complement. It
@@ -99,10 +99,10 @@ private theorem tendsto_integral_smul_sub_apply_fderiv_one (hΩ : IsOpen Ω) (hK
       _ < ε := by
         rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
         nlinarith
-  simpa using MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn (μ := volume) hΩ
-    (fun i ↦ ((hJu i).sub hJv).clm_apply
-      (((hu i).continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply continuousOn_const))
-    continuousOn_const hφ hφc hφΩ hsmall
+  simpa using MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn (μ := volume) hφ hφc
+    (Eventually.of_forall fun i ↦ (((hJu i).sub hJv).clm_apply
+      (((hu i).continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply continuousOn_const)).mono
+        hφΩ) hsmall
 
 /-- An equation `∂ₜu - J(z, u) ∂ₛu - Q(z, u) = 0`, tested against a continuous weight `φ` with
 compact support in `Ω`, passes to the limit: `∫ φ • (∂ₜv - J(z, v) ∂ₛv - Q(z, v)) = 0`. The
@@ -148,8 +148,9 @@ private theorem integral_smul_fderiv_I_sub_sub_eq_zero [l.NeBot] (hΩ : IsOpen �
   simp only [FunLike.coe_smul, Pi.smul_apply] at L₂
   have L₃ := tendsto_integral_smul_sub_apply_fderiv_one hΩ hK hJ hu huK hv.continuousOn hvK hφ hφc
     hφΩ hM hU
-  have L₄ := MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn (μ := volume) hΩ hQu hQv
-    hφ hφc hφΩ (IsCompact.tendstoUniformlyOn_comp_prodMk hφc hK
+  have L₄ := MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn (μ := volume)
+    hφ hφc (Eventually.of_forall fun i ↦ (hQu i).mono hφΩ)
+    (IsCompact.tendstoUniformlyOn_comp_prodMk hφc hK
       (hQ.mono (prod_mono hφΩ subset_rfl)) (Eventually.of_forall fun i ↦ (huK i).mono_left hφΩ)
       (hvK.mono_left hφΩ) hU)
   -- Along the sequence they add up to zero, since each `uᵢ` solves the equation.

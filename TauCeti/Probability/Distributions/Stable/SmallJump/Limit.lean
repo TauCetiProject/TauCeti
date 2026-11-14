@@ -116,7 +116,6 @@ private theorem lintegral_sq_le_of_conv_eq
     rw [integral_sq_stableSmallJumpRemainderMeasure hα hβ (hε n) (hεr n)]
     have hv := variance_id_stableSmallJumpRemainderMeasure_le hα hβ (hε n) (hεr n)
     have hm := abs_integral_id_stableSmallJumpRemainderMeasure_le hα hβ (hε n) (hεr n)
-    have hV : 0 ≤ V := integral_nonneg fun x ↦ sq_nonneg x
     have hmean : |∫ x, x ∂stableSmallJumpRemainderMeasure α β (ε n) r| ≤ r / 6 * V :=
       hm.trans (mul_le_mul_of_nonneg_left hv (by positivity))
     have hsq := (sq_le_sq₀ (abs_nonneg _) (by positivity : 0 ≤ r / 6 * V)).2 hmean

@@ -265,12 +265,16 @@ theorem foldedNormalPDF_of_scale_nonpos (hs : s ≤ 0) :
     foldedNormalPDF m s x = 0 := by
   rw [foldedNormalPDF_eq_ofReal, foldedNormalPDFReal_of_scale_nonpos hs, ENNReal.ofReal_zero]
 
-/-- On the positive half-line at positive scale, `foldedNormalPDF` is `ENNReal.ofReal` of the
-two-branch Gaussian exponential sum. -/
-theorem foldedNormalPDF_of_pos (hs : 0 < s) (hx : 0 < x) :
+/-- On the positive half-line, `foldedNormalPDF` is `ENNReal.ofReal` of the two-branch Gaussian
+exponential sum. At nonpositive scale both sides vanish. -/
+theorem foldedNormalPDF_of_pos (hx : 0 < x) :
     foldedNormalPDF m s x = ENNReal.ofReal ((√(2 * π) * s)⁻¹ *
       (exp (-(x - m) ^ 2 / (2 * s ^ 2)) + exp (-(x + m) ^ 2 / (2 * s ^ 2)))) := by
-  rw [foldedNormalPDF_eq_ofReal, foldedNormalPDFReal_of_pos hs hx]
+  rcases lt_or_ge 0 s with hs | hs
+  · rw [foldedNormalPDF_eq_ofReal, foldedNormalPDFReal_of_pos hs hx]
+  · rw [foldedNormalPDF_of_scale_nonpos hs, eq_comm, ENNReal.ofReal_eq_zero]
+    exact mul_nonpos_of_nonpos_of_nonneg
+      (inv_nonpos.mpr (mul_nonpos_of_nonneg_of_nonpos (by positivity) hs)) (by positivity)
 
 /-- The real folded normal density is nonnegative everywhere. -/
 theorem foldedNormalPDFReal_nonneg (m s x : ℝ) : 0 ≤ foldedNormalPDFReal m s x := by
@@ -481,7 +485,7 @@ density. -/
 theorem foldedNormalPDFReal_eq_noncentralChiPDFReal (m s x : ℝ) :
     foldedNormalPDFReal m s x = noncentralChiPDFReal 1 ‖m / s‖₊ s x := by
   by_cases hs : 0 < s
-  · rw [noncentralChiPDFReal_one, coe_nnnorm, Real.norm_eq_abs, abs_div, abs_of_pos hs,
+  · rw [noncentralChiPDFReal_one, coe_nnNorm, Real.norm_eq_abs, abs_div, abs_of_pos hs,
       div_mul_cancel₀ _ hs.ne', foldedNormalPDFReal_abs_loc]
   · rw [foldedNormalPDFReal_of_scale_nonpos (not_lt.mp hs),
       noncentralChiPDFReal_of_scale_nonpos (not_lt.mp hs)]
