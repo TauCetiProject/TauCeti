@@ -199,9 +199,7 @@ private theorem bijective_sub_disp (hκ : 2 < κ) (t : I) (x : X) :
   simp only [disp, weight, push_apply, vsub_eq_sub, sub_zero, vadd_eq_add, smul_neg, μ, ← ha_def]
   abel
 
-/-- The level-preserving total map of the straightening is a closed map. A point `q` is `G (F q, s)`
-for the map `G` moving back by `s • g x` and some `s ∈ [0, 1]`, so the image of a closed set is the
-projection, along the compact factor `[0, 1]`, of a closed set. -/
+/-- The level-preserving total map of the straightening is a closed map. -/
 private theorem isClosedMap_straightenGraph_total (hκ : 2 < κ) :
     IsClosedMap fun q : I × (X × W) => (q.1, (q.2.1, q.2.2 - disp g κ q)) := by
   set F := fun q : I × (X × W) => (q.1, (q.2.1, q.2.2 - disp g κ q))
@@ -210,8 +208,9 @@ private theorem isClosedMap_straightenGraph_total (hκ : 2 < κ) :
     fun p => (p.1.1, (p.1.2.1, p.1.2.2 + (p.2 : ℝ) • g p.1.2.1))
   have hG : Continuous G := by fun_prop
   have hFG : ∀ p, (F (G p)).1 = p.1.1 ∧ (F (G p)).2.1 = p.1.2.1 := fun _ => ⟨rfl, rfl⟩
-  change IsClosedMap F
   intro C hC
+  -- Every `q` is `G (F q, s)` for some `s ∈ [0, 1]`, so `F '' C` is the projection, along the
+  -- compact factor `[0, 1]`, of a closed set.
   have hR : IsClosed {p : (I × (X × W)) × I | (F (G p)).2.2 = p.1.2.2} :=
     isClosed_eq (by fun_prop) (by fun_prop)
   have heq : F '' C = Prod.fst '' ({p | (F (G p)).2.2 = p.1.2.2} ∩ G ⁻¹' C) := by
@@ -231,8 +230,7 @@ private theorem isClosedMap_straightenGraph_total (hκ : 2 < κ) :
   rw [heq]
   exact isClosedMap_fst_of_compactSpace _ (hR.inter (hC.preimage hG))
 
-/-- The level-preserving total map of the straightening is a homeomorphism of `I × (X × W)`. It
-is a continuous bijection and a closed map. -/
+/-- The level-preserving total map of the straightening is a homeomorphism of `I × (X × W)`. -/
 private theorem isHomeomorph_straightenGraph_total (hκ : 2 < κ) :
     IsHomeomorph fun q : I × (X × W) => (q.1, (q.2.1, q.2.2 - disp g κ q)) := by
   set F := fun q : I × (X × W) => (q.1, (q.2.1, q.2.2 - disp g κ q))
