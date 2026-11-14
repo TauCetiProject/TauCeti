@@ -416,9 +416,9 @@ theorem quotientLift_comp_quotientMk {H : Type*} [Monoid H] [TopologicalSpace H]
 /-- A continuous homomorphism on the quotient is determined by its values on representatives. -/
 theorem quotientLift_unique {H : Type*} [Monoid H] [TopologicalSpace H]
     (f : G →ₜ* H) (N : Subgroup G) [N.Normal] (hf : N ≤ f.ker) (g : (G ⧸ N) →ₜ* H)
-    (hg : ∀ x : G, g (x : G ⧸ N) = f x) : g = quotientLift f N hf := by
-  refine ContinuousMonoidHom.toMonoidHom_injective (QuotientGroup.monoidHom_ext N (MonoidHom.ext
-    fun x => (hg x).trans (quotientLift_mk f N hf x).symm))
+    (hg : ∀ x : G, g (x : G ⧸ N) = f x) : g = quotientLift f N hf :=
+  ContinuousMonoidHom.ext fun q =>
+    QuotientGroup.induction_on q fun x => (hg x).trans (quotientLift_mk f N hf x).symm
 
 /-- The restriction of a continuous homomorphism `f : H → G` to the preimage of a subgroup `U`,
 both carrying the subspace topology, as a continuous homomorphism `f⁻¹(U) → U`: the continuous
@@ -449,7 +449,8 @@ theorem subgroupComap_smul {H : Type*} [Group H] [TopologicalSpace H] (f : H →
 theorem le_ker_comp_quotientMk {H : Type*} [Monoid H] [TopologicalSpace H]
     {N : Subgroup G} [N.Normal] (g : (G ⧸ N) →ₜ* H) :
     N ≤ ((g.comp (Subgroup.quotientMkContinuousMonoidHom N) : G →* H)).ker :=
-  QuotientGroup.le_comap_mk' N g.toMonoidHom.ker
+  (MonoidHom.comap_ker g.toMonoidHom (QuotientGroup.mk' N)) ▸
+    QuotientGroup.le_comap_mk' N g.toMonoidHom.ker
 
 end ContinuousMonoidHom
 
