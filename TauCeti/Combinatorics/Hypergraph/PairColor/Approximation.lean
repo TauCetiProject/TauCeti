@@ -17,6 +17,7 @@ import TauCeti.Combinatorics.Enumerative.CoupledColoring
 import TauCeti.Combinatorics.Enumerative.RandomColoring
 import TauCeti.Combinatorics.Regularity.Partition.Equitabilise
 import TauCeti.Data.Finset.Basic
+import TauCeti.Order.Partition.Equipartition
 
 /-!
 # Strong regular approximation of pair-color systems and lower skeletons
@@ -178,59 +179,7 @@ end Bounds
 
 namespace PairColorSystem
 
-variable {κ V : Type*}
-
-/-- Concentration union bound for coupled and independent block recolorings: when
-`card κ + 3 ≤ η ^ 2 * #s` and `card κ + 3 ≤ η ^ 2 * #t`, the union bound over `2 ^ (#s + #t) + 1`
-test sets and all `card κ` colors succeeds at deviation `η * (#s * #t)`. -/
-private theorem two_mul_two_pow_add_one_mul_exp_lt [Fintype κ] [Nonempty κ] {η : ℝ}
-    {s t : Finset V} (hs : (Fintype.card κ + 3 : ℝ) ≤ η ^ 2 * #s)
-    (ht : (Fintype.card κ + 3 : ℝ) ≤ η ^ 2 * #t) :
-    2 * (2 ^ #s * 2 ^ #t + 1 : ℕ) * Fintype.card κ *
-      exp (-2 * (η * (#s * #t : ℕ)) ^ 2 / (#s * #t : ℕ)) < 1 := by
-  have hs_pos : (0 : ℝ) < #s := by
-    by_contra! h
-    nlinarith [mul_nonpos_of_nonneg_of_nonpos (sq_nonneg η) h]
-  have ht_pos : (0 : ℝ) < #t := by
-    by_contra! h
-    nlinarith [mul_nonpos_of_nonneg_of_nonpos (sq_nonneg η) h]
-  have hs1 : 1 ≤ #s := Nat.cast_pos.1 hs_pos
-  have ht1 : 1 ≤ #t := Nat.cast_pos.1 ht_pos
-  have hpow_ge : 1 ≤ 2 ^ #s * 2 ^ #t := Nat.mul_pos (by positivity) (by positivity)
-  have hpref : (2 * (2 ^ #s * 2 ^ #t + 1 : ℕ) : ℝ) ≤ exp 2 * (exp #s * exp #t) := by
-    have h2 : (2 : ℝ) ≤ exp 1 := by linarith [add_one_le_exp (1 : ℝ)]
-    have h4 : (4 : ℝ) ≤ exp 2 := by
-      calc (4 : ℝ) = 2 ^ 2 := by norm_num
-        _ ≤ exp 1 ^ 2 := pow_le_pow_left₀ (by norm_num) h2 2
-        _ = exp 2 := by rw [← exp_nat_mul]; norm_num
-    have hpow (k : ℕ) : (2 : ℝ) ^ k ≤ exp k :=
-      (pow_le_pow_left₀ (by norm_num) h2 k).trans_eq (by rw [← exp_nat_mul, mul_one])
-    have hle : (2 * (2 ^ #s * 2 ^ #t + 1 : ℕ) : ℝ) ≤ 4 * ((2 : ℝ) ^ #s * (2 : ℝ) ^ #t) := by
-      have : 2 * (2 ^ #s * 2 ^ #t + 1) ≤ 4 * (2 ^ #s * 2 ^ #t) := by omega
-      exact_mod_cast this
-    exact hle.trans (mul_le_mul h4 (mul_le_mul (hpow #s) (hpow #t) (by positivity) (by positivity))
-      (by positivity) (by positivity))
-  have hKexp : (Fintype.card κ : ℝ) ≤ exp (Fintype.card κ - 1) := by
-    linarith [add_one_le_exp ((Fintype.card κ : ℝ) - 1)]
-  have hexp : -2 * (η * (#s * #t : ℕ)) ^ 2 / ((#s * #t : ℕ) : ℝ) = -2 * (η ^ 2 * #s) * #t := by
-    push_cast
-    field_simp
-  calc 2 * ((2 ^ #s * 2 ^ #t + 1 : ℕ) : ℝ) * Fintype.card κ *
-        exp (-2 * (η * (#s * #t : ℕ)) ^ 2 / (#s * #t : ℕ))
-      ≤ (exp 2 * (exp #s * exp #t)) * exp (Fintype.card κ - 1) *
-          exp (-2 * (η ^ 2 * #s) * #t) := by
-        rw [hexp]
-        gcongr
-    _ = exp (#s + #t + Fintype.card κ + 1 - 2 * (η ^ 2 * #s) * #t) := by
-        simp only [← exp_add]
-        ring_nf
-    _ < 1 := by
-        rw [exp_lt_one_iff, sub_neg]
-        nlinarith [Nat.one_le_cast (α := ℝ) |>.2 hs1, Nat.one_le_cast (α := ℝ) |>.2 ht1,
-          mul_le_mul_of_nonneg_right hs ht_pos.le,
-          mul_le_mul_of_nonneg_right ht hs_pos.le]
-
-variable [Fintype V] [DecidableEq V]
+variable {κ V : Type*} [Fintype V] [DecidableEq V]
 
 section FineBlockGlue
 
@@ -250,23 +199,28 @@ private noncomputable def recolorFineBlocks : PairColorSystem κ V where
   rev := S.rev
   rev_involutive := S.rev_involutive
   color_rev p := by
-    let A' : Q.parts := ⟨Q.part p.1.1, Q.part_mem.2 (mem_univ _)⟩
-    let B' : Q.parts := ⟨Q.part p.1.2, Q.part_mem.2 (mem_univ _)⟩
-    change (if refinementParent hQP B' = refinementParent hQP A' then
-        S.color ⟨p.1.swap, p.2.symm⟩
-      else if idx B' < idx A' then x B' A' p.1.swap
-      else S.rev (x A' B' p.1)) =
-      S.rev (if refinementParent hQP A' = refinementParent hQP B' then S.color p
-        else if idx A' < idx B' then x A' B' p.1
-        else S.rev (x B' A' p.1.swap))
+    obtain ⟨⟨u, v⟩, huv⟩ := p
+    dsimp only [Prod.swap_prod_mk]
+    set A' : Q.parts := ⟨Q.part u, Q.part_mem.2 (mem_univ _)⟩
+    set B' : Q.parts := ⟨Q.part v, Q.part_mem.2 (mem_univ _)⟩
     by_cases hpar : refinementParent hQP A' = refinementParent hQP B'
-    · simp only [hpar, ↓reduceIte, S.color_rev]
+    · simpa only [hpar, ↓reduceIte, Prod.swap_prod_mk] using S.color_rev ⟨(u, v), huv⟩
     · have hpar' : refinementParent hQP B' ≠ refinementParent hQP A' := Ne.symm hpar
       have hne : idx A' ≠ idx B' := idx.injective.ne fun h ↦ hpar (h ▸ rfl)
       simp only [hpar, hpar', ↓reduceIte]
       rcases lt_or_gt_of_ne hne with hlt | hgt
       · simp only [hlt, lt_asymm hlt, ↓reduceIte]
       · simp only [hgt, lt_asymm hgt, ↓reduceIte, S.rev_rev]
+
+@[simp]
+private theorem recolorFineBlocks_color (p : {p : V × V // p.1 ≠ p.2}) :
+    (S.recolorFineBlocks hQP idx x).color p =
+      let A' : Q.parts := ⟨Q.part p.1.1, Q.part_mem.2 (mem_univ _)⟩
+      let B' : Q.parts := ⟨Q.part p.1.2, Q.part_mem.2 (mem_univ _)⟩
+      if refinementParent hQP A' = refinementParent hQP B' then S.color p
+      else if idx A' < idx B' then x A' B' p.1
+      else S.rev (x B' A' p.1.swap) :=
+  (rfl)
 
 @[simp]
 private theorem recolorFineBlocks_rev : (S.recolorFineBlocks hQP idx x).rev = S.rev :=
@@ -279,9 +233,7 @@ private theorem recolorFineBlocks_colorOfPair_of_parent_eq {u v : V}
     (S.recolorFineBlocks hQP idx x).colorOfPair u v = S.colorOfPair u v := by
   by_cases huv : u = v
   · simp [huv]
-  · rw [colorOfPair_of_ne _ huv, colorOfPair_of_ne _ huv]
-    dsimp only [recolorFineBlocks]
-    simp only [h, ↓reduceIte]
+  · simp [colorOfPair_of_ne _ huv, h]
 
 /-- On `A' ×ˢ B'` with `refinementParent hQP A' ≠ refinementParent hQP B'` and `idx A' < idx B'`,
 `recolorFineBlocks` applies `x A' B'`. -/
@@ -298,10 +250,7 @@ private theorem recolorFineBlocks_colorOfPair_of_lt {A' B' : Q.parts}
     Subtype.ext (Q.part_eq_of_mem A'.2 hu)
   have hB' : (⟨Q.part v, Q.part_mem.2 (mem_univ v)⟩ : Q.parts) = B' :=
     Subtype.ext (Q.part_eq_of_mem B'.2 hv)
-  rw [colorOfPair_of_ne _ huv]
-  dsimp only [recolorFineBlocks]
-  rw [hA', hB']
-  simp only [hpar, hlt, ↓reduceIte]
+  simp [colorOfPair_of_ne _ huv, hA', hB', hpar, hlt]
 
 end FineBlockGlue
 
@@ -369,7 +318,9 @@ private theorem exists_local_block_coloring_of_isRegularPair [Fintype κ] [Nonem
   have hconc : 2 * (Fintype.card ↥(A'.1.powerset ×ˢ B'.1.powerset) + 1 : ℕ) * Fintype.card κ *
       exp (-2 * (η * #Z) ^ 2 / #Z) < 1 := by
     rw [Fintype.card_coe, card_product, card_powerset, card_powerset]
-    simpa only [Z, card_product] using two_mul_two_pow_add_one_mul_exp_lt (κ := κ) hs ht
+    simpa only [Z, card_product] using
+      two_mul_two_pow_mul_two_pow_add_mul_exp_lt (κ := κ) (r := 1)
+        (by push_cast; linarith) (by push_cast; linarith)
   obtain ⟨x, hedit, hdisc⟩ := exists_coupled_coloring_abs_card_filter_sub_lt_of_le Z y hq0 hq1 T
     hT_le (mul_pos hη hZpos) hd hconc
   refine ⟨x, fun c s' hs' t' ht' ↦ ?_, ?_⟩
@@ -440,17 +391,10 @@ private theorem exists_local_block_coloring [Fintype κ] [Nonempty κ] {η : ℝ
     have hconc_ind :
         2 * (Fintype.card ↥(A'.1.powerset ×ˢ B'.1.powerset) : ℝ) * Fintype.card κ *
           exp (-2 * (η * #Z) ^ 2 / #Z) < 1 := by
-      have hle : (Fintype.card ↥(A'.1.powerset ×ˢ B'.1.powerset) : ℝ) ≤
-          (2 ^ #A'.1 * 2 ^ #B'.1 + 1 : ℕ) := by
-        rw [Fintype.card_coe, card_product, card_powerset, card_powerset]
-        exact_mod_cast Nat.le_succ _
-      have hle2 : 2 * (Fintype.card ↥(A'.1.powerset ×ˢ B'.1.powerset) : ℝ) ≤
-          2 * (2 ^ #A'.1 * 2 ^ #B'.1 + 1 : ℕ) :=
-        mul_le_mul_of_nonneg_left hle (by positivity)
-      refine (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hle2 (Nat.cast_nonneg _))
-        (exp_pos _).le).trans_lt ?_
+      rw [Fintype.card_coe, card_product, card_powerset, card_powerset]
       simpa only [Z, card_product] using
-        two_mul_two_pow_add_one_mul_exp_lt (κ := κ) (hsize A'.1 A'.2) (hsize B'.1 B'.2)
+        two_mul_two_pow_mul_two_pow_mul_exp_lt (κ := κ) (by linarith [hsize A'.1 A'.2])
+          (by linarith [hsize B'.1 B'.2])
     obtain ⟨x, hdisc⟩ := exists_forall_abs_card_filter_sub_mul_card_lt hq0 hq1 T hT_le
       (mul_pos hη hZpos) hconc_ind
     refine ⟨x, fun _ c s' hs' t' ht' ↦ ?_, fun _ h ↦ (hreg h).elim⟩
@@ -816,47 +760,6 @@ private theorem card_recolorFineBlocks_colorOfPair_ne_le [Fintype κ] (idx : Q.p
 
 end LocalBlockChoice
 
-/-- Within-cell distinct-pair count of an equipartition `P` is at most `|V|² / #P.parts`. -/
-private theorem sum_card_mul_sub_one_le_of_isEquipartition {P : Finpartition (univ : Finset V)}
-    (hP : P.IsEquipartition) :
-    ((∑ A ∈ P.parts, #A * (#A - 1) : ℕ) : ℝ) ≤
-      (Fintype.card V : ℝ) ^ 2 / #P.parts := by
-  have hnat : ∑ A ∈ P.parts, #A * (#A - 1) ≤ Fintype.card V * (Fintype.card V / #P.parts) := by
-    calc ∑ A ∈ P.parts, #A * (#A - 1)
-        ≤ ∑ A ∈ P.parts, #A * (Fintype.card V / #P.parts) :=
-          sum_le_sum fun A hA ↦ Nat.mul_le_mul_left _ <| Nat.sub_le_of_le_add <| by
-            simpa [card_univ] using hP.card_part_le_average_add_one hA
-      _ = (∑ A ∈ P.parts, #A) * (Fintype.card V / #P.parts) := (sum_mul _ _ _).symm
-      _ = Fintype.card V * (Fintype.card V / #P.parts) := by rw [P.sum_card_parts, card_univ]
-  calc ((∑ A ∈ P.parts, #A * (#A - 1) : ℕ) : ℝ)
-      ≤ (Fintype.card V : ℝ) * (Fintype.card V / #P.parts : ℕ) := by exact_mod_cast hnat
-    _ ≤ (Fintype.card V : ℝ) * ((Fintype.card V : ℝ) / #P.parts) :=
-        mul_le_mul_of_nonneg_left (Nat.cast_div_le ..) (Nat.cast_nonneg _)
-    _ = (Fintype.card V : ℝ) ^ 2 / #P.parts := by ring
-
-/-- When `|V|` exceeds `K` times the supremum of `⌈(m + 3) / (η t)²⌉₊` over `t ≤ K`, every cell of
-an equipartition `Q` with `1 ≤ #Q.parts ≤ K` satisfies `m + 3 ≤ (η t)² * #C` for any `t ≤ K` with
-`0 < η t`. -/
-private theorem card_part_ge_of_sup_mul_le {Q : Finpartition (univ : Finset V)}
-    (hQ : Q.IsEquipartition) {m K t : ℕ} {η : ℕ → ℝ} (hQ_pos : 0 < #Q.parts)
-    (hQ_le_K : #Q.parts ≤ K) (ht_le_K : t ≤ K) (hη : 0 < η t)
-    (hKM : K * max ((range (K + 1)).sup fun j ↦ ⌈(m + 3 : ℝ) / (η j) ^ 2⌉₊) 1 ≤ Fintype.card V)
-    {C : Finset V} (hC : C ∈ Q.parts) :
-    (m + 3 : ℝ) ≤ (η t) ^ 2 * #C := by
-  have hK_pos : 0 < K := hQ_pos.trans_le hQ_le_K
-  have hsup : ⌈(m + 3 : ℝ) / (η t) ^ 2⌉₊ ≤
-      max ((range (K + 1)).sup fun j ↦ ⌈(m + 3 : ℝ) / (η j) ^ 2⌉₊) 1 :=
-    (le_sup (f := fun j ↦ ⌈(m + 3 : ℝ) / (η j) ^ 2⌉₊)
-      (mem_range.2 (Nat.lt_succ_of_le ht_le_K))).trans (le_max_left _ _)
-  have hdivK : max ((range (K + 1)).sup fun j ↦ ⌈(m + 3 : ℝ) / (η j) ^ 2⌉₊) 1 ≤
-      Fintype.card V / K := (Nat.le_div_iff_mul_le hK_pos).2 (by rwa [mul_comm])
-  have hdivQ : Fintype.card V / K ≤ #C :=
-    (Nat.div_le_div_left hQ_le_K hQ_pos).trans
-      (by simpa [card_univ] using hQ.average_le_card_part hC)
-  have hdiv_le : (m + 3 : ℝ) / (η t) ^ 2 ≤ #C :=
-    (Nat.le_ceil _).trans (by exact_mod_cast hsup.trans (hdivK.trans hdivQ))
-  exact (div_le_iff₀' (pow_pos hη 2)).1 hdiv_le
-
 open Classical in
 /-- Combine the off-diagonal edit bound between `R` and `S` with the diagonal cleanup edit bound of
 `R.fillDiagonal P` into a single `δ |V|²` pair-edit bound. -/
@@ -886,7 +789,10 @@ private theorem card_fillDiagonal_colorOfPair_ne_le_of_le (S R : PairColorSystem
   have hdiag_edit : (#{p : V × V | (R.fillDiagonal P).colorOfPair p.1 p.2 ≠
         (R.colorOfPair p.1 p.2).map some} : ℝ) ≤ (δ / 4) * (Fintype.card V : ℝ) ^ 2 := by
     rw [R.card_fillDiagonal_colorOfPair_ne P]
-    refine (sum_card_mul_sub_one_le_of_isEquipartition hP).trans ?_
+    have hdiag : ((∑ A ∈ P.parts, #A * (#A - 1) : ℕ) : ℝ) ≤
+        (Fintype.card V : ℝ) ^ 2 / #P.parts := by
+      simpa only [card_univ] using hP.cast_sum_card_mul_sub_one_le (K := ℝ)
+    refine hdiag.trans ?_
     have h4δ' : 4 / δ ≤ (#P.parts : ℝ) := (Nat.le_ceil _).trans (by exact_mod_cast h4δ)
     rw [div_le_iff₀ hPpos]
     have : (1 : ℝ) ≤ δ / 4 * #P.parts := by rw [div_le_iff₀ hδ] at h4δ'; linarith
@@ -974,9 +880,13 @@ theorem exists_refining_equipartition_isPairColorRegular [Fintype κ] (S : PairC
   have ha_le_P : a ≤ #P.parts :=
     (Nat.le_mul_of_pos_right a hP₀_pos).trans (hP₁card.symm.trans_le (card_mono hPP₁))
   -- Step 3: Fine-cell size lower bound on `Q` for concentration.
-  have hQ_pos : 0 < #Q.parts := (Nat.pos_of_ne_zero ha0).trans_le (ha_le_P.trans (card_mono hQP))
+  have hsup_le_V : K * ((range (K + 1)).sup fun t ↦ ⌈(m + 3 : ℝ) / (η t) ^ 2⌉₊) ≤
+      #(univ : Finset V) := by
+    rw [card_univ]
+    exact (Nat.mul_le_mul_left K (le_max_left _ _)).trans hKM_le_V
   have hsizeQ : ∀ C ∈ Q.parts, (m + 3 : ℝ) ≤ (η #P.parts) ^ 2 * #C := fun C hC ↦
-    card_part_ge_of_sup_mul_le hQ hQ_pos hQ_le_K hP_le_K (hη_pos #P.parts) hKM_le_V hC
+    hQ.le_mul_card_part_of_sup_mul_le hQ_le_K hP_le_K (pow_pos (hη_pos #P.parts) 2)
+      hsup_le_V hC
   -- Step 4: Coupled/independent fine-block recoloring + diagonal cleanup on `P`.
   let idx : Q.parts ↪ ℕ :=
     (Fintype.equivFin Q.parts).toEmbedding.trans ⟨Fin.val, Fin.val_injective⟩

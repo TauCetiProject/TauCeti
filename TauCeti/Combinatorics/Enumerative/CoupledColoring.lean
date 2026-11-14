@@ -67,26 +67,6 @@ section TransitionCoupling
 
 variable [Fintype κ]
 
-/-- Pointwise algebraic identities relating `min u v`, the excess `max (u - v) 0`, the deficit
-`max (v - u) 0`, and `|u - v|`. -/
-private theorem excess_deficit_identities (u v : ℝ) :
-    max (u - v) 0 - max (v - u) 0 = u - v ∧
-      max (u - v) 0 + max (v - u) 0 = |u - v| ∧
-      min u v + max (u - v) 0 = u ∧
-      min u v + max (v - u) 0 = v ∧
-      max (u - v) 0 * max (v - u) 0 = 0 := by
-  rcases le_total u v with huv | hvu
-  · have h₁ : max (u - v) 0 = 0 := max_eq_right (sub_nonpos.2 huv)
-    have h₂ : max (v - u) 0 = v - u := max_eq_left (sub_nonneg.2 huv)
-    have h₃ : |u - v| = v - u := by rw [abs_sub_comm, abs_of_nonneg (sub_nonneg.2 huv)]
-    rw [h₁, h₂, h₃, min_eq_left huv]
-    refine ⟨by ring, by ring, by ring, by ring, by ring⟩
-  · have h₁ : max (u - v) 0 = u - v := max_eq_left (sub_nonneg.2 hvu)
-    have h₂ : max (v - u) 0 = 0 := max_eq_right (sub_nonpos.2 hvu)
-    have h₃ : |u - v| = u - v := abs_of_nonneg (sub_nonneg.2 hvu)
-    rw [h₁, h₂, h₃, min_eq_right hvu]
-    refine ⟨by ring, by ring, by ring, by ring, by ring⟩
-
 /-- **Maximal-coupling transition kernel.** For any two probability distributions `p` and `q` on a
 finite type `κ`, there is a Markov transition kernel `M : κ → κ → ℝ` pushing `p` forward to `q`
 whose diagonal mass at each `a` satisfies `p a * M a a = min (p a) (q a)`, so that the total
@@ -105,16 +85,27 @@ theorem exists_transition_coupling {p q : κ → ℝ} (hp : ∀ c, 0 ≤ p c) (h
   let df : κ → ℝ := fun c ↦ max (q c - p c) 0
   have hex₀ (a : κ) : 0 ≤ ex a := le_max_right _ _
   have hdf₀ (c : κ) : 0 ≤ df c := le_max_right _ _
+  have hex_sub_df (a : κ) : ex a - df a = p a - q a := by
+    simpa only [ex, df, neg_sub] using max_zero_sub_max_neg_zero_eq_self (p a - q a)
+  have hex_add_df (a : κ) : ex a + df a = |p a - q a| := by
+    simpa only [ex, df, neg_sub] using max_zero_add_max_neg_zero_eq_abs_self (p a - q a)
+  have hmin_ex (a : κ) : min (p a) (q a) + ex a = p a := by
+    have hmax : ex a = max (p a) (q a) - q a := by
+      simpa only [ex, sub_self] using max_sub_sub_right (p a) (q a) (q a)
+    linarith [min_add_max (p a) (q a)]
+  have hmin_df (c : κ) : min (p c) (q c) + df c = q c := by
+    have hmax : df c = max (q c) (p c) - p c := by
+      simpa only [df, sub_self] using max_sub_sub_right (q c) (p c) (p c)
+    linarith [min_add_max (q c) (p c), min_comm (p c) (q c)]
   have hsum_eq : ∑ a, ex a = ∑ c, df c := by
     have hsub : ∑ a, (ex a - df a) = 0 := by
-      rw [sum_congr rfl fun a _ ↦ (excess_deficit_identities (p a) (q a)).1,
-        sum_sub_distrib, hp1, hq1, sub_self]
+      rw [sum_congr rfl fun a _ ↦ hex_sub_df a, sum_sub_distrib, hp1, hq1, sub_self]
     linarith [sum_sub_distrib (s := univ) (f := ex) (g := df)]
-  set tv := ∑ a, ex a
+  set tv := ∑ a, ex a with htv_def
   have htv_abs : 2 * tv = ∑ a, |p a - q a| := by
     calc 2 * tv = ∑ a, ex a + ∑ a, df a := by rw [← hsum_eq]; ring
       _ = ∑ a, (ex a + df a) := sum_add_distrib.symm
-      _ = ∑ a, |p a - q a| := sum_congr rfl fun a _ ↦ (excess_deficit_identities (p a) (q a)).2.1
+      _ = ∑ a, |p a - q a| := sum_congr rfl fun a _ ↦ hex_add_df a
   -- When `tv = 0`, `p = q` everywhere; otherwise redistribute excess proportionally to deficit.
   by_cases htv : tv = 0
   · have hpq (a : κ) : p a = q a := by
@@ -123,7 +114,7 @@ theorem exists_transition_coupling {p q : κ → ℝ} (hp : ∀ c, 0 ≤ p c) (h
       have hdf_zero : df a = 0 :=
         le_antisymm ((single_le_sum (fun b _ ↦ hdf₀ b) (mem_univ a)).trans_eq
           (hsum_eq.symm.trans htv)) (hdf₀ a)
-      linarith [(excess_deficit_identities (p a) (q a)).1]
+      linarith [hex_sub_df a]
     refine ⟨fun a c ↦ if c = a then 1 else 0, fun a c ↦ by dsimp only; split_ifs <;> norm_num,
       fun a ↦ by simp, fun c ↦ by simp [hpq], fun a ↦ by simp [hpq], ?_⟩
     have habs : ∑ a, |p a - q a| = 0 := by linarith
@@ -147,8 +138,7 @@ theorem exists_transition_coupling {p q : κ → ℝ} (hp : ∀ c, 0 ≤ p c) (h
       · simp [hpa, hq1]
       · simp only [hpa, ↓reduceIte, sum_add_distrib, ← sum_div, ← mul_sum]
         rw [Fintype.sum_ite_eq' a fun _ ↦ min (p a) (q a), ← hsum_eq,
-          div_self htv, mul_one, ← add_div,
-          (excess_deficit_identities (p a) (q a)).2.2.1, div_self hpa]
+          div_self htv, mul_one, ← add_div, hmin_ex a, div_self hpa]
     -- Whether `p a = 0` or `p a > 0`, `p a * M a c` takes the same polynomial form.
     have hpM (a c : κ) :
         p a * M a c = (if c = a then min (p c) (q c) else 0) + ex a * (df c / tv) := by
@@ -168,12 +158,14 @@ theorem exists_transition_coupling {p q : κ → ℝ} (hp : ∀ c, 0 ≤ p c) (h
         · rfl
     have hM_marg (c : κ) : ∑ a, p a * M a c = q c := by
       simp_rw [hpM]
-      rw [sum_add_distrib, Fintype.sum_ite_eq c fun _ ↦ min (p c) (q c), ← sum_mul,
-        show ∑ a, ex a = tv from rfl, mul_div_cancel₀ _ htv,
-        (excess_deficit_identities (p c) (q c)).2.2.2.1]
+      rw [sum_add_distrib, Fintype.sum_ite_eq c fun _ ↦ min (p c) (q c), ← sum_mul, ← htv_def,
+        mul_div_cancel₀ _ htv, hmin_df c]
     have hM_diag (a : κ) : p a * M a a = min (p a) (q a) := by
       simp only [hpM, ↓reduceIte]
-      have hzero : ex a * df a = 0 := (excess_deficit_identities (p a) (q a)).2.2.2.2
+      have hzero : ex a * df a = 0 := by
+        rcases le_total (p a) (q a) with h | h
+        · simp [ex, max_eq_right (sub_nonpos.2 h)]
+        · simp [df, max_eq_right (sub_nonpos.2 h)]
       calc min (p a) (q a) + ex a * (df a / tv)
           = min (p a) (q a) + ex a * df a / tv := by ring
         _ = min (p a) (q a) := by rw [hzero, zero_div, add_zero]
@@ -181,14 +173,9 @@ theorem exists_transition_coupling {p q : κ → ℝ} (hp : ∀ c, 0 ≤ p c) (h
     have hterm (a : κ) : p a * (1 - M a a) = ex a := by
       calc p a * (1 - M a a) = p a - p a * M a a := by ring
         _ = p a - min (p a) (q a) := by rw [hM_diag]
-        _ = ex a := by linarith [(excess_deficit_identities (p a) (q a)).2.2.1]
+        _ = ex a := by linarith [hmin_ex a]
     simp_rw [hterm]
     linarith
-
-/-- Every entry of a row-stochastic nonnegative vector lies in `[0, 1]`. -/
-private theorem le_one_of_nonneg_of_sum_eq_one {M : κ → ℝ} (h₀ : ∀ c, 0 ≤ M c)
-    (h₁ : ∑ c, M c = 1) (c : κ) : M c ≤ 1 :=
-  (single_le_sum (fun b _ ↦ h₀ b) (mem_univ c)).trans_eq h₁
 
 /-- Under the concentration hypothesis, the ambient set `Z` is nonempty when `κ` is nonempty. -/
 private theorem card_pos_of_concentration [Nonempty κ] {Z : Finset ι} {m : ℕ} {a : ℝ}
@@ -205,15 +192,6 @@ end TransitionCoupling
 section CoupledColoring
 
 variable [Fintype κ] [DecidableEq κ]
-
-/-- Splitting a filtered count along the fibers of an auxiliary coloring `y : ι → κ`. -/
-private theorem card_filter_eq_sum_fiber (s : Finset ι) (y : ι → κ) (P : ι → Prop)
-    [DecidablePred P] :
-    #{e ∈ s | P e} = ∑ b, #{e ∈ {e ∈ s | y e = b} | P e} := by
-  rw [card_eq_sum_card_fiberwise (f := y) (t := univ) fun _ _ ↦ mem_univ _]
-  refine sum_congr rfl fun b _ ↦ congr_arg card ?_
-  ext e
-  simp [and_comm, and_left_comm]
 
 /-- **Coupled coloring of low discrepancy.** Let `Z` be a finite set colored by `y : ι → κ`, let
 `q : κ → ℝ` be a probability distribution on `κ`, and let `T : I → Finset ι` be a finite family of
@@ -279,10 +257,13 @@ theorem exists_coupled_coloring_abs_card_filter_sub_lt (Z : Finset ι) (y : ι �
       have hpartR : (#{e ∈ T' b none | f b e = b} : ℝ) + #{e ∈ T' b none | f b e ≠ b} =
           #(T' b none) := by exact_mod_cast hpart
       rw [hZb] at hkeep hpartR
-      linarith [show M b b * (p b * #Z) + p b * (1 - M b b) * #Z = p b * #Z by ring]
+      have hring : M b b * (p b * #Z) + p b * (1 - M b b) * #Z = p b * #Z := by ring
+      linarith [hring]
     have hsplit : (#{e ∈ Z | f (y e) e ≠ y e} : ℝ) =
         ∑ b, (#{e ∈ {e ∈ Z | y e = b} | f (y e) e ≠ y e} : ℝ) := by
-      exact_mod_cast card_filter_eq_sum_fiber Z y fun e ↦ f (y e) e ≠ y e
+      rw [← Nat.cast_sum, card_eq_sum_card_fiberwise (f := y) (t := univ) fun _ _ ↦ mem_univ _]
+      exact congr_arg Nat.cast (sum_congr rfl fun b _ ↦
+        congr_arg card (by ext; simp [and_right_comm]))
     have htvZ : (∑ b, p b * (1 - M b b) * #Z) =
         (1 / 2) * ∑ c, |(#{e ∈ Z | y e = c} : ℝ) - q c * #Z| := by
       rw [← sum_mul, hMtv, mul_assoc, sum_mul]
@@ -304,10 +285,12 @@ theorem exists_coupled_coloring_abs_card_filter_sub_lt (Z : Finset ι) (y : ι �
     intro i c
     have hsplit : (#{e ∈ T i | f (y e) e = c} : ℝ) =
         ∑ b, (#{e ∈ T' b (some i) | f b e = c} : ℝ) := by
-      rw [card_filter_eq_sum_fiber (T i) y fun e ↦ f (y e) e = c, Nat.cast_sum]
-      refine sum_congr rfl fun b _ ↦ ?_
-      congr 2
-      exact filter_congr fun e he ↦ by simp [(mem_filter.1 he).2]
+      rw [← Nat.cast_sum, card_eq_sum_card_fiberwise (f := y) (t := univ) fun _ _ ↦ mem_univ _]
+      refine congr_arg Nat.cast (sum_congr rfl fun b _ ↦ congr_arg card ?_)
+      ext e
+      simp only [T', mem_filter]
+      exact ⟨fun ⟨⟨he, hfe⟩, hy⟩ ↦ ⟨⟨he, hy⟩, hy ▸ hfe⟩,
+        fun ⟨⟨he, hy⟩, hfb⟩ ↦ ⟨⟨he, hy.symm ▸ hfb⟩, hy⟩⟩
     have hqc : q c * #(T i) = ∑ b, M b c * (p b * #(T i)) := by
       rw [← hMmarg c, sum_mul]
       exact sum_congr rfl fun b _ ↦ by ring
@@ -315,7 +298,7 @@ theorem exists_coupled_coloring_abs_card_filter_sub_lt (Z : Finset ι) (y : ι �
         |(#{e ∈ T' b (some i) | f b e = c} : ℝ) - M b c * (p b * #(T i))| <
           a + |(#{e ∈ T i | y e = b} : ℝ) - p b * #(T i)| := by
       have h₁ := hf b (some i) c
-      have hMle : M b c ≤ 1 := le_one_of_nonneg_of_sum_eq_one (hM0 b) (hM1 b) c
+      have hMle : M b c ≤ 1 := (single_le_sum (fun d _ ↦ hM0 b d) (mem_univ c)).trans_eq (hM1 b)
       have h₂ : |M b c * (#(T' b (some i)) : ℝ) - M b c * (p b * #(T i))| ≤
           |(#{e ∈ T i | y e = b} : ℝ) - p b * #(T i)| := by
         rw [← mul_sub, abs_mul, abs_of_nonneg (hM0 b c)]
