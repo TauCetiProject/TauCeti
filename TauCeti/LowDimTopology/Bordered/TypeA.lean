@@ -106,7 +106,9 @@ differential of the mapping cone of `f` (`TauCeti.UngradedAInfinityRightModuleHo
 block triangular with diagonal blocks the box tensor differentials of `M` and `M'`; since that
 differential squares to zero, `∂' ∘ T_f = T_f ∘ ∂` under either boundedness hypothesis. For a
 bounded type `D` structure, the identity morphism induces the identity. For any type `D` structure,
-an `A`-linear chain map `g` of differential modules induces `φ ↦ g ∘ φ`.
+an `A`-linear chain map `g` of differential modules induces `φ ↦ g ∘ φ`. The functoriality of the
+box tensor product in families of maps of `A∞` modules, which needs no mapping cone, is developed
+in `TauCeti.LowDimTopology.Bordered.TypeA.ModuleMap`.
 
 ## Main definitions
 
@@ -265,24 +267,37 @@ theorem typeABoxDifferential_typeABoxDifferential_of_act_eq_zero [CharP R 2]
 
 /-! ### Bounded type `D` structures -/
 
+/-- The operations of a matrix family along the coefficient matrix of `N`, with linear maps `L`
+applied to the coefficients, evaluate the family on the iterates `δⁿ` of `N`. -/
+theorem ungradedMatrixFamily_map_coeff_apply {M' : Type*} [AddCommGroup M'] [Module R M']
+    (N : TypeDStructure d ι X)
+    (f : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M')) (n : ℕ)
+    (L : Fin n → A →ₗ[R] A) (φ : X → M) (z : X) :
+    ungradedMatrixFamily X f n (fun l => N.coeff.map (L l)) φ z =
+      ∑ x, PiTensorProduct.lift ((f n).compLinearMap L) (N.iteratedCoeff n x z) (φ x) := by
+  rw [ungradedMatrixFamily_apply, ← Finset.sum_filter]
+  convert (N.sum_lift_iteratedCoeff n (fun x => (LinearMap.applyₗ (φ x)).compMultilinearMap
+    ((f n).compLinearMap L)) z).symm using 2 with x
+  · simp
+  · simp
+
 /-- The operations of the matrix module along the coefficient matrix of `N`, with linear maps `L`
 applied to the coefficients, evaluate the operations of `M` on the iterates `δⁿ` of `N`. -/
 theorem matrixAct_map_coeff_apply (N : TypeDStructure d ι X)
     (Mm : UngradedAInfinityRightModule d M) (n : ℕ) (L : Fin n → A →ₗ[R] A) (φ : X → M) (z : X) :
     Mm.matrixAct X n (fun l => N.coeff.map (L l)) φ z =
       ∑ x, PiTensorProduct.lift ((Mm.act n).compLinearMap L) (N.iteratedCoeff n x z) (φ x) := by
-  rw [Mm.matrixAct_apply, ← Finset.sum_filter]
-  convert (N.sum_lift_iteratedCoeff n (fun x => (LinearMap.applyₗ (φ x)).compMultilinearMap
-    ((Mm.act n).compLinearMap L)) z).symm using 2 with x
-  · simp
-  · simp
+  rw [UngradedAInfinityRightModule.matrixAct_eq_ungradedMatrixFamily]
+  exact N.ungradedMatrixFamily_map_coeff_apply Mm.act n L φ z
 
-/-- If the iterate `δⁿ` of `N` vanishes, so does the operation `m_{n+1}` of the matrix module on
+/-- If the iterate `δⁿ` of `N` vanishes, so does the operation `f_{n+1}` of a matrix family on
 every tuple of copies of the coefficient matrix of `N` and of its derivative. -/
-theorem matrixAct_eq_zero_of_iteratedCoeff_eq_zero (N : TypeDStructure d ι X)
-    (Mm : UngradedAInfinityRightModule d M) {n : ℕ} (hn : ∀ x z, N.iteratedCoeff n x z = 0)
-    {F : Fin n → Matrix X X A} (hF : ∀ l, F l = N.coeff ∨ F l = N.coeff.map d) :
-    Mm.matrixAct X n F = 0 := by
+theorem ungradedMatrixFamily_eq_zero_of_iteratedCoeff_eq_zero {M' : Type*} [AddCommGroup M']
+    [Module R M'] (N : TypeDStructure d ι X)
+    (f : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M')) {n : ℕ}
+    (hn : ∀ x z, N.iteratedCoeff n x z = 0) {F : Fin n → Matrix X X A}
+    (hF : ∀ l, F l = N.coeff ∨ F l = N.coeff.map d) :
+    ungradedMatrixFamily X f n F = 0 := by
   classical
   have hL : F = fun l => N.coeff.map ⇑(if F l = N.coeff then LinearMap.id else d) := by
     funext l
@@ -291,8 +306,17 @@ theorem matrixAct_eq_zero_of_iteratedCoeff_eq_zero (N : TypeDStructure d ι X)
       simp
     · exact (hF l).resolve_left h
   refine LinearMap.ext fun φ => funext fun z => ?_
-  rw [hL, matrixAct_map_coeff_apply]
+  rw [hL, ungradedMatrixFamily_map_coeff_apply]
   simp [hn]
+
+/-- If the iterate `δⁿ` of `N` vanishes, so does the operation `m_{n+1}` of the matrix module on
+every tuple of copies of the coefficient matrix of `N` and of its derivative. -/
+theorem matrixAct_eq_zero_of_iteratedCoeff_eq_zero (N : TypeDStructure d ι X)
+    (Mm : UngradedAInfinityRightModule d M) {n : ℕ} (hn : ∀ x z, N.iteratedCoeff n x z = 0)
+    {F : Fin n → Matrix X X A} (hF : ∀ l, F l = N.coeff ∨ F l = N.coeff.map d) :
+    Mm.matrixAct X n F = 0 := by
+  rw [UngradedAInfinityRightModule.matrixAct_eq_ungradedMatrixFamily]
+  exact N.ungradedMatrixFamily_eq_zero_of_iteratedCoeff_eq_zero Mm.act hn hF
 
 /-- **The box tensor differential in terms of the iterates of `N`.** When the operations
 `m_{n+1}(·, δ, …, δ)` of the matrix module vanish for `n ≥ K`, the box tensor differential is
@@ -1190,8 +1214,6 @@ theorem typeABoxMap_typeABoxMap_add_of_lt [CharP R 2] (hMm : Mm.IsStrictlyUnital
 end StrictUnit
 
 end Morphism
-
-/-! ### Maps induced by morphisms of `A∞` modules -/
 
 section ModuleHom
 
