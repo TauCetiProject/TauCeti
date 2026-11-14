@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.FinitePresentation
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 public import TauCeti.Topology.UniformSpace.DiscreteUniformity
+
+import Mathlib.RingTheory.Localization.Away.AdjoinRoot
 
 /-!
 # Completed localisations of a discrete ring
@@ -39,6 +42,8 @@ of the Čech complexes of localisations.
   discrete.
 * `TauCeti.Huber.PairOfDefinition.completionLocEquivOfDiscreteTopology`: the canonical map
   `Aₛ → A⟨T/s⟩` is a ring isomorphism.
+* `TauCeti.Huber.PairOfDefinition.finitePresentation_toCompletionLoc_of_discreteTopology`: over a
+  discrete ring `A`, `toCompletionLoc : A →+* A⟨T/s⟩` is algebraically of finite presentation.
 
 ## References
 
@@ -158,6 +163,27 @@ theorem completionLocEquivOfDiscreteTopology_symm_coe (P : PairOfDefinition A) (
   let _ := isTopologicalRing_locUniformSpace P T s S hden
   have _ := discreteUniformity_locUniformSpace P T s S hden
   exact UniformSpace.Completion.completeRingEquivSelf_coe S x
+
+/-- Over a discrete ring `A`, the canonical homomorphism `A →+* A⟨T/s⟩` into the completed
+localization is algebraically of finite presentation (`RingHom.FinitePresentation`), since it is
+`algebraMap A Aₛ` followed by the ring isomorphism `completionLocEquivOfDiscreteTopology`. -/
+theorem finitePresentation_toCompletionLoc_of_discreteTopology (P : PairOfDefinition A)
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    (toCompletionLoc P T s S hden).FinitePresentation := by
+  let _ := locUniformSpace P T s S hden
+  let _ := isUniformAddGroup_locUniformSpace P T s S hden
+  let _ := isTopologicalRing_locUniformSpace P T s S hden
+  let e := completionLocEquivOfDiscreteTopology P T s S hden
+  have heq : toCompletionLoc P T s S hden = e.toRingHom.comp (algebraMap A S) := by
+    ext r
+    simp [e, completionLocEquivOfDiscreteTopology_apply, toCompletionLoc_apply]
+  rw [heq]
+  exact (RingHom.FinitePresentation.of_bijective e.bijective).comp
+    (RingHom.finitePresentation_algebraMap.mpr (IsLocalization.Away.finitePresentation s))
 
 end PairOfDefinition
 
