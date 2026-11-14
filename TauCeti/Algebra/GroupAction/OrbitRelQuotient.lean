@@ -858,12 +858,16 @@ theorem MulAction.eq_orbitRelQuotientLift_iff {φ : MulAction.orbitRel.Quotient 
   (Quotient.mk_surjective.injective_comp_right.eq_iff' MulAction.orbitRelQuotientLift_comp_mk).symm
 
 /-- Postcomposing the descent of `f` with a map `h` gives the descent of `h ∘ f`. -/
+@[to_additive AddAction.comp_orbitRelQuotientLift
+  /-- Postcomposing the descent of `f` with a map `h` gives the descent of `h ∘ f`. -/]
 theorem MulAction.comp_orbitRelQuotientLift (h : Y → Z) :
     h ∘ MulAction.orbitRelQuotientLift f hf =
       MulAction.orbitRelQuotientLift (h ∘ f) fun g x ↦ congrArg h (hf g x) :=
   MulAction.eq_orbitRelQuotientLift_iff.2 (rfl)
 
 /-- The descent of a pair of invariant maps is the pair of their descents. -/
+@[to_additive AddAction.orbitRelQuotientLift_prodMk
+  /-- The descent of a pair of invariant maps is the pair of their descents. -/]
 theorem MulAction.orbitRelQuotientLift_prodMk {f' : X → Z}
     (hf' : ∀ (g : G) (x : X), f' (g • x) = f' x) :
     MulAction.orbitRelQuotientLift (fun x ↦ (f x, f' x))
@@ -1074,6 +1078,7 @@ theorem orbitRelQuotientMap_mk (s : S) :
 
 /-- The orbit map of an invariant subset composed with the orbit projection of `S` is the orbit
 projection of `X` restricted to `S`. -/
+@[simp]
 theorem orbitRelQuotientMap_comp_mk :
     S.orbitRelQuotientMap ∘ Quotient.mk (orbitRel H S) =
       Quotient.mk (orbitRel G X) ∘ Subtype.val :=
