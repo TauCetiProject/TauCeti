@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Solvable
+public import Mathlib.GroupTheory.Nilpotent
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import Mathlib.GroupTheory.IsPerfect
 
 /-!
-# Nonsolvability of `SL₂`
+# Nonsolvability and nonnilpotence of `SL₂`
 
 If a field contains an element `a` with `a ≠ 0` and `a² ≠ 1`, then `SL₂` is nonsolvable.
-In particular, this holds over every infinite field.
+It is therefore also not nilpotent. In particular, these statements hold over every infinite field.
 
 ## Main declarations
 
@@ -21,6 +21,15 @@ In particular, this holds over every infinite field.
   field contains an element outside the roots of `X * (X² - 1)`.
 * `TauCeti.Matrix.SpecialLinearGroup.not_isSolvable_fin_two_of_infinite`: the infinite-field
   specialization.
+* `TauCeti.Matrix.SpecialLinearGroup.not_isNilpotent_fin_two`: the corresponding
+  nonnilpotence statement.
+* `TauCeti.Matrix.SpecialLinearGroup.not_isNilpotent_fin_two_of_infinite`: its infinite-field
+  specialization.
+
+## References
+
+* Mathlib, `GroupTheory/IsPerfect.lean`, for nonsolvability of nontrivial perfect groups.
+* Mathlib, `GroupTheory/Nilpotent.lean`, for solvability of nilpotent groups.
 -/
 
 public section
@@ -47,5 +56,18 @@ theorem not_isSolvable_fin_two_of_infinite (F : Type*) [Field F] [Infinite F] :
   obtain ⟨a, ha⟩ := Infinite.exists_notMem_finset ({0, 1, -1} : Finset F)
   simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at ha
   exact not_isSolvable_fin_two F ⟨a, ha.1, sq_ne_one_iff.mpr ha.2⟩
+
+/-- The special linear group `SL₂(F)` is not nilpotent if `F` contains a nonzero element whose
+square is not one. -/
+theorem not_isNilpotent_fin_two (F : Type*) [Field F]
+    (hF : ∃ a : F, a ≠ 0 ∧ a ^ 2 ≠ 1) : ¬ Group.IsNilpotent SL(2, F) := by
+  intro h
+  exact not_isSolvable_fin_two F hF (Group.IsNilpotent.to_isSolvable (h := h))
+
+/-- The special linear group `SL₂` over an infinite field is not nilpotent. -/
+theorem not_isNilpotent_fin_two_of_infinite (F : Type*) [Field F] [Infinite F] :
+    ¬ Group.IsNilpotent SL(2, F) := by
+  intro h
+  exact not_isSolvable_fin_two_of_infinite F (Group.IsNilpotent.to_isSolvable (h := h))
 
 end TauCeti.Matrix.SpecialLinearGroup

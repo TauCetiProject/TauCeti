@@ -54,11 +54,11 @@ theorem eLpNorm_top_le_of_forall_eLpNorm_indicator_le {ε : Type*} [TopologicalS
   have hp_pos : 0 < p.toReal := ENNReal.toReal_pos hp hp_top
   -- Integrating `‖a‖ₑ ^ p` over each set of finite measure compares it with the constant `C ^ p`.
   have hle : (fun x ↦ ‖a x‖ₑ ^ p.toReal) ≤ᵐ[μ] fun _ ↦ C ^ p.toReal := by
-    refine ae_le_of_forall_setLIntegral_le_of_sigmaFinite₀ (ha.enorm.pow_const _)
+    refine ae_le_of_forall_setLIntegral_le_of_sigmaFinite₀ (ha.eNorm.pow_const _)
       fun s hs hμs ↦ ?_
     have hs' := h s hs hμs
     rw [eLpNorm_indicator_eq_eLpNorm_restrict hs.nullMeasurableSet,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal hp hp_top ha.restrict] at hs'
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hp hp_top ha.restrict] at hs'
     rw [setLIntegral_const]
     calc ∫⁻ x in s, ‖a x‖ₑ ^ p.toReal ∂μ
         = ((∫⁻ x in s, ‖a x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal)) ^ p.toReal := by
@@ -68,7 +68,7 @@ theorem eLpNorm_top_le_of_forall_eLpNorm_indicator_le {ε : Type*} [TopologicalS
           rw [ENNReal.mul_rpow_of_nonneg _ _ hp_pos.le, ← ENNReal.rpow_mul,
             one_div_mul_cancel hp_pos.ne', ENNReal.rpow_one]
   rw [eLpNorm_exponent_top ha]
-  refine eLpNormEssSup_le_of_ae_enorm_bound ?_
+  refine eLpNormEssSup_le_of_ae_eNorm_bound ?_
   filter_upwards [hle] with x hx
   exact (ENNReal.rpow_le_rpow_iff hp_pos).1 hx
 
@@ -100,8 +100,8 @@ theorem eLpNorm_top_le_of_dense_of_eLpNorm_mul_le [SigmaFinite μ] [Fact (1 ≤ 
     exact hx.const_mul (a x)
   have hnorm : Tendsto (fun n ↦ C * eLpNorm (f (ns n)) p μ) atTop (𝓝 (C * eLpNorm g p μ)) := by
     refine ENNReal.Tendsto.const_mul ?_ (Or.inr hC)
-    simp_rw [← Lp.enorm_def]
-    exact (continuous_enorm.tendsto g).comp (hfg.comp hns.tendsto_atTop)
+    simp_rw [← Lp.eNorm_def]
+    exact (continuous_eNorm.tendsto g).comp (hfg.comp hns.tendsto_atTop)
   calc eLpNorm (s.indicator a) p μ
       ≤ atTop.liminf fun n ↦ eLpNorm (a * ⇑(f (ns n))) p μ :=
         Lp.eLpNorm_lim_le_liminf_eLpNorm (fun n ↦ ha.mul (Lp.aestronglyMeasurable _)) _
@@ -111,6 +111,6 @@ theorem eLpNorm_top_le_of_dense_of_eLpNorm_mul_le [SigmaFinite μ] [Fact (1 ≤ 
     _ = C * eLpNorm g p μ := hnorm.liminf_eq
     _ = C * μ s ^ (1 / p.toReal) := by
         rw [eLpNorm_congr_ae indicatorConstLp_coeFn,
-          eLpNorm_indicator_const hs.nullMeasurableSet hp hp_top, enorm_one, one_mul]
+          eLpNorm_indicator_const hs.nullMeasurableSet hp hp_top, eNorm_one, one_mul]
 
 end MeasureTheory

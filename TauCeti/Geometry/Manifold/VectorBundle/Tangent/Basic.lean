@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
@@ -122,6 +123,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.symmL_trivializationAt_sumInl` and
   `TauCeti.Manifold.symmL_trivializationAt_sumInr`: so are its inverse tangent-bundle
   trivializations.
+* `TauCeti.Manifold.tangentEndomorphismOfModel`: a `Cⁿ` field of continuous linear maps on a
+  normed space is a `Cⁿ` section of the tangent endomorphism bundle of the model manifold.
 -/
 
 public section
@@ -929,9 +932,9 @@ theorem contMDiffAt_restrictOpenTangentSpaceBilinear [IsManifold I 1 M] {n : ℕ
       x := by
   -- Pull ambient `C^n` regularity back along the inclusion and compare the inherited and ambient
   -- tangent-bundle coordinates on a common neighbourhood of `x`.
-  rw [contMDiffAt_section]
+  rw [contMDiffAt_section_iff]
   have h := hb.comp x (contMDiff_subtype_val (I := I) (U := U)).contMDiffAt
-  rw [contMDiffAt_totalSpace] at h
+  rw [contMDiffAt_totalSpace_iff] at h
   apply h.2.congr_of_eventuallyEq
   filter_upwards [
     (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds
@@ -1259,5 +1262,26 @@ theorem symmL_trivializationAt_sumInr {y z : M'} :
   exact tangentCoordChange_sumInr y z z
 
 end Sum
+
+section ModelSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V] {n : WithTop ℕ∞}
+
+/-- A `Cⁿ` field of continuous linear maps on a normed space, as a `Cⁿ` section of the tangent
+endomorphism bundle of the model manifold. -/
+def tangentEndomorphismOfModel (A : V → V →L[𝕜] V) (hA : ContDiff 𝕜 n A) :
+    ContMDiffSection 𝓘(𝕜, V) (V →L[𝕜] V) n
+      (fun x : V ↦ TangentSpace 𝓘(𝕜, V) x →L[𝕜] TangentSpace 𝓘(𝕜, V) x) :=
+  ⟨A, by
+    intro x
+    rw [contMDiffAt_hom_bundle]
+    refine ⟨contMDiffAt_id, ?_⟩
+    simpa only [inCoordinates_tangent_bundle_core_model_space] using hA.contMDiff x⟩
+
+@[simp]
+theorem tangentEndomorphismOfModel_apply (A : V → V →L[𝕜] V) (hA : ContDiff 𝕜 n A) (x : V) :
+    tangentEndomorphismOfModel A hA x = A x := (rfl)
+
+end ModelSpace
 
 end TauCeti.Manifold

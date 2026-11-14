@@ -103,6 +103,11 @@ instance [Finite H] (i : ℕ) : Finite (H.stabilizerChain b i) :=
 theorem stabilizerChain_antitone : Antitone (H.stabilizerChain b) := fun _ _ hij ↦
   inf_le_inf_left H <| fixingSubgroup_antitone G α <| Set.image_mono <| Set.Iio_subset_Iio hij
 
+/-- The stabilizer chain is monotone in the subgroup. -/
+theorem stabilizerChain_mono {H K : Subgroup G} (b : ℕ → α) (h : H ≤ K) (i : ℕ) :
+    H.stabilizerChain b i ≤ K.stabilizerChain b i :=
+  inf_le_inf_right _ h
+
 /-! ### The order formula -/
 
 /-- **Orbit–stabilizer along a stabilizer chain.** The order of the `i`-th member of the chain is

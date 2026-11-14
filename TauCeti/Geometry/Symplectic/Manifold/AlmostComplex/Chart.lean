@@ -37,6 +37,8 @@ part of the equivalence; native tangent-frame transitions give coordinate conjug
 * `ContMDiffAlmostComplexStructure.inChart`, `contDiffOn_inChart`: the full finite coordinate field.
 * `ContMDiffAlmostComplexStructure.chartEquiv`: chart-source reconstruction and both round trips.
 * `ContMDiffAlmostComplexStructure.inChart_extChartAt_eq_conj`: derivative conjugation on overlaps.
+* `ContMDiffAlmostComplexStructure.inChart_modelWithCornersSelf`: on a model space the chart
+  expression is the structure's own endomorphism field.
 * `ContMDiffAlmostComplexStructure.chartPushforward`: the structure read in the coordinates of a
   chart with values in a normed space; `chartPushforward_apply_chartPushforward_apply`,
   `mfderiv_comp_toEndomorphism` and `chartPushforward_eq_pullbackEnd_inChart`: it squares to `-1`,
@@ -54,6 +56,8 @@ part of the equivalence; native tangent-frame transitions give coordinate conjug
   between derivatives of maps into and out of `M` involving `J` read in the chart.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_inChart`: it squares to `-1` on the chart target.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_extChartAt_self`: it is `J x` at the chart point.
+* `TauCeti.SmoothAlmostComplexStructure.inChart_modelWithCornersSelf`: on a model space it is the
+  structure's own endomorphism field.
 * `TauCeti.SmoothAlmostComplexStructure.fderivWithin_inChart_apply_apply`: its derivative at the
   chart point anticommutes with `J x`.
 -/
@@ -230,6 +234,21 @@ theorem inChart_neg : (-J).inChart x = -J.inChart x := by
   funext z
   simp [inChart]
 
+/-- On a normed space viewed as its own model, the chart expression of a structure is its own
+endomorphism field. -/
+@[simp]
+theorem inChart_modelWithCornersSelf {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (J : ContMDiffAlmostComplexStructure 𝓘(ℝ, V) n V) (x z : V) :
+    J.inChart x z = J.toEndomorphism z := by
+  rw [inChart_def]
+  exact inCoordinates_tangent_bundle_core_model_space _ _ _ _ _
+
+/-- The chart expression of a constant structure on its model space is the constant map. -/
+theorem inChart_const {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (Jc : V →L[ℝ] V) (hJc : ∀ v, Jc (Jc v) = -v) (x z : V) :
+    (const n Jc hJc).inChart x z = Jc := by
+  rw [inChart_modelWithCornersSelf, const_toEndomorphism_apply]
+
 /-- At each point of a boundaryless chart target the coordinate field is an ordinary C^n map. -/
 theorem contDiffAt_inChart [I.Boundaryless] {z : E} (hz : z ∈ (extChartAt I x).target) :
     ContDiffAt ℝ n (J.inChart x) z :=
@@ -404,6 +423,14 @@ theorem toContMDiff_inChart (n : ℕ∞) : (J.toContMDiff n).inChart x = J.inCha
   funext z
   rw [ContMDiffAlmostComplexStructure.inChart_def, toContMDiff_toEndomorphism_apply, inChart_def]
 
+/-- On a normed space viewed as its own model, the chart expression of a smooth structure is its
+own endomorphism field. -/
+@[simp]
+theorem inChart_modelWithCornersSelf {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (J : SmoothAlmostComplexStructure 𝓘(ℝ, V) V) (x z : V) :
+    J.inChart x z = J.toEndomorphism z :=
+  inCoordinates_tangent_bundle_core_model_space _ _ _ _ _
+
 section Pushforward
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
@@ -471,7 +498,7 @@ theorem inChart_extChartAt_apply_eq_mfderiv {y : M} (hy : y ∈ (extChartAt I x)
 of a map `u` from a normed space becomes `d(φ ∘ u)(a) = J_φ d(φ ∘ u)(b)`, for the structure
 `J_φ = J.inChart x` read in the chart. -/
 theorem fderiv_extChartAt_comp_apply_eq_inChart {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {u : F → M} {w : F} (hu : MDifferentiableAt 𝓘(ℝ, F) I u w)
+    [NormedSpace ℝ F] {u : F → M} {w : F} (hu : ContinuousAt u w)
     (hw : u w ∈ (extChartAt I x).source) {a b : F}
     (h : mfderiv 𝓘(ℝ, F) I u w a = J (u w) (mfderiv 𝓘(ℝ, F) I u w b)) :
     fderiv ℝ (extChartAt I x ∘ u) w a =

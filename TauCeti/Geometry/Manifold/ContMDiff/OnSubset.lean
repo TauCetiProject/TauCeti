@@ -28,6 +28,7 @@ a subset of Euclidean space with corners.
 * `ContMDiffOn.contMDiffOnSubset`: the restriction of a map that is `C^n` on a neighbourhood of `s`.
 * `TauCeti.ContMDiffOnSubset.comp_contDiff`: precomposition with a `C^n` map of normed spaces.
 * `ContMDiff.comp_contMDiffOnSubset`: postcomposition with a `C^n` map of manifolds.
+* `TauCeti.ContMDiffOnSubset.prodMk`: a pair of such maps is such a map to the product.
 
 ## References
 
@@ -97,6 +98,16 @@ theorem comp_contDiff {f : t → M} (hf : ContMDiffOnSubset I n f) {A : E → E'
   obtain ⟨U, hU, g, hg, hgf⟩ := hf (hst.restrict A s t x)
   exact ⟨A ⁻¹' U, hA.continuous.continuousAt.preimage_mem_nhds hU, g ∘ A,
     hg.comp hA.contMDiff.contMDiffOn Subset.rfl, fun y hy ↦ hgf (hst.restrict A s t y) hy⟩
+
+/-- A pair of maps that are `C^n` on `s` is a map to the product that is `C^n` on `s`. -/
+theorem prodMk {g : s → N} (hf : ContMDiffOnSubset I n f) (hg : ContMDiffOnSubset J n g) :
+    ContMDiffOnSubset (I.prod J) n fun x ↦ (f x, g x) := by
+  intro x
+  obtain ⟨U, hU, f', hf', hff⟩ := hf x
+  obtain ⟨V, hV, g', hg', hgg⟩ := hg x
+  exact ⟨U ∩ V, Filter.inter_mem hU hV, fun y ↦ (f' y, g' y),
+    (hf'.mono inter_subset_left).prodMk (hg'.mono inter_subset_right),
+    fun y hy ↦ Prod.ext (hff y hy.1) (hgg y hy.2)⟩
 
 end ContMDiffOnSubset
 

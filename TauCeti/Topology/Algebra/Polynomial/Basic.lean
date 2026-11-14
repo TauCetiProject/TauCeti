@@ -35,6 +35,8 @@ the monic polynomial `TauCeti.Polynomial.monicOfCoeff a` as a function of its co
   bounded degree.
 * `Polynomial.continuousAt_coeff_mul`: coefficients of a product of two families.
 * `Polynomial.continuousAt_coeff_prod`: coefficients of a finite product of families.
+* `Polynomial.continuousOn_coeff_of_monic`: for a monic family of fixed degree, continuity of
+  the lower coefficients gives continuity of the leading one.
 * `Polynomial.continuous_eval_of_continuous_coeff`: joint continuity of the evaluation of a family
   of bounded degree.
 * `Polynomial.continuous_evalEval`: joint continuity of bivariate polynomial evaluation.
@@ -114,6 +116,17 @@ theorem continuousAt_coeff_prod [CommSemiring R] [IsTopologicalSemiring R]
     simp only [Finset.prod_insert hk]
     exact continuousAt_coeff_mul (hf k (Finset.mem_insert_self k s))
       (fun j hj ↦ ih fun l hl m hm ↦ hf l (Finset.mem_insert_of_mem hl) m (hm.trans hj))
+
+/-- For a family of monic polynomials of degree `n` on `s`, continuity of the coefficients of
+index less than `n` on `s` gives continuity of every coefficient of index at most `n`, the leading
+one being `1`. -/
+theorem continuousOn_coeff_of_monic [Semiring R] {f : X → R[X]} {s : Set X} {n : ℕ}
+    (hm : ∀ x ∈ s, (f x).Monic) (hd : ∀ x ∈ s, (f x).natDegree = n)
+    (hc : ∀ k < n, ContinuousOn (fun x ↦ (f x).coeff k) s) {k : ℕ} (hk : k ≤ n) :
+    ContinuousOn (fun x ↦ (f x).coeff k) s := by
+  rcases hk.lt_or_eq with hk | rfl
+  · exact hc k hk
+  · exact continuousOn_const.congr fun x hx ↦ by rw [← hd x hx, (hm x hx).coeff_natDegree]
 
 /-- If a family of polynomials has degree at most `d` and its coefficients of index at most `d` are
 continuous, then its evaluation is jointly continuous in the parameter and the point. -/
