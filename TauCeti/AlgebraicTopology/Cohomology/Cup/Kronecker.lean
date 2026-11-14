@@ -136,106 +136,23 @@ lemma singularRelativeCup_eq_homologyMap_singularRelativeCup {W : TopCat.{w}} (k
   have := isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion T k L U V hU hV n
   apply (ModuleCat.mono_iff_injective (homologyMap (SSetPair.cochainComplexMap (R := T) (k := k)
     (M := L) (smallSingularSubcomplexPairToUnion U V)) n)).1 inferInstance
-  let e₁ : (W.smallSingularSubcomplex ![U, V]).pair.chainComplex T ⟶
-      (W.smallSingularSubcomplex ![U, V]).pair.chainComplex (R ⊗ S) :=
-    ((SSetPair.chainComplexFunctor C).map u).app (W.smallSingularSubcomplex ![U, V]).pair
-  let e₂ : (TopPair.ofSubset (U ∪ V)).singularChainComplex T ⟶
-      (TopPair.ofSubset (U ∪ V)).singularChainComplex (R ⊗ S) :=
-    ((SSetPair.chainComplexFunctor C).map u).app
-      (TopPair.toSSetPair.obj (TopPair.ofSubset (U ∪ V)))
-  let sT : (W.smallSingularSubcomplex ![U, V]).pair.chainComplex T ⟶
-      (TopPair.ofSubset (U ∪ V)).singularChainComplex T :=
-    SSetPair.chainComplexMap (smallSingularSubcomplexPairToUnion U V) T
-  let sRS : (W.smallSingularSubcomplex ![U, V]).pair.chainComplex (R ⊗ S) ⟶
-      (TopPair.ofSubset (U ∪ V)).singularChainComplex (R ⊗ S) :=
-    SSetPair.chainComplexMap (smallSingularSubcomplexPairToUnion U V) (R ⊗ S)
+  let e₁ := ((SSetPair.chainComplexFunctor C).map u).app (W.smallSingularSubcomplex ![U, V]).pair
+  let e₂ := ((SSetPair.chainComplexFunctor C).map u).app
+    (TopPair.toSSetPair.obj (TopPair.ofSubset (U ∪ V)))
+  let sT := SSetPair.chainComplexMap (smallSingularSubcomplexPairToUnion U V) T
+  let sRS := SSetPair.chainComplexMap (smallSingularSubcomplexPairToUnion U V) (R ⊗ S)
   have hsq : sT ≫ e₂ = e₁ ≫ sRS :=
-    ((SSetPair.chainComplexFunctor C).map u).naturality
-      (smallSingularSubcomplexPairToUnion U V)
+    ((SSetPair.chainComplexFunctor C).map u).naturality (smallSingularSubcomplexPairToUnion U V)
   let c := singularRelativeCup k (𝟙 (R ⊗ S)) μ U V hU hV p q n h a b
-  have hcomp : homologyMap
-        (K := ((W.smallSingularSubcomplex ![U, V]).pair.chainComplex (R ⊗ S)).linearYonedaObj k L)
-        (L := ((W.smallSingularSubcomplex ![U, V]).pair.chainComplex T).linearYonedaObj k L)
-        ((TauCeti.ChainComplex.linearYonedaFunctor k L).map e₁.op) n
-        (homologyMap (SSetPair.cochainComplexMap (R := R ⊗ S) (k := k) (M := L)
-          (smallSingularSubcomplexPairToUnion U V)) n c) =
-      homologyMap (SSetPair.cochainComplexMap (R := T) (k := k) (M := L)
-          (smallSingularSubcomplexPairToUnion U V)) n
-        (homologyMap
-          (K := (TopPair.ofSubset (U ∪ V)).singularCochainComplex (R ⊗ S) k L)
-          (L := (TopPair.ofSubset (U ∪ V)).singularCochainComplex T k L)
-          ((TauCeti.ChainComplex.linearYonedaFunctor k L).map e₂.op) n c) := by
-    refine (TauCeti.ChainComplex.homologyMap_linearYonedaFunctor_map_comp_apply
-      e₁ sRS n c).symm.trans ?_
-    rw [← hsq]
-    exact TauCeti.ChainComplex.homologyMap_linearYonedaFunctor_map_comp_apply sT e₂ n c
   rw [homologyMap_cochainComplexMap_singularRelativeCup]
-  refine Eq.trans ?_ hcomp
-  rw [homologyMap_cochainComplexMap_singularRelativeCup,
-    relativeAlexanderWhitneyDiagonal_eq_comp U V u]
-  exact TauCeti.ChainComplex.cup_precomp
-    (relativeAlexanderWhitneyDiagonal U V (𝟙 (R ⊗ S))) μ e₁ p q n h a b
-
-/-- On `X × Y`, the relative Alexander–Whitney diagonal for `fst⁻¹(A)` and `snd⁻¹(B)` followed by
-the projections onto `C(X, A; R)` and `C(Y, B; S)` is `TopCat.relativeAlexanderWhitney`. -/
-private lemma relativeAlexanderWhitneyDiagonal_id_comp_tensorHom_fst_snd
-    (X Y : TopCat.{w}) (A : Set X) (B : Set Y) :
-    relativeAlexanderWhitneyDiagonal (fst X Y ⁻¹' A) (snd X Y ⁻¹' B) (𝟙 (R ⊗ S)) ≫
-        HomologicalComplex.tensorHom
-          (TopPair.singularChainComplexMap
-            (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _)) R)
-          (TopPair.singularChainComplexMap
-            (TopPair.ofSubsetMap (snd X Y) (Set.mapsTo_preimage _ _)) S) =
-      relativeAlexanderWhitney X Y A B R S := by
-  apply (cancel_epi (((X ⊗ Y).smallSingularSubcomplex
-    ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplexπ (R ⊗ S))).1
-  have hdiag : lift (𝟙 (X ⊗ Y)) (𝟙 (X ⊗ Y)) ≫ (fst X Y ⊗ₘ snd X Y) = 𝟙 (X ⊗ Y) := by
-    ext <;> simp
-  have hAW : alexanderWhitney X Y R S =
-      (X ⊗ Y).alexanderWhitneyDiagonal (𝟙 (R ⊗ S)) ≫
-        HomologicalComplex.tensorHom
-          (SSet.chainComplexMap (toSSet.map (fst X Y)) R)
-          (SSet.chainComplexMap (toSSet.map (snd X Y)) S) := by
-    rw [TauCeti.alexanderWhitneyDiagonal_def, (SSet.chainComplexFunctor C).map_id]
-    simp only [NatTrans.id_app, Category.id_comp, Category.assoc]
-    have hD : SSet.chainComplexMap (toSSet.map (fst X Y ⊗ₘ snd X Y)) (R ⊗ S) ≫
-        alexanderWhitney X Y R S =
-      alexanderWhitney (X ⊗ Y) (X ⊗ Y) R S ≫
-        HomologicalComplex.tensorHom
-          (SSet.chainComplexMap (toSSet.map (fst X Y)) R)
-          (SSet.chainComplexMap (toSSet.map (snd X Y)) S) :=
-      alexanderWhitney_naturality (fst X Y) (snd X Y) R S
-    rw [← hD, ← Category.assoc, ← ((SSet.chainComplexFunctor C).obj (R ⊗ S)).map_comp,
-      ← toSSet.map_comp, hdiag, toSSet.map_id,
-      ((SSet.chainComplexFunctor C).obj (R ⊗ S)).map_id, Category.id_comp]
-  have hA := TopPair.singularChainComplexπ_pair_naturality
-    (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ A)) R
-  have hB := TopPair.singularChainComplexπ_pair_naturality
-    (TopPair.ofSubsetMap (snd X Y) (Set.mapsTo_preimage _ B)) S
-  rw [TopPair.ofSubsetMap_fst] at hA hB
-  have htensor : HomologicalComplex.tensorHom
-        ((TopPair.ofSubset (fst X Y ⁻¹' A)).singularChainComplexπ R)
-        ((TopPair.ofSubset (snd X Y ⁻¹' B)).singularChainComplexπ S) ≫
-      HomologicalComplex.tensorHom
-        (TopPair.singularChainComplexMap
-          (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _)) R)
-        (TopPair.singularChainComplexMap
-          (TopPair.ofSubsetMap (snd X Y) (Set.mapsTo_preimage _ _)) S) =
-      HomologicalComplex.tensorHom
-          (SSet.chainComplexMap (toSSet.map (fst X Y)) R)
-          (SSet.chainComplexMap (toSSet.map (snd X Y)) S) ≫
-        HomologicalComplex.tensorHom
-          ((TopPair.ofSubset A).singularChainComplexπ R)
-          ((TopPair.ofSubset B).singularChainComplexπ S) :=
-    (mapBifunctorMap_comp (curriedTensor C) (ComplexShape.down ℕ) _ _ _ _).symm.trans <|
-      (congrArg₂ (HomologicalComplex.tensorHom · ·) hA.symm hB.symm).trans
-        (mapBifunctorMap_comp (curriedTensor C) (ComplexShape.down ℕ) _ _ _ _)
-  exact (chainComplexπ_relativeAlexanderWhitneyDiagonal_assoc
-      (fst X Y ⁻¹' A) (snd X Y ⁻¹' B) (𝟙 (R ⊗ S)) _).trans <|
-    (Category.assoc _ _ _).trans <|
-    (whisker_eq _ htensor).trans <|
-    (Category.assoc _ _ _).symm.trans <|
-    (eq_whisker hAW.symm _).trans (chainComplexπ_relativeAlexanderWhitney X Y A B R S).symm
+  refine (Eq.trans ?_ (TauCeti.ChainComplex.homologyMap_linearYonedaFunctor_map_comp_apply
+    e₁ sRS n c).symm).trans ?_
+  · rw [homologyMap_cochainComplexMap_singularRelativeCup,
+      relativeAlexanderWhitneyDiagonal_eq_comp U V u]
+    exact TauCeti.ChainComplex.cup_precomp
+      (relativeAlexanderWhitneyDiagonal U V (𝟙 (R ⊗ S))) μ e₁ p q n h a b
+  · rw [← hsq]
+    exact TauCeti.ChainComplex.homologyMap_linearYonedaFunctor_map_comp_apply sT e₂ n c
 
 /-- **Characterization of the relative cohomology cross product on small chains**: under the
 small-chain isomorphism for `fst⁻¹(A)` and `snd⁻¹(B)`, `TauCeti.singularRelativeCross` is the
@@ -259,8 +176,7 @@ lemma homologyMap_cochainComplexMap_singularRelativeCross
       (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _)) R)
     (TopPair.singularChainComplexMap
       (TopPair.ofSubsetMap (snd X Y) (Set.mapsTo_preimage _ _)) S)
-    ((Category.id_comp _).trans
-      (relativeAlexanderWhitneyDiagonal_id_comp_tensorHom_fst_snd X Y A B).symm)
+    ((Category.id_comp _).trans (relativeAlexanderWhitney_def X Y A B R S))
     p q n h a b
   have hid : (TauCeti.ChainComplex.linearYonedaFunctor k L).map
       (𝟙 (((X ⊗ Y).smallSingularSubcomplex
@@ -367,25 +283,16 @@ private lemma homologyMap_relativeShuffle_comp_singularKronecker_singularRelativ
     exact (TauCeti.ChainComplex.kronecker_naturality (k := k)
       (SSetPair.chainComplexMap
         (smallSingularSubcomplexPairToUnion (fst X Y ⁻¹' A) (snd X Y ⁻¹' B)) (R ⊗ S)) n _).symm
-  have hcup : homologyMap
-        (K := (((X ⊗ Y).smallSingularSubcomplex
-          ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplex (R ⊗ S)).linearYonedaObj k L)
-        (L := _root_.ChainComplex.linearYonedaObj
-          (HomologicalComplex.tensorObj ((TopPair.ofSubset A).singularChainComplex R)
-            ((TopPair.ofSubset B).singularChainComplex S)) k L)
-        ((TauCeti.ChainComplex.linearYonedaFunctor k L).map
-          (relativeShuffle X Y A B R S).op) n
-        (TauCeti.ChainComplex.cup k (relativeAlexanderWhitney X Y A B R S) μ p q n h a b) =
-      TauCeti.ChainComplex.cup k
-        (𝟙 (HomologicalComplex.tensorObj ((TopPair.ofSubset A).singularChainComplex R)
-          ((TopPair.ofSubset B).singularChainComplex S))) μ p q n h a b :=
-    (TauCeti.ChainComplex.cup_precomp (relativeAlexanderWhitney X Y A B R S) μ
+  have hcup := (TauCeti.ChainComplex.cup_precomp (relativeAlexanderWhitney X Y A B R S) μ
       (relativeShuffle X Y A B R S) p q n h a b).symm.trans
-      (TauCeti.ChainComplex.cup_eq_of_homotopy _ μ
-        (relativeShuffleAlexanderWhitneyHomotopy X Y A B R S) p q n h a b)
-  refine (whisker_eq _ hk₁).trans ?_
-  rw [← hcup]
-  exact (TauCeti.ChainComplex.kronecker_naturality (k := k) (relativeShuffle X Y A B R S) n _).symm
+    (TauCeti.ChainComplex.cup_eq_of_homotopy _ μ
+      (relativeShuffleAlexanderWhitneyHomotopy X Y A B R S) p q n h a b)
+  exact (whisker_eq _ hk₁).trans <|
+    (TauCeti.ChainComplex.kronecker_naturality (k := k)
+        (relativeShuffle X Y A B R S) n _).symm.trans
+      (congrArg (TauCeti.ChainComplex.kronecker k
+        (HomologicalComplex.tensorObj ((TopPair.ofSubset A).singularChainComplex R)
+          ((TopPair.ofSubset B).singularChainComplex S)) L n) hcup)
 
 /-- **The Kronecker pairing of relative cross products**, `⟨a × b, x × y⟩ = μ (⟨a, x⟩ ⊗ ⟨b, y⟩)`:
 for open `A ⊆ X` and `B ⊆ Y`, evaluating the relative cohomology cross product
