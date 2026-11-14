@@ -54,6 +54,8 @@ condition into the global statement that every edge lies on one or two face side
 
 ## Main results
 
+* `TauCeti.PolygonalComplex.nonempty_path_cornerVertex`: the corners of a face are joined along its
+  sides in the one-skeleton.
 * `TauCeti.PolygonalComplex.linkDegree_eq_natCard_sum`: the degree of the germ `e` is the
   `Nat.card` of the face sides traversing `rev e` or `e`.
 * `TauCeti.PolygonalComplex.linkDegree_eq_sideCount_rev_add_sideCount`: when finitely many face
@@ -158,6 +160,23 @@ def cornerVertex (c : C.Corner) : C.graph.V := C.graph.src (C.outgoing c)
 @[simp] theorem tgt_incoming (c : C.Corner) : C.graph.tgt (C.incoming c) = C.cornerVertex c := by
   rw [incoming_eq_outgoing_prevCorner, tgt_outgoing, nextCorner_prevCorner]
 
+/-- Any two corners of a face are joined by a path in the one-skeleton, along the sides of the
+face. -/
+theorem nonempty_path_cornerVertex (f : C.Face) (i j : Fin (C.sides f)) :
+    Nonempty (C.graph.Path (C.cornerVertex ⟨f, i⟩) (C.cornerVertex ⟨f, j⟩)) := by
+  have key (k : ℕ) (hk : k < C.sides f) : Nonempty (C.graph.Path
+      (C.cornerVertex ⟨f, ⟨0, C.sides_pos f⟩⟩) (C.cornerVertex ⟨f, ⟨k, hk⟩⟩)) := by
+    induction k with
+    | zero => exact ⟨.nil⟩
+    | succ k ih =>
+      obtain ⟨P⟩ := ih (by omega)
+      refine ⟨P.cons ⟨C.outgoing ⟨f, ⟨k, by omega⟩⟩, rfl, ?_⟩⟩
+      rw [tgt_outgoing, nextCorner_def]
+      exact congrArg (fun j => C.cornerVertex ⟨f, j⟩) (Fin.ext (Fin.coe_finRotate_of_add_one_lt hk))
+  obtain ⟨P⟩ := key i i.2
+  obtain ⟨Q⟩ := key j j.2
+  exact ⟨P.reverse.comp Q⟩
+
 /-- A side of a face ends where the side at the cyclically next position starts. -/
 theorem tgt_side_eq_src_side {f : C.Face} {i j : Fin (C.sides f)}
     (h : (j : ℕ) = if (i : ℕ) + 1 = C.sides f then 0 else (i : ℕ) + 1) :
@@ -195,6 +214,32 @@ theorem prevCorner_mk_zero (f : C.Face) :
   dsimp only at h ⊢
   split_ifs at h
   omega
+
+/-- The corner preceding the corner at a positive position `j` of a face is at the position
+`j - 1`. -/
+theorem prevCorner_mk_of_ne_zero {f : C.Face} {i j : Fin (C.sides f)} (hj : (j : ℕ) ≠ 0)
+    (hi : (i : ℕ) = j - 1) : C.prevCorner ⟨f, j⟩ = ⟨f, i⟩ := by
+  have h : finRotate _ i = j := Fin.ext (by rw [Fin.coe_finRotate_eq_ite]; split_ifs <;> omega)
+  rw [← h]
+  exact C.prevCorner_nextCorner ⟨f, i⟩
+
+/-- A corner is its own successor exactly on a monogon. -/
+@[simp] theorem nextCorner_eq_self_iff {c : C.Corner} : C.nextCorner c = c ↔ C.sides c.1 = 1 := by
+  obtain ⟨f, k⟩ := c
+  have hk := Fin.coe_finRotate_eq_ite k
+  have := k.2
+  rw [nextCorner_def, Sigma.ext_iff]
+  simp only [heq_eq_eq, true_and, Fin.ext_iff]
+  split_ifs at hk <;> omega
+
+/-- A corner is its own predecessor exactly on a monogon. -/
+@[simp] theorem prevCorner_eq_self_iff {c : C.Corner} : C.prevCorner c = c ↔ C.sides c.1 = 1 := by
+  rw [← C.nextCorner_eq_self_iff]
+  constructor <;> intro hc
+  · conv_lhs => rw [← hc]
+    exact C.nextCorner_prevCorner c
+  · conv_lhs => rw [← hc]
+    exact C.prevCorner_nextCorner c
 
 /-- A face with a single side is attached along a loop. -/
 theorem tgt_side_eq_src_side_of_sides_eq_one {f : C.Face} (hf : C.sides f = 1)
