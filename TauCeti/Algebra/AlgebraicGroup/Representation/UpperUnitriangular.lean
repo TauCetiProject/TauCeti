@@ -255,15 +255,10 @@ theorem upperUnitriangularCoordinateGroupSchemeHom_comp_inclusion
   rw [upperUnitriangularCoordinateGroupSchemeHom_def, UpperUnitriangular.inclusion_def,
     coordinateGroupSchemeHom_def]
   simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  have hcoordinate :
-      CommHopfAlgCat.ofHom (coordinateBialgHom (H := H) b) =
-        UpperUnitriangular.coordinateMap R n ≫
-          CommHopfAlgCat.ofHom (upperUnitriangularCoordinateBialgHom (H := H) b h) := by
-    rw [← CommHopfAlgCat.ofHom_hom (UpperUnitriangular.coordinateMap R n),
-      ← CommHopfAlgCat.ofHom_comp]
-    exact congrArg CommHopfAlgCat.ofHom
-      (upperUnitriangularCoordinateBialgHom_comp_coordinateMap b h).symm
-  rw [← Category.assoc, ← Functor.map_comp, ← op_comp, ← hcoordinate]
+  rw [← Category.assoc, ← Functor.map_comp, ← op_comp]
+  congr 3
+  ext1
+  exact upperUnitriangularCoordinateBialgHom_comp_coordinateMap b h
 
 /-- The upper-unitriangular representation morphism is a closed immersion exactly when its
 coordinate Hopf-algebra morphism is surjective. -/

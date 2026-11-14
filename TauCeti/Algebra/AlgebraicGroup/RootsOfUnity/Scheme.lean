@@ -241,7 +241,7 @@ theorem characterQuotient_surjective (n : ℕ) :
 
 /-- The group-scheme morphism `mu_n -> G_m` induced contravariantly by the lifted quotient
 of character groups. -/
-noncomputable def inclusionGroupSchemeMap (R : Type u) [CommRing R] (n : ℕ) :
+@[expose] noncomputable def inclusionGroupSchemeMap (R : Type u) [CommRing R] (n : ℕ) :
     groupScheme R n ⟶ DiagonalizableGroup.multiplicativeGroupScheme R :=
   DiagonalizableGroup.groupSchemeMap R (characterQuotient n)
 

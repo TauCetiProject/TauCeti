@@ -45,7 +45,7 @@ variable (R : Type u) [CommRing R] (n : ℕ)
 /-- The special linear group scheme obtained by applying relative spectrum to the determinant-one
 coordinate Hopf algebra, which is the kernel Hopf-ideal quotient of
 `GeneralLinear.coordinateHopfAlgebra`. -/
-noncomputable def groupScheme : Grp (Over (Spec (CommRingCat.of R))) :=
+@[expose] noncomputable def groupScheme : Grp (Over (Spec (CommRingCat.of R))) :=
   (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj
     (Opposite.op (coordinateHopfAlgebra R n))
 
