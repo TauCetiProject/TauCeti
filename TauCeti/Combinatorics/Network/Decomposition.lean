@@ -138,20 +138,6 @@ end AddCommMonoid
 
 variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K]
 
-/-- The excess at `v` of a sum of weighted walks is the total weight of the walks ending at `v`
-minus the total weight of the walks starting at `v`. -/
-theorem WeightedWalk.excessAt_sum_map_assignment [DecidableEq V] (l : List (WeightedWalk Q K))
-    (v : V) :
-    excessAt (l.map WeightedWalk.assignment).sum v =
-      ((l.filter fun p ↦ p.target = v).map WeightedWalk.weight).sum -
-        ((l.filter fun p ↦ p.source = v).map WeightedWalk.weight).sum := by
-  induction l with
-  | nil => simp
-  | cons p l ih =>
-    rw [List.map_cons, List.sum_cons, excessAt_add, ih, assignment_def, excessAt_walkAssignment]
-    by_cases hs : p.source = v <;> by_cases ht : p.target = v <;>
-      simp [hs, ht, Ne.symm] <;> abel
-
 /-- The total excess on a vertex set `S` of a sum of weighted walks is the total weight of the walks
 ending in `S` minus the total weight of the walks starting in `S`. -/
 theorem WeightedWalk.sum_excessAt_sum_map_assignment [DecidableEq V]
@@ -165,6 +151,15 @@ theorem WeightedWalk.sum_excessAt_sum_map_assignment [DecidableEq V]
     simp only [List.map_cons, List.sum_cons, excessAt_add, sum_add_distrib, ih, assignment_def,
       excessAt_walkAssignment, sum_sub_distrib, sum_ite_eq']
     by_cases hs : p.source ∈ S <;> by_cases ht : p.target ∈ S <;> simp [hs, ht] <;> abel
+
+/-- The excess at `v` of a sum of weighted walks is the total weight of the walks ending at `v`
+minus the total weight of the walks starting at `v`. -/
+theorem WeightedWalk.excessAt_sum_map_assignment [DecidableEq V] (l : List (WeightedWalk Q K))
+    (v : V) :
+    excessAt (l.map WeightedWalk.assignment).sum v =
+      ((l.filter fun p ↦ p.target = v).map WeightedWalk.weight).sum -
+        ((l.filter fun p ↦ p.source = v).map WeightedWalk.weight).sum := by
+  simpa using WeightedWalk.sum_excessAt_sum_map_assignment l {v}
 
 /-- The excess of a sum of weighted closed walks vanishes. -/
 theorem WeightedClosedWalk.isCirculation_sum_map_assignment (l : List (WeightedClosedWalk Q K)) :
