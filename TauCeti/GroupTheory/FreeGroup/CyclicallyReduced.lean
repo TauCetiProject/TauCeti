@@ -30,7 +30,8 @@ variable {α : Type*} [DecidableEq α]
 
 /-- A word is cyclically reduced exactly when free reduction leaves it alone and its last letter
 does not cancel against its first, and both halves of that are decidable. -/
-instance (w : List (α × Bool)) : Decidable (IsCyclicallyReduced w) :=
+instance instDecidableIsCyclicallyReduced (w : List (α × Bool)) :
+    Decidable (IsCyclicallyReduced w) :=
   decidable_of_iff _ (and_congr_left' isReduced_iff_reduce_eq).symm
 
 /-- Cyclic reduction does not lengthen a word. -/
