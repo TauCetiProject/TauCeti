@@ -12,6 +12,8 @@ public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Topology.Compactness.Paracompact
 public import Mathlib.Topology.Sets.Compacts
+import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
 # Coordinate overlaps, measurability, precompact chart neighborhoods and transported charts
@@ -66,6 +68,9 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   preferred extended chart is the preferred chart.
 * `TauCeti.comp_extChartAt_symm_comp_extChartAt_eventuallyEq`: a chart representative
   composed with its chart agrees locally with the original function.
+* `ModelWithCorners.tendsto_extChartAt_nhdsNE`, `ModelWithCorners.tendsto_extChartAt_symm_nhdsNE`:
+  punctured neighbourhoods at a point and at its extended chart image map into one another (the
+  inverse direction for a boundaryless model).
 * `TauCeti.measurableEmbedding_extChartAt_restrict`: an extended chart restricted to its source is
   a measurable embedding.
 * `MeasurableSet.image_extChartAt`: for a Borel measurable space on the manifold, the image of a
@@ -225,6 +230,23 @@ theorem comp_extChartAt_symm_comp_extChartAt_eventuallyEq {α : Type*} (f : M �
     (f ∘ (extChartAt I x).symm) ∘ extChartAt I x =ᶠ[𝓝 x] f := by
   filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
   exact congrArg f ((extChartAt I x).left_inv hy)
+
+variable (I) in
+/-- The extended chart at `x` maps punctured neighbourhoods of `x` into punctured neighbourhoods of
+`extChartAt I x x`. -/
+theorem _root_.ModelWithCorners.tendsto_extChartAt_nhdsNE (x : M) :
+    Filter.Tendsto (extChartAt I x) (𝓝[≠] x) (𝓝[≠] (extChartAt I x x)) :=
+  (I.continuous.continuousAt.tendsto_nhdsNE I.injective).comp (tendsto_chartAt_nhdsNE x)
+
+variable (I) in
+/-- For a boundaryless model, the inverse of the extended chart at `x` maps punctured
+neighbourhoods of `extChartAt I x x` into punctured neighbourhoods of `x`. -/
+theorem _root_.ModelWithCorners.tendsto_extChartAt_symm_nhdsNE [I.Boundaryless] (x : M) :
+    Filter.Tendsto (extChartAt I x).symm (𝓝[≠] (extChartAt I x x)) (𝓝[≠] x) := by
+  have hI : Filter.Tendsto I.symm (𝓝[≠] (extChartAt I x x)) (𝓝[≠] (chartAt H x x)) := by
+    have h := (I.toHomeomorph.symm.map_punctured_nhds_eq (I.toHomeomorph (chartAt H x x))).le
+    rwa [Homeomorph.symm_apply_apply, ModelWithCorners.toHomeomorph_apply] at h
+  exact (tendsto_chartAt_symm_nhdsNE x).comp hI
 
 /-- A point `y` of the closure of `s` is read in its preferred extended chart as a point of the
 closure of the chart image of `s`, intersected with the range of the model. -/
