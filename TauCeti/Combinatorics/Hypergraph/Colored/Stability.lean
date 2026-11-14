@@ -30,7 +30,9 @@ This is the elementary edit-transfer step in induced counting; see Rödl–Schac
 discrepancy counts six orderings of every edited unordered triple.
 
 The same injection count bounds `editedOn` on any support by `editDiscrepancy3 * |V|³`,
-including empty hosts, via `card_editedOn_le_editDiscrepancy3`.
+including empty hosts, via `card_editedOn_le_editDiscrepancy3`; conversely, on the full set of
+injective triples `card_editedOn_univ` recovers six times the unordered edit count, giving
+`approximates3_of_card_editedOn_univ_le`.
 -/
 
 public section
@@ -126,6 +128,49 @@ theorem card_editedOn_le_editDiscrepancy3 [DecidableEq κ] (H H' : Colored3Graph
   push_cast
   rw [div_mul_cancel₀ _ hn']
   exact_mod_cast hcount
+
+/-- Every edited unordered triple contributes its six injective orderings to `editedOn` on the
+full set of injective triples. -/
+theorem card_editedOn_univ [DecidableEq V] [DecidableEq κ] (H H' : Colored3Graph κ V) :
+    #(H.editedOn H' univ) = 6 * {t | H.color t ≠ H'.color t}.ncard := by
+  classical
+  let edits : Finset (Set.powersetCard V 3) := univ.filter fun t ↦ H.color t ≠ H'.color t
+  have hfib : #(H.editedOn H' univ) =
+      ∑ t ∈ edits, #{x : {x : Fin 3 → V // Function.Injective x} |
+        Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ = t} := by
+    rw [editedOn_def, card_eq_sum_card_fiberwise
+      (f := fun x : {x : Fin 3 → V // Function.Injective x} ↦
+        Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) (t := edits)
+      (fun x hx ↦ mem_filter.2 ⟨mem_univ _, (mem_filter.1 hx).2⟩)]
+    refine sum_congr rfl fun t ht ↦ congrArg card (ext fun x ↦ ?_)
+    simp only [mem_filter, mem_univ, true_and, and_iff_right_iff_imp]
+    intro hxt
+    exact hxt ▸ (mem_filter.1 ht).2
+  have he : #edits = {t | H.color t ≠ H'.color t}.ncard := by
+    simp [edits, ← Nat.card_coe_set_eq, Nat.card_eq_fintype_card, Fintype.card_subtype]
+  rw [hfib]
+  simp [card_filter_ofFinEmb_eq, Nat.factorial_succ, Nat.factorial_zero, he, mul_comm]
+
+/-- On a finite vertex set, the edit discrepancy is the number of edited injective triples
+divided by `|V|³`. -/
+theorem editDiscrepancy3_eq_card_editedOn_univ_div [DecidableEq V] [DecidableEq κ]
+    (H H' : Colored3Graph κ V) :
+    H.editDiscrepancy3 H' = #(H.editedOn H' univ) / (Fintype.card V : ℚ) ^ 3 := by
+  rw [editDiscrepancy3_def, Nat.card_eq_fintype_card, H.card_editedOn_univ H', Nat.cast_mul,
+    Nat.cast_ofNat]
+
+/-- Bounding the number of edited injective triples by `ε * |V|³` yields `H.Approximates3 H' ε`
+for every `ε ≥ 0`, including on empty hosts. -/
+theorem approximates3_of_card_editedOn_univ_le [DecidableEq V] [DecidableEq κ]
+    {H H' : Colored3Graph κ V} {ε : ℝ} (hε : 0 ≤ ε)
+    (h : (#(H.editedOn H' univ) : ℝ) ≤ ε * (Fintype.card V : ℝ) ^ 3) :
+    H.Approximates3 H' ε := by
+  rw [approximates3_iff, H.editDiscrepancy3_eq_card_editedOn_univ_div H']
+  push_cast
+  by_cases hn : Fintype.card V = 0
+  · simpa [hn] using hε
+  · have hpos : (0 : ℝ) < (Fintype.card V : ℝ) ^ 3 := by positivity
+    rwa [div_le_iff₀ hpos]
 
 private theorem abs_inducedCopyCount_sub_le_edits (H H' : Colored3Graph κ V)
     (F : FiniteColored3Pattern κ) :
