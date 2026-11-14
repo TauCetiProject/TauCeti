@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Analysis.Calculus.DifferentialForm.PhaseForm
 public import TauCeti.Analysis.Calculus.DifferentialForm.TwistedDifferential
 public import TauCeti.LinearAlgebra.Complex.LinearPart
+public import TauCeti.Analysis.PDE.SeibergWitten.CovariantDeriv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -120,10 +121,12 @@ The phase form `Im (α⁻¹ dα)` (`TauCeti.phaseForm`) and the twisted differen
 (`TauCeti.AlmostComplexStructure.twistedDifferential`) are general constructions defined in
 `TauCeti.Analysis.Calculus.DifferentialForm.PhaseForm` and
 `TauCeti.Analysis.Calculus.DifferentialForm.TwistedDifferential`.
+The covariant derivative `∇_a α` (`TauCeti.SeibergWitten.covariantDeriv`) is defined, for
+sections with values in any complex vector space, in
+`TauCeti.Analysis.PDE.SeibergWitten.CovariantDeriv`.
 
 ## Main definitions
 
-* `TauCeti.SeibergWitten.covariantDeriv b α`: the covariant derivative `dα + i b α`.
 * `TauCeti.SeibergWitten.covariantPhaseForm b α`: the phase form `τ = Im (α⁻¹ dα) + b`.
 * `TauCeti.SeibergWitten.cutoffPhaseForm χ b α`: the one-form `χ(|α|²) τ`.
 * `TauCeti.SeibergWitten.cutoffCurrent χ b α`: the two-form `Θ = -db + d(χ(|α|²) τ)`.
@@ -153,25 +156,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {α u : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {χ : ℝ → ℝ} {x : E}
 
 /-! ### The covariant derivative and the covariant phase form -/
-
-/-- The covariant derivative `∇_a α = dα + i b α` of a section `α` of the trivial line for the
-imaginary connection form `a = i b`. -/
-def covariantDeriv (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) : E →L[ℝ] ℂ :=
-  fderiv ℝ α x + ((ofSubsingletonLIE (0 : Fin 1)).symm (b x)).smulRight (I * α x)
-
-/-- The covariant derivative evaluated on a vector. -/
-@[simp]
-theorem covariantDeriv_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x v : E) :
-    covariantDeriv b α x v = fderiv ℝ α x v + I * b x (fun _ ↦ v) * α x := by
-  simp [covariantDeriv, ofSubsingletonLIE_symm_apply]
-  ring
-
-/-- The covariant derivative of a `C¹` section for a continuous connection form is
-continuous. -/
-theorem continuous_covariantDeriv (hα : ContDiff ℝ 1 α) (hb : Continuous b) :
-    Continuous (covariantDeriv b α) := by
-  unfold covariantDeriv
-  fun_prop
 
 /-- The derivative of `|α|²` is `2 Re (conj α ∇_a α)`, for every connection form `a = i b`: the
 connection term contributes `Re (conj α · i b α) = Re (i b |α|²) = 0`. This is the modulus
