@@ -53,9 +53,7 @@ universe. The compatible maps `B → S` are assembled by the shared construction
 
 public section
 
-open CategoryTheory Limits TensorProduct
-
-universe u v w
+universe u v
 
 namespace TauCeti.Henselization
 
