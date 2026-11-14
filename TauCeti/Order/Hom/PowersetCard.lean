@@ -15,15 +15,17 @@ import TauCeti.Data.Finset.Sort
 /-!
 # Fixed-cardinality subsets of linear orders
 
-This file collects two enumerations of fixed-cardinality subsets through Mathlib's
+This file collects enumerations of fixed-cardinality subsets through Mathlib's
 `Set.powersetCard.ofFinEmbEquiv`, together with the sum and product formulas for its increasing
 enumeration.
 
-In a linear order, a three-element finite set is listed exactly once as an increasing triple
-`a < b < c`. `Set.powersetCard.ofLtTriple` is this enumeration, an equivalence between the
-increasing triples and `Set.powersetCard I 3`. It is the case `n = 3` of Mathlib's
-`Set.powersetCard.ofFinEmbEquiv`, stated for triples so that sums and products over the
-increasing triples `{t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2}` can be compared with sums over
+In a linear order, a two-element finite set is listed exactly once as an increasing pair `a < b`,
+and a three-element finite set is listed exactly once as an increasing triple `a < b < c`.
+`Set.powersetCard.ofLtPair` and `Set.powersetCard.ofLtTriple` are these enumerations, equivalences
+between the increasing pairs or triples and `Set.powersetCard I 2` or `Set.powersetCard I 3`. They
+are the cases `n = 2` and `n = 3` of Mathlib's `Set.powersetCard.ofFinEmbEquiv`, stated explicitly
+so that sums and products over increasing pairs `{p : I × I // p.1 < p.2}` and increasing triples
+`{t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2}` can be compared with sums over two- and
 three-element sets. For instance, a finite linear order with `n` elements has `n.choose 3`
 increasing triples.
 
@@ -60,6 +62,46 @@ theorem prod_comp_ofFinEmbEquiv_symm {n : ℕ} (s : powersetCard I n)
       exact congrArg f (Finset.coe_orderIsoOfFin_apply s.1 s.2 a).symm)).trans
     (Finset.prod_coe_sort s.val f)
 
+/-- An increasing pair, as an order embedding of `Fin 2`. -/
+private def ltPairEmb (p : {p : I × I // p.1 < p.2}) : Fin 2 ↪o I :=
+  OrderEmbedding.ofStrictMono ![p.1.1, p.1.2]
+    (Fin.strictMono_iff_lt_succ.2 fun m ↦ by fin_cases m; exact p.2)
+
+private theorem ltPairEmb_apply (p : {p : I × I // p.1 < p.2}) (m : Fin 2) :
+    ltPairEmb p m = ![p.1.1, p.1.2] m :=
+  rfl
+
+/-- The increasing pairs `a < b` of a linear order enumerate its two-element sets, by
+`(a, b) ↦ {a, b}`. -/
+noncomputable def ofLtPair : {p : I × I // p.1 < p.2} ≃ powersetCard I 2 :=
+  { toFun := ltPairEmb
+    invFun e := ⟨(e 0, e 1), e.strictMono (by decide)⟩
+    left_inv _ := rfl
+    right_inv e := by ext m; fin_cases m <;> rfl : _ ≃ (Fin 2 ↪o I)}.trans ofFinEmbEquiv
+
+private theorem ofLtPair_apply (p : {p : I × I // p.1 < p.2}) :
+    ofLtPair p = ofFinEmb 2 I (ltPairEmb p).toEmbedding :=
+  rfl
+
+/-- The two-element set enumerated by an increasing pair consists of its two entries. -/
+@[simp]
+theorem val_ofLtPair (p : {p : I × I // p.1 < p.2}) :
+    (ofLtPair p).val = {p.1.1, p.1.2} := by
+  ext a
+  simp [ofLtPair_apply, val_ofFinEmb, ltPairEmb_apply, Fin.exists_fin_succ, eq_comm]
+
+/-- The increasing pair enumerating a two-element set has that set as its entries. -/
+@[simp]
+theorem pair_ofLtPair_symm (s : powersetCard I 2) :
+    ({(ofLtPair.symm s).1.1, (ofLtPair.symm s).1.2} : Finset I) = s.val := by
+  simpa using (val_ofLtPair (ofLtPair.symm s)).symm
+
+/-- Every two-element set of a linear order is `{a, b}` for some `a < b`. -/
+theorem exists_lt_val_eq (s : powersetCard I 2) :
+    ∃ a b, a < b ∧ s.val = {a, b} := by
+  obtain ⟨p, rfl⟩ := ofLtPair.surjective s
+  exact ⟨_, _, p.2, val_ofLtPair p⟩
+
 /-- An increasing triple, as an order embedding of `Fin 3`. -/
 private def ltTripleEmb (t : {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) : Fin 3 ↪o I :=
   OrderEmbedding.ofStrictMono ![t.1.1, t.1.2.1, t.1.2.2]
@@ -87,6 +129,13 @@ theorem val_ofLtTriple (t : {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) 
     (ofLtTriple t).val = {t.1.1, t.1.2.1, t.1.2.2} := by
   ext a
   simp [ofLtTriple_apply, val_ofFinEmb, ltTripleEmb_apply, Fin.exists_fin_succ, eq_comm]
+
+/-- The increasing triple enumerating a three-element set has that set as its entries. -/
+@[simp]
+theorem triple_ofLtTriple_symm (s : powersetCard I 3) :
+    ({(ofLtTriple.symm s).1.1, (ofLtTriple.symm s).1.2.1, (ofLtTriple.symm s).1.2.2} :
+      Finset I) = s.val := by
+  simpa using (val_ofLtTriple (ofLtTriple.symm s)).symm
 
 /-- Every three-element set of a linear order is `{a, b, c}` for some `a < b < c`. -/
 theorem exists_lt_lt_val_eq (s : powersetCard I 3) :
