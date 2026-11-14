@@ -15,48 +15,34 @@ import TauCeti.Geometry.Manifold.ModelTransport.Interior
 /-!
 # Parametric transversality on manifolds
 
-Let `F : M × S → N` be a family of maps parametrized by a manifold `S`, and let `g : Z → N` be a
-fixed target map. When the total family `F` is transverse to `g`, the parameter values `s : S` at
-which the slice `x ↦ F (x, s)` fails to be transverse to `g` are precisely the critical values of
-the parameter projection `{((x, s), z) // F (x, s) = g z} → S` on the transverse fibre product.
-Applying Sard's theorem at its sharp regularity `n ≥ dim M + dim Z - dim N + 1` shows that these
-non-transverse parameters form a chartwise null set (`TauCeti.IsNullSet`) in `S`, so the transverse
-parameters are dense in `S`.
+For a family `F : M × S → N` transverse to `g : Z → N`, the parameters `s : S` where the slice
+`x ↦ F (x, s)` fails transversality are the critical values of the parameter projection
+`{((x, s), z) // F (x, s) = g z} → S` on the transverse fibre product. By Sard's theorem at sharp
+regularity `dim M + dim Z - dim N + 1 ≤ n`, they form a chartwise null set (`TauCeti.IsNullSet`) in
+`S`, so transverse parameters are dense in `S`:
 
-Two structural features make this directly usable in relative differential topology and cobordism:
-
-* **No countability assumption on `S` or `N`.** Nullity in `S` is chartwise, so restricting `S` to
-  the source of each preferred chart makes the local parameter space second countable; only `M` and
-  `Z` need to be Lindelöf.
-* **Corners in the models and half-space source manifolds.** Transporting boundaryless manifolds to
-  their vector-space copies via `TauCeti.BoundarylessModel.interiorDiffeomorph` removes any
-  `ModelWithCorners.Boundaryless` restriction on `M`, `S`, `Z`, or `N`. For a Lindelöf manifold `M`
-  with boundary modelled on `𝓡∂ (m + 1)`, applying the boundaryless theorem separately to the open
-  manifold interior and to the boundary `(∂M : Type*)` yields simultaneous interior and boundary
-  transversality (hence global ambient transversality by
-  `TauCeti.IsTransverse.of_interior_and_boundary`) outside a chartwise null set of parameters.
+* **No countability assumption on `S` or `N`:** chartwise nullity restricts `S` to each preferred
+  chart source (which is second countable), so only `M` and `Z` need to be Lindelöf.
+* **Corners in the models and half-space sources:** `TauCeti.BoundarylessModel.interiorDiffeomorph`
+  removes `ModelWithCorners.Boundaryless` hypotheses on `M`, `S`, `Z`, `N`, and applying the result
+  to both `interior M` and `∂M` gives facewise parametric transversality on `𝓡∂ (m + 1)` manifolds
+  (hence ambient transversality via `TauCeti.IsTransverse.of_interior_and_boundary`).
 
 ## Main results
 
 * `TauCeti.isRegularPoint_snd_transverseFiberProduct_iff`,
-  `TauCeti.isRegularValue_snd_transverseFiberProduct_iff`: on boundaryless models, regularity of
-  the parameter projection on `{((x, s), z) // F (x, s) = g z}` is equivalent to transversality of
-  the slice `x ↦ F (x, s)` to `g`.
+  `TauCeti.isRegularValue_snd_transverseFiberProduct_iff`: regularity of the parameter projection on
+  `{((x, s), z) // F (x, s) = g z}` is equivalent to slice transversality `x ↦ F (x, s)`.
 * `TauCeti.isNullSet_not_isTransverse_slice`, `TauCeti.dense_isTransverse_slice`: parametric
-  transversality at sharp Sard regularity `dim M + dim Z - dim N + 1 ≤ n` for boundaryless
-  manifolds `M`, `S`, `Z`, `N` with `M` and `Z` Lindelöf.
+  transversality at `dim M + dim Z - dim N + 1 ≤ n` for boundaryless `M`, `S`, `Z`, `N`.
 * `TauCeti.isNullSet_not_isTransverse_slice_halfSpace`,
-  `TauCeti.dense_isTransverse_slice_halfSpace`: facewise parametric transversality for a Lindelöf
-  manifold `M` with boundary modelled on `𝓡∂ (m + 1)`.
+  `TauCeti.dense_isTransverse_slice_halfSpace`: facewise parametric transversality on `𝓡∂ (m + 1)`.
 
 ## References
 
-* M. Hirsch, *Differential Topology*, Graduate Texts in Mathematics 33, Springer, 1976, Chapter 3,
-  §2, Theorem 2.7.
-* V. Guillemin and A. Pollack, *Differential Topology*, Prentice-Hall, 1974, Chapter 2, §3
-  (Transversality Theorem).
-* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
-  Springer, 2013, Theorem 6.35.
+* M. Hirsch, *Differential Topology*, GTM 33, Springer, 1976, Chapter 3, §2, Theorem 2.7.
+* V. Guillemin and A. Pollack, *Differential Topology*, Prentice-Hall, 1974, Chapter 2, §3.
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., GTM 218, Springer, 2013, Theorem 6.35.
 -/
 
 public section
@@ -85,8 +71,7 @@ private theorem mfderiv_slice_left_apply {F : M × S → N} {x : M} {s : S}
   have hι : MDifferentiableAt IM (IM.prod IS) (fun x' ↦ (x', s)) x :=
     mdifferentiableAt_id.prodMk mdifferentiableAt_const
   have h := mfderiv_comp_apply x hF hι u
-  rw [mfderiv_prod_left] at h
-  exact h
+  rwa [mfderiv_prod_left] at h
 
 private theorem isTransverseAt_prod_opens_left_iff {U : Opens M} {F : M × S → N} {g : Z → N}
     {x : U} {s : S} {z : Z} (hF : MDifferentiableAt (IM.prod IS) IN F (x, s)) :
@@ -95,60 +80,34 @@ private theorem isTransverseAt_prod_opens_left_iff {U : Opens M} {F : M × S →
   let ι : U × S → M × S := fun q ↦ (q.1, q.2)
   have h1 : MDifferentiableAt (IM.prod IS) IM (fun q : U × S ↦ (q.1 : M)) (x, s) :=
     (contMDiff_subtype_val.mdifferentiableAt one_ne_zero).comp (x, s) mdifferentiableAt_fst
-  have hι : MDifferentiableAt (IM.prod IS) (IM.prod IS) ι (x, s) := h1.prodMk mdifferentiableAt_snd
-  have hid : ∀ v : TangentSpace (IM.prod IS) (x, s),
-      mfderiv (IM.prod IS) (IM.prod IS) ι (x, s) v = v := fun v ↦ by
+  have hid (v : TangentSpace (IM.prod IS) (x, s)) :
+      mfderiv (IM.prod IS) (IM.prod IS) ι (x, s) v = v := by
     rw [show ι = fun q : U × S ↦ ((q.1 : M), q.2) from rfl, mfderiv_prodMk h1 mdifferentiableAt_snd]
-    refine Prod.ext ?_ ?_
-    · change mfderiv (IM.prod IS) IM ((Subtype.val : U → M) ∘ Prod.fst) (x, s) v = v.1
-      rw [mfderiv_comp_apply (x, s) (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
-        mdifferentiableAt_fst, mfderiv_fst, TauCeti.Manifold.mfderiv_subtype_val]
-      exact TauCeti.Manifold.tangentSpaceOpenEquiv_apply _ _
-    · change mfderiv (IM.prod IS) IS Prod.snd (x, s) v = v.2
-      rw [mfderiv_snd]
-      rfl
+    refine Prod.ext ?_ (by rw [mfderiv_snd]; rfl)
+    change mfderiv (IM.prod IS) IM ((Subtype.val : U → M) ∘ Prod.fst) (x, s) v = v.1
+    rw [mfderiv_comp_apply (x, s) (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
+      mdifferentiableAt_fst, mfderiv_fst, TauCeti.Manifold.mfderiv_subtype_val]
+    exact TauCeti.Manifold.tangentSpaceOpenEquiv_apply _ _
   have hrange : (mfderiv (IM.prod IS) IN (F ∘ ι) (x, s)).range =
       (mfderiv (IM.prod IS) IN F (x, s)).range := by
-    ext w
-    simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe]
-    refine exists_congr fun v ↦ ?_
-    rw [mfderiv_comp_apply (x, s) hF hι, hid]
+    ext w; simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe]
+    exact exists_congr fun v ↦ by
+      rw [mfderiv_comp_apply (x, s) hF (h1.prodMk mdifferentiableAt_snd), hid]
   rw [isTransverseAt_def, isTransverseAt_def]
-  refine forall_congr' fun _ ↦ ?_
-  change (mfderiv (IM.prod IS) IN (F ∘ ι) (x, s)).range ⊔ _ = ⊤ ↔ _
-  rw [hrange]
+  exact forall_congr' fun _ ↦ by
+    change (mfderiv (IM.prod IS) IN (F ∘ ι) (x, s)).range ⊔ _ = ⊤ ↔ _; rw [hrange]
 
 private theorem isTransverseAt_prod_opens_right_iff {V : Opens S} {F : M × S → N} {g : Z → N}
     {x : M} {s : V} {z : Z} (hF : MDifferentiableAt (IM.prod IS) IN F (x, s)) :
     IsTransverseAt (IM.prod IS) IZ IN (fun q : M × V ↦ F (q.1, q.2)) g (x, s) z ↔
       IsTransverseAt (IM.prod IS) IZ IN F g (x, s) z := by
-  let ι : M × V → M × S := fun q ↦ (q.1, q.2)
-  have h2 : MDifferentiableAt (IM.prod IS) IS (fun q : M × V ↦ (q.2 : S)) (x, s) :=
-    (contMDiff_subtype_val.mdifferentiableAt one_ne_zero).comp (x, s) mdifferentiableAt_snd
-  have hι : MDifferentiableAt (IM.prod IS) (IM.prod IS) ι (x, s) :=
-    mdifferentiableAt_fst.prodMk h2
-  have hid : ∀ v : TangentSpace (IM.prod IS) (x, s),
-      mfderiv (IM.prod IS) (IM.prod IS) ι (x, s) v = v := fun v ↦ by
-    rw [show ι = fun q : M × V ↦ (q.1, (q.2 : S)) from rfl,
-      mfderiv_prodMk mdifferentiableAt_fst h2]
-    refine Prod.ext ?_ ?_
-    · change mfderiv (IM.prod IS) IM Prod.fst (x, s) v = v.1
-      rw [mfderiv_fst]
-      rfl
-    · change mfderiv (IM.prod IS) IS ((Subtype.val : V → S) ∘ Prod.snd) (x, s) v = v.2
-      rw [mfderiv_comp_apply (x, s) (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
-        mdifferentiableAt_snd, mfderiv_snd, TauCeti.Manifold.mfderiv_subtype_val]
-      exact TauCeti.Manifold.tangentSpaceOpenEquiv_apply _ _
-  have hrange : (mfderiv (IM.prod IS) IN (F ∘ ι) (x, s)).range =
-      (mfderiv (IM.prod IS) IN F (x, s)).range := by
-    ext w
-    simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe]
-    refine exists_congr fun v ↦ ?_
-    rw [mfderiv_comp_apply (x, s) hF hι, hid]
-  rw [isTransverseAt_def, isTransverseAt_def]
-  refine forall_congr' fun _ ↦ ?_
-  change (mfderiv (IM.prod IS) IN (F ∘ ι) (x, s)).range ⊔ _ = ⊤ ↔ _
-  rw [hrange]
+  have h1 := isTransverseAt_comp_diffeomorph_left_iff (IY := IZ) (IN := IN)
+    (f := fun q : M × V ↦ F (q.1, q.2)) (g := g) (y := z)
+    (Diffeomorph.prodComm IS IM V M 1) one_ne_zero (x' := (s, x))
+  have h2 := isTransverseAt_comp_diffeomorph_left_iff (IY := IZ) (IN := IN) (f := F) (g := g)
+    (y := z) (Diffeomorph.prodComm IS IM S M 1) one_ne_zero (x' := ((s : S), x))
+  simpa using h1.symm.trans ((isTransverseAt_prod_opens_left_iff (IZ := IZ) (hF.comp ((s : S), x)
+    ((Diffeomorph.prodComm IS IM S M 1).contMDiff.mdifferentiableAt one_ne_zero))).trans h2)
 
 end OpenSlice
 
@@ -244,15 +203,12 @@ theorem isRegularValue_snd_transverseFiberProduct_iff (hn : 1 ≤ n)
   let := transverseFiberProductChartedSpace hn hF hg
     (fun q ↦ (hFtrans.isTransverseAt q.1 q.2).range_sup_eq_top)
   rw [isRegularValue_iff, isTransverse_def]
-  constructor
-  · intro hreg x z
-    rw [isTransverseAt_def]
-    intro hFxz
-    exact ((isRegularPoint_snd_transverseFiberProduct_iff hn hF hg hFtrans
-      ⟨((x, s), z), hFxz⟩).1 (hreg ⟨((x, s), z), hFxz⟩ rfl)).range_sup_eq_top hFxz
-  · rintro htrans ⟨⟨⟨x, s'⟩, z⟩, hp⟩ (rfl : s' = s)
-    exact (isRegularPoint_snd_transverseFiberProduct_iff hn hF hg hFtrans
-      ⟨((x, s'), z), hp⟩).2 (htrans x z)
+  refine ⟨fun hreg x z ↦ isTransverseAt_def.2 fun hFxz ↦
+    ((isRegularPoint_snd_transverseFiberProduct_iff hn hF hg hFtrans ⟨((x, s), z), hFxz⟩).1
+      (hreg ⟨((x, s), z), hFxz⟩ rfl)).range_sup_eq_top hFxz, ?_⟩
+  rintro htrans ⟨⟨⟨x, s'⟩, z⟩, hp⟩ (rfl : s' = s)
+  exact (isRegularPoint_snd_transverseFiberProduct_iff hn hF hg hFtrans
+    ⟨((x, s'), z), hp⟩).2 (htrans x z)
 
 private theorem isNullSet_not_isTransverse_slice_of_secondCountable
     [SecondCountableTopology M] [SecondCountableTopology S] [SecondCountableTopology Z]
@@ -265,9 +221,9 @@ private theorem isNullSet_not_isTransverse_slice_of_secondCountable
   let htr := fun q : (M × S) × Z ↦ (hFtrans.isTransverseAt q.1 q.2).range_sup_eq_top
   let := transverseFiberProductChartedSpace hn1 hF hg htr
   have := isManifold_transverseFiberProduct hn1 hF hg htr
-  let πS : {p : (M × S) × Z // F p.1 = g p.2} → S := fun q ↦ q.1.1.2
   have hπS : ContMDiff
-      𝓘(ℝ, Fin (finrank ℝ (EM × ES) + finrank ℝ EZ - finrank ℝ EN) → ℝ) IS n πS :=
+      𝓘(ℝ, Fin (finrank ℝ (EM × ES) + finrank ℝ EZ - finrank ℝ EN) → ℝ) IS n
+      (fun q : {p : (M × S) × Z // F p.1 = g p.2} ↦ q.1.1.2) :=
     contMDiff_snd.comp (contMDiff_fst.comp
       (isSmoothEmbedding_coe_transverseFiberProduct hn1 hF hg htr).contMDiff)
   have hkW : ((finrank ℝ (Fin (finrank ℝ (EM × ES) + finrank ℝ EZ - finrank ℝ EN) → ℝ) -
@@ -278,8 +234,7 @@ private theorem isNullSet_not_isTransverse_slice_of_secondCountable
     rwa [hdim]
   refine (hπS.isNullSet_image_criticalPoints hkW).mono fun s hs ↦ ?_
   have hns := (isRegularValue_snd_transverseFiberProduct_iff hn1 hF hg hFtrans s).not.2 hs
-  rw [isRegularValue_iff] at hns
-  push Not at hns
+  rw [isRegularValue_iff] at hns; push Not at hns
   obtain ⟨p, rfl, hp⟩ := hns
   exact ⟨p, hp, rfl⟩
 
@@ -291,13 +246,11 @@ private theorem isNullSet_not_isTransverse_slice_of_modelBoundaryless
     IsNullSet IS {s : S | ¬ IsTransverse IM IZ IN (fun x ↦ F (x, s)) g} := by
   have hn1 : 1 ≤ n := le_trans (by norm_cast; omega) hk
   have hn0 : n ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hn1)
-  have : SecondCountableTopology HM := IM.secondCountableTopology
-  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_lindelof HM M
-  have : SecondCountableTopology HZ := IZ.secondCountableTopology
-  have : SecondCountableTopology Z := ChartedSpace.secondCountable_of_lindelof HZ Z
-  have : SecondCountableTopology HS := IS.secondCountableTopology
+  have := IM.secondCountableTopology; have := ChartedSpace.secondCountable_of_lindelof HM M
+  have := IZ.secondCountableTopology; have := ChartedSpace.secondCountable_of_lindelof HZ Z
+  have := IS.secondCountableTopology
   rw [isNullSet_iff]
-  intro s₀ μ hμ
+  intro s₀ μ _
   let S₀ : Opens S := chartSource (H := HS) s₀
   let s₀' : S₀ := ⟨s₀, mem_chart_source HS s₀⟩
   have : SecondCountableTopology S₀ := (chartAt (H := HS) s₀).secondCountableTopology_source
@@ -308,8 +261,8 @@ private theorem isNullSet_not_isTransverse_slice_of_modelBoundaryless
     isTransverse_def.2 fun ⟨x, s⟩ z ↦
       (isTransverseAt_prod_opens_right_iff ((hF (x, s)).mdifferentiableAt hn0)).2
         (hFtrans.isTransverseAt (x, s) z)
-  have hnull₀ := isNullSet_not_isTransverse_slice_of_secondCountable hF₀ hg hF₀trans hk
-  refine measure_mono_null ?_ (hnull₀.chartwise s₀' μ)
+  refine measure_mono_null ?_ ((isNullSet_not_isTransverse_slice_of_secondCountable
+    hF₀ hg hF₀trans hk).chartwise s₀' μ)
   rintro y ⟨s, ⟨hsbad, hssrc⟩, rfl⟩
   have hsS₀ : s ∈ (chartAt HS s₀).source := by simpa only [extChartAt_source] using hssrc
   exact ⟨⟨s, hsS₀⟩, ⟨hsbad, by simpa [s₀', S₀, Opens.chartAt_eq] using hsS₀⟩,
@@ -320,19 +273,18 @@ end FiberProduct
 section Boundaryless
 
 variable {EM HM M : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [FiniteDimensional ℝ EM]
-  [TopologicalSpace HM] {IM : ModelWithCorners ℝ EM HM}
-  [TopologicalSpace M] [ChartedSpace HM M] [BoundarylessManifold IM M] [LindelofSpace M]
+  [TopologicalSpace HM] {IM : ModelWithCorners ℝ EM HM} [TopologicalSpace M] [ChartedSpace HM M]
+  [BoundarylessManifold IM M] [LindelofSpace M]
   {ES HS S : Type*} [NormedAddCommGroup ES] [NormedSpace ℝ ES] [FiniteDimensional ℝ ES]
-  [TopologicalSpace HS] {IS : ModelWithCorners ℝ ES HS}
-  [TopologicalSpace S] [ChartedSpace HS S] [BoundarylessManifold IS S]
+  [TopologicalSpace HS] {IS : ModelWithCorners ℝ ES HS} [TopologicalSpace S] [ChartedSpace HS S]
+  [BoundarylessManifold IS S]
   {EZ HZ Z : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [FiniteDimensional ℝ EZ]
-  [TopologicalSpace HZ] {IZ : ModelWithCorners ℝ EZ HZ}
-  [TopologicalSpace Z] [ChartedSpace HZ Z] [BoundarylessManifold IZ Z] [LindelofSpace Z]
+  [TopologicalSpace HZ] {IZ : ModelWithCorners ℝ EZ HZ} [TopologicalSpace Z] [ChartedSpace HZ Z]
+  [BoundarylessManifold IZ Z] [LindelofSpace Z]
   {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace ℝ EN] [FiniteDimensional ℝ EN]
-  [TopologicalSpace HN] {IN : ModelWithCorners ℝ EN HN}
-  [TopologicalSpace N] [ChartedSpace HN N] [BoundarylessManifold IN N]
-  {n : ℕ∞ω} [IsManifold IM n M] [IsManifold IS n S] [IsManifold IZ n Z] [IsManifold IN n N]
-  {F : M × S → N} {g : Z → N}
+  [TopologicalSpace HN] {IN : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N]
+  [BoundarylessManifold IN N] {n : ℕ∞ω} [IsManifold IM n M] [IsManifold IS n S]
+  [IsManifold IZ n Z] [IsManifold IN n N] {F : M × S → N} {g : Z → N}
 
 /-- **Parametric transversality (nullity).** Let `M`, `S`, `Z`, `N` be boundaryless `C^n`
 manifolds over finite-dimensional real spaces, with `M` and `Z` Lindelöf (their models with corners
@@ -373,7 +325,7 @@ theorem isNullSet_not_isTransverse_slice [MeasurableSpace ES] [BorelSpace ES]
       isTransverse_comp_diffeomorph_right_iff φZ.symm hn0]
   have hnull' := isNullSet_not_isTransverse_slice_of_modelBoundaryless hF' hg' hF'trans hk
   rw [isNullSet_iff]
-  intro s μ hμ
+  intro s μ _
   have hchart := hnull'.chartwise (BoundarylessModel.homeomorph IS S s) μ
   rw [BoundarylessModel.interiorExtChartAt_eq IS, Homeomorph.symm_apply_apply] at hchart
   refine measure_mono_null ?_ hchart
@@ -413,17 +365,15 @@ section HalfSpace
 variable {m : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (m + 1)) M]
   [LindelofSpace M]
   {ES HS S : Type*} [NormedAddCommGroup ES] [NormedSpace ℝ ES] [FiniteDimensional ℝ ES]
-  [TopologicalSpace HS] {IS : ModelWithCorners ℝ ES HS}
-  [TopologicalSpace S] [ChartedSpace HS S] [BoundarylessManifold IS S]
+  [TopologicalSpace HS] {IS : ModelWithCorners ℝ ES HS} [TopologicalSpace S] [ChartedSpace HS S]
+  [BoundarylessManifold IS S]
   {EZ HZ Z : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [FiniteDimensional ℝ EZ]
-  [TopologicalSpace HZ] {IZ : ModelWithCorners ℝ EZ HZ}
-  [TopologicalSpace Z] [ChartedSpace HZ Z] [BoundarylessManifold IZ Z] [LindelofSpace Z]
+  [TopologicalSpace HZ] {IZ : ModelWithCorners ℝ EZ HZ} [TopologicalSpace Z] [ChartedSpace HZ Z]
+  [BoundarylessManifold IZ Z] [LindelofSpace Z]
   {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace ℝ EN] [FiniteDimensional ℝ EN]
-  [TopologicalSpace HN] {IN : ModelWithCorners ℝ EN HN}
-  [TopologicalSpace N] [ChartedSpace HN N] [BoundarylessManifold IN N]
-  {n : ℕ∞ω} [IsManifold (𝓡∂ (m + 1)) 1 M] [IsManifold (𝓡∂ (m + 1)) n M]
-  [IsManifold IS n S] [IsManifold IZ n Z] [IsManifold IN n N]
-  {F : M × S → N} {g : Z → N}
+  [TopologicalSpace HN] {IN : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N]
+  [BoundarylessManifold IN N] {n : ℕ∞ω} [IsManifold (𝓡∂ (m + 1)) 1 M] [IsManifold (𝓡∂ (m + 1)) n M]
+  [IsManifold IS n S] [IsManifold IZ n Z] [IsManifold IN n N] {F : M × S → N} {g : Z → N}
 
 /-- **Facewise parametric transversality on a half-space manifold (nullity).** Let `M` be a
 Lindelöf `C^n` manifold with boundary modelled on `𝓡∂ (m + 1)`, and let `S`, `Z`, `N` be
@@ -443,12 +393,9 @@ theorem isNullSet_not_isTransverse_slice_halfSpace [MeasurableSpace ES] [BorelSp
         (fun p : ↥((𝓡∂ (m + 1)).boundary M) ↦ F (p, s)) g)} := by
   have hn1 : 1 ≤ n := le_trans (by norm_cast; omega) hk
   have hn0 : n ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hn1)
-  have : SecondCountableTopology (EuclideanHalfSpace (m + 1)) :=
-    (𝓡∂ (m + 1)).secondCountableTopology
-  have : SecondCountableTopology M :=
-    ChartedSpace.secondCountable_of_lindelof (EuclideanHalfSpace (m + 1)) M
+  have := (𝓡∂ (m + 1)).secondCountableTopology
+  have := ChartedSpace.secondCountable_of_lindelof (EuclideanHalfSpace (m + 1)) M
   have := isManifold_boundary (n := m) (k := n) M hn0
-  -- Apply boundaryless parametric transversality on the open manifold interior `U_int`.
   let U_int : Opens M := ⟨(𝓡∂ (m + 1)).interior M, (𝓡∂ (m + 1)).isOpen_interior one_ne_zero⟩
   have : BoundarylessManifold (𝓡∂ (m + 1)) U_int :=
     ⟨fun x ↦ (𝓡∂ (m + 1)).isInteriorPoint_iff_isInteriorPoint_val.2 x.2⟩
@@ -459,26 +406,16 @@ theorem isNullSet_not_isTransverse_slice_halfSpace [MeasurableSpace ES] [BorelSp
     isTransverse_def.2 fun ⟨x, s⟩ z ↦
       (isTransverseAt_prod_opens_left_iff ((hF (x, s)).mdifferentiableAt hn0)).2
         (hFint.isTransverseAt ⟨x.2, mem_univ s⟩ z)
-  have hk_int : ((finrank ℝ (EuclideanSpace ℝ (Fin (m + 1))) + finrank ℝ EZ - finrank ℝ EN + 1 : ℕ)
-      : ℕ∞ω) ≤ n := by
-    simpa [finrank_euclideanSpace] using hk
-  have hnull_int := isNullSet_not_isTransverse_slice hF_int hg hF_int_trans hk_int
-  -- Apply boundaryless parametric transversality on the boundary manifold `∂M`.
+  have hnull_int := isNullSet_not_isTransverse_slice hF_int hg hF_int_trans
+    (by simpa [finrank_euclideanSpace] using hk)
   let F_bdy : ↥((𝓡∂ (m + 1)).boundary M) × S → N := fun q ↦ F (q.1, q.2)
   have hF_bdy : ContMDiff (𝓘(ℝ, EuclideanSpace ℝ (Fin m)).prod IS) IN n F_bdy :=
     hF.comp (((isSmoothEmbedding_subtypeVal_boundary (n := m) (k := n) M hn0).contMDiff.comp
       contMDiff_fst).prodMk contMDiff_snd)
-  have hk_bdy : ((finrank ℝ (EuclideanSpace ℝ (Fin m)) + finrank ℝ EZ - finrank ℝ EN + 1 : ℕ) :
-      ℕ∞ω) ≤ n := by
-    refine le_trans ?_ hk
-    norm_cast
-    rw [finrank_euclideanSpace, Fintype.card_fin]
-    omega
-  have hnull_bdy := isNullSet_not_isTransverse_slice hF_bdy hg hFbdy hk_bdy
+  have hnull_bdy := isNullSet_not_isTransverse_slice hF_bdy hg hFbdy
+    (le_trans (by norm_cast; rw [finrank_euclideanSpace, Fintype.card_fin]; omega) hk)
   refine (hnull_int.union hnull_bdy).mono fun s hs ↦ ?_
-  rw [mem_union]
-  by_contra hnot
-  obtain ⟨h1, h2⟩ := not_or.1 hnot
+  rw [mem_union]; by_contra hnot; obtain ⟨h1, h2⟩ := not_or.1 hnot
   have hint_s : IsTransverseOn (𝓡∂ (m + 1)) IZ IN (fun x ↦ F (x, s)) g
       ((𝓡∂ (m + 1)).interior M) :=
     (isTransverse_comp_subtype_val_iff (U := U_int)).1 (not_not.1 h1)

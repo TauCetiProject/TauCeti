@@ -21,76 +21,54 @@ import TauCeti.Geometry.Manifold.TubularNeighborhood.Existence
 # Relative transversality with diagonal control
 
 A continuous map `f : C(M, P)` from a σ-compact Hausdorff smooth manifold `M` into a Hausdorff
-boundaryless smooth manifold `P`, whose image has compact closure and which is already smooth and
+boundaryless smooth manifold `P`, with `IsCompact (closure (range f))`, that is already smooth and
 transverse to a smooth map `g : Z → P` on a neighbourhood `U` of a closed set `C ⊆ M`, is homotopic
-relative to `C` to a smooth map `f'` globally transverse to `g`, by a homotopy `K` controlled by any
-prescribed neighbourhood `D` of the diagonal of `P` (`(K (t, x), f x) ∈ D` for all `t` and `x`).
-In particular, this holds without extra hypotheses whenever `P` is compact or `M` is compact.
-
-Both boundaryless sources (`[BoundarylessManifold IM M]`) and manifolds with boundary modelled on
-the Euclidean half-space `𝓡∂ (m + 1)` are covered. In the half-space case, facewise transversality
-on `U` (ambient transversality on `U ∩ interior M` together with transversality of `f ∘ Subtype.val`
-on `∂M ∩ U`) is upgraded relative to `C` to global transversality on both `M` and `∂M`.
+relative to `C` to a smooth map `f'` globally transverse to `g` via a homotopy `K` controlled by any
+`D ∈ 𝓝ˢ (diagonal P)` (`(K (t, x), f x) ∈ D`). Both boundaryless sources and half-space manifolds
+with boundary modelled on `𝓡∂ (m + 1)` (upgrading facewise transversality on `U` to global
+transversality on `M` and `∂M`) are covered, with unconditional corollaries when `P` or `M` is
+compact.
 
 ## Proof architecture
 
-1. **Embedded-target smooth perturbation.** Suppose `e : SmoothEmbedding IN 𝓘(ℝ, V) ∞ N V` embeds a
-   boundaryless manifold `N` into a finite-dimensional real normed space `V`, and let `r : O → N` be
-   a smooth submersive tubular retraction of an open neighbourhood `O ⊆ V` of `range e`
-   (`TauCeti.SmoothEmbedding.exists_contMDiffOn_retraction`). Given a smooth map `f₁ : M → N`
-   transverse to `g` on an open neighbourhood `V₁` of `C`, choose a positive smooth radius
-   `ρ : C^∞(M, ℝ)` (`TauCeti.exists_contMDiffMap_closedBall_subset`) keeping the perturbations
-   inside `O` and inside a diagonal neighbourhood `D₁`, and a smooth cutoff `ψ : C^∞(M, [0, 1])`
-   equal to `0` on `C` and `1` outside `V₁`. On the open unit ball `B ⊆ V`, define
-   `H(x, v) = r(e(f₁ x) + ψ(x)² ρ(x) v)`. Along any smooth stratum map `h : X → M`:
-   * where `ψ(h x') ≠ 0`, `H(h x', ·)` is an affine diffeomorphism onto a ball composed with the
-     submersion `r`, so `(x', v)` is a regular point of `(x', v) ↦ H(h x', v)`;
-   * where `ψ(h x') = 0`, we have `h x' ∈ V₁` and the squared cutoff `ψ²` vanishes to first order,
-     so the differential of `(x', v) ↦ H(h x', v)` reduces to `d(f₁ ∘ h)_{x'} ∘ fst`.
-   Parametric transversality (`TauCeti.dense_isTransverse_slice` and
-   `TauCeti.dense_isTransverse_slice_halfSpace`) then furnishes a parameter `v₀ ∈ B` whose slice is
-   transverse, joined to `f₁` relative to `C` by the straight-line homotopy `t ↦ H(·, t • v₀)`.
-2. **Reduction from relatively compact image.** For general `f : C(M, P)` with
-   `IsCompact (closure (range f))`, rechart `P` to its interior vector-space model
-   `TauCeti.BoundarylessModel JP P` and choose an open neighbourhood `W` of `closure (range f)` with
-   compact closure admitting a Euclidean embedding
-   (`IsCompact.exists_opens_nonempty_smoothEmbedding_euclidean`). Using the unique uniformity of the
-   compact Hausdorff space `closure W` (`uniformSpaceOfCompactR1`), choose `D₁` with `D₁ ○ D₁ ⊆ D`.
-   First smooth `f` relative to `closure V₁ ⊆ interior U` within `D₁`
-   (`TauCeti.SmoothEmbedding.exists_contMDiff_homotopyRel`), then apply the smooth perturbation step
-   on `W` within `D₁` against the restricted target map `g⁻¹(W) → W`, and concatenate the two
-   relative homotopies.
+1. **Embedded-target perturbation.** Given `e : SmoothEmbedding IN 𝓘(ℝ, V) ∞ N V`, a submersive
+   tubular retraction `r : O → N` (`TauCeti.SmoothEmbedding.exists_contMDiffOn_retraction`), a
+   positive radius `ρ` (`TauCeti.exists_contMDiffMap_closedBall_subset`), and a cutoff `ψ` vanishing
+   on `C` and equal to `1` outside `V₁`, define `H(x, v) = r(e(f₁ x) + ψ(x)² ρ(x) v)` on the unit
+   ball `B ⊆ V`. Where `ψ ≠ 0`, `H(x, ·)` is a submersion; where `ψ = 0`, `ψ²` vanishes to first
+   order so `dH` reduces to `df₁ ∘ fst` on `V₁`. Parametric transversality
+   (`TauCeti.dense_isTransverse_slice`, `TauCeti.dense_isTransverse_slice_halfSpace`) then yields a
+   transverse slice `v₀ ∈ B` joined to `f₁` rel `C` by `t ↦ H(·, t • v₀)`.
+2. **Relatively compact reduction.** Rechart `P` to `TauCeti.BoundarylessModel JP P`, embed a
+   precompact open neighbourhood `W` of `closure (range f)` into Euclidean space
+   (`IsCompact.exists_opens_nonempty_smoothEmbedding_euclidean`), split `D₁ ○ D₁ ⊆ D` on `closure W`
+   via `uniformSpaceOfCompactR1`, smooth `f` rel `closure V₁ ⊆ interior U` within `D₁`
+   (`TauCeti.SmoothEmbedding.exists_contMDiff_homotopyRel`), and concatenate with step 1 on `W`.
 
 ## Main results
 
 * `TauCeti.SmoothEmbedding.exists_contMDiff_isTransverse_homotopyRel_of_contMDiff`,
-  `TauCeti.SmoothEmbedding.exists_contMDiff_isTransverse_homotopyRel_halfSpace_of_contMDiff`:
-  smooth relative perturbation to transversality into a smoothly embedded target.
+  `TauCeti.SmoothEmbedding.exists_contMDiff_isTransverse_homotopyRel_halfSpace_of_contMDiff`.
 * `ContinuousMap.exists_contMDiff_isTransverse_homotopyRel_of_isCompact_closure_range`,
   `ContinuousMap.exists_contMDiff_isTransverse_homotopicRel_of_isCompact_closure_range`,
   `ContinuousMap.exists_contMDiff_isTransverse_homotopic_of_isCompact_closure_range`,
   `ContinuousMap.exists_contMDiff_isTransverse_homotopyRel`,
   `ContinuousMap.exists_contMDiff_isTransverse_homotopicRel`,
   `ContinuousMap.exists_contMDiff_isTransverse_homotopic`,
-  `ContinuousMap.exists_contMDiff_isTransverse_homotopyRel_of_compactSpace`: relative and global
-  transversality with diagonal control for boundaryless sources.
+  `ContinuousMap.exists_contMDiff_isTransverse_homotopyRel_of_compactSpace`.
 * `ContinuousMap.exists_contMDiff_isTransverse_homotopyRel_halfSpace_of_isCompact_closure_range`,
   `ContinuousMap.exists_contMDiff_isTransverse_homotopicRel_halfSpace_of_isCompact_closure_range`,
   `ContinuousMap.exists_contMDiff_isTransverse_homotopic_halfSpace_of_isCompact_closure_range`,
   `ContinuousMap.exists_contMDiff_isTransverse_homotopyRel_halfSpace`,
   `ContinuousMap.exists_contMDiff_isTransverse_homotopicRel_halfSpace`,
   `ContinuousMap.exists_contMDiff_isTransverse_homotopic_halfSpace`,
-  `ContinuousMap.exists_contMDiff_isTransverse_homotopyRel_halfSpace_of_compactSpace`: facewise
-  relative and global transversality with diagonal control on half-space manifolds with boundary.
+  `ContinuousMap.exists_contMDiff_isTransverse_homotopyRel_halfSpace_of_compactSpace`.
 
 ## References
 
-* M. Hirsch, *Differential Topology*, Graduate Texts in Mathematics 33, Springer, 1976, Chapter 3,
-  Theorem 2.1, pp. 74–78.
-* V. Guillemin and A. Pollack, *Differential Topology*, Prentice-Hall, 1974, Chapter 2, §3,
-  pp. 68–75.
-* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
-  Springer, 2013, Theorem 6.36, pp. 146–147.
+* M. Hirsch, *Differential Topology*, GTM 33, Springer, 1976, Chapter 3, Theorem 2.1, pp. 74–78.
+* V. Guillemin and A. Pollack, *Differential Topology*, Prentice-Hall, 1974, Chapter 2, §3.
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., GTM 218, Springer, 2013, Theorem 6.36.
 -/
 
 public noncomputable section
@@ -109,74 +87,57 @@ private theorem exists_nhdsSet_diagonal_comp_subset {X : Type*} [TopologicalSpac
   obtain ⟨D₁, hD₁, hD₁D⟩ := comp_mem_uniformity_sets (α := X) hD
   exact ⟨D₁, hD₁, fun _ _ _ hab hbc ↦ hD₁D ⟨_, hab, hbc⟩⟩
 
-private theorem preimage_prodMap_mem_nhdsSet_diagonal {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] {j : X → Y} (hj : Continuous j) {D : Set (Y × Y)}
-    (hD : D ∈ 𝓝ˢ (diagonal Y)) :
-    Prod.map j j ⁻¹' D ∈ 𝓝ˢ (diagonal X) := by
-  rw [mem_nhdsSet_iff_forall]
-  rintro ⟨x, _⟩ (rfl : x = _)
-  exact (hj.prodMap hj).continuousAt.preimage_mem_nhds (mem_nhdsSet_iff_forall.1 hD (j x, j x) rfl)
-
 private theorem secondCountableTopology_of_boundaryless_lindelof
     {EZ HZ Z : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [FiniteDimensional ℝ EZ]
-    [TopologicalSpace HZ] (IZ : ModelWithCorners ℝ EZ HZ)
-    [TopologicalSpace Z] [ChartedSpace HZ Z] [IsManifold IZ 1 Z] [BoundarylessManifold IZ Z]
-    [LindelofSpace Z] :
+    [TopologicalSpace HZ] (IZ : ModelWithCorners ℝ EZ HZ) [TopologicalSpace Z] [ChartedSpace HZ Z]
+    [IsManifold IZ 1 Z] [BoundarylessManifold IZ Z] [LindelofSpace Z] :
     SecondCountableTopology Z := by
   let := BoundarylessModel.interiorChartedSpace IZ (M := Z)
   have : LindelofSpace (BoundarylessModel IZ Z) := inferInstanceAs (LindelofSpace Z)
-  have : SecondCountableTopology (BoundarylessModel IZ Z) :=
-    ChartedSpace.secondCountable_of_lindelof EZ (BoundarylessModel IZ Z)
+  have := ChartedSpace.secondCountable_of_lindelof EZ (BoundarylessModel IZ Z)
   exact (BoundarylessModel.homeomorph IZ Z).secondCountableTopology
 
-private theorem tangentSpaceCast_self {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace ℝ EN]
-    [TopologicalSpace HN] (IN : ModelWithCorners ℝ EN HN) [TopologicalSpace N] [ChartedSpace HN N]
-    (a : N) (v : TangentSpace IN a) :
-    tangentSpaceCast IN a a v = v :=
-  rfl
+section
+variable {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
+  (IN : ModelWithCorners ℝ EN HN) [TopologicalSpace N] [ChartedSpace HN N]
 
-private theorem tangentSpaceCast_trans {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace ℝ EN]
-    [TopologicalSpace HN] (IN : ModelWithCorners ℝ EN HN) [TopologicalSpace N] [ChartedSpace HN N]
-    (a b c : N) (v : TangentSpace IN a) :
-    tangentSpaceCast IN b c (tangentSpaceCast IN a b v) = tangentSpaceCast IN a c v :=
-  rfl
+private theorem tangentSpaceCast_self (a : N) (v : TangentSpace IN a) :
+    tangentSpaceCast IN a a v = v := rfl
 
-private theorem tangentSpaceCast_mfderiv_of_eq {EX HX X EN HN N : Type*}
-    [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
-    {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace X] [ChartedSpace HX X]
-    [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
-    {IN : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N]
-    (φ : X → N) {a b : X} (hab : a = b) (v : TangentSpace IX b) :
+private theorem tangentSpaceCast_trans (a b c : N) (v : TangentSpace IN a) :
+    tangentSpaceCast IN b c (tangentSpaceCast IN a b v) = tangentSpaceCast IN a c v := rfl
+
+section
+variable {IN} {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
+  {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace X] [ChartedSpace HX X]
+
+private theorem tangentSpaceCast_mfderiv_of_eq (φ : X → N) {a b : X} (hab : a = b)
+    (v : TangentSpace IX b) :
     tangentSpaceCast IN (φ b) (φ a) (mfderiv IX IN φ b v) =
-      mfderiv IX IN φ a (tangentSpaceCast IX b a v) := by
-  subst hab
-  rfl
+      mfderiv IX IN φ a (tangentSpaceCast IX b a v) := by subst hab; rfl
 
-private theorem tangentSpaceCast_mfderiv_congr {EX HX X EN HN N : Type*}
-    [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
-    {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace X] [ChartedSpace HX X]
-    [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
-    {IN : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N]
-    {f₁ f₂ : X → N} (h : f₁ = f₂) (x : X) (v : TangentSpace IX x) :
+private theorem tangentSpaceCast_mfderiv_congr {f₁ f₂ : X → N} (h : f₁ = f₂) (x : X)
+    (v : TangentSpace IX x) :
     tangentSpaceCast IN (f₁ x) (f₂ x) (mfderiv IX IN f₁ x v) = mfderiv IX IN f₂ x v := by
-  subst h
-  rfl
+  subst h; rfl
+end
+end
 
 private theorem tangentSpaceCast_self_model {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {y₁ y₂ : E} (hy : y₁ = y₂) {v₁ : TangentSpace 𝓘(ℝ, E) y₁} {v₂ : TangentSpace 𝓘(ℝ, E) y₂}
     (hv : NormedSpace.fromTangentSpace y₁ v₁ = NormedSpace.fromTangentSpace y₂ v₂) :
     tangentSpaceCast 𝓘(ℝ, E) y₂ y₁ v₂ = v₁ := by
-  subst hy
-  exact (NormedSpace.fromTangentSpace y₁).injective hv.symm
+  subst hy; exact (NormedSpace.fromTangentSpace y₁).injective hv.symm
 
-private theorem isRegularPoint_perturbation_of_ne_zero
-    {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
-    {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace X] [ChartedSpace HX X]
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {B : Opens E}
-    {FW HW W : Type*} [NormedAddCommGroup FW] [NormedSpace ℝ FW] [TopologicalSpace HW]
-    {IW : ModelWithCorners ℝ FW HW} [TopologicalSpace W] [ChartedSpace HW W]
-    {O : Set E} (hO : IsOpen O) {r : E → W} (hrO : ContMDiffOn 𝓘(ℝ, E) IW ∞ r O)
-    (hrreg : ∀ y ∈ O, IsRegularPoint 𝓘(ℝ, E) IW r y)
+section
+variable {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
+  {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace X] [ChartedSpace HX X]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {B : Opens E}
+  {FW HW W : Type*} [NormedAddCommGroup FW] [NormedSpace ℝ FW] [TopologicalSpace HW]
+  {IW : ModelWithCorners ℝ FW HW} [TopologicalSpace W] [ChartedSpace HW W]
+
+private theorem isRegularPoint_perturbation_of_ne_zero {O : Set E} (hO : IsOpen O) {r : E → W}
+    (hrO : ContMDiffOn 𝓘(ℝ, E) IW ∞ r O) (hrreg : ∀ y ∈ O, IsRegularPoint 𝓘(ℝ, E) IW r y)
     {e₀ : X → E} {ψ₀ ρ₀ : X → ℝ} {x : X} {v : B}
     (hΦO : e₀ x + ψ₀ x • ((ψ₀ x * ρ₀ x) • (v : E)) ∈ O)
     (hΦd : MDifferentiableAt (IX.prod 𝓘(ℝ, E)) 𝓘(ℝ, E)
@@ -191,10 +152,8 @@ private theorem isRegularPoint_perturbation_of_ne_zero
   have hσ : MDifferentiableAt 𝓘(ℝ, E) (IX.prod 𝓘(ℝ, E)) σ v :=
     mdifferentiableAt_const.prodMk mdifferentiableAt_id
   have hΦσ_eq : Φ ∘ σ = (fun y : E ↦ c • y + e₀ x) ∘ (Subtype.val : B → E) := by
-    ext v'
-    simp [Φ, σ, c, smul_smul, add_comm]
-  have hΦσ_surj : Surjective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (Φ ∘ σ) v) := by
-    intro u
+    ext v'; simp [Φ, σ, c, smul_smul, add_comm]
+  have hΦσ_surj : Surjective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (Φ ∘ σ) v) := fun u ↦ by
     let uE : E := NormedSpace.fromTangentSpace (Φ (σ v)) u
     let wE : TangentSpace 𝓘(ℝ, E) (v : E) := (NormedSpace.fromTangentSpace (v : E)).symm (c⁻¹ • uE)
     let w : TangentSpace 𝓘(ℝ, E) v := (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, E)) v).symm wE
@@ -203,12 +162,10 @@ private theorem isRegularPoint_perturbation_of_ne_zero
     have haff : HasFDerivAt (fun y : E ↦ c • y + e₀ x)
         (c • ContinuousLinearMap.id ℝ E) (v : E) := by
       simpa using ((hasFDerivAt_id (v : E)).const_smul c).add_const (e₀ x)
-    rw [hΦσ_eq,
-      mvfderiv_comp_apply v haff.differentiableAt.mdifferentiableAt
-        (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) w,
-      Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.apply_symm_apply, mvfderiv_eq_fderiv, haff.fderiv,
-      ContinuousLinearMap.comp_apply]
+    rw [hΦσ_eq, mvfderiv_comp_apply v haff.differentiableAt.mdifferentiableAt
+      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) w, Manifold.mfderiv_subtype_val,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply, mvfderiv_eq_fderiv,
+      haff.fderiv, ContinuousLinearMap.comp_apply]
     simp [wE, inv_smul_smul₀ hc]
   have hrd : MDifferentiableAt 𝓘(ℝ, E) IW r (Φ (x, v)) :=
     (hrO.contMDiffAt (hO.mem_nhds hΦO)).mdifferentiableAt (by simp)
@@ -220,13 +177,8 @@ private theorem isRegularPoint_perturbation_of_ne_zero
   exact isRegularPoint_iff.2 hcomp_surj.of_comp
 
 private theorem isTransverseAt_perturbation_of_eq_zero
-    {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
-    {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace X] [ChartedSpace HX X]
     {EZ HZ Z : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [TopologicalSpace HZ]
     {IZ : ModelWithCorners ℝ EZ HZ} [TopologicalSpace Z] [ChartedSpace HZ Z]
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {B : Opens E}
-    {FW HW W : Type*} [NormedAddCommGroup FW] [NormedSpace ℝ FW] [TopologicalSpace HW]
-    {IW : ModelWithCorners ℝ FW HW} [TopologicalSpace W] [ChartedSpace HW W]
     {O : Set E} (hO : IsOpen O) {r : E → W} (hrO : ContMDiffOn 𝓘(ℝ, E) IW ∞ r O)
     {e₀ : X → E} {ψ₀ ρ₀ : X → ℝ} {f₀ : X → W} {g' : Z → W} {x : X} {v : B} {z' : Z}
     (he₀ : MDifferentiableAt IX 𝓘(ℝ, E) e₀ x) (hψd : MDifferentiableAt IX 𝓘(ℝ) ψ₀ x)
@@ -253,7 +205,6 @@ private theorem isTransverseAt_perturbation_of_eq_zero
       add_zero]
   have hrd : MDifferentiableAt 𝓘(ℝ, E) IW r (Φ q₀) :=
     (hrO.contMDiffAt (hO.mem_nhds hΦO)).mdifferentiableAt (by simp)
-  have hreq : r ∘ Φ₀ = f₀ ∘ Prod.fst := funext fun q ↦ hf₀ q.1
   have hcast_u (u : TangentSpace IX x) :
       tangentSpaceCast IW ((r ∘ Φ) q₀) (f₀ x)
         (mfderiv (IX.prod 𝓘(ℝ, E)) IW (r ∘ Φ) q₀ (u, (0 : TangentSpace 𝓘(ℝ, E) v))) =
@@ -270,7 +221,8 @@ private theorem isTransverseAt_perturbation_of_eq_zero
         tangentSpaceCast_mfderiv_of_eq r hΦ_eq, hcast_E,
         ← mfderiv_comp_apply q₀ (hΦ_eq.symm ▸ hrd) hΦ₀d w₀]
     have h12 := (congrArg (tangentSpaceCast IW (r (Φ₀ q₀)) (f₀ x)) h1).trans
-      (tangentSpaceCast_mfderiv_congr (IN := IW) hreq q₀ w₀)
+      (tangentSpaceCast_mfderiv_congr (f₁ := r ∘ Φ₀) (f₂ := f₀ ∘ Prod.fst)
+        (funext fun q ↦ hf₀ q.1) q₀ w₀)
     rw [tangentSpaceCast_trans] at h12
     exact h12.trans (by rw [mfderiv_comp_fst]; rfl)
   change IsTransverseAt (IX.prod 𝓘(ℝ, E)) IZ IW (r ∘ Φ) g' q₀ z'
@@ -279,11 +231,12 @@ private theorem isTransverseAt_perturbation_of_eq_zero
   have hf₀_eq : (r ∘ Φ) q₀ = f₀ x := (congrArg r hΦ_eq.symm).trans (hf₀ x)
   obtain ⟨u, wz, huw⟩ := isTransverseAt_iff_forall.1 htrans (hf₀_eq.symm.trans hxy)
     (tangentSpaceCast IW ((r ∘ Φ) q₀) (f₀ x) vt)
-  refine ⟨(u, (0 : TangentSpace 𝓘(ℝ, E) v)), wz, ?_⟩
   have hback := congrArg (tangentSpaceCast IW (f₀ x) ((r ∘ Φ) q₀)) huw
   rw [← hcast_u u, map_add, tangentSpaceCast_trans, tangentSpaceCast_self,
     tangentSpaceCast_trans, tangentSpaceCast_trans, tangentSpaceCast_self] at hback
-  exact hback
+  exact ⟨(u, (0 : TangentSpace 𝓘(ℝ, E) v)), wz, hback⟩
+
+end
 
 end Helpers
 
@@ -305,25 +258,22 @@ private abbrev perturbationMap {M N V : Type*} [SeminormedAddCommGroup V] [Norme
     (r : V → N) (e : N → V) (f₁ : M → N) (ψ ρ : M → ℝ) (q : M × unitBallOpens V) : N :=
   r (perturbationCoord e f₁ ψ ρ q)
 
-private theorem contMDiff_perturbationCoord
-    {EM HM M : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [TopologicalSpace HM]
-    {IM : ModelWithCorners ℝ EM HM} [TopologicalSpace M] [ChartedSpace HM M]
-    {FN GN N : Type*} [NormedAddCommGroup FN] [NormedSpace ℝ FN] [TopologicalSpace GN]
-    {IN : ModelWithCorners ℝ FN GN} [TopologicalSpace N] [ChartedSpace GN N]
-    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    {e : N → V} (he : ContMDiff IN 𝓘(ℝ, V) ∞ e) {f₁ : M → N} (hf₁ : ContMDiff IM IN ∞ f₁)
-    {ψ ρ : M → ℝ} (hψ : ContMDiff IM 𝓘(ℝ) ∞ ψ) (hρ : ContMDiff IM 𝓘(ℝ) ∞ ρ) :
+section
+variable {EM HM M : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [TopologicalSpace HM]
+  {IM : ModelWithCorners ℝ EM HM} [TopologicalSpace M] [ChartedSpace HM M]
+  {FN GN N : Type*} [NormedAddCommGroup FN] [NormedSpace ℝ FN] [TopologicalSpace GN]
+  {IN : ModelWithCorners ℝ FN GN} [TopologicalSpace N] [ChartedSpace GN N]
+  {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+private theorem contMDiff_perturbationCoord {e : N → V} (he : ContMDiff IN 𝓘(ℝ, V) ∞ e)
+    {f₁ : M → N} (hf₁ : ContMDiff IM IN ∞ f₁) {ψ ρ : M → ℝ}
+    (hψ : ContMDiff IM 𝓘(ℝ) ∞ ψ) (hρ : ContMDiff IM 𝓘(ℝ) ∞ ρ) :
     ContMDiff (IM.prod 𝓘(ℝ, V)) 𝓘(ℝ, V) ∞ (perturbationCoord e f₁ ψ ρ) :=
   ((he.comp hf₁).comp contMDiff_fst).add
     ((hψ.comp contMDiff_fst).smul
       (((hψ.mul hρ).comp contMDiff_fst).smul (contMDiff_subtype_val.comp contMDiff_snd)))
 
 private theorem isTransverseAt_perturbationMap
-    {EM HM M : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [TopologicalSpace HM]
-    {IM : ModelWithCorners ℝ EM HM} [TopologicalSpace M] [ChartedSpace HM M]
-    {FN GN N : Type*} [NormedAddCommGroup FN] [NormedSpace ℝ FN] [TopologicalSpace GN]
-    {IN : ModelWithCorners ℝ FN GN} [TopologicalSpace N] [ChartedSpace GN N]
-    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
     {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace X] [ChartedSpace HX X]
     {EZ HZ Z : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [TopologicalSpace HZ]
@@ -340,19 +290,17 @@ private theorem isTransverseAt_perturbationMap
     IsTransverseAt (IX.prod 𝓘(ℝ, V)) IZ IN
       (fun q : X × unitBallOpens V ↦ perturbationMap r e f₁ ψ ρ (h q.1, q.2)) g (x', v) z := by
   by_cases hψ0 : ψ (h x') = 0
-  · have hx'V₁ : h x' ∈ V₁ := by_contra fun hx' ↦ zero_ne_one (hψ0.symm.trans (hψV₁ (h x') hx'))
-    exact isTransverseAt_perturbation_of_eq_zero hO hrO
+  · exact isTransverseAt_perturbation_of_eq_zero hO hrO
       (((he.comp hf₁).comp hh).mdifferentiableAt (by simp))
-      ((hψ.comp hh).mdifferentiableAt (by simp))
-      ((hρ.comp hh).mdifferentiableAt (by simp))
-      (fun y ↦ hre (f₁ (h y))) (hO_mem (h x', v)) hψ0 (htrans hx'V₁)
-  · have hΦhd : MDifferentiableAt (IX.prod 𝓘(ℝ, V)) 𝓘(ℝ, V)
-        (fun q : X × unitBallOpens V ↦ perturbationCoord e f₁ ψ ρ (h q.1, q.2)) (x', v) :=
-      ((contMDiff_perturbationCoord he hf₁ hψ hρ).comp
-        ((hh.comp contMDiff_fst).prodMk contMDiff_snd)).mdifferentiableAt (by simp)
-    exact (isRegularPoint_perturbation_of_ne_zero hO hrO hrreg
-      (e₀ := e ∘ f₁ ∘ h) (ψ₀ := ψ ∘ h) (ρ₀ := ρ ∘ h) (x := x')
-      (hO_mem (h x', v)) hΦhd hψ0 (hρpos (h x')).ne').isTransverseAt_left g z
+      ((hψ.comp hh).mdifferentiableAt (by simp)) ((hρ.comp hh).mdifferentiableAt (by simp))
+      (fun y ↦ hre (f₁ (h y))) (hO_mem (h x', v)) hψ0
+      (htrans (by_contra fun hx' ↦ zero_ne_one (hψ0.symm.trans (hψV₁ (h x') hx'))))
+  · exact (isRegularPoint_perturbation_of_ne_zero hO hrO hrreg
+      (e₀ := e ∘ f₁ ∘ h) (ψ₀ := ψ ∘ h) (ρ₀ := ρ ∘ h) (x := x') (hO_mem (h x', v))
+      (((contMDiff_perturbationCoord he hf₁ hψ hρ).comp
+        ((hh.comp contMDiff_fst).prodMk contMDiff_snd)).mdifferentiableAt (by simp))
+      hψ0 (hρpos (h x')).ne').isTransverseAt_left g z
+end
 
 private theorem perturbation_smul_mem_closedBall {V : Type*} [SeminormedAddCommGroup V]
     [NormedSpace ℝ V] {a r : ℝ} (ha : a ∈ Icc (0 : ℝ) 1) (hr : 0 < r) (v : unitBallOpens V) :
@@ -419,17 +367,17 @@ private theorem exists_perturbation_data [Nonempty M]
     change (t : ℝ) • (v : V) ∈ Metric.ball (0 : V) 1
     rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg t.2.1]
     exact (mul_le_of_le_one_left (norm_nonneg _) t.2.2).trans_lt (mem_ball_zero_iff.1 v.2)
-  let K : (⟨f₁, hf₁.continuous⟩ : C(M, N)).HomotopyRel
-      ⟨fun x ↦ perturbationMap r e f₁ ψ ρ (x, v),
-        hH.continuous.comp (continuous_id.prodMk continuous_const)⟩ C :=
-    { toFun p := perturbationMap r e f₁ ψ ρ (p.2, ⟨(p.1 : ℝ) • (v : V), htv p.1⟩)
-      continuous_toFun := hH.continuous.comp
-        (continuous_snd.prodMk ((continuous_subtype_val.comp continuous_fst).smul
-          continuous_const |>.subtype_mk _))
-      map_zero_left x := by simp [perturbationMap, perturbationCoord, hre (f₁ x)]
-      map_one_left x := by simp [perturbationMap, perturbationCoord]
-      prop' t x hx := by simp [perturbationMap, perturbationCoord, hψC hx, hre (f₁ x)] }
-  exact ⟨K, fun t x ↦ interior_subset (hρΩ x _ (hΦ_ball (x, ⟨(t : ℝ) • (v : V), htv t⟩))).2⟩
+  exact ⟨{ toFun p := perturbationMap r e f₁ ψ ρ (p.2, ⟨(p.1 : ℝ) • (v : V), htv p.1⟩)
+           continuous_toFun := hH.continuous.comp (continuous_snd.prodMk
+             ((continuous_subtype_val.comp continuous_fst).smul continuous_const |>.subtype_mk _))
+           map_zero_left x := by simp [perturbationMap, perturbationCoord, hre (f₁ x)]
+           map_one_left x := by simp [perturbationMap, perturbationCoord]
+           prop' t x hx := by simp [perturbationMap, perturbationCoord, hψC hx, hre (f₁ x)] },
+    fun t x ↦ interior_subset (hρΩ x _ (hΦ_ball (x, ⟨(t : ℝ) • (v : V), htv t⟩))).2⟩
+
+variable {EZ HZ Z : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [FiniteDimensional ℝ EZ]
+  [TopologicalSpace HZ] {IZ : ModelWithCorners ℝ EZ HZ} [TopologicalSpace Z] [ChartedSpace HZ Z]
+  [IsManifold IZ ∞ Z] [BoundarylessManifold IZ Z] [LindelofSpace Z]
 
 /-- **Smooth relative transversality into an embedded target.** Let `e : N → V` be a smooth
 embedding into a finite-dimensional real normed space. A smooth map `f : M → N` from a σ-compact
@@ -437,10 +385,6 @@ Hausdorff boundaryless manifold `M` that is transverse to a smooth map `g : Z �
 neighbourhood `V₁` of a closed set `C ⊆ M` can be perturbed relative to `C`, within any prescribed
 diagonal neighbourhood `D₁` of `N`, to a smooth map globally transverse to `g`. -/
 theorem exists_contMDiff_isTransverse_homotopyRel_of_contMDiff [BoundarylessManifold IM M]
-    {EZ HZ Z : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [FiniteDimensional ℝ EZ]
-    [TopologicalSpace HZ] {IZ : ModelWithCorners ℝ EZ HZ}
-    [TopologicalSpace Z] [ChartedSpace HZ Z] [IsManifold IZ ∞ Z] [BoundarylessManifold IZ Z]
-    [LindelofSpace Z]
     (e : SmoothEmbedding IN 𝓘(ℝ, V) ∞ N V) {f : M → N} (hf : ContMDiff IM IN ∞ f)
     {g : Z → N} (hg : ContMDiff IZ IN ∞ g) {C V₁ : Set M} (hC : IsClosed C) (hV₁ : IsOpen V₁)
     (hCV₁ : C ⊆ V₁) (hftrans : IsTransverseOn IM IZ IN f g V₁)
@@ -471,25 +415,18 @@ smooth map globally transverse to `g` both on `M` and along `∂M`. -/
 theorem exists_contMDiff_isTransverse_homotopyRel_halfSpace_of_contMDiff {m : ℕ}
     {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (m + 1)) M]
     [IsManifold (𝓡∂ (m + 1)) ∞ M] [SigmaCompactSpace M] [T2Space M]
-    {EZ HZ Z : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [FiniteDimensional ℝ EZ]
-    [TopologicalSpace HZ] {IZ : ModelWithCorners ℝ EZ HZ}
-    [TopologicalSpace Z] [ChartedSpace HZ Z] [IsManifold IZ ∞ Z] [BoundarylessManifold IZ Z]
-    [LindelofSpace Z]
     (e : SmoothEmbedding IN 𝓘(ℝ, V) ∞ N V) {f : M → N} (hf : ContMDiff (𝓡∂ (m + 1)) IN ∞ f)
     {g : Z → N} (hg : ContMDiff IZ IN ∞ g) {C V₁ : Set M} (hC : IsClosed C) (hV₁ : IsOpen V₁)
     (hCV₁ : C ⊆ V₁) (hfint : IsTransverseOn (𝓡∂ (m + 1)) IZ IN f g (V₁ ∩ (𝓡∂ (m + 1)).interior M))
     (hfbdy : IsTransverseOn 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) IZ IN
       (f ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g (Subtype.val ⁻¹' V₁))
     {D₁ : Set (N × N)} (hD₁ : D₁ ∈ 𝓝ˢ (diagonal N)) :
-    ∃ f' : C(M, N), ContMDiff (𝓡∂ (m + 1)) IN ∞ f' ∧
-      IsTransverse (𝓡∂ (m + 1)) IZ IN f' g ∧
+    ∃ f' : C(M, N), ContMDiff (𝓡∂ (m + 1)) IN ∞ f' ∧ IsTransverse (𝓡∂ (m + 1)) IZ IN f' g ∧
       IsTransverse 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) IZ IN
         (f' ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g ∧
       ∃ K : (⟨f, hf.continuous⟩ : C(M, N)).HomotopyRel f' C, ∀ t x, (K (t, x), f x) ∈ D₁ := by
-  have : SecondCountableTopology (EuclideanHalfSpace (m + 1)) :=
-    (𝓡∂ (m + 1)).secondCountableTopology
-  have : SecondCountableTopology M :=
-    ChartedSpace.secondCountable_of_lindelof (EuclideanHalfSpace (m + 1)) M
+  have := (𝓡∂ (m + 1)).secondCountableTopology
+  have := ChartedSpace.secondCountable_of_lindelof (EuclideanHalfSpace (m + 1)) M
   have : IsManifold (𝓡∂ (m + 1)) 1 M := .of_le (WithTop.coe_le_coe.2 le_top)
   have := isManifold_boundary (n := m) (k := ∞) M (by simp)
   by_cases hM : Nonempty M
@@ -530,9 +467,9 @@ open TauCeti
 section Reduction
 
 private theorem isTransverseAt_openTarget_iff
-    {FP GP P : Type*} [NormedAddCommGroup FP] [NormedSpace ℝ FP]
-    [TopologicalSpace GP] {JP : ModelWithCorners ℝ FP GP}
-    [TopologicalSpace P] [ChartedSpace GP P] [IsManifold JP ∞ P] [BoundarylessManifold JP P]
+    {FP GP P : Type*} [NormedAddCommGroup FP] [NormedSpace ℝ FP] [TopologicalSpace GP]
+    {JP : ModelWithCorners ℝ FP GP} [TopologicalSpace P] [ChartedSpace GP P] [IsManifold JP ∞ P]
+    [BoundarylessManifold JP P]
     {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
     {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace X] [ChartedSpace HX X]
     {EZ HZ Z : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [TopologicalSpace HZ]
@@ -606,13 +543,12 @@ private theorem exists_opens_smoothing_reduction (f : C(M, P)) (hf : IsCompact (
   let L := closure (W : Set P')
   have : CompactSpace L := isCompact_iff_compactSpace.1 hWc
   let jL : C(L, P) := ⟨fun y ↦ φ.symm y.1, φ.symm.continuous.comp continuous_subtype_val⟩
-  obtain ⟨D₁L, hD₁L, hD₁LD⟩ :=
-    exists_nhdsSet_diagonal_comp_subset (preimage_prodMap_mem_nhdsSet_diagonal jL.continuous hD)
+  obtain ⟨D₁L, hD₁L, hD₁LD⟩ := exists_nhdsSet_diagonal_comp_subset
+    ((jL.continuous.prodMap jL.continuous).tendsto_nhdsSet mapsTo_prodMap_diagonal hD)
   let ιWL : C(W, L) := ⟨fun w ↦ ⟨w.1, subset_closure w.2⟩, continuous_subtype_val.subtype_mk _⟩
   have hD₁W : Prod.map ιWL ιWL ⁻¹' D₁L ∈ 𝓝ˢ (diagonal W) :=
-    preimage_prodMap_mem_nhdsSet_diagonal ιWL.continuous hD₁L
-  have : LocallyCompactSpace HM := IM.locallyCompactSpace
-  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace HM M
+    (ιWL.continuous.prodMap ιWL.continuous).tendsto_nhdsSet mapsTo_prodMap_diagonal hD₁L
+  have := IM.locallyCompactSpace; have := ChartedSpace.locallyCompactSpace HM M
   obtain ⟨V₁, hV₁, hCV₁, hV₁U⟩ :=
     normal_exists_closure_subset hC isOpen_interior (subset_interior_iff_mem_nhdsSet.2 hU)
   let f₀ : C(M, W) := ⟨fun x ↦ ⟨φ (f x), hW (subset_closure (mem_range_self x))⟩,
@@ -642,27 +578,26 @@ private theorem exists_opens_smoothing_reduction (f : C(M, P)) (hf : IsCompact (
 
 end Reduction
 
+section MainTheorems
+
+variable {EZ HZ Z : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [FiniteDimensional ℝ EZ]
+  [TopologicalSpace HZ] {IZ : ModelWithCorners ℝ EZ HZ} [TopologicalSpace Z] [ChartedSpace HZ Z]
+  [IsManifold IZ ∞ Z] [BoundarylessManifold IZ Z] [LindelofSpace Z]
+  {FP GP P : Type*} [NormedAddCommGroup FP] [NormedSpace ℝ FP] [FiniteDimensional ℝ FP]
+  [TopologicalSpace GP] {JP : ModelWithCorners ℝ FP GP} [TopologicalSpace P] [ChartedSpace GP P]
+  [IsManifold JP ∞ P] [BoundarylessManifold JP P] [T2Space P]
+
 section Boundaryless
 
 variable {EM HM M : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [FiniteDimensional ℝ EM]
-  [TopologicalSpace HM] {IM : ModelWithCorners ℝ EM HM}
-  [TopologicalSpace M] [ChartedSpace HM M] [IsManifold IM ∞ M] [BoundarylessManifold IM M]
-  [SigmaCompactSpace M] [T2Space M]
-  {EZ HZ Z : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [FiniteDimensional ℝ EZ]
-  [TopologicalSpace HZ] {IZ : ModelWithCorners ℝ EZ HZ}
-  [TopologicalSpace Z] [ChartedSpace HZ Z] [IsManifold IZ ∞ Z] [BoundarylessManifold IZ Z]
-  [LindelofSpace Z]
-  {FP GP P : Type*} [NormedAddCommGroup FP] [NormedSpace ℝ FP] [FiniteDimensional ℝ FP]
-  [TopologicalSpace GP] {JP : ModelWithCorners ℝ FP GP}
-  [TopologicalSpace P] [ChartedSpace GP P] [IsManifold JP ∞ P] [BoundarylessManifold JP P]
-  [T2Space P]
+  [TopologicalSpace HM] {IM : ModelWithCorners ℝ EM HM} [TopologicalSpace M] [ChartedSpace HM M]
+  [IsManifold IM ∞ M] [BoundarylessManifold IM M] [SigmaCompactSpace M] [T2Space M]
 
 /-- **Relative transversality with relatively compact image and diagonal control.** A continuous map
 `f : C(M, P)` from a σ-compact Hausdorff boundaryless manifold `M` into a Hausdorff boundaryless
-manifold `P`, whose image has compact closure and which is smooth and transverse to a smooth map
-`g : Z → P` on a neighbourhood `U` of a closed set `C ⊆ M`, is homotopic relative to `C` to a smooth
-map `f'` globally transverse to `g`, by a homotopy `K` satisfying `(K (t, x), f x) ∈ D` for any
-prescribed neighbourhood `D` of the diagonal of `P`. -/
+manifold `P`, whose image has compact closure and which is smooth and transverse to `g : Z → P` on a
+neighbourhood `U` of a closed set `C ⊆ M`, is homotopic relative to `C` within any
+`D ∈ 𝓝ˢ (diagonal P)` to a smooth map `f'` globally transverse to `g`. -/
 theorem exists_contMDiff_isTransverse_homotopyRel_of_isCompact_closure_range
     (f : C(M, P)) (hf : IsCompact (closure (range f))) {g : Z → P} (hg : ContMDiff IZ JP ∞ g)
     {C U : Set M} (hC : IsClosed C) (hU : U ∈ 𝓝ˢ C) (hfU : ContMDiffOn IM JP ∞ f U)
@@ -695,9 +630,7 @@ theorem exists_contMDiff_isTransverse_homotopyRel_of_isCompact_closure_range
   exact (isTransverseAt_openTarget_iff φ W hg (hf₂.mdifferentiableAt (by simp))).2
     fun z' ↦ hf₂trans.isTransverseAt x z'
 
-/-- **Relative transversality with relatively compact image.** Specializing
-`exists_contMDiff_isTransverse_homotopyRel_of_isCompact_closure_range` to `D = univ` yields a
-smooth map transverse to `g` and homotopic to `f` relative to `C`. -/
+/-- **Relative transversality with relatively compact image.** -/
 theorem exists_contMDiff_isTransverse_homotopicRel_of_isCompact_closure_range
     (f : C(M, P)) (hf : IsCompact (closure (range f))) {g : Z → P} (hg : ContMDiff IZ JP ∞ g)
     {C U : Set M} (hC : IsClosed C) (hU : U ∈ 𝓝ˢ C) (hfU : ContMDiffOn IM JP ∞ f U)
@@ -708,9 +641,7 @@ theorem exists_contMDiff_isTransverse_homotopicRel_of_isCompact_closure_range
       univ_mem
   exact ⟨f', hf', htr, ⟨K⟩⟩
 
-/-- **Global transversality up to homotopy with relatively compact image.** Every continuous map
-with relatively compact image from a σ-compact Hausdorff boundaryless manifold into a Hausdorff
-boundaryless manifold is homotopic to a smooth map transverse to `g`. -/
+/-- **Global transversality up to homotopy with relatively compact image.** -/
 theorem exists_contMDiff_isTransverse_homotopic_of_isCompact_closure_range
     (f : C(M, P)) (hf : IsCompact (closure (range f))) {g : Z → P} (hg : ContMDiff IZ JP ∞ g) :
     ∃ f' : C(M, P), ContMDiff IM JP ∞ f' ∧ IsTransverse IM IZ JP f' g ∧ f.Homotopic f' := by
@@ -719,10 +650,7 @@ theorem exists_contMDiff_isTransverse_homotopic_of_isCompact_closure_range
       isClosed_empty (U := ∅) (by simp) (contMDiffOn_empty (I' := JP)) isTransverseOn_empty
   exact ⟨f', hf', htr, hhom.homotopic⟩
 
-/-- **Relative transversality with diagonal control into a compact manifold.** A continuous map `f`
-from a σ-compact Hausdorff boundaryless manifold into a compact Hausdorff boundaryless manifold `P`,
-smooth and transverse to `g : Z → P` on a neighbourhood `U` of a closed set `C`, is homotopic
-relative to `C` within `D ∈ 𝓝ˢ (diagonal P)` to a smooth map globally transverse to `g`. -/
+/-- **Relative transversality with diagonal control into a compact manifold.** -/
 theorem exists_contMDiff_isTransverse_homotopyRel [CompactSpace P]
     (f : C(M, P)) {g : Z → P} (hg : ContMDiff IZ JP ∞ g) {C U : Set M} (hC : IsClosed C)
     (hU : U ∈ 𝓝ˢ C) (hfU : ContMDiffOn IM JP ∞ f U) (hftrans : IsTransverseOn IM IZ JP f g U)
@@ -732,10 +660,7 @@ theorem exists_contMDiff_isTransverse_homotopyRel [CompactSpace P]
   f.exists_contMDiff_isTransverse_homotopyRel_of_isCompact_closure_range isClosed_closure.isCompact
     hg hC hU hfU hftrans hD
 
-/-- **Relative transversality into a compact manifold.** A continuous map `f` from a σ-compact
-Hausdorff boundaryless manifold into a compact Hausdorff boundaryless manifold `P`, smooth and
-transverse to `g : Z → P` on a neighbourhood `U` of a closed set `C`, is homotopic relative to `C`
-to a smooth map globally transverse to `g`. -/
+/-- **Relative transversality into a compact manifold.** -/
 theorem exists_contMDiff_isTransverse_homotopicRel [CompactSpace P]
     (f : C(M, P)) {g : Z → P} (hg : ContMDiff IZ JP ∞ g) {C U : Set M} (hC : IsClosed C)
     (hU : U ∈ 𝓝ˢ C) (hfU : ContMDiffOn IM JP ∞ f U) (hftrans : IsTransverseOn IM IZ JP f g U) :
@@ -743,16 +668,13 @@ theorem exists_contMDiff_isTransverse_homotopicRel [CompactSpace P]
   f.exists_contMDiff_isTransverse_homotopicRel_of_isCompact_closure_range isClosed_closure.isCompact
     hg hC hU hfU hftrans
 
-/-- **Global transversality up to homotopy into a compact manifold.** Every continuous map from a
-σ-compact Hausdorff boundaryless manifold into a compact Hausdorff boundaryless manifold is
-homotopic to a smooth map transverse to `g`. -/
+/-- **Global transversality up to homotopy into a compact manifold.** -/
 theorem exists_contMDiff_isTransverse_homotopic [CompactSpace P]
     (f : C(M, P)) {g : Z → P} (hg : ContMDiff IZ JP ∞ g) :
     ∃ f' : C(M, P), ContMDiff IM JP ∞ f' ∧ IsTransverse IM IZ JP f' g ∧ f.Homotopic f' :=
   f.exists_contMDiff_isTransverse_homotopic_of_isCompact_closure_range isClosed_closure.isCompact hg
 
-/-- **Relative transversality with diagonal control from a compact manifold.** When the source `M`
-is compact, no compactness hypothesis on the Hausdorff boundaryless target `P` is needed. -/
+/-- **Relative transversality with diagonal control from a compact manifold.** -/
 theorem exists_contMDiff_isTransverse_homotopyRel_of_compactSpace [CompactSpace M]
     (f : C(M, P)) {g : Z → P} (hg : ContMDiff IZ JP ∞ g) {C U : Set M} (hC : IsClosed C)
     (hU : U ∈ 𝓝ˢ C) (hfU : ContMDiffOn IM JP ∞ f U) (hftrans : IsTransverseOn IM IZ JP f g U)
@@ -769,22 +691,12 @@ section HalfSpace
 
 variable {m : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (m + 1)) M]
   [IsManifold (𝓡∂ (m + 1)) ∞ M] [SigmaCompactSpace M] [T2Space M]
-  {EZ HZ Z : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [FiniteDimensional ℝ EZ]
-  [TopologicalSpace HZ] {IZ : ModelWithCorners ℝ EZ HZ}
-  [TopologicalSpace Z] [ChartedSpace HZ Z] [IsManifold IZ ∞ Z] [BoundarylessManifold IZ Z]
-  [LindelofSpace Z]
-  {FP GP P : Type*} [NormedAddCommGroup FP] [NormedSpace ℝ FP] [FiniteDimensional ℝ FP]
-  [TopologicalSpace GP] {JP : ModelWithCorners ℝ FP GP}
-  [TopologicalSpace P] [ChartedSpace GP P] [IsManifold JP ∞ P] [BoundarylessManifold JP P]
-  [T2Space P]
 
 /-- **Facewise relative transversality on a half-space manifold with relatively compact image and
-diagonal control.** Let `M` be a σ-compact Hausdorff smooth manifold with boundary modelled on
-`𝓡∂ (m + 1)`. A continuous map `f : C(M, P)` with relatively compact image that is smooth on a
-neighbourhood `U` of a closed set `C ⊆ M`, transverse to `g : Z → P` on `U ∩ interior M`, and whose
-boundary restriction `f ∘ Subtype.val` is transverse to `g` on `∂M ∩ U`, is homotopic relative to
-`C` within any `D ∈ 𝓝ˢ (diagonal P)` to a smooth map `f'` globally transverse to `g` both on `M`
-and along `∂M`. -/
+diagonal control.** A continuous map `f : C(M, P)` from a σ-compact Hausdorff `𝓡∂ (m + 1)` manifold
+with relatively compact image that is smooth on `U ∈ 𝓝ˢ C`, transverse to `g : Z → P` on
+`U ∩ interior M`, and boundary-transverse on `∂M ∩ U`, is homotopic relative to `C` within any
+`D ∈ 𝓝ˢ (diagonal P)` to a smooth map `f'` globally transverse to `g` on both `M` and `∂M`. -/
 theorem exists_contMDiff_isTransverse_homotopyRel_halfSpace_of_isCompact_closure_range
     (f : C(M, P)) (hf : IsCompact (closure (range f))) {g : Z → P} (hg : ContMDiff IZ JP ∞ g)
     {C U : Set M} (hC : IsClosed C) (hU : U ∈ 𝓝ˢ C) (hfU : ContMDiffOn (𝓡∂ (m + 1)) JP ∞ f U)
@@ -792,15 +704,12 @@ theorem exists_contMDiff_isTransverse_homotopyRel_halfSpace_of_isCompact_closure
     (hfbdy : IsTransverseOn 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) IZ JP
       (f ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g (Subtype.val ⁻¹' U))
     {D : Set (P × P)} (hD : D ∈ 𝓝ˢ (diagonal P)) :
-    ∃ f' : C(M, P), ContMDiff (𝓡∂ (m + 1)) JP ∞ f' ∧
-      IsTransverse (𝓡∂ (m + 1)) IZ JP f' g ∧
+    ∃ f' : C(M, P), ContMDiff (𝓡∂ (m + 1)) JP ∞ f' ∧ IsTransverse (𝓡∂ (m + 1)) IZ JP f' g ∧
       IsTransverse 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) IZ JP
         (f' ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g ∧
       ∃ K : f.HomotopyRel f' C, ∀ t x, (K (t, x), f x) ∈ D := by
-  have : SecondCountableTopology (EuclideanHalfSpace (m + 1)) :=
-    (𝓡∂ (m + 1)).secondCountableTopology
-  have : SecondCountableTopology M :=
-    ChartedSpace.secondCountable_of_lindelof (EuclideanHalfSpace (m + 1)) M
+  have := (𝓡∂ (m + 1)).secondCountableTopology
+  have := ChartedSpace.secondCountable_of_lindelof (EuclideanHalfSpace (m + 1)) M
   have : IsManifold (𝓡∂ (m + 1)) 1 M := .of_le (WithTop.coe_le_coe.2 le_top)
   have := isManifold_boundary (n := m) (k := ∞) M (by simp)
   have hbdy := (isSmoothEmbedding_subtypeVal_boundary (n := m) (k := ∞) M (by simp)).contMDiff
@@ -818,8 +727,7 @@ theorem exists_contMDiff_isTransverse_homotopyRel_halfSpace_of_isCompact_closure
     (TauCeti.ContMDiff.subtypeVal_comp_iff W g').1
       (φ.contMDiff.comp (hg.comp contMDiff_subtype_val))
   have hf₁_int : IsTransverseOn (𝓡∂ (m + 1)) IZ 𝓘(ℝ, FP) f₁ g' (V₁ ∩ (𝓡∂ (m + 1)).interior M) := by
-    have hopen : IsOpen (V₁ ∩ (𝓡∂ (m + 1)).interior M) :=
-      hV₁.inter ((𝓡∂ (m + 1)).isOpen_interior one_ne_zero)
+    have hopen := hV₁.inter ((𝓡∂ (m + 1)).isOpen_interior one_ne_zero)
     have hP := (hfint.mono (inter_subset_inter_left _ (hV₁U.trans interior_subset))).congr_of_isOpen
       hopen (hEqV₁.mono inter_subset_left)
     exact isTransverseOn_def.2 fun x hx z' ↦ (isTransverseAt_openTarget_iff φ W hg
@@ -850,11 +758,9 @@ theorem exists_contMDiff_isTransverse_homotopicRel_halfSpace_of_isCompact_closur
     (hfint : IsTransverseOn (𝓡∂ (m + 1)) IZ JP f g (U ∩ (𝓡∂ (m + 1)).interior M))
     (hfbdy : IsTransverseOn 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) IZ JP
       (f ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g (Subtype.val ⁻¹' U)) :
-    ∃ f' : C(M, P), ContMDiff (𝓡∂ (m + 1)) JP ∞ f' ∧
-      IsTransverse (𝓡∂ (m + 1)) IZ JP f' g ∧
+    ∃ f' : C(M, P), ContMDiff (𝓡∂ (m + 1)) JP ∞ f' ∧ IsTransverse (𝓡∂ (m + 1)) IZ JP f' g ∧
       IsTransverse 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) IZ JP
-        (f' ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g ∧
-      f.HomotopicRel f' C := by
+        (f' ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g ∧ f.HomotopicRel f' C := by
   obtain ⟨f', hf', hint, hbdy, K, -⟩ :=
     f.exists_contMDiff_isTransverse_homotopyRel_halfSpace_of_isCompact_closure_range hf hg hC hU
       hfU hfint hfbdy univ_mem
@@ -864,15 +770,12 @@ theorem exists_contMDiff_isTransverse_homotopicRel_halfSpace_of_isCompact_closur
 image.** -/
 theorem exists_contMDiff_isTransverse_homotopic_halfSpace_of_isCompact_closure_range
     (f : C(M, P)) (hf : IsCompact (closure (range f))) {g : Z → P} (hg : ContMDiff IZ JP ∞ g) :
-    ∃ f' : C(M, P), ContMDiff (𝓡∂ (m + 1)) JP ∞ f' ∧
-      IsTransverse (𝓡∂ (m + 1)) IZ JP f' g ∧
+    ∃ f' : C(M, P), ContMDiff (𝓡∂ (m + 1)) JP ∞ f' ∧ IsTransverse (𝓡∂ (m + 1)) IZ JP f' g ∧
       IsTransverse 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) IZ JP
-        (f' ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g ∧
-      f.Homotopic f' := by
+        (f' ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g ∧ f.Homotopic f' := by
   obtain ⟨f', hf', hint, hbdy, hhom⟩ :=
     f.exists_contMDiff_isTransverse_homotopicRel_halfSpace_of_isCompact_closure_range (m := m) hf hg
-      isClosed_empty (U := ∅) (by simp) (contMDiffOn_empty (I' := JP))
-      (by simp) (by simp)
+      isClosed_empty (U := ∅) (by simp) (contMDiffOn_empty (I' := JP)) (by simp) (by simp)
   exact ⟨f', hf', hint, hbdy, hhom.homotopic⟩
 
 /-- **Facewise relative transversality on a half-space manifold with diagonal control into a compact
@@ -884,8 +787,7 @@ theorem exists_contMDiff_isTransverse_homotopyRel_halfSpace [CompactSpace P]
     (hfbdy : IsTransverseOn 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) IZ JP
       (f ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g (Subtype.val ⁻¹' U))
     {D : Set (P × P)} (hD : D ∈ 𝓝ˢ (diagonal P)) :
-    ∃ f' : C(M, P), ContMDiff (𝓡∂ (m + 1)) JP ∞ f' ∧
-      IsTransverse (𝓡∂ (m + 1)) IZ JP f' g ∧
+    ∃ f' : C(M, P), ContMDiff (𝓡∂ (m + 1)) JP ∞ f' ∧ IsTransverse (𝓡∂ (m + 1)) IZ JP f' g ∧
       IsTransverse 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) IZ JP
         (f' ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g ∧
       ∃ K : f.HomotopyRel f' C, ∀ t x, (K (t, x), f x) ∈ D :=
@@ -899,11 +801,9 @@ theorem exists_contMDiff_isTransverse_homotopicRel_halfSpace [CompactSpace P]
     (hfint : IsTransverseOn (𝓡∂ (m + 1)) IZ JP f g (U ∩ (𝓡∂ (m + 1)).interior M))
     (hfbdy : IsTransverseOn 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) IZ JP
       (f ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g (Subtype.val ⁻¹' U)) :
-    ∃ f' : C(M, P), ContMDiff (𝓡∂ (m + 1)) JP ∞ f' ∧
-      IsTransverse (𝓡∂ (m + 1)) IZ JP f' g ∧
+    ∃ f' : C(M, P), ContMDiff (𝓡∂ (m + 1)) JP ∞ f' ∧ IsTransverse (𝓡∂ (m + 1)) IZ JP f' g ∧
       IsTransverse 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) IZ JP
-        (f' ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g ∧
-      f.HomotopicRel f' C :=
+        (f' ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g ∧ f.HomotopicRel f' C :=
   f.exists_contMDiff_isTransverse_homotopicRel_halfSpace_of_isCompact_closure_range
     isClosed_closure.isCompact hg hC hU hfU hfint hfbdy
 
@@ -911,17 +811,13 @@ theorem exists_contMDiff_isTransverse_homotopicRel_halfSpace [CompactSpace P]
 manifold.** -/
 theorem exists_contMDiff_isTransverse_homotopic_halfSpace [CompactSpace P]
     (f : C(M, P)) {g : Z → P} (hg : ContMDiff IZ JP ∞ g) :
-    ∃ f' : C(M, P), ContMDiff (𝓡∂ (m + 1)) JP ∞ f' ∧
-      IsTransverse (𝓡∂ (m + 1)) IZ JP f' g ∧
+    ∃ f' : C(M, P), ContMDiff (𝓡∂ (m + 1)) JP ∞ f' ∧ IsTransverse (𝓡∂ (m + 1)) IZ JP f' g ∧
       IsTransverse 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) IZ JP
-        (f' ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g ∧
-      f.Homotopic f' :=
+        (f' ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g ∧ f.Homotopic f' :=
   f.exists_contMDiff_isTransverse_homotopic_halfSpace_of_isCompact_closure_range
     isClosed_closure.isCompact hg
 
-/-- **Facewise relative transversality on a compact half-space manifold with diagonal control.**
-When the half-space source `M` is compact, no compactness hypothesis on the Hausdorff boundaryless
-target `P` is needed. -/
+/-- **Facewise relative transversality on a compact half-space manifold with diagonal control.** -/
 theorem exists_contMDiff_isTransverse_homotopyRel_halfSpace_of_compactSpace [CompactSpace M]
     (f : C(M, P)) {g : Z → P} (hg : ContMDiff IZ JP ∞ g) {C U : Set M} (hC : IsClosed C)
     (hU : U ∈ 𝓝ˢ C) (hfU : ContMDiffOn (𝓡∂ (m + 1)) JP ∞ f U)
@@ -929,8 +825,7 @@ theorem exists_contMDiff_isTransverse_homotopyRel_halfSpace_of_compactSpace [Com
     (hfbdy : IsTransverseOn 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) IZ JP
       (f ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g (Subtype.val ⁻¹' U))
     {D : Set (P × P)} (hD : D ∈ 𝓝ˢ (diagonal P)) :
-    ∃ f' : C(M, P), ContMDiff (𝓡∂ (m + 1)) JP ∞ f' ∧
-      IsTransverse (𝓡∂ (m + 1)) IZ JP f' g ∧
+    ∃ f' : C(M, P), ContMDiff (𝓡∂ (m + 1)) JP ∞ f' ∧ IsTransverse (𝓡∂ (m + 1)) IZ JP f' g ∧
       IsTransverse 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) IZ JP
         (f' ∘ (Subtype.val : ↥((𝓡∂ (m + 1)).boundary M) → M)) g ∧
       ∃ K : f.HomotopyRel f' C, ∀ t x, (K (t, x), f x) ∈ D := by
@@ -939,5 +834,7 @@ theorem exists_contMDiff_isTransverse_homotopyRel_halfSpace_of_compactSpace [Com
     (by rwa [hfc.isClosed.closure_eq]) hg hC hU hfU hfint hfbdy hD
 
 end HalfSpace
+
+end MainTheorems
 
 end ContinuousMap
