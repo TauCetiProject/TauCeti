@@ -99,7 +99,7 @@ theorem sub_checkerboardVector_mem_and_form_self_eq_one_iff [NeZero n] (x : Fin 
   constructor
   · exact fun ⟨hx, hnorm⟩ ↦ exists_eq_single_of_form_self_eq_one hx hnorm
   · rintro ⟨i, hx | hx⟩ <;> subst hx
-    · refine ⟨mem_checkerboardCarrier_of
+    · refine ⟨mem_checkerboardCarrier_of_even_sum
         (fun j ↦ (if j = i then 1 else 0) - if j = ⊤ then 1 else 0)
         (fun j ↦ ?_) ?_, ?_⟩
       · simp only [Pi.sub_apply, Pi.single_apply, checkerboardVector_apply]
@@ -107,7 +107,7 @@ theorem sub_checkerboardVector_mem_and_form_self_eq_one_iff [NeZero n] (x : Fin 
         split_ifs <;> norm_num
       · simp [Finset.sum_sub_distrib]
       · rw [checkerboardLattice_form_single, Pi.single_eq_same, mul_one]
-    · refine ⟨mem_checkerboardCarrier_of
+    · refine ⟨mem_checkerboardCarrier_of_even_sum
         (fun j ↦ -(if j = i then 1 else 0) - if j = ⊤ then 1 else 0)
         (fun j ↦ ?_) ?_, ?_⟩
       · simp only [Pi.sub_apply, Pi.neg_apply, Pi.single_apply, checkerboardVector_apply]

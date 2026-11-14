@@ -47,8 +47,8 @@ universe. The compatible maps `B → S` are assembled by the shared construction
 
 * [Stacks Project, Lemma 15.12.1](https://stacks.math.columbia.edu/tag/0A02), the universal
   property of the henselization of a pair.
-* The Stacks Project, Lemma 15.11.5, uniqueness of sections modulo an ideal in the Jacobson
-  radical.
+* The uniqueness of sections modulo an ideal in the Jacobson radical is the last paragraph of the
+  proof of the same lemma, [Stacks Project, Lemma 15.12.1](https://stacks.math.columbia.edu/tag/0A02).
 -/
 
 public section
