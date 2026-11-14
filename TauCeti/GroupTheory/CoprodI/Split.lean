@@ -12,45 +12,24 @@ public import Mathlib.GroupTheory.CoprodI
 # Splitting off one factor of a free product
 
 For a family of monoids `M : ι → Type*` and an index `i`, the indexed free product `∗ⱼ Mⱼ` is the
-free product of `Mᵢ` and of the indexed free product of the other factors. A trivial factor of a
-binary free product can be dropped: if `N` is trivial, the inclusion of `M` into `M ∗ N` is onto.
+free product of `Mᵢ` and of the indexed free product of the other factors.
 
 ## Main definitions
 
-* `Monoid.CoprodI.ofCoprodNe`: the homomorphism `Mᵢ ∗ (∗_{j ≠ i} Mⱼ) →* ∗ⱼ Mⱼ`.
+* `Monoid.CoprodI.ofCoprodNe`: the homomorphism `Mᵢ ∗ (∗_{j ≠ i} Mⱼ) →* ∗ⱼ Mⱼ` induced by the
+  inclusions of the factors.
+* `Monoid.CoprodI.equivCoprodNe`: the isomorphism `∗ⱼ Mⱼ ≃* Mᵢ ∗ (∗_{j ≠ i} Mⱼ)`, whose inverse is
+  `ofCoprodNe`.
 
 ## Main results
 
-* `Monoid.CoprodI.ofCoprodNe_bijective`: it is bijective.
-* `Monoid.Coprod.inl_surjective`, `Monoid.Coprod.inr_surjective`: if one factor of a free product
-  `M ∗ N` is trivial, the inclusion of the other one is onto.
+* `Monoid.CoprodI.ofCoprodNe_bijective`: `ofCoprodNe` is bijective.
 -/
 
 public section
 
 open Function
 open scoped Monoid.Coprod
-
-namespace Monoid.Coprod
-
-variable {M N : Type*} [MulOneClass M] [MulOneClass N]
-
-/-- If `N` is trivial, every element of the free product `M ∗ N` comes from `M`. -/
-theorem inl_surjective [Subsingleton N] : Surjective (inl : M →* M ∗ N) := fun x ↦ by
-  induction x using induction_on with
-  | inl m => exact ⟨m, rfl⟩
-  | inr n => exact ⟨1, by simp [Subsingleton.elim n 1]⟩
-  | mul x y hx hy =>
-    obtain ⟨a, rfl⟩ := hx
-    obtain ⟨b, rfl⟩ := hy
-    exact ⟨a * b, map_mul _ _ _⟩
-
-/-- If `M` is trivial, every element of the free product `M ∗ N` comes from `N`. -/
-theorem inr_surjective [Subsingleton M] : Surjective (inr : N →* M ∗ N) := by
-  rw [← swap_comp_inl, MonoidHom.coe_comp]
-  exact swap_surjective.comp inl_surjective
-
-end Monoid.Coprod
 
 namespace Monoid.CoprodI
 
@@ -61,29 +40,66 @@ factors to the indexed free product of all the factors. -/
 def ofCoprodNe : M i ∗ (CoprodI fun j : {j // j ≠ i} ↦ M j) →* CoprodI M :=
   Coprod.lift of (lift fun j ↦ of (i := j.1))
 
-@[simp]
-theorem ofCoprodNe_inl (m : M i) : ofCoprodNe M i (Coprod.inl m) = of m := by
-  simp [ofCoprodNe]
+theorem ofCoprodNe_def : ofCoprodNe M i = Coprod.lift of (lift fun j ↦ of (i := j.1)) :=
+  (rfl)
 
 @[simp]
+theorem ofCoprodNe_comp_inl : (ofCoprodNe M i).comp Coprod.inl = of :=
+  Coprod.lift_comp_inl _ _
+
+@[simp]
+theorem ofCoprodNe_comp_inr : (ofCoprodNe M i).comp Coprod.inr = lift fun j ↦ of (i := j.1) :=
+  Coprod.lift_comp_inr _ _
+
+@[simp]
+theorem ofCoprodNe_inl (m : M i) : ofCoprodNe M i (Coprod.inl m) = of m :=
+  Coprod.lift_apply_inl _ _ m
+
+@[simp]
+theorem ofCoprodNe_inr (x : CoprodI fun j : {j // j ≠ i} ↦ M j) :
+    ofCoprodNe M i (Coprod.inr x) = lift (fun j ↦ of (i := j.1)) x :=
+  Coprod.lift_apply_inr _ _ x
+
 theorem ofCoprodNe_inr_of (j : {j // j ≠ i}) (m : M j) :
     ofCoprodNe M i (Coprod.inr (of m)) = of (i := j.1) m := by
-  simp [ofCoprodNe]
+  simp
+
+section DecidableEq
+
+variable [DecidableEq ι]
+
+/-- An indexed free product is the free product of any one of its factors and of the indexed free
+product of the others: `M i` goes to the left factor and each `M j`, `j ≠ i`, to the right one. -/
+def equivCoprodNe : CoprodI M ≃* M i ∗ (CoprodI fun j : {j // j ≠ i} ↦ M j) :=
+  MonoidHom.toMulEquiv
+    (lift fun j ↦ if h : j = i then h ▸ Coprod.inl
+      else Coprod.inr.comp (of (M := fun j : {j // j ≠ i} ↦ M j) (i := ⟨j, h⟩)))
+    (ofCoprodNe M i)
+    (ext_hom _ _ fun j ↦ by
+      by_cases h : j = i
+      · subst h; ext m; simp
+      · ext m; simp [h])
+    (Coprod.hom_ext (by ext m; simp) (ext_hom _ _ fun j ↦ by ext m; simp [j.2]))
+
+@[simp]
+theorem equivCoprodNe_of_self (m : M i) : equivCoprodNe M i (of m) = Coprod.inl m := by
+  simp [equivCoprodNe]
+
+@[simp]
+theorem equivCoprodNe_of_ne {j : ι} (hj : j ≠ i) (m : M j) :
+    equivCoprodNe M i (of m) = Coprod.inr (of (i := ⟨j, hj⟩) m) := by
+  simp [equivCoprodNe, hj]
+
+@[simp]
+theorem coe_equivCoprodNe_symm : ⇑(equivCoprodNe M i).symm = ofCoprodNe M i :=
+  (rfl)
+
+end DecidableEq
 
 /-- An indexed free product is the free product of any one of its factors and of the indexed free
 product of the others. -/
 theorem ofCoprodNe_bijective : Bijective (ofCoprodNe M i) := by
   classical
-  -- the inverse sends `M i` to the left factor and each `M j`, `j ≠ i`, to the right one
-  let g : CoprodI M →* M i ∗ (CoprodI fun j : {j // j ≠ i} ↦ M j) :=
-    lift fun j ↦ if h : j = i then h ▸ Coprod.inl
-      else Coprod.inr.comp (of (M := fun j : {j // j ≠ i} ↦ M j) (i := ⟨j, h⟩))
-  have hg : (ofCoprodNe M i).comp g = .id _ := ext_hom _ _ fun j ↦ by
-    by_cases h : j = i
-    · subst h; ext m; simp [g]
-    · ext m; simp [g, h]
-  have hg' : g.comp (ofCoprodNe M i) = .id _ :=
-    Coprod.hom_ext (by ext m; simp [g]) (ext_hom _ _ fun j ↦ by ext m; simp [g, j.2])
-  exact bijective_iff_has_inverse.2 ⟨g, DFunLike.congr_fun hg', DFunLike.congr_fun hg⟩
+  simpa using (equivCoprodNe M i).symm.bijective
 
 end Monoid.CoprodI
