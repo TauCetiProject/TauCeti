@@ -365,8 +365,10 @@ once, for every properly discontinuous action.
 The modular stabilisers need no further instance: Mathlib's
 `Subgroup.IsArithmetic.properlyDiscontinuous` makes an arithmetic `𝒢 ≤ GL(2, ℝ)` act properly
 discontinuously on `ℍ`, and `TauCeti.ModularGroup.properlyDiscontinuousSMul` does the same for
-`SL(2, ℤ)` itself, hence for each of its subgroups, so all of their point stabilisers reach
-`Finite` through this instance alone. -/
+`SL(2, ℤ)` itself. Its module, `TauCeti.NumberTheory.ModularForms.ProperlyDiscontinuous`, also
+re-exports `Mathlib.Topology.Algebra.Group.DiscontinuousSubgroup`, whose instance passes proper
+discontinuity to every subgroup, so with that import the point stabilisers of `SL(2, ℤ)` and of
+each of its subgroups reach `Finite` through this instance. -/
 @[to_additive
 /-- **A properly discontinuous additive action has finite point stabilisers**, as a `Finite`
 instance. Mathlib's `ProperlyDiscontinuousVAdd.finite_stabilizer` states it as `Set.Finite` of
