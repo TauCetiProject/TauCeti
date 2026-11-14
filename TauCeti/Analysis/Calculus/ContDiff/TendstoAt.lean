@@ -89,12 +89,41 @@ theorem congr (h : TendstoContDiffAt 𝕜 n f f₀ l x₀) {g : ι → E → F}
   filter_upwards [tendsto_fst.eventually hfg] with p hp
   rw [hp]
 
+/-- `C^n` convergence at `x₀` depends only on the members of the family, eventually along `l`,
+and on the limit, on a fixed neighbourhood of `x₀`. -/
+theorem congr_of_eqOn (h : TendstoContDiffAt 𝕜 n f f₀ l x₀) {g : ι → E → F} {g₀ : E → F}
+    {s : Set E} (hs : s ∈ 𝓝 x₀) (hfg : ∀ᶠ i in l, EqOn (f i) (g i) s) (hfg₀ : EqOn f₀ g₀ s) :
+    TendstoContDiffAt 𝕜 n g g₀ l x₀ := by
+  intro k hk
+  rw [← ((eventuallyEq_of_mem hs hfg₀).iteratedFDeriv 𝕜 k).eq_of_nhds]
+  refine (h k hk).congr' ?_
+  filter_upwards [tendsto_fst.eventually hfg,
+    tendsto_snd.eventually (eventually_mem_nhds_iff.2 hs)] with p hp hps
+  exact ((eventuallyEq_of_mem hps hp).iteratedFDeriv 𝕜 k).eq_of_nhds
+
+/-- `C^n` convergence at `x₀` depends only on the family eventually along `l ×ˢ 𝓝 x₀` and on the
+limit near `x₀`. -/
+theorem congr_of_eventuallyEq (h : TendstoContDiffAt 𝕜 n f f₀ l x₀) {g : ι → E → F}
+    {g₀ : E → F} (hfg : (fun p : ι × E ↦ f p.1 p.2) =ᶠ[l ×ˢ 𝓝 x₀] fun p ↦ g p.1 p.2)
+    (hfg₀ : f₀ =ᶠ[𝓝 x₀] g₀) : TendstoContDiffAt 𝕜 n g g₀ l x₀ := by
+  obtain ⟨A, hA, B, hB, hAB⟩ := mem_prod_iff.1 hfg
+  refine h.congr_of_eqOn (inter_mem hB hfg₀) ?_ fun x hx ↦ hx.2
+  filter_upwards [hA] with i hi x hx using hAB (mk_mem_prod hi hx.1)
+
 /-- The values converge continuously. -/
 theorem tendsto (h : TendstoContDiffAt 𝕜 n f f₀ l x₀) :
     Tendsto (fun p : ι × E ↦ f p.1 p.2) (l ×ˢ 𝓝 x₀) (𝓝 (f₀ x₀)) := by
   simpa only [iteratedFDeriv_zero_eq_comp, Function.comp_def,
     LinearIsometryEquiv.apply_symm_apply] using
     ((continuousMultilinearCurryFin0 𝕜 E F).continuous.tendsto _).comp (h 0 (Nat.zero_le n))
+
+/-- Eventually along `l`, the members of the family map one open neighbourhood of `x₀` into a
+given neighbourhood of `f₀ x₀`. -/
+theorem exists_isOpen_eventually_mapsTo (h : TendstoContDiffAt 𝕜 n f f₀ l x₀) {s : Set F}
+    (hs : s ∈ 𝓝 (f₀ x₀)) : ∃ t, IsOpen t ∧ x₀ ∈ t ∧ ∀ᶠ i in l, MapsTo (f i) t s := by
+  obtain ⟨pa, hpa, pb, hpb, hpab⟩ := eventually_prod_iff.1 (h.tendsto hs)
+  obtain ⟨t, htb, ht, hx₀t⟩ := eventually_nhds_iff.1 hpb
+  exact ⟨t, ht, hx₀t, hpa.mono fun i hi x hx ↦ hpab hi (htb x hx)⟩
 
 /-- `C^0` convergence is continuous convergence of the values. -/
 theorem _root_.TauCeti.tendstoContDiffAt_zero_iff :

@@ -87,6 +87,9 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   on a locally compact space.
 * `TauCeti.exists_locallyFinite_compact_extChartAt_cover`: a locally finite compact coordinate
   cover of a locally compact, sigma-compact Hausdorff manifold.
+* `Topology.IsInducing.exists_isOpen_extChartAt_zero_mem`: along an inducing map out of a
+  manifold, an open set cutting the source of the chart at `x₀` down to points whose chart image
+  stays in a given neighbourhood of the chart point.
 * `TauCeti.exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt`: a convex neighbourhood of the
   chart point within the model range, inside the chart target, with unique derivatives and
   interior accumulating at the chart point.
@@ -358,6 +361,25 @@ theorem extChartAt_inclusion_symm_eventuallyEq {U V : TopologicalSpace.Opens M} 
     simpa [extChartAt, TopologicalSpace.Opens.chartAt_eq] using
       I.continuous_symm.tendsto (extChartAt I x x)
   exact (TopologicalSpace.Opens.chartAt_inclusion_symm_eventuallyEq h).comp_tendsto hc
+
+open Set in
+/-- **Shrinking along an embedding.** For an inducing map `ι : M → X` and an open set
+`V ⊆ E × E` containing `(φ x₀, 0)`, with `φ` the extended chart at `x₀`, there is an open
+`O ∋ ι x₀` such that a point `z` with `ι z ∈ O` lies in the source of `φ` with `(φ z, 0) ∈ V`. -/
+theorem _root_.Topology.IsInducing.exists_isOpen_extChartAt_zero_mem {X : Type*}
+    [TopologicalSpace X] {ι : M → X} (hι : Topology.IsInducing ι) {V : Set (E × E)}
+    (hV : IsOpen V) {x₀ : M} (hx₀ : (extChartAt I x₀ x₀, (0 : E)) ∈ V) :
+    ∃ O : Set X, IsOpen O ∧ ι x₀ ∈ O ∧
+      ∀ z, ι z ∈ O → z ∈ (extChartAt I x₀).source ∧ (extChartAt I x₀ z, (0 : E)) ∈ V := by
+  have hS : IsOpen ((extChartAt I x₀).source ∩ (fun z ↦ (extChartAt I x₀ z, (0 : E))) ⁻¹' V) :=
+    ((continuousOn_extChartAt x₀).prodMk continuousOn_const).isOpen_inter_preimage
+      (isOpen_extChartAt_source x₀) hV
+  obtain ⟨O, hO, hOS⟩ := hι.isOpen_iff.mp hS
+  refine ⟨O, hO, ?_, fun z hz ↦ ?_⟩
+  · rw [← mem_preimage, hOS]
+    exact ⟨mem_extChartAt_source x₀, hx₀⟩
+  · rw [← mem_preimage, hOS] at hz
+    exact hz
 
 namespace Manifold
 
