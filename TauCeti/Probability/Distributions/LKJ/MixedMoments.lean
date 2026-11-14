@@ -8,9 +8,10 @@ module
 public import TauCeti.Probability.Distributions.LKJ.Basic
 public import TauCeti.Probability.Distributions.LKJ.CoordinateIntegral
 public import TauCeti.Analysis.Matrix.PartialCorrelation.Powers
-public import TauCeti.Probability.Distributions.Beta.Reflection
 public import Mathlib.Probability.Distributions.Beta
+import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Analysis.Matrix.PosSemidef.Basic
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.Probability.Distributions.Beta.Symmetric
 import TauCeti.Probability.Distributions.LKJ.Cholesky.Moments
 import TauCeti.Probability.Distributions.LKJ.Marginal
@@ -44,7 +45,7 @@ closed Beta-quotient moments of all natural orders.
   correlations with arbitrary positive shapes;
 * `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure`: closed finite multinomial
   Beta-quotient evaluation of all natural mixed entry moments under `lkjMeasure p η` for `0 < η`;
-* `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_eq_prod_ne`,
+* `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_eq_integral_prod_filter_ne`,
   `TauCeti.Probability.integral_prod_pow_coe_apply_perm_lkjMeasure`, and
   `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_eq_zero_of_odd`: diagonal-exponent
   invariance, permutation invariance, and odd-degree vanishing of mixed moments;
@@ -74,7 +75,7 @@ namespace TauCeti.Probability
 /-- Every natural monomial in the entries of an LKJ matrix belongs to every `Lᵖ`, including
 `L∞`. The exponent is indexed by all ordered pairs; this permits arbitrary mixed moments while
 retaining the matrix-shaped API used by callers. -/
-theorem memLp_prod_pow_coe_apply_lkjMeasure (p : ℕ) (η : ℝ)
+theorem memLp_prod_pow_coe_apply_lkjMeasure {p : ℕ} (η : ℝ)
     (n : Fin p × Fin p → ℕ) (q : ℝ≥0∞) :
     MemLp (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
       ∏ ij, (R : Matrix (Fin p) (Fin p) ℝ) ij.1 ij.2 ^ n ij) q (lkjMeasure p η) := by
@@ -96,11 +97,11 @@ theorem memLp_prod_pow_coe_apply_lkjMeasure (p : ℕ) (η : ℝ)
 
 /-- Every natural mixed entry moment of an LKJ matrix is integrable. This includes the zeroth
 mixed moment and all invalid nonpositive shapes, where the measure is zero. -/
-theorem integrable_prod_pow_coe_apply_lkjMeasure (p : ℕ) (η : ℝ)
+theorem integrable_prod_pow_coe_apply_lkjMeasure {p : ℕ} (η : ℝ)
     (n : Fin p × Fin p → ℕ) :
     Integrable (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
       ∏ ij, (R : Matrix (Fin p) (Fin p) ℝ) ij.1 ij.2 ^ n ij) (lkjMeasure p η) :=
-  memLp_one_iff_integrable.mp (memLp_prod_pow_coe_apply_lkjMeasure p η n 1)
+  memLp_one_iff_integrable.mp (memLp_prod_pow_coe_apply_lkjMeasure η n 1)
 
 /-- Every natural power of a single entry of an LKJ matrix belongs to every `Lᵖ`, including
 `L∞`. -/
@@ -109,11 +110,10 @@ theorem memLp_pow_coe_apply_lkjMeasure {p : ℕ} (η : ℝ) (i j : Fin p) (m : �
       (R : Matrix (Fin p) (Fin p) ℝ) i j ^ m) q (lkjMeasure p η) := by
   classical
   have hsingle (M : Matrix (Fin p) (Fin p) ℝ) :
-      (∏ ij : Fin p × Fin p, M ij.1 ij.2 ^ Pi.single (i, j) m ij) = M i j ^ m := by
-    conv_rhs => rw [← Pi.single_eq_same (M := fun _ : Fin p × Fin p ↦ ℕ) (i, j) m]
-    exact Fintype.prod_eq_single (i, j) fun ij hij ↦ by simp [Pi.single_eq_of_ne hij]
+      (∏ ij : Fin p × Fin p, M ij.1 ij.2 ^ Pi.single (i, j) m ij) = M i j ^ m :=
+    Fintype.prod_pow_pi_single (fun ij : Fin p × Fin p ↦ M ij.1 ij.2) (i, j) m
   simpa only [hsingle] using
-    memLp_prod_pow_coe_apply_lkjMeasure p η (Pi.single (i, j) m) q
+    memLp_prod_pow_coe_apply_lkjMeasure η (Pi.single (i, j) m) q
 
 /-- Every natural power of a single entry of an LKJ matrix is integrable. -/
 theorem integrable_pow_coe_apply_lkjMeasure {p : ℕ} (η : ℝ) (i j : Fin p) (m : ℕ) :
@@ -266,7 +266,7 @@ theorem integral_prod_pow_coe_apply_lkjMeasure {p : ℕ} {η : ℝ} (hη : 0 < �
 
 /-- Diagonal exponents do not change mixed entry moments under `lkjMeasure`, since diagonal entries
 are almost surely one (and for nonpositive shapes the measure is zero). -/
-theorem integral_prod_pow_coe_apply_lkjMeasure_eq_prod_ne {p : ℕ} (η : ℝ)
+theorem integral_prod_pow_coe_apply_lkjMeasure_eq_integral_prod_filter_ne {p : ℕ} (η : ℝ)
     (n : Fin p × Fin p → ℕ) :
     ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
         (∏ q, (R : Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q) ∂lkjMeasure p η =
@@ -312,33 +312,22 @@ theorem integral_prod_pow_coe_apply_lkjMeasure_eq_zero_of_odd {p : ℕ} (η : �
     (hi : Odd (∑ j : Fin p, (n (i, j) + n (j, i)))) :
     ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
         (∏ q, (R : Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q) ∂lkjMeasure p η = 0 := by
-  let s : Fin p → ℝ := fun k ↦ if k = i then -1 else 1
-  have hs : ∀ k, |s k| = 1 := fun k ↦ by by_cases hk : k = i <;> simp [s, hk]
-  have hmeas : Measurable (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      ∏ q, (R : Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q) :=
-    Finset.measurable_fun_prod _ fun q _ ↦
-      (selfAdjoint.measurable_coe_apply q.1 q.2).pow_const (n q)
-  have h := congrArg
-    (fun ν : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) ↦
-      ∫ R, (∏ q, (R : Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q) ∂ν)
-    (map_symmetricCongruenceLinearMap_diagonal_lkjMeasure p η hs)
-  rw [integral_map (LinearMap.continuous_of_finiteDimensional _).measurable.aemeasurable
-    hmeas.aestronglyMeasurable] at h
-  have hsign (R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-      (∏ q : Fin p × Fin p,
-        (Matrix.symmetricCongruenceLinearMap (Matrix.diagonal s) R :
-          Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q) =
-        -(∏ q, (R : Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q) := by
-    simp only [Matrix.coe_symmetricCongruenceLinearMap_diagonal_apply]
-    rw [Matrix.prod_pow_mul_apply_mul (R : Matrix (Fin p) (Fin p) ℝ) s n]
-    have hprod : (∏ r : Fin p, s r ^ ∑ j : Fin p, (n (r, j) + n (j, r))) = -1 := by
-      rw [Fintype.prod_eq_single i]
-      · simp [s, hi.neg_one_pow]
-      · intro r hr
-        simp [s, hr]
-    rw [hprod, neg_one_mul]
-  simp_rw [hsign, integral_neg] at h
-  linarith
+  rcases le_or_gt η 0 with hη | hη
+  · simp [lkjMeasure_of_nonpos hη]
+  · let _ (ij : strictLowerTriangle p) : IsProbabilityMeasure
+        (betaMeasure (lkjPartialCorrelationShape p η ij)
+          (lkjPartialCorrelationShape p η ij)) :=
+      isProbabilityMeasureBeta (lkjPartialCorrelationShape_pos hη ij)
+        (lkjPartialCorrelationShape_pos hη ij)
+    let _ (ij : strictLowerTriangle p) : IsProbabilityMeasure
+        ((betaMeasure (lkjPartialCorrelationShape p η ij)
+          (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)) :=
+      (Measure.isProbabilityMeasure_map_iff (by fun_prop)).2 inferInstance
+    let g : Matrix (Fin p) (Fin p) ℝ → ℝ := fun M ↦ ∏ q, M q.1 q.2 ^ n q
+    have hg : Continuous g := by fun_prop
+    rw [← integral_map (f := g) measurable_subtype_coe.aemeasurable hg.aestronglyMeasurable,
+      map_coe_lkjMeasure hη]
+    exact integral_prod_pow_apply_map_partialCorrelationGram_pi_eq_zero_of_odd _ hi
 
 /-- Every natural moment of a diagonal entry of an LKJ matrix of positive shape equals one. -/
 @[simp]
@@ -403,19 +392,27 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {p : ℕ} {η : ℝ}
 including `L∞`. -/
 theorem memLp_prod_pow_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
     (n : Fin p × Fin p → ℕ) (q : ℝ≥0∞) :
-    MemLp (fun ω ↦ ∏ ij, (X ω : Matrix (Fin p) (Fin p) ℝ) ij.1 ij.2 ^ n ij) q P := by
-  have hg : Measurable (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      ∏ ij, (R : Matrix (Fin p) (Fin p) ℝ) ij.1 ij.2 ^ n ij) :=
-    Finset.measurable_fun_prod _ fun ij _ ↦
-      (selfAdjoint.measurable_coe_apply ij.1 ij.2).pow_const (n ij)
-  exact (memLp_map_measure_iff hg.aestronglyMeasurable hX.aemeasurable).mp
-    (hX.map_eq.symm ▸ TauCeti.Probability.memLp_prod_pow_coe_apply_lkjMeasure p η n q)
+    MemLp (fun ω ↦ ∏ ij, (X ω : Matrix (Fin p) (Fin p) ℝ) ij.1 ij.2 ^ n ij) q P :=
+  hX.memLp_fun_comp (TauCeti.Probability.memLp_prod_pow_coe_apply_lkjMeasure η n q)
 
 /-- Every natural mixed entry monomial of a random matrix with LKJ law is integrable. -/
 theorem integrable_prod_pow_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
     (n : Fin p × Fin p → ℕ) :
     Integrable (fun ω ↦ ∏ ij, (X ω : Matrix (Fin p) (Fin p) ℝ) ij.1 ij.2 ^ n ij) P :=
-  memLp_one_iff_integrable.mp (hX.memLp_prod_pow_coe_apply_lkjMeasure n 1)
+  hX.integrable_fun_comp (TauCeti.Probability.integrable_prod_pow_coe_apply_lkjMeasure η n)
+
+/-- Every natural power of a single entry of a random matrix with LKJ law belongs to every `Lᵖ`,
+including `L∞`. -/
+theorem memLp_pow_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
+    (i j : Fin p) (m : ℕ) (q : ℝ≥0∞) :
+    MemLp (fun ω ↦ (X ω : Matrix (Fin p) (Fin p) ℝ) i j ^ m) q P :=
+  hX.memLp_fun_comp (TauCeti.Probability.memLp_pow_coe_apply_lkjMeasure η i j m q)
+
+/-- Every natural power of a single entry of a random matrix with LKJ law is integrable. -/
+theorem integrable_pow_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
+    (i j : Fin p) (m : ℕ) :
+    Integrable (fun ω ↦ (X ω : Matrix (Fin p) (Fin p) ℝ) i j ^ m) P :=
+  hX.integrable_fun_comp (TauCeti.Probability.integrable_pow_coe_apply_lkjMeasure η i j m)
 
 /-- Mixed entry moments of a random matrix with positive-shape LKJ law. -/
 theorem integral_prod_pow_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
@@ -429,26 +426,73 @@ theorem integral_prod_pow_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) 
                 (lkjPartialCorrelationShape p η ij +
                   partialCorrelationCholeskyMonomialResidualPower (gramFactorMultiIndex c) ij) /
               beta (1 / 2) (lkjPartialCorrelationShape p η ij)
-          else 0 := by
-  have hg : Measurable (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      ∏ q, (R : Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q) :=
-    Finset.measurable_fun_prod _ fun q _ ↦
-      (selfAdjoint.measurable_coe_apply q.1 q.2).pow_const (n q)
-  exact (hX.integral_comp hg.aestronglyMeasurable).trans
+          else 0 :=
+  (hX.integral_comp
+    (TauCeti.Probability.integrable_prod_pow_coe_apply_lkjMeasure η n).aestronglyMeasurable).trans
     (TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure hη n)
+
+/-- Diagonal exponents do not change mixed entry moments of a random matrix with LKJ law. -/
+theorem integral_prod_pow_coe_apply_lkjMeasure_eq_integral_prod_filter_ne
+    (hX : HasLaw X (lkjMeasure p η) P) (n : Fin p × Fin p → ℕ) :
+    ∫ ω, (∏ q, (X ω : Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q) ∂P =
+      ∫ ω, (∏ q with q.1 ≠ q.2, (X ω : Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q) ∂P := by
+  have hfilter (M : Matrix (Fin p) (Fin p) ℝ) :
+      (∏ q with q.1 ≠ q.2, M q.1 q.2 ^ n q) =
+        ∏ q, M q.1 q.2 ^ (if q.1 ≠ q.2 then n q else 0) := by
+    rw [Finset.prod_filter]
+    exact Finset.prod_congr rfl fun q _ ↦ by split_ifs <;> simp
+  have hrhs : AEStronglyMeasurable
+      (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+        ∏ q with q.1 ≠ q.2, (R : Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q)
+      (lkjMeasure p η) := by
+    simp_rw [hfilter]
+    exact (TauCeti.Probability.integrable_prod_pow_coe_apply_lkjMeasure η _).aestronglyMeasurable
+  exact (hX.integral_comp
+    (TauCeti.Probability.integrable_prod_pow_coe_apply_lkjMeasure η n).aestronglyMeasurable).trans
+    ((TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_eq_integral_prod_filter_ne η
+      n).trans (hX.integral_comp hrhs).symm)
+
+/-- Mixed entry moments of a random matrix with LKJ law are invariant under simultaneous
+row-and-column permutations. -/
+theorem integral_prod_pow_coe_apply_perm_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
+    (σ : Equiv.Perm (Fin p)) (n : Fin p × Fin p → ℕ) :
+    ∫ ω, (∏ q, (X ω : Matrix (Fin p) (Fin p) ℝ) (σ q.1) (σ q.2) ^ n q) ∂P =
+      ∫ ω, (∏ q, (X ω : Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q) ∂P := by
+  have hperm (M : Matrix (Fin p) (Fin p) ℝ) :
+      (∏ q : Fin p × Fin p, M (σ q.1) (σ q.2) ^ n q) =
+        ∏ q : Fin p × Fin p, M q.1 q.2 ^ n (σ.symm q.1, σ.symm q.2) := by
+    simpa using (Equiv.prodCongr σ σ).prod_comp
+      fun q : Fin p × Fin p ↦ M q.1 q.2 ^ n (σ.symm q.1, σ.symm q.2)
+  have hlhs : AEStronglyMeasurable
+      (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+        ∏ q, (R : Matrix (Fin p) (Fin p) ℝ) (σ q.1) (σ q.2) ^ n q)
+      (lkjMeasure p η) := by
+    simp_rw [hperm]
+    exact (TauCeti.Probability.integrable_prod_pow_coe_apply_lkjMeasure η _).aestronglyMeasurable
+  exact (hX.integral_comp hlhs).trans
+    ((TauCeti.Probability.integral_prod_pow_coe_apply_perm_lkjMeasure η σ n).trans
+      (hX.integral_comp
+        (TauCeti.Probability.integrable_prod_pow_coe_apply_lkjMeasure η
+          n).aestronglyMeasurable).symm)
 
 /-- Mixed entry moments of a random matrix with LKJ law vanish whenever some vertex has odd
 symmetric degree. -/
 theorem integral_prod_pow_coe_apply_lkjMeasure_eq_zero_of_odd (hX : HasLaw X (lkjMeasure p η) P)
     {n : Fin p × Fin p → ℕ} {i : Fin p}
     (hi : Odd (∑ j : Fin p, (n (i, j) + n (j, i)))) :
-    ∫ ω, (∏ q, (X ω : Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q) ∂P = 0 := by
-  have hg : Measurable (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      ∏ q, (R : Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q) :=
-    Finset.measurable_fun_prod _ fun q _ ↦
-      (selfAdjoint.measurable_coe_apply q.1 q.2).pow_const (n q)
-  exact (hX.integral_comp hg.aestronglyMeasurable).trans
+    ∫ ω, (∏ q, (X ω : Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q) ∂P = 0 :=
+  (hX.integral_comp
+    (TauCeti.Probability.integrable_prod_pow_coe_apply_lkjMeasure η n).aestronglyMeasurable).trans
     (TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_eq_zero_of_odd η hi)
+
+/-- Every natural moment of a diagonal entry of a random matrix with positive-shape LKJ law equals
+one. -/
+theorem integral_pow_coe_apply_self_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
+    (hη : 0 < η) (i : Fin p) (m : ℕ) :
+    ∫ ω, (X ω : Matrix (Fin p) (Fin p) ℝ) i i ^ m ∂P = 1 :=
+  (hX.integral_comp
+    (TauCeti.Probability.integrable_pow_coe_apply_lkjMeasure η i i m).aestronglyMeasurable).trans
+    (TauCeti.Probability.integral_pow_coe_apply_self_lkjMeasure hη i m)
 
 /-- Natural moments of an off-diagonal entry of a random matrix with positive-shape LKJ law. -/
 theorem integral_pow_coe_apply_lkjMeasure_of_ne (hX : HasLaw X (lkjMeasure p η) P)
@@ -457,11 +501,9 @@ theorem integral_pow_coe_apply_lkjMeasure_of_ne (hX : HasLaw X (lkjMeasure p η)
       if Even m then
         beta (((m : ℝ) + 1) / 2) (η + ((p : ℝ) - 2) / 2) /
           beta (1 / 2) (η + ((p : ℝ) - 2) / 2)
-      else 0 := by
-  have hg : Measurable (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      (R : Matrix (Fin p) (Fin p) ℝ) i j ^ m) :=
-    (selfAdjoint.measurable_coe_apply i j).pow_const m
-  exact (hX.integral_comp hg.aestronglyMeasurable).trans
+      else 0 :=
+  (hX.integral_comp
+    (TauCeti.Probability.integrable_pow_coe_apply_lkjMeasure η i j m).aestronglyMeasurable).trans
     (TauCeti.Probability.integral_pow_coe_apply_lkjMeasure_of_ne hη hij m)
 
 /-- Natural moments of an arbitrary entry of a random matrix with positive-shape LKJ law. -/
@@ -472,11 +514,9 @@ theorem integral_pow_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
       else if Even m then
         beta (((m : ℝ) + 1) / 2) (η + ((p : ℝ) - 2) / 2) /
           beta (1 / 2) (η + ((p : ℝ) - 2) / 2)
-      else 0 := by
-  have hg : Measurable (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      (R : Matrix (Fin p) (Fin p) ℝ) i j ^ m) :=
-    (selfAdjoint.measurable_coe_apply i j).pow_const m
-  exact (hX.integral_comp hg.aestronglyMeasurable).trans
+      else 0 :=
+  (hX.integral_comp
+    (TauCeti.Probability.integrable_pow_coe_apply_lkjMeasure η i j m).aestronglyMeasurable).trans
     (TauCeti.Probability.integral_pow_coe_apply_lkjMeasure hη i j m)
 
 end ProbabilityTheory.HasLaw

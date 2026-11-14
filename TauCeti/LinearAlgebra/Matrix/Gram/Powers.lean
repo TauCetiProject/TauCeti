@@ -10,6 +10,7 @@ public import Mathlib.Data.Nat.Choose.Multinomial
 public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Order.Interval.Finset.Defs
 import TauCeti.Algebra.Order.Antidiag.Pi
+import TauCeti.LinearAlgebra.Matrix.Triangular
 import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!
@@ -26,23 +27,21 @@ When `L` is square and lower triangular over a finite linearly ordered index typ
 finite initial intervals, the `(i, j)` entry of `L * Lᵀ` sums only over columns
 `k ∈ Finset.Iic (min i j)`. Restricting each composition `c q` to `Finset.Iic (min q.1 q.2)`
 ensures that every induced factor multi-index `gramFactorMultiIndex c` is supported on the lower
-triangle `{rk | rk.2 ≤ rk.1}`. We also record the diagonal-scaling law for entry monomials of
-`s i * M i j * s j`.
+triangle `{rk | rk.2 ≤ rk.1}`.
 
 ## Main definitions and results
 
 * `TauCeti.gramFactorMultiIndex`: the factor multi-index induced by column compositions of Gram
-  entries, together with its additivity, row-degree conservation, total-degree, and
-  lower-triangular support lemmas;
+  entries, together with its additivity, singleton (`Pi.single`), row-degree conservation,
+  total-degree, and lower-triangular support lemmas;
+* `Matrix.prod_prod_pow_mul_pow_eq_prod_pow_gramFactorMultiIndex`: over a commutative monoid,
+  collecting column-product powers `(L q.1 k ^ c q k * L q.2 k ^ c q k)` yields the factor
+  monomial with exponent `TauCeti.gramFactorMultiIndex c`;
 * `Matrix.prod_pow_mul_transpose_eq_sum`: mixed monomial expansion of `(L * Lᵀ)` for a general
   rectangular matrix `L`;
-* `Matrix.IsLowerTriangular.mul_transpose_apply_eq_sum_Iic_min`: each entry `(L * Lᵀ) i j` of a
-  lower-triangular Gram matrix sums up to `min i j`;
 * `Matrix.IsLowerTriangular.prod_pow_mul_transpose_eq_sum`: mixed monomial expansion of `(L * Lᵀ)`
   for a lower-triangular matrix `L`, indexed by compositions supported on
-  `Finset.Iic (min q.1 q.2)`;
-* `Matrix.prod_pow_mul_apply_mul`: diagonal scaling `s i * M i j * s j` multiplies an entry
-  monomial by `∏ i, s i ^ ∑ j, (n (i, j) + n (j, i))`.
+  `Finset.Iic (min q.1 q.2)`.
 -/
 
 public section
@@ -91,6 +90,31 @@ theorem gramFactorMultiIndex_sum {s ι κ : Type*} [Fintype ι]
   induction t using Finset.induction_on with
   | empty => simp
   | @insert x t hxt ih => simp [hxt, ih]
+
+/-- Evaluating `gramFactorMultiIndex` on a composition family supported at a single matrix
+position `q` adds the row and column contributions of `f` at `rk.2`. -/
+theorem gramFactorMultiIndex_single_apply {ι κ : Type*} [Fintype ι] [DecidableEq ι]
+    (q : ι × ι) (f : κ → ℕ) (rk : ι × κ) :
+    gramFactorMultiIndex (Pi.single q f) rk =
+      (if rk.1 = q.1 then f rk.2 else 0) + (if rk.1 = q.2 then f rk.2 else 0) := by
+  rcases q with ⟨i, j⟩
+  rcases rk with ⟨r, k⟩
+  rw [gramFactorMultiIndex_apply, Finset.sum_add_distrib]
+  congr 1
+  · by_cases h1 : r = i <;> simp [h1, Pi.single_apply, apply_ite (fun g : κ → ℕ ↦ g k)]
+  · by_cases h2 : r = j <;> simp [h2, Pi.single_apply, apply_ite (fun g : κ → ℕ ↦ g k)]
+
+/-- A single unit of column exponent `m` at Gram position `q` and column `k` induces the sum of
+singleton factor exponents at `(q.1, k)` and `(q.2, k)`. -/
+@[simp]
+theorem gramFactorMultiIndex_single_single {ι κ : Type*} [Fintype ι] [DecidableEq ι]
+    [DecidableEq κ] (q : ι × ι) (k : κ) (m : ℕ) :
+    gramFactorMultiIndex (Pi.single q (Pi.single k m)) =
+      Pi.single (q.1, k) m + Pi.single (q.2, k) m := by
+  ext ⟨r, l⟩
+  rw [gramFactorMultiIndex_single_apply, Pi.add_apply]
+  by_cases hr1 : r = q.1 <;> by_cases hr2 : r = q.2 <;> by_cases hl : l = k <;>
+    simp [hr1, hr2, hl, Pi.single_apply, Prod.ext_iff]
 
 /-- Transposing the Gram-entry index pair leaves `gramFactorMultiIndex` unchanged. -/
 @[simp]
@@ -177,7 +201,7 @@ namespace Matrix
 /-- Collecting column-product powers `(L q.1 k ^ c q k * L q.2 k ^ c q k)` across all pairs `q`
 and columns `k` yields the factor monomial with exponent `TauCeti.gramFactorMultiIndex c`. -/
 theorem prod_prod_pow_mul_pow_eq_prod_pow_gramFactorMultiIndex
-    {ι κ R : Type*} [Fintype ι] [Fintype κ] [CommSemiring R]
+    {ι κ R : Type*} [Fintype ι] [Fintype κ] [CommMonoid R]
     (L : Matrix ι κ R) (c : ι × ι → κ → ℕ) :
     (∏ q : ι × ι, ∏ k : κ, (L q.1 k ^ c q k * L q.2 k ^ c q k)) =
       ∏ rk : ι × κ, L rk.1 rk.2 ^ TauCeti.gramFactorMultiIndex c rk := by
@@ -215,21 +239,6 @@ theorem prod_pow_mul_transpose_eq_sum {ι κ R : Type*} [Fintype ι] [Fintype κ
   simp_rw [mul_pow]
   exact prod_prod_pow_mul_pow_eq_prod_pow_gramFactorMultiIndex L c
 
-/-- Each entry `(L * Lᵀ) i j` of a lower-triangular Gram matrix sums only over columns up to
-`min i j`, since columns strictly above `i` or `j` vanish in `L`. -/
-theorem IsLowerTriangular.mul_transpose_apply_eq_sum_Iic_min
-    {ι R : Type*} [Fintype ι] [LinearOrder ι] [LocallyFiniteOrderBot ι]
-    [NonUnitalNonAssocSemiring R] {L : Matrix ι ι R} (hL : L.IsLowerTriangular) (i j : ι) :
-    (L * Lᵀ) i j = ∑ k ∈ Finset.Iic (min i j), L i k * L j k := by
-  rw [Matrix.mul_apply]
-  simp only [Matrix.transpose_apply]
-  symm
-  refine Finset.sum_subset (Finset.subset_univ _) fun k _ hk ↦ ?_
-  simp only [Finset.mem_Iic, le_min_iff, not_and_or, not_le] at hk
-  rcases hk with hik | hjk
-  · rw [hL hik, zero_mul]
-  · rw [hL hjk, mul_zero]
-
 /-- For a lower-triangular matrix `L`, every mixed natural monomial in the entries of `L * Lᵀ`
 expands as a multinomial sum over column compositions supported on `Finset.Iic (min q.1 q.2)`,
 so each resulting factor multi-index is supported on the lower triangle. -/
@@ -254,29 +263,5 @@ theorem IsLowerTriangular.prod_pow_mul_transpose_eq_sum
     rw [Finset.eq_zero_of_notMem_of_mem_piAntidiag hk (Fintype.mem_piFinset.mp hc q), pow_zero]
   simp_rw [hext]
   exact prod_prod_pow_mul_pow_eq_prod_pow_gramFactorMultiIndex L c
-
-/-- Scaling rows and columns of `M` by `s` multiplies an entry monomial `∏ q, M q.1 q.2 ^ n q` by
-`∏ i, s i ^ ∑ j, (n (i, j) + n (j, i))`. -/
-theorem prod_pow_mul_apply_mul {ι R : Type*} [Fintype ι] [CommSemiring R]
-    (M : Matrix ι ι R) (s : ι → R) (n : ι × ι → ℕ) :
-    (∏ q : ι × ι, (s q.1 * M q.1 q.2 * s q.2) ^ n q) =
-      (∏ i : ι, s i ^ ∑ j : ι, (n (i, j) + n (j, i))) *
-        ∏ q : ι × ι, M q.1 q.2 ^ n q := by
-  have hterm (q : ι × ι) :
-      (s q.1 * M q.1 q.2 * s q.2) ^ n q =
-        (s q.1 ^ n q * s q.2 ^ n q) * M q.1 q.2 ^ n q := by
-    rw [mul_right_comm, mul_pow, mul_pow]
-  simp_rw [hterm]
-  rw [Finset.prod_mul_distrib, Finset.prod_mul_distrib]
-  congr 1
-  have hleft : (∏ q : ι × ι, s q.1 ^ n q) = ∏ i : ι, s i ^ ∑ j : ι, n (i, j) := by
-    rw [Fintype.prod_prod_type]
-    exact Finset.prod_congr rfl fun i _ ↦ by simp [Finset.prod_pow_eq_pow_sum]
-  have hright : (∏ q : ι × ι, s q.2 ^ n q) = ∏ i : ι, s i ^ ∑ j : ι, n (j, i) := by
-    rw [Fintype.prod_prod_type, Finset.prod_comm]
-    exact Finset.prod_congr rfl fun i _ ↦ by simp [Finset.prod_pow_eq_pow_sum]
-  rw [hleft, hright, ← Finset.prod_mul_distrib]
-  refine Finset.prod_congr rfl fun i _ ↦ ?_
-  rw [← pow_add, ← Finset.sum_add_distrib]
 
 end Matrix

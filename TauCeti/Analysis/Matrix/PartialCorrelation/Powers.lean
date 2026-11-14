@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Analysis.Matrix.PartialCorrelation.Basic
-public import TauCeti.LinearAlgebra.Matrix.Triangular.GramPowers
+public import TauCeti.LinearAlgebra.Matrix.Gram.Powers
 
 /-!
 # Powers of partial-correlation Cholesky and Gram entries
@@ -426,16 +426,6 @@ theorem prod_pow_partialCorrelationCholesky_eq_prod
         (sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).2 (hz ij)))
         (fun q _ ↦ partialCorrelationCholeskyEntryResidualPower_nonneg
           q.1 q.2 (m q) ij)).symm
-
-/-- Each entry of the partial-correlation Gram matrix sums triangular column products up to
-`min i j`. -/
-theorem partialCorrelationGram_apply_eq_sum_Iic_min (z : strictLowerTriangle p → ℝ)
-    (i j : Fin p) :
-    partialCorrelationGram z i j =
-      ∑ k ∈ Finset.Iic (min i j),
-        partialCorrelationCholesky z i k * partialCorrelationCholesky z j k := by
-  rw [partialCorrelationGram_def,
-    (isLowerTriangular_partialCorrelationCholesky z).mul_transpose_apply_eq_sum_Iic_min]
 
 /-- Every mixed natural monomial in the entries of `partialCorrelationGram z` expands as a
 multinomial sum of lower-triangular Cholesky monomials indexed by column compositions on
