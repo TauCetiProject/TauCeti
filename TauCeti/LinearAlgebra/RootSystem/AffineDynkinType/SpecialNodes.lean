@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
+import TauCeti.Combinatorics.SimpleGraph.CycleGraph
 import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.IntegralNullVector
 
 /-!
@@ -63,6 +64,7 @@ namespace TauCeti.AffineDynkinType
 /-- **Every graph automorphism of an affine simply-laced diagram preserves its generalized Cartan
 matrix**, `Ã₁` included: away from `Ã₁` the matrix is `2I - A`, while at `Ã₁` it depends only on
 equality of nodes. -/
+@[simp]
 theorem cartanMatrix_graph_iso_apply {t : AffineDynkinType} (σ : t.graph ≃g t.graph)
     (i j : Fin t.nodes) : t.cartanMatrix (σ i) (σ j) = t.cartanMatrix i j := by
   by_cases h : t = A 1
@@ -84,28 +86,15 @@ theorem cartanMatrix_submatrix_graph_iso {t : AffineDynkinType} (σ : t.graph �
 graphical diagram the marks are the unique positive primitive null vector of `2I - A`
 (`SimpleGraph.Iso.eq_gcd_smul_marks_comp`), while at `Ã₁` and outside the valid range the marks are
 constant equal to `1`. -/
+@[simp]
 theorem marks_graph_iso_apply {t : AffineDynkinType} (σ : t.graph ≃g t.graph)
     (i : Fin t.nodes) : t.marks (σ i) = t.marks i := by
   by_cases ht : t.Valid
   · by_cases hg : t.IsGraphical
-    · let a : Fin t.nodes → ℕ := fun k ↦ (t.marks k).toNat
-      have ha_cast (k : Fin t.nodes) : (a k : ℤ) = t.marks k :=
-        Int.toNat_of_nonneg (t.marks_pos k).le
-      have ha_sum (k : Fin t.nodes) : ∑ j ∈ t.graph.neighborFinset k, a j = 2 * a k := by
-        have hs := sum_marks_neighborFinset_eq_two_mul ht hg k
-        simp_rw [← ha_cast] at hs
-        exact_mod_cast hs
-      have hgcd : univ.gcd a = 1 := by
-        apply Nat.dvd_one.mp
-        have hdvd := univ.gcd_dvd (f := a) (mem_univ t.affineNode)
-        have h1 : a t.affineNode = 1 := by
-          have := ha_cast t.affineNode
-          rw [marks_affineNode] at this
-          exact_mod_cast this
-        rwa [h1] at hdvd
-      have heq := congrFun (σ.eq_gcd_smul_marks_comp ht hg ha_sum) i
-      simp only [hgcd, Nat.cast_one, one_smul, Function.comp_apply, ha_cast] at heq
-      exact heq.symm
+    · have heq := congrFun (σ.eq_gcd_smul_marks_comp ht hg
+        (sum_natMarks_neighborFinset_eq_two_mul ht hg)) i
+      simpa only [gcd_natMarks, Nat.cast_one, one_smul, Function.comp_apply, coe_natMarks] using
+        heq.symm
     · rw [isGraphical_iff_ne_A_one, not_not] at hg
       subst hg
       exact (marks_A_apply 1 (σ i)).trans (marks_A_apply 1 i).symm
@@ -130,12 +119,6 @@ theorem marks_comp_graph_iso {t : AffineDynkinType} (σ : t.graph ≃g t.graph) 
 
 /-! ### Explicit automorphisms moving special nodes to the affine node -/
 
-private lemma cycleGraph_sub_adj_iff {n : ℕ} (i u v : Fin (n + 1)) :
-    (SimpleGraph.cycleGraph (n + 1)).Adj (u - i) (v - i) ↔
-      (SimpleGraph.cycleGraph (n + 1)).Adj u v := by
-  rw [SimpleGraph.cycleGraph_adj', SimpleGraph.cycleGraph_adj',
-    sub_sub_sub_cancel_right, sub_sub_sub_cancel_right]
-
 /-- Translation by `-i` as an automorphism of `(A n).graph`, sending `i` to `0`. -/
 private def isoSubRightA (n : ℕ) (i : Fin (A n).nodes) : (A n).graph ≃g (A n).graph where
   toFun u := u - i
@@ -144,58 +127,37 @@ private def isoSubRightA (n : ℕ) (i : Fin (A n).nodes) : (A n).graph ≃g (A n
   right_inv u := add_sub_cancel_right u i
   map_rel_iff' {u v} := by
     rw [graph_A]
-    exact cycleGraph_sub_adj_iff i u v
+    exact TauCeti.cycleGraph_sub_adj_iff i u v
 
-/-- Node-number formula for swapping the leaves `0` and `n - 1` of affine `Dₙ`. -/
-private def dSwapVal (n k : ℕ) : ℕ :=
-  if k = 0 then n - 1 else if k = n - 1 then 0 else k
-
-private lemma dSwapVal_lt {n k : ℕ} (hn : 4 ≤ n) (hk : k < (D n).nodes) :
-    dSwapVal n k < (D n).nodes := by
-  rw [nodes_D] at hk ⊢
-  unfold dSwapVal
-  split_ifs <;> omega
-
-private lemma dSwapVal_involutive {n k : ℕ} (hn : 4 ≤ n) :
-    dSwapVal n (dSwapVal n k) = k := by
-  unfold dSwapVal
-  split_ifs <;> omega
-
-private def dSwapEquiv {n : ℕ} (hn : 4 ≤ n) : Fin (D n).nodes ≃ Fin (D n).nodes where
-  toFun k := ⟨dSwapVal n k, dSwapVal_lt hn k.isLt⟩
-  invFun k := ⟨dSwapVal n k, dSwapVal_lt hn k.isLt⟩
-  left_inv _ := Fin.ext (dSwapVal_involutive hn)
-  right_inv _ := Fin.ext (dSwapVal_involutive hn)
-
-private lemma coe_dSwapEquiv {n : ℕ} (hn : 4 ≤ n) (k : Fin (D n).nodes) :
-    ((dSwapEquiv hn k : Fin (n + 1)) : ℕ) = dSwapVal n k := rfl
-
-private lemma dSwapEquiv_adj {n : ℕ} (hn : 4 ≤ n) {a b : Fin (D n).nodes}
+private lemma dSwap_adj {n : ℕ} (hn : 4 ≤ n) {a b : Fin (D n).nodes}
     (h : (D n).graph.Adj a b) :
-    (D n).graph.Adj (dSwapEquiv hn a) (dSwapEquiv hn b) := by
+    (D n).graph.Adj
+      (Equiv.swap (0 : Fin (D n).nodes) ⟨n - 1, by rw [nodes_D]; omega⟩ a)
+      (Equiv.swap (0 : Fin (D n).nodes) ⟨n - 1, by rw [nodes_D]; omega⟩ b) := by
   have ha : (a : ℕ) < n + 1 := by simpa [nodes_D] using a.isLt
   have hb : (b : ℕ) < n + 1 := by simpa [nodes_D] using b.isLt
+  have hs (x : Fin (D n).nodes) :
+      ((Equiv.swap (0 : Fin (D n).nodes) ⟨n - 1, by rw [nodes_D]; omega⟩ x :
+          Fin (D n).nodes) : ℕ) =
+        if (x : ℕ) = 0 then n - 1 else if (x : ℕ) = n - 1 then 0 else (x : ℕ) := by
+    have h0 : ((0 : Fin (D n).nodes) : ℕ) = 0 := Fin.val_zero _
+    have hx0 : (x = 0) ↔ (x : ℕ) = 0 := by rw [Fin.ext_iff, h0]
+    have hxn1 : (x = ⟨n - 1, by rw [nodes_D]; omega⟩) ↔ (x : ℕ) = n - 1 := Fin.ext_iff
+    simp only [Equiv.swap_apply_def, hx0, hxn1]
+    split_ifs <;> simp
   have hadj_D (x y : Fin (D n).nodes) := graph_D_adj hn (i := x) (j := y)
   rw [hadj_D] at h ⊢
-  rw [coe_dSwapEquiv, coe_dSwapEquiv]
-  rcases h with h | h | h | h | h | h <;>
-    (dsimp only [dSwapVal]; split_ifs <;> omega)
-
-private lemma dSwapEquiv_self {n : ℕ} (hn : 4 ≤ n) (k : Fin (D n).nodes) :
-    dSwapEquiv hn (dSwapEquiv hn k) = k :=
-  (dSwapEquiv hn).left_inv k
+  rw [hs a, hs b]
+  rcases h with h | h | h | h | h | h <;> (split_ifs <;> omega)
 
 /-- Swapping the two leaves `0` and `n - 1` attached to node `1` of affine `Dₙ`. -/
 private def dSwapLeft {n : ℕ} (hn : 4 ≤ n) : (D n).graph ≃g (D n).graph where
-  toEquiv := dSwapEquiv hn
+  toEquiv := Equiv.swap (0 : Fin (D n).nodes) ⟨n - 1, by rw [nodes_D]; omega⟩
   map_rel_iff' {u v} :=
     ⟨fun h ↦ by
-      have h' := dSwapEquiv_adj hn h
-      rwa [dSwapEquiv_self, dSwapEquiv_self] at h',
-     dSwapEquiv_adj hn⟩
-
-private lemma coe_dSwapLeft {n : ℕ} (hn : 4 ≤ n) (k : Fin (D n).nodes) :
-    ((dSwapLeft hn k : Fin (D n).nodes) : ℕ) = dSwapVal n k := rfl
+      have h' := dSwap_adj hn h
+      rwa [Equiv.swap_apply_self, Equiv.swap_apply_self] at h',
+     dSwap_adj hn⟩
 
 /-- Node-number formula for reversing the spine `0 - 1 - ⋯ - (n - 2)` of affine `Dₙ` while
 exchanging the leaves `n - 1` and `n`. -/
@@ -251,6 +213,34 @@ private def dReverse {n : ℕ} (hn : 4 ≤ n) : (D n).graph ≃g (D n).graph whe
 private lemma coe_dReverse {n : ℕ} (hn : 4 ≤ n) (k : Fin (D n).nodes) :
     ((dReverse hn k : Fin (D n).nodes) : ℕ) = dRevVal n k := rfl
 
+/-- Swapping the arms `0 - 1 - 2` and `0 - 3 - 4` of affine `E₆`, sending `4` to `2`. -/
+private def e6SwapArm4 : E6.graph ≃g E6.graph where
+  toEquiv := Equiv.swap (1 : Fin E6.nodes) 3 * Equiv.swap 2 4
+  map_rel_iff' := @fun u v ↦ by
+    revert u v
+    simp only [graph_E6_adj]
+    simp only [nodes_E6]
+    decide
+
+/-- Swapping the arms `0 - 1 - 2` and `0 - 5 - 6` of affine `E₆`, sending `6` to `2`. -/
+private def e6SwapArm6 : E6.graph ≃g E6.graph where
+  toEquiv := Equiv.swap (1 : Fin E6.nodes) 5 * Equiv.swap 2 6
+  map_rel_iff' := @fun u v ↦ by
+    revert u v
+    simp only [graph_E6_adj]
+    simp only [nodes_E6]
+    decide
+
+/-- Swapping the two long arms `1 - 2 - 3 - 4` and `1 - 5 - 6 - 7` of affine `E₇`, sending `7` to
+`4`. -/
+private def e7SwapArms : E7.graph ≃g E7.graph where
+  toEquiv := Equiv.swap (2 : Fin E7.nodes) 5 * Equiv.swap 3 6 * Equiv.swap 4 7
+  map_rel_iff' := @fun u v ↦ by
+    revert u v
+    simp only [graph_E7_adj]
+    simp only [nodes_E7]
+    decide
+
 /-- **Transitivity on special nodes.** For every valid affine simply-laced diagram `t` and every
 node `i` of mark `1`, there is a graph automorphism sending `i` to `t.affineNode`.
 
@@ -271,81 +261,44 @@ theorem exists_graph_iso_apply_eq_affineNode {t : AffineDynkinType} (ht : t.Vali
       have hi_lt : (i : ℕ) < n + 1 := by simpa [nodes_D] using i.isLt
       have hleaf : (i : ℕ) = 0 ∨ (i : ℕ) = n - 2 ∨ (i : ℕ) = n - 1 ∨ (i : ℕ) = n := by
         split_ifs at hi <;> omega
-      have h0_val : ((0 : Fin (D n).nodes) : ℕ) = 0 := rfl
+      have h0_val : ((0 : Fin (D n).nodes) : ℕ) = 0 := Fin.val_zero _
       rcases hleaf with h0 | hn2 | hn1 | hn
       · exact ⟨SimpleGraph.Iso.refl, Fin.ext (h0.trans h0_val.symm)⟩
       · refine ⟨dReverse ht, Fin.ext ?_⟩
         rw [coe_dReverse, h0_val]
         dsimp only [dRevVal]
         split_ifs <;> omega
-      · refine ⟨dSwapLeft ht, Fin.ext ?_⟩
-        rw [coe_dSwapLeft, h0_val]
-        dsimp only [dSwapVal]
-        split_ifs <;> omega
-      · refine ⟨(dReverse ht).trans (dSwapLeft ht), Fin.ext ?_⟩
-        rw [RelIso.trans_apply, coe_dSwapLeft, coe_dReverse, h0_val]
-        dsimp only [dSwapVal, dRevVal]
-        split_ifs <;> omega
+      · refine ⟨dSwapLeft ht, ?_⟩
+        have hi' : i = ⟨n - 1, by rw [nodes_D]; omega⟩ := Fin.ext hn1
+        rw [hi']
+        exact Equiv.swap_apply_right (0 : Fin (D n).nodes) ⟨n - 1, by rw [nodes_D]; omega⟩
+      · refine ⟨(dReverse ht).trans (dSwapLeft ht), ?_⟩
+        rw [RelIso.trans_apply]
+        have hrev : dReverse ht i = ⟨n - 1, by rw [nodes_D]; omega⟩ := by
+          apply Fin.ext
+          rw [coe_dReverse]
+          dsimp only [dRevVal]
+          split_ifs <;> omega
+        rw [hrev]
+        exact Equiv.swap_apply_right (0 : Fin (D n).nodes) ⟨n - 1, by rw [nodes_D]; omega⟩
   | E6 =>
-      -- Special nodes of `E₆` are the three arm tips `2`, `4`, `6`.
       rw [marks_E6] at hi
       rw [affineNode_E6]
-      rcases i with ⟨_ | _ | _ | _ | _ | _ | _ | k, hk⟩
-      · simp at hi
-      · simp at hi
+      fin_cases i <;> simp at hi
       · exact ⟨SimpleGraph.Iso.refl, rfl⟩
-      · simp at hi
-      · refine ⟨{ toEquiv := Equiv.swap (1 : Fin E6.nodes) 3 * Equiv.swap 2 4
-                  map_rel_iff' := @fun u v ↦ by
-                    revert u v
-                    simp only [graph_E6_adj]
-                    simp only [nodes_E6]
-                    decide }, by decide +revert⟩
-      · simp at hi
-      · refine ⟨{ toEquiv := Equiv.swap (1 : Fin E6.nodes) 5 * Equiv.swap 2 6
-                  map_rel_iff' := @fun u v ↦ by
-                    revert u v
-                    simp only [graph_E6_adj]
-                    simp only [nodes_E6]
-                    decide }, by decide +revert⟩
-      · simp only [nodes_E6] at hk
-        omega
+      · exact ⟨e6SwapArm4, by decide⟩
+      · exact ⟨e6SwapArm6, by decide⟩
   | E7 =>
-      -- Special nodes of `E₇` are the two long-arm tips `4`, `7`.
       rw [marks_E7] at hi
       rw [affineNode_E7]
-      rcases i with ⟨_ | _ | _ | _ | _ | _ | _ | _ | k, hk⟩
-      · simp at hi
-      · simp at hi
-      · simp at hi
-      · simp at hi
+      fin_cases i <;> simp at hi
       · exact ⟨SimpleGraph.Iso.refl, rfl⟩
-      · simp at hi
-      · simp at hi
-      · refine ⟨{ toEquiv := Equiv.swap (2 : Fin E7.nodes) 5 * Equiv.swap 3 6 * Equiv.swap 4 7
-                  map_rel_iff' := @fun u v ↦ by
-                    revert u v
-                    simp only [graph_E7_adj]
-                    simp only [nodes_E7]
-                    decide }, by decide +revert⟩
-      · simp only [nodes_E7] at hk
-        omega
+      · exact ⟨e7SwapArms, by decide⟩
   | E8 =>
-      -- The only special node of `E₈` is `8`.
       rw [marks_E8] at hi
       rw [affineNode_E8]
-      rcases i with ⟨_ | _ | _ | _ | _ | _ | _ | _ | _ | k, hk⟩
-      · simp at hi
-      · simp at hi
-      · simp at hi
-      · simp at hi
-      · simp at hi
-      · simp at hi
-      · simp at hi
-      · simp at hi
-      · exact ⟨SimpleGraph.Iso.refl, rfl⟩
-      · simp only [nodes_E8] at hk
-        omega
+      fin_cases i <;> simp at hi
+      exact ⟨SimpleGraph.Iso.refl, rfl⟩
 
 /-- **Any two special nodes of a valid affine simply-laced diagram are related by a graph
 automorphism.** -/

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Dimension.Free
-import Mathlib.LinearAlgebra.Dimension.Finrank
 import TauCeti.Algebra.Ring.SquareZero
 import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
 
@@ -72,7 +71,7 @@ end Hyperplane
 section RankTwo
 
 variable {R M : Type*} [CommRing R] [NoZeroDivisors R] [AddCommGroup M] [Module R M]
-  [Module.Free R M] [Module.Finite R M]
+  [Module.Free R M]
 
 /-- **Every involutive endomorphism of determinant one on a rank-two free module over a domain
 away from characteristic two is `1` or `-1`.** -/
@@ -80,6 +79,7 @@ theorem eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one (h2 : (2 : R) ≠ 
     (hdim : Module.finrank R M = 2) {f : M →ₗ[R] M} (hf : f * f = 1) (hdet : f.det = 1) :
     f = 1 ∨ f = -1 := by
   have : Nontrivial R := ⟨⟨2, 0, h2⟩⟩
+  have : Module.Finite R M := Module.finite_of_finrank_eq_succ hdim
   have : IsDomain R := NoZeroDivisors.to_isDomain R
   let b : Module.Basis (Fin 2) R M := Module.finBasisOfFinrankEq R M hdim
   have hmat : LinearMap.toMatrix b b f * LinearMap.toMatrix b b f = 1 := by

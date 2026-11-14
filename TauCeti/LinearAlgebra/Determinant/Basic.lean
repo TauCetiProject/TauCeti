@@ -90,6 +90,10 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
 * `LinearMap.apply_eq_det_smul_of_finrank_eq_one`: on a free module of rank one, an endomorphism
   is multiplication by its determinant.
+* `Module.Basis.detBilinForm` and `Module.Basis.detBilinFormEquivDual`: the unimodular alternating
+  bilinear form `(x, y) ↦ b.det ![x, y]` of a `Fin 2`-basis `b` and the induced equivalence
+  `M ≃ₗ[R] Module.Dual R M` (`Module.Basis.isAlt_detBilinForm`,
+  `Module.Basis.detBilinForm_bijective`, `Module.Basis.nondegenerate_detBilinForm`).
 
 ## Implementation notes
 
@@ -240,6 +244,98 @@ under a linear map `f : M → M'` gives its value on `f ∘ b` times the determi
 theorem det_comp_eq_mul (b : Basis ι R M) (b' : Basis ι R M') (f : M →ₗ[R] M') (v : ι → M) :
     b'.det (f ∘ v) = b'.det (f ∘ b) * b.det v :=
   DFunLike.congr_fun (AlternatingMap.eq_smul_basis_det b (b'.det.compLinearMap f)) v
+
+section FinTwo
+
+variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V] (b : Basis (Fin 2) R V)
+
+/-- The alternating bilinear form `(x, y) ↦ b.det ![x, y]` attached to a two-element basis `b`. -/
+noncomputable def detBilinForm : LinearMap.BilinForm R V :=
+  b.det.toMultilinearMap.toBilinMap
+
+@[simp]
+theorem detBilinForm_apply (x y : V) : b.detBilinForm x y = b.det ![x, y] :=
+  MultilinearMap.toBilinMap_apply b.det.toMultilinearMap x y
+
+/-- In coordinates with respect to `b`, `b.detBilinForm x y` is `x₀ y₁ - y₀ x₁`. -/
+theorem detBilinForm_eq_repr (x y : V) :
+    b.detBilinForm x y = b.repr x 0 * b.repr y 1 - b.repr y 0 * b.repr x 1 := by
+  rw [detBilinForm_apply, b.det_apply, Matrix.det_fin_two]
+  simp [Basis.toMatrix_apply]
+
+/-- The determinant bilinear form of a `Fin 2`-basis is alternating. -/
+theorem isAlt_detBilinForm : b.detBilinForm.IsAlt :=
+  b.det.isAlt_toBilinMap
+
+/-- Evaluating `b.detBilinForm` on `(b 0, b 1)` yields `1`. -/
+theorem detBilinForm_basis_zero_one : b.detBilinForm (b 0) (b 1) = 1 := by
+  rw [detBilinForm_eq_repr]
+  simp
+
+/-- Evaluating `b.detBilinForm` on `(b 1, b 0)` yields `-1`. -/
+theorem detBilinForm_basis_one_zero : b.detBilinForm (b 1) (b 0) = -1 := by
+  rw [detBilinForm_eq_repr]
+  simp
+
+/-- Pairing against `b 1` on the right reads off the `0`-th coordinate in `b`. -/
+theorem detBilinForm_apply_basis_one (x : V) : b.detBilinForm x (b 1) = b.repr x 0 := by
+  rw [detBilinForm_eq_repr]
+  simp
+
+/-- Pairing against `b 0` on the right reads off minus the `1`-st coordinate in `b`. -/
+theorem detBilinForm_apply_basis_zero (x : V) : b.detBilinForm x (b 0) = -b.repr x 1 := by
+  rw [detBilinForm_eq_repr]
+  simp
+
+private theorem detBilinForm_sub_smul (φ : Module.Dual R V) :
+    b.detBilinForm (φ (b 1) • b 0 - φ (b 0) • b 1) = φ := by
+  refine b.ext <| Fin.forall_fin_two.2 ⟨?_, ?_⟩
+  · rw [detBilinForm_apply_basis_zero]
+    simp
+  · rw [detBilinForm_apply_basis_one]
+    simp
+
+/-- **Unimodularity of the `Fin 2` determinant form.** Over every commutative ring `R`,
+`x ↦ b.detBilinForm x` is a bijection `V → Module.Dual R V`, with inverse
+`φ ↦ φ (b 1) • b 0 - φ (b 0) • b 1`. -/
+theorem detBilinForm_bijective : Function.Bijective b.detBilinForm := by
+  refine ⟨fun x y hxy ↦ b.repr.injective ?_, fun φ ↦ ⟨φ (b 1) • b 0 - φ (b 0) • b 1,
+    b.detBilinForm_sub_smul φ⟩⟩
+  refine Finsupp.ext <| Fin.forall_fin_two.2 ⟨?_, ?_⟩
+  · rw [← detBilinForm_apply_basis_one, ← detBilinForm_apply_basis_one]
+    exact LinearMap.congr_fun hxy (b 1)
+  · have h0 := LinearMap.congr_fun hxy (b 0)
+    rw [detBilinForm_apply_basis_zero, detBilinForm_apply_basis_zero] at h0
+    exact neg_inj.mp h0
+
+/-- The `R`-linear equivalence `V ≃ₗ[R] Module.Dual R V` induced by `b.detBilinForm`. -/
+noncomputable def detBilinFormEquivDual : V ≃ₗ[R] Module.Dual R V :=
+  LinearEquiv.ofBijective b.detBilinForm b.detBilinForm_bijective
+
+@[simp]
+theorem detBilinFormEquivDual_apply (x y : V) :
+    b.detBilinFormEquivDual x y = b.detBilinForm x y :=
+  (rfl)
+
+/-- The inverse of `Module.Basis.detBilinFormEquivDual` sends `φ : Module.Dual R V` to
+`φ (b 1) • b 0 - φ (b 0) • b 1`. -/
+@[simp]
+theorem detBilinFormEquivDual_symm_apply (φ : Module.Dual R V) :
+    b.detBilinFormEquivDual.symm φ = φ (b 1) • b 0 - φ (b 0) • b 1 :=
+  b.detBilinFormEquivDual.injective
+    ((b.detBilinFormEquivDual.apply_symm_apply φ).trans (b.detBilinForm_sub_smul φ).symm)
+
+/-- The determinant bilinear form of a `Fin 2`-basis is nondegenerate over every commutative
+ring. -/
+theorem nondegenerate_detBilinForm : b.detBilinForm.Nondegenerate := by
+  refine ⟨fun x hx ↦ b.detBilinForm_bijective.1 ?_, fun y hy ↦ b.detBilinForm_bijective.1 ?_⟩
+  · rw [map_zero]
+    exact LinearMap.ext hx
+  · rw [map_zero]
+    refine LinearMap.ext fun x ↦ ?_
+    rw [LinearMap.zero_apply, ← b.isAlt_detBilinForm.neg_eq x y, hy x, neg_zero]
+
+end FinTwo
 
 end Module.Basis
 

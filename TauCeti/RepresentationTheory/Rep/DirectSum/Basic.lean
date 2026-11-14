@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.LinearAlgebra.DirectSum.TensorProduct
 public import Mathlib.RepresentationTheory.Rep.Basic
 
 /-!
-# Finite direct sums of representations
+# Finite and arbitrary direct sums of representations
 
 An intertwining map into a finite direct sum is determined by its components
 (`Representation.IntertwiningMap.directSumLinearEquiv`, for carriers in arbitrary universes), and
@@ -18,12 +18,15 @@ dimension computations use a concrete direct-sum representation without replacin
 categorical biproduct.
 
 The natural identification with a dependent product conjugates the direct-sum action to the
-componentwise action, so finite direct sums can also be studied through product linear maps.
+componentwise action, so finite direct sums can also be studied through product linear maps. In
+addition, `Representation.tprodDirectSumEquiv` distributes left tensor products over arbitrary
+direct sums of representations.
 -/
 
 public section
 
 open CategoryTheory Representation DirectSum
+open scoped TensorProduct
 
 namespace Representation
 
@@ -42,6 +45,36 @@ theorem conj_directSum_linearEquivFunOnFintype
   simp only [LinearEquiv.conj_apply_apply, LinearMap.coe_piMap, Pi.map_apply,
     DirectSum.linearEquivFunOnFintype_apply, directSum_apply, DirectSum.lmap_apply]
   rw [← DirectSum.linearEquivFunOnFintype_apply k ι V, LinearEquiv.apply_symm_apply]
+
+/-- Tensoring on the left distributes over `Representation.directSum`. -/
+noncomputable def tprodDirectSumEquiv {k G V₀ ι : Type*} [CommSemiring k] [Monoid G]
+    [AddCommMonoid V₀] [Module k V₀] (ρ : Representation k G V₀) [DecidableEq ι]
+    {W : ι → Type*} [∀ i, AddCommMonoid (W i)] [∀ i, Module k (W i)]
+    (σ : ∀ i, Representation k G (W i)) :
+    (ρ.tprod (directSum σ)).Equiv (directSum fun i ↦ ρ.tprod (σ i)) :=
+  .mk (_root_.TensorProduct.directSumRight k k V₀ W) fun g ↦
+    _root_.TensorProduct.ext' fun v w ↦ by
+      induction w using DirectSum.induction_on with
+      | zero => simp
+      | of i x => simp [directSum_apply, ← DirectSum.lof_eq_of k]
+      | add x y hx hy => simp only [_root_.TensorProduct.tmul_add, map_add, hx, hy]
+
+@[simp]
+theorem toLinearEquiv_tprodDirectSumEquiv {k G V₀ ι : Type*} [CommSemiring k] [Monoid G]
+    [AddCommMonoid V₀] [Module k V₀] (ρ : Representation k G V₀) [DecidableEq ι]
+    {W : ι → Type*} [∀ i, AddCommMonoid (W i)] [∀ i, Module k (W i)]
+    (σ : ∀ i, Representation k G (W i)) :
+    (tprodDirectSumEquiv ρ σ).toLinearEquiv = _root_.TensorProduct.directSumRight k k V₀ W :=
+  (rfl)
+
+@[simp]
+theorem tprodDirectSumEquiv_tmul_lof {k G V₀ ι : Type*} [CommSemiring k] [Monoid G]
+    [AddCommMonoid V₀] [Module k V₀] (ρ : Representation k G V₀) [DecidableEq ι]
+    {W : ι → Type*} [∀ i, AddCommMonoid (W i)] [∀ i, Module k (W i)]
+    (σ : ∀ i, Representation k G (W i)) (v : V₀) (i : ι) (w : W i) :
+    tprodDirectSumEquiv ρ σ (v ⊗ₜ[k] DirectSum.lof k ι W i w) =
+      DirectSum.lof k ι (fun j ↦ V₀ ⊗[k] W j) i (v ⊗ₜ[k] w) := by
+  simp [tprodDirectSumEquiv]
 
 end Representation
 
