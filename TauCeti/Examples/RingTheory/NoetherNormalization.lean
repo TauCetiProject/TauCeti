@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Field.ZMod
+public import TauCeti.RingTheory.NoetherNormalization
 import Mathlib.Algebra.DualNumber
-import Mathlib.Algebra.Field.ZMod
 import Mathlib.Algebra.MvPolynomial.Expand
-import TauCeti.AlgebraicGeometry.AffineSpace.Linear
+import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
 # Examples and counterexamples for linear Noether normalization
@@ -32,9 +33,11 @@ import TauCeti.AlgebraicGeometry.AffineSpace.Linear
 * J. S. Milne, *A Primer of Commutative Algebra*, Remark 8.4.
 -/
 
+public section
+
 namespace TauCeti.NoetherNormalizationExamples
 
-open CategoryTheory MvPolynomial TauCeti
+open MvPolynomial TauCeti
 
 -- A polynomial ring `k[X₀, …, Xₙ₋₁]` is normalized by the identity matrix `1` with `d = n`.
 example (k : Type*) [Field k] (n : ℕ) :
@@ -47,15 +50,11 @@ example (k : Type*) [Field k] (n : ℕ) :
       (1 : Matrix (Fin n) (Fin n) k) i j • (X j : MvPolynomial (Fin n) k)) = X := by
     funext i
     simp [Matrix.one_apply]
-  have hind : AlgebraicIndependent k (X : Fin n → MvPolynomial (Fin n) k) :=
-    algebraicIndependent_iff_injective_aeval.mpr
-      (by simpa [aeval_X_left] using Function.injective_id)
   have hfin : (aeval (R := k) (X : Fin n → MvPolynomial (Fin n) k)).Finite := by
-    change (aeval (R := k) (X : Fin n → MvPolynomial (Fin n) k)).toRingHom.Finite
     rw [aeval_X_left]
-    exact RingHom.Finite.of_surjective _ Function.surjective_id
+    exact AlgHom.Finite.id k _
   rw [hy]
-  exact ⟨hind, hfin, by simp⟩
+  exact ⟨MvPolynomial.algebraicIndependent_X (Fin n) k, hfin, by simp⟩
 
 -- A zero-dimensional presentation of `k` by `![0] : Fin 1 → k` normalizes with `d = 0`.
 example (k : Type*) [Field k] :
@@ -72,7 +71,7 @@ example (k : Type*) [Field k] :
   have hsurj : Function.Surjective (aeval (R := k)
       (fun i : Fin 0 ↦ ∑ j : Fin 1, (0 : Matrix (Fin 0) (Fin 1) k) i j • (![0] : Fin 1 → k) j)) :=
     fun a ↦ ⟨MvPolynomial.C a, by simp⟩
-  exact ⟨hadj, hind, RingHom.Finite.of_surjective _ hsurj, by simp⟩
+  exact ⟨hadj, hind, AlgHom.Finite.of_surjective _ hsurj, by simp⟩
 
 -- The nonreduced algebra `k[X₀, X₁] ⧸ (X₁²)` is normalized by `C = !![1, 0]` (`d = 1`) while
 -- retaining nonzero nilpotents.
@@ -97,54 +96,58 @@ example (k : Type*) [Field k] :
     exact Ideal.subset_span rfl
   have hnot_red : ¬ IsReduced (MvPolynomial (Fin 2) k ⧸ I) := by
     intro hred
-    let toDual : (MvPolynomial (Fin 2) k ⧸ I) →+* DualNumber k :=
-      Ideal.Quotient.lift I (aeval (R := k) ![0, DualNumber.eps]).toRingHom fun p hp ↦
-        RingHom.mem_ker.mp <| Ideal.span_le.mpr
-          (by rintro _ rfl; simp [DualNumber.eps_mul_eps, sq]) hp
+    have hker : ∀ p ∈ I, (aeval (R := k) (![0, DualNumber.eps] : Fin 2 → DualNumber k)) p = 0 :=
+      fun p hp ↦ RingHom.mem_ker.mp <| Ideal.span_le.mpr
+        (by rintro _ rfl; simp [DualNumber.eps_mul_eps, sq]) hp
+    let toDual : (MvPolynomial (Fin 2) k ⧸ I) →ₐ[k] DualNumber k :=
+      Ideal.Quotient.liftₐ I (aeval (R := k) ![0, DualNumber.eps]) hker
+    have htoDual : toDual (x 1) = DualNumber.eps := by
+      simpa [toDual, x] using congr($(Ideal.Quotient.liftₐ_comp I _ hker) (X 1))
     have heps : (DualNumber.eps : DualNumber k) = 0 := by
-      have h0 := congrArg toDual (hred.eq_zero (x 1) ⟨2, hx1_sq⟩)
-      simpa [toDual, x, Ideal.Quotient.lift_mk] using h0
+      rw [← htoDual, hred.eq_zero (x 1) ⟨2, hx1_sq⟩, map_zero]
     exact one_ne_zero (α := k) (by simpa using congrArg TrivSqZeroExt.snd heps)
-  have hadj : Algebra.adjoin k (Set.range x) = ⊤ := by
-    rw [Algebra.adjoin_range_eq_range_aeval, AlgHom.range_eq_top]
-    have hmk : aeval (R := k) x = Ideal.Quotient.mkₐ k I :=
-      MvPolynomial.algHom_ext fun j ↦ by simp [x, Ideal.Quotient.mkₐ_eq_mk]
-    exact hmk ▸ Ideal.Quotient.mk_surjective
+  have hadj : Algebra.adjoin k (Set.range x) = ⊤ := I.adjoin_range_quotient_mk_X_eq_top
   have hy0 : y = ![x 0] := funext <| Fin.forall_fin_one.mpr (by simp [y, Fin.sum_univ_two])
-  let proj : (MvPolynomial (Fin 2) k ⧸ I) →+* MvPolynomial (Fin 1) k :=
-    Ideal.Quotient.lift I (aeval (R := k) ![X 0, 0]).toRingHom fun p hp ↦
-      RingHom.mem_ker.mp <| Ideal.span_le.mpr (by rintro _ rfl; simp) hp
+  have hproj_ker :
+      ∀ p ∈ I, (aeval (R := k) (![X 0, 0] : Fin 2 → MvPolynomial (Fin 1) k)) p = 0 :=
+    fun p hp ↦ RingHom.mem_ker.mp <| Ideal.span_le.mpr (by rintro _ rfl; simp) hp
+  let proj : (MvPolynomial (Fin 2) k ⧸ I) →ₐ[k] MvPolynomial (Fin 1) k :=
+    Ideal.Quotient.liftₐ I (aeval (R := k) ![X 0, 0]) hproj_ker
+  have hproj : proj (x 0) = X 0 := by
+    simpa [proj, x] using congr($(Ideal.Quotient.liftₐ_comp I _ hproj_ker) (X 0))
   have hind : AlgebraicIndependent k y := by
     rw [algebraicIndependent_iff_injective_aeval]
-    have hleft : proj.comp (aeval (R := k) y).toRingHom = RingHom.id _ :=
-      MvPolynomial.ringHom_ext
-        (fun r ↦ by
-          simp [proj, IsScalarTower.algebraMap_apply k (MvPolynomial (Fin 2) k),
-            Ideal.Quotient.algebraMap_eq]) <|
-        Fin.forall_fin_one.mpr (by simp [proj, hy0, x])
+    have hleft : proj.comp (aeval (R := k) y) = AlgHom.id k _ :=
+      MvPolynomial.algHom_ext <| Fin.forall_fin_one.mpr (by simp [hy0, hproj])
     exact Function.LeftInverse.injective fun p ↦ congr($hleft p)
   have hfin : (aeval (R := k) y).Finite := by
     refine finite_aeval_of_adjoin_eq_top hadj <| Fin.forall_fin_two.mpr ⟨?_, ?_⟩
     · simpa [hy0] using RingHom.isIntegralElem_map (aeval (R := k) y).toRingHom (x := X 0)
     · exact ⟨Polynomial.X ^ 2, Polynomial.monic_X_pow 2, by simp [hx1_sq]⟩
-  have : Nontrivial (MvPolynomial (Fin 2) k ⧸ I) :=
-    ⟨⟨1, 0, fun h ↦ by simpa using congrArg proj h⟩⟩
-  have hint : (aeval (R := k) y).toRingHom.IsIntegral := hfin.to_isIntegral
   exact ⟨hnot_red, hadj, hind, hfin, by
     simpa using ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial
-      (aeval (R := k) y).toRingHom (algebraicIndependent_iff_injective_aeval.mp hind) hint⟩
+      (aeval (R := k) y).toRingHom (algebraicIndependent_iff_injective_aeval.mp hind)
+      hfin.to_isIntegral⟩
+
+section ThreeLines
+
+/-- The defining ideal `(X₀ X₁ (X₀ + X₁))` of the three `𝔽₂`-rational lines through the origin in
+`𝔽₂[X₀, X₁]`. -/
+noncomputable def threeLinesIdeal : Ideal (MvPolynomial (Fin 2) (ZMod 2)) :=
+  Ideal.span {X 0 * X 1 * (X 0 + X 1)}
+
+/-- The coordinate generators `x₀, x₁` of `𝔽₂[X₀, X₁] ⧸ (X₀ X₁ (X₀ + X₁))`. -/
+noncomputable def threeLinesGen (j : Fin 2) :
+    MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal :=
+  Ideal.Quotient.mk threeLinesIdeal (X j)
 
 -- Over `𝔽₂ = ZMod 2`, NO linear combination `c 0 • x 0 + c 1 • x 1` of the coordinate generators
 -- makes `𝔽₂[X₀, X₁] ⧸ (X₀ X₁ (X₀ + X₁))` integral (hence nor module-finite) over `𝔽₂[Y]`.
 example (c : Fin 2 → ZMod 2) :
-    ¬ (aeval (R := ZMod 2) (![c 0 • Ideal.Quotient.mk
-        (Ideal.span {(X 0 : MvPolynomial (Fin 2) (ZMod 2)) * X 1 * (X 0 + X 1)}) (X 0) +
-      c 1 • Ideal.Quotient.mk
-        (Ideal.span {(X 0 : MvPolynomial (Fin 2) (ZMod 2)) * X 1 * (X 0 + X 1)}) (X 1)] :
+    ¬ (aeval (R := ZMod 2) (![c 0 • threeLinesGen 0 + c 1 • threeLinesGen 1] :
       Fin 1 → _)).toRingHom.IsIntegral := by
-  set I : Ideal (MvPolynomial (Fin 2) (ZMod 2)) := Ideal.span {X 0 * X 1 * (X 0 + X 1)}
-  set x : Fin 2 → MvPolynomial (Fin 2) (ZMod 2) ⧸ I := fun j ↦ Ideal.Quotient.mk I (X j)
-  set y : Fin 1 → MvPolynomial (Fin 2) (ZMod 2) ⧸ I := ![c 0 • x 0 + c 1 • x 1]
+  let y : Fin 1 → MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal :=
+    ![c 0 • threeLinesGen 0 + c 1 • threeLinesGen 1]
   have hdir : ∃ (u : Fin 2 → ZMod 2) (i₀ : Fin 2),
       u 0 * u 1 * (u 0 + u 1) = 0 ∧ c 0 * u 0 + c 1 * u 1 = 0 ∧ u i₀ = 1 := by
     by_cases hc0 : c 0 = 0
@@ -154,112 +157,99 @@ example (c : Fin 2 → ZMod 2) :
       · have hne : ∀ a : ZMod 2, a ≠ 0 → a = 1 := by decide
         exact ⟨![1, 1], 0, by decide, by rw [hne _ hc0, hne _ hc1]; decide, rfl⟩
   obtain ⟨u, i₀, hu_rel, hu_orth, hui₀⟩ := hdir
-  let lineHom : (MvPolynomial (Fin 2) (ZMod 2) ⧸ I) →+* Polynomial (ZMod 2) :=
-    Ideal.Quotient.lift I
-      (aeval (R := ZMod 2) fun j ↦ Polynomial.C (u j) * Polynomial.X).toRingHom fun p hp ↦
-        RingHom.mem_ker.mp <| Ideal.span_le.mpr (by
-          rintro _ rfl
-          have hcalc : (Polynomial.C (u 0) * Polynomial.X) * (Polynomial.C (u 1) * Polynomial.X) *
-              (Polynomial.C (u 0) * Polynomial.X + Polynomial.C (u 1) * Polynomial.X) =
-              Polynomial.C (u 0 * u 1 * (u 0 + u 1)) * Polynomial.X ^ 3 := by
-            simp only [map_add, map_mul]; ring
-          simp [hcalc, hu_rel]) hp
+  have hline_ker : ∀ p ∈ threeLinesIdeal,
+      (aeval (R := ZMod 2) fun j ↦ Polynomial.C (u j) * Polynomial.X) p = 0 :=
+    fun p hp ↦ RingHom.mem_ker.mp <| Ideal.span_le.mpr (by
+      rintro _ rfl
+      have hcalc : (Polynomial.C (u 0) * Polynomial.X) * (Polynomial.C (u 1) * Polynomial.X) *
+          (Polynomial.C (u 0) * Polynomial.X + Polynomial.C (u 1) * Polynomial.X) =
+          Polynomial.C (u 0 * u 1 * (u 0 + u 1)) * Polynomial.X ^ 3 := by
+        simp only [map_add, map_mul]; ring
+      simp [hcalc, hu_rel]) hp
+  let lineHom : (MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal) →ₐ[ZMod 2] Polynomial (ZMod 2) :=
+    Ideal.Quotient.liftₐ threeLinesIdeal
+      (aeval (R := ZMod 2) fun j ↦ Polynomial.C (u j) * Polynomial.X) hline_ker
+  have hline (j : Fin 2) : lineHom (threeLinesGen j) = Polynomial.C (u j) * Polynomial.X := by
+    simpa [lineHom, threeLinesGen] using
+      congr($(Ideal.Quotient.liftₐ_comp threeLinesIdeal _ hline_ker) (X j))
   have hy0 : lineHom (y 0) = 0 := by
-    have hsmul (j : Fin 2) :
-        lineHom (c j • x j) = Polynomial.C (c j) * (Polynomial.C (u j) * Polynomial.X) := by
-      change lineHom (Ideal.Quotient.mk I (c j • X j)) = _
-      simp [lineHom, Algebra.smul_def, Polynomial.algebraMap_eq]
-    have hlin : Polynomial.C (c 0) * (Polynomial.C (u 0) * Polynomial.X) +
-        Polynomial.C (c 1) * (Polynomial.C (u 1) * Polynomial.X) =
-        Polynomial.C (c 0 * u 0 + c 1 * u 1) * Polynomial.X := by
-      simp only [map_add, map_mul]; ring
-    simp only [y, Matrix.cons_val_zero, map_add, hsmul, hlin, hu_orth, map_zero, zero_mul]
+    rw [show y 0 = c 0 • threeLinesGen 0 + c 1 • threeLinesGen 1 from rfl,
+      map_add, map_smul, map_smul, hline 0, hline 1,
+      Algebra.smul_def, Algebra.smul_def, Polynomial.algebraMap_eq]
+    calc Polynomial.C (c 0) * (Polynomial.C (u 0) * Polynomial.X) +
+          Polynomial.C (c 1) * (Polynomial.C (u 1) * Polynomial.X)
+        = Polynomial.C (c 0 * u 0 + c 1 * u 1) * Polynomial.X := by
+          simp only [map_add, map_mul]; ring
+      _ = 0 := by rw [hu_orth, map_zero, zero_mul]
   intro hint
-  obtain ⟨P, hP_monic, hP_eval⟩ := hint (x i₀)
-  have hcomp : lineHom.comp (aeval (R := ZMod 2) y).toRingHom =
-      Polynomial.C.comp (MvPolynomial.eval 0) :=
-    MvPolynomial.ringHom_ext
-      (fun r ↦ by
-        simp [lineHom, IsScalarTower.algebraMap_apply (ZMod 2) (MvPolynomial (Fin 2) (ZMod 2)),
-          Ideal.Quotient.algebraMap_eq, Polynomial.algebraMap_eq]) <|
-      Fin.forall_fin_one.mpr (by simp [hy0])
+  obtain ⟨P, hP_monic, hP_eval⟩ := hint (threeLinesGen i₀)
+  have hcomp : lineHom.toRingHom.comp (aeval (R := ZMod 2) y).toRingHom =
+      Polynomial.C.comp (MvPolynomial.eval 0) := by
+    have halg : lineHom.comp (aeval (R := ZMod 2) y) =
+        (Polynomial.CAlgHom (R := ZMod 2)).comp (MvPolynomial.aeval (R := ZMod 2) 0) :=
+      MvPolynomial.algHom_ext <| Fin.forall_fin_one.mpr (by simp [hy0])
+    refine RingHom.ext fun p ↦ ?_
+    simpa [aeval_eq_eval] using congr($halg p)
   have hmap : P.map (MvPolynomial.eval (0 : Fin 1 → ZMod 2)) = 0 := by
-    have h0 := congrArg lineHom hP_eval
+    have h0 := congrArg lineHom.toRingHom hP_eval
     rw [Polynomial.hom_eval₂, hcomp, map_zero] at h0
-    have hxi₀ : lineHom (x i₀) = Polynomial.X := by simp [lineHom, x, hui₀]
+    have hxi₀ : lineHom.toRingHom (threeLinesGen i₀) = Polynomial.X := by
+      simp [hline i₀, hui₀]
     rwa [hxi₀, ← Polynomial.eval₂_map, Polynomial.eval₂_C_X] at h0
   exact (hP_monic.map (MvPolynomial.eval (0 : Fin 1 → ZMod 2))).ne_zero hmap
 
 -- Over `𝔽₂ = ZMod 2`, the nonlinear quadratic element `z = x₀² + x₀ x₁ + x₁²` DOES normalize
 -- `𝔽₂[X₀, X₁] ⧸ (X₀ X₁ (X₀ + X₁))` (`d = 1`).
 example :
-    let I : Ideal (MvPolynomial (Fin 2) (ZMod 2)) := Ideal.span {X 0 * X 1 * (X 0 + X 1)}
-    let x : Fin 2 → MvPolynomial (Fin 2) (ZMod 2) ⧸ I := fun j ↦ Ideal.Quotient.mk I (X j)
-    let y : Fin 1 → MvPolynomial (Fin 2) (ZMod 2) ⧸ I := ![x 0 ^ 2 + x 0 * x 1 + x 1 ^ 2]
-    Algebra.adjoin (ZMod 2) (Set.range x) = ⊤ ∧
+    let y : Fin 1 → MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal :=
+      ![threeLinesGen 0 ^ 2 + threeLinesGen 0 * threeLinesGen 1 + threeLinesGen 1 ^ 2]
+    Algebra.adjoin (ZMod 2) (Set.range threeLinesGen) = ⊤ ∧
       AlgebraicIndependent (ZMod 2) y ∧ (aeval (R := ZMod 2) y).Finite ∧
-        ringKrullDim (MvPolynomial (Fin 2) (ZMod 2) ⧸ I) = (1 : ℕ) := by
+        ringKrullDim (MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal) = (1 : ℕ) := by
   dsimp only
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  set I : Ideal (MvPolynomial (Fin 2) (ZMod 2)) := Ideal.span {X 0 * X 1 * (X 0 + X 1)}
-  set x : Fin 2 → MvPolynomial (Fin 2) (ZMod 2) ⧸ I := fun j ↦ Ideal.Quotient.mk I (X j)
-  set y : Fin 1 → MvPolynomial (Fin 2) (ZMod 2) ⧸ I := ![x 0 ^ 2 + x 0 * x 1 + x 1 ^ 2]
-  have hadj : Algebra.adjoin (ZMod 2) (Set.range x) = ⊤ := by
-    rw [Algebra.adjoin_range_eq_range_aeval, AlgHom.range_eq_top]
-    have hmk : aeval (R := ZMod 2) x = Ideal.Quotient.mkₐ (ZMod 2) I :=
-      MvPolynomial.algHom_ext fun j ↦ by simp [x, Ideal.Quotient.mkₐ_eq_mk]
-    exact hmk ▸ Ideal.Quotient.mk_surjective
-  let axisHom : (MvPolynomial (Fin 2) (ZMod 2) ⧸ I) →+* MvPolynomial (Fin 1) (ZMod 2) :=
-    Ideal.Quotient.lift I (aeval (R := ZMod 2) ![X 0, 0]).toRingHom fun p hp ↦
-      RingHom.mem_ker.mp <| Ideal.span_le.mpr (by rintro _ rfl; simp) hp
+  set y : Fin 1 → MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal :=
+    ![threeLinesGen 0 ^ 2 + threeLinesGen 0 * threeLinesGen 1 + threeLinesGen 1 ^ 2]
+  have hadj : Algebra.adjoin (ZMod 2) (Set.range threeLinesGen) = ⊤ :=
+    threeLinesIdeal.adjoin_range_quotient_mk_X_eq_top
+  have haxis_ker : ∀ p ∈ threeLinesIdeal,
+      (aeval (R := ZMod 2) (![X 0, 0] : Fin 2 → MvPolynomial (Fin 1) (ZMod 2))) p = 0 :=
+    fun p hp ↦ RingHom.mem_ker.mp <| Ideal.span_le.mpr (by rintro _ rfl; simp) hp
+  let axisHom : (MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal) →ₐ[ZMod 2]
+      MvPolynomial (Fin 1) (ZMod 2) :=
+    Ideal.Quotient.liftₐ threeLinesIdeal (aeval (R := ZMod 2) ![X 0, 0]) haxis_ker
+  have haxis (j : Fin 2) :
+      axisHom (threeLinesGen j) = (![X 0, 0] : Fin 2 → MvPolynomial (Fin 1) (ZMod 2)) j := by
+    simpa [axisHom, threeLinesGen] using
+      congr($(Ideal.Quotient.liftₐ_comp threeLinesIdeal _ haxis_ker) (X j))
   have hind : AlgebraicIndependent (ZMod 2) y := by
     rw [algebraicIndependent_iff_injective_aeval]
-    have hexp : axisHom.comp (aeval (R := ZMod 2) y).toRingHom =
-        (MvPolynomial.expand 2).toRingHom :=
-      MvPolynomial.ringHom_ext
-        (fun r ↦ by
-          simp [axisHom, IsScalarTower.algebraMap_apply (ZMod 2) (MvPolynomial (Fin 2) (ZMod 2)),
-            Ideal.Quotient.algebraMap_eq]) <|
-        Fin.forall_fin_one.mpr (by simp [axisHom, y, x, expand_X])
-    exact Function.Injective.of_comp (f := axisHom) <| by
-      change Function.Injective (axisHom.comp (aeval (R := ZMod 2) y).toRingHom)
-      rw [hexp]
-      exact MvPolynomial.expand_injective (by positivity)
+    have hexp : axisHom.comp (aeval (R := ZMod 2) y) = MvPolynomial.expand 2 :=
+      MvPolynomial.algHom_ext <|
+        Fin.forall_fin_one.mpr (by simp [y, haxis, expand_X])
+    refine Function.Injective.of_comp (f := axisHom) ?_
+    rw [← AlgHom.coe_comp, hexp]
+    exact MvPolynomial.expand_injective (by positivity)
   have hpoly : ∀ j : Fin 2, (X j : MvPolynomial (Fin 2) (ZMod 2)) ^ 3 -
       (X 0 ^ 2 + X 0 * X 1 + X 1 ^ 2) * X j = -(X 0 * X 1 * (X 0 + X 1)) :=
     Fin.forall_fin_two.mpr ⟨by ring, by ring⟩
-  have hcubic (j : Fin 2) : x j ^ 3 - y 0 * x j = 0 := by
-    have hmk : Ideal.Quotient.mk I
+  have hcubic (j : Fin 2) : threeLinesGen j ^ 3 - y 0 * threeLinesGen j = 0 := by
+    have hmk : Ideal.Quotient.mk threeLinesIdeal
         ((X j : MvPolynomial (Fin 2) (ZMod 2)) ^ 3 -
           (X 0 ^ 2 + X 0 * X 1 + X 1 ^ 2) * X j) = 0 := by
       rw [hpoly j, map_neg, neg_eq_zero, Ideal.Quotient.eq_zero_iff_mem]
       exact Ideal.subset_span rfl
-    simpa [y, x, map_sub, map_add, map_mul, map_pow] using hmk
+    simpa [y, threeLinesGen, map_sub, map_add, map_mul, map_pow] using hmk
   have hfin : (aeval (R := ZMod 2) y).Finite := by
     refine finite_aeval_of_adjoin_eq_top hadj fun j ↦ ?_
     refine ⟨Polynomial.X ^ 3 - Polynomial.C (X 0) * Polynomial.X,
       Polynomial.monic_X_pow_sub ((Polynomial.degree_C_mul_X_le _).trans_lt (by norm_num)), ?_⟩
     simpa using hcubic j
-  have : Nontrivial (MvPolynomial (Fin 2) (ZMod 2) ⧸ I) :=
-    ⟨⟨1, 0, fun h ↦ by simpa using congrArg axisHom h⟩⟩
-  have hint : (aeval (R := ZMod 2) y).toRingHom.IsIntegral := hfin.to_isIntegral
   exact ⟨hadj, hind, hfin, by
     simpa using ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial (k := ZMod 2)
       (aeval (R := ZMod 2) y).toRingHom
-      (algebraicIndependent_iff_injective_aeval.mp hind) hint⟩
+      (algebraicIndependent_iff_injective_aeval.mp hind) hfin.to_isIntegral⟩
 
--- Geometric linear Noether normalization specializes cleanly to closed subschemes of `𝔸ⁿ_k`.
-universe u in
-example (k A : Type u) [Field k] [Infinite k] [CommRing A] [Nontrivial A] [Algebra k A]
-    (n : ℕ) (x : Fin n → A) (hx : Algebra.adjoin k (Set.range x) = ⊤) :
-    AlgebraicGeometry.IsClosedImmersion
-        (AlgebraicGeometry.AffineSpace.homOfAlgebra (R := k) (x ∘ ULift.down)) ∧
-      ∃ (d : ℕ) (_ : d ≤ n) (C : Matrix (ULift.{u} (Fin d)) (ULift.{u} (Fin n)) k),
-        let π := AlgebraicGeometry.AffineSpace.homOfAlgebra (R := k) (x ∘ ULift.down) ≫
-          AlgebraicGeometry.AffineSpace.linearMap (AlgebraicGeometry.Spec (.of k))
-            (C.map (AlgebraicGeometry.Scheme.ΓSpecIso (.of k)).inv)
-        AlgebraicGeometry.IsFinite π ∧ AlgebraicGeometry.Surjective π ∧
-          (∀ q, (π ⁻¹' {q}).Finite) ∧ ringKrullDim A = d :=
-  AlgebraicGeometry.AffineSpace.exists_linear_normalization x hx
+end ThreeLines
 
 end TauCeti.NoetherNormalizationExamples

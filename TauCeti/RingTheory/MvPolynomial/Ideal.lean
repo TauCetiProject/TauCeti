@@ -57,6 +57,8 @@ its graph equations `Y i - f i`. These formulas need no monomial order.
 * `Ideal.mem_comap_rename_some_map_rename_some_sup_span_iff` and
   `Ideal.comap_rename_some_map_rename_some_sup_span`: the saturation of an ideal by a polynomial is
   the contraction of an ideal in one more variable, and the contraction from the localization.
+* `Ideal.adjoin_range_quotient_mk_X_eq_top`: the residue classes of the variables generate any
+  quotient `MvPolynomial σ R ⧸ I` as an `R`-algebra.
 
 ## References
 
@@ -289,5 +291,12 @@ theorem comap_rename_some_map_rename_some_sup_span (I : Ideal (MvPolynomial σ R
   ext g
   rw [mem_comap_rename_some_map_rename_some_sup_span_iff, mem_comap,
     IsLocalization.Away.algebraMap_mem_map_algebraMap_iff f]
+
+/-- The quotient `MvPolynomial σ R ⧸ I` is generated as an `R`-algebra by the residue classes of the
+variables `X i`. -/
+theorem adjoin_range_quotient_mk_X_eq_top (I : Ideal (MvPolynomial σ R)) :
+    Algebra.adjoin R (Set.range fun i : σ ↦ Quotient.mk I (X i)) = ⊤ := by
+  rw [Algebra.adjoin_range_eq_range_aeval, ← mkₐ_eq_aeval, AlgHom.range_eq_top]
+  exact Quotient.mk_surjective
 
 end Ideal
