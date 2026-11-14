@@ -9,7 +9,9 @@ public import Mathlib.RingTheory.AdicCompletion.Algebra
 public import Mathlib.RingTheory.FiniteType
 import Mathlib.Data.Fintype.Order
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Algebra.MvPolynomial.Degrees
 import TauCeti.Algebra.MvPolynomial.Monad
+import TauCeti.RingTheory.AdicCompletion.Nilpotent
 
 /-!
 # The Monsky–Washnitzer weak completion
@@ -59,6 +61,15 @@ Nothing here assumes that `O` is a discrete valuation ring or that `π` is a uni
 * `TauCeti.Dagger.weakCompletion.of_injective_iff`: `S → S†` is injective iff `S` is
   `π`-adically separated.
 * `TauCeti.Dagger.weakCompletion_eq_top_of_surjective`: if `S → S^∧` is surjective, `S† = S^∧`.
+* `TauCeti.Dagger.weakCompletion_eq_top_of_finite` and
+  `TauCeti.Dagger.weakCompletion_self_eq_top`: if `S` is module-finite over `O` (in particular for
+  `S = O`), `S† = S^∧`.
+* `TauCeti.Dagger.weakCompletion.of_bijective_of_isAdicComplete` and
+  `TauCeti.Dagger.weakCompletion.of_bijective_of_isNilpotent`: if `S` is `π`-adically complete (in
+  particular if the image of `π` in `S` is nilpotent), `S → S†` is bijective.
+* `TauCeti.Dagger.weakCompletion.of_bijective_iff_of_finite` and
+  `TauCeti.Dagger.weakCompletion.of_self_bijective_iff`: for module-finite `S` over `O` (in
+  particular for `S = O`), `S → S†` is bijective iff `S` is `π`-adically complete.
 
 ## References
 
@@ -202,6 +213,8 @@ theorem exists_mem_weakCompletionSet_of_degree_le {ι : Type*} (x : ι → S)
     AdicCompletion.evalₐ_mk _ k _
   exact ⟨z, mem_weakCompletionSet_iff.mpr ⟨c, P, hP, hz⟩, hz⟩
 
+section FiniteType
+
 variable (S) [Algebra.FiniteType O S]
 
 /-- The weak completion `S† ⊆ S^∧` of a finitely generated `O`-algebra `S`: the degree-growth set
@@ -272,5 +285,89 @@ theorem weakCompletion_eq_top_of_surjective
   refine eq_top_iff.mpr fun z _ ↦ ?_
   obtain ⟨s, rfl⟩ := h z
   exact algebraMap_mem_weakCompletion π s
+
+/-- If `S` is `π`-adically complete, the canonical map `S → S†` is bijective. -/
+theorem weakCompletion.of_bijective_of_isAdicComplete
+    [IsAdicComplete (Ideal.span {algebraMap O S π}) S] :
+    Function.Bijective (weakCompletion.of π S) := by
+  have hbij := AdicCompletion.of_bijective (Ideal.span {algebraMap O S π}) S
+  refine ⟨(weakCompletion.of_injective_iff π).mpr inferInstance, fun z ↦ ?_⟩
+  obtain ⟨s, hs⟩ := hbij.2 (z : piAdicCompletion π S)
+  exact ⟨s, Subtype.ext ((weakCompletion.coe_of π s).trans hs)⟩
+
+/-- If the image of `π` in `S` is nilpotent, the canonical map `S → S†` is bijective. -/
+theorem weakCompletion.of_bijective_of_isNilpotent {π : O}
+    (hπ : IsNilpotent (algebraMap O S π)) :
+    Function.Bijective (weakCompletion.of π S) := by
+  obtain ⟨n, hn⟩ := hπ
+  have hpow : Ideal.span {algebraMap O S π} ^ n = ⊥ := by
+    rw [Ideal.span_singleton_pow, hn, Ideal.span_singleton_eq_bot]
+  have : IsAdicComplete (Ideal.span {algebraMap O S π}) S :=
+    TauCeti.isAdicComplete_of_pow_smul_eq_bot (by rw [hpow, Submodule.bot_smul])
+  exact weakCompletion.of_bijective_of_isAdicComplete π
+
+end FiniteType
+
+/-- For any module-finite `O`-algebra `S`, the weak completion `S†` is the entire `π`-adic
+completion `S^∧`. -/
+theorem weakCompletion_eq_top_of_finite [Module.Finite O S] : weakCompletion π S = ⊤ := by
+  rw [eq_top_iff]
+  intro z _
+  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := O) (M := S)
+  let x : s → S := (↑)
+  have hspan : Submodule.span O (Set.range x) = ⊤ := by
+    simpa [x] using hs
+  have hgen : Algebra.adjoin O (Set.range x) = ⊤ := by
+    rw [← Algebra.adjoin_span]
+    simp [hspan]
+  rw [mem_weakCompletion_iff π hgen]
+  let I : Ideal S := Ideal.span {algebraMap O S π}
+  obtain ⟨f, rfl⟩ := AdicCompletion.mk_surjective I S z
+  -- Set `b 0 = 0` and `b (k + 1) = f.val (k + 1)`, then telescope consecutive differences.
+  let b : ℕ → S := fun k ↦ if k = 0 then 0 else f.val k
+  have hstep (j : ℕ) : ∃ t : S, b (j + 1) - b j = algebraMap O S π ^ j * t := by
+    rcases j with _ | j
+    · exact ⟨f.val 1, by simp [b]⟩
+    · have htr := SModEq.sub_mem.mp (f.property (Nat.le_succ (j + 1))).symm
+      rw [smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow, Ideal.mem_span_singleton] at htr
+      obtain ⟨t, ht⟩ := htr
+      exact ⟨t, by simpa [b] using ht⟩
+  choose t ht using hstep
+  choose P hPdeg hPev using fun j ↦
+    MvPolynomial.exists_totalDegree_le_one_aeval_eq_of_mem_span
+      (x := x) (t := t j) (hspan.symm ▸ Submodule.mem_top)
+  refine ⟨1, P, fun j ↦ (hPdeg j).trans (by omega), fun k ↦ ?_⟩
+  rw [AdicCompletion.evalₐ_mk]
+  rcases k with _ | k
+  · have : Subsingleton (S ⧸ I ^ 0) := Ideal.Quotient.subsingleton_iff.mpr (by simp)
+    exact Subsingleton.elim _ _
+  · congr 1
+    simpa [x, hPev, ← ht, b] using (sum_range_sub b (k + 1)).symm
+
+/-- For the base ring itself, the weak completion `O†` is the entire `π`-adic completion `Ô`. -/
+theorem weakCompletion_self_eq_top : weakCompletion π O = ⊤ :=
+  weakCompletion_eq_top_of_finite π
+
+namespace weakCompletion
+
+/-- For a module-finite `O`-algebra `S`, the canonical map `S → S†` is bijective if and only if
+`S` is `π`-adically complete. -/
+theorem of_bijective_iff_of_finite [Module.Finite O S] :
+    Function.Bijective (of π S) ↔ IsAdicComplete (Ideal.span {algebraMap O S π}) S := by
+  refine ⟨fun h ↦ ?_, fun _ ↦ of_bijective_of_isAdicComplete π⟩
+  rw [← AdicCompletion.of_bijective_iff]
+  have htop := weakCompletion_eq_top_of_finite (S := S) π
+  refine ⟨fun a b hab ↦ h.1 (Subtype.ext ((coe_of π a).trans (hab.trans (coe_of π b).symm))),
+    fun z ↦ ?_⟩
+  obtain ⟨a, ha⟩ := h.2 ⟨z, htop.symm ▸ Algebra.mem_top⟩
+  exact ⟨a, (coe_of π a).symm.trans (congrArg Subtype.val ha)⟩
+
+/-- For the base ring `O` itself, `O → O†` is bijective if and only if `O` is `π`-adically
+complete. -/
+theorem of_self_bijective_iff :
+    Function.Bijective (of π O) ↔ IsAdicComplete (Ideal.span {π}) O := by
+  simpa using of_bijective_iff_of_finite (S := O) π
+
+end weakCompletion
 
 end TauCeti.Dagger
