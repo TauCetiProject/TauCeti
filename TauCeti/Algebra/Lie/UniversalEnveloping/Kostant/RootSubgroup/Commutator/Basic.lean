@@ -7,9 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Commutator.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Basic
-public import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
-public import TauCeti.RingTheory.Nilpotent.RootString.Basic
-import Mathlib.RingTheory.Nilpotent.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Commutator.DoublyLaced
 
 /-!
@@ -54,11 +51,10 @@ Type `G₂` additionally needs the longer chain with factors at `3α + β` and `
 transport to Kostant root subgroups is in
 `TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commutator.G2.Basic`.
 
-The general statements about integral nilpotent exponentials are
-`TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq` and
-`TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq_two_nsmul`; this file only supplies the
-Lie-theoretic hypotheses and transports the identities to the root subgroups in
-`LinearMap.GeneralLinearGroup`.
+The Lie-bracket exponential identities are supplied by
+`TauCeti.UniversalEnvelopingAlgebra.baseChangeExp_mul_baseChangeExp_of_lie_eq` and
+`TauCeti.UniversalEnvelopingAlgebra.baseChangeExp_mul_baseChangeExp_of_lie_lie_eq`; this file
+transports them to `kostantRootSubgroupPoints` in `LinearMap.GeneralLinearGroup`.
 
 ## Main results
 

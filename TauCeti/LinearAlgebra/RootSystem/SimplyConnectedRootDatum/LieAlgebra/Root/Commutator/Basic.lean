@@ -73,41 +73,6 @@ noncomputable section
 
 variable {t : DynkinType} {ht : t.Valid} {α β γ δ : Fin t.numRoots}
 
-/-- A root sum `γ = α + β` makes the roots `α` and `β` linearly independent, so a combination
-`a α + b β` with natural coefficients and `a ≠ 0` does not vanish. -/
-private theorem ne_zero_of_eq_nsmul_root_add_nsmul_root
-    (hγ : (t.simplyConnectedRootDatum ht).root γ =
-      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
-    {a b : ℕ} (ha : a ≠ 0) {w : Fin t.rank → ℤ}
-    (hw : w = a • (t.simplyConnectedRootDatum ht).root α +
-      b • (t.simplyConnectedRootDatum ht).root β) :
-    w ≠ 0 := by
-  have := t.isReduced_simplyConnectedRootDatum ht
-  rintro rfl
-  rw [← natCast_zsmul, ← natCast_zsmul] at hw
-  have h := (LinearIndependent.pair_iff.1
-    ((t.simplyConnectedRootDatum ht).linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩) _ _
-      hw.symm).1
-  omega
-
-private theorem doublyLaced_vanishing_brackets
-    (hγ : (t.simplyConnectedRootDatum ht).root γ =
-      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
-    (hδ : (t.simplyConnectedRootDatum ht).root δ =
-      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
-    (hαδ : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root δ ∉
-      Set.range (t.simplyConnectedRootDatum ht).root)
-    (hβγ : (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root γ ∉
-      Set.range (t.simplyConnectedRootDatum ht).root) :
-    ⁅t.chevalleySystem ht α, t.chevalleySystem ht δ⁆ = 0 ∧
-      ⁅t.chevalleySystem ht β, t.chevalleySystem ht γ⁆ = 0 :=
-  ⟨lie_chevalleySystem_eq_zero hαδ
-      (ne_zero_of_eq_nsmul_root_add_nsmul_root hγ (a := 3) (b := 1) (by decide)
-        (by rw [hδ, hγ]; module)),
-    lie_chevalleySystem_eq_zero hβγ
-      (ne_zero_of_eq_nsmul_root_add_nsmul_root hγ (a := 1) (b := 2) one_ne_zero
-        (by rw [hγ]; module))⟩
-
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
   (M : AddSubgroup V)
@@ -156,12 +121,8 @@ theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_add
     rw [hγ]; module
   refine commutatorElement_chevalleyRootSubgroup_of_lie_eq ρ M hM hnil
     (lie_chevalleySystem_eq_structureConstant_zsmul hγ)
-    (lie_chevalleySystem_eq_zero (hαγ ▸ hα)
-      (ne_zero_of_eq_nsmul_root_add_nsmul_root hγ (a := 2) (b := 1) two_ne_zero
-        (by rw [hαγ, one_nsmul])))
-    (lie_chevalleySystem_eq_zero (hβγ ▸ hβ)
-      (ne_zero_of_eq_nsmul_root_add_nsmul_root hγ (a := 1) (b := 2) one_ne_zero
-        (by rw [hβγ, one_nsmul]))) A u v
+    (lie_chevalleySystem_eq_zero_of_add_eq hγ (hαγ ▸ hα))
+    (lie_chevalleySystem_eq_zero_of_add_eq (hγ.trans (add_comm _ _)) (hβγ ▸ hβ)) A u v
 
 /-- **The two-factor Chevalley commutator formula, short root first.** If `γ = α + β` and
 `δ = 2α + β` are roots while `3α + β` and `α + 2β` are not, then over every commutative ring of
@@ -200,7 +161,6 @@ theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add
   have hβγ : (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + 2 • (t.simplyConnectedRootDatum ht).root β := by
     rw [hγ]; module
-  obtain ⟨hil, hjk⟩ := doublyLaced_vanishing_brackets hγ hδ' (hαδ ▸ hα) (hβγ ▸ hβ)
   let e := t.chevalleySystem ht
   let d := t.structureConstant ht α β * t.structureConstant ht α γ / 2
   have hdiv : 2 * d = t.structureConstant ht α β * t.structureConstant ht α γ :=
@@ -214,7 +174,9 @@ theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add
   simpa only [MulEquiv.apply_symm_apply, toAdd_ofAdd] using
     commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq' e (t.lieBasis ht).h ρ M hM'
       (A := A)
-      (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hiij hil hjk
+      (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hiij
+      (lie_chevalleySystem_eq_zero_of_add_eq hδ' (hαδ ▸ hα))
+      (lie_chevalleySystem_eq_zero_of_add_eq (hγ.trans (add_comm _ _)) (hβγ ▸ hβ))
       (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
       (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
       (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)
@@ -263,7 +225,6 @@ theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_add_two_nsmul
   have hαγ : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ =
       2 • (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β := by
     rw [hγ]; module
-  obtain ⟨hjl, hik⟩ := doublyLaced_vanishing_brackets hγ' hδ' (hβδ ▸ hβ) (hαγ ▸ hα)
   let e := t.chevalleySystem ht
   let d := t.structureConstant ht β α * t.structureConstant ht β γ / 2
   have hdiv : 2 * d = t.structureConstant ht β α * t.structureConstant ht β γ :=
@@ -277,7 +238,9 @@ theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_add_two_nsmul
   simpa only [MulEquiv.apply_symm_apply, toAdd_ofAdd, Int.cast_neg] using
     commutatorElement_kostantRootSubgroupPoints_of_lie_lie_rev_eq' e (t.lieBasis ht).h ρ M hM'
       (A := A)
-      (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hjji hjl hik
+      (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hjji
+      (lie_chevalleySystem_eq_zero_of_add_eq hδ' (hβδ ▸ hβ))
+      (lie_chevalleySystem_eq_zero_of_add_eq hγ (hαγ ▸ hα))
       (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
       (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
       (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)

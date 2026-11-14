@@ -98,8 +98,6 @@ private theorem doubleString_brackets
   -- The two string bounds exclude the two unwanted root sums.
   have hrev := P.chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
     hbot htop
-  have hn (a b : ℤ) (hb : b ≠ 0) : a • P.root α + b • P.root β ≠ 0 :=
-    fun hz ↦ hb (LinearIndependent.pair_iff.mp hli a b hz).2
   have hthree : P.root β + 3 • P.root α ∉ Set.range P.root := by
     rw [P.root_add_nsmul_mem_range_iff_le_chainTopCoeff hli, htop]
     omega
@@ -111,16 +109,10 @@ private theorem doubleString_brackets
   have hbg : P.root β + P.root γ = P.root α + 2 • P.root β := by
     rw [hγ]; module
   -- Expand the local datum abbreviation to apply the root-vector bracket API.
-  dsimp only [P] at had hbg hn hthree htwo
-  refine ⟨lie_chevalleySystem_eq_zero ?_ ?_, lie_chevalleySystem_eq_zero ?_ ?_⟩
-  · simpa only [had, add_comm] using hthree
-  · rw [had]
-    convert hn 3 1 (by decide) using 1
-    module
-  · simpa only [hbg] using htwo
-  · rw [hbg]
-    convert hn 1 2 (by decide) using 1
-    module
+  dsimp only [P] at had hbg hthree htwo
+  exact ⟨lie_chevalleySystem_eq_zero_of_add_eq hδ (by simpa only [had, add_comm] using hthree),
+    lie_chevalleySystem_eq_zero_of_add_eq (hγ.trans (add_comm _ _))
+      (by simpa only [hbg] using htwo)⟩
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
