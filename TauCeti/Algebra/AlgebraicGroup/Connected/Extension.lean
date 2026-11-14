@@ -107,7 +107,7 @@ theorem of_kernel (hQ : geometricallyConnectedCommHopfAlgProperty k Q)
   let K := AlgebraicClosure k
   let fK := CommHopfAlgCat.baseChangeMap (K := K) f
   apply (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_baseChange k K G).mpr
-  have hQK := (hQ.baseChange k K Q).connectedSpace K _
+  have hQK := (hQ.baseChange k K Q).connectedSpace
   let _ := hQK
   have hNK := hN.baseChange k K _
   let e := CommHopfAlgCat.quotientBaseChangeIso (K := K)
@@ -117,7 +117,7 @@ theorem of_kernel (hQ : geometricallyConnectedCommHopfAlgProperty k Q)
       (CommHopfAlgCat.quotient (CommHopfAlgCat.baseChange (K := K) G)
         (CommHopfAlgCat.kernelHopfIdeal fK)) :=
     (geometricallyConnectedCommHopfAlgProperty K).prop_of_iso e.symm hNK
-  let _ := hNK'.connectedSpace K _
+  let _ := hNK'.connectedSpace
   apply _root_.CommHopfAlgCat.Hom.connectedSpace_of_connected_kernel fK
   dsimp only [fK]
   simpa only [CommHopfAlgCat.hom_baseChangeMap, Bialgebra.TensorProduct.map_toAlgHom,
