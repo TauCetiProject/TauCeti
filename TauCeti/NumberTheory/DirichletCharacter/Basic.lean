@@ -56,8 +56,10 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   read off the values of the Kronecker symbol at odd arguments.
 * `DirichletCharacter.changeLevel_trans_mul_toUnitHom`: raising a product of characters through an
   intermediate level, read on unit homomorphisms.
-* `DirichletCharacter.changeLevel_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`:
-  changing the level preserves the value at `-1`, hence parity.
+* `DirichletCharacter.changeLevel_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`,
+  `DirichletCharacter.primitiveCharacter_apply_neg_one`,
+  `DirichletCharacter.even_primitiveCharacter_iff`: changing the level or passing to the primitive
+  character preserves the value at `-1`, hence parity.
 * `DirichletCharacter.conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply`: a primitivity
   criterion at a prime-power level, obtained by comparing values on congruent units, and its
   specialisations `DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three` and
@@ -385,6 +387,18 @@ value at `-1` of its lift to any multiple level. -/
 theorem even_changeLevel_iff {S : Type*} [CommRing S] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter S d) : (changeLevel h χ).Even ↔ χ.Even := by
   rw [Even, Even, changeLevel_apply_neg_one]
+
+/-- Passing to the primitive character does not change the value at `-1`. -/
+@[simp]
+theorem primitiveCharacter_apply_neg_one {R : Type*} [CommMonoidWithZero R] {n : ℕ}
+    (χ : DirichletCharacter R n) : χ.primitiveCharacter (-1) = χ (-1) := by
+  rw [← changeLevel_apply_neg_one χ.conductor_dvd_level, changeLevel_primitiveCharacter]
+
+/-- **Passing to the primitive character preserves parity.** -/
+@[simp]
+theorem even_primitiveCharacter_iff {S : Type*} [CommRing S] {n : ℕ}
+    (χ : DirichletCharacter S n) : χ.primitiveCharacter.Even ↔ χ.Even := by
+  rw [Even, Even, primitiveCharacter_apply_neg_one]
 
 /-- If a combination of the symmetrised character sums `psi i x + phi i x` vanishes against every
 pair of units, then the coefficients of the combination vanish against every pair of

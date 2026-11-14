@@ -35,6 +35,8 @@ have absolute value one.
   level leaves it quadratic.
 * `DirichletCharacter.isQuadratic_changeLevel_iff`: at a nonzero target level, a lifted
   character is quadratic exactly when the original character is quadratic.
+* `MulChar.IsQuadratic.primitiveCharacter`, `DirichletCharacter.isQuadratic_primitiveCharacter_iff`:
+  a Dirichlet character is quadratic if and only if its primitive character is quadratic.
 * `DirichletCharacter.isQuadratic_mul`: the common-level product of two quadratic characters is
   quadratic.
 * `DirichletCharacter.isQuadratic_iff_eq_one_or_eq_quadraticChar`: at a prime level, the quadratic
@@ -79,6 +81,28 @@ theorem isQuadratic_changeLevel_iff {R : Type*} [CommRing R]
     rw [← ha.unit_spec, ← hu, ZMod.unitsMap_val]
     exact hv
   · exact Or.inl (MulChar.map_nonunit χ ha)
+
+/-- The primitive character of a quadratic Dirichlet character is quadratic. -/
+theorem _root_.MulChar.IsQuadratic.primitiveCharacter {R : Type*} [CommRing R] {n : ℕ}
+    {χ : DirichletCharacter R n} (hχ : χ.IsQuadratic) : χ.primitiveCharacter.IsQuadratic := by
+  obtain rfl | hn := eq_zero_or_neZero n
+  · have hc : χ.conductor = 0 := conductor_eq_zero_iff_level_eq_zero.mpr rfl
+    have h0 : ∀ (ψ : DirichletCharacter R χ.conductor) (h : χ.conductor ∣ 0),
+        (changeLevel h ψ).IsQuadratic → ψ.IsQuadratic := by
+      rw [hc]
+      intro ψ h hψ
+      rwa [changeLevel_self] at hψ
+    exact h0 χ.primitiveCharacter χ.conductor_dvd_level (by rwa [changeLevel_primitiveCharacter])
+  · exact (isQuadratic_changeLevel_iff χ.conductor_dvd_level).mp
+      (by rwa [changeLevel_primitiveCharacter])
+
+/-- The primitive character of a Dirichlet character is quadratic if and only if the character
+itself is quadratic. -/
+@[simp]
+theorem isQuadratic_primitiveCharacter_iff {R : Type*} [CommRing R] {n : ℕ}
+    (χ : DirichletCharacter R n) : χ.primitiveCharacter.IsQuadratic ↔ χ.IsQuadratic :=
+  ⟨fun h ↦ by simpa only [changeLevel_primitiveCharacter] using
+    h.changeLevel χ.conductor_dvd_level, MulChar.IsQuadratic.primitiveCharacter⟩
 
 /-- The product of two quadratic characters, taken at the least common multiple of their levels,
 is quadratic. -/
