@@ -15,7 +15,9 @@ import TauCeti.Topology.VectorBundle.RestrictScalars
 
 For a family `L` of real subspaces of the fibres of a complex vector bundle `V` whose fibres are
 maximal totally real, `V x = L x ⊕ i L x`, and the projection of `V x` onto `L x` along `i L x` is
-a continuous real-linear endomorphism of the fibre (`TauCeti.totallyRealProjection`).
+a continuous real-linear endomorphism of the fibre (`TauCeti.totallyRealProjection`). A real
+local frame of `L` is then a complex basis of each such fibre
+(`TauCeti.IsSubbundleFrameOn.complexBasis`).
 
 Read in a trivialization, a real local frame `X` of `L` becomes the complex-linear frame operator
 `c ↦ ∑ i, c i • X i`, which is bijective exactly where the fibre of `L` is maximal totally real
@@ -27,6 +29,8 @@ condition along a continuous frame (`TauCeti.eventually_isMaximalTotallyReal`).
 
 * `TauCeti.totallyRealProjection`: the projection of a fibre onto a maximal totally real
   subspace `L x` along `i L x`.
+* `TauCeti.IsSubbundleFrameOn.complexBasis`: a real local frame of a maximal totally real
+  fibre, as a complex basis of the fibre.
 * `TauCeti.IsSubbundleFrameOn.bijective_trivOperator`: a real frame of a maximal totally real
   fibre is a complex basis, so its frame operator is bijective.
 * `TauCeti.eventually_isMaximalTotallyReal`: along a continuous frame, maximal total reality is an
@@ -45,6 +49,46 @@ open Bundle FiberBundle Function Set
 open scoped Topology
 
 namespace TauCeti
+
+section ComplexBasis
+
+variable {B F : Type*} [TopologicalSpace B] {V : B → Type*} [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)] [∀ x, IsScalarTower ℝ ℂ (V x)]
+  [TopologicalSpace (TotalSpace F V)] {ι : Type*} {L : ∀ x, Submodule ℝ (V x)}
+  {σ : ι → Π x, V x} {U : Set B}
+
+/-- At a point where `L` is maximal totally real, a real local frame of `L` is a complex basis
+of the fibre of `V`. -/
+def IsSubbundleFrameOn.complexBasis (hX : IsSubbundleFrameOn F L σ U) {x : B} (hx : x ∈ U)
+    (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x)) :
+    Module.Basis ι ℂ (V x) :=
+  hL.complexBasis (hX.basis hx)
+
+theorem IsSubbundleFrameOn.complexBasis_def (hX : IsSubbundleFrameOn F L σ U) {x : B}
+    (hx : x ∈ U)
+    (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x)) :
+    hX.complexBasis hx hL = hL.complexBasis (hX.basis hx) :=
+  (rfl)
+
+@[simp]
+theorem IsSubbundleFrameOn.coe_complexBasis (hX : IsSubbundleFrameOn F L σ U) {x : B}
+    (hx : x ∈ U)
+    (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x)) :
+    ⇑(hX.complexBasis hx hL) = (σ · x) := by
+  ext i
+  simp [complexBasis_def, hX.coe_basis hx]
+
+/-- The complex coordinates of a vector of `L x` in `hX.complexBasis hx hL` are its real
+coordinates in the frame basis `hX.basis hx`. -/
+@[simp]
+theorem IsSubbundleFrameOn.complexBasis_repr_coe (hX : IsSubbundleFrameOn F L σ U) {x : B}
+    (hx : x ∈ U)
+    (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x))
+    (v : L x) (i : ι) :
+    (hX.complexBasis hx hL).repr v i = (hX.basis hx).repr v i := by
+  rw [complexBasis_def, hL.complexBasis_repr_coe]
+
+end ComplexBasis
 
 variable {B F : Type*} [TopologicalSpace B]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
@@ -99,7 +143,7 @@ theorem IsSubbundleFrameOn.bijective_trivOperator [Fintype ι] (hX : IsSubbundle
     (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V y) Complex.I).restrictScalars ℝ) (L y)) :
     Function.Bijective (IsSubbundleFrameOn.trivOperator ℂ F X x₀ y) := by
   set e := trivializationAt F V x₀
-  let b := hL.complexBasis (hX.basis hyU)
+  let b := hX.complexBasis hyU hL
   have h : ⇑(IsSubbundleFrameOn.trivOperator ℂ F X x₀ y) =
       e.continuousLinearEquivAt ℂ y hy ∘ b.equivFun.symm := by
     funext c

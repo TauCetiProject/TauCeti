@@ -155,7 +155,7 @@ theorem cotangentLiouvilleForm_compContinuousLinearMap_fderiv_cotangentGeneratin
     (hS : DifferentiableAt ℝ (fderiv ℝ S) x) (hx : cotangentFamilyFiberDeriv S x = 0) :
     (cotangentLiouvilleForm (cotangentGeneratingSource S x)).compContinuousLinearMap
         (fderiv ℝ (cotangentGeneratingSource S) x) =
-      differentialOneForm S x := by
+      differentialOneForm ℝ S x := by
   -- The target covector `-∂_a S` vanishes, so the target term of the exactness of the generated
   -- relation drops out.
   have hP : (cotangentGeneratingTarget S x).2 = 0 := by

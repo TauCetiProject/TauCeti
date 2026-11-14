@@ -332,7 +332,6 @@ theorem peterssonInnerCosets_restrict_restrict_eq_zero_of_mem_cuspFormsNew {M N 
   -- the decomposition `Γ₁(gcd N M) = Γ₁(N) · Γ₁(M)` carries this to level `lcm N M`
   have hgcd : Nat.gcd N M ≠ M := fun h ↦ hMN (h ▸ Nat.gcd_dvd_left N M)
   exact CuspForm.peterssonInnerCosets_restrict_restrict_eq_zero
-    (Gamma1_le_Gamma1_of_dvd (Nat.gcd_dvd_left N M))
     (Gamma1_le_Gamma1_of_dvd (Nat.gcd_dvd_right N M)) (Gamma1_lcm_eq_inf N M)
     (fun _ ↦ exists_mul_eq_of_mem_Gamma1_gcd)
     (fun ψ ↦ CuspForm.mem_peterssonOrthogonal_iff.mp hg _
@@ -463,6 +462,7 @@ theorem diamondOpCusp_mem_cuspFormsOld [NeZero N] (u : (ZMod N)ˣ)
   refine cuspFormsOld_le (V := (cuspFormsOld N k).comap (diamondOpCusp k u)) ?_ hf
   intro M d hdvd hM g
   have := NeZero.of_dvd (dvd_of_mul_left_dvd hdvd)
+  have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd hdvd)
   rw [Submodule.mem_comap, CuspForm.diamondOpCusp_levelRaise hdvd]
   exact levelRaise_mem_cuspFormsOld hdvd hM k _
 

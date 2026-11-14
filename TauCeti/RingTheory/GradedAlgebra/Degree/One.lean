@@ -86,7 +86,7 @@ private theorem mul_decompose_mem_closure {x : A}
     rw [decompose_of_mem_ne 𝒜 (SetLike.algebraMap_mem_graded 𝒜 r) hn.ne, mul_zero]
     exact zero_mem _
   | add x y _ _ hx hy =>
-    rw [decompose_add, add_apply, Submodule.coe_add, mul_add]
+    rw [decompose_add, DirectSum.add_apply, Submodule.coe_add, mul_add]
     exact add_mem (hx hn ha) (hy hn ha)
   | mul x y _ _ hx hy =>
     rw [decompose_mul, coe_mul_apply_eq_sum_antidiagonal, Finset.mul_sum]

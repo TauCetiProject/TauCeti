@@ -23,6 +23,10 @@ This identifies essential bounds on continuous observables, such as distance fro
 point, with geometric bounds on the support. Lower semicontinuity is important: an upward
 change at a single null point need not affect the essential supremum.
 
+An almost everywhere bound on the absolute value of a real function, with respect to a measure
+whose almost-everywhere filter is nontrivial, is nonnegative (`TauCeti.nonneg_of_ae_abs_le`), and
+so is one on a set of nonzero measure (`TauCeti.nonneg_of_ae_restrict_abs_le`).
+
 The file also records two facts about the essential oscillation `essSup f μ - essInf f μ` of a
 real function: a function with values in an interval of length `L` has essential oscillation at
 most `L` (`TauCeti.essSup_sub_essInf_le`), and the essential oscillation of an essentially
@@ -57,6 +61,20 @@ theorem essSup_eq_iSup_support {β : Type*} [CompleteLinearOrder β] [Topologica
 section Oscillation
 
 variable {α : Type*} [MeasurableSpace α] {ν : Measure α}
+
+/-- An almost everywhere bound on the absolute value of a real function is nonnegative, as long as
+the measure is nonzero. -/
+theorem nonneg_of_ae_abs_le [(ae ν).NeBot] {g : α → ℝ} {W : ℝ} (h : ∀ᵐ x ∂ν, |g x| ≤ W) :
+    0 ≤ W := by
+  obtain ⟨x, hx⟩ := h.exists
+  exact (abs_nonneg _).trans hx
+
+/-- An almost everywhere bound on the absolute value of a real function on a set of nonzero
+measure is nonnegative. -/
+theorem nonneg_of_ae_restrict_abs_le {s : Set α} (hs : ν s ≠ 0) {g : α → ℝ} {W : ℝ}
+    (h : ∀ᵐ x ∂ν.restrict s, |g x| ≤ W) : 0 ≤ W :=
+  have : (ae (ν.restrict s)).NeBot := ae_restrict_neBot.2 hs
+  nonneg_of_ae_abs_le h
 
 /-- A real function taking values almost everywhere in an interval of length `L` has essential
 oscillation at most `L`. -/

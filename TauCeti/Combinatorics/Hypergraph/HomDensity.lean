@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.Basic
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Finite
-public import TauCeti.Data.Fintype.CardEmbedding
+public import TauCeti.Data.Fintype.Card.Embedding
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Data.Rat.Cast.Lemmas
 import Mathlib.Tactic.Positivity

@@ -70,7 +70,7 @@ arbitrary fraction fields. -/
   -- The injectivity lemma leaves the coercions applied as anonymous functions.
   -- Reduce these applications to expose the underlying submodules for the named rewrites.
   dsimp only
-  rw [FractionalIdeal.extendedHom'_apply, FractionalIdeal.coe_extended_eq_span,
+  rw [FractionalIdeal.extendedHom'_apply, FractionalIdeal.coeToSubmodule_extended_eq_span,
     ← FractionalIdeal.val_eq_coe, FractionalIdeal.ringEquivOfRingEquiv_apply_val]
   simp only [FractionalIdeal.val_eq_coe]
   rw [← Submodule.span_eq (I : Submodule R (FractionRing R)), Submodule.map_span]

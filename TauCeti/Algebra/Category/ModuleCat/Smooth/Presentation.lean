@@ -37,14 +37,15 @@ namespace TauCeti
 variable {A : Type*} [Ring A] {ι : Type*} {J : ι → Submodule A A}
 
 /-- Finitely many vectors of a smooth module have a common annihilating ideal in a
-nonempty downward directed family. This does not assert a uniform annihilator for the
+downward directed family. This does not assert a uniform annihilator for the
 whole module. -/
-theorem exists_forall_smul_eq_zero_of_smoothModules [Nonempty ι]
+theorem exists_forall_smul_eq_zero_of_smoothModules
     (hJ : Directed (· ≥ ·) J) {M : ModuleCat A} (hM : smoothModules J M)
     {κ : Type*} [Finite κ] (v : κ → M) :
     ∃ i, ∀ k a, a ∈ J i → a • v k = 0 := by
   classical
   let _ := Fintype.ofFinite κ
+  have := nonempty_of_smoothModules hM
   rw [smoothModules_iff] at hM
   choose i hi using fun k ↦ hM (v k)
   obtain ⟨i₀, hi₀⟩ := hJ.finset_le (Finset.univ.image i)
@@ -54,7 +55,7 @@ theorem exists_forall_smul_eq_zero_of_smoothModules [Nonempty ι]
 /-- A finite generating family in a smooth module gives a surjection from copies of one
 cyclic quotient. The map sends the class of `1` in the `k`-th summand to the specified
 `k`-th generator. -/
-theorem exists_surjective_pi_quotient_of_smoothModules_of_span_eq_top [Nonempty ι]
+theorem exists_surjective_pi_quotient_of_smoothModules_of_span_eq_top
     (hJ : Directed (· ≥ ·) J) {M : ModuleCat A} (hM : smoothModules J M)
     {κ : Type*} [Finite κ] [DecidableEq κ] (v : κ → M) (hv : Submodule.span A (Set.range v) = ⊤) :
     ∃ i, ∃ f : (κ → A ⧸ J i) →ₗ[A] M, Function.Surjective f ∧
@@ -80,7 +81,7 @@ theorem exists_surjective_pi_quotient_of_smoothModules_of_span_eq_top [Nonempty 
 
 /-- Every finitely generated smooth module is a quotient of a finite sum of copies of
 one cyclic quotient `A ⧸ J i`. The indexing number may be zero. -/
-theorem exists_surjective_pi_quotient_of_smoothModules [Nonempty ι]
+theorem exists_surjective_pi_quotient_of_smoothModules
     (hJ : Directed (· ≥ ·) J) {M : ModuleCat A} [Module.Finite A M]
     (hM : smoothModules J M) :
     ∃ (i : ι) (n : ℕ) (f : (Fin n → A ⧸ J i) →ₗ[A] M), Function.Surjective f := by
@@ -91,7 +92,7 @@ theorem exists_surjective_pi_quotient_of_smoothModules [Nonempty ι]
 
 /-- If the cyclic quotients are smooth, they detect smoothness of finitely generated
 modules by finite-sum presentations. No stability under arbitrary extensions is assumed. -/
-theorem smoothModules_iff_exists_surjective_pi_quotient [Nonempty ι]
+theorem smoothModules_iff_exists_surjective_pi_quotient
     (hJ : Directed (· ≥ ·) J)
     (hQ : ∀ i, smoothModules J (ModuleCat.of A (A ⧸ J i)))
     {M : ModuleCat A} [Module.Finite A M] :

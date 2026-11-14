@@ -208,7 +208,7 @@ private theorem injOn_exp_halfStrip_of_inverted_coordinate [∀ z, Decidable (g 
   · exact absurd hzw.symm (exp_ne_zero _)
   · exact absurd hzw (exp_ne_zero _)
   · have hφ := injOn_exp_pi_mul_I_sub (hB z hz hgz) (hB w hw hgw) hzw
-    simp only [div_left_inj' hb, sub_left_inj, add_right_inj, inv_inj] at hφ
+    simp only [div_left_inj₀ hb, sub_left_inj, add_right_inj, inv_inj] at hφ
     exact hgi ⟨hz, hgz⟩ ⟨hw, hgw⟩ hφ
 
 /-- **The exponential coordinate at a parallel-sided end.**  Let `g = (f - q)⁻¹` be the inverted
