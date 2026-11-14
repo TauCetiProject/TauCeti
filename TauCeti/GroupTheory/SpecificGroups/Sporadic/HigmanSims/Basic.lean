@@ -40,6 +40,7 @@ finiteness, or simplicity of the presented group is asserted.
 public section
 
 open scoped commutatorElement
+open scoped Pointwise
 
 namespace TauCeti.Sporadic
 

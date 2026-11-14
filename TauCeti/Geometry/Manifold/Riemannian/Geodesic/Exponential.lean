@@ -39,6 +39,8 @@ defined for all time.
 * `TauCeti.Manifold.expDomain`: the natural domain of the exponential map at `p`.
 * `TauCeti.Manifold.riemannianExp`: the exponential map at `p`.
 * `TauCeti.Manifold.IsGeodesicallyCompleteAt`: every geodesic leaving `p` is defined for all time.
+* `TauCeti.Manifold.IsGeodesicallyCompleteAt.geodesicInterval_eq_univ`: at such a point every
+  maximal geodesic interval is the whole real line.
 * `TauCeti.Manifold.mem_geodesicInterval_iff_smul_mem_expDomain`: the maximal interval of `v` is
   the set of times `t` with `t • v` in the domain.
 * `TauCeti.Manifold.riemannianExp_smul`: `exp_p (t • v)` is the maximal geodesic at time `t`,
@@ -77,8 +79,6 @@ defined for all time.
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 3, §2, Prop. 2.9.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, Springer, 2018, Ch. 5, Prop. 5.19.
 -/
-
--- Roadmap: HopfRinow
 
 public section
 
@@ -121,6 +121,14 @@ interval contains `1`. -/
 /-- The exponential map is the maximal geodesic evaluated at time `1`. -/
 theorem riemannianExp_def (p : M) (v : TangentSpace I p) :
     riemannianExp I M p v = maximalGeodesic I M p v 1 := by
+  rfl
+
+/-- The exponential maps at equal base points agree on equal vectors. Both tangent spaces are the
+model space, so the vectors are compared there. -/
+theorem riemannianExp_congr {q p : M} (h : q = p) {w : TangentSpace I q}
+    {v : TangentSpace I p} (hw : (w : E) = v) :
+    riemannianExp I M q w = riemannianExp I M p v := by
+  subst h hw
   rfl
 
 /-- The zero vector lies in the domain of the exponential map. -/
@@ -552,6 +560,13 @@ variable (I M) in
 `p` is defined for all time. -/
 def IsGeodesicallyCompleteAt (p : M) : Prop :=
   ∀ v : TangentSpace I p, geodesicInterval I M p v = univ
+
+/-- At a point where the manifold is geodesically complete, every maximal geodesic interval is
+the whole real line. -/
+theorem IsGeodesicallyCompleteAt.geodesicInterval_eq_univ {p : M}
+    (hp : IsGeodesicallyCompleteAt I M p) (v : TangentSpace I p) :
+    geodesicInterval I M p v = univ :=
+  hp v
 
 /-- **Completeness at a point via the exponential map.**  The exponential map at `p` is defined on
 all of `T_p M` exactly when every geodesic leaving `p` is defined for all time. -/

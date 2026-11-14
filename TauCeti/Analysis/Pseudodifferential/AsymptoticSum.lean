@@ -196,7 +196,7 @@ private theorem eventually_norm_mixedDeriv_cutoff_smul_le
     rw [Function.comp_apply, seminormFamily_apply] at h
     exact (Real.le_norm_self _).trans h
   -- The dilated cutoffs satisfy the estimates of order `1` with constants `C t⁻¹`.
-  choose C hC0 hC using fun s s' : List (Fin n) =>
+  choose C _ hC using fun s s' : List (Fin n) =>
     (const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0).exists_norm_mixedDeriv_cutoff_smul_le χ
       (isCompact_closedBall (0 : CoordinateSpace n) j) s s'
   filter_upwards [eventually_ge_atTop 1, eventually_ge_atTop ((β.sublists'.revzip.map fun s' =>
@@ -568,7 +568,7 @@ private theorem exists_continuous_borelSum_sub (χ : FrequencyCutoff (Coordinate
   rw [hsub]
   refine (norm_mixedDeriv_borelSum_sub_sub_le χ ht (fun j => a j τ) (fun j => a j τ₀) hNj₂ α β x ξ
     (htail₂ τ) (htail₂ τ₀)).trans ?_
-  have hfin : ∑ j ∈ Finset.range N, ε' * w + ∑ j ∈ Finset.Ico N j₂, ε' * w ≤ ε / 4 * w := by
+  have hfin : ∑ _ ∈ Finset.range N, ε' * w + ∑ _ ∈ Finset.Ico N j₂, ε' * w ≤ ε / 4 * w := by
     have hj : (j₂ : ℝ) * ε' ≤ ε / 4 := by
       rw [mul_div_assoc', div_le_div_iff₀ (by positivity) (by norm_num)]
       nlinarith
@@ -576,7 +576,7 @@ private theorem exists_continuous_borelSum_sub (χ : FrequencyCutoff (Coordinate
       nsmul_eq_mul, Nat.cast_sub hNj₂]
     calc (N : ℝ) * (ε' * w) + ((j₂ : ℝ) - N) * (ε' * w) = j₂ * ε' * w := by ring
       _ ≤ ε / 4 * w := mul_le_mul_of_nonneg_right hj hw0
-  calc _ ≤ ∑ j ∈ Finset.range N, ε' * w + ∑ j ∈ Finset.Ico N j₂, ε' * w + 4 * (ε / 16) * w := by
+  calc _ ≤ ∑ _ ∈ Finset.range N, ε' * w + ∑ _ ∈ Finset.Ico N j₂, ε' * w + 4 * (ε / 16) * w := by
         gcongr with j hj j hj
         · rw [← hE j τ, ← hE j τ₀]
           exact hτE j hj x hx ξ
