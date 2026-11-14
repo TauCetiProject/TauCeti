@@ -10,8 +10,9 @@ public import TauCeti.RepresentationTheory.Compact.Character.Basic
 /-!
 # The orthonormal systems cut out by Schur orthogonality
 
-Fix a family `π i` of pairwise inequivalent finite-dimensional irreducible unitary representations
-of a compact group `G`, one for each index `i`. This file assembles the two orthogonality relations
+Fix an algebraically closed field `𝕜` (`RCLike`, so `ℂ`) and a family `π i` of pairwise inequivalent
+finite-dimensional irreducible representations of a compact group `G`, one for each index `i`. This
+file assembles the two orthogonality relations
 of `TauCeti/RepresentationTheory/Compact/SchurOrthogonality.lean` and
 `TauCeti/RepresentationTheory/Compact/Character/Basic.lean` into `Orthonormal` families in `L²(G)`:
 
@@ -27,17 +28,18 @@ subspace of `L²(G)`.
 ## Main statements
 
 * `TauCeti.ContRepresentation.orthonormal_matrixCoeffLp`: the normalized matrix coefficients of a
-  family of pairwise inequivalent irreducible unitary representations form an orthonormal system
-  in `L²(G)`.
-* `ContRepresentation.orthonormal_characterLp`: the characters of such a family form an
-  orthonormal system in `L²(G)`.
+  family of pairwise inequivalent irreducible unitary representations on inner product spaces, with
+  chosen orthonormal bases, form an orthonormal system in `L²(G)`.
+* `ContRepresentation.orthonormal_characterLp`: the characters of a family of pairwise inequivalent
+  irreducible representations on normed spaces form an orthonormal system in `L²(G)`; neither
+  unitarity, inner products nor bases are needed.
 
 ## Implementation notes
 
 Inequivalence is the hypothesis `Pairwise fun i j ↦ IsEmpty (ContRepresentation.Equiv (π i) (π j))`.
 Nothing here selects the family: "one representative per equivalence class" is chosen data,
-supplied by the caller as `π` together with the orthonormal bases `e`, exactly as the Peter-Weyl
-basis uses it.
+supplied by the caller as `π` (together with the orthonormal bases `e` for the matrix coefficients,
+exactly as the Peter-Weyl basis uses it).
 
 Both systems live in the *same* `L²(G)`, so the index of the matrix-coefficient system is a sigma
 type over the family rather than a product: different `i` contribute different numbers of
@@ -129,9 +131,9 @@ variable {𝕜 G ι : Type*} {V : ι → Type*} [RCLike 𝕜] [IsAlgClosed 𝕜]
 
 variable (π : ∀ i, ContRepresentation 𝕜 G (V i)) (hπ : ∀ i, Continuous (π i))
 
-/-- **The irreducible characters are orthonormal.** The characters of a family of pairwise
-inequivalent finite-dimensional irreducible representations of a compact group form an
-orthonormal system in `L²(G)`.
+/-- **The irreducible characters are orthonormal.** Over an algebraically closed field, the
+characters of a family of pairwise inequivalent finite-dimensional irreducible representations of a
+compact group form an orthonormal system in `L²(G)`.
 
 This is the system form of the two character orthogonality relations: normalization is the first,
 and orthogonality across the family is the second, whose intertwiner hypothesis Schur's lemma

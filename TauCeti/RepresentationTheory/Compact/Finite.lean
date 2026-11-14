@@ -636,15 +636,11 @@ end Character
 
 section CharacterOrthogonalityNormed
 
-variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [Fintype G] [TopologicalSpace G]
-  [DiscreteTopology G]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
-  [FiniteDimensional 𝕜 V]
-  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
-  [FiniteDimensional 𝕜 W]
+variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [Fintype G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [FiniteDimensional 𝕜 W]
   (π : ContRepresentation 𝕜 G V)
 
-omit [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] in
 /-- **The off-diagonal branch of first (row) character orthogonality for a finite group**: the
 group average of `conj χ_π · χ_ρ` vanishes when no nonzero continuous intertwiner `ρ → π` exists,
 which for a pair of irreducibles is Schur's lemma. As in the compact source
@@ -660,6 +656,8 @@ theorem character_orthonormal_distinct_sum (ρ : ContRepresentation 𝕜 G W)
     (hdistinct : ∀ f : ContIntertwiningMap ρ π, f.toContinuousLinearMap = 0) :
     (Nat.card G : 𝕜)⁻¹ * ∑ g, (starRingEnd 𝕜) (π.toRepresentation.character g) *
         ρ.toRepresentation.character g = 0 := by
+  let _ : TopologicalSpace G := ⊥
+  have _ : DiscreteTopology G := ⟨rfl⟩
   let _ : MeasurableSpace G := borel G
   have _ : BorelSpace G := ⟨rfl⟩
   rw [← coe_character π continuous_of_discreteTopology,

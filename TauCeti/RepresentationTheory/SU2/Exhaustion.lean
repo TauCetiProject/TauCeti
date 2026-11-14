@@ -9,7 +9,6 @@ module
 -- orthogonality relation below runs on, needs `IsAlgClosed ℂ`.
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.RepresentationTheory.Compact.Character.Basic
-public import TauCeti.RepresentationTheory.Compact.UnitaryModel
 public import TauCeti.RepresentationTheory.Continuous.Schur
 public import TauCeti.RepresentationTheory.SU2.Borel
 public import TauCeti.RepresentationTheory.SU2.Completeness

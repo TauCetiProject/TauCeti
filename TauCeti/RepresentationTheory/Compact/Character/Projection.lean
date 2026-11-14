@@ -178,10 +178,9 @@ theorem integratedOperator_star_character_eq_zero
         (ℓ.continuous.comp (hρ.clm_apply continuous_const))⟩
 
 /-- **The conjugate character acts on its own representation by the inverse dimension.** For a
-finite-dimensional irreducible representation of dimension `d`, the integrated operator of
-`conj χ_π` on `V_π` is `d⁻¹ • id`. Neither unitarity of `π` nor an inner product on its carrier is
-assumed, since none is in the first character orthogonality relation
-`ContRepresentation.character_orthonormal_self`.
+finite-dimensional irreducible representation of dimension `d` over an algebraically closed field,
+the integrated operator of `conj χ_π` on `V_π` is `d⁻¹ • id`. Neither unitarity of `π` nor an inner
+product on its carrier is assumed.
 
 The scalar is `d⁻¹` rather than `1` exactly because the character has `L²` norm one: the projection
 kernel that acts as the identity is `d · conj χ_π`, which is
