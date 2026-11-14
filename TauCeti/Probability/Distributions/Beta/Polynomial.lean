@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Beta.Symmetric
-public import Mathlib.Algebra.MvPolynomial.Eval
+public import TauCeti.Analysis.MvPolynomial.Sqrt
 
 /-!
 # Polynomial moments of centered Beta coordinates and their residuals
@@ -33,21 +33,6 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι]
 
-private theorem eval_sumElim_sqrt_one_sub_sq_monomial (n : (ι ⊕ ι) →₀ ℕ) (c : ℝ) (z : ι → ℝ)
-    (hz : ∀ i, |z i| ≤ 1) :
-    MvPolynomial.eval (Sum.elim z (fun i ↦ Real.sqrt (1 - z i ^ 2)))
-        (MvPolynomial.monomial n c) =
-      c * ∏ i, z i ^ n (Sum.inl i) *
-        (1 - z i ^ 2) ^ ((n (Sum.inr i) : ℝ) / 2) := by
-  rw [MvPolynomial.eval_monomial, Finsupp.prod_fintype _ _ (by simp),
-    Fintype.prod_sum_type, ← Finset.prod_mul_distrib]
-  congr 1
-  apply Finset.prod_congr rfl
-  intro i _
-  simp only [Sum.elim_inl, Sum.elim_inr]
-  rw [Real.rpow_div_two_eq_sqrt _ (sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).mpr (hz i))),
-    Real.rpow_natCast]
-
 private theorem integrable_eval_sumElim_sqrt_one_sub_sq_monomial (a : ι → ℝ) (ha : ∀ i, 0 < a i)
     (n : (ι ⊕ ι) →₀ ℕ) (c : ℝ) :
     Integrable (fun z : ι → ℝ ↦
@@ -59,7 +44,7 @@ private theorem integrable_eval_sumElim_sqrt_one_sub_sq_monomial (a : ι → ℝ
       (fun i ↦ (n (Sum.inr i) : ℝ) / 2) (fun i ↦ n (Sum.inl i)) ha
       (fun i ↦ add_pos_of_pos_of_nonneg (ha i) (by positivity))).const_mul c)
   filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure ha] with z hz
-  exact (eval_sumElim_sqrt_one_sub_sq_monomial n c z fun i ↦ (hz i).le).symm
+  exact (MvPolynomial.eval_sumElim_sqrt_one_sub_sq_monomial n c z fun i ↦ (hz i).le).symm
 
 /-- Every polynomial in independent centered symmetric Beta coordinates and their residual
 square roots is integrable, including for an empty coordinate type. -/
@@ -93,7 +78,7 @@ theorem integral_eval_sumElim_sqrt_one_sub_sq_pi_centered_betaMeasure (a : ι �
   intro n _
   rw [integral_congr_ae (by
     filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure ha] with z hz
-    exact eval_sumElim_sqrt_one_sub_sq_monomial n (P.coeff n) z fun i ↦ (hz i).le),
+    exact MvPolynomial.eval_sumElim_sqrt_one_sub_sq_monomial n (P.coeff n) z fun i ↦ (hz i).le),
     integral_const_mul]
   congr 1
   exact integral_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure a

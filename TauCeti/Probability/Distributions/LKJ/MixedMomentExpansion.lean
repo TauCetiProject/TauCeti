@@ -43,8 +43,8 @@ namespace TauCeti.Probability
 The exponents in each term are the coefficients' monomial indices in the explicit Gram
 expansion. Odd partial-correlation exponents vanish; residual exponents enter as half-integers. -/
 theorem integral_prod_pow_coe_apply_lkjMeasure {p : ℕ} {η : ℝ} (hη : 0 < η)
-    (n : Fin p → Fin p → ℕ) :
-    ∫ R, (∏ i, ∏ j, (R.val i j) ^ n i j) ∂lkjMeasure p η =
+    (n : Fin p × Fin p → ℕ) :
+    ∫ R, (∏ ij, (R.val ij.1 ij.2) ^ n ij) ∂lkjMeasure p η =
       ∑ d ∈ (partialCorrelationGramMonomialPolynomial p n).support,
         (partialCorrelationGramMonomialPolynomial p n).coeff d * ∏ ij : strictLowerTriangle p,
           if Even (d (Sum.inl ij)) then
@@ -53,9 +53,9 @@ theorem integral_prod_pow_coe_apply_lkjMeasure {p : ℕ} {η : ℝ} (hη : 0 < �
               beta (1 / 2) (lkjPartialCorrelationShape p η ij) else 0 := by
   have hmap := map_coe_lkjMeasure (p := p) hη
   have hcont : Continuous (fun R : Matrix (Fin p) (Fin p) ℝ ↦
-      ∏ i, ∏ j, R i j ^ n i j) := by fun_prop
+      ∏ ij, R ij.1 ij.2 ^ n ij) := by fun_prop
   have htransfer :
-      (∫ R, (∏ i, ∏ j, (R.val i j) ^ n i j) ∂lkjMeasure p η) =
+      (∫ R, (∏ ij, (R.val ij.1 ij.2) ^ n ij) ∂lkjMeasure p η) =
         ∫ z : strictLowerTriangle p → ℝ,
           MvPolynomial.eval (Sum.elim z (fun ij ↦ Real.sqrt (1 - z ij ^ 2)))
             (partialCorrelationGramMonomialPolynomial p n)
@@ -63,7 +63,7 @@ theorem integral_prod_pow_coe_apply_lkjMeasure {p : ℕ} {η : ℝ} (hη : 0 < �
             (betaMeasure (lkjPartialCorrelationShape p η ij)
               (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)) := by
     rw [← integral_map (φ := Subtype.val)
-      (f := fun R : Matrix (Fin p) (Fin p) ℝ ↦ ∏ i, ∏ j, R i j ^ n i j)
+      (f := fun R : Matrix (Fin p) (Fin p) ℝ ↦ ∏ ij, R ij.1 ij.2 ^ n ij)
       (by fun_prop) hcont.aestronglyMeasurable, hmap,
       integral_map (by fun_prop) hcont.aestronglyMeasurable]
     simp only [eval_partialCorrelationGramMonomialPolynomial]

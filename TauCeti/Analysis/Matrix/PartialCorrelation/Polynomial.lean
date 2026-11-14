@@ -130,26 +130,26 @@ theorem eval_partialCorrelationGramPolynomial (z : strictLowerTriangle p → ℝ
       (partialCorrelationGramPolynomial p i j) = partialCorrelationGram z i j := by
   simp [partialCorrelationGramPolynomial_def, partialCorrelationGram_def, Matrix.mul_apply]
 
-/-- Expand the entry monomial with exponent matrix `n` through the formal partial-correlation
+/-- Expand the entry monomial with ordered-pair exponents `n` through the formal partial-correlation
 Gram matrix. Its left variables are partial correlations and its right variables are residual
 square roots. Its coefficients are obtained by ordinary finite polynomial arithmetic. -/
-def partialCorrelationGramMonomialPolynomial (p : ℕ) (n : Fin p → Fin p → ℕ) :
+def partialCorrelationGramMonomialPolynomial (p : ℕ) (n : Fin p × Fin p → ℕ) :
     MvPolynomial (strictLowerTriangle p ⊕ strictLowerTriangle p) ℝ :=
-  ∏ i, ∏ j, partialCorrelationGramPolynomial p i j ^ n i j
+  ∏ ij, partialCorrelationGramPolynomial p ij.1 ij.2 ^ n ij
 
 /-- The entry-monomial polynomial is the product of formal Gram entries raised to their
 specified natural exponents. -/
-theorem partialCorrelationGramMonomialPolynomial_def (p : ℕ) (n : Fin p → Fin p → ℕ) :
+theorem partialCorrelationGramMonomialPolynomial_def (p : ℕ) (n : Fin p × Fin p → ℕ) :
     partialCorrelationGramMonomialPolynomial p n =
-      ∏ i, ∏ j, partialCorrelationGramPolynomial p i j ^ n i j := (rfl)
+      ∏ ij, partialCorrelationGramPolynomial p ij.1 ij.2 ^ n ij := (rfl)
 
 /-- Evaluation of the expanded polynomial is the original correlation-entry monomial. -/
 @[simp]
-theorem eval_partialCorrelationGramMonomialPolynomial (n : Fin p → Fin p → ℕ)
+theorem eval_partialCorrelationGramMonomialPolynomial (n : Fin p × Fin p → ℕ)
     (z : strictLowerTriangle p → ℝ) :
     MvPolynomial.eval (Sum.elim z (fun ij ↦ Real.sqrt (1 - z ij ^ 2)))
         (partialCorrelationGramMonomialPolynomial p n) =
-      ∏ i, ∏ j, partialCorrelationGram z i j ^ n i j := by
+      ∏ ij, partialCorrelationGram z ij.1 ij.2 ^ n ij := by
   simp [partialCorrelationGramMonomialPolynomial_def]
 
 /-- The zeroth entry monomial expands to the constant polynomial one, in every dimension. -/
@@ -161,11 +161,11 @@ theorem partialCorrelationGramMonomialPolynomial_zero (p : ℕ) :
 /-- A pointwise zero exponent function also simplifies to the constant polynomial one. -/
 @[simp]
 theorem partialCorrelationGramMonomialPolynomial_fun_zero (p : ℕ) :
-    partialCorrelationGramMonomialPolynomial p (fun _ _ ↦ 0) = 1 := by
+    partialCorrelationGramMonomialPolynomial p (fun _ ↦ 0) = 1 := by
   simpa only [Pi.zero_def] using partialCorrelationGramMonomialPolynomial_zero p
 
 /-- Adding entry exponents multiplies their formal Gram monomial polynomials. -/
-theorem partialCorrelationGramMonomialPolynomial_add (m n : Fin p → Fin p → ℕ) :
+theorem partialCorrelationGramMonomialPolynomial_add (m n : Fin p × Fin p → ℕ) :
     partialCorrelationGramMonomialPolynomial p (m + n) =
       partialCorrelationGramMonomialPolynomial p m *
         partialCorrelationGramMonomialPolynomial p n := by
@@ -173,11 +173,11 @@ theorem partialCorrelationGramMonomialPolynomial_add (m n : Fin p → Fin p → 
 
 /-- A single-entry exponent expands to the corresponding formal Gram entry power. -/
 @[simp]
-theorem partialCorrelationGramMonomialPolynomial_single (i j : Fin p) (k : ℕ) :
-    partialCorrelationGramMonomialPolynomial p (Pi.single i (Pi.single j k)) =
-      partialCorrelationGramPolynomial p i j ^ k := by
-  rw [partialCorrelationGramMonomialPolynomial_def, Finset.prod_eq_single i]
-  · simp [Pi.single_apply, pow_ite]
+theorem partialCorrelationGramMonomialPolynomial_single (ij : Fin p × Fin p) (k : ℕ) :
+    partialCorrelationGramMonomialPolynomial p (Pi.single ij k) =
+      partialCorrelationGramPolynomial p ij.1 ij.2 ^ k := by
+  rw [partialCorrelationGramMonomialPolynomial_def, Finset.prod_eq_single ij]
+  · simp
   · intro b _ hb
     simp [Pi.single_eq_of_ne hb]
   · simp
