@@ -16,7 +16,8 @@ subspace `W' = W ⊕ 𝕜v` of one more dimension, together with a functional `�
 is `W` and a vector `v ∈ W'` with `φ v = 1`. Every proper subspace of a finite-dimensional space
 admits one (`Submodule.nonempty_lineExtension`); `Submodule.lineExtension` is a chosen one.
 
-Over a linearly ordered field, for any extension `ψ` of `φ` to `F` (`LinearMap.exists_extend`),
+The functional `φ` extends to `F` (`Submodule.LineExtension.extend`). Over a linearly ordered
+field, for any extension `ψ` of `φ` to `F`,
 the complements of the two closed half-subspaces `{x ∈ W' | ψ x ≤ 0}` and `{x ∈ W' | 0 ≤ ψ x}`,
 which do not depend on the choice of `ψ`, cover the complement of `W`
 (`Submodule.LineExtension.compl_union_compl`) and intersect in the complement of `W'`
@@ -73,6 +74,24 @@ lemma nonempty_lineExtension [FiniteDimensional 𝕜 F] {W : Submodule 𝕜 F} (
 noncomputable def lineExtension [FiniteDimensional 𝕜 F] (W : Submodule 𝕜 F) (hW : W ≠ ⊤) :
     LineExtension W :=
   (nonempty_lineExtension hW).some
+
+namespace LineExtension
+
+variable {W : Submodule 𝕜 F} (s : LineExtension W)
+
+/-- A functional on the whole space extending the functional `φ` of an extension by a line, chosen
+by `LinearMap.exists_extend`. -/
+noncomputable def extend : F →ₗ[𝕜] 𝕜 :=
+  (LinearMap.exists_extend s.φ).choose
+
+lemma extend_comp_subtype : s.extend ∘ₗ s.W'.subtype = s.φ :=
+  (LinearMap.exists_extend s.φ).choose_spec
+
+@[simp]
+lemma extend_apply_v : s.extend s.v = 1 :=
+  (LinearMap.congr_fun s.extend_comp_subtype s.v).trans s.apply_v
+
+end LineExtension
 
 namespace LineExtension
 
