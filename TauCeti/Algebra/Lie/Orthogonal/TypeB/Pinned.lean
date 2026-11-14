@@ -81,7 +81,7 @@ theorem typeBPinnedLieEquiv_lieBasis_f (i : Fin (n + 1)) :
       (by simp) i
 
 /-- The pinned signed simple-root family maps to the native numbered root family. -/
-@[simp]
+@[simp↓]
 theorem typeBPinnedLieEquiv_lieBasis_rootGenerator (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     typeBPinnedLieEquiv n ht (((DynkinType.B (n + 1)).lieBasis ht).rootGenerator k) =
       typeBSimpleRootGeneratorFamily k := by
