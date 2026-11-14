@@ -311,12 +311,7 @@ theorem hasMFDerivAt_prodMk_projIcc {γ : ℝ → M} {s t : ℝ} (hγ : MDiffere
     HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (I.prod (𝓡∂ 1)) (fun p ↦ (γ p.1, projIcc a b hab.out.le p.2))
       (s, t) (((mfderiv 𝓘(ℝ) I γ s).comp (.fst ℝ ℝ ℝ)).prod
         ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc a b hab.out.le) t).comp (.snd ℝ ℝ ℝ))) := by
-  have h₁ : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Prod.fst) (s, t)
-      ((mfderiv 𝓘(ℝ) I γ s).comp (.fst ℝ ℝ ℝ)) :=
-    hγ.hasMFDerivAt.comp (s, t) hasFDerivAt_fst.hasMFDerivAt
-  have h₂ : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (𝓡∂ 1) (projIcc a b hab.out.le ∘ Prod.snd) (s, t)
-      ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc a b hab.out.le) t).comp (.snd ℝ ℝ ℝ)) :=
-    (mdifferentiableAt_projIcc ht).hasMFDerivAt.comp (s, t) hasFDerivAt_snd.hasMFDerivAt
-  exact h₁.prodMk h₂
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  exact hγ.hasMFDerivAt.prodMap (p := (s, t)) (mdifferentiableAt_projIcc ht).hasMFDerivAt
 
 end TauCeti

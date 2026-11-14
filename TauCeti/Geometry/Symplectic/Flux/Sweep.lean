@@ -23,7 +23,7 @@ under the motion. This file proves that the line integral of the flux form along
 integral of `σ` over this swept chain, oriented by `dt` followed by the orientation of `γ`
 (`TauCeti.Diffeotopy.pathIntegral_fluxForm`):
 
-`∫_γ Flux φ = ∫₀¹ ∫_a^b σ(∂ₜ φ_t (γ s), ∂_s φ_t (γ s)) ds dt`.
+`∫_γ Flux φ = ∫_a^b ∫₀¹ σ(∂ₜ φ_t (γ s), ∂_s φ_t (γ s)) dt ds`.
 
 In the convention of `TauCeti.rectangleIntegral`, which orders the coordinates `(s, t)`, the right
 side is minus the integral over `(s, t) ↦ φ_t (γ s)`. No closedness of `σ` and no symplectic
