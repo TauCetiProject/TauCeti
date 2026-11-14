@@ -56,11 +56,10 @@ parametrize closed copies of `𝔾ₐ`, and the torus generator parametrizes a c
 theorem generator_surjective (j : (Fin 4 ⊕ Fin 4) ⊕ Unit) :
     Function.Surjective (generator j).hom := by
   rcases j with k | ⟨⟩
-  · rw [generator_inl, kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_def]
-    exact _root_.CommHopfAlgCat.baseChangeMap_surjective_of_iso _
+  · rw [generator_inl]
+    exact kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_surjective_of_surjective
+      _ _ _ _ _ _ _ _ _
       (_root_.TauCeti.F4ShortRoot.representedRootSubgroupCoordinateMap_surjective k)
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso ℤ (ZMod 2) 26).symm
-      (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ (ZMod 2))
   · rw [generator_inr, GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
     exact GeneralLinear.weightTorusCoordinateMap_surjective f4ShortRootWeight
       span_range_f4ShortRootWeight_eq_top
