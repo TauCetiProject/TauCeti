@@ -566,36 +566,35 @@ theorem upperQuantile_le_quantile (μ : Measure ℝ) {s : ℝ} (hs0 : 0 < s) (hs
     (ht1 : t < 1) : μ.upperQuantile s ≤ μ.quantile t :=
   upperQuantile_le_of_lt_cdf μ hs0 (hst.trans_le (le_cdf_quantile μ ht1))
 
-/-- If the lower quantile tends to a limit `a` as the level decreases to `0`, then the upper
-quantile at `0` is `a`. -/
-theorem upperQuantile_zero_of_tendsto_quantile (μ : Measure ℝ) {a : ℝ}
-    (h : Tendsto μ.quantile (𝓝[>] 0) (𝓝 a)) : μ.upperQuantile 0 = a := by
-  have hle : ∀ y ∈ {x : ℝ | 0 < cdf μ x}, a ≤ y := fun y hy ↦ by
-    refine le_of_tendsto h ?_
-    filter_upwards [Ioo_mem_nhdsGT hy, Ioo_mem_nhdsGT zero_lt_one] with s hs hs'
-    exact (quantile_le_iff μ hs.1 hs'.2).2 hs.2.le
-  refine le_antisymm (le_of_forall_gt_imp_ge_of_dense fun c hc ↦ ?_)
-    (le_csInf (nonempty_setOf_lt_cdf μ zero_lt_one) hle)
-  obtain ⟨s, hs, hs'⟩ := ((h.eventually (eventually_lt_nhds hc)).and
-    (Ioo_mem_nhdsGT zero_lt_one)).exists
-  exact csInf_le ⟨a, hle⟩ (hs'.1.trans_le ((quantile_le_iff μ hs'.1 hs'.2).1 hs.le))
+/-- If the lower quantile tends to a limit `a` as the level decreases to `t`, then the upper
+quantile at `t` is `a`. -/
+theorem upperQuantile_eq_of_tendsto_quantile (μ : Measure ℝ) {a : ℝ}
+    (h : Tendsto μ.quantile (𝓝[>] t) (𝓝 a)) : μ.upperQuantile t = a := by
+  rcases lt_or_ge t 0 with ht | ht
+  · rw [upperQuantile_of_neg μ ht]
+    refine tendsto_nhds_unique (tendsto_const_nhds.congr' ?_) h
+    filter_upwards [Ioo_mem_nhdsGT ht] with s hs
+    exact (quantile_of_nonpos μ hs.2.le).symm
+  rcases lt_or_ge t 1 with h1 | h1
+  · have hle : ∀ y ∈ {x : ℝ | t < cdf μ x}, a ≤ y := fun y hy ↦ by
+      refine le_of_tendsto h ?_
+      filter_upwards [Ioo_mem_nhdsGT hy, Ioo_mem_nhdsGT h1] with s hs hs'
+      exact (quantile_le_iff μ (ht.trans_lt hs.1) hs'.2).2 hs.2.le
+    refine le_antisymm (le_of_forall_gt_imp_ge_of_dense fun c hc ↦ ?_)
+      (le_csInf (nonempty_setOf_lt_cdf μ h1) hle)
+    obtain ⟨s, hs, hs'⟩ := ((h.eventually (eventually_lt_nhds hc)).and
+      (Ioo_mem_nhdsGT h1)).exists
+    have hs0 : 0 < s := ht.trans_lt hs'.1
+    exact csInf_le ⟨a, hle⟩ (hs'.1.trans_le ((quantile_le_iff μ hs0 hs'.2).1 hs.le))
+  · rw [upperQuantile_of_one_le μ h1]
+    refine tendsto_nhds_unique (tendsto_const_nhds.congr' ?_) h
+    filter_upwards [self_mem_nhdsWithin] with s hs
+    exact (quantile_of_one_lt μ (h1.trans_lt hs)).symm
 
 /-- Where the lower quantile is right continuous, the upper quantile agrees with it. -/
 theorem upperQuantile_eq_quantile_of_continuousWithinAt (μ : Measure ℝ)
-    (h : ContinuousWithinAt μ.quantile (Ioi t) t) : μ.upperQuantile t = μ.quantile t := by
-  rcases lt_trichotomy t 0 with ht | rfl | ht
-  · rw [upperQuantile_of_neg μ ht, quantile_of_nonpos μ ht.le]
-  · exact upperQuantile_zero_of_tendsto_quantile μ h.tendsto
-  · rcases lt_or_ge t 1 with h1 | h1
-    · refine le_antisymm (ge_of_tendsto h ?_) (quantile_le_upperQuantile μ ht h1)
-      filter_upwards [Ioo_mem_nhdsGT h1] with s hs
-      exact upperQuantile_le_quantile μ ht hs.1 hs.2
-    · rw [upperQuantile_of_one_le μ h1]
-      have h0 : Tendsto μ.quantile (𝓝[>] t) (𝓝 0) := by
-        refine tendsto_const_nhds.congr' ?_
-        filter_upwards [self_mem_nhdsWithin] with s hs
-        exact (quantile_of_one_lt μ (h1.trans_lt hs)).symm
-      exact tendsto_nhds_unique h0 h
+    (h : ContinuousWithinAt μ.quantile (Ioi t) t) : μ.upperQuantile t = μ.quantile t :=
+  upperQuantile_eq_of_tendsto_quantile μ h.tendsto
 
 /-- The upper quantile function is monotone on the levels where it is an honest generalized
 inverse. -/
