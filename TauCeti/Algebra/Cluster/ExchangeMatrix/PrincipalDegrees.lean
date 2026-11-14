@@ -187,7 +187,8 @@ theorem degreePrincipalForm_eq_fromBlocks :
 theorem isAlt_degreePrincipalForm
     (hcol : ∀ i j, r j ∣ B.matrix i j) (hd : ∀ i, r i ∣ B.symmetrizer i) :
     (toBilin' (B.degreePrincipalForm r)).IsAlt :=
-  Matrix.isAlt_toBilin'_of_transpose_eq_neg (B.transpose_degreePrincipalForm r hcol hd)
+  (Matrix.isAlt_toBilin'_iff (B.degreePrincipalForm r)).mpr
+    ⟨B.transpose_degreePrincipalForm r hcol hd, B.degreePrincipalForm_apply_self r⟩
 
 /-- The degree-compatible principal pair has the original symmetrizer as its weights.
 In particular, no invertibility assumption on the mutable matrix is required. -/

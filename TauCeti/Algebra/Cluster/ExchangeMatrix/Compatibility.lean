@@ -259,7 +259,8 @@ theorem principalForm_eq_fromBlocks :
 /-- The bilinear form on the integral exponent lattice defined by the principal matrix
 is alternating. -/
 theorem isAlt_principalForm : (toBilin' B.principalForm).IsAlt :=
-  Matrix.isAlt_toBilin'_of_transpose_eq_neg B.transpose_principalForm
+  (Matrix.isAlt_toBilin'_iff B.principalForm).mpr
+    ⟨B.transpose_principalForm, B.principalForm_apply_self⟩
 
 /-- The principal extension and principal form are compatible with the original
 positive symmetrizer as weights. -/
