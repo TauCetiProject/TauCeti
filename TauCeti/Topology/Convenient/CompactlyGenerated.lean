@@ -5,33 +5,55 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
-public import TauCeti.Topology.Convenient.GeneratedBy
+public import Mathlib.Topology.Category.CompactlyGenerated
+public import Mathlib.Topology.Instances.Shrink
+public import TauCeti.Topology.Convenient.CartesianClosed
 
 /-!
-# Compact Hausdorff generators
+# Coreflection and cartesian closed structure on `CompactlyGenerated`
 
-Mathlib provides both compact generation and generation by an arbitrary family of spaces.
-Here we identify these constructions for the family of compact Hausdorff spaces. This lets
-compactly generated sources use the generated-topology counit and its continuity adapters.
-In particular, finite cubes and their homotopies lift continuously through that counit.
-`Topology.isGeneratedBy_compHaus_iff` identifies the predicates, and the forward instance
-makes these continuity adapters available to compactly generated sources.
+Mathlib provides both compact generation (`TopologicalSpace.compactlyGenerated`,
+`UCompactlyGeneratedSpace`, `CompactlyGenerated`) and generation by an arbitrary family of spaces
+(`TopologicalSpace.generatedBy`, `Topology.IsGeneratedBy`, `GeneratedByTopCat`). Evaluating the
+latter at the family `fun K : CompHaus.{u} ↦ K` of compact Hausdorff spaces in universe `u`
+identifies the two notions (`TopologicalSpace.generatedBy_compHaus`,
+`Topology.isGeneratedBy_compHaus_iff`) and gives a strict equivalence of categories
+`CompactlyGenerated.equivGeneratedByTopCat` over `TopCat.{w}`—with `u` independent of `w`.
 
-The universe of the compact Hausdorff test spaces is explicit and independent of the universe
-of the space being refined.
+Transporting the general convenient-category theory along this identification yields:
+
+* **Coreflection in `TopCat`** (`TopCat.toCompactlyGenerated`, `CompactlyGenerated.adj`):
+  `CompactlyGenerated.{u, w}` is a coreflective full subcategory of `TopCat.{w}` with all small
+  limits and colimits. The counit at `X` is an isomorphism if and only if `X` is `u`-compactly
+  generated (`CompactlyGenerated.isIso_adjCounit_app_iff`), in particular whenever `X` is `u`-small,
+  Hausdorff, and weakly locally compact
+  (`CompactlyGenerated.isIso_adjCounit_app_of_weaklyLocallyCompactSpace`).
+* **Cartesian monoidal closed structure** (`CompactlyGenerated.instCartesianMonoidalCategory`,
+  `CompactlyGenerated.instMonoidalClosed`): the convenient product `X ⊗ Y` refines `X × Y` by
+  compact Hausdorff spaces in `Type u`, and agrees with the ordinary product whenever one factor is
+  locally compact (`CompactlyGenerated.tensorHomeomorphProdOfLocallyCompactRight`,
+  `CompactlyGenerated.tensorHomeomorphProdOfLocallyCompactLeft`).
+* **Compact-open comparisons and exponential law**: when `X` is `u`-small and Hausdorff, the
+  internal hom `(ihom X).obj Z` is canonically isomorphic to the `u`-compactly generated refinement
+  of `C(X, Z)` (`CompactlyGenerated.ihomIsoCompactOpen`). When `Y` is also `u`-small and Hausdorff,
+  iterated currying gives the convenient compact-open exponential homeomorphism
+  (`CompactlyGenerated.compactOpenTensorHomeomorph`).
 
 ## References
 
-* R. M. Vogt, *Convenient categories of topological spaces for homotopy theory* (1971).
-
-The constructions being compared are Mathlib's `TopologicalSpace.compactlyGenerated` and
-`TopologicalSpace.generatedBy`.
+* R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.
+  (Basel) 22 (1971), 545–555.
+* M. Escardó, J. Lawson, and A. Simpson, *Comparing Cartesian closed categories of (core)
+  compactly generated spaces*, Topology Appl. 143 (2004), 105–145.
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
+  Appendix, Propositions A.13–A.16.
 -/
 
 public section
 
-universe u v
+universe w' v' u v w
+
+open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory Topology
 
 namespace TopologicalSpace
 
@@ -56,4 +78,655 @@ instance (Y : Type v) [TopologicalSpace Y] [UCompactlyGeneratedSpace.{u} Y] :
     IsGeneratedBy (fun K : CompHaus.{u} ↦ K) Y :=
   (isGeneratedBy_compHaus_iff Y).2 inferInstance
 
+/-- The compactly generated refinement of any topological space is `u`-compactly generated. -/
+instance (Y : Type v) [TopologicalSpace Y] :
+    UCompactlyGeneratedSpace.{u} (WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) Y) :=
+  (isGeneratedBy_compHaus_iff _).1 inferInstance
+
+/-- Every `u`-small compact subset of a Hausdorff space is the continuous image of a compact
+Hausdorff space in `Type u`. -/
+theorem exists_compHaus_lift_of_isCompact {Y : Type w} [TopologicalSpace Y] [T2Space Y]
+    {K : Set Y} (hK : IsCompact K) [Small.{u} K] :
+    ∃ (S : CompHaus.{u}) (L : Set S) (f : C(S, Y)), IsCompact L ∧ f '' L = K := by
+  have : CompactSpace ↑K := isCompact_iff_compactSpace.1 hK
+  let e := Shrink.homeomorph.{u} ↑K
+  have : CompactSpace (Shrink.{u} ↑K) := e.compactSpace
+  have : T2Space (Shrink.{u} ↑K) :=
+    T2Space.of_injective_continuous e.symm.injective e.symm.continuous
+  refine ⟨CompHaus.of (Shrink.{u} ↑K), Set.univ,
+    ⟨Subtype.val ∘ e.symm, continuous_subtype_val.comp e.symm.continuous⟩, isCompact_univ, ?_⟩
+  rw [Set.image_univ, ContinuousMap.coe_mk, Set.range_comp, e.symm.surjective.range_eq,
+    Set.image_univ, Subtype.range_coe_subtype, Set.ofPred_mem_eq]
+
+/-- On a `u`-small Hausdorff `u`-compactly generated domain `Y`, `CompHaus.{u}`-continuous maps
+`Y → Z` form a space homeomorphic to the compact-open mapping space `C(Y, Z)`. -/
+def ContinuousMapGeneratedBy.homeomorphContinuousMapOfT2 (Y : Type v) (Z : Type w)
+    [TopologicalSpace Y] [TopologicalSpace Z] [Small.{u} Y] [T2Space Y]
+    [UCompactlyGeneratedSpace.{u} Y] :
+    ContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) Y Z ≃ₜ C(Y, Z) :=
+  homeomorphContinuousMapOfCompactLift fun _ hKc ↦ exists_compHaus_lift_of_isCompact hKc
+
+@[simp]
+theorem ContinuousMapGeneratedBy.homeomorphContinuousMapOfT2_apply {Y : Type v} {Z : Type w}
+    [TopologicalSpace Y] [TopologicalSpace Z] [Small.{u} Y] [T2Space Y]
+    [UCompactlyGeneratedSpace.{u} Y]
+    (g : ContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) Y Z) :
+    homeomorphContinuousMapOfT2 Y Z g = g.toContinuousMap :=
+  homeomorphContinuousMapOfCompactLift_apply _ g
+
 end Topology
+
+/-- Compact generation with test spaces in `Type u` transfers along homeomorphisms. -/
+theorem UCompactlyGeneratedSpace.of_homeomorph {X : Type v} {Y : Type w}
+    [TopologicalSpace X] [TopologicalSpace Y] [UCompactlyGeneratedSpace.{u} X] (e : X ≃ₜ Y) :
+    UCompactlyGeneratedSpace.{u} Y :=
+  (Topology.isGeneratedBy_compHaus_iff Y).1 (Topology.IsGeneratedBy.of_homeomorph e)
+
+/-- Homeomorphic spaces are `u`-compactly generated for the same universes `u`. -/
+theorem uCompactlyGeneratedSpace_congr {X : Type v} {Y : Type w}
+    [TopologicalSpace X] [TopologicalSpace Y] (e : X ≃ₜ Y) :
+    UCompactlyGeneratedSpace.{u} X ↔ UCompactlyGeneratedSpace.{u} Y :=
+  ⟨fun _ ↦ UCompactlyGeneratedSpace.of_homeomorph e,
+    fun _ ↦ UCompactlyGeneratedSpace.of_homeomorph e.symm⟩
+
+/-- A `u`-small Hausdorff weakly locally compact space is `u`-compactly generated. -/
+theorem uCompactlyGeneratedSpace_of_weaklyLocallyCompactSpace (X : Type w)
+    [TopologicalSpace X] [Small.{u} X] [T2Space X] [WeaklyLocallyCompactSpace X] :
+    UCompactlyGeneratedSpace.{u} X := by
+  let e := Shrink.homeomorph.{u} X
+  have : T2Space (Shrink.{u} X) :=
+    T2Space.of_injective_continuous e.symm.injective e.symm.continuous
+  have : WeaklyLocallyCompactSpace (Shrink.{u} X) :=
+    e.symm.isClosedEmbedding.weaklyLocallyCompactSpace
+  exact UCompactlyGeneratedSpace.of_homeomorph e.symm
+
+/-- If `X` and `Y` are `u`-compactly generated and `Y` is locally compact, then the ordinary
+product `X × Y` is `u`-compactly generated. -/
+theorem UCompactlyGeneratedSpace.prod_of_locallyCompactSpace_right (X : Type v) (Y : Type w)
+    [TopologicalSpace X] [TopologicalSpace Y]
+    [UCompactlyGeneratedSpace.{u} X] [UCompactlyGeneratedSpace.{u} Y] [LocallyCompactSpace Y] :
+    UCompactlyGeneratedSpace.{u} (X × Y) :=
+  (Topology.isGeneratedBy_compHaus_iff (X × Y)).1
+    (Topology.IsGeneratedBy.prod_of_locallyCompactSpace_right X Y)
+
+/-- If `X` and `Y` are `u`-compactly generated and `X` is locally compact, then the ordinary
+product `X × Y` is `u`-compactly generated. -/
+theorem UCompactlyGeneratedSpace.prod_of_locallyCompactSpace_left (X : Type v) (Y : Type w)
+    [TopologicalSpace X] [TopologicalSpace Y]
+    [UCompactlyGeneratedSpace.{u} X] [UCompactlyGeneratedSpace.{u} Y] [LocallyCompactSpace X] :
+    UCompactlyGeneratedSpace.{u} (X × Y) :=
+  (Topology.isGeneratedBy_compHaus_iff (X × Y)).1
+    (Topology.IsGeneratedBy.prod_of_locallyCompactSpace_left X Y)
+
+namespace CompactlyGenerated
+
+/-- Construct a morphism in `CompactlyGenerated` from a `ContinuousMap`. -/
+abbrev homMk {X Y : CompactlyGenerated.{u, w}} (f : C(X.toTop, Y.toTop)) : X ⟶ Y :=
+  ConcreteCategory.ofHom f
+
+@[ext]
+theorem hom_ext {X Y : CompactlyGenerated.{u, w}} {f g : X ⟶ Y} (h : ∀ x, f x = g x) : f = g :=
+  InducedCategory.hom_ext (TopCat.ext h)
+
+/-- The canonical functor identifying `CompactlyGenerated.{u, w}` with
+`GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K)`.
+
+Exposed so that downstream modules and code generation agree on transported object carriers. -/
+@[expose]
+def toGeneratedByTopCat :
+    CompactlyGenerated.{u, w} ⥤ GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K) where
+  obj X := ⟨X.toTop, inferInstance⟩
+  map f := InducedCategory.homMk f.hom
+
+/-- The canonical inverse functor from `GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K)` to
+`CompactlyGenerated.{u, w}`.
+
+Exposed so that downstream modules and code generation agree on transported object carriers. -/
+@[expose]
+def fromGeneratedByTopCat :
+    GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K) ⥤ CompactlyGenerated.{u, w} where
+  obj Y :=
+    { toTop := Y.obj
+      is_compactly_generated := (Topology.isGeneratedBy_compHaus_iff Y.obj).1 Y.property }
+  map f := InducedCategory.homMk f.hom
+
+/-- `CompactlyGenerated.{u, w}` is strictly equivalent to
+`GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K)`. -/
+def equivGeneratedByTopCat :
+    CompactlyGenerated.{u, w} ≌ GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K) where
+  functor := toGeneratedByTopCat
+  inverse := fromGeneratedByTopCat
+  unitIso := Iso.refl _
+  counitIso := Iso.refl _
+
+instance : toGeneratedByTopCat.{u, w}.IsEquivalence :=
+  equivGeneratedByTopCat.isEquivalence_functor
+
+instance : fromGeneratedByTopCat.{u, w}.IsEquivalence :=
+  equivGeneratedByTopCat.isEquivalence_inverse
+
+@[simp]
+theorem toGeneratedByTopCat_comp_toTopCat :
+    toGeneratedByTopCat.{u, w} ⋙ GeneratedByTopCat.toTopCat = compactlyGeneratedToTop.{u, w} :=
+  (rfl)
+
+@[simp]
+theorem fromGeneratedByTopCat_comp_toTop :
+    fromGeneratedByTopCat.{u, w} ⋙ compactlyGeneratedToTop.{u, w} =
+      GeneratedByTopCat.toTopCat (X := fun K : CompHaus.{u} ↦ K) :=
+  (rfl)
+
+end CompactlyGenerated
+
+/-- The compactly generated coreflection `TopCat.{w} ⥤ CompactlyGenerated.{u, w}`, endowing a
+topological space with its `u`-compactly generated topology. -/
+@[expose]
+def TopCat.toCompactlyGenerated : TopCat.{w} ⥤ CompactlyGenerated.{u, w} :=
+  TopCat.toGeneratedByTopCat (X := fun K : CompHaus.{u} ↦ K) ⋙
+    CompactlyGenerated.fromGeneratedByTopCat.{u, w}
+
+namespace CompactlyGenerated
+
+section Coreflection
+
+/-- The unit isomorphism of the coreflective adjunction `CompactlyGenerated.adj`. -/
+def adjUnitIso :
+    𝟭 CompactlyGenerated.{u, w} ≅ compactlyGeneratedToTop.{u, w} ⋙ TopCat.toCompactlyGenerated :=
+  Functor.isoWhiskerLeft toGeneratedByTopCat
+    (Functor.isoWhiskerRight
+      (GeneratedByTopCat.adjUnitIso (X := fun K : CompHaus.{u} ↦ K)) fromGeneratedByTopCat)
+
+/-- The counit of the coreflective adjunction `CompactlyGenerated.adj`. -/
+def adjCounit :
+    TopCat.toCompactlyGenerated.{u, w} ⋙ compactlyGeneratedToTop.{u, w} ⟶ 𝟭 TopCat.{w} :=
+  GeneratedByTopCat.adjCounit (X := fun K : CompHaus.{u} ↦ K)
+
+/-- The coreflective adjunction `compactlyGeneratedToTop ⊣ TopCat.toCompactlyGenerated`. -/
+def adj : compactlyGeneratedToTop.{u, w} ⊣ TopCat.toCompactlyGenerated.{u, w} where
+  unit := adjUnitIso.hom
+  counit := adjCounit
+  left_triangle_components X :=
+    (GeneratedByTopCat.adj (X := fun K : CompHaus.{u} ↦ K)).left_triangle_components
+      (toGeneratedByTopCat.obj X)
+  right_triangle_components Y :=
+    congrArg fromGeneratedByTopCat.map <|
+      (GeneratedByTopCat.adj (X := fun K : CompHaus.{u} ↦ K)).right_triangle_components Y
+
+instance : IsIso adj.{u, w}.unit :=
+  inferInstanceAs (IsIso adjUnitIso.{u, w}.hom)
+
+instance : compactlyGeneratedToTop.{u, w}.IsLeftAdjoint :=
+  adj.isLeftAdjoint
+
+instance : TopCat.toCompactlyGenerated.{u, w}.IsRightAdjoint :=
+  adj.isRightAdjoint
+
+instance : TopCat.toCompactlyGenerated.{u, w}.Faithful where
+  map_injective h := by ext x; congrm $h x
+
+/-- `CompactlyGenerated.{u, w}` is a coreflective subcategory of `TopCat.{w}`. -/
+instance instCoreflectiveCompactlyGeneratedToTop :
+    Coreflective compactlyGeneratedToTop.{u, w} where
+  R := TopCat.toCompactlyGenerated
+  adj := adj
+
+noncomputable instance instCreatesColimitsOfSizeCompactlyGeneratedToTop :
+    CreatesColimitsOfSize.{w', v'} compactlyGeneratedToTop.{u, w} :=
+  comonadicCreatesColimits _
+
+instance [UnivLE.{v', w}] : HasLimitsOfSize.{w', v'} CompactlyGenerated.{u, w} :=
+  hasLimits_of_coreflective compactlyGeneratedToTop
+
+instance [UnivLE.{v', w}] : HasColimitsOfSize.{w', v'} CompactlyGenerated.{u, w} :=
+  hasColimits_of_coreflective compactlyGeneratedToTop
+
+/-- The underlying continuous map of the categorical counit is the generated-topology counit. -/
+@[simp]
+theorem adjCounit_app_hom (X : TopCat.{w}) :
+    (adjCounit.{u, w}.app X).hom =
+      Topology.WithGeneratedByTopology.counit (fun K : CompHaus.{u} ↦ K) X :=
+  GeneratedByTopCat.adjCounit_app_hom (fun K : CompHaus.{u} ↦ K) X
+
+/-- The compact-generation counit at `X` is an isomorphism in `TopCat` if and only if `X` is
+`u`-compactly generated. -/
+theorem isIso_adjCounit_app_iff (X : TopCat.{w}) :
+    IsIso (adjCounit.{u, w}.app X) ↔ UCompactlyGeneratedSpace.{u} X :=
+  (GeneratedByTopCat.isIso_adjCounit_app_iff (fun K : CompHaus.{u} ↦ K) X).trans
+    (Topology.isGeneratedBy_compHaus_iff X)
+
+/-- On a space already `u`-compactly generated, the counit is an isomorphism in `TopCat`. -/
+instance instIsIsoAdjCounitApp (X : TopCat.{w}) [UCompactlyGeneratedSpace.{u} X] :
+    IsIso (adjCounit.{u, w}.app X) :=
+  (isIso_adjCounit_app_iff X).2 inferInstance
+
+/-- On a `u`-small Hausdorff weakly locally compact space, the compact-generation counit is an
+isomorphism in `TopCat`. -/
+theorem isIso_adjCounit_app_of_weaklyLocallyCompactSpace (X : TopCat.{w})
+    [Small.{u} X] [T2Space X] [WeaklyLocallyCompactSpace X] :
+    IsIso (adjCounit.{u, w}.app X) :=
+  have := uCompactlyGeneratedSpace_of_weaklyLocallyCompactSpace.{u} X
+  inferInstance
+
+end Coreflection
+
+section CartesianClosed
+
+/-- `PUnit` is terminal in `CompactlyGenerated`. -/
+def isTerminalPUnit : IsTerminal (of PUnit.{w + 1} : CompactlyGenerated.{u, w}) :=
+  IsTerminal.ofUniqueHom (fun _ ↦ homMk ⟨fun _ ↦ PUnit.unit, continuous_const⟩) (fun _ _ ↦ by ext)
+
+/-- The explicit binary fan of `X` and `Y` in `CompactlyGenerated.{u, w}` with apex
+`WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) (X × Y)`.
+
+Exposed so that downstream modules and code generation agree on the carrier type of `X ⊗ Y`. -/
+@[expose]
+def prodBinaryFan (X Y : CompactlyGenerated.{u, w}) : BinaryFan X Y :=
+  BinaryFan.mk
+    (P := of (WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) (X × Y)))
+    (fromGeneratedByTopCat.map
+      (GeneratedByTopCat.prodBinaryFan (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)).fst)
+    (fromGeneratedByTopCat.map
+      (GeneratedByTopCat.prodBinaryFan (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)).snd)
+
+/-- `WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) (X × Y)` is a binary product of `X` and `Y`
+in `CompactlyGenerated.{u, w}`. -/
+def prodBinaryFanIsLimit (X Y : CompactlyGenerated.{u, w}) : IsLimit (prodBinaryFan X Y) :=
+  BinaryFan.IsLimit.mk _
+    (fun {_} f g ↦ fromGeneratedByTopCat.map <|
+      (GeneratedByTopCat.prodBinaryFanIsLimit
+        (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)).lift
+        (BinaryFan.mk (toGeneratedByTopCat.map f) (toGeneratedByTopCat.map g)))
+    (fun f g ↦ congrArg fromGeneratedByTopCat.map <|
+      (GeneratedByTopCat.prodBinaryFanIsLimit
+        (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)).fac
+        (BinaryFan.mk (toGeneratedByTopCat.map f) (toGeneratedByTopCat.map g)) ⟨.left⟩)
+    (fun f g ↦ congrArg fromGeneratedByTopCat.map <|
+      (GeneratedByTopCat.prodBinaryFanIsLimit
+        (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)).fac
+        (BinaryFan.mk (toGeneratedByTopCat.map f) (toGeneratedByTopCat.map g)) ⟨.right⟩)
+    (fun {_} f g m h₁ h₂ ↦ congrArg fromGeneratedByTopCat.map <|
+      (GeneratedByTopCat.prodBinaryFanIsLimit
+        (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)).uniq
+        (BinaryFan.mk (toGeneratedByTopCat.map f) (toGeneratedByTopCat.map g))
+        (toGeneratedByTopCat.map m) fun ⟨j⟩ ↦ by
+          cases j
+          · exact congrArg toGeneratedByTopCat.map h₁
+          · exact congrArg toGeneratedByTopCat.map h₂)
+
+instance instCartesianMonoidalCategory : CartesianMonoidalCategory CompactlyGenerated.{u, w} :=
+  .ofChosenFiniteProducts ⟨_, isTerminalPUnit⟩
+    (fun X Y ↦ ⟨prodBinaryFan X Y, prodBinaryFanIsLimit X Y⟩)
+
+instance instBraidedCategory : BraidedCategory CompactlyGenerated.{u, w} :=
+  .ofCartesianMonoidalCategory
+
+instance (X Y : CompactlyGenerated.{u, w}) [T2Space X] [T2Space Y] : T2Space ↑(X ⊗ Y) :=
+  inferInstanceAs (T2Space (WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) (X × Y)))
+
+instance (X Y : CompactlyGenerated.{u, w}) [Small.{v} X] [Small.{v} Y] :
+    Small.{v} ↑(X ⊗ Y) :=
+  inferInstanceAs (Small.{v} (WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) (X × Y)))
+
+/-- The underlying bijection between the convenient product `X ⊗ Y` and `X × Y`. -/
+def tensorEquiv (X Y : CompactlyGenerated.{u, w}) : ↑(X ⊗ Y) ≃ X × Y :=
+  GeneratedByTopCat.tensorEquiv (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)
+
+@[simp]
+theorem tensorEquiv_fst {X Y : CompactlyGenerated.{u, w}} (p : ↑(X ⊗ Y)) :
+    (tensorEquiv X Y p).1 = fst X Y p :=
+  GeneratedByTopCat.tensorEquiv_fst (Y := toGeneratedByTopCat.obj X)
+    (Z := toGeneratedByTopCat.obj Y) p
+
+@[simp]
+theorem tensorEquiv_snd {X Y : CompactlyGenerated.{u, w}} (p : ↑(X ⊗ Y)) :
+    (tensorEquiv X Y p).2 = snd X Y p :=
+  GeneratedByTopCat.tensorEquiv_snd (Y := toGeneratedByTopCat.obj X)
+    (Z := toGeneratedByTopCat.obj Y) p
+
+@[simp]
+theorem fst_tensorEquiv_symm {X Y : CompactlyGenerated.{u, w}} (x : X) (y : Y) :
+    fst X Y ((tensorEquiv X Y).symm (x, y)) = x :=
+  GeneratedByTopCat.fst_tensorEquiv_symm (Y := toGeneratedByTopCat.obj X)
+    (Z := toGeneratedByTopCat.obj Y) x y
+
+@[simp]
+theorem snd_tensorEquiv_symm {X Y : CompactlyGenerated.{u, w}} (x : X) (y : Y) :
+    snd X Y ((tensorEquiv X Y).symm (x, y)) = y :=
+  GeneratedByTopCat.snd_tensorEquiv_symm (Y := toGeneratedByTopCat.obj X)
+    (Z := toGeneratedByTopCat.obj Y) x y
+
+@[ext]
+theorem tensorObj_ext {X Y : CompactlyGenerated.{u, w}} {p q : ↑(X ⊗ Y)}
+    (h₁ : fst X Y p = fst X Y q) (h₂ : snd X Y p = snd X Y q) : p = q :=
+  GeneratedByTopCat.tensorObj_ext (X := fun K : CompHaus.{u} ↦ K)
+    (Y := toGeneratedByTopCat.obj X) (Z := toGeneratedByTopCat.obj Y) h₁ h₂
+
+@[simp]
+theorem lift_apply {W X Y : CompactlyGenerated.{u, w}} (f : W ⟶ X) (g : W ⟶ Y) (w : W) :
+    lift f g w = (tensorEquiv X Y).symm (f w, g w) :=
+  GeneratedByTopCat.lift_apply (toGeneratedByTopCat.map f) (toGeneratedByTopCat.map g) w
+
+/-- The canonical comparison from the underlying space of `X ⊗ Y` to the ordinary product `X × Y`
+in `TopCat`, given by the compact-generation counit. -/
+def prodComparisonToTop (X Y : CompactlyGenerated.{u, w}) :
+    compactlyGeneratedToTop.obj (X ⊗ Y) ⟶
+      compactlyGeneratedToTop.obj X ⊗ compactlyGeneratedToTop.obj Y :=
+  GeneratedByTopCat.prodComparisonToTop (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)
+
+@[simp]
+theorem prodComparisonToTop_apply (X Y : CompactlyGenerated.{u, w}) (p : ↑(X ⊗ Y)) :
+    prodComparisonToTop X Y p = tensorEquiv X Y p :=
+  GeneratedByTopCat.prodComparisonToTop_apply (toGeneratedByTopCat.obj X)
+    (toGeneratedByTopCat.obj Y) p
+
+@[reassoc (attr := simp)]
+theorem prodComparisonToTop_fst (X Y : CompactlyGenerated.{u, w}) :
+    prodComparisonToTop X Y ≫ fst (compactlyGeneratedToTop.obj X) (compactlyGeneratedToTop.obj Y) =
+      compactlyGeneratedToTop.map (fst X Y) :=
+  GeneratedByTopCat.prodComparisonToTop_fst (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)
+
+@[reassoc (attr := simp)]
+theorem prodComparisonToTop_snd (X Y : CompactlyGenerated.{u, w}) :
+    prodComparisonToTop X Y ≫ snd (compactlyGeneratedToTop.obj X) (compactlyGeneratedToTop.obj Y) =
+      compactlyGeneratedToTop.map (snd X Y) :=
+  GeneratedByTopCat.prodComparisonToTop_snd (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)
+
+/-- The convenient product `X ⊗ Y` has the ordinary product topology if and only if `X × Y` is
+`u`-compactly generated. -/
+theorem isIso_prodComparisonToTop_iff (X Y : CompactlyGenerated.{u, w}) :
+    IsIso (prodComparisonToTop X Y) ↔ UCompactlyGeneratedSpace.{u} (X × Y) :=
+  (GeneratedByTopCat.isIso_prodComparisonToTop_iff
+    (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)).trans
+    (Topology.isGeneratedBy_compHaus_iff (X × Y))
+
+/-- When `Y` is locally compact, the product comparison `(X ⊗ Y).toTop ⟶ X.toTop ⊗ Y.toTop` is an
+isomorphism in `TopCat`. -/
+instance instIsIsoProdComparisonToTopOfLocallyCompactRight
+    (X Y : CompactlyGenerated.{u, w}) [LocallyCompactSpace Y] :
+    IsIso (prodComparisonToTop X Y) :=
+  have : LocallyCompactSpace (toGeneratedByTopCat.obj Y) := ‹LocallyCompactSpace Y›
+  GeneratedByTopCat.instIsIsoProdComparisonToTopOfLocallyCompactRight
+    (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)
+
+/-- When `X` is locally compact, the product comparison `(X ⊗ Y).toTop ⟶ X.toTop ⊗ Y.toTop` is an
+isomorphism in `TopCat`. -/
+instance instIsIsoProdComparisonToTopOfLocallyCompactLeft
+    (X Y : CompactlyGenerated.{u, w}) [LocallyCompactSpace X] :
+    IsIso (prodComparisonToTop X Y) :=
+  have : LocallyCompactSpace (toGeneratedByTopCat.obj X) := ‹LocallyCompactSpace X›
+  GeneratedByTopCat.instIsIsoProdComparisonToTopOfLocallyCompactLeft
+    (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)
+
+/-- When `Y` is locally compact, the convenient product `X ⊗ Y` is homeomorphic to the ordinary
+product `X × Y` via `tensorEquiv`. -/
+def tensorHomeomorphProdOfLocallyCompactRight
+    (X Y : CompactlyGenerated.{u, w}) [LocallyCompactSpace Y] :
+    ↑(X ⊗ Y) ≃ₜ X × Y :=
+  have : LocallyCompactSpace (toGeneratedByTopCat.obj Y) := ‹LocallyCompactSpace Y›
+  GeneratedByTopCat.tensorHomeomorphProdOfLocallyCompactRight
+    (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)
+
+@[simp]
+theorem coe_tensorHomeomorphProdOfLocallyCompactRight
+    (X Y : CompactlyGenerated.{u, w}) [LocallyCompactSpace Y] :
+    ⇑(tensorHomeomorphProdOfLocallyCompactRight X Y) = tensorEquiv X Y :=
+  have : LocallyCompactSpace (toGeneratedByTopCat.obj Y) := ‹LocallyCompactSpace Y›
+  GeneratedByTopCat.coe_tensorHomeomorphProdOfLocallyCompactRight
+    (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)
+
+/-- When `X` is locally compact, the convenient product `X ⊗ Y` is homeomorphic to the ordinary
+product `X × Y` via `tensorEquiv`. -/
+def tensorHomeomorphProdOfLocallyCompactLeft
+    (X Y : CompactlyGenerated.{u, w}) [LocallyCompactSpace X] :
+    ↑(X ⊗ Y) ≃ₜ X × Y :=
+  have : LocallyCompactSpace (toGeneratedByTopCat.obj X) := ‹LocallyCompactSpace X›
+  GeneratedByTopCat.tensorHomeomorphProdOfLocallyCompactLeft
+    (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)
+
+@[simp]
+theorem coe_tensorHomeomorphProdOfLocallyCompactLeft
+    (X Y : CompactlyGenerated.{u, w}) [LocallyCompactSpace X] :
+    ⇑(tensorHomeomorphProdOfLocallyCompactLeft X Y) = tensorEquiv X Y :=
+  have : LocallyCompactSpace (toGeneratedByTopCat.obj X) := ‹LocallyCompactSpace X›
+  GeneratedByTopCat.coe_tensorHomeomorphProdOfLocallyCompactLeft
+    (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)
+
+/-- The internal hom functor on `CompactlyGenerated.{u, w}`.
+
+Exposed so that downstream modules and code generation agree on the carrier type of
+`(ihom X).obj Z`. -/
+@[expose]
+def internalHom (X : CompactlyGenerated.{u, w}) :
+    CompactlyGenerated.{u, w} ⥤ CompactlyGenerated.{u, w} :=
+  toGeneratedByTopCat ⋙ GeneratedByTopCat.internalHom (toGeneratedByTopCat.obj X) ⋙
+    fromGeneratedByTopCat
+
+private def internalHomEquiv (X Z : CompactlyGenerated.{u, w}) :
+    ↑((internalHom X).obj Z) ≃ C(X, Z) :=
+  GeneratedByTopCat.ihomEquiv (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Z)
+
+private theorem internalHomEquiv_map_apply {X Y Z : CompactlyGenerated.{u, w}}
+    (g : Y ⟶ Z) (f : ↑((internalHom X).obj Y)) (x : X) :
+    internalHomEquiv X Z (((internalHom X).map g) f) x = g (internalHomEquiv X Y f x) :=
+  GeneratedByTopCat.ihomEquiv_map_apply (toGeneratedByTopCat.map g) f x
+
+/-- Currying in `CompactlyGenerated.{u, w}`. -/
+def curryEquiv (X Y Z : CompactlyGenerated.{u, w}) :
+    (X ⊗ Y ⟶ Z) ≃ (Y ⟶ (internalHom X).obj Z) where
+  toFun f := fromGeneratedByTopCat.map <|
+    GeneratedByTopCat.curryEquiv (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)
+      (toGeneratedByTopCat.obj Z) (toGeneratedByTopCat.map f)
+  invFun g := fromGeneratedByTopCat.map <|
+    (GeneratedByTopCat.curryEquiv (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)
+      (toGeneratedByTopCat.obj Z)).symm (toGeneratedByTopCat.map g)
+  left_inv f := congrArg fromGeneratedByTopCat.map <|
+    (GeneratedByTopCat.curryEquiv (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)
+      (toGeneratedByTopCat.obj Z)).symm_apply_apply (toGeneratedByTopCat.map f)
+  right_inv g := congrArg fromGeneratedByTopCat.map <|
+    (GeneratedByTopCat.curryEquiv (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Y)
+      (toGeneratedByTopCat.obj Z)).apply_symm_apply (toGeneratedByTopCat.map g)
+
+private theorem internalHomEquiv_curryEquiv_apply {X Y Z : CompactlyGenerated.{u, w}}
+    (f : X ⊗ Y ⟶ Z) (y : Y) (x : X) :
+    internalHomEquiv X Z (curryEquiv X Y Z f y) x = f ((tensorEquiv X Y).symm (x, y)) :=
+  GeneratedByTopCat.ihomEquiv_curryEquiv_apply
+    (Y := toGeneratedByTopCat.obj X) (Z := toGeneratedByTopCat.obj Y)
+    (T := toGeneratedByTopCat.obj Z) (toGeneratedByTopCat.map f) y x
+
+private theorem curryEquiv_symm_apply_internal {X Y Z : CompactlyGenerated.{u, w}}
+    (g : Y ⟶ (internalHom X).obj Z) (p : ↑(X ⊗ Y)) :
+    (curryEquiv X Y Z).symm g p = internalHomEquiv X Z (g (snd X Y p)) (fst X Y p) :=
+  GeneratedByTopCat.curryEquiv_symm_apply (toGeneratedByTopCat.map g) p
+
+/-- The adjunction `X ⊗ - ⊣ internalHom X` in `CompactlyGenerated.{u, w}`. -/
+def tensorLeftAdjunction (X : CompactlyGenerated.{u, w}) :
+    tensorLeft X ⊣ internalHom X :=
+  Adjunction.mkOfHomEquiv
+    { homEquiv := curryEquiv X
+      homEquiv_naturality_left_symm {Y' Y Z} f g := by
+        ext p
+        have h : fst X Y ((X ◁ f) p) = fst X Y' p ∧ snd X Y ((X ◁ f) p) = f (snd X Y' p) := by
+          constructor <;> simp [← comp_apply]
+        simp [curryEquiv_symm_apply_internal, h.1, h.2]
+      homEquiv_naturality_right f g := by
+        ext y
+        apply (internalHomEquiv X _).injective
+        ext x
+        simp [internalHomEquiv_curryEquiv_apply, internalHomEquiv_map_apply] }
+
+/-- `CompactlyGenerated.{u, w}` is cartesian closed for any test-space universe `u` and carrier
+universe `w`. -/
+instance instMonoidalClosed : MonoidalClosed CompactlyGenerated.{u, w} where
+  closed X :=
+    { rightAdj := internalHom X
+      adj := tensorLeftAdjunction X }
+
+/-- Elements of `(ihom X).obj Z` correspond bijectively to continuous maps `C(X, Z)`. -/
+def ihomEquiv (X Z : CompactlyGenerated.{u, w}) : ↑((ihom X).obj Z) ≃ C(X, Z) :=
+  internalHomEquiv X Z
+
+/-- The hom-set bijection of the tensor–hom adjunction in `CompactlyGenerated.{u, w}` is
+`curryEquiv`. -/
+theorem homEquiv_def (X Y Z : CompactlyGenerated.{u, w}) :
+    (ihom.adjunction X).homEquiv Y Z = curryEquiv X Y Z :=
+  congrFun (congrFun (Adjunction.mkOfHomEquiv_homEquiv _) _) _
+
+@[ext]
+theorem ihom_obj_ext {X Z : CompactlyGenerated.{u, w}} {f g : ↑((ihom X).obj Z)}
+    (h : ∀ x, ihomEquiv X Z f x = ihomEquiv X Z g x) : f = g :=
+  GeneratedByTopCat.ihom_obj_ext (X := fun K : CompHaus.{u} ↦ K)
+    (Y := toGeneratedByTopCat.obj X) (Z := toGeneratedByTopCat.obj Z) h
+
+@[simp]
+theorem ihomEquiv_map_apply {X Y Z : CompactlyGenerated.{u, w}}
+    (g : Y ⟶ Z) (f : ↑((ihom X).obj Y)) (x : X) :
+    ihomEquiv X Z (((ihom X).map g) f) x = g (ihomEquiv X Y f x) :=
+  internalHomEquiv_map_apply g f x
+
+@[simp]
+theorem ihomEquiv_curry_apply {X Y Z : CompactlyGenerated.{u, w}}
+    (f : X ⊗ Y ⟶ Z) (y : Y) (x : X) :
+    ihomEquiv X Z (MonoidalClosed.curry f y) x = f ((tensorEquiv X Y).symm (x, y)) := by
+  rw [← MonoidalClosed.homEquiv_apply_eq, homEquiv_def]
+  exact internalHomEquiv_curryEquiv_apply f y x
+
+@[simp]
+theorem uncurry_apply {X Y Z : CompactlyGenerated.{u, w}}
+    (g : Y ⟶ (ihom X).obj Z) (p : ↑(X ⊗ Y)) :
+    MonoidalClosed.uncurry g p = ihomEquiv X Z (g (snd X Y p)) (fst X Y p) := by
+  rw [← MonoidalClosed.homEquiv_symm_apply_eq, homEquiv_def]
+  exact curryEquiv_symm_apply_internal g p
+
+/-- Evaluation in `CompactlyGenerated` applies the underlying continuous map to a point. -/
+theorem ihom_ev_app_apply {X Z : CompactlyGenerated.{u, w}} (p : ↑(X ⊗ (ihom X).obj Z)) :
+    ((ihom.ev X).app Z) p = ihomEquiv X Z (snd X _ p) (fst X _ p) := by
+  rw [← MonoidalClosed.uncurry_id_eq_ev, uncurry_apply]
+  rfl
+
+/-- Coevaluation in `CompactlyGenerated` sends `y` to the slice map `x ↦ (x, y)`. -/
+theorem ihomEquiv_ihom_coev_app_apply {X Y : CompactlyGenerated.{u, w}} (y : Y) (x : X) :
+    ihomEquiv X (X ⊗ Y) (((ihom.coev X).app Y) y) x = (tensorEquiv X Y).symm (x, y) := by
+  rw [← MonoidalClosed.curry_id_eq_coev, ihomEquiv_curry_apply]
+  rfl
+
+@[simp]
+theorem ihomEquiv_ihomCurry_apply {X Y Z : CompactlyGenerated.{u, w}}
+    (f : ↑((ihom (X ⊗ Y)).obj Z)) (y : Y) (x : X) :
+    ihomEquiv X Z (ihomEquiv Y ((ihom X).obj Z) (MonoidalClosed.ihomCurry X Y Z f) y) x =
+      ihomEquiv (X ⊗ Y) Z f ((tensorEquiv X Y).symm (x, y)) := by
+  rw [MonoidalClosed.ihomCurry, ihomEquiv_curry_apply, ihomEquiv_curry_apply, comp_apply,
+    ihom_ev_app_apply]
+  set q := (tensorEquiv X (Y ⊗ (ihom (X ⊗ Y)).obj Z)).symm
+    (x, (tensorEquiv Y ((ihom (X ⊗ Y)).obj Z)).symm (y, f))
+  have hfst : fst (X ⊗ Y) _ ((α_ X Y _).inv q) = (tensorEquiv X Y).symm (x, y) := by
+    ext
+    · rw [← comp_apply, ← comp_apply, associator_inv_fst_fst]
+      simp [q]
+    · rw [← comp_apply, ← comp_apply, associator_inv_fst_snd]
+      simp [q]
+  have hsnd : snd (X ⊗ Y) _ ((α_ X Y _).inv q) = f := by
+    rw [← comp_apply, associator_inv_snd, comp_apply]
+    simp [q]
+  rw [hfst, hsnd]
+
+/-- Canonical morphism from the `u`-compactly generated refinement of the compact-open mapping
+space `C(X, Z)` into `(ihom X).obj Z`. -/
+def compactOpenToIhom (X Z : CompactlyGenerated.{u, w}) :
+    of (WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) C(X, Z)) ⟶ (ihom X).obj Z :=
+  fromGeneratedByTopCat.map <|
+    GeneratedByTopCat.compactOpenToIhom (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Z)
+
+@[simp]
+theorem ihomEquiv_compactOpenToIhom_apply (X Z : CompactlyGenerated.{u, w})
+    (f : WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) C(X, Z)) :
+    ihomEquiv X Z (compactOpenToIhom X Z f) =
+      WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := C(X, Z)) f :=
+  GeneratedByTopCat.ihomEquiv_compactOpenToIhom_apply
+    (toGeneratedByTopCat.obj X) (toGeneratedByTopCat.obj Z) f
+
+/-- When `X` is `u`-small and Hausdorff, the internal hom `(ihom X).obj Z` is canonically
+isomorphic to the `u`-compactly generated refinement of the compact-open mapping space `C(X, Z)`. -/
+def ihomIsoCompactOpen (X Z : CompactlyGenerated.{u, w}) [Small.{u} X] [T2Space X] :
+    (ihom X).obj Z ≅ of (WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) C(X, Z)) :=
+  have : T2Space (toGeneratedByTopCat.obj X) := ‹T2Space X›
+  have : Small.{u} (toGeneratedByTopCat.obj X) := ‹Small.{u} X›
+  fromGeneratedByTopCat.mapIso <|
+    GeneratedByTopCat.ihomIsoCompactOpenOfCompactLift (Y := toGeneratedByTopCat.obj X)
+      (fun _ hKc ↦ Topology.exists_compHaus_lift_of_isCompact hKc) (toGeneratedByTopCat.obj Z)
+
+@[simp]
+theorem ihomIsoCompactOpen_inv (X Z : CompactlyGenerated.{u, w}) [Small.{u} X] [T2Space X] :
+    (ihomIsoCompactOpen X Z).inv = compactOpenToIhom X Z :=
+  have : T2Space (toGeneratedByTopCat.obj X) := ‹T2Space X›
+  have : Small.{u} (toGeneratedByTopCat.obj X) := ‹Small.{u} X›
+  congrArg fromGeneratedByTopCat.map <|
+    GeneratedByTopCat.ihomIsoCompactOpenOfCompactLift_inv
+      (Y := toGeneratedByTopCat.obj X)
+      (fun _ hKc ↦ Topology.exists_compHaus_lift_of_isCompact hKc) (toGeneratedByTopCat.obj Z)
+
+@[simp]
+theorem equiv_ihomIsoCompactOpen_hom_apply (X Z : CompactlyGenerated.{u, w})
+    [Small.{u} X] [T2Space X] (f : ↑((ihom X).obj Z)) :
+    WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := C(X, Z))
+      ((ihomIsoCompactOpen X Z).hom f) = ihomEquiv X Z f :=
+  have : T2Space (toGeneratedByTopCat.obj X) := ‹T2Space X›
+  have : Small.{u} (toGeneratedByTopCat.obj X) := ‹Small.{u} X›
+  GeneratedByTopCat.equiv_ihomIsoCompactOpenOfCompactLift_hom_apply
+    (Y := toGeneratedByTopCat.obj X)
+    (fun _ hKc ↦ Topology.exists_compHaus_lift_of_isCompact hKc) (toGeneratedByTopCat.obj Z) f
+
+/-- **Convenient compact-open exponential isomorphism** (Hatcher, Proposition A.16): for `u`-small
+Hausdorff `u`-compactly generated spaces `X` and `Y` and any `u`-compactly generated space `Z`,
+the `u`-compactly generated refinement of `C(↑(X ⊗ Y), Z)` is canonically isomorphic in
+`CompactlyGenerated.{u, w}` to the `u`-compactly generated refinement of
+`C(Y, WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) C(X, Z))`. -/
+def compactOpenTensorIso (X Y Z : CompactlyGenerated.{u, w})
+    [Small.{u} X] [T2Space X] [Small.{u} Y] [T2Space Y] :
+    of (WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) C(↑(X ⊗ Y), Z)) ≅
+      of (WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K)
+        C(Y, WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) C(X, Z))) :=
+  (ihomIsoCompactOpen (X ⊗ Y) Z).symm ≪≫ MonoidalClosed.ihomCurryIso X Y Z ≪≫
+    (ihom Y).mapIso (ihomIsoCompactOpen X Z) ≪≫ ihomIsoCompactOpen Y _
+
+/-- **Convenient compact-open exponential homeomorphism** (Hatcher, Proposition A.16): underlying
+homeomorphism of `CompactlyGenerated.compactOpenTensorIso`. -/
+def compactOpenTensorHomeomorph (X Y Z : CompactlyGenerated.{u, w})
+    [Small.{u} X] [T2Space X] [Small.{u} Y] [T2Space Y] :
+    WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) C(↑(X ⊗ Y), Z) ≃ₜ
+      WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K)
+        C(Y, WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) C(X, Z)) :=
+  homeoOfIso (compactOpenTensorIso X Y Z)
+
+@[simp]
+theorem equiv_equiv_compactOpenTensorHomeomorph_apply (X Y Z : CompactlyGenerated.{u, w})
+    [Small.{u} X] [T2Space X] [Small.{u} Y] [T2Space Y]
+    (f : WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) C(↑(X ⊗ Y), Z)) (y : Y) (x : X) :
+    WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := C(X, Z))
+      (WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K)
+        (Y := C(Y, WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) C(X, Z)))
+        (compactOpenTensorHomeomorph X Y Z f) y) x =
+      WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := C(↑(X ⊗ Y), Z)) f
+        ((tensorEquiv X Y).symm (x, y)) := by
+  let W : CompactlyGenerated.{u, w} :=
+    of (WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) C(X, Z))
+  let g₀ := MonoidalClosed.ihomCurry X Y Z (compactOpenToIhom (X ⊗ Y) Z f)
+  have hf : compactOpenTensorHomeomorph X Y Z f =
+      (ihomIsoCompactOpen Y W).hom (((ihom Y).map (ihomIsoCompactOpen X Z).hom) g₀) := by
+    rw [compactOpenTensorHomeomorph, homeoOfIso_apply, compactOpenTensorIso]
+    simp [W, g₀]
+  have h₁ := DFunLike.congr_fun
+    (equiv_ihomIsoCompactOpen_hom_apply Y W (((ihom Y).map (ihomIsoCompactOpen X Z).hom) g₀)) y
+  have h₂ := ihomEquiv_map_apply (ihomIsoCompactOpen X Z).hom g₀ y
+  have h₃ := DFunLike.congr_fun
+    (equiv_ihomIsoCompactOpen_hom_apply X Z (ihomEquiv Y ((ihom X).obj Z) g₀ y)) x
+  have h₄ := ihomEquiv_ihomCurry_apply (compactOpenToIhom (X ⊗ Y) Z f) y x
+  have h₅ := DFunLike.congr_fun
+    (ihomEquiv_compactOpenToIhom_apply (X ⊗ Y) Z f) ((tensorEquiv X Y).symm (x, y))
+  rw [hf]
+  exact (congrArg (fun k : W ↦
+    WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := C(X, Z)) k x)
+    (h₁.trans h₂)).trans (h₃.trans (h₄.trans h₅))
+
+end CartesianClosed
+
+end CompactlyGenerated
