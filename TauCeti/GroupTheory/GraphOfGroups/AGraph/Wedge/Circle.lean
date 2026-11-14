@@ -329,6 +329,12 @@ private theorem wedgeDart_cast_last (p : ι → 𝔸.AlternatingPath v₀ v₀)
   rw [wedgeVertex_cast]
   cases k using Fin.cases <;> simp [wedgePos, wedge]
 
+/-- The base vertex is the vertex at position `k` of a circle exactly when `k = 0`. -/
+@[simp] theorem base_eq_wedgeVertex_iff (p : ι → 𝔸.AlternatingPath v₀ v₀)
+    (i : {i // (p i).length ≠ 0}) (k : Fin (p i).length) :
+    (wedge p).base = wedgeVertex p i k ↔ (k : ℕ) = 0 :=
+  eq_comm.trans (wedgeVertex_eq_base_iff p i k)
+
 /-- The edge at position `k` of a circle starts at the vertex at position `k`. -/
 @[simp] theorem src_wedgeDart (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : {i // (p i).length ≠ 0})
     (k : Fin (p i).length) : (wedge p).graph.src (wedgeDart p i k) = wedgeVertex p i k := by
@@ -473,12 +479,18 @@ circle. -/
     rw [Fin.ext h]
 
 /-- No edge of a circle is the reverse of an edge of a circle. -/
-theorem wedgeDart_ne_rev (p : ι → 𝔸.AlternatingPath v₀ v₀) (i₁ i₂ : {i // (p i).length ≠ 0})
-    (k₁ : Fin (p i₁).length) (k₂ : Fin (p i₂).length) :
+@[simp] theorem wedgeDart_ne_rev (p : ι → 𝔸.AlternatingPath v₀ v₀)
+    (i₁ i₂ : {i // (p i).length ≠ 0}) (k₁ : Fin (p i₁).length) (k₂ : Fin (p i₂).length) :
     wedgeDart p i₁ k₁ ≠ (wedge p).graph.rev (wedgeDart p i₂ k₂) :=
   -- The edges of the circles are the darts `(d, true)` and their reverses are the darts
   -- `(d, false)`, by definition.
   fun h => Bool.noConfusion (congrArg Prod.snd h : true = false)
+
+/-- No reverse of an edge of a circle is an edge of a circle. -/
+@[simp] theorem rev_wedgeDart_ne (p : ι → 𝔸.AlternatingPath v₀ v₀)
+    (i₁ i₂ : {i // (p i).length ≠ 0}) (k₁ : Fin (p i₁).length) (k₂ : Fin (p i₂).length) :
+    (wedge p).graph.rev (wedgeDart p i₁ k₁) ≠ wedgeDart p i₂ k₂ :=
+  (wedgeDart_ne_rev p i₂ i₁ k₂ k₁).symm
 
 /-- The edge path of the path to position `0` of a circle is empty. -/
 private theorem edgePath_circlePath_zero (p : ι → 𝔸.AlternatingPath v₀ v₀)
@@ -559,6 +571,18 @@ private theorem mapPath_edgePath_circlePath (p : ι → 𝔸.AlternatingPath v�
   simp only [wedgeDart_cast_castSucc, wedgeDart_cast_last]
   -- The dart `⟨i, none⟩`, read through the quiver of the wedge, is `⟨i, none⟩`.
   exact congrArg (HAppend.hAppend _) (congrArg (fun f => [f]) (SerreGraph.dart_val _ _))
+
+/-- The loop around the circle of a path `p i` traverses as many edges as `p i` has darts. -/
+@[simp] theorem length_edgePath_wedgeLoop (p : ι → 𝔸.AlternatingPath v₀ v₀)
+    (i : {i // (p i).length ≠ 0}) : (wedgeLoop p i).edgePath.length = (p i).length := by
+  rw [← SerreGraph.Path.length_darts, darts_edgePath_wedgeLoop, List.length_ofFn]
+
+/-- The loop around a circle has no backtracking: it traverses the edges of the circle, all in the
+same direction. -/
+@[simp] theorem isReduced_edgePath_wedgeLoop (p : ι → 𝔸.AlternatingPath v₀ v₀)
+    (i : {i // (p i).length ≠ 0}) : SerreGraph.Path.IsReduced _ (wedgeLoop p i).edgePath := by
+  rw [SerreGraph.Path.isReduced_iff_isChain, darts_edgePath_wedgeLoop]
+  exact (List.pairwise_ofFn.2 fun _ _ _ => wedgeDart_ne_rev p i i _ _).isChain
 
 /-- The loop around a circle is the edge path of its edges, read as a path of the graph of groups
 of the wedge. -/

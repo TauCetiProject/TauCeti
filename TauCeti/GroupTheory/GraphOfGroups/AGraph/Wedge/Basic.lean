@@ -45,6 +45,9 @@ circle and complexity zero.
   classes of the paths.
 * `TauCeti.GraphOfGroups.AGraph.card_geomEdge_wedge`: the number of edges of the wedge is the sum of
   the lengths of the paths.
+* `TauCeti.GraphOfGroups.AGraph.rankGrp_wedge_base`,
+  `TauCeti.GraphOfGroups.AGraph.rankGrp_wedge_of_ne_base`: the base vertex group has the rank of
+  `wedgeGroup p` and the other vertex groups have rank zero.
 
 ## References
 
@@ -723,6 +726,36 @@ theorem map_grp_wedge_base (p : ι → 𝔸.AlternatingPath v₀ v₀) :
 theorem grp_wedge_of_ne_base (p : ι → 𝔸.AlternatingPath v₀ v₀) {u : (wedge p).graph.V}
     (hu : u ≠ (wedge p).base) : (wedge p).grp u = ⊥ :=
   grp_circleWedge_of_ne _ _ hu
+
+/-- The vertex group of the wedge at its base vertex is isomorphic to `wedgeGroup p`. -/
+private def grpWedgeBaseEquiv (p : ι → 𝔸.AlternatingPath v₀ v₀) :
+    (wedge p).grp (wedge p).base ≃* wedgeGroup p :=
+  ((MulEquiv.cast (M := 𝔸.vertexGroup) (wedge p).typ_base).subgroupMap _).trans
+    (MulEquiv.subgroupCongr (map_grp_wedge_base p))
+
+/-- The vertex groups of the wedge are finitely generated when its base vertex group is, as for a
+finite family: the others are trivial. -/
+instance (p : ι → 𝔸.AlternatingPath v₀ v₀) [Group.FG (wedgeGroup p)] (z : (wedge p).graph.V) :
+    Group.FG ((wedge p).grp z) := by
+  by_cases hz : z = (wedge p).base
+  · subst hz
+    exact IsMulFG.of_surjective _ (grpWedgeBaseEquiv p).symm.surjective
+  · rw [grp_wedge_of_ne_base p hz]
+    infer_instance
+
+/-- The vertex group of the wedge at its base vertex has the rank of `wedgeGroup p`. -/
+@[simp] theorem rankGrp_wedge_base (p : ι → 𝔸.AlternatingPath v₀ v₀) [Group.FG (wedgeGroup p)] :
+    (wedge p).rankGrp (wedge p).base = Group.rank (wedgeGroup p) :=
+  ((wedge p).rankGrp_eq _).trans (Group.rank_congr (grpWedgeBaseEquiv p))
+
+/-- The vertex groups of the wedge away from its base vertex have rank zero. -/
+theorem rankGrp_wedge_of_ne_base (p : ι → 𝔸.AlternatingPath v₀ v₀) {z : (wedge p).graph.V}
+    (hz : z ≠ (wedge p).base) : (wedge p).rankGrp z = 0 := by
+  have : Group.FG ((wedge p).grp z) := by
+    rw [grp_wedge_of_ne_base p hz]
+    infer_instance
+  rw [rankGrp_eq, Subgroup.rank_congr (grp_wedge_of_ne_base p hz)]
+  exact Group.rank_eq_zero _
 
 /-- The underlying graph of the wedge is connected. -/
 theorem connected_wedge (p : ι → 𝔸.AlternatingPath v₀ v₀) : (wedge p).graph.Connected :=
