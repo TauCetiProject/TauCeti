@@ -18,8 +18,10 @@ permutations. Counting rather than normalizing by the degree makes the norm mean
 on an empty type; normalization cancels in same-degree coboundary expansion ratios.
 
 The construction uses Mathlib's support inequalities and conjugation formula. Nonidentity
-permutations move at least two points, with equality precisely for transpositions. These facts
-also supply the norm estimate for the parity retraction.
+permutations move at least two points, with equality precisely for transpositions, while
+nonidentity even permutations move at least three points. Consequently, distinct permutations of
+the same sign lie at Hamming distance at least three, and on a domain of at most three points they
+disagree everywhere.
 -/
 
 public section
@@ -82,5 +84,49 @@ theorem two_le_movedNorm_of_sign_eq_neg_one {σ : Perm α} (hσ : sign σ = -1) 
   apply two_le_movedNorm_of_ne_one
   rintro rfl
   exact (by decide : (1 : ℤˣ) ≠ -1) (by simpa using hσ)
+
+/-- A nonidentity even permutation moves at least three points. -/
+theorem three_le_card_support_of_sign_eq_one {σ : Perm α} (hsign : sign σ = 1) (hσ : σ ≠ 1) :
+    3 ≤ σ.support.card := by
+  have h2 : 2 ≤ σ.support.card := two_le_card_support_of_ne_one hσ
+  have hne2 : σ.support.card ≠ 2 := by
+    intro h
+    have hswap : σ.IsSwap := card_support_eq_two.mp h
+    exact (by decide : (1 : ℤˣ) ≠ -1) (hsign.symm.trans hswap.sign_eq)
+  omega
+
+/-- A nonidentity even permutation has moved-point norm at least three. -/
+theorem three_le_movedNorm_of_sign_eq_one {σ : Perm α} (hsign : sign σ = 1) (hσ : σ ≠ 1) :
+    3 ≤ movedNorm α σ := by
+  rw [movedNorm_apply]
+  exact_mod_cast three_le_card_support_of_sign_eq_one hsign hσ
+
+/-- Distinct permutations of the same sign are at Hamming distance at least three. -/
+theorem three_le_hammingDist_of_sign_eq {σ τ : Perm α} (hsign : sign σ = sign τ) (hne : σ ≠ τ) :
+    3 ≤ hammingDist (⇑σ) (⇑τ) := by
+  have hsign' : sign (σ⁻¹ * τ) = 1 := by simp [hsign]
+  have hne' : σ⁻¹ * τ ≠ 1 := inv_mul_eq_one.not.mpr hne
+  have h3 : (3 : ℝ) ≤ movedNorm α (σ⁻¹ * τ) := three_le_movedNorm_of_sign_eq_one hsign' hne'
+  rw [← hammingDist_eq_movedNorm] at h3
+  exact_mod_cast h3
+
+/-- On a type of at most three elements, distinct permutations of the same sign disagree
+everywhere. -/
+theorem apply_ne_apply_of_sign_eq_of_card_le_three (hcard : Fintype.card α ≤ 3) {σ τ : Perm α}
+    (hsign : sign σ = sign τ) (hne : σ ≠ τ) (x : α) : σ x ≠ τ x := by
+  intro hx
+  have hle : hammingDist (⇑σ) (⇑τ) ≤ (Finset.univ.erase x).card := by
+    rw [hammingDist]
+    refine Finset.card_le_card fun y hy ↦ ?_
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hy
+    exact Finset.mem_erase.mpr ⟨fun hyx ↦ hy (hyx ▸ hx), Finset.mem_univ y⟩
+  rw [Finset.card_erase_of_mem (Finset.mem_univ x), Finset.card_univ] at hle
+  have h3 := three_le_hammingDist_of_sign_eq hsign hne
+  omega
+
+/-- On a type of at most three elements, distinct transpositions disagree everywhere. -/
+theorem IsSwap.apply_ne_apply_of_ne {σ τ : Perm α} (hσ : σ.IsSwap) (hτ : τ.IsSwap)
+    (hcard : Fintype.card α ≤ 3) (hne : σ ≠ τ) (x : α) : σ x ≠ τ x :=
+  apply_ne_apply_of_sign_eq_of_card_le_three hcard (hσ.sign_eq.trans hτ.sign_eq.symm) hne x
 
 end Equiv.Perm
