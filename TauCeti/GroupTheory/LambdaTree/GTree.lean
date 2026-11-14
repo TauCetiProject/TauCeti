@@ -329,12 +329,17 @@ theorem IsTree.toGTree_isHyperbolic_iff (hd : d.IsTree) (hG : d.IsIsometricActio
     hd.toGTree_isElliptic_iff, hd.toGTree_isElliptic_iff]
 
 @[simp]
+theorem IsTree.toGTree_dist (hd : d.IsTree) (hG : d.IsIsometricAction G)
+    (hinv : ∀ g : G, ¬IsInversion X g) (u v : (hd.toGTree hG hinv).V) :
+    ((hd.toGTree hG hinv).dist u v : ℤ) =
+      d (hd.toGTreeVertexEquiv hG hinv u) (hd.toGTreeVertexEquiv hG hinv v) :=
+  hd.isGeodesic.toSerreGraph_dist u v
+
 theorem IsTree.pathMetric_toGTree (hd : d.IsTree) (hG : d.IsIsometricAction G)
     (hinv : ∀ g : G, ¬IsInversion X g) (u v : (hd.toGTree hG hinv).V) :
     (hd.toGTree hG hinv).pathMetric u v =
       d (hd.toGTreeVertexEquiv hG hinv u) (hd.toGTreeVertexEquiv hG hinv v) := by
-  rw [GTree.pathMetric_apply]
-  exact hd.isGeodesic.toSerreGraph_dist u v
+  simp
 
 @[simp]
 theorem IsTree.basedLength_toGTree (hd : d.IsTree) (hG : d.IsIsometricAction G)

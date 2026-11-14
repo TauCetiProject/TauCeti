@@ -357,7 +357,6 @@ private theorem smul_chiswellMk (k g : G) (s : Λ) (hs₀ : 0 ≤ s) (hs : s ≤
       (Quotient.mk (rawSetoid l) (smulRaw l k ⟨(g, s), hs₀, hs⟩) : l.Chiswell) :=
   rfl
 
-@[simp]
 theorem smul_chiswellBase (g : G) :
     g • l.chiswellBase = l.chiswellMk g (l g) (apply_nonneg l g) le_rfl := by
   rw [chiswellBase, smul_chiswellMk]

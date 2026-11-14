@@ -23,7 +23,6 @@ universe u v
 variable {V : Type u} [Quiver.{v} V]
 
 /-- A vertex lies on a concatenated path `p.comp q` if and only if it lies on `p` or on `q`. -/
-@[simp]
 theorem mem_vertices_comp {a b c : V} (p : Path a b) (q : Path b c) {v : V} :
     v ∈ (p.comp q).vertices ↔ v ∈ p.vertices ∨ v ∈ q.vertices := by
   rw [vertices_comp, List.mem_append]
