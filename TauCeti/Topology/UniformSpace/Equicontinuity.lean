@@ -8,21 +8,30 @@ module
 public import Mathlib.Topology.UniformSpace.Equicontinuity
 
 /-!
-# Extending pointwise Cauchyness of equicontinuous families from dense subsets
+# Local, tail, and dense-Cauchy criteria for equicontinuous families
+
+Equicontinuity within a neighbourhood of `x₀` is equicontinuity at `x₀`
+(`EquicontinuousWithinAt.equicontinuousAt`), as for continuity. Equicontinuity at a point is also
+insensitive to finitely many members of a family, provided each of them is continuous there
+(`equicontinuousAt_finite`): for a sequence `F : ℕ → X → α`, equicontinuity at `x₀` of a tail
+`n ↦ F (n + N)` and continuity at `x₀` of the first `N` members give equicontinuity at `x₀` of the
+whole sequence (`TauCeti.equicontinuousAt_of_equicontinuousAt_add`).
 
 Mathlib's `Equicontinuous.isClosed_setOfPred_tendsto` extends pointwise convergence of an
 equicontinuous family `F : ι → X → α` from a dense set once a continuous limit function `f : X → α`
 is already in hand. Before constructing `f`, one often knows only that `F · y` is Cauchy along a
-filter `l` on `ι` for points `y` of a dense subset `s ⊆ X`.
-
-This file proves the Cauchy counterpart: if `F` is equicontinuous at `x` and `l.map (F · y)` is
-Cauchy for every `y ∈ s`, then `l.map (F · x)` is Cauchy whenever `x ∈ closure s`. Hence for an
-equicontinuous family `F`, the locus `{x | Cauchy (l.map (F · x))}` is closed. When the target
-uniform space `α` is complete and `s` is dense in `X`, `F` therefore converges pointwise on all of
-`X` to a continuous limit function.
+filter `l` on `ι` for points `y` of a dense subset `s ⊆ X`. If `F` is equicontinuous at `x` and
+`l.map (F · y)` is Cauchy for every `y ∈ s`, then `l.map (F · x)` is Cauchy whenever
+`x ∈ closure s`. Hence for an equicontinuous family `F`, the locus `{x | Cauchy (l.map (F · x))}`
+is closed, and when the target uniform space `α` is complete and `s` is dense in `X`, `F` converges
+pointwise on all of `X` to a continuous limit function.
 
 ## Main results
 
+* `EquicontinuousWithinAt.equicontinuousAt`: equicontinuity within a neighbourhood of `x₀` implies
+  equicontinuity at `x₀`.
+* `TauCeti.equicontinuousAt_of_equicontinuousAt_add`: equicontinuity at `x₀` of a sequence from
+  equicontinuity of a shifted tail and continuity of the initial segment.
 * `EquicontinuousAt.cauchy_map_of_mem_closure`: pointwise Cauchyness along a filter propagates to
   closure points at which the family is equicontinuous.
 * `Equicontinuous.isClosed_setOfPred_cauchy_map`: the set of points along which an equicontinuous
@@ -37,6 +46,29 @@ public section
 open Filter Set Topology Uniformity
 
 variable {ι X α : Type*} [TopologicalSpace X] [UniformSpace α]
+
+/-- A family equicontinuous at `x₀` within a neighbourhood of `x₀` is equicontinuous at `x₀`. -/
+theorem EquicontinuousWithinAt.equicontinuousAt {F : ι → X → α} {S : Set X} {x₀ : X}
+    (hF : EquicontinuousWithinAt F S x₀) (hS : S ∈ 𝓝 x₀) : EquicontinuousAt F x₀ := by
+  rwa [EquicontinuousWithinAt, nhdsWithin_eq_nhds.2 hS] at hF
+
+namespace TauCeti
+
+/-- A sequence of functions is equicontinuous at `x₀` if one of its tails `n ↦ F (n + N)` is,
+and its first `N` members are continuous at `x₀`. -/
+theorem equicontinuousAt_of_equicontinuousAt_add {F : ℕ → X → α} {x₀ : X} (N : ℕ)
+    (hF : EquicontinuousAt (fun n ↦ F (n + N)) x₀) (hc : ∀ n < N, ContinuousAt (F n) x₀) :
+    EquicontinuousAt F x₀ := by
+  intro U hU
+  have hfin : EquicontinuousAt (fun n : Fin N ↦ F n) x₀ :=
+    equicontinuousAt_finite.2 fun n ↦ hc n n.isLt
+  filter_upwards [hF U hU, hfin U hU] with x htail hhead n
+  rcases lt_or_ge n N with hn | hn
+  · exact hhead ⟨n, hn⟩
+  · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
+    exact htail k
+
+end TauCeti
 
 /-- If `F : ι → X → α` is equicontinuous at `x`, `l.map (F · y)` is Cauchy for every `y ∈ s`, and
 `x ∈ closure s`, then `l.map (F · x)` is Cauchy. -/
