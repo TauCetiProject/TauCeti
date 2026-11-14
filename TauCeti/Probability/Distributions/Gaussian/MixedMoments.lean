@@ -56,6 +56,14 @@ theorem integrable_prod_dual (μ : Measure E) [IsGaussian μ]
   rw [hexp] at hLp
   exact memLp_one_iff_integrable.mp hLp
 
+/-- An affine linear observable times a finite product of affine linear observables is
+integrable under a Gaussian measure. -/
+theorem integrable_dual_add_mul_prod (μ : Measure E) [IsGaussian μ] {ι : Type*}
+    (s : Finset ι) (L₀ : StrongDual ℝ E) (c₀ : ℝ) (L : ι → StrongDual ℝ E) (c : ι → ℝ) :
+    Integrable (fun x ↦ (L₀ x + c₀) * ∏ i ∈ s, (L i x + c i)) μ := by
+  simpa [Finset.prod_insertNone] using
+    integrable_prod_dual μ s.insertNone (fun i ↦ i.elim L₀ L) (fun i ↦ i.elim c₀ c)
+
 variable [CompleteSpace E] [SecondCountableTopology E]
 
 /-- The `2n`th centered moment of a linear observable of a Gaussian measure is
