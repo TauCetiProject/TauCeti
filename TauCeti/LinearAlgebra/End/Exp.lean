@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.LinearMap.Rat
 public import Mathlib.Algebra.Module.Submodule.LinearMap
 public import Mathlib.RingTheory.Nilpotent.Exp
+public import TauCeti.LinearAlgebra.End.Basic
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 import Mathlib.Algebra.Module.BigOperators
 public import Mathlib.Algebra.Algebra.Equiv
@@ -248,47 +249,46 @@ variable {R S M : Type*} [Semiring R] [Semiring S] [AddCommGroup M]
 @[simp]
 theorem restrictScalars_exp (D : Module.End S M) :
     (IsNilpotent.exp D).restrictScalars R = IsNilpotent.exp (D.restrictScalars R) := by
-  let f : Module.End S M →+* Module.End R M :=
-    { toFun := LinearMap.restrictScalars R
-      map_zero' := rfl
-      map_one' := rfl
-      map_add' := fun _ _ => rfl
-      map_mul' := fun _ _ => rfl }
-  by_cases hD : IsNilpotent D
-  · exact hD.map_exp f
-  · have hD' : ¬ IsNilpotent (D.restrictScalars R) := by
-      rw [show D.restrictScalars R = f D from rfl,
-        (IsNilpotent.map_iff (LinearMap.restrictScalars_injective R) (f := f))]
-      exact hD
-    have hzero : nilpotencyClass D = 0 := by
-      by_contra hn
-      exact hD (isNilpotent_of_pos_nilpotencyClass (Nat.pos_of_ne_zero hn))
-    have hzero' : nilpotencyClass (D.restrictScalars R) = 0 := by
-      by_contra hn
-      exact hD' (isNilpotent_of_pos_nilpotencyClass (Nat.pos_of_ne_zero hn))
-    rw [IsNilpotent.exp, hzero, range_zero, sum_empty, IsNilpotent.exp, hzero',
-      range_zero, sum_empty]
-    rfl
+  unfold IsNilpotent.exp
+  have hclass : nilpotencyClass (D.restrictScalars R) = nilpotencyClass D := by
+    unfold nilpotencyClass
+    congr
+    ext n
+    rw [← restrictScalars_pow, ← LinearMap.restrictScalars_zero R S M M,
+      LinearMap.restrictScalars_inj R (D ^ n) 0]
+  rw [hclass]
+  have hmap := map_sum (restrictScalarsRingHom R S M).toAddMonoidHom
+    (fun n : ℕ => (n.factorial : ℚ)⁻¹ • D ^ n) (range (nilpotencyClass D))
+  exact hmap.trans <| by
+    simp only [RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass,
+      restrictScalarsRingHom_apply, LinearMap.restrictScalars_smul, restrictScalars_pow]
 
 end RestrictScalars
 
 /-! ### Invariant submodules
 
 The finite exponential of an endomorphism preserves every submodule stable under it. Here the
-coefficient semiring and the module have compatible `ℚ`-actions, expressed by `SMul ℚ R`,
-`Module ℚ M`, and `IsScalarTower ℚ R M`.
+submodule's coefficient semiring and the module have compatible `ℚ`-actions, expressed by
+`SMul ℚ K`, `Module ℚ M`, and `IsScalarTower ℚ K M`; the endomorphism may use a different
+semiring.
 -/
 
 /-- With compatible `ℚ`-actions on the semiring and the module, the finite exponential preserves
 every submodule stable under its endomorphism. -/
-theorem exp_apply_mem_of_forall_mem {R M : Type*} [Semiring R] [AddCommGroup M]
-    [Module R M] [Module ℚ M] [SMul ℚ R] [IsScalarTower ℚ R M]
-    (D : Module.End R M) (S : Submodule R M)
+theorem exp_apply_mem_of_forall_mem {R K M : Type*} [Semiring R] [Semiring K] [AddCommGroup M]
+    [Module R M] [Module K M] [Module ℚ M] [SMul ℚ K] [IsScalarTower ℚ K M]
+    (D : Module.End R M) (S : Submodule K M)
     (hS : ∀ x ∈ S, D x ∈ S) {x : M} (hx : x ∈ S) :
     IsNilpotent.exp D x ∈ S := by
+  have hpow : ∀ n : ℕ, (D ^ n) x ∈ S := by
+    intro n
+    induction n generalizing x with
+    | zero => simpa
+    | succ n ih =>
+      rw [pow_succ, _root_.mul_apply_eq_comp]
+      exact ih (hS x hx)
   rw [IsNilpotent.exp, LinearMap.sum_apply]
-  exact S.sum_mem fun n _ => S.smul_of_tower_mem _
-    (Module.End.pow_apply_mem_of_forall_mem (f' := D) n hS x hx)
+  exact S.sum_mem fun n _ => S.smul_of_tower_mem _ (hpow n)
 
 /-- Exponentiating a nilpotent endomorphism fixes every vector in its kernel. -/
 theorem exp_apply_of_apply_eq_zero {R M : Type*} [Semiring R] [AddCommGroup M]
@@ -323,7 +323,6 @@ theorem expAlgEquiv_apply (D : Module.End R A)
     D.expAlgEquiv hder hD a = IsNilpotent.exp D a := (rfl)
 
 /-- The inverse acts by the finite exponential of the negative endomorphism. -/
-@[simp]
 theorem expAlgEquiv_symm_apply (D : Module.End R A)
     (hder : ∀ a b, D (a * b) = a * D b + D a * b) (hD : IsNilpotent D) (a : A) :
     (D.expAlgEquiv hder hD).symm a = IsNilpotent.exp (-D) a := by
@@ -343,11 +342,11 @@ theorem expAlgEquiv_zero (hder : ∀ a b, (0 : Module.End R A) (a * b) =
 /-- The inverse of a derivation's exponential automorphism is the exponential of its negation. -/
 @[simp]
 theorem expAlgEquiv_symm (D : Module.End R A)
-    (hder : ∀ a b, D (a * b) = a * D b + D a * b) (hD : IsNilpotent D)
-    (hder' : ∀ a b, (-D) (a * b) = a * (-D) b + (-D) a * b) :
-    (D.expAlgEquiv hder hD).symm = (-D).expAlgEquiv hder' hD.neg := by
+    (hder : ∀ a b, D (a * b) = a * D b + D a * b) (hD : IsNilpotent D) :
+    (D.expAlgEquiv hder hD).symm = (-D).expAlgEquiv
+      (fun a b => by simp [hder a b, add_comm]) hD.neg := by
   ext
-  simp [expAlgEquiv_apply]
+  simp [expAlgEquiv_apply, expAlgEquiv_symm_apply]
 
 end AlgebraAutomorphisms
 
@@ -356,31 +355,13 @@ section RestrictScalars
 variable {R S A : Type*} [CommRing R] [CommRing S] [Ring A]
   [Algebra R S] [Algebra S A] [Algebra R A] [IsScalarTower R S A] [Module ℚ A]
 
-/-- Restricting the scalars of an endomorphism preserves its powers. -/
-@[simp]
-theorem restrictScalars_pow {R S M : Type*} [Semiring R] [Semiring S] [AddCommGroup M]
-    [Module R M] [Module S M] [LinearMap.CompatibleSMul M M R S]
-    (D : Module.End S M) (n : ℕ) :
-    (D.restrictScalars R) ^ n = (D ^ n).restrictScalars R := by
-  induction n with
-  | zero => rfl
-  | succ n ih => rw [pow_succ, ih, pow_succ]; rfl
-
-/-- Restricting the scalars of an endomorphism preserves nilpotence. -/
-theorem isNilpotent_restrictScalars {R S M : Type*} [Semiring R] [Semiring S] [AddCommGroup M]
-    [Module R M] [Module S M] [LinearMap.CompatibleSMul M M R S]
-    (D : Module.End S M) (hD : IsNilpotent D) :
-    IsNilpotent (D.restrictScalars R) := by
-  obtain ⟨n, hn⟩ := hD
-  exact ⟨n, by rw [restrictScalars_pow, hn]; rfl⟩
-
 /-- Scalar restriction commutes with exponentiating a nilpotent derivation. -/
 @[simp]
 theorem expAlgEquiv_restrictScalars (D : Module.End S A)
     (hder : ∀ a b, D (a * b) = a * D b + D a * b) (hD : IsNilpotent D) :
     (D.expAlgEquiv hder hD).restrictScalars R =
       Module.End.expAlgEquiv (D.restrictScalars R) (fun a b => hder a b)
-        (isNilpotent_restrictScalars D hD) := by
+        ((isNilpotent_restrictScalars_iff (R := R) (D := D)).2 hD) := by
   ext a
   exact LinearMap.congr_fun (restrictScalars_exp (R := R) D) a
 
@@ -401,8 +382,8 @@ variable {R M N P : Type*} [CommRing R]
 
 /-- A Leibniz-compatible bilinear pairing intertwines nilpotent exponentials.
 
-The tensor-product proof follows `Module.End.exp_mul_of_derivation`, replacing multiplication
-by the bilinear pairing. -/
+This generalizes `Module.End.exp_mul_of_derivation` from algebra multiplication to an `R`-bilinear
+pairing. -/
 theorem exp_bilinear_of_leibniz
     (f : M →ₗ[R] N →ₗ[R] P)
     (D₁ : Module.End R M) (D₂ : Module.End R N) (D₃ : Module.End R P)
@@ -410,6 +391,7 @@ theorem exp_bilinear_of_leibniz
     (h₁ : IsNilpotent D₁) (h₂ : IsNilpotent D₂) (h₃ : IsNilpotent D₃)
     (x : M) (y : N) :
     exp D₃ (f x y) = f (exp D₁ x) (exp D₂ y) := by
+  -- The tensor-product argument follows `Module.End.exp_mul_of_derivation`.
   let DL : Module.End R (M ⊗[R] N) := D₂.lTensor M
   let DR : Module.End R (M ⊗[R] N) := D₁.rTensor N
   have h_nilL : IsNilpotent DL := h₂.map <| Module.End.lTensorAlgHom R N M

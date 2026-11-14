@@ -73,7 +73,7 @@ theorem quotientExpLieAction_apply (k : ℕ) (x : L) (a : A ⧸ F.ideal (k + 1))
 theorem quotientExpLieAction_neg (k : ℕ) (x : L) :
     F.quotientExpLieAction d ℒ k (-x) = (F.quotientExpLieAction d ℒ k x).symm := by
   simp only [quotientExpLieAction, map_neg]
-  exact (Module.End.expAlgEquiv_symm _ _ _ _).symm
+  exact (Module.End.expAlgEquiv_symm _ _ _).symm
 
 /-- The zero Lie element acts as the identity automorphism. -/
 @[simp]
@@ -105,16 +105,6 @@ end Decomposition
 section Truncated
 
 variable [GradedLieAlgebra ℒ] [Algebra ℚ A]
-
-/-- Lie elements with equal order-`k` truncations induce the same coefficient automorphism. -/
-theorem quotientExpLieAction_eq_of_mkQ_eq (k : ℕ) {x y : L}
-    (h : (d.degreeIdeal ℒ k).mkQ x = (d.degreeIdeal ℒ k).mkQ y) :
-    F.quotientExpLieAction d ℒ k x = F.quotientExpLieAction d ℒ k y := by
-  have he : F.quotientLieAction d ℒ k x = F.quotientLieAction d ℒ k y := by
-    rw [← F.truncatedLieAction_mk d ℒ k x, ← F.truncatedLieAction_mk d ℒ k y]
-    exact congrArg (F.truncatedLieAction d ℒ k) h
-  ext a
-  simp only [quotientExpLieAction_apply, he]
 
 /-- Exponentiate an element of the Lie truncation on the matching coefficient quotient. -/
 noncomputable def truncatedExpLieAction (k : ℕ) (x : d.truncatedLie ℒ k) :

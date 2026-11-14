@@ -55,19 +55,16 @@ theorem quotientLieAction_apply (k : ℕ) (x : L) (q : A ⧸ F.ideal (k + 1)) :
       (Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1)))
         (PositiveDegrees.quotientLieAction d ℒ (F.toSubmodule R)
           (F.toSubmodule_antitone R) k x
-          ((Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))).symm q)) := by
-  rfl
+          ((Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))).symm q)) := (rfl)
 
 /-- Quotient representatives are acted on by the original Lie action. -/
 @[simp]
 theorem quotientLieAction_mk (k : ℕ) (x : L) (a : A) :
     F.quotientLieAction d ℒ k x (Ideal.Quotient.mk _ a) =
       Ideal.Quotient.mk _ ⁅x, a⁆ := by
-  change Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))
-    ((PositiveDegrees.quotientLieAction d ℒ (F.toSubmodule R) (F.toSubmodule_antitone R) k x)
-      (Submodule.Quotient.mk a)) = _
-  rw [PositiveDegrees.quotientLieAction_mk]
-  rfl
+  rw [quotientLieAction_apply, ← Ideal.Quotient.mk_eq_mk]
+  exact congrArg _ (PositiveDegrees.quotientLieAction_mk d ℒ (F.toSubmodule R)
+    (F.toSubmodule_antitone R) k x a)
 
 /-- The finite-order operator retains the Leibniz rule. -/
 theorem quotientLieAction_mul [IsDerivationAction L A]
@@ -120,16 +117,14 @@ theorem degreeIdeal_le_ker_quotientLieAction (k : ℕ) :
     d.degreeIdeal ℒ k ≤ (F.quotientLieAction d ℒ k).ker := by
   intro x hx
   rw [LieHom.mem_ker]
-  ext q
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
-  simp only [quotientLieAction_mk, LinearMap.zero_apply, Ideal.Quotient.eq_zero_iff_mem]
-  have hx' : x ∈ d.degreeSubmodule ℒ k := by
-    rw [← d.degreeIdeal_toSubmodule ℒ k]
-    exact hx
-  exact show ⁅x, a⁆ ∈ F.toSubmodule R (k + 1) by
-    simpa only [Nat.add_zero] using
-      IsFiltrationRaising.lie_mem (d := d) (ℒ := ℒ) (F := F.toSubmodule R) hx'
-        (by simp : a ∈ F.toSubmodule R 0)
+  have hx' := (PositiveDegrees.degreeIdeal_le_ker_quotientLieAction d ℒ (F.toSubmodule R)
+    (F.toSubmodule_antitone R) (F.toSubmodule_zero R) k) hx
+  rw [LieHom.mem_ker] at hx'
+  let E := Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))
+  let Q : Module.End R (A ⧸ (F.ideal (k + 1)).restrictScalars R) :=
+    PositiveDegrees.quotientLieAction d ℒ (F.toSubmodule R) (F.toSubmodule_antitone R) k x
+  change E.conjAlgEquiv R Q = 0
+  exact map_eq_zero_iff (E.conjAlgEquiv R) (E.conjAlgEquiv R).injective |>.2 hx'
 
 /-- The representation of the order-`k` Lie truncation on the matching coefficient quotient. -/
 def truncatedLieAction (k : ℕ) :

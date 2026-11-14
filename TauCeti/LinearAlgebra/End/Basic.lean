@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.Algebra.Module.Submodule.Invariant
 public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.Algebra.Ring.GeomSum
+public import Mathlib.RingTheory.Nilpotent.Defs
 public import Mathlib.SetTheory.Cardinal.NatCard
 import Mathlib.Algebra.Algebra.Equiv
 
@@ -33,6 +34,9 @@ A finite nontrivial module has more than one endomorphism (`Module.End.one_lt_na
 
 Of two endomorphisms conjugate by a linear equivalence, one squares to `κ • 1` exactly when the
 other does (`Module.End.mul_self_eq_smul_one_iff_of_forall_apply_eq`).
+
+Scalar restriction of endomorphisms is packaged as a ring homomorphism, with power and nilpotence
+compatibility (`Module.End.restrictScalarsRingHom`).
 
 An endomorphism acting as a scalar `a` from a monoid acting on the module has `k`-th power acting
 as `a ^ k` (`Module.End.pow_apply_eq_pow_smul`), so it is `1` once `a ^ k = 1`
@@ -74,6 +78,41 @@ theorem injective_one_sub_of_pow_eq_smul_one {A M : Type*} [CommRing A] [IsDomai
 end TauCeti
 
 namespace Module.End
+
+section RestrictScalars
+
+variable {R S M : Type*} [Semiring R] [Semiring S] [AddCommMonoid M]
+  [Module R M] [Module S M] [LinearMap.CompatibleSMul M M R S]
+
+/-- Scalar restriction of endomorphisms as a ring homomorphism. -/
+@[expose] def restrictScalarsRingHom (R S M : Type*) [Semiring R] [Semiring S] [AddCommMonoid M]
+    [Module R M] [Module S M] [LinearMap.CompatibleSMul M M R S] :
+    Module.End S M →+* Module.End R M where
+  toFun := LinearMap.restrictScalars R
+  map_zero' := rfl
+  map_one' := rfl
+  map_add' _ _ := rfl
+  map_mul' _ _ := rfl
+
+/-- Restricting the scalars of an endomorphism preserves its powers. -/
+@[simp]
+theorem restrictScalars_pow (D : Module.End S M) (n : ℕ) :
+    (D ^ n).restrictScalars R = (D.restrictScalars R) ^ n :=
+  (restrictScalarsRingHom R S M).map_pow D n
+
+/-- Restricting the scalars of an endomorphism preserves and reflects nilpotence. -/
+@[simp]
+theorem isNilpotent_restrictScalars_iff {D : Module.End S M} :
+    IsNilpotent (D.restrictScalars R) ↔ IsNilpotent D :=
+  IsNilpotent.map_iff (f := restrictScalarsRingHom R S M) (LinearMap.restrictScalars_injective R)
+
+/-- The scalar-restriction ring homomorphism is the underlying scalar-restriction map. -/
+@[simp]
+theorem restrictScalarsRingHom_apply (R S M : Type*) [Semiring R] [Semiring S] [AddCommMonoid M]
+    [Module R M] [Module S M] [LinearMap.CompatibleSMul M M R S] (D : Module.End S M) :
+    restrictScalarsRingHom R S M D = D.restrictScalars R := (rfl)
+
+end RestrictScalars
 
 /-- A product of endomorphisms each of which acts on `s` by the scalar `z` acts on `s` by
 `z ^ l.length`. -/
