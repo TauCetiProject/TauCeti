@@ -1211,7 +1211,7 @@ private lemma laurentSmul_comp_laurentToSections (r : R) :
 
 omit [Fintype κ] [DecidableEq κ] in
 /-- Leray's comparison for the standard cover commutes with multiplication by `r`. -/
-private lemma homologyCechComplexIsoCohomology_inv_smul [Finite κ] (q : ℕ) (r : R)
+private lemma homologyCechComplexIsoCohomology_inv_smul (q : ℕ) (r : R)
     (y : Cohomology (Proj.twistingSheaf 𝒜 m) q) :
     (homologyCechComplexIsoCohomology (fun i : κ ↦ (chartFunctor b).obj (toDual {i}))
         (isAffineOpen_inf_chartFunctor_obj_singleton b) (iSup_chartFunctor_obj_singleton b)
