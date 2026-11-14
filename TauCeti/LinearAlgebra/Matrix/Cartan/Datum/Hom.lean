@@ -121,6 +121,11 @@ lemma cartan_eq : D'.cartan = D.cartan := by
   ext i j
   rw [cartan_apply, ← f.map_coroot, f.pairing_root_map, pairing_root_coroot]
 
+include f in
+/-- A morphism preserves the Serre lengths. -/
+lemma serreLength_eq (i j : ι) : D'.serreLength i j = D.serreLength i j := by
+  rw [serreLength_def, serreLength_def, f.cartan_eq]
+
 @[simp]
 lemma map_simpleTorus (i : ι) : f.toLinearMap (D.simpleTorus i) = D'.simpleTorus i := by
   rw [simpleTorus_def, map_nsmul, f.map_coroot, simpleTorus_def, f.symmetrizer_eq]
