@@ -233,14 +233,17 @@ theorem norm_weierstrassFactor_one_le_exp (z : ℂ) :
   · rw [← Real.exp_log h]
     exact Real.exp_le_exp.mpr (log_norm_weierstrassFactor_one_le z)
 
-/-- The quadratic deviation bound in exponential form, on the closed unit disk. -/
-theorem norm_weierstrassFactor_one_le_exp_sq {z : ℂ} (hz : ‖z‖ ≤ 1) :
+/-- The genus-one factor has a global quadratic exponential bound. -/
+theorem norm_weierstrassFactor_one_le_exp_sq (z : ℂ) :
     ‖weierstrassFactor 1 z‖ ≤ Real.exp (3 * ‖z‖ ^ 2) := by
-  calc
-    _ ≤ ‖(1 : ℂ)‖ + ‖weierstrassFactor 1 z - 1‖ := norm_le_norm_add_norm_sub' _ _
-    _ ≤ 3 * ‖z‖ ^ 2 + 1 := by
-      rw [norm_one, add_comm]
-      exact add_le_add_left (norm_weierstrassFactor_one_sub_one_le hz) 1
-    _ ≤ Real.exp (3 * ‖z‖ ^ 2) := Real.add_one_le_exp _
+  by_cases hz : ‖z‖ ≤ 1
+  · calc
+      _ ≤ ‖(1 : ℂ)‖ + ‖weierstrassFactor 1 z - 1‖ := norm_le_norm_add_norm_sub' _ _
+      _ ≤ 3 * ‖z‖ ^ 2 + 1 := by
+        rw [norm_one, add_comm]
+        exact add_le_add_left (norm_weierstrassFactor_one_sub_one_le hz) 1
+      _ ≤ Real.exp (3 * ‖z‖ ^ 2) := Real.add_one_le_exp _
+  · exact (norm_weierstrassFactor_one_le_exp z).trans
+      (Real.exp_le_exp.mpr (by nlinarith [norm_nonneg z]))
 
 end Complex
