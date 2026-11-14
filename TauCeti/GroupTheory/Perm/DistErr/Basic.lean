@@ -17,9 +17,10 @@ coboundary constant, where the gauge may live in a different symmetric group tha
 
 Main results:
 
-* `Equiv.Perm.distErr_eq_movedNorm_div` and `Equiv.Perm.mul_distErr`: in equal degree `n ≠ 0`, the
-  distance with errors is the normalized Hamming distance `movedNorm (Fin n) (σ⁻¹ * τ) / n`, and
-  `(n : ℝ) * distErr σ τ = movedNorm (Fin n) (σ⁻¹ * τ)` holds for every `n : ℕ`;
+* `Equiv.Perm.distErr_eq_movedNorm_div` and `Equiv.Perm.mul_distErr_eq_movedNorm`: in equal degree
+  `n ≠ 0`, the distance with errors is the normalized Hamming distance
+  `movedNorm (Fin n) (σ⁻¹ * τ) / n`, and `(n : ℝ) * distErr σ τ = movedNorm (Fin n) (σ⁻¹ * τ)` holds
+  for every `n : ℕ`;
 * `Equiv.Perm.agreeCount_one_right`, `Equiv.Perm.distErr_one_right`, and
   `Equiv.Perm.agreeCount_mul_inv_eq_card_filter`: agreements against the identity permutation and
   against a degree-`m` quotient `g * h⁻¹`;
@@ -151,6 +152,26 @@ theorem distErr_self [NeZero n] (σ : Perm (Fin n)) : distErr σ σ = 0 := by
 theorem agreeCount_self (σ : Perm (Fin n)) : agreeCount σ σ = n := by
   simpa using agreeCount_add_hammingDist σ σ
 
+/-- A permutation of degree `0` has `0` agreements with any permutation. -/
+@[simp]
+theorem agreeCount_zero_left (σ : Perm (Fin 0)) (τ : Perm (Fin m)) : agreeCount σ τ = 0 := by
+  simp [agreeCount_def]
+
+/-- Any permutation has `0` agreements with a permutation of degree `0`. -/
+@[simp]
+theorem agreeCount_zero_right (σ : Perm (Fin n)) (τ : Perm (Fin 0)) : agreeCount σ τ = 0 := by
+  simp [agreeCount_def]
+
+/-- A permutation of degree `0` has distance with errors `1` from any permutation. -/
+@[simp]
+theorem distErr_zero_left (σ : Perm (Fin 0)) (τ : Perm (Fin m)) : distErr σ τ = 1 := by
+  simp [distErr_def]
+
+/-- Any permutation has distance with errors `1` from a permutation of degree `0`. -/
+@[simp]
+theorem distErr_zero_right (σ : Perm (Fin n)) (τ : Perm (Fin 0)) : distErr σ τ = 1 := by
+  simp [distErr_def]
+
 /-- Agreements between `σ : Perm (Fin n)` and the identity permutation of degree `m` are the fixed
 points of `σ` lying below `m`. -/
 theorem agreeCount_one_right (σ : Perm (Fin n)) (m : ℕ) :
@@ -202,7 +223,7 @@ theorem distErr_one_left [NeZero n] (σ : Perm (Fin n)) :
 
 /-- Rescaling the equal-degree distance with errors by the degree recovers the moved-point norm of
 the quotient `σ⁻¹ * τ` for every `n : ℕ`, including `n = 0`. -/
-theorem mul_distErr (σ τ : Perm (Fin n)) :
+theorem mul_distErr_eq_movedNorm (σ τ : Perm (Fin n)) :
     (n : ℝ) * distErr σ τ = movedNorm (Fin n) (σ⁻¹ * τ) := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp [Subsingleton.elim (σ⁻¹ * τ) 1]
@@ -268,7 +289,7 @@ theorem distErr_eq_zero_iff (σ : Perm (Fin n)) (τ : Perm (Fin m)) :
     distErr σ τ = 0 ↔ n ≠ 0 ∧ n = m ∧ HEq σ τ := by
   by_cases hmax : max n m = 0
   · obtain ⟨rfl, rfl⟩ : n = 0 ∧ m = 0 := by omega
-    simp [distErr_def]
+    simp
   · have hmax' : ((max n m : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hmax
     rw [distErr_def, sub_eq_zero, eq_comm, div_eq_one_iff_eq hmax']
     norm_cast
@@ -295,7 +316,7 @@ theorem distErr_pos [NeZero n] {σ τ : Perm (Fin n)} : 0 < distErr σ τ ↔ σ
   simp [distErr_pos_iff, NeZero.ne n]
 
 /-- Permutations of distinct degrees have strictly positive distance with errors. -/
-theorem distErr_pos_of_ne_degree (σ : Perm (Fin n)) (τ : Perm (Fin m)) (hnm : n ≠ m) :
+theorem distErr_pos_of_ne' (σ : Perm (Fin n)) (τ : Perm (Fin m)) (hnm : n ≠ m) :
     0 < distErr σ τ :=
   (distErr_pos_iff σ τ).mpr (Or.inr (Or.inl hnm))
 
@@ -323,7 +344,7 @@ theorem one_sub_div_le_distErr_of_le_of_le (σ : Perm (Fin n)) (τ : Perm (Fin m
     (hnk : n ≤ k) (hkm : k ≤ m) : 1 - (n : ℝ) / k ≤ distErr σ τ := by
   rcases eq_or_ne k 0 with rfl | hk
   · obtain rfl : n = 0 := Nat.eq_zero_of_le_zero hnk
-    simpa using one_sub_div_le_distErr_of_le σ τ (Nat.zero_le m)
+    simp
   · refine (sub_le_sub_left ?_ 1).trans (one_sub_div_le_distErr_of_le σ τ (hnk.trans hkm))
     exact div_le_div_of_nonneg_left (Nat.cast_nonneg n) (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hk))
       (Nat.cast_le.mpr hkm)

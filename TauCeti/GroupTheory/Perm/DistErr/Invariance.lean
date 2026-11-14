@@ -23,9 +23,10 @@ Main results:
   Consequently, `Equiv.Perm.distErr_inv_mul_inv` shows that reversing an edge inverts both the
   permutation label and the gauge quotient `g * h⁻¹` without changing the edge cost.
 * `Equiv.Perm.distErr_mul_left`, `Equiv.Perm.distErr_mul_right`, and
-  `Equiv.Perm.mul_distErr_mul_inv`: in equal degree, `distErr` is bi-invariant and
+  `Equiv.Perm.mul_distErr_mul_inv_eq_movedNorm`: in equal degree, `distErr` is bi-invariant and
   `(n : ℝ) * distErr σ (g * h⁻¹) = movedNorm (Fin n) (g⁻¹ * σ * h)`.
 * `Equiv.Perm.distErr_mul_viaEmbedding_left`, `Equiv.Perm.distErr_mul_viaEmbedding_right`,
+  `Equiv.Perm.distErr_viaEmbedding_mul_left`, `Equiv.Perm.distErr_viaEmbedding_mul_right`,
   `Equiv.Perm.distErr_viaEmbedding_right`, and `Equiv.Perm.distErr_inv_mul_mul_mul_inv`: when
   `n ≤ m`, multiplying in degree `n` and simultaneously acting in degree `m` via `Fin.castLEEmb`
   preserves `agreeCount` and `distErr`.
@@ -132,10 +133,10 @@ theorem distErr_mul_inv_eq_movedNorm_div [NeZero n] (σ g h : Perm (Fin n)) :
 
 /-- Rescaling the equal-degree distance with errors by the degree recovers the moved-point norm of
 `g⁻¹ * σ * h` for every `n : ℕ`, including `n = 0`. -/
-theorem mul_distErr_mul_inv (σ g h : Perm (Fin n)) :
+theorem mul_distErr_mul_inv_eq_movedNorm (σ g h : Perm (Fin n)) :
     (n : ℝ) * distErr σ (g * h⁻¹) = movedNorm (Fin n) (g⁻¹ * σ * h) := by
   rw [← distErr_mul_left g⁻¹ σ (g * h⁻¹), ← distErr_mul_right _ _ h]
-  simpa [mul_assoc, distErr_comm] using mul_distErr (1 : Perm (Fin n)) (g⁻¹ * σ * h)
+  simpa [mul_assoc, distErr_comm] using mul_distErr_eq_movedNorm (1 : Perm (Fin n)) (g⁻¹ * σ * h)
 
 /-! ### Cross-degree invariance under initial-segment embeddings -/
 
@@ -174,6 +175,22 @@ theorem agreeCount_mul_viaEmbedding_right (σ ρ : Perm (Fin n)) (τ : Perm (Fin
   rw [← agreeCount_inv_inv (σ * ρ) (τ * ρ.viaEmbedding (Fin.castLEEmb hnm)),
     mul_inv_rev, mul_inv_rev, hinv, agreeCount_mul_viaEmbedding_left _ _ _ hnm, agreeCount_inv_inv]
 
+/-- When `n ≤ m`, left-multiplying `τ : Perm (Fin m)` by `ρ.viaEmbedding (Fin.castLEEmb hnm)` and
+`σ : Perm (Fin n)` by `ρ` preserves the agreement count. -/
+@[simp]
+theorem agreeCount_viaEmbedding_mul_left (ρ σ : Perm (Fin n)) (τ : Perm (Fin m)) (hnm : n ≤ m) :
+    agreeCount (ρ.viaEmbedding (Fin.castLEEmb hnm) * τ) (ρ * σ) = agreeCount τ σ :=
+  (agreeCount_comm _ _).trans
+    ((agreeCount_mul_viaEmbedding_left ρ σ τ hnm).trans (agreeCount_comm σ τ))
+
+/-- When `n ≤ m`, right-multiplying `τ : Perm (Fin m)` by `ρ.viaEmbedding (Fin.castLEEmb hnm)` and
+`σ : Perm (Fin n)` by `ρ` preserves the agreement count. -/
+@[simp]
+theorem agreeCount_viaEmbedding_mul_right (σ ρ : Perm (Fin n)) (τ : Perm (Fin m)) (hnm : n ≤ m) :
+    agreeCount (τ * ρ.viaEmbedding (Fin.castLEEmb hnm)) (σ * ρ) = agreeCount τ σ :=
+  (agreeCount_comm _ _).trans
+    ((agreeCount_mul_viaEmbedding_right σ ρ τ hnm).trans (agreeCount_comm σ τ))
+
 /-- A permutation of degree `n` agrees with its initial-segment extension to degree `m ≥ n` at all
 `n` common indices. -/
 @[simp]
@@ -201,6 +218,20 @@ degree `m` preserves the distance with errors. -/
 theorem distErr_mul_viaEmbedding_right (σ ρ : Perm (Fin n)) (τ : Perm (Fin m)) (hnm : n ≤ m) :
     distErr (σ * ρ) (τ * ρ.viaEmbedding (Fin.castLEEmb hnm)) = distErr σ τ := by
   simp [distErr_def, agreeCount_mul_viaEmbedding_right _ _ _ hnm]
+
+/-- When `n ≤ m`, left-multiplying via `Fin.castLEEmb hnm` in degree `m` and simultaneously in
+degree `n` preserves the distance with errors. -/
+@[simp]
+theorem distErr_viaEmbedding_mul_left (ρ σ : Perm (Fin n)) (τ : Perm (Fin m)) (hnm : n ≤ m) :
+    distErr (ρ.viaEmbedding (Fin.castLEEmb hnm) * τ) (ρ * σ) = distErr τ σ := by
+  simp [distErr_def, agreeCount_viaEmbedding_mul_left _ _ _ hnm]
+
+/-- When `n ≤ m`, right-multiplying via `Fin.castLEEmb hnm` in degree `m` and simultaneously in
+degree `n` preserves the distance with errors. -/
+@[simp]
+theorem distErr_viaEmbedding_mul_right (σ ρ : Perm (Fin n)) (τ : Perm (Fin m)) (hnm : n ≤ m) :
+    distErr (τ * ρ.viaEmbedding (Fin.castLEEmb hnm)) (σ * ρ) = distErr τ σ := by
+  simp [distErr_def, agreeCount_viaEmbedding_mul_right _ _ _ hnm]
 
 /-- A permutation of degree `n` has distance with errors `1 - n / m` from its initial-segment
 extension to degree `m ≥ n`. -/

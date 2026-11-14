@@ -33,31 +33,32 @@ combinatorial bounds and exact evaluations for these sums and their infima acros
   `Equiv.Perm.one_div_four_le_distErr_three_of_ne`, and
   `Finset.card_div_four_le_sum_distErr_three_of_ne`): explicit lower bounds comparing permutations
   in `Equiv.Perm (Fin 3)` against permutations of degree `2`, `m ≥ 4`, `m ≥ 5`, or any `m ≠ 3`.
-* **Cross-degree gauge invariance for `n ≤ m`** (`Finset.ciInf_sum_distErr_inv_mul_mul_eq`):
+* **Cross-degree gauge invariance for `n ≤ m`** (`Finset.ciInf_sum_distErr_inv_mul_mul_of_le`):
   transforming `α` by two-sided vertex-gauge multiplication `(γ u)⁻¹ * α u v * γ v` in degree `n`
   leaves the degree-`m` gauge-cost infimum unchanged whenever `n ≤ m`.
 * **Fiber decomposition and 4-vertex reduction**
   (`Finset.sum_agreeCount_mul_inv_le_of_forall_option`,
-  `Finset.sum_agreeCount_mul_inv_le_four_mul_min`, and
-  `Finset.card_sub_four_mul_min_div_le_sum_distErr_mul_inv`): indexing agreements on
-  `β u * (β v)⁻¹` by `y : Fin m` decomposes the total agreement count across `m` partial vertex
-  colourings `V → Option (Fin n)` of total domain size `Fintype.card V * min n m`. On four linearly
-  ordered vertices, partial colourings of domain size `#S ≤ 3` satisfy at most
-  `(#S).choose 2 ≤ #S` edges automatically, reducing the `4 * min n m` agreement upper bound (and
-  the `#E - 4 * min n m / max n m` pair-cost lower bound) for every `m` to checking `≤ 4`
-  compatible edges on total functions `V → Fin n`.
+  `Finset.sum_agreeCount_mul_inv_le_four_mul_min_of_card_eq_four_of_forall_le_four`, and
+  `Finset.card_sub_four_mul_min_div_le_sum_distErr_mul_inv_of_card_eq_four_of_forall_le_four`):
+  indexing agreements on `β u * (β v)⁻¹` by `y : Fin m` decomposes the total agreement count across
+  `m` partial vertex colourings `V → Option (Fin n)` of total domain size
+  `Fintype.card V * min n m`. On four linearly ordered vertices, partial colourings of domain size
+  `#S ≤ 3` satisfy at most `(#S).choose 2 ≤ #S` edges automatically, reducing the `4 * min n m`
+  agreement upper bound (and the `#E - 4 * min n m / max n m` pair-cost lower bound) for every `m`
+  to checking `≤ 4` compatible edges on total functions `V → Fin n`.
 * **Exact three-transposition optimization on `Fin 4`**
-  (`TauCeti.ciInf_sum_distErr_fin_four_three_swaps` and
-  `TauCeti.ciInf₂_sum_distErr_fin_four_three_swaps`): when `α 0 v = 1` for `0 < v` and
+  (`TauCeti.ciInf_sum_distErr_fin_four_of_eq_setOf_isSwap` and
+  `TauCeti.ciInf₂_sum_distErr_fin_four_of_eq_setOf_isSwap`): when `α 0 v = 1` for `0 < v` and
   `{α 1 2, α 1 3, α 2 3}` consists of the three transpositions of `Perm (Fin 3)`, the constant gauge
   `1` is globally optimal in every degree `m : ℕ`, giving exact infimum
   `6 - 4 * min 3 m / max 3 m` (`14 / 3` at `m = 1`, `10 / 3` at `m = 2`, `2` at `m = 3`, `3` at
   `m = 4`, at least `18 / 5` for `m ≥ 5`, and global cross-degree infimum `2` over `m + 2 ≥ 2`).
 * **Lexicographic cluster replication** (`TauCeti.ciInf_sum_distErr_lex`,
-  `TauCeti.card_sq_mul_ciInf_le_ciInf_sum_distErr_lex`, `TauCeti.ciInf_sum_distErr_lex_eq`,
-  `TauCeti.ciInf₂_sum_distErr_lex_eq`, and
-  `TauCeti.ciInf₂_sum_distErr_lex_fin_four_three_swaps`): replicating vertices along `V ×ₗ ι` with
-  identity labels inside clusters adds `(Fintype.card V * (Fintype.card ι).choose 2) *
+  `TauCeti.card_sq_mul_ciInf_le_ciInf_sum_distErr_lex`,
+  `TauCeti.ciInf_sum_distErr_lex_eq_card_sq_mul_ciInf`,
+  `TauCeti.ciInf₂_sum_distErr_lex_eq_card_sq_mul_ciInf_of_le_of_forall_le`, and
+  `TauCeti.ciInf₂_sum_distErr_lex_fin_four_of_eq_setOf_isSwap`): replicating vertices along `V ×ₗ ι`
+  with identity labels inside clusters adds `(Fintype.card V * (Fintype.card ι).choose 2) *
   (1 - min n m / max n m)` to `Fintype.card ι ^ 2` times the base degree-`m` infimum. In
   particular, replication multiplies the degree-`m` infimum by at least `Fintype.card ι ^ 2` for
   every `m`, with equality in equal nonzero degree `m = n`, and multiplies the global infimum over
@@ -142,7 +143,7 @@ theorem card_div_four_le_sum_distErr_three_of_ne (s : Finset ι) (f : ι → Per
 /-- When `n ≤ m`, transforming `α` by a degree-`n` vertex gauge `γ : V → Perm (Fin n)` via
 two-sided multiplication `(γ u)⁻¹ * α u v * γ v` preserves the infimum of the degree-`m`
 cross-degree pair cost over `E`. -/
-theorem ciInf_sum_distErr_inv_mul_mul_eq (E : Finset (V × V)) (α : V → V → Perm (Fin n))
+theorem ciInf_sum_distErr_inv_mul_mul_of_le (E : Finset (V × V)) (α : V → V → Perm (Fin n))
     (γ : V → Perm (Fin n)) (hnm : n ≤ m) :
     (⨅ β : V → Perm (Fin m),
         ∑ e ∈ E, distErr ((γ e.1)⁻¹ * α e.1 e.2 * γ e.2) (β e.1 * (β e.2)⁻¹)) =
@@ -217,8 +218,8 @@ theorem card_sub_div_le_sum_distErr_mul_inv_of_forall_option [Fintype V] (E : Fi
 /-- If `Fintype.card V = 4`, edges in `E` are strictly increasing, and every `f : V → Fin n`
 satisfies at most `4` edges of `E`, then the total agreement count across `E` is at most
 `4 * min n m`. -/
-theorem sum_agreeCount_mul_inv_le_four_mul_min [Fintype V] [LinearOrder V] (E : Finset (V × V))
-    (α : V → V → Perm (Fin n)) (β : V → Perm (Fin m))
+theorem sum_agreeCount_mul_inv_le_four_mul_min_of_card_eq_four_of_forall_le_four [Fintype V]
+    [LinearOrder V] (E : Finset (V × V)) (α : V → V → Perm (Fin n)) (β : V → Perm (Fin m))
     (hV : Fintype.card V = 4) (hE : ∀ e ∈ E, e.1 < e.2)
     (hf : ∀ f : V → Fin n, #{e ∈ E | f e.1 = α e.1 e.2 (f e.2)} ≤ 4) :
     (∑ e ∈ E, agreeCount (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) ≤ 4 * min n m := by
@@ -253,16 +254,18 @@ theorem sum_agreeCount_mul_inv_le_four_mul_min [Fintype V] [LinearOrder V] (E : 
       interval_cases #S <;> decide
   simpa [hV] using hbound
 
-/-- Distance-with-errors consequence of `Finset.sum_agreeCount_mul_inv_le_four_mul_min`. -/
-theorem card_sub_four_mul_min_div_le_sum_distErr_mul_inv [Fintype V] [LinearOrder V]
-    (E : Finset (V × V)) (α : V → V → Perm (Fin n)) (β : V → Perm (Fin m))
-    (hV : Fintype.card V = 4) (hE : ∀ e ∈ E, e.1 < e.2)
+/-- Distance-with-errors consequence of
+`Finset.sum_agreeCount_mul_inv_le_four_mul_min_of_card_eq_four_of_forall_le_four`. -/
+theorem card_sub_four_mul_min_div_le_sum_distErr_mul_inv_of_card_eq_four_of_forall_le_four
+    [Fintype V] [LinearOrder V] (E : Finset (V × V)) (α : V → V → Perm (Fin n))
+    (β : V → Perm (Fin m)) (hV : Fintype.card V = 4) (hE : ∀ e ∈ E, e.1 < e.2)
     (hf : ∀ f : V → Fin n, #{e ∈ E | f e.1 = α e.1 e.2 (f e.2)} ≤ 4) :
     (#E : ℝ) - ((4 * min n m : ℕ) : ℝ) / max n m ≤
       ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) := by
   rw [E.sum_distErr_eq_card_sub_div (fun e => α e.1 e.2) (fun e => β e.1 * (β e.2)⁻¹)]
   gcongr
-  exact_mod_cast E.sum_agreeCount_mul_inv_le_four_mul_min α β hV hE hf
+  exact_mod_cast
+    E.sum_agreeCount_mul_inv_le_four_mul_min_of_card_eq_four_of_forall_le_four α β hV hE hf
 
 end Finset
 
@@ -272,28 +275,21 @@ open Equiv Equiv.Perm
 
 /-! ### Exact cross-degree optimization for the three-transposition configuration on `Fin 4` -/
 
-private theorem finset_three_swaps_eq {α : Fin 4 → Fin 4 → Perm (Fin 3)}
-    (hswaps : ({α 1 2, α 1 3, α 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap}) :
-    ({α 1 2, α 1 3, α 2 3} : Finset (Perm (Fin 3))) =
-      {Equiv.swap 0 1, Equiv.swap 0 2, Equiv.swap 1 2} := by
-  rw [← coe_inj]
-  ext σ
-  simpa [isSwap_fin_three_iff] using Set.ext_iff.mp hswaps σ
-
 /-- When the star of `0 : Fin 4` carries `1` and the opposite triangle `{1, 2, 3}` carries the three
 transpositions of `Perm (Fin 3)`, no function `f : Fin 4 → Fin 3` is compatible with more than `4`
 of the `6` edges `u < v`. -/
-theorem card_filter_lt_eq_apply_le_four (α : Fin 4 → Fin 4 → Perm (Fin 3))
+theorem card_filter_lt_eq_apply_le_four_of_eq_setOf_isSwap (α : Fin 4 → Fin 4 → Perm (Fin 3))
     (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
     (hswaps : ({α 1 2, α 1 3, α 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap})
     (f : Fin 4 → Fin 3) :
     #{e ∈ ({p : Fin 4 × Fin 4 | p.1 < p.2} : Finset (Fin 4 × Fin 4)) |
       f e.1 = α e.1 e.2 (f e.2)} ≤ 4 := by
-  have hfin := finset_three_swaps_eq hswaps
   let S : Finset (Perm (Fin 3)) := {Equiv.swap 0 1, Equiv.swap 0 2, Equiv.swap 1 2}
-  have h12 : α 1 2 ∈ S := by dsimp only [S]; rw [← hfin]; simp
-  have h13 : α 1 3 ∈ S := by dsimp only [S]; rw [← hfin]; simp
-  have h23 : α 2 3 ∈ S := by dsimp only [S]; rw [← hfin]; simp
+  have hfin : ({α 1 2, α 1 3, α 2 3} : Finset (Perm (Fin 3))) = S :=
+    coe_inj.mp (by simpa [S] using hswaps.trans setOf_isSwap_perm_fin_three)
+  have h12 : α 1 2 ∈ S := by rw [← hfin]; simp
+  have h13 : α 1 3 ∈ S := by rw [← hfin]; simp
+  have h23 : α 2 3 ∈ S := by rw [← hfin]; simp
   have hexpand : ({p : Fin 4 × Fin 4 | p.1 < p.2} : Finset (Fin 4 × Fin 4)) =
       {(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)} := by decide
   have h01 : α 0 1 = 1 := h0 1 (by decide)
@@ -318,7 +314,7 @@ theorem card_filter_lt_eq_apply_le_four (α : Fin 4 → Fin 4 → Perm (Fin 3))
   rw [hcongr]
   exact key (α 1 2) h12 (α 1 3) h13 (α 2 3) h23 hfin f
 
-private theorem sum_three_swaps_agreeCount_one (m : ℕ) :
+private theorem sum_isSwap_agreeCount_one (m : ℕ) :
     (∑ σ ∈ ({Equiv.swap 0 1, Equiv.swap 0 2, Equiv.swap 1 2} : Finset (Perm (Fin 3))),
       agreeCount σ (1 : Perm (Fin m))) = min 3 m := by
   simp_rw [agreeCount_one_right, card_filter]
@@ -337,12 +333,14 @@ private theorem sum_three_swaps_agreeCount_one (m : ℕ) :
 
 /-- Against the identity permutation of degree `m`, the three-transposition configuration on `Fin 4`
 has exactly `4 * min 3 m` agreements across the `6` edges `u < v`. -/
-theorem sum_agreeCount_one_fin_four_three_swaps (α : Fin 4 → Fin 4 → Perm (Fin 3))
+theorem sum_agreeCount_one_fin_four_of_eq_setOf_isSwap (α : Fin 4 → Fin 4 → Perm (Fin 3))
     (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
     (hswaps : ({α 1 2, α 1 3, α 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap}) (m : ℕ) :
     (∑ e ∈ ({p : Fin 4 × Fin 4 | p.1 < p.2} : Finset (Fin 4 × Fin 4)),
         agreeCount (α e.1 e.2) (1 : Perm (Fin m))) = 4 * min 3 m := by
-  have hfin := finset_three_swaps_eq hswaps
+  have hfin : ({α 1 2, α 1 3, α 2 3} : Finset (Perm (Fin 3))) =
+      {Equiv.swap 0 1, Equiv.swap 0 2, Equiv.swap 1 2} :=
+    coe_inj.mp (by simpa using hswaps.trans setOf_isSwap_perm_fin_three)
   have hcard3 : #({α 1 2, α 1 3, α 2 3} : Finset (Perm (Fin 3))) = 3 := by
     rw [hfin]; decide
   obtain ⟨h12_13, h12_23, h13_23⟩ := card_triple_eq_three_iff.mp hcard3
@@ -361,12 +359,12 @@ theorem sum_agreeCount_one_fin_four_three_swaps (α : Fin 4 → Fin 4 → Perm (
       (agreeCount (α 1 3) (1 : Perm (Fin m)) + agreeCount (α 2 3) (1 : Perm (Fin m))) =
       ∑ σ ∈ ({α 1 2, α 1 3, α 2 3} : Finset (Perm (Fin 3))), agreeCount σ (1 : Perm (Fin m)) := by
     rw [sum_insert (by simp [h12_13, h12_23]), sum_pair h13_23]
-  rw [hsum_swaps, hfin, sum_three_swaps_agreeCount_one]
+  rw [hsum_swaps, hfin, sum_isSwap_agreeCount_one]
   omega
 
 /-- Against the constant gauge `fun _ => 1` of degree `m`, the three-transposition configuration on
 `Fin 4` has cross-degree pair cost `6 - 4 * min 3 m / max 3 m`. -/
-theorem sum_distErr_one_fin_four_three_swaps (α : Fin 4 → Fin 4 → Perm (Fin 3))
+theorem sum_distErr_one_fin_four_of_eq_setOf_isSwap (α : Fin 4 → Fin 4 → Perm (Fin 3))
     (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
     (hswaps : ({α 1 2, α 1 3, α 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap}) (m : ℕ) :
     (∑ e ∈ ({p : Fin 4 × Fin 4 | p.1 < p.2} : Finset (Fin 4 × Fin 4)),
@@ -376,13 +374,13 @@ theorem sum_distErr_one_fin_four_three_swaps (α : Fin 4 → Fin 4 → Perm (Fin
   have hsum := Finset.sum_distErr_eq_card_sub_div
     ({p : Fin 4 × Fin 4 | p.1 < p.2} : Finset (Fin 4 × Fin 4))
     (fun e => α e.1 e.2) (fun _ => (1 : Perm (Fin m)))
-  rw [hsum, hcard, sum_agreeCount_one_fin_four_three_swaps α h0 hswaps m]
+  rw [hsum, hcard, sum_agreeCount_one_fin_four_of_eq_setOf_isSwap α h0 hswaps m]
   norm_num
 
 /-- Exact degree-`m` cross-degree pair-cost infimum for the three-transposition configuration on
 `Fin 4`: for every `m : ℕ`, the infimum over `β : Fin 4 → Perm (Fin m)` equals
 `6 - 4 * min 3 m / max 3 m`. -/
-theorem ciInf_sum_distErr_fin_four_three_swaps (α : Fin 4 → Fin 4 → Perm (Fin 3))
+theorem ciInf_sum_distErr_fin_four_of_eq_setOf_isSwap (α : Fin 4 → Fin 4 → Perm (Fin 3))
     (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
     (hswaps : ({α 1 2, α 1 3, α 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap}) (m : ℕ) :
     (⨅ β : Fin 4 → Perm (Fin m),
@@ -394,63 +392,65 @@ theorem ciInf_sum_distErr_fin_four_three_swaps (α : Fin 4 → Fin 4 → Perm (F
   have hlower (β : Fin 4 → Perm (Fin m)) :
       6 - ((4 * min 3 m : ℕ) : ℝ) / max 3 m ≤
         ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) := by
-    have h := E.card_sub_four_mul_min_div_le_sum_distErr_mul_inv α β (by simp)
-      (fun _ he => (mem_filter.mp he).2) (card_filter_lt_eq_apply_le_four α h0 hswaps)
+    have h :=
+      E.card_sub_four_mul_min_div_le_sum_distErr_mul_inv_of_card_eq_four_of_forall_le_four α β
+        (by simp) (fun _ he => (mem_filter.mp he).2)
+        (card_filter_lt_eq_apply_le_four_of_eq_setOf_isSwap α h0 hswaps)
     simpa [hcard] using h
   have hbdd : BddBelow (Set.range fun β : Fin 4 → Perm (Fin m) =>
       ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) :=
     ⟨0, by rintro _ ⟨β, rfl⟩; exact sum_nonneg fun _ _ => distErr_nonneg _ _⟩
   refine le_antisymm ?_ (le_ciInf hlower)
   refine (ciInf_le hbdd (fun _ => (1 : Perm (Fin m)))).trans_eq ?_
-  simpa using sum_distErr_one_fin_four_three_swaps α h0 hswaps m
+  simpa using sum_distErr_one_fin_four_of_eq_setOf_isSwap α h0 hswaps m
 
 /-- In degree `1`, the three-transposition configuration on `Fin 4` has cross-degree pair-cost
 infimum `14 / 3`. -/
-theorem ciInf_sum_distErr_fin_four_three_swaps_one (α : Fin 4 → Fin 4 → Perm (Fin 3))
+theorem ciInf_sum_distErr_fin_four_one_of_eq_setOf_isSwap (α : Fin 4 → Fin 4 → Perm (Fin 3))
     (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
     (hswaps : ({α 1 2, α 1 3, α 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap}) :
     (⨅ β : Fin 4 → Perm (Fin 1),
         ∑ e ∈ ({p : Fin 4 × Fin 4 | p.1 < p.2} : Finset (Fin 4 × Fin 4)),
           distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) = 14 / 3 := by
-  rw [ciInf_sum_distErr_fin_four_three_swaps α h0 hswaps 1]
+  rw [ciInf_sum_distErr_fin_four_of_eq_setOf_isSwap α h0 hswaps 1]
   norm_num
 
 /-- In degree `2`, the three-transposition configuration on `Fin 4` has cross-degree pair-cost
 infimum `10 / 3`. -/
-theorem ciInf_sum_distErr_fin_four_three_swaps_two (α : Fin 4 → Fin 4 → Perm (Fin 3))
+theorem ciInf_sum_distErr_fin_four_two_of_eq_setOf_isSwap (α : Fin 4 → Fin 4 → Perm (Fin 3))
     (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
     (hswaps : ({α 1 2, α 1 3, α 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap}) :
     (⨅ β : Fin 4 → Perm (Fin 2),
         ∑ e ∈ ({p : Fin 4 × Fin 4 | p.1 < p.2} : Finset (Fin 4 × Fin 4)),
           distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) = 10 / 3 := by
-  rw [ciInf_sum_distErr_fin_four_three_swaps α h0 hswaps 2]
+  rw [ciInf_sum_distErr_fin_four_of_eq_setOf_isSwap α h0 hswaps 2]
   norm_num
 
 /-- In equal degree `3`, the three-transposition configuration on `Fin 4` has cross-degree pair-cost
 infimum `2`. -/
-theorem ciInf_sum_distErr_fin_four_three_swaps_three (α : Fin 4 → Fin 4 → Perm (Fin 3))
+theorem ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap (α : Fin 4 → Fin 4 → Perm (Fin 3))
     (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
     (hswaps : ({α 1 2, α 1 3, α 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap}) :
     (⨅ β : Fin 4 → Perm (Fin 3),
         ∑ e ∈ ({p : Fin 4 × Fin 4 | p.1 < p.2} : Finset (Fin 4 × Fin 4)),
           distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) = 2 := by
-  rw [ciInf_sum_distErr_fin_four_three_swaps α h0 hswaps 3]
+  rw [ciInf_sum_distErr_fin_four_of_eq_setOf_isSwap α h0 hswaps 3]
   norm_num
 
 /-- In degree `4`, the three-transposition configuration on `Fin 4` has cross-degree pair-cost
 infimum `3`. -/
-theorem ciInf_sum_distErr_fin_four_three_swaps_four (α : Fin 4 → Fin 4 → Perm (Fin 3))
+theorem ciInf_sum_distErr_fin_four_four_of_eq_setOf_isSwap (α : Fin 4 → Fin 4 → Perm (Fin 3))
     (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
     (hswaps : ({α 1 2, α 1 3, α 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap}) :
     (⨅ β : Fin 4 → Perm (Fin 4),
         ∑ e ∈ ({p : Fin 4 × Fin 4 | p.1 < p.2} : Finset (Fin 4 × Fin 4)),
           distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) = 3 := by
-  rw [ciInf_sum_distErr_fin_four_three_swaps α h0 hswaps 4]
+  rw [ciInf_sum_distErr_fin_four_of_eq_setOf_isSwap α h0 hswaps 4]
   norm_num
 
 /-- In every degree `m ≥ 5`, the three-transposition configuration on `Fin 4` has cross-degree
 pair-cost infimum at least `18 / 5`. -/
-theorem eighteen_div_five_le_ciInf_sum_distErr_fin_four_three_swaps
+theorem eighteen_div_five_le_ciInf_sum_distErr_fin_four_of_eq_setOf_isSwap_of_five_le
     (α : Fin 4 → Fin 4 → Perm (Fin 3))
     (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
     (hswaps : ({α 1 2, α 1 3, α 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap})
@@ -458,7 +458,7 @@ theorem eighteen_div_five_le_ciInf_sum_distErr_fin_four_three_swaps
     (18 : ℝ) / 5 ≤ ⨅ β : Fin 4 → Perm (Fin m),
       ∑ e ∈ ({p : Fin 4 × Fin 4 | p.1 < p.2} : Finset (Fin 4 × Fin 4)),
         distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) := by
-  rw [ciInf_sum_distErr_fin_four_three_swaps α h0 hswaps m,
+  rw [ciInf_sum_distErr_fin_four_of_eq_setOf_isSwap α h0 hswaps m,
     Nat.min_eq_left (by omega), Nat.max_eq_right (by omega)]
   have hm' : (5 : ℝ) ≤ m := by exact_mod_cast hm
   have hdiv : ((4 * 3 : ℕ) : ℝ) / m ≤ 12 / 5 := by
@@ -469,7 +469,7 @@ theorem eighteen_div_five_le_ciInf_sum_distErr_fin_four_three_swaps
 
 /-- Every gauge `β : Fin 4 → Perm (Fin m)` of every degree `m : ℕ` has cross-degree pair cost at
 least `2` against the three-transposition configuration on `Fin 4`. -/
-theorem two_le_sum_distErr_fin_four_three_swaps (α : Fin 4 → Fin 4 → Perm (Fin 3))
+theorem two_le_sum_distErr_fin_four_of_eq_setOf_isSwap (α : Fin 4 → Fin 4 → Perm (Fin 3))
     (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
     (hswaps : ({α 1 2, α 1 3, α 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap})
     {m : ℕ} (β : Fin 4 → Perm (Fin m)) :
@@ -480,7 +480,7 @@ theorem two_le_sum_distErr_fin_four_three_swaps (α : Fin 4 → Fin 4 → Perm (
         distErr (α e.1 e.2) (β' e.1 * (β' e.2)⁻¹)) :=
     ⟨0, by rintro _ ⟨β', rfl⟩; exact sum_nonneg fun _ _ => distErr_nonneg _ _⟩
   refine le_trans ?_ (ciInf_le hbdd β)
-  rw [ciInf_sum_distErr_fin_four_three_swaps α h0 hswaps m]
+  rw [ciInf_sum_distErr_fin_four_of_eq_setOf_isSwap α h0 hswaps m]
   by_cases hm : m ≤ 3
   · rw [Nat.min_eq_right hm, Nat.max_eq_left hm]
     have hm' : (m : ℝ) ≤ 3 := by exact_mod_cast hm
@@ -498,7 +498,7 @@ theorem two_le_sum_distErr_fin_four_three_swaps (α : Fin 4 → Fin 4 → Perm (
 
 /-- Across all gauge degrees `m + 2 ≥ 2`, the global cross-degree pair-cost infimum of the
 three-transposition configuration on `Fin 4` is `2`, attained at equal degree `3`. -/
-theorem ciInf₂_sum_distErr_fin_four_three_swaps (α : Fin 4 → Fin 4 → Perm (Fin 3))
+theorem ciInf₂_sum_distErr_fin_four_of_eq_setOf_isSwap (α : Fin 4 → Fin 4 → Perm (Fin 3))
     (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
     (hswaps : ({α 1 2, α 1 3, α 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap}) :
     (⨅ (m : ℕ) (β : Fin 4 → Perm (Fin (m + 2))),
@@ -507,60 +507,18 @@ theorem ciInf₂_sum_distErr_fin_four_three_swaps (α : Fin 4 → Fin 4 → Perm
   let f (m : ℕ) : ℝ := ⨅ β : Fin 4 → Perm (Fin (m + 2)),
     ∑ e ∈ ({p : Fin 4 × Fin 4 | p.1 < p.2} : Finset (Fin 4 × Fin 4)),
       distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)
-  have hf_ge (m : ℕ) : 2 ≤ f m := le_ciInf (two_le_sum_distErr_fin_four_three_swaps α h0 hswaps)
+  have hf_ge (m : ℕ) : 2 ≤ f m :=
+    le_ciInf (two_le_sum_distErr_fin_four_of_eq_setOf_isSwap α h0 hswaps)
   have hbdd : BddBelow (Set.range f) := ⟨2, by rintro _ ⟨m, rfl⟩; exact hf_ge m⟩
   refine le_antisymm ?_ (le_ciInf hf_ge)
-  exact (ciInf_le hbdd 1).trans_eq (ciInf_sum_distErr_fin_four_three_swaps_three α h0 hswaps)
+  exact (ciInf_le hbdd 1).trans_eq
+    (ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap α h0 hswaps)
 
 /-! ### Lexicographic cluster replication of cross-degree pair costs -/
 
 section Replication
 
 variable {V ι : Type*} [Fintype V] [LinearOrder V] [Fintype ι] [LinearOrder ι] {n : ℕ}
-
-private theorem filter_fst_lt_subset_filter_lt_lex :
-    ({p : (V ×ₗ ι) × (V ×ₗ ι) | (ofLex p.1).1 < (ofLex p.2).1} :
-      Finset ((V ×ₗ ι) × (V ×ₗ ι))) ⊆
-    ({p : (V ×ₗ ι) × (V ×ₗ ι) | p.1 < p.2} : Finset ((V ×ₗ ι) × (V ×ₗ ι))) := fun _ hp => by
-  simp only [mem_filter, mem_univ, true_and] at hp ⊢
-  exact Prod.Lex.lt_iff.mpr (Or.inl hp)
-
-omit [LinearOrder ι] in
-private theorem sum_filter_fst_lt_lex_distErr (α : V → V → Perm (Fin n)) {m : ℕ}
-    (β : (V ×ₗ ι) → Perm (Fin m)) :
-    (∑ e ∈ ({p : (V ×ₗ ι) × (V ×ₗ ι) | (ofLex p.1).1 < (ofLex p.2).1} :
-        Finset ((V ×ₗ ι) × (V ×ₗ ι))),
-      distErr (if (ofLex e.1).1 = (ofLex e.2).1 then 1 else α (ofLex e.1).1 (ofLex e.2).1)
-        (β e.1 * (β e.2)⁻¹)) =
-      ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
-        ∑ a : ι, ∑ b : ι,
-          distErr (α e.1 e.2) (β (toLex (e.1, a)) * (β (toLex (e.2, b)))⁻¹) := by
-  rw [Fintype.sum_filter_fst_lt_lex]
-  refine sum_congr rfl fun e he => sum_congr rfl fun _ _ => sum_congr rfl fun _ _ => ?_
-  simp [ne_of_lt (mem_filter.mp he).2]
-
-private theorem card_sdiff_filter_lt_lex :
-    #(({p : (V ×ₗ ι) × (V ×ₗ ι) | p.1 < p.2} : Finset ((V ×ₗ ι) × (V ×ₗ ι))) \
-      ({p : (V ×ₗ ι) × (V ×ₗ ι) | (ofLex p.1).1 < (ofLex p.2).1} :
-        Finset ((V ×ₗ ι) × (V ×ₗ ι)))) =
-      Fintype.card V * (Fintype.card ι).choose 2 := by
-  set Eintra : Finset (ι × ι) := {q ∈ (univ : Finset ι) ×ˢ univ | q.1 < q.2}
-  have hcard : #((univ : Finset V) ×ˢ Eintra) = Fintype.card V * (Fintype.card ι).choose 2 := by
-    rw [card_product, card_univ, card_product_filter_lt, card_univ]
-  rw [← hcard]
-  refine (card_bij (fun r _ => (toLex (r.1, r.2.1), toLex (r.1, r.2.2)))
-    (fun r hr => ?_) (fun r₁ _ r₂ _ h => ?_) (fun p hp => ?_)).symm
-  · simp only [mem_product, mem_filter, mem_univ, true_and, mem_sdiff, Prod.Lex.lt_iff,
-      ofLex_toLex, lt_self_iff_false, false_or, and_true, Eintra] at hr ⊢
-    exact ⟨hr, not_false⟩
-  · simp only [Prod.ext_iff, EmbeddingLike.apply_eq_iff_eq] at h
-    ext <;> simp [h]
-  · simp only [mem_sdiff, mem_filter, mem_univ, true_and, Prod.Lex.lt_iff] at hp
-    rcases hp with ⟨hlt | ⟨heq, hlt₂⟩, hnot⟩
-    · exact absurd hlt hnot
-    · refine ⟨((ofLex p.1).1, ((ofLex p.1).2, (ofLex p.2).2)), ?_, ?_⟩
-      · simp [Eintra, hlt₂]
-      · exact Prod.ext (by simp) (by simp [heq])
 
 /-- Exact degree-`m` cross-degree pair-cost infimum under lexicographic cluster replication along
 `V ×ₗ ι` with identity labels inside clusters: the `Fintype.card V * (Fintype.card ι).choose 2`
@@ -577,65 +535,51 @@ theorem ciInf_sum_distErr_lex (α : V → V → Perm (Fin n)) (m : ℕ) :
             ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
               distErr (α e.1 e.2) (β₀ e.1 * (β₀ e.2)⁻¹) := by
   set EV : Finset (V × V) := {p : V × V | p.1 < p.2}
-  set Elex : Finset ((V ×ₗ ι) × (V ×ₗ ι)) := {p : (V ×ₗ ι) × (V ×ₗ ι) | p.1 < p.2}
-  set Einter : Finset ((V ×ₗ ι) × (V ×ₗ ι)) :=
-    {p : (V ×ₗ ι) × (V ×ₗ ι) | (ofLex p.1).1 < (ofLex p.2).1}
-  set Eintra : Finset ((V ×ₗ ι) × (V ×ₗ ι)) := Elex \ Einter
+  set Q : Finset (ι × ι) := {q : ι × ι | q.1 < q.2}
   let b₀ : ℝ := 1 - (min n m : ℝ) / max n m
   let base : ℝ := (Fintype.card V * (Fintype.card ι).choose 2 : ℕ) * b₀
-  have heq_intra {p : (V ×ₗ ι) × (V ×ₗ ι)} (hp : p ∈ Eintra) :
-      (ofLex p.1).1 = (ofLex p.2).1 := by
-    simp only [Eintra, mem_sdiff, mem_filter, mem_univ, true_and, Elex, Einter,
-      Prod.Lex.lt_iff] at hp
-    rcases hp with ⟨hlt | ⟨heq, _⟩, hnot⟩
-    · exact absurd hlt hnot
-    · exact heq
+  have hQ : #Q = (Fintype.card ι).choose 2 := by
+    simpa [Q, ← univ_product_univ] using card_product_filter_lt (s := (univ : Finset ι))
+  -- Reindex gauges as curried families `V → ι → Perm (Fin m)` and isolate the intra-cluster
+  -- excess over the baseline `b₀`.
   let ev : (V → ι → Perm (Fin m)) ≃ ((V ×ₗ ι) → Perm (Fin m)) :=
     (Equiv.curry V ι (Perm (Fin m))).symm.trans (Equiv.arrowCongr toLex (.refl _))
-  have hev (β' : V → ι → Perm (Fin m)) (x : V ×ₗ ι) :
-      ev β' x = β' (ofLex x).1 (ofLex x).2 := by
-    simp [ev, Equiv.arrowCongr_apply, Function.uncurry_def]
+  have hev (β' : V → ι → Perm (Fin m)) (v : V) (a : ι) : ev β' (toLex (v, a)) = β' v a := rfl
   let c (β' : V → ι → Perm (Fin m)) : ℝ :=
-    ∑ e ∈ Eintra, (distErr (1 : Perm (Fin n)) (ev β' e.1 * (ev β' e.2)⁻¹) - b₀)
+    ∑ v : V, ∑ q ∈ Q, (distErr (1 : Perm (Fin n)) (β' v q.1 * (β' v q.2)⁻¹) - b₀)
   have hc (β' : V → ι → Perm (Fin m)) : 0 ≤ c β' :=
-    sum_nonneg fun e _ => sub_nonneg.mpr (one_sub_min_div_max_le_distErr _ _)
-  have hc_const (β₀ : V → Perm (Fin m)) : c (fun v _ => β₀ v) = 0 := by
-    refine sum_eq_zero fun e he => ?_
-    simp [b₀, hev, heq_intra he]
+    sum_nonneg fun _ _ => sum_nonneg fun _ _ =>
+      sub_nonneg.mpr (one_sub_min_div_max_le_distErr _ _)
+  have hc_const (β₀ : V → Perm (Fin m)) : c (fun v _ => β₀ v) = 0 := by simp [c, b₀]
+  -- Split the lexicographic edge sum into intra-cluster and inter-cluster pairs.
   have hsplit (β' : V → ι → Perm (Fin m)) :
-      (∑ e ∈ Elex,
+      (∑ e ∈ ({p : (V ×ₗ ι) × (V ×ₗ ι) | p.1 < p.2} : Finset ((V ×ₗ ι) × (V ×ₗ ι))),
         distErr (if (ofLex e.1).1 = (ofLex e.2).1 then 1 else α (ofLex e.1).1 (ofLex e.2).1)
           (ev β' e.1 * (ev β' e.2)⁻¹)) =
         base + (c β' + ∑ e ∈ EV, ∑ a : ι, ∑ b : ι,
           distErr (α e.1 e.2) (β' e.1 a * (β' e.2 b)⁻¹)) := by
-    rw [← sum_sdiff (filter_fst_lt_subset_filter_lt_lex (V := V) (ι := ι))]
-    have hsdiff : (∑ e ∈ Eintra,
-        distErr (if (ofLex e.1).1 = (ofLex e.2).1 then 1 else α (ofLex e.1).1 (ofLex e.2).1)
-          (ev β' e.1 * (ev β' e.2)⁻¹)) = base + c β' := by
-      have hcongr : (∑ e ∈ Eintra,
-          distErr (if (ofLex e.1).1 = (ofLex e.2).1 then 1 else α (ofLex e.1).1 (ofLex e.2).1)
-            (ev β' e.1 * (ev β' e.2)⁻¹)) =
-          ∑ e ∈ Eintra, (b₀ + (distErr (1 : Perm (Fin n)) (ev β' e.1 * (ev β' e.2)⁻¹) - b₀)) := by
-        refine sum_congr rfl fun e he => ?_
-        simp only [heq_intra he, ↓reduceIte]
-        ring
-      rw [hcongr, sum_add_distrib, sum_const, nsmul_eq_mul,
-        card_sdiff_filter_lt_lex (V := V) (ι := ι)]
-    have hinter : (∑ e ∈ Einter,
-        distErr (if (ofLex e.1).1 = (ofLex e.2).1 then 1 else α (ofLex e.1).1 (ofLex e.2).1)
-          (ev β' e.1 * (ev β' e.2)⁻¹)) =
-        ∑ e ∈ EV, ∑ a : ι, ∑ b : ι, distErr (α e.1 e.2) (β' e.1 a * (β' e.2 b)⁻¹) := by
-      rw [sum_filter_fst_lt_lex_distErr]
-      refine sum_congr rfl fun e _ => sum_congr rfl fun a _ => sum_congr rfl fun b _ => ?_
-      simp [hev]
-    rw [hsdiff, hinter, add_assoc]
-  rw [← ev.iInf_congr fun β' => hsplit β']
+    rw [Fintype.sum_filter_lt_lex (V := V) (ι := ι)]
+    dsimp only [ofLex_toLex]
+    simp only [↓reduceIte, hev]
+    have hintra : (∑ v : V, ∑ q : ι × ι with q.1 < q.2,
+        distErr (1 : Perm (Fin n)) (β' v q.1 * (β' v q.2)⁻¹)) = base + c β' := by
+      have hterm (v : V) : (∑ q ∈ Q, distErr (1 : Perm (Fin n)) (β' v q.1 * (β' v q.2)⁻¹)) =
+          (#Q : ℝ) * b₀ +
+            ∑ q ∈ Q, (distErr (1 : Perm (Fin n)) (β' v q.1 * (β' v q.2)⁻¹) - b₀) := by
+        simp [sum_sub_distrib, nsmul_eq_mul]
+      change (∑ v : V, ∑ q ∈ Q, distErr (1 : Perm (Fin n)) (β' v q.1 * (β' v q.2)⁻¹)) = _
+      simp only [hterm, sum_add_distrib, sum_const, card_univ, nsmul_eq_mul,
+        hQ, base, c, Nat.cast_mul, mul_assoc]
+    rw [hintra, add_assoc]
+    congr 2
+    exact sum_congr rfl fun e he => by simp [ne_of_lt (mem_filter.mp he).2]
+  rw [← ev.iInf_congr hsplit]
   have hbdd : BddBelow (Set.range fun β' : V → ι → Perm (Fin m) =>
       c β' + ∑ e ∈ EV, ∑ a : ι, ∑ b : ι, distErr (α e.1 e.2) (β' e.1 a * (β' e.2 b)⁻¹)) := by
     refine ⟨0, ?_⟩
     rintro _ ⟨β', rfl⟩
-    exact add_nonneg (hc β') (sum_nonneg fun _ _ => sum_nonneg fun _ _ => sum_nonneg fun _ _ =>
-      distErr_nonneg _ _)
+    exact add_nonneg (hc β')
+      (sum_nonneg fun _ _ => sum_nonneg fun _ _ => sum_nonneg fun _ _ => distErr_nonneg _ _)
   rw [← add_ciInf hbdd base,
     EV.ciInf_add_sum_eq_card_sq_mul_ciInf_sum (fun _ he => ne_of_lt (mem_filter.mp he).2)
       (fun e g h => distErr (α e.1 e.2) (g * h⁻¹)) c hc hc_const]
@@ -657,7 +601,7 @@ theorem card_sq_mul_ciInf_le_ciInf_sum_distErr_lex (α : V → V → Perm (Fin n
 /-- In equal nonzero degree `n`, lexicographic cluster replication multiplies the cross-degree
 pair-cost infimum by `Fintype.card ι ^ 2` with equality, because cluster-constant gauges have zero
 intra-cluster distance with errors. -/
-theorem ciInf_sum_distErr_lex_eq [NeZero n] (α : V → V → Perm (Fin n)) :
+theorem ciInf_sum_distErr_lex_eq_card_sq_mul_ciInf [NeZero n] (α : V → V → Perm (Fin n)) :
     (⨅ β : (V ×ₗ ι) → Perm (Fin n),
         ∑ e ∈ ({p : (V ×ₗ ι) × (V ×ₗ ι) | p.1 < p.2} : Finset ((V ×ₗ ι) × (V ×ₗ ι))),
           distErr (if (ofLex e.1).1 = (ofLex e.2).1 then 1 else α (ofLex e.1).1 (ofLex e.2).1)
@@ -672,7 +616,8 @@ theorem ciInf_sum_distErr_lex_eq [NeZero n] (α : V → V → Perm (Fin n)) :
 infimum over all gauge degrees `m + 2 ≥ 2` at its own degree `n`, its lexicographic replication on
 `V ×ₗ ι` also attains its cross-degree infimum at degree `n`, with value multiplied by
 `Fintype.card ι ^ 2`. -/
-theorem ciInf₂_sum_distErr_lex_eq (α : V → V → Perm (Fin n)) (hn : 2 ≤ n)
+theorem ciInf₂_sum_distErr_lex_eq_card_sq_mul_ciInf_of_le_of_forall_le (α : V → V → Perm (Fin n))
+    (hn : 2 ≤ n)
     (hmin : ∀ m : ℕ,
       (⨅ β₀ : V → Perm (Fin n),
           ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
@@ -697,7 +642,7 @@ theorem ciInf₂_sum_distErr_lex_eq (α : V → V → Perm (Fin n)) (hn : 2 ≤ 
     le_ciInf fun _ => sum_nonneg fun _ _ => distErr_nonneg _ _
   have hbdd : BddBelow (Set.range F) := ⟨0, by rintro _ ⟨m, rfl⟩; exact hF_nonneg m⟩
   refine le_antisymm ?_ ?_
-  · exact (ciInf_le hbdd k).trans_eq (ciInf_sum_distErr_lex_eq α)
+  · exact (ciInf_le hbdd k).trans_eq (ciInf_sum_distErr_lex_eq_card_sq_mul_ciInf α)
   · refine le_ciInf fun m => ?_
     exact (mul_le_mul_of_nonneg_left (hmin m) (sq_nonneg _)).trans
       (card_sq_mul_ciInf_le_ciInf_sum_distErr_lex α (m + 2))
@@ -706,7 +651,7 @@ end Replication
 
 /-- Replicating the three-transposition configuration on `Fin 4` along `Fin 4 ×ₗ ι` yields exact
 cross-degree pair-cost infimum `2 * Fintype.card ι ^ 2` across all gauge degrees `m + 2 ≥ 2`. -/
-theorem ciInf₂_sum_distErr_lex_fin_four_three_swaps {ι : Type*} [Fintype ι] [LinearOrder ι]
+theorem ciInf₂_sum_distErr_lex_fin_four_of_eq_setOf_isSwap {ι : Type*} [Fintype ι] [LinearOrder ι]
     (α : Fin 4 → Fin 4 → Perm (Fin 3))
     (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
     (hswaps : ({α 1 2, α 1 3, α 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap}) :
@@ -716,10 +661,11 @@ theorem ciInf₂_sum_distErr_lex_fin_four_three_swaps {ι : Type*} [Fintype ι] 
           distErr (if (ofLex e.1).1 = (ofLex e.2).1 then 1 else α (ofLex e.1).1 (ofLex e.2).1)
             (β e.1 * (β e.2)⁻¹)) =
       2 * (Fintype.card ι : ℝ) ^ 2 := by
-  have h := ciInf₂_sum_distErr_lex_eq (ι := ι) α (by decide) fun m => by
-    rw [ciInf_sum_distErr_fin_four_three_swaps_three α h0 hswaps]
-    exact le_ciInf (two_le_sum_distErr_fin_four_three_swaps α h0 hswaps)
-  rw [h, ciInf_sum_distErr_fin_four_three_swaps_three α h0 hswaps]
+  have h := ciInf₂_sum_distErr_lex_eq_card_sq_mul_ciInf_of_le_of_forall_le (ι := ι) α (by decide)
+    fun m => by
+      rw [ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap α h0 hswaps]
+      exact le_ciInf (two_le_sum_distErr_fin_four_of_eq_setOf_isSwap α h0 hswaps)
+  rw [h, ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap α h0 hswaps]
   ring
 
 end TauCeti
