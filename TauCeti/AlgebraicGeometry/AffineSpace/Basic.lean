@@ -60,7 +60,7 @@ lemma homOfAlgebra_def (x : n → A) :
 @[reassoc (attr := simp)]
 lemma homOfAlgebra_specIso_hom (x : n → A) :
     homOfAlgebra R x ≫ (SpecIso n (.of R)).hom =
-      Spec.map (CommRingCat.ofHom (MvPolynomial.aeval (R := R) x).toRingHom) := by
+      Spec.map (CommRingCat.ofHom (MvPolynomial.aeval (R := R) x : MvPolynomial n R →+* A)) := by
   simp [homOfAlgebra_def]
 
 /-- `homOfAlgebra R x` lies over `Spec (.of R)` via `Spec.map (algebraMap R A)`. -/
@@ -119,9 +119,9 @@ lemma homOfAlgebra_reindex (x : n → A) (g : m → n) :
 
 /-- Precomposing `homOfAlgebra R x` with `Spec.map` of an `R`-algebra morphism `f : A →ₐ[R] B`
 applies `f` to the coordinates `x`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma specMap_homOfAlgebra {B : Type u} [CommRing B] [Algebra R B] (f : A →ₐ[R] B) (x : n → A) :
-    Spec.map (CommRingCat.ofHom f.toRingHom) ≫ homOfAlgebra R x =
+    Spec.map (CommRingCat.ofHom (f : A →+* B)) ≫ homOfAlgebra R x =
       homOfAlgebra R (f ∘ x) := by
   have hcomp : f.comp (MvPolynomial.aeval (R := R) x) = MvPolynomial.aeval (R := R) (f ∘ x) :=
     MvPolynomial.algHom_ext fun i ↦ by simp
@@ -144,14 +144,11 @@ only if `MvPolynomial.aeval y` is module-finite. -/
 @[simp]
 theorem isFinite_homOfAlgebra_iff {y : n → A} :
     IsFinite (homOfAlgebra R y) ↔ (MvPolynomial.aeval (R := R) y).Finite := by
-  refine ⟨fun _ ↦ ?_, fun hfin ↦ ?_⟩
-  · rw [AlgHom.Finite, ← CommRingCat.hom_ofHom (MvPolynomial.aeval (R := R) y).toRingHom,
-      ← IsFinite.SpecMap_iff, ← homOfAlgebra_specIso_hom]
-    infer_instance
-  · have : IsFinite (Spec.map (CommRingCat.ofHom (MvPolynomial.aeval (R := R) y).toRingHom)) :=
-      (IsFinite.SpecMap_iff _).mpr hfin
-    rw [homOfAlgebra_def]
-    infer_instance
+  have : MorphismProperty.RespectsIso @IsFinite :=
+    MorphismProperty.RespectsIso.mk _ (fun _ _ _ ↦ inferInstance) (fun _ _ _ ↦ inferInstance)
+  rw [homOfAlgebra_def,
+    MorphismProperty.cancel_right_of_respectsIso @IsFinite _ (SpecIso n (.of R)).inv,
+    IsFinite.SpecMap_iff, CommRingCat.hom_ofHom, ← AlgHom.Finite]
 
 /-- If `y : n → A` is algebraically independent over `R` and makes `A` integral over
 `MvPolynomial n R`, then `homOfAlgebra R y : Spec (.of A) ⟶ 𝔸(n; Spec (.of R))` is surjective. -/

@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 import Mathlib.RingTheory.TensorProduct.Finite
+import TauCeti.RingTheory.TensorProduct.IsIntegral
 
 /-!
 # Extension of scalars of multivariate polynomials
@@ -145,30 +146,10 @@ theorem isIntegral_aeval_one_tmul (S : Type*) [CommRing S] [Algebra R S] {y : ι
     (hint : (aeval (R := R) y).toRingHom.IsIntegral) :
     (aeval (R := S) (fun i ↦ (1 : S) ⊗ₜ[R] y i)).toRingHom.IsIntegral := by
   rw [aeval_one_tmul_toRingHom]
-  refine RingHom.IsIntegral.trans _ _
-    (RingHom.isIntegral_of_surjective _ (algebraTensorAlgEquiv R S).symm.surjective) ?_
-  intro z
-  refine z.inductionOn (fun s a ↦ ?_) (fun u v hu hv ↦ RingHom.IsIntegralElem.add _ hu hv)
-  have hcomp :
-      (Algebra.TensorProduct.includeRight (R := R) (A := S) (B := A)).toRingHom.comp
-        (aeval (R := R) y).toRingHom =
-      (Algebra.TensorProduct.map (AlgHom.id R S) (aeval (R := R) y)).toRingHom.comp
-        (Algebra.TensorProduct.includeRight
-          (R := R) (A := S) (B := MvPolynomial ι R)).toRingHom := by
-    simp only [AlgHom.toRingHom_eq_coe, ← AlgHom.comp_toRingHom,
-      Algebra.TensorProduct.map_comp_includeRight]
-  have ha : (Algebra.TensorProduct.map (AlgHom.id R S) (aeval (R := R) y)).toRingHom.IsIntegralElem
-      ((1 : S) ⊗ₜ[R] a) := by
-    have ha' := (hint a).map
-      (Algebra.TensorProduct.includeRight (R := R) (A := S) (B := A)).toRingHom
-    rw [hcomp] at ha'
-    simpa using ha'.of_comp
-  have hs : (Algebra.TensorProduct.map (AlgHom.id R S) (aeval (R := R) y)).toRingHom.IsIntegralElem
-      (s ⊗ₜ[R] (1 : A)) := by
-    simpa using RingHom.isIntegralElem_map
-      (Algebra.TensorProduct.map (AlgHom.id R S) (aeval (R := R) y)).toRingHom
-      (x := s ⊗ₜ[R] (1 : MvPolynomial ι R))
-  simpa [Algebra.TensorProduct.tmul_mul_tmul] using RingHom.IsIntegralElem.mul _ hs ha
+  exact RingHom.IsIntegral.trans _ _
+    (RingHom.isIntegral_of_surjective _ (algebraTensorAlgEquiv R S).symm.surjective)
+    (RingHom.IsIntegral.tensorProductMap (f := AlgHom.id R S)
+      (RingHom.isIntegral_of_surjective _ Function.surjective_id) hint)
 
 end CommRing
 

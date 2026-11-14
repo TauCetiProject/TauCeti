@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.Basic
 public import Mathlib.RingTheory.Flat.Basic
+import TauCeti.RingTheory.TensorProduct.Maps
 import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
 /-!
@@ -34,9 +35,11 @@ theorem one_tmul {ι R A : Type*} (S : Type*) [CommRing R] [CommRing S] [Algebra
     AlgebraicIndependent S fun i ↦ (1 : S) ⊗ₜ[R] y i := by
   rw [algebraicIndependent_iff_injective_aeval] at hy ⊢
   have hinj :
-      Function.Injective (Algebra.TensorProduct.map (AlgHom.id R S) (MvPolynomial.aeval y)) :=
-    Module.Flat.lTensor_preserves_injective_linearMap (M := S)
-      (MvPolynomial.aeval y).toLinearMap hy
+      Function.Injective
+        (Algebra.TensorProduct.map (AlgHom.id R S) (MvPolynomial.aeval (R := R) y)) := by
+    rw [← funext ((MvPolynomial.aeval (R := R) y).lTensor_toLinearMap_apply S)]
+    exact Module.Flat.lTensor_preserves_injective_linearMap (M := S)
+      (MvPolynomial.aeval (R := R) y).toLinearMap (by rwa [AlgHom.coe_toLinearMap])
   intro p q hpq
   rw [MvPolynomial.aeval_one_tmul_eq_map_algebraTensorAlgEquiv_symm,
     MvPolynomial.aeval_one_tmul_eq_map_algebraTensorAlgEquiv_symm] at hpq

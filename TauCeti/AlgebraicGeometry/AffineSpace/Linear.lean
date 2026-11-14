@@ -109,6 +109,32 @@ lemma linearMap_comp [Fintype p] (C : Matrix m n Γ(S, ⊤)) (D : Matrix n p Γ(
   simp only [Matrix.mul_apply, map_sum, Finset.sum_mul, Finset.mul_sum, map_mul, mul_assoc]
   exact Finset.sum_comm
 
+/-- Composing `linearMap S C` with `linearMap S C⁻¹` for a unit matrix `C` gives the identity on
+`𝔸(n; S)`. -/
+@[reassoc (attr := simp)]
+lemma linearMap_comp_inv [DecidableEq n] {C : Matrix n n Γ(S, ⊤)} (hC : IsUnit C) :
+    linearMap S C ≫ linearMap S C⁻¹ = 𝟙 𝔸(n; S) := by
+  rw [linearMap_comp, Matrix.nonsing_inv_mul _ (C.isUnit_iff_isUnit_det.mp hC), linearMap_one]
+
+/-- Composing `linearMap S C⁻¹` with `linearMap S C` for a unit matrix `C` gives the identity on
+`𝔸(n; S)`. -/
+@[reassoc (attr := simp)]
+lemma linearMap_inv_comp [DecidableEq n] {C : Matrix n n Γ(S, ⊤)} (hC : IsUnit C) :
+    linearMap S C⁻¹ ≫ linearMap S C = 𝟙 𝔸(n; S) := by
+  rw [linearMap_comp, Matrix.mul_nonsing_inv _ (C.isUnit_iff_isUnit_det.mp hC), linearMap_one]
+
+/-- A unit matrix `C : Matrix n n Γ(S, ⊤)` induces an isomorphism `linearMap S C` on `𝔸(n; S)`. -/
+lemma isIso_linearMap_of_isUnit [DecidableEq n] {C : Matrix n n Γ(S, ⊤)} (hC : IsUnit C) :
+    IsIso (linearMap S C) :=
+  ⟨linearMap S C⁻¹, linearMap_comp_inv S hC, linearMap_inv_comp S hC⟩
+
+instance [DecidableEq n] (M : (Matrix n n Γ(S, ⊤))ˣ) : IsIso (linearMap S M.val) :=
+  isIso_linearMap_of_isUnit S M.isUnit
+
+instance [DecidableEq n] (M : (Matrix n n Γ(S, ⊤))ˣ) :
+    IsIso (linearMap S (M : Matrix n n Γ(S, ⊤))⁻¹) :=
+  isIso_linearMap_of_isUnit S (by rw [← Matrix.coe_units_inv]; exact M⁻¹.isUnit)
+
 /-- Postcomposing `linearMap S C` with `reindex g S` restricts the rows of `C` along `g`. -/
 @[reassoc]
 lemma linearMap_reindex {q : Type u} (C : Matrix m n Γ(S, ⊤)) (g : q → m) :
@@ -134,8 +160,8 @@ lemma map_linearMap {T : Scheme.{u}} (f : S ⟶ T) (C : Matrix m n Γ(T, ⊤)) :
 def linearIso [DecidableEq n] (M : (Matrix n n Γ(S, ⊤))ˣ) : 𝔸(n; S) ≅ 𝔸(n; S) where
   hom := linearMap S M.val
   inv := linearMap S M⁻¹.val
-  hom_inv_id := by rw [linearMap_comp, Units.inv_mul, linearMap_one]
-  inv_hom_id := by rw [linearMap_comp, Units.mul_inv, linearMap_one]
+  hom_inv_id := by simp
+  inv_hom_id := by simp
 
 /-- The forward morphism of `linearIso S M` is `linearMap S M.val`. -/
 @[simp]
@@ -143,14 +169,19 @@ lemma linearIso_hom [DecidableEq n] (M : (Matrix n n Γ(S, ⊤))ˣ) :
     (linearIso S M).hom = linearMap S M.val :=
   (rfl)
 
-/-- The inverse morphism of `linearIso S M` is `linearMap S M⁻¹.val`. -/
+/-- The inverse morphism of `linearIso S M` is `linearMap S (M : Matrix n n Γ(S, ⊤))⁻¹`. -/
 @[simp]
 lemma linearIso_inv [DecidableEq n] (M : (Matrix n n Γ(S, ⊤))ˣ) :
-    (linearIso S M).inv = linearMap S M⁻¹.val :=
-  (rfl)
+    (linearIso S M).inv = linearMap S (M : Matrix n n Γ(S, ⊤))⁻¹ := by
+  rw [← Matrix.coe_units_inv]
+  rfl
 
 instance [DecidableEq n] (M : (Matrix n n Γ(S, ⊤))ˣ) : (linearIso S M).hom.IsOver S := by
   rw [linearIso_hom]
+  infer_instance
+
+instance [DecidableEq n] (M : (Matrix n n Γ(S, ⊤))ˣ) : (linearIso S M).inv.IsOver S := by
+  rw [linearIso_inv]
   infer_instance
 
 /-- The identity unit matrix induces `Iso.refl 𝔸(n; S)`. -/

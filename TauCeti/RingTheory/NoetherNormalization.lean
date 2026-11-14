@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.KrullDimension.FiniteType
+import Mathlib.LinearAlgebra.Matrix.Invertible
 import TauCeti.LinearAlgebra.Matrix.BlockSucc
 import TauCeti.LinearAlgebra.Matrix.LastRowTransvection
 import TauCeti.RingTheory.AlgebraicIndependent.BaseChange
@@ -40,8 +41,9 @@ Because the normalizing parameters `yᵢ = ∑ⱼ Cᵢⱼ • xⱼ` are `k`-line
 their matrix `C` automatically has `k`-linearly independent rows
 (`AlgebraicIndependent.linearIndependent_row`), and the `yᵢ` remain inside any `k`-submodule
 containing the `xⱼ` (such as a fixed homogeneous component of a graded algebra). Moreover, a single
-normalizing matrix `C` remains valid after extending scalars along any field extension `K / k`
-(`TauCeti.linear_normalization_tensorProduct_field`).
+normalizing matrix `C` remains valid after extending scalars along any flat algebra map to a field
+`K` (in particular, any field extension `K / k`;
+`TauCeti.linear_normalization_tensorProduct_field`).
 
 ## Main results
 
@@ -56,7 +58,7 @@ normalizing matrix `C` remains valid after extending scalars along any field ext
 * `TauCeti.exists_linear_normalization`: linear Noether normalization in prescribed algebra
   generators `x : Fin n → A` over an infinite field `k`.
 * `TauCeti.linear_normalization_tensorProduct_field`: persistence of the normalizing matrix `C`
-  under field extensions.
+  under flat base change to a field.
 
 ## References
 
@@ -179,6 +181,7 @@ theorem exists_linear_normalization_units_of_finite [Nontrivial A] {n : ℕ} (x 
     ∃ (d : ℕ) (hd : d ≤ n) (M : (Matrix (Fin n) (Fin n) k)ˣ),
       let y : Fin d → A := fun i ↦ ∑ j, (M : Matrix (Fin n) (Fin n) k) (Fin.castLE hd i) j • x j
       AlgebraicIndependent k y ∧ (aeval (R := k) y).Finite ∧ ringKrullDim A = d := by
+  -- When `w` is already algebraically independent, `M = 1` witnesses normalization with `d = m`.
   have hid {m : ℕ} (w : Fin m → A) (hw : (aeval (R := k) w).Finite)
       (hind : AlgebraicIndependent k w) :
       ∃ (d : ℕ) (hd : d ≤ m) (M : (Matrix (Fin m) (Fin m) k)ˣ),
@@ -200,7 +203,9 @@ theorem exists_linear_normalization_units_of_finite [Nontrivial A] {n : ℕ} (x 
   | succ r ih =>
     by_cases hind : AlgebraicIndependent k x
     · exact hid x hx hind
-    · rw [_root_.algebraicIndependent_iff] at hind
+    · -- Eliminate `x (Fin.last r)` by a generic shear `zⱼ = xⱼ - aⱼ • xᵣ` and lift `M'` by block
+      -- extension times the transpose last-row transvection.
+      rw [_root_.algebraicIndependent_iff] at hind
       push Not at hind
       obtain ⟨p, hp0, hp⟩ := hind
       obtain ⟨a, ha⟩ := exists_eval_insertNth_homogeneousComponent_ne_zero hp (Fin.last r)
@@ -209,14 +214,7 @@ theorem exists_linear_normalization_units_of_finite [Nontrivial A] {n : ℕ} (x 
         simpa only [z, Fin.succAbove_last] using finite_aeval_shear hp0 ha.isUnit hx
       obtain ⟨d, hd, M', hy_ind, hy_fin, hdim⟩ := ih z hz
       let S : (Matrix (Fin (r + 1)) (Fin (r + 1)) k)ˣ :=
-        { val := (lastRowTransvection r (-a))ᵀ
-          inv := (lastRowTransvection r a)ᵀ
-          val_inv := by
-            rw [← Matrix.transpose_mul, lastRowTransvection_mul_lastRowTransvection,
-              add_neg_cancel, lastRowTransvection_zero, Matrix.transpose_one]
-          inv_val := by
-            rw [← Matrix.transpose_mul, lastRowTransvection_mul_lastRowTransvection,
-              neg_add_cancel, lastRowTransvection_zero, Matrix.transpose_one] }
+        ((lastRowTransvection r (-a)).isUnit_transpose.mpr (isUnit_lastRowTransvection (-a))).unit
       let U : (Matrix (Fin (r + 1)) (Fin (r + 1)) k)ˣ :=
         Units.map (Matrix.blockSuccMonoidHom k r) M' * S
       refine ⟨d, Nat.le_succ_of_le hd, U, ?_⟩
@@ -226,22 +224,14 @@ theorem exists_linear_normalization_units_of_finite [Nontrivial A] {n : ℕ} (x 
           fun i : Fin d ↦
             ∑ l : Fin r, (M' : Matrix (Fin r) (Fin r) k) (Fin.castLE hd i) l • z l := by
         funext i
-        let i₀ : Fin r := Fin.castLE hd i
-        have hcast : Fin.castLE (Nat.le_succ_of_le hd) i = i₀.castSucc := by ext; simp [i₀]
+        have hcast : Fin.castLE (Nat.le_succ_of_le hd) i = (Fin.castLE hd i).castSucc := by
+          ext; simp
         have hU_val : (U : Matrix (Fin (r + 1)) (Fin (r + 1)) k) =
             Matrix.blockSucc M'.val * (lastRowTransvection r (-a))ᵀ := by
           simp [U, S]
-        have hU_cast (j : Fin r) : (U : Matrix (Fin (r + 1)) (Fin (r + 1)) k)
-            i₀.castSucc j.castSucc = M'.val i₀ j := by
-          rw [hU_val, Matrix.mul_apply, Fin.sum_univ_castSucc]
-          simp [lastRowTransvection_apply, Matrix.one_apply, Fin.castSucc_inj]
-        have hU_last : (U : Matrix (Fin (r + 1)) (Fin (r + 1)) k)
-            i₀.castSucc (Fin.last r) = -∑ l : Fin r, M'.val i₀ l * a l := by
-          rw [hU_val, Matrix.mul_apply, Fin.sum_univ_castSucc]
-          simp [lastRowTransvection_apply]
-        rw [hcast, Fin.sum_univ_castSucc]
-        simp only [hU_cast, hU_last, i₀, z, sub_eq_add_neg, smul_add, smul_neg,
-          Finset.sum_add_distrib, Finset.sum_neg_distrib, neg_smul, Finset.sum_smul, mul_smul]
+        rw [hcast, hU_val, sum_mul_transpose_lastRowTransvection_smul]
+        simp only [Matrix.blockSucc_castSucc_castSucc, Matrix.blockSucc_castSucc_last,
+          Pi.neg_apply, neg_smul, zero_smul, add_zero, z, sub_eq_add_neg]
       rw [hy_eq]
       exact ⟨hy_ind, hy_fin, hdim⟩
 
@@ -308,11 +298,12 @@ end InfiniteField
 
 section BaseChange
 
-/-- **Field-extension stability of linear Noether normalization.** Over any field `k` and any field
-extension `K / k`, a matrix `C : Matrix ι κ k` whose linear combinations normalize a `k`-algebra
-`A` continues to normalize `K ⊗[k] A` with Krull dimension `Nat.card ι`. -/
+/-- **Flat-field base-change stability of linear Noether normalization.** Over any commutative ring
+`k` and any flat `k`-algebra `K` that is a field (in particular, any field extension `K / k`), a
+matrix `C : Matrix ι κ k` whose linear combinations normalize a `k`-algebra `A` continues to
+normalize `K ⊗[k] A` with Krull dimension `Nat.card ι`. -/
 theorem linear_normalization_tensorProduct_field {ι κ k A : Type*} [Finite ι] [Fintype κ]
-    (K : Type*) [Field k] [Field K] [Algebra k K] [CommRing A] [Algebra k A]
+    (K : Type*) [CommRing k] [Field K] [Algebra k K] [Module.Flat k K] [CommRing A] [Algebra k A]
     {C : Matrix ι κ k} {x : κ → A}
     (hy_ind : AlgebraicIndependent k fun i ↦ ∑ j, C i j • x j)
     (hy_fin : (aeval (R := k) fun i ↦ ∑ j, C i j • x j).Finite) :
