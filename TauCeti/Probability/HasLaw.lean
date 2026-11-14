@@ -237,8 +237,8 @@ private theorem countableProductFamily_projective {ι : Type*} {E : ι → Type*
 measure is constructed by Mathlib's Kolmogorov extension theorem; its finite marginals are the
 finite products of the coordinate laws. -/
 noncomputable def _root_.TauCeti.Measure.countableProductMeasure {ι : Type*} {E : ι → Type*}
-    [Countable ι] [∀ i, MeasurableSpace (E i)] [∀ i, TopologicalSpace (E i)]
-    [∀ i, OpensMeasurableSpace (E i)] [∀ i, SecondCountableTopology (E i)]
+    [∀ i, MeasurableSpace (E i)] [∀ i, TopologicalSpace (E i)]
+    [∀ i, SecondCountableTopology (E i)]
     [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
     (ν : ∀ i, Measure (E i)) [∀ i, IsProbabilityMeasure (ν i)] : Measure (∀ i, E i) :=
   MeasureTheory.projectiveLimit (fun I : Finset ι => Measure.pi fun i : I => ν i)
@@ -246,8 +246,8 @@ noncomputable def _root_.TauCeti.Measure.countableProductMeasure {ι : Type*} {E
 
 /-- The countable product measure is a probability measure. -/
 instance _root_.TauCeti.Measure.isProbabilityMeasure_countableProductMeasure
-    {ι : Type*} {E : ι → Type*} [Countable ι] [∀ i, MeasurableSpace (E i)]
-    [∀ i, TopologicalSpace (E i)] [∀ i, OpensMeasurableSpace (E i)]
+    {ι : Type*} {E : ι → Type*} [∀ i, MeasurableSpace (E i)]
+    [∀ i, TopologicalSpace (E i)]
     [∀ i, SecondCountableTopology (E i)]
     [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
     (ν : ∀ i, Measure (E i))
@@ -258,8 +258,8 @@ instance _root_.TauCeti.Measure.isProbabilityMeasure_countableProductMeasure
 /-- Every finite coordinate projection of the countable product measure has the expected finite
 product law. -/
 theorem _root_.TauCeti.Measure.isProjectiveLimit_countableProductMeasure
-    {ι : Type*} {E : ι → Type*} [Countable ι] [∀ i, MeasurableSpace (E i)]
-    [∀ i, TopologicalSpace (E i)] [∀ i, OpensMeasurableSpace (E i)]
+    {ι : Type*} {E : ι → Type*} [∀ i, MeasurableSpace (E i)]
+    [∀ i, TopologicalSpace (E i)]
     [∀ i, SecondCountableTopology (E i)]
     [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
     (ν : ∀ i, Measure (E i))
@@ -270,8 +270,8 @@ theorem _root_.TauCeti.Measure.isProjectiveLimit_countableProductMeasure
 
 /-- Any measure with the same finite marginals as the countable product is equal to it. -/
 theorem _root_.TauCeti.Measure.countableProductMeasure_unique
-    {ι : Type*} {E : ι → Type*} [Countable ι] [∀ i, MeasurableSpace (E i)]
-    [∀ i, TopologicalSpace (E i)] [∀ i, OpensMeasurableSpace (E i)]
+    {ι : Type*} {E : ι → Type*} [∀ i, MeasurableSpace (E i)]
+    [∀ i, TopologicalSpace (E i)]
     [∀ i, SecondCountableTopology (E i)]
     [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
     (ν : ∀ i, Measure (E i))
@@ -285,7 +285,7 @@ entire new family their product law. The old variable may itself encode dependen
 theorem _root_.ProbabilityTheory.HasLaw.prod_extension_countable
     {Ω α ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [Countable ι]
     {E : ι → Type*} [∀ i, MeasurableSpace (E i)] [∀ i, TopologicalSpace (E i)]
-    [∀ i, OpensMeasurableSpace (E i)] [∀ i, SecondCountableTopology (E i)]
+    [∀ i, SecondCountableTopology (E i)]
     [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
     {X : Ω → α} {μ : Measure α} {P : Measure Ω}
     (ν : ∀ i, Measure (E i)) [∀ i, IsProbabilityMeasure (ν i)]
@@ -299,7 +299,7 @@ theorem _root_.ProbabilityTheory.HasLaw.prod_extension_countable
 theorem _root_.ProbabilityTheory.HasLaw.prod_extension_countable_preserves_old_tuple
     {Ω α ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [Countable ι]
     {E : ι → Type*} [∀ i, MeasurableSpace (E i)] [∀ i, TopologicalSpace (E i)]
-    [∀ i, OpensMeasurableSpace (E i)] [∀ i, SecondCountableTopology (E i)]
+    [∀ i, SecondCountableTopology (E i)]
     [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
     {X : Ω → α} {μ : Measure α} {P : Measure Ω}
     (ν : ∀ i, Measure (E i)) [∀ i, IsProbabilityMeasure (ν i)]
@@ -315,7 +315,7 @@ dependence between its coordinates. -/
 theorem _root_.ProbabilityTheory.HasLaw.prod_extension_countable_preserves_old_pair
     {Ω α β ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
     [Countable ι] {E : ι → Type*} [∀ i, MeasurableSpace (E i)] [∀ i, TopologicalSpace (E i)]
-    [∀ i, OpensMeasurableSpace (E i)] [∀ i, SecondCountableTopology (E i)]
+    [∀ i, SecondCountableTopology (E i)]
     [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
     {X : Ω → α} {Y : Ω → β}
     {μ : Measure (α × β)} {P : Measure Ω} (ν : ∀ i, Measure (E i))
@@ -330,7 +330,7 @@ random object. -/
 theorem _root_.ProbabilityTheory.HasLaw.prod_extension_countable_indep
     {Ω α ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [Countable ι]
     {E : ι → Type*} [∀ i, MeasurableSpace (E i)] [∀ i, TopologicalSpace (E i)]
-    [∀ i, OpensMeasurableSpace (E i)] [∀ i, SecondCountableTopology (E i)]
+    [∀ i, SecondCountableTopology (E i)]
     [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
     {X : Ω → α} {μ : Measure α} {P : Measure Ω} [IsProbabilityMeasure P]
     (ν : ∀ i, Measure (E i)) [∀ i, IsProbabilityMeasure (ν i)]
