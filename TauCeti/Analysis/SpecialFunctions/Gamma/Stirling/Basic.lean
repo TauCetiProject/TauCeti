@@ -39,8 +39,9 @@ Moving from `s` out along its ray to radius `n + 1` and then along the arc to th
 * `Stirling.tendsto_log_factorial_sub_stirling`: the logarithmic form of Stirling's formula at
   `n + 1`.
 * `TauCeti.stirlingRemainder`: the remainder `logGamma s - ((s - 1/2) log s - s + log (2π) / 2)`
-  in Stirling's formula on the slit plane, together with its derivative, conjugation symmetry,
-  shift identity, and vanishing limit at positive integers.
+  in Stirling's formula on the slit plane, together with its real-part and positive-real
+  evaluations (`TauCeti.stirlingRemainder_re`, `TauCeti.stirlingRemainder_ofReal`), derivative,
+  conjugation symmetry, shift identity, and vanishing limit at positive integers.
 * `TauCeti.norm_logGamma_sub_stirling_le`: the explicit uniform bound on a closed sector.
 * `TauCeti.exists_norm_logGamma_sub_stirling_le`, `TauCeti.isBigO_logGamma_sub_stirling`:
   the `O(1 / ‖s‖)` forms.
@@ -139,11 +140,31 @@ theorem stirlingRemainder_conj {z : ℂ} (hz : z ∈ slitPlane) :
     Complex.log_conj z (slitPlane_arg_ne_pi hz)]
   simp [map_ofNat]
 
+/-- On the slit plane, the real part of `stirlingRemainder z` is the error in Stirling's formula
+for `log ‖Γ z‖`. -/
+theorem stirlingRemainder_re {z : ℂ} (hz : z ∈ slitPlane) :
+    (stirlingRemainder z).re =
+      Real.log ‖Complex.Gamma z‖ -
+        ((z.re - 1 / 2) * Real.log ‖z‖ - z.im * z.arg - z.re + Real.log (2 * π) / 2) := by
+  rw [stirlingRemainder_def, sub_re, logGamma_re hz]
+  simp only [sub_re, add_re, mul_re, log_re, log_im, ofReal_re, sub_im, one_div, inv_re,
+    normSq_ofNat, re_ofNat]
+  norm_num
+
+/-- On the positive real axis, `stirlingRemainder x` is the real logarithmic Stirling remainder
+cast to `ℂ`. -/
+theorem stirlingRemainder_ofReal {x : ℝ} (hx : 0 < x) :
+    stirlingRemainder x =
+      ((Real.log (Real.Gamma x) -
+        ((x - 1 / 2) * Real.log x - x + Real.log (2 * π) / 2) : ℝ) : ℂ) := by
+  rw [stirlingRemainder_def, logGamma_ofReal hx, ← ofReal_log hx.le]
+  push_cast
+  ring
+
 /-- On the positive real axis, `stirlingRemainder` is real-valued. -/
 theorem stirlingRemainder_ofReal_im {x : ℝ} (hx : 0 < x) :
     (stirlingRemainder x).im = 0 := by
-  rw [stirlingRemainder_def, logGamma_ofReal hx, ← ofReal_log hx.le]
-  simp
+  rw [stirlingRemainder_ofReal hx, ofReal_im]
 
 /-- Shift relation for `stirlingRemainder` under `z ↦ z + 1` on the slit plane. -/
 theorem stirlingRemainder_add_one {z : ℂ} (hz : z ∈ slitPlane) :
@@ -250,9 +271,8 @@ theorem tendsto_stirlingRemainder_natCast_add_one :
   rw [ofReal_zero] at h
   refine h.congr fun n ↦ ?_
   have hn : (0 : ℝ) < n + 1 := by positivity
-  rw [Function.comp_apply, stirlingRemainder_def, logGamma_ofReal hn, Real.Gamma_nat_eq_factorial,
-    ← ofReal_log hn.le]
-  push_cast
+  rw [Function.comp_apply, stirlingRemainder_ofReal hn, Real.Gamma_nat_eq_factorial]
+  congr 1
   ring
 
 /-- Scaling a nonzero `s` by `R / ‖s‖` moves it along its ray to the point of norm `R`. -/
@@ -342,12 +362,8 @@ theorem abs_log_norm_Gamma_sub_stirling_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ) (
     (hs : |s.arg| ≤ π - δ) (hs0 : s ≠ 0) :
     |Real.log ‖Complex.Gamma s‖ - ((s.re - 1 / 2) * Real.log ‖s‖ - s.im * s.arg - s.re +
       Real.log (2 * π) / 2)| ≤ 2 / ((1 - Real.cos δ) ^ 3 * ‖s‖) := by
-  refine le_trans (le_of_eq ?_) ((abs_re_le_norm _).trans
-    (norm_logGamma_sub_stirling_le hδ hδπ hs hs0))
-  congr 1
-  rw [sub_re, logGamma_re (mem_slitPlane_of_abs_arg_le hδ hs hs0)]
-  simp only [sub_re, add_re, mul_re, log_re, log_im, ofReal_re, sub_im, one_div, inv_re,
-    normSq_ofNat, re_ofNat]
-  norm_num
+  rw [← stirlingRemainder_re (mem_slitPlane_of_abs_arg_le hδ hs hs0)]
+  exact (abs_re_le_norm _).trans
+    ((norm_stirlingError_le hδ hδπ hs hs0).trans_eq (div_div _ _ _))
 
 end TauCeti

@@ -14,7 +14,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import TauCeti.Analysis.Calculus.Deriv.Fract
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.HalfAngle
 public import Mathlib.MeasureTheory.Function.Floor
-import TauCeti.Analysis.SpecialFunctions.Integrals.HalfLineRational
+import TauCeti.Analysis.SpecialFunctions.Integrals.PeriodicStieltjes
 
 /-!
 # Uniform sectorial digamma asymptotics
@@ -31,10 +31,12 @@ explicit error bound above.
 
 Integrating the sawtooth `fract t - 1/2` in that remainder by parts against the periodic kernel
 `P₂(t) = (fract t ^ 2 - fract t) / 2`, which vanishes at the integers and has `|P₂| ≤ 1/8`, gives
-both the exact improper-integral representation
+the exact improper-integral representation
 `digamma s - log s + 1 / (2s) = -2 ∫_{t > 0} ((fract t - fract t ^ 2) / 2) / (s + t) ^ 3 dt`
-(`Complex.digamma_sub_log_add_inv_two_mul_eq_integral`) and the second-order bound
-`‖digamma s - log s + 1 / (2s)‖ ≤ 2 / ((1 - cos δ) ^ 3 ‖s‖ ^ 2)` on the sector
+(`Complex.digamma_sub_log_add_inv_two_mul_eq_integral`), Nemes's explicit slit-plane bound
+`‖digamma z - log z + 1 / (2z)‖ ≤ 1 / (8 * cos (arg z / 2) ^ 3 * ‖z‖ ^ 2)`
+(`Complex.norm_digamma_sub_log_add_inv_two_mul_le`), and the second-order sector bound
+`‖digamma s - log s + 1 / (2s)‖ ≤ 2 / ((1 - cos δ) ^ 3 ‖s‖ ^ 2)`
 (`Complex.norm_digamma_sub_log_add_inv_two_mul_le_of_abs_arg_le`). This is the input to Stirling's
 formula on sectors and to the Stieltjes representation of the Stirling remainder, corresponding to
 [DLMF 5.11.1](https://dlmf.nist.gov/5.11.E1) and [DLMF 5.11.2](https://dlmf.nist.gov/5.11.E2).
@@ -55,7 +57,7 @@ private theorem add_ofReal_mem_slitPlane {s : ℂ} (hs : s ∈ slitPlane) {t : �
 
 private theorem add_ofReal_ne_zero {s : ℂ} (hs : s ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
     s + t ≠ 0 :=
-  slitPlane_ne_zero (add_ofReal_mem_slitPlane hs ht)
+  mem_slitPlane_iff_add_ofReal_ne_zero.mp hs t ht
 
 private theorem add_natCast_ne_zero {s : ℂ} (hs : s ∈ slitPlane) (N : ℕ) : s + N ≠ 0 := by
   simpa only [ofReal_natCast] using add_ofReal_ne_zero hs (Nat.cast_nonneg N)
@@ -273,13 +275,14 @@ private theorem sum_Icc_gaussSeries_eq (s : ℂ) (N : ℕ) :
   simp_rw [add_comm (1 : ℂ)] at h
   linear_combination -h
 
-/-- For every non-pole `s` (`∀ n : ℕ, s ≠ -n`), `log (s + N) - ∑_{k ≤ N} (s + k)⁻¹ → ψ(s)` as
-`N → ∞`. By the telescoped Gauss sum, this sequence is
-`G_N + (log (s + N) - log (N + 2)) - (ψ(N + 2) - log (N + 2)) - γ`, where the finite Gauss sum
-`G_N` tends to `ψ(s) + γ` and the two logarithmic differences tend to `0`. -/
+/-- Euler–Gauss limit representation of the digamma function: for every non-pole `s`
+(`∀ n : ℕ, s ≠ -n`), `log (s + N) - ∑_{k ≤ N} (s + k)⁻¹ → ψ(s)` as `N → ∞`. -/
 theorem tendsto_log_add_sub_sum_inv_add {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) :
     Tendsto (fun N : ℕ ↦ Complex.log (s + N) - ∑ k ∈ Finset.Icc 0 N, (s + k)⁻¹)
       atTop (𝓝 (digamma s)) := by
+  -- By `sum_Icc_gaussSeries_eq`, the sequence rewrites as
+  -- `(∑_{n ≤ N} (1 / (n + 1) - 1 / (s + n))) + (log (s + N) - log (N + 2))`
+  -- `- (ψ(N + 2) - log (N + 2)) - γ`.
   have h := ((((tendsto_sum_Icc_gaussSeries hs).add (tendsto_log_add_natCast_sub_log s)).sub
     tendsto_digamma_natCast_add_two_sub_log).sub_const (Real.eulerMascheroniConstant : ℂ))
   convert h using 1
@@ -515,64 +518,6 @@ private theorem norm_digamma_sub_log_add_inv_two_mul_le_of_mul_norm_add_le {s : 
       simpa only [ofReal_natCast] using hsN
     _ = _ := by ring
 
-private theorem integrableOn_fract_sub_fract_sq_div_add_cube {s : ℂ} (hs : s ∈ slitPlane) :
-    IntegrableOn
-      (fun t : ℝ ↦ (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / (s + t) ^ 3) (Ioi 0) := by
-  obtain ⟨c, hc, hden⟩ := TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add hs
-  have hmaj : IntegrableOn (fun t : ℝ ↦ (8 * c ^ 3)⁻¹ * (1 / (1 + t) ^ 3)) (Ioi 0) :=
-    ((TauCeti.integrableOn_Ioi_one_div_add_pow_iff (j := 1)).mpr one_pos).const_mul _
-  have hnum : Continuous fun t : ℝ ↦ (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) := by
-    refine (continuous_ofReal.comp (Int.continuous_fract_sq_sub_fract.neg.div_const 2)).congr
-      fun t ↦ ?_
-    dsimp only [Function.comp_apply, Pi.neg_apply]
-    push_cast
-    ring
-  refine hmaj.mono'
-    ((hnum.continuousOn.div ((continuousOn_const.add continuous_ofReal.continuousOn).pow 3)
-      fun t ht ↦ pow_ne_zero 3 (add_ofReal_ne_zero hs (mem_Ioi.mp ht).le)).aestronglyMeasurable
-      measurableSet_Ioi) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-  have ht0 : 0 ≤ t := (mem_Ioi.mp ht).le
-  have hcube : (c * (1 + t)) ^ 3 ≤ ‖s + t‖ ^ 3 := by
-    rw [add_comm s (t : ℂ)]
-    exact pow_le_pow_left₀ (by positivity) (hden t ht0) 3
-  rw [norm_div, norm_pow, Complex.norm_real, Real.norm_of_nonneg
-    (div_nonneg (Int.fract_sub_fract_sq_nonneg t) zero_le_two)]
-  calc
-    (Int.fract t - Int.fract t ^ 2) / 2 / ‖s + t‖ ^ 3 ≤ (1 / 8) / (c * (1 + t)) ^ 3 :=
-      div_le_div₀ (by norm_num) (by linarith [Int.fract_sub_fract_sq_le t]) (by positivity) hcube
-    _ = (8 * c ^ 3)⁻¹ * (1 / (1 + t) ^ 3) := by field_simp
-
-private theorem not_integrableOn_fract_sub_fract_sq_div_cube :
-    ¬ IntegrableOn
-      (fun t : ℝ ↦ (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / ((0 : ℂ) + t) ^ 3)
-      (Ioi 0) := by
-  intro h
-  have hsub : Ioo (0 : ℝ) (1 / 2) ⊆ Ioi 0 := fun _ ht ↦ ht.1
-  have hre : IntegrableOn (fun t : ℝ ↦
-      ((((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / ((0 : ℂ) + t) ^ 3).re)
-      (Ioo 0 (1 / 2)) :=
-    (h.mono_set hsub).re
-  have hm2 : IntegrableOn (fun t : ℝ ↦ (1 / 4 : ℝ) * t ^ (-2 : ℝ)) (Ioo 0 (1 / 2)) := by
-    refine hre.mono' (((ContinuousOn.rpow_const (s := Ioo (0 : ℝ) (1 / 2)) continuousOn_id
-      fun t ht ↦ Or.inl ht.1.ne').const_mul _).aestronglyMeasurable measurableSet_Ioo) ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
-    have ht0 : 0 < t := ht.1
-    have hfr : Int.fract t = t := Int.fract_eq_self.mpr ⟨ht0.le, by linarith [ht.2]⟩
-    have hval : ((((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / ((0 : ℂ) + t) ^ 3).re =
-        (1 - t) / (2 * t ^ 2) := by
-      rw [zero_add, ← ofReal_pow, ← ofReal_div, ofReal_re, hfr]
-      field_simp [ht0.ne']
-    rw [hval, Real.norm_of_nonneg (by positivity), rpow_neg ht0.le, rpow_two]
-    have : (1 / 2 : ℝ) ≤ 1 - t := by linarith [ht.2]
-    calc
-      (1 / 4 : ℝ) * (t ^ 2)⁻¹ = (1 / 2) / (2 * t ^ 2) := by field_simp; ring
-      _ ≤ (1 - t) / (2 * t ^ 2) := div_le_div_of_nonneg_right this (by positivity)
-  have hrpow : IntegrableOn (fun t : ℝ ↦ t ^ (-2 : ℝ)) (Ioo 0 (1 / 2)) :=
-    IntegrableOn.congr_fun (hm2.const_mul 4) (fun t _ ↦ by ring) measurableSet_Ioo
-  have hlt := (intervalIntegral.integrableOn_Ioo_rpow_iff (by norm_num : (0 : ℝ) < 1 / 2)).mp hrpow
-  linarith
-
 /-- Exact `P₂` Stieltjes integral representation of `ψ(s) - log s + 1 / (2s)` for
 `s ∈ slitPlane ∪ {0}`:
 `digamma s - log s + (2 * s)⁻¹ = -2 * ∫_{t > 0} ((fract t - fract t ^ 2) / 2) / (s + t) ^ 3 dt`
@@ -600,7 +545,7 @@ theorem digamma_sub_log_add_inv_two_mul_eq_integral {s : ℂ} (hs : s ∈ slitPl
         atTop (𝓝 (-2 * ∫ t : ℝ in Ioi 0,
           (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / (s + t) ^ 3)) := by
       simpa using hinv.add ((intervalIntegral_tendsto_integral_Ioi 0
-        (integrableOn_fract_sub_fract_sq_div_add_cube hs)
+        ((TauCeti.integrableOn_Ioi_fract_sub_fract_sq_div_add_pow_iff (j := 1)).mpr hs)
         tendsto_natCast_atTop_atTop).const_mul (-2))
     refine tendsto_nhds_unique hlim1 (hlim2.congr fun N ↦ ?_)
     rw [sum_inv_add_eq_log_sub_integral_fract hs N]
@@ -617,7 +562,22 @@ theorem digamma_sub_log_add_inv_two_mul_eq_integral {s : ℂ} (hs : s ∈ slitPl
     linear_combination -hker
   · have hlhs : digamma 0 - Complex.log 0 + (2 * (0 : ℂ))⁻¹ = 0 := by
       simp [digamma_def, logDeriv_apply]
-    rw [hlhs, integral_undef not_integrableOn_fract_sub_fract_sq_div_cube, mul_zero]
+    rw [hlhs, integral_undef
+      (mt (TauCeti.integrableOn_Ioi_fract_sub_fract_sq_div_add_pow_iff (z := 0) (j := 1)).mp
+        (by simp)), mul_zero]
+
+/-- Nemes's explicit bound for `ψ(z) - log z + 1 / (2z)` on `slitPlane ∪ {0}` (`j = 1` of the
+periodic-quadratic Stieltjes bound; at `z = 0` both sides vanish):
+`‖digamma z - log z + 1 / (2z)‖ ≤ 1 / (8 * cos (arg z / 2) ^ 3 * ‖z‖ ^ 2)`. -/
+theorem norm_digamma_sub_log_add_inv_two_mul_le {z : ℂ} (hz : z ∈ slitPlane ∪ {0}) :
+    ‖digamma z - Complex.log z + (2 * z)⁻¹‖ ≤
+      1 / (8 * Real.cos (z.arg / 2) ^ 3 * ‖z‖ ^ 2) := by
+  rw [digamma_sub_log_add_inv_two_mul_eq_integral hz, norm_mul, norm_neg, Complex.norm_two]
+  refine (mul_le_mul_of_nonneg_left
+    (TauCeti.norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le 1 z) zero_le_two).trans_eq ?_
+  rw [show 8 * ((1 : ℕ) + 1 : ℝ) * Real.cos (z.arg / 2) ^ (1 + 2) * ‖z‖ ^ (1 + 1) =
+      2 * (8 * Real.cos (z.arg / 2) ^ 3 * ‖z‖ ^ 2) by push_cast; ring,
+    one_div, mul_inv, ← mul_assoc, mul_inv_cancel₀ two_ne_zero, one_mul, inv_eq_one_div]
 
 /-- The second-order sectorial digamma bound: on `|arg s| ≤ π - δ`,
 `‖ψ(s) - log s + 1 / (2s)‖ ≤ 2 / ((1 - cos δ) ^ 3 ‖s‖ ^ 2)`. -/

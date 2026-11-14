@@ -17,7 +17,8 @@ sharply, `cos (arg z / 2) * (‖z‖ + t) ≤ ‖z + t‖` for every `z : ℂ` a
 closed sector `|arg z| ≤ π - δ` with `0 ≤ δ` one has `sin (δ / 2) * (‖z‖ + t) ≤ ‖z + t‖`
 (as well as `c = (1 - cos δ) / 2` for `t ≥ 0`). These inequalities control reciprocal kernels in
 sectorial and Stieltjes integrals. A nonzero point of such a sector, with `0 < δ`, lies in the
-slit plane.
+slit plane, and every open sector `{z : ℂ | |arg z| < α ∧ r < ‖z‖}` is preconnected
+(`Complex.isPreconnected_setOf_abs_arg_lt_and_lt_norm`).
 -/
 
 public section
@@ -140,5 +141,62 @@ slit plane. -/
 theorem mem_slitPlane_of_abs_arg_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ) (hs : |s.arg| ≤ Real.pi - δ)
     (hs0 : s ≠ 0) : s ∈ slitPlane :=
   mem_slitPlane_of_abs_arg_lt (by linarith) hs0
+
+/-- Every open sector `{z : ℂ | |arg z| < α ∧ r < ‖z‖}` is preconnected. -/
+theorem isPreconnected_setOf_abs_arg_lt_and_lt_norm {α r : ℝ} :
+    IsPreconnected {z : ℂ | |z.arg| < α ∧ r < ‖z‖} := by
+  let φ : ℝ × ℝ → ℂ := fun p ↦ (p.1 : ℂ) * Complex.exp ((p.2 : ℂ) * Complex.I)
+  have hφ : Continuous φ := by fun_prop
+  let R : Set ℝ := if r < 0 then Set.Ici 0 else Set.Ioi r
+  let T : Set ℝ := if Real.pi < α then Set.univ else Set.Ioo (-α) α
+  have hR : IsPreconnected R := by
+    dsimp only [R]
+    split_ifs <;> [exact isPreconnected_Ici; exact isPreconnected_Ioi]
+  have hT : IsPreconnected T := by
+    dsimp only [T]
+    split_ifs <;> [exact isPreconnected_univ; exact isPreconnected_Ioo]
+  have himg : φ '' (R ×ˢ T) = {z : ℂ | |z.arg| < α ∧ r < ‖z‖} := by
+    ext z
+    constructor
+    · rintro ⟨⟨ρ, θ⟩, ⟨hρ, hθ⟩, rfl⟩
+      have hρ0 : 0 ≤ ρ := by
+        dsimp only [R] at hρ
+        split_ifs at hρ with hr
+        · exact hρ
+        · exact (not_lt.mp hr).trans hρ.le
+      have hnorm : ‖φ (ρ, θ)‖ = ρ := by
+        dsimp only [φ]
+        rw [norm_mul, norm_exp_ofReal_mul_I, Complex.norm_real, Real.norm_of_nonneg hρ0, mul_one]
+      have hrρ : r < ρ := by
+        dsimp only [R] at hρ
+        split_ifs at hρ with hr
+        · exact hr.trans_le hρ
+        · exact hρ
+      refine ⟨?_, by rwa [hnorm]⟩
+      dsimp only [T] at hθ
+      split_ifs at hθ with hα
+      · exact (abs_arg_le_pi _).trans_lt hα
+      · rcases hρ0.eq_or_lt with rfl | hρ_pos
+        · dsimp only [φ]
+          rw [ofReal_zero, zero_mul, arg_zero, abs_zero]
+          linarith [hθ.1, hθ.2]
+        · have harg : (φ (ρ, θ)).arg = θ := by
+            dsimp only [φ]
+            rw [arg_real_mul _ hρ_pos, arg_exp_mul_I, toIocMod_eq_self]
+            exact ⟨by linarith [hθ.1, not_lt.mp hα], by linarith [hθ.2, not_lt.mp hα]⟩
+          rw [harg]
+          exact abs_lt.mpr hθ
+    · rintro ⟨harg, hnorm⟩
+      refine ⟨(‖z‖, z.arg), ⟨?_, ?_⟩, norm_mul_exp_arg_mul_I z⟩
+      · dsimp only [R]
+        split_ifs with hr
+        · exact norm_nonneg z
+        · exact hnorm
+      · dsimp only [T]
+        split_ifs with hα
+        · exact Set.mem_univ _
+        · exact abs_lt.mp harg
+  rw [← himg]
+  exact (hR.prod hT).image φ hφ.continuousOn
 
 end Complex

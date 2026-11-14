@@ -161,32 +161,25 @@ theorem integral_Ioi_sq_div_sq_add_sq_mul_sq_add_sq (a c : ℝ) :
 `0 < a`: for `a ≤ 0` the pole `t = -a` lies in `[0, ∞)` and has order `j + 2 ≥ 2`. -/
 theorem integrableOn_Ioi_one_div_add_pow_iff {a : ℝ} {j : ℕ} :
     IntegrableOn (fun t : ℝ ↦ 1 / (a + t) ^ (j + 2)) (Ioi 0) ↔ 0 < a := by
-  refine ⟨fun h ↦ ?_, fun ha ↦ ?_⟩
-  · by_contra! ha
-    have hsub : Ioo (-a) (-a + 1) ⊆ Ioi 0 := fun t ht ↦ mem_Ioi.mpr (by linarith [ht.1])
-    have h1 : IntegrableOn (fun t : ℝ ↦ (t - (-a)) ^ (-1 : ℝ)) (Ioo (-a) (-a + 1)) := by
-      refine (h.mono_set hsub).mono'
-        ((ContinuousOn.rpow_const (f := fun t : ℝ ↦ t - (-a)) (by fun_prop)
-          fun t ht ↦ Or.inl (by linarith [ht.1])).aestronglyMeasurable measurableSet_Ioo) ?_
-      filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
-      have hpos : 0 < a + t := by linarith [ht.1]
-      have hle1 : a + t ≤ 1 := by linarith [ht.2]
-      rw [sub_neg_eq_add, add_comm t a, rpow_neg_one, Real.norm_of_nonneg (inv_nonneg.mpr hpos.le),
-        one_div]
-      exact inv_anti₀ (pow_pos hpos _) (pow_le_of_le_one hpos.le hle1 (Nat.succ_ne_zero _))
-    have h2 : IntervalIntegrable (fun u : ℝ ↦ u ^ (-1 : ℝ)) volume 0 1 := by
-      have hi : IntervalIntegrable (fun t : ℝ ↦ (t - (-a)) ^ (-1 : ℝ)) volume (-a) (-a + 1) :=
-        (intervalIntegrable_iff_integrableOn_Ioo_of_le (by linarith)).mpr h1
-      simpa using hi.comp_add_right (-a)
-    have h3 := (intervalIntegral.integrableOn_Ioo_rpow_iff zero_lt_one).mp
-      ((intervalIntegrable_iff_integrableOn_Ioo_of_le zero_le_one).mp h2)
-    linarith
-  · refine (integrableOn_add_rpow_Ioi_of_lt (a := -(j + 2 : ℝ)) (c := 0) (m := a)
-      (by linarith) (by linarith)).congr_fun (fun t ht ↦ ?_) measurableSet_Ioi
-    dsimp only
-    have hpos : 0 < t + a := by linarith [mem_Ioi.mp ht]
-    rw [show -(j + 2 : ℝ) = -(((j + 2 : ℕ) : ℝ)) by push_cast; ring, rpow_neg hpos.le,
-      rpow_natCast, add_comm t a, one_div]
+  have himg : (fun t : ℝ ↦ a + t) '' Ioi (0 : ℝ) = Ioi a := by
+    rw [image_const_add_Ioi, add_zero]
+  have htr : IntegrableOn (fun t : ℝ ↦ 1 / (a + t) ^ (j + 2)) (Ioi 0) ↔
+      IntegrableOn (fun u : ℝ ↦ 1 / u ^ (j + 2)) (Ioi a) := by
+    rw [← himg, (measurePreserving_add_left volume a).integrableOn_image
+      (measurableEmbedding_addLeft a)]
+    simp only [Function.comp_def]
+  rw [htr]
+  have hrpow {c : ℝ} (hc : 0 ≤ c) :
+      IntegrableOn (fun u : ℝ ↦ 1 / u ^ (j + 2)) (Ioi c) ↔
+        IntegrableOn (fun u : ℝ ↦ u ^ (-(j + 2 : ℝ))) (Ioi c) :=
+    integrableOn_congr_fun (fun u hu ↦ by
+      have hu0 : 0 < u := hc.trans_lt hu
+      rw [show -(j + 2 : ℝ) = -(((j + 2 : ℕ) : ℝ)) by push_cast; ring, rpow_neg hu0.le,
+        rpow_natCast, one_div]) measurableSet_Ioi
+  refine ⟨fun h ↦ ?_, fun ha ↦ (hrpow ha.le).mpr (integrableOn_Ioi_rpow_of_lt (by linarith) ha)⟩
+  by_contra! ha
+  exact not_integrableOn_Ioi_rpow (-(j + 2 : ℝ))
+    ((hrpow le_rfl).mp (h.mono_set (Ioi_subset_Ioi ha)))
 
 /-- For `0 ≤ a` and `j : ℕ`, `∫_{t > 0} 1 / (a + t) ^ (j + 2) dt = 1 / ((j + 1) * a ^ (j + 1))`
 (at `a = 0` the integrand is not integrable and both sides vanish). -/
@@ -195,31 +188,20 @@ theorem integral_Ioi_one_div_add_pow {a : ℝ} (ha : 0 ≤ a) (j : ℕ) :
   rcases ha.eq_or_lt with rfl | ha'
   · rw [integral_undef (mt integrableOn_Ioi_one_div_add_pow_iff.mp (lt_irrefl 0))]
     simp [zero_pow (Nat.succ_ne_zero j)]
-  · let G : ℝ → ℝ := fun t ↦ -1 / ((j + 1 : ℝ) * (a + t) ^ (j + 1))
-    have hcont : ContinuousWithinAt G (Ici 0) 0 := by
-      refine (continuousAt_const.div ?_ (by positivity)).continuousWithinAt
-      exact continuousAt_const.mul ((continuousAt_const.add continuousAt_id).pow _)
-    have hderiv : ∀ t ∈ Ioi (0 : ℝ), HasDerivAt G (1 / (a + t) ^ (j + 2)) t := fun t ht ↦ by
-      have hpos : 0 < a + t := by linarith [mem_Ioi.mp ht]
-      have hp : HasDerivAt (fun u : ℝ ↦ (j + 1 : ℝ) * (a + u) ^ (j + 1))
-          ((j + 1 : ℝ) * ((j + 1 : ℕ) * (a + t) ^ j * 1)) t :=
-        (((hasDerivAt_id' t).const_add a).pow (j + 1)).const_mul (j + 1 : ℝ)
-      have hd := (hp.inv (by positivity)).neg
-      refine hd.congr_of_eventuallyEq (Eventually.of_forall fun u ↦ ?_) |>.congr_deriv ?_
-      · simp [G, neg_div]
-      · push_cast
-        field_simp [hpos.ne']
-        ring
-    have hlim : Tendsto G atTop (𝓝 0) := by
-      have htop : Tendsto (fun t : ℝ ↦ (j + 1 : ℝ) * (a + t) ^ (j + 1)) atTop atTop :=
-        Tendsto.const_mul_atTop (by positivity)
-          ((tendsto_pow_atTop (Nat.succ_ne_zero j)).comp
-            (tendsto_atTop_add_const_left atTop a tendsto_id))
-      simpa [G, neg_div] using (tendsto_inv_atTop_zero.comp htop).neg
-    rw [integral_Ioi_of_hasDerivAt_of_nonneg hcont hderiv (fun t ht ↦ by
-      have : 0 < a + t := by linarith [mem_Ioi.mp ht]
-      positivity) hlim]
-    simp only [G, add_zero]
-    ring
+  · have himg : (fun t : ℝ ↦ a + t) '' Ioi (0 : ℝ) = Ioi a := by
+      rw [image_const_add_Ioi, add_zero]
+    rw [← (measurePreserving_add_left volume a).setIntegral_image_emb
+      (measurableEmbedding_addLeft a) (fun u : ℝ ↦ 1 / u ^ (j + 2)) (Ioi 0), himg]
+    have hcongr : ∫ u : ℝ in Ioi a, 1 / u ^ (j + 2) =
+        ∫ u : ℝ in Ioi a, u ^ (-(j + 2 : ℝ)) :=
+      setIntegral_congr_fun measurableSet_Ioi fun u hu ↦ by
+        have hu0 : 0 < u := ha'.trans hu
+        rw [show -(j + 2 : ℝ) = -(((j + 2 : ℕ) : ℝ)) by push_cast; ring, rpow_neg hu0.le,
+          rpow_natCast, one_div]
+    rw [hcongr, integral_Ioi_rpow_of_lt (by linarith) ha',
+      show -(j + 2 : ℝ) + 1 = -(((j + 1 : ℕ) : ℝ)) by push_cast; ring,
+      rpow_neg ha'.le, rpow_natCast]
+    push_cast
+    field_simp [ha'.ne']
 
 end TauCeti

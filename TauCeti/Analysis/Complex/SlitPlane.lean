@@ -38,7 +38,8 @@ is a principal logarithm.
 
 ## Main declarations
 
-* `Complex.one_sub_mul_ofReal_mem_slitPlane`
+* `Complex.conj_mem_slitPlane`, `Complex.mem_slitPlane_iff_add_ofReal_ne_zero`,
+  `Complex.one_sub_mul_ofReal_mem_slitPlane`
 * `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`, `TauCeti.one_add_div_mem_slitPlane`
 * `TauCeti.mem_slitPlane_of_norm_one_sub_lt_one_add`,
   `TauCeti.div_mem_slitPlane_of_norm_sub_lt_add`
@@ -318,6 +319,18 @@ theorem im_eq_zero_of_notMem_slitPlane {z : ℂ} (hz : z ∉ slitPlane) : z.im =
 @[simp]
 theorem conj_mem_slitPlane {z : ℂ} : (starRingEnd ℂ) z ∈ slitPlane ↔ z ∈ slitPlane := by
   simp [mem_slitPlane_iff]
+
+/-- A complex number lies in the slit plane if and only if no nonnegative real translate
+vanishes. -/
+theorem mem_slitPlane_iff_add_ofReal_ne_zero {z : ℂ} :
+    z ∈ slitPlane ↔ ∀ t : ℝ, 0 ≤ t → z + (t : ℂ) ≠ 0 := by
+  refine ⟨fun hz t ht ↦ ?_, fun h ↦ by_contra fun hz ↦ ?_⟩
+  · rw [add_comm]
+    exact slitPlane_ne_zero (TauCeti.ofReal_add_mem_slitPlane hz ht)
+  · have him : z.im = 0 := im_eq_zero_of_notMem_slitPlane hz
+    have hre : z.re ≤ 0 := le_of_not_gt fun hp ↦ hz (mem_slitPlane_iff.mpr (Or.inl hp))
+    refine h (-z.re) (neg_nonneg.mpr hre) ?_
+    apply Complex.ext <;> simp [him]
 
 /-- Scaling `z` by a real number in `[0, 1]` preserves slit-plane membership of `1 - z`. -/
 theorem one_sub_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
