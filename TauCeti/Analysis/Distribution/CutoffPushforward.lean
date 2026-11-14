@@ -121,8 +121,7 @@ theorem comp_cutoffPullbackCLM_comp_cutoffPullbackCLM (T : 𝓓(Ω, E [⋀^Fin k
     (T ∘L cutoffPullbackCLM χ Φ hΦ) ∘L
         (cutoffPullbackCLM χ' Ψ hΨ : 𝓓(Ω'', E'' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _) =
       T ∘L cutoffPullbackCLM χ (Ψ ∘ Φ) hΨΦ := by
-  have hTΩ : dsupport T ⊆ Ω := fun x hx ↦
-    χ.tsupport_subset (subset_tsupport _ (by simp [hχ.self_of_nhdsSet x hx]))
+  have hTΩ : dsupport T ⊆ Ω := (isCompact_dsupport_and_subset_of_eventually_eq_one hχ).2
   -- `Φ` is continuous on `Ω`, so `χ' ∘ Φ` is equal to one near the support of `T`.
   have hχ'Φ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ' (Φ x) = 1 := by
     rw [eventually_nhdsSet_iff_forall] at hχ' ⊢

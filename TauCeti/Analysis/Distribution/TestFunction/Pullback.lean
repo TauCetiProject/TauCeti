@@ -516,12 +516,9 @@ theorem cutoffCompCLM_apply (f : 𝓓(Ω', F)) (x : E) :
 of the test function. -/
 theorem tsupport_cutoffCompCLM_subset (f : 𝓓(Ω', F)) :
     tsupport (cutoffCompCLM χ Φ hΦ f) ⊆ tsupport χ ∩ Φ ⁻¹' tsupport f := by
-  refine closure_minimal (fun x hx ↦ ⟨subset_tsupport _ fun h ↦ hx ?_,
-    subset_tsupport _ fun h ↦ hx ?_⟩) <|
-      (hΦ.continuousOn.mono χ.tsupport_subset).preimage_isClosed_of_isClosed
-        (isClosed_tsupport χ) (isClosed_tsupport f)
-  · simp [h]
-  · simp [h]
+  simpa only [cutoffCompCLM, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    tsupport_postcompCLE] using tsupport_cutoffPullbackCLM_subset (χ := χ) (hΦ := hΦ)
+      (postcompCLE (constOfIsEmptyLIE ℝ E' F (Fin 0)).toContinuousLinearEquiv f)
 
 end CutoffPullback
 

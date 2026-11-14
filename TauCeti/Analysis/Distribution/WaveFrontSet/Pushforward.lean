@@ -98,8 +98,7 @@ theorem IsMicrolocallySmoothAt.cutoffPushforwardCLM {A : E →L[ℝ] E'} {T : �
       𝓓'(Ω', ℂ)).IsMicrolocallySmoothAt y η := by
   set D := dsupport T
   set ξ₀ := (A†) η
-  have hD : IsCompact D := χ.hasCompactSupport.of_isClosed_subset isClosed_dsupport
-    fun x hx => subset_tsupport _ (by simp [hχ.self_of_nhdsSet x hx])
+  have hD : IsCompact D := (isCompact_dsupport_and_subset_of_eventually_eq_one hχ).1
   -- `T` decays uniformly in a cone `Γ₀ ∋ Aᵀ η` over a neighbourhood `W` of `D ∩ A⁻¹ {y}`.
   obtain ⟨W, hW, hKW, Γ₀, hΓ₀, hξ₀, hcone₀, hdecay₀⟩ :=
     exists_isOpen_cone_forall_decay_of_isCompact
@@ -163,7 +162,7 @@ theorem waveFrontSet_cutoffPushforwardCLM_subset (A : E →L[ℝ] E') (T : 𝓓'
   · exact ⟨x₀, hx₀, hx₀y, Or.inl hη⟩
   by_contra hne
   refine hS (IsMicrolocallySmoothAt.cutoffPushforwardCLM hχ hy hη fun x hx hxy => ?_)
-  have hxΩ : x ∈ Ω := χ.tsupport_subset (subset_tsupport _ (by simp [hχ.self_of_nhdsSet x hx]))
+  have hxΩ : x ∈ Ω := (isCompact_dsupport_and_subset_of_eventually_eq_one hχ).2 hx
   by_contra hT
   exact hne ⟨x, hx, hxy, Or.inr (mem_waveFrontSet_iff.2 ⟨hxΩ, hη, hT⟩)⟩
 
