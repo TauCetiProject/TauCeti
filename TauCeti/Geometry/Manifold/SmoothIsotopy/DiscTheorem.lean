@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Euclidean
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Extension
 
