@@ -16,7 +16,9 @@ The norms of the powers of an element in the open unit ball form a summable seri
 the seminorm is not normalized. The same holds after multiplication by bounded coefficients.
 Completeness then gives summability in the ring itself. In a complete seminormed group, a
 sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is summable, by the ratio
-test.
+test. In a normed division ring, integer powers of elements of norm at least one satisfy
+`‖w ^ n‖ ≤ ‖w‖ ^ n.toNat`, giving uniform polynomial-times-geometric majorants for `z ^ m / w ^ n`
+across all integer weights.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
@@ -87,6 +89,34 @@ theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] 
     refine Summable.of_norm_bounded_eventually_nat (g := fun _ ↦ 0) summable_zero ?_
     filter_upwards [Filter.eventually_ge_atTop 2] with n hn
     simpa [add_tsub_cancel_of_le (hj2.trans hn)] using hzero j hj (n - j)
+
+/-- In a normed division ring, an element of norm at least `1` satisfies
+`‖w ^ n‖ ≤ ‖w‖ ^ n.toNat` uniformly across all integer exponents `n : ℤ`. -/
+theorem norm_zpow_le_pow_toNat {K : Type*} [NormedDivisionRing K] {w : K} (hw : 1 ≤ ‖w‖)
+    (n : ℤ) : ‖w ^ n‖ ≤ ‖w‖ ^ n.toNat := by
+  rw [norm_zpow, ← zpow_natCast]
+  exact zpow_le_zpow_right₀ hw (Int.self_le_toNat n)
+
+/-- Uniform norm majorant for `z ^ m / w ^ n` across all integer exponents `n : ℤ` when
+`1 ≤ ‖w‖` and `‖z‖ ≤ r`. -/
+theorem norm_pow_div_zpow_le {K : Type*} [NormedDivisionRing K] (n : ℤ) (m : ℕ) {z w : K}
+    {r : ℝ} (hw : 1 ≤ ‖w‖) (hz : ‖z‖ ≤ r) :
+    ‖z ^ m / w ^ n‖ ≤ ‖w‖ ^ (-n).toNat * r ^ m := by
+  rw [div_eq_mul_inv, ← zpow_neg, norm_mul, norm_pow, mul_comm]
+  exact mul_le_mul (norm_zpow_le_pow_toNat hw (-n)) (pow_le_pow_left₀ (norm_nonneg z) hz m)
+    (pow_nonneg (norm_nonneg z) m) (pow_nonneg (zero_le_one.trans hw) _)
+
+/-- Uniform norm majorant for `z ^ m / (k + 1) ^ n` across all integer weights `n : ℤ` when
+`‖z‖ ≤ r`. -/
+theorem norm_pow_div_natCast_add_one_zpow_le {K : Type*} [NormedDivisionRing K]
+    [NormSMulClass ℤ K] (n : ℤ) (m k : ℕ) {z : K} {r : ℝ} (hz : ‖z‖ ≤ r) :
+    ‖z ^ m / ((k : K) + 1) ^ n‖ ≤ ((k + 1 : ℕ) : ℝ) ^ (-n).toNat * r ^ m := by
+  rw [← Nat.cast_add_one]
+  have hk : 1 ≤ ‖((k + 1 : ℕ) : K)‖ := by
+    rw [norm_natCast]
+    exact_mod_cast Nat.succ_pos k
+  have h := norm_pow_div_zpow_le n m hk hz
+  rwa [norm_natCast] at h
 
 variable {K : Type*} [NormedField K]
 
