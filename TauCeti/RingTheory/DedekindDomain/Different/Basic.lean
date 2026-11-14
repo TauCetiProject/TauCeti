@@ -23,7 +23,8 @@ The multiplicity lemmas express divisibility by powers of an ideal and Dedekind'
 For finite separable fraction-field extensions, the different is nonzero. When it is principal,
 membership in the trace dual is tested by multiplication by a generator, and division by that
 generator identifies `S` with its trace dual. This equivalence feeds the length computation of
-the complementary-module quotient.
+the complementary-module quotient. Finally, `FractionalIdeal.dualEquiv` packages
+`FractionalIdeal.dual` as an involutive permutation of the invertible fractional ideals.
 -/
 
 public section
@@ -317,5 +318,46 @@ theorem differentIdeal_self : differentIdeal D D = ⊤ := by
     Polynomial.derivative_X_sub_C, map_one, ← Ideal.eq_top_iff_one] at h
 
 end TauCeti
+
+namespace FractionalIdeal
+
+section DualEquiv
+
+variable (R K : Type*) {S L : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
+  [Field K] [Algebra R K] [IsFractionRing R K] [Field L] [Algebra K L] [FiniteDimensional K L]
+  [Algebra.IsSeparable K L] [CommRing S] [IsDedekindDomain S] [Algebra R L] [Algebra R S]
+  [Algebra S L] [IsScalarTower R K L] [IsScalarTower R S L] [IsFractionRing S L]
+  [IsIntegralClosure S R L]
+
+/-- In a finite separable extension of fraction fields of Dedekind domains, the trace dual
+`FractionalIdeal.dual` restricts to an involutive permutation of `(FractionalIdeal S⁰ L)ˣ`. -/
+noncomputable def dualEquiv : Equiv.Perm (FractionalIdeal S⁰ L)ˣ where
+  toFun I := Units.mk0 (dual R K (I : FractionalIdeal S⁰ L)) (dual_ne_zero R K I.ne_zero)
+  invFun I := Units.mk0 (dual R K (I : FractionalIdeal S⁰ L)) (dual_ne_zero R K I.ne_zero)
+  left_inv I := Units.ext (dual_dual R K (I : FractionalIdeal S⁰ L))
+  right_inv I := Units.ext (dual_dual R K (I : FractionalIdeal S⁰ L))
+
+/-- Coercion of `FractionalIdeal.dualEquiv` to `FractionalIdeal S⁰ L` is `FractionalIdeal.dual`. -/
+@[simp]
+theorem coe_dualEquiv (I : (FractionalIdeal S⁰ L)ˣ) :
+    ((dualEquiv R K I : (FractionalIdeal S⁰ L)ˣ) : FractionalIdeal S⁰ L) =
+      dual R K (I : FractionalIdeal S⁰ L) :=
+  (rfl)
+
+/-- `FractionalIdeal.dualEquiv` is its own inverse. -/
+@[simp]
+theorem symm_dualEquiv :
+    (dualEquiv R K : Equiv.Perm (FractionalIdeal S⁰ L)ˣ).symm = dualEquiv R K :=
+  (rfl)
+
+/-- Applying `FractionalIdeal.dualEquiv` twice is the identity. -/
+@[simp]
+theorem dualEquiv_dualEquiv (I : (FractionalIdeal S⁰ L)ˣ) :
+    dualEquiv R K (dualEquiv R K I) = I :=
+  (dualEquiv R K).symm_apply_apply I
+
+end DualEquiv
+
+end FractionalIdeal
 
 end

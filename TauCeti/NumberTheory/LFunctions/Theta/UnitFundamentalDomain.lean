@@ -23,9 +23,9 @@ This file sets up that action and its fundamental domains:
 * `archNorm y = ∏_w y_w ^ mult w` is the norm of a parameter, so that a complex place counts
   twice. It is the determinant of the quadratic form `x ↦ ∑_w y_w |x_w|²` on the mixed space.
   The parameter `(mult w ^ 2)_w` has norm `16 ^ r₂` (`archNorm_mult_sq`).
-* `unitScale u y` is the action `y_w ↦ |u|_w² y_w` of a unit. It preserves the norm
-  (`archNorm_unitScale`), and its kernel on parameters with nonzero coordinates is the torsion
-  (`unitScale_eq_self_iff`).
+* `unitScale u y` is the action `y_w ↦ |u|_w² y_w` of a unit. It is continuous
+  (`continuous_unitScale`), preserves the norm (`archNorm_unitScale`), and its kernel on parameters
+  with nonzero coordinates is the torsion (`unitScale_eq_self_iff`, `unitScale_of_mem_torsion`).
 * `normOneSurface K` is the hypersurface `S = {y > 0 | N(y) = 1}` on which the units act.
   Coordinatewise inversion and translation by a point of `S` give the self-homeomorphisms
   `surfaceInv` and `surfaceMul`. A bounded set of parameters meets `S` inside a box `[C⁻¹, C]`
@@ -105,6 +105,13 @@ theorem unitScale_pos {y : realSpace K} {w : InfinitePlace K} (hy : 0 < y w) (u 
     0 < unitScale u y w :=
   mul_pos (pow_pos (pos_iff.mpr (by simp)) 2) hy
 
+/-- Scaling by a fixed unit is continuous on `realSpace K`. -/
+@[fun_prop]
+theorem continuous_unitScale (u : (𝓞 K)ˣ) : Continuous (unitScale u : realSpace K → realSpace K) :=
+  (continuous_const_mul (unitScale u 1)).congr fun y ↦ by
+    ext w
+    simp
+
 variable [NumberField K]
 
 /-! ### The norm of a parameter -/
@@ -177,6 +184,14 @@ theorem archNorm_unitScale (u : (𝓞 K)ˣ) (y : realSpace K) :
     simp_rw [← pow_mul, mul_comm 2, pow_mul, prod_pow, prod_eq_abs_norm, Units.norm, Rat.cast_one,
       one_pow]
   simp only [archNorm_apply, unitScale_apply, mul_pow, prod_mul_distrib, hu, one_mul]
+
+/-- Roots of unity have absolute value `1` at every infinite place, so they act trivially on all
+archimedean parameters. -/
+theorem unitScale_of_mem_torsion {u : (𝓞 K)ˣ} (hu : u ∈ torsion K) (y : realSpace K) :
+    unitScale u y = y := by
+  rw [mem_torsion] at hu
+  ext w
+  rw [unitScale_apply, hu w, one_pow, one_mul]
 
 /-- The kernel of the unit action on parameters with nonzero coordinates, positive ones in
 particular, is the torsion: a unit fixes such a parameter exactly when all its absolute values
