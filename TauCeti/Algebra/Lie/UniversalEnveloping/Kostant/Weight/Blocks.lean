@@ -24,8 +24,8 @@ These statements hold over every commutative ring and use `Matrix.BlockUnitriang
 the block `LDU` factorization and its leading-minor criteria apply to these actual weight blocks.
 No faithfulness after reduction or generation of all points is assumed.
 
-The numbering reuses `orderedWeightIndexEquiv`, now on the finite set of distinct weights.
-The exponential calculation reuses the finite divided-power expansion of
+The numbering `orderedWeightBlockEquiv` reuses `orderedWeightIndexEquiv`, now on the finite set of
+distinct weights. The exponential calculation reuses the finite divided-power expansion of
 `kostantRootSubgroupMatrix_eq_sum`.
 
 ## References
@@ -45,7 +45,9 @@ section Blocks
 variable {κ η D : Type*} [Finite η]
 variable [AddCommGroup D] [LinearOrder D]
 
-private noncomputable def weightBlockEquiv (degree : (κ → ℤ) →+ D)
+/-- The equivalence numbering the distinct weights of `wt` by decreasing `degree`. Weights of
+equal degree are ordered by an arbitrary finite numbering. -/
+noncomputable def orderedWeightBlockEquiv (degree : (κ → ℤ) →+ D)
     (wt : η → κ → ℤ) : Set.range wt ≃ Fin (Nat.card (Set.range wt)) := by
   classical
   letI := Fintype.ofFinite (Set.range wt)
@@ -56,7 +58,13 @@ private noncomputable def weightBlockEquiv (degree : (κ → ℤ) →+ D)
 `degree`. Weights of equal degree are ordered by an arbitrary finite numbering. -/
 noncomputable def orderedWeightBlock (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
     (x : η) : Fin (Nat.card (Set.range wt)) :=
-  weightBlockEquiv degree wt ⟨wt x, ⟨x, rfl⟩⟩
+  orderedWeightBlockEquiv degree wt ⟨wt x, ⟨x, rfl⟩⟩
+
+/-- Applying `orderedWeightBlockEquiv` to the range element of `wt x` gives `orderedWeightBlock`. -/
+theorem orderedWeightBlockEquiv_apply_mk (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
+    (x : η) (hx : wt x ∈ Set.range wt) :
+    orderedWeightBlockEquiv degree wt ⟨wt x, hx⟩ = orderedWeightBlock degree wt x :=
+  (rfl)
 
 /-- Two basis indices belong to the same weight block exactly when their weights are equal. -/
 @[simp]
@@ -64,18 +72,18 @@ theorem orderedWeightBlock_eq_iff (degree : (κ → ℤ) →+ D) (wt : η → κ
     orderedWeightBlock degree wt r = orderedWeightBlock degree wt s ↔ wt r = wt s := by
   constructor
   · intro hrs
-    exact congrArg Subtype.val ((weightBlockEquiv degree wt).injective hrs)
+    exact congrArg Subtype.val ((orderedWeightBlockEquiv degree wt).injective hrs)
   · intro hrs
-    exact congrArg (weightBlockEquiv degree wt) (Subtype.ext hrs)
+    exact congrArg (orderedWeightBlockEquiv degree wt) (Subtype.ext hrs)
 
 /-- Every numbered weight block contains a basis index. This includes the empty-family case,
 where both the index type and the type of block numbers are empty. -/
 theorem orderedWeightBlock_surjective (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ) :
     Function.Surjective (orderedWeightBlock degree wt) := by
   intro k
-  obtain ⟨μ, hμ⟩ := (weightBlockEquiv degree wt).surjective k
+  obtain ⟨μ, hμ⟩ := (orderedWeightBlockEquiv degree wt).surjective k
   obtain ⟨x, hx⟩ := μ.property
-  exact ⟨x, (congrArg (weightBlockEquiv degree wt) (Subtype.ext hx)).trans hμ⟩
+  exact ⟨x, (congrArg (orderedWeightBlockEquiv degree wt) (Subtype.ext hx)).trans hμ⟩
 
 /-- The cardinality cast in the block numbering preserves the underlying natural number. -/
 private theorem orderedWeightBlock_val (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
@@ -84,7 +92,7 @@ private theorem orderedWeightBlock_val (degree : (κ → ℤ) →+ D) (wt : η �
       letI := Fintype.ofFinite (Set.range wt)
       (orderedWeightIndexEquiv degree (fun μ : Set.range wt => μ.val) ⟨wt x, x, rfl⟩).val := by
   classical
-  simp only [orderedWeightBlock, weightBlockEquiv, Equiv.trans_apply, finCongr_apply_coe]
+  simp only [orderedWeightBlock, orderedWeightBlockEquiv, Equiv.trans_apply, finCongr_apply_coe]
 
 /-- A strictly larger degree places a weight space strictly earlier in the block ranking. -/
 theorem orderedWeightBlock_lt_of_degree_lt (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)

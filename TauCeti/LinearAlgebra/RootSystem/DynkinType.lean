@@ -362,6 +362,21 @@ theorem cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two (t : DynkinType)
       simp only [cartanMatrix_G2, Matrix.transpose_apply] at hji ⊢
       fin_cases i <;> fin_cases j <;> norm_num [CartanMatrix.G₂] at *
 
+/-- At any pair of distinct nodes whose Cartan entries multiply to `c > 0`, one of the two
+directed entries is `-1` and the other is `-c`. -/
+theorem cartanMatrix_offDiag_of_mul_eq (t : DynkinType) {i j : Fin t.rank} (hij : i ≠ j)
+    {c : ℤ} (hc : 0 < c) (hp : t.cartanMatrix i j * t.cartanMatrix j i = c) :
+    t.cartanMatrix i j = -1 ∧ t.cartanMatrix j i = -c ∨
+      t.cartanMatrix j i = -1 ∧ t.cartanMatrix i j = -c := by
+  have ha : t.cartanMatrix i j ≤ 0 := t.cartanMatrix_apply_le_zero_of_ne hij
+  rcases (by omega : t.cartanMatrix i j = 0 ∨ t.cartanMatrix i j = -1 ∨
+      t.cartanMatrix i j ≤ -2) with h | h | h
+  · simp [h] at hp
+    omega
+  · exact Or.inl ⟨h, by rw [h] at hp; omega⟩
+  · have h' := t.cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two j i h
+    exact Or.inr ⟨h', by rw [h'] at hp; omega⟩
+
 /-- The double edge of type `Bₙ`: with at least two simple roots, the last two are joined by an
 entry `-2`. -/
 private lemma cartanMatrix_B_apply_eq_neg_two {n : ℕ} (hn : 2 ≤ n) (i j : Fin n)

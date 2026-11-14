@@ -5,22 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Algebra.OuterAut
 public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.Algebra.Lie.Sl2.Weyl.WeightOne
-import Mathlib.Algebra.Ring.Action.ConjAct
 
 /-!
-# Single-bond Weyl braid relations for Serre operators
+# Single-bond Weyl braid relations and shared Weyl-conjugation helpers for Serre operators
 
 In an associative rational algebra, the pinned Weyl units of a nilpotent Serre system
 satisfy the length-three braid relation at every single bond. This is an equality of units,
 not merely of their conjugation actions or their images modulo a torus. It supplies the
 rational operator identity from which integral lattice identities can be transported.
 
+This file also provides shared conjugation helpers (`weylUnit_eq_one_of_H_eq_zero`,
+`conjAlgEquiv_weylUnit_e`, `conjAlgEquiv_weylUnit_f`, and `conjAlgEquiv_weylUnit_neg`)
+reused in the double- and triple-bond braid calculations.
+
 The root-string formulas come from `IsSl2Triple.weylUnit_conj_of_lie_h_eq_neg` and its
 highest-weight counterpart. Serre's nested-bracket identities then identify the conjugated
-raising and lowering operators; functoriality of the nilpotent exponential identifies the
-Weyl units themselves. The Geck single-bond sign comparison in
+raising and lowering operators; functoriality of the nilpotent exponential (`conj_weylUnit`)
+identifies the Weyl units themselves. The Geck single-bond sign comparison in
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.SingleBond`
 is derived from `TauCeti.IsSerreSystem.weylUnit_conj_E_of_cartan_eq_neg_one`.
 No faithfulness, weight basis or finite-dimensionality is required.
@@ -38,9 +42,43 @@ namespace TauCeti.IsSerreSystem
 open LieAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+attribute [local instance] HasUniqueDiv.of_module_rat
 
 variable {B A : Type*} [Ring A] [Algebra ℚ A]
   {CM : Matrix B B ℤ} {H E F : B → A}
+
+/-- In a rational Serre system, a zero Cartan generator at `i` forces the pinned Weyl unit at
+every node `j` with `CM i j ≠ 0` to be `1`. -/
+theorem weylUnit_eq_one_of_H_eq_zero (hs : IsSerreSystem ℚ CM H E F) {i j : B}
+    (hH : H i = 0) (hij : CM i j ≠ 0) (hEj : IsNilpotent (E j)) (hFj : IsNilpotent (F j)) :
+    weylUnit hEj hFj = 1 :=
+  weylUnit_of_eq_zero hEj hFj
+    (hs.E_eq_zero_of_H_eq_zero hH hij) (hs.F_eq_zero_of_H_eq_zero hH hij)
+
+/-- At a nondegenerate node with `CM i i = 2`, conjugation by the pinned Weyl unit sends `E i`
+to `-F i`. -/
+theorem conjAlgEquiv_weylUnit_e (hs : IsSerreSystem ℚ CM H E F) {i : B}
+    (hii : CM i i = 2) (hi : H i ≠ 0) (hE : IsNilpotent (E i)) (hF : IsNilpotent (F i)) :
+    (weylUnit hE hF).conjAlgEquiv ℚ (E i) = -F i := by
+  simpa only [Units.conjAlgEquiv_apply, coe_weylUnit, coe_inv_weylUnit] using
+    weylUnit_conj_e (hs.isSl2Triple hii hi) hE hF
+
+/-- At a nondegenerate node with `CM i i = 2`, conjugation by the pinned Weyl unit sends `F i`
+to `-E i`. -/
+theorem conjAlgEquiv_weylUnit_f (hs : IsSerreSystem ℚ CM H E F) {i : B}
+    (hii : CM i i = 2) (hi : H i ≠ 0) (hE : IsNilpotent (E i)) (hF : IsNilpotent (F i)) :
+    (weylUnit hE hF).conjAlgEquiv ℚ (F i) = -E i := by
+  simpa only [Units.conjAlgEquiv_apply, coe_weylUnit, coe_inv_weylUnit] using
+    weylUnit_conj_f (hs.isSl2Triple hii hi) hE hF
+
+/-- Signed exchange (`E ↦ -F`, `F ↦ -E`) preserves the conjugation algebra equivalence of the
+pinned Weyl unit at any nondegenerate node of a Serre system with `CM i i = 2`. -/
+theorem conjAlgEquiv_weylUnit_neg (hs : IsSerreSystem ℚ CM H E F) {i : B}
+    (hii : CM i i = 2) (hi : H i ≠ 0) (hE : IsNilpotent (E i)) (hF : IsNilpotent (F i)) :
+    (weylUnit hF.neg hE.neg).conjAlgEquiv ℚ = (weylUnit hE hF).conjAlgEquiv ℚ := by
+  ext x
+  simpa only [Units.conjAlgEquiv_apply] using
+    (hs.isSl2Triple hii hi).weylUnit_neg_symm_conj hE hF x
 
 /-- At a directed Cartan entry minus one, the pinned Weyl unit sends the other raising
 operator to the ordered raising commutator. -/
@@ -83,61 +121,40 @@ theorem weylUnit_braid_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
     (hEj : IsNilpotent (E j)) (hFj : IsNilpotent (F j)) :
     weylUnit hEi hFi * weylUnit hEj hFj * weylUnit hEi hFi =
       weylUnit hEj hFj * weylUnit hEi hFi * weylUnit hEj hFj := by
+  -- A zero Cartan operator forces all four root operators to vanish at a single bond.
+  by_cases hj : H j = 0
+  · have hi0 : H i = 0 := hs.H_eq_zero_of_H_eq_zero hj (by omega)
+    simp [hs.weylUnit_eq_one_of_H_eq_zero hj (by omega) hEi hFi,
+      hs.weylUnit_eq_one_of_H_eq_zero hi0 (by omega) hEj hFj]
   let a := weylUnit hEi hFi
   let b := weylUnit hEj hFj
-  let c (u : Aˣ) : A →+* A :=
-    MulSemiringAction.toRingHom (ConjAct Aˣ) A (ConjAct.toConjAct u)
-  have hc (u : Aˣ) (x : A) : c u x = (u : A) * x * ↑u⁻¹ := by
-    simp only [c, MulSemiringAction.toRingHom_apply, ConjAct.units_smul_def,
-      ConjAct.ofConjAct_toConjAct]
-  have hne : i ≠ j := by intro h; subst j; omega
-  have haE : c a (E j) = ⁅E i, E j⁆ :=
-    hs.weylUnit_conj_E_of_cartan_eq_neg_one hii hij hEi hFi
-  have haF : c a (F j) = -⁅F i, F j⁆ :=
-    hs.weylUnit_conj_F_of_cartan_eq_neg_one hii hij hEi hFi
-  have hbE : c b (E i) = ⁅E j, E i⁆ :=
-    hs.weylUnit_conj_E_of_cartan_eq_neg_one hjj hji hEj hFj
-  have hbF : c b (F i) = -⁅F j, F i⁆ :=
-    hs.weylUnit_conj_F_of_cartan_eq_neg_one hjj hji hEj hFj
-  -- A zero Cartan operator forces all four root operators to vanish at a single bond.
-  by_cases hH : H j = 0
-  · have hEi0 : E i = 0 := by simpa [hH, hji] using hs.lie_H_E j i
-    have hFi0 : F i = 0 := by simpa [hH, hji] using (hs.lie_H_F j i).symm
-    have hHi0 : H i = 0 := by rw [← hs.lie_E_F_self i, hEi0, zero_lie]
-    have hEj0 : E j = 0 := by simpa [hHi0, hij] using hs.lie_H_E i j
-    have hFj0 : F j = 0 := by simpa [hHi0, hij] using (hs.lie_H_F i j).symm
-    apply Units.ext
-    simp [hEi0, hFi0, hEj0, hFj0]
-  have ht := hs.isSl2Triple hjj hH
-  have hbEj : c b (E j) = -F j := by
-    simpa only [hc, b, coe_weylUnit, coe_inv_weylUnit] using weylUnit_conj_e ht hEj hFj
-  have hbFj : c b (F j) = -E j := by
-    simpa only [hc, b, coe_weylUnit, coe_inv_weylUnit] using weylUnit_conj_f ht hEj hFj
-  -- Conjugation by b * a takes the j-th raising and lowering operators to the i-th ones.
-  have maplie (u : Aˣ) (x y : A) : c u ⁅x, y⁆ = ⁅c u x, c u y⁆ := by
+  have hne : i ≠ j := by rintro rfl; omega
+  have maplie (u : Aˣ) (x y : A) :
+      u.conjAlgEquiv ℚ ⁅x, y⁆ = ⁅u.conjAlgEquiv ℚ x, u.conjAlgEquiv ℚ y⁆ := by
     simp only [Ring.lie_def, map_sub, map_mul]
-  have hE : c b (c a (E j)) = E i := by
-    rw [haE, maplie, hbE, hbEj, ← lie_skew (E j) (E i)]
+  -- Conjugation by b * a takes the j-th raising and lowering operators to the i-th ones.
+  have hE : (b * a).conjAlgEquiv ℚ (E j) = E i := by
+    rw [Units.conjAlgEquiv_mul, AlgEquiv.mul_apply, a.conjAlgEquiv_apply ℚ,
+      hs.weylUnit_conj_E_of_cartan_eq_neg_one hii hij hEi hFi, maplie,
+      b.conjAlgEquiv_apply ℚ (E i),
+      hs.weylUnit_conj_E_of_cartan_eq_neg_one hjj hji hEj hFj,
+      hs.conjAlgEquiv_weylUnit_e hjj hj hEj hFj, ← lie_skew (E j) (E i)]
     simpa only [neg_lie, lie_neg, neg_neg, hji, neg_one_zsmul] using
       hs.lie_lie_E_E_F_of_ne hne
-  have hF : c b (c a (F j)) = F i := by
-    rw [haF, map_neg, maplie, hbF, hbFj, ← lie_skew (F j) (F i)]
+  have hF : (b * a).conjAlgEquiv ℚ (F j) = F i := by
+    rw [Units.conjAlgEquiv_mul, AlgEquiv.mul_apply, a.conjAlgEquiv_apply ℚ,
+      hs.weylUnit_conj_F_of_cartan_eq_neg_one hii hij hEi hFi, map_neg, maplie,
+      b.conjAlgEquiv_apply ℚ (F i),
+      hs.weylUnit_conj_F_of_cartan_eq_neg_one hjj hji hEj hFj,
+      hs.conjAlgEquiv_weylUnit_f hjj hj hEj hFj, ← lie_skew (F j) (F i)]
     simpa only [neg_lie, lie_neg, neg_neg, hji, neg_one_zsmul] using
       hs.lie_lie_F_F_E_of_ne hne
-  -- Exponentiate this operator comparison, retaining the units rather than only their action.
-  let d := (c b).comp (c a)
-  have hdE : d (E j) = E i := hE
-  have hdF : d (F j) = F i := hF
-  have hd : d (b : A) = (a : A) := by
-    simp only [b, coe_weylUnit, map_mul, hEj.map_exp d, hFj.neg.map_exp d,
-      map_neg, hdE, hdF]
-    exact (coe_weylUnit hEi hFi).symm
-  have hu : b * a * b * (b * a)⁻¹ = a := by
-    apply Units.ext
-    simpa only [d, RingHom.comp_apply, hc, Units.val_mul, Units.val_inv, mul_inv_rev,
-      mul_assoc] using hd
+  have hu : (b * a) * b * (b * a)⁻¹ = a :=
+    conj_weylUnit (b * a) hEj hFj hEi hFi
+      (by simpa only [Units.conjAlgEquiv_apply] using hE)
+      (by simpa only [Units.conjAlgEquiv_apply] using hF)
   calc
-    _ = (b * a * b * (b * a)⁻¹) * b * a := by rw [hu]
+    a * b * a = ((b * a) * b * (b * a)⁻¹) * b * a := by rw [hu]
     _ = b * a * b := by group
 
 end TauCeti.IsSerreSystem
