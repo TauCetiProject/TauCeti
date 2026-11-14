@@ -353,7 +353,7 @@ theorem cellForm_mapCellModuleEquiv_symm (e : A ≃ₐ[R] B) (μ : Λ)
   simp [cellForm_apply]
 
 /-- `mapCellModuleEquiv` identifies the cell radicals of `c` and `c.map e`. -/
-theorem mem_cellRadical_mapCellModuleEquiv (e : A ≃ₐ[R] B) (μ : Λ) (x : c.CellModule μ) :
+theorem mapCellModuleEquiv_mem_cellRadical_map_iff (e : A ≃ₐ[R] B) (μ : Λ) (x : c.CellModule μ) :
     c.mapCellModuleEquiv e μ x ∈ (c.map e).cellRadical μ ↔ x ∈ c.cellRadical μ := by
   simp only [mem_cellRadical]
   refine ⟨fun hx y ↦ ?_, fun hx y ↦ ?_⟩
@@ -362,10 +362,10 @@ theorem mem_cellRadical_mapCellModuleEquiv (e : A ≃ₐ[R] B) (μ : Λ) (x : c.
     simpa using hx y
 
 /-- The inverse of `mapCellModuleEquiv` identifies the cell radicals of `c.map e` and `c`. -/
-theorem mem_cellRadical_mapCellModuleEquiv_symm (e : A ≃ₐ[R] B) (μ : Λ)
+theorem mapCellModuleEquiv_symm_mem_cellRadical_iff (e : A ≃ₐ[R] B) (μ : Λ)
     (x : (c.map e).CellModule μ) :
     (c.mapCellModuleEquiv e μ).symm x ∈ c.cellRadical μ ↔ x ∈ (c.map e).cellRadical μ := by
-  rw [← c.mem_cellRadical_mapCellModuleEquiv e μ, LinearEquiv.apply_symm_apply]
+  rw [← c.mapCellModuleEquiv_mem_cellRadical_map_iff e μ, LinearEquiv.apply_symm_apply]
 
 /-- Vanishing of the cell form is invariant under `CellularBasis.map`. -/
 @[simp]

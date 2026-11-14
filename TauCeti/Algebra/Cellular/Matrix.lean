@@ -127,19 +127,14 @@ theorem not_isSimpleModule_matrix_int_cellModule_quotient :
         (CellularBasis.matrix ℤ Unit).cellRadical ()) := by
   let c := CellularBasis.matrix ℤ Unit
   intro hsimple
-  have hcoatom : IsCoatom (c.cellRadical ()) := isSimpleModule_iff_isCoatom.mp hsimple
+  have := IsSimpleModule.congr ((c.cellRadical ()).quotEquivOfEqBot cellRadical_matrix).symm
   let v := c.cellBasis () () + c.cellBasis () ()
-  let N : Submodule (Matrix Unit Unit ℤ) (c.CellModule ()) :=
-    Submodule.span (Matrix Unit Unit ℤ) {v}
   have hne_zero : v ≠ 0 := fun h0 ↦ by
     have := congrFun (congrArg (c.cellModuleEquiv ()) h0) ()
     simp [v] at this
-  have hlt : c.cellRadical () < N := by
-    rw [cellRadical_matrix, bot_lt_iff_ne_bot, Submodule.ne_bot_iff]
-    exact ⟨v, Submodule.subset_span (Set.mem_singleton _), hne_zero⟩
-  have hmem : c.cellBasis () () ∈ N := hcoatom.2 N hlt ▸ Submodule.mem_top
-  rw [Submodule.mem_span_singleton] at hmem
-  obtain ⟨m, hm⟩ := hmem
+  obtain ⟨m, hm⟩ := IsSimpleModule.toSpanSingleton_surjective (Matrix Unit Unit ℤ) hne_zero
+    (c.cellBasis () ())
+  rw [LinearMap.toSpanSingleton_apply] at hm
   have hcoord := congrFun (congrArg (c.cellModuleEquiv ()) hm) ()
   simp only [c, v, cellModuleEquiv_smul, cellRep_matrix, map_add, cellModuleEquiv_cellBasis,
     Matrix.mulVec, dotProduct, Fintype.univ_punit, Finset.sum_singleton, Pi.add_apply,

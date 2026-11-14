@@ -202,7 +202,7 @@ theorem det_gramMatrix_baseChange (μ : Λ) :
 /-- `baseChangeCellModuleEquiv` intertwines the `(S ⊗[R] A)`-action on pure tensors with the
 base-changed action `(s₁ ⊗ₜ a) • (s₂ ⊗ₜ x) = (s₁ * s₂) ⊗ₜ (a • x)`. -/
 @[simp]
-theorem smul_baseChangeCellModuleEquiv_tmul (μ : Λ) (s₁ s₂ : S) (a : A) (x : c.CellModule μ) :
+theorem tmul_smul_baseChangeCellModuleEquiv_tmul (μ : Λ) (s₁ s₂ : S) (a : A) (x : c.CellModule μ) :
     (s₁ ⊗ₜ[R] a) • c.baseChangeCellModuleEquiv S μ (s₂ ⊗ₜ[R] x) =
       c.baseChangeCellModuleEquiv S μ ((s₁ * s₂) ⊗ₜ[R] (a • x)) := by
   apply ((c.baseChange S).cellModuleEquiv μ).injective

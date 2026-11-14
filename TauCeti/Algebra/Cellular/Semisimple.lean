@@ -413,12 +413,9 @@ theorem existsUnique_nonempty_and_nonempty_linearEquiv_of_isSemisimpleRing
     [IsSimpleModule B S] :
     ∃! μ : Λ, Nonempty (M μ) ∧ Nonempty (d.CellModule μ ≃ₗ[B] S) := by
   obtain ⟨μ, ⟨hμ, ⟨e⟩⟩, huniq⟩ := d.existsUnique_cellForm_ne_zero_and_nonempty_linearEquiv S
+  obtain ⟨s, -, -⟩ := d.exists_gramMatrix_ne_zero hμ
   have eμ := (d.cellRadical μ).quotEquivOfEqBot (d.cellRadical_eq_bot_of_isSemisimpleRing μ)
-  have hneμ : Nonempty (M μ) := by
-    by_contra hE
-    have : IsEmpty (M μ) := not_nonempty_iff.mp hE
-    exact hμ ((d.cellForm_eq_zero_iff μ).mpr (Matrix.ext fun i ↦ isEmptyElim i))
-  refine ⟨μ, ⟨hneμ, ⟨eμ.symm.trans e⟩⟩, fun ν ⟨hneν, ⟨e'⟩⟩ ↦ huniq ν ⟨?_, ⟨?_⟩⟩⟩
+  refine ⟨μ, ⟨⟨s⟩, ⟨eμ.symm.trans e⟩⟩, fun ν ⟨hneν, ⟨e'⟩⟩ ↦ huniq ν ⟨?_, ⟨?_⟩⟩⟩
   · exact d.cellForm_ne_zero_of_isSemisimpleRing ν
   · exact ((d.cellRadical ν).quotEquivOfEqBot
       (d.cellRadical_eq_bot_of_isSemisimpleRing ν)).trans e'
