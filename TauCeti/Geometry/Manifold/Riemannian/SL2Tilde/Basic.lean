@@ -210,16 +210,15 @@ private theorem isCoercive_form (t : ℝ) : IsCoercive (form t) := by
   have hv' := v.norm_mul_self_le_sq_add_sq_add_sq
   -- With `u = e^{-t} v₁`, the form is `u² + v₂² + (v₃ + u)²`, which is at least
   -- `(u² + v₂² + v₃²) / 3` because `5 u² + 6 u v₃ + 2 v₃² ≥ 0`.
-  set u := exp (-t) * v.1
   have key : (exp (-2 * t) * v.1 ^ 2 + v.2.1 ^ 2 + v.2.2 ^ 2) / 3 ≤ form t v v := by
     rw [form_apply, h₃]
-    nlinarith [sq_nonneg (5 * u + 3 * v.2.2), sq_nonneg v.2.2, sq_nonneg v.2.1]
+    linarith [sq_nonneg (5 * (exp (-t) * v.1) + 3 * v.2.2), sq_nonneg v.2.2, sq_nonneg v.2.1]
   calc exp (-2 * |t|) / 3 * ‖v‖ * ‖v‖
       = exp (-2 * |t|) / 3 * (‖v‖ * ‖v‖) := by ring
     _ ≤ exp (-2 * |t|) / 3 * (v.1 ^ 2 + v.2.1 ^ 2 + v.2.2 ^ 2) :=
         mul_le_mul_of_nonneg_left hv' (by positivity)
     _ ≤ (exp (-2 * t) * v.1 ^ 2 + v.2.1 ^ 2 + v.2.2 ^ 2) / 3 := by
-        nlinarith [mul_le_mul_of_nonneg_right h₁ (sq_nonneg v.1),
+        linarith [mul_le_mul_of_nonneg_right h₁ (sq_nonneg v.1),
           mul_le_mul_of_nonneg_right h₂ (sq_nonneg v.2.1),
           mul_le_mul_of_nonneg_right h₂ (sq_nonneg v.2.2)]
     _ ≤ form t v v := key

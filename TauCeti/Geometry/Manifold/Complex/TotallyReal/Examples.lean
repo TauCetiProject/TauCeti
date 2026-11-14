@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.TotallyReal.Basic
-public import TauCeti.Geometry.Symplectic.Complex.CoordinateSpace
+public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.CoordinateSpace
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 
@@ -130,26 +130,6 @@ theorem not_isTotallyRealEmbedding_complexLine (n : ℕ∞ω) :
 section Lagrangian
 
 variable {ι : Type*} [Fintype ι]
-
-/-- The real locus in complex coordinate space is a Lagrangian embedding for every nonzero
-multiple `c Σ_j ds_j ∧ dt_j` of the standard symplectic form. -/
-theorem isLagrangianEmbedding_realLocus_rescale (c : ℝ) (hc : c ≠ 0) :
-    (SymplecticForm.isNondegenerate_constSmooth
-        ((stdComplexPiSymplecticForm ι).rescale c hc)).IsLagrangianEmbedding
-      𝓘(ℝ, ι → ℝ) (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) :=
-  (SmoothTwoForm.IsNondegenerate.isLagrangianEmbedding_iff_of_isSmoothEmbedding
-    (isTotallyRealEmbedding_realLocus ∞).isSmoothEmbedding).2
-    ((SymplecticForm.isLagrangianMap_continuousLinearMap_iff _ _).2
-      ((SymplecticForm.isLagrangian_rescale_iff _ _).2
-        isLagrangian_stdComplexPiSymplecticForm_range_ofReal))
-
-/-- The real locus in complex coordinate space is a Lagrangian embedding for the standard
-symplectic form `Σ_j ds_j ∧ dt_j`: the case `c = 1` of `isLagrangianEmbedding_realLocus_rescale`. -/
-theorem isLagrangianEmbedding_realLocus :
-    (SymplecticForm.isNondegenerate_constSmooth
-        (stdComplexPiSymplecticForm ι)).IsLagrangianEmbedding
-      𝓘(ℝ, ι → ℝ) (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) := by
-  simpa using isLagrangianEmbedding_realLocus_rescale (ι := ι) 1 one_ne_zero
 
 /-! The Lagrangian comparison recovers the smooth case of `isTotallyRealEmbedding_realLocus`:
 the real locus, Lagrangian for `Σ_j ds_j ∧ dt_j`, is totally real for multiplication by `I`,
