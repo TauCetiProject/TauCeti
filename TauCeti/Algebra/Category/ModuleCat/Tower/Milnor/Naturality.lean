@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Milnor.Basic
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
+import TauCeti.Algebra.Homology.HomologySequenceLemmas
 
 /-!
 # Naturality of the Milnor sequence
@@ -15,6 +16,13 @@ A map of towers of complexes induces maps on their limit and product complexes. 
 commute with the inclusion and the difference map, so the two maps of the Milnor short
 exact sequence are natural. The connecting square retains the actual connecting morphism
 of the product-complex short exact sequence.
+
+Because homology of the product complex is the product of the homologies, a map of towers
+whose components are quasi-isomorphisms in a given degree induces a quasi-isomorphism on
+the product complexes in that degree, without surjectivity hypotheses. When both towers
+have surjective shift maps on terms, the inclusion-and-difference short complexes are short
+exact, so a levelwise quasi-isomorphism of towers induces a quasi-isomorphism of limit
+complexes (`ComplexTower.quasiIso_limComplexMap`).
 
 The complex shape is arbitrary, in particular allowing integer-graded chain and cochain
 complexes. Naturality of the map to the limit of homology requires no surjectivity;
@@ -198,5 +206,71 @@ theorem limOneToHomology_naturality (f : C ⟶ D)
       ((C.productHomologyEquiv i).symm x)
     simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using hn
   exact congrArg ((D.shortComplex_shortExact hD).δ i j hij) hp
+
+/-- If a map of towers is a quasi-isomorphism in degree `i` at every stage, then the induced
+map of product complexes is a quasi-isomorphism in degree `i`. No surjectivity on the towers is
+required. -/
+instance quasiIsoAt_productComplexMap (f : C ⟶ D) (i : ι)
+    [∀ n, QuasiIsoAt (f.app (op n)) i] : QuasiIsoAt (productComplexMap f) i := by
+  rw [quasiIsoAt_iff_isIso_homologyMap, ConcreteCategory.isIso_iff_bijective]
+  let g : C.homology i ⟶ D.homology i :=
+    Functor.whiskerRight f (HomologicalComplex.homologyFunctor _ c i)
+  have hbij (n : ℕ) : Function.Bijective (g.app (op n)).hom :=
+    (ConcreteCategory.isIso_iff_bijective _).1
+      ((quasiIsoAt_iff_isIso_homologyMap (f.app (op n)) i).1 inferInstance)
+  have hprod : Function.Bijective (ModuleTower.productMap g) := by
+    refine ⟨fun x y h ↦ funext fun n ↦ (hbij n).1 ?_, fun y ↦ ?_⟩
+    · simpa only [ModuleTower.productMap_apply] using congrFun h n
+    · choose z hz using fun n ↦ (hbij n).2 (y n)
+      exact ⟨z, funext fun n ↦ (ModuleTower.productMap_apply g z n).trans (hz n)⟩
+  have hnat : (D.productHomologyEquiv i : _ → _) ∘
+        (HomologicalComplex.homologyMap (productComplexMap f) i).hom =
+      ModuleTower.productMap g ∘ (C.productHomologyEquiv i : _ → _) :=
+    congrArg DFunLike.coe (productHomologyEquiv_naturality f i)
+  exact ((D.productHomologyEquiv i).bijective.of_comp_iff' _).1
+    (hnat ▸ hprod.comp (C.productHomologyEquiv i).bijective)
+
+/-- A map of towers whose components are quasi-isomorphisms induces a quasi-isomorphism of
+product complexes, without surjectivity hypotheses on the towers. -/
+instance quasiIso_productComplexMap (f : C ⟶ D) [∀ n, QuasiIso (f.app (op n))] :
+    QuasiIso (productComplexMap f) := by
+  rw [quasiIso_iff]
+  intro i
+  infer_instance
+
+/-- For towers whose shift maps on terms are surjective, if `f` is a levelwise quasi-isomorphism
+in degree `j` and in every preceding degree `i` with `c.Rel i j`, then `limComplexMap f` induces
+an isomorphism on homology in degree `j`. -/
+theorem isIso_homologyMap_limComplexMap (f : C ⟶ D)
+    (hC : ∀ k, Function.Surjective (C.term k).shift)
+    (hD : ∀ k, Function.Surjective (D.term k).shift) (j : ι)
+    (hrel : ∀ i, c.Rel i j → ∀ n, QuasiIsoAt (f.app (op n)) i)
+    [∀ n, QuasiIsoAt (f.app (op n)) j] :
+    IsIso (HomologicalComplex.homologyMap (limComplexMap f) j) := by
+  have h := HomologicalComplex.HomologySequence.isIso_homologyMap_τ₁ (shortComplexMap f)
+    (C.shortComplex_shortExact hC) (D.shortComplex_shortExact hD) j
+  rw [shortComplexMap_τ₁, shortComplexMap_τ₂, shortComplexMap_τ₃] at h
+  refine h (fun i hij ↦ ?_) (fun i hij ↦ ?_) ?_ ?_
+  · have := hrel i hij
+    have := (quasiIsoAt_iff_isIso_homologyMap (productComplexMap f) i).1 inferInstance
+    infer_instance
+  · have := hrel i hij
+    exact (quasiIsoAt_iff_isIso_homologyMap (productComplexMap f) i).1 inferInstance
+  · exact (quasiIsoAt_iff_isIso_homologyMap (productComplexMap f) j).1 inferInstance
+  · have := (quasiIsoAt_iff_isIso_homologyMap (productComplexMap f) j).1 inferInstance
+    infer_instance
+
+/-- **Levelwise quasi-isomorphisms pass to the limit complex.** For towers whose shift maps on
+terms are surjective, a map of towers whose components are quasi-isomorphisms induces a
+quasi-isomorphism of limit complexes. -/
+theorem quasiIso_limComplexMap (f : C ⟶ D)
+    (hC : ∀ i, Function.Surjective (C.term i).shift)
+    (hD : ∀ i, Function.Surjective (D.term i).shift)
+    [∀ n, QuasiIso (f.app (op n))] :
+    QuasiIso (limComplexMap f) := by
+  have h := HomologicalComplex.HomologySequence.quasiIso_τ₁ (shortComplexMap f)
+    (C.shortComplex_shortExact hC) (D.shortComplex_shortExact hD)
+  rw [shortComplexMap_τ₁, shortComplexMap_τ₂, shortComplexMap_τ₃] at h
+  exact h inferInstance inferInstance
 
 end TauCeti.ComplexTower
