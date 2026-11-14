@@ -107,31 +107,25 @@ private theorem pinnedRepresentation_ι (x : G2.lieAlgebra valid_G2) :
 @[simp↓]
 theorem pinnedRepresentation_h (i : Fin G2.rank) :
     pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((G2.lieBasis valid_G2).h i)) =
-      Matrix.toLinAlgEquiv' (cartanMatrixRat i) := by
+      Matrix.toLinAlgEquiv' (cartanMatrixRat (Fin.cast rank_G2 i)) := by
   simp only [pinnedRepresentation_ι, pinnedToSerre_h, rep_ι_eq_toLinAlgEquiv',
     rationalSerreRepresentation_serreH]
-  dsimp +instances only [rank] at i ⊢
-  simp only [Fin.cast_eq_self]
 
 /-- The pinned raising generator acts by the existing integral raising matrix over ℚ. -/
 @[simp↓]
 theorem pinnedRepresentation_e (i : Fin G2.rank) :
     pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((G2.lieBasis valid_G2).e i)) =
-      Matrix.toLinAlgEquiv' (raisingMatrixRat i) := by
+      Matrix.toLinAlgEquiv' (raisingMatrixRat (Fin.cast rank_G2 i)) := by
   simp only [pinnedRepresentation_ι, pinnedToSerre_e, rep_ι_eq_toLinAlgEquiv',
     rationalSerreRepresentation_serreE]
-  dsimp +instances only [rank] at i ⊢
-  simp only [Fin.cast_eq_self]
 
 /-- The pinned lowering generator acts by the existing integral lowering matrix over ℚ. -/
 @[simp↓]
 theorem pinnedRepresentation_f (i : Fin G2.rank) :
     pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((G2.lieBasis valid_G2).f i)) =
-      Matrix.toLinAlgEquiv' (loweringMatrixRat i) := by
+      Matrix.toLinAlgEquiv' (loweringMatrixRat (Fin.cast rank_G2 i)) := by
   simp only [pinnedRepresentation_ι, pinnedToSerre_f, rep_ι_eq_toLinAlgEquiv',
     rationalSerreRepresentation_serreF]
-  dsimp +instances only [rank] at i ⊢
-  simp only [Fin.cast_eq_self]
 
 private theorem pinnedRepresentation_mem_lattice
     (u : _root_.UniversalEnvelopingAlgebra ℚ (G2.lieAlgebra valid_G2))
@@ -270,7 +264,7 @@ theorem chevalleyDatum_representation_f (i : Fin G2.rank) :
     (v : chevalleyDatum.carrier) (a : Fin 7) :
     (chevalleyDatum.representation
       (_root_.UniversalEnvelopingAlgebra.ι ℚ ((G2.lieBasis valid_G2).h i)) v : Fin 7 → ℚ) a =
-      (cartanMatrixRat i).mulVec (fun b => (v : Fin 7 → ℚ) b) a := by
+      (cartanMatrixRat (Fin.cast rank_G2 i)).mulVec (fun b => (v : Fin 7 → ℚ) b) a := by
   dsimp +instances only [chevalleyDatum] at v ⊢
   exact (congrArg (fun f : Module.End ℚ (Fin 7 → ℚ) => f v a)
     (pinnedRepresentation_h i)).trans (congrFun (Matrix.toLinAlgEquiv'_apply _ _) a)
@@ -280,7 +274,7 @@ theorem chevalleyDatum_representation_f (i : Fin G2.rank) :
     (v : chevalleyDatum.carrier) (a : Fin 7) :
     (chevalleyDatum.representation
       (_root_.UniversalEnvelopingAlgebra.ι ℚ ((G2.lieBasis valid_G2).e i)) v : Fin 7 → ℚ) a =
-      (raisingMatrixRat i).mulVec (fun b => (v : Fin 7 → ℚ) b) a := by
+      (raisingMatrixRat (Fin.cast rank_G2 i)).mulVec (fun b => (v : Fin 7 → ℚ) b) a := by
   dsimp +instances only [chevalleyDatum] at v ⊢
   exact (congrArg (fun f : Module.End ℚ (Fin 7 → ℚ) => f v a)
     (pinnedRepresentation_e i)).trans (congrFun (Matrix.toLinAlgEquiv'_apply _ _) a)
@@ -290,7 +284,7 @@ theorem chevalleyDatum_representation_f (i : Fin G2.rank) :
     (v : chevalleyDatum.carrier) (a : Fin 7) :
     (chevalleyDatum.representation
       (_root_.UniversalEnvelopingAlgebra.ι ℚ ((G2.lieBasis valid_G2).f i)) v : Fin 7 → ℚ) a =
-      (loweringMatrixRat i).mulVec (fun b => (v : Fin 7 → ℚ) b) a := by
+      (loweringMatrixRat (Fin.cast rank_G2 i)).mulVec (fun b => (v : Fin 7 → ℚ) b) a := by
   dsimp +instances only [chevalleyDatum] at v ⊢
   exact (congrArg (fun f : Module.End ℚ (Fin 7 → ℚ) => f v a)
     (pinnedRepresentation_f i)).trans (congrFun (Matrix.toLinAlgEquiv'_apply _ _) a)
@@ -318,7 +312,14 @@ theorem chevalleyDatum_basis : chevalleyDatum.basis = latticeBasis := (rfl)
   exact coe_latticeBasis a
 
 /-- The weights of the datum are the native seven short-root weights, in the same numbering. -/
-@[simp] theorem chevalleyDatum_weight : chevalleyDatum.weight = weight := (rfl)
+theorem chevalleyDatum_weight : chevalleyDatum.weight = weight := (rfl)
+
+/-- A datum weight evaluated at native indices is the corresponding short-root weight. -/
+@[simp↓] theorem chevalleyDatum_weight_apply (a : Fin chevalleyDatum.dim) (i : Fin G2.rank) :
+    chevalleyDatum.weight a i = weight (Fin.cast chevalleyDatum_dim a) (Fin.cast rank_G2 i) := by
+  rw [chevalleyDatum_weight]
+  dsimp only [chevalleyDatum, chevalleyDatum_dim, rank] at a i ⊢
+  simp only [Fin.cast_eq_self]
 
 /-- The seven weights generate the full weight lattice. -/
 @[simp] theorem chevalleyDatum_weightLattice : chevalleyDatum.weightLattice = ⊤ :=
@@ -327,23 +328,40 @@ theorem chevalleyDatum_basis : chevalleyDatum.basis = latticeBasis := (rfl)
     exact span_range_weight_eq_top)
 
 /-- The chosen character basis consists of the fundamental weights. -/
-@[simp↓] theorem coe_chevalleyDatum_weightLatticeBasis (i : Fin G2.rank) :
+theorem coe_chevalleyDatum_weightLatticeBasis (i : Fin G2.rank) :
     (chevalleyDatum.weightLatticeBasis i : Fin G2.rank → ℤ) = Pi.single i 1 := by
   dsimp +instances only [chevalleyDatum, rank] at i ⊢
   rw [Module.Basis.map_apply]
   simp only [LinearEquiv.coe_ofTop_symm_apply]
   exact Pi.basisFun_apply ℤ (Fin 2) i
 
+/-- A fundamental-weight basis vector evaluated at a native index is a coordinate unit. -/
+@[simp↓] theorem coe_chevalleyDatum_weightLatticeBasis_apply (i j : Fin G2.rank) :
+    (chevalleyDatum.weightLatticeBasis i : Fin G2.rank → ℤ) j =
+      (Pi.single (Fin.cast rank_G2 i) 1 : Fin 2 → ℤ) (Fin.cast rank_G2 j) := by
+  rw [coe_chevalleyDatum_weightLatticeBasis]
+  dsimp +instances only [rank] at i j ⊢
+  simp only [Fin.cast_eq_self]
+
 /-- The coordinate weights of the datum are its fundamental-weight coordinates. -/
-@[simp] theorem chevalleyDatum_coordinateWeight : chevalleyDatum.coordinateWeight = weight := by
+theorem chevalleyDatum_coordinateWeight : chevalleyDatum.coordinateWeight = weight := by
   ext a i
   have h := congrFun (chevalleyDatum.sum_coordinateWeight_smul a) i
   simpa only [Finset.sum_apply, Pi.smul_apply, coe_chevalleyDatum_weightLatticeBasis,
     Pi.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq,
     Finset.mem_univ, ite_true, chevalleyDatum_weight] using h
 
+/-- A datum coordinate weight evaluated at native indices is the corresponding short-root weight. -/
+@[simp↓] theorem chevalleyDatum_coordinateWeight_apply
+    (a : Fin chevalleyDatum.dim) (i : Fin G2.rank) :
+    chevalleyDatum.coordinateWeight a i =
+      weight (Fin.cast chevalleyDatum_dim a) (Fin.cast rank_G2 i) := by
+  rw [chevalleyDatum_coordinateWeight]
+  dsimp only [chevalleyDatum, chevalleyDatum_dim, rank] at a i ⊢
+  simp only [Fin.cast_eq_self]
+
 /-- The coordinate roots of the datum are the roots in fundamental-weight coordinates. -/
-@[simp] theorem chevalleyDatum_coordinateRoot (γ : Fin G2.numRoots) :
+@[simp↓] theorem chevalleyDatum_coordinateRoot (γ : Fin G2.numRoots) :
     chevalleyDatum.coordinateRoot γ = (G2.simplyConnectedRootDatum valid_G2).root γ := by
   ext i
   have h := congrFun (chevalleyDatum.sum_coordinateRoot_smul γ) i
