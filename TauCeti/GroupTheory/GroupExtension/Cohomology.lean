@@ -62,8 +62,10 @@ of `G`, equivalently the central extensions of `G` by `kˣ` up to equivalence.
 * `TauCeti.FactorSet.cohomologyClass_eq_zero_iff` and
   `TauCeti.FactorSet.nonempty_splitting_iff_cohomologyClass_eq_zero`: the class vanishes exactly
   for the coboundaries, equivalently for the factor sets whose extension splits.
-* `TauCeti.FactorSet.nsmul_cohomologyClass_eq_zero_iff`: `n` kills a factor-set class exactly
-  when the pointwise `n`-th power of the factor set is a multiplicative coboundary.
+* `TauCeti.FactorSet.nsmul_cohomologyClass_eq_zero_iff` and
+  `TauCeti.FactorSet.natCard_nsmul_cohomologyClass_eq_zero`: `n` kills a factor-set class exactly
+  when the pointwise `n`-th power of the factor set is a multiplicative coboundary; in particular,
+  `Nat.card M` kills every factor-set class.
 * `TauCeti.FactorSet.exists_rescale_pow_eq_one`: with a surjective `n`-th power map for
   nonzero `n`, a class killed by `n` admits a normalized rescaling by an action-aware
   coboundary whose values have `n`-th power one. For `n = 0`, no divisibility is needed.
@@ -161,6 +163,14 @@ theorem nsmul_cohomologyClass_eq_zero_iff (n : ℕ) :
   rw [hcoe]
   exact ⟨fun h ↦ isMulCoboundary₂_of_mem_coboundaries₂ _ h,
     fun h ↦ (coboundariesOfIsMulCoboundary₂ h).2⟩
+
+/-- The cardinality `Nat.card M` of the coefficient group annihilates the cohomology class of every
+factor set: `α p ^ Nat.card M = 1` pointwise by Lagrange's theorem (`pow_card_eq_one'`), which is
+the coboundary of the constant function `1` (including when `M` is infinite, where
+`Nat.card M = 0`). -/
+@[simp]
+theorem natCard_nsmul_cohomologyClass_eq_zero : Nat.card M • α.cohomologyClass = 0 :=
+  (α.nsmul_cohomologyClass_eq_zero_iff (Nat.card M)).2 ⟨1, fun _ _ ↦ by simp⟩
 
 end Class
 
