@@ -14,7 +14,8 @@ A stopping time remains a stopping time for a larger filtration. This transports
 arguments and localizing sequences when augmenting a filtration. Finite suprema preserve
 the stopping-time property.
 
-Stopping preserves right continuity at each time, including when the stopping time is infinite.
+Stopping preserves continuity and right continuity at each time, including when the stopping time
+is infinite.
 This pathwise fact requires no measurability or stopping-time hypothesis and lets local-martingale
 arguments retain the right continuity of their native stopped stages.
 
@@ -51,6 +52,20 @@ theorem Finset.isStoppingTime_sup {κ ι Ω : Type*}
 
 open Filter Set
 open scoped Topology
+
+/-- Stopping preserves continuity of a path, without any measurability or stopping-time
+assumption on the random time. At an infinite stopping time the path is unchanged. -/
+theorem Continuous.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderTopology ι] [TopologicalSpace E]
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω}
+    (hX : Continuous (X · ω)) :
+    Continuous (MeasureTheory.stoppedProcess X τ · ω) := by
+  cases hτ : τ ω with
+  | top => simpa [MeasureTheory.stoppedProcess, hτ] using hX
+  | coe u =>
+    simpa only [MeasureTheory.stoppedProcess, hτ, ← WithTop.coe_min,
+      WithTop.untopA, WithTop.untopD_coe, Function.comp_def, id_eq] using
+      hX.comp (continuous_id.min continuous_const)
 
 /-- Stopping preserves right continuity of a path at a given time, without any measurability
 assumption on the random time. At an infinite stopping time the path is unchanged. -/
