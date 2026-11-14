@@ -36,6 +36,6 @@ theorem isKilling_quotient_comap_incl [IsKilling R (L ⧸ I)]
     (hIP : Codisjoint I.toSubmodule P.toSubmodule) : IsKilling R (P ⧸ I.comap P.incl) := by
   rw [← I.ker_mkQ_comp_incl]
   exact isKilling_of_equiv
-    ((I.mkQ.comp P.incl).quotKerEquivOfSurjective (I.mkQ_comp_incl_surjective hIP)).symm
+    ((I.mkQ.comp P.incl).quotKerEquivOfSurjective (I.mkQ_comp_incl_surjective_iff.2 hIP)).symm
 
 end LieIdeal

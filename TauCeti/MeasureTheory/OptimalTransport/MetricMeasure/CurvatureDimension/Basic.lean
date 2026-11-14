@@ -159,12 +159,12 @@ theorem exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le
     have hbound : ∀ᵐ y ∂((μ : ProbabilityMeasure X) : Measure X),
         ‖edist x y‖ₑ ≤ ENNReal.ofReal r :=
       hμ ▸ (ae_cond_mem hs).mono fun y hy ↦ by
-        rw [enorm_eq_self, edist_comm, edist_dist]
+        rw [eNorm_eq_self, edist_comm, edist_dist]
         exact ENNReal.ofReal_le_ofReal ((mem_ball.1 hy).le.trans (min_le_left r ρ))
     calc wassersteinEDist p (Measure.dirac x) ((μ : ProbabilityMeasure X) : Measure X)
         ≤ ENNReal.ofReal r • ((μ : ProbabilityMeasure X) : Measure X) univ ^ p.toReal⁻¹ := by
           rw [wassersteinEDist_dirac_left measurable_edist]
-          exact eLpNorm_le_of_ae_enorm_bound (by fun_prop) hbound
+          exact eLpNorm_le_of_ae_eNorm_bound (by fun_prop) hbound
       _ = ENNReal.ofReal r := by simp
   -- The entropy is `c log c * m s`, the integral of a constant over `s`.
   have hV : (fun y ↦ ((s.indicator (fun _ ↦ c) y : ℝ≥0) : ℝ) *
@@ -367,8 +367,8 @@ theorem CurvatureDimension.mono (h : M.CurvatureDimension K N) (hK : K' ≤ K) :
   refine ⟨hac, hb, fun N' hN' ↦ (hS N' hN').trans ?_⟩
   rw [EReal.neg_le_neg_iff, EReal.coe_ennreal_le_coe_ennreal_iff]
   refine lintegral_mono fun z ↦ add_le_add (mul_le_mul_left ?_ _) (mul_le_mul_left ?_ _)
-  · exact distortionTau_left_monotone (sub_nonneg.2 ht.2) (sub_le_self _ ht.1) hK
-  · exact distortionTau_left_monotone ht.1 ht.2 hK
+  · exact distortionTau_left_monotone (sub_le_self _ ht.1) hK
+  · exact distortionTau_left_monotone ht.2 hK
 
 /-- `CD(K, N)` implies `CD(K, N')` for every `N' ≥ N`: the defining inequality is required for
 every dimension bound above `N`. -/

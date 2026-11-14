@@ -58,20 +58,12 @@ include hf
 `1 ≤ n`, with complex manifold structures on `Y` and `Z` modeled by `I` and `J`,
 this is the holomorphic map `[z, v] ↦ [f z, v]` for the pulled-back period family. -/
 theorem contMDiff_torusFamilyBaseChangeMap :
-    letI : ∀ z, DiscreteTopology (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
-      (DiscreteTopology (LinearMap.range (P (f z))))
-    letI : ∀ z, IsZLattice ℝ (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
-      (IsZLattice ℝ (LinearMap.range (P (f z))))
     letI := periodAddAction P
     letI := periodAddAction (P ∘ f)
     letI := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
     letI := torusFamilyChartedSpace (H := HZ) (P ∘ f)
       (fun l ↦ ((hP l).comp hf).continuous) (fun z ↦ hinj (f z))
     ContMDiff (J.prod 𝓘(𝕜, E)) (I.prod 𝓘(𝕜, E)) n (torusFamilyBaseChangeMap P f) := by
-  let : ∀ z, DiscreteTopology (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
-    (DiscreteTopology (LinearMap.range (P (f z))))
-  let : ∀ z, IsZLattice ℝ (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
-    (IsZLattice ℝ (LinearMap.range (P (f z))))
   let _ := periodAddAction P
   let _ := periodAddAction (P ∘ f)
   let _ := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
@@ -96,10 +88,6 @@ period quotient is `C^n` at a point exactly when both its base component and its
 the original family are `C^n` there. Continuity of the tested map is not assumed. -/
 theorem contMDiffAt_torusFamilyBaseChange_iff
     (u : letI := periodAddAction (P ∘ f); W → AddAction.orbitRel.Quotient Λ (Z × E)) (x : W) :
-    letI : ∀ z, DiscreteTopology (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
-      (DiscreteTopology (LinearMap.range (P (f z))))
-    letI : ∀ z, IsZLattice ℝ (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
-      (IsZLattice ℝ (LinearMap.range (P (f z))))
     letI := periodAddAction P
     letI := periodAddAction (P ∘ f)
     letI := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
@@ -108,10 +96,6 @@ theorem contMDiffAt_torusFamilyBaseChange_iff
     ContMDiffAt K (J.prod 𝓘(𝕜, E)) n u x ↔
       ContMDiffAt K J n (torusFamilyProjection (P ∘ f) ∘ u) x ∧
       ContMDiffAt K (I.prod 𝓘(𝕜, E)) n (torusFamilyBaseChangeMap P f ∘ u) x := by
-  let : ∀ z, DiscreteTopology (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
-    (DiscreteTopology (LinearMap.range (P (f z))))
-  let : ∀ z, IsZLattice ℝ (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
-    (IsZLattice ℝ (LinearMap.range (P (f z))))
   let _ := periodAddAction P
   let _ := periodAddAction (P ∘ f)
   let _ := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
@@ -158,10 +142,6 @@ theorem contMDiffAt_torusFamilyBaseChange_iff
 characterizes holomorphic maps into the pulled-back family by their two components. -/
 theorem contMDiff_torusFamilyBaseChange_iff
     (u : letI := periodAddAction (P ∘ f); W → AddAction.orbitRel.Quotient Λ (Z × E)) :
-    letI : ∀ z, DiscreteTopology (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
-      (DiscreteTopology (LinearMap.range (P (f z))))
-    letI : ∀ z, IsZLattice ℝ (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
-      (IsZLattice ℝ (LinearMap.range (P (f z))))
     letI := periodAddAction P
     letI := periodAddAction (P ∘ f)
     letI := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
@@ -181,10 +161,6 @@ theorem contMDiff_torusFamilyBaseChangeHomeomorph_symm
     (a : W → Z)
     (b : letI := periodAddAction P; W → AddAction.orbitRel.Quotient Λ (Y × E))
     (hab : ∀ w, torusFamilyProjection P (b w) = f (a w)) :
-    letI : ∀ z, DiscreteTopology (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
-      (DiscreteTopology (LinearMap.range (P (f z))))
-    letI : ∀ z, IsZLattice ℝ (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
-      (IsZLattice ℝ (LinearMap.range (P (f z))))
     letI := periodAddAction P
     letI := periodAddAction (P ∘ f)
     letI := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
@@ -194,10 +170,6 @@ theorem contMDiff_torusFamilyBaseChangeHomeomorph_symm
       ContMDiff K (J.prod 𝓘(𝕜, E)) n
         (fun w ↦ (torusFamilyBaseChangeHomeomorph P f (fun l ↦ (hP l).continuous)
           hf.continuous).symm ⟨(a w, b w), hab w⟩) := by
-  let : ∀ z, DiscreteTopology (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
-    (DiscreteTopology (LinearMap.range (P (f z))))
-  let : ∀ z, IsZLattice ℝ (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
-    (IsZLattice ℝ (LinearMap.range (P (f z))))
   let _ := periodAddAction P
   let _ := periodAddAction (P ∘ f)
   let _ := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj

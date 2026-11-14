@@ -137,7 +137,7 @@ theorem eq_of_coordinate_eq {A : Type*} [TopologicalSpace A] [PreconnectedSpace 
   have h := congrFun hfg a
   have hw : (D.width : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr D.width_pos.ne'
   have hc : (2 * (Real.pi : ℂ) * Complex.I) ≠ 0 := Complex.two_pi_I_ne_zero
-  exact mul_left_cancel₀ hc ((div_left_inj' hw).mp h)
+  exact mul_left_cancel₀ hc ((div_left_inj₀ hw).mp h)
 
 /-- In the scaling coordinate, powers of the primitive cusp generator are integral-width
 translations. -/

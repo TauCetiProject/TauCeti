@@ -20,7 +20,8 @@ computable pieces:
 * `ComputablePred.exists_lt`: a bounded existential quantifier over a computable predicate is
   computable, uniformly in the bound;
 * `ComputablePred.rePred_exists`: an unbounded existential quantifier over a computable predicate
-  is c.e., by unbounded search.
+  is c.e., by unbounded search;
+* `Computable.rePred_mem_range`: the range of a total computable function is c.e.
 
 ## References
 
@@ -81,3 +82,25 @@ theorem rePred_exists {p : α → ℕ → Prop} (hp : ComputablePred fun x : α 
   simpa using Nat.rfind_dom (p := fun n => Part.some (decide (p a n)))
 
 end ComputablePred
+
+namespace Computable
+
+/-- The range of a total computable function is c.e. -/
+theorem rePred_mem_range {β : Type*} [Primcodable β] {f : α → β} (hf : Computable f) :
+    REPred (· ∈ Set.range f) := by
+  classical
+  have hmap : Computable fun p : β × ℕ => (Encodable.decode p.2).map f :=
+    (Computable.decode.comp Computable.snd).option_map (hf.comp Computable.snd)
+  have heq : ComputablePred fun p : β × ℕ => (Encodable.decode p.2).map f = some p.1 :=
+    (Primrec.eq.decide.to_comp.comp hmap
+      (Computable.option_some.comp Computable.fst)).computablePred
+  refine (ComputablePred.rePred_exists
+    (p := fun b n => (Encodable.decode (α := α) n).map f = some b) heq).of_eq fun b => ?_
+  constructor
+  · rintro ⟨n, hn⟩
+    obtain ⟨a, -, hab⟩ := Option.map_eq_some_iff.mp hn
+    exact ⟨a, hab⟩
+  · rintro ⟨a, rfl⟩
+    exact ⟨Encodable.encode a, by simp⟩
+
+end Computable

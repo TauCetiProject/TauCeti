@@ -221,9 +221,8 @@ noncomputable def cotangentDualLieEquivOfCharZero (hf : IsIsogeny f) :
   let _ : Algebra.Smooth k K :=
     (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k K)
   let Q := _root_.CommHopfAlgCat.quotient K (kernelHopfIdeal f)
-  let _ : Module.Finite k Q := moduleFinite_quotient_kernelHopfIdeal hf.finite
-  let _ : _root_.IsReduced Q := HopfAlgebra.isReduced_of_charZero k Q
-  exact hf.cotangentDualLieEquivOfEtaleKernel (algebraEtale_of_finite_of_isReduced k Q)
+  exact hf.cotangentDualLieEquivOfEtaleKernel (algebraEtale_iff_finite_and_isReduced.2
+    ⟨moduleFinite_quotient_kernelHopfIdeal hf.finite, HopfAlgebra.isReduced_of_charZero k Q⟩)
 
 /-- The characteristic-zero Lie equivalence acts by the differential on cotangent duals.
 Use `rw` to retain cancellation of the equivalence and its inverse during simplification. -/

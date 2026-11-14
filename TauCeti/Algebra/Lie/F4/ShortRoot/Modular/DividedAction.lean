@@ -205,15 +205,9 @@ theorem f4ModularDividedAdjointSquare_rootVector_eq_zero_of_no_endpoint
         (2 : ℤ) •
           f4SimplyConnectedRootDatum.root (f4SignedSimpleRootIndex k)) :
     f4ModularDividedAdjointSquare k (f4ModularRootVector β) = 0 := by
-  have hopp : β ≠ f4OppositeRootIndex (f4SignedSimpleRootIndex k) := by
-    rintro rfl
-    refine hno (f4SignedSimpleRootIndex k) ?_
-    rw [f4OppositeRootIndex_eq_reflectionPerm, f4SimplyConnectedRootDatum.root_reflectionPerm,
-      f4SimplyConnectedRootDatum.reflection_apply_self]
-    module
   exact f4ModularDividedAdjointSquare_rootVector_eq_zero_of_dividedPower_eq_zero k β
     (f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint
-      (f4SignedSimpleRootIndex k) β hopp hno)
+      (f4SignedSimpleRootIndex k) β hno)
 
 /-- The modular divided square vanishes on every simple-coroot basis column. -/
 theorem f4ModularDividedAdjointSquare_simpleCoroot_eq_zero

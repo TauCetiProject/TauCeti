@@ -36,6 +36,6 @@ theorem isMultiplyPretransitive_of_surjective_toPermHom
   obtain ⟨π, hπ⟩ := Equiv.Perm.exists_smul_eq_embedding x y
   obtain ⟨g, rfl⟩ := h π
   exact ⟨g, Function.Embedding.ext fun i ↦ by
-    simpa [Function.Embedding.smul_apply] using DFunLike.congr_fun hπ i⟩
+    simpa [smul_apply] using DFunLike.congr_fun hπ i⟩
 
 end MulAction

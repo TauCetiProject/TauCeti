@@ -36,9 +36,12 @@ This file supplements Mathlib's basic moment-generating-function API.
   the summation set.
 * `ProbabilityTheory.iIndepFun.integrable_exp_mul_sum_of_aemeasurable`: the exponential of a finite
   sum of independent a.e. measurable variables is integrable when each factor is.
-
+* `ProbabilityTheory.iIndepFun.mgf_sum_le_exp_sum`: exponential MGF bound for a finite sum of
+  independent variables from coordinatewise exponential bounds.
 * `TauCeti.ofReal_mgf_sub_integral_le_lintegral`: symmetrization by Jensen's inequality, the
   moment-generating function of `f - 𝔼 f` is at most `∫∫ exp (t (f x - f y)) dμ(x) dμ(y)`.
+* `TauCeti.mgf_add_le_of_mgf_two_mul_le`, `TauCeti.mgf_add_le_exp_half_add`: AM-GM and
+  geometric-mean bounds for `mgf (X + Y)` without independence.
 -/
 
 public section
@@ -155,6 +158,64 @@ theorem ofReal_mgf_sub_integral_le_lintegral [IsProbabilityMeasure μ]
 
 end Symmetrization
 
+section AddBounds
+
+open Real
+
+/-- **AM-GM bound for the moment-generating function of a sum** without independence. -/
+theorem mgf_add_le_of_mgf_two_mul_le {Y : Ω → ℝ} {θ M₁ M₂ : ℝ}
+    (hX_int : Integrable (fun ω ↦ exp (2 * θ * X ω)) μ)
+    (hY_int : Integrable (fun ω ↦ exp (2 * θ * Y ω)) μ)
+    (hX_le : mgf X μ (2 * θ) ≤ M₁) (hY_le : mgf Y μ (2 * θ) ≤ M₂) :
+    Integrable (fun ω ↦ exp (θ * (X ω + Y ω))) μ ∧
+      mgf (fun ω ↦ X ω + Y ω) μ θ ≤ (M₁ + M₂) / 2 := by
+  have hsqrt : (fun ω ↦ exp (θ * (X ω + Y ω))) =
+      fun ω ↦ Real.sqrt (exp (2 * θ * X ω) * exp (2 * θ * Y ω)) := funext fun ω ↦ by
+    have hmul_sq : exp (2 * θ * X ω) * exp (2 * θ * Y ω) = exp (θ * (X ω + Y ω)) ^ 2 := by
+      rw [sq, ← exp_add, ← exp_add]; ring_nf
+    rw [hmul_sq, Real.sqrt_sq (exp_pos _).le]
+  have hpt (ω : Ω) : exp (θ * (X ω + Y ω)) ≤ (exp (2 * θ * X ω) + exp (2 * θ * Y ω)) / 2 := by
+    have hsq (z : ℝ) : exp (2 * θ * z) = exp (θ * z) ^ 2 := by rw [sq, ← exp_add]; ring_nf
+    rw [mul_add, exp_add, hsq (X ω), hsq (Y ω)]
+    linarith [two_mul_le_add_sq (exp (θ * X ω)) (exp (θ * Y ω))]
+  have hdom : Integrable (fun ω ↦ (exp (2 * θ * X ω) + exp (2 * θ * Y ω)) / 2) μ :=
+    (hX_int.add hY_int).div_const 2
+  have hint : Integrable (fun ω ↦ exp (θ * (X ω + Y ω))) μ :=
+    hdom.mono' (hsqrt ▸ continuous_sqrt.comp_aestronglyMeasurable (hX_int.1.mul hY_int.1))
+      (.of_forall fun ω ↦ by rw [Real.norm_of_nonneg (exp_pos _).le]; exact hpt ω)
+  refine ⟨hint, ?_⟩; rw [mgf]; refine (integral_mono hint hdom hpt).trans ?_
+  rw [integral_div, integral_add hX_int hY_int, ← mgf, ← mgf]; linarith
+
+/-- **Geometric-mean bound for the moment-generating function of a sum** without independence. -/
+theorem mgf_add_le_exp_half_add {Y : Ω → ℝ} {θ a b : ℝ}
+    (hX_int : Integrable (fun ω ↦ exp (2 * θ * X ω)) μ)
+    (hY_int : Integrable (fun ω ↦ exp (2 * θ * Y ω)) μ)
+    (hX_le : mgf X μ (2 * θ) ≤ exp a) (hY_le : mgf Y μ (2 * θ) ≤ exp b) :
+    Integrable (fun ω ↦ exp (θ * (X ω + Y ω))) μ ∧
+      mgf (fun ω ↦ X ω + Y ω) μ θ ≤ exp ((a + b) / 2) := by
+  have hint := (mgf_add_le_of_mgf_two_mul_le hX_int hY_int hX_le hY_le).1
+  have hpt (ω : Ω) : exp (θ * (X ω + Y ω)) ≤ exp ((a + b) / 2) / 2 *
+      (exp (-a) * exp (2 * θ * X ω) + exp (-b) * exp (2 * θ * Y ω)) := by
+    have hsq (z c : ℝ) : exp (-c) * exp (2 * θ * z) = exp (θ * z - c / 2) ^ 2 := by
+      rw [sq, ← exp_add, ← exp_add]; ring_nf
+    have hsplit : exp (θ * (X ω + Y ω)) =
+        exp ((a + b) / 2) * (exp (θ * X ω - a / 2) * exp (θ * Y ω - b / 2)) := by
+      rw [← exp_add, ← exp_add]; ring_nf
+    rw [hsplit, hsq (X ω) a, hsq (Y ω) b]
+    nlinarith [two_mul_le_add_sq (exp (θ * X ω - a / 2)) (exp (θ * Y ω - b / 2)),
+      exp_pos ((a + b) / 2)]
+  have hdom : Integrable (fun ω ↦ exp ((a + b) / 2) / 2 *
+      (exp (-a) * exp (2 * θ * X ω) + exp (-b) * exp (2 * θ * Y ω))) μ :=
+    ((hX_int.const_mul (exp (-a))).add (hY_int.const_mul (exp (-b)))).const_mul _
+  have h1 {Z : Ω → ℝ} {c : ℝ} (hZ : mgf Z μ (2 * θ) ≤ exp c) : exp (-c) * mgf Z μ (2 * θ) ≤ 1 :=
+    (mul_le_mul_of_nonneg_left hZ (exp_pos _).le).trans_eq (by rw [← exp_add]; simp)
+  refine ⟨hint, ?_⟩; rw [mgf]; refine (integral_mono hint hdom hpt).trans ?_
+  rw [integral_const_mul, integral_add (hX_int.const_mul _) (hY_int.const_mul _),
+    integral_const_mul, integral_const_mul, ← mgf, ← mgf]
+  nlinarith [h1 hX_le, h1 hY_le, exp_pos ((a + b) / 2)]
+
+end AddBounds
+
 end TauCeti
 
 namespace ProbabilityTheory.iIndepFun
@@ -188,5 +249,15 @@ theorem integrable_exp_mul_sum_of_aemeasurable (h_indep : iIndepFun X μ)
   rw [← mgf_pos_iff]
   rw [h_indep.mgf_sum_of_aemeasurable h_meas (t := t)]
   exact Finset.prod_pos fun i hi => mgf_pos (h_int i hi)
+
+omit [IsProbabilityMeasure μ] in
+/-- Exponential MGF bound for a finite sum of independent random variables from coordinatewise
+exponential MGF bounds. -/
+theorem mgf_sum_le_exp_sum (h_indep : iIndepFun X μ) {s : Finset ι}
+    (h_meas : ∀ i ∈ s, AEMeasurable (X i) μ) {b : ι → ℝ}
+    (hb : ∀ i ∈ s, mgf (X i) μ t ≤ Real.exp (b i)) :
+    mgf (fun ω ↦ ∑ i ∈ s, X i ω) μ t ≤ Real.exp (∑ i ∈ s, b i) := by
+  rw [h_indep.mgf_sum_of_aemeasurable h_meas, Real.exp_sum]
+  exact Finset.prod_le_prod₀ (fun _ _ ↦ mgf_nonneg) hb
 
 end ProbabilityTheory.iIndepFun

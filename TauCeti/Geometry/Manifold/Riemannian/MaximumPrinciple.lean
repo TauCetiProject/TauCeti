@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.CriticalHessian
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
+
 /-!
 # The maximum principle for the Laplace–Beltrami operator
 
@@ -68,7 +70,8 @@ theorem hessian_self_nonpos_of_isLocalMax (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     exact hm.comp_continuous (continuousAt_extChartAt_symm x)
   rw [hessian_eq_criticalHessian hf (mem_criticalPoints.1 (hmax.mem_criticalPoints (I := I))),
     criticalHessian_def]
-  exact fderiv_fderiv_self_nonpos_of_isLocalMax hf.contDiffAt_comp_extChartAt_symm hmax' v
+  exact fderiv_fderiv_self_nonpos_of_isLocalMax
+    (hf.contDiffAt_comp_extChartAt_symm.eventually_differentiableAt (by norm_num)) hmax' v
 
 /-- At a local maximum of a `C²` function on a boundaryless Riemannian manifold, the
 Laplace–Beltrami operator `Δ = div ∘ grad` is nonpositive. -/
@@ -86,7 +89,8 @@ theorem hessian_self_nonneg_of_isLocalMin (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     exact hm.comp_continuous (continuousAt_extChartAt_symm x)
   rw [hessian_eq_criticalHessian hf (mem_criticalPoints.1 (hmin.mem_criticalPoints (I := I))),
     criticalHessian_def]
-  exact fderiv_fderiv_self_nonneg_of_isLocalMin hf.contDiffAt_comp_extChartAt_symm hmin' v
+  exact fderiv_fderiv_self_nonneg_of_isLocalMin
+    (hf.contDiffAt_comp_extChartAt_symm.eventually_differentiableAt (by norm_num)) hmin' v
 
 /-- At a local minimum of a `C²` function on a boundaryless Riemannian manifold, the
 Laplace–Beltrami operator `Δ = div ∘ grad` is nonnegative. -/

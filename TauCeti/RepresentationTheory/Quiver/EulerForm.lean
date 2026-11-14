@@ -40,8 +40,6 @@ positive definiteness of the Tits form is a property of the underlying graph alo
 (`TauCeti.titsForm_posDef_iff_posDef_graphCartanMatrix`). A positive definite Tits form forces this
 arrow condition (`TauCeti.card_hom_add_card_hom_le_one_of_titsForm_posDef`).
 
-The definitions follow the Layer 4 signatures in
-`TauCetiRoadmap/TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/Suggested.lean`.
 See Derksen--Weyman, *An Introduction to Quiver Representations*.
 -/
 
