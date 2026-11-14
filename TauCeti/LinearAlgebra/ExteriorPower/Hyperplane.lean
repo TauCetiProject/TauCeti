@@ -47,8 +47,8 @@ inside a subspace determined solely by the nonvanishing pattern of the wedge for
   Plücker coordinates of any basis of `U`.
 * `TauCeti.exists_wedgeForms_omitOne_ne_zero`: for linearly independent forms `l`, every nonzero
   vector in `powersetCard ι p → K` (`p + 1 = #ι`) has a nonvanishing `omitOne` wedge form.
-* `TauCeti.mem_span_of_forall_dotProduct_eq_zero`: any normal vector to the hyperplane spanned by
-  `x` lies in the span of the coefficient vectors of the forms `l i` whose `omitOne hm i` wedge
+* `TauCeti.mem_span_of_forall_dotProduct_eq_zero`: any vector orthogonal to the hyperplane spanned
+  by `x` lies in the span of the coefficient vectors of the forms `l i` whose `omitOne hm i` wedge
   form does not vanish at `plucker x`.
 
 ## References
@@ -105,16 +105,18 @@ theorem exists_wedgeForms_omitOne_ne_zero (hm : p + 1 = Fintype.card ι)
   simpa using h ((omitOne hm).symm T)
 
 /-- If `x` is a linearly independent family of `p` vectors in `ι → K` with
-`p + 1 = Fintype.card ι`, `a` is a nonzero vector orthogonal to every `x r`, and `l` is a linearly
+`p + 1 = Fintype.card ι`, `a` is a vector orthogonal to every `x r`, and `l` is a linearly
 independent family of linear forms on `ι → K`, then `a` lies in the span of the coefficient
 vectors `j ↦ l i (Pi.single j 1)` of those forms `l i` whose `omitOne hm i` wedge form does not
 vanish at `plucker x`. -/
 theorem mem_span_of_forall_dotProduct_eq_zero (hm : p + 1 = Fintype.card ι)
     {l : ι → Dual K (ι → K)} (hl : LinearIndependent K l)
-    {x : Fin p → ι → K} (hx : LinearIndependent K x) {a : ι → K} (ha : a ≠ 0)
+    {x : Fin p → ι → K} (hx : LinearIndependent K x) {a : ι → K}
     (hxa : ∀ r, x r ⬝ᵥ a = 0) :
     a ∈ Submodule.span K ((fun i j ↦ l i (Pi.single j 1)) ''
       {i | wedgeForms l p (omitOne hm i) (plucker x) ≠ 0}) := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · exact Submodule.zero_mem _
   let Φ : (ι → K) ≃ₗ[K] (ι → K) := LinearEquiv.ofBijective (LinearMap.pi l) hl.pi_bijective
   let a' : ι → K := Φ.dotProductContragredient a
   have ha' : a' ≠ 0 := by simpa [a'] using ha

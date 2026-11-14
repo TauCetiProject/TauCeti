@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.ExteriorPower.Plucker
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+import TauCeti.Analysis.AbsoluteValue.LinearForms
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Gram.Fischer
 import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
@@ -21,10 +22,14 @@ The Euclidean norm of the Plücker vector is at most the product of the Euclidea
 norms of the original vectors. For a nonarchimedean absolute value, the analogous
 statement holds for maximum norms, while an arbitrary absolute value incurs at most
 the factorial of the exterior degree; columnwise entry bounds on a subset `s` pass
-to the minor on `s` in the same way. These are the local estimates underlying the
-height bound for a subspace in terms of a spanning family. The overlapping-family
-inequality compares the common rows and their two extensions; it supplies the
-archimedean factor of subspace-height submodularity.
+to the minor on `s` in the same way, and coordinate bounds controlled by a linearly
+independent system of linear forms pass to uniform power bounds on the Plücker sup
+norm (`AbsoluteValue.iSup_plucker_le_of_forall_apply_le`,
+`AbsoluteValue.exists_one_le_forall_iSup_plucker_le`). These are the local estimates
+underlying the height bound for a subspace in terms of a spanning family or an
+approximation domain. The overlapping-family inequality compares the common rows and
+their two extensions; it supplies the archimedean factor of subspace-height
+submodularity.
 
 ## References
 
@@ -143,5 +148,55 @@ theorem plucker_le_prod {R S ι : Type*} [CommRing R] [CommRing S] [LinearOrder 
   exact Matrix.abv_det_le_prod_of_le' _ hv (b := fun j ↦ b (ofFinEmbEquiv.symm s j))
     fun i j ↦ hb i _
       ((mem_range_ofFinEmbEquiv_symm_iff_mem s (ofFinEmbEquiv.symm s j)).1 ⟨j, rfl⟩)
+
+/-- If every coordinate `v (x j)` is bounded by `C * ⨆ i, v (l i x)` (`1 ≤ C`) and each row
+satisfies `v (l i (x r)) ≤ Q ^ e i` (`1 ≤ Q`), then every `p`-Plücker coordinate of `x` is bounded
+by `(#ι)! * C ^ #ι * Q ^ (p * ⨆ i, e i)`. Empty index types and arbitrary exterior degrees `p` are
+included. -/
+theorem iSup_plucker_le_of_forall_apply_le {R ι : Type*} [CommRing R] [LinearOrder ι] [Fintype ι]
+    {p : ℕ} (v : AbsoluteValue R ℝ) {l : ι → Module.Dual R (ι → R)} {C Q : ℝ} (hC1 : 1 ≤ C)
+    (hQ : 1 ≤ Q) (hl : ∀ (x : ι → R) (j : ι), v (x j) ≤ C * ⨆ i, v (l i x)) (e : ι → ℝ)
+    {x : Fin p → ι → R} (hx : ∀ (r : Fin p) (i : ι), v (l i (x r)) ≤ Q ^ e i) :
+    ⨆ s, v (plucker x s) ≤
+      ((Fintype.card ι).factorial * C ^ Fintype.card ι) * Q ^ ((p : ℝ) * ⨆ i, e i) := by
+  have hQ0 : 0 < Q := zero_lt_one.trans_le hQ
+  have hA1 : 1 ≤ (Fintype.card ι).factorial * C ^ Fintype.card ι :=
+    one_le_mul_of_one_le_of_one_le (by exact_mod_cast Nat.factorial_pos _) (one_le_pow₀ hC1)
+  refine Real.iSup_le (fun s ↦ ?_) (mul_nonneg (zero_le_one.trans hA1) (by positivity))
+  have hp : p ≤ Fintype.card ι := by simpa using (s : Finset ι).card_le_univ
+  have hrow (r : Fin p) : ⨆ j, v (x r j) ≤ C * Q ^ (⨆ i, e i) := by
+    have : Nonempty ι := Fintype.card_pos_iff.mp (lt_of_lt_of_le r.pos hp)
+    exact ciSup_le fun j ↦ (hl (x r) j).trans <| mul_le_mul_of_nonneg_left
+      (ciSup_le fun i ↦ (hx r i).trans
+        (Real.rpow_le_rpow_of_exponent_le hQ (Finite.le_ciSup_of_le i le_rfl)))
+      (zero_le_one.trans hC1)
+  calc v (plucker x s)
+      ≤ p.factorial * ∏ r : Fin p, ⨆ j, v (x r j) := v.plucker_le_factorial_mul_prod_iSup x s
+    _ ≤ p.factorial * ∏ _r : Fin p, (C * Q ^ (⨆ i, e i)) :=
+        mul_le_mul_of_nonneg_left
+          (Finset.prod_le_prod₀ (fun _ _ ↦ Real.iSup_nonneg fun _ ↦ v.nonneg _) fun r _ ↦ hrow r)
+          (Nat.cast_nonneg _)
+    _ = (p.factorial * C ^ p) * Q ^ ((p : ℝ) * ⨆ i, e i) := by
+        rw [Finset.prod_const, Finset.card_fin, mul_pow, ← Real.rpow_natCast (Q ^ _),
+          ← Real.rpow_mul hQ0.le, mul_comm (⨆ i, e i)]
+        ring
+    _ ≤ ((Fintype.card ι).factorial * C ^ Fintype.card ι) * Q ^ ((p : ℝ) * ⨆ i, e i) := by
+        refine mul_le_mul_of_nonneg_right ?_ (by positivity)
+        exact mul_le_mul (by exact_mod_cast Nat.factorial_le hp)
+          (pow_le_pow_right₀ hC1 hp) (by positivity) (Nat.cast_nonneg _)
+
+/-- At any real-valued absolute value where `#ι` linear forms `l` on `ι → K` are linearly
+independent, some `A ≥ 1` (independent of `e`, `Q`, `p`, and `x`) bounds `⨆ s, v (plucker x s)` by
+`A * Q ^ (p * ⨆ i, e i)` whenever `1 ≤ Q` and `v (l i (x r)) ≤ Q ^ e i`. -/
+theorem exists_one_le_forall_iSup_plucker_le {K ι : Type*} [Field K] [LinearOrder ι] [Finite ι]
+    (v : AbsoluteValue K ℝ) {l : ι → Module.Dual K (ι → K)} (hl : LinearIndependent K l) :
+    ∃ A : ℝ, 1 ≤ A ∧ ∀ (e : ι → ℝ) ⦃Q : ℝ⦄, 1 ≤ Q → ∀ {p : ℕ} {x : Fin p → ι → K},
+      (∀ r i, v (l i (x r)) ≤ Q ^ e i) →
+      ⨆ s, v (plucker x s) ≤ A * Q ^ ((p : ℝ) * ⨆ i, e i) := by
+  cases nonempty_fintype ι
+  obtain ⟨C, hC1, hC⟩ := v.exists_one_le_forall_apply_le_mul_iSup hl
+  refine ⟨(Fintype.card ι).factorial * C ^ Fintype.card ι,
+    one_le_mul_of_one_le_of_one_le (by exact_mod_cast Nat.factorial_pos _) (one_le_pow₀ hC1),
+    fun e Q hQ _ _ hx ↦ v.iSup_plucker_le_of_forall_apply_le hC1 hQ hC e hx⟩
 
 end AbsoluteValue
