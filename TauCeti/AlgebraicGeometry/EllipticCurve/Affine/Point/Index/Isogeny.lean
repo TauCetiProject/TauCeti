@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.NSmul
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.PrimaryReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Depth
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Index
 
 import TauCeti.Algebra.Group.Primary.Card
 import TauCeti.Algebra.Group.Subgroup.Map
@@ -80,6 +80,17 @@ through `[E₂,k : E₂,j] = |c|_u⁻¹` when `c` is
 integral, and the indices `[E(F_u) : E_k(F_u)]` of the levels, which involve the nonsingular
 reduction and the Tamagawa number (Silverman VII.6).
 
+For minimal equations and a finite residue field of order `q`, this gives the local factor itself:
+
+`[E₂(F_u) : φ E₁(F_u)] / #E₁(F_u)[φ] = |c|_u⁻¹ · c_u(E₂) / c_u(E₁)`,
+
+where `|c|_u⁻¹ = q ^ ord(c)` and `c_u` is the local Tamagawa number. Indeed
+`[E(F_u) : E_(k+1)(F_u)] = q ^ k · #Ẽ_ns(k_u) · c_u(E)`
+(`WeierstrassCurve.index_formalPointFiltration_eq_mul_tamagawaNumber`), and isogenous minimal
+equations have reductions with equally many nonsingular points
+(`TauCeti.Isogeny.natCard_point_reduction_eq`), so the counts `#Ẽ_ns(k_u)` cancel and the
+powers of `q` leave `q ^ (j - k) = q ^ ord(c)`.
+
 ## Main results
 
 * `TauCeti.Isogeny.Hom.finiteIndex_range_pointMapHom_of_degree_ne_zero`: the image of
@@ -103,6 +114,8 @@ reduction and the Tamagawa number (Silverman VII.6).
 * `TauCeti.Isogeny.eventually_index_range_pointMapHom_mul_index_formalPointFiltration`: the
   cross-multiplied index identity displayed above; when the level indices are finite, the local
   cokernel/kernel ratio of `φ` is `[E₂ : E₂,j] / [E₁ : E₁,k]`.
+* `TauCeti.Isogeny.index_range_pointMapHom_div_card_ker_eq_zpow_mul_tamagawaNumber_div`: for
+  minimal equations, the local cokernel/kernel ratio of `φ` is `|c|_u⁻¹ · c_u(E₂) / c_u(E₁)`.
 
 ## References
 
@@ -437,6 +450,68 @@ theorem eventually_index_range_pointMapHom_mul_index_formalPointFiltration {c : 
   have h := (Hom.ofIsogeny φ).pointMapHom.index_range_mul_index_mul_card_inf_ker
     (C₁.formalPointFiltration u k)
   rwa [hker, AddSubgroup.card_bot, mul_one, hmap j hjk] at h
+
+open scoped Classical in
+/-- **The local cokernel/kernel ratio of an isogeny at a finite place**: let `E₁` and `E₂` be
+given by minimal equations over `O_u`, with finite residue field of order `q`, and let `φ` pull the
+invariant differential back as `φ^*ω₂ = c ω₁`, with `2 ≠ 0` in `F_u` and `deg φ` nonzero in `A`.
+Then
+
+`[E₂(F_u) : φ E₁(F_u)] / #E₁(F_u)[φ] = q ^ ord(c) · c_u(E₂) / c_u(E₁)`,
+
+where `ord(c) = -log (v c)` and `c_u` is the local Tamagawa number, so that `q ^ ord(c)` is the
+inverse `|c|_u⁻¹` of the normalised absolute value of `c`. This holds at every finite place,
+including those dividing `deg φ`. -/
+theorem index_range_pointMapHom_div_card_ker_eq_zpow_mul_tamagawaNumber_div
+    [Finite (A ⧸ u.asIdeal)] [IsMinimal O_u (C₁.baseChange F_u)]
+    [IsMinimal O_u (C₂.baseChange F_u)] {c : F_u}
+    (hc : φ.pullbackDifferential (Affine.invariantDifferential _) =
+      c • Affine.invariantDifferential _)
+    (h2 : (2 : F_u) ≠ 0) (hn : (φ.degree : A) ≠ 0) :
+    ((Hom.ofIsogeny φ).pointMapHom.range.index : ℚ) / Nat.card (Hom.ofIsogeny φ).pointMapHom.ker =
+      (Nat.card (ResidueField O_u) : ℚ) ^ (-log (Valued.v c)) *
+        (C₂.baseChange F_u).tamagawaNumber Valued.v /
+          (C₁.baseChange F_u).tamagawaNumber Valued.v := by
+  -- `c ≠ 0`, as `c c' = deg φ` for the constant `c'` of the dual, and `deg φ ≠ 0` in `F_u`
+  obtain ⟨c', hc', -⟩ := φ.dual.existsUnique_pullbackDifferential_invariantDifferential_eq_smul
+  have hdeg : (φ.degree : F_u) ≠ 0 := by
+    have : (φ.degree : O_u) ≠ 0 := by
+      rw [← map_natCast (algebraMap A O_u)]
+      exact (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective A O_u)).mpr hn
+    rw [← map_natCast (algebraMap O_u F_u)]
+    exact (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective O_u F_u)).mpr this
+  have hc0 : c ≠ 0 :=
+    left_ne_zero_of_mul (φ.mul_eq_degree_of_pullbackDifferential_eq_smul hc hc' ▸ hdeg)
+  have hvc : Valued.v c ≠ 0 := (Valued.v : Valuation F_u ℤᵐ⁰).ne_zero_iff.mpr hc0
+  -- a deep positive level `k + 1`, carried onto the positive level `j + 1 = k + 1 + ord(c)`
+  obtain ⟨k, hk, hkc⟩ := ((eventually_index_range_pointMapHom_mul_index_formalPointFiltration u
+    hc h2 hn).and (eventually_ge_atTop ((log (Valued.v c)).natAbs + 1))).exists
+  obtain ⟨j, hj⟩ : ∃ j : ℕ, (j : ℤ) = k - log (Valued.v c) := ⟨_, Int.toNat_of_nonneg (by omega)⟩
+  have h := hk j (by rw [← exp_log hvc, ← exp_add, hj, add_sub_cancel])
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : k ≠ 0)
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : j ≠ 0)
+  -- `[E : E_(k+1)] = q ^ k · #Ẽ_ns · c_u(E)`, with the same count `#Ẽ_ns` for `E₁` and `E₂`
+  have hN := (C₁.natCard_point_reduction_baseChange_adicCompletion).symm.trans
+    (φ.natCard_point_reduction_eq.trans C₂.natCard_point_reduction_baseChange_adicCompletion)
+  rw [C₁.index_formalPointFiltration_eq_mul_tamagawaNumber u,
+    C₂.index_formalPointFiltration_eq_mul_tamagawaNumber u, ← hN] at h
+  -- the level index of `E₁` is finite, so `#Ẽ_ns` and `c_u(E₁)` are nonzero; so is `#E₁(F_u)[φ]`
+  have hI := (C₁.formalPointFiltration u (k + 1)).index_ne_zero_of_finite
+  rw [C₁.index_formalPointFiltration_eq_mul_tamagawaNumber u] at hI
+  obtain ⟨hqN, hc₁⟩ := mul_ne_zero_iff.mp hI
+  have := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
+  have hK : (Nat.card (Hom.ofIsogeny φ).pointMapHom.ker : ℚ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  have hq : (Nat.card (ResidueField O_u) : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  have hm : -log (Valued.v c) = (j : ℤ) - k := by
+    push_cast at hj
+    omega
+  rw [div_eq_div_iff hK (Nat.cast_ne_zero.mpr hc₁), hm, zpow_sub₀ hq, zpow_natCast, zpow_natCast]
+  field_simp
+  refine mul_left_cancel₀ (Nat.cast_ne_zero.mpr (right_ne_zero_of_mul hqN) : _ ≠ (0 : ℚ)) ?_
+  have h' := congrArg (Nat.cast : ℕ → ℚ) h
+  push_cast at h'
+  linear_combination h'
 
 end FormalLevels
 

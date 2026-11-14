@@ -25,9 +25,11 @@ counts supply torsion certificates for rational curves.
 
 Over the completion `F_u` at a height-one prime `u` with finite residue field, the ring of
 integers `𝒪[F_u]` of the valuative relation is `O_u`. So an elliptic equation over `O_u` has good
-reduction at `𝒪[F_u]` (`WeierstrassCurve.hasGoodReduction_baseChange_adicCompletion`), and its
-reduction there has as many points as the reduction used by the reduction homomorphism
-(`WeierstrassCurve.natCard_point_reduction_baseChange_adicCompletion`).
+reduction at `𝒪[F_u]` (`WeierstrassCurve.hasGoodReduction_baseChange_adicCompletion`), and an
+equation minimal at `O_u` is minimal at `𝒪[F_u]`
+(`WeierstrassCurve.isMinimal_integer_adicCompletion`). The reduction of a minimal equation over
+`O_u` at `𝒪[F_u]` has as many nonsingular points as the reduction used by the reduction
+homomorphism (`WeierstrassCurve.natCard_point_reduction_baseChange_adicCompletion`).
 -/
 
 public section
@@ -126,9 +128,26 @@ instance hasGoodReduction_baseChange_adicCompletion :
   rw [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_baseChange_self]
   exact C.isUnit_Δ
 
-/-- The reduction at `𝒪[F_u]` of an elliptic equation over `O_u` has as many points as its
-reduction at `Valued.v.valuationSubring`, the ring used by the reduction homomorphism. -/
-theorem natCard_point_reduction_baseChange_adicCompletion :
+/-- A Weierstrass equation over `F_u` that is minimal at `O_u` is minimal at the ring of integers
+`𝒪[F_u]` of the valuative relation of `F_u`, which is `O_u`. -/
+instance isMinimal_integer_adicCompletion (W : WeierstrassCurve (u.adicCompletion F))
+    [W.IsMinimal (u.adicCompletionIntegers F)] : W.IsMinimal 𝒪[u.adicCompletion F] := by
+  -- as in `hasGoodReduction_baseChange_adicCompletion`, substitute `𝒪[F_u] = O_u`
+  suffices ∀ (T : ValuationSubring (u.adicCompletion F)) [IsDiscreteValuationRing T],
+      u.adicCompletionIntegers F = T → W.IsMinimal T by
+    have hR : IsDiscreteValuationRing (valuation (u.adicCompletion F)).valuationSubring :=
+      inferInstanceAs (IsDiscreteValuationRing 𝒪[u.adicCompletion F])
+    exact this (valuation (u.adicCompletion F)).valuationSubring
+      (ValuationSubring.toSubring_injective (u.integer_eq_adicCompletionIntegers (K := F)).symm)
+  rintro T _ rfl
+  assumption
+
+omit [C.IsElliptic] in
+/-- The reduction at `𝒪[F_u]` of an equation over `O_u` that is minimal at `𝒪[F_u]` has as many
+points as its reduction at `Valued.v.valuationSubring`, the ring used by the reduction
+homomorphism. Only the nonsingular points are counted, so the reduction may be singular. -/
+theorem natCard_point_reduction_baseChange_adicCompletion
+    [(C.baseChange (u.adicCompletion F)).IsMinimal 𝒪[u.adicCompletion F]] :
     Nat.card ((C.baseChange (u.adicCompletion F)).reduction 𝒪[u.adicCompletion F]).toAffine.Point =
       Nat.card ((integralModel (Valued.v : Valuation (u.adicCompletion F)
         (WithZero (Multiplicative ℤ))).valuationSubring (C.baseChange (u.adicCompletion F))).map
