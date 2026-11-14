@@ -54,7 +54,9 @@ When moreover `f(z) (z / |z|)⁻ᵐ → 1` at infinity, that divisor has `m` poi
 (`TauCeti.IsZeroMultiplicity.card_eq_of_tendsto_mul_inv_pow`).
 
 Divisibility of a holomorphic function `H` by `f` near `z` is measured by the analytic order of
-`H`: if `H = f u` near `z` with `u` continuous at `z`, then `H` vanishes to order at least `n z`
+`H`: if `f` itself is analytic at `z` then its analytic order there equals `n z`
+(`TauCeti.IsZeroMultiplicity.analyticOrderAt_eq`), and if `H = f u` near `z` with `u` continuous at
+`z`, then `H` vanishes to order at least `n z`
 (`TauCeti.IsZeroMultiplicity.natCast_le_analyticOrderAt_of_eventually_eq_mul`); conversely, if `H`
 vanishes to order at least `n` and `f = (w - z) ^ n v` with `v` of class `Cᵏ` at `z` and nonzero
 there, then `H = f K` near `z` with `K` of class `Cᵏ` at `z`
@@ -186,6 +188,24 @@ theorem card_eq_of_tendsto_mul_inv_pow {D : Multiset ℂ}
     finsum_eq_sum_of_support_subset _ (s := D.toFinset) fun z hz ↦ ?_,
     Multiset.toFinset_sum_count_eq]
   simpa [Multiset.count_eq_zero] using hz
+
+/-- **The analytic order equals the zero multiplicity.** If `f` is analytic at `z` and has zero
+multiplicity function `n`, then `analyticOrderAt f z = n z`. -/
+theorem analyticOrderAt_eq (h : IsZeroMultiplicity f n) {z : ℂ} (hf : AnalyticAt ℂ f z) :
+    analyticOrderAt f z = n z := by
+  obtain ⟨v, hv, hv₀, hfac⟩ := isZeroMultiplicity_iff.1 h z
+  have hfin : analyticOrderAt f z ≠ ⊤ := by
+    intro htop
+    obtain ⟨w, ⟨⟨hw, hvw⟩, hw0⟩, hwz⟩ :=
+      ((((hfac.and (hv.eventually_ne hv₀)).and (analyticOrderAt_eq_top.1 htop)).filter_mono
+        nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := {z}ᶜ))).exists
+    exact mul_ne_zero (pow_ne_zero _ (sub_ne_zero.2 hwz)) hvw (hw.symm.trans hw0)
+  rw [← Nat.cast_analyticOrderNatAt hfin, Nat.cast_inj]
+  obtain ⟨g, hg, hg₀, hfg⟩ :=
+    hf.analyticOrderAt_eq_natCast.1 (Nat.cast_analyticOrderNatAt hfin).symm
+  exact eq_of_eventually_sub_pow_mul_eq hg.continuousAt hg₀ hv hv₀ <| by
+    filter_upwards [hfg, hfac] with w hw₁ hw₂
+    simpa only [smul_eq_mul] using hw₁.symm.trans hw₂
 
 /-- A holomorphic function divisible near `z` by `f`, with a quotient continuous at `z`, vanishes
 at `z` to order at least the zero multiplicity of `f` there. -/
