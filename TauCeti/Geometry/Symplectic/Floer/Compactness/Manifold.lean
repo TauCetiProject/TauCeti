@@ -150,6 +150,11 @@ private theorem chartStructure_apply_mvfderiv {x₀ x : M} (z : ℝ × ℝ)
         mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) (extChartAt I x₀ x) :
           E →L[ℝ] E) (mvfderiv I (extChartAt I x₀) x c) =
       mvfderiv I (extChartAt I x₀) x (J z x c) := by
+  -- The composite is typed `E →L[ℝ] E`, but its factors act on the tangent spaces
+  -- `TangentSpace 𝓘(ℝ, E) (ψ x)` and `TangentSpace I (ψ⁻¹ (ψ x))`, which are `E` only by
+  -- unfolding `TangentSpace`. `ContinuousLinearMap.comp_apply` therefore rewrites only the outer
+  -- composition (the inner rewrite motive is not type correct), so `change` evaluates both
+  -- compositions, the coercion of `toContinuousLinearMap` and that of `J` at once.
   change mvfderiv I (extChartAt I x₀) ((extChartAt I x₀).symm (extChartAt I x₀ x))
     (J z ((extChartAt I x₀).symm (extChartAt I x₀ x))
       (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) (extChartAt I x₀ x)
@@ -245,7 +250,7 @@ theorem exists_forall_norm_fderiv_extChartAt_comp_stdComplexLineReal_sq_le (ω :
   obtain ⟨c, hc, hbc⟩ := exists_pos_forall_mul_norm_mvfderiv_sq_le ω x₀ hD hK hKt hJ htame
   obtain ⟨B₀, hB₀⟩ := (hD.prod hK).exists_bound_of_continuousOn hX
   refine ⟨2 / c, by positivity, 2 * B₀ ^ 2, by positivity, fun u z hz hsrc hK' hu h ↦ ?_⟩
-  set a := ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal
+  set a := ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal with ha
   set T := mvfderiv I ψ (u z)
   have hXB : ‖T (ω.hamiltonianVectorField (Ks z) (u z))‖ ≤ B₀ := by
     have h' := hB₀ (z, ψ (u z)) ⟨hz, hK'⟩
@@ -258,8 +263,7 @@ theorem exists_forall_norm_fderiv_extChartAt_comp_stdComplexLineReal_sq_le (ω :
     have hch := (mvfderiv_eq_fderiv_apply (ψ ∘ u) z stdComplexLineReal).symm.trans
       (mvfderiv_comp_apply z (mdifferentiableAt_extChartAt
         (by simpa only [ψ, extChartAt_source] using hsrc)) hu stdComplexLineReal)
-    rw [hch, ← map_add,
-      show a = _ from perturbedMFDeriv_apply_stdComplexLineReal ω Ks Kt u z, sub_add_cancel]
+    rw [hch, ← map_add, ha, perturbedMFDeriv_apply_stdComplexLineReal, sub_add_cancel]
   have hE : c * ‖T a‖ ^ 2 ≤ ω.floerEnergyDensity Ks Kt u z := by
     have hP := h.apply_stdComplexLineImag
     simp only [ContinuousLinearMap.coe_coe] at hP
