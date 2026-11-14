@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.CWComplex.Classical.Finite
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
-public import TauCeti.Topology.VectorBundle.SphereBundle
+public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 import Mathlib.Analysis.Convex.Contractible
 import TauCeti.Topology.FiberBundle.Separation
 import TauCeti.Topology.MetricSpace.Isometry.Basic
