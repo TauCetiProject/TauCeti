@@ -37,6 +37,8 @@ transversals.
 
 * `TauCeti.GraphOfGroups.Transversal`: a choice of left transversals of the edge group images.
 * `TauCeti.GraphOfGroups.AlternatingPath`: alternating `𝔸`-paths `g₀, e₁, g₁, …, e_k, g_k`.
+* `TauCeti.GraphOfGroups.AlternatingPath.dartLength`: the number of darts traversed by an
+  alternating `𝔸`-path.
 * `TauCeti.GraphOfGroups.AlternatingPath.IsReduced`: alternating paths without backtracking.
 * `TauCeti.GraphOfGroups.NormalWord`: normal words for a transversal.
 * `TauCeti.GraphOfGroups.NormalWord.appendPath`: appending an `𝔸`-path to a normal word.
@@ -48,6 +50,8 @@ transversals.
   when they have the same normal form.
 * `TauCeti.GraphOfGroups.NormalWord.toPath_homotopic_toPath_iff`: distinct normal words are not
   homotopic.
+* `TauCeti.GraphOfGroups.AlternatingPath.IsReduced.not_toPath_homotopic_ofVertex`: no reduced
+  alternating `𝔸`-path of positive dart length is homotopic to a single vertex-group letter.
 * `TauCeti.GraphOfGroups.π₁.normalWordEquiv`: `π₁(𝔸, a)` is in bijection with the normal words of
   closed paths at `a`.
 * `TauCeti.GraphOfGroups.Path.ofVertex_homotopic_nil_iff`: a nontrivial vertex group element is
@@ -181,6 +185,23 @@ def setLast : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → 𝔸.vertexGroup b �
 
 @[simp] theorem setLast_setLast {b : Γ.V} (p : 𝔸.AlternatingPath a b) (g h : 𝔸.vertexGroup b) :
     (p.setLast g).setLast h = p.setLast h := by
+  cases p <;> rfl
+
+/-- The number of darts traversed by an alternating `𝔸`-path. -/
+def dartLength : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → ℕ
+  | _, single _ => 0
+  | _, cons p _ _ => p.dartLength + 1
+
+@[simp] theorem dartLength_single (g : 𝔸.vertexGroup a) :
+    (single g : 𝔸.AlternatingPath a a).dartLength = 0 :=
+  (rfl)
+
+@[simp] theorem dartLength_cons {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
+    (g : 𝔸.vertexGroup c) : (cons p e g).dartLength = p.dartLength + 1 :=
+  (rfl)
+
+@[simp] theorem dartLength_setLast {b : Γ.V} (p : 𝔸.AlternatingPath a b) (g : 𝔸.vertexGroup b) :
+    (p.setLast g).dartLength = p.dartLength := by
   cases p <;> rfl
 
 /-- The `𝔸`-path `g₀ e₁ g₁ ⋯ e_k g_k` spelled by an alternating path. -/
@@ -679,6 +700,51 @@ private theorem normalForm_toPath_aux :
 @[simp] theorem NormalWord.toPath_homotopic_toPath_iff {w w' : NormalWord d a b} :
     w.toPath.Homotopic w'.toPath ↔ w = w' := by
   rw [← normalForm_eq_normalForm_iff d, normalForm_toPath, normalForm_toPath]
+
+private theorem normalForm_toPath_dartLength_and_cancels :
+    ∀ {b : Γ.V} (p : 𝔸.AlternatingPath a b), p.IsReduced →
+      (normalForm d p.toPath).1.dartLength = p.dartLength ∧
+        ∀ {c : Γ.V} (e : b ⟶ c), (normalForm d p.toPath).1.Cancels e ↔ p.Cancels e
+  | _, .single _, _ => by simp
+  | _, .cons p e₀ g, hp => by
+    obtain ⟨hlen, hcan⟩ := normalForm_toPath_dartLength_and_cancels p hp.1
+    have hnc : ¬ (normalForm d p.toPath).1.Cancels e₀ := mt (hcan e₀).mp hp.2
+    have hnf : (normalForm d (AlternatingPath.cons p e₀ g).toPath).1 =
+        AlternatingPath.cons
+          ((normalForm d p.toPath).1.setLast (d.rep e₀ (normalForm d p.toPath).1.last)) e₀
+          (𝔸.ωArrow e₀ (d.edgePart e₀ (normalForm d p.toPath).1.last) * g) := by
+      simp [AlternatingPath.appendDart_of_not_cancels d hnc]
+    rw [hnf]
+    refine ⟨by simp [hlen], fun e => ?_⟩
+    simp only [AlternatingPath.cancels_cons_iff]
+    refine and_congr_right fun he => ?_
+    have hmem : 𝔸.ωArrow e₀ (d.edgePart e₀ (normalForm d p.toPath).1.last) ∈
+        (𝔸.αArrow e).range := by
+      rw [← 𝔸.range_ωArrow_eq_range_αArrow e₀ e he]
+      exact ⟨_, rfl⟩
+    exact (𝔸.αArrow e).range.mul_mem_cancel_left hmem
+
+/-- Normalizing a reduced alternating `𝔸`-path preserves the number of darts it traverses. -/
+theorem normalForm_toPath_dartLength_of_isReduced {b : Γ.V} {p : 𝔸.AlternatingPath a b}
+    (hp : p.IsReduced) : (normalForm d p.toPath).1.dartLength = p.dartLength :=
+  (normalForm_toPath_dartLength_and_cancels d p hp).1
+
+/-- No reduced alternating `𝔸`-path of positive dart length is homotopic to a single vertex-group
+letter. -/
+theorem AlternatingPath.IsReduced.not_toPath_homotopic_ofVertex {p : 𝔸.AlternatingPath a a}
+    (hp : p.IsReduced) (hlen : 0 < p.dartLength) (g : 𝔸.vertexGroup a) :
+    ¬ p.toPath.Homotopic (Path.ofVertex g) := by
+  intro h
+  have hnf := congrArg (fun w : NormalWord default a a => w.1.dartLength)
+    (normalForm_eq_of_homotopic default h)
+  rw [normalForm_toPath_dartLength_of_isReduced default hp, normalForm_ofVertex,
+    NormalWord.toAlternatingPath_single, AlternatingPath.dartLength_single] at hnf
+  exact hlen.ne' hnf
+
+/-- No reduced alternating `𝔸`-path of positive dart length is homotopic to the empty path. -/
+theorem AlternatingPath.IsReduced.not_toPath_homotopic_nil {p : 𝔸.AlternatingPath a a}
+    (hp : p.IsReduced) (hlen : 0 < p.dartLength) : ¬ p.toPath.Homotopic Quiver.Path.nil :=
+  fun h => hp.not_toPath_homotopic_ofVertex hlen 1 (h.trans Path.Homotopic.ofVertex_one.symm)
 
 end normalForm
 

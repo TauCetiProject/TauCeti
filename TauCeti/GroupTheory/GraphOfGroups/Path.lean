@@ -60,11 +60,15 @@ at `a`.
 
 ## Main results
 
+* `TauCeti.GraphOfGroups.Path.Homotopic.comp_left_iff`,
+  `TauCeti.GraphOfGroups.Path.Homotopic.comp_right_iff`: cancellation of common prefixes and
+  suffixes in path homotopies.
 * `TauCeti.GraphOfGroups.π₁.mk_eq_mk_iff`: closed paths give the same element of `π₁(𝔸, a)`
   exactly when they are homotopic.
-* `TauCeti.GraphOfGroups.π₁.vertexHom_eq_conj_comp`, `π₁.map_vertexHom_eq_map_conj`: the
-  conjugations of `A_b` into `π₁(𝔸, a)` along two paths from `a` to `b` differ by an inner
-  automorphism, so the images of a subgroup of `A_b` along them are conjugate.
+* `TauCeti.GraphOfGroups.π₁.vertexHom_eq_conj_comp`, `π₁.vertexHom_comp_ofVertex`,
+  `π₁.map_vertexHom_eq_map_conj`: the conjugations of `A_b` into `π₁(𝔸, a)` along two paths from
+  `a` to `b` differ by an inner automorphism, so the images of a subgroup of `A_b` along them are
+  conjugate.
 * `TauCeti.GraphOfGroups.Path.nonempty_of_preconnected`: over a preconnected graph any two
   vertices are joined by an `𝔸`-path.
 * `TauCeti.GraphOfGroups.π₁.toπ₁Tree_vertexHom`: the image of `p g p⁻¹` in `π₁(𝔸, T)`.
@@ -285,6 +289,27 @@ theorem comp_comp_reverse (q : 𝔸.Path x y) (p : 𝔸.Path y z) :
     Homotopic ((q.comp p).comp p.reverse) q := by
   simpa only [Quiver.Path.comp_assoc, Quiver.Path.comp_nil] using (comp_reverse p).comp_left q
 
+/-- Cancel a common prefix from a homotopy of `𝔸`-paths. -/
+theorem of_comp_left {q r : 𝔸.Path y z} {p : 𝔸.Path x y} (h : Homotopic (p.comp q) (p.comp r)) :
+    Homotopic q r := by
+  have key (s : 𝔸.Path y z) : Homotopic (p.reverse.comp (p.comp s)) s := by
+    rw [← Quiver.Path.comp_assoc]
+    simpa only [Quiver.Path.nil_comp] using (reverse_comp p).comp_right s
+  exact (key q).symm.trans ((h.comp_left p.reverse).trans (key r))
+
+@[simp] theorem comp_left_iff (p : 𝔸.Path x y) {q r : 𝔸.Path y z} :
+    Homotopic (p.comp q) (p.comp r) ↔ Homotopic q r :=
+  ⟨of_comp_left, fun h => h.comp_left p⟩
+
+/-- Cancel a common suffix from a homotopy of `𝔸`-paths. -/
+theorem of_comp_right {p q : 𝔸.Path x y} {r : 𝔸.Path y z} (h : Homotopic (p.comp r) (q.comp r)) :
+    Homotopic p q :=
+  (comp_comp_reverse p r).symm.trans ((h.comp_right r.reverse).trans (comp_comp_reverse q r))
+
+@[simp] theorem comp_right_iff {p q : 𝔸.Path x y} (r : 𝔸.Path y z) :
+    Homotopic (p.comp r) (q.comp r) ↔ Homotopic p q :=
+  ⟨of_comp_right, fun h => h.comp_right r⟩
+
 /-- Reversing homotopic paths gives homotopic paths. -/
 theorem reverse {p q : 𝔸.Path x y} (h : Homotopic p q) : Homotopic p.reverse q.reverse := by
   -- `p⁻¹ ~ p⁻¹ (q q⁻¹) = (p⁻¹ q) q⁻¹ ~ (p⁻¹ p) q⁻¹ ~ q⁻¹`.
@@ -431,6 +456,21 @@ theorem vertexHom_eq_conj_comp (q r : 𝔸.Path ⟨a⟩ ⟨b⟩) :
 theorem vertexHom_eq_conj_comp_apply (q r : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGroup b) :
     vertexHom r g = mk (r.comp q.reverse) * vertexHom q g * (mk (r.comp q.reverse))⁻¹ :=
   DFunLike.congr_fun (vertexHom_eq_conj_comp q r) g
+
+/-- Appending a vertex group letter `g ∈ A_b` to `q` conjugates `A_b` by `g` before applying
+`vertexHom q`. -/
+theorem vertexHom_comp_ofVertex_apply (q : 𝔸.Path ⟨a⟩ ⟨b⟩) (g k : 𝔸.vertexGroup b) :
+    vertexHom (q.comp (Path.ofVertex g)) k = vertexHom q (g * k * g⁻¹) := by
+  rw [vertexHom_eq_conj_comp_apply q, ← vertexHom_apply, ← map_inv, ← map_mul, ← map_mul]
+
+/-- Appending a vertex group letter `g ∈ A_b` to `q` composes `vertexHom q` on the right with
+inner conjugation by `g`. -/
+theorem vertexHom_comp_ofVertex (q : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGroup b) :
+    vertexHom (q.comp (Path.ofVertex g)) =
+      (vertexHom q).comp (MulAut.conj g : 𝔸.vertexGroup b →* 𝔸.vertexGroup b) :=
+  MonoidHom.ext fun k =>
+    (vertexHom_comp_ofVertex_apply q g k).trans
+      (congrArg (vertexHom q) (MulAut.conj_apply g k).symm)
 
 /-- The images in `π₁(𝔸, a)` of a subgroup `H` of a vertex group `A_b` along two paths `q` and
 `r` from `a` to `b` are conjugate, by the class of `r q⁻¹`. -/
