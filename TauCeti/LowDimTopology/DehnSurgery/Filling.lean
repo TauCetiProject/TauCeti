@@ -96,6 +96,15 @@ def fillingSlope (h : IsSolidTorusNeighborhood f Φ) (g : Circle × Circle ≃�
   Slope.mk (FramedBoundaryTorus.torusCurveClass (g.trans h.exteriorFrontierHomeomorph) 1 0)
     ((FramedBoundaryTorus.isPrimitive_torusCurveClass_iff _ 1 0).2 isCoprime_one_left)
 
+/-- The filling slope of a gluing `g` is the slope of the class of the curve
+`t ↦ g (exp (2πit), 1)`, the image of the meridian, on the boundary torus of the exterior. -/
+theorem fillingSlope_def (h : IsSolidTorusNeighborhood f Φ)
+    (g : Circle × Circle ≃ₜ Circle × Circle) :
+    h.fillingSlope g =
+      Slope.mk (FramedBoundaryTorus.torusCurveClass (g.trans h.exteriorFrontierHomeomorph) 1 0)
+        ((FramedBoundaryTorus.isPrimitive_torusCurveClass_iff _ 1 0).2 isCoprime_one_left) :=
+  (rfl)
+
 /-- **The filling slope from the image of the meridian.** If the gluing `g` carries the meridian
 curve `t ↦ (exp (2πit), 1)` of the filling solid torus to the `(p, q)` curve of `S¹ × S¹`, then
 the filling slope is the slope of the `(p, q)` curve on the boundary torus of the exterior, of
