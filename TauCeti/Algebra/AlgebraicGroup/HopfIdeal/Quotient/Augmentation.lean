@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
 
@@ -38,7 +40,7 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe u
+universe u v
 
 noncomputable section
 
@@ -63,6 +65,25 @@ theorem mkQuotient_comp_quotientAugmentationIso_hom
       FiniteTypeCommHopfAlgCat.ofHom (Bialgebra.counitBialgHom k H) := by
   apply FiniteTypeCommHopfAlgCat.hom_ext
   ext
+
+/-- Over any commutative ring, the quotient of a commutative Hopf algebra by its augmentation
+ideal is a finite module (isomorphic to the base ring). -/
+theorem moduleFinite_quotient_augmentation {R : Type u} [CommRing R]
+    (A : _root_.CommHopfAlgCat.{v} R) :
+    Module.Finite R (_root_.CommHopfAlgCat.quotient A (augmentation R A)) := by
+  rw [augmentation_def]
+  exact Module.Finite.equiv (kerLiftBialgEquiv (Bialgebra.counitBialgHom R A)
+    Bialgebra.counit_surjective).symm.toAlgEquiv.toLinearEquiv
+
+/-- Over any commutative ring satisfying the strong rank condition, the quotient of a commutative
+Hopf algebra by its augmentation ideal has rank `1`. -/
+@[simp]
+theorem finrank_quotient_augmentation {R : Type u} [CommRing R] [StrongRankCondition R]
+    (A : _root_.CommHopfAlgCat.{v} R) :
+    Module.finrank R (_root_.CommHopfAlgCat.quotient A (augmentation R A)) = 1 := by
+  rw [augmentation_def]
+  exact (kerLiftBialgEquiv (Bialgebra.counitBialgHom R A)
+    Bialgebra.counit_surjective).toAlgEquiv.toLinearEquiv.finrank_eq.trans (Module.finrank_self R)
 
 end HopfIdeal
 

@@ -1,0 +1,339 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Root.Differential
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Scheme
+public import TauCeti.Algebra.Lie.Sl2.Embedding
+import TauCeti.Algebra.AlgebraicGroup.Representation.Embedding
+import TauCeti.Algebra.AlgebraicGroup.Representation.Tangent
+import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Connected
+import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Tangent.Integration
+import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Naturality
+import TauCeti.Algebra.AlgebraicGroup.Tangent.Rigidity
+
+/-!
+# Integrating an `sl₂` triple to an algebraic `SL₂` homomorphism
+
+Let `G = Spec H` be an affine group scheme of finite type over a field `k` of characteristic zero,
+and let `t : IsSl2Triple h e f` be an `sl₂` triple in its tangent Lie algebra
+`Lie(G) = Derivation k H (Bialgebra.CounitAlgebra k H k)`. This file constructs the unique
+algebraic group homomorphism `SL₂ ⟶ G` — contravariantly, the coordinate Hopf-algebra morphism
+
+```text
+IsSl2Triple.sl2CoordinateMap : H ⟶ O(SL₂)
+```
+
+and geometrically `IsSl2Triple.sl2GroupSchemeHom` — whose differential at the identity agrees with
+the Lie embedding `t.toLieHom k : sl (Fin 2) k →ₗ⁅k⁆ Lie(G)` across
+`TauCeti.SpecialLinear.tangentLieEquivSl`. Neither algebraic closure of `k` nor smoothness or
+connectedness of `G` is assumed for existence or uniqueness: `SL₂` itself is geometrically
+connected of finite type, so differential rigidity
+(`CommHopfAlgCat.Hom.eq_of_derivationCompLieHom_eq_of_geometricallyConnected`) supplies uniqueness
+over `k`.
+
+To construct `t.sl2CoordinateMap`, choose a finite-dimensional regular subcomodule `M ≤ H` and a
+basis `b` whose coordinate morphism `q : O(GLₙ) →ₐc[k] H` is surjective
+(`TauCeti.Comodule.exists_coordinateBialgHom_surjective`). Restricting the differentiated action on
+`M` along `t.toLieHom k` makes `M` a finite-dimensional `sl (Fin 2) k`-module, which integrates to
+an `O(SL₂)`-comodule (`TauCeti.SpecialLinear.comoduleOfLieModule`). Its coordinate morphism
+`ρ : O(GLₙ) →ₐc[k] O(SL₂)` has differential `d ↦ derivationComp q (t.toLieHom k d)`, so the image
+Hopf ideal `(ker q).map ρ` in `O(SL₂)` has full tangent Lie algebra `Lie(SL₂)` and therefore
+vanishes (`TauCeti.HopfIdeal.eq_bot_of_lieSubalgebra_eq_top_of_geometricallyConnected`). Descending
+`ρ` through `O(GLₙ) ⧸ ker q ≃ₐc[k] H` yields `t.sl2CoordinateMap`.
+
+Combined with the Lie-algebraic Jacobson–Morozov theorem
+(`TauCeti.exists_isSl2Triple_of_isNilpotent_ad`), this characterizes the nonzero `ad`-nilpotent
+elements of `Lie(G)` when `Lie(G)` has nondegenerate Killing form: they are precisely the images of
+the raising matrix `E₀₁` under differentials of algebraic group homomorphisms `SL₂ ⟶ G`
+(`TauCeti.exists_sl2CoordinateMap_iff`).
+
+## Main declarations
+
+* `IsSl2Triple.existsUnique_sl2CoordinateMap`: existence and uniqueness of the coordinate morphism
+  `H ⟶ O(SL₂)` integrating an `sl₂` triple over any field of characteristic zero.
+* `IsSl2Triple.sl2CoordinateMap` and `IsSl2Triple.sl2GroupSchemeHom`: the coordinate morphism and
+  the corresponding group-scheme morphism `SL₂ ⟶ G`.
+* `IsSl2Triple.derivationCompLieHom_sl2CoordinateMap`,
+  `IsSl2Triple.derivationComp_sl2CoordinateMap_rootSubgroup_zero_one`, and
+  `IsSl2Triple.derivationComp_sl2CoordinateMap_rootSubgroup_one_zero`: differential formulas,
+  including the positive and negative root subgroups of `SL₂`.
+* `IsSl2Triple.sl2CoordinateMap_map`: naturality along morphisms of affine groups.
+* `TauCeti.exists_sl2CoordinateMap_of_isNilpotent_ad` and `TauCeti.exists_sl2CoordinateMap_iff`:
+  the algebraic-group Jacobson–Morozov theorem.
+
+## References
+
+* A. Borel, *Linear Algebraic Groups*, 2nd ed., GTM 126, Springer, 1991, §7.
+* D. H. Collingwood and W. M. McGovern, *Nilpotent Orbits in Semisimple Lie Algebras*, Van
+  Nostrand Reinhold, 1993, §3.3 and §3.7.
+* J. E. Humphreys, *Conjugacy Classes in Semisimple Algebraic Groups*, Mathematical Surveys and
+  Monographs 43, AMS, 1995, §8.4.
+* J. S. Milne, *Algebraic Groups*, Cambridge University Press, 2017, Chapters 4 and 10.
+-/
+
+public section
+
+open CategoryTheory AlgebraicGeometry LieAlgebra TauCeti
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+namespace IsSl2Triple
+
+universe u
+
+@[reducible]
+private noncomputable def finiteTypeSL2 (k : Type u) [Field k] :
+    FiniteTypeCommHopfAlgCat.{u, u} k :=
+  ⟨SpecialLinear.coordinateHopfAlgebra k 2, by
+    rw [← SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj]
+    exact (SpecialLinear.finiteTypeCoordinateHopfAlgebra k 2).property⟩
+
+section Integration
+
+variable {k : Type u} [Field k] [CharZero k]
+variable {H : Type u} [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
+variable {h e f : Derivation k H (Bialgebra.CounitAlgebra k H k)}
+
+/-- **Every `sl₂` triple in the Lie algebra of a finite-type affine group over a field of
+characteristic zero integrates to a unique algebraic `SL₂` homomorphism.** Contravariantly, there
+is a unique morphism `H ⟶ O(SL₂)` in `CommHopfAlgCat k` whose differential is `t.toLieHom k`
+composed with `SpecialLinear.tangentLieEquivSl 2`. -/
+theorem existsUnique_sl2CoordinateMap (t : IsSl2Triple h e f) :
+    ∃! φ : CommHopfAlgCat.of k H ⟶ SpecialLinear.coordinateHopfAlgebra k 2,
+      derivationCompLieHom (B := k) φ.hom =
+        (t.toLieHom k).comp (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).toLieHom := by
+  obtain ⟨M, n, b, hq⟩ := Comodule.exists_coordinateBialgHom_surjective (k := k) (H := H)
+  let q := Comodule.coordinateBialgHom (H := H) b
+  let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
+  have _ : Module.Finite k M := Module.Finite.of_basis b
+  let ρLie : SpecialLinear.sl (Fin 2) k →ₗ⁅k⁆ Module.End k M :=
+    (Comodule.differential (R := k) (H := H) (M := M)).comp (t.toLieHom k)
+  let _ : LieRingModule (SpecialLinear.sl (Fin 2) k) M := LieRingModule.compLieHom M ρLie
+  let _ : LieModule k (SpecialLinear.sl (Fin 2) k) M := LieModule.compLieHom M ρLie
+  let _ : Comodule k (SpecialLinear.coordinateHopfAlgebra k 2) M :=
+    SpecialLinear.comoduleOfLieModule k M
+  let ρ : GeneralLinear.coordinateHopfAlgebra k n →ₐc[k]
+      SpecialLinear.coordinateHopfAlgebra k 2 :=
+    Comodule.coordinateBialgHom (H := SpecialLinear.coordinateHopfAlgebra k 2) b
+  refine CommHopfAlgCat.existsUnique_hom_of_surjective_of_derivationCompLieHom_eq
+    (K := finiteTypeSL2 k)
+    (SpecialLinear.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2) q hq ρ _ ?_
+  ext d : 1
+  rw [LieHom.comp_apply, LieHom.comp_apply, LieEquiv.coe_toLieHom, derivationCompLieHom_apply,
+    derivationCompLieHom_apply]
+  apply (GeneralLinear.tangentLinearEquivMatrix (R := k) (B := k) n).injective
+  ext i j
+  rw [GeneralLinear.tangentLinearEquivMatrix_apply, GeneralLinear.tangentLinearEquivMatrix_apply,
+    d.tangentMatrix_derivationComp_coordinateBialgHom_apply
+      (H := SpecialLinear.coordinateHopfAlgebra k 2) b i j,
+    Derivation.tangentMatrix_derivationComp_coordinateBialgHom_apply _ (H := H) b i j,
+    Comodule.coefficientMatrix_apply (C := SpecialLinear.coordinateHopfAlgebra k 2) b i j,
+    Comodule.coefficientMatrix_apply (C := H) b i j,
+    d.apply_matrixCoefficient (H := SpecialLinear.coordinateHopfAlgebra k 2) (b.coord i) (b j),
+    Derivation.apply_matrixCoefficient _ (H := H) (b.coord i) (b j),
+    SpecialLinear.differential_comoduleOfLieModule]
+  exact (congrArg (b.coord i) (LieRingModule.compLieHom_apply M ρLie _ (b j))).symm
+
+/-- **The coordinate Hopf-algebra morphism `H ⟶ O(SL₂)` attached to an `sl₂` triple.**
+Contravariantly, this is the unique algebraic group homomorphism `SL₂ ⟶ G` whose differential
+sends the standard triple `(H, E, F)` of `sl (Fin 2) k` to `(h, e, f)`. -/
+noncomputable def sl2CoordinateMap (t : IsSl2Triple h e f) :
+    CommHopfAlgCat.of k H ⟶ SpecialLinear.coordinateHopfAlgebra k 2 :=
+  t.existsUnique_sl2CoordinateMap.choose
+
+/-- The differential of `t.sl2CoordinateMap` is `t.toLieHom k` composed with
+`SpecialLinear.tangentLieEquivSl 2`. -/
+@[simp]
+theorem derivationCompLieHom_sl2CoordinateMap (t : IsSl2Triple h e f) :
+    derivationCompLieHom (B := k) t.sl2CoordinateMap.hom =
+      (t.toLieHom k).comp (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).toLieHom :=
+  t.existsUnique_sl2CoordinateMap.choose_spec.1
+
+/-- Pointwise form of the differential of `t.sl2CoordinateMap`. -/
+@[simp]
+theorem derivationComp_sl2CoordinateMap (t : IsSl2Triple h e f)
+    (d : Derivation k (SpecialLinear.coordinateHopfAlgebra k 2)
+      (Bialgebra.CounitAlgebra k (SpecialLinear.coordinateHopfAlgebra k 2) k)) :
+    derivationComp (B := k) t.sl2CoordinateMap.hom d =
+      t.toLieHom k (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2 d) := by
+  simpa only [derivationCompLieHom_apply, LieHom.comp_apply, LieEquiv.coe_toLieHom] using
+    LieHom.congr_fun t.derivationCompLieHom_sl2CoordinateMap d
+
+/-- On the tangent vector corresponding to a trace-zero matrix `A ∈ sl (Fin 2) k`, the
+differential of `t.sl2CoordinateMap` evaluates to `t.toLieHom k A`. -/
+@[simp]
+theorem derivationComp_sl2CoordinateMap_symm (t : IsSl2Triple h e f)
+    (A : SpecialLinear.sl (Fin 2) k) :
+    derivationComp (B := k) t.sl2CoordinateMap.hom
+        ((SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm A) =
+      t.toLieHom k A := by
+  rw [t.derivationComp_sl2CoordinateMap, LieEquiv.apply_symm_apply]
+
+/-- The image of the differential of `t.sl2CoordinateMap` is the Lie subalgebra spanned by the
+triple `(h, e, f)`. -/
+theorem range_derivationCompLieHom_sl2CoordinateMap (t : IsSl2Triple h e f) :
+    (derivationCompLieHom (B := k) t.sl2CoordinateMap.hom).range = t.toLieSubalgebra k := by
+  ext x
+  rw [← t.range_toLieHom k, LieHom.mem_range, LieHom.mem_range]
+  constructor
+  · rintro ⟨d, rfl⟩
+    rw [derivationCompLieHom_apply, t.derivationComp_sl2CoordinateMap]
+    exact ⟨SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2 d, rfl⟩
+  · rintro ⟨A, rfl⟩
+    refine ⟨(SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm A, ?_⟩
+    rw [derivationCompLieHom_apply, t.derivationComp_sl2CoordinateMap_symm]
+
+/-- A coordinate morphism `H ⟶ O(SL₂)` equals `t.sl2CoordinateMap` if and only if its differential
+is `(t.toLieHom k).comp (SpecialLinear.tangentLieEquivSl 2).toLieHom`. -/
+theorem eq_sl2CoordinateMap_iff (t : IsSl2Triple h e f)
+    {φ : CommHopfAlgCat.of k H ⟶ SpecialLinear.coordinateHopfAlgebra k 2} :
+    φ = t.sl2CoordinateMap ↔
+      derivationCompLieHom (B := k) φ.hom =
+        (t.toLieHom k).comp (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).toLieHom :=
+  ⟨fun hφ ↦ hφ ▸ t.derivationCompLieHom_sl2CoordinateMap,
+    t.existsUnique_sl2CoordinateMap.choose_spec.2 φ⟩
+
+/-- **Naturality.** Pushing an `sl₂` triple forward along the differential of a group morphism
+`G ⟶ G'` (coordinate map `ψ : H' ⟶ H`) composes its `SL₂` homomorphism with `G ⟶ G'`. -/
+theorem sl2CoordinateMap_map {H' : Type u} [CommRing H'] [HopfAlgebra k H']
+    [Algebra.FiniteType k H'] (t : IsSl2Triple h e f)
+    (ψ : CommHopfAlgCat.of k H' ⟶ CommHopfAlgCat.of k H)
+    (hψ : derivationCompLieHom (B := k) ψ.hom h ≠ 0) :
+    (t.map (derivationCompLieHom (B := k) ψ.hom) hψ).sl2CoordinateMap =
+      ψ ≫ t.sl2CoordinateMap := by
+  symm
+  rw [eq_sl2CoordinateMap_iff, CommHopfAlgCat.hom_comp, derivationCompLieHom_comp,
+    t.derivationCompLieHom_sl2CoordinateMap, t.toLieHom_map k _ hψ]
+  ext d : 1
+  rfl
+
+/-- On `SL₂` itself, the standard `sl₂` triple transported along `tangentLieEquivSl 2` integrates
+to the identity morphism of `O(SL₂)`. -/
+@[simp]
+theorem sl2CoordinateMap_isSl2Triple_single
+    (hH : (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm.toLieHom
+      (SpecialLinear.singleSubSingle 0 1 1) ≠ 0) :
+    ((isSl2Triple_single (R := k) (zero_ne_one : (0 : Fin 2) ≠ 1)).map
+      (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm.toLieHom hH).sl2CoordinateMap =
+      𝟙 (SpecialLinear.coordinateHopfAlgebra k 2) := by
+  symm
+  rw [eq_sl2CoordinateMap_iff, (isSl2Triple_single (R := k) zero_ne_one).toLieHom_map k _ hH,
+    toLieHom_isSl2Triple_single]
+  ext d x
+  simp only [derivationCompLieHom_apply, LieHom.comp_apply, LieHom.id_apply,
+    LieEquiv.coe_toLieHom, LieEquiv.symm_apply_apply, derivationComp_apply]
+  rfl
+
+/-- Along the upper-triangular root subgroup `x₀₁ : 𝔾ₐ ⟶ SL₂`, the differential of
+`t.sl2CoordinateMap` sends the unit tangent vector of `𝔾ₐ` to `e`. -/
+theorem derivationComp_sl2CoordinateMap_rootSubgroup_zero_one (t : IsSl2Triple h e f) :
+    derivationComp (B := k)
+        (t.sl2CoordinateMap ≫
+          SpecialLinear.rootSubgroupCoordinateMap (R := k) (zero_ne_one : (0 : Fin 2) ≠ 1)).hom
+        ((AdditiveGroup.gaTangentLinearEquiv (R := k) (B := k)).symm 1) = e := by
+  rw [CommHopfAlgCat.hom_comp, derivationComp_comp, LinearMap.comp_apply,
+    t.derivationComp_sl2CoordinateMap, SpecialLinear.tangentLieEquivSl_apply,
+    SpecialLinear.tangentMatrix_derivationComp_rootSubgroup, LinearEquiv.apply_symm_apply,
+    t.toLieHom_single_zero_one k]
+
+/-- Along the lower-triangular root subgroup `x₁₀ : 𝔾ₐ ⟶ SL₂`, the differential of
+`t.sl2CoordinateMap` sends the unit tangent vector of `𝔾ₐ` to `f`. -/
+theorem derivationComp_sl2CoordinateMap_rootSubgroup_one_zero (t : IsSl2Triple h e f) :
+    derivationComp (B := k)
+        (t.sl2CoordinateMap ≫
+          SpecialLinear.rootSubgroupCoordinateMap (R := k) (one_ne_zero : (1 : Fin 2) ≠ 0)).hom
+        ((AdditiveGroup.gaTangentLinearEquiv (R := k) (B := k)).symm 1) = f := by
+  rw [CommHopfAlgCat.hom_comp, derivationComp_comp, LinearMap.comp_apply,
+    t.derivationComp_sl2CoordinateMap, SpecialLinear.tangentLieEquivSl_apply,
+    SpecialLinear.tangentMatrix_derivationComp_rootSubgroup, LinearEquiv.apply_symm_apply,
+    t.toLieHom_single_one_zero k]
+
+/-- **The algebraic group-scheme homomorphism `SL₂ ⟶ G` attached to an `sl₂` triple.** -/
+noncomputable def sl2GroupSchemeHom (t : IsSl2Triple h e f) :
+    SpecialLinear.groupScheme k 2 ⟶
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).obj
+        (Opposite.op (CommHopfAlgCat.of k H)) :=
+  eqToHom (SpecialLinear.groupScheme_def k 2) ≫
+    (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).map t.sl2CoordinateMap.op
+
+/-- The group-scheme homomorphism `t.sl2GroupSchemeHom` is the relative spectrum of
+`t.sl2CoordinateMap` preceded by the defining identification of `SpecialLinear.groupScheme`. -/
+theorem sl2GroupSchemeHom_def (t : IsSl2Triple h e f) :
+    t.sl2GroupSchemeHom =
+      eqToHom (SpecialLinear.groupScheme_def k 2) ≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).map t.sl2CoordinateMap.op :=
+  (rfl)
+
+end Integration
+
+end IsSl2Triple
+
+namespace TauCeti
+
+universe u
+
+section JacobsonMorozov
+
+variable {k : Type u} [Field k] [CharZero k]
+variable {H : Type u} [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
+variable [IsKilling k (Derivation k H (Bialgebra.CounitAlgebra k H k))]
+
+/-- **The Jacobson–Morozov theorem for algebraic groups.** In an affine group of finite type over a
+field of characteristic zero whose Lie algebra has nondegenerate Killing form, every nonzero
+`ad`-nilpotent tangent vector `e` extends to an `sl₂` triple `t : IsSl2Triple h e f`, whose
+associated coordinate morphism `t.sl2CoordinateMap : H ⟶ O(SL₂)` integrates the Lie embedding of
+the triple. -/
+theorem exists_sl2CoordinateMap_of_isNilpotent_ad
+    {e : Derivation k H (Bialgebra.CounitAlgebra k H k)}
+    (he : IsNilpotent (ad k (Derivation k H (Bialgebra.CounitAlgebra k H k)) e)) (he0 : e ≠ 0) :
+    ∃ (h f : Derivation k H (Bialgebra.CounitAlgebra k H k)) (t : IsSl2Triple h e f)
+      (φ : CommHopfAlgCat.of k H ⟶ SpecialLinear.coordinateHopfAlgebra k 2),
+      φ = t.sl2CoordinateMap ∧
+        Function.Injective (derivationCompLieHom (B := k) φ.hom) ∧
+        derivationComp (B := k) φ.hom
+          ((SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm
+            (SpecialLinear.single 0 1 zero_ne_one 1)) = e := by
+  obtain ⟨h, f, t⟩ := exists_isSl2Triple_of_isNilpotent_ad he he0
+  refine ⟨h, f, t, t.sl2CoordinateMap, rfl, ?_, ?_⟩
+  · rw [t.derivationCompLieHom_sl2CoordinateMap]
+    exact (t.toLieHom_injective k).comp
+      (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).injective
+  · rw [t.derivationComp_sl2CoordinateMap_symm, t.toLieHom_single_zero_one k]
+
+/-- **Characterization of nonzero `ad`-nilpotent elements via algebraic `SL₂` homomorphisms.** When
+`Lie(G)` has nondegenerate Killing form over a field of characteristic zero, `e ∈ Lie(G)` is the
+image of `E₀₁` under the differential of a morphism `SL₂ ⟶ G` (with `e ≠ 0`, or equivalently with
+injective differential) if and only if `ad e` is nilpotent and `e ≠ 0`. -/
+theorem exists_sl2CoordinateMap_iff {e : Derivation k H (Bialgebra.CounitAlgebra k H k)} :
+    (∃ φ : CommHopfAlgCat.of k H ⟶ SpecialLinear.coordinateHopfAlgebra k 2,
+      Function.Injective (derivationCompLieHom (B := k) φ.hom) ∧
+        derivationComp (B := k) φ.hom
+          ((SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm
+            (SpecialLinear.single 0 1 zero_ne_one 1)) = e) ↔
+      IsNilpotent (ad k (Derivation k H (Bialgebra.CounitAlgebra k H k)) e) ∧ e ≠ 0 := by
+  have _ : FiniteDimensional k (Derivation k H (Bialgebra.CounitAlgebra k H k)) :=
+    finite_of_isKilling (R := k) (L := Derivation k H (Bialgebra.CounitAlgebra k H k))
+  rw [← exists_injective_lieHom_slFinTwo_iff]
+  constructor
+  · rintro ⟨φ, hφ, rfl⟩
+    refine ⟨(derivationCompLieHom (B := k) φ.hom).comp
+      (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm.toLieHom,
+      hφ.comp (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm.injective, ?_⟩
+    simp only [LieHom.comp_apply, LieEquiv.coe_toLieHom, derivationCompLieHom_apply]
+  · rintro ⟨ψ, hψ, rfl⟩
+    have hH : ψ (SpecialLinear.singleSubSingle 0 1 1) ≠ 0 :=
+      ψ.injective_iff_map_singleSubSingle_ne_zero.mp hψ
+    let t := (isSl2Triple_single (R := k) (zero_ne_one : (0 : Fin 2) ≠ 1)).map ψ hH
+    have ht : t.toLieHom k = ψ := (ψ.eq_toLieHom_map hH).symm
+    refine ⟨t.sl2CoordinateMap, ?_, ?_⟩
+    · rw [t.derivationCompLieHom_sl2CoordinateMap, ht]
+      exact hψ.comp (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).injective
+    · rw [t.derivationComp_sl2CoordinateMap_symm, ht]
+
+end JacobsonMorozov
+
+end TauCeti

@@ -109,6 +109,20 @@ theorem dualCotangentMap_injective_of_etaleKernel [Algebra.FiniteType k K] {f : 
   simpa only [Derivation.cotangentLinearEquiv_dualCotangentMap] using
     congrArg (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k)) hxy
 
+/-- An affine group morphism from a finite-type source over a field with injective differential
+has a finite scheme-theoretic kernel: its kernel coordinate Hopf algebra is étale of finite type,
+hence finite-dimensional over `k`. -/
+theorem moduleFinite_quotient_kernelHopfIdeal_of_derivationCompLieHom_injective
+    [Algebra.FiniteType k K] {f : H ⟶ K}
+    (hf : Function.Injective (derivationCompLieHom (B := k) f.hom)) :
+    Module.Finite k (K ⧸ (kernelHopfIdeal f).toIdeal) := by
+  have : Algebra.FiniteType k (K ⧸ (kernelHopfIdeal f).toIdeal) :=
+    Algebra.FiniteType.of_surjective (Ideal.Quotient.mkₐ k (kernelHopfIdeal f).toIdeal)
+      (Ideal.Quotient.mkₐ_surjective k _)
+  have : Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal) :=
+    (algebraEtale_quotient_kernelHopfIdeal_iff f).mpr hf
+  exact HopfAlgebra.moduleFinite_of_algebraEtale (k := k) (H := K ⧸ (kernelHopfIdeal f).toIdeal)
+
 end TauCeti.CommHopfAlgCat
 
 namespace CommHopfAlgCat
