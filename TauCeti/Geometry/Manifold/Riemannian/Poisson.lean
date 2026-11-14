@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.H1
 import TauCeti.Geometry.Manifold.Riemannian.Poincare
+import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Regularity
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.ContinuousMap
 
@@ -16,7 +18,8 @@ import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 Let `M` be a compact connected manifold without boundary, with a continuous Riemannian metric, its
 Riemannian volume `dV` and the Sobolev space `H¹(M)` (`TauCeti.Manifold.SobolevH1`). This file
-inverts the nonnegative Laplacian `Δ⁺ = -div grad` on functions of mean zero, in the weak sense.
+inverts the nonnegative Laplacian `Δ⁺ = -div grad` on functions of mean zero, first in the weak
+sense on `H¹(M)` and then, for a smooth metric and smooth datum, in the classical `C^∞` sense.
 
 The weak form of the Poisson equation `Δ⁺w = f`, for `f ∈ L²(M)`, asks for `w ∈ H¹(M)` with
 
@@ -38,6 +41,10 @@ The proof is the Lax–Milgram theorem, applied on all of `H¹(M)` to the form
 (`TauCeti.Manifold.SobolevH1.exists_norm_toLp_sq_le`). For a `C¹` metric, Green's identity turns
 the weak equation against a smooth test function `φ` into the distributional one,
 `∫ w Δ⁺φ dV = ∫ f φ dV` (`TauCeti.Manifold.SobolevH1.exists_integral_mul_neg_laplaceBeltrami_eq`).
+When both the metric and `f` are smooth, interior elliptic regularity
+(`TauCeti.Manifold.SobolevH1.exists_contMDiff_of_dirichletForm_eq`) upgrades the weak solution to a
+unique smooth classical solution of mean zero
+(`TauCeti.Manifold.existsUnique_contMDiff_neg_laplaceBeltrami_eq`).
 
 ## Main results
 
@@ -49,6 +56,10 @@ the weak equation against a smooth test function `φ` into the distributional on
   is solvable exactly when `∫ f dV = 0`.
 * `TauCeti.Manifold.SobolevH1.exists_integral_mul_neg_laplaceBeltrami_eq`: the distributional
   form of the solution.
+* `TauCeti.Manifold.existsUnique_contMDiff_neg_laplaceBeltrami_eq`: existence and uniqueness of the
+  smooth solution of mean zero of `-laplaceBeltrami I u = f` for smooth `f` with `∫ f dV = 0`.
+* `TauCeti.Manifold.exists_contMDiff_neg_laplaceBeltrami_eq_iff`: for smooth `f`, the classical
+  equation `-laplaceBeltrami I u = f` has a smooth solution if and only if `∫ f dV = 0`.
 
 ## References
 
@@ -212,3 +223,78 @@ theorem exists_integral_mul_neg_laplaceBeltrami_eq (f : Lp ℝ 2 (riemannianVolu
   exact integral_congr_ae ((toLp_ofSmooth_ae_eq φ).mono fun x hx ↦ congrArg (f x * ·) hx)
 
 end TauCeti.Manifold.SobolevH1
+
+namespace TauCeti.Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [CompactSpace M] [PreconnectedSpace M]
+  [IsManifold I ∞ M] [T2Space M] [MeasurableSpace M] [BorelSpace M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- **The classical smooth Poisson equation on a closed manifold.** On a closed connected smooth
+Riemannian manifold, for every smooth function `f : M → ℝ` of integral zero there is a unique
+smooth function `u : M → ℝ` of integral zero solving `-laplaceBeltrami I u x = f x` everywhere on
+`M`. -/
+theorem existsUnique_contMDiff_neg_laplaceBeltrami_eq {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hf0 : ∫ x, f x ∂riemannianVolume I M = 0) :
+    ∃! u : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ u ∧ ∫ x, u x ∂riemannianVolume I M = 0 ∧
+      ∀ x, -laplaceBeltrami I u x = f x := by
+  have : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.of_le (n := ∞) (by simp)
+  let fL : Lp ℝ 2 (riemannianVolume I M) :=
+    ContinuousMap.toLp 2 (riemannianVolume I M) ℝ ⟨f, hf.continuous⟩
+  have hfL_ae : (fL : M → ℝ) =ᵐ[riemannianVolume I M] f := ContinuousMap.coeFn_toLp _ _
+  have hfL0 : ∫ x, fL x ∂riemannianVolume I M = 0 := by rwa [integral_congr_ae hfL_ae]
+  obtain ⟨w, ⟨hw0, hw⟩, huniq⟩ := SobolevH1.existsUnique_dirichletForm_eq fL hfL0
+  have hw_smooth : ∀ φ : C^∞⟮I, M; ℝ⟯,
+      SobolevH1.dirichletForm w (SobolevH1.ofSmooth φ) =
+        ∫ x, f x * φ x ∂riemannianVolume I M := fun φ ↦ by
+    rw [hw]
+    refine integral_congr_ae ?_
+    filter_upwards [hfL_ae, SobolevH1.toLp_ofSmooth_ae_eq φ] with x hx1 hx2
+    rw [hx1, hx2]
+  obtain ⟨u, rfl, hΔ⟩ := SobolevH1.exists_contMDiff_of_dirichletForm_eq hf hw_smooth
+  have hu0 : ∫ x, (u : M → ℝ) x ∂riemannianVolume I M = 0 := by
+    rwa [← integral_congr_ae (SobolevH1.toLp_ofSmooth_ae_eq u)]
+  refine ⟨u, ⟨u.contMDiff, hu0, hΔ⟩, fun u' ⟨hu', hu'0, hΔ'⟩ ↦ ?_⟩
+  let U' : C^∞⟮I, M; ℝ⟯ := ⟨u', hu'⟩
+  have hU'_coe : (U' : M → ℝ) = u' := rfl
+  have hU'_eq : SobolevH1.ofSmooth U' = SobolevH1.ofSmooth u := by
+    refine huniq (SobolevH1.ofSmooth U') ⟨?_, fun v ↦ ?_⟩
+    · rw [integral_congr_ae (SobolevH1.toLp_ofSmooth_ae_eq U'), hU'_coe]
+      exact hu'0
+    · rw [SobolevH1.dirichletForm_comm, SobolevH1.dirichletForm_ofSmooth_right]
+      refine integral_congr_ae ?_
+      filter_upwards [hfL_ae] with x hx
+      rw [hU'_coe, hΔ' x, hx, mul_comm]
+  have hae : u' =ᵐ[riemannianVolume I M] (u : M → ℝ) :=
+    hU'_coe ▸ (SobolevH1.toLp_ofSmooth_ae_eq U').symm.trans
+      (hU'_eq ▸ SobolevH1.toLp_ofSmooth_ae_eq u)
+  exact Measure.eq_of_ae_eq hae hu'.continuous u.contMDiff.continuous
+
+/-- **Solvability of the classical Poisson equation.** On a closed connected smooth Riemannian
+manifold, a smooth function `f : M → ℝ` is of the form `-laplaceBeltrami I u` for a smooth function
+`u` if and only if `∫ f dV = 0`. -/
+theorem exists_contMDiff_neg_laplaceBeltrami_eq_iff {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) :
+    (∃ u : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ u ∧ ∀ x, -laplaceBeltrami I u x = f x) ↔
+      ∫ x, f x ∂riemannianVolume I M = 0 := by
+  refine ⟨?_, fun hf0 ↦ (existsUnique_contMDiff_neg_laplaceBeltrami_eq hf hf0).exists.imp
+    fun _ ⟨hu, _, hΔ⟩ ↦ ⟨hu, hΔ⟩⟩
+  rintro ⟨u, hu, hΔ⟩
+  have : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.of_le (n := ∞) (by simp)
+  let U : C^∞⟮I, M; ℝ⟯ := ⟨u, hu⟩
+  have hU_coe : (U : M → ℝ) = u := rfl
+  have h1 : SobolevH1.dirichletForm (SobolevH1.ofSmooth (1 : C^∞⟮I, M; ℝ⟯))
+      (SobolevH1.ofSmooth U) = 0 := by
+    rw [SobolevH1.dirichletForm_comm, SobolevH1.dirichletForm_ofSmooth_one]
+  rw [SobolevH1.dirichletForm_ofSmooth_right] at h1
+  rw [← h1]
+  refine integral_congr_ae ?_
+  filter_upwards [SobolevH1.toLp_ofSmooth_ae_eq (1 : C^∞⟮I, M; ℝ⟯)] with x hx
+  rw [hx, ContMDiffMap.coe_one, Pi.one_apply, one_mul, hU_coe, hΔ x]
+
+end TauCeti.Manifold
