@@ -32,6 +32,7 @@ here.
 ## Main results
 
 * `TauCeti.GridDiagram.two_mul_tau_torusLink`: `2 τ(torusLink p q) = -p q` on a torus knot grid.
+* `TauCeti.GridDiagram.tau_torusLink`: `τ(torusLink p q) = -(p q / 2)` on a torus knot grid.
 * `TauCeti.GridDiagram.tau_torusLink_one_two`, `TauCeti.GridDiagram.tau_torusLink_two_three`:
   `τ = -1` on the `5 × 5` trefoil grid and `τ = -3` on the `7 × 7` grid of the `(3, 4)` torus knot.
 * `TauCeti.GridDiagram.tau_unknot`: `τ = 0` on every unknot grid.
@@ -49,6 +50,16 @@ namespace TauCeti
 
 namespace GridDiagram
 
+private theorem two_dvd_mul_of_coprime_succ {p q : ℕ} (h : (p + 1).Coprime (q + 1)) :
+    2 ∣ p * q := by
+  rcases Nat.even_or_odd p with ⟨k, rfl⟩ | ⟨k, rfl⟩
+  · exact ⟨k * q, by ring⟩
+  · rcases Nat.even_or_odd q with ⟨m, rfl⟩ | ⟨m, rfl⟩
+    · exact ⟨(2 * k + 1) * m, by ring⟩
+    · exfalso
+      have h1 : 2 ∣ 1 := h.gcd_eq_one ▸ Nat.dvd_gcd ⟨k + 1, by omega⟩ ⟨m + 1, by omega⟩
+      omega
+
 variable {p q : ℕ} (h : (p + 1).Coprime (q + 1)) (K : Type*) [Field K] [CharP K 2]
 
 /-- **`τ` of a torus knot grid**: on the standard grid of the `(p + 1, q + 1)` torus knot,
@@ -56,6 +67,16 @@ variable {p q : ℕ} (h : (p + 1).Coprime (q + 1)) (K : Type*) [Field K] [CharP 
 theorem two_mul_tau_torusLink :
     2 * ((isKnot_torusLink_iff p q).mpr h).tau K = -(p * q : ℤ) := by
   rw [IsKnot.tau_def, mul_neg, two_mul_supNonTorsionDegree_torusLink h K]
+
+/-- **`τ` of a torus knot grid**: when `p + 1` and `q + 1` are coprime, `p q` is even and
+`τ(torusLink p q) = -(p q / 2)`. -/
+theorem tau_torusLink :
+    ((isKnot_torusLink_iff p q).mpr h).tau K = -((p * q / 2 : ℕ) : ℤ) := by
+  obtain ⟨m, hm⟩ := two_dvd_mul_of_coprime_succ h
+  have htau := two_mul_tau_torusLink h K
+  rw [← Nat.cast_mul, hm] at htau
+  rw [hm]
+  omega
 
 /-- On the `5 × 5` trefoil grid, `τ = -1`. -/
 @[simp]
