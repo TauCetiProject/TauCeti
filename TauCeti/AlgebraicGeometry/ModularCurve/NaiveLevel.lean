@@ -51,7 +51,7 @@ with no hypothesis on `S`; such a structure can only exist where `N` is invertib
 the naive `A`-structures are rigid as soon as `A` contains elements `a` and `b` with `a² ≠ 1`,
 `b ≠ 1` and `b ≠ a^{±1}` (`ModuliProblem.isRigid_naiveLevel`), since an automorphism fixing `φ a`
 and `φ b` is trivial (`EllipticCurveGeom.IsFiberwiseInjective.eq_id_of_isPullback`). The bound
-`N ≥ 3` is sharp: for `N ≤ 2`, the automorphism `[-1]` fixes every point killed by `N`. Taking
+`N ≥ 3` is sharp: for `N = 1, 2`, the automorphism `[-1]` fixes every point killed by `N`. Taking
 `a = 1` and `b = 2` in `ℤ/Nℤ` shows that `[Γ₁(N)]` is rigid for `N ≥ 4`
 (`ModuliProblem.isRigid_gammaOneNaive`).
 
@@ -163,7 +163,7 @@ field of the base, the `N`-torsion of an elliptic curve is `(ℤ/Nℤ)²`, so ev
   where `N` is invertible), 3.7.1 (relative representability of naive full level `N`),
   Chapter 4, and §7.1 (the action of `GL₂(ℤ/Nℤ)` on `[Γ(N)]`).
 * D. Loeffler, *Modular curves*, lecture notes, Proposition 3.8.2 (naive level structures are
-  relatively representable and finite étale over `Ell/ℤ[1/N]`).
+  relatively representable and étale over `Ell/ℤ[1/N]`).
 -/
 
 public section
