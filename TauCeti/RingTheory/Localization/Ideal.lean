@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
-import TauCeti.RingTheory.Support
+import TauCeti.RingTheory.Support.Basic
 import Mathlib.Algebra.GroupWithZero.Action.Regular
 import TauCeti.RingTheory.Ideal.Maps
 

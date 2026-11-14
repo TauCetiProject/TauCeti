@@ -14,7 +14,7 @@ import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.RingTheory.Localization.Finiteness
 import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
 import TauCeti.RingTheory.Localization.Module
-import TauCeti.RingTheory.Support
+import TauCeti.RingTheory.Support.Basic
 
 /-!
 # Splitting off the torsion submodule up to pseudo-isomorphism
