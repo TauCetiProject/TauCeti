@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Flat.Localization
-public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
 public import TauCeti.RingTheory.RegularLocalRing.GeometricallyRegular
 
@@ -46,8 +44,6 @@ excellent rings.
 public section
 
 universe u v w
-
-open TensorProduct
 
 namespace TauCeti.Excellence
 
