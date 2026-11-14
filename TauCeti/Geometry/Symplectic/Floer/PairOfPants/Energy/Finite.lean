@@ -297,16 +297,9 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_ne_top_iff (ω : Sy
   have hsum {R : ℝ} (hR : 2 ≤ R) : ∑ q, q.endSign * A q R ≤ C :=
     ω.sum_endSign_mul_hamiltonianAction_le hH hHs hu hJ hfloer hE hR
   -- Each signed end action is increasing and bounded above, so it converges.
-  have hconv (q : Puncture) : ∃ b, Tendsto (fun R ↦ q.endSign * A q R) atTop (𝓝 b) := by
-    refine ⟨_, tendsto_atTop_ciSup_of_monotoneOn_Ici (hmono q)
-      ⟨C - ∑ r ∈ Finset.univ.erase q, r.endSign * A r 2, ?_⟩⟩
-    rintro _ ⟨R, hR, rfl⟩
-    have hrest : ∑ r ∈ Finset.univ.erase q, r.endSign * A r 2 ≤
-        ∑ r ∈ Finset.univ.erase q, r.endSign * A r R :=
-      Finset.sum_le_sum fun r _ ↦ hmono r (mem_Ici.2 le_rfl) hR hR
-    have h := hsum hR
-    rw [← Finset.add_sum_erase _ _ (Finset.mem_univ q)] at h
-    linarith
+  have hconv (q : Puncture) : ∃ b, Tendsto (fun R ↦ q.endSign * A q R) atTop (𝓝 b) :=
+    exists_tendsto_of_monotoneOn_Ici_of_sum_le (f := fun r R ↦ r.endSign * A r R)
+      (fun r _ ↦ hmono r) (fun _ hR ↦ hsum hR) (Finset.mem_univ q)
   choose b hb using hconv
   refine ⟨fun q ↦ q.endSign * b q, fun q ↦ ((hb q).const_mul q.endSign).congr fun R ↦ ?_⟩
   rw [← mul_assoc, endSign_mul_self, one_mul]

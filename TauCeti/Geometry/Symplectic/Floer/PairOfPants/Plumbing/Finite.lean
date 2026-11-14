@@ -572,35 +572,19 @@ theorem lintegral_floerEnergyDensity_plumbedPerturbation_ne_top_iff (ω : Symple
       (∑ r ∈ Finset.univ.erase q, fB r R) + ∑ r ∈ Finset.univ.erase inf, fA r R ≤ M :=
     ⟨_, fun R hR ↦ ω.sum_add_sum_hamiltonianAction_le_of_plumbedPerturbation hq hHa hHb hHas hHbs
       hab hL hu hJ hfloer hE hR⟩
-  -- Each end action increases by at most the increase of the signed sum since `L/2`, so it is
-  -- increasing and bounded above, and converges.
-  have hdB {R : ℝ} (hR : L / 2 ≤ R) (r : Puncture) (hr : r ∈ Finset.univ.erase q) :
-      0 ≤ fB r R - fB r (L / 2) :=
-    sub_nonneg.2 (hmB r (Finset.ne_of_mem_erase hr) (mem_Ici.2 le_rfl) (mem_Ici.2 hR) hR)
-  have hdA {R : ℝ} (hR : L / 2 ≤ R) (r : Puncture) (hr : r ∈ Finset.univ.erase inf) :
-      0 ≤ fA r R - fA r (L / 2) :=
-    sub_nonneg.2 (hmA r (Finset.ne_of_mem_erase hr) (mem_Ici.2 le_rfl) (mem_Ici.2 hR) hR)
-  have hd {R : ℝ} (hR : L / 2 ≤ R) :
-      (∑ r ∈ Finset.univ.erase q, (fB r R - fB r (L / 2))) +
-        ∑ r ∈ Finset.univ.erase inf, (fA r R - fA r (L / 2)) ≤
-      M - ((∑ r ∈ Finset.univ.erase q, fB r (L / 2)) +
-        ∑ r ∈ Finset.univ.erase inf, fA r (L / 2)) := by
-    simp only [Finset.sum_sub_distrib]
-    linarith [hsum R hR]
-  have hB (r : Puncture) (hr : r ≠ q) : ∃ l, Tendsto (fB r) atTop (𝓝 l) := by
-    refine ⟨_, tendsto_atTop_ciSup_of_monotoneOn_Ici (hmB r hr) ⟨fB r (L / 2) + (M -
-      ((∑ r ∈ Finset.univ.erase q, fB r (L / 2)) + ∑ r ∈ Finset.univ.erase inf, fA r (L / 2))),
-      ?_⟩⟩
-    rintro _ ⟨R, hR, rfl⟩
-    linarith [Finset.single_le_sum (hdB hR) (Finset.mem_erase.2 ⟨hr, Finset.mem_univ r⟩),
-      Finset.sum_nonneg (hdA hR), hd hR]
-  have hA (r : Puncture) (hr : r ≠ inf) : ∃ l, Tendsto (fA r) atTop (𝓝 l) := by
-    refine ⟨_, tendsto_atTop_ciSup_of_monotoneOn_Ici (hmA r hr) ⟨fA r (L / 2) + (M -
-      ((∑ r ∈ Finset.univ.erase q, fB r (L / 2)) + ∑ r ∈ Finset.univ.erase inf, fA r (L / 2))),
-      ?_⟩⟩
-    rintro _ ⟨R, hR, rfl⟩
-    linarith [Finset.single_le_sum (hdA hR) (Finset.mem_erase.2 ⟨hr, Finset.mem_univ r⟩),
-      Finset.sum_nonneg (hdB hR), hd hR]
+  -- Each end action is a monotone summand of this bounded sum, so it converges.
+  have hconv : ∀ i ∈ (Finset.univ.erase q).disjSum (Finset.univ.erase inf),
+      ∃ l, Tendsto (Sum.elim fB fA i) atTop (𝓝 l) :=
+    fun _ ↦ exists_tendsto_of_monotoneOn_Ici_of_sum_le
+      (by
+        rintro (r | r) hr
+        · exact hmB r (Finset.ne_of_mem_erase (Finset.inl_mem_disjSum.1 hr))
+        · exact hmA r (Finset.ne_of_mem_erase (Finset.inr_mem_disjSum.1 hr)))
+      (fun R hR ↦ by simpa only [Finset.sum_disjSum, Sum.elim_inl, Sum.elim_inr] using hsum R hR)
+  have hB (r : Puncture) (hr : r ≠ q) : ∃ l, Tendsto (fB r) atTop (𝓝 l) :=
+    hconv (.inl r) (Finset.inl_mem_disjSum.2 (Finset.mem_erase.2 ⟨hr, Finset.mem_univ r⟩))
+  have hA (r : Puncture) (hr : r ≠ inf) : ∃ l, Tendsto (fA r) atTop (𝓝 l) :=
+    hconv (.inr r) (Finset.inr_mem_disjSum.2 (Finset.mem_erase.2 ⟨hr, Finset.mem_univ r⟩))
   choose! lB hlB using hB
   choose! lA hlA using hA
   refine ⟨⟨fun r ↦ r.endSign * lB r, fun r hr ↦ ((hlB r hr).const_mul r.endSign).congr
