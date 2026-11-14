@@ -86,6 +86,16 @@ theorem logDeriv_deriv_comp {f g : ℂ → ℂ} {z : ℂ}
   rw [← Function.comp_def (deriv f) g,
     logDeriv_comp hf.deriv.differentiableAt hg.differentiableAt]
 
+/-- The pre-Schwarzian derivative is unchanged by the affine normalisation `w ↦ (w - c) / b` of the
+target, for `b ≠ 0`. -/
+theorem logDeriv_deriv_sub_div_const (f : ℂ → ℂ) (c : ℂ) {b : ℂ} (hb : b ≠ 0) (z : ℂ) :
+    logDeriv (deriv fun z => (f z - c) / b) z = logDeriv (deriv f) z := by
+  have hderiv : deriv (fun z => (f z - c) / b) = fun z => deriv f z / b := by
+    ext z
+    simp only [deriv_div_const, deriv_sub_const]
+  rw [hderiv]
+  simp only [div_eq_mul_inv, logDeriv_mul_const z b⁻¹ (inv_ne_zero hb)]
+
 /-- In the coordinate `w = -1 / z`, the pre-Schwarzian acquires the term `-2 / z`. -/
 theorem logDeriv_deriv_comp_neg_inv {g : ℂ → ℂ} {z : ℂ}
     (hg : AnalyticAt ℂ g (-z⁻¹)) (hgn : deriv g (-z⁻¹) ≠ 0) (hz : z ≠ 0) :
