@@ -167,10 +167,16 @@ theorem mono (h : IsWeakCRSolution q Ω J DJ S ξ η) (hΩ : Ω' ≤ Ω) :
   ⟨h.memLpLoc.mono_set hΩ, h.locallyIntegrableOn.mono_set hΩ, fun φ =>
     h.2.2 ⟨φ, φ.contDiff, φ.hasCompactSupport, φ.tsupport_subset.trans hΩ⟩⟩
 
+/-- Replacing the local integrability exponent of a weak solution requires only `MemLpLoc r Ω ξ`,
+since the integral identity itself is independent of the exponent. -/
+theorem of_memLpLoc (h : IsWeakCRSolution q Ω J DJ S ξ η) (hξ : MemLpLoc r Ω ξ) :
+    IsWeakCRSolution r Ω J DJ S ξ η :=
+  ⟨hξ, h.locallyIntegrableOn, h.2.2⟩
+
 /-- A weak solution for the exponent `q` is a weak solution for every smaller exponent. -/
 theorem mono_exponent (h : IsWeakCRSolution q Ω J DJ S ξ η) (hrq : r ≤ q) :
     IsWeakCRSolution r Ω J DJ S ξ η :=
-  ⟨h.memLpLoc.mono_exponent hrq, h.locallyIntegrableOn, h.2.2⟩
+  h.of_memLpLoc (h.memLpLoc.mono_exponent hrq)
 
 /-- The weak equation is homogeneous in `(ξ, η)`. -/
 theorem const_smul (h : IsWeakCRSolution q Ω J DJ S ξ η) (c : ℝ) :

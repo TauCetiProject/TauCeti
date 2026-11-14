@@ -255,16 +255,23 @@ theorem MemLpLoc.clm_comp_continuousOn {H : Type*} [NormedAddCommGroup H] [Norme
     (memLpLoc_iff.1 hB K hKU hK)
     ((hE.mono hKU).memLp_top_restrict_of_subset_isCompact hK hK.measurableSet subset_rfl)
 /-- **Hölder's inequality on compact subsets**: a locally `Lᵖ` field of continuous linear maps
+applied to a locally `L^q` field is locally `L^r` when `1/p + 1/q ≤ 1/r`. -/
+theorem MemLpLoc.clm_apply {r : ENNReal} {A : ℂ → F →L[ℝ] G} {w : ℂ → F}
+    (hA : MemLpLoc p U A) (hw : MemLpLoc q U w) (hpqr : p⁻¹ + q⁻¹ ≤ r⁻¹) :
+    MemLpLoc r U (fun z => A z (w z)) := by
+  have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
+  have h : MemLpLoc (p⁻¹ + q⁻¹)⁻¹ U (fun z => A z (w z)) :=
+    fun K hK hc => (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin _
+      (hA K hK hc) (hw K hK hc)
+  exact h.mono_exponent (ENNReal.inv_le_inv.1 (by simpa only [inv_inv] using hpqr))
+
+/-- **Hölder's inequality on compact subsets**: a locally `Lᵖ` field of continuous linear maps
 applied to a locally `L^q` field is locally integrable on a locally closed set when
 `1/p + 1/q ≤ 1`. -/
 theorem MemLpLoc.locallyIntegrableOn_clm_apply {A : ℂ → F →L[ℝ] G} {w : ℂ → F}
     (hA : MemLpLoc p U A) (hw : MemLpLoc q U w) (hpq : p⁻¹ + q⁻¹ ≤ 1)
-    (hU : IsLocallyClosed U) : LocallyIntegrableOn (fun z => A z (w z)) U volume := by
-  have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
-  exact MemLpLoc.locallyIntegrableOn
-    (fun K hK hc => (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin _ (hA K hK hc)
-      (hw K hK hc))
-    (ENNReal.one_le_inv.2 hpq) hU
+    (hU : IsLocallyClosed U) : LocallyIntegrableOn (fun z => A z (w z)) U volume :=
+  (hA.clm_apply hw (by simpa using hpq)).locallyIntegrableOn le_rfl hU
 
 open TauCeti.MeasureTheory in
 /-- A locally `Lᵖ` function on an open set `Ω`, with `1 ≤ p`, agrees almost everywhere on `Ω` with

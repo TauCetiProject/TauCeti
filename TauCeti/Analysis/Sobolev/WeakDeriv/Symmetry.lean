@@ -23,6 +23,8 @@ test functions commute (`TestFunction.lineDerivOp_comm`).
 ## Main declarations
 
 * `TauCeti.HasWeakLineDerivOn.comm`: weak derivatives in two directions commute.
+* `TauCeti.HasWeakFDerivOn.integral_inner_fderiv_comm`: pairing a weak Fréchet derivative with
+  directional derivatives of a vector-valued test function is symmetric in the two directions.
 -/
 
 public section
@@ -30,7 +32,7 @@ public section
 namespace TauCeti
 
 open LineDeriv MeasureTheory TopologicalSpace
-open scoped Distributions
+open scoped Distributions InnerProductSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace E] {μ : Measure E} {Ω : Opens E}
@@ -55,5 +57,23 @@ theorem HasWeakLineDerivOn.comm (h₁ : HasWeakLineDerivOn μ Ω u u₁ v)
     _ = ∫ x, lineDeriv ℝ (φ : E → ℝ) x w • u₁ x ∂μ := by
         simp only [TestFunction.lineDerivOp_apply]
     _ = -∫ x, (φ : E → ℝ) x • u₁₂ x ∂μ := h₁₂.integral_lineDeriv_smul_eq_neg_integral_smul φ
+
+/-- **Symmetry of second derivatives against a weak Fréchet derivative.** If `f` has weak Fréchet
+derivative `D` on `Ω`, then for any directions `v, w : E` and test function `Ψ ∈ 𝓓(Ω, V)`,
+`∫ ⟪DΨ(x) v, D(x) w⟫ = ∫ ⟪DΨ(x) w, D(x) v⟫`. Both sides equal `-∫ ⟪∂_v ∂_w Ψ(x), f x⟫` by
+commutativity of test-function directional derivatives. -/
+theorem HasWeakFDerivOn.integral_inner_fderiv_comm [OpensMeasurableSpace E]
+    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+    {f : E → V} {D : E → E →L[ℝ] V} (hD : HasWeakFDerivOn μ Ω f D) (v w : E) (Ψ : 𝓓(Ω, V)) :
+    ∫ x, ⟪fderiv ℝ (Ψ : E → V) x v, D x w⟫_ℝ ∂μ =
+      ∫ x, ⟪fderiv ℝ (Ψ : E → V) x w, D x v⟫_ℝ ∂μ := by
+  have key (a b : E) :
+      ∫ x, ⟪fderiv ℝ (Ψ : E → V) x a, D x b⟫_ℝ ∂μ =
+        -∫ x, ⟪lineDeriv ℝ (∂_{a} Ψ : 𝓓(Ω, V)) x b, f x⟫_ℝ ∂μ := by
+    have h := (hD.hasWeakLineDerivOn b).integral_inner_lineDeriv_eq_neg (∂_{a} Ψ)
+    simp only [TestFunction.lineDerivOp_apply_eq_fderiv] at h
+    exact neg_eq_iff_eq_neg.1 h.symm
+  rw [key v w, key w v]
+  simp only [TestFunction.lineDeriv_lineDerivOp_comm Ψ v w]
 
 end TauCeti

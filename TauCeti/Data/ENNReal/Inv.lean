@@ -39,6 +39,10 @@ is at most `2 b`.
 * `ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul`: the cancellation
   `ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m.toReal)` for `m` finite and
   nonzero.
+* `ENNReal.inv_add_inv_lt_one_of_two_lt`, `ENNReal.inv_add_inv_min_lt_one`: reciprocal-sum bounds
+  `p⁻¹ + q⁻¹ < 1` for `p > 2`, `q ≥ 2` and preservation under `min q p`.
+* `ENNReal.coe_inv_add_inv_lt_one_iff`, `ENNReal.coe_inv_add_inv_le_inv_iff`: comparison of `ℝ≥0`
+  reciprocal sums between `ℝ≥0∞` and `ℝ`.
 -/
 
 public section
@@ -165,5 +169,34 @@ theorem ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul {n : ℕ} {d a : ℝ} 
   rw [← ENNReal.ofReal_div_of_pos hmpos, ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   field_simp
+
+/-- If `p > 2` and `q ≥ 2` in `ℝ≥0∞`, then `1/p + 1/q < 1` (with `1/∞ = 0`). -/
+theorem inv_add_inv_lt_one_of_two_lt {p q : ℝ≥0∞} (hp : 2 < p) (hq : 2 ≤ q) :
+    p⁻¹ + q⁻¹ < 1 :=
+  calc p⁻¹ + q⁻¹ ≤ p⁻¹ + 2⁻¹ := add_le_add le_rfl (ENNReal.inv_le_inv.2 hq)
+    _ < (2 : ℝ≥0∞)⁻¹ + 2⁻¹ := ENNReal.add_lt_add_right (inv_ne_top.2 two_ne_zero)
+        (ENNReal.inv_lt_inv.2 hp)
+    _ = 1 := ENNReal.inv_two_add_inv_two
+
+/-- Lowering the second exponent to `min q p` preserves `1/p + 1/q < 1` when `p > 2`. -/
+theorem inv_add_inv_min_lt_one {p q : ℝ≥0∞} (hp : 2 < p) (hpq : p⁻¹ + q⁻¹ < 1) :
+    p⁻¹ + (min q p)⁻¹ < 1 := by
+  rcases le_total q p with hqp | hpq'
+  · simpa only [min_eq_left hqp] using hpq
+  · simpa only [min_eq_right hpq'] using inv_add_inv_lt_one_of_two_lt hp hp.le
+
+/-- For nonzero `a, b : ℝ≥0`, `(a : ℝ≥0∞)⁻¹ + (b : ℝ≥0∞)⁻¹ < 1` holds if and only if
+`(a : ℝ)⁻¹ + (b : ℝ)⁻¹ < 1`. -/
+theorem coe_inv_add_inv_lt_one_iff {a b : ℝ≥0} (ha : a ≠ 0) (hb : b ≠ 0) :
+    (a : ℝ≥0∞)⁻¹ + (b : ℝ≥0∞)⁻¹ < 1 ↔ (a : ℝ)⁻¹ + (b : ℝ)⁻¹ < 1 := by
+  rw [← coe_inv ha, ← coe_inv hb, ← coe_add, ← coe_one, coe_lt_coe, ← NNReal.coe_lt_coe]
+  simp
+
+/-- For nonzero `a, b, c : ℝ≥0`, `(a : ℝ≥0∞)⁻¹ + (b : ℝ≥0∞)⁻¹ ≤ (c : ℝ≥0∞)⁻¹` holds if and only if
+`(a : ℝ)⁻¹ + (b : ℝ)⁻¹ ≤ (c : ℝ)⁻¹`. -/
+theorem coe_inv_add_inv_le_inv_iff {a b c : ℝ≥0} (ha : a ≠ 0) (hb : b ≠ 0) (hc : c ≠ 0) :
+    (a : ℝ≥0∞)⁻¹ + (b : ℝ≥0∞)⁻¹ ≤ (c : ℝ≥0∞)⁻¹ ↔ (a : ℝ)⁻¹ + (b : ℝ)⁻¹ ≤ (c : ℝ)⁻¹ := by
+  rw [← coe_inv ha, ← coe_inv hb, ← coe_inv hc, ← coe_add, coe_le_coe, ← NNReal.coe_le_coe]
+  simp
 
 end ENNReal

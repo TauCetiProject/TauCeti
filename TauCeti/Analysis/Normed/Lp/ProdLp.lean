@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.Analysis.Normed.Operator.NNNorm
+public import Mathlib.Analysis.Normed.Operator.Prod
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
 import TauCeti.LinearAlgebra.Dimension.Submodule
 
@@ -27,7 +28,9 @@ of the two factors.
 
 Finally, it bundles the componentwise action of two continuous linear maps `f` and `g` on
 `WithLp p (α × β)` as a continuous linear map `f.withLpProdMap p g`, the continuous counterpart of
-Mathlib's `LinearIsometry.withLpProdMap`. For `p = 2` and inner product spaces this is the
+Mathlib's `LinearIsometry.withLpProdMap`, together with its continuous linear lift
+`ContinuousLinearMap.withLpProdMapL` and the arrow-conjugation equivalence
+`WithLp.prodArrowContinuousLinearEquiv`. For `p = 2` and inner product spaces this is the
 orthogonal block sum `f ⊕ g`. It is additive in the pair `(f, g)`, its rank is the sum of the
 ranks of `f` and `g`, and its operator norm is the larger of the two operator norms. The
 projections onto the factors and the inclusions of the factors are contractions, and fixing one
@@ -49,7 +52,10 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
 * `TauCeti.isBounded_range_toLp` — `Set.range (fun i ↦ WithLp.toLp p (f i, g i))` is bounded if
   and only if `Set.range f` and `Set.range g` are bounded.
 * `TauCeti.toLp_prodMk_eq_add` — `x ↦ (f x, u x)` is `x ↦ ι₁ (f x) + ι₂ (u x)`.
-* `ContinuousLinearMap.withLpProdMap` — the block sum `f ⊕ g` on `WithLp p (α × β)`.
+* `ContinuousLinearMap.withLpProdMap`, `ContinuousLinearMap.withLpProdMapL` — the block sum `f ⊕ g`
+  on `WithLp p (α × β)`, and as a continuous linear map in `(f, g)`.
+* `WithLp.prodArrowContinuousLinearEquiv` — arrow conjugation identifying continuous linear maps on
+  `WithLp p` products with continuous linear maps on bare products.
 * `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
 * `ContinuousLinearMap.norm_withLpProdMap` — `‖f ⊕ g‖ = max ‖f‖ ‖g‖`.
@@ -280,6 +286,24 @@ theorem withLpProdMap_zero :
   ext x
   simp
 
+/-- The block sum of identity maps is the identity map. -/
+@[simp]
+theorem withLpProdMap_id :
+    (ContinuousLinearMap.id 𝕜 α).withLpProdMap p (ContinuousLinearMap.id 𝕜 β) =
+      ContinuousLinearMap.id 𝕜 (WithLp p (α × β)) := by
+  ext ⟨a, b⟩
+  simp
+
+/-- Composition of block sums is componentwise composition. -/
+theorem withLpProdMap_comp {α'' β'' : Type*}
+    [TopologicalSpace α''] [AddCommGroup α''] [Module 𝕜 α'']
+    [TopologicalSpace β''] [AddCommGroup β''] [Module 𝕜 β'']
+    (f' : α' →L[𝕜] α'') (g' : β' →L[𝕜] β'') (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
+    (f'.withLpProdMap p g').comp (f.withLpProdMap p g) =
+      (f'.comp f).withLpProdMap p (g'.comp g) := by
+  ext x
+  simp
+
 end Topological
 
 section Seminormed
@@ -358,11 +382,60 @@ theorem nnnorm_withLpProdMap (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
     ‖f.withLpProdMap p g‖₊ = max ‖f‖₊ ‖g‖₊ :=
   NNReal.eq <| by simp
 
+variable (p 𝕜 α β α' β') in
+/-- `ContinuousLinearMap.withLpProdMap` as a continuous linear map. -/
+noncomputable def withLpProdMapL :
+    (α →L[𝕜] α') × (β →L[𝕜] β') →L[𝕜] WithLp p (α × β) →L[𝕜] WithLp p (α' × β') :=
+  ContinuousLinearMap.copy
+    (((WithLp.prodContinuousLinearEquiv p 𝕜 α β).arrowCongr
+      (WithLp.prodContinuousLinearEquiv p 𝕜 α' β')).symm.toContinuousLinearMap ∘L
+        prodMapL 𝕜 α α' β β')
+    (fun fg => fg.1.withLpProdMap p fg.2)
+    (by
+      funext fg
+      ext ⟨a, b⟩
+      simp)
+
+@[simp]
+theorem withLpProdMapL_apply (fg : (α →L[𝕜] α') × (β →L[𝕜] β')) :
+    withLpProdMapL p 𝕜 α β α' β' fg = fg.1.withLpProdMap p fg.2 :=
+  (rfl)
+
 end Normed
 
 end ContinuousLinearMap
 
 namespace WithLp
+
+section ArrowCongr
+
+variable (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α β α' β' : Type*) [NormedField 𝕜]
+  [TopologicalSpace α] [AddCommGroup α] [Module 𝕜 α]
+  [TopologicalSpace β] [AddCommGroup β] [Module 𝕜 β]
+  [SeminormedAddCommGroup α'] [NormedSpace 𝕜 α']
+  [SeminormedAddCommGroup β'] [NormedSpace 𝕜 β']
+
+/-- Conjugating continuous linear maps by `WithLp.prodContinuousLinearEquiv` identifies
+`WithLp p (α × β) →L[𝕜] WithLp p (α' × β')` with `(α × β) →L[𝕜] (α' × β')`. -/
+def prodArrowContinuousLinearEquiv :
+    (WithLp p (α × β) →L[𝕜] WithLp p (α' × β')) ≃L[𝕜] (α × β →L[𝕜] α' × β') :=
+  (prodContinuousLinearEquiv p 𝕜 α β).arrowCongr (prodContinuousLinearEquiv p 𝕜 α' β')
+
+variable {𝕜 α β α' β'}
+
+@[simp]
+theorem prodArrowContinuousLinearEquiv_apply
+    (f : WithLp p (α × β) →L[𝕜] WithLp p (α' × β')) (x : α × β) :
+    prodArrowContinuousLinearEquiv p 𝕜 α β α' β' f x = ofLp (f (toLp p x)) :=
+  (rfl)
+
+@[simp]
+theorem prodArrowContinuousLinearEquiv_symm_apply
+    (f : α × β →L[𝕜] α' × β') (x : WithLp p (α × β)) :
+    (prodArrowContinuousLinearEquiv p 𝕜 α β α' β').symm f x = toLp p (f (ofLp x)) :=
+  (rfl)
+
+end ArrowCongr
 
 section Contraction
 
