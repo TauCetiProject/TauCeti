@@ -10,7 +10,7 @@ public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Probability.Cdf
-public import TauCeti.Probability.Distributions.Uniform.Finite
+public import TauCeti.Probability.Distributions.Uniform.Finite.Basic
 public import TauCeti.Probability.GeneratingFunction
 public import TauCeti.Probability.Quantile.Discrete
 import Mathlib.Algebra.Field.GeomSum
@@ -123,7 +123,6 @@ theorem map_toNat_sub_uniformOn_Icc_int :
 /-! ### Integration -/
 
 /-- Every function is integrable against the uniform law on an integer interval. -/
-@[simp]
 theorem integrable_uniformOn_Icc_int {E : Type*} [SeminormedAddGroup E] (f : ℤ → E) :
     Integrable f (uniformOn (Icc a b : Set ℤ)) := by
   rw [← Finset.coe_Icc]
@@ -212,7 +211,6 @@ theorem pgf_uniformOn_Iio_of_ne_one (N : ℕ) {z : ℝ} (hz : z ≠ 1) :
   rw [pgf_uniformOn_Iio, geom_sum_eq hz, mul_comm (N : ℝ), ← div_div, inv_mul_eq_div]
 
 /-- Every exponential moment of the uniform law on an integer interval is finite. -/
-@[simp]
 theorem integrableExpSet_intCast_uniformOn_Icc :
     integrableExpSet (Int.cast : ℤ → ℝ) (uniformOn (Icc a b : Set ℤ)) = univ := by
   ext t
