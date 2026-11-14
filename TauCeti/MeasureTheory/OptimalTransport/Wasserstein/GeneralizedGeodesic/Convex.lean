@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Convex
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Basic
+import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Data.EReal.Operations
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Complete
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic
 
 /-!
 # Convexity along generalized geodesics and the Jordan–Kinderlehrer–Otto step
@@ -25,7 +28,7 @@ geodesics. It is, however, `2`-convex along the *generalized geodesics based at 
 interpolations `ν_t = ((1 - t) • y₀ + t • y₁)₊ γ` of a three-plan `γ` of `(x, y₀, y₁)` whose
 projections to `(x, y₀)` and `(x, y₁)` are optimal couplings out of `μ`
 (`TauCeti.IsGeneralizedGeodesicPlan.dist_sq_add_le`). This file introduces the matching convexity
-notion for energies and proves that it makes the JKO step unique.
+notion for energies and proves existence, uniqueness, and penalized convexity of the JKO step.
 
 An energy `φ` is *`m`-convex along generalized geodesics based at `μ`*
 (`TauCeti.GeneralizedGeodesicallyConvex m φ μ`) if any two laws `ν₀` and `ν₁` of its effective
@@ -34,16 +37,25 @@ domain are joined by the generalized geodesic of some such plan `γ` along which
 `φ ν_t ≤ (1 - t) φ ν₀ + t φ ν₁ - (m / 2) t (1 - t) ∫ ‖y₀ - y₁‖² dγ`.
 
 The integral is the quadratic cost of the coupling of `ν₀` and `ν₁` carried by `γ`; it is at least
-`W₂ (ν₀, ν₁) ^ 2`. If `φ` has this property, then the penalized functional of the JKO step is
+`W₂ (ν₀, ν₁) ^ 2`, with equality when the base law `μ` is chosen to be `ν₀` itself
+(`TauCeti.IsGeneralizedGeodesicPlan.integral_norm_sub_sq_snd_eq_dist_sq`). In particular, if `φ`
+is `m`-convex along generalized geodesics based at every law of its effective domain, it is
+`m`-geodesically convex (`TauCeti.geodesicallyConvex_of_generalizedGeodesicallyConvex`), hence
+coercive (`φ_τ(μ) > -∞`) when `φ` is lower semicontinuous, never `⊥`, and `1 + m τ > 0`
+(`TauCeti.moreauYosida_ne_bot_of_generalizedGeodesicallyConvex`). If `φ` is `m`-convex along
+generalized geodesics based at `μ`, then the penalized functional of the JKO step is
 `(m + 1 / τ)`-convex along the same curves
 (`TauCeti.GeneralizedGeodesicallyConvex.add_edist_sq_div`), so the JKO step is unique as soon as
-`1 + m τ > 0` (`TauCeti.GeneralizedGeodesicallyConvex.subsingleton_moreauYosidaResolvent`): the
-midpoint of the generalized geodesic joining two minimizers would otherwise do strictly better.
-Since `W₂ (ν₀, ν₁) ^ 2` is at most the plan cost, the same convexity holds with `W₂ (ν₀, ν₁) ^ 2`
-when `1 + m τ ≥ 0`. If `φ` is convex along generalized geodesics based at every law, it therefore
-satisfies the convexity hypothesis `TauCeti.PenalizedConvex` of the metric theory of gradient flows
-(`TauCeti.penalizedConvex_of_generalizedGeodesicallyConvex`), and JKO steps satisfy the discrete
-variational inequality of `TauCeti.Analysis.GradientFlow.MoreauYosida.Convex`.
+`1 + m τ > 0`
+(`TauCeti.GeneralizedGeodesicallyConvex.subsingleton_moreauYosidaResolvent`). Since
+`W₂ (ν₀, ν₁) ^ 2` is at most the plan cost, if `φ` is convex along generalized geodesics based at
+every law and `1 + m τ ≥ 0`, it satisfies `TauCeti.PenalizedConvex`
+(`TauCeti.penalizedConvex_of_generalizedGeodesicallyConvex`,
+`TauCeti.eventually_penalizedConvex_of_generalizedGeodesicallyConvex`), and on complete `P₂(E)`
+every JKO step exists without sublevel compactness
+(`TauCeti.moreauYosidaResolvent_nonempty_of_generalizedGeodesicallyConvex`,
+`TauCeti.exists_forall_mem_moreauYosidaResolvent_of_generalizedGeodesicallyConvex`,
+`TauCeti.existsUnique_mem_moreauYosidaResolvent_of_generalizedGeodesicallyConvex`).
 
 ## Main definitions
 
@@ -54,17 +66,26 @@ variational inequality of `TauCeti.Analysis.GradientFlow.MoreauYosida.Convex`.
 
 ## Main results
 
-* `TauCeti.IsGeneralizedGeodesicPlan.dist_sq_add_le`: the convexity of the squared Wasserstein
-  distance from the base point along a generalized geodesic, as an inequality of real numbers.
+* `TauCeti.IsGeneralizedGeodesicPlan.dist_sq_add_le` and
+  `TauCeti.IsGeneralizedGeodesicPlan.integral_norm_sub_sq_snd_eq_dist_sq`: convexity of the squared
+  Wasserstein distance from the base point along a generalized geodesic, and optimality of the
+  endpoint coupling when the base point is `ν₀`.
+* `TauCeti.geodesicallyConvex_of_generalizedGeodesicallyConvex` and
+  `TauCeti.moreauYosida_ne_bot_of_generalizedGeodesicallyConvex`: geodesic convexity and coercivity
+  `φ_τ(μ) > -∞` when `1 + m τ > 0`.
 * `TauCeti.GeneralizedGeodesicallyConvex.add_edist_sq_div`: the penalized functional
   `ν ↦ φ ν + W₂ (μ, ν) ^ 2 / (2τ)` of an energy that is `m`-convex along generalized geodesics
   based at `μ` is `(m + 1 / τ)`-convex along them.
 * `TauCeti.GeneralizedGeodesicallyConvex.eq_of_mem_moreauYosidaResolvent` and
   `TauCeti.GeneralizedGeodesicallyConvex.subsingleton_moreauYosidaResolvent`: uniqueness of the
   JKO step when `1 + m τ > 0`.
-* `TauCeti.penalizedConvex_of_generalizedGeodesicallyConvex`: convexity along generalized geodesics
-  based at every law is the convexity hypothesis `TauCeti.PenalizedConvex` of the metric theory,
-  so JKO steps satisfy its discrete variational inequality.
+* `TauCeti.penalizedConvex_of_generalizedGeodesicallyConvex` and
+  `TauCeti.eventually_penalizedConvex_of_generalizedGeodesicallyConvex`: convexity along generalized
+  geodesics based at every law gives `TauCeti.PenalizedConvex` whenever `1 + m τ ≥ 0`.
+* `TauCeti.moreauYosidaResolvent_nonempty_of_generalizedGeodesicallyConvex`,
+  `TauCeti.exists_forall_mem_moreauYosidaResolvent_of_generalizedGeodesicallyConvex`, and
+  `TauCeti.existsUnique_mem_moreauYosidaResolvent_of_generalizedGeodesicallyConvex`: existence and
+  uniqueness of JKO steps and sequences on `P₂(E)` when `τ > 0` and `1 + m τ > 0`.
 
 ## Implementation notes
 
@@ -80,15 +101,15 @@ The convexity inequality is stated, as in Ambrosio–Gigli–Savaré, with the c
 ## References
 
 * L. Ambrosio, N. Gigli, G. Savaré, *Gradient Flows in Metric Spaces and in the Space of
-  Probability Measures*, 2nd ed., Birkhäuser 2008, §9.2, Definition 9.2.4 and Lemma 9.2.7, and
-  Chapter 4, Assumption 4.0.1.
+  Probability Measures*, 2nd ed., Birkhäuser 2008, §9.2, Remark 9.2.3, Definition 9.2.4 and
+  Lemma 9.2.7, and Chapter 4, Assumption 4.0.1 and Lemma 4.1.1.
 * R. Jordan, D. Kinderlehrer, F. Otto, *The variational formulation of the Fokker–Planck
   equation*, SIAM J. Math. Anal. 29 (1998), 1--17.
 -/
 
 public section
 
-open MeasureTheory Set
+open Filter MeasureTheory Set Topology
 open scoped ENNReal NNReal
 
 namespace TauCeti
@@ -199,6 +220,33 @@ theorem IsGeneralizedGeodesicPlan.dist_sq_add_le {μ ν₀ ν₁ ν : Wasserstei
     ENNReal.ofReal_le_ofReal_iff (add_nonneg (mul_nonneg ht' (sq_nonneg _))
       (mul_nonneg ht.1 (sq_nonneg _)))] at hW
   exact hW
+
+/-- Along a quadratic generalized-geodesic plan `γ` from `ν₀` to `ν₁` based at `ν₀` itself, the
+coupling `γ.snd` of `ν₀` and `ν₁` is optimal: `∫ ‖y₀ - y₁‖² dγ.snd = W₂ (ν₀, ν₁) ^ 2`
+(Ambrosio–Gigli–Savaré, Remark 9.2.3). -/
+theorem IsGeneralizedGeodesicPlan.integral_norm_sub_sq_snd_eq_dist_sq
+    {ν₀ ν₁ : WassersteinSpace 2 E}
+    (hγ : IsGeneralizedGeodesicPlan 2 γ ((ν₀ : ProbabilityMeasure E) : Measure E)
+      ((ν₀ : ProbabilityMeasure E) : Measure E) ((ν₁ : ProbabilityMeasure E) : Measure E)) :
+    ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ.snd = dist ν₀ ν₁ ^ 2 := by
+  set I : ℝ := ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ.snd
+  refine le_antisymm ?_ (WassersteinSpace.dist_sq_le_integral hγ.isCoupling_snd)
+  by_contra! hlt
+  have hI_pos : 0 < I := (sq_nonneg _).trans_lt hlt
+  set δ : ℝ := I - dist ν₀ ν₁ ^ 2
+  have hδ : 0 < δ := sub_pos.2 hlt
+  set t : ℝ := min (1 / 2) (δ / (2 * I))
+  have ht0 : 0 < t := lt_min (by norm_num) (by positivity)
+  have ht1 : t < 1 := (min_le_left _ _).trans_lt (by norm_num)
+  obtain ⟨ν, hν⟩ := exists_coe_eq_generalizedGeodesic hγ.isCoupling_snd t
+  have hd := hγ.dist_sq_add_le ⟨ht0.le, ht1.le⟩ hν
+  rw [dist_self] at hd
+  have h1t : (1 - t) * I ≤ dist ν₀ ν₁ ^ 2 :=
+    le_of_mul_le_mul_left (by nlinarith [sq_nonneg (dist ν₀ ν), hd]) ht0
+  have htI : t * I ≤ δ / 2 := calc
+    t * I ≤ δ / (2 * I) * I := mul_le_mul_of_nonneg_right (min_le_right _ _) hI_pos.le
+    _ = δ / 2 := by have := hI_pos.ne'; field_simp
+  linarith [h1t, htI, show (1 - t) * I = I - t * I by ring]
 
 variable {m : ℝ} {φ : WassersteinSpace 2 E → EReal} {μ : WassersteinSpace 2 E} {τ : ℝ≥0}
 
@@ -315,9 +363,9 @@ theorem penalizedConvex_of_generalizedGeodesicallyConvex
   -- Select the laws along the generalized geodesic; its endpoints are `ν₀` and `ν₁`.
   choose c hc using exists_coe_eq_generalizedGeodesic hπ
   have hc₀ : c 0 = ν₀ := WassersteinSpace.ext <| ProbabilityMeasure.toMeasure_injective <| by
-    rw [hc, generalizedGeodesic_zero, hπ.fst_eq]
+    rw [hc, hγ.generalizedGeodesic_zero]
   have hc₁ : c 1 = ν₁ := WassersteinSpace.ext <| ProbabilityMeasure.toMeasure_injective <| by
-    rw [hc, generalizedGeodesic_one, hπ.snd_eq]
+    rw [hc, hγ.generalizedGeodesic_one]
   refine ⟨c, hc₀, hc₁, convexAlong_def.2 fun t ht ↦ ?_⟩
   have hle := hconv t ht (c t) (hc t)
   simp only [coe_edist_sq_div_eq_coe_dist_sq_div hτ] at hle
@@ -330,6 +378,99 @@ theorem penalizedConvex_of_generalizedGeodesicallyConvex
     exact mul_nonneg (mul_nonneg (div_nonneg (hm ▸ div_nonneg hmτ hτ'.le) zero_le_two) ht.1)
       (sub_nonneg.2 ht.2)
   exact mul_le_mul_of_nonneg_left (WassersteinSpace.dist_sq_le_integral hπ) hk
+
+/-- If `φ` is `m`-convex along generalized geodesics based at every law of `P₂(E)`, then `φ` is
+penalized convex with parameter `m` for all sufficiently small positive time steps `τ`. -/
+theorem eventually_penalizedConvex_of_generalizedGeodesicallyConvex
+    (h : ∀ μ, GeneralizedGeodesicallyConvex m φ μ) :
+    ∀ᶠ τ in 𝓝[>] (0 : ℝ≥0), PenalizedConvex m τ φ := by
+  have hcont : ContinuousAt (fun τ : ℝ≥0 ↦ (τ : ℝ)) 0 := NNReal.continuous_coe.continuousAt
+  filter_upwards [self_mem_nhdsWithin,
+    (hcont.eventually (eventually_one_add_mul_pos m)).filter_mono nhdsWithin_le_nhds] with τ hτ hmτ
+  exact penalizedConvex_of_generalizedGeodesicallyConvex h hτ hmτ.le
+
+/-- **Convexity along generalized geodesics implies geodesic convexity**
+(Ambrosio–Gigli–Savaré, Remark 9.2.3). If `φ` is `m`-convex along generalized geodesics based at
+every law of its effective domain, then `φ` is `m`-geodesically convex on `P₂(E)`. -/
+theorem geodesicallyConvex_of_generalizedGeodesicallyConvex
+    (h : ∀ ν, φ ν ≠ ⊤ → GeneralizedGeodesicallyConvex m φ ν) :
+    GeodesicallyConvex m φ := by
+  refine geodesicallyConvex_def.2 fun ν₀ ν₁ h₀ h₁ ↦ ?_
+  obtain ⟨γ, hγ, hφγ⟩ := generalizedGeodesicallyConvex_def.1 (h ν₀ h₀) h₀ h₁
+  have hI := hγ.integral_norm_sub_sq_snd_eq_dist_sq
+  have hopt_rpow : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ ((2 : ℝ≥0∞).toReal))
+      γ.snd ((ν₀ : ProbabilityMeasure E) : Measure E)
+      ((ν₁ : ProbabilityMeasure E) : Measure E) := by
+    simpa only [ENNReal.toReal_ofNat] using
+      WassersteinSpace.isOptimalCoupling_of_integral_le_dist_sq hγ.isCoupling_snd hI.le
+  obtain ⟨hπ, hopt⟩ :=
+    (isOptimalCoupling_edist_rpow_iff measurable_edist two_ne_zero ENNReal.ofNat_ne_top).1
+      hopt_rpow
+  obtain ⟨c, hc, hct⟩ := WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul hπ hopt
+  refine ⟨c, hc, convexAlong_def.2 fun t ht ↦ ?_⟩
+  have hc_eq : ((c t : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ t := by
+    rw [hct t ht, Measure.snd, Measure.map_map (by fun_prop) measurable_snd,
+      generalizedGeodesic_def]
+    rfl
+  simpa only [hc.source, hc.target, hI] using
+    convexAlongGeneralizedGeodesicPlan_def.1 hφγ t ht (c t) hc_eq
+
+/-- **Coercivity of energies convex along generalized geodesics.** If `φ : P₂(E) → EReal` is
+`W₂`-lower semicontinuous, never takes the value `⊥`, and is `m`-convex along generalized
+geodesics based at every law of its effective domain, then `φ_τ(μ) > -∞` for every `μ` and every
+time step `τ` with `1 + m * τ > 0`. -/
+theorem moreauYosida_ne_bot_of_generalizedGeodesicallyConvex
+    (hφ_lsc : LowerSemicontinuous φ) (hφ_bot : ∀ μ, φ μ ≠ ⊥)
+    (hφ_conv : ∀ μ, φ μ ≠ ⊤ → GeneralizedGeodesicallyConvex m φ μ)
+    (hmτ : 0 < 1 + m * τ) (μ : WassersteinSpace 2 E) :
+    moreauYosida φ τ μ ≠ ⊥ :=
+  (geodesicallyConvex_of_generalizedGeodesicallyConvex hφ_conv).moreauYosida_ne_bot
+    hφ_lsc hφ_bot hmτ μ
+
+/-- **Existence of the JKO step under convexity along generalized geodesics.** If
+`φ : P₂(E) → EReal` is `W₂`-lower semicontinuous, never takes the value `⊥`, and is `m`-convex
+along generalized geodesics based at every law, then for every `τ > 0` with `1 + m * τ > 0` and
+every `μ : P₂(E)` the JKO resolvent `TauCeti.moreauYosidaResolvent φ τ μ` is nonempty. -/
+theorem moreauYosidaResolvent_nonempty_of_generalizedGeodesicallyConvex
+    (hφ_lsc : LowerSemicontinuous φ) (hφ_bot : ∀ μ, φ μ ≠ ⊥)
+    (hφ_conv : ∀ μ, GeneralizedGeodesicallyConvex m φ μ)
+    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (μ : WassersteinSpace 2 E) :
+    (moreauYosidaResolvent φ τ μ).Nonempty :=
+  (penalizedConvex_of_generalizedGeodesicallyConvex hφ_conv hτ
+    hmτ.le).moreauYosidaResolvent_nonempty hφ_lsc hτ hmτ
+    (moreauYosida_ne_bot_of_generalizedGeodesicallyConvex hφ_lsc hφ_bot
+      (fun ν _ ↦ hφ_conv ν) hmτ μ)
+
+/-- **Existence of an infinite JKO sequence under convexity along generalized geodesics.** If
+`φ : P₂(E) → EReal` is `W₂`-lower semicontinuous, never takes the value `⊥`, and is `m`-convex
+along generalized geodesics based at every law, then for every `τ > 0` with `1 + m * τ > 0` and
+every initial law `μ₀ : P₂(E)` there exists a sequence `J : ℕ → P₂(E)` with `J 0 = μ₀` and
+`J (n + 1) ∈ moreauYosidaResolvent φ τ (J n)` for all `n`. -/
+theorem exists_forall_mem_moreauYosidaResolvent_of_generalizedGeodesicallyConvex
+    (hφ_lsc : LowerSemicontinuous φ) (hφ_bot : ∀ μ, φ μ ≠ ⊥)
+    (hφ_conv : ∀ μ, GeneralizedGeodesicallyConvex m φ μ)
+    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (μ₀ : WassersteinSpace 2 E) :
+    ∃ J : ℕ → WassersteinSpace 2 E,
+      J 0 = μ₀ ∧ ∀ n, J (n + 1) ∈ moreauYosidaResolvent φ τ (J n) :=
+  (penalizedConvex_of_generalizedGeodesicallyConvex hφ_conv hτ
+    hmτ.le).exists_forall_mem_moreauYosidaResolvent hφ_lsc hτ hmτ
+    (moreauYosida_ne_bot_of_generalizedGeodesicallyConvex hφ_lsc hφ_bot
+      (fun ν _ ↦ hφ_conv ν) hmτ) μ₀
+
+/-- **Existence and uniqueness of the JKO step under convexity along generalized geodesics.** If
+`φ : P₂(E) → EReal` is `W₂`-lower semicontinuous, never takes the value `⊥`, is finite somewhere,
+and is `m`-convex along generalized geodesics based at every law, then every law `μ : P₂(E)` has a
+unique JKO step `ν ∈ TauCeti.moreauYosidaResolvent φ τ μ` whenever `τ > 0` and `1 + m * τ > 0`. -/
+theorem existsUnique_mem_moreauYosidaResolvent_of_generalizedGeodesicallyConvex
+    (hφ_lsc : LowerSemicontinuous φ) (hφ_bot : ∀ μ, φ μ ≠ ⊥)
+    (hφ_conv : ∀ μ, GeneralizedGeodesicallyConvex m φ μ)
+    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (hdom : ∃ ν, φ ν ≠ ⊤)
+    (μ : WassersteinSpace 2 E) :
+    ∃! ν, ν ∈ moreauYosidaResolvent φ τ μ := by
+  obtain ⟨ν, hν⟩ :=
+    moreauYosidaResolvent_nonempty_of_generalizedGeodesicallyConvex hφ_lsc hφ_bot hφ_conv hτ hmτ μ
+  exact ⟨ν, hν, fun ν' hν' ↦
+    (hφ_conv μ).subsingleton_moreauYosidaResolvent hτ hmτ hφ_bot hdom hν' hν⟩
 
 end Hilbert
 
