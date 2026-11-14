@@ -6,21 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Krasner.Basic
+public import TauCeti.NumberTheory.LocalField.Padic
 import Mathlib.Data.Nat.Factorization.Basic
 
 /-!
 # Closed-form Krasner counts over `ℚ_[p]`
 
-Over `ℚ_[p]`, every positive integer has finite `p`-adic valuation `padicValNat p h`, so the sum of
-Ore coefficient depths `∑_{1 ≤ h < n} oreCoefficientDepth ℚ_[p] n j h` can be evaluated in closed
-form by double counting prime powers `p ^ i` dividing `1, …, n - 1` via
-`Nat.Ioc_filter_dvd_card_eq_div`. Substituting this closed form into
-`TauCeti.ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow` yields Pauli and Roblot's
-closed-form `ℕ` expression for `#{E ∈ σ_{ℚ_[p]}(n) | E.wildExponent = j}` and for `#σ_{ℚ_[p]}(n)`,
-including `#σ_{ℚ_[2]}(2) = 6`, `#σ_{ℚ_[3]}(3) = 21`, and `#σ_{ℚ_[2]}(4) = 92`.
+Over `ℚ_[p]`, every positive integer has finite `p`-adic valuation `padicValNat p h`. Ore's
+admissibility condition reduces to `min(v_p(j % n) * n, v_p(n) * n) ≤ j ≤ v_p(n) * n`
+(`TauCeti.isOreAdmissible_padic_iff`), and the sum of Ore coefficient depths
+`∑_{1 ≤ h < n} oreCoefficientDepth ℚ_[p] n j h` can be evaluated in closed form by double counting
+prime powers `p ^ i` dividing `1, …, n - 1` via `Nat.Ioc_filter_dvd_card_eq_div`. Substituting this
+closed form into `TauCeti.ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow` yields Pauli
+and Roblot's closed-form `ℕ` expression for `#{E ∈ σ_{ℚ_[p]}(n) | E.wildExponent = j}` and for
+`#σ_{ℚ_[p]}(n)` — matching `#σ_{ℚ_[2]}(2) = 2 + 4 = 6`
+(`TauCeti.encard_totallyRamifiedOfDegree_two_padicTwo`) and giving `#σ_{ℚ_[3]}(3) = 21` and
+`#σ_{ℚ_[2]}(4) = 92`.
 
 ## Main results
 
+* `TauCeti.isOreAdmissible_padic_iff`: Ore's inequality characterizing admissible wild exponents
+  over `ℚ_[p]` (Pauli–Roblot, Proposition 3.1).
 * `TauCeti.sum_oreCoefficientDepth_padic_of_mod_eq_zero`,
   `TauCeti.sum_oreCoefficientDepth_padic_of_mod_pos`: closed-form identities for the sum of Ore
   coefficient depths over `ℚ_[p]`.
@@ -29,23 +35,68 @@ including `#σ_{ℚ_[2]}(2) = 6`, `#σ_{ℚ_[3]}(3) = 21`, and `#σ_{ℚ_[2]}(4)
   6.1).
 * `TauCeti.ncard_totallyRamifiedOfDegree_padic`: total count `#σ_{ℚ_[p]}(n)` as a finite sum over
   `0 ≤ j ≤ n * padicValNat p n`.
-* `TauCeti.ncard_totallyRamifiedOfDegree_two_padicTwo`,
-  `TauCeti.ncard_totallyRamifiedOfDegree_three_padicThree`,
-  `TauCeti.ncard_totallyRamifiedOfDegree_four_padicTwo`: `#σ_{ℚ_[2]}(2) = 6`,
-  `#σ_{ℚ_[3]}(3) = 21`, and `#σ_{ℚ_[2]}(4) = 92`.
+* `TauCeti.ncard_totallyRamifiedOfDegree_three_padicThree`,
+  `TauCeti.ncard_totallyRamifiedOfDegree_four_padicTwo`: `#σ_{ℚ_[3]}(3) = 21` and
+  `#σ_{ℚ_[2]}(4) = 92`.
 
 ## References
 
 * M. Krasner, *Nombre des extensions d'un degré donné d'un corps p-adique*, Colloques
   Internationaux du CNRS **143**, Paris, 1966, 143–169.
 * S. Pauli and X.-F. Roblot, *On the computation of all extensions of a p-adic field of a given
-  degree*, Math. Comp. **70** (2001), 1641–1659, Theorem 6.1 and Table 1.
+  degree*, Math. Comp. **70** (2001), 1641–1659, Proposition 3.1, Theorem 6.1, and Table 1.
 -/
 
 public section
 noncomputable section
 
+open ValuativeRel IsDiscreteValuationRing
+
 namespace TauCeti
+
+/-- **Ore's inequality over `ℚ_[p]`** (Pauli–Roblot, Proposition 3.1): a wild exponent `j` is
+Ore-admissible for degree `n` over `ℚ_[p]` if and only if `0 < n` and
+`min(v_p(j % n) * n, v_p(n) * n) ≤ j ≤ v_p(n) * n`, with `v_p(0)` read as `∞` so that `n ∣ j`
+requires `j = v_p(n) * n`. -/
+theorem isOreAdmissible_padic_iff (p : ℕ) [Fact p.Prime] {n j : ℕ} :
+    IsOreAdmissible ℚ_[p] n j ↔
+      0 < n ∧
+        (if j % n = 0 then padicValNat p n * n
+          else min (padicValNat p (j % n) * n) (padicValNat p n * n)) ≤ j ∧
+          j ≤ padicValNat p n * n := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  have hn0 : (n : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
+  have hvn : addVal 𝒪[ℚ_[p]] (n : 𝒪[ℚ_[p]]) = (padicValNat p n : ℕ∞) := by
+    rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] n hn0,
+      _root_.Padic.natCastValuation_eq_padicValNat]
+  have hdiv := Nat.div_add_mod j n
+  have hlt := Nat.mod_lt j hn
+  rcases Nat.eq_zero_or_pos (j % n) with hmod | hmod
+  · rw [isOreAdmissible_iff_of_mod_eq_zero hmod, ite_eq_left hmod, hvn]
+    simp only [hn, true_and, ENat.natCast_inj]
+    rw [hmod, add_zero, Nat.mul_comm n (j / n)] at hdiv
+    rw [← hdiv, ← le_antisymm_iff, Nat.mul_div_cancel _ hn, Nat.mul_left_inj hn.ne', eq_comm]
+  · have hb0 : ((j % n : ℕ) : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hmod.ne'
+    have hvb : addVal 𝒪[ℚ_[p]] ((j % n : ℕ) : 𝒪[ℚ_[p]]) = (padicValNat p (j % n) : ℕ∞) := by
+      rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] (j % n) hb0,
+        _root_.Padic.natCastValuation_eq_padicValNat]
+    rw [isOreAdmissible_iff_of_mod_pos hmod, ite_eq_right hmod.ne', hvn, hvb]
+    simp only [hn, true_and]
+    norm_cast
+    rw [Nat.mul_comm n (j / n)] at hdiv
+    refine ⟨fun ⟨h1, h2⟩ ↦ ?_, fun ⟨h1, h2⟩ ↦ ?_⟩
+    · have hm1 := Nat.mul_le_mul_right n h1
+      have hm2 := Nat.mul_le_mul_right n h2
+      rw [Nat.add_one_mul] at hm2
+      exact ⟨(min_le_left _ _).trans (by omega), by omega⟩
+    · have hj_ne : j ≠ padicValNat p n * n := fun heq ↦ hmod.ne' (by rw [heq, Nat.mul_mod_left])
+      have hdiv_lt : j / n + 1 ≤ padicValNat p n :=
+        Nat.lt_of_mul_lt_mul_right (by omega : (j / n) * n < padicValNat p n * n)
+      rcases min_le_iff.mp h1 with hmin | hmin
+      · have hm_lt : padicValNat p (j % n) * n < (j / n + 1) * n := by rw [Nat.add_one_mul]; omega
+        exact ⟨Nat.lt_succ_iff.mp (Nat.lt_of_mul_lt_mul_right hm_lt), hdiv_lt⟩
+      · exact absurd (le_antisymm h2 hmin) hj_ne
 
 /-- Double-counting evaluation of the base Ore depth sum `∑_{1 ≤ h < n} (j / n - v_p(h))` for an
 Ore-admissible pair `(n, j)` over `ℚ_[p]`, using `Nat.Ioc_filter_dvd_card_eq_div`. -/
@@ -159,7 +210,7 @@ theorem sum_oreCoefficientDepth_padic_of_mod_pos (p : ℕ) [Fact p.Prime] {n j :
     (∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth ℚ_[p] n j h) +
       (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1)) = n + j - 2 := by
   have hn := hadm.pos
-  obtain ⟨hvb, -⟩ := (isOreAdmissible_of_mod_pos hmod).mp hadm |>.2
+  obtain ⟨hvb, -⟩ := (isOreAdmissible_iff_of_mod_pos hmod).mp hadm |>.2
   rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] (j % n)
     (Nat.cast_ne_zero.mpr hmod.ne'), _root_.Padic.natCastValuation_eq_padicValNat] at hvb
   have hvb_le : padicValNat p (j % n) ≤ j / n := by exact_mod_cast hvb
@@ -237,22 +288,8 @@ theorem ncard_totallyRamifiedOfDegree_padic (p : ℕ) [Fact p.Prime] {n : ℕ} (
   by_cases hadm : IsOreAdmissible ℚ_[p] n j
   · rw [ite_eq_left (((isOreAdmissible_padic_iff p).mp hadm).2),
       ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_padic p hadm]
-  · rw [ite_eq_right fun h ↦ hadm ((isOreAdmissible_padic_iff p).mpr ⟨hn, h⟩)]
-    have hempty : {E ∈ totallyRamifiedOfDegree ℚ_[p] n | E.wildExponent = j} = ∅ := by
-      ext E
-      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_and]
-      exact fun hE hEj ↦ hadm (ore_realizability.mp ⟨E, hE, hEj⟩)
-    rw [hempty, Set.ncard_empty]
-
-/-- `ℚ_[2]` has `6` ramified quadratic extensions inside `SeparableClosure ℚ_[2]` (`2` of wild
-exponent `1` and `4` of wild exponent `2`). -/
-theorem ncard_totallyRamifiedOfDegree_two_padicTwo :
-    (totallyRamifiedOfDegree ℚ_[2] 2).ncard = 6 := by
-  rw [ncard_totallyRamifiedOfDegree_padic 2 (by decide)]
-  simp only [Nat.padicValNat_def, Nat.multiplicity_self (by decide : 1 < 2),
-    Finset.sum_range_succ, Finset.sum_range_zero,
-    multiplicity_eq_zero_of_not_dvd (by decide : ¬ 2 ∣ 1)]
-  norm_num
+  · rw [ite_eq_right fun h ↦ hadm ((isOreAdmissible_padic_iff p).mpr ⟨hn, h⟩),
+      setOf_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_empty_iff.mpr hadm, Set.ncard_empty]
 
 /-- `ℚ_[3]` has `21` totally ramified cubic extensions inside `SeparableClosure ℚ_[3]` (`6` of wild
 exponent `1`, `6` of wild exponent `2`, and `9` of wild exponent `3`). -/
