@@ -346,8 +346,8 @@ public theorem finrank_linearMap_pi_eq_sum {R A ι κ : Type*} [Semiring R] [Str
 /-- The finite rank of a dependent product whose factors are finite free and only finitely many
 of them nontrivial is the sum of the ranks of the factors. The index type may be infinite; this
 extends `Module.finrank_pi_fintype`, the trivial factors contributing nothing. -/
-public theorem finrank_pi_eq_finsum {R ι : Type*} [Ring R] [StrongRankCondition R]
-    (M : ι → Type*) [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] [∀ i, Module.Free R (M i)]
+public theorem finrank_pi_eq_finsum {R ι : Type*} [Semiring R] [StrongRankCondition R]
+    (M : ι → Type*) [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] [∀ i, Module.Free R (M i)]
     [∀ i, Module.Finite R (M i)] (h : {i | Nontrivial (M i)}.Finite) :
     Module.finrank R ((i : ι) → M i) = ∑ᶠ i, Module.finrank R (M i) := by
   classical

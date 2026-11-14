@@ -126,13 +126,6 @@ theorem isLocallyFiniteModule_iff_exists_linearEquiv_dfinsupp_ladderModule
   ⟨fun _ => exists_linearEquiv_dfinsupp_ladderModule hq,
     fun ⟨_, _, _, ⟨e⟩⟩ => .of_linearEquiv e⟩
 
-/-- At a generic parameter, signed ladder modules `L_m^ε` with distinct labels `(m, ε)` are not
-isomorphic. -/
-theorem eq_of_nonempty_linearEquiv_ladderModule (hq : IsGenericQuantumParameter q)
-    {p p' : ℕ × ℤˣ}
-    (h : Nonempty (LadderModule q p.1 p.2 ≃ₗ[UqSl2 q] LadderModule q p'.1 p'.2)) : p = p' :=
-  Prod.ext_iff.mpr ((LadderModule.nonempty_linearEquiv_iff hq).mp h)
-
 /-- At a generic parameter, every simple submodule of a locally finite `UqSl2 q`-module is
 isomorphic to a signed ladder module `L_m^ε`. -/
 theorem exists_linearEquiv_ladderModule_submodule (hq : IsGenericQuantumParameter q)
@@ -154,7 +147,7 @@ noncomputable def ladderModuleTensorHomEquiv (hq : IsGenericQuantumParameter q)
   have := isSemisimpleModule_of_isLocallyFiniteModule hq (V := V)
   have (p : ℕ × ℤˣ) := LadderModule.isSimpleModule (m := p.1) (ε := p.2) hq
   directSumIsotypicTensorEquiv ℂ (fun p : ℕ × ℤˣ => LadderModule q p.1 p.2)
-    (fun _ _ => eq_of_nonempty_linearEquiv_ladderModule hq)
+    (fun _ _ => LadderModule.eq_of_nonempty_linearEquiv hq)
     (fun N _ => exists_linearEquiv_ladderModule_submodule hq N)
 
 /-- The evaluation isomorphism sends `v ⊗ φ` in the `(m, ε)` summand to `φ v`. -/
