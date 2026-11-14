@@ -76,9 +76,10 @@ operators, are separate.
 
 * `TauCeti.orbitTorusOperator`: the operator `D u = ∂s u + (J₀ ∂t u + S(t) u)`.
 * `TauCeti.orbitTorusAdjoint`: the formal adjoint `D† u = -∂s u + (J₀ ∂t u + S(t) u)`.
-* `TauCeti.setIntegral_inner_orbitTorusOperator_eq_setIntegral_inner_orbitTorusAdjoint` and
-  `TauCeti.orbitTorusOperator_comp_neg_fst`: `D†` is the formal adjoint of `D` on twisted maps,
-  and the reflection `(s, t) ↦ (-s, t)` intertwines `D` and `D†`.
+* `TauCeti.setIntegral_inner_orbitTorusOperator_eq_setIntegral_inner_orbitTorusAdjoint`,
+  `TauCeti.orbitTorusOperator_comp_neg_fst` and `TauCeti.orbitTorusAdjoint_comp_neg_fst`: `D†` is
+  the formal adjoint of `D` on twisted maps, and the reflection `(s, t) ↦ (-s, t)` intertwines `D`
+  and `D†`.
 * `TauCeti.setIntegral_norm_sq_orbitTorusOperator`: the energy identity on the fundamental
   rectangle.
 * `TauCeti.fderiv_apply_stdComplexLineReal_eq_zero_of_orbitTorusOperator_eq_zero`: kernel
@@ -96,9 +97,9 @@ operators, are separate.
 * `TauCeti.periodic_snd_of_twists` and `TauCeti.eq_one_or_eq_zero_of_orbitTorusOperator_eq_zero`:
   on a finite cover, twisted maps are periodic in `t`, and the operators twisted along the circle
   factor have no kernel.
-* `TauCeti.eq_one_or_eq_zero_and_apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero`
-  and `TauCeti.dysonSeriesLeft_pow_apply_eq_smul_of_orbitTorusOperator_eq_zero`: the kernel of
-  the twisted operators on a finite cover, described by the propagator and the `n`-th power of the
+* `TauCeti.apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero_of_twists` and
+  `TauCeti.dysonSeriesLeft_pow_apply_eq_smul_of_orbitTorusOperator_eq_zero`: the kernel of the
+  twisted operators on a finite cover, described by the propagator and the `n`-th power of the
   return map.
 * `TauCeti.exists_ne_zero_orbitTorusOperator_eq_zero_iff_eq_one_and_det_eq_zero`: on a finite
   cover the kernel is nonzero exactly when `ε₁ = 1` and `det (ε₂ - Ψ(d) ^ n) = 0`.
@@ -206,23 +207,18 @@ theorem setIntegral_inner_orbitTorusOperator_eq_setIntegral_inner_orbitTorusAdjo
   set φ₂ : ℝ × ℝ → ℝ := fun z => ⟪u z, J₀ (fderiv ℝ v z e₂)⟫ + ⟪fderiv ℝ u z e₂, J₀ (v z)⟫
   have hφ₁ : Continuous φ₁ := by fun_prop
   have hφ₂ : Continuous φ₂ := by fun_prop
-  have hfst {w : ℝ × ℝ → V} (hw : Differentiable ℝ w) (s t : ℝ) :
-      HasDerivAt (fun s => w (s, t)) (fderiv ℝ w (s, t) e₁) s :=
-    (hw _).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s t)
-  have hsnd {w : ℝ × ℝ → V} (hw : Differentiable ℝ w) (s t : ℝ) :
-      HasDerivAt (fun t => w (s, t)) (fderiv ℝ w (s, t) e₂) t :=
-    (hw _).hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right s t)
   have hI₁ : ∫ z in Icc (0 : ℝ) ℓ ×ˢ Icc 0 d, φ₁ z = 0 := by
     refine setIntegral_rect_eq_zero_of_hasDerivAt_fst hφ₁ (Φ := fun z => ⟪u z, v z⟫)
-      (fun s t => HasDerivAt.inner ℝ (hfst hu1 s t) (hfst hv1 s t)) fun t => ?_
+      (fun s t => HasDerivAt.inner ℝ (hasDerivAt_slice_left (hu1 (s, t)))
+        (hasDerivAt_slice_left (hv1 (s, t)))) fun t => ?_
     have hu' : u (ℓ, t) = ε₁ • u (0, t) := by simpa using hus 0 t
     have hv' : v (ℓ, t) = ε₁ • v (0, t) := by simpa using hvs 0 t
     simp only [hu', hv', real_inner_smul_left, real_inner_smul_right]
     linear_combination ⟪u (0, t), v (0, t)⟫ * hε₁
   have hI₂ : ∫ z in Icc (0 : ℝ) ℓ ×ˢ Icc 0 d, φ₂ z = 0 := by
     refine setIntegral_rect_eq_zero_of_hasDerivAt_snd hφ₂ (Φ := fun z => ⟪u z, J₀ (v z)⟫)
-      (fun s t => HasDerivAt.inner ℝ (hsnd hu1 s t)
-        (J₀.hasFDerivAt.comp_hasDerivAt t (hsnd hv1 s t)))
+      (fun s t => HasDerivAt.inner ℝ (hasDerivAt_slice_right (hu1 (s, t)))
+        (J₀.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_slice_right (hv1 (s, t)))))
       fun s => ?_
     have hu' : u (s, d) = ε₂ • u (s, 0) := by simpa using hut s 0
     have hv' : v (s, d) = ε₂ • v (s, 0) := by simpa using hvt s 0
@@ -248,20 +244,27 @@ theorem setIntegral_inner_orbitTorusOperator_eq_setIntegral_inner_orbitTorusAdjo
       (hφ₂.continuousOn.integrableOn_compact hR), hI₁, hI₂, sub_self, sub_eq_zero] at h
   exact h
 
-/-- **Reflection intertwines `D` and `D†`.** For a differentiable `u`, the operator `D` applied to
-the reflection `(s, t) ↦ u (-s, t)` is the reflection of `D† u`. -/
-theorem orbitTorusOperator_comp_neg_fst (hu : Differentiable ℝ u) (z : ℝ × ℝ) :
+/-- **Reflection intertwines `D` and `D†`.** The operator `D` applied to the reflection
+`(s, t) ↦ u (-s, t)` is the reflection of `D† u`. -/
+theorem orbitTorusOperator_comp_neg_fst (z : ℝ × ℝ) :
     orbitTorusOperator J₀ S (fun w => u (-w.1, w.2)) z = orbitTorusAdjoint J₀ S u (-z.1, z.2) := by
-  set L : ℝ × ℝ →L[ℝ] ℝ × ℝ := (-ContinuousLinearMap.fst ℝ ℝ ℝ).prod (ContinuousLinearMap.snd ℝ ℝ ℝ)
-  have hL (w : ℝ × ℝ) : L w = (-w.1, w.2) := rfl
-  have hf : HasFDerivAt (fun w => u (-w.1, w.2)) ((fderiv ℝ u (-z.1, z.2)).comp L) z :=
-    (hu _).hasFDerivAt.comp z L.hasFDerivAt
-  have h₁ : L stdComplexLineReal = -stdComplexLineReal := by
-    simp [hL, stdComplexLineReal_eq]
-  have h₂ : L stdComplexLineImag = stdComplexLineImag := by
-    simp [hL, stdComplexLineImag_eq]
-  rw [orbitTorusOperator_apply, orbitTorusAdjoint_apply, hf.fderiv,
+  set L : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ := (ContinuousLinearEquiv.neg ℝ : ℝ ≃L[ℝ] ℝ).prodCongr (.refl ℝ ℝ)
+  have hf : fderiv ℝ (fun w => u (-w.1, w.2)) z =
+      (fderiv ℝ u (-z.1, z.2)).comp (L : ℝ × ℝ →L[ℝ] ℝ × ℝ) :=
+    L.comp_right_fderiv (f := u)
+  have h₁ : (L : ℝ × ℝ →L[ℝ] ℝ × ℝ) stdComplexLineReal = -stdComplexLineReal := by
+    simp [L, stdComplexLineReal_eq]
+  have h₂ : (L : ℝ × ℝ →L[ℝ] ℝ × ℝ) stdComplexLineImag = stdComplexLineImag := by
+    simp [L, stdComplexLineImag_eq]
+  rw [orbitTorusOperator_apply, orbitTorusAdjoint_apply, hf,
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, h₁, h₂, map_neg]
+
+/-- **Reflection intertwines `D†` and `D`.** The formal adjoint `D†` applied to the reflection
+`(s, t) ↦ u (-s, t)` is the reflection of `D u`. -/
+theorem orbitTorusAdjoint_comp_neg_fst (z : ℝ × ℝ) :
+    orbitTorusAdjoint J₀ S (fun w => u (-w.1, w.2)) z = orbitTorusOperator J₀ S u (-z.1, z.2) := by
+  simpa using (orbitTorusOperator_comp_neg_fst (J₀ := J₀) (S := S)
+    (u := fun w => u (-w.1, w.2)) (-z.1, z.2)).symm
 
 /-- The orbit-torus adjoint is additive on maps differentiable at the point. -/
 theorem orbitTorusAdjoint_add {z : ℝ × ℝ} (hu : DifferentiableAt ℝ u z)
@@ -558,6 +561,13 @@ theorem orbitTorusOperator_dysonSeriesLeft_apply_eq_zero (hJ₀sq : ∀ x, J₀ 
   rw [orbitTorusOperator_apply, hf.fderiv]
   simp [stdComplexLineReal, stdComplexLineImag, hJ₀sq]
 
+/-- For a `C¹` path `S`, the propagator `Ψ` of the loop equation `w' = J₀ S(t) w`, applied to a
+vector `v` and extended constantly in `s`, is a `C²` map. -/
+theorem contDiff_dysonSeriesLeft_apply_snd (hS1 : ContDiff ℝ 1 S) (v : V) :
+    ContDiff ℝ 2 fun z : ℝ × ℝ => dysonSeriesLeft (fun t => J₀ ∘L S t) z.2 v :=
+  ((((contDiff_dysonSeriesLeft (n := 1) ((contDiff_const (c := J₀)).clm_comp
+    (by simpa using hS1))).of_le (by norm_num)).clm_apply contDiff_const).comp contDiff_snd)
+
 /-- **The propagator is symplectic.** If `J₀` is an orthogonal complex structure and every `S(t)` is
 symmetric, then `J₀ S(t)` is skew for the symplectic form `⟪J₀ ·, ·⟫`, so the propagator `Ψ(t)` of
 the loop equation `w' = J₀ S(t) w` preserves it: `⟪J₀ (Ψ(t) x), Ψ(t) y⟫ = ⟪J₀ x, y⟫`. -/
@@ -587,7 +597,7 @@ model operator lifts to every cover, and its twisted versions act on maps `u` wi
 /-- **Periodicity in `t` on a finite cover.** Let `k, n ∈ ℕ` and `a ∈ ℤ`. If `w` is twisted by a
 sign `ε₁` along `(k ℓ, 0)` and by a sign `ε₂` along `(a ℓ, n d)`, then `w` is periodic in `t` with
 period `2 k n d`, because `2 k (a ℓ, n d) - 2 a (k ℓ, 0) = (0, 2 k n d)`. -/
-theorem periodic_snd_of_twists {M : Type*} [AddCommGroup M] [Module ℝ M] {w : ℝ × ℝ → M}
+theorem periodic_snd_of_twists {M : Type*} [MulAction ℝ M] {w : ℝ × ℝ → M}
     (hε₁ : ε₁ ^ 2 = 1) (hε₂ : ε₂ ^ 2 = 1) {k n : ℕ} {a : ℤ}
     (hs : ∀ s t, w (s + k * ℓ, t) = ε₁ • w (s, t))
     (ht : ∀ s t, w (s + a * ℓ, t + n * d) = ε₂ • w (s, t)) (s : ℝ) :
@@ -633,24 +643,21 @@ variable [CompleteSpace V]
 
 /-- **Kernel elements on a finite cover.** Let `k, n ≥ 1` and `a ∈ ℤ`. A `C²` solution of
 `D u = 0` which is twisted by the sign `ε₁` along `(k ℓ, 0)` and by the sign `ε₂` along
-`(a ℓ, n d)` either vanishes or has `ε₁ = 1`, and it is given by the propagator,
-`u (s, t) = Ψ(t) (u 0)`. -/
-theorem eq_one_or_eq_zero_and_apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero
+`(a ℓ, n d)` is given by the propagator, `u (s, t) = Ψ(t) (u 0)`. -/
+theorem apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero_of_twists
     (hℓ : 0 < ℓ) (hd : 0 < d) (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫)
     (hJ₀sq : ∀ x, J₀ (J₀ x) = -x) (hS : ∀ t x y, ⟪S t x, y⟫ = ⟪x, S t y⟫)
     (hScont : Continuous S) (hu : ContDiff ℝ 2 u) (hε₁ : ε₁ ^ 2 = 1) (hε₂ : ε₂ ^ 2 = 1)
     {k n : ℕ} (hk : 0 < k) (hn : 0 < n) {a : ℤ}
     (hs : ∀ s t, u (s + k * ℓ, t) = ε₁ • u (s, t))
     (ht : ∀ s t, u (s + a * ℓ, t + n * d) = ε₂ • u (s, t))
-    (hD : ∀ z, orbitTorusOperator J₀ S u z = 0) :
-    (ε₁ = 1 ∨ u = 0) ∧ ∀ z, u z = dysonSeriesLeft (fun t => J₀ ∘L S t) z.2 (u 0) := by
+    (hD : ∀ z, orbitTorusOperator J₀ S u z = 0) (z : ℝ × ℝ) :
+    u z = dysonSeriesLeft (fun t => J₀ ∘L S t) z.2 (u 0) := by
   have hkℓ : 0 < (k : ℝ) * ℓ := mul_pos (Nat.cast_pos.2 hk) hℓ
   have hT : 0 < 2 * (k : ℝ) * n * d := by positivity
-  have hε₁' := eq_one_or_eq_zero_of_orbitTorusOperator_eq_zero hℓ hd hJ₀ hS hScont hu hε₁ hε₂ hk
-    hn hs ht hD
-  -- In either case `u` is given by the propagator.
-  refine ⟨hε₁', fun z => ?_⟩
-  rcases hε₁' with h | h
+  -- Either `ε₁ = 1` and `u` is periodic on a rectangular cover, or `u = 0`.
+  rcases eq_one_or_eq_zero_of_orbitTorusOperator_eq_zero hℓ hd hJ₀ hS hScont hu hε₁ hε₂ hk hn hs
+    ht hD with h | h
   · exact apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero hkℓ hT hJ₀ hJ₀sq hS
       hScont hu (one_pow 2) (fun s t => by rw [hs, h, one_smul])
       (fun s t => by rw [one_smul]; exact periodic_snd_of_twists hε₁ hε₂ hs ht s t) hD z
@@ -669,14 +676,30 @@ theorem dysonSeriesLeft_pow_apply_eq_smul_of_orbitTorusOperator_eq_zero (hℓ : 
     (ht : ∀ s t, u (s + a * ℓ, t + n * d) = ε₂ • u (s, t))
     (hD : ∀ z, orbitTorusOperator J₀ S u z = 0) :
     (dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n) (u 0) = ε₂ • u 0 := by
-  have hΨ := (eq_one_or_eq_zero_and_apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero
-    hℓ hd hJ₀ hJ₀sq hS hScont hu hε₁ hε₂ hk hn hs ht hD).2
+  have hΨ := apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero_of_twists hℓ hd hJ₀
+    hJ₀sq hS hScont hu hε₁ hε₂ hk hn hs ht hD
   -- The twist along `(a ℓ, n d)` at the origin is the return condition for `Ψ(n d) = Ψ(d) ^ n`.
   have hM : Continuous fun t => J₀ ∘L S t := (continuous_const (y := J₀)).clm_comp hScont
   have hMper : Function.Periodic (fun t => J₀ ∘L S t) d := fun t => by simp only [hper t]
   have h := ht 0 0
   rw [zero_add, zero_add, hΨ, ← Prod.zero_eq_mk] at h
   rwa [dysonSeriesLeft_natCast_mul_of_periodic hM hMper] at h
+
+/-- **The return twist of the propagator on a cover.** If `S` is `d`-periodic and `v` lies in the
+`ε₂`-eigenspace of `Ψ(d) ^ n`, the return map of the `n`-th iterate of the loop, then
+`Ψ(t + n d) v = ε₂ • Ψ(t) v` for all `t`. -/
+theorem dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul (hScont : Continuous S)
+    (hper : Function.Periodic S d) {n : ℕ} {v : V}
+    (hv : (dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n) v = ε₂ • v) (t : ℝ) :
+    dysonSeriesLeft (fun t => J₀ ∘L S t) (t + n * d) v =
+      ε₂ • dysonSeriesLeft (fun t => J₀ ∘L S t) t v := by
+  set Ψ := dysonSeriesLeft (fun t => J₀ ∘L S t)
+  have hM : Continuous fun t => J₀ ∘L S t := (continuous_const (y := J₀)).clm_comp hScont
+  have hMper : Function.Periodic (fun t => J₀ ∘L S t) d := fun t => by simp only [hper t]
+  have hadd : Ψ (t + n * d) = Ψ t * Ψ d ^ n :=
+    (dysonSeriesLeft_add_of_periodic hM (hMper.nat_mul n) t).trans
+      (congrArg (Ψ t * ·) (dysonSeriesLeft_natCast_mul_of_periodic hM hMper n))
+  rw [hadd, mul_apply_eq_comp, hv, map_smul]
 
 end Complete
 
@@ -699,14 +722,13 @@ theorem exists_ne_zero_orbitTorusOperator_eq_zero_iff_eq_one_and_det_eq_zero
         ((ε₂ • 1 - dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n : V →L[ℝ] V) : V →ₗ[ℝ] V) = 0 := by
   set Ψ := dysonSeriesLeft (fun t => J₀ ∘L S t)
   have hScont := hS1.continuous
-  have hM : Continuous fun t => J₀ ∘L S t := (continuous_const (y := J₀)).clm_comp hScont
-  have hMper : Function.Periodic (fun t => J₀ ∘L S t) d := fun t => by simp only [hper t]
   rw [LinearMap.det_eq_zero_iff_ker_ne_bot, Submodule.ne_bot_iff]
   constructor
   · rintro ⟨u, hu, hne, hs, ht, hD⟩
-    obtain ⟨hε₁', hΨ⟩ :=
-      eq_one_or_eq_zero_and_apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero hℓ hd
-        hJ₀ hJ₀sq hS hScont hu hε₁ hε₂ hk hn hs ht hD
+    have hε₁' := eq_one_or_eq_zero_of_orbitTorusOperator_eq_zero hℓ hd hJ₀ hS hScont hu hε₁ hε₂
+      hk hn hs ht hD
+    have hΨ := apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero_of_twists hℓ hd hJ₀
+      hJ₀sq hS hScont hu hε₁ hε₂ hk hn hs ht hD
     have hret := dysonSeriesLeft_pow_apply_eq_smul_of_orbitTorusOperator_eq_zero hℓ hd hJ₀ hJ₀sq hS
       hScont hper hu hε₁ hε₂ hk hn hs ht hD
     refine ⟨hε₁'.resolve_right hne, u 0, ?_, fun h0 => hne <| funext fun z => ?_⟩
@@ -718,17 +740,11 @@ theorem exists_ne_zero_orbitTorusOperator_eq_zero_iff_eq_one_and_det_eq_zero
       have h0 : (ε₂ • 1 - Ψ d ^ n) v = 0 := hv
       rw [sub_apply, smul_apply, one_apply_eq_self, sub_eq_zero] at h0
       exact h0.symm
-    have hΨ : ContDiff ℝ 2 Ψ := (contDiff_dysonSeriesLeft (n := 1)
-      ((contDiff_const (c := J₀)).clm_comp (by simpa using hS1))).of_le (by norm_num)
-    refine ⟨fun z => Ψ z.2 v, (hΨ.clm_apply contDiff_const).comp contDiff_snd, fun h => hne ?_,
-      fun _ _ => (one_smul ℝ _).symm, fun s t => ?_,
+    refine ⟨fun z => Ψ z.2 v, contDiff_dysonSeriesLeft_apply_snd hS1 v, fun h => hne ?_,
+      fun _ _ => (one_smul ℝ _).symm,
+      fun _ t => dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul hScont hper hΨv t,
       orbitTorusOperator_dysonSeriesLeft_apply_eq_zero hJ₀sq hScont v⟩
-    · simpa [Ψ] using congrFun h (0, 0)
-    · have hadd : Ψ (t + n * d) = Ψ t * Ψ d ^ n :=
-        (dysonSeriesLeft_add_of_periodic hM (hMper.nat_mul n) t).trans
-          (congrArg (Ψ t * ·) (dysonSeriesLeft_natCast_mul_of_periodic hM hMper n))
-      dsimp only
-      rw [hadd, mul_apply_eq_comp, hΨv, map_smul]
+    simpa [Ψ] using congrFun h (0, 0)
 
 /-- **Nondegeneracy of the untwisted circle direction.** Let `V` be finite-dimensional, `J₀` an
 orthogonal complex structure, and `S` a `C¹` path of symmetric operators with period `d > 0`.
