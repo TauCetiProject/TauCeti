@@ -21,16 +21,16 @@ homogeneous polynomial
 
 `σ_M(P)(ξ) = ∑ i ∈ s with k i = M, c i ∏ₗ ⟪m i l, ξ⟫`
 
-(`Distribution.constCoeffPrincipalSymbol`), and its *characteristic set*
-(`Distribution.constCoeffCharacteristicSet`) consists of the points `(x, ξ)` with `ξ ≠ 0` and
+(`TauCeti.constCoeffPrincipalSymbol`), and its *characteristic set*
+(`TauCeti.constCoeffCharacteristicSet`) consists of the points `(x, ξ)` with `ξ ≠ 0` and
 `σ_M(P)(ξ) = 0`. This file
 proves **microlocal elliptic regularity**: at a noncharacteristic covector, `T` is as regular as
 `P T`,
 
 `WF(T) ⊆ WF(P T) ∪ Char(P)`
 
-(`Distribution.waveFrontSet_subset_union_sum_smul_iteratedLineDerivOp`). Together with the reverse
-microlocality `WF(P T) ⊆ WF(T)` of differential operators, an operator elliptic in the sense that
+(`Distribution.waveFrontSet_subset_waveFrontSet_sum_smul_iteratedLineDerivOp_union`). Together
+with the reverse microlocality `WF(P T) ⊆ WF(T)` of differential operators, an operator elliptic in the sense that
 `σ_M(P)` vanishes nowhere off zero satisfies `WF(P T) = WF(T)`, and hence has the same singular
 support: `P T` is smooth on an open set exactly when `T` is. The Laplacian is the basic example
 (`Distribution.waveFrontSet_laplacianCLM`).
@@ -55,19 +55,20 @@ induction starts from the polynomial growth of the localized Fourier transform, 
 
 ## Main definitions
 
-* `Distribution.constCoeffPrincipalSymbol s c m M`: the principal symbol `σ_M(P)` of order `M`.
-* `Distribution.constCoeffCharacteristicSet s c m M`: the characteristic set `Char(P)`.
+* `TauCeti.constCoeffPrincipalSymbol s c m M`: the principal symbol `σ_M(P)` of order `M`.
+* `TauCeti.constCoeffCharacteristicSet s c m M`: the characteristic set `Char(P)`.
 
 ## Main results
 
 * `Distribution.IsMicrolocallySmoothAt.of_sum_smul_iteratedLineDerivOp`: if `P T` is
   microlocally smooth at `(x, ξ)` and `σ_M(P)(ξ) ≠ 0`, then `T` is microlocally smooth there.
-* `Distribution.waveFrontSet_subset_union_sum_smul_iteratedLineDerivOp`:
+* `Distribution.waveFrontSet_subset_waveFrontSet_sum_smul_iteratedLineDerivOp_union`:
   `WF(T) ⊆ WF(P T) ∪ Char(P)`.
 * `Distribution.waveFrontSet_sum_smul_iteratedLineDerivOp_of_forall_ne_zero`,
   `Distribution.singularSupport_sum_smul_iteratedLineDerivOp_of_forall_ne_zero`: an elliptic
   constant-coefficient operator preserves the wave front set and the singular support.
-* `Distribution.waveFrontSet_laplacianCLM`: `WF(Δ T) = WF(T)` for the Laplacian
+* `Distribution.waveFrontSet_laplacianCLM`, `Distribution.singularSupport_laplacianCLM`:
+  `WF(Δ T) = WF(T)` and `singsupp(Δ T) = singsupp(T)` for the Laplacian
   `Δ = LineDeriv.laplacianCLM ℝ E 𝓓'(Ω, ℂ)`.
 
 ## References
@@ -84,9 +85,9 @@ noncomputable section
 open Complex Filter LineDeriv Real Set TopologicalSpace TestFunction
 open scoped Distributions Topology RealInnerProductSpace ContDiff
 
-namespace Distribution
+namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Opens E}
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-! ### The principal symbol and the characteristic set -/
 
@@ -105,12 +106,34 @@ def constCoeffCharacteristicSet {ι : Type*} (s : Finset ι) (c : ι → ℂ) {k
     (m : ∀ i, Fin (k i) → E) (M : ℕ) : Set (E × E) :=
   {p | p.2 ≠ 0 ∧ constCoeffPrincipalSymbol s c m M p.2 = 0}
 
+theorem constCoeffPrincipalSymbol_def {ι : Type*} (s : Finset ι) (c : ι → ℂ) {k : ι → ℕ}
+    (m : ∀ i, Fin (k i) → E) (M : ℕ) (ξ : E) :
+    constCoeffPrincipalSymbol s c m M ξ = ∑ i ∈ s with k i = M, c i * ∏ l, (⟪m i l, ξ⟫ : ℂ) :=
+  (rfl)
+
+@[fun_prop]
+theorem continuous_constCoeffPrincipalSymbol {ι : Type*} (s : Finset ι) (c : ι → ℂ)
+    {k : ι → ℕ} (m : ∀ i, Fin (k i) → E) (M : ℕ) :
+    Continuous (constCoeffPrincipalSymbol s c m M) := by
+  unfold constCoeffPrincipalSymbol
+  fun_prop
+
 @[simp]
 theorem mem_constCoeffCharacteristicSet_iff {ι : Type*} {s : Finset ι} {c : ι → ℂ} {k : ι → ℕ}
     {m : ∀ i, Fin (k i) → E} {M : ℕ} {p : E × E} :
     p ∈ constCoeffCharacteristicSet s c m M ↔
       p.2 ≠ 0 ∧ constCoeffPrincipalSymbol s c m M p.2 = 0 :=
   Iff.rfl
+
+/-- The characteristic set is empty exactly when the operator is elliptic: its principal symbol
+vanishes at no `ξ ≠ 0`. -/
+theorem constCoeffCharacteristicSet_eq_empty_iff {ι : Type*} {s : Finset ι}
+    {c : ι → ℂ} {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ} :
+    constCoeffCharacteristicSet s c m M = ∅ ↔
+      ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol s c m M ξ ≠ 0 := by
+  simp only [eq_empty_iff_forall_notMem, mem_constCoeffCharacteristicSet_iff, Prod.forall,
+    not_and, ne_eq]
+  exact ⟨fun h ξ ↦ h 0 ξ, fun h _ ξ ↦ h ξ⟩
 
 /-- The principal symbol is homogeneous of degree `M`. -/
 theorem constCoeffPrincipalSymbol_smul {ι : Type*} (s : Finset ι) (c : ι → ℂ) {k : ι → ℕ}
@@ -126,6 +149,13 @@ theorem constCoeffPrincipalSymbol_smul {ι : Type*} (s : Finset ι) (c : ι → 
   have hpow : (t : ℂ) ^ k i = (t : ℂ) ^ M := by rw [hki]
   rw [hprod, hpow]
   ring
+
+/-- The characteristic set is conic in the frequency variable. -/
+theorem mk_smul_mem_constCoeffCharacteristicSet_iff {ι : Type*} {s : Finset ι} {c : ι → ℂ}
+    {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ} {x ξ : E} {t : ℝ} (ht : t ≠ 0) :
+    (x, t • ξ) ∈ constCoeffCharacteristicSet s c m M ↔
+      (x, ξ) ∈ constCoeffCharacteristicSet s c m M := by
+  simp [constCoeffPrincipalSymbol_smul, ht]
 
 /-- **An elliptic cone.** If the principal symbol does not vanish at `ξ`, then it is bounded
 below by `c₀ ‖η‖ ^ M` on an open cone around `ξ`, for some `c₀ > 0`. -/
@@ -146,8 +176,7 @@ theorem exists_cone_le_norm_constCoeffPrincipalSymbol {ι : Type*} {s : Finset �
     · exact pow_pos (norm_pos_iff.2 hξ0) M
   have hσξ := norm_pos_iff.2 hξ
   refine ⟨{η | ‖constCoeffPrincipalSymbol s c m M ξ‖ / (2 * ‖ξ‖ ^ M) * ‖η‖ ^ M <
-      ‖constCoeffPrincipalSymbol s c m M η‖}, isOpen_lt (by fun_prop)
-      (by unfold constCoeffPrincipalSymbol; fun_prop),
+      ‖constCoeffPrincipalSymbol s c m M η‖}, isOpen_lt (by fun_prop) (by fun_prop),
     ?_, fun t ht η hη ↦ ?_, _, by positivity, fun η hη ↦ hη.le⟩
   · simp only [mem_ofPred_eq]
     rw [div_mul_eq_mul_div, mul_div_mul_right _ _ hξM.ne']
@@ -156,6 +185,14 @@ theorem exists_cone_le_norm_constCoeffPrincipalSymbol {ι : Type*} {s : Finset �
     rw [constCoeffPrincipalSymbol_smul, norm_mul, norm_pow, Complex.norm_real,
       Real.norm_of_nonneg ht.le, norm_smul, Real.norm_of_nonneg ht.le, mul_pow, mul_left_comm]
     exact mul_lt_mul_of_pos_left hη (pow_pos ht M)
+
+end TauCeti
+
+namespace Distribution
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Opens E}
 
 /-! ### Polynomial bounds for the symbol -/
 
@@ -480,8 +517,8 @@ theorem IsMicrolocallySmoothAt.of_sum_smul_iteratedLineDerivOp {ι : Type*} {s :
 `WF(T) ⊆ WF(P T) ∪ Char(P)` for `P = ∑ i ∈ s, c i ∂^(m i)` with orders `k i ≤ M`, where
 `Char(P) = constCoeffCharacteristicSet s c m M` is the set of `(x, ξ)` with `ξ ≠ 0` at which the
 principal symbol vanishes. -/
-theorem waveFrontSet_subset_union_sum_smul_iteratedLineDerivOp {ι : Type*} (s : Finset ι)
-    (c : ι → ℂ) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E) {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M)
+theorem waveFrontSet_subset_waveFrontSet_sum_smul_iteratedLineDerivOp_union {ι : Type*}
+    (s : Finset ι) (c : ι → ℂ) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E) {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M)
     (T : 𝓓'(Ω, ℂ)) :
     T.waveFrontSet ⊆ (∑ i ∈ s, c i • ∂^{m i} T).waveFrontSet ∪
       constCoeffCharacteristicSet s c m M := by
@@ -500,10 +537,10 @@ theorem waveFrontSet_sum_smul_iteratedLineDerivOp_of_forall_ne_zero {ι : Type*}
     (hσ : ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol s c m M ξ ≠ 0)
     (T : 𝓓'(Ω, ℂ)) :
     (∑ i ∈ s, c i • ∂^{m i} T).waveFrontSet = T.waveFrontSet := by
-  refine subset_antisymm ((waveFrontSet_sum_subset s _).trans <| iUnion₂_subset fun i _ ↦
-    (waveFrontSet_smul_subset _ _).trans (waveFrontSet_iteratedLineDerivOp_subset T (m i)))
+  refine subset_antisymm (waveFrontSet_sum_smul_iteratedLineDerivOp_subset s c m T)
     fun p hp ↦ ?_
-  refine ((waveFrontSet_subset_union_sum_smul_iteratedLineDerivOp s c m hk T hp).resolve_right ?_)
+  refine (waveFrontSet_subset_waveFrontSet_sum_smul_iteratedLineDerivOp_union s c m hk T
+    hp).resolve_right ?_
   exact fun h ↦ hσ p.2 h.1 h.2
 
 /-- **Elliptic regularity for constant-coefficient operators.** If the principal symbol of
@@ -522,6 +559,7 @@ theorem singularSupport_sum_smul_iteratedLineDerivOp_of_forall_ne_zero [Measurab
 `Δ = LineDeriv.laplacianCLM ℝ E 𝓓'(Ω, ℂ)`, which is `∑ i, ∂_{b i} ∂_{b i}` for any orthonormal
 basis `b`, satisfies `WF(Δ T) = WF(T)`: its principal symbol `∑ i, ⟪b i, ξ⟫ ^ 2 = ‖ξ‖ ^ 2`
 vanishes only at `ξ = 0`. -/
+@[simp]
 theorem waveFrontSet_laplacianCLM (T : 𝓓'(Ω, ℂ)) :
     (laplacianCLM ℝ E 𝓓'(Ω, ℂ) T).waveFrontSet = T.waveFrontSet := by
   set b := stdOrthonormalBasis ℝ E
@@ -538,5 +576,11 @@ theorem waveFrontSet_laplacianCLM (T : 𝓓'(Ω, ℂ)) :
     simp [constCoeffPrincipalSymbol, Fin.prod_univ_two]
   rw [hval]
   exact_mod_cast (pow_pos (norm_pos_iff.2 hξ) 2).ne'
+
+/-- **Elliptic regularity for the Laplacian.** `Δ T` and `T` have the same singular support. -/
+@[simp]
+theorem singularSupport_laplacianCLM [MeasurableSpace E] [BorelSpace E] (T : 𝓓'(Ω, ℂ)) :
+    (laplacianCLM ℝ E 𝓓'(Ω, ℂ) T).singularSupport = T.singularSupport := by
+  rw [← fst_image_waveFrontSet, ← fst_image_waveFrontSet, waveFrontSet_laplacianCLM]
 
 end Distribution

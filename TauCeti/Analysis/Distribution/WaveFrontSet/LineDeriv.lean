@@ -146,6 +146,14 @@ theorem waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_subset {ι : Type*
     (waveFrontSet_smul_subset _ _).trans <| (waveFrontSet_smulLeftCLM_subset _ _).trans <|
       inter_subset_left.trans (waveFrontSet_iteratedLineDerivOp_subset T (m i))
 
+/-- **Constant-coefficient differential operators do not enlarge the wave front set**: for
+`P T = ∑ i ∈ s, c i • ∂^(m i) T`, `WF(P T) ⊆ WF(T)`. -/
+theorem waveFrontSet_sum_smul_iteratedLineDerivOp_subset {ι : Type*} (s : Finset ι)
+    (c : ι → ℂ) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E) (T : 𝓓'(Ω, ℂ)) :
+    (∑ i ∈ s, c i • ∂^{m i} T).waveFrontSet ⊆ T.waveFrontSet :=
+  (waveFrontSet_sum_subset s _).trans <| iUnion₂_subset fun i _ ↦
+    (waveFrontSet_smul_subset _ _).trans (waveFrontSet_iteratedLineDerivOp_subset T (m i))
+
 end FiniteDimensional
 
 end Distribution
