@@ -172,11 +172,8 @@ private theorem differentiable_cycleDixonFunction {f : ℂ → ℂ} {C : Cycle} 
       unfold cycleDixonH2
       exact DifferentiableAt.fun_sum fun γ hγ ↦ by
         have hoff := avoids_of_mem_support hwtrace hγ
-        exact (TauCeti.Contour.hasDerivAt_dixonH2 γ.continuousOn hoff
-          (TauCeti.Contour.cauchy_integrand_intervalIntegrable hf.continuousOn γ.continuousOn
-            (mapsTo_of_mem_support hCU hγ) γ.intervalIntegrable_deriv
-              hoff)).differentiableAt.const_mul
-              (FreeAbelianGroup.coeff γ C : ℂ)
+        exact (TauCeti.Contour.hasDerivAt_dixonH2 (f := f) γ.continuousOn
+          hoff).differentiableAt.const_mul (FreeAbelianGroup.coeff γ C : ℂ)
     obtain ⟨ε, hε, hball⟩ :=
       Metric.isOpen_iff.mp (isCompact_trace C).isClosed.isOpen_compl w hwtrace
     refine hH2.congr_of_eventuallyEq ?_

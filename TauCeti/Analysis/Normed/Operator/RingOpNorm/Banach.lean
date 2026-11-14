@@ -264,8 +264,8 @@ operator norm, with constant `‖g‖ * ‖f‖`. -/
 theorem lipschitzWith_comp_comp (g : G →L[R] H) (f : E →L[R] F) :
     LipschitzWith (‖g‖₊ * ‖f‖₊) fun X : F →L[R] G ↦ g.comp (X.comp f) :=
   LipschitzWith.of_dist_le_mul fun X Y ↦ by
-    rw [dist_eq_norm, dist_eq_norm, ← comp_sub, ← sub_comp, NNReal.coe_mul, coe_nnnorm,
-      coe_nnnorm]
+    rw [dist_eq_norm, dist_eq_norm, ← comp_sub, ← sub_comp, NNReal.coe_mul, coe_nnNorm,
+      coe_nnNorm]
     calc ‖g.comp ((X - Y).comp f)‖ ≤ ‖g‖ * (‖X - Y‖ * ‖f‖) :=
           (ringOpNorm_comp_le _ _).trans <| by gcongr; exact ringOpNorm_comp_le _ _
       _ = ‖g‖ * ‖f‖ * ‖X - Y‖ := by ring

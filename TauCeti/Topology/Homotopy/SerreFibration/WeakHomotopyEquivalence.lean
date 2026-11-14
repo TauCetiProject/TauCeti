@@ -45,12 +45,20 @@ the same fibres (`TopCat.Hom.fiberPullbackFstIso`). Pulling back along a CW appr
 base in this way replaces a Serre fibration over an arbitrary base by one over a CW complex,
 without changing the weak homotopy type of the total space.
 
+Another is **restriction over a weakly equivalent subspace**. If the inclusion of subspaces
+`S ⊆ T` of the base is a weak homotopy equivalence, so is the inclusion `p⁻¹(S) ⊆ p⁻¹(T)`
+(`TauCeti.TopCat.isWeakHomotopyEquivalence_inclusion_preimage`): the restrictions of `p` over `S`
+and over `T` are Serre fibrations with the same fibres. For instance the preimage of a
+deformation retract of the base is weakly equivalent to the preimage of the ambient subspace.
+
 ## Main results
 
 * `TauCeti.TopCat.isWeakHomotopyEquivalence_of_commSq`: a map of Serre fibrations which is a weak
   homotopy equivalence on the bases and on every fibre is one on the total spaces.
 * `TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackSnd`: base change of a Serre fibration along a
   weak homotopy equivalence.
+* `TauCeti.TopCat.isWeakHomotopyEquivalence_inclusion_preimage`: restriction of a Serre fibration
+  over a weakly equivalent subspace.
 
 ## References
 
@@ -259,5 +267,28 @@ theorem isWeakHomotopyEquivalence_pullbackSnd (hp : serreFibrations p) {B' : Top
       ((TopCat.pullbackSnd_apply g p x.1).trans (p.fiberPullbackFstIso_hom_apply_coe g b' x).symm)
   rw [h₁]
   exact (mem_weakEquivalences_iff _).1 (weakEquivalences.of_isIso _)
+
+/-- **Restriction of a Serre fibration over a weakly equivalent subspace.** If `p : E ⟶ B` is a
+Serre fibration and `S ⊆ T` are subspaces of `B` whose inclusion is a weak homotopy equivalence,
+then the inclusion `p⁻¹(S) ⊆ p⁻¹(T)` is a weak homotopy equivalence. -/
+theorem isWeakHomotopyEquivalence_inclusion_preimage (hp : serreFibrations p) {S T : Set B}
+    (hST : S ⊆ T) (h : (ContinuousMap.inclusion hST).IsWeakHomotopyEquivalence) :
+    (ContinuousMap.inclusion
+      (preimage_mono hST : p ⁻¹' S ⊆ p ⁻¹' T)).IsWeakHomotopyEquivalence := by
+  let sq : CommSq (TopCat.ofHom (ContinuousMap.inclusion (preimage_mono hST : p ⁻¹' S ⊆ p ⁻¹' T)))
+      (TopCat.ofHom (p.hom.restrictPreimage S)) (TopCat.ofHom (p.hom.restrictPreimage T))
+      (TopCat.ofHom (ContinuousMap.inclusion hST)) := ⟨rfl⟩
+  refine isWeakHomotopyEquivalence_of_commSq (mem_serreFibrations_restrictPreimage hp S)
+    (mem_serreFibrations_restrictPreimage hp T) sq h fun b ↦ ?_
+  -- Both fibres over `b` consist of the points of `E` over `b`, so the fibre map is invertible.
+  have hy (y : (TopCat.ofHom (p.hom.restrictPreimage T)).fiber (ContinuousMap.inclusion hST b)) :
+      p y.1.1 = b.1 :=
+    congrArg Subtype.val (mem_singleton_iff.1 y.2)
+  have : IsIso (sq.fiberMap b) :=
+    ⟨TopCat.ofHom ⟨fun y ↦ ⟨⟨y.1.1, by simp [hy y]⟩, Subtype.ext (hy y)⟩,
+      by fun_prop⟩,
+      by ext x; simpa using congrArg Subtype.val (sq.fiberMap_apply_coe b x),
+      by ext x; simpa using congrArg Subtype.val (sq.fiberMap_apply_coe b _)⟩
+  exact (mem_weakEquivalences_iff _).1 (weakEquivalences.of_isIso (sq.fiberMap b))
 
 end TauCeti.TopCat

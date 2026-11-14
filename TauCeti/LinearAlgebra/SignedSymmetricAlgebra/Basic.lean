@@ -36,18 +36,18 @@ variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
 
 /-- The Koszul swap relation on homogeneous generators of the tensor algebra. -/
-inductive signedSwapRel (G : InternalGrading R V) :
+inductive signedSwapRel (G : InternalGrading R V ℤ) :
     TensorAlgebra R V → TensorAlgebra R V → Prop where
   | swap (p q : ℤ) (x y : V) (hx : x ∈ G.piece p) (hy : y ∈ G.piece q) :
       signedSwapRel G (TensorAlgebra.ι R x * TensorAlgebra.ι R y)
         (((p * q).negOnePow : ℤ) • (TensorAlgebra.ι R y * TensorAlgebra.ι R x))
 
 /-- The tensor algebra modulo signed swaps of homogeneous generators. -/
-abbrev SignedSym (G : InternalGrading R V) := RingQuot (signedSwapRel G)
+abbrev SignedSym (G : InternalGrading R V ℤ) := RingQuot (signedSwapRel G)
 
 namespace SignedSym
 
-variable (G : InternalGrading R V)
+variable (G : InternalGrading R V ℤ)
 
 /-- The quotient map from the tensor algebra. -/
 abbrev quotient : TensorAlgebra R V →ₐ[R] SignedSym G :=
@@ -93,15 +93,15 @@ theorem induction {P : SignedSym G → Prop}
   | mul a b ha hb => simpa only [map_mul] using mul _ _ ha hb
   | add a b ha hb => simpa only [map_add] using add _ _ ha hb
 
-variable {A : Type w} [Ring A] [Algebra R A]
-
 /-- Algebra maps out of the signed symmetric algebra are determined by their generators. -/
 @[ext 1200]
-theorem hom_ext {f g : SignedSym G →ₐ[R] A}
+theorem hom_ext {A : Type w} [Semiring A] [Algebra R A] {f g : SignedSym G →ₐ[R] A}
     (h : ∀ x, f (generator G x) = g (generator G x)) : f = g := by
   apply RingQuot.ringQuot_ext'
   apply TensorAlgebra.hom_ext
   exact LinearMap.ext h
+
+variable {A : Type w} [Ring A] [Algebra R A]
 
 /-- Extend a linear map whose homogeneous images obey signed commutativity. No grading on the
 receiving algebra is required: the relation is tested on the images of generators. -/
@@ -170,7 +170,7 @@ instance [Nontrivial R] : Nontrivial (SignedSym G) :=
 section Map
 
 variable {W : Type*} [AddCommGroup W] [Module R W]
-variable (H : InternalGrading R W)
+variable (H : InternalGrading R W ℤ)
 
 /-- A degree-preserving linear map induces a map of signed symmetric algebras. -/
 def map (f : V →ₗ[R] W) (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) :
@@ -194,7 +194,7 @@ theorem map_id : map G G LinearMap.id (LinearMap.isHomogeneous_id G.piece) =
 variable {U : Type*} [AddCommGroup U] [Module R U]
 
 /-- The induced algebra maps respect composition. -/
-theorem map_comp (K : InternalGrading R U) (f : V →ₗ[R] W) (g : W →ₗ[R] U)
+theorem map_comp (K : InternalGrading R U ℤ) (f : V →ₗ[R] W) (g : W →ₗ[R] U)
     (hf : LinearMap.IsHomogeneous f G.piece H.piece 0)
     (hg : LinearMap.IsHomogeneous g H.piece K.piece 0) :
     map G K (g.comp f) (by simpa using hg.comp hf) =
@@ -234,7 +234,7 @@ theorem congr_symm (e : V ≃ₗ[R] W) (he) :
   simp
 
 /-- The induced algebra equivalences respect composition. -/
-theorem congr_trans (K : InternalGrading R U) (e : V ≃ₗ[R] W) (f : W ≃ₗ[R] U)
+theorem congr_trans (K : InternalGrading R U ℤ) (e : V ≃ₗ[R] W) (f : W ≃ₗ[R] U)
     (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0)
     (hf : LinearMap.IsHomogeneous f.toLinearMap H.piece K.piece 0) :
     congr G K (e.trans f) (by simpa using hf.comp he) =

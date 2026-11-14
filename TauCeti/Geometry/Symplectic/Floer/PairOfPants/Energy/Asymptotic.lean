@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
-import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
@@ -17,18 +17,15 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 Let `K` be the pair-of-pants perturbation `TauCeti.Floer.pairOfPantsPerturbation` built from
 bounded period-one `C¹` Hamiltonians `H_q` on the three ends of `S = ℂ ∖ {0, 1}`, and let `u` be
 a map which is `C¹` on `S`, with values in a finite-dimensional manifold `M` carrying a
-nondegenerate two-form `ω`, such as a closed symplectic manifold. On every truncation `S_R` of `S`
-the energy identity
-
-`∫_{S_R} E = ∫_{S_R} u^*ω + β(R - 1) ∑ q, ±∫₀¹ H_q(t, u(φ_q(±R + i t))) dt - ∫_{S_R} R_K(u)`
-
-holds; this is
-`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation`.
-This file lets `R → ∞`. Suppose that the loops `t ↦ u(φ_q(±R + i t))` along the circles of the end
-`q` converge pointwise to loops `x_q` as `R → ∞`, and that the energy density and the area density
-of `u` are integrable over `S`. The curvature is integrable over `S`
-(`SmoothTwoForm.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation`), the truncations exhaust
-`S`, and dominated convergence on the boundary circles gives
+nondegenerate two-form `ω`, such as a closed symplectic manifold. Suppose that the loops
+`t ↦ u(φ_q(±R + i t))` along the circles of the end `q` converge pointwise to loops `x_q` as
+`R → ∞`, and that the energy density and the area density of `u` are integrable over `S`. The
+curvature is integrable over `S`
+(`SmoothTwoForm.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation`), and by dominated
+convergence the integrals of the bounded Hamiltonians `H_q` along these loops converge to their
+integrals along `x_q`. Since `K` is `H_q(t) dt` beyond the height `2` on each end, the energy
+identity for data cylindrical on the ends
+(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_of_eq_smul_endAngularForm`) gives
 
 `∫_S E = ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, x_q(t)) dt - ∫_S R_K(u)`,
 
@@ -167,23 +164,19 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
-  -- Both sides are the limits as `R → ∞` of the two sides of the identity on the truncation
-  -- `S_R`, where the cutoff `β(R - 1)` of the boundary terms equals `1` once `R ≥ 2`.
-  have hβ : Tendsto (fun R : ℝ ↦ smoothTransition (R - 1)) atTop (𝓝 1) :=
-    tendsto_const_nhds.congr' <| by
-      filter_upwards [eventually_ge_atTop 2] with R hR
-      exact (smoothTransition.one_of_one_le (by linarith)).symm
-  have hrhs := ((tendsto_setIntegral_truncation hA).add (by
-      simpa only [one_mul] using hβ.mul (tendsto_finsetSum Finset.univ fun q _ ↦
-        (tendsto_intervalIntegral_endLoop (fun q ↦ (hHs q).continuous) hB hu.continuousOn
-          (hx q)).const_mul q.endSign))).sub
-    (tendsto_setIntegral_truncation
-      (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs hu.continuousOn))
-  refine tendsto_nhds_unique (tendsto_setIntegral_truncation hE) (hrhs.congr' ?_)
-  filter_upwards [eventually_ge_atTop 1] with R hR
-  exact (hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hH hHs
-    isOpen_thricePuncturedSphereReal (preimage_truncation_subset_thricePuncturedSphereReal R) hu
-    hR).symm
+  -- The complement of `S` is null, so integrals over `S` are integrals over the plane, and the
+  -- datum is `H_q(t) dt` beyond the height `2` on each end.
+  have hS : volume.restrict thricePuncturedSphereReal = volume :=
+    Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal
+  have hR := integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs hu.continuousOn
+  rw [IntegrableOn, hS] at hE hA hR
+  simp only [hS]
+  refine hω.integral_floerEnergyDensity_of_eq_smul_endAngularForm
+    (fun w x ↦ contMDiffAt_pairOfPantsPerturbation hH hHs w x)
+    (fun _ _ x hw ↦ pairOfPantsPerturbation_eq_smul_endAngularForm hw x) hH hu hE hA hR
+    fun q ↦ ?_
+  simpa only [endChart_apply, Complex.equivRealProdCLM_symm_apply] using
+    tendsto_intervalIntegral_endLoop (fun q ↦ (hHs q).continuous) hB hu.continuousOn (hx q)
 
 /-- **The energy bound on the pair of pants, for a manifold target.** Under the hypotheses of
 `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation`, the Floer
