@@ -9,6 +9,7 @@ public import TauCeti.Probability.PopulationSampling.Basic
 public import TauCeti.Probability.Process.EmpiricalMeasure
 public import TauCeti.Probability.UniformSampling
 public import Mathlib.MeasureTheory.Measure.FiniteMeasurePi
+import TauCeti.Data.Fintype.Card.Embedding
 
 /-!
 # Sampling finite populations with and without replacement
@@ -35,7 +36,9 @@ replacement, including when both index types are empty.
 
 Measurable observations of population values commute with both sampling laws. For deterministic
 populations, this expresses sampling a population that factors through another as a pushforward
-of the latter's sampling law, without separation assumptions on the value space.
+of the latter's sampling law, without separation assumptions on the value space. When the value
+space has measurable singletons, the singleton masses of a deterministic population count the
+embeddings or index maps producing each sampled word.
 
 ## Main declarations
 
@@ -44,6 +47,8 @@ of the latter's sampling law, without separation assumptions on the value space.
   with sampling;
 * `sampleWithoutReplacement_dirac_comp`, `sampleWithReplacement_dirac_comp`: their
   deterministic-population composition forms;
+* `sampleWithoutReplacement_dirac_apply_singleton`,
+  `sampleWithReplacement_dirac_apply_singleton`: singleton masses of deterministic sampling;
 * `pi_empiricalMeasureOfFintype_eq_map_uniformOn`: independent empirical draws as uniform
   selections;
 * `sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype`: the empirical-product mixture;
@@ -231,6 +236,53 @@ theorem sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype [Fintype ι] 
         (ProbabilityMeasure.pi fun _ : ι => empiricalMeasureOfFintype x).toMeasure := by
   simp_rw [sampleWithReplacement_eq_samplePopulation_uniformOn,
     samplePopulation_eq_bind_population, pi_empiricalMeasureOfFintype_eq_map_uniformOn]
+
+section Singleton
+
+variable [Fintype ι] [Fintype κ] [MeasurableSingletonClass α]
+
+/-- For a deterministic finite population, the probability under sampling without replacement of
+observing a given word `y` is the number of embeddings producing `y` divided by the number of all
+embeddings. When `|ι| > |κ|`, both numerator and denominator vanish and both sides are zero. -/
+theorem sampleWithoutReplacement_dirac_apply_singleton (x : κ → α) (y : ι → α) :
+    sampleWithoutReplacement (ι := ι) (Measure.dirac x) {y} =
+      Nat.card {f : ι ↪ κ // x ∘ f = y} /
+        (Fintype.card κ).descFactorial (Fintype.card ι) := by
+  classical
+  rw [sampleWithoutReplacement_dirac,
+    Measure.map_apply (measurable_readPopulation x) (measurableSet_singleton y),
+    uniformOn, cond_apply (Set.toFinite _).measurableSet,
+    Measure.count_apply_finite _ (Set.toFinite _),
+    Measure.count_apply_finite _ (Set.toFinite _),
+    ← ENNReal.div_eq_inv_mul]
+  congr 1
+  · norm_cast
+    rw [← Set.ncard_eq_toFinset_card _, ← Nat.card_coe_set_eq]
+    exact Nat.card_congr
+      ((Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm.trans
+        (Equiv.subtypeEquiv (Equiv.subtypeInjectiveEquivEmbedding ι κ) fun _ => Iff.rfl))
+  · norm_cast
+    simp only [Set.toFinite_toFinset, Set.toFinset_ofPred, ← Fintype.card_subtype]
+    exact Fintype.card_subtype_injective
+
+/-- For a deterministic finite population, the probability under sampling with replacement of
+observing a given word `y` is the number of index maps producing `y` divided by `|κ| ^ |ι|`.
+When `κ` is empty and `ι` is nonempty, both numerator and denominator vanish and both sides are
+zero. -/
+theorem sampleWithReplacement_dirac_apply_singleton (x : κ → α) (y : ι → α) :
+    sampleWithReplacement (ι := ι) (Measure.dirac x) {y} =
+      Nat.card {f : ι → κ // x ∘ f = y} /
+        (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
+  classical
+  rw [sampleWithReplacement_dirac,
+    Measure.map_apply (measurable_readPopulation x) (measurableSet_singleton y),
+    uniformOn_univ, Measure.count_apply_finite _ (Set.toFinite _), Fintype.card_fun, Nat.cast_pow]
+  congr 1
+  norm_cast
+  rw [← Set.ncard_eq_toFinset_card _, ← Nat.card_coe_set_eq]
+  rfl
+
+end Singleton
 
 section Bounds
 
