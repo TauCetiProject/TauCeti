@@ -89,9 +89,7 @@ section Equator
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
 /-- **The equatorial inclusion is globally bicollared.** In any real inner product space `F`, the
-equatorial sphere `S((ℝ ∙ p)ᗮ) → S(F)` around a unit vector `p` admits a global bicollar:
-reparametrizing `ℝ` onto `(-1, 1)` and applying `TauCeti.latitudeHomeomorphComplPair p` sweeps out
-`S(F) \ {p, -p}` as an open product neighbourhood. -/
+equatorial sphere `S((ℝ ∙ p)ᗮ) → S(F)` around a unit vector `p` admits a global bicollar. -/
 theorem isBicollared_equatorInclusion (p : sphere (0 : F) 1) :
     IsBicollared (equatorInclusion (r := 1) (p : F)) := by
   have hball : ball (0 : ℝ) 1 = Ioo (-1 : ℝ) 1 := by
@@ -102,10 +100,10 @@ theorem isBicollared_equatorInclusion (p : sphere (0 : F) 1) :
     ((Set.finite_singleton (-p)).insert p).isClosed.isOpen_compl
   let e := ((Homeomorph.refl _).prodCongr ρ).trans (latitudeHomeomorphComplPair p)
   refine isBicollared_iff.2 ⟨Subtype.val ∘ e,
-    hopen.isOpenEmbedding_subtypeVal.comp e.isOpenEmbedding, fun u ↦ Subtype.ext ?_⟩
+    hopen.isOpenEmbedding_subtypeVal.comp e.isOpenEmbedding, fun u ↦ ?_⟩
   have hρ0 : (ρ 0 : ℝ) = 0 := Homeomorph.coe_unitBall_apply_zero
-  have he : (e (u, 0) : sphere (0 : F) 1) = latitude p u (ρ 0) := by simp [e]
-  change ((e (u, 0) : sphere (0 : F) 1) : F) = (equatorInclusion (r := 1) (p : F) u : F)
+  have he : ((Subtype.val ∘ e) (u, 0) : F) = (latitude p u (ρ 0) : F) := by simp [e]
+  apply Subtype.ext
   rw [he, hρ0, coe_latitude_of_mem p u ⟨by norm_num, by norm_num⟩]
   simp [coe_equatorInclusion_apply]
 
@@ -153,19 +151,6 @@ theorem exists_connectedComponentIn_compl_range_sphere_eq_union
     · have hzw := hcall _ hzy
       rw [ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq] at hzw
       exact Or.inr (hzw ▸ mem_connectedComponentIn hz)
-
-/-- Transporting a complementary component and its closure across an ambient homeomorphism `Φ`. -/
-private lemma preimage_closure_connectedComponentIn_compl_range {X Y S : Type*}
-    [TopologicalSpace X] [TopologicalSpace Y] (Φ : X ≃ₜ Y) (f : S → X) (y : X) :
-    Φ ⁻¹' closure (connectedComponentIn (range (Φ ∘ f))ᶜ (Φ y)) =
-      closure (connectedComponentIn (range f)ᶜ y) := by
-  have hpre : Φ ⁻¹' (range (Φ ∘ f))ᶜ = (range f)ᶜ := by
-    rw [preimage_compl, range_comp, Φ.preimage_image]
-  have hcomp : Φ '' connectedComponentIn (range f)ᶜ y =
-      connectedComponentIn (range (Φ ∘ f))ᶜ (Φ y) := by
-    simpa only [hpre] using Φ.isInducing.image_connectedComponentIn_preimage
-      (F := (range (Φ ∘ f))ᶜ) (y := y) (by simp [Φ.surjective.range_eq])
-  rw [Φ.preimage_closure, ← hcomp, Φ.preimage_image]
 
 /-- When `finrank ℝ E = 0` and `finrank ℝ F = 1`, `S(E)` is empty and `S(F)` is finite discrete, so
 `range σ = ∅` and every complementary component in `S(F)` is a singleton `{y}`. -/
@@ -272,14 +257,16 @@ theorem exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq
       have hbΦ := hb.isOpenEmbedding_comp Φ.isOpenEmbedding
       obtain ⟨hG, hhG_inv, hhG_sph⟩ :=
         hbΦ.exists_homeomorph_closure_connectedComponentIn_compl_range (by simp [G]) hgt hyΦ
-      have hpre := preimage_closure_connectedComponentIn_compl_range Φ σ y
+      have hclΦ : closure (connectedComponentIn (range (Φ ∘ σ))ᶜ (Φ y)) =
+          Φ '' closure (connectedComponentIn (range σ)ᶜ y) := by
+        rw [range_comp, ← image_compl_eq Φ.bijective, ← Φ.image_connectedComponentIn hy,
+          Φ.image_closure]
       let Ψ : closure (connectedComponentIn (range σ)ᶜ y) ≃ₜ
           closure (connectedComponentIn (range (Φ ∘ σ))ᶜ (Φ y)) :=
-        Φ.subtype fun z ↦ by rw [← mem_preimage, hpre]
+        Φ.subtype fun z ↦ (hclΦ ▸ Φ.injective.mem_set_image).symm
       refine ⟨Ψ.trans hG, fun z x hzx ↦ hhG_inv (Ψ z) x (by simp [Ψ, hzx]), fun z ↦ ?_⟩
-      have hΨz : (Ψ z : sphere (0 : G) 1) = Φ z := rfl
       exact (hhG_sph (Ψ z)).trans <| by
-        rw [hΨz, range_comp]
+        rw [Homeomorph.subtype_apply_coe, range_comp]
         exact Φ.injective.mem_set_image
 
 /-- **Closed-ball extension form of Brown's generalized Schoenflies theorem (`m ≥ 0`).** For each

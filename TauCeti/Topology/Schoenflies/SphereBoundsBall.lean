@@ -13,6 +13,7 @@ import TauCeti.AlgebraicTopology.Disk
 import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 import TauCeti.AlgebraicTopology.Sphere.Contractible
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+import TauCeti.Geometry.Manifold.CoordinateBall
 
 /-!
 # Alexander's theorem and 3-manifold irreducibility instances
@@ -25,12 +26,12 @@ tame irreducibility predicate `TauCeti.IsSphereBoundsBall`. Likewise, every clos
 
 More generally, a local bicollar of `TopCat.sphere n` into a real normed space `E` or into the unit
 sphere `S(F)` of a real normed space `F` already forces `E` (resp. `F`) to be finite-dimensional of
-dimension `n + 1` (resp. `n + 2`), by Riesz's compact-ball theorem and Brouwer's invariance of
-dimension (`Topology.IsOpenEmbedding.finrank_eq`). Consequently the closed-disk extension theorems
-and `TauCeti.IsSphereBoundsBall` hold without any auxiliary dimension hypotheses on `E` or `F`: for
-`finrank ℝ F = 4` (`S(F) ≅ S³`, non-vacuously witnessed by `TauCeti.isLocallyFlat_equatorInclusion`)
-this is **Alexander's theorem**, while for `finrank ℝ F ≠ 4` no locally flat `(ℝ², ℝ)`-embedding of
-`S²` into `S(F)` exists.
+dimension `n + 1` (resp. `n + 2`), by Riesz's theorem (`FiniteDimensional.of_totallyBounded_nhds`)
+and Brouwer's invariance of dimension (`Topology.IsOpenEmbedding.finrank_eq`). Consequently the
+closed-disk extension theorems and `TauCeti.IsSphereBoundsBall` hold without any auxiliary dimension
+hypotheses on `E` or `F`: for `finrank ℝ F = 4` (`S(F) ≅ S³`, non-vacuously witnessed by
+`TauCeti.isLocallyFlat_equatorInclusion`) this is **Alexander's theorem**, while for
+`finrank ℝ F ≠ 4` no locally flat `(ℝ², ℝ)`-embedding of `S²` into `S(F)` exists.
 
 Historically, J. W. Alexander proved the piecewise-linear 3-sphere theorem in 1924, while his
 horned sphere showed that local flatness cannot be dropped in the topological category; M. Brown's
@@ -44,10 +45,12 @@ projection.
 
 ## Main results
 
-* `TauCeti.IsLocallyBicollared.finiteDimensional_and_finrank_eq_of_topCatSphere` and
-  `TauCeti.IsLocallyBicollared.finiteDimensional_and_finrank_eq_of_topCatSphere_sphere`: a locally
-  bicollared `n`-sphere in `E` (resp. `S(F)`) forces `FiniteDimensional ℝ E ∧ finrank ℝ E = n + 1`
-  (resp. `FiniteDimensional ℝ F ∧ finrank ℝ F = n + 2`).
+* `TauCeti.IsLocallyBicollared.finiteDimensional_of_topCatSphere`,
+  `TauCeti.IsLocallyBicollared.finrank_eq_of_topCatSphere`,
+  `TauCeti.IsLocallyBicollared.finiteDimensional_of_topCatSphere_sphere`, and
+  `TauCeti.IsLocallyBicollared.finrank_eq_of_topCatSphere_sphere`: a locally bicollared `n`-sphere
+  in `E` (resp. `S(F)`) forces `FiniteDimensional ℝ E` and `finrank ℝ E = n + 1` (resp.
+  `FiniteDimensional ℝ F` and `finrank ℝ F = n + 2`).
 * `TauCeti.IsLocallyFlat.exists_isClosedEmbedding_disk_sphere`: a locally flat `n`-sphere
   `TopCat.sphere n → S(F)` extends across `TopCat.disk (n + 1)` to a closed embedding onto the
   closure of either complementary component.
@@ -84,50 +87,6 @@ universe u v
 
 /-! ### Dimension forcing from local bicollars -/
 
-/-- An open embedding from a finite-dimensional real normed space `G` into a real normed space `E`
-forces `E` to be finite-dimensional of the same `finrank` as `G`. -/
-private lemma finiteDimensional_and_finrank_eq_of_isOpenEmbedding {G E : Type*}
-    [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {ψ : G → E} (hψ : IsOpenEmbedding ψ) :
-    FiniteDimensional ℝ E ∧ finrank ℝ E = finrank ℝ G := by
-  have hK : IsCompact (ψ '' closedBall 0 1) := (isCompact_closedBall 0 1).image hψ.continuous
-  have hnhds : ψ '' closedBall 0 1 ∈ 𝓝 (ψ 0) :=
-    Filter.mem_of_superset
-      ((hψ.isOpenMap _ isOpen_ball).mem_nhds ⟨0, mem_ball_self one_pos, rfl⟩)
-      (image_mono ball_subset_closedBall)
-  obtain ⟨r, hr₀, hrK⟩ := Metric.nhds_basis_closedBall.mem_iff.1 hnhds
-  have : FiniteDimensional ℝ E :=
-    .of_isCompact_closedBall ℝ hr₀ (hK.of_isClosed_subset isClosed_closedBall hrK)
-  exact ⟨‹_›, hψ.finrank_eq IsOpenEmbedding.id⟩
-
-/-- Around any point `x₀` of an open set `U` in a manifold `M` charted on a real normed space `H`,
-reparametrizing an open chart ball by `OpenPartialHomeomorph.univBall` gives an open embedding
-`H → U` sending `0` to `x₀`. -/
-private lemma exists_isOpenEmbedding_of_isOpen_mem {M H : Type*} [TopologicalSpace M]
-    [NormedAddCommGroup H] [NormedSpace ℝ H] [ChartedSpace H M]
-    {U : Set M} (hU : IsOpen U) {x₀ : M} (hx₀ : x₀ ∈ U) :
-    ∃ κ : H → U, IsOpenEmbedding κ ∧ (κ 0 : M) = x₀ := by
-  let φ := chartAt H x₀
-  have hxφ : x₀ ∈ φ.source := mem_chart_source H x₀
-  have hV : IsOpen (φ.target ∩ φ.symm ⁻¹' U) :=
-    φ.continuousOn_symm.isOpen_inter_preimage φ.open_target hU
-  have hxV : φ x₀ ∈ φ.target ∩ φ.symm ⁻¹' U :=
-    ⟨φ.map_source hxφ, by simpa [φ.left_inv hxφ] using hx₀⟩
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hV (φ x₀) hxV
-  let ψH := OpenPartialHomeomorph.univBall (φ x₀) ε
-  have hψ_mem (v : H) : ψH v ∈ φ.target ∩ φ.symm ⁻¹' U :=
-    hball (OpenPartialHomeomorph.univBall_target (φ x₀) hε ▸ ψH.map_source (by simp [ψH]))
-  let g : H → φ.symm.source := fun v ↦ ⟨ψH v, φ.symm_source ▸ (hψ_mem v).1⟩
-  have hg : IsOpenEmbedding g :=
-    (φ.symm.open_source.isOpenEmbedding_subtypeVal.of_comp_iff g).1
-      (ψH.isOpenEmbedding (OpenPartialHomeomorph.univBall_source _ _))
-  let κM : H → M := φ.symm.source.domRestrict φ.symm ∘ g
-  have hκM : IsOpenEmbedding κM := φ.symm.isOpenEmbedding_restrict.comp hg
-  let κ : H → U := fun v ↦ ⟨κM v, (hψ_mem v).2⟩
-  refine ⟨κ, (hU.isOpenEmbedding_subtypeVal.of_comp_iff κ).1 hκM, ?_⟩
-  change φ.symm (ψH 0) = x₀
-  rw [OpenPartialHomeomorph.univBall_apply_zero, φ.left_inv hxφ]
-
 /-- Any locally bicollared map out of `TopCat.sphere n` yields an open embedding of
 `EuclideanSpace ℝ (Fin n) × ℝ` into the target. -/
 private lemma exists_isOpenEmbedding_prod_of_topCatSphere {Y : Type v} [TopologicalSpace Y]
@@ -135,30 +94,20 @@ private lemma exists_isOpenEmbedding_prod_of_topCatSphere {Y : Type v} [Topologi
     ∃ ψ : EuclideanSpace ℝ (Fin n) × ℝ → Y, IsOpenEmbedding ψ := by
   let V := EuclideanSpace ℝ (Fin (n + 1))
   have : Fact (finrank ℝ V = n + 1) := ⟨by simp [V]⟩
-  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by simp [V])
-  obtain ⟨x₀⟩ : Nonempty (sphere (0 : V) 1) :=
-    (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
   let eS : TopCat.sphere.{u} n ≃ₜ sphere (0 : V) 1 := Homeomorph.ulift
-  obtain ⟨U, hU, hx₀, hbic⟩ := isLocallyBicollared_iff.1 (hf.comp_homeomorph eS.symm) x₀
+  obtain ⟨s₀⟩ := nonempty_topCatSphere.{u} n
+  obtain ⟨U, hU, hx₀, hbic⟩ := isLocallyBicollared_iff.1 (hf.comp_homeomorph eS.symm) (eS s₀)
   obtain ⟨b, hb⟩ := isBicollared_iff.1 hbic
   obtain ⟨κ, hκ, -⟩ :=
-    exists_isOpenEmbedding_of_isOpen_mem (H := EuclideanSpace ℝ (Fin n)) hU hx₀
+    hU.exists_isOpenEmbedding_apply_zero_eq (E := EuclideanSpace ℝ (Fin n)) hx₀
   exact ⟨b ∘ Prod.map κ id, hb.isOpenEmbedding.comp (hκ.prodMap IsOpenEmbedding.id)⟩
 
-/-- **A locally bicollared `n`-sphere in a real normed space `E` forces `dim E = n + 1`.** -/
-theorem IsLocallyBicollared.finiteDimensional_and_finrank_eq_of_topCatSphere
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ}
-    {f : TopCat.sphere.{u} n → E} (hf : IsLocallyBicollared f) :
-    FiniteDimensional ℝ E ∧ finrank ℝ E = n + 1 := by
-  obtain ⟨ψ, hψ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere hf
-  obtain ⟨hfd, hdim⟩ := finiteDimensional_and_finrank_eq_of_isOpenEmbedding hψ
-  exact ⟨hfd, hdim.trans (by simp [Module.finrank_prod])⟩
-
-/-- **A locally bicollared `n`-sphere in `S(F)` forces `dim F = n + 2`.** -/
-theorem IsLocallyBicollared.finiteDimensional_and_finrank_eq_of_topCatSphere_sphere
+/-- Any locally bicollared map from `TopCat.sphere n` into `sphere (0 : F) 1` yields an open
+embedding of `(EuclideanSpace ℝ (Fin n) × ℝ) × ℝ` into `F`. -/
+private lemma exists_isOpenEmbedding_prod_of_topCatSphere_sphere
     {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
     {f : TopCat.sphere.{u} n → sphere (0 : F) 1} (hf : IsLocallyBicollared f) :
-    FiniteDimensional ℝ F ∧ finrank ℝ F = n + 2 := by
+    ∃ Φ : (EuclideanSpace ℝ (Fin n) × ℝ) × ℝ → F, IsOpenEmbedding Φ := by
   obtain ⟨ψ, hψ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere hf
   let ρ₀ := OpenPartialHomeomorph.univBall (1 : ℝ) (1 / 2)
   have hρ_pos (t : ℝ) : 0 < ρ₀ t := by
@@ -170,13 +119,48 @@ theorem IsLocallyBicollared.finiteDimensional_and_finrank_eq_of_topCatSphere_sph
   have hρ : IsOpenEmbedding ρ :=
     (isOpen_Ioi.isOpenEmbedding_subtypeVal.of_comp_iff ρ).1
       (ρ₀.isOpenEmbedding (OpenPartialHomeomorph.univBall_source _ _))
-  let Φ : (EuclideanSpace ℝ (Fin n) × ℝ) × ℝ → F :=
-    Subtype.val ∘ (homeomorphUnitSphereProd F).symm ∘ Prod.map ψ ρ
-  have hΦ : IsOpenEmbedding Φ :=
+  exact ⟨Subtype.val ∘ (homeomorphUnitSphereProd F).symm ∘ Prod.map ψ ρ,
     isOpen_compl_singleton.isOpenEmbedding_subtypeVal.comp <|
-      (homeomorphUnitSphereProd F).symm.isOpenEmbedding.comp (hψ.prodMap hρ)
-  obtain ⟨hfd, hdim⟩ := finiteDimensional_and_finrank_eq_of_isOpenEmbedding hΦ
-  exact ⟨hfd, hdim.trans (by simp [Module.finrank_prod])⟩
+      (homeomorphUnitSphereProd F).symm.isOpenEmbedding.comp (hψ.prodMap hρ)⟩
+
+/-- **A locally bicollared `n`-sphere in a real normed space `E` forces `E` to be
+finite-dimensional.** -/
+theorem IsLocallyBicollared.finiteDimensional_of_topCatSphere
+    {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ}
+    {f : TopCat.sphere.{u} n → E} (hf : IsLocallyBicollared f) :
+    FiniteDimensional ℝ E := by
+  obtain ⟨ψ, hψ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere hf
+  obtain ⟨K, hK, hK0⟩ := exists_compact_mem_nhds (0 : EuclideanSpace ℝ (Fin n) × ℝ)
+  exact .of_totallyBounded_nhds (𝕜 := ℝ) (hψ.image_mem_nhds.2 hK0)
+    (hK.image hψ.continuous).totallyBounded
+
+/-- **A locally bicollared `n`-sphere in a real normed space `E` forces `dim E = n + 1`.** -/
+theorem IsLocallyBicollared.finrank_eq_of_topCatSphere
+    {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ}
+    {f : TopCat.sphere.{u} n → E} (hf : IsLocallyBicollared f) :
+    finrank ℝ E = n + 1 := by
+  have := hf.finiteDimensional_of_topCatSphere
+  obtain ⟨_, hψ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere hf
+  exact (hψ.finrank_eq IsOpenEmbedding.id).trans (by simp [Module.finrank_prod])
+
+/-- **A locally bicollared `n`-sphere in `S(F)` forces `F` to be finite-dimensional.** -/
+theorem IsLocallyBicollared.finiteDimensional_of_topCatSphere_sphere
+    {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
+    {f : TopCat.sphere.{u} n → sphere (0 : F) 1} (hf : IsLocallyBicollared f) :
+    FiniteDimensional ℝ F := by
+  obtain ⟨Φ, hΦ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere_sphere hf
+  obtain ⟨K, hK, hK0⟩ := exists_compact_mem_nhds (0 : (EuclideanSpace ℝ (Fin n) × ℝ) × ℝ)
+  exact .of_totallyBounded_nhds (𝕜 := ℝ) (hΦ.image_mem_nhds.2 hK0)
+    (hK.image hΦ.continuous).totallyBounded
+
+/-- **A locally bicollared `n`-sphere in `S(F)` forces `dim F = n + 2`.** -/
+theorem IsLocallyBicollared.finrank_eq_of_topCatSphere_sphere
+    {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
+    {f : TopCat.sphere.{u} n → sphere (0 : F) 1} (hf : IsLocallyBicollared f) :
+    finrank ℝ F = n + 2 := by
+  have := hf.finiteDimensional_of_topCatSphere_sphere
+  obtain ⟨_, hΦ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere_sphere hf
+  exact (hΦ.finrank_eq IsOpenEmbedding.id).trans (by simp [Module.finrank_prod])
 
 /-! ### Disk extensions and Alexander's theorem on `S³` -/
 
@@ -192,7 +176,7 @@ theorem IsLocallyFlat.exists_isClosedEmbedding_disk_sphere
       IsClosedEmbedding g ∧
       g.comp (TopCat.diskBoundaryInclusion (n + 1)).hom = f ∧
       range g = closure (connectedComponentIn (range f)ᶜ y) := by
-  obtain ⟨_, hF⟩ := hf.isLocallyBicollared.finiteDimensional_and_finrank_eq_of_topCatSphere_sphere
+  have hF := hf.isLocallyBicollared.finrank_eq_of_topCatSphere_sphere
   let E := EuclideanSpace ℝ (Fin (n + 1))
   let eS : (TopCat.sphere n : TopCat.{u}) ≃ₜ sphere (0 : E) 1 := Homeomorph.ulift
   let eD : (TopCat.disk (n + 1) : TopCat.{u}) ≃ₜ closedBall (0 : E) 1 := Homeomorph.ulift
@@ -203,13 +187,13 @@ theorem IsLocallyFlat.exists_isClosedEmbedding_disk_sphere
     hfσ.exists_isClosedEmbedding_closedBall (by simp [E, hF]) (hrange.symm ▸ hy)
   refine ⟨⟨g₀ ∘ eD, hg₀_emb.continuous.comp eD.continuous⟩,
     hg₀_emb.comp eD.isClosedEmbedding, ContinuousMap.ext fun s ↦ ?_, ?_⟩
-  · change g₀ (eD ((TopCat.diskBoundaryInclusion (n + 1)).hom s)) = f s
-    have hs : eD ((TopCat.diskBoundaryInclusion (n + 1)).hom s) =
-        ⟨(eS s : E), sphere_subset_closedBall (eS s).2⟩ := Subtype.ext rfl
-    rw [hs, hg₀_bdry (eS s)]
+  · have hs : eD ((TopCat.diskBoundaryInclusion (n + 1)).hom s) =
+        ⟨(eS s : E), sphere_subset_closedBall (eS s).2⟩ :=
+      Subtype.ext (TopCat.coe_diskBoundaryInclusion_apply_down (n + 1) s)
+    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, Function.comp_apply,
+      hs, hg₀_bdry (eS s)]
     exact congrArg f (eS.symm_apply_apply s)
-  · change range (g₀ ∘ eD) = closure (connectedComponentIn (range f)ᶜ y)
-    rw [eD.surjective.range_comp, hg₀_range, hrange]
+  · rw [ContinuousMap.coe_mk, eD.surjective.range_comp, hg₀_range, hrange]
 
 /-- **Alexander's theorem:** for any real normed space `F`, the unit sphere `sphere (0 : F) 1`
 satisfies `TauCeti.IsSphereBoundsBall`. When `finrank ℝ F = 4` (`S(F) ≅ S³`, witnessed
@@ -220,8 +204,7 @@ theorem isSphereBoundsBall_sphere (F : Type u) [NormedAddCommGroup F] [NormedSpa
     IsSphereBoundsBall (sphere (0 : F) 1) := by
   rw [isSphereBoundsBall_iff]
   intro f hf_emb hf_flat
-  obtain ⟨_, hF⟩ :=
-    hf_flat.isLocallyBicollared.finiteDimensional_and_finrank_eq_of_topCatSphere_sphere
+  have hF := hf_flat.isLocallyBicollared.finrank_eq_of_topCatSphere_sphere
   have hne : (range f)ᶜ.Nonempty := by
     by_contra hempty
     rw [not_nonempty_iff_eq_empty] at hempty
@@ -232,7 +215,8 @@ theorem isSphereBoundsBall_sphere (F : Type u) [NormedAddCommGroup F] [NormedSpa
       (E := EuclideanSpace ℝ (Fin 3)) (by simp [hF])
       (f.continuous.comp eS.symm.continuous) (hf_emb.injective.comp eS.symm.injective)
     have hσ_empty : (range σ)ᶜ = ∅ := by
-      rwa [show σ = f ∘ eS.symm from rfl, eS.symm.surjective.range_comp]
+      dsimp only [σ]
+      rwa [eS.symm.surjective.range_comp]
     have : IsEmpty ↥(range σ)ᶜ := isEmpty_coe_sort.2 hσ_empty
     have : IsEmpty (ConnectedComponents ↥(range σ)ᶜ) :=
       ⟨fun c ↦ let ⟨x, _⟩ := ConnectedComponents.surjective_coe c; isEmptyElim x⟩
@@ -260,7 +244,8 @@ theorem IsLocallyFlat.exists_isClosedEmbedding_disk_filledHull
       IsClosedEmbedding g ∧
       g.comp (TopCat.diskBoundaryInclusion (n + 1)).hom = f ∧
       range g = filledHull (range f) := by
-  obtain ⟨hfd, hE⟩ := hf.isLocallyBicollared.finiteDimensional_and_finrank_eq_of_topCatSphere
+  have := hf.isLocallyBicollared.finiteDimensional_of_topCatSphere
+  have hE := hf.isLocallyBicollared.finrank_eq_of_topCatSphere
   let V := EuclideanSpace ℝ (Fin (n + 1))
   let L : V ≃L[ℝ] E :=
     (FiniteDimensional.nonempty_continuousLinearEquiv_of_finrank_eq (by simp [V, hE])).some
@@ -275,13 +260,15 @@ theorem IsLocallyFlat.exists_isClosedEmbedding_disk_filledHull
     hf₀.exists_isClosedEmbedding_closedBall_filledHull
   refine ⟨⟨g₀ ∘ eD, hg₀_emb.continuous.comp eD.continuous⟩,
     hg₀_emb.comp eD.isClosedEmbedding, ContinuousMap.ext fun s ↦ ?_, ?_⟩
-  · change g₀ (eD ((TopCat.diskBoundaryInclusion (n + 1)).hom s)) = f s
-    have hs : eD ((TopCat.diskBoundaryInclusion (n + 1)).hom s) =
-        ⟨(eS s : E), sphere_subset_closedBall (eS s).2⟩ := Subtype.ext rfl
-    rw [hs, hg₀_bdry (eS s)]
+  · have hs : eD ((TopCat.diskBoundaryInclusion (n + 1)).hom s) =
+        ⟨(eS s : E), sphere_subset_closedBall (eS s).2⟩ := by
+      apply Subtype.ext
+      dsimp only [eD, eS]
+      exact congrArg L.unitBallHomeomorph (TopCat.coe_diskBoundaryInclusion_apply_down (n + 1) s)
+    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, Function.comp_apply,
+      hs, hg₀_bdry (eS s)]
     exact congrArg f (eS.symm_apply_apply s)
-  · change range (g₀ ∘ eD) = filledHull (range f)
-    rw [eD.surjective.range_comp, hg₀_range, hrange]
+  · rw [ContinuousMap.coe_mk, eD.surjective.range_comp, hg₀_range, hrange]
 
 /-- **Every real normed space satisfies `TauCeti.IsSphereBoundsBall`.** When `finrank ℝ E = 3`
 (`E ≅ ℝ³`), every closed locally flat embedded 2-sphere bounds `filledHull (range f)` as an embedded
@@ -307,7 +294,7 @@ theorem isBicollared_prodMkRight_of_finrank_eq_one {X Y H : Type*}
   let L : ℝ ≃L[ℝ] H :=
     (FiniteDimensional.nonempty_continuousLinearEquiv_of_finrank_eq
       ((Module.finrank_self ℝ).trans hH.symm)).some
-  obtain ⟨κU, hκU, hκU0⟩ := exists_isOpenEmbedding_of_isOpen_mem (H := H) isOpen_univ (mem_univ x₀)
+  obtain ⟨κU, hκU, hκU0⟩ := isOpen_univ.exists_isOpenEmbedding_apply_zero_eq (E := H) (mem_univ x₀)
   let κ : ℝ → X := Subtype.val ∘ κU ∘ L
   have hκ : IsOpenEmbedding κ :=
     isOpen_univ.isOpenEmbedding_subtypeVal.comp (hκU.comp L.toHomeomorph.isOpenEmbedding)
@@ -344,17 +331,18 @@ theorem not_isSphereBoundsBall_prod_sphere {X E : Type u} {H : Type*}
   obtain ⟨g, -, hg_bdry⟩ := (isSphereBoundsBall_iff _).1 h f hf_emb hf_flat
   let r : C(X × sphere (0 : E) 1, TopCat.diskBoundary.{u} 3) :=
     ⟨eU.symm ∘ eE.symm ∘ Prod.snd, by fun_prop⟩
-  have hext : TopCat.diskBoundaryInclusion 3 ≫ TopCat.ofHom (r.comp g) =
-      𝟙 (TopCat.diskBoundary.{u} 3) := by
+  let rg : TopCat.disk.{u} 3 ⟶ TopCat.diskBoundary.{u} 3 :=
+    (TopCat.Hom.equivContinuousMap _ _).symm (r.comp g)
+  have hrg : rg.hom = r.comp g :=
+    (TopCat.Hom.equivContinuousMap _ _).apply_symm_apply (r.comp g)
+  have hext : TopCat.diskBoundaryInclusion 3 ≫ rg = 𝟙 (TopCat.diskBoundary.{u} 3) := by
+    apply TopCat.hom_ext
+    rw [TopCat.hom_comp, TopCat.hom_id, hrg, ContinuousMap.comp_assoc, hg_bdry]
     ext s
-    have hs : g ((TopCat.diskBoundaryInclusion 3).hom s) = f s :=
-      ContinuousMap.congr_fun hg_bdry s
-    change eU.symm (eE.symm (g ((TopCat.diskBoundaryInclusion 3).hom s)).2) = s
-    rw [hs]
-    exact (congrArg eU.symm (eE.symm_apply_apply (eU s))).trans (eU.symm_apply_apply s)
+    simp [r, f, TopCat.sphere]
   have hnull : (ContinuousMap.id (TopCat.diskBoundary.{u} 3)).Nullhomotopic :=
     (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq
-      (𝟙 (TopCat.diskBoundary.{u} 3))).2 ⟨TopCat.ofHom (r.comp g), hext⟩
+      (𝟙 (TopCat.diskBoundary.{u} 3))).2 ⟨rg, hext⟩
   have : ContractibleSpace (TopCat.diskBoundary.{u} 3) :=
     (contractible_iff_id_nullhomotopic _).2 hnull
   have : ContractibleSpace S₀ := eU.symm.contractibleSpace

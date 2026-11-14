@@ -89,8 +89,9 @@ private lemma closure_connectedComponentIn_subset_range_onePoint {E S : Type*}
   have hzne : z ≠ Φ ∞ := by
     rintro rfl
     exact (hcl₀ ▸ hz).elim (hdisj.notMem_of_mem_left (mem_connectedComponentIn hinf)) hinf
-  obtain ⟨x, hx⟩ := show Φ.symm z ∈ range ((↑) : E → OnePoint E) from
+  have hmem : Φ.symm z ∈ range ((↑) : E → OnePoint E) :=
     not_not.1 fun hn ↦ hzne (Φ.symm_apply_eq.1 (OnePoint.notMem_range_coe_iff.1 hn))
+  obtain ⟨x, hx⟩ := hmem
   exact ⟨x, by simp [hx]⟩
 
 /-- In `OnePoint E ≃ₜ S`, the complementary component missing `∞` pulls back to `filledHull K \ K`,
@@ -173,8 +174,7 @@ private lemma exists_isOpenEmbedding_sphere_filledHull
     Φ ∘ ((↑) : E → OnePoint E)
   have hψ : IsOpenEmbedding ψ := Φ.isOpenEmbedding.comp OnePoint.isOpenEmbedding_coe
   have hσ_eq : Φ '' (((↑) : E → OnePoint E) '' range f) = range (ψ ∘ f) := by
-    rw [image_image, ← range_comp]
-    rfl
+    rw [← image_comp, ← range_comp]
   have hpinf : Φ ∞ ∉ range (ψ ∘ f) := by
     rintro ⟨x, hx⟩
     exact OnePoint.coe_ne_infty (f x) (Φ.injective hx)
@@ -218,7 +218,8 @@ theorem exists_homeomorph_filledHull_range_closedBall (hf : IsLocallyBicollared 
   let eD : filledHull (range f) ≃ₜ closure (connectedComponentIn (range (ψ ∘ f))ᶜ q₀) :=
     (Homeomorph.setCongr hpre_cl.symm).trans (hψ.isEmbedding.homeomorphOfSubsetRange hcl_sub)
   have heD (z : filledHull (range f)) :
-      (eD z : sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1) = ψ z := rfl
+      (eD z : sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1) = ψ z := by
+    simp [eD, Homeomorph.setCongr]
   refine ⟨eD.trans hS, fun z x hzx ↦ hhS_inv (eD z) x (by simp [heD, hzx]), fun z ↦ ?_⟩
   exact (hhS_sph (eD z)).trans <| by
     rw [heD, range_comp]

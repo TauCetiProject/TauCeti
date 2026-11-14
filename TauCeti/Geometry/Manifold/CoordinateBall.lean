@@ -9,9 +9,15 @@ public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.Topology.Sets.OpenCover
 public import TauCeti.Topology.OpenPartialHomeomorph.ChartOpens
+import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
+import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # Coordinate balls in charted spaces
+
+Around any point `x` of an open set `U` in a space `X` charted on a real seminormed space `E`,
+reparametrizing a coordinate ball inside `U` by `OpenPartialHomeomorph.univBall` gives an open
+embedding `E → U` sending `0` to `x`.
 
 Let `X` be a Hausdorff space charted on a real normed space `E`. Finitely many points of `X` have
 pairwise disjoint coordinate balls about them: for a finite `S ⊆ X` and `r > 0`, there is an open
@@ -31,6 +37,8 @@ such nested covers carry compact restriction maps between Čech cochain spaces.
 
 ## Main results
 
+* `IsOpen.exists_isOpenEmbedding_apply_zero_eq`: an open embedding `E → U` sending `0` to a given
+  point of an open set `U`.
 * `Set.Finite.exists_isOpenEmbedding_prod_ball`: the open embedding of `S × ball 0 r`.
 * `TauCeti.exists_finite_preimageBall_cover`: the finite cover by coordinate balls.
 -/
@@ -38,6 +46,34 @@ such nested covers carry compact restriction maps between Čech cochain spaces.
 public section
 
 open Metric Set Topology
+
+namespace IsOpen
+
+/-- **Coordinate-ball open embedding into an open set.** Around any point `x` of an open set `U` in
+a space `X` charted on a real seminormed space `E`, there is an open embedding `κ : E → U` sending
+`0` to `x`. -/
+theorem exists_isOpenEmbedding_apply_zero_eq {E X : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace X] [ChartedSpace E X] {U : Set X} (hU : IsOpen U)
+    {x : X} (hx : x ∈ U) :
+    ∃ κ : E → U, IsOpenEmbedding κ ∧ (κ 0 : X) = x := by
+  let e := chartAt E x
+  have hxe : x ∈ e.source := mem_chart_source E x
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 (e.imageOpens ⟨U, hU⟩).isOpen (e x)
+    (e.map_mem_imageOpens hxe hx)
+  let b := OpenPartialHomeomorph.univBall (e x) r
+  have hb (v : E) : b v ∈ e.target ∧ e.symm (b v) ∈ U :=
+    e.mem_imageOpens.1 <| hball <| OpenPartialHomeomorph.univBall_target (e x) hr ▸
+      b.map_source (OpenPartialHomeomorph.univBall_source (e x) r ▸ mem_univ v)
+  have hκX : IsOpenEmbedding (e.symm ∘ b) :=
+    e.symm.isOpenEmbedding_comp
+      (b.isOpenEmbedding (OpenPartialHomeomorph.univBall_source _ _)) <| by
+        rintro _ ⟨v, rfl⟩
+        exact e.symm_source ▸ (hb v).1
+  let κ : E → U := fun v ↦ ⟨e.symm (b v), (hb v).2⟩
+  exact ⟨κ, (hU.isOpenEmbedding_subtypeVal.of_comp_iff κ).1 hκX, by
+    simp [κ, b, OpenPartialHomeomorph.univBall_apply_zero, e.left_inv hxe]⟩
+
+end IsOpen
 
 namespace Set.Finite
 

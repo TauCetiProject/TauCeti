@@ -83,15 +83,17 @@ theorem isSphereBoundsBall {M : Type u} {N : Type v} [TopologicalSpace M] [Topol
   obtain ⟨gM, hgM_emb, hgM_bdry⟩ := h fM hfM_emb hfM_flat
   refine ⟨⟨e ∘ gM ∘ eD, by fun_prop⟩,
     e.isClosedEmbedding.comp (hgM_emb.comp eD.isClosedEmbedding), ?_⟩
-  ext s
-  have hs : eD ((TopCat.diskBoundaryInclusion 3).hom s) =
+  -- Neither `TopCat.diskBoundaryInclusion` nor `Homeomorph.ulift` has an evaluation lemma in
+  -- Mathlib; both preserve the underlying `EuclideanSpace ℝ (Fin 3)` vector by definition.
+  have hs (s : TopCat.sphere.{v} 2) : eD ((TopCat.diskBoundaryInclusion 3).hom s) =
       (TopCat.diskBoundaryInclusion 3).hom (eS.symm s) :=
-    ULift.ext rfl
+    ULift.ext (Subtype.ext rfl)
+  ext s
   have key : gM ((TopCat.diskBoundaryInclusion 3).hom (eS.symm s)) = fM (eS.symm s) :=
     ContinuousMap.congr_fun hgM_bdry (eS.symm s)
-  change e (gM (eD ((TopCat.diskBoundaryInclusion 3).hom s))) = f s
-  rw [hs, key]
-  simpa [fM] using congrArg f (eS.apply_symm_apply s)
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, Function.comp_apply, hs s, key, fM,
+    Homeomorph.apply_symm_apply]
+  exact congrArg f (eS.apply_symm_apply s)
 
 /-- `TauCeti.IsSphereBoundsBall` is invariant under homeomorphism, including across universes. -/
 theorem isSphereBoundsBall_iff {M : Type u} {N : Type v} [TopologicalSpace M] [TopologicalSpace N]
