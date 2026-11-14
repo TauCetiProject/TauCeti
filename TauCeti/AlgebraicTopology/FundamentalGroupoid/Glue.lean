@@ -58,8 +58,8 @@ variable {X : Type*} [TopologicalSpace X] {ι : Type*} {U : ι → Set X}
 
 section Partition
 
-/-- The `k`-th point of the uniform partition of the unit interval into `N` pieces; it is constant
-at `1` from `k = N` on. -/
+/-- The `k`-th point of the uniform partition of the unit interval into `N` pieces; for
+`N ≠ 0` it is constant at `1` from `k = N` on. -/
 private def pt (N k : ℕ) : I := Set.Icc.addNSMul zero_le_one (1 / N : ℝ) k
 
 private lemma coe_pt {N k : ℕ} (hk : k ≤ N) : (pt N k : ℝ) = k / N := by
@@ -374,7 +374,9 @@ private lemma pathVal_eq_eqToHom {x y : X} (P : Path x y) (hP : ∃ i, ∀ t, P 
   rw [pathVal_eq hU F hF i P _ hi]
   exact locVal_eq_eqToHom hU F hF i P hi hconst
 
-/-- Local values are additive along consecutive subpaths inside one member of the cover. -/
+/-- Local values compose along subpaths inside one member of the cover: for any `a`, `b`, `c` in
+`[lo, hi]`, the value on `γ|[a, b]` followed by the value on `γ|[b, c]` is the value on
+`γ|[a, c]`. -/
 private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : I}
     (hγ : ∀ t ∈ Icc lo hi, γ t ∈ U i) {a b c : I} (ha : a ∈ Icc lo hi) (hb : b ∈ Icc lo hi)
     (hc : c ∈ Icc lo hi) (hab : ∃ i, ∀ t, γ.subpath a b t ∈ U i)
