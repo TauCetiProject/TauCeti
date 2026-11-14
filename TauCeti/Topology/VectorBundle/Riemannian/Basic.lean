@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.VectorBundle.Riemannian
 
 /-!
-# Compactness of norm-bounded parts of a Riemannian vector bundle
+# Continuity and compactness in Riemannian vector bundles
 
 In a vector bundle whose fibers carry inner products depending continuously on the base point,
 the fiber norm is a continuous function on the total space.  When the model fiber is
@@ -27,14 +27,22 @@ model norm of the coordinates in the trivialization at that point (in the Rieman
 `eventually_norm_trivializationAt_lt`), so the coordinates of a convergent ultrafilter of bounded
 vectors converge too.
 
+Pulling a continuous metric back along a continuously evaluated family of linear maps gives a
+continuous family of bilinear forms on a fixed finite-dimensional model. This does not require
+continuous reference inner products on the fibres.
+
 ## Main results
 
 * `Continuous.norm_bundle`: the fiber norm of a continuous map into the fibers of a continuous
   Riemannian bundle is continuous, with `TauCeti.continuous_norm_bundle` its tautological case.
+* `IsOpen.norm_lt_bundle`: the vectors of norm less than `r` over an open set form an open subset
+  of the total space.
 * `IsCompact.norm_le_bundle`: the vectors of norm at most `r` over a compact set form a compact
   subset of the total space.
 * `IsCompact.norm_le_bundle_of_continuous`: the same for a continuous fiber norm with locally
   bounded trivializations.
+* `Bundle.RiemannianMetric.isSymm_toBilinForm_inner`: the inner product of a Riemannian metric
+  on a fiber is a symmetric bilinear form.
 -/
 
 public section
@@ -71,6 +79,13 @@ theorem continuous_norm_bundle : Continuous fun z : TotalSpace F E ↦ ‖z.2‖
     (continuous_id.congr fun z ↦ (TotalSpace.eta z).symm)
 
 end TauCeti
+
+/-- In a continuous Riemannian bundle, the vectors of norm less than `r` lying over an open subset
+of the base form an open subset of the total space. -/
+theorem IsOpen.norm_lt_bundle {U : Set B} (hU : IsOpen U) (r : ℝ) :
+    IsOpen {z : TotalSpace F E | z.proj ∈ U ∧ ‖z.2‖ < r} :=
+  (hU.preimage (FiberBundle.continuous_proj F E)).inter
+    (isOpen_lt (TauCeti.continuous_norm_bundle F E) continuous_const)
 
 end Norm
 
@@ -142,3 +157,36 @@ theorem IsCompact.norm_le_bundle {K : Set B} (hK : IsCompact K) (r : ℝ) :
       h.2.mono fun _ hy ↦ (ContinuousLinearMap.le_of_opNorm_le _ hy.le)) r
 
 end Compact
+
+namespace Bundle.RiemannianMetric
+
+variable {B : Type*} {E : B → Type*} [∀ b, TopologicalSpace (E b)] [∀ b, AddCommGroup (E b)]
+  [∀ b, Module ℝ (E b)]
+
+/-- The inner product of a Riemannian metric on a fiber is a symmetric bilinear form. -/
+theorem isSymm_toBilinForm_inner (g : RiemannianMetric E) (b : B) :
+    (g.inner b).toBilinForm.IsSymm :=
+  LinearMap.BilinForm.isSymm_def.mpr (g.symm b)
+
+end Bundle.RiemannianMetric
+
+namespace Bundle.ContinuousRiemannianMetric
+
+variable [∀ x, NormedSpace ℝ (E x)] [FiberBundle F E] [VectorBundle ℝ F E]
+
+/-- Pulling a continuous Riemannian metric back along a family of linear maps whose evaluations
+are continuous gives a continuous family of bilinear forms on a fixed model. -/
+theorem continuous_inner_bilinearComp (h : ContinuousRiemannianMetric F E)
+    {X V : Type*} [TopologicalSpace X]
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] {f : X → B}
+    (σ : ∀ x, V →L[ℝ] E (f x))
+    (hσ : ∀ w, Continuous fun x ↦ TotalSpace.mk' F (f x) (σ x w)) :
+    Continuous fun x ↦ (h.inner (f x)).bilinearComp (σ x) (σ x) := by
+  have hf : Continuous f := (FiberBundle.continuous_proj F E).comp (hσ 0)
+  refine continuous_clm_apply.2 fun w ↦ continuous_clm_apply.2 fun w' ↦ ?_
+  have : Continuous fun x ↦
+      TotalSpace.mk' ℝ (E := Bundle.Trivial B ℝ) (f x) (h.inner (f x) (σ x w) (σ x w')) :=
+    (h.continuous.comp hf).clm_bundle_apply₂ (F₁ := F) (F₂ := F) (hσ w) (hσ w')
+  exact continuous_snd.comp ((Bundle.Trivial.homeomorphProd B ℝ).continuous.comp this)
+
+end Bundle.ContinuousRiemannianMetric

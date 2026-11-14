@@ -118,7 +118,7 @@ theorem withDensityᵥ_scalarRNDeriv (μ : VectorMeasure X 𝕜) (ν : Measure X
       exact withDensityᵥ_smul' (μ := ν)
         (fun x ↦ ((scalarMeasureImagPart μ).rnDeriv ν x : 𝕜)) (RCLike.I : 𝕜)
     _ = μ := by
-      rw [← scalarMeasureOfReal_withDensityᵥ hreal, ← scalarMeasureOfReal_withDensityᵥ himag,
+      rw [← scalarMeasureOfReal_withDensityᵥ, ← scalarMeasureOfReal_withDensityᵥ,
         hre, him, scalarMeasureOfReal_realPart_add_I_smul_imagPart]
 
 /-- The variation of a scalar measure is obtained by taking the pointwise norm of its
@@ -146,7 +146,7 @@ theorem ae_norm_scalarRNDeriv_variation_eq_one (μ : VectorMeasure X 𝕜) :
   have hd : μ.variation.withDensity (fun x ↦ ‖scalarRNDeriv μ μ.variation x‖ₑ) =
       μ.variation.withDensity (fun _ ↦ 1) := by simpa using h.symm
   have hae := (withDensity_eq_iff_of_sigmaFinite
-    (integrable_scalarRNDeriv μ μ.variation).aestronglyMeasurable.enorm
+    (integrable_scalarRNDeriv μ μ.variation).aestronglyMeasurable.eNorm
     measurable_const.aemeasurable).1 hd
   filter_upwards [hae] with x hx
   simpa using congrArg ENNReal.toReal hx

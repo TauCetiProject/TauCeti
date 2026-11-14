@@ -199,7 +199,7 @@ variable (G M)
 every transition out of that level is an isomorphism. -/
 private theorem isEventuallyConstantFrom_explicitFiniteQuotientSystem0 :
     (explicitFiniteQuotientSystem0 G M).IsEventuallyConstantFrom
-      (Opposite.op (openNormalSubgroupTop G)) := by
+      (Opposite.op (⊤ : OpenNormalSubgroup G)) := by
   intro U f
   rw [ConcreteCategory.isIso_iff_bijective]
   exact explicitFiniteQuotientTransition0_bijective (leOfHom f.unop)
@@ -212,9 +212,8 @@ level — where the comparison leg is the equivalence
 `TauCeti.ContCohomology.explicitInfl0Equiv` — already computes the colimit. -/
 noncomputable def explicitFiniteQuotientColimit0 :
     IsColimit (explicitFiniteQuotientCocone0 G M) :=
-  haveI : Nonempty (OpenNormalSubgroup G) := ⟨openNormalSubgroupTop G⟩
   haveI : IsIso ((explicitFiniteQuotientCocone0 G M).ι.app
-      (Opposite.op (openNormalSubgroupTop G))) := by
+      (Opposite.op (⊤ : OpenNormalSubgroup G))) := by
     rw [ConcreteCategory.isIso_iff_bijective]
     exact ⟨explicitInfl0_injective G M _, explicitInfl0_surjective G M _⟩
   (isEventuallyConstantFrom_explicitFiniteQuotientSystem0 G M).isColimitOfIsIso _
@@ -481,9 +480,9 @@ private theorem d1_descend_eq_cocyclesMap2 {U V : OpenNormalSubgroup G} (hVU : V
         (FixedPoints.addSubgroup U.toSubgroup M).subtype
         (continuous_fixedPoints_addSubgroup_subtype G M U.toSubgroup)
         U.toSubgroup.fixedPoints_subtype_quotientMk_smul c : G × G → M) := by
-    refine (congrArg _ (cocyclesMap2_coe _ _ _ _ _ _ _ _ c)).trans ?_
+    refine (congrArg _ (coe_cocyclesMap2 _ _ _ _ _ _ _ _ c)).trans ?_
     exact (cochainsMap2_quotientMk_comp_transition (M := M) hVU c).trans
-      (cocyclesMap2_coe _ _ _ _ _ _ _ _ c).symm
+      (coe_cocyclesMap2 _ _ _ _ _ _ _ _ c).symm
   -- Pulling back to `G`, `d1` commutes with the pullback and `bV` becomes `b`.
   refine (cochainsMap2_d1
     (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup : G →* G ⧸ V.toSubgroup)

@@ -258,7 +258,6 @@ theorem k_mul_f_mul_e_mul_kInv : k q * f q * (e q * kInv q) = f q * e q := by
     simp [hq]
 
 /-- A tuple in a complex algebra satisfying the defining relations of `UqSl2 q`. -/
-@[ext]
 structure GeneratorTuple (q : ℂ) (A : Type*) [Ring A] [Algebra ℂ A] where
   /-- The proposed image of `E`. -/
   e : A
@@ -303,6 +302,17 @@ def toFun (x : GeneratorTuple q A) : Generator → A
 /-- The function underlying a tuple takes the inverse-weight label to its inverse-weight element. -/
 @[simp] theorem toFun_kInv (x : GeneratorTuple q A) : x.toFun .kInv = x.kInv := (rfl)
 
+/-- Two generator tuples with the same images of `E`, `F` and `K` are equal: the images of `K⁻¹`
+agree, being the inverse of the image of `K`. -/
+@[ext]
+theorem ext {x y : GeneratorTuple q A} (he : x.e = y.e) (hf : x.f = y.f) (hk : x.k = y.k) :
+    x = y := by
+  have hkInv : x.kInv = y.kInv :=
+    left_inv_eq_right_inv (a := y.k) (by rw [← hk, x.kInv_mul_k]) y.k_mul_kInv
+  cases x
+  cases y
+  congr
+
 end GeneratorTuple
 
 /-- The universal property of the presentation: a tuple satisfying the defining relations extends
@@ -329,11 +339,15 @@ theorem lift_generator (x : GeneratorTuple q A) (g : Generator) :
     lift x (generator q g) = x.toFun g := by
   exact (RingQuot.liftAlgHom_mkAlgHom_apply ℂ _ _ _).trans (FreeAlgebra.lift_ι_apply _ _)
 
-/-- Two algebra maps from `UqSl2 q` agreeing on the four generators are equal. -/
+/-- Two algebra maps from `UqSl2 q` agreeing on `E`, `F` and `K` are equal; agreement on `K⁻¹`
+follows since it is the inverse of `K`. -/
 @[ext high]
 theorem hom_ext {F G : UqSl2 q →ₐ[ℂ] A}
     (he : F (e q) = G (e q)) (hf : F (f q) = G (f q))
-    (hk : F (k q) = G (k q)) (hkInv : F (kInv q) = G (kInv q)) : F = G := by
+    (hk : F (k q) = G (k q)) : F = G := by
+  have hkInv : F (kInv q) = G (kInv q) :=
+    left_inv_eq_right_inv (a := G (k q)) (by rw [← hk, ← map_mul, kInv_mul_k, map_one])
+      (by rw [← map_mul, k_mul_kInv, map_one])
   apply RingQuot.ringQuot_ext' ℂ F G
   apply FreeAlgebra.hom_ext
   funext g
@@ -440,7 +454,7 @@ def liftEquiv : (UqSl2 q →ₐ[ℂ] A) ≃ GeneratorTuple q A where
         simpa only [map_sub, map_mul, map_smul] using
           congrArg F (e_mul_f_sub_f_mul_e (q := q)) }
   invFun := lift
-  left_inv F := hom_ext (by simp) (by simp) (by simp) (by simp)
+  left_inv F := hom_ext (by simp) (by simp) (by simp)
   right_inv x := by ext <;> simp
 
 /-- The tuple associated to an algebra map records its value on `E`. -/

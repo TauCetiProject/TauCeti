@@ -93,8 +93,7 @@ private theorem tendsto_blockAverage_limitBlock
     calc |(blockAverage (Finpartition.countablePartition Ω n) (V i) p q : ℝ) -
           blockAverage (Finpartition.countablePartition Ω n) (V j) p q|
         ≤ c * cutNorm μ ((V i).toSymmKernel - (V j).toSymmKernel) :=
-          abs_blockAverage_sub_blockAverage_le _
-            (fun _ hp ↦ Finpartition.measurableSet_of_mem_countablePartition Ω n hp) _ _ p q
+          abs_blockAverage_sub_blockAverage_le _ _ _ p q
       _ ≤ c * (ε / (c + 1)) := by
           gcongr
           exact (hN i hi j hj).le
@@ -183,7 +182,7 @@ private theorem stepGraphonAvg_limitStep_succ
     rw [mul_zero] at h0
     refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun k ↦ ?_) h0
     rw [Real.norm_eq_abs]
-    exact abs_blockAverage_sub_blockAverage_le P hP _ _ p q
+    exact abs_blockAverage_sub_blockAverage_le P _ _ p q
   exact tendsto_nhds_unique h₂ h₁
 
 private theorem stronglyMeasurable_limitStep (n : ℕ) :
@@ -216,7 +215,7 @@ private theorem uniformIntegrable_limitStep :
     refine Set.eq_empty_of_forall_notMem fun z hz ↦ ?_
     have hz' : (2 : ℝ≥0) ≤ ‖limitStep V n z.1 z.2‖₊ := hz
     have h1 : ‖limitStep V n z.1 z.2‖₊ ≤ 1 := by
-      rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs, NNReal.coe_one]
+      rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, NNReal.coe_one]
       exact abs_le.2 ⟨by linarith [(limitStep V n).nonneg z.1 z.2], (limitStep V n).le_one z.1 z.2⟩
     exact absurd (hz'.trans h1) (by norm_num)
   simp [hempty]

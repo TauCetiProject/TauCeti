@@ -59,30 +59,14 @@ theorem length_lt_card (h : Quiver.IsAcyclic V) [Fintype V] {a b : V} (p : _root
   rw [_root_.Quiver.Path.vertices_length] at hle
   omega
 
-private theorem finite_paths [Finite V] [∀ a b : V, Finite (a ⟶ b)] (h : Quiver.IsAcyclic V) :
-    Finite (Σ a b : V, _root_.Quiver.Path a b) := by
-  let : Fintype V := Fintype.ofFinite V
-  let pathFinite (a b : V) : Finite (_root_.Quiver.Path.BoundedPaths a b (Fintype.card V - 1)) :=
-    _root_.TauCeti.Quiver.finite_boundedPaths _ _ _
-  let pathFintype (a b : V) : Fintype (_root_.Quiver.Path.BoundedPaths a b (Fintype.card V - 1)) :=
-    Fintype.ofFinite _
-  let f : (Σ a b : V, _root_.Quiver.Path.BoundedPaths a b (Fintype.card V - 1)) →
-      Σ a b : V, _root_.Quiver.Path a b :=
-    fun p ↦ ⟨p.1, p.2.1, p.2.2.1⟩
-  let : Finite (Σ a b : V, _root_.Quiver.Path.BoundedPaths a b (Fintype.card V - 1)) :=
-    Finite.of_fintype _
-  apply Finite.of_surjective f
-  rintro ⟨a, b, p⟩
-  refine ⟨⟨a, b, p, ?_⟩, rfl⟩
-  have hp := h.length_lt_card p
-  omega
-
 end Quiver.IsAcyclic
 
 /-- A finite acyclic quiver with finite arrow types has finitely many paths. -/
 theorem finite_paths_of_isAcyclic [Finite V] [∀ a b : V, Finite (a ⟶ b)]
-    (h : Quiver.IsAcyclic V) : Finite (Σ a b : V, _root_.Quiver.Path a b) :=
-  h.finite_paths
+    (h : Quiver.IsAcyclic V) : Finite (Σ a b : V, _root_.Quiver.Path a b) := by
+  let : Fintype V := Fintype.ofFinite V
+  exact Set.finite_univ_iff.mp <| (TauCeti.Quiver.finite_setOf_length_lt (Fintype.card V)).subset
+    fun x _ ↦ h.length_lt_card x.2.2
 
 /-- **A quiver with finitely many paths is acyclic**: the powers of an oriented cycle are already
 infinitely many paths. No finiteness of the vertices or of the arrows is needed. -/

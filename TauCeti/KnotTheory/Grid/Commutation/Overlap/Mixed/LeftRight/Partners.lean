@@ -120,8 +120,7 @@ private theorem leftRightInverse_toRectangleDecomposition
           (by simpa using Grid.ne_right_of_mem_cIoo hcol))
         (E.underlying_first_isEmpty hp) (E.underlying_second_isEmpty hr) := by
   apply GridRectangleDecomposition.ext <;>
-    simp [leftRightInverse, GridRectanglePentagonDecomposition.pentagon,
-      (E.leftRightInverse_geometry hcommon hcol hp hr).2.1]
+    simp [leftRightInverse, GridRectanglePentagonDecomposition.pentagon]
 
 end TauCeti.GridPentagonRectangleDecomposition
 
@@ -173,21 +172,8 @@ theorem mem_leftRightOverlapPartners_of_left_eq_left
       (D.isRecut_recutLeftEqRight hDcommon hDr hDp hturn) hback
   have hsquares := D.coveredSquares_val_add_val_recutLeftEqRight hDcommon hDr hDp hturn
   rw [hEq] at hsquares
-  -- Use the forward square identity backwards: every square of the inverse domain avoids X.
-  rw [mem_pentagonRectangleDecompositions, mem_pentagons,
-    (G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles,
-    ← G.disjoint_map_swapColumns_XSet_iff] at hE
-  have hX (p : Fin n × Fin n)
-      (hp : p ∈ D.rectangle.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
-      p ∉ G.XSet := by
-    rw [← hsquares] at hp
-    rcases Multiset.mem_add.mp hp with hp | hp
-    · exact Finset.disjoint_left.mp hE.1.2 hp
-    · exact Finset.disjoint_left.mp hE.2.2 hp
-  have hD : D ∈ G.rectanglePentagonDecompositions C x z := by
-    rw [mem_rectanglePentagonDecompositions, mem_unblockedRectangles, mem_pentagons]
-    exact ⟨⟨hDr, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inl hp))⟩,
-      hDp, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inr hp))⟩
+  have hD := G.mem_rectanglePentagonDecompositions_of_val_add_val_eq_pentagonRectangle C hE hDr hDp
+    hsquares
   exact (G.mem_leftRightOverlapPartners C E).2
     ⟨D, (G.mem_leftRightOverlapSources C D).2 ⟨hD, hDcommon, hturn⟩, hback⟩
 
@@ -229,7 +215,6 @@ theorem mem_leftRightOverlapPartners_iff_sides
       (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle, D.toRectangleDecomposition_second_toGridRectangle]
         using hp)
-    have hEone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
     have hdata := hback.isRecutOfLeftEqLeft (by simpa using hEcommon)
     rcases hdata.recut_branch with ⟨hcol, -⟩ | ⟨-, -, hleft, -⟩
     · simpa only [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_left,

@@ -52,10 +52,10 @@ The converse is a counting argument over unramified extensions. Suppose that the
   `L/K`, if Tate's algorithm stops on the integral model of `W` at a symbol `s ≠ I₀` and `E(L)` has
   `n²` points of order dividing `n`, with `n` prime to the residue characteristic, then `n` is at
   most the number of components of `s`.
-* `WeierstrassCurve.hasGoodReduction_of_tateModuleGaloisRepresentation_eq_one`: a minimal equation
-  on whose `ℓ`-adic Tate module inertia acts trivially has good reduction.
-* `WeierstrassCurve.hasGoodReduction_iff_tateModuleGaloisRepresentation_eq_one`: the criterion of
-  Néron, Ogg and Shafarevich.
+* `hasGoodReduction_of_forall_mem_inertiaSubgroup_tateModuleGaloisRepresentation_eq_one`:
+  a minimal equation on whose `ℓ`-adic Tate module inertia acts trivially has good reduction.
+* `hasGoodReduction_iff_forall_mem_inertiaSubgroup_tateModuleGaloisRepresentation_eq_one`:
+  the criterion of Néron, Ogg and Shafarevich.
 
 ## References
 
@@ -77,6 +77,7 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [IsUnramified K L]
   [DecidableEq L] {W : WeierstrassCurve K} [W.IsElliptic] [IsIntegral 𝒪[K] W]
 
+omit [W.IsElliptic] in
 /-- **Full torsion over an unramified extension is bounded at bad reduction** (Silverman AEC
 VII.7.1). Let `L/K` be an unramified extension of nonarchimedean local fields, and suppose that
 Tate's algorithm, run with a uniformiser `ϖ` of `K`, stops on the integral model of `W` at a
@@ -97,7 +98,7 @@ theorem le_componentCount_of_natCard_torsionBy_eq {ϖ : 𝒪[K]} (hϖ : Irreduci
   have : HenselianLocalRing A := inferInstanceAs (HenselianLocalRing 𝒪[L])
   let : Algebra 𝒪[K] A := inferInstanceAs (Algebra 𝒪[K] 𝒪[L])
   have hmodel := integralModel_baseChange (R := 𝒪[K]) (S := A) (L := L)
-    (RingHom.ext coe_algebraMap_integerRing) W
+    (RingHom.ext (Valuation.HasExtension.val_algebraMap (vA := valuation L))) W
   have hϖA : maximalIdeal A = Ideal.span {algebraMap 𝒪[K] A ϖ} :=
     (IsUnramified.irreducible_algebraMap hϖ).maximalIdeal_eq
   -- Tate's algorithm stops at `s` on the integral model over `A`: divisibility by powers of `ϖ`
@@ -141,8 +142,8 @@ VII.7.1). Let `W` be an elliptic curve over a nonarchimedean local field `K`, gi
 equation, and let `ℓ` be a prime different from the residue characteristic of `K`. If the inertia
 subgroup of `Gal(K^{alg}/K)` acts trivially on the `ℓ`-adic Tate module of `W`, then `W` has good
 reduction. -/
-theorem hasGoodReduction_of_tateModuleGaloisRepresentation_eq_one {ℓ : ℕ} [Fact ℓ.Prime]
-    (hℓ : (ℓ : 𝓀[K]) ≠ 0)
+theorem hasGoodReduction_of_forall_mem_inertiaSubgroup_tateModuleGaloisRepresentation_eq_one
+    {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : (ℓ : 𝓀[K]) ≠ 0)
     (h : ∀ σ ∈ inertiaSubgroup K, W.tateModuleGaloisRepresentation ℓ σ = 1) :
     W.HasGoodReduction 𝒪[K] := by
   -- The division fields and their torsion counts below are stated with the classical decidable
@@ -201,11 +202,12 @@ theorem hasGoodReduction_of_tateModuleGaloisRepresentation_eq_one {ℓ : ℕ} [F
 curve over a nonarchimedean local field `K`, given by a minimal equation, and let `ℓ` be a prime
 different from the residue characteristic of `K`. Then `W` has good reduction exactly when the
 inertia subgroup of `Gal(K^{alg}/K)` acts trivially on the `ℓ`-adic Tate module of `W`. -/
-theorem hasGoodReduction_iff_tateModuleGaloisRepresentation_eq_one {ℓ : ℕ} [Fact ℓ.Prime]
-    (hℓ : (ℓ : 𝓀[K]) ≠ 0) :
+theorem hasGoodReduction_iff_forall_mem_inertiaSubgroup_tateModuleGaloisRepresentation_eq_one
+    {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : (ℓ : 𝓀[K]) ≠ 0) :
     W.HasGoodReduction 𝒪[K] ↔
       ∀ σ ∈ inertiaSubgroup K, W.tateModuleGaloisRepresentation ℓ σ = 1 := by
-  refine ⟨fun hW σ hσ ↦ ?_, W.hasGoodReduction_of_tateModuleGaloisRepresentation_eq_one hℓ⟩
+  refine ⟨fun hW σ hσ ↦ ?_,
+    W.hasGoodReduction_of_forall_mem_inertiaSubgroup_tateModuleGaloisRepresentation_eq_one hℓ⟩
   have : (integralModel 𝒪[K] W).IsElliptic :=
     ⟨(hasGoodReduction_iff_isUnit_integralModel_Δ 𝒪[K] W).1 hW⟩
   exact W.tateModuleGaloisRepresentation_eq_one_of_mem_inertiaSubgroup hℓ hσ

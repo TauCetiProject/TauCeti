@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Class
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 
@@ -44,11 +45,16 @@ the canonical operation internal to integral lattices is the integer action defi
   indices and preserves the null index.
 * `TauCeti.IntegralLattice.Isometry.smul`: an isometry of lattices is an isometry of their
   scalings.
+* `TauCeti.IntegralLattice.Isometry.smulEquiv`: for a nonzero scalar, the isometries between two
+  lattices are exactly the isometries between their scalings.
+* `TauCeti.IntegralLattice.exists_eq_smul_iff_forall_dvd`: a lattice is a scaling by a nonzero
+  integer `n` exactly when `n` divides every value of its integral form.
+* `TauCeti.IntegralLattice.smul_isometryClass`: scaling descends to isometry classes, injectively
+  for a nonzero scalar (`TauCeti.IntegralLattice.smul_isometryQuotient_injective`).
 
 ## References
 
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 1, form scaling and negation.
 -/
 
 public section
@@ -420,6 +426,131 @@ def Isometry.smul {W : Type v} [AddCommGroup W] [Module ℚ W] {L : IntegralLatt
 theorem Isometry.smul_apply {W : Type v} [AddCommGroup W] [Module ℚ W] {L : IntegralLattice V}
     {M : IntegralLattice W} (n : ℤ) (e : Isometry L M) (x : V) : e.smul n x = e x :=
   (rfl)
+
+/-- An isometry of the scalings of two lattices by a common nonzero integer is an isometry of the
+lattices themselves: both forms are divided by the same nonzero factor. -/
+def Isometry.ofSmul {W : Type v} [AddCommGroup W] [Module ℚ W] {L : IntegralLattice V}
+    {M : IntegralLattice W} {n : ℤ} (hn : n ≠ 0) (e : Isometry (n • L) (n • M)) :
+    Isometry L M where
+  toLinearEquiv := e.toLinearEquiv
+  map_app' x y := mul_left_cancel₀ (Int.cast_ne_zero.mpr hn : (n : ℚ) ≠ 0) <| by
+    simpa only [smul_form, LinearMap.smul_apply, smul_eq_mul] using e.map_app' x y
+  map_carrier := e.map_carrier
+
+@[simp]
+theorem Isometry.ofSmul_apply {W : Type v} [AddCommGroup W] [Module ℚ W] {L : IntegralLattice V}
+    {M : IntegralLattice W} {n : ℤ} (hn : n ≠ 0) (e : Isometry (n • L) (n • M)) (x : V) :
+    e.ofSmul hn x = e x :=
+  (rfl)
+
+/-- Scaling undoes `Isometry.ofSmul`. -/
+@[simp]
+theorem Isometry.smul_ofSmul {W : Type v} [AddCommGroup W] [Module ℚ W] {L : IntegralLattice V}
+    {M : IntegralLattice W} {n : ℤ} (hn : n ≠ 0) (e : Isometry (n • L) (n • M)) :
+    (e.ofSmul hn).smul n = e :=
+  (rfl)
+
+/-- `Isometry.ofSmul` undoes scaling. -/
+@[simp]
+theorem Isometry.ofSmul_smul {W : Type v} [AddCommGroup W] [Module ℚ W] {L : IntegralLattice V}
+    {M : IntegralLattice W} {n : ℤ} (hn : n ≠ 0) (e : Isometry L M) :
+    (e.smul n).ofSmul hn = e :=
+  (rfl)
+
+/-- Scaling by a nonzero integer identifies the isometries between two lattices with the
+isometries between their scalings. -/
+def Isometry.smulEquiv {W : Type v} [AddCommGroup W] [Module ℚ W] {L : IntegralLattice V}
+    {M : IntegralLattice W} {n : ℤ} (hn : n ≠ 0) : Isometry L M ≃ Isometry (n • L) (n • M) where
+  toFun := Isometry.smul n
+  invFun := Isometry.ofSmul hn
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem Isometry.smulEquiv_apply {W : Type v} [AddCommGroup W] [Module ℚ W]
+    {L : IntegralLattice V} {M : IntegralLattice W} {n : ℤ} (hn : n ≠ 0) (e : Isometry L M) :
+    Isometry.smulEquiv hn e = e.smul n :=
+  (rfl)
+
+@[simp]
+theorem Isometry.smulEquiv_symm_apply {W : Type v} [AddCommGroup W] [Module ℚ W]
+    {L : IntegralLattice V} {M : IntegralLattice W} {n : ℤ} (hn : n ≠ 0)
+    (e : Isometry (n • L) (n • M)) :
+    (Isometry.smulEquiv hn).symm e = e.ofSmul hn :=
+  (rfl)
+
+/-- Two lattices are isometric exactly when their scalings by a common nonzero integer are. -/
+theorem nonempty_isometry_smul_iff {W : Type v} [AddCommGroup W] [Module ℚ W]
+    {L : IntegralLattice V} {M : IntegralLattice W} {n : ℤ} (hn : n ≠ 0) :
+    Nonempty (Isometry (n • L) (n • M)) ↔ Nonempty (Isometry L M) :=
+  (Isometry.smulEquiv hn).nonempty_congr.symm
+
+/-- Scaling by a nonzero integer does not change the number of isometries between two lattices;
+in particular it does not change the order of the isometry group `O(L)`. -/
+theorem natCard_isometry_smul {W : Type v} [AddCommGroup W] [Module ℚ W]
+    {L : IntegralLattice V} {M : IntegralLattice W} {n : ℤ} (hn : n ≠ 0) :
+    Nat.card (Isometry (n • L) (n • M)) = Nat.card (Isometry L M) :=
+  Nat.card_congr (Isometry.smulEquiv hn).symm
+
+/-! ## Dividing the form -/
+
+/-- A lattice is the scaling of a lattice by a nonzero integer `n` exactly when `n` divides every
+value of its integral form. The quotient lattice has the same carrier and the form divided by
+`n`. -/
+theorem exists_eq_smul_iff_forall_dvd {n : ℤ} (hn : n ≠ 0) {L : IntegralLattice V} :
+    (∃ M : IntegralLattice V, L = n • M) ↔ ∀ x y : L, n ∣ L.integralForm x y := by
+  refine ⟨fun ⟨M, hM⟩ x y ↦ ?_, fun h ↦ ?_⟩
+  · subst hM
+    exact ⟨_, integralForm_smul_apply n M x y⟩
+  have hnq : (n : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hn
+  have hdual : L.carrier ≤ ((n : ℚ)⁻¹ • L.form).dualSubmodule L.carrier := fun x hx ↦ by
+    rw [LinearMap.BilinForm.mem_dualSubmodule]
+    intro y hy
+    obtain ⟨k, hk⟩ := h ⟨x, hx⟩ ⟨y, hy⟩
+    have hxy := L.integralForm_cast ⟨x, hx⟩ ⟨y, hy⟩
+    rw [hk, Int.cast_mul] at hxy
+    rw [Submodule.mem_one]
+    refine ⟨k, ?_⟩
+    dsimp only at hxy
+    rw [LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul, ← hxy,
+      inv_mul_cancel_left₀ hnq, algebraMap_int_eq, eq_intCast]
+  refine ⟨⟨L.carrier, (n : ℚ)⁻¹ • L.form, L.isLattice, L.isSymm.smul _, hdual⟩, ?_⟩
+  ext : 1
+  · rfl
+  · rw [smul_form, smul_smul, mul_inv_cancel₀ hnq, one_smul]
+
+/-! ## Isometry classes -/
+
+/-- Integer scaling of forms descends to the isometry classes of integral lattices, since an
+isometry of two lattices is an isometry of their scalings. -/
+noncomputable instance instSMulIntIsometryQuotient : SMul ℤ (IsometryQuotient V) :=
+  ⟨fun n c ↦ (n • c.out).isometryClass⟩
+
+/-- The scaling of the class of a lattice is the class of its scaling. -/
+@[simp]
+theorem smul_isometryClass (n : ℤ) (L : IntegralLattice V) :
+    n • L.isometryClass = (n • L).isometryClass := by
+  obtain ⟨e⟩ := isometryClass_eq_isometryClass_iff.mp (isometryClass_out L.isometryClass)
+  exact (e.smul n).isometryClass_eq
+
+/-- Integer scaling of forms is an action of the multiplicative monoid `ℤ` on isometry classes. -/
+noncomputable instance instMulActionIntIsometryQuotient : MulAction ℤ (IsometryQuotient V) where
+  one_smul c := by
+    obtain ⟨L, rfl⟩ := isometryClass_surjective c
+    rw [smul_isometryClass, one_smul]
+  mul_smul m n c := by
+    obtain ⟨L, rfl⟩ := isometryClass_surjective c
+    rw [smul_isometryClass, smul_isometryClass, smul_isometryClass, mul_smul]
+
+/-- Scaling by a nonzero integer is injective on isometry classes. -/
+theorem smul_isometryQuotient_injective {n : ℤ} (hn : n ≠ 0) :
+    Function.Injective (n • · : IsometryQuotient V → IsometryQuotient V) := by
+  intro c d hcd
+  obtain ⟨L, rfl⟩ := isometryClass_surjective c
+  obtain ⟨M, rfl⟩ := isometryClass_surjective d
+  simp only [smul_isometryClass, isometryClass_eq_isometryClass_iff,
+    nonempty_isometry_smul_iff hn] at hcd ⊢
+  exact hcd
 
 /-! ## Interaction with constructors -/
 

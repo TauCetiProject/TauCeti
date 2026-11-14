@@ -87,19 +87,17 @@ where `n` is the dimension and `ω` is the measure of the unit ball. For `p > n`
 `n (1 - 1/p)` is `n - 1 + α` with `α = 1 - n / p`, which is the growth condition of Morrey's
 Dirichlet growth theorem. -/
 theorem W1p.setIntegral_ball_norm_gradient_le {Omega : Opens E} (u : W1p mu Omega p) {z : E}
-    {r : ℝ} (hr : 0 < r) (hball : ball z r ⊆ (Omega : Set E)) :
+    {r : ℝ} (hball : ball z r ⊆ (Omega : Set E)) :
     ∫ w in ball z r, ‖W1p.gradient u w‖ ∂mu ≤
       mu.real (ball (0 : E) 1) ^ (1 - 1 / p.toReal) *
         r ^ ((finrank ℝ E : ℝ) * (1 - 1 / p.toReal)) *
           (eLpNorm (W1p.gradient u) p (mu.restrict (ball z r))).toReal := by
+  rcases le_or_gt r 0 with hr | hr
+  · -- The ball is empty, so both sides vanish.
+    rw [ball_eq_empty.2 hr]
+    simp
   set q : ℝ := 1 - 1 / p.toReal
-  have hq : 0 ≤ q := by
-    have h1 : (1 : ℝ≥0∞) ≤ p := Fact.out
-    rcases eq_or_ne p ∞ with rfl | hptop
-    · simp [q]
-    · have : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hptop h1
-      simp only [q, sub_nonneg]
-      exact (div_le_one (by linarith)).2 this
+  have hq : 0 ≤ q := ENNReal.one_sub_one_div_toReal_nonneg Fact.out
   have hf : AEStronglyMeasurable (W1p.gradient u) (mu.restrict (ball z r)) :=
     (Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hball le_rfl)
   have hfin : eLpNorm (W1p.gradient u) p (mu.restrict (ball z r)) ≠ ∞ :=
@@ -110,7 +108,7 @@ theorem W1p.setIntegral_ball_norm_gradient_le {Omega : Opens E} (u : W1p mu Omeg
   rw [Measure.restrict_apply_univ, ENNReal.toReal_one, div_one] at hholder
   calc ∫ w in ball z r, ‖W1p.gradient u w‖ ∂mu
       = (eLpNorm (W1p.gradient u) 1 (mu.restrict (ball z r))).toReal := by
-        rw [integral_norm_eq_lintegral_enorm hf, eLpNorm_one_eq_lintegral_enorm hf]
+        rw [integral_norm_eq_lintegral_eNorm hf, eLpNorm_one_eq_lintegral_eNorm hf]
     _ ≤ (eLpNorm (W1p.gradient u) p (mu.restrict (ball z r)) * mu (ball z r) ^ q).toReal :=
         ENNReal.toReal_mono (ENNReal.mul_ne_top hfin
           (ENNReal.rpow_ne_top_of_nonneg hq measure_ball_lt_top.ne)) hholder
@@ -162,7 +160,7 @@ theorem W1p.exists_dist_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0�
       ∫ w in ball z r, ‖W1p.gradient u w‖ ∂mu ≤ ω ^ q * N * r ^ ((n : ℝ) - 1 + α) := by
     intro z r hr hzr
     have hBΩ : B ⊆ (Omega : Set E) := ball_subset_closedBall.trans hxy
-    refine (W1p.setIntegral_ball_norm_gradient_le u hr (hzr.trans hBΩ)).trans ?_
+    refine (W1p.setIntegral_ball_norm_gradient_le u (hzr.trans hBΩ)).trans ?_
     rw [hexp, mul_right_comm]
     gcongr
     exact W1p.toReal_eLpNorm_gradient_mono u hzr hBΩ

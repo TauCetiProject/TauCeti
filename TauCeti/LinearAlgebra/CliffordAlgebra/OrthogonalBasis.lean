@@ -68,8 +68,9 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   the product of a generator, respectively a basis vector `e_s`, with a basis vector `e_t` is
   `(-1) ^ N * (∏ i ∈ s ∩ t, Q (b i)) • e_{s ∆ t}`, where `N` counts the pairs of an index of `s`
   and a smaller index of `t`.
-* `CliffordAlgebra.basis_mul_basis_eq_or` and `CliffordAlgebra.basis_mul_self_eq_or`: signed
-  multiplication and square laws when the generators square to `±1`.
+* `CliffordAlgebra.basis_mul_basis_eq_or`, `CliffordAlgebra.mul_eq_or_of_eq_basis_or` and
+  `CliffordAlgebra.basis_mul_self_eq_or`: signed multiplication and square laws when the
+  generators square to `±1`.
 * `CliffordAlgebra.basis_commuteOrNeg`: basis products commute up to sign for every
   orthogonal basis.
 * `CliffordAlgebra.isUnit_basis`: a basis monomial is a unit when its generator squares are units.
@@ -363,6 +364,16 @@ theorem basis_mul_basis_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
   rw [basis_mul_basis hb]
   rcases coeff_eq_one_or_neg_one hQ s t with hc | hc <;> rw [hc] <;> simp
 
+/-- When every generator squares to `±1`, the product of signed basis vectors `±e_s` and `±e_t`
+is `±e_{s ∆ t}`. -/
+theorem mul_eq_or_of_eq_basis_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {x y : CliffordAlgebra Q} {s t : Finset I}
+    (hx : x = basis Q b s ∨ x = -basis Q b s) (hy : y = basis Q b t ∨ y = -basis Q b t) :
+    x * y = basis Q b (s ∆ t) ∨ x * y = -basis Q b (s ∆ t) := by
+  rcases basis_mul_basis_eq_or hb hQ s t with hst | hst <;>
+    rcases hx with rfl | rfl <;> rcases hy with rfl | rfl <;>
+    simp only [neg_mul, mul_neg, neg_neg, hst, true_or, or_true]
+
 /-- For an orthogonal basis, two basis-vector products commute or anticommute. -/
 theorem basis_commuteOrNeg
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s t : Finset I) :
@@ -566,11 +577,16 @@ theorem scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero [IsStrictOrd
     · simp [hs]
     · simp [h s hs]
 
+omit [LinearOrder I] in
 /-- **Faithfulness of the trace pairing**: if `Q` is positive on an orthogonal basis, then
-`τ (reverse x * x) = 0` only for `x = 0`. -/
+`τ (reverse x * x) = 0` only for `x = 0`. The index type of the basis need not be ordered. -/
 theorem scalarTrace_reverse_mul_self_eq_zero_iff [IsStrictOrderedRing R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, 0 < Q (b i))
     {x : CliffordAlgebra Q} : scalarTrace Q (reverse x * x) = 0 ↔ x = 0 := by
+  classical
+  -- The order only enters through the auxiliary basis `CliffordAlgebra.basis`, so any linear order
+  -- on `I` will do.
+  let _ : LinearOrder I := linearOrderOfSTO WellOrderingRel
   rw [scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero hb fun i ↦ (hQ i).le,
     forall_prod_ne_zero_basis_repr_eq_zero_iff fun i ↦ (hQ i).ne']
 

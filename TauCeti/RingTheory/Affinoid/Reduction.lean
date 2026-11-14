@@ -208,9 +208,9 @@ theorem injective_reductionMap_iff_supSeminorm_eq (f : A →ₐ[K] B)
       have hpow := pow_lt_pow_left₀ hlt (supSeminorm_nonneg _) hm0
       have hcpos : 0 < ‖(c : K)‖ := norm_pos_iff.mpr c.ne_zero
       have hc' : ‖(c : K)‖ * supSeminorm K a ^ m = 1 := by
-        rwa [hA.supSeminorm_smul, hA.supSeminorm_pow a hm0] at hc
-      simpa only [u, map_smul, map_pow, hB.supSeminorm_smul,
-        hB.supSeminorm_pow (f a) hm0, hc'] using mul_lt_mul_of_pos_left hpow hcpos
+        rwa [supSeminorm_smul, supSeminorm_pow a hm0] at hc
+      simpa only [u, map_smul, map_pow, supSeminorm_smul,
+        supSeminorm_pow (f a) hm0, hc'] using mul_lt_mul_of_pos_left hpow hcpos
     exact (h ⟨u, hu⟩ hnorm).ne hc
   · intro h a ha
     rwa [h] at ha

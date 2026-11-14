@@ -89,21 +89,17 @@ Mathlib does not register `LieRing.ofAssociativeRing` as a global instance, so, 
 `Mathlib/Algebra/Lie/Classical.lean`, it is a local instance here.
 
 Linear independence of a triple is the eigenvector argument of
-`Module.End.eigenvectors_linearIndependent'`, so it asks what that theorem asks — a domain of
-characteristic zero and a torsion-free Lie algebra — rather than a field: the eigenvalues `2`, `-2`
-and `0` need only be distinct, not invertible. The presentation `TauCeti.lieHomOfSl2Basis` needs
-neither, being a bilinearity argument over an arbitrary commutative ring.
+`Module.End.eigenvectors_linearIndependent'`, so it asks what that theorem asks — a domain in
+which `2` is nonzero and a torsion-free Lie algebra — rather than a field: the eigenvalues `2`,
+`-2` and `0` need only be distinct, not invertible. The presentation `TauCeti.lieHomOfSl2Basis`
+needs neither, being a bilinearity argument over an arbitrary commutative ring.
 
 The `sl (Fin 2) R` results are stated for an arbitrary pair `i ≠ j` of indices in `Fin 2`, not just
 for `(0, 1)`: the opposite pair gives the opposite triple `(-h, f, e)`, and both are standard.
 
-## References
-
-This is the concrete input to Layer 0 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose worked `sl₂` is
-*"`LieAlgebra.SpecialLinear.sl (Fin 2) K` with its standard triple"*, and whose classification
-targets carry the hypothesis `htop : t.toLieSubalgebra K = ⊤` that
-`TauCeti.toLieSubalgebra_isSl2Triple_single_eq_top` discharges for that model.
+The `sl₂` classification theorems carry the hypothesis `htop : t.toLieSubalgebra K = ⊤`, which
+`TauCeti.toLieSubalgebra_isSl2Triple_single_eq_top` discharges for the standard triple of
+`sl (Fin 2) R`.
 -/
 
 public section
@@ -542,14 +538,18 @@ section GeneratingTriple
 variable {K : Type*} [CommRing K] [IsDomain K] [CharZero K] {L : Type*} [LieRing L]
   [LieAlgebra K L] [Module.IsTorsionFree K L] {h e f : L}
 
+omit [CharZero K] in
 /-- **An `sl₂` triple is linearly independent.** Its three elements are eigenvectors of `ad h` for
-the eigenvalues `2`, `-2` and `0`, which are distinct in characteristic zero. -/
-theorem linearIndependent_isSl2Triple (t : IsSl2Triple h e f) :
+the eigenvalues `2`, `-2` and `0`, which are distinct when `2` is nonzero in the domain `K`. -/
+theorem linearIndependent_isSl2Triple [NeZero (2 : K)] (t : IsSl2Triple h e f) :
     LinearIndependent K ![e, f, h] := by
+  have h2 : (2 : K) ≠ 0 := two_ne_zero
+  have hn : (2 : K) ≠ -2 := fun e => mul_ne_zero h2 h2 (by linear_combination e)
   refine (LieAlgebra.ad K L h).eigenvectors_linearIndependent' ![2, -2, 0] ?_ ![e, f, h]
     fun i => ?_
   · intro i j hij
-    fin_cases i <;> fin_cases j <;> first | rfl | (exfalso; revert hij; norm_num)
+    fin_cases i <;> fin_cases j <;>
+      first | rfl | (exfalso; revert hij; simp [h2, h2.symm, hn, hn.symm])
   · have heig_e : (LieAlgebra.ad K L h).HasEigenvector 2 e :=
       ⟨Module.End.mem_eigenspace_iff.2 (t.lie_h_e_smul K), t.e_ne_zero⟩
     have heig_f : (LieAlgebra.ad K L h).HasEigenvector (-2) f :=

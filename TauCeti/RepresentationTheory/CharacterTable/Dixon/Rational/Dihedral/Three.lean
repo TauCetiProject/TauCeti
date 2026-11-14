@@ -126,8 +126,7 @@ theorem dihedralGroupThree_centralCharacterSearch :
       (dihedralClassData 3).rowsOfMap
         (fun x : ℤ => (x : ZMod dihedralGroupThreeDixonPrimeData.p))
         dihedralGroupThreeCentralCharacterTable :=
-  (dihedralClassData 3).centralCharacterSearch_eq_rowsOfMap_of_isGoodDixonPrime
-    dihedralGroupThreeDixonPrimeData.isGoodDixonPrime
+  (dihedralClassData 3).centralCharacterSearch_eq_rowsOfMap
     (fun x : ℤ => (x : ZMod dihedralGroupThreeDixonPrimeData.p))
     dihedralGroupThreeCentralCharacterTable
     (by intro i; fin_cases i <;> decide)

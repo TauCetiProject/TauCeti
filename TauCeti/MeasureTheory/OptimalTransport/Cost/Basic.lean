@@ -77,9 +77,9 @@ here; the graph plan that witnesses it and the change of variables it uses come 
 inequality half needs no measurability of the cost at all, since only one half of the change of
 variables, `MeasureTheory.lintegral_map_le`, is used.
 
-This supplies the nonnegative-cost interface from Layer 1, item 1 of the optimal-transport
-roadmap. The parallel signed `EReal` interface for costs bounded below by an integrable split
-function is a separate definition family and is not part of this module.
+This is the nonnegative-cost interface. The parallel signed `EReal` interface for costs bounded
+below by an integrable split function is a separate definition family, in
+`TauCeti.MeasureTheory.OptimalTransport.Cost.BoundedBelow`.
 
 ## References
 
@@ -149,6 +149,18 @@ theorem exists_isCoupling_of_transportCost_ne_top (h : transportCost c μ ν ≠
     ∃ π, IsCoupling π μ ν := by
   obtain ⟨π, hπ, -⟩ := transportCost_lt_iff.1 h.lt_top
   exact ⟨π, hπ⟩
+
+/-- A probability measure whose transport cost to `ν` is finite has a probability measure `ν`
+as target. -/
+theorem isProbabilityMeasure_right_of_transportCost_ne_top [IsProbabilityMeasure μ]
+    (h : transportCost c μ ν ≠ ⊤) : IsProbabilityMeasure ν :=
+  (exists_isCoupling_of_transportCost_ne_top h).choose_spec.isProbabilityMeasure_right
+
+/-- A probability measure that is the target of a finite transport cost has a probability measure
+`μ` as source. -/
+theorem isProbabilityMeasure_left_of_transportCost_ne_top [IsProbabilityMeasure ν]
+    (h : transportCost c μ ν ≠ ⊤) : IsProbabilityMeasure μ :=
+  ⟨by rw [(exists_isCoupling_of_transportCost_ne_top h).choose_spec.measure_univ_eq, measure_univ]⟩
 
 /-- The transport cost is monotone in the cost function. -/
 @[gcongr]

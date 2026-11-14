@@ -14,6 +14,8 @@ Let `H` and `K` be subgroups of a group `G` with `K ≤ Subgroup.normalizer H`. 
 carries the external semidirect product `H ⋊ K` into `G` (`SemidirectProduct.monoidHomSubgroup`),
 and its image is the join `H ⊔ K`. The corresponding elementwise normal form of `H ⊔ K` is
 `Subgroup.mem_sup_of_right_le_normalizer_left` in `TauCeti.Algebra.Group.Subgroup.Pointwise`.
+An invariant normal subgroup of the first factor is normal in the full semidirect product
+(`Subgroup.normal_map_inl`).
 
 ## Main results
 
@@ -31,6 +33,23 @@ and its image is the join `H ⊔ K`. The corresponding elementwise normal form o
 public section
 
 variable {G : Type*} [Group G] {H K : Subgroup G}
+
+namespace Subgroup
+
+open SemidirectProduct
+
+/-- A normal subgroup of the first factor remains normal in the semidirect product if the
+acting group preserves it. -/
+theorem normal_map_inl {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N}
+    (S : Subgroup N) [S.Normal] (hS : ∀ q n, n ∈ S → φ q n ∈ S) :
+    (S.map (inl : N →* N ⋊[φ] Q)).Normal := by
+  constructor
+  rintro _ ⟨n, hn, rfl⟩ x
+  refine ⟨x.left * φ x.right n * x.left⁻¹,
+    ‹S.Normal›.conj_mem _ (hS _ _ hn) _, ?_⟩
+  ext <;> simp [mul_assoc]
+
+end Subgroup
 
 namespace SemidirectProduct
 
