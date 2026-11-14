@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
-public import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Normed.Group.Real
@@ -107,15 +106,15 @@ theorem integral_norm_add_const_sub_le {α E : Type*} [MeasurableSpace α] {μ :
   rw [he]
   exact norm_add_le _ _
 
-/-- If disjoint parametrizations `Q i` of a domain `D` cover the complement of a countable set
+/-- If disjoint parametrizations `Q i` of a domain `D` cover the complement of a set of seams
 `Z`, and `g` is injective on `s`, the integral over `g '' s` is the sum of the integrals over the
 images `(g ∘ Q i) '' (D ∩ Q i ⁻¹' s)` of the pieces cut out by each parametrization, up to the
 transport identity `hpiece` for each piece. The integrand need only be integrable on `g '' s`, and
-the measure needs null singletons only to discard the seams. -/
+the seams need only have a null image `g '' (s ∩ Z)`. -/
 theorem mul_integral_image_eq_sum_pieces {E M ι : Type*} [MeasurableSpace E] [Fintype ι]
-    {Q : ι → E → M} {D : Set E} {Z : Set M} (hZ : Z.Countable) (himage : (⋃ i, Q i '' D) = Zᶜ)
+    {Q : ι → E → M} {D : Set E} {Z : Set M} (himage : (⋃ i, Q i '' D) = Zᶜ)
     (hdisj : Pairwise (fun i j ↦ Disjoint (Q i '' D) (Q j '' D))) {g : M → E} {s : Set M}
-    (hg : InjOn g s) (μ : Measure E) [NullSingletonClass μ] {C : E → ℝ}
+    (hg : InjOn g s) (μ : Measure E) (hZ : μ (g '' (s ∩ Z)) = 0) {C : E → ℝ}
     (hC : IntegrableOn C (g '' s) μ)
     (c : ℝ) (V : ι → E → ℝ)
     (hT : ∀ i, MeasurableSet ((g ∘ Q i) '' (D ∩ Q i ⁻¹' s)))
@@ -137,7 +136,13 @@ theorem mul_integral_image_eq_sum_pieces {E M ι : Type*} [MeasurableSpace E] [F
   have hsub : ∀ i, (g ∘ Q i) '' (D ∩ Q i ⁻¹' s) ⊆ g '' s := fun i ↦ by
     rw [image_comp, image_inter_preimage]
     exact image_mono inter_subset_right
-  rw [setIntegral_congr_set (hZ.image_sdiff_ae_eq g s μ).symm, ← hcover,
+  -- The seams contribute only the null image `g '' (s ∩ Z)`.
+  have hae : g '' (s \ Z) =ᵐ[μ] g '' s := by
+    have hsplit : g '' s = g '' (s \ Z) ∪ g '' (s ∩ Z) := by
+      rw [← image_union, sdiff_union_inter]
+    rw [hsplit]
+    exact (union_ae_eq_left_of_ae_eq_empty (ae_eq_empty.mpr hZ)).symm
+  rw [setIntegral_congr_set hae.symm, ← hcover,
     integral_iUnion_fintype hT hpair (fun i ↦ hC.mono_set (hsub i)), Finset.mul_sum]
   exact Finset.sum_congr rfl fun i _ ↦ hpiece i
 
