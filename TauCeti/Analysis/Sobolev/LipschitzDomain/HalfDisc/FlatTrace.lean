@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.WeakSpace
-public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.HalfDisc.SurfaceMeasure
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Morrey
 
@@ -46,7 +45,7 @@ continuous boundary value at `1`.
 
 ## Main declarations
 
-* `TauCeti.W1p.halfDiscFlatTraceL`: the trace on the flat segment, a bounded linear map.
+* `TauCeti.W1p.halfDiscFlatTrace`: the trace on the flat segment, a bounded linear map.
 * `TauCeti.W1p.halfDiscFlatTraceL_ae_eq`, `TauCeti.W1p.halfDiscFlatTraceL_ae_eq_of_continuousOn`:
   it is the restriction of the frontier trace, and of a representative continuous up to the
   boundary.
@@ -90,7 +89,7 @@ variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {r : ℝ}
 for `p < ∞`: the boundary trace `TauCeti.W1p.frontierTrace`, for one choice of Lipschitz
 constant, restricted to the flat segment. By `TauCeti.W1p.mem_halfDiscFlatTraceZeroSubmodule_iff`
 its kernel does not depend on that choice. -/
-def W1p.halfDiscFlatTraceL (hp : p ≠ (∞ : ℝ≥0∞)) (r : ℝ) :
+def W1p.halfDiscFlatTrace (hp : p ≠ (∞ : ℝ≥0∞)) (r : ℝ) :
     W1p volume (halfDisc r) p →L[ℝ] Lp ℝ p
       (((μHE[finrank ℝ ℝ] : Measure (WithLp 2 (ℝ × ℝ))).restrict
         (frontier (halfDisc r : Set (WithLp 2 (ℝ × ℝ))))).restrict (halfDiscFlatSegment r)) :=
@@ -100,34 +99,34 @@ def W1p.halfDiscFlatTraceL (hp : p ≠ (∞ : ℝ≥0∞)) (r : ℝ) :
 
 /-- **Functions of zero trace on the flat segment.** The subspace of `W^{1,p}(halfDisc r)`,
 `p < ∞`, of functions whose boundary trace vanishes almost everywhere on the flat segment: the
-kernel of `TauCeti.W1p.halfDiscFlatTraceL`. Imposed on the imaginary part of each component of a
+kernel of `TauCeti.W1p.halfDiscFlatTrace`. Imposed on the imaginary part of each component of a
 `ℂⁿ`-valued map, it is the totally real boundary condition `ξ ∈ ℝⁿ` on the flat segment. -/
 def W1p.halfDiscFlatTraceZeroSubmodule (hp : p ≠ (∞ : ℝ≥0∞)) (r : ℝ) :
     Submodule ℝ (W1p volume (halfDisc r) p) :=
-  LinearMap.ker (W1p.halfDiscFlatTraceL hp r).toLinearMap
+  LinearMap.ker (W1p.halfDiscFlatTrace hp r).toLinearMap
 
 /-- **The flat trace is the restricted frontier trace.** For any Lipschitz constant of the
-half-disc, `TauCeti.W1p.halfDiscFlatTraceL` agrees almost everywhere on the flat segment, for
+half-disc, `TauCeti.W1p.halfDiscFlatTrace` agrees almost everywhere on the flat segment, for
 surface measure, with the boundary trace `TauCeti.W1p.frontierTrace`. -/
 theorem W1p.halfDiscFlatTraceL_ae_eq (hp : p ≠ (∞ : ℝ≥0∞)) (hr : 0 < r) {L : ℝ≥0}
     (hΩ : (halfDisc r : Set (WithLp 2 (ℝ × ℝ))).IsLipschitzDomainWith L)
     (u : W1p volume (halfDisc r) p) :
-    W1p.halfDiscFlatTraceL hp r u =ᵐ[(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict
+    W1p.halfDiscFlatTrace hp r u =ᵐ[(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict
       (halfDiscFlatSegment r)] W1p.frontierTrace hp hΩ (isBounded_halfDisc r) u := by
-  rw [← congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment hr), W1p.halfDiscFlatTraceL,
+  rw [← congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment hr), W1p.halfDiscFlatTrace,
     ContinuousLinearMap.comp_apply,
     W1p.frontierTrace_eq_of_isLipschitzDomainWith hp _ hΩ (isBounded_halfDisc r)]
   exact LpToLpRestrictCLM_coeFn ℝ (halfDiscFlatSegment r) _
 
 /-- **The flat trace of a function continuous up to the boundary is its restriction.** If
 `u ∈ W^{1,p}(halfDisc r)` agrees almost everywhere with a function `f` continuous on the closed
-half-disc, then `TauCeti.W1p.halfDiscFlatTraceL` sends `u` to `f` almost everywhere on the flat
+half-disc, then `TauCeti.W1p.halfDiscFlatTrace` sends `u` to `f` almost everywhere on the flat
 segment for surface measure. -/
 theorem W1p.halfDiscFlatTraceL_ae_eq_of_continuousOn (hp : p ≠ (∞ : ℝ≥0∞)) (hr : 0 < r)
     {u : W1p volume (halfDisc r) p} {f : WithLp 2 (ℝ × ℝ) → ℝ}
     (hf : ContinuousOn f (closure (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))))
     (hu : W1p.value u =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))] f) :
-    W1p.halfDiscFlatTraceL hp r u =ᵐ[(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict
+    W1p.halfDiscFlatTrace hp r u =ᵐ[(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict
       (halfDiscFlatSegment r)] f := by
   obtain ⟨L, hΩ⟩ := exists_isLipschitzDomainWith_halfDisc r
   refine (W1p.halfDiscFlatTraceL_ae_eq hp hr hΩ u).trans ?_
@@ -136,11 +135,11 @@ theorem W1p.halfDiscFlatTraceL_ae_eq_of_continuousOn (hp : p ≠ (∞ : ℝ≥0�
     (W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ (isBounded_halfDisc r) hf hu)
 
 /-- A function lies in `TauCeti.W1p.halfDiscFlatTraceZeroSubmodule` exactly when its flat trace
-`TauCeti.W1p.halfDiscFlatTraceL` is zero. -/
+`TauCeti.W1p.halfDiscFlatTrace` is zero. -/
 @[simp]
 theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTraceL_eq_zero
     (hp : p ≠ (∞ : ℝ≥0∞)) {u : W1p volume (halfDisc r) p} :
-    u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r ↔ W1p.halfDiscFlatTraceL hp r u = 0 :=
+    u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r ↔ W1p.halfDiscFlatTrace hp r u = 0 :=
   LinearMap.mem_ker
 
 /-- A function lies in `TauCeti.W1p.halfDiscFlatTraceZeroSubmodule` exactly when its trace, for
@@ -167,15 +166,7 @@ theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff (hp : p ≠ (∞ : ℝ≥0∞
 /-- **The zero-trace condition is closed** in `W^{1,p}(halfDisc r)`. -/
 theorem W1p.isClosed_halfDiscFlatTraceZeroSubmodule (hp : p ≠ (∞ : ℝ≥0∞)) (r : ℝ) :
     IsClosed (W1p.halfDiscFlatTraceZeroSubmodule hp r : Set (W1p volume (halfDisc r) p)) :=
-  (W1p.halfDiscFlatTraceL hp r).isClosed_ker
-
-/-- **The zero-trace condition passes to `W^{1,p}` limits.** -/
-theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_of_tendsto (hp : p ≠ (∞ : ℝ≥0∞)) {ι : Type*}
-    {l : Filter ι} [l.NeBot] {u : ι → W1p volume (halfDisc r) p} {v : W1p volume (halfDisc r) p}
-    (hv : Filter.Tendsto u l (nhds v))
-    (hu : ∀ᶠ i in l, u i ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r) :
-    v ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r :=
-  (W1p.isClosed_halfDiscFlatTraceZeroSubmodule hp r).mem_of_tendsto hv hu
+  (W1p.halfDiscFlatTrace hp r).isClosed_ker
 
 /-- **The zero-trace condition is weakly closed**: its image in the weak topology of
 `W^{1,p}(halfDisc r)` is closed, since it is a closed convex set. -/

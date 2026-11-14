@@ -36,7 +36,8 @@ The frontier is compact, so a single Lipschitz bound serves all frontier points
 * `TauCeti.halfDisc`: the open half-disc of radius `r`.
 * `TauCeti.closure_halfDisc`, `TauCeti.frontier_halfDisc`: its closure is the closed half-disc and
   its frontier is the flat segment together with the closed arc.
-* `TauCeti.halfDiscFlatSegment`: the flat segment of the frontier of the half-disc.
+* `TauCeti.halfDiscFlatSegment`: the flat segment of the frontier of the half-disc, the image of
+  `[-r, r]` under `t ↦ (0, t)` (`TauCeti.image_Icc_eq_halfDiscFlatSegment`).
 * `TauCeti.isLipschitzDomain_halfDisc`: the half-disc is a Lipschitz domain.
 * `TauCeti.exists_isLipschitzDomainWith_halfDisc`: the half-disc is a Lipschitz domain with a
   uniform Lipschitz bound.
@@ -131,6 +132,21 @@ def halfDiscFlatSegment (r : ℝ) : Set (WithLp 2 (ℝ × ℝ)) :=
 theorem mem_halfDiscFlatSegment {r : ℝ} {x : WithLp 2 (ℝ × ℝ)} :
     x ∈ halfDiscFlatSegment r ↔ ‖x‖ ≤ r ∧ x.fst = 0 := by
   rw [halfDiscFlatSegment, mem_inter_iff, mem_closedBall_zero_iff, mem_ofPred_eq]
+
+/-- The flat segment is the image of `[-r, r]` under `t ↦ (0, t)`. -/
+theorem image_Icc_eq_halfDiscFlatSegment (r : ℝ) :
+    (fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t)) '' Icc (-r) r = halfDiscFlatSegment r := by
+  ext x
+  rw [mem_image, mem_halfDiscFlatSegment]
+  constructor
+  · rintro ⟨t, ht, rfl⟩
+    exact ⟨(WithLp.norm_toLp_snd 2 ℝ ℝ t).trans_le (abs_le.2 ht), rfl⟩
+  · rintro ⟨hx, hx₁⟩
+    have hx' : WithLp.toLp 2 ((0 : ℝ), x.snd) = x := by
+      rw [← hx₁]
+      rfl
+    refine ⟨x.snd, abs_le.1 ?_, hx'⟩
+    rwa [← Real.norm_eq_abs, ← WithLp.norm_toLp_snd 2 ℝ ℝ, hx']
 
 theorem isClosed_halfDiscFlatSegment (r : ℝ) : IsClosed (halfDiscFlatSegment r) :=
   isClosed_closedBall.inter

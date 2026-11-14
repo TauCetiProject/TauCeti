@@ -38,21 +38,6 @@ open MeasureTheory Metric Module Set
 
 namespace TauCeti
 
-/-- The flat segment is the image of `[-r, r]` under `t ↦ (0, t)`. -/
-private theorem image_Icc_toLp_zero_prod (r : ℝ) :
-    (fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t)) '' Icc (-r) r = halfDiscFlatSegment r := by
-  ext x
-  rw [mem_image, mem_halfDiscFlatSegment]
-  constructor
-  · rintro ⟨t, ht, rfl⟩
-    exact ⟨(WithLp.norm_toLp_snd 2 ℝ ℝ t).trans_le (abs_le.2 ht), rfl⟩
-  · rintro ⟨hx, hx₁⟩
-    have hx' : WithLp.toLp 2 ((0 : ℝ), x.snd) = x := by
-      rw [← hx₁]
-      rfl
-    refine ⟨x.snd, abs_le.1 ?_, hx'⟩
-    rwa [← Real.norm_eq_abs, ← WithLp.norm_toLp_snd 2 ℝ ℝ, hx']
-
 /-- **Surface measure on the flat segment.** Normalized one-dimensional Euclidean Hausdorff
 measure on the flat segment of the half-disc is the image of Lebesgue measure on `[-r, r]` under
 the isometry `t ↦ (0, t)`. -/
@@ -63,11 +48,11 @@ theorem euclideanHausdorffMeasure_restrict_halfDiscFlatSegment (r : ℝ) :
   have hvol : (μHE[1] : Measure ℝ) = volume := by
     simpa using InnerProductSpace.euclideanHausdorffMeasure_eq_volume (V := ℝ)
   have hpre : (fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t)) ⁻¹' halfDiscFlatSegment r = Icc (-r) r := by
-    rw [← image_Icc_toLp_zero_prod, hι.injective.preimage_image]
+    rw [← image_Icc_eq_halfDiscFlatSegment, hι.injective.preimage_image]
   rw [← hpre, ← Measure.restrict_map hι.continuous.measurable
     (measurableSet_halfDiscFlatSegment r), ← hvol, hι.map_euclideanHausdorffMeasure,
     Measure.restrict_restrict (measurableSet_halfDiscFlatSegment r), inter_eq_left.2]
-  rw [← image_Icc_toLp_zero_prod]
+  rw [← image_Icc_eq_halfDiscFlatSegment]
   exact image_subset_range _ _
 
 /-- The flat segment of the half-disc of radius `r` has length `2 r`. -/
@@ -90,19 +75,19 @@ theorem eqOn_halfDiscFlatSegment_of_ae_eq {Y : Type*} [TopologicalSpace Y] [T2Sp
   have hι := WithLp.isometry_toLp_zero_prod (p := 2) (α := ℝ) (β := ℝ)
   have hmaps : MapsTo (fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t)) (Icc (-r) r)
       (halfDiscFlatSegment r) := by
-    rw [← image_Icc_toLp_zero_prod]
+    rw [← image_Icc_eq_halfDiscFlatSegment]
     exact mapsTo_image _ _
   rw [euclideanHausdorffMeasure_restrict_halfDiscFlatSegment] at hfg
   have hEq := Measure.eqOn_Icc_of_ae_eq volume (by linarith : -r ≠ r)
     (ae_of_ae_map (p := fun y => f y = g y) hι.continuous.aemeasurable hfg)
     (hf.comp hι.continuous.continuousOn hmaps) (hg.comp hι.continuous.continuousOn hmaps)
-  rw [← image_Icc_toLp_zero_prod]
+  rw [← image_Icc_eq_halfDiscFlatSegment]
   rintro _ ⟨t, ht, rfl⟩
   exact hEq ht
 
 /-- Surface measure on the frontier of the half-disc, restricted to the flat segment, is surface
 measure on the flat segment. This identifies the measure of the codomain of
-`TauCeti.W1p.halfDiscFlatTraceL`. -/
+`TauCeti.W1p.halfDiscFlatTrace`. -/
 theorem restrict_frontier_restrict_halfDiscFlatSegment {r : ℝ} (hr : 0 < r) :
     ((μHE[finrank ℝ ℝ] : Measure (WithLp 2 (ℝ × ℝ))).restrict
         (frontier (halfDisc r : Set (WithLp 2 (ℝ × ℝ))))).restrict (halfDiscFlatSegment r) =
