@@ -296,6 +296,13 @@ theorem reverse {p q : 𝔸.Path x y} (h : Homotopic p q) : Homotopic p.reverse 
 
 end Homotopic
 
+/-- A path is homotopic to `r p⁻¹` exactly when its concatenation with `p` is homotopic to `r`. -/
+theorem homotopic_comp_reverse_iff {x y z : 𝔸.LetterVertex} {q : 𝔸.Path x y} {p : 𝔸.Path y z}
+    {r : 𝔸.Path x z} : Homotopic q (r.comp p.reverse) ↔ Homotopic (q.comp p) r := by
+  refine ⟨fun h ↦ (h.comp_right p).trans ?_, fun h ↦ Homotopic.trans ?_ (h.comp_right p.reverse)⟩
+  · simpa using Homotopic.comp_reverse_comp_comp r p .nil
+  · simpa using (Homotopic.comp_reverse_comp_comp q p.reverse .nil).symm
+
 variable (𝔸) in
 /-- Homotopy of `𝔸`-paths as a setoid. -/
 instance setoid (x y : 𝔸.LetterVertex) : Setoid (𝔸.Path x y) :=
