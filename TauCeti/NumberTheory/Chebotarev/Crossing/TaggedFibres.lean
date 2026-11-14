@@ -71,7 +71,7 @@ noncomputable def taggedFrobeniusPrimeSet
   letI : FiniteDimensional L M := IsCyclotomicExtension.finiteDimensional (S := {m}) (K := L) M
   letI : NumberField M := NumberField.of_module_finite L M
   letI : IsGalois K M :=
-    IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M m
+    IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M {m}
   exact frobeniusPrimeSet K M
     (ConjClasses.mk ((IsCyclotomicExtension.galEquivProd K L M m hcop hζ).symm (σ, τ)))
 
@@ -96,7 +96,7 @@ theorem mem_taggedFrobeniusPrimeSet_iff
       IsCyclotomicExtension.finiteDimensional (S := {m}) (K := L) M
     letI : NumberField M := NumberField.of_module_finite L M
     letI : IsGalois K M :=
-      IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M m
+      IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M {m}
     ∀ {𝔭 : IsDedekindDomain.HeightOneSpectrum (𝓞 K)},
       𝔭 ∈ taggedFrobeniusPrimeSet K L M m hcop hζ σ τ ↔
         ∃ hur : ∀ (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal],
@@ -108,7 +108,7 @@ theorem mem_taggedFrobeniusPrimeSet_iff
     IsCyclotomicExtension.finiteDimensional (S := {m}) (K := L) M
   let _ : NumberField M := NumberField.of_module_finite L M
   let _ : IsGalois K M :=
-    IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M m
+    IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M {m}
   intro 𝔭
   rw [taggedFrobeniusPrimeSet_def, mem_frobeniusPrimeSet_iff]
 
@@ -126,7 +126,7 @@ theorem disjoint_taggedFrobeniusPrimeSet
     IsCyclotomicExtension.finiteDimensional (S := {m}) (K := L) M
   let _ : NumberField M := NumberField.of_module_finite L M
   let _ : IsGalois K M :=
-    IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M m
+    IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M {m}
   apply disjoint_frobeniusPrimeSet
   intro hclasses
   apply hτυ

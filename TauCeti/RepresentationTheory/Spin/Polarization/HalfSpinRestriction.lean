@@ -129,8 +129,7 @@ private theorem exists_linearEquiv_of_eigenspaceComplexVolumeAction_complexVolum
   have hdim : finrank ℂ (ExteriorAlgebra ℂ P.W) =
       finrank ℂ ((Algebra.lsmul ℂ ℂ S (complexVolume Q₁ o')).eigenspace μ) := by
     rw [P.finrank_exteriorAlgebra_W_of_finrank_eq_two_mul_add_one hV,
-      finrank_eigenspace_complexVolume_of_bijective_lsmul o' hQ₁' hS
-        ⟨ℓ + 1, by omega⟩ (by omega) hμ]
+      finrank_eigenspace_complexVolume_of_bijective_lsmul o' hQ₁' hS (by omega) hμ]
     congr 1
     omega
   obtain ⟨T, hT⟩ := exists_linearEquiv_apply_eq_apply_of_mem_odd hρ hω h₁ h₂ hdim
