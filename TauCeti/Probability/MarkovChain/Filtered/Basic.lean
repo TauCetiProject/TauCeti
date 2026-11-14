@@ -260,7 +260,7 @@ theorem isMarkovChain_iff_prefix_recursion
   · exact ⟨fun h n => prefix_recursion_of_isMarkovChain h hℱ n,
       isMarkovChain_of_prefix_recursion hℱ⟩
 
-omit [Nonempty S] [IsFiniteMeasure μ] in
+omit [Nonempty S] [MeasurableSingletonClass S] [IsFiniteMeasure μ] in
 /-- A process has the Markov-chain path law exactly when it has the specified initial law
 and is a Markov chain relative to Mathlib's natural filtration. The state-space topology
 is used only to form that filtration; no topology on the sample space is required. -/
