@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 import TauCeti.Analysis.Distribution.TemperateGrowth
-import TauCeti.Analysis.Pseudodifferential.OutputSupport
 
 /-!
 # Composition of quantizations on Schwartz space
