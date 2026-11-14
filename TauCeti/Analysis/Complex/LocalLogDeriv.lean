@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.Complex.Liouville
 import TauCeti.Analysis.Complex.AbsMax
 import TauCeti.Analysis.Complex.BorelCaratheodory
 import TauCeti.Analysis.Complex.BranchLogRoot
@@ -40,6 +41,9 @@ point are counted by Jensen's formula, and the remaining part of `logDeriv f` is
   `4 (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * log M`.
 * `AnalyticOnNhd.norm_logDeriv_sub_finsum_divisor_half_le`: the classical radii `R / 2` and
   `R / 4`, with the bound `48 / R * log M`.
+* `AnalyticOnNhd.norm_logDeriv_sub_logDeriv_sub_finsum_divisor_le`: subtracting the expansion at
+  `z₀` bounds `logDeriv f z - logDeriv f z₀` on `closedBall z₀ (R / 8)` by
+  `384 ‖z - z₀‖ / R ^ 2 * log M`.
 
 ## Implementation notes
 
@@ -68,21 +72,19 @@ namespace AnalyticOnNhd
 
 variable {f : ℂ → ℂ} {z₀ : ℂ} {r R : ℝ}
 
-/-- **Landau's local logarithmic-derivative lemma.** Let `f` be analytic on `closedBall z₀ R`
-with `f z₀ ≠ 0` and `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`, and let `2 r ≤ R`. At every `z` with
-`‖z - z₀‖ < r` and `f z ≠ 0`, the logarithmic derivative of `f` differs from `∑ m_ρ / (z - ρ)`
-over the zeros `ρ` in `closedBall z₀ r`, with multiplicities `m_ρ` given by the divisor, by at
-most `4 (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * log M`. -/
-theorem norm_logDeriv_sub_finsum_divisor_le (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
-    (hrR : 2 * r ≤ R) (hz₀ : f z₀ ≠ 0) {M : ℝ}
-    (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) {z : ℂ} (hz : ‖z - z₀‖ < r) (hfz : f z ≠ 0) :
-    ‖logDeriv f z - ∑ᶠ ρ, (divisor f (closedBall z₀ r) ρ : ℂ) / (z - ρ)‖ ≤
-      4 * (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * Real.log M := by
+/-- Decomposes `logDeriv f` on `ball z₀ r` into the finite partial-fraction sum over the zeros in
+`closedBall z₀ r` plus a holomorphic remainder bounded by Borel–Carathéodory and Cauchy's
+estimate. -/
+private theorem exists_differentiableOn_logDeriv_eq_finsum_add
+    (hf : AnalyticOnNhd ℂ f (closedBall z₀ R)) (hr : 0 < r) (hrR : 2 * r ≤ R) (hz₀ : f z₀ ≠ 0)
+    {M : ℝ} (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) :
+    ∃ φ : ℂ → ℂ, DifferentiableOn ℂ φ (ball z₀ r) ∧
+      (∀ u ∈ ball z₀ r, ‖φ u‖ ≤ 4 * (r + ‖u - z₀‖) / (r - ‖u - z₀‖) ^ 2 * Real.log M) ∧
+      ∀ u ∈ ball z₀ r, f u ≠ 0 →
+        logDeriv f u = (∑ᶠ ρ, (divisor f (closedBall z₀ r) ρ : ℂ) / (u - ρ)) + φ u := by
   classical
-  have hr : 0 < r := (norm_nonneg _).trans_lt hz
   have hR : 0 < R := by linarith
   have hz₀R : z₀ ∈ closedBall z₀ R := mem_closedBall_self hR.le
-  have hzb : z ∈ ball z₀ r := by rwa [mem_ball, dist_eq_norm]
   have hballR : ball z₀ r ⊆ ball z₀ R := ball_subset_ball (by linarith)
   have hM1 : 1 ≤ M :=
     (hf.differentiableOn.diffContOnCl_ball Subset.rfl).one_le_of_forall_mem_sphere_norm_le_mul
@@ -127,6 +129,7 @@ theorem norm_logDeriv_sub_finsum_divisor_le (hf : AnalyticOnNhd ℂ f (closedBal
     ((hG.differentiableOn.mono (hballR.trans ball_subset_closedBall)).div_const (G z₀))
     (fun ⟨w, hw, h0⟩ ↦ div_ne_zero (hG0 w (ball_subset_closedBall hw)) hGz₀ h0)
   set h : ℂ → ℂ := fun w ↦ L w - L z₀
+  have hhd : DifferentiableOn ℂ h (ball z₀ r) := hLd.sub_const _
   have hre (w : ℂ) (hw : w ∈ ball z₀ r) : (h w).re ≤ Real.log M := by
     have hexp : Complex.exp (h w) = G w / G z₀ := by
       have h₁ := hL hw
@@ -136,29 +139,45 @@ theorem norm_logDeriv_sub_finsum_divisor_le (hf : AnalyticOnNhd ℂ f (closedBal
     rw [Real.le_log_iff_exp_le (by linarith), ← Complex.norm_exp, hexp, norm_div,
       div_le_iff₀ (norm_pos_iff.2 hGz₀)]
     exact hGle w (ball_subset_closedBall (hballR hw))
-  -- Split `logDeriv f z = logDeriv P z + h' z` and evaluate `logDeriv P z`.
-  have hPz : P z ≠ 0 := fun h0 ↦
-    hfz (by rw [hfG z (ball_subset_closedBall (hballR hzb)), h0, zero_mul])
-  have hDz : D' z = 0 := by
-    by_contra hne
-    refine hPz ?_
-    rw [hPs]
-    exact Finset.prod_eq_zero (hfin.mem_toFinset.2 hne) (by rw [sub_self, zero_zpow _ hne])
-  have hlogf : logDeriv f z = logDeriv P z + logDeriv G z := by
-    have hfPG : f =ᶠ[𝓝 z] P * G := eventuallyEq_of_mem (isOpen_ball.mem_nhds (hballR hzb))
-      fun w hw ↦ hfG w (ball_subset_closedBall hw)
-    rw [(logDeriv_congr_nhds hfPG).eq_of_nhds,
-      logDeriv_mul z hPz (hG0 z (ball_subset_closedBall hzb))
-        (Function.FactorizedRational.analyticAt (hD' z)).differentiableAt
-        (hG z (ball_subset_closedBall (hballR hzb))).differentiableAt]
-  have hlogG : deriv h z = logDeriv G z := by
-    simp only [h, deriv_sub_const]
-    rw [TauCeti.deriv_eq_logDeriv_of_eqOn_exp_comp isOpen_ball hLd hL hzb]
-    simp only [div_eq_mul_inv]
-    exact logDeriv_mul_const z _ (inv_ne_zero hGz₀)
-  rw [hlogf, ← Function.FactorizedRational.logDeriv_eq_finsum hfin hDz, add_sub_cancel_left,
-    ← hlogG]
-  exact Complex.norm_deriv_le_of_forall_mem_ball_re_le (hLd.sub_const _) (sub_self _) hre hz
+  refine ⟨deriv h, hhd.deriv isOpen_ball, fun u hu ↦ ?_, fun u hu hfu ↦ ?_⟩
+  · exact Complex.norm_deriv_le_of_forall_mem_ball_re_le hhd (sub_self _) hre
+      (by simpa [dist_eq_norm] using hu)
+  · have hPu : P u ≠ 0 := fun h0 ↦
+      hfu (by rw [hfG u (ball_subset_closedBall (hballR hu)), h0, zero_mul])
+    have hDu : D' u = 0 := by
+      by_contra hne
+      refine hPu ?_
+      rw [hPs]
+      exact Finset.prod_eq_zero (hfin.mem_toFinset.2 hne) (by rw [sub_self, zero_zpow _ hne])
+    have hlogf : logDeriv f u = logDeriv P u + logDeriv G u := by
+      have hfPG : f =ᶠ[𝓝 u] P * G := eventuallyEq_of_mem (isOpen_ball.mem_nhds (hballR hu))
+        fun w hw ↦ hfG w (ball_subset_closedBall hw)
+      rw [(logDeriv_congr_nhds hfPG).eq_of_nhds,
+        logDeriv_mul u hPu (hG0 u (ball_subset_closedBall hu))
+          (Function.FactorizedRational.analyticAt (hD' u)).differentiableAt
+          (hG u (ball_subset_closedBall (hballR hu))).differentiableAt]
+    have hlogG : deriv h u = logDeriv G u := by
+      simp only [h, deriv_sub_const]
+      rw [TauCeti.deriv_eq_logDeriv_of_eqOn_exp_comp isOpen_ball hLd hL hu]
+      simp only [div_eq_mul_inv]
+      exact logDeriv_mul_const u _ (inv_ne_zero hGz₀)
+    rw [hlogf, Function.FactorizedRational.logDeriv_eq_finsum hfin hDu, hlogG]
+
+/-- **Landau's local logarithmic-derivative lemma.** Let `f` be analytic on `closedBall z₀ R`
+with `f z₀ ≠ 0` and `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`, and let `2 r ≤ R`. At every `z` with
+`‖z - z₀‖ < r` and `f z ≠ 0`, the logarithmic derivative of `f` differs from `∑ m_ρ / (z - ρ)`
+over the zeros `ρ` in `closedBall z₀ r`, with multiplicities `m_ρ` given by the divisor, by at
+most `4 (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * log M`. -/
+theorem norm_logDeriv_sub_finsum_divisor_le (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
+    (hrR : 2 * r ≤ R) (hz₀ : f z₀ ≠ 0) {M : ℝ}
+    (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) {z : ℂ} (hz : ‖z - z₀‖ < r) (hfz : f z ≠ 0) :
+    ‖logDeriv f z - ∑ᶠ ρ, (divisor f (closedBall z₀ r) ρ : ℂ) / (z - ρ)‖ ≤
+      4 * (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * Real.log M := by
+  have hr : 0 < r := (norm_nonneg _).trans_lt hz
+  have hzb : z ∈ ball z₀ r := by rwa [mem_ball, dist_eq_norm]
+  obtain ⟨φ, _, hφb, hφeq⟩ := hf.exists_differentiableOn_logDeriv_eq_finsum_add hr hrR hz₀ hM
+  rw [hφeq z hzb hfz, add_sub_cancel_left]
+  exact hφb z hzb
 
 /-- **Landau's local logarithmic-derivative lemma** in the classical normalization. Let `f` be
 analytic on `closedBall z₀ R` with `0 < R`, `f z₀ ≠ 0` and `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`.
@@ -183,6 +202,76 @@ theorem norm_logDeriv_sub_finsum_divisor_half_le (hf : AnalyticOnNhd ℂ f (clos
     _ = 48 / R := by
         field_simp
         ring
+
+/-- **Subtracted local logarithmic-derivative bound.** Under the hypotheses of
+`AnalyticOnNhd.norm_logDeriv_sub_finsum_divisor_half_le`, subtracting the expansion at `z₀`
+gains a factor of `R`: for `‖z - z₀‖ ≤ R / 8` with `f z ≠ 0`, `logDeriv f z - logDeriv f z₀`
+differs from `∑ m_ρ (1 / (z - ρ) - 1 / (z₀ - ρ))` over the zeros in `closedBall z₀ (R / 2)` by at
+most `384 ‖z - z₀‖ / R² * log M`. -/
+theorem norm_logDeriv_sub_logDeriv_sub_finsum_divisor_le
+    (hf : AnalyticOnNhd ℂ f (closedBall z₀ R)) (hR : 0 < R) (hz₀ : f z₀ ≠ 0) {M : ℝ}
+    (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) {z : ℂ} (hz : ‖z - z₀‖ ≤ R / 8)
+    (hfz : f z ≠ 0) :
+    ‖logDeriv f z - logDeriv f z₀ -
+        ∑ᶠ ρ, (divisor f (closedBall z₀ (R / 2)) ρ : ℂ) * (1 / (z - ρ) - 1 / (z₀ - ρ))‖ ≤
+      384 * ‖z - z₀‖ / R ^ 2 * Real.log M := by
+  have hM1 : 1 ≤ M :=
+    (hf.differentiableOn.diffContOnCl_ball Subset.rfl).one_le_of_forall_mem_sphere_norm_le_mul
+      hR hz₀ hM
+  obtain ⟨φ, hφd, hφb, hφeq⟩ := hf.exists_differentiableOn_logDeriv_eq_finsum_add
+    (r := R / 2) (by linarith) (by linarith) hz₀ hM
+  -- `φ` is bounded by `48 / R * log M` on `closedBall z₀ (R / 4)`, so Cauchy's estimate on discs
+  -- of radius `R / 8` bounds `deriv φ` on `closedBall z₀ (R / 8)`.
+  have hφ4 (w : ℂ) (hw : w ∈ closedBall z₀ (R / 4)) : ‖φ w‖ ≤ 48 / R * Real.log M := by
+    have hw' : ‖w - z₀‖ ≤ R / 4 := by simpa [dist_eq_norm] using hw
+    have hwb : w ∈ ball z₀ (R / 2) := by
+      rw [mem_ball, dist_eq_norm]
+      linarith
+    refine (hφb w hwb).trans (mul_le_mul_of_nonneg_right ?_ (Real.log_nonneg hM1))
+    calc 4 * (R / 2 + ‖w - z₀‖) / (R / 2 - ‖w - z₀‖) ^ 2
+        ≤ 4 * (R / 2 + R / 4) / (R / 2 - R / 4) ^ 2 := by
+          have : 0 < R / 2 - R / 4 := by linarith
+          gcongr
+      _ = 48 / R := by
+          field_simp
+          ring
+  have hderiv (u : ℂ) (hu : u ∈ closedBall z₀ (R / 8)) :
+      ‖deriv φ u‖ ≤ 384 / R ^ 2 * Real.log M := by
+    have h8 : 0 < R / 8 := by linarith
+    have hsub4 : closedBall u (R / 8) ⊆ closedBall z₀ (R / 4) := fun w hw ↦ by
+      rw [mem_closedBall, dist_eq_norm] at hw hu ⊢
+      linarith [norm_sub_le_norm_sub_add_norm_sub w u z₀]
+    have hsub2 : closedBall z₀ (R / 4) ⊆ ball z₀ (R / 2) :=
+      closedBall_subset_ball (by linarith)
+    have hc := Complex.norm_deriv_le_of_forall_mem_sphere_norm_le h8
+      (DifferentiableOn.diffContOnCl (by
+        rw [closure_ball u h8.ne']
+        exact hφd.mono (hsub4.trans hsub2)))
+      fun w hw ↦ hφ4 w (hsub4 (sphere_subset_closedBall hw))
+    refine hc.trans_eq ?_
+    field_simp
+    ring
+  have hsub8 : closedBall z₀ (R / 8) ⊆ ball z₀ (R / 2) := closedBall_subset_ball (by linarith)
+  have hzc : z ∈ closedBall z₀ (R / 8) := by rwa [mem_closedBall, dist_eq_norm]
+  have hz₀c : z₀ ∈ closedBall z₀ (R / 8) := mem_closedBall_self (by linarith)
+  have hmvt := (convex_closedBall z₀ (R / 8)).norm_image_sub_le_of_norm_deriv_le
+    (fun u hu ↦ hφd.differentiableAt (isOpen_ball.mem_nhds (hsub8 hu))) hderiv hz₀c hzc
+  set D' := divisor f (closedBall z₀ (R / 2))
+  have hfin : D'.support.Finite := D'.finiteSupport (isCompact_closedBall _ _)
+  have hsupp (u : ℂ) : (fun ρ ↦ (D' ρ : ℂ) / (u - ρ)).support ⊆ D'.support :=
+    fun ρ hρ h0 ↦ hρ (by simp [h0])
+  have hdiff_eq : logDeriv f z - logDeriv f z₀ -
+      (∑ᶠ ρ, (D' ρ : ℂ) * (1 / (z - ρ) - 1 / (z₀ - ρ))) = φ z - φ z₀ := by
+    rw [hφeq z (hsub8 hzc) hfz, hφeq z₀ (hsub8 hz₀c) hz₀]
+    have hfs : (∑ᶠ ρ, (D' ρ : ℂ) / (z - ρ)) - (∑ᶠ ρ, (D' ρ : ℂ) / (z₀ - ρ)) =
+        ∑ᶠ ρ, (D' ρ : ℂ) * (1 / (z - ρ) - 1 / (z₀ - ρ)) := by
+      rw [← finsum_sub_distrib (hfin.subset (hsupp z)) (hfin.subset (hsupp z₀))]
+      refine finsum_congr fun ρ ↦ ?_
+      ring
+    linear_combination hfs
+  rw [hdiff_eq]
+  refine hmvt.trans_eq ?_
+  ring
 
 end AnalyticOnNhd
 
