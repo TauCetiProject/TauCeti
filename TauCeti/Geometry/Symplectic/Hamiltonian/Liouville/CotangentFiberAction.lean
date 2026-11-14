@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Fibration
 import Mathlib.LinearAlgebra.Matrix.Dual
-import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
-import TauCeti.Topology.Connected.Basic
 
 /-!
 # The cotangent action on the fibres of a Lagrangian fibration and its period lattice
@@ -23,9 +21,9 @@ of the flow of `g ∘ π`, for any `g` with `dg_b = η`
 `IsLagrangianFibration.coe_cotangentFiberAction_apply`). Since pulled-back functions
 Poisson-commute, their flows commute and this is an action of the vector group `T*_b B`. It is
 constructed from the Hamiltonian flow action
-(`TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction`) of the coordinates of a chart of `B` at
-`b`, pulled back to `M`; the characterization by arbitrary functions `g` shows that it does not
-depend on that chart.
+(`TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction`) of the coordinates
+`TauCeti.chartCoord` of a chart of `B` at `b`, pulled back to `M`; the characterization by
+arbitrary functions `g` shows that it does not depend on that chart.
 
 For a regular Lagrangian torus fibration
 (`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFibration`), whose fibres are moreover
@@ -82,83 +80,44 @@ variable {E H M F H' B : Type*}
   [T2Space B]
   {σ : SmoothTwoForm I M} {hσ : σ.IsNondegenerate} {π : M → B}
 
-/-! ### Coordinates on the base -/
+/-! ### Covectors in the coordinates of the base -/
 
 variable (J)
-
-/-- A smooth map `B → F` with the germ of the extended chart at `b`. -/
-private noncomputable def baseChart (b : B) : C^∞⟮J, B; 𝓘(ℝ, F), F⟯ :=
-  (exists_contMDiffMap_eventuallyEq_extChartAt (I := J) b).choose
-
-private theorem baseChart_eventuallyEq (b : B) :
-    (baseChart J b : B → F) =ᶠ[𝓝 b] extChartAt J b :=
-  (exists_contMDiffMap_eventuallyEq_extChartAt (I := J) b).choose_spec
-
-/-- Linear coordinates on the model space of the base. -/
-private noncomputable def modelCoord (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [FiniteDimensional ℝ F] : F ≃L[ℝ] (Fin (finrank ℝ F) → ℝ) :=
-  ContinuousLinearEquiv.ofFinrankEq (by simp)
-
-/-- Smooth coordinates on the base, valid near `b`. -/
-private noncomputable def baseCoord (b : B) : B → Fin (finrank ℝ F) → ℝ :=
-  modelCoord F ∘ baseChart J b
-
-private theorem contMDiff_baseCoord (b : B) :
-    ContMDiff J 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) ∞ (baseCoord J b) :=
-  (modelCoord F).contDiff.comp_contMDiff (baseChart J b).contMDiff
-
-private theorem mvfderiv_baseCoord_apply (b : B) (w : TangentSpace J b) :
-    mvfderiv J (baseCoord J b) b w = modelCoord F (w : F) := by
-  have h := mvfderiv_comp_apply_of_differentiableAt (I := J) (g := (baseChart J b : B → F))
-    (φ := (modelCoord F : F → Fin (finrank ℝ F) → ℝ)) (x := b) (modelCoord F).differentiableAt
-    ((baseChart J b).contMDiff.mdifferentiableAt (by simp)) w
-  rw [(modelCoord F).fderiv,
-    mvfderiv_apply_of_eventuallyEq_extChartAt (baseChart_eventuallyEq J b)] at h
-  exact h
-
-private theorem exists_isOpen_injOn_baseCoord (b : B) :
-    ∃ W : Set B, IsOpen W ∧ b ∈ W ∧ InjOn (baseCoord J b) W := by
-  obtain ⟨W, hWsub, hWo, hbW⟩ := mem_nhds_iff.1
-    ((baseChart_eventuallyEq J b).and (extChartAt_source_mem_nhds (I := J) b))
-  refine ⟨W, hWo, hbW, fun c hc d hd hcd ↦ ?_⟩
-  refine (extChartAt J b).injOn (hWsub hc).2 (hWsub hd).2 ?_
-  rw [← (hWsub hc).1, ← (hWsub hd).1]
-  exact (modelCoord F).injective hcd
 
 variable (F) in
 /-- The linear forms `w ↦ wᵢ` of the linear coordinates of `F` form a basis of its dual: the
 covector with coordinates `v` is the dot product with `v`, read in the coordinates of `F`. -/
 private noncomputable def coordCovector : (Fin (finrank ℝ F) → ℝ) ≃L[ℝ] (F →L[ℝ] ℝ) :=
   ((dotProductEquiv ℝ (Fin (finrank ℝ F))).trans
-    ((modelCoord F).toLinearEquiv.dualMap.trans
+    ((Module.finBasis ℝ F).equivFunL.toLinearEquiv.dualMap.trans
       LinearMap.toContinuousLinearMap)).toContinuousLinearEquiv
 
 private theorem coordCovector_apply_apply (v : Fin (finrank ℝ F) → ℝ) (w : F) :
-    coordCovector F v w = ∑ i, v i * modelCoord F w i :=
+    coordCovector F v w = ∑ i, v i * (Module.finBasis ℝ F).equivFunL w i :=
   rfl
 
 /-- A linear combination of the base coordinates is a linear form of the base coordinates. -/
-private theorem sum_mul_baseCoord_eq_comp (b : B) (v : Fin (finrank ℝ F) → ℝ) :
-    (fun c ↦ ∑ i, v i * baseCoord J b c i) =
+private theorem sum_mul_chartCoord_eq_comp (b : B) (v : Fin (finrank ℝ F) → ℝ) :
+    (fun c ↦ ∑ i, v i * chartCoord J b c i) =
       ⇑(∑ i, v i • ContinuousLinearMap.proj i : (Fin (finrank ℝ F) → ℝ) →L[ℝ] ℝ) ∘
-        baseCoord J b := by
+        chartCoord J b := by
   funext c
   simp
 
-private theorem contMDiff_sum_mul_baseCoord (b : B) (v : Fin (finrank ℝ F) → ℝ) :
-    ContMDiff J 𝓘(ℝ) ∞ fun c ↦ ∑ i, v i * baseCoord J b c i := by
-  rw [sum_mul_baseCoord_eq_comp]
-  exact ContinuousLinearMap.contDiff _ |>.comp_contMDiff (contMDiff_baseCoord J b)
+private theorem contMDiff_sum_mul_chartCoord (b : B) (v : Fin (finrank ℝ F) → ℝ) :
+    ContMDiff J 𝓘(ℝ) ∞ fun c ↦ ∑ i, v i * chartCoord J b c i := by
+  rw [sum_mul_chartCoord_eq_comp]
+  exact ContinuousLinearMap.contDiff _ |>.comp_contMDiff (contMDiff_chartCoord J b)
 
-/-- In the base coordinates at `b`, the differential at `b` of `∑ i, vᵢ (baseCoord b)ᵢ` is the
+/-- In the base coordinates at `b`, the differential at `b` of `∑ i, vᵢ (chartCoord J b)ᵢ` is the
 covector with coordinates `v`. -/
 private theorem mvfderiv_eq_coordCovector (b : B) (v : Fin (finrank ℝ F) → ℝ) :
-    mvfderiv J (fun c ↦ ∑ i, v i * baseCoord J b c i) b = coordCovector F v := by
+    mvfderiv J (fun c ↦ ∑ i, v i * chartCoord J b c i) b = coordCovector F v := by
   set ψ : (Fin (finrank ℝ F) → ℝ) →L[ℝ] ℝ := ∑ i, v i • ContinuousLinearMap.proj i
   refine ContinuousLinearMap.ext fun w ↦ ?_
-  rw [sum_mul_baseCoord_eq_comp, mvfderiv_comp_apply_of_differentiableAt ψ.differentiableAt
-    ((contMDiff_baseCoord J b).mdifferentiableAt (by simp)), ψ.fderiv,
-    mvfderiv_baseCoord_apply]
+  rw [sum_mul_chartCoord_eq_comp, mvfderiv_comp_apply_of_differentiableAt ψ.differentiableAt
+    ((contMDiff_chartCoord J b).mdifferentiableAt (by simp)), ψ.fderiv,
+    mvfderiv_chartCoord_apply]
   -- `coordCovector F v` is read on the tangent space at `b`.
   change _ = coordCovector F v w
   simp only [ψ, sum_apply, smul_apply, ContinuousLinearMap.proj_apply, smul_eq_mul]
@@ -173,24 +132,12 @@ namespace IsLagrangianFibration
 variable (h : hσ.IsLagrangianFibration J π)
 include h
 
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
-private theorem contMDiff_baseCoord_comp (b : B) :
-    ContMDiff I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) ∞ (baseCoord J b ∘ π) :=
-  (contMDiff_baseCoord J b).comp h.contMDiff
-
-omit [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
-private theorem poissonBracket_baseCoord_comp (b : B) (i j : Fin (finrank ℝ F)) (y : M) :
-    σ.poissonBracket ((baseCoord J b ∘ π) · i) ((baseCoord J b ∘ π) · j) y = 0 :=
-  h.poissonBracket_comp_eq_zero
-    ((contMDiff_pi_module_iff.1 (contMDiff_baseCoord J b) i).mdifferentiableAt (by simp))
-    ((contMDiff_pi_module_iff.1 (contMDiff_baseCoord J b) j).mdifferentiableAt (by simp))
-
 omit [I.Boundaryless] in
-private theorem isCompleteVectorField_baseCoord_comp (hπ : IsProperMap π) (b : B)
+private theorem isCompleteVectorField_chartCoord_comp (hπ : IsProperMap π) (b : B)
     (i : Fin (finrank ℝ F)) :
-    IsCompleteVectorField (σ.hamiltonianVectorField ((baseCoord J b ∘ π) · i)) :=
+    IsCompleteVectorField (σ.hamiltonianVectorField ((chartCoord J b ∘ π) · i)) :=
   h.isCompleteVectorField_hamiltonianVectorField_comp hπ
-    ((contMDiff_pi_module_iff.1 (contMDiff_baseCoord J b) i).of_le (by simp))
+    ((contMDiff_pi_module_iff.1 (contMDiff_chartCoord J b) i).of_le (by simp))
 
 omit [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] [FiniteDimensional ℝ F]
   [IsManifold J ∞ B] [T2Space B] in
@@ -205,24 +152,24 @@ private theorem contMDiff_hamiltonianVectorField_comp {g : B → ℝ} (hg : Cont
 to `M`. -/
 private noncomputable def coordAction (hσc : σ.IsClosed) (hπ : IsProperMap π) (b : B) :
     (Fin (finrank ℝ F) → ℝ) →+ Additive (M ≃ₘ^∞⟮I, I⟯ M) :=
-  (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction (h.contMDiff_baseCoord_comp b)
-    (h.poissonBracket_baseCoord_comp b) (h.isCompleteVectorField_baseCoord_comp hπ b)
+  (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction (h.contMDiff_chartCoord_comp b)
+    (h.poissonBracket_chartCoord_comp b) (h.isCompleteVectorField_chartCoord_comp hπ b)
 
 /-- The vector `v` acts by the time-one map of the flow of `g ∘ π`, for every smooth `g` whose
 differential at `π x` is the covector with coordinates `v`. -/
 private theorem coordAction_apply_eq_globalFlow (hσc : σ.IsClosed) (hπ : IsProperMap π) (b : B)
     (v : Fin (finrank ℝ F) → ℝ) {x : M} {g : B → ℝ} (hg : ContMDiff J 𝓘(ℝ) 2 g)
-    (hgv : mvfderiv J g (π x) = mvfderiv J (fun c ↦ ∑ i, v i * baseCoord J b c i) (π x))
+    (hgv : mvfderiv J g (π x) = mvfderiv J (fun c ↦ ∑ i, v i * chartCoord J b c i) (π x))
     (hv : ContMDiff I I.tangent 1 fun y ↦
       (⟨y, σ.hamiltonianVectorField (g ∘ π) y⟩ : TangentBundle I M))
     (hc : IsCompleteVectorField (σ.hamiltonianVectorField (g ∘ π))) :
     (h.coordAction hσc hπ b v).toMul x = globalFlow _ hv hc 1 x := by
   have hσS : σ.IsSymplectic := ⟨hσc, hσ⟩
-  have hk := contMDiff_sum_mul_baseCoord J b v
+  have hk := contMDiff_sum_mul_chartCoord J b v
   have hvk := h.contMDiff_hamiltonianVectorField_comp (hk.of_le (by simp))
   have hck := hσS.isCompleteVectorField_hamiltonianVectorField_sum
-    (h.contMDiff_baseCoord_comp b) (h.poissonBracket_baseCoord_comp b)
-    (h.isCompleteVectorField_baseCoord_comp hπ b) v
+    (h.contMDiff_chartCoord_comp b) (h.poissonBracket_chartCoord_comp b)
+    (h.isCompleteVectorField_chartCoord_comp hπ b) v
   rw [coordAction, ← one_smul ℝ v, hσS.hamiltonianFlowAction_smul_apply_eq_globalFlow _ _ _ v
     hvk hck]
   exact h.globalFlow_hamiltonianVectorField_comp_eq_of_mvfderiv_eq (hk.of_le (by simp)) hg
@@ -232,7 +179,7 @@ private theorem coordAction_apply_eq_globalFlow (hσc : σ.IsClosed) (hπ : IsPr
 private theorem apply_coordAction_apply (hσc : σ.IsClosed) (hπ : IsProperMap π) (b : B)
     (v : Fin (finrank ℝ F) → ℝ) (x : M) :
     π ((h.coordAction hσc hπ b v).toMul x) = π x := by
-  have hk := contMDiff_sum_mul_baseCoord J b v
+  have hk := contMDiff_sum_mul_chartCoord J b v
   have hvk := h.contMDiff_hamiltonianVectorField_comp (hk.of_le (by simp))
   have hck := h.isCompleteVectorField_hamiltonianVectorField_comp hπ (hk.of_le (by simp))
   rw [h.coordAction_apply_eq_globalFlow hσc hπ b v (hk.of_le (by simp)) rfl hvk hck,
@@ -300,30 +247,21 @@ omit [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] hσc in
 /-- The data of the base coordinates at `b` needed to apply the topological Liouville–Arnold
 theorem to the fibre over `b`: the fibre is the connected component of each of its points in its
 level of the pulled-back coordinates, these points are regular, and the dimensions match. -/
-private theorem baseCoord_comp_spec {b : B} (x : π ⁻¹' {b}) :
-    connectedComponentIn ((baseCoord J b ∘ π) ⁻¹' {(baseCoord J b ∘ π) x}) x = π ⁻¹' {b} ∧
-      (∀ y ∈ connectedComponentIn ((baseCoord J b ∘ π) ⁻¹' {(baseCoord J b ∘ π) x}) x,
-        IsRegularPoint I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) (baseCoord J b ∘ π) y) ∧
+private theorem chartCoord_comp_spec {b : B} (x : π ⁻¹' {b}) :
+    connectedComponentIn ((chartCoord J b ∘ π) ⁻¹' {(chartCoord J b ∘ π) x}) x = π ⁻¹' {b} ∧
+      (∀ y ∈ connectedComponentIn ((chartCoord J b ∘ π) ⁻¹' {(chartCoord J b ∘ π) x}) x,
+        IsRegularPoint I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) (chartCoord J b ∘ π) y) ∧
       2 * Fintype.card (Fin (finrank ℝ F)) = finrank ℝ E := by
-  obtain ⟨W, hWo, hbW, hinj⟩ := exists_isOpen_injOn_baseCoord J b
-  have hxb : π x = b := x.2
-  have hcomp := (h.isConnected_preimage_singleton (π x)).isPreconnected
-    |>.connectedComponentIn_preimage_comp_eq h.contMDiff.continuous hWo (by rwa [hxb]) hinj
-  rw [hxb] at hcomp
-  refine ⟨hcomp, fun y hy ↦ ?_, ?_⟩
-  · rw [hcomp, mem_preimage, mem_singleton_iff] at hy
-    refine IsRegularPoint.comp (isRegularPoint_iff_surjective_mvfderiv.2
-      fun w ↦ ⟨(modelCoord F).symm w, ?_⟩) (isRegularPoint_iff.2 (h.surjective_mfderiv y))
-    rw [hy]
-    exact (mvfderiv_baseCoord_apply J b _).trans ((modelCoord F).apply_symm_apply w)
-  · have : Nonempty M := ⟨x⟩
-    rw [Fintype.card_fin, h.two_mul_finrank]
+  have hcomp := h.connectedComponentIn_preimage_chartCoord_comp_eq x.2
+  refine ⟨hcomp, fun y hy ↦ h.isRegularPoint_chartCoord_comp (by rwa [hcomp] at hy), ?_⟩
+  have : Nonempty M := ⟨x⟩
+  rw [Fintype.card_fin, h.two_mul_finrank]
 
 /-- **The cotangent action is transitive on each fibre.** Any two points of a fibre of a regular
 Lagrangian torus fibration are related by the action of a covector of the base. -/
 theorem exists_cotangentFiberAction_apply_eq {b : B} (x y : π ⁻¹' {b}) :
     ∃ η : TangentSpace J b →L[ℝ] ℝ, (h.cotangentFiberAction hσc h.isProperMap b η).toMul x = y := by
-  obtain ⟨hcomp, hreg, hdim⟩ := h.baseCoord_comp_spec x
+  obtain ⟨hcomp, hreg, hdim⟩ := h.chartCoord_comp_spec x
   have hσS : σ.IsSymplectic := ⟨hσc, hσ⟩
   have hy : (y : M) ∈ range fun v ↦ (h.coordAction hσc h.isProperMap b v).toMul x := by
     rw [IsLagrangianFibration.coordAction, hσS.range_hamiltonianFlowAction_apply _ _ _ hdim hreg,
@@ -366,8 +304,8 @@ private theorem mem_periodLattice_iff_mem_hamiltonianFlowStabilizer {b : B}
     {η : TangentSpace J b →L[ℝ] ℝ} (x : π ⁻¹' {b}) :
     η ∈ h.periodLattice hσc b ↔ (coordCovector F).symm η ∈
       (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowStabilizer
-        (h.contMDiff_baseCoord_comp b) (h.poissonBracket_baseCoord_comp b)
-        (h.isCompleteVectorField_baseCoord_comp h.isProperMap b) x := by
+        (h.contMDiff_chartCoord_comp b) (h.poissonBracket_chartCoord_comp b)
+        (h.isCompleteVectorField_chartCoord_comp h.isProperMap b) x := by
   rw [h.mem_periodLattice_iff hσc x, Subtype.ext_iff,
     h.coe_cotangentFiberAction_apply_eq_coordAction hσc h.isProperMap η x,
     IsSymplectic.mem_hamiltonianFlowStabilizer]
@@ -376,18 +314,18 @@ private theorem mem_periodLattice_iff_mem_hamiltonianFlowStabilizer {b : B}
 /-- **The period lattice is discrete.** -/
 theorem discreteTopology_periodLattice (b : B) : DiscreteTopology (h.periodLattice hσc b) := by
   obtain ⟨x, hx⟩ := (h.isConnected_preimage_singleton b).nonempty
-  obtain ⟨-, hreg, -⟩ := h.baseCoord_comp_spec ⟨x, hx⟩
+  obtain ⟨-, hreg, -⟩ := h.chartCoord_comp_spec ⟨x, hx⟩
   have := (⟨hσc, hσ⟩ : σ.IsSymplectic).discreteTopology_hamiltonianFlowStabilizer
-    (h.contMDiff_baseCoord_comp b) (h.poissonBracket_baseCoord_comp b)
-    (h.isCompleteVectorField_baseCoord_comp h.isProperMap b)
+    (h.contMDiff_chartCoord_comp b) (h.poissonBracket_chartCoord_comp b)
+    (h.isCompleteVectorField_chartCoord_comp h.isProperMap b)
     (hreg x (mem_connectedComponentIn (by simp)))
   -- The coordinates embed the period lattice continuously into the discrete stabilizer.
   refine DiscreteTopology.of_continuous_injective
     (f := fun η : h.periodLattice hσc b ↦ (⟨(coordCovector F).symm η.1,
       (h.mem_periodLattice_iff_mem_hamiltonianFlowStabilizer hσc ⟨x, hx⟩).1 η.2⟩ :
         (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowStabilizer
-          (h.contMDiff_baseCoord_comp b) (h.poissonBracket_baseCoord_comp b)
-          (h.isCompleteVectorField_baseCoord_comp h.isProperMap b) x))
+          (h.contMDiff_chartCoord_comp b) (h.poissonBracket_chartCoord_comp b)
+          (h.isCompleteVectorField_chartCoord_comp h.isProperMap b) x))
     ?_ fun η η' hηη' ↦ Subtype.ext <| (coordCovector F).symm.injective (congrArg Subtype.val hηη')
   exact ((coordCovector F).symm.continuous.comp continuous_subtype_val).subtype_mk _
 
@@ -395,17 +333,17 @@ theorem discreteTopology_periodLattice (b : B) : DiscreteTopology (h.periodLatti
 theorem span_periodLattice_eq_top (b : B) :
     Submodule.span ℝ (h.periodLattice hσc b : Set (TangentSpace J b →L[ℝ] ℝ)) = ⊤ := by
   obtain ⟨x, hx⟩ := (h.isConnected_preimage_singleton b).nonempty
-  obtain ⟨hcomp, hreg, hdim⟩ := h.baseCoord_comp_spec ⟨x, hx⟩
+  obtain ⟨hcomp, hreg, hdim⟩ := h.chartCoord_comp_spec ⟨x, hx⟩
   have hspan := (⟨hσc, hσ⟩ : σ.IsSymplectic).span_hamiltonianFlowStabilizer_eq_top
-    (h.contMDiff_baseCoord_comp b) (h.poissonBracket_baseCoord_comp b)
-    (h.isCompleteVectorField_baseCoord_comp h.isProperMap b) hreg hdim
+    (h.contMDiff_chartCoord_comp b) (h.poissonBracket_chartCoord_comp b)
+    (h.isCompleteVectorField_chartCoord_comp h.isProperMap b) hreg hdim
     (by rw [hcomp]; exact h.isCompact_preimage_singleton b)
   -- The period lattice is the image of the stabilizer under the coordinate isomorphism.
   have himage : (h.periodLattice hσc b : Set (TangentSpace J b →L[ℝ] ℝ)) =
       (coordCovector F).toLinearEquiv.toLinearMap ''
         ((⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowStabilizer
-          (h.contMDiff_baseCoord_comp b) (h.poissonBracket_baseCoord_comp b)
-          (h.isCompleteVectorField_baseCoord_comp h.isProperMap b) x : Set _) := by
+          (h.contMDiff_chartCoord_comp b) (h.poissonBracket_chartCoord_comp b)
+          (h.isCompleteVectorField_chartCoord_comp h.isProperMap b) x : Set _) := by
     ext η
     rw [SetLike.mem_coe, h.mem_periodLattice_iff_mem_hamiltonianFlowStabilizer hσc ⟨x, hx⟩]
     exact ⟨fun hη ↦ ⟨_, hη, (coordCovector F).apply_symm_apply η⟩,
@@ -427,8 +365,8 @@ private noncomputable def coordAddEquiv (b : B) :
 private theorem map_periodLattice_eq_hamiltonianFlowStabilizer {b : B} (x : π ⁻¹' {b}) :
     (h.periodLattice hσc b).map (coordAddEquiv (J := J) b : _ →+ _) =
       (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowStabilizer
-        (h.contMDiff_baseCoord_comp b) (h.poissonBracket_baseCoord_comp b)
-        (h.isCompleteVectorField_baseCoord_comp h.isProperMap b) x := by
+        (h.contMDiff_chartCoord_comp b) (h.poissonBracket_chartCoord_comp b)
+        (h.isCompleteVectorField_chartCoord_comp h.isProperMap b) x := by
   ext v
   refine ⟨fun ⟨η, hη, hηv⟩ ↦ hηv ▸
     (h.mem_periodLattice_iff_mem_hamiltonianFlowStabilizer hσc x).1 hη, fun hv ↦
@@ -443,14 +381,14 @@ the fibre over `b`, the orbit map `η ↦ η • x` of the cotangent action desc
 noncomputable def quotientPeriodLatticeHomeomorph {b : B} (x : π ⁻¹' {b}) :
     (TangentSpace J b →L[ℝ] ℝ) ⧸ h.periodLattice hσc b ≃ₜ π ⁻¹' {b} :=
   let Q := (⟨hσc, hσ⟩ : σ.IsSymplectic).quotientHamiltonianFlowStabilizerHomeomorph
-    (h.contMDiff_baseCoord_comp b) (h.poissonBracket_baseCoord_comp b)
-    (h.isCompleteVectorField_baseCoord_comp h.isProperMap b) (h.baseCoord_comp_spec x).2.2
-    (h.baseCoord_comp_spec x).2.1
+    (h.contMDiff_chartCoord_comp b) (h.poissonBracket_chartCoord_comp b)
+    (h.isCompleteVectorField_chartCoord_comp h.isProperMap b) (h.chartCoord_comp_spec x).2.2
+    (h.chartCoord_comp_spec x).2.1
   let e := ((QuotientAddGroup.congr _ _ (coordAddEquiv b)
     (h.map_periodLattice_eq_hamiltonianFlowStabilizer hσc x)).toEquiv.trans Q.toEquiv).trans
-      (Homeomorph.setCongr (h.baseCoord_comp_spec x).1).toEquiv
+      (Homeomorph.setCongr (h.chartCoord_comp_spec x).1).toEquiv
   -- Composed with the quotient map, `e` is a composite of continuous open maps.
-  have he : e ∘ QuotientAddGroup.mk = Homeomorph.setCongr (h.baseCoord_comp_spec x).1 ∘ Q ∘
+  have he : e ∘ QuotientAddGroup.mk = Homeomorph.setCongr (h.chartCoord_comp_spec x).1 ∘ Q ∘
       QuotientAddGroup.mk ∘ (coordCovector F).symm := rfl
   have hc : Continuous (e ∘ QuotientAddGroup.mk) := by
     rw [he]
@@ -472,9 +410,9 @@ theorem coe_quotientPeriodLatticeHomeomorph_mk {b : B} (x : π ⁻¹' {b})
   rw [h.coe_cotangentFiberAction_apply_eq_coordAction]
   -- Both sides unfold to the orbit map of the coordinate action at `(coordCovector F).symm η`.
   exact (⟨hσc, hσ⟩ : σ.IsSymplectic).coe_quotientHamiltonianFlowStabilizerHomeomorph_mk
-    (h.contMDiff_baseCoord_comp b) (h.poissonBracket_baseCoord_comp b)
-    (h.isCompleteVectorField_baseCoord_comp h.isProperMap b) (h.baseCoord_comp_spec x).2.2
-    (h.baseCoord_comp_spec x).2.1 _
+    (h.contMDiff_chartCoord_comp b) (h.poissonBracket_chartCoord_comp b)
+    (h.isCompleteVectorField_chartCoord_comp h.isProperMap b) (h.chartCoord_comp_spec x).2.2
+    (h.chartCoord_comp_spec x).2.1 _
 
 /-- **The period lattice is cocompact.** -/
 theorem compactSpace_quotient_periodLattice (b : B) :
