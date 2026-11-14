@@ -90,7 +90,7 @@ theorem exists_regular_lineDeriv_ofFun_apply_eq [BorelSpace E]
     (v : E) :
     ∃ ν₁ ν₂ : Measure Ω, ν₁.Regular ∧ ν₂.Regular ∧
       ∀ φ : 𝓓(Ω, ℝ), ∂_{v} (Distribution.ofFun Ω u μ ⊤) φ = ∫ x, φ x ∂ν₁ - ∫ x, φ x ∂ν₂ := by
-  refine (Distribution.forall_exists_abs_le_iff_exists_regular _).1
+  refine (Distribution.hasLocallyFiniteMass_iff_exists_regular _).1
     (Distribution.hasLocallyFiniteMass_def.2 fun K hK hKΩ => ?_)
   obtain ⟨U, hKU, hU⟩ := hu K hK hKΩ
   have hC : 0 ≤ ‖v‖ * (totalVariationOn μ U u).toReal := by positivity
