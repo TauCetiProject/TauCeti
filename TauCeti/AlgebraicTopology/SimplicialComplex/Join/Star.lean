@@ -9,13 +9,17 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.LinkStar
 public import TauCeti.Data.Finset.Partition
+import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Link
+import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Link
 
 /-!
 # Closed stars as joins
 
 The closed star of a face `σ` is the join of the simplex on `σ` with its link. The part of
 that closed star which does not contain `σ` is the join of the boundary of `σ` with its link.
-In particular, this describes the link of the new vertex of a stellar subdivision.
+In particular, this describes the link of the new vertex of a stellar subdivision, and taking a
+further link decomposes links of stellar faces containing the new vertex as joins of simplex
+boundaries with links in `K`.
 
 The join uses disjoint tagged vertex types. The identifications below tag a vertex on the left
 when it belongs to `σ`, and on the right otherwise. This vertex map is injective: untagging is
@@ -128,5 +132,31 @@ theorem map_closedStar_inf_deletion_eq_join (hσ : σ ∈ K) :
     rcases hτ.2.1 with h | h
     · exact (K.isRelLowerSet_faces hσ).1.ne_empty (heq.symm.trans h)
     · exact (mem_simplexBoundary.mp h).2.ne heq
+
+/-- For `ω` avoiding `σ` with `ω ∪ σ ∈ K`, the link of `ω` in the closed-star boundary
+`closedStar K σ ⊓ deletion K σ` is, after tagging by membership in `σ`, the join of
+`simplexBoundary (σ \ ω)` with `link K (ω ∪ σ)`. -/
+theorem map_link_closedStar_inf_deletion_eq_join {ω : Finset ι} (hσ : σ ∈ K)
+    (hnot : ¬ σ ⊆ ω) (hface : ω ∪ σ ∈ K) :
+    (link (closedStar K σ ⊓ deletion K σ) ω).map (partitionEmbedding (· ∈ σ)) =
+      join (simplexBoundary (σ \ ω)) (link K (ω ∪ σ)) := by
+  rw [map_link _ (partitionEmbedding (· ∈ σ)).injective,
+    map_closedStar_inf_deletion_eq_join hσ, image_partitionEmbedding,
+    filter_mem_eq_inter, filter_notMem_eq_sdiff]
+  have hs : ω ∩ σ = ∅ ∨ ω ∩ σ ∈ simplexBoundary σ := by
+    by_cases h : ω ∩ σ = ∅
+    · exact Or.inl h
+    · refine Or.inr (mem_simplexBoundary.mpr ⟨nonempty_iff_ne_empty.mpr h, ?_⟩)
+      exact Finset.ssubset_iff_subset_ne.mpr
+        ⟨inter_subset_right, fun heq => hnot (inter_eq_right.mp heq)⟩
+  have ht : ω \ σ = ∅ ∨ ω \ σ ∈ link K σ := by
+    by_cases h : ω \ σ = ∅
+    · exact Or.inl h
+    · refine Or.inr (mem_link_nonempty.mpr ⟨nonempty_iff_ne_empty.mpr h, sdiff_disjoint, ?_⟩)
+      rwa [sdiff_union_self_eq_union]
+  have hunion : σ ∪ ω \ σ = ω ∪ σ := by
+    rw [union_sdiff_self_eq_union, union_comm]
+  rw [link_join hs ht, link_simplexBoundary inter_subset_right, sdiff_inter_self_right σ ω,
+    link_link disjoint_sdiff_self_right, hunion]
 
 end PreAbstractSimplicialComplex

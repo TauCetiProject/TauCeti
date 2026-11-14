@@ -95,6 +95,19 @@ vertex. -/
 theorem notMem_of_singleton_notMem (hv : ({v} : Finset ι) ∉ K) (hσ : σ ∈ K) : v ∉ σ :=
   fun h => hv (singleton_mem_of_mem hσ h)
 
+/-- A singleton `{y}` is a face of `K.map f` if and only if `y` is the image of some vertex
+`{v} ∈ K`. -/
+theorem singleton_mem_map_iff {κ : Type*} [DecidableEq κ] {f : ι → κ} {y : κ} :
+    ({y} : Finset κ) ∈ K.map f ↔ ∃ v : ι, ({v} : Finset ι) ∈ K ∧ f v = y := by
+  rw [mem_map_iff]
+  constructor
+  · rintro ⟨σ, hσ, himg⟩
+    obtain ⟨v, hv⟩ := (K.isRelLowerSet_faces hσ).1
+    exact ⟨v, singleton_mem_of_mem hσ hv,
+      Finset.mem_singleton.mp (himg ▸ Finset.mem_image_of_mem f hv)⟩
+  · rintro ⟨v, hv, rfl⟩
+    exact ⟨{v}, hv, Finset.image_singleton f v⟩
+
 end PreAbstractSimplicialComplex
 
 namespace TauCeti.AbstractSimplicialComplex

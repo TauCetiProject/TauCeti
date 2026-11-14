@@ -12,14 +12,18 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Star
 /-!
 # Vertex stars in combinatorial manifolds
 
-The closed star of a vertex in a combinatorial `n`-manifold, with its vertices tagged according
-to whether they are the apex, is a combinatorial `n`-ball. In positive dimension the star is
-the join of the apex with its sphere-or-ball link. In dimension zero the closed star is just
-the vertex itself.
+The closed star of a vertex in a combinatorial `n`-manifold is a combinatorial `n`-ball. In
+positive dimension the star, with vertices tagged according to whether they are the apex, is the
+join of the apex with its sphere-or-ball link; in dimension zero the closed star is the vertex
+itself. Reflecting along the injective tagging `partitionEmbedding` gives the untagged ball
+statement directly on `closedStar K {v}`.
 
-This gives a standard ball model up to stellar moves for the finite local neighbourhoods used
-to construct manifold charts. The tagging agrees with `map_closedStar_eq_join` and is an
-injective relabeling, so distinct vertices remain distinct.
+## Main results
+
+* `PreAbstractSimplicialComplex.IsCombinatorialManifold.isCombinatorialBall_map_closedStar`: the
+  apex-tagged closed vertex star is a combinatorial `n`-ball.
+* `PreAbstractSimplicialComplex.IsCombinatorialManifold.isCombinatorialBall_closedStar`: the
+  closed star `closedStar K {v}` itself is a combinatorial `n`-ball.
 
 ## References
 
@@ -53,5 +57,13 @@ theorem IsCombinatorialManifold.isCombinatorialBall_map_closedStar
       · simpa only [map_join_swap, Nat.add_zero] using
           (hs.join_ball hpoint).map Sum.swap (Equiv.sumComm ι ι).injective
       · simpa only [Nat.zero_add] using hpoint.join hb
+
+/-- The closed star of every vertex in a combinatorial `n`-manifold is a combinatorial `n`-ball. -/
+theorem IsCombinatorialManifold.isCombinatorialBall_closedStar
+    (h : IsCombinatorialManifold K n) {v : ι} (hv : ({v} : Finset ι) ∈ K) :
+    IsCombinatorialBall (closedStar K {v}) n :=
+  (isCombinatorialBall_map_iff _
+    (TauCeti.partitionEmbedding (· ∈ ({v} : Finset ι))).injective).mp
+    (h.isCombinatorialBall_map_closedStar hv)
 
 end PreAbstractSimplicialComplex

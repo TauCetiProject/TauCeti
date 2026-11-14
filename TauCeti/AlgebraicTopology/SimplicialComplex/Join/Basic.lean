@@ -34,6 +34,8 @@ The construction follows Rourke--Sanderson, *Introduction to Piecewise-Linear To
 * `mem_join_iff`: membership is characterized by the two projected faces.
 * `disjSum_mem_join_iff`: a disjoint union is a face exactly when each nonempty component is.
 * `join_mono`: join is monotone in both arguments.
+* `bot_join` / `join_bot`: joining with the void complex tags the other factor by `Sum.inr` or
+  `Sum.inl`.
 -/
 
 public section
@@ -158,6 +160,35 @@ theorem map_join_swap [DecidableEq α] [DecidableEq β] :
     · simpa only [mem_join_iff, Finset.image_nonempty, Finset.toLeft_image_swap,
         Finset.toRight_image_swap, and_comm, and_left_comm] using hτ
     · simp [Finset.image_image]
+
+/-- Joining the void complex on the left tags the right factor by `Sum.inr`. -/
+@[simp]
+theorem bot_join [DecidableEq α] [DecidableEq β] :
+    join (⊥ : PreAbstractSimplicialComplex α) L = L.map Sum.inr := by
+  refine SetLike.ext fun τ => ?_
+  rw [mem_map_iff]
+  constructor
+  · intro hτ
+    obtain ⟨hne, hl, hr⟩ := mem_join_iff.mp hτ
+    have hl' : τ.toLeft = ∅ := hl.resolve_right False.elim
+    have hτeq : τ = τ.toRight.image Sum.inr := by
+      ext (x | x) <;> simp [← Finset.mem_toLeft, ← Finset.mem_toRight, hl']
+    have hrne : τ.toRight ≠ ∅ := by
+      rintro h0
+      rw [h0, image_empty] at hτeq
+      exact hne.ne_empty hτeq
+    exact ⟨τ.toRight, hr.resolve_left hrne, hτeq.symm⟩
+  · rintro ⟨t, ht, rfl⟩
+    convert map_inr_mem_join (K := ⊥) ht
+    ext x
+    simp
+
+/-- Joining the void complex on the right tags the left factor by `Sum.inl`. -/
+@[simp]
+theorem join_bot [DecidableEq α] [DecidableEq β] :
+    join K (⊥ : PreAbstractSimplicialComplex β) = K.map Sum.inl := by
+  have h := congrArg (fun C => C.map Sum.swap) (bot_join (α := β) (L := K))
+  simpa only [map_join_swap, map_map, Function.comp_def, Sum.swap_inr] using h
 
 end PreAbstractSimplicialComplex
 

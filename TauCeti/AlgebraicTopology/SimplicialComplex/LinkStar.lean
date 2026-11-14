@@ -62,6 +62,10 @@ the link of a simplex need not contain every vertex even when `K` does.
   `PreAbstractSimplicialComplex.deletion_deletion_singleton_of_mem`: deleting a face `σ` preserves
   domination of `v` by a vertex `w ∉ σ`, and does not affect a later deletion of `v ∈ σ`.
 * monotonicity of all three constructions in `K`.
+* `PreAbstractSimplicialComplex.closedStar_singleton_inf_deletion_singleton`: for a singleton
+  `{v}`, `closedStar K {v} ⊓ deletion K {v} = link K {v}`.
+* `PreAbstractSimplicialComplex.map_closedStar` / `map_link`: injective vertex maps commute with
+  `closedStar` and `link`.
 -/
 
 public section
@@ -395,6 +399,53 @@ theorem isCone_deletion (h : IsCone K v) (hσ : σ.Nonempty) (hv : v ∉ σ) :
       hω.2 ((Finset.subset_insert_iff_of_notMem hv).mp hsub)⟩
 
 end IsCone
+
+/-- For a singleton `{v}`, the boundary `closedStar K {v} ⊓ deletion K {v}` of its closed star is
+simply its link `link K {v}`: avoiding `{v}` is disjointness from `{v}`. -/
+theorem closedStar_singleton_inf_deletion_singleton (v : ι) :
+    closedStar K {v} ⊓ deletion K {v} = link K {v} := by
+  refine SetLike.ext fun ρ => ?_
+  simp only [mem_inf, mem_closedStar, mem_deletion, singleton_subset_iff, mem_link,
+    disjoint_singleton_right]
+  tauto
+
+/-- An injective vertex map commutes with taking the closed star of a face. -/
+@[simp]
+theorem map_closedStar {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
+    (closedStar K σ).map f = closedStar (K.map f) (σ.image f) := by
+  refine SetLike.ext fun ω => ?_
+  constructor
+  · rintro ⟨ρ, hρ, rfl⟩
+    obtain ⟨hne, hρσ⟩ := mem_closedStar_nonempty.mp hρ
+    refine mem_closedStar_nonempty.mpr ⟨hne.image f, ?_⟩
+    rw [← image_union]
+    exact mem_map_iff.mpr ⟨ρ ∪ σ, hρσ, rfl⟩
+  · intro hω
+    obtain ⟨hωK, hωσ⟩ := mem_closedStar.mp hω
+    obtain ⟨ρ, hρK, rfl⟩ := mem_map_iff.mp hωK
+    rw [← image_union] at hωσ
+    obtain ⟨η, hηK, hη⟩ := mem_map_iff.mp hωσ
+    obtain rfl := (image_injective hf) hη
+    exact mem_map_iff.mpr ⟨ρ, mem_closedStar.mpr ⟨hρK, hηK⟩, rfl⟩
+
+/-- An injective vertex map commutes with taking the link of a face. -/
+@[simp]
+theorem map_link {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
+    (link K σ).map f = link (K.map f) (σ.image f) := by
+  refine SetLike.ext fun ω => ?_
+  constructor
+  · rintro ⟨ρ, hρ, rfl⟩
+    obtain ⟨hne, hdis, hρσ⟩ := mem_link_nonempty.mp hρ
+    refine mem_link_nonempty.mpr ⟨hne.image f, (disjoint_image hf).mpr hdis, ?_⟩
+    rw [← image_union]
+    exact mem_map_iff.mpr ⟨ρ ∪ σ, hρσ, rfl⟩
+  · intro hω
+    obtain ⟨hωK, hdis, hωσ⟩ := mem_link.mp hω
+    obtain ⟨ρ, hρK, rfl⟩ := mem_map_iff.mp hωK
+    rw [← image_union] at hωσ
+    obtain ⟨η, hηK, hη⟩ := mem_map_iff.mp hωσ
+    obtain rfl := (image_injective hf) hη
+    exact mem_map_iff.mpr ⟨ρ, mem_link.mpr ⟨hρK, (disjoint_image hf).mp hdis, hηK⟩, rfl⟩
 
 end PreAbstractSimplicialComplex
 
