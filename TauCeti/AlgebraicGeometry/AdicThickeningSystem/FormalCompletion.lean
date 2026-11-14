@@ -40,6 +40,8 @@ same reductions, so this is the formal spectrum `Spf R̂` of the adic ring `R̂`
 * `AlgebraicGeometry.Scheme.formalCompletion`: the adic thickening system `n ↦ V(I ^ (n + 1))`.
 * `AlgebraicGeometry.Scheme.formalCompletion.toScheme`: the closed immersions
   `V(I ^ (n + 1)) ⟶ X`.
+* `AlgebraicGeometry.Scheme.formalCompletion.toOfScheme`: the canonical morphism from `X/V(I)` to
+  the constant adic thickening system of `X`.
 * `AlgebraicGeometry.Scheme.formalCompletion.map`: functoriality in pairs `(X, I)`.
 * `AlgebraicGeometry.Scheme.formalCompletion.botIso`: the formal completion along `V(⊥)` is the
   constant system of `X`.
@@ -173,6 +175,16 @@ theorem ι_toScheme (n : ℕ) :
     (X.formalCompletion I).ι n ≫ toScheme X I (n + 1) = toScheme X I n :=
   inclusion_subschemeι _
 
+/-- The canonical morphism `X/V(I) ⟶ X` from the formal completion to the constant adic thickening
+system of `X`, with components the closed immersions `toScheme X I n : V(I ^ (n + 1)) ⟶ X`. -/
+noncomputable def toOfScheme : X.formalCompletion I ⟶ AdicThickeningSystem.ofScheme.obj X where
+  app n := toScheme X I n
+  naturality n := (ι_toScheme X I n).trans (Category.comp_id _).symm
+
+@[simp]
+theorem toOfScheme_app (n : ℕ) : (toOfScheme X I).app n = toScheme X I n :=
+  (rfl)
+
 /-- The ideal sheaf of `V(I ^ (n + 1))` in `V(I ^ (n + 2))` is the inverse image of `I ^ (n + 1)`
 along `V(I ^ (n + 2)) ⟶ X`. -/
 @[simp]
@@ -230,6 +242,12 @@ noncomputable def map (f : X ⟶ Y) (hf : J.comap f ≤ I) :
 theorem map_app_toScheme (f : X ⟶ Y) (hf : J.comap f ≤ I) (n : ℕ) :
     (map f hf).app n ≫ toScheme Y J n = toScheme X I n ≫ f :=
   subschemeMap_subschemeι _ _ _ (pow_le_map_pow hf (n + 1))
+
+@[reassoc (attr := simp)]
+theorem map_toOfScheme (f : X ⟶ Y) (hf : J.comap f ≤ I) :
+    map f hf ≫ toOfScheme Y J = toOfScheme X I ≫ AdicThickeningSystem.ofScheme.map f := by
+  ext n
+  exact map_app_toScheme f hf n
 
 @[simp]
 theorem map_id (h : I.comap (𝟙 X) ≤ I) : map (𝟙 X) h = 𝟙 (X.formalCompletion I) := by
