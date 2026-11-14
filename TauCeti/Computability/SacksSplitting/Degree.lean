@@ -8,7 +8,6 @@ module
 public import TauCeti.Computability.SacksSplitting.Low
 public import TauCeti.Computability.Join
 import TauCeti.Computability.Split
-import TauCeti.Computability.Hierarchy.One
 
 /-!
 # Consequences of Sacks splitting for c.e. degrees
@@ -34,17 +33,18 @@ the classical structural facts about c.e. degrees. Degrees are those of Mathlib'
 
 ## Main results
 
-* `TauCeti.SacksSplitting.exists_low_incomparable_degrees_sup_eq`: the degree of a noncomputable
-  c.e. set is the supremum of two incomparable low c.e. degrees strictly below it.
-* `TauCeti.SacksSplitting.exists_low_degrees_sup_eq`: every c.e. degree is the supremum of two low
-  c.e. degrees.
-* `TauCeti.SacksSplitting.exists_low_degree_mem_Ioo`: no nonzero c.e. degree is minimal.
-* `TauCeti.SacksSplitting.exists_split_jump_empty_incomparable_half`,
-  `TauCeti.SacksSplitting.exists_low_incomparable_degree`: every nonzero incomplete c.e. degree is
-  incomparable with some low c.e. degree.
-* `TauCeti.SacksSplitting.exists_low_join_not_low`,
-  `TauCeti.SacksSplitting.not_forall_jump_join_turingReducible`: the join of two low c.e. sets need
-  not be low, and the jump does not distribute over joins.
+* `TauCeti.exists_split_low_incomparable`: a noncomputable c.e. set splits into two disjoint,
+  Turing incomparable, low c.e. sets, each strictly Turing below it;
+  `TauCeti.exists_low_incomparable_degrees_sup_eq`: so the degree of a noncomputable c.e. set is
+  the supremum of two incomparable low c.e. degrees strictly below it.
+* `TauCeti.exists_low_degrees_sup_eq`: every c.e. degree is the supremum of two low c.e. degrees.
+* `TauCeti.exists_low_degree_mem_Ioo`: no nonzero c.e. degree is minimal.
+* `TauCeti.exists_split_jump_empty_incomparable_half`,
+  `TauCeti.exists_low_incomparable_degree`: every nonzero incomplete c.e. degree is incomparable
+  with some low c.e. degree.
+* `TauCeti.exists_low_join_not_low`, `TauCeti.not_forall_jump_join_turingReducible`: the halting
+  set splits into two low c.e. sets whose join is not low, and the jump does not distribute over
+  joins.
 
 ## References
 
@@ -54,9 +54,28 @@ the classical structural facts about c.e. degrees. Degrees are those of Mathlib'
 
 public section
 
-namespace TauCeti.SacksSplitting
+namespace TauCeti
+
+open SacksSplitting
 
 variable {B : Set ℕ}
+
+/-- **Splitting a noncomputable c.e. set into incomparable low halves.** A noncomputable c.e. set
+`B` is the disjoint union of two low c.e. sets `A₀` and `A₁`, each strictly Turing below `B` and
+Turing incomparable with the other, whose join `A₀ ⊕ A₁` is Turing equivalent to `B`. -/
+theorem exists_split_low_incomparable (hB : REPred (· ∈ B)) (hnc : ¬ComputablePred (· ∈ B)) :
+    ∃ A₀ A₁ : Set ℕ, REPred (· ∈ A₀) ∧ REPred (· ∈ A₁) ∧ Disjoint A₀ A₁ ∧ A₀ ∪ A₁ = B ∧
+      A₀.Low ∧ A₁.Low ∧
+      TuringReducible A₀.oracle B.oracle ∧ ¬TuringReducible B.oracle A₀.oracle ∧
+      TuringReducible A₁.oracle B.oracle ∧ ¬TuringReducible B.oracle A₁.oracle ∧
+      ¬TuringReducible A₀.oracle A₁.oracle ∧ ¬TuringReducible A₁.oracle A₀.oracle ∧
+      TuringEquivalent (A₀.join A₁).oracle B.oracle := by
+  obtain ⟨A₀, A₁, h₀, h₁, hd, rfl, hl₀, hl₁, hn₀, hn₁⟩ :=
+    exists_split_low_not_turingReducible hB hB hnc
+  refine ⟨A₀, A₁, h₀, h₁, hd, rfl, hl₀, hl₁, hd.turingReducible_union_left h₀ h₁, hn₀,
+    hd.turingReducible_union_right h₀ h₁, hn₁, ?_, ?_, (hd.turingEquivalent_union_join h₀ h₁).symm⟩
+  · exact fun h => hn₁ <| Set.union_turingReducible h (.refl _)
+  · exact fun h => hn₀ <| Set.union_turingReducible (.refl _) h
 
 /-- **Splitting a noncomputable c.e. degree.** The degree of a noncomputable c.e. set `B` is the
 supremum of two incomparable low c.e. degrees, each strictly below the degree of `B`. -/
@@ -74,16 +93,14 @@ theorem exists_low_incomparable_degrees_sup_eq (hB : REPred (· ∈ B))
       toAntisymmetrization TuringReducible A₀.oracle ⊔
         toAntisymmetrization TuringReducible A₁.oracle =
           toAntisymmetrization TuringReducible B.oracle := by
-  obtain ⟨A₀, A₁, h₀, h₁, hd, rfl, hl₀, hl₁, hn₀, hn₁⟩ :=
-    exists_split_low_not_turingReducible hB hB hnc
-  have hsup := hd.degree_union_eq_sup h₀ h₁
-  refine ⟨A₀, A₁, h₀, h₁, hl₀, hl₁, ?_, ?_, ?_, ?_, hsup.symm⟩
+  obtain ⟨A₀, A₁, h₀, h₁, hd, rfl, hl₀, hl₁, hr₀, hn₀, hr₁, hn₁, h₀₁, h₁₀, -⟩ :=
+    exists_split_low_incomparable hB hnc
+  refine ⟨A₀, A₁, h₀, h₁, hl₀, hl₁, ?_, ?_, mt turingDegree_le_iff.1 h₀₁,
+    mt turingDegree_le_iff.1 h₁₀, (hd.degree_union_eq_sup h₀ h₁).symm⟩
   · rw [lt_iff_le_not_ge, turingDegree_le_iff, turingDegree_le_iff]
-    exact ⟨hd.turingReducible_union_left h₀ h₁, hn₀⟩
+    exact ⟨hr₀, hn₀⟩
   · rw [lt_iff_le_not_ge, turingDegree_le_iff, turingDegree_le_iff]
-    exact ⟨hd.turingReducible_union_right h₀ h₁, hn₁⟩
-  · exact fun h => hn₁ <| turingDegree_le_iff.1 <| hsup.trans_le (sup_le h le_rfl)
-  · exact fun h => hn₀ <| turingDegree_le_iff.1 <| hsup.trans_le (sup_le le_rfl h)
+    exact ⟨hr₁, hn₁⟩
 
 /-- **Every c.e. degree is the supremum of two low c.e. degrees.** No noncomputability is assumed
 of the c.e. set `B`; it is split against the halting set `(∅ : Set ℕ).jump`. -/
@@ -93,7 +110,7 @@ theorem exists_low_degrees_sup_eq (hB : REPred (· ∈ B)) :
         toAntisymmetrization TuringReducible A₁.oracle =
           toAntisymmetrization TuringReducible B.oracle := by
   obtain ⟨A₀, A₁, h₀, h₁, hd, rfl, hl₀, hl₁, -, -⟩ :=
-    exists_split_low_not_turingReducible hB ArithmeticalHierarchy.rePred_mem_jump_empty
+    exists_split_low_not_turingReducible hB Set.rePred_mem_jump_empty
       (Set.not_computablePred_mem_jump ∅)
   exact ⟨A₀, A₁, h₀, h₁, hl₀, hl₁, (hd.degree_union_eq_sup h₀ h₁).symm⟩
 
@@ -123,7 +140,7 @@ theorem exists_split_jump_empty_incomparable_half (hB : REPred (· ∈ B))
       ¬TuringReducible B.oracle A₀.oracle ∧ ¬TuringReducible B.oracle A₁.oracle ∧
       (¬TuringReducible A₀.oracle B.oracle ∨ ¬TuringReducible A₁.oracle B.oracle) := by
   obtain ⟨A₀, A₁, h₀, h₁, hd, hU, hl₀, hl₁, hn₀, hn₁⟩ :=
-    exists_split_low_not_turingReducible ArithmeticalHierarchy.rePred_mem_jump_empty hB hnc
+    exists_split_low_not_turingReducible Set.rePred_mem_jump_empty hB hnc
   refine ⟨A₀, A₁, h₀, h₁, hd, hU, hl₀, hl₁, hn₀, hn₁, not_and_or.1 fun h => hK ?_⟩
   rw [← hU]
   exact Set.union_turingReducible h.1 h.2
@@ -142,15 +159,16 @@ theorem exists_low_incomparable_degree (hB : REPred (· ∈ B)) (hnc : ¬Computa
   · exact ⟨A₀, h₀, hl₀, mt turingDegree_le_iff.1 h, mt turingDegree_le_iff.1 hn₀⟩
   · exact ⟨A₁, h₁, hl₁, mt turingDegree_le_iff.1 h, mt turingDegree_le_iff.1 hn₁⟩
 
-/-- **The join of two low c.e. sets need not be low.** The halves of a splitting of the halting set
-`(∅ : Set ℕ).jump` are low c.e. sets whose join has the degree of the halting set. -/
+/-- **The join of two low c.e. sets need not be low.** The halting set `(∅ : Set ℕ).jump` is the
+disjoint union of two low c.e. sets whose join has the degree of the halting set, and so is not
+low. -/
 theorem exists_low_join_not_low :
-    ∃ A₀ A₁ : Set ℕ, REPred (· ∈ A₀) ∧ REPred (· ∈ A₁) ∧ A₀.Low ∧ A₁.Low ∧
-      ¬(A₀.join A₁).Low := by
-  have hK := ArithmeticalHierarchy.rePred_mem_jump_empty
+    ∃ A₀ A₁ : Set ℕ, REPred (· ∈ A₀) ∧ REPred (· ∈ A₁) ∧ Disjoint A₀ A₁ ∧
+      A₀ ∪ A₁ = (∅ : Set ℕ).jump ∧ A₀.Low ∧ A₁.Low ∧ ¬(A₀.join A₁).Low := by
+  have hK := Set.rePred_mem_jump_empty
   obtain ⟨A₀, A₁, h₀, h₁, hd, hU, hl₀, hl₁, -, -⟩ :=
     exists_split_low_not_turingReducible hK hK (Set.not_computablePred_mem_jump ∅)
-  refine ⟨A₀, A₁, h₀, h₁, hl₀, hl₁, ?_⟩
+  refine ⟨A₀, A₁, h₀, h₁, hd, hU, hl₀, hl₁, ?_⟩
   rw [← Set.low_congr (hd.turingEquivalent_union_join h₀ h₁), hU]
   exact Set.not_low_jump ∅
 
@@ -161,9 +179,9 @@ theorem not_forall_jump_join_turingReducible :
     ¬∀ A₀ A₁ : Set ℕ,
       TuringReducible (A₀.join A₁).jump.oracle (A₀.jump.join A₁.jump).oracle := by
   intro h
-  obtain ⟨A₀, A₁, -, -, hl₀, hl₁, hn⟩ := exists_low_join_not_low
+  obtain ⟨A₀, A₁, -, -, -, -, hl₀, hl₁, hn⟩ := exists_low_join_not_low
   exact hn <| Set.low_iff_jump_turingReducible.2 <|
     (h A₀ A₁).trans (Set.join_turingReducible (Set.low_iff_jump_turingReducible.1 hl₀)
       (Set.low_iff_jump_turingReducible.1 hl₁))
 
-end TauCeti.SacksSplitting
+end TauCeti

@@ -125,10 +125,6 @@ theorem isSigma_one_jump : IsSigma Z 1 (· ∈ Z.jump) :=
   isSigma_one_iff_exists_recursiveIn_domain.2
     ⟨_, RecursiveIn.iff_nat.2 Z.recursiveIn_eval_diag, fun _ => Set.mem_jump⟩
 
-/-- The halting set `(∅ : Set ℕ).jump` is c.e. -/
-theorem rePred_mem_jump_empty : REPred (· ∈ (∅ : Set ℕ).jump) :=
-  isSigma_one_empty_iff_rePred.1 isSigma_one_jump
-
 /-- Every relative Σ⁰₁ set reduces one-one to the relative jump. -/
 theorem IsSigma.oneOneReducible_jump (h : IsSigma Z 1 p) :
     OneOneReducible p (· ∈ Z.jump) := by
