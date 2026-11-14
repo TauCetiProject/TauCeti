@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Operator.Banach
-public import Mathlib.Analysis.SpecificLimits.Basic
 public import Mathlib.Order.Filter.EventuallyConst
-public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
-public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
+import Mathlib.Analysis.Normed.Group.InfiniteSum
+import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.Topology.Algebra.InfiniteSum.Module
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
 # The separating space of a linear map
