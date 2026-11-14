@@ -51,9 +51,10 @@ multiplication by the transposed matrix.
   bootstrap. If `x` is smooth and its coordinates have bounded derivatives through order `k`, a
   weak `L²` solution of `L_x y = f` with `f ∈ H^k` lies in `H^(k+1)`. The multiplication by the
   coefficients of `L_x - L₀` preserves `H^k` (`mulVec_mem_sobolevFields_natCast`).
-* `mem_sobolevFields_one_of_mem_framedFieldSpace`: a continuous field of `A_m^s`, `s > 1`, is
-  bounded (`exists_norm_le_of_mem_framedFieldSpace`), so there weak `L²` solutions of `L_x y = f`
-  with `f ∈ L²`, in particular the weak `L²` kernel of `L_x`, lie in `H¹`.
+* `mem_sobolevFields_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedAdjoint_eq`: a
+  continuous field of `A_m^s`, `s > 1`, is bounded (`exists_norm_le_of_mem_framedFieldSpace`), so
+  there weak `L²` solutions of `L_x y = f` with `f ∈ L²`, in particular the weak `L²` kernel of
+  `L_x`, lie in `H¹`.
 * `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields`: at a
   `C¹` vortex of `A_m^s`, `s > 1`, the weak right inverse `Q` takes values in `H¹`.
 * `mem_sobolevFields_add_one_of_integral_inner_gaugeFixedOperator_vacuumField_eq`,
@@ -63,6 +64,9 @@ multiplication by the transposed matrix.
   every smooth compactly supported test field `v`. With `g = 0` they show that the weak `L²`
   cokernel of `L_x` lies in `H¹` at an essentially bounded measurable field, and in `H^(k+1)` at a
   smooth field whose coordinates have bounded derivatives through order `k`.
+* `mem_sobolevFields_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedOperator_eq`: at a
+  continuous field of `A_m^s`, `s > 1`, weak `L²` solutions of `L_x* η = g` with `g ∈ L²`, in
+  particular the weak `L²` cokernel of `L_x`, lie in `H¹`.
 
 These are regularity statements for weak solutions. The Fredholm property of `L_x` between
 Sobolev spaces and the dimension of its kernel are not treated here.
@@ -95,33 +99,13 @@ private theorem continuous_gaugeFixedZerothOrderMatrix_apply (i j : Fin 4) :
   have h (a : Fin 4) : Continuous fun w : EuclideanSpace ℝ (Fin 4) ↦ w a := by fun_prop
   fin_cases i <;> fin_cases j <;> first | exact continuous_const | exact h _ | exact (h _).neg
 
-/-- The zeroth-order term with coefficient matrix `A w` at a field with value `w`, applied to a
-variation with value `v`. For `A = gaugeFixedZerothOrderMatrix` this is `gaugeFixedZerothOrder`,
-the difference `L_x - L₀`; for the transposed matrix it is the difference `L_x* - L₀*`. Below,
-every entry of `A w` is an entry of `gaugeFixedZerothOrderMatrix w`. -/
-private def zerothOrder (A : EuclideanSpace ℝ (Fin 4) → Matrix (Fin 4) (Fin 4) ℝ)
-    (w v : EuclideanSpace ℝ (Fin 4)) : EuclideanSpace ℝ (Fin 4) :=
-  WithLp.toLp 2 fun i ↦ ∑ j, A w i j * v j
-
-/-- For the matrix of `gaugeFixedZerothOrder`, `zerothOrder` is `gaugeFixedZerothOrder`. -/
-private theorem zerothOrder_gaugeFixedZerothOrderMatrix :
-    zerothOrder gaugeFixedZerothOrderMatrix = gaugeFixedZerothOrder :=
-  rfl
-
-/-- The operator `L_x` is `L₀` plus multiplication by `gaugeFixedZerothOrder (x z - vacuumField z)`
-(`gaugeFixedOperator_eq_add_gaugeFixedZerothOrder`). Tested against a value `v`, this zeroth-order
-term moves to `v` with the transposed matrix, which is the difference `L_x* - L₀*`. -/
-private theorem inner_gaugeFixedOperator_eq_add_inner_zerothOrder
-    (x η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) (v : EuclideanSpace ℝ (Fin 4)) :
-    ⟪v, gaugeFixedOperator x η z⟫ = ⟪v, gaugeFixedOperator vacuumField η z⟫ +
-      ⟪zerothOrder (fun w ↦ (gaugeFixedZerothOrderMatrix w).transpose) (x z - vacuumField z) v,
-        η z⟫ := by
-  rw [gaugeFixedOperator_eq_add_gaugeFixedZerothOrder x vacuumField, inner_add_right]
-  congr 1
-  simp only [zerothOrder, gaugeFixedZerothOrder, PiLp.inner_apply, RCLike.inner_apply,
-    conj_trivial, Matrix.transpose_apply, Finset.mul_sum, Finset.sum_mul]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+/-- A matrix applied to a vector of `ℝ⁴`, in components: the form of the Sobolev multiplier
+lemma `mulVec_mem_sobolevFields_natCast`. -/
+private theorem toEuclideanLin_apply_eq_toLp (B : Matrix (Fin 4) (Fin 4) ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    B.toEuclideanLin v = WithLp.toLp 2 fun i ↦ ∑ j, B i j * v j := by
+  ext i
+  simp [Matrix.toLpLin_apply, Matrix.mulVec, dotProduct]
 
 /-! ### Real `L²` fields as tempered fields -/
 
@@ -213,14 +197,14 @@ private theorem memLp_zerothOrder
     (hA : ∀ i j, ∃ a b, ∀ w, A w i j = gaugeFixedZerothOrderMatrix w a b)
     {x y : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : AEStronglyMeasurable x volume) {C : ℝ}
     (hC : ∀ᵐ z ∂volume, ‖x z‖ ≤ C) (hy : MemLp y 2 volume) :
-    MemLp (fun z ↦ zerothOrder A (x z - vacuumField z) (y z)) 2 volume := by
+    MemLp (fun z ↦ (A (x z - vacuumField z)).toEuclideanLin (y z)) 2 volume := by
   have hw : AEStronglyMeasurable (fun z ↦ x z - vacuumField z) volume :=
     hx.sub (by rw [show vacuumField = _ from funext vacuumField_apply]; fun_prop)
   have hwC (z : ℂ) (hz : ‖x z‖ ≤ C) : ‖x z - vacuumField z‖ ≤ C + ‖vacuumField 0‖ := by
     rw [vacuumField_apply z, ← vacuumField_apply 0]
     exact (norm_sub_le _ _).trans (by gcongr)
   refine memLp_piLp_iff.2 fun i ↦ ?_
-  simp only [zerothOrder]
+  simp only [toEuclideanLin_apply_eq_toLp]
   refine memLp_finsetSum _ fun j _ ↦ ?_
   obtain ⟨a, b, hab⟩ := hA i j
   simp only [hab]
@@ -233,18 +217,18 @@ private theorem memLp_zerothOrder
 
 /-- If `∫ ⟪y, K x η⟫ = ∫ ⟪f, η⟫` for a test field `η`, then
 `∫ ⟪y, K vacuumField η⟫ = ∫ ⟪f - Z y, η⟫`, where `Z` is the zeroth-order term
-`zerothOrder A (x z - vacuumField z)`: tested against the vacuum operator, `y` has the
+`(A (x z - vacuumField z)).toEuclideanLin`: tested against the vacuum operator, `y` has the
 zeroth-order term moved to the right-hand side. -/
 private theorem integral_inner_vacuumField_eq
     (hK : ∀ (η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) z, K vacuumField η z = S η z)
     (hB : ∀ x η z v, ⟪v, K x η z⟫ =
-      ⟪v, K vacuumField η z⟫ + ⟪zerothOrder A (x z - vacuumField z) v, η z⟫)
+      ⟪v, K vacuumField η z⟫ + ⟪(A (x z - vacuumField z)).toEuclideanLin v, η z⟫)
     {x y f : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume) (hf : MemLp f 2 volume)
-    (hzo : MemLp (fun z ↦ zerothOrder A (x z - vacuumField z) (y z)) 2 volume)
+    (hzo : MemLp (fun z ↦ (A (x z - vacuumField z)).toEuclideanLin (y z)) 2 volume)
     {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ ∞ η) (hc : HasCompactSupport η)
     (hweak : ∫ z, ⟪y z, K x η z⟫ = ∫ z, ⟪f z, η z⟫) :
     ∫ z, ⟪y z, K vacuumField η z⟫ =
-      ∫ z, ⟪f z - zerothOrder A (x z - vacuumField z) (y z), η z⟫ := by
+      ∫ z, ⟪f z - (A (x z - vacuumField z)).toEuclideanLin (y z), η z⟫ := by
   have hηL : MemLp η 2 volume := hη.continuous.memLp_of_hasCompactSupport hc
   -- `hK` only applies to Schwartz fields, so `η` is packaged as the Schwartz field
   -- `hc.toSchwartzMap hη`, which `hS` identifies with `η` as a function.
@@ -265,14 +249,14 @@ private theorem mem_sobolevFields_one_of_integral_inner_eq
     (hreg : ∀ s Y, (∀ i, MemSobolev s 2 (T Y i)) → ∀ i, MemSobolev (s + 1) 2 (Y i))
     (hA : ∀ i j, ∃ a b, ∀ w, A w i j = gaugeFixedZerothOrderMatrix w a b)
     (hB : ∀ x η z v, ⟪v, K x η z⟫ =
-      ⟪v, K vacuumField η z⟫ + ⟪zerothOrder A (x z - vacuumField z) v, η z⟫)
+      ⟪v, K vacuumField η z⟫ + ⟪(A (x z - vacuumField z)).toEuclideanLin v, η z⟫)
     {x y f : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : AEStronglyMeasurable x volume) {C : ℝ}
     (hC : ∀ᵐ z ∂volume, ‖x z‖ ≤ C) (hy : MemLp y 2 volume) (hf : MemLp f 2 volume)
     (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
       ∫ z, ⟪y z, K x η z⟫ = ∫ z, ⟪f z, η z⟫) :
     y ∈ sobolevFields 1 := by
   have hzo := memLp_zerothOrder hA hx hC hy
-  have hg : (fun z ↦ f z - zerothOrder A (x z - vacuumField z) (y z)) ∈ sobolevFields 0 :=
+  have hg : (fun z ↦ f z - (A (x z - vacuumField z)).toEuclideanLin (y z)) ∈ sobolevFields 0 :=
     mem_sobolevFields_zero_iff.2 (hf.sub hzo)
   simpa using mem_sobolevFields_add_one_of_integral_inner_eq hT hK (hreg 0) hy hg
     fun η hη hc ↦ integral_inner_vacuumField_eq hK hB hy hf hzo hη hc (hweak η hη hc)
@@ -319,7 +303,7 @@ private theorem mem_sobolevFields_natCast_add_one_of_mem_sobolevFields {k : ℕ}
     (hreg : ∀ s Y, (∀ i, MemSobolev s 2 (T Y i)) → ∀ i, MemSobolev (s + 1) 2 (Y i))
     (hA : ∀ i j, ∃ a b, ∀ w, A w i j = gaugeFixedZerothOrderMatrix w a b)
     (hB : ∀ x η z v, ⟪v, K x η z⟫ =
-      ⟪v, K vacuumField η z⟫ + ⟪zerothOrder A (x z - vacuumField z) v, η z⟫)
+      ⟪v, K vacuumField η z⟫ + ⟪(A (x z - vacuumField z)).toEuclideanLin v, η z⟫)
     {x y f : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i, ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (hy : y ∈ sobolevFields k) (hf : f ∈ sobolevFields k)
@@ -327,7 +311,8 @@ private theorem mem_sobolevFields_natCast_add_one_of_mem_sobolevFields {k : ℕ}
       ∫ z, ⟪y z, K x η z⟫ = ∫ z, ⟪f z, η z⟫) :
     y ∈ sobolevFields (k + 1) := by
   have hM := contDiff_gaugeFixedZerothOrderMatrix_and_bounded hx hbound
-  have hzo : (fun z ↦ zerothOrder A (x z - vacuumField z) (y z)) ∈ sobolevFields k := by
+  have hzo : (fun z ↦ (A (x z - vacuumField z)).toEuclideanLin (y z)) ∈ sobolevFields k := by
+    simp_rw [toEuclideanLin_apply_eq_toLp]
     refine mulVec_mem_sobolevFields_natCast k (A := fun i j z ↦ A (x z - vacuumField z) i j)
       (fun i j ↦ ?_) (fun i j ↦ ?_) hy <;>
     · obtain ⟨a, b, hab⟩ := hA i j
@@ -346,7 +331,7 @@ private theorem mem_sobolevFields_natCast_add_one_of_integral_inner_eq (k : ℕ)
     (hreg : ∀ s Y, (∀ i, MemSobolev s 2 (T Y i)) → ∀ i, MemSobolev (s + 1) 2 (Y i))
     (hA : ∀ i j, ∃ a b, ∀ w, A w i j = gaugeFixedZerothOrderMatrix w a b)
     (hB : ∀ x η z v, ⟪v, K x η z⟫ =
-      ⟪v, K vacuumField η z⟫ + ⟪zerothOrder A (x z - vacuumField z) v, η z⟫)
+      ⟪v, K vacuumField η z⟫ + ⟪(A (x z - vacuumField z)).toEuclideanLin v, η z⟫)
     {x y f : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i, ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (hy : MemLp y 2 volume) (hf : f ∈ sobolevFields k)
@@ -404,8 +389,9 @@ theorem mem_sobolevFields_one_of_integral_inner_gaugeFixedAdjoint_eq
   mem_sobolevFields_one_of_integral_inner_eq (A := gaugeFixedZerothOrderMatrix)
     sum_temperedVacuumOperator_apply gaugeFixedAdjoint_vacuumField
     memSobolev_add_one_of_temperedVacuumOperator (fun i j ↦ ⟨i, j, fun _ ↦ rfl⟩)
-    (fun x ↦ zerothOrder_gaugeFixedZerothOrderMatrix ▸
-      inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder x vacuumField) hx hC hy hf hweak
+    (fun x η z v ↦ by
+      rw [inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder x vacuumField,
+        gaugeFixedZerothOrder_eq_toEuclideanLin]) hx hC hy hf hweak
 
 /-- **At a bounded plane vortex, every `L²` field is weakly the image of an `H¹` field under
 `L_x`.** Let `x` be a bounded `C¹` solution of the plane vortex equation with `|α| → 1` at
@@ -442,9 +428,9 @@ theorem mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq
   mem_sobolevFields_natCast_add_one_of_integral_inner_eq k (A := gaugeFixedZerothOrderMatrix)
     sum_temperedVacuumOperator_apply gaugeFixedAdjoint_vacuumField
     memSobolev_add_one_of_temperedVacuumOperator (fun i j ↦ ⟨i, j, fun _ ↦ rfl⟩)
-    (fun x ↦ zerothOrder_gaugeFixedZerothOrderMatrix ▸
-      inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder x vacuumField) hx hbound hy hf
-    hweak
+    (fun x η z v ↦ by
+      rw [inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder x vacuumField,
+        gaugeFixedZerothOrder_eq_toEuclideanLin]) hx hbound hy hf hweak
 
 /-! ### Weak solutions of `L_x* η = g` -/
 
@@ -472,7 +458,8 @@ theorem mem_sobolevFields_one_of_integral_inner_gaugeFixedOperator_eq
     η ∈ sobolevFields 1 :=
   mem_sobolevFields_one_of_integral_inner_eq sum_temperedVacuumAdjoint_apply
     gaugeFixedOperator_vacuumField memSobolev_add_one_of_temperedVacuumAdjoint
-    (fun i j ↦ ⟨j, i, fun _ ↦ rfl⟩) inner_gaugeFixedOperator_eq_add_inner_zerothOrder hx hC hη hg
+    (fun i j ↦ ⟨j, i, fun _ ↦ rfl⟩)
+    (inner_gaugeFixedOperator_eq_add_inner_toEuclideanLin_transpose · vacuumField) hx hC hη hg
     hweak
 
 /-- **The elliptic bootstrap for the adjoint of the gauge-fixed operator.** Let `x` be a smooth
@@ -489,23 +476,40 @@ theorem mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_e
     η ∈ sobolevFields (k + 1) :=
   mem_sobolevFields_natCast_add_one_of_integral_inner_eq k sum_temperedVacuumAdjoint_apply
     gaugeFixedOperator_vacuumField memSobolev_add_one_of_temperedVacuumAdjoint
-    (fun i j ↦ ⟨j, i, fun _ ↦ rfl⟩) inner_gaugeFixedOperator_eq_add_inner_zerothOrder hx hbound
-    hη hg hweak
+    (fun i j ↦ ⟨j, i, fun _ ↦ rfl⟩)
+    (inner_gaugeFixedOperator_eq_add_inner_toEuclideanLin_transpose · vacuumField) hx hbound hη hg
+    hweak
 
 /-! ### Fields of `A_m^s` and plane vortices -/
 
 /-- **Weak solutions at a field of `A_m^s` lie in `H¹`.** Let `x` be a continuous field of the
 affine space `A_m^s`, `s > 1`, and `g ∈ L²(ℂ; ℝ⁴)`. Every `L²` weak solution of `L_x y = g` lies
 in `H¹`; in particular the weak kernel of `L_x` lies in `H¹`. -/
-theorem mem_sobolevFields_one_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ}
-    (hs : 1 < s) {x y g : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m s)
-    (hcont : Continuous x) (hy : MemLp y 2 volume) (hg : MemLp g 2 volume)
+theorem mem_sobolevFields_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedAdjoint_eq
+    {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ} (hs : 1 < s) {x y g : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : x ∈ framedFieldSpace f m s) (hcont : Continuous x) (hy : MemLp y 2 volume)
+    (hg : MemLp g 2 volume)
     (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
       ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪g z, η z⟫) :
     y ∈ sobolevFields 1 :=
   let ⟨_, hC⟩ := exists_norm_le_of_mem_framedFieldSpace hs hx hcont
   mem_sobolevFields_one_of_integral_inner_gaugeFixedAdjoint_eq hcont.aestronglyMeasurable
     (ae_of_all _ hC) hy hg hweak
+
+/-- **Weak solutions of the adjoint at a field of `A_m^s` lie in `H¹`.** Let `x` be a continuous
+field of the affine space `A_m^s`, `s > 1`, and `g ∈ L²(ℂ; ℝ⁴)`. Every `L²` weak solution of
+`L_x* η = g`, in the sense that `∫ ⟪η, L_x v⟫ = ∫ ⟪g, v⟫` for every smooth compactly supported
+test field `v`, lies in `H¹`; in particular the weak `L²` cokernel of `L_x` lies in `H¹`. -/
+theorem mem_sobolevFields_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedOperator_eq
+    {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ} (hs : 1 < s) {x η g : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : x ∈ framedFieldSpace f m s) (hcont : Continuous x) (hη : MemLp η 2 volume)
+    (hg : MemLp g 2 volume)
+    (hweak : ∀ v : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ v → HasCompactSupport v →
+      ∫ z, ⟪η z, gaugeFixedOperator x v z⟫ = ∫ z, ⟪g z, v z⟫) :
+    η ∈ sobolevFields 1 :=
+  let ⟨_, hC⟩ := exists_norm_le_of_mem_framedFieldSpace hs hx hcont
+  mem_sobolevFields_one_of_integral_inner_gaugeFixedOperator_eq hcont.aestronglyMeasurable
+    (ae_of_all _ hC) hη hg hweak
 
 /-- **The weak right inverse at a plane vortex takes values in `H¹`.** Let `x` be a `C¹` solution
 of the plane vortex equation in the affine space `A_m^s`, `s > 1`. Then there is a bounded
@@ -525,7 +529,8 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_s
       ∀ g, (Q g : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields 1 := by
   obtain ⟨Q, hQ, hQK⟩ := exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq
     (μ := volume) hx₁ hsol (tendsto_normSq_of_mem_framedFieldSpace hs hx hx₁.continuous)
-  exact ⟨Q, hQ, hQK, fun g ↦ mem_sobolevFields_one_of_mem_framedFieldSpace hs hx hx₁.continuous
-    (Lp.memLp _) (Lp.memLp g) fun η hη hc ↦ hQ g η (hη.of_le (by simp)) hc⟩
+  exact ⟨Q, hQ, hQK, fun g ↦
+    mem_sobolevFields_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedAdjoint_eq hs hx
+      hx₁.continuous (Lp.memLp _) (Lp.memLp g) fun η hη hc ↦ hQ g η (hη.of_le (by simp)) hc⟩
 
 end TauCeti.Vortex
