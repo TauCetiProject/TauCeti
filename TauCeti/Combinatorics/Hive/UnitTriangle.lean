@@ -22,7 +22,7 @@ import Mathlib.Tactic.Ring
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
-# Unit edges, unit triangles, and the simplicial subdivision of the hive triangle
+# Unit triangles and the simplicial subdivision of the hive triangle
 
 For `n ≥ 1`, the continuous barycentric triangle
 `barycentricSimplex n = {x : Fin 3 → ℝ | (∀ i, 0 ≤ x i) ∧ ∑ i, x i = n}`
@@ -46,8 +46,6 @@ summing to `1` on `{x | ∑ i, x i = n}`, expressing its closed cell `T.cell` bo
 * `TauCeti.Hive.planeLinear`, `TauCeti.Hive.planeInvAffine`, `TauCeti.Hive.planarSimplex`:
   continuous linear planar projection, its affine inverse on sum-`n` triples, and the Euclidean
   size-`n` triangle.
-* `TauCeti.Hive.IsUnitEdge`, `TauCeti.Hive.UnitEdge`: unit lattice edges (`sqDist = 2`, Euclidean
-  length `1`).
 * `TauCeti.Hive.UnitTriangle`: upward and downward unit triangles of `Δₙ`, with vertices, dihedral
   symmetries, subtriangle shifts, affine barycentric weights `weight`, and polyhedral cells `cell`.
 
@@ -277,79 +275,6 @@ theorem planarSimplex_eq_convexHull (n : ℕ) :
     LinearMap.image_convexHull, ← Set.range_comp]
   exact congrArg _ (congrArg Set.range (funext planeLinear_barycentric))
 
-/-! ### Unit lattice edges -/
-
-/-- Two vertices `p, q : Vertex n` form a **unit lattice edge** if `p.sqDist q = 2`
-(equivalently, Euclidean planar distance `1`). -/
-def IsUnitEdge {n : ℕ} (p q : Vertex n) : Prop := p.sqDist q = 2
-
-theorem isUnitEdge_def {n : ℕ} (p q : Vertex n) : IsUnitEdge p q ↔ p.sqDist q = 2 := Iff.rfl
-
-instance {n : ℕ} (p q : Vertex n) : Decidable (IsUnitEdge p q) :=
-  decidable_of_iff (p.sqDist q = 2) (isUnitEdge_def p q).symm
-
-/-- The finite type of ordered unit edges in `Vertex n`. -/
-abbrev UnitEdge (n : ℕ) := {e : Vertex n × Vertex n // IsUnitEdge e.1 e.2}
-
-namespace IsUnitEdge
-
-variable {n : ℕ} {p q : Vertex n}
-
-theorem symm (h : IsUnitEdge p q) : IsUnitEdge q p := by rwa [isUnitEdge_def, Vertex.sqDist_comm]
-
-theorem ne (h : IsUnitEdge p q) : p ≠ q := by
-  rintro rfl; rw [isUnitEdge_def, Vertex.sqDist_self] at h; omega
-
-theorem one_le (h : IsUnitEdge p q) : 1 ≤ n := by
-  by_contra hn; obtain rfl : n = 0 := by omega
-  exact h.ne (Subsingleton.elim p q)
-
-theorem dist_plane_sq (h : IsUnitEdge p q) : dist p.plane q.plane ^ 2 = 1 := by
-  have hsq : p.sqDist q = 2 := h; rw [Vertex.dist_plane_sq, hsq]; norm_num
-
-theorem dist_plane (h : IsUnitEdge p q) : dist p.plane q.plane = 1 := by
-  nlinarith [h.dist_plane_sq, dist_nonneg (x := p.plane) (y := q.plane)]
-
-theorem rotate (h : IsUnitEdge p q) : IsUnitEdge p.rotate q.rotate := by simpa [IsUnitEdge] using h
-theorem reflect (h : IsUnitEdge p q) : IsUnitEdge p.reflect q.reflect := by
-  simpa [IsUnitEdge] using h
-theorem add {m : ℕ} (h : IsUnitEdge p q) (r : Vertex m) : IsUnitEdge (r.add p) (r.add q) := by
-  simpa [IsUnitEdge] using h
-
-end IsUnitEdge
-
-theorem isUnitEdge_comm {n : ℕ} {p q : Vertex n} :
-    IsUnitEdge p q ↔ IsUnitEdge q p := ⟨IsUnitEdge.symm, IsUnitEdge.symm⟩
-
-@[simp] theorem isUnitEdge_rotate_iff {n : ℕ} {p q : Vertex n} :
-    IsUnitEdge p.rotate q.rotate ↔ IsUnitEdge p q := by simp [IsUnitEdge]
-
-@[simp] theorem isUnitEdge_reflect_iff {n : ℕ} {p q : Vertex n} :
-    IsUnitEdge p.reflect q.reflect ↔ IsUnitEdge p q := by simp [IsUnitEdge]
-
-@[simp] theorem isUnitEdge_add_left_iff {m n : ℕ} (r : Vertex m) {p q : Vertex n} :
-    IsUnitEdge (r.add p) (r.add q) ↔ IsUnitEdge p q := by simp [IsUnitEdge]
-
-/-- Consecutive perimeter vertices along any side `s` form a unit edge. -/
-theorem isUnitEdge_edgePoint_succ (n : ℕ) (s : Fin 3) (k : Fin n) :
-    IsUnitEdge (Vertex.edgePoint n s k.castSucc) (Vertex.edgePoint n s k.succ) := by
-  have hk := k.isLt
-  fin_cases s <;> rw [isUnitEdge_def, Vertex.sqDist_def] <;>
-    simp [show ((n - (k.val + 1) : ℕ) : ℤ) = (n : ℤ) - k.val - 1 by omega,
-      show ((n - k.val : ℕ) : ℤ) = (n : ℤ) - k.val by omega]
-
-namespace IsRhombus
-
-variable {n : ℕ} {a b c d : Vertex n}
-
-theorem isUnitEdge_short (h : IsRhombus a b c d) : IsUnitEdge a c := h.short
-theorem isUnitEdge_ab (h : IsRhombus a b c d) : IsUnitEdge a b := h.side_ab
-theorem isUnitEdge_bc (h : IsRhombus a b c d) : IsUnitEdge b c := h.side_bc
-theorem isUnitEdge_cd (h : IsRhombus a b c d) : IsUnitEdge c d := h.side_cd
-theorem isUnitEdge_da (h : IsRhombus a b c d) : IsUnitEdge d a := h.side_da
-
-end IsRhombus
-
 /-! ### Standard corners and unit triangles -/
 
 /-- The `i`-th corner of `Δ₁`: `(1, 0, 0)`, `(0, 1, 0)`, `(0, 0, 1)`. -/
@@ -373,8 +298,7 @@ def unitCorner : Fin 3 → Vertex 1
   fin_cases i <;> ext <;> simp [unitCorner]
 
 @[simp] theorem reflect_unitCorner (i : Fin 3) : (unitCorner i).reflect = unitCorner (-i) := by
-  fin_cases i <;> ext <;>
-    simp [unitCorner, show (-1 : Fin 3) = 2 from rfl, show (-2 : Fin 3) = 1 from rfl]
+  fin_cases i <;> ext <;> simp [unitCorner, Fin.neg_def]
 
 /-- The `i`-th midpoint vertex of `Δ₂` opposite corner `i`:
 `(0, 1, 1)`, `(1, 0, 1)`, `(1, 1, 0)`. -/
@@ -391,8 +315,7 @@ def oppUnitCorner : Fin 3 → Vertex 2
 
 @[simp] theorem reflect_oppUnitCorner (i : Fin 3) :
     (oppUnitCorner i).reflect = oppUnitCorner (-i) := by
-  fin_cases i <;> ext <;>
-    simp [oppUnitCorner, show (-1 : Fin 3) = 2 from rfl, show (-2 : Fin 3) = 1 from rfl]
+  fin_cases i <;> ext <;> simp [oppUnitCorner, Fin.neg_def]
 
 /-- A unit equilateral lattice triangle inside `Δₙ`: either an **upward** triangle translated by
 `base : Vertex (n - 1)`, or a **downward** triangle translated by `base : Vertex (n - 2)`. -/
@@ -406,6 +329,8 @@ namespace UnitTriangle
 
 instance isEmptyZero : IsEmpty (UnitTriangle 0) := ⟨fun T => nomatch T⟩
 
+instance instInhabited {m : ℕ} : Inhabited (UnitTriangle (m + 1)) := ⟨up (Vertex.cornerA m)⟩
+
 /-- At size `1`, the unique unit triangle is `up (cornerA 0)`. -/
 def equivOne : UnitTriangle 1 ≃ Vertex 0 where
   toFun | up base => base
@@ -413,7 +338,8 @@ def equivOne : UnitTriangle 1 ≃ Vertex 0 where
   left_inv | up _ => rfl
   right_inv _ := rfl
 
-instance uniqueOne : Unique (UnitTriangle 1) := Equiv.unique equivOne
+instance uniqueOne : Unique (UnitTriangle 1) where
+  uniq _ := equivOne.injective (Subsingleton.elim _ _)
 
 /-- For `n = m + 2`, unit triangles decompose into upward (`Vertex (m + 1)`) and downward
 (`Vertex m`) triangles. -/

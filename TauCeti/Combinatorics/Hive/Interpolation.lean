@@ -93,19 +93,15 @@ with obtuse corners on their shared edge and acute corners `(adjacentUp s i).ver
 theorem isRhombus_adjacent {m : ℕ} (s : Vertex m) (i : Fin 3) :
     IsRhombus ((UnitTriangle.down s).vertex (i + 2)) ((adjacentUp s i).vertex i)
       ((UnitTriangle.down s).vertex (i + 1)) ((UnitTriangle.down s).vertex i) := by
+  have hv (a b : Vertex (m + 2))
+      (h : ∀ j, a.coord j = b.coord j := by
+        intro j
+        simp only [adjacentUp, UnitTriangle.vertex_coord_up, UnitTriangle.vertex_coord_down]
+        fin_cases j <;> simp) : a = b := Vertex.ext_coord h
   fin_cases i
-  · convert isRhombus_at_cornerA.add s using 1 <;> exact Vertex.ext_coord fun j => by
-      try rw [adjacentUp, UnitTriangle.vertex_coord_up]
-      try rw [UnitTriangle.vertex_coord_down]
-      fin_cases j <;> simp
-  · convert isRhombus_at_cornerA.rotate.add s using 1 <;> exact Vertex.ext_coord fun j => by
-      try rw [adjacentUp, UnitTriangle.vertex_coord_up]
-      try rw [UnitTriangle.vertex_coord_down]
-      fin_cases j <;> simp
-  · convert isRhombus_at_cornerA.rotate.rotate.add s using 1 <;> exact Vertex.ext_coord fun j => by
-      try rw [adjacentUp, UnitTriangle.vertex_coord_up]
-      try rw [UnitTriangle.vertex_coord_down]
-      fin_cases j <;> simp
+  · convert isRhombus_at_cornerA.add s using 1 <;> exact hv _ _
+  · convert isRhombus_at_cornerA.rotate.add s using 1 <;> exact hv _ _
+  · convert isRhombus_at_cornerA.rotate.rotate.add s using 1 <;> exact hv _ _
 
 /-- The union of the cells of `adjacentUp s i` and `down s`, a continuous unit rhombus inside
 `barycentricSimplex (m + 2)`. -/
@@ -114,8 +110,6 @@ def adjacentCell {m : ℕ} (s : Vertex m) (i : Fin 3) : Set (Fin 3 → ℝ) :=
 
 @[simp] theorem mem_adjacentCell_iff {m : ℕ} {s : Vertex m} {i : Fin 3} {x : Fin 3 → ℝ} :
     x ∈ adjacentCell s i ↔ x ∈ (adjacentUp s i).cell ∨ x ∈ (UnitTriangle.down s).cell := Iff.rfl
-
-instance {m : ℕ} : Inhabited (UnitTriangle (m + 1)) := ⟨UnitTriangle.up (Vertex.cornerA m)⟩
 
 /-- `adjacentCell s i` is cut out inside `barycentricSimplex (m + 2)` by bounding the two
 coordinates other than `i` to `[s_{i+1}, s_{i+1} + 1]` and `[s_{i+2}, s_{i+2} + 1]`. -/
@@ -263,15 +257,18 @@ theorem triangleAffine_apply {n : ℕ} (f : Vertex n → ℝ) (T : UnitTriangle 
 def unitStepVec : Fin 3 → (Fin 3 → ℝ)
   | ⟨0, _⟩ => ![-1, 1, 0] | ⟨1, _⟩ => ![0, -1, 1] | ⟨2, _⟩ => ![1, 0, -1]
 
-@[simp] theorem sum_unitStepVec (s : Fin 3) : ∑ i : Fin 3, unitStepVec s i = 0 := by
-  fin_cases s <;> simp [unitStepVec, Fin.sum_univ_three]
+@[simp] theorem unitStepVec_apply (s k : Fin 3) :
+    unitStepVec s k = (if k = s + 1 then 1 else 0) - (if k = s then 1 else 0) := by
+  fin_cases s <;> fin_cases k <;> simp [unitStepVec]
+
+theorem sum_unitStepVec (s : Fin 3) : ∑ i : Fin 3, unitStepVec s i = 0 := by simp
 
 /-- The directional derivative of `triangleAffine f T` along `unitStepVec s` equals the
 combinatorial edge slope `triangleGradient f T s`. -/
 @[simp] theorem triangleAffine_contLinear_unitStepVec {n : ℕ} (f : Vertex n → ℝ)
     (T : UnitTriangle n) (s : Fin 3) :
     (triangleAffine f T).contLinear (unitStepVec s) = triangleGradient f T s := by
-  cases T <;> fin_cases s <;> simp [triangleAffine, unitStepVec] <;> ring
+  cases T <;> fin_cases s <;> simp [triangleAffine] <;> ring
 
 /-- `triangleAffine f T` preserves three-point affine combinations with unit weight sum. -/
 theorem triangleAffine_combo {n : ℕ} (f : Vertex n → ℝ) (T : UnitTriangle n)
@@ -330,16 +327,15 @@ theorem interpolate_lineMap_of_isUnitEdge {n : ℕ} (f : Vertex n → ℝ) {a c 
     interpolate f (AffineMap.lineMap a.barycentric c.barycentric t) =
       (1 - t) * f a + t * f c := by
   obtain ⟨T, ha, hc⟩ := exists_cell_of_isUnitEdge h
-  have hmem : AffineMap.lineMap a.barycentric c.barycentric t ∈ T.cell := by
-    rw [AffineMap.lineMap_apply_module]
-    exact T.convex_cell ha hc (sub_nonneg.mpr ht.2) ht.1 (sub_add_cancel 1 t)
+  have hmem := T.convex_cell.lineMap_mem ha hc ht
   obtain ⟨ia, rfl⟩ := UnitTriangle.mem_range_vertex_of_barycentric_mem_cell ha
   obtain ⟨ic, rfl⟩ := UnitTriangle.mem_range_vertex_of_barycentric_mem_cell hc
   rw [interpolate_eq_triangleAffine f hmem, (triangleAffine f T).apply_lineMap,
     triangleAffine_vertex, triangleAffine_vertex, AffineMap.lineMap_apply_module,
     smul_eq_mul, smul_eq_mul]
 
-/-- `interpolate f` is piecewise affine on `barycentricSimplex n`. -/
+/-- `interpolate f` is piecewise affine on `barycentricSimplex n` (outside which it uses the
+constant fallback `f (cornerA n)`). -/
 theorem isPiecewiseAffineOn_interpolate {n : ℕ} (f : Vertex n → ℝ) :
     IsPiecewiseAffineOn (interpolate f) (barycentricSimplex n) := by
   rcases n with _ | m
@@ -349,10 +345,13 @@ theorem isPiecewiseAffineOn_interpolate {n : ℕ} (f : Vertex n → ℝ) :
       (fun T => T.isConvexPolyhedron_cell) (by rw [UnitTriangle.iUnion_cell_eq_barycentricSimplex])
       fun _ _ hx => interpolate_eq_triangleAffine f hx.2
 
+/-- `interpolate f` is piecewise linear (`IsPLOn`) on `barycentricSimplex n`. -/
 theorem isPLOn_interpolate {n : ℕ} (f : Vertex n → ℝ) :
     IsPLOn (interpolate f) (barycentricSimplex n) :=
   (isPiecewiseAffineOn_interpolate f).isPLOn
 
+/-- `interpolate f` is continuous on `barycentricSimplex n` (outside which it uses the constant
+fallback `f (cornerA n)`). -/
 theorem continuousOn_interpolate {n : ℕ} (f : Vertex n → ℝ) :
     ContinuousOn (interpolate f) (barycentricSimplex n) :=
   (isPiecewiseAffineOn_interpolate f).continuousOn
@@ -403,8 +402,7 @@ theorem interpolate_subtriangle {m k : ℕ} (h : RealHive (m + k)) (p : Vertex m
     interpolate (h.subtriangle p) x =
       interpolate h (p.barycentric + x) - h (p.add (Vertex.cornerA k)) := by
   rcases k with _ | k'
-  · rw [barycentricSimplex_zero, mem_singleton_iff] at hx; subst hx
-    simp [show p.add (Vertex.cornerA 0) = p by ext <;> simp]
+  · rw [barycentricSimplex_zero, mem_singleton_iff] at hx; subst hx; simp
   · obtain ⟨T, hT⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex k').symm ▸ hx)
     have hTp : p.barycentric + x ∈ (T.addLeft p).cell := (T.addLeft p).mem_cell_iff.mpr
       ⟨add_mem_barycentricSimplex (barycentric_mem_barycentricSimplex p) hx, fun i => by
@@ -432,16 +430,20 @@ theorem planarInterpolate_planeLinear {n : ℕ} (f : Vertex n → ℝ) {x : Fin 
     (hx : ∑ i, x i = (n : ℝ)) : planarInterpolate f (planeLinear x) = interpolate f x := by
   rw [planarInterpolate, planeInvAffine_planeLinear hx]
 
+/-- `planarInterpolate f` is piecewise affine on `planarSimplex n` (outside which it uses the
+constant fallback `f (cornerA n)`). -/
 theorem isPiecewiseAffineOn_planarInterpolate {n : ℕ} (f : Vertex n → ℝ) :
     IsPiecewiseAffineOn (planarInterpolate f) (planarSimplex n) :=
   (isPiecewiseAffineOn_interpolate f).comp
     (isPiecewiseAffineOn_continuousAffineMap (planeInvAffine n) (planarSimplex n))
     fun _ hu => mem_planarSimplex_iff.mp hu
 
+/-- `planarInterpolate f` is piecewise linear (`IsPLOn`) on `planarSimplex n`. -/
 theorem isPLOn_planarInterpolate {n : ℕ} (f : Vertex n → ℝ) :
     IsPLOn (planarInterpolate f) (planarSimplex n) :=
   (isPiecewiseAffineOn_planarInterpolate f).isPLOn
 
+/-- `planarInterpolate f` is continuous on `planarSimplex n`. -/
 theorem continuousOn_planarInterpolate {n : ℕ} (f : Vertex n → ℝ) :
     ContinuousOn (planarInterpolate f) (planarSimplex n) :=
   (isPiecewiseAffineOn_planarInterpolate f).continuousOn

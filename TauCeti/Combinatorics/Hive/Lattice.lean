@@ -23,6 +23,7 @@ barycentric triples of sum `n`. `Vertex.rotate` and `Vertex.reflect` give its di
 `Vertex.ofYZ` gives the two-variable chart `(y, z) ↦ (n - y - z, y, z)`. The planar embedding sends
 `(x,y,z)` to `(z + y/2, √3*y/2)`, so the corners `(n,0,0)`, `(0,n,0)`, `(0,0,n)` occur clockwise.
 
+`IsUnitEdge` and `UnitEdge` record unit lattice edges (`sqDist = 2`, planar length `1`), and
 `IsRhombus a b c d` records a unit rhombus in perimeter order, with **obtuse** corners
 `a,c`. Its short diagonal has barycentric squared length 2 and its long diagonal has
 squared length 6; the planar squared lengths are respectively 1 and 3. `IsUnitStep` and `HasStep`
@@ -154,6 +155,8 @@ theorem coord_reflect (p : Vertex n) (i : Fin 3) : p.reflect.coord (-i) = p.coor
 
 @[simp] theorem reflect_add {m : ℕ} (p : Vertex n) (q : Vertex m) :
     (p.add q).reflect = p.reflect.add q.reflect := by ext <;> simp
+
+@[simp] theorem add_cornerA_zero (p : Vertex n) : p.add (cornerA 0) = p := by ext <;> simp
 
 /-- Squared length in the ambient barycentric integer coordinates. -/
 def sqDist (p q : Vertex n) : ℤ :=
@@ -334,6 +337,64 @@ theorem ofYZ_sub_left (n z : ℕ) (hz : z ≤ n) :
 
 end Vertex
 
+/-- Two vertices `p, q : Vertex n` form a **unit lattice edge** if `p.sqDist q = 2`
+(equivalently, Euclidean planar distance `1`). -/
+def IsUnitEdge {n : ℕ} (p q : Vertex n) : Prop := p.sqDist q = 2
+
+theorem isUnitEdge_def {n : ℕ} (p q : Vertex n) : IsUnitEdge p q ↔ p.sqDist q = 2 := Iff.rfl
+
+instance {n : ℕ} (p q : Vertex n) : Decidable (IsUnitEdge p q) :=
+  decidable_of_iff (p.sqDist q = 2) (isUnitEdge_def p q).symm
+
+/-- The finite type of ordered unit edges in `Vertex n`. -/
+abbrev UnitEdge (n : ℕ) := {e : Vertex n × Vertex n // IsUnitEdge e.1 e.2}
+
+namespace IsUnitEdge
+
+variable {n : ℕ} {p q : Vertex n}
+
+theorem symm (h : IsUnitEdge p q) : IsUnitEdge q p := by rwa [isUnitEdge_def, Vertex.sqDist_comm]
+
+theorem ne (h : IsUnitEdge p q) : p ≠ q := by
+  rintro rfl; rw [isUnitEdge_def, Vertex.sqDist_self] at h; omega
+
+theorem one_le (h : IsUnitEdge p q) : 1 ≤ n := by
+  by_contra hn; obtain rfl : n = 0 := by omega
+  exact h.ne (Subsingleton.elim p q)
+
+theorem dist_plane_sq (h : IsUnitEdge p q) : dist p.plane q.plane ^ 2 = 1 := by
+  have hsq : p.sqDist q = 2 := h; rw [Vertex.dist_plane_sq, hsq]; norm_num
+
+theorem dist_plane (h : IsUnitEdge p q) : dist p.plane q.plane = 1 := by
+  nlinarith [h.dist_plane_sq, dist_nonneg (x := p.plane) (y := q.plane)]
+
+theorem rotate (h : IsUnitEdge p q) : IsUnitEdge p.rotate q.rotate := by simpa [IsUnitEdge] using h
+theorem reflect (h : IsUnitEdge p q) : IsUnitEdge p.reflect q.reflect := by
+  simpa [IsUnitEdge] using h
+theorem add {m : ℕ} (h : IsUnitEdge p q) (r : Vertex m) : IsUnitEdge (r.add p) (r.add q) := by
+  simpa [IsUnitEdge] using h
+
+end IsUnitEdge
+
+theorem isUnitEdge_comm {n : ℕ} {p q : Vertex n} :
+    IsUnitEdge p q ↔ IsUnitEdge q p := ⟨IsUnitEdge.symm, IsUnitEdge.symm⟩
+
+@[simp] theorem isUnitEdge_rotate_iff {n : ℕ} {p q : Vertex n} :
+    IsUnitEdge p.rotate q.rotate ↔ IsUnitEdge p q := by simp [IsUnitEdge]
+
+@[simp] theorem isUnitEdge_reflect_iff {n : ℕ} {p q : Vertex n} :
+    IsUnitEdge p.reflect q.reflect ↔ IsUnitEdge p q := by simp [IsUnitEdge]
+
+@[simp] theorem isUnitEdge_add_left_iff {m n : ℕ} (r : Vertex m) {p q : Vertex n} :
+    IsUnitEdge (r.add p) (r.add q) ↔ IsUnitEdge p q := by simp [IsUnitEdge]
+
+/-- Consecutive perimeter vertices along any side `s` form a unit edge. -/
+theorem isUnitEdge_edgePoint_succ (n : ℕ) (s : Fin 3) (k : Fin n) :
+    IsUnitEdge (Vertex.edgePoint n s k.castSucc) (Vertex.edgePoint n s k.succ) := by
+  have hk1 : ((n - (k.val + 1) : ℕ) : ℤ) = (n : ℤ) - k.val - 1 := by have := k.isLt; omega
+  have hk0 : ((n - k.val : ℕ) : ℤ) = (n : ℤ) - k.val := by have := k.isLt; omega
+  fin_cases s <;> rw [isUnitEdge_def, Vertex.sqDist_def] <;> simp [hk1, hk0]
+
 /-- A unit rhombus in perimeter order, with `a,c` the obtuse (short-diagonal) corners.
 All squared distances here use barycentric coordinates. -/
 structure IsRhombus {n : ℕ} (a b c d : Vertex n) : Prop where
@@ -452,6 +513,12 @@ theorem add {m : ℕ} (h : IsRhombus a b c d) (p : Vertex m) :
   side_bc := by simpa using h.side_bc
   side_cd := by simpa using h.side_cd
   side_da := by simpa using h.side_da
+
+theorem isUnitEdge_short (h : IsRhombus a b c d) : IsUnitEdge a c := h.short
+theorem isUnitEdge_ab (h : IsRhombus a b c d) : IsUnitEdge a b := h.side_ab
+theorem isUnitEdge_bc (h : IsRhombus a b c d) : IsUnitEdge b c := h.side_bc
+theorem isUnitEdge_cd (h : IsRhombus a b c d) : IsUnitEdge c d := h.side_cd
+theorem isUnitEdge_da (h : IsRhombus a b c d) : IsUnitEdge d a := h.side_da
 
 end IsRhombus
 

@@ -18,7 +18,6 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
-import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # The rhombus concavity criterion and tropical affine-envelope formula
@@ -38,10 +37,10 @@ adjacent-triangle bending test and 1D line-segment subdivision:
 2. Every point in the strict interior of `barycentricSimplex (m + 2)` that is not a lattice vertex
    admits an open convex neighbourhood contained in either a single unit-triangle cell or an
    `adjacentCell s i`, where `interpolate f` is concave.
-3. Along any strictly interior line segment avoiding the finitely many lattice vertices, Lebesgue's
-   number lemma and finite subdivision (`TauCeti.concaveOn_Icc_of_subdivision`) glue local
-   concavity into concavity on `[0, 1]`. Uniform vertex-avoiding approximation and continuity of
-   `interpolate f` extend concavity to all of `barycentricSimplex (m + 2)`.
+3. Along any strictly interior line segment avoiding the finitely many lattice vertices, local
+   concavity glues into concavity on `[0, 1]` (`TauCeti.concaveOn_Icc_of_local`). Uniform
+   vertex-avoiding approximation and continuity of `interpolate f` extend concavity to all of
+   `barycentricSimplex (m + 2)`.
 
 As an immediate consequence, whenever `f` is rhombus-concave and `n = m + 1 ≥ 1`, `interpolate f`
 is the tropical global minimum of its `n²` affine pieces
@@ -174,6 +173,92 @@ theorem concaveOn_adjacentCell_iff {m : ℕ} (f : Vertex (m + 2) → ℝ) (s : V
 
 /-! ### Line-segment subdivision, vertex-avoiding approximation, and global concavity -/
 
+-- An interior non-vertex point `x ∈ barycentricSimplex (m + 2)` with an integer `i`-th coordinate
+-- lies on the open shared edge of `adjacentCell s i` for `s = ⌊x⌋ - eᵢ`.
+private theorem exists_open_convex_subset_adjacentCell_of_eq_floor {m : ℕ} {x : Fin 3 → ℝ}
+    (hx : x ∈ barycentricSimplex (m + 2)) (hpos : ∀ k, 0 < x k)
+    (hnot : x ∉ Set.range (Vertex.barycentric (n := m + 2)))
+    {i : Fin 3} (hi_eq : x i = (⌊x i⌋₊ : ℝ)) :
+    ∃ (s : Vertex m) (U : Set (Fin 3 → ℝ)),
+      IsOpen U ∧ Convex ℝ U ∧ x ∈ U ∧ barycentricSimplex (m + 2) ∩ U ⊆ adjacentCell s i := by
+  obtain ⟨hx_nonneg, hx_sum⟩ := mem_barycentricSimplex_iff.mp hx
+  let b : Fin 3 → ℕ := fun k => ⌊x k⌋₊
+  have hb_le (k : Fin 3) : (b k : ℝ) ≤ x k := Nat.floor_le (hx_nonneg k)
+  have hx_lt (k : Fin 3) : x k < (b k : ℝ) + 1 := Nat.lt_floor_add_one (x k)
+  have hsum_x : x 0 + x 1 + x 2 = (m : ℝ) + 2 := by
+    simpa [Fin.sum_univ_three, add_assoc] using hx_sum
+  have hsum_perm : x i + x (i + 1) + x (i + 2) = (m : ℝ) + 2 := by
+    fin_cases i <;> simp <;> linarith [hsum_x]
+  -- If either other coordinate were also integral, the third would be too, making `x` a vertex.
+  have hne_other {j k : Fin 3} (hp : x i + x j + x k = (m : ℝ) + 2)
+      (hcov : ∀ l : Fin 3, l = i ∨ l = j ∨ l = k) : (b j : ℝ) < x j := by
+    refine lt_of_le_of_ne (hb_le j) fun hj => hnot ?_
+    have hj := hj.symm
+    have hle : b i + b j ≤ m + 2 := Nat.cast_le.mp
+      (by push_cast; linarith [hpos k] : ((b i + b j : ℕ) : ℝ) ≤ ((m + 2 : ℕ) : ℝ))
+    have hxk : x k = ((m + 2 - (b i + b j) : ℕ) : ℝ) := by
+      rw [Nat.cast_sub hle]; push_cast; linarith
+    have hk : x k = b k := by dsimp [b]; rw [hxk, Nat.floor_natCast]
+    have hall (l : Fin 3) : x l = b l := by rcases hcov l with rfl | rfl | rfl <;> assumption
+    exact ⟨⟨b 0, b 1, b 2, Nat.cast_injective
+      (by push_cast; linarith [hall 0, hall 1, hall 2] : ((_ : ℕ) : ℝ) = ((m + 2 : ℕ) : ℝ))⟩,
+      by ext l; fin_cases l <;> simp [hall _]⟩
+  have hlt1 : (b (i + 1) : ℝ) < x (i + 1) :=
+    hne_other hsum_perm fun l => by fin_cases i <;> fin_cases l <;> decide
+  have hlt2 : (b (i + 2) : ℝ) < x (i + 2) :=
+    hne_other (k := i + 1) (by linarith) fun l => by fin_cases i <;> fin_cases l <;> decide
+  have hbi_pos : 0 < b i := by exact_mod_cast (hi_eq ▸ hpos i : (0 : ℝ) < b i)
+  have hb_sum : b 0 + b 1 + b 2 = m + 1 := by
+    have h1 : b i + b (i + 1) + b (i + 2) < m + 2 :=
+      Nat.cast_lt.mp (by push_cast; linarith : ((_ : ℕ) : ℝ) < ((m + 2 : ℕ) : ℝ))
+    have h2 : m + 2 < b i + b (i + 1) + b (i + 2) + 2 := Nat.cast_lt.mp
+      (by push_cast; linarith [hx_lt (i + 1), hx_lt (i + 2)] : ((m + 2 : ℕ) : ℝ) < ((_ : ℕ) : ℝ))
+    fin_cases i <;> simp at h1 h2 <;> omega
+  let s : Vertex m :=
+    ⟨b 0 - if i = 0 then 1 else 0, b 1 - if i = 1 then 1 else 0, b 2 - if i = 2 then 1 else 0,
+      by fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue,
+        Fin.reduceEq, ↓reduceIte, Nat.sub_zero] at hbi_pos ⊢ <;> omega⟩
+  have hs1 : s.coord (i + 1) = b (i + 1) := by fin_cases i <;> simp [s]
+  have hs2 : s.coord (i + 2) = b (i + 2) := by fin_cases i <;> simp [s]
+  refine ⟨s, (fun y => y (i + 1)) ⁻¹' Ioo (s.coord (i + 1) : ℝ) (s.coord (i + 1) + 1) ∩
+      (fun y => y (i + 2)) ⁻¹' Ioo (s.coord (i + 2) : ℝ) (s.coord (i + 2) + 1),
+    (isOpen_Ioo.preimage (continuous_apply _)).inter (isOpen_Ioo.preimage (continuous_apply _)),
+    ((convex_Ioo _ _).linear_preimage (LinearMap.proj (i + 1))).inter
+      ((convex_Ioo _ _).linear_preimage (LinearMap.proj (i + 2))),
+    ⟨⟨hs1.symm ▸ hlt1, hs1.symm ▸ hx_lt _⟩, ⟨hs2.symm ▸ hlt2, hs2.symm ▸ hx_lt _⟩⟩, ?_⟩
+  rw [adjacentCell_eq]
+  exact fun _ ⟨hyS, ⟨h1a, h1b⟩, ⟨h2a, h2b⟩⟩ => ⟨hyS, h1a.le, h1b.le, h2a.le, h2b.le⟩
+
+-- A point `x ∈ barycentricSimplex (m + 2)` with no integer coordinate lies in an open unit cube
+-- whose intersection with `barycentricSimplex (m + 2)` is contained in a single `T.cell`.
+private theorem exists_open_convex_subset_cell_of_ne_floor {m : ℕ} {x : Fin 3 → ℝ}
+    (hx : x ∈ barycentricSimplex (m + 2)) (hne : ∀ k, x k ≠ (⌊x k⌋₊ : ℝ)) :
+    ∃ (T : UnitTriangle (m + 2)) (U : Set (Fin 3 → ℝ)),
+      IsOpen U ∧ Convex ℝ U ∧ x ∈ U ∧ barycentricSimplex (m + 2) ∩ U ⊆ T.cell := by
+  obtain ⟨hx_nonneg, hx_sum⟩ := mem_barycentricSimplex_iff.mp hx
+  let b : Fin 3 → ℕ := fun k => ⌊x k⌋₊
+  have hlt (k : Fin 3) : (b k : ℝ) < x k := lt_of_le_of_ne (Nat.floor_le (hx_nonneg k)) (hne k).symm
+  have hx_lt (k : Fin 3) : x k < (b k : ℝ) + 1 := Nat.lt_floor_add_one (x k)
+  have hsum_x : x 0 + x 1 + x 2 = (m : ℝ) + 2 := by
+    simpa [Fin.sum_univ_three, add_assoc] using hx_sum
+  let U : Set (Fin 3 → ℝ) := ⋂ k : Fin 3, (fun y : Fin 3 → ℝ => y k) ⁻¹' Ioo (b k : ℝ) (b k + 1)
+  have hUo : IsOpen U := isOpen_iInter_of_finite fun k => isOpen_Ioo.preimage (continuous_apply k)
+  have hUc : Convex ℝ U :=
+    convex_iInter fun k => (convex_Ioo _ _).linear_preimage (LinearMap.proj k)
+  have hxU : x ∈ U := mem_iInter.mpr fun k => ⟨hlt k, hx_lt k⟩
+  have h1 : b 0 + b 1 + b 2 < m + 2 := Nat.cast_lt.mp
+    (by push_cast; linarith [hlt 0, hlt 1, hlt 2] : ((_ : ℕ) : ℝ) < ((m + 2 : ℕ) : ℝ))
+  have h2 : m + 2 < b 0 + b 1 + b 2 + 3 := Nat.cast_lt.mp
+    (by push_cast; linarith [hx_lt 0, hx_lt 1, hx_lt 2] : ((m + 2 : ℕ) : ℝ) < ((_ : ℕ) : ℝ))
+  -- Depending on whether `∑ ⌊x k⌋₊` is `m + 1` or `m`, the cube slice lies in `up b` or `down b`.
+  rcases (by omega : b 0 + b 1 + b 2 = m + 1 ∨ b 0 + b 1 + b 2 = m) with hm1 | hm0
+  · exact ⟨UnitTriangle.up ⟨b 0, b 1, b 2, hm1⟩, U, hUo, hUc, hxU, fun y ⟨hyS, hyU⟩ =>
+      UnitTriangle.mem_cell_iff.mpr ⟨hyS, fun k => by
+        fin_cases k <;> simpa [sub_nonneg] using (mem_iInter.mp hyU _).1.le⟩⟩
+  · exact ⟨UnitTriangle.down ⟨b 0, b 1, b 2, hm0⟩, U, hUo, hUc, hxU, fun y ⟨hyS, hyU⟩ =>
+      UnitTriangle.mem_cell_iff.mpr ⟨hyS, fun k => by
+        fin_cases k <;> simpa [sub_nonneg] using (mem_iInter.mp hyU _).2.le⟩⟩
+
 private theorem exists_open_convex_concaveOn_of_notMem_barycentric {m : ℕ}
     {f : Vertex (m + 2) → ℝ}
     (hadj : ∀ (s : Vertex m) (i : Fin 3),
@@ -183,85 +268,18 @@ private theorem exists_open_convex_concaveOn_of_notMem_barycentric {m : ℕ}
     (hnot : x ∉ Set.range (Vertex.barycentric (n := m + 2))) :
     ∃ U : Set (Fin 3 → ℝ), IsOpen U ∧ Convex ℝ U ∧ x ∈ U ∧
       ConcaveOn ℝ (barycentricSimplex (m + 2) ∩ U) (interpolate f) := by
-  obtain ⟨hx_nonneg, hx_sum⟩ := mem_barycentricSimplex_iff.mp hx
-  let b : Fin 3 → ℕ := fun k => ⌊x k⌋₊
-  have hb_le (k : Fin 3) : (b k : ℝ) ≤ x k := Nat.floor_le (hx_nonneg k)
-  have hx_lt (k : Fin 3) : x k < (b k : ℝ) + 1 := Nat.lt_floor_add_one (x k)
-  have hsum_x : x 0 + x 1 + x 2 = (m : ℝ) + 2 := by
-    simpa [Fin.sum_univ_three, add_assoc] using hx_sum
-  have hnot_all (hall : ∀ k, x k = (b k : ℝ)) : False :=
-    hnot ⟨⟨b 0, b 1, b 2, Nat.cast_injective
-        (by push_cast; linarith [hall 0, hall 1, hall 2] : ((_ : ℕ) : ℝ) = ((m + 2 : ℕ) : ℝ))⟩,
-      by ext k; fin_cases k <;> simp [hall _]⟩
-  by_cases hex : ∃ i : Fin 3, x i = (b i : ℝ)
-  · obtain ⟨i, hi_eq⟩ := hex
-    have hsum_perm : x i + x (i + 1) + x (i + 2) = (m : ℝ) + 2 := by
-      fin_cases i <;> simp <;> linarith [hsum_x]
-    have htwo {j k : Fin 3} (hp : x i + x j + x k = (m : ℝ) + 2) (hj : x j = b j) : x k = b k := by
-      have hle : b i + b j ≤ m + 2 := Nat.cast_le.mp
-        (by push_cast; linarith [hpos k] : ((b i + b j : ℕ) : ℝ) ≤ ((m + 2 : ℕ) : ℝ))
-      have hxk : x k = ((m + 2 - (b i + b j) : ℕ) : ℝ) := by
-        rw [Nat.cast_sub hle]; push_cast; linarith
-      dsimp [b]; rw [hxk, Nat.floor_natCast]
-    have hall12 (h1 : x (i + 1) = b (i + 1)) (h2 : x (i + 2) = b (i + 2)) : False :=
-      hnot_all fun k => by
-        fin_cases i <;> fin_cases k <;>
-          { simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue, Fin.reduceAdd]
-              at hi_eq h1 h2 ⊢; assumption }
-    have hlt1 : (b (i + 1) : ℝ) < x (i + 1) :=
-      lt_of_le_of_ne (hb_le _) fun h => hall12 h.symm (htwo hsum_perm h.symm)
-    have hlt2 : (b (i + 2) : ℝ) < x (i + 2) :=
-      lt_of_le_of_ne (hb_le _) fun h => hall12 (htwo (by linarith) h.symm) h.symm
-    have hbi_pos : 0 < b i := by exact_mod_cast (hi_eq ▸ hpos i : (0 : ℝ) < b i)
-    have hb_sum : b 0 + b 1 + b 2 = m + 1 := by
-      have h1 : b i + b (i + 1) + b (i + 2) < m + 2 :=
-        Nat.cast_lt.mp (by push_cast; linarith : ((_ : ℕ) : ℝ) < ((m + 2 : ℕ) : ℝ))
-      have h2 : m + 2 < b i + b (i + 1) + b (i + 2) + 2 := Nat.cast_lt.mp
-        (by push_cast; linarith [hx_lt (i + 1), hx_lt (i + 2)] : ((m + 2 : ℕ) : ℝ) < ((_ : ℕ) : ℝ))
-      fin_cases i <;> simp at h1 h2 <;> omega
-    let s : Vertex m :=
-      ⟨b 0 - if i = 0 then 1 else 0, b 1 - if i = 1 then 1 else 0, b 2 - if i = 2 then 1 else 0,
-        by fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue,
-          Fin.reduceEq, ↓reduceIte, Nat.sub_zero] at hbi_pos ⊢ <;> omega⟩
-    have hs1 : s.coord (i + 1) = b (i + 1) := by fin_cases i <;> simp [s]
-    have hs2 : s.coord (i + 2) = b (i + 2) := by fin_cases i <;> simp [s]
-    let U : Set (Fin 3 → ℝ) :=
-      (fun y : Fin 3 → ℝ => y (i + 1)) ⁻¹' Ioo (s.coord (i + 1) : ℝ) ((s.coord (i + 1) : ℝ) + 1) ∩
-      (fun y : Fin 3 → ℝ => y (i + 2)) ⁻¹' Ioo (s.coord (i + 2) : ℝ) ((s.coord (i + 2) : ℝ) + 1)
-    have hUc : Convex ℝ U :=
-      ((convex_Ioo _ _).linear_preimage (LinearMap.proj (i + 1))).inter
-        ((convex_Ioo _ _).linear_preimage (LinearMap.proj (i + 2)))
-    refine ⟨U, (isOpen_Ioo.preimage (continuous_apply _)).inter
-        (isOpen_Ioo.preimage (continuous_apply _)), hUc, ?_,
-      ((concaveOn_adjacentCell_iff f s i).mpr (hadj s i)).subset ?_
-        ((convex_barycentricSimplex _).inter hUc)⟩
-    · simp only [U, mem_inter_iff, mem_preimage, mem_Ioo, hs1, hs2]
-      exact ⟨⟨hlt1, hx_lt _⟩, ⟨hlt2, hx_lt _⟩⟩
-    · rw [adjacentCell_eq]
-      rintro y ⟨hyS, ⟨hy1_lo, hy1_hi⟩, ⟨hy2_lo, hy2_hi⟩⟩
-      exact ⟨hyS, hy1_lo.le, hy1_hi.le, hy2_lo.le, hy2_hi.le⟩
+  -- Split according to whether `x` lies on an interior lattice grid line or strictly inside a cell.
+  by_cases hex : ∃ i : Fin 3, x i = (⌊x i⌋₊ : ℝ)
+  · obtain ⟨i, hi⟩ := hex
+    obtain ⟨s, U, hUo, hUc, hxU, hsub⟩ :=
+      exists_open_convex_subset_adjacentCell_of_eq_floor hx hpos hnot hi
+    exact ⟨U, hUo, hUc, hxU, ((concaveOn_adjacentCell_iff f s i).mpr (hadj s i)).subset hsub
+      ((convex_barycentricSimplex _).inter hUc)⟩
   · push Not at hex
-    have hlt (k : Fin 3) : (b k : ℝ) < x k := lt_of_le_of_ne (hb_le k) (hex k).symm
-    let U : Set (Fin 3 → ℝ) := ⋂ k : Fin 3, (fun y : Fin 3 → ℝ => y k) ⁻¹' Ioo (b k : ℝ) (b k + 1)
-    have hUo : IsOpen U := isOpen_iInter_of_finite fun k => isOpen_Ioo.preimage (continuous_apply k)
-    have hUc : Convex ℝ U :=
-      convex_iInter fun k => (convex_Ioo _ _).linear_preimage (LinearMap.proj k)
-    have hxU : x ∈ U := mem_iInter.mpr fun k => ⟨hlt k, hx_lt k⟩
-    have h1 : b 0 + b 1 + b 2 < m + 2 := Nat.cast_lt.mp
-      (by push_cast; linarith [hlt 0, hlt 1, hlt 2] : ((_ : ℕ) : ℝ) < ((m + 2 : ℕ) : ℝ))
-    have h2 : m + 2 < b 0 + b 1 + b 2 + 3 := Nat.cast_lt.mp
-      (by push_cast; linarith [hx_lt 0, hx_lt 1, hx_lt 2] : ((m + 2 : ℕ) : ℝ) < ((_ : ℕ) : ℝ))
-    have hcell (T : UnitTriangle (m + 2)) (hsub : barycentricSimplex (m + 2) ∩ U ⊆ T.cell) :
-        ConcaveOn ℝ (barycentricSimplex (m + 2) ∩ U) (interpolate f) :=
+    obtain ⟨T, U, hUo, hUc, hxU, hsub⟩ := exists_open_convex_subset_cell_of_ne_floor hx hex
+    exact ⟨U, hUo, hUc, hxU,
       (concaveOn_triangleAffine f T ((convex_barycentricSimplex _).inter hUc)).congr
-        fun _ hy => (interpolate_eq_triangleAffine f (hsub hy)).symm
-    rcases (by omega : b 0 + b 1 + b 2 = m + 1 ∨ b 0 + b 1 + b 2 = m) with hm1 | hm0
-    · exact ⟨U, hUo, hUc, hxU, hcell (UnitTriangle.up ⟨b 0, b 1, b 2, hm1⟩) fun y ⟨hyS, hyU⟩ =>
-        UnitTriangle.mem_cell_iff.mpr ⟨hyS, fun k => by
-          fin_cases k <;> simpa [sub_nonneg] using (mem_iInter.mp hyU _).1.le⟩⟩
-    · exact ⟨U, hUo, hUc, hxU, hcell (UnitTriangle.down ⟨b 0, b 1, b 2, hm0⟩) fun y ⟨hyS, hyU⟩ =>
-        UnitTriangle.mem_cell_iff.mpr ⟨hyS, fun k => by
-          fin_cases k <;> simpa [sub_nonneg] using (mem_iInter.mp hyU _).2.le⟩⟩
+        fun _ hy => (interpolate_eq_triangleAffine f (hsub hy)).symm⟩
 
 private theorem concaveOn_lineMap_of_notMem_barycentric {m : ℕ} {f : Vertex (m + 2) → ℝ}
     (hadj : ∀ (s : Vertex m) (i : Fin 3),
@@ -273,55 +291,21 @@ private theorem concaveOn_lineMap_of_notMem_barycentric {m : ℕ} {f : Vertex (m
       AffineMap.lineMap p q t ∉ Set.range (Vertex.barycentric (n := m + 2))) :
     ConcaveOn ℝ (Icc (0 : ℝ) 1) (interpolate f ∘ AffineMap.lineMap p q) := by
   let γ : ℝ →ᵃ[ℝ] (Fin 3 → ℝ) := AffineMap.lineMap p q
-  have hγ_cont : Continuous γ := by
-    rw [show (γ : ℝ → _) = fun t => (1 - t) • p + t • q by
-      ext; simp [γ, AffineMap.lineMap_apply_module]]
-    exact ((continuous_const.sub continuous_id).smul continuous_const).add
-      (continuous_id.smul continuous_const)
-  have hγ_mem {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : γ t ∈ barycentricSimplex (m + 2) := by
-    simpa [γ, AffineMap.lineMap_apply_module] using
-      convex_barycentricSimplex (m + 2) hp hq (sub_nonneg.mpr ht.2) ht.1 (sub_add_cancel 1 t)
+  have hγ_mem {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : γ t ∈ barycentricSimplex (m + 2) :=
+    (convex_barycentricSimplex (m + 2)).lineMap_mem hp hq ht
   have hγ_pos {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) (k : Fin 3) : 0 < γ t k := by
     simp only [γ, AffineMap.lineMap_apply_module, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     rcases eq_or_lt_of_le ht.1 with rfl | ht0
     · simp [hp_pos k]
     · exact add_pos_of_nonneg_of_pos (mul_nonneg (sub_nonneg.mpr ht.2) (hp_pos k).le)
         (mul_pos ht0 (hq_pos k))
-  have hlocal (t : Icc (0 : ℝ) 1) : ∃ V : Set ℝ, IsOpen V ∧ t.1 ∈ V ∧
-      ConcaveOn ℝ (Icc (0 : ℝ) 1 ∩ V) (interpolate f ∘ γ) := by
-    obtain ⟨U, hUo, hUc, hγU, hconc⟩ :=
-      exists_open_convex_concaveOn_of_notMem_barycentric hadj (hγ_mem t.2) (hγ_pos t.2)
-        (hnot t.1 t.2)
-    exact ⟨γ ⁻¹' U, hUo.preimage hγ_cont, hγU, (hconc.comp_affineMap γ).subset
-      (fun _ hs => ⟨hγ_mem hs.1, hs.2⟩) ((convex_Icc 0 1).inter (hUc.affine_preimage γ))⟩
-  choose V hVo htV hVconc using hlocal
-  obtain ⟨δ, hδ_pos, hball⟩ := lebesgue_number_lemma_of_metric isCompact_Icc hVo
-    fun s hs => mem_iUnion.mpr ⟨⟨s, hs⟩, htV ⟨s, hs⟩⟩
-  let N : ℕ := ⌊2 / δ⌋₊ + 1
-  have hN_pos : (0 : ℝ) < (N : ℝ) + 2 := by positivity
-  have hstep_lt : 2 / ((N : ℝ) + 2) < δ := (div_lt_iff₀ hN_pos).mpr <| by
-    have : 2 / δ < (N : ℝ) + 2 := by dsimp [N]; push_cast; linarith [Nat.lt_floor_add_one (2 / δ)]
-    linarith [(div_lt_iff₀ hδ_pos).mp this]
-  let t : Fin (N + 3) → ℝ := fun j => (j.val : ℝ) / ((N : ℝ) + 2)
-  have ht_mono : StrictMono t := fun _ _ hij => div_lt_div_of_pos_right (Nat.cast_lt.mpr hij) hN_pos
-  have ht0 : t 0 = 0 := by simp [t]
-  have ht_last : t (Fin.last (N + 2)) = 1 := by simpa [t, Nat.cast_add] using div_self hN_pos.ne'
-  have hsub_conc {a b : ℝ} (ha0 : 0 ≤ a) (hab : a ≤ b) (hb1 : b ≤ 1)
-      (hlen : b - a ≤ 2 / ((N : ℝ) + 2)) : ConcaveOn ℝ (Icc a b) (interpolate f ∘ γ) := by
-    obtain ⟨idx, hidx⟩ := hball a ⟨ha0, hab.trans hb1⟩
-    refine (hVconc idx).subset (fun s hs => ⟨⟨ha0.trans hs.1, hs.2.trans hb1⟩, hidx ?_⟩)
-      (convex_Icc a b)
-    rw [Metric.mem_ball, Real.dist_eq, abs_of_nonneg (sub_nonneg.mpr hs.1)]
-    exact (sub_le_sub_right hs.2 a).trans_lt (hlen.trans_lt hstep_lt)
-  rw [← ht0, ← ht_last]
-  refine TauCeti.concaveOn_Icc_of_subdivision ht_mono
-    (hsub_conc (by simp [t]) (ht_mono.monotone (Fin.zero_le _))
-      (ht_last ▸ ht_mono.monotone (Fin.le_last _)) ?_)
-    fun k => hsub_conc (ht0 ▸ ht_mono.monotone (Fin.zero_le _))
-      (ht_mono.monotone (by simp only [Fin.le_def, Fin.val_castSucc, Fin.val_succ]; omega))
-      (ht_last ▸ ht_mono.monotone (Fin.le_last _)) ?_
-  · simpa [t] using div_le_div_of_nonneg_right (by norm_num : (1 : ℝ) ≤ 2) hN_pos.le
-  · simp only [t, Fin.val_succ, Fin.val_castSucc, Nat.cast_add, Nat.cast_one]; ring_nf; rfl
+  -- Pull back local open-neighbourhood concavity along `γ` and glue over `[0, 1]`.
+  refine TauCeti.concaveOn_Icc_of_local fun t ht => ?_
+  obtain ⟨U, hUo, hUc, hγU, hconc⟩ :=
+    exists_open_convex_concaveOn_of_notMem_barycentric hadj (hγ_mem ht) (hγ_pos ht) (hnot t ht)
+  exact ⟨γ ⁻¹' U, hUo.preimage AffineMap.lineMap_continuous, hγU,
+    (hconc.comp_affineMap γ).subset (fun _ hs => ⟨hγ_mem hs.1, hs.2⟩)
+      ((convex_Icc 0 1).inter (hUc.affine_preimage γ))⟩
 
 private theorem exists_perturbation_notMem_barycentric {m : ℕ} {p' q' : Fin 3 → ℝ} (hpq : p' ≠ q')
     {δ : ℝ} (hδ_pos : 0 < δ) :
@@ -360,14 +344,18 @@ private theorem exists_perturbation_notMem_barycentric {m : ℕ} {p' q' : Fin 3 
     simp only [L, φ, Pi.add_apply, Pi.smul_apply, smul_eq_mul, hwi, hwi1]; ring
   exact hLr ▸ Finset.mem_image_of_mem _ (Finset.mem_univ r)
 
-private theorem concaveOn_barycentricSimplex_of_adjacent {m : ℕ} {f : Vertex (m + 2) → ℝ}
-    (hadj : ∀ (s : Vertex m) (i : Fin 3),
-      0 ≤ rhombusSlack f ((UnitTriangle.down s).vertex (i + 2)) ((adjacentUp s i).vertex i)
-        ((UnitTriangle.down s).vertex (i + 1)) ((UnitTriangle.down s).vertex i)) :
-    ConcaveOn ℝ (barycentricSimplex (m + 2)) (interpolate f) := by
-  refine ⟨convex_barycentricSimplex (m + 2), fun p hp q hq a b ha hb hab => ?_⟩
-  rcases eq_or_ne p q with rfl | hpq
-  · rw [← add_smul, ← add_smul, hab, one_smul, one_smul]
+-- Approximate any distinct `p, q ∈ barycentricSimplex (m + 2)` by strictly interior sequences
+-- `u, v` whose connecting lines avoid all lattice vertices.
+private theorem exists_seq_tendsto_barycentricSimplex_notMem_barycentric {m : ℕ}
+    {p q : Fin 3 → ℝ} (hp : p ∈ barycentricSimplex (m + 2))
+    (hq : q ∈ barycentricSimplex (m + 2)) (hpq : p ≠ q) :
+    ∃ u v : ℕ → Fin 3 → ℝ,
+      (∀ K, u K ∈ barycentricSimplex (m + 2)) ∧ (∀ K, v K ∈ barycentricSimplex (m + 2)) ∧
+      (∀ K k, 0 < u K k) ∧ (∀ K k, 0 < v K k) ∧
+      (∀ (K : ℕ) (t : ℝ),
+        AffineMap.lineMap (u K) (v K) t ∉ Set.range (Vertex.barycentric (n := m + 2))) ∧
+      Tendsto u atTop (𝓝 p) ∧ Tendsto v atTop (𝓝 q) := by
+  -- Contract toward the strict barycenter `c` by `ε K → 0`, then translate by `η K • w K`.
   let c : Fin 3 → ℝ := fun _ => ((m + 2 : ℕ) : ℝ) / 3
   have hc_mem : c ∈ barycentricSimplex (m + 2) :=
     mem_barycentricSimplex_iff.mpr ⟨fun _ => by dsimp [c]; positivity, by simp [c]; ring⟩
@@ -390,53 +378,63 @@ private theorem concaveOn_barycentricSimplex_of_adjacent {m : ℕ} {f : Vertex (
   have hpos_sh {z : Fin 3 → ℝ} (hz : z ∈ barycentricSimplex (m + 2)) (K : ℕ) (k : Fin 3) :
       0 < sh z K k := by
     have hck : (2 : ℝ) / 3 ≤ c k := by dsimp [c]; push_cast; linarith [Nat.cast_nonneg (α := ℝ) m]
-    simp only [sh, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-    have h1 : 0 ≤ (1 - ε K) * z k :=
+    have hz0 : 0 ≤ (1 - ε K) * z k :=
       mul_nonneg (by linarith [hε_le K]) ((mem_barycentricSimplex_iff.mp hz).1 k)
-    have h2 : 2 * ε K / 3 ≤ ε K * c k := by nlinarith [hε_pos K, hck]
-    have h3 : -(ε K / 3) ≤ η K * w K k := by
-      nlinarith [hη_nonneg K, hη_le K, (abs_le.mp (hw_abs K k)).1]
-    linarith [hε_pos K]
+    simp only [sh, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    nlinarith [hε_pos K, hck, hη_nonneg K, hη_le K, (abs_le.mp (hw_abs K k)).1]
   have hmem_sh {z : Fin 3 → ℝ} (hz : z ∈ barycentricSimplex (m + 2)) (K : ℕ) :
-      sh z K ∈ barycentricSimplex (m + 2) := by
-    refine mem_barycentricSimplex_iff.mpr ⟨fun k => (hpos_sh hz K k).le, ?_⟩
-    simp only [sh, Pi.add_apply, Finset.sum_add_distrib, Pi.smul_apply, smul_eq_mul,
-      ← Finset.mul_sum, (mem_barycentricSimplex_iff.mp hz).2,
-      (mem_barycentricSimplex_iff.mp hc_mem).2, hw_sum K]; ring
+      sh z K ∈ barycentricSimplex (m + 2) :=
+    mem_barycentricSimplex_iff.mpr ⟨fun k => (hpos_sh hz K k).le, by
+      simp only [sh, Pi.add_apply, Finset.sum_add_distrib, Pi.smul_apply, smul_eq_mul,
+        ← Finset.mul_sum, (mem_barycentricSimplex_iff.mp hz).2,
+        (mem_barycentricSimplex_iff.mp hc_mem).2, hw_sum K]; ring⟩
   have htend_sh (z : Fin 3 → ℝ) : Tendsto (sh z) atTop (𝓝 z) := by
     refine tendsto_pi_nhds.mpr fun k => tendsto_sub_nhds_zero_iff.mp <|
       squeeze_zero_norm (a := fun K => ε K * (|c k - z k| + 1)) (fun K => ?_)
         (by simpa using hε_tendsto.mul tendsto_const_nhds)
-    rw [Real.norm_eq_abs, show sh z K k - z k = ε K * (c k - z k) + η K * w K k by
-      simp only [sh, Pi.add_apply, Pi.smul_apply, smul_eq_mul]; ring]
-    have hηw : η K * |w K k| ≤ ε K :=
-      (mul_le_of_le_one_right (hη_nonneg K) (hw_abs K k)).trans (by linarith [hη_le K, hε_pos K])
-    calc |ε K * (c k - z k) + η K * w K k|
-        ≤ |ε K * (c k - z k)| + |η K * w K k| := abs_add_le _ _
-      _ = ε K * |c k - z k| + η K * |w K k| := by
-          rw [abs_mul (ε K), abs_mul (η K), abs_of_pos (hε_pos K), abs_of_nonneg (hη_nonneg K)]
-      _ ≤ ε K * (|c k - z k| + 1) := by linarith
-  have hineqK (K : ℕ) :
-      a • interpolate f (sh p K) + b • interpolate f (sh q K) ≤
-        interpolate f (a • sh p K + b • sh q K) := by
-    have h01 := (concaveOn_lineMap_of_notMem_barycentric hadj (hmem_sh hp K) (hmem_sh hq K)
-      (hpos_sh hp K) (hpos_sh hq K) fun t _ => havoid K t).2
+    have hsub : sh z K k - z k = ε K * (c k - z k) + η K * w K k := by
+      simp only [sh, Pi.add_apply, Pi.smul_apply, smul_eq_mul]; ring
+    have h1 : |ε K * (c k - z k)| = ε K * |c k - z k| := by rw [abs_mul, abs_of_pos (hε_pos K)]
+    have h2 : |η K * w K k| ≤ ε K := by
+      rw [abs_mul, abs_of_nonneg (hη_nonneg K)]
+      exact (mul_le_of_le_one_right (hη_nonneg K) (hw_abs K k)).trans
+        (by linarith [hη_le K, hε_pos K])
+    rw [Real.norm_eq_abs, hsub]
+    linarith [abs_add_le (ε K * (c k - z k)) (η K * w K k)]
+  exact ⟨sh p, sh q, hmem_sh hp, hmem_sh hq, hpos_sh hp, hpos_sh hq, havoid,
+    htend_sh p, htend_sh q⟩
+
+private theorem concaveOn_barycentricSimplex_of_adjacent {m : ℕ} {f : Vertex (m + 2) → ℝ}
+    (hadj : ∀ (s : Vertex m) (i : Fin 3),
+      0 ≤ rhombusSlack f ((UnitTriangle.down s).vertex (i + 2)) ((adjacentUp s i).vertex i)
+        ((UnitTriangle.down s).vertex (i + 1)) ((UnitTriangle.down s).vertex i)) :
+    ConcaveOn ℝ (barycentricSimplex (m + 2)) (interpolate f) := by
+  refine ⟨convex_barycentricSimplex (m + 2), fun p hp q hq a b ha hb hab => ?_⟩
+  rcases eq_or_ne p q with rfl | hpq
+  · rw [← add_smul, ← add_smul, hab, one_smul, one_smul]
+  -- Approximate `p, q` by strictly interior vertex-avoiding segments and pass to the limit.
+  obtain ⟨u, v, hu_mem, hv_mem, hu_pos, hv_pos, havoid, hu_tend, hv_tend⟩ :=
+    exists_seq_tendsto_barycentricSimplex_notMem_barycentric hp hq hpq
+  have hineq (K : ℕ) :
+      a • interpolate f (u K) + b • interpolate f (v K) ≤
+        interpolate f (a • u K + b • v K) := by
+    have h01 := (concaveOn_lineMap_of_notMem_barycentric hadj (hu_mem K) (hv_mem K)
+      (hu_pos K) (hv_pos K) fun t _ => havoid K t).2
       (left_mem_Icc.mpr zero_le_one) (right_mem_Icc.mpr zero_le_one) ha hb hab
-    simpa [show AffineMap.lineMap (sh p K) (sh q K) b = a • sh p K + b • sh q K by
-      ext k; simp only [AffineMap.lineMap_apply_module, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-      linear_combination -sh p K k * hab] using h01
-  have htend_val {u : ℕ → Fin 3 → ℝ} {z : Fin 3 → ℝ} (hz : z ∈ barycentricSimplex (m + 2))
-      (hu_mem : ∀ K, u K ∈ barycentricSimplex (m + 2)) (hu : Tendsto u atTop (𝓝 z)) :
-      Tendsto (fun K => interpolate f (u K)) atTop (𝓝 (interpolate f z)) :=
+    have h1b : 1 - b = a := by linarith
+    simpa [AffineMap.lineMap_apply_module, h1b] using h01
+  have htend_val {w : ℕ → Fin 3 → ℝ} {z : Fin 3 → ℝ} (hz : z ∈ barycentricSimplex (m + 2))
+      (hw_mem : ∀ K, w K ∈ barycentricSimplex (m + 2)) (hw : Tendsto w atTop (𝓝 z)) :
+      Tendsto (fun K => interpolate f (w K)) atTop (𝓝 (interpolate f z)) :=
     (continuousOn_interpolate f z hz).tendsto.comp
-      (tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within u hu (Eventually.of_forall hu_mem))
+      (tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within w hw (Eventually.of_forall hw_mem))
   exact le_of_tendsto_of_tendsto
-    (((htend_val hp (hmem_sh hp) (htend_sh p)).const_smul a).add
-      ((htend_val hq (hmem_sh hq) (htend_sh q)).const_smul b))
+    (((htend_val hp hu_mem hu_tend).const_smul a).add
+      ((htend_val hq hv_mem hv_tend).const_smul b))
     (htend_val (convex_barycentricSimplex (m + 2) hp hq ha hb hab)
-      (fun K => convex_barycentricSimplex (m + 2) (hmem_sh hp K) (hmem_sh hq K) ha hb hab)
-      (((htend_sh p).const_smul a).add ((htend_sh q).const_smul b)))
-    (Eventually.of_forall hineqK)
+      (fun K => convex_barycentricSimplex (m + 2) (hu_mem K) (hv_mem K) ha hb hab)
+      ((hu_tend.const_smul a).add (hv_tend.const_smul b)))
+    (Eventually.of_forall hineq)
 
 private theorem isRhombusConcave_of_concaveOn_barycentricSimplex {n : ℕ} {f : Vertex n → ℝ}
     (hconc : ConcaveOn ℝ (barycentricSimplex n) (interpolate f)) : IsRhombusConcave f :=
@@ -520,11 +518,8 @@ theorem IsRhombusConcave.interpolate_le_triangleAffine {n : ℕ} {f : Vertex n �
   have ht_pos : 0 < t := by dsimp [t]; positivity
   have ht_le : t ≤ 1 := div_le_one_of_le₀ (by linarith) (by positivity)
   let y : Fin 3 → ℝ := AffineMap.lineMap c x t
-  have hy_mem : y ∈ barycentricSimplex n := by
-    dsimp only [y]
-    rw [AffineMap.lineMap_apply_module]
-    exact convex_barycentricSimplex n hc_mem hx (sub_nonneg.mpr ht_le) ht_pos.le
-      (sub_add_cancel 1 t)
+  have hy_mem : y ∈ barycentricSimplex n :=
+    (convex_barycentricSimplex n).lineMap_mem hc_mem hx ⟨ht_pos.le, ht_le⟩
   have hy_cell : y ∈ T.cell := T.mem_cell_iff.mpr ⟨hy_mem, fun i => by
     dsimp only [y]
     rw [(T.weight i).apply_lineMap, AffineMap.lineMap_apply_module, hc_weight i,

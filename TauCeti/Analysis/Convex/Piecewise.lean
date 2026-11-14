@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Deriv
 import Mathlib.Analysis.Convex.Slope
+import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # Gluing convex functions across points and overlapping intervals
@@ -15,8 +16,10 @@ A real function which is convex on `(-∞, a]` and on `[a, ∞)` is convex on al
 its left derivative at `a` is at most its right derivative there. Over any linearly ordered field,
 two convex (or concave) functions on `[a, c]` and `[b, d]` with a nondegenerate overlap `b < c`
 glue to `[a, d]`, and iterating across a strictly increasing subdivision glues convexity (or
-concavity) along a chain of two-step intervals `[t k, t (k + 2)]`. This complements the monotone
-and antitone gluing lemmas of `Mathlib.Analysis.Convex.Piecewise`.
+concavity) along a chain of two-step intervals `[t k, t (k + 2)]`. On compact real intervals,
+Lebesgue's number lemma upgrades local convexity (or concavity) on open neighbourhoods to global
+convexity (or concavity) on `[a, b]`. This complements the monotone and antitone gluing lemmas of
+`Mathlib.Analysis.Convex.Piecewise`.
 
 ## Main statements
 
@@ -27,6 +30,8 @@ and antitone gluing lemmas of `Mathlib.Analysis.Convex.Piecewise`.
 * `TauCeti.convexOn_Icc_of_subdivision`, `TauCeti.concaveOn_Icc_of_subdivision`: convexity and
   concavity along `[t 0, t 1]` and every two-step interval `[t k, t (k + 2)]` of a strictly
   increasing subdivision imply convexity and concavity on `[t 0, t (Fin.last (m + 1))]`.
+* `TauCeti.convexOn_Icc_of_local`, `TauCeti.concaveOn_Icc_of_local`: local convexity (or concavity)
+  around every point of `[a, b] ⊆ ℝ` implies convexity (or concavity) on `[a, b]`.
 -/
 
 public section
@@ -162,5 +167,61 @@ theorem concaveOn_Icc_of_subdivision {m : ℕ} {t : Fin (m + 2) → 𝕜} {f : �
   neg_convexOn_iff.mp (convexOn_Icc_of_subdivision ht h0.neg fun k => (hstep k).neg)
 
 end Subdivision
+
+/-- Local-to-global convexity on a compact interval: if every point `x ∈ [a, b]` admits an open
+neighbourhood `U` such that `f : ℝ → ℝ` is convex on `[a, b] ∩ U`, then `f` is convex on `[a, b]`.
+-/
+theorem convexOn_Icc_of_local {a b : ℝ} {f : ℝ → ℝ}
+    (h : ∀ x ∈ Icc a b, ∃ U : Set ℝ, IsOpen U ∧ x ∈ U ∧ ConvexOn ℝ (Icc a b ∩ U) f) :
+    ConvexOn ℝ (Icc a b) f := by
+  rcases le_or_gt b a with hba | hab
+  · refine ⟨convex_Icc a b, fun x hx y hy u v _ _ huv => ?_⟩
+    obtain rfl : x = y := le_antisymm (hx.2.trans (hba.trans hy.1)) (hy.2.trans (hba.trans hx.1))
+    rw [← add_smul, ← add_smul, huv, one_smul, one_smul]
+  · have hL : 0 < b - a := sub_pos.mpr hab
+    choose V hVo hxV hVconv using fun x : Icc a b => h x.1 x.2
+    obtain ⟨δ, hδ_pos, hball⟩ := lebesgue_number_lemma_of_metric isCompact_Icc hVo
+      fun s hs => mem_iUnion.mpr ⟨⟨s, hs⟩, hxV ⟨s, hs⟩⟩
+    let N : ℕ := ⌊2 * (b - a) / δ⌋₊ + 1
+    have hN_pos : (0 : ℝ) < (N : ℝ) + 2 := by positivity
+    have hstep_lt : 2 * (b - a) / ((N : ℝ) + 2) < δ := (div_lt_iff₀ hN_pos).mpr <| by
+      have : 2 * (b - a) / δ < (N : ℝ) + 2 := by
+        dsimp [N]; push_cast; linarith [Nat.lt_floor_add_one (2 * (b - a) / δ)]
+      linarith [(div_lt_iff₀ hδ_pos).mp this]
+    let t : Fin (N + 3) → ℝ := fun j => a + (j.val : ℝ) / ((N : ℝ) + 2) * (b - a)
+    have ht_mono : StrictMono t := fun _ _ hij => add_lt_add_right
+      (mul_lt_mul_of_pos_right (div_lt_div_of_pos_right (Nat.cast_lt.mpr hij) hN_pos) hL) a
+    have ht0 : t 0 = a := by simp [t]
+    have ht_last : t (Fin.last (N + 2)) = b := by
+      simp only [t, Fin.val_last, Nat.cast_add, Nat.cast_ofNat, div_self hN_pos.ne']; ring
+    have hsub {u v : ℝ} (hau : a ≤ u) (huv : u ≤ v) (hvb : v ≤ b)
+        (hlen : v - u ≤ 2 * (b - a) / ((N : ℝ) + 2)) : ConvexOn ℝ (Icc u v) f := by
+      obtain ⟨idx, hidx⟩ := hball u ⟨hau, huv.trans hvb⟩
+      refine (hVconv idx).subset (fun s hs => ⟨⟨hau.trans hs.1, hs.2.trans hvb⟩, hidx ?_⟩)
+        (convex_Icc u v)
+      rw [Metric.mem_ball, Real.dist_eq, abs_of_nonneg (sub_nonneg.mpr hs.1)]
+      exact (sub_le_sub_right hs.2 u).trans_lt (hlen.trans_lt hstep_lt)
+    rw [← ht0, ← ht_last]
+    refine convexOn_Icc_of_subdivision ht_mono
+      (hsub (ht0 ▸ le_rfl) (ht_mono.monotone (Fin.zero_le _))
+        (ht_last ▸ ht_mono.monotone (Fin.le_last _)) ?_)
+      fun k => hsub (ht0 ▸ ht_mono.monotone (Fin.zero_le _))
+        (ht_mono.monotone (by simp only [Fin.le_def, Fin.val_castSucc, Fin.val_succ]; omega))
+        (ht_last ▸ ht_mono.monotone (Fin.le_last _)) ?_
+    · simp only [t, Fin.val_zero, Fin.val_one, Nat.cast_zero, Nat.cast_one]
+      have : a + 1 / ((N : ℝ) + 2) * (b - a) - (a + 0 / ((N : ℝ) + 2) * (b - a)) =
+          (b - a) / ((N : ℝ) + 2) := by ring
+      rw [this]
+      exact div_le_div_of_nonneg_right (by linarith) hN_pos.le
+    · simp only [t, Fin.val_succ, Fin.val_castSucc, Nat.cast_add, Nat.cast_one]; ring_nf; rfl
+
+/-- Local-to-global concavity on a compact interval: if every point `x ∈ [a, b]` admits an open
+neighbourhood `U` such that `f : ℝ → ℝ` is concave on `[a, b] ∩ U`, then `f` is concave on `[a, b]`.
+-/
+theorem concaveOn_Icc_of_local {a b : ℝ} {f : ℝ → ℝ}
+    (h : ∀ x ∈ Icc a b, ∃ U : Set ℝ, IsOpen U ∧ x ∈ U ∧ ConcaveOn ℝ (Icc a b ∩ U) f) :
+    ConcaveOn ℝ (Icc a b) f :=
+  neg_convexOn_iff.mp (convexOn_Icc_of_local fun x hx =>
+    let ⟨U, hUo, hxU, hUc⟩ := h x hx; ⟨U, hUo, hxU, hUc.neg⟩)
 
 end TauCeti
