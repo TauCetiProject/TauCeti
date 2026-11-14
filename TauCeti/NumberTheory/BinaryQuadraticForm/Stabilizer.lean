@@ -233,24 +233,30 @@ private theorem regularRep_injective (hfD : f.discrim = D)
   · exact him
 
 /-- When `2` is not a zero divisor, an automorph of `f = Q_M` commutes with the generator matrix
-`M`, since `Q_M` and the trace determine `M`. Its coordinates against `M` lie in `R` because the
-coefficients of `f` generate the unit ideal, so it is the image of a norm-one element of the
-order. -/
-private theorem unitaryToStabilizer_surjective (hfD : f.discrim = D)
-    (hf : Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤) (h2 : IsLeftRegular (2 : R)) :
-    Function.Surjective (unitaryToStabilizer (R := R) f hfD) := by
-  rintro ⟨γ, hγ⟩
+`M`, since `Q_M` and the trace determine `M`. -/
+private theorem mul_castGeneratorMatrix_comm_of_mem_stabilizer (hfD : f.discrim = D)
+    (h2 : IsLeftRegular (2 : R)) {γ : SL(2, R)}
+    (hγ : γ ∈ stabilizer SL(2, R) (f.map (Int.castRingHom R))) :
+    (γ : Matrix (Fin 2) (Fin 2) R) * castGeneratorMatrix R f hfD =
+      castGeneratorMatrix R f hfD * γ := by
   rw [mem_stabilizer_iff] at hγ
   have hconj : (γ : Matrix (Fin 2) (Fin 2) R) * castGeneratorMatrix R f hfD *
       ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) = castGeneratorMatrix R f hfD := by
     refine (ofMatrix_inj_of_trace_eq h2 ?_).mp ?_
     · exact ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct γ) _
     · rw [ofMatrix_conj, ofMatrix_castGeneratorMatrix, hγ]
-  have hcomm : (γ : Matrix (Fin 2) (Fin 2) R) * castGeneratorMatrix R f hfD =
-      castGeneratorMatrix R f hfD * γ := by
-    conv_rhs => rw [← hconj]
-    rw [Matrix.mul_assoc _ _ (γ : Matrix (Fin 2) (Fin 2) R), ← SpecialLinearGroup.coe_mul,
-      inv_mul_cancel, SpecialLinearGroup.coe_one, Matrix.mul_one]
+  conv_rhs => rw [← hconj]
+  rw [Matrix.mul_assoc _ _ (γ : Matrix (Fin 2) (Fin 2) R), ← SpecialLinearGroup.coe_mul,
+    inv_mul_cancel, SpecialLinearGroup.coe_one, Matrix.mul_one]
+
+/-- When `2` is not a zero divisor, every automorph of `f = Q_M` is the image of a norm-one
+element of the order: its coordinates against the generator matrix `M` lie in `R` because the
+coefficients of `f` generate the unit ideal. -/
+private theorem unitaryToStabilizer_surjective (hfD : f.discrim = D)
+    (hf : Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤) (h2 : IsLeftRegular (2 : R)) :
+    Function.Surjective (unitaryToStabilizer (R := R) f hfD) := by
+  rintro ⟨γ, hγ⟩
+  have hcomm := mul_castGeneratorMatrix_comm_of_mem_stabilizer f hfD h2 hγ
   have he := two_mul_ediv_two_of_discrim_eq (discrim_eq_sq_sub_four_mul f hfD)
   have he' := congrArg (Int.cast : ℤ → R) he
   rw [castGeneratorMatrix_eq] at hcomm
