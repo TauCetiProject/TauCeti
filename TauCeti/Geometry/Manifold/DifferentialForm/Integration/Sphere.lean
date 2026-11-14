@@ -51,7 +51,8 @@ of a form along a smooth map `f` over a class `a` is the integral of the form ov
 (`TauCeti.sphereIntegral_mpullback`). A form that vanishes on spheres in the sense of
 `TauCeti.VanishesOnSpheres` has zero integral over every class
 (`TauCeti.VanishesOnSpheres.sphereIntegral_eq_zero`); in particular this holds for exact forms
-(`TauCeti.sphereIntegral_mextDeriv`).
+(`TauCeti.sphereIntegral_mextDeriv`). The integral is linear in the form
+(`TauCeti.sphereIntegral_smul`, `TauCeti.sphereIntegral_add`, `TauCeti.sphereIntegral_sub`).
 
 The integral does not depend on the base point: transporting a class along a path from `x` to `y`
 (`TauCeti.homotopyGroupTransport`) does not change its integral
@@ -83,6 +84,8 @@ glued to a cap is compatible with moving the base point of a capped loop.
   group.
 * `TauCeti.VanishesOnSpheres.sphereIntegral_eq_zero`, `TauCeti.sphereIntegral_mextDeriv`: forms
   vanishing on spheres, such as exact forms, have zero integral over every class.
+* `TauCeti.sphereIntegral_smul`, `TauCeti.sphereIntegral_zero`, `TauCeti.sphereIntegral_neg`,
+  `TauCeti.sphereIntegral_add`, `TauCeti.sphereIntegral_sub`: linearity in the form.
 
 ## References
 
@@ -642,6 +645,49 @@ theorem VanishesOnSpheres.sphereIntegral_eq_zero (hS : VanishesOnSpheres φ) (a 
 theorem sphereIntegral_mextDeriv {α : RoughForm I M F 1} (hα : IsSmoothForm I 1 α)
     (a : π_ 2 M x) : sphereIntegral (mextDeriv α) x a = 0 :=
   (vanishesOnSpheres_mextDeriv hα).sphereIntegral_eq_zero a
+
+/-- The integral over a class of `π₂(M, x)` is linear in the form: scalar multiples. -/
+@[simp]
+theorem sphereIntegral_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F]
+    [SMulCommClass ℝ 𝕜 F] (c : 𝕜) (φ : RoughForm I M F 2) (a : π_ 2 M x) :
+    sphereIntegral (c • φ) x a = c • sphereIntegral φ x a :=
+  rectangleIntegral_smul c φ _ _ _
+
+/-- The integral of the zero form over every class of `π₂(M, x)` vanishes. -/
+@[simp]
+theorem sphereIntegral_zero (a : π_ 2 M x) : sphereIntegral (0 : RoughForm I M F 2) x a = 0 := by
+  simpa using sphereIntegral_smul (0 : ℝ) (0 : RoughForm I M F 2) a
+
+/-- The integral of the negative of a form over a class of `π₂(M, x)` is the negative of its
+integral. -/
+@[simp]
+theorem sphereIntegral_neg (φ : RoughForm I M F 2) (a : π_ 2 M x) :
+    sphereIntegral (-φ) x a = -sphereIntegral φ x a :=
+  rectangleIntegral_neg φ _ _ _
+
+/-- The integral over a class of `π₂(M, x)` is linear in the form: sums of continuous forms. -/
+@[simp]
+theorem sphereIntegral_add {ψ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
+    (hψ : IsSmoothForm I 0 ψ) (a : π_ 2 M x) :
+    sphereIntegral (φ + ψ) x a = sphereIntegral φ x a + sphereIntegral ψ x a := by
+  have hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 (exists_isSmoothSphere (I := I) a).choose :=
+    (exists_isSmoothSphere (I := I) a).choose_spec.1.contMDiff.of_le (by simp)
+  have hint {θ : RoughForm I M F 2} (hθ : IsSmoothForm I 0 θ) (s : ℝ) :
+      IntervalIntegrable (fun t ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I (exists_isSmoothSphere (I := I) a).choose
+        θ (s, t) ![(1, 0), (0, 1)]) MeasureTheory.volume 0 1 :=
+    ((hθ.continuous_mpullback_apply hv ![(1, 0), (0, 1)]).comp
+      (Continuous.prodMk_right s)).intervalIntegrable 0 1
+  exact rectangleIntegral_add (a := (0, 0)) (b := (1, 1)) (fun s _ ↦ hint hφ s)
+    (fun s _ ↦ hint hψ s) ((continuous_integral_mpullback hφ hv 0 1).intervalIntegrable 0 1)
+    ((continuous_integral_mpullback hψ hv 0 1).intervalIntegrable 0 1)
+
+/-- The integral over a class of `π₂(M, x)` is linear in the form: differences of continuous
+forms. -/
+@[simp]
+theorem sphereIntegral_sub {ψ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
+    (hψ : IsSmoothForm I 0 ψ) (a : π_ 2 M x) :
+    sphereIntegral (φ - ψ) x a = sphereIntegral φ x a - sphereIntegral ψ x a := by
+  rw [sub_eq_add_neg, sphereIntegral_add hφ hψ.neg, sphereIntegral_neg, sub_eq_add_neg]
 
 /-- **Naturality.** For a smooth map `f : M → M'` of compact manifolds and a closed `C¹` two-form
 `φ` on `M'`, the integral of the pullback `f^* φ` over a class `a ∈ π₂(M, x)` is the integral of
