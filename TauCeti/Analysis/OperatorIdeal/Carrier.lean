@@ -130,7 +130,7 @@ def finiteSubmodule : Submodule 𝕜 (E →L[𝕜] F) where
   carrier := {A | g A < ∞}
   add_mem' {A B} hA hB := (g.map_add_le A B).trans_lt (ENNReal.add_lt_top.2 ⟨hA, hB⟩)
   zero_mem' := by simp
-  smul_mem' c A hA := by simpa using ENNReal.mul_lt_top enorm_lt_top hA
+  smul_mem' c A hA := by simpa using ENNReal.mul_lt_top eNorm_lt_top hA
 
 variable {g}
 
@@ -259,11 +259,11 @@ theorem ofReal_norm_eq_gauge (T : g.Carrier) :
 instance : NormedSpace 𝕜 g.Carrier where
   norm_smul_le c T := by
     rw [norm_def, norm_def, toContinuousLinearMap_smul, g.map_smul, ENNReal.toReal_mul,
-      toReal_enorm]
+      toReal_eNorm]
 
 /-- The operator norm is dominated by the norm of the carrier. -/
 theorem norm_toContinuousLinearMap_le (T : g.Carrier) : ‖T.toContinuousLinearMap‖ ≤ ‖T‖ := by
-  rw [← enorm_le_iff_norm_le, enorm_eq_gauge]
+  rw [← eNorm_le_iff_norm_le, enorm_eq_gauge]
   exact g.enorm_le _
 
 variable (g) in

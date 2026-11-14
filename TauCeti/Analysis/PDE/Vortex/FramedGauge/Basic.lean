@@ -421,10 +421,10 @@ instance : IsCancelSMul framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) :=
 
 /-- The logarithmic derivative of a `C^(n+1)` gauge is a `C^n` one-form. -/
 theorem contDiff_gaugeForm {n : WithTop ℕ∞} {u : ℂ → Circle}
-    (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ))) : ContDiff ℝ n (gaugeForm u) := by
-  exact contDiff_const.clm_comp
-    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.comp (conjCLE.contDiff.comp
-      (hu.of_le le_self_add)) |>.clm_comp (hu.fderiv_right le_rfl))
+    (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ))) : ContDiff ℝ n (gaugeForm u) :=
+  contDiff_const.clm_comp
+    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.comp (conjCLE.contDiff.comp (hu.of_le le_self_add))
+      |>.clm_comp (hu.fderiv_right le_rfl))
 
 /-- **A gauge is one order smoother than its logarithmic derivative.** If `u` is differentiable
 and `Im (u⁻¹ du)` is `C^n`, `n ≤ ∞`, then `u` is `C^(n+1)`, because `du = i u Im (u⁻¹ du)`. -/
@@ -463,7 +463,8 @@ theorem differentiableAt_gaugeForm {u : ℂ → Circle} {z : ℂ}
         (hu.fderiv_right (by norm_num)))
   exact h.differentiableAt one_ne_zero
 
-/-- A `C^(n+1)` gauge preserves `C^n` fields. -/
+/-- A `C^(n+1)` gauge preserves `C^n` fields: the connection loses one derivative of the gauge
+through `u⁻¹ du`, the section none. -/
 theorem contDiff_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle}
     (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ)))
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x) :

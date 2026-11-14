@@ -505,9 +505,13 @@ theorem not_isFiniteType_starCartanMatrix_three_of_sum_inv_le_one {a b c : ℕ}
 `a ≤ b ≤ c` vertices besides the centre is a chain (`a = 0`), a fork of type `D` (`a = b = 1`), or
 one of `E₆`, `E₇`, `E₈` (`a = 1`, `b = 2` and `c ≤ 4`).
 
-This is the exclusion half of the classification of forks. The converse, that each of these shapes
-is the diagram of an actual root system, is the separate realization target of the same layer and
-is not proved here. -/
+This is the exclusion half of the classification of forks, and the converse is not proved here. It
+is in `TauCeti/LinearAlgebra/RootSystem/FiniteType/Star/Classification.lean`:
+`TauCeti.isFiniteType_starCartanMatrix_three_iff` shows that each of these shapes is of finite
+type, and `TauCeti.starHasCartanType_D`, `TauCeti.starHasCartanType_E6`,
+`TauCeti.starHasCartanType_E7` and `TauCeti.starHasCartanType_E8` identify the non-chain shapes
+with their standard Cartan matrices. That every valid Dynkin type is the type of an actual root
+system is `TauCeti.DynkinType.hasCartanType_rationalRootSystem`. -/
 theorem eq_zero_or_eq_one_one_or_eq_one_two_le_four_of_isFiniteType_star_three
     {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c)
     (h : IsFiniteType (starCartanMatrix ![a, b, c])) :

@@ -126,9 +126,8 @@ theorem W1p.exists_isCompactOperator_of_isLipschitzDomainWith {q : ℝ≥0∞}
     exact hK.of_forall_ae_eq_of_le hqp hS₀
   -- For `p ≤ q`, interpolate between `Lᵖ(Ω)` and `L^s(Ω)` for a finite `s > q` in the
   -- subcritical range.
-  obtain ⟨s, θ, hs₁, hs, hps, hθ0, hθ1, hrel⟩ := exists_inv_eq_of_inv_lt_inv_add Fact.out hq
-    (ENNReal.inv_ne_top.2 (by exact_mod_cast (Module.finrank_pos (R := ℝ)
-      (M := WithLp 2 (ℝ × E))).ne')) hpq' hpq
+  obtain ⟨s, θ, hs₁, hs, hps, hθ0, hθ1, hrel⟩ :=
+    exists_inv_eq_of_inv_lt_inv_add Fact.out hq hpq' hpq
   have : Fact (1 ≤ s) := ⟨hs₁⟩
   obtain ⟨T, hT⟩ := W1p.exists_lpEmbeddingL_of_eLpNorm_value_le subset_rfl
     (W1p.exists_eLpNorm_value_le_of_subcritical_gain_of_isLipschitzDomainWith hs hps hΩ hb)
