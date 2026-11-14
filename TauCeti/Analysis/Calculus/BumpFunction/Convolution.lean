@@ -36,9 +36,9 @@ uniformly on a neighbourhood filter of a point of continuity of the function.
 The file also bounds the topological support of `ρ.normed μ ⋆ g` by the Minkowski sum
 `closedBall 0 ρ.rOut + tsupport g`, and provides the standard shrinking sequence of bumps
 `ContDiffBump.shrinking`, of radii `R / (n + 1)` and `R / (2 * (n + 1))`, together with interior
-shrinking sequences on compact subsets of open domains
-(`ContDiffBump.exists_shrinking_closedBall_subset` and
-`ContDiffBump.exists_shrinking_tendstoUniformlyOn_indicator`). These bumps are all
+radius selection and uniform indicator approximation on compact subsets of open domains
+(`TauCeti.exists_contDiffBump_tendsto_rOut_closedBall_subset` and
+`TauCeti.tendstoUniformlyOn_normed_convolution_indicator`). These bumps are all
 rescalings of the first one (`ContDiffBump.shrinking_apply_eq`), so integrals against their
 normalized forms reduce to one kernel (`ContDiffBump.integral_shrinking_normed_mul`).
 -/
@@ -104,20 +104,6 @@ theorem exists_seq_sub_tsupport_subset {E : Type*} [NormedAddCommGroup E] [Norme
   refine hδΩ (mem_cthickening_of_dist_le _ x δ _ (subset_closure hx) ?_)
   rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
   exact hy.trans (div_le_self hδ.le (by simp))
-
-/-- On a compact subset `K` of an open set `U`, a shrinking sequence of bumps centred at zero has
-outer radii tending to zero and keeps every closed `(ρ n).rOut`-ball around points of `K` inside
-`U`. -/
-theorem exists_shrinking_closedBall_subset {E : Type*} [PseudoMetricSpace E] [Zero E]
-    {U K : Set E} (hU : IsOpen U) (hK : IsCompact K) (hKU : K ⊆ U) :
-    ∃ ρ : ℕ → ContDiffBump (0 : E),
-      Tendsto (fun n => (ρ n).rOut) atTop (𝓝 0) ∧
-      ∀ n, ∀ x ∈ K, closedBall x (ρ n).rOut ⊆ U := by
-  obtain ⟨δ, hδ, hδU⟩ := hK.exists_cthickening_subset_open hU hKU
-  refine ⟨shrinking hδ, tendsto_rOut_shrinking hδ, fun n x hx => ?_⟩
-  rw [rOut_shrinking]
-  exact (closedBall_subset_closedBall (div_le_self hδ.le (by simp))).trans
-    ((closedBall_subset_cthickening hx δ).trans hδU)
 
 /-- `ContDiffBump.shrinking hR n` is `ContDiffBump.shrinking hR 0` rescaled by the factor `n + 1`,
 so all the bumps of the sequence are rescalings of one kernel. -/
@@ -291,16 +277,35 @@ theorem tendstoUniformlyOn_convolution_indicator_ball {ι : Type*} {l : Filter �
   exact ((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact
     (isCompact_closedBall x (r / 2))).1 (hlocal.mono hsub)).mono ball_subset_closedBall
 
-/-- On a compact subset `K` of an open set `U`, a shrinking sequence of normalized bumps keeps
-every closed `(ρ n).rOut`-ball around `K` inside `U` and mollifies `U.indicator g` uniformly to `g`
-on `K` whenever `g` is continuous on `U`. -/
-theorem exists_shrinking_tendstoUniformlyOn_indicator {U K : Set G} (hU : IsOpen U)
-    (hK : IsCompact K) (hKU : K ⊆ U) (hg : ContinuousOn g U) :
-    ∃ ρ : ℕ → ContDiffBump (0 : G),
+end ContDiffBump
+
+namespace TauCeti
+
+/-- On a compact subset `K` of an open set `U`, there exists a sequence of bumps centred at zero
+whose outer radii tend to zero and keep every closed `(ρ n).rOut`-ball around points of `K` inside
+`U`. -/
+theorem exists_contDiffBump_tendsto_rOut_closedBall_subset {E : Type*} [PseudoMetricSpace E]
+    [Zero E] {U K : Set E} (hU : IsOpen U) (hK : IsCompact K) (hKU : K ⊆ U) :
+    ∃ ρ : ℕ → ContDiffBump (0 : E),
       Tendsto (fun n => (ρ n).rOut) atTop (𝓝 0) ∧
-      (∀ n, ∀ x ∈ K, closedBall x (ρ n).rOut ⊆ U) ∧
-      TendstoUniformlyOn
-        (fun n => (ρ n).normed μ ⋆[lsmul ℝ ℝ, μ] U.indicator g) g atTop K := by
+      ∀ n, ∀ x ∈ K, closedBall x (ρ n).rOut ⊆ U := by
+  obtain ⟨δ, hδ, hδU⟩ := hK.exists_cthickening_subset_open hU hKU
+  refine ⟨ContDiffBump.shrinking hδ, ContDiffBump.tendsto_rOut_shrinking hδ, fun n x hx => ?_⟩
+  rw [ContDiffBump.rOut_shrinking]
+  exact (closedBall_subset_closedBall (div_le_self hδ.le (by simp))).trans
+    ((closedBall_subset_cthickening hx δ).trans hδU)
+
+/-- Along any filter of bump kernels whose outer radii tend to `0`, normalized-bump convolution of
+`U.indicator g` converges uniformly to `g` on any compact subset `K ⊆ U` whenever `g` is continuous
+on the open set `U`. -/
+theorem tendstoUniformlyOn_normed_convolution_indicator {G F : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [FiniteDimensional ℝ G] [MeasurableSpace G] [BorelSpace G]
+    {μ : Measure G} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [CompleteSpace F] {ι : Type*} {l : Filter ι} {ρ : ι → ContDiffBump (0 : G)}
+    (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0)) {U K : Set G} {g : G → F}
+    (hU : IsOpen U) (hK : IsCompact K) (hKU : K ⊆ U) (hg : ContinuousOn g U) :
+    TendstoUniformlyOn
+      (fun i => (ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] U.indicator g) g l K := by
   obtain ⟨δ, hδ, hδU⟩ := hK.exists_cthickening_subset_open hU hKU
   have hδ2 : 0 < δ / 2 := half_pos hδ
   have hsub : thickening (δ / 2) K ⊆ cthickening δ K :=
@@ -311,16 +316,10 @@ theorem exists_shrinking_tendstoUniformlyOn_indicator {U K : Set G} (hU : IsOpen
   have hmeas : AEStronglyMeasurable (U.indicator g) μ :=
     (aestronglyMeasurable_indicator_iff hU.measurableSet).2
       (hg.aestronglyMeasurable hU.measurableSet)
-  refine ⟨shrinking hδ2, tendsto_rOut_shrinking hδ2, fun n x hx => ?_, ?_⟩
-  · rw [rOut_shrinking]
-    have hle : (δ / 2) / ((n : ℝ) + 1) ≤ δ :=
-      (div_le_self hδ2.le (by simp)).trans (by linarith)
-    exact (closedBall_subset_closedBall hle).trans
-      ((closedBall_subset_cthickening hx δ).trans hδU)
-  · exact (tendstoUniformlyOn_normed_convolution (tendsto_rOut_shrinking hδ2) hδ2 hu
-      hmeas).congr_right fun x hx => Set.indicator_of_mem (hKU hx) g
+  exact (ContDiffBump.tendstoUniformlyOn_normed_convolution hρ hδ2 hu hmeas).congr_right
+    fun x hx => Set.indicator_of_mem (hKU hx) g
 
-end ContDiffBump
+end TauCeti
 
 /-- Every available Fréchet derivative of compactly supported finite-regularity data commutes
 with normalized-bump convolution. -/

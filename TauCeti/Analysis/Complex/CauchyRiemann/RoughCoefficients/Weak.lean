@@ -241,6 +241,14 @@ structure IsSobolevCRCoefficients (p : ℝ≥0∞) (Ω : Opens ℂ) (J : ℂ →
   /-- The zeroth-order coefficient is locally `Lᵖ` on `Ω`. -/
   memLpLoc_zeroth : MemLpLoc p Ω S
 
+omit [CompleteSpace V] in
+/-- Sobolev coefficients for the exponent `p` are Sobolev coefficients for every smaller
+exponent. -/
+theorem IsSobolevCRCoefficients.mono_exponent (hc : IsSobolevCRCoefficients p Ω J DJ S)
+    (hrp : r ≤ p) : IsSobolevCRCoefficients r Ω J DJ S :=
+  ⟨hc.hasWeakFDerivOn, hc.memLpLoc_coeff.mono_exponent hrp,
+    hc.memLpLoc_deriv.mono_exponent hrp, hc.memLpLoc_zeroth.mono_exponent hrp⟩
+
 section Holder
 
 omit [CompleteSpace V] in
@@ -277,8 +285,9 @@ theorem IsSobolevCRCoefficients.integrable_inner_crFormalAdjoint
   exact ((h₁.neg.sub h₂).sub h₃).add h₄
 
 /-- Under Sobolev coefficients and the Hölder condition `1/p + 1/q ≤ 1`, the integral of
-`⟪D* φ, ξ⟫` splits into the integrals of its four terms for every locally `L^q` field `ξ`. -/
-theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_eq_terms
+`⟪D* φ, ξ⟫` splits into the signed sum of the integrals of its four terms for every locally `L^q`
+field `ξ`. -/
+theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_eq_sub_add
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
     (hξ : MemLpLoc q Ω ξ) (φ : 𝓓(Ω, V)) :
     ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ =
@@ -342,7 +351,7 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint [FiniteDimensiona
         ∫ z, ⟪(φ : ℂ → V) z, S z (ξ z)⟫_ℝ := by
     simp only [inner_add_right]
     rw [integral_add hDB hC, integral_add hD hB]
-  rw [hc.integral_inner_crFormalAdjoint_eq_terms hpq hξq φ, hrhs, hξ1, hJξI]
+  rw [hc.integral_inner_crFormalAdjoint_eq_sub_add hpq hξq φ, hrhs, hξ1, hJξI]
   ring
 
 /-- **Weak solutions with a weak derivative.** If `ξ` has weak derivative `Dξ` on `Ω`, with `ξ`

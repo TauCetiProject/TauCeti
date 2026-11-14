@@ -34,7 +34,7 @@ order `k ≥ 2` of the induction.
 The coefficients and right side of the new system inherit the regularity the induction needs: `J₂`
 has the regularity of `J`, `S₂` is in `W^{k,p}_loc` as soon as `S ∈ W^{k,p}_loc` and
 `J ∈ W^{k+1,p}_loc`, and the right side lies in `L^q_loc` for `k = 0` and in `W^{k,q}_loc` for
-`S ∈ W^{k+1,p}_loc` and `ξ, η ∈ W^{k+1,q}_loc`.
+`S ∈ W^{k+1,p}_loc`, `ξ ∈ W^{max 1 k, q}_loc`, and `η ∈ W^{k+1,q}_loc`.
 
 ## Main declarations
 
@@ -180,25 +180,27 @@ theorem memLpLoc_differentiatedCR_rightSide [FiniteDimensional ℝ V] {p q : ℝ
     ((memWkpLoc_zero_iff.2 (hcomp 1)).prodMk (memWkpLoc_zero_iff.2 (hcomp I)))
 
 /-- **Higher-order regularity of the differentiated right side.** For `p > 2`, `1 < q ≤ p`,
-`S ∈ W^{k+1,p}_loc(Ω)` with weak derivative `DS`, and `ξ, η ∈ W^{k+1,q}_loc(Ω)` with `η` having
-weak derivative `Dη`, the map `(∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` lies in `W^{k,q}_loc(Ω)`. -/
+`S ∈ W^{k+1,p}_loc(Ω)` with weak derivative `DS`, `ξ ∈ W^{max 1 k, q}_loc(Ω)`, and
+`η ∈ W^{k+1,q}_loc(Ω)` with weak derivative `Dη`, the map
+`(∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` lies in `W^{k,q}_loc(Ω)`. -/
 theorem memWkpLoc_differentiatedCR_rightSide [FiniteDimensional ℝ V] {p q : ℝ≥0} (hp : 2 < p)
     (hq : 1 < q) (hqp : q ≤ p) {S : ℂ → V →L[ℝ] V} {DS : ℂ → ℂ →L[ℝ] V →L[ℝ] V}
     {ξ η : ℂ → V} {Dη : ℂ → ℂ →L[ℝ] V}
     (hS : MemWkpLoc p Ω (k + 1) S) (hDS : HasWeakFDerivOn volume Ω S DS)
-    (hξ : MemWkpLoc q Ω (k + 1) ξ) (hη : MemWkpLoc q Ω (k + 1) η)
+    (hξ : MemWkpLoc q Ω (max 1 k) ξ) (hη : MemWkpLoc q Ω (k + 1) η)
     (hDη : HasWeakFDerivOn volume Ω η Dη) :
     MemWkpLoc q Ω k (fun z => (Dη z 1 - DS z 1 (ξ z), Dη z I - DS z I (ξ z))) := by
   cases k with
   | zero =>
     exact memWkpLoc_zero_iff.2 (memLpLoc_differentiatedCR_rightSide hp hq.le hqp hS hDS hξ hη hDη)
   | succ n =>
+    have hξ' : MemWkpLoc q Ω (n + 1) ξ := by simpa [Nat.succ_eq_add_one] using hξ
     have hDSn : MemWkpLoc p Ω (n + 1) DS := hS.memWkpLoc_of_hasWeakFDerivOn hDS
     have hDηn : MemWkpLoc q Ω (n + 1) Dη := hη.memWkpLoc_of_hasWeakFDerivOn hDη
     have hcomp (v : ℂ) : MemWkpLoc q Ω (n + 1) (fun z => Dη z v - DS z v (ξ z)) :=
       (hDηn.clm_comp (ContinuousLinearMap.apply ℝ V v)).sub
         ((hDSn.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) v)).clm_apply_succ
-          hp hq hqp hξ.of_succ)
+          hp hq hqp hξ')
     exact (hcomp 1).prodMk (hcomp I)
 
 /-- **Check: the constant case.** For a constant structure `J = A` and `S = 0`, the differentiated

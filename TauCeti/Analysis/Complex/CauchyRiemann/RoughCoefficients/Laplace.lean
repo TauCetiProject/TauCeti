@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Sobolev.Mollification.Interior
 
 /-!
@@ -86,40 +87,31 @@ private theorem IsSobolevCRCoefficients.locallyIntegrableOn_laplace_aux
   exact ⟨hf, (hJf.neg.sub (hDJ1.locallyIntegrableOn_clm_apply hsol.memLpLoc hpq hloc)).sub
     (hDJI.locallyIntegrableOn_clm_apply hJξ hpq hloc)⟩
 
-/-- Over `ℝ`, `starRingEnd ℝ = RingHom.id ℝ`, so `ContinuousLinearMap.adjoint` is a real linear
-isometry equivalence on `V →L[ℝ] V` and `(x, T) ↦ T.adjoint x` is a continuous bilinear map. -/
-private def adjointEvalBilin (V : Type*) [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    [CompleteSpace V] : V →L[ℝ] (V →L[ℝ] V) →L[ℝ] V :=
-  (ContinuousLinearMap.adjoint : (V →L[ℝ] V) ≃ₗᵢ[ℝ] V →L[ℝ] V
-    ).toContinuousLinearEquiv.toContinuousLinearMap.flip
-
-/-- Pointwise evaluation of `adjointEvalBilin` (using `starRingEnd ℝ = RingHom.id ℝ`). -/
-@[simp]
-private theorem adjointEvalBilin_apply (x : V) (T : V →L[ℝ] V) :
-    adjointEvalBilin V x T = T.adjoint x := by
-  simp [adjointEvalBilin]
-
 /-- Pointwise expansion of `⟪crFormalAdjoint J DJ S (A† Ψ) z, v⟫_ℝ` for smooth `A`, where `A† Ψ`
-is formed via `TestFunction.bilinLeftCLM (adjointEvalBilin V)`. -/
+is formed via `TestFunction.bilinLeftCLM ContinuousLinearMap.adjointRealCLM.flip`. -/
 private theorem inner_crFormalAdjoint_bilinLeftCLM_adjoint {A : ℂ → V →L[ℝ] V}
     (hA : ContDiff ℝ ∞ A) (Ψ : 𝓓(Ω, V)) (z : ℂ) (v : V) :
-    ⟪crFormalAdjoint J DJ S (TestFunction.bilinLeftCLM (adjointEvalBilin V) hA Ψ) z, v⟫_ℝ =
+    ⟪crFormalAdjoint J DJ S
+        (TestFunction.bilinLeftCLM
+          (ContinuousLinearMap.adjointRealCLM (𝕜 := ℝ) (V := V) (W := V)).flip hA Ψ) z, v⟫_ℝ =
       -⟪(∂_{(1 : ℂ)} Ψ : 𝓓(Ω, V)) z, A z v⟫_ℝ - ⟪(Ψ : ℂ → V) z, fderiv ℝ A z 1 v⟫_ℝ -
         ⟪(∂_{I} Ψ : 𝓓(Ω, V)) z, A z (J z v)⟫_ℝ - ⟪(Ψ : ℂ → V) z, fderiv ℝ A z I (J z v)⟫_ℝ -
         ⟪(Ψ : ℂ → V) z, A z (DJ z I v)⟫_ℝ + ⟪(Ψ : ℂ → V) z, A z (S z v)⟫_ℝ := by
+  let B := (ContinuousLinearMap.adjointRealCLM (𝕜 := ℝ) (V := V) (W := V)).flip
   have hdΨ : DifferentiableAt ℝ (Ψ : ℂ → V) z := Ψ.contDiff.differentiable (by simp) z
   have hdA : DifferentiableAt ℝ A z := hA.differentiable (by simp) z
   have hdf (u : ℂ) :
-      fderiv ℝ (TestFunction.bilinLeftCLM (adjointEvalBilin V) hA Ψ : ℂ → V) z u =
+      fderiv ℝ (TestFunction.bilinLeftCLM B hA Ψ : ℂ → V) z u =
         (A z).adjoint ((∂_{u} Ψ : 𝓓(Ω, V)) z) + (fderiv ℝ A z u).adjoint ((Ψ : ℂ → V) z) := by
     rw [TestFunction.bilinLeftCLM_apply, TestFunction.lineDerivOp_apply_eq_fderiv,
-      (adjointEvalBilin V).fderiv_of_bilinear hdΨ hdA]
-    simp only [add_apply, ContinuousLinearMap.compL_apply, ContinuousLinearMap.coe_comp,
+      B.fderiv_of_bilinear hdΨ hdA]
+    simp only [B, add_apply, ContinuousLinearMap.compL_apply, ContinuousLinearMap.coe_comp,
       Function.comp_apply, ContinuousLinearMap.precompR_apply, ContinuousLinearMap.precompL_apply,
-      adjointEvalBilin_apply]
+      ContinuousLinearMap.flip_apply, ContinuousLinearMap.adjointRealCLM_apply]
     exact add_comm _ _
   rw [inner_crFormalAdjoint, hdf 1, hdf I]
-  simp only [TestFunction.bilinLeftCLM_apply, adjointEvalBilin_apply, inner_add_left,
+  simp only [TestFunction.bilinLeftCLM_apply, ContinuousLinearMap.flip_apply,
+    ContinuousLinearMap.adjointRealCLM_apply, inner_add_left,
     ContinuousLinearMap.adjoint_inner_left]
   ring
 
@@ -171,7 +163,8 @@ private theorem integral_inner_mollified_adjoint_eq (hpq : p⁻¹ + q⁻¹ ≤ 1
     hsol.memLpLoc hpq hloc)
   have i6 := hi Ψ hJsmooth.continuous
     (hc.memLpLoc_zeroth.locallyIntegrableOn_clm_apply hsol.memLpLoc hpq hloc)
-  let Ψ_ρ : 𝓓(Ω, V) := TestFunction.bilinLeftCLM (adjointEvalBilin V) hJsmooth Ψ
+  let Ψ_ρ : 𝓓(Ω, V) := TestFunction.bilinLeftCLM
+    (ContinuousLinearMap.adjointRealCLM (𝕜 := ℝ) (V := V) (W := V)).flip hJsmooth Ψ
   have hsplit : ∫ z, ⟪crFormalAdjoint J DJ S Ψ_ρ z, ξ z⟫_ℝ =
       -(∫ z, ⟪(∂_{(1 : ℂ)} Ψ : 𝓓(Ω, V)) z, J_ρ z (ξ z)⟫_ℝ) -
         (∫ z, ⟪(Ψ : ℂ → V) z, fderiv ℝ J_ρ z 1 (ξ z)⟫_ℝ) -
@@ -184,11 +177,9 @@ private theorem integral_inner_mollified_adjoint_eq (hpq : p⁻¹ + q⁻¹ ≤ 1
       integral_sub _ i2, integral_neg]
     exacts [i1.neg, i1.neg.sub i2, (i1.neg.sub i2).sub i3, ((i1.neg.sub i2).sub i3).sub i4,
       (((i1.neg.sub i2).sub i3).sub i4).sub i5]
-  have hsol_ρ := hsol.integral_inner_crFormalAdjoint Ψ_ρ
-  rw [hsplit] at hsol_ρ
-  simp only [Ψ_ρ, TestFunction.bilinLeftCLM_apply, adjointEvalBilin_apply,
-    ContinuousLinearMap.adjoint_inner_left, hDJ_eq] at hsol_ρ
-  exact hsol_ρ
+  simpa only [Ψ_ρ, TestFunction.bilinLeftCLM_apply, ContinuousLinearMap.flip_apply,
+    ContinuousLinearMap.adjointRealCLM_apply, ContinuousLinearMap.adjoint_inner_left,
+    hDJ_eq] using hsplit.symm.trans (hsol.integral_inner_crFormalAdjoint Ψ_ρ)
 
 /-- Algebraic expansion of the right-hand side pairing in `integral_inner_adjoint_limit`. -/
 private theorem integral_inner_adjoint_rhs_eq (hpq : p⁻¹ + q⁻¹ ≤ 1)
@@ -268,9 +259,9 @@ private theorem integral_inner_adjoint_limit_aux (hp : p ≠ ⊤) (hpq : p⁻¹ 
       hsol.memLpLoc hpq hloc
   have hSξ : LocallyIntegrableOn (fun z => S z (ξ z)) Ω volume :=
     hc.memLpLoc_zeroth.locallyIntegrableOn_clm_apply hsol.memLpLoc hpq hloc
-  have hJn_cont (n : ℕ) : ContinuousOn
-      ((ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (W : Set ℂ).indicator J) Ω :=
-    (hJn_smooth n).continuous.continuousOn
+  have hJn_cont {s : Set ℂ} : ∀ᶠ n in atTop, ContinuousOn
+      ((ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (W : Set ℂ).indicator J) s :=
+    .of_forall fun n => (hJn_smooth n).continuous.continuousOn
   have hconv (v : ℂ) {u : ℂ → V} (huW : MemLp u q (volume.restrict W)) :
       Tendsto (fun n => ∫ z, ⟪(Ψ : ℂ → V) z,
           (((ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume]
@@ -280,15 +271,15 @@ private theorem integral_inner_adjoint_limit_aux (hp : p ≠ ⊤) (hpq : p⁻¹ 
       (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) v) hp hpq hWc hΨW hDJW huW hρ0
   have hlim_lhs :=
     ((((((∂_{(1 : ℂ)} Ψ).tendsto_integral_inner_clm_of_tendstoUniformlyOn hξloc hJn_cont
-        hJcont (hunif.mono (Ψ.tsupport_lineDerivOp_subset 1))).neg.sub
+        (hunif.mono (Ψ.tsupport_lineDerivOp_subset 1))).neg.sub
       (hconv 1 hξW)).sub
-      ((∂_{I} Ψ).tendsto_integral_inner_clm_of_tendstoUniformlyOn hJξloc hJn_cont hJcont
+      ((∂_{I} Ψ).tendsto_integral_inner_clm_of_tendstoUniformlyOn hJξloc hJn_cont
         (hunif.mono (Ψ.tsupport_lineDerivOp_subset I)))).sub
       (hconv I hJξW)).sub
-      (Ψ.tendsto_integral_inner_clm_of_tendstoUniformlyOn hDJIξ hJn_cont hJcont hunif)).add
-      (Ψ.tendsto_integral_inner_clm_of_tendstoUniformlyOn hSξ hJn_cont hJcont hunif)
+      (Ψ.tendsto_integral_inner_clm_of_tendstoUniformlyOn hDJIξ hJn_cont hunif)).add
+      (Ψ.tendsto_integral_inner_clm_of_tendstoUniformlyOn hSξ hJn_cont hunif)
   have hlim_rhs := Ψ.tendsto_integral_inner_clm_of_tendstoUniformlyOn hsol.locallyIntegrableOn
-    hJn_cont hJcont hunif
+    hJn_cont hunif
   have hlim := tendsto_nhds_unique hlim_lhs (hlim_rhs.congr fun n =>
     (integral_inner_mollified_adjoint_eq hpq hc hJcont hsol Ψ hWΩ (ρ n) (hball n)
       hJW hDJW (hJn_smooth n)).symm)
@@ -316,9 +307,10 @@ private theorem IsSobolevCRCoefficients.integral_inner_adjoint_limit (hp : p ≠
   have hp1 : 1 ≤ p := ENNReal.inv_le_one.1 (le_self_add.trans hpq)
   obtain ⟨W, hΨW, hWΩ, hWc⟩ :=
     Opens.exists_between_and_isCompact_closure Ψ.hasCompactSupport Ψ.tsupport_subset
-  obtain ⟨ρ, hρ0, hball, hunif⟩ :=
-    ContDiffBump.exists_shrinking_tendstoUniformlyOn_indicator (μ := volume) W.isOpen
-      Ψ.hasCompactSupport hΨW (hJcont.mono (subset_closure.trans hWΩ))
+  obtain ⟨ρ, hρ0, hball⟩ :=
+    exists_contDiffBump_tendsto_rOut_closedBall_subset W.isOpen Ψ.hasCompactSupport hΨW
+  have hunif := tendstoUniformlyOn_normed_convolution_indicator (μ := volume) hρ0 W.isOpen
+    Ψ.hasCompactSupport hΨW (hJcont.mono (subset_closure.trans hWΩ))
   have hJW : MemLp J p (volume.restrict W) := hc.memLpLoc_coeff.memLp_of_closure_subset hWc hWΩ
   have hDJW : MemLp DJ p (volume.restrict W) := hc.memLpLoc_deriv.memLp_of_closure_subset hWc hWΩ
   have hξW : MemLp ξ q (volume.restrict W) := hsol.memLpLoc.memLp_of_closure_subset hWc hWΩ
@@ -333,24 +325,6 @@ private theorem IsSobolevCRCoefficients.integral_inner_adjoint_limit (hp : p ≠
   exact integral_inner_adjoint_limit_aux hp hpq hc hJcont hJsq hsol Ψ hWc hWΩ hΨW hρ0 hball hunif
     hJW hDJW hξW hJξW hJn_smooth
 
-/-- Scalar-multiply a real test function by a fixed vector `w : V` via
-`TestFunction.postcompCLM`. -/
-private def smulTestFunction (φ : 𝓓(Ω, ℝ)) (w : V) : 𝓓(Ω, V) :=
-  TestFunction.postcompCLM ((ContinuousLinearMap.id ℝ ℝ).smulRight w) φ
-
-omit [CompleteSpace V] in
-/-- Pointwise formula for `smulTestFunction`. -/
-@[simp]
-private theorem smulTestFunction_apply (φ : 𝓓(Ω, ℝ)) (w : V) (z : ℂ) :
-    (smulTestFunction φ w : ℂ → V) z = (φ : ℂ → ℝ) z • w := by
-  simp [smulTestFunction]
-
-omit [CompleteSpace V] in
-/-- Directional derivatives commute with `smulTestFunction`. -/
-private theorem lineDerivOp_smulTestFunction (φ : 𝓓(Ω, ℝ)) (w : V) (u : ℂ) :
-    (∂_{u} (smulTestFunction φ w) : 𝓓(Ω, V)) = smulTestFunction (∂_{u} φ) w :=
-  TestFunction.lineDerivCLM_postcompCLM ((ContinuousLinearMap.id ℝ ℝ).smulRight w) u φ
-
 /-- Testing the weak Cauchy–Riemann equation against `(∂_1 φ) • w` isolates the `∂_1²` and
 mixed `∂_I ∂_1` terms in the divergence-form Laplace identity. -/
 private theorem IsSobolevCRCoefficients.integral_inner_lineDeriv_one_smul_eq (hpq : p⁻¹ + q⁻¹ ≤ 1)
@@ -360,7 +334,8 @@ private theorem IsSobolevCRCoefficients.integral_inner_lineDeriv_one_smul_eq (hp
         (∫ z, ⟪(∂_{I} (∂_{(1 : ℂ)} φ) : 𝓓(Ω, ℝ)) z • w, J z (ξ z)⟫_ℝ) =
       ∫ z, ⟪(∂_{(1 : ℂ)} φ : 𝓓(Ω, ℝ)) z • w, η z + DJ z I (ξ z) - S z (ξ z)⟫_ℝ := by
   have hloc := Ω.isOpen.isLocallyClosed
-  set Ψ₁ := smulTestFunction (∂_{(1 : ℂ)} φ) w
+  set Ψ₁ : 𝓓(Ω, V) :=
+    TestFunction.postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ w) (∂_{(1 : ℂ)} φ)
   have hDJI_loc : LocallyIntegrableOn (fun z => DJ z I (ξ z)) Ω volume :=
     (hc.memLpLoc_deriv.clm_comp
       (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)).locallyIntegrableOn_clm_apply
@@ -374,16 +349,18 @@ private theorem IsSobolevCRCoefficients.integral_inner_lineDeriv_one_smul_eq (hp
   have iη : Integrable (fun z => ⟪(Ψ₁ : ℂ → V) z, η z⟫_ℝ) :=
     Ψ₁.integrable_inner hsol.locallyIntegrableOn
   have h1 := hsol.integral_inner_crFormalAdjoint Ψ₁
-  rw [hc.integral_inner_crFormalAdjoint_eq_terms hpq hsol.memLpLoc Ψ₁] at h1
-  simp only [← TestFunction.lineDerivOp_apply_eq_fderiv, Ψ₁, lineDerivOp_smulTestFunction,
-    smulTestFunction_apply] at h1
+  rw [hc.integral_inner_crFormalAdjoint_eq_sub_add hpq hsol.memLpLoc Ψ₁] at h1
+  simp only [← TestFunction.lineDerivOp_apply_eq_fderiv] at h1
+  simp only [Ψ₁, TestFunction.lineDerivOp_postcompCLM, TestFunction.postcompCLM_apply,
+    Function.comp_apply, ContinuousLinearMap.toSpanSingleton_apply] at h1
   have hrhs : ∫ z, ⟪(Ψ₁ : ℂ → V) z, η z + DJ z I (ξ z) - S z (ξ z)⟫_ℝ =
       (∫ z, ⟪(Ψ₁ : ℂ → V) z, η z⟫_ℝ) + (∫ z, ⟪(Ψ₁ : ℂ → V) z, DJ z I (ξ z)⟫_ℝ) -
         ∫ z, ⟪(Ψ₁ : ℂ → V) z, S z (ξ z)⟫_ℝ := by
     simp only [inner_sub_right, inner_add_right]
     rw [integral_sub _ iS, integral_add iη iDJ]
     exact iη.add iDJ
-  simp only [Ψ₁, smulTestFunction_apply] at hrhs
+  simp only [Ψ₁, TestFunction.postcompCLM_apply, Function.comp_apply,
+    ContinuousLinearMap.toSpanSingleton_apply] at hrhs
   linarith
 
 /-- **Divergence-form Laplace reduction** for weak Cauchy–Riemann solutions with Sobolev
@@ -406,8 +383,9 @@ theorem IsSobolevCRCoefficients.integral_laplacian_smul_eq (hp : p ≠ ⊤) (hpq
   refine ext_inner_left ℝ fun w => ?_
   have eq1 := hc.integral_inner_lineDeriv_one_smul_eq hpq hsol φ w
   have eq2 := hc.integral_inner_adjoint_limit hp hpq hJcont hJsq hsol
-    (smulTestFunction (∂_{I} φ) w)
-  simp only [lineDerivOp_smulTestFunction, smulTestFunction_apply] at eq2
+    (TestFunction.postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ w) (∂_{I} φ))
+  simp only [TestFunction.lineDerivOp_postcompCLM, TestFunction.postcompCLM_apply,
+    Function.comp_apply, ContinuousLinearMap.toSpanSingleton_apply] at eq2
   rw [TestFunction.lineDerivOp_comm φ 1 I] at eq2
   have hΔ (z : ℂ) : Δ (φ : ℂ → ℝ) z =
       (∂_{(1 : ℂ)} (∂_{(1 : ℂ)} φ)) z + (∂_{I} (∂_{I} φ)) z := by

@@ -13,6 +13,7 @@ import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.Local.Examples
 import TauCeti.Analysis.Sobolev.Local.Multiplication
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
+import TauCeti.Data.ENNReal.Inv
 
 /-!
 # Order-zero interior regularity for Cauchy–Riemann operators with Sobolev coefficients
@@ -39,25 +40,26 @@ B.4.9) and shows that the complex-structure hypothesis `J² = -1` cannot be omit
    `TauCeti.memWkpLoc_one_of_forall_integral_laplacian_smul_eq` yields `ξ ∈ W^{1,r}_loc(Ω)`.
 2. **Bootstrap across the critical exponent**
    (`TauCeti.IsWeakCRSolution.memWkpLoc_one_of_memLpLoc` and
-   `TauCeti.IsWeakCRSolution.memWkpLoc_one`). When `2 < p < ∞`, `p⁻¹ + q⁻¹ < 1`, and `η ∈ Lʳ_loc`
-   with `1 < r ≤ p`, iterating the single-step gain with the two-dimensional Sobolev embedding
-   decreases `q⁻¹` by `(2⁻¹ - p⁻¹) / 2 > 0` at each step until the product exponent exceeds `2`,
-   where Morrey's embedding puts `ξ` in `L^∞_loc` and one final step reaches `W^{1,r}_loc(Ω)`.
+   `TauCeti.IsWeakCRSolution.memWkpLoc_one`). When `2 < p ≤ ∞`, `p⁻¹ + q⁻¹ < 1`, and `η ∈ Lʳ_loc`
+   with `1 < r < ∞` and `r ≤ p`, truncating `p` to a finite exponent `p₀ > 2` and iterating the
+   single-step gain with the two-dimensional Sobolev embedding decreases `q⁻¹` by
+   `(2⁻¹ - p₀⁻¹) / 2 > 0` at each step until the product exponent exceeds `2`, where Morrey's
+   embedding puts `ξ` in `L^∞_loc` and one final step reaches `W^{1,r}_loc(Ω)`.
 3. **Sharpness of `J² = -1`** (`TauCeti.exists_isWeakCRSolution_zero_not_memWkpLoc_one`). On any
-   open set `Ω` meeting the real axis, with `J = 0` and `S = 0`, there exists a weak solution
-   `ξ ∈ L^∞_loc(Ω)` of `∂_s ξ = 0` that fails to lie in `W^{1,q}_loc(Ω)` for every `q : ℝ≥0∞`.
+   nonempty open set `Ω`, with `J = 0` and `S = 0`, there exists a weak solution `ξ ∈ L^∞_loc(Ω)`
+   of `∂_s ξ = 0` that fails to lie in `W^{1,q}_loc(Ω)` for every `q : ℝ≥0∞`.
 
 ## Main declarations
 
 * `TauCeti.IsWeakCRSolution.memWkpLoc_one_of_inv_add_inv_le`: single-step regularity
   `ξ ∈ W^{1,r}_loc` when `2 < p ≤ ∞`, `1 < r < ∞`, `p⁻¹ + q⁻¹ ≤ r⁻¹` and `η ∈ Lʳ_loc`.
 * `TauCeti.IsWeakCRSolution.memWkpLoc_one_of_memLpLoc`: full order-zero gain `ξ ∈ W^{1,r}_loc`
-  for `p⁻¹ + q⁻¹ < 1`, `1 < r ≤ p` and `η ∈ Lʳ_loc`.
+  for `2 < p ≤ ∞`, `p⁻¹ + q⁻¹ < 1`, `1 < r < ∞`, `r ≤ p`, and `η ∈ Lʳ_loc`.
 * `TauCeti.IsWeakCRSolution.memWkpLoc_one`: order-zero regularity `ξ ∈ W^{1,q}_loc` for
-  `q ≤ p`, `p⁻¹ + q⁻¹ < 1` and `η ∈ L^q_loc`.
-* `TauCeti.exists_isWeakCRSolution_zero_not_memWkpLoc_one`: on any open `Ω` meeting the real
-  axis, without `J² = -1` there exists a weak solution in `L^∞_loc(Ω)` for smooth coefficients
-  that lies in `W^{1,q}_loc(Ω)` for no `q : ℝ≥0∞`.
+  `2 < p ≤ ∞`, `q < ∞`, `q ≤ p`, `p⁻¹ + q⁻¹ < 1`, and `η ∈ L^q_loc`.
+* `TauCeti.exists_isWeakCRSolution_zero_not_memWkpLoc_one`: on any nonempty open `Ω`, without
+  `J² = -1` there exists a weak solution in `L^∞_loc(Ω)` for smooth coefficients that lies in
+  `W^{1,q}_loc(Ω)` for no `q : ℝ≥0∞`.
 
 ## References
 
@@ -233,57 +235,62 @@ private theorem memWkpLoc_one_bootstrap_aux {p r : ℝ≥0} (hp : 2 < p) (hr : 1
           rw [hs_inv]; push_cast at hN; linarith
 
 /-- **Order-zero interior regularity with general right-hand side** (McDuff–Salamon, Proposition
-B.4.9 at `k = 0`). Let `2 < p`, `1 < r ≤ p`, and `(p : ℝ≥0∞)⁻¹ + q⁻¹ < 1` (allowing `q = ∞`). If
-`J ∈ W^{1,p}_loc(Ω)` with `J² = -1` almost everywhere on `Ω`, `S ∈ Lᵖ_loc(Ω)`, and
-`η ∈ Lʳ_loc(Ω)`, then every weak solution `ξ ∈ L^q_loc(Ω)` of `∂_s ξ + J ∂_t ξ + S ξ = η` lies in
-`W^{1,r}_loc(Ω)`. -/
-theorem IsWeakCRSolution.memWkpLoc_one_of_memLpLoc {p r : ℝ≥0} {q : ℝ≥0∞} (hp : 2 < p)
-    (hr : 1 < r) (hrp : r ≤ p) (hpq : (p : ℝ≥0∞)⁻¹ + q⁻¹ < 1)
+B.4.9 at `k = 0`). Let `2 < p ≤ ∞`, `1 < r < ∞`, `r ≤ p`, and `p⁻¹ + q⁻¹ < 1` (allowing `p = ∞`
+and `q = ∞`). If `J ∈ W^{1,p}_loc(Ω)` with `J² = -1` almost everywhere on `Ω`, `S ∈ Lᵖ_loc(Ω)`,
+and `η ∈ Lʳ_loc(Ω)`, then every weak solution `ξ ∈ L^q_loc(Ω)` of `∂_s ξ + J ∂_t ξ + S ξ = η` lies
+in `W^{1,r}_loc(Ω)`. -/
+theorem IsWeakCRSolution.memWkpLoc_one_of_memLpLoc {p q r : ℝ≥0∞} (hp : 2 < p)
+    (hr : 1 < r) (hr_top : r ≠ ⊤) (hrp : r ≤ p) (hpq : p⁻¹ + q⁻¹ < 1)
     (hc : IsSobolevCRCoefficients p Ω J DJ S)
     (hJsq : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1) (hη : MemLpLoc r Ω η)
     (hsol : IsWeakCRSolution q Ω J DJ S ξ η) :
     MemWkpLoc r Ω 1 ξ := by
+  obtain ⟨p₀, hp₀, hrp₀, hp₀p, hp₀q⟩ :=
+    ENNReal.exists_nnreal_two_lt_and_le_and_inv_add_inv_lt_one hp hr_top hrp hpq
+  lift r to ℝ≥0 using hr_top
+  have hr' : 1 < r := by exact_mod_cast hr
+  have hrp₀' : r ≤ p₀ := ENNReal.coe_le_coe.1 hrp₀
+  have hc₀ := hc.mono_exponent hp₀p
   rcases eq_or_ne q ⊤ with rfl | hqt
-  · exact memWkpLoc_one_of_isWeakCRSolution_top hp hr hrp hc hJsq hη hsol
-  have hq0 : q ≠ 0 := by
-    rintro rfl
-    simp at hpq
+  · exact memWkpLoc_one_of_isWeakCRSolution_top hp₀ hr' hrp₀' hc₀ hJsq hη hsol
+  have hq0 : q ≠ 0 := by rintro rfl; simp at hp₀q
   lift q to ℝ≥0 using hqt
   have hq_pos : 0 < q := pos_iff_ne_zero.2 (by exact_mod_cast hq0)
-  have hp_pos : 0 < p := zero_lt_two.trans hp
-  have hpq' : (p : ℝ)⁻¹ + (q : ℝ)⁻¹ < 1 := by
-    rw [← ENNReal.coe_inv hp_pos.ne', ← ENNReal.coe_inv hq_pos.ne', ← ENNReal.coe_add] at hpq
-    exact_mod_cast hpq
-  have hp2 : (2 : ℝ) < p := by exact_mod_cast hp
-  have hp_inv_lt : (p : ℝ)⁻¹ < 2⁻¹ := (inv_lt_inv₀ (by positivity) two_pos).2 hp2
-  have hδ : 0 < (2⁻¹ - (p : ℝ)⁻¹) / 2 := by linarith
-  refine memWkpLoc_one_bootstrap_aux hp hr hrp hc hJsq hη
-    ⌈(q : ℝ)⁻¹ / ((2⁻¹ - (p : ℝ)⁻¹) / 2)⌉₊ hq_pos hpq' ?_ hsol
+  have hp₀_pos : 0 < p₀ := zero_lt_two.trans hp₀
+  have hp₀q' : (p₀ : ℝ)⁻¹ + (q : ℝ)⁻¹ < 1 := by
+    rw [← ENNReal.coe_inv hp₀_pos.ne', ← ENNReal.coe_inv hq_pos.ne', ← ENNReal.coe_add] at hp₀q
+    exact_mod_cast hp₀q
+  have hp₀2 : (2 : ℝ) < p₀ := by exact_mod_cast hp₀
+  have hp₀_inv_lt : (p₀ : ℝ)⁻¹ < 2⁻¹ := (inv_lt_inv₀ (by positivity) two_pos).2 hp₀2
+  have hδ : 0 < (2⁻¹ - (p₀ : ℝ)⁻¹) / 2 := by linarith
+  refine memWkpLoc_one_bootstrap_aux hp₀ hr' hrp₀' hc₀ hJsq hη
+    ⌈(q : ℝ)⁻¹ / ((2⁻¹ - (p₀ : ℝ)⁻¹) / 2)⌉₊ hq_pos hp₀q' ?_ hsol
   exact (div_le_iff₀ hδ).1 (Nat.le_ceil _)
 
-/-- **Order-zero interior regularity** (McDuff–Salamon, Proposition B.4.9, `k = 0`). Let `2 < p`,
-`q ≤ p`, and `(p : ℝ≥0∞)⁻¹ + (q : ℝ≥0∞)⁻¹ < 1` (which in particular forces `1 < q`). If
+/-- **Order-zero interior regularity** (McDuff–Salamon, Proposition B.4.9, `k = 0`). Let
+`2 < p ≤ ∞`, `q < ∞`, `q ≤ p`, and `p⁻¹ + q⁻¹ < 1` (which in particular forces `1 < q`). If
 `J ∈ W^{1,p}_loc(Ω)` with `J² = -1` almost everywhere on `Ω`, `S ∈ Lᵖ_loc(Ω)`, and
 `η ∈ L^q_loc(Ω)`, then every weak solution `ξ ∈ L^q_loc(Ω)` of `∂_s ξ + J ∂_t ξ + S ξ = η` lies in
 `W^{1,q}_loc(Ω)`. -/
-theorem IsWeakCRSolution.memWkpLoc_one {p q : ℝ≥0} (hp : 2 < p) (hqp : q ≤ p)
-    (hpq : (p : ℝ≥0∞)⁻¹ + (q : ℝ≥0∞)⁻¹ < 1) (hc : IsSobolevCRCoefficients p Ω J DJ S)
+theorem IsWeakCRSolution.memWkpLoc_one {p q : ℝ≥0∞} (hp : 2 < p) (hq_top : q ≠ ⊤) (hqp : q ≤ p)
+    (hpq : p⁻¹ + q⁻¹ < 1) (hc : IsSobolevCRCoefficients p Ω J DJ S)
     (hJsq : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1) (hη : MemLpLoc q Ω η)
     (hsol : IsWeakCRSolution q Ω J DJ S ξ η) :
-    MemWkpLoc q Ω 1 ξ := by
-  have hq : 1 < q := by exact_mod_cast ENNReal.inv_lt_one.1 (le_add_self.trans_lt hpq)
-  exact hsol.memWkpLoc_one_of_memLpLoc hp hq hqp hpq hc hJsq hη
+    MemWkpLoc q Ω 1 ξ :=
+  hsol.memWkpLoc_one_of_memLpLoc hp (ENNReal.inv_lt_one.1 (le_add_self.trans_lt hpq)) hq_top hqp
+    hpq hc hJsq hη
 
 end OrderZeroRegularity
 
 section Counterexample
 
-/-- The indicator of the upper half-plane solves `∂_s ξ = 0` weakly in `L^∞_loc(Ω)` on every open
-planar domain `Ω`. -/
-private theorem isWeakCRSolution_upperHalfPlaneIndicator (Ω : Opens ℂ) :
-    IsWeakCRSolution ⊤ Ω 0 0 0 ({z : ℂ | 0 < z.im}.indicator fun _ => (1 : ℝ)) 0 := by
-  set ξ : ℂ → ℝ := {z : ℂ | 0 < z.im}.indicator fun _ => 1
-  have hmeas : MeasurableSet {z : ℂ | 0 < z.im} := measurableSet_lt measurable_const measurable_im
+/-- The indicator of the horizontal half-plane `{z : ℂ | t₀ < z.im}` solves `∂_s ξ = 0` weakly in
+`L^∞_loc(Ω)` on every open planar domain `Ω`. -/
+private theorem isWeakCRSolution_upperHalfPlaneIndicator (t₀ : ℝ) (Ω : Opens ℂ) :
+    IsWeakCRSolution ⊤ Ω 0 0 0 ({z : ℂ | t₀ < z.im}.indicator fun _ => (1 : ℝ)) 0 := by
+  set ξ : ℂ → ℝ := {z : ℂ | t₀ < z.im}.indicator fun _ => 1
+  have hmeas : MeasurableSet {z : ℂ | t₀ < z.im} := measurableSet_lt measurable_const measurable_im
+  have hmeas0 : MeasurableSet {z : ℂ | 0 < z.im} := measurableSet_lt measurable_const measurable_im
   have hξ_top : MemLpLoc ⊤ Ω ξ := memLpLoc_iff.2 fun K _ hK => by
     have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
     exact memLp_indicator_const ⊤ hmeas.nullMeasurableSet 1 (Or.inr (measure_ne_top _ _))
@@ -295,18 +302,34 @@ private theorem isWeakCRSolution_upperHalfPlaneIndicator (Ω : Opens ℂ) :
     rw [inner_crFormalAdjoint]; simp [mul_comm]
   simp_rw [hadj]
   refine ⟨hint₀.neg, ?_⟩
+  let c : ℂ := Complex.I * (t₀ : ℂ)
+  let g : ℂ → ℝ := (φ : ℂ → ℝ) ∘ fun z => z + c
+  have hg_diff : ContDiff ℝ 1 g :=
+    (φ.contDiff.of_le (by simp)).comp (contDiff_id.add contDiff_const)
+  have hg_supp : HasCompactSupport g :=
+    φ.hasCompactSupport.comp_homeomorph (Homeomorph.addRight c)
+  have hshift (z : ℂ) :
+      ({w : ℂ | t₀ < w.im}.indicator fun w => fderiv ℝ (φ : ℂ → ℝ) w 1) (z + c) =
+        {w : ℂ | 0 < w.im}.indicator (fun w => fderiv ℝ g w 1) z := by
+    have hdf : fderiv ℝ g z 1 = fderiv ℝ (φ : ℂ → ℝ) (z + c) 1 := by
+      have hd := (((φ.contDiff.of_le (by simp)).differentiable one_ne_zero
+        (z + c)).hasFDerivAt.comp z ((hasFDerivAt_id z).add_const c)).fderiv
+      simpa [g] using congr($hd 1)
+    simp [Set.indicator_apply, c, hdf]
   have hind : (fun z => fderiv ℝ (φ : ℂ → ℝ) z 1 * ξ z) =
-      {z : ℂ | 0 < z.im}.indicator fun z => fderiv ℝ (φ : ℂ → ℝ) z 1 := by
-    ext z; by_cases hz : 0 < z.im <;> simp [ξ, hz]
-  simp only [Pi.zero_apply, inner_zero_right, integral_zero, integral_neg, neg_eq_zero, hind,
-    integral_indicator hmeas]
-  exact setIntegral_im_pos_fderiv_one_eq_zero (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
+      {z : ℂ | t₀ < z.im}.indicator fun z => fderiv ℝ (φ : ℂ → ℝ) z 1 := by
+    ext z; by_cases hz : t₀ < z.im <;> simp [ξ, hz]
+  simp only [Pi.zero_apply, inner_zero_right, integral_zero, integral_neg, neg_eq_zero, hind]
+  rw [← integral_add_right_eq_self _ c]
+  simp_rw [hshift]
+  rw [integral_indicator hmeas0]
+  exact setIntegral_im_pos_fderiv_one_eq_zero hg_diff hg_supp
 
-/-- On an open set `Ω` meeting the real axis, the indicator of the upper half-plane does not belong
-to `W^{1,q}_loc(Ω)` for any `q : ℝ≥0∞`. -/
+/-- Around any point `z₀ ∈ Ω`, the indicator of `{z : ℂ | z₀.im < z.im}` does not belong to
+`W^{1,q}_loc(Ω)` for any `q : ℝ≥0∞`. -/
 private theorem not_memWkpLoc_one_upperHalfPlaneIndicator {Ω : Opens ℂ} {z₀ : ℂ} (hz₀ : z₀ ∈ Ω)
-    (him : z₀.im = 0) (q : ℝ≥0∞) :
-    ¬ MemWkpLoc q Ω 1 ({z : ℂ | 0 < z.im}.indicator fun _ => (1 : ℝ)) := by
+    (q : ℝ≥0∞) :
+    ¬ MemWkpLoc q Ω 1 ({z : ℂ | z₀.im < z.im}.indicator fun _ => (1 : ℝ)) := by
   intro hW
   obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 Ω.isOpen z₀ hz₀
   let A : ℂ ≃L[ℝ] ℂ :=
@@ -319,20 +342,20 @@ private theorem not_memWkpLoc_one_upperHalfPlaneIndicator {Ω : Opens ℂ} {z₀
     simpa using hz
   have h' : MemWkpLoc q (ball 0 ε) 1 ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) := by
     convert hW.comp_continuousLinearEquiv_add A z₀ hmaps using 2 with z
-    by_cases hz : 0 < z.re <;> simp [hA, him, hz]
+    by_cases hz : 0 < z.re <;> simp [hA, hz]
   have h0 : (0 : ℂ) ∈ interior (ball (0 : ℂ) ε) := by
     rw [isOpen_ball.interior_eq]; exact mem_ball_self hε
   exact not_memWkpLoc_indicator_re_pos (k := 0) h0 Complex.zero_re h'
 
-/-- **Sharpness of `J² = -1`.** On any open planar set `Ω` meeting the real axis (`z₀ ∈ Ω` with
-`z₀.im = 0`), there exists a weak solution `ξ ∈ L^∞_loc(Ω)` of the homogeneous
-equation `∂_s ξ = 0` (`J = 0`, `S = 0`, smooth coefficients violating `J² = -1`) that fails to
-belong to `W^{1,q}_loc(Ω)` for every `q : ℝ≥0∞`. -/
-theorem exists_isWeakCRSolution_zero_not_memWkpLoc_one {Ω : Opens ℂ} {z₀ : ℂ} (hz₀ : z₀ ∈ Ω)
-    (him : z₀.im = 0) :
-    ∃ ξ : ℂ → ℝ, IsWeakCRSolution ⊤ Ω 0 0 0 ξ 0 ∧ ∀ q, ¬ MemWkpLoc q Ω 1 ξ :=
-  ⟨_, isWeakCRSolution_upperHalfPlaneIndicator Ω,
-    not_memWkpLoc_one_upperHalfPlaneIndicator hz₀ him⟩
+/-- **Sharpness of `J² = -1`.** On any nonempty open planar set `Ω`, there exists a weak solution
+`ξ ∈ L^∞_loc(Ω)` of the homogeneous equation `∂_s ξ = 0` (`J = 0`, `S = 0`, smooth coefficients
+violating `J² = -1`) that fails to belong to `W^{1,q}_loc(Ω)` for every `q : ℝ≥0∞`. -/
+theorem exists_isWeakCRSolution_zero_not_memWkpLoc_one {Ω : Opens ℂ}
+    (hΩ : (Ω : Set ℂ).Nonempty) :
+    ∃ ξ : ℂ → ℝ, IsWeakCRSolution ⊤ Ω 0 0 0 ξ 0 ∧ ∀ q, ¬ MemWkpLoc q Ω 1 ξ := by
+  obtain ⟨z₀, hz₀⟩ := hΩ
+  exact ⟨_, isWeakCRSolution_upperHalfPlaneIndicator z₀.im Ω,
+    not_memWkpLoc_one_upperHalfPlaneIndicator hz₀⟩
 
 end Counterexample
 
