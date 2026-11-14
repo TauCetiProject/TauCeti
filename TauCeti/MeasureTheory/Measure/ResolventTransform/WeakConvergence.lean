@@ -53,6 +53,8 @@ are proved.
   convergence of the transforms on the upper half-plane.
 * `MeasureTheory.ProbabilityMeasure.tendsto_of_tendsto_resolventTransform_of_subset_closure`:
   convergence on a set whose closure contains the upper half-plane suffices.
+* `MeasureTheory.ProbabilityMeasure.isEmbedding_resolventTransform`: transforms on a countable
+  determining set induce the weak topology.
 * `MeasureTheory.ProbabilityMeasure.ae_tendsto_of_ae_tendsto_resolventTransform`: the almost
   sure version for random probability measures.
 
@@ -72,7 +74,7 @@ sequences, so the general statements assume a countably generated filter and red
 
 public section
 
-open Filter Complex Set
+open Filter Complex Set Topology
 open scoped Topology ENNReal
 
 namespace MeasureTheory
@@ -265,6 +267,37 @@ theorem ae_tendsto_of_ae_tendsto_resolventTransform [l.IsCountablyGenerated]
     {z : ℂ | 0 < z.im}).exists_countable_dense_subset
   exact ae_tendsto_of_ae_tendsto_resolventTransform_of_subset_closure hDc hD
     fun z hz ↦ h z (hDsub hz)
+
+/-- The resolvent tests on any set of nonreal points whose closure contains the upper
+half-plane induce exactly the weak topology on real probability measures. In particular,
+a countable dense subset of the upper half-plane suffices. -/
+theorem isEmbedding_resolventTransform {D : Set ℂ}
+    (hDim : ∀ z ∈ D, z.im ≠ 0) (hD : {z : ℂ | 0 < z.im} ⊆ closure D) :
+    IsEmbedding (fun μ : ProbabilityMeasure ℝ ↦
+      fun z : D ↦ resolventTransform (μ : Measure ℝ) (z : ℂ)) := by
+  obtain ⟨S, hSD, hSc, hDS⟩ :=
+    (TopologicalSpace.IsSeparable.of_separableSpace D).exists_countable_dense_subset
+  have : Countable S := hSc.to_subtype
+  let T := fun μ : ProbabilityMeasure ℝ ↦
+    fun z : D ↦ resolventTransform (μ : Measure ℝ) (z : ℂ)
+  let T₀ := fun μ : ProbabilityMeasure ℝ ↦
+    fun z : S ↦ resolventTransform (μ : Measure ℝ) (z : ℂ)
+  have hT : Continuous T := continuous_pi fun z : D ↦
+    continuous_iff_continuousAt.2 fun _ ↦
+      tendsto_resolventTransform_of_tendsto tendsto_id (hDim z z.property)
+  have hT₀ : IsInducing T₀ := by
+    apply isInducing_iff_nhds.2
+    intro μ
+    apply le_antisymm
+    · exact (continuous_pi fun z : S ↦ continuous_iff_continuousAt.2 fun _ ↦
+        tendsto_resolventTransform_of_tendsto tendsto_id
+          (hDim z (hSD z.property))).continuousAt.le_comap
+    · exact tendsto_of_tendsto_resolventTransform_of_subset_closure
+        (l := comap T₀ (𝓝 (T₀ μ))) (μs := id) (μ := μ)
+        (hD.trans (closure_minimal hDS isClosed_closure)) fun z hz ↦
+          ((continuous_apply (⟨z, hz⟩ : S)).tendsto (T₀ μ)).comp (tendsto_comap (f := T₀))
+  exact (IsInducing.of_comp hT
+    (continuous_pi fun z : S ↦ continuous_apply (⟨z, hSD z.property⟩ : D)) hT₀).isEmbedding
 
 end ProbabilityMeasure
 
