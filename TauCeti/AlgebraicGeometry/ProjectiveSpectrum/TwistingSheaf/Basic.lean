@@ -124,7 +124,7 @@ theorem isLocallyFraction_add {n : ℤ} {U : Opens (ProjectiveSpectrum.top 𝒜)
     ⟨sb * ra + sa * rb, add_mem (by simpa [add_comm] using SetLike.mul_mem_graded sb.2 ra.2)
       (by convert SetLike.mul_mem_graded sa.2 rb.2 using 2; omega)⟩,
     ⟨sa * sb, SetLike.mul_mem_graded sa.2 sb.2⟩,
-    fun y h ↦ (y.1.isPrime.mem_or_mem h).elim (hsa ⟨y.1, y.2.1⟩) (hsb ⟨y.1, y.2.2⟩),
+    fun y ↦ y.1.isPrime.mul_notMem (hsa ⟨y.1, y.2.1⟩) (hsb ⟨y.1, y.2.2⟩),
     fun y ↦ ?_⟩
   refine (congrArg₂ (· + ·) (wa ⟨y.1, y.2.1⟩) (wb ⟨y.1, y.2.2⟩)).trans ?_
   rw [Localization.add_mk, add_comm]
@@ -151,7 +151,7 @@ theorem isLocallyFraction_mul {m n : ℤ} {U : Opens (ProjectiveSpectrum.top �
   obtain ⟨Vb, mb, ib, ib', jb, hjb, rb, sb, hsb, wb⟩ := hg x
   refine ⟨Va ⊓ Vb, ⟨ma, mb⟩, Opens.infLELeft _ _ ≫ ia, ia' + ib', ja + jb, by push_cast; omega,
     ⟨ra * rb, SetLike.mul_mem_graded ra.2 rb.2⟩, ⟨sa * sb, SetLike.mul_mem_graded sa.2 sb.2⟩,
-    fun y h ↦ (y.1.isPrime.mem_or_mem h).elim (hsa ⟨y.1, y.2.1⟩) (hsb ⟨y.1, y.2.2⟩),
+    fun y ↦ y.1.isPrime.mul_notMem (hsa ⟨y.1, y.2.1⟩) (hsb ⟨y.1, y.2.2⟩),
     fun y ↦ ?_⟩
   exact (congrArg₂ (· * ·) (wa ⟨y.1, y.2.1⟩) (wb ⟨y.1, y.2.2⟩)).trans (Localization.mk_mul ..)
 
@@ -297,11 +297,8 @@ theorem sub_apply (s t : Γ(twistingSheaf 𝒜 n, U)) (x : U) : (s - t).1 x = s.
 /-- Finite sums of sections of `𝒪(n)` are computed pointwise. -/
 @[simp]
 theorem sum_apply {ι : Type*} (s : Finset ι) (t : ι → Γ(twistingSheaf 𝒜 n, U)) (x : U) :
-    (∑ i ∈ s, t i).1 x = ∑ i ∈ s, (t i).1 x := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert a s ha ih => simp [Finset.sum_insert ha, ih]
+    (∑ i ∈ s, t i).1 x = ∑ i ∈ s, (t i).1 x :=
+  map_sum ((Pi.evalAddMonoidHom _ x).comp (sectionsAddSubgroup 𝒜 n U).subtype) t s
 
 /-- Sections of the structure sheaf act on sections of `𝒪(n)` pointwise, through the inclusions
 `A_{(x)} → A_x` of the homogeneous localizations. -/
@@ -531,8 +528,8 @@ theorem sectionsLinearEquivTwistingSheafZero_apply_apply (U : (Proj 𝒜).Opens)
 @[simp]
 theorem sectionsLinearEquivTwistingSheafZero_symm_apply_val (U : (Proj 𝒜).Opens)
     (s : Γ(twistingSheaf 𝒜 0, U)) (x : U) :
-    (((sectionsLinearEquivTwistingSheafZero 𝒜 U).symm s).1 x).val = s.1 x := by
-  exact congrArg (fun t : Γ(twistingSheaf 𝒜 0, U) ↦ t.1 x)
+    (((sectionsLinearEquivTwistingSheafZero 𝒜 U).symm s).1 x).val = s.1 x :=
+  congrArg (fun t : Γ(twistingSheaf 𝒜 0, U) ↦ t.1 x)
     ((sectionsLinearEquivTwistingSheafZero 𝒜 U).apply_symm_apply s)
 
 /-- Multiplying by the section of `𝒪(0)` corresponding to a section `a` of the structure sheaf
