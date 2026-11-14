@@ -50,9 +50,9 @@ theorem exists_mem_krullDimLE_zero_quotient_span_singleton (m : Ideal A) [m.IsMa
   have hxS (p : Ideal A) (hp : p ∈ S) : x ∉ p := fun hxp ↦
     hx (Set.mem_biUnion hp hxp)
   refine ⟨x, hxm, Ring.KrullDimLE.mk₀ fun q hq ↦ ?_⟩
-  let p := q.comap (Ideal.Quotient.mk (span {x}))
-  have hp : p.IsPrime := hq.comap _
-  have hxp : x ∈ p := by simp [p, Ideal.mem_comap]
+  let p := q.under A
+  have hp : p.IsPrime := Ideal.IsPrime.under A q
+  have hxp : x ∈ p := by simp [p]
   have hpmax : p.IsMaximal := by
     rcases Ring.krullDimLE_one_iff.mp ‹Ring.KrullDimLE 1 A› p hp with hpmin | hpmax
     · by_contra hn
