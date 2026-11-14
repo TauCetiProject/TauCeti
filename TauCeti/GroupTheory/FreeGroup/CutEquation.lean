@@ -192,7 +192,7 @@ theorem substituteVars_eq_toWord [DecidableEq A] (h : P.IsSolution β α) (σ : 
 
 /-- The piece labels of a cut equation with a solution are reduced words. -/
 theorem isReduced_pieceLabel (h : P.IsSolution β α) (σ : E) : IsReduced (P.pieceLabel σ) :=
-  (h.isReduced_substituteVars σ).of_substituteVars h.ne_nil
+  (h.isReduced_substituteVars σ).of_substituteVars fun m _ _ => h.ne_nil m
 
 end IsSolution
 

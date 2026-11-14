@@ -97,7 +97,7 @@ variable {r : List (List ((X ⊕ A) × Bool))} {W : X → FreeGroup A}
 /-- The letters occurring in a table of an assignment have reduced words. -/
 theorem IsSolutionTable.isReduced_of_mem (h : IsSolutionTable r W T u) (o : Occurrence r) {z : Z}
     {b : Bool} (hz : (Sum.inl z, b) ∈ T o) : FreeGroup.IsReduced (u z) :=
-  (h.isReduced_substituteVars o).of_substituteVars hz
+  (h.isReduced_substituteVars o).of_substituteVars_of_mem hz
 
 /-- Renaming the letters of `Z` in a table of an assignment gives a table of the same assignment,
 for any words of the new letters which agree with the words of the letters occurring in the
@@ -119,7 +119,7 @@ theorem IsSolutionTable.map (h : IsSolutionTable r W T u) (f : Z → Z') {u' : Z
       FreeGroup.IsReduced (substituteVars u' ((T o).map (Prod.map (Sum.map f id) id))) := by
     rw [hsub o]
     exact h.isReduced_substituteVars o
-  refine ⟨h.isPartitionTable.map f fun o => (hred o).of_substituteVars_of_ne_nil fun _ _ => hne o,
+  refine ⟨h.isPartitionTable.map f fun o => (hred o).of_substituteVars fun _ _ => hne o,
     hred, fun o => ?_, hne⟩
   rw [hsub o]
   exact h.mk_substituteVars o
