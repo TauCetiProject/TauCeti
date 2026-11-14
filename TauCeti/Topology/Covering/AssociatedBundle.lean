@@ -338,6 +338,20 @@ theorem localTriv_associatedCore_apply_snd (σ : ∀ x, (hp.associatedCore ρ).F
   exact (hp.associatedCore_coordChange_localInverseAt ρ ((hp.associatedCore ρ).mem_baseSet_at x)
     hx (σ x)).symm
 
+/-- Near `y`, the coordinates in the chart through `y`, pulled back along `p`, agree with
+the equivariant function of the section. -/
+theorem eventuallyEq_localTriv_associatedSectionEquiv
+    (σ : ∀ x, (hp.associatedCore ρ).Fiber x) (y : E) :
+    ((fun x ↦ ((hp.associatedCore ρ).localTriv y ⟨x, σ x⟩).2) ∘ p) =ᶠ[𝓝 y]
+      (hp.associatedSectionEquiv ρ σ : E → F) := by
+  set s := hp.isLocalHomeomorph.localInverseAt y
+  filter_upwards [s.open_target.mem_nhds (hp.isLocalHomeomorph.self_mem_localInverseAt_target)]
+    with z hz
+  have hsource := s.map_target hz
+  have hinv := s.right_inv hz
+  rw [hp.isLocalHomeomorph.localInverseAt_symm] at hsource hinv
+  rw [Function.comp_apply, localTriv_associatedCore_apply_snd _ _ _ hsource, hinv]
+
 /-- The section attached to an equivariant function `f` reads as `x ↦ f (localInverseAt y x)` in
 the chart through `y`. -/
 theorem localTriv_associatedSectionEquiv_symm_apply_snd
