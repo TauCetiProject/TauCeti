@@ -59,9 +59,9 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
 * `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`,
-  `TauCeti.integral_comp_sin_sq_int_mul_pi`, `TauCeti.integral_comp_sin_sq_symm_interval`: the
-  integral from `0` of an integrand `θ ↦ G (sin² θ)` is odd and quasi-periodic in its upper limit,
-  and its integral over `[-x, x]` is twice that over `[0, x]`.
+  `TauCeti.integral_comp_sin_sq_int_mul_pi`: the integral from `0` of an integrand
+  `θ ↦ G (sin² θ)` (with `G` valued in a normed space) is odd and quasi-periodic in its upper
+  limit.
 -/
 
 public section
