@@ -158,8 +158,7 @@ theorem chevalleyWeylElement_conj_chevalleyRootSubgroup (α β : Fin t.numRoots)
       (t.isSl2Triple_chevalleySystem ht α)
       (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
       (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
-      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil β)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil β)]
+      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil β)]
   have hw := congrArg (fun z => ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ z))
     (t.weylAut_chevalleySystem ht α β)
   simp only [map_zsmul] at hw

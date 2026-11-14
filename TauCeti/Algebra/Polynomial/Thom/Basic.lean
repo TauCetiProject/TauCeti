@@ -300,9 +300,8 @@ derivative sign of `p` at `a x + b`, multiplied by `sign a ^ k`. -/
 @[simp, grind =]
 theorem derivativeSign_comp_C_mul_X_add_C (p : R[X]) (a b x : R) (k : ℕ) :
     derivativeSign (p.comp (C a * X + C b)) x k = sign a ^ k * derivativeSign p (a * x + b) k := by
-  rw [derivativeSign_def, derivativeSign_def, iterate_derivative_comp_C_mul_X_add_C, eval_mul,
-    eval_C, eval_comp, sign_mul, sign_pow]
-  simp
+  rw [derivativeSign_def, derivativeSign_def, eval_iterate_derivative_comp_C_mul_X_add_C, sign_mul,
+    sign_pow]
 
 /-- **Affine change of variable.** Coordinate `i` of the Thom encoding of `p (a X + b)` at `x`,
 for `a ≠ 0`, is coordinate `i` of the Thom encoding of `p` at `a x + b`, multiplied by

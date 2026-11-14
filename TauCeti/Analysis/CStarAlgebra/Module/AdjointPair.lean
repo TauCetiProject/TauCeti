@@ -24,10 +24,17 @@ usual adjoint identity. `LinearMap.IsAdjointPair.inner_eq_cstarModule` recovers 
 For right Hilbert A-modules, instantiate the coefficient type below with `Aᵐᵒᵖ`.
 No unit, fullness, countable generation, or nonzero-module hypothesis is needed.
 
+For bounded adjoint pairs, `LinearMap.IsAdjointPair.norm_adjoint_comp_self_cstarModule` proves
+the C⋆-identity `‖S ∘ T‖ = ‖T‖ ^ 2`, and `LinearMap.IsAdjointPair.norm_eq_cstarModule` proves
+`‖S‖ = ‖T‖`.
+
 ## References
 
 * Raeburn–Williams, *Morita Equivalence and Continuous-Trace C*-Algebras*,
   Definition 2.17 and the discussion of adjointable operators.
+* E. Christopher Lance, *Hilbert C⋆-Modules: A Toolkit for Operator Algebraists*, Chapter 1.
+* The proof of the C⋆-identity follows Mathlib's `ContinuousLinearMap.norm_adjoint_comp_self` for
+  inner product spaces.
 -/
 
 public section
@@ -213,5 +220,52 @@ theorem exists_continuousLinearMaps_cstarModule
     h.map_smul_coeff_cstarModule, h.symm_cstarModule.map_smul_coeff_cstarModule⟩
 
 end Analytic
+
+section Norm
+
+variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
+  {T : E →L[ℂ] F} {S : F →L[ℂ] E}
+
+/-- For a bounded C⋆-module adjoint pair, `‖T‖ ^ 2 ≤ ‖S ∘ T‖`. -/
+private theorem sq_norm_le_norm_comp_cstarModule
+    (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
+      (innerₛₗ (A := A) (E := F)).flip T S) :
+    ‖T‖ ^ 2 ≤ ‖S.comp T‖ := by
+  -- `‖T x‖ ^ 2 = ‖⟨x, S (T x)⟩‖ ≤ ‖S ∘ T‖ * ‖x‖ ^ 2` for every `x`.
+  rw [← Real.sqrt_le_sqrt_iff (norm_nonneg _), Real.sqrt_sq (norm_nonneg _)]
+  refine T.opNorm_le_bound (Real.sqrt_nonneg _) fun x ↦ ?_
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp ?_
+  calc ‖T x‖ ^ 2 = ‖inner A x (S (T x))‖ := by
+        rw [CStarModule.norm_sq_eq A, h.inner_eq_cstarModule]
+    _ ≤ ‖x‖ * ‖S.comp T x‖ := norm_inner_le E
+    _ ≤ ‖x‖ * (‖S.comp T‖ * ‖x‖) := by gcongr; exact (S.comp T).le_opNorm x
+    _ = (√‖S.comp T‖ * ‖x‖) ^ 2 := by
+        rw [mul_pow, Real.sq_sqrt (norm_nonneg _)]
+        ring
+
+/-- The two members of a bounded C⋆-module adjoint pair have the same operator norm. -/
+theorem norm_eq_cstarModule
+    (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
+      (innerₛₗ (A := A) (E := F)).flip T S) :
+    ‖S‖ = ‖T‖ := by
+  -- Each norm is bounded by the other: `‖T‖ ^ 2 ≤ ‖S ∘ T‖ ≤ ‖S‖ * ‖T‖`, and symmetrically.
+  have hT : ‖T‖ ^ 2 ≤ ‖S‖ * ‖T‖ :=
+    (sq_norm_le_norm_comp_cstarModule h).trans (S.opNorm_comp_le T)
+  have hS : ‖S‖ ^ 2 ≤ ‖T‖ * ‖S‖ :=
+    (sq_norm_le_norm_comp_cstarModule h.symm_cstarModule).trans (T.opNorm_comp_le S)
+  apply le_antisymm <;> nlinarith [norm_nonneg T, norm_nonneg S]
+
+/-- The C⋆-identity for a bounded C⋆-module adjoint pair: `‖S ∘ T‖ = ‖T‖ ^ 2`. This is the
+analytic input for the C⋆-algebra of adjointable operators on a Hilbert C⋆-module. -/
+theorem norm_adjoint_comp_self_cstarModule
+    (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
+      (innerₛₗ (A := A) (E := F)).flip T S) :
+    ‖S.comp T‖ = ‖T‖ ^ 2 :=
+  le_antisymm ((S.opNorm_comp_le T).trans_eq (by rw [h.norm_eq_cstarModule, sq]))
+    (sq_norm_le_norm_comp_cstarModule h)
+
+end Norm
 
 end LinearMap.IsAdjointPair
