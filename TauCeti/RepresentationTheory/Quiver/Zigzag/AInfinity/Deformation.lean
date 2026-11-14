@@ -442,11 +442,6 @@ theorem IsZigzagAInfinityDeformation.isFormal_comapGraphIso_iff {W : Type v} [Fi
 
 /-! #### Loop deformations on the public algebra of a connected nontrivial graph -/
 
-omit [Finite V] in
-/-- On a connected graph with at least two vertices, every vertex has an incident edge. -/
-theorem exists_adj_of_connected (hconn : G.Connected) [Nontrivial V] (i : V) : ∃ j, G.Adj i j :=
-  SimpleGraph.exists_adj_iff_not_isIsolated.mpr (hconn.preconnected.not_isIsolated i)
-
 /-- **Loop `A∞` deformation of the public zigzag algebra** on a connected graph `G` with at least
 two vertices: the pullback of `TauCeti.zigzagLoopAInfinityAlgebra` along the canonical graded
 algebra isomorphism `TauCeti.zigzagAlgebraEquivNonisolated`. -/
@@ -455,7 +450,7 @@ noncomputable def zigzagAlgebraLoopAInfinityAlgebra (hconn : G.Connected) [Nontr
     (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd) :
     AInfinityAlgebra k (zigzagAlgebra k G) :=
   comapZigzagAlgEquiv
-    (zigzagLoopAInfinityAlgebra (exists_adj_of_connected hconn) c hc)
+    (zigzagLoopAInfinityAlgebra hconn.preconnected.exists_adj_of_nontrivial c hc)
     (zigzagAlgebraEquivNonisolated k G hconn) fun p x ↦ by
       rw [zigzagLoopAInfinityAlgebra_grading_piece,
         zigzagAlgebraEquivNonisolated_mem_zigzagIntegerGrade_iff]
@@ -477,7 +472,7 @@ theorem zigzagAlgebraEquivNonisolated_zigzagAlgebraLoopAInfinityAlgebra_m (hconn
     (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd) (m : ℕ)
     (x : Fin m → zigzagAlgebra k G) :
     zigzagAlgebraEquivNonisolated k G hconn ((zigzagAlgebraLoopAInfinityAlgebra hconn c hc).m m x) =
-      (zigzagLoopAInfinityAlgebra (exists_adj_of_connected hconn) c hc).m m
+      (zigzagLoopAInfinityAlgebra hconn.preconnected.exists_adj_of_nontrivial c hc).m m
         (fun i ↦ zigzagAlgebraEquivNonisolated k G hconn (x i)) :=
   apply_comapZigzagAlgEquiv_m _ _ _ m x
 
@@ -488,7 +483,7 @@ theorem zigzagAlgebraLoopAInfinityAlgebra_m_apply (hconn : G.Connected) [Nontriv
     (x : Fin m → zigzagAlgebra k G) :
     (zigzagAlgebraLoopAInfinityAlgebra hconn c hc).m m x =
       (zigzagAlgebraEquivNonisolated k G hconn).symm
-        ((zigzagLoopAInfinityAlgebra (exists_adj_of_connected hconn) c hc).m m
+        ((zigzagLoopAInfinityAlgebra hconn.preconnected.exists_adj_of_nontrivial c hc).m m
           (fun i ↦ zigzagAlgebraEquivNonisolated k G hconn (x i))) := by
   rw [← zigzagAlgebraEquivNonisolated_zigzagAlgebraLoopAInfinityAlgebra_m hconn c hc m x,
     AlgEquiv.symm_apply_apply]
@@ -511,7 +506,7 @@ theorem isFormal_zigzagAlgebraLoopAInfinityAlgebra_iff (hconn : G.Connected) [No
     {n : ℕ} [NeZero n] (c : (Fin n → G.Dart) →₀ k)
     (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd) :
     (zigzagAlgebraLoopAInfinityAlgebra hconn c hc).IsFormal ↔
-      (zigzagLoopAInfinityAlgebra (exists_adj_of_connected hconn) c hc).IsFormal :=
+      (zigzagLoopAInfinityAlgebra hconn.preconnected.exists_adj_of_nontrivial c hc).IsFormal :=
   isFormal_comapZigzagAlgEquiv_iff _ _ _
 
 /-- Every operation of `zigzagAlgebraLoopAInfinityAlgebra` other than `m₂` and `mₙ` vanishes. -/
@@ -747,7 +742,8 @@ yields a non-formal minimal strictly unital `A∞` deformation on `zigzagAlgebra
 theorem not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra
     (hconn : G.Connected) [Nontrivial V] {n : ℕ} [NeZero n]
     {c : (Fin n → G.Dart) →₀ k} {hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd}
-    (hnf : ¬(zigzagLoopAInfinityAlgebra (exists_adj_of_connected hconn) c hc).IsFormal) :
+    (hnf :
+      ¬(zigzagLoopAInfinityAlgebra hconn.preconnected.exists_adj_of_nontrivial c hc).IsFormal) :
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := fun hf ↦
   hnf <| (isFormal_zigzagAlgebraLoopAInfinityAlgebra_iff hconn c hc).mp <|
     hf (zigzagAlgebraLoopAInfinityAlgebra hconn c hc)
@@ -760,7 +756,7 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_four_le_degree [Nontrivial k]
     (hv : 4 ≤ G.degree v) : ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
   have : Nontrivial V := G.nontrivial_of_degree_ne_zero (by omega : G.degree v ≠ 0)
   obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_four_le_degree
-    (k := k) (hns := exists_adj_of_connected hconn) hv
+    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hv
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
 
 /-- **Connected graphs with two distinct vertices of degree at least three are not intrinsically
@@ -771,7 +767,8 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_three_le_degree [Nontrivial k]
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
   have : Nontrivial V := ⟨⟨v, w, hvw⟩⟩
   obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_three_le_degree
-    (k := k) (hns := exists_adj_of_connected hconn) hvw (hconn.preconnected v w) hv hw
+    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial)
+    hvw (hconn.preconnected v w) hv hw
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
 
 /-- **Connected graphs containing a copy of affine `Dₙ` (`n ≥ 4`) are not intrinsically formal**,
@@ -782,7 +779,7 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_D [Nontrivial k]
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
   have : Nontrivial V := nontrivial_of_isContained_valid (AffineDynkinType.valid_D.2 hn) hG
   obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D
-    (k := k) (hns := exists_adj_of_connected hconn) hn hG
+    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hn hG
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
 
 /-- **The public affine `Dₙ` zigzag algebra (`n ≥ 4`) is not intrinsically formal**, over every
@@ -800,7 +797,7 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E6 [Nontrivial k] 
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
   have : Nontrivial V := nontrivial_of_isContained_valid (by decide) hG
   obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E6
-    (k := k) (hns := exists_adj_of_connected hconn) hG
+    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hG
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
 
 /-- **The public affine `E₆` zigzag algebra is not intrinsically formal**, over every nontrivial
@@ -817,7 +814,7 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E7 [Nontrivial k] 
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
   have : Nontrivial V := nontrivial_of_isContained_valid (by decide) hG
   obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E7
-    (k := k) (hns := exists_adj_of_connected hconn) hG
+    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hG
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
 
 /-- **The public affine `E₇` zigzag algebra is not intrinsically formal**, over every nontrivial
@@ -834,7 +831,7 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E8 [Nontrivial k] 
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
   have : Nontrivial V := nontrivial_of_isContained_valid (by decide) hG
   obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E8
-    (k := k) (hns := exists_adj_of_connected hconn) hG
+    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hG
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
 
 /-- **The public affine `E₈` zigzag algebra is not intrinsically formal**, over every nontrivial
@@ -895,7 +892,7 @@ theorem exists_isZigzagAInfinityDeformation_not_isFormal (hG : G.IsTree)
     · exact nontrivial_of_isContained_valid (by decide) h
     · exact nontrivial_of_isContained_valid (by decide) h
   obtain ⟨_, _, _, c, hc, hnf⟩ := hG.exists_not_isFormal_zigzagLoopAInfinityAlgebra
-    (k := k) (hns := exists_adj_of_connected hG.connected) hD
+    (k := k) (hns := hG.connected.preconnected.exists_adj_of_nontrivial) hD
   exact ⟨zigzagAlgebraLoopAInfinityAlgebra hG.connected c hc,
     isZigzagAInfinityDeformation_zigzagAlgebraLoopAInfinityAlgebra hG.connected c hc,
     (isFormal_zigzagAlgebraLoopAInfinityAlgebra_iff hG.connected c hc).not.mpr hnf⟩
