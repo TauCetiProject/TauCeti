@@ -54,6 +54,8 @@ characteristic.
   then `z` generates `F` over `k(X)`.
 * `TauCeti.isScalarTower_ratFuncAlgebraOfTranscendental_algebraMap`: an algebra map `F → F'` is
   `k(X)`-linear for the structures induced by `x` and by its image.
+* `TauCeti.algebraMap_ratFunc_eq`: when `X` maps compatibly along `k(X) → K(X) → F'` and
+  `k(X) → F → F'`, the two paths from `k(X)` to `F'` agree on every rational function.
 * `TauCeti.isScalarTower_ratFunc_ratFunc_of_transcendental`: for `y` transcendental over `k` and
   over `k'`, the structures of `k(X)` and `k'(X)` on `F'` in which `X` acts as `y`, and of `k(X)` on
   `k'(X)`, form a scalar tower.
@@ -195,6 +197,27 @@ theorem isScalarTower_ratFuncAlgebraOfTranscendental_algebraMap {F' : Type*} [Fi
     ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx)
   exact .of_algebraMap_eq fun r ↦ (map_algebraMap_ratFuncAlgebraOfTranscendental
     (IsScalarTower.toAlgHom k F F') hx r).symm
+
+/-- When `RatFunc.X` maps compatibly along `RatFunc k → RatFunc K → F'` and `RatFunc k → F → F'`,
+the two paths from `RatFunc k` to `F'` agree on every rational function. -/
+theorem algebraMap_ratFunc_eq {k K F F' : Type*} [CommRing k] [IsDomain k] [CommRing K]
+    [IsDomain K] [CommSemiring F] [Semiring F'] [Algebra k K] [Algebra k F] [Algebra k F']
+    [Algebra K F'] [Algebra F F'] [IsScalarTower k K F'] [IsScalarTower k F F']
+    [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
+    [Algebra (RatFunc K) F'] [IsScalarTower K (RatFunc K) F']
+    [Algebra (RatFunc k) (RatFunc K)] [IsScalarTower k (RatFunc k) (RatFunc K)]
+    (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X)
+    (hXF : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc K) F' RatFunc.X)
+    (r : RatFunc k) :
+    algebraMap F F' (algebraMap (RatFunc k) F r) =
+      algebraMap (RatFunc K) F' (algebraMap (RatFunc k) (RatFunc K) r) := by
+  let σ : RatFunc k →ₐ[k] F' :=
+    (IsScalarTower.toAlgHom k F F').comp (IsScalarTower.toAlgHom k (RatFunc k) F)
+  let τ : RatFunc k →ₐ[k] F' :=
+    ((IsScalarTower.toAlgHom K (RatFunc K) F').restrictScalars k).comp
+      (IsScalarTower.toAlgHom k (RatFunc k) (RatFunc K))
+  exact DFunLike.congr_fun (RatFunc.algHom_ext (σ := σ) (τ := τ) (by simp [σ, τ, hXF, hX])) r
 
 /-- **Compatible rational-function structures along a constant extension**: if `y` is
 transcendental over `k` and over `k'`, the algebra structures of `k(X)` and `k'(X)` on `F'` and of

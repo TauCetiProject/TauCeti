@@ -31,9 +31,9 @@ The tensor product of two reduced algebras over a perfect field is therefore red
 no finite-generation hypothesis on either factor.
 This supplies the reduced tensor square needed to form reductions of affine groups.
 
-Over an arbitrary field `k`, an algebra `A` is geometrically reduced as soon as `L ⊗[k] A` is
-reduced for one algebraically closed field `L` over `k`, since the algebraic closure of `k` embeds
-in `L` and the tensor product over a field preserves injections.
+Over an arbitrary field `k`, an algebra `A` is geometrically reduced as soon as `L ⊗[k] A` (or
+`A ⊗[k] L`) is reduced for one algebraically closed field `L` over `k`, since the algebraic
+closure of `k` embeds in `L` and the tensor product over a field preserves injections.
 
 ## References
 
@@ -61,6 +61,16 @@ theorem of_isReduced_tensorProduct {k A : Type*} [Field k] [Ring A] [Algebra k A
 end Algebra.IsGeometricallyReduced
 
 namespace TauCeti
+
+/-- A `k`-algebra `A` is geometrically reduced as soon as `A ⊗[k] L` is reduced for one
+algebraically closed field `L` over `k`. -/
+theorem isGeometricallyReduced_of_isReduced_tensorProduct {k A : Type*} [Field k] [Ring A]
+    [Algebra k A] (L : Type*) [Field L] [Algebra k L] [IsAlgClosed L] [IsReduced (A ⊗[k] L)] :
+    Algebra.IsGeometricallyReduced k A :=
+  have : IsReduced (L ⊗[k] A) :=
+    isReduced_of_injective (Algebra.TensorProduct.comm k L A)
+      (Algebra.TensorProduct.comm k L A).injective
+  Algebra.IsGeometricallyReduced.of_isReduced_tensorProduct L
 
 /-- Extending the scalars of a reduced algebra by a separable algebraic field extension gives a
 reduced algebra. Neither factor needs to be finite or finitely generated. -/
