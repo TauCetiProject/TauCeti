@@ -25,9 +25,17 @@ interval of length `T` decays exponentially, at the rate `-log q / T`
 integrated without differentiating `E`: when `E (s) - E (s + T) = ∫ₛ^{s + T} g` with `E ≤ K g`,
 monotonicity gives `T E (s + T) ≤ K (E s - E (s + T))`, a drop by the factor `K / (K + T)`.
 
-The second estimate is the shape of the a priori bound for implicit Euler schemes of gradient
-flows whose energy is not bounded below. A sequence `D n ≥ 0` with `D 0 = 0` grows by steps
-`D (n + 1) ≤ D n + d n` whose squared lengths are bounded by the energy dissipated,
+The two-sided version concerns a nondecreasing `g` with `|g| ≤ K g'`, again in integrated form:
+over every step of length `K`, `g` at least doubles where it is nonnegative and `-g` at least
+halves where `g` is nonpositive. Then the increase of `g` over `[a + T, b - T]` is at most
+`2 exp (-(log 2 / K) T)` times its increase over `[a, b]`, whatever the sign of `g` in between
+(`TauCeti.sub_le_two_mul_exp_mul_sub`): the increase concentrates exponentially at the two ends
+of the interval.
+
+The discrete Grönwall bound `TauCeti.sq_le_mul_one_add_div_pow_of_sq_le_mul_sub` is the shape of
+the a priori bound for implicit Euler schemes of gradient flows whose energy is not bounded
+below. A sequence `D n ≥ 0` with `D 0 = 0` grows by steps `D (n + 1) ≤ D n + d n` whose squared
+lengths are bounded by the energy dissipated,
 `d n ² ≤ 2τ (e n - e (n + 1))`, and the energy obeys the coercivity bound
 `2τ' (A - e n) ≤ D n ²`. Then `D n ² ≤ 2τ' (e 0 - A) (1 + 8τ / τ')ⁿ` whenever `4τ ≤ τ'`.
 
@@ -38,6 +46,8 @@ flows whose energy is not bounded below. A sequence `D n ≥ 0` with `D 0 = 0` g
   `D n ² ≤ 2τ' (e 0 - A) (1 + 8τ / τ')ⁿ` under coercivity.
 * `TauCeti.le_div_mul_exp_of_antitoneOn`: exponential decay of a nonincreasing function which
   drops by a fixed factor over every interval of a fixed length.
+* `TauCeti.sub_le_two_mul_exp_mul_sub`: the increase of a nondecreasing function which grows
+  geometrically away from its zero concentrates exponentially at the ends of the interval.
 
 ## References
 
@@ -165,5 +175,114 @@ theorem le_div_mul_exp_of_antitoneOn {E : ℝ → ℝ} {s₀ T q : ℝ} (hq : 0 
     _ = E s₀ / q * q ^ (n + 1) := by field_simp; ring
     _ ≤ E s₀ / q * Real.exp (Real.log q / T * (s - s₀)) :=
         mul_le_mul_of_nonneg_left hexp (div_nonneg h0 hq.le)
+
+/-- Iterating `2 g(s) ≤ g(s + K)` where `g ≥ 0`: above a level `m ≥ 0`, `g - m` at least
+doubles over every step of length `K`. -/
+private theorem two_pow_mul_sub_le_sub_of_two_mul_le {g : ℝ → ℝ} {a b K : ℝ} (hK : 0 ≤ K)
+    (hpos : ∀ s, a ≤ s → s + K ≤ b → 0 ≤ g s → 2 * g s ≤ g (s + K)) (n : ℕ) :
+    ∀ s, a ≤ s → s + n * K ≤ b → ∀ m, 0 ≤ m → m ≤ g s →
+      2 ^ n * (g s - m) ≤ g (s + n * K) - m := by
+  induction n with
+  | zero => intro s _ _ m _ _; simp
+  | succ n ih =>
+    intro s hs hsb m hm hms
+    push_cast at hsb ⊢
+    have hnK : 0 ≤ (n : ℝ) * K := by positivity
+    have h1 := hpos s hs (by linarith) (hm.trans hms)
+    have h2 := ih (s + K) (by linarith) (by linarith) m hm (by linarith)
+    rw [show s + K + n * K = s + (n + 1) * K by ring] at h2
+    calc (2 : ℝ) ^ (n + 1) * (g s - m) = 2 ^ n * (2 * (g s - m)) := by ring
+      _ ≤ 2 ^ n * (g (s + K) - m) := by gcongr; linarith
+      _ ≤ _ := h2
+
+/-- Iterating `g(s) ≤ 2 g(s + K)` where `g(s + K) ≤ 0`: below a level `m ≤ 0`, `m - g` at least
+halves over every step of length `K`. -/
+private theorem two_pow_mul_sub_le_sub_of_le_two_mul {g : ℝ → ℝ} {a b K : ℝ} (hK : 0 ≤ K)
+    (hg : MonotoneOn g (Set.Icc a b))
+    (hneg : ∀ s, a ≤ s → s + K ≤ b → g (s + K) ≤ 0 → g s ≤ 2 * g (s + K)) (n : ℕ) :
+    ∀ s, a ≤ s → s + n * K ≤ b → ∀ m ≤ 0, g (s + n * K) ≤ m →
+      2 ^ n * (m - g (s + n * K)) ≤ m - g s := by
+  induction n with
+  | zero => intro s _ _ m _ _; simp
+  | succ n ih =>
+    intro s hs hsb m hm hgm
+    push_cast at hsb hgm ⊢
+    have hnK : 0 ≤ (n : ℝ) * K := by positivity
+    have hK' : s + K + n * K = s + (n + 1) * K := by ring
+    have h2 := ih (s + K) (by linarith) (by linarith) m hm (by rwa [hK'])
+    rw [hK'] at h2
+    have hle : g (s + K) ≤ g (s + (n + 1) * K) :=
+      hg ⟨by linarith, by linarith⟩ ⟨by linarith, hsb⟩ (by linarith)
+    have h1 := hneg s hs (by linarith) (by linarith)
+    calc (2 : ℝ) ^ (n + 1) * (m - g (s + (n + 1) * K)) =
+          2 * (2 ^ n * (m - g (s + (n + 1) * K))) := by ring
+      _ ≤ 2 * (m - g (s + K)) := by gcongr
+      _ ≤ m - g s := by linarith
+
+/-- **Two-sided growth away from the zero of a monotone function.** Let `g` be nondecreasing on
+`[a, b]`, and suppose that over every step `[s, s + K] ⊆ [a, b]` of length `K > 0`, `g` at least
+doubles where it is nonnegative, `2 g(s) ≤ g(s + K)`, and `-g` at least halves where `g` is
+nonpositive, `g(s) ≤ 2 g(s + K)`. Then the increase of `g` over `[a + T, b - T]` is at most
+`2 exp (-(log 2 / K) T)` times its increase over `[a, b]`. This is how the two-sided
+differential inequality `|g| ≤ K g'` is integrated without differentiating `g`. -/
+theorem sub_le_two_mul_exp_mul_sub {g : ℝ → ℝ} {a b K T : ℝ} (hK : 0 < K)
+    (hg : MonotoneOn g (Set.Icc a b))
+    (hpos : ∀ s, a ≤ s → s + K ≤ b → 0 ≤ g s → 2 * g s ≤ g (s + K))
+    (hneg : ∀ s, a ≤ s → s + K ≤ b → g (s + K) ≤ 0 → g s ≤ 2 * g (s + K))
+    (hT : 0 ≤ T) (hab : a + T ≤ b - T) :
+    g (b - T) - g (a + T) ≤ 2 * Real.exp (-(Real.log 2 / K * T)) * (g b - g a) := by
+  set n := ⌊T / K⌋₊
+  have hnK : (n : ℝ) * K ≤ T := (le_div_iff₀ hK).1 (Nat.floor_le (div_nonneg hT hK.le))
+  have hn0 : 0 ≤ (n : ℝ) * K := by positivity
+  have hP := two_pow_mul_sub_le_sub_of_two_mul_le hK.le hpos n
+  have hN := two_pow_mul_sub_le_sub_of_le_two_mul hK.le hg hneg n
+  have hmem {s : ℝ} (h₁ : a ≤ s) (h₂ : s ≤ b) : s ∈ Set.Icc a b := ⟨h₁, h₂⟩
+  have hgab : g (a + T) ≤ g (b - T) := hg (hmem (by linarith) (by linarith))
+    (hmem (by linarith) (by linarith)) hab
+  have hga : g a ≤ g (a + T) := hg (hmem le_rfl (by linarith)) (hmem (by linarith) (by linarith))
+    (by linarith)
+  have hgb : g (b - T) ≤ g b := hg (hmem (by linarith) (by linarith)) (hmem (by linarith) le_rfl)
+    (by linarith)
+  -- The points `b - T + n K` and `a + T - n K` stay in `[a, b]`.
+  have hgr : g (b - T + n * K) ≤ g b :=
+    hg (hmem (by linarith) (by linarith)) (hmem (by linarith) le_rfl) (by linarith)
+  have hgl : g a ≤ g (a + T - n * K) :=
+    hg (hmem le_rfl (by linarith)) (hmem (by linarith) (by linarith)) (by linarith)
+  have hl : a + T - n * K + n * K = a + T := by ring
+  -- First the estimate `2 ^ n (g(b - T) - g(a + T)) ≤ g b - g a`, according to the sign of `g`.
+  have hmain : 2 ^ n * (g (b - T) - g (a + T)) ≤ g b - g a := by
+    by_cases h₁ : 0 ≤ g (a + T)
+    · have := hP (b - T) (by linarith) (by linarith) (g (a + T)) h₁ hgab
+      linarith
+    by_cases h₂ : g (b - T) ≤ 0
+    · have := hN (a + T - n * K) (by linarith) (by rw [hl]; linarith) (g (b - T)) h₂
+        (by rwa [hl])
+      rw [hl] at this
+      linarith
+    push Not at h₁ h₂
+    have hp := hP (b - T) (by linarith) (by linarith) 0 le_rfl h₂.le
+    have hq := hN (a + T - n * K) (by linarith) (by rw [hl]; linarith) 0 le_rfl
+      (by rw [hl]; exact h₁.le)
+    rw [hl] at hq
+    linarith
+  -- Then `exp ((log 2 / K) T) ≤ 2 ^ (n + 1)`, since `T / K < n + 1`.
+  have hexp : Real.exp (Real.log 2 / K * T) ≤ 2 * 2 ^ n := by
+    have hlt : T / K < n + 1 := Nat.lt_floor_add_one (T / K)
+    calc Real.exp (Real.log 2 / K * T) = Real.exp ((T / K) * Real.log 2) := by
+          congr 1
+          ring
+      _ ≤ Real.exp (((n + 1 : ℕ) : ℝ) * Real.log 2) :=
+          Real.exp_le_exp.2 (mul_le_mul_of_nonneg_right (by push_cast; exact hlt.le)
+            (Real.log_pos one_lt_two).le)
+      _ = 2 * 2 ^ n := by rw [Real.exp_nat_mul, Real.exp_log two_pos, pow_succ, mul_comm]
+  have hD : 0 ≤ g (b - T) - g (a + T) := sub_nonneg.2 hgab
+  have hmul : Real.exp (Real.log 2 / K * T) * (g (b - T) - g (a + T)) ≤ 2 * (g b - g a) :=
+    calc _ ≤ 2 * 2 ^ n * (g (b - T) - g (a + T)) := mul_le_mul_of_nonneg_right hexp hD
+      _ = 2 * (2 ^ n * (g (b - T) - g (a + T))) := by ring
+      _ ≤ 2 * (g b - g a) := by gcongr
+  rw [Real.exp_neg]
+  have hpos' := Real.exp_pos (Real.log 2 / K * T)
+  rw [mul_comm 2, mul_assoc, inv_mul_eq_div, le_div_iff₀ hpos']
+  linarith
 
 end TauCeti

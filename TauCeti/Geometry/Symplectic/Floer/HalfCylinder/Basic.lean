@@ -276,8 +276,8 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer
   have hseq := tendsto_hamiltonianAction_of_tendsto_integral_norm_sq_sliceDefect hH
     (hu.of_le one_le_two) hK huK hφa hdef hx hux.tendsto_at
   -- The actions increase along the end, so their limit along `s_n` is their limit as `s → ∞`.
-  have hJ : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
-    (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+  have hJ : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
+    ω.tames_of_mul_norm_sq_le hc (hJc z hz)
   have hmono := ω.monotoneOn_hamiltonianAction_of_floer isOpen_Ioi hH hu hper hJ hfloer
   set A : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))
   have hb : ∀ s, a < max s (a + 1) := fun s ↦ (lt_add_one a).trans_le (le_max_right _ _)
@@ -335,8 +335,8 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_atBot_of_floer
   have hseq := tendsto_hamiltonianAction_of_tendsto_integral_norm_sq_sliceDefect hH hur hK
     (fun s hs ↦ huK (-s) (hura s hs)) hφa hdef hx hux.tendsto_at
   -- The actions increase along the end, so their limit along `-s_n` is their limit as `s → -∞`.
-  have hJ : ∀ z ∈ Iio a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
-    (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+  have hJ : ∀ z ∈ Iio a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
+    ω.tames_of_mul_norm_sq_le hc (hJc z hz)
   have hmono := ω.monotoneOn_hamiltonianAction_of_floer isOpen_Iio hH hu hper hJ hfloer
   set A : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))
   have hb : ∀ s, -max s (-a + 1) < a := fun s ↦

@@ -488,6 +488,13 @@ theorem floerEnergyDensity_eq (ω : SymplecticForm V) (hu : DifferentiableAt ℝ
   rw [hs, ht]
   ring
 
+omit [FiniteDimensional ℝ V] in
+/-- A uniform taming bound `c ‖v‖² ≤ ω(v, J v)` with `c > 0`, the form in which the coercivity
+estimates below take their hypothesis, makes `J` tamed by `ω`. -/
+theorem tames_of_mul_norm_sq_le (ω : SymplecticForm V) {J : AlmostComplexStructure V} {c : ℝ}
+    (hc : 0 < c) (h : ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J v)) : ω.Tames J := fun v hv ↦
+  (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (h v)
+
 /-- **Nonnegativity of the Floer energy density.** If the perturbed derivative of `u` at `z` is
 complex linear for an almost complex structure `J` tamed by `ω`, that is if `u` solves the Floer
 equation at `z`, then the Floer energy density at `z` is nonnegative. -/

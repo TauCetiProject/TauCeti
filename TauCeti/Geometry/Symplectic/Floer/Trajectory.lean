@@ -121,8 +121,8 @@ theorem exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_eq
       hu.contDiffOn (fun s _ ↦ hper s) hK (fun s _ ↦ huK s) hc (fun z hz ↦ hJc z (hsub hz))
       (fun z hz ↦ hJM z (hsub hz)) (fun z hz ↦ hfloer z (hsub hz)) hEsub
   refine ⟨x₀, x₁, ⟨hx₀per, hx₀, hlimK hux₀⟩, ⟨hx₁per, hx₁, hlimK hux₁⟩, hbot, htop, ?_⟩
-  have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
-    (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+  have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
+    ω.tames_of_mul_norm_sq_le hc (hJc z hz)
   exact ω.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction hJ hH isOpen_univ
     hu.contDiffOn (subset_univ _) (fun s ↦ by simpa using hper s 0)
     (fun z hz ↦ by
@@ -174,8 +174,8 @@ theorem exists_pos_forall_ofReal_le_lintegral_floerEnergyDensity
   have hlt : A x₀ < A x₁ := by
     by_contra! hle
     obtain ⟨s, t, hst⟩ := hns
-    have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
-      (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+    have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
+      ω.tames_of_mul_norm_sq_le hc (hJc z hz)
     have hstat := (ω.lintegral_floerEnergyDensity_eq_zero_iff hH isOpen_univ
       (hu.of_le one_le_two).contDiffOn (subset_univ _) hJ hfloer).1
       (hEeq.trans (ENNReal.ofReal_eq_zero.2 (sub_nonpos.2 hle)))
