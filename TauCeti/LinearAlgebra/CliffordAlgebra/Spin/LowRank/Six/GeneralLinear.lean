@@ -139,11 +139,7 @@ private theorem evenUnitaryGroupMatrixFirst_inv_coe
     (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) (x : evenUnitaryGroup Q) :
     (↑((evenUnitaryGroupMatrixFirst e x)⁻¹) : Matrix n n K) =
       (matrixProdReverse e (e (evenUnitaryGroupEvenPart Q x))).1 := by
-  have h : evenUnitaryGroupEvenPart Q (x⁻¹) = reverseEven Q (evenUnitaryGroupEvenPart Q x) := by
-    apply Subtype.ext
-    simpa only [coe_evenUnitaryGroupEvenPart, coe_reverseEven_apply, Subgroup.coe_inv] using
-      (evenUnitaryGroup.reverse_eq_inv Q x).symm
-  rw [← map_inv, evenUnitaryGroupMatrixFirst_coe, h]
+  rw [← map_inv, evenUnitaryGroupMatrixFirst_coe, ← reverseEven_evenUnitaryGroupEvenPart]
   simp only [matrixProdReverse_apply, e.symm_apply_apply]
 
 private theorem evenUnitaryGroupMatrixFirst_injective
