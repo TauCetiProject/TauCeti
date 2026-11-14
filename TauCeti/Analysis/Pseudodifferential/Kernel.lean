@@ -139,9 +139,8 @@ variable {a : E × E → V →L[ℂ] W} {x : E}
 
 /-- The kernel integrand at `(x, y)` is integrable when the frequency slice `ξ ↦ a(x, ξ)` is. -/
 theorem integrable_quantizationKernel_integrand (ha : Integrable (fun ξ ↦ a (x, ξ))) (y : E) :
-    Integrable (fun ζ ↦ 𝐞 ⟪ζ, x - y⟫ • a (x, (2 * π) • ζ)) := by
-  simpa only [inner_neg_right, neg_neg] using
-    (Real.fourierIntegral_convergent_iff (-(x - y))).2 (ha.comp_smul two_pi_pos.ne')
+    Integrable (fun ζ ↦ 𝐞 ⟪ζ, x - y⟫ • a (x, (2 * π) • ζ)) :=
+  (ha.comp_smul two_pi_pos.ne').fourierChar_smul (x - y)
 
 /-- **Uniform bound.** `‖K_a(x, y)‖ ≤ (2π)⁻ⁿ ∫ ‖a(x, ξ)‖ dξ` for every `y`. -/
 theorem norm_quantizationKernel_le (a : E × E → V →L[ℂ] W) (x y : E) :
@@ -722,9 +721,8 @@ integrable. -/
 theorem adjoint_quantizationKernel {b : E × E → V →L[ℂ] W} {z : E}
     (hb : Integrable fun ξ ↦ b (z, ξ)) (y : E) :
     adjoint (quantizationKernel b z y) = ∫ ζ, 𝐞 ⟪ζ, y - z⟫ • adjoint (b (z, (2 * π) • ζ)) := by
-  have hb' : Integrable fun ζ ↦ 𝐞 ⟪ζ, z - y⟫ • b (z, (2 * π) • ζ) := by
-    simpa only [inner_neg_right, neg_neg] using
-      (Real.fourierIntegral_convergent_iff (-(z - y))).2 (hb.comp_smul two_pi_pos.ne')
+  have hb' : Integrable fun ζ ↦ 𝐞 ⟪ζ, z - y⟫ • b (z, (2 * π) • ζ) :=
+    (hb.comp_smul two_pi_pos.ne').fourierChar_smul (z - y)
   have h := integral_comp_commSL (X := E) (μ := volume) (σ := starRingEnd ℂ) (by simp)
     ((adjoint : (V →L[ℂ] W) ≃ₗᵢ⋆[ℂ] (W →L[ℂ] V)).toContinuousLinearEquiv :
       (V →L[ℂ] W) →SL[starRingEnd ℂ] (W →L[ℂ] V)) hb'
@@ -747,10 +745,6 @@ theorem integral_quantizationKernel_comp_adjoint {a b : E × E → V →L[ℂ] W
   set A : E → V →L[ℂ] W := fun ζ ↦ a (x, (2 * π) • ζ)
   set B : E → W →L[ℂ] V := fun ζ ↦ adjoint (b (z, (2 * π) • ζ))
   set K : E → V →L[ℂ] W := quantizationKernel a x
-  -- Multiplying by a character preserves integrability.
-  have hchar {X : Type _} [NormedAddCommGroup X] [NormedSpace ℂ X] {g : E → X}
-      (hg : Integrable g) (w : E) : Integrable fun ζ ↦ 𝐞 ⟪ζ, w⟫ • g ζ := by
-    simpa only [inner_neg_right, neg_neg] using (Real.fourierIntegral_convergent_iff (-w)).2 hg
   have hb' : Integrable fun ζ ↦ b (z, (2 * π) • ζ) := hb.comp_smul two_pi_pos.ne'
   have hB : Integrable B :=
     (LinearIsometryEquiv.integrable_comp_iff (adjoint : (V →L[ℂ] W) ≃ₗᵢ⋆[ℂ] (W →L[ℂ] V))).2 hb'
@@ -773,7 +767,7 @@ theorem integral_quantizationKernel_comp_adjoint {a b : E × E → V →L[ℂ] W
       = ∫ y, ∫ ζ, 𝐞 ⟪ζ, y - z⟫ • (K y ∘L B ζ) := by
         refine integral_congr_ae (.of_forall fun y ↦ ?_)
         dsimp only
-        have h := (compL ℂ W V W (K y)).integral_comp_comm (hchar hB (y - z))
+        have h := (compL ℂ W V W (K y)).integral_comp_comm (hB.fourierChar_smul (y - z))
         simp only [compL_apply] at h
         rw [adjoint_quantizationKernel hb y, ← h]
         simp only [Circle.smul_def, comp_smul]
@@ -786,7 +780,7 @@ theorem integral_quantizationKernel_comp_adjoint {a b : E × E → V →L[ℂ] W
           rw [map_smul, smul_smul, Circle.smul_def, fourierChar_inner_sub, mul_comm, flip_apply,
             compL_apply]
         have hint : Integrable fun y ↦ (𝐞 ⟪ζ, y⟫ : ℂ) • K y := by
-          simpa only [Circle.smul_def, real_inner_comm] using hchar hK ζ
+          simpa only [Circle.smul_def, real_inner_comm] using hK.fourierChar_smul ζ
         have hrow := integral_fourierChar_smul_quantizationKernel hac ha hK ζ
         simp only [Circle.smul_def] at hrow
         simp_rw [h, integral_smul]
