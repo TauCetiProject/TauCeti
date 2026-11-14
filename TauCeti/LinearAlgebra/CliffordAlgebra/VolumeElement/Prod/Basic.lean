@@ -41,9 +41,11 @@ positively oriented orthonormal frames of `V` and `W`, the latter orthogonal for
   `Γ_(V ⊕ W) = Γ_V ⊗ Γ_W`.
 
 When moreover `Q₂ w = -‖w‖²`, the factor `Γ_W` is the chirality of `W`, so the chirality of
-`V ⊕ W` is the tensor grading. Its eigenspace decomposition into
-`E⁺ ⊗ F⁺ ⊕ E⁻ ⊗ F⁻` and `E⁺ ⊗ F⁻ ⊕ E⁻ ⊗ F⁺` is not made here. When `m` is odd the central
-volume element of `V ⊕ W` acts through the second factor alone, as `1 ⊗ ω_W`. Both follow from
+`V ⊕ W` is the tensor grading; its eigenspace decomposition into `E⁺ ⊗ F⁺ ⊕ E⁻ ⊗ F⁻` and
+`E⁺ ⊗ F⁻ ⊕ E⁻ ⊗ F⁺` is developed in
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/HalfSpin.lean`. When `m` is odd the
+central volume element of `V ⊕ W` acts through the second factor alone, as `1 ⊗ ω_W`. Both follow
+from
 the action of the ordered frame product, `c(e₁) ⋯ c(eₙ) Γ_V ^ m ⊗ c(f₁) ⋯ c(fₘ)`, and the
 exponent identity `⌊(n + m + 1) / 2⌋ = ⌊(n + 1) / 2⌋ + ⌊(m + 1) / 2⌋` for even `n`.
 

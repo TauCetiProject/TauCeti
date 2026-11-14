@@ -51,13 +51,15 @@ the positive orientation and `-1` for the negative one.
   `(-i) ^ ⌊(n + 1) / 2⌋ Γ`.
 * `CliffordAlgebra.complexVolume_neg_orientation`: reversing the orientation negates `Γ`, and
   `CliffordAlgebra.complexVolume_positiveOrientation`: in rank zero, `Γ = 1`.
-* `CliffordAlgebra.map_complexVolume`: the complexification of an isometry of quadratic forms that
-  also preserves the norms carries `Γ` to `Γ` for the transported orientation.
+* `CliffordAlgebra.map_complexVolume`, `CliffordAlgebra.map_complexVolume_of_eq`: the
+  complexification of an isometry of quadratic forms that also preserves the norms carries `Γ` to
+  `Γ` for the transported orientation.
 * `CliffordAlgebra.complexVolume_mul_self`: `Γ² = 1` for `Q v = -‖v‖²`, while
   `CliffordAlgebra.complexVolume_mul_self_of_forall_eq_zero`: `Γ² = 0` for the zero form in
   positive dimension.
 * `CliffordAlgebra.complexVolume_smul_complexVolume_smul`,
-  `CliffordAlgebra.lsmul_complexVolume_involutive`: `Γ` acts as an involution on every module.
+  `CliffordAlgebra.lsmul_complexVolume_involutive`, `CliffordAlgebra.map_complexVolume_involutive`:
+  `Γ` acts as an involution on every module and under every complex representation.
 * `CliffordAlgebra.conjStar_complexVolume`: `Γ` is fixed by the conjugate-linear Clifford
   involution, while `CliffordAlgebra.star_complexVolume` computes the complex-linear Clifford
   conjugation `star Γ = (-1) ^ ⌊(n + 1) / 2⌋ Γ`; in dimension `2ℓ` this is `(-1) ^ ℓ Γ`.
@@ -184,6 +186,17 @@ theorem map_complexVolume (e : Q.IsometryEquiv Q') (he : ∀ v, ‖e v‖ = ‖v
     map_volumeElement o e he]
 
 end Naturality
+
+/-- Variant of `CliffordAlgebra.map_complexVolume` when the source and target dimension indices are
+identified along `h : n = n'`. -/
+theorem map_complexVolume_of_eq {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V']
+    [FiniteDimensional ℝ V'] {n' : ℕ} [Fact (finrank ℝ V' = n')] {Q' : QuadraticForm ℝ V'}
+    (e : Q.IsometryEquiv Q') (he : ∀ v, ‖e v‖ = ‖v‖) (h : n = n') :
+    map (e.toIsometry.baseChange ℂ) (complexVolume Q o) =
+      complexVolume Q'
+        (Orientation.reindex ℝ V' (finCongr h) (o.map (Fin n) e.toLinearEquiv)) := by
+  subst h
+  simpa using map_complexVolume o e he
 
 /-- The grade involution multiplies `Γ` by `(-1) ^ n`. -/
 @[simp]
@@ -318,6 +331,13 @@ theorem lsmul_complexVolume_involutive {M : Type*} [AddCommGroup M] [Module ℂ 
     [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) M] :
     Function.Involutive (Algebra.lsmul ℂ ℂ M (complexVolume Q o)) :=
   complexVolume_smul_complexVolume_smul o hQ
+
+/-- Any complex Clifford algebra representation `ρ` sends `Γ` to an involution of its module. -/
+theorem map_complexVolume_involutive {M : Type*} [AddCommGroup M] [Module ℂ M]
+    (ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ M) :
+    Function.Involutive (ρ (complexVolume Q o)) := fun ψ ↦ by
+  rw [← _root_.mul_apply_eq_comp, ← map_mul, complexVolume_mul_self o hQ, map_one,
+    one_apply_eq_self]
 
 /-- **In even dimension, conjugation by `Γ` is the grade involution**: `Γ x Γ = involute x`. -/
 theorem complexVolume_mul_mul_complexVolume (hn : Even n) (x : CliffordAlgebra (Q.baseChange ℂ)) :
