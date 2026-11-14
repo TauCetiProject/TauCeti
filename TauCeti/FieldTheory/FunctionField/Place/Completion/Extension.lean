@@ -269,9 +269,7 @@ theorem completionEmbedding_mem_integers_of_mem_integralClosure {x : F'}
     (hx : x ∈ integralClosure P.integers F') :
     P'.completionEmbedding x ∈ P'.completionPlace.integers := by
   have hx' : x ∈ P'.integers := P'.mem_integers_of_isIntegral
-    (fun a ↦ by
-      subst hP
-      exact (mem_integers_restrict_iff k F P' (a : F)).mp a.2) hx
+    (fun a ↦ by subst hP; exact (mem_integers_restrict_iff k F P' (a : F)).mp a.2) hx
   simpa only [mem_integers_iff, completionPlace_valuation, valuation_completionEmbedding] using hx'
 
 /-- The canonical ring homomorphism from the integral closure `𝒪'_P` of `𝒪_P` in `F'` into the
@@ -282,14 +280,11 @@ noncomputable def integralClosureToCompletionIntegers :
     (Subalgebra.val (integralClosure P.integers F'))).codRestrict P'.completionPlace.integers
     fun x ↦ P.completionEmbedding_mem_integers_of_mem_integralClosure P' hP x.2
 
-@[simp]
-theorem coe_integralClosureToCompletionIntegers (x : integralClosure P.integers F') :
-    (P.integralClosureToCompletionIntegers P' hP x : P'.Completion) =
-      P'.completionEmbedding x :=
+@[simp] theorem coe_integralClosureToCompletionIntegers (x : integralClosure P.integers F') :
+    (P.integralClosureToCompletionIntegers P' hP x : P'.Completion) = P'.completionEmbedding x :=
   (rfl)
 
-@[simp]
-theorem integralClosureToCompletionIntegers_algebraMap (r : P.integers) :
+@[simp] theorem integralClosureToCompletionIntegers_algebraMap (r : P.integers) :
     P.integralClosureToCompletionIntegers P' hP
         (algebraMap P.integers (integralClosure P.integers F') r) =
       P.completionIntegersExtension P' hP (P.completionIntegersEmbedding r) := by
@@ -323,19 +318,16 @@ theorem map_integralClosureToCompletionIntegers_eq_maximalIdeal_pow
   · obtain ⟨y, hy, hy0, hord⟩ := hex
     let yc := P.integralClosureToCompletionIntegers P' hP y
     have hyc0 : (yc : P'.Completion) ≠ 0 := by
-      rw [coe_integralClosureToCompletionIntegers]
-      exact (map_ne_zero _).mpr (by simpa using hy0)
+      rw [coe_integralClosureToCompletionIntegers]; exact (map_ne_zero _).mpr (by simpa using hy0)
     have hinv_ord : P'.completionPlace.ord (yc : P'.Completion)⁻¹ = -(n : ℤ) := by
       rw [P'.completionPlace.ord_inv, coe_integralClosureToCompletionIntegers,
         ord_completionEmbedding, hord]
-    have hfil : (z : P'.Completion) ∈ P'.completionPlace.filtration n :=
-      (P'.completionPlace.mem_maximalIdeal_pow_iff_coe_mem_filtration n z).mp hz
     have hq_int : (yc : P'.Completion)⁻¹ * (z : P'.Completion) ∈ P'.completionPlace.integers :=
-      P'.completionPlace.mul_mem_integers_of_mem_filtration hinv_ord hfil
+      P'.completionPlace.mul_mem_integers_of_mem_filtration hinv_ord
+        ((P'.completionPlace.mem_maximalIdeal_pow_iff_coe_mem_filtration n z).mp hz)
     have hz_eq : z = ⟨(yc : P'.Completion)⁻¹ * (z : P'.Completion), hq_int⟩ * yc :=
       Subtype.ext (by rw [MulMemClass.coe_mul, mul_comm, mul_inv_cancel_left₀ hyc0])
-    rw [hz_eq]
-    exact Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem _ hy)
+    exact hz_eq ▸ Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem _ hy)
 
 end IntegralClosureMap
 

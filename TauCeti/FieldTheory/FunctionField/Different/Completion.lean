@@ -15,52 +15,37 @@ public import TauCeti.RingTheory.DedekindDomain.Different.DualFamily
 /-!
 # Compatibility of the trace-dual different with completion at a place
 
-Let `F' / F` be a finite separable extension of fields equipped with constant fields `k' / k`,
-let `P` be a place of `F / k`, and let `P'` be a place of `F' / k'` lying over `P`, with local
-integral closure `𝒪'_P = integralClosure 𝒪_P F'` and completed valuation rings `𝒪̂_P ⊆ 𝒪̂_{P'}`.
-
-This file proves that the trace-dual complementary module, the different ideal, and the different
-exponent commute with completion at `P'`:
-
-* the `𝒪̂_{P'}`-span of the image of the complementary module `C_P = Submodule.traceDual 𝒪_P F 1`
-  inside `F̂'_{P'}` is the completed trace dual `Submodule.traceDual 𝒪̂_P F̂_P 1`
-  (`TauCeti.Place.span_traceDual_one_eq_traceDual_one_completionIntegers`), and the same holds for
+Let `F' / F` be a finite separable extension of fields with constant fields `k' / k`, let `P` be a
+place of `F / k`, and let `P'` be a place of `F' / k'` above `P`, with
+`𝒪'_P = integralClosure 𝒪_P F'` and completed valuation rings `𝒪̂_P ⊆ 𝒪̂_{P'}`. The complementary
+module, different ideal, and different exponent commute with completion at `P'`:
+* the `𝒪̂_{P'}`-span of `C_P = Submodule.traceDual 𝒪_P F 1` in `F̂'_{P'}` equals
+  `Submodule.traceDual 𝒪̂_P F̂_P 1`
+  (`TauCeti.Place.span_traceDual_one_eq_traceDual_one_completionIntegers`), and likewise for
   fractional ideals (`TauCeti.Place.extended_dual_one_eq_dual_one_completionIntegers`);
-* the different ideal of `𝒪'_P / 𝒪_P` generates in `𝒪̂_{P'}` the different ideal of `𝒪̂_{P'} / 𝒪̂_P`
+* `𝔇(𝒪'_P / 𝒪_P)` generates `𝔇(𝒪̂_{P'} / 𝒪̂_P)` in `𝒪̂_{P'}`
   (`TauCeti.Place.map_differentIdeal_eq_differentIdeal_completionIntegers`);
-* the different ideal of `𝒪̂_{P'} / 𝒪̂_P` is `𝔪̂_{P'} ^ d(P' ∣ P)`
-  (`TauCeti.Place.differentIdeal_completionIntegers_eq_pow`), so its multiplicity at `𝔪̂_{P'}` —
-  and, when the constant fields agree, the different exponent of the completed places — equals
-  `d(P' ∣ P)` (`TauCeti.Place.multiplicity_differentIdeal_completionIntegers`,
+* `𝔇(𝒪̂_{P'} / 𝒪̂_P) = 𝔪̂_{P'} ^ d(P' ∣ P)`
+  (`TauCeti.Place.differentIdeal_completionIntegers_eq_pow`), preserving multiplicity and, when
+  `k' = k`, `Place.differentExponent`
+  (`TauCeti.Place.multiplicity_differentIdeal_completionIntegers`,
   `TauCeti.Place.differentExponent_completionPlace`);
-* the lengths over `𝒪̂_P` of `𝒪̂_{P'} ⧸ 𝔇(𝒪̂_{P'} / 𝒪̂_P)` and of the completed complementary-module
-  quotient, as well as the `𝒪̂_P`-order of the discriminant of any `𝒪̂_P`-basis of `𝒪̂_{P'}`, equal
-  `d(P' ∣ P) · f(P' ∣ P)` (`TauCeti.Place.length_quotient_differentIdeal_completionIntegers`,
+* over `𝒪̂_P`, the lengths of `𝒪̂_{P'} ⧸ 𝔇(𝒪̂_{P'} / 𝒪̂_P)` and
+  `(Submodule.traceDual 𝒪̂_P F̂_P 1) ⧸ 𝒪̂_{P'}`, and `Ring.ord 𝒪̂_P (Algebra.discr 𝒪̂_P b)` for any
+  `𝒪̂_P`-basis `b` of `𝒪̂_{P'}`, all equal `d(P' ∣ P) · f(P' ∣ P)` including any inseparable residue
+  factor (`TauCeti.Place.length_quotient_differentIdeal_completionIntegers`,
   `TauCeti.Place.length_traceDual_quotient_completionIntegers`,
-  `TauCeti.Place.ord_discr_completionIntegers`), where `f(P' ∣ P)` is the full relative residue
-  degree including its inseparable factor;
-* when `k' / k` is integral, the extended different in the integral semilocal algebra
-  `𝒪̂_P ⊗[𝒪_P] 𝒪'_P` decomposes through `TauCeti.Place.integralSemilocalEquiv` as the product of the
-  completed differents above `P` (`TauCeti.Place.differentIdeal_integralSemilocal`).
+  `TauCeti.Place.ord_discr_completionIntegers`);
+* when `k' / k` is integral, the extended different in `𝒪̂_P ⊗[𝒪_P] 𝒪'_P` maps under
+  `TauCeti.Place.integralSemilocalEquiv` to the product of the completed differents above `P`
+  (`TauCeti.Place.differentIdeal_integralSemilocal`, under `open scoped PlaceCompletion`).
 
-Completion invariance allows `d(P' ∣ P)`, complementary-module quotient lengths, and local
-discriminant valuations to be computed purely locally in the completed extension `𝒪̂_{P'} / 𝒪̂_P`
-without residue-separability or residue-finiteness hypotheses, and transports global differential
-and cotrace data to completions.
-
-No assumption is made on the characteristic, on `IsFunctionField`, or on the finiteness or
-separability of the residue fields. Single-place statements over `k' / k` dispense with
-`[Algebra.IsIntegral k k']` by restricting the constant field of `P'` to `k` via
-`TauCeti.Place.restrictConstants` before invoking the semilocal decomposition of
-`TauCeti/FieldTheory/FunctionField/Place/Completion/Semilocal.lean` (while
-`TauCeti.Place.differentExponent_completionPlace` assumes matching constant fields `k' = k` so
-`P'.completionPlace` is a place over the same constant field `k` as `P.Completion`). Semilocal
-statements (`TauCeti.Place.differentIdeal_integralSemilocal`) require `open scoped PlaceCompletion`,
-whereas single-place statements bind `completionExtensionAlgebra` and
-`completionIntegersExtensionAlgebra` locally via `letI`.
-
-The trace-dual comparison adapts `IsDedekindDomain.HeightOneSpectrum` in
-`TauCeti/NumberTheory/NumberField/LocalGlobal/Different/Basic.lean` to intrinsic place completions.
+No assumption is made on the characteristic, on `IsFunctionField`, or on finiteness or separability
+of residue fields. Single-place statements bind `completionExtensionAlgebra` and
+`completionIntegersExtensionAlgebra` via `letI` and dispense with `[Algebra.IsIntegral k k']` via
+`TauCeti.Place.restrictConstants` (`differentExponent_completionPlace` assumes `k' = k` so
+`P'.completionPlace` shares constant field `k` with `P.Completion`). The trace-dual comparison
+adapts `TauCeti/NumberTheory/NumberField/LocalGlobal/Different/Basic.lean` to place completions.
 
 ## References
 
@@ -85,10 +70,8 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
   [IsScalarTower k k' F'] [IsScalarTower k F F']
   [FiniteDimensional F F'] [Algebra.IsSeparable F F']
 
-/-- Supplies the standard single-place completed extension instances (`IsScalarTower`,
-`Module.IsTorsionFree`, `FiniteDimensional`, `Algebra.IsSeparable`, `IsIntegralClosure`, and
-`Module.Finite`) in one step once `completionExtensionAlgebra` and
-`completionIntegersExtensionAlgebra` are bound. -/
+/-- Supplies the standard single-place completed extension instances once
+`completionExtensionAlgebra` and `completionIntegersExtensionAlgebra` are bound. -/
 private theorem withCompletionExtension {P : Place k F} {P' : Place k' F'}
     (hP : P'.restrict k F = P)
     {Goal :
@@ -103,9 +86,7 @@ private theorem withCompletionExtension {P : Place k F} {P' : Place k' F'}
         [FiniteDimensional P.Completion P'.Completion]
         [Algebra.IsSeparable P.Completion P'.Completion]
         [IsIntegralClosure P'.completionPlace.integers P.completionPlace.integers P'.Completion]
-        [Module.Finite P.completionPlace.integers P'.completionPlace.integers],
-        Goal) :
-    Goal := by
+        [Module.Finite P.completionPlace.integers P'.completionPlace.integers], Goal) : Goal := by
   let := P.completionExtensionAlgebra P' hP
   let := P.completionIntegersExtensionAlgebra P' hP
   have := P.isScalarTower_completionIntegersExtension P' hP
@@ -115,21 +96,6 @@ private theorem withCompletionExtension {P : Place k F} {P' : Place k' F'}
   have := P.isIntegralClosure_completionIntegers P' hP
   have := P.moduleFinite_completionIntegers P' hP
   exact h
-
-open scoped PlaceCompletion in
-omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F'] [FiniteDimensional F F'] [Algebra.IsSeparable F F'] in
-/-- On the image of `𝒪̂_P ⊗[𝒪_P] 𝒪'_P`, the trace pairing with an element of the local
-complementary module takes values in `𝒪̂_P`. -/
-private theorem trace_integralSemilocalToField_mul_mem
-    (P : Place k F) {d : F'}
-    (hd : d ∈ Submodule.traceDual P.integers F (1 : Submodule (integralClosure P.integers F') F'))
-    (t : P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F') :
-    Algebra.trace P.Completion (P.Completion ⊗[F] F')
-        (integralSemilocalToField F' P t * (1 ⊗ₜ d)) ∈
-      (algebraMap P.completionPlace.integers P.Completion).range := by
-  rw [integralSemilocalToField_eq_baseChangeOfTower]
-  exact trace_baseChangeOfTower_mul_mem hd t
 
 open scoped PlaceCompletion in
 /-- An element of the complementary module of `𝒪'_P` over `𝒪_P` maps into the trace dual of
@@ -150,31 +116,27 @@ theorem completionEmbedding_mem_traceDual_completionIntegers
       (@Algebra.trace P.Completion P'.Completion _ _ (P.completionExtensionAlgebra P' hP))
           ((z : P'.Completion) * P'.completionEmbedding d) ∈
         (algebraMap P.completionPlace.integers P.Completion).range := by
-    let P'₀ : Place k F' := P'.restrictConstants k
-    have hP₀ : P'₀.restrict k F = P := (restrict_restrictConstants k F P').trans hP
-    set Q₀ : {Q : Place k F' // Q.restrict k F = P} := ⟨P'₀, hP₀⟩
+    set Q₀ : {Q : Place k F' // Q.restrict k F = P} :=
+      ⟨P'.restrictConstants k, (restrict_restrictConstants k F P').trans hP⟩
     let z₀ : Q₀.1.completionPlace.integers :=
       ⟨(z : P'.Completion),
-        by simpa only [Q₀, P'₀, integers_completionPlace_restrictConstants] using z.2⟩
+        by simpa only [Q₀, integers_completionPlace_restrictConstants] using z.2⟩
     let f : ∀ Q : {Q : Place k F' // Q.restrict k F = P}, Q.1.completionPlace.integers :=
       Pi.single Q₀ z₀
-    let t := (integralSemilocalEquiv k F' P).symm f
-    have hcoe : (fun Q ↦ (f Q : Q.1.Completion)) = Pi.single Q₀ (z₀ : Q₀.1.Completion) := by
-      funext Q'
-      obtain rfl | hQ' := eq_or_ne Q' Q₀
-      · simp [f]
-      · simp [f, Pi.single_eq_of_ne hQ']
+    have hcoe : (fun Q ↦ (f Q : Q.1.Completion)) = Pi.single Q₀ (z₀ : Q₀.1.Completion) :=
+      funext fun Q' ↦ by obtain rfl | hQ' := eq_or_ne Q' Q₀ <;> simp [f, Pi.single_eq_of_ne, *]
     have htr := trace_semilocalEquiv_symm_single_mul P Q₀ (z₀ : Q₀.1.Completion) d
-    rw [← hcoe, ← integralSemilocalToField_integralSemilocalEquiv_symm P f] at htr
+    rw [← hcoe, ← integralSemilocalToField_integralSemilocalEquiv_symm P f,
+      integralSemilocalToField_eq_baseChangeOfTower] at htr
     have htr' : (@Algebra.trace P.Completion P'.Completion _ _
           (P.completionExtensionAlgebra P' hP))
           ((z : P'.Completion) * P'.completionEmbedding d) =
         (@Algebra.trace P.Completion Q₀.1.Completion _ _ (fiberCompletionAlgebra Q₀))
           ((z₀ : Q₀.1.Completion) * Q₀.1.completionEmbedding d) := by
       rw [← P.completionExtensionAlgebra_restrictConstants P' hP]
-      simp only [Q₀, P'₀, completionEmbedding_restrictConstants, z₀]
+      simp only [Q₀, completionEmbedding_restrictConstants, z₀]
     rw [htr', ← htr]
-    exact trace_integralSemilocalToField_mul_mem P hd t
+    exact trace_baseChangeOfTower_mul_mem hd ((integralSemilocalEquiv k F' P).symm f)
   let := P.completionExtensionAlgebra P' hP
   let := P.completionIntegersExtensionAlgebra P' hP
   have := P.isScalarTower_completionIntegersExtension P' hP
@@ -248,17 +210,15 @@ theorem extended_dual_one_eq_dual_one_completionIntegers
       (P.integralClosureToCompletionIntegers P' hP)
       (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
         (P.integralClosureToCompletionIntegers_injective P' hP)) =
-      P'.completionEmbedding.toRingHom := by
-    refine IsFractionRing.ringHom_ext (A := integralClosure P.integers F') fun x ↦ ?_
-    rw [IsLocalization.map_eq, ValuationSubring.algebraMap_apply,
-      coe_integralClosureToCompletionIntegers, Subalgebra.algebraMap_apply,
-      AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+      P'.completionEmbedding.toRingHom :=
+    IsFractionRing.ringHom_ext (A := integralClosure P.integers F') fun x ↦ by
+      rw [IsLocalization.map_eq, ValuationSubring.algebraMap_apply,
+        coe_integralClosureToCompletionIntegers, Subalgebra.algebraMap_apply,
+        AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
   have hdual : ((FractionalIdeal.dual P.integers F
         (1 : FractionalIdeal (integralClosure P.integers F')⁰ F')) : Set F') =
       Submodule.traceDual P.integers F (1 : Submodule (integralClosure P.integers F') F') := by
-    ext x
-    rw [SetLike.mem_coe, SetLike.mem_coe, ← FractionalIdeal.mem_coeToSubmodule,
-      FractionalIdeal.coeToSubmodule_dual_one]
+    ext x; simp [← FractionalIdeal.mem_coeToSubmodule, FractionalIdeal.coeToSubmodule_dual_one]
   rw [← FractionalIdeal.coeToSubmodule_inj, FractionalIdeal.coeToSubmodule_extended_eq_span,
     hmap, hdual, FractionalIdeal.coeToSubmodule_dual_one]
   exact span_traceDual_one_eq_traceDual_one_completionIntegers P P' hP
@@ -320,7 +280,6 @@ theorem differentIdeal_completionIntegers_eq_pow
   · simpa only [Subalgebra.algebraMap_apply] using
       differentExponent_le_ord_of_mem_differentIdeal k F P' hy hy0
   · obtain ⟨y, hy, hy0, hord⟩ := exists_mem_differentIdeal_ord_eq k F P'
-    rw [Subalgebra.algebraMap_apply] at hord
     exact ⟨y, hy, hy0, hord⟩
 
 /-- **Completion preserves the different exponent**, read as the multiplicity of `𝔪̂_{P'}` in the
@@ -443,8 +402,7 @@ theorem differentExponent_completionPlace
       algebraMap P'.completionPlace.integers P'.Completion c ∈ P'.completionPlace.integers :=
     fun c ↦ c.2
   have hcenter : (P'.completionPlace.center hC).asIdeal =
-      maximalIdeal P'.completionPlace.integers := by
-    ext x
+      maximalIdeal P'.completionPlace.integers := Ideal.ext fun x ↦ by
     rw [mem_center_asIdeal, ValuationSubring.algebraMap_apply,
       P'.completionPlace.mem_maximalIdeal_iff_valuation_lt_one]
   rw [differentExponent_eq_multiplicity_center (B := P.completionPlace.integers)
@@ -477,25 +435,23 @@ theorem differentIdeal_integralSemilocal (P : Place k F) :
   let incR : integralClosure P.integers F' →ₐ[P.integers]
       P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F' :=
     Algebra.TensorProduct.includeRight
-  have hmap : ((differentIdeal P.integers (integralClosure P.integers F')).map incR).map
-        (integralSemilocalEquiv k' F' P) =
-      (differentIdeal P.integers (integralClosure P.integers F')).map
-        ((integralSemilocalEquiv k' F' P).toRingEquiv.toRingHom.comp incR.toRingHom) :=
-    Ideal.map_map incR.toRingHom (integralSemilocalEquiv k' F' P).toRingEquiv.toRingHom
   have hpi (K : Ideal (∀ Q : {P' : Place k' F' // P'.restrict k F = P},
       Q.1.completionPlace.integers)) (Q : {P' : Place k' F' // P'.restrict k F = P}) :
       Ideal.piOrderIso K Q = K.map (Pi.evalRingHom _ Q) := by
     ext x
     rw [← SetLike.mem_coe, Ideal.coe_piOrderIso_apply, Ideal.map, Submodule.mem_span]
     simp [Set.image_subset_iff]
+  have hmap : ((differentIdeal P.integers (integralClosure P.integers F')).map incR).map
+        (integralSemilocalEquiv k' F' P) =
+      (differentIdeal P.integers (integralClosure P.integers F')).map
+        ((integralSemilocalEquiv k' F' P).toRingEquiv.toRingHom.comp incR.toRingHom) :=
+    Ideal.map_map incR.toRingHom (integralSemilocalEquiv k' F' P).toRingEquiv.toRingHom
   rw [hmap]
   apply Ideal.piOrderIso.injective
   funext Q
   rw [hpi, hpi, Ideal.map_evalRingHom_pi, Ideal.map_map,
     ← map_differentIdeal_eq_differentIdeal_completionIntegers P Q.1 Q.2]
-  congr 1
-  ext x
-  simp [incR]
+  congr 1; ext x; simp [incR]
 
 end Semilocal
 

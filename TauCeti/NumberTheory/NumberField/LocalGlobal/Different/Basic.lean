@@ -104,10 +104,7 @@ private theorem trace_integralSemilocalToField_mul_mem {d : L}
   have heq : integralSemilocalToField L v t =
       baseChangeOfTower (𝒪 K) K (v.adicCompletionIntegers K) (v.adicCompletion K) (𝒪 L) L t := by
     induction t using TensorProduct.inductionOn with
-    | tmul a x =>
-      exact (integralSemilocalToField_tmul a x).trans
-        (baseChangeOfTower_tmul (𝒪 K) K (v.adicCompletionIntegers K)
-          (v.adicCompletion K) (𝒪 L) L a x).symm
+    | tmul => simp
     | add _ _ hx hy => simp [hx, hy]
   rw [heq]
   exact trace_baseChangeOfTower_mul_mem hd t

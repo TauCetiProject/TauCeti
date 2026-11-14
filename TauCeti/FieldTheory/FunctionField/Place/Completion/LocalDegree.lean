@@ -531,22 +531,18 @@ theorem adjoin_range_completionEmbedding_eq_top :
     letI := P.completionExtensionAlgebra P' hP
     IntermediateField.adjoin P.Completion (Set.range P'.completionEmbedding) = ⊤ := by
   let := P.completionExtensionAlgebra P' hP
-  -- Lift a residue basis and uniformizer from `F'` and apply `span_completion_eq_top`.
   obtain ⟨u, t', _, hsp, ht⟩ := exists_residue_basis (k := k) (F := F) P'
   have htop := P.span_completion_eq_top P' hP u hsp (t := t') ht
   rw [eq_top_iff]
   intro x _
-  have hx : x ∈ Submodule.span P.Completion (Set.range P'.completionEmbedding) := by
-    have hsub : Set.range (fun p : Fin (relativeDegree k F P') × Fin (ramificationIdx F P') ↦
-        P'.completionEmbedding ((u p.1 : F') * (t' : F') ^ (p.2 : ℕ))) ⊆
-        Set.range P'.completionEmbedding := by
-      rintro _ ⟨p, rfl⟩
-      exact ⟨(u p.1 : F') * (t' : F') ^ (p.2 : ℕ), rfl⟩
-    exact Submodule.span_mono hsub (htop ▸ Submodule.mem_top)
-  exact Submodule.span_le
-    (p := (IntermediateField.adjoin P.Completion
+  have hsub : Set.range (fun p : Fin (relativeDegree k F P') × Fin (ramificationIdx F P') ↦
+      P'.completionEmbedding ((u p.1 : F') * (t' : F') ^ (p.2 : ℕ))) ⊆
+      Set.range P'.completionEmbedding := by
+    rintro _ ⟨p, rfl⟩; exact ⟨_, rfl⟩
+  exact Submodule.span_le (p := (IntermediateField.adjoin P.Completion
       (Set.range P'.completionEmbedding)).toSubalgebra.toSubmodule)
-    |>.mpr (fun y hy ↦ IntermediateField.subset_adjoin P.Completion _ hy) hx
+    |>.mpr (fun _ hy ↦ IntermediateField.subset_adjoin P.Completion _ hy)
+    (Submodule.span_mono hsub (htop ▸ Submodule.mem_top))
 
 end Degree
 
@@ -562,8 +558,7 @@ variable {k F F' : Type*} [Field k] [Field F] [Field F']
 
 /-- When the constant fields agree, the canonical place of `F̂'_{P'}` restricts to the canonical
 place of `F̂_P`. -/
-@[simp]
-theorem restrict_completionPlace :
+@[simp] theorem restrict_completionPlace :
     letI := P.completionExtensionAlgebra P' hP
     haveI := P.isScalarTower_completionExtensionAlgebra P' hP
     haveI := P.isIntegral_completion P' hP
@@ -577,8 +572,7 @@ theorem restrict_completionPlace :
 
 /-- Completion preserves the relative residue degree of `P'` over `P` when viewed as an extension
 of completed places over `k`. -/
-@[simp]
-theorem relativeDegree_completionPlace :
+@[simp] theorem relativeDegree_completionPlace :
     letI := P.completionExtensionAlgebra P' hP
     haveI := P.isScalarTower_completionExtensionAlgebra P' hP
     haveI := P.isIntegral_completion P' hP
@@ -588,8 +582,8 @@ theorem relativeDegree_completionPlace :
   let := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
   have := (P'.restrict k F).isScalarTower_completionExtensionAlgebra P' rfl
   have := (P'.restrict k F).isIntegral_completion P' rfl
-  have hres := (P'.restrict k F).restrict_completionPlace P' rfl
-  let eInt := RingEquiv.subringCongr (congrArg (fun Q ↦ Q.integers.toSubring) hres)
+  let eInt := RingEquiv.subringCongr
+    (congrArg (fun Q ↦ Q.integers.toSubring) ((P'.restrict k F).restrict_completionPlace P' rfl))
   rw [relativeDegree_def, ← P'.finrank_residueField_completion (k := k) (F := F)]
   refine Algebra.finrank_eq_of_equiv_equiv (ResidueField.mapEquiv eInt) (RingEquiv.refl _) ?_
   ext x

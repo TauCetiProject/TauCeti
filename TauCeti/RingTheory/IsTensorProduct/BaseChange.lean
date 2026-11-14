@@ -11,37 +11,23 @@ public import Mathlib.RingTheory.IsTensorProduct
 /-!
 # Base change along a pair of scalar towers
 
-Let `R → K` be a homomorphism of commutative semirings, let `A₀ → A` be a morphism over `R` into a
-ring `A` carrying a compatible `K`-algebra structure (`IsScalarTower R K A` and
-`IsScalarTower R A₀ A`), and let `B → L` be a morphism over `R` into a ring `L` carrying a
-compatible `K`-algebra structure (`IsScalarTower R K L` and `IsScalarTower R B L`).
+Given compatible scalar towers `R → A₀ → A`, `R → K → A` and `R → B → L`, `R → K → L`, the
+universal property of the tensor product defines a canonical `R`-algebra homomorphism
+`A₀ ⊗[R] B →ₐ[R] A ⊗[K] L` (`TauCeti.baseChangeOfTower`) sending `a₀ ⊗ b` to
+`algebraMap A₀ A a₀ ⊗ algebraMap B L b`. When `A` and `L` are commutative and
+`Algebra.IsPushout R K B L`, `Module.Flat R B`, and `FaithfulSMul A₀ A` hold, `baseChangeOfTower`
+is injective (`TauCeti.baseChangeOfTower_injective`) via `A ⊗[R] B ≃ₐ[A] A ⊗[K] L`.
 
-The universal property of the tensor product produces a canonical `R`-algebra homomorphism
+This abstracts the integral-to-field semilocal map `𝒪̂_v ⊗[𝒪_v] 𝒪'_v → K̂_v ⊗[K] L` from
+`TauCeti/NumberTheory/NumberField/LocalGlobal/Semilocal/Integers.lean` for reuse by Dedekind-domain
+adic completions and intrinsic function-field place completions.
 
-`A₀ ⊗[R] B →ₐ[R] A ⊗[K] L` (`TauCeti.baseChangeOfTower`),
+## Main definitions and results
 
-sending `a₀ ⊗ b` to `algebraMap A₀ A a₀ ⊗ algebraMap B L b`.
-
-When `A` and `L` are commutative and `L` is the pushout of `B` along `R → K`
-(`Algebra.IsPushout R K B L`), the intermediate base change `A ⊗[R] B` is `A`-isomorphic to
-`A ⊗[K] L`. If in addition `B` is flat over `R` and `A₀ → A` is injective (`FaithfulSMul A₀ A`),
-then `baseChangeOfTower` is injective (`TauCeti.baseChangeOfTower_injective`).
-
-This abstracts the integral-to-field semilocal comparison map `𝒪̂_v ⊗[𝒪_v] 𝒪'_v → K̂_v ⊗[K] L`
-from `TauCeti/NumberTheory/NumberField/LocalGlobal/Semilocal/Integers.lean` so that both
-Dedekind-domain adic completions and intrinsic function-field place completions share a single
-construction.
-
-## Main definitions
-
-* `TauCeti.baseChangeOfTower`: the canonical `R`-algebra homomorphism
-  `A₀ ⊗[R] B →ₐ[R] A ⊗[K] L` induced by compatible towers over `R → K`.
-
-## Main results
-
-* `TauCeti.baseChangeOfTower_tmul`: action of `baseChangeOfTower` on pure tensors.
-* `TauCeti.baseChangeOfTower_injective`: `baseChangeOfTower` is injective when
-  `Algebra.IsPushout R K B L`, `Module.Flat R B`, and `FaithfulSMul A₀ A` hold.
+* `TauCeti.baseChangeOfTower`, `TauCeti.baseChangeOfTower_tmul`: the canonical `R`-algebra map
+  `A₀ ⊗[R] B →ₐ[R] A ⊗[K] L` and its action on pure tensors.
+* `TauCeti.baseChangeOfTower_injective`: injectivity under `Algebra.IsPushout R K B L`,
+  `Module.Flat R B`, and `FaithfulSMul A₀ A`.
 -/
 
 public section
@@ -63,9 +49,8 @@ variable (R K A₀ A B L : Type*) [CommSemiring R] [CommSemiring K] [Algebra R K
 noncomputable def baseChangeOfTower : A₀ ⊗[R] B →ₐ[R] A ⊗[K] L :=
   Algebra.TensorProduct.lift
     (Algebra.TensorProduct.includeLeft.comp (IsScalarTower.toAlgHom R A₀ A))
-    ((Algebra.TensorProduct.includeRight.restrictScalars R).comp
-      (IsScalarTower.toAlgHom R B L))
-    (by intro _ _; exact (Commute.one_right _).tmul (Commute.one_left _))
+    ((Algebra.TensorProduct.includeRight.restrictScalars R).comp (IsScalarTower.toAlgHom R B L))
+    fun _ _ ↦ (Commute.one_right _).tmul (Commute.one_left _)
 
 /-- On a pure tensor, `baseChangeOfTower` applies `algebraMap` on each factor. -/
 @[simp]
