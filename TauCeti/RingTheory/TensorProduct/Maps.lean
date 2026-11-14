@@ -78,6 +78,8 @@ ones, so the public `LinearMap.baseChange` API applies.
   `Algebra.TensorProduct.ker_mapRingHom_id`: over the identity of the base, `mapRingHom` is
   `Algebra.TensorProduct.map`; for surjective maps it is surjective, and its kernel is generated
   by the two kernels.
+* `Algebra.TensorProduct.coe_rid`: the right unitor `A ⊗[R] R ≃ₐ[S] A` is, as a function, the
+  linear right unitor over `R`, whatever the scalars `S`.
 * `AlgHom.sectionBaseChange`: the base change `T ⊗[A] B →ₐ[T] T` of an `A`-algebra map
   `s : B →ₐ[A] A`, that is, the pullback to `Spec T` of the section of `Spec B → Spec A` given by
   `s`, with its value `AlgHom.sectionBaseChange_sum_tmul` on sums of pure tensors, its
@@ -399,6 +401,16 @@ theorem ker_mapRingHom_id (hS : Function.Surjective fS) (hT : Function.Surjectiv
   rfl
 
 end MapRingHom
+
+/-- The right unitor `A ⊗[R] R ≃ A` is the same function whichever scalars `S` it is linear
+over: it is the linear right unitor `a ⊗ r ↦ r • a` over `R`. -/
+theorem coe_rid (R S A : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S] [Semiring A]
+    [Algebra R A] [Algebra S A] [IsScalarTower R S A] :
+    ⇑(Algebra.TensorProduct.rid R S A) = _root_.TensorProduct.rid R A := by
+  funext x
+  induction x using TensorProduct.inductionOn with
+  | tmul a r => simp
+  | add x y hx hy => simp [hx, hy]
 
 end Algebra.TensorProduct
 
