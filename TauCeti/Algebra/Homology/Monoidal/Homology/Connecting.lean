@@ -40,6 +40,9 @@ input which identifies the connecting morphisms in the proof of the Künneth for
 * `HomologicalComplex.tensorRightShortComplex` and
   `HomologicalComplex.shortExact_tensorRightShortComplex`: the corresponding short complex
   `S ⊗ K` is short exact when `S` splits in each degree.
+* `HomologicalComplex.isSplitEpi_tensorHom_f` and
+  `HomologicalComplex.epi_tensorHom_of_isSplitEpi_f`: tensoring two degreewise split epimorphisms
+  gives a degreewise split epimorphism, hence an epimorphism of complexes.
 * `HomologicalComplex.homologyCross_comp_δ`: the connecting morphism of `K ⊗ S` on a cross
   product.
 
@@ -189,6 +192,56 @@ lemma shortExact_tensorRightShortComplex (hS : S.ShortExact) [∀ p, IsSplitMono
         simpa using congrArg (fun φ ↦ φ ▷ K.X q ≫ ιTensorObj S.X₂ K p q n h) (σ p).id }
 
 end TensorRight
+
+section SplitEpi
+
+/-- The tensor product of two morphisms of homological complexes that are split epimorphisms in
+each degree is a split epimorphism in each degree. -/
+instance isSplitEpi_tensorHom_f {D : Type*} [Category* D] [Preadditive D] [MonoidalCategory D]
+    [MonoidalPreadditive D] {K₁ K₂ L₁ L₂ : HomologicalComplex D c} (f₁ : K₁ ⟶ L₁)
+    (f₂ : K₂ ⟶ L₂) [HasTensor K₁ K₂] [HasTensor L₁ L₂]
+    [∀ i₁, IsSplitEpi (f₁.f i₁)] [∀ i₂, IsSplitEpi (f₂.f i₂)] (j : I) :
+    IsSplitEpi ((tensorHom f₁ f₂).f j) :=
+  ⟨⟨mapBifunctorDesc fun p q h ↦
+      (section_ (f₁.f p) ⊗ₘ section_ (f₂.f q)) ≫ ιTensorObj K₁ K₂ p q j h, by
+    refine mapBifunctor.hom_ext fun p q h ↦ ?_
+    rw [ι_mapBifunctorDesc_assoc, Category.assoc, ι_tensorHom, tensorHom_comp_tensorHom_assoc]
+    simp⟩⟩
+
+/-- In an abelian monoidal category, the tensor product of two morphisms of homological complexes
+that are split epimorphisms in each degree is an epimorphism. -/
+instance epi_tensorHom_of_isSplitEpi_f {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
+    (f₂ : K₂ ⟶ L₂) [HasTensor K₁ K₂] [HasTensor L₁ L₂]
+    [∀ i₁, IsSplitEpi (f₁.f i₁)] [∀ i₂, IsSplitEpi (f₂.f i₂)] :
+    Epi (tensorHom f₁ f₂) :=
+  epi_of_epi_f _ fun _ ↦ inferInstance
+
+section MonoidalTensorHom
+
+variable [∀ (X₁ X₂ : GradedObject I C), GradedObject.HasTensor X₁ X₂]
+  [∀ X₂, PreservesColimit (CategoryTheory.Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
+  [∀ (X₁ X₂ X₃ : GradedObject I C), GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
+  [∀ (X₁ X₂ X₃ : GradedObject I C), GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
+
+/-- In the monoidal category of homological complexes, `f₁ ⊗ₘ f₂` is a split epimorphism in each
+degree when `f₁` and `f₂` are. -/
+instance isSplitEpi_monoidalTensorHom_f {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
+    (f₂ : K₂ ⟶ L₂) [∀ i₁, IsSplitEpi (f₁.f i₁)] [∀ i₂, IsSplitEpi (f₂.f i₂)] (j : I) :
+    IsSplitEpi ((f₁ ⊗ₘ f₂).f j) := by
+  rw [tensorHom_eq_mapBifunctorMap]
+  exact isSplitEpi_tensorHom_f f₁ f₂ j
+
+/-- In the monoidal category of homological complexes over an abelian category, `f₁ ⊗ₘ f₂` is an
+epimorphism when `f₁` and `f₂` are degreewise split epimorphisms. -/
+instance epi_monoidalTensorHom_of_isSplitEpi_f {K₁ K₂ L₁ L₂ : HomologicalComplex C c}
+    (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂)
+    [∀ i₁, IsSplitEpi (f₁.f i₁)] [∀ i₂, IsSplitEpi (f₂.f i₂)] :
+    Epi (f₁ ⊗ₘ f₂) :=
+  epi_of_epi_f _ fun _ ↦ inferInstance
+
+end MonoidalTensorHom
+
+end SplitEpi
 
 section Connecting
 

@@ -17,9 +17,11 @@ simplices of the ambient space whose image lies in a member of `U` form a subcom
 `TopPair.smallSingularSubcomplex P U` of the ambient simplicial set of the singular pair of `P`,
 to which the singular pair restricts.  Its preimage in the singular simplicial set of the subspace
 is the small subcomplex of the subspace for the pulled-back family
-(`TopPair.smallSingularSubcomplex_preimage_hom`), and a map of pairs carries the simplices small
-for the pulled-back family into the simplices small for the family
-(`TopPair.smallSingularSubcomplex_le_preimage`).
+(`TopPair.smallSingularSubcomplex_preimage_hom`), a map of pairs carries the simplices small for
+the pulled-back family into the simplices small for the family
+(`TopPair.smallSingularSubcomplex_le_preimage`), and a continuous map into a single member of `U`
+vanishes in the chains relative to the small subcomplex
+(`TauCeti.chainComplexMap_comp_smallSingularSubcomplex_chainComplexπ_eq_zero`).
 
 The main result is the relative form of the small-chain theorem: when `U` is an open cover, the
 inclusion of the restricted pair induces isomorphisms on relative singular homology in every degree
@@ -100,3 +102,35 @@ lemma smallSingularSubcomplex_le_preimage :
   (TopCat.preimage_smallSingularSubcomplex U (Hom.fst f)).ge
 
 end TopPair
+
+namespace TauCeti
+
+attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
+attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
+
+variable {A : Type u} [Category.{v} A] [Preadditive A] [HasCoproducts.{w} A]
+
+/-- A continuous map `f : Z ⟶ W` taking values in a single member `U i` of a family of subsets
+induces the zero map into the singular chains of `W` relative to the simplices small for `U`. -/
+@[reassoc]
+lemma chainComplexMap_comp_smallSingularSubcomplex_chainComplexπ_eq_zero
+    {Z W : TopCat.{w}} {ι : Type*} (U : ι → Set W) (f : Z ⟶ W) {i : ι} (hf : ∀ z, f z ∈ U i)
+    (T : A) :
+    SSet.chainComplexMap (TopCat.toSSet.map f) T ≫
+        (W.smallSingularSubcomplex U).pair.chainComplexπ T =
+      0 := by
+  have hι : SSet.chainComplexMap (W.smallSingularSubcomplex U).ι T ≫
+      (W.smallSingularSubcomplex U).pair.chainComplexπ T = 0 :=
+    (W.smallSingularSubcomplex U).pair.chainComplex_condition T
+  have hmap : SSet.chainComplexMap (TopCat.toSSet.map f) T =
+      SSet.chainComplexMap
+        (TopCat.toSSet.map (TopCat.ofHom ⟨fun z ↦ ⟨f z, hf z⟩, f.hom.continuous.subtype_mk hf⟩) ≫
+          TopCat.toSmallSingularSubcomplex U (subset_refl (U i))) T ≫
+      SSet.chainComplexMap (W.smallSingularSubcomplex U).ι T := by
+    refine Eq.trans ?_ (((SSet.chainComplexFunctor A).obj T).map_comp _ _)
+    congr 2
+    rw [Category.assoc, TopCat.toSmallSingularSubcomplex_ι, ← TopCat.toSSet.map_comp]
+    rfl
+  exact (eq_whisker hmap _).trans ((Category.assoc _ _ _).trans ((whisker_eq _ hι).trans comp_zero))
+
+end TauCeti
