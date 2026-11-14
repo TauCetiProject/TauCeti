@@ -28,6 +28,8 @@ unit sphere of `E` along itself; this is how knotted arcs are slid along a great
 ## Main definitions
 
 * `LinearIsometry.planeRotation ι`: the rotations of `E` in the plane `ι ℂ`.
+* `LinearIsometry.ofOrthonormalPair`: the linear isometry `ℂ →ₗᵢ[ℝ] E` carrying `1` and `i` to an
+  orthonormal pair of vectors in `E`.
 
 ## Main results
 
@@ -37,6 +39,9 @@ unit sphere of `E` along itself; this is how knotted arcs are slid along a great
 * `LinearIsometry.planeRotation_neg_one`: the rotation by `-1` is the reflection across that
   complement.
 * `LinearIsometry.contMDiff_planeRotation`: the rotation is smooth in the angle and the point.
+* `Continuous.planeRotation_toContinuousLinearMap` and
+  `Continuous.ofOrthonormalPair_toContinuousLinearMap`: the rotation and the orthonormal-pair
+  plane embedding depend continuously in the operator-norm topology on their parameters.
 -/
 
 public section
@@ -191,5 +196,70 @@ theorem contMDiff_planeRotation {m : ℕ∞ω} :
       fun p : Circle × E => ((p.1 : ℂ) - 1) * planeCoord ι p.2 :=
     contDiff_mul.contMDiff.comp ((hc.sub contMDiff_const).prodMk_space hw)
   exact hx.add (ι.toContinuousLinearMap.contDiff.contMDiff.comp hmul)
+
+/-- **Joint continuity of plane rotations in the plane and the angle.** If `ι : X → ℂ →ₗᵢ[ℝ] E` is
+continuous in the operator-norm topology on `ℂ →L[ℝ] E` and `c : X → Circle` is continuous, then
+`(ι x).planeRotation (c x)` depends continuously on `x` in the operator-norm topology on
+`E →L[ℝ] E`. -/
+theorem _root_.Continuous.planeRotation_toContinuousLinearMap {X : Type*} [TopologicalSpace X]
+    {ι : X → ℂ →ₗᵢ[ℝ] E} {c : X → Circle}
+    (hι : Continuous fun x ↦ (ι x).toContinuousLinearMap) (hc : Continuous c) :
+    Continuous fun x ↦ (((ι x).planeRotation (c x)).toContinuousLinearEquiv : E →L[ℝ] E) := by
+  have h1 : Continuous fun x ↦ (ι x) 1 := hι.clm_apply continuous_const
+  have hI : Continuous fun x ↦ (ι x) I := hι.clm_apply continuous_const
+  have hcoord : Continuous fun x ↦ planeCoord (ι x) :=
+    (((ContinuousLinearMap.smulRightL ℝ E ℂ).flip (1 : ℂ)).continuous.comp
+        ((innerSL ℝ).continuous.comp h1)).add
+      (((ContinuousLinearMap.smulRightL ℝ E ℂ).flip I).continuous.comp
+        ((innerSL ℝ).continuous.comp hI))
+  have hmul : Continuous fun x ↦ ContinuousLinearMap.mul ℝ ℂ ((c x : ℂ) - 1) :=
+    (ContinuousLinearMap.mul ℝ ℂ).continuous.comp
+      ((continuous_subtype_val.comp hc).sub continuous_const)
+  refine ((continuous_const (y := ContinuousLinearMap.id ℝ E)).add
+    (hι.clm_comp (hmul.clm_comp hcoord))).congr fun x ↦ ?_
+  ext y : 1
+  exact (planeRotation_apply_eq (ι x) (c x) y).symm
+
+section OrthonormalPair
+
+/-- The linear isometry `ℂ →ₗᵢ[ℝ] E` carrying `1` to `u` and `i` to `v`, for an orthonormal pair
+`u`, `v` in `E`: `z ↦ Re z • u + Im z • v`. -/
+def ofOrthonormalPair {u v : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (huv : ⟪u, v⟫ = 0) :
+    ℂ →ₗᵢ[ℝ] E where
+  toLinearMap := (Complex.reCLM.smulRight u + Complex.imCLM.smulRight v : ℂ →L[ℝ] E)
+  norm_map' z := by
+    simp only [ContinuousLinearMap.coe_coe, add_apply, ContinuousLinearMap.smulRight_apply,
+      Complex.reCLM_apply, Complex.imCLM_apply]
+    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), norm_add_sq_real, Complex.sq_norm,
+      Complex.normSq_apply]
+    simp only [norm_smul, real_inner_smul_left, real_inner_smul_right, hu, hv, huv,
+      Real.norm_eq_abs, mul_one, sq_abs]
+    ring
+
+/-- `LinearIsometry.ofOrthonormalPair` sends `z` to `Re z • u + Im z • v`. -/
+@[simp]
+theorem ofOrthonormalPair_apply {u v : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (huv : ⟪u, v⟫ = 0)
+    (z : ℂ) : ofOrthonormalPair hu hv huv z = z.re • u + z.im • v :=
+  (rfl)
+
+/-- The underlying continuous linear map of `LinearIsometry.ofOrthonormalPair`. -/
+@[simp]
+theorem toContinuousLinearMap_ofOrthonormalPair {u v : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1)
+    (huv : ⟪u, v⟫ = 0) :
+    (ofOrthonormalPair hu hv huv).toContinuousLinearMap =
+      Complex.reCLM.smulRight u + Complex.imCLM.smulRight v :=
+  (rfl)
+
+/-- For continuous families `u, v : X → E` that are pointwise orthonormal, the plane isometry
+`LinearIsometry.ofOrthonormalPair` depends continuously on the parameter in the operator-norm
+topology. -/
+theorem _root_.Continuous.ofOrthonormalPair_toContinuousLinearMap {X : Type*} [TopologicalSpace X]
+    {u v : X → E} (hu : Continuous u) (hv : Continuous v)
+    (hnu : ∀ x, ‖u x‖ = 1) (hnv : ∀ x, ‖v x‖ = 1) (huv : ∀ x, ⟪u x, v x⟫ = 0) :
+    Continuous fun x ↦ (ofOrthonormalPair (hnu x) (hnv x) (huv x)).toContinuousLinearMap :=
+  ((ContinuousLinearMap.smulRightL ℝ ℂ E Complex.reCLM).continuous.comp hu).add
+    ((ContinuousLinearMap.smulRightL ℝ ℂ E Complex.imCLM).continuous.comp hv)
+
+end OrthonormalPair
 
 end LinearIsometry
