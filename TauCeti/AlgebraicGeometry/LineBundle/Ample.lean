@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.QuasiAffine
-public import TauCeti.AlgebraicGeometry.LineBundle.Class
-public import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
+public import TauCeti.AlgebraicGeometry.LineBundle.Trivial
 
 /-!
 # Ample line bundles
@@ -108,27 +107,19 @@ theorem isAmple_one_iff : (1 : LineBundleClass X).IsAmple ↔ X.IsQuasiAffine :=
   let O : InvertibleSheaf X := ⟨SheafOfModules.unit X.ringCatSheaf, inferInstance⟩
   -- The tensor unit `𝟙_ X.Modules` is by definition the structure sheaf `SheafOfModules.unit`.
   have hO : mk O = 1 := mk_eq_one_iff.mpr ⟨Iso.refl _⟩
-  -- The nonvanishing loci of global sections of a line bundle of trivial class are exactly the
-  -- basic open sets of global regular functions.
-  have hrange (L : InvertibleSheaf X) (hL : mk L = 1) :
-      Set.range (L.obj.nonvanishingLocus (U := ⊤)) =
-        Set.range (X.basicOpen (U := ⊤)) := by
-    obtain ⟨e⟩ := mk_eq_mk_iff.mp (hL.trans hO.symm)
-    rw [Scheme.Modules.range_nonvanishingLocus_eq_of_iso e ⊤]
-    exact congrArg Set.range (funext Scheme.Modules.nonvanishingLocus_unit)
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨inferInstance, fun x ↦ ?_⟩⟩
   · have := h.compactSpace
     refine Scheme.IsQuasiAffine.of_forall_exists_mem_basicOpen X fun x ↦ ?_
     obtain ⟨n, -, L, hL, s, hx, hs⟩ := h.exists_isAffineOpen_nonvanishingLocus x
     obtain ⟨r, hr⟩ : L.obj.nonvanishingLocus s ∈ Set.range (X.basicOpen (U := ⊤)) := by
-      rw [← hrange L (hL.trans (one_pow n))]
+      rw [← range_nonvanishingLocus_eq_of_mk_eq_one (hL.trans (one_pow n)) ⊤]
       exact ⟨s, rfl⟩
     exact ⟨r, hr ▸ hs, hr ▸ hx⟩
   · obtain ⟨_, ⟨r, hr, rfl⟩, hx, -⟩ :=
       Opens.isBasis_iff_nbhd.mp (Scheme.IsQuasiAffine.isBasis_basicOpen X) (Opens.mem_top x)
     obtain ⟨s, hs⟩ :
         X.basicOpen r ∈ Set.range (O.obj.nonvanishingLocus (U := ⊤)) := by
-      rw [hrange O hO]
+      rw [range_nonvanishingLocus_eq_of_mk_eq_one hO ⊤]
       exact ⟨r, rfl⟩
     exact ⟨1, Nat.one_pos, O, hO.trans (one_pow 1).symm, s, hs ▸ hx, hs ▸ hr⟩
 

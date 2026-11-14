@@ -42,6 +42,9 @@ curve over a discrete valuation ring, are covered here.
   bundle are finite-dimensional.
 * `LineBundleClass.eulerDegree_mul_of_isIntegral` and
   `LineBundleClass.eulerDegree_inv_of_isIntegral`: the degree is additive on the Picard group.
+* `LineBundleClass.eulerDegree_pow_of_isIntegral` and
+  `LineBundleClass.eulerDegree_zpow_of_isIntegral`: the degree of a tensor power is the multiple
+  of the degree.
 
 ## References
 
@@ -220,6 +223,31 @@ theorem eulerDegree_inv_of_isIntegral (a : LineBundleClass X) :
   have h := eulerDegree_mul_of_isIntegral k a⁻¹ a
   rw [inv_mul_cancel, eulerDegree_one] at h
   linarith
+
+/-- The degree of a tensor power is the multiple of the degree, on an integral proper curve over
+`k` with finite-dimensional `H⁰(X, 𝒪_X)` and `H¹(X, 𝒪_X)`. -/
+@[simp]
+theorem eulerDegree_pow_of_isIntegral (a : LineBundleClass X) (n : ℕ) :
+    eulerDegree k (a ^ n) = n * eulerDegree k a := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, eulerDegree_mul_of_isIntegral, ih]
+    push_cast
+    ring
+
+/-- The degree of an integer tensor power is the multiple of the degree, on an integral proper
+curve over `k` with finite-dimensional `H⁰(X, 𝒪_X)` and `H¹(X, 𝒪_X)`. -/
+@[simp]
+theorem eulerDegree_zpow_of_isIntegral (a : LineBundleClass X) (n : ℤ) :
+    eulerDegree k (a ^ n) = n * eulerDegree k a := by
+  cases n with
+  | ofNat n => simp
+  | negSucc n =>
+    rw [zpow_negSucc, eulerDegree_inv_of_isIntegral, eulerDegree_pow_of_isIntegral,
+      Int.negSucc_eq]
+    push_cast
+    ring
 
 end LineBundleClass
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.AlgebraicGeometry.ValuativeCriterion
+public import TauCeti.AlgebraicGeometry.Morphisms.Proper
 public import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
@@ -20,7 +21,8 @@ A curve over a field is an integral scheme that is proper and one-dimensional ov
 Its function field is therefore an algebraic function field of one variable. The two-chart model
 of any algebraic function field provides a regular proper curve with that function field. A
 rational point of a curve is a point of codimension one, that is, the generic point of a prime
-divisor.
+divisor. A curve has more than one point, so it is not affine: an integral affine scheme proper
+over a field is a single point.
 -/
 
 public section
@@ -59,6 +61,22 @@ theorem IsCurveOver.isFunctionField [X.IsCurveOver k] :
 theorem IsCurveOver.coheight_le_one [X.IsCurveOver k] (x : X) : Order.coheight x ≤ 1 := by
   exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim x).trans
     (IsCurveOver.topologicalKrullDim_eq_one k).le
+
+variable (k X) in
+/-- A curve over a field has at least two points: a one-point space has dimension zero. -/
+theorem IsCurveOver.nontrivial [X.IsCurveOver k] : Nontrivial X := by
+  by_contra h
+  have : Subsingleton X := not_nontrivial_iff_subsingleton.mp h
+  have hX := topologicalKrullDim_zero_of_discreteTopology X
+  rw [IsCurveOver.topologicalKrullDim_eq_one k] at hX
+  exact absurd hX (by decide)
+
+variable (k X) in
+/-- **A proper curve is not affine.** An integral affine scheme proper over a field is a single
+point, while a curve has at least two. -/
+theorem IsCurveOver.not_isAffine [X.IsCurveOver k] : ¬ IsAffine X := fun _ ↦
+  have := IsCurveOver.nontrivial k X
+  not_subsingleton X (X ↘ Spec (.of k)).subsingleton_of_isAffine_of_universallyClosed
 
 variable (k X) in
 /-- A curve over a field is a Noetherian scheme. -/
