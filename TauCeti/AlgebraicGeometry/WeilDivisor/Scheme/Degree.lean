@@ -62,7 +62,7 @@ lemma relativeDegree_comp (f : X ⟶ Y) (g : Y ⟶ Z) (D : SchemeWeilDivisor X) 
 /-- An effective divisor has nonnegative relative degree: residue degrees are nonnegative. -/
 lemma relativeDegree_nonneg (f : X ⟶ Y) {D : SchemeWeilDivisor X}
     (hD : 0 ≤ D) : 0 ≤ relativeDegree f D :=
-  WeilDivisor.weightedDegree_nonneg (fun _ ↦ Int.natCast_nonneg _) hD
+  WeilDivisor.weightedDegree_nonneg (fun _ _ ↦ Int.natCast_nonneg _) hD
 
 end
 
