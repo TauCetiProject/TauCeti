@@ -14,7 +14,7 @@ public import TauCeti.RepresentationTheory.SymmetricAlgebra.Reynolds
 
 Let `ρ` be a representation of a group `G` on an `R`-module `M`, and let `S` be a commutative
 `R`-algebra. The canonical equivalence `S ⊗[R] Sym M ≃ Sym (S ⊗[R] M)`
-(`TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv`) is equivariant: it intertwines the scalar
+(`SymmetricAlgebra.scalarTensorBialgEquiv`) is equivariant: it intertwines the scalar
 extension of the induced action of `G` on `Sym M` with the action induced by the scalar-extended
 representation `ρ.baseChange S`. This file draws the consequences for invariants.
 
@@ -52,7 +52,7 @@ representation `ρ.baseChange S`. This file draws the consequences for invariant
 
 public section
 
-open TensorProduct TauCeti.SymmetricAlgebra
+open SymmetricAlgebra TensorProduct TauCeti.SymmetricAlgebra
 
 namespace Representation
 
