@@ -299,29 +299,29 @@ theorem formSolutionOperator_injective (hB : IsCoercive B) {J : V →L[ℝ] H} (
 /-- With `J` of dense range, the solution operator has dense range. -/
 theorem denseRange_formSolutionOperator [CompleteSpace H] (hB : IsCoercive B) {J : V →L[ℝ] H}
     (hJ : DenseRange J) : DenseRange (hB.formSolutionOperator J) := by
-  rw [DenseRange, ← ContinuousLinearMap.coe_coe, ← LinearMap.coe_range,
-    Submodule.dense_iff_topologicalClosure_eq_top, Submodule.topologicalClosure_eq_top_iff,
-    Submodule.eq_bot_iff]
-  intro g hg
-  have hself : ⟪g, hB.formSolutionOperator J g⟫_ℝ = 0 := by
-    rw [real_inner_comm]
-    exact (Submodule.mem_orthogonal _ _).1 hg _ (LinearMap.mem_range_self _ g)
-  rw [inner_formSolutionOperator_self] at hself
-  have hw : hB.formSolutionMap J g = 0 := by
-    by_contra hne
-    exact (hB.apply_self_pos hne).ne' hself
-  refine (injective_iff_map_eq_zero _).1 (hB.formSolutionOperator_injective hJ) g ?_
-  rw [formSolutionOperator_apply, hw, map_zero]
+  have horth : (LinearMap.range (hB.formSolutionOperator J : H →ₗ[ℝ] H))ᗮ = ⊥ := by
+    refine (Submodule.eq_bot_iff _).2 fun g hg => ?_
+    have hself : ⟪g, hB.formSolutionOperator J g⟫_ℝ = 0 := by
+      rw [real_inner_comm]
+      exact (Submodule.mem_orthogonal _ _).1 hg _ (LinearMap.mem_range_self _ g)
+    rw [inner_formSolutionOperator_self] at hself
+    have hw : hB.formSolutionMap J g = 0 := by
+      by_contra hne
+      exact (hB.apply_self_pos hne).ne' hself
+    refine (injective_iff_map_eq_zero _).1 (hB.formSolutionOperator_injective hJ) g ?_
+    rw [formSolutionOperator_apply, hw, map_zero]
+  simpa [DenseRange, LinearMap.coe_range] using Submodule.dense_iff_topologicalClosure_eq_top.2
+    (Submodule.topologicalClosure_eq_top_iff.2 horth)
 
 /-- `I + S` is invertible, since `⟪(I + S) h, h⟫ ≥ ‖h‖²` for the positive semidefinite solution
 operator `S`. -/
 theorem isUnit_one_add_formSolutionOperator [CompleteSpace H] (hB : IsCoercive B)
     (J : V →L[ℝ] H) : IsUnit (1 + hB.formSolutionOperator J) := by
   refine ContinuousLinearMap.isUnit_of_forall_le_norm_inner_map _ one_pos fun h => ?_
-  rw [NNReal.coe_one, mul_one, add_apply, one_apply_eq_self,
-    Real.norm_eq_abs, inner_add_left, real_inner_self_eq_norm_sq, real_inner_comm]
-  exact (le_add_of_nonneg_right (hB.inner_formSolutionOperator_self_nonneg J h)).trans
-    (le_abs_self _)
+  have hS := hB.inner_formSolutionOperator_self_nonneg J h
+  simp only [NNReal.coe_one, mul_one, add_apply, one_apply_eq_self, inner_add_left,
+    real_inner_self_eq_norm_sq, real_inner_comm] at hS ⊢
+  exact (le_add_of_nonneg_right hS).trans (Real.le_norm_self _)
 
 /-! ### Variational eigenvalues -/
 

@@ -146,12 +146,11 @@ theorem StronglyContinuousSemigroup.realOperator_apply_eq_exp_smul_of_generator_
     S.realOperator t x = Real.exp (μ * t) • (x : X) := by
   have hsol : IsClassicalSolution S.generator x fun s => Real.exp (μ * s) • (x : X) := by
     refine isClassicalSolution_iff.2 ⟨by simp, fun s => (μ * Real.exp (μ * s)) • (x : X),
-      ((continuous_const.mul (Real.continuous_exp.comp (continuous_const.mul
-        continuous_id))).smul continuous_const).continuousOn, fun s _ => ?_⟩
+      (by fun_prop : Continuous fun s : ℝ => (μ * Real.exp (μ * s)) • (x : X)).continuousOn,
+      fun s _ => ?_⟩
     refine ⟨S.generator.domain.smul_mem _ x.2, ?_, ?_⟩
-    · have h := ((hasDerivAt_id s).const_mul μ).exp.smul_const (x : X)
-      simp only [mul_one, id] at h
-      exact (by simpa only [mul_comm] using h : HasDerivAt _ _ s).hasDerivWithinAt
+    · refine HasDerivAt.hasDerivWithinAt ?_
+      simpa [mul_comm] using ((hasDerivAt_id s).const_mul μ).exp.smul_const (x : X)
     · have hsmul : (⟨Real.exp (μ * s) • (x : X), S.generator.domain.smul_mem _ x.2⟩ :
           S.generator.domain) = Real.exp (μ * s) • x := Subtype.ext (Submodule.coe_smul _ _).symm
       rw [hsmul, S.generator.map_smul, hx, smul_smul, mul_comm]

@@ -56,7 +56,7 @@ such eigenvectors the semigroup is therefore the diagonal operator
 * `IsCoercive.isMDissipative_formGenerator`, `IsCoercive.dense_formGenerator_domain`: the
   hypotheses of the Lumer–Phillips theorem.
 * `IsCoercive.formSemigroup`: the contraction semigroup, with
-  `IsCoercive.formSemigroup_generator`.
+  `IsCoercive.formSemigroup_generator` and `IsCoercive.formSemigroup_generator_apply`.
 * `IsCoercive.formSemigroup_apply_of_forall_apply_eq_smul_inner`,
   `IsCoercive.hasSum_formSemigroup_apply`: the action on eigenvectors and the eigenfunction
   expansion.
@@ -263,6 +263,15 @@ theorem formSemigroup_generator [CompleteSpace H] (hJ : DenseRange J) :
   (hB.isMDissipative_formGenerator hJ).yosidaLimitSemigroup_generator
     (hB.dense_formGenerator_domain hJ)
 
+/-- The generator of the semigroup of a coercive form agrees with `IsCoercive.formGenerator` at
+every point of their common domain. -/
+theorem formSemigroup_generator_apply [CompleteSpace H] (hJ : DenseRange J)
+    (x : (hB.formSemigroup hJ).toStronglyContinuousSemigroup.generator.domain)
+    (hx : (x : H) ∈ (hB.formGenerator J).domain) :
+    (hB.formSemigroup hJ).toStronglyContinuousSemigroup.generator x =
+      hB.formGenerator J ⟨x, hx⟩ :=
+  LinearPMap.congr_fun (hB.formSemigroup_generator hJ) x.2 hx
+
 /-- **The semigroup on an eigenvector.** If `B u v = κ ⟪J u, J v⟫` for every `v`, then the
 semigroup multiplies `J u` by `exp (-κ t)`. -/
 theorem formSemigroup_apply_of_forall_apply_eq_smul_inner [CompleteSpace H] (hJ : DenseRange J)
@@ -273,10 +282,9 @@ theorem formSemigroup_apply_of_forall_apply_eq_smul_inner [CompleteSpace H] (hJ 
   have hdom : J u ∈ S.generator.domain := by
     rw [hB.formSemigroup_generator hJ]
     exact hB.apply_mem_formGenerator_domain hu'
-  have hgen : S.generator ⟨J u, hdom⟩ = (-κ) • J u :=
-    (LinearPMap.congr_fun (hB.formSemigroup_generator hJ) hdom
-      (hB.apply_mem_formGenerator_domain hu')).trans
-      ((hB.formGenerator_apply_eq_neg hJ hu').trans (neg_smul κ (J u)).symm)
+  have hgen : S.generator ⟨J u, hdom⟩ = (-κ) • J u := by
+    rw [hB.formSemigroup_generator_apply hJ _ (hB.apply_mem_formGenerator_domain hu'),
+      hB.formGenerator_apply_eq_neg hJ hu', neg_smul]
   have h := S.apply_eq_exp_smul_of_generator_eq_smul ⟨J u, hdom⟩ hgen t
   rw [neg_mul] at h
   exact h
