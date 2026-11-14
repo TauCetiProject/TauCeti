@@ -27,14 +27,15 @@ smooth as well as pointwise compatible.
 
 `SymplecticForm.Compatible.cayleyInterp` interpolates compatible structures with any weight
 in `[0, 1]`, by scaling the endpoint's Cayley coordinate.
-`SymplecticForm.Compatible.cayleyPath` joins a compatible structure to any other compatible
-structure, is constant for parameters at most zero and at least one, and is smooth on the
-whole real line. Thus its endpoint jets of every positive order vanish. Smoothness is also
-proved jointly with external parameters for families expressed in Cayley coordinates. In
-operator-norm coordinates the path is the rational expression `TauCeti.cayleyPathFormula` in
-its two endpoints, which commutes with algebra isomorphisms, and hence with conjugation by linear
-isomorphisms intertwining the endpoints, and is smooth jointly in the parameter and both endpoints
-wherever its denominators are invertible.
+`SymplecticForm.Compatible.cayleyPath` joins a compatible structure to any tame structure
+through tame structures, and to any compatible structure through compatible structures. It is
+constant for parameters at most zero and at least one, and is smooth on the whole real line.
+Thus its endpoint jets of every positive order vanish. Smoothness is also proved jointly with
+external parameters for families expressed in Cayley coordinates. In operator-norm coordinates
+the path is the rational expression `TauCeti.cayleyPathFormula` in its two endpoints, which
+commutes with algebra isomorphisms, and hence with conjugation by linear isomorphisms
+intertwining the endpoints, and is smooth jointly in the parameter and both endpoints wherever
+its denominators are invertible.
 Over a manifold of parameters, `SymplecticForm.Compatible.contMDiffAt_cayleyEquiv_symm` shows
 that the inverse chart preserves smoothness, and conversely
 `SymplecticForm.Tames.contMDiffAt_cayley` shows that the forward chart sends a smooth family of
@@ -359,21 +360,41 @@ theorem Compatible.cayleyInterp_self (h₀ : ω.Compatible J₀) (h₁ : ω.Comp
     {b : ℝ} (hb : b ∈ Icc 0 1) : h₀.cayleyInterp h₁ hb = J₀ := by
   exact h₀.eq_of_cayley_eq (h₀.compatible_cayleyInterp h₁ _).tames h₀.tames (by simp)
 
-/-- A smooth, collar-constant path from `J₀` to `J₁` through compatible structures, obtained by
-multiplying the Cayley coordinate of `J₁` by `smoothTransition t`. -/
-def Compatible.cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁) (t : ℝ) :
+/-- A smooth, collar-constant path from a compatible `J₀` to a tame `J₁` through tame structures,
+obtained by multiplying the Cayley coordinate of `J₁` by `smoothTransition t`. -/
+def Compatible.cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Tames J₁) (t : ℝ) :
     AlmostComplexStructure V :=
-  h₀.cayleyInterp h₁ ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩
+  (h₀.cayleyEquiv.symm
+    ⟨smoothTransition t • J₀.cayley J₁,
+      h₀.smul_cayley_mem_cayleyBall h₁ (smoothTransition.abs_le_one t)⟩).val
 
-/-- The path is the inverse compatible Cayley chart at the cutoff-scaled endpoint coordinate. -/
+/-- Every structure on the path is tamed by `ω`. -/
+theorem Compatible.tames_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Tames J₁) (t : ℝ) :
+    ω.Tames (h₀.cayleyPath h₁ t) :=
+  (h₀.cayleyEquiv.symm _).property
+
+/-- The Cayley coordinate of the path is the cutoff-scaled coordinate of its endpoint. -/
+@[simp]
+theorem Compatible.cayley_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Tames J₁) (t : ℝ) :
+    J₀.cayley (h₀.cayleyPath h₁ t) = smoothTransition t • J₀.cayley J₁ := by
+  rw [Compatible.cayleyPath]
+  simpa only [Compatible.cayleyEquiv_apply_coe] using
+    congrArg Subtype.val (h₀.cayleyEquiv.apply_symm_apply
+      ⟨smoothTransition t • J₀.cayley J₁,
+        h₀.smul_cayley_mem_cayleyBall h₁ (smoothTransition.abs_le_one t)⟩)
+
+/-- For a compatible endpoint, the path is the inverse compatible Cayley chart at the
+cutoff-scaled endpoint coordinate. -/
 theorem Compatible.cayleyPath_eq_compatibleCayleyEquiv_symm
     (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁) (t : ℝ) :
-    h₀.cayleyPath h₁ t =
+    h₀.cayleyPath h₁.tames t =
       (h₀.compatibleCayleyEquiv.symm
         ⟨smoothTransition t • J₀.cayley J₁,
           h₀.smul_cayley_mem_compatibleCayleyBall h₁
-            (smoothTransition.abs_le_one t)⟩).val := by
-  rfl
+            (smoothTransition.abs_le_one t)⟩).val :=
+  AlmostComplexStructure.toLinearMap_injective <| by
+    simp only [Compatible.cayleyPath, Compatible.cayleyEquiv_symm_apply_toLinearMap,
+      Compatible.compatibleCayleyEquiv_symm_apply_toLinearMap]
 
 /-- The cutoff-scaled Cayley coordinate of `J₁`, as a continuous endomorphism, lies in the
 compatible Cayley ball. -/
@@ -385,50 +406,50 @@ theorem Compatible.smoothTransition_smul_cayley_mem_compatibleCayleyBall
     h₀.smul_cayley_mem_compatibleCayleyBall h₁
       (smoothTransition.abs_le_one t)
 
-/-- The interpolated structure is compatible at every parameter, not only at its endpoints. -/
+/-- For a compatible endpoint, the path is compatible at every parameter, not only at its
+endpoints. -/
 theorem Compatible.compatible_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁) (t : ℝ) :
-    ω.Compatible (h₀.cayleyPath h₁ t) :=
-  h₀.compatible_cayleyInterp h₁ ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩
-
-/-- The Cayley coordinate of the path is the cutoff-scaled coordinate of its endpoint. -/
-@[simp]
-theorem Compatible.cayley_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁) (t : ℝ) :
-    J₀.cayley (h₀.cayleyPath h₁ t) = smoothTransition t • J₀.cayley J₁ := by
-  exact h₀.cayley_cayleyInterp h₁ ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩
+    ω.Compatible (h₀.cayleyPath h₁.tames t) :=
+  (h₀.cayley_mem_compatibleCayleyBall_iff (h₀.tames_cayleyPath h₁.tames t)).1 <| by
+    rw [Compatible.cayley_cayleyPath]
+    exact h₀.smul_cayley_mem_compatibleCayleyBall h₁ (smoothTransition.abs_le_one t)
 
 /-- Interpolating a structure with itself leaves it fixed at every parameter. -/
 @[simp]
 theorem Compatible.cayleyPath_self (h₀ : ω.Compatible J₀) (t : ℝ) :
-    h₀.cayleyPath h₀ t = J₀ := by
-  exact h₀.eq_of_cayley_eq (h₀.compatible_cayleyPath h₀ t).tames h₀.tames (by simp)
+    h₀.cayleyPath h₀.tames t = J₀ :=
+  h₀.eq_of_cayley_eq (h₀.tames_cayleyPath h₀.tames t) h₀.tames <| by
+    rw [Compatible.cayley_cayleyPath, AlmostComplexStructure.cayley_self, smul_zero]
 
 /-- The path agrees with its initial structure on the entire incoming collar. -/
 @[simp]
-theorem Compatible.cayleyPath_of_nonpos (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁)
-    {t : ℝ} (ht : t ≤ 0) : h₀.cayleyPath h₁ t = J₀ := by
-  simp only [Compatible.cayleyPath, smoothTransition.zero_of_nonpos ht,
-    Compatible.cayleyInterp_zero]
+theorem Compatible.cayleyPath_of_nonpos (h₀ : ω.Compatible J₀) (h₁ : ω.Tames J₁)
+    {t : ℝ} (ht : t ≤ 0) : h₀.cayleyPath h₁ t = J₀ :=
+  h₀.eq_of_cayley_eq (h₀.tames_cayleyPath h₁ t) h₀.tames <| by
+    rw [Compatible.cayley_cayleyPath, smoothTransition.zero_of_nonpos ht, zero_smul,
+      AlmostComplexStructure.cayley_self]
 
 /-- The path agrees with its final structure on the entire outgoing collar. -/
 @[simp]
-theorem Compatible.cayleyPath_of_one_le (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁)
-    {t : ℝ} (ht : 1 ≤ t) : h₀.cayleyPath h₁ t = J₁ := by
-  simp only [Compatible.cayleyPath, smoothTransition.one_of_one_le ht,
-    Compatible.cayleyInterp_one]
+theorem Compatible.cayleyPath_of_one_le (h₀ : ω.Compatible J₀) (h₁ : ω.Tames J₁)
+    {t : ℝ} (ht : 1 ≤ t) : h₀.cayleyPath h₁ t = J₁ :=
+  h₀.eq_of_cayley_eq (h₀.tames_cayleyPath h₁ t) h₁ <| by
+    rw [Compatible.cayley_cayleyPath, smoothTransition.one_of_one_le ht, one_smul]
 
 /-- The path is smooth on the whole real line, including both transition endpoints. -/
-theorem Compatible.contDiff_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁)
+theorem Compatible.contDiff_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Tames J₁)
     (n : ℕ∞) :
     ContDiff ℝ n (fun t => LinearMap.toContinuousLinearMap (h₀.cayleyPath h₁ t).toLinearMap) := by
   let C : ℝ → V →L[ℝ] V := fun t =>
     smoothTransition t • LinearMap.toContinuousLinearMap (J₀.cayley J₁)
-  have hC (t : ℝ) : (C t).toLinearMap ∈ ω.compatibleCayleyBall J₀ :=
-    h₀.smoothTransition_smul_cayley_mem_compatibleCayleyBall h₁ t
-  convert h₀.contDiff_compatibleCayleyEquiv_symm (n := n) hC
+  have hC (t : ℝ) : (C t).toLinearMap ∈ ω.cayleyBall J₀ := by
+    simpa only [C, ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
+      using h₀.smul_cayley_mem_cayleyBall h₁ (smoothTransition.abs_le_one t)
+  convert h₀.contDiff_cayleyEquiv_symm (n := n) hC
     (smoothTransition.contDiff.smul contDiff_const) using 1
   funext t
-  rw [h₀.cayleyPath_eq_compatibleCayleyEquiv_symm h₁ t]
-  simp only [C, ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
+  simp only [Compatible.cayleyPath, C, ContinuousLinearMap.toLinearMap_smul,
+    LinearMap.coe_toContinuousLinearMap]
 
 /-! ### The linear Cayley path in operator-norm coordinates -/
 
@@ -477,16 +498,15 @@ theorem Compatible.toContinuousLinearMap_cayleyInterp (h₀ : ω.Compatible J₀
     Compatible.cayleyInterp, Compatible.compatibleCayleyEquiv_symm_apply_toLinearMap,
     Compatible.cayleyEquiv_symm_apply_toLinearMap]
 
-/-- In operator-norm coordinates, the compatible Cayley path from `J₀` to `J₁` at time `t` is
+/-- In operator-norm coordinates, the Cayley path from `J₀` to `J₁` at time `t` is
 `J₀ (1 + β C)(1 - β C)⁻¹`, where `C` is the Cayley coordinate of `J₁` and
 `β = smoothTransition t`. -/
 theorem Compatible.toContinuousLinearMap_cayleyPath (h₀ : ω.Compatible J₀)
-    (h₁ : ω.Compatible J₁) (t : ℝ) (hA : A.toLinearMap = J₀.toLinearMap)
+    (h₁ : ω.Tames J₁) (t : ℝ) (hA : A.toLinearMap = J₀.toLinearMap)
     (hB : B.toLinearMap = J₁.toLinearMap) :
     LinearMap.toContinuousLinearMap (h₀.cayleyPath h₁ t).toLinearMap =
       cayleyPathFormula (smoothTransition t) A B :=
-  h₀.toContinuousLinearMap_cayleyInterp h₁
-    ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩ hA hB
+  h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley h₁ (smoothTransition.abs_le_one t) hA hB
 
 /-- For `|b| ≤ 1` and a tame `J₁`, the denominator `1 - b C` of the Cayley path expression is
 invertible, where `C` is the Cayley coordinate of `J₁`. -/
