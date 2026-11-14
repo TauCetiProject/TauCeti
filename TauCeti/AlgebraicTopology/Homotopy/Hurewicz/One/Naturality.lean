@@ -85,25 +85,25 @@ lemma homologyMap_H₁AddEquivHomology_loopClass {x : X} (γ : Path x x) :
 homology group of the singular chain complex corresponds to the map induced on fundamental
 groups. -/
 theorem homologyMap_H₁AddEquivHomology_hurewiczAb {x : X}
-    (a : Additive (Abelianization (FundamentalGroup X x))) :
+    (a : Additive (Group.Abelianization (FundamentalGroup X x))) :
     (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
         (H₁AddEquivHomology X (hurewiczAb x a)) =
-      H₁AddEquivHomology Y (hurewiczAb (f x) (Additive.ofMul (Abelianization.map
+      H₁AddEquivHomology Y (hurewiczAb (f x) (Additive.ofMul (Group.Abelianization.map
         (FundamentalGroup.map f.hom x) a.toMul))) := by
   induction a using Additive.rec with | ofMul a =>
   induction a using Quot.ind with | mk p =>
   obtain ⟨p⟩ := p
   induction p using Path.Homotopic.Quotient.ind with | mk γ =>
-  rw [Abelianization.mk_eq_of, toMul_ofMul, Abelianization.map_of,
+  rw [Group.Abelianization.mk_eq_of, toMul_ofMul, Group.Abelianization.map_of,
     FundamentalGroup.map_fromPath f.hom x γ, hurewiczAb_ofMul_of_mk,
     hurewiczAb_ofMul_of_mk, homologyMap_H₁AddEquivHomology_loopClass]
 
 /-- **Naturality of the Hurewicz isomorphism** of path-connected spaces. -/
 theorem homologyMap_hurewiczHomologyAddEquiv [PathConnectedSpace X] [PathConnectedSpace Y]
-    {x : X} (a : Additive (Abelianization (FundamentalGroup X x))) :
+    {x : X} (a : Additive (Group.Abelianization (FundamentalGroup X x))) :
     (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
         (hurewiczHomologyAddEquiv x a) =
-      hurewiczHomologyAddEquiv (f x) (Additive.ofMul (Abelianization.map
+      hurewiczHomologyAddEquiv (f x) (Additive.ofMul (Group.Abelianization.map
         (FundamentalGroup.map f.hom x) a.toMul)) := by
   rw [hurewiczHomologyAddEquiv_apply, hurewiczHomologyAddEquiv_apply,
     homologyMap_H₁AddEquivHomology_hurewiczAb]
@@ -112,10 +112,10 @@ theorem homologyMap_hurewiczHomologyAddEquiv [PathConnectedSpace X] [PathConnect
 carrying the base point `x` to a prescribed base point `y` of the target. -/
 theorem homologyMap_hurewiczHomologyAddEquiv_mapOfEq [PathConnectedSpace X]
     [PathConnectedSpace Y] {x : X} {y : Y} (h : f x = y)
-    (a : Additive (Abelianization (FundamentalGroup X x))) :
+    (a : Additive (Group.Abelianization (FundamentalGroup X x))) :
     (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
         (hurewiczHomologyAddEquiv x a) =
-      hurewiczHomologyAddEquiv y (Additive.ofMul (Abelianization.map
+      hurewiczHomologyAddEquiv y (Additive.ofMul (Group.Abelianization.map
         (FundamentalGroup.mapOfEq f.hom h) a.toMul)) := by
   subst h
   rw [FundamentalGroup.mapOfEq_rfl, homologyMap_hurewiczHomologyAddEquiv]
@@ -148,9 +148,9 @@ theorem hurewicz₁_fundamentalGroupMulEquivOfPath {x x' : X} (p : Path x x')
 by the degree-one Hurewicz isomorphism. -/
 theorem hurewiczHomologyAddEquiv_fundamentalGroupMulEquivOfPath [PathConnectedSpace X]
     {x x' : X} (p : Path x x') (a : FundamentalGroup X x) :
-    hurewiczHomologyAddEquiv x' (Additive.ofMul (Abelianization.of
+    hurewiczHomologyAddEquiv x' (Additive.ofMul (Group.Abelianization.of
       (FundamentalGroup.fundamentalGroupMulEquivOfPath p a))) =
-      hurewiczHomologyAddEquiv x (Additive.ofMul (Abelianization.of a)) := by
+      hurewiczHomologyAddEquiv x (Additive.ofMul (Group.Abelianization.of a)) := by
   simp only [hurewiczHomologyAddEquiv_apply, hurewiczAb_ofMul_of]
   exact congrArg (fun z ↦ H₁AddEquivHomology X (Multiplicative.toAdd z))
     (hurewicz₁_fundamentalGroupMulEquivOfPath p a)

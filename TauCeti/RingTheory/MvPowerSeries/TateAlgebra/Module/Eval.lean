@@ -34,7 +34,7 @@ variables.
 
 The main result recovers the coefficients from the values. Suppose `K` is nontrivially normed and
 ultrametric, and `E` carries a jointly injective family of continuous `K`-linear maps `φⱼ : E → Lⱼ`
-into complete normed field extensions `Lⱼ` of `K`. If `a(x) = 0` for every `x` in a product of
+into normed field extensions `Lⱼ` of `K`. If `a(x) = 0` for every `x` in a product of
 infinite subsets `Sᵢ` of the discs `‖xᵢ‖ ≤ cᵢ`, then `a = 0`. In one variable, each `φⱼ ∘ a` is the
 coefficient sequence of an `Lⱼ`-valued restricted series vanishing on an infinite subset of a closed
 disc, which is zero by Strassmann's theorem (`TauCeti.PowerSeries.eq_zero_of_hasSum_pow_smul`).
@@ -65,7 +65,7 @@ the finite set `𝔽_p`.
   restricted scalar series by convolution to multiplication by their values.
 * `TauCeti.MvPowerSeries.IsRestrictedFamily.eq_zero_of_familyEval_eq_zero`: a restricted family
   vanishing on a product of infinite subsets of the closed polydisc is zero, given a jointly
-  injective family of functionals into complete field extensions.
+  injective family of functionals into field extensions.
 * `TauCeti.MvPowerSeries.IsRestrictedFamily.eq_zero_of_familyEval_padicInt_eq_zero`: its
   specialisation to unit-radius series over `ℚ_p` evaluated on `ℤ_pⁿ`.
 
@@ -191,7 +191,7 @@ section Injective
 
 variable [NontriviallyNormedField K] [IsUltrametricDist K] [NormedAddCommGroup E] [NormedSpace K E]
   [IsUltrametricDist E] [CompleteSpace E] {ι : Type*} {L : ι → Type*}
-  [∀ j, NormedField (L j)] [∀ j, NormedAlgebra K (L j)] [∀ j, CompleteSpace (L j)]
+  [∀ j, NormedField (L j)] [∀ j, NormedAlgebra K (L j)]
 
 /-- The statement proved by induction on the variables, for a fixed coefficient space. -/
 private def VanishingPrinciple (E : Type*) [NormedAddCommGroup E] [NormedSpace K E]
@@ -285,7 +285,7 @@ private theorem vanishingPrinciple_option (φ : ∀ j, E →L[K] L j)
 
 /-- **Coefficient recovery for module-valued restricted series.** Let `E` be a complete
 ultrametric normed space over an ultrametric normed field `K`, with a jointly injective family of
-continuous linear maps `φⱼ : E → Lⱼ` into complete normed field extensions of `K`. A family
+continuous linear maps `φⱼ : E → Lⱼ` into normed field extensions of `K`. A family
 restricted at `c`, in finitely many variables, whose value vanishes at every point of a product
 of infinite subsets `Sᵢ` of the discs `‖xᵢ‖ ≤ cᵢ`, is zero. -/
 theorem IsRestrictedFamily.eq_zero_of_familyEval_eq_zero [Finite σ] (φ : ∀ j, E →L[K] L j)
@@ -298,13 +298,13 @@ theorem IsRestrictedFamily.eq_zero_of_familyEval_eq_zero [Finite σ] (φ : ∀ j
     (vanishingPrinciple_option φ hφ) σ c a S ha hS hSc h
 
 /-- **Coefficient recovery on `ℤ_pⁿ`.** Let `E` be an ultrametric Banach space over `ℚ_p` with a
-jointly injective family of continuous linear maps into complete normed field extensions of `ℚ_p`.
+jointly injective family of continuous linear maps into normed field extensions of `ℚ_p`.
 A unit-radius restricted family in finitely many variables with values in `E`, vanishing at every
 point of `ℤ_pⁿ`, is zero. -/
 theorem IsRestrictedFamily.eq_zero_of_familyEval_padicInt_eq_zero {p : ℕ} [Fact p.Prime]
     [Finite σ] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℚ_[p] E] [IsUltrametricDist E]
     [CompleteSpace E] {ι : Type*} {L : ι → Type*} [∀ j, NormedField (L j)]
-    [∀ j, NormedAlgebra ℚ_[p] (L j)] [∀ j, CompleteSpace (L j)] (φ : ∀ j, E →L[ℚ_[p]] L j)
+    [∀ j, NormedAlgebra ℚ_[p] (L j)] (φ : ∀ j, E →L[ℚ_[p]] L j)
     (hφ : ∀ e, (∀ j, φ j e = 0) → e = 0) {a : (σ →₀ ℕ) → E}
     (ha : IsRestrictedFamily (fun _ ↦ 1) a)
     (h : ∀ x : σ → ℤ_[p], familyEval (fun i ↦ (x i : ℚ_[p])) a = 0) : a = 0 := by
