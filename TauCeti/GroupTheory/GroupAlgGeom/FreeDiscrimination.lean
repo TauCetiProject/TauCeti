@@ -21,9 +21,11 @@ group or, more generally, a nonabelian fully residually free group. Then the fre
 discrimination of extensions of centralizers of `G` by their retractions onto `G`.
 
 The discriminating homomorphisms send each variable `x` to a conjugate `c x * u ^ k * (c x)⁻¹`
-of a large power of one fixed element `u ≠ 1`. The group `G` must be nonabelian: a homomorphism
-to a commutative group kills the commutator of a variable with a coefficient, which is nontrivial
-in `G[X]` whenever the coefficient is. More generally, the coefficient group may embed into a
+of a large power of one fixed element `u ≠ 1`. For nonempty `X` the group `G` must be
+nonabelian: a homomorphism to the trivial group kills the variables, and a homomorphism to a
+nontrivial commutative group kills the commutator of a variable with a nontrivial coefficient,
+which is nontrivial in `G[X]`. (For empty `X`, `G[X] ≅ G` is discriminated by any `G`.) More
+generally, the coefficient group may embed into a
 nonabelian CSA BP target `H`, and the same construction discriminates `G[X]` by `H` over that
 embedding.
 

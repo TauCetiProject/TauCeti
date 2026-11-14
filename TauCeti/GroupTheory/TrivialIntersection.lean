@@ -185,8 +185,8 @@ theorem comap {K : Type*} [Group K] (hH : IsTISubgroup H) (f : K →* G)
     simpa only [Subgroup.mem_comap, map_mul, map_inv] using hgx
   simpa only [map_one] using hH hfg hfx hfgx
 
-/-- If two elements conjugate the same nonidentity element into a malnormal subgroup, they
-lie in the same left coset of that subgroup. -/
+/-- If `y⁻¹ * h * y` and `y'⁻¹ * h * y'` both lie in a malnormal subgroup `H` for the same
+nonidentity element `h`, then `y` and `y'` lie in the same left coset of `H`. -/
 theorem inv_mul_mem_of_inv_mul_mul_mem (hH : IsTISubgroup H) {h y y' : G} (hh : h ≠ 1)
     (hy : y⁻¹ * h * y ∈ H) (hy' : y'⁻¹ * h * y' ∈ H) : y⁻¹ * y' ∈ H := by
   by_contra hnot
@@ -194,24 +194,24 @@ theorem inv_mul_mem_of_inv_mul_mul_mem (hH : IsTISubgroup H) {h y y' : G} (hh : 
   · simpa [mul_assoc] using congrArg (fun z => y' * z * y'⁻¹) h1
   · convert hy using 1; group
 
-/-- In a torsion-free group, distinct integer powers of an element outside a malnormal subgroup
-lie in distinct left cosets of that subgroup. -/
-theorem eq_of_inv_zpow_mul_zpow_mem (hH : IsTISubgroup H) [IsMulTorsionFree G]
-    {v : G} (hv : v ∉ H) {n n' : ℤ} (h : (v ^ n)⁻¹ * v ^ n' ∈ H) : n = n' := by
+/-- Distinct integer powers of an element of infinite order outside a malnormal subgroup lie
+in distinct left cosets of that subgroup. -/
+theorem eq_of_inv_zpow_mul_zpow_mem (hH : IsTISubgroup H) {v : G} (hv : v ∉ H)
+    (hvo : ¬IsOfFinOrder v) {n n' : ℤ} (h : (v ^ n)⁻¹ * v ^ n' ∈ H) : n = n' := by
   by_contra hne
   rw [← zpow_neg, ← zpow_add, neg_add_eq_sub] at h
-  have hv1 : v ≠ 1 := by rintro rfl; exact hv H.one_mem
-  have hd : v ^ (n' - n) ≠ 1 :=
-    (IsMulTorsionFree.zpow_eq_one_iff_right hv1).not.2 (sub_ne_zero.2 (Ne.symm hne))
+  have hd : v ^ (n' - n) ≠ 1 := fun h1 => hne (sub_eq_zero.1
+    (injective_zpow_iff_not_isOfFinOrder.2 hvo (h1.trans (zpow_zero v).symm))).symm
   exact hv (hH.centralizer_singleton_le h hd
     (Subgroup.mem_centralizer_singleton_iff.2 (Commute.self_zpow v _).eq))
 
-/-- In a torsion-free group, powers of an element outside a malnormal subgroup can be chosen
-so that their mixed products with prescribed nonidentity elements avoid the subgroup. Distinct
-indices also give distinct left cosets, by taking the middle element to be `1`. -/
-theorem exists_inv_pow_mul_mul_pow_notMem (hH : IsTISubgroup H) [IsMulTorsionFree G]
-    {ι : Type*} {v : G}
-    (hv : v ∉ H) (s : Finset ι) (T : Set G) (hT : T.Finite) :
+/-- Let `v` be an element of infinite order outside a malnormal subgroup `H`. On a finite index
+set `s`, for a finite set `T` of prescribed elements, powers `v ^ m x` can be chosen so that
+`(v ^ m x)⁻¹ * h * v ^ m x' ∉ H` for all `x, x' ∈ s` and every nonidentity `h ∈ T`, and also
+for `h = 1` whenever `x ≠ x'`; the latter says that distinct indices give distinct left cosets
+of `H`. -/
+theorem exists_inv_pow_mul_mul_pow_notMem (hH : IsTISubgroup H) {ι : Type*} {v : G}
+    (hv : v ∉ H) (hvo : ¬IsOfFinOrder v) (s : Finset ι) (T : Set G) (hT : T.Finite) :
     ∃ m : ι → ℕ, ∀ x ∈ s, ∀ x' ∈ s, ∀ h : G, (h = 1 ∧ x ≠ x' ∨ h ∈ T ∧ h ≠ 1) →
       (v ^ m x)⁻¹ * h * v ^ m x' ∉ H := by
   classical
@@ -223,7 +223,7 @@ theorem exists_inv_pow_mul_mul_pow_notMem (hH : IsTISubgroup H) [IsMulTorsionFre
     have hsub : ∀ P : ℕ → Prop,
         (∀ n n', P n → P n' → (v ^ n)⁻¹ * v ^ n' ∈ H) → {n | P n}.Finite :=
       fun P hP => Set.Subsingleton.finite fun n hn n' hn' => by
-        have heq := hH.eq_of_inv_zpow_mul_zpow_mem hv
+        have heq := hH.eq_of_inv_zpow_mul_zpow_mem hv hvo
           (n := (n : ℤ)) (n' := (n' : ℤ)) (by simpa only [zpow_natCast] using hP n n' hn hn')
         exact_mod_cast heq
     have hT1 : (insert 1 T).Finite := hT.insert 1

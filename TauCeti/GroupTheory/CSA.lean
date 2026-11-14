@@ -17,12 +17,12 @@ element in such a group is its unique maximal abelian subgroup containing that e
 particular, commutation is transitive through a nonidentity element. In a torsion-free
 commutative-transitive group roots are unique and no nonidentity element is conjugate to its
 inverse. In a torsion-free CSA group, conjugates of nontrivial powers of `u ≠ 1` by elements of
-different cosets of the centralizer of `u` do not commute, distinct powers of an element outside
-that centralizer lie in distinct cosets, and powers `c x` can be chosen so that
-`(c x)⁻¹ * h * c x'` avoids the centralizer for distinct indices when `h = 1` and for all
-indices when `h` is a prescribed nonidentity element of a finite set. A group is CSA exactly when it
-is commutative transitive and every nonidentity element commuting with one of its conjugates
-`g * x * g⁻¹` commutes with `g`. Consequently, given two noncommuting elements `a` and `b`, the
+different cosets of the centralizer of `u` do not commute, and on any finite index set powers
+`c x` of an element outside that centralizer can be chosen so that `(c x)⁻¹ * h * c x'` avoids
+the centralizer for distinct indices when `h = 1` and for all indices when `h` is a prescribed
+nonidentity element of a finite set. A group is CSA exactly when it is commutative transitive
+and every nonidentity element commuting with one of its conjugates `g * x * g⁻¹` commutes with
+`g`. Consequently, given two noncommuting elements `a` and `b`, the
 disjunction `x = 1 ∨ y = 1` is equivalent to `x` commuting with `y`, `a * y * a⁻¹` and
 `b * y * b⁻¹`. A failure of either condition is witnessed by a nonidentity element together with a
 nontrivial commutator, so both conditions pass to any group in which every pair of nonidentity
@@ -213,14 +213,17 @@ theorem IsCSA.exists_inv_mul_notMem_centralizer (hG : IsCSA G) {u g : G} (hu : u
         (fun h' => hd (by simpa using inv_mem h')) hu' hu (by simpa [mul_assoc] using h)
 
 /-- In a torsion-free CSA group, given `v` outside `C_G(u)`, one can choose powers of `v` whose
-mixed products `(v ^ n x)⁻¹ * h * v ^ n x'` avoid `C_G(u)` for distinct indices when `h = 1`,
-and for all indices when `h` is a prescribed nonidentity element of the finite set `T`. -/
+mixed products `(v ^ n x)⁻¹ * h * v ^ n x'` avoid `C_G(u)` for distinct indices in the finite set
+`s` when `h = 1`, and for all indices in `s` when `h` is a prescribed nonidentity element of the
+finite set `T`. -/
 theorem IsCSA.exists_inv_pow_mul_mul_pow_notMem_centralizer (hG : IsCSA G) [IsMulTorsionFree G]
     {ι : Type*} {u v : G} (hv : v ∉ Subgroup.centralizer {u}) (s : Finset ι)
     (T : Set G) (hT : T.Finite) :
     ∃ n : ι → ℕ, ∀ x ∈ s, ∀ x' ∈ s, ∀ h : G, (h = 1 ∧ x ≠ x' ∨ h ∈ T ∧ h ≠ 1) →
       (v ^ n x)⁻¹ * h * v ^ n x' ∉ Subgroup.centralizer {u} := by
-  exact (hG.centralizer_isTISubgroup u).exists_inv_pow_mul_mul_pow_notMem hv s T hT
+  have hv1 : v ≠ 1 := by rintro rfl; exact hv (Subgroup.one_mem _)
+  exact (hG.centralizer_isTISubgroup u).exists_inv_pow_mul_mul_pow_notMem hv
+    (not_isOfFinOrder_of_isMulTorsionFree hv1) s T hT
 
 /-- In a CSA group with two noncommuting elements `a` and `b`, an element `x` is trivial or `y`
 is trivial exactly when `x` commutes with `y`, `a * y * a⁻¹` and `b * y * b⁻¹`. This expresses
