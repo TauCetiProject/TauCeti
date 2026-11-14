@@ -38,6 +38,8 @@ the generic point, and a dominant one by its pullback of rational functions.
 * `AlgebraicGeometry.IsDominant.pullback_fst_of_isOpenMap`: base change of a dominant morphism
   along a morphism with open underlying map (for instance an étale morphism) is dominant, without
   reducedness or irreducibility assumptions.
+* `AlgebraicGeometry.Scheme.Hom.isDominant_of_isOpenImmersion`: an open immersion from a
+  nonempty scheme into an irreducible scheme is dominant.
 * `AlgebraicGeometry.Scheme.Hom.genericPoint_eq_of_isDominant`: a dominant morphism of
   irreducible schemes sends the generic point to the generic point.
 * `AlgebraicGeometry.isDominant_iff_genericPoint_eq`: conversely, a morphism of irreducible
@@ -58,6 +60,8 @@ the generic point, and a dominant one by its pullback of rational functions.
   injective for nonempty `V`.
 * `AlgebraicGeometry.Scheme.Hom.functionFieldMap_id` and
   `AlgebraicGeometry.Scheme.Hom.functionFieldMap_comp`: functoriality.
+* `AlgebraicGeometry.Scheme.Hom.isIso_functionFieldMap`: along a dominant open immersion, `f^*` is
+  an isomorphism of generic stalks.
 * `AlgebraicGeometry.isDominant_fromSpecStalk_genericPoint`: the canonical morphism `Spec K(X) ⟶ X`
   is dominant.
 * `AlgebraicGeometry.Scheme.Hom.ext_of_functionFieldMap_eq`: dominant morphisms from a reduced
@@ -94,6 +98,12 @@ theorem Scheme.Hom.irreducibleSpace_of_isDominant {X Y : Scheme.{u}} [Irreducibl
       (IrreducibleSpace.isIrreducible_univ X).image f f.continuous.continuousOn
   refine (irreducibleSpace_def Y).mpr ?_
   simpa only [Set.top_eq_univ, f.denseRange.closure_eq] using himage.closure
+
+/-- An open immersion from a nonempty scheme into an irreducible scheme is dominant: its image is a
+nonempty open subset, which is dense. -/
+theorem Scheme.Hom.isDominant_of_isOpenImmersion {X Y : Scheme.{u}} [IrreducibleSpace Y]
+    (f : X ⟶ Y) [IsOpenImmersion f] [Nonempty X] : IsDominant f :=
+  ⟨f.isOpenEmbedding.isOpen_range.dense (Set.range_nonempty _)⟩
 
 /-- The preimage of a nonempty open under a dominant morphism is nonempty. -/
 instance Scheme.Hom.nonempty_preimage_of_isDominant {X Y : Scheme.{u}} (f : X ⟶ Y)
@@ -227,6 +237,20 @@ theorem functionFieldMap_comp [IrreducibleSpace Z] (f : X ⟶ Y) (g : Y ⟶ Z) [
     (f ≫ g).functionFieldMap = g.functionFieldMap ≫ f.functionFieldMap := by
   rw [eq_comm, eq_functionFieldMap_iff, Spec.map_comp_assoc,
     SpecMap_functionFieldMap_fromSpecStalk, SpecMap_functionFieldMap_fromSpecStalk_assoc]
+
+/-- The pullback of rational functions along a dominant open immersion of irreducible schemes is an
+isomorphism of generic stalks, as is every map of stalks of an open immersion. -/
+instance isIso_functionFieldMap (f : X ⟶ Y) [IsOpenImmersion f] [IsDominant f] :
+    IsIso f.functionFieldMap := by
+  -- the specialization map between the stalks at two equal points is an isomorphism
+  have key : ∀ (a b : Y) (e : a = b),
+      IsIso (Y.presheaf.stalkSpecializes (specializes_of_eq e)) := by
+    rintro a _ rfl
+    rw [TopCat.Presheaf.stalkSpecializes_refl]
+    infer_instance
+  have := key _ _ f.genericPoint_eq_of_isDominant
+  rw [functionFieldMap]
+  infer_instance
 
 /-- **A dominant morphism into a separated scheme is determined by its pullback of rational
 functions**: two dominant `S`-morphisms from a reduced irreducible scheme to an irreducible
