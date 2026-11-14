@@ -49,6 +49,8 @@ comes from the subadditivity of inversion counts
   `s` is the source of `φ` and zero otherwise, and `φ I(t)` is `φ` when `t` is its target.
 * `TauCeti.StrandsAlgebra.map_mul_of_basis`: a linear map out of the strands algebra is
   multiplicative once it is multiplicative on basis elements.
+* `TauCeti.StrandsAlgebra.repr_mul_idOn`: the coefficient on an identity diagram is
+  multiplicative.
 
 ## References
 
@@ -327,6 +329,26 @@ theorem exists_of_repr_mul_ne_zero {x y : StrandsAlgebra R α} {χ : StrandDiagr
   rw [ne_eq, ite_eq_right_iff, not_imp] at hψ
   obtain ⟨⟨hc, rfl⟩, hψ⟩ := hψ
   exact ⟨φ, ψ, hc, rfl, left_ne_zero_of_mul hψ, right_ne_zero_of_mul hψ⟩
+
+/-- **The coefficient on an identity diagram is multiplicative.** The only factorization of the
+identity diagram `I(s)` is `I(s) I(s)` (`TauCeti.StrandDiagram.trans_eq_idOn_iff_of_target_eq`),
+so its coefficient in a product is the product of its coefficients in the factors. -/
+@[simp]
+theorem repr_mul_idOn (x y : StrandsAlgebra R α) (s : Finset α) :
+    (basis R α).repr (x * y) (StrandDiagram.idOn s) =
+      (basis R α).repr x (StrandDiagram.idOn s) * (basis R α).repr y (StrandDiagram.idOn s) := by
+  classical
+  let := Fintype.ofFinite (StrandDiagram α)
+  have key (φ ψ : StrandDiagram α) :
+      (φ.Composable ψ ∧ φ.trans ψ = StrandDiagram.idOn s) ↔
+        (φ = StrandDiagram.idOn s ∧ ψ = StrandDiagram.idOn s) := by
+    refine ⟨fun ⟨hc, h⟩ ↦ (StrandDiagram.trans_eq_idOn_iff_of_target_eq hc.target_eq).1 h,
+      fun ⟨hφ, hψ⟩ ↦ ?_⟩
+    subst hφ hψ
+    exact ⟨StrandDiagram.composable_idOn_left_iff.2 (StrandDiagram.source_idOn s).symm,
+      StrandDiagram.idOn_trans_of_eq_source (StrandDiagram.source_idOn s).symm⟩
+  rw [repr_mul_apply]
+  simp [key, ite_and]
 
 end StrandsAlgebra
 
