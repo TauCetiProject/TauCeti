@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
 public import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
@@ -66,14 +67,6 @@ noncomputable def bruhatCell (w : (t.simplyConnectedRootDatum ht).weylGroup) :
   (D.extendedElementarySubgroup K).subtype ''
     (D.titsSystem K).bruhatCell ((D.titsWeylGroupMulEquiv K).symm w)
 
-private theorem image_subtype_borelSubgroupOf_eq :
-    (D.extendedElementarySubgroup K).subtype ''
-        (((D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K) :
-          Subgroup (D.extendedElementarySubgroup K)) : Set (D.extendedElementarySubgroup K)) =
-      (D.borelSubgroup K : Set (D.points K)) := by
-  rw [← Subgroup.coe_map,
-    Subgroup.map_subgroupOf_eq_of_le (D.borelSubgroup_le_extendedElementarySubgroup K)]
-
 /-- For any lift `n : D.weylSubgroup K` with `D.weylProjection K n = w`, the Bruhat cell
 `D.bruhatCell K w` is the double coset `B n B` in `D.points K`. -/
 theorem bruhatCell_eq_doubleCoset_of_weylProjection_eq
@@ -81,14 +74,11 @@ theorem bruhatCell_eq_doubleCoset_of_weylProjection_eq
     (hn : D.weylProjection K n = w) :
     D.bruhatCell K w =
       DoubleCoset.doubleCoset (n : D.points K) (D.borelSubgroup K) (D.borelSubgroup K) := by
-  have hsymm :
-      (D.titsWeylGroupMulEquiv K).symm w =
-        QuotientGroup.mk ((D.titsSubgroupNMulEquiv K).symm n) := by
-    apply (D.titsWeylGroupMulEquiv K).injective
-    rw [MulEquiv.apply_symm_apply, titsWeylGroupMulEquiv_mk, MulEquiv.apply_symm_apply, hn]
-  rw [bruhatCell, hsymm, (D.titsSystem K).bruhatCell_mk, titsSystem_subgroupB,
-    DoubleCoset.image_doubleCoset, D.image_subtype_borelSubgroupOf_eq K, Subgroup.subtype_apply,
-    coe_titsSubgroupNMulEquiv_symm]
+  subst hn
+  rw [bruhatCell, D.titsWeylGroupMulEquiv_symm_weylProjection K n,
+    (D.titsSystem K).bruhatCell_mk, titsSystem_subgroupB, DoubleCoset.image_doubleCoset,
+    Subgroup.image_subtype_subgroupOf_of_le (D.borelSubgroup_le_extendedElementarySubgroup K),
+    Subgroup.subtype_apply, coe_titsSubgroupNMulEquiv_symm]
 
 /-- The Bruhat cell of `D.weylProjection K n` is the double coset `B n B` in `D.points K`. -/
 @[simp]
@@ -102,7 +92,7 @@ theorem bruhatCell_weylProjection (n : D.weylSubgroup K) :
 theorem bruhatCell_one :
     D.bruhatCell K 1 = (D.borelSubgroup K : Set (D.points K)) := by
   rw [bruhatCell, map_one, (D.titsSystem K).bruhatCell_one, titsSystem_subgroupB]
-  exact D.image_subtype_borelSubgroupOf_eq K
+  exact Subgroup.image_subtype_subgroupOf_of_le (D.borelSubgroup_le_extendedElementarySubgroup K)
 
 /-- The Bruhat cell of the `i`-th simple reflection is the double coset `B nᵢ(1) B`. -/
 @[simp]
@@ -276,37 +266,28 @@ theorem bruhatCell_ofIdx_mul_eq_union_of_mem_negRoots
   let s := RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) α
   have hpos : (t.simplyConnectedRootDatum ht).weylGroupToPerm (s * w)⁻¹ α ∈
       posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-    let _ := (t.simplyConnectedRootDatum ht).indexNeg
-    have hperm : (t.simplyConnectedRootDatum ht).weylGroupToPerm (s * w)⁻¹ α =
-        (t.simplyConnectedRootDatum ht).reflectionPerm
-          ((t.simplyConnectedRootDatum ht).weylGroupToPerm w⁻¹ α)
-          ((t.simplyConnectedRootDatum ht).weylGroupToPerm w⁻¹ α) := by
-      dsimp only [s]
-      rw [mul_inv_rev, RootPairing.weylGroup.ofIdx_inv_eq, map_mul, Equiv.Perm.mul_apply,
-        RootPairing.weylGroupToPerm_ofIdx_apply,
-        ← (t.simplyConnectedRootDatum ht).indexNeg_neg,
-        ← (t.simplyConnectedRootDatum ht).indexNeg_neg]
-      exact (t.simplyConnectedRootDatum ht).weylGroupToPerm_neg w⁻¹ α
-    rw [hperm, ← t.reflectionPerm_rationalRootSystem ht]
+    dsimp only [s]
+    rw [mul_inv_rev, RootPairing.weylGroup.ofIdx_inv_eq,
+      RootPairing.weylGroupToPerm_mul_ofIdx_apply,
+      RootPairing.weylGroupToPerm_reflectionPerm_self, ← t.reflectionPerm_rationalRootSystem ht]
     exact (reflectionPerm_self_mem_posRoots_iff_mem_negRoots _ _ _).mpr hw
   have hstep : D.bruhatCell K s * D.bruhatCell K (s * w) = D.bruhatCell K w := by
     have h := D.bruhatCell_ofIdx_mul_eq_of_mem_posRoots K i hpos
     dsimp only [s, α] at h ⊢
     rwa [← mul_assoc, RootPairing.weylGroup.ofIdx_mul_self, one_mul] at h
   have hself : D.bruhatCell K s * D.bruhatCell K s = D.bruhatCell K 1 ∪ D.bruhatCell K s := by
-    have hsymm : (D.titsWeylGroupMulEquiv K).symm s = D.titsSimpleReflection K i := by
-      apply (D.titsWeylGroupMulEquiv K).injective
-      rw [MulEquiv.apply_symm_apply, D.titsWeylGroupMulEquiv_titsSimpleReflection K i]
     calc
       D.bruhatCell K s * D.bruhatCell K s =
           (D.extendedElementarySubgroup K).subtype ''
             ((D.titsSystem K).bruhatCell (D.titsSimpleReflection K i) *
               (D.titsSystem K).bruhatCell (D.titsSimpleReflection K i)) := by
-        rw [bruhatCell, hsymm, Set.image_mul]
+        dsimp only [s, α]
+        rw [bruhatCell, D.titsWeylGroupMulEquiv_symm_ofIdx_simpleIndex K i, Set.image_mul]
       _ = D.bruhatCell K 1 ∪ D.bruhatCell K s := by
+        dsimp only [s, α]
         rw [(D.titsSystem K).bruhatCell_mul_self_eq_union_of_mem_simple
           (D.titsSimpleReflection_mem_simple K i), Set.image_union, bruhatCell, map_one,
-          bruhatCell, hsymm]
+          bruhatCell, D.titsWeylGroupMulEquiv_symm_ofIdx_simpleIndex K i]
   have habsorb : D.bruhatCell K 1 * D.bruhatCell K (s * w) = D.bruhatCell K (s * w) := by
     rw [bruhatCell, map_one, bruhatCell, ← Set.image_mul, (D.titsSystem K).bruhatCell_one,
       (D.titsSystem K).subgroupB_mul_bruhatCell]
@@ -330,9 +311,8 @@ theorem wordLength_titsSimpleReflection_mul_gt_iff_mem_posRoots
     (D.titsSimpleReflection_mem_simple K i) q]
   let w := D.titsWeylGroupMulEquiv K q
   let s := RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)
-  have hsymm_s : (D.titsWeylGroupMulEquiv K).symm s = D.titsSimpleReflection K i := by
-    apply (D.titsWeylGroupMulEquiv K).injective
-    rw [MulEquiv.apply_symm_apply, D.titsWeylGroupMulEquiv_titsSimpleReflection K i]
+  have hsymm_s : (D.titsWeylGroupMulEquiv K).symm s = D.titsSimpleReflection K i :=
+    D.titsWeylGroupMulEquiv_symm_ofIdx_simpleIndex K i
   have hsymm_w : (D.titsWeylGroupMulEquiv K).symm w = q :=
     (D.titsWeylGroupMulEquiv K).symm_apply_apply q
   have hsymm_sw : (D.titsWeylGroupMulEquiv K).symm (s * w) =
@@ -360,10 +340,7 @@ theorem wordLength_titsSimpleReflection_mul_gt_iff_mem_posRoots
       apply Set.image_injective.mpr (D.extendedElementarySubgroup K).subtype_injective
       rw [Set.image_union, ← hsymm_sw, ← hsymm_w, ← bruhatCell, ← bruhatCell]
       exact hunion
-    have hsub : (D.titsSystem K).bruhatCell q ⊆
-        (D.titsSystem K).bruhatCell (D.titsSimpleReflection K i * q) :=
-      hunionT ▸ Set.subset_union_right
-    exact (D.titsSystem K).simple_ne_one (D.titsSimpleReflection_mem_simple K i)
-      (by simpa using (D.titsSystem K).bruhatCell_subset_iff.mp hsub)
+    exact (D.titsSystem K).bruhatCell_mul_ne_union_of_ne_one
+      ((D.titsSystem K).simple_ne_one (D.titsSimpleReflection_mem_simple K i)) q hunionT
 
 end TauCeti.DynkinType.ChevalleyDatum

@@ -173,6 +173,43 @@ theorem borelSubgroup_sup_weylSubgroup_eq_extendedElementarySubgroup :
             (D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) _))))
         (inv_mem (Subgroup.mem_sup_right (D.weylElement_mem_weylSubgroup A i)))
 
+/-- Over any nontrivial commutative ring, if a product of pinned simple Weyl representatives
+equals an actual torus point times a positive point, then the Weyl word evaluates to `1` in the
+Weyl group. -/
+theorem geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive [Nontrivial A]
+    {l : List (Fin t.rank)} {s : Fin t.rank → Aˣ} {u : D.points A}
+    (hu : u ∈ D.positivePoints A)
+    (h : (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod =
+      D.torusPoints A s * u) :
+    t.geckWeylWordProd ht l = 1 := by
+  rw [← D.exists_blockLDU_weylWord_iff l A D.weightBlockEquiv]
+  have hfun : (fun j => D.weightBlockEquiv ⟨D.weight j, Set.mem_range_self j⟩) =
+      orderedWeightBlock (t.weightDegree ht) D.weight :=
+    funext D.weightBlockEquiv_weight
+  let Nmat : Matrix (Fin D.dim) (Fin D.dim) A :=
+    ((D.torusPoints A s : Matrix.GeneralLinearGroup (Fin D.dim) A) :
+      Matrix (Fin D.dim) (Fin D.dim) A)
+  let Umat : Matrix (Fin D.dim) (Fin D.dim) A :=
+    ((u : Matrix.GeneralLinearGroup (Fin D.dim) A) :
+      Matrix (Fin D.dim) (Fin D.dim) A)
+  have hNdiag : Nmat =
+      Matrix.diagonal (fun j => (torusCharacter s (D.coordinateWeight j) : A)) := by
+    simp only [Nmat, D.coe_torusPoints, kostantTorusMatrix_apply, diagGL_coe]
+  refine ⟨1, Nmat, Umat, Matrix.blockUnitriangular_one, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [hNdiag]
+    exact Matrix.blockTriangular_diagonal _
+  · rw [hNdiag]
+    exact Matrix.blockTriangular_diagonal _
+  · rw [hfun]
+    exact D.blockUnitriangular_orderedWeightBlock_of_mem_positivePoints hu
+  · exact (Matrix.isUnit_iff_isUnit_det Nmat).mp
+      (D.torusPoints A s : Matrix.GeneralLinearGroup (Fin D.dim) A).isUnit
+  · rw [one_mul]
+    simpa only [Nmat, Umat, Subgroup.coe_mul, Units.val_mul] using
+      congrArg (fun x : D.points A =>
+        ((x : Matrix.GeneralLinearGroup (Fin D.dim) A) :
+          Matrix (Fin D.dim) (Fin D.dim) A)) h
+
 end CommRing
 
 section Field
@@ -268,52 +305,25 @@ theorem positivePoints_inf_weylSubgroup_eq_bot :
   obtain ⟨huP, huW⟩ := hu
   rw [Subgroup.mem_bot]
   obtain ⟨l, s, hls⟩ := (D.mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints K).mp huW
-  let wprod : D.points K := (l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod
   -- Conjugate the positive factor across the torus point so the Weyl word has block LDU form.
   let u' : D.points K := D.torusPoints K s * u * (D.torusPoints K s)⁻¹
   have hu'P : u' ∈ D.positivePoints K :=
     (Subgroup.mem_normalizer_iff.mp
       (D.range_torusPoints_le_normalizer_positivePoints K ⟨s, rfl⟩) u).mp huP
-  have hwprod' : wprod = D.torusPoints K s⁻¹ * u' := by
-    have hwprod : wprod = u * (D.torusPoints K s)⁻¹ := eq_mul_inv_of_mul_eq hls
-    rw [hwprod, (D.torusPoints K).map_inv]
+  have hwprod' :
+      (l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod =
+        D.torusPoints K s⁻¹ * u' := by
+    rw [eq_mul_inv_of_mul_eq hls, (D.torusPoints K).map_inv]
     dsimp only [u']
     group
-  have hword_one : t.geckWeylWordProd ht l = 1 := by
-    rw [← D.exists_blockLDU_weylWord_iff l K D.weightBlockEquiv]
-    have hfun : (fun j => D.weightBlockEquiv ⟨D.weight j, Set.mem_range_self j⟩) =
-        orderedWeightBlock (t.weightDegree ht) D.weight :=
-      funext D.weightBlockEquiv_weight
-    let Nmat : Matrix (Fin D.dim) (Fin D.dim) K :=
-      ((D.torusPoints K s⁻¹ : Matrix.GeneralLinearGroup (Fin D.dim) K) :
-        Matrix (Fin D.dim) (Fin D.dim) K)
-    let Umat : Matrix (Fin D.dim) (Fin D.dim) K :=
-      ((u' : Matrix.GeneralLinearGroup (Fin D.dim) K) :
-        Matrix (Fin D.dim) (Fin D.dim) K)
-    have hNdiag : Nmat =
-        Matrix.diagonal (fun j => (torusCharacter s⁻¹ (D.coordinateWeight j) : K)) := by
-      simp only [Nmat, D.coe_torusPoints, kostantTorusMatrix_apply, diagGL_coe]
-    refine ⟨1, Nmat, Umat, Matrix.blockUnitriangular_one, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [hNdiag]
-      exact Matrix.blockTriangular_diagonal _
-    · rw [hNdiag]
-      exact Matrix.blockTriangular_diagonal _
-    · rw [hfun]
-      exact D.blockUnitriangular_orderedWeightBlock_of_mem_positivePoints hu'P
-    · exact (Matrix.isUnit_iff_isUnit_det Nmat).mp
-        (D.torusPoints K s⁻¹ : Matrix.GeneralLinearGroup (Fin D.dim) K).isUnit
-    · rw [one_mul]
-      simpa only [wprod, Nmat, Umat, Subgroup.coe_mul, Units.val_mul] using
-        congrArg (fun x : D.points K =>
-          ((x : Matrix.GeneralLinearGroup (Fin D.dim) K) :
-            Matrix (Fin D.dim) (Fin D.dim) K)) hwprod'
   have hproj : D.weylProjection K ⟨u, huW⟩ = 1 := by
     have hsub : (⟨u, huW⟩ : D.weylSubgroup K) =
         ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod * D.torusPoints K s,
           mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup K l)
             (D.torusPoints_mem_weylSubgroup K s)⟩ :=
       Subtype.ext hls.symm
-    rw [hsub, D.weylProjection_list_prod_mul_torusPoints K l s, hword_one]
+    rw [hsub, D.weylProjection_list_prod_mul_torusPoints K l s,
+      D.geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive K hu'P hwprod']
   exact D.eq_one_of_mem_positivePoints_of_weylProjection_eq_one K huP huW hproj
 
 /-- Over any field, the intersection of the Borel-type subgroup and the Weyl subgroup of a
@@ -339,12 +349,13 @@ theorem borelSubgroup_inf_weylSubgroup_eq_range_torusPoints :
     rintro _ ⟨s, rfl⟩
     exact D.torusPoints_mem_weylSubgroup K s
 
-/-- Over any field, the intersection of the Weyl subgroup and the Borel-type subgroup of a
-Chevalley datum is precisely the image of its actual torus. -/
-@[simp]
-theorem weylSubgroup_inf_borelSubgroup_eq_range_torusPoints :
-    D.weylSubgroup K ⊓ D.borelSubgroup K = (D.torusPoints K).range := by
-  rw [inf_comm, D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints K]
+/-- Over any field, an element of `D.weylSubgroup K` belongs to `D.borelSubgroup K` if and only if
+it lies in the image of the actual torus. -/
+theorem mem_borelSubgroup_iff_mem_range_torusPoints_of_mem_weylSubgroup
+    {n : D.points K} (hn : n ∈ D.weylSubgroup K) :
+    n ∈ D.borelSubgroup K ↔ n ∈ (D.torusPoints K).range := by
+  rw [← D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints K, Subgroup.mem_inf]
+  exact (and_iff_left hn).symm
 
 end Field
 
