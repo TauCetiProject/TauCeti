@@ -18,6 +18,7 @@ Mathlib bounds each factor of `WithLp p (α × β)` by the whole (`WithLp.norm_f
 the opposite bound, valid for every exponent `1 ≤ p ≤ ∞`: the `ℓ^p` norm of a pair is at most the
 sum of the norms of its two components.  For `p = 1` the bound is an identity for every pair.
 It also records that the `ℓ^p` norm is monotone and positively homogeneous in the component norms.
+The inclusions `x ↦ (x, 0)` and `y ↦ (0, y)` of the two factors are isometries.
 
 It also records that taking a component of `WithLp p (α × β)` commutes with `Set.indicator`, as
 Mathlib's `norm_indicator_eq_indicator_norm` does for the norm, that an indexed family of pairs in
@@ -42,6 +43,8 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
   seminormed groups.
 * `WithLp.prod_mul_norm_le_mul_norm` — componentwise bounds `c * ‖x.i‖ ≤ d * ‖y.i‖` give
   `c * ‖x‖ ≤ d * ‖y‖`.
+* `WithLp.isometry_toLp_prod_zero`, `WithLp.isometry_toLp_zero_prod` — the inclusions
+  `x ↦ (x, 0)` and `y ↦ (0, y)` of the factors are isometries.
 * `TauCeti.snd_lt_one` — a unit vector in `E × ℝ` other than `(0, 1)` has last coordinate
   strictly less than `1`.
 * `WithLp.fst_indicator`, `WithLp.snd_indicator` — a component of an indicator is the indicator
@@ -159,6 +162,16 @@ theorem _root_.WithLp.prod_mul_norm_le_mul_norm {γ δ : Type*} [SeminormedAddGr
     · have := prod_mul_norm_le_mul_norm_of_nonneg (neg_nonneg.mpr hd.le) (neg_nonneg.mpr hc.le)
         (x := y) (y := x) (by linarith) (by linarith)
       linarith
+
+/-- The inclusion `x ↦ (x, 0)` of the first factor into `WithLp p (α × β)` is an isometry. -/
+theorem _root_.WithLp.isometry_toLp_prod_zero [SeminormedAddCommGroup α]
+    [SeminormedAddCommGroup β] : Isometry fun x : α => WithLp.toLp p (x, (0 : β)) :=
+  Isometry.of_dist_eq (WithLp.dist_toLp_fst p α β)
+
+/-- The inclusion `y ↦ (0, y)` of the second factor into `WithLp p (α × β)` is an isometry. -/
+theorem _root_.WithLp.isometry_toLp_zero_prod [SeminormedAddCommGroup α]
+    [SeminormedAddCommGroup β] : Isometry fun y : β => WithLp.toLp p ((0 : α), y) :=
+  Isometry.of_dist_eq (WithLp.dist_toLp_snd p α β)
 
 section Real
 

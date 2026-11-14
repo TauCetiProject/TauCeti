@@ -48,6 +48,8 @@ of the trace with `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.frontierTrace_ae_eq_of_continuousOn`: the trace of a function continuous up to
   the boundary is its restriction to the frontier.
 * `TauCeti.W1p.eq_frontierTrace`: any bounded operator with these boundary values is the trace.
+* `TauCeti.W1p.frontierTrace_eq_of_isLipschitzDomainWith`: the trace does not depend on the
+  Lipschitz constant used to construct it.
 * `TauCeti.W1p.w1p0Submodule_le_ker_frontierTrace`: functions in `W^{1,p}_0(Ω)` have zero trace.
 * `TauCeti.W1p.frontierTrace_contDiffSMul_ae`: the trace of `ψ u` is `ψ` times the trace of `u`.
 * `TauCeti.W1p.mem_w1p0Submodule_iff_frontierTrace_eq_zero` and `TauCeti.W1p.ker_frontierTrace`:
@@ -256,6 +258,17 @@ theorem W1p.eq_frontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
       T.continuous (W1p.frontierTrace hp hΩ hb).continuous (funext fun φ => ?_)
   exact Lp.ext ((hT φ).trans (W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb
     φ.continuous.continuousOn (W1p.value_restrictL_ofTestFunctionₗ_ae le_top φ)).symm)
+
+/-- **The trace does not depend on the Lipschitz constant** used to construct it: the trace
+operators built from two Lipschitz bounds of the same bounded domain agree. -/
+theorem W1p.frontierTrace_eq_of_isLipschitzDomainWith (hp : p ≠ (∞ : ℝ≥0∞)) {L' : ℝ≥0}
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hΩ' : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L')
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) :
+    W1p.frontierTrace hp hΩ hb = W1p.frontierTrace hp hΩ' hb :=
+  W1p.eq_frontierTrace hp hΩ' hb _ fun φ =>
+    W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb φ.continuous.continuousOn
+      (W1p.value_restrictL_ofTestFunctionₗ_ae le_top φ)
 
 /-- **Functions in `W^{1,p}_0(Ω)` have zero trace.** -/
 theorem W1p.w1p0Submodule_le_ker_frontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
