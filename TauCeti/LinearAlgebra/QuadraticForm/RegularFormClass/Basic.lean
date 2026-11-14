@@ -38,6 +38,7 @@ rank is additive.
 * `TauCeti.presentedForm`: the weighted sum of squares a presentation stands for.
 * `TauCeti.RegularFormClass`: isometry classes of regular finite-dimensional quadratic forms.
 * `TauCeti.RegularFormClass.rank`: the common rank of the presentations in a class.
+* `TauCeti.RegularFormClass.mk_rankOne_inv`: `⟨a⁻¹⟩ ≅ ⟨a⟩`.
 * `TauCeti.RegularFormPresentation.append`: concatenation of presentations.
 * `TauCeti.formClass`: the class of a regular form on a finite-dimensional space.
 
@@ -229,6 +230,18 @@ def RegularFormClass.rank : RegularFormClass K → ℕ :=
 @[simp]
 theorem RegularFormClass.rank_mk (p : RegularFormPresentation K) :
     RegularFormClass.rank (Quotient.mk (regularFormSetoid K) p) = p.1 := (rfl)
+
+/-- **A rank-one class is the class of its inverse weight**: `⟨a⁻¹⟩ ≅ ⟨a⟩`, since `a⁻¹` and `a`
+differ by the square `a⁻¹ * a⁻¹`. The isometry is multiplication by `a⁻¹`, so this holds in every
+characteristic. -/
+@[simp]
+theorem RegularFormClass.mk_rankOne_inv (a : Kˣ) :
+    Quotient.mk (regularFormSetoid K) (⟨1, fun _ => a⁻¹⟩ : RegularFormPresentation K) =
+      Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ := by
+  rw [RegularFormClass.mk_eq_mk_iff, presentedForm_eq_weightedSumSquares_coe,
+    presentedForm_eq_weightedSumSquares_coe]
+  exact ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares (fun _ => a⁻¹)
+    fun _ => by simp [pow_two]⟩
 
 /-! ### The orthogonal sum -/
 
