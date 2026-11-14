@@ -328,10 +328,28 @@ noncomputable def occVars (w : GX G X) : Finset X :=
   Set.ext fun _ => mem_occVars_iff
 
 @[simp] theorem occVars_inl (g : G) : occVars (inl g : GX G X) = ∅ := by ext; simp
-
 @[simp] theorem occVars_one : occVars (1 : GX G X) = ∅ := by ext; simp
-
 @[simp] theorem occVars_inv (w : GX G X) : occVars w⁻¹ = occVars w := by ext; simp
+
+@[simp] theorem occVars_inr_of (x : X) : occVars (inr (FreeGroup.of x) : GX G X) = {x} := by
+  ext y
+  rcases eq_or_ne x y with rfl | h
+  · simp
+  · simp [h, h.symm]
+
+/-- Every variable occurring in a product `u * v` occurs in `u` or in `v`. -/
+theorem occVars_mul_subset [DecidableEq X] (u v : GX G X) :
+    occVars (u * v) ⊆ occVars u ∪ occVars v := fun x hx => by
+  rw [Finset.mem_union, mem_occVars_iff, mem_occVars_iff]
+  have hle := occurrences_mul_le x u v
+  have hx0 := mem_occVars_iff.1 hx
+  omega
+
+/-- No variable occurs in `w` if and only if `w` is a coefficient. -/
+theorem occVars_eq_empty_iff {w : GX G X} :
+    occVars w = ∅ ↔ w ∈ Set.range (inl : G →* GX G X) := by
+  rw [Finset.eq_empty_iff_forall_notMem, mem_range_inl_iff_forall_occurrences_eq_zero]
+  simp
 
 /-- Only finitely many variables occur in any word of `G[X]`. -/
 theorem finite_setOf_occurrences_ne_zero (w : GX G X) : {x | occurrences x w ≠ 0}.Finite :=
@@ -964,10 +982,7 @@ theorem occurrences_toWord_of_notMem_vars {S : Standard G X} {x : X} (hx : x ∉
 
 private def commLetters (x y : X) : List (G ⊕ X × Bool) :=
   [.inr (x, false), .inr (y, false), .inr (x, true), .inr (y, true)]
-
-private def sqLetters (x : X) : List (G ⊕ X × Bool) :=
-  [.inr (x, true), .inr (x, true)]
-
+private def sqLetters (x : X) : List (G ⊕ X × Bool) := [.inr (x, true), .inr (x, true)]
 private def conjLetters (z : X) (c : G) : List (G ⊕ X × Bool) :=
   [.inr (z, false), .inl c, .inr (z, true)]
 
@@ -990,9 +1005,8 @@ private theorem prod_wordLetters (S : Standard G X) :
   have hcomm (a b : X) : ((commLetters (G := G) a b).map GX.letter).prod =
       ⁅(inr (FreeGroup.of a) : GX G X)⁻¹, (inr (FreeGroup.of b))⁻¹⁆ := by
     simp [commLetters, commutatorElement_def, mul_assoc]
-  have hsq (a : X) :
-      ((sqLetters (G := G) a).map GX.letter).prod = (inr (FreeGroup.of a) : GX G X) ^ 2 := by
-    simp [sqLetters, pow_two]
+  have hsq (a : X) : ((sqLetters (G := G) a).map GX.letter).prod =
+      (inr (FreeGroup.of a) : GX G X) ^ 2 := by simp [sqLetters, pow_two]
   have hconj (a : X) (c : G) : ((conjLetters a c).map GX.letter).prod =
       (inr (FreeGroup.of a) : GX G X)⁻¹ * inl c * inr (FreeGroup.of a) := by
     simp [conjLetters, mul_assoc]
@@ -1017,14 +1031,12 @@ private theorem isCyclicallyReduced_flatten_of_blocks {blocks : List (List (G �
   rcases hf : (l :: rest_blocks).flatten with _ | ⟨a, _ | ⟨c, rest⟩⟩
   · simp [hf] at hlen_f
   · simp [hf] at hlen_f
-  rw [GX.isCyclicallyReduced_cons_cons]
-  refine ⟨hf ▸ hr, ?_⟩
+  refine GX.isCyclicallyReduced_cons_cons.2 ⟨hf ▸ hr, ?_⟩
   have ha_eq : List.findSome? List.head? (l :: rest_blocks) = some a := by
     rw [← List.head?_flatten, hf]; rfl
   have hl_eq : List.findSome? List.getLast? (l :: rest_blocks).reverse =
       some ((c :: rest).getLast (List.cons_ne_nil c rest)) := by
-    rw [← List.getLast?_flatten, hf]
-    simp [List.getLast?_eq_some_getLast (List.cons_ne_nil c rest)]
+    rw [← List.getLast?_flatten, hf]; simp [List.getLast?_eq_some_getLast (List.cons_ne_nil c rest)]
   obtain ⟨l₂, hl₂, ha⟩ := List.exists_of_findSome?_eq_some ha_eq
   obtain ⟨l₁, hl₁, hlast⟩ := List.exists_of_findSome?_eq_some hl_eq
   exact hwrap l₁ (List.mem_reverse.1 hl₁) l₂ hl₂ _ hlast _ ha
@@ -1049,14 +1061,9 @@ private theorem isCyclicallyReduced_flatten_append_inl {blocks : List (List (G �
   refine ⟨⟨hr, GX.isReduced_singleton_inl.2 hd, fun u hu v hv => ?_⟩, ?_⟩
   · rw [Option.mem_def, List.getLast?_flatten] at hu
     obtain ⟨l₁, hl₁, hu'⟩ := List.exists_of_findSome?_eq_some hu
-    simp only [List.head?_cons, Option.mem_def, Option.some.injEq] at hv
-    subst hv
-    rcases u with g | _
-    · exact absurd rfl (hlast l₁ (List.mem_reverse.1 hl₁) _ hu' g)
-    · simp
-  · rcases a with g | _
-    · exact absurd rfl (hhead l₀ hl₀ _ ha g)
-    · simp
+    obtain rfl : .inl d = v := by simpa using hv
+    rcases u with g | _; exacts [absurd rfl (hlast l₁ (List.mem_reverse.1 hl₁) _ hu' g), by simp]
+  · rcases a with g | _; exacts [absurd rfl (hhead l₀ hl₀ _ ha g), by simp]
 
 private theorem isCyclicallyReduced_ofFn_append_conjLetters {n m : ℕ}
     (f : Fin n → List (G ⊕ X × Bool)) (z : Fin m → X) (c : Fin m → G) {d : G}
@@ -1081,16 +1088,11 @@ private theorem isCyclicallyReduced_ofFn_append_conjLetters {n m : ℕ}
   · simp only [List.mem_append, List.mem_ofFn, or_imp, forall_and, forall_exists_index,
       forall_apply_eq_imp_iff]
     exact ⟨hred, fun j => by simp [conjLetters, hc j]⟩
-  · rw [hblocks, List.isChain_map]
-    exact hnd.isChain.imp hsep
-  · intro l hl
-    obtain ⟨i, rfl⟩ | ⟨j, rfl⟩ := by simpa [List.mem_ofFn] using List.mem_append.1 hl
-    · exact hhead i
-    · simp [conjLetters]
-  · intro l hl
-    obtain ⟨i, rfl⟩ | ⟨j, rfl⟩ := by simpa [List.mem_ofFn] using List.mem_append.1 hl
-    · exact hlast i
-    · simp [conjLetters]
+  · rw [hblocks, List.isChain_map]; exact hnd.isChain.imp hsep
+  · intro l hl; obtain ⟨i, rfl⟩ | ⟨j, rfl⟩ := by simpa [List.mem_ofFn] using List.mem_append.1 hl
+    exacts [hhead i, by simp [conjLetters]]
+  · intro l hl; obtain ⟨i, rfl⟩ | ⟨j, rfl⟩ := by simpa [List.mem_ofFn] using List.mem_append.1 hl
+    exacts [hlast i, by simp [conjLetters]]
 
 private theorem isCyclicallyReduced_orientableCoeff {n m : ℕ} {x y : Fin n → X} {z : Fin m → X}
     {c : Fin m → G} {d : G} (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) z).Injective)
@@ -1120,8 +1122,7 @@ private theorem isCyclicallyReduced_nonorientableCoeff {n m : ℕ} {x : Fin n �
     (by simp [sqLetters]) (by simp [sqLetters]) fun s₁ s₂ hs => ?_
   have hne_v : Sum.elim x z s₁ ≠ Sum.elim x z s₂ := inj.ne hs
   rcases s₁ with i₁ | j₁ <;> rcases s₂ with i₂ | j₂ <;>
-    simp only [Sum.elim_inl, Sum.elim_inr] at hne_v <;>
-    simp [sqLetters, conjLetters, hne_v]
+    simp only [Sum.elim_inl, Sum.elim_inr] at hne_v <;> simp [sqLetters, conjLetters, hne_v]
 
 private theorem isCyclicallyReduced_wordLetters (S : Standard G X) :
     GX.IsCyclicallyReduced (wordLetters S) := by
@@ -1133,14 +1134,12 @@ private theorem isCyclicallyReduced_wordLetters (S : Standard G X) :
     · simp only [atomBlocks, List.mem_ofFn, forall_exists_index, forall_apply_eq_imp_iff]
       intro i; simp [commLetters, hxy i i, (hxy i i).symm]
     · intro l₁ hl₁ l₂ hl₂
-      obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hl₁
-      obtain ⟨j, rfl⟩ := List.mem_ofFn.1 hl₂
+      obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hl₁; obtain ⟨j, rfl⟩ := List.mem_ofFn.1 hl₂
       simp [commLetters, hxy i j]
   | nonorientable n hn x inj =>
     refine isCyclicallyReduced_flatten_of_blocks (by simp [atomBlocks, sqLetters])
       (by simp [atomBlocks, sqLetters]) fun l₁ hl₁ l₂ hl₂ => ?_
-    obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hl₁
-    obtain ⟨j, rfl⟩ := List.mem_ofFn.1 hl₂
+    obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hl₁; obtain ⟨j, rfl⟩ := List.mem_ofFn.1 hl₂
     simp [sqLetters]
   | orientableCoeff _ _ hnm _ _ _ inj _ hc _ hd =>
     exact isCyclicallyReduced_orientableCoeff hnm inj hc hd

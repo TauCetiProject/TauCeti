@@ -319,13 +319,22 @@ theorem Rad_singleton_of_conj_mulEquiv (hw' : u * φ w * u⁻¹ = w') :
     Rad ι {w'} = (Rad ι {w}).map (φ : GX G X →* GX G Y) := by
   rw [← hw', Rad_singleton_conj, ← Set.image_singleton, Rad_image_mulEquiv ι φ hφ]
 
+/-- If an isomorphism `φ : G[X] ≃* G[Y]` fixing `inl c` and conjugation by `u` carry `w` to
+`inl c`, then `w` is conjugate in `G[X]` to `inl c`. -/
+theorem eq_conj_inl_of_conj_mulEquiv_eq_inl {c : G} (hφc : φ (inl c) = inl c)
+    (hw' : u * φ w * u⁻¹ = inl c) :
+    w = (φ.symm u)⁻¹ * inl c * ((φ.symm u)⁻¹)⁻¹ := by
+  calc w = φ.symm (u⁻¹ * (u * φ w * u⁻¹) * u) := by simp [mul_assoc]
+    _ = (φ.symm u)⁻¹ * inl c * ((φ.symm u)⁻¹)⁻¹ := by
+      rw [hw', map_mul, map_mul, map_inv, φ.symm_apply_eq.2 hφc.symm, inv_inv]
+
 include hφ in
 /-- An equation carried by a `G`-isomorphism and conjugation to a coefficient `c` that remains
 nontrivial in `H` has no solutions in `H`. -/
 theorem V_singleton_eq_empty_of_conj_mulEquiv_inl {c : G} (hw' : u * φ w * u⁻¹ = inl c)
-    (hc : ι c ≠ 1) : V ι {w} = ∅ :=
-  Set.eq_empty_iff_forall_notMem.2 fun v hv =>
-    (V_singleton_inl_eq_empty hc).subset (equivVOfConjMulEquiv ι φ hφ hw' ⟨v, hv⟩).2
+    (hc : ι c ≠ 1) : V ι {w} = ∅ := by
+  rw [eq_conj_inl_of_conj_mulEquiv_eq_inl φ (hφ c) hw', V_singleton_conj,
+    V_singleton_inl_eq_empty hc]
 
 include hφ in
 /-- An equation carried by a `G`-isomorphism and conjugation to a coefficient `c` that remains
@@ -339,12 +348,8 @@ include hφ in
 (in particular `c = 1`) is satisfied by every point of `H^X`. -/
 theorem V_singleton_eq_univ_of_conj_mulEquiv_inl {c : G} (hw' : u * φ w * u⁻¹ = inl c)
     (hc : ι c = 1) : V ι {w} = Set.univ := by
-  refine Set.eq_univ_of_forall fun v => mem_V.2 ?_
-  rintro _ rfl
-  have key := congrArg (fun z => eval ι v (φ.symm z)) hw'
-  simp only [map_mul, map_inv, MulEquiv.symm_apply_apply, φ.symm_apply_eq.2 (hφ c).symm,
-    eval_inl, hc] at key
-  exact conj_eq_one_iff.1 key
+  rw [eq_conj_inl_of_conj_mulEquiv_eq_inl φ (hφ c) hw', V_singleton_conj,
+    V_singleton_inl_eq_univ hc]
 
 include hφ in
 /-- An equation carried by a `G`-isomorphism and conjugation to a coefficient `c` with `ι c = 1`
@@ -384,37 +389,6 @@ with the coefficient maps. -/
 theorem mulEquivOfConjMulEquiv_symm_coeff (hw' : u * φ w * u⁻¹ = w') (g : G) :
     (mulEquivOfConjMulEquiv ι φ hφ hw').symm (coeff ι {w'} g) = coeff ι {w} g := by
   rw [MulEquiv.symm_apply_eq, mulEquivOfConjMulEquiv_coeff]
-
-/-- `mulEquivOfConjMulEquiv` as a `G`-homomorphism between the coordinate groups. -/
-noncomputable def gHomOfConjMulEquiv (hw' : u * φ w * u⁻¹ = w') :
-    GHom (coeff ι {w}) (coeff ι {w'}) :=
-  GHom.ofMulEquiv (mulEquivOfConjMulEquiv ι φ hφ hw')
-    (mulEquivOfConjMulEquiv_coeff ι φ hφ hw')
-
-theorem gHomOfConjMulEquiv_def (hw' : u * φ w * u⁻¹ = w') :
-    gHomOfConjMulEquiv ι φ hφ hw' =
-      GHom.ofMulEquiv (mulEquivOfConjMulEquiv ι φ hφ hw')
-        (mulEquivOfConjMulEquiv_coeff ι φ hφ hw') :=
-  (rfl)
-
-@[simp]
-theorem coe_gHomOfConjMulEquiv (hw' : u * φ w * u⁻¹ = w') :
-    ⇑(gHomOfConjMulEquiv ι φ hφ hw') = mulEquivOfConjMulEquiv ι φ hφ hw' :=
-  GHom.coe_ofMulEquiv _ _
-
-theorem gHomOfConjMulEquiv_bijective (hw' : u * φ w * u⁻¹ = w') :
-    Function.Bijective (gHomOfConjMulEquiv ι φ hφ hw') :=
-  GHom.ofMulEquiv_bijective _ _
-
-@[simp]
-theorem symmOfBijective_gHomOfConjMulEquiv (hw' : u * φ w * u⁻¹ = w')
-    (h : Function.Bijective (gHomOfConjMulEquiv ι φ hφ hw')) :
-    (gHomOfConjMulEquiv ι φ hφ hw').symmOfBijective h =
-      GHom.ofMulEquiv (mulEquivOfConjMulEquiv ι φ hφ hw').symm
-        (mulEquivOfConjMulEquiv_symm_coeff ι φ hφ hw') := by
-  ext x
-  apply h.1
-  simp [gHomOfConjMulEquiv_def]
 
 include hφ in
 /-- If `ι` is injective and the transformed equation `w' = u * φ w * u⁻¹` has a solution in `H`,

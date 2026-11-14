@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.GroupAlgGeom.ChangeOfCoordinates
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Automorphism
 import Mathlib.Algebra.Group.Subgroup.Finite
+import TauCeti.Data.List.OfFn
 
 /-!
 # Reduction of strictly quadratic words to standard form
@@ -267,12 +268,16 @@ private theorem isStrictlyQuadratic_and_occVars_prod {w : GX G X} (hw : IsStrict
     rw [← occurrences_eq_countVar_reducedWord] at hle
     rcases hL v with h0 | heq <;> omega
 
+private theorem notMem_occVars_prod_of_countVar_eq_zero {x : X} {L : List (G ⊕ X × Bool)}
+    (h : GX.countVar x L = 0) : x ∉ occVars (L.map GX.letter).prod := by
+  rw [mem_occVars_iff, not_not, occurrences_eq_countVar_reducedWord]
+  exact Nat.eq_zero_of_le_zero ((GX.countVar_reducedWord_le x L).trans_eq h)
+
 variable [DecidableEq X]
 
 private theorem prod_mem_avoiding_of_countVar_eq_zero {x : X} {L : List (G ⊕ X × Bool)}
     (h : GX.countVar x L = 0) : (L.map GX.letter).prod ∈ GX.avoiding x := by
-  rw [mem_avoiding_iff_occurrences_eq_zero, occurrences_eq_countVar_reducedWord]
-  exact Nat.eq_zero_of_le_zero ((GX.countVar_reducedWord_le x L).trans_eq h)
+  simpa [mem_avoiding_iff_occurrences_eq_zero] using notMem_occVars_prod_of_countVar_eq_zero h
 
 private def signAut (x : X) (b : Bool) : MulAut (GX G X) :=
   if b then 1 else GX.invertVar G x
@@ -355,10 +360,9 @@ private theorem step_sameSign {w : GX G X} (hw : IsStrictlyQuadratic {w}) {x : X
     · subst hvx; left; simp [L, hPMQ.1, hPMQ.2.1, hPMQ.2.2, GX.countVar_invRev]
     · right
       simp [occurrences_eq_countVar_reducedWord, hl, L, Ne.symm hvx, GX.countVar_invRev]
-  have hxR : x ∉ occVars (L.map GX.letter).prod := by
-    rw [mem_occVars_iff, not_not, occurrences_eq_countVar_reducedWord]
-    exact Nat.eq_zero_of_le_zero ((GX.countVar_reducedWord_le x L).trans_eq
-      (by simp [L, hPMQ.1, hPMQ.2.1, hPMQ.2.2, GX.countVar_invRev]))
+  have hxR : x ∉ occVars (L.map GX.letter).prod :=
+    notMem_occVars_prod_of_countVar_eq_zero
+      (by simp [L, hPMQ.1, hPMQ.2.1, hPMQ.2.2, GX.countVar_invRev])
   refine ⟨f, hf_mem, (L.map GX.letter).prod, hrem.1, hrem.2, hxk, hxR, fun a ha => ?_, ?_⟩
   · simp [f, signAut_apply_of_mem_avoiding (ha x hxk), ha x hxk]
   · have hLprod : (L.map GX.letter).prod = p * m⁻¹ * q := by
@@ -434,14 +438,12 @@ private theorem step_alt {w : GX G X} (hw : IsStrictlyQuadratic {w}) {x y : X} {
     · by_cases hvy : v = y
       · subst hvy; left; simp [L, hy0.1, hy0.2.1, hy0.2.2.1, hy0.2.2.2.1, hy0.2.2.2.2]
       · right; simp [occurrences_eq_countVar_reducedWord, hl, L, Ne.symm hvx, Ne.symm hvy]; omega
-  have hxR : x ∉ occVars (L.map GX.letter).prod := by
-    rw [mem_occVars_iff, not_not, occurrences_eq_countVar_reducedWord]
-    exact Nat.eq_zero_of_le_zero ((GX.countVar_reducedWord_le x L).trans_eq
-      (by simp [L, hx0.1, hx0.2.1, hx0.2.2.1, hx0.2.2.2.1, hx0.2.2.2.2]))
-  have hyR : y ∉ occVars (L.map GX.letter).prod := by
-    rw [mem_occVars_iff, not_not, occurrences_eq_countVar_reducedWord]
-    exact Nat.eq_zero_of_le_zero ((GX.countVar_reducedWord_le y L).trans_eq
-      (by simp [L, hy0.1, hy0.2.1, hy0.2.2.1, hy0.2.2.2.1, hy0.2.2.2.2]))
+  have hxR : x ∉ occVars (L.map GX.letter).prod :=
+    notMem_occVars_prod_of_countVar_eq_zero
+      (by simp [L, hx0.1, hx0.2.1, hx0.2.2.1, hx0.2.2.2.1, hx0.2.2.2.2])
+  have hyR : y ∉ occVars (L.map GX.letter).prod :=
+    notMem_occVars_prod_of_countVar_eq_zero
+      (by simp [L, hy0.1, hy0.2.1, hy0.2.2.1, hy0.2.2.2.1, hy0.2.2.2.2])
   have hw_eq : w = (P.map GX.letter).prod * GX.letter (.inr (x, bx)) * (U.map GX.letter).prod *
       GX.letter (.inr (y, by_)) * (V.map GX.letter).prod * GX.letter (.inr (x, !bx)) *
       (W.map GX.letter).prod * GX.letter (.inr (y, !by_)) * (Z.map GX.letter).prod := by
@@ -481,10 +483,8 @@ private theorem step_conj {w : GX G X} (hw : IsStrictlyQuadratic {w}) {z : X} {b
     by_cases hvz : v = z
     · subst hvz; left; simp [L, hPQ.1, hPQ.2]
     · right; simp [occurrences_eq_countVar_reducedWord, hl, L, Ne.symm hvz]
-  have hzR : z ∉ occVars (L.map GX.letter).prod := by
-    rw [mem_occVars_iff, not_not, occurrences_eq_countVar_reducedWord]
-    exact Nat.eq_zero_of_le_zero
-      ((GX.countVar_reducedWord_le z L).trans_eq (by simp [L, hPQ.1, hPQ.2]))
+  have hzR : z ∉ occVars (L.map GX.letter).prod :=
+    notMem_occVars_prod_of_countVar_eq_zero (by simp [L, hPQ.1, hPQ.2])
   refine ⟨f, hf_mem, (L.map GX.letter).prod, hrem.1, hrem.2, hzk, hzR, fun a ha => ?_, ?_⟩
   · simp [f, signAut_apply_of_mem_avoiding (ha z hzk), ha z hzk]
   · have hb_eq : signAut (G := G) z (!b) (GX.letter (.inr (z, b))) = (inr (FreeGroup.of z))⁻¹ := by
@@ -626,9 +626,7 @@ private theorem exists_atomic_aux (n : ℕ) : ∀ w : GX G X, (occVars w).card =
   | ind n ih =>
     intro w hcard hw
     by_cases hemp : occVars w = ∅
-    · have h0 : ∀ x, occurrences x w = 0 := fun x =>
-        not_not.1 fun hx => Finset.notMem_empty x (hemp ▸ mem_occVars_iff.2 hx)
-      obtain ⟨d, rfl⟩ := mem_range_inl_iff_forall_occurrences_eq_zero.2 h0
+    · obtain ⟨d, rfl⟩ := occVars_eq_empty_iff.1 hemp
       exact ⟨1, one_mem _, [], [], [], d, by simp [atomicToWord], by simp [atomicVarList],
         by simp [atomicVarList], by simp, fun _ _ => rfl⟩
     · obtain ⟨x₀, hx₀⟩ := Finset.nonempty_iff_ne_empty.2 hemp
@@ -840,22 +838,6 @@ section Main
 variable {G X : Type*} [Group G]
 
 omit [Group G] in
-private theorem sumElim_injective_of_nodup_ofFn_append {n m : ℕ} {f : Fin n → X} {g : Fin m → X}
-    (hnd : (List.ofFn f ++ List.ofFn g).Nodup) : (Sum.elim f g).Injective := by
-  obtain ⟨hf_nd, hg_nd, hdisj⟩ := List.nodup_append.1 hnd
-  exact (List.nodup_ofFn.1 hf_nd).sumElim (List.nodup_ofFn.1 hg_nd) fun i j =>
-    hdisj _ (List.mem_ofFn.2 ⟨i, rfl⟩) _ (List.mem_ofFn.2 ⟨j, rfl⟩)
-
-omit [Group G] in
-private theorem comms_sumElim_injective {comms : List (X × X)}
-    (hnd : (comms.map Prod.fst ++ comms.map Prod.snd).Nodup) :
-    (Sum.elim (fun i : Fin comms.length => comms[i].1)
-      (fun i : Fin comms.length => comms[i].2)).Injective :=
-  sumElim_injective_of_nodup_ofFn_append <| by
-    simpa [List.ofFn_getElem_eq_map comms Prod.fst, List.ofFn_getElem_eq_map comms Prod.snd]
-      using hnd
-
-omit [Group G] in
 private theorem comms_mem_atomicVarList {comms : List (X × X)} {squares : List X}
     {conjs : List (X × G)} (s : Fin comms.length ⊕ Fin comms.length) :
     Sum.elim (fun i : Fin comms.length => comms[i].1) (fun i : Fin comms.length => comms[i].2) s ∈
@@ -889,8 +871,11 @@ private theorem atomic_to_standard_or_inl_one (comms : List (X × X)) (squares :
     · subst hcm
       exact .inl ⟨1, by simp [atomicToWord]⟩
     · have hn : 0 < comms.length := List.length_pos_iff.2 hcm
-      have hinj := comms_sumElim_injective
-        (by simpa only [atomicVarList, List.map_nil, List.append_nil] using hnd)
+      have hinj : (Sum.elim (fun i : Fin comms.length => comms[i].1)
+          (fun i : Fin comms.length => comms[i].2)).Injective :=
+        List.nodup_ofFn_append.1 <| by
+          simpa [List.ofFn_getElem_eq_map comms Prod.fst, List.ofFn_getElem_eq_map comms Prod.snd,
+            atomicVarList] using hnd
       refine .inr ⟨.orientable comms.length hn (fun i => comms[i].1) (fun i => comms[i].2) hinj,
         ?_, ?_⟩
       · simp [Standard.toWord_def, atomicToWord,
@@ -913,12 +898,17 @@ private theorem atomic_to_standard_or_inl_squares_nil (comms : List (X × X)) (c
         have := List.length_pos_iff.2 ‹_› <;> omega
     obtain ⟨hnd_xy, hnd_cj, hdisj⟩ :=
       List.nodup_append.1 (by simpa only [atomicVarList, List.append_nil] using hnd)
+    have hinj_xy : (Sum.elim (fun i : Fin comms.length => comms[i].1)
+        (fun i : Fin comms.length => comms[i].2)).Injective :=
+      List.nodup_ofFn_append.1 <| by
+        simpa [List.ofFn_getElem_eq_map comms Prod.fst,
+          List.ofFn_getElem_eq_map comms Prod.snd] using hnd_xy
     have hnd_z : (List.ofFn (fun j : Fin conjs.length => conjs[j].1)).Nodup := by
       simpa [List.ofFn_getElem_eq_map conjs Prod.fst] using hnd_cj
     have hinj : (Sum.elim (Sum.elim (fun i : Fin comms.length => comms[i].1)
         (fun i : Fin comms.length => comms[i].2))
         (fun j : Fin conjs.length => conjs[j].1)).Injective :=
-      (comms_sumElim_injective hnd_xy).sumElim (List.nodup_ofFn.1 hnd_z) fun s j => by
+      hinj_xy.sumElim (List.nodup_ofFn.1 hnd_z) fun s j => by
         rcases s with i | i
         · exact hdisj _
             (List.mem_append_left _ (List.mem_map_of_mem (f := Prod.fst) (List.getElem_mem _)))
@@ -946,7 +936,7 @@ private theorem atomic_to_standard_or_inl_comms_nil (squares : List X) (hsq : sq
   have hn : 0 < squares.length := List.length_pos_iff.2 hsq
   have hinj : (Sum.elim (fun i : Fin squares.length => squares[i])
       (fun j : Fin conjs.length => conjs[j].1)).Injective :=
-    sumElim_injective_of_nodup_ofFn_append <| by
+    List.nodup_ofFn_append.1 <| by
       simpa [List.ofFn_getElem_eq_map conjs Prod.fst, atomicVarList] using hnd
   refine .inr ⟨.nonorientableCoeff squares.length conjs.length hn (fun i => squares[i])
     (fun j : Fin conjs.length => conjs[j].1) hinj (fun j => conjs[j].2)
@@ -1011,15 +1001,14 @@ theorem exists_standardForm_fixing {w : GX G X} (hw : IsStrictlyQuadratic {w}) :
   -- Absorb the last conjugated coefficient when `d = 1` and `conjs ≠ []`.
   by_cases hd : d = 1
   · subst hd
-    rcases conjs.eq_nil_or_concat with rfl | ⟨conjsInit, ⟨z, c⟩, hconcat⟩
+    rcases conjs.eq_nil_or_concat' with rfl | ⟨conjsInit, ⟨z, c⟩, rfl⟩
     · refine ⟨f₁, hf₁, 1, hfix₁, ?_⟩
       have hw_eq : 1 * f₁ w * 1⁻¹ = atomicToWord comms squares [] 1 := by simp [hf₁_eq]
       rcases atomic_to_standard_or_inl_one comms squares hmix hnd with
         ⟨c', hc'⟩ | ⟨S, hS, hS_vars⟩
       · exact .inl ⟨c', hw_eq.trans hc'⟩
       · exact .inr ⟨S, hw_eq.trans hS, fun v hv => mem_occVars_iff.1 (hsub v (hS_vars v hv))⟩
-    · rw [List.concat_eq_append] at hconcat; subst hconcat
-      have hc_z : c ≠ 1 := hc (z, c) (by simp)
+    · have hc_z : c ≠ 1 := hc (z, c) (by simp)
       have hc_init : ∀ p ∈ conjsInit, p.2 ≠ 1 := fun p hp => hc p (List.mem_append_left _ hp)
       obtain ⟨f₂, hf₂, u, hf₂_eq, hf₂_fix⟩ := absorb_last_conj comms squares conjsInit z c hnd
       have hnd_init : (atomicVarList comms squares conjsInit).Nodup :=
@@ -1085,14 +1074,7 @@ theorem not_exists_standard_of_conj_mulEquiv_eq_inl
     (φ₂ : F) (hφ₂ : φ₂ (inl c) = inl c) (u₂ : GX G Z) :
     ¬∃ S : Standard G Z, u₂ * φ₂ w * u₂⁻¹ = S.toWord := by
   rintro ⟨S, hS⟩
-  have hφ₁w : φ₁ w = u₁⁻¹ * inl c * u₁ := by
-    calc φ₁ w = u₁⁻¹ * (u₁ * φ₁ w * u₁⁻¹) * u₁ := by simp [mul_assoc]
-      _ = u₁⁻¹ * inl c * u₁ := by rw [hw₁]
-  have hw : w = (φ₁.symm u₁)⁻¹ * inl c * ((φ₁.symm u₁)⁻¹)⁻¹ := by
-    calc w = φ₁.symm (φ₁ w) := (φ₁.symm_apply_apply w).symm
-      _ = (φ₁.symm u₁)⁻¹ * inl c * ((φ₁.symm u₁)⁻¹)⁻¹ := by
-        rw [hφ₁w, map_mul, map_mul, map_inv, φ₁.symm_apply_eq.2 hφ₁.symm, inv_inv]
-  rw [hw] at hS
+  rw [eq_conj_inl_of_conj_mulEquiv_eq_inl φ₁ hφ₁ hw₁] at hS
   exact S.toWord_ne_conj_map_conj_inl φ₂ hφ₂ u₂ (φ₁.symm u₁)⁻¹ hS.symm
 
 end Exclusivity
@@ -1103,9 +1085,9 @@ section Examples
 
 variable {G H X Y : Type*} [Group G] [Group H]
 
-/-- The elementary change of coordinates `x₀ ↦ x₀ x₁⁻¹`, `x₁ ↦ x₁⁻¹` induces a bijection `e`
-between the solution set of the Klein-bottle equation `x₀ x₁ x₀ x₁⁻¹ = 1` and that of the standard
-non-orientable equation `x₀² x₁² = 1`, sending `(a₀, a₁)` to `(a₀ a₁, a₁⁻¹)`. -/
+/-- There is a bijection between the solution set of the Klein-bottle equation `x₀ x₁ x₀ x₁⁻¹ = 1`
+and that of the standard non-orientable equation `x₀² x₁² = 1` sending `(a₀, a₁)` to
+`(a₀ a₁, a₁⁻¹)`. -/
 theorem exists_equiv_V_kleinBottle (ι : G →* H) :
     ∃ e : V ι {(inr (.of 0) * inr (.of 1) * inr (.of 0) * (inr (.of 1))⁻¹ : GX G (Fin 2))} ≃
         V ι {(inr (.of 0) ^ 2 * inr (.of 1) ^ 2 : GX G (Fin 2))},
@@ -1138,8 +1120,7 @@ theorem not_exists_standard_conj_of_zero_unit
 /-- The identity word `1`—whose solution set `V ι {1}` is `Set.univ` even when the variable set is
 nonempty—takes the coefficient branch `c = 1` exclusively: no `1`-preserving map and conjugation can
 carry `1` to a standard quadratic word. -/
-theorem Standard.toWord_ne_conj_map_one
-    {α F : Type*} [One α] [FunLike F α (GX G Y)] [OneHomClass F α (GX G Y)]
+example {α F : Type*} [One α] [FunLike F α (GX G Y)] [OneHomClass F α (GX G Y)]
     (S : Standard G Y) (φ : F) (u : GX G Y) :
     S.toWord ≠ u * φ 1 * u⁻¹ := by
   simp

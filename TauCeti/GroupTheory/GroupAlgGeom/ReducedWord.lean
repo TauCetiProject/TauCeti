@@ -899,32 +899,25 @@ variable letters. -/
 theorem IsCyclicallyReduced.countVar_eq_zero_of_eq_conj_inl {l : List (G ⊕ X × Bool)}
     (hl : IsCyclicallyReduced l) {v : GX G X} {c : G}
     (hv : (l.map letter).prod = v * inl c * v⁻¹) (x : X) : countVar x l = 0 := by
-  suffices ∀ (n : ℕ) (p : List (G ⊕ X × Bool)) (c : G), p.length ≤ n → IsReduced p →
+  suffices ∀ (p : List (G ⊕ X × Bool)) (c : G), IsReduced p →
       (l.map letter).prod = (p.map letter).prod * inl c * ((p.map letter).prod)⁻¹ →
       countVar x l = 0 from
-    this _ (reducedWord v) c le_rfl (isReduced_reducedWord v) (by simpa using hv)
-  intro n
-  induction n with
-  | zero =>
-    intro p c hn _ hprod
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.eq_zero_of_le_zero hn)
+    this (reducedWord v) c (isReduced_reducedWord v) (by simpa using hv)
+  intro p
+  induction p using List.reverseRecOn with
+  | nil =>
+    intro c _ hprod
     have hl' : l = reducedWord (inl c) :=
       ((reducedWord_eq_iff hl.isReduced).2 (by simpa using hprod)).symm
     by_cases hc : c = 1 <;> simp [hl', hc]
-  | succ n ih =>
-    intro p c hn hp hprod
+  | append_singleton q d ih =>
+    intro c hp hprod
     by_cases hc : c = 1
     · have hl' : l = reducedWord 1 :=
         ((reducedWord_eq_iff hl.isReduced).2 (by simpa [hc] using hprod)).symm
       simp [hl']
-    rcases p.eq_nil_or_concat with rfl | ⟨q, d, hq⟩
-    · exact ih [] c (by simp) hp hprod
-    rw [List.concat_eq_append] at hq
-    subst hq
-    have hq_red : IsReduced q := (isReduced_append.1 hp).1
-    have hq_len : q.length ≤ n := by simp at hn; omega
     rcases d with g | ⟨y, b⟩
-    · exact ih q (g * c * g⁻¹) hq_len hq_red (by simpa [mul_assoc] using hprod)
+    · exact ih (g * c * g⁻¹) (isReduced_append.1 hp).1 (by simpa [mul_assoc] using hprod)
     · exfalso
       have hm_red :
           IsReduced ((q ++ [.inr (y, b)]) ++ [.inl c] ++ invRev (q ++ [.inr (y, b)])) := by
