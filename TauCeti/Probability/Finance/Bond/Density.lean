@@ -17,6 +17,11 @@ measure's L¹ norm by bounded finite-grid holdings, chosen at the left endpoints
 approximations preserve the information constraint of trading and control precisely the
 absolute-income error, even when the rate vanishes or changes sign.
 
+On a finite horizon with continuous short rate and finite sample measure, one sequence
+also converges almost surely in pathwise absolute-variation L¹. This simultaneous
+convergence is provided by
+`exists_seq_simpleHolding_tendsto_eLpNorm_one_and_ae_tendsto_lintegral_bondPrice`.
+
 The weight is the absolute-variation density identified by
 `variation_vectorMeasureIcc_bondPrice` in `TauCeti.Probability.Finance.Bond.Trading`, and
 `Filtration.exists_seq_simpleHolding_tendsto_eLpNorm_one_of_isStronglyPredictable` supplies
@@ -76,5 +81,49 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_bondPrice
   exact ℱ.exists_seq_simpleHolding_tendsto_eLpNorm_one_of_isStronglyPredictable _
     (withDensity_absolutelyContinuous _ _
       (by simp only [Measure.prod_prod, timeMeasure_singleton_zero, zero_mul])) hb hint
+
+/-- On the finite horizon `[0, T]`, with continuous short rate `r` and finite sample measure
+`P`, bounded finite-grid bond holdings approximate every predictable holding with finite
+expected absolute interest income. Convergence holds in expected absolute bond variation
+and almost surely in pathwise absolute bond variation, for the same sequence. Trading
+heights are measurable at the left endpoints. Zero rates and a zero horizon are allowed. -/
+theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_and_ae_tendsto_lintegral_bondPrice
+    (hr : ContinuousOn r (Icc 0 (T : ℝ)))
+    {b : ℝ≥0 → Ω → ℝ} (hb : IsStronglyPredictable ℱ b)
+    (hb₁ : MemLp (Function.uncurry b) 1
+      (((timeMeasure T).withDensity
+        (fun t : ℝ≥0 ↦ ‖r t * bondPrice r β₀ t‖ₑ)).prod P)) :
+    ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (C : ℕ → ℝ),
+      (∀ m, τ m 0 = 0) ∧ (∀ m, StrictMonoOn (τ m) (Iic (n m))) ∧
+      (∀ m j, j < n m → StronglyMeasurable[ℱ (τ m j)] (a m j)) ∧
+      (∀ m j, j < n m → ∀ ω, ‖a m j ω‖ ≤ C m) ∧
+      Tendsto (fun m ↦ eLpNorm
+        (fun p ↦ simpleHolding (τ m) (n m) (a m) p.1 p.2 - b p.1 p.2) 1
+        (((timeMeasure T).withDensity
+          (fun t : ℝ≥0 ↦ ‖r t * bondPrice r β₀ t‖ₑ)).prod P)) atTop (𝓝 0) ∧
+      ∀ᵐ ω ∂P, Tendsto (fun m ↦ ∫⁻ t : ℝ≥0,
+        ‖r t * bondPrice r β₀ t‖ₑ *
+          ‖simpleHolding (τ m) (n m) (a m) t ω - b t ω‖ₑ
+            ∂timeMeasure T) atTop (𝓝 0) := by
+  have hc : ContinuousOn (fun t : ℝ≥0 ↦ r t * bondPrice r β₀ t) (Icc 0 T) :=
+    (hr.mul (continuousOn_bondPrice hr β₀)).comp NNReal.continuous_coe.continuousOn
+      (fun t ht ↦ ⟨t.coe_nonneg, by exact_mod_cast ht.2⟩)
+  have hi : Integrable (fun t : ℝ≥0 ↦ r t * bondPrice r β₀ t)
+      (timeMeasure T) := by
+    have h := (hc.integrableOn_Icc (μ := timeMeasure T)).mono_set
+      Ioc_subset_Icc_self
+    simpa only [IntegrableOn, timeMeasure_restrict, min_self] using h
+  let ν := (timeMeasure T).withDensity
+    (fun t : ℝ≥0 ↦ ‖r t * bondPrice r β₀ t‖ₑ)
+  have : IsFiniteMeasure ν :=
+    isFiniteMeasure_withDensity (hasFiniteIntegral_iff_eNorm.mp hi.hasFiniteIntegral).ne
+  have hν : ν {0} = 0 :=
+    (withDensity_absolutelyContinuous _ _) (timeMeasure_singleton_zero T)
+  obtain ⟨n, τ, a, C, hτ₀, hτ, ha, hbound, hmean, hpath⟩ :=
+    ℱ.exists_seq_simpleHolding_tendsto_eLpNorm_one_and_ae_tendsto_lintegral ν hν P hb hb₁
+  refine ⟨n, τ, a, C, hτ₀, hτ, ha, hbound, hmean, ?_⟩
+  simpa only [ν, lintegral_withDensity_eq_lintegral_mul_non_measurable₀ _
+    hi.aestronglyMeasurable.eNorm (ae_of_all _ fun _ ↦ eNorm_lt_top), Pi.mul_apply]
+    using hpath
 
 end TauCeti.Finance

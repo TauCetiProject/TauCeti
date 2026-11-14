@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
 
 /-!
 # Approximation of integrable predictable holdings
@@ -17,6 +18,9 @@ measurable at the left endpoint. No square integrability of the original process
 This applies to expected absolute-variation measures for finite-variation trading gains.
 The ambient form accepts a finite measure on the product sigma-algebra and a strongly
 predictable process, and transfers the predictable statement through `Measure.trim`.
+For finite time and sample measures, with no time atom at zero, one sequence converges
+both in product L¹ and almost surely in pathwise time L¹. The time measure may vanish
+on intervals; no continuity of the holding is required.
 
 The construction uses Mathlib's simple-function approximation, then the finite-grid L²
 approximation in `TauCeti.Probability.Finance.SimpleStrategy.Approximation`. Simple functions
@@ -106,5 +110,39 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_of_isStronglyPredictable
   refine ⟨n, τ, a, C, hτ₀, hτ, ha, hb, hlim.congr fun k ↦ ?_⟩
   exact eLpNorm_trim ℱ.predictable_le_prod
     ((isStronglyPredictable_simpleHolding (ℱ := ℱ) (ha k)).sub hH)
+
+/-- Predictable L¹ integrands for finite time and sample measures admit bounded,
+left-measurable finite-grid approximations, both in product L¹ and almost surely in
+pathwise time L¹. The deterministic time measure may vanish on intervals, and needs
+only a null atom at zero; no continuity of the integrand is required. -/
+theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_and_ae_tendsto_lintegral
+    (ν : Measure ℝ≥0) [IsFiniteMeasure ν] (hν : ν {0} = 0)
+    (P : Measure Ω) [IsFiniteMeasure P]
+    {H : ℝ≥0 → Ω → ℝ} (hH : IsStronglyPredictable ℱ H)
+    (hH₁ : MemLp (Function.uncurry H) 1 (ν.prod P)) :
+    ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (C : ℕ → ℝ),
+      (∀ m, τ m 0 = 0) ∧ (∀ m, StrictMonoOn (τ m) (Iic (n m))) ∧
+      (∀ m j, j < n m → StronglyMeasurable[ℱ (τ m j)] (a m j)) ∧
+      (∀ m j, j < n m → ∀ ω, ‖a m j ω‖ ≤ C m) ∧
+      Tendsto (fun m ↦ eLpNorm
+        (fun p ↦ simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) 1
+          (ν.prod P)) atTop (𝓝 0) ∧
+      ∀ᵐ ω ∂P, Tendsto (fun m ↦ ∫⁻ t,
+        ‖simpleHolding (τ m) (n m) (a m) t ω - H t ω‖ₑ ∂ν) atTop (𝓝 0) := by
+  obtain ⟨n, τ, a, C, hτ₀, hτ, ha, hb, hlim⟩ :=
+    ℱ.exists_seq_simpleHolding_tendsto_eLpNorm_one_of_isStronglyPredictable (ν.prod P)
+      (by simp only [Measure.prod_prod, hν, zero_mul]) hH
+      (memLp_one_iff_integrable.mp hH₁)
+  have hmeas m : StronglyMeasurable[ℱ.predictable]
+      (fun p ↦ simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) :=
+    (isStronglyPredictable_simpleHolding (ha m)).sub hH
+  have he m := ((hmeas m).mono ℱ.predictable_le_prod).eNorm.aemeasurable (μ := ν.prod P)
+  obtain ⟨φ, hφ, hpath⟩ := TauCeti.exists_strictMono_ae_tendsto_zero_of_tendsto_lintegral
+    (fun m ↦ (he m).lintegral_prod_left')
+    (by simpa only [← lintegral_prod_symm _ (he _),
+      ← eLpNorm_one_eq_lintegral_eNorm ((hmeas _).mono
+        ℱ.predictable_le_prod).aestronglyMeasurable] using hlim)
+  exact ⟨n ∘ φ, τ ∘ φ, a ∘ φ, C ∘ φ, fun m ↦ hτ₀ (φ m), fun m ↦ hτ (φ m),
+    fun m ↦ ha (φ m), fun m ↦ hb (φ m), hlim.comp hφ.tendsto_atTop, hpath⟩
 
 end MeasureTheory.Filtration
