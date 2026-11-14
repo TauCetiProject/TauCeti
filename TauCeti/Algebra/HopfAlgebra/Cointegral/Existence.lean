@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.HopfAlgebra.Cointegral.Basic
 public import TauCeti.Algebra.HopfAlgebra.Frobenius
 public import TauCeti.Algebra.HopfAlgebra.HopfModule
+public import TauCeti.Algebra.HopfAlgebra.Module.Dual
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Comul
 
 /-!
@@ -80,27 +81,13 @@ private theorem matrixCoefficient_self (f : Module.Dual k H) (x : H) :
       TensorProduct.lid k H (f.rTensor H (comul x)) :=
   Comodule.matrixCoefficient_def f x
 
-/-- The action `(h • f)(x) = f(S(h) x)` of `H` on `H*`. -/
-private noncomputable def action : H →ₐ[k] Module.End k (Module.Dual k H) :=
-  AlgHom.ofLinearMap
-    (Module.Dual.transpose (R := k) ∘ₗ LinearMap.mul k H ∘ₗ HopfAlgebra.antipode k)
-    (by ext f x; simp [Module.Dual.transpose_apply])
-    (by
-      intro a b
-      ext f x
-      simp [Module.Dual.transpose_apply, HopfAlgebra.antipode_mul_antidistrib, mul_assoc])
-
-private theorem action_apply (h : H) (f : Module.Dual k H) (x : H) :
-    action h f x = f (HopfAlgebra.antipode k h * x) := by
-  simp [action, Module.Dual.transpose_apply]
-
 /-- The `H`-identity behind `H`-linearity of the coaction on `H*`:
 `∑ h₁ (∑ f(S(h₂) x)₁ (S(h₂) x)₂) = ∑ f(S(h) x₁) x₂`. -/
 private theorem sum_mul_matrixCoefficient_antipode_mul (f : Module.Dual k H) (h x : H) :
     ∑ i ∈ (ℛ k h).index, (ℛ k h).left i *
       Comodule.matrixCoefficient (R := k) (C := H) f
         (HopfAlgebra.antipode k ((ℛ k h).right i) * x) =
-      Comodule.matrixCoefficient (R := k) (C := H) (action h f) x := by
+      Comodule.matrixCoefficient (R := k) (C := H) ((Algebra.lsmul k k H).hopfDual h f) x := by
   set r := ℛ k h
   set q := ℛ k x
   -- `Γ (p ⊗ u ⊗ y) = ∑ f(S(y) x₁) • p S(u) x₂` turns both sides into coassociativity of `Δ`.
@@ -142,20 +129,22 @@ private theorem sum_mul_matrixCoefficient_antipode_mul (f : Module.Dual k H) (h 
         rw [matrixCoefficient_self, ← q.eq]
         conv_rhs => rw [← Coalgebra.sum_counit_smul r]
         simp only [smul_smul, mul_comm, map_sum, map_smul, LinearMap.coe_sum, LinearMap.coe_smul,
-          Finset.sum_apply, Pi.smul_apply, LinearMap.rTensor_tmul, action_apply, smul_eq_mul,
+          Finset.sum_apply, Pi.smul_apply, LinearMap.rTensor_tmul, AlgHom.hopfDual_apply,
+          Algebra.lsmul_coe, smul_eq_mul,
           TensorProduct.lid_tmul]
         rw [Finset.sum_comm]
         simp_rw [Finset.sum_smul]
 
-/-- `H*` as a left `H`-module through `action`. The action involves the antipode and is not
-canonical, so it is only a local instance, used to apply the fundamental theorem of Hopf
-modules. -/
+/-- `H*` as a left `H`-module through the contragredient of the regular representation,
+`(h • f)(x) = f(S(h) x)`. The action involves the antipode and is not canonical, so it is
+only a local instance, used to apply the fundamental theorem of Hopf modules. -/
 private noncomputable abbrev instModule : Module H (Module.Dual k H) :=
-  Module.compHom _ (action (k := k) (H := H)).toRingHom
+  Module.compHom _ (Algebra.lsmul k k H).hopfDual.toRingHom
 
 attribute [local instance] instModule
 
-private theorem smul_def (h : H) (f : Module.Dual k H) : h • f = action h f :=
+private theorem smul_def (h : H) (f : Module.Dual k H) :
+    h • f = (Algebra.lsmul k k H).hopfDual h f :=
   (rfl)
 
 private theorem isScalarTower : IsScalarTower k H (Module.Dual k H) :=
@@ -171,7 +160,7 @@ private theorem evalAt_tensorAction (h x : H) (u : H ⊗[k] Module.Dual k H) :
   | add u w hu hw => simp only [map_add, hu, hw, mul_add, Finset.sum_add_distrib]
   | tmul a g =>
     rw [BialgebraModule.tensorAction_apply, ← (ℛ k h).eq]
-    simp [map_sum, evalAt_tmul, smul_def, action_apply]
+    simp [map_sum, evalAt_tmul, smul_def, AlgHom.hopfDual_apply, Algebra.lsmul_coe]
 
 variable [FiniteDimensional k H]
 
@@ -299,13 +288,6 @@ theorem exists_isRightCointegral_ne_zero [FiniteDimensional k H] :
     exact zero_ne_one h1
   obtain ⟨φ, hφ, h0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
   exact ⟨φ, (mem_rightCointegrals φ).mp hφ, h0⟩
-
-/-- Right cointegrals are the right invariant integrals of `TauCeti.Algebra.HopfAlgebra.Integral`;
-the two predicates have the same defining equation. -/
-theorem isRightCointegral_iff_isRightInvariantIntegral {k H : Type*} [CommSemiring k] [Semiring H]
-    [Bialgebra k H] {φ : Module.Dual k H} :
-    IsRightCointegral φ ↔ φ.IsRightInvariantIntegral := by
-  rw [isRightCointegral_def, LinearMap.isRightInvariantIntegral_iff]
 
 /-- **Larson–Sweedler**: the antipode of a finite-dimensional Hopf algebra over a field is
 bijective. -/

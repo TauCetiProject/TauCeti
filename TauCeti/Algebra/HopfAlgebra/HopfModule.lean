@@ -152,6 +152,7 @@ theorem coinvariantProj_smul (hδ : IsHopfModule δ) {n : M} (hn : n ∈ coinvar
     one_smul]
 
 /-- The projection fixes the coinvariants. -/
+@[simp]
 theorem coinvariantProj_eq_self (hδ : IsHopfModule δ) {n : M} (hn : n ∈ coinvariants δ) :
     coinvariantProj δ n = n := by
   simpa using hδ.coinvariantProj_smul hn 1
