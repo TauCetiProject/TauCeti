@@ -28,8 +28,9 @@ Milnor's proof of the homogeneity lemma.
 
 * `TauCeti.chartField`: a vector field on the model space, read in the extended chart at a point
   and extended by zero; `TauCeti.contMDiff_chartField` shows it is smooth when the field is
-  supported in a compact subset of the chart target, and `TauCeti.hasMFDerivAt_chartField` that
-  straight segments along which the field is constant are its integral curves.
+  supported in a compact subset of the chart target, and
+  `TauCeti.hasMFDerivAt_extChartAt_symm_add_smul` that straight segments along which the field is
+  constant are its integral curves.
 * `TauCeti.bumpChartField`: a constant field cut off by a bump function, read in the chart;
   `TauCeti.bumpChartField_extChartAt_symm` and
   `TauCeti.bumpChartField_extChartAt_symm_of_mem_ball` give its values in the chart;
@@ -108,7 +109,7 @@ theorem chartField_extChartAt_symm {p : E} {d : TangentSpace 𝓘(ℝ, E) p}
 
 /-- A segment in a chart, along which `w` is the constant `d`, is an integral curve of the chart
 field at every time at which it stays in an open set where `w = d`. -/
-theorem hasMFDerivAt_chartField {c d : E} {V : Set E}
+theorem hasMFDerivAt_extChartAt_symm_add_smul {c d : E} {V : Set E}
     (hV : IsOpen V) (hVt : V ⊆ (extChartAt I x).target) (hwV : ∀ p ∈ V, w p = d) {t : ℝ}
     (ht : c + t • d ∈ V) :
     HasMFDerivAt 𝓘(ℝ, ℝ) I (fun s : ℝ ↦ (extChartAt I x).symm (c + s • d)) t
@@ -237,7 +238,7 @@ theorem isMIntegralCurveOn_bumpChartField
     (hρ : closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target) {c : E} {J : Set ℝ}
     (hJ : ∀ s ∈ J, c + s • v ∈ ball (extChartAt I x x) ρ.rIn) :
     IsMIntegralCurveOn (fun s ↦ (extChartAt I x).symm (c + s • v)) (bumpChartField x ρ v) J :=
-  fun s hs ↦ (hasMFDerivAt_chartField isOpen_ball
+  fun s hs ↦ (hasMFDerivAt_extChartAt_symm_add_smul isOpen_ball
     ((ball_subset_closedBall.trans (closedBall_subset_closedBall ρ.rIn_lt_rOut.le)).trans hρ)
     (fun p hp ↦ by
       -- `TangentSpace 𝓘(ℝ, E) p` is `E` by definition.
