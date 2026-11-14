@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Perfectoid.UniformTilt.CharP
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.Tate
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.Quotient
 import TauCeti.RingTheory.Huber.Reduction
@@ -22,8 +23,10 @@ topologically nilpotent elements of `B°`, it is a ring homomorphism. That ideal
 ring of integral elements, so integral closedness descends to the reduction and can be pulled
 back along sharp. This constructs the plus ring needed to regard tilting as a construction
 on Huber pairs. `Huber.Pair.tilt` and `Huber.Pair.Hom.tilt` give that construction and its
-functoriality on continuous plus-preserving maps. The Tate hypotheses can be supplied by
-`RingHom.isTateRing_uniformTilt` for algebras over a perfectoid Tate ring.
+functoriality on continuous plus-preserving maps; in characteristic `p` on a perfect ring,
+`Huber.Pair.tiltEquivHom` and `Huber.Pair.tiltEquivSymmHom` identify `P.tilt` with `P` as
+Huber pairs. The Tate hypotheses can be supplied by `RingHom.isTateRing_uniformTilt` for algebras
+over a perfectoid Tate ring.
 
 ## References
 
@@ -159,5 +162,59 @@ theorem Hom.tilt_comp {P : Pair B} {Q : Pair C} {R : Pair D} (g : Hom Q R) (f : 
   apply Hom.ext
   simpa only [Hom.toRingHom_tilt, Hom.toRingHom_comp] using
     uniformTilt.map_comp f.toRingHom f.continuous_toRingHom g.toRingHom g.continuous_toRingHom
+
+section CharP
+
+variable [CharP B p] [PerfectRing B p]
+
+/-- On a perfect ring of characteristic `p`, the zeroth coordinate `uniformTilt.equivOfCharP`
+defines a morphism of Huber pairs from `P.tilt` to `P`. -/
+noncomputable def tiltEquivHom (P : Pair B) : Hom (P.tilt (p := p)) P where
+  toRingHom := (uniformTilt.equivOfCharP p B).toRingHom
+  continuous_toRingHom := uniformTilt.continuous_equivOfCharP p B
+  map_mem_plus x hx := by
+    simpa only [RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, uniformTilt.equivOfCharP_apply] using
+      uniformTilt.mem_plusSubring_iff_coeff_zero.mp hx
+
+/-- On a perfect ring of characteristic `p`, the inverse of `uniformTilt.equivOfCharP` defines the
+inverse morphism of Huber pairs from `P` to `P.tilt`. -/
+noncomputable def tiltEquivSymmHom (P : Pair B) : Hom P (P.tilt (p := p)) where
+  toRingHom := (uniformTilt.equivOfCharP p B).symm.toRingHom
+  continuous_toRingHom := uniformTilt.continuous_equivOfCharP_symm p B
+  map_mem_plus b hb := by
+    rw [tilt_plus, uniformTilt.mem_plusSubring_iff_coeff_zero]
+    simpa using hb
+
+/-- The underlying ring homomorphism of `Pair.tiltEquivHom` is `uniformTilt.equivOfCharP`. -/
+@[simp]
+theorem toRingHom_tiltEquivHom (P : Pair B) :
+    (P.tiltEquivHom (p := p)).toRingHom = (uniformTilt.equivOfCharP p B).toRingHom := (rfl)
+
+/-- The underlying ring homomorphism of `Pair.tiltEquivSymmHom` is the inverse of
+`uniformTilt.equivOfCharP`. -/
+@[simp]
+theorem toRingHom_tiltEquivSymmHom (P : Pair B) :
+    (P.tiltEquivSymmHom (p := p)).toRingHom = (uniformTilt.equivOfCharP p B).symm.toRingHom :=
+  (rfl)
+
+/-- `Pair.tiltEquivHom` is a left inverse to `Pair.tiltEquivSymmHom`. -/
+@[simp]
+theorem tiltEquivHom_comp_tiltEquivSymmHom (P : Pair B) :
+    (P.tiltEquivHom (p := p)).comp (P.tiltEquivSymmHom (p := p)) = Hom.id P := by
+  apply Hom.ext
+  apply RingHom.ext
+  intro b
+  simp
+
+/-- `Pair.tiltEquivSymmHom` is a left inverse to `Pair.tiltEquivHom`. -/
+@[simp]
+theorem tiltEquivSymmHom_comp_tiltEquivHom (P : Pair B) :
+    (P.tiltEquivSymmHom (p := p)).comp (P.tiltEquivHom (p := p)) = Hom.id (P.tilt (p := p)) := by
+  apply Hom.ext
+  apply RingHom.ext
+  intro x
+  simp
+
+end CharP
 
 end TauCeti.Huber.Pair

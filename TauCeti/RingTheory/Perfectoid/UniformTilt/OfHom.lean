@@ -20,7 +20,10 @@ criterion for the tilt.
 The hypotheses on `B` are the standing hypotheses of `uniformTilt`'s ring structure. In
 particular, no perfectoid base *field*, injectivity of the homomorphism, or nonzero-ring
 hypothesis is required. The Tate structure can be installed using
-`RingHom.isTateRing_uniformTilt`, after which `RingHom.isPerfectoidTateRing_uniformTilt` applies.
+`RingHom.isTateRing_uniformTilt`, after which `RingHom.isPerfectoidTateRing_uniformTilt` applies;
+for `B = A` with the identity map these are packaged as
+`IsPerfectoidTateRing.isTateRing_uniformTilt` and
+`IsPerfectoidTateRing.isPerfectoidTateRing_uniformTilt`.
 
 ## References
 
@@ -67,3 +70,24 @@ theorem isPerfectoidTateRing_uniformTilt (f : A →+* B) (hf : Continuous f) :
   exact uniformTilt.isPerfectoidTateRing_of_sharp hϖ
 
 end RingHom
+
+namespace TauCeti.Perfectoid.IsPerfectoidTateRing
+
+variable (p : ℕ) [Fact p.Prime] (R : Type*)
+  [CommRing R] [UniformSpace R] [IsUniformAddGroup R] [IsTopologicalRing R]
+  [IsTateRing R] [CompleteSpace R] [T2Space R] [IsUniform R]
+  [Fact (IsTopologicallyNilpotent (p : R))] [IsPerfectoidTateRing p R]
+
+/-- The tilt of a perfectoid Tate ring is a Tate ring (Scholze, *Étale cohomology of diamonds*,
+Lemma 3.10). -/
+theorem isTateRing_uniformTilt : IsTateRing (uniformTilt p R) :=
+  (RingHom.id R).isTateRing_uniformTilt (p := p) continuous_id
+
+/-- The tilt of a perfectoid Tate ring is again a perfectoid Tate ring (Scholze, *Étale cohomology
+of diamonds*, Lemma 3.10). -/
+theorem isPerfectoidTateRing_uniformTilt :
+    letI := isTateRing_uniformTilt p R
+    IsPerfectoidTateRing p (uniformTilt p R) :=
+  (RingHom.id R).isPerfectoidTateRing_uniformTilt (p := p) continuous_id
+
+end TauCeti.Perfectoid.IsPerfectoidTateRing

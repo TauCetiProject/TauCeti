@@ -85,6 +85,8 @@ sets are *literally equal* for equivalent valuations, which is
   the zeros of a continuous valuation is continuous.
 * `Valuation.IsContinuous.isEquiv_of_dense` : two continuous valuations with the same zeros that
   agree in their comparisons on a dense subset are equivalent.
+* `Valuation.IsContinuous.isClosed_le` : every closed valuation ball `{a | v a ≤ γ}` is closed,
+  whether or not `γ` is attained (including `γ = 0`).
 * `Valuation.IsContinuous.isClosed_supp` : the support of a continuous valuation is closed.
 
 ## References
@@ -232,6 +234,17 @@ theorem IsContinuous.comap {B : Type*} [Ring B] [TopologicalSpace B] {φ : B →
     (hφ : Continuous φ) {v : Valuation A Γ₀} (hv : v.IsContinuous) : (v.comap φ).IsContinuous :=
   fun b ↦ (hv (φ b)).preimage hφ
 
+/-- **Every closed valuation ball of a continuous valuation is topologically closed.** Off
+`{a | v a ≤ γ}` we have `v x ≠ 0` (since `0 ≤ γ`), so `v` is locally constant near `x`
+(`IsContinuous.eventually_eq`) and the complement is open. Unlike `IsContinuous.isOpen_le`, `γ`
+may be any element of `Γ₀`, attained or not, including `0`. -/
+theorem IsContinuous.isClosed_le [SeparatelyContinuousAdd A] {v : Valuation A Γ₀}
+    (hv : v.IsContinuous) (γ : Γ₀) : IsClosed {a : A | v a ≤ γ} := by
+  refine isOpen_compl_iff.mp <| isOpen_iff_mem_nhds.mpr fun x hx ↦ ?_
+  have hx0 : v x ≠ 0 := fun h0 ↦ hx (by simp [h0])
+  filter_upwards [hv.eventually_eq hx0] with y hy
+  exact fun hle ↦ hx (by simpa [hy] using hle)
+
 section CommRing
 
 variable {R : Type*} [CommRing R] [TopologicalSpace R] [SeparatelyContinuousAdd R]
@@ -241,10 +254,11 @@ locally constant (`IsContinuous.eventually_eq`), so the complement of the suppor
 separate continuity of addition is required, and the value monoid need not be a group. -/
 theorem IsContinuous.isClosed_supp {v : Valuation R Γ₀} (hv : v.IsContinuous) :
     IsClosed (v.supp : Set R) := by
-  refine isOpen_compl_iff.mp <| isOpen_iff_mem_nhds.mpr fun x hx ↦ ?_
-  rw [mem_compl_iff, SetLike.mem_coe, mem_supp_iff] at hx
-  filter_upwards [hv.eventually_eq hx] with y hy
-  simpa [hy] using hx
+  have hsupp : (v.supp : Set R) = {a : R | v a ≤ 0} := by
+    ext a
+    simp
+  rw [hsupp]
+  exact hv.isClosed_le 0
 
 end CommRing
 
