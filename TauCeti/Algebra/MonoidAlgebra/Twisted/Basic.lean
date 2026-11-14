@@ -345,6 +345,17 @@ theorem isUnit_of (g : G) : IsUnit (of g : twistedMonoidAlgebra k G α) := by
 
 end Group
 
+section Ring
+
+variable {R : Type*} [CommRing R] (β : G → G → Rˣ) [IsFactorSet β]
+
+/-- With ring coefficients, the twisted monoid algebra is a ring. -/
+noncomputable instance : Ring (twistedMonoidAlgebra R G β) :=
+  -- Specify the ambient type: inference cannot recover it through the ring-to-semiring map.
+  Subalgebra.toRing (A := Module.End R (G →₀ R)) _
+
+end Ring
+
 variable (k G α)
 
 /-- The twisted translations form a basis of `k_α[G]` indexed by `G`: the twisted monoid algebra is
@@ -366,6 +377,26 @@ theorem finrank_eq_natCard [StrongRankCondition k] :
   finrank_eq_nat_card_basis (basis k G α)
 
 variable {k G α}
+
+/-- Cancellation of addition transfers from the coefficients to a twisted monoid algebra. -/
+instance [IsCancelAdd k] : IsCancelAdd (twistedMonoidAlgebra k G α) :=
+  (basis k G α).repr.injective.isCancelAdd _ (map_add _)
+
+/-- The coefficients of a product are the twisted convolution of the two coefficient families. -/
+theorem repr_mul (f g : twistedMonoidAlgebra k G α) :
+    (basis k G α).repr (f * g) =
+      ((basis k G α).repr f).sum fun a r ↦
+        ((basis k G α).repr g).sum fun b s ↦
+          Finsupp.single (a * b) (r * s * (α a b : k)) := by
+  classical
+  conv_lhs =>
+    rw [← (basis k G α).linearCombination_repr f, ← (basis k G α).linearCombination_repr g]
+  simp only [Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_mul, Finset.mul_sum,
+    smul_mul_assoc, mul_smul_comm, map_sum, map_smul, basis_apply, of_mul_of]
+  simp only [← basis_apply k G α, Module.Basis.repr_self, Finset.smul_sum, Finsupp.smul_single,
+    smul_eq_mul]
+  rw [Finset.sum_comm]
+  simp only [mul_one, mul_assoc, mul_left_comm]
 
 /-- An algebra map out of `k_α[G]` is determined by its values on the basis elements. -/
 @[ext]
