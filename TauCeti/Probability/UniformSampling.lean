@@ -246,34 +246,49 @@ theorem uniformOn_le_inter_add_compl {Ω : Type*} [MeasurableSpace Ω] [Measurab
 collision event: for every event `A`, the former is at most the latter plus the collision measure.
 
 When an injective map `ι → κ` exists, these are the probabilities for uniform sampling without and
-with replacement, respectively.  The inequality also holds when the set of injective maps is empty,
-in which case its `uniformOn` measure is zero; this includes an infinite index type `ι`. -/
-theorem uniformOn_injective_le_add [Finite κ] [MeasurableSpace κ]
-    [MeasurableSingletonClass κ]
+with replacement, respectively.  The inequality also holds when the set of injective maps is empty
+or infinite, in which case its `uniformOn` measure is zero; this includes infinite index or
+codomain types. -/
+theorem uniformOn_injective_le_add [MeasurableSpace κ] [MeasurableSingletonClass κ]
     (A : Set (ι → κ)) :
     uniformOn {x : ι → κ | Function.Injective x} A ≤
       uniformOn Set.univ A + uniformOn Set.univ {x : ι → κ | ¬Function.Injective x} := by
-  rcases finite_or_infinite ι with hι | hι
-  · simpa only [Set.univ_inter, Set.compl_ofPred] using
+  by_cases h0 : uniformOn {x : ι → κ | Function.Injective x} A = 0
+  · simp [h0]
+  · obtain ⟨f, hf⟩ : {x : ι → κ | Function.Injective x}.Nonempty :=
+      Set.nonempty_iff_ne_empty.2 fun h ↦ h0 (by simp [h])
+    have hS := finite_of_uniformOn_ne_zero h0
+    have : Finite ι ∧ Finite (ι → κ) := by
+      rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
+      · exact ⟨inferInstance, inferInstance⟩
+      · classical
+        have := hS.to_subtype
+        have hκ : Finite κ := Finite.of_injective
+          (fun y ↦ (⟨Equiv.swap (f i₀) y ∘ f, (Equiv.injective _).comp hf⟩ :
+            ↑{x : ι → κ | Function.Injective x}))
+          fun y z h ↦ by simpa using congrFun (congrArg Subtype.val h) i₀
+        have := Finite.of_injective f hf
+        exact ⟨inferInstance, inferInstance⟩
+    obtain ⟨hι, hfin⟩ := this
+    simpa only [Set.univ_inter, Set.compl_ofPred] using
       uniformOn_inter_le_add_compl {x : ι → κ | Function.Injective x} A Set.finite_univ
-  · have : {x : ι → κ | Function.Injective x} = ∅ :=
-      Set.eq_empty_of_forall_notMem fun f hf ↦ not_injective_infinite_finite f hf
-    rw [this, uniformOn_empty_meas]
-    exact zero_le
 
 /-- The uniform measure on all maps differs from the uniform measure on injective maps only on the
 collision event: for every event `A`, the former is at most the latter plus the collision measure.
 
 When an injective map `ι → κ` exists, these are the probabilities for uniform sampling with and
 without replacement, respectively.  The inequality also holds when the set of injective maps is
-empty, in which case its `uniformOn` measure is zero. -/
-theorem uniformOn_univ_le_injective_add [Finite ι] [Finite κ] [MeasurableSpace κ]
+empty, in which case its `uniformOn` measure is zero; this includes an infinite index type `ι`,
+where `Set.univ` is a collision-only event. -/
+theorem uniformOn_univ_le_injective_add [Finite κ] [MeasurableSpace κ]
     [MeasurableSingletonClass κ]
     (A : Set (ι → κ)) :
     uniformOn Set.univ A ≤ uniformOn {x : ι → κ | Function.Injective x} A +
       uniformOn Set.univ {x : ι → κ | ¬Function.Injective x} := by
-  simpa only [Set.univ_inter, Set.compl_ofPred] using
-    uniformOn_le_inter_add_compl {x : ι → κ | Function.Injective x} A Set.finite_univ
+  rcases finite_or_infinite ι with hι | hι
+  · simpa only [Set.univ_inter, Set.compl_ofPred] using
+      uniformOn_le_inter_add_compl {x : ι → κ | Function.Injective x} A Set.finite_univ
+  · exact le_add_left (measure_mono fun f _ ↦ not_injective_infinite_finite f)
 
 variable [Fintype ι] [Fintype κ]
 
