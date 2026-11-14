@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import TauCeti.Probability.Moments.Pi
-import Mathlib.MeasureTheory.Integral.Gamma
+import TauCeti.MeasureTheory.Integral.Gamma
 
 /-!
 # Moments of the real Gaussian distribution
@@ -56,28 +56,6 @@ theorem integrable_abs_add_abs_gaussianReal (μ₁ μ₂ : ℝ) (v₁ v₂ : ℝ
     h₁.aestronglyMeasurable |>.2 h₁).add
       ((measurePreserving_snd (μ := gaussianReal μ₁ v₁) (ν := gaussianReal μ₂ v₂)).integrable_comp
         h₂.aestronglyMeasurable |>.2 h₂)
-
-private lemma integral_abs_pow_mul_exp_neg_mul_sq (n : ℕ) {b : ℝ} (hb : 0 < b) :
-    ∫ x : ℝ, |x| ^ n * exp (-b * x ^ 2) =
-      b ^ (-((n : ℝ) + 1) / 2) * Gamma (((n : ℝ) + 1) / 2) := by
-  calc
-    _ = ∫ x : ℝ, (fun y : ℝ ↦ y ^ (n : ℝ) * exp (-b * y ^ 2)) |x| := by
-      congr with x
-      simp only [Real.rpow_natCast, sq_abs]
-    _ = 2 * ∫ x : ℝ in Ioi 0, x ^ (n : ℝ) * exp (-b * x ^ 2) :=
-      integral_comp_abs (f := fun y : ℝ ↦ y ^ (n : ℝ) * exp (-b * y ^ 2))
-    _ = _ := by
-      have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := (n : ℝ)) (b := b)
-        (hp := two_pos) (hq := lt_of_lt_of_le (by norm_num) (Nat.cast_nonneg n)) (hb := hb)
-      have h' : ∫ x : ℝ in Ioi 0, x ^ (n : ℝ) * exp (-b * x ^ 2) =
-          b ^ (-((n : ℝ) + 1) / 2) * (1 / 2) * Gamma (((n : ℝ) + 1) / 2) := by
-        rw [← h]
-        refine setIntegral_congr_fun measurableSet_Ioi fun x _ ↦ ?_
-        rw [Real.rpow_two]
-      calc
-        _ = 2 * (b ^ (-((n : ℝ) + 1) / 2) * (1 / 2) *
-            Gamma (((n : ℝ) + 1) / 2)) := congrArg (2 * ·) h'
-        _ = _ := by ring
 
 private lemma gaussian_absolute_moment_algebra (n : ℕ) {v : ℝ} (hv : 0 < v) :
     (√(2 * π * v))⁻¹ *
@@ -132,7 +110,10 @@ theorem integral_abs_sub_pow_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
       ring
     _ = (√(2 * π * (v : ℝ)))⁻¹ *
         ((2 * (v : ℝ))⁻¹ ^ (-((n : ℝ) + 1) / 2) * Gamma (((n : ℝ) + 1) / 2)) := by
-      rw [integral_abs_pow_mul_exp_neg_mul_sq n (inv_pos.mpr (mul_pos two_pos hv'))]
+      have h := integral_abs_rpow_mul_exp_neg_mul_sq (q := (n : ℝ))
+        (lt_of_lt_of_le (by norm_num) (Nat.cast_nonneg n)) (inv_pos.mpr (mul_pos two_pos hv'))
+      simp only [Real.rpow_natCast] at h
+      rw [h]
     _ = _ := gaussian_absolute_moment_algebra n hv'
 
 /-- The mean of the absolute value of a centered real Gaussian, the half-normal mean:

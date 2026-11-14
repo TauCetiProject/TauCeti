@@ -23,6 +23,7 @@ comparable to `x ^ q` near the origin, which is not integrable there.
 
 These integrals normalize the generalized normal (exponential power) densities
 `exp (-|x| ^ p)` and compute all of their absolute moments.
+The scaled case `exp (-b * |x| ^ p)` is also evaluated for `b > 0`.
 -/
 
 public section
@@ -58,5 +59,36 @@ theorem integral_abs_rpow_mul_exp_neg_abs_rpow {p q : ℝ} (hp : 0 < p) (hq : -1
   rw [integral_comp_abs (f := fun x : ℝ => x ^ q * Real.exp (-x ^ p)),
     integral_rpow_mul_exp_neg_rpow hp hq]
   ring
+
+/-- The two-sided Gamma integrand with a scaled exponential is integrable. -/
+theorem integrable_abs_rpow_mul_exp_neg_mul_abs_rpow {p q b : ℝ}
+    (hp : 0 < p) (hq : -1 < q) (hb : 0 < b) :
+    Integrable (fun x : ℝ => |x| ^ q * Real.exp (-b * |x| ^ p)) :=
+  MeasureTheory.integrable_comp_abs
+    (f := fun x : ℝ => x ^ q * Real.exp (-b * x ^ p))
+    (integrableOn_rpow_mul_exp_neg_mul_rpow hq hp hb)
+
+/-- The scaled two-sided Gamma integral. -/
+theorem integral_abs_rpow_mul_exp_neg_mul_abs_rpow {p q b : ℝ}
+    (hp : 0 < p) (hq : -1 < q) (hb : 0 < b) :
+    ∫ x : ℝ, |x| ^ q * Real.exp (-b * |x| ^ p) =
+      2 / p * b ^ (-(q + 1) / p) * Real.Gamma ((q + 1) / p) := by
+  rw [integral_comp_abs (f := fun x : ℝ => x ^ q * Real.exp (-b * x ^ p)),
+    integral_rpow_mul_exp_neg_mul_rpow hp hq hb]
+  ring
+
+/-- The two-sided Gamma integrand with a scaled Gaussian exponential is integrable. -/
+theorem integrable_abs_rpow_mul_exp_neg_mul_sq {q b : ℝ} (hq : -1 < q) (hb : 0 < b) :
+    Integrable (fun x : ℝ => |x| ^ q * Real.exp (-b * x ^ 2)) := by
+  have h := integrable_abs_rpow_mul_exp_neg_mul_abs_rpow (p := 2) two_pos hq hb
+  simpa only [Real.rpow_two, sq_abs] using h
+
+/-- The two-sided Gamma integral with a scaled Gaussian exponential. -/
+theorem integral_abs_rpow_mul_exp_neg_mul_sq {q b : ℝ} (hq : -1 < q) (hb : 0 < b) :
+    ∫ x : ℝ, |x| ^ q * Real.exp (-b * x ^ 2) =
+      b ^ (-(q + 1) / 2) * Real.Gamma ((q + 1) / 2) := by
+  have h := integral_abs_rpow_mul_exp_neg_mul_abs_rpow (p := 2) two_pos hq hb
+  simpa only [Real.rpow_two, sq_abs, div_self (by norm_num : (2 : ℝ) ≠ 0),
+    one_mul] using h
 
 end TauCeti
