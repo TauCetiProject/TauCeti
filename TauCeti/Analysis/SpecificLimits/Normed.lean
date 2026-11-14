@@ -88,22 +88,35 @@ theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] 
     filter_upwards [Filter.eventually_ge_atTop 2] with n hn
     simpa [add_tsub_cancel_of_le (hj2.trans hn)] using hzero j hj (n - j)
 
-variable {K : Type*} [NormedField K]
-
 /-- The geometric series with coefficients `(k + 1)²` sums to `(1 + x) / (1 - x)³`. -/
-theorem hasSum_succ_sq_mul_geometric_of_norm_lt_one {x : K} (hx : ‖x‖ < 1) :
+theorem hasSum_succ_sq_mul_geometric_of_norm_lt_one {K : Type*} [NormedDivisionRing K]
+    {x : K} (hx : ‖x‖ < 1) :
     HasSum (fun k : ℕ ↦ ((k : K) + 1) ^ 2 * x ^ k) ((1 + x) / (1 - x) ^ 3) := by
   have H := ((hasSum_sq_mul_geometric_of_norm_lt_one hx).add
     ((hasSum_coe_mul_geometric_of_norm_lt_one hx).mul_left 2)).add
     (hasSum_geometric_of_norm_lt_one hx)
+  have hne : 1 - x ≠ 0 := sub_ne_zero.mpr (fun h ↦ by
+    have : x = 1 := h.symm
+    simp only [this, norm_one, lt_self_iff_false] at hx)
+  let u := (1 - x)⁻¹
+  have hsq : u ^ 2 = (1 - x) * u ^ 3 := by
+    rw [pow_succ' u 2, ← mul_assoc, mul_inv_cancel₀ hne, one_mul]
+  have hlin : u = (1 - x) ^ 2 * u ^ 3 := by
+    calc
+      u = (1 - x) * u ^ 2 := by
+        rw [pow_two, ← mul_assoc, mul_inv_cancel₀ hne, one_mul]
+      _ = (1 - x) ^ 2 * u ^ 3 := by rw [hsq, ← mul_assoc, pow_two]
+  have hid : x * (1 + x) * u ^ 3 + 2 * (x * u ^ 2) + u = (1 + x) * u ^ 3 := by
+    calc
+      _ = x * (1 + x) * u ^ 3 + 2 * (x * ((1 - x) * u ^ 3)) +
+          (1 - x) ^ 2 * u ^ 3 := by rw [← hsq, ← hlin]
+      _ = _ := by noncomm_ring
   convert H using 1
   · ext k
-    ring
-  · have hne : 1 - x ≠ 0 := sub_ne_zero.mpr (fun h ↦ by
-      have : x = 1 := h.symm
-      simp only [this, norm_one, lt_self_iff_false] at hx)
-    field_simp
-    ring
+    noncomm_ring
+  · simpa only [u, div_eq_mul_inv, inv_pow] using hid.symm
+
+variable {K : Type*} [NormedField K]
 
 /-- The geometric series with coefficient and exponent both shifted by one. -/
 theorem tsum_natCast_succ_mul_pow_succ (r : K) (hr : ‖r‖ < 1) :

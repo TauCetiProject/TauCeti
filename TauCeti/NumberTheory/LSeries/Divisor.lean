@@ -54,11 +54,13 @@ private theorem divisor_sq_summable {s : ℂ} (hs : 1 < s.re) :
       congr 2
       ring
 
-private theorem divisor_sq_local {s : ℂ} (hs : 1 < s.re) (p : Nat.Primes) :
+private theorem divisor_sq_local {s : ℂ} (hs : 0 < s.re) (p : Nat.Primes) :
     (∑' k : ℕ, _root_.LSeries.term (fun n : ℕ ↦ (n.divisors.card : ℂ) ^ 2) s
       (p.val ^ k)) = (1 + (p : ℂ) ^ (-s)) / (1 - (p : ℂ) ^ (-s)) ^ 3 := by
-  have hx : ‖(p : ℂ) ^ (-s)‖ < 1 :=
-    (Complex.norm_prime_cpow_le_one_half p hs).trans_lt (by norm_num)
+  have hx : ‖(p : ℂ) ^ (-s)‖ < 1 := by
+    rw [Complex.norm_natCast_cpow_of_pos p.prop.pos, Complex.neg_re]
+    exact Real.rpow_lt_one_of_one_lt_of_neg (by exact_mod_cast p.prop.one_lt)
+      (neg_neg_of_pos hs)
   have hterm (k : ℕ) :
       _root_.LSeries.term (fun n : ℕ ↦ (n.divisors.card : ℂ) ^ 2) s (p.val ^ k) =
         ((k : ℂ) + 1) ^ 2 * ((p : ℂ) ^ (-s)) ^ k := by
@@ -90,7 +92,7 @@ theorem LSeriesHasSum_card_divisors_sq {s : ℂ} (hs : 1 < s.re) :
   have hfactor (p : Nat.Primes) :
       (1 - (p : ℂ) ^ (-(2 * s)))⁻¹ * (∑' k : ℕ, _root_.LSeries.term a s (p.val ^ k)) =
         ((1 - (p : ℂ) ^ (-s))⁻¹) ^ 4 := by
-    rw [divisor_sq_local hs]
+    rw [divisor_sq_local (zero_lt_one.trans hs)]
     have hexp : (p : ℂ) ^ (-(2 * s)) = ((p : ℂ) ^ (-s)) ^ 2 := by
       have hneg : -(2 * s) = -s + -s := by ring
       rw [hneg, Complex.cpow_add _ _ (Nat.cast_ne_zero.mpr p.prop.ne_zero), pow_two]
