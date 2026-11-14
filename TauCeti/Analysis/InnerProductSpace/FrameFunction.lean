@@ -6,7 +6,7 @@ Authors: Bryan Ehrlich
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Trace
-public import Mathlib.Analysis.InnerProductSpace.Positive
+public import TauCeti.Analysis.Matrix.EuclideanLin
 
 /-!
 # Finite-dimensional frame functions
@@ -15,6 +15,9 @@ A frame function is real-valued on the unit sphere and has a prescribed sum over
 orthonormal bases. Hermitian quadratic forms supply examples, with weight their trace,
 and are determined by their values on the sphere. The zero- and one-dimensional cases
 and nonnegative functions of weight zero need no Gleason theorem.
+
+The quadratic construction uses `LinearMap.trace_eq_sum_inner`; its diagonal example
+uses `Matrix.re_inner_toEuclideanLin_diagonal_apply_self`.
 
 ## References
 
@@ -43,6 +46,12 @@ theorem isFrameFunction_iff [FiniteDimensional ℂ E] (f : {v : E // ‖v‖ = 1
         ∑ i, f ⟨b i, b.norm_eq_one i⟩ = w :=
   ⟨And.right, fun h => ⟨inferInstance, h⟩⟩
 
+/-- Constant functions have weight the dimension times their value. -/
+theorem isFrameFunction_const [FiniteDimensional ℂ E] (c : ℝ) :
+    IsFrameFunction (fun _ : {v : E // ‖v‖ = 1} => c) (Module.finrank ℂ E * c) := by
+  refine ⟨inferInstance, fun b => ?_⟩
+  simp
+
 namespace IsFrameFunction
 
 variable {f : {v : E // ‖v‖ = 1} → ℝ} {w : ℝ}
@@ -59,6 +68,18 @@ theorem sum_eq (hf : IsFrameFunction f w) {ι : Type*} [Fintype ι]
         ∑ j, f ⟨(b.reindex e) j, (b.reindex e).norm_eq_one j⟩ :=
       Fintype.sum_equiv e _ _ (fun i => by simp [OrthonormalBasis.reindex_apply])
     _ = w := hf.2 (b.reindex e)
+
+/-- Adding frame functions adds their weights. -/
+theorem add (hf : IsFrameFunction f w) {g : {v : E // ‖v‖ = 1} → ℝ} {w' : ℝ}
+    (hg : IsFrameFunction g w') : IsFrameFunction (f + g) (w + w') := by
+  refine ⟨hf.finiteDimensional, fun b => ?_⟩
+  simp only [Pi.add_apply, Finset.sum_add_distrib, hf.2 b, hg.2 b]
+
+/-- Multiplying a frame function by a real scalar multiplies its weight. -/
+theorem smul (hf : IsFrameFunction f w) (c : ℝ) :
+    IsFrameFunction (c • f) (c * w) := by
+  refine ⟨hf.finiteDimensional, fun b => ?_⟩
+  simp only [Pi.smul_apply, smul_eq_mul, ← Finset.mul_sum, hf.2 b]
 
 /-- The weight is determined by the function. -/
 theorem weight_unique (hf : IsFrameFunction f w) {w' : ℝ}
@@ -121,7 +142,7 @@ theorem _root_.LinearMap.quadraticFrameFunction_apply (T : E →ₗ[ℂ] E)
     (v : {v : E // ‖v‖ = 1}) :
     T.quadraticFrameFunction v = RCLike.re ⟪v.val, T v.val⟫_ℂ := (rfl)
 
-open LinearMap (quadraticFrameFunction)
+open _root_.LinearMap (quadraticFrameFunction)
 
 /-- The real quadratic function has weight the real part of the trace.
 For Hermitian operators the inner product and trace are real. -/
@@ -131,15 +152,7 @@ theorem _root_.LinearMap.isFrameFunction_quadratic [FiniteDimensional ℂ E] (T 
   simpa [quadraticFrameFunction, map_sum] using
     congrArg Complex.re (T.trace_eq_sum_inner b).symm
 
-open LinearMap (isFrameFunction_quadratic)
-
-/-- For a Hermitian operator the real-valued quadratic function is the full inner product. -/
-theorem _root_.LinearMap.IsSymmetric.coe_quadraticFrameFunction {T : E →ₗ[ℂ] E} (hT : T.IsSymmetric)
-    (v : {v : E // ‖v‖ = 1}) :
-    (quadraticFrameFunction T v : ℂ) = ⟪v.val, T v.val⟫_ℂ := by
-  apply Complex.ext
-  · rfl
-  · exact (hT.im_inner_self_apply v.val).symm
+open _root_.LinearMap (isFrameFunction_quadratic)
 
 /-- A Hermitian operator is uniquely determined by its quadratic function on unit vectors. -/
 theorem _root_.LinearMap.IsSymmetric.ext_quadraticFrameFunction {S T : E →ₗ[ℂ] E}
@@ -152,8 +165,10 @@ theorem _root_.LinearMap.IsSymmetric.ext_quadraticFrameFunction {S T : E →ₗ[
   let a : ℂ := (‖x‖ : ℂ)⁻¹
   have ha : a ≠ 0 := by simp [a, hx]
   have hv : ‖a • x‖ = 1 := by simp [a, norm_smul, hx]
-  have hs := hS.coe_quadraticFrameFunction ⟨a • x, hv⟩
-  have ht := hT.coe_quadraticFrameFunction ⟨a • x, hv⟩
+  have hs : (quadraticFrameFunction S ⟨a • x, hv⟩ : ℂ) = ⟪a • x, S (a • x)⟫_ℂ := by
+    simpa [quadraticFrameFunction] using hS.coe_re_inner_self_apply (a • x)
+  have ht : (quadraticFrameFunction T ⟨a • x, hv⟩ : ℂ) = ⟪a • x, T (a • x)⟫_ℂ := by
+    simpa [quadraticFrameFunction] using hT.coe_re_inner_self_apply (a • x)
   have he : ⟪a • x, S (a • x)⟫_ℂ = ⟪a • x, T (a • x)⟫_ℂ := by
     rw [← hs, ← ht, h]
   simp only [map_smul, inner_smul_left, inner_smul_right] at he
@@ -169,15 +184,6 @@ theorem IsFrameFunction.operator_eq_zero {T : E →ₗ[ℂ] E}
   rw [hf.eq_zero_of_nonneg hn]
   funext v
   simp [quadraticFrameFunction]
-
-omit [NormedAddCommGroup E] [InnerProductSpace ℂ E] in
-/-- Positive semidefinite matrices give nonnegative quadratic frame functions. -/
-theorem _root_.Matrix.PosSemidef.quadraticFrameFunction_nonneg {ι : Type*}
-    [Fintype ι] [DecidableEq ι]
-    {A : Matrix ι ι ℂ} (hA : A.PosSemidef)
-    (v : {v : EuclideanSpace ℂ ι // ‖v‖ = 1}) :
-    0 ≤ quadraticFrameFunction A.toEuclideanLin v :=
-  (Matrix.isPositive_toEuclideanLin_iff.mpr hA).re_inner_nonneg_right v.val
 
 /-- In dimension one a frame function is induced by multiplication by its weight. -/
 theorem IsFrameFunction.eq_quadratic_of_finrank_one
@@ -200,7 +206,7 @@ theorem IsFrameFunction.trace_eq {T : E →ₗ[ℂ] E} {w : ℝ}
   calc
     ∑ i, ⟪b i, T (b i)⟫_ℂ = ∑ i, (quadraticFrameFunction T ⟨b i, b.norm_eq_one i⟩ : ℂ) :=
       Finset.sum_congr rfl fun i _ =>
-        (hT.coe_quadraticFrameFunction ⟨b i, b.norm_eq_one i⟩).symm
+        (hT.coe_re_inner_self_apply (b i)).symm
     _ = (w : ℂ) := by exact_mod_cast hf.2 b
 
 /-- In dimension one the frame condition says exactly that the function is constant. -/
@@ -213,36 +219,6 @@ theorem isFrameFunction_iff_of_finrank_one [FiniteDimensional ℂ E]
   simp [hd]
 
 omit [NormedAddCommGroup E] [InnerProductSpace ℂ E] in
-/-- The unnormalized weight-three frame function on complex three-space. -/
-theorem isFrameFunction_weight_three :
-    IsFrameFunction (fun v : {v : EuclideanSpace ℂ (Fin 3) // ‖v‖ = 1} =>
-      2 * ‖v.val 0‖ ^ 2 + ‖v.val 1‖ ^ 2) 3 := by
-  apply (isFrameFunction_iff _ _).mpr
-  intro b
-  have h0 := b.sum_sq_norm_inner_left (EuclideanSpace.single 0 (1 : ℂ))
-  have h1 := b.sum_sq_norm_inner_left (EuclideanSpace.single 1 (1 : ℂ))
-  simp only [EuclideanSpace.inner_single_left, map_one, one_mul] at h0 h1
-  norm_num at h0 h1
-  simp only [Finset.sum_add_distrib, ← Finset.mul_sum]
-  linarith
-
-omit [NormedAddCommGroup E] [InnerProductSpace ℂ E] in
-/-- The quadratic function of a real diagonal matrix is the weighted sum of coordinate norms. -/
-theorem _root_.Matrix.quadraticFrameFunction_diagonal {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (d : ι → ℝ) (v : {v : EuclideanSpace ℂ ι // ‖v‖ = 1}) :
-    quadraticFrameFunction (Matrix.diagonal (fun i => (d i : ℂ))).toEuclideanLin v =
-      ∑ i, d i * ‖v.val i‖ ^ 2 := by
-  simp only [quadraticFrameFunction, EuclideanSpace.inner_eq_star_dotProduct,
-    Matrix.ofLp_toLpLin, Matrix.toLin'_apply, Matrix.mulVec_diagonal,
-    dotProduct, map_sum, Pi.star_apply]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  have h : (d i : ℂ) * v.val i * star (v.val i) =
-      (d i : ℂ) * (star (v.val i) * v.val i) := by ring
-  rw [h, ← starRingEnd_apply, ← Complex.normSq_eq_conj_mul_self]
-  simp only [Complex.normSq_eq_norm_sq]
-  norm_cast
-
-omit [NormedAddCommGroup E] [InnerProductSpace ℂ E] in
 /-- The weight-three function is induced by the Hermitian matrix `diag(2, 1, 0)`. -/
 theorem quadraticFrameFunction_diagonal_two_one_zero
     (v : {v : EuclideanSpace ℂ (Fin 3) // ‖v‖ = 1}) :
@@ -251,8 +227,9 @@ theorem quadraticFrameFunction_diagonal_two_one_zero
   have hd : (fun i : Fin 3 => ((![2, 1, 0] : Fin 3 → ℝ) i : ℂ)) = ![2, 1, 0] := by
     funext i
     fin_cases i <;> norm_num
-  simpa [hd, Fin.sum_univ_succ] using
-    Matrix.quadraticFrameFunction_diagonal (![2, 1, 0] : Fin 3 → ℝ) v
+  simpa [quadraticFrameFunction, hd, Fin.sum_univ_succ, inner_re_symm, mul_comm] using
+    Matrix.re_inner_toEuclideanLin_diagonal_apply_self
+      (![2, 1, 0] : Fin 3 → ℝ) v.val
 
 omit [NormedAddCommGroup E] [InnerProductSpace ℂ E] in
 /-- The matrix inducing the weight-three example is positive semidefinite. -/
@@ -267,11 +244,16 @@ omit [NormedAddCommGroup E] [InnerProductSpace ℂ E] in
 theorem trace_diagonal_two_one_zero :
     (Matrix.diagonal (![2, 1, 0] : Fin 3 → ℂ)).toEuclideanLin.trace
       ℂ (EuclideanSpace ℂ (Fin 3)) = 3 := by
-  have hf : IsFrameFunction
-      (quadraticFrameFunction (Matrix.diagonal (![2, 1, 0] : Fin 3 → ℂ)).toEuclideanLin) 3 := by
-    simpa only [IsFrameFunction, quadraticFrameFunction_diagonal_two_one_zero] using
-      isFrameFunction_weight_three
-  exact hf.trace_eq (Matrix.isPositive_toEuclideanLin_iff.mpr
-    diagonal_two_one_zero_posSemidef).isSymmetric
+  norm_num [Matrix.toEuclideanLin_eq_toLin_orthonormal, Matrix.trace_diagonal,
+    Fin.sum_univ_succ]
+
+omit [NormedAddCommGroup E] [InnerProductSpace ℂ E] in
+/-- The unnormalized weight-three frame function on complex three-space. -/
+theorem isFrameFunction_weight_three :
+    IsFrameFunction (fun v : {v : EuclideanSpace ℂ (Fin 3) // ‖v‖ = 1} =>
+      2 * ‖v.val 0‖ ^ 2 + ‖v.val 1‖ ^ 2) 3 := by
+  simpa only [isFrameFunction_iff, trace_diagonal_two_one_zero, Complex.re_ofNat,
+    quadraticFrameFunction_diagonal_two_one_zero] using
+    isFrameFunction_quadratic (Matrix.diagonal (![2, 1, 0] : Fin 3 → ℂ)).toEuclideanLin
 
 end TauCeti
