@@ -216,7 +216,7 @@ theorem ordinaryJetEval_eq_comp_jetEval {s : Set (σ →₀ ℕ)} {a : ι → σ
         DistribMulAction.toLinearEquiv R R (hk i).unit).toLinearMap ∘ₗ
         jetEval s a (fun i ↦ single (v i) (k i)) := by
   ext f i
-  exact ordinaryJetEval_apply_eq_factorial_mul s a v k f i
+  simpa using ordinaryJetEval_apply_eq_factorial_mul s a v k f i
 
 /-- When every `(k i)!` is a unit in `R`, the ordinary and Hasse jet evaluation maps have the same
 kernel. -/
@@ -242,8 +242,8 @@ noncomputable def rangeOrdinaryJetEvalEquiv {s : Set (σ →₀ ℕ)} {a : ι �
 theorem coe_rangeOrdinaryJetEvalEquiv_apply {s : Set (σ →₀ ℕ)} {a : ι → σ → R} {v : ι → σ}
     {k : ι → ℕ} (hk : ∀ i, IsUnit ((k i).factorial : R))
     (x : LinearMap.range (jetEval s a fun i ↦ single (v i) (k i))) (i : ι) :
-    (rangeOrdinaryJetEvalEquiv hk x : ι → R) i = ((k i).factorial : R) * (x : ι → R) i :=
-  (rfl)
+    (rangeOrdinaryJetEvalEquiv hk x : ι → R) i = ((k i).factorial : R) * (x : ι → R) i := by
+  simp [rangeOrdinaryJetEvalEquiv]
 
 /-- When every `(k i)!` is a unit in `R`, the ordinary and Hasse jet evaluation maps have the same
 rank. -/
@@ -260,6 +260,18 @@ theorem finrank_range_ordinaryJetEval {s : Set (σ →₀ ℕ)} {a : ι → σ �
     Module.finrank R (LinearMap.range (ordinaryJetEval s a v k)) =
       Module.finrank R (LinearMap.range (jetEval s a fun i ↦ single (v i) (k i))) :=
   (rangeOrdinaryJetEvalEquiv hk).symm.finrank_eq
+
+/-- When every `(k i)!` is a unit in `R`, the matrix of the ordinary jet map has the same rank as
+the Hasse jet matrix along `k i • eᵥ₍ᵢ₎`. -/
+theorem rank_toMatrix_ordinaryJetEval {s : Set (σ →₀ ℕ)} {a : ι → σ → R} {v : ι → σ} {k : ι → ℕ}
+    [Fintype s] [Finite ι] [DecidableEq s] (hk : ∀ i, IsUnit ((k i).factorial : R)) :
+    (LinearMap.toMatrix (basisRestrictSupport R s) (Pi.basisFun R ι)
+      (ordinaryJetEval s a v k)).rank =
+      (jetMatrix s a fun i ↦ single (v i) (k i)).rank := by
+  rw [← toMatrix_jetEval,
+    Matrix.rank_eq_finrank_range_toLin _ (Pi.basisFun R ι) (basisRestrictSupport R s),
+    Matrix.rank_eq_finrank_range_toLin _ (Pi.basisFun R ι) (basisRestrictSupport R s),
+    Matrix.toLin_toMatrix, Matrix.toLin_toMatrix, finrank_range_ordinaryJetEval hk]
 
 end Ordinary
 
@@ -284,26 +296,9 @@ end Box
 
 end CommSemiring
 
-section OrdinaryCommRing
-
-variable {σ R ι : Type*} [CommRing R]
-
-/-- Over a commutative ring, when every `(k i)!` is a unit, the matrix of the ordinary jet map has
-the same rank as the Hasse jet matrix along `k i • eᵥ₍ᵢ₎`. -/
-theorem rank_toMatrix_ordinaryJetEval {s : Set (σ →₀ ℕ)} {a : ι → σ → R} {v : ι → σ} {k : ι → ℕ}
-    [Fintype s] [Finite ι] [DecidableEq s] (hk : ∀ i, IsUnit ((k i).factorial : R)) :
-    (LinearMap.toMatrix (basisRestrictSupport R s) (Pi.basisFun R ι)
-      (ordinaryJetEval s a v k)).rank =
-      (jetMatrix s a fun i ↦ single (v i) (k i)).rank := by
-  classical
-  cases nonempty_fintype ι
-  rw [toMatrix_ordinaryJetEval_eq_diagonal_mul,
-    Matrix.rank_mul_eq_right_of_isUnit_det _ _
-      (by rw [Matrix.det_diagonal]; exact IsUnit.prod_univ_iff.2 hk)]
-
 section CharP
 
-variable {p : ℕ} [Fact p.Prime] [CharP R p]
+variable {σ R ι : Type*} [CommRing R] {p : ℕ} [Fact p.Prime] [CharP R p]
 
 /-- In prime characteristic `p`, when every jet order satisfies `k i < p`, the ordinary and Hasse
 jet evaluation maps have the same kernel. -/
@@ -339,8 +334,6 @@ theorem rank_toMatrix_ordinaryJetEval_of_lt_char {s : Set (σ →₀ ℕ)} {a : 
   rank_toMatrix_ordinaryJetEval fun i ↦ (IsUnit.natCast_factorial_iff_of_charP p).2 (hk i)
 
 end CharP
-
-end OrdinaryCommRing
 
 /-! ### Examples -/
 
