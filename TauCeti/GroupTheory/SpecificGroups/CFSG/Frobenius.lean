@@ -57,15 +57,6 @@ branch, which is why it is defined for every valid index and not only for the un
 * `TauCeti.ValidLieTypeIndex.exists_iterate_frobeniusEquiv_eq`: every element of the closure is
   fixed by some positive iterate.
 
-## Roadmap
-
-This is the field-level half of `Frob_q` in milestone L1 of
-`TauCetiRoadmap/CFSGStatement/README.md`, which sets "`Frob_q` the endomorphism induced on points
-by `x ↦ x ^ d.fieldOrder` on the algebraic closure". The endomorphism of points that L1 asks for
-is induced by this map once milestone L0 supplies the ambient pinned group, which waits on Layer 9
-of `TauCetiRoadmap/ReductiveGroups/README.md`; the map being induced from is this one. The
-`fieldExponent` data it uses belongs to the numbered conventions of milestone I0.
-
 ## References
 
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.

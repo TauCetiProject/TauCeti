@@ -56,6 +56,7 @@ All in the namespace `TauCeti.AlgebraicGeometry`:
 * `height_eq_toNat_trdeg_residueField`: the height of `x` is `trdeg_k κ(x)`.
 * `height_apply_eq_height_of_residueDegree_ne_zero`: a morphism over `k` preserves the height of
   a point with finite residue field extension.
+* `height_apply_of_isOpenImmersion`: an open immersion over `k` preserves the height of points.
 
 ## References
 
@@ -230,6 +231,14 @@ theorem height_apply_eq_height_of_residueDegree_ne_zero {Y : Scheme.{u}} [Y.Over
   rw [height_eq_toNat_trdeg_residueField k, height_eq_toNat_trdeg_residueField k,
     ← trdeg_add_eq k (Y.residueField (f x)) (A := X.residueField x),
     trdeg_eq_zero (R := Y.residueField (f x)), add_zero]
+
+/-- Over a field, an open immersion preserves the dimension of points: its residue degrees are
+one, so a point and its image have residue fields of the same transcendence degree over `k`. -/
+theorem height_apply_of_isOpenImmersion {U : Scheme.{u}} [U.Over (Spec (.of k))]
+    [LocallyOfFiniteType (U ↘ Spec (.of k))] (j : U ⟶ X) [IsOpenImmersion j]
+    [j.IsOver (Spec (.of k))] (u : U) : Order.height (j u) = Order.height u :=
+  height_apply_eq_height_of_residueDegree_ne_zero k j
+    (by rw [Scheme.Hom.residueDegree_eq_one_of_surjectiveOnStalks]; exact one_ne_zero)
 
 end AlgebraicGeometry
 

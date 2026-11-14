@@ -31,6 +31,9 @@ differential `b`.
 * `TauCeti.exists_isRepresentingChain`: every relative class is represented.
 * `TauCeti.IsRepresentingCycle.exists_isRepresentingChain`: a relative class is represented by a
   chain with a prescribed boundary.
+* `TauCeti.IsRepresentingChain.exists_cubicalChainDifferential_eq_sub_add`: when
+  `Hₙ(X) → Hₙ(X, A)` is injective, a cycle `a - a' + b` with `a`, `a'` representing the same
+  relative class and `b` a chain of `A` is a boundary.
 * `TauCeti.exists_forall_cubicalChainDifferential_eq_and_isRepresentingChain`: under the gluing
   condition, a family of chains with prescribed boundaries representing prescribed relative
   classes exists, when the prescribed boundary of each chain only depends on the chains of
@@ -146,6 +149,51 @@ theorem IsRepresentingCycle.exists_isRepresentingChain {n m : ℕ} (h : m + 1 = 
     (TopPair.ofSubset A).exists_boundary_eq_of_cubicalHomologyδ_eq k m μ z hz.symm
   exact ⟨_, ⟨c, rfl, (TopPair.isCubicalRepresentative_iff c μ).2 ⟨r, hr, hrμ⟩⟩,
     (cubicalChainDifferential_lof_succ X k m c).trans (congrArg _ hbd)⟩
+
+/-- **A cycle with vanishing relative class is a boundary** when the relative class determines
+the absolute one. Let `a` and `a'` represent the same class of `Hₙ(X, A)` and let `b` be an
+`n`-chain of `A`, pushed forward to `X`. If `a - a' + b` is a cycle of `X` and the map
+`Hₙ(X) → Hₙ(X, A)` is injective, then `a - a' + b` is the boundary of an `(n + 1)`-chain of `X`.
+The relative class of the cycle is that of `a - a'`, which vanishes. The injectivity holds for
+instance when `Hₙ(A) = 0`, as for a compact `n`-manifold `X` with boundary `A`. -/
+theorem IsRepresentingChain.exists_cubicalChainDifferential_eq_sub_add {n : ℕ}
+    {μ : ((TopPair.ofSubset A).cubicalChainComplex k).homology n}
+    {a a' : normalizedCubicalChainAlgebra X k} (ha : IsRepresentingChain a μ)
+    (ha' : IsRepresentingChain a' μ)
+    {b : normalizedCubicalChainAlgebra A k} (hb : b ∈ cubicalChainGrading A k (-(n : ℤ)))
+    (hc : cubicalChainDifferential X k
+      (a - a' + cubicalChainSumMap k (ContinuousMap.subtypeVal A) b) = 0)
+    (hinj : Function.Injective (HomologicalComplex.homologyMap
+      (cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset A).map)) n).hom) :
+    ∃ e : normalizedCubicalChainAlgebra X k, e ∈ cubicalChainGrading X k (-((n + 1 : ℕ) : ℤ)) ∧
+      cubicalChainDifferential X k e =
+        a - a' + cubicalChainSumMap k (ContinuousMap.subtypeVal A) b := by
+  obtain ⟨c, rfl, hcμ⟩ := ha
+  obtain ⟨r, hcr, rfl⟩ :=
+    (TopPair.isCubicalRepresentative_iff (P := TopPair.ofSubset A) c _).1 hcμ
+  obtain ⟨c', rfl, hcμ'⟩ := ha'
+  obtain ⟨r', hcr', hr'⟩ :=
+    (TopPair.isCubicalRepresentative_iff (P := TopPair.ofSubset A) c' _).1 hcμ'
+  obtain ⟨b, rfl⟩ : ∃ b₀ : NormalizedCubicalChain A k n, cubicalChainLof A k n b₀ = b := by
+    rcases (mem_cubicalChainGrading_iff _ k).1 hb with rfl | ⟨m, y, hm, rfl⟩
+    · exact ⟨0, map_zero _⟩
+    · obtain rfl : m = n := by omega
+      exact ⟨y, rfl⟩
+  rw [cubicalChainSumMap_lof, ← map_sub, ← map_add] at hc ⊢
+  -- The chain `c - c' + b` is a cycle of `X`.
+  have hd : ((normalizedCubicalChainComplex k).obj X).d n (n - 1)
+      (c - c' + NormalizedCubicalChain.map k (ContinuousMap.subtypeVal A) n b) = 0 := by
+    rcases n with _ | m
+    · rw [HomologicalComplex.shape _ 0 (0 - 1) (by simp)]
+      exact LinearMap.zero_apply _
+    · rw [cubicalChainDifferential_lof_succ] at hc
+      exact (normalizedCubicalChainComplex_obj_d_apply X m _).trans
+        (DirectSum.of_injective (β := fun i ↦ NormalizedCubicalChain X k i) m
+          (hc.trans (map_zero _).symm))
+  obtain ⟨y, hy⟩ := TopPair.exists_boundary_eq_sub_add_map_of_injective k (TopPair.ofSubset A) n
+    c c' b hd r r' hcr hcr' hr'.symm hinj
+  exact ⟨cubicalChainLof X k (n + 1) y, cubicalChainLof_mem X k y,
+    (cubicalChainDifferential_lof_succ X k n y).trans (congrArg (cubicalChainLof X k n) hy)⟩
 
 /-! ### Families of chains with prescribed boundaries -/
 
