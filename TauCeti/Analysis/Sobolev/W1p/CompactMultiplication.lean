@@ -138,7 +138,7 @@ theorem W1p.exists_isCompactOperator_value_smul_of_isLipschitzDomainWith {G : Ty
     ∃ M : W1p volume Ω q →L[ℝ] Lp G q (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))),
       (∀ u, M u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))]
         fun x => W1p.value u x • α x) ∧ IsCompactOperator M := by
-  obtain ⟨T, hT⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := q) hΩ hb
+  obtain ⟨T, hT, _⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := q) hΩ hb
   have hTV (u : W1p volume Ω q) :
       W1p.value (T u) =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))]
         W1p.valueL (mu := volume) u := by
