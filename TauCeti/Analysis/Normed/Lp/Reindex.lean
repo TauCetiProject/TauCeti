@@ -16,7 +16,9 @@ Let `f : ι → G` be a sequence in `ℓᵖ` and let `g : ι' → ι` be injecti
 sequence `s.indicator (f ∘ g)`, which reads `f` along `g` on `s` and vanishes off `s`, takes each
 value of `f` at most once, so it again lies in `ℓᵖ`, with no larger norm
 (`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). Shifts of a sequence indexed
-by `ℕ` are the basic examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`.
+by `ℕ` are the basic examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`. In
+particular a sequence indexed by `ℕ` lies in `ℓᵖ` exactly when its tail `j ↦ f (j + d)` does
+(`TauCeti.memℓp_nat_add_iff`).
 
 Consequently the **window sums** `j ↦ ∑_{j - L ≤ k < j + L} f k` of a sequence indexed by `ℕ`,
 a sum of `2 L` shifts, lie in `ℓᵖ`, and for `1 ≤ p` their norm is at most `2 L ‖f‖`
@@ -86,6 +88,29 @@ theorem lp.norm_le_of_forall_eq_indicator_comp (hp : p ≠ 0) {f : lp (fun _ : �
     simp_rw [h]
     exact (Finset.sum_apply_indicator_comp_eq_sum_image (h := fun x : G ↦ ‖x‖ ^ p.toReal)
       (by simp [Real.zero_rpow hp'.ne']) hg t).trans_le (lp.sum_rpow_le_norm_rpow hp' f _)
+
+namespace TauCeti
+
+/-- **Dropping the first terms.** A sequence indexed by `ℕ` lies in `ℓᵖ` exactly when its tail
+`j ↦ f (j + d)` does. -/
+theorem memℓp_nat_add_iff {f : ℕ → G} (d : ℕ) : Memℓp (fun j ↦ f (j + d)) p ↔ Memℓp f p := by
+  refine ⟨fun hf ↦ ?_, fun hf ↦ ?_⟩
+  · -- `f` is its first `d` terms plus its tail shifted back by `d`.
+    have h0 : Memℓp ({j | j < d}.indicator f) p :=
+      (memℓp_zero ((Set.finite_lt_nat d).subset fun j hj ↦
+        by_contra fun h ↦ hj (Set.indicator_of_notMem h _))).of_exponent_ge zero_le
+    have h1 := hf.indicator_comp (g := fun j ↦ j - d) (s := {j | d ≤ j})
+      fun a ha b hb h ↦ by simp only [Set.mem_ofPred_eq] at ha hb h; omega
+    convert h0.add h1 using 1
+    funext j
+    by_cases hj : j < d
+    · simp [hj]
+    · have hj' : d ≤ j := not_lt.1 hj
+      simp [hj, Set.indicator_of_mem (s := {j | d ≤ j}) hj', Nat.sub_add_cancel hj']
+  · simpa [Function.comp_def] using hf.indicator_comp (g := fun j ↦ j + d) (s := Set.univ)
+      fun a _ b _ h ↦ add_right_cancel h
+
+end TauCeti
 
 /-- **Window sums in `ℓᵖ`.** If `f ∈ ℓᵖ`, then so is `j ↦ ∑_{j - L ≤ k < j + L} f k`. -/
 theorem Memℓp.sum_Ico_sub_add {f : ℕ → G} (hf : Memℓp f p) (L : ℕ) :

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Compactness
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Action
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
