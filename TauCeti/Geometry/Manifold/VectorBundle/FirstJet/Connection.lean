@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trivial
 public import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
@@ -33,26 +34,45 @@ trivialization.
   covariant derivative over a set containing `x`, with
   `TauCeti.FirstJetBundle.covariantDerivative_jet`: it sends `j¹s(x)` to `∇s(x)`. Consequently
   `∇s(x)` depends only on the first jet of `s` at `x`
-  (`TauCeti.FirstJetBundle.covariantDerivative_eq_of_jet_eq`).
+  (`TauCeti.FirstJetBundle.covariantDerivative_eq_of_jet_eq`). Since every first jet is the first
+  jet of such a section, this property characterizes it
+  (`TauCeti.FirstJetBundle.eq_covariantDerivative_iff`). In coordinates it sends `(w, A)` to `A`
+  plus the covariant derivative of the section with constant coordinates `w`
+  (`TauCeti.FirstJetBundle.covariantDerivative_apply`).
 * `TauCeti.FirstJetBundle.covariantDerivative_comp_ofDeriv`: it is a left inverse of the inclusion
   `Hom(TₓM, Vₓ) → J¹Vₓ`, so it splits the first-jet sequence.
 * `TauCeti.FirstJetBundle.horizontalLift`: the corresponding right inverse `Vₓ → J¹Vₓ` of the
   projection, whose image is the kernel of the covariant derivative, and
   `TauCeti.FirstJetBundle.connectionEquiv`: the resulting isomorphism
-  `J¹Vₓ ≃ Vₓ × Hom(TₓM, Vₓ)`, `j ↦ (value j, ∇ j)`.
+  `J¹Vₓ ≃ Vₓ × Hom(TₓM, Vₓ)`, `j ↦ (value j, ∇ j)`, which sends `j¹s(x)` to `(s x, ∇s(x))`
+  (`TauCeti.FirstJetBundle.connectionEquiv_jet`). A first jet is a horizontal lift exactly when
+  its covariant derivative vanishes (`TauCeti.FirstJetBundle.eq_horizontalLift_iff`,
+  `TauCeti.FirstJetBundle.jet_eq_horizontalLift_iff`), and
+  `TauCeti.FirstJetBundle.horizontalLift_apply` gives the horizontal lift in coordinates.
 * `TauCeti.FirstJetBundle.covariantDerivative_add_one_form` and
   `TauCeti.FirstJetBundle.covariantDerivative_sub_covariantDerivative`: changing the covariant
   derivative by an endomorphism-valued one-form `A` changes the derivative coordinate of the
   splitting by `A` applied to the value coordinate; in particular two covariant derivatives give
-  splittings that differ by their difference tensor applied to the value.
+  splittings that differ by their difference tensor applied to the value. Correspondingly
+  `TauCeti.FirstJetBundle.horizontalLift_add_one_form` and
+  `TauCeti.FirstJetBundle.horizontalLift_sub_horizontalLift` change the horizontal lift of `v` by
+  minus the jet of `A x v`, respectively of the difference tensor applied to `v`.
+* `TauCeti.FirstJetBundle.connectionEquiv_trivial_jet` and
+  `TauCeti.FirstJetBundle.connectionEquiv_add_one_form_trivial_jet`: on a trivial bundle, the
+  canonical flat connection `d` and the connection `d + A` decompose the first jet of a section
+  `σ` as `(σ x, dσ(x))` and `(σ x, dσ(x) + A (σ x))`.
 
 For instance, on the trivial line bundle over `ℝ` the jet of the constant section `1` is sent to
-`0` by the flat derivative `d` and to `a` by `d + a dt`, while its value stays `1`.
+`0` by the flat derivative `d` and to `a` by `d + a dt`, while its value stays `1`
+(`TauCeti.FirstJetBundle.connectionEquiv_trivial_jet_const` and
+`TauCeti.FirstJetBundle.connectionEquiv_add_one_form_trivial_jet_const`).
 
 ## References
 
 * I. Kolář, P. W. Michor and J. Slovák, *Natural Operations in Differential Geometry*, §17
   (connections and first jets).
+* D. J. Saunders, *The Geometry of Jet Bundles*, London Math. Soc. Lecture Note Series 142,
+  Chapter 4.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 4 (locality of
   covariant derivatives and connections on trivial bundles).
 -/
@@ -67,6 +87,8 @@ open scoped Manifold Topology
 namespace TauCeti
 
 namespace FirstJetBundle
+
+section
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
@@ -142,8 +164,8 @@ def covariantDerivative (hcov : IsCovariantDerivativeOn F cov U) (x : M) :
 
 /-- The covariant derivative of a jet: its derivative coordinate read through the trivialization
 at `x`, plus the Christoffel form at `x` applied to its value. -/
-private theorem covariantDerivative_apply (hcov : IsCovariantDerivativeOn F cov U)
-    (j : FirstJetBundle I F V x) :
+private theorem covariantDerivative_eq_add_christoffelAt
+    (hcov : IsCovariantDerivativeOn F cov U) (j : FirstJetBundle I F V x) :
     covariantDerivative hcov x j =
       (((trivializationAt F V x).symmL 𝕜 x).comp j.2 : TangentSpace I x →L[𝕜] V x) +
         christoffelAt hcov x (value I F x j) :=
@@ -155,7 +177,7 @@ derivative of the first jet `j¹s(x)` of a section differentiable at `x` is `∇
 theorem covariantDerivative_jet (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U)
     {s : Π x : M, V x} (hs : MDiffAt (T% s) x) :
     covariantDerivative hcov x (jet I F s x) = cov s x := by
-  rw [covariantDerivative_apply, value_jet, christoffelAt_apply hcov hx hs,
+  rw [covariantDerivative_eq_add_christoffelAt, value_jet, christoffelAt_apply hcov hx hs,
     frameCovariantDerivative_eq_symmL_comp_jet_snd hs]
   -- The two copies of the flat derivative are typed by `E →L[𝕜] V x` and its synonym
   -- `TangentSpace I x →L[𝕜] V x`, so `rw [add_sub_cancel]` does not see the pattern.
@@ -171,7 +193,7 @@ theorem covariantDerivative_eq_of_jet_eq (hcov : IsCovariantDerivativeOn F cov U
 /-- The covariant derivative of the jet with value zero and derivative `L` is `L`. -/
 theorem covariantDerivative_ofDeriv (hcov : IsCovariantDerivativeOn F cov U)
     (L : TangentSpace I x →L[𝕜] V x) : covariantDerivative hcov x (ofDeriv I F x L) = L := by
-  rw [covariantDerivative_apply, value_ofDeriv, map_zero, add_zero, ofDeriv_apply]
+  rw [covariantDerivative_eq_add_christoffelAt, value_ofDeriv, map_zero, add_zero, ofDeriv_apply]
   ext v
   exact (trivializationAt F V x).symmL_continuousLinearMapAt (R := 𝕜)
     (mem_baseSet_trivializationAt F V x) (L v)
@@ -182,6 +204,35 @@ a left inverse of the inclusion `Hom(TₓM, Vₓ) → J¹Vₓ`. -/
 theorem covariantDerivative_comp_ofDeriv (hcov : IsCovariantDerivativeOn F cov U) :
     covariantDerivative hcov x ∘L ofDeriv I F x = ContinuousLinearMap.id 𝕜 _ :=
   ContinuousLinearMap.ext (covariantDerivative_ofDeriv hcov)
+
+/-- **The covariant derivative of a first jet in coordinates.** At a point `x` of `U`, in the
+chart and trivialization `e` at `x`, a first jet `(w, A)` is sent to `A` read back in `Vₓ` plus
+the covariant derivative at `x` of the section `y ↦ e.symm y w` with constant coordinates `w`. -/
+theorem covariantDerivative_apply (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U)
+    (j : FirstJetBundle I F V x) :
+    covariantDerivative hcov x j =
+      (((trivializationAt F V x).symmL 𝕜 x).comp j.2 : TangentSpace I x →L[𝕜] V x) +
+        cov (fun y ↦ (trivializationAt F V x).symm y j.1) x := by
+  have hσ : MDiffAt (T% (fun y ↦ (trivializationAt F V x).symm y j.1)) x :=
+    ((Manifold.contMDiffOn_symm_baseSet (I := I) j.1).mdifferentiableOn
+      one_ne_zero).mdifferentiableAt
+        ((trivializationAt F V x).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V x))
+  rw [covariantDerivative_eq_add_christoffelAt, value_apply, christoffelAt_apply hcov hx hσ,
+    Manifold.frameCovariantDerivative_symm_const, sub_zero]
+
+/-- **Characterization of the covariant derivative of first jets.** At a point `x` of `U`, a
+continuous linear map `J¹Vₓ → Hom(TₓM, Vₓ)` is `TauCeti.FirstJetBundle.covariantDerivative`
+exactly when it sends the first jet of every section `s` differentiable at `x` to `∇s(x)`: every
+first jet is the first jet of such a section. -/
+theorem eq_covariantDerivative_iff (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U)
+    {K : FirstJetBundle I F V x →L[𝕜] TangentSpace I x →L[𝕜] V x} :
+    K = covariantDerivative hcov x ↔
+      ∀ s : Π x : M, V x, MDiffAt (T% s) x → K (jet I F s x) = cov s x := by
+  refine ⟨by rintro rfl s hs; exact covariantDerivative_jet hcov hx hs, fun h ↦ ?_⟩
+  refine ContinuousLinearMap.ext fun j ↦ ?_
+  obtain ⟨s, hs, rfl⟩ := exists_contMDiffAt_jet_eq I F (n := 1) x j
+  rw [h s (hs.mdifferentiableAt one_ne_zero),
+    covariantDerivative_jet hcov hx (hs.mdifferentiableAt one_ne_zero)]
 
 /-! ### Changing the covariant derivative -/
 
@@ -202,7 +253,8 @@ theorem covariantDerivative_add_one_form (hcov : IsCovariantDerivativeOn F cov U
     (A : Π x : M, V x →L[𝕜] TangentSpace I x →L[𝕜] V x) (j : FirstJetBundle I F V x) :
     covariantDerivative (hcov.add_one_form A) x j =
       covariantDerivative hcov x j + A x (value I F x j) := by
-  rw [covariantDerivative_apply, covariantDerivative_apply, christoffelAt_add_one_form hcov hx]
+  rw [covariantDerivative_eq_add_christoffelAt, covariantDerivative_eq_add_christoffelAt,
+    christoffelAt_add_one_form hcov hx]
   abel
 
 /-- **The splittings of two covariant derivatives differ by their difference tensor** applied to
@@ -213,9 +265,10 @@ theorem covariantDerivative_sub_covariantDerivative {cov' : (Π x : M, V x) →
     covariantDerivative hcov x j - covariantDerivative hcov' x j =
       hcov.difference hcov' x (value I F x j) := by
   have hσ := mdifferentiableAt_extend I F (value I F x j)
-  rw [covariantDerivative_apply, covariantDerivative_apply, add_sub_add_left_eq_sub,
-    ← FiberBundle.extend_apply_self F (value I F x j), christoffelAt_apply hcov hx hσ,
-    christoffelAt_apply hcov' hx hσ, IsCovariantDerivativeOn.difference_apply _ _ hx hσ]
+  rw [covariantDerivative_eq_add_christoffelAt, covariantDerivative_eq_add_christoffelAt,
+    add_sub_add_left_eq_sub, ← FiberBundle.extend_apply_self F (value I F x j),
+    christoffelAt_apply hcov hx hσ, christoffelAt_apply hcov' hx hσ,
+    IsCovariantDerivativeOn.difference_apply _ _ hx hσ]
   abel
 
 /-! ### The horizontal lift and the splitting isomorphism -/
@@ -248,7 +301,7 @@ def horizontalLift (hcov : IsCovariantDerivativeOn F cov U) (x : M) :
     V x →L[𝕜] FirstJetBundle I F V x :=
   flatLift I F x - ofDeriv I F x ∘L covariantDerivative hcov x ∘L flatLift I F x
 
-private theorem horizontalLift_apply (hcov : IsCovariantDerivativeOn F cov U) (v : V x) :
+private theorem horizontalLift_eq_flatLift_sub (hcov : IsCovariantDerivativeOn F cov U) (v : V x) :
     horizontalLift hcov x v =
       flatLift I F x v - ofDeriv I F x (covariantDerivative hcov x (flatLift I F x v)) :=
   (rfl)
@@ -257,7 +310,7 @@ private theorem horizontalLift_apply (hcov : IsCovariantDerivativeOn F cov U) (v
 @[simp]
 theorem value_horizontalLift (hcov : IsCovariantDerivativeOn F cov U) (v : V x) :
     value I F x (horizontalLift hcov x v) = v := by
-  rw [horizontalLift_apply, map_sub, value_ofDeriv, sub_zero, value_flatLift]
+  rw [horizontalLift_eq_flatLift_sub, map_sub, value_ofDeriv, sub_zero, value_flatLift]
 
 /-- The horizontal lift is a right inverse of the projection `J¹Vₓ → Vₓ`. -/
 theorem value_comp_horizontalLift (hcov : IsCovariantDerivativeOn F cov U) :
@@ -268,7 +321,7 @@ theorem value_comp_horizontalLift (hcov : IsCovariantDerivativeOn F cov U) :
 @[simp]
 theorem covariantDerivative_horizontalLift (hcov : IsCovariantDerivativeOn F cov U) (v : V x) :
     covariantDerivative hcov x (horizontalLift hcov x v) = 0 := by
-  rw [horizontalLift_apply, map_sub, covariantDerivative_ofDeriv, sub_self]
+  rw [horizontalLift_eq_flatLift_sub, map_sub, covariantDerivative_ofDeriv, sub_self]
 
 /-- **The splitting decomposition of a first jet**: every first jet is the horizontal lift of its
 value plus the jet of its covariant derivative. -/
@@ -286,6 +339,88 @@ theorem horizontalLift_value_add_ofDeriv_covariantDerivative
     rwa [ContinuousLinearMap.coe_coe, covariantDerivative_ofDeriv, map_sub,
       covariantDerivative_horizontalLift, sub_zero, eq_comm] at h
   rw [hcd, ← ContinuousLinearMap.coe_coe (ofDeriv I F x), hL, add_sub_cancel]
+
+/-- The horizontal lift composed with the covariant derivative of jets is zero. -/
+theorem covariantDerivative_comp_horizontalLift (hcov : IsCovariantDerivativeOn F cov U) :
+    covariantDerivative hcov x ∘L horizontalLift hcov x = 0 :=
+  ContinuousLinearMap.ext (covariantDerivative_horizontalLift hcov)
+
+/-- A first jet is the horizontal lift of `v` exactly when it has value `v` and covariant
+derivative zero. -/
+theorem eq_horizontalLift_iff (hcov : IsCovariantDerivativeOn F cov U)
+    {j : FirstJetBundle I F V x} {v : V x} :
+    j = horizontalLift hcov x v ↔ value I F x j = v ∧ covariantDerivative hcov x j = 0 := by
+  refine ⟨by rintro rfl; simp, fun ⟨hv, hK⟩ ↦ ?_⟩
+  rw [← horizontalLift_value_add_ofDeriv_covariantDerivative hcov j, hv, hK, map_zero, add_zero]
+
+/-- The value coordinate of the horizontal lift of `v` in the trivialization `e` at `x` is
+`e v`. -/
+@[simp]
+theorem horizontalLift_fst (hcov : IsCovariantDerivativeOn F cov U) (v : V x) :
+    (horizontalLift hcov x v).1 = (trivializationAt F V x).continuousLinearMapAt 𝕜 x v := by
+  rw [horizontalLift_eq_flatLift_sub]
+  -- The fibre of `J¹V` is a type synonym for `F × (E →L[𝕜] F)`, so `rw [Prod.fst_sub]` does not
+  -- see the subtraction; `change` restates it in the product.
+  change (flatLift I F x v).1 - (ofDeriv I F x _).1 = _
+  rw [ofDeriv_fst, sub_zero, flatLift_apply]
+
+/-- **The horizontal lift in coordinates.** At a point `x` of `U`, in the trivialization `e` at
+`x`, the horizontal lift of `v` has value coordinate `e v`, and its derivative coordinate is minus
+the covariant derivative at `x`, read in `e`, of the section `y ↦ e.symm y (e v)` with constant
+coordinates `e v`. -/
+theorem horizontalLift_apply (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U) (v : V x) :
+    horizontalLift hcov x v =
+      (((trivializationAt F V x).continuousLinearMapAt 𝕜 x v,
+        -((trivializationAt F V x).continuousLinearMapAt 𝕜 x).comp
+          (cov (fun y ↦ (trivializationAt F V x).symm y
+            ((trivializationAt F V x).continuousLinearMapAt 𝕜 x v)) x)) :
+        FirstJetBundle I F V x) := by
+  have hxe := mem_baseSet_trivializationAt F V x
+  refine ((eq_horizontalLift_iff hcov).2 ⟨?_, ?_⟩).symm
+  · exact (value_apply I F x _).trans <|
+      ((trivializationAt F V x).symmL_apply (R := 𝕜) hxe _).symm.trans
+        ((trivializationAt F V x).symmL_continuousLinearMapAt (R := 𝕜) hxe v)
+  · refine (covariantDerivative_apply hcov hx _).trans ?_
+    ext w
+    simp only [add_apply, ContinuousLinearMap.comp_apply,
+      neg_apply, map_neg, zero_apply]
+    rw [(trivializationAt F V x).symmL_continuousLinearMapAt (R := 𝕜) hxe, neg_add_cancel]
+
+/-- At a point `x` of `U`, the derivative coordinate of the horizontal lift of `v` in the
+trivialization `e` at `x` is minus the covariant derivative at `x`, read in `e`, of the section
+with constant coordinates `e v`. -/
+theorem horizontalLift_snd (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U) (v : V x) :
+    (horizontalLift hcov x v).2 =
+      -((trivializationAt F V x).continuousLinearMapAt 𝕜 x).comp
+        (cov (fun y ↦ (trivializationAt F V x).symm y
+          ((trivializationAt F V x).continuousLinearMapAt 𝕜 x v)) x) :=
+  congrArg Prod.snd (horizontalLift_apply hcov hx v)
+
+/-- **Changing the horizontal lift by a one-form**: adding an endomorphism-valued one-form `A` to
+the covariant derivative subtracts the jet of `A x v` from the horizontal lift of `v`. -/
+theorem horizontalLift_add_one_form (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U)
+    (A : Π x : M, V x →L[𝕜] TangentSpace I x →L[𝕜] V x) (v : V x) :
+    horizontalLift (hcov.add_one_form A) x v = horizontalLift hcov x v - ofDeriv I F x (A x v) := by
+  refine ((eq_horizontalLift_iff (hcov.add_one_form A)).2 ⟨?_, ?_⟩).symm
+  · rw [map_sub, value_horizontalLift, value_ofDeriv, sub_zero]
+  · rw [covariantDerivative_add_one_form hcov hx, map_sub, map_sub, value_horizontalLift,
+      value_ofDeriv, sub_zero, covariantDerivative_horizontalLift, covariantDerivative_ofDeriv,
+      zero_sub, neg_add_cancel]
+
+/-- **The horizontal lifts of two covariant derivatives differ by their difference tensor**: the
+difference of the horizontal lifts of `v` is minus the jet of the difference tensor applied to
+`v`. -/
+theorem horizontalLift_sub_horizontalLift {cov' : (Π x : M, V x) →
+    (Π x : M, TangentSpace I x →L[𝕜] V x)} (hcov : IsCovariantDerivativeOn F cov U)
+    (hcov' : IsCovariantDerivativeOn F cov' U) (hx : x ∈ U) (v : V x) :
+    horizontalLift hcov x v - horizontalLift hcov' x v =
+      -ofDeriv I F x (hcov.difference hcov' x v) := by
+  have h := horizontalLift_value_add_ofDeriv_covariantDerivative hcov' (horizontalLift hcov x v)
+  have hK := covariantDerivative_sub_covariantDerivative hcov hcov' hx (horizontalLift hcov x v)
+  rw [value_horizontalLift] at h hK
+  rw [covariantDerivative_horizontalLift, zero_sub] at hK
+  rw [← hK, map_neg, neg_neg, sub_eq_iff_eq_add']
+  exact h.symm
 
 /-- The kernel of the covariant derivative of jets is the image of the horizontal lift: the
 splitting `J¹Vₓ = Vₓ ⊕ Hom(TₓM, Vₓ)` has these two summands. -/
@@ -328,6 +463,112 @@ theorem connectionEquiv_symm_apply (hcov : IsCovariantDerivativeOn F cov U)
     (p : V x × (TangentSpace I x →L[𝕜] V x)) :
     (connectionEquiv hcov x).symm p = horizontalLift hcov x p.1 + ofDeriv I F x p.2 :=
   (rfl)
+
+/-- The splitting isomorphism sends the first jet of a section differentiable at a point `x` of
+`U` to its value and its covariant derivative at `x`. -/
+theorem connectionEquiv_jet (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U)
+    {s : Π x : M, V x} (hs : MDiffAt (T% s) x) :
+    connectionEquiv hcov x (jet I F s x) = (s x, cov s x) := by
+  rw [connectionEquiv_apply, value_jet, covariantDerivative_jet hcov hx hs]
+
+/-- At a point `x` of `U`, a section differentiable at `x` has first jet the horizontal lift of
+its value exactly when its covariant derivative at `x` vanishes. -/
+theorem jet_eq_horizontalLift_iff (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U)
+    {s : Π x : M, V x} (hs : MDiffAt (T% s) x) :
+    jet I F s x = horizontalLift hcov x (s x) ↔ cov s x = 0 := by
+  rw [eq_horizontalLift_iff, value_jet, covariantDerivative_jet hcov hx hs]
+  exact and_iff_right rfl
+
+end
+
+/-! ### Trivial bundles -/
+
+section Trivial
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I 1 M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {U : Set M} {x : M}
+
+/-- On a trivial bundle, the covariant derivative of first jets induced by the canonical flat
+connection sends a first jet to its derivative coordinate. -/
+theorem covariantDerivative_trivial
+    (hcov : IsCovariantDerivativeOn F (CovariantDerivative.trivial (I := I) (M := M) F) U)
+    (hx : x ∈ U) (j : FirstJetBundle I F (Bundle.Trivial M F) x) :
+    covariantDerivative hcov x j = j.2 := by
+  rw [covariantDerivative_apply hcov hx, CovariantDerivative.trivial_apply]
+  simp only [Trivial.fiberBundle_trivializationAt', Trivial.trivialization_symm_apply,
+    mvfderiv_const, add_zero]
+  ext w
+  exact (Trivialization.symmL_apply (R := 𝕜) _ (mem_univ x) (j.2 w)).trans
+    (Trivial.trivialization_symm_apply M F x (j.2 w))
+
+/-- On a trivial bundle, the horizontal lift of the canonical flat connection sends `v` to the
+first jet with value `v` and derivative zero. -/
+theorem horizontalLift_trivial
+    (hcov : IsCovariantDerivativeOn F (CovariantDerivative.trivial (I := I) (M := M) F) U)
+    (hx : x ∈ U) (v : Bundle.Trivial M F x) :
+    horizontalLift hcov x v = ((v, 0) : FirstJetBundle I F (Bundle.Trivial M F) x) := by
+  refine ((eq_horizontalLift_iff hcov).2 ⟨?_, ?_⟩).symm
+  · refine (value_apply I F x _).trans ?_
+    simp only [Trivial.fiberBundle_trivializationAt', Trivial.trivialization_symm_apply]
+  · exact covariantDerivative_trivial hcov hx _
+
+/-- On a trivial bundle, the splitting isomorphism of the canonical flat connection is the
+identity on the coordinates of a first jet. -/
+theorem connectionEquiv_trivial_apply
+    (hcov : IsCovariantDerivativeOn F (CovariantDerivative.trivial (I := I) (M := M) F) U)
+    (hx : x ∈ U) (j : FirstJetBundle I F (Bundle.Trivial M F) x) :
+    connectionEquiv hcov x j = (j.1, j.2) := by
+  rw [connectionEquiv_apply, covariantDerivative_trivial hcov hx, value_apply]
+  simp only [Trivial.fiberBundle_trivializationAt', Trivial.trivialization_symm_apply]
+  -- The two pairs differ only in their `Prod.mk` types, `Trivial M F x × (TangentSpace I x →L[𝕜]
+  -- Trivial M F x)` and `F × (E →L[𝕜] F)`, which are definitionally equal.
+  rfl
+
+/-- On a trivial bundle, the splitting isomorphism of the canonical flat connection decomposes the
+first jet of a section `σ` as its value and its derivative. -/
+theorem connectionEquiv_trivial_jet
+    (hcov : IsCovariantDerivativeOn F (CovariantDerivative.trivial (I := I) (M := M) F) U)
+    (hx : x ∈ U) (σ : M → F) :
+    connectionEquiv hcov x (jet I F (σ : Π y, Bundle.Trivial M F y) x) = (σ x, mvfderiv I σ x) := by
+  rw [connectionEquiv_apply, value_jet, covariantDerivative_trivial hcov hx,
+    jet_trivial_snd_eq_mvfderiv]
+
+/-- On a trivial bundle, the splitting isomorphism of the connection `d + A` decomposes the first
+jet of a section `σ` as its value and `dσ + A σ`. -/
+theorem connectionEquiv_add_one_form_trivial_jet
+    (hcov : IsCovariantDerivativeOn F (CovariantDerivative.trivial (I := I) (M := M) F) U)
+    (hx : x ∈ U)
+    (A : Π x : M, Bundle.Trivial M F x →L[𝕜] TangentSpace I x →L[𝕜] Bundle.Trivial M F x)
+    (σ : M → F) :
+    connectionEquiv (hcov.add_one_form A) x (jet I F (σ : Π y, Bundle.Trivial M F y) x) =
+      (σ x, mvfderiv I σ x + A x (σ x)) := by
+  rw [connectionEquiv_apply, covariantDerivative_add_one_form hcov hx, value_jet,
+    covariantDerivative_trivial hcov hx, jet_trivial_snd_eq_mvfderiv]
+
+/-- On a trivial bundle, the splitting isomorphism of the canonical flat connection decomposes the
+first jet of a constant section `v` as `(v, 0)`. -/
+theorem connectionEquiv_trivial_jet_const
+    (hcov : IsCovariantDerivativeOn F (CovariantDerivative.trivial (I := I) (M := M) F) U)
+    (hx : x ∈ U) (v : F) :
+    connectionEquiv hcov x (jet I F (fun _ ↦ v : Π y, Bundle.Trivial M F y) x) = (v, 0) := by
+  rw [connectionEquiv_trivial_jet hcov hx, mvfderiv_const]
+
+/-- On a trivial bundle, the splitting isomorphism of the connection `d + A` decomposes the first
+jet of a constant section `v` as `(v, A v)`. -/
+theorem connectionEquiv_add_one_form_trivial_jet_const
+    (hcov : IsCovariantDerivativeOn F (CovariantDerivative.trivial (I := I) (M := M) F) U)
+    (hx : x ∈ U)
+    (A : Π x : M, Bundle.Trivial M F x →L[𝕜] TangentSpace I x →L[𝕜] Bundle.Trivial M F x)
+    (v : F) :
+    connectionEquiv (hcov.add_one_form A) x (jet I F (fun _ ↦ v : Π y, Bundle.Trivial M F y) x) =
+      (v, A x v) := by
+  rw [connectionEquiv_add_one_form_trivial_jet hcov hx, mvfderiv_const, zero_add]
+
+end Trivial
 
 end FirstJetBundle
 
