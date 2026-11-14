@@ -310,33 +310,27 @@ private theorem undoCell_zero (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :
       simp only [ContinuousMap.snd_apply]
     · -- On the annulus `1/4 ≤ ‖w‖ ≤ 1/2` the reverse homotopy is read at time `2 - 4‖w‖`.
       have hvn' : 1 / 2 ≤ ‖v.down.1‖ := by rw [hvn]; linarith
-      obtain ⟨t, ht⟩ : ∃ t : I, (t : ℝ) = 2 - 2 * ‖v.down.1‖ :=
-        ⟨TopCat.reattachmentTime v, TopCat.coe_reattachmentTime_of_le_norm hvn'⟩
-      obtain ⟨s, hs⟩ : ∃ s : TopCat.diskBoundary.{u} (k i), s.down.1 = ‖v.down.1‖⁻¹ • v.down.1 :=
-        ⟨TopCat.annulusDir (by norm_num) ⟨v, hvn'⟩, TopCat.coe_annulusDir _ _⟩
-      rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm (w := v) (hw := hvn')
-        (ht := ht) (hs := hs), undoCell_of_le_norm α₁ χ₀ χ₁ hχ₁ K hK i 0 p hw' (t := σ t) (s := s)
+      rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm' (w := v) (hw := hvn'),
+        undoCell_of_le_norm α₁ χ₀ χ₁ hχ₁ K hK i 0 p hw' (t := σ (TopCat.reattachmentTime v))
+          (s := TopCat.annulusDir (by norm_num) ⟨v, hvn'⟩)
         (by
-          rw [coe_symm_eq, ht, hvn, Icc.coe_zero, sub_zero,
+          rw [coe_symm_eq, TopCat.coe_reattachmentTime_of_le_norm hvn', hvn, Icc.coe_zero, sub_zero,
             min_eq_left (show 4 * ‖w.down.1‖ - 1 ≤ 2 - 2 * ‖w.down.1‖ by linarith),
             min_eq_left (show 4 * ‖w.down.1‖ - 1 ≤ 1 by linarith)]
           ring)
-        (by rw [hs, hvn, hv, smul_smul]; congr 1; field_simp)]
+        (by rw [TopCat.coe_annulusDir, hvn, hv, smul_smul]; congr 1; field_simp)]
       exact congrArg (fun a ↦ fiberwiseCellAttachmentIncl α₁ (p, a))
-        (Subtype.ext (hKK' i t p s).symm)
+        (Subtype.ext (hKK' i _ p _).symm)
   · -- On the annulus `1/2 ≤ ‖w‖` the homotopy is read at time `2 - 2‖w‖`, and the second
     -- reattachment map fixes `P × A`.
-    obtain ⟨t, ht⟩ : ∃ t : I, (t : ℝ) = 2 - 2 * ‖w.down.1‖ :=
-      ⟨TopCat.reattachmentTime w, TopCat.coe_reattachmentTime_of_le_norm hw⟩
-    obtain ⟨s, hs⟩ : ∃ s : TopCat.diskBoundary.{u} (k i), s.down.1 = ‖w.down.1‖⁻¹ • w.down.1 :=
-      ⟨TopCat.annulusDir (by norm_num) ⟨w, hw⟩, TopCat.coe_annulusDir _ _⟩
-    rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm (hw := hw) (ht := ht)
-      (hs := hs), fiberwiseCellReattachment_fiberwiseCellAttachmentIncl,
-      undoCell_of_le_norm α₁ χ₀ χ₁ hχ₁ K hK i 0 p (by linarith) (t := t) (s := s)
+    rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm' (hw := hw),
+      fiberwiseCellReattachment_fiberwiseCellAttachmentIncl,
+      undoCell_of_le_norm α₁ χ₀ χ₁ hχ₁ K hK i 0 p (by linarith) (t := TopCat.reattachmentTime w)
+        (s := TopCat.annulusDir (by norm_num) ⟨w, hw⟩)
         (by
-          rw [ht, Icc.coe_zero, sub_zero,
+          rw [TopCat.coe_reattachmentTime_of_le_norm hw, Icc.coe_zero, sub_zero,
             min_eq_right (show 2 - 2 * ‖w.down.1‖ ≤ 4 * ‖w.down.1‖ - 1 by linarith),
-            min_eq_left (show 2 - 2 * ‖w.down.1‖ ≤ 1 by linarith)]) hs]
+            min_eq_left (show 2 - 2 * ‖w.down.1‖ ≤ 1 by linarith)]) (TopCat.coe_annulusDir _ _)]
 
 /-- At the end of the contraction, `TauCeti.undoCell` is the radial push of the `i`-th cell. -/
 private theorem undoCell_one (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :
@@ -493,14 +487,8 @@ private theorem fiberwiseCellReattachment_eq_comp_fiberwiseCellAttachmentReparam
       fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le (hw := hw) (hv := hv),
       fiberwiseCellAttachmentReparam_fiberwiseCellAttachmentCell]
     simp only [ContinuousMap.snd_apply]
-  · obtain ⟨s, hs⟩ : ∃ s : TopCat.diskBoundary.{u} (k i), s.down.1 = ‖w.down.1‖⁻¹ • w.down.1 :=
-      ⟨TopCat.annulusDir (by norm_num) ⟨w, hw⟩, TopCat.coe_annulusDir _ _⟩
-    obtain ⟨t, ht⟩ : ∃ t : I, (t : ℝ) = 2 - 2 * ‖w.down.1‖ :=
-      ⟨TopCat.reattachmentTime w, TopCat.coe_reattachmentTime_of_le_norm hw⟩
-    rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm (hw := hw) (ht := ht)
-        (hs := hs),
-      fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm (hw := hw) (ht := ht)
-        (hs := hs),
+  · rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm' (hw := hw),
+      fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm' (hw := hw),
       fiberwiseCellAttachmentReparam_fiberwiseCellAttachmentIncl]
     simp only [castHomotopy, ContinuousMap.Homotopy.cast_apply]
 
