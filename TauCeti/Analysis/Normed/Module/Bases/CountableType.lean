@@ -29,6 +29,13 @@ has a `t`-orthogonal one. This file constructs these bases by an approximate Gra
   `t`-orthogonal basis indexed by a set of natural numbers.
 * `TauCeti.exists_basis_isTOrthogonalFamily`: a finite-dimensional space has a `t`-orthogonal
   basis in the sense of `Module.Basis`, indexed by `Fin (finrank K E)`.
+* `TauCeti.exists_strongDual_apply_eq_one_of_finiteDimensional`: for a nonzero vector `x` of a
+  finite-dimensional space and `c > 1`, some continuous linear functional sends `x` to `1` and has
+  norm at most `c * ‖x‖⁻¹`.
+* `Submodule.exists_projection_norm_le_of_finiteDimensional_quotient` and
+  `Submodule.exists_projection_norm_le`: a closed subspace of finite codimension (in particular,
+  any subspace of a finite-dimensional space) is the range of a continuous linear projection of
+  norm at most `c`, for any `c > 1`.
 * `TauCeti.exists_isTOrthogonalBasis_nat_of_dense_span`: an infinite-dimensional space of
   countable type has a `t`-orthogonal basis indexed by `ℕ`.
 * `Submodule.exists_finiteDimensional_le_infDist_le`: for a closed subspace `D`, a
@@ -164,6 +171,111 @@ theorem exists_basis_isTOrthogonalFamily [FiniteDimensional K E] {t : ℝ≥0} (
   refine ⟨basisOfTopLeSpanOfCardEqFinrank (fun i : Fin d ↦ e i) htop (Fintype.card_fin d), ?_⟩
   rw [coe_basisOfTopLeSpanOfCardEqFinrank]
   exact he.comp Fin.val_injective
+
+/-- **Almost-norming functionals in finite dimensions**: over a complete nontrivially normed field,
+for every nonzero vector `x` of a finite-dimensional ultrametric normed space `E` and every `c > 1`,
+there is a continuous linear functional `φ : StrongDual K E` with `φ x = 1` and
+`‖φ y‖ * ‖x‖ ≤ c * ‖y‖` for every `y`. -/
+theorem exists_strongDual_apply_eq_one_of_finiteDimensional [FiniteDimensional K E] {x : E}
+    (hx : x ≠ 0) {c : ℝ} (hc : 1 < c) :
+    ∃ φ : StrongDual K E, φ x = 1 ∧ ∀ y : E, ‖φ y‖ * ‖x‖ ≤ c * ‖y‖ := by
+  have hc0 : 0 < c := zero_lt_one.trans hc
+  obtain ⟨t, hct, ht1⟩ : ∃ t : ℝ≥0, c⁻¹ < (t : ℝ) ∧ t < 1 := by
+    obtain ⟨t, h₁, h₂⟩ := exists_between (inv_lt_one_of_one_lt₀ hc)
+    exact ⟨⟨t, (inv_pos.2 hc0).le.trans h₁.le⟩, h₁, by exact_mod_cast h₂⟩
+  have ht0 : (0 : ℝ) < t := (inv_pos.2 hc0).trans hct
+  obtain ⟨b, hb⟩ := exists_basis_isTOrthogonalFamily (K := K) (E := E) ht1
+  -- By the ultrametric inequality on `x = ∑ i, b.repr x i • b i`, some term dominates `‖x‖`.
+  have hne : (Finset.univ : Finset (Fin (Module.finrank K E))).Nonempty := by
+    by_contra h
+    rw [Finset.not_nonempty_iff_eq_empty] at h
+    exact hx (by simpa [h] using (b.sum_repr x).symm)
+  obtain ⟨i, hi_mem, hi⟩ := Finset.exists_mem_eq_sup' hne (fun j ↦ ‖b.repr x j • b j‖)
+  have hxle : ‖x‖ ≤ ‖b.repr x i‖ * ‖b i‖ :=
+    calc ‖x‖ = ‖∑ j, b.repr x j • b j‖ := by rw [b.sum_repr]
+      _ ≤ Finset.univ.sup' hne (fun j ↦ ‖b.repr x j • b j‖) :=
+        IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg
+          (Finset.le_sup'_of_le _ hi_mem (norm_nonneg _))
+          fun j hj ↦ Finset.le_sup' (fun k ↦ ‖b.repr x k • b k‖) hj
+      _ = ‖b.repr x i‖ * ‖b i‖ := by rw [hi, norm_smul]
+  have hxi : b.repr x i ≠ 0 := by
+    intro h0
+    exact (norm_pos_iff.2 hx).not_ge (hxle.trans_eq (by simp [h0]))
+  let φ : StrongDual K E := (b.repr x i)⁻¹ • (b.coord i).toContinuousLinearMap
+  refine ⟨φ, by simp [φ, inv_mul_cancel₀ hxi], fun y ↦ ?_⟩
+  have hby := hb.mul_norm_smul_le (Finset.mem_univ i) (b.repr y)
+  rw [b.sum_repr, norm_smul] at hby
+  calc ‖φ y‖ * ‖x‖ = ‖b.repr y i‖ * (‖b.repr x i‖⁻¹ * ‖x‖) := by
+        simp only [φ, smul_apply, LinearMap.coe_toContinuousLinearMap',
+          Module.Basis.coord_apply, smul_eq_mul, norm_mul, norm_inv]
+        ring
+    _ ≤ ‖b.repr y i‖ * ‖b i‖ := by
+        gcongr
+        rwa [inv_mul_le_iff₀ (norm_pos_iff.2 hxi)]
+    _ ≤ (t : ℝ)⁻¹ * ‖y‖ := by rwa [le_inv_mul_iff₀ ht0]
+    _ ≤ c * ‖y‖ := by
+        gcongr
+        rw [inv_le_comm₀ ht0 hc0]
+        exact hct.le
+
+/-- **Almost-contractive projections onto closed subspaces of finite codimension**: over a complete
+nontrivially normed field, for every closed subspace `D` of an ultrametric normed space `E` with
+`E ⧸ D` finite-dimensional and every `c > 1`, there is a continuous linear projection
+`p : E →L[K] D` (`p x = x` for `x ∈ D`) with `‖(p x : E)‖ ≤ c * ‖x‖` for every `x`. -/
+theorem _root_.Submodule.exists_projection_norm_le_of_finiteDimensional_quotient
+    (D : Submodule K E) (hD : IsClosed (D : Set E)) [FiniteDimensional K (E ⧸ D)] {c : ℝ}
+    (hc : 1 < c) :
+    ∃ p : E →L[K] D, (∀ x : D, p x = x) ∧ ∀ x : E, ‖(p x : E)‖ ≤ c * ‖x‖ := by
+  have hc0 : 0 < c := zero_lt_one.trans hc
+  obtain ⟨t, hct, ht⟩ : ∃ t : ℝ≥0, (c⁻¹ : ℝ) < t ∧ t < 1 := by
+    obtain ⟨t, h₁, h₂⟩ := exists_between (inv_lt_one_of_one_lt₀ hc)
+    exact ⟨⟨t, (inv_pos.2 hc0).le.trans h₁.le⟩, h₁, by exact_mod_cast h₂⟩
+  have hct' : 1 < c * t := by
+    rw [inv_lt_iff_one_lt_mul₀ hc0] at hct
+    linarith
+  obtain ⟨b, hb⟩ := exists_basis_isTOrthogonalFamily (K := K) (E := E ⧸ D) ht
+  have hlift (i : Fin (Module.finrank K (E ⧸ D))) :
+      ∃ y : E, D.mkQ y = b i ∧ ‖y‖ ≤ c * t * ‖b i‖ := by
+    obtain ⟨y, hy, hny⟩ := Submodule.Quotient.norm_mk_lt (b i)
+      (mul_pos (sub_pos.2 hct') (norm_pos_iff.2 (b.ne_zero i)))
+    exact ⟨y, hy, by linarith⟩
+  choose y hy hny using hlift
+  let s₀ : (E ⧸ D) →ₗ[K] E := ∑ i, (b.coord i).smulRight (y i)
+  have hs₀ (q : E ⧸ D) : ‖s₀ q‖ ≤ c * ‖q‖ := by
+    simp only [s₀, LinearMap.sum_apply, LinearMap.smulRight_apply, Module.Basis.coord_apply]
+    refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg
+      (mul_nonneg hc0.le (norm_nonneg q)) fun i _ ↦ ?_
+    have hbi := hb.mul_norm_smul_le (Finset.mem_univ i) (b.repr q)
+    rw [b.sum_repr, norm_smul] at hbi
+    calc ‖b.repr q i • y i‖ = ‖b.repr q i‖ * ‖y i‖ := norm_smul _ _
+      _ ≤ ‖b.repr q i‖ * (c * t * ‖b i‖) := by gcongr; exact hny i
+      _ = c * (t * (‖b.repr q i‖ * ‖b i‖)) := by ring
+      _ ≤ c * ‖q‖ := by gcongr
+  let s : E →L[K] E := (s₀.mkContinuous c hs₀).comp D.mkQL
+  have hmem (x : E) : (ContinuousLinearMap.id K E - s) x ∈ D := by
+    rw [sub_apply, ContinuousLinearMap.id_apply,
+      ← Submodule.Quotient.mk_eq_zero, ← mkQ_apply, map_sub]
+    simp [s, s₀, hy, b.sum_repr]
+  refine ⟨(ContinuousLinearMap.id K E - s).codRestrict D hmem, fun x ↦ Subtype.ext ?_, fun x ↦ ?_⟩
+  · have hx0 : D.mkQL x = 0 := LinearMap.mem_ker.1 (by simp)
+    simp [s, hx0]
+  · calc ‖(((ContinuousLinearMap.id K E - s).codRestrict D hmem x : D) : E)‖
+        = ‖x + -s x‖ := by simp [sub_eq_add_neg]
+      _ ≤ max ‖x‖ ‖-s x‖ := IsUltrametricDist.norm_add_le_max x (-s x)
+      _ = max ‖x‖ ‖s x‖ := by rw [norm_neg]
+      _ ≤ c * ‖x‖ := max_le (le_mul_of_one_le_left (norm_nonneg x) hc.le) <|
+          (hs₀ (D.mkQ x)).trans
+            (mul_le_mul_of_nonneg_left (QuotientAddGroup.norm_mk_le_norm (S := D.toAddSubgroup))
+              hc0.le)
+
+/-- **Almost-contractive projections in finite dimensions**: over a complete nontrivially normed
+field, for every subspace `D` of a finite-dimensional ultrametric normed space `E` and every
+`c > 1`, there is a continuous linear projection `p : E →L[K] D` (`p x = x` for `x ∈ D`) with
+`‖(p x : E)‖ ≤ c * ‖x‖` for every `x`. -/
+theorem _root_.Submodule.exists_projection_norm_le [FiniteDimensional K E] (D : Submodule K E)
+    {c : ℝ} (hc : 1 < c) :
+    ∃ p : E →L[K] D, (∀ x : D, p x = x) ∧ ∀ x : E, ‖(p x : E)‖ ≤ c * ‖x‖ :=
+  D.exists_projection_norm_le_of_finiteDimensional_quotient D.isClosed_of_finiteDimensional hc
 
 /-- **`t`-orthogonal bases of infinite-dimensional spaces of countable type**: over a complete
 nontrivially normed field, if a sequence has dense span in an infinite-dimensional ultrametric
