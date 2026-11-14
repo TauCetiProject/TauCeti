@@ -67,6 +67,8 @@ parameter manifold along a parameter curve:
   `two_mul_apply_deriv_difference_eq_derivBilinearTensor`: the same results for the difference
   tensors `∇ˢ - ∇ᵗ` (Mathlib's `CovariantDerivative.difference`), whose derivative `Γ'` at `t` is
   the tensor of the first variation formula.
+* `deriv_difference_eq_zero_of_derivBilinearTensor_eq_zero`: `Γ'` vanishes where the first
+  variation of the metric is parallel.
 
 ## References
 
@@ -380,6 +382,23 @@ theorem two_mul_apply_deriv_difference_eq_derivBilinearTensor
   simpa only [extend_apply_self] using
     g.two_mul_apply_deriv_eq_derivBilinearTensor_of_isLeviCivitaConnection hc hcov
       (mdifferentiableAt_extend I E u) v w
+
+/-- **The variation of the Levi-Civita connection vanishes where the metric variation is
+parallel.** Let `g` be a smooth family of nondegenerate metrics parametrized by `P`, let `c` be a
+parameter curve which is `C²` at `t`, and let `∇ˢ` be a Levi-Civita connection of `g_{c s}` for
+every `s`. If the first variation `h = δ_{c'(t)} g` is parallel at `y` for `∇ᵗ`, as for the
+conformal variation `h = λ g_{c t}` by a constant `λ`, then the derivative `Γ'` at `t` of the
+difference tensors `∇ˢ - ∇ᵗ` vanishes at `y`. -/
+theorem deriv_difference_eq_zero_of_derivBilinearTensor_eq_zero
+    (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
+    (hcov : ∀ s, (g.metric (c s)).IsLeviCivitaConnection (cov s)) {y : M}
+    (hh : (cov t).derivBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y = 0) :
+    deriv (fun s ↦ (cov s).difference (cov t) y) t = 0 := by
+  ext u v : 2
+  refine ((g.metric (c t)).nondegenerate y).1 _ fun w ↦ ?_
+  have h := g.two_mul_apply_deriv_difference_eq_derivBilinearTensor hc hcov y u v w
+  simp only [hh, zero_apply, sub_zero, add_zero, mul_eq_zero, two_ne_zero, false_or] at h
+  simpa [metric_apply] using h
 
 /-- **The variation of the Levi-Civita connection depends only on the position and velocity of
 the parameter curve.** Let `g` be a smooth family of nondegenerate metrics parametrized by `P`,
