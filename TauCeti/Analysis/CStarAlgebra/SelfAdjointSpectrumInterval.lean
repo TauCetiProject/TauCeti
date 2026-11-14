@@ -71,20 +71,12 @@ theorem spectrum_add_subset_Icc {A : Type*} [CStarAlgebra A] {a b : A}
     spectrum ℝ (a + b) ⊆ Set.Icc (m₁ + m₂) (M₁ + M₂) := by
   let _ : PartialOrder A := CStarAlgebra.spectralOrder A
   have _ : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
-  have hle₁ : algebraMap ℝ A m₁ ≤ a :=
-    (algebraMap_le_iff_le_spectrum ha).mpr fun x hx => (haI hx).1
-  have hge₁ : a ≤ algebraMap ℝ A M₁ :=
-    (le_algebraMap_iff_spectrum_le ha).mpr fun x hx => (haI hx).2
-  have hle₂ : algebraMap ℝ A m₂ ≤ b :=
-    (algebraMap_le_iff_le_spectrum hb).mpr fun x hx => (hbI hx).1
-  have hge₂ : b ≤ algebraMap ℝ A M₂ :=
-    (le_algebraMap_iff_spectrum_le hb).mpr fun x hx => (hbI hx).2
-  have hlow : algebraMap ℝ A (m₁ + m₂) ≤ a + b := by
-    rw [map_add]
-    exact add_le_add hle₁ hle₂
-  have hhigh : a + b ≤ algebraMap ℝ A (M₁ + M₂) := by
-    rw [map_add]
-    exact add_le_add hge₁ hge₂
+  have hlow : algebraMap ℝ A (m₁ + m₂) ≤ a + b := (map_add (algebraMap ℝ A) m₁ m₂).trans_le <|
+    add_le_add ((algebraMap_le_iff_le_spectrum ha).mpr fun x hx => (haI hx).1)
+      ((algebraMap_le_iff_le_spectrum hb).mpr fun x hx => (hbI hx).1)
+  have hhigh : a + b ≤ algebraMap ℝ A (M₁ + M₂) := (add_le_add
+    ((le_algebraMap_iff_spectrum_le ha).mpr fun x hx => (haI hx).2)
+    ((le_algebraMap_iff_spectrum_le hb).mpr fun x hx => (hbI hx).2)).trans_eq (map_add _ M₁ M₂).symm
   exact fun x hx => ⟨(algebraMap_le_iff_le_spectrum (ha.add hb)).mp hlow x hx,
     (le_algebraMap_iff_spectrum_le (ha.add hb)).mp hhigh x hx⟩
 
@@ -95,27 +87,20 @@ namespace TauCeti
 open Finset
 
 /-- If self-adjoint elements `a i` (`i ∈ s`) of a unital C⋆-algebra have real spectra in
-`[m i, M i]`, then the real spectrum of `∑ i ∈ s, a i` lies in `[∑ i ∈ s, m i, ∑ i ∈ s, M i]`,
-including when `s = ∅`. -/
+`[m i, M i]`, then `spectrum ℝ (∑ i ∈ s, a i) ⊆ [∑ i ∈ s, m i, ∑ i ∈ s, M i]` (including `s = ∅`).
+-/
 theorem spectrum_sum_subset_Icc {A ι : Type*} [CStarAlgebra A] (s : Finset ι) {a : ι → A}
     {m M : ι → ℝ} (ha : ∀ i ∈ s, IsSelfAdjoint (a i))
     (hI : ∀ i ∈ s, spectrum ℝ (a i) ⊆ Set.Icc (m i) (M i)) :
     spectrum ℝ (∑ i ∈ s, a i) ⊆ Set.Icc (∑ i ∈ s, m i) (∑ i ∈ s, M i) := by
   classical
   induction s using Finset.induction_on with
-  | empty =>
-      simp only [sum_empty, Set.Icc_self]
-      by_cases hA : Nontrivial A
-      · simp
-      · have : Subsingleton A := not_nontrivial_iff_subsingleton.mp hA
-        simp
+  | empty => rcases subsingleton_or_nontrivial A with _ | _ <;> simp
   | @insert i s hi ih =>
-      have hsa_sum : IsSelfAdjoint (∑ j ∈ s, a j) :=
-        isSelfAdjoint_sum s fun j hj => ha j (mem_insert_of_mem hj)
       rw [sum_insert hi, sum_insert hi, sum_insert hi]
-      exact (ha i (mem_insert_self i s)).spectrum_add_subset_Icc hsa_sum
+      exact (ha i (mem_insert_self i s)).spectrum_add_subset_Icc
+        (isSelfAdjoint_sum s fun j hj => ha j (mem_insert_of_mem hj))
         (hI i (mem_insert_self i s))
-        (ih (fun j hj => ha j (mem_insert_of_mem hj))
-          (fun j hj => hI j (mem_insert_of_mem hj)))
+        (ih (fun j hj => ha j (mem_insert_of_mem hj)) (fun j hj => hI j (mem_insert_of_mem hj)))
 
 end TauCeti

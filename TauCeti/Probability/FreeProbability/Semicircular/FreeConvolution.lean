@@ -13,15 +13,11 @@ public import TauCeti.Probability.FreeProbability.Semicircular.Law
 # Free additive convolution of Wigner semicircle laws
 
 The location-scale Wigner semicircle laws `TauCeti.Probability.semicircleReal m v` on `ℝ` form a
-two-parameter semigroup under Voiculescu's free additive convolution
-`MeasureTheory.Measure.freeConv` (`⊞`), playing the role of Gaussian laws under classical
-convolution: both centres and variances add, including in the degenerate zero-variance Dirac cases.
-
-In the centred case `m₁ = m₂ = 0`, realizing both semicircle laws by freely independent selfadjoint
-elements via `MeasureTheory.Measure.exists_isFreelyIndependentElements_law_add_eq_freeConv` reduces
-the convolution identity to `TauCeti.IsFreelyIndependentElements.isSemicircular_add`; the general
-location-scale case follows by affine equivariance (`MeasureTheory.Measure.freeConv_map_affine`),
-and induction yields the `n`-fold free convolution power `semicircleReal (n * m) (n • v)`.
+two-parameter semigroup under `MeasureTheory.Measure.freeConv` (`⊞`): both centres and variances
+add, including in the degenerate zero-variance Dirac cases. Realizing centred semicircle laws via
+`Measure.exists_isFreelyIndependentElements_law_add_eq_freeConv` reduces `m₁ = m₂ = 0` to
+`TauCeti.IsFreelyIndependentElements.isSemicircular_add`, and affine equivariance yields the general
+case and `n`-fold powers.
 
 ## Main results
 
@@ -57,20 +53,16 @@ theorem semicircleReal_freeConv_semicircleReal (m₁ m₂ : ℝ) (v₁ v₂ : �
     obtain ⟨A, _, _, _, φ, g, -, hg_free, hg1_sa, hg2_sa, -, -, hg1_law, hg2_law, hadd_law⟩ :=
       Measure.exists_isFreelyIndependentElements_law_add_eq_freeConv
         (isCompact_support_semicircleReal 0 v₁) (isCompact_support_semicircleReal 0 v₂)
-    have hg1 : IsSemicircular φ.toLinearMap (g true) ((v₁ : ℝ) : ℂ) :=
-      (φ.law_eq_semicircleReal_iff hg1_sa v₁).mp hg1_law
-    have hg2 : IsSemicircular φ.toLinearMap (g false) ((v₂ : ℝ) : ℂ) :=
-      (φ.law_eq_semicircleReal_iff hg2_sa v₂).mp hg2_law
     have hsum : IsSemicircular φ.toLinearMap (g true + g false) (((v₁ + v₂ : ℝ≥0) : ℝ) : ℂ) := by
-      simpa [NNReal.coe_add] using hg_free.isSemicircular_add Bool.false_ne_true.symm hg1 hg2
-    rw [← hadd_law]
-    exact (φ.law_eq_semicircleReal_iff (hg1_sa.add hg2_sa) (v₁ + v₂)).mpr hsum
+      simpa [NNReal.coe_add] using hg_free.isSemicircular_add Bool.false_ne_true.symm
+        ((φ.law_eq_semicircleReal_iff hg1_sa v₁).mp hg1_law)
+        ((φ.law_eq_semicircleReal_iff hg2_sa v₂).mp hg2_law)
+    exact hadd_law.symm.trans <| (φ.law_eq_semicircleReal_iff (hg1_sa.add hg2_sa) _).mpr hsum
   have hshift (m : ℝ) (v : ℝ≥0) :
       semicircleReal m v = (semicircleReal 0 v).map fun x => m + 1 * x := by
     simpa using (map_affine_semicircleReal 0 m 1 v).symm
-  rw [hshift m₁ v₁, hshift m₂ v₂,
-    Measure.freeConv_map_affine (isCompact_support_semicircleReal 0 v₁)
-      (isCompact_support_semicircleReal 0 v₂) m₁ m₂ 1,
+  rw [hshift m₁ v₁, hshift m₂ v₂, Measure.freeConv_map_affine
+    (isCompact_support_semicircleReal 0 v₁) (isCompact_support_semicircleReal 0 v₂) m₁ m₂ 1,
     hcentred, ← hshift (m₁ + m₂) (v₁ + v₂)]
 
 /-- **Free convolution powers of Wigner semicircle laws.** -/
@@ -80,8 +72,6 @@ theorem semicircleReal_freeConvolutionPower (m : ℝ) (v : ℝ≥0) (n : ℕ) :
   | zero => simp
   | succ n ih =>
       rw [Measure.freeConvolutionPower_succ, ih, semicircleReal_freeConv_semicircleReal, succ_nsmul]
-      congr 1
-      push_cast
-      ring
+      congr 1; push_cast; ring
 
 end TauCeti.Probability

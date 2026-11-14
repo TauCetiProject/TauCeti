@@ -349,69 +349,57 @@ theorem isCompact_support_law (a : A) : IsCompact (law φ a).support :=
 @[simp]
 theorem law_algebraMap (c : ℝ) :
     law φ (algebraMap ℝ A c) = ENNReal.ofReal (φ 1).re • Measure.dirac c := by
-  have h1 : 0 ≤ φ 1 := φ.map_nonneg zero_le_one
-  have h1re : ((φ 1).re : ℂ) = φ 1 := by
-    rw [Complex.ext_iff]
-    exact ⟨rfl, (Complex.nonneg_iff.mp h1).2⟩
-  have hfin : IsFiniteMeasure (ENNReal.ofReal (φ 1).re • Measure.dirac c) := ⟨by simp⟩
+  have h1 := Complex.nonneg_iff.mp (φ.map_nonneg zero_le_one)
+  have h1re : ((φ 1).re : ℂ) = φ 1 := Complex.ext rfl h1.2
+  have : IsFiniteMeasure (ENNReal.ofReal (φ 1).re • Measure.dirac c) := ⟨by simp⟩
   refine (eq_law_iff.mpr fun f _ => ?_).symm
-  rw [integral_smul_measure, integral_dirac, ENNReal.toReal_ofReal (Complex.nonneg_iff.mp h1).1,
-    cfc_algebraMap c f, Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul, map_smul,
-    smul_eq_mul, smul_eq_mul, Complex.ofReal_mul, h1re, mul_comm]
+  rw [integral_smul_measure, integral_dirac, ENNReal.toReal_ofReal h1.1, cfc_algebraMap c f,
+    Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul, map_smul, smul_eq_mul, smul_eq_mul,
+    Complex.ofReal_mul, h1re, mul_comm]
 
 /-- For a state (`φ 1 = 1`), the law of `algebraMap ℝ A c` is the Dirac mass at `c`. -/
 theorem law_algebraMap_of_apply_one (hφ : φ 1 = 1) (c : ℝ) :
-    law φ (algebraMap ℝ A c) = Measure.dirac c := by
-  simp [hφ]
+    law φ (algebraMap ℝ A c) = Measure.dirac c := by simp [hφ]
 
 /-- The law of `0` is `(φ 1).re` times the Dirac mass at `0`. -/
-@[simp]
-theorem law_zero : law φ (0 : A) = ENNReal.ofReal (φ 1).re • Measure.dirac 0 := by
+@[simp] theorem law_zero : law φ (0 : A) = ENNReal.ofReal (φ 1).re • Measure.dirac 0 := by
   simpa using law_algebraMap φ 0
 
 /-- For a state (`φ 1 = 1`), the law of `0` is the Dirac mass at `0`. -/
-theorem law_zero_of_apply_one (hφ : φ 1 = 1) : law φ (0 : A) = Measure.dirac 0 := by
-  simp [hφ]
+theorem law_zero_of_apply_one (hφ : φ 1 = 1) : law φ (0 : A) = Measure.dirac 0 := by simp [hφ]
 
 /-- The law of `1` is `(φ 1).re` times the Dirac mass at `1`. -/
-@[simp]
-theorem law_one : law φ (1 : A) = ENNReal.ofReal (φ 1).re • Measure.dirac 1 := by
+@[simp] theorem law_one : law φ (1 : A) = ENNReal.ofReal (φ 1).re • Measure.dirac 1 := by
   simpa using law_algebraMap φ 1
 
 /-- For a state (`φ 1 = 1`), the law of `1` is the Dirac mass at `1`. -/
-theorem law_one_of_apply_one (hφ : φ 1 = 1) : law φ (1 : A) = Measure.dirac 1 := by
-  simp [hφ]
+theorem law_one_of_apply_one (hφ : φ 1 = 1) : law φ (1 : A) = Measure.dirac 1 := by simp [hφ]
 
 /-- Negating an element reflects its law, including the non-selfadjoint case where both are `0`. -/
 @[simp]
 theorem law_neg (a : A) : law φ (-a) = (law φ a).neg := by
   by_cases ha : IsSelfAdjoint a
-  · have h := law_smul_add_algebraMap φ ha (-1) 0
-    simpa [Measure.neg_def] using h
+  · simpa [Measure.neg_def] using law_smul_add_algebraMap φ ha (-1) 0
   · have hna : ¬IsSelfAdjoint (-a) := fun h => ha (by simpa using h.neg)
     simp [law_of_not_isSelfAdjoint, ha, hna, Measure.neg_def]
 
 /-- A unital `⋆`-algebra homomorphism intertwining two positive functionals preserves the law of
 every selfadjoint element. Neither injectivity of `f` nor normalization is required. -/
 theorem law_starAlgHom {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-    (ψ : B →ₚ[ℂ] ℂ) (f : A →⋆ₐ[ℂ] B) {x : A} (hx : IsSelfAdjoint x)
-    (hf : ∀ y, ψ (f y) = φ y) : law ψ (f x) = law φ x :=
-  (law_eq_law_iff_forall_apply_pow ψ φ (hx.map f) hx).mpr fun n => by
-    rw [← map_pow, hf]
+    (ψ : B →ₚ[ℂ] ℂ) (f : A →⋆ₐ[ℂ] B) {x : A} (hx : IsSelfAdjoint x) (hf : ∀ y, ψ (f y) = φ y) :
+    law ψ (f x) = law φ x :=
+  (law_eq_law_iff_forall_apply_pow ψ φ (hx.map f) hx).mpr fun n => by rw [← map_pow, hf]
 
-/-- Interval bounds on the real spectra of selfadjoint `x` and `y` bound the support of the law
-of `x + y`. -/
+/-- Interval bounds on the real spectra of selfadjoint `x` and `y` bound `(law φ (x + y)).support`.
+-/
 theorem support_law_add_subset_Icc {x y : A} (hx : IsSelfAdjoint x) (hy : IsSelfAdjoint y)
-    {m₁ M₁ m₂ M₂ : ℝ} (hxI : spectrum ℝ x ⊆ Set.Icc m₁ M₁)
-    (hyI : spectrum ℝ y ⊆ Set.Icc m₂ M₂) :
+    {m₁ M₁ m₂ M₂ : ℝ} (hxI : spectrum ℝ x ⊆ Set.Icc m₁ M₁) (hyI : spectrum ℝ y ⊆ Set.Icc m₂ M₂) :
     (law φ (x + y)).support ⊆ Set.Icc (m₁ + m₂) (M₁ + M₂) :=
   (support_law_subset_spectrum φ (x + y)).trans (hx.spectrum_add_subset_Icc hy hxI hyI)
 
-/-- Interval bounds on the real spectra of selfadjoint `x i` (`i ∈ s`) bound the support of the
-law of `∑ i ∈ s, x i`. -/
+/-- Interval bounds on `spectrum ℝ (x i)` (`i ∈ s`) bound `(law φ (∑ i ∈ s, x i)).support`. -/
 theorem support_law_sum_subset_Icc {ι : Type*} (s : Finset ι) {x : ι → A} {m M : ι → ℝ}
-    (hx : ∀ i ∈ s, IsSelfAdjoint (x i))
-    (hI : ∀ i ∈ s, spectrum ℝ (x i) ⊆ Set.Icc (m i) (M i)) :
+    (hx : ∀ i ∈ s, IsSelfAdjoint (x i)) (hI : ∀ i ∈ s, spectrum ℝ (x i) ⊆ Set.Icc (m i) (M i)) :
     (law φ (∑ i ∈ s, x i)).support ⊆ Set.Icc (∑ i ∈ s, m i) (∑ i ∈ s, M i) :=
   (support_law_subset_spectrum φ _).trans (TauCeti.spectrum_sum_subset_Icc s hx hI)
 
