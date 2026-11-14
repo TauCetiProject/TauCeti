@@ -32,10 +32,13 @@ Riesz theorem.
 
 ## Main declarations
 
-* `CStarModule.inner_polarization`: the polarization identity expressing `⟪x, y⟫_A` through the
-  inner products `⟪z, z⟫_A`.
+* `CStarModule.inner_map_polarization`, `CStarModule.inner_polarization`: polarization identities
+  expressing `⟪S x, T y⟫_A` and `⟪x, y⟫_A` through diagonal inner products.
 * `CStarModule.ext_inner_left`, `CStarModule.ext_inner_right`: vectors are determined by their
   inner products against all vectors.
+* `CStarModule.eq_of_forall_inner_map_self`, `CStarModule.inner_map_eq_iff_forall_self`:
+  complex-linear endomorphisms and inner-product-preserving maps are determined by diagonal inner
+  products.
 * `CStarModule.isGreatest_norm_inner`: norm recovery, `‖x‖` is the largest value of
   `‖⟪y, x⟫_A‖` over the closed unit ball.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`.
@@ -87,16 +90,26 @@ end Right
 variable [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A] [Norm A]
   [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
 
+/-- Polarization for a pair of complex-linear maps into a C⋆-module: the sesquilinear pairing
+`⟪S x, T y⟫_A` is determined by its diagonal values `⟪S z, T z⟫_A`. -/
+lemma inner_map_polarization {V M₁ M₂ : Type*} [AddCommGroup V] [Module ℂ V]
+    [FunLike M₁ V E] [LinearMapClass M₁ ℂ V E] [FunLike M₂ V E] [LinearMapClass M₂ ℂ V E]
+    (S : M₁) (T : M₂) (x y : V) :
+    inner A (S x) (T y) = (4 : ℂ)⁻¹ • (inner A (S (x + y)) (T (x + y)) -
+      inner A (S (x - y)) (T (x - y)) - I • inner A (S (x + I • y)) (T (x + I • y)) +
+      I • inner A (S (x - I • y)) (T (x - I • y))) := by
+  simp only [map_add, map_sub, map_smul, inner_add_left, inner_add_right, inner_sub_left,
+    inner_sub_right, inner_smul_left_complex, inner_smul_right_complex, Complex.star_def, conj_I,
+    smul_add, smul_sub, smul_neg, smul_smul, neg_smul, I_mul_I]
+  module
+
 /-- The polarization identity: the `A`-valued inner product, conjugate-linear in its first
 variable, is determined by its values `⟪z, z⟫_A` on the diagonal. This holds for either side
 convention, in particular for right Hilbert modules `CStarModule Aᵐᵒᵖ E`. -/
 lemma inner_polarization (x y : E) :
     inner A x y = (4 : ℂ)⁻¹ • (inner A (x + y) (x + y) - inner A (x - y) (x - y) -
-      I • inner A (x + I • y) (x + I • y) + I • inner A (x - I • y) (x - I • y)) := by
-  simp only [inner_add_left, inner_add_right, inner_sub_left, inner_sub_right,
-    inner_smul_left_complex, inner_smul_right_complex, Complex.star_def, conj_I, smul_add,
-    smul_sub, smul_neg, smul_smul, neg_smul, I_mul_I]
-  module
+      I • inner A (x + I • y) (x + I • y) + I • inner A (x - I • y) (x - I • y)) :=
+  inner_map_polarization (LinearMap.id : E →ₗ[ℂ] E) (LinearMap.id : E →ₗ[ℂ] E) x y
 
 /-- Vectors are determined by their inner products against all vectors in the first slot. -/
 theorem ext_inner_left {x y : E} (h : ∀ z, inner A z x = inner A z y) : x = y := by
@@ -109,6 +122,26 @@ theorem ext_inner_right {x y : E} (h : ∀ z, inner A x z = inner A y z) : x = y
   apply ext_inner_left (A := A)
   intro z
   simpa using congrArg star (h z)
+
+/-- Complex-linear endomorphisms of a C⋆-module are determined by their diagonal inner products
+`⟪x, T x⟫_A`. -/
+theorem eq_of_forall_inner_map_self {M : Type*} [FunLike M E E] [LinearMapClass M ℂ E E]
+    {S T : M} (h : ∀ x : E, inner A x (S x) = inner A x (T x)) : S = T :=
+  DFunLike.ext S T fun y ↦ ext_inner_left (A := A) fun x ↦ by
+    have hS := inner_map_polarization (A := A) (LinearMap.id : E →ₗ[ℂ] E) S x y
+    have hT := inner_map_polarization (A := A) (LinearMap.id : E →ₗ[ℂ] E) T x y
+    simp only [LinearMap.id_apply, h] at hS hT
+    exact hS.trans hT.symm
+
+/-- A complex-linear map between C⋆-modules preserves all inner products if and only if it
+preserves diagonal inner products `⟪x, x⟫_A`. -/
+theorem inner_map_eq_iff_forall_self {F M : Type*} [AddCommGroup F] [Module ℂ F] [SMul A F]
+    [Norm F] [CStarModule A F] [FunLike M E F] [LinearMapClass M ℂ E F] (U : M) :
+    (∀ x y : E, inner A (U x) (U y) = inner A x y) ↔
+      ∀ x : E, inner A (U x) (U x) = inner A x x :=
+  ⟨fun h x ↦ h x x, fun h x y ↦ by
+    rw [inner_map_polarization (A := A) U U x y, inner_polarization (A := A) x y]
+    simp only [h]⟩
 
 end Algebraic
 
