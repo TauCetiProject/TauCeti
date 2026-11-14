@@ -27,10 +27,11 @@ Let `F` be a flasque sheaf of abelian groups on a topological space `X`. This fi
 for every finite open cover `U` of `X` the augmented Čech complex
 `0 ⟶ F(X) ⟶ Č⁰(U, F) ⟶ Č¹(U, F) ⟶ ⋯` is exact: flasque sheaves have no higher Čech cohomology
 for finite covers. This is the Čech counterpart of the acyclicity of flasque sheaves for
-derived-functor cohomology (`TauCeti.Topology.subsingleton_H'_succ_of_isFlasque`). The comparison
-of Čech and derived-functor cohomology for covers whose finite intersections are acyclic
-(`TauCeti.Topology.homologyCechComplexIsoH`) does not use it: it holds for arbitrary covers, by
-the Čech acyclicity of injective sheaves on a site.
+derived-functor cohomology (`TauCeti.Topology.subsingleton_H'_succ_of_isFlasque`). The finite-cover
+results supply the injective Čech acyclicity used in Cartan's criterion
+(`TauCeti.Topology.subsingleton_H'_succ_of_isCechAcyclicOn`) and, on compact spaces, the vanishing
+of cover-colimit Čech cohomology of flasque sheaves of modules
+(`TauCeti.Topology.isZero_cechCohomology_succ_of_isFlasque`).
 
 The proof is by induction on the number of members of the cover, applied more generally to the
 restricted presheaves `V ↦ F(Y ∩ V)` for opens `Y` contained in the union of the members. For a
