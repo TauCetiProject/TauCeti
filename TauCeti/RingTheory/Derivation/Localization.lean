@@ -31,7 +31,12 @@ scheme on its basic open subsets.
 * `IsLocalization.eq_of_leibniz`: two maps `T → N` satisfying the Leibniz rule and agreeing on
   the image of `A` are equal;
 * `Derivation.extendOfIsLocalization`: the extension of a derivation of `A` to `T`, with
-  `Derivation.extendOfIsLocalization_algebraMap` stating that it extends.
+  `Derivation.extendOfIsLocalization_algebraMap` stating that it extends;
+* `Derivation.algebraMap_mem_maximalIdeal_pow_of_mem_maximalIdeal_pow_succ`: if the image of `f` in
+  `A_Q` lies in the `(n + 1)`-th power of the maximal ideal, then `D f` maps into the `n`-th power;
+* `Derivation.foldl_mem_of_algebraMap_mem_maximalIdeal_pow`: if the image of `f` in `A_Q` lies in
+  the `n`-th power of the maximal ideal, every iterated derivation of length `< n` maps `f` into
+  `Q`;
 * `Derivation.algebraMap_notMem_maximalIdeal_sq`: if `D f ∉ Q` for a prime `Q` of `A`, then the
   image of `f` in `A_Q` does not lie in the square of its maximal ideal.
 -/
@@ -84,17 +89,56 @@ theorem extendOfIsLocalization_algebraMap (S : Submonoid A) [IsLocalization S T]
   -- Keep the differential in the image of `map` so the localization lift simplifies.
   simp [-KaehlerDifferential.map_D]
 
+/-- If the image of `f` in the local ring `A_Q` lies in the `(n + 1)`-th power of the maximal
+ideal, then for every `R`-derivation `D` of `A`, the image of `D f` lies in the `n`-th power of
+the maximal ideal. -/
+theorem algebraMap_mem_maximalIdeal_pow_of_mem_maximalIdeal_pow_succ (D : Derivation R A A)
+    {Q : Ideal A} [Q.IsPrime] {n : ℕ} {f : A}
+    (hf : algebraMap A (Localization.AtPrime Q) f ∈
+      IsLocalRing.maximalIdeal (Localization.AtPrime Q) ^ (n + 1)) :
+    algebraMap A (Localization.AtPrime Q) (D f) ∈
+      IsLocalRing.maximalIdeal (Localization.AtPrime Q) ^ n := by
+  -- The extension of `D` to `A_Q` maps `𝔪 ^ (n + 1)` into `𝔪 ^ n`.
+  have h := (((Algebra.linearMap A (Localization.AtPrime Q)).compDer D).extendOfIsLocalization
+    Q.primeCompl).apply_mem_pow_smul_top_of_mem_pow_succ hf
+  rwa [extendOfIsLocalization_algebraMap, smul_eq_mul, Ideal.mul_top] at h
+
+/-- Applying a list `l` of derivations of `A` shifts membership in powers of the maximal ideal of
+`A_Q` down by `l.length`. -/
+theorem algebraMap_foldl_mem_maximalIdeal_pow {ι : Type*} (D : ι → Derivation R A A)
+    {Q : Ideal A} [Q.IsPrime] {n : ℕ} {f : A} (l : List ι)
+    (hf : algebraMap A (Localization.AtPrime Q) f ∈
+      IsLocalRing.maximalIdeal (Localization.AtPrime Q) ^ (n + l.length)) :
+    algebraMap A (Localization.AtPrime Q) (l.foldl (fun g i ↦ D i g) f) ∈
+      IsLocalRing.maximalIdeal (Localization.AtPrime Q) ^ n := by
+  induction l generalizing f with
+  | nil => simpa using hf
+  | cons i l ih =>
+    exact ih ((D i).algebraMap_mem_maximalIdeal_pow_of_mem_maximalIdeal_pow_succ
+      (by simpa only [List.length_cons, Nat.add_assoc] using hf))
+
+/-- If the image of `f` in `A_Q` lies in the `n`-th power of the maximal ideal, then every
+iterated derivation of `f` along a list of length strictly less than `n` belongs to `Q`. -/
+theorem foldl_mem_of_algebraMap_mem_maximalIdeal_pow {ι : Type*} (D : ι → Derivation R A A)
+    {Q : Ideal A} [Q.IsPrime] {n : ℕ} {f : A}
+    (hf : algebraMap A (Localization.AtPrime Q) f ∈
+      IsLocalRing.maximalIdeal (Localization.AtPrime Q) ^ n)
+    {l : List ι} (hl : l.length < n) :
+    l.foldl (fun g i ↦ D i g) f ∈ Q := by
+  have hmem : algebraMap A (Localization.AtPrime Q) f ∈
+      IsLocalRing.maximalIdeal (Localization.AtPrime Q) ^ (1 + l.length) :=
+    Ideal.pow_le_pow_right (by omega) hf
+  have h := algebraMap_foldl_mem_maximalIdeal_pow D l hmem
+  rw [pow_one] at h
+  exact (IsLocalization.AtPrime.to_map_mem_maximal_iff _ Q _).mp h
+
 /-- If a derivation `D` of `A` maps `f` outside the prime ideal `Q`, then the image of `f` in the
 local ring `A_Q` does not lie in the square of its maximal ideal. -/
 theorem algebraMap_notMem_maximalIdeal_sq (D : Derivation R A A) {Q : Ideal A} [Q.IsPrime]
     {f : A} (hf : D f ∉ Q) :
     algebraMap A (Localization.AtPrime Q) f ∉
-      IsLocalRing.maximalIdeal (Localization.AtPrime Q) ^ 2 := by
-  -- the extension of `D` to `A_Q` maps the square of the maximal ideal into the maximal ideal
-  intro h
-  have h' := (((Algebra.linearMap A (Localization.AtPrime Q)).compDer D).extendOfIsLocalization
-    Q.primeCompl).apply_mem_smul_top_of_mem_sq h
-  rw [extendOfIsLocalization_algebraMap, smul_eq_mul, Ideal.mul_top] at h'
-  exact hf ((IsLocalization.AtPrime.to_map_mem_maximal_iff _ Q _).mp h')
+      IsLocalRing.maximalIdeal (Localization.AtPrime Q) ^ 2 :=
+  fun h ↦ hf (foldl_mem_of_algebraMap_mem_maximalIdeal_pow (fun _ : Unit ↦ D) h (l := [()])
+    (by simp))
 
 end Derivation
