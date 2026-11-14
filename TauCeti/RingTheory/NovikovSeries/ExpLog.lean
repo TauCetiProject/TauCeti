@@ -95,20 +95,22 @@ that subobject. This holds for the totalized exponential without a positivity as
 theorem support_exp_subset (a : NovikovSeries K H N) {M : Type*} [SetLike M H]
     [AddSubmonoidClass M H] {S : M} (ha : a.support ⊆ S) :
     (NormedSpace.exp a).support ⊆ S := by
-  exact (mem_supportSubalgebra ℚ K N).1
-    (NormedSpace.exp_mem (R := ℚ) (s := supportSubalgebra ℚ K N S)
-      (by simpa only [coe_supportSubalgebra] using isClosed_support_subset (N := N) (S : Set H))
-      ((mem_supportSubalgebra ℚ K N).2 ha))
+  exact (mem_supportedSubalgebra ℚ K N).1
+    (NormedSpace.exp_mem (R := ℚ) (s := supportedSubalgebra ℚ K N S)
+      (by simpa only [coe_supportedSubalgebra] using
+        isClosed_setOf_support_subset (N := N) (S : Set H))
+      ((mem_supportedSubalgebra ℚ K N).2 ha))
 
 /-- The logarithm of a series supported in an additive submonoid or subgroup is supported in
 that subobject. This holds for the totalized logarithm without a positivity assumption. -/
 theorem support_log_subset (u : NovikovSeries K H N) {M : Type*} [SetLike M H]
     [AddSubmonoidClass M H] {S : M} (hu : u.support ⊆ S) :
     (NormedSpace.log u).support ⊆ S := by
-  exact (mem_supportSubalgebra ℚ K N).1
-    (NormedSpace.log_mem (R := ℚ) (s := supportSubalgebra ℚ K N S)
-      (by simpa only [coe_supportSubalgebra] using isClosed_support_subset (N := N) (S : Set H))
-      ((mem_supportSubalgebra ℚ K N).2 hu))
+  exact (mem_supportedSubalgebra ℚ K N).1
+    (NormedSpace.log_mem (R := ℚ) (s := supportedSubalgebra ℚ K N S)
+      (by simpa only [coe_supportedSubalgebra] using
+        isClosed_setOf_support_subset (N := N) (S : Set H))
+      ((mem_supportedSubalgebra ℚ K N).2 hu))
 
 end Ring
 

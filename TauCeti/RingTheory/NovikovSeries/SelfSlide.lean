@@ -35,8 +35,9 @@ commutative `ℚ`-algebra of coefficients may have zero divisors.
 
 ## Main results
 
-* `TauCeti.NovikovSeries.support_subset_nsmul_ge_two_of_mem_posIdeal`: removing the first
-  coefficient of a positive cyclically supported series leaves only indices at least two.
+* `TauCeti.NovikovSeries.support_subset_setOf_exists_two_le_and_eq_nsmul_of_mem_posIdeal`:
+  removing the first coefficient of a positive cyclically supported series leaves only indices
+  at least two.
 * `TauCeti.NovikovSeries.mem_periodIdeal_two_mul_of_support_subset_zmultiples` and
   `TauCeti.NovikovSeries.sub_one_mem_periodIdeal_two_mul_of_support_subset_zmultiples`:
   the resulting filtration bounds for positive series and principal units.
@@ -65,7 +66,7 @@ variable {R H : Type*} [Ring R] [AddGroup H] {N : H →+ ℝ} {h : H}
 
 /-- A positive series supported on the integer multiples of a positive-period class, with
 zero coefficient at that class, is supported on its natural multiples of index at least two. -/
-theorem support_subset_nsmul_ge_two_of_mem_posIdeal
+theorem support_subset_setOf_exists_two_le_and_eq_nsmul_of_mem_posIdeal
     (hpos : 0 < N h) {a : nonnegSubring R N} (ha : a ∈ posIdeal R N)
     (hsupp : (a : NovikovSeries R H N).support ⊆ (AddSubgroup.zmultiples h : Set H))
     (hfirst : (a : NovikovSeries R H N).coeff h = 0) :
@@ -99,7 +100,8 @@ theorem mem_periodIdeal_two_mul_of_support_subset_zmultiples
   refine mem_periodFiltration.2 fun g hg => ?_
   by_contra hcoeff
   obtain ⟨k, hk, rfl⟩ :=
-    support_subset_nsmul_ge_two_of_mem_posIdeal hpos ha hsupp hfirst (mem_support.2 hcoeff)
+    support_subset_setOf_exists_two_le_and_eq_nsmul_of_mem_posIdeal
+      hpos ha hsupp hfirst (mem_support.2 hcoeff)
   have hk' : (2 : ℝ) ≤ k := by exact_mod_cast hk
   have hperiod : N (k • h) = (k : ℝ) * N h := by simp
   nlinarith
@@ -162,7 +164,8 @@ theorem eq_zero_of_forall_algebraNorm_exp_sub_one_mem_periodFiltration
   rw [Subring.coe_zero, coeff_zero]
   by_contra hg
   obtain ⟨k, hk, rfl⟩ :=
-    support_subset_nsmul_ge_two_of_mem_posIdeal hpos ha hsupp hfirst (mem_support.2 hg)
+    support_subset_setOf_exists_two_le_and_eq_nsmul_of_mem_posIdeal
+      hpos ha hsupp hfirst (mem_support.2 hg)
   let : NeZero k := ⟨by omega⟩
   obtain ⟨C, hC, hcutC⟩ := hcut k hk
   have hz := coeff_log_eq_zero_of_algebraNorm_sub_one_mem_periodFiltration

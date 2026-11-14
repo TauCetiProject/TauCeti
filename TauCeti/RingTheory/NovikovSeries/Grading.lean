@@ -28,7 +28,7 @@ theory on a spherically monotone symplectic manifold, graded by twice the first 
 ## Main definitions
 
 * `TauCeti.NovikovSeries.supported R N s`: the Novikov series supported in the set `s`.
-* `TauCeti.NovikovSeries.supportSubalgebra S R N s`: the subalgebra of series supported in an
+* `TauCeti.NovikovSeries.supportedSubalgebra S R N s`: the subalgebra of series supported in an
   additive submonoid or subgroup `s`.
 * `TauCeti.NovikovSeries.gradeBy R N f i`: the Novikov series of degree `i` for the degree
   function `f`.
@@ -97,7 +97,7 @@ variable [CommSemiring S] [Algebra S R] [AddMonoid H] {N : H →+ ℝ}
 
 variable (S R N) in
 /-- The subalgebra of Novikov series supported in the additive submonoid or subgroup `s`. -/
-def supportSubalgebra (s : M) : Subalgebra S (NovikovSeries R H N) where
+def supportedSubalgebra (s : M) : Subalgebra S (NovikovSeries R H N) where
   carrier := {a | a.support ⊆ s}
   add_mem' ha hb := (support_add_subset _ _).trans (Set.union_subset ha hb)
   mul_mem' ha hb h hh := by
@@ -109,17 +109,17 @@ def supportSubalgebra (s : M) : Subalgebra S (NovikovSeries R H N) where
       zero_mem s
 
 variable (S R N) in
-/-- The carrier of `supportSubalgebra S R N s` consists of series supported in `s`. -/
+/-- The carrier of `supportedSubalgebra S R N s` consists of series supported in `s`. -/
 @[simp]
-theorem coe_supportSubalgebra (s : M) :
-    (supportSubalgebra S R N s : Set (NovikovSeries R H N)) = {a | a.support ⊆ (s : Set H)} := by
+theorem coe_supportedSubalgebra (s : M) :
+    (supportedSubalgebra S R N s : Set (NovikovSeries R H N)) = {a | a.support ⊆ (s : Set H)} := by
   rfl
 
 variable (S R N) in
-/-- A series lies in `supportSubalgebra S R N s` exactly when its support lies in `s`. -/
+/-- A series lies in `supportedSubalgebra S R N s` exactly when its support lies in `s`. -/
 @[simp]
-theorem mem_supportSubalgebra {s : M} {a : NovikovSeries R H N} :
-    a ∈ supportSubalgebra S R N s ↔ a.support ⊆ s :=
+theorem mem_supportedSubalgebra {s : M} {a : NovikovSeries R H N} :
+    a ∈ supportedSubalgebra S R N s ↔ a.support ⊆ s :=
   Iff.rfl
 
 end AddMonoid

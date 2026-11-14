@@ -62,7 +62,7 @@ to a complete separated uniform space extends uniquely to the Novikov series. Th
   basis of open subgroups, and coefficientwise scalar multiplication is continuous.
 * `TauCeti.NovikovSeries.coeff_tsum_eq_zero`: a sum of series vanishing at an exponent vanishes
   there.
-* `TauCeti.NovikovSeries.isClosed_support_subset`: series supported in any fixed set form a
+* `TauCeti.NovikovSeries.isClosed_setOf_support_subset`: series supported in any fixed set form a
   closed set.
 * `TauCeti.NovikovSeries.summable_sigma_fin_iff` and `TauCeti.NovikovSeries.tsum_sigma_fin`:
   over coefficients without additive torsion, listing the `i`-th series of a family `c i` times
@@ -305,7 +305,7 @@ theorem isLocallyConstant_coeff (h : H) :
 
 /-- The series supported in any fixed set of exponents form a closed set in the period
 topology. -/
-theorem isClosed_support_subset (s : Set H) :
+theorem isClosed_setOf_support_subset (s : Set H) :
     IsClosed {a : NovikovSeries R H N | a.support ⊆ s} := by
   have hset : {a : NovikovSeries R H N | a.support ⊆ s} =
       ⋂ h ∈ {h | h ∉ s}, {a | a.coeff h = 0} := by
