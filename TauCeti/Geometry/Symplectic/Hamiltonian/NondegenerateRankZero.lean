@@ -13,6 +13,7 @@ import Mathlib.FieldTheory.Separable
 import TauCeti.Algebra.Lie.AdjointAction.Basic
 import TauCeti.Algebra.Lie.Subalgebra.Cartan
 import TauCeti.Algebra.Lie.Subalgebra.Engel
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.Geometry.Symplectic.Plane
 import TauCeti.LinearAlgebra.End.Prod
@@ -38,15 +39,19 @@ This file sets up this notion on a symplectic vector space, the local model of t
   the linear span of the family (`isNondegenerateQuadraticFamily_iff_of_span_eq`), and is
   invariant under linear symplectomorphisms (`isNondegenerateQuadraticFamily_comp_iff`). In
   particular, forms on `V` and the forms they induce on the reduced space of `⊤` are nondegenerate
-  together (`isNondegenerateQuadraticFamily_reduction_iff_of_eq_top`). By
+  together (`isNondegenerateQuadraticFamily_reduction_iff_of_eq_top`), and families induced on
+  reduced spaces are invariant under linear symplectomorphisms
+  (`isNondegenerateQuadraticFamily_reduction_comp_iff`). By
   Mathlib's `LieSubalgebra.normalizer_eq_self_of_engel_le`, a Poisson-commuting family is
   nondegenerate as soon as it contains the Engel subalgebra of one Hamiltonian endomorphism
   (`isNondegenerateQuadraticFamily_of_engel_le`).
 * `TauCeti.SymplecticForm.IsNondegenerateRankZeroPoint ω F x`: `x` is a `C²` critical point of
   `F : E → G` at which the Hessians of the functions `ℓ ∘ F`, `ℓ` a linear functional on `G`, form
   a nondegenerate family. For `G = ℝⁿ` these may be replaced by the Hessians of the components
-  (`isNondegenerateRankZeroPoint_pi_iff`), and the notion is invariant under composition with
-  maps `g : G → G'` whose differential is injective (`isNondegenerateRankZeroPoint_comp_iff`).
+  (`isNondegenerateRankZeroPoint_pi_iff`). The notion is invariant under composition with
+  maps `g : G → G'` whose differential is injective (`isNondegenerateRankZeroPoint_comp_iff`),
+  and under precomposition with maps whose differential is a linear symplectomorphism, such as
+  canonical transformations (`isNondegenerateRankZeroPoint_comp_iff_of_isSymplectomorphism`).
 
 In dimension two the notion reduces to Morse theory: a single quadratic form is a nondegenerate
 family exactly when it is a nondegenerate quadratic form
@@ -216,6 +221,23 @@ theorem isNondegenerateQuadraticFamily_reduction_iff_of_eq_top {U : Submodule �
   congr! with i
   ext v
   simp
+
+/-- **Invariance of reduced families under linear symplectomorphisms.** If `e : V ≃ V'` carries
+`ω` to `ω'` and `U` onto `U'`, the forms induced on the reduced space of `U` by the pullbacks
+`Q i ∘ e` form a nondegenerate family exactly when the forms induced on the reduced space of `U'`
+by the `Q i` do. -/
+theorem isNondegenerateQuadraticFamily_reduction_comp_iff {V' : Type*} [AddCommGroup V']
+    [Module ℝ V'] [FiniteDimensional ℝ V'] {ω' : SymplecticForm V'} {e : V ≃ₗ[ℝ] V'}
+    (he : IsSymplectomorphism ω ω' e) {U : Submodule ℝ V} {U' : Submodule ℝ V'}
+    (hU : U.map (e : V →ₗ[ℝ] V') = U') (Q : ι → QuadraticForm ℝ V')
+    (hQ : ∀ i, ∀ w ∈ U' ⊓ ω'.orthogonal U', ∀ u ∈ U', QuadraticMap.polar (Q i) w u = 0) :
+    (ω.reduction U).IsNondegenerateQuadraticFamily (fun i ↦ ω.reducedQuadraticForm U
+        ((Q i).comp (e : V →ₗ[ℝ] V')) ((forall_polar_comp_eq_zero_iff he hU (Q i)).2 (hQ i))) ↔
+      (ω'.reduction U').IsNondegenerateQuadraticFamily
+        fun i ↦ ω'.reducedQuadraticForm U' (Q i) (hQ i) := by
+  have h := isNondegenerateQuadraticFamily_comp_iff (isSymplectomorphism_reducedSpaceCongr e he hU)
+    fun i ↦ ω'.reducedQuadraticForm U' (Q i) (hQ i)
+  simpa only [reducedQuadraticForm_comp_reducedSpaceCongr] using h
 
 /-- **Regular elements give Cartan subalgebras.** A family of pairwise Poisson-commuting quadratic
 forms is nondegenerate as soon as the Engel subalgebra of the Hamiltonian endomorphism of some
@@ -549,6 +571,40 @@ theorem isNondegenerateRankZeroPoint_comp_iff [FiniteDimensional ℝ G'] {g : G 
     congrArg (Submodule.span ℝ) (range_hessianQuadraticForm_comp hg hinj hF (h0.1 h))]
   exact ⟨fun ⟨_, h, hQ⟩ ↦ ⟨hF, h0.1 h, hQ⟩,
     fun h ↦ ⟨hg.comp x hF, h0.2 h.fderiv_eq_zero, h.isNondegenerateQuadraticFamily⟩⟩
+
+/-- **Invariance under canonical transformations.** If `φ : E' → E` is `C²` at `y`, with
+differential at `y` a linear symplectomorphism `e` from `(E', ω')` to `(E, ω)`, then `y` is a
+nondegenerate rank-zero point of `F ∘ φ` for `ω'` exactly when `φ y` is a nondegenerate rank-zero
+point of `F` for `ω`: the Hessians of the functions `ℓ ∘ F ∘ φ` are those of the `ℓ ∘ F` pulled
+back along `e`. Only the differential of `φ` at `y` enters, so this applies in particular to a `C²`
+canonical transformation `φ`. -/
+theorem isNondegenerateRankZeroPoint_comp_iff_of_isSymplectomorphism {E' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] {ω' : SymplecticForm E'}
+    {φ : E' → E} {y : E'} {e : E' ≃ₗ[ℝ] E} (he : IsSymplectomorphism ω' ω e)
+    (hφ : ContDiffAt ℝ 2 φ y) (hφe : ∀ v, fderiv ℝ φ y v = e v) :
+    ω'.IsNondegenerateRankZeroPoint (F ∘ φ) y ↔ ω.IsNondegenerateRankZeroPoint F (φ y) := by
+  have hD : fderiv ℝ φ y = (e.toContinuousLinearEquiv : E' →L[ℝ] E) :=
+    ContinuousLinearMap.ext fun v ↦ by simp [hφe]
+  have hcd := hφ.contDiffAt_comp_iff (h := F)
+    (hD ▸ (hφ.differentiableAt two_ne_zero).hasFDerivAt) two_ne_zero
+  by_cases hF : ContDiffAt ℝ 2 F (φ y)
+  swap
+  · exact iff_of_false (fun h ↦ hF (hcd.1 h.contDiffAt)) fun h ↦ hF h.contDiffAt
+  have h0 : fderiv ℝ (F ∘ φ) y = 0 ↔ fderiv ℝ F (φ y) = 0 := by
+    rw [fderiv_comp y (hF.differentiableAt two_ne_zero) (hφ.differentiableAt two_ne_zero), hD]
+    simp [ContinuousLinearMap.ext_iff, e.toContinuousLinearEquiv.surjective.forall]
+  -- At a critical point, the Hessian of `ℓ ∘ F ∘ φ` is the pullback of that of `ℓ ∘ F` along `e`.
+  have hH : ∀ ℓ : G →L[ℝ] ℝ, fderiv ℝ F (φ y) = 0 → hessianQuadraticForm (ℓ ∘ F ∘ φ) y =
+      (hessianQuadraticForm (ℓ ∘ F) (φ y)).comp (e : E' →ₗ[ℝ] E) := fun ℓ hc ↦ by
+    rw [← Function.comp_assoc, hessianQuadraticForm_comp (ℓ.contDiff.contDiffAt.comp _ hF) hφ
+      (by rw [fderiv_comp _ ℓ.differentiableAt (hF.differentiableAt two_ne_zero), ℓ.fderiv, hc,
+        ContinuousLinearMap.comp_zero]), hD]
+    rfl
+  rw [isNondegenerateRankZeroPoint_iff_of_span_eq fun _ hc ↦ congrArg (Submodule.span ℝ)
+    (congrArg Set.range (funext fun ℓ ↦ hH ℓ (h0.1 hc))),
+    isNondegenerateQuadraticFamily_comp_iff he]
+  exact ⟨fun ⟨_, hc, hQ⟩ ↦ ⟨hF, h0.1 hc, hQ⟩,
+    fun h ↦ ⟨hcd.2 hF, h0.2 h.fderiv_eq_zero, h.isNondegenerateQuadraticFamily⟩⟩
 
 /-- **Nondegenerate rank-zero points of one Hamiltonian on a symplectic plane.** On a
 two-dimensional symplectic vector space, a point is a nondegenerate rank-zero point of a function

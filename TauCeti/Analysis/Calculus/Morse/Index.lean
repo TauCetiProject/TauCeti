@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.LinearAlgebra.QuadraticForm.Real
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -203,15 +204,23 @@ theorem _root_.ContinuousLinearMap.hessianQuadraticForm_comp_left_apply (ℓ : F
   rw [hessianQuadraticForm_apply, fderiv_fderiv_comp_apply ℓ.contDiff.contDiffAt hφ]
   simp [hℓ]
 
+/-- Along the kernel of the differential of a `C²` map `φ` at `x`, the Hessian of `h ∘ φ` only
+involves the differential of `h` at `φ x`: on a vector `v` with `Dφ(x) v = 0` it agrees with the
+Hessian of `Dh(φ x) ∘ φ`. -/
+theorem hessianQuadraticForm_comp_apply_of_fderiv_apply_eq_zero {h : F → ℝ} {φ : E → F}
+    (hh : ContDiffAt ℝ 2 h (φ x)) (hφ : ContDiffAt ℝ 2 φ x) {v : E} (hv : fderiv ℝ φ x v = 0) :
+    hessianQuadraticForm (h ∘ φ) x v = hessianQuadraticForm (fderiv ℝ h (φ x) ∘ φ) x v := by
+  rw [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply _ hφ, hessianQuadraticForm_apply,
+    fderiv_fderiv_comp_apply hh hφ, hv]
+  simp
+
 /-- At a critical point `x` of a `C²` map `φ`, the Hessian of `h ∘ φ` only involves the
 differential of `h` at `φ x`: it is the Hessian of `Dh(φ x) ∘ φ`. -/
 theorem hessianQuadraticForm_comp_eq_fderiv_comp {h : F → ℝ} {φ : E → F}
     (hh : ContDiffAt ℝ 2 h (φ x)) (hφ : ContDiffAt ℝ 2 φ x) (hc : fderiv ℝ φ x = 0) :
     hessianQuadraticForm (h ∘ φ) x = hessianQuadraticForm (fderiv ℝ h (φ x) ∘ φ) x := by
   ext v
-  rw [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply _ hφ, hessianQuadraticForm_apply,
-    fderiv_fderiv_comp_apply hh hφ, hc]
-  simp
+  exact hessianQuadraticForm_comp_apply_of_fderiv_apply_eq_zero hh hφ (by simp [hc])
 
 /-- At a `C²` point of `φ`, the Hessians of all the functions `ℓ ∘ φ`, for `ℓ` a continuous linear
 functional, span the same space as the Hessians of the `L i ∘ φ`, for any family `L` spanning the
@@ -272,14 +281,9 @@ theorem range_hessianQuadraticForm_comp {G : Type*} [NormedAddCommGroup G] [Norm
       (ℓ.contDiff.contDiffAt.comp _ hg) hφ hc, fderiv_comp _ ℓ.differentiableAt
       (hg.differentiableAt (by norm_num)), ℓ.fderiv]
   simp only [hℓ]
-  refine le_antisymm (by rintro _ ⟨ℓ, rfl⟩; exact ⟨_, rfl⟩) ?_
-  rintro _ ⟨ℓ, rfl⟩
-  obtain ⟨h, hh⟩ := (fderiv ℝ g (φ x) : F →ₗ[ℝ] G).exists_leftInverse_of_injective
-    (LinearMap.ker_eq_bot.2 hinj)
-  have hℓ' : (ℓ.comp (LinearMap.toContinuousLinearMap h)).comp (fderiv ℝ g (φ x)) = ℓ := by
-    ext w
-    simpa using congr(ℓ ($hh w))
-  exact ⟨ℓ.comp (LinearMap.toContinuousLinearMap h), by beta_reduce; rw [hℓ']⟩
+  rw [← (ContinuousLinearMap.surjective_compL_flip_of_injective hinj).range_comp
+    fun ℓ : F →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ φ) x]
+  simp only [Function.comp_def, ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply]
 
 /-- The **Morse index** of `f` at `x` is the negative index of inertia of its Hessian quadratic
 form.  In finite dimensions it is equivalently the maximal dimension of a subspace on which the
