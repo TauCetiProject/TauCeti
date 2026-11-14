@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Unitary
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Unitary.Commutator
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.BasicProperties.TwistedA.Basic
 
 /-!
@@ -17,6 +17,7 @@ We embed the corresponding unitary subgroup of the Heisenberg group into the fin
 special unitary model and then into the actual Steinberg fixed points of `²A₂(q)`.
 The embedding is injective and retains the matrix coordinates under finite-field descent.
 The inherited multiplication and central commutator formulas describe this root subgroup.
+Its derived subgroup is exactly its centre, also on its image in the Steinberg fixed points.
 
 ## References
 
@@ -160,6 +161,24 @@ theorem rankTwoUpperUnitaryRootHom_injective (q : PrimePower)
     Function.Injective (rankTwoUpperUnitaryRootHom q hv) :=
   (specialUnitaryEquivFixedPoints 2 q hv).injective.comp
     (ofTwistedA 2 q hv).1.rankTwoUpperUnitaryRootHom_injective
+
+/-- The upper root subgroup of the actual Steinberg fixed points of `²A₂(q)` has derived
+subgroup equal to its centre, including in characteristic two. -/
+theorem commutator_range_rankTwoUpperUnitaryRootHom (q : PrimePower)
+    (hv : (LieTypeIndex.twistedA 2 q).Valid) :
+    commutator (rankTwoUpperUnitaryRootHom q hv).range =
+      Subgroup.center (rankTwoUpperUnitaryRootHom q hv).range := by
+  let d := (ofTwistedA 2 q hv).1
+  let e := MonoidHom.ofInjective (rankTwoUpperUnitaryRootHom_injective q hv)
+  have h := HeisenbergGroup.unitarySubgroup.commutator_eq_center_iterateFrobenius
+    (K := GaloisField d.characteristic (d.fieldExponent * 2))
+    (p := d.characteristic) (n := d.fieldExponent)
+    (by
+      simpa [pow_mul] using GaloisField.card d.characteristic (d.fieldExponent * 2)
+        (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero))
+  have hm := congrArg (Subgroup.map e.toMonoidHom) h
+  exact (map_commutator_of_surjective e.surjective).symm.trans
+    (hm.trans (Subgroup.map_center_eq e))
 
 end TauCeti.TypeALieIndex
 
