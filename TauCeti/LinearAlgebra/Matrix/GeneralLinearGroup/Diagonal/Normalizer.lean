@@ -26,6 +26,8 @@ Weyl group of the corresponding coordinate root datum with the same permutation 
 ## Main declarations
 
 * `TauCeti.permutationGL`: the permutation-matrix embedding in `GL`.
+* `Matrix.permMatrix_mul_apply`, `TauCeti.coe_permutationGL_mul_apply`: left multiplication by a
+  permutation matrix permutes rows.
 * `TauCeti.coe_permutationGL_inv_mul_mul_permutationGL_apply`: conjugation by a permutation matrix
   relabels both matrix indices.
 * `TauCeti.permutationGL_mul_mul_inv`: conjugation by a permutation matrix is reindexing along
@@ -79,6 +81,21 @@ theorem permutationGL_coe {ι : Type*} [Fintype ι] [DecidableEq ι] (σ : Equiv
   by
     rw [permutationGL, MonoidHom.coe_toHomUnits]
     rfl
+
+/-- Left multiplication by `σ.permMatrix R` permutes the rows: the `(i, j)` entry of
+`σ.permMatrix R * M` is `M (σ i) j`. -/
+@[simp]
+theorem _root_.Matrix.permMatrix_mul_apply {R : Type*} [NonAssocSemiring R] {ι κ : Type*}
+    [Fintype ι] [DecidableEq ι] {σ : Equiv.Perm ι} (M : Matrix ι κ R) (i : ι) (j : κ) :
+    (σ.permMatrix R * M) i j = M (σ i) j := by
+  rw [Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, Matrix.submatrix_apply, id]
+
+/-- Left multiplication by the matrix underlying `permutationGL σ` permutes the rows along `σ⁻¹`:
+the `(i, j)` entry of `(permutationGL σ : Matrix ι ι k) * M` is `M (σ.symm i) j`. -/
+theorem coe_permutationGL_mul_apply {ι κ : Type*} [Fintype ι] [DecidableEq ι]
+    (σ : Equiv.Perm ι) (M : Matrix ι κ k) (i : ι) (j : κ) :
+    ((permutationGL (k := k) σ : Matrix ι ι k) * M) i j = M (σ.symm i) j := by
+  rw [permutationGL_coe, permMatrix_mul_apply, Equiv.Perm.inv_def]
 
 /-- Right multiplication by `permutationGL σ` permutes the columns: the `(i, j)` entry of
 `g * permutationGL σ` is the `(i, σ j)` entry of `g`. -/

@@ -62,6 +62,8 @@ element (`TauCeti.diagGL_const`).
 
 * `TauCeti.isUnit_apply_of_isDiag`: the diagonal entries of an invertible diagonal matrix are
   units.
+* `TauCeti.exists_apply_ne_zero_col`: every invertible matrix over a nontrivial semiring has a
+  nonzero entry in each column.
 * `TauCeti.coe_inv_of_coe_eq_diagonal`: over a division ring, the inverse of an invertible
   diagonal matrix is the diagonal matrix of the inverse entries.
 * `TauCeti.exists_det_eq_one_mul_map_eq_map_mul_diagGL`: a matrix intertwining another matrix with
@@ -166,6 +168,14 @@ theorem isUnit_apply_of_isDiag {g : GL ι k} (hg : (g : Matrix ι ι k).IsDiag) 
   have := g.isUnit
   rw [← hg.diagonal_diag] at this
   exact Pi.isUnit_iff.mp (isUnit_diagonal_iff.mp this) i
+
+/-- Every invertible matrix over a nontrivial semiring has at least one nonzero entry in each
+column. -/
+theorem exists_apply_ne_zero_col [Nontrivial k] (g : GL ι k) (j : ι) :
+    ∃ i : ι, g i j ≠ 0 := by
+  by_contra! h
+  have h1 := congrFun (congrFun g.inv_mul j) j
+  simp [Matrix.mul_apply, h] at h1
 
 /-- The **diagonal torus** of `GL n k`: the image of the coordinatewise units under `diagGL`. -/
 def diagonalTorus (k : Type u) [Semiring k] (n : ℕ) : Subgroup (GL (Fin n) k) :=
