@@ -26,16 +26,38 @@ in particular the resulting metric is independent of that choice. Install the na
 `fockNormedAddCommGroup` and `fockInnerProductSpace` locally, in that order. No global
 norm or inner product instance on an exterior algebra is introduced.
 
-The vacuum has norm one, and the normalized real Clifford action has native adjoint
-`c(a)* = c(star a)`. Thus `c(v)* = -c(v)` for real vectors, with the normalization already
-built into the Fock action. These identities supply the Hermitian hypothesis of the
-half-spin representation and its restriction to either chirality eigenspace.
+The vacuum has norm one, pure wedges in every degree `p` (including degree zero and the top
+degree) satisfy the Gram-determinant formula `⟪x₁ ∧ … ∧ x_p, y₁ ∧ … ∧ y_p⟫ = det (h_ℂ (xᵢ, yⱼ))`
+with distinct exterior powers orthogonal, and the normalized real Clifford action has native
+adjoint `c(a)* = c(star a)`. Thus `c(v)* = -c(v)` for real vectors, with the normalization already
+built into the Fock action. These identities supply the Hermitian hypothesis of the half-spin
+representation and its restriction to either chirality eigenspace.
+
+## Main definitions
+
+* `TauCeti.AlmostComplexStructure.fockInnerProductCore`,
+  `TauCeti.AlmostComplexStructure.fockNormedAddCommGroup`, and
+  `TauCeti.AlmostComplexStructure.fockInnerProductSpace`: the native norm and complex inner product
+  of the normalized Fock module `⋀ W`.
+
+## Main results
+
+* `TauCeti.AlmostComplexStructure.inner_fock_eq_sesqExteriorAlgebra`: the native Fock inner product
+  is the exterior Gram metric of `h_ℂ|_W`.
+* `TauCeti.AlmostComplexStructure.inner_fock_ιMulti_ιMulti` and
+  `TauCeti.AlmostComplexStructure.inner_fock_eq_zero_of_mem_exteriorPower_of_ne`: the
+  Gram-determinant formula in every degree and orthogonality of distinct exterior powers.
+* `TauCeti.AlmostComplexStructure.adjoint_fockAction`,
+  `TauCeti.AlmostComplexStructure.adjoint_realFockAction`, and
+  `TauCeti.AlmostComplexStructure.adjoint_realFockAction_ι`: native adjoints of the complexified and
+  real Fock actions.
 
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
 * J. W. Morgan, *The Seiberg–Witten equations and applications to the topology of smooth
   four-manifolds*, Mathematical Notes 44, Princeton University Press, 1996, §3.1.
+* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, 3rd ed. (2020), §2.2.4 and §12.1.
 -/
 
 public section
@@ -44,8 +66,8 @@ noncomputable section
 
 namespace TauCeti.AlmostComplexStructure
 
-open CliffordAlgebra Matrix Module
-open scoped ComplexOrder TensorProduct
+open CliffordAlgebra InnerProductSpace Matrix Module
+open scoped ComplexOrder RealInnerProductSpace TensorProduct
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [FiniteDimensional ℝ V] (J : AlmostComplexStructure V) {Q : QuadraticForm ℝ V}
@@ -127,6 +149,53 @@ theorem orthonormal_fock {ι : Type*} [Finite ι] [LinearOrder ι] (b : Basis ι
   let := Fintype.ofFinite ι
   exact orthonormal_iff_ite.mpr fun i j ↦ by
     rw [J.inner_fock hQJ hQnd hQ b hb, toLinearMapₛₗ₂_apply_basis, Matrix.one_apply]
+
+/-- **The native Fock inner product is the exterior Gram metric of `h_ℂ|_W`**, where
+`h_ℂ = LinearMap.BilinForm.sesqComplexification (innerₗ V)` is the sesquilinear complexification of
+the real Euclidean inner product. -/
+theorem inner_fock_eq_sesqExteriorAlgebra (s t : S) :
+    letI := J.fockNormedAddCommGroup hQJ hQnd hQ
+    letI := J.fockInnerProductSpace hQJ hQnd hQ
+    inner ℂ s t =
+      ((LinearMap.BilinForm.sesqComplexification (innerₗ V)).domRestrict₁₂
+        W W).sesqExteriorAlgebra s t := by
+  let := J.fockNormedAddCommGroup hQJ hQnd hQ
+  let := J.fockInnerProductSpace hQJ hQnd hQ
+  have hg : LinearMap.BilinForm.IsSymm (innerₗ V) :=
+    LinearMap.BilinForm.isSymm_iff.mpr ⟨fun u v ↦ real_inner_comm v u⟩
+  have hQg : ∀ v, Q v = -(innerₗ V) v v := fun v ↦ by
+    rw [hQ, innerₗ_apply_apply, real_inner_self_eq_norm_sq]
+  rw [J.inner_fock hQJ hQnd hQ (J.fockMetricBasis hQJ hQnd hQ)
+      (J.fockMetricBasis_polar hQJ hQnd hQ),
+    J.toLinearMapₛₗ₂_exteriorAlgebra_eq_sesqExteriorAlgebra hQJ hQnd
+      (J.fockMetricBasis hQJ hQnd hQ) (J.fockMetricBasis_polar hQJ hQnd hQ) hg hQg]
+
+/-- **Gram-determinant formula for the native Fock inner product**: in every degree `p` (including
+degree zero and the top degree), the Fock inner product of two pure wedges of vectors in `W` is the
+Gram determinant `det (h_ℂ (xᵢ, yⱼ))`. -/
+@[simp]
+theorem inner_fock_ιMulti_ιMulti {p : ℕ} (x y : Fin p → W) :
+    letI := J.fockNormedAddCommGroup hQJ hQnd hQ
+    letI := J.fockInnerProductSpace hQJ hQnd hQ
+    inner ℂ (ExteriorAlgebra.ιMulti ℂ p x) (ExteriorAlgebra.ιMulti ℂ p y) =
+      (Matrix.of fun i j ↦
+        LinearMap.BilinForm.sesqComplexification (innerₗ V) (x i) (y j)).det := by
+  let := J.fockNormedAddCommGroup hQJ hQnd hQ
+  let := J.fockInnerProductSpace hQJ hQnd hQ
+  rw [J.inner_fock_eq_sesqExteriorAlgebra hQJ hQnd hQ,
+    LinearMap.sesqExteriorAlgebra_ιMulti_ιMulti]
+  rfl
+
+/-- **Orthogonality of distinct exterior powers in the native Fock metric.** -/
+theorem inner_fock_eq_zero_of_mem_exteriorPower_of_ne {p q : ℕ} (hpq : p ≠ q)
+    {s t : S} (hs : s ∈ ⋀[ℂ]^p W) (ht : t ∈ ⋀[ℂ]^q W) :
+    letI := J.fockNormedAddCommGroup hQJ hQnd hQ
+    letI := J.fockInnerProductSpace hQJ hQnd hQ
+    inner ℂ s t = 0 := by
+  let := J.fockNormedAddCommGroup hQJ hQnd hQ
+  let := J.fockInnerProductSpace hQJ hQnd hQ
+  rw [J.inner_fock_eq_sesqExteriorAlgebra hQJ hQnd hQ]
+  exact LinearMap.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne _ hpq hs ht
 
 /-- The vacuum of the normalized Fock module has inner product one with itself. -/
 private theorem inner_fock_one_one : letI := J.fockNormedAddCommGroup hQJ hQnd hQ

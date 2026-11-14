@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Grading
+public import Mathlib.LinearAlgebra.ExteriorAlgebra.BaseChange
 -- Private: the transport of the involution and the grading along `equivExterior`, the
 -- comparison of the two base-change maps, and the computation of `LinearMap.tensorProductEnd`
 -- are used only inside proofs.
@@ -56,6 +57,9 @@ is the Clifford action on complex-valued forms.
 * `CliffordAlgebra.exteriorAction_mem_evenOdd`: the action is `ℤ/2`-graded.
 * `CliffordAlgebra.baseChangeExteriorAction_ofBaseChangeAux_tmul` and
   `CliffordAlgebra.baseChangeExteriorAction_ι_tmul`: the extended action on pure tensors.
+* `ExteriorAlgebra.baseChangeEquiv_contractLeft` and
+  `CliffordAlgebra.equivExterior_ofBaseChangeAux`: compatibility of exterior contraction and the
+  Chevalley isomorphism `CliffordAlgebra.equivExterior` with `ExteriorAlgebra.baseChangeEquiv`.
 
 ## References
 
@@ -171,6 +175,87 @@ theorem baseChangeExteriorAction_ι_tmul (w : A) (m : M) (z : A) (x : ExteriorAl
     baseChangeExteriorAction A Q (ι (Q.baseChange A) (w ⊗ₜ m)) (z ⊗ₜ x) =
       (w * z) ⊗ₜ exteriorAction Q (ι Q m) x :=
   baseChangeExteriorAction_tmul A Q (toBaseChange_ι A Q w m) z x
+
+variable {A Q}
+
+omit [Invertible (2 : R)] in
+/-- `ExteriorAlgebra.baseChangeEquiv` intertwines left exterior contraction on `1 ⊗ₜ s` with left
+contraction by a compatible `A`-linear functional. -/
+theorem _root_.ExteriorAlgebra.baseChangeEquiv_contractLeft {d : Module.Dual R M}
+    {d' : Module.Dual A (A ⊗[R] M)} (hd : ∀ u, d' (1 ⊗ₜ[R] u) = algebraMap R A (d u))
+    (s : ExteriorAlgebra R M) :
+    ExteriorAlgebra.baseChangeEquiv R M A
+        (1 ⊗ₜ[R] contractLeft (Q := (0 : QuadraticForm R M)) d s) =
+      contractLeft (Q := (0 : QuadraticForm A (A ⊗[R] M))) d'
+        (ExteriorAlgebra.baseChangeEquiv R M A (1 ⊗ₜ[R] s)) := by
+  let e : ExteriorAlgebra R M →ₐ[R] ExteriorAlgebra A (A ⊗[R] M) :=
+    ((ExteriorAlgebra.baseChangeEquiv R M A).restrictScalars R).toAlgHom.comp
+      Algebra.TensorProduct.includeRight
+  have he_ι (u : M) : e (ExteriorAlgebra.ι R u) = ExteriorAlgebra.ι A (1 ⊗ₜ[R] u) := by
+    simp [e, ExteriorAlgebra.baseChangeEquiv_apply]
+  change e (contractLeft d s) = contractLeft d' (e s)
+  induction s using CliffordAlgebra.left_induction with
+  | algebraMap r =>
+    rw [contractLeft_algebraMap, map_zero, AlgHom.commutes,
+      IsScalarTower.algebraMap_apply R A, contractLeft_algebraMap]
+  | add x y hx hy => simp [hx, hy]
+  | ι_mul s u hs =>
+    change e (contractLeft d (ι (0 : QuadraticForm R M) u * s)) =
+      contractLeft d' (e (ExteriorAlgebra.ι R u * s))
+    have hι0 : ι (0 : QuadraticForm R M) u = ExteriorAlgebra.ι R u := rfl
+    rw [contractLeft_ι_mul, hι0, map_sub, map_smul, map_mul e, map_mul e, he_ι,
+      show ExteriorAlgebra.ι A (1 ⊗ₜ[R] u) = ι (0 : QuadraticForm A (A ⊗[R] M)) (1 ⊗ₜ[R] u)
+        from rfl,
+      contractLeft_ι_mul, hs, hd u, algebra_compatible_smul A]
+
+/-- **Scalar-extension naturality of `CliffordAlgebra.equivExterior`**: the Chevalley isomorphism
+intertwines `CliffordAlgebra.ofBaseChangeAux` with `1 ⊗ₜ ·` followed by
+`ExteriorAlgebra.baseChangeEquiv`. -/
+theorem equivExterior_ofBaseChangeAux [Invertible (2 : A)] (c : CliffordAlgebra Q) :
+    equivExterior (Q.baseChange A) (ofBaseChangeAux A Q c) =
+      ExteriorAlgebra.baseChangeEquiv R M A (1 ⊗ₜ[R] equivExterior Q c) := by
+  let e : ExteriorAlgebra R M →ₐ[R] ExteriorAlgebra A (A ⊗[R] M) :=
+    ((ExteriorAlgebra.baseChangeEquiv R M A).restrictScalars R).toAlgHom.comp
+      Algebra.TensorProduct.includeRight
+  have he_ι (u : M) : e (ExteriorAlgebra.ι R u) = ExteriorAlgebra.ι A (1 ⊗ₜ[R] u) := by
+    simp [e, ExteriorAlgebra.baseChangeEquiv_apply]
+  induction c using CliffordAlgebra.left_induction with
+  | algebraMap r =>
+    change equivExterior (Q.baseChange A) (ofBaseChangeAux A Q (algebraMap R _ r)) =
+      e (equivExterior Q (algebraMap R _ r))
+    have h1A : equivExterior (Q.baseChange A) (algebraMap A _ (algebraMap R A r)) =
+        algebraMap A _ (algebraMap R A r) := by
+      rw [Algebra.algebraMap_eq_smul_one, map_smul, show equivExterior (Q.baseChange A) 1 = 1 by
+        simp, ← Algebra.algebraMap_eq_smul_one]
+    have h1R : equivExterior Q (algebraMap R _ r) = algebraMap R _ r := by
+      rw [Algebra.algebraMap_eq_smul_one, map_smul, show equivExterior Q 1 = 1 by simp,
+        ← Algebra.algebraMap_eq_smul_one]
+    rw [AlgHom.commutes, IsScalarTower.algebraMap_apply R A (CliffordAlgebra (Q.baseChange A)),
+      h1A, h1R, AlgHom.commutes,
+      IsScalarTower.algebraMap_apply R A (ExteriorAlgebra A (A ⊗[R] M))]
+  | add x y hx hy =>
+    simp only [map_add, TensorProduct.tmul_add, hx, hy]
+  | ι_mul c v hc =>
+    change equivExterior (Q.baseChange A) (ofBaseChangeAux A Q (ι Q v * c)) =
+      e (equivExterior Q (ι Q v * c))
+    have hι : ofBaseChangeAux A Q (ι Q v) = ι (Q.baseChange A) (1 ⊗ₜ[R] v) := by simp
+    have hassoc (u : M) : QuadraticMap.associated (-(Q.baseChange A)) (1 ⊗ₜ[R] v) (1 ⊗ₜ[R] u) =
+        algebraMap R A (QuadraticMap.associated (-Q) v u) := by
+      have hneg1 : QuadraticMap.associated (-(Q.baseChange A)) =
+          -QuadraticMap.associated (Q.baseChange A) :=
+        map_neg (QuadraticMap.associatedHom A) (Q.baseChange A)
+      have hneg2 : QuadraticMap.associated (-Q) = -QuadraticMap.associated Q :=
+        map_neg (QuadraticMap.associatedHom R) Q
+      rw [hneg1, hneg2, LinearMap.neg_apply, LinearMap.neg_apply, LinearMap.neg_apply,
+        LinearMap.neg_apply, QuadraticForm.associated_baseChange,
+        LinearMap.BilinForm.baseChange_tmul, mul_one, Algebra.algebraMap_eq_smul_one, neg_smul]
+    rw [map_mul, hι, equivExterior_ι_mul, equivExterior_ι_mul, map_sub, map_mul e, he_ι,
+      show e (contractLeft (QuadraticMap.associated (-Q) v) (equivExterior Q c)) =
+        contractLeft (QuadraticMap.associated (-(Q.baseChange A)) (1 ⊗ₜ[R] v))
+          (e (equivExterior Q c)) from
+        ExteriorAlgebra.baseChangeEquiv_contractLeft hassoc (equivExterior Q c),
+      hc]
+    rfl
 
 end BaseChange
 

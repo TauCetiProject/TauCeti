@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Contraction
+public import Mathlib.LinearAlgebra.ExteriorAlgebra.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.CliffordAction
 -- Private: Chevalley grading and ordered-monomial identities are used only in proofs.
@@ -30,6 +31,23 @@ of chirality and its transpose.
 The transpose is the induced dual parity; the chirality of the reverse-dual Clifford action
 has the additional sign `(-1) ^ (dim V / 2)`. These comparisons include dimension zero and
 both orientations. No Hermitian metric is needed for these algebraic identifications.
+
+## Main definitions
+
+* `AlgEquiv.cliffordFormsEquivEnd`: identification `A ⊗[R] ExteriorAlgebra R V ≃ₗ[A] Module.End A S`
+  via the inverse Chevalley map and a full Clifford representation `ρ`.
+* `AlgEquiv.cliffordFormsEquivTensor`: identification `A ⊗[R] ExteriorAlgebra R V ≃ₗ[A] S ⊗[A] S*`
+  for a finite projective spinor module `S`.
+
+## Main results
+
+* `AlgEquiv.cliffordFormsEquivEnd_action` and `AlgEquiv.cliffordFormsEquivTensor_action`:
+  equivariance for `CliffordAlgebra.baseChangeExteriorAction`.
+* `AlgEquiv.cliffordFormsEquivEnd_eq_equivExterior_symm_baseChangeEquiv` and
+  `AlgEquiv.cliffordFormsEquivTensor_eq_equivExterior_symm_baseChangeEquiv`: comparison with
+  `ExteriorAlgebra.baseChangeEquiv` and `CliffordAlgebra.equivExterior` over `A`.
+* `AlgEquiv.cliffordFormsEquivEnd_involute` and `AlgEquiv.cliffordFormsEquivTensor_involute`:
+  exterior parity vs spinor chirality in even negative-metric real dimension.
 
 ## References
 
@@ -137,6 +155,26 @@ theorem cliffordFormsEquivEnd_conj
   | add x y hx hy => simp [hx, hy]
   | tmul z x => simp
 
+/-- **Comparison with `ExteriorAlgebra.baseChangeEquiv`**: `cliffordFormsEquivEnd` sends `x` to the
+spinor representation of the inverse Chevalley image of
+`ExteriorAlgebra.baseChangeEquiv R V A x`. -/
+theorem cliffordFormsEquivEnd_eq_equivExterior_symm_baseChangeEquiv [Invertible (2 : A)]
+    (ρ : CliffordAlgebra (Q.baseChange A) ≃ₐ[A] Module.End A S)
+    (x : A ⊗[R] ExteriorAlgebra R V) :
+    ρ.cliffordFormsEquivEnd x =
+      ρ ((equivExterior (Q.baseChange A)).symm (ExteriorAlgebra.baseChangeEquiv R V A x)) := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul z s =>
+    have hs : (equivExterior (Q.baseChange A)).symm
+        (ExteriorAlgebra.baseChangeEquiv R V A (1 ⊗ₜ[R] s)) =
+          ofBaseChangeAux A Q ((equivExterior Q).symm s) := by
+      apply (equivExterior (Q.baseChange A)).injective
+      rw [LinearEquiv.apply_symm_apply, equivExterior_ofBaseChangeAux,
+        LinearEquiv.apply_symm_apply]
+    have hsmul : z ⊗ₜ[R] s = z • ((1 : A) ⊗ₜ[R] s) := by simp [TensorProduct.smul_tmul']
+    rw [cliffordFormsEquivEnd_tmul, hsmul, map_smul, map_smul, map_smul, hs]
+
 variable [Module.Finite A S] [Module.Projective A S]
 
 /-- Base-changed forms as `S ⊗ S*`, with evaluation `s ⊗ φ ↦ (t ↦ φ(t) s)`.
@@ -155,6 +193,19 @@ theorem dualTensorHomEquiv_comm_cliffordFormsEquivTensor
     dualTensorHomEquiv A S S (TensorProduct.comm A S (Dual A S)
       (ρ.cliffordFormsEquivTensor x)) = ρ.cliffordFormsEquivEnd x := by
   simp [cliffordFormsEquivTensor]
+
+/-- **Tensor comparison with `ExteriorAlgebra.baseChangeEquiv`**: `cliffordFormsEquivTensor` sends
+`x` to the inverse evaluation of the spinor endomorphism of
+`ExteriorAlgebra.baseChangeEquiv R V A x`. -/
+theorem cliffordFormsEquivTensor_eq_equivExterior_symm_baseChangeEquiv [Invertible (2 : A)]
+    (ρ : CliffordAlgebra (Q.baseChange A) ≃ₐ[A] Module.End A S)
+    (x : A ⊗[R] ExteriorAlgebra R V) :
+    ρ.cliffordFormsEquivTensor x =
+      TensorProduct.comm A (Dual A S) S
+        ((dualTensorHomEquiv A S S).symm
+          (ρ ((equivExterior (Q.baseChange A)).symm
+            (ExteriorAlgebra.baseChangeEquiv R V A x)))) := by
+  simp [cliffordFormsEquivTensor, cliffordFormsEquivEnd_eq_equivExterior_symm_baseChangeEquiv]
 
 /-- The inverse tensor identification sends a pure spinor tensor to the inverse Chevalley
 image of its rank-one endomorphism. -/
