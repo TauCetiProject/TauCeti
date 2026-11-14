@@ -290,7 +290,7 @@ theorem ae_tendsto_arrival_atTop (hindep : iIndepFun T P)
       (hid 0).aemeasurable_fst.identDistrib_mk
   have hzero' : P {ω | T' 0 ω = 0} < 1 := by
     have hset : ({ω | T' 0 ω = 0} : Set Ω) =ᵐ[P] {ω | T 0 ω = 0} :=
-      (hT'_ae 0).symm.mono fun ω hω ↦ propext (by simp [hω])
+      Filter.Eventually.mono (hT'_ae 0).symm fun ω hω ↦ by simp only [Set.mem_ofPred_eq, hω]
     rwa [measure_congr hset]
   -- Since `T' 0` is not almost surely zero, some threshold `a > 0` has `0 < P (a ≤ T' 0)`.
   obtain ⟨k, hpos⟩ : ∃ k : ℕ, 0 < P (T' 0 ⁻¹' Ici (1 / (k + 1))) := by

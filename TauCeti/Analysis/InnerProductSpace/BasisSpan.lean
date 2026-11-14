@@ -24,8 +24,8 @@ subspace spanned by the corresponding basis vectors.
 * `OrthonormalBasis.mem_spanIndices_of_mem`: selected basis vectors belong to the span.
 * `OrthonormalBasis.mem_spanIndices_iff`: membership means coordinates vanish
   outside the selected indices.
-* `OrthonormalBasis.finrank_spanIndices`: the dimension of a selected finite span.
 * `OrthonormalBasis.finrank_spanIndices_set`: dimension as set cardinality.
+* `OrthonormalBasis.finrank_spanIndices`: the dimension for a finset of indices.
 * `OrthonormalBasis.orthogonal_spanIndices`: orthogonal complement by index complement.
 
 ## Source
@@ -75,50 +75,35 @@ theorem mem_spanIndices_of_mem (b : OrthonormalBasis ι 𝕜 E) {s : Set ι} {i 
   rw [b.spanIndices_eq_span]
   exact Submodule.subset_span ⟨i, hi, rfl⟩
 
-/-- A vector in the span of a selected subfamily has zero coordinate at any
-index outside the selection. -/
-theorem repr_eq_zero_of_mem_spanIndices (b : OrthonormalBasis ι 𝕜 E)
-    {s : Set ι} {x : E} (hx : x ∈ b.spanIndices s) {i : ι} (hi : i ∉ s) :
-    b.repr x i = 0 := by
-  rw [b.spanIndices_eq_span] at hx
-  rw [b.repr_apply_apply]
-  -- `⟪b i, ·⟫` vanishes on the spanning set, hence on the whole span.
-  refine Submodule.span_induction ?_ ?_ ?_ ?_ hx
-  · rintro y ⟨j, hj, rfl⟩
-    refine b.inner_eq_zero ?_
-    rintro rfl
-    exact hi hj
-  · rw [inner_zero_right]
-  · intro y z _ _ hy hz
-    rw [inner_add_right, hy, hz, add_zero]
-  · intro a y _ hy
-    rw [inner_smul_right, hy, mul_zero]
-
 /-- Membership in the span of a selected subfamily is exactly the vanishing of
 the coordinates outside the selection. -/
 @[simp]
 theorem mem_spanIndices_iff (b : OrthonormalBasis ι 𝕜 E)
     {s : Set ι} {x : E} :
     x ∈ b.spanIndices s ↔ ∀ i ∉ s, b.repr x i = 0 := by
-  classical
-  refine ⟨fun hx i hi => b.repr_eq_zero_of_mem_spanIndices hx hi, fun h => ?_⟩
-  rw [← b.sum_repr x]
-  refine Submodule.sum_mem _ fun i _ => ?_
-  by_cases hi : i ∈ s
-  · exact Submodule.smul_mem _ _ (b.mem_spanIndices_of_mem hi)
-  · rw [h i hi, zero_smul]
-    exact Submodule.zero_mem _
+  rw [b.spanIndices_eq_span, ← b.coe_toBasis, b.toBasis.mem_span_image]
+  simp [Set.subset_def, not_imp_comm]
+
+/-- A vector in the span of a selected subfamily has zero coordinate at any
+index outside the selection. -/
+theorem repr_eq_zero_of_mem_spanIndices (b : OrthonormalBasis ι 𝕜 E)
+    {s : Set ι} {x : E} (hx : x ∈ b.spanIndices s) {i : ι} (hi : i ∉ s) :
+    b.repr x i = 0 :=
+  b.mem_spanIndices_iff.mp hx i hi
+
+/-- The span of a selected set of basis vectors has dimension equal to the
+number of selected indices. -/
+theorem finrank_spanIndices_set (b : OrthonormalBasis ι 𝕜 E) (s : Set ι) :
+    finrank 𝕜 (b.spanIndices s) = s.ncard := by
+  rw [b.spanIndices_eq_span,
+    finrank_span_set_eq_ncard (b.orthonormal.linearIndependent.linearIndepOn s).id_image,
+    Set.ncard_image_of_injective s b.orthonormal.linearIndependent.injective]
 
 /-- The span of a selected subfamily has dimension the number of selected
 indices. -/
 theorem finrank_spanIndices (b : OrthonormalBasis ι 𝕜 E) (s : Finset ι) :
     finrank 𝕜 (b.spanIndices ↑s) = s.card := by
-  have h : finrank 𝕜 (Submodule.span 𝕜
-      (Set.range fun i : ↥(↑s : Set ι) => b ↑i)) = Fintype.card ↥(↑s : Set ι) :=
-    finrank_span_eq_card
-      (b.orthonormal.linearIndependent.comp _ Subtype.val_injective)
-  rw [b.spanIndices_eq_span, Set.image_eq_range, h]
-  simp
+  rw [b.finrank_spanIndices_set, Set.ncard_coe_finset]
 
 /-- The span of the basis vectors with index below `n` has rank at most `n`. -/
 theorem rank_spanIndices_val_lt_le {m : ℕ} (b : OrthonormalBasis (Fin m) 𝕜 E) (n : ℕ) :
@@ -127,43 +112,16 @@ theorem rank_spanIndices_val_lt_le {m : ℕ} (b : OrthonormalBasis (Fin m) 𝕜 
   rw [← Module.finrank_eq_rank, b.finrank_spanIndices, Fin.card_filter_val_lt]
   exact_mod_cast min_le_right m n
 
-/-- The span of a selected set of basis vectors has dimension equal to the
-number of selected indices. -/
-theorem finrank_spanIndices_set (b : OrthonormalBasis ι 𝕜 E) (s : Set ι) :
-    finrank 𝕜 (b.spanIndices s) = s.ncard := by
-  classical
-  rw [Set.ncard_eq_toFinset_card']
-  rw [← b.finrank_spanIndices s.toFinset, Set.coe_toFinset]
-
 /-- The orthogonal complement of the span of a selected subfamily is the span
 of the complementary subfamily. -/
 theorem orthogonal_spanIndices (b : OrthonormalBasis ι 𝕜 E) (s : Set ι) :
     (b.spanIndices s)ᗮ = b.spanIndices sᶜ := by
-  classical
-  have : FiniteDimensional 𝕜 E := Module.Finite.of_basis b.toBasis
-  have hEcard : finrank 𝕜 E = Fintype.card ι := by
-    rw [Module.finrank_eq_card_basis b.toBasis]
-  refine (Submodule.eq_of_le_of_finrank_le ?_ ?_).symm
-  · -- the complementary span is orthogonal to the selected span.
-    rw [b.spanIndices_eq_span (sᶜ)]
-    apply Submodule.span_le.mpr
-    rintro y ⟨j, hj, rfl⟩
-    rw [SetLike.mem_coe, Submodule.mem_orthogonal]
-    intro u hu
-    rw [← inner_conj_symm, ← b.repr_apply_apply,
-      b.repr_eq_zero_of_mem_spanIndices hu hj, map_zero]
-  · -- dimensions match: `card ι − #s` on both sides.
-    have h1 : finrank 𝕜 (b.spanIndices s)
-        + finrank 𝕜 ((b.spanIndices s)ᗮ : Submodule 𝕜 E) = Fintype.card ι := by
-      rw [Submodule.finrank_add_finrank_orthogonal, hEcard]
-    have h2 := b.finrank_spanIndices_set s
-    have h3 := b.finrank_spanIndices_set sᶜ
-    have h4 : s.toFinset.card + (sᶜ).toFinset.card = Fintype.card ι := by
-      rw [Set.toFinset_compl, Finset.card_compl]
-      have := Finset.card_le_univ s.toFinset
-      omega
-    simp only [Set.ncard_eq_toFinset_card'] at h2 h3
-    omega
+  ext x
+  rw [b.mem_spanIndices_iff, b.spanIndices_eq_span]
+  -- Membership in `Kᗮ` is, by definition, membership in `K.orthogonalBilin (innerₛₗ 𝕜)`, for which
+  -- the simp lemma `Submodule.mem_orthogonalBilin_span` reduces to the spanning vectors.
+  change x ∈ (Submodule.span 𝕜 (b '' s)).orthogonalBilin (innerₛₗ 𝕜) ↔ _
+  simp [b.repr_apply_apply]
 
 /-- A vector orthogonal to the first `n` basis vectors lies in the remaining span. -/
 theorem mem_spanIndices_le_of_mem_orthogonal {m : ℕ} (b : OrthonormalBasis (Fin m) 𝕜 E)

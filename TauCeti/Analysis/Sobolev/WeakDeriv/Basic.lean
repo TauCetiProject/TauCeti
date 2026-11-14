@@ -134,6 +134,8 @@ weaken them for no gain.
 * `TauCeti.hasWeakLineDerivOn_iff`: the unbundled restatement of the defining identity.
 * `TauCeti.integrable_lineDeriv_smul_of_locallyIntegrableOn`: the integrability fact, next to
   Mathlib's `TestFunction.integrable_smul`, that makes the defining integrals honest.
+* `TauCeti.integrable_fderiv_smul_of_locallyIntegrableOn`: the same fact with the derivative of
+  the test function written as `fderiv`.
 * `TauCeti.setIntegral_smul_eq_integral_smul` and
   `TauCeti.setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul`: a test function on `Ω` and its
   directional derivative vanish off `Ω`, so the defining integrals may equivalently be taken over
@@ -161,6 +163,8 @@ weaken them for no gain.
 * `TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` and
   `TauCeti.hasWeakFDerivOn_of_differentiableOn`: classical derivatives that are locally integrable
   on `Ω` are weak derivatives.
+* `ContDiffOn.hasWeakFDerivOn_fderiv`: a `C¹` function on `Ω` has its classical derivative as
+  weak derivative.
 * `TauCeti.hasWeakLineDerivOn_const`: against a Haar measure, a constant has weak derivative `0`.
 * `TauCeti.hasWeakFDerivOn_gradient_of_contDiffOn`: a `C¹` function on `Ω` has weak derivative
   the linear functional represented by its gradient.
@@ -395,6 +399,16 @@ theorem integrable_lineDeriv_smul_of_locallyIntegrableOn {w : E → F}
     funext fun _ => TestFunction.lineDerivCLM_apply_of_le le_top
   simpa [hcoe] using
     TestFunction.integrable_smul (TestFunction.lineDerivCLM ℝ v φ : 𝓓(Ω, ℝ)) hw
+
+/-- The `fderiv` form of `TauCeti.integrable_lineDeriv_smul_of_locallyIntegrableOn`: a first
+derivative of a test function on `Ω` scales a function locally integrable on `Ω` to a globally
+integrable one. -/
+theorem integrable_fderiv_smul_of_locallyIntegrableOn {w : E → F}
+    (hw : LocallyIntegrableOn w Ω μ) (φ : 𝓓(Ω, ℝ)) (v : E) :
+    Integrable (fun x => fderiv ℝ (φ : E → ℝ) x v • w x) μ := by
+  have hφ (x : E) : lineDeriv ℝ (φ : E → ℝ) x v = fderiv ℝ (φ : E → ℝ) x v :=
+    (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv
+  simpa only [hφ] using integrable_lineDeriv_smul_of_locallyIntegrableOn hw φ v
 
 omit [OpensMeasurableSpace E] in
 /-- A test function on `Ω` vanishes off `Ω`, so integrating `φ • w` over `Ω` is the same as
@@ -833,6 +847,15 @@ theorem hasWeakFDerivOn_of_differentiableOn
         (ContinuousLinearMap.apply ℝ F v).locallyIntegrableOn_comp hu')
     fun x hx => (h x hx).hasFDerivAt.hasLineDerivAt v
 
+/-- **A `C¹` function is weakly differentiable**, with weak derivative its classical one. Only
+differentiability inside the open set `Ω` is used. -/
+theorem _root_.ContDiffOn.hasWeakFDerivOn_fderiv (hu : ContDiffOn ℝ 1 u Ω) :
+    HasWeakFDerivOn μ Ω u (fderiv ℝ u) :=
+  hasWeakFDerivOn_of_differentiableOn
+    ((hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).locallyIntegrableOn
+      Ω.isOpen.measurableSet)
+    fun _ hx => (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hx)
+
 end Classical
 
 /-! ### `C¹` functions and test functions are weakly differentiable
@@ -868,10 +891,7 @@ is used. -/
 theorem hasWeakFDerivOn_gradient_of_contDiffOn {u : E → ℝ} (hu : ContDiffOn ℝ 1 u Ω) :
     HasWeakFDerivOn μ Ω u fun x => innerSL ℝ (∇ u x) := by
   rw [show (fun x => innerSL ℝ (∇ u x)) = fderiv ℝ u from funext fun _ => toDual_gradient]
-  exact hasWeakFDerivOn_of_differentiableOn
-    ((hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).locallyIntegrableOn
-      Ω.isOpen.measurableSet)
-    fun x hx => (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hx)
+  exact hu.hasWeakFDerivOn_fderiv
 
 /-- **A test function is weakly differentiable**, with weak derivative the continuous linear
 functional represented by its gradient. -/

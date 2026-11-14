@@ -48,7 +48,7 @@ this with completeness to construct a `TauCeti.HyperbolicMetric`.
 * `TauCeti.UpperHalfSpace.inner_def`: the inner product of tangent vectors at `x` is their
   Euclidean inner product divided by `height x ^ 2` (`TauCeti.UpperHalfSpace.riemannianMetric_inner`
   is the same formula for the bundled metric `riemannianMetric`);
-  `TauCeti.UpperHalfSpace.norm_def` and `TauCeti.UpperHalfSpace.enorm_def` are the corresponding
+  `TauCeti.UpperHalfSpace.norm_def` and `TauCeti.UpperHalfSpace.eNorm_def` are the corresponding
   norm forms.
 * `TauCeti.UpperHalfSpace.contMDiff_coe_comp_iff`: a map into the upper half-space is `C^n` iff
   its composite with the inclusion into `E × ℝ` is.
@@ -407,7 +407,7 @@ theorem norm_def (x : UpperHalfSpace E) (v : TangentSpace 𝓘(ℝ, WithLp 2 (E 
 /-- The extended norm of a tangent vector at a point of the upper half-space is its Euclidean
 extended norm divided by the height. -/
 @[simp]
-theorem enorm_def (x : UpperHalfSpace E) (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
+theorem eNorm_def (x : UpperHalfSpace E) (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
     ‖v‖ₑ = ‖tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v‖ₑ / ENNReal.ofReal (height x) := by
   rw [← ofReal_norm, ← ofReal_norm, norm_def,
     ENNReal.ofReal_div_of_pos (height_pos x)]

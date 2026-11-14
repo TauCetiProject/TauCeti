@@ -50,7 +50,7 @@ private theorem singularValue_adjoint_le (T : E →L[𝕜] F) (n : ℕ) :
   refine (T.isGLB_singularValue n).2 ?_
   rintro _ ⟨R, hR, rfl⟩
   refine ((T†).singularValue_le_nnnorm_sub ((rank_adjoint_le_iff R).mpr hR)).trans_eq ?_
-  rw [← map_sub, LinearIsometryEquiv.nnnorm_map]
+  rw [← map_sub, LinearIsometryEquiv.nnNorm_map]
 
 /-- **Adjoint invariance.** A bounded operator between Hilbert spaces and its adjoint have the
 same approximation numbers: `aₙ(T†) = aₙ(T)`. -/

@@ -72,8 +72,9 @@ attribute [local instance] Comodule.cofree
 /-- The module-first unsuspension of a map `F : M ⊗ A^⊗n → N` between suspended inputs: it
 evaluates `F` after twisting the input in position `j` (the module input being in position `0`)
 by the Koszul twist of parameter `n - j`. -/
-noncomputable def unsuspend (G : InternalGrading R M) (GA : InternalGrading R A) (n : ℕ)
-    (F : M ⊗[R] TensorPower R n A →ₗ[R] N) : M →ₗ[R] MultilinearMap R (fun _ : Fin n ↦ A) N :=
+noncomputable def unsuspend (G : InternalGrading R M ℤ) (GA : InternalGrading R A ℤ) (n : ℕ)
+    (F : M ⊗[R] TensorPower R n A →ₗ[R] N) :
+    M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) N :=
   { toFun x :=
       ((F ∘ₗ TensorProduct.mk R M (TensorPower R n A) (G.koszulTwist n x)
         ).compMultilinearMap (PiTensorProduct.tprod R)).compLinearMap
@@ -86,7 +87,7 @@ noncomputable def unsuspend (G : InternalGrading R M) (GA : InternalGrading R A)
       simp }
 
 /-- The unsuspension evaluates the map on Koszul-twisted inputs. -/
-theorem unsuspend_apply (G : InternalGrading R M) (GA : InternalGrading R A) (n : ℕ)
+theorem unsuspend_apply (G : InternalGrading R M ℤ) (GA : InternalGrading R A ℤ) (n : ℕ)
     (F : M ⊗[R] TensorPower R n A →ₗ[R] N) (x : M) (a : Fin n → A) :
     unsuspend G GA n F x a =
       F (G.koszulTwist n x ⊗ₜ[R]
@@ -94,7 +95,7 @@ theorem unsuspend_apply (G : InternalGrading R M) (GA : InternalGrading R A) (n 
   (rfl)
 
 /-- A map evaluates its unsuspension on Koszul-twisted inputs: the twists are involutions. -/
-theorem apply_tmul_tprod_eq_unsuspend (G : InternalGrading R M) (GA : InternalGrading R A)
+theorem apply_tmul_tprod_eq_unsuspend (G : InternalGrading R M ℤ) (GA : InternalGrading R A ℤ)
     (n : ℕ) (F : M ⊗[R] TensorPower R n A →ₗ[R] N) (x : M) (a : Fin n → A) :
     F (x ⊗ₜ[R] PiTensorProduct.tprod R a) =
       unsuspend G GA n F (G.koszulTwist n x)
@@ -103,8 +104,9 @@ theorem apply_tmul_tprod_eq_unsuspend (G : InternalGrading R M) (GA : InternalGr
 
 /-- On homogeneous inputs, the Koszul twists of the module-first unsuspension multiply to the
 Koszul sign of suspending the module input and all algebra inputs. -/
-theorem apply_koszulTwist_of_mem (G : InternalGrading R M) (GA : InternalGrading R A) {n : ℕ}
-    (φ : M →ₗ[R] MultilinearMap R (fun _ : Fin n ↦ A) N) {x : M} {e : ℤ} (hx : x ∈ G.piece e)
+theorem apply_koszulTwist_of_mem (G : InternalGrading R M ℤ) (GA : InternalGrading R A ℤ) {n : ℕ}
+    (φ : M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) N) {x : M} {e : ℤ}
+    (hx : x ∈ G.piece e)
     (d : ℕ → ℤ) (a : ℕ → A) (ha : ∀ i < n, a i ∈ GA.piece (d i)) :
     φ (G.koszulTwist n x) (fun i : Fin n ↦ GA.koszulTwist ((n : ℤ) - 1 - i) (a i)) =
       negOnePowCast R (n * e + suspExp n d) • evalNat (φ x) a := by
@@ -116,10 +118,11 @@ theorem apply_koszulTwist_of_mem (G : InternalGrading R M) (GA : InternalGrading
     MultilinearMap.map_smul_univ, smul_smul, evalNat_def, suspExp_def, negOnePowCast_add,
     negOnePowCast_sum,
     ← Fin.prod_univ_eq_prod_range (fun i ↦ negOnePowCast R (((n : ℤ) - 1 - i) * d i)) n]
+  simp only [RingHom.id_apply]
 
 /-- On homogeneous inputs, a map is its module-first unsuspension multiplied by the suspension
 Koszul sign. -/
-theorem apply_tmul_tprod_of_mem (G : InternalGrading R M) (GA : InternalGrading R A) (n : ℕ)
+theorem apply_tmul_tprod_of_mem (G : InternalGrading R M ℤ) (GA : InternalGrading R A ℤ) (n : ℕ)
     (F : M ⊗[R] TensorPower R n A →ₗ[R] N) {x : M} {e : ℤ} (hx : x ∈ G.piece e)
     (d : ℕ → ℤ) (a : ℕ → A) (ha : ∀ i < n, a i ∈ GA.piece (d i)) :
     F (x ⊗ₜ[R] PiTensorProduct.tprod R fun i : Fin n ↦ a i) =
@@ -128,8 +131,8 @@ theorem apply_tmul_tprod_of_mem (G : InternalGrading R M) (GA : InternalGrading 
 
 /-- If a map of suspended inputs raises total suspended degree by `k`, its module-first
 unsuspension has degree `k - 1 - n` on `n` algebra inputs. -/
-theorem unsuspend_mem_piece (G : InternalGrading R M) (GA : InternalGrading R A)
-    {GN : InternalGrading R N} (n : ℕ) {F : M ⊗[R] TensorPower R n A →ₗ[R] N} (k : ℤ)
+theorem unsuspend_mem_piece (G : InternalGrading R M ℤ) (GA : InternalGrading R A ℤ)
+    {GN : InternalGrading R N ℤ} (n : ℕ) {F : M ⊗[R] TensorPower R n A →ₗ[R] N} (k : ℤ)
     (hF : ∀ {x : M} {p : ℤ}, x ∈ (G.shift 1).piece p → ∀ (a : Fin n → A) (d : Fin n → ℤ),
       (∀ i, a i ∈ (GA.shift 1).piece (d i)) →
         F (x ⊗ₜ[R] PiTensorProduct.tprod R a) ∈ GN.piece (p + ∑ i, d i + k))
@@ -157,11 +160,11 @@ theorem unsuspend_mem_piece (G : InternalGrading R M) (GA : InternalGrading R A)
 their unsuspended components.  The inner components have degree `q - k` on `k` algebra inputs;
 the outer degree is irrelevant to the suspension sign. -/
 theorem apply_comp_subword_of_mem
-    {GA : InternalGrading R A} {GM : InternalGrading R M} {GN : InternalGrading R N}
+    {GA : InternalGrading R A ℤ} {GM : InternalGrading R M ℤ} {GN : InternalGrading R N ℤ}
     {F : (M ⊗[R] TensorWords R A) →ₗ[R] N}
     {H : (N ⊗[R] TensorWords R A) →ₗ[R] P}
-    {f : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin n ↦ A) N}
-    {h : (n : ℕ) → N →ₗ[R] MultilinearMap R (fun _ : Fin n ↦ A) P}
+    {f : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) N}
+    {h : (n : ℕ) → N →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) P}
     {q : ℤ}
     (hFf : ∀ (n : ℕ) (x : M) (a : Fin n → A),
       F (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) =
@@ -257,9 +260,9 @@ theorem apply_coaugmentedBarDifferential_of_tprod
 /-- A suspended term in which the algebra bar differential collapses a block of homogeneous
 algebra inputs, expressed through the unsuspended module-first component and algebra operation. -/
 theorem apply_algebra_splice_of_mem
-    {G : InternalGrading R M}
+    {G : InternalGrading R M ℤ}
     {F : (M ⊗[R] TensorWords R A) →ₗ[R] N}
-    {f : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin n ↦ A) N}
+    {f : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) N}
     (hFf : ∀ (n : ℕ) (x : M) (a : Fin n → A),
       F (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) =
         f n (G.koszulTwist n x)
