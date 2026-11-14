@@ -290,7 +290,7 @@ theorem etaleConstantSheafSectionsEquiv_apply (M : Type u) (U : S.Etale)
 
 /-- Evaluating the comparison isomorphism on a section gives its locally constant function. -/
 @[simp]
-theorem constantSheafIsoEtaleLocallyConstantSheaf_hom_app_hom_app (M : Type u) (U : S.Etale)
+theorem constantSheafIsoEtaleLocallyConstantSheaf_hom_app_hom_app_apply (M : Type u) (U : S.Etale)
     (x : ((constantSheaf (smallEtaleTopology S) (Type u)).obj M).obj.obj (op U)) :
     (dsimp% ((constantSheafIsoEtaleLocallyConstantSheaf S).hom.app M).hom.app (op U) x) =
       etaleConstantSheafSectionsEquiv S M U x :=
@@ -337,7 +337,7 @@ theorem etaleConstantSheafSectionsEquiv_symm_apply (M : Type u) (U : S.Etale)
 /-- Evaluating the inverse comparison isomorphism gives the section attached to a locally
 constant function. -/
 @[simp]
-theorem constantSheafIsoEtaleLocallyConstantSheaf_inv_app_hom_app (M : Type u) (U : S.Etale)
+theorem constantSheafIsoEtaleLocallyConstantSheaf_inv_app_hom_app_apply (M : Type u) (U : S.Etale)
     (g : LocallyConstant U.left M) :
     (dsimp% ((constantSheafIsoEtaleLocallyConstantSheaf S).inv.app M).hom.app (op U) g) =
       (etaleConstantSheafSectionsEquiv S M U).symm g :=
