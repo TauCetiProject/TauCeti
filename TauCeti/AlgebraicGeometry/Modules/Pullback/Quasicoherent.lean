@@ -73,9 +73,9 @@ instance isIso_restrictRingCatSheafHom : IsIso (restrictRingCatSheafHom j) := by
 
 /-- Restriction of modules along an open immersion `j` is lax monoidal, as the pushforward of
 sheaves of modules along the functor of opens `j.opensFunctor`
-(`TauCeti.SheafOfModules.pushforwardLaxMonoidal`). -/
+(`SheafOfModules.pushforwardLaxMonoidal`). -/
 instance restrictFunctorLaxMonoidal : (restrictFunctor j).LaxMonoidal :=
-  TauCeti.SheafOfModules.pushforwardLaxMonoidal (restrictRingCatSheafHom j)
+  SheafOfModules.pushforwardLaxMonoidal (restrictRingCatSheafHom j)
 
 /-- The unit `M ⟶ j_* (M|_U)` of the restriction--pushforward adjunction along an open immersion
 is compatible with the tensor maps of restriction and pushforward. -/

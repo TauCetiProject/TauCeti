@@ -129,7 +129,7 @@ theorem restrictFunctor_μ_app_tmulRight {Y : Scheme.{u}} (j : Y ⟶ X) [IsOpenI
     {W : Y.Opens} (e : Γ(L.restrict j, W)) (t : Γ(F.restrict j, W)) :
     (Functor.LaxMonoidal.μ (restrictFunctor j) F L).app W (tmulRight (F.restrict j) e t) =
       tmulRight F (L := L) (U := j ''ᵁ W) e t :=
-  TauCeti.SheafOfModules.pushforward_μ_app_tmul (restrictRingCatSheafHom j) F L (op W) t e
+  SheafOfModules.pushforward_μ_app_tmul (restrictRingCatSheafHom j) F L (op W) t e
 
 /-! ### Bijectivity over a basis section -/
 
