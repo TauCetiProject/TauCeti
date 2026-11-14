@@ -20,7 +20,8 @@ to the residue skyscraper detects a generating section whenever its image is non
 criterion turns surjectivity of restriction to a point into generation of the line bundle there.
 Global generation is equivalent to the existence of Mathlib's
 `SheafOfModules.GeneratingSections`, including the epimorphism from a free sheaf onto the
-line bundle.
+line bundle. The trivial line bundle is globally generated
+(`TauCeti.AlgebraicGeometry.InvertibleSheaf.isGloballyGenerated_trivial`).
 
 ## References
 
@@ -271,5 +272,11 @@ theorem isGloballyGenerated_iff_nonempty_generatingSections {L : InvertibleSheaf
       rw [← hsection, hnat, htop ((σ.s i).val (op ⊤)), map_zero]
     exact hz
   exact (hp φ).trans (heq.trans (hp 0).symm)
+
+/-- The trivial line bundle on a scheme is globally generated. -/
+@[simp]
+theorem isGloballyGenerated_trivial (X : Scheme.{u}) : (trivial X).IsGloballyGenerated :=
+  isGloballyGenerated_iff_nonempty_generatingSections.mpr
+    ⟨(trivial_obj X).symm ▸ SheafOfModules.free.generatingSections PUnit⟩
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf
