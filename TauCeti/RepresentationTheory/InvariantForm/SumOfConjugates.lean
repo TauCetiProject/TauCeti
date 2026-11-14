@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.BilinearForm
-public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.PermutationForm
 
 /-!
 # Summing a bilinear form over the conjugates of a representation
@@ -21,12 +20,12 @@ needs no invertibility of the group order.  The sum over the conjugates of a sym
 symmetric.
 
 Over an ordered field the construction also produces a *nonzero* invariant symmetric form on any
-nontrivial finite-dimensional representation: sum the coordinate dot product read in a basis.
-Positivity is what makes the sum nonzero -- the sum of the nonnegative numbers
-`B₀ (σ g x) (σ g x)` is at least its term at `g = 1`, which is positive -- so it is the ordering of
-the field, not a division by `|G|`, that does the work.  For an irreducible complex representation
-of a finite group with a real form, this form on the real form, transported to the complex space,
-is the nonzero invariant symmetric form that gives Frobenius-Schur indicator `+1`
+nontrivial representation: sum the coordinate dot product read in a basis.
+Positivity is what makes the sum nonzero -- on the diagonal the sum of a nonnegative form dominates
+its term at `g = 1`, so the sum of a positive definite form is again positive definite -- so it is
+the ordering of the field, not a division by `|G|`, that does the work.  For an irreducible complex
+representation of a finite group with a real form, this form on the real form, transported to the
+complex space, is the nonzero invariant symmetric form that gives Frobenius-Schur indicator `+1`
 (`Representation.IsRealForm.frobeniusSchurIndicator_eq_one`).
 
 ## Main definitions
@@ -44,8 +43,7 @@ is the nonzero invariant symmetric form that gives Frobenius-Schur indicator `+1
   `Representation.posDef_toQuadraticMap_sumOfConjugatesForm`: over an ordered semiring, that sum
   dominates the form on the diagonal, and is positive definite if the form is.
 * `Representation.exists_isInvariantForm_isSymm_ne_zero`: **a representation of a finite group on a
-  nontrivial finite-dimensional space over an ordered field carries a nonzero invariant symmetric
-  form.**
+  nontrivial space over an ordered field carries a nonzero invariant symmetric form.**
 
 ## References
 
@@ -155,37 +153,32 @@ section OrderedField
 variable {k G W : Type*} [Field k] [LinearOrder k] [IsStrictOrderedRing k] [Group G] [Finite G]
   [AddCommGroup W] [Module k W]
 
-/-- **A representation of a finite group over an ordered field carries a nonzero invariant
-symmetric form.**  Take the dot product read in a basis and sum it over the conjugates; that sum
-preserves symmetry, and it dominates its term at `g = 1`, which is the value `B₀ x x` of the dot
-product itself and is positive for `x ≠ 0`.  So the sum does not vanish.  This is the input over
-`ℝ` to the orthogonality of a representation with a real form. -/
-theorem exists_isInvariantForm_isSymm_ne_zero (σ : Representation k G W)
-    [FiniteDimensional k W] [Nontrivial W] :
+/-- **A representation of a finite group on a nontrivial space over an ordered field carries a
+nonzero invariant symmetric form.**  The space need not be finite-dimensional.  This is the input
+over `ℝ` to the orthogonality of a representation with a real form. -/
+theorem exists_isInvariantForm_isSymm_ne_zero (σ : Representation k G W) [Nontrivial W] :
     ∃ B : BilinForm k W, IsInvariantForm σ B ∧ B.IsSymm ∧ B ≠ 0 := by
   classical
   have : Fintype G := Fintype.ofFinite G
-  set b := Module.finBasis k W with _
-  set B₀ : BilinForm k W := Matrix.toBilin b 1 with hB₀
-  have hB₀apply : ∀ x y : W, B₀ x y = ⇑(b.repr x) ⬝ᵥ ⇑(b.repr y) := by
-    intro x y
-    simp [hB₀, Matrix.toBilin_apply, Matrix.one_apply, Finset.sum_ite_eq, dotProduct]
-  have hB₀symm : B₀.IsSymm := (Matrix.isSymm_toBilin_iff_isSymm b).mpr Matrix.isSymm_one
-  have hB₀nonneg : ∀ x : W, 0 ≤ B₀ x x := fun x => by
-    rw [hB₀apply, dotProduct]
-    exact Finset.sum_nonneg fun i _ => mul_self_nonneg _
+  -- The permutation form of the coordinate space, pulled back along the coordinates of a basis, is
+  -- symmetric and positive definite, hence so is its sum over the conjugates, which is nonzero.
+  let e : W ≃ₗ[k] MonoidAlgebra k (Module.Free.ChooseBasisIndex k W) :=
+    (Module.Free.chooseBasis k W).repr.trans (MonoidAlgebra.coeffLinearEquiv k).symm
+  set B₀ : BilinForm k W :=
+    (TauCeti.permutationForm k (Module.Free.ChooseBasisIndex k W)).compl₁₂ e.toLinearMap
+      e.toLinearMap with hB₀
+  have hB₀pos : B₀.toQuadraticMap.PosDef := fun y hy => by
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, hB₀, LinearMap.compl₁₂_apply]
+    exact TauCeti.permutationForm_self_pos (e.map_ne_zero_iff.mpr hy)
   refine ⟨sumOfConjugatesForm σ B₀, isInvariantForm_sumOfConjugatesForm σ B₀,
-    isSymm_sumOfConjugatesForm hB₀symm, ?_⟩
-  obtain ⟨x, hx⟩ := exists_ne (0 : W)
-  have hpos : 0 < B₀ x x := by
-    refine (hB₀nonneg x).lt_of_ne (Ne.symm ?_)
-    rw [hB₀apply, ne_eq, dotProduct_self_eq_zero, Finsupp.coe_eq_zero]
-    exact fun h => hx (b.repr.map_eq_zero_iff.mp h)
-  have hle : B₀ x x ≤ sumOfConjugatesForm σ B₀ x x := le_sumOfConjugatesForm_apply_self hB₀nonneg x
-  intro hzero
-  rw [hzero] at hle
-  simp only [LinearMap.zero_apply] at hle
-  exact absurd (hpos.trans_le hle) (lt_irrefl 0)
+    isSymm_sumOfConjugatesForm ?_, ?_⟩
+  · refine ⟨fun x y => ?_⟩
+    rw [hB₀, LinearMap.compl₁₂_apply, LinearMap.compl₁₂_apply]
+    exact TauCeti.permutationForm_comm _ _
+  · obtain ⟨x, hx⟩ := exists_ne (0 : W)
+    intro hzero
+    have := posDef_toQuadraticMap_sumOfConjugatesForm (σ := σ) hB₀pos x hx
+    simp [hzero] at this
 
 end OrderedField
 

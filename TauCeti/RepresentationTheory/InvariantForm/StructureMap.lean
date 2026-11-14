@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.LinearAlgebra.SesquilinearForm.Balance
+public import TauCeti.LinearAlgebra.SesquilinearForm.Complex
 public import TauCeti.LinearAlgebra.SesquilinearForm.Separating
 public import TauCeti.RepresentationTheory.InvariantForm.Hermitian
 public import TauCeti.RepresentationTheory.QuaternionicStructure
@@ -418,7 +419,7 @@ private theorem exists_isInvariantForm_flip_of_sq_eq_smul {H : V →ₗ⋆[ℂ] 
     {K : V →ₛₗ[starRingEnd ℂ] V} {ε : ℝ} (hε : ε * ε = 1)
     (hKsq : ∀ x : V, K (K x) = (ε : ℂ) • x)
     (hKint : ∀ (g : G) (v : V), K (ρ g v) = ρ g (K v)) (hHinv : IsInvariantSesqForm ρ H)
-    (hHsymm : H.IsSymm) (hHnonneg : H.IsNonneg) (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) :
+    (hHnonneg : H.IsNonneg) (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) :
     ∃ B : BilinForm ℂ V, IsInvariantForm ρ B ∧ (∀ x y : V, B x y = (ε : ℂ) * B y x) ∧
       B.Nondegenerate := by
   have hεC : (ε : ℂ) * (ε : ℂ) = 1 := by exact_mod_cast hε
@@ -446,7 +447,8 @@ private theorem exists_isInvariantForm_flip_of_sq_eq_smul {H : V →ₗ⋆[ℂ] 
     intro x y
     rw [LinearMap.comp_apply, LinearMap.comp_apply]
     calc balance H K (K x) y
-        = (starRingEnd ℂ) (balance H K y (K x)) := ((isSymm_balance hHsymm K).eq y (K x)).symm
+        = (starRingEnd ℂ) (balance H K y (K x)) :=
+          ((isSymm_balance hHnonneg.isSymm K).eq y (K x)).symm
       _ = (starRingEnd ℂ) (balance H K ((ε : ℂ) • K (K y)) (K x)) := by
             rw [hKsq y, smul_smul, hεC, one_smul]
       _ = (starRingEnd ℂ) ((ε : ℂ) * (starRingEnd ℂ) (balance H K (K y) x)) := by
@@ -467,29 +469,29 @@ private theorem exists_isInvariantForm_flip_of_sq_eq_smul {H : V →ₗ⋆[ℂ] 
       smul_eq_mul, mul_eq_zero] at h
     exact h.resolve_left hεne
 
-/-- **A real structure produces a nondegenerate invariant symmetric form.**  This is the flip sign
-`ε = 1` of the construction: the balanced form of `H` against the involution `K` is compatible with
-it, and `B x y = H (K x) y` is then symmetric. -/
+/-- **A real structure, together with a positive definite invariant Hermitian form, produces a
+nondegenerate invariant symmetric form.**  Here the invariant form `H` is nonnegative and nonzero
+off the origin. -/
 theorem exists_isInvariantForm_isSymm_nondegenerate_of_isRealStructure
     {H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ} {K : V →ₛₗ[starRingEnd ℂ] V} (hK : IsRealStructure ρ K)
-    (hHinv : IsInvariantSesqForm ρ H) (hHsymm : H.IsSymm) (hHnonneg : H.IsNonneg)
+    (hHinv : IsInvariantSesqForm ρ H) (hHnonneg : H.IsNonneg)
     (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) :
     ∃ B : BilinForm ℂ V, IsInvariantForm ρ B ∧ B.IsSymm ∧ B.Nondegenerate := by
   obtain ⟨B, hBinv, hflip, hBnd⟩ := exists_isInvariantForm_flip_of_sq_eq_smul (ε := 1) (one_mul 1)
-    (fun x => by simpa using hK.involutive x) hK.isIntertwining hHinv hHsymm hHnonneg hdef
+    (fun x => by simpa using hK.involutive x) hK.isIntertwining hHinv hHnonneg hdef
   exact ⟨B, hBinv, ⟨fun x y => by simpa using hflip x y⟩, hBnd⟩
 
-/-- **A quaternionic structure produces a nondegenerate invariant alternating form.**  This is the
-flip sign `ε = -1` of the same construction: the form built from `J` obeys `B x y = -B y x`, which
-over `ℂ` is alternation. -/
+/-- **A quaternionic structure, together with a positive definite invariant Hermitian form,
+produces a nondegenerate invariant alternating form.**  Here the invariant form `H` is nonnegative
+and nonzero off the origin. -/
 theorem exists_isInvariantForm_isAlt_nondegenerate_of_isQuaternionicStructure
     {H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ} {J : V →ₛₗ[starRingEnd ℂ] V} (hJ : IsQuaternionicStructure ρ J)
-    (hHinv : IsInvariantSesqForm ρ H) (hHsymm : H.IsSymm) (hHnonneg : H.IsNonneg)
+    (hHinv : IsInvariantSesqForm ρ H) (hHnonneg : H.IsNonneg)
     (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) :
     ∃ B : BilinForm ℂ V, IsInvariantForm ρ B ∧ B.IsAlt ∧ B.Nondegenerate := by
   obtain ⟨B, hBinv, hflip, hBnd⟩ :=
     exists_isInvariantForm_flip_of_sq_eq_smul (ε := -1) (by norm_num)
-      (fun x => by simpa using hJ.sq_eq_neg x) hJ.isIntertwining hHinv hHsymm hHnonneg hdef
+      (fun x => by simpa using hJ.sq_eq_neg x) hJ.isIntertwining hHinv hHnonneg hdef
   refine ⟨B, hBinv, ?_, hBnd⟩
   intro x
   have h : B x x = -B x x := by simpa using hflip x x
@@ -511,11 +513,11 @@ over a compact one.  This is an equivalence of the two existence statements, not
 each direction produces *some* witness from a given one, and no inverse pair of constructions is
 claimed. -/
 theorem exists_isRealStructure_iff {H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ} (hHinv : IsInvariantSesqForm ρ H)
-    (hHsymm : H.IsSymm) (hHnonneg : H.IsNonneg) (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) :
+    (hHnonneg : H.IsNonneg) (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) :
     (∃ K : V →ₛₗ[starRingEnd ℂ] V, IsRealStructure ρ K) ↔
       ∃ B : BilinForm ℂ V, IsInvariantForm ρ B ∧ B.IsSymm ∧ B.Nondegenerate :=
   ⟨fun ⟨_, hK⟩ =>
-      exists_isInvariantForm_isSymm_nondegenerate_of_isRealStructure hK hHinv hHsymm hHnonneg hdef,
+      exists_isInvariantForm_isSymm_nondegenerate_of_isRealStructure hK hHinv hHnonneg hdef,
     fun ⟨_, hBinv, hBsymm, hBnd⟩ =>
       exists_isRealStructure_of_isInvariantForm_of_isInvariantSesqForm hBinv hBsymm hBnd hHinv
         hHnonneg hdef⟩
@@ -525,13 +527,12 @@ when a nondegenerate invariant alternating form does.**  This is the value `-1` 
 Frobenius-Schur trichotomy, `Representation.exists_isRealStructure_iff` being the value `1`; the
 remaining value `0` is the case where no invariant bilinear form of either kind exists. -/
 theorem exists_isQuaternionicStructure_iff {H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ}
-    (hHinv : IsInvariantSesqForm ρ H) (hHsymm : H.IsSymm) (hHnonneg : H.IsNonneg)
+    (hHinv : IsInvariantSesqForm ρ H) (hHnonneg : H.IsNonneg)
     (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) :
     (∃ J : V →ₛₗ[starRingEnd ℂ] V, IsQuaternionicStructure ρ J) ↔
       ∃ B : BilinForm ℂ V, IsInvariantForm ρ B ∧ B.IsAlt ∧ B.Nondegenerate :=
   ⟨fun ⟨_, hJ⟩ =>
-      exists_isInvariantForm_isAlt_nondegenerate_of_isQuaternionicStructure hJ hHinv hHsymm
-        hHnonneg hdef,
+      exists_isInvariantForm_isAlt_nondegenerate_of_isQuaternionicStructure hJ hHinv hHnonneg hdef,
     fun ⟨_, hBinv, hBalt, hBnd⟩ =>
       exists_isQuaternionicStructure_of_isInvariantForm_of_isInvariantSesqForm hBinv hBalt hBnd
         hHinv hHnonneg hdef⟩
