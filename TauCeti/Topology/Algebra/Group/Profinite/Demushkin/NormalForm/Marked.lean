@@ -192,8 +192,8 @@ with `2^f ∣ α`, including `α = 0`. Under this isomorphism the canonical char
 on every other marked generator. The image pins the level `f`; the exponent `α` above it is not an
 invariant of `G`. -/
 theorem isDemushkin_marked_of_q_two_even_unitsPlusMinus (hG : IsDemushkin 2 G)
-    (heven : Even (demushkinRank hG)) (hn : 4 ≤ demushkinRank hG) {a f : ℕ} (hf : 2 ≤ f)
-    (ha : 2 ^ f ∣ a) (hrange : (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f) :
+    (heven : Even (demushkinRank hG)) {a f : ℕ} (hf : 2 ≤ f) (ha : 2 ^ f ∣ a)
+    (hrange : (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f) :
     ∃ e : G ≃ₜ* presentedProP 2 (Fin (demushkinRank hG))
         {demushkinWordTwoEven a f (demushkinRank hG) (freeProPGen 2 (demushkinRank hG))},
       ((demushkinCharacter hG (e.symm (presentedProPGen 2 (demushkinRank hG) _ 1)) : ℤ_[2])
@@ -202,6 +202,7 @@ theorem isDemushkin_marked_of_q_two_even_unitsPlusMinus (hG : IsDemushkin 2 G)
           * (1 - 2 ^ f) = 1) ∧
         ∀ i : ℕ, i ≠ 1 → i ≠ 3 → i < demushkinRank hG →
           demushkinCharacter hG (e.symm (presentedProPGen 2 (demushkinRank hG) _ i)) = 1 := by
+  have hn := hG.three_lt_demushkinRank_of_even_of_range_eq_unitsPlusMinus heven hrange
   have ha₂ : 2 ∣ a := (dvd_pow_self 2 (by omega : f ≠ 0)).trans ha
   have ha' : (2 : ℤ_[2]) ^ f ∣ (a : ℤ_[2]) := by exact_mod_cast Nat.cast_dvd_cast (α := ℤ_[2]) ha
   -- The normal form with exponent `α` is Demushkin of the same rank as `G` with the same image,
@@ -277,7 +278,7 @@ theorem isDemushkin_marked_of_q_two_even (hG : IsDemushkin 2 G)
         ∀ i : ℕ, i ≠ 1 → i ≠ 3 → i < demushkinRank hG →
           demushkinCharacter hG (e.symm (presentedProPGen 2 (demushkinRank hG) _ i)) = 1 := by
   rcases hrange with ⟨haf, hrange⟩ | ⟨hlt, w, hw, hrange⟩
-  · exact isDemushkin_marked_of_q_two_even_unitsPlusMinus hG heven hn hf haf hrange
+  · exact isDemushkin_marked_of_q_two_even_unitsPlusMinus hG heven hf haf hrange
   · have ha₀ : a ≠ 0 := by
       rintro rfl
       simp [Nat.padicValNat_def] at hw

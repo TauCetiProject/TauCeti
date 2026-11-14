@@ -60,8 +60,8 @@ A Demushkin pro-`2` group of even rank at least four whose orientation has image
 `2^f`. The isomorphism gives the canonical character the values `-(1 + α)⁻¹` on `x₂`,
 `(1 - 2^f)⁻¹` on `x₄`, and `1` on the other marked generators. -/
 theorem isDemushkin_marked_of_q_two_even_unitsPlusMinus_padic (hG : IsDemushkin 2 G)
-    (heven : Even (demushkinRank hG)) (hn : 4 ≤ demushkinRank hG) {α : ℤ_[2]} {f : ℕ}
-    (hf : 2 ≤ f) (hα : (2 : ℤ_[2]) ^ f ∣ α)
+    (heven : Even (demushkinRank hG)) {α : ℤ_[2]} {f : ℕ} (hf : 2 ≤ f)
+    (hα : (2 : ℤ_[2]) ^ f ∣ α)
     (hrange : (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f) :
     ∃ e : G ≃ₜ* presentedProP 2 (Fin (demushkinRank hG))
         {demushkinWordTwoEvenPadic (isProP_freeProP 2 (Fin (demushkinRank hG))) α (2 ^ f)
@@ -73,6 +73,7 @@ theorem isDemushkin_marked_of_q_two_even_unitsPlusMinus_padic (hG : IsDemushkin 
         ∀ i : ℕ, i ≠ 1 → i ≠ 3 → i < demushkinRank hG →
           demushkinCharacter hG
             (e.symm (presentedProPGen 2 (demushkinRank hG) _ i)) = 1 := by
+  have hn := hG.three_lt_demushkinRank_of_even_of_range_eq_unitsPlusMinus heven hrange
   have hα₂ : (2 : ℤ_[2]) ∣ α := (dvd_pow_self 2 (by omega : f ≠ 0)).trans hα
   have hq₂ : 2 ∣ 2 ^ f := dvd_pow_self 2 (by omega)
   let hH := isDemushkin_presentedProP_demushkinWordTwoEvenPadic heven (by omega) hα₂ hq₂
@@ -151,7 +152,7 @@ theorem isDemushkin_marked_of_q_two_even_padic (hG : IsDemushkin 2 G)
           demushkinCharacter hG
             (e.symm (presentedProPGen 2 (demushkinRank hG) _ i)) = 1 := by
   rcases hrange with ⟨hα, hrange⟩ | ⟨g, w, hg, hαg, hαg', hgf, hw, hrange⟩
-  · exact isDemushkin_marked_of_q_two_even_unitsPlusMinus_padic hG heven hn hf hα hrange
+  · exact isDemushkin_marked_of_q_two_even_unitsPlusMinus_padic hG heven hf hα hrange
   · exact isDemushkin_marked_of_q_two_even_twisted_padic hG heven hn hg hαg hαg' hgf hw
       hrange
 

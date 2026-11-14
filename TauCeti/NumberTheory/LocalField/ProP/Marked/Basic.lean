@@ -184,9 +184,8 @@ theorem absoluteGaloisGroupProP_two_marked_of_degree_even_plusMinus
   have hG := isDemushkin_absoluteGaloisGroupProP_of_mu 2 K hmu
   have hrank : demushkinRank hG = Module.finrank ℚ_[2] K + 2 :=
     demushkinRank_absoluteGaloisGroupProP 2 K hmu
-  have hpos : 0 < Module.finrank ℚ_[2] K := Module.finrank_pos
   have hmarked := isDemushkin_marked_of_q_two_even_unitsPlusMinus hG
-    (hrank ▸ heven.add even_two) (hrank ▸ by obtain ⟨m, hm⟩ := heven; omega) hf ha
+    (hrank ▸ heven.add even_two) hf ha
     ((range_demushkinCharacter_absoluteGaloisGroupProP 2 K hmu).trans hrange)
   rwa [demushkinCharacter_absoluteGaloisGroupProP, hrank] at hmarked
 
