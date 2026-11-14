@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.BasisToDual
-public import TauCeti.LinearAlgebra.Finsupp.VectorSpace
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.HallInner
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.Algebra
 
@@ -32,15 +31,15 @@ character table of the symmetric group, and is proved in
 
 On all of `Λ_R` the Hall inner product `TauCeti.SymmetricFunction.hallInner R` is defined by the
 Schur basis `TauCeti.SymmetricFunction.schurBasis R`, indexed by `Σ n, n.Partition`, which collects
-the Schur bases of all degrees. It restricts to `TauCeti.stableHallInner R n` in degree `n`
-(`TauCeti.SymmetricFunction.hallInner_of_of`) and pairs different degrees to zero
-(`TauCeti.SymmetricFunction.hallInner_of_of_of_ne`), so it is the sum over all degrees of the Hall
-inner products of the homogeneous components (`TauCeti.SymmetricFunction.hallInner_apply`).
+the Schur bases of all degrees (it is set up with the ring `Λ_R` itself). It restricts to
+`TauCeti.stableHallInner R n` in degree `n` (`TauCeti.SymmetricFunction.hallInner_of_of`) and
+pairs different degrees to zero (`TauCeti.SymmetricFunction.hallInner_of_of_of_ne`), so it is the
+sum over all degrees of the Hall inner products of the homogeneous components
+(`TauCeti.SymmetricFunction.hallInner_apply`).
 
 ## Main definitions
 
 * `TauCeti.stableHallInner R n`: the Hall inner product on the symmetric functions of degree `n`.
-* `TauCeti.SymmetricFunction.schurBasis R`: the basis of `Λ_R` consisting of the Schur functions.
 * `TauCeti.SymmetricFunction.hallInner R`: the Hall inner product on `Λ_R`.
 
 ## Main results
@@ -137,29 +136,6 @@ theorem hallInner_stableSymmetricProj {d : ℕ} (hn : n ≤ d) (f g : stableSymm
 namespace SymmetricFunction
 
 open DirectSum
-
-variable (R) in
-/-- **The Schur basis of the ring of symmetric functions**: the Schur functions `s_μ`, over all
-partitions `μ` of all degrees `n`, indexed by `Σ n, n.Partition`. It collects the Schur bases
-`TauCeti.stableSchurBasis R n` of the homogeneous components; its vectors are read off by
-`TauCeti.SymmetricFunction.schurBasis_apply`. -/
-noncomputable def schurBasis : Module.Basis (Σ n : ℕ, n.Partition) R (SymmetricFunction R) :=
-  DFinsupp.basis fun n => stableSchurBasis R n
-
-/-- **The vectors of the Schur basis of `Λ_R` are the Schur functions.** -/
-@[simp]
-theorem schurBasis_apply (μ : Σ n : ℕ, n.Partition) :
-    schurBasis R μ = of _ μ.1 (stableSchur R μ.2) := by
-  rw [schurBasis, DFinsupp.basis_apply, stableSchurBasis_apply]
-  -- `DirectSum.of` is `DFinsupp.single`, bundled as an additive monoid homomorphism.
-  rfl
-
-/-- **The Schur coordinates of a symmetric function are the Schur coordinates of its homogeneous
-components.** -/
-@[simp]
-theorem schurBasis_repr_apply (x : SymmetricFunction R) (μ : Σ n : ℕ, n.Partition) :
-    (schurBasis R).repr x μ = (stableSchurBasis R μ.1).repr (x μ.1) μ.2 :=
-  DFinsupp.basis_repr _ x μ
 
 variable (R) in
 /-- **The Hall inner product on the ring of symmetric functions**: the bilinear form in which the
