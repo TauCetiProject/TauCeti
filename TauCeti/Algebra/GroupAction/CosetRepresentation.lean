@@ -9,7 +9,9 @@ public import TauCeti.Algebra.Group.NormalizerQuotient.Basic
 public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.Algebra.GroupAction.PermutationRepresentation
 public import TauCeti.GroupTheory.Coset.Basic
+public import TauCeti.GroupTheory.Index.Map
 public import TauCeti.GroupTheory.QuotientGroup.Basic
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Permutation representations on coset spaces
@@ -26,8 +28,9 @@ representations, without assuming `H` normal or of finite index:
   pointed-conjugate iff `H₁ = H₂`
   (`Equiv.exists_conj_permutationRepresentation_quotient_apply_eq_iff`).
 * **Transport along isomorphisms and right cosets.** Pointwise action preserves index
-  (`Subgroup.index_smul`), giving the `ConjAct G`-subaction `Subgroup.ofIndex` transported across
-  `φ : G ≃* G'` by `MulEquiv.ofIndexEquiv` and `MulEquiv.orbitRelQuotientOfIndexEquiv`; see also
+  (`Subgroup.index_smul` in `TauCeti.GroupTheory.Index.Map`), giving the `ConjAct G`-subaction
+  `Subgroup.ofIndex` transported across `φ : G ≃* G'` by `MulEquiv.ofIndexEquiv`,
+  `MulEquiv.ofIndexEquiv_conjAct_smul`, and `MulEquiv.orbitRelQuotientOfIndexEquiv`; see also
   `Equiv.permutationRepresentation_congrOfMapEq`, `Subgroup.rightCosetPerm`, and
   `Equiv.permCongr_rightCosetPerm`.
 * **Normal core and centralizer.** The kernel of the coset representation is `H.normalCore`
@@ -51,13 +54,7 @@ namespace Subgroup
 
 variable {G : Type*} [Group G]
 
-/-! ### Index-preserving actions and the fiber of index-`n` subgroups -/
-
-/-- Pointwise action by a `MulDistribMulAction` preserves subgroup index (the multiplicative
-counterpart of `AddSubgroup.index_smul`). -/
-@[simp] theorem index_smul {α : Type*} [Group α] [MulDistribMulAction α G] (a : α)
-    (H : Subgroup G) : (a • H).index = H.index :=
-  index_map_of_bijective (MulAction.bijective a) H
+/-! ### The fiber of index-`n` subgroups -/
 
 /-- The subgroups of `G` of index `n`, as a `ConjAct G`-invariant sub-action of `Subgroup G`.
 With `Subgroup.index`'s convention, `n = 0` denotes infinite-index subgroups. -/
@@ -141,49 +138,41 @@ theorem quotientRightRelEquivQuotientLeftRel_rightCosetPerm (H : Subgroup G) (g 
 
 /-! ### Centralizer of left translation on `G ⧸ H` -/
 
-/-- Right multiplication on `G ⧸ H` by an element of `N_G(H)`, sending `x H` to `(x * n) H`. -/
-private def normalizerCosetPerm (H : Subgroup G) (n : normalizer (H : Set G)) :
-    Equiv.Perm (G ⧸ H) :=
-  Quotient.congr (Equiv.mulRight (n : G)) fun a b ↦ by
-    simp only [QuotientGroup.leftRel_apply, Equiv.coe_mulRight, mul_inv_rev]
-    simpa [mul_assoc] using mem_normalizer_iff.mp (inv_mem n.2) (a⁻¹ * b)
-
-private theorem normalizerCosetPerm_mk (H : Subgroup G) (n : normalizer (H : Set G)) (x : G) :
-    normalizerCosetPerm H n (x : G ⧸ H) = ((x * (n : G) : G) : G ⧸ H) := (rfl)
-
-private theorem normalizerCosetPerm_mem_centralizer (H : Subgroup G)
-    (n : normalizer (H : Set G)) :
-    normalizerCosetPerm H n ∈ centralizer (Set.range (MulAction.toPermHom G (G ⧸ H))) := by
+private theorem toPermHom_normalizer_op_mem_centralizer (H : Subgroup G)
+    (u : (normalizer (H : Set G)).op) :
+    MulAction.toPermHom (normalizer (H : Set G)).op (G ⧸ H) u ∈
+      centralizer (Set.range (MulAction.toPermHom G (G ⧸ H))) := by
   rw [mem_centralizer_iff]
   rintro _ ⟨g, rfl⟩
   exact Equiv.ext fun q ↦ QuotientGroup.induction_on q fun x ↦ by
-    simp [Equiv.Perm.mul_apply, normalizerCosetPerm_mk, MulAction.Quotient.smul_mk, smul_eq_mul,
-      mul_assoc]
+    simp [Equiv.Perm.mul_apply, MulAction.Quotient.smul_mk, Subgroup.smul_def,
+      MulOpposite.smul_eq_mul_unop, smul_eq_mul, mul_assoc]
 
 /-- The homomorphism `N_G(H) →* C_{Perm (G ⧸ H)}(G)ᵐᵒᵖ` sending `n` to right multiplication by `n`
-on left cosets. -/
+on left cosets via Mathlib's `(normalizer H).op` quotient action. -/
 private def normalizerToCentralizerOp (H : Subgroup G) :
-    normalizer (H : Set G) →* (centralizer (Set.range (MulAction.toPermHom G (G ⧸ H))))ᵐᵒᵖ where
-  toFun n := MulOpposite.op ⟨normalizerCosetPerm H n, normalizerCosetPerm_mem_centralizer H n⟩
-  map_one' := congrArg MulOpposite.op <| Subtype.ext <| Equiv.ext fun q ↦
-    QuotientGroup.induction_on q fun _ ↦ by simp [normalizerCosetPerm_mk]
-  map_mul' n₁ n₂ := by
-    rw [← MulOpposite.op_mul]
-    exact congrArg MulOpposite.op <| Subtype.ext <| Equiv.ext fun q ↦
-      QuotientGroup.induction_on q fun x ↦ by
-        rw [MulMemClass.coe_mul, Equiv.Perm.mul_apply, normalizerCosetPerm_mk,
-          normalizerCosetPerm_mk, normalizerCosetPerm_mk, Subgroup.coe_mul, mul_assoc]
+    normalizer (H : Set G) →* (centralizer (Set.range (MulAction.toPermHom G (G ⧸ H))))ᵐᵒᵖ :=
+  (((MulAction.toPermHom (normalizer (H : Set G)).op (G ⧸ H)).codRestrict _
+    (toPermHom_normalizer_op_mem_centralizer H)).op).comp
+    (normalizer (H : Set G)).mulEquivOpMop.toMonoidHom
+
+private theorem coe_unop_normalizerToCentralizerOp_apply (H : Subgroup G)
+    (n : normalizer (H : Set G)) (x : G) :
+    (((normalizerToCentralizerOp H n).unop : Equiv.Perm (G ⧸ H)) (x : G ⧸ H)) =
+      ((x * (n : G) : G) : G ⧸ H) := by
+  simp [normalizerToCentralizerOp, MonoidHom.op, Subgroup.smul_def,
+    MulOpposite.smul_eq_mul_unop]
 
 private theorem normalizerToCentralizerOp_eq_one_iff (H : Subgroup G)
     (n : normalizer (H : Set G)) :
     normalizerToCentralizerOp H n = 1 ↔ (n : G) ∈ H := by
-  simp only [normalizerToCentralizerOp, MonoidHom.coe_mk, OneHom.coe_mk, ← MulOpposite.unop_inj,
-    MulOpposite.unop_op, MulOpposite.unop_one, Subtype.ext_iff, OneMemClass.coe_one]
+  rw [← MulOpposite.unop_inj, MulOpposite.unop_one, Subtype.ext_iff, OneMemClass.coe_one]
   refine ⟨fun h ↦ ?_, fun hn ↦ Equiv.ext fun q ↦ QuotientGroup.induction_on q fun x ↦ ?_⟩
   · have h1 := Equiv.congr_fun h ((1 : G) : G ⧸ H)
-    rw [normalizerCosetPerm_mk, one_mul, Equiv.Perm.one_apply, QuotientGroup.eq, mul_one] at h1
+    rw [coe_unop_normalizerToCentralizerOp_apply, one_mul, Equiv.Perm.one_apply, QuotientGroup.eq,
+      mul_one] at h1
     exact inv_mem_iff.mp h1
-  · rw [normalizerCosetPerm_mk, Equiv.Perm.one_apply, QuotientGroup.eq]
+  · rw [coe_unop_normalizerToCentralizerOp_apply, Equiv.Perm.one_apply, QuotientGroup.eq]
     simpa [mul_assoc] using hn
 
 private noncomputable def normalizerQuotientEquivCentralizerOp (H : Subgroup G) :
@@ -213,7 +202,14 @@ private noncomputable def normalizerQuotientEquivCentralizerOp (H : Subgroup G) 
   refine ⟨H.normalizerQuotientMk ⟨n, hn_mem⟩, ?_⟩
   rw [normalizerQuotientLift_mk, ← MulOpposite.unop_inj]
   exact Subtype.ext <| Equiv.ext fun q ↦ QuotientGroup.induction_on q fun x ↦
-    (normalizerCosetPerm_mk H ⟨n, hn_mem⟩ x).trans (hτx x).symm
+    (coe_unop_normalizerToCentralizerOp_apply H ⟨n, hn_mem⟩ x).trans (hτx x).symm
+
+private theorem normalizerQuotientEquivCentralizerOp_mk (H : Subgroup G)
+    (n : normalizer (H : Set G)) :
+    normalizerQuotientEquivCentralizerOp H n = normalizerToCentralizerOp H n := by
+  rw [← H.normalizerQuotientMk_apply]
+  exact normalizerQuotientLift_mk H (normalizerToCentralizerOp H)
+    (fun g hg ↦ (normalizerToCentralizerOp_eq_one_iff H g).mpr hg) n
 
 /-- **The `G`-automorphism group of `G ⧸ H` is `(N_G(H) / H)ᵐᵒᵖ`.** Every permutation of `G ⧸ H`
 centralizing left translation by `G` is right multiplication by a normalizer coset, and right
@@ -234,7 +230,10 @@ normalizer coset `n H` to right multiplication `x H ↦ (x * n) H`. -/
     (n : normalizer (H : Set G)) (x : G) :
     (((H.centralizerToPermHomQuotientMulEquiv.symm
       (MulOpposite.op (n : H.normalizerQuotient)) : _) : Equiv.Perm (G ⧸ H)) (x : G ⧸ H)) =
-        ((x * (n : G) : G) : G ⧸ H) := (rfl)
+        ((x * (n : G) : G) : G ⧸ H) := by
+  change (((normalizerQuotientEquivCentralizerOp H n).unop :
+    Equiv.Perm (G ⧸ H)) (x : G ⧸ H)) = ((x * (n : G) : G) : G ⧸ H)
+  rw [normalizerQuotientEquivCentralizerOp_mk, coe_unop_normalizerToCentralizerOp_apply]
 
 end Subgroup
 
@@ -255,7 +254,8 @@ def ofIndexEquiv (φ : G ≃* G') (n : ℕ) : Subgroup.ofIndex G n ≃ Subgroup.
     ((φ.ofIndexEquiv n).symm H : Subgroup G) = H.1.comap (φ : G →* G') :=
   (Subgroup.comap_equiv_eq_map_symm φ H.1).symm
 
-private theorem ofIndexEquiv_conjAct_smul (φ : G ≃* G') (n : ℕ) (g : G)
+/-- `φ.ofIndexEquiv` is equivariant with respect to subgroup conjugation. -/
+@[simp] theorem ofIndexEquiv_conjAct_smul (φ : G ≃* G') (n : ℕ) (g : G)
     (H : Subgroup.ofIndex G n) :
     φ.ofIndexEquiv n (ConjAct.toConjAct g • H) = ConjAct.toConjAct (φ g) • φ.ofIndexEquiv n H :=
   Subtype.ext (Subgroup.map_map_conj H.1 φ.toMonoidHom g)
@@ -264,30 +264,26 @@ private theorem ofIndexEquiv_conjAct_smul (φ : G ≃* G') (n : ℕ) (g : G)
 -/
 def orbitRelQuotientOfIndexEquiv (φ : G ≃* G') (n : ℕ) :
     MulAction.orbitRel.Quotient (ConjAct G) (Subgroup.ofIndex G n) ≃
-      MulAction.orbitRel.Quotient (ConjAct G') (Subgroup.ofIndex G' n) where
-  toFun := Quotient.map' (φ.ofIndexEquiv n) fun H₁ H₂ ⟨g, hg⟩ ↦ by
-    obtain ⟨c, rfl⟩ := ConjAct.toConjAct.surjective g
-    exact ⟨ConjAct.toConjAct (φ c), (ofIndexEquiv_conjAct_smul φ n c H₂).symm.trans (congrArg _ hg)⟩
-  invFun := Quotient.map' (φ.symm.ofIndexEquiv n) fun H₁ H₂ ⟨g, hg⟩ ↦ by
-    obtain ⟨c, rfl⟩ := ConjAct.toConjAct.surjective g
-    exact ⟨ConjAct.toConjAct (φ.symm c),
-      (ofIndexEquiv_conjAct_smul φ.symm n c H₂).symm.trans (congrArg _ hg)⟩
-  left_inv q := Quotient.inductionOn' q fun H ↦
-    congrArg Quotient.mk'' ((φ.ofIndexEquiv n).symm_apply_apply H)
-  right_inv q := Quotient.inductionOn' q fun H ↦
-    congrArg Quotient.mk'' ((φ.ofIndexEquiv n).apply_symm_apply H)
+      MulAction.orbitRel.Quotient (ConjAct G') (Subgroup.ofIndex G' n) :=
+  TauCeti.MulAction.orbitRelQuotientCongr (ConjAct.ofConjAct.trans (φ.trans ConjAct.toConjAct))
+    (φ.ofIndexEquiv n) fun g H ↦ by
+      simpa using φ.ofIndexEquiv_conjAct_smul n (ConjAct.ofConjAct g) H
 
 /-- `φ.orbitRelQuotientOfIndexEquiv` maps the conjugacy class of `H` to that of
 `φ.ofIndexEquiv n H`. -/
 @[simp] theorem orbitRelQuotientOfIndexEquiv_mk (φ : G ≃* G') (n : ℕ) (H : Subgroup.ofIndex G n) :
-    φ.orbitRelQuotientOfIndexEquiv n (Quotient.mk'' H) = Quotient.mk'' (φ.ofIndexEquiv n H) := (rfl)
+    φ.orbitRelQuotientOfIndexEquiv n (Quotient.mk'' H) = Quotient.mk'' (φ.ofIndexEquiv n H) := by
+  rw [orbitRelQuotientOfIndexEquiv, TauCeti.MulAction.orbitRelQuotientCongr_mk]
 
 /-- `(φ.orbitRelQuotientOfIndexEquiv n).symm` maps the conjugacy class of `H` to that of
 `φ.symm.ofIndexEquiv n H`. -/
 @[simp] theorem orbitRelQuotientOfIndexEquiv_symm_mk (φ : G ≃* G') (n : ℕ)
     (H : Subgroup.ofIndex G' n) :
     (φ.orbitRelQuotientOfIndexEquiv n).symm (Quotient.mk'' H) =
-      Quotient.mk'' (φ.symm.ofIndexEquiv n H) := (rfl)
+      Quotient.mk'' (φ.symm.ofIndexEquiv n H) := by
+  rw [orbitRelQuotientOfIndexEquiv, TauCeti.MulAction.orbitRelQuotientCongr_symm_mk]
+  exact congrArg Quotient.mk'' <| Subtype.ext <|
+    (φ.coe_ofIndexEquiv_symm_apply n H).trans (Subgroup.comap_equiv_eq_map_symm φ H.1)
 
 end MulEquiv
 
@@ -395,26 +391,16 @@ read through `e : G ⧸ H ≃ β` is canonically isomorphic to `(H.normalizerQuo
 noncomputable def centralizerPermutationRepresentationQuotientMulEquiv {H : Subgroup G}
     (e : G ⧸ H ≃ β) :
     Subgroup.centralizer (Set.range (e.permutationRepresentation (G := G))) ≃*
-      (H.normalizerQuotient)ᵐᵒᵖ := by
-  have hmem (τ : Perm β) :
-      τ ∈ Subgroup.centralizer (Set.range (e.permutationRepresentation (G := G))) ↔
-        e.permCongr.symm τ ∈ Subgroup.centralizer (Set.range (MulAction.toPermHom G (G ⧸ H))) := by
-    simp only [Subgroup.mem_centralizer_iff, Set.mem_range, forall_exists_index,
-      forall_apply_eq_imp_iff]
+      (H.normalizerQuotient)ᵐᵒᵖ :=
+  (TauCeti.Subgroup.congrOfMapEq e.permCongrHom.symm <| by
+    ext σ
+    rw [Subgroup.map_equiv_eq_comap_symm, Subgroup.mem_comap]
+    simp only [MulEquiv.symm_symm, MonoidHom.coe_ofClass, Subgroup.mem_centralizer_iff,
+      Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff]
     refine forall_congr' fun g ↦ ?_
-    have hg : e.permCongr.symm (e.permutationRepresentation g) = MulAction.toPermHom G (G ⧸ H) g :=
-      Equiv.ext fun q ↦ by simp [permCongr_symm, permCongr_apply]
-    rw [← hg, ← e.permCongrHom.symm.injective.eq_iff]
-    simp [permCongrHom_symm]
-  exact ({
-    toFun := fun τ ↦ ⟨e.permCongr.symm τ.1, (hmem τ.1).mp τ.2⟩
-    invFun := fun σ ↦ ⟨e.permCongr σ.1,
-      (hmem (e.permCongr σ.1)).mpr (by rw [e.permCongr.symm_apply_apply]; exact σ.2)⟩
-    left_inv := fun τ ↦ Subtype.ext (e.permCongr.apply_symm_apply τ.1)
-    right_inv := fun σ ↦ Subtype.ext (e.permCongr.symm_apply_apply σ.1)
-    map_mul' := fun τ₁ τ₂ ↦ Subtype.ext (map_mul e.permCongrHom.symm τ₁.1 τ₂.1)
-  } : Subgroup.centralizer (Set.range (e.permutationRepresentation (G := G))) ≃*
-    Subgroup.centralizer (Set.range (MulAction.toPermHom G (G ⧸ H)))).trans
+    have hg : e.permCongrHom (MulAction.toPermHom G (G ⧸ H) g) = e.permutationRepresentation g :=
+      Equiv.ext fun i ↦ by simp [permCongrHom_coe, permCongr_apply]
+    rw [← hg, ← map_mul, ← map_mul, e.permCongrHom.injective.eq_iff]).trans
     H.centralizerToPermHomQuotientMulEquiv
 
 /-- The inverse of `Equiv.centralizerPermutationRepresentationQuotientMulEquiv` sends the opposite
@@ -423,8 +409,10 @@ of a normalizer coset `n H` to the conjugate by `e` of right multiplication `x H
     {H : Subgroup G} (e : G ⧸ H ≃ β) (n : Subgroup.normalizer (H : Set G)) (x : G) :
     (((e.centralizerPermutationRepresentationQuotientMulEquiv.symm
       (MulOpposite.op (n : H.normalizerQuotient)) : _) : Perm β) (e (x : G ⧸ H))) =
-        e ((x * (n : G) : G) : G ⧸ H) :=
-  (permCongr_apply e _ (e (x : G ⧸ H))).trans <| by rw [symm_apply_apply]; rfl
+        e ((x * (n : G) : G) : G ⧸ H) := by
+  rw [centralizerPermutationRepresentationQuotientMulEquiv, MulEquiv.symm_trans_apply,
+    TauCeti.Subgroup.coe_congrOfMapEq_symm_apply, MulEquiv.symm_symm, permCongrHom_coe,
+    permCongr_apply, symm_apply_apply, Subgroup.coe_centralizerToPermHomQuotientMulEquiv_symm_apply]
 
 /-- The order of the centralizer of a coset permutation representation of `H` is the relative index
 `[N_G(H) : H]`. No finiteness assumption is needed (`Nat.card` is `0` when infinite). -/

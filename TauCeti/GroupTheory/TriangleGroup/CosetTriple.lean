@@ -66,6 +66,18 @@ theorem cosetTriple_eq_permutationTripleEquiv (H : Subgroup (TriangleGroup a b c
   rw [← permutationTripleEquiv_toPerm (cosetTriple H e) (cosetTriple_σ0_pow H e)
     (cosetTriple_σ1_pow H e) (cosetTriple_σinf_pow H e), toPerm_cosetTriple]
 
+/-- Reconstructing the coset triple of the stabilizer of `i` under `toPerm t` via
+`MonoidHom.quotientComapStabilizerEquiv` recovers `t` itself. -/
+@[simp] theorem cosetTriple_quotientComapStabilizerEquiv (t : PermutationTriple n)
+    (ha : t.σ0 ^ a = 1) (hb : t.σ1 ^ b = 1) (hc : t.σinf ^ c = 1)
+    (hρ : MulAction.IsPretransitive (toPerm t ha hb hc).range (Fin n)) (i : Fin n) :
+    cosetTriple ((MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t ha hb hc))
+      ((toPerm t ha hb hc).quotientComapStabilizerEquiv hρ i) = t := by
+  rw [cosetTriple_eq_permutationTripleEquiv,
+    Equiv.permutationRepresentation_eq_of_map_smul _
+      ((toPerm t ha hb hc).quotientComapStabilizerEquiv_smul hρ i),
+    permutationTripleEquiv_toPerm]
+
 /-! ### Mirror compatibility -/
 
 /-- Precomposing a permutation representation of `Δ(a, b, c)` with `TriangleGroup.mirror` mirrors
@@ -112,22 +124,7 @@ theorem equivalent_mirror_cosetTriple (H : Subgroup (TriangleGroup a b c))
       (equivalent_cosetTriple _ e' ((TauCeti.QuotientGroup.congrOfMapEq μ hmap).trans e)),
     cosetTriple_congrOfMapEq_mirror hmap e]
 
-/-! ### Index, monodromy, and normal core of a coset triple -/
-
-/-- A coset numbering `Δ(a, b, c) ⧸ H ≃ Fin n` witnesses that `H` has index `n`. -/
-theorem index_eq_of_equiv (H : Subgroup (TriangleGroup a b c))
-    (e : TriangleGroup a b c ⧸ H ≃ Fin n) : H.index = n := by
-  rw [Subgroup.index_eq_card, Nat.card_congr e, Nat.card_fin]
-
-/-- A coset space `Δ(a, b, c) ⧸ H` is nonempty, so any `Fin n` numbering forces `n ≠ 0`. -/
-theorem ne_zero_of_equiv (H : Subgroup (TriangleGroup a b c))
-    (e : TriangleGroup a b c ⧸ H ≃ Fin n) : n ≠ 0 :=
-  (isConnected_cosetTriple H e).ne_zero
-
-/-- A subgroup whose coset space is numbered by `Fin n` has finite index. -/
-theorem finiteIndex_of_equiv (H : Subgroup (TriangleGroup a b c))
-    (e : TriangleGroup a b c ⧸ H ≃ Fin n) : H.FiniteIndex :=
-  ⟨by rw [index_eq_of_equiv H e]; exact ne_zero_of_equiv H e⟩
+/-! ### Monodromy and normal core of a coset triple -/
 
 /-- The monodromy group of `cosetTriple H e` is the image of the coset permutation representation.
 -/
@@ -205,7 +202,7 @@ theorem exists_cosetTriple_equivalent {t : PermutationTriple n} (ht : t.IsConnec
   let i : Fin n := ⟨0, Nat.pos_of_ne_zero ht.ne_zero⟩
   let H := (MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t ha hb hc)
   let e : TriangleGroup a b c ⧸ H ≃ Fin n := (toPerm t ha hb hc).quotientComapStabilizerEquiv hρ i
-  exact ⟨H, finiteIndex_of_equiv H e, e, index_eq_of_equiv H e,
+  exact ⟨H, H.finiteIndex_of_equiv e, e, H.index_eq_of_equiv e,
     equivalent_cosetTriple_of_comap_stabilizer_eq H e ht ha hb hc i rfl⟩
 
 variable (a b c n) in
@@ -311,29 +308,28 @@ private theorem coe_cosetMarkedIsoClassAux [NeZero n]
         (e ((1 : TriangleGroup a b c) : TriangleGroup a b c ⧸ H.1)) :=
   (markedIsoClass_cosetTriple_eq_iff _ e).mpr rfl
 
+private theorem coe_cosetMarkedIsoClassAux_comap_stabilizer [NeZero n] (t : ConnectedTriple n)
+    (i : Fin n) (ha : t.1.σ0 ^ a = 1) (hb : t.1.σ1 ^ b = 1) (hc : t.1.σinf ^ c = 1) :
+    let hρ := ((isConnected_iff_isPretransitive_range_toPerm t.1 ha hb hc).mp t.2).2
+    let H := (MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t.1 ha hb hc)
+    let e := (toPerm t.1 ha hb hc).quotientComapStabilizerEquiv hρ i
+    (cosetMarkedIsoClassAux ⟨H, Subgroup.mem_ofIndex.mpr (H.index_eq_of_equiv e)⟩ :
+      MarkedIsoClass n) = MarkedIsoClass.mk t i := by
+  intro hρ H e
+  rw [coe_cosetMarkedIsoClassAux ⟨H, Subgroup.mem_ofIndex.mpr (H.index_eq_of_equiv e)⟩ e]
+  have hct : (⟨cosetTriple H e, isConnected_cosetTriple H e⟩ : ConnectedTriple n) = t :=
+    Subtype.ext (cosetTriple_quotientComapStabilizerEquiv t.1 ha hb hc hρ i)
+  have hi : e ((1 : TriangleGroup a b c) : TriangleGroup a b c ⧸ H) = i :=
+    ((toPerm t.1 ha hb hc).quotientComapStabilizerEquiv_mk hρ i 1).trans (by simp)
+  rw [hct, hi]
+
 private theorem bijective_cosetMarkedIsoClassAux [NeZero n] :
     Function.Bijective (cosetMarkedIsoClassAux (a := a) (b := b) (c := c) (n := n)) := by
   refine ⟨fun H₁ H₂ h ↦ Subtype.ext ((markedIsoClass_cosetTriple_eq_iff _ _).mp
     (congrArg Subtype.val h)), fun M ↦ ?_⟩
   obtain ⟨t, i, hd, hM⟩ := M.2
   obtain ⟨ha, hb, hc⟩ := (hasDividingOrders_iff t.1).mp hd
-  have hρ := ((isConnected_iff_isPretransitive_range_toPerm t.1 ha hb hc).mp t.2).2
-  let H := (MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t.1 ha hb hc)
-  let e : TriangleGroup a b c ⧸ H ≃ Fin n := (toPerm t.1 ha hb hc).quotientComapStabilizerEquiv hρ i
-  let H' : Subgroup.ofIndex (TriangleGroup a b c) n :=
-    ⟨H, Subgroup.mem_ofIndex.mpr (index_eq_of_equiv H e)⟩
-  refine ⟨H', Subtype.ext ?_⟩
-  rw [coe_cosetMarkedIsoClassAux H' e, ← hM]
-  have he : e.permutationRepresentation = toPerm t.1 ha hb hc :=
-    Equiv.permutationRepresentation_eq_of_map_smul e
-      ((toPerm t.1 ha hb hc).quotientComapStabilizerEquiv_smul hρ i)
-  have hct : (⟨cosetTriple H e, isConnected_cosetTriple H e⟩ : ConnectedTriple n) = t := by
-    apply Subtype.ext
-    dsimp only
-    rw [cosetTriple_eq_permutationTripleEquiv, he, permutationTripleEquiv_toPerm]
-  have hi : e ((1 : TriangleGroup a b c) : TriangleGroup a b c ⧸ H) = i :=
-    ((toPerm t.1 ha hb hc).quotientComapStabilizerEquiv_mk hρ i 1).trans (by simp)
-  rw [hct, hi]
+  exact ⟨_, Subtype.ext ((coe_cosetMarkedIsoClassAux_comap_stabilizer t i ha hb hc).trans hM)⟩
 
 /-- **Pointed Millington bijection for `Δ(a, b, c)`.** For `n ≠ 0`, subgroups of `Δ(a, b, c)` of
 index `n` are in bijection with marked isomorphism classes of connected triples of degree `n` whose
@@ -360,26 +356,12 @@ of the marked sheet `i` under `toPerm t`. -/
         mk_mem_markedIsoClasses_iff.mpr ((hasDividingOrders_iff t.1).mpr ⟨ha, hb, hc⟩)⟩ :
         Subgroup (TriangleGroup a b c)) =
       (MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t.1 ha hb hc) := by
-  have hρ := ((isConnected_iff_isPretransitive_range_toPerm t.1 ha hb hc).mp t.2).2
-  let H := (MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t.1 ha hb hc)
-  let e : TriangleGroup a b c ⧸ H ≃ Fin n := (toPerm t.1 ha hb hc).quotientComapStabilizerEquiv hρ i
-  let H' : Subgroup.ofIndex (TriangleGroup a b c) n :=
-    ⟨H, Subgroup.mem_ofIndex.mpr (index_eq_of_equiv H e)⟩
-  suffices cosetMarkedIsoClassEquiv.symm ⟨MarkedIsoClass.mk t i, _⟩ = H' by rw [this]
-  apply cosetMarkedIsoClassEquiv.injective
-  rw [Equiv.apply_symm_apply]
-  apply Subtype.ext
-  rw [coe_cosetMarkedIsoClassEquiv_apply H' e]
-  have he : e.permutationRepresentation = toPerm t.1 ha hb hc :=
-    Equiv.permutationRepresentation_eq_of_map_smul e
-      ((toPerm t.1 ha hb hc).quotientComapStabilizerEquiv_smul hρ i)
-  have hct : (⟨cosetTriple H e, isConnected_cosetTriple H e⟩ : ConnectedTriple n) = t := by
-    apply Subtype.ext
-    dsimp only
-    rw [cosetTriple_eq_permutationTripleEquiv, he, permutationTripleEquiv_toPerm]
-  have hi : e ((1 : TriangleGroup a b c) : TriangleGroup a b c ⧸ H) = i :=
-    ((toPerm t.1 ha hb hc).quotientComapStabilizerEquiv_mk hρ i 1).trans (by simp)
-  rw [hct, hi]
+  have key := cosetMarkedIsoClassEquiv.injective <|
+    (cosetMarkedIsoClassEquiv.apply_symm_apply
+      ⟨MarkedIsoClass.mk t i,
+        mk_mem_markedIsoClasses_iff.mpr ((hasDividingOrders_iff t.1).mpr ⟨ha, hb, hc⟩)⟩).trans
+      (Subtype.ext (coe_cosetMarkedIsoClassAux_comap_stabilizer t i ha hb hc).symm)
+  exact congrArg Subtype.val key
 
 /-! ### Automorphism group, conjugate count, and finiteness at fixed index -/
 
@@ -431,7 +413,7 @@ theorem ncard_subgroups_of_cosetTriple_class_mul_card_automorphismGroup
         (cosetTriple K e').Equivalent (cosetTriple H e)}.ncard *
       Nat.card (cosetTriple H e).automorphismGroup = n := by
   rw [setOf_exists_cosetTriple_equivalent_eq_orbit H e, natCard_automorphismGroup_cosetTriple H e,
-    H.ncard_orbit_mul_relIndex_normalizer, index_eq_of_equiv H e]
+    H.ncard_orbit_mul_relIndex_normalizer, H.index_eq_of_equiv e]
 
 /-- **Finiteness at fixed index for `Δ(a, b, c)`.** For every `n ≠ 0`, `Δ(a, b, c)` has only
 finitely many subgroups of index `n`. -/

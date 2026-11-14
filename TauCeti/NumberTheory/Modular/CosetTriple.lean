@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
-public import TauCeti.Combinatorics.PermutationTriple.Enumeration
 public import TauCeti.GroupTheory.QuotientGroup.MulAut
 public import TauCeti.GroupTheory.TriangleGroup.CosetTriple
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.NumberTheory.Modular.ConjugateTranslation
 
 /-!
 # The modular coset triple and Millington's theorem
@@ -133,22 +133,6 @@ theorem hasDividingOrders_modularTriple (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2,
   (hasDividingOrders_iff _).mpr
     ⟨modularTriple_σ0_pow_three Γ' e, modularTriple_σ1_sq Γ' e, pow_zero _⟩
 
-/-- A coset numbering `PSL(2, ℤ) ⧸ Γ' ≃ Fin n` witnesses that `Γ'` has index `n`. -/
-theorem index_eq_of_equiv (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
-    Γ'.index = n := by
-  rw [Subgroup.index_eq_card, Nat.card_congr e, Nat.card_fin]
-
-/-- A coset space `PSL(2, ℤ) ⧸ Γ'` is nonempty, so any `Fin n` numbering forces `n ≠ 0`. -/
-theorem ne_zero_of_equiv (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) : n ≠ 0 :=
-  TriangleGroup.ne_zero_of_equiv _
-    ((TauCeti.QuotientGroup.congrOfMapEq modularEquiv
-      (Subgroup.map_comap_eq_self_of_surjective modularEquiv.surjective Γ')).trans e)
-
-/-- A subgroup of `PSL(2, ℤ)` whose cosets are numbered by `Fin n` has finite index. -/
-theorem finiteIndex_of_equiv (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
-    Γ'.FiniteIndex :=
-  ⟨by rw [index_eq_of_equiv Γ' e]; exact ne_zero_of_equiv Γ' e⟩
-
 /-- Every modular coset triple is connected. -/
 theorem isConnected_modularTriple (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     (modularTriple Γ' e).IsConnected := by
@@ -254,9 +238,10 @@ theorem equivOppositeConvention_modularTriple_quotientRightRel (Γ' : Subgroup P
   simp [Equiv.permCongr_rightCosetPerm]
 
 /-- **LMFDB row translation.** In terms of the right-coset permutations
-`s_row := r.permCongr (Γ'.rightCosetPerm S)` and `t_row := r.permCongr (Γ'.rightCosetPerm T)`,
-the right-coset permutation of `R = S T` is `t_row * s_row`, the modular triple under the induced
-left-coset numbering is `(s_row * t_row, s_row, t_row⁻¹)`, and `permR` is `(t_row * s_row)⁻¹`. -/
+`sRow := r.permCongr (Γ'.rightCosetPerm S)` and `tRow := r.permCongr (Γ'.rightCosetPerm T)`,
+the right-coset permutation of `R = S T` is `tRow * sRow`, the modular triple under the induced
+left-coset numbering is `(sRow * tRow, sRow, tRow⁻¹)`, and `permR` is the inverse of the
+right-coset permutation of `R`. -/
 theorem modularTriple_quotientRightRel (Γ' : Subgroup PSL(2, ℤ))
     (r : Quotient (QuotientGroup.rightRel Γ') ≃ Fin n) :
     let e := (QuotientGroup.quotientRightRelEquivQuotientLeftRel Γ').symm.trans r
@@ -282,7 +267,7 @@ theorem modularTriple_quotientRightRel (Γ' : Subgroup PSL(2, ℤ))
   · dsimp only [e]
     rw [permR, Equiv.permCongr_rightCosetPerm, inv_inv]
 
-/-- The involutive outer automorphism of `PSL(2, ℤ)` induced by conjugation by `diag(-1, 1)` on
+/-- The involutive automorphism of `PSL(2, ℤ)` induced by conjugation by `diag(-1, 1)` on
 `SL(2, ℤ)`. -/
 def conjJAut : MulAut PSL(2, ℤ) :=
   MulAut.mapQuotient (Subgroup.center SL(2, ℤ)) SpecialLinearGroup.conjJMulAut
@@ -321,12 +306,6 @@ theorem conjJAut_mk (γ : SL(2, ℤ)) :
 /-- `conjJAut` sends `R = S T` to `U = S T⁻¹`. -/
 @[simp] theorem conjJAut_R : conjJAut (R : PSL(2, ℤ)) = U := by
   rw [← conjJAut_U, conjJAut_conjJAut]
-
-private theorem coe_S_mul_coe_U_inv_mul_coe_S :
-    (S : PSL(2, ℤ)) * (U : PSL(2, ℤ))⁻¹ * S = R := by
-  rw [R_def, U_def, QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv,
-    _root_.mul_inv_rev, inv_inv, coe_S_inv, ← mul_assoc (S : PSL(2, ℤ)) T S,
-    _root_.Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S]
 
 /-- Under `modularEquiv`, `conjJAut` corresponds to `TriangleGroup.mirror`. -/
 theorem conjJAut_modularEquiv (x : TriangleGroup 3 2 0) :
@@ -420,7 +399,7 @@ theorem exists_modularTriple_equivalent {t : PermutationTriple n} (ht : t.IsConn
   let Γ' := H.map (modularEquiv : TriangleGroup 3 2 0 →* PSL(2, ℤ))
   let e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n :=
     (TauCeti.QuotientGroup.congrOfMapEq modularEquiv (rfl : Γ' = Γ')).symm.trans eH
-  refine ⟨Γ', finiteIndex_of_equiv Γ' e, e, index_eq_of_equiv Γ' e, ?_⟩
+  refine ⟨Γ', Γ'.finiteIndex_of_equiv e, e, Γ'.index_eq_of_equiv e, ?_⟩
   rw [modularTriple_eq_cosetTriple Γ' e, ← IsoClass.mk_eq_mk_iff, ← IsoClass.mk_eq_mk_iff.mpr heq,
     IsoClass.mk_eq_mk_iff, TriangleGroup.cosetTriple_equivalent_cosetTriple_iff]
   exact ⟨1, by rw [one_smul, Subgroup.comap_map_eq_self_of_injective modularEquiv.injective H]⟩
@@ -577,7 +556,7 @@ theorem card_subgroups_of_class (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) �
       Nat.card (modularTriple Γ' e).automorphismGroup = n := by
   rw [← Set.coe_ofPred, Nat.card_coe_set_eq, setOf_exists_modularTriple_equivalent_eq_orbit Γ' e,
     natCard_automorphismGroup_modularTriple Γ' e, Γ'.ncard_orbit_mul_relIndex_normalizer,
-    index_eq_of_equiv Γ' e]
+    Γ'.index_eq_of_equiv e]
 
 /-- **Finiteness at fixed index.** For every `n ≠ 0`, `PSL(2, ℤ)` has only finitely many subgroups
 of index `n`. -/
@@ -600,115 +579,6 @@ theorem finite_orbitRel_quotient_ofIndex (n : ℕ) [NeZero n] :
   have := TriangleGroup.finite_orbitRel_quotient_ofIndex 3 2 0 n
   Finite.of_equiv _ (modularEquiv.orbitRelQuotientOfIndexEquiv n)
 
-private theorem eq_or_eq_neg_of_pslMk_eq {a b : SL(2, ℤ)}
-    (h : (a : PSL(2, ℤ)) = (b : PSL(2, ℤ))) : a = b ∨ a = -b := by
-  rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp
-      (QuotientGroup.eq.mp h) with h1 | hneg
-  · exact Or.inl (inv_mul_eq_one.mp h1)
-  · exact Or.inr <| by
-      calc a = a * (-(a⁻¹ * b)) := by rw [hneg, neg_neg, mul_one]
-        _ = -b := by rw [mul_neg, ← mul_assoc, mul_inv_cancel, one_mul]
-
-private theorem index_zpowers_T_pow (m : ℕ) :
-    (Subgroup.zpowers ((T : PSL(2, ℤ)) ^ m)).index = 0 := by
-  have : Infinite (PSL(2, ℤ) ⧸ Subgroup.zpowers ((T : PSL(2, ℤ)) ^ m)) := by
-    refine Infinite.of_injective
-      (fun j : ℕ ↦ (((T ^ (j : ℤ) * S : SL(2, ℤ)) : PSL(2, ℤ)) :
-        PSL(2, ℤ) ⧸ Subgroup.zpowers ((T : PSL(2, ℤ)) ^ m))) fun i j hij ↦ ?_
-    obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp (QuotientGroup.eq.mp hij)
-    have hpsl : (((T ^ (i : ℤ) * S)⁻¹ * (T ^ (j : ℤ) * S) : SL(2, ℤ)) : PSL(2, ℤ)) =
-        ((T ^ ((m : ℤ) * k) : SL(2, ℤ)) : PSL(2, ℤ)) := by
-      rw [QuotientGroup.mk_mul, QuotientGroup.mk_inv, ← hk, _root_.zpow_mul, zpow_natCast,
-        ← QuotientGroup.mk_pow, ← QuotientGroup.mk_zpow]
-    have lhs_eq : (((T ^ (i : ℤ) * S)⁻¹ * (T ^ (j : ℤ) * S) : SL(2, ℤ)) :
-        Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; (i : ℤ) - j, 1] := by
-      have hinv : (T ^ (i : ℤ) * S)⁻¹ = S⁻¹ * T ^ (-(i : ℤ)) := by
-        rw [_root_.mul_inv_rev, _root_.zpow_neg]
-      rw [hinv, mul_assoc, ← mul_assoc (T ^ (-(i : ℤ))), ← _root_.zpow_add]
-      have hSinv : ((S⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) = !![0, 1; -1, 0] := by decide
-      rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, hSinv,
-        ModularGroup.coe_T_zpow, ModularGroup.coe_S, Matrix.mul_fin_two, Matrix.mul_fin_two]
-      ext a b
-      fin_cases a <;> fin_cases b <;> simp
-      omega
-    rcases eq_or_eq_neg_of_pslMk_eq hpsl with hmat | hmat
-    · have h10 := congr_fun (congr_fun
-        (congrArg (↑· : SL(2, ℤ) → Matrix (Fin 2) (Fin 2) ℤ) hmat) 1) 0
-      rw [lhs_eq, ModularGroup.coe_T_zpow] at h10
-      simp at h10
-      omega
-    · have h00 := congr_fun (congr_fun
-        (congrArg (↑· : SL(2, ℤ) → Matrix (Fin 2) (Fin 2) ℤ) hmat) 0) 0
-      rw [lhs_eq, Matrix.SpecialLinearGroup.coe_neg, ModularGroup.coe_T_zpow] at h00
-      simp at h00
-  rw [Subgroup.index_eq_card]
-  exact Nat.card_eq_zero_of_infinite
-
-private theorem conj_T_zpow_matrix (γ : SL(2, ℤ)) (a : ℤ) :
-    ((γ * T ^ a * γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
-      !![1 - γ 0 0 * γ 1 0 * a, γ 0 0 * γ 0 0 * a;
-        -(γ 1 0 * γ 1 0 * a), 1 + γ 0 0 * γ 1 0 * a] := by
-  have hdet := Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
-  have hγ : (γ : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, γ 0 1; γ 1 0, γ 1 1] := by
-    ext i j; fin_cases i <;> fin_cases j <;> rfl
-  have hginv : ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
-      !![γ 1 1, -γ 0 1; -γ 1 0, γ 0 0] := by
-    rw [Matrix.SpecialLinearGroup.coe_inv, Matrix.adjugate_fin_two]
-  rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, hγ,
-    ModularGroup.coe_T_zpow, hginv, Matrix.mul_fin_two, Matrix.mul_fin_two]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
-  · linarith [calc γ 0 0 * γ 1 1 - (γ 0 0 * a + γ 0 1) * γ 1 0
-        = (γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0) - γ 0 0 * γ 1 0 * a := by ring
-      _ = 1 - γ 0 0 * γ 1 0 * a := by rw [hdet]]
-  · ring
-  · ring
-  · linarith [calc -(γ 1 0 * γ 0 1) + (γ 1 0 * a + γ 1 1) * γ 0 0
-        = (γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0) + γ 0 0 * γ 1 0 * a := by ring
-      _ = 1 + γ 0 0 * γ 1 0 * a := by rw [hdet]]
-
-private theorem dvd_of_conj_zpowers_T_pow {a b : ℕ} {g : ConjAct PSL(2, ℤ)}
-    (h : g • Subgroup.zpowers ((T : PSL(2, ℤ)) ^ a) =
-      Subgroup.zpowers ((T : PSL(2, ℤ)) ^ b)) : b ∣ a := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · exact Nat.dvd_zero b
-  obtain ⟨p, rfl⟩ := ConjAct.toConjAct.surjective g
-  obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective p
-  have hmem : ((γ * T ^ (a : ℤ) * γ⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) ∈
-      Subgroup.zpowers ((T : PSL(2, ℤ)) ^ b) := by
-    rw [← h]
-    exact ⟨(T : PSL(2, ℤ)) ^ a, Subgroup.mem_zpowers _, by
-      simp [ConjAct.smul_def, QuotientGroup.mk_mul, QuotientGroup.mk_inv, zpow_natCast]⟩
-  obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp hmem
-  have hpsl : ((γ * T ^ (a : ℤ) * γ⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) =
-      ((T ^ ((b : ℤ) * k) : SL(2, ℤ)) : PSL(2, ℤ)) := by
-    rw [← hk, _root_.zpow_mul, zpow_natCast, ← QuotientGroup.mk_pow, ← QuotientGroup.mk_zpow]
-  have hc0 : γ 1 0 = 0 := by
-    rcases eq_or_eq_neg_of_pslMk_eq hpsl with hmat | hmat
-    · have h10 := congr_fun (congr_fun
-        (congrArg (↑· : SL(2, ℤ) → Matrix (Fin 2) (Fin 2) ℤ) hmat) 1) 0
-      rw [conj_T_zpow_matrix, ModularGroup.coe_T_zpow] at h10
-      simp at h10
-      exact h10.resolve_right ha
-    · have h10 := congr_fun (congr_fun
-        (congrArg (↑· : SL(2, ℤ) → Matrix (Fin 2) (Fin 2) ℤ) hmat) 1) 0
-      rw [conj_T_zpow_matrix, Matrix.SpecialLinearGroup.coe_neg, ModularGroup.coe_T_zpow] at h10
-      simp at h10
-      exact h10.resolve_right ha
-  have hdet := Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
-  rw [hc0, mul_zero, sub_zero] at hdet
-  have hp2 : γ 0 0 * γ 0 0 = 1 := by
-    rcases Int.mul_eq_one_iff_eq_one_or_neg_one.mp hdet with ⟨h0, _⟩ | ⟨h0, _⟩ <;> simp [h0]
-  rcases eq_or_eq_neg_of_pslMk_eq hpsl with hmat | hmat
-  · have h01 := congr_fun (congr_fun
-      (congrArg (↑· : SL(2, ℤ) → Matrix (Fin 2) (Fin 2) ℤ) hmat) 0) 1
-    rw [conj_T_zpow_matrix, ModularGroup.coe_T_zpow, hp2, one_mul] at h01
-    exact Int.natCast_dvd_natCast.mp ⟨k, by simpa using h01⟩
-  · have h00 := congr_fun (congr_fun
-      (congrArg (↑· : SL(2, ℤ) → Matrix (Fin 2) (Fin 2) ℤ) hmat) 0) 0
-    rw [conj_T_zpow_matrix, Matrix.SpecialLinearGroup.coe_neg, ModularGroup.coe_T_zpow, hc0] at h00
-    simp at h00
-
 /-- At `n = 0` (infinite index), `PSL(2, ℤ)` has infinitely many conjugacy classes of subgroups,
 witnessed by the parabolic subgroups `⟨T ^ (m + 1)⟩`. Thus `[NeZero n]` in `finite_ofIndex`,
 `finite_subgroups_of_index`, and `finite_orbitRel_quotient_ofIndex` is sharp. -/
@@ -717,16 +587,22 @@ theorem infinite_orbitRel_quotient_ofIndex_zero :
   refine Infinite.of_injective
     (fun m : ℕ ↦ (Quotient.mk''
       ⟨Subgroup.zpowers ((T : PSL(2, ℤ)) ^ (m + 1)),
-        Subgroup.mem_ofIndex.mpr (index_zpowers_T_pow (m + 1))⟩ :
+        Subgroup.mem_ofIndex.mpr <| by
+          rw [← zpow_natCast]
+          exact index_zpowers_coe_T_zpow (m + 1 : ℕ)⟩ :
       MulAction.orbitRel.Quotient (ConjAct PSL(2, ℤ)) (Subgroup.ofIndex PSL(2, ℤ) 0)))
     fun i j hij ↦ ?_
   obtain ⟨g, hg⟩ := Quotient.exact' hij
-  have hg' : g • Subgroup.zpowers ((T : PSL(2, ℤ)) ^ (j + 1)) =
-      Subgroup.zpowers ((T : PSL(2, ℤ)) ^ (i + 1)) := congrArg Subtype.val hg
-  have hg'' : g⁻¹ • Subgroup.zpowers ((T : PSL(2, ℤ)) ^ (i + 1)) =
-      Subgroup.zpowers ((T : PSL(2, ℤ)) ^ (j + 1)) := by rw [← hg', inv_smul_smul]
+  have hg' : g • Subgroup.zpowers ((T : PSL(2, ℤ)) ^ ((j + 1 : ℕ) : ℤ)) =
+      Subgroup.zpowers ((T : PSL(2, ℤ)) ^ ((i + 1 : ℕ) : ℤ)) := by
+    rw [zpow_natCast, zpow_natCast]
+    exact congrArg Subtype.val hg
+  have hg'' : g⁻¹ • Subgroup.zpowers ((T : PSL(2, ℤ)) ^ ((i + 1 : ℕ) : ℤ)) =
+      Subgroup.zpowers ((T : PSL(2, ℤ)) ^ ((j + 1 : ℕ) : ℤ)) := by
+    rw [← hg', inv_smul_smul]
   exact Nat.succ_injective <| Nat.dvd_antisymm
-    (dvd_of_conj_zpowers_T_pow hg') (dvd_of_conj_zpowers_T_pow hg'')
+    (Int.natCast_dvd_natCast.mp (dvd_of_conj_zpowers_coe_T_zpow_le hg'.le))
+    (Int.natCast_dvd_natCast.mp (dvd_of_conj_zpowers_coe_T_zpow_le hg''.le))
 
 /-- `PSL(2, ℤ)` has infinitely many infinite-index (`index = 0`) subgroups. -/
 theorem infinite_ofIndex_zero : Infinite (Subgroup.ofIndex PSL(2, ℤ) 0) :=
@@ -789,8 +665,7 @@ theorem natCard_conjClasses_index_two :
   rw [natCard_orbitRel_quotient_ofIndex_eq 2]
   decide
 
-/-- `PSL(2, ℤ)` has `2` conjugacy classes of subgroups of index `3` (one normal with monodromy `C₃`
-and one non-normal `Γ₀(2)`-class with monodromy `S₃`). -/
+/-- `PSL(2, ℤ)` has `2` conjugacy classes of subgroups of index `3`. -/
 theorem natCard_conjClasses_index_three :
     Nat.card (MulAction.orbitRel.Quotient (ConjAct PSL(2, ℤ)) (Subgroup.ofIndex PSL(2, ℤ) 3)) =
       2 := by
