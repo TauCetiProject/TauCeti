@@ -292,6 +292,25 @@ theorem coeff_intCast [NeZero e] (z : ℤ) (j : ℕ) :
   rw [(modByMonic_eq_self_iff (cyclotomic.monic e ℤ)).mpr hdegree]
   exact Polynomial.coeff_C
 
+/-- A natural number has only a constant power-basis coordinate when the conductor is nonzero. -/
+@[simp]
+theorem coeff_natCast [NeZero e] (n j : ℕ) :
+    (n : Cyclotomic e).coeff j = if j = 0 then (n : ℤ) else 0 := by
+  exact_mod_cast coeff_intCast (e := e) (n : ℤ) j
+
+/-- The power-basis coordinate of `1` is the Kronecker delta at `0` when the conductor is
+nonzero. -/
+@[simp]
+theorem coeff_one [NeZero e] (j : ℕ) : (1 : Cyclotomic e).coeff j = if j = 0 then 1 else 0 := by
+  exact_mod_cast coeff_intCast (e := e) 1 j
+
+/-- A numeral at least `2` has only a constant power-basis coordinate when the conductor is
+nonzero. -/
+@[simp]
+theorem coeff_ofNat [NeZero e] (n : ℕ) [n.AtLeastTwo] (j : ℕ) :
+    (ofNat(n) : Cyclotomic e).coeff j = if j = 0 then ofNat(n) else 0 :=
+  coeff_natCast (e := e) n j
+
 /-- **Multiplication by an integer constant scales every coefficient.**  A constant multiple
 raises no power of `ζ`, so no reduction modulo `Φ_e` takes place. -/
 @[simp]
@@ -307,6 +326,18 @@ theorem coeffs_intCast_mul (z : ℤ) (x : Cyclotomic e) :
     rfl
   rw [hmul]
   exact coeffs_ofCoeffList_of_length_eq (by simp)
+
+/-- Multiplication by a natural-number constant scales every coefficient. -/
+@[simp]
+theorem coeffs_natCast_mul (n : ℕ) (x : Cyclotomic e) :
+    ((n : Cyclotomic e) * x).coeffs = x.coeffs.map ((n : ℤ) * ·) := by
+  exact_mod_cast coeffs_intCast_mul (n : ℤ) x
+
+/-- Multiplication by a numeral at least `2` scales every coefficient. -/
+@[simp]
+theorem coeffs_ofNat_mul (n : ℕ) [n.AtLeastTwo] (x : Cyclotomic e) :
+    ((ofNat(n) : Cyclotomic e) * x).coeffs = x.coeffs.map (ofNat(n) * ·) :=
+  coeffs_natCast_mul n x
 
 /-! ## Comparison with `AdjoinRoot` -/
 
@@ -368,6 +399,18 @@ theorem coeff_zsmul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
 theorem coeff_intCast_mul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
     ((z : Cyclotomic e) * x).coeff j = z * x.coeff j := by
   simpa [zsmul_eq_mul] using (coeffAddHom e j).map_zsmul z x
+
+/-- Multiplying by a natural-number cast scales every power-basis coefficient. -/
+@[simp]
+theorem coeff_natCast_mul (n : ℕ) (x : Cyclotomic e) (j : ℕ) :
+    ((n : Cyclotomic e) * x).coeff j = n * x.coeff j := by
+  exact_mod_cast coeff_intCast_mul (n : ℤ) x j
+
+/-- Multiplying by a numeral at least `2` scales every power-basis coefficient. -/
+@[simp]
+theorem coeff_ofNat_mul (n : ℕ) [n.AtLeastTwo] (x : Cyclotomic e) (j : ℕ) :
+    ((ofNat(n) : Cyclotomic e) * x).coeff j = ofNat(n) * x.coeff j :=
+  coeff_natCast_mul n x j
 
 /-- A finite sum adds power-basis coefficients. -/
 @[simp]
