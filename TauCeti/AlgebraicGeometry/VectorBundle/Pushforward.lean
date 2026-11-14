@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 import Mathlib.RingTheory.Flat.EquationalCriterion
@@ -53,10 +54,10 @@ and its additivity and identity and composition comparisons.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_pushforward`,
-  `AlgebraicGeometry.Scheme.Modules.isLocallyFree_pushforward`, and
-  `AlgebraicGeometry.Scheme.Modules.isFinitePresentation_pushforward`: direct image along a finite,
-  flat, locally finitely presented morphism preserves finite local freeness;
+* `AlgebraicGeometry.Scheme.Modules.isLocallyFree_pushforward` and
+  `AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_pushforward`: direct image along a finite,
+  flat, locally finitely presented morphism preserves finite local freeness (combining local
+  freeness with `isFinitePresentation_pushforward_of_isFinite_of_locallyOfFinitePresentation`);
 * `AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_pushforward_unit`: for such `f : X ⟶ Y`,
   `f_* 𝒪_X` is finite locally free;
 * `AlgebraicGeometry.Scheme.Hom.isFinite_and_flat_and_locallyOfFinitePresentation_iff`:
@@ -201,16 +202,14 @@ section General
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
-/-- **Pushforward preserves finite locally free sheaves.** If `f : X ⟶ Y` is finite, flat, and
-locally of finite presentation, then the direct image `f_* M` of every finite locally free
-`𝒪_X`-module `M` is a finite locally free `𝒪_Y`-module. -/
-theorem isFiniteLocallyFree_pushforward [IsFinite f] [Flat f] [LocallyOfFinitePresentation f]
-    {M : X.Modules} (hM : isFiniteLocallyFree X M) :
-    isFiniteLocallyFree Y ((pushforward f).obj M) := by
+/-- Direct image along a finite, flat, locally finitely presented morphism preserves local freeness
+of finitely presented `𝒪_X`-modules. -/
+instance isLocallyFree_pushforward [IsFinite f] [Flat f] [LocallyOfFinitePresentation f]
+    (M : X.Modules) [M.IsLocallyFree] [M.IsFinitePresentation] :
+    ((pushforward f).obj M).IsLocallyFree := by
   let 𝒰 := Y.affineCover
-  obtain ⟨_, _⟩ := hM
   have : M.IsQuasicoherent := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
-  refine (isFiniteLocallyFree_iff_forall_pullback 𝒰 ((pushforward f).obj M)).mpr fun i ↦ ?_
+  refine ((isFiniteLocallyFree_iff_forall_pullback 𝒰 ((pushforward f).obj M)).mpr fun i ↦ ?_).1
   have H : IsPullback (Limits.pullback.fst f (𝒰.f i)) (Limits.pullback.snd f (𝒰.f i)) f (𝒰.f i) :=
     IsPullback.of_hasPullback f (𝒰.f i)
   have := isIso_pushforwardBaseChange_app H M
@@ -219,19 +218,14 @@ theorem isFiniteLocallyFree_pushforward [IsFinite f] [Flat f] [LocallyOfFinitePr
     (isFiniteLocallyFree_pushforward_affine (Limits.pullback.snd f (𝒰.f i))
       ⟨inferInstance, inferInstance⟩)
 
-/-- Direct image along a finite, flat, locally finitely presented morphism preserves local freeness
-of finitely presented `𝒪_X`-modules. -/
-instance isLocallyFree_pushforward [IsFinite f] [Flat f] [LocallyOfFinitePresentation f]
-    (M : X.Modules) [M.IsLocallyFree] [M.IsFinitePresentation] :
-    ((pushforward f).obj M).IsLocallyFree :=
-  (isFiniteLocallyFree_pushforward f ⟨‹_›, ‹_›⟩).1
-
-/-- Direct image along a finite, flat, locally finitely presented morphism preserves finite
-presentation of locally free `𝒪_X`-modules. -/
-instance isFinitePresentation_pushforward [IsFinite f] [Flat f] [LocallyOfFinitePresentation f]
-    (M : X.Modules) [M.IsLocallyFree] [M.IsFinitePresentation] :
-    ((pushforward f).obj M).IsFinitePresentation :=
-  (isFiniteLocallyFree_pushforward f ⟨‹_›, ‹_›⟩).2
+/-- **Pushforward preserves finite locally free sheaves.** If `f : X ⟶ Y` is finite, flat, and
+locally of finite presentation, then the direct image `f_* M` of every finite locally free
+`𝒪_X`-module `M` is a finite locally free `𝒪_Y`-module. -/
+theorem isFiniteLocallyFree_pushforward [IsFinite f] [Flat f] [LocallyOfFinitePresentation f]
+    {M : X.Modules} (hM : isFiniteLocallyFree X M) :
+    isFiniteLocallyFree Y ((pushforward f).obj M) := by
+  have ⟨_, _⟩ := hM
+  exact ⟨inferInstance, inferInstance⟩
 
 /-- If `f : X ⟶ Y` is finite, flat, and locally of finite presentation, then `f_* 𝒪_X` is a finite
 locally free `𝒪_Y`-module. -/
@@ -367,6 +361,18 @@ def pullbackPushforwardAdjunction (f : X ⟶ Y) [IsFinite f] [Flat f]
     (Scheme.Modules.isFiniteLocallyFree Y).fullyFaithfulι
     (Scheme.Modules.isFiniteLocallyFree X).fullyFaithfulι
     (pullbackCompιIso f).symm (pushforwardCompιIso f).symm
+
+/-- Pullback of finite locally free sheaves along a finite, flat, locally finitely presented
+morphism is a left adjoint. -/
+instance (f : X ⟶ Y) [IsFinite f] [Flat f] [LocallyOfFinitePresentation f] :
+    (pullback f).IsLeftAdjoint :=
+  (pullbackPushforwardAdjunction f).isLeftAdjoint
+
+/-- Direct image of finite locally free sheaves along a finite, flat, locally finitely presented
+morphism is a right adjoint. -/
+instance (f : X ⟶ Y) [IsFinite f] [Flat f] [LocallyOfFinitePresentation f] :
+    (pushforward f).IsRightAdjoint :=
+  (pullbackPushforwardAdjunction f).isRightAdjoint
 
 /-- On underlying modules, the unit of `pullbackPushforwardAdjunction` is the unit of Mathlib's
 `Scheme.Modules.pullbackPushforwardAdjunction`. -/

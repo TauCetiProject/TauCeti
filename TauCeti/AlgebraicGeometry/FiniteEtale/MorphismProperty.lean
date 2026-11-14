@@ -120,26 +120,14 @@ instance faithful_pullback (f : T ⟶ S) [IsDominant f] : (pullback f).Faithful 
     Functor.Faithful.of_iso (pullbackCompEquivOver f).symm
   exact Functor.Faithful.of_comp (pullback f) (equivOver T).functor
 
-/-- Conjugate `FiniteEtaleScheme.pullback f` by `equivOver` to obtain
-`MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f`. -/
-private noncomputable def overPullbackIso (f : T ⟶ S)
-    [(@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChangeAlong f] :
-    (equivOver S).inverse ⋙ pullback f ⋙ (equivOver T).functor ≅
-      MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f := by
-  let : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChange := .inf
-  exact Functor.isoWhiskerLeft (equivOver S).inverse (pullbackCompEquivOver f) ≪≫
-    (Functor.associator _ _ _).symm ≪≫
-    Functor.isoWhiskerRight (equivOver S).counitIso
-      (MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f) ≪≫
-    Functor.leftUnitor _
-
 /-- Faithfulness of `FiniteEtaleScheme.pullback f` transports across `equivOver` to
 `MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f`. -/
 instance faithful_overPullback (f : T ⟶ S)
     [(@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChangeAlong f]
     [(pullback f).Faithful] :
     (MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f).Faithful :=
-  Functor.Faithful.of_iso (overPullbackIso f)
+  let : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChange := .inf
+  Functor.Faithful.of_iso (Iso.inverseCompIso (G := equivOver S) (pullbackCompEquivOver f))
 
 /-- Fullness of `FiniteEtaleScheme.pullback f` transports across `equivOver` to
 `MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f`. -/
@@ -147,6 +135,7 @@ instance full_overPullback (f : T ⟶ S)
     [(@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChangeAlong f]
     [(pullback f).Full] :
     (MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f).Full :=
-  Functor.Full.of_iso (overPullbackIso f)
+  let : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChange := .inf
+  Functor.Full.of_iso (Iso.inverseCompIso (G := equivOver S) (pullbackCompEquivOver f))
 
 end TauCeti.FiniteEtaleScheme

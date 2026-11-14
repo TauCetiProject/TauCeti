@@ -226,6 +226,42 @@ theorem pullback_map_hom_hom_hom {Y : Scheme.{u}} (f : Y ⟶ X)
   unfold pullback ofCommMon toCommMon
   exact QuasicoherentSheaf.pullback_map_hom f _
 
+/-- For a module map `β : A₂ ⟶ A₁` between the carriers of quasicoherent algebras, its pullback
+`f^* β` (transported to the pulled-back carriers) preserves the algebra unit if and only if `f^*`
+identifies `η[A₂] ≫ β` with `η[A₁]`. -/
+theorem one_comp_eqToHom_pullback_map_iff {Y : Scheme.{u}} (f : Y ⟶ X)
+    {A₁ A₂ : QuasicoherentAlgebra X} (β : A₂.obj.X ⟶ A₁.obj.X) :
+    η[((pullback f).obj A₂).obj.X] ≫ eqToHom (pullback_obj_X f A₂) ≫
+        (Scheme.Modules.pullback f).map β ≫ eqToHom (pullback_obj_X f A₁).symm =
+      η[((pullback f).obj A₁).obj.X] ↔
+      (Scheme.Modules.pullback f).map (η[A₂.obj.X] ≫ β) =
+        (Scheme.Modules.pullback f).map η[A₁.obj.X] := by
+  rw [pullback_obj_one f A₂, pullback_obj_one f A₁, (Scheme.Modules.pullback f).map_comp]
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  rw [cancel_epi, ← Category.assoc, cancel_mono]
+
+/-- For a module map `β : A₂ ⟶ A₁` between the carriers of quasicoherent algebras, its pullback
+`f^* β` (transported to the pulled-back carriers) preserves multiplication if and only if `f^*`
+identifies `μ[A₂] ≫ β` with `(β ⊗ₘ β) ≫ μ[A₁]`. -/
+theorem mul_comp_eqToHom_pullback_map_iff {Y : Scheme.{u}} (f : Y ⟶ X)
+    {A₁ A₂ : QuasicoherentAlgebra X} (β : A₂.obj.X ⟶ A₁.obj.X) :
+    μ[((pullback f).obj A₂).obj.X] ≫ eqToHom (pullback_obj_X f A₂) ≫
+        (Scheme.Modules.pullback f).map β ≫ eqToHom (pullback_obj_X f A₁).symm =
+      ((eqToHom (pullback_obj_X f A₂) ≫ (Scheme.Modules.pullback f).map β ≫
+          eqToHom (pullback_obj_X f A₁).symm) ⊗ₘ
+        (eqToHom (pullback_obj_X f A₂) ≫ (Scheme.Modules.pullback f).map β ≫
+          eqToHom (pullback_obj_X f A₁).symm)) ≫
+        μ[((pullback f).obj A₁).obj.X] ↔
+      (Scheme.Modules.pullback f).map (μ[A₂.obj.X] ≫ β) =
+        (Scheme.Modules.pullback f).map ((β ⊗ₘ β) ≫ μ[A₁.obj.X]) := by
+  rw [pullback_obj_mul f A₂, ← tensorHom_comp_tensorHom]
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  rw [cancel_epi, IsIso.inv_comp_eq, pullback_obj_mul f A₁, ← tensorHom_comp_tensorHom]
+  simp only [Category.assoc, tensorHom_comp_tensorHom_assoc, eqToHom_trans, eqToHom_refl,
+    id_tensorHom_id, Category.id_comp]
+  rw [Functor.OplaxMonoidal.δ_natural_assoc, IsIso.hom_inv_id_assoc, ← Functor.map_comp_assoc,
+    ← Functor.map_comp_assoc, cancel_mono]
+
 end QuasicoherentAlgebra
 
 namespace QuasicoherentAlgebra
@@ -310,6 +346,25 @@ theorem pullbackComp_hom_app_hom_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) (A : Quasic
     Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, h, CategoryTheory.Functor.map_id,
     Category.id_comp]
   rfl
+
+/-- On underlying modules, `(pullbackComp f g).hom.app A` followed by `eqToHom` along `f ≫ g = h`
+is Mathlib's `Scheme.Modules.pullbackComp f g ≪≫ Scheme.Modules.pullbackCongr hf`. -/
+theorem pullbackComp_hom_app_comp_eqToHom_hom_hom_hom {f : X ⟶ Y} {g : Y ⟶ Z} {h : X ⟶ Z}
+    (hf : f ≫ g = h) (A : QuasicoherentAlgebra Z) :
+    ((pullbackComp f g).hom.app A ≫
+        eqToHom (congrArg (fun k ↦ (pullback k).obj A) hf)).hom.hom.hom =
+      eqToHom ((pullback_obj_X f _).trans (congrArg _ (pullback_obj_X g A))) ≫
+        ((Scheme.Modules.pullbackComp f g ≪≫ Scheme.Modules.pullbackCongr hf).app A.obj.X).hom ≫
+        eqToHom (pullback_obj_X h A).symm := by
+  subst hf
+  rw [eqToHom_refl, Category.comp_id]
+  have hcongr :
+      ((Scheme.Modules.pullbackComp f g ≪≫
+          Scheme.Modules.pullbackCongr (rfl : f ≫ g = f ≫ g)).app A.obj.X).hom =
+        (Scheme.Modules.pullbackComp f g).hom.app A.obj.X := by
+    simp [Scheme.Modules.pullbackCongr]
+  rw [hcongr]
+  exact pullbackComp_hom_app_hom_hom_hom f g A
 
 /-- The inverse composition comparison of algebra pullback is Mathlib's inverse composition
 comparison of module pullback on underlying modules. -/

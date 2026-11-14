@@ -237,11 +237,27 @@ noncomputable def botIso : X.formalCompletion ⊥ ≅ AdicThickeningSystem.ofSch
 theorem botIso_hom_app (n : ℕ) : (botIso X).hom.app n = toScheme X ⊥ n :=
   (AdicThickeningSystem.isoMk_hom_app _ _ n).trans (asIso_hom (toScheme X ⊥ n))
 
+/-- The inverse of `botIso` at level `n` is the inverse of the isomorphism `toScheme X ⊥ n`. -/
+@[simp]
+theorem botIso_inv_app (n : ℕ) : (botIso X).inv.app n = inv (toScheme X ⊥ n) :=
+  (AdicThickeningSystem.isoMk_inv_app _ _ n).trans (asIso_inv (toScheme X ⊥ n))
+
 /-- The forward morphism of `botIso` is `toOfScheme X ⊥`. -/
 @[simp]
 theorem botIso_hom : (botIso X).hom = toOfScheme X ⊥ := by
   ext n
   exact botIso_hom_app X n
+
+/-- Postcomposing `toOfScheme X ⊥` with `(botIso X).inv` gives the identity. -/
+@[reassoc (attr := simp)]
+theorem toOfScheme_botIso_inv : toOfScheme X ⊥ ≫ (botIso X).inv = 𝟙 (X.formalCompletion ⊥) := by
+  rw [← botIso_hom, Iso.hom_inv_id]
+
+/-- Precomposing `toOfScheme X ⊥` with `(botIso X).inv` gives the identity. -/
+@[reassoc (attr := simp)]
+theorem botIso_inv_toOfScheme :
+    (botIso X).inv ≫ toOfScheme X ⊥ = 𝟙 (AdicThickeningSystem.ofScheme.obj X) := by
+  rw [← botIso_hom, Iso.inv_hom_id]
 
 instance isIso_toOfScheme_bot : IsIso (toOfScheme X ⊥) := by
   rw [← botIso_hom]
