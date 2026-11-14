@@ -56,7 +56,6 @@ theorem tendstoInMeasure_sub_sum_taylor_two (hB : IsBrownianReal B P)
         (B (grid k (i + 1)) ω - B (grid k i) ω)) -
       1 / 2 * ∑ i ∈ Finset.range (N k), deriv (deriv f) (B (grid k i) ω) *
         (B (grid k (i + 1)) ω - B (grid k i) ω) ^ 2) l (fun _ ↦ 0) := by
-  have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
   let R (k : ι) (ω : Ω) := f (B b ω) - f (B a ω) -
     (∑ i ∈ Finset.range (N k), deriv f (B (grid k i) ω) *
       (B (grid k (i + 1)) ω - B (grid k i) ω)) -
@@ -64,22 +63,18 @@ theorem tendstoInMeasure_sub_sum_taylor_two (hB : IsBrownianReal B P)
       (B (grid k (i + 1)) ω - B (grid k i) ω) ^ 2
   suffices hlim : TendstoInMeasure P R l (fun _ ↦ (0 : ℝ)) by
     simpa only [R] using hlim
-  rw [tendstoInMeasure_iff_tendsto_toNNReal]
   intro ε hε
   by_contra hbad
   obtain ⟨S, hS, hfreq⟩ := not_tendsto_iff_exists_frequently_notMem.1 hbad
   -- Failure of convergence supplies bad indices with arbitrarily small mesh and valid grids.
-  have hchoose (m : ℕ) : ∃ k,
-      (P {ω | ε ≤ edist (R k ω) 0}).toNNReal ∉ S ∧
-      MonotoneOn (grid k) (Iic (N k)) ∧ grid k 0 = a ∧ grid k (N k) = b ∧
-      (∀ i < N k, (grid k (i + 1) : ℝ) - grid k i ≤ δ k) ∧
-      ‖δ k‖ < 1 / (m + 1 : ℝ) := by
-    have hsmall := Metric.tendsto_nhds.1 hδ (1 / (m + 1 : ℝ)) (by positivity)
-    have hgood := hgrid.and (ha.and (hb.and (hmesh.and hsmall)))
-    simpa only [dist_zero_right] using (hfreq.and_eventually hgood).exists
-  choose u hu_bad hu_grid hu_a hu_b hu_mesh huδ using hchoose
-  have hδu : Tendsto (fun m ↦ δ (u m)) atTop (𝓝 0) :=
-    squeeze_zero_norm (fun m ↦ (huδ m).le) tendsto_one_div_add_atTop_nhds_zero_nat
+  obtain ⟨u, hu, hgood⟩ := exists_seq_forall_of_frequently <|
+    (hfreq.and_eventually (hgrid.and (ha.and (hb.and hmesh)))).filter_mono hδ.le_comap
+  have hu_bad := fun k ↦ (hgood k).1
+  have hu_grid := fun k ↦ (hgood k).2.1
+  have hu_a := fun k ↦ (hgood k).2.2.1
+  have hu_b := fun k ↦ (hgood k).2.2.2.1
+  have hu_mesh := fun k ↦ (hgood k).2.2.2.2
+  have hδu : Tendsto (fun m ↦ δ (u m)) atTop (𝓝 0) := tendsto_comap_iff.1 hu
   -- The constant-parameter specialization controls the remainders along this sequence.
   have hRlim : TendstoInMeasure P (fun k ↦ R (u k)) atTop (fun _ ↦ (0 : ℝ)) := by
     have h := hB.tendstoInMeasure_sum_sub_taylorWithinEval_two_param
@@ -97,7 +92,7 @@ theorem tendstoInMeasure_sub_sum_taylor_two (hB : IsBrownianReal B P)
     simp only [← Fin.sum_univ_eq_sum_range, Fin.val_succ, Fin.val_castSucc]
   -- Convergence in measure contradicts the choice of every extracted index.
   obtain ⟨m, hm⟩ :=
-    ((tendstoInMeasure_iff_tendsto_toNNReal.1 hRlim ε hε).eventually hS).exists
+    ((hRlim ε hε).eventually hS).exists
   exact hu_bad m hm
 
 end ProbabilityTheory.IsBrownianReal

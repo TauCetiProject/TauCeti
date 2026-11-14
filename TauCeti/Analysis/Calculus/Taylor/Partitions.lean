@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Taylor.Basic
 import TauCeti.Analysis.Normed.Group.UniformContinuity
+import Mathlib.Analysis.Asymptotics.Lemmas
 
 /-!
 # Accumulated Taylor remainders
@@ -101,30 +102,28 @@ theorem tendsto_sub_sum_taylor_two {f : ℝ → ℝ} {s : Set ℝ} {K : ℝ}
   simp_rw [sub_sum_taylor_two_eq_sum_sub_taylorWithinEval]
   -- The compact set may have gaps where the function is not smooth, so use the compact-set
   -- estimate rather than the parameter-family estimate on a containing interval.
-  apply Metric.tendsto_nhds.2
-  intro ε hε
-  obtain ⟨η, hη, hTaylor⟩ := exists_pos_forall_abs_sub_taylorWithinEval_two_le_of_isCompact
-    hf hs (div_pos hε (by positivity : 0 < max K 0 + 1))
-  filter_upwards [(tendsto_order.1 hδ0).2 η hη, hx, hδ, hQ] with k hk hxk hδk hQk
-  have hstep i (hi : i ∈ Finset.range (n k)) :
-      ‖f (x k (i + 1)) - taylorWithinEval f 2 univ (x k i) (x k (i + 1))‖ ≤
-        ε / (max K 0 + 1) * (x k (i + 1) - x k i) ^ 2 := by
-    have hi' := Finset.mem_range.1 hi
-    simpa only [Real.norm_eq_abs] using
-      hTaylor _ (hxk i hi') _ ((hδk i hi').trans_lt hk)
-  have hbound : |∑ i ∈ Finset.range (n k),
-      (f (x k (i + 1)) - taylorWithinEval f 2 univ (x k i) (x k (i + 1)))| ≤
-      ε / (max K 0 + 1) * max K 0 := by
-    calc
-      _ ≤ ε / (max K 0 + 1) *
-          ∑ i ∈ Finset.range (n k), (x k (i + 1) - x k i) ^ 2 := by
-        simpa only [Real.norm_eq_abs, ← Finset.mul_sum] using
-          norm_sum_le_of_le (Finset.range (n k)) hstep
-      _ ≤ _ := by gcongr; exact hQk.trans (le_max_left _ _)
-  rw [Real.dist_eq, sub_zero]
-  apply hbound.trans_lt
-  rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity : 0 < max K 0 + 1)]
-  linarith
+  have hQnonneg (k : ι) : 0 ≤ ∑ i ∈ Finset.range (n k),
+      (x k (i + 1) - x k i) ^ 2 := Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
+  refine (Asymptotics.isLittleO_one_iff ℝ).1 <|
+    Asymptotics.IsLittleO.trans_isBigO
+      (g := fun k ↦ ∑ i ∈ Finset.range (n k), (x k (i + 1) - x k i) ^ 2)
+      (.of_bound ?_) (.of_bound K ?_)
+  · intro ε hε
+    obtain ⟨η, hη, hTaylor⟩ := exists_pos_forall_abs_sub_taylorWithinEval_two_le_of_isCompact
+      hf hs hε
+    filter_upwards [(tendsto_order.1 hδ0).2 η hη, hx, hδ] with k hk hxk hδk
+    have hstep i (hi : i ∈ Finset.range (n k)) :
+        ‖f (x k (i + 1)) - taylorWithinEval f 2 univ (x k i) (x k (i + 1))‖ ≤
+          ε * (x k (i + 1) - x k i) ^ 2 := by
+      have hi' := Finset.mem_range.1 hi
+      simpa only [Real.norm_eq_abs] using
+        hTaylor _ (hxk i hi') _ ((hδk i hi').trans_lt hk)
+    simpa only [Real.norm_eq_abs,
+      abs_of_nonneg (hQnonneg k), ← Finset.mul_sum] using
+      norm_sum_le_of_le (Finset.range (n k)) hstep
+  · filter_upwards [hQ] with k hk
+    simpa only [Real.norm_eq_abs,
+      abs_of_nonneg (hQnonneg k), norm_one, mul_one] using hk
 
 
 /-- Along grids eventually in a compact metric set with eventually controlled vanishing mesh

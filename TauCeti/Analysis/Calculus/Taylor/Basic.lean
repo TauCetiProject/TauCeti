@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.ZPow
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.Topology.MetricSpace.Lebesgue
 
 /-!
 # Taylor polynomials and remainder estimates
@@ -187,27 +188,26 @@ theorem exists_pos_forall_abs_sub_taylorWithinEval_two_le_of_isCompact {f : ℝ 
     {ε : ℝ} (hε : 0 < ε) :
     ∃ δ > 0, ∀ x ∈ s, ∀ y, |y - x| < δ →
       |f y - taylorWithinEval f 2 univ x y| ≤ ε * (y - x) ^ 2 := by
-  have hlocal (z : s) : ∃ U : Set ℝ, IsOpen U ∧ (z : ℝ) ∈ U ∧
+  have hlocal (z : s) : ∃ U : Set ℝ, U ∈ 𝓝 (z : ℝ) ∧
       ∀ x ∈ U, ∀ y ∈ U,
         |f y - taylorWithinEval f 2 univ x y| ≤ ε * (y - x) ^ 2 := by
     obtain ⟨a, b, _, hab, hsub⟩ := exists_Icc_mem_subset_of_mem_nhds
       ((hf z z.property).eventually (by norm_num))
     obtain ⟨η, hη, hTaylor⟩ := exists_pos_forall_abs_sub_taylorWithinEval_two_le
       (fun x hx ↦ hsub hx) hε
-    refine ⟨interior (Icc a b) ∩ Metric.ball (z : ℝ) (η / 2),
-      isOpen_interior.inter Metric.isOpen_ball,
-      ⟨mem_interior_iff_mem_nhds.2 hab, Metric.mem_ball_self (half_pos hη)⟩, ?_⟩
+    refine ⟨Icc a b ∩ Metric.ball (z : ℝ) (η / 2),
+      Filter.inter_mem hab (Metric.ball_mem_nhds _ (half_pos hη)), ?_⟩
     intro x hx y hy
-    apply hTaylor x (interior_subset hx.1) y (interior_subset hy.1)
+    apply hTaylor x hx.1 y hy.1
     rw [← Real.dist_eq]
     have hx' := Metric.mem_ball.1 hx.2
     have hy' := Metric.mem_ball.1 hy.2
     have := dist_triangle y (z : ℝ) x
     rw [dist_comm (z : ℝ) x] at this
     linarith
-  choose U hU hz hTaylor using hlocal
-  obtain ⟨δ, hδ, hcover⟩ := lebesgue_number_lemma_of_metric hs hU
-    (fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx⟩, hz ⟨x, hx⟩⟩)
+  choose U hU hTaylor using hlocal
+  obtain ⟨δ, hδ, hcover⟩ := lebesgue_number_lemma_of_metric_of_mem_nhds (c := U) hs
+    (fun x hx ↦ ⟨⟨x, hx⟩, hU ⟨x, hx⟩⟩)
   refine ⟨δ, hδ, fun x hx y hxy ↦ ?_⟩
   obtain ⟨z, hball⟩ := hcover x hx
   exact hTaylor z x (hball (Metric.mem_ball_self hδ)) y
