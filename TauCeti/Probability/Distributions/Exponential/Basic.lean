@@ -474,34 +474,6 @@ theorem hasLaw_min_expMeasure_of_indepFun {Ω : Type*} {mΩ : MeasurableSpace Ω
   rw [map_min_expMeasure hr hs] at hmin
   exact hmin.congr (ae_of_all _ fun _ => rfl)
 
-/-- The minimum of `d` independent exponential variables of a common positive rate `r` is
-exponential of rate `d * r`. This is the `d`-fold form of
-`TauCeti.Probability.hasLaw_min_expMeasure_of_indepFun`, which allows two different rates. -/
-theorem hasLaw_min_iid_expMeasure {Ω ι : Type*} {mΩ : MeasurableSpace Ω} [Fintype ι] [Nonempty ι]
-    {P : Measure Ω} {X : ι → Ω → ℝ} (hr : 0 < r) (hindep : iIndepFun X P)
-    (hlaw : ∀ i, HasLaw (X i) (expMeasure r) P) :
-    HasLaw (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω)
-      (expMeasure ((Fintype.card ι : ℝ) * r)) P := by
-  have hd : (0 : ℝ) < Fintype.card ι := by
-    exact_mod_cast Fintype.card_pos_iff.2 ‹Nonempty ι›
-  have _ : IsProbabilityMeasure (expMeasure r) := isProbabilityMeasure_expMeasure hr
-  have _ : IsProbabilityMeasure (expMeasure ((Fintype.card ι : ℝ) * r)) :=
-    isProbabilityMeasure_expMeasure (mul_pos hd hr)
-  have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P := by
-    simp_rw [Finset.inf'_univ_eq_ciInf]
-    exact AEMeasurable.iInf fun i => (hlaw i).aemeasurable
-  have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
-  refine ⟨hmin, ?_⟩
-  refine Measure.eq_of_cdf _ _ ?_
-  ext x
-  rw [cdf_min_iid hindep hlaw x, cdf_expMeasure_eq hr x,
-    cdf_expMeasure_eq (mul_pos hd hr) x]
-  by_cases hx : 0 ≤ x
-  · rw [ite_eq_left hx, ite_eq_left hx, sub_sub_cancel, ← Real.exp_nat_mul]
-    congr 2
-    ring
-  · rw [ite_eq_right hx, ite_eq_right hx, sub_zero, one_pow, sub_self]
-
 /-- **Minimum of independent heterogeneous exponentials.** Under a nonempty finite product of
 exponential laws with positive rates `r i`, the coordinatewise minimum is exponential of rate
 `∑ i, r i`. -/
@@ -546,7 +518,17 @@ theorem hasLaw_min_indep_expMeasure {Ω ι : Type*} {_ : MeasurableSpace Ω} [Fi
       (expMeasure (∑ i, r i)) P := by
   have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
   rw [← map_min_pi_expMeasure fun i ↦ pos_of_hasLaw_expMeasure (hX i)]
-  exact hindep.hasLaw_inf' hX Finset.univ Finset.univ_nonempty
+  exact hindep.hasLaw_inf' hX
+
+/-- The minimum of `d` independent exponential variables of a common rate `r` is exponential of
+rate `d * r`. This is the constant-rate specialization of
+`TauCeti.Probability.hasLaw_min_indep_expMeasure`. -/
+theorem hasLaw_min_iid_expMeasure {Ω ι : Type*} {_ : MeasurableSpace Ω} [Fintype ι] [Nonempty ι]
+    {P : Measure Ω} {X : ι → Ω → ℝ} (hindep : iIndepFun X P)
+    (hlaw : ∀ i, HasLaw (X i) (expMeasure r) P) :
+    HasLaw (fun ω ↦ Finset.univ.inf' Finset.univ_nonempty fun i ↦ X i ω)
+      (expMeasure ((Fintype.card ι : ℝ) * r)) P := by
+  simpa using hasLaw_min_indep_expMeasure (r := fun _ ↦ r) hindep hlaw
 
 /-- The exponential measure of rate `r` on `ℝ≥0`, obtained by transporting the usual exponential
 law on `ℝ` along `Real.toNNReal`.

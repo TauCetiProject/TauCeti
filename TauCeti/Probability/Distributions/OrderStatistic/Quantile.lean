@@ -22,10 +22,9 @@ adjunction, so it requires no continuity assumption on the source law or its qua
 
 * `quantile_map_orderStatistic_pi` computes the quantile of the product-measure law.
 * `quantile_of_hasLaw_orderStatistic_iid` gives the same formula for an independent sample.
-* `quantile_map_orderStatistic_zero_pi`, `quantile_map_orderStatistic_last_pi`,
-  `quantile_of_hasLaw_orderStatistic_zero_iid`, and
-  `quantile_of_hasLaw_orderStatistic_last_iid` specialize the inverse-Beta quantile at the extreme
-  positions `0` and `Fin.last n` to elementary power levels.
+* `quantile_map_orderStatistic_zero_pi` and `quantile_map_orderStatistic_last_pi` specialize the
+  inverse-Beta product-measure quantile at the extreme positions `0` and `Fin.last n` to elementary
+  power levels.
 * `tendsto_quantile_map_orderStatistic_pi_nhdsGT_zero` and
   `tendsto_quantile_map_orderStatistic_pi_nhdsLT_one` identify the endpoint limits with those
   of the source law.
@@ -59,6 +58,7 @@ theorem quantile_map_orderStatistic_pi (k : Fin n) (hu : u ∈ Ioo 0 1) :
   rw [cdf_map_orderStatistic_pi_eq_regularizedIncompleteBeta,
     inverseRegularizedIncompleteBeta_le_iff ha hb hu.1 hu.2]
 
+omit [IsProbabilityMeasure μ] in
 /-- The quantile formula for the `k`-th order statistic of independent real random
 variables with common law `μ`, with no atomlessness or continuity hypothesis. -/
 theorem quantile_of_hasLaw_orderStatistic_iid {Ω : Type*} [MeasurableSpace Ω]
@@ -66,6 +66,7 @@ theorem quantile_of_hasLaw_orderStatistic_iid {Ω : Type*} [MeasurableSpace Ω]
     (hlaw : ∀ i, HasLaw (X i) μ P) (k : Fin n) (hu : u ∈ Ioo 0 1) :
     (P.map (fun ω => orderStatistic k fun i => X i ω)).quantile u =
       μ.quantile (inverseRegularizedIncompleteBeta ((k : ℝ) + 1) ((n : ℝ) - k) u) := by
+  have : IsProbabilityMeasure μ := (hlaw k).isProbabilityMeasure_iff.1 hindep.isProbabilityMeasure
   have hstat := (hasLaw_map (measurable_orderStatistic k).aemeasurable).comp
     (hindep.hasLaw_pi hlaw)
   simp only [Function.comp_def] at hstat
@@ -89,35 +90,7 @@ theorem quantile_map_orderStatistic_last_pi (hu : u ∈ Ioo 0 1) :
       μ.quantile (u ^ ((n : ℝ) + 1)⁻¹) := by
   have hn : (0 : ℝ) < (n : ℝ) + 1 := by positivity
   rw [quantile_map_orderStatistic_pi (Fin.last n) hu]
-  have hsub : ((n + 1 : ℕ) : ℝ) - (n : ℝ) = 1 := by push_cast; ring
-  simp only [Fin.val_last, hsub]
-  rw [inverseRegularizedIncompleteBeta_one_right hn hu.1 hu.2]
-
-omit [IsProbabilityMeasure μ] in
-/-- Random-variable form of `TauCeti.Probability.quantile_map_orderStatistic_zero_pi`, with no
-atomlessness or continuity hypothesis. -/
-theorem quantile_of_hasLaw_orderStatistic_zero_iid {Ω : Type*} {_ : MeasurableSpace Ω} [NeZero n]
-    {P : Measure Ω} {X : Fin n → Ω → ℝ} (hindep : iIndepFun X P)
-    (hlaw : ∀ i, HasLaw (X i) μ P) (hu : u ∈ Ioo 0 1) :
-    (P.map fun ω ↦ orderStatistic 0 fun i ↦ X i ω).quantile u =
-      μ.quantile (1 - (1 - u) ^ (n : ℝ)⁻¹) := by
-  have := hindep.isProbabilityMeasure
-  have _ : IsProbabilityMeasure μ := (hlaw 0).isProbabilityMeasure_iff.1 this
-  rw [(hasLaw_orderStatistic_zero_indep hindep hlaw).map_eq,
-    quantile_map_orderStatistic_zero_pi hu]
-
-omit [IsProbabilityMeasure μ] in
-/-- Random-variable form of `TauCeti.Probability.quantile_map_orderStatistic_last_pi`, with no
-atomlessness or continuity hypothesis. -/
-theorem quantile_of_hasLaw_orderStatistic_last_iid {Ω : Type*} {_ : MeasurableSpace Ω}
-    {P : Measure Ω} {X : Fin (n + 1) → Ω → ℝ} (hindep : iIndepFun X P)
-    (hlaw : ∀ i, HasLaw (X i) μ P) (hu : u ∈ Ioo 0 1) :
-    (P.map fun ω ↦ orderStatistic (Fin.last n) fun i ↦ X i ω).quantile u =
-      μ.quantile (u ^ ((n : ℝ) + 1)⁻¹) := by
-  have := hindep.isProbabilityMeasure
-  have _ : IsProbabilityMeasure μ := (hlaw 0).isProbabilityMeasure_iff.1 this
-  rw [(hasLaw_orderStatistic_last_indep hindep hlaw).map_eq,
-    quantile_map_orderStatistic_last_pi hu]
+  simp [Nat.cast_add_one, add_sub_cancel_left, hn, hu.1, hu.2]
 
 /-- As the probability level tends to zero from above, the quantiles of an iid order statistic
 tend to the infimum of the source law's topological support. The infimum is taken in `EReal`, so

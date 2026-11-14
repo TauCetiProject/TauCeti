@@ -8,8 +8,8 @@ module
 public import TauCeti.Probability.Distributions.Beta.Basic
 public import TauCeti.Probability.Distributions.Uniform.Basic
 import TauCeti.Analysis.SpecialFunctions.Beta
-import TauCeti.Probability.Distributions.Beta.Cdf
-import TauCeti.Probability.Distributions.Relations
+import TauCeti.MeasureTheory.Order.Lattice
+import TauCeti.Probability.Distributions.OrderStatistic.Basic
 
 /-!
 # The unit uniform law and its finite extrema as beta laws
@@ -48,22 +48,16 @@ theorem map_min_pi_uniformMeasure {ι : Type*} [Fintype ι] [Nonempty ι] :
     (Measure.pi fun _ : ι ↦ uniformMeasure 0 1).map
       (fun x ↦ Finset.univ.inf' Finset.univ_nonempty fun i ↦ x i) =
       betaMeasure 1 (Fintype.card ι) := by
-  have _ : IsProbabilityMeasure (uniformMeasure 0 1) :=
+  have : IsProbabilityMeasure (uniformMeasure 0 1) :=
     isProbabilityMeasure_uniformMeasure zero_lt_one
-  have hd : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.mpr Fintype.card_pos
-  have _ : IsProbabilityMeasure (betaMeasure 1 (Fintype.card ι)) :=
-    isProbabilityMeasureBeta one_pos hd
-  refine Measure.eq_of_cdf _ _ ?_
-  ext x
-  rw [cdf_map_min_pi_const, cdf_betaMeasure_eq one_pos hd, cdf_uniformMeasure zero_lt_one]
-  split_ifs with h0 h1
-  · rw [regularizedIncompleteBeta_eq_zero_of_nonpos one_pos.ne' _ h0]
-    simp
-  · rw [regularizedIncompleteBeta_eq_one_of_one_le zero_le_one hd h1, sub_self,
-      zero_pow Fintype.card_ne_zero, sub_zero]
-  · push Not at h0 h1
-    simp only [sub_zero, div_one]
-    rw [regularizedIncompleteBeta_one_left hd h0.le h1.le, Real.rpow_natCast]
+  have : NeZero (Fintype.card ι) := ⟨Fintype.card_ne_zero⟩
+  let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
+  rw [← Measure.pi_map_piCongrLeft e (fun _ : ι ↦ uniformMeasure 0 1),
+    Measure.map_map (by fun_prop) (MeasurableEquiv.measurable _),
+    ← map_orderStatistic_zero_pi_uniformMeasure, map_orderStatistic_zero]
+  refine Measure.map_congr (.of_forall fun x ↦ eq_of_forall_le_iff fun c ↦ ?_)
+  simp only [Function.comp_apply, Finset.le_inf'_iff, Finset.mem_univ, forall_true_left,
+    MeasurableEquiv.coe_piCongrLeft, ← e.forall_congr_right, Equiv.piCongrLeft_apply_apply]
 
 /-- The coordinatewise maximum of a nonempty finite product of unit uniform laws has law
 `betaMeasure (Fintype.card ι) 1`. -/
@@ -71,19 +65,16 @@ theorem map_max_pi_uniformMeasure {ι : Type*} [Fintype ι] [Nonempty ι] :
     (Measure.pi fun _ : ι ↦ uniformMeasure 0 1).map
       (fun x ↦ Finset.univ.sup' Finset.univ_nonempty fun i ↦ x i) =
       betaMeasure (Fintype.card ι) 1 := by
-  have _ : IsProbabilityMeasure (uniformMeasure 0 1) :=
+  have : IsProbabilityMeasure (uniformMeasure 0 1) :=
     isProbabilityMeasure_uniformMeasure zero_lt_one
-  have hd : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.mpr Fintype.card_pos
-  have _ : IsProbabilityMeasure (betaMeasure (Fintype.card ι) 1) :=
-    isProbabilityMeasureBeta hd one_pos
-  refine Measure.eq_of_cdf _ _ ?_
-  ext x
-  rw [cdf_map_max_pi_const, cdf_betaMeasure_eq hd one_pos, cdf_uniformMeasure zero_lt_one]
-  split_ifs with h0 h1
-  · rw [regularizedIncompleteBeta_eq_zero_of_nonpos hd.ne' _ h0, zero_pow Fintype.card_ne_zero]
-  · rw [regularizedIncompleteBeta_eq_one_of_one_le hd.le one_pos h1, one_pow]
-  · push Not at h0 h1
-    simp only [sub_zero, div_one]
-    rw [regularizedIncompleteBeta_one_right hd h0.le h1.le, Real.rpow_natCast]
+  have hn : Fintype.card ι - 1 + 1 = Fintype.card ι := Nat.sub_add_cancel Fintype.card_pos
+  let e : Fin (Fintype.card ι - 1 + 1) ≃ ι := (finCongr hn).trans (Fintype.equivFin ι).symm
+  have hcast : ((Fintype.card ι - 1 : ℕ) : ℝ) + 1 = Fintype.card ι := by exact_mod_cast hn
+  rw [← hcast, ← map_orderStatistic_last_pi_uniformMeasure, map_orderStatistic_last,
+    ← Measure.pi_map_piCongrLeft e (fun _ : ι ↦ uniformMeasure 0 1),
+    Measure.map_map (by fun_prop) (MeasurableEquiv.measurable _)]
+  refine Measure.map_congr (.of_forall fun x ↦ eq_of_forall_ge_iff fun c ↦ ?_)
+  simp only [Function.comp_apply, Finset.sup'_le_iff, Finset.mem_univ, forall_true_left,
+    MeasurableEquiv.coe_piCongrLeft, ← e.forall_congr_right, Equiv.piCongrLeft_apply_apply]
 
 end TauCeti.Probability
