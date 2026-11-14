@@ -145,7 +145,7 @@ lemma blowup_toBase : (M.blowup I hC).toBase = I.blowupToBase ≫ M.toBase :=
   (rfl)
 
 /-- The blowup of a proper model is a proper model. -/
-lemma isProper_blowup [hM : M.IsProper] : (M.blowup I hC).IsProper := by
+instance isProper_blowup [hM : M.IsProper] : (M.blowup I hC).IsProper := by
   have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
   have : AlgebraicGeometry.IsProper M.toBase := hM
   rw [Model.IsProper, blowup_toBase]
