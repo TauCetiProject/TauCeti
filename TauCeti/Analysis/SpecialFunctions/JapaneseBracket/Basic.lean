@@ -51,6 +51,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
 
 * `TauCeti.one_add_norm_sq_rpow_mul_norm_le`: one power of `‖x‖` costs one order of the
   Japanese bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
+* `TauCeti.one_add_norm_sq_rpow_neg_le_inv_norm_pow`: away from the origin,
+  `⟨x⟩ ^ (-k) ≤ ‖x‖ ^ (-k)`.
 * `TauCeti.one_add_mul_norm_pow_le`: the linear weight `(1 + c ‖x‖) ^ i` is at most
   `(1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
@@ -98,6 +100,20 @@ theorem one_add_norm_sq_rpow_mul_norm_le {E : Type*} [NormedAddCommGroup E] (x :
   rw [add_div, Real.rpow_add (by positivity), ← Real.sqrt_eq_rpow]
   gcongr
   exact Real.le_sqrt_of_sq_le (by linarith)
+
+/-- Away from the origin, a negative bracket power is bounded by the corresponding power of the
+norm: `⟨x⟩ ^ (-k) ≤ ‖x‖ ^ (-k)` for `x ≠ 0`. This turns symbol estimates of order `0` into
+Mihlin's condition `‖D^k m ξ‖ ≤ A / ‖ξ‖ ^ k`. -/
+theorem one_add_norm_sq_rpow_neg_le_inv_norm_pow {E : Type*} [NormedAddCommGroup E] {x : E}
+    (hx : x ≠ 0) (k : ℕ) : (1 + ‖x‖ ^ 2) ^ (-(k : ℝ) / 2) ≤ (‖x‖ ^ k)⁻¹ := by
+  have hk : ‖x‖ ^ k ≤ (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) := by
+    calc ‖x‖ ^ k ≤ ((1 + ‖x‖ ^ 2) ^ ((1 : ℝ) / 2)) ^ k := by
+          gcongr
+          rw [← Real.sqrt_eq_rpow]
+          exact Real.le_sqrt_of_sq_le (by linarith)
+      _ = _ := by rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]; ring_nf
+  rw [neg_div, Real.rpow_neg (by positivity)]
+  exact inv_anti₀ (pow_pos (norm_pos_iff.2 hx) k) hk
 
 /-- A linear weight is dominated by the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
 `(1 + c ‖x‖) ^ i ≤ (1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`. -/

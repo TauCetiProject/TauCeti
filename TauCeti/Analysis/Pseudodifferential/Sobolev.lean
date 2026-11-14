@@ -78,7 +78,10 @@ families of operators.
   (`TauCeti.Symbol.HasCompactSpatialSupport.continuous_fourier_slice`), differentiability in `ξ`
   with the Fourier transform of `∂_ξ a` as derivative
   (`TauCeti.Symbol.HasCompactSpatialSupport.hasFDerivAt_fourier_slice`,
-  `TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), and
+  `TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), smoothness in `ξ`
+  with the symbol estimates `‖D_ξ^k â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - k) ⟨η⟩ ^ (-r)`
+  (`TauCeti.Symbol.HasCompactSpatialSupport.contDiff_fourier_slice`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_le`), and
   `(∂_{x_j} a)^(η, ξ) = 2πi ηⱼ â(η, ξ)`
   (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_spatialDeriv_slice`).
 * `TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`: the Fourier transform
@@ -389,6 +392,74 @@ theorem HasCompactSpatialSupport.coordinateDeriv_fourier_slice (ha : a.HasCompac
     Real.fourier_eq]
   simp only [Circle.smul_def, coefficient_frequencyDeriv, coordinateDeriv_cons,
     coordinateDeriv_nil]
+
+/-- **Smoothness in the frequency.** The Fourier transform `â(η, ξ)` of the position slice of a
+symbol with compact spatial support is smooth in the frequency `ξ`. -/
+theorem HasCompactSpatialSupport.contDiff_fourier_slice (ha : a.HasCompactSpatialSupport)
+    (η : CoordinateSpace n) :
+    ContDiff ℝ ∞ fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η := by
+  refine contDiff_infty.2 fun k ↦ ?_
+  induction k generalizing m with
+  | zero =>
+    rw [Nat.cast_zero, contDiff_zero]
+    -- Elaborating the composition first, without the expected type, avoids unfolding `𝓕`.
+    have hc := ha.continuous_fourier_slice.comp (Continuous.prodMk_right (X := CoordinateSpace n) η)
+    exact hc
+  | succ k ih =>
+    -- The derivative is `v ↦ ∑ⱼ vⱼ (∂_{ξⱼ} a)^(η, ξ)`, built from the slices of the frequency
+    -- derivatives, which are `C^k` by induction.
+    set D : CoordinateSpace n → CoordinateSpace n →L[ℝ] (V →L[ℂ] W) := fun ξ ↦
+      ∑ j, (EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).smulRight
+        (𝓕 (fun y ↦ (Symbol.frequencyDeriv j a).coefficient (y, ξ)) η)
+    rw [Nat.cast_succ]
+    refine contDiff_succ_iff_hasFDerivAt.2 ⟨D, ?_, fun ξ ↦ ?_⟩
+    · exact ContDiff.sum fun j _ ↦
+        contDiff_const.smulRight (ih (ha.frequencyDeriv j))
+    · convert ha.hasFDerivAt_fourier_slice η ξ using 1
+      refine ContinuousLinearMap.coe_injective
+        ((EuclideanSpace.basisFun (Fin n) ℝ).toBasis.ext fun j ↦ ?_)
+      have h := ha.coordinateDeriv_fourier_slice j η ξ
+      rw [coordinateDeriv_cons, coordinateDeriv_nil,
+        (ha.hasFDerivAt_fourier_slice η ξ).fderiv] at h
+      simp [D, h, EuclideanSpace.proj, Finset.sum_apply]
+
+/-- **Frequency derivatives of `â`.** For a symbol `a` of order `m` with compact spatial support,
+the coordinate derivative of `ξ ↦ â(η, ξ)` along a word `w` satisfies
+`‖∂_ξ^w â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - |w|) ⟨η⟩ ^ (-r)`, for every `r`. -/
+theorem HasCompactSpatialSupport.exists_norm_coordinateDeriv_fourier_slice_le
+    (ha : a.HasCompactSpatialSupport) (w : List (Fin n)) (r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ η ξ : CoordinateSpace n,
+      ‖coordinateDeriv w (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m - w.length) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  induction w using List.reverseRecOn generalizing m with
+  | nil => simpa using ha.exists_norm_fourier_slice_le r
+  | append_singleton w j ih =>
+    obtain ⟨C, hC0, hC⟩ := ih (ha.frequencyDeriv j)
+    refine ⟨C, hC0, fun η ξ ↦ ?_⟩
+    have hd : coordinateDeriv [j] (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) =
+        fun ξ ↦ 𝓕 (fun y ↦ (Symbol.frequencyDeriv j a).coefficient (y, ξ)) η :=
+      funext (ha.coordinateDeriv_fourier_slice j η)
+    rw [coordinateDeriv_append, hd]
+    convert hC η ξ using 4
+    rw [List.length_append, List.length_singleton]
+    push_cast
+    ring
+
+/-- **Fréchet derivatives of `â` in the frequency.** For a symbol `a` of order `m` with compact
+spatial support, `‖D_ξ^k â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - k) ⟨η⟩ ^ (-r)`, for every `k` and `r`. -/
+theorem HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_le
+    (ha : a.HasCompactSpatialSupport) (k : ℕ) (r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ η ξ : CoordinateSpace n,
+      ‖iteratedFDeriv ℝ k (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  choose C hC0 hC using fun w : Fin k → Fin n ↦
+    ha.exists_norm_coordinateDeriv_fourier_slice_le (List.ofFn w) r
+  refine ⟨∑ w, C w, Finset.sum_nonneg fun w _ ↦ hC0 w, fun η ξ ↦ ?_⟩
+  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv
+    ((ha.contDiff_fourier_slice η).of_le (mod_cast le_top)) ξ).trans ?_
+  rw [Finset.sum_mul, Finset.sum_mul]
+  refine Finset.sum_le_sum fun w _ ↦ ?_
+  simpa using hC w η ξ
 
 end Decay
 
