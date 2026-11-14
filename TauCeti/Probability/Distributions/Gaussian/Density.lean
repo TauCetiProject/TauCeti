@@ -208,38 +208,28 @@ theorem map_smul_stdGaussian_eq_withDensity_norm (E : Type*) [NormedAddCommGroup
           ((2 * π * c ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 2) *
             exp (-‖x‖ ^ 2 / (2 * c ^ 2))) := by
   let A : E ≃L[ℝ] E :=
-    { toLinearEquiv :=
-        { toFun x := c • x
-          map_add' x y := smul_add c x y
-          map_smul' r x := smul_comm c r x
-          invFun x := c⁻¹ • x
-          left_inv x := inv_smul_smul₀ hc x
-          right_inv x := smul_inv_smul₀ hc x }
+    { toFun := (c • ·), invFun := (c⁻¹ • ·), map_add' := smul_add c, map_smul' := smul_comm c
+      left_inv := inv_smul_smul₀ hc, right_inv := smul_inv_smul₀ hc
       continuous_toFun := continuous_const.smul continuous_id
       continuous_invFun := continuous_const.smul continuous_id }
-  have hAfun : (c • · : E → E) = fun x => 0 + A x := funext fun x => (zero_add _).symm
-  have hAsymm (x : E) : A.symm x = c⁻¹ • x := rfl
-  have hAlin : (A : E →ₗ[ℝ] E) = c • LinearMap.id := by
-    ext x
-    rfl
   have hc_abs : 0 < |c| := abs_pos.2 hc
-  rw [stdGaussian_eq_withDensity_norm E, hAfun, Measure.map_affine_withDensity volume A 0]
+  have hAlin : (A : E →ₗ[ℝ] E) = c • LinearMap.id := LinearMap.ext fun _ => rfl
+  rw [stdGaussian_eq_withDensity_norm E,
+    show (c • · : E → E) = fun x => 0 + A x from funext fun _ => (zero_add _).symm,
+    Measure.map_affine_withDensity volume A 0]
   refine withDensity_congr_ae (.of_forall fun y => ?_)
   have hdet : |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| =
       (c ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 2) := by
     rw [hAlin, LinearMap.det_smul, LinearMap.det_id, mul_one, abs_inv, abs_pow,
       ← Real.rpow_natCast |c|, ← Real.rpow_neg hc_abs.le, ← sq_abs c,
       ← Real.rpow_natCast |c| 2, ← Real.rpow_mul hc_abs.le]
-    congr 1
-    ring
+    exact congrArg _ (by ring)
   have hnorm : -‖A.symm (y - 0)‖ ^ 2 / 2 = -‖y‖ ^ 2 / (2 * c ^ 2) := by
-    rw [sub_zero, hAsymm, norm_smul, Real.norm_eq_abs, abs_inv, mul_pow, inv_pow, sq_abs]
-    have : c ^ 2 ≠ 0 := pow_ne_zero 2 hc
+    change -‖c⁻¹ • (y - 0)‖ ^ 2 / 2 = _
+    rw [sub_zero, norm_smul, Real.norm_eq_abs, abs_inv, mul_pow, inv_pow, sq_abs]
     field_simp
   dsimp only
-  rw [← ENNReal.ofReal_mul (abs_nonneg _), hdet, hnorm]
-  refine congrArg ENNReal.ofReal ?_
-  rw [← mul_assoc, mul_comm ((c ^ 2) ^ _),
+  rw [← ENNReal.ofReal_mul (abs_nonneg _), hdet, hnorm, ← mul_assoc, mul_comm ((c ^ 2) ^ _),
     ← Real.mul_rpow (by positivity) (sq_nonneg c)]
 
 /-- The standard Gaussian measure on a finite-dimensional real inner product space has full
