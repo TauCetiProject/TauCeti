@@ -59,10 +59,10 @@ with `k ≤ ℓ` and `k ≤ m` and every target exponent `1 < s ≤ p`, this fil
    differentiated system on `WithLp 2 (V × V)` puts `Ξ` in `W^{k'+1,s}_loc(Ω)`, hence `ξ` in
    `W^{k'+2,s}_loc(Ω)`.
 
-Transferring across `toEuclidean` removes the inner-product hypothesis for the almost-everywhere
-equation on an arbitrary finite-dimensional real normed space
-(`TauCeti.memWkpLoc_of_ae_cauchyRiemann`) and for homogeneous linear solutions
-(`TauCeti.IsWeakLinearCauchyRiemannOn.memWkpLoc`,
+Transferring across `toEuclidean` and using `W^{1,1}_loc ⊂ L²_loc` removes both the inner-product
+hypothesis and the conjugate-exponent restriction for the almost-everywhere equation on an arbitrary
+finite-dimensional real normed space (`TauCeti.memWkpLoc_of_ae_cauchyRiemann`, for all `1 ≤ q ≤ ∞`)
+and for homogeneous linear solutions (`TauCeti.IsWeakLinearCauchyRiemannOn.memWkpLoc`,
 `TauCeti.IsWeakLinearCauchyRiemannOn.memWkpLoc_of_le`,
 `TauCeti.IsWeakLinearCauchyRiemannOn.contDiffOn`).
 
@@ -125,8 +125,8 @@ theorem integral_inner_fderiv_add_integral_inner_eq_of_hasWeakFDerivOn (hp : 2 <
       (∂_{w} (α i) : 𝓓(Ω, ℝ)) z = ⟪b i, fderiv ℝ (φ : ℂ → V) z w⟫_ℝ := by
     simp [α, TestFunction.lineDeriv_eq_fderiv]
   have hparseval (x y : V) : ⟪x, y⟫_ℝ = ∑ i, ⟪b i, x⟫_ℝ * ⟪b i, y⟫_ℝ := by
-    conv_lhs => rw [← b.sum_repr' x]
-    simp only [sum_inner, real_inner_smul_left]
+    rw [← b.sum_inner_mul_inner x y]
+    exact Finset.sum_congr rfl fun i _ => by rw [real_inner_comm]
   have hsum_val {w : ℂ → V} (hw : LocallyIntegrableOn w Ω) :
       ∫ z, ⟪(φ : ℂ → V) z, w z⟫_ℝ = ∑ i, ∫ z, (α i : ℂ → ℝ) z * ⟪b i, w z⟫_ℝ := by
     rw [← integral_finsetSum _ fun i _ => (α i).integrable_mul_inner hw (b i)]
@@ -478,6 +478,110 @@ theorem IsWeakCRSolution.memWkpLoc {k ℓ m : ℕ} (hp : 2 < p) (hp_top : p ≠ 
   hsol.memWkpLoc_of_memWkpLoc hp hp_top hpq (ENNReal.one_lt_two.trans hp) le_rfl hℓ
     hkℓ hkm hJ hDJ hJsq hS hη
 
+/-- Weak directional Leibniz rule for `z ↦ J z (ξ z)` when `J ∈ W^{1,p}_loc(Ω)` (`2 < p < ∞`) and
+`ξ ∈ W^{1,1}_loc(Ω)`: two-dimensional Sobolev embedding puts `ξ` in `L²_loc(Ω)`, while `J ∈ L^∞_loc`
+pairs against `Dξ · u ∈ L¹_loc(Ω)`. -/
+private theorem hasWeakLineDerivOn_clm_apply_of_memWkpLoc_one (hp : 2 < p) (hp_top : p ≠ ⊤)
+    (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ)
+    {Dξ : ℂ → ℂ →L[ℝ] V} (hξ1 : MemWkpLoc (1 : ℝ≥0) Ω 1 ξ) (hDξ : HasWeakFDerivOn volume Ω ξ Dξ)
+    (u : ℂ) :
+    HasWeakLineDerivOn volume Ω (fun z => J z (ξ z))
+      (fun z => DJ z u (ξ z) + J z (Dξ z u)) u := by
+  have hloc := Ω.isOpen.isLocallyClosed
+  have hJi : MemLpLoc ∞ Ω J := hJ.memLpLoc_top hp
+  have hDJp : MemLpLoc p Ω DJ := hJ.memLpLoc_of_hasWeakFDerivOn hDJ
+  have hξ2 : MemLpLoc (2 : ℝ≥0) Ω ξ :=
+    hξ1.memLpLoc_of_inv_sub_inv_le le_rfl one_le_two (by norm_num)
+  have hp2 : p⁻¹ + (2 : ℝ≥0∞)⁻¹ < 1 := ENNReal.inv_add_inv_lt_one_of_two_lt hp le_rfl
+  have hDξ1 : MemLpLoc (1 : ℝ≥0) Ω Dξ := hξ1.memLpLoc_of_hasWeakFDerivOn hDξ
+  have hJξ_loc : LocallyIntegrableOn (fun z => J z (ξ z)) Ω :=
+    hJi.locallyIntegrableOn_clm_apply hξ1.memLpLoc (by simp) hloc
+  have hDJξ_loc : LocallyIntegrableOn (fun z => DJ z u (ξ z)) Ω :=
+    (hDJp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) u)).locallyIntegrableOn_clm_apply
+      hξ2 hp2.le hloc
+  have hJDξ_loc : LocallyIntegrableOn (fun z => J z (Dξ z u)) Ω :=
+    hJi.locallyIntegrableOn_clm_apply (hDξ1.clm_comp (ContinuousLinearMap.apply ℝ V u))
+      (by simp) hloc
+  have hsum_loc : LocallyIntegrableOn (fun z => DJ z u (ξ z) + J z (Dξ z u)) Ω :=
+    hDJξ_loc.add hJDξ_loc
+  refine hasWeakLineDerivOn_iff_testFunction.2
+    ⟨inferInstance, hJξ_loc, hsum_loc, fun ψ => ext_inner_left ℝ fun v => ?_⟩
+  have hψu : (fun z => lineDeriv ℝ (ψ : ℂ → ℝ) z u • J z (ξ z)) =
+      fun z => (∂_{u} ψ : 𝓓(Ω, ℝ)) z • J z (ξ z) :=
+    funext fun z => by rw [TestFunction.lineDerivOp_apply]
+  rw [hψu, ← integral_inner ((∂_{u} ψ).integrable_smul hJξ_loc) v, inner_neg_right,
+    ← integral_inner (ψ.integrable_smul hsum_loc) v]
+  obtain ⟨Ψ, hderiv, hval⟩ :=
+    exists_testFunction_tendsto_integral_inner_of_hasWeakFDerivOn hp hp_top hp2.le hJ hDJ ψ v
+  have hΨ (n : ℕ) :
+      ∫ z, ⟪fderiv ℝ (Ψ n : ℂ → V) z u, ξ z⟫_ℝ = -∫ z, ⟪(Ψ n : ℂ → V) z, Dξ z u⟫_ℝ := by
+    simpa only [TestFunction.lineDeriv_eq_fderiv] using
+      (hDξ.hasWeakLineDerivOn u).integral_inner_lineDeriv_eq_neg (Ψ n)
+  have hlim := tendsto_nhds_unique ((hderiv u hξ2).congr hΨ)
+    (hval (hDξ.hasWeakLineDerivOn u).locallyIntegrableOn_deriv).neg
+  have hlhs : ∫ z, ⟪v, (∂_{u} ψ : 𝓓(Ω, ℝ)) z • J z (ξ z)⟫_ℝ =
+      ∫ z, (∂_{u} ψ : 𝓓(Ω, ℝ)) z * ⟪v, J z (ξ z)⟫_ℝ :=
+    integral_congr_ae (.of_forall fun z => by simp [inner_smul_right])
+  have hrhs : ∫ z, ⟪v, (ψ : ℂ → ℝ) z • (DJ z u (ξ z) + J z (Dξ z u))⟫_ℝ =
+      (∫ z, (ψ : ℂ → ℝ) z * ⟪v, DJ z u (ξ z)⟫_ℝ) +
+        ∫ z, (ψ : ℂ → ℝ) z * ⟪v, J z (Dξ z u)⟫_ℝ := by
+    rw [← integral_add (ψ.integrable_mul_inner hDJξ_loc v) (ψ.integrable_mul_inner hJDξ_loc v)]
+    exact integral_congr_ae (.of_forall fun z => by simp [inner_smul_right, inner_add_right])
+  linarith
+
+/-- Upgrading a `W^{1,1}_loc(Ω)` solution of the almost-everywhere Cauchy–Riemann equation to a
+weak `L²_loc(Ω)` solution (`IsWeakCRSolution 2`) via `W^{1,1}_loc ⊂ L²_loc`. -/
+private theorem isWeakCRSolution_two_of_memWkpLoc_one (hp : 2 < p) (hp_top : p ≠ ⊤)
+    (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ) (hS : MemLpLoc p Ω S)
+    {Dξ : ℂ → ℂ →L[ℝ] V} (hξ1 : MemWkpLoc (1 : ℝ≥0) Ω 1 ξ) (hDξ : HasWeakFDerivOn volume Ω ξ Dξ)
+    (hη : LocallyIntegrableOn η Ω)
+    (hae : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z) :
+    IsWeakCRSolution 2 Ω J DJ S ξ η := by
+  have hloc := Ω.isOpen.isLocallyClosed
+  have hξ2 : MemLpLoc (2 : ℝ≥0) Ω ξ :=
+    hξ1.memLpLoc_of_inv_sub_inv_le le_rfl one_le_two (by norm_num)
+  have hp2 : p⁻¹ + (2 : ℝ≥0∞)⁻¹ < 1 := ENNReal.inv_add_inv_lt_one_of_two_lt hp le_rfl
+  have hc : IsSobolevCRCoefficients p Ω J DJ S :=
+    ⟨hDJ, hJ.memLpLoc, hJ.memLpLoc_of_hasWeakFDerivOn hDJ, hS⟩
+  have hDξ_one : MemLpLoc (1 : ℝ≥0) Ω Dξ := hξ1.memLpLoc_of_hasWeakFDerivOn hDξ
+  have hJDξI_loc : LocallyIntegrableOn (fun z => J z (Dξ z I)) Ω :=
+    (hJ.memLpLoc_top hp).locallyIntegrableOn_clm_apply
+      (hDξ_one.clm_comp (ContinuousLinearMap.apply ℝ V I)) (by simp) hloc
+  have hJξ := hasWeakLineDerivOn_clm_apply_of_memWkpLoc_one hp hp_top hJ hDJ hξ1 hDξ I
+  refine isWeakCRSolution_iff.2
+    ⟨hξ2, hη, fun φ => ⟨hc.integrable_inner_crFormalAdjoint hp2.le hξ2 φ, ?_⟩⟩
+  have hDJ_I : MemLpLoc p Ω (fun z => DJ z I) :=
+    hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)
+  have hA := φ.integrable_inner (hDJ_I.locallyIntegrableOn_clm_apply hξ2 hp2.le hloc)
+  have hB := φ.integrable_inner hJDξI_loc
+  have hC := φ.integrable_inner (hS.locallyIntegrableOn_clm_apply hξ2 hp2.le hloc)
+  have hD := φ.integrable_inner (hDξ.hasWeakLineDerivOn 1).locallyIntegrableOn_deriv
+  have hξ_one : ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ = -∫ z, ⟪(φ : ℂ → V) z, Dξ z 1⟫_ℝ := by
+    simpa only [TestFunction.lineDeriv_eq_fderiv] using
+      (hDξ.hasWeakLineDerivOn 1).integral_inner_lineDeriv_eq_neg φ
+  have hJξI : ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z I, J z (ξ z)⟫_ℝ =
+      -((∫ z, ⟪(φ : ℂ → V) z, DJ z I (ξ z)⟫_ℝ) + ∫ z, ⟪(φ : ℂ → V) z, J z (Dξ z I)⟫_ℝ) := by
+    have h := hJξ.integral_inner_lineDeriv_eq_neg φ
+    simp only [TestFunction.lineDeriv_eq_fderiv, inner_add_right] at h
+    exact h.trans (congrArg Neg.neg (integral_add hA hB))
+  have hrhs : ∫ z, ⟪(φ : ℂ → V) z, η z⟫_ℝ =
+      (∫ z, ⟪(φ : ℂ → V) z, Dξ z 1⟫_ℝ) + (∫ z, ⟪(φ : ℂ → V) z, J z (Dξ z I)⟫_ℝ) +
+        ∫ z, ⟪(φ : ℂ → V) z, S z (ξ z)⟫_ℝ := by
+    have heq : ∫ z, ⟪(φ : ℂ → V) z, η z⟫_ℝ =
+        ∫ z, ⟪(φ : ℂ → V) z, Dξ z 1 + J z (Dξ z I) + S z (ξ z)⟫_ℝ := by
+      refine integral_congr_ae ?_
+      filter_upwards [ae_imp_of_ae_restrict hae] with z hz
+      by_cases hzΩ : z ∈ (Ω : Set ℂ)
+      · rw [hz hzΩ]
+      · simp [image_eq_zero_of_notMem_tsupport fun h => hzΩ (φ.tsupport_subset h)]
+    have hDB : Integrable
+        (fun z => ⟪(φ : ℂ → V) z, Dξ z 1⟫_ℝ + ⟪(φ : ℂ → V) z, J z (Dξ z I)⟫_ℝ) := hD.add hB
+    rw [heq]
+    simp only [inner_add_right]
+    rw [integral_add hDB hC, integral_add hD hB]
+  rw [hc.integral_inner_crFormalAdjoint_eq_terms hp2.le hξ2 φ, hrhs, hξ_one, hJξI]
+  ring
+
 end InnerProduct
 
 /-! ### Transfer to finite-dimensional real normed spaces -/
@@ -488,13 +592,14 @@ variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimension
   {Ω : Opens ℂ} {p q s : ℝ≥0∞}
 
 /-- **Interior regularity for the almost-everywhere linear Cauchy–Riemann equation on any
-finite-dimensional real normed space.** Let `2 < p < ∞`, `1/p + 1/q < 1`, `1 < s ≤ p`, `1 ≤ ℓ`,
-`k ≤ ℓ` and `k ≤ m` (`q = ⊤` is included). If `J ∈ W^{ℓ,p}_loc(Ω; W →L[ℝ] W)` satisfies `J² = -1`
-almost everywhere on `Ω`, `S ∈ W^{m,p}_loc(Ω; W →L[ℝ] W)`, `ξ ∈ W^{1,q}_loc(Ω; W)` has a weak
-derivative `Dξ` satisfying `Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z` almost everywhere on `Ω`, and
-`η ∈ W^{k,s}_loc(Ω; W)`, then `ξ ∈ W^{k+1,s}_loc(Ω; W)`. -/
+finite-dimensional real normed space.** Let `2 < p < ∞`, `1 ≤ q ≤ ∞`, `1 < s ≤ p`, `1 ≤ ℓ`,
+`k ≤ ℓ` and `k ≤ m` (`q = 1` and `q = ⊤` are included). If `J ∈ W^{ℓ,p}_loc(Ω; W →L[ℝ] W)`
+satisfies `J² = -1` almost everywhere on `Ω`, `S ∈ W^{m,p}_loc(Ω; W →L[ℝ] W)`,
+`ξ ∈ W^{1,q}_loc(Ω; W)` has a weak derivative `Dξ` satisfying
+`Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z` almost everywhere on `Ω`, and `η ∈ W^{k,s}_loc(Ω; W)`,
+then `ξ ∈ W^{k+1,s}_loc(Ω; W)`. -/
 theorem memWkpLoc_of_ae_cauchyRiemann {k ℓ m : ℕ} {J S : ℂ → W →L[ℝ] W} {ξ η : ℂ → W}
-    {Dξ : ℂ → ℂ →L[ℝ] W} (hp : 2 < p) (hp_top : p ≠ ⊤) (hpq : p⁻¹ + q⁻¹ < 1)
+    {Dξ : ℂ → ℂ →L[ℝ] W} (hp : 2 < p) (hp_top : p ≠ ⊤) (hq : 1 ≤ q)
     (hs1 : 1 < s) (hsp : s ≤ p) (hℓ : 1 ≤ ℓ) (hkℓ : k ≤ ℓ) (hkm : k ≤ m)
     (hJ : MemWkpLoc p Ω ℓ J)
     (hJsq : ∀ᵐ z ∂volume.restrict Ω, (J z).comp (J z) = -ContinuousLinearMap.id ℝ W)
@@ -502,10 +607,7 @@ theorem memWkpLoc_of_ae_cauchyRiemann {k ℓ m : ℕ} {J S : ℂ → W →L[ℝ]
     (hae : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z)
     (hη : MemWkpLoc s Ω k η) :
     MemWkpLoc s Ω (k + 1) ξ := by
-  let q₀ : ℝ≥0∞ := min q p
-  have hq₀_top : q₀ ≠ ⊤ := ne_top_of_le_ne_top hp_top (min_le_right q p)
-  have hpq₀ : p⁻¹ + q₀⁻¹ < 1 := ENNReal.inv_add_inv_min_lt_one hp hpq
-  have hξ₀ : MemWkpLoc q₀ Ω 1 ξ := hξ.mono_exponent (min_le_left q p)
+  have hp2 : p⁻¹ + (2 : ℝ≥0∞)⁻¹ < 1 := ENNReal.inv_add_inv_lt_one_of_two_lt hp le_rfl
   let e : W ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ W)) := toEuclidean
   let eEnd := e.arrowCongr e
   obtain ⟨DJ, hDJ, -⟩ := (hJ.of_le hℓ).exists_weakFDeriv_of_isOpen
@@ -524,31 +626,28 @@ theorem memWkpLoc_of_ae_cauchyRiemann {k ℓ m : ℕ} {J S : ℂ → W →L[ℝ]
     have hx : J z (J z (e.symm x)) = -e.symm x := by simpa using congr($hz (e.symm x))
     simp [J', eEnd, hx]
   have hS' : MemWkpLoc p Ω m S' := eEnd.comp_memWkpLoc_iff.2 hS
-  have hξ' : MemWkpLoc q₀ Ω 1 ξ' := e.comp_memWkpLoc_iff.2 hξ₀
+  have hξ'1 : MemWkpLoc (1 : ℝ≥0) Ω 1 ξ' := (e.comp_memWkpLoc_iff.2 hξ).mono_exponent hq
   have hDξ' : HasWeakFDerivOn volume Ω ξ' Dξ' := hDξ.clm_comp e.toContinuousLinearMap
-  have hDξ'q₀ : MemLpLoc q₀ Ω Dξ' := hξ'.memLpLoc_of_hasWeakFDerivOn hDξ'
   have hη' : MemWkpLoc s Ω k η' := e.comp_memWkpLoc_iff.2 hη
   have hη'_loc : LocallyIntegrableOn η' Ω :=
     hη'.memLpLoc.locallyIntegrableOn hs1.le Ω.isOpen.isLocallyClosed
-  have hc' : IsSobolevCRCoefficients p Ω J' DJ' S' :=
-    ⟨hDJ', hJ'.memLpLoc, (hJ'.of_le hℓ).memLpLoc_of_hasWeakFDerivOn hDJ', hS'.memLpLoc⟩
-  have hsol' : IsWeakCRSolution q₀ Ω J' DJ' S' ξ' η' := by
-    refine (hc'.isWeakCRSolution_iff_ae hpq₀.le hp_top hq₀_top hDξ' hξ'.memLpLoc hDξ'q₀
-      hη'_loc).2 ?_
+  have hae' : ∀ᵐ z ∂volume.restrict Ω, Dξ' z 1 + J' z (Dξ' z I) + S' z (ξ' z) = η' z := by
     filter_upwards [hae] with z hz
-    have he := congrArg e hz
-    simpa [J', S', ξ', Dξ', η', eEnd, map_add] using he
+    simpa [J', S', ξ', Dξ', η', eEnd, map_add] using congrArg e hz
+  have hsol' : IsWeakCRSolution 2 Ω J' DJ' S' ξ' η' :=
+    isWeakCRSolution_two_of_memWkpLoc_one hp hp_top (hJ'.of_le hℓ) hDJ' hS'.memLpLoc hξ'1 hDξ'
+      hη'_loc hae'
   exact e.comp_memWkpLoc_iff.1
-    (hsol'.memWkpLoc_of_memWkpLoc hp hp_top hpq₀ hs1 hsp hℓ hkℓ hkm hJ' hDJ' hJ'sq hS' hη')
+    (hsol'.memWkpLoc_of_memWkpLoc hp hp_top hp2 hs1 hsp hℓ hkℓ hkm hJ' hDJ' hJ'sq hS' hη')
 
 /-- **Interior Sobolev regularity for homogeneous linear Cauchy–Riemann solutions.** If `2 < p < ∞`,
-`1/p + 1/q < 1` (`q = ⊤` is included), `1 ≤ ℓ`, `k ≤ ℓ`, `k ≤ m`, `J ∈ W^{ℓ,p}_loc(Ω)` with
-`J² = -1` almost everywhere on `Ω`, `S ∈ W^{m,p}_loc(Ω)`, and `ξ` satisfies
+`1 ≤ q ≤ ∞` (`q = 1` and `q = ⊤` are included), `1 ≤ ℓ`, `k ≤ ℓ`, `k ≤ m`, `J ∈ W^{ℓ,p}_loc(Ω)`
+with `J² = -1` almost everywhere on `Ω`, `S ∈ W^{m,p}_loc(Ω)`, and `ξ` satisfies
 `IsWeakLinearCauchyRiemannOn q Ω J S ξ`, then `ξ ∈ W^{k+1,p}_loc(Ω)` (and when `q ≤ p`,
 `IsWeakLinearCauchyRiemannOn.memWkpLoc_of_le` gives `ξ ∈ W^{k+1,q}_loc(Ω)`). -/
 theorem IsWeakLinearCauchyRiemannOn.memWkpLoc {k ℓ m : ℕ} {J S : ℂ → W →L[ℝ] W} {ξ : ℂ → W}
     (h : IsWeakLinearCauchyRiemannOn q Ω J S ξ) (hp : 2 < p) (hp_top : p ≠ ⊤)
-    (hpq : p⁻¹ + q⁻¹ < 1) (hℓ : 1 ≤ ℓ) (hkℓ : k ≤ ℓ) (hkm : k ≤ m)
+    (hq : 1 ≤ q) (hℓ : 1 ≤ ℓ) (hkℓ : k ≤ ℓ) (hkm : k ≤ m)
     (hJ : MemWkpLoc p Ω ℓ J)
     (hJsq : ∀ᵐ z ∂volume.restrict Ω, (J z).comp (J z) = -ContinuousLinearMap.id ℝ W)
     (hS : MemWkpLoc p Ω m S) :
@@ -556,30 +655,29 @@ theorem IsWeakLinearCauchyRiemannOn.memWkpLoc {k ℓ m : ℕ} {J S : ℂ → W �
   obtain ⟨-, hξq, D, hD, hDq, hae⟩ := isWeakLinearCauchyRiemannOn_iff_of_isOpen.1 h
   have hξ1 : MemWkpLoc q Ω 1 ξ :=
     memWkpLoc_succ_iff_of_isOpen.2 ⟨hξq, D, hD, memWkpLoc_zero_iff.2 hDq⟩
-  exact memWkpLoc_of_ae_cauchyRiemann hp hp_top hpq (ENNReal.one_lt_two.trans hp)
+  exact memWkpLoc_of_ae_cauchyRiemann hp hp_top hq (ENNReal.one_lt_two.trans hp)
     le_rfl hℓ hkℓ hkm hJ hJsq hS hξ1 hD hae memWkpLoc_zero_fun
 
 /-- **Interior Sobolev regularity at the solution's exponent for homogeneous linear solutions.** -/
 theorem IsWeakLinearCauchyRiemannOn.memWkpLoc_of_le {k ℓ m : ℕ} {J S : ℂ → W →L[ℝ] W} {ξ : ℂ → W}
     (h : IsWeakLinearCauchyRiemannOn q Ω J S ξ) (hp : 2 < p) (hp_top : p ≠ ⊤)
-    (hpq : p⁻¹ + q⁻¹ < 1) (hqp : q ≤ p) (hℓ : 1 ≤ ℓ) (hkℓ : k ≤ ℓ) (hkm : k ≤ m)
+    (hq : 1 ≤ q) (hqp : q ≤ p) (hℓ : 1 ≤ ℓ) (hkℓ : k ≤ ℓ) (hkm : k ≤ m)
     (hJ : MemWkpLoc p Ω ℓ J)
     (hJsq : ∀ᵐ z ∂volume.restrict Ω, (J z).comp (J z) = -ContinuousLinearMap.id ℝ W)
     (hS : MemWkpLoc p Ω m S) :
     MemWkpLoc q Ω (k + 1) ξ :=
-  (h.memWkpLoc hp hp_top hpq hℓ hkℓ hkm hJ hJsq hS).mono_exponent hqp
+  (h.memWkpLoc hp hp_top hq hℓ hkℓ hkm hJ hJsq hS).mono_exponent hqp
 
 /-- **`C^n` interior regularity of homogeneous linear Cauchy–Riemann solutions.** For every
-`1 < q ≤ ∞` and `n : ℕ∞`, if `J` and `S` are `C^n` on `Ω` with `J² = -1` on `Ω` and `ξ` satisfies
+`1 ≤ q ≤ ∞` and `n : ℕ∞`, if `J` and `S` are `C^n` on `Ω` with `J² = -1` on `Ω` and `ξ` satisfies
 `IsWeakLinearCauchyRiemannOn q Ω J S ξ`, then `ξ` is `C^n` on `Ω`. -/
 theorem IsWeakLinearCauchyRiemannOn.contDiffOn {n : ℕ∞} {J S : ℂ → W →L[ℝ] W} {ξ : ℂ → W}
-    (h : IsWeakLinearCauchyRiemannOn q Ω J S ξ) (hq : 1 < q)
+    (h : IsWeakLinearCauchyRiemannOn q Ω J S ξ) (hq : 1 ≤ q)
     (hJ : ContDiffOn ℝ n J Ω)
     (hJsq : ∀ z ∈ (Ω : Set ℂ), (J z).comp (J z) = -ContinuousLinearMap.id ℝ W)
     (hS : ContDiffOn ℝ n S Ω) :
     ContDiffOn ℝ n ξ Ω := by
-  obtain ⟨p, hp, hp_top, hpq⟩ := ENNReal.exists_two_lt_ne_top_and_inv_add_inv_lt_one hq
-  lift p to ℝ≥0 using hp_top
+  have hp : (2 : ℝ≥0∞) < (3 : ℝ≥0) := by norm_num
   have hJsq_ae : ∀ᵐ z ∂volume.restrict Ω, (J z).comp (J z) = -ContinuousLinearMap.id ℝ W :=
     (ae_restrict_iff' Ω.isOpen.measurableSet).2 (.of_forall hJsq)
   refine contDiffOn_iff_forall_nat_le.2 fun k hk => ?_
@@ -587,10 +685,12 @@ theorem IsWeakLinearCauchyRiemannOn.contDiffOn {n : ℕ∞} {J S : ℂ → W →
   · exact contDiffOn_zero.2 h.continuousOn
   · have hmax_le : ((max 1 k : ℕ) : ℕ∞) ≤ n := by
       simpa only [Nat.max_eq_right (Nat.one_le_iff_ne_zero.2 hk0)] using hk
-    have hJp : MemWkpLoc p Ω (max 1 k) J := (hJ.of_le (mod_cast hmax_le)).memWkpLoc subset_rfl
-    have hSp : MemWkpLoc p Ω (max 1 k) S := (hS.of_le (mod_cast hmax_le)).memWkpLoc subset_rfl
-    have hξ_sob : MemWkpLoc p Ω (k + 1) ξ :=
-      h.memWkpLoc hp ENNReal.coe_ne_top hpq (le_max_left 1 k) (le_max_right 1 k)
+    have hJp : MemWkpLoc (3 : ℝ≥0) Ω (max 1 k) J :=
+      (hJ.of_le (mod_cast hmax_le)).memWkpLoc subset_rfl
+    have hSp : MemWkpLoc (3 : ℝ≥0) Ω (max 1 k) S :=
+      (hS.of_le (mod_cast hmax_le)).memWkpLoc subset_rfl
+    have hξ_sob : MemWkpLoc (3 : ℝ≥0) Ω (k + 1) ξ :=
+      h.memWkpLoc hp ENNReal.coe_ne_top hq (le_max_left 1 k) (le_max_right 1 k)
         (le_max_right 1 k) hJp hJsq_ae hSp
     obtain ⟨g, hg, hξg⟩ := hξ_sob.exists_contDiffOn_ae_eq hp
     exact hg.congr (Measure.eqOn_open_of_ae_eq hξg Ω.isOpen h.continuousOn hg.continuousOn)

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Complex.Wirtinger.DivergenceLaplace
+import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.Local.Multiplication
@@ -68,39 +69,7 @@ open scoped ContDiff Convolution Distributions ENNReal InnerProductSpace NNReal 
 
 namespace TauCeti
 
-/-! ### Weakly differentiating `J² = -1` and passing mollified pairings to the limit -/
-
-section NormedSpace
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {Ω : Opens ℂ} {p : ℝ≥0∞} {J : ℂ → V →L[ℝ] V} {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V}
-
-/-- Differentiating `J ∘ J = c` weakly on `Ω` for a constant operator `c` gives
-`(DJ · v) ∘ J + J ∘ (DJ · v) = 0` for all `v ∈ ℂ` almost everywhere on `Ω`. The endpoint `p = ⊤`
-is included by passing locally to `min p 3`. -/
-theorem HasWeakFDerivOn.ae_apply_add_apply_eq_zero_of_comp_self_eq_const
-    {c : V →L[ℝ] V} (hDJ : HasWeakFDerivOn volume Ω J DJ) (hp : 2 < p) (hJ : MemWkpLoc p Ω 1 J)
-    (hJsq : ∀ᵐ z ∂volume.restrict Ω, (J z).comp (J z) = c) :
-    ∀ᵐ z ∂volume.restrict Ω, ∀ (v : ℂ) (w : V), DJ z v (J z w) + J z (DJ z v w) = 0 := by
-  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
-  let p₀ : ℝ≥0 := (min p 3).toNNReal
-  have hp₀_coe : (p₀ : ℝ≥0∞) = min p 3 :=
-    ENNReal.coe_toNNReal (ne_top_of_le_ne_top ENNReal.ofNat_ne_top (min_le_right p 3))
-  have hp₀ : 2 < (p₀ : ℝ≥0∞) :=
-    hp₀_coe ▸ lt_min hp (by exact_mod_cast (by norm_num : 2 < 3))
-  have hJ₀ : MemWkpLoc p₀ Ω 1 J := hJ.mono_exponent (hp₀_coe.le.trans (min_le_left p 3))
-  have hp₀' : 2 < p₀ := by exact_mod_cast hp₀
-  have hp₀1 : 1 < p₀ := one_lt_two.trans hp₀'
-  have hDJp₀ : MemLpLoc p₀ Ω DJ := hJ₀.memLpLoc_of_hasWeakFDerivOn hDJ
-  have hprod := hDJ.bilin_of_memLpLoc (ContinuousLinearMap.compL ℝ V V V) hp₀' hp₀1 le_rfl
-    ((hJ₀.memLpLoc_top hp₀).mono_exponent le_top) hDJp₀ hDJ hJ₀.memLpLoc hDJp₀
-  have hconst : HasWeakFDerivOn volume Ω (fun _ : ℂ => c) 0 :=
-    hasWeakFDerivOn_iff.2 fun u => by
-      simpa using hasWeakLineDerivOn_const (μ := volume) (Ω := Ω) (v := u) c
-  filter_upwards [(hprod.congr_ae hJsq).ae_eq hconst] with z hz v w
-  simpa using congr($(congr($hz v)) w)
-
-end NormedSpace
+/-! ### Passing mollified pairings to the limit -/
 
 section MollifiedPairing
 
@@ -121,11 +90,12 @@ private theorem tendsto_integral_mul_inner_normed_convolution_indicator
       atTop (𝓝 (∫ z, (α : ℂ → ℝ) z * ⟪v, G z (w z)⟫_ℝ)) := by
   have hαw_on := memLpLoc_iff.1 (hw.continuousOn_smul α.contDiff.continuous.continuousOn) _
     α.tsupport_subset α.hasCompactSupport.isCompact
+  have hind : (fun z => (α : ℂ → ℝ) z • w z) =
+      (tsupport (α : ℂ → ℝ)).indicator (fun z => (α : ℂ → ℝ) z • w z) :=
+    (Set.indicator_eq_self.2
+      ((Function.support_smul_subset_left (α : ℂ → ℝ) w).trans (subset_tsupport _))).symm
   have hαw : MemLp (fun z => (α : ℂ → ℝ) z • w z) r' volume := by
-    rw [show (fun z => (α : ℂ → ℝ) z • w z) =
-      (tsupport (α : ℂ → ℝ)).indicator (fun z => (α : ℂ → ℝ) z • w z) from
-      (Set.indicator_eq_self.2
-        ((Function.support_smul_subset_left (α : ℂ → ℝ) w).trans (subset_tsupport _))).symm]
+    rw [hind]
     exact (memLp_indicator_iff_restrict
       (isClosed_tsupport (α : ℂ → ℝ)).measurableSet.nullMeasurableSet).2 hαw_on
   let B : V →L[ℝ] (V →L[ℝ] V) →L[ℝ] ℝ :=
@@ -142,6 +112,66 @@ private theorem tendsto_integral_mul_inner_normed_convolution_indicator
   · simp only [indicator_of_mem (hαW' hz)]
   · simp only [image_eq_zero_of_notMem_tsupport hz, zero_mul]
 
+/-- Pairing `(φ n).normed volume ⋆ (W'.indicator G)` against `(α : ℂ → ℝ) • w` for a bounded
+operator field `W'.indicator G ∈ L^∞ ∩ L¹_loc` and a locally integrable field `w` on `Ω` converges
+along a bump sequence with `rOut → 0` and bounded outer-to-inner radius ratio. -/
+private theorem tendsto_integral_mul_inner_normed_convolution_indicator_of_locallyIntegrableOn
+    {φ : ℕ → ContDiffBump (0 : ℂ)} (hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0))
+    (hφ_ratio : ∀ᶠ n in atTop, (φ n).rOut ≤ 2 * (φ n).rIn)
+    {W' : Set ℂ} {G : ℂ → V →L[ℝ] V} (hG_top : MemLp (W'.indicator G) ∞ volume)
+    (hG_loc : LocallyIntegrable (W'.indicator G) volume)
+    (α : 𝓓(Ω, ℝ)) (hαW' : tsupport (α : ℂ → ℝ) ⊆ W')
+    {w : ℂ → V} (hw : LocallyIntegrableOn w Ω) (v : V) :
+    Tendsto (fun n => ∫ z, (α : ℂ → ℝ) z *
+        ⟪v, (((φ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume]
+          (W'.indicator G)) z) (w z)⟫_ℝ)
+      atTop (𝓝 (∫ z, (α : ℂ → ℝ) z * ⟪v, G z (w z)⟫_ℝ)) := by
+  let U := W'.indicator G
+  let U_lp := hG_top.toLp U
+  let Jn (n : ℕ) := (φ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] U
+  have hαw : Integrable (fun z => (α : ℂ → ℝ) z • w z) volume := α.integrable_smul hw
+  have hJn_cont (n : ℕ) : Continuous (Jn n) :=
+    ((φ n).hasCompactSupport_normed.contDiff_convolution_left _ (φ n).contDiff_normed
+      hG_loc : ContDiff ℝ ∞ (Jn n)).continuous
+  have hJn_norm (n : ℕ) (z : ℂ) : ‖Jn n z‖ ≤ ‖U_lp‖ := by
+    have heq : Jn n z = ((φ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume]
+        (U_lp : ℂ → V →L[ℝ] V)) z := by
+      refine integral_congr_ae ?_
+      filter_upwards [(Measure.measurePreserving_sub_left volume z).quasiMeasurePreserving.ae
+        hG_top.coeFn_toLp] with y hy
+      dsimp only [ContinuousLinearMap.lsmul_apply, U, U_lp]
+      rw [hy]
+    rw [heq]
+    simpa only [Real.norm_of_nonneg ((φ n).nonneg_normed _), (φ n).integral_normed, one_mul] using
+      MeasureTheory.norm_convolution_lsmul_le_integral_norm_mul_norm (φ n).integrable_normed U_lp z
+  have hmeas (n : ℕ) : AEStronglyMeasurable
+      (fun z => (α : ℂ → ℝ) z * ⟪v, Jn n z (w z)⟫_ℝ) volume := by
+    have hm := (innerSL ℝ v).continuous.comp_aestronglyMeasurable
+      ((ContinuousLinearMap.id ℝ (V →L[ℝ] V)).continuous₂.comp_aestronglyMeasurable₂
+        (hJn_cont n).aestronglyMeasurable hαw.aestronglyMeasurable)
+    exact hm.congr (.of_forall fun z => by simp [map_smul])
+  have hbound (n : ℕ) : ∀ᵐ z ∂volume,
+      ‖(α : ℂ → ℝ) z * ⟪v, Jn n z (w z)⟫_ℝ‖ ≤ ‖v‖ * ‖U_lp‖ * ‖(α : ℂ → ℝ) z • w z‖ :=
+    .of_forall fun z => by
+      have h1 : (α : ℂ → ℝ) z * ⟪v, Jn n z (w z)⟫_ℝ = ⟪v, Jn n z ((α : ℂ → ℝ) z • w z)⟫_ℝ := by
+        rw [map_smul, inner_smul_right]
+      rw [h1]
+      calc ‖⟪v, Jn n z ((α : ℂ → ℝ) z • w z)⟫_ℝ‖
+          ≤ ‖v‖ * ‖Jn n z ((α : ℂ → ℝ) z • w z)‖ := norm_inner_le_norm _ _
+        _ ≤ ‖v‖ * (‖Jn n z‖ * ‖(α : ℂ → ℝ) z • w z‖) := by gcongr; exact (Jn n z).le_opNorm _
+        _ ≤ ‖v‖ * (‖U_lp‖ * ‖(α : ℂ → ℝ) z • w z‖) := by gcongr; exact hJn_norm n z
+        _ = ‖v‖ * ‖U_lp‖ * ‖(α : ℂ → ℝ) z • w z‖ := (mul_assoc _ _ _).symm
+  have hae : ∀ᵐ z ∂volume, Tendsto (fun n => (α : ℂ → ℝ) z * ⟪v, Jn n z (w z)⟫_ℝ) atTop
+      (𝓝 ((α : ℂ → ℝ) z * ⟪v, G z (w z)⟫_ℝ)) := by
+    filter_upwards [ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable hφ hφ_ratio
+      hG_loc] with z hz
+    by_cases hzα : z ∈ tsupport (α : ℂ → ℝ)
+    · have hUG : U z = G z := indicator_of_mem (hαW' hzα) _
+      exact tendsto_const_nhds.mul (((innerSL ℝ v).continuous.tendsto _).comp
+        (((ContinuousLinearMap.apply ℝ V (w z)).continuous.tendsto _).comp (hUG ▸ hz)))
+    · simp [image_eq_zero_of_notMem_tsupport hzα]
+  exact tendsto_integral_of_dominated_convergence _ hmeas (hαw.norm.const_mul _) hbound hae
+
 /-- Local mollification of a bounded `W^{1,p}_loc(Ω)` operator field near a compact subset `K ⊆ Ω`:
 produces `C^∞` maps `Jn n` whose pairings and derivative pairings against fields supported in `K`
 converge to those of `J` and `DJ`. -/
@@ -151,8 +181,8 @@ private theorem exists_contDiff_tendsto_integral_mul_inner_of_hasWeakFDerivOn
     {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     ∃ Jn : ℕ → ℂ → V →L[ℝ] V,
       (∀ n, ContDiff ℝ ∞ (Jn n)) ∧
-      (∀ {s : ℝ≥0∞}, 1 < s → s ≠ ⊤ → ∀ (α : 𝓓(Ω, ℝ)), tsupport (α : ℂ → ℝ) ⊆ K →
-        ∀ {w : ℂ → V}, MemLpLoc s Ω w → ∀ (v : V),
+      (∀ (α : 𝓓(Ω, ℝ)), tsupport (α : ℂ → ℝ) ⊆ K →
+        ∀ {w : ℂ → V}, LocallyIntegrableOn w Ω → ∀ (v : V),
           Tendsto (fun n => ∫ z, (α : ℂ → ℝ) z * ⟪v, Jn n z (w z)⟫_ℝ) atTop
             (𝓝 (∫ z, (α : ℂ → ℝ) z * ⟪v, J z (w z)⟫_ℝ))) ∧
       (∀ (u : ℂ) (α : 𝓓(Ω, ℝ)), tsupport (α : ℂ → ℝ) ⊆ K →
@@ -161,7 +191,18 @@ private theorem exists_contDiff_tendsto_integral_mul_inner_of_hasWeakFDerivOn
             (𝓝 (∫ z, (α : ℂ → ℝ) z * ⟪v, DJ z u (w z)⟫_ℝ))) := by
   obtain ⟨W, hKW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
   obtain ⟨W', hWW', hW'Ω, hW'c⟩ := Opens.exists_between_and_isCompact_closure hWc hWΩ
-  obtain ⟨φ, hφ, hsupp⟩ := ContDiffBump.exists_seq_sub_tsupport_subset (μ := volume) hWc hWW'
+  obtain ⟨δ, hδ, hδW'⟩ := hWc.exists_cthickening_subset_open W'.isOpen hWW'
+  let φ : ℕ → ContDiffBump (0 : ℂ) := ContDiffBump.shrinking hδ
+  have hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) := ContDiffBump.tendsto_rOut_shrinking hδ
+  have hφ_ratio : ∀ᶠ n in atTop, (φ n).rOut ≤ 2 * (φ n).rIn :=
+    .of_forall fun n => (ContDiffBump.rOut_shrinking_eq_two_mul_rIn hδ n).le
+  have hsupp (n : ℕ) (x : ℂ) (hx : x ∈ (W : Set ℂ)) (y : ℂ)
+      (hy : y ∈ tsupport ((φ n).normed volume)) : x - y ∈ W' := by
+    rw [(φ n).tsupport_normed_eq, Metric.mem_closedBall, dist_zero_right,
+      ContDiffBump.rOut_shrinking] at hy
+    refine hδW' (Metric.mem_cthickening_of_dist_le _ x δ _ (subset_closure hx) ?_)
+    rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
+    exact hy.trans (div_le_self hδ.le (by simp))
   have hW'm := W'.isOpen.measurableSet.nullMeasurableSet (μ := volume)
   have hJW'_top : MemLp J ∞ (volume.restrict W') :=
     (memLpLoc_iff.1 hJi _ hW'Ω hW'c).mono_measure (Measure.restrict_mono subset_closure le_rfl)
@@ -177,30 +218,28 @@ private theorem exists_contDiff_tendsto_integral_mul_inner_of_hasWeakFDerivOn
   have hJn_smooth (n : ℕ) : ContDiff ℝ ∞ (Jn n) :=
     (φ n).hasCompactSupport_normed.contDiff_convolution_left _ (φ n).contDiff_normed
       ((hU_mem p).locallyIntegrable hp1.le)
-  refine ⟨Jn, hJn_smooth, fun {s} hs1 _ α hαK {w} hw v => ?_, fun u α hαK {w} hw v => ?_⟩
-  · have : s.conjExponent.HolderConjugate s := (ENNReal.HolderConjugate.conjExponent hs1.le).symm
-    have : Fact (1 ≤ s.conjExponent) := ⟨ENNReal.HolderConjugate.one_le s.conjExponent s⟩
-    have : Fact (1 ≤ s) := ⟨hs1.le⟩
-    exact tendsto_integral_mul_inner_normed_convolution_indicator
-      (((ENNReal.HolderConjugate.lt_top_iff_one_lt s.conjExponent s).2 hs1).ne) hφ
-      (hU_mem s.conjExponent) α ((hαK.trans hKW).trans (subset_closure.trans hWW')) hw v
-  · have : Fact (1 ≤ p) := ⟨hp1.le⟩
-    have : p.HolderConjugate p.conjExponent := .conjExponent hp1.le
-    have : Fact (1 ≤ p.conjExponent) := ⟨ENNReal.HolderConjugate.one_le p.conjExponent p⟩
-    have hU'u : MemLp ((W' : Set ℂ).indicator fun z => DJ z u) p volume :=
-      (memLp_indicator_iff_restrict hW'm).2
-        ((memLpLoc_iff.1 (hDJp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) u)) _ hW'Ω
-          hW'c).mono_measure (Measure.restrict_mono subset_closure le_rfl))
-    refine (tendsto_integral_mul_inner_normed_convolution_indicator hp_top hφ hU'u α
-      ((hαK.trans hKW).trans (subset_closure.trans hWW')) hw v).congr fun n =>
-        integral_congr_ae (.of_forall fun z => ?_)
-    by_cases hz : z ∈ tsupport (α : ℂ → ℝ)
-    · have hDJu := (hDJ.mono (subset_closure.trans hW'Ω)).hasWeakLineDerivOn u
-      rw [hDJu.indicator.convolution_eq_apply_fderiv_convolution
-        (L := ContinuousLinearMap.id ℝ (V →L[ℝ] V)) ((hU_mem p).locallyIntegrable hp1.le)
-        (φ n).contDiff_normed (φ n).hasCompactSupport_normed (hsupp n z (hKW (hαK hz)))]
-      rfl
-    · simp only [image_eq_zero_of_notMem_tsupport hz, zero_mul]
+  refine ⟨Jn, hJn_smooth, fun α hαK {w} hw v =>
+      tendsto_integral_mul_inner_normed_convolution_indicator_of_locallyIntegrableOn hφ hφ_ratio
+        (hU_mem ∞) ((hU_mem p).locallyIntegrable hp1.le) α
+        ((hαK.trans hKW).trans (subset_closure.trans hWW')) hw v,
+    fun u α hαK {w} hw v => ?_⟩
+  have : Fact (1 ≤ p) := ⟨hp1.le⟩
+  have : p.HolderConjugate p.conjExponent := .conjExponent hp1.le
+  have : Fact (1 ≤ p.conjExponent) := ⟨ENNReal.HolderConjugate.one_le p.conjExponent p⟩
+  have hU'u : MemLp ((W' : Set ℂ).indicator fun z => DJ z u) p volume :=
+    (memLp_indicator_iff_restrict hW'm).2
+      ((memLpLoc_iff.1 (hDJp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) u)) _ hW'Ω
+        hW'c).mono_measure (Measure.restrict_mono subset_closure le_rfl))
+  refine (tendsto_integral_mul_inner_normed_convolution_indicator hp_top hφ hU'u α
+    ((hαK.trans hKW).trans (subset_closure.trans hWW')) hw v).congr fun n =>
+      integral_congr_ae (.of_forall fun z => ?_)
+  by_cases hz : z ∈ tsupport (α : ℂ → ℝ)
+  · have hDJu := (hDJ.mono (subset_closure.trans hW'Ω)).hasWeakLineDerivOn u
+    rw [hDJu.indicator.convolution_eq_apply_fderiv_convolution
+      (L := ContinuousLinearMap.id ℝ (V →L[ℝ] V)) ((hU_mem p).locallyIntegrable hp1.le)
+      (φ n).contDiff_normed (φ n).hasCompactSupport_normed (hsupp n z (hKW (hαK hz)))]
+    rfl
+  · simp only [image_eq_zero_of_notMem_tsupport hz, zero_mul]
 
 private noncomputable def adjointApplyCLM (v : V) : (V →L[ℝ] V) →L[ℝ] V :=
   (ContinuousLinearMap.apply ℝ V v).comp
@@ -265,7 +304,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 
 /-- Local mollification of `J ∈ W^{1,p}_loc(Ω)` (`2 < p < ∞`, `1/p + 1/q ≤ 1`) applied in the form
 `(α z) • J_n(z)* v`: produces vector test functions `Ψ n ∈ 𝓓(Ω, V)` whose directional-derivative
-pairings against `w ∈ L^q_loc(Ω)` and value pairings against `w ∈ L^r_loc(Ω)` (`1 < r < ∞`)
+pairings against `w ∈ L^q_loc(Ω)` and value pairings against locally integrable `w` on `Ω`
 converge to the corresponding pairings of `J` and `DJ`. -/
 theorem exists_testFunction_tendsto_integral_inner_of_hasWeakFDerivOn (hp : 2 < p) (hp_top : p ≠ ⊤)
     (hpq : p⁻¹ + q⁻¹ ≤ 1) (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ)
@@ -275,7 +314,7 @@ theorem exists_testFunction_tendsto_integral_inner_of_hasWeakFDerivOn (hp : 2 < 
         Tendsto (fun n => ∫ z, ⟪fderiv ℝ (Ψ n : ℂ → V) z u, w z⟫_ℝ) atTop
           (𝓝 ((∫ z, (∂_{u} α : 𝓓(Ω, ℝ)) z * ⟪v, J z (w z)⟫_ℝ) +
             ∫ z, (α : ℂ → ℝ) z * ⟪v, DJ z u (w z)⟫_ℝ))) ∧
-      (∀ {r : ℝ≥0∞}, 1 < r → r ≠ ⊤ → ∀ {w : ℂ → V}, MemLpLoc r Ω w →
+      (∀ {w : ℂ → V}, LocallyIntegrableOn w Ω →
         Tendsto (fun n => ∫ z, ⟪(Ψ n : ℂ → V) z, w z⟫_ℝ) atTop
           (𝓝 (∫ z, (α : ℂ → ℝ) z * ⟪v, J z (w z)⟫_ℝ))) := by
   have hp1 : 1 < p := ENNReal.one_lt_two.trans hp
@@ -284,18 +323,16 @@ theorem exists_testFunction_tendsto_integral_inner_of_hasWeakFDerivOn (hp : 2 < 
     have : Fact (1 ≤ p) := ⟨hp1.le⟩
     rw [← ENNReal.inv_le_inv, ← ENNReal.HolderConjugate.one_sub_inv p p.conjExponent]
     exact ENNReal.le_sub_of_add_le_left (ENNReal.inv_ne_top.2 (zero_lt_one.trans hp1).ne') hpq
-  have hq_min_gt : 1 < min q p := lt_min hq1 hp1
-  have hq_min_top : min q p ≠ ⊤ := ne_top_of_le_ne_top hp_top (min_le_right q p)
   obtain ⟨Jn, hJn_smooth, hlim_J, hlim_DJ⟩ :=
     exists_contDiff_tendsto_integral_mul_inner_of_hasWeakFDerivOn hp1 hp_top (hJ.memLpLoc_top hp)
       hDJ (hJ.memLpLoc_of_hasWeakFDerivOn hDJ) α.hasCompactSupport.isCompact α.tsupport_subset
   refine ⟨fun n => smulAdjointTestFunction (hJn_smooth n) α v,
-    fun u {w} hw => ?_, fun {r} hr_gt hr_top {w} hw => ?_⟩
-  · exact ((hlim_J hq_min_gt hq_min_top (∂_{u} α) (α.tsupport_lineDerivOp_subset u)
-        (hw.mono_exponent (min_le_left q p)) v).add
+    fun u {w} hw => ?_, fun {w} hw => ?_⟩
+  · exact ((hlim_J (∂_{u} α) (α.tsupport_lineDerivOp_subset u)
+        (hw.locallyIntegrableOn hq1.le Ω.isOpen.isLocallyClosed) v).add
       (hlim_DJ u α Subset.rfl (hw.mono_exponent hp'_le_q) v)).congr fun n =>
         (integral_inner_fderiv_smul_adjoint_eq hq1.le (hJn_smooth n) α v u hw).symm
-  · exact (hlim_J hr_gt hr_top α Subset.rfl hw v).congr fun n =>
+  · exact (hlim_J α Subset.rfl hw v).congr fun n =>
       integral_congr_ae (.of_forall fun z => by simp)
 
 namespace IsWeakCRSolution
@@ -333,7 +370,7 @@ private theorem integral_test_lineDeriv_one (hpq : p⁻¹ + q⁻¹ ≤ 1)
 mollifier radius tends to zero, and simplifying `J² = -1` and `(∂_t J) J + J (∂_t J) = 0` gives the
 `∂_t² ψ` and mixed `∂_t ∂_s ψ` terms of the divergence-form Laplace identity. -/
 private theorem integral_test_mollified_adjoint (hp : 2 < p) (hp_top : p ≠ ⊤)
-    (hpq : p⁻¹ + q⁻¹ ≤ 1) {r₀ : ℝ≥0∞} (hr₀_gt : 1 < r₀) (hr₀_top : r₀ ≠ ⊤)
+    (hpq : p⁻¹ + q⁻¹ ≤ 1) {r₀ : ℝ≥0∞} (hr₀_gt : 1 < r₀)
     (hJ : MemWkpLoc p Ω 1 J) (hJi : MemLpLoc ∞ Ω J)
     (hc : IsSobolevCRCoefficients p Ω J DJ S)
     (hJsq : ∀ᵐ z ∂volume.restrict Ω, (J z).comp (J z) = -ContinuousLinearMap.id ℝ V)
@@ -355,11 +392,13 @@ private theorem integral_test_mollified_adjoint (hp : 2 < p) (hp_top : p ≠ ⊤
     exists_testFunction_tendsto_integral_inner_of_hasWeakFDerivOn hp hp_top hpq hJ
       hc.hasWeakFDerivOn ψt v
   have hlim_lhs := (((hderiv 1 hξq).neg.sub (hderiv I hJξq)).sub
-    (hval hr₀_gt hr₀_top hDJIξ_r₀)).add (hval hr₀_gt hr₀_top hSξ_r₀)
+    (hval (hDJIξ_r₀.locallyIntegrableOn hr₀_gt.le hloc))).add
+      (hval (hSξ_r₀.locallyIntegrableOn hr₀_gt.le hloc))
   have hlhs_eq (n : ℕ) :=
     (hc.integral_inner_crFormalAdjoint_eq_terms hpq hξq (Ψ n)).symm.trans
       (hsol.integral_inner_crFormalAdjoint (Ψ n))
-  have heq₂ := tendsto_nhds_unique (hlim_lhs.congr hlhs_eq) (hval hr₀_gt hr₀_top hη)
+  have heq₂ := tendsto_nhds_unique (hlim_lhs.congr hlhs_eq)
+    (hval (hη.locallyIntegrableOn hr₀_gt.le hloc))
   have hJJ_eq : ∫ z, (∂_{(I : ℂ)} ψt : 𝓓(Ω, ℝ)) z * ⟪v, J z (J z (ξ z))⟫_ℝ =
       -∫ z, (∂_{(I : ℂ)} ψt : 𝓓(Ω, ℝ)) z * ⟪v, ξ z⟫_ℝ := by
     rw [← integral_neg]
@@ -437,10 +476,10 @@ private theorem memLpLoc_laplacian_rhs (hp : 2 < p) (hpqr : p⁻¹ + q⁻¹ ≤ 
   exact ⟨(hη.sub hSξ).add hDJIξ,
     ((hJi.clm_apply hη (by simp)).neg.add (hJi.clm_apply hSξ (by simp))).sub hDJ1ξ⟩
 
-/-- Divergence-form Laplace identity at a fixed common finite exponent `1 < r < ∞` with
+/-- Divergence-form Laplace identity at a fixed common exponent `1 < r` with
 `1/p + 1/q ≤ 1/r`. -/
 private theorem integral_laplacian_smul_eq_of_inv_add_inv_le (hp : 2 < p) (hp_top : p ≠ ⊤)
-    (hr : 1 < r) (hr_top : r ≠ ⊤) (hpqr : p⁻¹ + q⁻¹ ≤ r⁻¹)
+    (hr : 1 < r) (hpqr : p⁻¹ + q⁻¹ ≤ r⁻¹)
     (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ)
     (hJsq : ∀ᵐ z ∂volume.restrict Ω, (J z).comp (J z) = -ContinuousLinearMap.id ℝ V)
     (hS : MemLpLoc p Ω S) (hsol : IsWeakCRSolution q Ω J DJ S ξ η) (hη : MemLpLoc r Ω η)
@@ -475,7 +514,7 @@ private theorem integral_laplacian_smul_eq_of_inv_add_inv_le (hp : 2 < p) (hp_to
   rw [← integral_inner (integrable_laplacian_smul_of_locallyIntegrableOn hξ_loc ψ) v,
     inner_neg_right, ← integral_inner hint_rhs v, integral_inner_laplacian_smul_eq hξ_loc ψ v]
   have heq₁ := hsol.integral_test_lineDeriv_one hpq hc ψ v
-  have heq₂ := hsol.integral_test_mollified_adjoint hp hp_top hpq hr hr_top
+  have heq₂ := hsol.integral_test_mollified_adjoint hp hp_top hpq hr
     hJ hJi hc hJsq hDJI hSξ hDJIξ hη ψ v
   have h1 : Integrable (fun z => ⟪v, fderiv ℝ (ψ : ℂ → ℝ) z 1 • f z⟫_ℝ) :=
     (innerSL ℝ v).integrable_comp (integrable_fderiv_smul_of_locallyIntegrableOn hf_loc ψ 1)
@@ -512,12 +551,10 @@ theorem integral_laplacian_smul_eq (hp : 2 < p) (hp_top : p ≠ ⊤) (hpq : p⁻
   set r₀ : ℝ≥0∞ := min t (min 2 (p⁻¹ + q₁⁻¹)⁻¹)
   have hr₀_gt : 1 < r₀ :=
     lt_min ht (lt_min ENNReal.one_lt_two (by simpa using ENNReal.inv_lt_inv.2 hpq₁))
-  have hr₀_top : r₀ ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofNat_ne_top
-    ((min_le_right _ _).trans (min_le_left _ _))
   have hr₀_le : r₀ ≤ (p⁻¹ + q₁⁻¹)⁻¹ := (min_le_right _ _).trans (min_le_right _ _)
   have hpq₁_r₀ : p⁻¹ + q₁⁻¹ ≤ r₀⁻¹ := by simpa only [inv_inv] using ENNReal.inv_le_inv.2 hr₀_le
   exact (hsol.mono_exponent (min_le_left q p)).integral_laplacian_smul_eq_of_inv_add_inv_le
-    hp hp_top hr₀_gt hr₀_top hpq₁_r₀ hJ hDJ hJsq hS (hη.mono_exponent (min_le_left _ _)) ψ
+    hp hp_top hr₀_gt hpq₁_r₀ hJ hDJ hJsq hS (hη.mono_exponent (min_le_left _ _)) ψ
 
 /-! ### Single Hölder step and order-zero Sobolev iteration -/
 
@@ -536,7 +573,7 @@ theorem memWkpLoc_one_of_inv_add_inv_le (hp : 2 < p) (hp_top : p ≠ ⊤) (hr : 
   have hξ_loc := hsol.memLpLoc.locallyIntegrableOn
     (ENNReal.inv_le_one.1 (le_add_self.trans hpq.le)) Ω.isOpen.isLocallyClosed
   exact memWkpLoc_one_of_forall_integral_laplacian_smul_eq hr hr_top hξ_loc hf hg
-    (hsol.integral_laplacian_smul_eq_of_inv_add_inv_le hp hp_top hr hr_top hpqr hJ hDJ hJsq hS hη)
+    (hsol.integral_laplacian_smul_eq_of_inv_add_inv_le hp hp_top hr hpqr hJ hDJ hJsq hS hη)
 
 /-- Once `ξ` reaches `W^{1,r}_loc` for some `r > 2`, the `L^∞` Sobolev embedding puts `ξ` in
 `L^∞_loc`, and one more application of `memWkpLoc_one_of_inv_add_inv_le` reaches `W^{1,s}_loc`. -/
@@ -612,13 +649,13 @@ private theorem memWkpLoc_one_critical_case {p s r₁ : ℝ≥0} (hp : 2 < (p : 
       (by exact_mod_cast ht_star_pos.ne') (by exact_mod_cast hr₂_pos.ne')).2 <| by
         rw [ht_star_inv, hr₂_coe]
         exact (le_inv_comm₀ (by positivity) (by positivity)).2 (min_le_right _ _)
+  have hr₂_gt2' : (2 : ℝ) < r₂ := hr₂_coe.symm ▸ hr₂_gt2
+  have hr₂_le_s : (r₂ : ℝ) ≤ s := hr₂_coe.trans_le (min_le_left _ _)
   have hξ_r₂ : MemWkpLoc r₂ Ω 1 ξ :=
     (hsol.of_memLpLoc hξ_star).memWkpLoc_one_of_inv_add_inv_le hp ENNReal.coe_ne_top
-      (by exact_mod_cast (show (1 : ℝ) < r₂ by rw [hr₂_coe]; linarith))
-      ENNReal.coe_ne_top hpqr₂ hJ hDJ hJsq hS
-      (hη.mono_exponent
-        (by exact_mod_cast (show (r₂ : ℝ) ≤ s from hr₂_coe.trans_le (min_le_left _ _))))
-  exact memWkpLoc_one_of_two_lt (by exact_mod_cast (hr₂_coe.symm ▸ hr₂_gt2 : (2 : ℝ) < r₂))
+      (by exact_mod_cast one_lt_two.trans hr₂_gt2') ENNReal.coe_ne_top hpqr₂ hJ hDJ hJsq hS
+      (hη.mono_exponent (by exact_mod_cast hr₂_le_s))
+  exact memWkpLoc_one_of_two_lt (by exact_mod_cast hr₂_gt2')
     hp ENNReal.coe_ne_top hs1 hsp hJ hDJ hJsq hS hsol hη hξ_r₂
 
 /-- Finite-exponent Sobolev ladder: if `1/t ≤ n * (1/2 - 1/p)` with `1/p + 1/t < 1`, at most `n`

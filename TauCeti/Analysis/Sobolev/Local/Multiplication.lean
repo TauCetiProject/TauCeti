@@ -36,6 +36,8 @@ Both rest on local bounds that are uniform in the bilinear map.
 * `TauCeti.HasWeakFDerivOn.bilin_of_memLpLoc`: the weak Leibniz rule for the order-one
   product.
 * `TauCeti.MemWkpLoc.bilin_of_memLpLoc_top` and `TauCeti.MemWkpLoc.bilin`: order-one membership.
+* `TauCeti.HasWeakFDerivOn.ae_apply_add_apply_eq_zero_of_comp_self_eq_const`: differentiating
+  `J ∘ J = c` weakly on `Ω` for `J ∈ W^{1,p}_loc` (`p > 2`).
 
 The local bounds behind them, `TauCeti.W1p.exists_eLpNorm_le_of_holderTriple`,
 `TauCeti.W1p.exists_eLpNorm_bilin_le` and `TauCeti.W1p.exists_eLpNorm_bilin_add_eLpNorm_deriv_le`,
@@ -164,5 +166,39 @@ theorem MemWkpLoc.bilin [FiniteDimensional ℝ F] [CompleteSpace H] (B : F →L[
     (hg : MemWkpLoc q Ω 1 g) : MemWkpLoc q Ω 1 (fun z => B (f z) (g z)) := by
   let _ : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨by exact_mod_cast hq.le.trans hqp⟩
   exact hf.bilin_of_memLpLoc_top B hp hq hqp (hf.memLpLoc_of_holderTriple hp le_rfl) hg
+
+section Operator
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {Ω : Opens ℂ} {p : ℝ≥0∞} {J : ℂ → V →L[ℝ] V} {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V}
+
+/-- Differentiating `J ∘ J = c` weakly on `Ω` for a constant operator `c` gives
+`(DJ · v) ∘ J + J ∘ (DJ · v) = 0` for all `v ∈ ℂ` almost everywhere on `Ω`. The endpoint `p = ⊤`
+is included by passing locally to `min p 3`. -/
+theorem HasWeakFDerivOn.ae_apply_add_apply_eq_zero_of_comp_self_eq_const
+    {c : V →L[ℝ] V} (hDJ : HasWeakFDerivOn volume Ω J DJ) (hp : 2 < p) (hJ : MemWkpLoc p Ω 1 J)
+    (hJsq : ∀ᵐ z ∂volume.restrict Ω, (J z).comp (J z) = c) :
+    ∀ᵐ z ∂volume.restrict Ω, ∀ (v : ℂ) (w : V), DJ z v (J z w) + J z (DJ z v w) = 0 := by
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
+  let p₀ : ℝ≥0 := (min p 3).toNNReal
+  have hp₀_coe : (p₀ : ℝ≥0∞) = min p 3 :=
+    ENNReal.coe_toNNReal (ne_top_of_le_ne_top ENNReal.ofNat_ne_top (min_le_right p 3))
+  have hp₀ : 2 < (p₀ : ℝ≥0∞) :=
+    hp₀_coe ▸ lt_min hp (by exact_mod_cast (by norm_num : 2 < 3))
+  have hJ₀ : MemWkpLoc p₀ Ω 1 J := hJ.mono_exponent (hp₀_coe.le.trans (min_le_left p 3))
+  have hp₀' : 2 < p₀ := by exact_mod_cast hp₀
+  have hp₀1 : 1 < p₀ := one_lt_two.trans hp₀'
+  let _ : Fact (1 ≤ (p₀ : ℝ≥0∞)) := ⟨by exact_mod_cast hp₀1.le⟩
+  have hDJp₀ : MemLpLoc p₀ Ω DJ := hJ₀.memLpLoc_of_hasWeakFDerivOn hDJ
+  have hprod := hDJ.bilin_of_memLpLoc (ContinuousLinearMap.compL ℝ V V V) hp₀' hp₀1 le_rfl
+    ((hJ₀.memLpLoc_of_holderTriple hp₀' le_rfl : MemLpLoc ∞ Ω J).mono_exponent le_top)
+    hDJp₀ hDJ hJ₀.memLpLoc hDJp₀
+  have hconst : HasWeakFDerivOn volume Ω (fun _ : ℂ => c) 0 :=
+    hasWeakFDerivOn_iff.2 fun u => by
+      simpa using hasWeakLineDerivOn_const (μ := volume) (Ω := Ω) (v := u) c
+  filter_upwards [(hprod.congr_ae hJsq).ae_eq hconst] with z hz v w
+  simpa using congr($(congr($hz v)) w)
+
+end Operator
 
 end TauCeti

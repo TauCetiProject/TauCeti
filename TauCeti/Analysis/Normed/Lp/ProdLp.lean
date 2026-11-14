@@ -292,6 +292,7 @@ theorem withLpProdMap_id :
   simp
 
 /-- Composition of block sums is componentwise composition. -/
+@[simp]
 theorem withLpProdMap_comp {α'' β'' : Type*}
     [TopologicalSpace α''] [AddCommGroup α''] [Module 𝕜 α'']
     [TopologicalSpace β''] [AddCommGroup β''] [Module 𝕜 β'']

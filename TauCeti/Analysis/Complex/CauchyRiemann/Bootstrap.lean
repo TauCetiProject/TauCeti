@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Comparison
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Higher
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
-import TauCeti.Data.ENNReal.Inv
 
 /-!
 # Interior elliptic bootstrapping for the nonlinear Cauchy–Riemann equation
@@ -92,7 +91,6 @@ theorem IsWeakCauchyRiemannOn.memWkpLoc_of_contDiffOn [FiniteDimensional ℝ V] 
   have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   have hpNN : 2 < p := by exact_mod_cast hp
   have hp1 : (1 : ℝ≥0∞) < p := (by exact_mod_cast one_lt_two : (1 : ℝ≥0∞) < 2).trans hp
-  have hpp : (p : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ < 1 := ENNReal.inv_add_inv_lt_one_of_two_lt hp hp.le
   obtain ⟨huc, -, D, hD, -, hae⟩ := isWeakCauchyRiemannOn_iff_of_isOpen.1 hu
   have hu1 : MemWkpLoc p Ω 1 u := hu.memWkpLoc_one
   have hJsq_ae : ∀ᵐ z ∂volume.restrict Ω,
@@ -113,7 +111,7 @@ theorem IsWeakCauchyRiemannOn.memWkpLoc_of_contDiffOn [FiniteDimensional ℝ V] 
     have hηu : MemWkpLoc p Ω (d' + 1) (fun z => η z (u z)) :=
       hud.contDiffOn_comp_graph_succ hpNN huc hW
         (hη.of_le (by exact_mod_cast hd)) huW
-    exact memWkpLoc_of_ae_cauchyRiemann hp ENNReal.coe_ne_top hpp hp1 le_rfl
+    exact memWkpLoc_of_ae_cauchyRiemann hp ENNReal.coe_ne_top hp1.le hp1 le_rfl
       (Nat.succ_pos d') le_rfl le_rfl hJu hJsq_ae memWkpLoc_zero_fun hu1 hD hae_lin hηu
 
 /-- **`C^n` interior bootstrapping with local `C^n` data.** For every `2 < p ≤ ∞` and `n : ℕ∞`, if
