@@ -88,7 +88,7 @@ theorem coe_spectralValuation (x : L) : (spectralValuation K L x : ℝ) = spectr
 @[simp]
 theorem spectralValuation_algebraMap (c : K) :
     spectralValuation K L (algebraMap K L c) = ‖c‖₊ :=
-  NNReal.eq <| by rw [coe_spectralValuation, spectralNorm_extends, coe_nnnorm]
+  NNReal.eq <| by rw [coe_spectralValuation, spectralNorm_extends, coe_nnNorm]
 
 /-- The spectral valuation pulled back to `K` is the norm valuation of `K`. -/
 @[simp]
@@ -126,7 +126,7 @@ theorem _root_.Valuation.isEquiv_spectralValuation_iff {Γ₀ : Type*}
       ∀ c d : K, w (algebraMap K L c) ≤ w (algebraMap K L d) ↔ ‖c‖ ≤ ‖d‖ := by
   refine ⟨fun h c d ↦ ?_, fun hK ↦ ?_⟩
   · rw [h, spectralValuation_algebraMap, spectralValuation_algebraMap, ← NNReal.coe_le_coe,
-      coe_nnnorm, coe_nnnorm]
+      coe_nnNorm, coe_nnNorm]
   have hle (c : K) (hc : ‖c‖ ≤ 1) : w (algebraMap K L c) ≤ 1 := by
     simpa using (hK c 1).mpr (by simpa using hc)
   -- an element of spectral norm below one has value below one: compare a power of it with a
@@ -136,7 +136,7 @@ theorem _root_.Valuation.isEquiv_spectralValuation_iff {Γ₀ : Type*}
     have hwc : w (algebraMap K L c) < 1 := lt_of_not_ge fun h ↦
       hc₁.not_ge (by simpa using (hK 1 c).mp (by simpa using h))
     have hwc₀ : w (algebraMap K L c) ≠ 0 := by simpa using norm_pos_iff.mp hc₀
-    obtain ⟨n, hn⟩ := NNReal.exists_pow_lt_of_lt_one (nnnorm_pos.mpr (norm_pos_iff.mp hc₀)) ha
+    obtain ⟨n, hn⟩ := NNReal.exists_pow_lt_of_lt_one (nnNorm_pos.mpr (norm_pos_iff.mp hc₀)) ha
     have hdiv : w (a ^ n / algebraMap K L c) ≤ 1 := le_one_of_spectralValuation_le_one hle <| by
       rw [map_div₀, map_pow, spectralValuation_algebraMap]
       exact div_le_one_of_le₀ hn.le zero_le
