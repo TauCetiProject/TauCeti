@@ -52,13 +52,15 @@ equivalence:
   the parity Koszul sign rule in `SignedSym G`.
 * `TauCeti.SignedSym.ker_quotient_parity`: the Koszul relation ideal in `TensorAlgebra R V` is
   unchanged under parity reduction.
-* `TauCeti.SignedSym.parityEquiv_mem_signedSymPiece_iff`: homogeneous pieces of `SignedSym G.parity`
-  match `parityGrading (signedSymPiece G)`.
+* `TauCeti.SignedSym.parityEquiv_mem_signedSymPiece_iff` and
+  `TauCeti.SignedSym.parityEquiv_symm_mem_parityGrading_iff`: homogeneous pieces of
+  `SignedSym G.parity` match `parityGrading (signedSymPiece G)`.
 * `TauCeti.SignedSym.isHomogeneous_conj_parityEquiv`,
   `TauCeti.SignedSym.conj_parityEquiv_mul_of_leibniz`,
-  `TauCeti.SignedSym.conj_parityEquiv_liftDerivation`, and
-  `TauCeti.SignedSym.isDGAlgebra_iff_conj_parityEquiv_comp_self_eq_zero`: transport of odd
-  derivations and `IsDGAlgebra` differentials across `parityEquiv`.
+  `TauCeti.SignedSym.conj_parityEquiv_liftDerivation`,
+  `TauCeti.SignedSym.isDGAlgebra_iff_conj_parityEquiv_comp_self_eq_zero`, and
+  `TauCeti.SignedSym.isDGAlgebra_liftDerivation_iff_parity`: transport of homogeneous maps, odd
+  derivations, and `IsDGAlgebra` differentials across `parityEquiv`.
 
 ## References
 
@@ -163,6 +165,12 @@ theorem parityEquiv_mem_lengthPiece_iff {n : ℕ} {a : SignedSym G} :
     parityEquiv G a ∈ lengthPiece G.parity n ↔ a ∈ lengthPiece G n :=
   coarsenEquiv_mem_lengthPiece_iff G (f := Int.castRingHom (ZMod 2)) (uzpow_intCast (-1))
 
+/-- The inverse of `parityEquiv` preserves word length. -/
+@[simp]
+theorem parityEquiv_symm_mem_lengthPiece_iff {n : ℕ} {a : SignedSym G.parity} :
+    (parityEquiv G).symm a ∈ lengthPiece G n ↔ a ∈ lengthPiece G.parity n :=
+  coarsenEquiv_symm_mem_lengthPiece_iff G (f := Int.castRingHom (ZMod 2)) (uzpow_intCast (-1))
+
 /-- The parity-`i` piece of `SignedSym G.parity` is the image under `parityEquiv` of the parity-`i`
 piece of `SignedSym G`. -/
 theorem signedSymPiece_parity_eq_map (i : ZMod 2) :
@@ -174,6 +182,13 @@ theorem signedSymPiece_parity_eq_map (i : ZMod 2) :
 theorem parityEquiv_mem_signedSymPiece_iff {i : ZMod 2} {a : SignedSym G} :
     parityEquiv G a ∈ signedSymPiece G.parity i ↔ a ∈ parityGrading (signedSymPiece G) i :=
   coarsenEquiv_mem_signedSymPiece_iff G (f := Int.castRingHom (ZMod 2)) (uzpow_intCast (-1))
+
+/-- The inverse of `parityEquiv` identifies `signedSymPiece G.parity` with
+`parityGrading (signedSymPiece G)`. -/
+theorem parityEquiv_symm_mem_parityGrading_iff {i : ZMod 2} {a : SignedSym G.parity} :
+    (parityEquiv G).symm a ∈ parityGrading (signedSymPiece G) i ↔
+      a ∈ signedSymPiece G.parity i :=
+  coarsenEquiv_symm_mem_coarsenGrading_iff G (f := Int.castRingHom (ZMod 2)) (uzpow_intCast (-1))
 
 /-- An element of `SignedSym G` of integer degree `p` maps under `parityEquiv` into parity
 `p mod 2` in `SignedSym G.parity`. -/
@@ -214,11 +229,13 @@ theorem ofParity_apply (a : SignedSym G.parity) : ofParity G a = (parityEquiv G)
   ofCoarsen_apply G (f := Int.castRingHom (ZMod 2)) (uzpow_intCast (-1)) a
 
 /-- `ofParity` is a left inverse of `toParity` as a `ZMod 2`-graded algebra homomorphism. -/
+@[simp]
 theorem ofParity_comp_toParity :
     (ofParity G).comp (toParity G) = GradedAlgHom.id R (parityGrading (signedSymPiece G)) :=
   ofCoarsen_comp_toCoarsen G (f := Int.castRingHom (ZMod 2)) (uzpow_intCast (-1))
 
 /-- `toParity` is a left inverse of `ofParity` as a `ZMod 2`-graded algebra homomorphism. -/
+@[simp]
 theorem toParity_comp_ofParity :
     (toParity G).comp (ofParity G) = GradedAlgHom.id R (signedSymPiece G.parity) :=
   toCoarsen_comp_ofCoarsen G (f := Int.castRingHom (ZMod 2)) (uzpow_intCast (-1))
@@ -228,12 +245,10 @@ theorem parityEquiv_map {W : Type w} [AddCommGroup W] [Module R W]
     (H : InternalGrading R W ℤ) (φ : V →ₗ[R] W)
     (hφ : LinearMap.IsHomogeneous φ G.piece H.piece 0) (a : SignedSym G) :
     parityEquiv H (map G H φ hφ a) =
-      map G.parity H.parity φ
-        (map_zero (Int.castRingHom (ZMod 2)) ▸ hφ.coarsenGrading (Int.castRingHom (ZMod 2)))
-        (parityEquiv G a) :=
+      map G.parity H.parity φ (Int.cast_zero (R := ZMod 2) ▸ hφ.parity) (parityEquiv G a) :=
   coarsenEquiv_map G H (f := Int.castRingHom (ZMod 2)) (uzpow_intCast (-1)) φ hφ a
 
-/-! ### Transport of integer odd derivations to `SignedSym G.parity` -/
+/-! ### Transport of integer homogeneous maps and odd derivations to `SignedSym G.parity` -/
 
 /-- Composing an integer degree-`q` generator map `δ : V →ₗ[R] SignedSym G` with `parityEquiv`
 yields a map of parity `q mod 2` for `G.parity`. -/
@@ -243,14 +258,21 @@ theorem isHomogeneous_parityEquiv_comp {δ : V →ₗ[R] SignedSym G} {q : ℤ}
       G.parity.piece (signedSymPiece G.parity) q :=
   isHomogeneous_coarsenEquiv_comp G (f := Int.castRingHom (ZMod 2)) (uzpow_intCast (-1)) hδ
 
-/-- Conjugating an integer degree-`1` endomorphism of `SignedSym G` by `parityEquiv` produces an
-odd endomorphism of `SignedSym G.parity`. -/
-theorem isHomogeneous_conj_parityEquiv {d : SignedSym G →ₗ[R] SignedSym G}
-    (hd : LinearMap.IsHomogeneous d (signedSymPiece G) (signedSymPiece G) 1) :
+/-- Composing an integer degree-`1` generator map `δ : V →ₗ[R] SignedSym G` with `parityEquiv`
+yields an odd generator map for `G.parity`. -/
+theorem isHomogeneous_one_parityEquiv_comp {δ : V →ₗ[R] SignedSym G}
+    (hδ : LinearMap.IsHomogeneous δ G.piece (signedSymPiece G) 1) :
+    LinearMap.IsHomogeneous ((parityEquiv G).toLinearMap ∘ₗ δ)
+      G.parity.piece (signedSymPiece G.parity) 1 :=
+  Int.cast_one (R := ZMod 2) ▸ isHomogeneous_parityEquiv_comp G hδ
+
+/-- Conjugating an integer degree-`q` endomorphism of `SignedSym G` by `parityEquiv` produces an
+endomorphism of parity `q mod 2` on `SignedSym G.parity`. -/
+theorem isHomogeneous_conj_parityEquiv {d : SignedSym G →ₗ[R] SignedSym G} {q : ℤ}
+    (hd : LinearMap.IsHomogeneous d (signedSymPiece G) (signedSymPiece G) q) :
     LinearMap.IsHomogeneous ((parityEquiv G).toLinearEquiv.conj d)
-      (signedSymPiece G.parity) (signedSymPiece G.parity) 1 :=
-  map_one (Int.castRingHom (ZMod 2)) ▸
-    isHomogeneous_conj_coarsenEquiv G (f := Int.castRingHom (ZMod 2)) (uzpow_intCast (-1)) hd
+      (signedSymPiece G.parity) (signedSymPiece G.parity) q :=
+  isHomogeneous_conj_coarsenEquiv G (f := Int.castRingHom (ZMod 2)) (uzpow_intCast (-1)) hd
 
 /-- Conjugating an integer signed Leibniz endomorphism of `SignedSym G` by `parityEquiv` produces a
 parity signed Leibniz endomorphism of `SignedSym G.parity`. -/
@@ -271,16 +293,8 @@ theorem conj_parityEquiv_liftDerivation {δ : V →ₗ[R] SignedSym G}
     (hδ : LinearMap.IsHomogeneous δ G.piece (signedSymPiece G) 1) :
     (parityEquiv G).toLinearEquiv.conj (liftDerivation δ hδ) =
       liftDerivation ((parityEquiv G).toLinearMap ∘ₗ δ)
-        (Int.cast_one (R := ZMod 2) ▸ isHomogeneous_parityEquiv_comp G hδ) :=
+        (isHomogeneous_one_parityEquiv_comp G hδ) :=
   conj_coarsenEquiv_liftDerivation G (f := Int.castRingHom (ZMod 2)) (uzpow_intCast (-1)) hδ
-
-/-- The parity-transported endomorphism on `SignedSym G.parity` squares to zero if and only if `d`
-squares to zero on `SignedSym G`. -/
-@[simp]
-theorem conj_parityEquiv_comp_self_eq_zero_iff (d : SignedSym G →ₗ[R] SignedSym G) :
-    (parityEquiv G).toLinearEquiv.conj d ∘ₗ (parityEquiv G).toLinearEquiv.conj d = 0 ↔
-      d ∘ₗ d = 0 :=
-  conj_coarsenEquiv_comp_self_eq_zero_iff G (f := Int.castRingHom (ZMod 2)) (uzpow_intCast (-1)) d
 
 /-- The differential of a differential graded algebra structure on `SignedSym G` transports across
 `parityEquiv` to an odd endomorphism of `SignedSym G.parity`. -/
@@ -288,7 +302,8 @@ theorem isHomogeneous_conj_parityEquiv_of_isDGAlgebra {d : SignedSym G →ₗ[R]
     (hd : IsDGAlgebra (signedSymPiece G) d) :
     LinearMap.IsHomogeneous ((parityEquiv G).toLinearEquiv.conj d)
       (signedSymPiece G.parity) (signedSymPiece G.parity) 1 :=
-  isHomogeneous_conj_parityEquiv G (LinearMap.isHomogeneous_def.2 fun _ _ ha ↦ hd.map_mem ha)
+  Int.cast_one (R := ZMod 2) ▸
+    isHomogeneous_conj_parityEquiv G (LinearMap.isHomogeneous_def.2 fun _ _ ha ↦ hd.map_mem ha)
 
 /-- The differential of a differential graded algebra structure on `SignedSym G` transports across
 `parityEquiv` to a parity signed Leibniz endomorphism of `SignedSym G.parity`. -/
@@ -306,8 +321,8 @@ theorem conj_parityEquiv_mul_of_isDGAlgebra {d : SignedSym G →ₗ[R] SignedSym
 theorem conj_parityEquiv_comp_self_of_isDGAlgebra {d : SignedSym G →ₗ[R] SignedSym G}
     (hd : IsDGAlgebra (signedSymPiece G) d) :
     (parityEquiv G).toLinearEquiv.conj d ∘ₗ (parityEquiv G).toLinearEquiv.conj d = 0 := by
-  ext a
-  simp [LinearEquiv.conj_apply, hd.sq_zero]
+  rw [← LinearEquiv.conj_comp, LinearEquiv.map_eq_zero_iff]
+  exact LinearMap.ext hd.sq_zero
 
 /-- A degree-`1` signed Leibniz endomorphism of `SignedSym G` defines a differential graded algebra
 structure if and only if its parity transport on `SignedSym G.parity` squares to zero. -/
@@ -317,22 +332,24 @@ theorem isDGAlgebra_iff_conj_parityEquiv_comp_self_eq_zero {d : SignedSym G →�
       d (a * b) = d a * b + p.negOnePow • (a * d b)) :
     IsDGAlgebra (signedSymPiece G) d ↔
       (parityEquiv G).toLinearEquiv.conj d ∘ₗ (parityEquiv G).toLinearEquiv.conj d = 0 := by
-  rw [conj_parityEquiv_comp_self_eq_zero_iff]
+  rw [← LinearEquiv.conj_comp, LinearEquiv.map_eq_zero_iff]
   exact ⟨fun h ↦ LinearMap.ext h.sq_zero, fun h ↦
     { map_mem := fun ha ↦ hdeg.map_mem ha
       sq_zero := fun a ↦ LinearMap.congr_fun h a
       leibniz := fun ha b ↦ hleibniz ha b }⟩
 
 /-- Extending an integer degree-`1` generator assignment yields a differential graded algebra
-structure on `SignedSym G` if and only if the parity-transported derivation squares to zero. -/
-theorem isDGAlgebra_liftDerivation_iff_conj_parityEquiv_comp_self_eq_zero
-    {δ : V →ₗ[R] SignedSym G}
+structure on `SignedSym G` if and only if the parity-reduced odd derivation on `SignedSym G.parity`
+squares to zero. -/
+theorem isDGAlgebra_liftDerivation_iff_parity {δ : V →ₗ[R] SignedSym G}
     (hδ : LinearMap.IsHomogeneous δ G.piece (signedSymPiece G) 1) :
     IsDGAlgebra (signedSymPiece G) (liftDerivation δ hδ) ↔
-      (parityEquiv G).toLinearEquiv.conj (liftDerivation δ hδ) ∘ₗ
-        (parityEquiv G).toLinearEquiv.conj (liftDerivation δ hδ) = 0 :=
-  isDGAlgebra_iff_conj_parityEquiv_comp_self_eq_zero G
-    (isHomogeneous_liftDerivation hδ) (liftDerivation_mul hδ)
+      liftDerivation ((parityEquiv G).toLinearMap ∘ₗ δ)
+          (isHomogeneous_one_parityEquiv_comp G hδ) ∘ₗ
+        liftDerivation ((parityEquiv G).toLinearMap ∘ₗ δ)
+          (isHomogeneous_one_parityEquiv_comp G hδ) = 0 := by
+  rw [isDGAlgebra_iff_conj_parityEquiv_comp_self_eq_zero G
+    (isHomogeneous_liftDerivation hδ) (liftDerivation_mul hδ), conj_parityEquiv_liftDerivation]
 
 end SignedSym
 

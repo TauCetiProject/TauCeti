@@ -8,17 +8,17 @@ module
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Derivation
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.WordLength
 public import TauCeti.RingTheory.GradedAlgebra.Coarsen
-import TauCeti.Algebra.Homology.DG.Algebra.Parity
 
 /-!
 # Coarsening the grading of the signed symmetric algebra
 
 If `G` is an internal grading of an `R`-module `V` over a Koszul-signed degree semiring `ι` and
-`f : ι →+* κ` is a ring homomorphism that preserves the sign character `p ↦ (-1 : ℤˣ) ^ p`, then
-the Koszul swap relations of `G` generate the same two-sided ideal in `TensorAlgebra R V` as those
-of the coarsened grading `G.coarsen f`: every homogeneous swap for `G` is already a homogeneous swap
-for `G.coarsen f`, and conversely elements of coarsened pieces supercommute in `SignedSym G` because
-each coarsened piece is the sum of the original pieces in its fibre.
+`f` is a ring homomorphism `ι →+* κ` (or any `RingHomClass` map) that preserves the sign character
+`p ↦ (-1 : ℤˣ) ^ p`, then the Koszul swap relations of `G` generate the same two-sided ideal in
+`TensorAlgebra R V` as those of the coarsened grading `G.coarsen f`: every homogeneous swap for `G`
+is already a homogeneous swap for `G.coarsen f`, and conversely elements of coarsened pieces
+supercommute in `SignedSym G` because each coarsened piece is the sum of the original pieces in its
+fibre.
 
 Consequently `SignedSym G` is canonically isomorphic as an `R`-algebra to `SignedSym (G.coarsen f)`
 (`TauCeti.SignedSym.coarsenEquiv`), compatibly with generators, the tensor-algebra quotient map,
@@ -44,7 +44,8 @@ its differential graded algebra structure with its parity reduction `SignedSym G
   pieces supercommute in `SignedSym G` with the coarsened Koszul sign.
 * `TauCeti.SignedSym.ker_quotient_coarsen`: the Koszul relation ideal in `TensorAlgebra R V` is
   unchanged under sign-preserving coarsening.
-* `TauCeti.SignedSym.coarsenEquiv_mem_signedSymPiece_iff`: homogeneous pieces of
+* `TauCeti.SignedSym.coarsenEquiv_mem_signedSymPiece_iff` and
+  `TauCeti.SignedSym.coarsenEquiv_symm_mem_coarsenGrading_iff`: homogeneous pieces of
   `SignedSym (G.coarsen f)` match the coarsened homogeneous pieces of `SignedSym G`.
 * `TauCeti.SignedSym.isHomogeneous_conj_coarsenEquiv`,
   `TauCeti.SignedSym.conj_coarsenEquiv_mul_of_leibniz`, and
@@ -67,37 +68,39 @@ variable {V : Type v} [AddCommGroup V] [Module R V]
 
 section Coarsen
 
-variable {ι : Type*} {κ : Type*} [DecidableEq ι] [DecidableEq κ]
+variable {ι : Type*} {κ : Type*} {F : Type*} [DecidableEq ι] [DecidableEq κ]
   [CommSemiring ι] [Module ι (Additive ℤˣ)] [CommSemiring κ] [Module κ (Additive ℤˣ)]
+  [FunLike F ι κ] [RingHomClass F ι κ]
 
 /-- Every defining Koszul swap relation for `G` is already a defining Koszul swap relation for
-`G.coarsen f` when `f : ι →+* κ` preserves `(-1 : ℤˣ) ^ ·`. -/
-theorem signedSwapRel.coarsen {G : InternalGrading R V ι} {f : ι →+* κ}
+`G.coarsen f` when `f` preserves `(-1 : ℤˣ) ^ ·`. -/
+theorem signedSwapRel.coarsen {G : InternalGrading R V ι} {f : F}
     (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p) {a b : TensorAlgebra R V}
     (h : signedSwapRel G a b) : signedSwapRel (G.coarsen f) a b := by
   cases h with
   | swap p q x y hx hy =>
     have hpq : (-1 : ℤˣ) ^ (f p * f q) = (-1 : ℤˣ) ^ (p * q) := by rw [← map_mul, hf]
     rw [← hpq]
-    exact .swap (f p) (f q) x y (mem_coarsenGrading_of_mem f hx)
-      (mem_coarsenGrading_of_mem f hy)
+    exact .swap (f p) (f q) x y (G.mem_coarsen_of_mem f hx) (G.mem_coarsen_of_mem f hy)
 
 namespace SignedSym
 
-variable (G : InternalGrading R V ι) {f : ι →+* κ}
+variable (G : InternalGrading R V ι) {f : F}
 
 private noncomputable def toCoarsenAlgHom (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p) :
     SignedSym G →ₐ[R] SignedSym (G.coarsen f) :=
   lift G (generator (G.coarsen f)) fun p q x y hx hy ↦ by
     have hpq : (-1 : ℤˣ) ^ (f p * f q) = (-1 : ℤˣ) ^ (p * q) := by rw [← map_mul, hf]
     rw [← hpq]
-    exact generator_mul_generator (G.coarsen f) (mem_coarsenGrading_of_mem f hx)
-      (mem_coarsenGrading_of_mem f hy)
+    exact generator_mul_generator (G.coarsen f) (G.mem_coarsen_of_mem f hx)
+      (G.mem_coarsen_of_mem f hy)
 
-omit [Module κ (Additive ℤˣ)] in
+omit [CommSemiring κ] [Module κ (Additive ℤˣ)] [RingHomClass F ι κ] in
 private theorem generator_mem_coarsenGrading {k : κ} {x : V} (hx : x ∈ (G.coarsen f).piece k) :
-    generator G x ∈ coarsenGrading (signedSymPiece G) f k :=
-  coarsenGrading_induction (motive := fun y ↦ generator G y ∈ coarsenGrading (signedSymPiece G) f k)
+    generator G x ∈ coarsenGrading (signedSymPiece G) f k := by
+  rw [InternalGrading.coarsen_piece] at hx
+  exact coarsenGrading_induction
+    (motive := fun y ↦ generator G y ∈ coarsenGrading (signedSymPiece G) f k)
     hx (fun p hp y hy ↦ by
       rw [← hp]
       exact mem_coarsenGrading_of_mem f (generator_mem_signedSymPiece G hy))
@@ -203,6 +206,13 @@ theorem coarsenEquiv_mem_lengthPiece_iff (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = 
     coarsenEquiv G hf a ∈ lengthPiece (G.coarsen f) n ↔ a ∈ lengthPiece G n := by
   simp [← map_lengthPiece_coarsenEquiv G hf]
 
+/-- The inverse of `coarsenEquiv` preserves word length. -/
+@[simp]
+theorem coarsenEquiv_symm_mem_lengthPiece_iff (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p)
+    {n : ℕ} {a : SignedSym (G.coarsen f)} :
+    (coarsenEquiv G hf).symm a ∈ lengthPiece G n ↔ a ∈ lengthPiece (G.coarsen f) n := by
+  rw [← coarsenEquiv_mem_lengthPiece_iff G hf, AlgEquiv.apply_symm_apply]
+
 /-- The degree-`k` piece of `SignedSym (G.coarsen f)` is the image under `coarsenEquiv` of the
 coarsened degree-`k` piece of `SignedSym G`. -/
 theorem signedSymPiece_coarsen_eq_map (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p) (k : κ) :
@@ -223,6 +233,14 @@ theorem coarsenEquiv_mem_signedSymPiece_iff (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p
       a ∈ coarsenGrading (signedSymPiece G) f k := by
   simp [signedSymPiece_coarsen_eq_map G hf]
 
+/-- The inverse of `coarsenEquiv` identifies the input-degree grading of `SignedSym (G.coarsen f)`
+with the coarsened grading of `SignedSym G`. -/
+theorem coarsenEquiv_symm_mem_coarsenGrading_iff (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p)
+    {k : κ} {a : SignedSym (G.coarsen f)} :
+    (coarsenEquiv G hf).symm a ∈ coarsenGrading (signedSymPiece G) f k ↔
+      a ∈ signedSymPiece (G.coarsen f) k := by
+  rw [← coarsenEquiv_mem_signedSymPiece_iff G hf, AlgEquiv.apply_symm_apply]
+
 /-- An element of `SignedSym G` of degree `p` maps under `coarsenEquiv` into degree `f p`. -/
 theorem coarsenEquiv_mem_of_mem (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p)
     {p : ι} {a : SignedSym G} (ha : a ∈ signedSymPiece G p) :
@@ -241,7 +259,7 @@ noncomputable def toCoarsen (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) 
 noncomputable def ofCoarsen (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p) :
     signedSymPiece (G.coarsen f) →ₐᵍ[R] coarsenGrading (signedSymPiece G) f :=
   { (coarsenEquiv G hf).symm.toAlgHom with
-    map_mem := fun ha ↦ (coarsenEquiv_mem_signedSymPiece_iff G hf).1 (by simpa using ha) }
+    map_mem := fun ha ↦ (coarsenEquiv_symm_mem_coarsenGrading_iff G hf).2 ha }
 
 /-- The underlying algebra homomorphism of `toCoarsen` is `coarsenEquiv`. -/
 @[simp]
@@ -265,6 +283,7 @@ theorem ofCoarsen_apply (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p)
     ofCoarsen G hf a = (coarsenEquiv G hf).symm a := (rfl)
 
 /-- `ofCoarsen` is a left inverse of `toCoarsen` as a graded algebra homomorphism. -/
+@[simp]
 theorem ofCoarsen_comp_toCoarsen (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p) :
     (ofCoarsen G hf).comp (toCoarsen G hf) =
       GradedAlgHom.id R (coarsenGrading (signedSymPiece G) f) := by
@@ -272,6 +291,7 @@ theorem ofCoarsen_comp_toCoarsen (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : �
   simp
 
 /-- `toCoarsen` is a left inverse of `ofCoarsen` as a graded algebra homomorphism. -/
+@[simp]
 theorem toCoarsen_comp_ofCoarsen (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p) :
     (toCoarsen G hf).comp (ofCoarsen G hf) =
       GradedAlgHom.id R (signedSymPiece (G.coarsen f)) := by
@@ -283,11 +303,11 @@ theorem coarsenEquiv_map {W : Type w} [AddCommGroup W] [Module R W]
     (H : InternalGrading R W ι) (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p)
     (φ : V →ₗ[R] W) (hφ : LinearMap.IsHomogeneous φ G.piece H.piece 0) (a : SignedSym G) :
     coarsenEquiv H hf (map G H φ hφ a) =
-      map (G.coarsen f) (H.coarsen f) φ (map_zero f ▸ hφ.coarsenGrading f)
+      map (G.coarsen f) (H.coarsen f) φ (map_zero f ▸ hφ.coarsen f)
         (coarsenEquiv G hf a) := by
   have h : (coarsenEquiv H hf).toAlgHom.comp (map G H φ hφ) =
       (map (G.coarsen f) (H.coarsen f) φ
-        (map_zero f ▸ hφ.coarsenGrading f)).comp (coarsenEquiv G hf).toAlgHom :=
+        (map_zero f ▸ hφ.coarsen f)).comp (coarsenEquiv G hf).toAlgHom :=
     hom_ext G fun x ↦ by simp
   exact AlgHom.congr_fun h a
 
@@ -300,8 +320,9 @@ theorem isHomogeneous_coarsenEquiv_comp (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (
     (hδ : LinearMap.IsHomogeneous δ G.piece (signedSymPiece G) q) :
     LinearMap.IsHomogeneous ((coarsenEquiv G hf).toLinearMap ∘ₗ δ)
       (G.coarsen f).piece (signedSymPiece (G.coarsen f)) (f q) :=
-  LinearMap.isHomogeneous_def.2 fun _ _ hx ↦
-    (coarsenEquiv_mem_signedSymPiece_iff G hf).2 ((hδ.coarsenGrading f).map_mem hx)
+  LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
+    rw [InternalGrading.coarsen_piece] at hx
+    exact (coarsenEquiv_mem_signedSymPiece_iff G hf).2 ((hδ.coarsenGrading f).map_mem hx)
 
 /-- Conjugating a degree-`q` endomorphism of `SignedSym G` by `coarsenEquiv` produces a
 degree-`f q` endomorphism of `SignedSym (G.coarsen f)`. -/
@@ -310,10 +331,9 @@ theorem isHomogeneous_conj_coarsenEquiv (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (
     (hd : LinearMap.IsHomogeneous d (signedSymPiece G) (signedSymPiece G) q) :
     LinearMap.IsHomogeneous ((coarsenEquiv G hf).toLinearEquiv.conj d)
       (signedSymPiece (G.coarsen f)) (signedSymPiece (G.coarsen f)) (f q) :=
-  LinearMap.isHomogeneous_def.2 fun _ a ha ↦ by
-    have ha' : (coarsenEquiv G hf).symm a ∈ coarsenGrading (signedSymPiece G) f _ :=
-      (coarsenEquiv_mem_signedSymPiece_iff G hf).1 (by simpa using ha)
-    simpa using (coarsenEquiv_mem_signedSymPiece_iff G hf).2 ((hd.coarsenGrading f).map_mem ha')
+  LinearMap.isHomogeneous_def.2 fun _ _ ha ↦ by
+    simpa using (coarsenEquiv_mem_signedSymPiece_iff G hf).2
+      ((hd.coarsenGrading f).map_mem ((coarsenEquiv_symm_mem_coarsenGrading_iff G hf).2 ha))
 
 /-- Conjugating a signed Leibniz endomorphism of `SignedSym G` by `coarsenEquiv` produces a signed
 Leibniz endomorphism of `SignedSym (G.coarsen f)`. -/
@@ -326,9 +346,8 @@ theorem conj_coarsenEquiv_mul_of_leibniz (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = 
     (coarsenEquiv G hf).toLinearEquiv.conj d (a * b) =
       (coarsenEquiv G hf).toLinearEquiv.conj d a * b +
         ((-1 : ℤˣ) ^ k) • (a * (coarsenEquiv G hf).toLinearEquiv.conj d b) := by
-  have ha' : (coarsenEquiv G hf).symm a ∈ coarsenGrading (signedSymPiece G) f k :=
-    (coarsenEquiv_mem_signedSymPiece_iff G hf).1 (by simpa using ha)
-  have hleib := leibniz_coarsenGrading_of_leibniz hf hd ha' ((coarsenEquiv G hf).symm b)
+  have hleib := leibniz_coarsenGrading_of_leibniz hf hd
+    ((coarsenEquiv_symm_mem_coarsenGrading_iff G hf).2 ha) ((coarsenEquiv G hf).symm b)
   simpa [LinearEquiv.conj_apply, map_add, map_mul, map_zsmul_unit] using
     congrArg (coarsenEquiv G hf) hleib
 
@@ -344,16 +363,6 @@ theorem conj_coarsenEquiv_liftDerivation (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = 
     (fun ha b ↦ conj_coarsenEquiv_mul_of_leibniz G hf (liftDerivation_mul hδ) ha b)
     fun x ↦ ?_
   simp
-
-/-- The transported endomorphism on `SignedSym (G.coarsen f)` squares to zero if and only if `d`
-squares to zero on `SignedSym G`. -/
-@[simp]
-theorem conj_coarsenEquiv_comp_self_eq_zero_iff (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p)
-    (d : SignedSym G →ₗ[R] SignedSym G) :
-    (coarsenEquiv G hf).toLinearEquiv.conj d ∘ₗ
-        (coarsenEquiv G hf).toLinearEquiv.conj d = 0 ↔
-      d ∘ₗ d = 0 := by
-  rw [← LinearEquiv.conj_comp, LinearEquiv.map_eq_zero_iff]
 
 end SignedSym
 

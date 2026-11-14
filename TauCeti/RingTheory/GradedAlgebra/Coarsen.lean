@@ -19,11 +19,12 @@ degree-`k` piece is the sum of the pieces `𝒜 i` with `f i = k`, again grades 
 an integer-graded algebra is a `ZMod 2`-graded (super) algebra through its parity grading
 `TauCeti.parityGrading 𝒜`.
 
-Graded commutativity with Koszul signs `(-1) ^ (p * q)` passes to any coarsening along a ring
-homomorphism `f : ι →+* κ` that preserves `(-1) ^ ·`.  In particular, integer graded commutativity
-passes to the parity grading, with the signs `(-1) ^ (i * j)` for parities `i j : ZMod 2`, written
-with Mathlib's power of a unit of `ℤ` by an element of `ZMod 2`.  Thus the supercommutativity
-relations of an integer-graded algebra are those of its parity reduction.
+Graded commutativity with Koszul signs `(-1) ^ (p * q)` passes to any coarsening along a
+multiplicative map `f : ι →* κ` that preserves `(-1) ^ ·`, and the graded Leibniz rule with signs
+`(-1) ^ p` passes to any coarsening along a sign-preserving map `f : ι → κ`.  In particular,
+integer graded commutativity and signed derivations pass to the parity grading, with the signs
+`(-1) ^ (i * j)` and `(-1) ^ i` for parities `i j : ZMod 2`, written with Mathlib's power of a unit
+of `ℤ` by an element of `ZMod 2`.
 
 ## Main results
 
@@ -35,6 +36,8 @@ relations of an integer-graded algebra are those of its parity reduction.
 * `TauCeti.mul_eq_uzpow_smul_mul_of_mem_coarsenGrading` and
   `TauCeti.mul_eq_uzpow_smul_mul_of_mem_parityGrading`: Koszul graded commutativity passes to
   sign-preserving coarsenings, and in particular from integer degree to parity.
+* `TauCeti.leibniz_coarsenGrading_of_leibniz`: the graded Leibniz rule passes to sign-preserving
+  coarsenings.
 -/
 
 public section
@@ -71,6 +74,8 @@ variable {R : Type uR} {A : Type uA} {ι : Type uι} {κ : Type uκ} {F : Type*}
   [Semiring R] [Semiring A] [Module R A] [AddMonoid ι] [AddMonoid κ]
   [FunLike F ι κ] [AddMonoidHomClass F ι κ] (𝒜 : ι → Submodule R A)
 
+/-- Coarsening a graded monoid structure along an additive homomorphism of index monoids gives a
+graded monoid structure. -/
 instance [SetLike.GradedMonoid 𝒜] (f : F) : SetLike.GradedMonoid (coarsenGrading 𝒜 f) :=
   { (inferInstance : SetLike.GradedMul (coarsenGrading 𝒜 f)) with
     one_mem := by simpa using mem_coarsenGrading_of_mem f (SetLike.one_mem_graded 𝒜) }
@@ -107,11 +112,11 @@ variable {R : Type uR} {A : Type uA} {ι : Type uι} {κ : Type uκ}
   {𝒜 : ι → Submodule R A}
 
 /-- **Koszul graded commutativity passes to any sign-preserving coarsening.** If homogeneous
-elements of degrees `p` and `q` commute up to the Koszul sign `(-1) ^ (p * q)` and the ring
-homomorphism `f : ι →+* κ` preserves `(-1) ^ ·`, then elements of coarsened degrees `i` and `j`
-commute up to `(-1) ^ (i * j)`. -/
-theorem mul_eq_uzpow_smul_mul_of_mem_coarsenGrading {f : ι →+* κ}
-    (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p)
+elements of degrees `p` and `q` commute up to the Koszul sign `(-1) ^ (p * q)` and the
+multiplicative homomorphism `f` preserves `(-1) ^ ·`, then elements of coarsened degrees `i` and
+`j` commute up to `(-1) ^ (i * j)`. -/
+theorem mul_eq_uzpow_smul_mul_of_mem_coarsenGrading {F : Type*} [FunLike F ι κ] [MulHomClass F ι κ]
+    {f : F} (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p)
     (hcomm : ∀ {p q : ι} {a b : A}, a ∈ 𝒜 p → b ∈ 𝒜 q →
       a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a))
     {i j : κ} {a b : A} (ha : a ∈ coarsenGrading 𝒜 f i) (hb : b ∈ coarsenGrading 𝒜 f j) :
@@ -122,6 +127,24 @@ theorem mul_eq_uzpow_smul_mul_of_mem_coarsenGrading {f : ι →+* κ}
   refine coarsenGrading_induction (motive := fun b ↦ a * b = ((-1 : ℤˣ) ^ (i * j)) • (b * a)) hb
     (fun q hq b hb ↦ ?_) (by simp) fun x y hx hy ↦ by rw [mul_add, add_mul, hx, hy, smul_add]
   rw [hcomm ha hb, ← hp, ← hq, ← map_mul, hf]
+
+/-- **The graded Leibniz rule passes to any sign-preserving coarsening.** If `d` satisfies the
+graded Leibniz rule with the sign `(-1) ^ p` on a left factor of degree `p` and `f : ι → κ`
+preserves `(-1) ^ ·`, then `d` satisfies the graded Leibniz rule with the sign `(-1) ^ i` on a
+left factor in the coarsened piece of degree `i`. -/
+theorem leibniz_coarsenGrading_of_leibniz {d : A →ₗ[R] A} {f : ι → κ}
+    (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p)
+    (hl : ∀ {p : ι} {a : A}, a ∈ 𝒜 p → ∀ b : A,
+      d (a * b) = d a * b + ((-1 : ℤˣ) ^ p) • (a * d b))
+    {i : κ} {a : A} (ha : a ∈ coarsenGrading 𝒜 f i) (b : A) :
+    d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b) := by
+  -- Both sides are additive in `a`, so it suffices to treat homogeneous elements.
+  refine coarsenGrading_induction
+    (motive := fun a ↦ d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b)) ha
+    (fun p hp a ha ↦ ?_) (by simp) fun x y hx hy ↦ ?_
+  · rw [hl ha b, ← hp, hf]
+  · rw [add_mul, map_add, hx, hy, map_add, add_mul, add_mul, smul_add]
+    abel
 
 end CoarsenComm
 

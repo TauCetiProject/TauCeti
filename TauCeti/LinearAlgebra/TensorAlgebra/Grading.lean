@@ -216,7 +216,7 @@ theorem coarsenGrading_tensorAlgebraPiece {κ F : Type*} [DecidableEq κ] [AddCo
     coarsenGrading_le_iff.2 fun p hp ↦ tensorAlgebraPiece_le fun n d x hx hd ↦ by
       rw [← hp, ← hd, map_sum]
       exact tprod_mem_tensorAlgebraPiece (G.coarsen f) (f ∘ d) x fun i ↦
-        mem_coarsenGrading_of_mem f (hx i)
+        G.mem_coarsen_of_mem f (hx i)
   funext k
   refine le_antisymm (hle k) fun z hz ↦ ?_
   have hdec := DirectSum.map_decompose_shift

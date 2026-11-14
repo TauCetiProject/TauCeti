@@ -278,12 +278,14 @@ theorem ofProd_inr (b : SignedSym H) : ofProd G H (inr G H b) = 1 ᵍ⊗ₜ[R] b
   rw [ofProd_apply, prodEquiv_inr]
 
 /-- `toProd` is a left inverse of `ofProd`. -/
+@[simp]
 theorem toProd_comp_ofProd :
     (toProd G H).comp (ofProd G H) = GradedAlgHom.id R (signedSymPiece (G.prod H)) := by
   ext z
   simp [← map_add (generator (G.prod H))]
 
 /-- `ofProd` is a left inverse of `toProd`. -/
+@[simp]
 theorem ofProd_comp_toProd :
     (ofProd G H).comp (toProd G H) =
       GradedAlgHom.id R (gradedTensorGrading (signedSymPiece G) (signedSymPiece H)) := by
