@@ -83,6 +83,14 @@ theorem mem_avoiding_iff_occurrences_eq_zero : a ∈ GX.avoiding x ↔ occurrenc
     by_contra ha'
     simp [ha, ha'] at h
 
+/-- A variable is avoided by the left side of a standard quadratic equation if and only if it is
+outside `S.vars`. -/
+@[simp]
+theorem Standard.toWord_mem_avoiding_iff {S : Standard G X} :
+    S.toWord ∈ GX.avoiding x ↔ x ∉ S.vars := by
+  rw [mem_avoiding_iff_occurrences_eq_zero, ← not_iff_not, not_not,
+    S.mem_vars_iff_occurrences_toWord_ne_zero]
+
 end Avoiding
 
 /-! ### Occurrences under the elementary automorphisms -/
