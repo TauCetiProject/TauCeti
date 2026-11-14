@@ -143,14 +143,14 @@ theorem stableOmega_sum_interlacedBy {n m : ℕ} (ν : n.Partition) :
     ∑ μ : m.Partition with
         (YoungDiagram.ofPartition μ).IsVerticalStrip (YoungDiagram.ofPartition ν.conjugate),
       stableSchur R μ := by
+  let e : m.Partition ≃ m.Partition :=
+    Function.Involutive.toPerm _root_.Nat.Partition.conjugate
+      _root_.Nat.Partition.conjugate_conjugate
+  have he (μ : m.Partition) : e μ = μ.conjugate :=
+    congrFun (Function.Involutive.coe_toPerm _) μ
   rw [map_sum]
-  refine Finset.sum_equiv
-    { toFun := _root_.Nat.Partition.conjugate
-      invFun := _root_.Nat.Partition.conjugate
-      left_inv := _root_.Nat.Partition.conjugate_conjugate
-      right_inv := _root_.Nat.Partition.conjugate_conjugate }
-    (fun μ => ?_) (fun μ _ => by simp)
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and, Equiv.coe_fn_mk,
+  refine Finset.sum_equiv e (fun μ => ?_) (fun μ _ => by simp [he])
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and, he,
     YoungDiagram.isVerticalStrip_iff_interlacedBy_transpose,
     YoungDiagram.ofPartition_conjugate, YoungDiagram.transpose_transpose]
 

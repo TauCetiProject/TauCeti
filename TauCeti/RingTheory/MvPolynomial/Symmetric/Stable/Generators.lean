@@ -34,6 +34,8 @@ functions over a commutative ring. In finitely many variables this is Mathlib's
 
 ## Main results
 
+* `TauCeti.stableSchur_ones`, `TauCeti.stableSchur_indiscrete`: `s_{(1ⁿ)} = e_n` and
+  `s_{(n)} = h_n`.
 * `TauCeti.SymmetricFunction.algHom_ext`: algebra homomorphisms out of `Λ_R` are determined by
   their values on the elementary symmetric functions.
 
@@ -41,7 +43,7 @@ functions over a commutative ring. In finitely many variables this is Mathlib's
 
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,
   Section 2: (2.4) for the free generation of `Λ` by the `e_r`, and the definitions of `h_r`
-  and `p_r`.
+  and `p_r`; Section 3 for `s_{(1ⁿ)} = e_n` and `s_{(n)} = h_n`.
 -/
 
 public section
@@ -71,6 +73,12 @@ theorem coe_stableSymmetricProj_stableEsymm (n d : ℕ) :
 theorem stableEsymm_zero : stableEsymm R 0 = stableSymmetricOne R :=
   stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp
 
+/-- **The Schur function of the one-column partition `(1ⁿ)` is the elementary symmetric function
+`e_n`.** -/
+@[simp]
+theorem stableSchur_ones (n : ℕ) : stableSchur R (Nat.Partition.ones n) = stableEsymm R n :=
+  (rfl)
+
 /-- **The complete homogeneous symmetric function** `h_n`. -/
 noncomputable def stableHsymm (n : ℕ) : stableSymmetricSubmodule R n :=
   ⟨fun d => ⟨hsymm (Fin d) R n,
@@ -88,6 +96,13 @@ theorem coe_stableSymmetricProj_stableHsymm (n d : ℕ) :
 @[simp]
 theorem stableHsymm_zero : stableHsymm R 0 = stableSymmetricOne R :=
   stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp
+
+/-- **The Schur function of the one-row partition `(n)` is the complete homogeneous symmetric
+function `h_n`.** -/
+@[simp]
+theorem stableSchur_indiscrete (n : ℕ) :
+    stableSchur R (_root_.Nat.Partition.indiscrete n) = stableHsymm R n :=
+  stableSymmetricSubmodule_ext fun _ => Subtype.ext <| by simp
 
 /-- **The power sum symmetric function** `p_n`, for `n ≠ 0`. There is no stable `p_0`: the zeroth
 power sum in `d` variables is `d`. -/

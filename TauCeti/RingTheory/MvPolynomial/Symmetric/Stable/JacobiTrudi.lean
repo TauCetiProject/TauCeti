@@ -12,20 +12,22 @@ import TauCeti.Combinatorics.Enumerative.Partition.Conjugate
 /-!
 # The Jacobi--Trudi identities and the action of `ω` on Schur functions
 
-Every Schur function `s_μ` in the ring `Λ_R` of symmetric functions is simultaneously a determinant
-in the complete homogeneous symmetric functions indexed by the row lengths of `μ`,
+Over a commutative ring `R`, every Schur function `s_μ` in the ring `Λ_R` of symmetric functions is
+a determinant in the complete homogeneous symmetric functions indexed by the row lengths of `μ`,
 
-`s_μ = det (h_{μᵢ - i + j})_{0 ≤ i, j < r}`,
+`s_μ = det (h_{μᵢ - i + j})_{0 ≤ i, j < r}`
 
-and a determinant in the elementary symmetric functions indexed by its column lengths — the row
-lengths of the conjugate partition `μᵗ` —
+for every `r` at least the number of parts (rows) of `μ`, and a determinant in the elementary
+symmetric functions indexed by its column lengths — the row lengths of the conjugate partition
+`μᵗ` —
 
-`s_μ = det (e_{μᵗᵢ - i + j})_{0 ≤ i, j < r}`,
+`s_μ = det (e_{μᵗᵢ - i + j})_{0 ≤ i, j < r'}`
 
-where negative-degree entries vanish (`TauCeti.SymmetricFunction.hsymmInt` and
-`TauCeti.SymmetricFunction.esymmInt`). Both identities lift from the finite alphabets
-(`TauCeti.schurPoly_eq_det_hsymmInt` and `Nat.Partition.schurPoly_eq_det_esymmInt`) along
-`TauCeti.SymmetricFunction.specialization`, with no bound relating an alphabet size to `μ`.
+for every `r'` at least the number of parts of `μᵗ` (columns of `μ`), where negative-degree entries
+vanish (`TauCeti.SymmetricFunction.hsymmInt` and `TauCeti.SymmetricFunction.esymmInt`). Both
+identities lift from the finite alphabets (`TauCeti.schurPoly_eq_det_hsymmInt` and
+`Nat.Partition.schurPoly_eq_det_esymmInt`) along `TauCeti.SymmetricFunction.specialization`, with no
+bound relating an alphabet size to `μ`.
 
 Applying the algebra involution `ω` (`TauCeti.SymmetricFunction.omega`), which exchanges `e_m` and
 `h_m` in every integer degree, turns the dual Jacobi--Trudi determinant of `μ` into the
@@ -44,8 +46,6 @@ the Schur basis by partition conjugation.
 
 ## Main results
 
-* `TauCeti.stableSchur_ones`, `TauCeti.stableSchur_indiscrete`: `s_{(1ⁿ)} = e_n` and
-  `s_{(n)} = h_n`.
 * `TauCeti.SymmetricFunction.of_stableSchur_eq_det_hsymmInt`,
   `TauCeti.SymmetricFunction.of_stableSchur_shapePartition_eq_det_hsymmInt`: **the Jacobi--Trudi
   identity** in `Λ_R`.
@@ -54,9 +54,10 @@ the Schur basis by partition conjugation.
   `TauCeti.SymmetricFunction.of_stableSchur_shapePartition_eq_det_esymmInt`: **the dual
   Jacobi--Trudi identity** in `Λ_R`.
 * `TauCeti.SymmetricFunction.omega_of_stableSchur`: **`ω(s_μ) = s_(μᵗ)`**.
-* `TauCeti.SymmetricFunction.of_stableSchur_singletonSecondRow_one_eq_hsymm`,
-  `TauCeti.SymmetricFunction.of_stableSchur_singletonSecondRow_one_eq_esymm`:
-  `s_{(2, 1)} = h₂ h₁ - h₃ = e₂ e₁ - e₃`.
+* `TauCeti.SymmetricFunction.of_stableSchur_singletonSecondRow_eq_hsymm`,
+  `TauCeti.SymmetricFunction.of_stableSchur_conjugate_singletonSecondRow_eq_esymm`:
+  `s_{(n + 1, 1)} = h_{n + 1} h₁ - h_{n + 2}` and
+  `s_{(2, 1ⁿ)} = e_{n + 1} e₁ - e_{n + 2}`.
 * `TauCeti.SymmetricFunction.omega_of`, `TauCeti.SymmetricFunction.omega_apply`,
   `TauCeti.SymmetricFunction.lmap_stableOmega`: `ω` acts degree by degree as `TauCeti.stableOmega`.
 * `TauCeti.stableOmega_stableSchur`, `TauCeti.stableOmega_stableEsymm`,
@@ -75,25 +76,6 @@ public section
 namespace TauCeti
 
 open MvPolynomial DirectSum
-
-section ExtremeSchur
-
-variable (R : Type*) [CommSemiring R]
-
-/-- **The Schur function of the one-column partition `(1ⁿ)` is the elementary symmetric function
-`e_n`.** -/
-@[simp]
-theorem stableSchur_ones (n : ℕ) : stableSchur R (Nat.Partition.ones n) = stableEsymm R n :=
-  stableSymmetricSubmodule_ext fun _ => Subtype.ext <| by simp
-
-/-- **The Schur function of the one-row partition `(n)` is the complete homogeneous symmetric
-function `h_n`.** -/
-@[simp]
-theorem stableSchur_indiscrete (n : ℕ) :
-    stableSchur R (_root_.Nat.Partition.indiscrete n) = stableHsymm R n :=
-  stableSymmetricSubmodule_ext fun _ => Subtype.ext <| by simp
-
-end ExtremeSchur
 
 namespace SymmetricFunction
 
@@ -274,33 +256,31 @@ theorem omega_of_stableSchur {n : ℕ} (μ : n.Partition) :
   ext i j : 1
   simp
 
-/-- **The Jacobi--Trudi expansion of `s_{(2, 1)}`**: `s_{(2, 1)} = h₂ h₁ - h₃` in `Λ_R`. -/
-theorem of_stableSchur_singletonSecondRow_one_eq_hsymm :
-    DirectSum.of _ 3 (stableSchur R (Nat.Partition.singletonSecondRow 1)) =
-      (DirectSum.of _ 2 (stableHsymm R 2) : SymmetricFunction R) *
+/-- **The Jacobi--Trudi expansion of `s_{(n + 1, 1)}`**: for every `n`,
+`s_{(n + 1, 1)} = h_{n + 1} h₁ - h_{n + 2}` in `Λ_R`. -/
+theorem of_stableSchur_singletonSecondRow_eq_hsymm (n : ℕ) :
+    DirectSum.of _ (n + 2) (stableSchur R (Nat.Partition.singletonSecondRow n)) =
+      (DirectSum.of _ (n + 1) (stableHsymm R (n + 1)) : SymmetricFunction R) *
           DirectSum.of _ 1 (stableHsymm R 1) -
-        DirectSum.of _ 3 (stableHsymm R 3) := by
-  have hr : (Nat.Partition.singletonSecondRow 1).parts.card ≤ 2 := by
+        DirectSum.of _ (n + 2) (stableHsymm R (n + 2)) := by
+  have hr : (Nat.Partition.singletonSecondRow n).parts.card ≤ 2 := by
     simp [Nat.Partition.singletonSecondRow_parts]
-  have hsort : ((2 ::ₘ {1} : Multiset ℕ).sort (· ≥ ·)) = [2, 1] := by
+  have hsort : (((n + 1) ::ₘ {1} : Multiset ℕ).sort (· ≥ ·)) = [n + 1, 1] := by
     simpa only [Nat.Partition.singletonSecondRow_parts, Multiset.insert_eq_cons] using
-      Nat.Partition.sort_parts_singletonSecondRow 1
-  rw [of_stableSchur_eq_det_hsymmInt R _ hr, Matrix.det_fin_two]
-  simp [hsort]
+      Nat.Partition.sort_parts_singletonSecondRow n
+  rw [of_stableSchur_eq_det_hsymmInt R _ hr, Matrix.det_fin_two, ← hsymmInt_natCast R (n + 1),
+    ← hsymmInt_natCast R (n + 2)]
+  simp [hsort, add_assoc]
 
-/-- **The dual Jacobi--Trudi expansion of `s_{(2, 1)}`**: `s_{(2, 1)} = e₂ e₁ - e₃` in `Λ_R`. -/
-theorem of_stableSchur_singletonSecondRow_one_eq_esymm :
-    DirectSum.of _ 3 (stableSchur R (Nat.Partition.singletonSecondRow 1)) =
-      (DirectSum.of _ 2 (stableEsymm R 2) : SymmetricFunction R) *
+/-- **The dual Jacobi--Trudi expansion of `s_{(2, 1ⁿ)}`** (the Schur function of
+`(Nat.Partition.singletonSecondRow n).conjugate`): for every `n`,
+`s_{(2, 1ⁿ)} = e_{n + 1} e₁ - e_{n + 2}` in `Λ_R`. -/
+theorem of_stableSchur_conjugate_singletonSecondRow_eq_esymm (n : ℕ) :
+    DirectSum.of _ (n + 2) (stableSchur R (Nat.Partition.singletonSecondRow n).conjugate) =
+      (DirectSum.of _ (n + 1) (stableEsymm R (n + 1)) : SymmetricFunction R) *
           DirectSum.of _ 1 (stableEsymm R 1) -
-        DirectSum.of _ 3 (stableEsymm R 3) := by
-  have hr : (Nat.Partition.singletonSecondRow 1).conjugate.parts.card ≤ 2 := by
-    simp [Nat.Partition.singletonSecondRow_parts]
-  have hsort : ((2 ::ₘ {1} : Multiset ℕ).sort (· ≥ ·)) = [2, 1] := by
-    simpa only [Nat.Partition.singletonSecondRow_parts, Multiset.insert_eq_cons] using
-      Nat.Partition.sort_parts_singletonSecondRow 1
-  rw [of_stableSchur_eq_det_esymmInt_conjugate R _ hr, Matrix.det_fin_two]
-  simp [hsort]
+        DirectSum.of _ (n + 2) (stableEsymm R (n + 2)) := by
+  simpa using congrArg (omega R) (of_stableSchur_singletonSecondRow_eq_hsymm R n)
 
 end JacobiTrudi
 
@@ -351,17 +331,15 @@ theorem stableOmega_symm (n : ℕ) : (stableOmega R n).symm = stableOmega R n :=
 theorem stableSchurBasis_repr_stableOmega {n : ℕ} (f : stableSymmetricSubmodule R n)
     (μ : n.Partition) :
     (stableSchurBasis R n).repr (stableOmega R n f) μ =
-      (stableSchurBasis R n).repr f μ.conjugate := by
-  have h : ((stableSchurBasis R n).coord μ).comp (stableOmega R n).toLinearMap =
-      (stableSchurBasis R n).coord μ.conjugate := by
-    refine (stableSchurBasis R n).ext fun ν => ?_
-    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, Module.Basis.coord_apply,
-      Module.Basis.coord_apply, Module.Basis.repr_self, stableSchurBasis_apply,
-      stableOmega_stableSchur, ← stableSchurBasis_apply, Module.Basis.repr_self,
-      Finsupp.single_apply, Finsupp.single_apply]
-    exact if_congr ⟨fun h => by rw [← h, _root_.Nat.Partition.conjugate_conjugate],
-      fun h => by rw [h, _root_.Nat.Partition.conjugate_conjugate]⟩ rfl rfl
-  exact DFunLike.congr_fun h f
+      (stableSchurBasis R n).repr f μ.conjugate :=
+  calc
+    (stableSchurBasis R n).repr (stableOmega R n f) μ
+      = ((stableSchurBasis R n).map (stableOmega R n)).repr f μ := by simp
+    _ = ((stableSchurBasis R n).repr f)
+          ((Function.Involutive.toPerm _root_.Nat.Partition.conjugate
+            _root_.Nat.Partition.conjugate_conjugate) μ) := by simp [stableOmega]
+    _ = (stableSchurBasis R n).repr f μ.conjugate :=
+      congrArg _ (congrFun (Function.Involutive.coe_toPerm _) μ)
 
 namespace SymmetricFunction
 
