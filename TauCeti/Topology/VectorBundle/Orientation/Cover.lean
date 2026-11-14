@@ -318,18 +318,6 @@ theorem isCoveringMap_proj (hι : Fintype.card ι = finrank ℝ F) :
       isOpen_preimage_proj (trivializationAt F E b).open_baseSet,
       trivializationHomeomorph hι (trivializationAt F E b), fun _ ↦ rfl⟩
 
-variable [FiniteDimensional ℝ F]
-
-/-- The projection of the orientation double cover is surjective, provided `ι` has cardinality
-the rank of the bundle. -/
-theorem surjective_proj (hι : Fintype.card ι = finrank ℝ F) :
-    Function.Surjective (proj : VectorBundleOrientationCover F E ι → B) := by
-  classical
-  intro b
-  have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b
-  exact ⟨⟨b, ((trivializationAt F E b).mapOrientation ι hb).symm
-    ((Module.finBasis ℝ F).reindex (Fintype.equivFinOfCardEq hι).symm).orientation⟩, rfl⟩
-
 /-- The fibre of the orientation double cover through `p` consists of `p` and `deck p`, provided
 `ι` has cardinality the rank of the bundle. -/
 theorem eq_or_eq_deck (hι : Fintype.card ι = finrank ℝ F) {p q : VectorBundleOrientationCover F E ι}
@@ -341,13 +329,26 @@ theorem eq_or_eq_deck (hι : Fintype.card ι = finrank ℝ F) {p q : VectorBundl
   -- `card ι`, so they are equal or opposite.
   have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b'
   have hinj := ((trivializationAt F E b').mapOrientation ι hb).injective
-  rcases Orientation.eq_or_eq_neg ((trivializationAt F E b').mapOrientation ι hb o')
+  rcases Orientation.eq_or_eq_neg_of_card_eq_finrank
+    ((trivializationAt F E b').mapOrientation ι hb o')
     ((trivializationAt F E b').mapOrientation ι hb o) hι with h | h
   · obtain rfl := hinj h
     exact .inl rfl
   · rw [← Trivialization.mapOrientation_neg] at h
     obtain rfl := hinj h
     exact .inr rfl
+
+variable [FiniteDimensional ℝ F]
+
+/-- The projection of the orientation double cover is surjective, provided `ι` has cardinality
+the rank of the bundle. -/
+theorem surjective_proj (hι : Fintype.card ι = finrank ℝ F) :
+    Function.Surjective (proj : VectorBundleOrientationCover F E ι → B) := by
+  classical
+  intro b
+  have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b
+  exact ⟨⟨b, ((trivializationAt F E b).mapOrientation ι hb).symm
+    ((Module.finBasis ℝ F).reindex (Fintype.equivFinOfCardEq hι).symm).orientation⟩, rfl⟩
 
 /-- Every fibre of the orientation double cover has exactly two points, provided `ι` has
 cardinality the rank of the bundle. -/
@@ -523,8 +524,6 @@ theorem nonempty_iff_exists_section (hι : Fintype.card ι = finrank ℝ F) :
   convert hs using 1
   exact funext fun b ↦ key (s b) b (hproj b)
 
-variable [FiniteDimensional ℝ F]
-
 /-- The points of the orientation double cover lying on the section given by an orientation `o`
 form a clopen set, provided `ι` has cardinality the rank of the bundle. -/
 theorem isClopen_setOf_orientation_eq (hι : Fintype.card ι = finrank ℝ F)
@@ -673,6 +672,8 @@ theorem nonempty_iff_exists_homeomorph (hι : Fintype.card ι = finrank ℝ F) :
     exact (nonempty_iff_exists_section hι).mpr
       ⟨fun b ↦ e (b, 0), e.continuous.comp (continuous_id.prodMk continuous_const),
         fun b ↦ he (b, 0)⟩
+
+variable [FiniteDimensional ℝ F]
 
 /-- Over a connected base, a bundle of rank `card ι` is orientable if and only if its orientation
 double cover is disconnected. -/
