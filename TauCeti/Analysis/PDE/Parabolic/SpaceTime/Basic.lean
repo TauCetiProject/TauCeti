@@ -201,6 +201,16 @@ theorem edist_time_rpow_le (p q : ParabolicSpaceTime E) :
   rw [edist_eq]
   exact le_add_self
 
+/-- Moving the time of `q` to `s`, with `q.time ≤ s ≤ p.time`, does not increase the parabolic
+distance to `p`. -/
+theorem edist_ofCoords_space_le {s : ℝ} {p q : ParabolicSpaceTime E} (hq : q.time ≤ s)
+    (hp : s ≤ p.time) : edist p (ofCoords q.space s) ≤ edist p q := by
+  rw [edist_eq, edist_eq, space_ofCoords, time_ofCoords]
+  gcongr
+  rw [edist_dist, edist_dist, Real.dist_eq, Real.dist_eq, abs_of_nonneg (by linarith),
+    abs_of_nonneg (by linarith)]
+  exact ENNReal.ofReal_le_ofReal (by linarith)
+
 /-- The spatial position of a point of a slab is `1`-Lipschitz for the parabolic distance. -/
 theorem lipschitzWith_slabSpace {a b : ℝ} :
     LipschitzWith 1 fun p : slab (E := E) a b ↦ (p : ParabolicSpaceTime E).space :=

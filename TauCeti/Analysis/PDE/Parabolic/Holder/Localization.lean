@@ -17,6 +17,9 @@ This file proves its product formula in bounded parabolic Hölder spaces and est
 `‖u‖_{α,par} + ‖D_x u‖_{α,par}`. In particular the zeroth-order coefficient cancels, and no
 ellipticity assumption is needed.
 
+When `χ` depends on time alone, so that its spatial derivatives vanish, the commutator is the
+zeroth-order term `χ' u` and `P (χ u) = χ P u + χ' u`.
+
 For `α < 1`, interpolation makes this error at most `η ‖u‖_{2+α,par} + K ‖u‖_∞`, for any
 `η > 0`. The constant is uniform over slabs, coefficients and cutoffs with the stated bound
 on their derivative norms. This is the lower-order error estimate used when localizing a
@@ -153,6 +156,22 @@ theorem norm_parabolicOperatorL_mul_sub_mul_parabolicOperatorL_le :
       ‖B‖ * ‖spatialFDerivHolderL hα χ‖) (norm_nonneg (spatialFDerivHolderL hα u)),
     mul_nonneg (by positivity : 0 ≤ ‖A‖ * ‖spatialFDerivHolderL hα χ‖)
       (norm_nonneg (valueHolderL hα u))]
+
+/-- **The product rule for a factor depending on time alone.** If `χ` has vanishing spatial
+gradient, then `P (χ u) = χ P u + χ' u`: the spatial derivatives fall on `u` only, and the time
+derivative of `χ` produces the zeroth-order term `χ' u`. -/
+theorem parabolicOperatorL_mul_of_spatialFDerivL_eq_zero (hχ : spatialFDerivL χ = 0) :
+    parabolicOperatorL hα A B C ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u) =
+      (ContinuousLinearMap.mul ℝ ℝ).compHolder₂ (valueHolderL hα χ)
+          (parabolicOperatorL hα A B C u) +
+        (ContinuousLinearMap.mul ℝ ℝ).compHolder₂ (timeDerivL χ) (valueHolderL hα u) := by
+  -- In the localization commutator, the terms with spatial derivatives of `χ` vanish.
+  have hχ₂ := spatialSecondFDerivL_eq_zero_of_spatialFDerivL_eq_zero hχ
+  have hD : spatialFDerivHolderL hα χ = 0 := HolderSpace.ext fun p ↦ by simp [hχ]
+  have hL : spatialOperatorL hα A B 0 χ = 0 := HolderSpace.ext fun p ↦ by simp [hχ, hχ₂]
+  have h := parabolicOperatorL_mul_sub_mul_parabolicOperatorL hα A B C χ u
+  simp only [hD, hL, sub_zero, map_zero, _root_.zero_apply, add_zero] at h
+  rw [← h, add_sub_cancel]
 
 /-- **Uniform absorption of localization errors.** Given a common bound `M` on the cutoff
 derivative/coefficient expression, the remainder constant depends only on `α`, `M` and `η`.
