@@ -104,6 +104,7 @@ theorem formalDenom_def (C : VariableChange R) (W : WeierstrassCurve R) :
       PowerSeries.C (C.s * (C.u : R) ^ 2) * X - PowerSeries.C C.t * formalW (C • W) :=
   (rfl)
 
+/-- The constant coefficient of the denominator of the transition is `u³`. -/
 @[simp]
 theorem constantCoeff_formalDenom (C : VariableChange R) (W : WeierstrassCurve R) :
     constantCoeff (C.formalDenom W) = (C.u : R) ^ 3 := by
