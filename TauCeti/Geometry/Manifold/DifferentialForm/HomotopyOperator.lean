@@ -54,6 +54,8 @@ the unit tangent vector at every time.
 ## Main declarations
 
 * `TauCeti.homotopyOperator`: the homotopy operator `h`.
+* `TauCeti.curryLeft_compContinuousLinearMap_inl_apply`: its integrand, evaluated on tangent
+  vectors of `M`.
 * `TauCeti.IsSmoothForm.homotopyOperator`: `h` preserves `C^r` regularity.
 * `TauCeti.homotopyOperator_add`, `TauCeti.homotopyOperator_sub`: `h` is additive on continuous
   forms.
@@ -75,6 +77,9 @@ the unit tangent vector at every time.
   h_t (j₀^* φ))`, where `ι_c x = (x, c)` and `j_c p = (p, c)`. No condition on `φ` at the ends of
   the inner cylinder is needed; when `h_s φ` vanishes over both of them, this is the
   homotopy-rel-ends invariance of the homotopy operator.
+* `TauCeti.cylinderTime`, `TauCeti.cylinderTimeForm`: the time coordinate `t` of the cylinder and
+  its differential `dt`, which reads the time component of a tangent vector
+  (`TauCeti.cylinderTimeForm_apply`) and sends `∂ₜ` to `1` (`TauCeti.cylinderTimeForm_apply_time`).
 
 ## References
 
@@ -128,6 +133,21 @@ theorem homotopyOperator_apply (φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0
           (.inl ℝ E (EuclideanSpace ℝ (Fin 1)))) 0 1 volume :=
   (rfl)
 
+/-- **The integrand of the homotopy operator, evaluated.** On tangent vectors `v` of `M`, the
+integrand of `TauCeti.homotopyOperator_apply` at `(x, t)` is `φ (x, t)` applied to the unit time
+vector `∂ₜ = (0, 1)` followed by the included vectors `(v i, 0)`. -/
+theorem curryLeft_compContinuousLinearMap_inl_apply
+    (φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)) (x : M) (t : Icc (0 : ℝ) 1)
+    (v : Fin k → E) :
+    (ContinuousAlternatingMap.curryLeft (E := E × EuclideanSpace ℝ (Fin 1)) (φ (x, t))
+        ((0 : E), (1 : TangentSpace (𝓡∂ 1) t))).compContinuousLinearMap
+        (.inl ℝ E (EuclideanSpace ℝ (Fin 1))) v =
+      φ (x, t) (Matrix.vecCons ((0 : E), (1 : TangentSpace (𝓡∂ 1) t))
+        fun i ↦ ((v i : E), (0 : EuclideanSpace ℝ (Fin 1)))) :=
+  -- `curryLeft_apply_apply` does not fire: the tangent spaces of the cylinder are the model
+  -- spaces only by definition. The currying and composition operators unfold definitionally.
+  (rfl)
+
 /-- The homotopy operator vanishes at `x` when, at every time `t`, the form `φ (x, t)` vanishes on
 every family whose first vector is the unit time vector `∂ₜ = (0, 1)`. -/
 theorem homotopyOperator_apply_eq_zero
@@ -140,12 +160,7 @@ theorem homotopyOperator_apply_eq_zero
   refine (intervalIntegral.integral_congr (g := fun _ ↦ (0 : E [⋀^Fin k]→L[ℝ] F))
     fun t _ ↦ ?_).trans (intervalIntegral.integral_zero (E := E [⋀^Fin k]→L[ℝ] F))
   refine ContinuousAlternatingMap.ext fun w ↦ ?_
-  -- `curryLeft_apply_apply` does not fire: the tangent spaces of the cylinder are the model
-  -- spaces only by definition. So state the evaluation of the curried form on `∂ₜ` followed by
-  -- the included vectors explicitly.
-  change φ (x, projIcc 0 1 zero_le_one t)
-    (Matrix.vecCons ((0 : E), (1 : TangentSpace (𝓡∂ 1) (projIcc 0 1 zero_le_one t)))
-      fun i ↦ ((w i : E), (0 : EuclideanSpace ℝ (Fin 1)))) = 0
+  rw [curryLeft_compContinuousLinearMap_inl_apply]
   exact h _ _
 
 /-- The homotopy operator of a pullback `f^* σ` vanishes at every point `x` over which the map
@@ -637,5 +652,54 @@ theorem mextDeriv_homotopyOperator_homotopyOperator [IsManifold I 2 M] [Complete
   rw [hdL, homotopyOperator_sub hφ₁ hφ₀] at key
   rw [Pi.sub_apply, Pi.sub_apply, Pi.sub_apply, ← key, Pi.sub_apply]
   abel
+
+/-! ### The time coordinate of the cylinder -/
+
+section TimeCoordinate
+
+variable (I)
+
+/-- The time coordinate `(x, t) ↦ t` of the cylinder `M × [0, 1]`. -/
+def cylinderTime : C^∞⟮I.prod (𝓡∂ 1), M × Icc (0 : ℝ) 1; ℝ⟯ :=
+  ⟨fun p ↦ (p.2 : ℝ), contMDiff_subtypeVal_Icc.comp contMDiff_snd⟩
+
+/-- The time coordinate of the cylinder at `(x, t)` is `t`. -/
+@[simp]
+theorem cylinderTime_apply (p : M × Icc (0 : ℝ) 1) : cylinderTime I p = p.2 :=
+  (rfl)
+
+variable [IsManifold I 2 M]
+
+/-- The one-form `dt` of the time coordinate of the cylinder `M × [0, 1]`. -/
+def cylinderTimeForm : SmoothForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) ℝ 1 :=
+  mextDerivₗ (I.prod (𝓡∂ 1)) 0 (SmoothForm.ofFunction (cylinderTime I (M := M)))
+
+/-- The form `dt` is the exterior derivative of the time coordinate of the cylinder. -/
+theorem cylinderTimeForm_def :
+    cylinderTimeForm I (M := M) =
+      mextDerivₗ (I.prod (𝓡∂ 1)) 0 (SmoothForm.ofFunction (cylinderTime I (M := M))) :=
+  (rfl)
+
+variable {I}
+
+/-- The form `dt` only sees the time component of a tangent vector of the cylinder. -/
+theorem cylinderTimeForm_apply (p : M × Icc (0 : ℝ) 1)
+    (u : Fin 1 → TangentSpace (I.prod (𝓡∂ 1)) p) :
+    (cylinderTimeForm I (M := M)).1 p u =
+      mfderiv (𝓡∂ 1) 𝓘(ℝ, ℝ) (Subtype.val : Icc (0 : ℝ) 1 → ℝ) p.2 (u 0).2 := by
+  have hval : MDifferentiableAt (𝓡∂ 1) 𝓘(ℝ) (Subtype.val : Icc (0 : ℝ) 1 → ℝ) p.2 :=
+    (contMDiff_subtypeVal_Icc (n := 1)).mdifferentiableAt one_ne_zero
+  have hcomp : (cylinderTime I (M := M) : M × Icc (0 : ℝ) 1 → ℝ) = Subtype.val ∘ Prod.snd := rfl
+  rw [cylinderTimeForm_def, mextDerivₗ_apply, SmoothForm.coe_ofFunction, mextDeriv_ofFunction,
+    ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv_apply_eq_mfderiv_apply, hcomp,
+    mfderiv_comp p hval mdifferentiableAt_snd, mfderiv_snd]
+  rfl
+
+/-- The form `dt` sends the unit time vector `∂ₜ = (0, 1)` to `1`. -/
+theorem cylinderTimeForm_apply_time (p : M × Icc (0 : ℝ) 1) :
+    (cylinderTimeForm I (M := M)).1 p ![((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2))] = 1 :=
+  (cylinderTimeForm_apply p _).trans (mfderiv_subtypeVal_Icc_one p.2)
+
+end TimeCoordinate
 
 end TauCeti
