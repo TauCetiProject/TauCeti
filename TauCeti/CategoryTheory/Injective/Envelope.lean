@@ -71,6 +71,7 @@ structure IsEssentialMono {M I : C} (ι : M ⟶ I) : Prop where
   mono_of_mono_comp {X : C} (g : I ⟶ X) : Mono (ι ≫ g) → Mono g
 
 /-- An isomorphism is an essential monomorphism: composing with it changes nothing. -/
+@[simp]
 theorem isEssentialMono_of_isIso {M I : C} (f : M ⟶ I) [IsIso f] : IsEssentialMono f where
   mono := inferInstance
   mono_of_mono_comp g hg := (mono_comp_iff_of_isIso f g).1 hg
@@ -137,9 +138,17 @@ theorem exists_comp_eq_and_isSplitMono {M I : C} [Injective I] {ι : M ⟶ I}
 end IsEssentialMono
 
 /-- Precomposing with an isomorphism does not change essentiality. -/
-theorem isEssentialMono_iso_comp_iff {M M' I : C} (e : M ≅ M') (f : M' ⟶ I) :
-    IsEssentialMono (e.hom ≫ f) ↔ IsEssentialMono f :=
-  ⟨fun h ↦ by simpa using (isEssentialMono_of_isIso e.inv).comp h,
-    fun h ↦ (isEssentialMono_of_isIso e.hom).comp h⟩
+@[simp]
+theorem isEssentialMono_isIso_comp_iff {M M' I : C} (e : M ⟶ M') [IsIso e] (f : M' ⟶ I) :
+    IsEssentialMono (e ≫ f) ↔ IsEssentialMono f :=
+  ⟨fun h ↦ by simpa using (isEssentialMono_of_isIso (inv e)).comp h,
+    fun h ↦ (isEssentialMono_of_isIso e).comp h⟩
+
+/-- Postcomposing with an isomorphism does not change essentiality. -/
+@[simp]
+theorem isEssentialMono_comp_isIso_iff {M I I' : C} (f : M ⟶ I) (e : I ⟶ I') [IsIso e] :
+    IsEssentialMono (f ≫ e) ↔ IsEssentialMono f :=
+  ⟨fun h ↦ by simpa using h.comp (isEssentialMono_of_isIso (inv e)),
+    fun h ↦ h.comp (isEssentialMono_of_isIso e)⟩
 
 end TauCeti

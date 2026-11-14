@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Projective
-public import TauCeti.Algebra.Category.ModuleCat.Algebra
-public import TauCeti.Algebra.Module.Injective.Envelope.ModuleCat
+public import TauCeti.Algebra.Category.ModuleCat.Injective.MinimalCoresolution
+public import TauCeti.Algebra.Module.Injective.Envelope.Projective
+public import TauCeti.Algebra.Module.Injective.Int
 public import TauCeti.CategoryTheory.Abelian.DominantDimension
-public import TauCeti.RingTheory.MatlisDuality.ArtinAlgebra
 
 /-!
 # The dominant dimension of a ring
@@ -20,15 +20,18 @@ dimension of the left regular module `Γ` in `ModuleCat Γ` (`CategoryTheory.dom
 supremum of the `n` for which there is an exact sequence `0 → Γ → I⁰ → ⋯ → Iⁿ⁻¹`, exact at `Γ` and
 at `I⁰, …, Iⁿ⁻²`, by projective and injective modules.
 
-For an Artin algebra this is the dominant dimension of [ARS, §VI.5]: the terms of the minimal
-injective coresolution of `Γ` are finitely generated, and `n ≤ dom.dim Γ` exactly when there is
-such a coresolution by **finitely generated** projective-injective modules
-(`TauCeti.natCast_le_dominantDimension_iff_of_finite`). For other rings the established notion asks
-the terms of the minimal injective coresolution to be flat rather than projective (Hoshino); Xi
-calls it the *flat-dominant dimension*. The two differ already for `ℤ`: here
-`dominantDimension ℤ = 0` (`TauCeti.dominantDimension_int`), because a projective and injective
-`ℤ`-module is zero, while in the minimal injective coresolution `0 → ℤ → ℚ → ℚ/ℤ → 0` the module `ℚ`
-is flat and `ℚ/ℤ` is not, so the flat version is `1`. The flat version is not defined here.
+For a finitely generated module `M` over any ring, `n ≤ dom.dim M` exactly when there is such a
+coresolution by **finitely generated** projective-injective modules
+(`ModuleCat.natCast_le_dominantDimension_iff_of_finite`): the minimal injective coresolution is a
+termwise retract of every injective coresolution, so its first `n` terms are projective-injective,
+and a projective injective envelope of a finitely generated module is finitely generated
+(`TauCeti.IsInjectiveEnvelope.finite_of_projective`). For an Artin algebra this is the dominant
+dimension of [ARS, §VI.5]. For other rings the established notion asks the terms of the minimal
+injective coresolution to be flat rather than projective (Hoshino); Xi calls it the
+*flat-dominant dimension*. The two differ already for `ℤ`: here `dominantDimension ℤ = 0`
+(`TauCeti.dominantDimension_int`), because a projective and injective `ℤ`-module is zero, while in
+the minimal injective coresolution `0 → ℤ → ℚ → ℚ/ℤ → 0` the module `ℚ` is flat and `ℚ/ℤ` is not,
+so the flat version is `1`. The flat version is not defined here.
 
 ## Main definitions
 
@@ -36,14 +39,16 @@ is flat and `ℚ/ℤ` is not, so the flat version is `1`. The flat version is no
 
 ## Main results
 
-* `TauCeti.natCast_le_dominantDimension_iff_of_finite`: for an Artin algebra, `n ≤ dom.dim Γ`
-  exactly when `Γ` has a coresolution with `n` terms by finitely generated projective-injective
-  modules.
+* `ModuleCat.natCast_le_dominantDimension_iff_of_finite` and
+  `TauCeti.natCast_le_dominantDimension_iff_of_finite`: for a finitely generated module, and for
+  the ring itself, `n ≤ dom.dim` exactly when there is a coresolution with `n` terms by finitely
+  generated projective-injective modules.
+* `TauCeti.two_le_dominantDimension_iff_of_finite`: `dom.dim Γ ≥ 2` exactly when `Γ` has an
+  injective copresentation by finitely generated projective-injective modules.
 * `TauCeti.dominantDimension_eq_top_of_injective`: a left self-injective ring has dominant
   dimension `⊤`.
 * `TauCeti.dominantDimension_int`: `dominantDimension ℤ = 0`.
-* `TauCeti.ModuleCat.exists_isMinimalInjectiveCoresolution`: every module has minimal injective
-  coresolutions of every length.
+* `ModuleCat.dominantDimension_le_dominantDimension_pi`: `dom.dim M ≤ dom.dim Mⁿ`.
 
 ## References
 
@@ -57,22 +62,68 @@ public section
 
 universe u v
 
-open CategoryTheory Limits ComposableArrows
+open CategoryTheory Limits ComposableArrows TauCeti
+
+/-- The cosyzygies of a minimal injective coresolution of a finitely generated module by
+projective modules are finitely generated, and so are its terms. -/
+private theorem ModuleCat.finite_cosyzygy {Γ : Type u} [Ring Γ] [Small.{v} Γ] {n : ℕ}
+    {E : ComposableArrows (ModuleCat.{v} Γ) (n + 1)} (hE : E.IsMinimalInjectiveCoresolution)
+    [Module.Finite Γ (E.obj' 1)] (hP : ∀ (i : ℕ) (hi : i < n), Projective (E.obj' (i + 2))) :
+    ∀ (i : ℕ) (hi : i ≤ n), Module.Finite Γ (E.cosyzygy i)
+  | 0, _ => Module.Finite.equiv hE.cosyzygyZeroIso.toLinearEquiv.symm
+  | i + 1, hi => by
+    have := ModuleCat.finite_cosyzygy hE hP i (by omega)
+    have := hE.injective i (by omega)
+    have := hP i (by omega)
+    have : Module.Projective Γ (E.obj' (i + 2)) :=
+      (IsProjective.iff_projective (E.obj' (i + 2))).2 inferInstance
+    have := ((isInjectiveEnvelope_iff_injective_and_isEssentialMono _).2
+      ⟨inferInstance, hE.isEssentialMono_cosyzygyι i (by omega)⟩).finite_of_projective
+    -- The next cosyzygy is a quotient of the term `E.obj' (i + 2)`.
+    exact Module.Finite.of_surjective (cokernel.π (E.map' (i + 1) (i + 2))).hom
+      ((ModuleCat.epi_iff_surjective _).1 inferInstance)
+
+/-- **Finitely generated coresolutions.** For a finitely generated module `M` over any ring,
+`n ≤ dom.dim M` exactly when `M` has a coresolution with `n` terms by finitely generated
+projective-injective modules. The minimal injective coresolution has projective terms as soon as
+`n ≤ dom.dim M`, and a projective injective envelope of a finitely generated module is finitely
+generated. -/
+theorem ModuleCat.natCast_le_dominantDimension_iff_of_finite {Γ : Type u} [Ring Γ] [Small.{v} Γ]
+    (M : ModuleCat.{v} Γ) [Module.Finite Γ M] (n : ℕ) :
+    (n : ℕ∞) ≤ CategoryTheory.dominantDimension M ↔
+      HasCoresolution (fun N : ModuleCat.{v} Γ ↦ Module.Finite Γ N ∧ Projective N ∧ Injective N)
+        M n := by
+  constructor
+  · intro h
+    obtain ⟨E, hE, ⟨e⟩⟩ := ModuleCat.exists_isMinimalInjectiveCoresolution M n
+    have hP := (hE.natCast_le_dominantDimension_iff e).1 h
+    have : Module.Finite Γ (E.obj' 1) := Module.Finite.equiv e.toLinearEquiv.symm
+    have hfin := ModuleCat.finite_cosyzygy hE hP
+    refine hasCoresolution_iff.2 ⟨E, hE.toIsCoresolution, ⟨e⟩, fun i hi ↦ ⟨?_, hP i hi,
+      hE.injective i hi⟩⟩
+    have := hfin i (by omega)
+    have := hE.injective i hi
+    have := hP i hi
+    have : Module.Projective Γ (E.obj' (i + 2)) :=
+      (IsProjective.iff_projective (E.obj' (i + 2))).2 inferInstance
+    exact ((isInjectiveEnvelope_iff_injective_and_isEssentialMono _).2
+      ⟨inferInstance, hE.isEssentialMono_cosyzygyι i hi⟩).finite_of_projective
+  · intro h
+    obtain ⟨S, hS, e, hP⟩ := hasCoresolution_iff.1 h
+    exact natCast_le_dominantDimension_iff.2
+      (hasProjectiveInjectiveCoresolution_iff.2 ⟨S, hS, e, fun i hi ↦ (hP i hi).2⟩)
+
+/-- **Finite powers.** The dominant dimension of a finite power `Mⁿ` of a module is at least that
+of `M`; for `n = 0` the power is zero, of dominant dimension `⊤`. -/
+theorem ModuleCat.dominantDimension_le_dominantDimension_pi {Γ : Type u} [Ring Γ]
+    (M : ModuleCat.{v} Γ) (n : ℕ) :
+    CategoryTheory.dominantDimension M ≤
+      CategoryTheory.dominantDimension (ModuleCat.of Γ (Fin n → M)) := by
+  rw [← dominantDimension_eq_of_iso (ModuleCat.biproductIsoPi fun _ : Fin n ↦ M)]
+  exact (le_iInf fun _ ↦ le_rfl).trans
+    (iInf_dominantDimension_le_dominantDimension_biproduct fun _ : Fin n ↦ M)
 
 namespace TauCeti
-
-/-- **Every module has minimal injective coresolutions of every length**, since every module has
-an injective envelope. -/
-theorem ModuleCat.exists_isMinimalInjectiveCoresolution {R : Type u} [Ring R] [Small.{v} R]
-    (M : ModuleCat.{v} R) (n : ℕ) :
-    ∃ E : ComposableArrows (ModuleCat.{v} R) (n + 1), E.IsMinimalInjectiveCoresolution ∧
-      Nonempty (E.obj' 1 ≅ M) := by
-  obtain ⟨E, hE, e, -⟩ := ComposableArrows.exists_isMinimalInjectiveCoresolution
-    (Q := fun _ ↦ True)
-    (fun X _ ↦ by
-      obtain ⟨I, ι, hI, hι⟩ := ModuleCat.exists_isEssentialMono X
-      exact ⟨I, ι, hI, hι, trivial, trivial⟩) n trivial (X := M)
-  exact ⟨E, hE, e⟩
 
 /-- The **dominant dimension** `dom.dim Γ` of a ring `Γ`, of left modules: the dominant dimension of
 the left regular module (`CategoryTheory.dominantDimension`), the supremum in `ℕ∞` of the `n` for
@@ -90,6 +141,26 @@ theorem dominantDimension_eq_dominantDimension_of (Γ : Type u) [Ring Γ] :
     dominantDimension Γ = CategoryTheory.dominantDimension (ModuleCat.of Γ Γ) :=
   (rfl)
 
+/-- **The dominant dimension of a ring through finitely generated modules.** `n ≤ dom.dim Γ`
+exactly when `Γ` has a coresolution `0 → Γ → I⁰ → ⋯ → Iⁿ⁻¹` by finitely generated projective and
+injective modules. For an Artin algebra this is the dominant dimension of [ARS, §VI.5]. -/
+theorem natCast_le_dominantDimension_iff_of_finite (Γ : Type u) [Ring Γ] (n : ℕ) :
+    (n : ℕ∞) ≤ dominantDimension Γ ↔
+      HasCoresolution (fun M : ModuleCat.{u} Γ ↦ Module.Finite Γ M ∧ Projective M ∧ Injective M)
+        (ModuleCat.of Γ Γ) n :=
+  ModuleCat.natCast_le_dominantDimension_iff_of_finite (ModuleCat.of Γ Γ) n
+
+/-- **The case `dom.dim Γ ≥ 2` through finitely generated modules.** It holds exactly when `Γ` has
+an injective copresentation `0 → Γ → I⁰ → I¹` by finitely generated projective-injective
+modules. -/
+theorem two_le_dominantDimension_iff_of_finite (Γ : Type u) [Ring Γ] :
+    2 ≤ dominantDimension Γ ↔
+      ∃ (I₀ I₁ : ModuleCat.{u} Γ) (f : ModuleCat.of Γ Γ ⟶ I₀) (g : I₀ ⟶ I₁) (w : f ≫ g = 0),
+        Mono f ∧ (ShortComplex.mk f g w).Exact ∧
+          (Module.Finite Γ I₀ ∧ Projective I₀ ∧ Injective I₀) ∧
+            (Module.Finite Γ I₁ ∧ Projective I₁ ∧ Injective I₁) := by
+  rw [← Nat.cast_ofNat, natCast_le_dominantDimension_iff_of_finite, hasCoresolution_two_iff]
+
 /-- **A left self-injective ring has dominant dimension `⊤`**, through the coresolution
 `0 → Γ → Γ → 0 → 0 → ⋯`. -/
 theorem dominantDimension_eq_top_of_injective (Γ : Type u) [Ring Γ] [Module.Injective Γ Γ] :
@@ -99,109 +170,27 @@ theorem dominantDimension_eq_top_of_injective (Γ : Type u) [Ring Γ] [Module.In
   exact CategoryTheory.dominantDimension_eq_top _
 
 /-- The zero ring has dominant dimension `⊤`. -/
+@[simp]
 theorem dominantDimension_eq_top_of_subsingleton (Γ : Type u) [Ring Γ] [Subsingleton Γ] :
-    dominantDimension Γ = ⊤ := by
-  have hZ : IsZero (ModuleCat.of Γ Γ) := ModuleCat.isZero_of_subsingleton _
-  have := hZ.projective
-  have := hZ.injective
-  exact CategoryTheory.dominantDimension_eq_top _
+    dominantDimension Γ = ⊤ :=
+  (ModuleCat.isZero_of_subsingleton (ModuleCat.of Γ Γ)).dominantDimension_eq_top
 
-/-- A `ℤ`-module that is projective and injective is zero: an element is divisible by every
-nonzero integer, by injectivity, and a linear form on a projective module that is nonzero on it
-would then take a value divisible by every nonzero integer. -/
-private theorem eq_zero_of_projective_of_injective {I : ModuleCat.{0} ℤ} [Projective I]
-    [Injective I] (x : I) : x = 0 := by
-  by_contra hx
-  have : Module.Projective ℤ I := (IsProjective.iff_projective (R := ℤ) I).2 ‹_›
-  obtain ⟨s, hs⟩ := Module.projective_def'.1 this
-  have hsx : s x ≠ 0 := fun h ↦ hx (by
-    have := LinearMap.congr_fun hs x
-    rw [LinearMap.comp_apply, h, map_zero, LinearMap.id_apply] at this
-    exact this.symm)
-  obtain ⟨a, ha⟩ := Finsupp.ne_iff.1 hsx
-  let φ : I →ₗ[ℤ] ℤ := Finsupp.lapply a ∘ₗ s
-  have hφ : φ x ≠ 0 := ha
-  -- `x` is divisible by `N = |φ x| + 1`, by injectivity of `I`.
-  let N : ℕ := (φ x).natAbs + 1
-  let m : ModuleCat.of ℤ ℤ ⟶ ModuleCat.of ℤ ℤ := ModuleCat.ofHom ((N : ℤ) • LinearMap.id)
-  have : Mono m := (ModuleCat.mono_iff_injective m).2 fun a b hab ↦ by
-    have : (N : ℤ) * a = N * b := by simpa [m] using hab
-    exact mul_left_cancel₀ (by positivity) this
-  let g : ModuleCat.of ℤ ℤ ⟶ I := ModuleCat.ofHom (LinearMap.toSpanSingleton ℤ I x)
-  let h : ModuleCat.of ℤ ℤ ⟶ I := Injective.factorThru g m
-  have hg : m ≫ h = g := Injective.comp_factorThru g m
-  have hx' : x = (N : ℤ) • h.hom 1 := by
-    have := congrArg (fun f ↦ f.hom 1) hg
-    rw [ModuleCat.hom_comp, LinearMap.comp_apply] at this
-    have hm : m.hom 1 = (N : ℤ) • (1 : ℤ) := rfl
-    have hg1 : g.hom 1 = x := LinearMap.toSpanSingleton_apply_one ℤ I x
-    rw [hm, map_zsmul, hg1] at this
-    exact this.symm
-  have hdvd : (N : ℤ) ∣ φ x := by
-    rw [hx', map_zsmul, smul_eq_mul]
-    exact dvd_mul_right _ _
-  have := Int.natAbs_le_of_dvd_ne_zero hdvd hφ
-  simp only [N, Int.natAbs_natCast] at this
-  omega
-
-/-- **`dominantDimension ℤ = 0`.** A projective and injective `ℤ`-module is zero, so `ℤ` has no
-projective-injective coresolution with one term. The flat version of the dominant dimension
-(Hoshino) is `1` for `ℤ`, so the two notions differ outside Artin algebras. -/
+/-- **`dominantDimension ℤ = 0`.** A projective and injective `ℤ`-module is zero
+(`Module.subsingleton_of_projective_of_injective_int`), so `ℤ` has no projective-injective
+coresolution with one term. The flat version of the dominant dimension (Hoshino) is `1` for `ℤ`,
+so the two notions differ outside Artin algebras. -/
+@[simp]
 theorem dominantDimension_int : dominantDimension ℤ = 0 := by
   by_contra h
   have h1 : ((1 : ℕ) : ℕ∞) ≤ CategoryTheory.dominantDimension (ModuleCat.of ℤ ℤ) :=
     Order.one_le_iff_ne_zero.2 h
-  obtain ⟨I, ι, hι, ⟨hP, hI⟩, -⟩ := hasCoresolution_succ_iff.1
+  obtain ⟨I, ι, hι, ⟨hP, hI⟩⟩ := hasCoresolution_one_iff.1
     (hasProjectiveInjectiveCoresolution_iff_hasCoresolution.1
       (natCast_le_dominantDimension_iff.1 h1))
+  have : Module.Projective ℤ I := (IsProjective.iff_projective (R := ℤ) I).2 hP
+  have : Module.Injective ℤ I := Module.injective_module_of_injective_object ℤ I
+  have := Module.subsingleton_of_projective_of_injective_int I
   have hinj := (ModuleCat.mono_iff_injective ι).1 hι
-  have : ι.hom 1 = ι.hom 0 := by rw [map_zero]; exact eq_zero_of_projective_of_injective _
-  exact one_ne_zero (hinj this)
-
-section Artin
-
-attribute [local instance] ModuleCat.moduleOfAlgebra ModuleCat.isScalarTower_moduleOfAlgebra
-
-variable (R : Type u) [CommRing R] [IsArtinianRing R] (Γ : Type u) [Ring Γ] [Algebra R Γ]
-  [Module.Finite R Γ]
-
-include R
-
-/-- Over an Artin algebra, a finitely generated module has an injective envelope by a finitely
-generated module, and the cokernel is again finitely generated. -/
-private theorem exists_isEssentialMono_finite (X : ModuleCat.{u} Γ) [Module.Finite Γ X] :
-    ∃ (I : ModuleCat.{u} Γ) (ι : X ⟶ I), Injective I ∧ IsEssentialMono ι ∧ Module.Finite Γ I ∧
-      Module.Finite Γ (cokernel ι : ModuleCat.{u} Γ) := by
-  obtain ⟨Q, _, _, _, i, hi⟩ := exists_isInjectiveEnvelope_finite R (A := Γ) X
-  let ι : X ⟶ ModuleCat.of Γ Q := ModuleCat.ofHom i
-  refine ⟨ModuleCat.of Γ Q, ι, IsInjectiveEnvelope.injective_obj (f := ι) hi,
-    IsInjectiveEnvelope.isEssentialMono (f := ι) hi, ‹_›, ?_⟩
-  exact Module.Finite.of_surjective (cokernel.π ι).hom
-    ((ModuleCat.epi_iff_surjective _).1 inferInstance)
-
-/-- **The dominant dimension of an Artin algebra.** For an Artin `R`-algebra `Γ`, `n ≤ dom.dim Γ`
-exactly when `Γ` has a coresolution `0 → Γ → I⁰ → ⋯ → Iⁿ⁻¹` by finitely generated projective and
-injective modules. The minimal injective coresolution of `Γ` has finitely generated terms, and it is
-a termwise retract of every injective coresolution, so it is such a coresolution as soon as
-`n ≤ dom.dim Γ`. -/
-theorem natCast_le_dominantDimension_iff_of_finite (n : ℕ) :
-    (n : ℕ∞) ≤ dominantDimension Γ ↔
-      HasCoresolution (fun M : ModuleCat.{u} Γ ↦ Module.Finite Γ M ∧ Projective M ∧ Injective M)
-        (ModuleCat.of Γ Γ) n := by
-  constructor
-  · intro h
-    obtain ⟨E, hE, ⟨e⟩, hQ⟩ := exists_isMinimalInjectiveCoresolution
-      (Q := fun M : ModuleCat.{u} Γ ↦ Module.Finite Γ M)
-      (fun X (_ : Module.Finite Γ X) ↦ exists_isEssentialMono_finite R Γ X) n
-      (X := ModuleCat.of Γ Γ) (inferInstanceAs (Module.Finite Γ Γ))
-    have hP := (hE.natCast_le_dominantDimension_iff e).1 h
-    exact hasCoresolution_iff.2
-      ⟨E, hE.toIsCoresolution, ⟨e⟩, fun i hi ↦ ⟨hQ i hi, hP i hi, hE.injective i hi⟩⟩
-  · intro h
-    obtain ⟨S, hS, e, hP⟩ := hasCoresolution_iff.1 h
-    exact natCast_le_dominantDimension_iff.2
-      (hasProjectiveInjectiveCoresolution_iff.2 ⟨S, hS, e, fun i hi ↦ (hP i hi).2⟩)
-
-end Artin
+  exact one_ne_zero (hinj (Subsingleton.elim (ι.hom 1) (ι.hom 0)))
 
 end TauCeti

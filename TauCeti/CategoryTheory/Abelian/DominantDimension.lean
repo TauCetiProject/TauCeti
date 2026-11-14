@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ENat.Lattice
 public import TauCeti.CategoryTheory.Abelian.Injective.MinimalCoresolution
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 
 /-!
 # Dominant dimension
@@ -26,6 +27,11 @@ For modules over other rings it is a different number from the established one, 
 terms of the minimal injective coresolution to be flat rather than projective (Hoshino; Xi calls
 this the *flat-dominant dimension*). The flat version is not defined here.
 
+Since projective-injective coresolutions are closed under extensions and retracts
+(`CategoryTheory.HasCoresolution.of_shortExact`, `CategoryTheory.HasCoresolution.of_retract`), the
+dominant dimension of a retract is at least that of the whole object, and that of a biproduct is
+the minimum, in every abelian category.
+
 ## Main definitions
 
 * `CategoryTheory.HasProjectiveInjectiveCoresolution X n`: `X` has a projective-injective
@@ -43,9 +49,11 @@ this the *flat-dominant dimension*). The flat version is not defined here.
 * `CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.natCast_le_dominantDimension_iff`:
   `n ≤ dom.dim X` exactly when the first `n` terms of a minimal injective coresolution are
   projective.
-* `CategoryTheory.min_dominantDimension_le_dominantDimension_biprod` and
-  `CategoryTheory.dominantDimension_le_of_retract`: the dominant dimension of a biproduct is at
-  least the minimum, and that of a retract is at least that of the whole object.
+* `CategoryTheory.Retract.dominantDimension_le`: the dominant dimension of a retract is at least
+  that of the whole object.
+* `CategoryTheory.dominantDimension_biprod`: the dominant dimension of `X ⊞ Y` is the minimum of
+  those of `X` and `Y`; `CategoryTheory.iInf_dominantDimension_le_dominantDimension_biproduct` for
+  finite biproducts.
 * `CategoryTheory.Equivalence.dominantDimension_functor_obj`: equivalences preserve the dominant
   dimension.
 
@@ -59,7 +67,7 @@ this the *flat-dominant dimension*). The flat version is not defined here.
 
 public section
 
-universe v v' u u'
+universe v v' u u' w
 
 namespace CategoryTheory
 
@@ -93,6 +101,7 @@ rings the established notion asks the terms of the minimal injective coresolutio
 noncomputable def dominantDimension (X : C) : ℕ∞ :=
   ⨆ (n : ℕ) (_ : HasProjectiveInjectiveCoresolution X n), (n : ℕ∞)
 
+@[simp]
 theorem hasProjectiveInjectiveCoresolution_zero (X : C) : HasProjectiveInjectiveCoresolution X 0 :=
   hasCoresolution_zero X
 
@@ -105,6 +114,19 @@ theorem HasProjectiveInjectiveCoresolution.of_iso {X Y : C} {n : ℕ}
     (h : HasProjectiveInjectiveCoresolution X n) (e : X ≅ Y) :
     HasProjectiveInjectiveCoresolution Y n :=
   HasCoresolution.of_iso h e
+
+/-- Projective-injective objects are closed under binary biproducts. -/
+private theorem projective_and_injective_biprod (A B : C) (hA : Projective A ∧ Injective A)
+    (hB : Projective B ∧ Injective B) : Projective (A ⊞ B) ∧ Injective (A ⊞ B) := by
+  obtain ⟨_, _⟩ := hA
+  obtain ⟨_, _⟩ := hB
+  exact ⟨inferInstance, inferInstance⟩
+
+/-- Projective-injective coresolutions of a retract: if `Y` has one with `n` terms, so does every
+retract of `Y`. -/
+theorem HasProjectiveInjectiveCoresolution.of_retract {X Y : C} {n : ℕ} (r : Retract X Y)
+    (h : HasProjectiveInjectiveCoresolution Y n) : HasProjectiveInjectiveCoresolution X n :=
+  HasCoresolution.of_retract (fun _ h ↦ h.2) projective_and_injective_biprod r h
 
 /-- **`n ≤ dom.dim X` exactly when `X` has a projective-injective coresolution with `n` terms.**
 Coresolutions can be truncated, so the set of such `n` is downward closed. -/
@@ -135,23 +157,10 @@ theorem dominantDimension_eq_top_iff {X : C} :
 theorem two_le_dominantDimension_iff {X : C} :
     2 ≤ dominantDimension X ↔
       ∃ (I₀ I₁ : C) (f : X ⟶ I₀) (g : I₀ ⟶ I₁) (w : f ≫ g = 0), Mono f ∧
-        (ShortComplex.mk f g w).Exact ∧ Projective I₀ ∧ Injective I₀ ∧ Projective I₁ ∧
-          Injective I₁ := by
-  rw [show (2 : ℕ∞) = ((2 : ℕ) : ℕ∞) from rfl, natCast_le_dominantDimension_iff,
-    HasProjectiveInjectiveCoresolution, hasCoresolution_succ_iff]
-  constructor
-  · rintro ⟨I₀, f, hf, ⟨hI₀, hI₀'⟩, h⟩
-    obtain ⟨I₁, ι, hι, ⟨hI₁, hI₁'⟩, -⟩ := hasCoresolution_succ_iff.1 h
-    refine ⟨I₀, I₁, f, cokernel.π f ≫ ι, by simp, hf, ?_, hI₀, hI₀', hI₁, hI₁'⟩
-    exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono
-      (S₁ := ShortComplex.mk f (cokernel.π f) (cokernel.condition f))
-      (S₂ := ShortComplex.mk f (cokernel.π f ≫ ι) (by simp))
-      { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := ι, comm₁₂ := by simp, comm₂₃ := by simp }).1
-      (ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel f))
-  · rintro ⟨I₀, I₁, f, g, w, hf, hfg, hI₀, hI₀', hI₁, hI₁'⟩
-    have := hfg.mono_cokernelDesc
-    exact ⟨I₀, f, hf, ⟨hI₀, hI₀'⟩, hasCoresolution_succ_iff.2
-      ⟨I₁, cokernel.desc f g w, this, ⟨hI₁, hI₁'⟩, hasCoresolution_zero _⟩⟩
+        (ShortComplex.mk f g w).Exact ∧ (Projective I₀ ∧ Injective I₀) ∧
+          (Projective I₁ ∧ Injective I₁) := by
+  rw [← Nat.cast_ofNat, natCast_le_dominantDimension_iff, HasProjectiveInjectiveCoresolution,
+    hasCoresolution_two_iff]
 
 /-- A zero object has projective-injective coresolutions of every length. -/
 theorem Limits.IsZero.hasProjectiveInjectiveCoresolution {Z : C} (hZ : IsZero Z) (n : ℕ) :
@@ -173,6 +182,11 @@ theorem dominantDimension_eq_top (X : C) [Projective X] [Injective X] :
     exact hasCoresolution_succ_iff.2 ⟨X, 𝟙 X, inferInstance, ⟨inferInstance, inferInstance⟩,
       (isZero_cokernel_of_epi (𝟙 X)).hasProjectiveInjectiveCoresolution n⟩
 
+/-- A zero object has dominant dimension `⊤`. -/
+theorem Limits.IsZero.dominantDimension_eq_top {Z : C} (hZ : IsZero Z) :
+    dominantDimension Z = ⊤ :=
+  dominantDimension_eq_top_iff.2 hZ.hasProjectiveInjectiveCoresolution
+
 theorem dominantDimension_eq_of_iso {X Y : C} (e : X ≅ Y) :
     dominantDimension X = dominantDimension Y := by
   refine le_antisymm (iSup₂_le fun n hn ↦ natCast_le_dominantDimension_iff.2 (hn.of_iso e))
@@ -183,8 +197,8 @@ namespace ComposableArrows.IsMinimalInjectiveCoresolution
 /-- **The dominant dimension from the minimal injective coresolution.** If `E` is a minimal
 injective coresolution of `X` with `n` terms, then `n ≤ dom.dim X` exactly when the terms of `E`
 are projective. The minimal coresolution is a termwise retract of every injective coresolution
-(`CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.nonempty_retract`), and retracts
-of projective objects are projective. -/
+(`CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.nonempty_retract_obj'`), and
+retracts of projective objects are projective. -/
 theorem natCast_le_dominantDimension_iff {n : ℕ} {E : ComposableArrows C (n + 1)}
     (hE : E.IsMinimalInjectiveCoresolution) {X : C} (e : E.obj' 1 ≅ X) :
     (n : ℕ∞) ≤ dominantDimension X ↔ ∀ (i : ℕ) (hi : i < n), Projective (E.obj' (i + 2)) := by
@@ -193,7 +207,7 @@ theorem natCast_le_dominantDimension_iff {n : ℕ} {E : ComposableArrows C (n + 
   · rintro h i hi
     obtain ⟨S, hS, ⟨e'⟩, hP⟩ := hasProjectiveInjectiveCoresolution_iff.1 h
     have hS' : S.IsInjectiveCoresolution := ⟨hS, fun i hi ↦ (hP i hi).2⟩
-    obtain ⟨r⟩ := hE.nonempty_retract hS' (Retract.ofIso (e ≪≫ e'.symm)) i hi
+    obtain ⟨r⟩ := hE.nonempty_retract_obj' hS' (Retract.ofIso (e ≪≫ e'.symm)) i hi
     have := (hP i hi).1
     exact r.projective
   · intro h
@@ -202,68 +216,78 @@ theorem natCast_le_dominantDimension_iff {n : ℕ} {E : ComposableArrows C (n + 
 
 end ComposableArrows.IsMinimalInjectiveCoresolution
 
+/-- **Retracts.** If `X` is a retract of `Y`, then `dom.dim Y ≤ dom.dim X`: projective-injective
+coresolutions pass to retracts (`CategoryTheory.HasProjectiveInjectiveCoresolution.of_retract`). -/
+theorem Retract.dominantDimension_le {X Y : C} (r : Retract X Y) :
+    dominantDimension Y ≤ dominantDimension X :=
+  iSup₂_le fun _ hn ↦ natCast_le_dominantDimension_iff.2 (hn.of_retract r)
+
 /-- **Biproducts.** The dominant dimension of `X ⊞ Y` is at least the minimum of those of `X` and
 `Y`. -/
 theorem min_dominantDimension_le_dominantDimension_biprod (X Y : C) :
     min (dominantDimension X) (dominantDimension Y) ≤ dominantDimension (X ⊞ Y) := by
   refine ENat.forall_natCast_le_iff_le.1 fun n hn ↦ ?_
   rw [le_min_iff, natCast_le_dominantDimension_iff, natCast_le_dominantDimension_iff] at hn
-  exact natCast_le_dominantDimension_iff.2 (HasCoresolution.biprod
-    (fun A B hA hB ↦ ⟨by have := hA.1; have := hB.1; infer_instance,
-      by have := hA.2; have := hB.2; infer_instance⟩) hn.1 hn.2)
+  exact natCast_le_dominantDimension_iff.2
+    (HasCoresolution.biprod projective_and_injective_biprod hn.1 hn.2)
 
-/-- **Retracts.** If `X` is a retract of `Y` and `X` has minimal injective coresolutions of every
-length, for instance in a module category, then `dom.dim Y ≤ dom.dim X`. -/
-theorem dominantDimension_le_of_retract {X Y : C} (r : Retract X Y)
-    (hX : ∀ n : ℕ, ∃ E : ComposableArrows C (n + 1), E.IsMinimalInjectiveCoresolution ∧
-      Nonempty (E.obj' 1 ≅ X)) :
-    dominantDimension Y ≤ dominantDimension X := by
-  refine iSup₂_le fun n hn ↦ ?_
-  obtain ⟨S, hS, ⟨e⟩, hP⟩ := hasProjectiveInjectiveCoresolution_iff.1 hn
-  obtain ⟨E, hE, ⟨e'⟩⟩ := hX n
-  have hS' : S.IsInjectiveCoresolution := ⟨hS, fun i hi ↦ (hP i hi).2⟩
-  refine (hE.natCast_le_dominantDimension_iff e').2 fun i hi ↦ ?_
-  obtain ⟨r'⟩ :=
-    hE.nonempty_retract hS' ((Retract.ofIso e').trans (r.trans (Retract.ofIso e.symm))) i hi
-  have := (hP i hi).1
-  exact r'.projective
-
-/-- **Biproducts, exactly.** If `X` and `Y` have minimal injective coresolutions of every length,
-then the dominant dimension of `X ⊞ Y` is the minimum of those of `X` and `Y`. -/
-theorem dominantDimension_biprod {X Y : C}
-    (hX : ∀ n : ℕ, ∃ E : ComposableArrows C (n + 1), E.IsMinimalInjectiveCoresolution ∧
-      Nonempty (E.obj' 1 ≅ X))
-    (hY : ∀ n : ℕ, ∃ E : ComposableArrows C (n + 1), E.IsMinimalInjectiveCoresolution ∧
-      Nonempty (E.obj' 1 ≅ Y)) :
+/-- **Biproducts, exactly.** The dominant dimension of `X ⊞ Y` is the minimum of those of `X` and
+`Y`. -/
+theorem dominantDimension_biprod (X Y : C) :
     dominantDimension (X ⊞ Y) = min (dominantDimension X) (dominantDimension Y) :=
-  le_antisymm (le_min (dominantDimension_le_of_retract ⟨biprod.inl, biprod.fst, by simp⟩ hX)
-    (dominantDimension_le_of_retract ⟨biprod.inr, biprod.snd, by simp⟩ hY))
+  le_antisymm (le_min (Retract.dominantDimension_le ⟨biprod.inl, biprod.fst, by simp⟩)
+    (Retract.dominantDimension_le ⟨biprod.inr, biprod.snd, by simp⟩))
     (min_dominantDimension_le_dominantDimension_biprod X Y)
+
+/-- **Finite biproducts.** The dominant dimension of a finite biproduct is at least the infimum of
+those of its summands. -/
+theorem iInf_dominantDimension_le_dominantDimension_biproduct [HasFiniteBiproducts C]
+    {J : Type w} [Finite J] (f : J → C) :
+    (⨅ j, dominantDimension (f j)) ≤ dominantDimension (⨁ f) := by
+  -- Induction on the finite index type, through `Option`.
+  refine Finite.induction_empty_option (P := fun J ↦ ∀ [Finite J] (f : J → C),
+    (⨅ j, dominantDimension (f j)) ≤ dominantDimension (⨁ f)) ?_ ?_ ?_ J f
+  · intro J K e h hK f
+    have : Finite J := Finite.of_equiv K e.symm
+    rw [← e.iInf_comp, dominantDimension_eq_of_iso
+      (biproduct.whiskerEquiv e (fun j ↦ Iso.refl (f (e j)))).symm]
+    exact h (f ∘ e)
+  · intro _ f
+    rw [(isZero_biproduct_of_isEmpty f).dominantDimension_eq_top]
+    exact le_top
+  · intro J _ h _ f
+    rw [iInf_option, dominantDimension_eq_of_iso (biproductOptionIso f)]
+    exact (min_le_min_left _ (h _)).trans
+      (min_dominantDimension_le_dominantDimension_biprod _ _)
 
 section Equivalence
 
 variable {D : Type u'} [Category.{v'} D] [Abelian D]
 
-/-- An equivalence carries projective-injective coresolutions to projective-injective
-coresolutions. -/
-theorem HasProjectiveInjectiveCoresolution.map (F : C ≌ D) {X : C} {n : ℕ}
-    (h : HasProjectiveInjectiveCoresolution X n) :
-    HasProjectiveInjectiveCoresolution (F.functor.obj X) n := by
-  obtain ⟨S, hS, ⟨e⟩, hP⟩ := hasProjectiveInjectiveCoresolution_iff.1 h
-  refine hasProjectiveInjectiveCoresolution_iff.2 ⟨S ⋙ F.functor,
-    ⟨⟨⟨fun i hi ↦ ?_⟩, fun i hi ↦ ?_⟩, F.functor.map_isZero hS.isZero_left⟩,
-    ⟨F.functor.mapIso e⟩, fun i hi ↦ ⟨(F.map_projective_iff _).2 (hP i hi).1,
-      (F.map_injective_iff _).2 (hP i hi).2⟩⟩
-  · change F.functor.map _ ≫ F.functor.map _ = 0
-    rw [← F.functor.map_comp, hS.exact.toIsComplex.zero i, F.functor.map_zero]
-  · exact (hS.exact.exact i).map F.functor
+/-- An exact functor sending projective-injective objects to projective-injective objects carries
+projective-injective coresolutions to projective-injective coresolutions. -/
+theorem HasProjectiveInjectiveCoresolution.map (F : C ⥤ D) [F.PreservesZeroMorphisms]
+    [F.PreservesHomology]
+    (hF : ∀ Y : C, Projective Y → Injective Y → Projective (F.obj Y) ∧ Injective (F.obj Y))
+    {X : C} {n : ℕ} (h : HasProjectiveInjectiveCoresolution X n) :
+    HasProjectiveInjectiveCoresolution (F.obj X) n :=
+  HasCoresolution.map F (fun Y hY ↦ hF Y hY.1 hY.2) h
+
+/-- An equivalence sends projective-injective objects to projective-injective objects. -/
+private theorem Equivalence.projective_and_injective_functor_obj {C D : Type*} [Category* C]
+    [Category* D] [Abelian C] [Abelian D] (F : C ≌ D) (Y : C) (hP : Projective Y)
+    (hI : Injective Y) : Projective (F.functor.obj Y) ∧ Injective (F.functor.obj Y) :=
+  ⟨(F.map_projective_iff _).2 hP, (F.map_injective_iff _).2 hI⟩
 
 /-- **Equivalences preserve the dominant dimension.** -/
+@[simp]
 theorem Equivalence.dominantDimension_functor_obj (F : C ≌ D) (X : C) :
     dominantDimension (F.functor.obj X) = dominantDimension X := by
   refine le_antisymm (iSup₂_le fun n hn ↦ natCast_le_dominantDimension_iff.2 ?_)
-    (iSup₂_le fun n hn ↦ natCast_le_dominantDimension_iff.2 (hn.map F))
-  exact (hn.map F.symm).of_iso (F.unitIso.app X).symm
+    (iSup₂_le fun n hn ↦ natCast_le_dominantDimension_iff.2
+      (hn.map F.functor (Equivalence.projective_and_injective_functor_obj F)))
+  exact (hn.map F.inverse (Equivalence.projective_and_injective_functor_obj F.symm)).of_iso
+    (F.unitIso.app X).symm
 
 end Equivalence
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import Mathlib.CategoryTheory.Abelian.Basic
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 public import TauCeti.CategoryTheory.Injective.Envelope
@@ -28,9 +29,13 @@ the familiar fact that `A ⊕ K` is essential in `E ⊕ K` when `A` is essential
 
 * `TauCeti.IsEssentialMono.biprod_map_id`: `biprod.map ι (𝟙 K)` is an essential monomorphism
   when `ι` is.
+* `TauCeti.isEssentialMono_cokernelDesc_of_eq_zero` and
+  `TauCeti.isEssentialMono_cokernelDesc_epi_comp`: the map out of a cokernel induced by `g` is
+  essential exactly when `g` is, if the morphism divided out is zero, and dividing out `p ≫ f` for
+  an epimorphism `p` is the same as dividing out `f`.
 * `TauCeti.IsEssentialMono.nonempty_retract_and_nonempty_retract_cokernel`: an injective envelope
-  of a retract of `B` is a retract of every injective object containing `B`, compatibly with the
-  cokernels.
+  `ι` of a retract of `B` is a retract of every injective object `I` containing `B`, and
+  `cokernel ι` is a retract of the cokernel of `B ⟶ I`.
 
 ## References
 
@@ -93,14 +98,14 @@ theorem biprod_map_id {A E : C} {ι : A ⟶ E} (hι : IsEssentialMono ι) (K : C
       rwa [← cancel_mono g₂, zero_comp]
     ext <;> simp [h₁, h₂]
 
-/-- **An injective envelope of a retract is a retract, compatibly with cokernels.** Let
+/-- **An injective envelope of a retract is a retract, and so is its cokernel.** Let
 `ι : A ⟶ E` be an essential monomorphism into an injective object, `j : B ⟶ I` a monomorphism
 into an injective object, and `A` a retract of `B`. Then `E` is a retract of `I`, and
 `cokernel ι` is a retract of `cokernel j`.
 
 Taking `B = A`, this says that the injective envelope is a retract of every injective object
-containing `A`, together with the cosyzygies; iterating it compares a minimal injective
-coresolution with an arbitrary one. -/
+containing `A`, and its cokernel a retract of the corresponding cokernel; iterating it compares a
+minimal injective coresolution with an arbitrary one. -/
 theorem nonempty_retract_and_nonempty_retract_cokernel {A B E I : C} [Injective E] [Injective I]
     {ι : A ⟶ E} (hι : IsEssentialMono ι) {j : B ⟶ I} [Mono j] (h : Retract A B) :
     Nonempty (Retract E I) ∧ Nonempty (Retract (cokernel ι) (cokernel j)) := by
@@ -108,21 +113,19 @@ theorem nonempty_retract_and_nonempty_retract_cokernel {A B E I : C} [Injective 
   -- `g : E ⟶ I` extends `A ⟶ B ⟶ I` along `ι`.
   let g : E ⟶ I := Injective.factorThru (h.i ≫ j) ι
   have hg : ι ≫ g = h.i ≫ j := Injective.comp_factorThru _ _
-  -- The complement `K` of `A` in `B`.
+  -- The complement `K` of `A` in `B`, with the splitting `B ≅ A ⊞ K` of `K ⟶ B ⟶ A`.
   let κ : kernel h.r ⟶ B := kernel.ι h.r
-  let p : B ⟶ kernel h.r := kernel.lift h.r (𝟙 B - h.r ≫ h.i) (by simp)
-  have hp : p ≫ κ = 𝟙 B - h.r ≫ h.i := kernel.lift_ι _ _ _
-  have hip : h.i ≫ p = 0 := by
-    rw [← cancel_mono κ, Category.assoc, hp]
-    simp
-  have hκp : κ ≫ p = 𝟙 _ := by
-    rw [← cancel_mono κ, Category.assoc, hp]
-    simp [κ]
-  -- `B ≅ A ⊞ K`, through `biprod.desc h.i κ` with left inverse `biprod.lift h.r p`.
+  let σ := ShortComplex.Splitting.ofExactOfSection (ShortComplex.kernelSequence h.r)
+    (ShortComplex.kernelSequence_exact h.r) h.i h.retract (inferInstanceAs (Mono κ))
+  let p : B ⟶ kernel h.r := σ.r
+  have hip : h.i ≫ p = 0 := σ.s_r
+  have hκp : κ ≫ p = 𝟙 _ := σ.f_r
+  have hid : p ≫ κ + h.r ≫ h.i = 𝟙 B := σ.id
   have hd : Mono (biprod.desc h.i κ) := by
     have : biprod.desc h.i κ ≫ biprod.lift h.r p = 𝟙 _ := by
       ext <;> simp [hip, hκp, κ]
-    exact ⟨fun a b hab ↦ by simpa [this] using congrArg (· ≫ biprod.lift h.r p) hab⟩
+    have := IsSplitMono.mk' ⟨_, this⟩
+    infer_instance
   -- `u : E ⊞ K ⟶ I` is a monomorphism, since `A ⊞ K ⟶ E ⊞ K` is essential.
   let u : E ⊞ kernel h.r ⟶ I := biprod.desc g (κ ≫ j)
   have hu : Mono u := by
@@ -137,11 +140,8 @@ theorem nonempty_retract_and_nonempty_retract_cokernel {A B E I : C} [Injective 
   have hgq : g ≫ q = 𝟙 E := by simpa [u] using congrArg (biprod.inl ≫ ·) hq
   have hκq : κ ≫ j ≫ q = 0 := by simpa [u] using congrArg (biprod.inr ≫ ·) hq
   have hjq : j ≫ q = h.r ≫ ι := by
-    have : 𝟙 B = h.r ≫ h.i + p ≫ κ := by rw [hp]; abel
-    calc j ≫ q = (h.r ≫ h.i + p ≫ κ) ≫ j ≫ q := by rw [← this, Category.id_comp]
-      _ = h.r ≫ ι := by
-        rw [Preadditive.add_comp, Category.assoc, Category.assoc, hκq, comp_zero, add_zero,
-          ← Category.assoc h.i, ← hg, Category.assoc, hgq, Category.comp_id]
+    calc j ≫ q = (p ≫ κ + h.r ≫ h.i) ≫ j ≫ q := by rw [hid, Category.id_comp]
+      _ = h.r ≫ ι := by simp [hκq, ← reassoc_of% hg, hgq]
   refine ⟨⟨⟨g, q, hgq⟩⟩, ⟨⟨cokernel.desc ι (g ≫ cokernel.π j) ?_,
     cokernel.desc j (q ≫ cokernel.π ι) ?_, ?_⟩⟩⟩
   · rw [← Category.assoc, hg]
@@ -152,5 +152,37 @@ theorem nonempty_retract_and_nonempty_retract_cokernel {A B E I : C} [Injective 
     simp [reassoc_of% hgq]
 
 end IsEssentialMono
+
+omit [Abelian C] in
+/-- Essentiality only depends on the morphism. -/
+theorem isEssentialMono_congr {A B : C} {f f' : A ⟶ B} (h : f = f') :
+    IsEssentialMono f ↔ IsEssentialMono f' := by
+  subst h
+  rfl
+
+/-- `cokernel.desc f g w` only depends on `f` and `g`. -/
+theorem isEssentialMono_cokernelDesc_congr {A B D : C} {f f' : A ⟶ B} {g g' : B ⟶ D}
+    (hf : f = f') (hg : g = g') (w : f ≫ g = 0) (w' : f' ≫ g' = 0) :
+    IsEssentialMono (cokernel.desc f g w) ↔ IsEssentialMono (cokernel.desc f' g' w') := by
+  subst hf hg
+  rfl
+
+/-- Dividing out by a zero morphism does not change essentiality. -/
+theorem isEssentialMono_cokernelDesc_of_eq_zero {A B D : C} {f : A ⟶ B} (hf : f = 0)
+    {g : B ⟶ D} (w : f ≫ g = 0) : IsEssentialMono (cokernel.desc f g w) ↔ IsEssentialMono g := by
+  subst hf
+  have : cokernel.desc (0 : A ⟶ B) g w = inv (cokernel.π (0 : A ⟶ B)) ≫ g := by
+    simp [← cancel_epi (cokernel.π (0 : A ⟶ B))]
+  rw [this, isEssentialMono_isIso_comp_iff]
+
+/-- Precomposing with an epimorphism does not change the essentiality of the induced map out of
+the cokernel. -/
+theorem isEssentialMono_cokernelDesc_epi_comp {A A' B D : C} (p : A' ⟶ A) [Epi p]
+    (f : A ⟶ B) {g : B ⟶ D} (w : (p ≫ f) ≫ g = 0) (w' : f ≫ g = 0) :
+    IsEssentialMono (cokernel.desc (p ≫ f) g w) ↔ IsEssentialMono (cokernel.desc f g w') := by
+  have : cokernel.desc (p ≫ f) g w = (cokernelEpiComp p f).hom ≫ cokernel.desc f g w' := by
+    ext
+    simp [cokernelEpiComp]
+  rw [this, isEssentialMono_isIso_comp_iff]
 
 end TauCeti
