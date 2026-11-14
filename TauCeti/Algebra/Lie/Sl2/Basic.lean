@@ -419,9 +419,9 @@ theorem lieHom_ext_slFinTwo {φ ψ : SpecialLinear.sl (Fin 2) K →ₗ⁅K⁆ L}
 
 end Presentation
 
-/-! ### A triple inside the subalgebra it generates -/
-
 end TauCeti
+
+/-! ### A triple inside the subalgebra it generates -/
 
 variable {K : Type*} [CommRing K] {L : Type*} [LieRing L] [LieAlgebra K L] {h e f : L}
 

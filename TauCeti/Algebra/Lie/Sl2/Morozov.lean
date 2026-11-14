@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Sl2
-public import TauCeti.Algebra.Lie.Sl2.Associative
+import TauCeti.Algebra.Lie.Sl2.Associative
 
 /-!
 # Morozov's lemma

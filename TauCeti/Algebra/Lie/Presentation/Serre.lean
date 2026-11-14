@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Lie.SerreConstruction
 public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Presentation.Basic
-import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Quotient
 
 /-!
@@ -368,7 +367,9 @@ end Orthogonal
 Serre's relations are stable under reindexing the three families along an injective map of index
 sets, provided the matrix is reindexed the same way, and under the signed exchange of the raising
 and lowering families. Both are statements about an arbitrary Serre system in an arbitrary Lie
-algebra; applied to the generators of the presented algebra they give its automorphisms, in
+algebra. Applied to the generators of the presented algebra, reindexing along an arbitrary
+injective map gives homomorphisms between different presentations, while only the
+matrix-preserving permutations and the signed exchange give automorphisms, in
 `TauCeti/Algebra/Lie/Presentation/Serre/Automorphism.lean`. -/
 
 section Stability
