@@ -60,8 +60,8 @@ theorem cauchyRiemannOperator_comp
 
 /-- Under a `C²` target map intertwining `J` and `K` near the image, the linearization
 transforms by the differential, with a second-derivative correction proportional to the
-nonlinear Cauchy–Riemann defect. -/
-theorem cauchyRiemannLinearization_comp
+nonlinear Cauchy–Riemann defect; evaluated form. -/
+theorem cauchyRiemannLinearization_comp_apply
     (j : U →L[ℝ] U) (J : V → V →L[ℝ] V) (K : W → W →L[ℝ] W)
     (u ξ : U → V) (Φ : V → W) (x v : U)
     (hu : DifferentiableAt ℝ u x) (hξ : DifferentiableAt ℝ ξ x)
@@ -101,6 +101,25 @@ theorem cauchyRiemannLinearization_comp
   rw [hbase]
   linear_combination (norm := module) ht
 
+/-- Under a `C²` target map intertwining `J` and `K` near the image, the linearization
+transforms by the differential, with a second-derivative correction proportional to the
+nonlinear Cauchy–Riemann defect. -/
+theorem cauchyRiemannLinearization_comp
+    (j : U →L[ℝ] U) (J : V → V →L[ℝ] V) (K : W → W →L[ℝ] W)
+    (u ξ : U → V) (Φ : V → W) (x : U)
+    (hu : DifferentiableAt ℝ u x) (hξ : DifferentiableAt ℝ ξ x)
+    (hΦ : ContDiffAt ℝ 2 Φ (u x)) (hJ : DifferentiableAt ℝ J (u x))
+    (hK : DifferentiableAt ℝ K (Φ (u x)))
+    (hJK : ∀ᶠ y in 𝓝 (u x), (fderiv ℝ Φ y).comp (J y) =
+      (K (Φ y)).comp (fderiv ℝ Φ y)) :
+    cauchyRiemannLinearization j K (Φ ∘ u)
+        (fun y ↦ fderiv ℝ Φ (u y) (ξ y)) x =
+      (fderiv ℝ Φ (u x)).comp (cauchyRiemannLinearization j J u ξ x) +
+        (fderiv ℝ (fderiv ℝ Φ) (u x) (ξ x)).comp (cauchyRiemannOperator j J u x) := by
+  ext v
+  rw [cauchyRiemannLinearization_comp_apply j J K u ξ Φ x v hu hξ hΦ hJ hK hJK, add_apply,
+    comp_apply, comp_apply]
+
 /-- At a zero of the Cauchy–Riemann defect, the linearization is natural under a `C²`
 target coordinate change. No integrability of the target structures is required. -/
 theorem cauchyRiemannLinearization_comp_of_cauchyRiemannOperator_eq_zero
@@ -115,7 +134,7 @@ theorem cauchyRiemannLinearization_comp_of_cauchyRiemannOperator_eq_zero
     cauchyRiemannLinearization j K (Φ ∘ u)
         (fun y ↦ fderiv ℝ Φ (u y) (ξ y)) x =
       (fderiv ℝ Φ (u x)).comp (cauchyRiemannLinearization j J u ξ x) := by
-  ext v
-  simp [cauchyRiemannLinearization_comp j J K u ξ Φ x v hu hξ hΦ hJ hK hJK, hhol]
+  rw [cauchyRiemannLinearization_comp j J K u ξ Φ x hu hξ hΦ hJ hK hJK, hhol, comp_zero,
+    add_zero]
 
 end TauCeti
