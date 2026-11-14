@@ -257,6 +257,10 @@ instance commRing {A : Type*} [CommRing A] (I : TwoSidedIdeal A) : CommRing (A �
 instance algebra (I : TwoSidedIdeal A) : Algebra R (A ⧸ I) :=
   inferInstanceAs <| Algebra R (A ⧸ I.asIdeal)
 
+instance isScalarTower {S : Type*} [CommSemiring S] [SMul R S] [Algebra S A]
+    [IsScalarTower R S A] (I : TwoSidedIdeal A) : IsScalarTower R S (A ⧸ I) :=
+  inferInstanceAs <| IsScalarTower R S (A ⧸ I.asIdeal)
+
 -- Verify that the unital ring structure agrees definitionally with the nonunital one.
 example (I : TwoSidedIdeal A) : (ring I).toNonUnitalRing = nonUnitalRing I := by
   with_reducible_and_instances rfl
@@ -275,6 +279,20 @@ theorem mk_one (I : TwoSidedIdeal A) : mk I (1 : A) = 1 :=
 
 theorem idealQuotientMk_asIdeal_eq_mk (I : TwoSidedIdeal A) (a : A) :
     (Ideal.Quotient.mk I.asIdeal a : A ⧸ I) = mk I a :=
+  (rfl)
+
+theorem algebraMap_apply (I : TwoSidedIdeal A) (r : R) :
+    algebraMap R (A ⧸ I) r = mk I (algebraMap R A r) :=
+  (rfl)
+
+@[simp]
+theorem mk_algebraMap (I : TwoSidedIdeal A) (r : R) :
+    mk I (algebraMap R A r) = algebraMap R (A ⧸ I) r :=
+  (rfl)
+
+@[simp]
+theorem mkRingHom_comp_algebraMap (I : TwoSidedIdeal A) :
+    (mkRingHom I).comp (algebraMap R A) = algebraMap R (A ⧸ I) :=
   (rfl)
 
 end Quotient
