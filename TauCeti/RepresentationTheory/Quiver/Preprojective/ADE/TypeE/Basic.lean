@@ -56,8 +56,9 @@ results are stated for the named Bourbaki-labelled graph `TauCeti.zigzagE8Graph`
 For `E₇`, the Bourbaki-labelled inclusion into `E₈`, recorded in
 `TauCeti.DynkinType.cartanMatrix_E7_eq_submatrix_E8`, identifies its signless algebra with an
 induced subgraph quotient. This transfers finite dimensionality from `E₈` to `E₇`. The signless
-`E₇` instance retains the caller's neighborhood `Fintype` instances as parameters, so its
-conclusion refers to the quotient carrier formed with those enumerations.
+`E₇` instance takes no neighborhood `Fintype` parameters: its conclusion refers to the quotient
+carrier formed with the enumeration `SimpleGraph.neighborSetFintypeOfFinite`, which is a local
+instance of this file.
 
 The signless algebra of a bipartite graph is the preprojective algebra of each of its
 orientations, by an explicit sign rescaling of the arrows. Thus the same bound holds in the
