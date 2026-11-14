@@ -46,10 +46,17 @@ the two valuative topologies.
 * `TauCeti.algebraMap_integerRing_dvd_iff`: the map of valuation rings reflects divisibility.
 * `TauCeti.aroots_eq_map_roots_integerRing`: the roots in `L` of a monic polynomial over the
   valuation ring of `K` are its roots in the valuation ring of `L`.
+* `ValuativeExtension.valuation_algebraMap_le_one_iff` and
+  `ValuativeExtension.valuation_algebraMap_lt_one_iff`: a compatible extension preserves and
+  reflects `valuation · ≤ 1` and `valuation · < 1`.
+* `ValuativeExtension.residueField_algebraMap_residue`: the induced map on residue fields
+  intertwines the residue maps.
 * `IsAlgebraic.exists_ne_zero_vle`: a nonzero algebraic element has value at least that of some
   nonzero base-field element.
 * `AlgHom.aeval_residue_minpoly_eq_zero`: a residue embedding sends the residue of an integer to a
   root of the reduction of its minimal polynomial.
+* `AlgEquiv.integerAlgEquivOfMemInteger`: restriction of a valuation-ring-preserving field
+  automorphism `L ≃ₐ[K] L` to an integer-ring automorphism `𝒪[L] ≃ₐ[𝒪[K]] 𝒪[L]`.
 -/
 
 public section
@@ -99,6 +106,18 @@ theorem _root_.ValuativeRel.IsNontrivial.of_valuativeExtension [IsNontrivial A] 
   have hinj := (mapValueGroupWithZero_strictMono (A := A) (B := B)).injective
   exact ⟨mapValueGroupWithZero A B γ, by rwa [← map_zero (mapValueGroupWithZero A B), hinj.ne_iff],
     by rwa [← map_one (mapValueGroupWithZero A B), hinj.ne_iff]⟩
+
+/-- A compatible extension preserves and reflects `valuation · ≤ 1`. -/
+theorem valuation_algebraMap_le_one_iff (x : A) :
+    valuation B (algebraMap A B x) ≤ 1 ↔ valuation A x ≤ 1 := by
+  rw [← mapValueGroupWithZero_valuation, ← map_one (mapValueGroupWithZero A B),
+    (mapValueGroupWithZero_strictMono (A := A) (B := B)).le_iff_le]
+
+/-- A compatible extension preserves and reflects `valuation · < 1`. -/
+theorem valuation_algebraMap_lt_one_iff (x : A) :
+    valuation B (algebraMap A B x) < 1 ↔ valuation A x < 1 := by
+  rw [← mapValueGroupWithZero_valuation, ← map_one (mapValueGroupWithZero A B),
+    (mapValueGroupWithZero_strictMono (A := A) (B := B)).lt_iff_lt]
 
 end ValuativeExtension
 
@@ -200,3 +219,61 @@ theorem aeval_residue_minpoly_eq_zero (φ : 𝓀ᵥ[L] →ₐ[𝓀ᵥ[K]] 𝓀�
     ((φ.restrictScalars 𝒪ᵥ[K]).comp (IsScalarTower.toAlgHom 𝒪ᵥ[K] 𝒪ᵥ[L] 𝓀ᵥ[L])) z
 
 end AlgHom
+
+section ResidueAndAlgEquiv
+
+open TauCeti
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L]
+  [Algebra K L] [ValuativeExtension K L]
+
+local notation "𝒪ᵥ[" K "]" => Valuation.integer (valuation K)
+local notation "𝓀ᵥ[" K "]" => IsLocalRing.ResidueField ↥𝒪ᵥ[K]
+
+/-- The induced map on residue fields of a `ValuativeExtension` intertwines the residue maps. -/
+theorem ValuativeExtension.residueField_algebraMap_residue (x : 𝒪ᵥ[K]) :
+    algebraMap 𝓀ᵥ[K] 𝓀ᵥ[L] (IsLocalRing.residue 𝒪ᵥ[K] x) =
+      IsLocalRing.residue 𝒪ᵥ[L] (algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] x) :=
+  Valuation.HasExtension.algebraMap_residue_eq_residue_algebraMap (valuation K) (valuation L) x
+
+namespace AlgEquiv
+
+/-- Restriction of a `K`-algebra automorphism `σ : L ≃ₐ[K] L` preserving `𝒪[L]` in both directions
+to an `𝒪[K]`-algebra automorphism of `𝒪[L]`. -/
+noncomputable def integerAlgEquivOfMemInteger (σ : L ≃ₐ[K] L)
+    (hσ : ∀ z : L, σ z ∈ 𝒪ᵥ[L] ↔ z ∈ 𝒪ᵥ[L]) :
+    𝒪ᵥ[L] ≃ₐ[𝒪ᵥ[K]] 𝒪ᵥ[L] where
+  toFun x := ⟨σ x.1, (hσ x.1).2 x.2⟩
+  invFun x := ⟨σ.symm x.1, (hσ (σ.symm x.1)).1 (by rw [σ.apply_symm_apply]; exact x.2)⟩
+  left_inv x := Subtype.ext (σ.symm_apply_apply x.1)
+  right_inv x := Subtype.ext (σ.apply_symm_apply x.1)
+  map_mul' x y := Subtype.ext (map_mul σ x.1 y.1)
+  map_add' x y := Subtype.ext (map_add σ x.1 y.1)
+  commutes' r := Subtype.ext (by
+    simp only [Valuation.HasExtension.val_algebraMap]
+    exact σ.commutes (r : K))
+
+@[simp]
+theorem coe_integerAlgEquivOfMemInteger_apply (σ : L ≃ₐ[K] L)
+    (hσ : ∀ z : L, σ z ∈ 𝒪ᵥ[L] ↔ z ∈ 𝒪ᵥ[L]) (x : 𝒪ᵥ[L]) :
+    (σ.integerAlgEquivOfMemInteger hσ x : L) = σ (x : L) :=
+  (rfl)
+
+@[simp]
+theorem coe_integerAlgEquivOfMemInteger_symm_apply (σ : L ≃ₐ[K] L)
+    (hσ : ∀ z : L, σ z ∈ 𝒪ᵥ[L] ↔ z ∈ 𝒪ᵥ[L]) (x : 𝒪ᵥ[L]) :
+    ((σ.integerAlgEquivOfMemInteger hσ).symm x : L) = σ.symm (x : L) :=
+  (rfl)
+
+theorem coe_integerAlgEquivOfMemInteger_pow_apply (σ : L ≃ₐ[K] L)
+    (hσ : ∀ z : L, σ z ∈ 𝒪ᵥ[L] ↔ z ∈ 𝒪ᵥ[L]) (n : ℕ) (x : 𝒪ᵥ[L]) :
+    ((σ.integerAlgEquivOfMemInteger hσ ^ n) x : L) = (σ ^ n) (x : L) := by
+  induction n generalizing x with
+  | zero => rfl
+  | succ n ih =>
+    rw [pow_succ', pow_succ', AlgEquiv.mul_apply, AlgEquiv.mul_apply,
+      coe_integerAlgEquivOfMemInteger_apply, ih]
+
+end AlgEquiv
+
+end ResidueAndAlgEquiv
