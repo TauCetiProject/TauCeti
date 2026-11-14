@@ -34,9 +34,8 @@ basis vectors form a complete flag of direct summands. For zero-based pivot posi
 `i` (`Module.Grassmannian.schemeSchubertLocus_le_ker_toSchemeHom_iff_of_field`), the classical
 condition defining the Schubert variety of `p` relative to the flag. The scheme structure here is
 the one given by the determinantal equations; it is defined over any base ring and its formation
-commutes with base change. No comparison with the reduced structure, with the closure of the
-Schubert cell or with the pivot description of the cells (`Module.Basis.flagPivots`) is made in
-this file.
+commutes with base change; see `TauCeti.AlgebraicGeometry.Grassmannian.Schubert` for its Schubert
+cells, characterization via `Module.Basis.flagPivots`, and comparison with the closure of the cell.
 
 ## Main definitions
 
