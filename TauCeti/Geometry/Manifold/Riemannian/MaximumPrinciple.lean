@@ -35,13 +35,13 @@ uniqueness mechanism for the curvature equation of conformal metrics on closed s
   `TauCeti.Manifold.hessian_self_nonneg_of_isLocalMin`: the second-derivative test.
 * `TauCeti.Manifold.laplaceBeltrami_nonpos_of_isLocalMax`,
   `TauCeti.Manifold.laplaceBeltrami_nonneg_of_isLocalMin`: the sign of `Δ` at local extrema.
-* `TauCeti.Manifold.exists_forall_le_and_laplaceBeltrami_nonpos`,
-  `TauCeti.Manifold.exists_forall_ge_and_laplaceBeltrami_nonneg`: on a compact manifold a `C²`
+* `TauCeti.Manifold.exists_forall_ge_and_laplaceBeltrami_nonpos`,
+  `TauCeti.Manifold.exists_forall_le_and_laplaceBeltrami_nonneg`: on a compact manifold a `C²`
   function attains its maximum at a point where `Δ` is nonpositive, and its minimum at a point
   where `Δ` is nonnegative.
 * `TauCeti.Manifold.le_of_le_laplaceBeltrami_of_laplaceBeltrami_le`: the comparison principle.
-* `TauCeti.Manifold.le_one_add_mul_div_of_laplaceBeltrami_le`: the bound `u ≤ 1 + 4 k / r` for a
-  subsolution of `-Δu / 2 + (r / 4) (u - 1) u ≤ k u`.
+* `TauCeti.Manifold.le_max_div_zero_of_mul_sq_sub_mul_le_laplaceBeltrami`: the bound
+  `u ≤ max (b / a) 0` for a subsolution of `a u² - b u ≤ Δu` with `a > 0`.
 
 ## References
 
@@ -107,7 +107,7 @@ theorem laplaceBeltrami_nonneg_of_isLocalMin (hf : ContMDiffAt I 𝓘(ℝ) 2 f x
 
 /-- On a compact boundaryless Riemannian manifold, a `C²` function attains its maximum at a point
 where its Laplace–Beltrami operator `Δ = div ∘ grad` is nonpositive. -/
-theorem exists_forall_le_and_laplaceBeltrami_nonpos [CompactSpace M] [Nonempty M]
+theorem exists_forall_ge_and_laplaceBeltrami_nonpos [CompactSpace M] [Nonempty M]
     (hf : ContMDiff I 𝓘(ℝ) 2 f) : ∃ x₀, (∀ y, f y ≤ f x₀) ∧ laplaceBeltrami I f x₀ ≤ 0 := by
   obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty hf.continuous.continuousOn
   exact ⟨x₀, fun y ↦ hx₀ (Set.mem_univ y),
@@ -115,7 +115,7 @@ theorem exists_forall_le_and_laplaceBeltrami_nonpos [CompactSpace M] [Nonempty M
 
 /-- On a compact boundaryless Riemannian manifold, a `C²` function attains its minimum at a point
 where its Laplace–Beltrami operator `Δ = div ∘ grad` is nonnegative. -/
-theorem exists_forall_ge_and_laplaceBeltrami_nonneg [CompactSpace M] [Nonempty M]
+theorem exists_forall_le_and_laplaceBeltrami_nonneg [CompactSpace M] [Nonempty M]
     (hf : ContMDiff I 𝓘(ℝ) 2 f) : ∃ x₀, (∀ y, f x₀ ≤ f y) ∧ 0 ≤ laplaceBeltrami I f x₀ := by
   obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMinOn Set.univ_nonempty hf.continuous.continuousOn
   exact ⟨x₀, fun y ↦ hx₀ (Set.mem_univ y),
@@ -131,7 +131,7 @@ theorem le_of_le_laplaceBeltrami_of_laplaceBeltrami_le [CompactSpace M] {h : M �
   intro y
   have : Nonempty M := ⟨y⟩
   -- At a maximum `x₀` of `u - v`, the Laplacian of `u - v` is nonpositive.
-  obtain ⟨x₀, hx₀, hmax⟩ := exists_forall_le_and_laplaceBeltrami_nonpos (f := u - v) (hu.sub hv)
+  obtain ⟨x₀, hx₀, hmax⟩ := exists_forall_ge_and_laplaceBeltrami_nonpos (f := u - v) (hu.sub hv)
   rw [laplaceBeltrami_sub I hu hv] at hmax
   -- Hence `h x₀ (u x₀) ≤ h x₀ (v x₀)`, so `u x₀ ≤ v x₀` by strict monotonicity.
   have hle : u x₀ ≤ v x₀ :=
@@ -139,23 +139,21 @@ theorem le_of_le_laplaceBeltrami_of_laplaceBeltrami_le [CompactSpace M] {h : M �
   have hy : u y - v y ≤ u x₀ - v x₀ := hx₀ y
   linarith
 
-/-- **The maximum principle bound for a logistic subsolution.** On a compact boundaryless
-Riemannian manifold, a `C²` function `u` with `-Δu / 2 + (r / 4) (u - 1) u ≤ k u` satisfies
-`u ≤ 1 + 4 k / r`. For `u = |α|² + |β|²` this is Taubes's bound `|Ψ|² ≤ r (1 + C / r)` on a
-Seiberg–Witten spinor. -/
-theorem le_one_add_mul_div_of_laplaceBeltrami_le [CompactSpace M] {u : M → ℝ} {r k : ℝ}
-    (hr : 0 < r) (hk : 0 ≤ k) (hu : ContMDiff I 𝓘(ℝ) 2 u)
-    (h : ∀ x, -laplaceBeltrami I u x / 2 + r / 4 * (u x - 1) * u x ≤ k * u x) (x : M) :
-    u x ≤ 1 + 4 * k / r := by
+/-- **The maximum principle bound for a quadratic subsolution.** On a compact boundaryless
+Riemannian manifold, a `C²` function `u` with `a u² - b u ≤ Δu` and `a > 0` satisfies
+`u ≤ max (b / a) 0`. For instance a subsolution of `-Δu / 2 + (r / 4) (u - 1) u ≤ k u` with
+`r > 0` and `k ≥ 0` is at most `1 + 4 k / r`. -/
+theorem le_max_div_zero_of_mul_sq_sub_mul_le_laplaceBeltrami [CompactSpace M] {u : M → ℝ}
+    {a b : ℝ} (ha : 0 < a) (hu : ContMDiff I 𝓘(ℝ) 2 u)
+    (h : ∀ x, a * u x ^ 2 - b * u x ≤ laplaceBeltrami I u x) (x : M) :
+    u x ≤ max (b / a) 0 := by
   have : Nonempty M := ⟨x⟩
-  obtain ⟨x₀, hx₀, hΔ⟩ := exists_forall_le_and_laplaceBeltrami_nonpos hu
+  obtain ⟨x₀, hx₀, hΔ⟩ := exists_forall_ge_and_laplaceBeltrami_nonpos hu
   refine (hx₀ x).trans ?_
-  have h₀ := h x₀
   rcases le_or_gt (u x₀) 0 with hu₀ | hu₀
-  · exact hu₀.trans (by positivity)
-  -- At the maximum `Δu ≤ 0`, so `(r / 4) (u - 1) u ≤ k u`, and `u > 0` there.
-  have hle : r / 4 * (u x₀ - 1) ≤ k := le_of_mul_le_mul_right (by linarith) hu₀
-  rw [← sub_le_iff_le_add', le_div_iff₀ hr]
-  linarith
+  · exact hu₀.trans (le_max_right _ _)
+  -- At the maximum `Δu ≤ 0`, so `(a u) u ≤ b u`, and `u > 0` there.
+  have hle : u x₀ * a * u x₀ ≤ b * u x₀ := by linarith [h x₀]
+  exact le_max_of_le_left ((le_div_iff₀ ha).2 (le_of_mul_le_mul_right hle hu₀))
 
 end TauCeti.Manifold

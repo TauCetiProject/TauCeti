@@ -86,8 +86,8 @@ private theorem exists_pos_eq_const_of_conformalLaplacian_eq (hn : 2 < finrank �
     (hc : c ≤ 0) (hScal : ∀ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x = c)
     (heq : ∀ x, conformalLaplacian I u x = d * u x ^ (criticalExponent (finrank ℝ E) - 1)) :
     ∃ t > 0, ∀ x, u x = t := by
-  obtain ⟨a, ha, hΔa⟩ := exists_forall_ge_and_laplaceBeltrami_nonneg hu
-  obtain ⟨b, hb, hΔb⟩ := exists_forall_le_and_laplaceBeltrami_nonpos hu
+  obtain ⟨a, ha, hΔa⟩ := exists_forall_le_and_laplaceBeltrami_nonneg hu
+  obtain ⟨b, hb, hΔb⟩ := exists_forall_ge_and_laplaceBeltrami_nonpos hu
   have hA := conformalCoefficient_pos hn
   have hmin : d * u a ^ (criticalExponent (finrank ℝ E) - 2) ≤ c := by
     rw [← conformalLaplacian_eq_div hu_pos hScal heq a]
