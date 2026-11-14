@@ -417,6 +417,21 @@ theorem _root_.IsLocalMin.mem_criticalPoints (h : IsLocalMin f x) : x ∈ critic
 theorem _root_.IsLocalMax.mem_criticalPoints (h : IsLocalMax f x) : x ∈ criticalPoints I f :=
   IsLocalExtr.mem_criticalPoints (IsMaxFilter.isExtrFilter h)
 
+/-- An extremum of `f` on a neighbourhood of `x` is a critical point. -/
+theorem _root_.IsExtrOn.mem_criticalPoints {s : Set M} (h : IsExtrOn f s x)
+    (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
+  (h.isLocalExtr hs).mem_criticalPoints
+
+/-- A minimum of `f` on a neighbourhood of `x` (by default all of `M`) is a critical point. -/
+theorem _root_.IsMinOn.mem_criticalPoints {s : Set M} (h : IsMinOn f s x)
+    (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
+  h.isExtrOn.mem_criticalPoints hs
+
+/-- A maximum of `f` on a neighbourhood of `x` (by default all of `M`) is a critical point. -/
+theorem _root_.IsMaxOn.mem_criticalPoints {s : Set M} (h : IsMaxOn f s x)
+    (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
+  h.isExtrOn.mem_criticalPoints hs
+
 /-- If the only critical points of `f` are a global minimum `x₀` and a point `x₁` with a larger
 value, then `x₀` is the only point at which `f` attains its minimum: any other such point would be
 a third critical point. -/
@@ -424,7 +439,7 @@ theorem _root_.IsMinOn.eq_of_le_of_two_criticalPoints {x₀ x₁ y : M} (hx₀ :
     (hlt : f x₀ < f x₁) (hcrit : ∀ x ∈ criticalPoints I f, x = x₀ ∨ x = x₁)
     (hy : f y ≤ f x₀) : y = x₀ := by
   have hy' : IsMinOn f univ y := isMinOn_univ_iff.2 fun z ↦ hy.trans (hx₀ (mem_univ z))
-  refine (hcrit y (hy'.isLocalMin univ_mem).mem_criticalPoints).resolve_right ?_
+  refine (hcrit y hy'.mem_criticalPoints).resolve_right ?_
   rintro rfl
   exact hy.not_gt hlt
 
@@ -435,7 +450,7 @@ theorem _root_.IsMaxOn.eq_of_le_of_two_criticalPoints {x₀ x₁ y : M} (hx₁ :
     (hlt : f x₀ < f x₁) (hcrit : ∀ x ∈ criticalPoints I f, x = x₀ ∨ x = x₁)
     (hy : f x₁ ≤ f y) : y = x₁ := by
   have hy' : IsMaxOn f univ y := isMaxOn_univ_iff.2 fun z ↦ (hx₁ (mem_univ z)).trans hy
-  refine (hcrit y (hy'.isLocalMax univ_mem).mem_criticalPoints).resolve_left ?_
+  refine (hcrit y hy'.mem_criticalPoints).resolve_left ?_
   rintro rfl
   exact hy.not_gt hlt
 
@@ -444,7 +459,7 @@ instance a point where it attains its minimum. -/
 theorem criticalPoints_nonempty [CompactSpace M] [Nonempty M] (hf : Continuous f) :
     (criticalPoints I f).Nonempty := by
   obtain ⟨x, -, hx⟩ := isCompact_univ.exists_isMinOn univ_nonempty hf.continuousOn
-  exact ⟨x, (hx.isLocalMin univ_mem).mem_criticalPoints⟩
+  exact ⟨x, hx.mem_criticalPoints⟩
 
 /-- A function on a boundaryless manifold has a critical point in each nonempty compact sublevel
 `{f ≤ t}` on which it is continuous, for instance a point where it attains its minimum. -/
@@ -455,7 +470,7 @@ theorem exists_mem_criticalPoints_of_isCompact_sublevel {t : ℝ}
   -- Points outside the sublevel have values above `t ≥ f x`, so `x` is a global minimum.
   have hglobal : IsMinOn f univ x := fun y _ ↦
     (le_or_gt (f y) t).elim (fun hy ↦ hmin hy) fun hy ↦ (hx.trans hy.le : f x ≤ f y)
-  exact ⟨x, (hglobal.isLocalMin univ_mem).mem_criticalPoints, hx⟩
+  exact ⟨x, hglobal.mem_criticalPoints, hx⟩
 
 /-- **A nonempty compact regular sublevel forces the model space to be finite dimensional.** If
 `f` is continuous, the sublevel `{f ≤ b}` is compact and nonempty, and `b` is a regular value, then
@@ -1033,8 +1048,8 @@ theorem exists_isMinOn_isMaxOn_of_totalCriticalCount_eq_two [I.Boundaryless] [Co
   obtain ⟨x₁, -, hx₁⟩ := isCompact_univ.exists_isMaxOn ⟨p, mem_univ p⟩ hf.continuousOn
   rcases (hx₀ (mem_univ x₁)).lt_or_eq with hlt | hconst
   · -- The minimum and the maximum are two distinct critical points, so they are all of them.
-    have h₀ := (hx₀.isLocalMin univ_mem).mem_criticalPoints (I := I)
-    have h₁ := (hx₁.isLocalMax univ_mem).mem_criticalPoints (I := I)
+    have h₀ := hx₀.mem_criticalPoints (I := I)
+    have h₁ := hx₁.mem_criticalPoints (I := I)
     have hne : x₀ ≠ x₁ := fun h ↦ hlt.ne (congrArg f h)
     refine ⟨x₀, x₁, hx₀, hx₁, hne, ?_, .inl hlt⟩
     rw [hpq', mem_insert_iff, mem_singleton_iff] at h₀ h₁
@@ -1047,7 +1062,7 @@ theorem exists_isMinOn_isMaxOn_of_totalCriticalCount_eq_two [I.Boundaryless] [Co
   have hmin (x : M) : IsMinOn f univ x := isMinOn_univ_iff.2 fun y ↦ by rw [hall x, hall y]
   have hmax (x : M) : IsMaxOn f univ x := isMaxOn_univ_iff.2 fun y ↦ by rw [hall x, hall y]
   have hcrit : criticalPoints I f = univ :=
-    eq_univ_of_forall fun x ↦ ((hmin x).isLocalMin univ_mem).mem_criticalPoints
+    eq_univ_of_forall fun x ↦ (hmin x).mem_criticalPoints
   exact ⟨p, q, hmin p, hmax q, hpq, hpq', .inr ⟨fun x ↦ by rw [hall x, hall p], hcrit⟩⟩
 
 /-- There are no critical points of index larger than the dimension. -/
@@ -1075,19 +1090,19 @@ theorem sum_criticalCount_eq_totalCriticalCount :
   rfl
 
 /-- The signed count `∑ᵢ (-1)ⁱ cᵢ` of the critical points of `f`, by index, is the sum of `(-1)^λ`
-over the critical points, `λ` being the Morse index, when the critical set is a finite set `s`.
+over the critical points, `λ` being the Morse index, when the critical set is finite.
 Here `n` is any bound for the dimension of `M`. -/
-theorem sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum (s : Finset M)
-    (hs : (s : Set M) = criticalPoints I f) {n : ℕ} (hn : Module.finrank ℝ E ≤ n) :
+theorem sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum (h : (criticalPoints I f).Finite)
+    {n : ℕ} (hn : Module.finrank ℝ E ≤ n) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat =
-      ∑ x ∈ s, (-1 : ℤ) ^ manifoldMorseIndex I f x := by
+      ∑ x ∈ h.toFinset, (-1 : ℤ) ^ manifoldMorseIndex I f x := by
   rw [← sum_card_filter_nsmul_eq_sum_comp fun x _ ↦
       Finset.mem_range.2 (Nat.lt_succ_of_le (manifoldMorseIndex_le_finrank.trans hn))]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have hi : {x ∈ criticalPoints I f | manifoldMorseIndex I f x = i} =
-      ↑({x ∈ s | manifoldMorseIndex I f x = i} : Finset M) := by
+      ↑({x ∈ h.toFinset | manifoldMorseIndex I f x = i} : Finset M) := by
     ext x
-    simp [← hs]
+    simp
   rw [criticalCount_def, hi, encard_coe_eq_coe_finsetCard]
   simp [mul_comm]
 
@@ -1107,7 +1122,7 @@ theorem toNat_totalCriticalCount_modEq_sum_range_neg_one_pow_mul_toNat_criticalC
     (h : (criticalPoints I f).Finite) {n : ℕ} (hn : Module.finrank ℝ E ≤ n) :
     ((totalCriticalCount I f).toNat : ℤ) ≡
       ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat [ZMOD 2] := by
-  rw [sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum h.toFinset h.coe_toFinset hn,
+  rw [sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum h hn,
     totalCriticalCount_def, h.encard_eq_coe_toFinset_card, ENat.toNat_natCast,
     Finset.card_eq_sum_ones]
   push_cast
