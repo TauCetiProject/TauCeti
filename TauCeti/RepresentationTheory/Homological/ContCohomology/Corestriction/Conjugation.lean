@@ -108,28 +108,22 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (f : TopRep.res (κ : V →* U) (ofDiscreteModule ℤ U M) ⟶ ofDiscreteModule ℤ V M)
   (hf : ∀ m : M, f.hom m = g • m)
 
-omit [CompactSpace G] [TotallyDisconnectedSpace G] [IsTopologicalGroup G] in
-include hκ in
-/-- A subgroup `V` with `κ : V → U`, `v ↦ g⁻¹ v g`, lies in `gUg⁻¹`. -/
-theorem le_map_conj_of_forall_coe_eq : V ≤ U.map (MulAut.conj g).toMonoidHom := fun v hv =>
-  Subgroup.mem_map.2 ⟨κ ⟨v, hv⟩, (κ ⟨v, hv⟩).2, by simp [hκ, mul_assoc]⟩
-
-omit [TotallyDisconnectedSpace G] [ContinuousSMul G M] in
+omit [CompactSpace G] [TotallyDisconnectedSpace G] [ContinuousSMul G M] in
 include hκ hf in
 /-- **The Shapiro map intertwines conjugation**: Shapiro's map for `U` followed by the conjugation
 `(g)_*` is the coefficient map of the conjugation `Coind_U^G M → Coind_V^G M` followed by Shapiro's
 map for `V`. Both are compatible-pair maps from `Hⁿ(G, Coind_U^G M)` to `Hⁿ(V, M)`; they differ by
 the pair of the inner automorphism `x ↦ g⁻¹ x g` of `G` and the action of `g`, which induces the
-identity. Compactness ensures that the right-translation action on the discrete coinduced module is
-continuous. -/
-theorem shapiroMap_comp_map_of_conj (n : ℕ) :
+identity (`exists_map_eq_id_conj_smul`, the step that uses local compactness of `G`). -/
+theorem shapiroMap_comp_map_of_conj [LocallyCompactSpace G] (n : ℕ) :
     shapiroMap U M n ≫ _root_.ContinuousCohomology.map κ f n =
       coeffMap (ofDiscreteModuleMap
           (DiscreteCoind.conj U V M g
-            (le_map_conj_of_forall_coe_eq U V g κ hκ)).toAddMonoidHom.toIntLinearMap
+            (V.le_map_conj_of_forall_coe_eq U g κ hκ)).toAddMonoidHom.toIntLinearMap
           fun h F => _root_.map_smul (DiscreteCoind.conj U V M g
-            (le_map_conj_of_forall_coe_eq U V g κ hκ)) h F) n ≫
+            (V.le_map_conj_of_forall_coe_eq U g κ hκ)) h F) n ≫
         shapiroMap V M n := by
+  have hVU := V.le_map_conj_of_forall_coe_eq U g κ hκ
   let X := ofDiscreteModule ℤ G (DiscreteCoind G U M)
   obtain ⟨c, B, hc, hBΦ, hB⟩ := exists_map_eq_id_conj_smul (DiscreteCoind G U M) g n
   -- Both sides are the compatible pair of `v ↦ g⁻¹ v g` and `Φ ↦ g • Φ 1`; on the left this needs
@@ -146,10 +140,8 @@ theorem shapiroMap_comp_map_of_conj (n : ℕ) :
     congr 1
     group
   have hFΦ (Φ : DiscreteCoind G U M) : F Φ = g • Φ 1 := by simp [F]
-  let Ψ := ofDiscreteModuleMap (DiscreteCoind.conj U V M g
-      (le_map_conj_of_forall_coe_eq U V g κ hκ)).toAddMonoidHom.toIntLinearMap
-    fun h Φ => _root_.map_smul (DiscreteCoind.conj U V M g
-      (le_map_conj_of_forall_coe_eq U V g κ hκ)) h Φ
+  let Ψ := ofDiscreteModuleMap (DiscreteCoind.conj U V M g hVU).toAddMonoidHom.toIntLinearMap
+    fun h Φ => _root_.map_smul (DiscreteCoind.conj U V M g hVU) h Φ
   let evV := ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype V : V →* G)
     (DiscreteCoind.eval G V M).toIntLinearMap fun v Φ => eval_subgroupSubtype_smul G V M v Φ
   -- A coefficient map followed by a compatible-pair map is a single compatible-pair map.
@@ -172,11 +164,9 @@ theorem shapiroMap_comp_map_of_conj (n : ℕ) :
     let BV := (TopRep.resFunctor (ContinuousMonoidHom.subgroupSubtype V : V →* G)).map B
     let ΨV := (TopRep.resFunctor (ContinuousMonoidHom.subgroupSubtype V : V →* G)).map Ψ
     refine (TopRep.comp_apply BV (ΨV ≫ evV) Φ).trans ((TopRep.comp_apply ΨV evV _).trans ?_)
-    have h₂ : ΨV.hom (g • Φ) =
-        DiscreteCoind.conj U V M g (le_map_conj_of_forall_coe_eq U V g κ hκ) (g • Φ) :=
+    have h₂ : ΨV.hom (g • Φ) = DiscreteCoind.conj U V M g hVU (g • Φ) :=
       ofDiscreteModuleMap_hom_apply (G := G) _
-        (fun h Φ => _root_.map_smul
-          (DiscreteCoind.conj U V M g (le_map_conj_of_forall_coe_eq U V g κ hκ)) h Φ) (g • Φ)
+        (fun h Φ => _root_.map_smul (DiscreteCoind.conj U V M g hVU) h Φ) (g • Φ)
     refine (congrArg evV.hom ((congrArg ΨV.hom (hBΦ Φ)).trans h₂)).trans ?_
     refine (ofDiscreteModulePair_hom_apply (ContinuousMonoidHom.subgroupSubtype V : V →* G)
       (DiscreteCoind.eval G V M).toIntLinearMap
@@ -314,7 +304,7 @@ theorem conjNormalMap_comp (g h : G) (n : ℕ) :
 /-- **Shapiro's map intertwines conjugation**: for a normal subgroup `V`, Shapiro's map followed by
 `(g)_*` is the coefficient map of the conjugation of `Coind_V^G M` by `g`, followed by Shapiro's
 map. -/
-theorem shapiroMap_comp_conjNormalMap [CompactSpace G] (g : G) (n : ℕ) :
+theorem shapiroMap_comp_conjNormalMap [LocallyCompactSpace G] (g : G) (n : ℕ) :
     shapiroMap V M n ≫ conjNormalMap V M g n =
       coeffMap (ofDiscreteModuleMap
           (DiscreteCoind.conj V V M g (show V.map (MulAut.conj g).toMonoidHom = V from
