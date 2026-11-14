@@ -68,6 +68,24 @@ theorem orderedWeightBlock_def (degree : (κ → ℤ) →+ D) (wt : η → κ �
       orderedWeightBlockEquiv degree wt ⟨wt x, Set.mem_range_self x⟩ :=
   (rfl)
 
+/-- Evaluating the block equivalence at a basis weight gives its block number. -/
+-- Rewrite before simp normalizes the cardinality in the equivalence's codomain.
+@[simp↓]
+theorem orderedWeightBlockEquiv_apply (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
+    (x : η) :
+    orderedWeightBlockEquiv degree wt ⟨wt x, Set.mem_range_self x⟩ =
+      orderedWeightBlock degree wt x :=
+  (orderedWeightBlock_def degree wt x).symm
+
+/-- The inverse block equivalence recovers the weight of a basis index. -/
+-- Rewrite before simp descends into the cardinality-indexed equivalence.
+@[simp↓]
+theorem orderedWeightBlockEquiv_symm_apply (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
+    (x : η) :
+    (orderedWeightBlockEquiv degree wt).symm (orderedWeightBlock degree wt x) =
+      ⟨wt x, Set.mem_range_self x⟩ := by
+  rw [orderedWeightBlock_def, Equiv.symm_apply_apply]
+
 /-- Two basis indices belong to the same weight block exactly when their weights are equal. -/
 @[simp]
 theorem orderedWeightBlock_eq_iff (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ) {r s : η} :
@@ -105,6 +123,15 @@ theorem orderedWeightBlock_lt_of_degree_lt (degree : (κ → ℤ) →+ D) (wt : 
   rw [Fin.lt_def, orderedWeightBlock_val, orderedWeightBlock_val]
   exact Fin.lt_def.mp (orderedWeightIndexEquiv_lt_of_degree_lt degree
     (fun μ : Set.range wt => μ.val) (r := ⟨wt r, r, rfl⟩) (s := ⟨wt s, s, rfl⟩) hrs)
+
+/-- A distinct weight of strictly larger degree receives a strictly smaller block number. -/
+theorem orderedWeightBlockEquiv_lt_of_degree_lt (degree : (κ → ℤ) →+ D)
+    (wt : η → κ → ℤ) {μ ν : Set.range wt} (hμν : degree ν.val < degree μ.val) :
+    orderedWeightBlockEquiv degree wt μ < orderedWeightBlockEquiv degree wt ν := by
+  rcases μ with ⟨_, r, rfl⟩
+  rcases ν with ⟨_, s, rfl⟩
+  simpa only [orderedWeightBlockEquiv_apply] using
+    orderedWeightBlock_lt_of_degree_lt degree wt (r := r) (s := s) hμν
 
 variable [IsOrderedAddMonoid D]
 
