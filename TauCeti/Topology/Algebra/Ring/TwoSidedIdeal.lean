@@ -11,12 +11,17 @@ public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Topology.ApproximateUnit
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.RingTheory.Ideal.Quotient.Operations
+public import TauCeti.RingTheory.TwoSidedIdeal.Annihilator
 
 /-!
 # Closed two-sided ideals
 
 The closure of a two-sided ideal in a topological ring is again two-sided, and closed two-sided
-ideals in rings with an approximate unit absorb compatible scalar multiplication. We
+ideals in rings with an approximate unit absorb compatible scalar multiplication. In a `T₁`
+topological ring with continuous multiplication, the left and right annihilators of any two-sided
+ideal are closed and agree with the annihilators of its topological closure; we also define
+essential ideals in the lattice of closed two-sided ideals (`TwoSidedIdeal.IsClosedEssential`) and
+relate them to `TwoSidedIdeal.IsEssential` and annihilators. We
 also supply the topological-ring structure on Mathlib's existing quotient topology
 for quotients of noncommutative rings by native ideals. The closed ideal generated
 by an ideal of the center presents discrete modules with central relations.
@@ -174,6 +179,173 @@ theorem smul_mem_of_isApproximateUnit (I : TwoSidedIdeal A) [hI : IsClosed (I : 
   exact hI.mem_of_tendsto hlim (Eventually.of_forall fun e => I.mul_mem_left (c • e) a ha)
 
 end ApproximateUnit
+
+section ClosedLattice
+
+variable {A : Type*} [NonUnitalNonAssocRing A] [TopologicalSpace A]
+
+/-- The top two-sided ideal is closed. -/
+instance isClosed_top : IsClosed ((⊤ : TwoSidedIdeal A) : Set A) :=
+  isClosed_univ
+
+/-- In a `T₁` space, the bottom two-sided ideal `{0}` is closed. -/
+instance isClosed_bot [T1Space A] : IsClosed ((⊥ : TwoSidedIdeal A) : Set A) :=
+  isClosed_singleton
+
+/-- The intersection of two closed two-sided ideals is closed. -/
+instance isClosed_inf (I J : TwoSidedIdeal A) [hI : IsClosed (I : Set A)]
+    [hJ : IsClosed (J : Set A)] : IsClosed ((I ⊓ J : TwoSidedIdeal A) : Set A) :=
+  hI.inter hJ
+
+end ClosedLattice
+
+section ClosedAnnihilator
+
+variable {A : Type*} [NonUnitalRing A] [TopologicalSpace A]
+
+/-- In a `T₁` space with continuous multiplication, the left annihilator of any two-sided ideal is
+closed. -/
+instance isClosed_leftAnnihilator [ContinuousMul A] [T1Space A] (I : TwoSidedIdeal A) :
+    IsClosed (I.leftAnnihilator : Set A) := by
+  have hset : (I.leftAnnihilator : Set A) = ⋂ x ∈ (I : Set A), (· * x) ⁻¹' {0} := by
+    ext a
+    simp [mem_leftAnnihilator]
+  rw [hset]
+  exact isClosed_biInter fun x _ => isClosed_singleton.preimage (continuous_mul_const x)
+
+/-- In a `T₁` space with continuous multiplication, the right annihilator of any two-sided ideal is
+closed. -/
+instance isClosed_rightAnnihilator [ContinuousMul A] [T1Space A] (I : TwoSidedIdeal A) :
+    IsClosed (I.rightAnnihilator : Set A) := by
+  have hset : (I.rightAnnihilator : Set A) = ⋂ x ∈ (I : Set A), (x * ·) ⁻¹' {0} := by
+    ext a
+    simp [mem_rightAnnihilator]
+  rw [hset]
+  exact isClosed_biInter fun x _ => isClosed_singleton.preimage (continuous_const_mul x)
+
+/-- Taking topological closure does not change the left annihilator of a two-sided ideal. -/
+@[simp]
+theorem leftAnnihilator_topologicalClosure [IsTopologicalRing A] [T1Space A]
+    (I : TwoSidedIdeal A) :
+    I.topologicalClosure.leftAnnihilator = I.leftAnnihilator :=
+  le_antisymm (leftAnnihilator_anti I.le_topologicalClosure) fun a ha =>
+    mem_leftAnnihilator.mpr fun _ hx =>
+      closure_minimal (fun _ hy => mul_eq_zero_of_mem_leftAnnihilator ha hy)
+        (isClosed_singleton.preimage (continuous_const_mul a))
+        (I.mem_topologicalClosure.mp hx)
+
+/-- Taking topological closure does not change the right annihilator of a two-sided ideal. -/
+@[simp]
+theorem rightAnnihilator_topologicalClosure [IsTopologicalRing A] [T1Space A]
+    (I : TwoSidedIdeal A) :
+    I.topologicalClosure.rightAnnihilator = I.rightAnnihilator :=
+  le_antisymm (rightAnnihilator_anti I.le_topologicalClosure) fun a ha =>
+    mem_rightAnnihilator.mpr fun _ hx =>
+      closure_minimal (fun _ hy => mul_eq_zero_of_mem_rightAnnihilator hy ha)
+        (isClosed_singleton.preimage (continuous_mul_const a))
+        (I.mem_topologicalClosure.mp hx)
+
+end ClosedAnnihilator
+
+section ClosedEssential
+
+variable {A : Type*} [NonUnitalNonAssocRing A] [TopologicalSpace A]
+
+/-- A two-sided ideal `I` of a topological ring `A` is *essential among closed ideals* if it meets
+every nonzero closed two-sided ideal of `A` nontrivially. -/
+def IsClosedEssential (I : TwoSidedIdeal A) : Prop :=
+  ∀ J : TwoSidedIdeal A, IsClosed (J : Set A) → J ≠ ⊥ → I ⊓ J ≠ ⊥
+
+theorem isClosedEssential_def {I : TwoSidedIdeal A} :
+    I.IsClosedEssential ↔ ∀ J : TwoSidedIdeal A, IsClosed (J : Set A) → J ≠ ⊥ → I ⊓ J ≠ ⊥ :=
+  (Iff.rfl)
+
+/-- Contrapositive characterization: `I.IsClosedEssential` iff `I ⊓ J = ⊥` forces `J = ⊥` for every
+closed two-sided ideal `J`. -/
+theorem isClosedEssential_iff_eq_bot {I : TwoSidedIdeal A} :
+    I.IsClosedEssential ↔ ∀ J : TwoSidedIdeal A, IsClosed (J : Set A) → I ⊓ J = ⊥ → J = ⊥ :=
+  ⟨fun h J hJ hIJ => by_contra fun hJ0 => h J hJ hJ0 hIJ,
+   fun h J hJ hJ0 hIJ => hJ0 (h J hJ hIJ)⟩
+
+theorem IsEssential.isClosedEssential {I : TwoSidedIdeal A} (hI : I.IsEssential) :
+    I.IsClosedEssential :=
+  isClosedEssential_def.mpr fun J _ => isEssential_def.mp hI J
+
+@[simp]
+theorem isClosedEssential_top : (⊤ : TwoSidedIdeal A).IsClosedEssential :=
+  isEssential_top.isClosedEssential
+
+theorem IsClosedEssential.mono {I J : TwoSidedIdeal A} (hI : I.IsClosedEssential) (hIJ : I ≤ J) :
+    J.IsClosedEssential :=
+  isClosedEssential_iff_eq_bot.mpr fun K hK hJK =>
+    isClosedEssential_iff_eq_bot.mp hI K hK (le_bot_iff.mp ((inf_le_inf_right K hIJ).trans hJK.le))
+
+theorem IsClosedEssential.inf_of_isClosed {I J : TwoSidedIdeal A}
+    (hI : I.IsClosedEssential) (hJ : J.IsClosedEssential) [IsClosed (J : Set A)] :
+    (I ⊓ J).IsClosedEssential :=
+  isClosedEssential_iff_eq_bot.mpr fun K hK hIJK =>
+    isClosedEssential_iff_eq_bot.mp hJ K hK <|
+      isClosedEssential_iff_eq_bot.mp hI (J ⊓ K) (isClosed_inf J K) (by rwa [← inf_assoc])
+
+@[simp]
+theorem isClosedEssential_bot_iff : (⊥ : TwoSidedIdeal A).IsClosedEssential ↔ Subsingleton A := by
+  rw [isClosedEssential_iff_eq_bot]
+  refine ⟨fun h => ⟨fun a b => ?_⟩, fun _ J _ _ => ?_⟩
+  · have htop : (⊤ : TwoSidedIdeal A) = ⊥ := h ⊤ isClosed_top (by simp)
+    have ha : a - b ∈ (⊥ : TwoSidedIdeal A) := htop ▸ mem_top A
+    exact sub_eq_zero.mp ((mem_bot _).mp ha)
+  · ext x
+    simp [Subsingleton.elim x 0]
+
+theorem not_isClosedEssential_bot [Nontrivial A] : ¬ (⊥ : TwoSidedIdeal A).IsClosedEssential := by
+  rw [isClosedEssential_bot_iff]
+  exact not_subsingleton A
+
+theorem IsClosedEssential.ne_bot [Nontrivial A] {I : TwoSidedIdeal A}
+    (hI : I.IsClosedEssential) : I ≠ ⊥ :=
+  fun h => not_isClosedEssential_bot (h ▸ hI)
+
+end ClosedEssential
+
+section ClosedEssentialRing
+
+variable {A : Type*} [NonUnitalRing A] [TopologicalSpace A]
+
+theorem isClosedEssential_of_leftAnnihilator_eq_bot {I : TwoSidedIdeal A}
+    (hI : I.leftAnnihilator = ⊥) : I.IsClosedEssential :=
+  (isEssential_of_leftAnnihilator_eq_bot hI).isClosedEssential
+
+theorem isClosedEssential_of_rightAnnihilator_eq_bot {I : TwoSidedIdeal A}
+    (hI : I.rightAnnihilator = ⊥) : I.IsClosedEssential :=
+  (isEssential_of_rightAnnihilator_eq_bot hI).isClosedEssential
+
+/-- In a `T₁` ring with continuous multiplication and proper involution, a `star`-closed two-sided
+ideal is essential among closed ideals if and only if its left annihilator is trivial. -/
+theorem isClosedEssential_iff_leftAnnihilator_eq_bot_of_star_mem
+    [ContinuousMul A] [T1Space A] [StarRing A] [IsProperStar A]
+    {I : TwoSidedIdeal A} (hstar : ∀ {x : A}, x ∈ I → star x ∈ I) :
+    I.IsClosedEssential ↔ I.leftAnnihilator = ⊥ :=
+  ⟨fun h => isClosedEssential_iff_eq_bot.mp h I.leftAnnihilator I.isClosed_leftAnnihilator
+      (inf_leftAnnihilator_eq_bot_of_star_mem hstar),
+   isClosedEssential_of_leftAnnihilator_eq_bot⟩
+
+theorem isClosedEssential_iff_rightAnnihilator_eq_bot_of_star_mem
+    [ContinuousMul A] [T1Space A] [StarRing A] [IsProperStar A]
+    {I : TwoSidedIdeal A} (hstar : ∀ {x : A}, x ∈ I → star x ∈ I) :
+    I.IsClosedEssential ↔ I.rightAnnihilator = ⊥ := by
+  rw [isClosedEssential_iff_leftAnnihilator_eq_bot_of_star_mem hstar,
+    leftAnnihilator_eq_rightAnnihilator_of_star_mem hstar]
+
+/-- In a `T₁` ring with continuous multiplication and proper involution, essentiality among closed
+two-sided ideals and algebraic essentiality coincide for `star`-closed two-sided ideals. -/
+theorem isClosedEssential_iff_isEssential_of_star_mem
+    [ContinuousMul A] [T1Space A] [StarRing A] [IsProperStar A]
+    {I : TwoSidedIdeal A} (hstar : ∀ {x : A}, x ∈ I → star x ∈ I) :
+    I.IsClosedEssential ↔ I.IsEssential := by
+  rw [isClosedEssential_iff_leftAnnihilator_eq_bot_of_star_mem hstar,
+    isEssential_iff_leftAnnihilator_eq_bot_of_star_mem hstar]
+
+end ClosedEssentialRing
 
 end TwoSidedIdeal
 
