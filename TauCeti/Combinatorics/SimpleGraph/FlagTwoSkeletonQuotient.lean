@@ -32,7 +32,7 @@ of the two-skeleton of the flag complex by `G` is finite.
   graph on which `G` acts by graph homomorphisms, it holds exactly when a finite set of vertices
   contains a translate of every vertex.
 * `SimpleGraph.not_hasFiniteFlagTwoSkeletonQuotient_top`: it fails for the complete graph on an
-  infinite left-cancellative monoid acted on by left multiplication.
+  infinite set with a cancellative scalar action, for instance a free group action.
 
 ## References
 
@@ -89,8 +89,8 @@ theorem hasFiniteFlagTwoSkeletonQuotient_iff_adj : Γ.HasFiniteFlagTwoSkeletonQu
     · exact (h₂ a b (hab' hab)).imp fun _ h ↦ ⟨h.1, h.2, h.1⟩
     · exact h₃ a b c (hab' hab) (hbc' hbc) (hac' hac)
 
-/-- On finitely many vertices, the set of all vertices contains a translate of every vertex, edge
-and triangle, for the scalar action of any nonempty type. -/
+/-- On a finite vertex type, `SimpleGraph.HasFiniteFlagTwoSkeletonQuotient` holds for the scalar
+action of any nonempty type. -/
 @[simp]
 theorem HasFiniteFlagTwoSkeletonQuotient.of_finite [Nonempty G] [Finite V] :
     Γ.HasFiniteFlagTwoSkeletonQuotient G :=
@@ -103,8 +103,8 @@ theorem HasFiniteFlagTwoSkeletonQuotient.of_isEmpty [IsEmpty V] :
     Γ.HasFiniteFlagTwoSkeletonQuotient G :=
   ⟨∅, Set.finite_empty, fun a ↦ isEmptyElim a⟩
 
-/-- If a finite set of vertices contains a `G`-translate of every vertex, edge and triangle, then
-in particular it contains a `G`-translate of every vertex. -/
+/-- If `SimpleGraph.HasFiniteFlagTwoSkeletonQuotient` holds, then some finite set of vertices
+contains a `G`-translate of every vertex. -/
 theorem HasFiniteFlagTwoSkeletonQuotient.exists_finite_forall_smul_mem
     (h : Γ.HasFiniteFlagTwoSkeletonQuotient G) :
     ∃ A : Set V, A.Finite ∧ ∀ a : V, ∃ g : G, g • a ∈ A :=
@@ -141,18 +141,29 @@ theorem hasFiniteFlagTwoSkeletonQuotient_bot_iff :
       ∃ A : Set V, A.Finite ∧ ∀ a : V, ∃ g : G, g • a ∈ A :=
   hasFiniteFlagTwoSkeletonQuotient_iff_of_finite_neighborSet (by simp) fun _ _ _ h ↦ h.elim
 
-/-- For the complete graph on an infinite left-cancellative monoid, acted on by left
-multiplication, no finite set of vertices contains a translate of every edge. -/
-theorem not_hasFiniteFlagTwoSkeletonQuotient_top {H : Type*} [LeftCancelMonoid H] [Infinite H] :
-    ¬(⊤ : SimpleGraph H).HasFiniteFlagTwoSkeletonQuotient H := by
+/-- `SimpleGraph.HasFiniteFlagTwoSkeletonQuotient` fails for the complete graph on an infinite
+vertex type with a left-cancellative scalar action of `G` for which `g ↦ g • a₀` is injective for
+some vertex `a₀`. -/
+theorem not_hasFiniteFlagTwoSkeletonQuotient_top_of_injective [IsLeftCancelSMul G V] [Infinite V]
+    {a₀ : V} (ha₀ : Function.Injective (· • a₀ : G → V)) :
+    ¬(⊤ : SimpleGraph V).HasFiniteFlagTwoSkeletonQuotient G := by
   rintro ⟨A, hA, h⟩
-  choose g hg using fun b : H ↦ h 1 b b (by simp)
-  have : Finite ↥(A ×ˢ A) := (hA.prod hA).to_subtype
-  -- the edge `{1, b}` is translated by `g b` into `A`, and `b` is recovered from `(g b, g b * b)`
-  have : Finite H := Finite.of_injective
-    (fun b ↦ (⟨(g b • 1, g b • b), (hg b).1, (hg b).2.1⟩ : ↥(A ×ˢ A))) fun b c hbc ↦ by
-      simp only [Subtype.mk.injEq, Prod.mk.injEq, smul_eq_mul, mul_one] at hbc
-      exact mul_left_cancel (hbc.2.trans (by rw [hbc.1]))
-  exact not_finite H
+  choose g hg using fun b : V ↦ h a₀ b b (by simp)
+  have : Finite A := hA.to_subtype
+  -- the edge `{a₀, b}` is translated by `g b` into `A`, and `b` is recovered from
+  -- `(g b • a₀, g b • b)`
+  have : Finite V := Finite.of_injective
+    (fun b ↦ ((⟨g b • a₀, (hg b).1⟩ : A), (⟨g b • b, (hg b).2.1⟩ : A))) fun b c hbc ↦ by
+      simp only [Prod.mk.injEq, Subtype.mk.injEq] at hbc
+      rw [ha₀ hbc.1] at hbc
+      exact IsLeftCancelSMul.left_cancel _ _ _ hbc.2
+  exact not_finite V
+
+/-- `SimpleGraph.HasFiniteFlagTwoSkeletonQuotient` fails for the complete graph on an infinite
+vertex type with a cancellative scalar action of `G`, for instance a free action of a group. -/
+theorem not_hasFiniteFlagTwoSkeletonQuotient_top [IsCancelSMul G V] [Infinite V] :
+    ¬(⊤ : SimpleGraph V).HasFiniteFlagTwoSkeletonQuotient G :=
+  not_hasFiniteFlagTwoSkeletonQuotient_top_of_injective (a₀ := Classical.arbitrary V)
+    fun _ _ ↦ IsCancelSMul.right_cancel _ _ _
 
 end SimpleGraph

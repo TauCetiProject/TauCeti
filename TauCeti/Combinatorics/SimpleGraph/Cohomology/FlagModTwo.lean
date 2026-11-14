@@ -35,8 +35,8 @@ of `Γ` are two-cells here.
 * `SimpleGraph.hasTrivialFlagFirstCohomologyModTwo_top`: so has a complete graph.
 * `SimpleGraph.Iso.hasTrivialFlagFirstCohomologyModTwo_iff`: the property is invariant under
   graph isomorphisms.
-* `SimpleGraph.not_hasTrivialFlagFirstCohomologyModTwo_cycleGraph_four`: the four-cycle has
-  nontrivial first cohomology modulo two.
+* `SimpleGraph.hasTrivialFlagFirstCohomologyModTwo_cycleGraph_iff`: the cycle graph on `n`
+  vertices has trivial first cohomology modulo two exactly when `n ≤ 3`.
 
 ## References
 
@@ -133,22 +133,36 @@ theorem Iso.hasTrivialFlagFirstCohomologyModTwo_iff (e : Γ ≃g Γ') :
     Γ.HasTrivialFlagFirstCohomologyModTwo ↔ Γ'.HasTrivialFlagFirstCohomologyModTwo :=
   ⟨fun h ↦ h.of_iso e, fun h ↦ h.of_iso e.symm⟩
 
-/-- The four-cycle has nontrivial first cohomology modulo two of its flag complex. -/
+/-- The cycle graph on `n` vertices has trivial first cohomology modulo two of its flag complex
+exactly when `n ≤ 3`. -/
 @[simp]
-theorem not_hasTrivialFlagFirstCohomologyModTwo_cycleGraph_four :
-    ¬(cycleGraph 4).HasTrivialFlagFirstCohomologyModTwo := by
-  intro h
-  -- the cochain supported on the edge `{0, 1}` is a cocycle, the four-cycle having no triangle
+theorem hasTrivialFlagFirstCohomologyModTwo_cycleGraph_iff {n : ℕ} :
+    (cycleGraph n).HasTrivialFlagFirstCohomologyModTwo ↔ n ≤ 3 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ cycleGraph_eq_top_iff.2 h ▸ hasTrivialFlagFirstCohomologyModTwo_top⟩
+  by_contra! hn
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 4 := ⟨n - 4, by omega⟩
+  -- no triangle: the differences `a - b`, `b - c` and their sum `a - c` cannot all be `±1`
+  have tri (a b c : Fin (m + 4)) (hab : (cycleGraph (m + 4)).Adj a b)
+      (hbc : (cycleGraph (m + 4)).Adj b c) (hac : (cycleGraph (m + 4)).Adj a c) : False := by
+    have h3 : (1 + (1 + 1) : Fin (m + 4)) ≠ 0 := by
+      rw [Ne, Fin.ext_iff, Fin.val_add, Fin.val_add, Fin.val_one, Fin.val_zero,
+        Nat.mod_eq_of_lt (show 1 + 1 < m + 4 by omega),
+        Nat.mod_eq_of_lt (show 1 + (1 + 1) < m + 4 by omega)]
+      omega
+    rw [cycleGraph_adj, ← neg_sub a b, neg_eq_iff_eq_neg] at hab
+    rw [cycleGraph_adj, ← neg_sub b c, neg_eq_iff_eq_neg] at hbc
+    rw [cycleGraph_adj, ← neg_sub a c, neg_eq_iff_eq_neg, ← sub_add_sub_cancel a b c] at hac
+    generalize a - b = x, b - c = y at hab hbc hac
+    rcases hab with rfl | rfl <;> rcases hbc with rfl | rfl <;>
+      simp_all [add_neg_eq_iff_eq_add, neg_eq_iff_add_eq_zero, eq_neg_iff_add_eq_zero, add_assoc]
+  -- so the cochain supported on the edge `{0, 1}` is a cocycle
   obtain ⟨c, hc⟩ := h (fun a b ↦ if a.val + b.val = 1 then 1 else 0)
-    (fun _ _ _ ↦ by rw [add_comm]) (by decide)
-  -- its sum around the four-cycle is `1`, while that of a coboundary is `0`
-  have h01 := hc 0 1 (by decide)
-  have h12 := hc 1 2 (by decide)
-  have h23 := hc 2 3 (by decide)
-  have h30 := hc 3 0 (by decide)
-  revert h01 h12 h23 h30
-  generalize c 0 = x₀, c 1 = x₁, c 2 = x₂, c 3 = x₃
-  revert x₀ x₁ x₂ x₃
-  decide
+    (fun _ _ _ ↦ by rw [add_comm]) fun a b c hab hbc hac ↦ (tri a b c hab hbc hac).elim
+  -- summed over the edges `{i, i + 1}`, it gives `1`, while a coboundary gives `0`
+  have hsum := Fintype.sum_congr _ _ fun i : Fin (m + 4) ↦ hc i (i + 1) (by simp [cycleGraph_adj])
+  have h0 (i : Fin (m + 4)) : i.val + (i + 1).val = 1 ↔ i = 0 := by grind [Fin.val_add_one]
+  simp only [h0, Fintype.sum_ite_eq', Finset.sum_add_distrib,
+    Fintype.sum_equiv (Equiv.addRight 1) (fun i ↦ c (i + 1)) c fun _ ↦ rfl] at hsum
+  exact (by decide : ∀ x : ZMod 2, 1 ≠ x + x) _ hsum
 
 end SimpleGraph
