@@ -397,12 +397,12 @@ private theorem d_homotopyGen_succ (n : ℕ) (i : ι (n + 1)) :
       (B.homotopyTarget f g n).app (B.model (n + 1) i) (B.gen (n + 1) i) := by
   induction n with
   | zero =>
-    rw [homotopyGen.eq_2]
+    rw [homotopyGen.eq_2, homotopyTarget_app_apply]
     refine Function.invFun_eq (hG.exists_d_eq_of_d_eq_zero 1 i 0 _ ?_)
     rw [map_sub, map_sub, B.d_extend_homotopyGen_zero hG f g hfg,
       HomologicalComplex.Hom.comm_apply, HomologicalComplex.Hom.comm_apply, sub_self]
   | succ n ih =>
-    rw [homotopyGen.eq_2]
+    rw [homotopyGen.eq_2, homotopyTarget_app_apply]
     refine Function.invFun_eq (hG.exists_d_eq_of_d_eq_zero (n + 2) i (n + 1) _ ?_)
     rw [map_sub, map_sub, B.d_extend _ (B.homotopyTarget f g n) ih, homotopyTarget_app_apply,
       HomologicalComplex.d_comp_d_apply, map_zero, sub_zero, HomologicalComplex.Hom.comm_apply,
