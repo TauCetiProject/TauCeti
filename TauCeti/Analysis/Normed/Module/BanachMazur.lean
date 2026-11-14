@@ -208,6 +208,31 @@ section Attained
 variable [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+/-- The set of mutually inverse pairs `(A, B)` with `‖A‖ ≤ 1` and `‖B‖ ≤ r` is compact when
+`E →L[𝕜] F` and `F →L[𝕜] E` are proper spaces. -/
+private theorem isCompact_inverse_pairs [ProperSpace (E →L[𝕜] F)] [ProperSpace (F →L[𝕜] E)]
+    (r : ℝ) : IsCompact ((Metric.closedBall (0 : E →L[𝕜] F) 1 ×ˢ
+        Metric.closedBall (0 : F →L[𝕜] E) r) ∩
+      {p | p.1.comp p.2 = .id 𝕜 F ∧ p.2.comp p.1 = .id 𝕜 E}) := by
+  refine (isCompact_closedBall _ _).prod (isCompact_closedBall _ _) |>.inter_right ?_
+  exact (isClosed_eq (continuous_fst.clm_comp continuous_snd) continuous_const).inter
+    (isClosed_eq (continuous_snd.clm_comp continuous_fst) continuous_const)
+
+/-- If `1 < ‖c‖` and the equivalence `T` satisfies `‖T‖ * ‖T⁻¹‖ ≤ P`, then there is a mutually
+inverse pair `(A, B)` with `‖A‖ ≤ 1`, `‖B‖ ≤ ‖c‖ * P` and `‖A‖ * ‖B‖ = ‖T‖ * ‖T⁻¹‖`. -/
+private theorem exists_mem_inverse_pairs_of_norm_mul_norm_symm_le {c : 𝕜} (hc : 1 < ‖c‖)
+    {P : ℝ} (T : E ≃L[𝕜] F) (hT : ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖ ≤ P) :
+    ∃ p ∈ ((Metric.closedBall (0 : E →L[𝕜] F) 1 ×ˢ
+        Metric.closedBall (0 : F →L[𝕜] E) (‖c‖ * P)) ∩
+      {p | p.1.comp p.2 = .id 𝕜 F ∧ p.2.comp p.1 = .id 𝕜 E}),
+      ‖p.1‖ * ‖p.2‖ = ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖ := by
+  obtain ⟨U, hU₁, hU₂, hU⟩ := T.exists_norm_le_one_and_norm_symm_le hc
+  refine ⟨((U : E →L[𝕜] F), (U.symm : F →L[𝕜] E)), ⟨⟨?_, ?_⟩, ?_, ?_⟩, hU⟩
+  · simpa using hU₁
+  · simpa using hU₂.trans (by gcongr)
+  · exact U.coe_comp_coe_symm
+  · exact U.coe_symm_comp_coe
+
 /-- Over a locally compact field, the infimum defining the Banach–Mazur distance between
 isomorphic finite-dimensional spaces is attained. -/
 theorem exists_norm_mul_norm_symm_eq_banachMazurDist [LocallyCompactSpace 𝕜]
@@ -227,18 +252,10 @@ theorem exists_norm_mul_norm_symm_eq_banachMazurDist [LocallyCompactSpace 𝕜]
   set K : Set ((E →L[𝕜] F) × (F →L[𝕜] E)) :=
     (Metric.closedBall 0 1 ×ˢ Metric.closedBall 0 (‖c‖ * P)) ∩
       {p | p.1.comp p.2 = .id 𝕜 F ∧ p.2.comp p.1 = .id 𝕜 E}
-  have hK : IsCompact K := by
-    refine (isCompact_closedBall _ _).prod (isCompact_closedBall _ _) |>.inter_right ?_
-    exact (isClosed_eq (continuous_fst.clm_comp continuous_snd) continuous_const).inter
-      (isClosed_eq (continuous_snd.clm_comp continuous_fst) continuous_const)
+  have hK : IsCompact K := isCompact_inverse_pairs _
   have hmem {T : E ≃L[𝕜] F} (hT : ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖ ≤ P) :
-      ∃ p ∈ K, g p = ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖ := by
-    obtain ⟨U, hU₁, hU₂, hU⟩ := T.exists_norm_le_one_and_norm_symm_le hc
-    refine ⟨((U : E →L[𝕜] F), (U.symm : F →L[𝕜] E)), ⟨⟨?_, ?_⟩, ?_, ?_⟩, hU⟩
-    · simpa using hU₁
-    · simpa using hU₂.trans (by gcongr)
-    · exact U.coe_comp_coe_symm
-    · exact U.coe_symm_comp_coe
+      ∃ p ∈ K, g p = ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖ :=
+    exists_mem_inverse_pairs_of_norm_mul_norm_symm_le hc T hT
   obtain ⟨p₀, hp₀K, -⟩ := hmem le_rfl
   obtain ⟨p, ⟨-, hp₁, hp₂⟩, hmin⟩ := hK.exists_isMinOn ⟨p₀, hp₀K⟩
     ((continuous_fst.norm.mul continuous_snd.norm).continuousOn)
