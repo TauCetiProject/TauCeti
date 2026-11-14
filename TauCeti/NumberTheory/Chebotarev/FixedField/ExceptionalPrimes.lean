@@ -32,10 +32,8 @@ open IsDedekindDomain (HeightOneSpectrum)
 
 namespace NumberField.Chebotarev
 
-variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
-  [Algebra K L] [IsGalois K L]
+variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
 
-omit [IsGalois K L] in
 /-- The prime below `Q` in `L ^ H` is unramified in `L` exactly when the inertia group
 at `Q` over `K` is disjoint from `H`. Together with
 `under_mem_primesAboveRamifiedPrimes_iff_inertia_ne_bot`, nontrivial inertia disjoint from `H`
