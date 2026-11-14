@@ -33,6 +33,9 @@ of summands finishes the proof.
 
 * `TauCeti.exists_equiv_iso_of_biproduct_iso_of_isLocalRing`: uniqueness of decompositions into
   objects with local endomorphism rings.
+* `TauCeti.exists_isSplitMono_comp_π_of_retract` and
+  `TauCeti.exists_nonempty_retract_of_retract_biproduct`: a direct summand with local endomorphism
+  ring of a finite biproduct is a direct summand of one of its terms.
 * `TauCeti.exists_isIso_comp_π_of_retract`: a direct summand with local endomorphism ring of a
   biproduct of objects with local endomorphism rings is isomorphic to one of them.
 
@@ -59,12 +62,11 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteBiproducts C]
 
 attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
 
-/-- **A summand with local endomorphism ring of a biproduct of objects with local endomorphism
-rings is one of them**: if `A` is a retract of `⨁ Y` and the rings `End A` and `End (Y j)` are
-local, then the component `A ⟶ Y j` of the inclusion is an isomorphism for some `j`. -/
-theorem exists_isIso_comp_π_of_retract {κ : Type w} [Finite κ] (Y : κ → C)
-    (hY : ∀ j, IsLocalRing (End (Y j))) {A : C} [IsLocalRing (End A)] (h : Retract A (⨁ Y)) :
-    ∃ j, IsIso (h.i ≫ biproduct.π Y j) := by
+/-- **A local summand of a finite biproduct splits off one term**: if `A` is a retract of `⨁ Y` and
+`End A` is local, then for some `j` the component `A ⟶ Y j` of the inclusion is a split
+monomorphism. -/
+theorem exists_isSplitMono_comp_π_of_retract {κ : Type w} [Finite κ] (Y : κ → C) {A : C}
+    [IsLocalRing (End A)] (h : Retract A (⨁ Y)) : ∃ j, IsSplitMono (h.i ≫ biproduct.π Y j) := by
   have := Fintype.ofFinite κ
   -- The identity of `A` is the sum of its composites through the `Y j`; one is invertible.
   have hsum : ∑ j, End.of (h.i ≫ biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r) = 1 := by
@@ -73,13 +75,33 @@ theorem exists_isIso_comp_π_of_retract {κ : Type w} [Finite κ] (Y : κ → C)
       simp only [← Category.assoc, ← Preadditive.sum_comp, biproduct.total, Category.id_comp]
     simp only [End.sum_asHom, End.one_asHom, ← Preadditive.comp_sum, hr, h.retract]
   obtain ⟨j, -, hj⟩ := IsLocalRing.exists_of_isUnit_sum (hsum ▸ isUnit_one : IsUnit (∑ j, _))
+  have := (isUnit_iff_isIso _).1 hj
+  exact ⟨j, IsSplitMono.mk' ⟨biproduct.ι Y j ≫ h.r ≫
+    inv (h.i ≫ biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r), by
+      simpa only [Category.assoc] using
+        IsIso.hom_inv_id (h.i ≫ biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r)⟩⟩
+
+/-- **A local summand of a finite biproduct is a summand of one term**: if `End A` is local and
+`A` is a retract of `⨁ Y`, then `A` is a retract of some `Y j`. -/
+theorem exists_nonempty_retract_of_retract_biproduct {κ : Type w} [Finite κ] (Y : κ → C) {A : C}
+    [IsLocalRing (End A)] (h : Retract A (⨁ Y)) : ∃ j, Nonempty (Retract A (Y j)) := by
+  obtain ⟨j, _⟩ := exists_isSplitMono_comp_π_of_retract Y h
+  exact ⟨j, ⟨⟨h.i ≫ biproduct.π Y j, retraction (h.i ≫ biproduct.π Y j), IsSplitMono.id _⟩⟩⟩
+
+/-- **A summand with local endomorphism ring of a biproduct of objects with local endomorphism
+rings is one of them**: if `A` is a retract of `⨁ Y` and the rings `End A` and `End (Y j)` are
+local, then the component `A ⟶ Y j` of the inclusion is an isomorphism for some `j`. -/
+theorem exists_isIso_comp_π_of_retract {κ : Type w} [Finite κ] (Y : κ → C)
+    (hY : ∀ j, IsLocalRing (End (Y j))) {A : C} [IsLocalRing (End A)] (h : Retract A (⨁ Y)) :
+    ∃ j, IsIso (h.i ≫ biproduct.π Y j) := by
+  obtain ⟨j, hj⟩ := exists_isSplitMono_comp_π_of_retract Y h
   have := hY j
   -- `A` is a retract of `Y j`, whose idempotents are trivial, so `A ≅ Y j`.
   exact ⟨j, isIso_of_isIso_comp
     (fun h₀ ↦ indecomposable_of_isLocalRing_end.1 ((IsZero.iff_id_eq_zero A).2 h₀))
     (fun e he ↦ (IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing
       (a := End.of e) (End.ext he)).imp (congrArg End.asHom) (congrArg End.asHom))
-    _ (biproduct.ι Y j ≫ h.r) (by simpa only [Category.assoc] using (isUnit_iff_isIso _).1 hj)⟩
+    _ (retraction _) (by rw [IsSplitMono.id]; infer_instance)⟩
 
 /-- **The exchange step.** If `A ⊞ A' ≅ ⨁ Y` with `End A` and all `End (Y j)` local, then
 `A ≅ Y j` for some `j`, and `A'` is isomorphic to the biproduct of the other summands. -/
