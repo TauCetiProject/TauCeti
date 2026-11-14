@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Sub
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.Probability.Renewal.Count
 public import TauCeti.Probability.Renewal.Moments
+import TauCeti.MeasureTheory.Integral.Lebesgue.Support
 import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.Probability.Independence.InfinitePi
 
@@ -53,6 +54,8 @@ measure and the renewal function are the objects of the renewal limit theorems a
 * `MeasureTheory.Measure.renewalMeasure_Iic` — `U [0, t] = 1 + m t`.
 * `TauCeti.Probability.lintegral_renewalCount` — `𝔼[N t] = m t` for i.i.d. increments, and
   `TauCeti.Probability.integral_renewalCountNat`, its real form for the natural-valued count.
+* `MeasureTheory.Measure.measure_singleton_zero_lt_one_of_mean_eq_top` — an infinite-mean law
+  assigns mass strictly less than one to `{0}`.
 * `MeasureTheory.Measure.renewalFunction_lt_top`,
   `MeasureTheory.Measure.isLocallyFiniteMeasure_renewalMeasure` — local finiteness when
   `F {0} < 1`.
@@ -259,6 +262,14 @@ theorem integral_renewalCountNat (hT : ∀ n, Measurable (T n)) (hindep : iIndep
 end TauCeti.Probability
 
 namespace MeasureTheory.Measure
+
+/-- A zero or probability measure on `ℝ≥0` of infinite extended mean has mass strictly below one at
+zero. -/
+theorem measure_singleton_zero_lt_one_of_mean_eq_top
+    (μ : Measure ℝ≥0) [IsZeroOrProbabilityMeasure μ]
+    (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂μ) = ∞) : μ {0} < 1 :=
+  μ.measure_singleton_lt_one_of_lintegral_pos (f := fun u ↦ (u : ℝ≥0∞))
+    (a := 0) (by simp) (hmean ▸ ENNReal.zero_lt_top)
 
 variable (μ : Measure ℝ≥0) [IsProbabilityMeasure μ]
 

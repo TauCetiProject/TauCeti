@@ -119,13 +119,9 @@ theorem tendsto_of_eq_add_renewalConv {F : Measure ℝ≥0} [IsProbabilityMeasur
     (hg : Measurable g) (hgb : ∀ t, ∃ C, ∀ s ≤ t, |g s| ≤ C)
     (hgeq : g = h + renewalConv g F) :
     Tendsto g atTop
-      (𝓝 (((∫⁻ x, (x : ℝ≥0∞) ∂F)⁻¹).toReal * ∫ x in Ioi (0 : ℝ), h x.toNNReal)) := by
-  let : IsLocallyFiniteMeasure F.renewalMeasure :=
-    F.isLocallyFiniteMeasure_renewalMeasure
-      (Measure.measure_singleton_zero_lt_one_of_not_isLattice hNL)
-  have hhb : ∀ t, ∃ C, ∀ s ≤ t, |h s| ≤ C := fun _ =>
-    ⟨h 0, fun s _ => by rw [abs_of_nonneg (h₀ s)]; exact hh bot_le⟩
-  rw [eq_renewalConv_renewalMeasure hh.measurable hhb hg hgb hgeq]
-  exact F.tendsto_renewalConv hNL hh h₀ hint
+      (𝓝 (((∫⁻ x, (x : ℝ≥0∞) ∂F)⁻¹).toReal * ∫ x in Ioi (0 : ℝ), h x.toNNReal)) :=
+  tendsto_of_eq_add_renewalConv_of_tendsto_measureReal_Ioc
+    (Measure.measure_singleton_zero_lt_one_of_not_isLattice hNL)
+    (F.tendsto_renewalMeasure_real_Ioc hNL) hh h₀ hint hg hgb hgeq
 
 end TauCeti.Probability

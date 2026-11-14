@@ -20,7 +20,8 @@ even when the integrating measure has atoms. The measure need only be finite on 
 intervals; it need not be a renewal measure.
 
 For a renewal measure, uniform tail truncation extends this to every nonnegative decreasing
-Lebesgue-integrable forcing function. This is the analytic transfer in the key renewal
+Lebesgue-integrable forcing function, and hence to every measurable, locally bounded solution
+of the renewal equation `g = h + g ∗ F`. This is the analytic transfer in the key renewal
 theorem. The interval limit is an explicit hypothesis: this file does not establish
 Blackwell's theorem, nor infer a nonlattice renewal limit from the local bound alone.
 
@@ -156,6 +157,11 @@ theorem tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc
       (hbounds n).2] with t ht hle
     exact hle.trans_lt ht
 
+private lemma abs_le_apply_zero_of_antitone {h : ℝ≥0 → ℝ} (hh : Antitone h)
+    (h₀ : ∀ x, 0 ≤ h x) (x : ℝ≥0) : |h x| ≤ h 0 := by
+  rw [abs_of_nonneg (h₀ x)]
+  exact hh bot_le
+
 /-- The analytic implication from Blackwell interval limits to the key renewal limit.
 The nonlattice hypothesis and the identification of `r` must be supplied by the interval-limit
 theorem; neither is assumed implicitly. Zero increments and infinite increment mean are allowed. -/
@@ -169,9 +175,7 @@ theorem tendsto_renewalConv_of_tendsto_measureReal_Ioc
     Tendsto (renewalConv h μ.renewalMeasure) atTop
       (𝓝 (r * ∫ x in Ioi (0 : ℝ), h x.toNNReal)) := by
   have := isLocallyFiniteMeasure_renewalMeasure μ hμ
-  have hbound : ∀ x : ℝ≥0, |h x| ≤ h 0 := fun x => by
-    rw [abs_of_nonneg (h₀ x)]
-    exact hh bot_le
+  have hbound : ∀ x : ℝ≥0, |h x| ≤ h 0 := abs_le_apply_zero_of_antitone hh h₀
   have hintconv (t : ℝ≥0) : IntegrableOn (fun s => h (t - s)) (Iic t)
       μ.renewalMeasure :=
     integrableOn_Iic_sub hh.measurable (fun s _ => hbound s) measure_Iic_lt_top.ne
@@ -226,18 +230,35 @@ theorem tendsto_renewalConv_sub_dirac_of_tendsto_measureReal_Ioc
     simpa only [Function.comp_def, Real.toNNReal_coe, id_eq] using
       (hf.tendsto_zero_of_integrableOn_Ioi hint (fun x _ => h₀ x.toNNReal)).comp
         (NNReal.tendsto_coe_atTop.2 tendsto_id)
-  have hmeasure : μ.renewalMeasure - dirac 0 = μ ∗ μ.renewalMeasure := by
-    conv_lhs => rw [renewalMeasure_eq_dirac_add_conv, add_comm, Measure.add_sub_cancel]
   have he (t : ℝ≥0) : renewalConv h (μ.renewalMeasure - dirac 0) t =
       renewalConv h μ.renewalMeasure t - h t := by
-    rw [hmeasure]
-    have heq := renewalConv_renewalMeasure_eq_add_conv (μ := μ) hh.measurable
-      (t := t) (C := h 0) (fun s _ => by
-        rw [abs_of_nonneg (h₀ s)]
-        exact hh bot_le)
+    have heq := renewalConv_renewalMeasure_eq_add_sub_dirac (μ := μ) hh.measurable
+      (t := t) (C := h 0) (fun s _ => abs_le_apply_zero_of_antitone hh h₀ s)
     linarith
   rw [funext he]
   simpa only [sub_zero] using
     (μ.tendsto_renewalConv_of_tendsto_measureReal_Ioc hμ hlim hh h₀ hint).sub hhlim
 
 end MeasureTheory.Measure
+
+namespace TauCeti.Probability
+
+/-- If the renewal measure of `F` satisfies Blackwell interval limits with rate `r` and
+`h : ℝ≥0 → ℝ` is nonnegative, nonincreasing, and Lebesgue-integrable, every measurable, locally
+bounded solution `g` of `g = h + g ∗ F` converges as `t → ∞` to `r * ∫ x in Ioi 0, h x.toNNReal`. -/
+theorem tendsto_of_eq_add_renewalConv_of_tendsto_measureReal_Ioc
+    {F : Measure ℝ≥0} [IsProbabilityMeasure F] (hF : F {0} < 1) {r : ℝ}
+    (hlim : ∀ d : ℝ≥0,
+      Tendsto (fun t : ℝ≥0 => F.renewalMeasure.real (Ioc t (t + d))) atTop (𝓝 (r * d)))
+    {h g : ℝ≥0 → ℝ} (hh : Antitone h) (h₀ : ∀ x, 0 ≤ h x)
+    (hint : IntegrableOn (fun x : ℝ => h x.toNNReal) (Ioi 0))
+    (hg : Measurable g) (hgb : ∀ t, ∃ C, ∀ s ≤ t, |g s| ≤ C)
+    (hgeq : g = h + renewalConv g F) :
+    Tendsto g atTop (𝓝 (r * ∫ x in Ioi (0 : ℝ), h x.toNNReal)) := by
+  let : IsLocallyFiniteMeasure F.renewalMeasure := F.isLocallyFiniteMeasure_renewalMeasure hF
+  have hhb : ∀ t, ∃ C, ∀ s ≤ t, |h s| ≤ C := fun _ =>
+    ⟨h 0, fun s _ => Measure.abs_le_apply_zero_of_antitone hh h₀ s⟩
+  rw [eq_renewalConv_renewalMeasure hh.measurable hhb hg hgb hgeq]
+  exact F.tendsto_renewalConv_of_tendsto_measureReal_Ioc hF hlim hh h₀ hint
+
+end TauCeti.Probability

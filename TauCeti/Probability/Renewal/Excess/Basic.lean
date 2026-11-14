@@ -51,8 +51,12 @@ respectively. These representations are the input of the limit theorem for the e
   arrival `arrival T n` is at most `t` while the next one is after `t + x`.
 * `TauCeti.Probability.measurable_renewalExcess`,
   `TauCeti.Probability.aemeasurable_renewalExcess`,
-  `TauCeti.Probability.renewalExcess_congr_ae`: measurability and almost-everywhere invariance
-  of the excess.
+  `TauCeti.Probability.renewalExcess_congr_ae`,
+  `TauCeti.Probability.exists_measurable_iIndepFun_renewalExcess_eq_ae`: measurability,
+  almost-everywhere invariance, and measurable i.i.d. modification of the excess.
+* `TauCeti.Probability.measureReal_renewalExcess_le_eq_one_sub`,
+  `TauCeti.Probability.measureReal_preimage_coe_renewalExcess_Iic`: complement and real-sublevel
+  identities for the excess.
 * `TauCeti.Probability.measure_lt_renewalExcess`,
   `TauCeti.Probability.measureReal_lt_renewalExcess`: the excess-tail representation
   `P(x < E t) = (F> (· + x) ∗ U) t`.
@@ -138,6 +142,21 @@ private lemma pairwise_disjoint_setOf_arrival (t x : ℝ≥0) :
   have hle := monotone_arrival T ω (Nat.succ_le_of_lt hmn)
   exact (hm.2.trans_le (hle.trans hn.1)).not_ge le_self_add
 
+/-- At a nonnegative real threshold `x`, the preimage of `Iic x` under the real-valued excess at
+time `t` is `{ω | renewalExcess T t ω ≤ x.toNNReal}`. -/
+lemma preimage_coe_renewalExcess_Iic_of_nonneg (t : ℝ≥0) {x : ℝ} (hx : 0 ≤ x) :
+    (fun ω ↦ (renewalExcess T t ω : ℝ)) ⁻¹' Iic x = {ω | renewalExcess T t ω ≤ x.toNNReal} := by
+  ext ω
+  simp only [mem_preimage, mem_Iic, mem_ofPred_eq, ← NNReal.coe_le_coe, Real.coe_toNNReal x hx]
+
+/-- At a negative real threshold `x`, the preimage of `Iic x` under the real-valued excess at
+time `t` is empty. -/
+lemma preimage_coe_renewalExcess_Iic_of_neg (t : ℝ≥0) {x : ℝ} (hx : x < 0) :
+    (fun ω ↦ (renewalExcess T t ω : ℝ)) ⁻¹' Iic x = ∅ := by
+  ext ω
+  simp only [mem_preimage, mem_Iic, mem_empty_iff_false, iff_false]
+  exact not_le_of_gt (hx.trans_le (renewalExcess T t ω).coe_nonneg)
+
 variable [MeasurableSpace Ω]
 
 /-- The excess at a fixed time is measurable. -/
@@ -167,6 +186,53 @@ theorem aemeasurable_renewalExcess (hT : ∀ n, AEMeasurable (T n) P) (t : ℝ�
     AEMeasurable (renewalExcess T t) P :=
   (measurable_renewalExcess (fun n ↦ (hT n).measurable_mk) t).aemeasurable.congr
     ((renewalExcess_congr_ae fun n ↦ (hT n).ae_eq_mk.symm).mono fun _ hω ↦ hω t)
+
+/-- Every sequence of independent, identically distributed nonnegative increments admits a
+measurable i.i.d. modification with the same common law and an excess process that agrees with
+the original one almost everywhere at all times. -/
+theorem exists_measurable_iIndepFun_renewalExcess_eq_ae
+    (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P) :
+    ∃ T' : ℕ → Ω → ℝ≥0, (∀ n, Measurable (T' n)) ∧ iIndepFun T' P ∧
+      (∀ n, IdentDistrib (T' n) (T' 0) P P) ∧ P.map (T' 0) = P.map (T 0) ∧
+      (∀ᵐ ω ∂P, ∀ t, renewalExcess T t ω = renewalExcess T' t ω) := by
+  let hT_ae (n : ℕ) : AEMeasurable (T n) P := (hid n).aemeasurable_fst
+  exact ⟨fun n ↦ (hT_ae n).mk (T n), fun n ↦ (hT_ae n).measurable_mk,
+    hindep.congr (fun n ↦ (hT_ae n).ae_eq_mk),
+    fun n ↦ (hT_ae n).identDistrib_mk.symm.trans ((hid n).trans (hT_ae 0).identDistrib_mk),
+    (Measure.map_congr (hT_ae 0).ae_eq_mk).symm,
+    renewalExcess_congr_ae fun n ↦ (hT_ae n).ae_eq_mk⟩
+
+/-- Almost-everywhere equality of two excess processes at all times implies equality of the real
+measures of preimages under the excess at every time. -/
+theorem measureReal_preimage_renewalExcess_of_ae_eq {T' : ℕ → Ω → ℝ≥0}
+    (h : ∀ᵐ ω ∂P, ∀ t, renewalExcess T t ω = renewalExcess T' t ω)
+    (s : Set ℝ≥0) (t : ℝ≥0) :
+    P.real (renewalExcess T t ⁻¹' s) = P.real (renewalExcess T' t ⁻¹' s) := by
+  apply measureReal_congr
+  filter_upwards [h] with ω hω
+  simp [hω t]
+
+/-- At any real threshold `x`, the real measure of the preimage of `Iic x` under the real-valued
+excess at time `t` equals `P.real {ω | renewalExcess T t ω ≤ x.toNNReal}` for `0 ≤ x` and `0` for
+`x < 0`. -/
+theorem measureReal_preimage_coe_renewalExcess_Iic (t : ℝ≥0) (x : ℝ) :
+    P.real ((fun ω ↦ (renewalExcess T t ω : ℝ)) ⁻¹' Iic x) =
+      if 0 ≤ x then P.real {ω | renewalExcess T t ω ≤ x.toNNReal} else 0 := by
+  split_ifs with hx
+  · rw [preimage_coe_renewalExcess_Iic_of_nonneg t hx]
+  · rw [preimage_coe_renewalExcess_Iic_of_neg t (lt_of_not_ge hx), measureReal_empty]
+
+/-- For almost-everywhere measurable increments on a probability space, the excess sublevel
+probability at time `t` is one minus the strict-superlevel probability. -/
+theorem measureReal_renewalExcess_le_eq_one_sub [IsProbabilityMeasure P]
+    (hT : ∀ n, AEMeasurable (T n) P) (t x : ℝ≥0) :
+    P.real {ω | renewalExcess T t ω ≤ x} = 1 - P.real {ω | x < renewalExcess T t ω} := by
+  have hnull : NullMeasurableSet {ω | x < renewalExcess T t ω} P :=
+    (aemeasurable_renewalExcess hT t).nullMeasurableSet_preimage measurableSet_Ioi
+  rw [← probReal_compl_eq_one_sub₀ hnull]
+  congr 1
+  ext ω
+  simp
 
 /-- For i.i.d. increments with law `F`, the `n`-th arrival is at most `t` and the next one is
 after `t + x` with probability `∫_{[0, t]} F((t - s + x, ∞)) F^{∗n}(ds)`, because `arrival T n`
@@ -255,11 +321,8 @@ theorem measureReal_renewalExcess_le (hT : ∀ n, Measurable (T n)) (hindep : iI
     (Antitone.measurable fun _ _ h ↦ measureReal_mono (Ioi_subset_Ioi (by gcongr)))
     (fun u _ ↦ by simp [abs_of_nonneg measureReal_nonneg]) hU
   -- `P(E t ≤ x) = 1 - P(x < E t)`, and `1 = (F> ∗ U) t` by the tail identity.
-  have hcompl : {ω | renewalExcess T t ω ≤ x} = {ω | x < renewalExcess T t ω}ᶜ := by
-    ext
-    simp
-  rw [hcompl, probReal_compl_eq_one_sub (measurableSet_lt measurable_const
-      (measurable_renewalExcess hT t)), measureReal_lt_renewalExcess hT hindep hid hzero,
+  rw [measureReal_renewalExcess_le_eq_one_sub (fun n ↦ (hT n).aemeasurable) t x,
+    measureReal_lt_renewalExcess hT hindep hid hzero,
     ← renewalConv_measureReal_Ioi_renewalMeasure hF t]
   have hfun : (fun u ↦ F.real (Iic (u + x)) - F.real (Iic u)) =
       (fun u ↦ F.real (Ioi (u + 0))) - fun u ↦ F.real (Ioi (u + x)) := by

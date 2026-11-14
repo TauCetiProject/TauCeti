@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Integral.Lebesgue.Support
 public import TauCeti.Probability.Renewal.Lattice.Blackwell
 public import TauCeti.Analysis.SpecificLimits.LatticeIncrements
 
@@ -40,8 +39,7 @@ theorem IsLattice.tendsto_renewalFunction_add_sub_of_mean_eq_top
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞) (x : ℝ≥0) :
     Tendsto (fun t ↦ (F.renewalFunction (t + x)).toReal -
       (F.renewalFunction t).toReal) atTop (𝓝 0) := by
-  have hzero := F.measure_singleton_lt_one_of_lintegral_pos (f := fun u ↦ (u : ℝ≥0∞))
-    (a := 0) (by simp) (hmean ▸ ENNReal.zero_lt_top)
+  have hzero := F.measure_singleton_zero_lt_one_of_mean_eq_top hmean
   obtain ⟨a, hmax⟩ := hF.exists_isGreatest_of_measure_zero_lt_one hzero
   have hgrid : Tendsto (fun n : ℕ ↦ (F.renewalFunction (a * (n + 1))).toReal -
       (F.renewalFunction (a * n)).toReal) atTop (𝓝 0) := by
