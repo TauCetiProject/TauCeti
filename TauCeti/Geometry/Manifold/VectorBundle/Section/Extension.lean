@@ -16,9 +16,9 @@ import Mathlib.Geometry.Manifold.BumpFunction
 
 Let `V` be a `C^n` real vector bundle, `n ≤ ∞`, over a finite-dimensional Hausdorff smooth
 manifold. Every vector in `V` is the value of a global `C^n` section. This lets tensorial
-operations on globally `C^n` sections define maps on individual fibres. The construction cuts off
-Mathlib's locally `C^n` `FiberBundle.extend` with a smooth bump function, and
-`FiberBundle.globalSection` chooses such a section. Equivalently, evaluation of global `C^n`
+operations on globally `C^n` sections define maps on individual fibres. The section
+`FiberBundle.contMDiffExtend I F v` cuts off Mathlib's locally `C^n` `FiberBundle.extend F v` with
+a smooth bump function; it does not depend on `n`. Equivalently, evaluation of global `C^n`
 sections at a point is surjective.
 
 Every fibre vector is moreover the value of a compactly supported `C^n` section supported in any
@@ -37,40 +37,52 @@ namespace FiberBundle
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {H : Type*} [TopologicalSpace H]
   (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
-  [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
-  (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
-  [FiberBundle F V] [VectorBundle ℝ F V]
+  [ChartedSpace H M] [T2Space M]
+  (F : Type*) {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
+
+section Construction
+
+variable [TopologicalSpace F] [∀ x, Zero (V x)] [FiberBundle F V]
+
+/-- A global section of `V` through the fibre vector `v`: Mathlib's `FiberBundle.extend F v`,
+which is `C^n` on the base set of the trivialization at the base point of `v`, cut off by a smooth
+bump function supported in that base set. It takes the value `v` at the base point
+(`FiberBundle.contMDiffExtend_apply_self`) and is `C^n` whenever `V` is a `C^n` vector bundle,
+`n ≤ ∞` (`FiberBundle.contMDiff_contMDiffExtend`). -/
+noncomputable def contMDiffExtend [∀ x, SMul ℝ (V x)] {x : M} (v : V x) : Π y : M, V y :=
+  (((SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.1 <|
+    (trivializationAt F V x).open_baseSet.mem_nhds <| mem_baseSet_trivializationAt F V x).choose :
+      M → ℝ) • extend F v
+
+/-- `FiberBundle.contMDiffExtend I F v` takes the value `v` at the base point of `v`. -/
+@[simp]
+theorem contMDiffExtend_apply_self [∀ x, MulAction ℝ (V x)] {x : M} (v : V x) :
+    contMDiffExtend I F v x = v := by
+  simp [contMDiffExtend]
+
+end Construction
+
+variable [IsManifold I ∞ M] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
+
+/-- In a `C^n` vector bundle with `n ≤ ∞`, `FiberBundle.contMDiffExtend I F v` is a global `C^n`
+section. -/
+theorem contMDiff_contMDiffExtend {n : ℕ∞ω} [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
+    {x : M} (v : V x) : CMDiff n (T% (contMDiffExtend I F v)) := by
+  have hρ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.1 <|
+    (trivializationAt F V x).open_baseSet.mem_nhds <| mem_baseSet_trivializationAt F V x
+  refine (hρ.choose.contMDiff.of_le ENat.LEInfty.out).contMDiffOn.smul_section_of_tsupport
+    (trivializationAt F V x).open_baseSet hρ.choose_spec.2 ?_
+  rw [(trivializationAt F V x).contMDiffOn_section_baseSet_iff]
+  exact (contMDiffOn_const (c := (trivializationAt F V x ⟨x, v⟩).2)).congr fun y hy ↦ by
+    simp [extend, hy]
 
 /-- In a `C^n` vector bundle with `n ≤ ∞`, every fibre vector is the value of a global `C^n`
 section. The fibre need not be finite-dimensional, and the base need not be compact or
 boundaryless. -/
 theorem exists_contMDiff_section_eq (n : ℕ∞ω) [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
-    {x : M} (v : V x) : ∃ s : Π y : M, V y, CMDiff n (T% s) ∧ s x = v := by
-  obtain ⟨u, hu, hs⟩ := exists_contMDiffOn_extend (k := n) I F v
-  obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp
-    (interior_mem_nhds.2 hu)
-  refine ⟨(ρ : M → ℝ) • extend F v, ?_, by simp⟩
-  exact (ρ.contMDiff.of_le ENat.LEInfty.out).contMDiffOn.smul_section_of_tsupport
-    isOpen_interior hρ (hs.mono interior_subset)
-
-/-- A chosen global `C^n` section of `V` whose value at the base point of `v` is `v`
-(`FiberBundle.exists_contMDiff_section_eq`). -/
-noncomputable def globalSection (n : ℕ∞ω) [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
-    {x : M} (v : V x) : Π y : M, V y :=
-  Classical.choose (exists_contMDiff_section_eq I F n v)
-
-/-- The chosen global section through `v` is `C^n`. -/
-theorem contMDiff_globalSection (n : ℕ∞ω) [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
-    {x : M} (v : V x) : CMDiff n (T% (globalSection I F n v)) :=
-  (Classical.choose_spec (exists_contMDiff_section_eq I F n v)).1
-
-/-- The chosen global section through `v` takes the value `v` at its base point. -/
-@[simp]
-theorem globalSection_apply_self (n : ℕ∞ω) [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
-    {x : M} (v : V x) : globalSection I F n v x = v :=
-  (Classical.choose_spec (exists_contMDiff_section_eq I F n v)).2
+    {x : M} (v : V x) : ∃ s : Π y : M, V y, CMDiff n (T% s) ∧ s x = v :=
+  ⟨contMDiffExtend I F v, contMDiff_contMDiffExtend I F v, contMDiffExtend_apply_self I F v⟩
 
 end FiberBundle
 

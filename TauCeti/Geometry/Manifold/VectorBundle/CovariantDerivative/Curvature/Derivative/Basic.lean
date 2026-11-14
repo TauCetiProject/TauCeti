@@ -214,20 +214,20 @@ variable (cov covT)
 /-- The value of `∇R` on fibre vectors, computed on chosen smooth extensions. -/
 private def derivCurvatureValue (x : M) (v u w : TangentSpace I x) (s : V x) : V x :=
   derivCurvatureAux cov covT
-    (globalSection I E ∞ u)
-    (globalSection I E ∞ w)
-    (globalSection I F ∞ s) x v
+    (contMDiffExtend I E u)
+    (contMDiffExtend I E w)
+    (contMDiffExtend I F s) x v
 
 private theorem derivCurvatureValue_eq (x : M) (v : TangentSpace I x)
     (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z)) (hσ : CMDiff ∞ (T% σ)) :
     derivCurvatureValue cov covT x v (Y x) (Z x) (σ x) = derivCurvatureAux cov covT Y Z σ x v :=
   congrFun (derivCurvatureAux_congr
-    (contMDiff_globalSection I E ∞ (Y x)) hY
-    (contMDiff_globalSection I E ∞ (Z x)) hZ
-    (contMDiff_globalSection I F ∞ (σ x)) hσ
-    (globalSection_apply_self I E ∞ (Y x))
-    (globalSection_apply_self I E ∞ (Z x))
-    (globalSection_apply_self I F ∞ (σ x))) v
+    (contMDiff_contMDiffExtend I E (Y x)) hY
+    (contMDiff_contMDiffExtend I E (Z x)) hZ
+    (contMDiff_contMDiffExtend I F (σ x)) hσ
+    (contMDiffExtend_apply_self I E (Y x))
+    (contMDiffExtend_apply_self I E (Z x))
+    (contMDiffExtend_apply_self I F (σ x))) v
 
 private theorem derivCurvatureValue_add_dir (x : M) (v v' u w : TangentSpace I x) (s : V x) :
     derivCurvatureValue cov covT x (v + v') u w s =
