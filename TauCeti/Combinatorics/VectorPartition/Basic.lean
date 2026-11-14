@@ -9,23 +9,21 @@ public import Mathlib.Data.Matrix.Basic
 public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Order.Interval.Finset.Nat
 public import Mathlib.SetTheory.Cardinal.Finite
-public import TauCeti.Geometry.Convex.Cone.Alternative
-import Mathlib.Algebra.BigOperators.Pi
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
 # Finite vector-partition fibers
 
-For an integer matrix `A`, `Matrix.NatFiber A b` is the type of natural multiplicity vectors
-whose image is `b`. Distinct multiplicity vectors are counted separately, including when columns
-of `A` coincide. A strictly positive integral covector on the columns bounds every coordinate in
-a fiber and gives its finite enumeration. The count is defined for every matrix as the natural
-cardinality of its fiber, so it is zero for infinite fibers. Under a positive covector it counts
-the finite solution set and is independent of that covector.
+For an integer matrix `A`, `Matrix.NatFiber A b` consists of decompositions of the target `b`
+as a natural linear combination of the columns of `A`. Distinct multiplicity vectors are counted
+separately, including when columns coincide. An integral covector strictly positive on every
+column bounds each multiplicity and gives a finite enumeration of the fiber. The count is defined
+for every matrix as the natural cardinality of its fiber, so it is zero for infinite fibers.
+Under a positive covector it counts the finite solution set and is independent of that covector.
 
-The existence of a positive integral covector is equivalent to the real kernel containing no
-nonzero nonnegative vector. Its construction uses the integral form of Tucker's theorem in
-`TauCeti.Geometry.Convex.Cone.Alternative`, including that theorem's denominator clearing.
+The positive-covector criterion `Matrix.exists_forall_vecMul_pos_iff` in
+`TauCeti.Geometry.Convex.Cone.Alternative` characterizes the existence of such an integral
+covector by the absence of nonzero nonnegative vectors in the real kernel.
 Neither full row rank nor unimodularity is needed for these finiteness results.
 -/
 
@@ -56,7 +54,8 @@ theorem NatFiber.dotProduct_eq {A : Matrix m n ℤ} {b : m → ℤ} (c : NatFibe
     (h : m → ℤ) : (h ᵥ* A) ⬝ᵥ (fun j => (c.1 j : ℤ)) = h ⬝ᵥ b := by
   rw [← dotProduct_mulVec, c.2]
 
-/-- Each multiplicity is bounded by the integral height of the right-hand side. -/
+/-- If the integral covector is strictly positive on every column, each multiplicity is bounded
+by the height of the right-hand side. -/
 theorem NatFiber.apply_le_toNat_dotProduct {A : Matrix m n ℤ} {b : m → ℤ} (c : NatFiber A b)
     {h : m → ℤ} (hh : ∀ j, 0 < (h ᵥ* A) j) (j : n) :
     c.1 j ≤ (h ⬝ᵥ b).toNat := by
@@ -114,20 +113,23 @@ theorem card_natFiberFinset [DecidableEq n] (A : Matrix m n ℤ) {h : m → ℤ}
   exact Nat.card_congr (Equiv.subtypeEquivRight fun c =>
     mem_natFiberFinset_iff_of_vecMul_pos A hh b c)
 
-/-- The count is positive precisely when there is a natural solution. -/
+/-- Under an integral covector strictly positive on every column, the count is positive precisely
+when there is a natural solution. -/
 @[simp] theorem natFiberCount_pos_iff (A : Matrix m n ℤ)
     (hA : ∃ h : m → ℤ, ∀ j, 0 < (h ᵥ* A) j) (b : m → ℤ) :
     0 < A.natFiberCount b ↔ ∃ c : n → ℕ, A *ᵥ (fun j => (c j : ℤ)) = b := by
   rw [natFiberCount_def, Nat.card_pos_iff, nonempty_subtype]
   exact and_iff_left (A.finite_natFiber hA b)
 
-/-- The count vanishes precisely when there is no natural solution. -/
+/-- Under an integral covector strictly positive on every column, the count vanishes precisely
+when there is no natural solution. -/
 @[simp] theorem natFiberCount_eq_zero_iff (A : Matrix m n ℤ)
     (hA : ∃ h : m → ℤ, ∀ j, 0 < (h ᵥ* A) j) (b : m → ℤ) :
     A.natFiberCount b = 0 ↔ ¬ ∃ c : n → ℕ, A *ᵥ (fun j => (c j : ℤ)) = b := by
   rw [← natFiberCount_pos_iff A hA b, Nat.pos_iff_ne_zero, not_ne_iff]
 
-/-- The zero vector is the unique natural solution with image zero. -/
+/-- Under an integral covector strictly positive on every column, the zero vector is the unique
+natural solution with image zero. -/
 theorem NatFiber.eq_zero {A : Matrix m n ℤ}
     (hA : ∃ h : m → ℤ, ∀ j, 0 < (h ᵥ* A) j) (c : NatFiber A 0) : c.1 = 0 := by
   obtain ⟨h, hh⟩ := hA
@@ -135,7 +137,8 @@ theorem NatFiber.eq_zero {A : Matrix m n ℤ}
   have := c.apply_le_toNat_dotProduct hh j
   simpa using this
 
-/-- The fiber at zero has exactly one point, including for an empty column family. -/
+/-- Under an integral covector strictly positive on every column, the fiber at zero has exactly
+one point, including for an empty column family. -/
 @[simp] theorem natFiberCount_zero (A : Matrix m n ℤ)
     (hA : ∃ h : m → ℤ, ∀ j, 0 < (h ᵥ* A) j) : A.natFiberCount 0 = 1 := by
   rw [natFiberCount_def, Nat.card_eq_one_iff_unique]

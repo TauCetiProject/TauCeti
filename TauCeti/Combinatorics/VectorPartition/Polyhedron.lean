@@ -15,12 +15,11 @@ import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 # Real vector-partition polyhedra
 
 `Matrix.nonnegFiber A b` is the nonnegative real solution set of a matrix equation.
-It is a native convex polyhedron, and a positive real height bounds all its coordinates,
-making it compact. For integer matrices, the natural multiplicity vectors are identified with
-the integer points of the corresponding real fiber.
-
-These results do not require unimodularity: real feasibility alone need not supply an integer
-point, and no such conclusion is asserted here.
+When the row index type is finite, it satisfies `TauCeti.IsConvexPolyhedron`. A real covector
+strictly positive on every column bounds all its coordinates, making it compact. For integer
+matrices, the natural fibers are identified with the lattice points of the corresponding real
+nonnegative fibers. Real feasibility need not imply integer feasibility, and these results do
+not require unimodularity.
 -/
 
 public section
