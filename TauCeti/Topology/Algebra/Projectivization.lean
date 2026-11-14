@@ -44,6 +44,8 @@ of projective space.
 
 * `Projectivization.isOpen_linearProjectionDomain`: the points where a continuous linear map does
   not vanish form an open set.
+* `ContinuousLinearEquiv.mapProjectivization`: a continuous semilinear equivalence
+  `V ≃SL[σ] W` induces a homeomorphism `ℙ K V ≃ₜ ℙ L W`.
 * `Projectivization.continuousAt_linearProjection`: the map induced by a linear map depends
   jointly continuously on the linear map and the point, where it is defined.
 * `Projectivization.mk'_eq_mk'_iff_forall_strongDual`: when continuous linear forms separate
@@ -89,6 +91,58 @@ theorem isOpen_linearProjectionDomain {W : Type*} [AddCommGroup W] [Module K W]
   convert (isOpen_compl_singleton (x := (0 : W))).preimage (hG.comp continuous_subtype_val) using 1
   ext v
   simp [mk'_eq_mk]
+
+section MapProjectivization
+
+variable {L W : Type*} [DivisionRing L] [AddCommGroup W] [Module L W] [TopologicalSpace W]
+  {σ : K →+* L} {σ' : L →+* K} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+
+/-- A continuous semilinear equivalence `V ≃SL[σ] W` induces a homeomorphism `ℙ K V ≃ₜ ℙ L W`,
+sending the line spanned by `v` to the line spanned by `e v`. -/
+def _root_.ContinuousLinearEquiv.mapProjectivization (e : V ≃SL[σ] W) :
+    ℙ K V ≃ₜ ℙ L W where
+  toFun := map (e : V →ₛₗ[σ] W) e.injective
+  invFun := map (e.symm : W →ₛₗ[σ'] V) e.symm.injective
+  left_inv p := by
+    induction p using ind with | h v hv => simp [map_mk]
+  right_inv p := by
+    induction p using ind with | h v hv => simp [map_mk]
+  continuous_toFun := continuous_map _ e.continuous
+  continuous_invFun := continuous_map _ e.symm.continuous
+
+/-- The homeomorphism `ContinuousLinearEquiv.mapProjectivization` is `Projectivization.map`. -/
+theorem _root_.ContinuousLinearEquiv.coe_mapProjectivization (e : V ≃SL[σ] W) :
+    ⇑e.mapProjectivization = map (e : V →ₛₗ[σ] W) e.injective :=
+  (rfl)
+
+@[simp]
+theorem _root_.ContinuousLinearEquiv.mapProjectivization_mk (e : V ≃SL[σ] W) (v : V)
+    (hv : v ≠ 0) :
+    e.mapProjectivization (mk K v hv) = mk L (e v) ((map_ne_zero_iff e e.injective).2 hv) :=
+  (rfl)
+
+@[simp]
+theorem _root_.ContinuousLinearEquiv.mapProjectivization_symm (e : V ≃SL[σ] W) :
+    e.mapProjectivization.symm = e.symm.mapProjectivization :=
+  (rfl)
+
+@[simp]
+theorem _root_.ContinuousLinearEquiv.mapProjectivization_refl :
+    (ContinuousLinearEquiv.refl K V).mapProjectivization = Homeomorph.refl (ℙ K V) := by
+  ext p
+  induction p using ind with | h v hv => simp
+
+@[simp]
+theorem _root_.ContinuousLinearEquiv.mapProjectivization_trans {M U : Type*} [DivisionRing M]
+    [AddCommGroup U] [Module M U] [TopologicalSpace U] {τ : L →+* M} {τ' : M →+* L}
+    {ρ : K →+* M} {ρ' : M →+* K} [RingHomInvPair τ τ'] [RingHomInvPair τ' τ]
+    [RingHomInvPair ρ ρ'] [RingHomInvPair ρ' ρ] [RingHomCompTriple σ τ ρ]
+    [RingHomCompTriple τ' σ' ρ'] (e₁ : V ≃SL[σ] W) (e₂ : W ≃SL[τ] U) :
+    (e₁.trans e₂).mapProjectivization = e₁.mapProjectivization.trans e₂.mapProjectivization := by
+  ext p
+  induction p using ind with | h v hv => simp
+
+end MapProjectivization
 
 variable [ContinuousConstSMul Kˣ V]
 
