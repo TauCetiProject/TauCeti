@@ -356,8 +356,11 @@ def retraction {T : Type u} [Group T] {ι : G →* T} : Tower G T ι → T →* 
 
 @[simp] theorem retraction_base : (base : Tower G G (.id G)).retraction = .id G := (rfl)
 
-@[simp] theorem retraction_cons (t : Tower G T ι) (L : TowerLevel T) :
+theorem retraction_cons (t : Tower G T ι) (L : TowerLevel T) :
     (cons t L).retraction = t.retraction.comp L.retraction := (rfl)
+
+@[simp] theorem retraction_cons_apply (t : Tower G T ι) (L : TowerLevel T) (x : L.Carrier) :
+    (cons t L).retraction x = t.retraction (L.retraction x) := (rfl)
 
 /-- The tower with the single level `L` over `G`. -/
 def single (L : TowerLevel G) : Tower G L.Carrier L.inclusion :=

@@ -15,7 +15,7 @@ public import TauCeti.GroupTheory.FreeGroup.Primitive
 The free product `G ∗ H` of two free groups is free: free bases `b` of `G` and `b'` of `H` give
 the free basis `b.coprod b'` of `G ∗ H`, indexed by the disjoint union of their index types, whose
 elements are the images of the basis elements of the two factors. This is the binary analogue of
-Mathlib's `FreeGroupBasis.coprodI` for the indexed free product `Monoid.CoprodI`.
+Mathlib's `Monoid.CoprodI.FreeGroupBasis.coprodI` for the indexed free product `Monoid.CoprodI`.
 
 ## Main definitions
 
@@ -24,6 +24,8 @@ Mathlib's `FreeGroupBasis.coprodI` for the indexed free product `Monoid.CoprodI`
 ## Main results
 
 * `FreeGroupBasis.coprod_apply_inl`, `FreeGroupBasis.coprod_apply_inr`: its elements.
+* `FreeGroupBasis.coprod_repr_inl`, `FreeGroupBasis.coprod_repr_inr`: the coordinates in it of the
+  elements of the two factors.
 * The instance `IsFreeGroup (G ∗ H)` for free groups `G` and `H`.
 * `Monoid.Coprod.isPrimitive_inl`, `Monoid.Coprod.isPrimitive_inr`: a primitive element of a free
   group stays primitive in its free product with any free group.
@@ -38,7 +40,8 @@ namespace FreeGroupBasis
 variable {ι ι' G H : Type*} [Group G] [Group H]
 
 /-- The free basis of the free product `G ∗ H` indexed by `ι ⊕ ι'`, given by free bases of `G`
-indexed by `ι` and of `H` indexed by `ι'`; the binary analogue of `FreeGroupBasis.coprodI`. -/
+indexed by `ι` and of `H` indexed by `ι'`; the binary analogue of
+`Monoid.CoprodI.FreeGroupBasis.coprodI`. -/
 def coprod (b : FreeGroupBasis ι G) (b' : FreeGroupBasis ι' H) :
     FreeGroupBasis (ι ⊕ ι') (G ∗ H) :=
   .ofRepr <| MonoidHom.toMulEquiv
@@ -58,6 +61,20 @@ theorem coprod_apply_inl (b : FreeGroupBasis ι G) (b' : FreeGroupBasis ι' H) (
 theorem coprod_apply_inr (b : FreeGroupBasis ι G) (b' : FreeGroupBasis ι' H) (i : ι') :
     b.coprod b' (.inr i) = inr (b' i) :=
   FreeGroup.lift_apply_of (f := Sum.elim (inl ∘ b) (inr ∘ b')) (x := .inr i)
+
+/-- The coordinates of an element of `G` in the free basis `b.coprod b'` of `G ∗ H` are its
+coordinates in `b`, with the indices sent into the left summand. -/
+@[simp]
+theorem coprod_repr_inl (b : FreeGroupBasis ι G) (b' : FreeGroupBasis ι' H) (x : G) :
+    (b.coprod b').repr (inl x) = FreeGroup.map Sum.inl (b.repr x) := by
+  simp [coprod]
+
+/-- The coordinates of an element of `H` in the free basis `b.coprod b'` of `G ∗ H` are its
+coordinates in `b'`, with the indices sent into the right summand. -/
+@[simp]
+theorem coprod_repr_inr (b : FreeGroupBasis ι G) (b' : FreeGroupBasis ι' H) (y : H) :
+    (b.coprod b').repr (inr y) = FreeGroup.map Sum.inr (b'.repr y) := by
+  simp [coprod]
 
 end FreeGroupBasis
 
