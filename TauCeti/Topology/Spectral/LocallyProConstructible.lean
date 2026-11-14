@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Spectral.LocallySpectral
 public import TauCeti.Topology.Spectral.ProConstructible
+import TauCeti.Topology.Spectral.Limits.Basic
 
 /-!
 # Locally pro-constructible subsets
@@ -22,8 +23,11 @@ a subset is closed exactly when it is stable under specialization.
 A quasi-compact locally spectral map out of a locally spectral space carries locally
 pro-constructible subsets to locally pro-constructible subsets. Here quasi-compactness is
 expressed by Mathlib's `IsSpectralMap`: inverse images of compact opens are compact. Between
-locally spectral spaces, such a map is closed exactly when it is a `SpecializingMap`. These are
-the topological image and closedness criteria used in properness arguments in adic geometry.
+locally spectral spaces, such a map is closed exactly when it is a `SpecializingMap`, while an
+open locally spectral map lifts generalizations. Locally pro-constructible subspaces of locally
+spectral spaces are locally spectral with locally spectral inclusions, and slicing a locally
+pro-constructible subset of a product at a point of a locally spectral factor yields a locally
+pro-constructible subset.
 
 ## References
 
@@ -288,5 +292,102 @@ theorem IsLocallySpectralMap.isClosedMap_iff_specializingMap {f : X → Y}
   have himage := hs.isLocallyProConstructible.image hX hf hqc
   exact (himage.isClosed_iff_stableUnderSpecialization hY).mpr
     (hs.stableUnderSpecialization.image hspec)
+
+/-- Commute subtype preimages between two subsets of an ambient space. -/
+private def preimageSubtypeHomeomorph (s U : Set X) :
+    ((Subtype.val : s → X) ⁻¹' U) ≃ₜ ((Subtype.val : U → X) ⁻¹' s) where
+  toFun y := ⟨⟨y.1.1, y.2⟩, y.1.2⟩
+  invFun z := ⟨⟨z.1.1, z.2⟩, z.1.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun :=
+    ((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _).subtype_mk _
+  continuous_invFun :=
+    ((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _).subtype_mk _
+
+/-- A locally pro-constructible subspace of a locally spectral space is locally spectral. -/
+theorem IsLocallyProConstructible.isLocallySpectralSpace (hs : IsLocallyProConstructible s)
+    (hX : IsLocallySpectralSpace X) : IsLocallySpectralSpace s :=
+  isLocallySpectralSpace_iff.mpr fun x ↦ by
+    obtain ⟨U, hUo, hxU, hUs⟩ := isLocallySpectralSpace_iff.mp hX x.1
+    have := hUs
+    have : SpectralSpace ((Subtype.val : U → X) ⁻¹' s) := (hs U hUo hUs).spectralSpace
+    let e := preimageSubtypeHomeomorph s U
+    have : CompactSpace ((Subtype.val : s → X) ⁻¹' U) := e.symm.compactSpace
+    exact ⟨(Subtype.val : s → X) ⁻¹' U, hUo.preimage continuous_subtype_val, hxU,
+      e.isOpenEmbedding.spectralSpace⟩
+
+/-- The subspace inclusion of any locally pro-constructible subset is locally spectral, without
+ambient separation or compactness assumptions. -/
+theorem IsLocallyProConstructible.isLocallySpectralMap_subtypeVal
+    (hs : IsLocallyProConstructible s) : IsLocallySpectralMap (Subtype.val : s → X) := by
+  refine .of_isSpectralMap_restrict continuous_subtype_val fun U V hUV hUo hVo hUs hVs ↦ ?_
+  have := hUs
+  have := hVs
+  have : SpectralSpace ((Subtype.val : V → X) ⁻¹' s) := (hs V hVo hVs).spectralSpace
+  let e := preimageSubtypeHomeomorph s V
+  have : CompactSpace ((Subtype.val : s → X) ⁻¹' V) := e.symm.compactSpace
+  have : SpectralSpace ((Subtype.val : s → X) ⁻¹' V) := e.isOpenEmbedding.spectralSpace
+  have hUV' : U ⊆ (Subtype.val : s → X) ⁻¹' V := hUV
+  have hinc : IsOpenEmbedding (inclusion hUV') :=
+    .inclusion hUV' (hUo.preimage continuous_subtype_val)
+  exact (hs V hVo hVs).isSpectralMap_subtypeVal.comp
+    (e.isProperMap.isSpectralMap.comp hinc.isSpectralMap)
+
+/-- Slicing a locally pro-constructible subset of `X × Y` at a point of a locally spectral space
+`X` yields a locally pro-constructible subset of `Y`. -/
+theorem IsLocallyProConstructible.preimage_prodMkRight {R : Set (X × Y)}
+    (hR : IsLocallyProConstructible R) (hX : IsLocallySpectralSpace X) (x : X) :
+    IsLocallyProConstructible (Prod.mk x ⁻¹' R) := by
+  intro V hVo hVs
+  have := hVs
+  obtain ⟨U, hUo, hxU, hUs⟩ := isLocallySpectralSpace_iff.mp hX x
+  have := hUs
+  let e := Homeomorph.Set.prod U V
+  have : CompactSpace ↥(U ×ˢ V) := e.symm.compactSpace
+  have hΩs : SpectralSpace ↥(U ×ˢ V) := e.isOpenEmbedding.spectralSpace
+  exact (hR (U ×ˢ V) (hUo.prod hVo) hΩs).preimage
+    (e.symm.isProperMap.isSpectralMap.comp (isSpectralMap_prodMkRight (⟨x, hxU⟩ : U)))
+
+/-- Slicing a locally pro-constructible subset of `X × Y` at a point of a locally spectral space
+`Y` yields a locally pro-constructible subset of `X`. -/
+theorem IsLocallyProConstructible.preimage_prodMkLeft {R : Set (X × Y)}
+    (hR : IsLocallyProConstructible R) (hY : IsLocallySpectralSpace Y) (y : Y) :
+    IsLocallyProConstructible ((fun x : X ↦ (x, y)) ⁻¹' R) := by
+  intro U hUo hUs
+  have := hUs
+  obtain ⟨V, hVo, hyV, hVs⟩ := isLocallySpectralSpace_iff.mp hY y
+  have := hVs
+  let e := Homeomorph.Set.prod U V
+  have : CompactSpace ↥(U ×ˢ V) := e.symm.compactSpace
+  have hΩs : SpectralSpace ↥(U ×ˢ V) := e.isOpenEmbedding.spectralSpace
+  exact (hR (U ×ˢ V) (hUo.prod hVo) hΩs).preimage
+    (e.symm.isProperMap.isSpectralMap.comp (isSpectralMap_prodMkLeft (⟨y, hyV⟩ : V)))
+
+/-- An open locally spectral map between locally spectral spaces lifts generalizations. -/
+theorem IsLocallySpectralMap.generalizingMap_of_isOpenMap {f : X → Y}
+    (hf : IsLocallySpectralMap f) (hX : IsLocallySpectralSpace X)
+    (hY : IsLocallySpectralSpace Y) (ho : IsOpenMap f) : GeneralizingMap f := by
+  intro x y hy
+  obtain ⟨V, hVo, hfxV, hVs⟩ := isLocallySpectralSpace_iff.mp hY (f x)
+  have := hVs
+  have hyV : y ∈ V := hy.mem_open hVo hfxV
+  obtain ⟨U₀, hU₀o, hxU₀, hU₀s⟩ := isLocallySpectralSpace_iff.mp hX x
+  obtain ⟨U, hUsub, hUo, hxU, -, hUs⟩ :=
+    hU₀o.exists_spectralSpace_subset_inter hU₀s (hVo.preimage hf.continuous) hxU₀ hfxV
+  have := hUs
+  have hUV : MapsTo f U V := fun z hz ↦ (hUsub hz).2
+  have hg_open : IsOpenMap (hUV.restrict f U V) := fun W hWo ↦ by
+    have heq : hUV.restrict f U V '' W = (Subtype.val : V → Y) ⁻¹' (f '' (Subtype.val '' W)) := by
+      ext v
+      exact ⟨fun ⟨u, hu, huv⟩ ↦ ⟨u.1, ⟨u, hu, rfl⟩, congrArg Subtype.val huv⟩,
+        fun ⟨_, ⟨u, hu, rfl⟩, huv⟩ ↦ ⟨u, hu, Subtype.ext huv⟩⟩
+    rw [heq]
+    exact (ho _ (hUo.isOpenMap_subtype_val W hWo)).preimage continuous_subtype_val
+  have hy' : (⟨y, hyV⟩ : V) ⤳ hUV.restrict f U V ⟨x, hxU⟩ :=
+    IsInducing.subtypeVal.specializes_iff.mp hy
+  obtain ⟨x', hx'x, hx'y⟩ :=
+    (hf.isSpectralMap_restrict hUV hUo hVo).generalizingMap_of_isOpenMap hg_open hy'
+  exact ⟨x'.1, hx'x.map continuous_subtype_val, congrArg Subtype.val hx'y⟩
 
 end TauCeti

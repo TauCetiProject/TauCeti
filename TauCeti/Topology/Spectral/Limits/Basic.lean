@@ -58,6 +58,36 @@ instance spectralSpace_pi {ι : Type*} {X : ι → Type*} [t : ∀ i, Topologica
       ((hV i hi).2.isClopen_constructibleTopology_of_isOpen (hV i hi).1)
       (fun x ↦ x i) (@continuous_apply ι X (fun i ↦ constructibleTopology (X i)) i)
 
+/-- A binary product of spectral spaces, with its product topology, is spectral. -/
+instance spectralSpace_prod {X Y : Type*} [tX : TopologicalSpace X] [tY : TopologicalSpace Y]
+    [SpectralSpace X] [SpectralSpace Y] : SpectralSpace (X × Y) := by
+  have hb := (PrespectralSpace.isTopologicalBasis (X := X)).prod
+    (PrespectralSpace.isTopologicalBasis (X := Y))
+  have hgen := hb.eq_generateFrom
+  have hT0 : T0Space (X × Y) := inferInstance
+  let t' : TopologicalSpace (X × Y) :=
+    @instTopologicalSpaceProd X Y (constructibleTopology X) (constructibleTopology Y)
+  have hc : @CompactSpace (X × Y) t' := by
+    have hcompX : @CompactSpace X (constructibleTopology X) :=
+      @Function.Surjective.compactSpace (WithConstructibleTopology X) X _
+        (constructibleTopology X) WithTopology.ofTopology
+        (WithTopology.continuous_ofTopology _) inferInstance
+        (WithTopology.ofTopology_surjective _)
+    have hcompY : @CompactSpace Y (constructibleTopology Y) :=
+      @Function.Surjective.compactSpace (WithConstructibleTopology Y) Y _
+        (constructibleTopology Y) WithTopology.ofTopology
+        (WithTopology.continuous_ofTopology _) inferInstance
+        (WithTopology.ofTopology_surjective _)
+    let : TopologicalSpace X := constructibleTopology X
+    let : TopologicalSpace Y := constructibleTopology Y
+    exact inferInstance
+  refine @spectralSpace_of_isClopen_generateFrom _ _ t'
+    (@instTopologicalSpaceProd X Y tX tY) hgen hc ?_ hT0
+  rintro _ ⟨U, hU, V, hV, rfl⟩
+  exact @IsClopen.prod X Y (constructibleTopology X) (constructibleTopology Y) U V
+    (hU.2.isClopen_constructibleTopology_of_isOpen hU.1)
+    (hV.2.isClopen_constructibleTopology_of_isOpen hV.1)
+
 end TauCeti
 
 namespace TopCat

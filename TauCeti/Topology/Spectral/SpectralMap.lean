@@ -39,6 +39,8 @@ but no criterion that tests spectrality on a basis; this supplies the missing en
   subsets of the ambient spaces.
 * `TauCeti.isSpectralMap_eval`: a coordinate projection is spectral when every other factor
   is quasi-compact.
+* `TauCeti.isSpectralMap_prodMkRight`, `TauCeti.isSpectralMap_prodMkLeft`: coordinate-insertion
+  slices into a binary product with a prespectral factor are spectral maps.
 * `Topology.IsEmbedding.spectralSpace_preimage_iff` : a subset of the range of an embedding is
   spectral if and only if its preimage is — the transport step of any "prove it on a subspace"
   argument.
@@ -131,6 +133,34 @@ theorem isSpectralMap_eval {ι : Type*} {Z : ι → Type*} [∀ i, TopologicalSp
     · simpa using hUc
     · rw [Function.update_of_ne hj]
       exact hZ j hj
+
+/-- Inserting a fixed left coordinate into `X × Y` is a spectral map whenever `Y` is
+prespectral. -/
+theorem isSpectralMap_prodMkRight [PrespectralSpace Y] (x : X) :
+    IsSpectralMap (Prod.mk x : Y → X × Y) := by
+  refine isSpectralMap_of_isTopologicalBasis
+    (isTopologicalBasis_opens.prod PrespectralSpace.isTopologicalBasis)
+    (.prodMk_right x) ?_
+  rintro _ ⟨U, _, V, hV, rfl⟩
+  classical
+  rw [mk_preimage_prod_right_eq_if]
+  split_ifs
+  · exact hV.2
+  · exact isCompact_empty
+
+/-- Inserting a fixed right coordinate into `X × Y` is a spectral map whenever `X` is
+prespectral. -/
+theorem isSpectralMap_prodMkLeft [PrespectralSpace X] (y : Y) :
+    IsSpectralMap (fun x : X ↦ (x, y)) := by
+  refine isSpectralMap_of_isTopologicalBasis
+    (PrespectralSpace.isTopologicalBasis.prod isTopologicalBasis_opens)
+    (.prodMk_left y) ?_
+  rintro _ ⟨U, hU, V, _, rfl⟩
+  classical
+  rw [mk_preimage_prod_left_eq_if]
+  split_ifs
+  · exact hU.2
+  · exact isCompact_empty
 
 /-- **Spectrality transports along an embedding.** A subset of the target contained in the range
 of an embedding is spectral if and only if its preimage is: the embedding restricts to a

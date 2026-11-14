@@ -79,9 +79,13 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
   pro-constructible subset of a compact, quasi-sober, quasi-separated prespectral space that is
   stable under generalization is the intersection of the quasi-compact opens containing it. This
   is the pro-constructible case of `IsCompact.eq_sInter_of_stableUnderGeneralization`.
+* `TauCeti.isProConstructible_singleton` — singletons in a T₀ prespectral space are
+  pro-constructible.
 * `IsSpectralMap.isQuotientMap_of_generalizingMap` — a surjective generalizing spectral map onto
   a spectral space is a quotient map. This is the general form of Mathlib's
   `PrimeSpectrum.isQuotientMap_of_generalizingMap`, whose proof it follows.
+* `IsSpectralMap.generalizingMap_of_isOpenMap` — an open spectral map from a compact, quasi-sober,
+  quasi-separated prespectral space to a T₀ prespectral space lifts generalizations.
 
 ## References
 
@@ -187,6 +191,16 @@ theorem isProConstructible_setOfPred_specializes [PrespectralSpace X] (x : X) :
         (x := y) (y := x)
   rw [heq]
   exact IsProConstructible.sInter fun U hU ↦ hU.2.1.isProConstructible hU.1
+
+/-- Every singleton in a T₀ prespectral space is pro-constructible, since the constructible
+topology is Hausdorff. -/
+@[simp]
+theorem isProConstructible_singleton [PrespectralSpace X] [T0Space X] (x : X) :
+    IsProConstructible ({x} : Set X) := by
+  rw [IsProConstructible]
+  convert isClosed_singleton (x := WithTopology.toTopology (constructibleTopology X) x) using 1
+  ext y
+  exact (WithTopology.ofTopology_injective (constructibleTopology X)).eq_iff
 
 /-! ### Functoriality -/
 
@@ -416,6 +430,34 @@ theorem _root_.IsSpectralMap.isQuotientMap_of_generalizingMap [CompactSpace X] [
   rw [Set.image_preimage_eq t hsurj, ← stableUnderGeneralization_compl_iff]
   convert hg.stableUnderGeneralization_image ht.isOpen_compl.stableUnderGeneralization
   rw [← Set.preimage_compl, Set.image_preimage_eq _ hsurj]
+
+/-- An open spectral map from a compact, quasi-sober, quasi-separated prespectral space to a T₀
+prespectral space lifts generalizations. -/
+theorem _root_.IsSpectralMap.generalizingMap_of_isOpenMap [CompactSpace X] [QuasiSober X]
+    [PrespectralSpace X] [QuasiSeparatedSpace X] [PrespectralSpace Y] [T0Space Y] {f : X → Y}
+    (hf : IsSpectralMap f) (ho : IsOpenMap f) : GeneralizingMap f := by
+  intro x y hy
+  let ι := {U : Set X // IsOpen U ∧ IsCompact U ∧ x ∈ U}
+  have : Nonempty ι := ⟨⟨univ, isOpen_univ, isCompact_univ, mem_univ x⟩⟩
+  let F (U : ι) : Set (WithConstructibleTopology X) :=
+    WithTopology.ofTopology ⁻¹' (U.1 ∩ f ⁻¹' {y})
+  have hFcl (U : ι) : IsClosed (F U) :=
+    (U.2.2.1.isProConstructible U.2.1).inter ((isProConstructible_singleton y).preimage hf)
+  have hFdir : Directed (· ⊇ ·) F := fun U V ↦
+    ⟨⟨U.1 ∩ V.1, U.2.1.inter V.2.1,
+      QuasiSeparatedSpace.inter_isCompact U.1 V.1 U.2.1 U.2.2.1 V.2.1 V.2.2.1,
+      U.2.2.2, V.2.2.2⟩,
+      preimage_mono (inter_subset_inter_left _ inter_subset_left),
+      preimage_mono (inter_subset_inter_left _ inter_subset_right)⟩
+  have hFne (U : ι) : (F U).Nonempty := by
+    obtain ⟨x', hx'U, hx'y⟩ := hy.mem_open (ho U.1 U.2.1) ⟨x, U.2.2.2, rfl⟩
+    exact ⟨WithTopology.toTopology (constructibleTopology X) x', hx'U, hx'y⟩
+  obtain ⟨z, hz⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed F
+    hFdir hFne (fun U ↦ (hFcl U).isCompact) hFcl
+  refine ⟨WithTopology.ofTopology z, ?_,
+    (mem_iInter.mp hz ⟨univ, isOpen_univ, isCompact_univ, mem_univ x⟩).2⟩
+  exact (PrespectralSpace.isTopologicalBasis (X := X)).nhds_hasBasis.specializes_iff.mpr
+    fun U ⟨⟨hUo, hUc⟩, hxU⟩ ↦ (mem_iInter.mp hz ⟨U, hUo, hUc, hxU⟩).1
 
 end TauCeti
 

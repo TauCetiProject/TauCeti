@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Spectral.SpectralMap
 import TauCeti.Topology.Compactness.Compact
+import TauCeti.Topology.Spectral.Limits.Basic
 
 /-!
 # Locally spectral spaces and maps
@@ -40,6 +41,9 @@ compose through a locally spectral middle space.
   locally spectral.
 * `TauCeti.IsLocallySpectralMap.of_forall_exists`: local spectrality of a map tested on one cover.
 * `TauCeti.IsLocallySpectralMap.comp`: composition through a locally spectral middle space.
+* `TauCeti.IsLocallySpectralSpace.prod`, `TauCeti.isLocallySpectralMap_fst`,
+  `TauCeti.isLocallySpectralMap_snd`: binary products of locally spectral spaces and their
+  coordinate projections.
 
 ## References
 
@@ -315,6 +319,101 @@ theorem IsLocallySpectralMap.comp {Z : Type*} [TopologicalSpace Z] {g : Y → Z}
   have heq : U' ∩ (g ∘ f) ⁻¹' K = U' ∩ f ⁻¹' (V ∩ g ⁻¹' K) := Set.ext fun y ↦
     ⟨fun ⟨hy, hyK⟩ ↦ ⟨hy, hU'V hy, hyK⟩, fun ⟨hy, _, hyK⟩ ↦ ⟨hy, hyK⟩⟩
   rwa [heq]
+
+/-- A binary product of locally spectral spaces is locally spectral. -/
+theorem IsLocallySpectralSpace.prod (hX : IsLocallySpectralSpace X)
+    (hY : IsLocallySpectralSpace Y) : IsLocallySpectralSpace (X × Y) := fun ⟨x, y⟩ ↦ by
+  obtain ⟨U, hUo, hxU, hUs⟩ := hX x
+  obtain ⟨V, hVo, hyV, hVs⟩ := hY y
+  have := hUs
+  have := hVs
+  let e := Homeomorph.Set.prod U V
+  have : CompactSpace ↥(U ×ˢ V) := e.symm.compactSpace
+  exact ⟨U ×ˢ V, hUo.prod hVo, ⟨hxU, hyV⟩, e.isOpenEmbedding.spectralSpace⟩
+
+/-- The first projection `X × Y → X` is locally spectral whenever the fiber factor `Y` is locally
+spectral; no assumption on `X` or global compactness on `Y` is needed. -/
+theorem isLocallySpectralMap_fst (hY : IsLocallySpectralSpace Y) :
+    IsLocallySpectralMap (Prod.fst : X × Y → X) := by
+  refine .of_isSpectralMap_restrict continuous_fst fun Ω W hΩW hΩo hWo hΩs hWs ↦ ?_
+  have := hΩs
+  have := hWs
+  refine isLocallySpectralMap_iff_isSpectralMap.mp (.of_forall_exists fun p ↦ ?_)
+  obtain ⟨V, hVo, hpV, hVs⟩ := hY p.1.2
+  have := hVs
+  let e := Homeomorph.Set.prod W V
+  have : CompactSpace ↥(W ×ˢ V) := e.symm.compactSpace
+  have hWVs : SpectralSpace ↥(W ×ˢ V) := e.isOpenEmbedding.spectralSpace
+  obtain ⟨O, hOsub, hOo, hpO, -, hOs⟩ :=
+    (isOpen_univ (X := Ω)).exists_spectralSpace_subset_inter spectralSpace_univ
+      ((hWo.prod hVo).preimage continuous_subtype_val) (mem_univ p) ⟨hΩW p.2, hpV⟩
+  have := hOs
+  let j : O → ↥(W ×ˢ V) := fun o ↦ ⟨o.1.1, (hOsub o.2).2⟩
+  have hj_emb : IsEmbedding j :=
+    .of_comp ((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _)
+      continuous_subtype_val
+      ((IsEmbedding.subtypeVal (p := (· ∈ Ω))).comp IsEmbedding.subtypeVal)
+  have hj_open : IsOpenEmbedding j := by
+    refine ⟨hj_emb, ?_⟩
+    have hrange : range j = (Subtype.val : ↥(W ×ˢ V) → X × Y) ⁻¹'
+        (Subtype.val '' (Subtype.val '' (univ : Set O))) := by
+      ext q
+      simp only [mem_range, mem_preimage, mem_image, mem_univ, true_and, j]
+      exact ⟨fun ⟨o, ho⟩ ↦ ⟨o.1, ⟨o, rfl⟩, congrArg Subtype.val ho⟩,
+        fun ⟨_, ⟨o, rfl⟩, ho⟩ ↦ ⟨o, Subtype.ext ho⟩⟩
+    rw [hrange]
+    exact (hΩo.isOpenMap_subtype_val _
+      (hOo.isOpenMap_subtype_val _ isOpen_univ)).preimage continuous_subtype_val
+  refine ⟨O, univ, mapsTo_univ _ _, hOo, isOpen_univ, hpO, hOs.toQuasiSeparatedSpace, ?_⟩
+  have heq : (mapsTo_univ (hΩW.restrict Prod.fst Ω W) O).restrict
+      (hΩW.restrict Prod.fst Ω W) O univ =
+      (Homeomorph.Set.univ W).symm ∘ (Prod.fst ∘ e ∘ j) := (rfl)
+  rw [heq]
+  exact (Homeomorph.Set.univ W).symm.isProperMap.isSpectralMap.comp
+    ((isProperMap_fst_of_compactSpace.isSpectralMap.comp e.isProperMap.isSpectralMap).comp
+      hj_open.isSpectralMap)
+
+/-- The second projection `X × Y → Y` is locally spectral whenever the fiber factor `X` is locally
+spectral; no assumption on `Y` or global compactness on `X` is needed. -/
+theorem isLocallySpectralMap_snd (hX : IsLocallySpectralSpace X) :
+    IsLocallySpectralMap (Prod.snd : X × Y → Y) := by
+  refine .of_isSpectralMap_restrict continuous_snd fun Ω W hΩW hΩo hWo hΩs hWs ↦ ?_
+  have := hΩs
+  have := hWs
+  refine isLocallySpectralMap_iff_isSpectralMap.mp (.of_forall_exists fun p ↦ ?_)
+  obtain ⟨U, hUo, hpU, hUs⟩ := hX p.1.1
+  have := hUs
+  let e := Homeomorph.Set.prod U W
+  have : CompactSpace ↥(U ×ˢ W) := e.symm.compactSpace
+  have hUWs : SpectralSpace ↥(U ×ˢ W) := e.isOpenEmbedding.spectralSpace
+  obtain ⟨O, hOsub, hOo, hpO, -, hOs⟩ :=
+    (isOpen_univ (X := Ω)).exists_spectralSpace_subset_inter spectralSpace_univ
+      ((hUo.prod hWo).preimage continuous_subtype_val) (mem_univ p) ⟨hpU, hΩW p.2⟩
+  have := hOs
+  let j : O → ↥(U ×ˢ W) := fun o ↦ ⟨o.1.1, (hOsub o.2).2⟩
+  have hj_emb : IsEmbedding j :=
+    .of_comp ((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _)
+      continuous_subtype_val
+      ((IsEmbedding.subtypeVal (p := (· ∈ Ω))).comp IsEmbedding.subtypeVal)
+  have hj_open : IsOpenEmbedding j := by
+    refine ⟨hj_emb, ?_⟩
+    have hrange : range j = (Subtype.val : ↥(U ×ˢ W) → X × Y) ⁻¹'
+        (Subtype.val '' (Subtype.val '' (univ : Set O))) := by
+      ext q
+      simp only [mem_range, mem_preimage, mem_image, mem_univ, true_and, j]
+      exact ⟨fun ⟨o, ho⟩ ↦ ⟨o.1, ⟨o, rfl⟩, congrArg Subtype.val ho⟩,
+        fun ⟨_, ⟨o, rfl⟩, ho⟩ ↦ ⟨o, Subtype.ext ho⟩⟩
+    rw [hrange]
+    exact (hΩo.isOpenMap_subtype_val _
+      (hOo.isOpenMap_subtype_val _ isOpen_univ)).preimage continuous_subtype_val
+  refine ⟨O, univ, mapsTo_univ _ _, hOo, isOpen_univ, hpO, hOs.toQuasiSeparatedSpace, ?_⟩
+  have heq : (mapsTo_univ (hΩW.restrict Prod.snd Ω W) O).restrict
+      (hΩW.restrict Prod.snd Ω W) O univ =
+      (Homeomorph.Set.univ W).symm ∘ (Prod.snd ∘ e ∘ j) := (rfl)
+  rw [heq]
+  exact (Homeomorph.Set.univ W).symm.isProperMap.isSpectralMap.comp
+    ((isProperMap_snd_of_compactSpace.isSpectralMap.comp e.isProperMap.isSpectralMap).comp
+      hj_open.isSpectralMap)
 
 end TauCeti
 
