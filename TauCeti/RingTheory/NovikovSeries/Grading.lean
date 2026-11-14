@@ -28,6 +28,8 @@ theory on a spherically monotone symplectic manifold, graded by twice the first 
 ## Main definitions
 
 * `TauCeti.NovikovSeries.supported R N s`: the Novikov series supported in the set `s`.
+* `TauCeti.NovikovSeries.supportSubalgebra S R N s`: the subalgebra of series supported in an
+  additive submonoid or subgroup `s`.
 * `TauCeti.NovikovSeries.gradeBy R N f i`: the Novikov series of degree `i` for the degree
   function `f`.
 
@@ -63,7 +65,7 @@ namespace TauCeti
 
 namespace NovikovSeries
 
-variable {R H ι : Type*}
+variable {S R H ι : Type*}
 
 section Semiring
 
@@ -85,6 +87,46 @@ def supported (s : Set H) : Submodule R (NovikovSeries R H N) where
 theorem mem_supported {s : Set H} {a : NovikovSeries R H N} :
     a ∈ supported R N s ↔ a.support ⊆ s :=
   Iff.rfl
+
+end AddZeroClass
+
+section AddMonoid
+
+variable [CommSemiring S] [Algebra S R] [AddMonoid H] {N : H →+ ℝ}
+    {M : Type*} [SetLike M H] [AddSubmonoidClass M H]
+
+variable (S R N) in
+/-- The subalgebra of Novikov series supported in the additive submonoid or subgroup `s`. -/
+def supportSubalgebra (s : M) : Subalgebra S (NovikovSeries R H N) where
+  carrier := {a | a.support ⊆ s}
+  add_mem' ha hb := (support_add_subset _ _).trans (Set.union_subset ha hb)
+  mul_mem' ha hb h hh := by
+    obtain ⟨a, ha', b, hb', rfl⟩ := support_mul_subset _ _ hh
+    exact add_mem (ha ha') (hb hb')
+  algebraMap_mem' r h hh := by
+    rw [algebraMap_apply] at hh
+    exact (Set.mem_singleton_iff.1 (support_single_subset 0 (algebraMap S R r) hh)) ▸
+      zero_mem s
+
+variable (S R N) in
+/-- The carrier of `supportSubalgebra S R N s` consists of series supported in `s`. -/
+@[simp]
+theorem coe_supportSubalgebra (s : M) :
+    (supportSubalgebra S R N s : Set (NovikovSeries R H N)) = {a | a.support ⊆ (s : Set H)} := by
+  rfl
+
+variable (S R N) in
+/-- A series lies in `supportSubalgebra S R N s` exactly when its support lies in `s`. -/
+@[simp]
+theorem mem_supportSubalgebra {s : M} {a : NovikovSeries R H N} :
+    a ∈ supportSubalgebra S R N s ↔ a.support ⊆ s :=
+  Iff.rfl
+
+end AddMonoid
+
+section AddZeroClass
+
+variable [AddZeroClass H] {N : H →+ ℝ}
 
 variable (R N) in
 /-- The Novikov series of degree `i` for the degree function `f`: those whose support lies in

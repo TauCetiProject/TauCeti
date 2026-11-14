@@ -62,6 +62,8 @@ to a complete separated uniform space extends uniquely to the Novikov series. Th
   basis of open subgroups, and coefficientwise scalar multiplication is continuous.
 * `TauCeti.NovikovSeries.coeff_tsum_eq_zero`: a sum of series vanishing at an exponent vanishes
   there.
+* `TauCeti.NovikovSeries.isClosed_support_subset`: series supported in any fixed set form a
+  closed set.
 * `TauCeti.NovikovSeries.summable_sigma_fin_iff` and `TauCeti.NovikovSeries.tsum_sigma_fin`:
   over coefficients without additive torsion, listing the `i`-th series of a family `c i` times
   has the summability and the sum of scaling it by `c i`.
@@ -300,6 +302,19 @@ theorem isLocallyConstant_coeff (h : H) :
   (IsLocallyConstant.iff_eventually_eq _).2 fun a => by
     filter_upwards [tendsto_nhds_iff.1 (tendsto_id (x := 𝓝 a)) (N h + 1)] with b hb
     exact hb h (lt_add_one _)
+
+/-- The series supported in any fixed set of exponents form a closed set in the period
+topology. -/
+theorem isClosed_support_subset (s : Set H) :
+    IsClosed {a : NovikovSeries R H N | a.support ⊆ s} := by
+  have hset : {a : NovikovSeries R H N | a.support ⊆ s} =
+      ⋂ h ∈ {h | h ∉ s}, {a | a.coeff h = 0} := by
+    ext a
+    simp only [Set.mem_ofPred_eq, Set.mem_iInter]
+    exact ⟨fun ha h hh => not_not.1 fun hn => hh (ha (mem_support.2 hn)),
+      fun ha h hh => not_not.1 fun hn => mem_support.1 hh (ha h hn)⟩
+  rw [hset]
+  exact isClosed_biInter fun h _ => (isLocallyConstant_coeff h).isClosed_fiber 0
 
 /-- If every term of a family of Novikov series has coefficient `0` at the exponent `h`, so does
 its sum. -/
