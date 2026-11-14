@@ -46,6 +46,8 @@ interior source points with the same ambient image, intertwining the two integra
   dimension equals the rank of the distribution at any image point.
 * `TauCeti.isIntegralManifold_id`: the identity is an integral manifold of the full tangent
   distribution.
+* `TauCeti.IsIntegralManifold.mfderiv_mem_of_comp_eq`: the velocity of a differentiable map
+  factoring through an integral immersion belongs to the distribution.
 * `TauCeti.IsIntegralManifold.eventually_sub_mem`: an integral immersion, of regularity at least
   one, of a finite-dimensional constant distribution locally stays in one affine plaque, including
   at boundary source points.
@@ -125,6 +127,19 @@ theorem IsIntegralManifold.range_mfderiv (hf : IsIntegralManifold J n D f) (y : 
 theorem IsIntegralManifold.contMDiff (hf : IsIntegralManifold J n D f) :
     ContMDiff J I n f :=
   hf.isImmersion.contMDiff
+
+/-- The derivative of a map factoring differentiably through an integral immersion takes
+values in the distribution. -/
+theorem IsIntegralManifold.mfderiv_mem_of_comp_eq
+    (hf : IsIntegralManifold J n D f) (hn : n ≠ 0)
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    {H'' : Type*} [TopologicalSpace H''] {L : ModelWithCorners ℝ E'' H''}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+    {g : P → N} {γ : P → M} {x : P} (hg : MDifferentiableAt L J g x)
+    (hcomp : f ∘ g = γ) (v : TangentSpace L x) : mfderiv L I γ x v ∈ D (γ x) := by
+  rw [← hcomp, mfderiv_comp x (hf.contMDiff.mdifferentiableAt hn) hg]
+  rw [Function.comp_apply, ← hf.range_mfderiv (g x)]
+  exact ⟨_, rfl⟩
 
 /-- For regularity `n ≠ 0`, the model dimension of an integral manifold `f` equals the rank of
 the distribution at the image point `f y` of any source point `y`. -/
