@@ -97,13 +97,6 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
 
 local notation "O_u" => u.adicCompletionIntegers F
 local notation "F_u" => u.adicCompletion F
-local notation "m_u" => IsLocalRing.maximalIdeal O_u
-
-local instance : IsLinearTopology O_u O_u :=
-  u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸ Ideal.isLinearTopology m_u
-
-local instance : Fact (IsAdic m_u) :=
-  ⟨u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)⟩
 
 variable (C : WeierstrassCurve (u.adicCompletionIntegers F))
   [(C.baseChange (u.adicCompletion F)).IsElliptic]
