@@ -47,10 +47,10 @@ pairs by their finite algebras, and by their integral algebras.
 * `TauCeti.isLocalRing_of_isIntegral_of_forall_isIdempotentElem`: a possibly noncommutative
   integral algebra over a henselian local ring is local if it is nontrivial and has only trivial
   idempotents.
-* `TauCeti.IsIntegralClosure.isLocalRing`: any model of the integral closure of a henselian local
-  ring in a domain is local.
-* `TauCeti.HenselianLocalRing.of_finite`: a finite local algebra over a henselian local ring
-  is henselian.
+* `TauCeti.IsIntegralClosure.isLocalRing` and `TauCeti.IsIntegralClosure.henselianLocalRing`: any
+  model of the integral closure of a henselian local ring in a domain is a henselian local ring.
+* `TauCeti.HenselianLocalRing.of_isIntegral` and `TauCeti.HenselianLocalRing.of_finite`: an
+  integral (in particular finite) local algebra over a henselian local ring is henselian.
 * `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem` and
   `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem_of_isIntegral`: `(R, I)` is Henselian
   if and only if reduction modulo `IS` is a bijection on idempotents for every finite, or every
@@ -236,22 +236,59 @@ instance integralClosure.isLocalRing (R S : Type*) [CommRing R] [IsLocalRing R]
     IsLocalRing (integralClosure R S) :=
   IsIntegralClosure.isLocalRing R S _
 
-/-- A finite local algebra over a henselian local ring is henselian. -/
-theorem HenselianLocalRing.of_finite (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
-    [HenselianLocalRing R] [IsLocalRing S] [Module.Finite R S] : HenselianLocalRing S := by
+/-- **Integral local extensions of henselian local rings.** A local ring integral over a henselian
+local ring is henselian. -/
+@[stacks 04GH "(2)"]
+theorem HenselianLocalRing.of_isIntegral (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
+    [HenselianLocalRing R] [IsLocalRing S] [Algebra.IsIntegral R S] : HenselianLocalRing S := by
   let I := (IsLocalRing.maximalIdeal R).map (algebraMap R S)
   have hrad : I.radical = IsLocalRing.maximalIdeal S := by
-    obtain ⟨n, hn⟩ := IsLocalRing.exists_maximalIdeal_pow_le_map (R := R) (S := S)
     apply le_antisymm
     · apply (Ideal.IsPrime.radical_le_iff inferInstance).mpr
       exact Ideal.map_le_iff_le_comap.mpr
         (Ideal.comap_eq_maximalIdeal_of_isIntegral (IsLocalRing.maximalIdeal S)).ge
-    · intro b hb
-      exact ⟨n, hn (Ideal.pow_mem_pow hb n)⟩
+    · rw [Ideal.radical_eq_sInf]
+      refine le_sInf fun J ⟨hIJ, hJp⟩ ↦ ?_
+      have hcomap : IsLocalRing.maximalIdeal R = J.under R :=
+        (IsLocalRing.maximalIdeal.isMaximal R).eq_of_le (hJp.comap _).ne_top
+          (Ideal.map_le_iff_le_comap.mp hIJ)
+      have : J.IsMaximal :=
+        Ideal.isMaximal_of_isIntegral_of_isMaximal_under (R := R) J
+          (hcomap ▸ IsLocalRing.maximalIdeal.isMaximal R)
+      exact (IsLocalRing.eq_maximalIdeal this).ge
   have : HenselianRing S I := inferInstance
   have : HenselianRing S I.radical := inferInstance
   rw [hrad] at this
   exact HenselianRing.henselianLocalRing S
+
+/-- A finite local algebra over a henselian local ring is henselian. -/
+@[stacks 04GH "(2)"]
+theorem HenselianLocalRing.of_finite (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
+    [HenselianLocalRing R] [IsLocalRing S] [Module.Finite R S] : HenselianLocalRing S :=
+  of_isIntegral R S
+
+/-- A domain integral over a henselian local ring is a henselian local ring. -/
+theorem HenselianLocalRing.of_isDomain_of_isIntegral (R S : Type*) [CommRing R]
+    [HenselianLocalRing R] [CommRing S] [IsDomain S] [Algebra R S] [Algebra.IsIntegral R S] :
+    HenselianLocalRing S :=
+  have := isLocalRing_of_isDomain_of_isIntegral_of_henselianRing R S
+  of_isIntegral R S
+
+/-- Any model of the integral closure of a henselian local ring in a domain is a henselian local
+ring. -/
+theorem IsIntegralClosure.henselianLocalRing (R S B : Type*) [CommRing R]
+    [HenselianLocalRing R] [CommRing S] [IsDomain S] [Algebra R S]
+    [CommRing B] [Algebra R B] [Algebra B S] [IsScalarTower R B S]
+    [IsIntegralClosure B R S] : HenselianLocalRing B := by
+  have : IsDomain B := (_root_.IsIntegralClosure.algebraMap_injective B R S).isDomain _
+  have := _root_.IsIntegralClosure.isIntegral_algebra R S (A := B)
+  exact HenselianLocalRing.of_isDomain_of_isIntegral R B
+
+/-- The integral closure of a henselian local ring in a domain is a henselian local ring. -/
+instance integralClosure.henselianLocalRing (R S : Type*) [CommRing R]
+    [HenselianLocalRing R] [CommRing S] [IsDomain S] [Algebra R S] :
+    HenselianLocalRing (integralClosure R S) :=
+  IsIntegralClosure.henselianLocalRing R S _
 
 /-- **Henselian pairs and idempotents of finite algebras.** A pair `(R, I)` is Henselian if and
 only if, for every finite `R`-algebra `S` in the universe of `R`, the quotient map `S → S ⧸ IS`
