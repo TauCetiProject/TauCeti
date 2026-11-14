@@ -135,17 +135,17 @@ abbrev toGraphClosure : U.toScheme ⟶ graphClosure f q U g hg :=
 @[reassoc (attr := simp)]
 theorem toGraphClosure_graphClosureFst :
     toGraphClosure f q U g hg ≫ graphClosureFst f q U g hg = U.ι := by
-  simp [graphClosureFst]
+  simp [graphClosureFst_def]
 
 @[reassoc (attr := simp)]
 theorem toGraphClosure_graphClosureSnd :
     toGraphClosure f q U g hg ≫ graphClosureSnd f q U g hg = g := by
-  simp [graphClosureSnd]
+  simp [graphClosureSnd_def]
 
 @[reassoc]
 theorem graphClosureFst_comp :
     graphClosureFst f q U g hg ≫ f = graphClosureSnd f q U g hg ≫ q := by
-  simp [graphClosureFst, graphClosureSnd, pullback.condition]
+  simp [graphClosureFst_def, graphClosureSnd_def, pullback.condition]
 
 /-- The projection of the graph closure to `X` is proper when `q` is. -/
 instance [IsProper q] : IsProper (graphClosureFst f q U g hg) := by
@@ -332,7 +332,7 @@ theorem isImmersion_graphClosureSnd_restrict [IsSeparated f] :
       (graphClosureSnd f q U g hg ⁻¹ᵁ h ⁻¹ᵁ j.opensRange).ι ≫
         (opensGraph f q U g hg).imageι := by
     refine pullback.hom_ext ?_ ?_
-    · simpa [σ, graphClosureFst] using graphClosureSnd_restrict_comp hUV hh hj hgj
+    · simpa [σ, ← graphClosureFst_def] using graphClosureSnd_restrict_comp hUV hh hj hgj
     · simp only [σ, Category.assoc, pullback.lift_snd, morphismRestrict_ι, graphClosureSnd_def]
   have : IsImmersion ((graphClosureSnd f q U g hg ∣_ h ⁻¹ᵁ j.opensRange) ≫ σ) := by
     rw [hσ]
