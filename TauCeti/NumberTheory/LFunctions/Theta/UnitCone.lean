@@ -20,9 +20,7 @@ does not identify a radial lattice-point sum with a partial zeta function.
 
 The unfolding of one unit orbit is recorded separately: for a point `x` of nonzero norm, the
 cone integrals of the Gaussians of the unit multiples `u x` against `N(y)^(s/2)` sum to `w` times
-the full gamma integral of `x` (`hasSum_integral_unitCone_archGaussian_unit_smul`), and the cone
-integral of the norm of such a Gaussian is the real part of the cone integral at `Re s`
-(`integral_unitCone_norm_archGaussian_mul_archNorm_cpow`).
+the full gamma integral of `x` (`hasSum_integral_unitCone_archGaussian_unit_smul`).
 
 ## References
 
@@ -92,19 +90,5 @@ theorem hasSum_integral_unitCone_archGaussian_unit_smul (hD : IsUnitFundamentalD
     (integrable_archGaussian_mul_archNorm_cpow hx hs)
   rw [integral_archGaussian_mul_archNorm_cpow hx hs, nsmul_eq_mul] at h
   exact h.congr_fun fun u ↦ by simp only [archGaussian_unit_smul, archNorm_unitScale]
-
-/-- The cone integral of the norm of the Gaussian against `N(y)^(s/2)` is the real part of the
-cone integral at `Re s`. -/
-theorem integral_unitCone_norm_archGaussian_mul_archNorm_cpow
-    (hDm : MeasurableSet D) {x : mixedSpace K} (hx : mixedEmbedding.norm x ≠ 0)
-    (hs : 0 < s.re) :
-    ∫ y in unitCone D, ‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖ ∂archHaar K =
-      (∫ y in unitCone D, archGaussian y x * (archNorm y : ℂ) ^ ((s.re : ℂ) / 2)
-        ∂archHaar K).re := by
-  have hint := (integrable_archGaussian_mul_archNorm_cpow hx
-    (s := (s.re : ℂ)) (by simpa using hs)).integrableOn (s := unitCone D)
-  rw [← reCLM_apply, ← ContinuousLinearMap.integral_comp_comm _ hint]
-  exact setIntegral_congr_fun (measurableSet_unitCone hDm) fun y hy ↦
-    norm_archGaussian_mul_archNorm_cpow (mem_unitCone.mp hy).1
 
 end TauCeti.LFunctions

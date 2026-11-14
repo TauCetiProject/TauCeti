@@ -208,8 +208,7 @@ private theorem idealClass_eq_of_mk0_eq_toPrincipalIdeal_mul {c : RayClassGroup 
 fractional ideal `I` whose class is the inverse of the class `c` of the trivial modulus, and
 `Re s > 1`, the sum of `|N(x)|^(-s)` over the points `x` of the lattice of `I` in the fundamental
 cone is `w N(I)^(-s) ζ(c, s)`, where `w = #μ(K)` is `torsionOrder K`. For a nonzero integral ideal
-this is `LSeries_rayClassCoeff_one_eq_tsum_idealSet`; the general case reduces to it by scaling
-`I` by a positive integer `n` with `n I` integral, which preserves the fundamental cone. -/
+`LSeries_rayClassCoeff_one_eq_tsum_idealSet` is the corresponding `tsum` identity. -/
 theorem hasSum_norm_cpow_fundamentalCone_inter_idealLattice {c : RayClassGroup (Modulus.one K)}
     (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
     (hI : rayClassMk (Modulus.one K) ((idealsPrimeToEquiv Modulus.support_one).symm I) = c⁻¹)
@@ -226,7 +225,8 @@ theorem hasSum_norm_cpow_fundamentalCone_inter_idealLattice {c : RayClassGroup (
   -- multiplication by `n` carries the lattice of `I` onto the lattice of `J`
   have hmem (x : mixedSpace K) :
       (n : ℝ) • x ∈ idealLattice K (FractionalIdeal.mk0 K J) ↔ x ∈ idealLattice K I := by
-    rw [hJ, natCast_smul_mem_idealLattice_iff]
+    rw [hJ, Nat.cast_smul_eq_nsmul, nsmul_eq_mul, ← map_natCast (mixedEmbedding K)]
+    exact mixedEmbedding_mul_mem_idealLattice_iff (Units.mk0 (n : K) hn) I
   let e : ↥(fundamentalCone K ∩ (idealLattice K I : Set (mixedSpace K))) ≃ idealSet K J :=
     { toFun a := ⟨(n : ℝ) • (a : mixedSpace K), (smul_mem_iff_mem hn0).mpr a.2.1,
         (hmem _).mpr a.2.2⟩

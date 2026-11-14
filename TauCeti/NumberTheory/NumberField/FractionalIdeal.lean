@@ -18,10 +18,16 @@ two such ideals, the index of `J` in `I` is the ratio of their absolute norms.  
 computed from the determinant formula `NumberField.det_basisOfFractionalIdeal_eq_absNorm` and
 `AddSubgroup.relIndex_eq_abs_det`.
 
+Every invertible fractional ideal `I` has a positive integer multiple `n I` that is a nonzero
+integral ideal; this clears the denominator of `I` by an integer rather than by an element of
+`𝓞 K`.
+
 ## Main results
 
 * `NumberField.relIndex_fractionalIdeal_eq_absNorm_div_absNorm`: the index of `J` in `I`, as
   additive subgroups of `K`, is `absNorm J / absNorm I`.
+* `NumberField.exists_mk0_eq_toPrincipalIdeal_natCast_mul`: some positive integer multiple `n I`
+  of an invertible fractional ideal `I` is a nonzero integral ideal.
 -/
 
 public section
@@ -55,8 +61,8 @@ theorem relIndex_fractionalIdeal_eq_absNorm_div_absNorm {I J : (FractionalIdeal 
     ← det_basisOfFractionalIdeal_eq_absNorm K J (e J), ← (integralBasis K).det_mul_det (b I) (b J),
     abs_mul, mul_div_cancel_left₀ _ (abs_ne_zero.mpr ((integralBasis K).isUnit_det _).ne_zero)]
 
-/-- **Clearing the denominator of a fractional ideal.**  A nonzero integer multiple `n I` of an
-invertible fractional ideal `I` is a nonzero integral ideal. -/
+/-- **Clearing the denominator of a fractional ideal.**  Every invertible fractional ideal `I` has
+a positive integer multiple `n I` that is a nonzero integral ideal. -/
 theorem exists_mk0_eq_toPrincipalIdeal_natCast_mul (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     ∃ (n : ℕ) (hn : (n : K) ≠ 0) (J : (Ideal (𝓞 K))⁰),
       FractionalIdeal.mk0 K J = toPrincipalIdeal (𝓞 K) K (Units.mk0 (n : K) hn) * I := by

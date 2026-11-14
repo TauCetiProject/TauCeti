@@ -39,8 +39,8 @@ transported to the mixed space along the injective embedding.
   `I * 𝔞` is `N 𝔞` times the covolume of the lattice of `I`.
 * `NumberField.mixedEmbedding.norm_ne_zero_of_mem_idealLattice`: the nonzero points of an ideal
   lattice have nonzero norm.
-* `NumberField.mixedEmbedding.natCast_smul_mem_idealLattice_iff`: multiplication by a positive
-  integer `n` carries the lattice of `I` onto the lattice of `n I`.
+* `NumberField.mixedEmbedding.mixedEmbedding_mul_mem_idealLattice_iff`: multiplication by the
+  image of `a ∈ Kˣ` carries the lattice of `I` onto the lattice of `(a) I`.
 * `Ideal.mixedBasisElem_mem`, `Ideal.linearIndependent_mixedBasisElem`,
   `Ideal.span_int_mixedBasisElem`: `Ideal.mixedBasisElem` lies in `IsLocalization.coeSubmodule K I`,
   is `ℤ`-linearly independent, and spans `IsLocalization.coeSubmodule K I` over `ℤ`.
@@ -111,22 +111,20 @@ theorem norm_ne_zero_of_mem_idealLattice {I : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
   obtain ⟨a, -, rfl⟩ := (mem_idealLattice K I).mp hx
   exact fun h ↦ h0 ((norm_eq_zero_iff' (mem_range_self a)).mp h)
 
-/-- Multiplication by a positive integer `n` carries the lattice of `I` onto the lattice of
-`n I`. -/
-theorem natCast_smul_mem_idealLattice_iff {n : ℕ} (hn : (n : K) ≠ 0)
-    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {x : mixedSpace K} :
-    (n : ℝ) • x ∈ idealLattice K (toPrincipalIdeal (𝓞 K) K (Units.mk0 (n : K) hn) * I) ↔
+/-- Multiplication by the image of `a ∈ Kˣ` carries the lattice of `I` onto the lattice of
+`(a) I`. -/
+theorem mixedEmbedding_mul_mem_idealLattice_iff (a : Kˣ) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
+    {x : mixedSpace K} :
+    mixedEmbedding K (a : K) * x ∈ idealLattice K (toPrincipalIdeal (𝓞 K) K a * I) ↔
       x ∈ idealLattice K I := by
-  have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr fun h ↦ hn (by simp [h])
-  have hσ (z : K) : mixedEmbedding K ((n : K) * z) = (n : ℝ) • mixedEmbedding K z := by
-    rw [map_mul, map_natCast, ← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℝ]
-  simp only [mem_idealLattice, Units.val_mul, coe_toPrincipalIdeal, Units.val_mk0,
-    SetLike.mem_coe, FractionalIdeal.mem_singleton_mul]
+  simp only [mem_idealLattice, Units.val_mul, coe_toPrincipalIdeal, SetLike.mem_coe,
+    FractionalIdeal.mem_singleton_mul]
   constructor
   · rintro ⟨_, ⟨z, hz, rfl⟩, h⟩
-    exact ⟨z, hz, smul_right_injective _ hn0 ((hσ z).symm.trans h)⟩
+    exact ⟨z, hz, (a.isUnit.map (mixedEmbedding K)).mul_right_injective
+      ((map_mul _ _ _).symm.trans h)⟩
   · rintro ⟨z, hz, rfl⟩
-    exact ⟨_, ⟨z, hz, rfl⟩, hσ z⟩
+    exact ⟨_, ⟨z, hz, rfl⟩, map_mul _ _ _⟩
 
 end NumberField.mixedEmbedding
 

@@ -35,9 +35,10 @@ its full gamma integral `Γ_ℝ(s)^r₁ Γ_ℝ(2s)^r₂ |N(a)|^(-s)`
 (`TauCeti.LFunctions.hasSum_integral_unitCone_archGaussian_unit_smul`). On the side of the
 lattice, the map `(a, u) ↦ u a` from the points of `σ(I)` in the fundamental cone and the units
 onto the nonzero points of `σ(I)` has fibres of `w` points, the torsion orbits
-(`NumberField.mixedEmbedding.fundamentalCone.natCard_unitSMul_eq_torsionOrder`). Both sums are
-absolutely convergent for `Re s > 1` (`TauCeti.LFunctions.summable_integral_unitCone`), which
-licenses the exchange of the lattice sum with the integral.
+(`NumberField.mixedEmbedding.fundamentalCone.natCard_unitSMul_eq_torsionOrder`). For `Re s > 1`
+the cone integrals `∫_{cone D} ‖archGaussian y z N(y)^(s/2)‖ dy / y` of the pointwise norms are
+summable over the nonzero points `z` of `σ(I)` (`TauCeti.LFunctions.summable_integral_unitCone`),
+which licenses the exchange of the lattice sum with the integral.
 
 The unfolding needs the cone above a fundamental domain for the units; over the whole positive
 orthant the sum of the gamma integrals of the nonzero lattice points diverges in positive unit
@@ -48,7 +49,8 @@ rank (`NumberField.Units.not_summable_absNorm_of_rank_pos`).
 * `TauCeti.LFunctions.hasSum_integral_unitCone_archGaussian`: the cone integrals of the Gaussians
   of the nonzero points of `σ(I)` against `N(y)^(s/2)` sum to
   `Γ_ℝ(s)^r₁ Γ_ℝ(2s)^r₂ ∑_a |N(a)|^(-s)`, over the points `a` of `σ(I)` in the fundamental cone.
-* `TauCeti.LFunctions.summable_integral_unitCone`: the same sum converges absolutely.
+* `TauCeti.LFunctions.summable_integral_unitCone`: the cone integrals of the pointwise norms
+  `∫_{cone D} ‖…‖` of these integrands are summable over the nonzero points of `σ(I)`.
 * `TauCeti.LFunctions.integrableOn_unitCone_archNorm_cpow_mul_latticeTheta_sub_one` and
   `TauCeti.LFunctions.integral_unitCone_archNorm_cpow_mul_latticeTheta_sub_one`: the theta integral
   over the cone converges and equals that sum.
@@ -128,8 +130,7 @@ private theorem hasSum_integral_unitCone_archGaussian_prod
   have hbound (p : A × (𝓞 K)ˣ) :
       ‖φ s (p.2 • (p.1 : mixedSpace K))‖ ≤ (φ s.re (p.2 • (p.1 : mixedSpace K))).re :=
     (norm_integral_le_integral_norm _).trans_eq
-      (integral_unitCone_norm_archGaussian_mul_archNorm_cpow hD.measurableSet
-        (norm_unit_smul_ne_zero p.1.2.1 p.2) (zero_lt_one.trans hs))
+      (setIntegral_norm_archGaussian_mul_archNorm_cpow _)
   have hsummable : Summable fun p : A × (𝓞 K)ˣ ↦ φ s (p.2 • (p.1 : mixedSpace K)) := by
     refine Summable.of_norm_bounded ((summable_prod_of_nonneg fun p ↦
       (norm_nonneg _).trans (hbound p)).mpr ⟨fun a ↦ (hasSum_re (hfib _ hσ a)).summable, ?_⟩)
@@ -189,8 +190,7 @@ theorem summable_integral_unitCone (hD : IsUnitFundamentalDomain K D) (hs : 1 < 
         ∂archHaar K := by
   refine (hasSum_re (hasSum_integral_unitCone_archGaussian I hD (s := s.re)
     (by simpa using hs))).summable.congr fun z ↦ ?_
-  exact (integral_unitCone_norm_archGaussian_mul_archNorm_cpow hD.measurableSet
-    (norm_ne_zero_of_ne_zero I z) (zero_lt_one.trans hs)).symm
+  exact (setIntegral_norm_archGaussian_mul_archNorm_cpow _).symm
 
 /-! ### The theta integral over the cone -/
 
