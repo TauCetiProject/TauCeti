@@ -574,6 +574,14 @@ theorem sectionValue_gaugeTransform (u : ℂ → Circle)
     sectionValue (gaugeTransform u x) z = (u z : ℂ) * sectionValue x z := by
   apply Complex.ext <;> simp [sectionValue_apply, gaugeTransform] <;> ring
 
+/-- If the section of `x` at `z` is `c` times the gauge `u`, then the gauge transformation by
+`u⁻¹` has the section `c` there. -/
+theorem sectionValue_gaugeTransform_inv_eq {u : ℂ → Circle} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {z c : ℂ} (h : sectionValue x z = c * u z) :
+    sectionValue (gaugeTransform u⁻¹ x) z = c := by
+  rw [sectionValue_gaugeTransform, Pi.inv_apply, h, mul_left_comm, ← Circle.coe_mul,
+    inv_mul_cancel, Circle.coe_one, mul_one]
+
 /-- **A gauge relates two fields exactly when it matches their connections and sections.** The
 logarithmic derivative `Im (u⁻¹ du)` is the connection difference
 `(b₁ - b₁') ds + (b₂ - b₂') dt`, and `u` carries the section `α` of `x` to that of `y`. -/

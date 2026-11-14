@@ -44,8 +44,8 @@ smooth framed gauge group to one normalized at its end
 does this, without choosing a logarithm of the phase. Hence every smooth framed vortex has a
 framed-gauge representative which converges exponentially to the reference field
 (`TauCeti.Vortex.exists_framedGaugeGroup_norm_smul_sub_referenceField_le_mul_exp`). This is the
-zeroth-order decay of the fields in the end trivialization; decay of their derivatives is not
-treated here.
+zeroth-order decay of the fields in the end trivialization; the decay of their derivatives is
+`TauCeti.Vortex.isBigO_iteratedFDeriv_gaugeTransform_inv_windingPhase_sub_vacuumField`.
 
 ## Main definitions
 
@@ -184,17 +184,6 @@ theorem gaugeTransform_inv_windingPhase_referenceField (f : ContDiffBump (0 : �
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {m : ℕ}
 
-/-- If the section of `x` is `|α|` times the winding phase near `z`, then its end
-trivialization has the real section `|α|` there. -/
-private theorem sectionValue_gaugeTransform_inv_windingPhase {z : ℂ}
-    (hphase : sectionValue x z = ‖sectionValue x z‖ * windingPhase m z) :
-    sectionValue (gaugeTransform (windingPhase m)⁻¹ x) z = ‖sectionValue x z‖ := by
-  have h1 : ((windingPhase m z)⁻¹ : Circle) * (windingPhase m z : ℂ) = 1 := by
-    rw [← Circle.coe_mul, inv_mul_cancel, Circle.coe_one]
-  rw [sectionValue_gaugeTransform, Pi.inv_apply]
-  nth_rw 1 [hphase]
-  rw [mul_left_comm, h1, mul_one]
-
 /-- **The connection in the end trivialization.** If the section of `x` is `|α|` times the
 winding phase near `z ≠ 0`, the connection coefficient `b'(v)` of the end trivialization of `x`
 satisfies `|b'(v)| |α| ≤ |∇_v α|`: it is the imaginary part of the covariant derivative of the
@@ -215,12 +204,12 @@ private theorem abs_mul_norm_le_norm_covariantDerivative {z : ℂ} (hz : z ≠ 0
     have hconst : (fun w ↦ (sectionValue (gaugeTransform (windingPhase m)⁻¹ x) w).im) =ᶠ[𝓝 z]
         fun _ ↦ (0 : ℝ) := by
       filter_upwards [hphase] with w hw
-      rw [sectionValue_gaugeTransform_inv_windingPhase hw, ofReal_im]
+      rw [sectionValue_gaugeTransform_inv_eq hw, ofReal_im]
     have h := (imCLM.hasFDerivAt.comp z hsy.hasFDerivAt).fderiv
     have h' := congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) (hconst.fderiv_eq.symm.trans h)
     simpa using h'.symm
   have hcov := covariantDerivative_gaugeTransform hu hp hq v
-  rw [covariantDerivative_apply, sectionValue_gaugeTransform_inv_windingPhase hphase.self_of_nhds]
+  rw [covariantDerivative_apply, sectionValue_gaugeTransform_inv_eq hphase.self_of_nhds]
     at hcov
   have hval := congrArg Complex.im hcov
   simp only [add_im, him, mul_im, I_re, I_im, ofReal_re, ofReal_im, one_mul, mul_zero,
@@ -248,7 +237,7 @@ private theorem norm_sub_referenceField_le (f : ContDiffBump (0 : ℝ)) {z : ℂ
   -- The section coordinates of the end trivialization are `(|α| / 2, 0)`.
   have hsec : 2 * ((y z 2 : ℂ) + (y z 3 : ℂ) * I) = (s : ℂ) := by
     rw [← sectionValue_apply]
-    exact sectionValue_gaugeTransform_inv_windingPhase hphase.self_of_nhds
+    exact sectionValue_gaugeTransform_inv_eq hphase.self_of_nhds
   have hy2 : y z 2 = s / 2 := by
     have := congrArg Complex.re hsec
     simp only [mul_re, add_re, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat] at this
