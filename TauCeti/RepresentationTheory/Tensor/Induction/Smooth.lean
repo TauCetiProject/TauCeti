@@ -123,6 +123,21 @@ theorem TopPairing.smoothTensorInduced_bil :
     (P.smoothTensorInduced U hU s).bil = PiTensorProduct.map₂ fun _ ↦ P.bil :=
   (rfl)
 
+/-- Tensor induction of a coefficient pairing commutes with `TopPairing.flip`. -/
+@[simp]
+theorem TopPairing.smoothTensorInduced_flip :
+    (P.smoothTensorInduced U hU s).flip = P.flip.smoothTensorInduced U hU s := by
+  have h : (PiTensorProduct.map₂ fun _ : G ⧸ U ↦ P.bil).flip =
+      PiTensorProduct.map₂ fun _ : G ⧸ U ↦ P.flip.bil := by
+    ext b a
+    simp [PiTensorProduct.map₂_tprod_tprod]
+  exact TopPairing.ext <| LinearMap.ext fun x ↦ LinearMap.ext fun y ↦
+    ((P.smoothTensorInduced U hU s).flip_bil x y).trans <|
+      (LinearMap.congr_fun (LinearMap.congr_fun (P.smoothTensorInduced_bil U hU s) y) x).trans <|
+        (LinearMap.congr_fun (LinearMap.congr_fun h x) y).trans
+          (LinearMap.congr_fun
+            (LinearMap.congr_fun (P.flip.smoothTensorInduced_bil U hU s) x) y).symm
+
 end Pairing
 
 end TauCeti
