@@ -284,17 +284,14 @@ variable {εF : ∀ X : C, (F.obj X).X 0 →ₗ[k] k} {εG : ∀ X : C, (G.obj X
   (hG : IsAcyclicOnMulti G B.model εG) (hεF : ∀ X x, εF X ((F.obj X).d 1 0 x) = 0)
   (t₀ : ∀ i : ι 0, (G.obj (B.model 0 i)).X 0) (ht₀ : ∀ X x, εG X (B.extend t₀ X x) = εF X x)
 
-open Classical in
 /-- The elements of the models chosen degree by degree to define the components of the natural
 chain map extending `B.extend t₀` through `MultiModelPresentation.extend`. -/
 private def chainMapGen (t₀ : ∀ i : ι 0, (G.obj (B.model 0 i)).X 0) :
     (n : ℕ) → (i : ι n) → (G.obj (B.model n i)).X n
   | 0, i => t₀ i
-  | n + 1, i =>
-    if h : ∃ b, (G.obj (B.model (n + 1) i)).d (n + 1) n b =
-        B.extend (chainMapGen t₀ n) (B.model (n + 1) i)
-          ((F.obj (B.model (n + 1) i)).d (n + 1) n (B.gen (n + 1) i))
-    then h.choose else 0
+  | n + 1, i => Function.invFun (fun b ↦ (G.obj (B.model (n + 1) i)).d (n + 1) n b)
+      (B.extend (chainMapGen t₀ n) (B.model (n + 1) i)
+        ((F.obj (B.model (n + 1) i)).d (n + 1) n (B.gen (n + 1) i)))
 
 /-- In degree zero the chosen elements are the given ones. -/
 private theorem chainMapGen_zero (t₀ : ∀ i : ι 0, (G.obj (B.model 0 i)).X 0) :
@@ -311,15 +308,11 @@ private theorem d_chainMapGen (n : ℕ) (i : ι (n + 1)) :
   induction n with
   | zero =>
     rw [chainMapGen.eq_2]
-    split_ifs with hex
-    · exact hex.choose_spec
-    refine absurd (hG.exists_d_eq_of_augment_eq_zero 1 i _ ?_) hex
+    refine Function.invFun_eq (hG.exists_d_eq_of_augment_eq_zero 1 i _ ?_)
     rw [chainMapGen_zero, ht₀, hεF]
   | succ n ih =>
     rw [chainMapGen.eq_2]
-    split_ifs with hex
-    · exact hex.choose_spec
-    refine absurd (hG.exists_d_eq_of_d_eq_zero (n + 2) i n _ ?_) hex
+    refine Function.invFun_eq (hG.exists_d_eq_of_d_eq_zero (n + 2) i n _ ?_)
     rw [B.d_extend_eq_extend_d _ _ ih, HomologicalComplex.d_comp_d_apply, map_zero]
 
 include hG hεF ht₀ in
@@ -354,21 +347,16 @@ section Homotopy
 variable {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k} (hG : IsAcyclicOnMulti G B.model εG)
   (f g : F ⟶ G) (hfg : ∀ X x, εG X ((f.app X).f 0 x) = εG X ((g.app X).f 0 x))
 
-open Classical in
 /-- The elements of the models chosen degree by degree to define the components of the chain
 homotopy between two natural chain maps through `MultiModelPresentation.extend`. -/
 private def homotopyGen : (n : ℕ) → (i : ι n) → (G.obj (B.model n i)).X (n + 1)
-  | 0, i =>
-    if h : ∃ b, (G.obj (B.model 0 i)).d 1 0 b =
-        (f.app (B.model 0 i)).f 0 (B.gen 0 i) - (g.app (B.model 0 i)).f 0 (B.gen 0 i)
-    then h.choose else 0
-  | n + 1, i =>
-    if h : ∃ b, (G.obj (B.model (n + 1) i)).d (n + 2) (n + 1) b =
-        (f.app (B.model (n + 1) i)).f (n + 1) (B.gen (n + 1) i) -
-          (g.app (B.model (n + 1) i)).f (n + 1) (B.gen (n + 1) i) -
-          B.extend (homotopyGen n) (B.model (n + 1) i)
-            ((F.obj (B.model (n + 1) i)).d (n + 1) n (B.gen (n + 1) i))
-    then h.choose else 0
+  | 0, i => Function.invFun (fun b ↦ (G.obj (B.model 0 i)).d 1 0 b)
+      ((f.app (B.model 0 i)).f 0 (B.gen 0 i) - (g.app (B.model 0 i)).f 0 (B.gen 0 i))
+  | n + 1, i => Function.invFun (fun b ↦ (G.obj (B.model (n + 1) i)).d (n + 2) (n + 1) b)
+      ((f.app (B.model (n + 1) i)).f (n + 1) (B.gen (n + 1) i) -
+        (g.app (B.model (n + 1) i)).f (n + 1) (B.gen (n + 1) i) -
+        B.extend (homotopyGen n) (B.model (n + 1) i)
+          ((F.obj (B.model (n + 1) i)).d (n + 1) n (B.gen (n + 1) i)))
 
 /-- `f - g`, read in degree `n` as a natural transformation, takes `x` to
 `(f.app X).f n x - (g.app X).f n x`. -/
@@ -384,9 +372,7 @@ private theorem d_extend_homotopyGen_zero (X : C) (x : (F.obj X).X 0) :
   rw [← whiskerRight_sub_eval_app_apply f g]
   refine B.d_extend _ _ (fun i ↦ ?_) X x
   rw [whiskerRight_sub_eval_app_apply, homotopyGen.eq_1]
-  split_ifs with hex
-  · exact hex.choose_spec
-  refine absurd (hG.exists_d_eq_of_augment_eq_zero 0 i _ ?_) hex
+  refine Function.invFun_eq (hG.exists_d_eq_of_augment_eq_zero 0 i _ ?_)
   simp [hfg]
 
 /-- The natural transformation `x ↦ f x - g x - H (∂ x)` on the chains of degree `n + 1`, where `H`
@@ -411,17 +397,13 @@ private theorem d_homotopyGen_succ (n : ℕ) (i : ι (n + 1)) :
       (B.homotopyTarget f g n).app (B.model (n + 1) i) (B.gen (n + 1) i) := by
   induction n with
   | zero =>
-    rw [homotopyGen.eq_2]
-    split_ifs with hex
-    · exact hex.choose_spec
-    refine absurd (hG.exists_d_eq_of_d_eq_zero 1 i 0 _ ?_) hex
+    rw [homotopyGen.eq_2, homotopyTarget_app_apply]
+    refine Function.invFun_eq (hG.exists_d_eq_of_d_eq_zero 1 i 0 _ ?_)
     rw [map_sub, map_sub, B.d_extend_homotopyGen_zero hG f g hfg,
       HomologicalComplex.Hom.comm_apply, HomologicalComplex.Hom.comm_apply, sub_self]
   | succ n ih =>
-    rw [homotopyGen.eq_2]
-    split_ifs with hex
-    · exact hex.choose_spec
-    refine absurd (hG.exists_d_eq_of_d_eq_zero (n + 2) i (n + 1) _ ?_) hex
+    rw [homotopyGen.eq_2, homotopyTarget_app_apply]
+    refine Function.invFun_eq (hG.exists_d_eq_of_d_eq_zero (n + 2) i (n + 1) _ ?_)
     rw [map_sub, map_sub, B.d_extend _ (B.homotopyTarget f g n) ih, homotopyTarget_app_apply,
       HomologicalComplex.d_comp_d_apply, map_zero, sub_zero, HomologicalComplex.Hom.comm_apply,
       HomologicalComplex.Hom.comm_apply, sub_self]
