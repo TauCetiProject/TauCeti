@@ -169,6 +169,13 @@ theorem lift_mk_segment {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H) 
     rfl
   · rfl
 
+/-- A homomorphism out of the free group on the items and constants evaluates `h[i, j] ^ -1` as
+the inverse of its value on `h[i, j]`. -/
+theorem lift_mk_segment_false {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H) (i j : ℕ) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment i j false)) =
+      (FreeGroup.lift f (FreeGroup.mk (Ω.segment i j true)))⁻¹ :=
+  Ω.lift_mk_segment f i j false
+
 /-- The word `h[i, j] ^ ±1` has one letter for each item between the boundaries `i` and `j`. -/
 @[simp]
 theorem length_segment (i j : ℕ) (s : Bool) :
@@ -189,30 +196,33 @@ theorem segment_succ (k : Fin Ω.numItems) (s : Bool) :
   · simp [segment_false, h, FreeGroup.invRev]
   · exact h
 
-/-- Concatenation of segments: `h[i, j] h[j, k] = h[i, k]` for `i ≤ j ≤ k ≤ ρ`. -/
-theorem segment_append {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) (hk : k ≤ Ω.numItems) :
+/-- Concatenation of segments: `h[i, j] h[j, k] = h[i, k]` for `i ≤ j ≤ k`. -/
+theorem segment_append {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) :
     Ω.segment i j true ++ Ω.segment j k true = Ω.segment i k true := by
   simp only [segment_true, ← List.map_append]
   congr 1
-  set M := (List.finRange Ω.numItems).take k
-  have hM : (List.finRange Ω.numItems).take j = M.take j := by
-    simp [M, List.take_take, min_eq_left hjk]
-  rw [hM]
-  conv_rhs => rw [← List.take_append_drop j M]
-  rw [List.drop_append_of_le_length (by simp [M]; omega)]
+  rcases le_or_gt i Ω.numItems with hi | hi
+  · set M := (List.finRange Ω.numItems).take k
+    have hM : (List.finRange Ω.numItems).take j = M.take j := by
+      simp [M, List.take_take, min_eq_left hjk]
+    rw [hM]
+    conv_rhs => rw [← List.take_append_drop j M]
+    rw [List.drop_append_of_le_length (by rw [← hM]; simp [hij, hi])]
+  · rw [List.drop_eq_nil_of_le (by simp; omega), List.drop_eq_nil_of_le (by simp; omega),
+      List.drop_eq_nil_of_le (by simp; omega), List.append_nil]
 
 /-- An empty segment `h[i, j] ^ ±1` with `j ≤ i` evaluates to `1` in every group. -/
 theorem lift_mk_segment_eq_one {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H) {i j : ℕ}
     (h : j ≤ i) (s : Bool) : FreeGroup.lift f (FreeGroup.mk (Ω.segment i j s)) = 1 := by
   rw [Ω.segment_eq_nil_of_le h, ← FreeGroup.one_eq_mk, map_one]
 
-/-- Evaluation of `h[i, k]` in a group factors as `h[i, j] * h[j, k]` for `i ≤ j ≤ k ≤ ρ`. -/
-theorem lift_mk_segment_append {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H) {i j k : ℕ}
-    (hij : i ≤ j) (hjk : j ≤ k) (hk : k ≤ Ω.numItems) :
+/-- Evaluation of `h[i, k]` in a group factors as `h[i, j] * h[j, k]` for `i ≤ j ≤ k`. -/
+theorem lift_mk_segment_eq_mul {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H) {i j k : ℕ}
+    (hij : i ≤ j) (hjk : j ≤ k) :
     FreeGroup.lift f (FreeGroup.mk (Ω.segment i k true)) =
       FreeGroup.lift f (FreeGroup.mk (Ω.segment i j true)) *
         FreeGroup.lift f (FreeGroup.mk (Ω.segment j k true)) := by
-  rw [← Ω.segment_append hij hjk hk, ← FreeGroup.mul_mk, map_mul]
+  rw [← Ω.segment_append hij hjk, ← FreeGroup.mul_mk, map_mul]
 
 /-- The word `h[i, j]` is a prefix of `h[i, k]` for `j ≤ k`. -/
 theorem segment_prefix_segment {i j k : ℕ} (hjk : j ≤ k) :
@@ -604,6 +614,16 @@ theorem isFormallyConsistent_iff : Ω.IsFormallyConsistent ↔
 
 /-- Formal consistency is decidable (Kharlampovich–Myasnikov, Lemma 12(2)). -/
 instance [DecidableEq A] : Decidable Ω.IsFormallyConsistent :=
+  letI : Decidable (∀ c ∈ Ω.connections, ∀ c' ∈ Ω.connections, c.2.1 = c'.2.1 → c.1 ≤ c'.1 →
+      if Ω.sign c.2.1 = Ω.sign (Ω.dual c.2.1) then c.2.2 ≤ c'.2.2 else c'.2.2 ≤ c.2.2) :=
+    Finset.decidableDforallFinset (_hp := fun _ _ => Finset.decidableDforallFinset)
+  letI : Decidable (∀ c ∈ Ω.connections, Ω.left c.2.1 = Ω.left (Ω.dual c.2.1) → c.1 = c.2.2) :=
+    Finset.decidableDforallFinset
+  letI : Decidable (∀ b ∈ Ω.constBases, ∀ c ∈ Ω.connections, ∀ c' ∈ Ω.connections,
+      c.2.1 = c'.2.1 → c.1 = b.1.castSucc → c'.1 = b.1.succ →
+        (c.2.2 : ℕ) + 1 = c'.2.2 ∨ (c'.2.2 : ℕ) + 1 = c.2.2) :=
+    Finset.decidableDforallFinset (_hp := fun _ _ =>
+      Finset.decidableDforallFinset (_hp := fun _ _ => Finset.decidableDforallFinset))
   decidable_of_iff _ Ω.isFormallyConsistent_iff.symm
 
 variable {Ω} in
@@ -673,8 +693,7 @@ theorem isReduced_substituteVars_segment_of_le (ν : Fin Ω.numBases) {i j : ℕ
     FreeGroup.IsReduced (substituteVars U.word (Ω.segment i j true)) := by
   rcases le_total i j with hij | hji
   · have h := U.isReduced_substituteVars_segment ν
-    rw [← Ω.segment_append hi (hij.trans hj) (Ω.right ν).is_le,
-      ← Ω.segment_append hij hj (Ω.right ν).is_le, substituteVars_append,
+    rw [← Ω.segment_append hi (hij.trans hj), ← Ω.segment_append hij hj, substituteVars_append,
       substituteVars_append, ← List.append_assoc] at h
     exact h.infix (List.infix_append _ _ _)
   · rw [Ω.segment_eq_nil_of_le hji, FreeGroup.substituteVars_nil]
@@ -775,7 +794,7 @@ segment `h[c, d]` with `a ≤ c < b`: an overlap would be a nonempty reduced wor
 formal inverse, and a segment inside another one is too short. This is applied to the two bases of
 the basic equation of `μ`, for `ε(μ) = 1` and `ε(Δμ) = -1`, to show that they cannot overlap. -/
 private theorem not_overlap {a b c d : ℕ} (hab : a < b) (hb : b ≤ Ω.numItems) (hcd : c < d)
-    (hd : d ≤ Ω.numItems) (hac : a ≤ c) (hcb : c < b)
+    (hac : a ≤ c) (hcb : c < b)
     (hred : FreeGroup.IsReduced (substituteVars U.word (Ω.segment a b true)))
     (heq : substituteVars U.word (Ω.segment a b true) =
       FreeGroup.invRev (substituteVars U.word (Ω.segment c d true))) : False := by
@@ -785,7 +804,7 @@ private theorem not_overlap {a b c d : ℕ} (hab : a < b) (hb : b ≤ Ω.numItem
   have h₂ := U.length_substituteVars_segment_add_prefixLength true hcd.le
   rcases le_or_gt b d with hbd | hdb
   · -- The overlap `h[c, b]` is a nonempty reduced word equal to its formal inverse.
-    rw [← Ω.segment_append hac hcb.le hb, ← Ω.segment_append hcb.le hbd hd,
+    rw [← Ω.segment_append hac hcb.le, ← Ω.segment_append hcb.le hbd,
       substituteVars_append, substituteVars_append, FreeGroup.invRev_append] at heq
     have hX := U.length_substituteVars_segment_add_prefixLength true hac
     have hZ := U.length_substituteVars_segment_add_prefixLength true hbd
@@ -796,7 +815,7 @@ private theorem not_overlap {a b c d : ℕ} (hab : a < b) (hb : b ≤ Ω.numItem
     have hCC := (List.append_inj heq hXZ).2
     have hCred : FreeGroup.IsReduced (substituteVars U.word (Ω.segment c b true)) := by
       refine hred.infix ⟨substituteVars U.word (Ω.segment a c true), [], ?_⟩
-      rw [List.append_nil, ← substituteVars_append, Ω.segment_append hac hcb.le hb]
+      rw [List.append_nil, ← substituteVars_append, Ω.segment_append hac hcb.le]
     have hCne : substituteVars U.word (Ω.segment c b true) ≠ [] :=
       U.substituteVars_word_ne_nil (List.ne_nil_of_length_pos (by rw [length_segment]; omega))
     exact hCred.invRev_ne_self hCne hCC.symm
@@ -830,8 +849,8 @@ private theorem disjoint_of_sign_ne (μ : Fin Ω.numBases) (hμ : Ω.sign μ ≠
   have hx' := Ω.left_lt_right x
   have hy' := Ω.left_lt_right (Ω.dual x)
   rcases le_total (Ω.left x : ℕ) (Ω.left (Ω.dual x)) with h | h
-  · exact U.not_overlap hx' (Ω.right x).is_le hy' (Ω.right (Ω.dual x)).is_le h hne.1 rx ex
-  · refine U.not_overlap hy' (Ω.right (Ω.dual x)).is_le hx' (Ω.right x).is_le h hne.2 ry ?_
+  · exact U.not_overlap hx' (Ω.right x).is_le hy' h hne.1 rx ex
+  · refine U.not_overlap hy' (Ω.right (Ω.dual x)).is_le hx' h hne.2 ry ?_
     rw [ex, FreeGroup.invRev_invRev]
 
 /-- The boundary equation of a connection `(p, μ, q)` of a generalised equation with a solution,
@@ -1061,6 +1080,37 @@ theorem substituteVars_boundaryEquation_dual_eq_iff (hp₁ : Ω.left μ ≤ p) (
 
 end Solution
 
+/-- When `ε(μ) = ε(Δμ)`, any group assignment satisfying the basic equation of `μ` gives the same
+value to `h[α(μ), β(μ)]` and `h[α(Δμ), β(Δμ)]`. -/
+theorem lift_mk_segment_eq_of_sign_eq {H : Type*} [Group H] {f : Fin Ω.numItems ⊕ A → H}
+    {μ : Fin Ω.numBases} (hs : Ω.sign μ = Ω.sign (Ω.dual μ))
+    (hb : FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
+      FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2)) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) (Ω.right μ) true)) =
+      FreeGroup.lift f
+        (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true)) := by
+  rw [basicEquation_fst, basicEquation_snd, Ω.lift_mk_segment f _ _ (Ω.sign μ),
+    Ω.lift_mk_segment f _ _ (Ω.sign (Ω.dual μ)), ← hs] at hb
+  cases h₁ : Ω.sign μ <;> simp only [h₁, Bool.cond_false, Bool.cond_true, inv_inj] at hb <;>
+    exact hb
+
+/-- When `ε(μ) ≠ ε(Δμ)`, any group assignment satisfying the basic equation of `μ` evaluates
+`h[α(μ), β(μ)]` to the inverse of `h[α(Δμ), β(Δμ)]`. -/
+theorem lift_mk_segment_eq_inv_of_sign_ne {H : Type*} [Group H] {f : Fin Ω.numItems ⊕ A → H}
+    {μ : Fin Ω.numBases} (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ))
+    (hb : FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
+      FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2)) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) (Ω.right μ) true)) =
+      (FreeGroup.lift f
+        (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true)))⁻¹ := by
+  rw [basicEquation_fst, basicEquation_snd, Ω.lift_mk_segment f _ _ (Ω.sign μ),
+    Ω.lift_mk_segment f _ _ (Ω.sign (Ω.dual μ))] at hb
+  cases h₁ : Ω.sign μ <;> cases h₂ : Ω.sign (Ω.dual μ)
+  · exact absurd (h₁.trans h₂.symm) hs
+  · simpa only [h₁, h₂, Bool.cond_false, Bool.cond_true, inv_eq_iff_eq_inv] using hb
+  · simpa only [h₁, h₂, Bool.cond_false, Bool.cond_true] using hb
+  · exact absurd (h₁.trans h₂.symm) hs
+
 /-- Under any group assignment satisfying the basic equation of `μ`, the boundary equation of the
 dual triple `(q, Δ(μ), p)` holds in the group if and only if that of `(p, μ, q)` holds, for a
 boundary `p` of `μ` and a boundary `q` of `Δ(μ)`. -/
@@ -1085,22 +1135,12 @@ theorem lift_mk_boundaryEquation_dual_iff {H : Type*} [Group H] (f : Fin Ω.numI
   · have hs' : Ω.sign (Ω.dual μ) ≠ Ω.sign (Ω.dual (Ω.dual μ)) := by
       rw [Ω.dual_involutive μ]
       exact Ne.symm hs
-    have hbase : FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) (Ω.right μ) true)) =
-        (FreeGroup.lift f
-          (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true)))⁻¹ := by
-      rw [basicEquation_fst, basicEquation_snd] at hb
-      cases h₁ : Ω.sign μ <;> cases h₂ : Ω.sign (Ω.dual μ) <;> rw [h₁, h₂] at hb hs
-      · exact absurd rfl hs
-      · rw [segment_false, ← FreeGroup.inv_mk, map_inv] at hb
-        exact inv_eq_iff_eq_inv.1 hb
-      · rwa [segment_false, ← FreeGroup.inv_mk, map_inv] at hb
-      · exact absurd rfl hs
-    rw [Ω.lift_mk_segment_append f hp₁ hp₂ (Ω.right μ).is_le,
-      Ω.lift_mk_segment_append f hq₁ hq₂ (Ω.right (Ω.dual μ)).is_le, mul_inv_rev] at hbase
+    have hbase := Ω.lift_mk_segment_eq_inv_of_sign_ne hs hb
+    rw [Ω.lift_mk_segment_eq_mul f hp₁ hp₂, Ω.lift_mk_segment_eq_mul f hq₁ hq₂,
+      mul_inv_rev] at hbase
     rw [boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_ne (c := (q, Ω.dual μ, p)) hs',
       boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_ne (c := (p, μ, q)) hs,
-      Ω.dual_involutive μ, segment_false, segment_false, ← FreeGroup.inv_mk, ← FreeGroup.inv_mk,
-      map_inv, map_inv]
+      Ω.dual_involutive μ, Ω.lift_mk_segment_false, Ω.lift_mk_segment_false]
     refine ⟨fun h1 => ?_, fun h2 => ?_⟩
     · have h1' : (FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual μ)) q true)))⁻¹ =
           FreeGroup.lift f (FreeGroup.mk (Ω.segment p (Ω.right μ) true)) := by

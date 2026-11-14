@@ -314,62 +314,50 @@ section Segments
 
 open FreeGroup (substituteVars mk_substituteVars)
 
-/-- If a group assignment satisfies the basic equation of `μ` and the boundary equations of the
-connections through `μ`, and `ε(μ) = ε(Δμ)`, then for every tie `(p, q)` of `μ` the prefix
-`h[α(μ), p]` evaluates to `h[α(Δμ), q]`. -/
+/-- If a group assignment satisfies the basic equation of `μ` and the boundary equation of
+`(p, μ, q)` (when `(p, μ, q)` is a boundary connection), and `ε(μ) = ε(Δμ)`, then for every tie
+`(p, q)` of `μ` the prefix `h[α(μ), p]` evaluates to `h[α(Δμ), q]`. -/
 theorem IsTiedTo.lift_mk_segment_left_of_sign_eq {H : Type*} [Group H]
     {f : Fin Ω.numItems ⊕ A → H} (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q)
     (hb : FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
       FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2))
-    (hc : ∀ c ∈ Ω.connections, c.2.1 = μ →
-      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation c).1) =
-        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation c).2)) :
+    (hc : (p, μ, q) ∈ Ω.connections →
+      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).2)) :
     FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) p true)) =
       FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual μ)) q true)) := by
   rcases h with h | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-  · have e := hc (p, μ, q) h rfl
+  · have e := hc h
     rwa [boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_eq hs] at e
   · simp only [hs, ite_true, Ω.lift_mk_segment_eq_one f le_rfl]
   · simp only [hs, ite_true]
-    rw [basicEquation_fst, basicEquation_snd, ← hs] at hb
-    cases h₁ : Ω.sign μ <;> rw [h₁] at hb
-    · rwa [segment_false, segment_false, ← FreeGroup.inv_mk, ← FreeGroup.inv_mk, map_inv,
-        map_inv, inv_inj] at hb
-    · exact hb
+    exact Ω.lift_mk_segment_eq_of_sign_eq hs hb
 
-/-- If a group assignment satisfies the basic equation of `μ` and the boundary equations of the
-connections through `μ`, and `ε(μ) ≠ ε(Δμ)`, then for every tie `(p, q)` of `μ` the prefix
-`h[α(μ), p]` evaluates to `h[q, β(Δμ)]⁻¹`. -/
+/-- If a group assignment satisfies the basic equation of `μ` and the boundary equation of
+`(p, μ, q)` (when `(p, μ, q)` is a boundary connection), and `ε(μ) ≠ ε(Δμ)`, then for every tie
+`(p, q)` of `μ` the prefix `h[α(μ), p]` evaluates to `h[q, β(Δμ)]⁻¹`. -/
 theorem IsTiedTo.lift_mk_segment_left_of_sign_ne {H : Type*} [Group H]
     {f : Fin Ω.numItems ⊕ A → H} (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q)
     (hb : FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
       FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2))
-    (hc : ∀ c ∈ Ω.connections, c.2.1 = μ →
-      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation c).1) =
-        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation c).2)) :
+    (hc : (p, μ, q) ∈ Ω.connections →
+      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).2)) :
     FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) p true)) =
       (FreeGroup.lift f (FreeGroup.mk (Ω.segment q (Ω.right (Ω.dual μ)) true)))⁻¹ := by
   rcases h with h | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-  · have e := hc (p, μ, q) h rfl
-    rwa [boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_ne hs, segment_false,
-      ← FreeGroup.inv_mk, map_inv] at e
+  · have e := hc h
+    rwa [boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_ne hs, Ω.lift_mk_segment_false] at e
   · simp only [hs, ite_false, Ω.lift_mk_segment_eq_one f le_rfl, inv_one]
   · simp only [hs, ite_false]
-    rw [basicEquation_fst, basicEquation_snd] at hb
-    cases h₁ : Ω.sign μ <;> cases h₂ : Ω.sign (Ω.dual μ) <;> rw [h₁, h₂] at hb hs
-    · exact absurd rfl hs
-    · rw [segment_false, ← FreeGroup.inv_mk, map_inv] at hb
-      exact inv_eq_iff_eq_inv.1 hb
-    · rwa [segment_false, ← FreeGroup.inv_mk, map_inv] at hb
-    · exact absurd rfl hs
+    exact Ω.lift_mk_segment_eq_inv_of_sign_ne hs hb
 
 /-- In a formally consistent generalised equation, any group assignment satisfying the basic
 equation of `μ` and the boundary equations through `μ` identifies `h[p, p']` with `h[q, q']`
-whenever `p ≤ p'` are `μ`-tied to `q, q'` and `ε(μ) = ε(Δμ)`. -/
+whenever `p, p'` are `μ`-tied to `q, q'` and `ε(μ) = ε(Δμ)`. -/
 theorem IsFormallyConsistent.lift_mk_segment_eq_of_isTiedTo_of_sign_eq {H : Type*} [Group H]
     {f : Fin Ω.numItems ⊕ A → H} (hΩ : Ω.IsFormallyConsistent)
     (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q) (h' : Ω.IsTiedTo μ p' q')
-    (hp : p ≤ p')
     (hb : FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
       FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2))
     (hc : ∀ c ∈ Ω.connections, c.2.1 = μ →
@@ -377,19 +365,22 @@ theorem IsFormallyConsistent.lift_mk_segment_eq_of_isTiedTo_of_sign_eq {H : Type
         FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation c).2)) :
     FreeGroup.lift f (FreeGroup.mk (Ω.segment p p' true)) =
       FreeGroup.lift f (FreeGroup.mk (Ω.segment q q' true)) := by
-  have hq : q ≤ q' := hΩ.le_of_isTiedTo_of_sign_eq hs h h' hp
-  apply mul_left_cancel (a := FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) p true)))
-  rw [← Ω.lift_mk_segment_append f h.left_le hp p'.is_le,
-    h.lift_mk_segment_left_of_sign_eq hs hb hc, h'.lift_mk_segment_left_of_sign_eq hs hb hc,
-    Ω.lift_mk_segment_append f h.left_dual_le hq q'.is_le]
+  rcases le_or_gt p p' with hp | hp
+  · have hq : q ≤ q' := hΩ.le_of_isTiedTo_of_sign_eq hs h h' hp
+    apply mul_left_cancel (a := FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) p true)))
+    rw [← Ω.lift_mk_segment_eq_mul f h.left_le hp,
+      h.lift_mk_segment_left_of_sign_eq hs hb (hc _ · rfl),
+      h'.lift_mk_segment_left_of_sign_eq hs hb (hc _ · rfl),
+      Ω.lift_mk_segment_eq_mul f h.left_dual_le hq]
+  · rw [Ω.lift_mk_segment_eq_one f hp.le,
+      Ω.lift_mk_segment_eq_one f (hΩ.lt_of_isTiedTo_of_sign_eq hs h' h hp).le]
 
 /-- In a formally consistent generalised equation, any group assignment satisfying the basic
 equation of `μ` and the boundary equations through `μ` identifies `h[p, p']` with `h[q', q]⁻¹`
-whenever `p ≤ p'` are `μ`-tied to `q, q'` and `ε(μ) ≠ ε(Δμ)`. -/
+whenever `p, p'` are `μ`-tied to `q, q'` and `ε(μ) ≠ ε(Δμ)`. -/
 theorem IsFormallyConsistent.lift_mk_segment_eq_inv_of_isTiedTo_of_sign_ne {H : Type*} [Group H]
     {f : Fin Ω.numItems ⊕ A → H} (hΩ : Ω.IsFormallyConsistent)
     (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q) (h' : Ω.IsTiedTo μ p' q')
-    (hp : p ≤ p')
     (hb : FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
       FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2))
     (hc : ∀ c ∈ Ω.connections, c.2.1 = μ →
@@ -397,49 +388,52 @@ theorem IsFormallyConsistent.lift_mk_segment_eq_inv_of_isTiedTo_of_sign_ne {H : 
         FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation c).2)) :
     FreeGroup.lift f (FreeGroup.mk (Ω.segment p p' true)) =
       (FreeGroup.lift f (FreeGroup.mk (Ω.segment q' q true)))⁻¹ := by
-  have hq : q' ≤ q := hΩ.le_of_isTiedTo_of_sign_ne hs h h' hp
-  apply mul_left_cancel (a := FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) p true)))
-  rw [← Ω.lift_mk_segment_append f h.left_le hp p'.is_le,
-    h.lift_mk_segment_left_of_sign_ne hs hb hc, h'.lift_mk_segment_left_of_sign_ne hs hb hc,
-    Ω.lift_mk_segment_append f hq h.le_right_dual (Ω.right (Ω.dual μ)).is_le, mul_inv_rev]
+  rcases le_or_gt p p' with hp | hp
+  · have hq : q' ≤ q := hΩ.le_of_isTiedTo_of_sign_ne hs h h' hp
+    apply mul_left_cancel (a := FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) p true)))
+    rw [← Ω.lift_mk_segment_eq_mul f h.left_le hp,
+      h.lift_mk_segment_left_of_sign_ne hs hb (hc _ · rfl),
+      h'.lift_mk_segment_left_of_sign_ne hs hb (hc _ · rfl),
+      Ω.lift_mk_segment_eq_mul f hq h.le_right_dual, mul_inv_rev]
+  · rw [Ω.lift_mk_segment_eq_one f hp.le,
+      Ω.lift_mk_segment_eq_one f (hΩ.lt_of_isTiedTo_of_sign_ne hs h' h hp).le, inv_one]
+
+/-- Both sides of any equation of `Ω` evaluate to the same element of `F(A)` under the item words
+of a solution `U`. -/
+private theorem Solution.lift_mk_eq_of_mem_equations (U : Ω.Solution)
+    {e : List ((Fin Ω.numItems ⊕ A) × Bool) × List ((Fin Ω.numItems ⊕ A) × Bool)}
+    (he : e ∈ Ω.equations) :
+    FreeGroup.lift (Sum.elim (fun x => FreeGroup.mk (U.word x)) FreeGroup.of)
+        (FreeGroup.mk e.1) =
+      FreeGroup.lift (Sum.elim (fun x => FreeGroup.mk (U.word x)) FreeGroup.of)
+        (FreeGroup.mk e.2) := by
+  simpa only [mk_substituteVars] using congrArg FreeGroup.mk (U.subst_eq e he)
 
 /-- Under a solution `U`, a segment `U[p, p']` between `μ`-tied boundaries `(p, q)` and `(p', q')`
-with `p ≤ p'` equals `U[q, q']` when `ε(μ) = ε(Δμ)`. -/
+equals `U[q, q']` when `ε(μ) = ε(Δμ)`. -/
 theorem Solution.substituteVars_segment_eq_of_isTiedTo_of_sign_eq (U : Ω.Solution)
-    (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q) (h' : Ω.IsTiedTo μ p' q')
-    (hp : p ≤ p') :
+    (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q) (h' : Ω.IsTiedTo μ p' q') :
     substituteVars U.word (Ω.segment p p' true) =
       substituteVars U.word (Ω.segment q q' true) := by
-  have hV := Ω.mem_V_toSystem_iff.1 U.point_mem_V
-  have hpt : (fun x => FreeGroup.mk (U.word x)) = U.point := (funext U.point_apply).symm
   refine (U.isReduced_substituteVars_segment_of_le μ h.left_le h'.le_right).eq_of_mk_eq
     (U.isReduced_substituteVars_segment_of_le (Ω.dual μ) h.left_dual_le h'.le_right_dual) ?_
-  rw [mk_substituteVars, mk_substituteVars, hpt]
-  exact U.isFormallyConsistent.lift_mk_segment_eq_of_isTiedTo_of_sign_eq hs h h' hp
-    (by
-      simpa only [MonoidHom.coe_id, Function.id_comp] using hV _ (Ω.basicEquation_mem_equations μ))
-    fun c hc _ => by
-      simpa only [MonoidHom.coe_id, Function.id_comp] using
-        hV _ (Ω.boundaryEquation_mem_equations hc)
+  rw [mk_substituteVars, mk_substituteVars]
+  exact U.isFormallyConsistent.lift_mk_segment_eq_of_isTiedTo_of_sign_eq hs h h'
+    (U.lift_mk_eq_of_mem_equations (Ω.basicEquation_mem_equations μ))
+    fun c hc _ => U.lift_mk_eq_of_mem_equations (Ω.boundaryEquation_mem_equations hc)
 
 /-- Under a solution `U`, a segment `U[p, p']` between `μ`-tied boundaries `(p, q)` and `(p', q')`
-with `p ≤ p'` equals the formal inverse of `U[q', q]` when `ε(μ) ≠ ε(Δμ)`. -/
+equals the formal inverse of `U[q', q]` when `ε(μ) ≠ ε(Δμ)`. -/
 theorem Solution.substituteVars_segment_eq_invRev_of_isTiedTo_of_sign_ne (U : Ω.Solution)
-    (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q) (h' : Ω.IsTiedTo μ p' q')
-    (hp : p ≤ p') :
+    (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q) (h' : Ω.IsTiedTo μ p' q') :
     substituteVars U.word (Ω.segment p p' true) =
       FreeGroup.invRev (substituteVars U.word (Ω.segment q' q true)) := by
-  have hV := Ω.mem_V_toSystem_iff.1 U.point_mem_V
-  have hpt : (fun x => FreeGroup.mk (U.word x)) = U.point := (funext U.point_apply).symm
   refine (U.isReduced_substituteVars_segment_of_le μ h.left_le h'.le_right).eq_of_mk_eq
     (U.isReduced_substituteVars_segment_of_le (Ω.dual μ) h'.left_dual_le h.le_right_dual).invRev ?_
-  rw [mk_substituteVars, ← FreeGroup.inv_mk, mk_substituteVars, hpt]
-  exact U.isFormallyConsistent.lift_mk_segment_eq_inv_of_isTiedTo_of_sign_ne hs h h' hp
-    (by
-      simpa only [MonoidHom.coe_id, Function.id_comp] using hV _ (Ω.basicEquation_mem_equations μ))
-    fun c hc _ => by
-      simpa only [MonoidHom.coe_id, Function.id_comp] using
-        hV _ (Ω.boundaryEquation_mem_equations hc)
+  rw [mk_substituteVars, ← FreeGroup.inv_mk, mk_substituteVars]
+  exact U.isFormallyConsistent.lift_mk_segment_eq_inv_of_isTiedTo_of_sign_ne hs h h'
+    (U.lift_mk_eq_of_mem_equations (Ω.basicEquation_mem_equations μ))
+    fun c hc _ => U.lift_mk_eq_of_mem_equations (Ω.boundaryEquation_mem_equations hc)
 
 end Segments
 
