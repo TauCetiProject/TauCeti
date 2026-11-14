@@ -30,8 +30,9 @@ In particular:
   registered as a typeclass instance).
 * For a field `K` and a separable algebraic extension `Ω` of `K`, `toTarget K Ω` is a henselization
   of `K` at `Ω` (`isHenselization_of_field`, registered as a typeclass instance).
-* For a local ring `R` and an `R`-algebra isomorphism `e : Ω ≃ₐ[R] ResidueField R`,
-  `toTarget R Ω` is a henselization of `R` at `Ω` (`isHenselization_of_residueFieldEquiv`).
+* Whenever `algebraMap R Ω` is surjective — in particular for a local ring `R` and an `R`-algebra
+  isomorphism `e : Ω ≃ₐ[R] ResidueField R` — `toTarget R Ω` is a henselization of `R` at `Ω`
+  (`isHenselization_of_algebraMap_surjective`, `isHenselization_of_residueFieldEquiv`).
 
 This file also reconciles the abstract maps produced by `IsHenselization` with the explicit
 pointed-colimit maps:
@@ -39,14 +40,16 @@ pointed-colimit maps:
 * `isHenselizationLift_toTarget_eq` and `isHenselizationLift_toTarget_eq_lift`: lifting
   `toTarget R Ω` into a Henselian local ring `B` along a surjective map `χ : B →ₐ[R] Ω` agrees with
   `StrictHenselization.lift R Ω` for any compatible `pointMap : Ω →ₐ[R] ResidueField B`, and in
-  particular along `(IsHenselization.residueFieldEquiv χ).symm` when `[IsHenselization χ]` holds.
+  particular along `(residueFieldAlgEquivOfSurjective hχ).symm`.
 * `isHenselizationLift_eq_fromHenselization`: any lift produced by `IsHenselization.lift` out of the
   ordinary henselization `Henselization.algebra (maximalIdeal R)` into `algebra R Ω` agrees with
   `fromHenselization R Ω`.
-* `bijective_fromHenselization_of_residueFieldEquiv` and `fromHenselizationAlgEquiv`: when
-  `Ω` is `R`-isomorphic to `ResidueField R` (in particular at `Ω = ResidueField R`), both the
-  ordinary henselization and the `Ω`-pointed étale colimit are henselizations at the same point, so
-  `fromHenselization R Ω` is bijective and identifies the unpointed and pointed colimits.
+* `bijective_fromHenselization_of_algebraMap_surjective`,
+  `bijective_fromHenselization_of_residueFieldEquiv`, and `fromHenselizationAlgEquiv`: when
+  `algebraMap R Ω` is surjective (in particular when `Ω` is `R`-isomorphic to `ResidueField R`, and
+  for `Ω = ResidueField R` itself), both the ordinary henselization and the `Ω`-pointed étale
+  colimit are henselizations at the same point, so `fromHenselization R Ω` is bijective and
+  identifies the unpointed and pointed colimits.
 
 ## References
 
@@ -80,6 +83,15 @@ theorem isHenselization_of_surjective {R Ω : Type u} [CommRing R] [Field Ω] [A
     (h : Function.Surjective (toTarget R Ω)) : IsHenselization (toTarget R Ω) :=
   (isHenselization_iff_surjective R Ω).mpr h
 
+/-- Whenever `algebraMap R Ω` is surjective onto the field `Ω` (with no local-ring assumption on
+`R`), `toTarget R Ω` is surjective and hence a henselization of `R` at `Ω`. -/
+theorem isHenselization_of_algebraMap_surjective {R Ω : Type u} [CommRing R] [Field Ω]
+    [Algebra R Ω] (h : Function.Surjective (algebraMap R Ω)) :
+    IsHenselization (toTarget R Ω) :=
+  isHenselization_of_surjective fun y ↦
+    let ⟨r, hr⟩ := h y
+    ⟨algebraMap R (algebra R Ω) r, ((toTarget R Ω).commutes r).trans hr⟩
+
 /-- Lifting `toTarget R Ω` into a Henselian local `R`-algebra `B` along a surjective `R`-algebra
 map `χ : B →ₐ[R] Ω` agrees with `StrictHenselization.lift R Ω pointMap` for any
 `pointMap : Ω →ₐ[R] ResidueField B` sending `χ b` to `residue B b`. -/
@@ -91,14 +103,15 @@ theorem isHenselizationLift_toTarget_eq {B : Type v} [CommRing B] [Algebra R B]
   refine IsHenselization.eq_lift hχ (AlgHom.ext fun x ↦ ?_)
   exact RingHom.injective pointMap.toRingHom ((hpoint _).trans (residue_lift R Ω pointMap x))
 
-/-- For a henselization `χ : B →ₐ[R] Ω`, the map `IsHenselization.lift (toTarget R Ω) hχ.surjective`
-agrees with `StrictHenselization.lift` along `(IsHenselization.residueFieldEquiv χ).symm`. -/
-theorem isHenselizationLift_toTarget_eq_lift {B : Type u} [CommRing B] [Algebra R B]
-    [HenselianLocalRing B] (χ : B →ₐ[R] Ω) [hχ : IsHenselization χ] :
-    IsHenselization.lift (toTarget R Ω) hχ.surjective =
-      lift R Ω (IsHenselization.residueFieldEquiv χ).symm.toAlgHom :=
-  isHenselizationLift_toTarget_eq R Ω hχ.surjective _
-    (IsHenselization.residueFieldEquiv_symm_apply χ)
+/-- Lifting `toTarget R Ω` into a Henselian local `R`-algebra `B` along a surjective `R`-algebra
+map `χ : B →ₐ[R] Ω` via `IsHenselization.lift` agrees with `StrictHenselization.lift R Ω` along
+`(residueFieldAlgEquivOfSurjective hχ).symm`. -/
+theorem isHenselizationLift_toTarget_eq_lift {B : Type v} [CommRing B] [Algebra R B]
+    [HenselianLocalRing B] {χ : B →ₐ[R] Ω} (hχ : Function.Surjective χ) :
+    IsHenselization.lift (toTarget R Ω) hχ =
+      lift R Ω (residueFieldAlgEquivOfSurjective hχ).symm.toAlgHom :=
+  isHenselizationLift_toTarget_eq R Ω hχ _
+    (residueFieldAlgEquivOfSurjective_symm_apply hχ)
 
 end Surjective
 
@@ -142,20 +155,21 @@ theorem isHenselizationLift_eq_fromHenselization (R Ω : Type u) {L : Type*} [Co
 `toTarget R Ω` a henselization of `R` at `Ω`. -/
 theorem isHenselization_of_residueFieldEquiv (R Ω : Type u) [CommRing R] [IsLocalRing R]
     [Field Ω] [Algebra R Ω] (e : Ω ≃ₐ[R] ResidueField R) :
-    IsHenselization (toTarget R Ω) := by
-  refine isHenselization_of_surjective fun y ↦ ?_
-  obtain ⟨r, hr⟩ := residue_surjective (e y)
-  refine ⟨algebraMap R (algebra R Ω) r, e.injective ?_⟩
-  rw [AlgHom.commutes, e.commutes, ResidueField.algebraMap_eq, hr]
+    IsHenselization (toTarget R Ω) :=
+  isHenselization_of_algebraMap_surjective <| by
+    simpa [Function.comp_def, ← ResidueField.algebraMap_eq] using
+      e.symm.surjective.comp residue_surjective
 
-/-- For a local ring `R` and a field `Ω` receiving a local map from `R` together with an
-`R`-algebra isomorphism `e : ResidueField R ≃ₐ[R] Ω`, the comparison `fromHenselization R Ω` from
-the ordinary henselization to the `Ω`-pointed étale colimit is bijective: both are henselizations
-of `R` at `Ω`. -/
-theorem bijective_fromHenselization_of_residueFieldEquiv (R Ω : Type u) [CommRing R] [IsLocalRing R]
-    [Field Ω] [Algebra R Ω] [IsLocalHom (algebraMap R Ω)] (e : ResidueField R ≃ₐ[R] Ω) :
+/-- For a local ring `R` and a field `Ω` receiving a surjective local map from `R`, the comparison
+`fromHenselization R Ω` from the ordinary henselization to the `Ω`-pointed étale colimit is
+bijective: both are henselizations of `R` at `Ω`. -/
+theorem bijective_fromHenselization_of_algebraMap_surjective {R Ω : Type u} [CommRing R]
+    [IsLocalRing R] [Field Ω] [Algebra R Ω] [IsLocalHom (algebraMap R Ω)]
+    (h : Function.Surjective (algebraMap R Ω)) :
     Function.Bijective (fromHenselization R Ω) := by
-  have : IsHenselization (toTarget R Ω) := isHenselization_of_residueFieldEquiv R Ω e.symm
+  let e : ResidueField R ≃ₐ[R] Ω :=
+    residueFieldAlgEquivOfSurjective (ψ := Algebra.ofId R Ω) h
+  have : IsHenselization (toTarget R Ω) := isHenselization_of_algebraMap_surjective h
   have : IsHenselization (e.toAlgHom.comp (Henselization.toResidueField R)) :=
     (IsHenselization.algEquiv_comp_iff e (Henselization.toResidueField R)).mpr inferInstance
   refine IsHenselization.bijective_of_comp_eq
@@ -163,6 +177,16 @@ theorem bijective_fromHenselization_of_residueFieldEquiv (R Ω : Type u) [CommRi
     (fromHenselization R Ω) ?_
   rw [toTarget_comp_fromHenselization]
   exact (Henselization.eq_lift (map_maximalIdeal_le (algebraMap R Ω)) _).symm
+
+/-- For a local ring `R` and a field `Ω` receiving a local map from `R` together with an
+`R`-algebra isomorphism `e : ResidueField R ≃ₐ[R] Ω`, the comparison `fromHenselization R Ω` from
+the ordinary henselization to the `Ω`-pointed étale colimit is bijective. -/
+theorem bijective_fromHenselization_of_residueFieldEquiv (R Ω : Type u) [CommRing R] [IsLocalRing R]
+    [Field Ω] [Algebra R Ω] [IsLocalHom (algebraMap R Ω)] (e : ResidueField R ≃ₐ[R] Ω) :
+    Function.Bijective (fromHenselization R Ω) :=
+  bijective_fromHenselization_of_algebraMap_surjective <| by
+    simpa [Function.comp_def, ← ResidueField.algebraMap_eq] using
+      e.surjective.comp residue_surjective
 
 /-- For any local ring `R`, the ordinary henselization `Henselization.algebra (maximalIdeal R)` is
 canonically `R`-isomorphic to the `ResidueField R`-pointed étale colimit
@@ -190,6 +214,7 @@ theorem toAlgHom_fromHenselizationAlgEquiv_symm (R : Type u) [CommRing R] [IsLoc
       lift R (ResidueField R) (Henselization.residueFieldEquiv R).toAlgHom := by
   rw [fromHenselizationAlgEquiv_def, IsHenselization.algEquiv_symm,
     IsHenselization.toAlgHom_algEquiv, isHenselizationLift_toTarget_eq_lift,
+    ← IsHenselization.residueFieldEquiv_def,
     Henselization.isHenselizationResidueFieldEquiv_toResidueField, AlgEquiv.symm_symm]
 
 /-- Evaluating `toTarget R (ResidueField R)` on `fromHenselizationAlgEquiv R` recovers

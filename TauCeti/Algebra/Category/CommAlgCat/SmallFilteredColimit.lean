@@ -304,9 +304,11 @@ theorem coconePointAlgEquiv_comp_ι (hc : IsColimit cocone) (object : Index) :
   rwa [CommAlgCat.hom_comp] at h
 
 /-- Elementwise form of `coconePointAlgEquiv_comp_ι`. -/
+@[simp]
 theorem coconePointAlgEquiv_ι_apply (hc : IsColimit cocone) (object : Index)
     (element : functor.obj object) :
-    coconePointAlgEquiv hc ((cocone.ι.app object).hom element) = stage functor object element :=
+    dsimp% coconePointAlgEquiv hc ((cocone.ι.app object).hom element) =
+      stage functor object element :=
   DFunLike.congr_fun (coconePointAlgEquiv_comp_ι hc object) element
 
 /-- The inverse of `coconePointAlgEquiv` sends the canonical stage maps to the cocone legs. -/
@@ -364,13 +366,14 @@ theorem descOfCompatibleOfIsColimit_comp_ι (hc : IsColimit cocone) {Target : Ty
     descOfCompatible_comp_stage]
 
 /-- Elementwise form of `descOfCompatibleOfIsColimit_comp_ι`. -/
+@[simp]
 theorem descOfCompatibleOfIsColimit_ι_apply (hc : IsColimit cocone) {Target : Type w}
     [CommRing Target] [Algebra Base Target]
     (stageMap : ∀ object, functor.obj object →ₐ[Base] Target)
     (hcompat : ∀ {first second : Index} (morphism : first ⟶ second),
       (stageMap second).comp (functor.map morphism).hom = stageMap first) (object : Index)
     (element : functor.obj object) :
-    descOfCompatibleOfIsColimit hc stageMap hcompat ((cocone.ι.app object).hom element) =
+    dsimp% descOfCompatibleOfIsColimit hc stageMap hcompat ((cocone.ι.app object).hom element) =
       stageMap object element :=
   DFunLike.congr_fun (descOfCompatibleOfIsColimit_comp_ι hc stageMap hcompat object) element
 

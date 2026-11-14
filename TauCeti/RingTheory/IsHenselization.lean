@@ -380,13 +380,15 @@ instance ofId_residueField (R : Type u) [CommRing R] [HenselianLocalRing R] :
     IsHenselization (Algebra.ofId R (ResidueField R)) :=
   of_surjective_of_henselianLocalRing _ residue_surjective
 
-/-- A field `K` is its own henselization at the identity map `K →ₐ[K] K`. -/
-instance id (K : Type u) [Field K] : IsHenselization (AlgHom.id K K) :=
-  of_surjective_of_henselianLocalRing _ Function.surjective_id
+/-- An ind-étale field `R`-algebra `L` (in particular a field over itself) is its own
+henselization at the identity map `AlgHom.id R L`. -/
+instance id (R L : Type u) [CommRing R] [Field L] [Algebra R L] [Algebra.IndEtale R L] :
+    IsHenselization (AlgHom.id R L) :=
+  ⟨inferInstance, inferInstance, Function.surjective_id⟩
 
 /-- Transport `IsHenselization` along an `R`-algebra isomorphism `e : A ≃ₐ[R] B`. -/
 theorem of_algEquiv {R A B : Type u} {L : Type*} [CommRing R] [CommRing A] [Algebra R A]
-    [CommRing B] [Algebra R B] [Field L] [Algebra R L] {ψ : A →ₐ[R] L} [h : IsHenselization ψ]
+    [CommRing B] [Algebra R B] [Field L] [Algebra R L] (ψ : A →ₐ[R] L) [h : IsHenselization ψ]
     (e : A ≃ₐ[R] B) : IsHenselization (ψ.comp e.symm.toAlgHom) := by
   have := h.henselianLocalRing
   have := h.indEtale
@@ -402,7 +404,7 @@ theorem comp_algEquiv_iff {R A B : Type u} {L : Type*} [CommRing R] [CommRing A]
     [CommRing B] [Algebra R B] [Field L] [Algebra R L] (ψ : B →ₐ[R] L) (e : A ≃ₐ[R] B) :
     IsHenselization (ψ.comp e.toAlgHom) ↔ IsHenselization ψ := by
   have hEq : (ψ.comp e.toAlgHom).comp e.symm.toAlgHom = ψ := AlgHom.ext fun b ↦ by simp
-  exact ⟨fun h ↦ hEq ▸ of_algEquiv (h := h) e, fun _ ↦ of_algEquiv e.symm⟩
+  exact ⟨fun _ ↦ hEq ▸ of_algEquiv (ψ.comp e.toAlgHom) e, fun _ ↦ of_algEquiv ψ e.symm⟩
 
 /-- Post-composing the pointing map with an `R`-algebra isomorphism of fields preserves
 `IsHenselization`. -/
@@ -421,7 +423,7 @@ to `R` is a henselization of `R`. -/
 theorem restrictScalars (R : Type u) {S A : Type u} {L : Type*} [CommRing R] [CommRing S]
     [Algebra R S] [Algebra.IndEtale R S] [CommRing A] [Algebra R A] [Algebra S A]
     [IsScalarTower R S A] [Field L] [Algebra R L] [Algebra S L] [IsScalarTower R S L]
-    {ψ : A →ₐ[S] L} [h : IsHenselization ψ] :
+    (ψ : A →ₐ[S] L) [h : IsHenselization ψ] :
     IsHenselization (ψ.restrictScalars R) := by
   have := h.indEtale
   exact
@@ -431,8 +433,11 @@ theorem restrictScalars (R : Type u) {S A : Type u} {L : Type*} [CommRing R] [Co
 
 end Permanence
 
--- Sanity check: a field is its own henselization at the identity map.
+-- Sanity check: an ind-étale field algebra (in particular a field over itself) is its own
+-- henselization at the identity map.
 example (K : Type u) [Field K] : IsHenselization (AlgHom.id K K) := inferInstance
+example (R L : Type u) [CommRing R] [Field L] [Algebra R L] [Algebra.IndEtale R L] :
+    IsHenselization (AlgHom.id R L) := inferInstance
 
 -- Sanity check: for a prime `p`, `ZMod p` is a Henselian local ring and `ZMod p → ZMod p` is
 -- surjective, yet it is not a henselization of `ℤ` because `ZMod p` is not flat over `ℤ`.
