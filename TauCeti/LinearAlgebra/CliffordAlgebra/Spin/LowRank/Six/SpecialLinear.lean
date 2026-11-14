@@ -810,32 +810,20 @@ theorem toMatrix_spinPlusAction_spinSixTransvectionLift {i j : Fin 4}
           (spinSixTransvectionLift P hline b hij c))) = Matrix.transvection i j c := by
   fin_cases i <;> fin_cases j
   · exact (hij rfl).elim
-  · convert spinSixLiftHasMatrix_zero_one P hline b c using 1
-    rfl
-  · convert spinSixLiftHasMatrix_zero_two P hline b c using 1
-    rfl
-  · convert spinSixLiftHasMatrix_zero_three P hline b c using 1
-    rfl
-  · convert spinSixLiftHasMatrix_one_zero P hline b c using 1
-    rfl
+  · exact spinSixLiftHasMatrix_zero_one P hline b c
+  · exact spinSixLiftHasMatrix_zero_two P hline b c
+  · exact spinSixLiftHasMatrix_zero_three P hline b c
+  · exact spinSixLiftHasMatrix_one_zero P hline b c
   · exact (hij rfl).elim
-  · convert spinSixLiftHasMatrix_one_two P hline b c using 1
-    rfl
-  · convert spinSixLiftHasMatrix_one_three P hline b c using 1
-    rfl
-  · convert spinSixLiftHasMatrix_two_zero P hline b c using 1
-    rfl
-  · convert spinSixLiftHasMatrix_two_one P hline b c using 1
-    rfl
+  · exact spinSixLiftHasMatrix_one_two P hline b c
+  · exact spinSixLiftHasMatrix_one_three P hline b c
+  · exact spinSixLiftHasMatrix_two_zero P hline b c
+  · exact spinSixLiftHasMatrix_two_one P hline b c
   · exact (hij rfl).elim
-  · convert spinSixLiftHasMatrix_two_three P hline b c using 1
-    rfl
-  · convert spinSixLiftHasMatrix_three_zero P hline b c using 1
-    rfl
-  · convert spinSixLiftHasMatrix_three_one P hline b c using 1
-    rfl
-  · convert spinSixLiftHasMatrix_three_two P hline b c using 1
-    rfl
+  · exact spinSixLiftHasMatrix_two_three P hline b c
+  · exact spinSixLiftHasMatrix_three_zero P hline b c
+  · exact spinSixLiftHasMatrix_three_one P hline b c
+  · exact spinSixLiftHasMatrix_three_two P hline b c
   · exact (hij rfl).elim
 
 /-- The vector action of the canonical lift is its defining Eichler transvection. -/
