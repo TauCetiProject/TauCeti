@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Algebra.Star.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.PosPart.Basic
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import Mathlib.LinearAlgebra.Matrix.DotProduct
@@ -26,7 +27,8 @@ this order exactly when its finite quadratic forms are positive in `A`:
 No self-adjointness hypothesis is needed for the converse: positivity of all the quadratic forms
 already forces `M` to be self-adjoint, by polarization over `ℂ`. The criterion is the standard way
 to recognise positive matrices over a C⋆-algebra, for instance Gram matrices of vectors in a
-Hilbert C⋆-module.
+Hilbert C⋆-module. We also show that a diagonal matrix in `CStarMatrix n n A` has operator norm
+equal to the supremum norm of its diagonal.
 
 ## Main declarations
 
@@ -38,6 +40,8 @@ Hilbert C⋆-module.
   are self-adjoint is self-adjoint. This is purely algebraic, and holds over any complex
   star-algebra whose star is proper.
 * `CStarMatrix.nonneg_iff_forall_sum_nonneg`: the quadratic-form criterion for positivity.
+* `CStarMatrix.norm_ofMatrix_diagonal`: `‖ofMatrix (diagonal d)‖ = ‖d‖` over any non-unital
+  C⋆-algebra.
 
 ## References
 
@@ -170,5 +174,49 @@ theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
   rw [← star_mul_self_eq_zero, hN.star_eq]
   calc N * N = star R * (R * N) := by rw [← mul_assoc, ← hR]
     _ = 0 := by rw [hRN, mul_zero]
+
+/-- The operator norm of a diagonal matrix in `CStarMatrix n n A` is at most the supremum norm of
+its diagonal. -/
+theorem norm_ofMatrix_diagonal_le [DecidableEq n] (d : n → A) :
+    ‖ofMatrix (diagonal d)‖ ≤ ‖d‖ := by
+  rw [norm_def]
+  refine (toCLM (ofMatrix (diagonal d))).opNorm_le_bound (norm_nonneg d) fun v => ?_
+  refine (sq_le_sq₀ (norm_nonneg _) (mul_nonneg (norm_nonneg d) (norm_nonneg v))).mp ?_
+  rw [WithCStarModule.pi_norm_sq, mul_pow, WithCStarModule.pi_norm_sq]
+  have happly (j : n) : toCLM (ofMatrix (diagonal d)) v j = v j * d j := by
+    simp [toCLM_apply_eq_sum, diagonal_apply]
+  have hterm (j : n) :
+      (v j * d j) * star (v j * d j) ≤ ‖d‖ ^ 2 • (v j * star (v j)) := calc
+    (v j * d j) * star (v j * d j) = v j * (d j * star (d j)) * star (v j) := by
+      simp [mul_assoc]
+    _ ≤ ‖d j * star (d j)‖ • (v j * star (v j)) :=
+      CStarAlgebra.star_right_conjugate_le_norm_smul (v j) (d j * star (d j))
+    _ = ‖d j‖ ^ 2 • (v j * star (v j)) := by rw [CStarRing.norm_self_mul_star, sq]
+    _ ≤ ‖d‖ ^ 2 • (v j * star (v j)) :=
+      smul_le_smul_of_nonneg_right
+        (pow_le_pow_left₀ (norm_nonneg _) (norm_le_pi_norm d j) 2) (mul_star_self_nonneg (v j))
+  have hsum :
+      ∑ j, inner A (toCLM (ofMatrix (diagonal d)) v j) (toCLM (ofMatrix (diagonal d)) v j) ≤
+        ‖d‖ ^ 2 • ∑ j, inner A (v j) (v j) := by
+    rw [Finset.smul_sum]
+    refine Finset.sum_le_sum fun j _ => ?_
+    simpa only [WithCStarModule.inner_def, happly] using hterm j
+  calc
+    ‖∑ j, inner A (toCLM (ofMatrix (diagonal d)) v j) (toCLM (ofMatrix (diagonal d)) v j)‖
+      ≤ ‖‖d‖ ^ 2 • ∑ j, inner A (v j) (v j)‖ :=
+        CStarAlgebra.norm_le_norm_of_le_of_nonneg hsum
+          (Finset.sum_nonneg fun _ _ => CStarModule.inner_self_nonneg)
+    _ = ‖d‖ ^ 2 * ‖∑ j, inner A (v j) (v j)‖ := by
+      rw [norm_smul, Real.norm_of_nonneg (sq_nonneg _)]
+
+/-- The operator norm of a diagonal matrix in `CStarMatrix n n A` equals the supremum norm of its
+diagonal. -/
+@[simp]
+theorem norm_ofMatrix_diagonal [DecidableEq n] (d : n → A) :
+    ‖ofMatrix (diagonal d)‖ = ‖d‖ := by
+  refine le_antisymm (norm_ofMatrix_diagonal_le d) ?_
+  rw [pi_norm_le_iff_of_nonneg (norm_nonneg _)]
+  intro i
+  simpa using norm_entry_le_norm (M := ofMatrix (diagonal d)) (i := i) (j := i)
 
 end CStarMatrix
