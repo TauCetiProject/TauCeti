@@ -19,7 +19,7 @@ import TauCeti.MeasureTheory.Integral.Bochner.Set
 The absolute Jacobian in change of variables cancels the chart sign when the parametrization
 preserves the tangent orientation. The resulting coefficient is evaluation on its tangent map.
 Finite chart partitions then compute canonical integration from parametrizations, including
-disconnected manifolds of any positive dimension and finite sets of seams. The parametrizations
+disconnected manifolds of any positive dimension and countable sets of seams. The parametrizations
 are defined on the model space `E` of the manifold, and the parameter integrals are taken for the
 Haar measure of a basis of `E` on which the tangent orientation is tested.
 
@@ -131,7 +131,7 @@ theorem Manifold.OrientationLift.integrableOn_and_integral_chart_parameter_piece
 
 omit [IsManifold I 1 M] in
 /-- Integrability and the signed chart integral of one chart piece of a manifold, computed on
-disjoint parametrizations covering the complement of a finite set of seams, for a measure with
+disjoint parametrizations covering the complement of a countable set of seams, for a measure with
 null singletons. -/
 private theorem integrableOn_and_sign_mul_integral_chart_piece [MeasurableSpace E]
     [BorelSpace E] {ι : Type*} [Fintype ι] [Nontrivial E]
@@ -139,7 +139,7 @@ private theorem integrableOn_and_sign_mul_integral_chart_piece [MeasurableSpace 
     (φ : RoughForm I M ℝ k) (hi : IntegrableTopForm φ) (α : M) {s : Set M}
     (hsm : IsChartMeasurable I s) (hsrc : s ⊆ (extChartAt I α).source)
     {Q : ι → E → M} {D : Set E} (hQ : ∀ i, ContinuousOn (Q i) D) (hD : MeasurableSet D)
-    {Z : Set M} (hZ : Z.Finite) (himage : (⋃ i, Q i '' D) = Zᶜ)
+    {Z : Set M} (hZ : Z.Countable) (himage : (⋃ i, Q i '' D) = Zᶜ)
     (hdisj : Pairwise (fun i j ↦ Disjoint (Q i '' D) (Q j '' D)))
     (hinj : ∀ i, InjOn (Q i) D) (d : ι → E → E →L[ℝ] E)
     (hd : ∀ i z, z ∈ D → Q i z ∈ (extChartAt I α).source →
@@ -169,7 +169,7 @@ private theorem integrableOn_and_sign_mul_integral_chart_piece [MeasurableSpace 
         ∫ z in D ∩ Q i ⁻¹' s, V i z ∂B.addHaar :=
     l.integrableOn_and_integral_chart_parameter_piece B φ hi α (hS i) (d i) (hderiv i)
       (hΨinj i) (V i) fun z hz ↦ htransport i z hz.1 (hsrc hz.2)
-  exact ⟨fun i ↦ (hpiece i).1, mul_integral_image_eq_sum_pieces hZ.countable himage hdisj
+  exact ⟨fun i ↦ (hpiece i).1, mul_integral_image_eq_sum_pieces hZ himage hdisj
     ((extChartAt I α).injOn.mono hsrc) B.addHaar hC.integrableOn _ V
     (fun i ↦ measurable_image_of_fderivWithin (hS i) (hderiv i) (hΨinj i))
     fun i ↦ (hpiece i).2⟩
@@ -186,7 +186,7 @@ private theorem integralTopForm_eq_sum_parameter_integrals [Nontrivial E] {ι : 
     [CompactSpace N] (l : Manifold.OrientationLift I N (Fin k)) (B : Module.Basis (Fin k) ℝ E)
     (φ : RoughForm I N ℝ k) (hi : IntegrableTopForm φ)
     {Q : ι → E → N} {D : Set E} (hQ : ∀ i, ContinuousOn (Q i) D) (hD : MeasurableSet D)
-    {Z : Set N} (hZ : Z.Finite) (himage : (⋃ i, Q i '' D) = Zᶜ)
+    {Z : Set N} (hZ : Z.Countable) (himage : (⋃ i, Q i '' D) = Zᶜ)
     (hdisj : Pairwise (fun i j ↦ Disjoint (Q i '' D) (Q j '' D)))
     (hinj : ∀ i, InjOn (Q i) D) (d : N → ι → E → E →L[ℝ] E)
     (hd : ∀ α i z, z ∈ D → Q i z ∈ (extChartAt I α).source →
@@ -221,14 +221,14 @@ private theorem integralTopForm_eq_sum_parameter_integrals [Nontrivial E] {ι : 
       (fun j ↦ (hA j).1 i), hSD i]
 
 /-- Finitely many disjoint positively oriented parametrizations compute the canonical integral
-of a compact positive-dimensional manifold outside a finite set of seams. The parametrizations are
-defined on the model space `E`, the tangent orientation is tested on a basis `B` of `E`, and the
-parameter integrals are taken for the Haar measure of `B`. Parameter integrability follows from
-intrinsic integrability. -/
+of a compact positive-dimensional manifold outside a countable set of seams. The parametrizations
+are defined on the model space `E`, the tangent orientation is tested on a basis `B` of `E`, and
+the parameter integrals are taken for the Haar measure of `B`. Parameter integrability follows
+from intrinsic integrability. -/
 theorem integralTopForm_eq_oriented_parametrizations [Nontrivial E] {ι : Type*} [Fintype ι]
     [CompactSpace N] (l : Manifold.OrientationLift I N (Fin k)) (B : Module.Basis (Fin k) ℝ E)
     (φ : RoughForm I N ℝ k) (hi : IntegrableTopForm φ) {Q : ι → E → N} {D : Set E}
-    (hD : MeasurableSet D) {Z : Set N} (hZ : Z.Finite) (himage : (⋃ i, Q i '' D) = Zᶜ)
+    (hD : MeasurableSet D) {Z : Set N} (hZ : Z.Countable) (himage : (⋃ i, Q i '' D) = Zᶜ)
     (hdisj : Pairwise (fun i j ↦ Disjoint (Q i '' D) (Q j '' D)))
     (hinj : ∀ i, InjOn (Q i) D) (e : ∀ i z, E ≃L[ℝ] TangentSpace I (Q i z))
     (hd : ∀ i, ∀ z ∈ D, HasMFDerivAt 𝓘(ℝ, E) I (Q i) z
@@ -259,12 +259,12 @@ theorem integralTopForm_eq_oriented_parametrizations [Nontrivial E] {ι : Type*}
     _ = _ := h
 
 /-- One positively oriented parametrization computes the canonical integral of a compact
-positive-dimensional manifold outside a finite set of seams, including parameter-integrability as a
-conclusion. -/
+positive-dimensional manifold outside a countable set of seams, including parameter-integrability
+as a conclusion. -/
 theorem integralTopForm_eq_oriented_parametrization [Nontrivial E] [CompactSpace N]
     (l : Manifold.OrientationLift I N (Fin k)) (B : Module.Basis (Fin k) ℝ E)
     (φ : RoughForm I N ℝ k) (hi : IntegrableTopForm φ) {Q : E → N} {D : Set E}
-    (hD : MeasurableSet D) {Z : Set N} (hZ : Z.Finite) (himage : Q '' D = Zᶜ) (hinj : InjOn Q D)
+    (hD : MeasurableSet D) {Z : Set N} (hZ : Z.Countable) (himage : Q '' D = Zᶜ) (hinj : InjOn Q D)
     (e : ∀ z, E ≃L[ℝ] TangentSpace I (Q z))
     (hd : ∀ z ∈ D, HasMFDerivAt 𝓘(ℝ, E) I Q z
       ((e z).toContinuousLinearMap.comp (NormedSpace.fromTangentSpace z).toContinuousLinearMap))
