@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Topology.Sheaves.Leray.Basic
-public import TauCeti.Topology.Sheaves.Flasque.Basic
 import Mathlib.Algebra.Category.Grp.AB
 import TauCeti.Algebra.Homology.Ext.Basic
 import TauCeti.CategoryTheory.Limits.Lattice
@@ -50,18 +49,6 @@ namespace TauCeti.Topology
 
 variable {X : TopCat.{u}} {ι : Type u} (U : ι → Opens X)
 
-/-- Čech cochains preserve the kernel in the injective cokernel sequence. -/
-private lemma lerayOneSeq_exact (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
-    (cechInjectiveCokernelSequence U F).Exact := by
-  apply (injectiveCokernelSequence_shortExact F).exact.map_of_mono_of_preservesKernel
-    (sheafToPresheaf _ AddCommGrpCat.{u} ⋙ cechComplexFunctor U) inferInstance inferInstance
-
-/-- The first Čech map is injective. -/
-private instance lerayOneSeq_mono (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
-    Mono (cechInjectiveCokernelSequence U F).f := by
-  exact Functor.map_mono (sheafToPresheaf _ AddCommGrpCat.{u} ⋙ cechComplexFunctor U)
-    (Injective.ι F)
-
 /-- The actual complex cokernel, used in place of `Č(Q)`. -/
 private abbrev lerayOneCokerSeq
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :=
@@ -76,7 +63,7 @@ private def lerayOneCokerToQuotient
 private instance lerayOneCokerToQuotient_mono
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
     Mono (lerayOneCokerToQuotient U F) :=
-  (lerayOneSeq_exact U F).mono_cokernelDesc
+  (cechInjectiveCokernelSequence_exact U F).mono_cokernelDesc
 
 /-- Memberwise `H¹` vanishing makes the degree-zero map onto. -/
 private lemma epi_lerayOneSeq_g_zero
@@ -394,18 +381,6 @@ theorem homologyMap_comp_homologyCechComplexIsoHOne_hom
         exact homologyMap_comp_homologyZeroCechIso_hom U hU
           (injectiveCokernelSequenceMap f).τ₃)
 
-/-- A cover refinement induces a map of the left exact Čech sequences. -/
-private def lerayOneSeqRefinement
-    (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
-    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
-    cechInjectiveCokernelSequence V F ⟶ cechInjectiveCokernelSequence U F where
-  τ₁ := cechComplexMap F.obj φ
-  τ₂ := cechComplexMap (Injective.under F).obj φ
-  τ₃ := cechComplexMap (cokernel (Injective.ι F)).obj φ
-  comm₁₂ := (cechComplexMap_naturality F.obj (Injective.ι F).hom φ).symm
-  comm₂₃ := (cechComplexMap_naturality (Injective.under F).obj
-    (cokernel.π (Injective.ι F)).hom φ).symm
-
 /-- Degree-one Leray comparison commutes with the actual map induced by a cover refinement. -/
 @[reassoc]
 theorem homologyMap_cechComplexMap_comp_homologyCechComplexIsoHOne_hom
@@ -417,13 +392,15 @@ theorem homologyMap_cechComplexMap_comp_homologyCechComplexIsoHOne_hom
         (homologyCechComplexIsoHOne U hU F hFU).hom =
       (homologyCechComplexIsoHOne V hV F hFV).hom := by
   have h := lerayOneIso_naturality V U hV hU hFV hFU
-    (lerayOneSeqRefinement U V F φ) (𝟙 (injectiveCokernelSequence F))
+    (cechInjectiveCokernelSequenceRefinement U V F φ) (𝟙 (injectiveCokernelSequence F))
     (by
-      simpa only [lerayOneSeqRefinement, ShortComplex.id_τ₁, ShortComplex.id_τ₃,
+      simpa only [cechInjectiveCokernelSequenceRefinement_τ₁,
+        cechInjectiveCokernelSequenceRefinement_τ₃, ShortComplex.id_τ₁, ShortComplex.id_τ₃,
         _root_.CategoryTheory.Sheaf.H.ofHom_map_id, Category.comp_id] using
         homologyMap_cechComplexMap_comp_homologyZeroCechIso_hom U hU V hV
           (cokernel (Injective.ι F)) φ)
-  simpa only [lerayOneSeqRefinement, ShortComplex.id_τ₁, ShortComplex.id_τ₃,
+  simpa only [cechInjectiveCokernelSequenceRefinement_τ₁,
+    cechInjectiveCokernelSequenceRefinement_τ₃, ShortComplex.id_τ₁, ShortComplex.id_τ₃,
         _root_.CategoryTheory.Sheaf.H.ofHom_map_id, Category.comp_id] using h
 
 /-- A refinement between memberwise `H¹`-acyclic covers induces an isomorphism on `H¹`. -/

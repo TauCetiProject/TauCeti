@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Sheaves.Cech.Cofinal
+public import TauCeti.Topology.Sheaves.Cohomology.Instances
 public import TauCeti.Topology.Sheaves.Leray.One
 import Mathlib.Algebra.Category.Grp.Zero
 import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology

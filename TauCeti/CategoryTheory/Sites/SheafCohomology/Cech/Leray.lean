@@ -19,11 +19,12 @@ import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughInjectives
 # Leray's acyclicity theorem for a covering of a site
 
 Let `(C, J)` be a site with finite products and a terminal object `T`, let `U` be a family of
-objects whose maps to `T` generate a covering sieve, and let `F` be an abelian sheaf with no
-cohomology in positive degrees on any finite product `U (a 0) × ⋯ × U (a m)` of members of `U`
-(a *Leray covering* for `F`). Then the Čech cohomology `Hⁿ(U, F)`, the cohomology of the Čech
-complex `Č(U, F)`, is isomorphic to the sheaf cohomology `Hⁿ(F)` in every degree, naturally in
-`F` (`TauCeti.CategoryTheory.homologyCechComplexIsoH`).
+objects covering the terminal object (`CategoryTheory.GrothendieckTopology.CoversTop`), and let
+`F` be an abelian sheaf with no cohomology in positive degrees on any finite product
+`U (a 0) × ⋯ × U (a m)` of members of `U` (a *Leray covering* for `F`). Then the Čech
+cohomology `Hⁿ(U, F)`, the cohomology of the Čech complex `Č(U, F)`, is isomorphic to the sheaf
+cohomology `Hⁿ(F)` in every degree, naturally in `F`
+(`TauCeti.CategoryTheory.homologyCechComplexIsoH`).
 
 For a covering `{Uᵢ ⟶ V}` of an object `V` of a site with fibre products, it can be applied to
 the site `C/V`, whose products are the fibre products over `V`. For an open cover of a
@@ -49,8 +50,10 @@ Induction on the degree, for all sheaves at once, concludes.
 
 * `TauCeti.CategoryTheory.cechInjectiveCokernelSequence`: the sequence of Čech complexes of the
   chosen injective cokernel sequence `0 ⟶ F ⟶ I ⟶ Q ⟶ 0`, with its maps
-  `TauCeti.CategoryTheory.cechInjectiveCokernelSequenceMap`; it is short exact when `F` has no
-  first cohomology on the finite products of members of `U`
+  `TauCeti.CategoryTheory.cechInjectiveCokernelSequenceMap` induced by morphisms of sheaves and
+  `TauCeti.CategoryTheory.cechInjectiveCokernelSequenceRefinement` induced by refinements of
+  families; it is left exact (`TauCeti.CategoryTheory.cechInjectiveCokernelSequence_exact`), and
+  short exact when `F` has no first cohomology on the finite products of members of `U`
   (`TauCeti.CategoryTheory.cechInjectiveCokernelSequence_shortExact`);
 * `TauCeti.CategoryTheory.homologyCechComplexIsoH`: for a Leray covering `U`, `Hⁿ(U, F) ≅ Hⁿ(F)`
   for every `n`;
@@ -58,8 +61,11 @@ Induction on the degree, for all sheaves at once, concludes.
   natural in `F`;
 * `TauCeti.CategoryTheory.homologyCechComplexIsoH_zero`: in degree `0` it is the identification of
   both groups with the global sections (`TauCeti.CategoryTheory.homologyZeroCechIso`);
-* `TauCeti.CategoryTheory.δ_comp_homologyCechComplexIsoH_one_hom`: in degree `1` it intertwines
-  the connecting maps of the Čech and sheaf injective cokernel sequences.
+* `TauCeti.CategoryTheory.δ_comp_homologyCechComplexIsoH_one_hom` and
+  `TauCeti.CategoryTheory.δ_comp_homologyCechComplexIsoH_succ_hom`: it intertwines the connecting
+  maps of the Čech and sheaf injective cokernel sequences;
+* `TauCeti.CategoryTheory.homologyMap_cechComplexMap_comp_homologyCechComplexIsoH_hom`: it is
+  compatible with refinement of Leray coverings.
 
 ## References
 
@@ -82,13 +88,13 @@ noncomputable section
 
 open CategoryTheory Limits Opposite
 
-universe v u
+universe w' v u
 
 namespace TauCeti.CategoryTheory
 
 variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] {J : GrothendieckTopology C}
   [HasSheafify J AddCommGrpCat.{v}] {ι : Type v} (U : ι → C) {T : C} (hT : IsTerminal T)
-  (hU : Sieve.ofArrows U (fun i ↦ hT.from (U i)) ∈ J T)
+  (hU : J.CoversTop U)
 
 /-! ### The Čech complexes of an injective cokernel sequence -/
 
@@ -109,22 +115,15 @@ abbrev cechInjectiveCokernelSequence (F : Sheaf J AddCommGrpCat.{v}) :
 /-- A morphism `F ⟶ G` induces a morphism of the sequences of Čech complexes of the chosen
 injective cokernel sequences, through `TauCeti.injectiveCokernelSequenceMap`. -/
 def cechInjectiveCokernelSequenceMap {F G : Sheaf J AddCommGrpCat.{v}} (f : F ⟶ G) :
-    cechInjectiveCokernelSequence U F ⟶ cechInjectiveCokernelSequence U G where
-  τ₁ := (cechComplexFunctor U).map f.hom
-  τ₂ := (cechComplexFunctor U).map (injectiveCokernelSequenceMap f).τ₂.hom
-  τ₃ := (cechComplexFunctor U).map (injectiveCokernelSequenceMap f).τ₃.hom
-  comm₁₂ := by
-    simp only [injectiveCokernelSequenceMap_τ₂, ← Functor.map_comp, ← InducedCategory.comp_hom,
-      Injective.comp_factorThru]
-  comm₂₃ := by
-    simp only [injectiveCokernelSequenceMap_τ₂, injectiveCokernelSequenceMap_τ₃,
-      ← Functor.map_comp, ← InducedCategory.comp_hom, cokernel.π_desc]
+    cechInjectiveCokernelSequence U F ⟶ cechInjectiveCokernelSequence U G :=
+  (sheafToPresheaf J AddCommGrpCat.{v} ⋙ cechComplexFunctor U).mapShortComplex.map
+    (injectiveCokernelSequenceMap f)
 
 /-- On the first term, the map of Čech sequences is induced by the original morphism. -/
 @[simp]
 theorem cechInjectiveCokernelSequenceMap_τ₁ {F G : Sheaf J AddCommGrpCat.{v}} (f : F ⟶ G) :
-    (cechInjectiveCokernelSequenceMap U f).τ₁ = (cechComplexFunctor U).map f.hom :=
-  (rfl)
+    (cechInjectiveCokernelSequenceMap U f).τ₁ = (cechComplexFunctor U).map f.hom := by
+  simp [cechInjectiveCokernelSequenceMap]
 
 /-- On the injective term, the map of Čech sequences is induced by the chosen injective lift. -/
 @[simp]
@@ -140,20 +139,69 @@ theorem cechInjectiveCokernelSequenceMap_τ₃ {F G : Sheaf J AddCommGrpCat.{v}}
       (cechComplexFunctor U).map (injectiveCokernelSequenceMap f).τ₃.hom :=
   (rfl)
 
-/-! ### Dimension shifting -/
+/-- The sequence of Čech complexes of the chosen injective cokernel sequence is left exact: it is
+exact at `Č(U, I)`. -/
+theorem cechInjectiveCokernelSequence_exact (F : Sheaf J AddCommGrpCat.{v}) :
+    (cechInjectiveCokernelSequence U F).Exact :=
+  (injectiveCokernelSequence_shortExact F).exact.map_of_mono_of_preservesKernel
+    (sheafToPresheaf _ AddCommGrpCat.{v} ⋙ cechComplexFunctor U) inferInstance inferInstance
 
-variable [HasExt.{v} (Sheaf J AddCommGrpCat.{v})]
+/-- The sequence of Čech complexes of the chosen injective cokernel sequence is left exact: the
+map `Č(U, F) ⟶ Č(U, I)` is a monomorphism. -/
+instance mono_cechInjectiveCokernelSequence_f (F : Sheaf J AddCommGrpCat.{v}) :
+    Mono (cechInjectiveCokernelSequence U F).f :=
+  Functor.map_mono (sheafToPresheaf _ AddCommGrpCat.{v} ⋙ cechComplexFunctor U) (Injective.ι F)
+
+/-- A morphism of families `U ⟶ V` induces a morphism from the sequence of Čech complexes of the
+chosen injective cokernel sequence for `V` to that for `U`, through `cechComplexMap`. -/
+def cechInjectiveCokernelSequenceRefinement {κ : Type v} (V : κ → C)
+    (F : Sheaf J AddCommGrpCat.{v}) (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    cechInjectiveCokernelSequence V F ⟶ cechInjectiveCokernelSequence U F where
+  τ₁ := cechComplexMap F.obj φ
+  τ₂ := cechComplexMap (Injective.under F).obj φ
+  τ₃ := cechComplexMap (cokernel (Injective.ι F)).obj φ
+  comm₁₂ := (cechComplexMap_naturality F.obj (Injective.ι F).hom φ).symm
+  comm₂₃ := (cechComplexMap_naturality (Injective.under F).obj
+    (cokernel.π (Injective.ι F)).hom φ).symm
+
+/-- On the first term, the refinement map of Čech sequences is the refinement map of `F`. -/
+@[simp]
+theorem cechInjectiveCokernelSequenceRefinement_τ₁ {κ : Type v} (V : κ → C)
+    (F : Sheaf J AddCommGrpCat.{v}) (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    (cechInjectiveCokernelSequenceRefinement U V F φ).τ₁ = cechComplexMap F.obj φ :=
+  (rfl)
+
+/-- On the injective term, the refinement map of Čech sequences is the refinement map of `I`. -/
+@[simp]
+theorem cechInjectiveCokernelSequenceRefinement_τ₂ {κ : Type v} (V : κ → C)
+    (F : Sheaf J AddCommGrpCat.{v}) (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    (cechInjectiveCokernelSequenceRefinement U V F φ).τ₂ =
+      cechComplexMap (Injective.under F).obj φ :=
+  (rfl)
+
+/-- On the quotient term, the refinement map of Čech sequences is the refinement map of `Q`. -/
+@[simp]
+theorem cechInjectiveCokernelSequenceRefinement_τ₃ {κ : Type v} (V : κ → C)
+    (F : Sheaf J AddCommGrpCat.{v}) (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    (cechInjectiveCokernelSequenceRefinement U V F φ).τ₃ =
+      cechComplexMap (cokernel (Injective.ι F)).obj φ :=
+  (rfl)
 
 /-- If `F` has no first cohomology on the finite products `U (a 0) × ⋯ × U (a m)` of members of
 the family, the sections of `0 ⟶ F ⟶ I ⟶ Q ⟶ 0` on them are short exact, so the sequence of Čech
 complexes `0 ⟶ Č(U, F) ⟶ Č(U, I) ⟶ Č(U, Q) ⟶ 0` is short exact. -/
-theorem cechInjectiveCokernelSequence_shortExact {F : Sheaf J AddCommGrpCat.{v}}
-    (hF : ∀ (m : ℕ) (a : Fin (m + 1) → ι), Subsingleton (F.H'.{v} 1 (∏ᶜ fun j ↦ U (a j)))) :
+theorem cechInjectiveCokernelSequence_shortExact [HasExt.{w'} (Sheaf J AddCommGrpCat.{v})]
+    {F : Sheaf J AddCommGrpCat.{v}}
+    (hF : ∀ (m : ℕ) (a : Fin (m + 1) → ι), Subsingleton (F.H'.{w'} 1 (∏ᶜ fun j ↦ U (a j)))) :
     (cechInjectiveCokernelSequence U F).ShortExact :=
   shortExact_map_cechComplexFunctor U
     ((injectiveCokernelSequence F).map (sheafToPresheaf _ AddCommGrpCat.{v})) fun m a ↦
       _root_.CategoryTheory.Sheaf.H'.shortExact_map_sheafSections
         (injectiveCokernelSequence_shortExact F) _ (hF m a)
+
+/-! ### Dimension shifting -/
+
+variable [HasExt.{v} (Sheaf J AddCommGrpCat.{v})]
 
 /-- The Leray condition: `F` has no cohomology in positive degrees on the finite products
 `U (a 0) × ⋯ × U (a m)` of members of the family. -/
@@ -285,9 +333,11 @@ private lemma cechIsoAux_naturality (n : ℕ) :
     have hδC : (cechSeq_shortExact hF).δ n (n + 1) rfl ≫
         HomologicalComplex.homologyMap ((cechComplexFunctor U).map f.hom) (n + 1) =
           HomologicalComplex.homologyMap ((cechComplexFunctor U).map g.hom) n ≫
-            (cechSeq_shortExact hG).δ n (n + 1) rfl :=
-      HomologicalComplex.HomologySequence.δ_naturality
-        (cechInjectiveCokernelSequenceMap U f) _ _ n (n + 1) rfl
+            (cechSeq_shortExact hG).δ n (n + 1) rfl := by
+      simpa only [cechInjectiveCokernelSequenceMap_τ₁, cechInjectiveCokernelSequenceMap_τ₃] using
+        HomologicalComplex.HomologySequence.δ_naturality
+          (cechInjectiveCokernelSequenceMap U f) (cechSeq_shortExact hF) (cechSeq_shortExact hG)
+          n (n + 1) rfl
     have hδH : AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map g n) ≫
         AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
           (injectiveCokernelSequence_shortExact G) n (n + 1) rfl) =
@@ -304,6 +354,30 @@ private lemma cechIsoAux_naturality (n : ℕ) :
     rw [reassoc_of% hδC, δ_comp_cechIsoAux_hom,
       reassoc_of% (ih (isLerayProd_cokernel hF) (isLerayProd_cokernel hG) g), hδH,
       ← δ_comp_cechIsoAux_hom_assoc]
+
+/-- The comparison is compatible with refinement of Leray families. -/
+private lemma cechIsoAux_refinement {κ : Type v} (V : κ → C) (hV : J.CoversTop V) (n : ℕ) :
+    ∀ {F : Sheaf J AddCommGrpCat.{v}} (hFU : IsLerayProd U F) (hFV : IsLerayProd V F)
+      (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V),
+      HomologicalComplex.homologyMap (cechComplexMap F.obj φ) n ≫
+          (cechIsoAux U hT hU n F hFU).hom = (cechIsoAux V hT hV n F hFV).hom := by
+  induction n with
+  | zero =>
+    intro F _ _ φ
+    exact homologyMap_cechComplexMap_comp_homologyZeroCechIso_hom U hT hU V hV F φ
+  | succ n ih =>
+    intro F hFU hFV φ
+    have := epi_δ_cechSeq V hFV n
+    rw [← cancel_epi ((cechSeq_shortExact hFV).δ n (n + 1) rfl)]
+    have hδ : (cechSeq_shortExact hFV).δ n (n + 1) rfl ≫
+        HomologicalComplex.homologyMap (cechComplexMap F.obj φ) (n + 1) =
+          HomologicalComplex.homologyMap (cechComplexMap (cokernel (Injective.ι F)).obj φ) n ≫
+            (cechSeq_shortExact hFU).δ n (n + 1) rfl :=
+      HomologicalComplex.HomologySequence.δ_naturality
+        (cechInjectiveCokernelSequenceRefinement U V F φ) _ _ n (n + 1) rfl
+    rw [reassoc_of% hδ, δ_comp_cechIsoAux_hom,
+      reassoc_of% (ih (isLerayProd_cokernel hFU) (isLerayProd_cokernel hFV) φ),
+      δ_comp_cechIsoAux_hom]
 
 /-! ### Leray's theorem -/
 
@@ -343,6 +417,23 @@ lemma δ_comp_homologyCechComplexIsoH_one_hom (F : Sheaf J AddCommGrpCat.{v})
           (injectiveCokernelSequence_shortExact F) 0 1 rfl) :=
   δ_comp_cechIsoOne_hom U hT hU F hF
 
+/-- In positive degrees, the comparison of Leray's theorem intertwines the connecting maps
+`Hⁿ(U, Q) ⟶ Hⁿ⁺¹(U, F)` and `Hⁿ(Q) ⟶ Hⁿ⁺¹(F)` of the chosen injective cokernel sequence
+`0 ⟶ F ⟶ I ⟶ Q ⟶ 0`, where `Q` again satisfies the hypotheses of Leray's theorem. The short
+exactness witness of its Čech complexes may be any one. -/
+@[reassoc]
+lemma δ_comp_homologyCechComplexIsoH_succ_hom (F : Sheaf J AddCommGrpCat.{v})
+    (hF : ∀ (m : ℕ) (a : Fin (m + 1) → ι) (k : ℕ),
+      Subsingleton (F.H'.{v} (k + 1) (∏ᶜ fun j ↦ U (a j))))
+    (hQ : ∀ (m : ℕ) (a : Fin (m + 1) → ι) (k : ℕ),
+      Subsingleton ((cokernel (Injective.ι F)).H'.{v} (k + 1) (∏ᶜ fun j ↦ U (a j))))
+    (hS : (cechInjectiveCokernelSequence U F).ShortExact) (n : ℕ) :
+    hS.δ n (n + 1) rfl ≫ (homologyCechComplexIsoH U hT hU F hF (n + 1)).hom =
+      (homologyCechComplexIsoH U hT hU (cokernel (Injective.ι F)) hQ n).hom ≫
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
+          (injectiveCokernelSequence_shortExact F) n (n + 1) rfl) :=
+  δ_comp_cechIsoAux_hom U hT hU n F hF
+
 /-- **Naturality of Leray's theorem.** The comparison `Hⁿ(U, F) ≅ Hⁿ(F)` commutes with the maps
 induced by a morphism `F ⟶ G` of sheaves which both satisfy the hypotheses of Leray's theorem. -/
 @[reassoc]
@@ -357,5 +448,21 @@ theorem homologyMap_comp_homologyCechComplexIsoH_hom {F G : Sheaf J AddCommGrpCa
       (homologyCechComplexIsoH U hT hU F hF n).hom ≫
         AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map f n) :=
   cechIsoAux_naturality U hT hU n hF hG f
+
+/-- **Leray's theorem and refinement.** For two families `U` and `V` covering the terminal object
+on which `F` satisfies the hypotheses of Leray's theorem, the map `Hⁿ(V, F) ⟶ Hⁿ(U, F)` induced by
+a morphism of families `U ⟶ V` commutes with the comparisons with `Hⁿ(F)`. -/
+@[reassoc]
+theorem homologyMap_cechComplexMap_comp_homologyCechComplexIsoH_hom {κ : Type v} (V : κ → C)
+    (hV : J.CoversTop V) (F : Sheaf J AddCommGrpCat.{v})
+    (hFU : ∀ (m : ℕ) (a : Fin (m + 1) → ι) (k : ℕ),
+      Subsingleton (F.H'.{v} (k + 1) (∏ᶜ fun j ↦ U (a j))))
+    (hFV : ∀ (m : ℕ) (a : Fin (m + 1) → κ) (k : ℕ),
+      Subsingleton (F.H'.{v} (k + 1) (∏ᶜ fun j ↦ V (a j))))
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (n : ℕ) :
+    HomologicalComplex.homologyMap (cechComplexMap F.obj φ) n ≫
+        (homologyCechComplexIsoH U hT hU F hFU n).hom =
+      (homologyCechComplexIsoH V hT hV F hFV n).hom :=
+  cechIsoAux_refinement U hT hU V hV n hFU hFV φ
 
 end TauCeti.CategoryTheory

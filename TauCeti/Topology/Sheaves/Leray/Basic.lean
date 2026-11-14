@@ -22,9 +22,8 @@ respects any module structure on both sides that is induced by an action of a ri
 
 This is Leray's acyclicity theorem for a covering of a site
 (`TauCeti.CategoryTheory.homologyCechComplexIsoH`), applied to the site of opens of `X`: the cover
-generates a covering sieve of `⊤`
-(`TauCeti.Topology.ofArrows_mem_grothendieckTopology_of_iSup_eq_top`), and the finite products
-of opens are their intersections.
+covers the terminal open `⊤` (`TopologicalSpace.Opens.coversTop_iff`), and the finite products of
+opens are their intersections (`TauCeti.Topology.homologyCechComplexIsoH_def`).
 
 ## Main results
 
@@ -34,8 +33,11 @@ of opens are their intersections.
   in `F`;
 * `TauCeti.Topology.homologyCechComplexIsoH_zero`: in degree `0` it is the identification of both
   groups with the global sections.
-* `TauCeti.Topology.δ_comp_homologyCechComplexIsoH_one_hom`: in degree `1` the comparison
-  intertwines the connecting maps of the Čech and sheaf injective cokernel sequences.
+* `TauCeti.Topology.δ_comp_homologyCechComplexIsoH_one_hom` and
+  `TauCeti.Topology.δ_comp_homologyCechComplexIsoH_succ_hom`: the comparison intertwines the
+  connecting maps of the Čech and sheaf injective cokernel sequences;
+* `TauCeti.Topology.homologyMap_cechComplexMap_comp_homologyCechComplexIsoH_hom`: the comparison
+  is compatible with refinement of Leray covers.
 
 ## References
 
@@ -75,8 +77,20 @@ def homologyCechComplexIsoH (F : Sheaf (Opens.grothendieckTopology X) AddCommGrp
     (hF : ∀ s : Finset ι, s.Nonempty → ∀ k, Subsingleton (F.H' (k + 1) (s.inf U))) (n : ℕ) :
     ((cechComplexFunctor U).obj F.obj).homology n ≅
       AddCommGrpCat.of (_root_.CategoryTheory.Sheaf.H.{u} F n) :=
-  CategoryTheory.homologyCechComplexIsoH U isTerminalTop
-    (ofArrows_mem_grothendieckTopology_of_iSup_eq_top U hU) F (isLerayProd_of_finset hF) n
+  CategoryTheory.homologyCechComplexIsoH U isTerminalTop ((Opens.coversTop_iff X U).2 hU) F
+    (isLerayProd_of_finset hF) n
+
+/-- Leray's theorem for an open cover is Leray's theorem for the family covering the terminal open
+`⊤`, whose finite products are the finite intersections; the Leray condition on the finite
+products may be witnessed by any proof. -/
+theorem homologyCechComplexIsoH_def (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
+    (hF : ∀ s : Finset ι, s.Nonempty → ∀ k, Subsingleton (F.H' (k + 1) (s.inf U)))
+    (hF' : ∀ (m : ℕ) (a : Fin (m + 1) → ι) (k : ℕ),
+      Subsingleton (F.H' (k + 1) (∏ᶜ fun j ↦ U (a j)))) (n : ℕ) :
+    homologyCechComplexIsoH U hU F hF n =
+      CategoryTheory.homologyCechComplexIsoH U isTerminalTop ((Opens.coversTop_iff X U).2 hU) F
+        hF' n :=
+  (rfl)
 
 /-- In degree `0`, the comparison of Leray's theorem is the identification of both groups with
 the global sections. -/
@@ -100,6 +114,23 @@ lemma δ_comp_homologyCechComplexIsoH_one_hom
   rw [homologyZeroCechIso_def]
   exact CategoryTheory.δ_comp_homologyCechComplexIsoH_one_hom U isTerminalTop _ F _ hS
 
+/-- In positive degrees, the all-degree Leray comparison intertwines the connecting maps
+`Hⁿ(U, Q) ⟶ Hⁿ⁺¹(U, F)` and `Hⁿ(X, Q) ⟶ Hⁿ⁺¹(X, F)` of the Čech and sheaf injective cokernel
+sequences, where `Q` again satisfies the hypotheses of Leray's theorem. The short exactness
+witness may be any one. -/
+@[reassoc]
+lemma δ_comp_homologyCechComplexIsoH_succ_hom
+    (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
+    (hF : ∀ s : Finset ι, s.Nonempty → ∀ k, Subsingleton (F.H' (k + 1) (s.inf U)))
+    (hQ : ∀ s : Finset ι, s.Nonempty → ∀ k,
+      Subsingleton ((cokernel (Injective.ι F)).H' (k + 1) (s.inf U)))
+    (hS : (cechInjectiveCokernelSequence U F).ShortExact) (n : ℕ) :
+    hS.δ n (n + 1) rfl ≫ (homologyCechComplexIsoH U hU F hF (n + 1)).hom =
+      (homologyCechComplexIsoH U hU (cokernel (Injective.ι F)) hQ n).hom ≫
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
+          (injectiveCokernelSequence_shortExact F) n (n + 1) rfl) :=
+  CategoryTheory.δ_comp_homologyCechComplexIsoH_succ_hom U isTerminalTop _ F _ _ hS n
+
 /-- **Naturality of Leray's theorem.** The comparison `Hⁿ(U, F) ≅ Hⁿ(X, F)` commutes with the maps
 induced by a morphism `F ⟶ G` of sheaves which both satisfy the hypotheses of Leray's theorem. -/
 @[reassoc]
@@ -113,5 +144,21 @@ theorem homologyMap_comp_homologyCechComplexIsoH_hom
       (homologyCechComplexIsoH U hU F hF n).hom ≫
         AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map f n) :=
   CategoryTheory.homologyMap_comp_homologyCechComplexIsoH_hom U isTerminalTop _ _ _ f n
+
+/-- **Leray's theorem and refinement.** For two open covers `U` and `V` of `X` which are Leray
+covers for `F`, the map `Hⁿ(V, F) ⟶ Hⁿ(U, F)` induced by a refinement `U ⟶ V` commutes with the
+comparisons with `Hⁿ(X, F)`. -/
+@[reassoc]
+theorem homologyMap_cechComplexMap_comp_homologyCechComplexIsoH_hom
+    {κ : Type u} (V : κ → Opens X) (hV : ⨆ i, V i = ⊤)
+    (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
+    (hFU : ∀ s : Finset ι, s.Nonempty → ∀ k, Subsingleton (F.H' (k + 1) (s.inf U)))
+    (hFV : ∀ s : Finset κ, s.Nonempty → ∀ k, Subsingleton (F.H' (k + 1) (s.inf V)))
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (n : ℕ) :
+    HomologicalComplex.homologyMap (cechComplexMap F.obj φ) n ≫
+        (homologyCechComplexIsoH U hU F hFU n).hom =
+      (homologyCechComplexIsoH V hV F hFV n).hom :=
+  CategoryTheory.homologyMap_cechComplexMap_comp_homologyCechComplexIsoH_hom U isTerminalTop _ V
+    _ F _ _ φ n
 
 end TauCeti.Topology
