@@ -75,7 +75,14 @@ Given an almost complex structure `J`, the cutoff phase form also has a modulus 
 with a test form `ζ` is the pairing of `χ(s) τ = d^c_J H(s) + E` with `dζ`; after an integration
 by parts in the first term, these pointwise bounds reduce that pairing to integral bounds on
 `1 - |α|²` and on `∂bar_a α`. This reduction is carried out in
-`TauCeti.Analysis.PDE.SeibergWitten.CurvatureComparison`.
+`TauCeti.Analysis.PDE.SeibergWitten.CurvatureComparison`. For a holomorphic section,
+`∂bar_a α = 0`, the correction vanishes and `τ = d^c_J log |α|²` away from the zeros of `α`
+(`covariantPhaseForm_eq_twistedDifferential_log`). The operator `∂bar_a` satisfies the product
+rule `∂bar_a (h α) = α ∂bar_(a - a') h + h ∂bar_(a') α` for a second connection form `a' = i b'`
+(`covariantDBar_mul`), so the quotient of two holomorphic sections is holomorphic for the
+difference of their connections where the denominator does not vanish
+(`covariantDBar_sub_eq_zero_of_mul`), and everywhere if the zeros of the denominator have dense
+complement (`covariantDBar_sub_eq_zero_of_dense`).
 
 On a pair of vectors the cutoff current is an explicit combination of the curvature and of the
 covariant derivative: with `s = |α|²` and `χ'` the derivative of `χ`,
@@ -305,18 +312,20 @@ theorem extDeriv_cutoffCurrent (hα : ContDiff ℝ 3 α) (hb : ContDiff ℝ 2 b)
 /-- The cutoff current vanishes at a point `x` with `α x ≠ 0` where `χ` is `1` near `|α x|²`:
 there `d(χ(|α|²) τ) = dτ = db`. -/
 theorem cutoffCurrent_eq_zero (hα : ContDiffAt ℝ 2 α x) (h : α x ≠ 0)
-    (hb : DifferentiableAt ℝ b x) (hχ : χ =ᶠ[𝓝 (normSq (α x))] 1) :
-    cutoffCurrent χ b α x = 0 := by
+    (hχ : χ =ᶠ[𝓝 (normSq (α x))] 1) : cutoffCurrent χ b α x = 0 := by
+  have hτ := (contDiffAt_phaseForm hα h le_rfl).differentiableAt one_ne_zero
   rw [cutoffCurrent_apply,
     (cutoffPhaseForm_eventuallyEq_covariantPhaseForm hα.continuousAt hχ).extDeriv_eq,
-    covariantPhaseForm,
-    extDeriv_add ((contDiffAt_phaseForm hα h le_rfl).differentiableAt one_ne_zero) hb,
-    extDeriv_phaseForm hα h, zero_add, sub_self]
+    covariantPhaseForm]
+  by_cases hb : DifferentiableAt ℝ b x
+  · rw [extDeriv_add hτ hb, extDeriv_phaseForm hα h, zero_add, sub_self]
+  · have hs : ¬ DifferentiableAt ℝ (phaseForm α + b) x := fun h' ↦ hb (by simpa using h'.sub hτ)
+    rw [extDeriv_of_not_differentiableAt hb, extDeriv_of_not_differentiableAt hs, sub_zero]
 
 /-- **Support of the cutoff current.** If `χ = 1` on `(c, ∞)` with `c ≥ 0`, the cutoff current is
 supported in `{|α|² ≤ c}`. -/
 theorem tsupport_cutoffCurrent_subset {c : ℝ} (hc : 0 ≤ c) (hα : ContDiff ℝ 2 α)
-    (hb : Differentiable ℝ b) (hχ : EqOn χ 1 (Ioi c)) :
+    (hχ : EqOn χ 1 (Ioi c)) :
     tsupport (cutoffCurrent χ b α) ⊆ {x | normSq (α x) ≤ c} := by
   refine closure_minimal (fun x hx ↦ ?_)
     (isClosed_le (continuous_normSq.comp hα.continuous) continuous_const)
@@ -326,7 +335,7 @@ theorem tsupport_cutoffCurrent_subset {c : ℝ} (hc : 0 ≤ c) (hα : ContDiff �
     rintro h
     rw [h, normSq_zero] at hlt
     exact hlt.not_ge hc
-  exact hx (cutoffCurrent_eq_zero hα.contDiffAt h₀ (hb x)
+  exact hx (cutoffCurrent_eq_zero hα.contDiffAt h₀
     (eventuallyEq_of_mem (Ioi_mem_nhds hlt) hχ))
 
 /-! ### Gauge invariance -/
@@ -512,21 +521,26 @@ theorem contDiff_modulusPotential (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝 0
     funext fun t ↦ (hasDerivAt_modulusPotential hχ hχ₀ t).deriv]
   exact hχ.div_id_of_eventuallyEq_zero hχ₀
 
-/-- The modulus potential is constant near `0`, for a continuous cutoff vanishing near `0`. -/
-theorem modulusPotential_eventuallyEq (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) :
+/-- The modulus potential is constant near `0`, for a cutoff vanishing near `0`. -/
+theorem modulusPotential_eventuallyEq (hχ₀ : χ =ᶠ[𝓝 0] 0) :
     modulusPotential χ =ᶠ[𝓝 0] fun _ ↦ modulusPotential χ 0 := by
   obtain ⟨ε, hε, hzero⟩ := (nhds_basis_Ioo_pos (0 : ℝ)).eventually_iff.1 hχ₀
   rw [zero_sub, zero_add] at hzero
-  have hcont := hχ.div_id_of_eventuallyEq_zero hχ₀
   filter_upwards [Ioo_mem_nhds (neg_lt_zero.2 hε) hε] with s hs
   have hsub : uIcc 0 s ⊆ Ioo (-ε) ε := ordConnected_Ioo.uIcc_subset ⟨by linarith, hε⟩ hs
+  have hf0 : EqOn (fun t ↦ χ t / t) 0 (uIcc 0 s) := fun t ht ↦ by simp [hzero (hsub ht)]
+  have hint : IntervalIntegrable (fun t ↦ χ t / t) volume 0 s :=
+    intervalIntegrable_iff.2 (integrableOn_zero.congr_fun
+      (fun t ht ↦ (hf0 (uIoc_subset_uIcc ht)).symm) measurableSet_uIoc)
   have h0s : (∫ t in (0 : ℝ)..s, χ t / t) = 0 := by
-    rw [intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ by
-      simp [hzero (hsub ht)]]
+    rw [intervalIntegral.integral_congr hf0]
     exact intervalIntegral.integral_zero
-  rw [modulusPotential, modulusPotential,
-    ← intervalIntegral.integral_add_adjacent_intervals (hcont.intervalIntegrable _ _)
-      (hcont.intervalIntegrable _ _), h0s, add_zero]
+  by_cases h : IntervalIntegrable (fun t ↦ χ t / t) volume 1 0
+  · rw [modulusPotential, modulusPotential,
+      ← intervalIntegral.integral_add_adjacent_intervals h hint, h0s, add_zero]
+  · have h' : ¬ IntervalIntegrable (fun t ↦ χ t / t) volume 1 s := fun h's ↦ h (h's.trans hint.symm)
+    rw [modulusPotential, modulusPotential, intervalIntegral.integral_undef h,
+      intervalIntegral.integral_undef h']
 
 /-- **Pointwise bound on the modulus potential.** If `χ` vanishes on `(0, c)` and `|χ| ≤ 1`, then
 `|H(s)| ≤ |s - 1| / c` for `s ≥ 0`. -/
@@ -692,6 +706,62 @@ theorem cutoffPhaseForm_eq_twistedDifferential_add {H : ℝ → ℝ}
     field_simp
     rw [normSq_apply]
     ring
+
+/-- **The phase form of a holomorphic section.** At a point where `α` does not vanish and
+`∂bar_a α = 0`, the phase form `τ = Im (α⁻¹ dα) + b` is the twisted differential of `log |α|²`:
+`τ = d^c_J log |α|²`. -/
+theorem covariantPhaseForm_eq_twistedDifferential_log (hα : DifferentiableAt ℝ α x)
+    (h₀ : α x ≠ 0) (hdbar : covariantDBar J b α x = 0) :
+    covariantPhaseForm b α x = J.twistedDifferential (fun y ↦ Real.log (‖α y‖ ^ 2)) x := by
+  have hn : normSq (α x) ≠ 0 := (normSq_pos.2 h₀).ne'
+  -- Specialize the modulus-potential decomposition to `χ = 1` away from `0` and `H = log`.
+  have hH : HasDerivAt Real.log ((fun s : ℝ ↦ if s = 0 then (0 : ℝ) else 1) (normSq (α x)) /
+      normSq (α x)) (normSq (α x)) := by
+    simpa [hn, one_div] using Real.hasDerivAt_log hn
+  have h := cutoffPhaseForm_eq_twistedDifferential_add J
+    (χ := fun s : ℝ ↦ if s = 0 then (0 : ℝ) else 1) (b := b) hH (by simp) hα
+  simp only [cutoffPhaseForm_apply, hn, ite_false, one_smul] at h
+  have hE : cutoffDBarForm J (fun s : ℝ ↦ if s = 0 then (0 : ℝ) else 1) b α x = 0 := by
+    ext v
+    simp [hdbar]
+  rw [h, hE, add_zero]
+  simp_rw [normSq_eq_norm_sq]
+
+/-- **Product rule for `∂bar_a`.** For a second connection form `a' = i b'`,
+`∂bar_a (h α) = α ∂bar_(a - a') h + h ∂bar_(a') α`. -/
+theorem covariantDBar_mul {h : E → ℂ} (b' : E → E [⋀^Fin 1]→L[ℝ] ℝ)
+    (hh : DifferentiableAt ℝ h x) (hα : DifferentiableAt ℝ α x) :
+    covariantDBar J b (h * α) x =
+      α x • covariantDBar J (b - b') h x + h x • covariantDBar J b' α x := by
+  ext v
+  simp only [covariantDBar_apply, covariantDeriv_apply, fderiv_mul hh hα, Pi.mul_apply,
+    _root_.add_apply, _root_.smul_apply, smul_eq_mul, Pi.sub_apply,
+    ContinuousAlternatingMap.sub_apply, ofReal_sub]
+  ring
+
+/-- **The quotient of two holomorphic sections is holomorphic.** If `∂bar_a (h α') = 0`,
+`∂bar_(a') α' = 0` and `α'` does not vanish at `x`, then `∂bar_(a - a') h = 0` at `x`. -/
+theorem covariantDBar_sub_eq_zero_of_mul {h α' : E → ℂ} {b' : E → E [⋀^Fin 1]→L[ℝ] ℝ}
+    (hh : DifferentiableAt ℝ h x) (hα' : DifferentiableAt ℝ α' x) (hx : α' x ≠ 0)
+    (hdbar : covariantDBar J b (h * α') x = 0) (hdbar' : covariantDBar J b' α' x = 0) :
+    covariantDBar J (b - b') h x = 0 := by
+  ext v
+  have hv := congrArg (fun φ : E →L[ℝ] ℂ ↦ φ v) hdbar
+  simp only [covariantDBar_mul J b' hh hα', hdbar', _root_.add_apply, _root_.smul_apply,
+    zero_apply, smul_eq_mul, mul_zero, add_zero] at hv
+  exact (mul_eq_zero.1 hv).resolve_left hx
+
+/-- **The quotient of two holomorphic sections is holomorphic everywhere.** If `α = h α'` with
+`h` of class `C¹`, `∂bar_a α = 0` and `∂bar_(a') α' = 0` everywhere, and `α'` is differentiable
+and nonzero on a dense set, then `∂bar_(a - a') h = 0` everywhere, including at the zeros of `α'`.
+-/
+theorem covariantDBar_sub_eq_zero_of_dense {h α' : E → ℂ} {b' : E → E [⋀^Fin 1]→L[ℝ] ℝ}
+    (hb : Continuous b) (hb' : Continuous b') (hh : ContDiff ℝ 1 h) (hα' : Differentiable ℝ α')
+    (hα : α = h * α') (hdense : Dense {y | α' y ≠ 0}) (hdbar : ∀ y, covariantDBar J b α y = 0)
+    (hdbar' : ∀ y, covariantDBar J b' α' y = 0) : covariantDBar J (b - b') h = 0 :=
+  (continuous_covariantDBar J hh (hb.sub hb')).ext_on hdense continuous_const fun y hy ↦
+    covariantDBar_sub_eq_zero_of_mul J (hh.differentiable one_ne_zero y) (hα' y) hy
+      (hα ▸ hdbar y) (hdbar' y)
 
 /-- **Pointwise bound on the correction form.** If `χ` vanishes on `[0, c)` and `|χ| ≤ 1`, then
 `‖2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J‖ ≤ (2 / √c) ‖∂bar_a α‖`. -/

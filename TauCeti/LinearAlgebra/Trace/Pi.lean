@@ -11,18 +11,17 @@ public import Mathlib.LinearAlgebra.Trace
 /-!
 # Traces on finite products
 
-The trace of an endomorphism of a finite dependent product is the sum of the traces of its
-diagonal blocks. In particular, a coordinatewise endomorphism has the sum of the component
-traces, and a coordinate-reindexing endomorphism receives contributions only from fixed
-coordinates.
+The trace of an endomorphism `T` of a finite dependent product of finite free modules is the
+sum of the traces of its diagonal blocks `proj i ∘ₗ T ∘ₗ single k M i`. In particular, the
+trace of a coordinatewise endomorphism is the sum of the component traces.
 
 The results are linear-algebra inputs for character formulas of induced representations and
 finite direct sums of representations.
 
 ## Main results
 
-* `LinearMap.trace_pi`: the trace of an arbitrary endomorphism of a finite dependent product is
-  the sum of the traces of its diagonal blocks.
+* `LinearMap.trace_pi`: the trace of an arbitrary endomorphism of a finite dependent product of
+  finite free modules is the sum of the traces of its diagonal blocks.
 * `LinearMap.trace_piMap`: the trace of a coordinatewise endomorphism `LinearMap.piMap f` of a
   finite dependent product is the sum of the traces of its components.
 -/
@@ -37,8 +36,8 @@ variable {k : Type u} {ι : Type v} [CommSemiring k] [Fintype ι] {M : ι → Ty
   [∀ i, AddCommMonoid (M i)] [∀ i, Module k (M i)] [∀ i, Module.Free k (M i)]
   [∀ i, Module.Finite k (M i)]
 
-/-- The trace of an endomorphism of a finite dependent product is the sum of the traces of its
-diagonal blocks. -/
+/-- The trace of an endomorphism of a finite dependent product of finite free modules is the sum
+of the traces of its diagonal blocks. -/
 theorem trace_pi [DecidableEq ι] (T : ((i : ι) → M i) →ₗ[k] (i : ι) → M i) :
     trace k ((i : ι) → M i) T =
       ∑ i, trace k (M i) (proj i ∘ₗ T ∘ₗ single k M i) := by

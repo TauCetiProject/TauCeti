@@ -172,7 +172,7 @@ theorem norm_add_hodgeStar_add_sq_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v
       inner_quadraticTwoFormPolar_of_cliffordProjection o hQ hkl hω hρ hφ hβ, mul_zero, mul_zero]
   have hsum : F + o.hodgeStar hkl F + η =
       -((r / 4 * (‖φ‖ ^ 2 - ‖β‖ ^ 2 - 1)) • ω + r • X) := by
-    rw [hF, ← coe_quadraticTwoForm_sqrt_smul_add_sub_smul o hQ hkl hω hω₂ hρ h₂ hφ hβ hr]
+    rw [hF, ← coe_quadraticTwoForm_sqrt_smul_add_sub_smul o hQ hkl hω hρ h₂ hφ hβ hr]
     abel
   have hXle : ‖r • X‖ ^ 2 ≤ r ^ 2 * (‖φ‖ ^ 2 * ‖β‖ ^ 2 / 2) := by
     have h := norm_quadraticTwoFormPolar_le o hQ hkl hρ h₂ φ β
@@ -197,7 +197,6 @@ theorem norm_smul_add_hodgeStar_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v))
     ‖(2⁻¹ : ℝ) • (F + o.hodgeStar hkl F)‖ ≤
       r / (4 * √2) * max (1 - ‖φ‖ ^ 2) 0 + (K + 1) / (2 * √2) + ‖η‖ / 2 := by
   have hr0 : 0 ≤ r := by linarith
-  have hs2 : 0 < √2 := Real.sqrt_pos.2 two_pos
   set m := max (1 - ‖φ‖ ^ 2) 0
   have hm : 0 ≤ m := le_max_right _ _
   have hK : 0 ≤ K := nonneg_of_le_div_mul_add_div (sq_nonneg _) (by linarith) hm hβK
@@ -294,7 +293,6 @@ theorem norm_smul_sub_hodgeStar_le_of_forall_le_hermitianForm (hr : 0 ≤ r)
   have h := AlmostComplexStructure.norm_smul_sub_hodgeStar_le_of_forall_le_hermitianForm_apply_self
     h₀ h₂₃ hkl he F hC
   rw [inner_div_two_eq_of_add_hodgeStar_eq hQ hkl hω hω₂ hφ hβ hr hF] at h
-  have hs2 : 0 < √2 := Real.sqrt_pos.2 two_pos
   calc ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖
       ≤ √2 * (r / 8 * (1 - ‖φ‖ ^ 2 + ‖β‖ ^ 2) - ⟪J.kahlerForm, η⟫ / 4 + C) := h
     _ = r / (4 * √2) * (1 - ‖φ‖ ^ 2 + ‖β‖ ^ 2) - ⟪J.kahlerForm, η⟫ / (2 * √2) + √2 * C := by
@@ -316,7 +314,6 @@ theorem norm_smul_sub_hodgeStar_le (hr : 1 ≤ r) {K : ℝ}
       r / (4 * √2) * max (1 - ‖φ‖ ^ 2) 0 + K / (2 * √2) + ‖η‖ / 2 + √2 * C := by
   have hr0 : 0 < r := by linarith
   have hK : 0 ≤ K := nonneg_of_le_div_mul_add_div (sq_nonneg _) hr0 (le_max_right _ _) hβK
-  have hs2 : 0 < √2 := Real.sqrt_pos.2 two_pos
   have h := norm_smul_sub_hodgeStar_le_of_forall_le_hermitianForm h₀ h₂₃ hQ hkl he hφ hβ hr0.le
     hF hC
   set m := max (1 - ‖φ‖ ^ 2) 0
@@ -377,7 +374,6 @@ theorem norm_le_of_add_hodgeStar_eq (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)
   have hsplit : F = (2⁻¹ : ℝ) • (F + o.hodgeStar hkl F) + (2⁻¹ : ℝ) • (F - o.hodgeStar hkl F) := by
     rw [← smul_add, add_add_sub_cancel, ← two_smul ℝ F, smul_smul]
     norm_num
-  have hs2 : 0 < √2 := Real.sqrt_pos.2 two_pos
   calc ‖F‖ ≤ ‖(2⁻¹ : ℝ) • (F + o.hodgeStar hkl F)‖ + ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ := by
         nth_rewrite 1 [hsplit]
         exact norm_add_le _ _
@@ -407,13 +403,12 @@ theorem lieMap_lieMap_eq_of_add_hodgeStar_eq
           exteriorPower.lieMap 2 J.toLinearMap (exteriorPower.lieMap 2 J.toLinearMap η) := by
   have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
   have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
-  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
   set D := exteriorPower.lieMap 2 J.toLinearMap
   set X : ⋀[ℝ]^2 V := (quadraticTwoFormPolar o ρ hkl φ β : ⋀[ℝ]^2 V)
   -- `F + ⋆F = -c ω - r X - η` for a scalar `c`.
   have hsum : F + o.hodgeStar hkl F =
       -((r / 4 * (‖φ‖ ^ 2 - ‖β‖ ^ 2 - 1)) • J.kahlerForm) - r • X - η := by
-    have h := coe_quadraticTwoForm_sqrt_smul_add_sub_smul o hQ hkl hω hω₂ hρ h₂ hφ hβ hr
+    have h := coe_quadraticTwoForm_sqrt_smul_add_sub_smul o hQ hkl hω hρ h₂ hφ hβ hr
     rw [hF]
     linear_combination (norm := module) -h
   -- The anti-self-dual part of `F` is `J`-invariant.

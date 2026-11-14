@@ -137,7 +137,7 @@ private theorem IsSymm.exists_two_one_one_two_of_isUnit (hR : Nat.card (ResidueF
     simpa using isUnit_one_sub_self_of_mem_nonunits (-(2 * a * t))
       ((maximalIdeal R).neg_mem ((maximalIdeal R).mul_mem_left _ (by simpa using htm)))
   have h₂ : B f₀ e₀ = 1 := by rw [← hB.eq, h₁]
-  set s : R := ↑hs.unit⁻¹ with hs_def
+  set s : R := ↑hs.unit⁻¹
   have hss : s * (1 + 2 * a * t) = 1 := hs.val_inv_mul
   set u : M := t • e₀ + f₀ with hu_def
   set w : M := s • e₀ with hw_def
@@ -151,7 +151,7 @@ private theorem IsSymm.exists_two_one_one_two_of_isUnit (hR : Nat.card (ResidueF
     linear_combination hss
   have hwu : B w u = 1 := by rw [← hB.eq, huw]
   -- Second, `B w w = 2d` with `d = a s²` a unit, and `D = 4d - 1` is a unit.
-  set d : R := a * s ^ 2 with hd_def
+  set d : R := a * s ^ 2
   have hww : B w w = 2 * d := by
     simp only [hw_def, map_smul, LinearMap.smul_apply, smul_eq_mul, ha]
     ring
@@ -352,7 +352,6 @@ private theorem equivalent_of_isSquare_det_mul_det_of_even (hR : Nat.card (Resid
   induction n using Nat.strong_induction_on with
   | _ n ih =>
   intro P Q _ _ _ _ B C hB hC hBeven hCeven b c hBdet hCdet hsq
-  have h2 := two_mem_maximalIdeal_of_card_residueField_eq_two hR
   obtain hn | hn := lt_or_ge n 2
   · exact equivalent_of_lt_two_of_even hR hn hBeven b c hBdet
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 + 1 := ⟨n - 2, by omega⟩
@@ -410,7 +409,7 @@ private theorem IsSymm.exists_pair_mem_span_of_sub_mem (hR : Nat.card (ResidueFi
   set W := Submodule.span R {e₀, f₀}
   have hu : IsUnit (B e₀ f₀) := by
     simpa using TauCeti.isUnit_add_of_isUnit_of_not_isUnit isUnit_one ((mem_maximalIdeal _).mp h₁)
-  set v : R := ↑hu.unit⁻¹ with hv
+  set v : R := ↑hu.unit⁻¹
   have hvu : v * B e₀ f₀ = 1 := hu.val_inv_mul
   -- Work in `W`, with `e₀` and `v f₀`, which pair to `1`.
   let x : W := ⟨e₀, Submodule.subset_span (by simp)⟩
@@ -471,9 +470,9 @@ private theorem IsSymm.sub_mem_restrict_of_sub_mem_span_pair (h2 : (2 : R) ∈ m
       simp only [map_add, map_smul, smul_eq_mul]
       exact (maximalIdeal R).add_mem ((maximalIdeal R).mul_mem_left γ (hx' e' (by simp)))
         ((maximalIdeal R).mul_mem_left δ (hx' f' (by simp)))
-    obtain ⟨α, hα, β, hβ, hαβ⟩ := hC.exists_mem_maximalIdeal_of_mem_span_pair (h₁ ▸ isUnit_one)
-      (hee ▸ (maximalIdeal R).mul_mem_right q h2) (hff ▸ (maximalIdeal R).mul_mem_right q h2)
-      (hψ x) (hpair e he (Submodule.subset_span (by simp)))
+    obtain ⟨α, hα, β, hβ, hαβ⟩ := hC.exists_mem_maximalIdeal_of_mem_span_pair
+      (h₁ ▸ isUnit_one) (hff ▸ (maximalIdeal R).mul_mem_right q h2) (hψ x)
+      (hpair e he (Submodule.subset_span (by simp)))
       (hpair f hf (Submodule.subset_span (by simp)))
     exact ⟨α, hα, β, hβ, by rw [← hαβ, sub_add_cancel]⟩
   -- The discarded components change the pairings by multiples of their coordinates.

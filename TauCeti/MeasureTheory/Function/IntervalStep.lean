@@ -106,7 +106,6 @@ theorem exists_intervalStep_dist_lt [PseudoMetricSpace E] (g : ℝ → E) {a b �
 theorem intervalStep_eq {a δ t : ℝ} (hδ : 0 < δ) (g : ℝ → E) (i : ℕ)
     (ht : t ∈ Ico (a + i * δ) (a + (i + 1) * δ)) :
     intervalStep a δ g t = g (a + i * δ) := by
-  have hi : 0 ≤ (i : ℝ) := Nat.cast_nonneg _
   have ht0 : 0 ≤ (t - a) / δ := by
     apply div_nonneg _ hδ.le
     nlinarith [ht.1]

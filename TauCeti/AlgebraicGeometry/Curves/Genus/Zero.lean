@@ -163,7 +163,7 @@ theorem nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one
   have hF := IsCurveOver.isFunctionField (k := k) (X := X)
   have hgF : TauCeti.genus k X.functionField = 0 := by
     rw [← SchemeWeilDivisor.genus_eq_genus_functionField hex hdim hF hk, genus_def, hg]
-  exact TauCeti.nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one hF hk hgF
+  exact TauCeti.nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one hF hgF
     ⟨SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim D, by
       rw [SchemeWeilDivisor.degree_equivFunctionFieldDivisor, hD]⟩
 

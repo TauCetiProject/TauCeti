@@ -88,9 +88,22 @@ theorem LFunction_inv_conj_eq_zero_iff (s : ℂ) :
   · rw [LFunction_inv_conj χ (not_and_or.mp h), map_eq_zero]
 
 /-- The derivatives of the continued L-functions of inverse characters satisfy the same
-reflection identity wherever the L-functions are holomorphic. -/
-theorem deriv_LFunction_inv_conj {s : ℂ} (hs : s ≠ 1 ∨ χ ≠ 1) :
+reflection identity. At the pole `1` of the principal character both sides are `0`, as the
+L-function is not differentiable there. -/
+theorem deriv_LFunction_inv_conj (s : ℂ) :
     deriv χ⁻¹.LFunction (conj s) = conj (deriv χ.LFunction s) := by
+  by_cases hs : s = 1 ∧ χ = 1
+  · obtain ⟨rfl, rfl⟩ := hs
+    have hnd : ¬ DifferentiableAt ℂ (LFunctionTrivChar N) 1 := by
+      intro hd
+      have h0 : Filter.Tendsto (fun z ↦ (z - 1) * LFunctionTrivChar N z) (𝓝[≠] 1) (𝓝 0) := by
+        have h := (((continuous_id.sub (continuous_const (y := (1 : ℂ)))).tendsto (1 : ℂ)).mul
+          hd.continuousAt.tendsto).mono_left (nhdsWithin_le_nhds (s := {1}ᶜ))
+        simpa using h
+      have h1 := tendsto_nhds_unique h0 (LFunctionTrivChar_residue_one (N := N))
+      exact LFunctionTrivChar₁_apply_one_ne_zero N (by simpa using h1.symm)
+    simp [deriv_zero_of_not_differentiableAt hnd]
+  have hs := not_and_or.mp hs
   have hloc : χ⁻¹.LFunction =ᶠ[𝓝 (conj s)] conj ∘ χ.LFunction ∘ conj := by
     rcases hs with hs | hχ
     · have hs' : conj s ≠ 1 := fun h ↦ hs (by simpa using congrArg conj h)
@@ -111,12 +124,11 @@ theorem LFunction_conj_of_isQuadratic (hχ : χ.IsQuadratic) {s : ℂ}
     (hs : s ≠ 1 ∨ χ ≠ 1) : χ.LFunction (conj s) = conj (χ.LFunction s) := by
   simpa only [hχ.inv] using LFunction_inv_conj χ hs
 
-/-- The derivative of a quadratic character's continued L-function commutes with conjugation
-wherever the L-function is holomorphic. -/
+/-- The derivative of a quadratic character's continued L-function commutes with conjugation. -/
 @[simp]
-theorem deriv_LFunction_conj_of_isQuadratic (hχ : χ.IsQuadratic) {s : ℂ}
-    (hs : s ≠ 1 ∨ χ ≠ 1) : deriv χ.LFunction (conj s) = conj (deriv χ.LFunction s) := by
-  simpa only [hχ.inv] using deriv_LFunction_inv_conj χ hs
+theorem deriv_LFunction_conj_of_isQuadratic (hχ : χ.IsQuadratic) (s : ℂ) :
+    deriv χ.LFunction (conj s) = conj (deriv χ.LFunction s) := by
+  simpa only [hχ.inv] using deriv_LFunction_inv_conj χ s
 
 /-- The continued L-function of a quadratic character is real at real arguments away from its
 possible pole at `1`, not only in the half-plane of convergence. -/
@@ -127,12 +139,11 @@ theorem LFunction_im_eq_zero_of_isQuadratic (hχ : χ.IsQuadratic) (x : ℝ)
   rw [conj_ofReal] at h
   exact conj_eq_iff_im.mp h.symm
 
-/-- The derivative of a quadratic character's continued L-function is real at real arguments
-wherever the L-function is holomorphic. -/
+/-- The derivative of a quadratic character's continued L-function is real at real arguments. -/
 @[simp]
-theorem deriv_LFunction_im_eq_zero_of_isQuadratic (hχ : χ.IsQuadratic) (x : ℝ)
-    (hx : x ≠ 1 ∨ χ ≠ 1) : (deriv χ.LFunction x).im = 0 := by
-  have h := deriv_LFunction_conj_of_isQuadratic hχ (s := x) (by simpa using hx)
+theorem deriv_LFunction_im_eq_zero_of_isQuadratic (hχ : χ.IsQuadratic) (x : ℝ) :
+    (deriv χ.LFunction x).im = 0 := by
+  have h := deriv_LFunction_conj_of_isQuadratic hχ (s := x)
   rw [conj_ofReal] at h
   exact conj_eq_iff_im.mp h.symm
 

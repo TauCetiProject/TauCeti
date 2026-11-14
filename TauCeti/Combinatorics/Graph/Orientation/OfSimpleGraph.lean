@@ -114,7 +114,7 @@ theorem dart_of_mem_toDartOrientation (o : (Graph.ofSimpleGraph H).Orientation) 
 theorem toDartOrientation_injective :
     Function.Injective (toDartOrientation (H := H)) := by
   intro o p h
-  apply ext_of_tail
+  apply ext
   intro e
   let d := o.dart e
   have hed : (⟨d.edge, d.edge_mem⟩ : (Graph.ofSimpleGraph H).edgeSet) = e := by

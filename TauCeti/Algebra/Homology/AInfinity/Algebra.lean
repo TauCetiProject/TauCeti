@@ -54,8 +54,6 @@ universe uR uA
 
 namespace TauCeti
 
--- Interface provenance: the first `A∞` algebra prototype in
--- `TauCetiRoadmap/DGAInfinity/Suggested.lean` supplied the public shape packaged below.
 /-- An uncurved nonunital `A∞` algebra over a commutative ring.
 
 The Taylor map is stored alongside the operations because suspension depends on the degrees of
@@ -65,9 +63,9 @@ coderivation, and `bar_square_zero` is the stored Stasheff law. -/
 structure AInfinityAlgebra (R : Type uR) (A : Type uA) [CommRing R] [AddCommGroup A]
     [Module R A] where
   /-- The internal cohomological grading of the carrier. -/
-  grading : InternalGrading R A
+  grading : InternalGrading R A ℤ
   /-- The unsuspended arity-`n` operation. -/
-  m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A
+  m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A
   /-- The arity-zero operation vanishes: the algebra is uncurved. -/
   m_zero : m 0 = 0
   /-- The operation `m n` has cohomological degree `2 - n`. -/
@@ -147,8 +145,8 @@ theorem stasheff (𝒜 : AInfinityAlgebra R A) (n : ℕ)
 
 /-- Construct an `A∞` algebra from homogeneous operations satisfying the unsuspended Stasheff
 identities and a Taylor map realizing their suspension. -/
-def ofStasheff (G : InternalGrading R A)
-    (m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A) (hm0 : m 0 = 0)
+def ofStasheff (G : InternalGrading R A ℤ)
+    (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A) (hm0 : m 0 = 0)
     (hm : ∀ n, 0 < n →
       MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
     (F : ReducedTensorWords R A →ₗ[R] A) (hFm : AInfinity.IsSuspension G F m)
@@ -165,18 +163,18 @@ def ofStasheff (G : InternalGrading R A)
     (hFm.comp_self_eq_zero_iff_forall_stasheffSum_eq_zero hm).2 hSI
 
 @[simp]
-theorem ofStasheff_grading (G : InternalGrading R A)
-    (m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A) (hm0 hm F hFm hSI) :
+theorem ofStasheff_grading (G : InternalGrading R A ℤ)
+    (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A) (hm0 hm F hFm hSI) :
     (ofStasheff G m hm0 hm F hFm hSI).grading = G := (rfl)
 
 @[simp]
-theorem ofStasheff_m (G : InternalGrading R A)
-    (m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A) (hm0 hm F hFm hSI) :
+theorem ofStasheff_m (G : InternalGrading R A ℤ)
+    (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A) (hm0 hm F hFm hSI) :
     (ofStasheff G m hm0 hm F hFm hSI).m = m := (rfl)
 
 @[simp]
-theorem ofStasheff_taylor (G : InternalGrading R A)
-    (m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A) (hm0 hm F hFm hSI) :
+theorem ofStasheff_taylor (G : InternalGrading R A ℤ)
+    (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A) (hm0 hm F hFm hSI) :
     (ofStasheff G m hm0 hm F hFm hSI).taylor = F := (rfl)
 
 /-- `A∞` algebras are determined by their grading and unsuspended operations; the Taylor map is
@@ -197,7 +195,7 @@ theorem ext {𝒜 𝒜' : AInfinityAlgebra R A} (hG : 𝒜.grading = 𝒜'.gradi
 
 /-- Construct an `A∞` algebra from a Taylor map of degree one for the suspended grading whose bar
 coderivation squares to zero.  Its operations are the desuspension of the Taylor map. -/
-noncomputable def ofTaylor (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+noncomputable def ofTaylor (G : InternalGrading R A ℤ) (F : ReducedTensorWords R A →ₗ[R] A)
     (hF : LinearMap.IsHomogeneous F (ReducedTensorWords.gradedPiece (G.shift 1))
       (G.shift 1).piece 1)
     (hsq : ReducedTensorWords.gradedCoderiv (G.shift 1) F 1 ∘ₗ
@@ -206,26 +204,26 @@ noncomputable def ofTaylor (G : InternalGrading R A) (F : ReducedTensorWords R A
   grading := G
   m := AInfinity.desuspension G F
   m_zero := AInfinity.desuspension_zero G F
-  m_degree _ hn := AInfinity.isHomogeneous_desuspension hF hn
+  m_degree _ _ := AInfinity.isHomogeneous_desuspension hF
   taylor := F
   taylor_isSuspension := AInfinity.isSuspension_desuspension G F
   bar_square_zero := hsq
 
 @[simp]
-theorem ofTaylor_grading (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+theorem ofTaylor_grading (G : InternalGrading R A ℤ) (F : ReducedTensorWords R A →ₗ[R] A)
     (hF hsq) : (ofTaylor G F hF hsq).grading = G := (rfl)
 
 @[simp]
-theorem ofTaylor_m (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A) (hF hsq) :
+theorem ofTaylor_m (G : InternalGrading R A ℤ) (F : ReducedTensorWords R A →ₗ[R] A) (hF hsq) :
     (ofTaylor G F hF hsq).m = AInfinity.desuspension G F := (rfl)
 
 @[simp]
-theorem ofTaylor_taylor (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+theorem ofTaylor_taylor (G : InternalGrading R A ℤ) (F : ReducedTensorWords R A →ₗ[R] A)
     (hF hsq) : (ofTaylor G F hF hsq).taylor = F := (rfl)
 
 /-- The bar differential of the algebra built from a Taylor map is the coderivation it generates. -/
 @[simp]
-theorem barDifferential_ofTaylor (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+theorem barDifferential_ofTaylor (G : InternalGrading R A ℤ) (F : ReducedTensorWords R A →ₗ[R] A)
     (hF hsq) :
     (ofTaylor G F hF hsq).barDifferential = ReducedTensorWords.gradedCoderiv (G.shift 1) F 1 :=
   (rfl)
@@ -630,15 +628,15 @@ theorem m_one_m_two (𝒜 : AInfinityAlgebra R A) (x y : A) :
 /-- The associator of the binary operation as a trilinear map: the difference of the left- and
 right-associated products. -/
 private theorem exists_multilinear_assoc_sub (𝒜 : AInfinityAlgebra R A) :
-    ∃ F : MultilinearMap R (fun _ : Fin 3 ↦ A) A, ∀ a b c : A,
+    ∃ F : MultilinearMap (RingHom.id R) (fun _ : Fin 3 ↦ A) A, ∀ a b c : A,
       F ![a, b, c] = 𝒜.m 2 ![𝒜.m 2 ![a, b], c] - 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
-  let L : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+  let L : MultilinearMap (RingHom.id R) (fun _ : Fin 3 ↦ A) A :=
     (𝒜.mul.compMultilinearMap (𝒜.m 2)).uncurryRight
-  let Qc : A →ₗ[R] MultilinearMap R (fun _ : Fin 2 ↦ A) A :=
+  let Qc : A →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin 2 ↦ A) A :=
     { toFun := fun a ↦ (𝒜.mul a).compMultilinearMap (𝒜.m 2)
       map_add' := fun a b ↦ by ext v; simp
       map_smul' := fun r a ↦ by ext v; simp }
-  let Q : MultilinearMap R (fun _ : Fin 3 ↦ A) A := Qc.uncurryLeft
+  let Q : MultilinearMap (RingHom.id R) (fun _ : Fin 3 ↦ A) A := Qc.uncurryLeft
   have L_apply (a b c : A) : L ![a, b, c] = 𝒜.m 2 ![𝒜.m 2 ![a, b], c] := by
     simp only [L, MultilinearMap.uncurryRight_apply, LinearMap.compMultilinearMap_apply,
       mul_apply]
@@ -657,18 +655,18 @@ private theorem exists_multilinear_assoc_sub (𝒜 : AInfinityAlgebra R A) :
 /-- The ternary operation against the unary boundary, as a trilinear map: the boundary of the
 ternary operation plus the three terms in which a unary boundary meets it. -/
 private theorem exists_multilinear_boundary_terms (𝒜 : AInfinityAlgebra R A) :
-    ∃ G : MultilinearMap R (fun _ : Fin 3 ↦ A) A, ∀ a b c : A,
+    ∃ G : MultilinearMap (RingHom.id R) (fun _ : Fin 3 ↦ A) A, ∀ a b c : A,
       G ![a, b, c] = 𝒜.m 1 ![𝒜.m 3 ![a, b, c]] + 𝒜.m 3 ![𝒜.m 1 ![a], b, c] +
         𝒜.m 3 ![𝒜.grading.koszulTwist 1 a, 𝒜.m 1 ![b], c] +
         𝒜.m 3 ![𝒜.grading.koszulTwist 1 a, 𝒜.grading.koszulTwist 1 b, 𝒜.m 1 ![c]] := by
-  let D : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+  let D : MultilinearMap (RingHom.id R) (fun _ : Fin 3 ↦ A) A :=
     𝒜.differential.compMultilinearMap (𝒜.m 3)
-  let T₀ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+  let T₀ : MultilinearMap (RingHom.id R) (fun _ : Fin 3 ↦ A) A :=
     (𝒜.m 3).compLinearMap ![𝒜.differential, LinearMap.id, LinearMap.id]
-  let T₁ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+  let T₁ : MultilinearMap (RingHom.id R) (fun _ : Fin 3 ↦ A) A :=
     (𝒜.m 3).compLinearMap
       ![𝒜.grading.koszulTwist 1, 𝒜.differential, LinearMap.id]
-  let T₂ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
+  let T₂ : MultilinearMap (RingHom.id R) (fun _ : Fin 3 ↦ A) A :=
     (𝒜.m 3).compLinearMap
       ![𝒜.grading.koszulTwist 1, 𝒜.grading.koszulTwist 1, 𝒜.differential]
   have D_apply (a b c : A) : D ![a, b, c] = 𝒜.differential (𝒜.m 3 ![a, b, c]) := rfl
@@ -704,9 +702,9 @@ theorem m_one_m_three (𝒜 : AInfinityAlgebra R A) (x y z : A) :
         - 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 𝒜.grading.koszulTwist 1 y, 𝒜.m 1 ![z]] := by
   obtain ⟨F, hF⟩ := 𝒜.exists_multilinear_assoc_sub
   obtain ⟨G, hG⟩ := 𝒜.exists_multilinear_boundary_terms
-  have smul_first (f : MultilinearMap R (fun _ : Fin 3 ↦ A) A) (r : R) (a b c : A) :
+  have smul_first (f : MultilinearMap (RingHom.id R) (fun _ : Fin 3 ↦ A) A) (r : R) (a b c : A) :
       f ![r • a, b, c] = r • f ![a, b, c] := f.cons_smul ![b, c] r a
-  have smul_second (f : MultilinearMap R (fun _ : Fin 3 ↦ A) A) (r : R) (a b c : A) :
+  have smul_second (f : MultilinearMap (RingHom.id R) (fun _ : Fin 3 ↦ A) A) (r : R) (a b c : A) :
       f ![a, r • b, c] = r • f ![a, b, c] := (f.curryLeft a).cons_smul ![c] r b
   -- On homogeneous inputs the two Koszul twists produce exactly the signs of the graded identity.
   have hE : G + F = 0 := by

@@ -417,8 +417,7 @@ theorem _root_.Continuous.moorePath_symm {f : Y → MoorePath X} (hf : Continuou
     Continuous fun y ↦ (f y).symm := by
   refine continuous_iff.2 ⟨by simp only [length_symm]; fun_prop, ?_⟩
   simp only [symm_apply]
-  exact (hf.comp continuous_fst).moorePath_eval
-    (((continuous_length.comp hf).comp continuous_fst).sub continuous_snd)
+  fun_prop
 
 /-! ### Reparametrization to a given length -/
 
@@ -446,6 +445,7 @@ theorem length_rescale (γ : MoorePath X) (ℓ : ℝ≥0) : (γ.rescale ℓ).len
 theorem source_rescale (γ : MoorePath X) (ℓ : ℝ≥0) : (γ.rescale ℓ).source = γ.source := by
   rw [source_def, rescale_apply, mul_zero, zero_div, source_def]
 
+@[simp]
 theorem target_rescale (γ : MoorePath X) {ℓ : ℝ≥0} (hℓ : ℓ ≠ 0) :
     (γ.rescale ℓ).target = γ.target := by
   rw [target_def, length_rescale, rescale_apply, mul_div_cancel_right₀ _ hℓ, target_def]
@@ -482,9 +482,7 @@ theorem _root_.Continuous.moorePath_rescale {f : Y → MoorePath X} {g : Y → �
     Continuous fun y ↦ (f y).rescale (g y) := by
   refine continuous_iff.2 ⟨hg, ?_⟩
   simp only [rescale_apply]
-  exact (hf.comp continuous_fst).moorePath_eval
-    ((((continuous_length.comp hf).comp continuous_fst).mul continuous_snd).div₀
-      (hg.comp continuous_fst) fun p ↦ h0 p.1)
+  fun_prop (disch := exact fun p ↦ h0 p.1)
 
 end MoorePath
 
@@ -547,6 +545,12 @@ theorem map_map (g : C(Y, Z)) (f : C(X, Y)) (γ : MoorePath X) :
     (γ.map f).map g = γ.map (g.comp f) :=
   (rfl)
 
+/-- The image of a Moore path under a constant map is the constant path of the same length. -/
+@[simp]
+theorem map_const (y : Y) (γ : MoorePath X) :
+    γ.map (.const X y) = constOfLength y γ.length :=
+  (rfl)
+
 @[fun_prop]
 theorem continuous_map (f : C(X, Y)) : Continuous (map f : MoorePath X → MoorePath Y) :=
   continuous_iff.2 ⟨continuous_length, f.continuous.comp continuous_eval⟩
@@ -566,9 +570,7 @@ theorem mem_pathsBetween {A B : Set X} {γ : MoorePath X} :
 def endpointsBetween (A B : Set X) : C(pathsBetween A B, A × B) where
   toFun γ := (⟨γ.val.source, (mem_pathsBetween.mp γ.property).1⟩,
     ⟨γ.val.target, (mem_pathsBetween.mp γ.property).2⟩)
-  continuous_toFun :=
-    ((continuous_source.comp continuous_subtype_val).subtype_mk _).prodMk
-      ((continuous_target.comp continuous_subtype_val).subtype_mk _)
+  continuous_toFun := by fun_prop
 
 -- Keep endpoint evaluation bundled under `simp` so endpoint-preserving comparison lemmas fire.
 theorem endpointsBetween_apply (A B : Set X) (γ : pathsBetween A B) :
@@ -589,7 +591,7 @@ theorem refl_mem_pathsBetween {A B : Set X} {x : X} (hA : x ∈ A) (hB : x ∈ B
 /-- The constant Moore paths of duration zero, parametrized by `A ∩ B`. -/
 def constantBetween (A B : Set X) : C(↥(A ∩ B), pathsBetween A B) where
   toFun x := ⟨refl x.val, refl_mem_pathsBetween x.property.1 x.property.2⟩
-  continuous_toFun := (continuous_refl.comp continuous_subtype_val).subtype_mk _
+  continuous_toFun := by fun_prop
 
 @[simp]
 theorem coe_constantBetween (A B : Set X) (x : ↥(A ∩ B)) :
@@ -598,7 +600,7 @@ theorem coe_constantBetween (A B : Set X) (x : ↥(A ∩ B)) :
 
 theorem trans_mem_pathsBetween {A B : Set X} {γ δ : MoorePath X} (hγ : γ.source ∈ A)
     (hδ : δ.target ∈ B) (h : γ.target = δ.source) : γ.trans δ h ∈ pathsBetween A B :=
-  ⟨by rw [source_trans]; exact hγ, by rw [target_trans]; exact hδ⟩
+  ⟨by rwa [source_trans], by rwa [target_trans]⟩
 
 theorem symm_mem_pathsBetween {A B : Set X} {γ : MoorePath X} :
     γ.symm ∈ pathsBetween B A ↔ γ ∈ pathsBetween A B := by
@@ -687,6 +689,16 @@ def length (γ : MooreLoopSpace X x) : ℝ≥0 :=
 @[simp]
 theorem length_toMoorePath (γ : MooreLoopSpace X x) : γ.toMoorePath.length = γ.length :=
   (rfl)
+
+/-- A Moore loop starts at its base point. -/
+@[simp]
+theorem toMoorePath_apply_zero (γ : MooreLoopSpace X x) : γ.toMoorePath 0 = x :=
+  γ.source_eq
+
+/-- A Moore loop is back at its base point at its length. -/
+@[simp]
+theorem toMoorePath_apply_length (γ : MooreLoopSpace X x) : γ.toMoorePath γ.length = x :=
+  γ.target_eq
 
 @[simp]
 theorem length_one : (1 : MooreLoopSpace X x).length = 0 :=
@@ -804,6 +816,13 @@ theorem toMoorePath_map (f : C(X, Y)) (hf : f x = y) (γ : MooreLoopSpace X x) :
 @[simp]
 theorem length_map (f : C(X, Y)) (hf : f x = y) (γ : MooreLoopSpace X x) :
     (map f hf γ).length = γ.length :=
+  (rfl)
+
+/-- The Moore loop map of the constant map at the base point sends a loop to the constant loop of
+the same length. -/
+@[simp]
+theorem map_const_apply (hy : ContinuousMap.const X y x = y) (γ : MooreLoopSpace X x) :
+    map (.const X y) hy γ = constOfLength y γ.length :=
   (rfl)
 
 @[simp]

@@ -175,7 +175,7 @@ theorem exists_vertex_eq_inr_smul_of_isCuspPoint (hmap : ∀ i, σ.map i ∈ Γ)
     (hlf : LocallyFinite fun γ : Γ ↦ (γ : PSL(2, ℝ)) • P.carrier)
     {c : OnePoint ℝ} (hc : Γ.IsCuspPoint c) : ∃ γ : Γ, ∃ j, P.vertex j = .inr (γ • c) := by
   classical
-  have : DiscreteTopology Γ := TauCeti.discreteTopology_of_locallyFinite_smul
+  have : DiscreteTopology Γ := TauCeti.discreteTopology_of_locallyFinite_smul (fun _ ↦ by fun_prop)
     (P.nonempty_interior_carrier.mono interior_subset) hlf
   by_contra hne
   simp only [not_exists] at hne

@@ -79,7 +79,7 @@ theorem isSeparable_adjoinRoot_X_pow_sub_C_X (hn : (n : k) ≠ 0) :
     Algebra.IsSeparable (RatFunc k) (AdjoinRoot (X ^ n - C (RatFunc.X : RatFunc k))) := by
   have hn' : (n : RatFunc k) ≠ 0 := by
     rwa [← map_natCast (algebraMap k (RatFunc k)), _root_.map_ne_zero]
-  exact isSeparable_of_pow_eq_of_adjoin_eq_top hn' RatFunc.X_ne_zero
+  exact isSeparable_of_pow_eq_of_adjoin_eq_top hn'
     (by simpa [AdjoinRoot.algebraMap_eq] using root_X_pow_sub_C_pow n (RatFunc.X : RatFunc k))
     (IntermediateField.adjoin_root_eq_top _)
 

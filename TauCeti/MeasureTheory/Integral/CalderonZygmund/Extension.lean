@@ -32,7 +32,7 @@ namespace ContinuousLinearMap
 open MeasureTheory Metric Set TauCeti
 open scoped ENNReal NNReal
 
-variable {ι : Type*} [Fintype ι] [Nonempty ι] {H K : Type*}
+variable {ι : Type*} [Fintype ι] {H K : Type*}
   [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
   [NormedAddCommGroup K] [InnerProductSpace ℝ K] [CompleteSpace K]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -56,7 +56,7 @@ theorem exists_strongTypeExtension_of_setLIntegral_compl_closedBall_le
       ∀ (f : Lp H 2 (volume : Measure (ι → ℝ))) (hf : MemLp f p volume),
         (S (hf.toLp f) : (ι → ℝ) → K) =ᵐ[volume] T f := by
   obtain ⟨C, hC⟩ := exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le (ι := ι) (H := H)
-    (K := K) 2 (M := ‖T‖ₑ) enorm_ne_top hB hB' hp hp_top
+    (K := K) 2 (M := ‖T‖ₑ) eNorm_ne_top hB hB' hp hp_top
   have hC' : ∀ f : Lp H 2 (volume : Measure (ι → ℝ)), MemLp f p volume →
       eLpNorm (T f) p volume ≤ C * eLpNorm f p volume := fun f _ => hC T le_rfl hT hT' f
   exact ⟨C, strongTypeExtension T C hC' hp_top,

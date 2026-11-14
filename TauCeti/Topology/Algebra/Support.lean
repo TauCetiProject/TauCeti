@@ -29,6 +29,8 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
   in `U`, times a function continuous on `U`, is continuous.
 * `TauCeti.tsupport_snd_smul_fst_subset`: the topological support of `(x, y) ↦ f y • g x` lies in
   `tsupport g ×ˢ tsupport f`.
+* `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
+  compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
 -/
 
 public section
@@ -110,3 +112,11 @@ theorem mulTSupport_comp_symm_subset_interior_image (e : X ≃ₜ Y) {F : X → 
   exact Set.image_mono h
 
 end Homeomorph
+
+/-- A function of `Ψ y` that vanishes outside `T` is compactly supported when the preimage under
+`Ψ` of `T` lies in a compact set. -/
+theorem HasCompactSupport.comp_of_forall_mem_imp_mem {X Y Z : Type*} [TopologicalSpace X]
+    [R1Space X] [Zero Z] {Ψ : X → Y} {T : Set Y} {K : Set X} (hK : IsCompact K)
+    (hΨK : ∀ y, Ψ y ∈ T → y ∈ K) {k : Y → Z}
+    (hkz : ∀ z ∉ T, k z = 0) : HasCompactSupport fun y ↦ k (Ψ y) :=
+  HasCompactSupport.intro hK fun y hy ↦ hkz _ fun h ↦ hy (hΨK y h)
