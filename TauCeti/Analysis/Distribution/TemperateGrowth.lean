@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
@@ -17,8 +18,10 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 /-!
 # Derivatives of functions of temperate growth
 
-A smooth function whose iterated derivatives are all bounded has temperate growth. Typical examples
-are smooth functions which outside a ball agree with a homogeneous function of degree at most `0`.
+A smooth function whose iterated derivatives are all bounded — or even only those of positive order,
+by the mean value theorem — has temperate growth. Typical examples
+are smooth functions which outside a ball agree with a homogeneous function of degree at most `0`,
+and diffeomorphisms whose derivatives of positive order are bounded.
 So does a smooth function satisfying symbol estimates
 `‖D^k f(x)‖ ≤ C_k (1 + ‖x‖ ^ 2) ^ ((m - k) / 2)` of some real order `m`, and the rescaled
 Bessel potential `x ↦ (1 + ‖c • x‖ ^ 2) ^ r`.
@@ -41,6 +44,8 @@ A measure of temperate growth is finite on compact sets.
 
 * `Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le`: bounded derivatives give temperate
   growth.
+* `Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_of_pos`: bounded positive-order derivatives
+  give temperate growth.
 * `Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow`: symbol estimates
   give temperate growth.
 * `Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow`: the rescaled Bessel potential has
@@ -73,6 +78,28 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddComm
 theorem of_norm_iteratedFDeriv_le (hf : ContDiff ℝ ∞ f)
     (hbd : ∀ n : ℕ, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ C) : f.HasTemperateGrowth :=
   ⟨hf, fun n ↦ ⟨0, (hbd n).imp fun C hC x ↦ by simpa using hC x⟩⟩
+
+/-- A smooth function whose iterated derivatives of all positive orders are bounded has temperate
+growth: the mean value theorem bounds `‖f x‖` linearly by `‖f 0‖ + C₁ ‖x‖`. -/
+theorem of_norm_iteratedFDeriv_le_of_pos (hf : ContDiff ℝ ∞ f)
+    (hbd : ∀ n : ℕ, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ C) : f.HasTemperateGrowth := by
+  refine ⟨hf, fun n ↦ ?_⟩
+  rcases n with _ | n
+  · obtain ⟨C₁, hC₁⟩ := hbd 1 le_rfl
+    refine ⟨1, ‖f 0‖ + max C₁ 0, fun x ↦ ?_⟩
+    have hmvt : ‖f x - f 0‖ ≤ max C₁ 0 * ‖x - 0‖ :=
+      convex_univ.norm_image_sub_le_of_norm_fderiv_le
+        (fun y _ ↦ hf.differentiable (by simp) y)
+        (fun y _ ↦ (norm_iteratedFDeriv_one f).symm.trans_le ((hC₁ y).trans (le_max_left _ _)))
+        (Set.mem_univ 0) (Set.mem_univ x)
+    rw [norm_iteratedFDeriv_zero, pow_one]
+    calc ‖f x‖ = ‖f 0 + (f x - f 0)‖ := by rw [add_sub_cancel]
+      _ ≤ ‖f 0‖ + ‖f x - f 0‖ := norm_add_le _ _
+      _ ≤ ‖f 0‖ + max C₁ 0 * ‖x‖ := by simpa only [sub_zero] using add_le_add_right hmvt ‖f 0‖
+      _ ≤ (‖f 0‖ + max C₁ 0) * (1 + ‖x‖) := by
+        nlinarith [norm_nonneg (f 0), norm_nonneg x, le_max_right C₁ 0]
+  · obtain ⟨C, hC⟩ := hbd (n + 1) (by omega)
+    exact ⟨0, C, fun x ↦ by simpa using hC x⟩
 
 /-- **Symbol estimates give temperate growth.** A smooth function whose `k`-th derivative is
 bounded by `C_k (1 + ‖x‖²) ^ ((m - k) / 2)` for every `k` has temperate growth. -/
