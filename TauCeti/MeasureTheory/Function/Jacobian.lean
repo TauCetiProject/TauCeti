@@ -25,13 +25,14 @@ on `s` with `c > 0`, then `f` pushes `μ` on `s` forward to at most `c⁻¹ μ` 
 
 For `f` differentiable on an open set `s` and mapping it into `t`, the same bound holds with the
 Fréchet derivative `fderiv ℝ f` as Jacobian and `μ` on `t` in place of `μ` on `f '' s`
-(`MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`). Without differentiability of
-`f`, a differentiable left inverse `g` on an open set `t` still controls the pushforward of `μ` on
+(`MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`). If moreover `f` is injective
+and its derivative is invertible on `s`, then almost-everywhere properties on `t` pull back along
+`f` to almost-everywhere properties on `s` (`MeasureTheory.ae_restrict_comp_of_differentiableOn`).
+Without differentiability of `f`, if `f` is almost everywhere measurable on `s` and maps `s` into
+an open set `t`, a differentiable left inverse `g` on `t` still controls the pushforward of `μ` on
 `s` by an upper bound on `|det Dg|` or on `‖Dg‖ ^ n` along `f '' s`
 (`MeasureTheory.map_restrict_le_smul_restrict_of_leftInvOn`,
-`MeasureTheory.map_restrict_le_smul_restrict_of_norm_fderiv_le`). If moreover the derivative is
-invertible on `s`, then almost-everywhere properties on `t` pull back along `f` to almost-everywhere
-properties on `s` (`MeasureTheory.ae_restrict_comp_of_differentiableOn`).
+`MeasureTheory.map_restrict_le_smul_restrict_of_norm_fderiv_le`).
 
 Such a pushforward bound `μ.map f ≤ C • ν` gives the `eLpNorm` estimate for precomposition with
 `f` (`MeasureTheory.eLpNorm_comp_le_of_map_le_smul`). For a change of variables no upper bound on
@@ -59,8 +60,9 @@ a permutation of the vertices of a simplex, acts on integrals over it.
 * `MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`: the same for `f`
   differentiable on an open set `s` and mapping it into `t`, with `μ` on `t` as the target.
 * `MeasureTheory.map_restrict_le_smul_restrict_of_leftInvOn`,
-  `MeasureTheory.map_restrict_le_smul_restrict_of_norm_fderiv_le`: pushforward bounds on `s` from a
-  differentiable left inverse `g` on an open set `t`, without differentiability of `f`.
+  `MeasureTheory.map_restrict_le_smul_restrict_of_norm_fderiv_le`: pushforward bounds on `s` for an
+  almost-everywhere measurable `f` from a differentiable left inverse `g` on an open set `t`,
+  without differentiability of `f`.
 * `MeasureTheory.ae_restrict_comp_of_differentiableOn`: almost-everywhere properties pull back
   along a map that is injective with invertible derivative on an open set.
 * `MeasureTheory.exists_det_bounds_of_isCompact`: Jacobian and derivative bounds on a compact

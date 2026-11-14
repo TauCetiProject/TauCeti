@@ -44,10 +44,12 @@ of a finite-dimensional real inner product space `E`:
    `TauCeti.Wkp.compLBound p k L c`. For a `Cᵏ` diffeomorphism with bounded derivatives in both
    directions this gives a Banach-space isomorphism `TauCeti.Wkp.compLEquiv`.
 3. **Left-invertible `Cᵏ` maps** (`k : ℕ`, `1 ≤ p ≤ ∞`): when `Φ` is `Cᵏ` on `U` mapping `U` into
-   `V` and admits a differentiable left inverse `Ψ` on `V` with `‖fderiv ℝ Ψ (Φ x)‖ ≤ L'` on `U`,
-   the Jacobian determinant of `Φ` (for `k ≥ 1`) or the pushforward of `mu` along `Φ` (for `k = 0`)
-   is controlled by `max 1 L' ^ finrank ℝ E`, giving the precomposition operator
-   `TauCeti.Wkp.compOfLeftInvOnL` and the uniform norm bound `TauCeti.Wkp.exists_norm_comp_le`.
+   `V` with `‖iteratedFDeriv ℝ i Φ x‖ ≤ L` for `1 ≤ i ≤ k` on `U`, and admits a differentiable
+   left inverse `Ψ` on `V` with `‖fderiv ℝ Ψ (Φ x)‖ ≤ L'` on `U`, we have
+   `(max 1 L' ^ finrank ℝ E)⁻¹ ≤ |det DΦ|` on `U` (for `k ≥ 1`) and the pushforward of `mu` on `U`
+   along `Φ` is at most `max 1 L' ^ finrank ℝ E` times `mu` on `V`, giving the precomposition
+   operator `TauCeti.Wkp.compOfLeftInvOnL` and the uniform norm bound
+   `TauCeti.Wkp.exists_norm_comp_le`.
 
 ## The argument
 
@@ -65,8 +67,9 @@ precomposition is constructed inductively on `k`: at order `0` by
 `MeasureTheory.Lp.compOfMapLeSmul`, at order `1` by the weak chain rule
 `TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo`, and at order `m + 2` by restricting to small
 balls with relatively compact target neighbourhoods, pulling back in `W^{m+2,q}` for `1 ≤ q < ∞`
-via `TauCeti.Wkp.ofExponentLEL`, passing `q → ∞` with `TauCeti.eLpNorm_exponent_top_le_liminf`, and
-gluing the local weak derivatives via `TauCeti.exists_hasWeakFDerivOn_iSup`.
+via `TauCeti.Wkp.ofExponentLEL`, passing `q → ∞` with
+`TauCeti.ae_norm_le_of_forall_nnreal_eLpNorm_le`, and gluing the local weak derivatives via
+`TauCeti.exists_hasWeakFDerivOn_iSup`.
 
 ## Main declarations
 
@@ -586,12 +589,45 @@ def compLBound (p : ℝ≥0∞) (k : ℕ) (L c : ℝ) : ℝ :=
   c⁻¹ ^ (1 / p).toReal *
     ∑ i ∈ Finset.range (k + 1), max 1 L ^ i * (Fintype.card (OrderedFinpartition i) : ℝ)
 
-/-- The constant `compLBound p k L c` is nonnegative. -/
-theorem compLBound_nonneg (p : ℝ≥0∞) (k : ℕ) (L : ℝ) {c : ℝ} (hc : 0 < c) :
-    0 ≤ compLBound p k L c := by
+/-- Defining formula for `compLBound`. -/
+theorem compLBound_def (p : ℝ≥0∞) (k : ℕ) (L c : ℝ) :
+    compLBound p k L c =
+      c⁻¹ ^ (1 / p).toReal *
+        ∑ i ∈ Finset.range (k + 1), max 1 L ^ i * (Fintype.card (OrderedFinpartition i) : ℝ) :=
+  (rfl)
+
+/-- At order `0`, `compLBound p 0 L c` reduces to the `Lᵖ` Jacobian factor
+`c⁻¹ ^ (1 / p).toReal`. -/
+@[simp]
+theorem compLBound_zero (p : ℝ≥0∞) (L c : ℝ) :
+    compLBound p 0 L c = c⁻¹ ^ (1 / p).toReal := by
+  simp [compLBound, Fintype.card_unique]
+
+/-- The constant `compLBound p k L c` is positive when `0 < c`. -/
+theorem compLBound_pos (p : ℝ≥0∞) (k : ℕ) (L : ℝ) {c : ℝ} (hc : 0 < c) :
+    0 < compLBound p k L c := by
   unfold compLBound
+  refine mul_pos (Real.rpow_pos_of_pos (inv_pos.2 hc) _) (Finset.sum_pos' (fun _ _ => ?_)
+    ⟨0, Finset.mem_range.2 k.succ_pos, by simp [Fintype.card_unique]⟩)
   have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _)
   positivity
+
+/-- The constant `compLBound p k L c` is nonnegative. -/
+theorem compLBound_nonneg (p : ℝ≥0∞) (k : ℕ) (L : ℝ) {c : ℝ} (hc : 0 < c) :
+    0 ≤ compLBound p k L c :=
+  (compLBound_pos p k L hc).le
+
+/-- For `0 < c ≤ 1` and `1 ≤ p`, `compLBound p k L c` is bounded above by its `L¹` value
+`compLBound 1 k L c`. -/
+theorem compLBound_le_compLBound_one (p : ℝ≥0∞) [Fact (1 ≤ p)] (k : ℕ) (L : ℝ) {c : ℝ}
+    (hc0 : 0 < c) (hc1 : c ≤ 1) : compLBound p k L c ≤ compLBound 1 k L c := by
+  unfold compLBound
+  refine mul_le_mul_of_nonneg_right ?_ (Finset.sum_nonneg fun _ _ => by
+    have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _); positivity)
+  have hp1 : (1 / p).toReal ≤ (1 / (1 : ℝ≥0∞)).toReal :=
+    ENNReal.toReal_mono (by simp)
+      (by simpa only [div_one] using ENNReal.div_le_of_le_mul (by simpa using (Fact.out : 1 ≤ p)))
+  exact Real.rpow_le_rpow_of_exponent_le (one_le_inv₀ hc0 |>.2 hc1) hp1
 
 section Calculus
 
@@ -895,26 +931,6 @@ private theorem norm_iteratedGradient_compLFinite_le
 
 /-! ### The endpoint `p = ∞` -/
 
-/-- Passing `q → ∞` on a family of `L^q` seminorm bounds `M * a ^ (1 / q)` yields a pointwise
-almost-everywhere norm bound `M`. -/
-private theorem ae_norm_le_of_forall_nnreal_eLpNorm_le {α F : Type*} [MeasurableSpace α]
-    [NormedAddCommGroup F] {ν : Measure α} {f : α → F} {M a : ℝ} (hM : 0 ≤ M) (ha : 0 < a)
-    (h : ∀ q : NNReal, 1 ≤ q → eLpNorm f q ν ≤ ENNReal.ofReal (M * a ^ (1 / (q : ℝ)))) :
-    ∀ᵐ y ∂ν, ‖f y‖ ≤ M := by
-  have hlim : Tendsto (fun q : NNReal => ENNReal.ofReal (M * a ^ (1 / (q : ℝ)))) atTop
-      (𝓝 (ENNReal.ofReal M)) := by
-    have h0 : Tendsto (fun q : NNReal => (1 : ℝ) / (q : ℝ)) atTop (𝓝 0) :=
-      tendsto_const_nhds.div_atTop (NNReal.tendsto_coe_atTop.2 tendsto_id)
-    rw [show ENNReal.ofReal M = ENNReal.ofReal (M * a ^ (0 : ℝ)) by simp]
-    exact ENNReal.continuous_ofReal.continuousAt.tendsto.comp
-      (tendsto_const_nhds.mul ((Real.continuousAt_const_rpow ha.ne').tendsto.comp h0))
-  have htop : eLpNorm f ⊤ ν ≤ ENNReal.ofReal M :=
-    eLpNorm_exponent_top_le_liminf.trans ((liminf_le_liminf
-      ((eventually_ge_atTop (1 : NNReal)).mono h)).trans_eq hlim.liminf_eq)
-  have hmem : MemLp f ⊤ ν := htop.trans_lt ENNReal.ofReal_lt_top
-  filter_upwards [ae_le_lpNorm_exponent_top hmem] with y hy
-  exact hy.trans (ENNReal.toReal_le_of_le_ofReal hM htop)
-
 /-- First-order precomposition at `p = ∞`, built directly from the weak chain rule
 `TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo`. -/
 private theorem exists_comp_top_one (h : IsChangeOfVariables 1 U V Φ L c) (u : Wkp mu V ⊤ 1) :
@@ -1121,7 +1137,7 @@ private theorem exists_comp_top :
         ‖w‖ ≤ compLBound ⊤ k L c * ‖u‖
   | 0, _, _, _, _, h, u =>
       ⟨compLp h u, by rw [value_zero, value_zero]; exact compLp_ae h u, by
-        simpa [compLBound, Fintype.card_unique] using norm_compLp_le h u⟩
+        simpa using norm_compLp_le h u⟩
   | 1, _, _, _, _, h, u =>
       let ⟨w, hw, _, hn⟩ := exists_comp_top_one h u
       ⟨w, hw, hn⟩
@@ -1428,7 +1444,7 @@ theorem norm_compOfLeftInvOnL_le (hΦ : ContDiffOn ℝ k Φ U) (hΨ : Differenti
         (map_measurableExtension_le_of_leftInvOn hΦ.continuousOn hΨ hmaps hΨΦ hL') u).trans
         (le_of_eq ?_)
       rw [← ENNReal.toReal_rpow, ENNReal.toReal_ofReal hM]
-      simp [compLBound, Fintype.card_unique]
+      simp
   | succ m =>
       exact norm_compL_le (IsChangeOfVariables.of_leftInvOn m.succ_pos hΦ hΨ hmaps hΨΦ hL hL') u
 
@@ -1448,27 +1464,14 @@ end LeftInvOn
 
 end Calculus
 
-private theorem compLBound_pos (k : ℕ) (L : ℝ) {c : ℝ} (hc : 0 < c) : 0 < compLBound 1 k L c := by
-  unfold compLBound
-  refine mul_pos (Real.rpow_pos_of_pos (inv_pos.2 hc) _) (Finset.sum_pos' (fun _ _ => ?_)
-    ⟨0, Finset.mem_range.2 k.succ_pos, by simp [Fintype.card_unique]⟩)
-  have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _); positivity
-
-private theorem compLBound_le_compLBound_one (p : ℝ≥0∞) [Fact (1 ≤ p)] (k : ℕ) (L : ℝ) {c : ℝ}
-    (hc0 : 0 < c) (hc1 : c ≤ 1) : compLBound p k L c ≤ compLBound 1 k L c := by
-  unfold compLBound
-  refine mul_le_mul_of_nonneg_right ?_ (Finset.sum_nonneg fun _ _ => by
-    have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _); positivity)
-  have hp1 : (1 / p).toReal ≤ (1 / (1 : ℝ≥0∞)).toReal :=
-    ENNReal.toReal_mono (by simp)
-      (by simpa only [div_one] using ENNReal.div_le_of_le_mul (by simpa using (Fact.out : 1 ≤ p)))
-  exact Real.rpow_le_rpow_of_exponent_le (one_le_inv₀ hc0 |>.2 hc1) hp1
-
-/-- **Uniform `W^{k,p}` precomposition bound for left-invertible `Cᵏ` maps.** There is a positive
-constant `C`, depending only on the dimension of `E`, the order `k`, and the derivative bounds `L`
-and `L'`, such that for every additive Haar measure `mu`, every exponent `1 ≤ p ≤ ∞`, open sets
-`U, V ⊆ E`, `Cᵏ` map `Φ : E → E` on `U` mapping `U` into `V` with derivatives of orders `1`
-through `k` bounded by `L` on `U`, and differentiable left inverse `Ψ` on `V` satisfying
+/-- **Uniform `W^{k,p}` precomposition bound for left-invertible `Cᵏ` maps.** For a
+finite-dimensional real inner product space `E`, order `k`, and derivative bounds `L` and `L'`,
+there is a constant `C > 0` (depending only on `E`, `k`, `L`, and `L'`; see
+`TauCeti.Wkp.norm_compOfLeftInvOnL_le` and `TauCeti.Wkp.compLBound_le_compLBound_one` for the
+explicit bound `compLBound 1 k L (max 1 L' ^ finrank ℝ E)⁻¹` depending on `E` only through
+`Module.finrank ℝ E`) such that for every additive Haar measure `mu`, every exponent `1 ≤ p ≤ ∞`,
+open sets `U, V ⊆ E`, `Cᵏ` map `Φ : E → E` on `U` mapping `U` into `V` with derivatives of orders
+`1` through `k` bounded by `L` on `U`, and differentiable left inverse `Ψ` on `V` satisfying
 `‖fderiv ℝ Ψ (Φ x)‖ ≤ L'` on `U`, precomposition with `Φ` carries each `u ∈ W^{k,p}(V)` to an
 element `w ∈ W^{k,p}(U)` of norm at most `C * ‖u‖` whose value agrees with `u ∘ Φ` almost
 everywhere on `U`. -/
@@ -1484,7 +1487,7 @@ theorem exists_norm_comp_le (E : Type*) [MeasurableSpace E] [NormedAddCommGroup 
   set c : ℝ := (max 1 L' ^ Module.finrank ℝ E)⁻¹
   have hc0 : 0 < c := inv_pos.2 (pow_pos (zero_lt_one.trans_le (le_max_left 1 L')) _)
   have hc1 : c ≤ 1 := inv_le_one_of_one_le₀ (one_le_pow₀ (le_max_left 1 L'))
-  refine ⟨compLBound 1 k L c, compLBound_pos k L hc0,
+  refine ⟨compLBound 1 k L c, compLBound_pos 1 k L hc0,
     fun mu _ p _ {U V Φ Ψ} hΦ hΨ hmaps hΨΦ hL hL' u =>
       ⟨compOfLeftInvOnL hΦ hΨ hmaps hΨΦ hL hL' u,
         value_compOfLeftInvOnL_ae hΦ hΨ hmaps hΨΦ hL hL' u,

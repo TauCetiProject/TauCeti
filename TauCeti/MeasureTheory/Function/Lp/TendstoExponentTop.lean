@@ -37,6 +37,9 @@ the endpoint `∞` itself is `MeasureTheory.eLpNorm_exponent_top`.
 
 * `TauCeti.eLpNorm_exponent_top_le_liminf` — `eLpNorm f ∞ μ` is at most the `liminf` of the
   finite-exponent seminorms, for every measure;
+* `TauCeti.ae_norm_le_of_forall_nnreal_eLpNorm_le` — a family of bounds
+  `eLpNorm f q μ ≤ ENNReal.ofReal (M * a ^ (1 / q))` for `1 ≤ q < ∞` gives `‖f y‖ ≤ M` almost
+  everywhere;
 * `TauCeti.tendsto_eLpNorm_atTop` — for a finite measure, the finite-exponent seminorms converge
   to `eLpNorm f ∞ μ`.
 
@@ -53,6 +56,8 @@ open Filter MeasureTheory
 open scoped ENNReal NNReal Topology
 
 namespace TauCeti
+
+section ENorm
 
 variable {α ε : Type*} [MeasurableSpace α] [TopologicalSpace ε] [ContinuousENorm ε]
   {μ : Measure α} {f : α → ε}
@@ -112,5 +117,31 @@ theorem tendsto_eLpNorm_atTop [IsFiniteMeasure μ] :
         (NNReal.tendsto_coe_atTop.2 tendsto_id)) (.inl one_ne_zero)
   refine (limsup_le_limsup (.of_forall fun p ↦ ?_)).trans_eq hlim.limsup_eq
   simpa using eLpNorm_le_eLpNorm_mul_rpow_measure_univ (le_top : (p : ℝ≥0∞) ≤ ∞) hf
+
+end ENorm
+
+/-- **Pointwise `L^∞` bound from `L^q` seminorm bounds.** If `0 ≤ M`, `0 < a`, and
+`eLpNorm f q μ ≤ ENNReal.ofReal (M * a ^ (1 / q))` for every `q : ℝ≥0` with `1 ≤ q`, then
+`‖f y‖ ≤ M` for `μ`-almost every `y`. -/
+theorem ae_norm_le_of_forall_nnreal_eLpNorm_le {α F : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup F] {μ : Measure α} {f : α → F} {M a : ℝ} (hM : 0 ≤ M) (ha : 0 < a)
+    (h : ∀ q : ℝ≥0, 1 ≤ q → eLpNorm f q μ ≤ ENNReal.ofReal (M * a ^ (1 / (q : ℝ)))) :
+    ∀ᵐ y ∂μ, ‖f y‖ ≤ M := by
+  have ha0 : ENNReal.ofReal a ≠ 0 := by simp [ha]
+  have hlim : Tendsto (fun q : ℝ≥0 ↦ ENNReal.ofReal M * ENNReal.ofReal a ^ (1 / (q : ℝ))) atTop
+      (𝓝 (ENNReal.ofReal M)) := by
+    simpa only [mul_one, Function.comp_def, id] using ENNReal.Tendsto.const_mul
+      ((ENNReal.tendsto_rpow_one_div_atTop ha0 ENNReal.ofReal_ne_top).comp
+        (NNReal.tendsto_coe_atTop.2 tendsto_id)) (.inl one_ne_zero)
+  have htop : eLpNorm f ∞ μ ≤ ENNReal.ofReal M := by
+    refine eLpNorm_exponent_top_le_liminf.trans ((liminf_le_liminf ?_).trans_eq hlim.liminf_eq)
+    refine (eventually_ge_atTop (1 : ℝ≥0)).mono fun q hq ↦ (h q hq).trans_eq ?_
+    rw [ENNReal.ofReal_mul hM, ENNReal.ofReal_rpow_of_pos ha]
+  have hf : AEStronglyMeasurable f μ := by
+    by_contra hf
+    exact ENNReal.ofReal_ne_top (top_le_iff.1 (eLpNorm_of_not_aestronglyMeasurable hf ▸ htop))
+  rw [eLpNorm_exponent_top hf] at htop
+  filter_upwards [ae_le_eLpNormEssSup (f := f) (μ := μ)] with y hy
+  exact (ENNReal.ofReal_le_ofReal_iff hM).1 (by simpa only [ofReal_norm] using hy.trans htop)
 
 end TauCeti
