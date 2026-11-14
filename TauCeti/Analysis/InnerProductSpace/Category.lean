@@ -18,8 +18,9 @@ structures. Composition and addition give the native linear category structure, 
 Mathlib's `ContinuousLinearMap.adjoint` supplies the conjugate-linear dagger.
 
 Unitary arrows are precisely the maps underlying linear isometric equivalences.
-The operator norm satisfies the C*-identity in categorical composition order; these
-facts provide the Hilbert-space example for analytic categories.
+The operator norm satisfies the C*-identity in categorical composition order, and the full
+subcategory `TauCeti.FDHilbertCat 𝕜` of finite-dimensional spaces inherits the linear dagger
+structure; these provide the Hilbert-space examples for analytic categories.
 -/
 
 public section
@@ -316,6 +317,67 @@ theorem unitaryEquivLinearIsometryEquiv_symm_val_apply
     (e : X ≃ₗᵢ[𝕜] Y) (x : X) :
     (unitaryEquivLinearIsometryEquiv.symm e).1 x = e x := (rfl)
 
+/-- A bundled Hilbert space is a categorical zero object precisely when its underlying type is a
+subsingleton. -/
+theorem isZero_iff_subsingleton (X : HilbertCat.{u, v} 𝕜) :
+    Limits.IsZero X ↔ Subsingleton X := by
+  rw [Limits.IsZero.iff_id_eq_zero]
+  constructor
+  · intro h
+    refine ⟨fun x y => ?_⟩
+    have hid : ContinuousLinearMap.id 𝕜 X = 0 := h
+    have hx : (ContinuousLinearMap.id 𝕜 X) x = 0 := by simp [hid]
+    have hy : (ContinuousLinearMap.id 𝕜 X) y = 0 := by simp [hid]
+    simpa using hx.trans hy.symm
+  · intro
+    exact ContinuousLinearMap.ext fun _ => Subsingleton.elim _ _
+
+/-- A subsingleton Hilbert space is a zero object of `HilbertCat 𝕜`. -/
+theorem isZero_of_subsingleton (X : HilbertCat.{u, v} 𝕜) [Subsingleton X] :
+    Limits.IsZero X :=
+  (isZero_iff_subsingleton X).mpr inferInstance
+
+/-- A nontrivial Hilbert space is not a zero object of `HilbertCat 𝕜`. -/
+theorem not_isZero_of_nontrivial (X : HilbertCat.{u, v} 𝕜) [Nontrivial X] :
+    ¬ Limits.IsZero X := by
+  rw [isZero_iff_subsingleton]
+  exact not_subsingleton X
+
+/-- Finite-dimensional Hilbert spaces, as an object property on `HilbertCat 𝕜`. -/
+abbrev isFiniteDimensional (𝕜 : Type u) [RCLike 𝕜] : ObjectProperty (HilbertCat.{u, v} 𝕜) :=
+  fun H => FiniteDimensional 𝕜 H
+
+/-- Membership in `HilbertCat.isFiniteDimensional` means `FiniteDimensional 𝕜 H`. -/
+@[simp] theorem isFiniteDimensional_iff (H : HilbertCat.{u, v} 𝕜) :
+    isFiniteDimensional 𝕜 H ↔ FiniteDimensional 𝕜 H := Iff.rfl
+
 end HilbertCat
+
+/-- The full subcategory of finite-dimensional Hilbert spaces over `𝕜`. It inherits linear and
+dagger structures (and over `ℂ`, the C*-category structure) from `HilbertCat 𝕜`. -/
+abbrev FDHilbertCat (𝕜 : Type u) [RCLike 𝕜] :=
+  (HilbertCat.isFiniteDimensional.{u, v} 𝕜).FullSubcategory
+
+namespace FDHilbertCat
+
+variable {𝕜 : Type u} [RCLike 𝕜]
+
+instance : CoeSort (FDHilbertCat.{u, v} 𝕜) (Type v) := ⟨fun H => H.obj.carrier⟩
+
+instance (H : FDHilbertCat.{u, v} 𝕜) : FiniteDimensional 𝕜 H := H.property
+
+/-- Bundle a finite-dimensional inner product space as an object of `FDHilbertCat 𝕜`.
+Completeness is supplied automatically by finite-dimensionality. -/
+abbrev of (𝕜 : Type u) [RCLike 𝕜] (E : Type v) [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [hE : FiniteDimensional 𝕜 E] : FDHilbertCat.{u, v} 𝕜 :=
+  let _ := FiniteDimensional.completeSpace 𝕜 E
+  ⟨HilbertCat.of 𝕜 E, hE⟩
+
+/-- The underlying `HilbertCat 𝕜` object of `FDHilbertCat.of 𝕜 E` has carrier `E`. -/
+@[simp] theorem of_carrier (E : Type v) [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] :
+    (of 𝕜 E : Type v) = E := (rfl)
+
+end FDHilbertCat
 
 end TauCeti
