@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Determinant.Projective
 public import TauCeti.LinearAlgebra.End.Aeval
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 import Mathlib.RingTheory.LocalProperties.Basic
+import Mathlib.RingTheory.Localization.BaseChange
 
 /-!
 # The reversed characteristic polynomial on a finite projective module
@@ -43,7 +44,10 @@ If `π : R ^ n → M` and `σ : M → R ^ n` split `M` off a free module, then
 * **Cayley–Hamilton**: for some `n` bounding its degree, the reflection `X ^ n · Q(1/X)` of
   `Q = projectiveCharpolyRev f` is a monic polynomial killing `f`
   (`LinearMap.exists_aeval_reflect_projectiveCharpolyRev_eq_zero`,
-  `LinearMap.monic_reflect_projectiveCharpolyRev`).
+  `LinearMap.monic_reflect_projectiveCharpolyRev`); when `M` has constant rank `d` on `Spec R`,
+  the reflection at `d` itself kills `f`
+  (`LinearMap.aeval_reflect_projectiveCharpolyRev_eq_zero_of_rankAtStalk_eq`,
+  `LinearMap.aeval_reverse_projectiveCharpolyRev_eq_zero_of_rankAtStalk_eq`).
 
 The last statement turns a norm into an integral equation: an element of a finite projective
 `R`-algebra is a root of a monic polynomial whose coefficients are those of the reversed
@@ -283,5 +287,43 @@ theorem monic_reflect_projectiveCharpolyRev (f : Module.End R M) {n : ℕ}
     ((projectiveCharpolyRev f).reflect n).Monic := by
   refine monic_of_natDegree_le_of_coeff_eq_one n (natDegree_reflect_le.trans (max_le le_rfl hn)) ?_
   rw [coeff_reflect, revAt_le le_rfl, Nat.sub_self, coeff_projectiveCharpolyRev_zero]
+
+open scoped TensorProduct in
+/-- **Cayley–Hamilton on a finite projective module of constant rank.** If `M` has constant rank
+`d` at every point of `Spec R`, the reflection `X ^ d · Q(1/X)` at `d` of
+`Q = projectiveCharpolyRev f` kills `f`. -/
+theorem aeval_reflect_projectiveCharpolyRev_eq_zero_of_rankAtStalk_eq {d : ℕ}
+    (hd : ∀ p, rankAtStalk (R := R) M p = d) (f : Module.End R M) :
+    aeval f ((projectiveCharpolyRev f).reflect d) = 0 := by
+  ext x
+  refine Module.eq_zero_of_localization_maximal (fun P _ ↦ Localization.AtPrime P ⊗[R] M)
+    (fun P _ ↦ TensorProduct.mk R (Localization.AtPrime P) M 1) _ fun P hP ↦ ?_
+  let A := Localization.AtPrime P
+  have : Module.Free A (A ⊗[R] M) := free_of_flat_of_isLocalRing
+  have hfin : finrank A (A ⊗[R] M) = d := by
+    rw [← rankAtStalk_eq_finrank_tensorProduct (M := M) ⟨P, hP.isPrime⟩, hd]
+  -- Over the local ring `A`, `A ⊗[R] M` is free of rank `d`, so reflecting `Q_A` at `d` recovers
+  -- the ordinary characteristic polynomial of `f.baseChange A`.
+  let ι : M →ₛₗ[algebraMap R A] A ⊗[R] M :=
+    { toFun m := 1 ⊗ₜ[R] m
+      map_add' a b := TensorProduct.tmul_add 1 a b
+      map_smul' r m := by simp [Algebra.smul_def, TensorProduct.smul_tmul'] }
+  have hι : (f.baseChange A).comp ι = ι.comp f := by ext m; rfl
+  have hbase := LinearMap.congr_fun
+    (Module.End.aeval_map_comp_of_comp_eq hι ((projectiveCharpolyRev f).reflect d)) x
+  have hpoly : ((projectiveCharpolyRev f).reflect d).map (algebraMap R A) =
+      (f.baseChange A).charpoly := by
+    rw [← reflect_map, ← projectiveCharpolyRev_baseChange,
+      projectiveCharpolyRev_eq_reverse_charpoly, reverse, charpoly_natDegree, hfin,
+      reflect_reflect]
+  simpa only [ι, LinearMap.comp_apply, LinearMap.coe_mk, AddHom.coe_mk, TensorProduct.mk_apply,
+    hpoly, aeval_self_charpoly, LinearMap.zero_apply] using hbase.symm
+
+/-- If `M` has constant rank equal to the degree of `Q = projectiveCharpolyRev f` on `Spec R`,
+for instance when the leading coefficient of `Q` is a unit, the reversal `Q.reverse` kills `f`. -/
+theorem aeval_reverse_projectiveCharpolyRev_eq_zero_of_rankAtStalk_eq {f : Module.End R M}
+    (hd : ∀ p, rankAtStalk (R := R) M p = (projectiveCharpolyRev f).natDegree) :
+    aeval f (projectiveCharpolyRev f).reverse = 0 :=
+  aeval_reflect_projectiveCharpolyRev_eq_zero_of_rankAtStalk_eq hd f
 
 end LinearMap
