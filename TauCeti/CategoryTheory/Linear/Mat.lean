@@ -21,6 +21,10 @@ The embedding `Mat_.embedding C` is then `R`-linear, and so are the functor
 `F.mapMat_ : Mat_ C ⥤ Mat_ D` and, when `D` has finite biproducts, the extension
 `Mat_.lift F : Mat_ C ⥤ D` of an `R`-linear functor `F : C ⥤ D`.
 
+The same holds for Mathlib's matrix category `Mat R` over a ring `R`: when `R` is an algebra
+over a commutative semiring `S`, or more generally an `S`-module on which `S` commutes and
+associates with multiplication, the category `Mat R` is `S`-linear.
+
 Together with the linear structure on `Karoubi C` (`TauCeti/CategoryTheory/Linear/Karoubi.lean`),
 this makes the additive and idempotent envelope `Karoubi (Mat_ C)` of an `R`-linear category
 `R`-linear.
@@ -29,6 +33,8 @@ this makes the additive and idempotent envelope `Karoubi (Mat_ C)` of an `R`-lin
 
 * `CategoryTheory.Mat_.smul_apply`: scalars act entrywise on matrices.
 * The instance `CategoryTheory.Linear R (Mat_ C)`.
+* `CategoryTheory.Mat.instLinear`: the matrix category `Mat R` of an `S`-algebra `R` is
+  `S`-linear, with scalars acting entrywise (`CategoryTheory.Mat.smul_apply`).
 * The instances `(Mat_.embedding C).Linear R`, `F.mapMat_.Linear R` and
   `(Mat_.lift F).Linear R` for an `R`-linear functor `F`.
 -/
@@ -91,5 +97,31 @@ instance lift_linear [HasFiniteBiproducts E] (F : C ⥤ E) [F.Additive] [F.Linea
     exact biproduct.matrix_smul r _
 
 end Mat_
+
+namespace Mat
+
+variable {R : Type} [Ring R] {S : Type w} [Semiring S] [Module S R]
+
+/-- The `S`-module of `X × Y` matrices over `R`, as morphisms of `Mat R`. -/
+instance instModuleHom (X Y : Mat R) : Module S (X ⟶ Y) :=
+  inferInstanceAs <| Module S (Matrix X Y R)
+
+/-- Scalars act entrywise on matrices. -/
+@[simp]
+theorem smul_apply {X Y : Mat R} (s : S) (f : X ⟶ Y) (i : X) (j : Y) :
+    (s • f) i j = s • f i j :=
+  (rfl)
+
+/-- The matrix category `Mat R` is `S`-linear when scalars from `S` commute and associate with
+multiplication in `R`, for instance when `R` is an `S`-algebra. -/
+instance instLinear [IsScalarTower S R R] [SMulCommClass S R R] : Linear S (Mat R) where
+  smul_comp _ _ _ s f g := by
+    ext
+    simp [Finset.smul_sum, smul_mul_assoc]
+  comp_smul _ _ _ f s g := by
+    ext
+    simp [Finset.smul_sum, mul_smul_comm]
+
+end Mat
 
 end CategoryTheory
