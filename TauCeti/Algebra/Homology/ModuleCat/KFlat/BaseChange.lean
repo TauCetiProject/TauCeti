@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ModuleCat.KFlat.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.KFlat.DerivabilityStructure
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.Tensor
 public import TauCeti.CategoryTheory.Localization.DerivabilityStructure.Derives
@@ -26,9 +27,8 @@ reflects isomorphisms, any quasi-isomorphism between K-flat complexes of `R`-mod
 quasi-isomorphism under `(ModuleCat.extendScalars f).mapHomologicalComplex (.up ℤ)`
 (`CochainComplex.quasiIso_mapHomologicalComplex_extendScalars_of_isKFlat`).
 
-Combining this invariance with the K-flat left derivability structure on
-`CochainComplex (ModuleCat R) ℤ` from
-`TauCeti.Algebra.Homology.ModuleCat.KFlat.DerivabilityStructure`, we obtain:
+Combining this invariance with `TauCeti.Algebra.Homology.ModuleCat.KFlat.DerivabilityStructure` and
+`TauCeti.Algebra.Homology.ModuleCat.KFlat.Basic`, we obtain:
 * `TauCeti.hasLeftDerivedFunctor_extendScalars`:
   `(ModuleCat.extendScalars f).mapHomologicalComplex (.up ℤ) ⋙ DerivedCategory.Q` admits a left
   derived functor `− ⊗^L_R S : D(R) ⥤ D(S)` with respect to quasi-isomorphisms;
@@ -69,16 +69,14 @@ namespace CochainComplex
 complexes of `R`-modules. -/
 instance quasiIso_mapHomologicalComplex_extendScalars_of_isKFlat
     {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
-    {P Q : CochainComplex (ModuleCat.{u} R) ℤ} [P.IsKFlat] [Q.IsKFlat]
-    (g : P ⟶ Q) [QuasiIso g] :
+    {P Q : CochainComplex (ModuleCat.{u} R) ℤ} [P.IsKFlat] [Q.IsKFlat] (g : P ⟶ Q) [QuasiIso g] :
     QuasiIso (((ModuleCat.extendScalars.{u, u, u} f).mapHomologicalComplex (.up ℤ)).map g) := by
   rw [← quasiIso_map_iff_of_preservesHomology _ (ModuleCat.restrictScalars.{u} f)]
   let e := Functor.mapHomologicalComplexCompIso
     (ModuleCat.extendScalarsCompRestrictScalarsIso f) (.up ℤ)
   exact quasiIso_of_arrow_mk_iso
     (((MonoidalCategory.tensorLeft
-      ((ModuleCat.restrictScalars f).obj (ModuleCat.of S S))).mapHomologicalComplex
-        (.up ℤ)).map g)
+      ((ModuleCat.restrictScalars f).obj (ModuleCat.of S S))).mapHomologicalComplex (.up ℤ)).map g)
     (((ModuleCat.restrictScalars.{u} f).mapHomologicalComplex (.up ℤ)).map
       (((ModuleCat.extendScalars.{u, u, u} f).mapHomologicalComplex (.up ℤ)).map g))
     (Arrow.isoMk (e.app P).symm (e.app Q).symm (e.inv.naturality g).symm)
@@ -89,8 +87,7 @@ namespace TauCeti
 
 section GeneralTarget
 
-variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
-  {H : Type*} [Category* H]
+variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S) {H : Type*} [Category* H]
   (F : CochainComplex (ModuleCat.{u} S) ℤ ⥤ H)
   (hF : (quasiIso (ModuleCat.{u} S) (.up ℤ)).IsInvertedBy F)
 
@@ -121,10 +118,8 @@ theorem hasLeftDerivedFunctor_extendScalars_of_inverts :
 
 section Characterization
 
-variable {D : Type*} [Category* D]
-  {L : CochainComplex (ModuleCat.{u} R) ℤ ⥤ D}
-  [L.IsLocalization (quasiIso (ModuleCat.{u} R) (.up ℤ))]
-  {LF : D ⥤ H}
+variable {D : Type*} [Category* D] {L : CochainComplex (ModuleCat.{u} R) ℤ ⥤ D}
+  [L.IsLocalization (quasiIso (ModuleCat.{u} R) (.up ℤ))] {LF : D ⥤ H}
   (α : L ⋙ LF ⟶ (ModuleCat.extendScalars.{u, u, u} f).mapHomologicalComplex (.up ℤ) ⋙ F)
 
 include hF in
@@ -180,8 +175,7 @@ complexes, postcomposing any left derived functor `(LF, α)` of
 theorem isLeftDerivedFunctor_comp_of_isLeftDerivedFunctor_extendScalars
     {E : Type*} [Category* E] (M : H ⥤ E)
     [LF.IsLeftDerivedFunctor α (quasiIso (ModuleCat.{u} R) (.up ℤ))] :
-    (LF ⋙ M).IsLeftDerivedFunctor
-      ((Functor.associator L LF M).inv ≫ whiskerRight α M)
+    (LF ⋙ M).IsLeftDerivedFunctor ((Functor.associator L LF M).inv ≫ whiskerRight α M)
       (quasiIso (ModuleCat.{u} R) (.up ℤ)) :=
   (derives_extendScalars_of_inverts f F hF).isLeftDerivedFunctor_comp α M
 
@@ -195,8 +189,8 @@ section DerivedCategory
 termwise scalar extension of complexes followed by localization to `DerivedCategory (ModuleCat S)`
 admits a left derived functor `− ⊗^L_R S` with respect to quasi-isomorphisms of `R`-module
 complexes. -/
-theorem hasLeftDerivedFunctor_extendScalars {R S : Type u} [CommRing R] [CommRing S]
-    (f : R →+* S) [HasDerivedCategory.{w} (ModuleCat.{u} S)] :
+theorem hasLeftDerivedFunctor_extendScalars {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
+    [HasDerivedCategory.{w} (ModuleCat.{u} S)] :
     ((ModuleCat.extendScalars.{u, u, u} f).mapHomologicalComplex (.up ℤ) ⋙
       DerivedCategory.Q (C := ModuleCat.{u} S)).HasLeftDerivedFunctor
       (HomologicalComplex.quasiIso (ModuleCat.{u} R) (ComplexShape.up ℤ)) :=
@@ -225,8 +219,7 @@ private lemma isLeftDerivedFunctor_comp_mapDerivedCategory :
 private lemma isRightDerivedFunctor_mapDerivedCategory_comp :
     ((ModuleCat.restrictScalars.{u} f).mapDerivedCategory ⋙ G).IsRightDerivedFunctor
       (whiskerRight (ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors.inv G ≫
-        (Functor.associator _ _ _).hom)
-      (quasiIso (ModuleCat.{u} S) (.up ℤ)) :=
+        (Functor.associator _ _ _).hom) (quasiIso (ModuleCat.{u} S) (.up ℤ)) :=
   Functor.isRightDerivedFunctor_of_inverts (quasiIso (ModuleCat.{u} S) (.up ℤ)) _
     (asIso (whiskerRight (ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors.inv G ≫
       (Functor.associator _ _ _).hom)).symm
@@ -250,9 +243,8 @@ comparison `α` with the degreewise unit of `ModuleCat.extendRestrictScalarsAdj 
 lemma derivedExtendRestrictScalarsAdj_unit_app_comp (K : CochainComplex (ModuleCat.{u} R) ℤ) :
     (derivedExtendRestrictScalarsAdj f G α).unit.app (DerivedCategory.Q.obj K) ≫
       (ModuleCat.restrictScalars.{u} f).mapDerivedCategory.map (α.app K) =
-      DerivedCategory.Q.map
-        (((ModuleCat.extendRestrictScalarsAdj.{u, u, u} f).mapHomologicalComplex
-          (.up ℤ)).unit.app K) ≫
+      DerivedCategory.Q.map (((ModuleCat.extendRestrictScalarsAdj.{u, u, u} f).mapHomologicalComplex
+        (.up ℤ)).unit.app K) ≫
         (ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors.inv.app
           (((ModuleCat.extendScalars.{u, u, u} f).mapHomologicalComplex (.up ℤ)).obj K) := by
   have := isLeftDerivedFunctor_comp_mapDerivedCategory f G α
@@ -265,8 +257,7 @@ lemma derivedExtendRestrictScalarsAdj_unit_app_comp (K : CochainComplex (ModuleC
 /-- The counit of `derivedExtendRestrictScalarsAdj` on a localized complex `Q.obj M` intertwines
 the comparison `α` with the degreewise counit of `ModuleCat.extendRestrictScalarsAdj f`. -/
 @[reassoc (attr := simp)]
-lemma map_comp_derivedExtendRestrictScalarsAdj_counit_app
-    (M : CochainComplex (ModuleCat.{u} S) ℤ) :
+lemma map_comp_derivedExtendRestrictScalarsAdj_counit_app (M : CochainComplex (ModuleCat.{u} S) ℤ) :
     G.map ((ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors.inv.app M) ≫
       (derivedExtendRestrictScalarsAdj f G α).counit.app (DerivedCategory.Q.obj M) =
       α.app (((ModuleCat.restrictScalars.{u} f).mapHomologicalComplex (.up ℤ)).obj M) ≫
@@ -291,8 +282,8 @@ variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
 `f : R →+* S`. -/
 def derivedExtendScalars : DerivedCategory (ModuleCat.{u} R) ⥤ DerivedCategory (ModuleCat.{u} S) :=
   ((ModuleCat.extendScalars.{u, u, u} f).mapHomologicalComplex (.up ℤ) ⋙
-    DerivedCategory.Q (C := ModuleCat.{u} S)).totalLeftDerived
-    DerivedCategory.Q (quasiIso (ModuleCat.{u} R) (.up ℤ))
+    DerivedCategory.Q (C := ModuleCat.{u} S)).totalLeftDerived DerivedCategory.Q
+    (quasiIso (ModuleCat.{u} R) (.up ℤ))
 
 /-- The universal counit comparing `derivedExtendScalars f` on localized complexes with termwise
 scalar extension `(ModuleCat.extendScalars f).mapHomologicalComplex (.up ℤ)`. -/
@@ -300,8 +291,8 @@ def derivedExtendScalarsCounit :
     DerivedCategory.Q ⋙ derivedExtendScalars f ⟶
       (ModuleCat.extendScalars.{u, u, u} f).mapHomologicalComplex (.up ℤ) ⋙ DerivedCategory.Q :=
   ((ModuleCat.extendScalars.{u, u, u} f).mapHomologicalComplex (.up ℤ) ⋙
-    DerivedCategory.Q (C := ModuleCat.{u} S)).totalLeftDerivedCounit
-    DerivedCategory.Q (quasiIso (ModuleCat.{u} R) (.up ℤ))
+    DerivedCategory.Q (C := ModuleCat.{u} S)).totalLeftDerivedCounit DerivedCategory.Q
+    (quasiIso (ModuleCat.{u} R) (.up ℤ))
 
 instance : (derivedExtendScalars f).IsLeftDerivedFunctor (derivedExtendScalarsCounit f)
     (quasiIso (ModuleCat.{u} R) (.up ℤ)) := by
@@ -317,9 +308,8 @@ instance (P : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] :
 DerivedCategory.Q.obj (((ModuleCat.extendScalars f).mapHomologicalComplex (.up ℤ)).obj P)` induced
 by `derivedExtendScalarsCounit f` at a K-flat complex `P` of `R`-modules. -/
 def derivedExtendScalarsKFlatIso (P : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] :
-    (derivedExtendScalars f).obj (DerivedCategory.Q.obj P) ≅
-      DerivedCategory.Q.obj
-        (((ModuleCat.extendScalars.{u, u, u} f).mapHomologicalComplex (.up ℤ)).obj P) :=
+    (derivedExtendScalars f).obj (DerivedCategory.Q.obj P) ≅ DerivedCategory.Q.obj
+      (((ModuleCat.extendScalars.{u, u, u} f).mapHomologicalComplex (.up ℤ)).obj P) :=
   asIso ((derivedExtendScalarsCounit f).app P)
 
 /-- The forward morphism of `derivedExtendScalarsKFlatIso` is the counit component. -/
@@ -352,8 +342,8 @@ lemma derivedExtendScalarsAdj_unit_app_comp (K : CochainComplex (ModuleCat.{u} R
           (.up ℤ)).unit.app K) ≫
         (ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors.inv.app
           (((ModuleCat.extendScalars.{u, u, u} f).mapHomologicalComplex (.up ℤ)).obj K) :=
-  derivedExtendRestrictScalarsAdj_unit_app_comp f
-    (derivedExtendScalars f) (derivedExtendScalarsCounit f) K
+  derivedExtendRestrictScalarsAdj_unit_app_comp f (derivedExtendScalars f)
+    (derivedExtendScalarsCounit f) K
 
 /-- The counit of `derivedExtendScalarsAdj` intertwines `derivedExtendScalarsCounit` with the
 degreewise counit of `ModuleCat.extendRestrictScalarsAdj f`. -/
@@ -367,8 +357,8 @@ lemma map_comp_derivedExtendScalarsAdj_counit_app (M : CochainComplex (ModuleCat
         DerivedCategory.Q.map
           (((ModuleCat.extendRestrictScalarsAdj.{u, u, u} f).mapHomologicalComplex
             (.up ℤ)).counit.app M) :=
-  map_comp_derivedExtendRestrictScalarsAdj_counit_app f
-    (derivedExtendScalars f) (derivedExtendScalarsCounit f) M
+  map_comp_derivedExtendRestrictScalarsAdj_counit_app f (derivedExtendScalars f)
+    (derivedExtendScalarsCounit f) M
 
 end Canonical
 

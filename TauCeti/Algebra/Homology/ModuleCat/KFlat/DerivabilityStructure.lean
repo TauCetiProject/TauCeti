@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.DerivabilityStructure
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
-public import Mathlib.RingTheory.Flat.Basic
-import Mathlib.Algebra.Category.ModuleCat.AB
+import TauCeti.Algebra.Category.ModuleCat.AB
 import Mathlib.Algebra.Category.ModuleCat.LeftResolution
 import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.RingTheory.Flat.CategoryTheory
@@ -24,10 +23,6 @@ Let `R` be a commutative ring. Applying the functorial K-flat resolution of
 and connected left-resolution categories, and forms a left derivability structure with respect to
 quasi-isomorphisms.
 
-We also record the `Module.Flat` specializations `CochainComplex.isKFlat_single_of_flat_moduleCat`
-and `CochainComplex.isKFlat_of_boundedAbove_flat_moduleCat` so downstream files can pass from
-module-theoretic flatness to `CochainComplex.IsKFlat` in a single step.
-
 ## References
 
 * N. Spaltenstein, *Resolutions of unbounded complexes*, Compositio Math. 65 (1988), 121–154.
@@ -37,8 +32,6 @@ module-theoretic flatness to `CochainComplex.IsKFlat` in a single step.
 
 public section
 
-noncomputable section
-
 open CategoryTheory Limits HomologicalComplex
 
 namespace CochainComplex
@@ -47,12 +40,8 @@ universe u
 
 variable {R : Type u} [CommRing R]
 
-private instance : AB5OfSize.{0, 0} (ModuleCat.{u} R) :=
-  AB5OfSize_of_univLE.{0, 0, u, u} _
-
-private instance (X : ModuleCat.{u} R) :
-    PreservesFiniteLimits
-      (MonoidalCategory.tensorLeft ((forget (ModuleCat.{u} R) ⋙ ModuleCat.free R).obj X)) :=
+private instance (X : ModuleCat.{u} R) : PreservesFiniteLimits
+    (MonoidalCategory.tensorLeft ((forget (ModuleCat.{u} R) ⋙ ModuleCat.free R).obj X)) :=
   inferInstanceAs (PreservesFiniteLimits (MonoidalCategory.tensorLeft ((ModuleCat.free R).obj X)))
 
 instance : (kFlatLocalizerMorphism (ModuleCat.{u} R)).IsLocalizedEquivalence :=
@@ -73,16 +62,5 @@ left derivability structure with respect to quasi-isomorphisms. -/
 instance : (kFlatLocalizerMorphism (ModuleCat.{u} R)).IsLeftDerivabilityStructure :=
   isLeftDerivabilityStructure_kFlatLocalizerMorphism
     (forget (ModuleCat.{u} R) ⋙ ModuleCat.free R) (ModuleCat.adj R).counit
-
-/-- A flat `R`-module placed in a single cohomological degree `n` is K-flat. -/
-instance isKFlat_single_of_flat_moduleCat (M : ModuleCat.{u} R) [Module.Flat R M] (n : ℤ) :
-    IsKFlat ((single (ModuleCat.{u} R) (.up ℤ) n).obj M) :=
-  isKFlat_single_of_flat M n
-
-/-- A bounded-above cochain complex of flat `R`-modules is K-flat. -/
-theorem isKFlat_of_boundedAbove_flat_moduleCat (P : CochainComplex (ModuleCat.{u} R) ℤ) (b : ℤ)
-    [P.IsStrictlyLE b] (hP : ∀ n, Module.Flat R (P.X n)) : P.IsKFlat :=
-  letI := hP
-  isKFlat_of_boundedAbove_flat P b
 
 end CochainComplex
