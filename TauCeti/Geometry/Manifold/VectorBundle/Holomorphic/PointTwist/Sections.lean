@@ -44,10 +44,11 @@ slope `dslope`). Hence the space of sections grows by at most the rank of `E`
 
 ## Main results
 
-* `TauCeti.pointTwistMulₗ_injective` and `TauCeti.range_pointTwistMulₗ`: the sequence
-  `0 → H⁰(E) → H⁰(E(x)) → E x` is exact.
+* `TauCeti.pointTwistMulₗ_injective` and `TauCeti.range_pointTwistMulₗ`: for `n ≠ 0` and a
+  complete model fibre, the sequence `0 → H⁰(E) → H⁰(E(x)) → E x` is exact.
 * `TauCeti.finiteDimensional_contMDiffSection_pointTwistCore` and
-  `TauCeti.finrank_contMDiffSection_pointTwistCore_le`: `dim H⁰(E(x)) ≤ dim H⁰(E) + rank E`.
+  `TauCeti.finrank_contMDiffSection_pointTwistCore_le`: for `n ≠ 0` and finite rank,
+  `dim H⁰(E(x)) ≤ dim H⁰(E) + rank E`.
 
 ## References
 
@@ -86,8 +87,8 @@ theorem exists_contMDiffAt_eventually_eq_pointTwistCoord_smul [IsManifold 𝓘(�
       ((contMDiffOn_chart (I := 𝓘(ℂ)) (n := n)).contMDiffAt
         ((chartAt ℂ x).open_source.mem_nhds hx')), ?_⟩
   filter_upwards [(chartAt ℂ x).open_source.mem_nhds hx'] with z hz
-  rw [pointTwistCoord_apply, Function.comp_apply, sub_smul_dslope, Function.comp_apply,
-    Function.comp_apply, (chartAt ℂ x).left_inv hz, (chartAt ℂ x).left_inv hx', hx, sub_zero]
+  rw [Function.comp_apply, pointTwistCoord_apply, sub_smul_dslope]
+  simp [(chartAt ℂ x).left_inv hz, (chartAt ℂ x).left_inv hx', hx]
 
 section General
 
@@ -126,6 +127,18 @@ omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
     pointTwistEvalₗ F E x τ = pointTwistPoleMul F E x x (τ x) :=
   (rfl)
 
+omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
+/-- The leading coefficient of a section of the point twist vanishes exactly when the section
+vanishes at `x`. -/
+theorem pointTwistEvalₗ_eq_zero_iff {x : X} {τ : Cₛ^n⟮𝓘(ℂ); F, (pointTwistCore F E x).Fiber⟯} :
+    pointTwistEvalₗ F E x τ = 0 ↔ τ x = 0 :=
+  pointTwistPoleMul_self_eq_zero_iff
+
+omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
+theorem mem_ker_pointTwistEvalₗ {x : X} {τ : Cₛ^n⟮𝓘(ℂ); F, (pointTwistCore F E x).Fiber⟯} :
+    τ ∈ LinearMap.ker (pointTwistEvalₗ F E x) ↔ τ x = 0 :=
+  pointTwistEvalₗ_eq_zero_iff
+
 /-- Multiplication by the canonical section of `𝒪(x)` is injective on `C^n` sections. -/
 theorem pointTwistMulₗ_injective (x : X) :
     Function.Injective (pointTwistMulₗ (n := n) F E x) := by
@@ -159,7 +172,7 @@ theorem exists_pointTwistMul_eq [CompleteSpace F] (hn : n ≠ 0) {x : X}
     rw [hτx, ← (trivializationAt F E x).continuousLinearMapAt_apply_of_mem ℂ hx, map_zero]
   obtain ⟨k, hk, hhk⟩ := exists_contMDiffAt_eventually_eq_pointTwistCoord_smul hn
     ((contMDiffAt_section_iff x).1 (contMDiffAt_pointTwist_section_iff_self.1 (hτ x))) hhx
-  have hτ0 : τ x = 0 := (trivializationAt_pointTwistPoleMul_self (F := F) x (τ x)).symm.trans hhx
+  have hτ0 : τ x = 0 := (pointTwistPoleMul_self_eq_zero_iff (F := F)).1 hτx
   -- the section of `E`: off `x` the reading of `τ`, at `x` the value of `k` in the chart of `E`
   let σ : ∀ z, E z := Function.update (fun z ↦ pointTwistDiv F E x z (τ z)) x
     ((trivializationAt F E x).symm x (k x))
@@ -177,16 +190,10 @@ theorem exists_pointTwistMul_eq [CompleteSpace F] (hn : n ≠ 0) {x : X}
       · subst hzx
         rw [hσx, (trivializationAt F E z).apply_mk_symm hx]
       · have hc : pointTwistCoord z₀ z ≠ 0 := pointTwistCoord_ne_zero hzc hzx
-        -- stated for `w : F`, since the fibres of `E(x)` are not syntactically `F`
-        have key (w : F) : (trivializationAt F E z₀ ⟨z, pointTwistPoleMul F E z₀ z w⟩).2 =
-            pointTwistCoord z₀ z • (trivializationAt F E z₀ ⟨z, pointTwistDiv F E z₀ z w⟩).2 := by
-          rw [pointTwistPoleMul_eq_smul_pointTwistDiv hzx,
-            ← (trivializationAt F E z₀).continuousLinearMapAt_apply_of_mem ℂ hzb, map_smul,
-            (trivializationAt F E z₀).continuousLinearMapAt_apply_of_mem ℂ hzb]
         refine smul_right_injective F hc ?_
         dsimp only
         rw [← hz, hσne z hzx]
-        exact (key (τ z)).symm
+        exact (trivializationAt_pointTwistPoleMul_of_ne hzx hzb (τ z)).symm
     · have : T1Space X := ChartedSpace.t1Space ℂ X
       have h₁ := (contMDiffAt_pointTwist_section_iff_of_ne hz₀).1 (hτ z₀)
       refine h₁.congr_of_eventuallyEq ?_
@@ -194,8 +201,8 @@ theorem exists_pointTwistMul_eq [CompleteSpace F] (hn : n ≠ 0) {x : X}
       rw [hσne z hz]
   · by_cases hzx : z = x
     · subst hzx
-      rw [pointTwistMul_self, hτ0]
-      rfl
+      rw [pointTwistMul_self, zero_apply]
+      exact hτ0.symm
     · rw [hσne z hzx]
       exact pointTwistMul_pointTwistDiv (F := F) hzx (τ z)
 
@@ -210,7 +217,8 @@ theorem range_pointTwistMulₗ [CompleteSpace F] (hn : n ≠ 0) (x : X) :
   · obtain ⟨σ, hσ, hστ⟩ := exists_pointTwistMul_eq hn τ.contMDiff hτ
     exact ⟨⟨σ, hσ⟩, ContMDiffSection.ext hστ⟩
 
-/-- If `E` has finite rank and finitely many independent `C^n` sections, so has its point twist. -/
+/-- For `n ≠ 0`, if `E` has finite rank and its space of `C^n` sections is finite-dimensional, so
+is that of its point twist. -/
 theorem finiteDimensional_contMDiffSection_pointTwistCore [FiniteDimensional ℂ F] (hn : n ≠ 0)
     (x : X) [FiniteDimensional ℂ Cₛ^n⟮𝓘(ℂ); F, E⟯] :
     FiniteDimensional ℂ Cₛ^n⟮𝓘(ℂ); F, (pointTwistCore F E x).Fiber⟯ := by

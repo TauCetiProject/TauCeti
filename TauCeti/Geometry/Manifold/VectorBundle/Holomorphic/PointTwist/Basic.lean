@@ -503,6 +503,27 @@ theorem trivializationAt_pointTwistPoleMul_self (x : X) (w : F) :
   exact congrArg Prod.snd
     ((trivializationAt F E x).apply_mk_symm (mem_baseSet_trivializationAt F E x) w)
 
+variable (F E) in
+/-- The leading coefficient at `x` is injective. -/
+theorem pointTwistPoleMul_self_injective (x : X) :
+    Function.Injective (pointTwistPoleMul F E x x) := fun w w' h ↦ by
+  rw [← trivializationAt_pointTwistPoleMul_self (E := E) x w, h,
+    trivializationAt_pointTwistPoleMul_self]
+
+@[simp] theorem pointTwistPoleMul_self_eq_zero_iff {x : X} {w : F} :
+    pointTwistPoleMul F E x x w = 0 ↔ w = 0 :=
+  map_eq_zero_iff _ (pointTwistPoleMul_self_injective F E x)
+
+/-- Away from `x`, in any chart of `E` around `z`, the leading coefficient reads the centred chart
+coordinate times `pointTwistDiv`. -/
+theorem trivializationAt_pointTwistPoleMul_of_ne {x z y : X} (hzx : z ≠ x)
+    (hz : z ∈ (trivializationAt F E y).baseSet) (w : F) :
+    (trivializationAt F E y ⟨z, pointTwistPoleMul F E x z w⟩).2 =
+      pointTwistCoord x z • (trivializationAt F E y ⟨z, pointTwistDiv F E x z w⟩).2 := by
+  rw [pointTwistPoleMul_eq_smul_pointTwistDiv hzx,
+    ← (trivializationAt F E y).continuousLinearMapAt_apply_of_mem ℂ hz, map_smul,
+    (trivializationAt F E y).continuousLinearMapAt_apply_of_mem ℂ hz]
+
 theorem trivializationAt_pointTwistDiv {x z : X} {y : X}
     (hz : z ∈ (pointTwistCore F E x).baseSet (y, false)) (w : F) :
     (trivializationAt F E y ⟨z, pointTwistDiv F E x z w⟩).2 =

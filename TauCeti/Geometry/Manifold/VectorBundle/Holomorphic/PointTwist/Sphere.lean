@@ -43,9 +43,9 @@ theorem contMDiff_pointTwistOfPole_affineChart :
   · filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds
       ((chartAt ℂ (∞ : OnePoint ℂ)).open_source.mem_nhds (mem_chart_source ℂ (∞ : OnePoint ℂ)))]
       with z hzi hz
-    have hc0 := pointTwistCoord_ne_zero hz hzi
-    rw [pointTwistCoord_apply, chartAt_infty, invChart_infty, sub_zero] at hc0 ⊢
-    rw [smul_eq_mul, ← inv_invChart, mul_inv_cancel₀ hc0]
+    have hc0 : invChart z ≠ 0 := by
+      simpa [pointTwistCoord_apply, chartAt_infty] using pointTwistCoord_ne_zero hz hzi
+    simp [pointTwistCoord_apply, chartAt_infty, ← inv_invChart, hc0]
 
 /-- The section `z` of the twist of the trivial line bundle at `∞` on the Riemann sphere vanishes
 exactly at `0`. -/
