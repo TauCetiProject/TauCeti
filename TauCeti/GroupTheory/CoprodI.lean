@@ -17,8 +17,8 @@ Mathlib's `MulEquiv.coprodCongr` for the free product of two monoids.  It is use
 free product of fundamental groups one factor at a time, for instance to recognise the
 fundamental group of a wedge of circles as a free group.
 
-The free product of a family of two monoids indexed by `Bool` is the binary free product
-`Monoid.Coprod` of its two members, by the isomorphism matching the canonical inclusions.
+The free product of a family of two monoids indexed by `Bool` or `Fin 2` is the binary free
+product `Monoid.Coprod` of its two members, by the isomorphism matching the canonical inclusions.
 
 The free product of an empty family is trivial, and the free product of a family indexed by a
 type with a unique element is that single monoid.
@@ -28,6 +28,8 @@ type with a unique element is that single monoid.
 * `MulEquiv.coprodICongr`: the isomorphism of free products induced by a family of isomorphisms.
 * `Monoid.CoprodI.boolEquivCoprod`: `CoprodI M ≃* Coprod (M false) (M true)` for a family `M`
   indexed by `Bool`.
+* `Monoid.CoprodI.finTwoEquivCoprod`: `CoprodI M ≃* Coprod (M 0) (M 1)` for a family `M` indexed
+  by `Fin 2`.
 * `Monoid.CoprodI.instUniqueOfIsEmpty`: the free product of an empty family is trivial.
 * `MulEquiv.coprodIUnique`: the free product of a family indexed by a type with a unique element
   is isomorphic to the monoid at the single index.
@@ -90,6 +92,8 @@ end MulEquiv
 
 namespace Monoid.CoprodI
 
+section Bool
+
 variable (M : Bool → Type*) [∀ i, Monoid (M i)]
 
 /-- The free product of a family of monoids indexed by `Bool` is the free product of its two
@@ -120,5 +124,47 @@ theorem boolEquivCoprod_symm_inl (x : M false) : (boolEquivCoprod M).symm (Copro
 @[simp]
 theorem boolEquivCoprod_symm_inr (x : M true) : (boolEquivCoprod M).symm (Coprod.inr x) = of x :=
   Coprod.lift_apply_inr (of (i := false)) (of (i := true)) x
+
+end Bool
+
+section FinTwo
+
+variable (M : Fin 2 → Type*) [∀ i, Monoid (M i)]
+
+/-- The free product of a family of two monoids indexed by `Fin 2` is the free product of its two
+members: the inclusion of `M 0` corresponds to `Monoid.Coprod.inl` and that of `M 1` to
+`Monoid.Coprod.inr`. -/
+def finTwoEquivCoprod : CoprodI M ≃* Coprod (M 0) (M 1) :=
+  MonoidHom.toMulEquiv
+    (lift fun
+      | ⟨0, _⟩ => Coprod.inl
+      | ⟨1, _⟩ => Coprod.inr)
+    (Coprod.lift (of (i := 0)) (of (i := 1)))
+    (by
+      refine ext_hom _ _ fun i => ?_
+      match i with
+      | ⟨0, _⟩ => ext; simp
+      | ⟨1, _⟩ => ext; simp)
+    (by ext <;> simp)
+
+variable {M}
+
+@[simp]
+theorem finTwoEquivCoprod_of_zero (x : M 0) : finTwoEquivCoprod M (of x) = Coprod.inl x :=
+  lift_of _ _
+
+@[simp]
+theorem finTwoEquivCoprod_of_one (x : M 1) : finTwoEquivCoprod M (of x) = Coprod.inr x :=
+  lift_of _ _
+
+@[simp]
+theorem finTwoEquivCoprod_symm_inl (x : M 0) : (finTwoEquivCoprod M).symm (Coprod.inl x) = of x :=
+  Coprod.lift_apply_inl (of (i := 0)) (of (i := 1)) x
+
+@[simp]
+theorem finTwoEquivCoprod_symm_inr (x : M 1) : (finTwoEquivCoprod M).symm (Coprod.inr x) = of x :=
+  Coprod.lift_apply_inr (of (i := 0)) (of (i := 1)) x
+
+end FinTwo
 
 end Monoid.CoprodI
