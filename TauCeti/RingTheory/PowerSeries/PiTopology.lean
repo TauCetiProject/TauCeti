@@ -6,19 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.PiTopology
+public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import TauCeti.RingTheory.PowerSeries.CoeffProd
 
 /-!
-# Infinite products of power series in the coefficientwise topology
+# Power series in the coefficientwise topology
 
-If all but finitely many factors agree with `1` to each prescribed degree, their product
-converges coefficientwise. Each coefficient is computed from any finite cutoff containing all
-factors that can affect it.
+Mathlib's `PowerSeries.WithPiTopology` equips `S⟦X⟧` with the topology of coefficientwise
+convergence (activated via `open scoped PowerSeries.WithPiTopology`). This file provides two
+tools needed to work with `S⟦X⟧` as a topological module and topological ring in that topology:
 
-## Main results
-
-* `PowerSeries.WithPiTopology.hasProd_of_X_pow_dvd_sub_one`: convergence and finite-cutoff
-  coefficients for products whose factors approach `1` modulo increasing powers of `X`.
+* `PowerSeries.WithPiTopology.continuousLinearEquivPi`: for any scalar semiring `R` acting linearly
+  on `S`, `PowerSeries.coeff` and `PowerSeries.mk` identify `S⟦X⟧` with `ℕ → S` as a topological
+  `R`-module, allowing product-module properties such as `TauCeti.IsCompactModule` and
+  `TauCeti.IsProfiniteFlat` to transfer directly from `ℕ → S` to `S⟦X⟧`.
+* `PowerSeries.WithPiTopology.hasProd_of_X_pow_dvd_sub_one`: if all but finitely many factors agree
+  with `1` modulo each power `X ^ (n + 1)`, their infinite product converges coefficientwise and
+  each degree-`n` coefficient is computed from the corresponding finite cutoff.
 -/
 
 public section
@@ -28,6 +32,38 @@ open Finset
 namespace PowerSeries.WithPiTopology
 
 open scoped PowerSeries.WithPiTopology
+
+section Semiring
+
+variable (R S : Type*) [Semiring R] [Semiring S] [Module R S] [TopologicalSpace S]
+
+/-- With the product topology on coefficients (`open scoped PowerSeries.WithPiTopology`), `S⟦X⟧` is
+continuously `R`-linearly isomorphic to `ℕ → S` via `PowerSeries.coeff` and `PowerSeries.mk`. -/
+noncomputable def continuousLinearEquivPi : S⟦X⟧ ≃L[R] (ℕ → S) where
+  toFun f n := PowerSeries.coeff n f
+  map_add' f g := by ext n; simp
+  map_smul' r f := by ext n; simp
+  invFun := PowerSeries.mk
+  left_inv f := by ext n; simp
+  right_inv c := by ext n; simp
+  continuous_toFun := continuous_pi (continuous_coeff S)
+  continuous_invFun := continuous_iff_continuousAt.mpr fun _ ↦
+    (tendsto_iff_coeff_tendsto S _ _ _).mpr fun n ↦ by
+      simpa [PowerSeries.coeff_mk] using (continuous_apply n).continuousAt.tendsto
+
+@[simp]
+theorem continuousLinearEquivPi_apply (f : S⟦X⟧) (n : ℕ) :
+    continuousLinearEquivPi R S f n = PowerSeries.coeff n f :=
+  (rfl)
+
+@[simp]
+theorem continuousLinearEquivPi_symm_apply (c : ℕ → S) :
+    (continuousLinearEquivPi R S).symm c = PowerSeries.mk c :=
+  (rfl)
+
+end Semiring
+
+section CommRing
 
 variable {R ι : Type*} [CommRing R] [TopologicalSpace R]
 
@@ -42,5 +78,7 @@ theorem hasProd_of_X_pow_dvd_sub_one {g : ι → R⟦X⟧} (F : ℕ → Finset �
   refine fun n ↦ tendsto_atTop_of_eventually_const (i₀ := F n) fun s hs ↦ ?_
   rw [coeff_mk]
   exact coeff_prod_eq_coeff_prod_of_X_pow_dvd_sub_one hs fun i hi ↦ hF n i (mem_sdiff.1 hi).2
+
+end CommRing
 
 end PowerSeries.WithPiTopology
