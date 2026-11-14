@@ -23,27 +23,19 @@ public import TauCeti.Topology.Category.TopCat.Action
 The topological `n`-simplex is a standard simplex on a finite nonempty type, up to a universe
 lift, hence compact, Hausdorff, second-countable, metrizable, contractible and locally path
 connected. Every monomorphism in `SimplexCategory` induces a closed embedding of topological
-simplices (`SimplexCategory.isClosedEmbedding_toTop_map_of_mono`), and every point of a
-topological simplex lies in the open interior (`SimplexCategory.toTopInterior`) of a unique face
-(`SimplexCategory.exists_mono_toTop_map_mem_toTopInterior`,
-`SimplexCategory.unique_mono_toTop_map_dim`, `SimplexCategory.unique_mono_toTop_map_hom`). The
-geometric realization `|Δ[n]|` of the standard simplicial simplex, being homeomorphic to the
-topological simplex, is contractible as well. This file also names its initial vertex, and the
-continuous map on the topological `n`-simplex that underlies a singular `n`-simplex of a space.
+simplices (`SimplexCategory.isClosedEmbedding_toTop_map_of_mono`), and every point of `Δⁿ` lies in
+the open interior (`SimplexCategory.toTopInterior`) of a unique face. The geometric realization
+`|Δ[n]|` of the standard simplicial simplex, being homeomorphic to the topological simplex, is
+contractible as well. This file also names its initial vertex, and the continuous map on the
+topological `n`-simplex that underlies a singular `n`-simplex of a space.
 
 ## Main declarations
 
 * `SimplexCategory.compactSpace`, `SimplexCategory.t2Space`,
-  `SimplexCategory.secondCountableTopology`, `SimplexCategory.metrizableSpace`: topological
-  finiteness and separation instances on `SimplexCategory.toTop.obj n`.
-* `SimplexCategory.isClosedEmbedding_toTop_map_of_mono`: face maps of topological simplices are
-  closed embeddings.
-* `SimplexCategory.toTopInterior`, `SimplexCategory.toTopBoundary`,
-  `SimplexCategory.toTopBoundary_eq_iUnion_range_δ`: the open interior and relative boundary of
-  the topological simplex.
-* `SimplexCategory.exists_mono_toTop_map_mem_toTopInterior`,
-  `SimplexCategory.unique_mono_toTop_map_dim`, `SimplexCategory.unique_mono_toTop_map_hom`:
-  existence and uniqueness of the interior face containing a point of `Δⁿ`.
+  `SimplexCategory.secondCountableTopology`, `SimplexCategory.metrizableSpace`: finiteness and
+  separation instances on `SimplexCategory.toTop.obj n`.
+* `SimplexCategory.isClosedEmbedding_toTop_map_of_mono`, `SimplexCategory.toTopInterior`,
+  `SimplexCategory.toTopBoundary`: closed face embeddings and unique open-face decomposition.
 * `SimplexCategory.toTopInitialVertex`: the initial vertex of the topological `n`-simplex, and
   `SimplexCategory.toTop_map_toTopInitialVertex_down`: its image under a morphism of simplices.
 * `TauCeti.TopCat.simplexMap`: the continuous map underlying a singular simplex, with its
@@ -64,12 +56,11 @@ universe u
 
 namespace SimplexCategory
 
-/-- Every topological simplex is compact, being a universe lift of a standard simplex on a finite
-type. -/
+/-- Every topological simplex is compact. -/
 instance compactSpace (n : SimplexCategory) : CompactSpace (toTop.{u}.obj n) :=
   (Homeomorph.ulift (X := StdSimplex ℝ (Fin (n.len + 1)))).symm.compactSpace
 
-/-- Every topological simplex is metrizable, as it embeds into a finite product of copies of `ℝ`. -/
+/-- Every topological simplex is metrizable. -/
 instance metrizableSpace (n : SimplexCategory) :
     TopologicalSpace.MetrizableSpace (toTop.{u}.obj n) :=
   ((StdSimplex.isEmbedding_toFun_comp_weights ℝ (Fin (n.len + 1))).comp
@@ -78,8 +69,7 @@ instance metrizableSpace (n : SimplexCategory) :
 /-- Every topological simplex is Hausdorff. -/
 instance t2Space (n : SimplexCategory) : T2Space (toTop.{u}.obj n) := inferInstance
 
-/-- Every topological simplex is second-countable, as it embeds into a finite product of copies
-of `ℝ`. -/
+/-- Every topological simplex is second-countable. -/
 instance secondCountableTopology (n : SimplexCategory) :
     SecondCountableTopology (toTop.{u}.obj n) :=
   ((StdSimplex.isEmbedding_toFun_comp_weights ℝ (Fin (n.len + 1))).comp
@@ -106,43 +96,33 @@ instance locallyPathConnectedSpace (n : SimplexCategory) :
 theorem toTop_map_down {m n : SimplexCategory} (f : m ⟶ n) (t : toTop.{u}.obj m) :
     (toTop.{u}.map f t).down = StdSimplex.map f.toOrderHom t.down := (rfl)
 
-/-- Pushing a point of a topological simplex forward along `f` takes the image of its coordinate
-support under `f`. -/
+/-- Pushing forward along `f` takes the image of the coordinate support under `f`. -/
 theorem support_toTop_map {m n : SimplexCategory} (f : m ⟶ n) (t : toTop.{u}.obj m) :
-    (toTop.{u}.map f t).down.weights.support =
-      t.down.weights.support.image f.toOrderHom := by
+    (toTop.{u}.map f t).down.weights.support = t.down.weights.support.image f.toOrderHom := by
   rw [toTop_map_down, StdSimplex.weights_map]
   exact Finsupp.support_mapDomain_of_nonneg (fun i ↦ t.down.nonneg i) f.toOrderHom
 
 /-- Every monomorphism in `SimplexCategory` induces an injective map of topological simplices. -/
 theorem toTop_map_injective_of_mono {m n : SimplexCategory} (f : m ⟶ n) [Mono f] :
-    Function.Injective (toTop.{u}.map f) := fun s t h ↦ by
-  apply ULift.ext
-  apply StdSimplex.ext
-  exact Finsupp.mapDomain_injective (mono_iff_injective.mp ‹Mono f›)
+    Function.Injective (toTop.{u}.map f) := fun _ _ h ↦ ULift.ext <| StdSimplex.ext <|
+  Finsupp.mapDomain_injective (mono_iff_injective.mp ‹Mono f›)
     (congrArg (fun p : toTop.{u}.obj n ↦ p.down.weights) h)
 
-/-- Every monomorphism in `SimplexCategory` induces a closed embedding of topological simplices,
-since topological simplices are compact and Hausdorff. -/
+/-- Every monomorphism in `SimplexCategory` induces a closed embedding of topological simplices. -/
 theorem isClosedEmbedding_toTop_map_of_mono {m n : SimplexCategory} (f : m ⟶ n) [Mono f] :
     IsClosedEmbedding (toTop.{u}.map f) :=
   (toTop.{u}.map f).hom.continuous.isClosedEmbedding (toTop_map_injective_of_mono f)
 
-/-- A point of `Δⁿ` lies in the image of `f : m ⟶ n` if and only if all of its coordinates
-outside the range of `f` vanish. -/
+/-- A point of `Δⁿ` lies in `range (toTop.map f)` iff its coordinates vanish outside `range f`. -/
 theorem mem_range_toTop_map_iff {m n : SimplexCategory} (f : m ⟶ n) (t : toTop.{u}.obj n) :
     t ∈ Set.range (toTop.{u}.map f) ↔ ∀ i, i ∉ Set.range f.toOrderHom → t.down.weights i = 0 := by
   rw [← StdSimplex.mem_range_map_iff f.toOrderHom t.down]
-  exact ⟨fun ⟨s, hs⟩ ↦ ⟨s.down, congrArg ULift.down hs⟩,
-    fun ⟨s, hs⟩ ↦ ⟨ULift.up s, ULift.ext hs⟩⟩
+  exact ⟨fun ⟨s, hs⟩ ↦ ⟨s.down, congrArg ULift.down hs⟩, fun ⟨s, hs⟩ ↦ ⟨ULift.up s, ULift.ext hs⟩⟩
 
-/-- The open interior of the topological simplex `n`: the points with all barycentric coordinates
-strictly positive. -/
+/-- The open interior of the topological simplex `n`: points with strictly positive weights. -/
 def toTopInterior (n : SimplexCategory) : Set (toTop.{u}.obj n) :=
   {t | ∀ i, 0 < t.down.weights i}
 
-/-- A point of a topological simplex lies in its open interior if and only if its weight support
-is all vertices. -/
 theorem mem_toTopInterior_iff_support_eq_univ {n : SimplexCategory} {t : toTop.{u}.obj n} :
     t ∈ toTopInterior n ↔ t.down.weights.support = Finset.univ := by
   simp only [toTopInterior, Set.mem_ofPred_eq, Finset.eq_univ_iff_forall, Finsupp.mem_support_iff]
@@ -154,14 +134,11 @@ theorem toTop_map_mem_toTopInterior_of_epi {m n : SimplexCategory} (f : m ⟶ n)
     toTop.{u}.map f t ∈ toTopInterior n := by
   rw [mem_toTopInterior_iff_support_eq_univ] at ht ⊢
   rw [support_toTop_map, ht]
-  exact Finset.image_univ_of_surjective (epi_iff_surjective.mp ‹Epi f›)
+  exact Finset.image_univ_of_surjective (epi_iff_surjective.mp ‹_›)
 
 /-- The relative boundary of the topological simplex `n`, the complement of `toTopInterior n`. -/
-def toTopBoundary (n : SimplexCategory) : Set (toTop.{u}.obj n) :=
-  (toTopInterior n)ᶜ
+def toTopBoundary (n : SimplexCategory) : Set (toTop.{u}.obj n) := (toTopInterior n)ᶜ
 
-/-- A point of a topological simplex lies on its relative boundary if and only if at least one
-barycentric coordinate vanishes. -/
 theorem mem_toTopBoundary_iff {n : SimplexCategory} {t : toTop.{u}.obj n} :
     t ∈ toTopBoundary n ↔ ∃ i, t.down.weights i = 0 := by
   simp only [toTopBoundary, toTopInterior, Set.mem_compl_iff, Set.mem_ofPred_eq, not_forall, not_lt]
@@ -169,25 +146,20 @@ theorem mem_toTopBoundary_iff {n : SimplexCategory} {t : toTop.{u}.obj n} :
 
 /-- The relative boundary of every topological simplex is closed. -/
 theorem isClosed_toTopBoundary (n : SimplexCategory) : IsClosed (toTopBoundary.{u} n) := by
-  have h : toTopBoundary.{u} n = ⋃ i : Fin (n.len + 1), {t | t.down.weights i = 0} := by
-    ext t
-    simp [mem_toTopBoundary_iff]
-  rw [h]
-  refine isClosed_iUnion_of_finite fun i ↦ isClosed_eq ?_ continuous_const
-  exact (continuous_apply i).comp
-    ((StdSimplex.isEmbedding_toFun_comp_weights ℝ (Fin (n.len + 1))).continuous.comp
-      continuous_uliftDown)
+  suffices toTopBoundary.{u} n = ⋃ i : Fin (n.len + 1), {t | t.down.weights i = 0} by
+    rw [this]
+    exact isClosed_iUnion_of_finite fun i ↦ isClosed_eq ((continuous_apply i).comp
+      ((StdSimplex.isEmbedding_toFun_comp_weights ℝ _).continuous.comp continuous_uliftDown))
+      continuous_const
+  ext; simp [mem_toTopBoundary_iff]
 
-/-- The relative boundary of `Δⁿ⁺¹` is the union of the images of its `n + 2` codimension-one
-faces `δ i`. -/
+/-- The relative boundary of `Δⁿ⁺¹` is the union of the images of its faces `δ i`. -/
 theorem toTopBoundary_eq_iUnion_range_δ (n : ℕ) :
     toTopBoundary.{u} ⦋n + 1⦌ = ⋃ i : Fin (n + 2), Set.range (toTop.{u}.map (δ i)) := by
-  ext t
-  rw [mem_toTopBoundary_iff, Set.mem_iUnion]
+  ext t; rw [mem_toTopBoundary_iff, Set.mem_iUnion]
   refine exists_congr fun i ↦ ?_
-  rw [mem_range_toTop_map_iff]
   have hrange : Set.range (δ i).toOrderHom = {i}ᶜ := Fin.range_succAbove i
-  rw [hrange]
+  rw [mem_range_toTop_map_iff, hrange]
   exact ⟨fun hi j hj ↦ (Set.notMem_compl_iff.mp hj : j = i) ▸ hi,
     fun h ↦ h i (Set.notMem_compl_iff.mpr rfl)⟩
 
@@ -195,43 +167,30 @@ theorem toTopBoundary_eq_iUnion_range_δ (n : ℕ) :
 theorem toTop_map_mem_toTopBoundary_of_len_lt {m n : SimplexCategory} (f : m ⟶ n)
     (hm : m.len < n.len) (t : toTop.{u}.obj m) :
     toTop.{u}.map f t ∈ toTopBoundary n := by
-  rw [mem_toTopBoundary_iff]
-  by_contra! h
+  rw [mem_toTopBoundary_iff]; by_contra! h
   have hsurj : Function.Surjective f.toOrderHom := fun i ↦ by
-    by_contra hi
-    exact h i ((mem_range_toTop_map_iff f (toTop.map f t)).mp ⟨t, rfl⟩ i hi)
+    by_contra hi; exact h i ((mem_range_toTop_map_iff f (toTop.map f t)).mp ⟨t, rfl⟩ i hi)
   have hcard := Fintype.card_le_of_surjective f.toOrderHom hsurj
-  simp only [Fintype.card_fin] at hcard
-  omega
+  simp only [Fintype.card_fin] at hcard; omega
 
 /-- Every point of `Δⁿ` lies in the open interior of the image of some face `μ : ⦋k⦌ ⟶ ⦋n⦌`. -/
 theorem exists_mono_toTop_map_mem_toTopInterior {n : ℕ} (t : toTop.{u}.obj ⦋n⦌) :
     ∃ (k : ℕ) (μ : ⦋k⦌ ⟶ ⦋n⦌) (_ : Mono μ) (u : toTop.{u}.obj ⦋k⦌),
       u ∈ toTopInterior ⦋k⦌ ∧ toTop.{u}.map μ u = t := by
-  set S := t.down.weights.support
-  have hne : S.Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty, ne_eq, Finsupp.support_eq_empty]
-    intro hzero
-    have htot := t.down.total
-    rw [hzero, Finsupp.sum_zero_index] at htot
-    exact zero_ne_one htot
+  let S := t.down.weights.support
+  have hne : S.Nonempty := Finsupp.support_nonempty_iff.mpr fun h ↦ by
+    have htot := t.down.total; rw [h, Finsupp.sum_zero_index] at htot; exact zero_ne_one htot
   obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero hne.card_pos.ne'
   let e := S.orderEmbOfFin hk
   let μ : ⦋k⦌ ⟶ ⦋n⦌ := mkHom e.toOrderHom
-  have hmono : Mono μ := mono_iff_injective.mpr e.injective
   have hrange : Set.range μ.toOrderHom = (S : Set (Fin (n + 1))) := S.range_orderEmbOfFin hk
-  have hmem : t ∈ Set.range (toTop.{u}.map μ) := by
-    rw [mem_range_toTop_map_iff, hrange]
-    intro i hi
-    exact Finsupp.notMem_support_iff.mp hi
-  obtain ⟨u, hu⟩ := hmem
-  refine ⟨k, μ, hmono, u, ?_, hu⟩
-  rw [mem_toTopInterior_iff_support_eq_univ]
-  apply Finset.eq_univ_of_card
+  obtain ⟨u, hu⟩ : t ∈ Set.range (toTop.{u}.map μ) := by
+    rw [mem_range_toTop_map_iff, hrange]; exact fun _ ↦ Finsupp.notMem_support_iff.mp
+  refine ⟨k, μ, mono_iff_injective.mpr e.injective, u, mem_toTopInterior_iff_support_eq_univ.mpr <|
+    Finset.eq_univ_of_card _ ?_, hu⟩
   have himg := congrArg Finset.card (hu ▸ support_toTop_map μ u)
-  have hcard := Finset.card_image_of_injective u.down.weights.support (f := μ.toOrderHom)
-    e.injective
-  exact hcard.symm.trans (himg.symm.trans (hk.trans (Fintype.card_fin (k + 1)).symm))
+  exact (Finset.card_image_of_injective _ (f := μ.toOrderHom) e.injective).symm.trans
+    (himg.symm.trans (hk.trans (Fintype.card_fin (k + 1)).symm))
 
 /-- The dimension of the face whose open interior contains a point of `Δⁿ` is unique. -/
 theorem unique_mono_toTop_map_dim {n k₁ k₂ : ℕ} {μ₁ : ⦋k₁⦌ ⟶ ⦋n⦌} [Mono μ₁]
@@ -239,8 +198,7 @@ theorem unique_mono_toTop_map_dim {n k₁ k₂ : ℕ} {μ₁ : ⦋k₁⦌ ⟶ �
     {μ₂ : ⦋k₂⦌ ⟶ ⦋n⦌} [Mono μ₂] {u₂ : toTop.{u}.obj ⦋k₂⦌} (hu₂ : u₂ ∈ toTopInterior ⦋k₂⦌)
     (h : toTop.{u}.map μ₁ u₁ = toTop.{u}.map μ₂ u₂) : k₁ = k₂ := by
   have hs := congrArg (fun p : toTop.{u}.obj ⦋n⦌ ↦ p.down.weights.support.card) h
-  rw [support_toTop_map, support_toTop_map,
-    mem_toTopInterior_iff_support_eq_univ.mp hu₁,
+  rw [support_toTop_map, support_toTop_map, mem_toTopInterior_iff_support_eq_univ.mp hu₁,
     mem_toTopInterior_iff_support_eq_univ.mp hu₂,
     Finset.card_image_of_injective _ (mono_iff_injective.mp ‹Mono μ₁›),
     Finset.card_image_of_injective _ (mono_iff_injective.mp ‹Mono μ₂›)] at hs
@@ -260,18 +218,15 @@ theorem unique_mono_toTop_map_hom {n k : ℕ} {μ₁ μ₂ : ⦋k⦌ ⟶ ⦋n⦌
   have hcard₂ : (Finset.univ.image μ₂.toOrderHom).card = k + 1 :=
     le_antisymm (Finset.card_image_le.trans (by simp))
       (hcard₁.symm.le.trans (Finset.card_le_card hsub))
-  have heq_img : Finset.univ.image μ₁.toOrderHom = Finset.univ.image μ₂.toOrderHom :=
-    Finset.eq_of_subset_of_card_le hsub (hcard₂.trans hcard₁.symm).le
+  have heq_img := Finset.eq_of_subset_of_card_le hsub (hcard₂.trans hcard₁.symm).le
   have hinj₂ : Function.Injective μ₂.toOrderHom := fun i j hij ↦
     Finset.card_image_iff.mp (hcard₂.trans (by simp)) (Finset.mem_univ i) (Finset.mem_univ j) hij
-  have heq := (Finset.orderEmbOfFin_unique hcard₁ (f := μ₁.toOrderHom)
-    (fun i ↦ Finset.mem_image_of_mem μ₁.toOrderHom (Finset.mem_univ i))
+  ext i : 3; exact congrFun ((Finset.orderEmbOfFin_unique hcard₁
+    (fun i ↦ Finset.mem_image_of_mem _ (Finset.mem_univ i))
     (μ₁.toOrderHom.monotone.strictMono_of_injective hinj₁)).trans
-    (Finset.orderEmbOfFin_unique hcard₁ (f := μ₂.toOrderHom)
-      (fun i ↦ heq_img.symm ▸ Finset.mem_image_of_mem μ₂.toOrderHom (Finset.mem_univ i))
-      (μ₂.toOrderHom.monotone.strictMono_of_injective hinj₂)).symm
-  ext i : 3
-  exact congrFun heq i
+    (Finset.orderEmbOfFin_unique hcard₁
+      (fun i ↦ heq_img.symm ▸ Finset.mem_image_of_mem _ (Finset.mem_univ i))
+      (μ₂.toOrderHom.monotone.strictMono_of_injective hinj₂)).symm) i
 
 /-- The initial vertex of the topological `n`-simplex: the universe lift of the standard-simplex
 vertex `StdSimplex.single 0`. -/
