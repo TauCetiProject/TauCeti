@@ -226,15 +226,6 @@ section RightRigid
 
 variable [RightRigidCategory C]
 
-/-- Taking a mate commutes with the quotient functor for the global rigid choices too,
-including at the unit where instance search otherwise selects the canonical self-duality. -/
-theorem rightAdjointMate_map_rightRigid {X Y : C} (f : X ⟶ Y) :
-    @rightAdjointMate (MonoidalQuotient I) _ _
-      ((toMonoidalQuotient I).obj X) ((toMonoidalQuotient I).obj Y)
-      (RightRigidCategory.rightDual _) (RightRigidCategory.rightDual _)
-      ((toMonoidalQuotient I).map f) = (toMonoidalQuotient I).map (fᘁ) :=
-  rightAdjointMate_map f
-
 /-- The tensor comparison of the right dual descends to the quotient. -/
 @[simp]
 theorem rightDualTensorIso_obj_hom (X Y : C) :
@@ -273,7 +264,7 @@ theorem doubleRightDualFunctor_μ_obj (X Y : C) :
   -- duals at the rewriter's transparency, including the composite's fixed bidual endpoints.
   -- Compose the descent equations as terms, using the chosen duals' definitional identification.
   exact (congrArg₂ (· ≫ ·) (rightDualTensorIso_obj_inv Yᘁ Xᘁ)
-    (rightAdjointMate_map_rightRigid (rightDualTensorIso X Y).hom)).trans
+    (rightAdjointMate_map (I := I) (rightDualTensorIso X Y).hom)).trans
       ((toMonoidalQuotient I).map_comp _ _).symm
 
 /-- The inverse tensorator of the double right dual descends to the quotient. -/
@@ -286,7 +277,7 @@ theorem doubleRightDualFunctor_δ_obj (X Y : C) :
   -- As for the tensorator, rewriting cannot match the tensor comparison at descended duals
   -- with its mapped-source form while retaining the composite's fixed bidual endpoints.
   -- Term congruence uses their definitional identification without abstracting those endpoints.
-  exact (congrArg₂ (· ≫ ·) (rightAdjointMate_map_rightRigid (rightDualTensorIso X Y).inv)
+  exact (congrArg₂ (· ≫ ·) (rightAdjointMate_map (I := I) (rightDualTensorIso X Y).inv)
     (rightDualTensorIso_obj_hom Yᘁ Xᘁ)).trans
       ((toMonoidalQuotient I).map_comp _ _).symm
 
@@ -327,6 +318,8 @@ chosen dual of the unit on both sides. -/
 theorem doubleRightDualFunctor_ε_eq_map :
     ε (doubleRightDualFunctor (MonoidalQuotient I)) =
       (toMonoidalQuotient I).map (ε (doubleRightDualFunctor C)) := by
+  -- Select the rigid structure's unit dual rather than its canonical self-duality.
+  let : HasRightDual (𝟙_ C) := RightRigidCategory.rightDual _
   rw [doubleRightDualFunctor_ε_eq_rightAdjointMate,
     doubleRightDualFunctor_ε_eq_rightAdjointMate,
     rightDualIso_exactPairingUnit_hom, rightDualIso_exactPairingUnit_inv]
@@ -334,7 +327,7 @@ theorem doubleRightDualFunctor_ε_eq_map :
   -- rw cannot identify. Term congruence identifies the rigidly chosen dual and its image
   -- definitionally, keeping the composite's unit and bidual endpoints together.
   exact (congrArg₂ (· ≫ ·) (Eq.refl _)
-    (rightAdjointMate_map_rightRigid (rightDualIso
+    (rightAdjointMate_map (I := I) (rightDualIso
       (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom)).trans
         ((toMonoidalQuotient I).map_comp _ _).symm
 
