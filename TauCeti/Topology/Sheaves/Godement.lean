@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Sites.Abelian
+public import Mathlib.Topology.Sheaves.Abelian
 public import TauCeti.CategoryTheory.Abelian.FunctorialResolution
+public import TauCeti.CategoryTheory.Adjunction.Additive
 public import TauCeti.Topology.Sheaves.Skyscraper
 public import TauCeti.Topology.Sheaves.Flasque.Products
+import TauCeti.Topology.Sheaves.Stalks
 
 /-!
 # The Godement sheaf and the canonical flasque embedding
@@ -23,11 +26,13 @@ with the discrete topology, and this is the adjunction `f^* ⊣ f_*` for the ide
 
 The composite `godement C X = stalksFunctor C X ⋙ skyscraperProductFunctor C X` is the *Godement
 sheaf* functor `F ↦ ∏ₓ (iₓ)_* Fₓ`, whose coordinate at `x` on a morphism is the induced morphism of
-skyscraper sheaves (`godement_map_π`). The unit of the adjunction is the canonical morphism
-`toGodement C X : F ⟶ godement C X F` (`toGodement_eq_unit`), whose coordinate at `x` sends a
-section over an open containing `x` to its germ at `x` (`toGodement_app_π_hom_app`), as the unit of
-the adjunction between the stalk at `x` and the skyscraper sheaf at `x` does
-(`TauCeti.Topology.stalkSkyscraperSheafAdjunction_unit_app_hom_app`).
+skyscraper sheaves (`godement_map_π`). When `C` is abelian, `godement C X` is additive
+(`additive_godement`) and local, sending morphisms that vanish on all opens inside `V` to morphisms
+that vanish on all opens inside `V` (`godement_map_app_eq_zero_of_app_eq_zero`). The unit of the
+adjunction is the canonical morphism `toGodement C X : F ⟶ godement C X F` (`toGodement_eq_unit`),
+whose coordinate at `x` sends a section over an open containing `x` to its germ at `x`
+(`toGodement_app_π_hom_app`), as the unit of the adjunction between the stalk at `x` and the
+skyscraper sheaf at `x` does (`TauCeti.Topology.stalkSkyscraperSheafAdjunction_unit_app_hom_app`).
 
 A product of skyscraper sheaves whose values admit morphisms from the terminal object is flasque
 (`isFlasque_skyscraperProductFunctor_obj`): the restriction maps of each skyscraper presheaf are
@@ -63,6 +68,9 @@ valued in an abelian concrete category with the usual stalk hypotheses its augme
 ## Main results
 
 * `TauCeti.Topology.godement_map_π`: the coordinates of the Godement sheaf of a morphism.
+* `TauCeti.Topology.additive_godement` and
+  `TauCeti.Topology.godement_map_app_eq_zero_of_app_eq_zero`: additivity and locality of the
+  Godement functor for abelian targets.
 * `TauCeti.Topology.toGodement_app_π`: the coordinate of `toGodement` at `x` is the unit of the
   adjunction between the stalk at `x` and the skyscraper sheaf at `x`.
 * `TauCeti.Topology.toGodement_app_π_hom_app`: this coordinate sends a section to its germ at `x`.
@@ -352,6 +360,67 @@ instance mono_toGodement_app (F : X.Sheaf C) : Mono ((toGodement C X).app F) :=
 end Concrete
 
 end Mono
+
+section Additive
+
+variable (C : Type*) [Category.{u} C] [Abelian C] [HasColimits C] [HasProducts.{u} C]
+  (X : TopCat.{u})
+
+open scoped Classical in
+/-- The Godement functor on sheaves valued in an abelian category is additive. -/
+instance additive_godement : (godement C X).Additive where
+  map_add {F G} α β := by
+    refine Pi.hom_ext _ _ fun x ↦ ?_
+    have hsky : (skyscraperSheafFunctor x).map
+          ((TopCat.Presheaf.stalkFunctor C x).map (α + β).hom) =
+        (skyscraperSheafFunctor x).map ((TopCat.Presheaf.stalkFunctor C x).map α.hom) +
+          (skyscraperSheafFunctor x).map ((TopCat.Presheaf.stalkFunctor C x).map β.hom) := by
+      rw [← Functor.map_add]
+      exact congrArg (skyscraperSheafFunctor x).map (TopCat.Presheaf.stalkFunctor C x).map_add
+    -- `godement` and `Presheaf.stalk` are semireducible, so `trans` avoids `simp`/`rw`
+    -- implicit-transparency mismatches across `godement_map_π`.
+    exact ((godement_map_π C X (α + β) x).trans
+      ((congrArg _ hsky).trans (Preadditive.comp_add _ _ _ _ _ _))).trans
+      ((Preadditive.add_comp _ _ _ ((godement C X).map α) ((godement C X).map β) _).trans
+        (congrArg₂ (· + ·) (godement_map_π C X α x) (godement_map_π C X β x))).symm
+
+variable {C X}
+
+/-- Locality of the Godement functor: if `α : F ⟶ G` vanishes on all opens inside `V`, then so
+does `(godement C X).map α`. -/
+theorem godement_map_app_eq_zero_of_app_eq_zero {F G : X.Sheaf C} (α : F ⟶ G) {V : Opens X}
+    (hα : ∀ ⦃W : Opens X⦄, W ≤ V → α.hom.app (op W) = 0) ⦃W : Opens X⦄ (hW : W ≤ V) :
+    ((godement C X).map α).hom.app (op W) = 0 := by
+  classical
+  let fam : X → X.Sheaf C := fun y ↦ (skyscraperSheafFunctor y).obj (G.presheaf.stalk y)
+  let evW : X.Sheaf C ⥤ C :=
+    sheafToPresheaf (Opens.grothendieckTopology X) C ⋙ (evaluation (Opens X)ᵒᵖ C).obj (op W)
+  have hlim : IsLimit (evW.mapCone (limit.cone (Discrete.functor fam))) :=
+    isLimitOfPreserves evW (limit.isLimit (Discrete.functor fam))
+  rw [← evaluation_obj_map,
+    ← ObjectProperty.ι_map (TopCat.Presheaf.IsSheaf (X := X)),
+    ← Functor.comp_map]
+  refine hlim.hom_ext fun ⟨y⟩ ↦ ?_
+  have hπcone :
+      (evW.mapCone (limit.cone (Discrete.functor fam))).π.app ⟨y⟩ = evW.map (Pi.π fam y) := by
+    rw [Functor.mapCone_π_app, limit.cone_π]
+  refine ((congrArg (evW.map ((godement C X).map α) ≫ ·) hπcone).trans
+    ((evW.map_comp ((godement C X).map α) (Pi.π fam y)).symm.trans ?_)).trans zero_comp.symm
+  by_cases hyW : y ∈ W
+  · have hstalk := TopCat.Presheaf.stalkFunctor_map_eq_zero_of_app_eq_zero α.hom hα (hW hyW)
+    have hsky : (skyscraperSheafFunctor y).map
+        ((TopCat.Presheaf.stalkFunctor C y).map α.hom) = 0 := by
+      rw [hstalk, Functor.map_zero]
+    have hπ : (godement C X).map α ≫ Pi.π fam y = 0 :=
+      (godement_map_π C X α y).trans ((congrArg (_ ≫ ·) hsky).trans comp_zero)
+    rw [hπ, Functor.map_zero]
+  · have hzeroW : IsZero (evW.obj (fam y)) :=
+      (isZero_zero C).of_iso
+        ((eqToIso ((skyscraperSheaf_obj_obj y (G.presheaf.stalk y) (op W)).trans
+          (ite_eq_right hyW))).trans HasZeroObject.zeroIsoTerminal.symm)
+    exact hzeroW.eq_of_tgt _ _
+
+end Additive
 
 section Resolution
 
