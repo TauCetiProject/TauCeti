@@ -6,6 +6,7 @@ Authors: Jon Crall, Claude Opus 5
 module
 
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Basic
+import TauCeti.Analysis.InnerProductSpace.Parallelogram
 
 /-!
 # Orthogonal countable splitting and vector operations for diagonal spectral measures
@@ -16,8 +17,9 @@ For a countable measurable partition, these squared norms sum to the squared
 norm of the original vector (`tsum_enorm_sq_proj`). Because the diagonal measure
 is characterized by these squared projection norms, it vanishes at `0`
 (`diag_zero`), scales quadratically under scalar multiplication (`diag_smul`),
-satisfies the parallelogram-type subadditivity `P.diag (ξ + η) ≤ 2 • P.diag ξ + 2 • P.diag η`
-(`diag_add_le`), and restricts to `B` along `P.proj B hB` (`diag_proj`).
+is invariant under negation (`diag_neg`), satisfies the parallelogram-type
+subadditivity `P.diag (ξ + η) ≤ 2 • P.diag ξ + 2 • P.diag η` (`diag_add_le`),
+and restricts to `B` along `P.proj B hB` (`diag_proj`).
 The identities apply to projection-valued measures on arbitrary measurable spaces.
 
 Adapted from Kitware's DKPS formalization in
@@ -79,26 +81,19 @@ theorem diag_smul (P : ProjValMeasure X H) (c : ℂ) (ξ : H) :
   rw [smul_apply, ← P.enorm_sq_proj_apply B hB (c • ξ), map_smul, eNorm_smul, mul_pow,
     P.enorm_sq_proj_apply B hB ξ, smul_eq_mul]
 
+/-- Negating a vector leaves its diagonal scalar measure unchanged. -/
+@[simp]
+theorem diag_neg (P : ProjValMeasure X H) (ξ : H) : P.diag (-ξ) = P.diag ξ := by
+  simpa using P.diag_smul (-1 : ℂ) ξ
+
 /-- The diagonal scalar measure of a sum is bounded by twice the sum of the two diagonal
 measures. -/
 theorem diag_add_le (P : ProjValMeasure X H) (ξ η : H) :
     P.diag (ξ + η) ≤ (2 : ℝ≥0∞) • P.diag ξ + (2 : ℝ≥0∞) • P.diag η := by
   refine Measure.le_iff.2 fun B hB => ?_
-  have hreal : ‖P.proj B hB (ξ + η)‖ ^ 2 ≤
-      2 * ‖P.proj B hB ξ‖ ^ 2 + 2 * ‖P.proj B hB η‖ ^ 2 := by
-    have htri : ‖P.proj B hB (ξ + η)‖ ≤ ‖P.proj B hB ξ‖ + ‖P.proj B hB η‖ := by
-      rw [map_add]
-      exact norm_add_le _ _
-    have hsq : ‖P.proj B hB (ξ + η)‖ ^ 2 ≤ (‖P.proj B hB ξ‖ + ‖P.proj B hB η‖) ^ 2 :=
-      pow_le_pow_left₀ (norm_nonneg _) htri 2
-    nlinarith [sq_nonneg (‖P.proj B hB ξ‖ - ‖P.proj B hB η‖)]
-  have henn : ENNReal.ofReal (‖P.proj B hB (ξ + η)‖ ^ 2) ≤
-      ENNReal.ofReal (2 * ‖P.proj B hB ξ‖ ^ 2 + 2 * ‖P.proj B hB η‖ ^ 2) :=
-    ENNReal.ofReal_le_ofReal hreal
-  rw [ENNReal.ofReal_add (by positivity) (by positivity),
-    ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat] at henn
-  simpa only [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm, P.enorm_sq_proj_apply _ hB,
-    add_apply, smul_apply, smul_eq_mul] using henn
+  simp only [add_apply, smul_apply, smul_eq_mul, ← P.enorm_sq_proj_apply B hB, map_add, ← mul_add]
+  exact le_self_add.trans_eq
+    (TauCeti.parallelogram_law_with_enorm ℂ (P.proj B hB ξ) (P.proj B hB η))
 
 /-- Applying a measurable-set projection restricts the diagonal scalar measure to that set. -/
 @[simp]

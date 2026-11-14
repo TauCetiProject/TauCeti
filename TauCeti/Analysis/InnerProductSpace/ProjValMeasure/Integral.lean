@@ -45,7 +45,9 @@ continuous extension `LinearMap.extendOfNorm`.
   its values times the projections of its fibres.
 * `ProjValMeasure.eq_integral_of_continuous`: a continuous map agreeing with the integral on
   simple symbols is the integral.
-* `ProjValMeasure.integral_indicator`: the integral of a measurable indicator is the projection.
+* `ProjValMeasure.integral_indicator`, `ProjValMeasure.proj_mul_integral`, and
+  `ProjValMeasure.integral_mul_proj`: the integral of a measurable indicator is the projection, and
+  composing a projection with an integral restricts the symbol to that set.
 * `ProjValMeasure.forall_commute_integral_iff`: an operator commutes with every integral iff it
   commutes with every projection.
 * `ProjValMeasure.integral_diag_eq_inner_integral`: diagonal matrix elements of the integral are
@@ -278,6 +280,30 @@ theorem integral_indicator (P : ProjValMeasure X H) {B : Set X} (hB : Measurable
     integral_ofSimpleFunc_eq_simpleIntegral]
   exact (P.setToSimpleFunc_smulProj_piecewise 1 hB).trans (one_smul ℂ _)
 
+/-- Multiplying an operator integral on the left by `P(B)` restricts the symbol to `B`. -/
+theorem proj_mul_integral (P : ProjValMeasure X H) {B : Set X} (hB : MeasurableSet B)
+    (f : BoundedBorelFunction X) :
+    P.proj B hB * P.integral f = P.integral (BoundedBorelFunction.indicator B hB f) := by
+  rw [← P.integral_indicator hB, ← map_mul, BoundedBorelFunction.indicator_one_mul]
+
+/-- Multiplying an operator integral on the right by `P(B)` restricts the symbol to `B`. -/
+theorem integral_mul_proj (P : ProjValMeasure X H) (f : BoundedBorelFunction X) {B : Set X}
+    (hB : MeasurableSet B) :
+    P.integral f * P.proj B hB = P.integral (BoundedBorelFunction.indicator B hB f) := by
+  rw [← P.integral_indicator hB, ← map_mul, BoundedBorelFunction.mul_indicator_one]
+
+/-- Applying `P(B)` to `(∫ f dP) ξ` gives `(∫ 1_B f dP) ξ`. -/
+theorem proj_integral_apply (P : ProjValMeasure X H) {B : Set X} (hB : MeasurableSet B)
+    (f : BoundedBorelFunction X) (ξ : H) :
+    P.proj B hB (P.integral f ξ) = P.integral (BoundedBorelFunction.indicator B hB f) ξ := by
+  rw [← mul_apply_eq_comp, P.proj_mul_integral]
+
+/-- Applying `∫ f dP` to `P(B) ξ` gives `(∫ 1_B f dP) ξ`. -/
+theorem integral_proj_apply (P : ProjValMeasure X H) (f : BoundedBorelFunction X) {B : Set X}
+    (hB : MeasurableSet B) (ξ : H) :
+    P.integral f (P.proj B hB ξ) = P.integral (BoundedBorelFunction.indicator B hB f) ξ := by
+  rw [← mul_apply_eq_comp, P.integral_mul_proj]
+
 /-- An operator commutes with the integral of every bounded Borel symbol iff it commutes with the
 projection of every measurable set: integrals of simple symbols are linear combinations of
 projections, and simple symbols are dense. -/
@@ -335,32 +361,21 @@ theorem norm_sq_integral_apply (P : ProjValMeasure X H) (f : BoundedBorelFunctio
 diagonal measure `P.diag ξ`. -/
 theorem integral_apply_eq_zero_iff (P : ProjValMeasure X H) (f : BoundedBorelFunction X)
     (ξ : H) : P.integral f ξ = 0 ↔ ⇑f =ᵐ[P.diag ξ] 0 := by
-  have hint : Integrable (fun x => ‖f x‖ ^ 2) (P.diag ξ) :=
-    .of_bound (f.measurable.norm.pow_const 2).aestronglyMeasurable (‖f‖ ^ 2)
-      (Eventually.of_forall fun x => by
-        rw [Real.norm_of_nonneg (by positivity)]
-        exact pow_le_pow_left₀ (norm_nonneg _) (f.norm_coe_le_norm x) 2)
+  have hint : Integrable (fun x => ‖f x‖ ^ 2) (P.diag ξ) := by
+    simpa only [sq, BoundedBorelFunction.mul_apply, norm_mul] using
+      ((f * f).integrable (P.diag ξ)).norm
   rw [← norm_eq_zero, ← pow_eq_zero_iff (n := 2) two_ne_zero, norm_sq_integral_apply,
-    integral_eq_zero_iff_of_nonneg (fun x => by positivity) hint]
+    integral_eq_zero_iff_of_nonneg (fun _ => by positivity) hint]
   simp [EventuallyEq]
 
 /-- The diagonal measure of `(∫ g dP) ξ` is `P.diag ξ` weighted by `x ↦ ‖g x‖ₑ ^ 2`. -/
 @[simp]
 theorem diag_integral (P : ProjValMeasure X H) (g : BoundedBorelFunction X) (ξ : H) :
     P.diag (P.integral g ξ) = (P.diag ξ).withDensity fun x => ‖g x‖ₑ ^ 2 := by
-  have hint : Integrable (fun x => ‖g x‖ ^ 2) (P.diag ξ) :=
-    .of_bound (g.measurable.norm.pow_const 2).aestronglyMeasurable (‖g‖ ^ 2)
-      (Eventually.of_forall fun x => by
-        rw [Real.norm_of_nonneg (by positivity)]
-        exact pow_le_pow_left₀ (norm_nonneg _) (g.norm_coe_le_norm x) 2)
+  have hint : Integrable (fun x => ‖g x‖ ^ 2) (P.diag ξ) := by
+    simpa only [sq, BoundedBorelFunction.mul_apply, norm_mul] using
+      ((g * g).integrable (P.diag ξ)).norm
   ext B hB
-  have hmul :
-      BoundedBorelFunction.indicator B hB 1 * g = BoundedBorelFunction.indicator B hB g := by
-    ext x
-    by_cases hx : x ∈ B <;> simp [hx]
-  have hproj :
-      P.proj B hB (P.integral g ξ) = P.integral (BoundedBorelFunction.indicator B hB g) ξ := by
-    rw [← P.integral_indicator hB, ← mul_apply_eq_comp, ← map_mul, hmul]
   have hind : (fun x => ‖BoundedBorelFunction.indicator B hB g x‖ ^ 2) =
       B.indicator fun x => ‖g x‖ ^ 2 := by
     ext x
@@ -369,8 +384,8 @@ theorem diag_integral (P : ProjValMeasure X H) (g : BoundedBorelFunction X) (ξ 
     P.diag (P.integral g ξ) B = ENNReal.ofReal ((P.diag (P.integral g ξ) B).toReal) :=
       (ENNReal.ofReal_toReal (measure_ne_top _ _)).symm
     _ = ENNReal.ofReal (∫ x in B, ‖g x‖ ^ 2 ∂(P.diag ξ)) := by
-      rw [← P.norm_sq_proj_apply B hB, hproj, P.norm_sq_integral_apply, hind,
-        MeasureTheory.integral_indicator hB]
+      rw [← P.norm_sq_proj_apply B hB, P.proj_integral_apply hB g ξ, P.norm_sq_integral_apply,
+        hind, MeasureTheory.integral_indicator hB]
     _ = ∫⁻ x in B, ‖g x‖ₑ ^ 2 ∂(P.diag ξ) := by
       rw [ofReal_integral_eq_lintegral_ofReal hint.integrableOn (ae_of_all _ fun _ => sq_nonneg _)]
       refine lintegral_congr fun x => ?_
