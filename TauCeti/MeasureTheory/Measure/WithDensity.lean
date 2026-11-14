@@ -7,13 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Pow
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
-public import Mathlib.MeasureTheory.Integral.Lebesgue.Map
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 public import Mathlib.MeasureTheory.Measure.Support
-public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.MeasureTheory.Measure.Real
-import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -36,14 +32,21 @@ weight. The substitution `x = t ^ 2` on the positive half-line is the case a squ
 
 A weight `exp ∘ g` whose exponent is bounded above almost everywhere keeps a finite measure finite.
 
+The topological support of a weighted measure is also computed: an almost-everywhere nonzero
+density preserves it, and, when the reference measure is positive on nonempty open sets, a density
+positive on an open set and zero off its closure gives that closure as support. A measure is
+absolutely continuous with respect to itself weighted by an almost-everywhere positive density, and
+continuous nonnegative real densities presenting the same weighted measure against a sigma-finite
+measure that is positive on nonempty open sets are equal.
+
 ## Main statements
 
 * `MeasurableEquiv.map_withDensity`: the image of a weighted measure along a measurable
   equivalence is the image measure weighted by the transported weight.
 * `TauCeti.Probability.map_abs_withDensity`: the image of a weighted Lebesgue measure under
   absolute value has the folded density.
-* `MeasureTheory.Measure.map_withDensity_eq_withDensity`: a pointwise factorization of one weight
-  through a map whose Jacobian identity is already known transports that weight to the image.
+* `MeasureTheory.Measure.map_withDensity_eq_withDensity`: an almost-everywhere factorization of one
+  weight through a map whose Jacobian identity is already known transports that weight to the image.
 * `MeasureTheory.Measure.map_withDensity_comp`: the image of a measure weighted by a pulled-back
   weight is the image measure weighted by that weight.
 * `MeasurableEmbedding.map_withDensity_comp`: the same along a measurable embedding, with no
@@ -57,26 +60,28 @@ A weight `exp ∘ g` whose exponent is bounded above almost everywhere keeps a f
   obtained by the same substitution and Jacobian factor.
 * `MeasureTheory.Measure.support_withDensity_eq`: weighting a measure by an almost-everywhere
   nonzero density preserves its topological support.
-* `MeasureTheory.Measure.support_withDensity_eq_closure_of_subset`: a density positive on an open
-  set and zero off its closure has topological support equal to that closure.
+* `MeasureTheory.Measure.support_withDensity_eq_closure_of_subset`: for a measure positive on
+  nonempty open sets, a density positive on an open set and zero off its closure has topological
+  support equal to that closure.
 * `MeasureTheory.Measure.support_withDensity_eq_closure`: the special case where the function
   support is exactly the open set.
-* `MeasureTheory.Measure.support_withDensity_ofReal`: a continuous nonnegative real density
-  has the same topological support as the measure it defines.
+* `MeasureTheory.Measure.support_withDensity_ofReal`: for a measure positive on nonempty open
+  sets, a continuous nonnegative real density has the same topological support as the measure it
+  defines.
 * `MeasureTheory.absolutelyContinuous_withDensity_ofReal`: a measure is absolutely continuous with
   respect to itself weighted by an almost-everywhere positive real density.
 * `MeasureTheory.continuous_eq_of_withDensity_ofReal_eq`: continuous nonnegative real densities
-  presenting the same weighted measure are equal pointwise.
+  presenting the same weighted measure against a sigma-finite measure positive on nonempty open
+  sets are equal pointwise.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
   with `g` bounded above almost everywhere, is finite.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
   along a map injective and differentiable on a measurable set.
 * `TauCeti.MeasureTheory.map_sq_withDensity_restrict_Ioi`: its instance for squaring on the
   positive half-line.
+
 -/
 public section
-
-noncomputable section
 
 open MeasureTheory
 
@@ -108,13 +113,8 @@ folded law has density `f x + f (-x)` on the positive half-line and `0` elsewher
 theorem map_abs_withDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
     (volume.withDensity f).map (|·|) =
       volume.withDensity ((Ioi 0).indicator fun x => f x + f (-x)) := by
-  have hvolume : volume.map (fun x : ℝ => -x) = volume := by
-    exact Measure.map_neg_eq_self (volume : Measure ℝ)
   have hneg : (volume.withDensity f).neg = volume.withDensity fun x => f (-x) := by
-    have h := MeasurableEquiv.map_withDensity (MeasurableEquiv.neg ℝ) volume f
-    have hvolume' : volume.map (MeasurableEquiv.neg ℝ) = volume := hvolume
-    rw [hvolume'] at h
-    simpa [Measure.neg_def] using h
+    simpa [Measure.neg_def] using MeasurableEquiv.map_withDensity (MeasurableEquiv.neg ℝ) volume f
   rw [(volume.withDensity f).map_abs_eq_restrict_add_restrict, hneg,
     restrict_withDensity measurableSet_Ici,
     restrict_withDensity measurableSet_Ioi, Measure.restrict_congr_set Ioi_ae_eq_Ici.symm,
@@ -167,9 +167,8 @@ on nonempty open sets. -/
 theorem support_withDensity_eq_closure {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
     {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → ℝ≥0∞}
     {U : Set X} (hf : Measurable f) (hU : IsOpen U) (hsupp : Function.support f = U) :
-    (μ.withDensity f).support = closure U := by
-  exact support_withDensity_eq_closure_of_subset hf hU (hsupp.ge)
-    (hsupp.le.trans subset_closure)
+    (μ.withDensity f).support = closure U :=
+  support_withDensity_eq_closure_of_subset hf hU hsupp.ge (hsupp.le.trans subset_closure)
 
 /-- The support of a measure with continuous nonnegative real density is the topological support
 of that density, provided the reference measure is positive on nonempty open sets. -/
@@ -365,8 +364,8 @@ weighted by `f`.
 
 This is the measure-level form of Mathlib's
 `MeasureTheory.lintegral_image_eq_lintegral_abs_deriv_mul`, and it carries a weight where
-`MeasureTheory.map_withDensity_abs_det_fderiv_eq_addHaar` has none: that theorem is the case
-`f = 1`. Unlike
+`MeasureTheory.map_withDensity_abs_det_fderiv_eq_addHaar` has none: its one-dimensional instance
+is the case `f = 1`. Unlike
 `MeasurableEquiv.withDensity_ofReal_map_symm_apply_eq_integral_abs_deriv_mul`, it does not ask
 `φ` to be injective off `s`, which is what a substitution on a half-line needs. The weight `f` is
 arbitrary; no measurability of it is required. -/
