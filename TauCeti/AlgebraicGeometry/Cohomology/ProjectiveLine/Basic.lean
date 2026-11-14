@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
 public import TauCeti.AlgebraicGeometry.Cohomology.SectionsQuotient.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.Trivial
-public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveLine
@@ -155,7 +155,7 @@ private theorem isLocalization_ρ₀ :
 
 /-- Restriction from the first chart to the overlap is injective. -/
 private theorem ψ₀_injective : Function.Injective (ψ₀ R) := by
-  rcases subsingleton_or_nontrivial R with hR | hR
+  rcases subsingleton_or_nontrivial R with hR | _
   · exact Function.injective_of_subsingleton _
   let := (ρ₀ R).toAlgebra
   have := isLocalization_ρ₀ R

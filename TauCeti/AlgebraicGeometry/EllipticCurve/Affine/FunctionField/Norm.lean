@@ -44,16 +44,11 @@ extension is `RatFunc F` itself; files consuming these results open the `RatFunc
 does. The repository's own `algebraFractionRingFunctionField` is the same construction for
 `FractionRing F[X]`, exported there because that diamond cannot arise for a quadratic extension.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 0** (the function field, places, and divisors).
-The layer asks for the place at infinity, "where `x` and `y` have their poles", with `ord_∞ x = -2`,
-`ord_∞ y = -3` and residue field `K`. That place is this norm followed by Mathlib's place at
-infinity of `F(x)`: `ord_∞ f = -deg N(f)`. This file supplies the general degree transport that
-`ord_∞` is computed from; the valuation itself and the two coordinate values are proved in
-`FunctionField/InfinityPlace/Basic.lean`. No order at infinity is defined or claimed here. Layer 0
-seeds no declaration this competes with — `Suggested.lean` records that the function-field
-layer's "types are new API and are built there, not pinned here".
+The place at infinity of the curve, where `x` and `y` have their poles, with
+`ord_∞ x = -2` and `ord_∞ y = -3`, is this norm followed by Mathlib's place at infinity of `F(x)`:
+`ord_∞ f = -deg N(f)`. This file supplies the general degree transport that `ord_∞` is computed
+from; the valuation itself and the two coordinate values are proved in
+`FunctionField/InfinityPlace/Basic.lean`. No order at infinity is defined or claimed here.
 
 ## Provenance
 

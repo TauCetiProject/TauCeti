@@ -60,7 +60,7 @@ variable [Field K] [Algebra k K]
 
 /-- A unipotent point whose `n`-th power is the identity is trivial when `n` is nonzero in
 the value field. -/
-theorem eq_one_of_pow_eq_one [PerfectField K]
+theorem eq_one_of_pow_eq_one
     {g : WithConv (H →ₐ[k] K)} (hg : IsUnipotentPoint g)
     {n : ℕ} (hn : (n : K) ≠ 0) (hpow : g ^ n = 1) : g = 1 :=
   (isSemisimplePoint_of_pow_eq_one hn hpow).eq_one_of_isUnipotent hg

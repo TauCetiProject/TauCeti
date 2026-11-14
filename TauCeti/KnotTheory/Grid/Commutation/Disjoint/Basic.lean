@@ -174,10 +174,6 @@ theorem commute_toRectangleDecomposition (D : GridRectanglePentagonDecomposition
       commute, GridPentagonRectangleDecomposition.rectangle,
       GridRectangleDecomposition.commute_second_left,
       toRectangleDecomposition_first_left]
-  · simp only [GridPentagonRectangleDecomposition.toRectangleDecomposition_second_right,
-      commute, GridPentagonRectangleDecomposition.rectangle,
-      GridRectangleDecomposition.commute_second_right,
-      toRectangleDecomposition_first_right]
 
 /-- The initial side of the reordered pentagon. -/
 @[simp]
@@ -332,10 +328,6 @@ theorem commute_toRectangleDecomposition (D : GridPentagonRectangleDecomposition
       commute, GridRectanglePentagonDecomposition.pentagon,
       GridPentagonBetween.ofToGridRectangleEq_toGridRectangleBetween,
       GridRectangleDecomposition.commute_second_left, toRectangleDecomposition_first_left]
-  · simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_second_right,
-      commute, GridRectanglePentagonDecomposition.pentagon,
-      GridPentagonBetween.ofToGridRectangleEq_toGridRectangleBetween,
-      GridRectangleDecomposition.commute_second_right, toRectangleDecomposition_first_right]
 
 /-- The initial side of the reordered rectangle. -/
 @[simp]

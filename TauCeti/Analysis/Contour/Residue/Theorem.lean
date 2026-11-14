@@ -30,6 +30,10 @@ stated up to that normal form.
   form: only the poles (points of negative meromorphic order) need lie in `S`.
 * `TauCeti.Contour.classicalResidueTheorem_circle` — the form asking every point of nonzero
   meromorphic order to lie in `S`; a direct corollary since residues at non-poles vanish.
+* `TauCeti.Contour.circleIntegral_eq_residue_of_meromorphicOrderAt_nonneg` — a single pole `z₀`
+  inside the circle: `∮_{C(c,R)} f = 2πi · residue f z₀`;
+  `TauCeti.Contour.circleIntegral_eq_residue` is the form asking `f` to be holomorphic away
+  from `z₀`.
 
 This is the special case of the Hungerbühler–Wasem generalized residue theorem (HW Thm 3.3) for a
 round circle.
@@ -353,5 +357,28 @@ theorem classicalResidueTheorem_circle {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR
     circleIntegral f c R = 2 * (Real.pi : ℂ) * Complex.I * (∑ s ∈ S, residue f s) :=
   classicalResidueTheorem_circle_of_meromorphicOrderAt_neg hR S hf hS
     fun z hz h ↦ hsupp z hz h.ne
+
+/-- **The residue theorem for a single pole on a circle.** If `f` is meromorphic on the closed
+disc of radius `R` about `c` and has nonnegative meromorphic order at every point of the closed
+disc other than a point `z₀` of the open disc, then `∮_{|z - c| = R} f dz = 2πi · Res_{z₀} f`. -/
+theorem circleIntegral_eq_residue_of_meromorphicOrderAt_nonneg {f : ℂ → ℂ} {c z₀ : ℂ} {R : ℝ}
+    (hz₀ : z₀ ∈ ball c R) (hf : MeromorphicOn f (closedBall c R))
+    (hord : ∀ z ∈ closedBall c R, z ≠ z₀ → 0 ≤ meromorphicOrderAt f z) :
+    circleIntegral f c R = 2 * π * I * residue f z₀ := by
+  rw [classicalResidueTheorem_circle_of_meromorphicOrderAt_neg (pos_of_mem_ball hz₀) {z₀} hf
+    (by simpa using hz₀) ?_, Finset.sum_singleton]
+  intro z hz hneg
+  by_contra hzz₀
+  exact (hord z hz (by simpa using hzz₀)).not_gt hneg
+
+/-- **The residue theorem for a single pole on a circle**, holomorphic form. If `f` is meromorphic
+at a point `z₀` of the open disc of radius `R` about `c` and holomorphic at every other point of
+the closed disc, then `∮_{|z - c| = R} f dz = 2πi · Res_{z₀} f`. -/
+theorem circleIntegral_eq_residue {f : ℂ → ℂ} {c z₀ : ℂ} {R : ℝ} (hz₀ : z₀ ∈ ball c R)
+    (hf : MeromorphicAt f z₀) (hfa : ∀ z ∈ closedBall c R, z ≠ z₀ → AnalyticAt ℂ f z) :
+    circleIntegral f c R = 2 * π * I * residue f z₀ :=
+  circleIntegral_eq_residue_of_meromorphicOrderAt_nonneg hz₀
+    (fun z hz ↦ if hzz₀ : z = z₀ then hzz₀ ▸ hf else (hfa z hz hzz₀).meromorphicAt)
+    fun z hz hzz₀ ↦ (hfa z hz hzz₀).meromorphicOrderAt_nonneg
 
 end TauCeti.Contour
