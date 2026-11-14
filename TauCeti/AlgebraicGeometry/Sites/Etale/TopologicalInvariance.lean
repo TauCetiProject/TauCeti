@@ -45,7 +45,7 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
 /-- Base change along `f : X ⟶ Y`, from schemes étale over `Y` to schemes étale over `X`: an étale
 `V ⟶ Y` is sent to `V ×_Y X ⟶ X`. -/
-noncomputable def smallEtaleBaseChange : Y.Etale ⥤ X.Etale :=
+@[expose] noncomputable def smallEtaleBaseChange : Y.Etale ⥤ X.Etale :=
   MorphismProperty.Over.pullback @Etale ⊤ f
 
 /-- On underlying schemes over `X`, `smallEtaleBaseChange f` is base change along `f`. -/
