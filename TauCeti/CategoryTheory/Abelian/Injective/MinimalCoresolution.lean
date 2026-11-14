@@ -292,10 +292,7 @@ private theorem π_isoCosyzygy_succ_hom (hE : E.IsMinimalInjectiveCoresolution)
 /-- **Minimal injective coresolutions are unique up to isomorphism.** Two minimal injective
 coresolutions `E` and `S` with `n` terms of the same object are isomorphic as composable arrows,
 by an isomorphism extending a given isomorphism `e : E.obj' 1 ≅ S.obj' 1` of the resolved
-objects. It is built term by term: an isomorphism of `i`-th cosyzygies extends along the injective
-envelopes to an isomorphism of `i`-th terms
-(`CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.exists_iso_obj'_comm`), which
-induces one of the next cosyzygies. -/
+objects. -/
 theorem exists_iso (hE : E.IsMinimalInjectiveCoresolution)
     (hS : S.IsMinimalInjectiveCoresolution) (e : E.obj' 1 ≅ S.obj' 1) :
     ∃ f : E ≅ S, app' f.hom 1 = e.hom := by
