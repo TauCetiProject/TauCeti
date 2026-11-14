@@ -50,6 +50,7 @@ finite field with `q` elements whose point counts are `1 + qⁿ - tₙ`.
 * `PowerSeries.subst_exp_logOf` and `PowerSeries.logOf_subst_exp`: `exp (log f) = f` and
   `log (exp g) = g`.
 * `PowerSeries.logOf_mul`: `log (f g) = log f + log g`.
+* `PowerSeries.map_logOf`: the logarithm commutes with changing the coefficients.
 * `PowerSeries.logOf_eq_mk_iff`: `log f = ∑ sₙ Xⁿ / n` exactly when `(∑ sₙ₊₁ Xⁿ) f = f'`.
 * `PowerSeries.logOf_one_sub_C_mul_X` and `PowerSeries.logOf_one_sub_C_mul_X_add_C_mul_X_sq`: the
   logarithms of `1 - c X` and of `1 - a X + q X²`.
@@ -207,6 +208,15 @@ theorem logOf_prod {ι : Type*} {s : Finset ι} {f : ι → A⟦X⟧}
       logOf_mul (hf a (Finset.mem_insert_self a s))
         (by rw [map_prod]; exact Finset.prod_eq_one hs),
       ih hs]
+
+/-- The formal logarithm commutes with changing the coefficients along a ring homomorphism
+between `ℚ`-algebras, for power series with constant coefficient one. -/
+theorem map_logOf {B : Type*} [CommRing B] [Algebra ℚ B] (h : A →+* B) {f : A⟦X⟧}
+    (hf : constantCoeff f = 1) : map h (logOf f) = logOf (map h f) := by
+  have hsub : HasSubst (f - 1) := HasSubst.of_constantCoeff_zero' (by simp [hf])
+  rw [logOf_eq, logOf_eq]
+  -- `PowerSeries.map` is `MvPowerSeries.map`, in which `map_subst` states its result.
+  exact (map_subst (h := h) hsub (log A)).trans (by rw [map_log, map_sub, map_one]; rfl)
 
 /-! ## Logarithms of linear and quadratic polynomials -/
 
