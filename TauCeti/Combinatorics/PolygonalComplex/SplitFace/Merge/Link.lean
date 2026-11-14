@@ -33,11 +33,9 @@ characteristic, the same orientability and the same boundary darts: the deleted 
 
 ## Main results
 
-* `TauCeti.PolygonalComplex.IsMergeable.linkDegree_incoming`: the deleted edge lies on two face
-  sides, so it is interior.
 * `TauCeti.PolygonalComplex.HasSurfaceLink.mergeFaces`: a surface link stays a surface link.
-* `TauCeti.PolygonalComplex.IsMergeable.nonempty_path_tgt_src`: the merged face joins the target
-  of the deleted edge to its source.
+* `TauCeti.PolygonalComplex.IsMergeable.incoming_notMem_boundaryDarts`: the deleted edge is
+  interior.
 * `TauCeti.SurfaceModel.eulerChar_mergeFaces`, `TauCeti.SurfaceModel.isOrientable_mergeFaces_iff`:
   the Euler characteristic and orientability are unchanged.
 * `TauCeti.SurfaceModel.image_val_boundaryDarts_mergeFaces`: the boundary darts are unchanged.
@@ -164,11 +162,8 @@ private theorem cornerVertex_joinCorner : (C.mergeFaces h).cornerVertex (joinCor
   · rw [joinCorner_of_one_lt h h₂, ← src_outgoing, outgoing_def]
     exact src_mergeFacesSide_sides_sub_one h h₂
   · have h₂ : C.sides g₂ = 1 := by have := C.sides_pos g₂; omega
-    rw [joinCorner_eq_firstCorner h (.inr h₂), cornerVertex_firstCorner]
-    -- `g₂ = d⁻¹` is a monogon, so `d` is a loop
-    have hl := C.tgt_side_eq_src_side_of_sides_eq_one h₂ ⟨0, C.sides_pos g₂⟩
-    rw [← outgoing_def _ ⟨_, _⟩, h.outgoing_eq, SerreGraph.tgt_rev, SerreGraph.src_rev] at hl
-    exact hl.symm
+    rw [joinCorner_eq_firstCorner h (.inr h₂), cornerVertex_firstCorner,
+      h.tgt_incoming_eq_src_incoming_of_sides_eq_one h₂]
 
 /-! ### Germs -/
 
@@ -206,29 +201,6 @@ private theorem src_mergeGerm (e : C.graph.E) : C.graph.src (mergeGerm h e).1 = 
   · rw [mergeGerm_of_ne h he]
 
 /-! ### Vertex links -/
-
-omit h in
-/-- The edge of `d` lies on exactly the two face sides `d` of `g₁` and `d⁻¹` of `g₂`, so `d` has
-degree two in its link. -/
-theorem IsMergeable.linkDegree_incoming (h : C.IsMergeable g₁ g₂) :
-    C.linkDegree (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) = 2 := by
-  have hd₁ := (C.incoming_eq_outgoing_prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩).symm
-  have hne := C.graph.rev_ne (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)
-  have h₁ : Nat.card {c : C.Corner // C.outgoing c = C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩} = 1 :=
-    Nat.card_eq_one_iff_exists.2 ⟨⟨_, hd₁⟩, fun ⟨c, hc⟩ => Subtype.ext <| by
-      rcases h.eq_or_eq_of_toGeomEdge_eq c (by rw [hc]) with rfl | rfl
-      · rfl
-      · exact absurd (h.outgoing_eq.symm.trans hc) hne⟩
-  have h₂ : Nat.card {c : C.Corner //
-      C.outgoing c = C.graph.rev (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)} = 1 :=
-    Nat.card_eq_one_iff_exists.2 ⟨⟨_, h.outgoing_eq⟩, fun ⟨c, hc⟩ => Subtype.ext <| by
-      rcases h.eq_or_eq_of_toGeomEdge_eq c (by rw [hc, SerreGraph.toGeomEdge_rev]) with rfl | rfl
-      · exact absurd (hd₁.symm.trans hc) hne.symm
-      · rfl⟩
-  have := Nat.finite_of_card_ne_zero (h₁.symm ▸ one_ne_zero)
-  have := Nat.finite_of_card_ne_zero (h₂.symm ▸ one_ne_zero)
-  rw [linkDegree_eq_natCard_sum, Nat.card_sum, h₁, h₂]
-
 
 omit h in
 /-- Two germs of a link with the same underlying dart are joined by the empty path. -/
@@ -427,20 +399,6 @@ theorem HasSurfaceLink.mergeFaces {v : C.graph.V} (hv : C.HasSurfaceLink v) :
       h₂, (linkDegree_mergeFaces h _).trans hd₁, (linkDegree_mergeFaces h _).trans hd₂,
       fun e he hne₁ hne₂ => (linkDegree_mergeFaces h e).trans
         (hrest e.1 he (fun h' => hne₁ (Subtype.ext h')) fun h' => hne₂ (Subtype.ext h'))⟩
-
-/-! ### The one-skeleton -/
-
-/-- In the merged complex the target of `d` is joined to its source, along the sides of `X`. -/
-theorem IsMergeable.nonempty_path_tgt_src :
-    Nonempty ((C.mergeFaces h).graph.Path (C.graph.tgt (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩))
-      (C.graph.src (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩))) := by
-  obtain ⟨P⟩ := (C.mergeFaces h).nonempty_path_cornerVertex none (firstCorner h).2 (joinCorner h).2
-  have e₁ : (C.mergeFaces h).cornerVertex ⟨none, (firstCorner h).2⟩ =
-      C.graph.tgt (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := cornerVertex_firstCorner h
-  have e₂ : (C.mergeFaces h).cornerVertex ⟨none, (joinCorner h).2⟩ =
-      C.graph.src (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := cornerVertex_joinCorner h
-  rw [e₁, e₂] at P
-  exact ⟨P⟩
 
 end PolygonalComplex
 

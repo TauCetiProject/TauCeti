@@ -72,7 +72,7 @@ condition into the global statement that every edge lies on one or two face side
 
 public section
 
-universe u v w
+universe u v w u' v' w'
 
 namespace TauCeti
 
@@ -240,6 +240,24 @@ theorem prevCorner_mk_of_ne_zero {f : C.Face} {i j : Fin (C.sides f)} (hj : (j :
     exact C.nextCorner_prevCorner c
   · conv_lhs => rw [← hc]
     exact C.prevCorner_nextCorner c
+
+variable {C} in
+/-- Positions along faces with equally many sides advance in step: if `c'` sits at the position of a
+corner `c` of a possibly different complex, on a face with as many sides as that of `c`, then the
+corner `x` of the face of `c'` at the position of the corner following `c` follows `c'`. -/
+theorem eq_nextCorner_of_coe_snd {D : PolygonalComplex.{u', v', w'}} {c : D.Corner}
+    {c' x : C.Corner} (hfst : x.1 = c'.1) (hs : C.sides c'.1 = D.sides c.1)
+    (hx : (x.2 : ℕ) = (D.nextCorner c).2) (hc' : (c'.2 : ℕ) = c.2) : x = C.nextCorner c' := by
+  obtain ⟨g, k⟩ := c'
+  obtain ⟨g', k'⟩ := x
+  obtain rfl : g' = g := hfst
+  rw [nextCorner_def]
+  refine Sigma.ext rfl (heq_of_eq (Fin.ext ?_))
+  rw [nextCorner_def] at hx
+  have h₁ := Fin.coe_finRotate_eq_ite c.2
+  have h₂ := Fin.coe_finRotate_eq_ite k
+  dsimp only at hx hc' hs ⊢
+  split_ifs at h₁ h₂ <;> omega
 
 /-- A face with a single side is attached along a loop. -/
 theorem tgt_side_eq_src_side_of_sides_eq_one {f : C.Face} (hf : C.sides f = 1)
