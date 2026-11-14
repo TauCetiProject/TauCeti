@@ -27,8 +27,8 @@ transport of complexes through the stalk comparison for an embedding.
 
 The stalk of an additive-group-valued presheaf at `x` vanishes exactly when every section over a
 neighbourhood of `x` restricts to zero on a smaller neighbourhood of `x`
-(`TopCat.Presheaf.isZero_stalk_iff`). If a morphism of presheaves valued in a preadditive category
-vanishes on all opens inside `V`, its induced map on stalks vanishes at every point of `V`
+(`TopCat.Presheaf.isZero_stalk_iff`). If a morphism of presheaves valued in a category with zero
+morphisms vanishes on all opens inside `V`, its induced map on stalks vanishes at every point of `V`
 (`TopCat.Presheaf.stalkFunctor_map_eq_zero_of_app_eq_zero`). Since sheafification does not change
 stalks (`TopCat.Presheaf.isZero_stalk_sheafify_iff`), the sheafification of a presheaf vanishes
 exactly when every section is locally zero (`TopCat.Presheaf.isZero_presheafToSheaf_obj_iff`). The
@@ -53,12 +53,12 @@ noncomputable section
 
 namespace TopCat.Presheaf
 
-section Preadditive
+section ZeroMorphisms
 
-/-- A morphism of presheaves valued in a preadditive category that vanishes on all opens inside `V`
-induces the zero map on stalks at every point of `V`. -/
+/-- A morphism of presheaves valued in a category with zero morphisms that vanishes on all opens
+inside `V` induces the zero map on stalks at every point of `V`. -/
 theorem stalkFunctor_map_eq_zero_of_app_eq_zero
-    {C : Type*} [Category.{u} C] [Preadditive C] [HasColimits C]
+    {C : Type*} [Category.{u} C] [HasZeroMorphisms C] [HasColimits C]
     {X : TopCat.{u}} {F G : X.Presheaf C} (α : F ⟶ G) {V : Opens X}
     (hα : ∀ ⦃W : Opens X⦄, W ≤ V → α.app (op W) = 0) {x : X} (hx : x ∈ V) :
     (stalkFunctor C x).map α = 0 := by
@@ -71,7 +71,7 @@ theorem stalkFunctor_map_eq_zero_of_app_eq_zero
     ((stalkFunctor C x).map α)
   exact (hres.symm.trans ((congrArg (_ ≫ ·) hUV).trans comp_zero)).trans comp_zero.symm
 
-end Preadditive
+end ZeroMorphisms
 
 variable {X : TopCat.{u}} (F : X.Presheaf AddCommGrpCat.{u}) (x : X)
   {T : Type u} [AddCommGroup T]

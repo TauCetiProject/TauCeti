@@ -220,15 +220,9 @@ theorem IsFine.of_iso {F G : X.Sheaf C} (e : F ≅ G) [F.IsFine] : G.IsFine :=
 theorem IsFine.of_isZero {F : X.Sheaf C} (hF : IsZero F) : F.IsFine where
   exists_isPartitionOfUnity _ _ _ :=
     ⟨fun _ ↦ 0, fun _ ↦ ⊤, fun _ ↦ sup_top_eq _,
-      fun _ W _ ↦ (sheafToPresheaf (Opens.grothendieckTopology X) C ⋙
-        (evaluation (Opens X)ᵒᵖ C).obj (op W)).map_zero _ _,
+      fun _ _ _ ↦ by simp,
       fun x ↦ ⟨⊤, Set.mem_univ x, ∅, fun _ _ ↦ le_top, fun W _ ↦ by
-        let evW : X.Sheaf C ⥤ C :=
-          sheafToPresheaf (Opens.grothendieckTopology X) C ⋙ (evaluation (Opens X)ᵒᵖ C).obj (op W)
-        simp only [Finset.sum_empty]
-        exact ((evW.map_zero F F).symm.trans
-          (congrArg evW.map (hF.eq_of_src (0 : F ⟶ F) (𝟙 F)))).trans
-          (evW.map_id F)⟩⟩
+        simp [← TopCat.Sheaf.id_app, hF.eq_of_src (𝟙 F) (0 : F ⟶ F)]⟩⟩
 
 /-- Postcomposing a fine sheaf with an additive sheaf-preserving functor produces a fine sheaf. -/
 instance isFine_sheafCompose {D : Type*} [Category* D] [Preadditive D] (G : C ⥤ D) [G.Additive]
@@ -450,17 +444,16 @@ namespace IsFine
 
 /-- Every fine sheaf of abelian groups has vanishing cohomology `Sheaf.H` in every positive degree
 `0 < n`. -/
-theorem subsingleton_H_of_pos {F : X.Sheaf AddCommGrpCat.{u}} (hF : F.IsFine) (n : ℕ)
+theorem subsingleton_H_of_pos {F : X.Sheaf AddCommGrpCat.{u}} [F.IsFine] (n : ℕ)
     (hn : 0 < n) : Subsingleton (_root_.CategoryTheory.Sheaf.H.{u} F n) := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
-  have : F.IsFine := hF
   exact subsingleton_H_succ_of_isFine F k
 
 /-- Every fine sheaf of abelian groups has vanishing cohomology `Sheaf.H' _ _ ⊤` over the whole
 space in every positive degree `0 < n`. -/
-theorem subsingleton_H'_top_of_pos {F : X.Sheaf AddCommGrpCat.{u}} (hF : F.IsFine) (n : ℕ)
+theorem subsingleton_H'_top_of_pos {F : X.Sheaf AddCommGrpCat.{u}} [F.IsFine] (n : ℕ)
     (hn : 0 < n) : Subsingleton (_root_.CategoryTheory.Sheaf.H'.{u} F n (⊤ : Opens X)) := by
-  have := hF.subsingleton_H_of_pos n hn
+  have := subsingleton_H_of_pos (F := F) n hn
   exact (F.cohomologyPresheafObjIsoH n isTerminalTop).addCommGroupIsoToAddEquiv
     |>.toEquiv.subsingleton
 
@@ -468,39 +461,39 @@ theorem subsingleton_H'_top_of_pos {F : X.Sheaf AddCommGrpCat.{u}} (hF : F.IsFin
 global section of `F₃` lifts to a global section of `F₂`. -/
 theorem g_hom_app_top_surjective
     {S : ShortComplex (CategoryTheory.Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})}
-    (hS : S.ShortExact) (hF₁ : IsFine S.X₁) :
+    (hS : S.ShortExact) [IsFine S.X₁] :
     Function.Surjective (S.g.hom.app (op (⊤ : Opens X))) :=
-  Sheaf.H'.g_hom_app_surjective hS (⊤ : Opens X) (hF₁.subsingleton_H'_top_of_pos 1 Nat.zero_lt_one)
+  Sheaf.H'.g_hom_app_surjective hS (⊤ : Opens X)
+    (subsingleton_H'_top_of_pos 1 Nat.zero_lt_one)
 
 /-- In a short exact sequence `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` of abelian sheaves with `F₁` fine, the
 sequence of global sections `0 ⟶ F₁(⊤) ⟶ F₂(⊤) ⟶ F₃(⊤) ⟶ 0` is short exact. -/
 theorem shortExact_map_sheafSections_top
     {S : ShortComplex (CategoryTheory.Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})}
-    (hS : S.ShortExact) (hF₁ : IsFine S.X₁) :
+    (hS : S.ShortExact) [IsFine S.X₁] :
     (S.map (sheafToPresheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u} ⋙
       (evaluation (Opens X)ᵒᵖ AddCommGrpCat.{u}).obj (op (⊤ : Opens X)))).ShortExact :=
   Sheaf.H'.shortExact_map_sheafSections hS (⊤ : Opens X)
-    (hF₁.subsingleton_H'_top_of_pos 1 Nat.zero_lt_one)
+    (subsingleton_H'_top_of_pos 1 Nat.zero_lt_one)
 
 /-- If the restriction `U.sheafRestrict.obj F` of an abelian sheaf `F` to an open subset `U` is
 fine (an open subset of a space with partitions of unity need not inherit paracompactness unless
 assumed separately), then `F` has vanishing cohomology over `U` in every positive degree. -/
 theorem subsingleton_H'_of_sheafRestrict_of_pos {F : X.Sheaf AddCommGrpCat.{u}} {U : Opens X}
-    (hFU : IsFine (X := TopCat.of U) (U.sheafRestrict.obj F)) (n : ℕ) (hn : 0 < n) :
+    [IsFine (X := TopCat.of U) (U.sheafRestrict.obj F)] (n : ℕ) (hn : 0 < n) :
     Subsingleton (_root_.CategoryTheory.Sheaf.H'.{u} F n U) := by
-  have := hFU.subsingleton_H_of_pos n hn
+  have := subsingleton_H_of_pos (X := TopCat.of U) (F := U.sheafRestrict.obj F) n hn
   exact (U.cohomologyPresheafObjIsoSheafRestrictH F n).addCommGroupIsoToAddEquiv
     |>.toEquiv.subsingleton
 
 /-- Every fine sheaf of `R`-modules has vanishing right derived global sections in degree
 `n + 1`. -/
 theorem isZero_rightDerived_Γ_succ {R : Type u} [CommRing R]
-    {F : X.Sheaf (ModuleCat.{u} R)} (hF : F.IsFine) (n : ℕ) :
+    {F : X.Sheaf (ModuleCat.{u} R)} [F.IsFine] (n : ℕ) :
     IsZero (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).rightDerived (n + 1)).obj
       F) := by
   let G := forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}
   let FAb := (CategoryTheory.sheafCompose (Opens.grothendieckTopology X) G).obj F
-  have : F.IsFine := hF
   have hAb : IsZero (G.obj (((Sheaf.Γ _ (ModuleCat.{u} R)).rightDerived (n + 1)).obj F)) :=
     (AddCommGrpCat.isZero_of_subsingleton (AddCommGrpCat.of (Sheaf.H FAb (n + 1)))).of_iso
       ((TauCeti.Topology.moduleCohomologyForgetComparison X R (n + 1)).app F)
@@ -511,10 +504,10 @@ theorem isZero_rightDerived_Γ_succ {R : Type u} [CommRing R]
 /-- Every fine sheaf of `R`-modules has vanishing right derived global sections in every positive
 degree `0 < n`. -/
 theorem isZero_rightDerived_Γ_of_pos {R : Type u} [CommRing R]
-    {F : X.Sheaf (ModuleCat.{u} R)} (hF : F.IsFine) (n : ℕ) (hn : 0 < n) :
+    {F : X.Sheaf (ModuleCat.{u} R)} [F.IsFine] (n : ℕ) (hn : 0 < n) :
     IsZero (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).rightDerived n).obj F) := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
-  exact hF.isZero_rightDerived_Γ_succ k
+  exact isZero_rightDerived_Γ_succ k
 
 end IsFine
 
@@ -523,7 +516,6 @@ fine, then `F` has vanishing cohomology over `U` in degree `n + 1`. -/
 instance subsingleton_H'_succ_of_isFine_sheafRestrict (F : X.Sheaf AddCommGrpCat.{u})
     (U : Opens X) [IsFine (X := TopCat.of U) (U.sheafRestrict.obj F)] (n : ℕ) :
     Subsingleton (_root_.CategoryTheory.Sheaf.H'.{u} F (n + 1) U) :=
-  IsFine.subsingleton_H'_of_sheafRestrict_of_pos (F := F) (U := U) inferInstance (n + 1)
-    (Nat.succ_pos n)
+  IsFine.subsingleton_H'_of_sheafRestrict_of_pos (n + 1) (Nat.succ_pos n)
 
 end TopCat.Sheaf

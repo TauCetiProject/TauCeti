@@ -127,11 +127,8 @@ theorem sum_sub_id_app_eq_zero_iff {C : Type*} [Category* C] [Preadditive C]
     (W : Opens Y) :
     ((∑ i ∈ s, η i) - 𝟙 F).hom.app (op W) = 0 ↔
       ∑ i ∈ s, (η i).hom.app (op W) = 𝟙 (F.obj.obj (op W)) := by
-  let ev : Y.Sheaf C ⥤ C :=
-    sheafToPresheaf (Opens.grothendieckTopology Y) C ⋙ (evaluation (Opens Y)ᵒᵖ C).obj (op W)
-  change ev.map ((∑ i ∈ s, η i) - 𝟙 F) = 0 ↔
-    ∑ i ∈ s, ev.map (η i) = 𝟙 (ev.obj F)
-  rw [Functor.map_sub, Functor.map_sum, CategoryTheory.Functor.map_id, sub_eq_zero]
+  rw [← InducedCategory.homAddEquiv_apply, map_sub, map_sum]
+  simp [sub_eq_zero]
 
 /-- Gluing a locally finite sum of sections of an abelian sheaf `G` over `U`: if each `a i`
 vanishes on opens inside `V i`, and `N` covers `U` with `N k ≤ V i` for all `i ∉ S k`, then the

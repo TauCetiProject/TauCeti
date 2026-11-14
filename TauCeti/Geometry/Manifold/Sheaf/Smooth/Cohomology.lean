@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Geometry.Manifold.Sheaf.Smooth.Restrict
 public import TauCeti.Topology.Sheaves.Fine
 import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Restriction
 
 /-!
@@ -62,19 +63,6 @@ namespace TauCeti
 
 /-! ### Scalar multiplication by global smooth functions -/
 
-private theorem compRightAlgHom_restrict_id_apply {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
-    {HM : Type*} [TopologicalSpace HM] {IM : ModelWithCorners 𝕜 EM HM}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace HM M]
-    (W : Opens M) (g : C^∞⟮IM, M; 𝓘(𝕜), 𝕜⟯) (y : W) :
-    ContMDiffMap.compRightAlgHom 𝕜 𝕜
-        ((ContMDiffMap.id : C^∞⟮IM, M; IM, M⟯).restrict W) g y =
-      g y.1 :=
-  (congrArg (fun h : C^∞⟮IM, W; 𝓘(𝕜), 𝕜⟯ ↦ h y)
-    (ContMDiffMap.compRightAlgHom_apply 𝕜
-      ((ContMDiffMap.id : C^∞⟮IM, M; IM, M⟯).restrict W) g)).trans
-    (congrArg g (ContMDiffMap.restrict_apply (ContMDiffMap.id : C^∞⟮IM, M; IM, M⟯) W y))
-
 namespace smoothSheafAddCommGroup
 
 section ScalarField
@@ -115,10 +103,8 @@ def smulEnd (g : C^∞⟮IM, M; 𝓘(𝕜), 𝕜⟯) :
       naturality {U₁ U₂} h := AddCommGrpCat.hom_ext <|
         AddMonoidHom.ext fun (f : C^∞⟮IM, U₁.unop; 𝓘(𝕜, V), V⟯) ↦
           ContMDiffMap.ext fun x ↦
-            (congrArg (· • f ⟨x.1, leOfHom h.unop x.2⟩)
-              (compRightAlgHom_restrict_id_apply U₂.unop g x)).trans
-            (congrArg (· • f ⟨x.1, leOfHom h.unop x.2⟩)
-              (compRightAlgHom_restrict_id_apply U₁.unop g ⟨x.1, leOfHom h.unop x.2⟩)).symm }
+            (congrArg (· • f ⟨x.1, leOfHom h.unop x.2⟩) (by simp : _ = g x.1)).trans
+            (congrArg (· • f ⟨x.1, leOfHom h.unop x.2⟩) (by simp : _ = g x.1)).symm }
 
 private theorem smulEnd_hom_app (g : C^∞⟮IM, M; 𝓘(𝕜), 𝕜⟯) (W : Opens (TopCat.of M)) :
     (smulEnd IM V g).hom.app (op W) =
@@ -134,7 +120,9 @@ theorem smulEnd_hom_app_apply (g : C^∞⟮IM, M; 𝓘(𝕜), 𝕜⟯) (W : Open
     @DFunLike.coe (no_index C^∞⟮IM, W; 𝓘(𝕜, V), V⟯) (no_index ↥W) (fun _ ↦ V) _
         (no_index ((smulEnd IM V g).hom.app (op W) f)) x =
       g x.1 • f x :=
-  congrArg (· • f x) (compRightAlgHom_restrict_id_apply W g x)
+  congrArg (· • f x)
+    (by simp : ContMDiffMap.compRightAlgHom 𝕜 𝕜
+      ((ContMDiffMap.id : C^∞⟮IM, M; IM, M⟯).restrict W) g x = g x.1)
 
 /-- Pointwise multiplication by `g₁ + g₂` is the sum of the corresponding sheaf endomorphisms. -/
 theorem smulEnd_add (g₁ g₂ : C^∞⟮IM, M; 𝓘(𝕜), 𝕜⟯) :
@@ -147,10 +135,8 @@ theorem smulEnd_add (g₁ g₂ : C^∞⟮IM, M; 𝓘(𝕜), 𝕜⟯) :
 theorem smulEnd_zero :
     smulEnd IM V (0 : C^∞⟮IM, M; 𝓘(𝕜), 𝕜⟯) = 0 :=
   Sheaf.hom_ext <| NatTrans.ext <| funext fun ⟨W⟩ ↦ by
-    let F := smoothSheafAddCommGroup IM 𝓘(𝕜, V) M V
     rw [smulEnd_hom_app, map_zero, map_zero]
-    exact ((sheafToPresheaf (Opens.grothendieckTopology (TopCat.of M)) AddCommGrpCat.{u} ⋙
-      (evaluation _ AddCommGrpCat.{u}).obj (op W)).map_zero F F).symm
+    simp
 
 /-- Multiplication by the constant smooth function `1` is the identity sheaf endomorphism. -/
 @[simp]
@@ -190,21 +176,17 @@ private theorem sup_complSupport_eq_top {ρ : SmoothPartitionOfUnity ι I M}
 private theorem restrict_eq_zero_of_le_complSupport (ρ : SmoothPartitionOfUnity ι I M) (i : ι)
     {W : Opens (TopCat.of M)} (hW : W ≤ complSupport ρ i) :
     ContMDiffMap.compRightAlgHom ℝ ℝ
-        ((ContMDiffMap.id : C^∞⟮I, M; I, M⟯).restrict W) (ρ i) = 0 :=
-  ContMDiffMap.ext fun y ↦ (TauCeti.compRightAlgHom_restrict_id_apply W (ρ i) y).trans
-    (image_eq_zero_of_notMem_tsupport (f := ρ i) (hW y.2))
+        ((ContMDiffMap.id : C^∞⟮I, M; I, M⟯).restrict W) (ρ i) = 0 := by
+  ext y
+  simpa using image_eq_zero_of_notMem_tsupport (f := ρ i) (hW y.2)
 
 private theorem sum_restrict_eq_one (ρ : SmoothPartitionOfUnity ι I M) {s : Finset ι}
     {W : Opens (TopCat.of M)} (hsum : ∀ y : W, ∑ i ∈ s, ρ i y.1 = 1) :
     ∑ i ∈ s,
       ContMDiffMap.compRightAlgHom ℝ ℝ
-        ((ContMDiffMap.id : C^∞⟮I, M; I, M⟯).restrict W) (ρ i) = 1 :=
-  ContMDiffMap.ext fun y ↦
-    ((map_sum (ContMDiffMap.evalRingHom y : C^∞⟮I, W; 𝓘(ℝ), ℝ⟯ →+* ℝ)
-      (fun i ↦ ContMDiffMap.compRightAlgHom ℝ ℝ
-        ((ContMDiffMap.id : C^∞⟮I, M; I, M⟯).restrict W) (ρ i)) s).trans
-      (Finset.sum_congr rfl fun i _ ↦ TauCeti.compRightAlgHom_restrict_id_apply W (ρ i) y)).trans
-      (hsum y)
+        ((ContMDiffMap.id : C^∞⟮I, M; I, M⟯).restrict W) (ρ i) = 1 := by
+  ext y
+  simpa using hsum y
 
 private theorem exists_local_finset (ρ : SmoothPartitionOfUnity ι I M) (x : M) :
     ∃ (N : Opens (TopCat.of M)) (_ : x ∈ N) (s : Finset ι),
@@ -277,7 +259,7 @@ instance isFine (V : Type u) [NormedAddCommGroup V] [NormedSpace ℝ V] :
 theorem subsingleton_H_of_pos {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (n : ℕ) (hn : 0 < n) :
     Subsingleton ((smoothSheafAddCommGroup I 𝓘(ℝ, V) M V).H n) :=
-  TopCat.Sheaf.IsFine.subsingleton_H_of_pos inferInstance n hn
+  TopCat.Sheaf.IsFine.subsingleton_H_of_pos n hn
 
 end smoothSheafAddCommGroup
 
@@ -296,12 +278,11 @@ theorem smoothSheafAddCommGroup.subsingleton_H'_of_sigmaCompactSpace
     {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (U : Opens (TopCat.of M)) [T2Space U] [SigmaCompactSpace U] (n : ℕ) (hn : 0 < n) :
     Subsingleton ((smoothSheafAddCommGroup I 𝓘(ℝ, V) M V).H' n U) := by
-  have hFine : TopCat.Sheaf.IsFine (X := TopCat.of U)
+  have : TopCat.Sheaf.IsFine (X := TopCat.of U)
       (U.sheafRestrict.obj (smoothSheafAddCommGroup I 𝓘(ℝ, V) M V)) :=
     TopCat.Sheaf.IsFine.of_iso (X := TopCat.of U)
       (smoothSheafAddCommGroup.restrictIso I 𝓘(ℝ, V) V U).symm
-  exact TopCat.Sheaf.IsFine.subsingleton_H'_of_sheafRestrict_of_pos
-    (F := smoothSheafAddCommGroup I 𝓘(ℝ, V) M V) (U := U) hFine n hn
+  exact TopCat.Sheaf.IsFine.subsingleton_H'_of_sheafRestrict_of_pos n hn
 
 end OpenSubset
 

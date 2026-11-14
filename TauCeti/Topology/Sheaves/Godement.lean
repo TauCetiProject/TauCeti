@@ -397,7 +397,9 @@ theorem godement_map_app_eq_zero_of_app_eq_zero {F G : X.Sheaf C} (α : F ⟶ G)
     sheafToPresheaf (Opens.grothendieckTopology X) C ⋙ (evaluation (Opens X)ᵒᵖ C).obj (op W)
   have hlim : IsLimit (evW.mapCone (limit.cone (Discrete.functor fam))) :=
     isLimitOfPreserves evW (limit.isLimit (Discrete.functor fam))
-  change evW.map ((godement C X).map α) = 0
+  rw [← evaluation_obj_map,
+    ← ObjectProperty.ι_map (TopCat.Presheaf.IsSheaf (X := X)),
+    ← Functor.comp_map]
   refine hlim.hom_ext fun ⟨y⟩ ↦ ?_
   have hπcone :
       (evW.mapCone (limit.cone (Discrete.functor fam))).π.app ⟨y⟩ = evW.map (Pi.π fam y) := by
