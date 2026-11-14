@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.Padics.Complex
 public import TauCeti.Analysis.Normed.Ring.LogGauge.Rational
-import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.Normed.Ring.Commensurable
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Commensurable
 import TauCeti.NumberTheory.Padics.Complex.Basic
@@ -27,15 +26,13 @@ field a sufficiently close approximation of a nonzero element has the same norm.
 On `ℚ_[p]` it restricts to Mathlib's `Padic.addValuation`. Since `ℂ_[p]` is algebraically closed,
 every rational number is a value: a root `x` of `x ^ n = p ^ m` with `n > 0` has `v(x) = m / n`.
 For example a cube root of `p` has valuation `1 / 3`. Consequently every rational power of `p` is
-attained as a norm on `ℂ_[p]`, and both `ℂ_[p]` and `PadicAlgCl p` are densely normed fields.
+attained as a norm on `ℂ_[p]`.
 
 ## Main definitions
 
 * `PadicComplex.pseudoUniformizer`: the multiplicative pseudo-uniformiser `p` of `ℂ_[p]`.
 * `PadicComplex.addValuation`: the additive valuation on `ℂ_[p]` with values in `WithTop ℚ`,
   normalised by `v(p) = 1`.
-* `PadicComplex.denselyNormedField`, `PadicAlgCl.denselyNormedField`: `ℂ_[p]` and `PadicAlgCl p`
-  are densely normed fields.
 
 ## Main results
 
@@ -165,36 +162,5 @@ theorem exists_norm_eq_rpow (q : ℚ) : ∃ x : ℂ_[p], ‖x‖ = (p : ℝ) ^ (
   obtain ⟨x, hx⟩ := addValuation_surjective (p := p) (-q : ℚ)
   exact ⟨x, by simpa using addValuation_eq_coe_iff.mp hx⟩
 
-variable (p) in
-/-- **`ℂ_[p]` is densely normed**: as an algebraically closed nontrivially normed field, its
-positive norms are dense in `(0, ∞)`. -/
-noncomputable instance denselyNormedField : DenselyNormedField ℂ_[p] where
-  lt_norm_lt _ _ := by exact NormedField.exists_lt_norm_lt_of_isAlgClosed ℂ_[p]
-
--- Ensure that `DenselyNormedField` induces the existing normed and nontrivially normed field
--- instances on `ℂ_[p]`.
-example : (inferInstance : NormedField ℂ_[p]) = PadicComplex.normedField p := by
-  with_reducible_and_instances rfl
-
-example :
-    (inferInstance : NontriviallyNormedField ℂ_[p]) = PadicComplex.nontriviallyNormedField p := by
-  with_reducible_and_instances rfl
-
 end PadicComplex
-
-namespace PadicAlgCl
-
-/-- **`PadicAlgCl p` is densely normed**: as an algebraically closed nontrivially normed field, its
-positive norms are dense in `(0, ∞)`. -/
-noncomputable instance denselyNormedField : DenselyNormedField (PadicAlgCl p) where
-  lt_norm_lt _ _ := by exact NormedField.exists_lt_norm_lt_of_isAlgClosed (PadicAlgCl p)
-
--- Ensure that `DenselyNormedField` induces the existing nontrivially normed field instance on
--- `PadicAlgCl p`.
-example :
-    (inferInstance : NontriviallyNormedField (PadicAlgCl p)) =
-      PadicAlgCl.nontriviallyNormedField p := by
-  with_reducible_and_instances rfl
-
-end PadicAlgCl
 

@@ -27,10 +27,10 @@ This file relates `λ` and the Newton slopes of `f` to the pointwise convergence
   nontrivially normed, `f.convergenceRadius L` equals `b ^ λ`, and for admissible infinitely
   supported `f` it equals `b` raised to the supremum of the finite unit slopes of
   `f.newtonPolygon v`.
-* Over a discretely normed complete ultrametric extension `A` whose nonzero norms are integer
-  powers `b ^ m`, whenever `λ = t ∈ ℝ` is not an integer and `b ^ ⌊t⌋` is attained in `A`, the
-  pointwise convergence radius rounds down to `b ^ ⌊t⌋`, giving the strict inequality
-  `f.convergenceRadius A < f.radius`.
+* Over a discretely normed extension `A` whose nonzero norms are integer powers `b ^ m`, whenever
+  `λ = t ∈ ℝ` is not an integer, the pointwise convergence radius is strictly smaller than
+  `f.radius`, and when `A` is complete and ultrametric and `b ^ ⌊t⌋` is attained in `A`, it equals
+  `b ^ ⌊t⌋`.
 
 ## Main results
 
@@ -44,9 +44,9 @@ This file relates `λ` and the Newton slopes of `f` to the pointwise convergence
   counterparts: Newton-polygon formulas for `f.convergenceRadius L` in complete densely normed or
   algebraically closed nontrivially normed extensions `L`.
 * `PowerSeries.convergenceRadius_eq_ofReal_zpow_floor` and
-  `PowerSeries.convergenceRadius_lt_radius_of_linearGrowthInf`: rounding down to `b ^ ⌊t⌋` and
-  strict inequality `f.convergenceRadius A < f.radius` for non-integral limiting slope `t` in
-  discretely normed ultrametric extensions.
+  `PowerSeries.convergenceRadius_lt_radius_of_linearGrowthInf`: rounding down to `b ^ ⌊t⌋` in
+  complete ultrametric extensions and strict inequality `f.convergenceRadius A < f.radius` for
+  non-integral limiting slope `t` when nonzero norms are integer powers of `b`.
 
 ## References
 
@@ -150,6 +150,23 @@ theorem convergenceRadius_eq_exp_iSup_unitSlope_newtonPolygon_of_isAlgClosed (L 
   rw [f.convergenceRadius_eq_radius_of_isAlgClosed L,
     radius_eq_exp_iSup_unitSlope_newtonPolygon f v hb hv hf hinf]
 
+private theorem ofReal_zpow_lt_radius_of_linearGrowthInf {t : ℝ}
+    (ht : (linearGrowthInf fun n ↦ (v (coeff n f)).toEReal) = t) {k : ℤ} (hk : (k : ℝ) < t) :
+    ENNReal.ofReal (b ^ k) < f.radius := by
+  rw [radius_eq_ofReal_rpow f v hb hv ht, ← Real.rpow_intCast]
+  exact ENNReal.ofReal_lt_ofReal_iff (Real.rpow_pos_of_pos (zero_lt_one.trans hb) t) |>.mpr
+    (Real.rpow_lt_rpow_left_iff hb |>.mpr hk)
+
+private theorem not_isRestricted_zpow_floor_add_one {t : ℝ}
+    (ht : (linearGrowthInf fun n ↦ (v (coeff n f)).toEReal) = t) :
+    ¬f.IsRestricted (b ^ (⌊t⌋ + 1)) := by
+  have hb0 : 0 < b := zero_lt_one.trans hb
+  refine not_isRestricted_of_radius_lt ?_
+  rw [Real.eNorm_eq_ofReal (zpow_pos hb0 (⌊t⌋ + 1)).le,
+    radius_eq_ofReal_rpow f v hb hv ht, ← Real.rpow_intCast]
+  exact ENNReal.ofReal_lt_ofReal_iff (Real.rpow_pos_of_pos hb0 _) |>.mpr
+    (Real.rpow_lt_rpow_left_iff hb |>.mpr (by exact_mod_cast Int.lt_floor_add_one t))
+
 /-- **Discretely normed extensions round non-integral limiting slopes down.** Let `A` be a complete
 ultrametric extension whose nonzero norms are integer powers of `b`. If the lower linear growth of
 `v (aₙ)` is a non-integral real number `t` (`(⌊t⌋ : ℝ) < t`) and `b ^ ⌊t⌋` is attained as a norm in
@@ -160,30 +177,21 @@ theorem convergenceRadius_eq_ofReal_zpow_floor (A : Type*) [SeminormedRing A] [S
     (ht : (linearGrowthInf fun n ↦ (v (coeff n f)).toEReal) = t) (hfloor : (⌊t⌋ : ℝ) < t)
     (hatt : ∃ x : A, ‖x‖ = b ^ ⌊t⌋) :
     f.convergenceRadius A = ENNReal.ofReal (b ^ ⌊t⌋) := by
-  have hb0 : 0 < b := zero_lt_one.trans hb
-  have hrad : f.radius = ENNReal.ofReal (b ^ t) := radius_eq_ofReal_rpow f v hb hv ht
   have hres : f.IsRestricted (b ^ ⌊t⌋) := isRestricted_of_lt_radius <| by
-    rw [Real.eNorm_eq_ofReal (zpow_pos hb0 ⌊t⌋).le, hrad, ← Real.rpow_intCast]
-    exact ENNReal.ofReal_lt_ofReal_iff (Real.rpow_pos_of_pos hb0 t) |>.mpr
-      (Real.rpow_lt_rpow_left_iff hb |>.mpr hfloor)
-  have hnres : ¬f.IsRestricted (b ^ (⌊t⌋ + 1)) := not_isRestricted_of_radius_lt <| by
-    rw [Real.eNorm_eq_ofReal (zpow_pos hb0 (⌊t⌋ + 1)).le, hrad, ← Real.rpow_intCast]
-    exact ENNReal.ofReal_lt_ofReal_iff (Real.rpow_pos_of_pos hb0 _) |>.mpr
-      (Real.rpow_lt_rpow_left_iff hb |>.mpr (by exact_mod_cast Int.lt_floor_add_one t))
-  exact convergenceRadius_eq_ofReal_zpow hb hdisc hatt hres hnres
+    rw [Real.eNorm_eq_ofReal (zpow_pos (zero_lt_one.trans hb) ⌊t⌋).le]
+    exact ofReal_zpow_lt_radius_of_linearGrowthInf f v hb hv ht hfloor
+  exact convergenceRadius_eq_ofReal_zpow hb hdisc hatt hres
+    (not_isRestricted_zpow_floor_add_one f v hb hv ht)
 
-/-- Under the hypotheses of `convergenceRadius_eq_ofReal_zpow_floor`, the pointwise convergence
-radius in `A` is strictly smaller than the intrinsic radius `f.radius`. -/
+/-- If every nonzero norm in `A` is an integer power of `b` and the lower linear growth of `v (aₙ)`
+is a non-integral real number `t` (`(⌊t⌋ : ℝ) < t`), then `f.convergenceRadius A < f.radius`.
+Neither completeness, ultrametricity, nor norm attainment in `A` is needed. -/
 theorem convergenceRadius_lt_radius_of_linearGrowthInf (A : Type*) [SeminormedRing A] [SMul K A]
-    [NormSMulClass K A] [NormMulClass A] [IsUltrametricDist A] [CompleteSpace A]
-    (hdisc : ∀ y : A, ‖y‖ ≠ 0 → ∃ m : ℤ, ‖y‖ = b ^ m) {t : ℝ}
-    (ht : (linearGrowthInf fun n ↦ (v (coeff n f)).toEReal) = t) (hfloor : (⌊t⌋ : ℝ) < t)
-    (hatt : ∃ x : A, ‖x‖ = b ^ ⌊t⌋) :
-    f.convergenceRadius A < f.radius := by
-  have hb0 : 0 < b := zero_lt_one.trans hb
-  rw [convergenceRadius_eq_ofReal_zpow_floor f v hb hv A hdisc ht hfloor hatt,
-    radius_eq_ofReal_rpow f v hb hv ht, ← Real.rpow_intCast]
-  exact ENNReal.ofReal_lt_ofReal_iff (Real.rpow_pos_of_pos hb0 t) |>.mpr
-    (Real.rpow_lt_rpow_left_iff hb |>.mpr hfloor)
+    [NormSMulClass K A] [NormMulClass A] (hdisc : ∀ y : A, ‖y‖ ≠ 0 → ∃ m : ℤ, ‖y‖ = b ^ m) {t : ℝ}
+    (ht : (linearGrowthInf fun n ↦ (v (coeff n f)).toEReal) = t) (hfloor : (⌊t⌋ : ℝ) < t) :
+    f.convergenceRadius A < f.radius :=
+  convergenceRadius_lt_radius_of_zpow hb hdisc
+    (ofReal_zpow_lt_radius_of_linearGrowthInf f v hb hv ht hfloor)
+    (not_isRestricted_zpow_floor_add_one f v hb hv ht)
 
 end PowerSeries

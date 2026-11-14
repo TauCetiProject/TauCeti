@@ -415,16 +415,24 @@ end Normed
 
 section Summable
 
-/-- If the weighted coefficient norms `‖aₙ‖ ‖b‖ⁿ` of a series `f = ∑ aₙ Xⁿ` are summable, then so
-are the norms of its terms `aₙ • bⁿ` at `b`, in any seminormed ring with a bounded scalar action. -/
-theorem summable_norm_smul_pow_of_summable_norm_mul_pow {R A : Type*} [NormedRing R]
-    [SeminormedRing A] [SMulZeroClass R A] [IsBoundedSMul R A] {f : R⟦X⟧} {b : A}
+/-- If the weighted coefficient norms `‖aₙ‖ ‖b‖ⁿ` of a series `f = ∑ aₙ Xⁿ` are summable and the
+scalar action satisfies `‖a • x‖ ≤ ‖a‖ * ‖x‖`, then the term norms `‖aₙ • bⁿ‖` at `b` are
+summable. -/
+theorem summable_norm_smul_pow_of_norm_smul_le {R A : Type*} [SeminormedRing R] [SeminormedRing A]
+    [SMul R A] (hsmul : ∀ (a : R) (x : A), ‖a • x‖ ≤ ‖a‖ * ‖x‖) {f : R⟦X⟧} {b : A}
     (h : Summable fun n ↦ ‖coeff n f‖ * ‖b‖ ^ n) : Summable fun n ↦ ‖coeff n f • b ^ n‖ := by
   -- `‖bⁿ‖ ≤ ‖b‖ⁿ` only holds for `n ≥ 1`, so the term of index `0` is set aside
   rw [← summable_nat_add_iff 1]
   refine ((summable_nat_add_iff 1).mpr h).of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun n ↦ ?_
-  exact (norm_smul_le _ _).trans
+  exact (hsmul _ _).trans
     (mul_le_mul_of_nonneg_left (norm_pow_le' b n.succ_pos) (norm_nonneg _))
+
+/-- If the weighted coefficient norms `‖aₙ‖ ‖b‖ⁿ` of a series `f = ∑ aₙ Xⁿ` are summable, then so
+are the norms of its terms `aₙ • bⁿ` at `b`, in any seminormed ring with a bounded scalar action. -/
+theorem summable_norm_smul_pow_of_summable_norm_mul_pow {R A : Type*} [SeminormedRing R]
+    [SeminormedRing A] [SMulZeroClass R A] [IsBoundedSMul R A] {f : R⟦X⟧} {b : A}
+    (h : Summable fun n ↦ ‖coeff n f‖ * ‖b‖ ^ n) : Summable fun n ↦ ‖coeff n f • b ^ n‖ :=
+  summable_norm_smul_pow_of_norm_smul_le norm_smul_le h
 
 /-- In a complete seminormed algebra, if the terms `aₙ • bⁿ` of a series `f = ∑ aₙ Xⁿ` are
 absolutely summable, then they sum to `f(b)`. -/
@@ -493,6 +501,16 @@ theorem IsRestricted.summable_smul_pow {R A : Type*} [NormedRing R] [SeminormedR
     Summable fun n ↦ coeff n f • b ^ n :=
   NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero (hf.tendsto_smul_pow hb)
 
+/-- **Evaluation of restricted series.** In a complete ultrametric seminormed algebra, for a series
+`f = ∑ aₙ Xⁿ` restricted at the radius `c` and a point `b` with `‖b‖ ≤ c`, the series
+`∑ aₙ • bⁿ` converges to `f(b)`. -/
+theorem IsRestricted.hasSum_evalAt {R A : Type*} [NormedCommRing R] [SeminormedRing A]
+    [Algebra R A] [IsBoundedSMul R A] [IsUltrametricDist A] [CompleteSpace A] {c : ℝ} {f : R⟦X⟧}
+    {b : A} (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
+    HasSum (fun n ↦ coeff n f • b ^ n) (f.evalAt b) := by
+  rw [evalAt_def]
+  exact (hf.summable_smul_pow hb).hasSum
+
 variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
   {c : ℝ} {f g : R⟦X⟧} {b : A}
 
@@ -504,14 +522,6 @@ theorem IsRestricted.norm_evalAt_le_gaussNorm [IsUltrametricDist A] [NormOneClas
   PowerSeries.norm_evalAt_le_gaussNorm (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hf) hb
 
 variable [IsUltrametricDist A] [CompleteSpace A]
-
-/-- **Evaluation of restricted series.** In a complete ultrametric normed algebra, for a series
-`f = ∑ aₙ Xⁿ` restricted at the radius `c` and a point `b` with `‖b‖ ≤ c`, the series
-`∑ aₙ • bⁿ` converges to `f(b)`. -/
-theorem IsRestricted.hasSum_evalAt (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
-    HasSum (fun n ↦ coeff n f • b ^ n) (f.evalAt b) := by
-  rw [evalAt_def]
-  exact (hf.summable_smul_pow hb).hasSum
 
 /-- Evaluation at a point of norm at most `c` is additive on series restricted at `c`. -/
 theorem IsRestricted.evalAt_add (hf : f.IsRestricted c) (hg : g.IsRestricted c) (hb : ‖b‖ ≤ c) :

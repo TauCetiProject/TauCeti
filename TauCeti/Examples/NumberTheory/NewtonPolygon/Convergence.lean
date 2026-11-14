@@ -134,14 +134,9 @@ theorem summable_halfSlopeSeries_padic_iff {x : ℚ_[p]} :
       (le_convergenceRadius_of_summable hs).trans_eq convergenceRadius_padic_halfSlopeSeries
     simpa [← ofReal_norm] using hle
   · intro hx
-    have hp1 : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
-    have hsqrt : (1 : ℝ) < Real.sqrt p := by
-      rwa [Real.lt_sqrt zero_le_one, one_pow]
-    have hres : (halfSlopeSeries p).IsRestricted (1 : ℝ) := by
-      refine isRestricted_of_lt_radius ?_
-      rw [radius_halfSlopeSeries, Real.eNorm_eq_ofReal zero_le_one]
-      exact ENNReal.ofReal_lt_ofReal_iff (zero_lt_one.trans hsqrt) |>.mpr hsqrt
-    exact hres.summable_smul_pow (by simpa using hx)
+    exact (isRestricted_of_lt_radius (r := 1) (by
+      simpa [convergenceRadius_padic_halfSlopeSeries] using
+        convergenceRadius_padic_lt_radius_halfSlopeSeries (p := p))).summable_smul_pow hx
 
 /-- Over `ℂ_[p]`, the pointwise convergence radius of `∑_{n ≥ 0} p ^ ⌈n / 2⌉ X ^ n` equals its
 intrinsic radius `√p`. -/
