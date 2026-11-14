@@ -111,6 +111,27 @@ theorem root_rationalRootSystem_eq_add_zsmul_iff (α β γ : Fin t.numRoots) (n 
   simp only [funext_iff, Pi.add_apply, Pi.smul_apply, root_rationalRootSystem,
     smul_eq_mul, ← Int.cast_mul, ← Int.cast_add, Int.cast_inj]
 
+/-- Rational base change preserves and reflects root-string relations with natural coefficients,
+with the multiple of the first root written first. -/
+theorem root_rationalRootSystem_eq_nsmul_add_iff (α β γ : Fin t.numRoots) (n : ℕ) :
+    (t.rationalRootSystem ht).root γ =
+        n • (t.rationalRootSystem ht).root α + (t.rationalRootSystem ht).root β ↔
+      (t.simplyConnectedRootDatum ht).root γ =
+        n • (t.simplyConnectedRootDatum ht).root α +
+          (t.simplyConnectedRootDatum ht).root β := by
+  simpa only [Int.cast_natCast, Nat.cast_smul_eq_nsmul, natCast_zsmul, add_comm] using
+    t.root_rationalRootSystem_eq_add_zsmul_iff ht α β γ n
+
+/-- Rational base change preserves and reflects sums of two roots. -/
+theorem root_rationalRootSystem_eq_add_iff (α β γ : Fin t.numRoots) :
+    (t.rationalRootSystem ht).root γ =
+        (t.rationalRootSystem ht).root α + (t.rationalRootSystem ht).root β ↔
+      (t.simplyConnectedRootDatum ht).root γ =
+        (t.simplyConnectedRootDatum ht).root α +
+          (t.simplyConnectedRootDatum ht).root β := by
+  simpa only [one_nsmul] using
+    t.root_rationalRootSystem_eq_nsmul_add_iff ht α β γ 1
+
 @[simp] theorem coroot_rationalRootSystem (i : Fin t.numRoots) (k : Fin t.rank) :
     (t.rationalRootSystem ht).coroot i k = ((t.simplyConnectedRootDatum ht).coroot i k : ℚ) := by
   rw [rationalRootSystem, coroot_rootPairingBaseChange, piAlgebraMap_apply]

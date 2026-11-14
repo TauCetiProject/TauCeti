@@ -34,6 +34,12 @@ theorem isNotG2_rationalRootSystem_of_ne_G2 {t : DynkinType} {ht : t.Valid}
     h ((hasCartanType_rationalRootSystem t ht).eq_of_valid
       (hasCartanType_G2_of_isG2 hG2 (t.rationalBase ht)) ht valid_G2)
 
+/-- A simply-laced pinned rational root system is not G₂. -/
+theorem isNotG2_rationalRootSystem_of_isSimplyLaced
+    {t : DynkinType} {ht : t.Valid} (hs : t.IsSimplyLaced) :
+    (t.rationalRootSystem ht).IsNotG2 :=
+  isNotG2_rationalRootSystem_of_ne_G2 (by rintro rfl; exact not_isSimplyLaced_G2 hs)
+
 /-- The Cartan integers of the rational type-B system lie between `-2` and `2`. -/
 instance instIsNotG2RationalRootSystemB (n : ℕ) (hn : (B n).Valid) :
     ((B n).rationalRootSystem hn).IsNotG2 :=
