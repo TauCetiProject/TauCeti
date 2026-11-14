@@ -16,6 +16,7 @@ import TauCeti.AlgebraicGeometry.Morphisms.Etale.Ramification
 import TauCeti.AlgebraicGeometry.Morphisms.LocalSpectrum
 import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 import TauCeti.RingTheory.KrullDimension.Integral
+import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.RingTheory.RegularLocalRing.Normal
 import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 import TauCeti.RingTheory.RegularLocalRing.Purity

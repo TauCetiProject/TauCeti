@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.RegularLocalRing.FiniteNormal
 public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.RegularLocalRing.Defs
 import Mathlib.RingTheory.LocalProperties.Basic
 import TauCeti.RingTheory.CohenMacaulay.RegularSequence
 import TauCeti.RingTheory.Flat.LocalCriterion
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
 import TauCeti.RingTheory.Regular.RegularSequence
 
@@ -29,26 +30,25 @@ this matters for the localizations `B_𝔮` of a finite algebra `B` at its maxim
 in general not finite over `R`.
 
 The file also proves finite normal cases in dimension two, where Cohen–Macaulayness of the target
-comes from normality. A finite injective local algebra over a two-dimensional regular local ring
-is free, and hence flat, if it is a normal local domain. More generally, a finite torsion-free
-algebra `B` over a two-dimensional regular local ring `A` is free if every localization of `B` at
-a maximal ideal is a normal domain; here `B` need not be local.
+comes from normality. A finite torsion-free algebra `B` over a two-dimensional regular local ring
+`A` is free if every localization of `B` at a maximal ideal is a normal domain; here `B` need not be
+local. As a corollary, a finite injective algebra over `A` that is a normal domain is flat.
 
-The two dimension-two proofs show that a pair `x, y` generating the maximal ideal of `A` is a
-regular sequence on `B`, and then apply `TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular`. In
-the local case normality of `B` gives this directly. In general `x` is regular because `B` is
-torsion free, and regularity of `y` modulo `x` may be checked after localizing at the maximal
-ideals `𝔮` of `B`. As `A` is factorial, hence integrally closed, going down along `A → B` gives
-`B_𝔮` dimension two, and the normal domain `B_𝔮` is then Cohen–Macaulay, so `x, y` is a regular
-sequence on `B_𝔮`.
+The proof of freeness shows that a pair `x, y` generating the maximal ideal of `A` is a regular
+sequence on `B`, and then applies `TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular`. Here `x` is
+regular because `B` is torsion free, and regularity of `y` modulo `x` may be checked after
+localizing at the maximal ideals `𝔮` of `B`. As `A` is factorial, hence integrally closed, going
+down along `A → B` gives `B_𝔮` dimension two, and the normal domain `B_𝔮` is then Cohen–Macaulay,
+so `x, y` is a regular sequence on `B_𝔮`. For a normal domain `B`, every localization is a normal
+domain, which gives the flatness corollary.
 
 ## Main results
 
 * `TauCeti.Algebra.flat_of_isCohenMacaulay`: **miracle flatness**, Stacks, Lemma 10.128.1 (00R4).
-* `TauCeti.Algebra.flat_of_normal_dim_two`: a finite injective normal local algebra over a
-  two-dimensional regular local ring is flat.
 * `TauCeti.Algebra.free_of_normal_dim_two`: a finite torsion-free algebra over a two-dimensional
   regular local ring whose localizations at maximal ideals are normal domains is free.
+* `TauCeti.Algebra.flat_of_normal_dim_two`: a finite injective normal domain over a
+  two-dimensional regular local ring is flat, as a corollary.
 
 ## References
 
@@ -84,19 +84,6 @@ theorem flat_of_isCohenMacaulay {R S : Type*} [CommRing R] [IsRegularLocalRing R
 
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] [IsRegularLocalRing A]
   [Module.Finite A B]
-
-/-- A finite injective algebra over a two-dimensional regular local ring is flat if it is a
-normal local domain. Locality of the algebra map follows from finiteness and injectivity. -/
-theorem flat_of_normal_dim_two [IsLocalRing B] [IsDomain B] [IsIntegrallyClosed B]
-    (hinj : Function.Injective (algebraMap A B)) (hdim : ringKrullDim A = 2) :
-    Module.Flat A B := by
-  have : FaithfulSMul A B := (faithfulSMul_iff_algebraMap_injective A B).mpr hinj
-  have : IsLocalHom (algebraMap A B) := inferInstance
-  -- Normality makes a parameter pair of the base regular on the algebra.
-  obtain ⟨x, y, hxy, -, hreg⟩ :=
-    TauCeti.IsRegularLocalRing.exists_regular_parameters_of_finite_normal hinj hdim
-  have := TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular hxy hreg.toIsWeaklyRegular
-  infer_instance
 
 /-- A finite torsion-free algebra over a two-dimensional regular local ring is free if its
 localizations at maximal ideals are normal domains. The algebra need not be local, and its
@@ -134,5 +121,16 @@ theorem free_of_normal_dim_two [Module.IsTorsionFree A B] (hdim : ringKrullDim A
     (TauCeti.isSMulRegular_quotSMulTop_iff.mp hyreg _ _ hcL)
   rw [Ideal.map_span, Set.image_singleton, ← IsScalarTower.algebraMap_apply, ← hd]
   exact mem_span_singleton'.mpr ⟨d, mul_comm _ _⟩
+
+/-- A finite injective algebra over a two-dimensional regular local ring is flat if it is a
+normal domain. The algebra need not be local; see `free_of_normal_dim_two` for freeness. -/
+theorem flat_of_normal_dim_two [IsDomain B] [IsIntegrallyClosed B]
+    (hinj : Function.Injective (algebraMap A B)) (hdim : ringKrullDim A = 2) :
+    Module.Flat A B := by
+  have : FaithfulSMul A B := (faithfulSMul_iff_algebraMap_injective A B).mpr hinj
+  have := free_of_normal_dim_two (A := A) (B := B) hdim fun 𝔮 _ ↦
+    ⟨inferInstance, isIntegrallyClosed_of_isLocalization _ 𝔮.primeCompl
+      (primeCompl_le_nonZeroDivisors 𝔮)⟩
+  infer_instance
 
 end TauCeti.Algebra
