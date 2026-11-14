@@ -434,39 +434,29 @@ private theorem supportι_twoSummandX (N : CochainComplex C₂ ℤ) (j : ℤ) :
   simp only [TwoTermSupport.ι, mkHomFromSingle_f, Functor.map_comp, NatTrans.comp_app,
     Category.assoc, Iso.map_inv_hom_id_app_assoc]
 
-omit [∀ N : CochainComplex C₂ ℤ, HasMapBifunctor ((single C₁ c s.b).obj s.B) N F c] in
-private theorem supportπ_twoSummandX_ι_low (N : CochainComplex C₂ ℤ) (j : ℤ) :
+omit [∀ N : CochainComplex C₂ ℤ, HasMapBifunctor ((single C₁ c s.b).obj s.B) N F c]
+  [HasBinaryBiproducts D] in
+private theorem ι_mapBifunctorMap_π_low (N : CochainComplex C₂ ℤ) (j : ℤ) :
     ιMapBifunctor s.K N F c s.a (j + -s.a) j (add_neg_cancel_comm_assoc s.a j) ≫
         (mapBifunctorMap s.π (𝟙 N) F c).f j =
-      ιMapBifunctor s.K N F c s.a (j + -s.a) j (add_neg_cancel_comm_assoc s.a j) ≫
-        (F.twoSummandX s N j).hom ≫ biprod.snd ≫
-          (F.map (singleObjXSelf c s.a s.A).inv).app (N.X (j + -s.a)) ≫
-            ((single C₁ c s.a).obj s.A).ιMapBifunctor N F c s.a (j + -s.a) j
-              (add_neg_cancel_comm_assoc _ _) := by
-  have hm := ι_mapBifunctorMap (TwoTermSupport.π s) (𝟙 N) (F)
-    c s.a (j + -s.a) j (add_neg_cancel_comm_assoc s.a j)
+      ((F).map s.low.hom).app (N.X (j + -s.a)) ≫
+        (F.singleX s.A s.a N (j + -s.a) j (add_neg_cancel_comm_assoc s.a j)).inv := by
+  have hm := ι_mapBifunctorMap s.π (𝟙 N) F c s.a (j + -s.a) j
+    (add_neg_cancel_comm_assoc s.a j)
   simp only [HomologicalComplex.id_f] at hm
   rw [((F).obj (((single C₁ c s.a).obj s.A).X s.a)).map_id, id_comp] at hm
-  rw [hm, reassoc_of% (F.twoSummandX_ι_low s N j)]
-  simp only [TwoTermSupport.π, mkHomToSingle_f, Functor.map_comp, NatTrans.comp_app,
-    Category.assoc, biprod.inr_snd_assoc]
+  rw [hm, singleX_inv]
+  simp only [TwoTermSupport.π_f, Functor.map_comp, NatTrans.comp_app, Category.assoc]
 
-omit [∀ N : CochainComplex C₂ ℤ, HasMapBifunctor ((single C₁ c s.b).obj s.B) N F c] in
-private theorem supportπ_twoSummandX_ι_high (N : CochainComplex C₂ ℤ) (j : ℤ) :
+omit [∀ N : CochainComplex C₂ ℤ, HasMapBifunctor ((single C₁ c s.b).obj s.B) N F c]
+  [HasBinaryBiproducts D] in
+private theorem ι_mapBifunctorMap_π_high (N : CochainComplex C₂ ℤ) (j : ℤ) :
     ιMapBifunctor s.K N F c s.b (j + -s.b) j (add_neg_cancel_comm_assoc s.b j) ≫
-        (mapBifunctorMap s.π (𝟙 N) F c).f j =
-      ιMapBifunctor s.K N F c s.b (j + -s.b) j (add_neg_cancel_comm_assoc s.b j) ≫
-        (F.twoSummandX s N j).hom ≫ biprod.snd ≫
-          (F.map (singleObjXSelf c s.a s.A).inv).app (N.X (j + -s.a)) ≫
-            ((single C₁ c s.a).obj s.A).ιMapBifunctor N F c s.a (j + -s.a) j
-              (add_neg_cancel_comm_assoc _ _) := by
+        (mapBifunctorMap s.π (𝟙 N) F c).f j = 0 := by
   have hπ : (TwoTermSupport.π s).f s.b = 0 :=
     (isZero_single_obj_X c s.a s.A s.b s.ne.symm).eq_of_tgt _ _
-  have hm := ι_mapBifunctorMap (TwoTermSupport.π s) (𝟙 N) (F)
-    c s.b (j + -s.b) j (add_neg_cancel_comm_assoc s.b j)
-  rw [hm, reassoc_of% (F.twoSummandX_ι_high s N j)]
-  simp only [hπ, Functor.map_zero, NatTrans.app_zero, zero_comp,
-    biprod.inl_snd_assoc, comp_zero]
+  rw [ι_mapBifunctorMap s.π (𝟙 N) F c s.b (j + -s.b) j (add_neg_cancel_comm_assoc s.b j)]
+  simp only [hπ, Functor.map_zero, NatTrans.app_zero, zero_comp]
 
 private theorem supportπ_twoSummandX (N : CochainComplex C₂ ℤ) (j : ℤ) :
     (((F.mapTwoTermSupport s).g.app N).f j) ≫
@@ -483,19 +473,21 @@ private theorem supportπ_twoSummandX (N : CochainComplex C₂ ℤ) (j : ℤ) :
   apply (cancel_mono (F.singleX s.A s.a N (j + -s.a) j
     (add_neg_cancel_comm_assoc s.a j)).inv).1
   simp only [Category.assoc, Iso.hom_inv_id, comp_id]
-  rw [singleX_inv]
   apply mapBifunctor.hom_ext (K₁ := s.K) (K₂ := N) (F := F) («c» := c)
   intro p q hpq
   by_cases hp₀ : p = s.a
   · subst p
     obtain rfl : q = j + -s.a := by
       simpa only [sub_eq_add_neg] using (eq_sub_of_add_eq' hpq)
-    exact F.supportπ_twoSummandX_ι_low s N j
+    rw [F.ι_mapBifunctorMap_π_low s N j, reassoc_of% (F.twoSummandX_ι_low s N j),
+      biprod.inr_snd_assoc]
   · by_cases hp₁ : p = s.b
     · subst p
       obtain rfl : q = j + -s.b := by
         simpa only [sub_eq_add_neg] using (eq_sub_of_add_eq' hpq)
-      exact F.supportπ_twoSummandX_ι_high s N j
+      rw [F.ι_mapBifunctorMap_π_high s N j, reassoc_of% (F.twoSummandX_ι_high s N j),
+        biprod.inl_snd_assoc]
+      simp only [zero_comp, comp_zero]
     · have hzero := ((F).flip.obj (N.X q)).map_isZero
         (s.support p hp₀ hp₁)
       exact hzero.eq_of_src _ _
