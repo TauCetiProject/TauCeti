@@ -88,15 +88,14 @@ private theorem doubleString_brackets
     (hbot : (t.simplyConnectedRootDatum ht).chainBotCoeff α β = 0)
     (htop : (t.simplyConnectedRootDatum ht).chainTopCoeff α β = 2) :
     ⁅t.chevalleySystem ht α, t.chevalleySystem ht δ⁆ = 0 ∧
-      ⁅t.chevalleySystem ht β, t.chevalleySystem ht γ⁆ = 0 ∧
-      ⁅t.chevalleySystem ht β, t.chevalleySystem ht δ⁆ = 0 := by
+      ⁅t.chevalleySystem ht β, t.chevalleySystem ht γ⁆ = 0 := by
   let P := t.simplyConnectedRootDatum ht
   let : P.IsReduced := t.isReduced_simplyConnectedRootDatum ht
   have hli : LinearIndependent ℤ ![P.root α, P.root β] :=
     P.linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
   have hli' : LinearIndependent ℤ ![P.root β, P.root α] :=
     LinearIndependent.pair_symm_iff.mp hli
-  -- The two string bounds and reducedness exclude the three unwanted root sums.
+  -- The two string bounds exclude the two unwanted root sums.
   have hrev := P.chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
     hbot htop
   have hn (a b : ℤ) (hb : b ≠ 0) : a • P.root α + b • P.root β ≠ 0 :=
@@ -107,21 +106,13 @@ private theorem doubleString_brackets
   have htwo : P.root α + 2 • P.root β ∉ Set.range P.root := by
     rw [P.root_add_nsmul_mem_range_iff_le_chainTopCoeff hli', hrev]
     omega
-  have hdouble : P.root γ + P.root γ ∉ Set.range P.root := by
-    intro h
-    have hi := P.linearIndependent_of_add_mem_range_root' h
-    have := LinearIndependent.pair_iff.mp hi (1 : ℤ) (-1) (by simp)
-    norm_num at this
   have had : P.root α + P.root δ = 3 • P.root α + P.root β := by
     rw [hδ, hγ]; module
   have hbg : P.root β + P.root γ = P.root α + 2 • P.root β := by
     rw [hγ]; module
-  have hbd : P.root β + P.root δ = P.root γ + P.root γ := by
-    rw [hδ, hγ]; module
   -- Expand the local datum abbreviation to apply the root-vector bracket API.
-  dsimp only [P] at had hbg hbd hn hthree htwo hdouble
-  refine ⟨lie_chevalleySystem_eq_zero ?_ ?_, lie_chevalleySystem_eq_zero ?_ ?_,
-    lie_chevalleySystem_eq_zero ?_ ?_⟩
+  dsimp only [P] at had hbg hn hthree htwo
+  refine ⟨lie_chevalleySystem_eq_zero ?_ ?_, lie_chevalleySystem_eq_zero ?_ ?_⟩
   · simpa only [had, add_comm] using hthree
   · rw [had]
     convert hn 3 1 (by decide) using 1
@@ -129,10 +120,6 @@ private theorem doubleString_brackets
   · simpa only [hbg] using htwo
   · rw [hbg]
     convert hn 1 2 (by decide) using 1
-    module
-  · simpa only [hbd] using hdouble
-  · rw [hbd, hγ]
-    convert hn 2 2 (by decide) using 1
     module
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
@@ -165,7 +152,7 @@ theorem chevalleyRootSubgroup_mul_of_doubleString
             (((t.structureConstant ht α β * (t.structureConstant ht α γ / 2) : ℤ) : A) *
               (u ^ 2 * v)))) *
         chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) := by
-  obtain ⟨had, hbg, _⟩ := doubleString_brackets hγ hδ hbot htop
+  obtain ⟨had, hbg⟩ := doubleString_brackets hγ hδ hbot htop
   have hmul := kostantRootSubgroupPoints_mul_of_lie_lie_eq'
     (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
     (kostantForm_chevalleySystem_smul_mem ρ M hM hnil)
@@ -200,20 +187,16 @@ theorem commutatorElement_chevalleyRootSubgroup_of_doubleString
         (Multiplicative.ofAdd
           (((t.structureConstant ht α β * (t.structureConstant ht α γ / 2) : ℤ) : A) *
             (u ^ 2 * v))) := by
-  obtain ⟨had, hbg, hbd⟩ := doubleString_brackets hγ hδ hbot htop
+  obtain ⟨had, hbg⟩ := doubleString_brackets hγ hδ hbot htop
   have hcomm := commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq' (A := A)
     (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
     (kostantForm_chevalleySystem_smul_mem ρ M hM hnil)
     (lie_chevalleySystem_eq_structureConstant_zsmul hγ)
-    (lie_lie_chevalleySystem_of_chainBotCoeff_eq_zero hγ hδ hbot) had hbg hbd
+    (lie_lie_chevalleySystem_of_chainBotCoeff_eq_zero hγ hδ hbot) had hbg
     (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
     (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
     (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)
     (isNilpotent_apply_ι_chevalleySystem ρ hnil δ)
-  -- Identify the canonical integer algebra with the one stored by the category object.
-  have hA : Ring.toIntAlgebra A = (inferInstance : Algebra ℤ A) := Subsingleton.elim _ _
-  rw [hA] at hcomm
-  specialize hcomm
     ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd u))
     ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd v))
   convert hcomm using 2 <;> apply Units.ext <;>

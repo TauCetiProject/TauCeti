@@ -45,10 +45,9 @@ its generating-function form.
 
 * `TauCeti.integralDividedPower_mul_integralDividedPower_of_commutator_eq`: normal ordering for the
   integral operators restricted to `M`.
-* `TauCeti.baseChangeExp_zsmul`: rescaling an element by an integer rescales the parameter of its
-  exponential, which is how an integer structure constant enters.
-* `TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq`: the Chevalley commutator relation.
-* `TauCeti.baseChangeExp_conj_of_commutator_eq`: its conjugation form.
+* `TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq` and
+  `TauCeti.baseChangeExp_conj_of_commutator_eq`: the Chevalley commutator relation and its
+  conjugation form.
 
 ## References
 
@@ -92,50 +91,8 @@ theorem integralDividedPower_mul_integralDividedPower_of_commutator_eq
   simpa only [mul_assoc] using
     Associative.dividedPower_mul_dividedPower_of_commutator_eq hxy hxz hyz m n
 
-/-! ## Rescaling by an integer -/
-
-/-- Restricting the divided power of an integer multiple scales the restricted operator by the
-same power of that integer. -/
-theorem integralDividedPower_zsmul (c : ℤ) {x : A} (M : S) (n : ℕ)
-    (hM : ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
-    (hcM : ∀ v ∈ M, Associative.dividedPower n (c • x) • v ∈ M) :
-    integralDividedPower (c • x) M n hcM = c ^ n • integralDividedPower x M n hM := by
-  ext v
-  rw [coe_integralDividedPower_apply, Associative.dividedPower_zsmul, smul_assoc,
-    LinearMap.smul_apply, ← coe_integralDividedPower_apply x M n hM v]
-  rfl
-
 -- Match tensor products to the module structure carried by the explicit `ℤ`-algebra.
 attribute [local instance high] Algebra.toModule
-
-section BaseChange
-
-variable {R : Type v} [CommRing R] [Algebra ℤ R]
-
-/-- Rescaling an element by an integer `c` rescales the parameter of its integral exponential by
-`c`. This is how an integer Chevalley structure constant is absorbed into the parameter of a root
-subgroup. -/
-theorem baseChangeExp_zsmul (c : ℤ) {x : A} (M : S)
-    (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
-    (hcM : ∀ n, ∀ v ∈ M, Associative.dividedPower n (c • x) • v ∈ M)
-    (hx : IsNilpotent x) (t : R) :
-    baseChangeExp (c • x) M hcM t = baseChangeExp x M hM ((c : R) * t) := by
-  obtain ⟨k, hk⟩ := hx
-  have hck : (c • x) ^ k = 0 := by
-    rw [smul_pow, hk, smul_zero]
-  rw [baseChangeExp_of_pow_eq_zero (c • x) M hcM hck,
-    baseChangeExp_of_pow_eq_zero x M hM hk]
-  refine Finset.sum_congr rfl fun n _ => ?_
-  have hb : ((c ^ n • integralDividedPower x M n (hM n)).baseChange R :
-      Module.End R (R ⊗[ℤ] M)) = c ^ n • (integralDividedPower x M n (hM n)).baseChange R :=
-    map_zsmul (Module.End.baseChangeHom ℤ R M) _ _
-  rw [integralDividedPower_zsmul c M n (hM n) (hcM n), hb,
-    ← Int.cast_smul_eq_zsmul R (c ^ n) ((integralDividedPower x M n (hM n)).baseChange R),
-    smul_smul, Int.cast_pow]
-  congr 1
-  ring
-
-end BaseChange
 
 /-! ## The Chevalley commutator relation -/
 
