@@ -160,13 +160,14 @@ open scoped _root_.NumberField
 cyclotomic exponent is the norm of the prime below. -/
 theorem isArithFrobAt_iff_autToPow_eq_absNorm
     {m : ℕ} [NeZero m] {K F : Type*} [Field K] [NumberField K]
-    [Field F] [NumberField F] [Algebra K F] [IsCyclotomicExtension {m} K F]
+    [Field F] [Algebra K F] [IsCyclotomicExtension {m} K F]
     {ζ : F} (hζ : IsPrimitiveRoot ζ m)
     (𝔭 : HeightOneSpectrum (𝓞 K)) (hm : (m : 𝓞 K) ∉ 𝔭.asIdeal)
     (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal]
     (σ : F ≃ₐ[K] F) :
     IsArithFrobAt (𝓞 K) σ Q ↔
       (hζ.autToPow K σ : ZMod m) = Ideal.absNorm 𝔭.asIdeal := by
+  have : NumberField F := IsCyclotomicExtension.numberField {m} K F
   have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot 𝔭.ne_bot Q
   let _ : Finite (𝓞 F ⧸ Q) := Ring.HasFiniteQuotients.finiteQuotient hQ
   let _ : IsGalois K F := IsCyclotomicExtension.isGalois {m} K F
