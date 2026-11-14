@@ -34,6 +34,15 @@ duality (`TauCeti.additiveClosure_functor_obj_op_iff`). So `M` is a coseparator 
 injective argument. The descriptions through indecomposable objects then follow from the
 Krull-Schmidt property of `mod A`.
 
+The two halves are not symmetric outside the categorical statements. Over every ring the regular
+module is a finitely generated projective generator, so separators of `mod R` have the elementwise
+description `Module.IsGenerator` (`FGModuleCat.isSeparator_iff_isGenerator`). There is no
+cogenerator analogue of this form: a cogenerator of the category of all `R`-modules embeds every
+module into a possibly infinite product of copies of itself, and need not be finitely generated,
+while `mod R` may have no coseparator at all (`mod ℤ` has none). A finitely generated cogenerator,
+`D A`, comes from the duality, which is why the cogenerator results here are stated for Artin
+algebras.
+
 The Artin hypothesis is needed for the indecomposable description. Over `ℤ`, the regular module is
 not a coseparator of `mod ℤ`, since every morphism `ℤ/2ℤ ⟶ ℤ` is zero
 (`FGModuleCat.not_isCoseparator_int`). Yet `mod ℤ` has no nonzero injective object: a nonzero
