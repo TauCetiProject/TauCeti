@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.IntegralClosure.GoingDown
-public import Mathlib.Algebra.Module.Torsion.Free
-import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 
 /-!
 # Going down for torsion-free integral algebras
