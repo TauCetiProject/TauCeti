@@ -122,9 +122,8 @@ private lemma instances [IsGaloisGroup Gal(L/K) K L] :
   exact ⟨inferInstance, inferInstance, inferInstance, inferInstance,
     .of_isFractionRing _ _ _ K L, .of_isFractionRing _ _ _ E L⟩
 
-variable [FiniteDimensional K L] [P.IsMaximal]
+variable [P.IsMaximal]
 
-omit [FiniteDimensional K L] in
 include K L E P in
 /-- Over the inertia field, the ramification index of `P` is unchanged, and the residue extension
 of `P.under 𝓞E` over `P.under A` is separable. -/
@@ -166,7 +165,6 @@ private lemma ramificationIdx_eq_and_isSeparable :
     exact hle
   exact ⟨by rw [key, hins, mul_one], (isSeparable_iff_finInsepDegree_eq_one _ _).mpr hins⟩
 
-omit [FiniteDimensional K L] in
 include K L E P in
 /-- Let `E` be the inertia field of `P` in `L/K`. Then the ramification index of `P` over
 `P.under 𝓞E` is its ramification index over `P.under A`. No separability of the residue
@@ -174,7 +172,6 @@ extension is assumed. -/
 theorem ramificationIdx_eq : P.ramificationIdx 𝓞E = P.ramificationIdx A :=
   (ramificationIdx_eq_and_isSeparable A K L P E 𝓞E).1
 
-omit [FiniteDimensional K L] in
 include K L E P in
 /-- Let `E` be the inertia field of `P` in `L/K`. Then the residue extension of `P.under 𝓞E` over
 `P.under A` is separable: the inertia field carries exactly the separable part of the residue
@@ -183,7 +180,6 @@ theorem isSeparable_quotient_under :
     Algebra.IsSeparable (A ⧸ P.under A) (𝓞E ⧸ P.under 𝓞E) :=
   (ramificationIdx_eq_and_isSeparable A K L P E 𝓞E).2
 
-omit [FiniteDimensional K L] in
 include K L E P in
 /-- Let `E` be the inertia field of `P` in `L/K`. Then the inertia degree of `P` over `P.under 𝓞E`
 is the inseparable residue degree of `P` over `P.under A`. -/
@@ -205,7 +201,6 @@ theorem inertiaDeg_eq_finInsepDegree :
     card_inertia_eq_ramificationIdx_mul_finInsepDegree (R := A) (G := Gal(L/K)) P] at h
   exact Nat.eq_of_mul_eq_mul_left (ramificationIdx_pos A P) h.symm
 
-omit [FiniteDimensional K L] in
 include K L E P in
 /-- Let `E` be the inertia field of `P` in `L/K`. Then `P.under 𝓞E` has ramification index `1`
 over the prime of `A` below it. No separability of the residue extension is assumed. -/
@@ -216,7 +211,6 @@ theorem ramificationIdx_under_eq_one :
   rw [ramificationIdx_eq A K L P E 𝓞E] at h
   exact (right_eq_mul₀ (ramificationIdx_pos A P).ne').mp h
 
-omit [FiniteDimensional K L] in
 include K L E P in
 /-- Let `E` be the inertia field of `P` in `L/K`. Then the inertia degree of `P.under 𝓞E` over
 `P.under A` is the separable residue degree of `P` over `P.under A`. -/
@@ -233,7 +227,6 @@ section Separable
 
 variable [Algebra.IsSeparable (A ⧸ P.under A) (B ⧸ P)]
 
-omit [FiniteDimensional K L] in
 include A K L E P in
 /-- When the residue extension of `P` over `P.under A` is separable, the inertia degree of `P`
 over `P.under 𝓞E` is `1`. -/
@@ -241,7 +234,6 @@ theorem inertiaDeg_eq_one : P.inertiaDeg 𝓞E = 1 := by
   rw [inertiaDeg_eq_finInsepDegree A K L P E 𝓞E]
   exact (isSeparable_iff_finInsepDegree_eq_one _ _).mp inferInstance
 
-omit [FiniteDimensional K L] in
 include K L E P in
 /-- When the residue extension of `P` over `P.under A` is separable, the inertia degree of
 `P.under 𝓞E` over `P.under A` is the full inertia degree of `P` over `P.under A`. -/
