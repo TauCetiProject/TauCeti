@@ -79,7 +79,7 @@ namespace TauCeti
 open RootPairing
 
 variable {ι : Type u} {M : Type w} {N : Type x} [AddCommGroup M] [AddCommGroup N]
-  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] [P.flip.IsReduced] {lam : M}
+  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] {lam : M}
 
 /-! ### Chain independence of the bond gcd -/
 
@@ -303,7 +303,6 @@ theorem bondGcd_eq_intervalBondGcd (hlam : lam ∈ dominantChamber P b)
   exact bondGcd_eq_of_head_eq_of_last_eq hlam (Subtype.ext h.choose_spec.1.symm)
     (Subtype.ext h.choose_spec.2.symm)
 
-omit [P.flip.IsReduced] in
 /-- The interval bond gcd `d_λ(x, x)` vanishes. -/
 @[simp]
 theorem intervalBondGcd_self (x : P.weylGroup) : intervalBondGcd b lam x x = 0 := by
@@ -315,7 +314,6 @@ theorem intervalBondGcd_self (x : P.weylGroup) : intervalBondGcd b lam x x = 0 :
     exact bondGcd_eq_zero_of_length_eq_zero (by omega)
   · rfl
 
-omit [P.flip.IsReduced] in
 /-- The interval bond gcd `d_λ(x, y)` vanishes unless `y ≤ x`: then no saturated chain runs from `x`
 down to `y`. -/
 theorem intervalBondGcd_eq_zero_of_not_bruhatLE {x y : P.weylGroup}
@@ -326,7 +324,6 @@ theorem intervalBondGcd_eq_zero_of_not_bruhatLE {x y : P.weylGroup}
     exact (h (CoxeterSystem.MinimalCosetRepChain.bruhatLE_last_head C)).elim
   · rfl
 
-omit [P.flip.IsReduced] in
 /-- The interval bond gcd `d_λ(x, y)` vanishes unless `x` is a minimal coset representative of
 `W_λ`: then no saturated chain of `W / W_λ` starts at `x`. -/
 theorem intervalBondGcd_eq_zero_of_not_isMinimalCosetRep_left {x y : P.weylGroup}
@@ -338,7 +335,6 @@ theorem intervalBondGcd_eq_zero_of_not_isMinimalCosetRep_left {x y : P.weylGroup
     exact (hx C.head.2).elim
   · rfl
 
-omit [P.flip.IsReduced] in
 /-- The interval bond gcd `d_λ(x, y)` vanishes unless `y` is a minimal coset representative of
 `W_λ`: then no saturated chain of `W / W_λ` ends at `y`. -/
 theorem intervalBondGcd_eq_zero_of_not_isMinimalCosetRep_right {x y : P.weylGroup}
