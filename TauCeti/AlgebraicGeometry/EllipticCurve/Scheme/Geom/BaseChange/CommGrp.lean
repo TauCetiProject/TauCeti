@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Hom
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Hom.Basic
 
 /-!
 # Base change of the commutative group scheme of an elliptic curve

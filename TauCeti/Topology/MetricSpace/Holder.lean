@@ -33,7 +33,8 @@ Hölder inequality passes from `s × s` to its closure because both of its sides
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
 
-Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants.
+Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants,
+and a pointwise limit of Hölder functions with a common constant is Hölder with that constant.
 For `0 < α < 1`, a series of pieces bounded by `a 2^{-jα}` and Lipschitz with constants
 `b 2^{j(1-α)}` is `α`-Hölder; this is the dyadic summation behind the Hölder regularity of
 Littlewood–Paley series.
@@ -70,8 +71,12 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
   function on the whole space.
 * `Isometry.comp_holderOnWith`, `Isometry.comp_holderWith`: postcomposition with an isometry
   preserves Hölder bounds.
+* `Isometry.holderWith_comp_iff`: postcomposition with an isometry preserves global Hölder bounds
+  in both directions.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
+* `HolderOnWith.of_tendsto`, `HolderWith.of_tendsto`: a pointwise limit of Hölder functions with
+  a common constant is Hölder with that constant.
 * `holderWith_zero_of_nnnorm_le`: a function bounded by `M` is Hölder of exponent zero with
   constant `2 M`.
 * `TauCeti.exists_holderWith_tsum_of_rpow_mul_le`: for `0 < α < 1`, a series `∑ⱼ fⱼ` whose terms
@@ -167,6 +172,13 @@ theorem Isometry.comp_holderWith {X Y Z : Type*} [PseudoEMetricSpace X] [PseudoE
     [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) {C r : ℝ≥0} {f : X → Y}
     (hf : HolderWith C r f) : HolderWith C r (g ∘ f) :=
   holderOnWith_univ.mp (hg.comp_holderOnWith (hf.holderOnWith univ))
+
+/-- Postcomposition with an isometry neither creates nor destroys a global Hölder bound: `g ∘ f`
+is Hölder with constant `C` and exponent `r` exactly when `f` is. -/
+theorem Isometry.holderWith_comp_iff {X Y Z : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) {C r : ℝ≥0}
+    {f : X → Y} : HolderWith C r (g ∘ f) ↔ HolderWith C r f := by
+  simp only [HolderWith, Function.comp_apply, hg.edist_eq]
 
 /-- A function that satisfies the Hölder bound with constant `K` and exponent `r` between points of
 `s` at distance less than `δ > 0`, and whose values on `s` lie within distance `D` of each other,
@@ -272,6 +284,24 @@ theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommG
     simp only [Pi.add_apply, NNReal.coe_add]
     linarith [dist_add_add_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
 
+/-- A pointwise limit on `s` of maps that are `r`-Hölder on `s` with a common constant `C` is
+`r`-Hölder on `s` with constant `C`. -/
+theorem HolderOnWith.of_tendsto {ι X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    {l : Filter ι} [l.NeBot] {C r : ℝ≥0} {u : ι → X → Y} {v : X → Y} {s : Set X}
+    (hu : ∀ x ∈ s, Tendsto (fun n ↦ u n x) l (𝓝 (v x)))
+    (hC : ∀ᶠ n in l, HolderOnWith C r (u n) s) :
+    HolderOnWith C r v s := fun x hx y hy ↦
+  le_of_tendsto ((hu x hx).edist (hu y hy)) (hC.mono fun _ hn ↦ hn x hx y hy)
+
+/-- A pointwise limit of maps that are `r`-Hölder with a common constant `C` is `r`-Hölder with
+constant `C`. -/
+theorem HolderWith.of_tendsto {ι X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    {l : Filter ι} [l.NeBot] {C r : ℝ≥0} {u : ι → X → Y} {v : X → Y}
+    (hu : ∀ x, Tendsto (fun n ↦ u n x) l (𝓝 (v x))) (hC : ∀ᶠ n in l, HolderWith C r (u n)) :
+    HolderWith C r v :=
+  holderOnWith_univ.mp <| HolderOnWith.of_tendsto (fun x _ ↦ hu x)
+    (hC.mono fun _ hn ↦ holderOnWith_univ.mpr hn)
+
 /-- A function bounded by `M` has oscillation at most `2 M`, which is its Hölder bound of
 exponent zero. Compare Mathlib's `HolderWith.holderWith_zero_of_bounded`, which bounds the
 oscillation of a Hölder function on a bounded space instead. -/
@@ -279,8 +309,8 @@ theorem holderWith_zero_of_nnnorm_le {X Y : Type*} [PseudoEMetricSpace X]
     [SeminormedAddCommGroup Y] {f : X → Y} {M : ℝ≥0} (hf : ∀ x, ‖f x‖₊ ≤ M) :
     HolderWith (2 * M) 0 f := fun x y ↦ by
   rw [NNReal.coe_zero, ENNReal.rpow_zero, mul_one, edist_nndist, ENNReal.coe_le_coe,
-    nndist_eq_nnnorm, two_mul]
-  exact (nnnorm_sub_le _ _).trans (add_le_add (hf x) (hf y))
+    nnDist_eq_nnNorm, two_mul]
+  exact (nnNorm_sub_le _ _).trans (add_le_add (hf x) (hf y))
 
 /-- **Local Hölder bounds near a compact set are uniform on a thickening.** If `f` is `α`-Hölder on
 a ball around each point of a compact set `K`, with radii and constants depending on the point, then
@@ -318,7 +348,7 @@ theorem IsCompact.exists_holderOnWith_thickening_and_norm_le {X Y : Type*} [Pseu
           exact (hL z (htK z hzt)).dist_le_mul_rpow_of_mem_ball hyz
       _ = ((‖f z‖₊ + L z * (r z).toNNReal ^ (α : ℝ) : ℝ≥0) : ℝ) := by
           rw [NNReal.coe_add, NNReal.coe_mul, NNReal.coe_rpow,
-            Real.coe_toNNReal _ (hr z (htK z hzt)).le, coe_nnnorm]
+            Real.coe_toNNReal _ (hr z (htK z hzt)).le, coe_nnNorm]
       _ ≤ M := by
           exact_mod_cast Finset.single_le_sum
             (f := fun z => ‖f z‖₊ + L z * (r z).toNNReal ^ (α : ℝ)) (fun _ _ => zero_le) hzt

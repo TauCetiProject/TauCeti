@@ -78,7 +78,7 @@ theorem enorm_sub_le_lintegral_enorm_fderiv_apply (x h : E)
   have hint : IntegrableOn (fun t : ℝ => ‖fderiv ℝ u (x + t • h) h‖) (Ioc (0 : ℝ) 1) := by
     have hnorm : IntegrableOn (fun t : ℝ => ‖deriv Gc t‖) (Ioc (0 : ℝ) 1) := by
       refine ⟨hmeas.restrict, ?_⟩
-      simp only [HasFiniteIntegral, enorm_norm]
+      simp only [HasFiniteIntegral, eNorm_norm]
       refine lt_of_le_of_lt ?_ (lt_top_iff_ne_top.2 hJ)
       refine (lintegral_mono_set Ioc_subset_Icc_self).trans_eq' ?_
       exact setLIntegral_congr_fun measurableSet_Ioc fun t ht => by

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Meromorphic.Continuation
-public import TauCeti.NumberTheory.LFunctions.Hecke.Primitive
+public import TauCeti.NumberTheory.LFunctions.Hecke.EulerCorrection
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
 
 /-!
@@ -19,7 +19,8 @@ the coefficients of the unitary weight `RayClassCharacter.toUnitaryIdealWeight`.
 depends on the presentation and not only on the character: presenting `χ` at a multiple `𝔫` of
 `𝔪` deletes the Euler factors at the primes dividing `𝔫` but not `𝔪`. Those factors are
 `RayClassCharacter.eulerCorrection χ 𝔫 s = ∏_{𝔭 ∣ 𝔫, 𝔭 ∤ 𝔪} (1 - χ(𝔭) N𝔭 ^ (-s))`, an entire
-function (`RayClassCharacter.differentiable_eulerCorrection`) without zeros on `Re s > 0`, and on
+function (`RayClassCharacter.differentiable_eulerCorrection`) with zeros only on `Re s = 0`
+(`RayClassCharacter.re_eq_zero_of_eulerCorrection_eq_zero`), and on
 `Re s > 1` the series of the induced character is the series of `χ` times these factors
 (`RayClassCharacter.LSeries_induced`).
 
@@ -105,7 +106,7 @@ theorem heckeLFunctionC_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪
   rw [heckeLFunctionC_induced_eq_meromorphicContinuation, meromorphicContinuation_smul_apply
     (fun z ↦ ((χ.differentiable_eulerCorrection 𝔫).analyticAt z).meromorphicAt)
     (fun z _ ↦ (χ.differentiable_eulerCorrection 𝔫).analyticAt z)
-    (fun z hz ↦ χ.eulerCorrection_ne_zero 𝔫 (zero_lt_one.trans hz))
+    (fun z hz ↦ χ.eulerCorrection_ne_zero 𝔫 (zero_lt_one.trans hz).ne')
     (analyticOnNhd_LSeries_of_unitary χ.toUnitaryIdealWeight) hs, smul_eq_mul, mul_comm,
     heckeLFunctionC_def]
 
@@ -120,7 +121,7 @@ theorem heckeLFunctionC_induced_eventuallyEq (h : 𝔪 ∣ 𝔫) (χ : RayClassC
   filter_upwards [meromorphicContinuation_smul_eventuallyEq
     (fun z ↦ ((χ.differentiable_eulerCorrection 𝔫).analyticAt z).meromorphicAt)
     (fun z _ ↦ (χ.differentiable_eulerCorrection 𝔫).analyticAt z)
-    (fun z hz ↦ χ.eulerCorrection_ne_zero 𝔫 (zero_lt_one.trans hz))
+    (fun z hz ↦ χ.eulerCorrection_ne_zero 𝔫 (zero_lt_one.trans hz).ne')
     (analyticOnNhd_LSeries_of_unitary χ.toUnitaryIdealWeight) s] with z hz
   rw [hz, Pi.smul_apply', smul_eq_mul, mul_comm, heckeLFunctionC_def]
 
