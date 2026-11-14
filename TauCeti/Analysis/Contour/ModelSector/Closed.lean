@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.ModelSector.Corner
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
-public import TauCeti.Analysis.Contour.Winding.Number.Circle
+public import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
 public import TauCeti.Analysis.Contour.Winding.Number.Concat
 public import TauCeti.Analysis.Contour.Winding.Number.Reparam
 
@@ -43,12 +43,12 @@ value on its own; the arc is a reparametrised `circleMap`.
 ## Main results
 
 * `TauCeti.Contour.windingNumber_closedModelSector` — its winding number about `z₀`
-  is `α / 2π`, for every `0 ≤ α`. This is the roadmap's acceptance criterion.
+  is `α / 2π`, for every `0 ≤ α`.
 * `TauCeti.Contour.windingNumber_closedModelSector_eq_half` and
   `TauCeti.Contour.windingNumber_closedModelSector_eq_one_div_six` — the `½` at a smooth crossing
   and the `1/6` at a `π/3` corner, the two values the valence formula consumes.
 
-This is Layer 1 of the Hungerbühler–Wasem generalized residue theorem (HW Thm 3.3).
+This is an ingredient of the Hungerbühler–Wasem generalized residue theorem (HW Thm 3.3).
 
 ## References
 
@@ -233,10 +233,10 @@ private theorem norm_modelSector_dirs (φ α : ℝ) :
 /-- **The swept-arc curve has winding number `α / 2π` about its corner.** The two radial segments
 contribute nothing and the arc contributes its swept angle.
 
-This holds for every `0 ≤ α`, and is the roadmap's acceptance criterion. The curve is the
-Hungerbühler–Wasem model sector of *interior angle* `α` only for `0 < α < 2π`: at `α = 0` the two
-radii coincide, and at `α ≥ 2π` the arc wraps — `α = 4π` traverses the circle twice, giving winding
-`2`. At both ends the formula stands; it is the corner reading that lapses. -/
+This holds for every `0 ≤ α`. The curve is the Hungerbühler–Wasem model sector of *interior angle*
+`α` only for `0 < α < 2π`: at `α = 0` the two radii coincide, and at `α ≥ 2π` the arc wraps —
+`α = 4π` traverses the circle twice, giving winding `2`. At both ends the formula stands; it is the
+corner reading that lapses. -/
 @[simp]
 theorem windingNumber_closedModelSector {z₀ : ℂ} {r : ℝ} (hr : 0 < r) (φ : ℝ) {α : ℝ} (hα : 0 ≤ α) :
     windingNumber (modelSector z₀ r φ α) (-r) (r + α) z₀ = (α : ℂ) / (2 * (Real.pi : ℂ)) := by

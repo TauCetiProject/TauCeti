@@ -59,7 +59,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Com
   {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M]
 
-omit [ContinuousSMul G M] in
+omit [ContinuousSMul G M] [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G] in
 /-- A continuous `1`-cocycle for a trivial action on a discrete group killed by `p` vanishes on
 the pro-`p` Frattini subgroup: it is a continuous homomorphism to an elementary abelian group
 (`TauCeti.ContCohomology.Z1EquivOfSmulEqSelf`). -/
@@ -67,17 +67,15 @@ private theorem apply_eq_zero_of_mem_proPFrattini (htriv : ∀ (g : G) (m : M), 
     (hpM : ∀ m : M, p • m = 0) (c : Z1 G M) {g : G} (hg : g ∈ proPFrattini p G) :
     (c : G → M) g = 0 := by
   let φ := Additive.toMul (Z1EquivOfSmulEqSelf htriv c)
-  have hker : IsClosed (φ.toMonoidHom.ker : Set G) := by
-    rw [MonoidHom.coe_ker]
-    exact isClosed_singleton.preimage φ.continuous
   have hexp : Monoid.exponent (Multiplicative M) ∣ p :=
-    Monoid.exponent_dvd_iff_forall_pow_eq_one.mpr fun x ↦ by
-      rw [← ofAdd_toAdd x, ← ofAdd_nsmul, hpM, ofAdd_zero]
-  have h := MonoidHom.mem_ker.mp
-    (proPFrattini_le_ker_of_exponent_dvd Fact.out φ.toMonoidHom hker hexp hg)
+    Monoid.exponent_multiplicative (G := M) ▸ AddMonoid.exponent_dvd_of_forall_nsmul_eq_zero hpM
+  have h := φ.toMonoidHom.proPFrattini_le_comap_of_prime Fact.out φ.continuous hg
+  rw [Subgroup.mem_comap, (proPFrattini_eq_bot_iff_of_discreteTopology Fact.out).mpr
+    ⟨inferInstance, hexp⟩, Subgroup.mem_bot] at h
   simpa [φ] using h
 
-/-- **Restriction to a subgroup of the Frattini subgroup vanishes.** For a profinite group `G`,
+omit [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G] in
+/-- **Restriction to a subgroup of the Frattini subgroup vanishes.** For a topological group `G`,
 a subgroup `N ≤ proPFrattini p G`, and a discrete abelian group `M` killed by `p` with trivial
 action, restriction `H¹(G, M) → H¹(N, M)` is zero. -/
 theorem explicitRes1_eq_zero_of_le_proPFrattini {N : Subgroup G}

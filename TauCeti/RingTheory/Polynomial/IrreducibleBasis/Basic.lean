@@ -11,6 +11,8 @@ public import TauCeti.RingTheory.Polynomial.SquarefreeBasis
 
 import Mathlib.Algebra.BigOperators.Associated
 import Mathlib.Algebra.Squarefree.Basic
+import TauCeti.Algebra.GCDMonoid.Basic
+import TauCeti.Algebra.Polynomial.Irreducible
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
@@ -96,7 +98,9 @@ variable {D : Type*} [CommRing D] {F B B' : Finset D[X]} {b b' : D[X]}
 
 namespace IsIrreducibleBasis
 
-variable [IsDomain D]
+section NoZeroDivisors
+
+variable [NoZeroDivisors D]
 
 /-- The members of an irreducible basis are primitive. -/
 theorem isPrimitive (hB : F.IsIrreducibleBasis B) (hb : b ∈ B) : b.IsPrimitive :=
@@ -112,12 +116,16 @@ theorem isSquarefreeBasis (hB : F.IsIrreducibleBasis B) : F.IsSquarefreeBasis B 
       (hB.irreducible b hb).associated_of_dvd (hB.irreducible b' hb') h
   exists_eq_C_mul_prod := hB.exists_eq_C_mul_prod
 
+end NoZeroDivisors
+
 variable [IsGCDMonoid D]
 
 /-- An irreducible polynomial of positive degree is associated to a member of an irreducible
 basis of `F` exactly when it divides a nonzero member of `F`. -/
 theorem exists_associated_iff (hB : F.IsIrreducibleBasis B) {q : D[X]} (hq : Irreducible q)
     (hdeg : 0 < q.natDegree) : (∃ b ∈ B, Associated q b) ↔ ∃ f ∈ F, f ≠ 0 ∧ q ∣ f := by
+  have := hq.nontrivial_coeff
+  have : IsDomain D := TauCeti.isDomain_of_isGCDMonoid
   refine ⟨fun ⟨b, hb, hqb⟩ ↦ ?_, fun ⟨f, hf, hf0, hqf⟩ ↦ ?_⟩
   · obtain ⟨f, hf, hf0, hbf⟩ := hB.exists_dvd b hb
     exact ⟨f, hf, hf0, hqb.dvd.trans hbf⟩
@@ -141,6 +149,8 @@ theorem exists_associated (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBa
 basis of the same family. -/
 theorem exists_eq_C_mul (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B')
     (hb : b ∈ B) : ∃ b' ∈ B', ∃ r : D, IsUnit r ∧ b = C r * b' := by
+  have := (hB.irreducible b hb).nontrivial_coeff
+  have : IsDomain D := TauCeti.isDomain_of_isGCDMonoid
   obtain ⟨b', hb', hbb'⟩ := hB.exists_associated hB' hb
   obtain ⟨u, hu⟩ := hbb'.symm
   obtain ⟨r, hr, hru⟩ := Polynomial.isUnit_iff.1 u.isUnit
@@ -168,6 +178,8 @@ theorem card_eq (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B') :
 member of any other irreducible basis of the same family. -/
 theorem exists_associated_discr (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B')
     (hb : b ∈ B) : ∃ c ∈ B', Associated b.discr c.discr := by
+  have := (hB.irreducible b hb).nontrivial_coeff
+  have : IsDomain D := TauCeti.isDomain_of_isGCDMonoid
   obtain ⟨c, hc, r, hr, rfl⟩ := hB.exists_eq_C_mul hB' hb
   refine ⟨c, hc, ?_⟩
   rw [TauCeti.discr_C_mul _ hr.ne_zero]
@@ -199,8 +211,10 @@ variable (K : Type*) [Field K] [Algebra D K] [IsFractionRing D K]
 /-- By Gauss's lemma, the members of an irreducible basis stay irreducible over the fraction
 field. -/
 theorem irreducible_map (hB : F.IsIrreducibleBasis B) (hb : b ∈ B) :
-    Irreducible (b.map (algebraMap D K)) :=
-  (hB.isPrimitive hb).irreducible_iff_irreducible_map_fraction_map.1 (hB.irreducible b hb)
+    Irreducible (b.map (algebraMap D K)) := by
+  have := (hB.irreducible b hb).nontrivial_coeff
+  have : IsDomain D := TauCeti.isDomain_of_isGCDMonoid
+  exact (hB.isPrimitive hb).irreducible_iff_irreducible_map_fraction_map.1 (hB.irreducible b hb)
 
 end FractionField
 
@@ -210,13 +224,16 @@ end Finset
 
 namespace Polynomial
 
-variable {D : Type*} [CommRing D] [IsDomain D] [IsGCDMonoid D]
+variable {D : Type*} [CommRing D] [IsGCDMonoid D]
 
 /-- Over a GCD domain, every polynomial is a constant times a product of irreducible
 polynomials of positive degree. The zero polynomial is included by taking the constant zero. -/
 theorem exists_eq_C_mul_prod_irreducible (f : D[X]) :
     ∃ (c : D) (s : Multiset D[X]),
       (∀ q ∈ s, Irreducible q ∧ 0 < q.natDegree) ∧ f = C c * s.prod := by
+  rcases subsingleton_or_nontrivial D with hD | hD
+  · exact ⟨0, 0, by simp, Subsingleton.elim _ _⟩
+  have : IsDomain D := TauCeti.isDomain_of_isGCDMonoid
   classical
   let := Classical.arbitrary (NormalizedGCDMonoid D)
   induction hn : f.natDegree using Nat.strong_induction_on generalizing f with
@@ -260,10 +277,13 @@ end Polynomial
 
 namespace Finset
 
-variable {D : Type*} [CommRing D] [IsDomain D] [IsGCDMonoid D]
+variable {D : Type*} [CommRing D] [IsGCDMonoid D]
 
 /-- Every finite family of polynomials over a GCD domain has an irreducible basis. -/
 theorem exists_isIrreducibleBasis (F : Finset D[X]) : ∃ B, F.IsIrreducibleBasis B := by
+  rcases subsingleton_or_nontrivial D with hD | hD
+  · exact ⟨∅, by simp, by simp, by simp, fun f _ ↦ ⟨0, 0, Subsingleton.elim _ _⟩, by simp⟩
+  have : IsDomain D := TauCeti.isDomain_of_isGCDMonoid
   classical
   choose c factors hirr hfactor using (exists_eq_C_mul_prod_irreducible (D := D))
   -- Collect the positive-degree irreducible factors of the nonzero members of `F`.

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.PathSpace.Moore
-public import Mathlib.Topology.Homotopy.Basic
+public import Mathlib.Topology.Homotopy.Contractible
 
 /-!
 # Homotopy invariance of Moore loop maps
@@ -21,12 +21,22 @@ Since the conclusion is again a based homotopy, the statement iterates to the do
 base point, then `Ω r ∘ Ω s ≃ id` relative to the constant loop
 (`TauCeti.MooreLoopSpace.homotopicRel_comp_map_id`).
 
+Applied to a contraction of `Y` onto `y` that fixes `y`, homotopy invariance contracts every Moore
+loop pointwise to a constant loop of the same length; shrinking that length to zero then contracts
+the Moore loop space onto the unit, again relative to the unit
+(`TauCeti.MooreLoopSpace.homotopicRel_id_const_one`). The constant loops of positive length are
+not the unit, so the second stage cannot be dropped. Since the conclusion is of the same form as
+the hypothesis, it iterates to the double Moore loop space.
+
 ## Main results
 
 * `TauCeti.MooreLoopSpace.homotopicRel_map`: based maps homotopic relative to the base point
   induce Moore loop maps homotopic relative to the constant loop.
 * `TauCeti.MooreLoopSpace.homotopicRel_comp_map_id`: the Moore loop functor preserves pointed
   left homotopy inverses.
+* `TauCeti.MooreLoopSpace.homotopicRel_id_const_one`,
+  `TauCeti.MooreLoopSpace.contractibleSpace_of_homotopicRel`: a contraction of `Y` relative to
+  `y` contracts `Ω_y Y` relative to the unit; in particular `Ω_y Y` is contractible.
 -/
 
 public section
@@ -86,5 +96,47 @@ theorem homotopicRel_comp_map_id {Z : Type*} [TopologicalSpace Z] {z : Z} {s : C
     rw [map_id]
     rfl
   simpa only [hcomp, hid] using homotopicRel_map h hrs (ContinuousMap.id_apply x)
+
+/-- **The constant loops shrink to the unit.** Sending a Moore loop to the constant loop at the
+base point of the same length is homotopic, relative to the unit, to the constant map at the unit:
+the length shrinks linearly to zero. -/
+private theorem homotopicRel_constOfLength_const_one :
+    (⟨fun γ ↦ constOfLength x γ.length, by fun_prop⟩ :
+      C(MooreLoopSpace X x, MooreLoopSpace X x)).HomotopicRel (ContinuousMap.const _ 1) {1} :=
+  ⟨{ toFun p := constOfLength x (unitInterval.toNNReal (unitInterval.symm p.1) * p.2.length)
+     continuous_toFun := by fun_prop
+     map_zero_left γ := by simp
+     map_one_left γ := by simp
+     prop' t γ hγ := by
+       rw [Set.mem_singleton_iff] at hγ
+       subst hγ
+       simp }⟩
+
+/-- **A contraction relative to the base point contracts the Moore loop space.** If the identity of
+`X` is homotopic to the constant map at `x` relative to `{x}`, then the identity of the Moore loop
+space `Ω_x X` is homotopic to the constant map at the unit relative to the unit. The homotopy first
+contracts every loop pointwise, which leaves the constant loop of the same length, and then shrinks
+that length to zero. -/
+theorem homotopicRel_id_const_one
+    (h : (ContinuousMap.id X).HomotopicRel (ContinuousMap.const X x) {x}) :
+    (ContinuousMap.id (MooreLoopSpace X x)).HomotopicRel (ContinuousMap.const _ 1) {1} := by
+  have hid : (map (ContinuousMap.id X) (ContinuousMap.id_apply x) :
+      C(MooreLoopSpace X x, MooreLoopSpace X x)) = ContinuousMap.id _ := by
+    rw [map_id]
+    rfl
+  have hconst : (map (ContinuousMap.const X x) (ContinuousMap.const_apply x x) :
+      C(MooreLoopSpace X x, MooreLoopSpace X x)) =
+      ⟨fun γ ↦ constOfLength x γ.length, by fun_prop⟩ :=
+    ContinuousMap.ext (map_const_apply _)
+  have h₁ := homotopicRel_map h (ContinuousMap.id_apply x) (ContinuousMap.const_apply x x)
+  rw [hid, hconst] at h₁
+  exact h₁.trans homotopicRel_constOfLength_const_one
+
+/-- **The Moore loop space of a space contracting onto its base point is contractible**, when the
+contraction fixes the base point. -/
+theorem contractibleSpace_of_homotopicRel
+    (h : (ContinuousMap.id X).HomotopicRel (ContinuousMap.const X x) {x}) :
+    ContractibleSpace (MooreLoopSpace X x) :=
+  (contractible_iff_id_nullhomotopic _).2 ⟨1, (homotopicRel_id_const_one h).homotopic⟩
 
 end TauCeti.MooreLoopSpace

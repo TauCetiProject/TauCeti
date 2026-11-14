@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.SetTheory.Cardinal.Finite
 public import TauCeti.RepresentationTheory.CharacterTable.Pairing
 import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 import Mathlib.LinearAlgebra.Dimension.Finite
@@ -55,8 +56,9 @@ below uses them.
 ## Implementation notes
 
 The pairing enters only through the split orthonormality lemmas of
-`TauCeti/RepresentationTheory/CharacterTable/Pairing.lean`, so these statements ask for
-`Finite G` and produce the `Fintype` inside their proofs.
+`TauCeti/RepresentationTheory/CharacterTable/Pairing.lean`, so the proofs derive `Finite G` from
+the invertibility of `Nat.card G` (which is `0` for an infinite group) and produce the `Fintype`
+inside.
 
 ## References
 
@@ -80,7 +82,7 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
 
 section Independence
 
-variable [Finite G] {ι : Type*} {V : ι → Type w} [∀ i, AddCommGroup (V i)]
+variable {ι : Type*} {V : ι → Type w} [∀ i, AddCommGroup (V i)]
   [∀ i, Module k (V i)]
 
 /-- **The characters of pairwise inequivalent irreducible representations are linearly
@@ -89,6 +91,8 @@ to `1` with itself. -/
 theorem linearIndependent_ofCharacter (ρ : ∀ i, Representation k G (V i))
     [∀ i, (ρ i).IsIrreducible] (h : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j))) :
     LinearIndependent k fun i => ofCharacter (ρ i) := by
+  have : Finite G :=
+    TauCeti.finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ := Fintype.ofFinite G
   refine LinearMap.BilinForm.linearIndependent_of_iIsOrtho
     (LinearMap.BilinForm.iIsOrtho_def.mpr fun i j hij =>
@@ -114,6 +118,8 @@ independent** as class functions. -/
 theorem linearIndependent_ofFDRep (X : ι → FDRep k G) [∀ i, CategoryTheory.Simple (X i)]
     (h : Pairwise fun i j => IsEmpty (X i ≅ X j)) :
     LinearIndependent k fun i => ofFDRep (X i) := by
+  have : Finite G :=
+    TauCeti.finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ := Fintype.ofFinite G
   refine LinearMap.BilinForm.linearIndependent_of_iIsOrtho
     (LinearMap.BilinForm.iIsOrtho_def.mpr fun i j hij =>
@@ -142,7 +148,7 @@ end ClassFunction
 
 namespace Representation
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)] {V W : Type*} [AddCommGroup V] [Module k V]
   [AddCommGroup W] [Module k W]
 
@@ -152,6 +158,8 @@ theorem _root_.Representation.nonempty_equiv_of_character_eq_of_isIrreducible
     (ρ : Representation k G V) (σ : Representation k G W)
     [ρ.IsIrreducible] [σ.IsIrreducible] (h : ρ.character = σ.character) :
     Nonempty (σ.Equiv ρ) := by
+  have : Finite G :=
+    TauCeti.finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ := Fintype.ofFinite G
   rw [← not_isEmpty_iff]
   intro hempty
@@ -187,7 +195,7 @@ section FDRep
 
 section Simple
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)]
 
 /-- **A simple object of `FDRep k G` is determined by its character**: two simple objects with
@@ -195,6 +203,8 @@ the same character are isomorphic. -/
 theorem _root_.FDRep.nonempty_iso_of_character_eq_of_simple (X Y : FDRep k G)
     [CategoryTheory.Simple X] [CategoryTheory.Simple Y]
     (h : X.character = Y.character) : Nonempty (X ≅ Y) := by
+  have : Finite G :=
+    TauCeti.finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ := Fintype.ofFinite G
   rw [← not_isEmpty_iff]
   intro hempty
@@ -210,7 +220,7 @@ end FDRep
 
 namespace ClassFunction
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)] {ι : Type*} [Fintype ι] {V : ι → Type w}
   [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
 
@@ -224,6 +234,8 @@ whose dimension is the number of conjugacy classes. -/
 theorem card_le_card_conjClasses (ρ : ∀ i, Representation k G (V i))
     [∀ i, (ρ i).IsIrreducible] (h : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j))) :
     Fintype.card ι ≤ Nat.card (ConjClasses G) := by
+  have : Finite G :=
+    TauCeti.finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ := Fintype.ofFinite G
   have hle := (linearIndependent_ofCharacter ρ h).fintype_card_le_finrank
   rwa [finrank_eq_card_conjClasses] at hle
@@ -233,6 +245,8 @@ conjugacy classes of `G`. -/
 theorem card_le_card_conjClasses_fdRep (X : ι → FDRep k G) [∀ i, CategoryTheory.Simple (X i)]
     (h : Pairwise fun i j => IsEmpty (X i ≅ X j)) :
     Fintype.card ι ≤ Nat.card (ConjClasses G) := by
+  have : Finite G :=
+    TauCeti.finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ := Fintype.ofFinite G
   have hle := (linearIndependent_ofFDRep X h).fintype_card_le_finrank
   rwa [finrank_eq_card_conjClasses] at hle

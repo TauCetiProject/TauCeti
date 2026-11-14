@@ -134,15 +134,14 @@ private theorem eLpNorm_conjWirtingerDeriv_smul_le {χ : ℂ → ℝ} {u g : ℂ
   set v : ℂ → F := fun y ↦ χ y • u y
   have hv : ContDiff ℝ ∞ v := hu.contDiff_smul_of_tsupport_subset hU hχ.contDiffOn hχU
   have hDv : Continuous (fderiv ℝ v) := hv.continuous_fderiv (by simp)
-  have hdbar : Continuous fun z ↦ conjWirtingerDeriv v z 1 := by
-    simp only [conjWirtingerDeriv_apply]
-    fun_prop
+  have hdbar : Continuous fun z ↦ conjWirtingerDeriv v z 1 :=
+    (hv.of_le (by simp)).continuous_conjWirtingerDeriv_apply 1
   -- Off `U`, the map `v` vanishes near the point, and so does `\bar∂ v`.
   have hsupp : (fun z ↦ conjWirtingerDeriv v z 1).support ⊆ U := by
     intro z hz
     by_contra hzU
     have hzv : z ∉ tsupport v := fun h ↦ hzU (hχU (tsupport_smul_subset_left χ u h))
-    exact hz (by simp [conjWirtingerDeriv_apply, fderiv_of_notMem_tsupport ℝ hzv])
+    exact hz (by simp [conjWirtingerDeriv_of_notMem_tsupport hzv])
   rw [← eLpNorm_restrict_eq_of_support_subset hdbar.aestronglyMeasurable hsupp]
   have hpt : ∀ᵐ z ∂(volume.restrict U), ‖conjWirtingerDeriv v z 1‖ ≤
       ‖g z‖ + δ * ‖fderiv ℝ v z‖ + (δ * L + M + L : ℝ≥0) * ‖u z‖ := by
@@ -159,9 +158,9 @@ private theorem eLpNorm_conjWirtingerDeriv_smul_le {χ : ℂ → ℝ} {u g : ℂ
   rw [hsplit]
   refine (eLpNorm_add_le hp).trans (add_le_add ((eLpNorm_add_le hp).trans
     (add_le_add (eLpNorm_norm _ hgm).le ?_)) ?_)
-  · rw [eLpNorm_const_smul, NNReal.enorm_eq, eLpNorm_norm _ hDv.aestronglyMeasurable]
+  · rw [eLpNorm_const_smul, NNReal.eNorm_eq, eLpNorm_norm _ hDv.aestronglyMeasurable]
     exact mul_le_mul_right (eLpNorm_mono_measure (fderiv ℝ v) Measure.restrict_le_self) _
-  · rw [eLpNorm_const_smul, NNReal.enorm_eq,
+  · rw [eLpNorm_const_smul, NNReal.eNorm_eq,
       eLpNorm_norm _ (hu.continuousOn.aestronglyMeasurable hU.measurableSet)]
 
 /-- **The Calderón–Zygmund inequality for the cut-off map.** If `C` is a Calderón–Zygmund

@@ -433,7 +433,7 @@ private theorem scaleSubst_X :
 
 private theorem prodSubst_C (a : A) :
     prodSubst R A (LaurentPolynomial.C a) = LaurentPolynomial.C (LaurentPolynomial.C a) :=
-  laurentEval_C (R := A) _ a
+  AlgHom.apply_laurentPolynomial_C (laurentEval _) a
 
 private theorem prodSubst_T :
     prodSubst R A (LaurentPolynomial.T 1) =

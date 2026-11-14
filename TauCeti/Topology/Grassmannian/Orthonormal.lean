@@ -237,6 +237,24 @@ noncomputable abbrev specialOrthogonalMulAction :
   MulAction.compHom _ (Submonoid.inclusion (S := specialOrthogonalGroup (Fin N) ℝ)
     (T := unitaryGroup (Fin N) ℝ) fun _ hA ↦ hA.1)
 
+/-- Under `specialOrthogonalMulAction`, a special orthogonal matrix acts on frames by
+`unitaryMap`. -/
+@[simp]
+theorem specialOrthogonal_smul_def (A : specialOrthogonalGroup (Fin N) ℝ)
+    (f : finiteOrthonormalFrame ℝ r N) :
+    letI := specialOrthogonalMulAction r N
+    A • f = unitaryMap ⟨A.1, A.2.1⟩ f :=
+  (rfl)
+
+/-- The action `specialOrthogonalMulAction` of `SO(N)` on orthonormal real frames is jointly
+continuous. -/
+theorem continuousSMul_specialOrthogonalMulAction :
+    letI := specialOrthogonalMulAction r N
+    ContinuousSMul (specialOrthogonalGroup (Fin N) ℝ) (finiteOrthonormalFrame ℝ r N) :=
+  letI := specialOrthogonalMulAction r N
+  ⟨continuous_unitaryMap.comp
+    (((continuous_subtype_val.subtype_mk _).comp continuous_fst).prodMk continuous_snd)⟩
+
 end UnitaryMap
 
 end finiteOrthonormalFrame
@@ -270,9 +288,10 @@ theorem continuous_orthonormalize :
   .subtype_mk (continuous_pi fun i ↦ (PiLp.continuous_ofLp 2 _).comp <|
     Continuous.gramSchmidtNormed
       (v := fun j (f : finiteFullRankFrame 𝕜 r N) ↦
-        (WithLp.toLp 2 (f.1 j) : EuclideanSpace 𝕜 (Fin N)))
-      (fun j ↦ (PiLp.continuous_toLp 2 _).comp <|
-        (continuous_apply j).comp continuous_subtype_val) linearIndependent_toLp i) _
+        (WithLp.toLp 2 (f.1 j) : EuclideanSpace 𝕜 (Fin N))) i
+      (fun j _ ↦ (PiLp.continuous_toLp 2 _).comp <|
+        (continuous_apply j).comp continuous_subtype_val)
+      fun f ↦ f.linearIndependent_toLp.linearIndepOn _) _
 
 /-- Gram-Schmidt orthonormalization does not change the span of a frame. -/
 @[simp] theorem span_range_orthonormalize (f : finiteFullRankFrame 𝕜 r N) :
