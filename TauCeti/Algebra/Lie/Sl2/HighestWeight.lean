@@ -28,7 +28,10 @@ read in the coordinate `t = λ(h)` through `TauCeti.slTwoWeight`.
   `V(n)` is `e^{n} + e^{n-2} + ⋯ + e^{-n}`.
 * `v₀` is a highest weight vector of weight `n`, so `V(n)` is the irreducible module `L(n)`, which
   therefore has dimension `n + 1`.
-* By Schur's lemma, `L(λ)` occurs in `V(n)` with multiplicity one when `λ = n` and zero otherwise.
+* `L(λ)` occurs in `V(n)` with multiplicity one when `λ = n` and zero otherwise, over any field of
+  characteristic zero: both are irreducible highest weight modules, so this is the general
+  `TauCeti.isotypicMultiplicity_irreducibleQuotient_of_isHighestWeightVector`, which rests on every
+  endomorphism of a cyclic highest weight module being a scalar rather than on Schur's lemma.
 
 These are the inputs that let the general toolkit of characters and isotypic multiplicities be
 evaluated on concrete `sl₂`-modules built from `V(n)`.
@@ -151,33 +154,16 @@ theorem nonempty_lieModuleEquiv_irreducibleQuotient :
     (isHighestWeightVector_irreducibleQuotientGenerator _ _)
 
 open scoped Classical in
-/-- **`L(λ)` occurs in `V(n)` exactly when `λ = n`, and then once.** This is Schur's lemma: `V(n)`
-and `L(λ)` are irreducible, and they are equivalent exactly when their highest weights agree. -/
-theorem isotypicMultiplicity_irreducibleQuotient
-    (lam : Dual K (slTwoDiagonalCartan K)) :
+/-- **`L(λ)` occurs in `V(n)` exactly when `λ = n`, and then once**, over any field of
+characteristic zero. This is
+`TauCeti.isotypicMultiplicity_irreducibleQuotient_of_isHighestWeightVector` for the highest weight
+vector `v₀` of `V(n)`. -/
+theorem isotypicMultiplicity_irreducibleQuotient (lam : Dual K (slTwoDiagonalCartan K)) :
     LieModule.isotypicMultiplicity K (SpecialLinear.sl (Fin 2) K) (Sl2Std K n)
         (irreducibleQuotient (slTwoPositiveBase K) lam) =
-      if lam = slTwoWeight (n : K) then 1 else 0 := by
-  split_ifs with h
-  · subst h
-    obtain ⟨e⟩ := nonempty_lieModuleEquiv_irreducibleQuotient (K := K) (n := n)
-    rw [← LieModule.isotypicMultiplicity_eq_of_lieModuleEquiv_type e,
-      LieModule.isotypicMultiplicity_def]
-    have hgen : LieSubmodule.lieSpan K (SpecialLinear.sl (Fin 2) K) {basis K n 0} = ⊤ :=
-      (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦ (basis K n).ne_zero 0 <| by
-        simpa [hbot] using LieSubmodule.subset_lieSpan
-          (R := K) (L := SpecialLinear.sl (Fin 2) K) (s := {basis K n 0}) rfl
-    refine (finrank_eq_one_iff_of_ne_zero' (LieModuleHom.id : Sl2Std K n →ₗ⁅K, _⁆ Sl2Std K n)
-      ?_).2 fun f ↦ ?_
-    · exact fun h ↦ (basis K n).ne_zero 0 (by simpa using LieModuleHom.congr_fun h (basis K n 0))
-    · obtain ⟨c, hc⟩ := isHighestWeightVector_basis_zero.exists_eq_smul_id hgen f
-      exact ⟨c, hc.symm⟩
-  · rw [LieModule.isotypicMultiplicity_def]
-    refine LieModule.finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv
-      (not_nonempty_iff.mp fun he ↦ h ?_)
-    exact ((nonempty_lieModuleEquiv_iff_eq_of_isHighestWeightVector
-      (isHighestWeightVector_irreducibleQuotientGenerator _ _)
-      isHighestWeightVector_basis_zero).mp he)
+      if lam = slTwoWeight (n : K) then 1 else 0 :=
+  isotypicMultiplicity_irreducibleQuotient_of_isHighestWeightVector
+    isHighestWeightVector_basis_zero lam
 
 end HighestWeight
 
