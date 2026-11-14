@@ -126,12 +126,7 @@ private theorem injOn_and_surjOn_ker_inf_range_pow (hE : IsNilpotent E)
   induction d with
   | zero =>
     intro k hk
-    have hzero : ∀ c ∈ LinearMap.ker E ⊓ LinearMap.range (E ^ k), c = 0 := by
-      rintro c ⟨-, hc⟩
-      rw [pow_eq_zero_of_le (by omega) hm, LinearMap.range_zero] at hc
-      exact (Submodule.mem_bot K).mp hc
-    exact ⟨fun c hc _ => hzero c hc, fun w hw =>
-      ⟨0, zero_mem _, by simp [hzero w hw]⟩⟩
+    simp [pow_eq_zero_of_le (show m ≤ k by omega) hm]
   | succ d ih =>
     intro k hk
     obtain ⟨hinj, hsurj⟩ := ih (k + 1) (by omega)
