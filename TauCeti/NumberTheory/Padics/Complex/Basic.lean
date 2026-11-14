@@ -12,9 +12,10 @@ public import TauCeti.Topology.Algebra.Valued.Integer
 
 import Mathlib.Algebra.AlgebraicCard
 import TauCeti.Analysis.Normed.Field.Approximation
+import TauCeti.Analysis.Normed.Field.Basic
 
 /-!
-# `ℂ_p` is separable
+# `ℂ_p` is separable and densely normed
 
 The field `ℂ_[p]` of `p`-adic complex numbers is the completion of an algebraic closure of
 `ℚ_[p]`. It contains the countable set of algebraic numbers, the elements algebraic over `ℚ`, as
@@ -25,9 +26,10 @@ over `ℚ` and take a nearby root (`IsAlgebraic.mem_closure_setOf_isAlgebraic`).
 Separability is what makes `ℂ_p` fail to be spherically complete, so that the closed unit disc
 over `ℂ_p` has points of type (4).
 
-The file also compares the valuation with the norm, records `‖p‖ = p⁻¹ < 1` and the
-residue characteristic, and provides the integral coefficient inclusion and topological
-nilpotence of `ζ - 1` for `p`-th roots of unity.
+Because `PadicAlgCl p` and `ℂ_[p]` are algebraically closed nontrivially normed fields, their
+positive norms are dense in `(0, ∞)`, making both fields densely normed. The file also compares the
+valuation with the norm, records `‖p‖ = p⁻¹ < 1` and the residue characteristic, and provides the
+integral coefficient inclusion and topological nilpotence of `ζ - 1` for `p`-th roots of unity.
 
 ## Main results
 
@@ -42,6 +44,8 @@ nilpotence of `ζ - 1` for `p`-th roots of unity.
 * `PadicComplex.norm_p_lt_one`: `‖p‖ < 1` in `ℂ_[p]`.
 * `PadicComplex.dense_setOf_isAlgebraic`: the algebraic numbers are dense in `ℂ_[p]`.
 * `PadicComplex.separableSpace`: `ℂ_[p]` is a separable space.
+* `PadicComplex.denselyNormedField`, `PadicAlgCl.denselyNormedField`: `ℂ_[p]` and `PadicAlgCl p`
+  are densely normed fields.
 
 ## References
 
@@ -139,4 +143,36 @@ theorem dense_setOf_isAlgebraic : Dense {x : ℂ_[p] | IsAlgebraic ℚ x} := by
 instance separableSpace : TopologicalSpace.SeparableSpace ℂ_[p] :=
   ⟨⟨_, Algebraic.countable ℚ ℂ_[p], dense_setOf_isAlgebraic p⟩⟩
 
+/-- **`ℂ_[p]` is densely normed**: as an algebraically closed nontrivially normed field, its
+positive norms are dense in `(0, ∞)`. -/
+noncomputable instance denselyNormedField : DenselyNormedField ℂ_[p] where
+  lt_norm_lt _ _ := by exact NormedField.exists_lt_norm_lt_of_isAlgClosed ℂ_[p]
+
+-- Ensure that `DenselyNormedField` induces the existing normed and nontrivially normed field
+-- instances on `ℂ_[p]`.
+example : (inferInstance : NormedField ℂ_[p]) = PadicComplex.normedField p := by
+  with_reducible_and_instances rfl
+
+example :
+    (inferInstance : NontriviallyNormedField ℂ_[p]) = PadicComplex.nontriviallyNormedField p := by
+  with_reducible_and_instances rfl
+
 end PadicComplex
+
+namespace PadicAlgCl
+
+variable (p : ℕ) [Fact p.Prime]
+
+/-- **`PadicAlgCl p` is densely normed**: as an algebraically closed nontrivially normed field, its
+positive norms are dense in `(0, ∞)`. -/
+noncomputable instance denselyNormedField : DenselyNormedField (PadicAlgCl p) where
+  lt_norm_lt _ _ := by exact NormedField.exists_lt_norm_lt_of_isAlgClosed (PadicAlgCl p)
+
+-- Ensure that `DenselyNormedField` induces the existing nontrivially normed field instance on
+-- `PadicAlgCl p`.
+example :
+    (inferInstance : NontriviallyNormedField (PadicAlgCl p)) =
+      PadicAlgCl.nontriviallyNormedField p := by
+  with_reducible_and_instances rfl
+
+end PadicAlgCl
