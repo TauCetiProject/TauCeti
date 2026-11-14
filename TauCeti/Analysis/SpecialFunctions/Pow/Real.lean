@@ -130,6 +130,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.rpow_sub_mul_mul_rpow_mul`: `x ^ ((s - a) t) x ^ (a t) = x ^ (s t)` for `0 < x`.
 * `Real.rpow_mul_le_rpow_add_one`: `T ^ S * x ≤ R' ^ (S + 1)` for `0 < R' ≤ T`, `x ≤ T` and
   `S + 1 ≤ 0`.
+* `Real.exists_rat_lt_rpow_lt`: for `0 < b ≠ 1`, `0 < r₂` and `r₁ < r₂`, some rational `q`
+  satisfies `r₁ < b ^ (q : ℝ) < r₂`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
   exponents have finite multiplicative support.
 * `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
@@ -447,6 +449,28 @@ theorem le_sqrt_mul_rpow_sub_one_of_sq_le {x d B β : ℝ} (hd : 0 < d)
   have h' := le_sqrt_mul_of_sq_le_mul (rpow_nonneg hd.le β) hsq
   rw [rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
   linarith
+
+/-- **Density of rational powers.** For a positive base `b ≠ 1`, `0 < r₂`, and `r₁ < r₂`, some
+rational exponent `q` satisfies `r₁ < b ^ (q : ℝ) < r₂`. -/
+theorem exists_rat_lt_rpow_lt {b r₁ r₂ : ℝ} (hb₀ : 0 < b) (hb₁ : b ≠ 1) (hr₂ : 0 < r₂)
+    (hr : r₁ < r₂) : ∃ q : ℚ, r₁ < b ^ (q : ℝ) ∧ b ^ (q : ℝ) < r₂ := by
+  wlog hb : 1 < b generalizing b
+  · have hb' : 1 < b⁻¹ := (one_lt_inv₀ hb₀).mpr (hb₁.lt_of_le (not_lt.mp hb))
+    obtain ⟨q, hq₁, hq₂⟩ := this (inv_pos.mpr hb₀) hb'.ne' hb'
+    rw [inv_rpow hb₀.le, ← rpow_neg hb₀.le, ← Rat.cast_neg] at hq₁ hq₂
+    exact ⟨-q, hq₁, hq₂⟩
+  -- Replace `r₁` by `max r₁ (r₂ / 2)` so that both endpoints are strictly positive.
+  set r₁' := max r₁ (r₂ / 2)
+  have hr₁_le : r₁ ≤ r₁' := le_max_left _ _
+  have hr₁' : 0 < r₁' := lt_max_of_lt_right (half_pos hr₂)
+  have hlt' : r₁' < r₂ := max_lt hr (half_lt_self hr₂)
+  have hlb : 0 < log b := log_pos hb
+  obtain ⟨q, hq₁, hq₂⟩ := exists_rat_btwn (div_lt_div_of_pos_right (log_lt_log hr₁' hlt') hlb)
+  refine ⟨q, hr₁_le.trans_lt ?_, ?_⟩
+  · rw [rpow_def_of_pos hb₀, mul_comm, ← exp_log hr₁', exp_lt_exp]
+    exact (div_lt_iff₀ hlb).mp hq₁
+  · rw [rpow_def_of_pos hb₀, mul_comm, ← exp_log hr₂, exp_lt_exp]
+    exact (lt_div_iff₀ hlb).mp hq₂
 
 end Real
 

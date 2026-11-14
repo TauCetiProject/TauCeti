@@ -47,6 +47,8 @@ rationals.
   commensurable with every multiplicative pseudo-uniformiser.
 * `TauCeti.NormedRing.PseudoUniformizer.ratAddValuation_eq_map_padicAddValuation`: the rational
   valuation of a multiplicative pseudo-uniformiser of norm `p⁻¹` is `Padic.addValuation`.
+* `Padic.range_norm_sdiff_singleton_zero`: the nonzero norms of `ℚ_[p]` are the integer powers of
+  `p`.
 -/
 
 public section
@@ -151,3 +153,20 @@ theorem exists_int_padicRealValuation {x : ℚ_[p]} (hx : x ≠ 0) :
     WithTop.map_coe]⟩
 
 end TauCeti
+
+namespace Padic
+
+/-- **Nonzero norms of `ℚ_[p]`.** The nonzero norms of `ℚ_[p]` are the integer powers of `p`. -/
+theorem range_norm_sdiff_singleton_zero (p : ℕ) [Fact p.Prime] :
+    Set.range (norm : ℚ_[p] → ℝ) \ {0} = Set.range fun m : ℤ ↦ (p : ℝ) ^ m := by
+  ext r
+  simp only [Set.mem_sdiff, Set.mem_range, Set.mem_singleton_iff]
+  constructor
+  · rintro ⟨⟨x, rfl⟩, hx⟩
+    exact ⟨-x.valuation, (Padic.norm_eq_zpow_neg_valuation (norm_ne_zero_iff.mp hx)).symm⟩
+  · rintro ⟨m, rfl⟩
+    have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr (Fact.out : p.Prime).pos
+    refine ⟨⟨(p : ℚ_[p]) ^ (-m), ?_⟩, (zpow_pos hp0 m).ne'⟩
+    rw [norm_zpow, Padic.norm_p, inv_zpow, zpow_neg, inv_inv]
+
+end Padic

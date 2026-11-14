@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.ERealExp
 public import TauCeti.Analysis.Convex.Sequence.Asymptotic
 public import TauCeti.NumberTheory.NewtonPolygon.GaussNorm
-public import TauCeti.RingTheory.PowerSeries.Radius
+public import TauCeti.RingTheory.PowerSeries.Radius.Basic
 
 /-!
 # The radius of a power series from its Newton polygon

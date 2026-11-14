@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Ring.LogGauge.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Rational values of the logarithmic gauge
@@ -30,7 +31,9 @@ of the *rational-valued* additive valuation `ratAddValuation`, normalised by `v_
 the unique rational-valued additive valuation recovering the norm through
 `‖x‖ = ‖ϖ‖ ^ v_ϖ(x)`, and its real form satisfies `-log ‖x‖ = (-log ‖ϖ‖) · v_ϖ(x)`. Rational
 values let one state that a slope or a root valuation has a given denominator without passing
-through real numbers.
+through real numbers. When every rational number is a value of `ratAddValuation`, the nonzero
+norms are exactly the rational powers `‖ϖ‖ ^ q`, so they are dense in `(0, ∞)` and their closure
+is `[0, ∞)`.
 
 ## Main definitions
 
@@ -58,6 +61,10 @@ through real numbers.
   with this property.
 * `TauCeti.NormedRing.PseudoUniformizer.ratAddValuation_eq_map_mul`: the rational valuations for
   two pseudo-uniformisers differ by the factor `v_ϖ(ϖ')`.
+* `TauCeti.NormedRing.PseudoUniformizer.exists_lt_norm_lt_of_forall_exists_ratAddValuation` and
+  `range_norm_sdiff_singleton_zero_eq_of_forall_exists_ratAddValuation`: when every rational number
+  is a value of `ratAddValuation`, the nonzero norms are the rational powers `‖ϖ‖ ^ q`, which
+  separate any two radii `0 ≤ r₁ < r₂`.
 
 ## References
 
@@ -148,6 +155,13 @@ theorem isCommensurable_iff_isCommensurable (ϖ ϖ' : PseudoUniformizer R) :
     ϖ.IsCommensurable ↔ ϖ'.IsCommensurable :=
   ⟨fun h ↦ isCommensurable_of_forall_exists_norm_eq_pow h ϖ' fun y _ ↦ ⟨1, one_pos, y, by simp⟩,
     fun h ↦ isCommensurable_of_forall_exists_norm_eq_pow h ϖ fun y _ ↦ ⟨1, one_pos, y, by simp⟩⟩
+
+/-- Every nonzero norm of a ring commensurable with `ϖ` is a rational power of `‖ϖ‖`. -/
+theorem IsCommensurable.range_norm_sdiff_singleton_zero_subset (hϖ : ϖ.IsCommensurable) :
+    Set.range (norm : R → ℝ) \ {0} ⊆ Set.range fun q : ℚ ↦ ‖(ϖ.unit : R)‖ ^ (q : ℝ) := by
+  rintro _ ⟨⟨x, rfl⟩, hx⟩
+  obtain ⟨q, hq⟩ := isCommensurable_iff_exists_rpow.mp hϖ x hx
+  exact ⟨q, hq.symm⟩
 
 section RatAddValuation
 
@@ -267,6 +281,45 @@ theorem ratAddValuation_eq_map_mul {ϖ' : PseudoUniformizer R} (hϖ' : ϖ'.IsCom
   congr 1
   ext t
   simp
+
+/-- **Nonzero norms from a surjective rational valuation.** When every rational number is a value
+of `ϖ.ratAddValuation hϖ`, the nonzero norms of `R` are the rational powers of `‖ϖ‖`. -/
+theorem range_norm_sdiff_singleton_zero_eq_of_forall_exists_ratAddValuation
+    (hsurj : ∀ q : ℚ, ∃ x : R, ϖ.ratAddValuation hϖ x = q) :
+    Set.range (norm : R → ℝ) \ {0} = Set.range fun q : ℚ ↦ ‖(ϖ.unit : R)‖ ^ (q : ℝ) := by
+  refine Set.Subset.antisymm hϖ.range_norm_sdiff_singleton_zero_subset ?_
+  rintro _ ⟨q, rfl⟩
+  obtain ⟨x, hx⟩ := hsurj q
+  exact ⟨⟨x, (ratAddValuation_eq_coe_iff hϖ).mp hx⟩,
+    (Real.rpow_pos_of_pos ϖ.norm_pos (q : ℝ)).ne'⟩
+
+/-- **Density of positive norms.** When every rational number is a value of
+`ϖ.ratAddValuation hϖ`, any two radii `0 ≤ r₁ < r₂` are separated by the norm of an element of
+`R`. -/
+theorem exists_lt_norm_lt_of_forall_exists_ratAddValuation
+    (hsurj : ∀ q : ℚ, ∃ x : R, ϖ.ratAddValuation hϖ x = q) {r₁ r₂ : ℝ} (hr₀ : 0 ≤ r₁)
+    (hr : r₁ < r₂) : ∃ x : R, r₁ < ‖x‖ ∧ ‖x‖ < r₂ := by
+  obtain ⟨q, hq₁, hq₂⟩ :=
+    Real.exists_rat_lt_rpow_lt ϖ.norm_pos ϖ.norm_lt_one.ne (hr₀.trans_lt hr) hr
+  obtain ⟨x, hx⟩ := hsurj q
+  rw [← (ratAddValuation_eq_coe_iff hϖ).mp hx] at hq₁ hq₂
+  exact ⟨x, hq₁, hq₂⟩
+
+/-- When every rational number is a value of `ϖ.ratAddValuation hϖ`, the closure of the nonzero
+norms of `R` is `[0, ∞)`. -/
+theorem closure_range_norm_sdiff_singleton_zero_eq_Ici_of_forall_exists_ratAddValuation
+    (hsurj : ∀ q : ℚ, ∃ x : R, ϖ.ratAddValuation hϖ x = q) :
+    closure (Set.range (norm : R → ℝ) \ {0}) = Set.Ici 0 := by
+  refine Set.Subset.antisymm (closure_minimal ?_ isClosed_Ici) fun r hr ↦ ?_
+  · rintro _ ⟨⟨x, rfl⟩, -⟩
+    exact norm_nonneg x
+  · rw [Metric.mem_closure_iff]
+    intro ε hε
+    obtain ⟨x, hr₁, hr₂⟩ := exists_lt_norm_lt_of_forall_exists_ratAddValuation hϖ hsurj hr
+      (lt_add_of_pos_right r hε)
+    refine ⟨‖x‖, ⟨⟨x, rfl⟩, (hr.trans_lt hr₁).ne'⟩, ?_⟩
+    rw [Real.dist_eq, abs_sub_lt_iff]
+    exact ⟨by linarith, by linarith⟩
 
 end RatAddValuation
 

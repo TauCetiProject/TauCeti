@@ -25,7 +25,9 @@ field a sufficiently close approximation of a nonzero element has the same norm.
 
 On `ℚ_[p]` it restricts to Mathlib's `Padic.addValuation`. Since `ℂ_[p]` is algebraically closed,
 every rational number is a value: a root `x` of `x ^ n = p ^ m` with `n > 0` has `v(x) = m / n`.
-For example a cube root of `p` has valuation `1 / 3`.
+For example a cube root of `p` has valuation `1 / 3`. Consequently the nonzero norms of `ℂ_[p]`
+are the rational powers `p ^ q`, so `ℂ_[p]` is densely normed and the closure of its nonzero norms
+is `[0, ∞)`.
 
 ## Main definitions
 
@@ -42,6 +44,9 @@ For example a cube root of `p` has valuation `1 / 3`.
 * `PadicComplex.addValuation_algebraMap`: on `ℚ_[p]` the valuation is `Padic.addValuation`.
 * `PadicComplex.addValuation_eq_of_pow_eq_zpow`: a root of `x ^ n = p ^ m` has valuation `m / n`.
 * `PadicComplex.addValuation_surjective`: every rational number is a value.
+* `PadicComplex.range_norm_sdiff_singleton_zero`, `PadicComplex.denselyNormedField`, and
+  `PadicComplex.closure_range_norm_sdiff_singleton_zero`: the nonzero norms of `ℂ_[p]` are the
+  rational powers of `p`, making `ℂ_[p]` densely normed.
 
 ## References
 
@@ -154,5 +159,35 @@ theorem addValuation_surjective : Function.Surjective (addValuation p) := by
   | coe q =>
     obtain ⟨x, hx⟩ := IsAlgClosed.exists_pow_nat_eq ((p : ℂ_[p]) ^ q.num) q.pos
     exact ⟨x, by rw [addValuation_eq_of_pow_eq_zpow q.pos hx, Rat.num_div_den]⟩
+
+/-- Every rational number is a finite value of `PadicComplex.addValuation p`. -/
+private theorem forall_exists_ratAddValuation (q : ℚ) :
+    ∃ x : ℂ_[p], (pseudoUniformizer p).ratAddValuation (isCommensurable p _) x = q := by
+  simpa only [← addValuation_def] using addValuation_surjective (q : WithTop ℚ)
+
+variable (p) in
+/-- **Nonzero norms of `ℂ_[p]`.** The nonzero norms of `ℂ_[p]` are the rational powers of `p`. -/
+theorem range_norm_sdiff_singleton_zero :
+    Set.range (norm : ℂ_[p] → ℝ) \ {0} = Set.range fun q : ℚ ↦ (p : ℝ) ^ (q : ℝ) := by
+  rw [PseudoUniformizer.range_norm_sdiff_singleton_zero_eq_of_forall_exists_ratAddValuation
+    (isCommensurable p _) forall_exists_ratAddValuation]
+  ext r
+  simp only [Set.mem_range, norm_unit_pseudoUniformizer_rpow]
+  exact ⟨fun ⟨q, hq⟩ ↦ ⟨-q, by simpa using hq⟩, fun ⟨q, hq⟩ ↦ ⟨-q, by simpa using hq⟩⟩
+
+variable (p) in
+/-- **`ℂ_[p]` is densely normed**: its nonzero norms are the rational powers of `p`, which are
+dense in `(0, ∞)`. -/
+noncomputable instance denselyNormedField : DenselyNormedField ℂ_[p] where
+  lt_norm_lt _ _ hr₀ hr := by
+    exact PseudoUniformizer.exists_lt_norm_lt_of_forall_exists_ratAddValuation (isCommensurable p _)
+      forall_exists_ratAddValuation hr₀ hr
+
+variable (p) in
+/-- The closure of the nonzero norms of `ℂ_[p]` is `[0, ∞)`. -/
+theorem closure_range_norm_sdiff_singleton_zero :
+    closure (Set.range (norm : ℂ_[p] → ℝ) \ {0}) = Set.Ici 0 :=
+  PseudoUniformizer.closure_range_norm_sdiff_singleton_zero_eq_Ici_of_forall_exists_ratAddValuation
+    (isCommensurable p _) forall_exists_ratAddValuation
 
 end PadicComplex
