@@ -22,11 +22,9 @@ It also records the form of quadratic reciprocity for an integer numerator `a �
 either sign: `J(a | b) = J(b | |a|)` for odd `b`, and that a square factor prime to `b` can be
 dropped from the numerator.
 
-Finally, a nonsquare integer `a` is a quadratic nonresidue modulo some odd prime `p`. For `a < 0`
-the reflection law gives `J(a | 4 |a| - 1) = -1`. Otherwise some prime `q` divides `a` to an odd
-power, `a = q ^ v * b` with `q ∤ b`, and a denominator `n ≡ 1 (mod 4 b)` makes the factor `b`
-contribute `1`: at `q = 2` take `n = 4 b + 1 ≡ 5 (mod 8)`, and at odd `q` take `n` a nonresidue
-modulo `q` and apply reciprocity to `J(q | n)`. A prime divisor of `n` then has the same property.
+Finally, a nonsquare integer `a` is a quadratic nonresidue modulo some odd prime `p`, that is
+`J(a | p) = -1`. This is what makes the Kronecker character `(D / ·)` of a nonsquare discriminant
+`D` nontrivial.
 
 The proof of the reflection law for a natural numerator is adapted from the proof of Mathlib's
 `jacobiSym.mod_right'`: both split off the power of `2` and apply quadratic reciprocity to the odd

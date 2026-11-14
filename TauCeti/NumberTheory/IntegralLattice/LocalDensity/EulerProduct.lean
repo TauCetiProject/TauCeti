@@ -59,8 +59,8 @@ determines `α p` for every good prime.
   nonzero.
 * `Matrix.inv_half_localDensity_eq_inv_one_sub_kroneckerChar_of_card_eq_two`: in rank `2`, the
   inverse normalized density at a good prime is the Euler factor at `s = 1` of `χ_L`.
-* `Matrix.forall_inv_half_localDensity_eq_iff_isSquare_of_card_eq_two`: in rank `2`, every good
-  local factor is `(1 - p⁻¹)⁻¹` exactly when `-det A` is a square.
+* `Matrix.forall_inv_half_localDensity_eq_iff_isSquare_neg_det_of_card_eq_two`: in rank `2`,
+  every good local factor is `(1 - p⁻¹)⁻¹` exactly when `-det A` is a square.
 
 ## References
 
@@ -229,45 +229,43 @@ theorem tprod_inv_half_localDensity_ne_zero_of_card_eq_two_mul_add_two (hA : A�
 
 /-! ### Rank two
 
-In rank `2` the normalized density at a good prime is the Euler factor at `s = 1` of the quadratic
-character of `-det A`. There the Euler product of this character converges at best conditionally,
-so the statements below concern the local factors only. -/
+In rank `2` the inverse normalized density at a good prime is the Euler factor at `s = 1` of the
+quadratic character of `-det A`. There the Euler product of this character converges at best
+conditionally, so the statements below concern the local factors only. -/
 
 /-- **The local factor at a good prime, in rank `2`.** Let `A` be a symmetric `2 × 2` integer
-matrix with nonzero determinant, and let `α p` be its local density at every prime `p ∤ 2 det A`.
-At each such prime the inverse normalized density `(α p / 2)⁻¹` is the Euler factor
-`(1 - χ_L(p) p⁻¹)⁻¹` at `s = 1` of the Kronecker character `χ_L` of `-4 det A`, whose value at
-`p` is the Legendre symbol `(-det A | p)`. -/
-theorem inv_half_localDensity_eq_inv_one_sub_kroneckerChar_of_card_eq_two (hA : Aᵀ = A)
-    (hdet : A.det ≠ 0) (hn : Fintype.card n = 2) {α : ℕ → ℚ}
-    (hα : ∀ (p : ℕ) [Fact p.Prime], ¬ p ∣ (2 * A.det).natAbs →
-      Tendsto (fun r => ((A.map (Int.castRingHom ℤ_[p])).localDensityCount r : ℚ) /
-        (p : ℚ) ^ (r * (Fintype.card n).choose 2)) atTop (𝓝 (α p)))
+matrix with nonzero determinant, and let `α_p` be its local density at a prime `p ∤ 2 det A`.
+Then the inverse normalized density `(α_p / 2)⁻¹` is the Euler factor `(1 - χ_L(p) p⁻¹)⁻¹` at
+`s = 1` of the Kronecker character `χ_L` of `-4 det A`, whose value at `p` is the Legendre symbol
+`(-det A | p)`. -/
+theorem inv_half_localDensity_eq_inv_one_sub_kroneckerChar_of_card_eq_two {K : Type*} [Field K]
+    [CharZero K] (hA : Aᵀ = A) (hdet : A.det ≠ 0) (hn : Fintype.card n = 2)
     (p : ℕ) [Fact p.Prime] (hp : ¬ p ∣ (2 * A.det).natAbs) :
-    ((α p : ℂ) / 2)⁻¹ = (1 - TauCeti.kroneckerChar ℂ (4 * -A.det)
+    (((A.map (Int.castRingHom ℤ_[p])).localDensity : K) / 2)⁻¹ =
+      (1 - TauCeti.kroneckerChar K (4 * -A.det)
         (Or.inl (Int.modEq_zero_iff_dvd.mpr (dvd_mul_right 4 _)))
-        (mul_ne_zero four_ne_zero (neg_ne_zero.mpr hdet)) p * (p : ℂ)⁻¹)⁻¹ := by
+        (mul_ne_zero four_ne_zero (neg_ne_zero.mpr hdet)) p * (p : K)⁻¹)⁻¹ := by
   obtain ⟨hp2, hu⟩ := ne_two_and_isUnit_det_map hp
-  rw [tendsto_nhds_unique (hα p hp)
-    (tendsto_localDensityCount_div_of_card_eq_two_mul_add_two (m := 0) hp2
-      (by rw [← transpose_map, hA]) hu hn), TauCeti.kroneckerChar_natCast,
-    show 4 * -A.det = 4 * ((-1) ^ (0 + 1) * A.det) by ring, kroneckerSym_eq_quadraticChar hp2]
+  have hAp : (A.map (Int.castRingHom ℤ_[p]))ᵀ = A.map (Int.castRingHom ℤ_[p]) := by
+    rw [← transpose_map, hA]
+  rw [tendsto_nhds_unique (tendsto_localDensityCount_div_of_det_ne_zero hAp hu.ne_zero)
+    (tendsto_localDensityCount_div_of_card_eq_two_mul_add_two (m := 0) hp2 hAp hu hn),
+    TauCeti.kroneckerChar_natCast, show 4 * -A.det = 4 * ((-1) ^ (0 + 1) * A.det) by ring,
+    kroneckerSym_eq_quadraticChar hp2]
   push_cast
   ring
 
 /-- **The split regime in rank `2`.** Let `A` be a symmetric `2 × 2` integer matrix with nonzero
-determinant, and let `α p` be its local density at every prime `p ∤ 2 det A`. Then every good local
-factor `(α p / 2)⁻¹` is the Euler factor `(1 - p⁻¹)⁻¹` of `ζ` at `s = 1` exactly when `-det A` is a
-square. Otherwise some good prime has factor `(1 + p⁻¹)⁻¹`, and the character of the local factors
-is nontrivial (`TauCeti.kroneckerChar_eq_one_iff_isSquare`). The hyperbolic plane, with
-`-det = 1`, is split. -/
-theorem forall_inv_half_localDensity_eq_iff_isSquare_of_card_eq_two (hA : Aᵀ = A)
-    (hdet : A.det ≠ 0) (hn : Fintype.card n = 2) {α : ℕ → ℚ}
-    (hα : ∀ (p : ℕ) [Fact p.Prime], ¬ p ∣ (2 * A.det).natAbs →
-      Tendsto (fun r => ((A.map (Int.castRingHom ℤ_[p])).localDensityCount r : ℚ) /
-        (p : ℚ) ^ (r * (Fintype.card n).choose 2)) atTop (𝓝 (α p))) :
+determinant, and let `α_p` be its local density at each prime `p`. Then every good local factor
+`(α_p / 2)⁻¹`, at a prime `p ∤ 2 det A`, is the Euler factor `(1 - p⁻¹)⁻¹` of `ζ` at `s = 1`
+exactly when `-det A` is a square. Otherwise some good prime has factor `(1 + p⁻¹)⁻¹`, and the
+character of the local factors is nontrivial (`TauCeti.kroneckerChar_eq_one_iff_isSquare`). The
+hyperbolic plane, with `-det = 1`, is split. -/
+theorem forall_inv_half_localDensity_eq_iff_isSquare_neg_det_of_card_eq_two {K : Type*}
+    [Field K] [CharZero K] (hA : Aᵀ = A) (hdet : A.det ≠ 0) (hn : Fintype.card n = 2) :
     (∀ (p : ℕ) [Fact p.Prime], ¬ p ∣ (2 * A.det).natAbs →
-      ((α p : ℂ) / 2)⁻¹ = (1 - (p : ℂ)⁻¹)⁻¹) ↔ IsSquare (-A.det) := by
+      (((A.map (Int.castRingHom ℤ_[p])).localDensity : K) / 2)⁻¹ = (1 - (p : K)⁻¹)⁻¹) ↔
+      IsSquare (-A.det) := by
   -- a prime `p` is good exactly when it is odd and `-det A` is nonzero modulo `p`
   have hgood (p : ℕ) [Fact p.Prime] :
       ¬ p ∣ (2 * A.det).natAbs ↔ p ≠ 2 ∧ ((-A.det : ℤ) : ZMod p) ≠ 0 := by
@@ -276,9 +274,10 @@ theorem forall_inv_half_localDensity_eq_iff_isSquare_of_card_eq_two (hA : Aᵀ =
       Int.natCast_dvd_ofNat, Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two]
   -- at a good prime the factor is `(1 - (-det A | p) p⁻¹)⁻¹`
   have hfactor (p : ℕ) [Fact p.Prime] (hp : ¬ p ∣ (2 * A.det).natAbs) :
-      ((α p : ℂ) / 2)⁻¹ = (1 - (legendreSym p (-A.det) : ℂ) * (p : ℂ)⁻¹)⁻¹ := by
+      (((A.map (Int.castRingHom ℤ_[p])).localDensity : K) / 2)⁻¹ =
+        (1 - (legendreSym p (-A.det) : K) * (p : K)⁻¹)⁻¹ := by
     have hp2 := ((hgood p).mp hp).1
-    rw [inv_half_localDensity_eq_inv_one_sub_kroneckerChar_of_card_eq_two hA hdet hn hα p hp,
+    rw [inv_half_localDensity_eq_inv_one_sub_kroneckerChar_of_card_eq_two hA hdet hn p hp,
       TauCeti.kroneckerChar_natCast, show 4 * -A.det = -A.det * 2 ^ 2 by ring,
       TauCeti.kroneckerSym_mul_sq two_ne_zero ?_, TauCeti.kroneckerSym_eq_legendreSym _ p hp2]
     rw [← Nat.cast_ofNat, Int.gcd_natCast_natCast]
@@ -295,7 +294,7 @@ theorem forall_inv_half_localDensity_eq_iff_isSquare_of_card_eq_two (hA : Aᵀ =
       exact absurd hJ (by decide)⟩
     have heq := (h p hp').symm.trans (hfactor p hp')
     rw [hJ, Int.cast_neg, Int.cast_one, neg_one_mul, sub_neg_eq_add, _root_.inv_inj] at heq
-    have hp0 : (p : ℂ)⁻¹ ≠ 0 := inv_ne_zero (Nat.cast_ne_zero.mpr hp.ne_zero)
+    have hp0 : (p : K)⁻¹ ≠ 0 := inv_ne_zero (Nat.cast_ne_zero.mpr hp.ne_zero)
     exact hp0 (by linear_combination -heq / 2)
   · rintro ⟨s, hs⟩ p _ hp
     rw [hfactor p hp, (legendreSym.eq_one_iff p ((hgood p).mp hp).2).mpr
@@ -305,26 +304,20 @@ theorem forall_inv_half_localDensity_eq_iff_isSquare_of_card_eq_two (hA : Aᵀ =
 factor is `(1 - p⁻¹)⁻¹`. The sum of two squares `!![1, 0; 0, 1]` has `-det = -1`, which is not a
 square, so its local factors are not all of this form. -/
 
-example {A : Matrix (Fin 2) (Fin 2) ℤ} (hU : A = !![0, 1; 1, 0]) {α : ℕ → ℚ}
-    (hα : ∀ (p : ℕ) [Fact p.Prime], ¬ p ∣ (2 * A.det).natAbs →
-      Tendsto (fun r => ((A.map (Int.castRingHom ℤ_[p])).localDensityCount r : ℚ) /
-        (p : ℚ) ^ (r * (Fintype.card (Fin 2)).choose 2)) atTop (𝓝 (α p))) :
+example {A : Matrix (Fin 2) (Fin 2) ℤ} (hU : A = !![0, 1; 1, 0]) :
     ∀ (p : ℕ) [Fact p.Prime], ¬ p ∣ (2 * A.det).natAbs →
-      ((α p : ℂ) / 2)⁻¹ = (1 - (p : ℂ)⁻¹)⁻¹ := by
+      (((A.map (Int.castRingHom ℤ_[p])).localDensity : ℂ) / 2)⁻¹ = (1 - (p : ℂ)⁻¹)⁻¹ := by
   subst hU
-  exact (forall_inv_half_localDensity_eq_iff_isSquare_of_card_eq_two
-    (by ext i j; fin_cases i <;> fin_cases j <;> rfl) (by simp [det_fin_two]) (Fintype.card_fin 2)
-    hα).mpr ⟨1, by simp [det_fin_two]⟩
+  exact (forall_inv_half_localDensity_eq_iff_isSquare_neg_det_of_card_eq_two
+    (by ext i j; fin_cases i <;> fin_cases j <;> rfl) (by simp [det_fin_two])
+    (Fintype.card_fin 2)).mpr ⟨1, by simp [det_fin_two]⟩
 
-example {A : Matrix (Fin 2) (Fin 2) ℤ} (hI : A = 1) {α : ℕ → ℚ}
-    (hα : ∀ (p : ℕ) [Fact p.Prime], ¬ p ∣ (2 * A.det).natAbs →
-      Tendsto (fun r => ((A.map (Int.castRingHom ℤ_[p])).localDensityCount r : ℚ) /
-        (p : ℚ) ^ (r * (Fintype.card (Fin 2)).choose 2)) atTop (𝓝 (α p))) :
+example {A : Matrix (Fin 2) (Fin 2) ℤ} (hI : A = 1) :
     ¬ ∀ (p : ℕ) [Fact p.Prime], ¬ p ∣ (2 * A.det).natAbs →
-      ((α p : ℂ) / 2)⁻¹ = (1 - (p : ℂ)⁻¹)⁻¹ := by
+      (((A.map (Int.castRingHom ℤ_[p])).localDensity : ℂ) / 2)⁻¹ = (1 - (p : ℂ)⁻¹)⁻¹ := by
   subst hI
-  rw [forall_inv_half_localDensity_eq_iff_isSquare_of_card_eq_two (by simp) (by simp)
-    (Fintype.card_fin 2) hα, det_one]
+  rw [forall_inv_half_localDensity_eq_iff_isSquare_neg_det_of_card_eq_two (by simp) (by simp)
+    (Fintype.card_fin 2), det_one]
   rintro ⟨r, hr⟩
   nlinarith [mul_self_nonneg r]
 

@@ -568,6 +568,7 @@ theorem kroneckerChar_eq_one_of_isSquare (hsq : IsSquare D) :
 /-- **The Kronecker character is trivial exactly on squares**: for a coefficient ring with
 `2 ≠ 0`, the character `(D / ·)` is the trivial Dirichlet character modulo `|D|` if and only if
 the discriminant `D` is a square. For a nonsquare `D` some odd prime `p ∤ D` has `(D / p) = -1`. -/
+@[simp]
 theorem kroneckerChar_eq_one_iff_isSquare [NeZero (2 : R)] :
     kroneckerChar R D hD hD₀ = 1 ↔ IsSquare D := by
   refine ⟨fun h ↦ ?_, kroneckerChar_eq_one_of_isSquare hD hD₀⟩
