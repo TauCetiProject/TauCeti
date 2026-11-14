@@ -13,9 +13,10 @@ import Mathlib.Analysis.MellinInversion
 /-!
 # Mellin decay on vertical strips
 
-A compactly supported `C^N` function whose closed support lies in the positive half-line
+A compactly supported `C^N` function whose closed support avoids zero
 has Mellin transform of size `O((1 + |Im s|)⁻ᴺ)`, uniformly as `Re s` ranges over any
-compact set. In particular, smooth test functions have faster-than-polynomial decay on
+compact set. Negative or mixed support is allowed: the Mellin transform integrates only over
+the positive half-line. In particular, smooth test functions have faster-than-polynomial decay on
 vertical strips, as needed for absolutely convergent explicit formulas.
 
 The logarithmic substitution turns the Mellin transform into the Fourier transform of
@@ -100,13 +101,19 @@ private lemma contDiff_weighted_log (N : ℕ) {f : ℝ → F} (hf : ContDiff ℝ
     exact Complex.ofRealCLM.contDiff.comp hr
   exact he.smul (hf.comp (by fun_prop))
 
+end ComplexSpace
+
+section Support
+
+variable {F : Type*} [Zero F] [SMulZeroClass ℂ F]
+
 private lemma compact_log_support {f : ℝ → F} (hc : HasCompactSupport f)
-    (hp : tsupport f ⊆ Ioi 0) :
+    (hp : 0 ∉ tsupport f) :
     ∃ S : Set ℝ, IsCompact S ∧ ∀ σ : ℝ,
       tsupport (fun u ↦ (Real.exp (-σ * u) : ℂ) • f (Real.exp (-u))) ⊆ S := by
   let S : Set ℝ := (fun x ↦ -Real.log x) '' tsupport f
   have hS : IsCompact S := hc.image_of_continuousOn
-    (Real.continuousOn_log.neg.mono fun x hx ↦ (ne_of_gt (hp hx) : x ≠ 0))
+    (Real.continuousOn_log.neg.mono fun x hx ↦ (ne_of_mem_of_not_mem hx hp : x ≠ 0))
   refine ⟨S, hS, fun σ ↦ closure_minimal ?_ hS.isClosed⟩
   intro u hu
   have hn : f (Real.exp (-u)) ≠ 0 := by
@@ -115,7 +122,7 @@ private lemma compact_log_support {f : ℝ → F} (hc : HasCompactSupport f)
   refine ⟨Real.exp (-u), subset_closure hn, ?_⟩
   simp
 
-end ComplexSpace
+end Support
 
 section Scaling
 
@@ -150,7 +157,7 @@ section Family
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 private lemma weighted_log_family_data {N : ℕ} {f : ℝ → E}
-    (hf : ContDiff ℝ N f) (hc : HasCompactSupport f) (hp : tsupport f ⊆ Ioi 0)
+    (hf : ContDiff ℝ N f) (hc : HasCompactSupport f) (hp : 0 ∉ tsupport f)
     {K : Set ℝ} (hK : IsCompact K) :
     ∃ S : Set ℝ, IsCompact S ∧ ∃ C > 0,
       (∀ σ : ℝ, tsupport (fun u ↦ (Real.exp (-σ * u) : ℂ) • f (Real.exp (-u))) ⊆ S) ∧
@@ -167,10 +174,10 @@ section Endpoint
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- The Mellin transform of a compactly supported `C^N` function with positive support decays
+/-- The Mellin transform of a compactly supported `C^N` function supported away from zero decays
 with order `N` in the imaginary direction, uniformly over any compact set of real parts. -/
 theorem exists_one_add_abs_im_pow_mul_norm_mellin_le {N : ℕ} {f : ℝ → E}
-    (hf : ContDiff ℝ N f) (hc : HasCompactSupport f) (hp : tsupport f ⊆ Ioi 0)
+    (hf : ContDiff ℝ N f) (hc : HasCompactSupport f) (hp : 0 ∉ tsupport f)
     {K : Set ℝ} (hK : IsCompact K) :
     ∃ C > 0, ∀ s : ℂ, s.re ∈ K → (1 + |s.im|) ^ N * ‖mellin f s‖ ≤ C := by
   obtain ⟨S, hS, D, hD, hsupp, hbound⟩ := weighted_log_family_data hf hc hp hK
