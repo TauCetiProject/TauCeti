@@ -295,21 +295,16 @@ theorem aeval_cons_zero_monomial {n : ℕ} (α : Fin (n + 1) →₀ ℕ) (c : R)
     _root_.MvPolynomial.aeval (Fin.cons (0 : MvPolynomial (Fin n) R) X) (monomial α c) =
       if α 0 = 0 then monomial α.tail c else 0 := by
   split_ifs with h0
-  · have hα : Finsupp.cons 0 α.tail = α := by rw [← h0, Finsupp.cons_tail]
-    have hren : rename Fin.succ (monomial α.tail c) = monomial α c := by
-      rw [rename_monomial, Finsupp.mapDomain_finSucc, hα]
-    rw [← hren, aeval_rename]
-    have hcomp : Fin.cons (0 : MvPolynomial (Fin n) R) X ∘ Fin.succ = X := by
-      ext i; simp
-    rw [hcomp, aeval_X_left, AlgHom.id_apply]
-  · have hle : Finsupp.single (0 : Fin (n + 1)) 1 ≤ α :=
-      Finsupp.single_le_iff.mpr (Nat.pos_of_ne_zero h0)
-    have hmul : X 0 * monomial (α - Finsupp.single 0 1) c = monomial α c := by
-      rw [X, monomial_mul_monomial, one_mul, add_tsub_cancel_of_le hle]
-    rw [← hmul, map_mul]
-    simp
+  · have hren : rename Fin.succ (monomial α.tail c) = monomial α c := by
+      rw [rename_monomial, Finsupp.mapDomain_finSucc, ← h0, Finsupp.cons_tail]
+    have hcomp : Fin.cons (0 : MvPolynomial (Fin n) R) X ∘ Fin.succ = X := by ext i; simp
+    rw [← hren, aeval_rename, hcomp, aeval_X_left, AlgHom.id_apply]
+  · have hmul : X 0 * monomial (α - Finsupp.single 0 1) c = monomial α c := by
+      rw [X, monomial_mul_monomial, one_mul,
+        add_tsub_cancel_of_le (Finsupp.single_le_iff.mpr (Nat.pos_of_ne_zero h0))]
+    rw [← hmul, map_mul]; simp
 
-/-- Specializing `X 0 ↦ 0` and shifting `X i.succ ↦ X i` preserves homogeneity of any degree `d`. -/
+/-- Specializing `X 0 ↦ 0` and shifting `X i.succ ↦ X i` preserves homogeneity of degree `d`. -/
 theorem IsHomogeneous.aeval_cons_zero {n d : ℕ} {p : MvPolynomial (Fin (n + 1)) R}
     (hp : p.IsHomogeneous d) :
     (_root_.MvPolynomial.aeval (Fin.cons (0 : MvPolynomial (Fin n) R) X) p).IsHomogeneous d := by
@@ -320,8 +315,8 @@ theorem IsHomogeneous.aeval_cons_zero {n d : ℕ} {p : MvPolynomial (Fin (n + 1)
   rwa [one_mul] at h
 
 /-- Every homogeneous polynomial `p` of degree `d + 1` in `n + 1` variables decomposes as the lift
-along `Fin.succ` of its `X 0 = 0` specialization plus `X 0 * q` for a homogeneous polynomial `q` of
-degree `d`. -/
+along `Fin.succ` of its `X 0 = 0` specialization plus `X 0 * q` for a homogeneous `q` of degree
+`d`. -/
 theorem IsHomogeneous.exists_eq_rename_succ_add_X_zero_mul {n d : ℕ}
     {p : MvPolynomial (Fin (n + 1)) R} (hp : p.IsHomogeneous (d + 1)) :
     ∃ q : MvPolynomial (Fin (n + 1)) R, q.IsHomogeneous d ∧
@@ -332,15 +327,13 @@ theorem IsHomogeneous.exists_eq_rename_succ_add_X_zero_mul {n d : ℕ}
   · rw [← mem_homogeneousSubmodule]
     refine Submodule.sum_mem _ fun α hα ↦ ?_
     obtain ⟨hsupp, h0⟩ := Finset.mem_filter.mp hα
+    have hdegα : α.degree = d + 1 := by
+      rw [Finsupp.degree_apply]; exact (hp.degree_eq_sum_deg_support hsupp).symm
     have hle : Finsupp.single (0 : Fin (n + 1)) 1 ≤ α :=
       Finsupp.single_le_iff.mpr (Nat.pos_of_ne_zero h0)
-    have hdegα : α.degree = d + 1 := by
-      rw [Finsupp.degree_apply]
-      exact (hp.degree_eq_sum_deg_support hsupp).symm
     have hadd : (α - Finsupp.single 0 1).degree + 1 = α.degree := by
       simpa [map_add] using congrArg Finsupp.degree (tsub_add_cancel_of_le hle)
-    rw [mem_homogeneousSubmodule]
-    exact isHomogeneous_monomial (p.coeff α) (by omega)
+    exact (mem_homogeneousSubmodule d _).mpr (isHomogeneous_monomial (p.coeff α) (by omega))
   · conv_rhs => rw [p.as_sum]
     rw [← Finset.sum_filter_add_sum_filter_not p.support (fun α ↦ α 0 = 0)]
     congr 1
@@ -348,10 +341,9 @@ theorem IsHomogeneous.exists_eq_rename_succ_add_X_zero_mul {n d : ℕ}
         ← Finset.sum_filter_add_sum_filter_not p.support (fun α ↦ α 0 = 0)]
       have hzero : ∑ α ∈ p.support with ¬ α 0 = 0,
           rename Fin.succ (_root_.MvPolynomial.aeval (Fin.cons (0 : MvPolynomial (Fin n) R) X)
-            (monomial α (p.coeff α))) = 0 := by
-        refine Finset.sum_eq_zero fun α hα ↦ ?_
-        have h0 : ¬ α 0 = 0 := (Finset.mem_filter.mp hα).2
-        simp [aeval_cons_zero_monomial, h0]
+            (monomial α (p.coeff α))) = 0 :=
+        Finset.sum_eq_zero fun α hα ↦ by
+          simp [aeval_cons_zero_monomial, (Finset.mem_filter.mp hα).2]
       rw [hzero, add_zero]
       refine Finset.sum_congr rfl fun α hα ↦ ?_
       have h0 : α 0 = 0 := (Finset.mem_filter.mp hα).2
@@ -360,9 +352,8 @@ theorem IsHomogeneous.exists_eq_rename_succ_add_X_zero_mul {n d : ℕ}
       rw [← h0, Finsupp.cons_tail]
     · rw [Finset.mul_sum]
       refine Finset.sum_congr rfl fun α hα ↦ ?_
-      have hle : Finsupp.single (0 : Fin (n + 1)) 1 ≤ α :=
-        Finsupp.single_le_iff.mpr (Nat.pos_of_ne_zero (Finset.mem_filter.mp hα).2)
-      rw [X, monomial_mul_monomial, one_mul, add_tsub_cancel_of_le hle]
+      rw [X, monomial_mul_monomial, one_mul, add_tsub_cancel_of_le
+        (Finsupp.single_le_iff.mpr (Nat.pos_of_ne_zero (Finset.mem_filter.mp hα).2))]
 
 end CommSemiring
 
