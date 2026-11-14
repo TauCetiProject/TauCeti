@@ -51,6 +51,8 @@ For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
 ## Main results
 
 * `MeasureTheory.Measure.addHaar_real_ball_of_pos`: the real measure of a positive-radius ball.
+* `MeasureTheory.Measure.addHaar_real_ball_eq_div_pow_mul`:
+  `μ (ball x ρ) = (ρ / r)ⁿ μ (ball y r)` in dimension `n`.
 * `MeasureTheory.Measure.addHaar_real_ball_rpow`: `μ (ball x r) ^ e = r ^ (n e) μ (ball 0 1) ^ e` in
   dimension `n`.
 * `MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball`:
@@ -125,6 +127,16 @@ theorem addHaar_real_ball_of_pos
     mu.real (ball x r) = r ^ finrank ℝ E * mu.real (ball 0 1) := by
   rw [measureReal_def, mu.addHaar_ball_of_pos x hr, ENNReal.toReal_mul,
     ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
+
+/-- The real measures of two balls of positive radii are in the ratio of the radii raised to the
+dimension: `μ (ball x ρ) = (ρ / r)ⁿ μ (ball y r)`. -/
+theorem addHaar_real_ball_eq_div_pow_mul
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x y : E) {ρ r : ℝ} (hρ : 0 < ρ) (hr : 0 < r) :
+    mu.real (ball x ρ) = (ρ / r) ^ finrank ℝ E * mu.real (ball y r) := by
+  rw [mu.addHaar_real_ball_of_pos x hρ, mu.addHaar_real_ball_of_pos y hr, div_pow, ← mul_assoc,
+    div_mul_cancel₀ _ (by positivity)]
 
 /-- The square root of the real measure of a ball of radius `R` is `R ^ (n / 2)` times that of the
 unit ball, where `n` is the dimension. -/

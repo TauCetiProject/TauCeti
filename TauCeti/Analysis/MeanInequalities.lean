@@ -62,6 +62,8 @@ of a higher-order Sobolev space.
   by positive scalars, with the strict form.
 * `Real.sqrt_sum_sq_add_sum_sq_le_sum_sqrt`: the triangle inequality in the plane for finite
   sums of coordinate pairs.
+* `Real.mul_rpow_inv_mul_mul_rpow_inv`: a common factor `c ≥ 0` comes out of
+  `(c x)^(1/p) (c y)^(1/q)` when `1 / p + 1 / q = 1`.
 * `ENNReal.geom_mean_le_arith_mean2_weighted_ofReal`: two-point weighted AM-GM in `ℝ≥0∞` with
   the real weights `1 - θ` and `θ`.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
@@ -156,6 +158,13 @@ theorem sqrt_sum_sq_add_sum_sq_le_sum_sqrt {ι : Type*} (s : Finset ι) (a b : �
   have hsum : (⟨∑ i ∈ s, a i, ∑ i ∈ s, b i⟩ : ℂ) = ∑ i ∈ s, ⟨a i, b i⟩ :=
     Complex.ext (by rw [Complex.re_sum]) (by rw [Complex.im_sum])
   simpa only [h, hsum] using norm_sum_le s fun i => (⟨a i, b i⟩ : ℂ)
+
+/-- For exponents with `1 / p + 1 / q = 1`, such as Hölder conjugate ones, a common factor
+`c ≥ 0` comes out of the Hölder product: `(c x)^(1/p) (c y)^(1/q) = c x^(1/p) y^(1/q)`. -/
+theorem mul_rpow_inv_mul_mul_rpow_inv {p q c : ℝ} (h : p⁻¹ + q⁻¹ = 1) (hc : 0 ≤ c) (x y : ℝ) :
+    (c * x) ^ p⁻¹ * (c * y) ^ q⁻¹ = c * (x ^ p⁻¹ * y ^ q⁻¹) := by
+  rw [mul_rpow_of_nonneg_left hc, mul_rpow_of_nonneg_left hc, mul_mul_mul_comm,
+    ← rpow_add' hc (by rw [h]; exact one_ne_zero), h, rpow_one]
 
 end Real
 
