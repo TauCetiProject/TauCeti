@@ -303,6 +303,15 @@ lemma isZero_singularHomologyFunctor_zero_of_isEmpty (X : TopCat.{w}) [IsEmpty X
   exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ fun c ↦ isEmptyElim c)).of_iso
     (X.singularHomology₀Iso R)
 
+omit [HasKernels C] in
+/-- The singular homology of the empty space vanishes in every degree. -/
+lemma isZero_singularHomologyFunctor_of_isEmpty (X : TopCat.{w}) [IsEmpty X] (n : ℕ) :
+    IsZero (((singularHomologyFunctor C n).obj R).obj X) := by
+  cases n with
+  | zero => exact isZero_singularHomologyFunctor_zero_of_isEmpty R X
+  | succ n =>
+    exact isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C (n + 1) R X n.succ_ne_zero
+
 /-- The reduced singular homology of the empty space vanishes in every degree. -/
 lemma isZero_reducedSingularHomologyFunctor_of_isEmpty (X : TopCat.{w}) [IsEmpty X] (n : ℕ) :
     IsZero ((reducedSingularHomologyFunctor R n).obj X) := by

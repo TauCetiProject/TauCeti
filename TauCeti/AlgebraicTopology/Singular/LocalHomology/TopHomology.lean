@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Section
-public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Noncompact
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Section
+public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 
 /-!
 # The top homology of a compact manifold
@@ -282,7 +283,7 @@ over which every module has projective dimension at most one, with a projective 
 `N`, the singular homology `Hₘ(M; N)` of a compact Hausdorff space modelled on a real normed space
 of finite dimension `n` is projective for every `m ≥ n`: it is the projective top homology for
 `m = n` (`TauCeti.projective_localHomology_univ`) and zero for `m > n`
-(`TauCeti.isZero_singularHomology_of_compactSpace`). With `Λ = N = ℤ`, the integral homology of a
+(`TauCeti.isZero_singularHomology_of_finrank_lt`). With `Λ = N = ℤ`, the integral homology of a
 compact manifold is free abelian from the dimension on. -/
 theorem projective_singularHomology_of_compactSpace
     [∀ V : ModuleCat.{w} Λ, HasProjectiveDimensionLE V 1] [Projective N] [CompactSpace M]
@@ -296,7 +297,7 @@ theorem projective_singularHomology_of_compactSpace
     exact Projective.of_iso
       (asIso ((TopPair.ofSubset ((univ : Set M)ᶜ : Set (TopCat.of M))).singularHomologyπ N n)).symm
       (projective_localHomology_univ N hn)
-  · exact Projective.of_iso (isZero_singularHomology_of_compactSpace N hn hm).isoZero.symm
+  · exact Projective.of_iso (isZero_singularHomology_of_finrank_lt N hn hm).isoZero.symm
       inferInstance
 
 end TauCeti

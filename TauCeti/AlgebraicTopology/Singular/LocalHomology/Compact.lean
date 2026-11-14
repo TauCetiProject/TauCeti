@@ -23,8 +23,7 @@ vanishes above the dimension (`TauCeti.isZero_localHomology_of_isCompact`), and 
 from a class of `Hₙ(M, M ∖ A)` (`TauCeti.exists_localHomologyRestriction_eq_of_isCompact`), so
 from exactly one (`TauCeti.existsUnique_localHomologyRestriction_eq_of_isCompact`). For `M`
 compact and `A = M`, applied to local generators that vary in this way, this is the class that
-becomes a fundamental class. For compact `M`, `A = M` also shows that the singular homology `Hₖ(M)`
-vanishes for `k > n` (`TauCeti.isZero_singularHomology_of_compactSpace`).
+becomes a fundamental class.
 
 ## Main results
 
@@ -37,7 +36,6 @@ vanishes for `k > n` (`TauCeti.isZero_singularHomology_of_compactSpace`).
   `TauCeti.existsUnique_localHomologyRestriction_eq_of_isCompact`: a family of local classes at
   the points of `A` that is locally the family of restrictions of a single class is the family of
   restrictions of exactly one class of `Hₙ(M, M ∖ A)`.
-* `TauCeti.isZero_singularHomology_of_compactSpace`: `Hₖ(M) = 0` for compact `M` and `k > n`.
 
 ## References
 
@@ -347,20 +345,6 @@ theorem existsUnique_localHomologyRestriction_eq_of_isCompact (hn : finrank ℝ 
   obtain ⟨γ, hγ⟩ := exists_localHomologyRestriction_eq_of_isCompact N hn hA α hα
   exact ⟨γ, hγ, fun δ hδ ↦ localHomology_ext_of_isCompact N hn hA fun x hx ↦ by
     rw [hδ x hx, hγ x hx]⟩
-
-/-- **The homology of a compact manifold vanishes above the dimension.** For a compact Hausdorff
-space modelled on a real normed space of dimension `n`, `Hₖ(M) = 0` for `k > n`: it is the local
-homology `Hₖ(M, M ∖ M)`. -/
-theorem isZero_singularHomology_of_compactSpace [CompactSpace M] (hn : finrank ℝ E = n) {k : ℕ}
-    (hk : n < k) :
-    IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj
-      (TopCat.of M)) := by
-  have h := isZero_localHomology_of_isCompact N hn (isCompact_univ (X := M)) hk
-  rw [localHomology, compl_univ] at h
-  have : IsEmpty (TopPair.ofSubset (∅ : Set (TopCat.of M))).snd :=
-    inferInstanceAs (IsEmpty (∅ : Set M))
-  have hπ := asIso ((TopPair.ofSubset (∅ : Set (TopCat.of M))).singularHomologyπ N k)
-  exact h.of_iso hπ
 
 end Module
 
