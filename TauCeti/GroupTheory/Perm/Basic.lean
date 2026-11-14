@@ -28,17 +28,20 @@ a characterization of permutations with a unique fixed point, functions constant
 orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
 periodic orbit, a function whose difference `z ↦ c (σ⁻¹ z) - c z` joins points in the same orbit
 (`Equiv.Perm.SameCycle.exists_comp_symm_sub_eq`, `Equiv.Perm.exists_comp_symm_sub_eq_sum`), a
-transposition forming one cycle on a `Fin 2` fibre over `Fin 1`, a
-permutation transported along an injection, the combination of two
-permutations transported along injections with disjoint ranges, a fiber-preserving permutation
-carrying one finite family to another with the same equality pattern
+transposition forming one cycle on a `Fin 2` fibre over `Fin 1`, the extension to `Option α`
+of a permutation forming one cycle on each fibre of a labelling by `Fin n`
+(`TauCeti.isCycleOn_optionCongr_fiber`), a permutation transported along an injection, the
+combination of two permutations transported along injections with disjoint ranges, a
+fiber-preserving permutation carrying one finite family to another with the same equality pattern
 (`TauCeti.exists_perm_apply_eq_of_eq_iff`), the fact that a permutation
-is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
-types, transport of cycle quotients along conjugating equivalences, and the factorization of an
-invariant function through a map on whose fibres the permutation is a single cycle, also stated
-for the difference `x ↦ c (σ⁻¹ x) - c x` (`Equiv.Perm.forall_comp_symm_sub_eq_zero_iff`), and a
-correction by a power of a cycle for a permutation commuting with it. The set of points on the
-cycle through `x` has `Function.minimalPeriod σ x` elements, counted by `Set.ncard`
+is a single cycle on each of its own orbits, the transport of its cycles along a semiconjugating
+map (`Equiv.Perm.IsCycleOn.map`), in particular along an equivalence of types and to `Option α`
+by fixing `none`, transport of cycle quotients along conjugating
+equivalences, and the factorization of an invariant function through a map on whose fibres the
+permutation is a single cycle, also stated for the difference `x ↦ c (σ⁻¹ x) - c x`
+(`Equiv.Perm.forall_comp_symm_sub_eq_zero_iff`), and a correction by a power of a cycle for a
+permutation commuting with it. The set of points on the cycle through `x` has
+`Function.minimalPeriod σ x` elements, counted by `Set.ncard`
 (`Equiv.Perm.ncard_setOf_sameCycle`, and `Equiv.Perm.minimalPeriod_eq_natCard_of_forall_sameCycle`
 for a single cycle through every point). Points over distinct classes of the cycle quotient are
 distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
@@ -320,18 +323,31 @@ theorem sameCycle_permCongr_iff {β : Type*} (e : α ≃ β) {x y : β} :
     (e.permCongr σ).SameCycle x y ↔ σ.SameCycle (e.symm x) (e.symm y) := by
   rw [← sameCycle_permCongr σ e, e.apply_symm_apply, e.apply_symm_apply]
 
+/-- A map semiconjugating one permutation to another carries cycles to cycles: if
+`g (σ x) = τ (g x)` for all `x` and `σ` is a single cycle on `s`, then `τ` is a single cycle on
+`g '' s`. -/
+theorem IsCycleOn.map {σ : Perm α} {β : Type*} {τ : Perm β} {g : α → β} {s : Set α}
+    (h : σ.IsCycleOn s) (hg : ∀ x, g (σ x) = τ (g x)) : τ.IsCycleOn (g '' s) := by
+  refine ⟨⟨?_, τ.injective.injOn, ?_⟩, ?_⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    exact ⟨σ x, h.1.mapsTo hx, hg x⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    obtain ⟨y, hy, rfl⟩ := h.1.surjOn hx
+    exact ⟨g y, ⟨y, hy, rfl⟩, (hg y).symm⟩
+  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+    exact (h.2 hx hy).map hg
+
 /-- Transporting a permutation along an equivalence transports its cycles on a set: the analogue of
 `Equiv.Perm.IsCycleOn.conj` for an equivalence between two types. -/
 theorem IsCycleOn.permCongr {σ : Perm α} {β : Type*} (e : α ≃ β) {s : Set α}
-    (h : σ.IsCycleOn s) : (e.permCongr σ).IsCycleOn (e '' s) := by
-  refine ⟨⟨?_, (e.permCongr σ).injective.injOn, ?_⟩, ?_⟩
-  · rintro _ ⟨x, hx, rfl⟩
-    exact ⟨σ x, h.1.mapsTo hx, by simp⟩
-  · rintro _ ⟨x, hx, rfl⟩
-    obtain ⟨y, hy, rfl⟩ := h.1.surjOn hx
-    exact ⟨e y, ⟨y, hy, rfl⟩, by simp⟩
-  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
-    exact (sameCycle_permCongr σ e).2 (h.2 hx hy)
+    (h : σ.IsCycleOn s) : (e.permCongr σ).IsCycleOn (e '' s) :=
+  h.map fun z ↦ by simp
+
+/-- Extending a permutation to `Option α` by fixing `none` keeps its cycles: a single cycle on `s`
+becomes a single cycle on the image of `s` under `some`. -/
+theorem IsCycleOn.optionCongr {σ : Perm α} {s : Set α} (h : σ.IsCycleOn s) :
+    IsCycleOn (Equiv.optionCongr σ) (some '' s) :=
+  h.map fun z ↦ by simp
 
 open _root_.Finset in
 /-- A permutation of a finite type sends as many points from outside `p` into `p` as from
@@ -359,6 +375,33 @@ theorem sum_tsub_comp_eq_sum_comp_tsub [Fintype α] (f : α → ℕ) :
   omega
 
 end Equiv.Perm
+
+namespace TauCeti
+
+/-- Extending a labelling `f : α → Fin n` by a new point `none` with the new label `Fin.last n`:
+a permutation forming one cycle on each fibre of `f`, extended to fix `none`, forms one cycle on
+each fibre of the extended labelling. -/
+theorem isCycleOn_optionCongr_fiber {α : Type*} {n : ℕ} {f : α → Fin n} {σ : Equiv.Perm α}
+    (hσ : ∀ j, σ.IsCycleOn {q | f q = j}) (i : Fin (n + 1)) :
+    Equiv.Perm.IsCycleOn (Equiv.optionCongr σ)
+      {p : Option α | p.elim (Fin.last n) (fun q => (f q).castSucc) = i} := by
+  induction i using Fin.lastCases with
+  | last =>
+    have hs : {p : Option α | p.elim (Fin.last n) (fun q => (f q).castSucc) = Fin.last n} =
+        {none} := by
+      ext p
+      cases p <;> simp [Fin.castSucc_ne_last]
+    rw [hs, Equiv.Perm.isCycleOn_singleton]
+    simp
+  | cast j =>
+    have hs : {p : Option α | p.elim (Fin.last n) (fun q => (f q).castSucc) = j.castSucc} =
+        some '' {q | f q = j} := by
+      ext p
+      cases p <;> simp [(Fin.castSucc_ne_last j).symm]
+    rw [hs]
+    exact (hσ j).optionCongr
+
+end TauCeti
 
 namespace Equiv
 
