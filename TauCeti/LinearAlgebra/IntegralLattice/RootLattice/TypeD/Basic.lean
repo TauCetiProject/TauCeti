@@ -249,11 +249,11 @@ theorem checkerboardLattice_carrier : (checkerboardLattice n).carrier = checkerb
   ofSubmodule_carrier _ _ _ _
 
 /-- The rational form of the checkerboard lattice is the identity Gram form. -/
-@[simp]
 theorem checkerboardLattice_form : (checkerboardLattice n).form = Matrix.toBilin' 1 :=
   ofSubmodule_form _ _ _ _
 
 /-- The form of the checkerboard lattice is the standard dot product. -/
+@[simp]
 theorem checkerboardLattice_form_apply (x y : Fin n → ℚ) :
     (checkerboardLattice n).form x y = ∑ i, x i * y i := by
   rw [checkerboardLattice_form, checkerboardAmbientForm_apply]
@@ -314,12 +314,14 @@ theorem isEven_checkerboardLattice : (checkerboardLattice n).IsEven := by
 
 /-! ## The dual lattice -/
 
+variable {n} in
 /-- Pairing an arbitrary vector against a single coordinate vector. -/
 theorem checkerboardLattice_form_single (x : Fin n → ℚ) (i : Fin n) (a : ℚ) :
     (checkerboardLattice n).form x (Pi.single i a) = x i * a := by
   rw [checkerboardLattice_form, Matrix.toBilin'_apply', Matrix.one_mulVec]
   simp
 
+variable {n} in
 /-- Pairing an arbitrary vector against a difference of two coordinate vectors. -/
 theorem checkerboardLattice_form_single_sub_single (x : Fin n → ℚ) (i j : Fin n) :
     (checkerboardLattice n).form x (Pi.single i (1 : ℚ) - Pi.single j (1 : ℚ)) = x i - x j := by
@@ -507,6 +509,12 @@ variable (n)
 noncomputable def checkerboardVectorClass [NeZero n] : (checkerboardLattice n).DiscriminantGroup :=
   Submodule.Quotient.mk ⟨checkerboardVector n, checkerboardVector_mem_dualCarrier⟩
 
+/-- The vector class is represented by the Conway--Sloane vector `v`. -/
+theorem checkerboardVectorClass_def [NeZero n] :
+    checkerboardVectorClass n =
+      Submodule.Quotient.mk ⟨checkerboardVector n, checkerboardVector_mem_dualCarrier⟩ :=
+  (rfl)
+
 /-- The class of the spinor representative `s` in the checkerboard discriminant group. -/
 noncomputable def checkerboardSpinorClass : (checkerboardLattice n).DiscriminantGroup :=
   Submodule.Quotient.mk ⟨checkerboardSpinor n, checkerboardSpinor_mem_dualCarrier⟩
@@ -521,6 +529,12 @@ theorem checkerboardSpinorClass_def :
 noncomputable def checkerboardCospinorClass [NeZero n] :
     (checkerboardLattice n).DiscriminantGroup :=
   Submodule.Quotient.mk ⟨checkerboardCospinor n, checkerboardCospinor_mem_dualCarrier⟩
+
+/-- The cospinor class is represented by the Conway--Sloane cospinor vector `c`. -/
+theorem checkerboardCospinorClass_def [NeZero n] :
+    checkerboardCospinorClass n =
+      Submodule.Quotient.mk ⟨checkerboardCospinor n, checkerboardCospinor_mem_dualCarrier⟩ :=
+  (rfl)
 
 variable {n}
 
@@ -698,21 +712,25 @@ theorem checkerboardSpinor_sub_checkerboardCospinor_notMem_checkerboardCarrier :
   exact checkerboardVector_notMem_checkerboardCarrier n
 
 /-- The vector class is nonzero. -/
+@[simp]
 theorem checkerboardVectorClass_ne_zero : checkerboardVectorClass n ≠ 0 := by
   rw [checkerboardVectorClass, Ne, discriminantGroup_mk_eq_zero_iff, checkerboardLattice_carrier]
   exact checkerboardVector_notMem_checkerboardCarrier n
 
 /-- The spinor class is nonzero. -/
+@[simp]
 theorem checkerboardSpinorClass_ne_zero : checkerboardSpinorClass n ≠ 0 := by
   rw [checkerboardSpinorClass, Ne, discriminantGroup_mk_eq_zero_iff, checkerboardLattice_carrier]
   exact checkerboardSpinor_notMem_checkerboardCarrier n
 
 /-- The cospinor class is nonzero. -/
+@[simp]
 theorem checkerboardCospinorClass_ne_zero : checkerboardCospinorClass n ≠ 0 := by
   rw [checkerboardCospinorClass, Ne, discriminantGroup_mk_eq_zero_iff, checkerboardLattice_carrier]
   exact checkerboardCospinor_notMem_checkerboardCarrier n
 
 /-- The spinor class differs from the vector class. -/
+@[simp]
 theorem checkerboardSpinorClass_ne_checkerboardVectorClass :
     checkerboardSpinorClass n ≠ checkerboardVectorClass n := by
   rw [checkerboardSpinorClass, checkerboardVectorClass, Ne, discriminantGroup_mk_eq_iff,
@@ -720,6 +738,7 @@ theorem checkerboardSpinorClass_ne_checkerboardVectorClass :
   exact checkerboardCospinor_notMem_checkerboardCarrier n
 
 /-- The cospinor class differs from the vector class. -/
+@[simp]
 theorem checkerboardCospinorClass_ne_checkerboardVectorClass :
     checkerboardCospinorClass n ≠ checkerboardVectorClass n := by
   rw [checkerboardCospinorClass, checkerboardVectorClass, Ne, discriminantGroup_mk_eq_iff,
@@ -727,11 +746,45 @@ theorem checkerboardCospinorClass_ne_checkerboardVectorClass :
   exact checkerboardCospinor_sub_checkerboardVector_notMem_checkerboardCarrier n
 
 /-- The spinor class differs from the cospinor class. -/
+@[simp]
 theorem checkerboardSpinorClass_ne_checkerboardCospinorClass :
     checkerboardSpinorClass n ≠ checkerboardCospinorClass n := by
   rw [checkerboardSpinorClass, checkerboardCospinorClass, Ne, discriminantGroup_mk_eq_iff,
     checkerboardLattice_carrier]
   exact checkerboardSpinor_sub_checkerboardCospinor_notMem_checkerboardCarrier n
+
+/-- The zero class differs from the vector class. -/
+@[simp]
+theorem zero_ne_checkerboardVectorClass : 0 ≠ checkerboardVectorClass n :=
+  (checkerboardVectorClass_ne_zero n).symm
+
+/-- The zero class differs from the spinor class. -/
+@[simp]
+theorem zero_ne_checkerboardSpinorClass : 0 ≠ checkerboardSpinorClass n :=
+  (checkerboardSpinorClass_ne_zero n).symm
+
+/-- The zero class differs from the cospinor class. -/
+@[simp]
+theorem zero_ne_checkerboardCospinorClass : 0 ≠ checkerboardCospinorClass n :=
+  (checkerboardCospinorClass_ne_zero n).symm
+
+/-- The vector class differs from the spinor class. -/
+@[simp]
+theorem checkerboardVectorClass_ne_checkerboardSpinorClass :
+    checkerboardVectorClass n ≠ checkerboardSpinorClass n :=
+  (checkerboardSpinorClass_ne_checkerboardVectorClass n).symm
+
+/-- The vector class differs from the cospinor class. -/
+@[simp]
+theorem checkerboardVectorClass_ne_checkerboardCospinorClass :
+    checkerboardVectorClass n ≠ checkerboardCospinorClass n :=
+  (checkerboardCospinorClass_ne_checkerboardVectorClass n).symm
+
+/-- The cospinor class differs from the spinor class. -/
+@[simp]
+theorem checkerboardCospinorClass_ne_checkerboardSpinorClass :
+    checkerboardCospinorClass n ≠ checkerboardSpinorClass n :=
+  (checkerboardSpinorClass_ne_checkerboardCospinorClass n).symm
 
 /-! ## The order of the discriminant group -/
 
@@ -886,26 +939,30 @@ theorem checkerboardVectorClass_add_checkerboardSpinorClass [NeZero n] :
     abel
   rw [h, two_zsmul_checkerboardVectorClass]
 
+/-- **For odd `n` the spinor class generates the checkerboard discriminant group.** -/
+theorem zmultiples_checkerboardSpinorClass_of_odd (hn : Odd n) :
+    AddSubgroup.zmultiples (checkerboardSpinorClass n) = ⊤ := by
+  have : NeZero n := NeZero.of_pos hn.pos
+  have hc : (-1 : ℤ) • checkerboardSpinorClass n = checkerboardCospinorClass n := by
+    rw [checkerboardCospinorClass_eq_sub, ← two_zsmul_checkerboardSpinorClass_of_odd n hn]
+    abel
+  refine (AddSubgroup.eq_top_iff' _).mpr fun x ↦ ?_
+  rcases checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_cospinorClass
+      x with h | h | h | h
+  · exact AddSubgroup.mem_zmultiples_iff.mpr ⟨0, by rw [h, zero_zsmul]⟩
+  · exact AddSubgroup.mem_zmultiples_iff.mpr
+      ⟨2, by rw [h, two_zsmul_checkerboardSpinorClass_of_odd n hn]⟩
+  · exact AddSubgroup.mem_zmultiples_iff.mpr ⟨1, by rw [h, one_zsmul]⟩
+  · exact AddSubgroup.mem_zmultiples_iff.mpr ⟨-1, by rw [h, hc]⟩
+
 /-- **For odd `n` the checkerboard discriminant group is cyclic of order four**, generated by the
 spinor class. -/
 noncomputable def zmodFourAddEquivCheckerboardDiscriminantGroup (hn : Odd n) :
-    ZMod 4 ≃+ (checkerboardLattice n).DiscriminantGroup := by
-  let _ : NeZero n := NeZero.of_pos hn.pos
-  exact
-    zmodAddEquivOfGenerator (g := checkerboardSpinorClass n)
-      (fun x ↦ by
-        have hc : (-1 : ℤ) • checkerboardSpinorClass n = checkerboardCospinorClass n := by
-          rw [checkerboardCospinorClass_eq_sub, ← two_zsmul_checkerboardSpinorClass_of_odd n hn]
-          abel
-        rcases
-            checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_cospinorClass
-              x with h | h | h | h
-        · exact AddSubgroup.mem_zmultiples_iff.mpr ⟨0, by rw [h, zero_zsmul]⟩
-        · exact AddSubgroup.mem_zmultiples_iff.mpr
-            ⟨2, by rw [h, two_zsmul_checkerboardSpinorClass_of_odd n hn]⟩
-        · exact AddSubgroup.mem_zmultiples_iff.mpr ⟨1, by rw [h, one_zsmul]⟩
-        · exact AddSubgroup.mem_zmultiples_iff.mpr ⟨-1, by rw [h, hc]⟩)
-      (natCard_discriminantGroup_checkerboardLattice n)
+    ZMod 4 ≃+ (checkerboardLattice n).DiscriminantGroup :=
+  letI : NeZero n := NeZero.of_pos hn.pos
+  zmodAddEquivOfGenerator (g := checkerboardSpinorClass n)
+    ((AddSubgroup.eq_top_iff' _).mp (zmultiples_checkerboardSpinorClass_of_odd n hn))
+    (natCard_discriminantGroup_checkerboardLattice n)
 
 /-- The odd-rank identification sends the generator `1` of `ℤ/4` to the spinor class. -/
 @[simp]
@@ -913,6 +970,12 @@ theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one (hn : Odd n) :
     zmodFourAddEquivCheckerboardDiscriminantGroup n hn 1 = checkerboardSpinorClass n := by
   rw [zmodFourAddEquivCheckerboardDiscriminantGroup]
   exact zmodAddEquivOfGenerator_apply_one _ _
+
+/-- **For odd `n` the spinor class has additive order four.** -/
+theorem addOrderOf_checkerboardSpinorClass_of_odd (hn : Odd n) :
+    addOrderOf (checkerboardSpinorClass n) = 4 := by
+  rw [← zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one n hn, AddEquiv.addOrderOf_eq]
+  exact ZMod.addOrderOf_one 4
 
 /-- The odd-rank identification sends `2 ∈ ℤ/4` to the vector class. -/
 @[simp]
