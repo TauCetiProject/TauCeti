@@ -12,7 +12,6 @@ public import TauCeti.Topology.OmegaLimit
 -- interval integrals are used only inside proofs; no declaration below exposes their APIs.
 import TauCeti.Analysis.Calculus.Gradient
 import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.ODE.Transform
 import Mathlib.Topology.Order.MonotoneConvergence
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.Topology.Order.MonotoneConvergence
@@ -127,6 +126,34 @@ theorem exists_tendsto_comp_atTop
 
 /-! ### The gradient dies along the trajectory -/
 
+/-- **The gradient stays above `ε / 2` for a short time.** If `‖∇ f (γ t)‖` is at least `ε` at a
+time `t ≥ 0`, and `δ` is short enough that the trajectory cannot move by `η` in that time, then the
+modulus `hUC` keeps the gradient above `ε / 2` throughout `[t, t + δ]`. -/
+private theorem le_norm_gradient_of_mem_Icc {C δ ε η : ℝ}
+    (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Ici 0)) (hmaps : MapsTo γ (Ici 0) K)
+    (hC : ∀ y ∈ K, ‖∇ f y‖ ≤ C)
+    (hUC : ∀ y ∈ K, ∀ z ∈ K, dist y z < η → dist (∇ f y) (∇ f z) < ε / 2)
+    (hCδ : C * δ < η) {t : ℝ} (ht : 0 ≤ t) (hbig : ε ≤ ‖∇ f (γ t)‖) :
+    ∀ s ∈ Icc t (t + δ), ε / 2 ≤ ‖∇ f (γ s)‖ := by
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC _ (hmaps (mem_Ici.mpr le_rfl)))
+  intro s hs
+  have hs0 : s ∈ Ici (0 : ℝ) := mem_Ici.mpr (ht.trans hs.1)
+  have hnorm : ‖s - t‖ ≤ δ := by
+    rw [Real.norm_eq_abs, abs_of_nonneg (by linarith [hs.1])]
+    linarith [hs.2]
+  have hdist : dist (γ s) (γ t) < η := by
+    rw [dist_eq_norm]
+    calc ‖γ s - γ t‖ ≤ C * ‖s - t‖ :=
+          norm_sub_le_of_norm_gradient_le hγ hmaps hC (mem_Ici.mpr ht) hs0
+      _ ≤ C * δ := by nlinarith
+      _ < η := hCδ
+  have h := hUC _ (hmaps hs0) _ (hmaps (mem_Ici.mpr ht)) hdist
+  rw [dist_eq_norm] at h
+  have h' : ‖∇ f (γ t)‖ - ‖∇ f (γ s)‖ ≤ ‖∇ f (γ s) - ∇ f (γ t)‖ := by
+    rw [norm_sub_rev]
+    exact norm_sub_norm_le _ _
+  linarith
+
 /-- **Across a short interval the energy drops by at least `δ * (ε / 2) ^ 2`.** If `‖∇ f (γ t)‖`
 is at least `ε` at a time `t ≥ 0`, and `δ` is short enough that the trajectory cannot move by `η`
 in that time, then the modulus `hUC` keeps the gradient above `ε / 2` throughout `[t, t + δ]`, and
@@ -152,24 +179,7 @@ private theorem energy_drop_of_le_norm_gradient {C δ ε η : ℝ}
   have htδ : t ≤ t + δ := by linarith
   have hIcc : Icc t (t + δ) ⊆ Ici (0 : ℝ) := fun s hs ↦ mem_Ici.mpr (ht.trans hs.1)
   have huIcc : [[t, t + δ]] = Icc t (t + δ) := uIcc_of_le htδ
-  have hlow : ∀ s ∈ Icc t (t + δ), ε / 2 ≤ ‖∇ f (γ s)‖ := by
-    intro s hs
-    have hs0 : s ∈ Ici (0 : ℝ) := hIcc hs
-    have hnorm : ‖s - t‖ ≤ δ := by
-      rw [Real.norm_eq_abs, abs_of_nonneg (by linarith [hs.1])]
-      linarith [hs.2]
-    have hdist : dist (γ s) (γ t) < η := by
-      rw [dist_eq_norm]
-      calc ‖γ s - γ t‖ ≤ C * ‖s - t‖ :=
-            norm_sub_le_of_norm_gradient_le hγ hmaps hC (mem_Ici.mpr ht) hs0
-        _ ≤ C * δ := by nlinarith
-        _ < η := hCδ
-    have h := hUC _ (hmaps hs0) _ (hmaps (mem_Ici.mpr ht)) hdist
-    rw [dist_eq_norm] at h
-    have h' : ‖∇ f (γ t)‖ - ‖∇ f (γ s)‖ ≤ ‖∇ f (γ s) - ∇ f (γ t)‖ := by
-      rw [norm_sub_rev]
-      exact norm_sub_norm_le _ _
-    linarith
+  have hlow := le_norm_gradient_of_mem_Icc hγ hmaps hC hUC hCδ ht hbig
   have hint : IntervalIntegrable (fun s ↦ ‖∇ f (γ s)‖ ^ 2) volume t (t + δ) := by
     refine ContinuousOn.intervalIntegrable ?_
     rw [huIcc]
@@ -340,30 +350,10 @@ theorem exists_tendsto_atBot
     (hgrad : ContinuousOn (∇ f) K) (hfin : {y ∈ K | ∇ f y = 0}.Finite) :
     ∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atBot (𝓝 p) := by
   have hgrad_neg : ∀ y : E, ∇ (-f) y = -∇ f y := fun y ↦ gradient_neg
-  have hγ_rev := hγ.comp_mul (-1)
-  have hdomain : {t : ℝ | t * (-1) ∈ Iic (0 : ℝ)} = Ici 0 := by
-    ext t
-    simp only [mem_Iic, mem_Ici]
-    constructor
-    · intro ht
-      exact neg_nonpos.mp (by simpa using ht)
-    · intro ht
-      simpa using (neg_nonpos.mpr ht)
-  have hfield :
-      ((-1 : ℝ) • (fun _ x ↦ -∇ f x)) ∘ (fun t : ℝ ↦ t * (-1)) =
-    (fun _ x ↦ -∇ (-f) x) := by
-    funext t y
-    simp only [Function.comp_apply, neg_one_smul, Pi.neg_apply, hgrad_neg, neg_neg]
-  have hγ_rev' :
-      IsIntegralCurveOn (γ ∘ (fun t : ℝ ↦ t * (-1)))
-        (fun _ x ↦ -∇ (-f) x) (Ici 0) := by
-    rw [← hdomain, ← hfield]
-    exact hγ_rev
-  have hmaps_rev : MapsTo (γ ∘ (fun t : ℝ ↦ t * (-1))) (Ici 0) K := by
-    intro t ht
-    apply hmaps
-    simp only [mem_Iic]
-    simpa using (neg_nonpos.mpr (mem_Ici.mp ht))
+  have hγ_rev' : IsIntegralCurveOn (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) (Ici 0) := by
+    simpa using hγ.comp_neg_neg_gradient
+  have hmaps_rev : MapsTo (fun t ↦ γ (-t)) (Ici 0) K :=
+    fun t ht ↦ hmaps (neg_nonpos.mpr (mem_Ici.mp ht))
   have hdiff_neg : ∀ y ∈ K, DifferentiableAt ℝ (-f) y := by
     intro y hy
     simpa only [Pi.neg_apply] using (hdiff y hy).neg
@@ -377,8 +367,7 @@ theorem exists_tendsto_atBot
     hgrad_neg_cont hfin_neg
   refine ⟨p, hpK, ?_, ?_⟩
   · simpa only [hgrad_neg, neg_eq_zero] using hp
-  · simpa only [Function.comp_def, mul_neg, mul_one, neg_neg] using
-      hp_lim.comp tendsto_neg_atBot_atTop
+  · simpa only [Function.comp_def, neg_neg] using hp_lim.comp tendsto_neg_atBot_atTop
 
 /-- **The Morse form of backward convergence.** A negative gradient trajectory confined to a
 compact set on which `fderiv ℝ f` is continuous and every critical point is nondegenerate converges

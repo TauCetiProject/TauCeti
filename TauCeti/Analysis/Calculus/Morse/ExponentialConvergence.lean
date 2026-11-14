@@ -12,7 +12,6 @@ public import TauCeti.Analysis.Calculus.Morse.Linearization
 -- declaration below exposes their APIs.
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.ODE.Gronwall
-import Mathlib.Analysis.ODE.Transform
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
@@ -318,31 +317,12 @@ theorem exists_norm_deriv_le_mul_exp_atTop
   rw [hderiv.deriv, norm_neg]
   exact ht
 
-/-- Reversing time turns a negative gradient trajectory for `f` on `Iic a` into a negative
-gradient trajectory for `-f` on `Ici (-a)`. -/
-private theorem comp_neg_isIntegralCurveOn_neg
-    (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a)) :
-    IsIntegralCurveOn (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) (Ici (-a)) := by
-  have hgrad_neg : ∀ y : E, ∇ (-f) y = -∇ f y := fun y ↦ gradient_neg
-  have hdomain : {t : ℝ | t * (-1) ∈ Iic a} = Ici (-a) := by
-    ext t
-    simp only [mem_ofPred_eq, mem_Iic, mem_Ici, mul_neg, mul_one, neg_le]
-  have hfield : ((-1 : ℝ) • (fun _ : ℝ ↦ fun x ↦ -∇ f x)) ∘ (fun t : ℝ ↦ t * (-1)) =
-      (fun _ : ℝ ↦ fun x ↦ -∇ (-f) x) := by
-    funext t y
-    simp only [Function.comp_apply, neg_one_smul, Pi.neg_apply, hgrad_neg, neg_neg]
-  have hcomp : γ ∘ (fun t : ℝ ↦ t * (-1)) = fun t ↦ γ (-t) := by
-    funext t
-    simp
-  rw [← hcomp, ← hdomain, ← hfield]
-  exact hγ.comp_mul (-1)
-
 /-- **The energy along a backward trajectory converging to a nondegenerate critical point decays
 exponentially.** -/
 theorem exists_sub_le_mul_exp_atBot (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a))
     (hp : IsNondegenerateCriticalPoint f p) (hconv : Tendsto γ atBot (𝓝 p)) :
     ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atBot, f p - f (γ t) ≤ C * Real.exp (μ * t) := by
-  have hrev := comp_neg_isIntegralCurveOn_neg hγ
+  have hrev := hγ.comp_neg_neg_gradient
   have hconv' : Tendsto (fun t ↦ γ (-t)) atTop (𝓝 p) := hconv.comp tendsto_neg_atTop_atBot
   obtain ⟨μ, hμ, C, hC, hbound⟩ := exists_sub_le_mul_exp_atTop hrev hp.neg hconv'
   refine ⟨μ, hμ, C, hC, ?_⟩
@@ -355,7 +335,7 @@ into a negative gradient trajectory of `-f`, whose critical point at `p` is agai
 theorem exists_norm_sub_le_mul_exp_atBot (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a))
     (hp : IsNondegenerateCriticalPoint f p) (hconv : Tendsto γ atBot (𝓝 p)) :
     ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atBot, ‖γ t - p‖ ≤ C * Real.exp (μ * t) := by
-  have hrev := comp_neg_isIntegralCurveOn_neg hγ
+  have hrev := hγ.comp_neg_neg_gradient
   have hconv' : Tendsto (fun t ↦ γ (-t)) atTop (𝓝 p) := hconv.comp tendsto_neg_atTop_atBot
   obtain ⟨μ, hμ, C, hC, hbound⟩ := exists_norm_sub_le_mul_exp_atTop hrev hp.neg hconv'
   refine ⟨μ, hμ, C, hC, ?_⟩

@@ -159,6 +159,19 @@ theorem perturb_eventuallyEq_of_fderiv_eq_zero (hh : ∀ i, IsAdmissiblePerturba
   perturb_eventuallyEq_of_forall_notMem_tsupport s fun i hmem ↦
     Set.disjoint_left.1 (hh i).disjoint hmem hx
 
+/-- If each `h i` has differential of norm at most `D` at `x`, then the linear combination
+`∑ i, s i • fderiv ℝ (h i) x` has norm at most `card ι * D * ‖s‖`. -/
+private theorem norm_sum_smul_fderiv_le (s : EuclideanSpace ℝ ι) (x : E) {D : ℝ}
+    (hD : ∀ i, ‖fderiv ℝ (h i) x‖ ≤ D) :
+    ‖∑ i, s i • fderiv ℝ (h i) x‖ ≤ Fintype.card ι * D * ‖s‖ := by
+  calc ‖∑ i, s i • fderiv ℝ (h i) x‖ ≤ ∑ i, ‖s i • fderiv ℝ (h i) x‖ := norm_sum_le _ _
+    _ ≤ ∑ _i : ι, ‖s‖ * D := Finset.sum_le_sum fun i _ ↦ by
+      rw [norm_smul]
+      exact mul_le_mul (PiLp.norm_apply_le s i) (hD i) (norm_nonneg _) (norm_nonneg _)
+    _ = Fintype.card ι * D * ‖s‖ := by
+      rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+      ring
+
 /-- **Small perturbations keep the critical points.** For a family of compactly supported `C¹`
 functions whose supports avoid the critical points of `f` (for instance an admissible family), for
 all sufficiently small parameters the critical points of `perturb f h s` are those of `f`. -/
@@ -194,15 +207,8 @@ theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 1 f)
     refine iff_of_false ?_ hne
     rw [fderiv_perturb (hfd x) fun i ↦ hhd i x]
     intro h0
-    have h1 : ‖∑ i, s i • fderiv ℝ (h i) x‖ ≤ Fintype.card ι * max C 0 * ‖s‖ := by
-      calc ‖∑ i, s i • fderiv ℝ (h i) x‖ ≤ ∑ i, ‖s i • fderiv ℝ (h i) x‖ := norm_sum_le _ _
-        _ ≤ ∑ _i : ι, ‖s‖ * max C 0 := Finset.sum_le_sum fun i _ ↦ by
-          rw [norm_smul]
-          exact mul_le_mul (PiLp.norm_apply_le s i)
-            ((hB i x).trans ((hC i).trans (le_max_left _ _))) (norm_nonneg _) (norm_nonneg _)
-        _ = Fintype.card ι * max C 0 * ‖s‖ := by
-          rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-          ring
+    have h1 := norm_sum_smul_fderiv_le s x (D := max C 0)
+      fun i ↦ (hB i x).trans ((hC i).trans (le_max_left _ _))
     have h2 : ‖fderiv ℝ f x‖ ≤ ‖∑ i, s i • fderiv ℝ (h i) x‖ := by
       have : fderiv ℝ f x = -∑ i, s i • fderiv ℝ (h i) x := eq_neg_of_add_eq_zero_left h0
       rw [this, norm_neg]
