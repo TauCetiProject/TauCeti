@@ -50,6 +50,10 @@ a different argument and is not proved here.
 
 ## Main statements
 
+* `TauCeti.logIntegralExp`: the log-partition transform `log ∫ exp (h (a, b) + ψ b) dν(b)` of a
+  Sinkhorn half-step, together with `TauCeti.measurable_logIntegralExp`,
+  `TauCeti.integrable_exp_add_of_le`, `TauCeti.abs_logIntegralExp_le`, and
+  `TauCeti.abs_logIntegralExp_sub_le`.
 * `TauCeti.exists_isCoupling_withDensity_exp_add`: the Schrödinger system for a bounded measurable
   kernel has a solution by bounded measurable potentials.
 * `TauCeti.exists_isCoupling_withDensity_exp_add_of_eq_withDensity`: the same system written
@@ -89,23 +93,29 @@ variable {A B : Type*} [MeasurableSpace A] [MeasurableSpace B] {ν : Measure B}
 
 /-- `log ∫ exp (h (a, b) + ψ b) dν(b)`, the logarithm of the partition function of the kernel
 `exp h` tilted by `exp ψ`. A Sinkhorn half-step replaces the potential on `A` by its negative. -/
-private def logIntegralExp (h : A × B → ℝ) (ν : Measure B) (ψ : B → ℝ) (a : A) : ℝ :=
+def logIntegralExp (h : A × B → ℝ) (ν : Measure B) (ψ : B → ℝ) (a : A) : ℝ :=
   Real.log (∫ b, Real.exp (h (a, b) + ψ b) ∂ν)
 
-private theorem measurable_logIntegralExp [SFinite ν] (hh : Measurable h) (hψ : Measurable ψ) :
+omit [MeasurableSpace A] in
+theorem logIntegralExp_def (h : A × B → ℝ) (ν : Measure B) (ψ : B → ℝ) (a : A) :
+    logIntegralExp h ν ψ a = Real.log (∫ b, Real.exp (h (a, b) + ψ b) ∂ν) := by
+  rfl
+
+/-- `logIntegralExp h ν ψ` is measurable whenever `h` and `ψ` are measurable and `ν` is
+`SFinite`. -/
+theorem measurable_logIntegralExp [SFinite ν] (hh : Measurable h) (hψ : Measurable ψ) :
     Measurable (logIntegralExp h ν ψ) := by
   have : StronglyMeasurable fun z : A × B ↦ Real.exp (h z + ψ z.2) :=
     (by fun_prop : Measurable fun z : A × B ↦ Real.exp (h z + ψ z.2)).stronglyMeasurable
   exact this.integral_prod_right'.measurable.log
 
-/-- The kernel `exp (h (a, b) + ψ b)` is integrable in `b` when `h` and `ψ` are bounded and
-measurable. -/
-private theorem integrable_exp_add_of_abs_le [IsFiniteMeasure ν] (hh : Measurable h)
-    (hM : ∀ z, |h z| ≤ M) (hψ : Measurable ψ) {C : ℝ} (hC : ∀ b, |ψ b| ≤ C) (a : A) :
+/-- The kernel `exp (h (a, b) + ψ b)` is integrable in `b` against a finite measure `ν` when `h` and
+`ψ` are measurable and bounded above. -/
+theorem integrable_exp_add_of_le [IsFiniteMeasure ν] (hh : Measurable h)
+    (hM : ∀ z, h z ≤ M) (hψ : Measurable ψ) {C : ℝ} (hC : ∀ b, ψ b ≤ C) (a : A) :
     Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν := by
   simpa only [one_mul] using ProbabilityTheory.integrable_exp_mul_of_le (μ := ν) 1 (M + C)
-    zero_le_one (by fun_prop) (ae_of_all _ fun b ↦
-      (le_abs_self _).trans ((abs_add_le _ _).trans (add_le_add (hM _) (hC b))))
+    zero_le_one (by fun_prop) (ae_of_all _ fun b ↦ add_le_add (hM _) (hC b))
 
 /-- Integrating `exp (h (a, b) + ψ b + t)` against `ν` gives `exp (t + logIntegralExp h ν ψ a)`. -/
 private theorem lintegral_ofReal_exp_add [IsFiniteMeasure ν] (hν : ν ≠ 0) (hh : Measurable h)
@@ -113,20 +123,23 @@ private theorem lintegral_ofReal_exp_add [IsFiniteMeasure ν] (hν : ν ≠ 0) (
     ∫⁻ b, ENNReal.ofReal (Real.exp (h (a, b) + ψ b + t)) ∂ν =
       ENNReal.ofReal (Real.exp (t + logIntegralExp h ν ψ a)) := by
   have := NeZero.mk hν
-  have hint := integrable_exp_add_of_abs_le (ν := ν) hh hM hψ hC a
+  have hint := integrable_exp_add_of_le (ν := ν) hh (fun z ↦ le_of_abs_le (hM z)) hψ
+    (fun b ↦ le_of_abs_le (hC b)) a
   have hsplit : (fun b ↦ Real.exp (h (a, b) + ψ b + t)) =
       fun b ↦ Real.exp (h (a, b) + ψ b) * Real.exp t := funext fun b ↦ Real.exp_add _ _
   rw [← ofReal_integral_eq_lintegral_ofReal (hsplit ▸ hint.mul_const _)
     (ae_of_all _ fun _ ↦ (Real.exp_pos _).le), hsplit, integral_mul_const, logIntegralExp,
     Real.exp_add, Real.exp_log (integral_exp_pos hint), mul_comm]
 
-private theorem abs_logIntegralExp_le [IsFiniteMeasure ν] (hν : ν ≠ 0) (hh : Measurable h)
+/-- Uniform bound on `logIntegralExp h ν ψ` when `|h| ≤ M` and `|ψ| ≤ C`. -/
+theorem abs_logIntegralExp_le [IsFiniteMeasure ν] (hν : ν ≠ 0) (hh : Measurable h)
     (hM : ∀ z, |h z| ≤ M) (hψ : Measurable ψ) {C : ℝ} (hC : ∀ b, |ψ b| ≤ C) (a : A) :
     |logIntegralExp h ν ψ a| ≤ M + C + |Real.log (ν.real univ)| := by
   have hν' : 0 < ν.real univ := by
     rw [measureReal_def]
     exact ENNReal.toReal_pos (Measure.measure_univ_ne_zero.2 hν) (measure_ne_top _ _)
-  have hint := integrable_exp_add_of_abs_le (ν := ν) hh hM hψ hC a
+  have hint := integrable_exp_add_of_le (ν := ν) hh (fun z ↦ le_of_abs_le (hM z)) hψ
+    (fun b ↦ le_of_abs_le (hC b)) a
   have hlo : Real.exp (-(M + C)) * ν.real univ ≤ ∫ b, Real.exp (h (a, b) + ψ b) ∂ν := by
     rw [mul_comm, ← smul_eq_mul, ← integral_const]
     refine integral_mono (integrable_const _) hint fun b ↦ Real.exp_le_exp.2 ?_
@@ -145,6 +158,33 @@ private theorem abs_logIntegralExp_le [IsFiniteMeasure ν] (hν : ν ≠ 0) (hh 
   constructor <;>
     linarith [neg_abs_le (Real.log (ν.real univ)), le_abs_self (Real.log (ν.real univ))]
 
+/-- `logIntegralExp h ν ψ` inherits every uniform `B`-slice oscillation bound of `h` in its first
+variable, independently of the nonzero finite measure `ν` and the potential `ψ`. -/
+theorem abs_logIntegralExp_sub_le [IsFiniteMeasure ν] (hν : ν ≠ 0) (hh : Measurable h)
+    (hM : ∀ z, h z ≤ M) (hψ : Measurable ψ) {C : ℝ} (hC : ∀ b, ψ b ≤ C) {a₁ a₂ : A} {δ : ℝ}
+    (hosc : ∀ b, |h (a₁, b) - h (a₂, b)| ≤ δ) :
+    |logIntegralExp h ν ψ a₁ - logIntegralExp h ν ψ a₂| ≤ δ := by
+  have := NeZero.mk hν
+  have one_side {u v : A} (huv : ∀ b, h (u, b) - h (v, b) ≤ δ) :
+      logIntegralExp h ν ψ u - logIntegralExp h ν ψ v ≤ δ := by
+    have hint_u := integrable_exp_add_of_le (ν := ν) hh hM hψ hC u
+    have hint_v := integrable_exp_add_of_le (ν := ν) hh hM hψ hC v
+    have hZu : 0 < ∫ b, Real.exp (h (u, b) + ψ b) ∂ν := integral_exp_pos hint_u
+    have hZv : 0 < ∫ b, Real.exp (h (v, b) + ψ b) ∂ν := integral_exp_pos hint_v
+    have hle : ∫ b, Real.exp (h (u, b) + ψ b) ∂ν ≤
+        Real.exp δ * ∫ b, Real.exp (h (v, b) + ψ b) ∂ν := by
+      rw [← integral_const_mul]
+      refine integral_mono hint_u (hint_v.const_mul _) fun b ↦ ?_
+      rw [← Real.exp_add, Real.exp_le_exp]
+      linarith [huv b]
+    have hlog := (Real.log_le_log hZu hle).trans_eq <| by
+      rw [Real.log_mul (Real.exp_pos _).ne' hZv.ne', Real.log_exp]
+    unfold logIntegralExp
+    linarith
+  rw [abs_sub_le_iff]
+  exact ⟨one_side fun b ↦ (abs_le.1 (hosc b)).2,
+    one_side fun b ↦ by linarith [(abs_le.1 (hosc b)).1]⟩
+
 /-- **The half-step contracts oscillations**, in bracket form: if `m ≤ ψ₁ - ψ₂ ≤ m + ω`, then the
 difference of the log-partition functions of `ψ₁` and `ψ₂` has oscillation at most
 `(1 - exp (-4M)) * ω`, where `|h| ≤ M`. -/
@@ -162,7 +202,8 @@ private theorem logIntegralExp_sub_sub_le_of_le [IsFiniteMeasure ν] (hν : ν �
   -- The four partition functions `A₁, A₂` at `a` and `B₁, B₂` at `a'`.
   have hi (a : A) {ψ : B → ℝ} (hψ : Measurable ψ) {C : ℝ} (hC : ∀ b, |ψ b| ≤ C) :
       Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν :=
-    integrable_exp_add_of_abs_le (ν := ν) hh hM hψ hC a
+    integrable_exp_add_of_le (ν := ν) hh (fun z ↦ le_of_abs_le (hM z)) hψ
+      (fun b ↦ le_of_abs_le (hC b)) a
   set A₁ := ∫ b, Real.exp (h (a, b) + ψ₁ b) ∂ν
   set A₂ := ∫ b, Real.exp (h (a, b) + ψ₂ b) ∂ν
   set B₁ := ∫ b, Real.exp (h (a', b) + ψ₁ b) ∂ν

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.ContinuousMap.Bounded.Basic
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.UniformSpace.Ascoli
 public import Mathlib.Algebra.Ring.Periodic
@@ -71,6 +72,9 @@ endpoints `eₙ` stay at distance at least `1` from each other
   the space of functions with the topology of uniform convergence on compacts.
 * `ArzelaAscoli.isCompact_closure_of_equicontinuous_of_totallyBounded`: for a complete target,
   total boundedness of the values at the points of a dense set suffices.
+* `ArzelaAscoli.totallyBounded_range_mkOfCompact_of_equicontinuous`: on a compact space, an
+  equicontinuous and pointwise totally bounded family into a pseudometric space has totally bounded
+  range in `X →ᵇ Y`.
 * `IsCompact.equicontinuous`: a compact set of continuous maps on a weakly locally compact space
   is equicontinuous.
 * `TauCeti.exists_tendstoUniformly_subseq_of_periodic_of_modulus`: Arzelà–Ascoli for periodic
@@ -195,6 +199,25 @@ theorem isCompact_closure_of_equicontinuous_of_totallyBounded [UniformSpace Y] [
     ⟨_, (((hA x).equicontinuousWithinAt D).totallyBounded_range_eval (hD x)
       (fun x hx ↦ image_eq_range (· x) A ▸ hAD x hx)).closure.isCompact_of_isClosed
       isClosed_closure, fun f ↦ subset_closure (mem_range_self f)⟩
+
+/-- On a compact space, an equicontinuous and pointwise totally bounded family of functions into a
+pseudometric space has totally bounded range when bundled into `X →ᵇ Y`. -/
+theorem totallyBounded_range_mkOfCompact_of_equicontinuous [CompactSpace X] [PseudoMetricSpace Y]
+    {ι : Type*} {g : ι → X → Y} (hequi : Equicontinuous g)
+    (hg : ∀ x, TotallyBounded (range fun i ↦ g i x)) :
+    TotallyBounded
+      (range fun i ↦ BoundedContinuousFunction.mkOfCompact ⟨g i, hequi.continuous i⟩) := by
+  refine Metric.totallyBounded_iff.2 fun r hr ↦ ?_
+  obtain ⟨t, htf, hcov⟩ := (hequi.equicontinuousOn univ).exists_finite_approx_of_isCompact
+    isCompact_univ (fun x _ ↦ hg x) (Metric.dist_mem_uniformity (half_pos hr))
+  refine ⟨(fun j ↦ BoundedContinuousFunction.mkOfCompact ⟨g j, hequi.continuous j⟩) '' t,
+    htf.image _, ?_⟩
+  rintro _ ⟨i, rfl⟩
+  obtain ⟨j, hjt, hij⟩ := hcov i
+  refine mem_iUnion₂.2 ⟨_, mem_image_of_mem _ hjt, Metric.mem_ball.2 ?_⟩
+  refine lt_of_le_of_lt ((BoundedContinuousFunction.dist_le (half_pos hr).le).2 fun x ↦ ?_)
+    (half_lt_self hr)
+  exact (hij x (mem_univ x)).le
 
 end ArzelaAscoli
 

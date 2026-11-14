@@ -24,6 +24,8 @@ families, for both `FiniteMeasure α` and `ProbabilityMeasure α`.
 
 ## Main statements
 
+* `MeasureTheory.FiniteMeasure.lipschitzWith_integral`: integration against a finite measure `ν` is
+  `ν.mass`-Lipschitz on `α →ᵇ E`.
 * `MeasureTheory.FiniteMeasure.tendstoUniformly_integral_of_totallyBounded`: narrow convergence of
   finite measures implies uniform convergence of integrals over any family in `α →ᵇ 𝕜` with totally
   bounded range.
@@ -52,35 +54,15 @@ namespace MeasureTheory
 variable {α 𝕜 ι γ : Type*} [TopologicalSpace α] [MeasurableSpace α] [OpensMeasurableSpace α]
   [RCLike 𝕜]
 
-/-- Integration against a finite measure is Lipschitz in the supremum distance on `α →ᵇ 𝕜`, with
-constant the total mass of the measure. -/
-private theorem dist_integral_boundedContinuousFunction_le (ν : FiniteMeasure α) (f₁ f₂ : α →ᵇ 𝕜) :
-    dist (∫ x, f₁ x ∂(ν : Measure α)) (∫ x, f₂ x ∂(ν : Measure α)) ≤
-      dist f₁ f₂ * (ν.mass : ℝ) := by
+/-- Integration against a finite measure is Lipschitz on `α →ᵇ E`, with Lipschitz constant the
+total mass `ν.mass`. -/
+theorem FiniteMeasure.lipschitzWith_integral {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E] (ν : FiniteMeasure α) :
+    LipschitzWith ν.mass fun f : α →ᵇ E ↦ ∫ x, f x ∂(ν : Measure α) := by
+  refine LipschitzWith.of_dist_le_mul fun f₁ f₂ ↦ ?_
   rw [dist_eq_norm, ← integral_sub (f₁.integrable _) (f₂.integrable _)]
-  refine (norm_integral_le_of_norm_le_const (C := dist f₁ f₂) (ae_of_all _ fun x ↦ ?_)).trans_eq ?_
-  · rw [← dist_eq_norm]
-    exact f₁.dist_coe_le_dist x
-  · rw [measureReal_def, ← FiniteMeasure.ennreal_mass, ENNReal.coe_toReal]
-
-omit [MeasurableSpace α] [OpensMeasurableSpace α] in
-/-- On a compact space, an equicontinuous and pointwise totally bounded family of functions has
-totally bounded range when bundled into `α →ᵇ 𝕜`. -/
-private theorem totallyBounded_range_mkOfCompact_of_equicontinuous [CompactSpace α] {g : ι → α → 𝕜}
-    (hequi : Equicontinuous g) (hg : ∀ x, TotallyBounded (range fun i ↦ g i x)) :
-    TotallyBounded
-      (range fun i ↦ BoundedContinuousFunction.mkOfCompact ⟨g i, hequi.continuous i⟩) := by
-  refine Metric.totallyBounded_iff.2 fun r hr ↦ ?_
-  obtain ⟨t, htf, hcov⟩ := (hequi.equicontinuousOn univ).exists_finite_approx_of_isCompact
-    isCompact_univ (fun x _ ↦ hg x) (Metric.dist_mem_uniformity (half_pos hr))
-  refine ⟨(fun j ↦ BoundedContinuousFunction.mkOfCompact ⟨g j, hequi.continuous j⟩) '' t,
-    htf.image _, ?_⟩
-  rintro _ ⟨i, rfl⟩
-  obtain ⟨j, hjt, hij⟩ := hcov i
-  refine mem_iUnion₂.2 ⟨_, mem_image_of_mem _ hjt, Metric.mem_ball.2 ?_⟩
-  refine lt_of_le_of_lt ((BoundedContinuousFunction.dist_le (half_pos hr).le).2 fun x ↦ ?_)
-    (half_lt_self hr)
-  exact (hij x (mem_univ x)).le
+  refine ((f₁ - f₂).norm_integral_le_mul_norm (ν : Measure α)).trans_eq ?_
+  rw [measureReal_def, ← FiniteMeasure.ennreal_mass, ENNReal.coe_toReal, dist_eq_norm]
 
 /-- **Uniform narrow convergence over a totally bounded family.** If finite measures `μs n`
 converge narrowly to `μ`, then for every family `g : ι → α →ᵇ 𝕜` with totally bounded range in
@@ -108,15 +90,15 @@ theorem FiniteMeasure.tendstoUniformly_integral_of_totallyBounded {l : Filter γ
   obtain ⟨f, hft, hgf⟩ := mem_iUnion₂.1 (hcov (mem_range_self i))
   rw [Metric.mem_ball] at hgf
   have h1 : dist (∫ x, g i x ∂(μ : Measure α)) (∫ x, f x ∂(μ : Measure α)) < ε / 3 := by
-    refine (dist_integral_boundedContinuousFunction_le μ (g i) f).trans_lt ?_
-    calc dist (g i) f * (μ.mass : ℝ) < ε / (3 * M) * M :=
-          mul_lt_mul_of_le_of_lt_of_nonneg_of_pos hgf.le hμM μ.mass.coe_nonneg (by positivity)
+    refine (μ.lipschitzWith_integral.dist_le_mul (g i) f).trans_lt ?_
+    calc (μ.mass : ℝ) * dist (g i) f < M * (ε / (3 * M)) :=
+          mul_lt_mul_of_lt_of_le_of_nonneg_of_pos hμM hgf.le μ.mass.coe_nonneg (by positivity)
       _ = ε / 3 := by field_simp
   have h3 : dist (∫ x, f x ∂(μs n : Measure α)) (∫ x, g i x ∂(μs n : Measure α)) < ε / 3 := by
-    refine (dist_integral_boundedContinuousFunction_le (μs n) f (g i)).trans_lt ?_
+    refine ((μs n).lipschitzWith_integral.dist_le_mul f (g i)).trans_lt ?_
     rw [dist_comm]
-    calc dist (g i) f * ((μs n).mass : ℝ) < ε / (3 * M) * M :=
-          mul_lt_mul_of_le_of_lt_of_nonneg_of_pos hgf.le hmn (μs n).mass.coe_nonneg (by positivity)
+    calc ((μs n).mass : ℝ) * dist (g i) f < M * (ε / (3 * M)) :=
+          mul_lt_mul_of_lt_of_le_of_nonneg_of_pos hmn hgf.le (μs n).mass.coe_nonneg (by positivity)
       _ = ε / 3 := by field_simp
   calc dist (∫ x, g i x ∂(μ : Measure α)) (∫ x, g i x ∂(μs n : Measure α))
       ≤ dist (∫ x, g i x ∂(μ : Measure α)) (∫ x, f x ∂(μ : Measure α)) +
@@ -136,7 +118,7 @@ theorem FiniteMeasure.tendstoUniformly_integral_of_equicontinuous [CompactSpace 
     TendstoUniformly (fun n i ↦ ∫ x, g i x ∂(μs n : Measure α))
       (fun i ↦ ∫ x, g i x ∂(μ : Measure α)) l :=
   FiniteMeasure.tendstoUniformly_integral_of_totallyBounded hμ
-    (totallyBounded_range_mkOfCompact_of_equicontinuous hequi hg)
+    (ArzelaAscoli.totallyBounded_range_mkOfCompact_of_equicontinuous hequi hg)
 
 /-- **Uniform weak convergence over a totally bounded family.** If probability measures `μs n`
 converge weakly to `μ`, then for every family `g : ι → α →ᵇ 𝕜` with totally bounded range in

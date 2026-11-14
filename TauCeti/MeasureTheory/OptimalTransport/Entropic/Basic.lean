@@ -519,6 +519,12 @@ transported along `Prod.swap`. -/
 theorem entropicTransportCost_comp_swap [IsFiniteMeasure μ] (c : X × Y → ℝ≥0∞) (ε : ℝ≥0)
     (ν : Measure Y) :
     entropicTransportCost (c ∘ Prod.swap) ε ν μ = entropicTransportCost c ε μ ν := by
+  have hswap₁ : MeasurableEmbedding (Prod.swap : X × Y → Y × X) :=
+    MeasurableEmbedding.of_measurable_inverse measurable_swap
+      (by rw [Prod.swap_surjective.range_eq]; exact .univ) measurable_swap Prod.swap_leftInverse
+  have hswap₂ : MeasurableEmbedding (Prod.swap : Y × X → X × Y) :=
+    MeasurableEmbedding.of_measurable_inverse measurable_swap
+      (by rw [Prod.swap_surjective.range_eq]; exact .univ) measurable_swap Prod.swap_leftInverse
   by_cases hex : ∃ π, IsCoupling π μ ν
   · obtain ⟨π₀, hπ₀⟩ := hex
     have := hπ₀.isFiniteMeasure
@@ -530,9 +536,8 @@ theorem entropicTransportCost_comp_swap [IsFiniteMeasure μ] (c : X × Y → ℝ
           ≤ ∫⁻ w, c w.swap ∂π.map Prod.swap + ε * klDiv (π.map Prod.swap) (ν.prod μ) :=
             entropicTransportCost_le hπ.swap _ ε
         _ ≤ ∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν) := by
-            rw [show ∫⁻ w, c w.swap ∂π.map Prod.swap = ∫⁻ z, c z ∂π from
-              lintegral_map_equiv (μ := π) (c ∘ Prod.swap) MeasurableEquiv.prodComm,
-              ← Measure.prod_swap (μ := μ) (ν := ν)]
+            rw [hswap₁.lintegral_map, ← Measure.prod_swap (μ := μ) (ν := ν)]
+            simp only [Prod.swap_swap]
             gcongr
             exact klDiv_map_le _ _ measurable_swap
     · have := hσ.isFiniteMeasure
@@ -540,9 +545,7 @@ theorem entropicTransportCost_comp_swap [IsFiniteMeasure μ] (c : X × Y → ℝ
           ≤ ∫⁻ z, c z ∂σ.map Prod.swap + ε * klDiv (σ.map Prod.swap) (μ.prod ν) :=
             entropicTransportCost_le hσ.swap _ ε
         _ ≤ ∫⁻ w, c w.swap ∂σ + ε * klDiv σ (ν.prod μ) := by
-            rw [show ∫⁻ z, c z ∂σ.map Prod.swap = ∫⁻ w, c w.swap ∂σ from
-              lintegral_map_equiv (μ := σ) c MeasurableEquiv.prodComm,
-              ← Measure.prod_swap (μ := ν) (ν := μ)]
+            rw [hswap₂.lintegral_map, ← Measure.prod_swap (μ := ν) (ν := μ)]
             gcongr
             exact klDiv_map_le _ _ measurable_swap
   · have h₁ : ∀ π, ¬ IsCoupling π μ ν := fun π hπ ↦ hex ⟨π, hπ⟩
@@ -582,8 +585,8 @@ theorem entropicTransportCost_dirac_right_eq_transportCost [IsProbabilityMeasure
     (c : X × Y → ℝ≥0∞) (ε : ℝ≥0) (y : Y) :
     entropicTransportCost c ε μ (Measure.dirac y) = transportCost c μ (Measure.dirac y) := by
   rw [← entropicTransportCost_comp_swap c ε (Measure.dirac y),
-    entropicTransportCost_dirac_left_eq_transportCost, ← transportCost_comp_swap μ]
-  rfl
+    entropicTransportCost_dirac_left_eq_transportCost, Function.comp_def,
+    transportCost_comp_swap μ]
 
 /-- For a measurable cost, the regularised transport cost from a probability measure to a Dirac
 mass is the marginal integral of the cost. -/

@@ -42,6 +42,8 @@ convex set of measures a Cauchy sequence.
 * I. Csiszár, *I-divergence geometry of probability distributions and minimization problems*,
   Ann. Probability 3 (1975), 146–158. The quantitative midpoint estimate plays the role of the
   parallelogram identity in the proof of his Theorem 2.1.
+* T. M. Cover and J. A. Thomas, *Elements of Information Theory*, 2nd ed., Wiley, 2006,
+  Theorem 2.7.2, for the log-sum inequality and joint convexity of relative entropy.
 -/
 
 public section

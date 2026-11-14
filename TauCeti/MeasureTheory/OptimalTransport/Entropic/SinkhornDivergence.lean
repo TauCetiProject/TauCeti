@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Continuity
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Symmetric
 import Mathlib.MeasureTheory.Measure.Prokhorov
 import TauCeti.Analysis.InnerProductSpace.CompleteSquare
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Sinkhorn divergences
@@ -59,7 +60,7 @@ is the intended value when these are finite, as they are for the bounded costs c
 
 * `TauCeti.sinkhornDivergence_self`, `TauCeti.sinkhornDivergence_const`,
   `TauCeti.sinkhornDivergence_comp_swap`, `TauCeti.sinkhornDivergence_comm`, and
-  `TauCeti.sinkhornDivergence_dirac_dirac`: diagonal vanishing, invariance under constant costs,
+  `TauCeti.sinkhornDivergence_dirac_dirac`: diagonal vanishing, vanishing for constant costs,
   marginal symmetry, and evaluation on Dirac masses.
 * `TauCeti.sinkhornDivergence_nonneg` and `TauCeti.sinkhornDivergence_eq_zero_iff`: nonnegativity
   and definiteness under a positive-definite (and universal) Gibbs kernel.
@@ -311,6 +312,166 @@ theorem sinkhornDivergence_comm_of_posSemidef [IsFiniteMeasure μ] [IsFiniteMeas
     sinkhornDivergence c ε μ ν = sinkhornDivergence c ε ν μ :=
   sinkhornDivergence_comm (comp_swap_eq_of_posSemidef hcB hε hk) ε
 
+omit [MeasurableSpace X] in
+/-- The logarithmic density-weighted mean potential
+`ε * log ((u x * exp (p₀ x / ε) + v x * exp (p₁ x / ε)) / (u x + v x))` interpolating two
+potentials `p₀` and `p₁` with nonnegative weights `u` and `v`. -/
+private def logMeanPotential (ε : ℝ≥0) (u v p₀ p₁ : X → ℝ) (x : X) : ℝ :=
+  (ε : ℝ) * Real.log ((u x * Real.exp (p₀ x / ε) + v x * Real.exp (p₁ x / ε)) / (u x + v x))
+
+omit [MeasurableSpace X] in
+private theorem add_mul_exp_pos {u v a b : ℝ} (hu : 0 ≤ u) (hv : 0 ≤ v) (huv : 0 < u + v) :
+    0 < u * Real.exp a + v * Real.exp b := by
+  rcases eq_or_lt_of_le hu with rfl | hu'
+  · exact add_pos_of_nonneg_of_pos (by positivity) (mul_pos (by simpa using huv) (Real.exp_pos b))
+  · exact add_pos_of_pos_of_nonneg (mul_pos hu' (Real.exp_pos a)) (by positivity)
+
+private theorem measurable_logMeanPotential {u v p₀ p₁ : X → ℝ} (hu : Measurable u)
+    (hv : Measurable v) (hp₀ : Measurable p₀) (hp₁ : Measurable p₁) :
+    Measurable (logMeanPotential ε u v p₀ p₁) := by
+  unfold logMeanPotential
+  fun_prop
+
+omit [MeasurableSpace X] in
+private theorem abs_logMeanPotential_le {u v p₀ p₁ : X → ℝ} {C : ℝ} (hε : ε ≠ 0) (hC : 0 ≤ C)
+    (hu : ∀ x, 0 ≤ u x) (hv : ∀ x, 0 ≤ v x) (hp₀ : ∀ x, |p₀ x| ≤ C) (hp₁ : ∀ x, |p₁ x| ≤ C)
+    (x : X) :
+    |logMeanPotential ε u v p₀ p₁ x| ≤ C := by
+  have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
+  simp only [logMeanPotential]
+  rcases eq_or_lt_of_le (add_nonneg (hu x) (hv x)) with huv0 | huv_pos
+  · rw [← huv0, div_zero, Real.log_zero, mul_zero, abs_zero]
+    exact hC
+  · set num := u x * Real.exp (p₀ x / ε) + v x * Real.exp (p₁ x / ε)
+    have hnum_pos : 0 < num := add_mul_exp_pos (hu x) (hv x) huv_pos
+    have hle_u : num / (u x + v x) ≤ Real.exp (C / ε) := by
+      rw [div_le_iff₀ huv_pos]
+      have h0 : Real.exp (p₀ x / ε) ≤ Real.exp (C / ε) :=
+        Real.exp_le_exp.2 (div_le_div_of_nonneg_right (le_of_abs_le (hp₀ x)) hεpos.le)
+      have h1 : Real.exp (p₁ x / ε) ≤ Real.exp (C / ε) :=
+        Real.exp_le_exp.2 (div_le_div_of_nonneg_right (le_of_abs_le (hp₁ x)) hεpos.le)
+      calc num ≤ u x * Real.exp (C / ε) + v x * Real.exp (C / ε) :=
+            add_le_add (mul_le_mul_of_nonneg_left h0 (hu x)) (mul_le_mul_of_nonneg_left h1 (hv x))
+        _ = Real.exp (C / ε) * (u x + v x) := by ring
+    have hle_l : Real.exp (-C / ε) ≤ num / (u x + v x) := by
+      rw [le_div_iff₀ huv_pos]
+      have h0 : Real.exp (-C / ε) ≤ Real.exp (p₀ x / ε) :=
+        Real.exp_le_exp.2 (div_le_div_of_nonneg_right (neg_le_of_abs_le (hp₀ x)) hεpos.le)
+      have h1 : Real.exp (-C / ε) ≤ Real.exp (p₁ x / ε) :=
+        Real.exp_le_exp.2 (div_le_div_of_nonneg_right (neg_le_of_abs_le (hp₁ x)) hεpos.le)
+      calc Real.exp (-C / ε) * (u x + v x) = u x * Real.exp (-C / ε) + v x * Real.exp (-C / ε) :=
+            by ring
+        _ ≤ num := add_le_add (mul_le_mul_of_nonneg_left h0 (hu x))
+            (mul_le_mul_of_nonneg_left h1 (hv x))
+    have hlog_u := (Real.log_le_log (div_pos hnum_pos huv_pos) hle_u).trans_eq (Real.log_exp _)
+    have hlog_l := (Real.log_exp _).symm.trans_le (Real.log_le_log (Real.exp_pos _) hle_l)
+    rw [abs_le]
+    constructor
+    · have := mul_le_mul_of_nonneg_left hlog_l hεpos.le
+      rw [neg_div, mul_neg, mul_div_cancel₀ _ hεpos.ne'] at this
+      linarith
+    · have := mul_le_mul_of_nonneg_left hlog_u hεpos.le
+      rw [mul_div_cancel₀ _ hεpos.ne'] at this
+      linarith
+
+omit [MeasurableSpace X] in
+private theorem add_mul_exp_logMeanPotential {u v p₀ p₁ : X → ℝ} (hε : ε ≠ 0)
+    (hu : ∀ x, 0 ≤ u x) (hv : ∀ x, 0 ≤ v x) (x : X) :
+    (u x + v x) * Real.exp (logMeanPotential ε u v p₀ p₁ x / ε) =
+      u x * Real.exp (p₀ x / ε) + v x * Real.exp (p₁ x / ε) := by
+  have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
+  rcases eq_or_lt_of_le (add_nonneg (hu x) (hv x)) with huv0 | huv_pos
+  · have hu0 : u x = 0 := by linarith [hu x, hv x]
+    have hv0 : v x = 0 := by linarith [hu x, hv x]
+    simp [hu0, hv0]
+  · have hnum_pos := add_mul_exp_pos (a := p₀ x / ε) (b := p₁ x / ε) (hu x) (hv x) huv_pos
+    have hpdiv : logMeanPotential ε u v p₀ p₁ x / ε =
+        Real.log ((u x * Real.exp (p₀ x / ε) + v x * Real.exp (p₁ x / ε)) / (u x + v x)) :=
+      mul_div_cancel_left₀ _ hεpos.ne'
+    rw [hpdiv, Real.exp_log (div_pos hnum_pos huv_pos), mul_div_cancel₀ _ huv_pos.ne']
+
+omit [MeasurableSpace X] in
+private theorem mul_add_mul_le_logMeanPotential {u v p₀ p₁ : X → ℝ} (hε : ε ≠ 0)
+    (hu : ∀ x, 0 ≤ u x) (hv : ∀ x, 0 ≤ v x) (x : X) :
+    u x * p₀ x + v x * p₁ x ≤ (u x + v x) * logMeanPotential ε u v p₀ p₁ x := by
+  have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
+  set px := logMeanPotential ε u v p₀ p₁ x
+  have hexp_id : u x * Real.exp ((p₀ x - px) / ε) + v x * Real.exp ((p₁ x - px) / ε) =
+      u x + v x := by
+    have hmul := congrArg (· * Real.exp (-(px / ε)))
+      (add_mul_exp_logMeanPotential (p₀ := p₀) (p₁ := p₁) hε hu hv x).symm
+    have hrw (r : ℝ) : Real.exp (r / ε) * Real.exp (-(px / ε)) = Real.exp ((r - px) / ε) := by
+      rw [← Real.exp_add]; congr 1; ring
+    calc u x * Real.exp ((p₀ x - px) / ε) + v x * Real.exp ((p₁ x - px) / ε)
+        = (u x * Real.exp (p₀ x / ε) + v x * Real.exp (p₁ x / ε)) * Real.exp (-(px / ε)) := by
+          rw [← hrw (p₀ x), ← hrw (p₁ x)]; ring
+      _ = (u x + v x) * (Real.exp (px / ε) * Real.exp (-(px / ε))) := by rw [hmul, mul_assoc]
+      _ = u x + v x := by rw [← Real.exp_add, add_neg_cancel, Real.exp_zero, mul_one]
+  have hlin₀ := mul_le_mul_of_nonneg_left (Real.add_one_le_exp ((p₀ x - px) / ε)) (hu x)
+  have hlin₁ := mul_le_mul_of_nonneg_left (Real.add_one_le_exp ((p₁ x - px) / ε)) (hv x)
+  have : u x * ((p₀ x - px) / ε + 1) + v x * ((p₁ x - px) / ε + 1) ≤ u x + v x :=
+    (add_le_add hlin₀ hlin₁).trans_eq hexp_id
+  have hdiv_nonpos : (u x * (p₀ x - px) + v x * (p₁ x - px)) / ε ≤ 0 := by
+    have : u x * ((p₀ x - px) / ε + 1) + v x * ((p₁ x - px) / ε + 1) =
+        (u x + v x) + (u x * (p₀ x - px) + v x * (p₁ x - px)) / ε := by ring
+    linarith
+  have := mul_nonpos_of_nonpos_of_nonneg hdiv_nonpos hεpos.le
+  rw [div_mul_cancel₀ _ hεpos.ne'] at this
+  linarith
+
+private theorem tilt_eq_withDensity_rnDeriv {ν' lam : Measure X} [IsFiniteMeasure ν']
+    [SigmaFinite lam] (hν' : ν' ≪ lam) {q : X → ℝ} (hq : Measurable q) :
+    tilt ν' ε q = lam.withDensity fun x ↦
+      ENNReal.ofReal ((ν'.rnDeriv lam x).toReal * Real.exp (q x / ε)) := by
+  conv_lhs =>
+    rw [tilt, ← Measure.withDensity_rnDeriv_eq ν' lam hν',
+      ← withDensity_mul lam (Measure.measurable_rnDeriv ν' lam) (measurable_tiltDensity hq)]
+  refine withDensity_congr_ae ?_
+  filter_upwards [Measure.rnDeriv_lt_top ν' lam] with x hx
+  conv_lhs =>
+    rw [Pi.mul_apply, ← ENNReal.ofReal_toReal hx.ne,
+      ← ENNReal.ofReal_mul ENNReal.toReal_nonneg]
+
+/-- Tilting `a • μ₀ + b • μ₁` by the Radon–Nikodym-weighted `logMeanPotential` interpolates the
+tilted measures `a • tilt μ₀ ε p₀ + b • tilt μ₁ ε p₁` linearly. -/
+private theorem tilt_smul_add_smul_logMeanPotential {μ₀ μ₁ : Measure X} [IsFiniteMeasure μ₀]
+    [IsFiniteMeasure μ₁] (a b : ℝ≥0) {p₀ p₁ : X → ℝ} (hε : ε ≠ 0) (hp₀ : Measurable p₀)
+    (hp₁ : Measurable p₁) :
+    tilt (a • μ₀ + b • μ₁) ε
+      (logMeanPotential ε (fun x ↦ (a : ℝ) * (μ₀.rnDeriv (μ₀ + μ₁) x).toReal)
+        (fun x ↦ (b : ℝ) * (μ₁.rnDeriv (μ₀ + μ₁) x).toReal) p₀ p₁) =
+      (a : ℝ≥0∞) • tilt μ₀ ε p₀ + (b : ℝ≥0∞) • tilt μ₁ ε p₁ := by
+  set lam := μ₀ + μ₁
+  have h₀lam : μ₀ ≪ lam := Measure.AbsolutelyContinuous.rfl.add_right μ₁
+  have h₁lam : μ₁ ≪ lam := Measure.AbsolutelyContinuous.rfl.add_right' μ₀
+  let u : X → ℝ := fun x ↦ (a : ℝ) * (μ₀.rnDeriv lam x).toReal
+  let v : X → ℝ := fun x ↦ (b : ℝ) * (μ₁.rnDeriv lam x).toReal
+  have hum : Measurable u := measurable_const.mul (Measure.measurable_rnDeriv _ _).ennreal_toReal
+  have hvm : Measurable v := measurable_const.mul (Measure.measurable_rnDeriv _ _).ennreal_toReal
+  have hu : ∀ x, 0 ≤ u x := fun _ ↦ mul_nonneg a.coe_nonneg ENNReal.toReal_nonneg
+  have hv : ∀ x, 0 ≤ v x := fun _ ↦ mul_nonneg b.coe_nonneg ENNReal.toReal_nonneg
+  set p := logMeanPotential ε u v p₀ p₁
+  have hpm : Measurable p := measurable_logMeanPotential hum hvm hp₀ hp₁
+  have hlhs : tilt (a • μ₀ + b • μ₁) ε p = (a : ℝ≥0∞) • tilt μ₀ ε p + (b : ℝ≥0∞) • tilt μ₁ ε p := by
+    simp only [tilt, withDensity_add_measure, ← Measure.coe_nnreal_smul, withDensity_smul_measure]
+  rw [hlhs, tilt_eq_withDensity_rnDeriv h₀lam hpm, tilt_eq_withDensity_rnDeriv h₁lam hpm,
+    tilt_eq_withDensity_rnDeriv h₀lam hp₀, tilt_eq_withDensity_rnDeriv h₁lam hp₁,
+    ← withDensity_smul _ (by fun_prop), ← withDensity_smul _ (by fun_prop),
+    ← withDensity_smul _ (by fun_prop), ← withDensity_smul _ (by fun_prop),
+    ← withDensity_add_left (by fun_prop), ← withDensity_add_left (by fun_prop)]
+  congr 1
+  funext x
+  simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, ← ENNReal.ofReal_coe_nnreal]
+  have : 0 ≤ (μ₀.rnDeriv lam x).toReal := ENNReal.toReal_nonneg
+  have : 0 ≤ (μ₁.rnDeriv lam x).toReal := ENNReal.toReal_nonneg
+  rw [← ENNReal.ofReal_mul a.coe_nonneg, ← ENNReal.ofReal_mul b.coe_nonneg,
+    ← ENNReal.ofReal_mul a.coe_nonneg, ← ENNReal.ofReal_mul b.coe_nonneg,
+    ← ENNReal.ofReal_add (by positivity) (by positivity),
+    ← ENNReal.ofReal_add (by positivity) (by positivity)]
+  congr 1
+  simpa only [u, v, add_mul, mul_assoc] using
+    add_mul_exp_logMeanPotential (p₀ := p₀) (p₁ := p₁) hε hu hv x
+
 end Basic
 
 /-! ### Nonnegativity, definiteness, convexity, and weak-convergence metrization -/
@@ -405,7 +566,8 @@ private theorem exists_sq_norm_sinkhornNegentropy_smul_add_smul_le [OpensMeasura
             ‖hk.kernelMeanEmbedding (tilt μ₀ ε p₀) -
               hk.kernelMeanEmbedding (tilt μ₁ ε p₁)‖ ^ 2 ≤
         a * sinkhornNegentropy c ε μ₀ + b * sinkhornNegentropy c ε μ₁ := by
-  have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
+  -- Step 1: Extract bounded self-potentials for `μ₀` and `μ₁` and construct the logarithmic
+  -- Radon–Nikodym-weighted mean potential `p` for `μm := a • μ₀ + b • μ₁`.
   have hab' : (a : ℝ≥0∞) + b = 1 := by exact_mod_cast hab
   have habR : (a : ℝ) + b = 1 := by exact_mod_cast hab
   have hcs := comp_swap_eq_of_posSemidef hcB hε hk
@@ -418,124 +580,32 @@ private theorem exists_sq_norm_sinkhornNegentropy_smul_add_smul_le [OpensMeasura
   set lam := μ₀ + μ₁
   have h₀lam : μ₀ ≪ lam := Measure.AbsolutelyContinuous.rfl.add_right μ₁
   have h₁lam : μ₁ ≪ lam := Measure.AbsolutelyContinuous.rfl.add_right' μ₀
-  let w₀ : X → ℝ := fun x ↦ (μ₀.rnDeriv lam x).toReal
-  let w₁ : X → ℝ := fun x ↦ (μ₁.rnDeriv lam x).toReal
-  have hw₀m : Measurable w₀ := (Measure.measurable_rnDeriv _ _).ennreal_toReal
-  have hw₁m : Measurable w₁ := (Measure.measurable_rnDeriv _ _).ennreal_toReal
+  let u : X → ℝ := fun x ↦ (a : ℝ) * (μ₀.rnDeriv lam x).toReal
+  let v : X → ℝ := fun x ↦ (b : ℝ) * (μ₁.rnDeriv lam x).toReal
+  have hum : Measurable u := measurable_const.mul (Measure.measurable_rnDeriv _ _).ennreal_toReal
+  have hvm : Measurable v := measurable_const.mul (Measure.measurable_rnDeriv _ _).ennreal_toReal
+  have hu : ∀ x, 0 ≤ u x := fun _ ↦ mul_nonneg a.coe_nonneg ENNReal.toReal_nonneg
+  have hv : ∀ x, 0 ≤ v x := fun _ ↦ mul_nonneg b.coe_nonneg ENNReal.toReal_nonneg
   let C : ℝ := max (max C₀ C₁) 0
   have hC₀ : ∀ x, |p₀ x| ≤ C := fun x ↦ (hp₀C x).trans ((le_max_left _ _).trans (le_max_left _ _))
   have hC₁ : ∀ x, |p₁ x| ≤ C := fun x ↦ (hp₁C x).trans ((le_max_right _ _).trans (le_max_left _ _))
   have hCnonneg : 0 ≤ C := le_max_right _ _
-  let p : X → ℝ := fun x ↦ (ε : ℝ) * Real.log
-    (((a : ℝ) * w₀ x * Real.exp (p₀ x / ε) + (b : ℝ) * w₁ x * Real.exp (p₁ x / ε)) /
-      ((a : ℝ) * w₀ x + (b : ℝ) * w₁ x))
-  have hpm : Measurable p := by fun_prop
-  have hpC : ∀ x, |p x| ≤ C := fun x ↦ by
-    set u := (a : ℝ) * w₀ x
-    set v := (b : ℝ) * w₁ x
-    have hu : 0 ≤ u := mul_nonneg a.coe_nonneg ENNReal.toReal_nonneg
-    have hv : 0 ≤ v := mul_nonneg b.coe_nonneg ENNReal.toReal_nonneg
-    change |(ε : ℝ) * Real.log ((u * Real.exp (p₀ x / ε) + v * Real.exp (p₁ x / ε)) / (u + v))| ≤ C
-    rcases eq_or_lt_of_le (add_nonneg hu hv) with huv0 | huv_pos
-    · rw [← huv0, div_zero, Real.log_zero, mul_zero, abs_zero]
-      exact hCnonneg
-    · set num := u * Real.exp (p₀ x / ε) + v * Real.exp (p₁ x / ε)
-      have hnum_pos : 0 < num := by
-        have he₀ : 0 < Real.exp (p₀ x / ε) := Real.exp_pos _
-        have he₁ : 0 < Real.exp (p₁ x / ε) := Real.exp_pos _
-        rcases eq_or_lt_of_le hu with hu0 | hu'
-        · have hv' : 0 < v := by linarith
-          exact add_pos_of_nonneg_of_pos (by positivity) (mul_pos hv' he₁)
-        · exact add_pos_of_pos_of_nonneg (mul_pos hu' he₀) (by positivity)
-      have hle_u : num / (u + v) ≤ Real.exp (C / ε) := by
-        rw [div_le_iff₀ huv_pos]
-        have h0 : Real.exp (p₀ x / ε) ≤ Real.exp (C / ε) :=
-          Real.exp_le_exp.2 (div_le_div_of_nonneg_right (le_of_abs_le (hC₀ x)) hεpos.le)
-        have h1 : Real.exp (p₁ x / ε) ≤ Real.exp (C / ε) :=
-          Real.exp_le_exp.2 (div_le_div_of_nonneg_right (le_of_abs_le (hC₁ x)) hεpos.le)
-        calc num ≤ u * Real.exp (C / ε) + v * Real.exp (C / ε) :=
-              add_le_add (mul_le_mul_of_nonneg_left h0 hu) (mul_le_mul_of_nonneg_left h1 hv)
-          _ = Real.exp (C / ε) * (u + v) := by ring
-      have hle_l : Real.exp (-C / ε) ≤ num / (u + v) := by
-        rw [le_div_iff₀ huv_pos]
-        have h0 : Real.exp (-C / ε) ≤ Real.exp (p₀ x / ε) :=
-          Real.exp_le_exp.2 (div_le_div_of_nonneg_right (neg_le_of_abs_le (hC₀ x)) hεpos.le)
-        have h1 : Real.exp (-C / ε) ≤ Real.exp (p₁ x / ε) :=
-          Real.exp_le_exp.2 (div_le_div_of_nonneg_right (neg_le_of_abs_le (hC₁ x)) hεpos.le)
-        calc Real.exp (-C / ε) * (u + v) = u * Real.exp (-C / ε) + v * Real.exp (-C / ε) := by ring
-          _ ≤ num := add_le_add (mul_le_mul_of_nonneg_left h0 hu) (mul_le_mul_of_nonneg_left h1 hv)
-      have hlog_u := (Real.log_le_log (div_pos hnum_pos huv_pos) hle_u).trans_eq (Real.log_exp _)
-      have hlog_l := (Real.log_exp _).symm.trans_le (Real.log_le_log (Real.exp_pos _) hle_l)
-      rw [abs_le]
-      constructor
-      · have := mul_le_mul_of_nonneg_left hlog_l hεpos.le
-        rw [neg_div, mul_neg, mul_div_cancel₀ _ hεpos.ne'] at this
-        linarith
-      · have := mul_le_mul_of_nonneg_left hlog_u hεpos.le
-        rw [mul_div_cancel₀ _ hεpos.ne'] at this
-        linarith
-  have hpoint (x : X) :
-      ((a : ℝ) * w₀ x + (b : ℝ) * w₁ x) * Real.exp (p x / ε) =
-        (a : ℝ) * w₀ x * Real.exp (p₀ x / ε) + (b : ℝ) * w₁ x * Real.exp (p₁ x / ε) := by
-    set u := (a : ℝ) * w₀ x
-    set v := (b : ℝ) * w₁ x
-    have hu : 0 ≤ u := mul_nonneg a.coe_nonneg ENNReal.toReal_nonneg
-    have hv : 0 ≤ v := mul_nonneg b.coe_nonneg ENNReal.toReal_nonneg
-    rcases eq_or_lt_of_le (add_nonneg hu hv) with huv0 | huv_pos
-    · have hu0 : u = 0 := by linarith
-      have hv0 : v = 0 := by linarith
-      simp [hu0, hv0]
-    · set num := u * Real.exp (p₀ x / ε) + v * Real.exp (p₁ x / ε)
-      have hnum_pos : 0 < num := by
-        have he₀ : 0 < Real.exp (p₀ x / ε) := Real.exp_pos _
-        have he₁ : 0 < Real.exp (p₁ x / ε) := Real.exp_pos _
-        rcases eq_or_lt_of_le hu with hu0 | hu'
-        · have hv' : 0 < v := by linarith
-          exact add_pos_of_nonneg_of_pos (by positivity) (mul_pos hv' he₁)
-        · exact add_pos_of_pos_of_nonneg (mul_pos hu' he₀) (by positivity)
-      have hpdiv : p x / ε = Real.log (num / (u + v)) :=
-        mul_div_cancel_left₀ _ hεpos.ne'
-      rw [hpdiv, Real.exp_log (div_pos hnum_pos huv_pos), mul_div_cancel₀ _ huv_pos.ne']
-  have htilt_rn (ν' : Measure X) [IsFiniteMeasure ν'] (hν' : ν' ≪ lam) {q : X → ℝ}
-      (hq : Measurable q) :
-      tilt ν' ε q = lam.withDensity fun x ↦
-        ENNReal.ofReal ((ν'.rnDeriv lam x).toReal * Real.exp (q x / ε)) := by
-    conv_lhs =>
-      rw [tilt, ← Measure.withDensity_rnDeriv_eq ν' lam hν',
-        ← withDensity_mul lam (Measure.measurable_rnDeriv ν' lam) (measurable_tiltDensity hq)]
-    refine withDensity_congr_ae ?_
-    filter_upwards [Measure.rnDeriv_lt_top ν' lam] with x hx
-    conv_lhs =>
-      rw [Pi.mul_apply, ← ENNReal.ofReal_toReal hx.ne,
-        ← ENNReal.ofReal_mul ENNReal.toReal_nonneg]
-  have htilt_comb : tilt μm ε p = (a : ℝ≥0∞) • tilt μ₀ ε p₀ + (b : ℝ≥0∞) • tilt μ₁ ε p₁ := by
-    have hlhs : tilt μm ε p = (a : ℝ≥0∞) • tilt μ₀ ε p + (b : ℝ≥0∞) • tilt μ₁ ε p := by
-      simp only [μm, tilt, withDensity_add_measure, ← Measure.coe_nnreal_smul,
-        withDensity_smul_measure]
-    rw [hlhs, htilt_rn μ₀ h₀lam hpm, htilt_rn μ₁ h₁lam hpm,
-      htilt_rn μ₀ h₀lam hp₀, htilt_rn μ₁ h₁lam hp₁,
-      ← withDensity_smul _ (by fun_prop), ← withDensity_smul _ (by fun_prop),
-      ← withDensity_smul _ (by fun_prop), ← withDensity_smul _ (by fun_prop),
-      ← withDensity_add_left (by fun_prop), ← withDensity_add_left (by fun_prop)]
-    congr 1
-    funext x
-    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, ← ENNReal.ofReal_coe_nnreal]
-    have : 0 ≤ w₀ x := ENNReal.toReal_nonneg
-    have : 0 ≤ w₁ x := ENNReal.toReal_nonneg
-    rw [← ENNReal.ofReal_mul a.coe_nonneg, ← ENNReal.ofReal_mul b.coe_nonneg,
-      ← ENNReal.ofReal_mul a.coe_nonneg, ← ENNReal.ofReal_mul b.coe_nonneg,
-      ← ENNReal.ofReal_add (by positivity) (by positivity),
-      ← ENNReal.ofReal_add (by positivity) (by positivity)]
-    congr 1
-    simpa only [w₀, w₁, add_mul, mul_assoc] using hpoint x
+  let p : X → ℝ := logMeanPotential ε u v p₀ p₁
+  have hpm : Measurable p := measurable_logMeanPotential hum hvm hp₀ hp₁
+  have hpC : ∀ x, |p x| ≤ C := abs_logMeanPotential_le hε hCnonneg hu hv hC₀ hC₁
+  have htilt_comb : tilt μm ε p = (a : ℝ≥0∞) • tilt μ₀ ε p₀ + (b : ℝ≥0∞) • tilt μ₁ ε p₁ :=
+    tilt_smul_add_smul_logMeanPotential a b hε hp₀ hp₁
+  -- Step 2: Bound the linear Kantorovich functional `∫ p dμm` from below by the convex combination
+  -- of `∫ p₀ dμ₀` and `∫ p₁ dμ₁` via the pointwise inequality `mul_add_mul_le_logMeanPotential`.
   have hint_le : (a : ℝ) * ∫ x, p₀ x ∂μ₀ + (b : ℝ) * ∫ x, p₁ x ∂μ₁ ≤ ∫ x, p x ∂μm := by
     have hp_μ₀ : Integrable p μ₀ := .of_bound hpm.aestronglyMeasurable C (ae_of_all _ hpC)
     have hp_μ₁ : Integrable p μ₁ := .of_bound hpm.aestronglyMeasurable C (ae_of_all _ hpC)
     have hp₀_μ₀ : Integrable p₀ μ₀ := .of_bound hp₀.aestronglyMeasurable C₀ (ae_of_all _ hp₀C)
     have hp₁_μ₁ : Integrable p₁ μ₁ := .of_bound hp₁.aestronglyMeasurable C₁ (ae_of_all _ hp₁C)
+    have hμm_eq : μm = (a : ℝ≥0∞) • μ₀ + (b : ℝ≥0∞) • μ₁ := by
+      simp [μm, Measure.coe_nnreal_smul]
     have hrhs : ∫ x, p x ∂μm = (a : ℝ) * ∫ x, p x ∂μ₀ + (b : ℝ) * ∫ x, p x ∂μ₁ := by
-      rw [show μm = (a : ℝ≥0∞) • μ₀ + (b : ℝ≥0∞) • μ₁ by
-        simp [μm, Measure.coe_nnreal_smul],
+      rw [hμm_eq,
         integral_add_measure (hp_μ₀.smul_measure ENNReal.coe_ne_top)
           (hp_μ₁.smul_measure ENNReal.coe_ne_top),
         integral_smul_measure, integral_smul_measure, ENNReal.coe_toReal, ENNReal.coe_toReal,
@@ -555,39 +625,10 @@ private theorem exists_sq_norm_sinkhornNegentropy_smul_add_smul_le [OpensMeasura
       ((((integrable_toReal_rnDeriv_mul_iff h₀lam).2 hp_μ₀).const_mul _).add
         (((integrable_toReal_rnDeriv_mul_iff h₁lam).2 hp_μ₁).const_mul _))
       fun x ↦ ?_
-    dsimp only
-    set u := (a : ℝ) * w₀ x
-    set v := (b : ℝ) * w₁ x
-    have hu : 0 ≤ u := mul_nonneg a.coe_nonneg ENNReal.toReal_nonneg
-    have hv : 0 ≤ v := mul_nonneg b.coe_nonneg ENNReal.toReal_nonneg
-    have hpt_x : u * p₀ x + v * p₁ x ≤ u * p x + v * p x := by
-      have hexp_id : u * Real.exp ((p₀ x - p x) / ε) + v * Real.exp ((p₁ x - p x) / ε) =
-          u + v := by
-        have hmul := congrArg (· * Real.exp (-(p x / ε))) (hpoint x).symm
-        have hrw (r : ℝ) : Real.exp (r / ε) * Real.exp (-(p x / ε)) =
-            Real.exp ((r - p x) / ε) := by
-          rw [← Real.exp_add]
-          congr 1
-          ring
-        calc u * Real.exp ((p₀ x - p x) / ε) + v * Real.exp ((p₁ x - p x) / ε)
-            = (u * Real.exp (p₀ x / ε) + v * Real.exp (p₁ x / ε)) * Real.exp (-(p x / ε)) := by
-              rw [← hrw (p₀ x), ← hrw (p₁ x)]
-              ring
-          _ = (u + v) * (Real.exp (p x / ε) * Real.exp (-(p x / ε))) := by
-              rw [hmul, mul_assoc]
-          _ = u + v := by rw [← Real.exp_add, add_neg_cancel, Real.exp_zero, mul_one]
-      have hlin₀ := mul_le_mul_of_nonneg_left (Real.add_one_le_exp ((p₀ x - p x) / ε)) hu
-      have hlin₁ := mul_le_mul_of_nonneg_left (Real.add_one_le_exp ((p₁ x - p x) / ε)) hv
-      have : u * ((p₀ x - p x) / ε + 1) + v * ((p₁ x - p x) / ε + 1) ≤ u + v :=
-        (add_le_add hlin₀ hlin₁).trans_eq hexp_id
-      have hdiv_nonpos : (u * (p₀ x - p x) + v * (p₁ x - p x)) / ε ≤ 0 := by
-        have : u * ((p₀ x - p x) / ε + 1) + v * ((p₁ x - p x) / ε + 1) =
-            (u + v) + (u * (p₀ x - p x) + v * (p₁ x - p x)) / ε := by ring
-        linarith
-      have := mul_nonpos_of_nonpos_of_nonneg hdiv_nonpos hεpos.le
-      rw [div_mul_cancel₀ _ hεpos.ne'] at this
-      linarith
-    simpa only [u, v, mul_assoc] using hpt_x
+    simpa only [u, v, p, add_mul, mul_assoc] using
+      mul_add_mul_le_logMeanPotential (p₀ := p₀) (p₁ := p₁) hε hu hv x
+  -- Step 3: Apply weak entropic duality at `(p, p)` for `μm` and complete the square in the
+  -- Kolmogorov space using linearity of `kernelMeanEmbedding` on `htilt_comb`.
   have := isFiniteMeasure_tilt (μ := μm) (ε := ε) hpm hpC
   have hexp_m := integrable_entropicGibbsFactor_of_le (μ := μm) (ν := μm) (ε := ε) hc hpm hpm
     (fun x ↦ le_of_abs_le (hpC x)) (fun x ↦ le_of_abs_le (hpC x))
@@ -719,7 +760,7 @@ theorem sinkhornDivergence_smul_add_smul_right_le [OpensMeasurableSpace X] {μ �
 /-- **Strict convexity of the Sinkhorn divergence in the first marginal** (Feydy et al.,
 Theorem 1). When the Gibbs kernel is moreover universal on a compact Borel space with
 `HasOuterApproxClosed`, `μ ↦ sinkhornDivergence c ε μ ν` is strictly convex on probability
-measures, so `ν` is its unique global and local minimiser. -/
+measures. -/
 theorem sinkhornDivergence_smul_add_smul_left_lt [BorelSpace X] [HasOuterApproxClosed X]
     {μ₀ μ₁ ν : Measure X} [IsProbabilityMeasure μ₀] [IsProbabilityMeasure μ₁]
     [IsProbabilityMeasure ν] {a b : ℝ≥0} (ha : a ≠ 0) (hb : b ≠ 0) (hab : a + b = 1)
@@ -807,14 +848,7 @@ theorem tendsto_sinkhornDivergence_zero_iff_tendsto [T2Space X] [BorelSpace X]
       (hcont.tendsto ν).comp hUν
     have hzero : sinkhornDivergence c ε (ν : Measure X) (μ : Measure X) = 0 :=
       tendsto_nhds_unique hlimν hlim₀
-    have hcR : Continuous fun z : X × X ↦ (c z).toReal :=
-      ENNReal.continuousOn_toReal.comp_continuous hc hfin
-    obtain ⟨M, hM⟩ := isCompact_univ.exists_bound_of_continuousOn hcR.continuousOn
-    have hcB : ∀ z, c z ≤ Real.toNNReal M := fun z ↦ by
-      rw [← ENNReal.ofReal_toReal (hfin z), ← ENNReal.ofReal_coe_nnreal]
-      refine ENNReal.ofReal_le_ofReal ?_
-      exact ((le_abs_self _).trans (by simpa using hM z (mem_univ z))).trans
-        (Real.le_coe_toNNReal M)
+    obtain ⟨B, hcB⟩ := exists_le_of_continuous_of_ne_top hc hfin
     exact ProbabilityMeasure.toMeasure_injective
       ((sinkhornDivergence_eq_zero_iff hc.measurable hcB hε hk
         (continuous_entropicGibbsKernel hc hfin) hku).1 hzero)
