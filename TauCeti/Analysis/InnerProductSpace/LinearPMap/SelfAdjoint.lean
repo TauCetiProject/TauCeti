@@ -230,14 +230,19 @@ theorem IsFormalAdjoint.eq_zero_of_apply_eq_smul {A : E →ₗ.[𝕜] E} (hA : A
     zero_add] at him
   exact norm_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp ((mul_eq_zero.mp him).resolve_left hc))
 
-/-- **Eigenvectors of a symmetric operator for distinct eigenvalues are orthogonal.** -/
+/-- **Eigenvectors of a symmetric operator for distinct eigenvalues are orthogonal.** A nonzero
+eigenvector has a real eigenvalue (`IsFormalAdjoint.eq_zero_of_apply_eq_smul`), so symmetry gives
+`c * ⟪x, y⟫ = d * ⟪x, y⟫`. -/
 theorem IsFormalAdjoint.inner_eq_zero_of_apply_eq_smul {A : E →ₗ.[𝕜] E}
-    (hA : A.IsFormalAdjoint A) {x y : A.domain} {c d : ℝ} (hx : A x = (c : 𝕜) • (x : E))
-    (hy : A y = (d : 𝕜) • (y : E)) (hcd : c ≠ d) : inner 𝕜 (x : E) (y : E) = 0 := by
+    (hA : A.IsFormalAdjoint A) {x y : A.domain} {c d : 𝕜} (hx : A x = c • (x : E))
+    (hy : A y = d • (y : E)) (hcd : c ≠ d) : inner 𝕜 (x : E) (y : E) = 0 := by
+  by_cases hx0 : (x : E) = 0
+  · rw [hx0, inner_zero_left]
+  have hc : (starRingEnd 𝕜) c = c :=
+    RCLike.conj_eq_iff_im.mpr (by_contra fun h ↦ hx0 (hA.eq_zero_of_apply_eq_smul h hx))
   have h := hA x y
-  rw [hx, hy, inner_smul_left, inner_smul_right, RCLike.conj_ofReal, ← sub_eq_zero, ← sub_mul,
-    ← RCLike.ofReal_sub] at h
-  exact (mul_eq_zero.mp h).resolve_left (RCLike.ofReal_ne_zero.mpr (sub_ne_zero.mpr hcd))
+  rw [hx, hy, inner_smul_left, inner_smul_right, hc, ← sub_eq_zero, ← sub_mul] at h
+  exact (mul_eq_zero.mp h).resolve_left (sub_ne_zero.mpr hcd)
 
 /-- **The range of a shift bounded below is dense.** If a shift `x ↦ c • x - A x` of a
 self-adjoint partial linear map dominates `K * ‖x‖` for some `K > 0`, its range is dense: a vector

@@ -24,7 +24,7 @@ and it is unbounded unless `c` is. Its graph is described coordinatewise
 adjoint is the diagonal operator of the conjugate family (`HilbertBasis.adjoint_diagonal`), so it is
 closed, and self-adjoint for a real family. Composition multiplies the families
 (`HilbertBasis.diagonal_apply_diagonal_apply`) and addition adds them on the common domain
-(`HilbertBasis.diagonal_add_le`).
+(`HilbertBasis.diagonal_add_diagonal_le`).
 
 Diagonal operators are the functional calculus of operators with a Hilbert basis of eigenvectors.
 If a self-adjoint operator `A` has a Hilbert basis `b` of eigenvectors, with real eigenvalues
@@ -38,8 +38,8 @@ orthogonal to the vectors of another eigenbasis with different eigenvalues. By
 operator with compact resolvent, such as the Dirac operator of a spectral triple, has such an
 eigenbasis, and this calculus defines its absolute value, sign, heat operators and powers.
 
-No measurability of `f` is needed: the spectrum of such an operator is the countable set of
-eigenvalues, and `f` only enters through its values there.
+No measurability of `f` is needed: `b.diagonal (f ∘ λ)` acts coordinatewise in the eigenbasis,
+so `f` only enters through its values `f (λ i)` at the eigenvalues.
 
 ## Main definitions
 
@@ -58,8 +58,8 @@ eigenvalues, and `f` only enters through its values there.
   so diagonal operators are closed, and self-adjoint for self-adjoint coefficient families.
 * `HilbertBasis.le_diagonal_iff`: the restrictions of a diagonal operator.
 * `HilbertBasis.diagonal_apply_mem_diagonal_domain_iff`,
-  `HilbertBasis.diagonal_apply_diagonal_apply`, `HilbertBasis.diagonal_add_le`: composition and
-  sum of diagonal operators.
+  `HilbertBasis.diagonal_apply_diagonal_apply`, `HilbertBasis.diagonal_add_diagonal_le`:
+  composition and sum of diagonal operators.
 * `LinearPMap.IsFormalAdjoint.le_diagonal` and `IsSelfAdjoint.eq_diagonal`: a symmetric operator
   with a Hilbert basis of eigenvectors is contained in, and a self-adjoint one is equal to, the
   diagonal operator of its eigenvalues.
@@ -249,7 +249,7 @@ theorem diagonal_apply_diagonal_apply (x : (b.diagonal d).domain)
 
 /-- **Sum of diagonal operators.** `b.diagonal c + b.diagonal d`, defined on the intersection of
 the two domains, is a restriction of `b.diagonal (c + d)`. -/
-theorem diagonal_add_le : b.diagonal c + b.diagonal d ≤ b.diagonal (c + d) :=
+theorem diagonal_add_diagonal_le : b.diagonal c + b.diagonal d ≤ b.diagonal (c + d) :=
   (b.le_diagonal_iff _).2 fun x i ↦ by
     rw [LinearPMap.add_apply, inner_add_right, inner_diagonal_apply, inner_diagonal_apply,
       Pi.add_apply, add_mul]
@@ -349,7 +349,8 @@ private theorem IsFormalAdjoint.diagonal_le_diagonal (hA : A.IsFormalAdjoint A)
     ring
   · obtain ⟨hj, hAj⟩ := hb' j
     obtain ⟨hi, hAi⟩ := hb i
-    rw [hA.inner_eq_zero_of_apply_eq_smul (x := ⟨b' j, hj⟩) (y := ⟨b i, hi⟩) hAj hAi hij]
+    rw [hA.inner_eq_zero_of_apply_eq_smul (x := ⟨b' j, hj⟩) (y := ⟨b i, hi⟩) hAj hAi
+      (RCLike.ofReal_injective.ne hij)]
     ring
 
 /-- **Independence of the eigenbasis.** If `b` and `b'` are Hilbert bases of eigenvectors of a
