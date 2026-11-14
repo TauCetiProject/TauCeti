@@ -71,7 +71,8 @@ abbrev pivotalCategory :
     letI := rigidCategory q
     PivotalCategory (FiniteHopfModuleCat ℂ (UqSl2 q)) :=
   FiniteHopfModuleCat.pivotalCategory (g := (kUnit q)⁻¹)
-    (fun x => by simpa using antipode_antipode q x) (kUnit_inv (q := q) ▸ isGroupLikeElem_kInv q)
+    (fun x => by simpa using antipode_antipode q x)
+    (val_inv_kUnit (q := q) ▸ isGroupLikeElem_kInv q)
 
 variable {q}
 
@@ -85,7 +86,7 @@ theorem dualEquiv_pivotalIsoApp_hom_apply (V : FiniteHopfModuleCat ℂ (UqSl2 q)
         ((pivotalIsoApp V).hom.hom.hom v) φ =
       BialgebraModule.dualEquiv ℂ (UqSl2 q) V φ (kInv q • v) := by
   rw [FiniteHopfModuleCat.pivotalIsoApp_pivotalCategory,
-    FiniteHopfModuleCat.dualEquiv_unitEvalIso_hom_apply, kUnit_inv]
+    FiniteHopfModuleCat.dualEquiv_unitEvalIso_hom_apply, val_inv_kUnit]
 
 /-- The right trace of an endomorphism `f` of a finite-dimensional module `V` is the trace of
 `K⁻¹ f` on `V`. -/
@@ -96,7 +97,7 @@ theorem rightTrace_eq_smul {V : FiniteHopfModuleCat ℂ (UqSl2 q)} (f : V ⟶ V)
       LinearMap.trace ℂ V (Algebra.lsmul ℂ ℂ V (kInv q) ∘ₗ f.hom.hom.restrictScalars ℂ) •
         𝟙 (𝟙_ (FiniteHopfModuleCat ℂ (UqSl2 q))) := by
   refine (FiniteHopfModuleCat.rightTrace_eq_smul _ _ f).trans ?_
-  rw [kUnit_inv]
+  rw [val_inv_kUnit]
 
 /-- The left trace of an endomorphism `f` of a finite-dimensional module `V` is the trace of
 `K f` on `V`. -/
@@ -107,7 +108,7 @@ theorem leftTrace_eq_smul {V : FiniteHopfModuleCat ℂ (UqSl2 q)} (f : V ⟶ V) 
       LinearMap.trace ℂ V (Algebra.lsmul ℂ ℂ V (k q) ∘ₗ f.hom.hom.restrictScalars ℂ) •
         𝟙 (𝟙_ (FiniteHopfModuleCat ℂ (UqSl2 q))) := by
   refine (FiniteHopfModuleCat.leftTrace_eq_smul _ _ f).trans ?_
-  rw [inv_inv, kUnit_val]
+  rw [inv_inv, val_kUnit]
 
 variable (q) in
 /-- For `q - q⁻¹ ≠ 0`, the pivotal structure given by `K⁻¹` is spherical: the left and right
