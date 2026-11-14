@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 
 /-!
 # The pair of pants and its end charts in real coordinates
@@ -666,6 +667,16 @@ theorem contDiff_uncurry_positiveEndHamiltonian {E : Type*} [NormedAddCommGroup 
     [NormedSpace ℝ E] {H : Puncture → ℝ → E → ℝ} {q : Puncture} {n : WithTop ℕ∞}
     (hH : ContDiff ℝ n (uncurry (H q))) : ContDiff ℝ n (uncurry (positiveEndHamiltonian H q)) :=
   contDiff_const.mul (hH.comp ((contDiff_const.mul contDiff_fst).prodMk contDiff_snd))
+
+/-- The positive end Hamiltonian of a jointly `Cⁿ` Hamiltonian on a manifold is jointly `Cⁿ`. -/
+theorem contMDiff_uncurry_positiveEndHamiltonian {E G M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [TopologicalSpace M]
+    [ChartedSpace G M] {H : Puncture → ℝ → M → ℝ} {q : Puncture} {n : WithTop ℕ∞}
+    (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q))) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (positiveEndHamiltonian H q)) := by
+  have hmul : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) n (fun y : ℝ ↦ q.endSign * y) :=
+    (contDiff_const.mul contDiff_id).contMDiff
+  exact hmul.comp (hH.comp ((hmul.comp contMDiff_fst).prodMk contMDiff_snd))
 
 /-- A `1`-periodic loop read with the time `±t` of an end is `1`-periodic. -/
 theorem periodic_comp_endSign_mul {α : Type*} {q : Puncture} {x : ℝ → α} (hx : Periodic x 1) :

@@ -70,6 +70,10 @@ isolated, fixed points is finite.
 * `TauCeti.timeDependentFlowOf_add_period` and `TauCeti.timeDependentFlowOf_add_period_eq_iff`:
   for a complete suspension, the flow over one more period is the return map followed by the flow,
   so points at times `t + T` and `t` match exactly across the inverse return map.
+* `TauCeti.exists_mem_nhds_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt` and
+  `TauCeti.IsNondegenerateFixedPt.exists_mem_nhds_forall_mem_periodicSolutions_eq`: a periodic
+  solution whose value at time `s` is an isolated (in particular, nondegenerate) fixed point of
+  the return map is isolated among periodic solutions at time `s`.
 * `TauCeti.finite_periodicSolutions`: on a compact boundaryless finite-dimensional manifold, a
   field whose periodic solutions are all nondegenerate has finitely many of them.
 * `TauCeti.finite_contractiblePeriodicSolutions`: the same for the contractible periodic solutions,
@@ -88,8 +92,8 @@ public section
 
 noncomputable section
 
-open Function Set
-open scoped Manifold
+open Filter Function Set
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -273,6 +277,22 @@ theorem periodicSolutionsEquivFixedPoints_symm_apply (hT : Periodic X T) (hT0 : 
       timeDependentFlowOf X s t x :=
   (rfl)
 
+omit [CompleteSpace E] in
+/-- **A periodic solution starting at an isolated fixed point of the return map is isolated.** If
+`X` is jointly `C¹` and `T`-periodic with `T ≠ 0`, and no point `y ≠ γ s` near `γ s` is fixed by
+the return map `timeDependentFlowOf X s (s + T)`, then `γ s` has a neighbourhood `U` such that
+every `T`-periodic solution passing through `U` at time `s` equals `γ`. -/
+theorem exists_mem_nhds_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt
+    (hT : Periodic X T) (hT0 : T ≠ 0) {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T)
+    (hiso : ∀ᶠ y in 𝓝[≠] γ s, ¬IsFixedPt (timeDependentFlowOf X s (s + T)) y) :
+    ∃ U ∈ 𝓝 (γ s), ∀ η ∈ periodicSolutions X T, η s ∈ U → η = γ := by
+  let e := periodicSolutionsEquivFixedPoints hX hT hT0 s
+  refine ⟨{y | y ∈ ({γ s}ᶜ : Set M) → ¬IsFixedPt (timeDependentFlowOf X s (s + T)) y},
+    eventually_nhdsWithin_iff.1 hiso, fun η hη hηU ↦
+      congrArg Subtype.val (e.injective (a₁ := ⟨η, hη⟩) (a₂ := ⟨γ, hγ⟩) (Subtype.ext ?_))⟩
+  by_contra hne
+  exact hηU hne (e ⟨η, hη⟩).2.2
+
 section Complete
 
 variable (hc : IsCompleteVectorField (timeDependentSuspensionField X))
@@ -309,6 +329,22 @@ theorem timeDependentFlowOf_add_period_eq_iff (hT : Periodic X T) (s t : ℝ) (x
 end Complete
 
 end Flow
+
+/-- **A periodic solution starting at a nondegenerate fixed point of the return map is isolated.**
+Let `X` be a jointly `C¹` time-dependent vector field on a boundaryless manifold modelled on a
+finite-dimensional space, `T`-periodic in time with `T ≠ 0`. If `γ` is a `T`-periodic solution and
+`γ s` is a nondegenerate fixed point of the return map `timeDependentFlowOf X s (s + T)`, then
+`γ s` has a neighbourhood `U` such that every `T`-periodic solution passing through `U` at time `s`
+equals `γ`. -/
+theorem IsNondegenerateFixedPt.exists_mem_nhds_forall_mem_periodicSolutions_eq
+    [FiniteDimensional ℝ E] [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
+    {γ : ℝ → M} (hnd : IsNondegenerateFixedPt I (timeDependentFlowOf X s (s + T)) (γ s))
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    (hT : Periodic X T) (hT0 : T ≠ 0) (hγ : γ ∈ periodicSolutions X T) :
+    ∃ U ∈ 𝓝 (γ s), ∀ η ∈ periodicSolutions X T, η s ∈ U → η = γ :=
+  exists_mem_nhds_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt hX hT hT0 hγ
+    hnd.eventually_not_isFixedPt
 
 /-- **Finiteness of nondegenerate periodic solutions.** Let `X` be a jointly `C¹` time-dependent
 vector field on a compact boundaryless manifold modelled on a finite-dimensional space, `T`-periodic
