@@ -44,6 +44,14 @@ theorem continuousDet_apply (b : Module.Basis ι 𝕜 E) (v : ι → E) :
 theorem continuousDet_toAlternatingMap (b : Module.Basis ι 𝕜 E) :
     b.continuousDet.toAlternatingMap = b.det := by rfl
 
+/-- Changing from basis `b₁` to `b₂` rescales the continuous determinant form by `b₁.det b₂`. -/
+theorem continuousDet_eq_det_smul (b₁ b₂ : Module.Basis ι 𝕜 E) :
+    b₁.continuousDet = (b₁.det b₂) • b₂.continuousDet := by
+  ext v
+  rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul, mul_comm]
+  exact (b₁.continuousDet.apply_eq_det_mul b₂ v).trans
+    (by rw [continuousDet_apply, continuousDet_apply])
+
 /-- Evaluation on a basis is a continuous linear equivalence from top-degree forms to scalars.
 The inverse sends `c` to `c` times the determinant form of the basis. -/
 noncomputable def topFormEquiv (b : Module.Basis ι 𝕜 E) :

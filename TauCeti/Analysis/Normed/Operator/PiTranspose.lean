@@ -20,8 +20,9 @@ Since precomposition is itself a continuous bilinear operation, transposition is
 linear map `ContinuousLinearMap.piTransposeL` of operator spaces; in particular a continuous
 family of matrices has a continuous family of transposes. The defining adjunction for the
 standard pairing is `ContinuousLinearMap.sum_mul_piTranspose`, the matrix of the transpose is
-the transposed matrix (`ContinuousLinearMap.toMatrix'_piTranspose`), and transposition is an
-involution reversing composition.
+the transposed matrix (`ContinuousLinearMap.toMatrix'_piTranspose`), so transposition preserves
+determinants (`ContinuousLinearMap.det_piTranspose`), and transposition is an involution
+reversing composition.
 
 These are the coordinate transition maps of a dual vector bundle presented by finite-matrix
 charts.
@@ -97,6 +98,12 @@ theorem eq_piTranspose_iff (T : (ι → 𝕜) →L[𝕜] (κ → 𝕜)) (S : (κ
       (LinearMap.toMatrix' (T : (ι → 𝕜) →ₗ[𝕜] (κ → 𝕜)))ᵀ := by
   ext i j
   simp [LinearMap.toMatrix'_apply, piTranspose_apply, Pi.single_apply]
+
+/-- Transposition preserves the determinant of an endomorphism of a coordinate space. -/
+@[simp] theorem det_piTranspose (T : (ι → 𝕜) →L[𝕜] (ι → 𝕜)) :
+    T.piTranspose.det = T.det := by
+  rw [ContinuousLinearMap.det, ContinuousLinearMap.det, ← LinearMap.det_toMatrix',
+    ← LinearMap.det_toMatrix', toMatrix'_piTranspose, Matrix.det_transpose]
 
 @[simp] theorem piTranspose_id :
     (ContinuousLinearMap.id 𝕜 (ι → 𝕜)).piTranspose = ContinuousLinearMap.id 𝕜 (ι → 𝕜) :=

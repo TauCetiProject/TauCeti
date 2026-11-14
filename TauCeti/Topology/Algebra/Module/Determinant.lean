@@ -9,6 +9,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
+public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.Topology.Algebra.Polynomial
@@ -39,6 +40,8 @@ the affine cofactor pullback, `ContinuousLinearEquiv.sum_fderiv_affineFluxPullba
   the determinant of the identity, of a composition and of a scalar multiple.
 * `ContinuousLinearMap.exists_le_norm_det_id_sub_smul`: over `ℝ` or `ℂ`, the second-order lower
   bound `1 - δ re (trace H) - P δ² ≤ ‖det (1 - δ H)‖` for `0 ≤ δ ≤ 1`.
+* `ContinuousLinearEquiv.det_arrowCongr_self`: conjugating an endomorphism by a continuous linear
+  equivalence preserves its determinant.
 * `ContinuousLinearEquiv.det_symm_comp_mul_det_symm_comp`: relative determinants multiply.
 * `ContinuousLinearEquiv.det_symm_comp_comp_comp`: composing with endomorphisms on either side
   multiplies the relative determinant by their determinants.
@@ -121,6 +124,22 @@ section Relative
 
 variable {R M N : Type*} [CommRing R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
   [TopologicalSpace N] [AddCommGroup N] [Module R N]
+
+/-- Conjugating a continuous linear endomorphism by a continuous linear equivalence preserves its
+determinant. -/
+@[simp]
+theorem det_arrowCongr_self {𝕜 E F : Type*} [NormedField 𝕜]
+    [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+    [IsTopologicalAddGroup E] [ContinuousConstSMul 𝕜 E]
+    [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] [ContinuousConstSMul 𝕜 F]
+    (e : E ≃L[𝕜] F) (T : E →L[𝕜] E) :
+    (e.arrowCongr e T).det = T.det := by
+  have h : (e.arrowCongr e T : F →ₗ[𝕜] F) =
+      (e.toLinearEquiv : E →ₗ[𝕜] F) ∘ₗ (T : E →ₗ[𝕜] E) ∘ₗ (e.toLinearEquiv.symm : F →ₗ[𝕜] E) := by
+    ext v
+    simp
+  rw [ContinuousLinearMap.det, h, LinearMap.det_conj]
 
 /-- Determinants relative to equivalences `M ≃L[R] N` multiply: comparing `S` with `T` is
 comparing `U` with `T` and then `S` with `U`. -/
