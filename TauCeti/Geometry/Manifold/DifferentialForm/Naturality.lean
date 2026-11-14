@@ -17,7 +17,10 @@ Pullback by a twice continuously differentiable map commutes with the exterior d
 continuously differentiable fixed-coefficient form. The pointwise and on-set forms expose the
 local hypotheses needed by later constructions, while the global theorem is the cochain-map law
 used by de Rham cohomology; in particular pullback preserves closed forms
-(`TauCeti.IsSmoothForm.mextDeriv_mpullback_eq_zero`).
+(`TauCeti.IsSmoothForm.mextDeriv_mpullback_eq_zero`). The same chart computation shows that
+pullback along a `C²` map preserves vanishing first jets: if a form vanishes at the image point
+and its coordinate expression has zero derivative there, the same holds for its pullback
+(`TauCeti.hasFDerivWithinAt_inChartAt_mpullback_zero`).
 
 For a map from a subset `s` of a normed space, such as a cylinder `s ×ˢ Icc 0 1` or a simplex,
 the within-set pullback commutes with the flat exterior derivative within `s`
@@ -138,6 +141,62 @@ theorem mpullback_mextDeriv_at {f : M → M'} (hf : ContMDiffAt I I' 2 f x)
   rw [(hf.mdifferentiableAt (by norm_num)).mfderiv_abuse]
   rw [hpullderiv, hflat]
   rfl
+
+/-- **Pullback preserves vanishing first jets.** If a form `φ` vanishes at `f x` and its
+coordinate expression in the chart at `f x` has zero derivative there, then the coordinate
+expression of the pullback of `φ` along a map `f` that is `C²` at `x` has zero derivative at the
+chart point of `x`. No regularity of `φ` is needed. -/
+theorem hasFDerivWithinAt_inChartAt_mpullback_zero {f : M → M'} (hf : ContMDiffAt I I' 2 f x)
+    {φ : RoughForm I' M' F k} (hφ : φ (f x) = 0)
+    (hdφ : HasFDerivWithinAt (φ.inChartAt (f x)) (0 : E' →L[ℝ] E' [⋀^Fin k]→L[ℝ] F) (range I')
+      (extChartAt I' (f x) (f x))) :
+    HasFDerivWithinAt ((mpullback I I' f φ).inChartAt x) (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
+      (range I) (extChartAt I x x) := by
+  set z := extChartAt I x x
+  set g := writtenInExtChartAt I I' x f
+  have hzrange : z ∈ range I := extChartAt_target_subset_range x (mem_extChartAt_target x)
+  have hgz : g z = extChartAt I' (f x) (f x) := by
+    simp only [g, z, writtenInExtChartAt, Function.comp_apply, extChartAt_to_inv]
+  have hg : ContDiffWithinAt ℝ 2 g (range I) z := by
+    simpa only [g, z, writtenInExtChartAt] using (contMDiffAt_iff.mp hf).2
+  -- The chart expression of `f` maps the model range near `z` into the model range.
+  have hmaps : Tendsto g (𝓝[range I] z) (𝓝[range I'] (g z)) := by
+    refine tendsto_nhdsWithin_iff.2 ⟨hg.continuousWithinAt.tendsto, ?_⟩
+    have hfc : ContinuousAt f ((extChartAt I x).symm z) := by
+      simpa only [z, extChartAt_to_inv] using hf.continuousAt
+    have htarget : (f ∘ (extChartAt I x).symm) ⁻¹' (extChartAt I' (f x)).source ∈
+        𝓝[range I] z := by
+      apply (hfc.comp_continuousWithinAt (mdifferentiableWithinAt_extChartAt_symm
+        (mem_extChartAt_target x)).continuousWithinAt).preimage_mem_nhdsWithin
+      simpa only [Function.comp_apply, z, extChartAt_to_inv] using
+        extChartAt_source_mem_nhds (I := I') (f x)
+    filter_upwards [htarget] with w hw
+    exact extChartAt_target_subset_range (I := I') (f x) ((extChartAt I' (f x)).map_source hw)
+  -- The coordinates of `φ` along `g` have zero value and zero derivative at `z`.
+  have hA : HasFDerivWithinAt (fun w ↦ φ.inChartAt (f x) (g w))
+      (0 : E →L[ℝ] E' [⋀^Fin k]→L[ℝ] F) (range I) z := by
+    simpa using (hgz ▸ hdφ).comp_of_tendsto z
+      (hg.differentiableWithinAt (by norm_num)).hasFDerivWithinAt hmaps
+  have hA0 : φ.inChartAt (f x) (g z) = 0 := by
+    rw [hgz, RoughForm.inChartAt_extChartAt_self, hφ]
+    -- The zero of the fibre over `f x` is the zero of the model fibre.
+    rfl
+  -- Precomposition with the derivative of `g` is differentiable at `z`.
+  have hP : DifferentiableWithinAt ℝ (fun w ↦ (ContinuousAlternatingMap.compContinuousLinearMapCLM
+      (fderivWithin ℝ g (range I) w) : (E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] E [⋀^Fin k]→L[ℝ] F))
+      (range I) z :=
+    ((ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM 1).differentiable
+      one_ne_zero _).comp_differentiableWithinAt z
+      ((hg.fderivWithin_right I.uniqueDiffOn (by norm_num) hzrange).differentiableWithinAt
+        one_ne_zero)
+  have h := hP.hasFDerivWithinAt.clm_apply hA
+  rw [hA0] at h
+  simp only [ContinuousLinearMap.comp_zero, map_zero, zero_add] at h
+  have hpull := inChartAt_mpullback_eventuallyEq x hf φ
+  refine h.congr_of_eventuallyEq ?_ ?_
+  · filter_upwards [hpull] with w hw
+    rw [hw, ContinuousAlternatingMap.compContinuousLinearMapCLM_apply]
+  · rw [hpull.self_of_nhdsWithin hzrange, ContinuousAlternatingMap.compContinuousLinearMapCLM_apply]
 
 /-- On a set, pullback commutes pointwise with the exterior derivative. -/
 theorem mpullback_mextDeriv_on {f : M → M'} {s : Set M}
