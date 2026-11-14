@@ -118,7 +118,8 @@ theorem ringKrullDim_isRestricted_subring {σ : Type*} [Finite σ] :
       exact PowerSeries.ringKrullDim_succ_le_ringKrullDim_isRestricted_subring 1
 
 /-- The Tate algebra in finitely many variables has finite Krull dimension. -/
-instance finiteRingKrullDim {σ : Type*} [Finite σ] : FiniteRingKrullDim (Tate σ) :=
+instance finiteRingKrullDim_isRestricted_subring {σ : Type*} [Finite σ] :
+    FiniteRingKrullDim (Tate σ) :=
   .of_ringKrullDim_eq_natCast ringKrullDim_isRestricted_subring
 
 /-- **The degree of a normalisation is the Krull dimension.** A ring that is integral over an
