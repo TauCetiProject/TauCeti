@@ -553,7 +553,7 @@ theorem criticalHessian_apply_eq_mvfderiv [IsManifold I 2 M]
       (fun y ↦ mvfderiv I f y (Y y)) ∘ ψ.symm := by
     simpa only [g, V, ψ, ModelWithCorners.Boundaryless.range_eq_univ, nhdsWithin_univ,
       fderivWithin_univ] using
-      eventuallyEq_fderivWithin_chart_apply_mpullbackWithin (U := Y) hf (by norm_num)
+      eventuallyEq_fderivWithin_chart_apply_mpullbackWithin (U := Y) (f := f)
   -- Differentiating once more leaves only `D²g`: the term involving `DV` is multiplied by `Dg=0`.
   have hzero : fderiv ℝ g (ψ x) = 0 := by
     rwa [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]

@@ -57,9 +57,6 @@ theorem inner_alongCurve_eq_inner (hcov : cov.IsLeviCivitaConnection)
     (ha : HasDerivAt (fun r ↦ mvfderiv I f (γ r) (V r)) a t)
     (w : TangentSpace I (γ t)) :
     inner ℝ (alongCurve cov γ V t) w = inner ℝ a (mvfderiv I f (γ t) w) := by
-  have : IsManifold I (minSmoothness ℝ 2) M := by
-    rw [minSmoothness_of_isRCLikeNormedField]
-    infer_instance
   let Z := extend E w
   have hZ : MDiffAt (T% Z) (γ t) := mdifferentiableAt_extend I E w
   have hZcoord : DifferentiableAt ℝ
@@ -68,7 +65,7 @@ theorem inner_alongCurve_eq_inner (hcov : cov.IsLeviCivitaConnection)
       (mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
   have hsource := hcov.isMetricCompatible.hasDerivAt_inner_alongCurve hγ hV hZcoord
   have htarget := ha.inner ℝ (hasDerivAt_comp_curve
-    (TauCeti.mdifferentiableAt_mvfderiv_apply hf (by simp) hZ)
+    (TauCeti.mdifferentiableAt_mvfderiv_apply hf le_rfl hZ)
     (hasMFDerivAt_curveVelocity hγ))
   have hpair : (fun r ↦ inner ℝ (V r) (Z (γ r))) =
       fun r ↦ inner ℝ (mvfderiv I f (γ r) (V r)) (mvfderiv I f (γ r) (Z (γ r))) :=

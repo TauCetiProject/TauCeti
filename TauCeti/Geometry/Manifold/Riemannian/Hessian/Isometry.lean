@@ -78,10 +78,8 @@ theorem hessian_comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
     hf.mfderiv_leviCivitaConnection_mpullback hW] at hsource
   have htarget := hessian_apply_eq_mvfderiv_sub (f x) hu V W hW
   simp only [V, W, FiberBundle.extend_apply_self] at htarget
-  let _ : IsManifold J (minSmoothness ℝ 2) N :=
-    IsManifold.of_le (n := 2) (by simp)
   have hdirectional := mfderiv_comp x
-    (TauCeti.mdifferentiableAt_mvfderiv_apply hu (by simp) hW) (hf.mdifferentiableAt x)
+    (TauCeti.mdifferentiableAt_mvfderiv_apply hu le_rfl hW) (hf.mdifferentiableAt x)
   rw [hsource, htarget]
   congr 1
   exact congrArg (fun L ↦ L v) hdirectional
