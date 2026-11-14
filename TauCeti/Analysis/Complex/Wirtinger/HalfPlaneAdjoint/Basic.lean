@@ -34,6 +34,10 @@ this complement is `ℝⁿ` itself, so the dual boundary condition is again `η 
 wrong dual condition `η ∈ i ℝⁿ` does not make the term vanish: for `η = i ξ` on `ℝ` it is
 `-∫_ℝ ‖ξ‖² < 0` as soon as `ξ` is nonzero somewhere on `ℝ`.
 
+These boundary statements are proved for a general boundary term `∫_ℝ ⟪η(s), J(s) ξ(s)⟫ ds` on a
+real inner product space, with a variable coefficient `J(s)` in place of `i`: it vanishes for
+every `ξ` with values in `Λ` on `ℝ` exactly when `η(s) ⊥ J(s) Λ`.
+
 ## Main results
 
 * `TauCeti.setIntegral_im_pos_re_inner_cauchyRiemann`: the integration by parts formula above,
@@ -41,6 +45,12 @@ wrong dual condition `η ∈ i ℝⁿ` does not make the term vanish: for `η = 
 * `TauCeti.setIntegral_im_pos_re_inner_conjWirtingerDeriv`: the same formula in Wirtinger form.
 * `TauCeti.setIntegral_halfDisc_re_inner_cauchyRiemann`: the formula on the half-disc
   `D⁺_r = {|z| < r, 0 < t}` for `ξ` supported in the open disc of radius `r`.
+* `Submodule.forall_integral_inner_clm_apply_eq_zero_iff_of_isOpen` and
+  `Submodule.forall_integral_inner_clm_apply_eq_zero_iff`: the general boundary term vanishes for
+  all smooth `ξ` supported in an open `U ⊆ ℂ` (or in `ℂ`) with values in `Λ` on `ℝ` exactly when
+  `⟪η(s), J(s) v⟫ = 0` for all `v ∈ Λ` and real `s ∈ U`.
+* `TauCeti.integral_inner_clm_apply_pos`: for `η = J ξ` on `ℝ` the general boundary integral is
+  positive.
 * `Submodule.forall_integral_re_inner_I_smul_eq_zero_iff`: the boundary term vanishes for all
   smooth `ξ` with values in `L` on `ℝ` exactly when `Re ⟪i v, η(s)⟫ = 0` for all `v ∈ L`.
 * `TauCeti.forall_integral_re_inner_I_smul_eq_zero_iff_mem_realSubspace`: for `L = ℝⁿ ⊆ ℂⁿ`, this
@@ -173,8 +183,61 @@ theorem setIntegral_halfDisc_re_inner_cauchyRiemann {r : ℝ} (hξ : ContDiff �
       simp [image_eq_zero_of_notMem_tsupport (hout hs)]]
   exact setIntegral_im_pos_re_inner_cauchyRiemann hξ hξc isOpen_ball hη hξr
 
-/-- **The dual boundary condition.** The boundary term `∫_ℝ Re ⟪i ξ, η⟫` vanishes for every
-smooth compactly supported `ξ` taking values in a real subspace `L` on `ℝ` exactly when
+/-- **The dual boundary condition on an open set.** For a real inner product space `V`, maps
+`J : ℝ → (V →L[ℝ] V)` and `η : ℝ → V` continuous on `U ∩ ℝ` for an open `U ⊆ ℂ`, and a real
+subspace `Λ`, the boundary term `∫_ℝ ⟪η(s), J(s) ξ(s)⟫ ds` vanishes for every smooth compactly
+supported `ξ` with support in `U` and values in `Λ` on `ℝ` exactly when `⟪η(s), J(s) v⟫ = 0` for
+all `v ∈ Λ` and real `s ∈ U`, that is, when `η(s) ⊥ J(s) Λ` on `U ∩ ℝ`. -/
+theorem _root_.Submodule.forall_integral_inner_clm_apply_eq_zero_iff_of_isOpen {V : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] (Λ : Submodule ℝ V) {J : ℝ → V →L[ℝ] V}
+    {η : ℝ → V} (hU : IsOpen U) (hJ : ContinuousOn J (ofReal ⁻¹' U))
+    (hη : ContinuousOn η (ofReal ⁻¹' U)) :
+    (∀ ξ : ℂ → V, ContDiff ℝ ∞ ξ → HasCompactSupport ξ → tsupport ξ ⊆ U → (∀ s : ℝ, ξ s ∈ Λ) →
+      ∫ s : ℝ, ⟪η s, J s (ξ s)⟫_ℝ = 0) ↔
+      ∀ s : ℝ, (s : ℂ) ∈ U → ∀ v ∈ Λ, ⟪η s, J s v⟫_ℝ = 0 := by
+  refine ⟨fun h s₀ hs₀ v hv ↦ ?_, fun h ξ _ _ hξU hξΛ ↦ ?_⟩
+  · have hW : IsOpen (ofReal ⁻¹' U) := hU.preimage continuous_ofReal
+    set f : ℝ → ℝ := fun s ↦ ⟪η s, J s v⟫_ℝ
+    have hf : ContinuousOn f (ofReal ⁻¹' U) := hη.inner (hJ.clm_apply continuousOn_const)
+    refine Measure.eqOn_open_of_ae_eq (μ := volume) (g := 0) ((ae_restrict_iff' hW.measurableSet).2
+      (hW.ae_eq_zero_of_integral_contDiff_smul_eq_zero (hf.locallyIntegrableOn hW.measurableSet)
+        fun φ hφ hφc hφU ↦ ?_)) hW hf continuousOn_const hs₀
+    -- Extend `φ • v` from `ℝ` to `ℂ` by a cutoff equal to one near `tsupport φ`.
+    obtain ⟨χ, hχ, -, hχ1, hχc, hχU⟩ :=
+      (hφc.isCompact.image continuous_ofReal).exists_contDiff_cutoff_eventuallyEq_one hU
+        (image_subset_iff.2 hφU)
+    set ξ : ℂ → V := fun z ↦ (φ z.re * χ z) • v
+    have hξs (s : ℝ) : ξ s = φ s • v := by
+      by_cases hs : s ∈ tsupport φ
+      · simp [ξ, (hχ1 _ (mem_image_of_mem _ hs)).self_of_nhds]
+      · simp [ξ, image_eq_zero_of_notMem_tsupport hs]
+    have hξ : ContDiff ℝ ∞ ξ :=
+      ((hφ.comp Complex.reCLM.contDiff).mul hχ).smul contDiff_const
+    have hξc : HasCompactSupport ξ := (hχc.mul_left (f := fun z : ℂ ↦ φ z.re)).smul_right
+    have hξU : tsupport ξ ⊆ U :=
+      ((tsupport_smul_subset_left _ _).trans tsupport_mul_subset_right).trans hχU
+    have := h ξ hξ hξc hξU fun s ↦ hξs s ▸ Λ.smul_mem _ hv
+    simpa [hξs, f, inner_smul_right] using this
+  · have h' (s : ℝ) : ⟪η s, J s (ξ s)⟫_ℝ = 0 := by
+      by_cases hs : (s : ℂ) ∈ U
+      · exact h s hs _ (hξΛ s)
+      · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hs (hξU h)]
+    simp [h']
+
+/-- **The dual boundary condition.** The boundary term `∫_ℝ ⟪η(s), J(s) ξ(s)⟫ ds` vanishes for
+every smooth compactly supported `ξ` taking values in a real subspace `Λ` on `ℝ` exactly when
+`⟪η(s), J(s) v⟫ = 0` for all `v ∈ Λ` and real `s`, that is, when `η(s) ⊥ J(s) Λ`. -/
+theorem _root_.Submodule.forall_integral_inner_clm_apply_eq_zero_iff {V : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] (Λ : Submodule ℝ V) {J : ℝ → V →L[ℝ] V}
+    {η : ℝ → V} (hJ : Continuous J) (hη : Continuous η) :
+    (∀ ξ : ℂ → V, ContDiff ℝ ∞ ξ → HasCompactSupport ξ → (∀ s : ℝ, ξ s ∈ Λ) →
+      ∫ s : ℝ, ⟪η s, J s (ξ s)⟫_ℝ = 0) ↔
+      ∀ s : ℝ, ∀ v ∈ Λ, ⟪η s, J s v⟫_ℝ = 0 := by
+  simpa using Λ.forall_integral_inner_clm_apply_eq_zero_iff_of_isOpen isOpen_univ
+    hJ.continuousOn hη.continuousOn
+
+/-- **The dual boundary condition for `J = i`.** The boundary term `∫_ℝ Re ⟪i ξ, η⟫` vanishes
+for every smooth compactly supported `ξ` taking values in a real subspace `L` on `ℝ` exactly when
 `Re ⟪i v, η(s)⟫ = 0` for all `v ∈ L` and real `s`, that is, when `η` takes values on `ℝ` in the
 orthogonal complement of `i L` for `Re ⟪·, ·⟫`. -/
 theorem _root_.Submodule.forall_integral_re_inner_I_smul_eq_zero_iff (L : Submodule ℝ E)
@@ -182,28 +245,12 @@ theorem _root_.Submodule.forall_integral_re_inner_I_smul_eq_zero_iff (L : Submod
     (∀ ξ : ℂ → E, ContDiff ℝ ∞ ξ → HasCompactSupport ξ → (∀ s : ℝ, ξ s ∈ L) →
       ∫ s : ℝ, re ⟪I • ξ s, η s⟫_ℂ = 0) ↔
       ∀ s : ℝ, ∀ v ∈ L, re ⟪I • v, η s⟫_ℂ = 0 := by
-  refine ⟨fun h s₀ v hv ↦ ?_, fun h ξ _ _ hξL ↦ by simp [h _ _ (hξL _)]⟩
-  set f : ℝ → ℝ := fun s ↦ re ⟪I • v, η s⟫_ℂ
-  have hf : Continuous f := Complex.continuous_re.comp (continuous_const.inner hη)
-  suffices hf0 : f = 0 from congr_fun hf0 s₀
-  refine (hf.ae_eq_iff_eq volume continuous_const).1
-    (ae_eq_zero_of_integral_contDiff_smul_eq_zero hf.locallyIntegrable fun φ hφ hφc ↦ ?_)
-  obtain ⟨R, hR, hφR⟩ := hφc.exists_pos_le_norm_notMem_tsupport
-  let ψ : ContDiffBump (0 : ℂ) := ⟨R, R + 1, hR, by linarith⟩
-  set ξ : ℂ → E := fun z ↦ (φ z.re * ψ z) • v
-  have hξs (s : ℝ) : ξ s = φ s • v := by
-    by_cases hs : R ≤ ‖(s : ℂ)‖
-    · rw [Complex.norm_real] at hs
-      simp [ξ, image_eq_zero_of_notMem_tsupport (hφR s hs)]
-    · rw [not_le] at hs
-      simp [ξ, ψ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 hs.le)]
-  have hξ : ContDiff ℝ ∞ ξ :=
-    ((hφ.comp Complex.reCLM.contDiff).mul ψ.contDiff).smul contDiff_const
-  have hξc : HasCompactSupport ξ :=
-    (ψ.hasCompactSupport.mul_left (f := fun z : ℂ ↦ φ z.re)).smul_right
-  have := h ξ hξ hξc fun s ↦ hξs s ▸ L.smul_mem _ hv
-  simpa [hξs, f, smul_comm I, ← Complex.coe_smul, inner_smul_left, Complex.conj_ofReal,
-    Complex.re_ofReal_mul] using this
+  let := InnerProductSpace.complexToReal (G := E)
+  have h (x y : E) : re ⟪I • x, y⟫_ℂ = ⟪y, ContinuousLinearMap.lsmul ℝ ℂ I x⟫_ℝ := by
+    rw [ContinuousLinearMap.lsmul_apply, real_inner_eq_re_inner ℂ, ← RCLike.re_to_complex,
+      inner_re_symm]
+  simp_rw [h]
+  exact L.forall_integral_inner_clm_apply_eq_zero_iff continuous_const hη
 
 /-- **The dual boundary condition for `F = ℝⁿ`.** On `ℂⁿ`, the boundary term `∫_ℝ Re ⟪i ξ, η⟫`
 vanishes for every smooth compactly supported `ξ` that is real on `ℝ` exactly when `η` is real
@@ -216,20 +263,34 @@ theorem forall_integral_re_inner_I_smul_eq_zero_iff_mem_realSubspace {n : Type*}
   simp_rw [Submodule.forall_integral_re_inner_I_smul_eq_zero_iff _ hη,
     forall_re_inner_I_smul_eq_zero_iff_mem_realSubspace]
 
-/-- **The wrong dual boundary condition.** If `η = i ξ` on `ℝ`, which for `ξ` real on `ℝ` is the
-condition `η ∈ i ℝⁿ`, the boundary integral `∫_ℝ Re ⟪i ξ, η⟫ = ∫_ℝ ‖ξ‖²` is positive as soon as
-`ξ` is nonzero somewhere on `ℝ`, so the boundary term does not vanish. -/
+/-- **The wrong dual boundary condition.** If `η(s) = J(s) ξ(s)` on `ℝ`, which for `ξ` with
+values in `Λ` is the condition `η(s) ∈ J(s) Λ`, the boundary integral
+`∫_ℝ ⟪η(s), J(s) ξ(s)⟫ = ∫_ℝ ‖J(s) ξ(s)‖²` is positive as soon as `J(s) ξ(s)` is nonzero somewhere
+on `ℝ`, so the boundary term does not vanish. -/
+theorem integral_inner_clm_apply_pos {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    {J : ℝ → V →L[ℝ] V} {η ξ : ℝ → V} (hJ : Continuous J) (hξ : Continuous ξ)
+    (hξc : HasCompactSupport ξ) {s₀ : ℝ} (hs₀ : J s₀ (ξ s₀) ≠ 0)
+    (hη : ∀ s : ℝ, η s = J s (ξ s)) :
+    0 < ∫ s : ℝ, ⟪η s, J s (ξ s)⟫_ℝ := by
+  simp_rw [hη, real_inner_self_eq_norm_sq]
+  exact ((hJ.clm_apply hξ).norm.pow 2).integral_pos_of_hasCompactSupport_nonneg_ne_zero
+    (hξc.mono fun s hs h0 ↦ hs (by simp [h0])) (fun s ↦ sq_nonneg _)
+    (pow_ne_zero 2 (norm_ne_zero_iff.2 hs₀))
+
+/-- **The wrong dual boundary condition for `J = i`.** If `η = i ξ` on `ℝ`, which for `ξ` real on
+`ℝ` is the condition `η ∈ i ℝⁿ`, the boundary integral `∫_ℝ Re ⟪i ξ, η⟫ = ∫_ℝ ‖ξ‖²` is positive
+as soon as `ξ` is nonzero somewhere on `ℝ`, so the boundary term does not vanish. -/
 theorem integral_re_inner_I_smul_pos (hξ : Continuous ξ) (hξc : HasCompactSupport ξ) {s₀ : ℝ}
     (hs₀ : ξ s₀ ≠ 0) (hη : ∀ s : ℝ, η s = I • ξ s) :
     0 < ∫ s : ℝ, re ⟪I • ξ s, η s⟫_ℂ := by
-  have heq (s : ℝ) : re ⟪I • ξ s, η s⟫_ℂ = ‖ξ s‖ ^ 2 := by
-    rw [hη, ← RCLike.re_to_complex, inner_self_eq_norm_sq, norm_smul, Complex.norm_I, one_mul]
-  simp_rw [heq]
-  have hc : Continuous fun s : ℝ ↦ ξ s := hξ.comp Complex.continuous_ofReal
-  have hcs : HasCompactSupport fun s : ℝ ↦ ξ s :=
-    hξc.comp_isClosedEmbedding Complex.isometry_ofReal.isClosedEmbedding
-  exact (hc.norm.pow 2).integral_pos_of_hasCompactSupport_nonneg_ne_zero
-    (hcs.mono fun s hs h0 ↦ hs (by simp [h0])) (fun s ↦ sq_nonneg _)
-    (pow_ne_zero 2 (norm_ne_zero_iff.2 hs₀))
+  let := InnerProductSpace.complexToReal (G := E)
+  have h (x y : E) : re ⟪I • x, y⟫_ℂ = ⟪y, ContinuousLinearMap.lsmul ℝ ℂ I x⟫_ℝ := by
+    rw [ContinuousLinearMap.lsmul_apply, real_inner_eq_re_inner ℂ, ← RCLike.re_to_complex,
+      inner_re_symm]
+  simp_rw [h]
+  exact integral_inner_clm_apply_pos (η := fun s : ℝ ↦ η s) continuous_const
+    (hξ.comp continuous_ofReal)
+    (hξc.comp_isClosedEmbedding Complex.isometry_ofReal.isClosedEmbedding)
+    (by simpa using hs₀) fun s ↦ by simp [hη]
 
 end TauCeti
