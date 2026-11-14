@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import TauCeti.Analysis.Normed.Module.Dual.Bilinear
+public import TauCeti.Analysis.Normed.Module.Dual.Bimodule
 
 /-!
 # The two Arens products
@@ -15,7 +16,9 @@ The bidual of a nonunital normed algebra has two associative bounded products, o
 by extending multiplication in opposite orders. We keep these as explicit bounded
 bilinear maps `TauCeti.arensMul` and `TauCeti.arensMulRev`, rather than choosing a
 multiplication instance on the bidual. Both extend the original multiplication and
-agree whenever either argument belongs to the original algebra.
+agree whenever either argument belongs to the canonical image of the original algebra,
+where they coincide with the iterated dual actions `dualAction (dualAction (mul 𝕜 A))`
+and `dualAction (dualAction (mul 𝕜 A).flip)`.
 
 The first product is weak-star continuous in its first variable, and the second in
 its second variable. On the canonical image of the original algebra they are also
@@ -109,6 +112,42 @@ theorem arensMul_inclusionInDoubleDual_right_eq_arensMulRev
     arensMul 𝕜 A F (inclusionInDoubleDual 𝕜 A b) =
       arensMulRev 𝕜 A F (inclusionInDoubleDual 𝕜 A b) := by
   exact (ContinuousLinearMap.mul 𝕜 A).arensExtension_inclusionInDoubleDual_right_eq_flip F b
+
+/-- Left multiplication by `J_A a` in the first Arens product is the iterated dual action of left
+multiplication by `a`. -/
+theorem arensMul_inclusionInDoubleDual_left (a : A) (G : StrongDual 𝕜 (StrongDual 𝕜 A)) :
+    arensMul 𝕜 A (inclusionInDoubleDual 𝕜 A a) G =
+      dualAction (dualAction (ContinuousLinearMap.mul 𝕜 A)) a G := by
+  ext f
+  rw [arensMul_apply, dual_def, bilinearTranspose_apply, dualAction_apply_apply]
+  congr 1
+  ext b
+  simp
+
+/-- Left multiplication by `J_A a` in the second Arens product is the iterated dual action of left
+multiplication by `a`. -/
+theorem arensMulRev_inclusionInDoubleDual_left (a : A) (G : StrongDual 𝕜 (StrongDual 𝕜 A)) :
+    arensMulRev 𝕜 A (inclusionInDoubleDual 𝕜 A a) G =
+      dualAction (dualAction (ContinuousLinearMap.mul 𝕜 A)) a G := by
+  rw [← arensMul_inclusionInDoubleDual_left_eq_arensMulRev, arensMul_inclusionInDoubleDual_left]
+
+/-- Right multiplication by `J_A a` in the second Arens product is the iterated dual action of
+right multiplication by `a`. -/
+theorem arensMulRev_inclusionInDoubleDual_right (G : StrongDual 𝕜 (StrongDual 𝕜 A)) (a : A) :
+    arensMulRev 𝕜 A G (inclusionInDoubleDual 𝕜 A a) =
+      dualAction (dualAction (ContinuousLinearMap.mul 𝕜 A).flip) a G := by
+  ext f
+  rw [arensMulRev_apply, dual_def, bilinearTranspose_apply, dualAction_apply_apply]
+  congr 1
+  ext b
+  simp
+
+/-- Right multiplication by `J_A a` in the first Arens product is the iterated dual action of right
+multiplication by `a`. -/
+theorem arensMul_inclusionInDoubleDual_right (G : StrongDual 𝕜 (StrongDual 𝕜 A)) (a : A) :
+    arensMul 𝕜 A G (inclusionInDoubleDual 𝕜 A a) =
+      dualAction (dualAction (ContinuousLinearMap.mul 𝕜 A).flip) a G := by
+  rw [arensMul_inclusionInDoubleDual_right_eq_arensMulRev, arensMulRev_inclusionInDoubleDual_right]
 
 /-- Associativity of the first Arens product. -/
 theorem arensMul_assoc (F G H : StrongDual 𝕜 (StrongDual 𝕜 A)) :

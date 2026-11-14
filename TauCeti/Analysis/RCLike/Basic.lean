@@ -15,6 +15,7 @@ public import Mathlib.Analysis.RCLike.Basic
 * `RCLike.re_eq_self_of_im_eq_zero`: a scalar with zero imaginary part equals its real part.
 * `RCLike.norm_le_abs_re_add_abs_im`: `‖z‖ ≤ |re z| + |im z|`, the `RCLike` counterpart of
   `Complex.norm_le_abs_re_add_abs_im`.
+* `RCLike.small`: every `RCLike` field is `Small` in any universe.
 -/
 
 public section
@@ -22,6 +23,12 @@ public section
 namespace RCLike
 
 variable {K : Type*} [RCLike K]
+
+universe u in
+/-- Every `RCLike` field is `Small` in any universe, since `re` and `im` embed it into `ℝ × ℝ`. -/
+instance (priority := 100) small : Small.{u} K :=
+  small_of_injective (β := ℝ × ℝ) (f := fun z ↦ (re z, im z)) fun _ _ h ↦
+    ext (congrArg Prod.fst h) (congrArg Prod.snd h)
 
 /-- The norm of a scalar is at most the sum of the absolute values of its real and imaginary
 parts. -/

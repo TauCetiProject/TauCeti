@@ -7,8 +7,12 @@ module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.Analysis.LocallyConvex.Separation
+import Mathlib.Analysis.LocallyConvex.WeakSpace
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
+import TauCeti.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Normed.Module.Dual.Basic
+import TauCeti.Analysis.Normed.Module.Dual.Functoriality
+import TauCeti.Topology.MetricSpace.SimultaneousApproximation
 
 /-!
 # Goldstine's theorem
@@ -21,13 +25,20 @@ about the image of `x`. In particular `E` is weak-star dense in its bidual.
 
 No completeness or separability is assumed, and seminormed spaces are allowed. Together with
 Banach–Alaoglu (`WeakDual.isCompact_closedBall`), Goldstine's theorem relates weak compactness
-of the unit ball of `E` to reflexivity of `E`.
+of the unit ball of `E` to reflexivity of `E`. Combined with Mazur's theorem that weak and norm
+closures of convex sets agree (`Convex.toWeakSpace_closure`), it converts bidual operator
+equations `T** M = J y` with `‖M‖ ≤ C` into norm approximation inside `T '' closedBall 0 C`,
+simultaneously across any family of bounded operators.
 
 ## Main results
 
 * `NormedSpace.closure_image_inclusionInDoubleDualWeak_closedBall`: Goldstine's theorem.
 * `NormedSpace.closure_image_inclusionInDoubleDualWeak_closedBall_zero_one`: its unit-ball form.
 * `NormedSpace.denseRange_inclusionInDoubleDualWeak`: `E` is weak-star dense in its bidual.
+* `ContinuousLinearMap.mem_closure_image_closedBall_of_precomp_precomp_eq`: if `T** M = J y`
+  with `‖M‖ ≤ C`, then `y ∈ closure (T '' closedBall 0 C)`.
+* `StrongDual.exists_neBot_tendsto_of_forall_precomp_precomp_eq`: simultaneous norm
+  approximation along a bounded proper filter for any family of operators with `T_k** M = J y_k`.
 
 ## References
 
@@ -110,3 +121,106 @@ theorem denseRange_inclusionInDoubleDualWeak : DenseRange (inclusionInDoubleDual
   exact (mem_closedBall_zero_iff (E := StrongDual 𝕜 (StrongDual 𝕜 E))).2 le_rfl
 
 end NormedSpace
+
+namespace ContinuousLinearMap
+
+variable {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- If the bidual adjoint `T**` of `T : E →L[𝕜] F` sends an element `M` of the bidual of `E` with
+`‖M‖ ≤ C` to the canonical bidual image of `y : F`, then `y` belongs to the norm closure of
+`T '' closedBall 0 C`: Goldstine's theorem places `y` in the weak closure of that convex image,
+which coincides with its norm closure. -/
+theorem mem_closure_image_closedBall_of_precomp_precomp_eq
+    (T : E →L[𝕜] F) {M : StrongDual 𝕜 (StrongDual 𝕜 E)} {C : ℝ} (hM : ‖M‖ ≤ C) {y : F}
+    (hy : precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) M =
+      NormedSpace.inclusionInDoubleDual 𝕜 F y) :
+    y ∈ closure (T '' closedBall 0 C) := by
+  let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
+  let : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
+  let : IsScalarTower ℝ 𝕜 E := .of_algebraMap_smul fun _ _ ↦ rfl
+  let : IsScalarTower ℝ 𝕜 F := .of_algebraMap_smul fun _ _ ↦ rfl
+  -- Goldstine places `M` in the weak-star closure of the ball of radius `C`.
+  have hMcl : StrongDual.toWeakDual M ∈ closure
+      (NormedSpace.inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' closedBall 0 C)) := by
+    rw [NormedSpace.closure_image_inclusionInDoubleDualWeak_closedBall, map_zero,
+      Set.mem_preimage, StrongDual.toStrongDual_toWeakDual]
+    exact (mem_closedBall_zero_iff (E := StrongDual 𝕜 (StrongDual 𝕜 E))).2 hM
+  -- Push forward along the weak-star continuous bidual adjoint `T**`.
+  let f : WeakDual 𝕜 (StrongDual 𝕜 E) → WeakDual 𝕜 (StrongDual 𝕜 F) := fun Φ ↦
+    StrongDual.toWeakDual
+      (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) (WeakDual.toStrongDual Φ))
+  have hfM : f (StrongDual.toWeakDual M) ∈ closure (f ''
+      (NormedSpace.inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' closedBall 0 C))) :=
+    T.continuous_toWeakDual_precomp_precomp.continuousOn.image_closure ⟨_, hMcl, rfl⟩
+  have hfim : f '' (NormedSpace.inclusionInDoubleDualWeak 𝕜 E ''
+      (toWeakSpace 𝕜 E '' closedBall 0 C)) =
+      NormedSpace.inclusionInDoubleDualWeak 𝕜 F ''
+        (toWeakSpace 𝕜 F '' (T '' closedBall 0 C)) := by
+    ext ψ
+    simp only [Set.mem_image, f]
+    constructor
+    · rintro ⟨_, ⟨_, ⟨x, hx, rfl⟩, rfl⟩, rfl⟩
+      exact ⟨_, ⟨T x, ⟨x, hx, rfl⟩, rfl⟩,
+        (T.toWeakDual_precomp_precomp_inclusionInDoubleDualWeak x).symm⟩
+    · rintro ⟨_, ⟨_, ⟨x, hx, rfl⟩, rfl⟩, rfl⟩
+      exact ⟨_, ⟨_, ⟨x, hx, rfl⟩, rfl⟩,
+        T.toWeakDual_precomp_precomp_inclusionInDoubleDualWeak x⟩
+  have hfy : f (StrongDual.toWeakDual M) =
+      NormedSpace.inclusionInDoubleDualWeak 𝕜 F (toWeakSpace 𝕜 F y) := by
+    dsimp [f]
+    rw [hy, NormedSpace.inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply]
+  rw [hfim, hfy] at hfM
+  -- Pull back to the weak topology of `F`, where weak and norm closures agree on convex sets.
+  have hweak : toWeakSpace 𝕜 F y ∈ closure (toWeakSpace 𝕜 F '' (T '' closedBall 0 C)) := by
+    rw [(NormedSpace.isInducing_inclusionInDoubleDualWeak 𝕜 F).closure_eq_preimage_closure_image]
+    exact hfM
+  have hconv : Convex ℝ (T '' closedBall (0 : E) C) :=
+    (convex_closedBall 0 C).linear_image ((T : E →ₗ[𝕜] F).restrictScalars ℝ)
+  rw [← hconv.toWeakSpace_closure 𝕜] at hweak
+  exact (toWeakSpace 𝕜 F).injective.mem_set_image.1 hweak
+
+end ContinuousLinearMap
+
+namespace StrongDual
+
+/-- If an element `M` of the bidual of `E` with `‖M‖ ≤ C` is sent by the bidual adjoint of every
+operator `T k : E →L[𝕜] Y k` to the canonical bidual image of `y k`, then there is a proper filter
+on `E`, eventually bounded in norm by `C`, along which `T k` tends in norm to `y k` for all `k`. -/
+theorem exists_neBot_tendsto_of_forall_precomp_precomp_eq {κ : Type*} {Y : κ → Type*}
+    [∀ k, SeminormedAddCommGroup (Y k)] [∀ k, NormedSpace 𝕜 (Y k)]
+    (M : StrongDual 𝕜 (StrongDual 𝕜 E)) {C : ℝ} (hM : ‖M‖ ≤ C)
+    (T : ∀ k, E →L[𝕜] Y k) (y : ∀ k, Y k)
+    (hT : ∀ k, ContinuousLinearMap.precomp 𝕜
+        (ContinuousLinearMap.precomp 𝕜 (T k) : StrongDual 𝕜 (Y k) →L[𝕜] StrongDual 𝕜 E) M =
+      NormedSpace.inclusionInDoubleDual 𝕜 (Y k) (y k)) :
+    ∃ l : Filter E, l.NeBot ∧ (∀ᶠ x in l, ‖x‖ ≤ C) ∧ ∀ k, Filter.Tendsto (T k) l (nhds (y k)) := by
+  suffices ∃ l : Filter E, l.NeBot ∧ (∀ᶠ x in l, ‖x‖ ≤ C) ∧
+      ∀ k, Filter.Tendsto (fun x ↦ ‖T k x - y k‖) l (nhds 0) by
+    simpa only [← tendsto_iff_norm_sub_tendsto_zero] using this
+  rw [TauCeti.exists_neBot_tendsto_iff_forall_finset_dist_lt]
+  intro s ε hε
+  classical
+  let Φ : E →L[𝕜] ∀ k : s, Y k.1 := ContinuousLinearMap.pi fun k : s ↦ T k.1
+  let z : ∀ k : s, Y k.1 := fun k ↦ y k.1
+  have hΦ : ContinuousLinearMap.precomp 𝕜
+      (ContinuousLinearMap.precomp 𝕜 Φ : StrongDual 𝕜 (∀ k : s, Y k.1) →L[𝕜] StrongDual 𝕜 E) M =
+      NormedSpace.inclusionInDoubleDual 𝕜 (∀ k : s, Y k.1) z := by
+    ext g
+    have hg : g.comp Φ = ∑ k : s, (g.comp (.single 𝕜 (fun k : s ↦ Y k.1) k)).comp (T k.1) := by
+      ext x
+      simpa [Φ] using (ContinuousLinearMap.sum_comp_single (L := g) (v := Φ x)).symm
+    have hkey (k : s) : M ((g.comp (.single 𝕜 (fun k : s ↦ Y k.1) k)).comp (T k.1)) =
+        g.comp (.single 𝕜 (fun k : s ↦ Y k.1) k) (y k.1) :=
+      congr($(hT k.1) (g.comp (.single 𝕜 (fun k : s ↦ Y k.1) k)))
+    rw [ContinuousLinearMap.precomp_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.precomp_apply, hg, map_sum, NormedSpace.dual_def]
+    simp only [hkey]
+    exact ContinuousLinearMap.sum_comp_single (L := g) (v := z)
+  obtain ⟨_, ⟨x, hx, rfl⟩, hdist⟩ := Metric.mem_closure_iff.1
+    (Φ.mem_closure_image_closedBall_of_precomp_precomp_eq hM hΦ) ε hε
+  refine ⟨x, mem_closedBall_zero_iff.1 hx, fun k hk ↦ ?_⟩
+  rw [Real.dist_0_eq_abs, abs_norm, norm_sub_rev]
+  rw [dist_eq_norm] at hdist
+  exact (norm_le_pi_norm (z - Φ x) ⟨k, hk⟩).trans_lt hdist
+
+end StrongDual
