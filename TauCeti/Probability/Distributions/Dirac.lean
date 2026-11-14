@@ -37,7 +37,7 @@ open _root_.MeasureTheory ProbabilityTheory Set
 /-- The cumulative distribution function of a Dirac measure is a step function. -/
 @[simp]
 theorem cdf_dirac (a x : ℝ) : cdf (Measure.dirac a) x = if a ≤ x then 1 else 0 := by
-  rw [cdf_eq_real, dirac_real_Iic]
+  rw [cdf_eq_real, Measure.dirac_real_Iic]
 
 /-- Every exponential moment of a Dirac measure exists. -/
 @[simp]

@@ -31,7 +31,7 @@ combinations of Dirac measures at its points, with nonnegative real weights summ
 
 ## Main results
 
-* `TauCeti.Probability.dirac_real_Iic` — the cumulative mass of a Dirac measure on a preorder.
+* `MeasureTheory.Measure.dirac_real_Iic` — the cumulative mass of a Dirac measure on a preorder.
 * `MeasureTheory.Measure.map_dirac_of_aemeasurable` — the Dirac pushforward formula for a map
   that is only a.e. measurable.
 * `MeasureTheory.Measure.dirac_eq_dirac_iff_inseparable` — two points have equal Borel Dirac
@@ -64,7 +64,7 @@ public section
 open MeasureTheory
 open scoped ENNReal NNReal Topology
 
-namespace TauCeti.Probability
+namespace MeasureTheory.Measure
 
 open Set
 
@@ -73,12 +73,6 @@ theorem dirac_real_Iic {α : Type*} [MeasurableSpace α] [MeasurableSingletonCla
     (a b : α) [Decidable (a ≤ b)] :
     (Measure.dirac a).real (Iic b) = if a ≤ b then 1 else 0 := by
   by_cases h : a ≤ b <;> simp [Measure.dirac_real_apply, Set.indicator, h]
-
-end TauCeti.Probability
-
-namespace MeasureTheory.Measure
-
-open Set
 
 variable {X : Type*} {Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {T : X → Y}
 
