@@ -194,7 +194,7 @@ theorem mem_range_of_stabilizeXSuccChainMap_mem_range {z : GridChainMinus R (n +
     (h : G.stabilizeXSuccChainMap s R z ∈ LinearMap.range (G.unblockedDifferential R)) :
     z ∈ LinearMap.range ((G.stabilizeX s.succ (G.X s).succ s).unblockedDifferential R) :=
   G.mem_range_of_injective_unblockedHomologyMap _
-    (G.stabilizeXSuccChainMap s R) (G.stabilizeXSuccChainMap_unblockedDifferential s R)
+    (G.stabilizeXSuccChainMap s R)
     (G.stabilizeXSuccHomologyMap s R)
     (fun w _ => G.stabilizeXSuccHomologyMap_unblockedHomologyClass s R w)
     (G.stabilizeXSuccHomologyMap_bijective s R).1 hz h

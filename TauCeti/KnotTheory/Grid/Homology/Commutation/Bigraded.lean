@@ -73,14 +73,14 @@ noncomputable def simplyBlockedHomologyCommutationCoefficientEquiv :
     exact he
 
 /-- Restriction of coefficient scalars does not change the specified pentagon comparison. -/
-@[simp]
 theorem simplyBlockedHomologyCommutationCoefficientEquiv_apply
     (y : (Base).obj (hG.simplyBlockedHomology R i)) :
     hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i y =
       hG.simplyBlockedHomologyCommutationMap R C i y :=
   congrFun (hG.coe_simplyBlockedHomologyCommutationEquiv R C i) y
 
-private theorem simplyBlockedHomologyCommutationCoefficientEquiv_homogeneous :
+/-- The coefficient-linear commutation comparison preserves both homology degrees. -/
+theorem isHomogeneous_simplyBlockedHomologyCommutationCoefficientEquiv :
     LinearMap.IsHomogeneous
       (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i).toLinearMap
       ((H).bigradedHatHomologyGrading R i).piece
@@ -94,8 +94,30 @@ private theorem simplyBlockedHomologyCommutationCoefficientEquiv_homogeneous :
       rw [simplyBlockedChainEquiv_simplyBlockedCommutationCyclesMap]
       exact (H).simplyBlockedCommutationMap_mem_bigradedChainHatPiece R C i hz)
 
+/-- The coefficient-linear commutation comparison preserves and reflects both homology degrees. -/
+@[simp↓]
+theorem simplyBlockedHomologyCommutationCoefficientEquiv_mem_bigradedHatHomologyPiece_iff
+    {g : ℤ × ℤ} {y : (Base).obj (hG.simplyBlockedHomology R i)} :
+    hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i y ∈
+        (H').bigradedHatHomologyPiece R (σ i) g ↔
+      y ∈ (H).bigradedHatHomologyPiece R i g :=
+  (H).bigradedHatHomologyEquiv_mem_piece_iff R i (H') (σ i)
+    (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i)
+    (hG.isHomogeneous_simplyBlockedHomologyCommutationCoefficientEquiv R C i) g y
+
+/-- The inverse coefficient-linear comparison preserves and reflects both homology degrees. -/
+@[simp↓]
+theorem simplyBlockedHomologyCommutationCoefficientEquiv_symm_mem_bigradedHatHomologyPiece_iff
+    {g : ℤ × ℤ} {y : (Base').obj ((hG').simplyBlockedHomology R (σ i))} :
+    (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i).symm y ∈
+        (H).bigradedHatHomologyPiece R i g ↔
+      y ∈ (H').bigradedHatHomologyPiece R (σ i) g :=
+  (H).bigradedHatHomologyEquiv_symm_mem_piece_iff R i (H') (σ i)
+    (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i)
+    (hG.isHomogeneous_simplyBlockedHomologyCommutationCoefficientEquiv R C i) g y
+
 /-- The specified commutation map preserves and reflects both homology degrees. -/
-@[simp]
+@[simp↓]
 theorem simplyBlockedHomologyCommutationMap_mem_bigradedHatHomologyPiece_iff
     {g : ℤ × ℤ} {y : (Base).obj (hG.simplyBlockedHomology R i)} :
     hG.simplyBlockedHomologyCommutationMap R C i y ∈
@@ -103,7 +125,7 @@ theorem simplyBlockedHomologyCommutationMap_mem_bigradedHatHomologyPiece_iff
       y ∈ (H).bigradedHatHomologyPiece R i g := by
   have h := (H).bigradedHatHomologyEquiv_mem_piece_iff R i (H') (σ i)
     (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i)
-    (hG.simplyBlockedHomologyCommutationCoefficientEquiv_homogeneous R C i) g y
+    (hG.isHomogeneous_simplyBlockedHomologyCommutationCoefficientEquiv R C i) g y
   exact (hG.simplyBlockedHomologyCommutationCoefficientEquiv_apply R C i y) ▸ h
 
 /-- The pentagon comparison sends a homogeneous class to one of the same bidegree. -/
@@ -121,20 +143,31 @@ noncomputable def simplyBlockedHomologyCommutationPieceEquiv (g : ℤ × ℤ) :
     (H).bigradedHatHomologyPiece R i g ≃ₗ[R] (H').bigradedHatHomologyPiece R (σ i) g :=
   (H).bigradedHatHomologyPieceEquiv R i (H') (σ i)
     (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i)
-    (hG.simplyBlockedHomologyCommutationCoefficientEquiv_homogeneous R C i) g
+    (hG.isHomogeneous_simplyBlockedHomologyCommutationCoefficientEquiv R C i) g
 
-/-- On underlying classes, the equivalence of homogeneous pieces is the pentagon map. -/
-@[simp]
+/-- On underlying classes, the piece equivalence is the total coefficient-linear comparison. -/
+@[simp↓]
 theorem coe_simplyBlockedHomologyCommutationPieceEquiv (g : ℤ × ℤ)
     (y : (H).bigradedHatHomologyPiece R i g) :
     (hG.simplyBlockedHomologyCommutationPieceEquiv R C i g y :
       (Base').obj ((hG').simplyBlockedHomology R (σ i))) =
-      hG.simplyBlockedHomologyCommutationMap R C i
+      hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i
         (y : (Base).obj (hG.simplyBlockedHomology R i)) := by
-  exact ((H).coe_bigradedHatHomologyPieceEquiv_apply R i (H') (σ i)
+  exact (H).coe_bigradedHatHomologyPieceEquiv_apply R i (H') (σ i)
     (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i)
-    (hG.simplyBlockedHomologyCommutationCoefficientEquiv_homogeneous R C i) g y).trans
-      (hG.simplyBlockedHomologyCommutationCoefficientEquiv_apply R C i y)
+    (hG.isHomogeneous_simplyBlockedHomologyCommutationCoefficientEquiv R C i) g y
+
+/-- The inverse piece equivalence is the inverse of the total coefficient-linear comparison. -/
+@[simp↓]
+theorem coe_simplyBlockedHomologyCommutationPieceEquiv_symm_apply (g : ℤ × ℤ)
+    (y : (H').bigradedHatHomologyPiece R (σ i) g) :
+    ((hG.simplyBlockedHomologyCommutationPieceEquiv R C i g).symm y :
+      (Base).obj (hG.simplyBlockedHomology R i)) =
+      (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i).symm
+        (y : (Base').obj ((hG').simplyBlockedHomology R (σ i))) :=
+  (H).coe_bigradedHatHomologyPieceEquiv_symm_apply R i (H') (σ i)
+    (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i)
+    (hG.isHomogeneous_simplyBlockedHomologyCommutationCoefficientEquiv R C i) g y
 
 section Field
 

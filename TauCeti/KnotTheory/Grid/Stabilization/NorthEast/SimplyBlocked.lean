@@ -117,7 +117,7 @@ coefficient specialization. -/
 theorem simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization (c : GridChainMinus R (n + 1)) :
     G.simplyBlockedStabilizeXSuccMap s i R (simplyBlockedSpecialization R j c) =
       simplyBlockedSpecialization R i (G.stabilizeXSuccChainMap s R c) :=
-  simplyBlockedMapAlong_specialization R s.predAbove i j (G.stabilizeXSuccChainMap s R)
+  simplyBlockedMapAlong_simplyBlockedSpecialization R s.predAbove i j (G.stabilizeXSuccChainMap s R)
     (by simp [Fin.predAbove_succ_succAbove]) c
 
 variable [CharP R 2]
@@ -127,7 +127,8 @@ theorem simplyBlockedStabilizeXSuccMap_simplyBlockedDifferential (c : GridChainH
     G.simplyBlockedStabilizeXSuccMap s i R
         ((G.stabilizeX s.succ (G.X s).succ s).simplyBlockedDifferential R j c) =
       G.simplyBlockedDifferential R i (G.simplyBlockedStabilizeXSuccMap s i R c) :=
-  simplyBlockedMapAlong_differential R s.predAbove i j (G.stabilizeXSuccChainMap s R) G _
+  simplyBlockedMapAlong_simplyBlockedDifferential R s.predAbove i j
+    (G.stabilizeXSuccChainMap s R) G _
     (by simp [Fin.predAbove_succ_succAbove]) (G.stabilizeXSuccChainMap_unblockedDifferential s R) c
 
 /-! ### Quasi-isomorphism after blocking -/
@@ -137,7 +138,7 @@ local notation "G'" => GridDiagram.stabilizeX G (Fin.succ s)
 
 /-- Every simply blocked cycle of `G` differs from the image of a simply blocked cycle of the
 stabilized diagram by a boundary. -/
-private theorem exists_sub_simplyBlockedStabilizeXSuccMap_mem_range {y : GridChainHat R n i}
+theorem exists_sub_simplyBlockedStabilizeXSuccMap_mem_range {y : GridChainHat R n i}
     (hy : y ∈ LinearMap.ker (G.simplyBlockedDifferential R i)) :
     ∃ x ∈ LinearMap.ker ((G').simplyBlockedDifferential R j),
       y - G.simplyBlockedStabilizeXSuccMap s i R x ∈
@@ -150,7 +151,7 @@ private theorem exists_sub_simplyBlockedStabilizeXSuccMap_mem_range {y : GridCha
 
 /-- A simply blocked cycle of the stabilized diagram whose image in `G` is a boundary is itself a
 boundary. -/
-private theorem mem_range_of_simplyBlockedStabilizeXSuccMap_mem_range {x : GridChainHat R (n + 1) j}
+theorem mem_range_of_simplyBlockedStabilizeXSuccMap_mem_range {x : GridChainHat R (n + 1) j}
     (hx : x ∈ LinearMap.ker ((G').simplyBlockedDifferential R j))
     (h : G.simplyBlockedStabilizeXSuccMap s i R x ∈
       LinearMap.range (G.simplyBlockedDifferential R i)) :
@@ -353,6 +354,30 @@ theorem oneVariableSpecializationStabilizeXSuccHomologyEquiv_symm_mem_bigradedHa
   exact (G.stabilizeXSucc s).bigradedHatHomologyEquiv_symm_mem_piece_iff R j G i
     (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
     (G.isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R) g y
+
+/-- The semilinear north-east comparison preserves and reflects homology bidegrees. -/
+@[simp]
+theorem oneVariableSpecializationStabilizeXSuccHomologyMap_mem_bigradedHatHomologyPiece_iff
+    (g : ℤ × ℤ)
+    (y : (BaseS).obj (((G.stabilizeXSucc s).1.simplyBlockedComplex R j).homology ())) :
+    (G.1.oneVariableSpecializationStabilizeXSuccHomologyMap s i R y :
+        (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) ∈
+        G.bigradedHatHomologyPiece R i g ↔
+      y ∈ (G.stabilizeXSucc s).bigradedHatHomologyPiece R j g := by
+  rw [← GridDiagram.oneVariableSpecializationStabilizeXSuccHomologyEquiv_apply]
+  exact G.oneVariableSpecializationStabilizeXSuccHomologyEquiv_mem_bigradedHatHomologyPiece_iff
+    s i R g y
+
+/-- Every homogeneous class has a north-east image of the same bidegree. -/
+theorem oneVariableSpecializationStabilizeXSuccHomologyMap_mem_bigradedHatHomologyPiece
+    {g : ℤ × ℤ}
+    {y : (BaseS).obj (((G.stabilizeXSucc s).1.simplyBlockedComplex R j).homology ())}
+    (hy : y ∈ (G.stabilizeXSucc s).bigradedHatHomologyPiece R j g) :
+    (G.1.oneVariableSpecializationStabilizeXSuccHomologyMap s i R y :
+        (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) ∈
+      G.bigradedHatHomologyPiece R i g :=
+  (G.oneVariableSpecializationStabilizeXSuccHomologyMap_mem_bigradedHatHomologyPiece_iff
+    s i R g y).2 hy
 
 /-- North-east `X`-stabilization identifies each homogeneous piece, blocking the transported old
 `O`-marking and preserving absolute `O`-Maslov and Alexander bidegrees. -/

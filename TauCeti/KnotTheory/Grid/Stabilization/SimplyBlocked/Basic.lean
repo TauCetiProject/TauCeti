@@ -25,9 +25,9 @@ quotient of `GC⁻` by multiplication by `V`, which is injective, and the unbloc
 map carries the variable of the transported marking to that of the original marking. So the
 unblocked and specialized maps form a morphism of short exact sequences of complexes, and the
 five lemma for their long exact homology sequences
-(`AddMonoidHom.exists_mem_ker_sub_mem_range_of_exact` and
-`AddMonoidHom.mem_range_of_map_mem_range_of_exact`) transfers stabilization invariance of `GH⁻`
-to the specialized complexes.
+as applied in `TauCeti.exists_sub_simplyBlockedMapAlong_mem_range` and
+`TauCeti.mem_range_of_simplyBlockedMapAlong_mem_range` transfers stabilization invariance of
+`GH⁻` to the specialized complexes.
 
 ## Main results
 
@@ -122,7 +122,7 @@ coefficient specialization. -/
 theorem simplyBlockedStabilizeXMap_simplyBlockedSpecialization (c : GridChainMinus R (n + 1)) :
     G.simplyBlockedStabilizeXMap s i R (simplyBlockedSpecialization R j c) =
       simplyBlockedSpecialization R i (G.stabilizeXChainMap s R c) :=
-  simplyBlockedMapAlong_specialization R s.predAbove i j (G.stabilizeXChainMap s R)
+  simplyBlockedMapAlong_simplyBlockedSpecialization R s.predAbove i j (G.stabilizeXChainMap s R)
     (by simp [Fin.predAbove_succAbove]) c
 
 variable [CharP R 2]
@@ -132,7 +132,7 @@ theorem simplyBlockedStabilizeXMap_simplyBlockedDifferential (c : GridChainHat R
     G.simplyBlockedStabilizeXMap s i R
         ((G.stabilizeX s.castSucc (G.X s).castSucc s).simplyBlockedDifferential R j c) =
       G.simplyBlockedDifferential R i (G.simplyBlockedStabilizeXMap s i R c) :=
-  simplyBlockedMapAlong_differential R s.predAbove i j (G.stabilizeXChainMap s R) G _
+  simplyBlockedMapAlong_simplyBlockedDifferential R s.predAbove i j (G.stabilizeXChainMap s R) G _
     (by simp [Fin.predAbove_succAbove]) (G.stabilizeXChainMap_unblockedDifferential s R) c
 
 /-! ### Quasi-isomorphism after blocking -/

@@ -148,7 +148,6 @@ noncomputable def oneVariableSpecializationStabilizeXHomologyEquiv :
 
 /-- On elements, `oneVariableSpecializationStabilizeXHomologyEquiv` is the semilinear stabilization
 comparison. -/
-@[simp]
 theorem oneVariableSpecializationStabilizeXHomologyEquiv_apply
     (y : (ModuleCat.restrictScalars (MvPolynomial.C : R →+* S)).obj
       (((G').simplyBlockedComplex R j).homology ())) :

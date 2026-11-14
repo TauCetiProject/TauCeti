@@ -217,10 +217,7 @@ noncomputable def bigradedHatHomologyPieceEquiv
     (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
       (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ) :
     G.bigradedHatHomologyPiece R i g ≃ₗ[R] H.bigradedHatHomologyPiece R j g :=
-  e.ofSubmodules _ _ (by
-    ext y
-    rw [Submodule.mem_map_equiv, ← G.bigradedHatHomologyEquiv_mem_piece_iff R i H j e he g,
-      LinearEquiv.apply_symm_apply])
+  he.pieceEquiv g
 
 /-- The piece equivalence applies the total homology equivalence to underlying classes. -/
 @[simp]
@@ -230,7 +227,8 @@ theorem coe_bigradedHatHomologyPieceEquiv_apply
       (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ)
     (y : G.bigradedHatHomologyPiece R i g) :
     (G.bigradedHatHomologyPieceEquiv R i H j e he g y : (BaseH).obj ((D).homology ())) =
-      e y := (rfl)
+      e y :=
+  he.coe_pieceEquiv_apply g y
 
 /-- The inverse piece equivalence applies the inverse total equivalence to underlying classes. -/
 @[simp]
@@ -240,7 +238,8 @@ theorem coe_bigradedHatHomologyPieceEquiv_symm_apply
       (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ)
     (y : H.bigradedHatHomologyPiece R j g) :
     ((G.bigradedHatHomologyPieceEquiv R i H j e he g).symm y :
-        (Base).obj ((C).homology ())) = e.symm y := (rfl)
+        (Base).obj ((C).homology ())) = e.symm y :=
+  he.coe_pieceEquiv_symm_apply g y
 
 end Comparison
 

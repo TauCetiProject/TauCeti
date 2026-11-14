@@ -179,31 +179,6 @@ theorem mem_range_moduleCatToCycles_simplyBlockedComplex_iff (i : Fin n)
     apply (G.simplyBlockedChainEquiv R i).injective
     rw [hd, LinearEquiv.apply_symm_apply, hw]
 
-/-- The categorical homology isomorphism to the concrete quotient, used for descent. -/
-private noncomputable def oneVariableSpecializationHomologyIsoQuotient (G : GridDiagram n)
-    (R : Type*) [CommRing R] [CharP R 2] (i : Fin n) :
-    (G.simplyBlockedComplex R i).homology () ≅
-      ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R)
-        (LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom ⧸
-          LinearMap.range ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatToCycles) :=
-  (G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl ≪≫
-    ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso
-
-private theorem oneVariableSpecializationHomologyIsoQuotient_hom_class
-    (G : GridDiagram n) (R : Type*) [CommRing R] [CharP R 2] (i : Fin n)
-    (z : LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom) :
-    (oneVariableSpecializationHomologyIsoQuotient G R i).hom
-        (G.oneVariableSpecializationHomologyClass R i z) = Submodule.Quotient.mk z := by
-  rw [G.oneVariableSpecializationHomologyClass_apply]
-  -- Expose the composite isomorphism so the inverse laws match the selected module carriers.
-  change ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso.hom
-      (((G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl).hom
-        (((G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl).inv
-          (((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso.inv
-            (Submodule.Quotient.mk z)))) = _
-  rw [ModuleCat.hom_inv_apply]
-  exact ModuleCat.hom_inv_apply _ _
-
 section Intertwining
 
 variable {n m : ℕ} {G : GridDiagram n} {H : GridDiagram m}
@@ -427,7 +402,8 @@ noncomputable def simplyBlockedHomologyIsoQuotient (hG : G.IsKnot) (i : Fin n) :
     hG.simplyBlockedHomology R i ≅
       ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R)
         (hG.simplyBlockedHomologyQuotient R i) :=
-  oneVariableSpecializationHomologyIsoQuotient G R i
+  (G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl ≪≫
+    ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso
 
 /-- Under the concrete cycles-modulo-boundaries identification, the class of a cycle is its
 quotient class. -/
@@ -436,6 +412,14 @@ theorem simplyBlockedHomologyIsoQuotient_hom_class (hG : G.IsKnot) (i : Fin n)
     (c : hG.simplyBlockedCycles R i) :
     (hG.simplyBlockedHomologyIsoQuotient R i).hom (G.oneVariableSpecializationHomologyClass R i c) =
       Submodule.Quotient.mk c := by
-  exact oneVariableSpecializationHomologyIsoQuotient_hom_class G R i c
+  rw [G.oneVariableSpecializationHomologyClass_apply]
+  -- Expose the composite isomorphism so the inverse laws match the selected module carriers.
+  change ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso.hom
+      (((G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl).hom
+        (((G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl).inv
+          (((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso.inv
+            (Submodule.Quotient.mk c)))) = _
+  rw [ModuleCat.hom_inv_apply]
+  exact ModuleCat.hom_inv_apply _ _
 
 end TauCeti.GridDiagram.IsKnot

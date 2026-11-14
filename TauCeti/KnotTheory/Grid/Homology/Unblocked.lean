@@ -231,14 +231,15 @@ theorem exists_sub_mem_range_of_surjective_unblockedHomologyMap
       _ = 0 := sub_eq_zero.mpr hy.symm
   exact ⟨z, z.2, (G.unblockedHomologyClass_eq_zero_iff R _).1 he⟩
 
+omit hf in
 /-- A class-compatible injective map on unblocked homology reflects boundaries of cycles. -/
 theorem mem_range_of_injective_unblockedHomologyMap
     (h : Function.Injective F) {z : GridChainMinus R m}
     (hz : z ∈ LinearMap.ker (G'.unblockedDifferential R))
     (hb : f z ∈ LinearMap.range (G.unblockedDifferential R)) :
     z ∈ LinearMap.range (G'.unblockedDifferential R) := by
-  have hfz : f z ∈ LinearMap.ker (G.unblockedDifferential R) := by
-    rw [LinearMap.mem_ker, ← hf, LinearMap.mem_ker.mp hz, map_zero]
+  have hfz : f z ∈ LinearMap.ker (G.unblockedDifferential R) :=
+    (LinearMap.range_le_ker_iff.mpr (G.unblockedDifferential_comp_self_eq_zero R)) hb
   apply (G'.unblockedHomologyClass_eq_zero_iff R ⟨z, hz⟩).1
   apply h
   rw [map_zero, hF ⟨z, hz⟩ hfz, unblockedHomologyClass_eq_zero_iff]
