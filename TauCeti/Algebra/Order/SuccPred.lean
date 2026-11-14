@@ -14,9 +14,10 @@ public import Mathlib.Order.SuccPred.Basic
 In an ordered additive group the translations `x ↦ a + x` are order isomorphisms, so they commute
 with the successor function: `a + succ b = succ (a + b)`. In particular `succ a = a + succ 0`, so
 the successor function of a discretely ordered abelian group is translation by its least positive
-element `succ 0`. Unlike Mathlib's `SuccAddOrder`, this does not ask the instance `One` to be that
-element: on `Lex (Fin n → ℤ)` the instance `One` is the constant function `1`, which is not the
-least positive element when `n ≥ 2`.
+element `succ 0`, which is positive as soon as some element is (`lt_succ_self_of_lt`). Unlike
+Mathlib's `SuccAddOrder`, this does not ask the instance `One` to be that element: on
+`Lex (Fin n → ℤ)` the instance `One` is the constant function `1`, which is not the least positive
+element when `n ≥ 2`.
 -/
 
 public section
@@ -24,6 +25,11 @@ public section
 namespace TauCeti.Order
 
 open _root_.Order
+
+/-- An element below some other element is not maximal, so it is below its successor. -/
+theorem lt_succ_self_of_lt {α : Type*} [Preorder α] [SuccOrder α] {a b : α} (h : a < b) :
+    a < succ a :=
+  lt_succ_of_not_isMax (not_isMax_of_lt h)
 
 variable {α : Type*} [AddGroup α] [PartialOrder α] [AddLeftMono α] [SuccOrder α]
 

@@ -74,10 +74,15 @@ there is one. The instance `One Λ` is not used, because it need not be that ele
 * `TauCeti.InfWord.take_append_drop`: `w.take β ++ w.drop β = w`.
 * `TauCeti.InfWord.take_append`, `TauCeti.InfWord.drop_append`: the segments of a concatenation.
 * `TauCeti.InfWord.take_take`, `TauCeti.InfWord.drop_drop`: segments of segments.
+* `TauCeti.InfWord.letter_injective`: a word is determined by its letters.
+* `TauCeti.InfWord.take_eq_take_iff_forall_letter_eq`,
+  `TauCeti.InfWord.take_succ_eq_take_succ_iff`: when two words have the same initial segment.
 * `TauCeti.InfWord.append_eq_append_iff`: two factorisations of one word differ by a common
   middle piece.
 * `TauCeti.InfWord.inv_take`, `TauCeti.InfWord.inv_drop`: inversion exchanges initial and final
   segments, `(w.take β)⁻¹ = w⁻¹.drop (|w| - β)`.
+* `TauCeti.InfWord.letter_inv_succ_zero`, `TauCeti.InfWord.letter_inv_length`: the first and last
+  letters of `w⁻¹` are the inverses of the last and first letters of `w`.
 * `TauCeti.InfWord.isReduced_append_iff`: the criterion for a concatenation to be reduced.
 * `TauCeti.InfWord.isReduced_inv_append_iff`: `u⁻¹ ++ v` is reduced exactly when `u`, `v` are
   reduced and, when both are nonempty, their first letters differ.
@@ -183,6 +188,15 @@ theorem length_pos_iff : 0 < w.length ↔ w ≠ empty Λ X :=
 @[simp]
 theorem length_nonpos_iff : w.length ≤ 0 ↔ w = empty Λ X :=
   w.length_nonneg.ge_iff_eq'.trans length_eq_zero_iff
+
+/-- A word is determined by its letters: the length of a nonempty word is the last position
+carrying a letter. -/
+theorem letter_injective : Function.Injective (letter : InfWord Λ X → Λ → Option (X × Bool)) := by
+  have key {u v : InfWord Λ X} (h : u.letter = v.letter) : u.length ≤ v.length := by
+    rcases u.length_nonneg.eq_or_lt with hu | hu
+    · exact hu ▸ v.length_nonneg
+    · exact ((v.isSome_letter _).1 (h ▸ (u.isSome_letter _).2 ⟨hu, le_rfl⟩)).2
+  exact fun u v h => ext (le_antisymm (key h) (key h.symm)) fun β _ _ => congrFun h β
 
 end PartialOrder
 
@@ -303,6 +317,17 @@ theorem take_eq_self_iff {w : InfWord Λ X} {β : Λ} :
 theorem take_ofFun (α β : Λ) (f : Λ → X × Bool) : (ofFun α f).take β = ofFun (min β α) f :=
   ext (by simp; grind) fun _ _ _ => by grind
 
+/-- Two words have the same initial segment `take β` exactly when they have the same letters at
+all positions `γ ≤ β`. -/
+theorem take_eq_take_iff_forall_letter_eq {u v : InfWord Λ X} {β : Λ} :
+    u.take β = v.take β ↔ ∀ γ ≤ β, u.letter γ = v.letter γ := by
+  refine ⟨fun h γ hγ => by simpa [hγ] using congrArg (letter · γ) h, fun h => ?_⟩
+  refine letter_injective (funext fun γ => ?_)
+  simp only [letter_take]
+  split_ifs with hγ
+  · exact h γ hγ
+  · rfl
+
 end LinearOrder
 
 section IsReduced
@@ -350,6 +375,14 @@ theorem IsReduced.take (h : w.IsReduced) (β : Λ) : (w.take β).IsReduced := by
   obtain ⟨hγβ, hγw⟩ : γ < β ∧ γ < w.length := by simp at hγ; grind
   rw [letter_take_of_le _ (Order.succ_le_of_lt hγβ), letter_take_of_le _ hγβ.le]
   exact h γ h0 hγw
+
+/-- Two words have the same initial segment `take (β + 1)` exactly when they have the same initial
+segment `take β` and the same letter at `β + 1`. -/
+theorem take_succ_eq_take_succ_iff {u v : InfWord Λ X} {β : Λ} :
+    u.take (Order.succ β) = v.take (Order.succ β) ↔
+      u.take β = v.take β ∧ u.letter (Order.succ β) = v.letter (Order.succ β) := by
+  simp only [take_eq_take_iff_forall_letter_eq, Order.le_succ_iff_eq_or_le]
+  grind
 
 end LinearOrder
 
@@ -608,6 +641,18 @@ instance : Inv (InfWord Λ X) where
 theorem letter_inv (w : InfWord Λ X) (β : Λ) :
     w⁻¹.letter β = (w.letter (Order.succ w.length - β)).map (Prod.map id not) := (rfl)
 
+/-- The first letter of `w⁻¹` is the inverse of the last letter of `w`. -/
+@[simp]
+theorem letter_inv_succ_zero (w : InfWord Λ X) :
+    w⁻¹.letter (Order.succ 0) = (w.letter w.length).map (Prod.map id not) := by
+  rw [letter_inv, Order.succ_eq_add_succ_zero w.length, add_sub_cancel_right]
+
+/-- The last letter of `w⁻¹` is the inverse of the first letter of `w`. -/
+@[simp]
+theorem letter_inv_length (w : InfWord Λ X) :
+    w⁻¹.letter w.length = (w.letter (Order.succ 0)).map (Prod.map id not) := by
+  rw [letter_inv, Order.succ_eq_add_succ_zero, add_sub_cancel_left]
+
 instance : InvolutiveInv (InfWord Λ X) where
   inv_inv w := ext (by simp) fun β _ _ => by
     simp [letter_inv, Function.comp_def, Prod.map]
@@ -685,8 +730,8 @@ theorem IsReduced.letter_succ_zero_ne_of_append (h : (u ++ v).IsReduced) (hu : 0
     (hv : 0 < v.length) :
     v.letter (Order.succ 0) ≠ (u.letter u.length).map (Prod.map id not) := by
   have := h u.length hu (by simpa using hv)
-  rwa [Order.succ_eq_add_succ_zero, letter_append_length_add _ _
-    (Order.lt_succ_of_not_isMax (not_isMax_of_lt hu)), letter_append_of_le _ le_rfl] at this
+  rwa [Order.succ_eq_add_succ_zero, letter_append_length_add _ _ (Order.lt_succ_self_of_lt hu),
+    letter_append_of_le _ le_rfl] at this
 
 /-- The concatenation `u ++ v` of two words is reduced, written `u ∘ v`, exactly when `u` and `v`
 are reduced and the last letter of `u` is not the inverse of the first letter of `v`. -/
@@ -699,8 +744,8 @@ theorem isReduced_append_iff : (u ++ v).IsReduced ↔ u.IsReduced ∧ v.IsReduce
   rcases lt_trichotomy β u.length with h | rfl | h
   · rw [letter_append_of_le _ (Order.succ_le_of_lt h), letter_append_of_le _ h.le]
     exact hu β h0 h
-  · rw [Order.succ_eq_add_succ_zero, letter_append_length_add _ _
-      (Order.lt_succ_of_not_isMax (not_isMax_of_lt h0)), letter_append_of_le _ le_rfl]
+  · rw [Order.succ_eq_add_succ_zero, letter_append_length_add _ _ (Order.lt_succ_self_of_lt h0),
+      letter_append_of_le _ le_rfl]
     exact huv h0 (by simpa using hβ)
   · obtain ⟨γ, rfl⟩ : ∃ γ, β = u.length + γ := ⟨β - u.length, by abel⟩
     have hγ : 0 < γ := by simpa using h
@@ -715,9 +760,7 @@ theorem IsReduced.drop (h : w.IsReduced) (β : Λ) : (w.drop β).IsReduced :=
 nonempty, their first letters differ. -/
 theorem isReduced_inv_append_iff : (u⁻¹ ++ v).IsReduced ↔ u.IsReduced ∧ v.IsReduced ∧
     (0 < u.length → 0 < v.length → v.letter (Order.succ 0) ≠ u.letter (Order.succ 0)) := by
-  rw [isReduced_append_iff, isReduced_inv, length_inv, letter_inv,
-    Order.succ_eq_add_succ_zero u.length, add_sub_cancel_left, Option.map_map]
-  simp [Function.comp_def, Prod.map]
+  simp [isReduced_append_iff, Prod.map_comp_map, Bool.involutive_not.comp_self]
 
 /-- `w⁻¹ ++ w` is reduced only for the empty word. -/
 @[simp]
