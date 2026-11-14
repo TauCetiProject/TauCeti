@@ -24,6 +24,7 @@ We prove:
   `C` iff every finite subset of `A` is approximately fixed, to any accuracy, by a single
   element of norm at most `C`; equivalently, iff there is such an approximate identity in the
   form of a net indexed by `Finset A × ℕ`, all of whose terms have norm at most `C`;
+* the estimate `‖e * a - b‖ ≤ 2 δ` when `‖e‖ ≤ 1` and both `a` and `e * b` are `δ`-close to `b`;
 * Dixon's combination: if `(e)` is a left approximate identity bounded by `C` and `(f)` a right
   one bounded by `D`, then `e + f - f * e` is a two-sided approximate identity bounded by
   `C + D + C * D`. In the unitization, `1 - (e + f - f * e) = (1 - f) * (1 - e)`;
@@ -139,6 +140,16 @@ theorem norm_mul_add_sub_mul_sub_le (e f a : A) :
     abel
   rw [this, add_mul, one_mul, mul_comm ‖e‖]
   exact (norm_sub_le _ _).trans (by gcongr; exact norm_mul_le _ _)
+
+/-- If `e` has norm at most `1`, `a` is `δ`-close to `b` and `e * b` is `δ`-close to `b`, then
+`e * a` is `2 δ`-close to `b`. -/
+theorem norm_mul_sub_le_two_mul {e a b : A} {δ : ℝ} (he : ‖e‖ ≤ 1) (h₁ : ‖a - b‖ ≤ δ)
+    (h₂ : ‖e * b - b‖ ≤ δ) : ‖e * a - b‖ ≤ 2 * δ := by
+  have h : ‖e * (a - b)‖ ≤ δ :=
+    (norm_mul_le _ _).trans (by simpa using mul_le_mul he h₁ (norm_nonneg _) zero_le_one)
+  calc ‖e * a - b‖ = ‖e * (a - b) + (e * b - b)‖ := by rw [mul_sub, sub_add_sub_cancel]
+    _ ≤ δ + δ := (norm_add_le _ _).trans (add_le_add h h₂)
+    _ = 2 * δ := by ring
 
 variable {l₁ l₂ : Filter A}
 
