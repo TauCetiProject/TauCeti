@@ -231,7 +231,7 @@ def twistingPresheafInAb (n : ℤ) : (Opens (ProjectiveSpectrum.top 𝒜))ᵒᵖ
 of types. -/
 def twistingPresheafInAbCompForget (n : ℤ) :
     twistingPresheafInAb 𝒜 n ⋙ forget Ab ≅ (twistingSheafInType 𝒜 n).obj :=
-  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ rfl
+  Iso.refl _
 
 /-- The twisting sheaf `𝒪(n)` as a presheaf of modules over the structure sheaf of `Proj`. -/
 def twistingPresheaf (n : ℤ) : PresheafOfModules.{u} (Proj 𝒜).ringCatSheaf.obj :=
