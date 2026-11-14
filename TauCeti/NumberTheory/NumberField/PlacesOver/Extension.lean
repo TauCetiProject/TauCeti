@@ -5,30 +5,47 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.PlacesOver.FinitePlace
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
+public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
+public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
+
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
+import TauCeti.NumberTheory.NumberField.PlacesOver.FinitePlace
+import TauCeti.NumberTheory.NumberField.PlacesOver.InfinitePlace
 
 /-!
-# Extending absolute values above finite places
+# Extending absolute values above places
 
-An absolute value of a number field equivalent to a finite place extends to every further
-number field. In particular, an absolute value lying over a finite place of a smaller number
-field extends further, with its normalization preserved exactly.
+An absolute value `w` on an intermediate extension `F / K` lying over a place `v` of `K` extends to
+further extensions `E / F`, with its normalization on `F` preserved:
 
-This distinction matters at ramified primes: an absolute value lying over a base place is
-usually a root of a finite place, rather than a finite place itself. The extension is obtained
-by extending the finite place and taking the same positive real power. The exponent is allowed
-to exceed one, because finite-place absolute values are nonarchimedean.
+* Above an infinite place `v : InfinitePlace K`, `w` is itself an infinite place of `F`
+  (`NumberField.isInfinitePlace_of_liesOver`) and extends to every algebraic field extension `E / F`
+  (`NumberField.InfinitePlace.exists_liesOver_of_liesOver`), without assuming `K`, `F`, or `E` to be
+  number fields.
+* Above a finite place `v : FinitePlace K` in a tower of number fields, `w` is typically a proper
+  root of a finite place of `F` at ramified or inert primes rather than a finite place itself; it is
+  extended by extending the underlying finite place of `F` and raising to the same positive real
+  power via `AbsoluteValue.nonarchRpow` (`NumberField.FinitePlace.exists_liesOver_of_isEquiv`,
+  `NumberField.FinitePlace.exists_liesOver_of_liesOver`).
+* Combining the two cases yields `NumberField.exists_liesOver_of_liesOver` for any infinite or
+  finite place `v` of `K` (`IsInfinitePlace v ∨ IsFinitePlace v`) in a tower of number fields.
 
-The proof uses the finite-place classification and nonemptiness of the fibres from
-`NumberField.exists_finitePlace_rpow_inv_eq_of_liesOver` and
-`NumberField.nonempty_setOf_liesOver_finitePlace_mk`, together with
-`AbsoluteValue.nonarchRpow`.
+## Main results
+
+* `NumberField.InfinitePlace.exists_liesOver_of_liesOver`: an absolute value of a field extension
+  `F / K` lying over an infinite place of `K` extends to every algebraic field extension `E / F`.
+* `NumberField.FinitePlace.exists_liesOver_of_isEquiv` and
+  `NumberField.FinitePlace.exists_liesOver_of_liesOver`: an absolute value of a number field `F`
+  equivalent to a finite place of `F`, or lying over a finite place of a smaller number field `K`,
+  extends to every further number field `E / F`.
+* `NumberField.exists_liesOver_of_liesOver`: an absolute value of a number field `F` lying over an
+  infinite or finite place of a number field `K` extends to every further number field `E / F`.
 
 ## References
 
-* E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, §1.3.
+* E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press, 2006,
+  §1.3.
 -/
 
 public section
@@ -36,6 +53,17 @@ public section
 open AbsoluteValue
 
 namespace NumberField
+
+/-- An absolute value of a field extension `F / K` lying over an infinite place `v` of `K` extends
+to every algebraic field extension `E / F`. -/
+theorem InfinitePlace.exists_liesOver_of_liesOver {K F E : Type*} [Field K] [Field F] [Field E]
+    [Algebra K F] [Algebra F E] [Algebra.IsAlgebraic F E] (v : InfinitePlace K)
+    (w : AbsoluteValue F ℝ) [w.LiesOver v.1] :
+    ∃ u : AbsoluteValue E ℝ, u.LiesOver w := by
+  obtain ⟨w', -, rfl⟩ := (existsUnique_infinitePlace_eq_of_liesOver v w).exists
+  exact nonempty_setOf_liesOver_infinitePlace E w'
+
+section NumberFieldExtension
 
 variable {F E : Type*} [Field F] [NumberField F] [Field E] [NumberField E] [Algebra F E]
 
@@ -61,5 +89,17 @@ theorem FinitePlace.exists_liesOver_of_liesOver {K : Type*} [Field K] [NumberFie
   obtain ⟨𝔓, t, ht, -, hw⟩ := exists_finitePlace_rpow_inv_eq_of_liesOver w v
   apply (FinitePlace.mk 𝔓).exists_liesOver_of_isEquiv
   exact isEquiv_iff_exists_rpow_eq.mpr ⟨t, ht, funext hw |>.symm⟩
+
+/-- An absolute value of a number field `F` lying over an infinite or finite place `v` of a number
+field `K` extends to every further number field `E / F`. -/
+theorem exists_liesOver_of_liesOver {K : Type*} [Field K] [NumberField K] [Algebra K F]
+    {v : AbsoluteValue K ℝ} (hv : IsInfinitePlace v ∨ IsFinitePlace v)
+    (w : AbsoluteValue F ℝ) [w.LiesOver v] :
+    ∃ u : AbsoluteValue E ℝ, u.LiesOver w := by
+  rcases hv.imp (isInfinitePlace_iff v).mp (isFinitePlace_iff v).mp with ⟨v, rfl⟩ | ⟨v, rfl⟩
+  · exact v.exists_liesOver_of_liesOver w
+  · exact v.exists_liesOver_of_liesOver w
+
+end NumberFieldExtension
 
 end NumberField
