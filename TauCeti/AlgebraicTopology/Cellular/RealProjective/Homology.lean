@@ -337,13 +337,6 @@ def singularHomologyProjectivizationLinearEquivOfOdd (hk : Odd k) (hkN : k < N) 
       (homeomorphProjectivization N))).toLinearEquiv.symm ≪≫ₗ
     singularHomologyLinearEquivOfOdd R hk hkN
 
-/-- For odd `k < N`, `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); ℤ) ≅ ℤ/2`. -/
-def singularHomologyProjectivizationIntLinearEquivOfOdd (hk : Odd k) (hkN : k < N) :
-    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ ℤ)).obj
-      (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) ≃ₗ[ℤ] ZMod 2 :=
-  singularHomologyProjectivizationLinearEquivOfOdd ℤ hk hkN ≪≫ₗ
-    (Int.quotientSpanNatEquivZMod 2).toAddEquiv.toIntLinearEquiv
-
 /-- If right multiplication by `2` is injective on `R`, then `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); R)`
 vanishes for every even `k > 0`. -/
 theorem isZero_singularHomology_projectivization_of_even (h2 : IsRightRegular (2 : R))
@@ -354,5 +347,15 @@ theorem isZero_singularHomology_projectivization_of_even (h2 : IsRightRegular (2
     (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
       (ModuleCat.of R R)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N))
         (homeomorphProjectivization N))).symm
+
+/-- **Odd-degree integral homology of `ℙ ℝ (Fin (N + 1) → ℝ)`.** For odd `k < N`,
+`Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); ℤ) ≅ ℤ/2`. -/
+def singularHomologyProjectivizationIntLinearEquivOfOdd (hk : Odd k) (hkN : k < N) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ ℤ)).obj
+      (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) ≃ₗ[ℤ] ZMod 2 :=
+  (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj
+    (ModuleCat.of ℤ ℤ)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N))
+      (homeomorphProjectivization N))).symm.toLinearEquiv ≪≫ₗ
+    singularHomologyIntLinearEquivOfOdd hk hkN
 
 end TauCeti.RealProjectiveSpace

@@ -87,7 +87,7 @@ universe u v w
 namespace Representation
 
 variable {k : Type u} {G : Type v} {V : Type w} [Field k] [IsAlgClosed k] [Monoid G]
-  [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+  [AddCommGroup V] [Module k V]
 
 /-- **The Galois action on character values is by power maps.** If `g ^ n = 1` and the ring
 endomorphism `σ` of the coefficient field raises every `n`-th root of unity to the `j`-th power,
@@ -96,8 +96,10 @@ dimensions of the eigenspaces they are weighted by. -/
 theorem map_character_eq_character_pow (ρ : Representation k G V) {g : G} {n j : ℕ}
     (hn : (n : k) ≠ 0) (hg : g ^ n = 1) (σ : k →+* k) (hσ : ∀ μ : k, μ ^ n = 1 → σ μ = μ ^ j) :
     σ (ρ.character g) = ρ.character (g ^ j) := by
-  simp only [Representation.character, map_pow]
-  exact Module.End.map_trace_eq_trace_pow hn (by rw [← map_pow, hg, map_one]) σ hσ
+  by_cases hV : FiniteDimensional k V
+  · simp only [Representation.character, map_pow]
+    exact Module.End.map_trace_eq_trace_pow hn (by rw [← map_pow, hg, map_one]) σ hσ
+  · simp [ρ.character_eq_zero_of_not_finite hV]
 
 omit [IsAlgClosed k] in
 /-- **The Galois action on character values is by power maps**, in the form where the power `j` is
@@ -137,19 +139,20 @@ end Representation
 section ClassFunction
 
 variable {k : Type u} {G : Type v} {V : Type w} [Field k] [IsAlgClosed k] [Group G]
-  [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+  [AddCommGroup V] [Module k V]
 
 /-- **The Galois twist of a character is the power-map twist of its class function.** On a group
 of exponent dividing `n`, the composite `σ ∘ χ` is `TauCeti.ClassFunction.powMap j` applied to the
-class function of `χ`. This is the form in which a Galois group acts on `ClassFunction k G`. -/
+class function of `χ`. This is the form in which a Galois group acts on `ClassFunction k G`. If `V`
+is not finite-dimensional, every character vanishes and both sides are `0`. -/
 theorem Representation.map_ofCharacter_eq_powMap (ρ : Representation k G V) {n j : ℕ}
     (hn : (n : k) ≠ 0) (hG : ∀ g : G, g ^ n = 1) (σ : k →+* k)
     (hσ : ∀ μ : k, μ ^ n = 1 → σ μ = μ ^ j) :
     σ ∘ (ClassFunction.ofCharacter ρ).1 =
       (ClassFunction.powMap j (ClassFunction.ofCharacter ρ)).1 := by
   funext g
-  simpa only [Function.comp_apply, ClassFunction.powMap_apply, ClassFunction.ofCharacter_apply]
-    using Representation.map_character_eq_character_pow ρ hn (hG g) σ hσ
+  simp only [Function.comp_apply, ClassFunction.powMap_apply, ClassFunction.ofCharacter_apply]
+  exact Representation.map_character_eq_character_pow ρ hn (hG g) σ hσ
 
 end ClassFunction
 
@@ -160,10 +163,18 @@ variable {G : Type v} [Monoid G]
 /-- **The Galois action on complex character values is by power maps.** If `g ^ n = 1` and the ring
 endomorphism `σ` of `ℂ` raises every `n`-th root of unity to the `j`-th power, then
 `σ (χ(g)) = χ(g ^ j)`. -/
-theorem map_character_eq_character_pow (X : FDRep ℂ G) {g : G} {n j : ℕ} (hn : n ≠ 0)
+theorem map_character_eq_character_pow (X : FDRep ℂ G) {g : G} {n j : ℕ}
     (hg : g ^ n = 1) (σ : ℂ →+* ℂ) (hσ : ∀ μ : ℂ, μ ^ n = 1 → σ μ = μ ^ j) :
-    σ (X.character g) = X.character (g ^ j) :=
-  Representation.map_character_eq_character_pow X.ρ (Nat.cast_ne_zero.2 hn) hg σ hσ
+    σ (X.character g) = X.character (g ^ j) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · -- Every complex number is a `0`-th root of unity, which forces `σ = id` and `j = 1`.
+    have h2 : (2 : ℕ) ^ j = 2 ^ 1 := by
+      have := hσ 2 (pow_zero 2)
+      rw [map_ofNat] at this
+      exact_mod_cast this.symm
+    obtain rfl := Nat.pow_right_injective (le_refl 2) h2
+    simpa using hσ (X.character g) (pow_zero _)
+  · exact Representation.map_character_eq_character_pow X.ρ (Nat.cast_ne_zero.2 hn) hg σ hσ
 
 /-- **The Galois action on complex character values is by power maps**, with the power supplied by
 the cyclotomic character `IsPrimitiveRoot.autToPow`: a field automorphism `f` of `ℂ`, which is the
@@ -173,7 +184,7 @@ theorem map_character_eq_character_pow_of_isPrimitiveRoot (X : FDRep ℂ G) {n :
     [NeZero n] {ζ : ℂ}
     (hζ : IsPrimitiveRoot ζ n) {g : G} (hg : g ^ n = 1) (f : ℂ ≃ₐ[ℚ] ℂ) :
     f (X.character g) = X.character (g ^ ((hζ.autToPow ℚ f : ZMod n).val)) :=
-  FDRep.map_character_eq_character_pow X (NeZero.ne n) hg f.toAlgHom.toRingHom
+  FDRep.map_character_eq_character_pow X hg f.toAlgHom.toRingHom
     fun _ hμ => IsPrimitiveRoot.map_eq_pow hζ _ (hζ.autToPow_spec ℚ f).symm hμ
 
 /-- **A character value and its power-map twist are conjugate algebraic numbers**: `χ(g)` and

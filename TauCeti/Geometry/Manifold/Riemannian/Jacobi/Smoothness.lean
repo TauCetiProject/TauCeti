@@ -61,45 +61,16 @@ private theorem IsJacobiFieldOn.contMDiffOn_alongCurveWithin_alongCurveWithin
           (alongCurveWithin (leviCivitaConnection I M) γ J s) s r)) s := by
   let cov := leviCivitaConnection I M
   have hn_le_infty : (n + 1 : ℕ) ≤ (∞ : ℕ∞ω) := by simp
-  have hγ := h.isGeodesicCurveOn.contMDiffOn_infty
   have hvel := h.isGeodesicCurveOn.contMDiffOn_curveVelocityLiftWithin_infty
-  -- Cache the iterated hom-fibre instances to keep typeclass search within its budget.
-  let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
-  let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
-  let _ : ∀ x : M, NormedAddCommGroup (TangentSpace I x →L[ℝ] TangentSpace I x) :=
-    fun x ↦ inferInstance
-  let _ : ∀ x : M, NormedSpace ℝ (TangentSpace I x →L[ℝ] TangentSpace I x) :=
-    fun x ↦ inferInstance
-  let _ : ∀ x : M, NormedAddCommGroup
-      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x) :=
-    fun x ↦ inferInstance
-  let _ : ∀ x : M, NormedSpace ℝ
-      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x) :=
-    fun x ↦ inferInstance
-  let _ : ∀ x : M, AddCommMonoid
-      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x) :=
-    fun x ↦ (inferInstance : NormedAddCommGroup
-      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x)).toAddCommMonoid
-  have hR : ContMDiffOn 𝓘(ℝ, ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E →L[ℝ] E))
-      (n + 1 : ℕ) (fun r ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E →L[ℝ] E)
-        (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ]
-          TangentSpace I x →L[ℝ] TangentSpace I x) (γ r)
-        (cov.curvatureTensorCLM (V := fun x : M ↦ TangentSpace I x)
-          (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x)))
-          (γ r))) s :=
-    ((contMDiff_curvatureTensorCLM (F := E)
-      (V := fun x : M ↦ TangentSpace I x)
-      (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x)))
-      cov).comp_contMDiffOn hγ).of_le hn_le_infty
-  -- Evaluate the smooth curvature tensor on the three section lifts.
   have hvel' : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent (n + 1 : ℕ)
       (fun r ↦ TotalSpace.mk' E (γ r) (curveVelocityWithin I γ s r)) s := by
     simpa only [funext (curveVelocityLiftWithin_apply (I := I) γ s)] using
       hvel.of_le hn_le_infty
-  have hcurv := ((hR.clm_bundle_apply hJ).clm_bundle_apply hvel').clm_bundle_apply hvel'
+  have hcurv := cov.contMDiffOn_curvatureTensor (F := E) (V := TangentSpace I)
+        hn_le_infty hJ hvel' hvel'
   refine (contMDiffOn_const (c := (-1 : ℝ))).smul_totalSpace hcurv |>.congr ?_
   intro r hr
-  simp only [curvatureTensorCLM_apply, neg_one_smul]
+  simp only [neg_one_smul]
   exact congrArg (TotalSpace.mk' E (γ r)) (h.alongCurveWithin_alongCurveWithin_eq hr)
 
 /-- The simultaneous finite-order bootstrap for a Jacobi field and its first derivative. -/

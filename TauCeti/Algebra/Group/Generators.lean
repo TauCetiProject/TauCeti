@@ -9,16 +9,21 @@ public import TauCeti.Algebra.Module.SpanRank
 public import Mathlib.LinearAlgebra.Pi
 import Mathlib.Data.Nat.ChineseRemainder
 import Mathlib.GroupTheory.OrderOfElement
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # Generators of products of groups of coprime orders
 
-For finite abelian groups of pairwise coprime orders, coordinatewise generating families
-of a common length generate their product. Chinese remainder coefficients recover each
-single-coordinate generator from the corresponding tuple. Consequently, the least number
-of generators of the product is the maximum of the least numbers for its factors.
+For abelian groups of pairwise coprime orders (`Nat.card`, which is `0` for an infinite group),
+coordinatewise generating families of a common length generate their product. Chinese remainder
+coefficients recover each single-coordinate generator from the corresponding tuple. Consequently,
+the least number of generators of the product is the maximum of the least numbers for its factors.
+If one factor is infinite, coprimality forces all the others to be trivial, and the statements
+reduce to that factor.
 
-The generator number is Mathlib's `Submodule.spanFinrank` over `ℤ`.
+The generator number is Mathlib's `Submodule.spanFinrank` over `ℤ`, the least number of generators
+of a finitely generated group. By Mathlib's convention it is `0` for a group that is not finitely
+generated, so for such factors the generator-number statement holds by that convention only.
 -/
 
 public section
@@ -26,10 +31,31 @@ public section
 namespace TauCeti.AddCommGroup
 
 variable {ι : Type*} [Fintype ι] (M : ι → Type*)
-  [∀ i, AddCommGroup (M i)] [∀ i, Finite (M i)]
+  [∀ i, AddCommGroup (M i)]
 
 omit [Fintype ι] in
-/-- In a product of finite abelian groups of pairwise coprime orders, tuples formed from
+/-- If a family of abelian groups of pairwise coprime orders has an infinite member, then all the
+other members are trivial, so the projection onto that member is a right inverse of its inclusion
+into the product: every tuple is the inclusion of its coordinate there. -/
+private theorem exists_subsingleton_and_rightInverse_single_of_not_finite [DecidableEq ι]
+    (hcop : Pairwise fun i j ↦ (Nat.card (M i)).Coprime (Nat.card (M j)))
+    (hfin : ¬ ∀ j, Finite (M j)) :
+    ∃ i₀, (∀ j, j ≠ i₀ → Subsingleton (M j)) ∧
+      Function.RightInverse (fun x : ∀ j, M j ↦ x i₀) (LinearMap.single ℤ M i₀) := by
+  obtain ⟨i₀, hi₀⟩ := not_forall.mp hfin
+  have := not_finite_iff_infinite.mp hi₀
+  have hsub : ∀ j, j ≠ i₀ → Subsingleton (M j) := fun j hj ↦
+    (hcop hj.symm).subsingleton_of_infinite
+  refine ⟨i₀, hsub, fun x ↦ ?_⟩
+  ext j
+  by_cases hj : j = i₀
+  · subst hj
+    simp
+  · have := hsub _ hj
+    exact Subsingleton.elim _ _
+
+omit [Fintype ι] in
+/-- In a product of abelian groups of pairwise coprime orders, tuples formed from
 coordinatewise generating families themselves generate the product. -/
 theorem span_range_pi_eq_top_of_coprime_card [Finite ι]
     (hcop : Pairwise fun i j ↦ (Nat.card (M i)).Coprime (Nat.card (M j)))
@@ -39,6 +65,15 @@ theorem span_range_pi_eq_top_of_coprime_card [Finite ι]
   classical
   let _ := Fintype.ofFinite ι
   let S := Submodule.span ℤ (Set.range (fun k i ↦ v i k))
+  by_cases hfin : ∀ j, Finite (M j)
+  swap
+  · obtain ⟨i₀, -, hinv⟩ :=
+      exists_subsingleton_and_rightInverse_single_of_not_finite M hcop hfin
+    have hcomp : (fun k i ↦ v i k) = LinearMap.single ℤ M i₀ ∘ v i₀ :=
+      funext fun k ↦ (hinv fun j ↦ v j k).symm
+    rw [hcomp, Set.range_comp, ← Submodule.map_span, hv i₀, Submodule.map_top,
+      LinearMap.range_eq_top]
+    exact hinv.surjective
   have hsingle (i : ι) (k : κ) : Pi.single i (v i k) ∈ S := by
     let c := Nat.chineseRemainderOfFinset (fun j ↦ if j = i then 1 else 0)
       (fun j ↦ Nat.card (M j)) Finset.univ (fun j _ ↦ Nat.card_pos.ne')
@@ -70,14 +105,35 @@ theorem span_range_pi_eq_top_of_coprime_card [Finite ι]
   rw [← Finset.univ_sum_single x]
   exact S.sum_mem (fun i _ ↦ hall i (x i))
 
-/-- For finite abelian groups of pairwise coprime orders, the least number of generators
-of their product is the maximum of the least numbers for the factors. The empty product
-has generator number zero. -/
+/-- For abelian groups of pairwise coprime orders, the least number of generators
+of their product is the maximum of the least numbers for the factors, over the finite index type
+`ι`. The empty product has generator number zero. Here `spanFinrank` is Mathlib's: it is the least
+number of generators for a finitely generated group and `0` otherwise (for instance for an infinite
+factor that is not finitely generated, which forces all other factors to be trivial). -/
 theorem spanFinrank_pi_eq_sup_of_coprime_card
     (hcop : Pairwise fun i j ↦ (Nat.card (M i)).Coprime (Nat.card (M j))) :
     (⊤ : Submodule ℤ (∀ i, M i)).spanFinrank =
       Finset.univ.sup (fun i ↦ (⊤ : Submodule ℤ (M i)).spanFinrank) := by
   classical
+  by_cases hfin : ∀ i, Finite (M i)
+  swap
+  · obtain ⟨i₀, hsub, hinv⟩ :=
+      exists_subsingleton_and_rightInverse_single_of_not_finite M hcop hfin
+    have hrange : (⊤ : Submodule ℤ (M i₀)).map (LinearMap.single ℤ M i₀) = ⊤ := by
+      rw [Submodule.map_top, LinearMap.range_eq_top]
+      exact hinv.surjective
+    have heq : (⊤ : Submodule ℤ (∀ i, M i)).spanFinrank =
+        (⊤ : Submodule ℤ (M i₀)).spanFinrank := by
+      rw [← hrange, Submodule.spanFinrank_map_eq_of_injective _ (Pi.single_injective i₀)]
+    rw [heq]
+    refine le_antisymm (Finset.le_sup (f := fun i ↦ (⊤ : Submodule ℤ (M i)).spanFinrank)
+      (Finset.mem_univ i₀)) (Finset.sup_le fun i _ ↦ ?_)
+    by_cases hi : i = i₀
+    · subst hi
+      exact le_rfl
+    · have := hsub _ hi
+      rw [Subsingleton.elim (⊤ : Submodule ℤ (M i)) ⊥, Submodule.spanFinrank_bot]
+      exact Nat.zero_le _
   let n := Finset.univ.sup (fun i ↦ (⊤ : Submodule ℤ (M i)).spanFinrank)
   apply le_antisymm
   · have hgen (i : ι) : ∃ v : Fin n → M i, Submodule.span ℤ (Set.range v) = ⊤ :=
