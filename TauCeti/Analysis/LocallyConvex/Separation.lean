@@ -27,11 +27,21 @@ continuous functional.
   and nonzero at a prescribed vector `u`.
 * `TauCeti.exists_strongDual_pos_of_not_sameRay_neg`: two nonzero vectors that do not point in
   opposite directions are both positive for some continuous functional.
+* `SeparatingDual` instance over an `RCLike` field `𝕜` for any `T₁` locally convex topological
+  `𝕜`-vector space, extending Mathlib's real locally convex instance and normed `RCLike` instance.
 -/
 
 public section
 
 open Set Topology
+
+/-- Continuous `𝕜`-linear functionals separate points of any `T₁` locally convex topological
+`𝕜`-vector space over `ℝ` or `ℂ`, by the geometric Hahn–Banach theorem for two points. -/
+instance {𝕜 E : Type*} [RCLike 𝕜] [AddCommGroup E] [Module ℝ E] [Module 𝕜 E]
+    [IsScalarTower ℝ 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
+    [LocallyConvexSpace ℝ E] [T1Space E] : SeparatingDual 𝕜 E :=
+  ⟨fun x hx ↦
+    RCLike.geometric_hahn_banach_point_point hx |>.imp fun f hf hf' ↦ by simp [hf'] at hf⟩
 
 namespace TauCeti
 
