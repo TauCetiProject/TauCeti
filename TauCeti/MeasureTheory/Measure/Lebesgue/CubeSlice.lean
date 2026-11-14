@@ -240,8 +240,6 @@ private lemma volume_inter_le_mul_volume_closedBall {Q : Set E} (hQ : Measurable
   classical
   set S : Set (Vᗮ × V) := (fun p ↦ (p.1 : E) + p.2) ⁻¹' Q
   have hS : MeasurableSet S := hQ.preimage (by fun_prop)
-  have hslice (w : Vᗮ) : volume (Prod.mk w ⁻¹' S) ≤ volume (((↑) : V → E) ⁻¹' Q) :=
-    volume_preimage_prodMk_add_le hQ hQc hQneg V w
   have hAQ : MeasurableSet (Vᗮ.starProjection ⁻¹' closedBall 0 ε ∩ Q) :=
     (measurableSet_closedBall.preimage (by fun_prop)).inter hQ
   rw [← lintegral_indicator_one hAQ,
@@ -258,7 +256,7 @@ private lemma volume_inter_le_mul_volume_closedBall {Q : Set E} (hQ : Measurable
         = ∫⁻ v : V, (Prod.mk w ⁻¹' S).indicator 1 v :=
           lintegral_congr fun v ↦ by simp only [indicator_apply, hmem, hw, true_and, Pi.one_apply]
       _ = volume (Prod.mk w ⁻¹' S) := lintegral_indicator_one (measurable_prodMk_left hS)
-      _ ≤ _ := hslice w
+      _ ≤ _ := volume_preimage_prodMk_add_le hQ hQc hQneg V w
   · rw [indicator_of_notMem hw]
     simp only [indicator_apply, hmem, hw, false_and, ↓reduceIte, lintegral_zero, le_refl]
 

@@ -269,30 +269,6 @@ theorem _root_.Convex.continuousOn_volume_real_hyperplaneSection {s : Set E} (hs
   rw [← fst_image_hyperplaneFibers e he]
   exact (convex_hyperplaneFibers e hs).continuousOn_volume_real_preimage_prodMk
 
-/-- **The volume below a hyperplane as an interval integral.** For a set `s` lying above the
-height `a` along a unit vector `e`, with sections of finite volume and integrable section volumes,
-the volume of the part below the height `c > a` is the integral of the section volumes over
-`[a, c]` (Cavalieri). -/
-theorem volume_real_sep_inner_le_eq_intervalIntegral (e : E) (he : ‖e‖ = 1) {s : Set E}
-    (hs : NullMeasurableSet s volume) {a c : ℝ} (hac : a < c) (ha : ∀ x ∈ s, a < ⟪e, x⟫)
-    (hfin : ∀ t : ℝ, volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} ≠ ∞)
-    (hφi : Integrable fun t : ℝ ↦ volume.real {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s}) :
-    volume.real {x ∈ s | ⟪e, x⟫ ≤ c} =
-      ∫ t in a..c, volume.real {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} := by
-  have hsep : {x ∈ s | ⟪e, x⟫ ≤ c} = {x ∈ s | ⟪e, x⟫ ∈ Ioc a c} := by
-    ext x
-    exact and_congr_right fun hx ↦ ⟨fun h ↦ ⟨ha x hx, h⟩, And.right⟩
-  have hlin : ∫⁻ t in Ioc a c, volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} =
-      ENNReal.ofReal (∫ t in Ioc a c, volume.real {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s}) := by
-    rw [ofReal_integral_eq_lintegral_ofReal hφi.integrableOn
-      (ae_of_all _ fun _ ↦ ENNReal.toReal_nonneg)]
-    exact setLIntegral_congr_fun measurableSet_Ioc fun t _ ↦
-      (ENNReal.ofReal_toReal (hfin t)).symm
-  rw [intervalIntegral.integral_of_le hac.le, measureReal_def, hsep,
-    volume_sep_inner_mem_eq_setLIntegral e he hs measurableSet_Ioc, hlin]
-  exact ENNReal.toReal_ofReal (setIntegral_nonneg measurableSet_Ioc
-    fun _ _ ↦ ENNReal.toReal_nonneg)
-
 /-- For a bounded Borel convex set, the volume of the part below the hyperplane `⟪e, x⟫ = c` is
 differentiable in `c` at every height interior to `⟪e, s⟫`, and its derivative is the volume of
 the hyperplane section at height `c`. -/
@@ -308,21 +284,18 @@ theorem _root_.Convex.hasDerivAt_volume_real_sep_inner_le {s : Set E} (hs : Conv
   have hφi : Integrable φ := integrable_toReal_of_lintegral_ne_top hm.aemeasurable (by
     rw [← volume_eq_lintegral_volume_hyperplaneSection e he hsm.nullMeasurableSet]
     exact hsb.measure_lt_top.ne)
-  -- Choose a height `a < c` below `s`; near `c` the volume below `c'` is an interval integral.
+  -- From a height `m - 1` below `s`, the volume below `c'` is the integral of `φ` up to `c'`.
   obtain ⟨m, hmin⟩ := ((innerSL ℝ e).lipschitzWith.isBounded_image hsb).bddBelow
-  set a := min m c - 1
-  have ha (x : E) (hx : x ∈ s) : a < ⟪e, x⟫ :=
-    (sub_one_lt _).trans_le ((min_le_left _ _).trans (hmin ⟨x, hx, rfl⟩))
-  have hvol : ∀ᶠ c' in nhds c, volume.real {x ∈ s | ⟪e, x⟫ ≤ c'} = ∫ t in a..c', φ t := by
-    filter_upwards [lt_mem_nhds ((sub_one_lt _).trans_le (min_le_right m c))] with c' hc'
-    exact volume_real_sep_inner_le_eq_intervalIntegral e he hsm.nullMeasurableSet hc' ha hfin hφi
+  have hvol : (fun c' ↦ volume.real {x ∈ s | ⟪e, x⟫ ≤ c'}) = fun c' ↦ ∫ t in (m - 1)..c', φ t :=
+    funext <| volume_real_sep_inner_le_eq_intervalIntegral e he hsm.nullMeasurableSet
+      (fun x hx ↦ (sub_one_lt m).trans_le (hmin ⟨x, hx, rfl⟩)) hfin
   -- By Brunn's concavity principle `φ` is continuous at the interior height `c`.
   have hcont : ContinuousAt φ c :=
     (hs.continuousOn_volume_real_hyperplaneSection he).continuousAt
       (isOpen_interior.mem_nhds hc)
-  exact (intervalIntegral.integral_hasDerivAt_right hφi.intervalIntegrable
-    hm.ennreal_toReal.stronglyMeasurable.stronglyMeasurableAtFilter hcont).congr_of_eventuallyEq
-    hvol
+  rw [hvol]
+  exact intervalIntegral.integral_hasDerivAt_right hφi.intervalIntegrable
+    hm.ennreal_toReal.stronglyMeasurable.stronglyMeasurableAtFilter hcont
 
 /-- **Multiplicative Brunn–Minkowski for hyperplane sections.** The weighted geometric mean of the
 volumes of a section of `K` and a section of `L` is at most the volume of the section of
