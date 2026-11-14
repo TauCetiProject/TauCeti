@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Leech.Projective
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Leech.Isometry
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 import Mathlib.Algebra.Group.Action.Hom
