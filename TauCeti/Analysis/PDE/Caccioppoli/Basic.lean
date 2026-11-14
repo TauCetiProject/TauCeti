@@ -102,7 +102,7 @@ theorem W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise (hlam : 0 < lam)
   -- The energy density is dominated, almost everywhere, by an integrable function.
   have hI1 : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) (mu.restrict Omega) := by
     refine ((he.add (hI2.const_mul (2 * Lam ^ 2 / lam))).const_mul (2 / lam)).mono'
-      (hψ2.mul (W1p.integrable_norm_gradient_sq w).aestronglyMeasurable) ?_
+      (hψ2.mul (Lp.memLp (W1p.gradient w)).norm.integrable_sq.aestronglyMeasurable) ?_
     filter_upwards [hpointwise] with x hx
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
     simp only [Pi.add_apply]
@@ -271,7 +271,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_add_setIntegral_of_cutoff :
   have hleft : ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu :=
     MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_ae_sq_eq_one
-      (W1p.integrable_norm_gradient_sq w)
+      (Lp.memLp (W1p.gradient w)).norm.integrable_sq
       (ae_of_all _ fun x => sq_nonneg _) (hψ.continuous.pow 2).aestronglyMeasurable
       (ae_of_all _ fun x => abs_le.2 ⟨by linarith [(hrange (mem_range_self x)).1],
         (hrange (mem_range_self x)).2⟩)

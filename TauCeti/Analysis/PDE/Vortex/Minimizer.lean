@@ -71,7 +71,7 @@ private theorem sobolevReducedFunctional_eq_add (P : Polynomial ℂ)
   have hgrad : (∫⁻ z, ENNReal.ofReal (‖W1p.gradient u z‖ ^ 2) ∂(volume : Measure ℂ).restrict
       ((⊤ : Opens ℂ) : Set ℂ)) / 2 =
       ENNReal.ofReal (‖W1p.gradient u‖ ^ 2 / 2) := by
-    rw [← ofReal_integral_eq_lintegral_ofReal (W1p.integrable_norm_gradient_sq u)
+    rw [← ofReal_integral_eq_lintegral_ofReal (Lp.memLp (W1p.gradient u)).norm.integrable_sq
       (ae_of_all _ fun z ↦ sq_nonneg _), Lp.integral_norm_sq_eq_norm_sq,
       ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_ofNat]
   rw [sobolevReducedFunctional_def, EReal.coe_ennreal_add, hgrad, EReal.coe_ennreal_ofReal,

@@ -130,7 +130,7 @@ private theorem ofReal_mul_enorm_sq_le_ofReal_mul_lintegral
   set f := W1p.value v
   set g := W1p.gradient v
   have hpt := ae_sub_le_energyIntegrand_jetField h hb_bound hc_nonneg v
-  have hint₁ : Integrable (fun x ↦ ‖g x‖ ^ 2) μ := W1p.integrable_norm_gradient_sq v
+  have hint₁ : Integrable (fun x ↦ ‖g x‖ ^ 2) μ := (Lp.memLp (W1p.gradient v)).norm.integrable_sq
   have hint₂ : Integrable (fun x ↦ ‖g x‖ * ‖f x‖) μ :=
     (Lp.memLp g).norm.integrable_mul (Lp.memLp f).norm
   have hreal : lam * ‖g‖ ^ 2 ≤ beta * ∫ x, ‖g x‖ * ‖f x‖ ∂μ := by
