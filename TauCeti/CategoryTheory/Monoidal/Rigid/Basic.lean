@@ -42,8 +42,8 @@ tensor product pairings: in string diagrams, the loop of `f` sits inside the loo
   whiskering by an object with a left (resp. right) dual preserves zero morphisms;
 * `TauCeti.coevaluation_ne_zero`: the coevaluation `η_ X Y` of an exact pairing is nonzero when `X`
   is not a zero object, by the zigzag identity, and
-  `CategoryTheory.Limits.IsZero.of_exactPairing`: an object exactly paired with a zero object is
-  zero;
+  `CategoryTheory.Limits.IsZero.of_exactPairing`: in an exact pairing of `X` with `Y`, if `X` is
+  a zero object then so is `Y`;
 * `TauCeti.ExactPairing.homUnitEquiv`: for an exact pairing of `X` and `Y`, morphisms `X ⟶ 𝟙_ C`
   correspond to morphisms `𝟙_ C ⟶ Y`;
 * `TauCeti.tensorRightHomEquiv_whiskerRight_comp`, `TauCeti.tensorRightHomEquiv_symm_comp`, and
@@ -270,11 +270,12 @@ theorem coevaluation_ne_zero [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
   exact hX ((IsZero.iff_id_eq_zero X).2 (by simpa using (λ_ X).inv ≫= hz.symm =≫ (ρ_ X).hom))
 
 open Limits in
-/-- An object exactly paired with a zero object is zero: tensoring with `Y` on the right is a right
-adjoint, so `X ⊗ Y` is zero, and the zigzag identity factors the identity of `Y` through it. The
-zero object supplies the zero morphisms. -/
+/-- In an exact pairing of `X` with `Y`, if `X` is a zero object then so is `Y`. The category `C`
+is not assumed to have zero morphisms. -/
 theorem _root_.CategoryTheory.Limits.IsZero.of_exactPairing {X : C} (hX : IsZero X) (Y : C)
     [ExactPairing X Y] : IsZero Y := by
+  -- The zero object supplies the zero morphisms. Tensoring with `Y` on the right is a right
+  -- adjoint, so `X ⊗ Y` is zero, and the zigzag identity factors the identity of `Y` through it.
   let := hX.hasZeroMorphisms
   have := (tensorRightAdjunction X Y).isRightAdjoint
   have := (tensorLeftAdjunction X Y).isLeftAdjoint
