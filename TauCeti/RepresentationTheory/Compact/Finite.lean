@@ -131,12 +131,12 @@ extra hypotheses are carried. Continuity of a representation is likewise automat
 the two pairing lemmas are about the `L²` classes `matrixCoeffLp π hπ` and `characterLp π hπ`, which
 take the continuity proof as an argument, so a caller of them holds one already. The orthogonality
 relations ask for none: the Schur ones are stated as bare sums `∑ g, ⟪π g v, w⟫ · …`, and the
-character one uses Mathlib's `Representation.character`, which is by
-`ContRepresentation.coe_character` the function underlying `character π hπ`. Those
-statements mention no measure either, so they ask for no measurable structure on `G`: their proofs
-install `borel G` themselves, and the caller is left with a bare finite discrete group. The two
-Maschke statements go one step further: mentioning no topology on `G` at all, they have their proof
-install the discrete topology as well, and the caller is left with a bare finite group.
+character one uses Mathlib's `Representation.character`. The Schur statements mention no measure
+either, so they ask for no measurable structure on `G`: their proofs install `borel G` themselves,
+and the caller is left with a bare finite discrete group. The character statement
+`character_orthonormal_distinct_sum` and the two Maschke statements go one step further: mentioning
+no topology on `G` at all, they have their proof install the discrete topology as well, and the
+caller is left with a bare finite group.
 
 The scalar in the averaged sums is real, not `𝕜`: the Bochner integral being specialized is an
 `ℝ`-integral, and `V` is not assumed to be an `ℝ`-`𝕜`-scalar tower. The conversion is confined to
@@ -649,9 +649,8 @@ assumed. (The second orthogonality relation, the column sum over the irreducible
 different statement and is not proved here.)
 
 The characters are written as Mathlib's `Representation.character` of the underlying
-representations, which is by `ContRepresentation.coe_character` the function underlying
-`character π hπ`; so no continuity proof is asked of the caller, and no measurable structure on `G`
-either, the statement mentioning neither. -/
+representations, so the statement assumes no topology on `G`, no continuity proof and no measurable
+structure; the proof installs the discrete topology and its Borel structure itself. -/
 theorem character_orthonormal_distinct_sum (ρ : ContRepresentation 𝕜 G W)
     (hdistinct : ∀ f : ContIntertwiningMap ρ π, f.toContinuousLinearMap = 0) :
     (Nat.card G : 𝕜)⁻¹ * ∑ g, (starRingEnd 𝕜) (π.toRepresentation.character g) *

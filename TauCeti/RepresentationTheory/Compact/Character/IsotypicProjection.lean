@@ -149,9 +149,10 @@ variable (rho : ContRepresentation k G V) (hrho : Continuous rho)
 
 /-- **The normalized character operator.** This is the action on `rho` of
 `dim(sigma) · conj(character sigma)`, packaged as a continuous self-intertwiner. When `sigma` is
-irreducible and `k` is algebraically closed, this operator is the isotypic projector onto the
-component of type `sigma`, as `range_isotypicProjector` and `isotypicProjector_idempotent` show;
-neither unitarity of `rho` nor an inner product on its carrier is needed. -/
+irreducible, `rho` is finite-dimensional and `k` is algebraically closed, this operator is the
+isotypic projector onto the component of type `sigma`, as `range_isotypicProjector` and
+`isotypicProjector_idempotent` show; neither unitarity of `rho` nor an inner product on its carrier
+is needed. -/
 noncomputable def isotypicProjector (sigma : ContRepresentation k G W)
     (hsigma : Continuous sigma) : ContIntertwiningMap rho rho where
   __ := integratedOperator rho hrho (isotypicKernel sigma hsigma)
