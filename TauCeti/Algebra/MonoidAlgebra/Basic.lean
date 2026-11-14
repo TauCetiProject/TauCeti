@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GroupWithZero.NonZeroDivisors
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.GroupTheory.Torsion
@@ -37,6 +38,9 @@ none of the further theory built on it.
 * The `Finite (MonoidAlgebra R M)` instance: `R[M]` is finite when `R` and `M` are.
 * `TauCeti.MonoidAlgebra.isIntegral_of_isMulTorsion`: the monoid algebra of a commutative torsion
   monoid is integral over its coefficient ring.
+* `MonoidAlgebra.single_mem_nonZeroDivisors` and `MonoidAlgebra.mrange_of_le_nonZeroDivisors`:
+  for a cancellative monoid `M`, monomials with non-zero-divisor coefficients (in particular
+  coefficient-one monomials) are non-zero-divisors in `R[M]`.
 * `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
   `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
   conjugates the indices of the coefficients.
@@ -217,6 +221,28 @@ instance instFinite {R M : Type*} [Semiring R] [Finite R] [Finite M] :
     Finite (MonoidAlgebra R M) :=
   .of_injective (fun x ↦ ⇑x.coeff) (DFunLike.coe_injective.comp coeff_injective)
 
+/-- In the monoid algebra of a cancellative monoid, any monomial whose coefficient is a
+non-zero-divisor of `R` is a non-zero-divisor of `R[M]`. -/
+@[to_additive (dont_translate := R)
+/-- In the additive monoid algebra of a cancellative additive monoid, any monomial whose
+coefficient is a non-zero-divisor of `R` is a non-zero-divisor of `R[M]`. -/]
+theorem single_mem_nonZeroDivisors {R M : Type*} [Semiring R] [Monoid M] [IsCancelMul M]
+    (m : M) {r : R} (hr : r ∈ nonZeroDivisors R) :
+    single m r ∈ nonZeroDivisors (MonoidAlgebra R M) := by
+  obtain ⟨hrL, hrR⟩ := mem_nonZeroDivisors_iff.mp hr
+  refine mem_nonZeroDivisors_iff.mpr ⟨fun f hf => ?_, fun f hf => ?_⟩
+  · ext t
+    exact hrL (f.coeff t) (by simpa using congr(($hf).coeff (m * t)))
+  · ext t
+    exact hrR (f.coeff t) (by simpa using congr(($hf).coeff (t * m)))
+
+/-- For a cancellative monoid `M`, every coefficient-one monomial in `MonoidHom.mrange (of R M)`
+is a non-zero-divisor of `R[M]`. -/
+theorem mrange_of_le_nonZeroDivisors {R M : Type*} [Semiring R] [Monoid M] [IsCancelMul M] :
+    MonoidHom.mrange (of R M) ≤ nonZeroDivisors (MonoidAlgebra R M) := by
+  rintro _ ⟨m, rfl⟩
+  exact single_mem_nonZeroDivisors m (one_mem _)
+
 /-- The basis element `single g 1` of a group algebra, as a unit with inverse `single g⁻¹ 1`. -/
 noncomputable def singleOneUnit (g : G) : (MonoidAlgebra R G)ˣ :=
   Units.map (of R G) (toUnits g)
@@ -240,3 +266,11 @@ theorem coeff_single_mul_mul_single_inv [Semiring R] (g h : G) (x : MonoidAlgebr
   simp [mul_assoc]
 
 end MonoidAlgebra
+
+/-- For a cancellative additive monoid `M`, every coefficient-one monomial in
+`MonoidHom.mrange (AddMonoidAlgebra.of R M)` is a non-zero-divisor of `R[M]`. -/
+theorem AddMonoidAlgebra.mrange_of_le_nonZeroDivisors {R M : Type*} [Semiring R] [AddMonoid M]
+    [IsCancelAdd M] :
+    MonoidHom.mrange (AddMonoidAlgebra.of R M) ≤ nonZeroDivisors (AddMonoidAlgebra R M) := by
+  rintro _ ⟨m, rfl⟩
+  exact AddMonoidAlgebra.single_mem_nonZeroDivisors m.toAdd (one_mem _)
