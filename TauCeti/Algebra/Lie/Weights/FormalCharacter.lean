@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Lie.Weights.Prod
 public import TauCeti.Algebra.Lie.Weights.TensorProduct
 public import TauCeti.Algebra.Lie.Weights.WeylInvariance
 public import TauCeti.LinearAlgebra.Dimension.DirectSum
+public import TauCeti.LinearAlgebra.Dimension.TensorProduct
 public import TauCeti.LinearAlgebra.TensorProduct.Decomposition
 -- Non-public: this supplies the inputs of the direct-sum additivity proof, never the vocabulary of
 -- a statement.
@@ -406,25 +407,7 @@ theorem finrank_genWeightSpace_tensorProduct (χ : Dual K L) :
     (p.1 : Dual K L) + (p.2 : Dual K L) = χ}
   have hindep : iSupIndep fun p : S ↦ A p :=
     hint.submodule_iSupIndep.comp Subtype.val_injective
-  have hspace : (genWeightSpace (M ⊗[K] N) (χ : L → K)).toSubmodule = ⨆ p : S, A p := by
-    apply le_antisymm
-    · rw [genWeightSpace_tensorProduct_eq_iSup]
-      refine iSup₂_le fun μ ν ↦ iSup_le fun hμν ↦ ?_
-      by_cases hμ : genWeightSpace M μ = ⊥
-      · simp [hμ, A]
-      by_cases hν : genWeightSpace N ν = ⊥
-      · simp [hν, A]
-      let m : Weight K L M := ⟨μ, hμ⟩
-      let n : Weight K L N := ⟨ν, hν⟩
-      have hadd : (m : Dual K L) + (n : Dual K L) = χ := by
-        ext x
-        simpa [m, n] using congrFun hμν x
-      exact le_iSup (fun p : S ↦ A p) ⟨(m, n), hadd⟩
-    · refine iSup_le fun p ↦ ?_
-      have hp : (p.1.1 : L → K) + (p.1.2 : L → K) = (χ : L → K) := by
-        exact congrArg (fun f : Dual K L ↦ (f : L → K)) p.property
-      rw [← hp]
-      simpa only [A] using map₂_mk_genWeightSpace_le M N p.1.1 p.1.2
+  have hspace := genWeightSpace_toSubmodule_tensorProduct (M := M) (N := N) χ
   rw [← LieSubmodule.finrank_toSubmodule]
   rw [hspace, finrank_iSup_eq_sum_finrank_of_iSupIndep hindep]
   rw [← Finset.sum_subtype
@@ -438,11 +421,7 @@ theorem finrank_genWeightSpace_tensorProduct (χ : Dual K L) :
     -- `finrank`; restating the goal makes those instances use the displayed `map₂` submodule.
     change finrank K (Submodule.map₂ (TensorProduct.mk K M N)
       (genWeightSpace M p.1).toSubmodule (genWeightSpace N p.2).toSubmodule) = _
-    rw [← TensorProduct.range_mapIncl,
-      LinearMap.finrank_range_of_inj
-        (Module.Flat.tensorProduct_mapIncl_injective_of_right
-          (genWeightSpace M p.1).toSubmodule (genWeightSpace N p.2).toSubmodule),
-      Module.finrank_tensorProduct]
+    rw [Submodule.finrank_map₂_mk]
     rfl
   · simp only [hp, ite_false]
 

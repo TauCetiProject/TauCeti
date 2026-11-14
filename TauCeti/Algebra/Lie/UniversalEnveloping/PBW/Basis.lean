@@ -170,6 +170,13 @@ theorem pbwEquiv_symm_monomial (n : ι →₀ ℕ) :
   apply b.pbwEquiv.injective
   simp
 
+/-- The finitely supported multiset `k • {i}` has multiplicity `k` at `i` and zero elsewhere. -/
+private theorem toFinsupp_replicate_coe {α : Type*} [DecidableEq α] (k : ℕ) (i : α) :
+    Multiset.toFinsupp ((List.replicate k i : List α) : Multiset α) = Finsupp.single i k := by
+  ext a
+  rw [Multiset.toFinsupp_apply, Multiset.coe_replicate, Multiset.count_replicate,
+    Finsupp.single_apply]
+
 /-- The basis vector at `n` is the product of `ι(b i) ^ n i`, with the support traversed in
 increasing order. No commutativity of the enveloping algebra is assumed. -/
 theorem pbwBasis_eq_prod_pow (n : ι →₀ ℕ) :
@@ -187,18 +194,12 @@ theorem pbwBasis_eq_prod_pow (n : ι →₀ ℕ) :
         Multiset.toFinsupp ((l.flatMap fun i ↦ List.replicate (n i) i) : Multiset ι) =
           (l.map fun i ↦ Finsupp.single i (n i)).sum := by
       induction l with
-      | nil => simp [Multiset.toFinsupp_zero]
+      | nil => simp
       | cons i l ih =>
-          simp only [List.flatMap_cons, ← Multiset.coe_add, Multiset.toFinsupp_add,
-            List.map_cons, List.sum_cons, ih]
-          congr 1
-          ext j
-          by_cases hij : i = j
-          · subst j
-            simp
-          · simp [Multiset.toFinsupp_apply, List.count_replicate, hij]
-    rw [haux]
-    rw [← Multiset.sum_coe, ← Multiset.map_coe, Finset.sort_eq]
+          rw [List.flatMap_cons, ← Multiset.coe_add, Multiset.toFinsupp_add, ih,
+            toFinsupp_replicate_coe]
+          simp
+    rw [haux, ← Multiset.sum_coe, ← Multiset.map_coe, Finset.sort_eq]
     exact Finsupp.sum_single n
   have hprod : pbwMonomial R L b word = ((indices.map
       (fun i ↦ _root_.UniversalEnvelopingAlgebra.ι R (b i) ^ n i))).prod := by
