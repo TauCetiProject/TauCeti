@@ -40,16 +40,13 @@ section NonUnitalRing
 
 variable {A B C : Type*} [NonUnitalRing A]
 
-/-- The additive subgroup underlying a two-sided ideal. -/
-@[expose] def toAddSubgroup (I : TwoSidedIdeal A) : AddSubgroup A where
-  carrier := I
-  add_mem' := I.add_mem
-  zero_mem' := I.zero_mem
-  neg_mem' := I.neg_mem
+/-- The additive subgroup underlying a two-sided ideal: Mathlib's `AddSubgroup.ofClass I`. -/
+@[expose] def toAddSubgroup (I : TwoSidedIdeal A) : AddSubgroup A :=
+  AddSubgroup.ofClass I
 
 @[simp]
 theorem coe_toAddSubgroup (I : TwoSidedIdeal A) : (I.toAddSubgroup : Set A) = I :=
-  (rfl)
+  AddSubgroup.coe_ofClass I
 
 @[simp]
 theorem mem_toAddSubgroup {I : TwoSidedIdeal A} {x : A} : x ∈ I.toAddSubgroup ↔ x ∈ I :=
