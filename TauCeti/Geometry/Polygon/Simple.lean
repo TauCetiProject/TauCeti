@@ -528,8 +528,8 @@ theorem boundaryParamCircle_coe (t : ℝ) : poly.boundaryParamCircle t = poly.bo
 omit [NeZero n] in
 /-- The circle parametrization depends affinely on an inserted vertex. This expresses a moving
 polygon as the pointwise affine interpolation of its endpoint parametrizations. -/
-theorem boundaryParamCircle_insertVertex_lineMap {V : Type*} [AddCommGroup V] [Module ℝ V]
-    (poly : Polygon V n) (i : Fin n) (a b : V) (t : ℝ) (z : AddCircle ((n + 1 : ℕ) : ℝ)) :
+theorem boundaryParamCircle_insertVertex_lineMap
+    (poly : Polygon P n) (i : Fin n) (a b : P) (t : ℝ) (z : AddCircle ((n + 1 : ℕ) : ℝ)) :
     (poly.insertVertex i (AffineMap.lineMap a b t)).boundaryParamCircle z =
       AffineMap.lineMap ((poly.insertVertex i a).boundaryParamCircle z)
         ((poly.insertVertex i b).boundaryParamCircle z) t := by
@@ -542,7 +542,8 @@ theorem boundaryParamCircle_insertVertex_lineMap {V : Type*} [AddCommGroup V] [M
   obtain ⟨u, rfl⟩ := QuotientAddGroup.mk_surjective z
   simp only [boundaryParamCircle_coe, boundaryParam_eq_edgePath_edgeIndexAt, edgePath]
   rw [hv, hv]
-  simp only [AffineMap.lineMap_apply_module]
+  apply (vsub_left_injective a)
+  simp only [AffineMap.lineMap_vsub, AffineMap.lineMap_apply_module]
   module
 
 /-- The circle parametrization runs over the whole boundary of the polygon. -/
@@ -732,6 +733,7 @@ theorem IsSimple.isJordanCurve_boundary [T2Space P] (h : poly.IsSimple ℝ) :
     h.boundaryParamCircle_injective.injOn
   rwa [image_univ, range_boundaryParamCircle] at himage
 
+omit [NeZero n] in
 /-- **Local structure of a simple polygon.** Near each of its points `z`, a simple polygon is the
 union of two segments from `z`, to points `a` and `b` other than `z`, which meet only at `z`. For a
 vertex `z` these run along the two edges at `z`; for a point inside an edge they run along that
