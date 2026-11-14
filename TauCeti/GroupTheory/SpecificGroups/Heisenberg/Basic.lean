@@ -179,6 +179,13 @@ theorem commutatorElement_eq_one_of_mem_zAxis {a : HeisenbergGroup R} (ha : a �
   commutatorElement_eq_one_iff_mul_comm.mpr
     ((Subgroup.mem_center_iff.mp (zAxis_le_center ha) b).symm)
 
+/-- **The Heisenberg group is nilpotent**, of class at most two: every commutator lies on the
+central `z`-axis. -/
+instance : Group.IsNilpotent (HeisenbergGroup R) :=
+  ⟨⟨2, eq_top_iff.mpr fun a _ ↦ Subgroup.mem_upperCentralSeries_succ_iff.mpr fun b ↦ by
+    rw [Subgroup.upperCentralSeries_one]
+    exact zAxis_le_center (commutatorElement_mem_zAxis a b)⟩⟩
+
 /-- A ring homomorphism `f : R →+* S` induces the group homomorphism
 `HeisenbergGroup R →* HeisenbergGroup S` applying `f` to each coordinate. -/
 def map {S : Type*} [Ring S] (f : R →+* S) : HeisenbergGroup R →* HeisenbergGroup S where
