@@ -95,7 +95,7 @@ theorem isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv :
         s i R z)
   · intro g z hz
     rw [simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXCyclesMap]
-    exact G.simplyBlockedStabilizeXMap_mem_bigradedChainHatPiece s i R hz
+    simpa only [add_zero] using G.simplyBlockedStabilizeXMap_mem_bigradedChainHatPiece s i R hz
 
 /-- The total stabilization equivalence preserves and reflects homology bidegrees. -/
 @[simp]

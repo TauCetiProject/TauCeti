@@ -211,39 +211,24 @@ theorem simplyBlockedHomologyCommutationMap_oneVariableSpecializationHomologyCla
 pentagon map of a validated column commutation is bijective. -/
 theorem simplyBlockedHomologyCommutationMap_bijective :
     Function.Bijective (hG.simplyBlockedHomologyCommutationMap R C i) := by
-  refine ⟨(injective_iff_map_eq_zero _).mpr fun y hy => ?_, fun y => ?_⟩
-  · -- A cycle whose pentagon image is a boundary is a boundary.
-    obtain ⟨z, rfl⟩ := G.oneVariableSpecializationHomologyClass_surjective R i y
-    rw [simplyBlockedHomologyCommutationMap_oneVariableSpecializationHomologyClass,
-      oneVariableSpecializationHomologyClass_eq_zero_iff,
-      (G').mem_range_moduleCatToCycles_simplyBlockedComplex_iff R (σ i),
-      simplyBlockedChainEquiv_simplyBlockedCommutationCyclesMap] at hy
-    have hz := (G.mem_ker_simplyBlockedComplex_d_iff R i z).mp z.2
-    obtain ⟨Z, hZ⟩ := simplyBlockedSpecialization_surjective R i (G.simplyBlockedChainEquiv R i z)
-    rw [← hZ, simplyBlockedCommutationMap_simplyBlockedSpecialization] at hy
-    rw [← hZ, ← simplyBlockedSpecialization_unblockedDifferential] at hz
-    rw [oneVariableSpecializationHomologyClass_eq_zero_iff,
-      G.mem_range_moduleCatToCycles_simplyBlockedComplex_iff R i, ← hZ]
-    exact G.simplyBlockedSpecialization_mem_range_of_commutationMap R C i hz hy
-  · -- The class of a cycle `y` of the commuted diagram is the image of the class of `Ψ y`.
-    obtain ⟨y, rfl⟩ := (G').oneVariableSpecializationHomologyClass_surjective R (σ i) y
-    have hy := ((G').mem_ker_simplyBlockedComplex_d_iff R (σ i) y).mp y.2
-    obtain ⟨Y, hY⟩ :=
-      simplyBlockedSpecialization_surjective R (σ i) ((G').simplyBlockedChainEquiv R (σ i) y)
-    rw [← hY, ← simplyBlockedSpecialization_unblockedDifferential] at hy
-    let z : hG.simplyBlockedCycles R i :=
-      ⟨(G.simplyBlockedChainEquiv R i).symm
-        (simplyBlockedSpecialization R i ((G').commutationMap R C.reverse Y)), by
-        rw [G.mem_ker_simplyBlockedComplex_d_iff R i, LinearEquiv.apply_symm_apply,
-          ← simplyBlockedSpecialization_unblockedDifferential]
-        exact G.simplyBlockedSpecialization_unblockedDifferential_commutationMap_reverse R C i hy⟩
-    refine ⟨G.oneVariableSpecializationHomologyClass R i z, ?_⟩
-    rw [simplyBlockedHomologyCommutationMap_oneVariableSpecializationHomologyClass,
-      oneVariableSpecializationHomologyClass_eq_iff,
-      (G').mem_range_moduleCatToCycles_simplyBlockedComplex_iff R (σ i), Submodule.coe_sub,
-      map_sub, simplyBlockedChainEquiv_simplyBlockedCommutationCyclesMap, ← hY,
-      LinearEquiv.apply_symm_apply, simplyBlockedCommutationMap_simplyBlockedSpecialization]
-    exact G.simplyBlockedSpecialization_commutationMap_commutationMap_reverse_sub_mem_range R C i hy
+  apply oneVariableSpecializationHomologyMapOfIntertwining_bijective
+    R i (σ i) ((simplyBlockedRenameEquiv R σ i).toRingEquiv : _ →+* _)
+    (G.simplyBlockedCommutationMap R C i)
+    (G.simplyBlockedCommutationMap_simplyBlockedDifferential R C i)
+  · intro x hx hfx
+    obtain ⟨X, rfl⟩ := simplyBlockedSpecialization_surjective R i x
+    rw [← simplyBlockedSpecialization_unblockedDifferential] at hx
+    rw [simplyBlockedCommutationMap_simplyBlockedSpecialization] at hfx
+    exact G.simplyBlockedSpecialization_mem_range_of_commutationMap R C i hx hfx
+  · intro y hy
+    obtain ⟨Y, rfl⟩ := simplyBlockedSpecialization_surjective R (σ i) y
+    rw [← simplyBlockedSpecialization_unblockedDifferential] at hy
+    refine ⟨simplyBlockedSpecialization R i ((G').commutationMap R C.reverse Y), ?_, ?_⟩
+    · rw [← simplyBlockedSpecialization_unblockedDifferential]
+      exact G.simplyBlockedSpecialization_unblockedDifferential_commutationMap_reverse R C i hy
+    · rw [simplyBlockedCommutationMap_simplyBlockedSpecialization, ← neg_sub]
+      exact neg_mem
+        (G.simplyBlockedSpecialization_commutationMap_commutationMap_reverse_sub_mem_range R C i hy)
 
 /-- The commutation map on simply blocked grid homology, as a semilinear equivalence along the
 renaming of the surviving variables by the column transposition. -/

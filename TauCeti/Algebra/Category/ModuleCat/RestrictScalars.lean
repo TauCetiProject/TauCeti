@@ -12,12 +12,13 @@ public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.Algebra.Module.Projective.Trans
 
 /-!
-# Equivalences, finite generation and projectivity under restriction of scalars
+# Semilinear maps, finite generation and projectivity under restriction of scalars
 
 Restriction of scalars along a ring homomorphism `f : R →+* S` keeps the underlying abelian
 group of a module and only changes which ring acts on it. This file records when the two
 finiteness properties defining `K₀(proj R)` and `G₀(mod R)` survive it. It also restricts a
-semilinear map along compatible coefficient maps to a linear map.
+semilinear map along compatible coefficient maps to a linear map, or a linear equivalence
+when the original map is bijective.
 
 * Along a **surjective** ring homomorphism, finite generation is preserved and reflected: every
   scalar of `S` is the image of a scalar of `R`, so the `S`-span and the `R`-span of a set
@@ -38,6 +39,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
 
 * `ModuleCat.restrictScalarsLinearMap`: a semilinear map viewed linearly after
   restriction along compatible coefficient homomorphisms.
+* `ModuleCat.restrictScalarsLinearEquivOfBijective`: a bijective semilinear map viewed as a
+  linear equivalence after restriction along compatible coefficient homomorphisms.
 * `RingHom.restrictScalarsSemilinearMap`: the identity of a module, as a semilinear map from its
   restriction of scalars.
 * `RingHom.finiteModulesRestrictScalars`: restriction of scalars along a finite ring
@@ -242,6 +245,20 @@ def restrictScalarsLinearMap :
 bundled maps in expressions where their generic laws apply. -/
 theorem restrictScalarsLinearMap_apply (x) :
     restrictScalarsLinearMap f₁ f₂ g hσ x = g x := (rfl)
+
+/-- A bijective semilinear map becomes a linear equivalence after restricting both scalar
+actions along compatible ring homomorphisms. The source and target retain the native
+`ModuleCat.restrictScalars` carriers; no inverse coefficient homomorphism is needed. -/
+noncomputable def restrictScalarsLinearEquivOfBijective (hg : Function.Bijective g) :
+    (restrictScalars f₁).obj M₁ ≃ₗ[R₀] (restrictScalars f₂).obj M₂ :=
+  LinearEquiv.ofBijective (restrictScalarsLinearMap f₁ f₂ g hσ) hg
+
+/-- The restricted linear equivalence has the original semilinear map as its underlying
+function. This remains a named rewrite so generic equivalence inverse laws still simplify. -/
+theorem restrictScalarsLinearEquivOfBijective_apply (hg : Function.Bijective g) (x) :
+    restrictScalarsLinearEquivOfBijective f₁ f₂ g hσ hg x = g x :=
+  (LinearEquiv.ofBijective_apply (restrictScalarsLinearMap f₁ f₂ g hσ) x).trans
+    (restrictScalarsLinearMap_apply f₁ f₂ g hσ x)
 
 end SemilinearMap
 

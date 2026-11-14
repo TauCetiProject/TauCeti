@@ -310,28 +310,10 @@ noncomputable def oneVariableSpecializationHomologyLinearEquivOfIntertwining
         ((G.simplyBlockedComplex R i).homology ()) ≃ₗ[R]
       (ModuleCat.restrictScalars (MvPolynomial.C : R →+* _)).obj
         ((H.simplyBlockedComplex R j).homology ()) :=
-  LinearEquiv.ofBijective
-    (ModuleCat.restrictScalarsLinearMap
-      (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
-      (MvPolynomial.C : R →+* MvPolynomial {c : Fin m // c ≠ j} R)
-      (oneVariableSpecializationHomologyMapOfIntertwining R i j σ f h) hσ)
-    (by
-      constructor
-      · intro x y hxy
-        exact hf.1 ((ModuleCat.restrictScalarsLinearMap_apply
-          (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
-          (MvPolynomial.C : R →+* MvPolynomial {c : Fin m // c ≠ j} R)
-          (oneVariableSpecializationHomologyMapOfIntertwining R i j σ f h) hσ x).symm.trans
-          (hxy.trans (ModuleCat.restrictScalarsLinearMap_apply
-          (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
-          (MvPolynomial.C : R →+* MvPolynomial {c : Fin m // c ≠ j} R)
-          (oneVariableSpecializationHomologyMapOfIntertwining R i j σ f h) hσ y)))
-      · intro y
-        obtain ⟨x, hx⟩ := hf.2 y
-        exact ⟨x, (ModuleCat.restrictScalarsLinearMap_apply
-          (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
-          (MvPolynomial.C : R →+* MvPolynomial {c : Fin m // c ≠ j} R)
-          (oneVariableSpecializationHomologyMapOfIntertwining R i j σ f h) hσ x).trans hx⟩)
+  ModuleCat.restrictScalarsLinearEquivOfBijective
+    (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
+    (MvPolynomial.C : R →+* MvPolynomial {c : Fin m // c ≠ j} R)
+    (oneVariableSpecializationHomologyMapOfIntertwining R i j σ f h) hσ hf
 
 /-- The coefficient-linear packaging preserves the descended homology map. -/
 theorem oneVariableSpecializationHomologyLinearEquivOfIntertwining_apply
@@ -341,10 +323,10 @@ theorem oneVariableSpecializationHomologyLinearEquivOfIntertwining_apply
       ((G.simplyBlockedComplex R i).homology ())) :
     oneVariableSpecializationHomologyLinearEquivOfIntertwining R i j σ f h hσ hf y =
       oneVariableSpecializationHomologyMapOfIntertwining R i j σ f h y :=
-  ModuleCat.restrictScalarsLinearMap_apply
+  ModuleCat.restrictScalarsLinearEquivOfBijective_apply
     (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
     (MvPolynomial.C : R →+* MvPolynomial {c : Fin m // c ≠ j} R)
-    (oneVariableSpecializationHomologyMapOfIntertwining R i j σ f h) hσ y
+    (oneVariableSpecializationHomologyMapOfIntertwining R i j σ f h) hσ hf y
 
 end Intertwining
 

@@ -24,7 +24,8 @@ the surviving polynomial variables. It descends to a bijective semilinear homolo
 after restricting scalars, a coefficient-linear equivalence on total homology and every
 homogeneous piece. The cycle-class and chain-evaluation equations hide all carrier transport.
 The underlying unblocked comparison conjugates the south-west comparison by half-turns,
-retaining the grading normalization and blocked marking. For knots over a field of
+retaining the grading normalization and unrotated column indexing. Thus `s.predAbove` sends
+the transported old `O`-marking column `s.succ.succAbove i` to `i`. For knots over a field of
 characteristic two, the bigraded Poincaré series and Alexander-graded Euler characteristic
 are unchanged.
 
@@ -330,7 +331,7 @@ theorem isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv :
         G.1 s i R z
   · intro g z hz
     rw [GridDiagram.simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXSuccCyclesMap]
-    exact G.simplyBlockedStabilizeXSuccMap_mem_bigradedChainHatPiece s i R hz
+    simpa only [add_zero] using G.simplyBlockedStabilizeXSuccMap_mem_bigradedChainHatPiece s i R hz
 
 /-- The north-east comparison preserves and reflects the absolute homology bidegree. -/
 @[simp]

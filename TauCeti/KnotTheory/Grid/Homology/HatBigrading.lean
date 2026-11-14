@@ -171,21 +171,21 @@ local notation "BaseH" => ModuleCat.restrictScalars
   (MvPolynomial.C : R →+* MvPolynomial {c : Fin m // c ≠ j} R)
 local notation "D" => GridDiagram.simplyBlockedComplex H.val R j
 
-/-- Cycle-level preservation of the chain bigrading descends to a degree-zero homology map.
+/-- Cycle-level homogeneity of the chain bigrading descends to the homology map.
 The class equation keeps this independent of how the homology comparison was constructed. -/
-theorem isHomogeneous_oneVariableSpecializationHomologyMap
+theorem isHomogeneous_oneVariableSpecializationHomologyMap {q : ℤ × ℤ}
     (f : (Base).obj ((C).homology ()) →ₗ[R] (BaseH).obj ((D).homology ()))
     (cycles : LinearMap.ker d → LinearMap.ker ((D).d () ()).hom)
     (hclass : ∀ z, f (G.1.oneVariableSpecializationHomologyClass R i z) =
       H.1.oneVariableSpecializationHomologyClass R j (cycles z))
     (hdegree : ∀ (g : ℤ × ℤ) (z : LinearMap.ker d),
       G.1.simplyBlockedChainEquiv R i z ∈ G.bigradedChainHatPiece R i g →
-      H.1.simplyBlockedChainEquiv R j (cycles z) ∈ H.bigradedChainHatPiece R j g) :
+      H.1.simplyBlockedChainEquiv R j (cycles z) ∈ H.bigradedChainHatPiece R j (g + q)) :
     LinearMap.IsHomogeneous f (G.bigradedHatHomologyGrading R i).piece
-      (H.bigradedHatHomologyGrading R j).piece 0 := by
+      (H.bigradedHatHomologyGrading R j).piece q := by
   rw [LinearMap.isHomogeneous_def]
   intro g y hy
-  rw [add_zero, bigradedHatHomologyGrading_piece] at ⊢
+  rw [bigradedHatHomologyGrading_piece] at ⊢
   rw [bigradedHatHomologyGrading_piece] at hy
   obtain ⟨z, hz, rfl⟩ := (G.mem_bigradedHatHomologyPiece_iff R i).mp hy
   rw [hclass]

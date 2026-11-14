@@ -423,7 +423,8 @@ theorem coe_pieceEquiv_apply {ι : Type*} [DecidableEq ι] [AddMonoid ι]
     {ℳ : ι → Submodule R M} {𝓝 : ι → Submodule R N}
     [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] {e : M ≃ₗ[R] N}
     (he : IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) (x : ℳ p) :
-    (he.pieceEquiv p x : N) = e x.1 := (rfl)
+    (he.pieceEquiv p x : N) = e x.1 := by
+  rw [pieceEquiv, LinearEquiv.ofSubmodules_apply]
 
 /-- The inverse piece equivalence applies the original inverse to the underlying element. -/
 @[simp]
@@ -431,7 +432,8 @@ theorem coe_pieceEquiv_symm_apply {ι : Type*} [DecidableEq ι] [AddMonoid ι]
     {ℳ : ι → Submodule R M} {𝓝 : ι → Submodule R N}
     [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] {e : M ≃ₗ[R] N}
     (he : IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) (x : 𝓝 p) :
-    ((he.pieceEquiv p).symm x : M) = e.symm x.1 := (rfl)
+    ((he.pieceEquiv p).symm x : M) = e.symm x.1 := by
+  rw [pieceEquiv, LinearEquiv.ofSubmodules_symm_apply]
 
 section Decompose
 

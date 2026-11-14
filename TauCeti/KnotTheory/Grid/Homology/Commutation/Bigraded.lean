@@ -9,6 +9,8 @@ public import TauCeti.KnotTheory.Grid.Commutation.Grading.SimplyBlocked
 public import TauCeti.KnotTheory.Grid.Homology.Commutation.SimplyBlocked
 public import TauCeti.KnotTheory.Grid.Homology.Series.SimplyBlocked
 
+import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
+
 /-!
 # Bigraded commutation invariance of simply blocked grid homology
 
@@ -49,35 +51,29 @@ local notation "Base" => ModuleCat.restrictScalars (MvPolynomial.C :
 local notation "Base'" => ModuleCat.restrictScalars (MvPolynomial.C :
   R →+* MvPolynomial {c : Fin n // c ≠ σ i} R)
 
-/-- The coefficient action on source homology is the action selected by
-`ModuleCat.restrictScalars` along the inclusion of constant polynomials. -/
-local instance : Module R (hG.simplyBlockedHomology R i) :=
-  Module.compHom _ (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
-/-- The coefficient action on commuted homology is the same restricted-scalar action,
-with the blocked column transported by the transposition. -/
-local instance : Module R ((hG').simplyBlockedHomology R (σ i)) :=
-  Module.compHom _ (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ σ i} R)
-
 /-- The specified commutation equivalence, restricted to coefficient scalars rather than
 surviving polynomial scalars. -/
 noncomputable def simplyBlockedHomologyCommutationCoefficientEquiv :
     (Base).obj (hG.simplyBlockedHomology R i) ≃ₗ[R]
       (Base').obj ((hG').simplyBlockedHomology R (σ i)) :=
-  (hG.simplyBlockedHomologyCommutationEquiv R C i).toAddEquiv.toLinearEquiv fun r y => by
-    have hr : (simplyBlockedRenameEquiv R σ i).toRingEquiv (MvPolynomial.C r) =
-        (MvPolynomial.C r : MvPolynomial {c : Fin n // c ≠ σ i} R) :=
-      (simplyBlockedRenameEquiv R σ i).commutes r
-    have he := (hG.simplyBlockedHomologyCommutationEquiv R C i).map_smulₛₗ
-      (MvPolynomial.C r) y
-    simp only [RingEquiv.coe_toRingHom, hr] at he
-    exact he
+  ModuleCat.restrictScalarsLinearEquivOfBijective
+    (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
+    (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ σ i} R)
+    (hG.simplyBlockedHomologyCommutationMap R C i)
+    (fun r => (simplyBlockedRenameEquiv R σ i).commutes r)
+    (hG.simplyBlockedHomologyCommutationMap_bijective R C i)
 
 /-- Restriction of coefficient scalars does not change the specified pentagon comparison. -/
 theorem simplyBlockedHomologyCommutationCoefficientEquiv_apply
     (y : (Base).obj (hG.simplyBlockedHomology R i)) :
     hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i y =
       hG.simplyBlockedHomologyCommutationMap R C i y :=
-  congrFun (hG.coe_simplyBlockedHomologyCommutationEquiv R C i) y
+  ModuleCat.restrictScalarsLinearEquivOfBijective_apply
+    (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
+    (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ σ i} R)
+    (hG.simplyBlockedHomologyCommutationMap R C i)
+    (fun r => (simplyBlockedRenameEquiv R σ i).commutes r)
+    (hG.simplyBlockedHomologyCommutationMap_bijective R C i) y
 
 /-- The coefficient-linear commutation comparison preserves both homology degrees. -/
 theorem isHomogeneous_simplyBlockedHomologyCommutationCoefficientEquiv :
@@ -92,7 +88,8 @@ theorem isHomogeneous_simplyBlockedHomologyCommutationCoefficientEquiv :
       (hG.simplyBlockedHomologyCommutationMap_oneVariableSpecializationHomologyClass R C i z))
     (fun g z hz => by
       rw [simplyBlockedChainEquiv_simplyBlockedCommutationCyclesMap]
-      exact (H).simplyBlockedCommutationMap_mem_bigradedChainHatPiece R C i hz)
+      simpa only [add_zero] using
+        (H).simplyBlockedCommutationMap_mem_bigradedChainHatPiece R C i hz)
 
 /-- The coefficient-linear commutation comparison preserves and reflects both homology degrees. -/
 @[simp↓]

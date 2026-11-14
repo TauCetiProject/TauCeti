@@ -11,11 +11,11 @@ import TauCeti.KnotTheory.Grid.Homology.ExactSequence
 /-!
 # Specializing semilinear grid chain maps
 
-A column map `π` carrying the blocked source column `j` to the blocked target column `i`
-induces a map on surviving coefficient variables. Specializing a semilinear unblocked map
-along this coefficient map preserves its chain equation. When `π j = i` and the unblocked map
-is both surjective on cycles modulo boundaries and reflects boundaries among cycles, its
-specialization has both properties.
+Any column map `π` induces a ring homomorphism between the polynomial rings in the surviving
+variables, sending `X c` to zero when `π c = i`. This homomorphism commutes with blocking when
+`π j = i`. Under that condition, specializing a semilinear unblocked map along this coefficient
+map preserves its chain equation. If the unblocked map is both surjective on cycles modulo
+boundaries and reflects boundaries among cycles, its specialization has both properties.
 
 This extends single-grid specialization to semilinear maps along column maps `π`, including
 column-merging comparisons for south-west and north-east stabilization.

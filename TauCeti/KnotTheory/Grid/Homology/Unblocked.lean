@@ -203,18 +203,16 @@ end Quotient
 section HomologyMap
 
 variable {m : ℕ} (G' : GridDiagram m)
-  {σ : MvPolynomial (Fin m) R →+* MvPolynomial (Fin n) R}
-  (f : GridChainMinus R m →ₛₗ[σ] GridChainMinus R n)
-  (hf : ∀ c, f (G'.unblockedDifferential R c) = G.unblockedDifferential R (f c))
-  (F : G'.unblockedHomology R →ₛₗ[σ] G.unblockedHomology R)
-  (hF : ∀ (z : LinearMap.ker (G'.unblockedDifferential R))
-    (hz : f z ∈ LinearMap.ker (G.unblockedDifferential R)),
-    F (G'.unblockedHomologyClass R z) = G.unblockedHomologyClass R ⟨f z, hz⟩)
-
-include hf hF
 
 /-- A class-compatible surjective map on unblocked homology lifts cycles modulo boundaries. -/
 theorem exists_sub_mem_range_of_surjective_unblockedHomologyMap
+    {𝓕 : Type*} [FunLike 𝓕 (GridChainMinus R m) (GridChainMinus R n)]
+    [ZeroHomClass 𝓕 (GridChainMinus R m) (GridChainMinus R n)] (f : 𝓕)
+    (hf : ∀ c, f (G'.unblockedDifferential R c) = G.unblockedDifferential R (f c))
+    (F : G'.unblockedHomology R → G.unblockedHomology R)
+    (hF : ∀ (z : LinearMap.ker (G'.unblockedDifferential R))
+      (hz : f z ∈ LinearMap.ker (G.unblockedDifferential R)),
+      F (G'.unblockedHomologyClass R z) = G.unblockedHomologyClass R ⟨f z, hz⟩)
     (h : Function.Surjective F) {c : GridChainMinus R n}
     (hc : c ∈ LinearMap.ker (G.unblockedDifferential R)) :
     ∃ z ∈ LinearMap.ker (G'.unblockedDifferential R),
@@ -231,9 +229,14 @@ theorem exists_sub_mem_range_of_surjective_unblockedHomologyMap
       _ = 0 := sub_eq_zero.mpr hy.symm
   exact ⟨z, z.2, (G.unblockedHomologyClass_eq_zero_iff R _).1 he⟩
 
-omit hf in
 /-- A class-compatible injective map on unblocked homology reflects boundaries of cycles. -/
 theorem mem_range_of_injective_unblockedHomologyMap
+    (f : GridChainMinus R m → GridChainMinus R n)
+    {𝓕 : Type*} [FunLike 𝓕 (G'.unblockedHomology R) (G.unblockedHomology R)]
+    [ZeroHomClass 𝓕 (G'.unblockedHomology R) (G.unblockedHomology R)] (F : 𝓕)
+    (hF : ∀ (z : LinearMap.ker (G'.unblockedDifferential R))
+      (hz : f z ∈ LinearMap.ker (G.unblockedDifferential R)),
+      F (G'.unblockedHomologyClass R z) = G.unblockedHomologyClass R ⟨f z, hz⟩)
     (h : Function.Injective F) {z : GridChainMinus R m}
     (hz : z ∈ LinearMap.ker (G'.unblockedDifferential R))
     (hb : f z ∈ LinearMap.range (G.unblockedDifferential R)) :
