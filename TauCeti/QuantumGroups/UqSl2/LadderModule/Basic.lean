@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.AlgebraRepresentation.Basic
 public import TauCeti.QuantumGroups.QuantumInteger.Factorial
-public import TauCeti.QuantumGroups.UqSl2.Commutator
+public import TauCeti.QuantumGroups.UqSl2.HighestWeight
 public import TauCeti.QuantumGroups.UqSl2.QuantumTrace
 public import TauCeti.QuantumGroups.UqSl2.Weights
 
@@ -470,12 +470,8 @@ include hq hv he in
 private theorem e_smul_string (j : ℕ) :
     e q • string q v (j + 1) = (ε * quantumInteger q (m - j)) • string q v j := by
   have hq0 := hq.ne_zero
-  have hk : k q • v = (ε * q ^ m : ℂ) • v := mem_weightSpace_iff.mp hv
-  have hkInv := kInv_smul_of_mem_weightSpace hv
   -- Apply the commutator formula to `v`; only its `K`, `K⁻¹` term survives.
-  have h := congrArg (· • v) (e_mul_f_pow (q := q) (j + 1))
-  simp only [add_smul, mul_smul, he, smul_zero, zero_add, smul_assoc, sub_smul, hk, hkInv,
-    Nat.add_sub_cancel, smul_sub, smul_comm (f q ^ j) (_ : ℂ)] at h
+  have h := e_smul_f_pow_succ_smul_of_mem_weightSpace hv he j
   have hj : quantumInteger q ((j : ℤ) + 1) ≠ 0 := quantumInteger_ne_zero hq (by omega)
   rw [string, string, smul_comm, h]
   generalize f q ^ j • v = w

@@ -50,6 +50,21 @@ namespace TauCeti.UqSl2
 variable {q : ℂ} {V : Type*} [AddCommGroup V] [Module ℂ V]
   [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V]
 
+/-- The action of `E` on `F ^ (j + 1) v` for a vector `v` of weight `μ` killed by `E`:
+`E F^(j+1) v = [j + 1]_q (q^(-j) μ - q^j μ⁻¹) / (q - q⁻¹) F^j v`. -/
+theorem e_smul_f_pow_succ_smul_of_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ)
+    (hev : e q • v = 0) (j : ℕ) :
+    e q • f q ^ (j + 1) • v =
+      (quantumInteger q (j + 1) * (q⁻¹ ^ j * μ - q ^ j * μ⁻¹) / (q - q⁻¹)) • f q ^ j • v := by
+  have hX : (q⁻¹ ^ j • k q - q ^ j • kInv q) • v = (q⁻¹ ^ j * μ - q ^ j * μ⁻¹) • v := by
+    rw [sub_smul, smul_assoc, smul_assoc, mem_weightSpace_iff.mp hv,
+      kInv_smul_of_mem_weightSpace hv, smul_smul, smul_smul, sub_smul]
+  rw [← mul_smul, e_mul_f_pow, add_smul, mul_smul, hev, smul_zero, zero_add, Nat.add_sub_cancel,
+    smul_assoc, mul_smul (f q ^ j), hX, smul_comm (f q ^ j), smul_smul]
+  congr 1
+  push_cast
+  ring
+
 /-- A finite nonzero lowering string from a highest-weight vector has signed integral highest
 weight.  The returned `m` is the last nonvanishing index of the string. -/
 theorem exists_eq_sign_mul_pow_of_highest_weight_vector [FiniteDimensional ℂ V]
@@ -61,30 +76,14 @@ theorem exists_eq_sign_mul_pow_of_highest_weight_vector [FiniteDimensional ℂ V
     exists_pow_smul_ne_zero_and_smul_eq_zero hv0 (exists_f_pow_smul_eq_zero hq v)
   have hN : f q ^ (m + 1) • v = 0 := by rwa [pow_succ', mul_smul]
   have hμ := weight_ne_zero hv hv0
-  have hkInv : kInv q • v = μ⁻¹ • v := by
-    have hk : μ • (kInv q • v) = v := by
-      calc
-        μ • (kInv q • v) = kInv q • (μ • v) := smul_comm _ _ _
-        _ = kInv q • (k q • v) := by rw [mem_weightSpace_iff.mp hv]
-        _ = (kInv q * k q) • v := (mul_smul _ _ _).symm
-        _ = v := by rw [kInv_mul_k, one_smul]
-    calc
-      kInv q • v = μ⁻¹ • (μ • (kInv q • v)) := by simp [smul_smul, hμ]
-      _ = μ⁻¹ • v := by rw [hk]
   -- Apply the commutator formula to `v`; only the `K`, `K⁻¹` term survives.
-  have hcomm : (quantumInteger q (m + 1) * (q - q⁻¹)⁻¹ * (q⁻¹ ^ m * μ - q ^ m * μ⁻¹)) •
-      f q ^ m • v = 0 := by
-    have hf (c : ℂ) (w : V) : f q ^ m • c • w = c • f q ^ m • w := smul_comm _ _ _
-    have h := congrArg (· • v) (e_mul_f_pow (q := q) (m + 1))
-    simp only [mul_smul, hN, hev, smul_zero, add_smul, zero_add, smul_assoc,
-      sub_smul, mem_weightSpace_iff.mp hv, hkInv, Nat.add_sub_cancel, Nat.cast_add,
-      Nat.cast_one, smul_sub, hf] at h
-    generalize f q ^ m • v = w at h ⊢
-    linear_combination (norm := module) -h
+  have hcomm := e_smul_f_pow_succ_smul_of_mem_weightSpace hv hev m
+  rw [hN, smul_zero] at hcomm
   have hcoefficient : q⁻¹ ^ m * μ - q ^ m * μ⁻¹ = 0 := by
-    have hqi : quantumInteger q ((m : ℤ) + 1) * (q - q⁻¹)⁻¹ ≠ 0 :=
-      mul_ne_zero (quantumInteger_ne_zero hq (by omega)) (inv_ne_zero hq.sub_inv_ne_zero)
-    exact (mul_eq_zero.mp ((smul_eq_zero.mp hcomm).resolve_right hFm)).resolve_left hqi
+    have hqi : quantumInteger q ((m : ℤ) + 1) ≠ 0 := quantumInteger_ne_zero hq (by omega)
+    have h0 := (smul_eq_zero.mp hcomm.symm).resolve_right hFm
+    rw [div_eq_zero_iff, mul_eq_zero] at h0
+    exact h0.resolve_right hq.sub_inv_ne_zero |>.resolve_left (by exact_mod_cast hqi)
   have hsq : μ ^ 2 = (q ^ m) ^ 2 := by
     have hqm : q ^ m * q⁻¹ ^ m = 1 := by rw [← mul_pow, mul_inv_cancel₀ hq.ne_zero, one_pow]
     linear_combination

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 public import Mathlib.LinearAlgebra.Quotient.Basic
-public import TauCeti.QuantumGroups.UqSl2.Commutator
+public import TauCeti.QuantumGroups.UqSl2.HighestWeight
 public import TauCeti.QuantumGroups.UqSl2.Weights
 
 import Mathlib.Tactic
@@ -193,16 +193,9 @@ theorem vec_mem_weightSpace (j : ℕ) :
 theorem e_smul_vec_succ (j : ℕ) :
     e q • vec q μ (j + 1) =
       (quantumInteger q (j + 1) * (q⁻¹ ^ j * μ - q ^ j * μ⁻¹) / (q - q⁻¹)) • vec q μ j := by
-  have hX : (q⁻¹ ^ j • k q - q ^ j • kInv q) • vec q μ 0 =
-      (q⁻¹ ^ j * μ - q ^ j * μ⁻¹) • vec q μ 0 := by
-    rw [sub_smul, smul_assoc, smul_assoc, k_smul_vec_zero, kInv_smul_vec_zero, smul_smul,
-      smul_smul, sub_smul]
-  rw [vec_eq_f_pow_smul, ← mul_smul, e_mul_f_pow, add_smul, mul_smul, e_smul_vec_zero,
-    smul_zero, zero_add, Nat.add_sub_cancel, smul_assoc, mul_smul (f q ^ j), hX,
-    smul_comm (f q ^ j), ← vec_eq_f_pow_smul, smul_smul]
-  congr 1
-  push_cast
-  ring
+  rw [vec_eq_f_pow_smul (j + 1),
+    e_smul_f_pow_succ_smul_of_mem_weightSpace (mem_weightSpace_iff.mpr k_smul_vec_zero)
+      e_smul_vec_zero, ← vec_eq_f_pow_smul j]
 
 /-! ### Spanning -/
 
