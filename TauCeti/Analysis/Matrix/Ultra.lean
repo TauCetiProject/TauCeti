@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Ring.Ultra
 public import TauCeti.Analysis.Polynomial.Ultra
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import TauCeti.LinearAlgebra.Matrix.Minor
+import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # Determinant estimates for matrices over ultrametric seminormed rings

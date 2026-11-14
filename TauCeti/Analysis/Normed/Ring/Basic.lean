@@ -119,6 +119,29 @@ theorem norm_prod_le_prod_norm_of_nonempty {ι R : Type*} [SeminormedCommRing R]
     rw [Finset.prod_cons, Finset.prod_cons]
     exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ih (norm_nonneg _))
 
+/-- The norm of a finite product is bounded by the product of the norms, over a seminormed
+commutative ring with `‖1‖ = 1`; that normalisation is used only for the empty product. Mathlib's
+`Finset.norm_prod_le` states this only for a `NormedCommRing`. -/
+theorem norm_prod_le_prod_norm {ι R : Type*} [SeminormedCommRing R] [NormOneClass R]
+    (s : Finset ι) (f : ι → R) : ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
+  · exact norm_prod_le_prod_norm_of_nonempty hs f
+
+/-- **A finite product of unit-ball elements lies in the unit ball**, over a seminormed
+commutative ring with `‖1‖ = 1`. -/
+theorem norm_prod_le_one {ι R : Type*} [SeminormedCommRing R] [NormOneClass R] {s : Finset ι}
+    {b : ι → R} (hb : ∀ i ∈ s, ‖b i‖ ≤ 1) : ‖∏ i ∈ s, b i‖ ≤ 1 :=
+  (norm_prod_le_prod_norm s b).trans (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) hb)
+
+/-- **A finite product over a nonempty set of unit-ball elements lies in the unit ball**, over a
+seminormed commutative ring, without assuming `‖1‖ = 1`. For the empty product, which is `1`, see
+`TauCeti.norm_prod_le_one`. -/
+theorem norm_prod_le_one_of_nonempty {ι R : Type*} [SeminormedCommRing R] {s : Finset ι}
+    (hs : s.Nonempty) {b : ι → R} (hb : ∀ i ∈ s, ‖b i‖ ≤ 1) : ‖∏ i ∈ s, b i‖ ≤ 1 :=
+  (norm_prod_le_prod_norm_of_nonempty hs b).trans
+    (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) hb)
+
 /-- A point within distance `1` of `1` is not `0`. -/
 theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass R] {z : R}
     (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
