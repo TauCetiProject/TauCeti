@@ -496,9 +496,9 @@ def morseFamilyCharacteristicMap (i : ι) : C(P × TopCat.disk.{u} (k i), {x | f
         q.2).symm
 
 @[simp]
-theorem morseFamilyCharacteristicMap_apply (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :
-    morseFamilyCharacteristicMap ψ k hk hε hball hf hs i (p, w) =
-      (ψ p i).morseCharacteristicMap (hk i) hε (hball p i) (hf p i) w :=
+theorem morseFamilyCharacteristicMap_apply (i : ι) (q : P × TopCat.disk.{u} (k i)) :
+    morseFamilyCharacteristicMap ψ k hk hε hball hf hs i q =
+      (ψ q.1 i).morseCharacteristicMap (hk i) hε (hball q.1 i) (hf q.1 i) q.2 :=
   (rfl)
 
 include hs in
@@ -526,11 +526,11 @@ theorem morseFamilyCharacteristicMap_diskBoundaryInclusion (i : ι) (p : P)
   (rfl)
 
 @[simp]
-theorem coe_morseFamilyAttachingMap_apply (i : ι) (p : P) (s : TopCat.diskBoundary.{u} (k i)) :
-    ((morseFamilyAttachingMap ψ k hk hε hball hf hs i (p, s) : {x | f x ≤ c + ε}) : M) =
-      (ψ p i).morseAttachingMap (hk i) hε (hball p i) (hf p i) s :=
-  OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion (hball p i) (hf p i)
-    (hk i) hε s
+theorem coe_morseFamilyAttachingMap_apply (i : ι) (q : P × TopCat.diskBoundary.{u} (k i)) :
+    ((morseFamilyAttachingMap ψ k hk hε hball hf hs i q : {x | f x ≤ c + ε}) : M) =
+      (ψ q.1 i).morseAttachingMap (hk i) hε (hball q.1 i) (hf q.1 i) q.2 :=
+  OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion (hball q.1 i)
+    (hf q.1 i) (hk i) hε q.2
 
 variable {P' : Type*} [TopologicalSpace P'] (g : P' → P)
   (hs' : ∀ i, ContinuousOn (fun q : P' × EuclideanSpace ℝ (Fin n) ↦ (ψ (g q.1) i).symm q.2)

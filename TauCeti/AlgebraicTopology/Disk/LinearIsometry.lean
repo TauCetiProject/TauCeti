@@ -161,8 +161,8 @@ def diskMapFamily : C(P × TopCat.disk.{u} n, TopCat.disk.{u} n) where
     (continuous_subtype_val.comp (continuous_uliftDown.comp continuous_snd))).subtype_mk _)
 
 @[simp]
-theorem diskMapFamily_apply (p : P) (w : TopCat.disk.{u} n) :
-    diskMapFamily g hg (p, w) = (g p).diskMap w :=
+theorem diskMapFamily_apply (q : P × TopCat.disk.{u} n) :
+    diskMapFamily g hg q = (g q.1).diskMap q.2 :=
   (rfl)
 
 /-- Each disk map of the family is a map of pairs `(D^n, ∂D^n) → (D^n, ∂D^n)`. -/
