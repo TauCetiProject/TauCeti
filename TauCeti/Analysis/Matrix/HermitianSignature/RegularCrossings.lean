@@ -86,6 +86,7 @@ theorem finite_setOf_not_nondegenerate_toBilinForm (hc : ContinuousOn V (Icc a b
       with t ht htD
     exact htD.2 ht
 
+omit [FiniteDimensional ℝ E] in
 /-- The negative index of `V` is constant from a nondegenerate `s ∈ [a, b]` to `u ≤ b` when no
 crossing lies in `(s, u]`. -/
 private theorem sigNeg_toBilinForm_eq_of_forall_lt (hc : ContinuousOn V (Icc a b))
