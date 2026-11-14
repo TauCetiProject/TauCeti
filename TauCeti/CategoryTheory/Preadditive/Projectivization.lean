@@ -41,6 +41,12 @@ the module category of a ring `A`, which is abelian and hence idempotent complet
 `A`-module `M`, this identifies the direct summands of the modules `Mⁿ` with the finitely
 generated projective right modules over `End_A(M)`.
 
+Dually, `Hom(-, M)` takes values in left `Γ`-modules (Mathlib's
+`CategoryTheory.preadditiveYonedaObj M`), and the same three steps, run through morphisms *into*
+`M` and its finite biproducts, make it an anti-equivalence
+`TauCeti.contravariantProjectivizationFunctor M` between `add M` and the finitely generated
+projective left `Γ`-modules when idempotents split in `C`.
+
 ## Main definitions
 
 * `TauCeti.fullyFaithfulPreadditiveCoyonedaObjAdditiveClosure M`: `Hom(M, -)` is fully faithful
@@ -48,6 +54,12 @@ generated projective right modules over `End_A(M)`.
 * `TauCeti.preadditiveCoyonedaObjBiproductIso M n`: `Hom(M, Mⁿ) ≅ Γᵐᵒᵖⁿ`.
 * `TauCeti.projectivizationFunctor M`: `Hom(M, -)` from `add M` to the finitely generated
   projective `Γᵐᵒᵖ`-modules; it is an equivalence in an idempotent-complete category.
+* `TauCeti.fullyFaithfulPreadditiveYonedaObjAdditiveClosure M`: `Hom(-, M)` is fully faithful on
+  the opposite of `add M`.
+* `TauCeti.preadditiveYonedaObjBiproductIso M n`: `Hom(Mⁿ, M) ≅ Γⁿ`.
+* `TauCeti.contravariantProjectivizationFunctor M`: `Hom(-, M)` from the opposite of `add M` to the
+  finitely generated projective `Γ`-modules; it is an equivalence in an idempotent-complete
+  category.
 
 ## Main results
 
@@ -57,6 +69,10 @@ generated projective right modules over `End_A(M)`.
   generated and projective for `X` in `add M`.
 * `TauCeti.finiteProjectiveModules_le_essImage`: in an idempotent-complete category, every
   finitely generated projective `Γᵐᵒᵖ`-module is `Hom(M, X)` for some `X` in `add M`.
+* `TauCeti.preadditiveYonedaObj_map_bijective`,
+  `TauCeti.finiteProjectiveModules_preadditiveYonedaObj_obj` and
+  `TauCeti.finiteProjectiveModules_le_essImage_preadditiveYonedaObj`: the same three statements for
+  `Hom(-, M)` and the finitely generated projective `Γ`-modules.
 
 ## References
 
@@ -68,7 +84,7 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits
+open CategoryTheory CategoryTheory.Limits Opposite
 
 universe v u
 
@@ -222,6 +238,149 @@ projective `Γᵐᵒᵖ`-modules, that is the finitely generated projective righ
 instance [IsIdempotentComplete C] : (projectivizationFunctor M).IsEquivalence :=
   have : (projectivizationFunctor M).EssSurj :=
     (ObjectProperty.essSurj_lift_iff _ _ _).mpr finiteProjectiveModules_le_essImage
+  { }
+
+/-! ### The contravariant projectivization -/
+
+/-- For `X` in the additive closure of `M`, composition identifies the morphisms `Y ⟶ X`, the
+morphisms `op X ⟶ op Y` of `Cᵒᵖ`, with the `Γ`-linear maps `Hom(X, M) → Hom(Y, M)`, where
+`Γ = End M`. -/
+theorem preadditiveYonedaObj_map_bijective {X : C} (hX : additiveClosure M X) (Y : C) :
+    Function.Bijective ((preadditiveYonedaObj M).map : (op X ⟶ op Y) → _) := by
+  obtain ⟨n, ⟨e⟩⟩ := additiveClosure_iff.mp hX
+  exact (preadditiveYonedaObj M).map_bijective_of_retract e.op
+    ((preadditiveYonedaObj M).map_bijective_op_biproduct _ fun _ ↦
+      preadditiveYonedaObj_map_bijective_self M Y)
+
+instance : ((additiveClosure M).ι.op ⋙ preadditiveYonedaObj M).Full where
+  map_surjective {X Y} φ :=
+    have ⟨g, hg⟩ := (preadditiveYonedaObj_map_bijective X.unop.property Y.unop.obj).2 φ
+    ⟨(ObjectProperty.homMk g.unop).op, hg⟩
+
+instance : ((additiveClosure M).ι.op ⋙ preadditiveYonedaObj M).Faithful where
+  map_injective {X Y} _ _ h :=
+    Quiver.Hom.unop_inj (ObjectProperty.hom_ext _ (Quiver.Hom.op_inj
+      ((preadditiveYonedaObj_map_bijective X.unop.property Y.unop.obj).1 h)))
+
+variable (M) in
+/-- `Hom(-, M)` is fully faithful on the opposite of the additive closure of `M`. -/
+noncomputable def fullyFaithfulPreadditiveYonedaObjAdditiveClosure :
+    ((additiveClosure M).ι.op ⋙ preadditiveYonedaObj M).FullyFaithful :=
+  .ofFullyFaithful _
+
+variable (M) in
+/-- `Hom(Mⁿ, M)` is the free `Γ`-module of rank `n`, where `Γ = End M`: a morphism `Mⁿ ⟶ M` is
+determined by its components on the summands. -/
+noncomputable def preadditiveYonedaObjBiproductIso (n : ℕ) :
+    (preadditiveYonedaObj M).obj (op (⨁ fun _ : Fin n ↦ M)) ≅
+      ModuleCat.of (End M) (Fin n → End M) :=
+  LinearEquiv.toModuleIso
+    { toFun f j := .of (biproduct.ι (fun _ : Fin n ↦ M) j ≫ f)
+      invFun v := biproduct.desc fun j ↦ (v j).asHom
+      map_add' f g := by
+        ext j
+        simp
+      map_smul' r f := by
+        ext j
+        simp [End.smul_right]
+      left_inv f := biproduct.hom_ext' _ _ fun j ↦ biproduct.ι_desc _ j
+      right_inv v := by
+        ext j
+        simp }
+
+/-- `TauCeti.preadditiveYonedaObjBiproductIso` sends `f : Mⁿ ⟶ M` to its components
+`biproduct.ι _ j ≫ f`, viewed in `Γ`. -/
+@[simp]
+theorem preadditiveYonedaObjBiproductIso_hom_apply {n : ℕ} (f : (⨁ fun _ : Fin n ↦ M) ⟶ M)
+    (j : Fin n) :
+    (preadditiveYonedaObjBiproductIso M n).hom.hom f j = End.of (biproduct.ι _ j ≫ f) :=
+  (rfl)
+
+/-- The inverse of `TauCeti.preadditiveYonedaObjBiproductIso` sends a vector `v` of elements of
+`Γ` to the morphism `Mⁿ ⟶ M` with components `(v j).asHom`. -/
+@[simp]
+theorem preadditiveYonedaObjBiproductIso_inv_apply {n : ℕ} (v : Fin n → End M) :
+    (preadditiveYonedaObjBiproductIso M n).inv.hom v = biproduct.desc fun j ↦ (v j).asHom :=
+  (rfl)
+
+/-- For `X` in the additive closure of `M`, `Hom(X, M)` is a finitely generated projective
+`Γ`-module, where `Γ = End M`. -/
+theorem finiteProjectiveModules_preadditiveYonedaObj_obj {X : C} (hX : additiveClosure M X) :
+    finiteProjectiveModules (End M) ((preadditiveYonedaObj M).obj (op X)) := by
+  obtain ⟨n, ⟨e⟩⟩ := additiveClosure_iff.mp hX
+  refine (finiteProjectiveModules _).prop_of_retract (e.op.map _) ?_
+  exact (finiteProjectiveModules _).prop_of_iso (preadditiveYonedaObjBiproductIso M n).symm
+    (finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩)
+
+/-- In an idempotent-complete category, every finitely generated projective `Γ`-module is
+isomorphic to `Hom(X, M)` for some `X` in the additive closure of `M`, where `Γ = End M`. -/
+theorem finiteProjectiveModules_le_essImage_preadditiveYonedaObj [IsIdempotentComplete C] :
+    finiteProjectiveModules (End M) ≤
+      ((additiveClosure M).ι.op ⋙ preadditiveYonedaObj M).essImage := by
+  intro P hP
+  obtain ⟨_, _⟩ := finiteProjectiveModules_iff.mp hP
+  obtain ⟨n, f, s, -, -, hs⟩ := Module.Finite.exists_comp_eq_id_of_projective (End M) P
+  let r : Retract P (ModuleCat.of (End M) (Fin n → End M)) :=
+    { i := ModuleCat.ofHom s
+      r := ModuleCat.ofHom f
+      retract := by ext x; exact congr($hs x) }
+  exact ObjectProperty.prop_of_retract _
+    (r.trans (preadditiveYonedaObjBiproductIso M n).symm.retract)
+    ⟨op ⟨_, additiveClosure_biproduct n⟩, ⟨Iso.refl _⟩⟩
+
+variable (M) in
+/-- `Hom(-, M)` on the opposite of the additive closure of `M`, as a functor to the finitely
+generated projective `Γ`-modules, where `Γ = End M`. -/
+@[expose] noncomputable def contravariantProjectivizationFunctor :
+    (additiveClosure M).FullSubcategoryᵒᵖ ⥤ (finiteProjectiveModules (End M)).FullSubcategory :=
+  (finiteProjectiveModules (End M)).lift ((additiveClosure M).ι.op ⋙ preadditiveYonedaObj M)
+    fun X ↦ finiteProjectiveModules_preadditiveYonedaObj_obj X.unop.property
+
+@[simp]
+theorem contravariantProjectivizationFunctor_obj_obj (X : (additiveClosure M).FullSubcategoryᵒᵖ) :
+    ((contravariantProjectivizationFunctor M).obj X).obj =
+      (preadditiveYonedaObj M).obj (op X.unop.obj) :=
+  (rfl)
+
+@[simp]
+theorem contravariantProjectivizationFunctor_map_hom
+    {X Y : (additiveClosure M).FullSubcategoryᵒᵖ} (f : X ⟶ Y) :
+    ((contravariantProjectivizationFunctor M).map f).hom =
+      (preadditiveYonedaObj M).map f.unop.hom.op :=
+  (rfl)
+
+/-- `TauCeti.contravariantProjectivizationFunctor M` followed by the inclusion of the finitely
+generated projective modules is `Hom(-, M)` on the opposite of the additive closure. -/
+noncomputable def contravariantProjectivizationFunctorCompιIso :
+    contravariantProjectivizationFunctor M ⋙ (finiteProjectiveModules (End M)).ι ≅
+      (additiveClosure M).ι.op ⋙ preadditiveYonedaObj M :=
+  ObjectProperty.liftCompιIso _ _ _
+
+@[simp]
+theorem contravariantProjectivizationFunctorCompιIso_hom_app
+    (X : (additiveClosure M).FullSubcategoryᵒᵖ) :
+    (contravariantProjectivizationFunctorCompιIso (M := M)).hom.app X = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+theorem contravariantProjectivizationFunctorCompιIso_inv_app
+    (X : (additiveClosure M).FullSubcategoryᵒᵖ) :
+    (contravariantProjectivizationFunctorCompιIso (M := M)).inv.app X = 𝟙 _ :=
+  (rfl)
+
+instance : (contravariantProjectivizationFunctor M).Full :=
+  inferInstanceAs (ObjectProperty.lift _ _ _).Full
+
+instance : (contravariantProjectivizationFunctor M).Faithful :=
+  inferInstanceAs (ObjectProperty.lift _ _ _).Faithful
+
+/-- **Contravariant projectivization.** In an idempotent-complete preadditive category with finite
+biproducts, `Hom(-, M)` is an anti-equivalence between the additive closure `add M` and the
+finitely generated projective left `Γ`-modules, where `Γ = End M`. -/
+instance [IsIdempotentComplete C] : (contravariantProjectivizationFunctor M).IsEquivalence :=
+  have : (contravariantProjectivizationFunctor M).EssSurj :=
+    (ObjectProperty.essSurj_lift_iff _ _ _).mpr
+      finiteProjectiveModules_le_essImage_preadditiveYonedaObj
   { }
 
 end TauCeti
