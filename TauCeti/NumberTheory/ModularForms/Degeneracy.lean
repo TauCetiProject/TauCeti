@@ -354,7 +354,7 @@ lemma levelRaise_injective [𝒢'.HasDetOne] [NeZero d]
 
 /-- `V_d` is injective as a `ℂ`-linear map, so its range is a copy of `M_k(𝒢)` inside
 `M_k(𝒢')`. -/
-lemma levelRaiseₗ_injective [𝒢.HasDetOne] [𝒢'.HasDetOne] (d : ℕ) [NeZero d]
+lemma levelRaiseₗ_injective [𝒢.HasDetOne] [𝒢'.HasDetOne] {d : ℕ} [NeZero d]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) :
     Injective (levelRaiseₗ (k := k) d h) :=
   levelRaise_injective h
@@ -448,7 +448,7 @@ lemma levelRaise_injective [𝒢'.HasDetOne] [NeZero d]
 
 /-- `V_d` is injective as a `ℂ`-linear map on cusp forms, so its range is a copy of `S_k(𝒢)`
 inside `S_k(𝒢')`. These ranges are what span the old subspace. -/
-lemma levelRaiseₗ_injective [𝒢.HasDetOne] [𝒢'.HasDetOne] (d : ℕ) [NeZero d]
+lemma levelRaiseₗ_injective [𝒢.HasDetOne] [𝒢'.HasDetOne] {d : ℕ} [NeZero d]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) :
     Injective (levelRaiseₗ (k := k) d h) :=
   levelRaise_injective h
