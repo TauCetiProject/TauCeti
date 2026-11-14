@@ -59,6 +59,8 @@ Nothing here proves or assumes it; every statement below is conditional on a cov
 * `TauCeti.IsProjectiveCover.bijective_of_comp_eq` and
   `TauCeti.IsProjectiveCover.exists_linearEquiv`: **uniqueness**, first as bijectivity of any
   comparison map between two covers and then as the existence of an isomorphism over `M`.
+* `TauCeti.IsProjectiveCover.bijective_of_projective`: a projective cover of a projective module is
+  an isomorphism.
 * `TauCeti.IsProjectiveCover.nonempty_linearEquiv_ker`: uniqueness read on the kernels — the syzygy
   cut out by a projective cover of `M` is independent of the cover.
 * `TauCeti.IsProjectiveCover.comp`: composing a projective cover with a surjection that itself
@@ -182,6 +184,12 @@ theorem IsProjectiveCover.bijective_of_comp_eq {P' : Type*} [AddCommGroup P'] [M
     (hf.isSuperfluous_ker.mono hkerle).surjective_of_surjective_comp (f := h)
       (by rw [hσ]; exact Function.surjective_id)
   exact (hsplit.rightInverse_of_surjective hσsurj).injective
+
+/-- **A projective cover of a projective module is an isomorphism**: compare it with the identity,
+which is a projective cover of the projective target (`TauCeti.isProjectiveCover_id`). -/
+theorem IsProjectiveCover.bijective_of_projective [Module.Projective R M] {f : P →ₗ[R] M}
+    (hf : IsProjectiveCover f) : Function.Bijective f :=
+  hf.bijective_of_comp_eq isProjectiveCover_id (LinearMap.id_comp f)
 
 /-- **Uniqueness of the projective cover.** Two projective covers of the same module are related by
 a linear equivalence commuting with the covering maps; in particular the covering module of a

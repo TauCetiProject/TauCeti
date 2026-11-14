@@ -25,8 +25,9 @@ of finitely presented modules over a semiperfect ring are built from these cover
 
 Conversely, a cover of a simple module has a local endomorphism ring
 (`TauCeti.IsProjectiveCover.isLocalRing_end`), and a projective cover of a projective module is an
-isomorphism. So if every simple module has a projective cover, the cover of `R` from the first
-result is an isomorphism, and `R` is a finite product of projectives with local endomorphism rings
+isomorphism (`TauCeti.IsProjectiveCover.bijective_of_projective`). So if every simple module has a
+projective cover, the cover of `R` from the first result is an isomorphism, and `R` is a finite
+product of projectives with local endomorphism rings
 (`TauCeti.exists_linearEquiv_pi_of_forall_isSimpleModule`), which makes `R` semiperfect
 (`TauCeti.IsSemiperfectRing.of_linearEquiv_pi`). This gives the characterization of semiperfect
 rings by projective covers (`TauCeti.isSemiperfectRing_tfae`).
@@ -54,8 +55,6 @@ rings by projective covers (`TauCeti.isSemiperfectRing_tfae`).
   `Reᵢ`.
 * `TauCeti.exists_isProjectiveCover_of_isSemiperfectRing`: over a semiperfect ring, every finitely
   generated module has a projective cover.
-* `TauCeti.IsProjectiveCover.isLocalRing_end`: a projective cover of a simple module has a local
-  endomorphism ring.
 * `TauCeti.isSemiperfectRing_tfae`: `R` is semiperfect exactly when it is a finite product of
   projectives with local endomorphism rings, exactly when every finitely generated module has a
   projective cover, exactly when every simple module has one.
@@ -81,63 +80,6 @@ namespace TauCeti
 universe u v w
 
 variable {R : Type u} [Ring R]
-
-section Local
-
-variable {P M S : Type*} [AddCommGroup P] [Module R P] [AddCommGroup M] [Module R M]
-  [AddCommGroup S] [Module R S]
-
-/-- **A projective cover of a projective module is an isomorphism**: it splits, and its kernel is a
-superfluous direct summand. -/
-theorem IsProjectiveCover.bijective_of_projective [Module.Projective R M] {f : P →ₗ[R] M}
-    (hf : IsProjectiveCover f) : Function.Bijective f := by
-  obtain ⟨g, hg⟩ := Module.projective_lifting_property f LinearMap.id hf.surjective
-  have hfg (y : M) : f (g y) = y := LinearMap.congr_fun hg y
-  -- `P` is the sum of `ker f` and the image of the section, which is therefore everything.
-  have hsup : LinearMap.ker f ⊔ LinearMap.range g = ⊤ := eq_top_iff.2 fun x _ ↦
-    Submodule.mem_sup.2 ⟨x - g (f x), by simp [hfg], g (f x), LinearMap.mem_range_self _ _,
-      sub_add_cancel _ _⟩
-  have hg_surj : Function.Surjective g :=
-    LinearMap.range_eq_top.1 (hf.isSuperfluous_ker.eq_top_of_sup_eq_top hsup)
-  refine ⟨fun x y hxy ↦ ?_, hf.surjective⟩
-  obtain ⟨x, rfl⟩ := hg_surj x
-  obtain ⟨y, rfl⟩ := hg_surj y
-  rw [hfg, hfg] at hxy
-  rw [hxy]
-
-/-- **The cover of a simple module has a local endomorphism ring**: for an endomorphism `φ`, one of
-`φ` and `1 - φ` is onto, since their images sum to everything and proper submodules lie in the
-kernel of the cover; and an onto endomorphism is a projective cover of the projective source, hence
-invertible. -/
-theorem IsProjectiveCover.isLocalRing_end [IsSimpleModule R S] {p : P →ₗ[R] S}
-    (hp : IsProjectiveCover p) : IsLocalRing (Module.End R P) := by
-  have := hp.projective
-  have := IsSimpleModule.nontrivial R S
-  have : Nontrivial P := hp.surjective.nontrivial
-  have hker : LinearMap.ker p ≠ ⊤ := fun h ↦ by
-    obtain ⟨y, hy⟩ := exists_ne (0 : S)
-    obtain ⟨x, rfl⟩ := hp.surjective y
-    exact hy (LinearMap.mem_ker.1 (h ▸ Submodule.mem_top))
-  -- An onto endomorphism has a proper, hence superfluous, kernel.
-  have hunit (φ : Module.End R P) (hφ : Function.Surjective φ) : IsUnit φ := by
-    have hφker : LinearMap.ker φ ≠ ⊤ := fun h ↦ by
-      obtain ⟨y, hy⟩ := exists_ne (0 : P)
-      obtain ⟨x, rfl⟩ := hφ y
-      exact hy (LinearMap.mem_ker.1 (h ▸ Submodule.mem_top))
-    have hcov : IsProjectiveCover φ :=
-      ⟨inferInstance, hφ, hp.isSuperfluous_ker.mono (hp.le_ker_of_ne_top hφker)⟩
-    exact (Module.End.isUnit_iff φ).2 hcov.bijective_of_projective
-  refine IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun φ ↦ ?_
-  by_contra! h
-  have h₁ : LinearMap.range φ ≠ ⊤ := fun ht ↦ h.1 (hunit φ (LinearMap.range_eq_top.1 ht))
-  have h₂ : LinearMap.range (1 - φ) ≠ ⊤ := fun ht ↦ h.2 (hunit _ (LinearMap.range_eq_top.1 ht))
-  refine hker (top_le_iff.1 fun x _ ↦ ?_)
-  have hx : x = φ x + (1 - φ) x := by simp
-  rw [hx]
-  exact add_mem (hp.le_ker_of_ne_top h₁ (LinearMap.mem_range_self _ _))
-    (hp.le_ker_of_ne_top h₂ (LinearMap.mem_range_self _ _))
-
-end Local
 
 section Generation
 
