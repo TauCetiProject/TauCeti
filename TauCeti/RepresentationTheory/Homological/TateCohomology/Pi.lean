@@ -234,14 +234,13 @@ private theorem toPi_bijective (n : ℤ) : ∀ M : ι → Rep R G, Function.Bije
     intro M
     exact (toPi_bijective_of_shortExact (fun i ↦ coindBotUnit (M i))
       (fun i ↦ dimensionShiftUpπ (M i)) (fun i ↦ coindBotUnit_comp_dimensionShiftUpπ (M i))
-      (fun i ↦ by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact (M i))
+      (fun i ↦ dimensionShiftUpSES_shortExact (M i))
       (fun i S _ m ↦ isZero_res_coindBot S (M i).V m) n).1 (ih _)
   | pred n ih =>
     intro M
     refine (toPi_bijective_of_shortExact (fun i ↦ dimensionShiftDownι (M i))
       (fun i ↦ indBotCounit (M i)) (fun i ↦ dimensionShiftDownι_comp_indBotCounit (M i))
-      (fun i ↦ by
-        simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact (M i))
+      (fun i ↦ dimensionShiftDownSES_shortExact (M i))
       (fun i S _ m ↦ isZero_res_indBot S (M i).V m) _).2 ?_
     rw [sub_add_cancel]
     exact ih _

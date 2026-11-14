@@ -102,9 +102,11 @@ def dimensionShiftUpπIsCokernel (A : Rep k G) :
       (coindBotUnit_comp_dimensionShiftUpπ A)) :=
   cokernelIsCokernel (coindBotUnit A)
 
-/-- The short complex `A ⟶ Coind_⊥^G A ⟶ dimensionShiftUp A`. -/
+/-- The short complex `A ⟶ Coind_⊥^G A ⟶ dimensionShiftUp A`, the cokernel sequence of
+`coindBotUnit A`. -/
+@[expose]
 def dimensionShiftUpSES (A : Rep k G) : ShortComplex (Rep k G) :=
-  ShortComplex.cokernelSequence (coindBotUnit A)
+  ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A) (coindBotUnit_comp_dimensionShiftUpπ A)
 
 /-- The upward dimension-shifting short complex has maps the embedding into the coinduced module
 and the dimension-shift projection. -/
@@ -175,9 +177,11 @@ def dimensionShiftDownιIsKernel (A : Rep k G) :
       (dimensionShiftDownι_comp_indBotCounit A)) :=
   kernelIsKernel (indBotCounit A)
 
-/-- The short complex `dimensionShiftDown A ⟶ Ind_⊥^G A ⟶ A`. -/
+/-- The short complex `dimensionShiftDown A ⟶ Ind_⊥^G A ⟶ A`, the kernel sequence of
+`indBotCounit A`. -/
+@[expose]
 def dimensionShiftDownSES (A : Rep k G) : ShortComplex (Rep k G) :=
-  ShortComplex.kernelSequence (indBotCounit A)
+  ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A) (dimensionShiftDownι_comp_indBotCounit A)
 
 /-- The downward dimension-shifting short complex has maps the dimension-shift inclusion and the
 projection onto `A`. -/

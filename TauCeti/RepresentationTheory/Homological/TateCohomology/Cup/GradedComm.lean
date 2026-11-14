@@ -102,8 +102,8 @@ private theorem cup_gradedComm_add_one (M N : Rep k G) {p q r : ℤ} (hq : 0 ≤
   obtain ⟨y, rfl⟩ : ∃ y', (dimensionShiftUpIso N q).hom y' = y :=
     ⟨(dimensionShiftUpIso N q).inv y, Iso.inv_hom_id_apply _ _⟩
   have hD : (ShortComplex.mk (coindBotUnit N) (dimensionShiftUpπ N)
-      (coindBotUnit_comp_dimensionShiftUpπ N)).ShortExact := by
-    simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact N
+      (coindBotUnit_comp_dimensionShiftUpπ N)).ShortExact :=
+    dimensionShiftUpSES_shortExact N
   -- The braiding commutes with the connecting maps of the tensor products of the shifting sequence
   -- with `M` on either side.
   have hδ := (ConcreteCategory.congr_hom (_root_.TateCohomology.δ_naturality
@@ -133,8 +133,8 @@ private theorem cup_gradedComm_of_add_one (M N : Rep k G) {p q r : ℤ} (hq : q 
     (tateCohomologyFunctor r).map (β_ M N).hom (cup M N p q r h x y) =
       (p * q).negOnePow • cup N M q p r (by omega) y x := by
   have hD : (ShortComplex.mk (dimensionShiftDownι N) (indBotCounit N)
-      (dimensionShiftDownι_comp_indBotCounit N)).ShortExact := by
-    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact N
+      (dimensionShiftDownι_comp_indBotCounit N)).ShortExact :=
+    dimensionShiftDownSES_shortExact N
   obtain ⟨ρ, hρ⟩ := Rep.exists_leftInverse_of_rightInverse hD.exact (rightInverse_indBotCounit N)
   have hβ : ∀ {A B : Rep k G} (e : A ≅ B) (n : ℤ) (z : tateCohomology A n),
       (tateCohomologyFunctor n).map e.inv ((tateCohomologyFunctor n).map e.hom z) = z :=
