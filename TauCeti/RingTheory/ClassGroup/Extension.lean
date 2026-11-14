@@ -18,7 +18,7 @@ This file supplies:
 
 * `ClassGroup.extendedHom_mk_of_isFractionRing`: evaluation of `ClassGroup.extendedHom` on a
   fractional ideal over arbitrary fraction fields;
-* `ClassGroup.map_comp_extendedHom`, `ClassGroup.map_extendedHom`: factorization of
+* `ClassGroup.map_comp_extendedHom`: factorization of
   `ClassGroup.extendedHom` along an injective algebra homomorphism without an `IsScalarTower`
   assumption;
 * `ClassGroup.map_mk0_eq_one_iff`, `ClassGroup.map_eq_one_iff_forall_isPrincipal`,
@@ -63,12 +63,6 @@ theorem map_comp_extendedHom [CommRing C] [IsDomain C] [Algebra R C]
   ext x
   exact (map_map (algebraMap R B) (FaithfulSMul.algebraMap_injective R B) (f : B →+* C) hf x).trans
     (DFunLike.congr_fun (map_congr f.comp_algebraMap _ _) x)
-
-/-- Pointwise form of `ClassGroup.map_comp_extendedHom`. -/
-theorem map_extendedHom [CommRing C] [IsDomain C] [Algebra R C]
-    [Module.IsTorsionFree R C] (f : B →ₐ[R] C) (hf : Function.Injective f) (x : ClassGroup R) :
-    map (f : B →+* C) hf (extendedHom R B x) = extendedHom R C x :=
-  DFunLike.congr_fun (map_comp_extendedHom f hf) x
 
 variable [Field K] [Algebra R K] [IsFractionRing R K]
   [Field L] [Algebra B L] [IsFractionRing B L]

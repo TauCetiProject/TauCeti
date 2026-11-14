@@ -22,6 +22,8 @@ field, as a `k`-algebra.
   `E` of `L / K` and a semiring `k` acting compatibly on `K` and `L`.
 * `IntermediateField.le_of_isScalarTower`: an intermediate field `E` lies in an intermediate
   field `E'` as soon as some algebra structure of `E'` over `E` is compatible with `L`.
+* `IntermediateField.restrictScalars_self`: restricting the scalars of an intermediate field of
+  `L / K` to `K` itself is the identity.
 * `IntermediateField.restrictScalarsAlgEquiv`: an intermediate field `E` of `L / L'` and its
   restriction of scalars `E.restrictScalars K` are the same field over `K`.
 -/
@@ -47,6 +49,13 @@ theorem le_of_isScalarTower {K L : Type*} [Field K] [Field L] [Algebra K L]
   rwa [← algebraMap_apply, ← IsScalarTower.algebraMap_apply] at h
 
 section RestrictScalars
+
+/-- Restricting the scalars of an intermediate field of `L / K` from `K` to `K` itself is the
+identity. -/
+@[simp]
+theorem restrictScalars_self {K L : Type*} [Field K] [Field L] [Algebra K L]
+    (E : IntermediateField K L) : E.restrictScalars K = E :=
+  SetLike.coe_injective (coe_restrictScalars (K := K))
 
 variable (K : Type*) {L' L : Type*} [Field K] [Field L'] [Field L] [Algebra K L'] [Algebra K L]
   [Algebra L' L] [IsScalarTower K L' L] (E : IntermediateField L' L)

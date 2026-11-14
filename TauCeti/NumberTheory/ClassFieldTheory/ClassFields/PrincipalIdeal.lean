@@ -97,10 +97,8 @@ theorem ideleClassExtension_hilbertClassField_mem_raySubgroup (K : Type) [Field 
       raySubgroup (Modulus.one (hilbertClassField K)) := by
   let H := hilbertClassField K
   let H₂ := hilbertClassFieldOver K H
-  let _ : Algebra H H₂ :=
-    (IntermediateField.inclusion (le_rayClassFieldOver H (Modulus.one H))).toRingHom.toAlgebra
-  have : IsScalarTower H H₂ (SeparableClosure K) :=
-    IsScalarTower.of_algebraMap_eq fun x ↦ by simp [RingHom.algebraMap_toAlgebra]
+  let _ := algebraRayClassFieldOver K (Modulus.one H)
+  have := isScalarTower_right_rayClassFieldOver K (Modulus.one H)
   rw [← range_ideleClassNormMap_rayClassFieldOver K (Modulus.one H)]
   exact ideleClassExtension_mem_range_ideleClassNormMap_of_isGalois_of_unramified H₂
     (fun w ↦ isUnramifiedAt_hilbertClassFieldOver_of_isUnramifiedAt K H

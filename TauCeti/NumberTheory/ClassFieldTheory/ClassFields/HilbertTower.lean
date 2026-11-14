@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RayClassField
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.PrincipalIdeal
 import TauCeti.FieldTheory.Galois.Abelian.Equiv
 import TauCeti.FieldTheory.Galois.Restriction
+import TauCeti.FieldTheory.IntermediateField.Map
 import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.FieldTheory.IsSepClosed
 import TauCeti.NumberTheory.NumberField.AlgEquiv
@@ -64,6 +65,10 @@ in a tower `K → L → Kˢ` inside `Kˢ` itself (`rayClassFieldOver`, `hilbertC
   `SeparableClosure K`.
 * `hilbertClassFieldOver`, `narrowHilbertClassFieldOver`: the ordinary and narrow Hilbert class
   fields of `L` inside `SeparableClosure K`.
+* `toRayClassFieldOver`, `algebraRayClassFieldOver`: the canonical `K`-algebra map
+  `L →ₐ[K] rayClassFieldOver K 𝔪` and induced `Algebra L (rayClassFieldOver K 𝔪)` structure (with
+  compatible scalar-tower lemmas `isScalarTower_left_rayClassFieldOver` and
+  `isScalarTower_right_rayClassFieldOver`).
 * `rayClassFieldOverEquivOfAlgHom`: the `L`-algebra isomorphism
   `rayClassField 𝔪 ≃ₐ[L] rayClassFieldOver K 𝔪` induced by any `L`-embedding into `Kˢ`.
 
@@ -212,13 +217,6 @@ into `SeparableClosure K` has this field as its image (`rayClassFieldOver_eq_fie
 def rayClassFieldOver : IntermediateField K (SeparableClosure K) :=
   (IntermediateField.normalClosure L (rayClassField 𝔪) (SeparableClosure K)).restrictScalars K
 
-/-- Unfolding lemma for `rayClassFieldOver`. -/
-theorem rayClassFieldOver_def :
-    rayClassFieldOver K 𝔪 =
-      (IntermediateField.normalClosure L (rayClassField 𝔪) (SeparableClosure K)).restrictScalars
-        K :=
-  (rfl)
-
 /-- Every `L`-embedding of `rayClassField 𝔪` into `SeparableClosure K` has image
 `rayClassFieldOver K 𝔪`. -/
 theorem rayClassFieldOver_eq_fieldRange (ι : rayClassField 𝔪 →ₐ[L] SeparableClosure K) :
@@ -229,8 +227,8 @@ theorem rayClassFieldOver_eq_fieldRange (ι : rayClassField 𝔪 →ₐ[L] Separ
 @[simp]
 theorem rayClassFieldOver_self {K : Type} [Field K] [NumberField K] (𝔪 : Modulus K) :
     rayClassFieldOver K 𝔪 = rayClassField 𝔪 := by
-  rw [rayClassFieldOver_eq_fieldRange K 𝔪 (rayClassField 𝔪).val, IntermediateField.fieldRange_val]
-  rfl
+  rw [rayClassFieldOver_eq_fieldRange K 𝔪 (rayClassField 𝔪).val, IntermediateField.fieldRange_val,
+    IntermediateField.restrictScalars_self]
 
 /-- The image of `L` in `SeparableClosure K` lies inside `rayClassFieldOver K 𝔪`. -/
 theorem algebraMap_mem_rayClassFieldOver (a : L) :
@@ -254,6 +252,34 @@ def toRayClassFieldOver : L →ₐ[K] rayClassFieldOver K 𝔪 :=
 theorem coe_toRayClassFieldOver_apply (a : L) :
     (toRayClassFieldOver K 𝔪 a : SeparableClosure K) = algebraMap L (SeparableClosure K) a :=
   (rfl)
+
+/-- Canonical `L`-algebra structure on `rayClassFieldOver K 𝔪`, induced by
+`toRayClassFieldOver K 𝔪`. Activate this as a local instance together with
+`isScalarTower_left_rayClassFieldOver` and `isScalarTower_right_rayClassFieldOver` when no
+compatible `Algebra L (rayClassFieldOver K 𝔪)` instance is already in scope (it is not a global
+instance because for `L = K` it would compete with `IntermediateField.algebra`). -/
+@[instance_reducible]
+def algebraRayClassFieldOver : Algebra L (rayClassFieldOver K 𝔪) :=
+  (toRayClassFieldOver K 𝔪).toRingHom.toAlgebra
+
+section
+attribute [local instance] algebraRayClassFieldOver
+
+/-- `K → L → rayClassFieldOver K 𝔪` is a scalar tower for `algebraRayClassFieldOver K 𝔪`. -/
+theorem isScalarTower_left_rayClassFieldOver :
+    IsScalarTower K L (rayClassFieldOver K 𝔪) :=
+  IsScalarTower.of_algebraMap_eq fun x ↦ Subtype.ext <|
+    (IntermediateField.coe_algebraMap_apply _ x).trans
+      (IsScalarTower.algebraMap_apply K L (SeparableClosure K) x)
+
+/-- `L → rayClassFieldOver K 𝔪 → SeparableClosure K` is a scalar tower for
+`algebraRayClassFieldOver K 𝔪`. -/
+theorem isScalarTower_right_rayClassFieldOver :
+    IsScalarTower L (rayClassFieldOver K 𝔪) (SeparableClosure K) :=
+  IsScalarTower.of_algebraMap_eq fun x ↦
+    (IntermediateField.algebraMap_apply _ (toRayClassFieldOver K 𝔪 x)).symm
+
+end
 
 /-- Any `L`-embedding `ι : rayClassField 𝔪 →ₐ[L] SeparableClosure K` restricts to an `L`-algebra
 isomorphism `rayClassField 𝔪 ≃ₐ[L] rayClassFieldOver K 𝔪`, for any compatible `L`-algebra
@@ -339,39 +365,25 @@ private theorem rayClassFieldOver_eq_map
   rw [rayClassFieldOver_eq_fieldRange K 𝔪 (e.symm.toAlgHom.comp (rayClassField 𝔪).val),
     IntermediateField.fieldRange_comp_val]
 
-variable {K 𝔪} in
-omit [NumberField L] [Algebra K L] [IsScalarTower K L (SeparableClosure K)] in
-private theorem map_symm_map (E : IntermediateField L (SeparableClosure L))
-    (e : SeparableClosure K ≃ₐ[L] SeparableClosure L) :
-    (E.map e.symm.toAlgHom).map e.toAlgHom = E := by
-  rw [IntermediateField.map_map, show e.toAlgHom.comp e.symm.toAlgHom = AlgHom.id _ _ by ext; simp,
-    IntermediateField.map_id]
-
-variable {K 𝔪} in
-omit [NumberField L] [Algebra K L] [IsScalarTower K L (SeparableClosure K)] in
-private theorem map_map_symm (F : IntermediateField L (SeparableClosure K))
-    (e : SeparableClosure K ≃ₐ[L] SeparableClosure L) :
-    (F.map e.toAlgHom).map e.symm.toAlgHom = F := by
-  rw [IntermediateField.map_map, show e.symm.toAlgHom.comp e.toAlgHom = AlgHom.id _ _ by ext; simp,
-    IntermediateField.map_id]
-
 private theorem restrictScalars_le_rayClassFieldOver_iff
     (F : IntermediateField L (SeparableClosure K))
     (e : SeparableClosure K ≃ₐ[L] SeparableClosure L) :
     F.restrictScalars K ≤ rayClassFieldOver K 𝔪 ↔ F.map e.toAlgHom ≤ rayClassField 𝔪 := by
   rw [rayClassFieldOver_eq_map K 𝔪 e, IntermediateField.restrictScalars_le_iff K]
   exact ⟨fun h ↦ (IntermediateField.map_mono e.toAlgHom h).trans_eq
-      (map_symm_map (rayClassField 𝔪) e),
-    fun h ↦ (map_map_symm F e).symm.trans_le (IntermediateField.map_mono e.symm.toAlgHom h)⟩
+      (IntermediateField.map_map_symm e (rayClassField 𝔪)),
+    fun h ↦ (IntermediateField.map_symm_map e F).symm.trans_le
+      (IntermediateField.map_mono e.symm.toAlgHom h)⟩
 
 private theorem rayClassFieldOver_le_restrictScalars_iff
     (F : IntermediateField L (SeparableClosure K))
     (e : SeparableClosure K ≃ₐ[L] SeparableClosure L) :
     rayClassFieldOver K 𝔪 ≤ F.restrictScalars K ↔ rayClassField 𝔪 ≤ F.map e.toAlgHom := by
   rw [rayClassFieldOver_eq_map K 𝔪 e, IntermediateField.restrictScalars_le_iff K]
-  exact ⟨fun h ↦ (map_symm_map (rayClassField 𝔪) e).symm.trans_le
+  exact ⟨fun h ↦ (IntermediateField.map_map_symm e (rayClassField 𝔪)).symm.trans_le
       (IntermediateField.map_mono e.toAlgHom h),
-    fun h ↦ (IntermediateField.map_mono e.symm.toAlgHom h).trans_eq (map_map_symm F e)⟩
+    fun h ↦ (IntermediateField.map_mono e.symm.toAlgHom h).trans_eq
+      (IntermediateField.map_symm_map e F)⟩
 
 /-- **Universal property of `rayClassFieldOver K 𝔪`**: for a finite abelian extension `M/L` and any
 `L`-embedding `ι : M →ₐ[L] SeparableClosure K`, `𝔪` is admissible for `M/L` if and only if the
@@ -409,7 +421,7 @@ theorem rayClassFieldOver_le_rayClassFieldOver_iff {𝔫 : Modulus L} :
   have := TauCeti.isSepClosure_tower_top K L (SeparableClosure K)
   let e := IsSepClosure.equiv L (SeparableClosure K) (SeparableClosure L)
   rw [rayClassFieldOver_eq_map K 𝔪 e, restrictScalars_le_rayClassFieldOver_iff K 𝔫 _ e,
-    map_symm_map (rayClassField 𝔪) e, rayClassField_le_rayClassField_iff]
+    IntermediateField.map_map_symm e (rayClassField 𝔪), rayClassField_le_rayClassField_iff]
 
 variable {K 𝔪} in
 /-- **Relative ray class fields grow with the modulus**: if `𝔪 ∣ 𝔫`, then
@@ -551,25 +563,6 @@ theorem isUnramifiedAt_narrowHilbertClassFieldOver_of_isUnramifiedAt
     (by simp) hL
 
 section CanonicalAlgebra
-
-@[instance_reducible]
-private def algebraRayClassFieldOver : Algebra L (rayClassFieldOver K 𝔪) :=
-  (toRayClassFieldOver K 𝔪).toRingHom.toAlgebra
-
-private theorem isScalarTower_left_rayClassFieldOver :
-    letI := algebraRayClassFieldOver K 𝔪
-    IsScalarTower K L (rayClassFieldOver K 𝔪) := by
-  let _ := algebraRayClassFieldOver K 𝔪
-  exact IsScalarTower.of_algebraMap_eq fun x ↦ Subtype.ext <|
-    (IntermediateField.coe_algebraMap_apply _ x).trans
-      (IsScalarTower.algebraMap_apply K L (SeparableClosure K) x)
-
-private theorem isScalarTower_right_rayClassFieldOver :
-    letI := algebraRayClassFieldOver K 𝔪
-    IsScalarTower L (rayClassFieldOver K 𝔪) (SeparableClosure K) := by
-  let _ := algebraRayClassFieldOver K 𝔪
-  exact IsScalarTower.of_algebraMap_eq fun x ↦
-    (IntermediateField.algebraMap_apply _ (toRayClassFieldOver K 𝔪 x)).symm
 
 attribute [local instance] algebraRayClassFieldOver
   isScalarTower_left_rayClassFieldOver isScalarTower_right_rayClassFieldOver
