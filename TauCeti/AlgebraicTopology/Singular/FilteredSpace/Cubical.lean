@@ -479,9 +479,8 @@ lemma filteredSpaceCubicalSpectralSequenceIso_hom_two_f_comp (pq : ℤ × ℤ) (
       (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one ha hb)))).trans (homologyMap_comp _ _ m)
   -- The first-page identifications are composites of isomorphisms whose types mention the pair
   -- `(X b, X a)` only up to definitional unfolding, so they are composed with terms.
-  have e :=
-    CochainComplex.spectralSequenceMap_hom_two_f_comp_spectralSequenceFirstPageXIsoCokernel_hom
-      (filteredSpaceCubicalToSingular k hX) pq a b ha hb m hm
+  have e := CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality
+    (filteredSpaceCubicalToSingular k hX) pq a b ha hb m hm
   exact ((reassoc_of% e) _).trans <|
     (congrArg (_ ≫ ·) <| ((reassoc_of% h) _).trans <|
       congrArg (_ ≫ ·) (extendHomologyIso_hom_naturality _ _ _)).trans <|

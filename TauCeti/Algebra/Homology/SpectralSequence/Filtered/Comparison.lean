@@ -20,7 +20,7 @@ filtered complexes, holds for all filtrations.
 
 ## Main results
 
-* `CochainComplex.spectralSequenceMap_hom_two_f_comp_spectralSequenceFirstPageXIsoCokernel_hom`:
+* `CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`:
   on the first page, the morphism of spectral sequences is the map in cohomology of the induced
   morphism of graded pieces.
 * `CochainComplex.spectralObjectMap_filtrationFunctorMap_abutment_comp`:
@@ -97,7 +97,7 @@ and `G_q ⟶ G_{q+1}`, under the identifications of the objects of the first pag
 cohomology of the graded pieces, the morphism of spectral sequences induced by `α : F ⟶ G` is the
 map in cohomology of the induced morphism of cokernels. -/
 @[reassoc]
-lemma spectralSequenceMap_hom_two_f_comp_spectralSequenceFirstPageXIsoCokernel_hom
+lemma spectralSequenceFirstPageXIsoCokernel_hom_naturality
     {F G : EInt ⥤ CochainComplex C ℤ} (α : F ⟶ G) (pq : ℤ × ℤ) (i₁ i₂ : ℤ)
     (hi₁ : i₁ = pq.2) (hi₂ : i₂ = pq.2 + 1) (n : ℤ) (hn : n = pq.1 + pq.2)
     [Mono (F.map (homOfLE (coe_le_coe_of_eq_add_one hi₁ hi₂)))]
@@ -105,7 +105,8 @@ lemma spectralSequenceMap_hom_two_f_comp_spectralSequenceFirstPageXIsoCokernel_h
     ((spectralSequenceMap coreE₂Cohomological (spectralObjectMap α)).hom 2 le_rfl).f pq ≫
         (spectralSequenceFirstPageXIsoCokernel G pq i₁ i₂ hi₁ hi₂ n hn).hom =
       (spectralSequenceFirstPageXIsoCokernel F pq i₁ i₂ hi₁ hi₂ n hn).hom ≫
-        HomologicalComplex.homologyMap (cokernel.map _ _ _ _ (α.naturality _)) n := by
+        HomologicalComplex.homologyMap
+          (cokernel.map _ _ (α.app i₁) (α.app i₂) (α.naturality _)) n := by
   rw [spectralSequenceMap_hom, spectralSequencePageMap_f, spectralSequenceFirstPageXIsoCokernel_eq,
     spectralSequenceFirstPageXIsoCokernel_eq, Iso.trans_hom, Iso.trans_hom, Category.assoc,
     ← spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom]
