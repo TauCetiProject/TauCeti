@@ -135,11 +135,12 @@ theorem coe_stableSymmetricProj_stablePsumPart {n : ℕ} (μ : n.Partition) (d :
       psumPart (Fin d) R μ := by
   rw [stablePsumPart, stableSymmetricProj_mk]
 
-/-- The power-sum product of the empty partition is the unit of the symmetric functions. -/
+/-- The power-sum product of the (unique, empty) partition of `0` is the unit of the symmetric
+functions. -/
 @[simp]
-theorem stablePsumPart_zero :
-    stablePsumPart R (Nat.Partition.indiscrete 0) = stableSymmetricOne R :=
-  stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp
+theorem stablePsumPart_zero (μ : Nat.Partition 0) : stablePsumPart R μ = stableSymmetricOne R := by
+  rw [Subsingleton.elim μ (.indiscrete 0)]
+  exact stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp
 
 /-- The power-sum product of the one-row partition `(n)` is the power sum `p_n`. -/
 @[simp]
