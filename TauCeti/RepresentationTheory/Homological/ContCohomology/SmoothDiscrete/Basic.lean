@@ -281,6 +281,8 @@ lemma proves the goal `IsSmoothDiscrete R (TopRep.res φ X)` verbatim. -/
 lemma IsSmoothDiscrete.res {H : Type*} [Monoid H] [TopologicalSpace H] {φ : H →* G}
     (hφ : Continuous φ) {X : TopRep R G} (hX : IsSmoothDiscrete R X) :
     IsSmoothDiscrete R (TopRep.of (X.ρ.restrict φ)) := by
+  -- The stabilizer of `x` for `X.ρ.restrict φ` is the preimage under `φ` of the stabilizer of `x`
+  -- for `X.ρ`, by definition of `restrict`, so the openness term typechecks as is.
   exact ⟨hX.discreteTopology, fun x ↦ (hX.stabilizer_isOpen x).preimage hφ⟩
 
 /-- Smoothness passes to the source of an injective morphism: a continuous injection into a
@@ -316,7 +318,10 @@ Read on an arbitrary discrete `X` it says less: the image of `TauCeti.ofDiscrete
 discrete modules is every discrete object, smooth or not
 (`TauCeti.not_isSmoothDiscrete_ofDiscreteModule_units_zmod`). -/
 @[simp] lemma ofDiscreteModule_eq_self (X : TopRep R G) [DiscreteTopology X.V] :
-    ofDiscreteModule R G X.V = X := (rfl)
+    ofDiscreteModule R G X.V = X :=
+  -- `X` is `TopRep.of X.ρ` by structure eta, and the operators of `ofDiscreteModule` unfold to
+  -- `X.ρ`, so the two sides agree by `rfl`.
+  (rfl)
 
 variable (R G)
 
@@ -326,6 +331,8 @@ lemma ofDiscreteModule_isSmoothDiscrete (M : Type w) [AddCommGroup M] [Module R 
     [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M] [SMulCommClass G R M]
     [ContinuousSMul R M] [ContinuousSMul G M] :
     IsSmoothDiscrete R (ofDiscreteModule R G M) := by
+  -- The stabilizer of `m` unfolds to `(fun g ↦ g • m) ⁻¹' {m}` by
+  -- `ofDiscreteModule_ρ_apply_apply`, so the preimage of the open singleton is the goal.
   exact ⟨‹DiscreteTopology M›, fun (m : M) ↦
     (isOpen_discrete {m}).preimage (f := fun g : G ↦ g • m) (by fun_prop)⟩
 
