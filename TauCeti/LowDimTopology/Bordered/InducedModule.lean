@@ -300,8 +300,9 @@ theorem inducedDifferential_smul (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (�
   Subtype.ext (boxDifferential_smul hd N b φ)
 
 /-- The induced differential sends the generator `1 ⊗ x` to `∑ y, coeff x y ⊗ y`, the row of the
-coefficient matrix at `x`. -/
-@[simp]
+coefficient matrix at `x`. Its `simp` priority is high so that it applies before
+`TauCeti.TypeDStructure.coe_inducedDifferential_apply` unfolds the induced differential. -/
+@[simp high]
 theorem coe_inducedDifferential_generator [DecidableEq X] (hd : IsUngradedDGAlgebra d)
     (hidem : ∀ s, IsIdempotentElem (ι s)) (hι : ∀ s, d (ι s) = 0) (x : X) :
     (N.inducedDifferential hd hι (N.generator hidem x) : X → A) = N.coeff x := by
