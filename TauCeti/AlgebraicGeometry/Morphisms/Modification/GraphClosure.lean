@@ -248,11 +248,9 @@ instance isIso_graphClosureFst_restrict [IsSeparated q] :
     Category.assoc, IsOpenImmersion.lift_fac_assoc, Category.id_comp]
   refine pullback.hom_ext ?_ ?_
   · simp only [Category.assoc, Scheme.Hom.toImage_imageι, opensGraph_fst,
-      morphismRestrict_ι]
-    rfl
+      morphismRestrict_ι, graphClosureFst_def]
   · simp only [Category.assoc, Scheme.Hom.toImage_imageι, opensGraph_snd,
-      graphClosureFst_restrict_comp]
-    rfl
+      graphClosureFst_restrict_comp, graphClosureSnd_def]
 
 omit [QuasiSeparated q] in
 /-- **The graph closure is a modification.** When `q` is proper, `U ⟶ X` is quasi-compact and
@@ -335,8 +333,7 @@ theorem isImmersion_graphClosureSnd_restrict [IsSeparated f] :
         (opensGraph f q U g hg).imageι := by
     refine pullback.hom_ext ?_ ?_
     · simpa [σ, graphClosureFst] using graphClosureSnd_restrict_comp hUV hh hj hgj
-    · simp only [σ, Category.assoc, pullback.lift_snd, morphismRestrict_ι]
-      rfl
+    · simp only [σ, Category.assoc, pullback.lift_snd, morphismRestrict_ι, graphClosureSnd_def]
   have : IsImmersion ((graphClosureSnd f q U g hg ∣_ h ⁻¹ᵁ j.opensRange) ≫ σ) := by
     rw [hσ]
     infer_instance

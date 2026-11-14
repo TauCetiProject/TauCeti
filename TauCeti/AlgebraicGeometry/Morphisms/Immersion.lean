@@ -21,8 +21,9 @@ including images with nonreduced scheme structure.
 
 The file also records that immersions are stable under composition with open immersions
 on either side (`AlgebraicGeometry.IsImmersion.respectsLeft_isOpenImmersion`,
-`AlgebraicGeometry.IsImmersion.respectsRight_isOpenImmersion`), as needed to check that a
-morphism is an immersion locally on its target.
+`AlgebraicGeometry.IsImmersion.respectsRight_isOpenImmersion`). The second one is the
+hypothesis of Mathlib's `AlgebraicGeometry.IsZariskiLocalAtTarget.of_range_subset_iSup`, which
+checks that a morphism is an immersion over opens covering its range.
 
 The construction uses Mathlib's `Scheme.Hom.liftCoborder`, `IsOpenImmersion.lift`,
 `IsClosedImmersion.lift`, and the ideal-sheaf formula `Scheme.Hom.ker_comp`, through
