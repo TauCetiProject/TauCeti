@@ -15,14 +15,14 @@ public import Mathlib.CategoryTheory.Sites.LocalProperties
 Let `S` be a scheme and `U` an object of its small étale site, that is, an étale morphism
 `U.left ⟶ S`. The localized site `Over U`, with the topology `(smallEtaleTopology S).over U`
 induced from `S`, is the small étale site of the scheme `U.left`
-(`AlgebraicGeometry.Scheme.Etale.overEquiv`). An object `V ⟶ U` of `Over U` is a morphism between
-étale `S`-schemes, so the underlying morphism of schemes `V.left.left ⟶ U.left` is étale and is an
-object of `U.left.Etale`. Conversely, an étale `U.left`-scheme `W` is étale over `S` through the
-composite `W.left ⟶ U.left ⟶ S`. The equivalence identifies the two topologies, because on both
-sides a sieve covers exactly when the images of its members cover the underlying scheme
+(`AlgebraicGeometry.Scheme.Etale.overEquivalence`). An object `V ⟶ U` of `Over U` is a morphism
+between étale `S`-schemes, so the underlying morphism of schemes `V.left.left ⟶ U.left` is étale
+and is an object of `U.left.Etale`. Conversely, an étale `U.left`-scheme `W` is étale over `S`
+through the composite `W.left ⟶ U.left ⟶ S`. The equivalence identifies the two topologies, because
+on both sides a sieve covers exactly when the images of its members cover the underlying scheme
 (`AlgebraicGeometry.Scheme.mem_smallEtaleTopology_iff`,
 `AlgebraicGeometry.Scheme.mem_over_smallEtaleTopology_iff`). Hence sheaves on the two sites agree
-(`AlgebraicGeometry.Scheme.Etale.overSheafEquiv`).
+(`AlgebraicGeometry.Scheme.Etale.sheafEquivOver`).
 
 Composing with Mathlib's restriction `GrothendieckTopology.overPullback` of sheaves to a localized
 site gives the restriction of an étale sheaf on `S` to the small étale site of `U.left`
@@ -37,9 +37,9 @@ structure morphisms cover `S` (`AlgebraicGeometry.Scheme.coversTop_smallEtaleTop
 
 ## Main definitions
 
-* `AlgebraicGeometry.Scheme.Etale.overEquiv U : Over U ≌ U.left.Etale`: the localization of the
-  small étale site of `S` at `U` is the small étale site of `U.left`.
-* `AlgebraicGeometry.Scheme.Etale.overSheafEquiv U A`: the corresponding equivalence of categories
+* `AlgebraicGeometry.Scheme.Etale.overEquivalence U : Over U ≌ U.left.Etale`: the localization of
+  the small étale site of `S` at `U` is the small étale site of `U.left`.
+* `AlgebraicGeometry.Scheme.Etale.sheafEquivOver U A`: the corresponding equivalence of categories
   of sheaves with values in `A`.
 * `AlgebraicGeometry.Scheme.Etale.sheafRestrict U A`: restriction of étale sheaves on `S` to the
   small étale site of `U.left`.
@@ -140,7 +140,7 @@ noncomputable def Etale.overBackward : U.left.Etale ⥤ Over U where
 /-- The localization at `U` of the small étale site of `S` is equivalent to the small étale site
 of `U.left`. -/
 @[expose]
-noncomputable def Etale.overEquiv : Over U ≌ U.left.Etale where
+noncomputable def Etale.overEquivalence : Over U ≌ U.left.Etale where
   functor := Etale.overForward U
   inverse := Etale.overBackward U
   unitIso := NatIso.ofComponents (fun V ↦ Over.isoMk (MorphismProperty.Over.isoMk
@@ -154,111 +154,115 @@ noncomputable def Etale.overEquiv : Over U ≌ U.left.Etale where
   functor_unitIso_comp _ := MorphismProperty.Over.Hom.ext (Category.id_comp _)
 
 @[simp]
-theorem Etale.overEquiv_functor : (Etale.overEquiv U).functor = Etale.overForward U :=
+theorem Etale.overEquivalence_functor : (Etale.overEquivalence U).functor = Etale.overForward U :=
   (rfl)
 
 @[simp]
-theorem Etale.overEquiv_inverse : (Etale.overEquiv U).inverse = Etale.overBackward U :=
+theorem Etale.overEquivalence_inverse : (Etale.overEquivalence U).inverse = Etale.overBackward U :=
   (rfl)
 
 @[simp]
-theorem Etale.overEquiv_unit_app_left_left (V : Over U) :
-    ((Etale.overEquiv U).unit.app V).left.left = 𝟙 V.left.left :=
+theorem Etale.overEquivalence_unit_app_left_left (V : Over U) :
+    ((Etale.overEquivalence U).unit.app V).left.left = 𝟙 V.left.left :=
   (rfl)
 
 @[simp]
-theorem Etale.overEquiv_unitInv_app_left_left (V : Over U) :
-    ((Etale.overEquiv U).unitInv.app V).left.left = 𝟙 V.left.left :=
+theorem Etale.overEquivalence_unitInv_app_left_left (V : Over U) :
+    ((Etale.overEquivalence U).unitInv.app V).left.left = 𝟙 V.left.left :=
   (rfl)
 
 @[simp]
-theorem Etale.overEquiv_counit_app_left (W : U.left.Etale) :
-    ((Etale.overEquiv U).counit.app W).left = 𝟙 W.left :=
+theorem Etale.overEquivalence_counit_app_left (W : U.left.Etale) :
+    ((Etale.overEquivalence U).counit.app W).left = 𝟙 W.left :=
   (rfl)
 
 @[simp]
-theorem Etale.overEquiv_counitInv_app_left (W : U.left.Etale) :
-    ((Etale.overEquiv U).counitInv.app W).left = 𝟙 W.left :=
+theorem Etale.overEquivalence_counitInv_app_left (W : U.left.Etale) :
+    ((Etale.overEquivalence U).counitInv.app W).left = 𝟙 W.left :=
   (rfl)
 
-instance : (Etale.overEquiv U).functor.IsCocontinuous ((smallEtaleTopology S).over U)
+instance : (Etale.overEquivalence U).functor.IsCocontinuous ((smallEtaleTopology S).over U)
     (smallEtaleTopology U.left) where
   cover_lift {V} R hR := by
     rw [mem_smallEtaleTopology_iff] at hR
     rw [mem_over_smallEtaleTopology_iff]
     intro x
     obtain ⟨W, f, w, hf, rfl⟩ := hR x
-    -- The lift is `f` on underlying schemes, since the unit of `Etale.overEquiv` is the identity.
-    refine ⟨_, (Etale.overEquiv U).inverse.map f ≫ (Etale.overEquiv U).unitInv.app V, w, ?_, rfl⟩
+    -- The lift is `f` on underlying schemes, since the unit of `Etale.overEquivalence` is the
+    -- identity.
+    refine ⟨_, (Etale.overEquivalence U).inverse.map f ≫ (Etale.overEquivalence U).unitInv.app V,
+      w, ?_, rfl⟩
     -- The image of the lift of `f` is `f`, precomposed with the counit of the equivalence.
-    have : (Etale.overEquiv U).functor.map
-        ((Etale.overEquiv U).inverse.map f ≫ (Etale.overEquiv U).unitInv.app V) =
-          (Etale.overEquiv U).counit.app W ≫ f := by
+    have : (Etale.overEquivalence U).functor.map
+        ((Etale.overEquivalence U).inverse.map f ≫ (Etale.overEquivalence U).unitInv.app V) =
+          (Etale.overEquivalence U).counit.app W ≫ f := by
       simp
     rw [Sieve.functorPullback_apply, Presieve.functorPullback_mem, this]
     exact R.downward_closed hf _
 
-instance : (Etale.overEquiv U).inverse.IsCocontinuous (smallEtaleTopology U.left)
+instance : (Etale.overEquivalence U).inverse.IsCocontinuous (smallEtaleTopology U.left)
     ((smallEtaleTopology S).over U) where
   cover_lift {W} R hR := by
     rw [mem_over_smallEtaleTopology_iff] at hR
     rw [mem_smallEtaleTopology_iff]
     intro x
     obtain ⟨V, f, v, hf, rfl⟩ := hR x
-    -- The lift is `f` on underlying schemes, since the counit of `Etale.overEquiv` is the identity.
-    refine ⟨_, (Etale.overEquiv U).functor.map f ≫ (Etale.overEquiv U).counit.app W, v, ?_, rfl⟩
+    -- The lift is `f` on underlying schemes, since the counit of `Etale.overEquivalence` is the
+    -- identity.
+    refine ⟨_, (Etale.overEquivalence U).functor.map f ≫ (Etale.overEquivalence U).counit.app W,
+      v, ?_, rfl⟩
     -- The image of the lift of `f` is `f`, precomposed with the inverse of the unit of the
     -- equivalence.
-    have : (Etale.overEquiv U).inverse.map
-        ((Etale.overEquiv U).functor.map f ≫ (Etale.overEquiv U).counit.app W) =
-          (Etale.overEquiv U).unitInv.app V ≫ f := by
+    have : (Etale.overEquivalence U).inverse.map
+        ((Etale.overEquivalence U).functor.map f ≫ (Etale.overEquivalence U).counit.app W) =
+          (Etale.overEquivalence U).unitInv.app V ≫ f := by
       simp
     rw [Sieve.functorPullback_apply, Presieve.functorPullback_mem, this]
     exact R.downward_closed hf _
 
-instance : (Etale.overEquiv U).inverse.IsDenseSubsite (smallEtaleTopology U.left)
+instance : (Etale.overEquivalence U).inverse.IsDenseSubsite (smallEtaleTopology U.left)
     ((smallEtaleTopology S).over U) :=
   Equivalence.isDenseSubsite_inverse_of_isCocontinuous _ _ _
 
-instance : (Etale.overEquiv U).symm.inverse.IsDenseSubsite ((smallEtaleTopology S).over U)
+instance : (Etale.overEquivalence U).symm.inverse.IsDenseSubsite ((smallEtaleTopology S).over U)
     (smallEtaleTopology U.left) :=
-  inferInstanceAs ((Etale.overEquiv U).functor.IsDenseSubsite ..)
+  inferInstanceAs ((Etale.overEquivalence U).functor.IsDenseSubsite ..)
 
 instance : (Etale.overForward U).IsDenseSubsite ((smallEtaleTopology S).over U)
     (smallEtaleTopology U.left) :=
-  inferInstanceAs ((Etale.overEquiv U).functor.IsDenseSubsite ..)
+  inferInstanceAs ((Etale.overEquivalence U).functor.IsDenseSubsite ..)
 
 instance : (Etale.overBackward U).IsDenseSubsite (smallEtaleTopology U.left)
     ((smallEtaleTopology S).over U) :=
-  inferInstanceAs ((Etale.overEquiv U).inverse.IsDenseSubsite ..)
+  inferInstanceAs ((Etale.overEquivalence U).inverse.IsDenseSubsite ..)
 
 variable (A : Type w) [Category.{v} A]
 
 /-- Sheaves on the localization at `U` of the small étale site of `S` are equivalent to sheaves on
 the small étale site of `U.left`. -/
 @[expose, simps!]
-noncomputable def Etale.overSheafEquiv :
+noncomputable def Etale.sheafEquivOver :
     Sheaf ((smallEtaleTopology S).over U) A ≌ Sheaf (smallEtaleTopology U.left) A :=
-  (Etale.overEquiv U).sheafCongr _ _ A
+  (Etale.overEquivalence U).sheafCongr _ _ A
 
 /-- The restriction of étale sheaves on `S` to the small étale site of `U.left`, for an étale
 `S`-scheme `U`. -/
 @[expose]
 noncomputable def Etale.sheafRestrict :
     Sheaf (smallEtaleTopology S) A ⥤ Sheaf (smallEtaleTopology U.left) A :=
-  (smallEtaleTopology S).overPullback A U ⋙ (Etale.overSheafEquiv U A).functor
+  (smallEtaleTopology S).overPullback A U ⋙ (Etale.sheafEquivOver U A).functor
 
 /-- The restriction of étale sheaves to the small étale site of `U.left` is restriction to the
-localized site at `U`, followed by the equivalence `Etale.overSheafEquiv`. -/
+localized site at `U`, followed by the equivalence `Etale.sheafEquivOver`. -/
 theorem Etale.sheafRestrict_def :
     Etale.sheafRestrict U A =
-      (smallEtaleTopology S).overPullback A U ⋙ (Etale.overSheafEquiv U A).functor :=
+      (smallEtaleTopology S).overPullback A U ⋙ (Etale.sheafEquivOver U A).functor :=
   (rfl)
 
 instance [((smallEtaleTopology S).overPullback A U).IsRightAdjoint] :
     (Etale.sheafRestrict U A).IsRightAdjoint :=
   inferInstanceAs
-    ((smallEtaleTopology S).overPullback A U ⋙ (Etale.overSheafEquiv U A).functor).IsRightAdjoint
+    ((smallEtaleTopology S).overPullback A U ⋙ (Etale.sheafEquivOver U A).functor).IsRightAdjoint
 
 /-- The sections of the restriction of `F` over an étale `U.left`-scheme `X` are the sections of
 `F` over `X`, regarded as an étale `S`-scheme. -/
@@ -298,6 +302,6 @@ theorem Etale.isIso_iff_forall_isIso_sheafRestrict_map {ι : Type*} {U : ι → 
   rw [Sheaf.isIso_iff_of_coversTop ((coversTop_smallEtaleTopology_iff U).mpr hU)]
   refine forall_congr' fun i ↦ ?_
   rw [Etale.sheafRestrict_def, Functor.comp_map]
-  exact (isIso_iff_of_reflects_iso _ (Etale.overSheafEquiv (U i) A).functor).symm
+  exact (isIso_iff_of_reflects_iso _ (Etale.sheafEquivOver (U i) A).functor).symm
 
 end AlgebraicGeometry.Scheme
