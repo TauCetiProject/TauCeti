@@ -91,24 +91,25 @@ theorem IsIntegerValued.eventually_natFloor_Ioc_add_eq_nhdsLT (hμ : μ.IsIntege
     (measure_mono (singleton_subset_iff.2 (right_mem_Ioc.2 hat))).trans_lt measure_Ioc_lt_top
   -- Continuity from above along windows `(s, t]` shrinking to the atom `{t}`.
   have hlim := tendsto_measure_Ioc_nhdsLT (μ := μ) ⟨a, hat, measure_Ioc_lt_top.ne⟩
-  rw [← hμ.natCast_natFloor_eq ht] at hlim
-  filter_upwards [hlim.eventually (gt_mem_nhds (ENNReal.lt_add_right (ENNReal.natCast_ne_top _)
-    one_ne_zero)), Ioo_mem_nhdsLT hat] with s hs has
+  filter_upwards [hlim.eventually (gt_mem_nhds (ENNReal.lt_add_right ht.ne one_ne_zero)),
+    Ioo_mem_nhdsLT hat] with s hs has
   have hle : μ {t} ≤ μ (Ioc s t) := measure_mono (singleton_subset_iff.2 (right_mem_Ioc.2 has.2))
-  rw [← hμ.natCast_natFloor_eq ht, ← hμ.natCast_natFloor_eq (measure_Ioc_lt_top (a := s))]
-    at hle
-  rw [← hμ.natCast_natFloor_eq (measure_Ioc_lt_top (a := s))] at hs
-  have hwin : ⌊(μ (Ioc s t)).toNNReal⌋₊ = ⌊(μ {t}).toNNReal⌋₊ := by
-    have hle' : ⌊(μ {t}).toNNReal⌋₊ ≤ ⌊(μ (Ioc s t)).toNNReal⌋₊ := by exact_mod_cast hle
-    have hs' : ⌊(μ (Ioc s t)).toNNReal⌋₊ < ⌊(μ {t}).toNNReal⌋₊ + 1 := by exact_mod_cast hs
-    omega
-  have hsplit : μ (Ioc a t) = μ (Ioc a s) + μ (Ioc s t) := by
+  have hsplit : μ (Ioc a s) + μ (Ioc s t) = μ (Ioc a t) := by
     rw [← measure_union (Ioc_disjoint_Ioc_of_le le_rfl) measurableSet_Ioc,
       Ioc_union_Ioc_eq_Ioc has.1.le has.2.le]
-  rw [← hμ.natCast_natFloor_eq (measure_Ioc_lt_top (a := a) (b := t)),
-    ← hμ.natCast_natFloor_eq (measure_Ioc_lt_top (a := a) (b := s)),
-    ← hμ.natCast_natFloor_eq (measure_Ioc_lt_top (a := s) (b := t)), hwin] at hsplit
-  exact_mod_cast hsplit.symm
+  -- Name the natural values of the four finite masses and argue in `ℕ`.
+  obtain ⟨k, hk⟩ := hμ.exists_eq_natCast (measurableSet_singleton t) ht
+  obtain ⟨m, hm⟩ := hμ.exists_eq_natCast measurableSet_Ioc (measure_Ioc_lt_top (a := a) (b := s))
+  obtain ⟨n, hn⟩ := hμ.exists_eq_natCast measurableSet_Ioc (measure_Ioc_lt_top (a := s) (b := t))
+  obtain ⟨N, hN⟩ := hμ.exists_eq_natCast measurableSet_Ioc (measure_Ioc_lt_top (a := a) (b := t))
+  rw [hk, hn] at hle hs
+  rw [hm, hn, hN] at hsplit
+  rw [hk, hm, hN]
+  simp only [ENNReal.toNNReal_natCast, Nat.floor_natCast]
+  have hkn : k ≤ n := by exact_mod_cast hle
+  have hnk : n < k + 1 := by exact_mod_cast hs
+  have hmn : m + n = N := by exact_mod_cast hsplit
+  omega
 
 /-- If a locally finite integer-valued measure has mass at most one at `t`, then the count
 `s ↦ ⌊(μ (Ioc a s)).toNNReal⌋₊` jumps by at most one at `t`: for all `s < t` close enough to `t`,

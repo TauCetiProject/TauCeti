@@ -158,6 +158,8 @@ theorem tendsto_measure_Ioc_nhdsLT (hf : ∃ r < a, μ (Ioc r a) ≠ ∞) :
     obtain ⟨c, hxc, hca⟩ := (not_covBy_iff hx).1 hcov
     exact (h c hca).1.not_gt hxc
   rw [← h]
+  -- Apply continuity from above in the order dual `αᵒᵈ`: there `𝓝[>] a`, `r > a` and the
+  -- hypothesis `∃ r > a, _` unfold by definition to `𝓝[<] a`, `r < a` and `hf` in `α`.
   exact tendsto_measure_biInter_gt (ι := αᵒᵈ) (s := fun r => Ioc (OrderDual.ofDual r) a)
     (fun _ _ => measurableSet_Ioc.nullMeasurableSet) (fun _ _ _ hij => Ioc_subset_Ioc_left hij) hf
 
