@@ -94,18 +94,18 @@ variable {s r σ K τ : ℝ}
 -- and `0 ≤ P ≤ K e^{-rτ} Φ(-d₋)`.
 
 /-- **Call boundary at zero spot.** As the spot tends to `0`, the call price tends to `0`. -/
-theorem tendsto_callPrice_spot_zero (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
+theorem tendsto_callPrice_spot_zero (hσ : 0 < σ) (hK : 0 ≤ K) (hτ : 0 < τ) :
     Tendsto (fun x => callPrice x r σ K τ) (𝓝[>] 0) (𝓝 0) := by
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
     (tendsto_nhdsWithin_of_tendsto_nhds (f := fun x => x) tendsto_id) ?_ ?_
   · filter_upwards [self_mem_nhdsWithin] with x hx
-    exact callPrice_nonneg hx hσ hK hτ
+    exact callPrice_nonneg hx hσ hτ
   · filter_upwards [self_mem_nhdsWithin] with x hx
-    exact callPrice_le (le_of_lt hx) hK.le
+    exact callPrice_le (le_of_lt hx) hK
 
 /-- **Put boundary at zero spot.** As the spot tends to `0`, the put price tends to the
 discounted strike `K e^{-rτ}`. -/
-theorem tendsto_putPrice_spot_zero (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
+theorem tendsto_putPrice_spot_zero (hσ : 0 < σ) (hK : 0 ≤ K) (hτ : 0 < τ) :
     Tendsto (fun x => putPrice x r σ K τ) (𝓝[>] 0) (𝓝 (K * exp (-r * τ))) := by
   have h := ((tendsto_callPrice_spot_zero (r := r) hσ hK hτ).sub
     (tendsto_nhdsWithin_of_tendsto_nhds (f := fun x => x) tendsto_id)).add_const
@@ -130,8 +130,7 @@ theorem tendsto_putPrice_spot_atTop (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
       (tendsto_neg_atTop_atBot.comp (tendsto_dMinus_spot_atTop hσ hK hτ))).const_mul
       (K * exp (-r * τ))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h ?_ ?_
-  · filter_upwards [eventually_gt_atTop 0] with x hx
-    exact putPrice_nonneg hx hσ hK hτ
+  · exact Eventually.of_forall fun _ => putPrice_nonneg hσ hK hτ
   · filter_upwards [eventually_ge_atTop 0] with x hx
     exact putPrice_le_mul_cdf hx
 
@@ -467,8 +466,8 @@ theorem tendsto_deriv_callPrice_volatility_maturity_zero (hs : 0 < s) (hσ : σ 
   have hup := (tendsto_mul_sqrt_nhds_zero (s * (√(2 * π))⁻¹)).mono_left
     (nhdsWithin_le_nhds (s := Ioi 0))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hup ?_ ?_ <;>
-    filter_upwards [self_mem_nhdsWithin] with u hu <;>
-    rw [(hasDerivAt_callPrice_volatility hs hK hσ hu).deriv]
+    filter_upwards [self_mem_nhdsWithin] with u _ <;>
+    rw [(hasDerivAt_callPrice_volatility hs hK hσ).deriv]
   · have := gaussianPDFReal_nonneg 0 1 (dPlus s r σ K u)
     positivity
   · have hφ : gaussianPDFReal 0 1 (dPlus s r σ K u) ≤ (√(2 * π))⁻¹ := by
@@ -481,8 +480,8 @@ maturity tends to `0⁺`. -/
 theorem tendsto_deriv_putPrice_volatility_maturity_zero (hs : 0 < s) (hσ : σ ≠ 0) (hK : 0 < K) :
     Tendsto (fun u => deriv (fun v => putPrice s r v K u) σ) (𝓝[>] 0) (𝓝 0) := by
   refine (tendsto_deriv_callPrice_volatility_maturity_zero (r := r) hs hσ hK).congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with u hu
-  rw [(hasDerivAt_callPrice_volatility hs hK hσ hu).deriv,
-    (hasDerivAt_putPrice_volatility hs hK hσ hu).deriv]
+  filter_upwards [self_mem_nhdsWithin] with u _
+  rw [(hasDerivAt_callPrice_volatility hs hK hσ).deriv,
+    (hasDerivAt_putPrice_volatility hs hK hσ).deriv]
 
 end TauCeti.BlackScholes
