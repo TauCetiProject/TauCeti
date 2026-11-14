@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Bounded
 public import Mathlib.Algebra.Order.Group.Pointwise.Bounds
+public import TauCeti.Topology.Order.IsLUB
 
 /-!
 # Bounded sublevels of an energy
@@ -14,13 +15,14 @@ public import Mathlib.Algebra.Order.Group.Pointwise.Bounds
 `HasBoundedSublevelsOn E S` is the boundedness condition used to obtain compactness in the
 direct method: every sublevel of the ordered-valued energy `E`, relative to the admissible set `S`,
 is bounded. It is stable under restriction, increasing the energy, positive scaling, and
-addition of an energy bounded below. In a pseudometric space it is equivalent to boundedness
-of every admissible sequence whose energies are bounded above.
+addition of an energy bounded below. When `E` is bounded below on a nonempty `S`, it supplies
+bounded minimizing sequences. In a pseudometric space it is equivalent to boundedness of every
+admissible sequence whose energies are bounded above.
 -/
 
 public section
 
-open Set Bornology Filter
+open Set Bornology Filter Topology
 
 namespace TauCeti
 
@@ -139,6 +141,32 @@ theorem isBounded_minimizers [Preorder β] (h : HasBoundedSublevelsOn E S) :
   · obtain ⟨u, hu⟩ := hne
     exact (h (E u)).subset fun x hx ↦ ⟨hx.1, hx.2 hu⟩
   · simp [Set.not_nonempty_iff_eq_empty.1 hne]
+
+/-- When an energy with bounded sublevels is bounded below on a nonempty admissible set, there is a
+bounded sequence in the set along which the energy is antitone and converges to `sInf (E '' S)`. -/
+theorem exists_isBounded_seq_antitone_tendsto_sInf_image [ConditionallyCompleteLinearOrder β]
+    [TopologicalSpace β] [OrderTopology β] [FirstCountableTopology β]
+    (h : HasBoundedSublevelsOn E S) (hne : S.Nonempty) (hbdd : BddBelow (E '' S)) :
+    ∃ u : ℕ → X, (∀ n, u n ∈ S) ∧ IsBounded (range u) ∧ Antitone (E ∘ u) ∧
+      Tendsto (fun n ↦ E (u n)) atTop (𝓝 (sInf (E '' S))) := by
+  obtain ⟨u, huS, hanti, hlim⟩ := exists_seq_antitone_tendsto_sInf_image hne hbdd
+  exact ⟨u, huS, h.isBounded_range huS ⟨E (u 0), by rintro _ ⟨n, rfl⟩; exact hanti (Nat.zero_le n)⟩,
+    hanti, hlim⟩
+
+/-- When a real-valued energy with bounded sublevels is bounded below on a nonempty admissible set,
+there is a bounded sequence in the set satisfying `E (u n) < sInf (E '' S) + 1 / (n + 1)` and
+converging in energy to `sInf (E '' S)`. -/
+theorem exists_isBounded_seq_lt_sInf_image_add_one_div {E : X → ℝ}
+    (h : HasBoundedSublevelsOn E S) (hne : S.Nonempty) (hbdd : BddBelow (E '' S)) :
+    ∃ u : ℕ → X, (∀ n, u n ∈ S) ∧ IsBounded (range u) ∧
+      (∀ n : ℕ, E (u n) < sInf (E '' S) + 1 / ((n : ℝ) + 1)) ∧
+      Tendsto (fun n ↦ E (u n)) atTop (𝓝 (sInf (E '' S))) := by
+  obtain ⟨u, huS, hlt, hlim⟩ := exists_seq_lt_sInf_image_add_one_div hne hbdd
+  refine ⟨u, huS, h.isBounded_range huS ⟨sInf (E '' S) + 1, ?_⟩, hlt, hlim⟩
+  rintro _ ⟨n, rfl⟩
+  refine (hlt n).le.trans (add_le_add_right ?_ _)
+  rw [one_div_le (Nat.cast_add_one_pos n) zero_lt_one, div_one]
+  exact le_add_of_nonneg_left n.cast_nonneg
 
 end HasBoundedSublevelsOn
 

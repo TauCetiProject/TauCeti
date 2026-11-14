@@ -10,23 +10,25 @@ public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.Topology.MetricSpace.PiNat
 import Mathlib.Analysis.RCLike.Lemmas
 import Mathlib.Topology.Sequences
+import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
 # Weakly compact sets are weakly sequentially compact
 
-This file proves Šmulian's half of the Eberlein–Šmulian theorem: in a real or complex normed
+This file proves Šmulian's half of the Eberlein–Šmulian theorem: in a real or complex seminormed
 space, a weakly compact set is weakly sequentially compact, and every sequence in a relatively
-weakly compact set has a weakly convergent subsequence. No separability or completeness
-assumption is made on the space.
+weakly compact set has a weakly convergent subsequence. Neither separability, completeness nor
+point separation of the seminorm is assumed.
 
-The proof is a separable reduction. A norm-separable set `s` is separated by countably many
-continuous linear functionals of norm at most one: choose norming functionals at the points of
-a countable dense subset of `s - s`. On a weakly compact, norm-separable set these functionals
-induce a continuous injection into a countable product of metric spaces, so the weak topology
-there is metrizable and compactness gives convergent subsequences. A sequence in an arbitrary
-weakly compact set `K` lies in the closed linear span of its terms, which is norm separable and,
-being convex and norm closed, weakly closed; its intersection with `K` is therefore a weakly
-compact, norm-separable set containing the sequence.
+The proof in the normed case is a separable reduction. A norm-separable set `s` is separated by
+countably many continuous linear functionals of norm at most one: choose norming functionals at
+the points of a countable dense subset of `s - s`. On a weakly compact, norm-separable set these
+functionals induce a continuous injection into a countable product of metric spaces, so the weak
+topology there is metrizable and compactness gives convergent subsequences. A sequence in an
+arbitrary weakly compact set `K` lies in the closed linear span of its terms, which is norm
+separable and, being convex and norm closed, weakly closed; its intersection with `K` is therefore
+a weakly compact, norm-separable set containing the sequence. The seminormed case reduces to
+`SeparationQuotient E` along the inducing map `WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E)`.
 
 The separation argument is the one carried out inline in Mathlib's
 `ae_eq_zero_of_forall_dual_of_isSeparable`, and the metrizability step follows Mathlib's
@@ -54,6 +56,8 @@ public section
 open Filter Set Topology TopologicalSpace
 
 namespace TauCeti
+
+section Normed
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
@@ -101,9 +105,7 @@ theorem metrizableSpace_toWeakSpace_of_isSeparable_of_isCompact {K : Set E} (hse
   exact hne <| Subtype.ext <| congrArg (toWeakSpace 𝕜 E) <|
     hf hx hy (funext fun n ↦ by simpa using h n)
 
-/-- **Šmulian's theorem**: in a real or complex normed space, a weakly compact set is weakly
-sequentially compact. Neither completeness nor separability of the space is assumed. -/
-theorem isSeqCompact_toWeakSpace_of_isCompact {K : Set E}
+private theorem isSeqCompact_toWeakSpace_of_isCompact_normed {K : Set E}
     (hK : IsCompact (toWeakSpace 𝕜 E '' K)) : IsSeqCompact (toWeakSpace 𝕜 E '' K) := by
   intro u hu
   choose v hvK hv using hu
@@ -131,8 +133,36 @@ theorem isSeqCompact_toWeakSpace_of_isCompact {K : Set E}
     (fun n ↦ (⟨u n, v n, ⟨hvK n, hvY n⟩, hv n⟩ : toWeakSpace 𝕜 E '' (K ∩ Y)))
   exact ⟨a, image_mono inter_subset_left ha, φ, hφ, (continuous_subtype_val.tendsto _).comp hlim⟩
 
+end Normed
+
+section Seminormed
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- **Šmulian's theorem**: in a real or complex seminormed space, a weakly compact set is weakly
+sequentially compact. Neither completeness, separability nor point separation of the seminorm is
+assumed. -/
+theorem isSeqCompact_toWeakSpace_of_isCompact {K : Set E}
+    (hK : IsCompact (toWeakSpace 𝕜 E '' K)) : IsSeqCompact (toWeakSpace 𝕜 E '' K) := by
+  let π := WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E)
+  have hπ (x : E) : π (toWeakSpace 𝕜 E x) =
+      toWeakSpace 𝕜 (SeparationQuotient E) (SeparationQuotient.mk x) := rfl
+  have hK' : IsCompact (toWeakSpace 𝕜 (SeparationQuotient E) '' (SeparationQuotient.mk '' K)) := by
+    have heq : toWeakSpace 𝕜 (SeparationQuotient E) '' (SeparationQuotient.mk '' K) =
+        π '' (toWeakSpace 𝕜 E '' K) := by
+      simp_rw [← image_comp, Function.comp_def, hπ]
+    exact heq ▸ hK.image π.continuous
+  intro u hu
+  obtain ⟨_, ⟨_, ⟨a, ha, rfl⟩, rfl⟩, φ, hφ, hlim⟩ :=
+    isSeqCompact_toWeakSpace_of_isCompact_normed hK' (x := fun n ↦ π (u n)) (fun n ↦ by
+      obtain ⟨z, hz, hzu⟩ := hu n
+      exact ⟨SeparationQuotient.mk z, mem_image_of_mem _ hz, hzu ▸ hπ z⟩)
+  exact ⟨toWeakSpace 𝕜 E a, mem_image_of_mem _ ha, φ, hφ,
+    (WeakSpace.isInducing_map_mkCLM 𝕜 E).tendsto_nhds_iff.mpr hlim⟩
+
 /-- **Šmulian's theorem**, relative form: every sequence in a relatively weakly compact subset of
-a real or complex normed space has a subsequence converging weakly to some point of the space. -/
+a real or complex seminormed space has a subsequence converging weakly to some point of the
+space. -/
 theorem tendsto_subseq_toWeakSpace_of_isCompact_closure {K : Set E}
     (hK : IsCompact (closure (toWeakSpace 𝕜 E '' K))) {u : ℕ → E} (hu : ∀ n, u n ∈ K) :
     ∃ x : E, ∃ φ : ℕ → ℕ, StrictMono φ ∧
@@ -144,5 +174,7 @@ theorem tendsto_subseq_toWeakSpace_of_isCompact_closure {K : Set E}
     (x := fun n ↦ toWeakSpace 𝕜 E (u n))
     (fun n ↦ hL ▸ subset_closure (mem_image_of_mem _ (hu n)))
   exact ⟨x, φ, hφ, hlim⟩
+
+end Seminormed
 
 end TauCeti
