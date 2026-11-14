@@ -43,9 +43,12 @@ Laplace-type integrals without losing integrability near the origin.
   sharp polynomial-free Gaussian upper bound `0 < ∑_{m ≥ 0} x^m / Γ(m / 2 + 1) < 2 exp(x²)` on all
   of `ℝ`.
 * `Real.tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp`,
-  `Real.tsum_pow_add_two_mul_div_Gamma_div_two_add_one_le`: for all `x : ℝ`, shifted tails of the
-  half-Gamma series satisfy both the uniform polynomial-free bound `< 2 exp(x²)` and the
-  vanishing-order factorial bound `≤ 2 x^{2L} / L! * exp(x²)`.
+  `Real.tsum_pow_add_two_mul_div_Gamma_div_two_add_one_le`,
+  `Real.tsum_pow_add_div_Gamma_div_two_add_one_le_of_abs_le_one`,
+  `Real.tsum_pow_add_div_Gamma_div_two_add_one_le_mul_exp`: shifted tails of the half-Gamma series
+  satisfy the uniform polynomial-free bound `< 2 exp(x²)`, the even-shift factorial bound
+  `≤ 2 x^{2L} / L! * exp(x²)`, and for every shift `M : ℕ` (even or odd) the small-argument bound
+  `≤ 2 e |x|^M` on `|x| ≤ 1` and the global bound `≤ 2 e |x|^M exp(x²)`.
 
 ## References
 
@@ -305,5 +308,55 @@ theorem tsum_pow_add_two_mul_div_Gamma_div_two_add_one_le (x : ℝ) (L : ℕ) :
           gcongr
           exact (tsum_pow_div_Gamma_div_two_add_one_lt_two_mul_exp |x|).le
     _ = 2 * x ^ (2 * L) / L ! * rexp (x ^ 2) := by rw [sq_abs]; ring
+
+/-- For `|x| ≤ 1` and any shift `M : ℕ` (even or odd), the `M`-shifted tail of the half-Gamma
+series satisfies `∑_{k ≥ 0} x^{k + M} / Γ((k + M) / 2 + 1) ≤ 2 e |x|^M`. -/
+theorem tsum_pow_add_div_Gamma_div_two_add_one_le_of_abs_le_one {x : ℝ} (hx : |x| ≤ 1) (M : ℕ) :
+    (∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) ≤ 2 * rexp 1 * |x| ^ M := by
+  have hterm : ∀ k : ℕ,
+      x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) ≤
+        |x| ^ M * ((1 : ℝ) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) := fun k => by
+    have hpow : x ^ (k + M) ≤ |x| ^ M :=
+      calc x ^ (k + M) ≤ |x ^ (k + M)| := le_abs_self _
+        _ = |x| ^ k * |x| ^ M := by rw [abs_pow, pow_add]
+        _ ≤ 1 * |x| ^ M :=
+            mul_le_mul_of_nonneg_right (pow_le_one₀ (abs_nonneg x) hx) (by positivity)
+        _ = |x| ^ M := one_mul _
+    simpa only [one_pow, mul_one_div] using div_le_div_of_nonneg_right hpow
+      (Real.Gamma_pos_of_pos (by positivity)).le
+  have hsum_tail : Summable fun k : ℕ =>
+      x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) :=
+    (summable_nat_add_iff M).2 (summable_pow_div_Gamma_div_two_add_one x)
+  have hsum_one : Summable fun k : ℕ =>
+      |x| ^ M * ((1 : ℝ) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) :=
+    ((summable_nat_add_iff M).2 (summable_pow_div_Gamma_div_two_add_one 1)).mul_left (|x| ^ M)
+  calc (∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1))
+      ≤ ∑' k : ℕ, |x| ^ M * ((1 : ℝ) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) :=
+          hsum_tail.tsum_le_tsum hterm hsum_one
+    _ = |x| ^ M * ∑' k : ℕ, (1 : ℝ) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) :=
+          tsum_mul_left
+    _ ≤ |x| ^ M * (2 * rexp ((1 : ℝ) ^ 2)) := by
+          gcongr
+          exact (tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp 1 M).le
+    _ = 2 * rexp 1 * |x| ^ M := by norm_num; ring
+
+/-- For every `x : ℝ` and any shift `M : ℕ` (even or odd), the `M`-shifted tail of the half-Gamma
+series satisfies `∑_{k ≥ 0} x^{k + M} / Γ((k + M) / 2 + 1) ≤ 2 e |x|^M exp(x²)`. -/
+theorem tsum_pow_add_div_Gamma_div_two_add_one_le_mul_exp (x : ℝ) (M : ℕ) :
+    (∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) ≤
+      2 * rexp 1 * |x| ^ M * rexp (x ^ 2) := by
+  rcases le_total |x| 1 with hx | hx
+  · exact (tsum_pow_add_div_Gamma_div_two_add_one_le_of_abs_le_one hx M).trans
+      (le_mul_of_one_le_right (by positivity) (Real.one_le_exp (sq_nonneg x)))
+  · have h1 : (1 : ℝ) ≤ rexp 1 * |x| ^ M :=
+      calc (1 : ℝ) = 1 * 1 := by ring
+        _ ≤ rexp 1 * |x| ^ M :=
+            mul_le_mul (Real.one_le_exp zero_le_one) (one_le_pow₀ hx) zero_le_one
+              (Real.exp_nonneg 1)
+    calc (∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1))
+        ≤ 2 * rexp (x ^ 2) := (tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp x M).le
+      _ = 2 * 1 * rexp (x ^ 2) := by ring
+      _ ≤ 2 * (rexp 1 * |x| ^ M) * rexp (x ^ 2) := by gcongr
+      _ = 2 * rexp 1 * |x| ^ M * rexp (x ^ 2) := by ring
 
 end Real
