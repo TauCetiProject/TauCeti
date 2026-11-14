@@ -126,7 +126,7 @@ theorem range_normalGraphEmbedding (φ : E → ℝ) :
     simp
   · simp [WithLp.ext_iff, Prod.ext_iff, hx.symm]
 
-/-- The second projection is a `1`-Lipschitz inverse to the graph parametrization on its range. -/
+/-- The normal graph parametrization is `1`-antilipschitz. -/
 theorem antilipschitzWith_normalGraphEmbedding [PseudoEMetricSpace E] (φ : E → ℝ) :
     AntilipschitzWith 1 (normalGraphEmbedding φ) := fun x y ↦ by
   simpa only [ENNReal.coe_one, one_mul, normalGraphEmbedding_snd] using
@@ -195,9 +195,8 @@ def _root_.ContinuousLinearMap.normalGraphL (A : E →L[ℝ] ℝ) :
 
 /-- The continuous linear graph map is the normal graph parametrization of `A`. -/
 theorem _root_.ContinuousLinearMap.normalGraphL_apply (A : E →L[ℝ] ℝ) (x : E) :
-    A.normalGraphL x = normalGraphEmbedding A x :=
-  (WithLp.ext_iff 2).2 <| Prod.ext (normalGraphEmbedding_fst A x).symm
-    (normalGraphEmbedding_snd A x).symm
+    A.normalGraphL x = normalGraphEmbedding A x := by
+  simp [ContinuousLinearMap.normalGraphL, normalGraphEmbedding_apply]
 
 /-- As a function, the continuous linear graph map is the normal graph parametrization of `A`. -/
 @[simp]
