@@ -18,7 +18,9 @@ free product of fundamental groups one factor at a time, for instance to recogni
 fundamental group of a wedge of circles as a free group.
 
 The free product of a family of two monoids indexed by `Bool` is the binary free product
-`Monoid.Coprod` of its two members, by the isomorphism matching the canonical inclusions.
+`Monoid.Coprod` of its two members, by the isomorphism matching the canonical inclusions. Under it,
+the homomorphisms induced by a pair of homomorphisms on the two members correspond, so one of them
+is injective exactly when the other is.
 
 The free product of an empty family is trivial, and the free product of a family indexed by a
 type with a unique element is that single monoid.
@@ -28,6 +30,9 @@ type with a unique element is that single monoid.
 * `MulEquiv.coprodICongr`: the isomorphism of free products induced by a family of isomorphisms.
 * `Monoid.CoprodI.boolEquivCoprod`: `CoprodI M ≃* Coprod (M false) (M true)` for a family `M`
   indexed by `Bool`.
+* `Monoid.CoprodI.injective_coprod_lift_iff`: for a family `M` indexed by `Bool`, homomorphisms
+  `f i : M i →* N` induce an injective homomorphism `Coprod (M false) (M true) →* N` if and only
+  if they induce an injective homomorphism `CoprodI M →* N`.
 * `Monoid.CoprodI.instUniqueOfIsEmpty`: the free product of an empty family is trivial.
 * `MulEquiv.coprodIUnique`: the free product of a family indexed by a type with a unique element
   is isomorphic to the monoid at the single index.
@@ -120,5 +125,22 @@ theorem boolEquivCoprod_symm_inl (x : M false) : (boolEquivCoprod M).symm (Copro
 @[simp]
 theorem boolEquivCoprod_symm_inr (x : M true) : (boolEquivCoprod M).symm (Coprod.inr x) = of x :=
   Coprod.lift_apply_inr (of (i := false)) (of (i := true)) x
+
+variable {N : Type*} [Monoid N] (f : ∀ i, M i →* N)
+
+/-- Under `boolEquivCoprod`, the homomorphism `CoprodI M →* N` induced by homomorphisms `f i` on
+the two factors is `Monoid.Coprod.lift (f false) (f true)`. -/
+@[simp]
+theorem lift_comp_boolEquivCoprod_symm :
+    (lift f).comp ((boolEquivCoprod M).symm : Coprod (M false) (M true) →* CoprodI M) =
+      Coprod.lift (f false) (f true) := by
+  ext <;> simp
+
+/-- The homomorphism `Monoid.Coprod (M false) (M true) →* N` induced by homomorphisms `f i` on the
+two factors is injective if and only if the homomorphism `CoprodI M →* N` they induce is. -/
+theorem injective_coprod_lift_iff :
+    Function.Injective (Coprod.lift (f false) (f true)) ↔ Function.Injective (lift f) := by
+  rw [← lift_comp_boolEquivCoprod_symm, MonoidHom.coe_comp, MonoidHom.coe_ofClass]
+  exact EquivLike.injective_comp _ _
 
 end Monoid.CoprodI
