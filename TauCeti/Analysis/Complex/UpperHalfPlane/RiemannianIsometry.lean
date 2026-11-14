@@ -66,7 +66,13 @@ private def smulIsom (g : GL (Fin 2) ℝ) : Isom 𝓘(ℝ, ℂ) ℍ where
   toEquiv := MulAction.toPerm g
   contMDiff_toFun := contMDiff_const_smul g
   contMDiff_invFun := contMDiff_const_smul g⁻¹
-  inner_mfderiv' := inner_mfderiv_smul g
+  inner_mfderiv' z v w := by
+    -- The diffeomorphism under construction is `(g • ·)` by definition, and the inner product on
+    -- `TangentSpace 𝓘(ℝ, ℂ) z` is `poincareRiemannianMetric.inner z` by `instRiemannianBundle`;
+    -- `change` states the goal in these terms, so that `inner_mfderiv_smul` applies.
+    change poincareRiemannianMetric.inner (g • z) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • ·) z v)
+        (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • ·) z w) = poincareRiemannianMetric.inner z v w
+    exact inner_mfderiv_smul g z v w
 
 /-- The Riemannian isometry attached to `g ∈ GL(2, ℝ)` acts by `g`. -/
 private theorem smulIsom_apply (g : GL (Fin 2) ℝ) (z : ℍ) : smulIsom g z = g • z := (rfl)
@@ -91,18 +97,34 @@ theorem glIsom_apply (g : GL (Fin 2) ℝ) (z : ℍ) : glIsom g z = g • z :=
 theorem glIsom_symm_apply (g : GL (Fin 2) ℝ) (z : ℍ) : (glIsom g).symm z = g⁻¹ • z := by
   rw [← RiemannianIsometry.inv_apply, ← map_inv, glIsom_apply]
 
+/-- As a function, the Riemannian isometry attached to `g ∈ GL(2, ℝ)` is `(g • ·)`. -/
+theorem coe_glIsom (g : GL (Fin 2) ℝ) : ⇑(glIsom g) = (g • ·) :=
+  funext (glIsom_apply g)
+
+/-- As a function, the inverse of the Riemannian isometry attached to `g ∈ GL(2, ℝ)` is
+`(g⁻¹ • ·)`. -/
+theorem coe_glIsom_symm (g : GL (Fin 2) ℝ) : ⇑(glIsom g).symm = (g⁻¹ • ·) :=
+  funext (glIsom_symm_apply g)
+
+/-- Nonzero scalar matrices act on `ℍ` by the identity isometry. -/
+@[simp]
+theorem glIsom_scalar (u : ℝˣ) : glIsom (Matrix.GeneralLinearGroup.scalar (Fin 2) u) = 1 :=
+  RiemannianIsometry.ext fun z ↦ by rw [glIsom_apply, glScalar_smul, RiemannianIsometry.one_apply]
+
 /-- **`PGL(2, ℝ)` acts on `ℍ` by Riemannian isometries of the Poincaré metric**: the descent of
 `glIsom` to the quotient by the centre, which acts trivially. -/
 def pglIsom : PGL(2, ℝ) →* Isom 𝓘(ℝ, ℂ) ℍ :=
-  QuotientGroup.lift _ glIsom fun g hg ↦ RiemannianIsometry.ext fun z ↦ by
-    rw [glIsom_apply, RiemannianIsometry.one_apply, ← pglMk_smul,
-      Matrix.ProjGenLinGroup.mk_eq_one.mpr hg, one_smul]
+  Matrix.ProjGenLinGroup.lift glIsom (MonoidHom.ext glIsom_scalar)
 
 /-- On the class of `g ∈ GL(2, ℝ)`, the isometry attached to `PGL(2, ℝ)` is that of `g`. -/
 @[simp]
 theorem pglIsom_mk (g : GL (Fin 2) ℝ) : pglIsom (Matrix.ProjGenLinGroup.mk g) = glIsom g :=
-  -- `PGL(2, ℝ)` is the quotient by the centre and `mk` its quotient map, so the lift computes.
-  (rfl)
+  Matrix.ProjGenLinGroup.lift_mk _ g
+
+/-- `glIsom` factors through the quotient map `GL(2, ℝ) → PGL(2, ℝ)`. -/
+@[simp]
+theorem pglIsom_comp_mk : pglIsom.comp Matrix.ProjGenLinGroup.mk = glIsom :=
+  Matrix.ProjGenLinGroup.lift_comp_mk _
 
 /-- The Riemannian isometry attached to `g ∈ PGL(2, ℝ)` acts by `g`. -/
 @[simp]
@@ -115,25 +137,68 @@ theorem pglIsom_apply (g : PGL(2, ℝ)) (z : ℍ) : pglIsom g z = g • z := by
 theorem pglIsom_symm_apply (g : PGL(2, ℝ)) (z : ℍ) : (pglIsom g).symm z = g⁻¹ • z := by
   rw [← RiemannianIsometry.inv_apply, ← map_inv, pglIsom_apply]
 
+/-- As a function, the Riemannian isometry attached to `g ∈ PGL(2, ℝ)` is `(g • ·)`. -/
+theorem coe_pglIsom (g : PGL(2, ℝ)) : ⇑(pglIsom g) = (g • ·) :=
+  funext (pglIsom_apply g)
+
+/-- As a function, the inverse of the Riemannian isometry attached to `g ∈ PGL(2, ℝ)` is
+`(g⁻¹ • ·)`. -/
+theorem coe_pglIsom_symm (g : PGL(2, ℝ)) : ⇑(pglIsom g).symm = (g⁻¹ • ·) :=
+  funext (pglIsom_symm_apply g)
+
 /-- Distinct elements of `PGL(2, ℝ)` give distinct isometries of `ℍ`. -/
 theorem pglIsom_injective : Function.Injective pglIsom := fun g h hgh ↦
   eq_of_smul_eq_smul fun z : ℍ ↦ by
     rw [← pglIsom_apply, ← pglIsom_apply, hgh]
+
+/-- The elements of `GL(2, ℝ)` acting on `ℍ` by the identity isometry are the scalar matrices,
+which form the centre. -/
+@[simp]
+theorem ker_glIsom : glIsom.ker = Subgroup.center (GL (Fin 2) ℝ) := by
+  rw [← pglIsom_comp_mk, MonoidHom.ker_comp_of_injective _ _ pglIsom_injective,
+    Matrix.ProjGenLinGroup.ker_mk]
 
 /-- **`PSL(2, ℝ)` acts on `ℍ` by Riemannian isometries of the Poincaré metric**, through
 `PGL(2, ℝ)`. -/
 def pslIsom : PSL(2, ℝ) →* Isom 𝓘(ℝ, ℂ) ℍ :=
   pglIsom.comp Matrix.ProjectiveSpecialLinearGroup.toPGL
 
+/-- Along `toPGL`, the isometry attached to `PGL(2, ℝ)` is that attached to `PSL(2, ℝ)`. -/
+@[simp]
+theorem pglIsom_toPGL (g : PSL(2, ℝ)) :
+    pglIsom (Matrix.ProjectiveSpecialLinearGroup.toPGL g) = pslIsom g :=
+  (MonoidHom.comp_apply _ _ g).symm
+
+/-- `pslIsom` factors through `toPGL : PSL(2, ℝ) → PGL(2, ℝ)`. -/
+@[simp]
+theorem pglIsom_comp_toPGL : pglIsom.comp Matrix.ProjectiveSpecialLinearGroup.toPGL = pslIsom :=
+  MonoidHom.ext pglIsom_toPGL
+
+/-- On the class of `g ∈ SL(2, ℝ)`, the isometry attached to `PSL(2, ℝ)` is that of `g` viewed
+in `GL(2, ℝ)`. -/
+@[simp]
+theorem pslIsom_mk (g : SL(2, ℝ)) :
+    pslIsom (g : PSL(2, ℝ)) = glIsom (Matrix.SpecialLinearGroup.toGL g) := by
+  rw [← pglIsom_toPGL, Matrix.ProjectiveSpecialLinearGroup.toPGL_mk, pglIsom_mk]
+
 /-- The Riemannian isometry attached to `g ∈ PSL(2, ℝ)` acts by `g`. -/
 @[simp]
 theorem pslIsom_apply (g : PSL(2, ℝ)) (z : ℍ) : pslIsom g z = g • z := by
-  simp [pslIsom]
+  rw [← pglIsom_toPGL, pglIsom_apply, toPGL_smul]
 
 /-- The inverse of the Riemannian isometry attached to `g ∈ PSL(2, ℝ)` acts by `g⁻¹`. -/
 @[simp]
 theorem pslIsom_symm_apply (g : PSL(2, ℝ)) (z : ℍ) : (pslIsom g).symm z = g⁻¹ • z := by
   rw [← RiemannianIsometry.inv_apply, ← map_inv, pslIsom_apply]
+
+/-- As a function, the Riemannian isometry attached to `g ∈ PSL(2, ℝ)` is `(g • ·)`. -/
+theorem coe_pslIsom (g : PSL(2, ℝ)) : ⇑(pslIsom g) = (g • ·) :=
+  funext (pslIsom_apply g)
+
+/-- As a function, the inverse of the Riemannian isometry attached to `g ∈ PSL(2, ℝ)` is
+`(g⁻¹ • ·)`. -/
+theorem coe_pslIsom_symm (g : PSL(2, ℝ)) : ⇑(pslIsom g).symm = (g⁻¹ • ·) :=
+  funext (pslIsom_symm_apply g)
 
 /-- Distinct elements of `PSL(2, ℝ)` give distinct isometries of `ℍ`. -/
 theorem pslIsom_injective : Function.Injective pslIsom :=

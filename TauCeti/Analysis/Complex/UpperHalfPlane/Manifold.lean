@@ -196,8 +196,9 @@ instance instContMDiffConstSMulGL2Real {n : WithTop ℕ∞} :
     have hF : ContDiffAt ℝ ω (fun w : ℂ ↦ σ g (num g w / denom g w)) τ :=
       (σ g).toContinuousLinearEquiv.contDiff.contDiffAt.comp _
         ((hnum.contDiffAt.div hden.contDiffAt (denom_ne_zero g τ)).restrict_scalars ℝ)
-    have hcoe : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ω ((↑) : ℍ → ℂ) τ := contMDiffAt_extChartAt
-    exact hF.contMDiffAt.comp τ hcoe
+    have hcoe : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ω ((↑) : ℍ → ℂ) τ := by
+      simpa using contMDiffAt_extChartAt (I := 𝓘(ℝ, ℂ)) (x := τ)
+    simpa only [Function.comp_def, coe_smul] using hF.contMDiffAt.comp τ hcoe
 
 end UpperHalfPlane
 

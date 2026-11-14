@@ -267,14 +267,14 @@ theorem tangentSpaceCastModel_mfderiv_smul (g : GL (Fin 2) ℝ) (z : ℍ)
   have hg : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • · : ℍ → ℍ) z :=
     (contMDiff_const_smul (n := 1) g).mdifferentiableAt one_ne_zero
   rw [hg.tangentSpaceCastModel_mfderiv_apply]
+  have hwritten : writtenInExtChartAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) z (g • ·) =
+      (fun x : ℍ ↦ ((g • x : ℍ) : ℂ)) ∘ (chartAt ℂ z).symm := by
+    ext w
+    simp [writtenInExtChartAt]
   have hlocal : writtenInExtChartAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) z (g • ·)
       =ᶠ[nhds (z : ℂ)] fun w ↦ ↑(g • ofComplex w) := by
-    filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds z.im_pos] with w hw
-    have hsymm : (extChartAt 𝓘(ℝ, ℂ) z).symm w = ofComplex w := by
-      rw [ofComplex_apply_of_im_pos hw]
-      exact (extChartAt 𝓘(ℝ, ℂ) z).left_inv (x := ⟨w, hw⟩) (by simp)
-    simp only [writtenInExtChartAt, Function.comp_apply, hsymm]
-    simp
+    rw [hwritten]
+    exact TauCeti.UpperHalfPlane.comp_chartAt_symm_eventuallyEq _ z
   have hchart : extChartAt 𝓘(ℝ, ℂ) z z = (z : ℂ) := by simp
   rw [hchart, hlocal.fderiv_eq, (hasStrictFDerivAt_smul g z).hasFDerivAt.fderiv]
 
