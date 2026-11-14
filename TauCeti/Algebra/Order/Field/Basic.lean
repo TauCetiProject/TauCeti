@@ -106,6 +106,8 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.pow_le_one_add_pow_of_le`: `x ^ j ≤ 1 + x ^ m` for `0 ≤ x` and `j ≤ m` in a linearly
+  ordered semiring.
 -/
 
 public section
@@ -412,6 +414,15 @@ theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictO
 theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
     {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
   one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
+
+/-- In a linearly ordered semiring, any intermediate power `x ^ j` (`j ≤ m`) of `x ≥ 0` is bounded
+by `1 + x ^ m`. -/
+theorem pow_le_one_add_pow_of_le {R : Type*} [Semiring R] [LinearOrder R] [IsStrictOrderedRing R]
+    {x : R} (hx : 0 ≤ x) {j m : ℕ} (hjm : j ≤ m) :
+    x ^ j ≤ 1 + x ^ m := by
+  rcases le_total x 1 with hx1 | h1x
+  · exact (pow_le_one₀ hx hx1).trans (le_add_of_nonneg_right (pow_nonneg hx m))
+  · exact (pow_le_pow_right₀ h1x hjm).trans (le_add_of_nonneg_left zero_le_one)
 
 end TauCeti
 

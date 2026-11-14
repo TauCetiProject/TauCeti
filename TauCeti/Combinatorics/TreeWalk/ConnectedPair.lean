@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Combinatorics.TreeWalk.Leading
 public import TauCeti.Data.Fintype.SmallRange
+import TauCeti.Data.Fin.Basic
+import TauCeti.GroupTheory.Perm.SumCongr
 
 /-!
 # Vertex and counting bounds for connected pairs of trace words
@@ -15,28 +17,31 @@ In the variance and covariance expansions for traces of powers of Wigner matrice
 words `(w₁, w₂)` with disjoint sets of unordered edges cancel by independence, while pairs whose
 combined step set has a singleton unordered edge have vanishing expectation when entries are
 centered. Every remaining pair shares at least one unordered edge and traverses every combined
-unordered edge at least twice.
+unordered edge at least twice (`TauCeti.TreeWalk.IsConnectedPair`).
 
 Concatenating two such cyclic words at a shared vertex produces a single singleton-free cyclic word
 of length `k₁ + k₂`. When `k₁ + k₂ = 2 * m`, the single-word bound gives at most `m + 1` combined
 vertices. Equality `#V = m + 1` is impossible: canonicalizing the concatenated walk would yield a
 closed double-traversal tree walk that returns to the root at the concatenation time `k₁` while
-sharing an unordered edge between `[0, k₁)` and `[k₁, 2 * m)`, contradicting the fact that every
-edge discovered before returning to the root must already have been closed before that return.
-Hence `(w₁, w₂)` visits at most `m` distinct vertices in total, and on an `n`-element vertex set
-there are at most `n ^ m * m ^ (2 * m)` such pairs.
+sharing an unordered edge between `[0, k₁)` and `[k₁, 2 * m)`, contradicting
+`TauCeti.TreeWalk.IsTreeWalk.ne_edge_of_lt_of_le`. Hence `(w₁, w₂)` visits at most `m` distinct
+vertices in total, and on an `n`-element vertex set there are at most `n ^ m * m ^ (2 * m)` such
+pairs.
+
+## Main definitions
+
+* `TauCeti.TreeWalk.IsConnectedPair`: two cyclic words share at least one unordered step edge and
+  traverse every unordered edge in their combined step multiset at least twice.
 
 ## Main results
 
-* `TauCeti.TreeWalk.IsTreeWalk.ne_edge_of_lt_of_le`: if a tree walk returns to the root at time
-  `r`, no step before `r` shares an unordered edge with a step at or after `r`.
 * `TauCeti.TreeWalk.card_image_sumElim_le_of_add_eq_two_mul` and
-  `TauCeti.TreeWalk.card_image_sumElim_le`: two edge-sharing cyclic words without combined
-  singleton edges and of total length `2 * m` (in particular, two length-`k` words with `m = k`)
-  visit at most `m` vertices together.
+  `TauCeti.TreeWalk.card_image_sumElim_le`: two connected singleton-free cyclic words of total
+  length `2 * m` (in particular, two length-`k` words with `m = k`) visit at most `m` vertices
+  together.
 * `TauCeti.TreeWalk.card_filter_connectedPair_le_of_add_eq_two_mul` and
   `TauCeti.TreeWalk.card_filter_connectedPair_le`: at most `|α| ^ m * m ^ (2 * m)` pairs `(w₁, w₂)`
-  of total length `2 * m` share an unordered edge and have no combined singleton unordered edge.
+  of total length `2 * m` satisfy `IsConnectedPair`.
 
 ## References
 
@@ -52,83 +57,100 @@ open Finset
 
 namespace TauCeti.TreeWalk
 
-private theorem iterate_pred_apply_zero {w : ℕ → ℕ} (h0 : w 0 = 0) :
-    ∀ n, (fun v ↦ w (v - 1))^[n] 0 = 0
-  | 0 => rfl
-  | n + 1 => by simp [Function.iterate_succ_apply, h0, iterate_pred_apply_zero h0 n]
-
-/-- When a closed double-traversal tree walk returns to the root `0` at time `r`, every edge
-discovered before `r` is already closed before `r`, so no step in `[0, r)` can traverse the same
-unordered edge as a step in `[r, 2 * m)`. -/
-theorem IsTreeWalk.ne_edge_of_lt_of_le {m r a b : ℕ} {w : ℕ → ℕ} (hw : IsTreeWalk m w)
-    (hr : w r = 0) (ha : a < r) (hrb : r ≤ b) (hb : b < 2 * m) :
-    s(w a, w (a + 1)) ≠ s(w b, w (b + 1)) := by
-  intro hab
-  obtain ⟨i, hi, hup, hae⟩ := hw.exists_up_edge (ha.trans (hrb.trans_lt hb))
-  have hie : s(w i, w (i + 1)) = s(w i, i + 1) := by rw [hup]
-  obtain ⟨j, hj, hj1, -, hpair⟩ := hw.exists_edge_fiber_eq_pair hi hup
-  have ha_mem : a ∈ ({i, j} : Finset ℕ) := by
-    rw [← hpair]
-    exact mem_filter.mpr ⟨mem_range.mpr (ha.trans (hrb.trans_lt hb)), hae.trans hie.symm⟩
-  have hb_mem : b ∈ ({i, j} : Finset ℕ) := by
-    rw [← hpair]
-    exact mem_filter.mpr ⟨mem_range.mpr hb, hab.symm.trans (hae.trans hie.symm)⟩
-  have hij : i < j := by
-    have := hw.le_self j hj.le
-    omega
-  simp only [mem_insert, mem_singleton] at ha_mem hb_mem
-  have hia : i = a := by omega
-  have hjb : j = b := by omega
-  let p : ℕ → ℕ := fun v ↦ w (v - 1)
-  have hdesc : ∀ d, i + 1 + d ≤ r → ∃ n, p^[n] (w (i + 1 + d)) = i + 1 := by
-    intro d
-    induction d with
-    | zero =>
-      intro _
-      exact ⟨0, hup⟩
-    | succ d ih =>
-      intro hd
-      set t := i + 1 + d
-      obtain ⟨n, hn⟩ := ih (by omega)
-      have ht2m : t < 2 * m := by omega
-      have hsub : i + 1 + (d + 1) = t + 1 := by omega
-      rw [hsub]
-      by_cases htup : w (t + 1) = t + 1
-      · refine ⟨n + 1, ?_⟩
-        rw [Function.iterate_succ_apply, htup]
-        exact hn
-      · obtain ⟨-, hpar, -⟩ := hw.step_down ht2m htup
-        cases n with
-        | zero =>
-          exfalso
-          have hwt : w t = i + 1 := hn
-          have hwt1 : w (t + 1) = w i := by simpa [hwt] using hpar
-          have hte : s(w t, w (t + 1)) = s(w i, w (i + 1)) := by
-            rw [hwt, hwt1, hup, Sym2.eq_swap]
-          have ht_mem : t ∈ ({i, j} : Finset ℕ) := by
-            rw [← hpair]
-            exact mem_filter.mpr ⟨mem_range.mpr ht2m, hte⟩
-          simp only [mem_insert, mem_singleton] at ht_mem
-          omega
-        | succ n =>
-          refine ⟨n, ?_⟩
-          have hpar' : w (t + 1) = p (w t) := hpar
-          rw [hpar', ← Function.iterate_succ_apply]
-          exact hn
-  obtain ⟨n, hn⟩ := hdesc (r - (i + 1)) (by omega)
-  rw [Nat.add_sub_of_le (by omega : i + 1 ≤ r), hr, iterate_pred_apply_zero hw.root n] at hn
-  omega
-
 section CyclicPairs
 
 variable {α : Type*}
 
-private theorem finRotate_add_right {k : ℕ} (j r : Fin k) :
-    finRotate k (j + r) = finRotate k j + r := by
-  have := j.neZero
-  simp only [finRotate_apply, add_right_comm]
+/-- Two cyclic trace words `w₁` and `w₂` form a connected singleton-free pair when they share at
+least one unordered step edge and every unordered step edge in their combined step multiset occurs
+at least twice. -/
+abbrev IsConnectedPair {k₁ k₂ : ℕ} (w₁ : Fin k₁ → α) (w₂ : Fin k₂ → α) : Prop :=
+  (∃ t₁ t₂, s(w₁ t₁, w₁ (finRotate k₁ t₁)) = s(w₂ t₂, w₂ (finRotate k₂ t₂))) ∧
+    ∀ x : Fin k₁ ⊕ Fin k₂, ∃ y ≠ x,
+      Sum.elim (fun t ↦ s(w₁ t, w₁ (finRotate k₁ t)))
+        (fun t ↦ s(w₂ t, w₂ (finRotate k₂ t))) y =
+      Sum.elim (fun t ↦ s(w₁ t, w₁ (finRotate k₁ t)))
+        (fun t ↦ s(w₂ t, w₂ (finRotate k₂ t))) x
+
+/-- Appending two nonempty tuples that agree at `0` commutes with `finRotate` via `finSumPerm`. -/
+private theorem append_comp_finRotate_of_eq_zero {m₁ m₂ : ℕ}
+    (u : Fin (m₁ + 1) → α) (v : Fin (m₂ + 1) → α) (h0 : u 0 = v 0) :
+    Fin.append u v ∘ finRotate ((m₁ + 1) + (m₂ + 1)) =
+      Fin.append (u ∘ finRotate (m₁ + 1)) (v ∘ finRotate (m₂ + 1)) := by
+  have hswap : Fin.append u v ∘
+      Equiv.swap (Fin.castAdd (m₂ + 1) 0) (Fin.natAdd (m₁ + 1) 0) = Fin.append u v := by
+    funext x
+    rw [Function.comp_apply, Equiv.swap_apply_def]
+    split_ifs with hx₁ hx₂
+    · rw [hx₁, Fin.append_left, Fin.append_right, h0]
+    · rw [hx₂, Fin.append_right, Fin.append_left, h0]
+    · rfl
+  rw [Equiv.Perm.finRotate_add_eq_swap_mul_finSumPerm, Equiv.Perm.coe_mul, ← Function.comp_assoc,
+    hswap, Fin.append_comp_finSumPerm]
+
+/-- Splicing two cyclic words `w₁` and `w₂` at shared vertices `w₁ r₁ = w₂ r₂` into a cyclic word
+on `Fin ((m₁ + 1) + (m₂ + 1))`. -/
+private def spliceWord {m₁ m₂ : ℕ} (w₁ : Fin (m₁ + 1) → α) (w₂ : Fin (m₂ + 1) → α)
+    (r₁ : Fin (m₁ + 1)) (r₂ : Fin (m₂ + 1)) : Fin ((m₁ + 1) + (m₂ + 1)) → α :=
+  Fin.append (fun i ↦ w₁ (i + r₁)) (fun j ↦ w₂ (j + r₂))
+
+/-- Equivalence identifying combined step indices of `w₁` and `w₂` with those of `spliceWord`. -/
+private def spliceStepEquiv {m₁ m₂ : ℕ} (r₁ : Fin (m₁ + 1)) (r₂ : Fin (m₂ + 1)) :
+    Fin (m₁ + 1) ⊕ Fin (m₂ + 1) ≃ Fin ((m₁ + 1) + (m₂ + 1)) :=
+  (Equiv.sumCongr (Equiv.addRight r₁).symm (Equiv.addRight r₂).symm).trans finSumFinEquiv
+
+/-- Each unordered step edge of `spliceWord` matches the corresponding step edge of `w₁` or `w₂`. -/
+private theorem spliceWord_edge_stepEquiv {m₁ m₂ : ℕ}
+    (w₁ : Fin (m₁ + 1) → α) (w₂ : Fin (m₂ + 1) → α)
+    {r₁ : Fin (m₁ + 1)} {r₂ : Fin (m₂ + 1)} (hr : w₁ r₁ = w₂ r₂)
+    (x : Fin (m₁ + 1) ⊕ Fin (m₂ + 1)) :
+    let u := spliceWord w₁ w₂ r₁ r₂
+    let s := spliceStepEquiv r₁ r₂ x
+    s(u s, u (finRotate ((m₁ + 1) + (m₂ + 1)) s)) =
+      Sum.elim (fun t ↦ s(w₁ t, w₁ (finRotate (m₁ + 1) t)))
+        (fun t ↦ s(w₂ t, w₂ (finRotate (m₂ + 1) t))) x := by
+  have hrot (a : Fin ((m₁ + 1) + (m₂ + 1))) :
+      spliceWord w₁ w₂ r₁ r₂ (finRotate ((m₁ + 1) + (m₂ + 1)) a) =
+        Fin.append ((fun i ↦ w₁ (i + r₁)) ∘ finRotate (m₁ + 1))
+          ((fun j ↦ w₂ (j + r₂)) ∘ finRotate (m₂ + 1)) a :=
+    congrFun (append_comp_finRotate_of_eq_zero (fun i ↦ w₁ (i + r₁))
+      (fun j ↦ w₂ (j + r₂)) (by simpa using hr)) a
+  cases x with
+  | inl t =>
+    dsimp only
+    rw [hrot]
+    simp only [spliceWord, spliceStepEquiv, Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inl,
+      Equiv.addRight_symm_apply, finSumFinEquiv_apply_left, Fin.append_left, Function.comp_apply,
+      Fin.finRotate_add_right, neg_add_cancel_right, Sum.elim_inl]
+  | inr t =>
+    dsimp only
+    rw [hrot]
+    simp only [spliceWord, spliceStepEquiv, Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inr,
+      Equiv.addRight_symm_apply, finSumFinEquiv_apply_right, Fin.append_right, Function.comp_apply,
+      Fin.finRotate_add_right, neg_add_cancel_right, Sum.elim_inr]
 
 variable [DecidableEq α]
+
+/-- `spliceWord` visits the exact same vertex set as `Sum.elim w₁ w₂`. -/
+private theorem image_spliceWord {m₁ m₂ : ℕ}
+    (w₁ : Fin (m₁ + 1) → α) (w₂ : Fin (m₂ + 1) → α)
+    (r₁ : Fin (m₁ + 1)) (r₂ : Fin (m₂ + 1)) :
+    univ.image (spliceWord w₁ w₂ r₁ r₂) = univ.image (Sum.elim w₁ w₂) := by
+  ext v
+  simp only [mem_image, mem_univ, true_and]
+  constructor
+  · rintro ⟨a, rfl⟩
+    induction a using Fin.addCases with
+    | left i => exact ⟨.inl (i + r₁), by simp [spliceWord]⟩
+    | right j => exact ⟨.inr (j + r₂), by simp [spliceWord]⟩
+  · rintro ⟨x, rfl⟩
+    cases x with
+    | inl t => exact ⟨spliceStepEquiv r₁ r₂ (.inl t), by simp [spliceWord, spliceStepEquiv]⟩
+    | inr t => exact ⟨spliceStepEquiv r₁ r₂ (.inr t), by simp [spliceWord, spliceStepEquiv]⟩
+
+private theorem finCongr_symm_finRotate {n₁ n₂ : ℕ} (h : n₁ = n₂) (a : Fin n₂) :
+    (finCongr h).symm (finRotate n₂ a) = finRotate n₁ ((finCongr h).symm a) := by
+  cases h; rfl
 
 /-- Two cyclic words `w₁ : Fin k₁ → α` and `w₂ : Fin k₂ → α` of total length `k₁ + k₂ = 2 * m`
 that share at least one unordered edge and have no singleton unordered edge in their combined step
@@ -149,173 +171,89 @@ theorem card_image_sumElim_le_of_add_eq_two_mul {k₁ k₂ m : ℕ}
   cases k₂ with
   | zero => exact t₂.elim0
   | succ m₂ =>
-  have hm : m ≠ 0 := by omega
-  have : NeZero m := ⟨hm⟩
+  have : NeZero m := ⟨by omega⟩
   have : NeZero (2 * m) := ⟨by omega⟩
-  -- Extract a vertex shared between `w₁` and `w₂` from the shared unordered edge.
-  have hvtx : ∃ (r₁ : Fin (m₁ + 1)) (r₂ : Fin (m₂ + 1)), w₁ r₁ = w₂ r₂ := by
+  obtain ⟨r₁, r₂, hr₁₂⟩ : ∃ (r₁ : Fin (m₁ + 1)) (r₂ : Fin (m₂ + 1)), w₁ r₁ = w₂ r₂ := by
     rcases Sym2.eq_iff.mp ht₁₂ with ⟨h, -⟩ | ⟨h, -⟩
     · exact ⟨t₁, t₂, h⟩
     · exact ⟨t₁, finRotate (m₂ + 1) t₂, h⟩
-  obtain ⟨r₁, r₂, hr₁₂⟩ := hvtx
-  let w₁' : Fin (m₁ + 1) → α := fun i ↦ w₁ (i + r₁)
-  let w₂' : Fin (m₂ + 1) → α := fun i ↦ w₂ (i + r₂)
-  have hw0 : w₁' 0 = w₂' 0 := by simpa [w₁', w₂'] using hr₁₂
-  -- Concatenate the rotated words into a single cyclic word of length `2 * m`.
-  let e : Fin (m₁ + 1) ⊕ Fin (m₂ + 1) ≃ Fin (2 * m) :=
-    finSumFinEquiv.trans (finCongr hk)
-  let W : Fin (2 * m) → α := Sum.elim w₁' w₂' ∘ e.symm
+  let W : Fin (2 * m) → α := spliceWord w₁ w₂ r₁ r₂ ∘ (finCongr hk).symm
   let stepEquiv : Fin (m₁ + 1) ⊕ Fin (m₂ + 1) ≃ Fin (2 * m) :=
-    (Equiv.sumCongr (Equiv.addRight r₁).symm (Equiv.addRight r₂).symm).trans e
-  have hW_inl (i : Fin (m₁ + 1)) : W (e (.inl i)) = w₁' i := by simp [W]
-  have hW_inr (i : Fin (m₂ + 1)) : W (e (.inr i)) = w₂' i := by simp [W]
-  -- Compare each step of `W` with the corresponding rotated step of `w₁` or `w₂`.
-  have hedge_e (x : Fin (m₁ + 1) ⊕ Fin (m₂ + 1)) :
-      s(W (e x), W (finRotate (2 * m) (e x))) =
-        Sum.elim (fun i ↦ s(w₁' i, w₁' (finRotate (m₁ + 1) i)))
-          (fun i ↦ s(w₂' i, w₂' (finRotate (m₂ + 1) i))) x := by
-    have h1lt : 1 < 2 * m := by omega
-    have hrot_mod (u : Fin (2 * m)) : (finRotate (2 * m) u).val = (u.val + 1) % (2 * m) := by
-      rw [finRotate_apply, Fin.add_def, Fin.val_one' (2 * m), Nat.mod_eq_of_lt h1lt]
-    cases x with
-    | inl i =>
-      simp only [Sum.elim_inl, hW_inl]
-      have heval : (e (.inl i)).val = i.val := by simp [e]
-      have hlt2m : (e (.inl i)).val + 1 < 2 * m := by omega
-      have hnext_val : (finRotate (2 * m) (e (.inl i))).val = i.val + 1 := by
-        rw [hrot_mod, Nat.mod_eq_of_lt hlt2m, heval]
-      rcases lt_or_eq_of_le (Nat.le_of_lt_succ i.isLt) with hi | hi
-      · have htarget : finRotate (2 * m) (e (.inl i)) = e (.inl (finRotate (m₁ + 1) i)) := by
-          ext
-          rw [hnext_val]
-          simp [e, finRotate_of_lt hi]
-        rw [htarget, hW_inl]
-      · have hilast : i = Fin.last m₁ := Fin.ext hi
-        have htarget : finRotate (2 * m) (e (.inl i)) = e (.inr 0) := by
-          ext
-          rw [hnext_val, hi]
-          simp [e]
-        rw [htarget, hW_inr, hilast, finRotate_last, hw0]
-    | inr i =>
-      simp only [Sum.elim_inr, hW_inr]
-      have heval : (e (.inr i)).val = (m₁ + 1) + i.val := by simp [e]
-      rcases lt_or_eq_of_le (Nat.le_of_lt_succ i.isLt) with hi | hi
-      · have hlt2m : (e (.inr i)).val + 1 < 2 * m := by omega
-        have htarget : finRotate (2 * m) (e (.inr i)) = e (.inr (finRotate (m₂ + 1) i)) := by
-          ext
-          rw [hrot_mod, Nat.mod_eq_of_lt hlt2m, heval]
-          simp [e, finRotate_of_lt hi, Nat.add_assoc]
-        rw [htarget, hW_inr]
-      · have hilast : i = Fin.last m₂ := Fin.ext hi
-        have hsum2m : (e (.inr i)).val + 1 = 2 * m := by omega
-        have htarget : finRotate (2 * m) (e (.inr i)) = e (.inl 0) := by
-          ext
-          rw [hrot_mod, hsum2m, Nat.mod_self]
-          simp [e]
-        rw [htarget, hW_inl, hilast, finRotate_last, hw0]
+    (spliceStepEquiv r₁ r₂).trans (finCongr hk)
   have hedge_step (x : Fin (m₁ + 1) ⊕ Fin (m₂ + 1)) :
       s(W (stepEquiv x), W (finRotate (2 * m) (stepEquiv x))) =
         Sum.elim (fun t ↦ s(w₁ t, w₁ (finRotate (m₁ + 1) t)))
           (fun t ↦ s(w₂ t, w₂ (finRotate (m₂ + 1) t))) x := by
-    cases x with
-    | inl t =>
-      simp only [stepEquiv, Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inl,
-        Equiv.addRight_symm_apply, hedge_e, Sum.elim_inl, w₁']
-      rw [finRotate_add_right, neg_add_cancel_right, neg_add_cancel_right]
-    | inr t =>
-      simp only [stepEquiv, Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inr,
-        Equiv.addRight_symm_apply, hedge_e, Sum.elim_inr, w₂']
-      rw [finRotate_add_right, neg_add_cancel_right, neg_add_cancel_right]
-  -- `W` inherits the no-singleton-edge property and the combined vertex set.
+    simp only [W, stepEquiv, Function.comp_apply, finCongr_symm_finRotate hk, Equiv.trans_apply,
+      Equiv.symm_apply_apply]
+    exact spliceWord_edge_stepEquiv w₁ w₂ hr₁₂ x
   have hW_ns : ∀ a : Fin (2 * m), ∃ b ≠ a,
       s(W b, W (finRotate (2 * m) b)) = s(W a, W (finRotate (2 * m) a)) := by
     intro a
     obtain ⟨y, hy, hyeq⟩ := hns (stepEquiv.symm a)
-    refine ⟨stepEquiv y, ?_, ?_⟩
-    · intro h
-      exact hy (stepEquiv.symm_apply_eq.mpr h.symm).symm
-    · rw [hedge_step y, ← stepEquiv.apply_symm_apply a, hedge_step (stepEquiv.symm a)]
-      exact hyeq
+    refine ⟨stepEquiv y, fun h ↦ hy (stepEquiv.symm_apply_eq.mpr h.symm).symm, ?_⟩
+    rw [hedge_step y, ← stepEquiv.apply_symm_apply a, hedge_step (stepEquiv.symm a), hyeq]
   have himage : univ.image W = univ.image (Sum.elim w₁ w₂) := by
+    rw [← image_spliceWord w₁ w₂ r₁ r₂]
     ext v
-    simp only [mem_image, mem_univ, true_and]
-    constructor
-    · rintro ⟨a, rfl⟩
-      rcases ha : e.symm a with i | i
-      · exact ⟨.inl (i + r₁), by simp [W, ha, w₁']⟩
-      · exact ⟨.inr (i + r₂), by simp [W, ha, w₂']⟩
-    · rintro ⟨x, rfl⟩
-      cases x with
-      | inl t => exact ⟨stepEquiv (.inl t), by simp [W, stepEquiv, w₁']⟩
-      | inr t => exact ⟨stepEquiv (.inr t), by simp [W, stepEquiv, w₂']⟩
+    simp only [W, mem_image, mem_univ, true_and, Function.comp_apply]
+    exact (finCongr hk).symm.exists_congr_left
   have hle : #(univ.image W) ≤ m + 1 := by
     simpa [Nat.mul_div_right m (by omega : 0 < 2)] using
       card_image_le_div_two_add_one_of_no_singleton_edge W hW_ns
   rw [← himage]
   by_contra hgt
-  have heq_card : #(univ.image W) = m + 1 := by omega
   have htree : IsTreeWalk m (canonicalWalk (cyclicPath W)) :=
-    isTreeWalk_canonicalWalk_cyclic W hW_ns heq_card
-  -- At time `m₁ + 1`, `W` visits `w₂' 0 = w₁' 0 = W 0`, so `canonicalWalk (cyclicPath W)` is `0`.
-  let mid : Fin (2 * m) := e (.inr 0)
-  have hmid_val : mid.val = m₁ + 1 := by simp [mid, e]
+    isTreeWalk_canonicalWalk_cyclic W hW_ns (by omega)
+  -- `W` revisits `W 0` at index `m₁ + 1`, so `canonicalWalk (cyclicPath W)` returns to `0` there.
+  let mid : Fin (2 * m) := finCongr hk (Fin.natAdd (m₁ + 1) 0)
   have hroot_mid : canonicalWalk (cyclicPath W) (m₁ + 1) = 0 := by
-    have hmid_eq : cyclicPath W mid.castSucc = cyclicPath W 0 := by
-      have h0_eq : (0 : Fin (2 * m)) = e (.inl 0) := by ext; simp [e]
-      rw [cyclicPath_castSucc, cyclicPath_zero, h0_eq, hW_inl, hW_inr, hw0]
-    have hc := (canonicalWalk_eq_iff (cyclicPath W) mid.castSucc 0).mpr hmid_eq
-    simpa [Fin.val_castSucc, hmid_val] using hc
-  -- The shared edge gives steps in `[0, m₁ + 1)` and `[m₁ + 1, 2 * m)` traversing the same edge.
+    have hmid_eq : cyclicPath W mid.castSucc = cyclicPath W (0 : Fin (2 * m)).castSucc := by
+      rw [cyclicPath_castSucc, cyclicPath_castSucc]
+      have h0 : (finCongr hk).symm 0 = Fin.castAdd (m₂ + 1) 0 := by ext; simp
+      have hm : (finCongr hk).symm mid = Fin.natAdd (m₁ + 1) 0 := (finCongr hk).symm_apply_apply _
+      dsimp only [W, Function.comp_apply]
+      rw [hm, h0]
+      simp [spliceWord, hr₁₂]
+    simpa [mid, Fin.val_castSucc] using
+      (canonicalWalk_eq_iff (cyclicPath W) mid.castSucc (0 : Fin (2 * m)).castSucc).mpr hmid_eq
+  -- `stepEquiv (.inl t₁) < m₁ + 1 ≤ stepEquiv (.inr t₂)` share an edge, contradicting `htree`.
   let a := stepEquiv (.inl t₁)
   let b := stepEquiv (.inr t₂)
-  have ha_lt : a.val < m₁ + 1 := by
-    simp only [a, stepEquiv, e, Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inl,
-      Equiv.addRight_symm_apply, finSumFinEquiv_apply_left, finCongr_apply, Fin.val_cast,
-      Fin.val_castAdd]
-    exact (t₁ + -r₁).isLt
-  have hb_ge : m₁ + 1 ≤ b.val := by simp [b, stepEquiv, e]
-  have hab_edge : s(W a, W (finRotate (2 * m) a)) = s(W b, W (finRotate (2 * m) b)) := by
-    rw [hedge_step (.inl t₁), hedge_step (.inr t₂)]
-    exact ht₁₂
   have hab_canon :
       s(canonicalWalk (cyclicPath W) a.val, canonicalWalk (cyclicPath W) (a.val + 1)) =
         s(canonicalWalk (cyclicPath W) b.val, canonicalWalk (cyclicPath W) (b.val + 1)) := by
     have hca : s(cyclicPath W a.castSucc, cyclicPath W a.succ) =
         s(cyclicPath W b.castSucc, cyclicPath W b.succ) := by
-      simpa only [cyclicPath_castSucc, cyclicPath_succ] using hab_edge
+      simpa only [cyclicPath_castSucc, cyclicPath_succ, a, b, hedge_step,
+        Sum.elim_inl, Sum.elim_inr] using ht₁₂
     simpa only [Sym2.eq_iff, ← canonicalWalk_eq_iff (cyclicPath W),
       Fin.val_castSucc, Fin.val_succ] using hca
+  have ha_lt : a.val < m₁ + 1 := by
+    simp only [a, stepEquiv, spliceStepEquiv, Equiv.trans_apply, finCongr_apply, Fin.val_cast,
+      Equiv.sumCongr_apply, Sum.map_inl, finSumFinEquiv_apply_left, Fin.val_castAdd]
+    exact Fin.is_lt _
+  have hb_ge : m₁ + 1 ≤ b.val := by
+    simp [b, stepEquiv, spliceStepEquiv]
   exact htree.ne_edge_of_lt_of_le hroot_mid ha_lt hb_ge b.isLt hab_canon
 
 /-- Two cyclic words `w₁, w₂ : Fin k → α` that share an unordered edge and have no singleton
 unordered edge in their combined step family visit at most `k` distinct vertices together. -/
-theorem card_image_sumElim_le {k : ℕ} (w₁ w₂ : Fin k → α)
-    (hshare : ∃ t₁ t₂, s(w₁ t₁, w₁ (finRotate k t₁)) = s(w₂ t₂, w₂ (finRotate k t₂)))
-    (hns : ∀ x : Fin k ⊕ Fin k, ∃ y ≠ x,
-      Sum.elim (fun t ↦ s(w₁ t, w₁ (finRotate k t)))
-        (fun t ↦ s(w₂ t, w₂ (finRotate k t))) y =
-      Sum.elim (fun t ↦ s(w₁ t, w₁ (finRotate k t)))
-        (fun t ↦ s(w₂ t, w₂ (finRotate k t))) x) :
+theorem card_image_sumElim_le {k : ℕ} (w₁ w₂ : Fin k → α) (h : IsConnectedPair w₁ w₂) :
     #(univ.image (Sum.elim w₁ w₂)) ≤ k :=
-  card_image_sumElim_le_of_add_eq_two_mul w₁ w₂ (two_mul k).symm hshare hns
+  card_image_sumElim_le_of_add_eq_two_mul w₁ w₂ (two_mul k).symm h.1 h.2
 
 /-- On a finite vertex type `α`, there are at most `|α| ^ m * m ^ (2 * m)` pairs `(w₁, w₂)` of
 cyclic words of lengths `k₁` and `k₂` with `k₁ + k₂ = 2 * m` that share an unordered edge and
 have no singleton unordered edge in their combined step family. -/
 theorem card_filter_connectedPair_le_of_add_eq_two_mul [Fintype α] {k₁ k₂ m : ℕ}
     (hk : k₁ + k₂ = 2 * m) :
-    #({p : (Fin k₁ → α) × (Fin k₂ → α) |
-      (∃ t₁ t₂, s(p.1 t₁, p.1 (finRotate k₁ t₁)) = s(p.2 t₂, p.2 (finRotate k₂ t₂))) ∧
-        ∀ x : Fin k₁ ⊕ Fin k₂, ∃ y ≠ x,
-          Sum.elim (fun t ↦ s(p.1 t, p.1 (finRotate k₁ t)))
-            (fun t ↦ s(p.2 t, p.2 (finRotate k₂ t))) y =
-          Sum.elim (fun t ↦ s(p.1 t, p.1 (finRotate k₁ t)))
-            (fun t ↦ s(p.2 t, p.2 (finRotate k₂ t))) x}) ≤
+    #({p : (Fin k₁ → α) × (Fin k₂ → α) | IsConnectedPair p.1 p.2}) ≤
       Fintype.card α ^ m * m ^ (2 * m) := by
   rcases eq_or_ne k₁ 0 with rfl | hk₁
-  · simp
+  · simp [IsConnectedPair]
   rcases eq_or_ne k₂ 0 with rfl | hk₂
-  · simp
+  · simp [IsConnectedPair]
   cases isEmpty_or_nonempty α with
   | inl hα =>
     have : Nonempty (Fin k₁) := ⟨⟨0, Nat.pos_of_ne_zero hk₁⟩⟩
@@ -323,13 +261,7 @@ theorem card_filter_connectedPair_le_of_add_eq_two_mul [Fintype α] {k₁ k₂ m
     simp [Finset.eq_empty_of_isEmpty, hm]
   | inr hα =>
     let eqv := Equiv.sumArrowEquivProdArrow (Fin k₁) (Fin k₂) α
-    let S : Finset ((Fin k₁ → α) × (Fin k₂ → α)) :=
-      {p | (∃ t₁ t₂, s(p.1 t₁, p.1 (finRotate k₁ t₁)) = s(p.2 t₂, p.2 (finRotate k₂ t₂))) ∧
-        ∀ x : Fin k₁ ⊕ Fin k₂, ∃ y ≠ x,
-          Sum.elim (fun t ↦ s(p.1 t, p.1 (finRotate k₁ t)))
-            (fun t ↦ s(p.2 t, p.2 (finRotate k₂ t))) y =
-          Sum.elim (fun t ↦ s(p.1 t, p.1 (finRotate k₁ t)))
-            (fun t ↦ s(p.2 t, p.2 (finRotate k₂ t))) x}
+    let S : Finset ((Fin k₁ → α) × (Fin k₂ → α)) := {p | IsConnectedPair p.1 p.2}
     let T : Finset (Fin k₁ ⊕ Fin k₂ → α) := {f | #(univ.image f) ≤ m}
     have hmaps : Set.MapsTo eqv.symm (↑S) (↑T) := by
       intro p hp
@@ -343,13 +275,7 @@ theorem card_filter_connectedPair_le_of_add_eq_two_mul [Fintype α] {k₁ k₂ m
 of length `k` share an unordered edge and have no singleton unordered edge in their combined step
 family. -/
 theorem card_filter_connectedPair_le [Fintype α] (k : ℕ) :
-    #({p : (Fin k → α) × (Fin k → α) |
-      (∃ t₁ t₂, s(p.1 t₁, p.1 (finRotate k t₁)) = s(p.2 t₂, p.2 (finRotate k t₂))) ∧
-        ∀ x : Fin k ⊕ Fin k, ∃ y ≠ x,
-          Sum.elim (fun t ↦ s(p.1 t, p.1 (finRotate k t)))
-            (fun t ↦ s(p.2 t, p.2 (finRotate k t))) y =
-          Sum.elim (fun t ↦ s(p.1 t, p.1 (finRotate k t)))
-            (fun t ↦ s(p.2 t, p.2 (finRotate k t))) x}) ≤
+    #({p : (Fin k → α) × (Fin k → α) | IsConnectedPair p.1 p.2}) ≤
       Fintype.card α ^ k * k ^ (2 * k) :=
   card_filter_connectedPair_le_of_add_eq_two_mul (two_mul k).symm
 

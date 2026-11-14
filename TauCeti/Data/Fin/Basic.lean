@@ -56,6 +56,8 @@ range, so the value is a `dite` rather than a plain application.
   `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
 * `Fin.coe_finRotate_eq_ite`: the value of `finRotate n` on any `Fin n`, with wrap-around
   determined by whether the index plus one equals `n`.
+* `Fin.finRotate_add_right` and `Fin.finRotate_add_left`: `finRotate n` commutes with addition on
+  `Fin n`.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
@@ -766,6 +768,18 @@ theorem exists_orderHom_succAbove_eq {m : ℕ} (l : Fin (m + 2)) :
     have := succAbove_predAbove (p := l.castPred hl) (i := v)
       (by rwa [castSucc_castPred])
     rwa [castSucc_castPred] at this
+
+/-- Cyclic rotation of `a + b` in `Fin n` rotates the left summand. -/
+theorem finRotate_add_right {n : ℕ} (a b : Fin n) :
+    finRotate n (a + b) = finRotate n a + b := by
+  have := a.neZero
+  rw [finRotate_apply, finRotate_apply, add_right_comm]
+
+/-- Cyclic rotation of `a + b` in `Fin n` rotates the right summand. -/
+theorem finRotate_add_left {n : ℕ} (a b : Fin n) :
+    finRotate n (a + b) = a + finRotate n b := by
+  have := a.neZero
+  rw [finRotate_apply, finRotate_apply, add_assoc]
 
 end Fin
 

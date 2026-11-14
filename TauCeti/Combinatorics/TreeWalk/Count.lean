@@ -97,12 +97,9 @@ theorem card_canonicalWalk_closedTreeWalk [Finite α] (u : ClosedTreeWalk m) :
   have h := card_canonicalWalk_eq (α := α) (fun i : Fin (2 * m + 1) ↦ u.1 i)
   rwa [canonicalWalk_closedTreeWalk, card_image_closedTreeWalk] at h
 
-private theorem closed_and_card_and_edge_of_canonicalWalk_eq {v : Fin (2 * m + 1) → α}
+private theorem isClosedTreePath_of_canonicalWalk_eq {v : Fin (2 * m + 1) → α}
     {u : ClosedTreeWalk m} (hu : canonicalWalk v = u.1) :
-    v (Fin.last (2 * m)) = v 0 ∧
-      #(univ.image v) = m + 1 ∧
-      ∀ i : Fin (2 * m),
-        #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2 := by
+    IsClosedTreePath m v := by
   refine ⟨?_, ?_, ?_⟩
   · apply (canonicalWalk_eq_iff v (Fin.last (2 * m)) 0).mp
     simp only [hu, Fin.val_last, Fin.val_zero]
@@ -128,14 +125,12 @@ private theorem closed_and_card_and_edge_of_canonicalWalk_eq {v : Fin (2 * m + 1
 /-- Grouping closed paths of length `2 * m` with `m + 1` vertices and double edge multiplicities
 by their first-visit `ClosedTreeWalk m`. -/
 def closedTreePathEquiv (m : ℕ) :
-    {v : Fin (2 * m + 1) → α // v (Fin.last (2 * m)) = v 0 ∧ #(univ.image v) = m + 1 ∧
-      ∀ i : Fin (2 * m),
-        #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2} ≃
+    {v : Fin (2 * m + 1) → α // IsClosedTreePath m v} ≃
       (u : ClosedTreeWalk m) × {v : Fin (2 * m + 1) → α // canonicalWalk v = u.1} where
   toFun v :=
     ⟨⟨canonicalWalk v.1, isTreeWalk_canonicalWalk v.1 v.2.1 v.2.2.1 v.2.2.2,
       fun _ hi ↦ canonicalWalk_eq_zero v.1 hi⟩, ⟨v.1, rfl⟩⟩
-  invFun p := ⟨p.2.1, closed_and_card_and_edge_of_canonicalWalk_eq p.2.2⟩
+  invFun p := ⟨p.2.1, isClosedTreePath_of_canonicalWalk_eq p.2.2⟩
   left_inv _ := rfl
   right_inv p := by
     rcases p with ⟨u, v, hv⟩
@@ -143,17 +138,13 @@ def closedTreePathEquiv (m : ℕ) :
 
 /-- The first component of `closedTreePathEquiv` has underlying map `canonicalWalk v.1`. -/
 @[simp] theorem closedTreePathEquiv_apply_fst_coe
-    (v : {v : Fin (2 * m + 1) → α // v (Fin.last (2 * m)) = v 0 ∧ #(univ.image v) = m + 1 ∧
-      ∀ i : Fin (2 * m),
-        #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2}) :
+    (v : {v : Fin (2 * m + 1) → α // IsClosedTreePath m v}) :
     ((closedTreePathEquiv m v).1 : ℕ → ℕ) = canonicalWalk v.1 :=
   (rfl)
 
 /-- The second component of `closedTreePathEquiv` is the path `v` itself. -/
 @[simp] theorem closedTreePathEquiv_apply_snd_coe
-    (v : {v : Fin (2 * m + 1) → α // v (Fin.last (2 * m)) = v 0 ∧ #(univ.image v) = m + 1 ∧
-      ∀ i : Fin (2 * m),
-        #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2}) :
+    (v : {v : Fin (2 * m + 1) → α // IsClosedTreePath m v}) :
     ((closedTreePathEquiv m v).2 : Fin (2 * m + 1) → α) = v.1 :=
   (rfl)
 
@@ -163,43 +154,22 @@ def closedTreePathEquiv (m : ℕ) :
     ((closedTreePathEquiv (α := α) m).symm p : Fin (2 * m + 1) → α) = p.2.1 :=
   (rfl)
 
-/-- There are finitely many closed tree walks of semi-length `k`. -/
-instance instFiniteClosedTreeWalk (k : ℕ) : Finite (ClosedTreeWalk k) :=
-  Finite.of_equiv _ (closedTreeWalkEquiv k).symm
-
 /-- On a finite vertex set `α`, there are `catalan m * (Nat.card α).descFactorial (m + 1)` closed
 paths of length `2 * m` visiting `m + 1` vertices and traversing every unordered edge twice. -/
 theorem card_closedTreePath [Finite α] (m : ℕ) :
-    Nat.card {v : Fin (2 * m + 1) → α // v (Fin.last (2 * m)) = v 0 ∧ #(univ.image v) = m + 1 ∧
-      ∀ i : Fin (2 * m),
-        #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2} =
+    Nat.card {v : Fin (2 * m + 1) → α // IsClosedTreePath m v} =
       catalan m * (Nat.card α).descFactorial (m + 1) := by
   classical
   let := Fintype.ofFinite α
-  let := Fintype.ofFinite (ClosedTreeWalk m)
   rw [Nat.card_congr (closedTreePathEquiv (α := α) m), Nat.card_sigma]
   simp only [card_canonicalWalk_closedTreeWalk, sum_const, card_univ, smul_eq_mul,
     ← Nat.card_eq_fintype_card, card_closedTreeWalk]
 
-omit [DecidableEq α] in
-private theorem cyclicPath_restrict_eq {k : ℕ} [NeZero k] {v : Fin (k + 1) → α}
-    (hclosed : v (Fin.last k) = v 0) :
-    cyclicPath (fun i : Fin k ↦ v i.castSucc) = v := by
-  funext i
-  refine Fin.lastCases ?_ ?_ i
-  · simpa only [cyclicPath_last, Fin.castSucc_zero] using hclosed.symm
-  · intro j
-    exact cyclicPath_castSucc (fun r : Fin k ↦ v r.castSucc) j
-
 /-- For `m ≠ 0`, `cyclicPath` gives an equivalence between leading cyclic trace words of length
 `2 * m` and closed double-traversal tree paths of length `2 * m`. -/
 def leadingCyclicWordEquivClosedTreePath [NeZero m] :
-    {w : Fin (2 * m) → α //
-      (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
-        #(univ.image w) = m + 1} ≃
-    {v : Fin (2 * m + 1) → α // v (Fin.last (2 * m)) = v 0 ∧ #(univ.image v) = m + 1 ∧
-      ∀ i : Fin (2 * m),
-        #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2} where
+    {w : Fin (2 * m) → α // IsLeadingCyclicWord m w} ≃
+    {v : Fin (2 * m + 1) → α // IsClosedTreePath m v} where
   toFun w := ⟨cyclicPath w.1, by simp, by simpa using w.2.2,
     card_edge_fiber_cyclicPath w.1 w.2.1 w.2.2⟩
   invFun v := by
@@ -223,29 +193,22 @@ def leadingCyclicWordEquivClosedTreePath [NeZero m] :
 
 /-- Applying `leadingCyclicWordEquivClosedTreePath` extends a cyclic word by `cyclicPath`. -/
 @[simp] theorem leadingCyclicWordEquivClosedTreePath_apply_coe [NeZero m]
-    (w : {w : Fin (2 * m) → α //
-      (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
-        #(univ.image w) = m + 1}) :
+    (w : {w : Fin (2 * m) → α // IsLeadingCyclicWord m w}) :
     (leadingCyclicWordEquivClosedTreePath w : Fin (2 * m + 1) → α) = cyclicPath w.1 :=
   (rfl)
 
 /-- Applying `leadingCyclicWordEquivClosedTreePath.symm` restricts a closed path along
 `Fin.castSucc`. -/
 @[simp] theorem leadingCyclicWordEquivClosedTreePath_symm_apply_coe [NeZero m]
-    (v : {v : Fin (2 * m + 1) → α // v (Fin.last (2 * m)) = v 0 ∧ #(univ.image v) = m + 1 ∧
-      ∀ i : Fin (2 * m),
-        #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2})
-    (i : Fin (2 * m)) :
-    ((leadingCyclicWordEquivClosedTreePath (α := α) (m := m)).symm v : Fin (2 * m) → α) i =
-      v.1 i.castSucc :=
+    (v : {v : Fin (2 * m + 1) → α // IsClosedTreePath m v}) :
+    ((leadingCyclicWordEquivClosedTreePath (α := α) (m := m)).symm v : Fin (2 * m) → α) =
+      fun i ↦ v.1 i.castSucc :=
   (rfl)
 
 /-- For `m ≠ 0`, there are `catalan m * (Nat.card α).descFactorial (m + 1)` leading cyclic words
 of length `2 * m` on a finite vertex type `α`. -/
 theorem card_leadingCyclicWord [Finite α] [NeZero m] :
-    Nat.card {w : Fin (2 * m) → α //
-      (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
-        #(univ.image w) = m + 1} =
+    Nat.card {w : Fin (2 * m) → α // IsLeadingCyclicWord m w} =
       catalan m * (Nat.card α).descFactorial (m + 1) := by
   rw [Nat.card_congr leadingCyclicWordEquivClosedTreePath, card_closedTreePath]
 
@@ -253,9 +216,7 @@ theorem card_leadingCyclicWord [Finite α] [NeZero m] :
 `catalan m * (Fintype.card α).descFactorial (m + 1)` singleton-free cyclic words of length `2 * m`
 visiting `m + 1` vertices. -/
 theorem card_filter_leadingCyclicWord [Fintype α] [NeZero m] :
-    #({w : Fin (2 * m) → α |
-      (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
-        #(univ.image w) = m + 1}) =
+    #({w : Fin (2 * m) → α | IsLeadingCyclicWord m w}) =
       catalan m * (Fintype.card α).descFactorial (m + 1) := by
   have h := card_leadingCyclicWord (α := α) (m := m)
   rwa [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, Fintype.card_subtype] at h

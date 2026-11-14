@@ -77,8 +77,11 @@ spectral measures of a sample covariance matrix `X * Xᴴ / n` and of its compan
   matrix is concentrated on the nonnegative reals;
 * `Matrix.eigenvalueMeasure_toMeasure_of_isNilpotent` — a nilpotent matrix has eigenvalue measure
   `δ₀`;
-* `Matrix.integral_pow_spectralMeasure` — the `k`-th moment of the spectral measure is the
-  normalized trace of `A ^ k`;
+* `Matrix.integrable_spectralMeasure`, `Matrix.integrable_pow_spectralMeasure` — every function into
+  a normed additive group (in particular every monomial `x ↦ x ^ k`) is integrable against the
+  spectral measure;
+* `Matrix.integral_pow_spectralMeasure`, `Matrix.ofReal_integral_pow_spectralMeasure` — the `k`-th
+  moment of the spectral measure is the normalized trace of `A ^ k`;
 * `Matrix.resolventTransform_spectralMeasure` — the resolvent transform of the spectral measure is
   the normalized trace of the resolvent `(A - z • 1)⁻¹`;
 * `Matrix.spectralMeasure_toMeasure_of_charpoly_eq_X_pow_mul`,
@@ -310,6 +313,21 @@ theorem eigenvalueMeasure_toMeasure_of_isNilpotent {A : Matrix n n ℂ} (hA : Is
     Multiset.map_singleton, Multiset.sum_singleton, ← Nat.cast_smul_eq_nsmul ℝ≥0∞, smul_smul,
     ENNReal.inv_mul_cancel (by simp) (by simp), one_smul]
 
+/-- Every function into a normed additive group is integrable against `A.spectralMeasure hA`,
+because singletons in `ℝ` are measurable and the spectral measure is a finite sum of Dirac
+masses. -/
+theorem integrable_spectralMeasure {E : Type*} [NormedAddCommGroup E]
+    (A : Matrix n n 𝕜) (hA : A.IsHermitian) (f : ℝ → E) :
+    Integrable f (A.spectralMeasure hA : Measure ℝ) := by
+  rw [spectralMeasure_def, empiricalMeasureOfFintype_toMeasure]
+  exact integrable_finsetSum_measure.mpr fun i _ =>
+    (integrable_dirac (by simp)).smul_measure (by simp)
+
+/-- Every monomial `x ↦ x ^ k` is integrable against `A.spectralMeasure hA`. -/
+theorem integrable_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) (k : ℕ) :
+    Integrable (fun x : ℝ => x ^ k) (A.spectralMeasure hA : Measure ℝ) :=
+  integrable_spectralMeasure A hA _
+
 /-- The `k`-th moment of the spectral measure of a Hermitian matrix is the normalized trace of
 `A ^ k`: `∫ x ^ k dL_A = (card n)⁻¹ * Re tr (A ^ k)`. -/
 theorem integral_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) (k : ℕ) :
@@ -317,6 +335,15 @@ theorem integral_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) 
       ((Fintype.card n : ℕ) : ℝ)⁻¹ * RCLike.re (A ^ k).trace := by
   rw [integral_spectralMeasure, smul_eq_mul, hA.trace_pow_eq_sum_eigenvalues_pow, map_sum]
   simp_rw [← RCLike.ofReal_pow, RCLike.ofReal_re]
+
+/-- Cast into `𝕜`, the `k`-th moment of `A.spectralMeasure hA` equals the normalized trace
+`((Fintype.card n : ℕ) : 𝕜)⁻¹ * (A ^ k).trace`, since `(A ^ k).trace` is real for Hermitian `A`. -/
+theorem ofReal_integral_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) (k : ℕ) :
+    RCLike.ofReal (∫ x, x ^ k ∂(A.spectralMeasure hA : Measure ℝ)) =
+      ((Fintype.card n : ℕ) : 𝕜)⁻¹ * (A ^ k).trace := by
+  rw [integral_spectralMeasure, smul_eq_mul, RCLike.ofReal_mul, RCLike.ofReal_inv,
+    RCLike.ofReal_natCast, hA.trace_pow_eq_sum_eigenvalues_pow, RCLike.ofReal_sum]
+  simp_rw [RCLike.ofReal_pow]
 
 /-- The positive moments of the two Gram-matrix spectral measures agree after weighting by the
 dimensions of their respective matrices, over any `RCLike` field and finite nonempty index types. -/

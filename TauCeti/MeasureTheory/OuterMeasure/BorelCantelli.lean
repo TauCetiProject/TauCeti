@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 import Mathlib.Order.Filter.EventuallyConst
+import Mathlib.Topology.Instances.Real.Lemmas
 
 /-!
-# Sequences of sets with summable consecutive symmetric differences
+# Sequences of sets with summable consecutive symmetric differences and Borel--Cantelli limits
 
 If consecutive sets of a sequence differ by sets of summable measure, the Borel--Cantelli lemma
 shows that almost every point eventually stays inside the sets or eventually stays outside them.
@@ -17,15 +19,20 @@ Membership in the sets therefore converges almost everywhere to membership in th
 This turns a sequence of approximate constructions whose corrections have summable mass into a
 limiting set, as in the allocation of disjoint sets of prescribed mass in a laminar family.
 
+Similarly, if for every positive threshold `ε > 0` the deviation sets `{x | ε ≤ dist (f n x) (a x)}`
+have summable outer measure, Borel--Cantelli along the countable sequence `ε = (k + 1)⁻¹` yields
+almost-everywhere convergence `f n x → a x`.
+
 ## Main statements
 
 * `TauCeti.MeasureTheory.ae_eventually_mem_iff_mem_liminf`
+* `TauCeti.MeasureTheory.ae_tendsto_of_tsum_measure_ge_ne_top`
 -/
 
 public section
 
 open Filter MeasureTheory Set
-open scoped ENNReal symmDiff
+open scoped ENNReal symmDiff Topology
 
 namespace TauCeti.MeasureTheory
 
@@ -49,5 +56,21 @@ theorem ae_eventually_mem_iff_mem_liminf {s : ℕ → Set α}
     obtain ⟨M, hM⟩ := eventually_atTop.1 h
     exact (hconst (max M N) (le_max_right M N)).1 (hM _ (le_max_left M N))
   exact eventually_atTop.2 ⟨N, fun n hn ↦ (hconst n hn).trans hlim.symm⟩
+
+/-- **Borel--Cantelli criterion for almost-everywhere convergence.** If for every `ε > 0` the
+deviation sets `{x | ε ≤ dist (f n x) (a x)}` have summable outer measure, then `f n x → a x`
+almost everywhere. No measurability assumptions on `f` or `a` are required. -/
+theorem ae_tendsto_of_tsum_measure_ge_ne_top {β : Type*} [PseudoMetricSpace β]
+    {f : ℕ → α → β} {a : α → β}
+    (h : ∀ {ε : ℝ}, 0 < ε → ∑' n, μ {x | ε ≤ dist (f n x) (a x)} ≠ ∞) :
+    ∀ᵐ x ∂μ, Tendsto (fun n ↦ f n x) atTop (𝓝 (a x)) := by
+  have hbc (k : ℕ) : ∀ᵐ x ∂μ, ∀ᶠ n in atTop, dist (f n x) (a x) < (k + 1 : ℝ)⁻¹ := by
+    simpa only [mem_ofPred_eq, not_le] using
+      ae_eventually_notMem (h (inv_pos.mpr (by positivity)))
+  filter_upwards [ae_all_iff.2 hbc] with x hx
+  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
+  obtain ⟨k, hk⟩ := exists_nat_one_div_lt hε
+  filter_upwards [hx k] with n hn
+  exact hn.trans (by simpa only [one_div] using hk)
 
 end TauCeti.MeasureTheory

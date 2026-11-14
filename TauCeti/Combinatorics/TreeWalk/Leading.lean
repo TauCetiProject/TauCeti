@@ -22,6 +22,16 @@ endpoint. Equality of vertices, and hence equality of unordered edges, is preser
 `isTreeWalk_canonicalWalk_cyclic` applies the vertex and edge counting estimates to identify
 canonicalized leading cyclic words as tree walks.
 
+## Main definitions
+
+* `TauCeti.TreeWalk.cyclicPath`: extends a cyclic word `Fin k → α` to a closed path
+  `Fin (k + 1) → α` by repeating its initial vertex, inverted on closed paths by
+  `TauCeti.TreeWalk.cyclicPath_restrict_eq`.
+* `TauCeti.TreeWalk.IsClosedTreePath`: predicate for closed paths of length `2 * m` visiting
+  `m + 1` vertices and traversing every unordered edge twice.
+* `TauCeti.TreeWalk.IsLeadingCyclicWord`: predicate for cyclic trace words of length `2 * m` with
+  no singleton unordered edge that visit `m + 1` vertices.
+
 ## References
 
 * G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*, Cambridge
@@ -61,6 +71,17 @@ theorem cyclicPath_apply {k : ℕ} [NeZero k] (w : Fin k → α) (i : Fin (k + 1
     cyclicPath w (Fin.last k) = w 0 := by
   simp [cyclicPath]
 
+/-- Extending the restriction `i ↦ v i.castSucc` of a closed path `v` by `cyclicPath` recovers
+`v`. -/
+@[simp] theorem cyclicPath_restrict_eq {k : ℕ} [NeZero k] {v : Fin (k + 1) → α}
+    (hclosed : v (Fin.last k) = v 0) :
+    cyclicPath (fun i : Fin k ↦ v i.castSucc) = v := by
+  funext i
+  refine Fin.lastCases ?_ ?_ i
+  · simpa only [cyclicPath_last, Fin.castSucc_zero] using hclosed.symm
+  · intro j
+    exact cyclicPath_castSucc (fun r : Fin k ↦ v r.castSucc) j
+
 /-- Repeating the initial vertex at the endpoint preserves the set of visited vertices. -/
 @[simp] theorem range_cyclicPath {k : ℕ} [NeZero k] (w : Fin k → α) :
     Set.range (cyclicPath w) = Set.range w := by
@@ -86,6 +107,19 @@ theorem comp_cyclicPath {β : Type*} {k : ℕ} [NeZero k] (f : α → β) (w : F
     rfl
 
 variable [DecidableEq α]
+
+/-- A closed path of length `2 * m` visiting `m + 1` distinct vertices and traversing every
+unordered edge exactly twice. -/
+abbrev IsClosedTreePath (m : ℕ) (v : Fin (2 * m + 1) → α) : Prop :=
+  v (Fin.last (2 * m)) = v 0 ∧ #(univ.image v) = m + 1 ∧
+    ∀ i : Fin (2 * m),
+      #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2
+
+/-- A leading cyclic trace word of length `2 * m`: every unordered step edge occurs at least twice
+and the word visits `m + 1` distinct vertices. -/
+abbrev IsLeadingCyclicWord (m : ℕ) (w : Fin (2 * m) → α) : Prop :=
+  (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
+    #(univ.image w) = m + 1
 
 @[simp] theorem image_cyclicPath {k : ℕ} [NeZero k] (w : Fin k → α) :
     univ.image (cyclicPath w) = univ.image w := by
