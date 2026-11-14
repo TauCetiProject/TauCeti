@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
+public import Mathlib.CategoryTheory.Limits.Shapes.StrongEpi
 
 /-!
 # Isomorphisms and base change of objects over a base
@@ -24,12 +25,17 @@ induced morphism `A ×_S T ⟶ B ×_S T`, which is the pullback of `g` along the
 `T` over `S'` agree, `T ×_{S'} (S' ×_S X) ≅ T ×_S X` (`pullbackRightPullbackFstIso`), naturally in
 `T`.
 
+Factorization through a monomorphism can be checked after base change whenever the projection
+to the source is a strong epimorphism. This uses Mathlib's `StrongEpi.llp` and `CommSq.lift`.
+
 ## Main declarations
 
 * `CategoryTheory.Over.isIso_left`: the underlying morphism of an isomorphism over a base is
   an isomorphism.
 * `CategoryTheory.Over.isPullback_pullback_map_left`: base change of a morphism over `S` is a
   pullback of it.
+* `CategoryTheory.Over.exists_factor_thru_pullback_iff`: factorization through a monomorphism
+  can be checked after base change if the projection to the source is a strong epimorphism.
 * `CategoryTheory.Over.pullbackRightPullbackFstIso_inv_comp_pullback_map`: the identification
   `T ×_S X ≅ T ×_{S'} (S' ×_S X)` is natural in `T` over `S'`.
 -/
@@ -73,6 +79,27 @@ theorem pullbackRightPullbackFstIso_inv_comp_pullback_map {C : Type u} [Category
   · apply pullback.hom_ext
     · simp
     · simp
+
+/-- A morphism over `S` factors through a monomorphism if and only if its base change along
+`p` does, provided the projection to its source is a strong epimorphism. -/
+theorem exists_factor_thru_pullback_iff {C : Type u} [Category.{v} C]
+    {S S' : C} (p : S' ⟶ S) [HasPullbacksAlong p]
+    {X Y Z : Over S} [StrongEpi (pullback.fst Z.hom p)]
+    (i : X ⟶ Y) [Mono i] (f : Z ⟶ Y) :
+    (∃ g : (Over.pullback p).obj Z ⟶ (Over.pullback p).obj X,
+      g ≫ (Over.pullback p).map i = (Over.pullback p).map f) ↔
+      ∃ g : Z ⟶ X, g ≫ i = f := by
+  constructor
+  · rintro ⟨g, hg⟩
+    have sq : CommSq (g.left ≫ pullback.fst X.hom p) (pullback.fst Z.hom p) i.left f.left := by
+      constructor
+      simpa using congr(($hg).left ≫ pullback.fst Y.hom p)
+    refine ⟨Over.homMk sq.lift ?_, ?_⟩
+    · simpa only [Category.assoc, i.w, f.w] using congr($(sq.fac_right) ≫ Y.hom)
+    · ext1
+      exact sq.fac_right
+  · rintro ⟨g, rfl⟩
+    exact ⟨(Over.pullback p).map g, ((Over.pullback p).map_comp g i).symm⟩
 
 end Over
 
