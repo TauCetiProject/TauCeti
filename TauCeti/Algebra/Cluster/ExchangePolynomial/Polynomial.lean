@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.ExchangePolynomial.Basic
+public import TauCeti.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.OfFn
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.Eval.Degree
@@ -89,8 +90,13 @@ theorem toPolynomial_injective [Nontrivial R] :
   intro H G h
   apply ext
   · simpa using congrArg Polynomial.natDegree h
-  · intro i
+  · intro i _hi
     simpa using congrArg (fun p : R[X] => p.coeff i) h
+
+/-- Polynomial realizations agree exactly when the exchange polynomials do. -/
+@[simp] theorem toPolynomial_inj [Nontrivial R] {H G : ExchangePolynomial R} :
+    H.toPolynomial = G.toPolynomial ↔ H = G :=
+  toPolynomial_injective.eq_iff
 
 /-- Regard a positive-degree polynomial with unit endpoints as exchange data. -/
 def _root_.Polynomial.toExchangePolynomial (p : R[X]) (hpos : 0 < p.natDegree)
@@ -109,6 +115,18 @@ def _root_.Polynomial.toExchangePolynomial (p : R[X]) (hpos : 0 < p.natDegree)
 @[simp] theorem _root_.Polynomial.coeff_toExchangePolynomial (p : R[X]) (hpos : 0 < p.natDegree)
     (h0 : IsUnit (p.coeff 0)) (hr : IsUnit p.leadingCoeff) (i : ℕ) :
     (p.toExchangePolynomial hpos h0 hr).coeff i = p.coeff i := (rfl)
+
+@[simp] theorem _root_.Polynomial.constantUnit_toExchangePolynomial (p : R[X])
+    (hpos : 0 < p.natDegree) (h0 : IsUnit (p.coeff 0)) (hr : IsUnit p.leadingCoeff) :
+    (p.toExchangePolynomial hpos h0 hr).constantUnit = h0.unit :=
+  Units.ext (by simp)
+
+@[simp] theorem _root_.Polynomial.leadingUnit_toExchangePolynomial (p : R[X])
+    (hpos : 0 < p.natDegree) (h0 : IsUnit (p.coeff 0)) (hr : IsUnit p.leadingCoeff) :
+    (p.toExchangePolynomial hpos h0 hr).leadingUnit = hr.unit :=
+  Units.ext (by simp only [TauCeti.ExchangePolynomial.coe_leadingUnit,
+    degree_toExchangePolynomial, coeff_toExchangePolynomial, Polynomial.leadingCoeff,
+    IsUnit.unit_spec])
 
 @[simp] theorem _root_.Polynomial.toPolynomial_toExchangePolynomial (p : R[X])
     (hpos : 0 < p.natDegree)
@@ -179,29 +197,13 @@ theorem eval₂_toPolynomial_reverse_mul_pow (H : ExchangePolynomial R) (f : R �
     (x : Sˣ) :
     H.reverse.toPolynomial.eval₂ f (↑x⁻¹) * (x : S) ^ H.degree =
       H.toPolynomial.eval₂ f (x : S) := by
-  rw [toPolynomial_reverse]
-  refine induction_with_natDegree_le
-    (fun p : R[X] =>
-      (p.reflect H.degree).eval₂ f (↑x⁻¹) * (x : S) ^ H.degree = p.eval₂ f (x : S))
-    H.degree ?zero ?C_mul_pow ?add H.toPolynomial
-    (natDegree_toPolynomial_le H)
-  · simp
-  · intro n r _hr hn
-    conv_rhs => rw [C_mul_X_pow_eq_monomial]
-    rw [reflect_C_mul_X_pow, revAt_le hn]
-    simp only [C_mul_X_pow_eq_monomial, eval₂_monomial]
-    conv in (x : S) ^ H.degree => rw [← Nat.sub_add_cancel hn]
-    rw [pow_add]
-    conv_lhs => rw [← mul_assoc, mul_assoc (f r),
-      pow_mul_pow_eq_one _ x.inv_mul]
-    simp
-  · intro p q _hpq _hq hp hq'
-    simp only [reflect_add, eval₂_add, add_mul, hp, hq']
+  simpa only [toPolynomial_reverse, invOf_units] using
+    H.toPolynomial.eval₂_reflect_mul_pow' f (x : S) H.natDegree_toPolynomial_le
 
 /-- Reversal preserves the sum of the coefficients. -/
 theorem eval₂_one_toPolynomial_reverse (H : ExchangePolynomial R) (f : R →+* S) :
     H.reverse.toPolynomial.eval₂ f 1 = H.toPolynomial.eval₂ f 1 := by
-  simpa using H.eval₂_toPolynomial_reverse_mul_pow f 1
+  simp
 
 /-- Evaluation is the finite sum of the realized coefficients times the corresponding powers. -/
 theorem eval₂_toPolynomial (H : ExchangePolynomial R) (f : R →+* S) (x : S) :
@@ -217,7 +219,7 @@ theorem eval_toPolynomial (H : ExchangePolynomial R) (x : R) :
 /-- Reversal preserves evaluation at one. -/
 theorem eval_one_toPolynomial_reverse (H : ExchangePolynomial R) :
     H.reverse.toPolynomial.eval 1 = H.toPolynomial.eval 1 := by
-  simpa using H.eval₂_one_toPolynomial_reverse (.id R)
+  simp
 
 /-- The reciprocal identity for polynomial evaluation holds at every coefficient unit. -/
 theorem eval_toPolynomial_reverse_mul_pow (H : ExchangePolynomial R) (x : Rˣ) :
