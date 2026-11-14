@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Group.Defs
 public import TauCeti.Algebra.Order.SuccPred
+public import TauCeti.Order.SuccPred.Basic
 public import Mathlib.Tactic.Abel
 
 /-!
@@ -74,7 +75,8 @@ there is one. The instance `One Λ` is not used, because it need not be that ele
 * `TauCeti.InfWord.take_append_drop`: `w.take β ++ w.drop β = w`.
 * `TauCeti.InfWord.take_append`, `TauCeti.InfWord.drop_append`: the segments of a concatenation.
 * `TauCeti.InfWord.take_take`, `TauCeti.InfWord.drop_drop`: segments of segments.
-* `TauCeti.InfWord.letter_injective`: a word is determined by its letters.
+* `TauCeti.InfWord.letter_injective`, `TauCeti.InfWord.letter_inj`: a word is determined by its
+  letters.
 * `TauCeti.InfWord.take_eq_take_iff_forall_letter_eq`,
   `TauCeti.InfWord.take_succ_eq_take_succ_iff`: when two words have the same initial segment.
 * `TauCeti.InfWord.append_eq_append_iff`: two factorisations of one word differ by a common
@@ -84,8 +86,9 @@ there is one. The instance `One Λ` is not used, because it need not be that ele
 * `TauCeti.InfWord.letter_inv_succ_zero`, `TauCeti.InfWord.letter_inv_length`: the first and last
   letters of `w⁻¹` are the inverses of the last and first letters of `w`.
 * `TauCeti.InfWord.isReduced_append_iff`: the criterion for a concatenation to be reduced.
-* `TauCeti.InfWord.isReduced_inv_append_iff`: `u⁻¹ ++ v` is reduced exactly when `u`, `v` are
-  reduced and, when both are nonempty, their first letters differ.
+* `TauCeti.InfWord.isReduced_inv_append_iff`, `TauCeti.InfWord.isReduced_append_inv_iff`:
+  `u⁻¹ ++ v` (resp. `u ++ v⁻¹`) is reduced exactly when `u`, `v` are reduced and, when both are
+  nonempty, their first (resp. last) letters differ.
 * `TauCeti.InfWord.isReduced_inv`, `TauCeti.InfWord.IsReduced.take`,
   `TauCeti.InfWord.IsReduced.drop`: inverses and segments of reduced words are reduced.
 * `TauCeti.InfWord.isReduced_ofFun_const`: the constant word `x^α` is reduced.
@@ -197,6 +200,11 @@ theorem letter_injective : Function.Injective (letter : InfWord Λ X → Λ → 
     · exact hu ▸ v.length_nonneg
     · exact ((v.isSome_letter _).1 (h ▸ (u.isSome_letter _).2 ⟨hu, le_rfl⟩)).2
   exact fun u v h => ext (le_antisymm (key h) (key h.symm)) fun β _ _ => congrFun h β
+
+/-- Two words are equal exactly when they have the same letters. -/
+@[simp]
+theorem letter_inj {u v : InfWord Λ X} : u.letter = v.letter ↔ u = v :=
+  letter_injective.eq_iff
 
 end PartialOrder
 
@@ -761,6 +769,13 @@ nonempty, their first letters differ. -/
 theorem isReduced_inv_append_iff : (u⁻¹ ++ v).IsReduced ↔ u.IsReduced ∧ v.IsReduced ∧
     (0 < u.length → 0 < v.length → v.letter (Order.succ 0) ≠ u.letter (Order.succ 0)) := by
   simp [isReduced_append_iff, Prod.map_comp_map, Bool.involutive_not.comp_self]
+
+/-- The concatenation `u ++ v⁻¹` is reduced exactly when `u` and `v` are reduced and, if both are
+nonempty, their last letters differ. -/
+theorem isReduced_append_inv_iff : (u ++ v⁻¹).IsReduced ↔ u.IsReduced ∧ v.IsReduced ∧
+    (0 < u.length → 0 < v.length → v.letter v.length ≠ u.letter u.length) := by
+  simp [isReduced_append_iff,
+    (Option.map_injective (Function.injective_id.prodMap Bool.involutive_not.injective)).eq_iff]
 
 /-- `w⁻¹ ++ w` is reduced only for the empty word. -/
 @[simp]

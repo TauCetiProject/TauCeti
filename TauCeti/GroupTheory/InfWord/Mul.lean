@@ -19,10 +19,20 @@ non-Archimedean `Λ` the common initial segments of two words need not have a lo
 
 The operation is recorded as the relation `TauCeti.InfWord.IsMul u v w`, read as: `u ∗ v` is
 defined and equals `w`, and as the partial function `TauCeti.InfWord.mul` with values in `Part`.
-It is functional (`IsMul.unique`), and it satisfies the axioms (P1)–(P4) of a pregroup: the empty
-word is a unit, `u⁻¹` is an inverse of `u`, `(u ∗ v)⁻¹ = v⁻¹ ∗ u⁻¹`, and if `u ∗ v` and `v ∗ w`
-are defined then `(u ∗ v) ∗ w` is defined if and only if `u ∗ (v ∗ w)` is, and they are then
-equal.
+It is functional (`IsMul.unique`), and it satisfies the first four axioms (P1)–(P4) of Stallings'
+pregroups: the empty word is a unit, `u⁻¹` is an inverse of `u`, `(u ∗ v)⁻¹ = v⁻¹ ∗ u⁻¹`, and if
+`u ∗ v` and `v ∗ w` are defined then `(u ∗ v) ∗ w` is defined if and only if `u ∗ (v ∗ w)` is,
+and they are then equal. Stallings' fifth axiom (P5) asks that if `u ∗ v`, `v ∗ w` and `w ∗ z` are
+defined then `u ∗ v ∗ w` or `v ∗ w ∗ z` is defined. It fails for the set of all reduced words in
+general, although it holds on some subsets of it.
+
+A set of reduced words that is a group under `∗` is called a subgroup of the reduced words, and
+`∗` is the multiplication of these groups of infinite words. For instance, for `Λ = ℤ` all reduced
+words form such a group, isomorphic to the free group on `X`. If `δ` is the length of the longest
+common initial segment of `u` and `v`, then `|u⁻¹ ∗ v| + 2 δ = |u| + |v|`. So `δ` is the Gromov
+product `(|u| + |v| - |u⁻¹ ∗ v|) / 2` of the length function `w ↦ |w|`, and in particular it lies
+in `Λ`. This identity is the key step in showing that the length of words is a free Lyndon length
+function with values in `Λ` on groups of cyclically decomposable words.
 
 ## Main definitions
 
@@ -39,20 +49,29 @@ equal.
 * `TauCeti.InfWord.isMul_inv_left_iff`, `TauCeti.InfWord.isMul_inv_right_iff`: `u ∗ v = w`
   exactly when `u⁻¹ ∗ w = v`, exactly when `w ∗ v⁻¹ = u`; hence `IsMul.left_cancel` and
   `IsMul.right_cancel`.
-* `TauCeti.InfWord.isMul_append_inv_append_iff`: `(p ∘ q⁻¹) ∗ (q ∘ r) = p ∗ r`.
+* `TauCeti.InfWord.isMul_append_inv_append_iff`, `TauCeti.InfWord.isMul_append_inv_append_iff'`:
+  `(p ∘ q⁻¹) ∗ (q ∘ r) = p ∗ r`.
 * `TauCeti.InfWord.isMul_append_left_iff_isMul_append_right`: `(p ∘ m) ∗ q = p ∗ (m ∘ q)`.
 * `TauCeti.InfWord.exists_isMul_iff`: for reduced `u`, `v`, the product `u ∗ v` is defined if and
   only if the lengths of the common initial segments of `u⁻¹` and `v` have a greatest element `δ`;
   `TauCeti.InfWord.isMul_of_isGreatest` gives the product, and
   `TauCeti.InfWord.exists_isMul_inv_left_iff` is the case of `u⁻¹ ∗ v`.
-* `TauCeti.InfWord.IsMul.length_add_two_nsmul_eq`: `|u ∗ v| + 2 δ = |u| + |v|`.
+* `TauCeti.InfWord.IsMul.length_add_two_nsmul_eq`: `|u ∗ v| + 2 δ = |u| + |v|`, where `δ` is the
+  length of the longest common initial segment of `u⁻¹` and `v`; and
+  `TauCeti.InfWord.length_add_two_nsmul_eq_of_isMul_inv_left`: `|u⁻¹ ∗ v| + 2 δ = |u| + |v|`,
+  where `δ` is the length of the longest common initial segment of `u` and `v`.
+* `TauCeti.InfWord.mul_eq_some_iff`: `u.mul v = Part.some w ↔ IsMul u v w`; and
+  `TauCeti.InfWord.empty_mul`, `TauCeti.InfWord.mul_empty`, `TauCeti.InfWord.inv_mul_self`,
+  `TauCeti.InfWord.mul_inv_self`, `TauCeti.InfWord.mul_inv_rev`, `TauCeti.InfWord.mul_assoc`:
+  (P1)–(P4) for the partial function `TauCeti.InfWord.mul`.
 
 ## References
 
 * A. Myasnikov, V. Remeslennikov, D. Serbin, *Regular free length functions on Lyndon's free
   `ℤ[t]`-group `F^{ℤ[t]}`*, Contemp. Math. 378 (2005), 37–77, §3.2, Definition 3.2 and
-  Theorem 3.4; the function `δ(u, v)` and the identity `2 δ(u, v) = |u| + |v| - |u⁻¹ ∗ v|` in the
-  proof of Theorem 4.1.
+  Theorem 3.4; §2.2 for Stallings' pregroups and (P5); Example 3.5 for subgroups of reduced words;
+  the function `δ(u, v)` and the identity `2 δ(u, v) = |u| + |v| - |u⁻¹ ∗ v|` in the proof of
+  Theorem 4.1, and Corollary 4.2.
 -/
 
 public section
@@ -125,7 +144,7 @@ theorem isMul_append_inv_append_iff {p q r : InfWord Λ X} (h₁ : (p ++ q⁻¹)
 
 /-- `(p ∘ q) ∗ (q⁻¹ ∘ r) = p ∗ r`: if `p ++ q` and `q⁻¹ ++ r` are reduced, then their product is
 defined exactly when `p ∗ r` is, and the two products agree. -/
-theorem isMul_append_append_inv_iff {p q r : InfWord Λ X} (h₁ : (p ++ q).IsReduced)
+theorem isMul_append_inv_append_iff' {p q r : InfWord Λ X} (h₁ : (p ++ q).IsReduced)
     (h₂ : (q⁻¹ ++ r).IsReduced) : IsMul (p ++ q) (q⁻¹ ++ r) z ↔ IsMul p r z := by
   simpa using isMul_append_inv_append_iff (q := q⁻¹) (by simpa using h₁) h₂
 
@@ -188,11 +207,13 @@ theorem IsMul.inv (h : IsMul u v w) : IsMul v⁻¹ u⁻¹ w⁻¹ := by
 theorem isMul_inv_inv_inv_iff : IsMul v⁻¹ u⁻¹ w⁻¹ ↔ IsMul u v w :=
   ⟨fun h => by simpa using h.inv, IsMul.inv⟩
 
-private theorem IsMul.inv_left (h : IsMul u v w) : IsMul u⁻¹ w v := by
+/-- If `u ∗ v = w`, then `u⁻¹ ∗ w = v`. -/
+theorem IsMul.inv_left (h : IsMul u v w) : IsMul u⁻¹ w v := by
   obtain ⟨hu, hv, a, b, c, rfl, rfl, rfl, hw⟩ := h
   exact ⟨hu.inv, hw, c, b, a, by simp, rfl, rfl, hv⟩
 
-private theorem IsMul.inv_right (h : IsMul u v w) : IsMul w v⁻¹ u := by
+/-- If `u ∗ v = w`, then `w ∗ v⁻¹ = u`. -/
+theorem IsMul.inv_right (h : IsMul u v w) : IsMul w v⁻¹ u := by
   obtain ⟨hu, hv, a, b, c, rfl, rfl, rfl, hw⟩ := h
   exact ⟨hw, hv.inv, a, c⁻¹, b⁻¹, by simp, by simp, rfl, hu⟩
 
@@ -354,6 +375,19 @@ theorem exists_isMul_inv_left_iff (hu : u.IsReduced) (hv : v.IsReduced) :
       ∃ δ, IsGreatest {β | 0 ≤ β ∧ β ≤ u.length ∧ β ≤ v.length ∧ u.take β = v.take β} δ := by
   simpa using exists_isMul_iff hu.inv hv
 
+/-- If `u⁻¹ ∗ v` is defined, then the common initial segments of `u` and `v` have a longest
+element. -/
+theorem exists_isGreatest_of_isMul_inv_left (h : IsMul u⁻¹ v w) :
+    ∃ δ, IsGreatest {β | 0 ≤ β ∧ β ≤ u.length ∧ β ≤ v.length ∧ u.take β = v.take β} δ := by
+  simpa using h.exists_isGreatest
+
+/-- `|u⁻¹ ∗ v| + 2 δ = |u| + |v|`, where `δ` is the length of the longest common initial segment of
+`u` and `v`. -/
+theorem length_add_two_nsmul_eq_of_isMul_inv_left (h : IsMul u⁻¹ v w)
+    (hδ : IsGreatest {β | 0 ≤ β ∧ β ≤ u.length ∧ β ≤ v.length ∧ u.take β = v.take β} δ) :
+    w.length + 2 • δ = u.length + v.length := by
+  simpa using h.length_add_two_nsmul_eq (by simpa using hδ)
+
 /-! ### The partial product as a partial function -/
 
 /-- The partial product `u ∗ v` of two words: it is defined exactly when `IsMul u v w` holds for
@@ -362,12 +396,64 @@ noncomputable def mul (u v : InfWord Λ X) : Part (InfWord Λ X) :=
   ⟨∃ w, IsMul u v w, Exists.choose⟩
 
 /-- `u ∗ v` is defined exactly when `IsMul u v w` holds for some `w`. -/
+@[simp, grind =]
 theorem mul_dom_iff : (u.mul v).Dom ↔ ∃ w, IsMul u v w := Iff.rfl
 
 /-- `w` is the value of `u ∗ v` exactly when `IsMul u v w`. -/
-@[simp]
+@[simp, grind =]
 theorem mem_mul_iff : w ∈ u.mul v ↔ IsMul u v w :=
   ⟨fun ⟨h, hw⟩ => hw ▸ h.choose_spec, fun h => ⟨⟨w, h⟩, IsMul.unique (Exists.choose_spec _) h⟩⟩
+
+/-- When `u ∗ v` is defined, its value is the product of `u` and `v`. -/
+theorem isMul_get (h : (u.mul v).Dom) : IsMul u v ((u.mul v).get h) :=
+  mem_mul_iff.1 (Part.get_mem h)
+
+/-- `u ∗ v = w` exactly when `IsMul u v w`. -/
+@[simp]
+theorem mul_eq_some_iff : u.mul v = Part.some w ↔ IsMul u v w :=
+  Part.eq_some_iff.trans mem_mul_iff
+
+/-- `u ∗ v` is undefined exactly when `IsMul u v w` holds for no `w`. -/
+@[simp]
+theorem mul_eq_none_iff : u.mul v = Part.none ↔ ∀ w, ¬IsMul u v w := by
+  simp [Part.eq_none_iff]
+
+/-- The product of two words is their concatenation when it is reduced. -/
+theorem mul_eq_some_append (h : (u ++ v).IsReduced) : u.mul v = Part.some (u ++ v) :=
+  mul_eq_some_iff.2 (isMul_append h)
+
+/-- (P1) `ε ∗ u = u`. -/
+theorem empty_mul (hu : u.IsReduced) : (empty Λ X).mul u = Part.some u :=
+  mul_eq_some_iff.2 (isMul_empty_left hu)
+
+/-- (P1) `u ∗ ε = u`. -/
+theorem mul_empty (hu : u.IsReduced) : u.mul (empty Λ X) = Part.some u :=
+  mul_eq_some_iff.2 (isMul_empty_right hu)
+
+/-- (P2) `u⁻¹ ∗ u = ε`. -/
+theorem inv_mul_self (hu : u.IsReduced) : u⁻¹.mul u = Part.some (empty Λ X) :=
+  mul_eq_some_iff.2 (isMul_inv_self hu)
+
+/-- (P2) `u ∗ u⁻¹ = ε`. -/
+theorem mul_inv_self (hu : u.IsReduced) : u.mul u⁻¹ = Part.some (empty Λ X) :=
+  mul_eq_some_iff.2 (isMul_self_inv hu)
+
+/-- (P3) `(u ∗ v)⁻¹ = v⁻¹ ∗ u⁻¹`: one side is defined exactly when the other is, and they are then
+equal. -/
+@[simp]
+protected theorem mul_inv_rev (u v : InfWord Λ X) : (u.mul v)⁻¹ = v⁻¹.mul u⁻¹ := by
+  ext w
+  rw [Part.inv_def, Part.mem_map_iff, mem_mul_iff]
+  exact ⟨fun ⟨x, hx, hw⟩ => hw ▸ (mem_mul_iff.1 hx).inv,
+    fun h => ⟨w⁻¹, mem_mul_iff.2 (by simpa using h.inv), inv_inv w⟩⟩
+
+/-- (P4) If `u ∗ v` and `v ∗ w` are defined, then `(u ∗ v) ∗ w = u ∗ (v ∗ w)`: one side is defined
+exactly when the other is, and they are then equal. -/
+protected theorem mul_assoc (huv : (u.mul v).Dom) (hvw : (v.mul w).Dom) :
+    (u.mul v).bind (·.mul w) = (v.mul w).bind (u.mul ·) := by
+  rw [huv.bind, hvw.bind]
+  ext z
+  simpa using (isMul_get huv).assoc_iff (isMul_get hvw)
 
 end InfWord
 
