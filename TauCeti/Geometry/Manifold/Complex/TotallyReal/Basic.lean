@@ -310,10 +310,7 @@ theorem _root_.ContinuousLinearMap.isTotallyRealEmbedding_iff
       apply hi
       rw [ContinuousLinearMap.mfderiv_eq]
       exact hvw
-    have he : Topology.IsEmbedding L :=
-      (LinearMap.isClosedEmbedding_of_injective (LinearMap.ker_eq_bot.mpr hinj)).isEmbedding
-    exact ⟨⟨(ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hinj).isImmersion,
-      he⟩, hdim, hmap⟩
+    exact ⟨L.isSmoothEmbedding_of_injective hinj, hdim, hmap⟩
 
 end LinearModel
 

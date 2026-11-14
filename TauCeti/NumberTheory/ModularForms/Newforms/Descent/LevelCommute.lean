@@ -86,12 +86,20 @@ private theorem descendExtraGamma_mul_inv_mem_Gamma (hp : p.Prime) (hpN : p ∣ 
   rwa [Nat.mul_div_cancel' hpN] at this
 
 /-- **The extra representatives at levels `l N` and `N` differ on the left by `Γ₁(N)`.** -/
-theorem exists_mem_Gamma1_descendMatrix_mul_left_eq (hp : p.Prime) (hpN : p ∣ N)
+theorem exists_mem_Gamma1_descendMatrix_mul_left_eq (hp : p.Prime)
     (hpl : Nat.Coprime p l) {v : Fin (descendMatrixCount p N)} (hv : p ≤ v.val)
     {w : Fin (descendMatrixCount p (l * N))} (hw : p ≤ w.val) :
     haveI : NeZero p := ⟨hp.ne_zero⟩
     ∃ ε ∈ Gamma1 N, descendMatrix p (l * N) w = mapGL ℝ ε * descendMatrix p N v := by
   have : NeZero p := ⟨hp.ne_zero⟩
+  -- away from `p ∣ N` both extra matrices are the identity
+  by_cases hpN : p ∣ N
+  swap
+  · refine ⟨1, (Gamma1 N).one_mem, ?_⟩
+    rw [descendMatrix_of_le hw, descendMatrix_of_le hv,
+      descendExtraGamma_eq_one_of_not fun h ↦ hpN (hpl.dvd_of_dvd_mul_left h.2.1),
+      descendExtraGamma_eq_one_of_not fun h ↦ hpN h.2.1]
+    simp
   have hpsq : ¬ p ^ 2 ∣ N := fun h ↦ by
     have h2 := descendMatrixCount_of_sq_dvd h
     omega
@@ -107,7 +115,7 @@ theorem exists_mem_Gamma1_descendMatrix_mul_left_eq (hp : p.Prime) (hpN : p ∣ 
 /-- **Miyake, Lemma 4.6.6 — the descent slash sum does not see the level away from `p`.** For
 `l` coprime to `p` and `f` invariant under `Γ₁(N)`, the descent slash sums of `f` at levels `l N`
 and `N` coincide. -/
-theorem descendSlash_mul_left_of_coprime (k : ℤ) (hp : p.Prime) (hpN : p ∣ N)
+theorem descendSlash_mul_left_of_coprime (k : ℤ) (hp : p.Prime)
     (hpl : Nat.Coprime p l) {f : ℍ → ℂ}
     (hf : ∀ ε ∈ Gamma1 N, f ∣[k] (mapGL ℝ ε : GL (Fin 2) ℝ) = f) :
     haveI : NeZero p := ⟨hp.ne_zero⟩
@@ -122,7 +130,7 @@ theorem descendSlash_mul_left_of_coprime (k : ℤ) (hp : p.Prime) (hpN : p ∣ N
     have hidx : (⟨(finCongr (descendMatrixCount_mul_left_of_coprime hpl N) w).val, hw'⟩ : Fin p)
         = ⟨w.val, hw⟩ := Fin.ext (by simp)
     rw [descendMatrix_of_lt hw, descendMatrix_of_lt hw', hidx]
-  · obtain ⟨ε, hε, hεeq⟩ := exists_mem_Gamma1_descendMatrix_mul_left_eq hp hpN hpl
+  · obtain ⟨ε, hε, hεeq⟩ := exists_mem_Gamma1_descendMatrix_mul_left_eq hp hpl
       (v := finCongr (descendMatrixCount_mul_left_of_coprime hpl N) w) (by simpa using hw)
       (Nat.not_lt.mp hw)
     rw [hεeq, SlashAction.slash_mul, hf ε hε]
