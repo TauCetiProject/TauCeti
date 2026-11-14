@@ -81,8 +81,8 @@ infrastructure independent of the diamond operators.
   unit upper-left entry modulo `N`.
 * `CongruenceSubgroup.intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0`: modulo its
   level, a `Γ₀(N)` matrix has mutually inverse diagonal entries.
-* `CongruenceSubgroup.intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0` and
-  `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0`:
+* `CongruenceSubgroup.intCast_add_natCast_mul_of_mem_Gamma0` and
+  `CongruenceSubgroup.isUnit_intCast_add_natCast_mul_of_mem_Gamma0`:
   shearing the first column by a natural-number multiple of the lower-left entry changes nothing
   modulo the level, so the sheared entry is a unit too.
 * `CongruenceSubgroup.mem_Gamma1_iff_toHomUnits_eq_one`: inside `Γ₀(N)`, `Γ₁(N)` is the kernel of
@@ -332,19 +332,19 @@ theorem isUnit_intCast_apply_zero_zero_of_mem_Gamma0 {N : ℕ} {σ : SL(2, ℤ)}
 /-- **The first column of a `Γ₀(N)` matrix collapses under a natural-number shear**:
 `a + j c ≡ a` modulo `N` for every `j : ℕ`, because `c ≡ 0`. Stated with the casts already
 distributed, since that — not the cast of the sum — is the `simp` normal form. -/
-@[simp] theorem intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0 {N : ℕ}
+@[simp] theorem intCast_add_natCast_mul_of_mem_Gamma0 {N : ℕ}
     {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) (j : ℕ) :
     ((γ 0 0 : ℤ) : ZMod N) + (j : ZMod N) * ((γ 1 0 : ℤ) : ZMod N) = ((γ 0 0 : ℤ) : ZMod N) := by
   rw [Gamma0_mem.mp hγ, mul_zero, add_zero]
 
 /-- **The sheared entry is still a unit**, for every `j : ℕ`: it *is* the upper-left entry modulo
 `N`, which `isUnit_intCast_apply_zero_zero_of_mem_Gamma0` knows to be a unit. -/
-theorem isUnit_intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0 {N : ℕ}
+theorem isUnit_intCast_add_natCast_mul_of_mem_Gamma0 {N : ℕ}
     {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) (j : ℕ) :
     IsUnit (((γ 0 0 + (j : ℕ) * γ 1 0 : ℤ) : ZMod N)) := by
   have h : ((γ 0 0 + (j : ℕ) * γ 1 0 : ℤ) : ZMod N) = ((γ 0 0 : ℤ) : ZMod N) := by
     push_cast
-    exact intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0 hγ j
+    exact intCast_add_natCast_mul_of_mem_Gamma0 hγ j
   rw [h]
   exact isUnit_intCast_apply_zero_zero_of_mem_Gamma0 hγ
 
