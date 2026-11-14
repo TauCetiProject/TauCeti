@@ -35,6 +35,9 @@ have absolute value one.
   level leaves it quadratic.
 * `DirichletCharacter.isQuadratic_changeLevel_iff`: at a nonzero target level, a lifted
   character is quadratic exactly when the original character is quadratic.
+* `DirichletCharacter.isQuadratic_primitiveCharacter_iff`,
+  `MulChar.IsQuadratic.primitiveCharacter`: the primitive character of `χ` is quadratic if and only
+  if `χ` is quadratic.
 * `DirichletCharacter.isQuadratic_mul`: the common-level product of two quadratic characters is
   quadratic.
 * `DirichletCharacter.isQuadratic_iff_eq_one_or_eq_quadraticChar`: at a prime level, the quadratic
@@ -79,6 +82,30 @@ theorem isQuadratic_changeLevel_iff {R : Type*} [CommRing R]
     rw [← ha.unit_spec, ← hu, ZMod.unitsMap_val]
     exact hv
   · exact Or.inl (MulChar.map_nonunit χ ha)
+
+/-- The primitive character associated to `χ` is quadratic if and only if `χ` is quadratic. -/
+@[simp]
+theorem isQuadratic_primitiveCharacter_iff {R : Type*} [CommRing R] {n : ℕ}
+    (χ : DirichletCharacter R n) :
+    χ.primitiveCharacter.IsQuadratic ↔ χ.IsQuadratic := by
+  refine ⟨fun h ↦ χ.changeLevel_primitiveCharacter ▸ h.changeLevel χ.conductor_dvd_level, ?_⟩
+  rcases eq_or_ne n 0 with rfl | hn
+  · have h0 : 0 ∣ χ.conductor :=
+      dvd_of_eq ((conductor_eq_zero_iff_level_eq_zero (χ := χ)).mpr rfl).symm
+    have hid : changeLevel h0 χ = χ.primitiveCharacter :=
+      (congrArg (changeLevel h0) χ.changeLevel_primitiveCharacter.symm).trans <|
+        (changeLevel_trans _ _ _).symm.trans (changeLevel_self _)
+    exact fun hχ ↦ hid ▸ hχ.changeLevel h0
+  · have : NeZero n := ⟨hn⟩
+    exact fun hχ ↦
+      (isQuadratic_changeLevel_iff χ.conductor_dvd_level).mp
+        (χ.changeLevel_primitiveCharacter.symm ▸ hχ)
+
+/-- The primitive character associated to a quadratic Dirichlet character is quadratic. -/
+theorem _root_.MulChar.IsQuadratic.primitiveCharacter {R : Type*} [CommRing R] {n : ℕ}
+    {χ : DirichletCharacter R n} (hχ : χ.IsQuadratic) :
+    χ.primitiveCharacter.IsQuadratic :=
+  (isQuadratic_primitiveCharacter_iff χ).mpr hχ
 
 /-- The product of two quadratic characters, taken at the least common multiple of their levels,
 is quadratic. -/

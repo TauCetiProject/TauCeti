@@ -17,12 +17,12 @@ import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Values
 /-!
 # Primitive quadratic characters are Kronecker characters
 
-A primitive quadratic Dirichlet character `χ` of level `N ≠ 0` is the character of a fundamental
-discriminant: there is a fundamental discriminant `D` with `|D| = N` such that
-`χ n = fundamentalDiscriminantCharCast R D n` at every integer `n`, the left side read modulo `N`
-and the right side modulo `|D|`. When `2 ≠ 0` in the coefficient ring, `D` is `N` if `χ (-1) = 1`
-and `-N` otherwise. The principal character is included: it is primitive only at level `1`, where
-`D = 1`.
+A primitive quadratic Dirichlet character `χ` of level `N ≠ 0` is the character of a unique
+fundamental discriminant `D` with `|D| = N` such that
+`χ n = fundamentalDiscriminantCharCast R D hD n` at every integer `n`, the left side read modulo `N`
+and the right side modulo `|D|`. Explicitly, `D` is `N` if `χ (-1) = 1` and `-N` otherwise (when
+`2 = 0` in `R`, every quadratic character is principal, so `N = 1` and `D = 1`). The principal
+character is included: it is primitive only at level `1`, where `D = 1`.
 
 The proof is local. At a prime power `p ^ k`, `k ≠ 0`, a primitive quadratic character is the
 Legendre character modulo `p` (so `k = 1`) when `p` is odd, and `χ₄`, `χ₈` or `χ₈'` (so `k = 2`
@@ -38,12 +38,14 @@ The results hold for characters with values in any commutative ring.
 * `DirichletCharacter.IsPrimitive.exists_isPrimeDiscriminant_apply_eq`: a primitive quadratic
   character of level `p ^ k`, `k ≠ 0`, is the character of a prime discriminant of absolute
   value `p ^ k`.
-* `DirichletCharacter.IsPrimitive.exists_isFundamentalDiscr_apply_eq`: a primitive quadratic
-  character of level `N ≠ 0` is the character of a fundamental discriminant of absolute
+* `DirichletCharacter.IsPrimitive.exists_isFundamentalDiscr_apply_eq`,
+  `DirichletCharacter.IsPrimitive.existsUnique_isFundamentalDiscr_apply_eq`: a primitive quadratic
+  character of level `N ≠ 0` is the character of a unique fundamental discriminant of absolute
   value `N`.
-* `DirichletCharacter.IsPrimitive.isFundamentalDiscr_ite`,
-  `DirichletCharacter.IsPrimitive.apply_eq_fundamentalDiscriminantCharCast_ite`: when `2 ≠ 0`,
-  that fundamental discriminant is `χ (-1) N`.
+* `DirichletCharacter.eq_conductor_ite_of_isFundamentalDiscr`,
+  `DirichletCharacter.IsPrimitive.isFundamentalDiscr_ite`,
+  `DirichletCharacter.IsPrimitive.apply_eq_fundamentalDiscriminantCharCast_ite`: that fundamental
+  discriminant is `if χ (-1) = 1 then N else -N`.
 
 ## References
 
@@ -112,7 +114,7 @@ theorem IsPrimitive.exists_isPrimeDiscriminant_apply_eq {p k : ℕ} (hp : p.Prim
 
 /-- **Primitive quadratic characters are Kronecker characters.** A primitive quadratic character
 `χ` of level `N ≠ 0` is the character of a fundamental discriminant `D` with `|D| = N`:
-`χ n = fundamentalDiscriminantCharCast R D n` at every integer `n` (Montgomery–Vaughan,
+`χ n = fundamentalDiscriminantCharCast R D hD n` at every integer `n` (Montgomery–Vaughan,
 Theorem 9.13). The discriminant `D` is the product of the prime discriminants of the local factors
 of `χ`. -/
 theorem IsPrimitive.exists_isFundamentalDiscr_apply_eq {N : ℕ} [NeZero N]
@@ -164,39 +166,74 @@ theorem IsPrimitive.exists_isFundamentalDiscr_apply_eq {N : ℕ} [NeZero N]
     fundamentalDiscriminantCharCast_apply,
     fundamentalDiscriminantChar_apply_primeDiscriminant (hP p hp).1]
 
+/-- Any fundamental discriminant `D` of absolute value `χ.conductor` whose sign casts in `R` to
+`χ (-1)` for a quadratic character `χ` of nonzero level `N` is determined by
+`if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor`. This holds in every commutative ring `R`:
+when `2 = 0` in `R`, `χ = 1`, `χ.conductor = 1`, and the only fundamental discriminant of absolute
+value `1` is `1` (`-1 ≡ 3 (mod 4)`). -/
+theorem eq_conductor_ite_of_isFundamentalDiscr [DecidableEq R] {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ.IsQuadratic) {D : ℤ} (hD : Int.IsFundamentalDiscr D)
+    (hDc : D.natAbs = χ.conductor) (hsign : χ (-1) = (D.sign : R)) :
+    D = if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor := by
+  rcases eq_or_ne (2 : R) 0 with h2 | h2
+  · obtain rfl := hχ.eq_one_of_two_eq_zero h2
+    rw [conductor_one] at hDc ⊢
+    rw [MulChar.one_apply isUnit_one.neg, ite_eq_left rfl, Nat.cast_one]
+    have hmod := hD.emod_four_eq_zero_or_one
+    omega
+  · split_ifs with h1 <;> rw [hsign] at h1 <;> rcases hD.ne_zero.lt_or_gt with h | h
+    · rw [Int.sign_eq_neg_one_of_neg h, Int.cast_neg, Int.cast_one, neg_eq_iff_add_eq_zero,
+        one_add_one_eq_two] at h1
+      exact absurd h1 h2
+    · omega
+    · omega
+    · rw [Int.sign_eq_one_of_pos h, Int.cast_one] at h1
+      exact absurd rfl h1
+
+/-- **Uniqueness of the fundamental discriminant of a primitive quadratic character.** Every
+primitive quadratic Dirichlet character `χ` of nonzero level `N` is the character of a unique
+fundamental discriminant `D` of absolute value `N`. -/
+theorem IsPrimitive.existsUnique_isFundamentalDiscr_apply_eq {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ.IsPrimitive) (hq : χ.IsQuadratic) :
+    ∃! D : ℤ, ∃ hD : Int.IsFundamentalDiscr D, D.natAbs = N ∧
+      ∀ n : ℤ, χ n = fundamentalDiscriminantCharCast R D hD n := by
+  classical
+  obtain ⟨D, hD, hDN, hval⟩ := hχ.exists_isFundamentalDiscr_apply_eq hq
+  refine ⟨D, ⟨hD, hDN, hval⟩, fun D' ⟨hD', hD'N, hval'⟩ ↦ ?_⟩
+  have hc : χ.conductor = N := hχ
+  have hsign : χ (-1) = D.sign := by simpa [fundamentalDiscriminantChar_neg_one] using hval (-1)
+  have hsign' : χ (-1) = D'.sign := by simpa [fundamentalDiscriminantChar_neg_one] using hval' (-1)
+  exact (eq_conductor_ite_of_isFundamentalDiscr hq hD' (hD'N.trans hc.symm) hsign').trans
+    (eq_conductor_ite_of_isFundamentalDiscr hq hD (hDN.trans hc.symm) hsign).symm
+
 section Sign
 
-variable [DecidableEq R] [NeZero (2 : R)] {N : ℕ} [NeZero N] {χ : DirichletCharacter R N}
+variable [DecidableEq R] {N : ℕ} [NeZero N] {χ : DirichletCharacter R N}
 
-/-- When `2 ≠ 0`, the fundamental discriminant of a primitive quadratic character `χ` of level `N`
-is `N` if `χ (-1) = 1` and `-N` otherwise, its sign being `χ (-1)`. -/
+/-- The fundamental discriminant of a primitive quadratic character `χ` of level `N` is `N` if
+`χ (-1) = 1` and `-N` otherwise. -/
 private theorem IsPrimitive.exists_eq_ite_apply_eq (hχ : χ.IsPrimitive) (hq : χ.IsQuadratic) :
     ∃ (D : ℤ) (hD : Int.IsFundamentalDiscr D), D = (if χ (-1) = 1 then (N : ℤ) else -N) ∧
       ∀ n : ℤ, χ n = fundamentalDiscriminantCharCast R D hD n := by
   obtain ⟨D, hD, hDN, hval⟩ := hχ.exists_isFundamentalDiscr_apply_eq hq
+  have hc : χ.conductor = N := hχ
   have hsign : χ (-1) = D.sign := by
     simpa [fundamentalDiscriminantChar_neg_one] using hval (-1)
-  refine ⟨D, hD, ?_, hval⟩
-  split_ifs with h1 <;> rw [hsign] at h1 <;> rcases hD.ne_zero.lt_or_gt with h | h
-  · rw [Int.sign_eq_neg_one_of_neg h, Int.cast_neg, Int.cast_one, neg_eq_iff_add_eq_zero,
-      one_add_one_eq_two] at h1
-    exact absurd h1 two_ne_zero
-  · omega
-  · omega
-  · rw [Int.sign_eq_one_of_pos h, Int.cast_one] at h1
-    exact absurd rfl h1
+  have hite := eq_conductor_ite_of_isFundamentalDiscr hq hD (hDN.trans hc.symm) hsign
+  rw [hc] at hite
+  exact ⟨D, hD, hite, hval⟩
 
-/-- When `2 ≠ 0`, the integer `χ (-1) N`, that is `N` if `χ (-1) = 1` and `-N` otherwise, is a
-fundamental discriminant for every primitive quadratic character `χ` of level `N`. -/
+/-- The integer `N` if `χ (-1) = 1` and `-N` otherwise is a fundamental discriminant for every
+primitive quadratic character `χ` of nonzero level `N`. -/
 theorem IsPrimitive.isFundamentalDiscr_ite (hχ : χ.IsPrimitive) (hq : χ.IsQuadratic) :
     Int.IsFundamentalDiscr (if χ (-1) = 1 then (N : ℤ) else -N) := by
   obtain ⟨D, hD, rfl, -⟩ := hχ.exists_eq_ite_apply_eq hq
   exact hD
 
-/-- **Primitive quadratic characters are Kronecker characters, with their discriminant.** When
-`2 ≠ 0`, a primitive quadratic character `χ` of level `N` is the character of the fundamental
-discriminant `D = χ (-1) N`: `χ n = fundamentalDiscriminantCharCast R D n` at every integer `n`.
-For the principal character, primitive only at level `1`, this is `D = 1`. -/
+/-- **Primitive quadratic characters are Kronecker characters, with their discriminant.** A
+primitive quadratic character `χ` of nonzero level `N` is the character of the fundamental
+discriminant `D = if χ (-1) = 1 then N else -N`: `χ n = fundamentalDiscriminantCharCast R D hD n`
+at every integer `n`. For the principal character, primitive only at level `1`, this is `D = 1`. -/
 theorem IsPrimitive.apply_eq_fundamentalDiscriminantCharCast_ite (hχ : χ.IsPrimitive)
     (hq : χ.IsQuadratic) (n : ℤ) :
     χ n = fundamentalDiscriminantCharCast R _ (hχ.isFundamentalDiscr_ite hq) n := by

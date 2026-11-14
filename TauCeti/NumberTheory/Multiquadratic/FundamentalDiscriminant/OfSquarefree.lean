@@ -40,6 +40,11 @@ law in `Quadratic/Ramification.lean`: a prime coprime to `2` divides it exactly 
 * `TauCeti.Multiquadratic.fundamentalDiscriminant_ne_zero`: it is nonzero for nonzero `d`.
 * `TauCeti.Multiquadratic.fundamentalDiscriminant_primeDiscriminantRadicand`: a prime discriminant
   is the fundamental discriminant of its own radicand.
+* `TauCeti.Multiquadratic.fundamentalDiscriminant_injective`,
+  `TauCeti.Multiquadratic.bijOn_fundamentalDiscriminant`,
+  `TauCeti.Multiquadratic.existsUnique_squarefree_fundamentalDiscriminant_eq`:
+  `fundamentalDiscriminant` is injective on `ℤ` and restricts to a bijection between squarefree
+  integers and fundamental discriminants, with inverse `if D % 4 = 1 then D else D / 4`.
 -/
 
 public section
@@ -137,5 +142,114 @@ theorem fundamentalDiscriminant_primeDiscriminantRadicand {D : ℤ} (hD : IsPrim
   · rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd,
       fundamentalDiscriminant_of_mod_four_eq_one
         (oddPrimeDiscriminant_mod_four_eq_one_iff.mpr hodd)]
+
+/-- `fundamentalDiscriminant` is injective on all integers: its odd values lie in `1 + 4ℤ` and its
+even values lie in `4ℤ`. -/
+theorem fundamentalDiscriminant_injective : Function.Injective fundamentalDiscriminant := by
+  intro d₁ d₂ h
+  rw [fundamentalDiscriminant_def, fundamentalDiscriminant_def] at h
+  split_ifs at h <;> omega
+
+/-- Two integers have the same fundamental discriminant if and only if they are equal. -/
+@[simp]
+theorem fundamentalDiscriminant_inj {d₁ d₂ : ℤ} :
+    fundamentalDiscriminant d₁ = fundamentalDiscriminant d₂ ↔ d₁ = d₂ :=
+  fundamentalDiscriminant_injective.eq_iff
+
+/-- `fundamentalDiscriminant d` vanishes if and only if `d = 0`. -/
+@[simp]
+theorem fundamentalDiscriminant_eq_zero_iff {d : ℤ} :
+    fundamentalDiscriminant d = 0 ↔ d = 0 := by
+  rw [fundamentalDiscriminant_def]
+  split_ifs <;> omega
+
+/-- `fundamentalDiscriminant d` equals `1` if and only if `d = 1`. -/
+@[simp]
+theorem fundamentalDiscriminant_eq_one_iff {d : ℤ} :
+    fundamentalDiscriminant d = 1 ↔ d = 1 := by
+  rw [fundamentalDiscriminant_def]
+  split_ifs <;> omega
+
+/-- `fundamentalDiscriminant d` is positive if and only if `d` is positive. -/
+@[simp]
+theorem fundamentalDiscriminant_pos_iff {d : ℤ} :
+    0 < fundamentalDiscriminant d ↔ 0 < d := by
+  rw [fundamentalDiscriminant_def]
+  split_ifs <;> omega
+
+/-- `fundamentalDiscriminant d` is negative if and only if `d` is negative. -/
+@[simp]
+theorem fundamentalDiscriminant_neg_iff {d : ℤ} :
+    fundamentalDiscriminant d < 0 ↔ d < 0 := by
+  rw [fundamentalDiscriminant_def]
+  split_ifs <;> omega
+
+/-- `fundamentalDiscriminant` preserves the integer sign. -/
+@[simp]
+theorem sign_fundamentalDiscriminant (d : ℤ) :
+    (fundamentalDiscriminant d).sign = d.sign := by
+  rcases lt_trichotomy d 0 with hd | rfl | hd
+  · rw [Int.sign_eq_neg_one_of_neg (fundamentalDiscriminant_neg_iff.mpr hd),
+      Int.sign_eq_neg_one_of_neg hd]
+  · rw [fundamentalDiscriminant_of_mod_four_ne_one (by norm_num), mul_zero]
+  · rw [Int.sign_eq_one_of_pos (fundamentalDiscriminant_pos_iff.mpr hd),
+      Int.sign_eq_one_of_pos hd]
+
+/-- Every integer has absolute value at most that of its fundamental discriminant. -/
+theorem natAbs_le_natAbs_fundamentalDiscriminant (d : ℤ) :
+    d.natAbs ≤ (fundamentalDiscriminant d).natAbs := by
+  rw [fundamentalDiscriminant_def]
+  split_ifs <;> omega
+
+/-- `fundamentalDiscriminant d` is a fundamental discriminant if and only if `d` is squarefree. -/
+@[simp]
+theorem isFundamentalDiscr_fundamentalDiscriminant_iff {d : ℤ} :
+    Int.IsFundamentalDiscr (fundamentalDiscriminant d) ↔ Squarefree d := by
+  refine ⟨fun h ↦ ?_, isFundamentalDiscr_fundamentalDiscriminant⟩
+  by_cases hmod : d % 4 = 1
+  · rw [fundamentalDiscriminant_of_mod_four_eq_one hmod] at h
+    exact (Int.isFundamentalDiscr_iff_squarefree.mp h).elim And.right
+      fun ⟨h0, _⟩ ↦ absurd (h0.symm.trans hmod) (by decide)
+  · rw [fundamentalDiscriminant_of_mod_four_ne_one hmod] at h
+    exact (Int.isFundamentalDiscr_four_mul.mp h).1
+
+/-- Removing the factor `4` when `D ≢ 1 (mod 4)` sends a fundamental discriminant `D` to a
+squarefree integer. -/
+theorem squarefree_ite_ediv_four {D : ℤ} (hD : Int.IsFundamentalDiscr D) :
+    Squarefree (if D % 4 = 1 then D else D / 4) := by
+  rcases Int.isFundamentalDiscr_iff_squarefree.mp hD with ⟨h1, hsq⟩ | ⟨h0, hsq, -⟩
+  · rwa [ite_eq_left h1]
+  · rw [ite_eq_right (h0 ▸ by decide)]
+    exact hsq
+
+/-- `if D % 4 = 1 then D else D / 4` is the right inverse to `fundamentalDiscriminant` on
+fundamental discriminants. -/
+theorem fundamentalDiscriminant_ite_ediv_four {D : ℤ} (hD : Int.IsFundamentalDiscr D) :
+    fundamentalDiscriminant (if D % 4 = 1 then D else D / 4) = D := by
+  rcases Int.isFundamentalDiscr_iff_squarefree.mp hD with ⟨h1, -⟩ | ⟨h0, -, h23⟩
+  · rw [ite_eq_left h1, fundamentalDiscriminant_of_mod_four_eq_one h1]
+  · have hne1 : (D / 4) % 4 ≠ 1 := by rcases h23 with h | h <;> omega
+    rw [ite_eq_right (h0 ▸ by decide), fundamentalDiscriminant_of_mod_four_ne_one hne1]
+    omega
+
+/-- **Every fundamental discriminant is `fundamentalDiscriminant d` for a unique squarefree `d`.**
+-/
+theorem existsUnique_squarefree_fundamentalDiscriminant_eq {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D) :
+    ∃! d : ℤ, Squarefree d ∧ fundamentalDiscriminant d = D := by
+  refine ⟨if D % 4 = 1 then D else D / 4,
+    ⟨squarefree_ite_ediv_four hD, fundamentalDiscriminant_ite_ediv_four hD⟩, ?_⟩
+  rintro d ⟨-, hd⟩
+  exact fundamentalDiscriminant_injective
+    (hd.trans (fundamentalDiscriminant_ite_ediv_four hD).symm)
+
+/-- **`fundamentalDiscriminant` restricts to a bijection between squarefree integers and
+fundamental discriminants.** -/
+theorem bijOn_fundamentalDiscriminant :
+    Set.BijOn fundamentalDiscriminant {d : ℤ | Squarefree d} {D : ℤ | Int.IsFundamentalDiscr D} :=
+  ⟨fun _ hd ↦ isFundamentalDiscr_fundamentalDiscriminant hd,
+    fundamentalDiscriminant_injective.injOn,
+    fun D hD ↦ ⟨if D % 4 = 1 then D else D / 4, squarefree_ite_ediv_four hD,
+      fundamentalDiscriminant_ite_ediv_four hD⟩⟩
 
 end TauCeti.Multiquadratic
