@@ -31,7 +31,8 @@ hexagon--rectangle and pentagon--pentagon decompositions of grid commutation all
 * `TauCeti.GridTwoStepDecomposition.map_injective`: mapping both steps by injective maps is
   injective.
 * `TauCeti.GridTwoStepDecomposition.mem_decompositionsOf` characterizes membership in
-  `decompositionsOf`.
+  `decompositionsOf`, and `TauCeti.GridTwoStepDecomposition.map_mem_decompositionsOf` that of a
+  mapped decomposition.
 * `TauCeti.GridTwoStepDecomposition.card_decompositionsOf` counts `decompositionsOf`.
 * `TauCeti.GridTwoStepDecomposition.sum_decompositionsOf` rewrites a sum over `decompositionsOf`
   as the iterated sum over the intermediate state and the two constituent domains.
@@ -88,30 +89,30 @@ alone. -/
 @[simp]
 theorem map_mk (f : ∀ y : GridState n, A x y → A' x y) (g : ∀ y : GridState n, B y z → B' y z)
     (m : GridState n) (P : A x m) (Q : B m z) :
-    map f g ⟨m, P, Q⟩ = ⟨m, f m P, g m Q⟩ := (rfl)
+    map f g ⟨m, P, Q⟩ = ⟨m, f m P, g m Q⟩ := rfl
 
 /-- `map` keeps the intermediate state. -/
 @[simp]
 theorem map_middle (f : ∀ y : GridState n, A x y → A' x y)
     (g : ∀ y : GridState n, B y z → B' y z) (D : GridTwoStepDecomposition A B x z) :
-    (D.map f g).middle = D.middle := (rfl)
+    (D.map f g).middle = D.middle := rfl
 
 /-- The first step of a mapped decomposition is the image of the first step. -/
 @[simp]
 theorem map_first (f : ∀ y : GridState n, A x y → A' x y)
     (g : ∀ y : GridState n, B y z → B' y z) (D : GridTwoStepDecomposition A B x z) :
-    (D.map f g).first = f D.middle D.first := (rfl)
+    (D.map f g).first = f D.middle D.first := rfl
 
 /-- The second step of a mapped decomposition is the image of the second step. -/
 @[simp]
 theorem map_second (f : ∀ y : GridState n, A x y → A' x y)
     (g : ∀ y : GridState n, B y z → B' y z) (D : GridTwoStepDecomposition A B x z) :
-    (D.map f g).second = g D.middle D.second := (rfl)
+    (D.map f g).second = g D.middle D.second := rfl
 
 /-- Mapping both steps by the identity does nothing. -/
 @[simp]
 theorem map_id (D : GridTwoStepDecomposition A B x z) :
-    D.map (fun _ => id) (fun _ => id) = D := (rfl)
+    D.map (fun _ => id) (fun _ => id) = D := rfl
 
 /-- Mapping twice is mapping by the composites. -/
 @[simp]
@@ -119,7 +120,7 @@ theorem map_map {A'' B'' : GridState n → GridState n → Type*}
     (f : ∀ y : GridState n, A x y → A' x y) (g : ∀ y : GridState n, B y z → B' y z)
     (f' : ∀ y : GridState n, A' x y → A'' x y) (g' : ∀ y : GridState n, B' y z → B'' y z)
     (D : GridTwoStepDecomposition A B x z) :
-    (D.map f g).map f' g' = D.map (fun y => f' y ∘ f y) (fun y => g' y ∘ g y) := (rfl)
+    (D.map f g).map f' g' = D.map (fun y => f' y ∘ f y) (fun y => g' y ∘ g y) := rfl
 
 /-- Mapping both steps by injective maps is injective. -/
 theorem map_injective {f : ∀ y : GridState n, A x y → A' x y}
@@ -159,6 +160,18 @@ theorem mem_decompositionsOf
       D.first ∈ first x D.middle ∧ D.second ∈ second D.middle z := by
   classical
   simp [decompositionsOf, sigmaEquiv]
+
+/-- Membership of a mapped decomposition in `decompositionsOf` is membership of the images of its
+two steps, stated in terms of the intermediate state `D.middle` of the original decomposition. -/
+@[simp high]
+theorem map_mem_decompositionsOf {A' B' : GridState n → GridState n → Type*}
+    (f : ∀ y : GridState n, A x y → A' x y) (g : ∀ y : GridState n, B y z → B' y z)
+    (first : ∀ u v : GridState n, Finset (A' u v))
+    (second : ∀ u v : GridState n, Finset (B' u v))
+    (D : GridTwoStepDecomposition A B x z) :
+    D.map f g ∈ decompositionsOf first second x z ↔
+      f D.middle D.first ∈ first x D.middle ∧ g D.middle D.second ∈ second D.middle z :=
+  mem_decompositionsOf first second (D.map f g)
 
 /-- The number of selected two-step decompositions is the sum, over intermediate states, of the
 products of the numbers of selected constituent domains. -/
