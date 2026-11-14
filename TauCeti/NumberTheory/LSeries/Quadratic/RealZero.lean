@@ -15,7 +15,6 @@ import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.DerivBound
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogBound
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic.FundamentalDiscriminant
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.LFunction
 
@@ -33,7 +32,7 @@ Throughout, `N` is a nonzero level (`[NeZero N]`) and `DirichletCharacter.LFunct
 continuation of `L(s, χ)`. For any nonprincipal complex character `χ` of level `N` (neither
 primitivity nor quadraticity is needed), nonvanishing on `Re(s) ≥ 1`, the near-one derivative bound
 `‖L'(σ, χ)‖ ≤ 81 (log N) ^ 2` on `[1 - 1 / log N, 1]`, and the boundary bound
-`‖L(1, χ)‖ ≤ 2 + log N` give the unconditional separation
+`‖L(1, χ)‖ ≤ 1 + log N` give the unconditional separation
 `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β` for every real zero `β` of `L(s, χ)`.
 
 When `χ` is primitive (`χ.IsPrimitive`, so the level `N` equals `χ.conductor`) and quadratic, `χ`
@@ -124,12 +123,12 @@ theorem LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero
     rw [div_le_iff₀ (by positivity)]
     have hmul := (div_le_iff₀ (sub_pos.mpr hβ1)).mp (hslope ▸ hc_le)
     linarith
-  · -- Left of `1 - 1 / log N`, use `Re L(1, χ) ≤ 2 + log N ≤ 81 log N`.
+  · -- Left of `1 - 1 / log N`, use `Re L(1, χ) ≤ 1 + log N ≤ 81 log N`.
     calc
       (χ.LFunction 1).re / (81 * Real.log N ^ 2)
-          ≤ (2 + Real.log N) / (81 * Real.log N ^ 2) :=
+          ≤ (1 + Real.log N) / (81 * Real.log N ^ 2) :=
         div_le_div_of_nonneg_right
-          ((Complex.re_le_norm _).trans (χ.norm_LFunction_one_le_two_add_log hχ)) (by positivity)
+          ((Complex.re_le_norm _).trans (χ.norm_LFunction_one_le_one_add_log hχ)) (by positivity)
       _ ≤ 81 * Real.log N / (81 * Real.log N ^ 2) :=
         div_le_div_of_nonneg_right (by linarith) (by positivity)
       _ = 1 / Real.log N := by field_simp
