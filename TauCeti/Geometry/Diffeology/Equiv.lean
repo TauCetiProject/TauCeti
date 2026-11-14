@@ -26,9 +26,12 @@ Conversely, an induction defines a diffeomorphism onto its range with the subspa
 * `TauCeti.Diffeology.DSmoothEquiv.refl`, `TauCeti.Diffeology.DSmoothEquiv.symm`,
   `TauCeti.Diffeology.DSmoothEquiv.trans`: identity, inverse, and composition.
 * `TauCeti.Diffeology.DSmoothEquiv.prodCongr`, `TauCeti.Diffeology.DSmoothEquiv.prodComm`,
-  `TauCeti.Diffeology.DSmoothEquiv.prodAssoc`: product diffeomorphisms.
-* `TauCeti.Diffeology.DSmoothEquiv.toHomeomorph`: underlying homeomorphism for spaces with
-  compatible D-topologies.
+  `TauCeti.Diffeology.DSmoothEquiv.prodAssoc`, `TauCeti.Diffeology.DSmoothEquiv.prodUnique`,
+  `TauCeti.Diffeology.DSmoothEquiv.uniqueProd`: product congruences, associator/commutator, and
+  unit laws for `[Unique _]` factors.
+* `TauCeti.Diffeology.DSmoothEquiv.instHomeomorphClass`,
+  `TauCeti.Diffeology.DSmoothEquiv.toHomeomorph`: `HomeomorphClass` instance and underlying
+  homeomorphism for spaces with compatible D-topologies.
 * `TauCeti.Diffeology.IsInduction.toDSmoothEquivRange`: diffeomorphism from the source of an
   induction onto its range.
 
@@ -225,21 +228,21 @@ theorem symm_trans_self (e : DSmoothEquiv X Y) : e.symm.trans e = DSmoothEquiv.r
 
 /-- Postcomposing a map from a Cartesian space with a diffeomorphism preserves plots. -/
 @[simp]
-theorem isPlot_comp_iff (e : DSmoothEquiv X Y) {n : ℕ} {p : 𝔼ⁿ → X} :
+theorem comp_isPlot_iff (e : DSmoothEquiv X Y) {n : ℕ} {p : 𝔼ⁿ → X} :
     _root_.Diffeology.IsPlot (e ∘ p) ↔ _root_.Diffeology.IsPlot p :=
   ⟨fun hp ↦ by simpa only [← comp_assoc, symm_comp_self, id_comp] using e.symm.dSmooth n _ hp,
     fun hp ↦ e.dSmooth n p hp⟩
 
 /-- Postcomposing with a diffeomorphism preserves diffeological smoothness. -/
 @[simp]
-theorem dSmooth_comp_iff (e : DSmoothEquiv Y Z) {f : X → Y} :
+theorem comp_dSmooth_iff (e : DSmoothEquiv Y Z) {f : X → Y} :
     _root_.Diffeology.DSmooth (e ∘ f) ↔ _root_.Diffeology.DSmooth f :=
   ⟨fun hf ↦ by simpa only [← comp_assoc, symm_comp_self, id_comp] using e.symm.dSmooth.comp hf,
     fun hf ↦ e.dSmooth.comp hf⟩
 
 /-- Precomposing with a diffeomorphism preserves diffeological smoothness. -/
 @[simp]
-theorem comp_dSmooth_iff (e : DSmoothEquiv X Y) {f : Y → Z} :
+theorem dSmooth_comp_iff (e : DSmoothEquiv X Y) {f : Y → Z} :
     _root_.Diffeology.DSmooth (f ∘ e) ↔ _root_.Diffeology.DSmooth f :=
   ⟨fun hf ↦ by simpa only [comp_assoc, self_comp_symm, comp_id] using hf.comp e.symm.dSmooth,
     fun hf ↦ hf.comp e.dSmooth⟩
@@ -247,7 +250,7 @@ theorem comp_dSmooth_iff (e : DSmoothEquiv X Y) {f : Y → Z} :
 /-- Every diffeological diffeomorphism is an induction. -/
 theorem isInduction (e : DSmoothEquiv X Y) : IsInduction e where
   injective := e.injective
-  isPlot_iff := e.isPlot_comp_iff.symm
+  isPlot_iff := e.comp_isPlot_iff.symm
 
 /-- Every diffeological diffeomorphism is a subduction. -/
 theorem isSubduction (e : DSmoothEquiv X Y) : IsSubduction e where
@@ -308,6 +311,12 @@ theorem prodAssoc_symm_apply (p : X × (Y × Z)) :
     (prodAssoc X Y Z).symm p = ((p.1, p.2.1), p.2.2) :=
   (rfl)
 
+instance instHomeomorphClass [TopologicalSpace X] [_root_.Diffeology.IsDTopologyCompatible X]
+    [TopologicalSpace Y] [_root_.Diffeology.IsDTopologyCompatible Y] :
+    HomeomorphClass (DSmoothEquiv X Y) X Y where
+  map_continuous e := e.dSmooth_toFun.continuous'
+  inv_continuous e := e.dSmooth_invFun.continuous'
+
 /-- A diffeological diffeomorphism between spaces carrying topologies equal to their D-topologies
 is a homeomorphism. -/
 def toHomeomorph [TopologicalSpace X] [_root_.Diffeology.IsDTopologyCompatible X]
@@ -323,11 +332,29 @@ theorem coe_toHomeomorph [TopologicalSpace X] [_root_.Diffeology.IsDTopologyComp
     ⇑e.toHomeomorph = ⇑e :=
   (rfl)
 
+theorem toHomeomorph_injective [TopologicalSpace X] [_root_.Diffeology.IsDTopologyCompatible X]
+    [TopologicalSpace Y] [_root_.Diffeology.IsDTopologyCompatible Y] :
+    Injective (toHomeomorph : DSmoothEquiv X Y → (X ≃ₜ Y)) :=
+  fun _ _ h ↦ ext fun x ↦ congr($(h) x)
+
 @[simp]
+theorem toHomeomorph_refl [TopologicalSpace X] [_root_.Diffeology.IsDTopologyCompatible X] :
+    (DSmoothEquiv.refl X).toHomeomorph = Homeomorph.refl X :=
+  Homeomorph.ext fun _ ↦ rfl
+
+@[simp, grind =]
 theorem toHomeomorph_symm [TopologicalSpace X] [_root_.Diffeology.IsDTopologyCompatible X]
     [TopologicalSpace Y] [_root_.Diffeology.IsDTopologyCompatible Y] (e : DSmoothEquiv X Y) :
-    e.toHomeomorph.symm = e.symm.toHomeomorph :=
+    e.symm.toHomeomorph = e.toHomeomorph.symm :=
   (rfl)
+
+@[simp]
+theorem toHomeomorph_trans [TopologicalSpace X] [_root_.Diffeology.IsDTopologyCompatible X]
+    [TopologicalSpace Y] [_root_.Diffeology.IsDTopologyCompatible Y]
+    [TopologicalSpace Z] [_root_.Diffeology.IsDTopologyCompatible Z]
+    (e₁ : DSmoothEquiv X Y) (e₂ : DSmoothEquiv Y Z) :
+    (e₁.trans e₂).toHomeomorph = e₁.toHomeomorph.trans e₂.toHomeomorph :=
+  Homeomorph.ext fun _ ↦ rfl
 
 end DSmoothEquiv
 
@@ -338,72 +365,81 @@ def IsInduction.toDSmoothEquivRange {X Y : Type*} [DiffeologicalSpace X] [Diffeo
   dSmooth_toFun := hf.dSmooth_ofInjective
   dSmooth_invFun := hf.dSmooth_ofInjective_symm
 
+@[simp]
+theorem IsInduction.toEquiv_toDSmoothEquivRange {X Y : Type*} [DiffeologicalSpace X]
+    [DiffeologicalSpace Y] {f : Y → X} (hf : IsInduction f) :
+    hf.toDSmoothEquivRange.toEquiv = Equiv.ofInjective f hf.injective :=
+  (rfl)
+
 @[simp, grind =]
 theorem IsInduction.coe_toDSmoothEquivRange_apply {X Y : Type*} [DiffeologicalSpace X]
     [DiffeologicalSpace Y] {f : Y → X} (hf : IsInduction f) (y : Y) :
     (hf.toDSmoothEquivRange y : X) = f y :=
   (rfl)
 
-/-! ### Subsingletons and `PUnit` -/
+@[simp]
+theorem IsInduction.toDSmoothEquivRange_symm_apply {X Y : Type*} [DiffeologicalSpace X]
+    [DiffeologicalSpace Y] {f : Y → X} (hf : IsInduction f) (y : Y) :
+    hf.toDSmoothEquivRange.symm ⟨f y, mem_range_self y⟩ = y :=
+  hf.toDSmoothEquivRange.symm_apply_eq.mpr (Subtype.ext rfl)
 
-/-- Every map from a Cartesian space into a subsingleton diffeological space is a plot, since it
-is constant. -/
-theorem isPlot_of_subsingleton {X : Type*} [DiffeologicalSpace X] [Subsingleton X] {n : ℕ}
-    (p : 𝔼ⁿ → X) : _root_.Diffeology.IsPlot p := by
-  convert _root_.Diffeology.isPlot_const (x := p 0)
+theorem IsInduction.apply_toDSmoothEquivRange_symm {X Y : Type*} [DiffeologicalSpace X]
+    [DiffeologicalSpace Y] {f : Y → X} (hf : IsInduction f) (z : range f) :
+    f (hf.toDSmoothEquivRange.symm z) = z :=
+  Equiv.apply_ofInjective_symm hf.injective z
 
-/-- Every map into a subsingleton diffeological space is smooth. -/
-theorem dSmooth_of_subsingleton {X Y : Type*} [DiffeologicalSpace X] [DiffeologicalSpace Y]
-    [Subsingleton Y] (f : X → Y) : _root_.Diffeology.DSmooth f :=
-  fun _ p _ ↦ isPlot_of_subsingleton (f ∘ p)
+@[simp]
+theorem IsInduction.self_comp_toDSmoothEquivRange_symm {X Y : Type*} [DiffeologicalSpace X]
+    [DiffeologicalSpace Y] {f : Y → X} (hf : IsInduction f) :
+    f ∘ ⇑hf.toDSmoothEquivRange.symm = Subtype.val :=
+  funext hf.apply_toDSmoothEquivRange_symm
 
-/-- The unique diffeology on `PUnit`, whose D-topology is the standard topology. -/
-instance instDiffeologicalSpacePUnit : DiffeologicalSpace PUnit where
-  plots _ := univ
-  constant_plots _ := mem_univ _
-  plot_reparam _ _ := mem_univ _
-  locality _ := mem_univ _
-  dTopology := inferInstance
-  isOpen_iff_preimages_plots {u} :=
-    ⟨fun _ _ p _ ↦ by
-      rcases u.eq_empty_or_nonempty with rfl | ⟨x, hx⟩
-      · exact isOpen_empty
-      · convert isOpen_univ
-        exact eq_univ_of_forall fun z ↦ mem_preimage.mpr (Subsingleton.elim x (p z) ▸ hx),
-      fun _ ↦ trivial⟩
-
-instance instIsDTopologyCompatiblePUnit : _root_.Diffeology.IsDTopologyCompatible PUnit := ⟨rfl⟩
+/-! ### Product unit laws -/
 
 namespace DSmoothEquiv
 
-variable (X : Type*) [DiffeologicalSpace X]
+variable (X Y : Type*) [DiffeologicalSpace X] [DiffeologicalSpace Y]
 
-/-- Left unit law `PUnit × X ≃ X` for the product diffeology. -/
-def punitProd : DSmoothEquiv (PUnit × X) X where
-  toEquiv := Equiv.punitProd X
-  dSmooth_toFun := dSmooth_snd
-  dSmooth_invFun := (dSmooth_of_subsingleton _).prodMk _root_.Diffeology.dSmooth_id
-
-@[simp, grind =]
-theorem punitProd_apply (p : PUnit × X) : punitProd X p = p.2 :=
-  (rfl)
-
-@[simp, grind =]
-theorem punitProd_symm_apply (x : X) : (punitProd X).symm x = (PUnit.unit, x) :=
-  (rfl)
-
-/-- Right unit law `X × PUnit ≃ X` for the product diffeology. -/
-def prodPUnit : DSmoothEquiv (X × PUnit) X where
-  toEquiv := Equiv.prodPUnit X
+/-- Right unit law `X × Y ≃ X` for the product diffeology when `Y` has a unique element. -/
+def prodUnique [Unique Y] : DSmoothEquiv (X × Y) X where
+  toEquiv := Equiv.prodUnique X Y
   dSmooth_toFun := dSmooth_fst
   dSmooth_invFun := _root_.Diffeology.dSmooth_id.prodMk (dSmooth_of_subsingleton _)
 
-@[simp, grind =]
-theorem prodPUnit_apply (p : X × PUnit) : prodPUnit X p = p.1 :=
+@[simp]
+theorem coe_prodUnique [Unique Y] : ⇑(prodUnique X Y) = Prod.fst :=
+  (rfl)
+
+@[grind =]
+theorem prodUnique_apply [Unique Y] (p : X × Y) : prodUnique X Y p = p.1 :=
   (rfl)
 
 @[simp, grind =]
-theorem prodPUnit_symm_apply (x : X) : (prodPUnit X).symm x = (x, PUnit.unit) :=
+theorem prodUnique_symm_apply [Unique Y] (x : X) : (prodUnique X Y).symm x = (x, default) :=
+  (rfl)
+
+@[simp]
+theorem toEquiv_prodUnique [Unique Y] : (prodUnique X Y).toEquiv = Equiv.prodUnique X Y :=
+  (rfl)
+
+/-- Left unit law `X × Y ≃ Y` for the product diffeology when `X` has a unique element. -/
+def uniqueProd [Unique X] : DSmoothEquiv (X × Y) Y :=
+  (prodComm X Y).trans (prodUnique Y X)
+
+@[simp]
+theorem coe_uniqueProd [Unique X] : ⇑(uniqueProd X Y) = Prod.snd :=
+  (rfl)
+
+@[grind =]
+theorem uniqueProd_apply [Unique X] (p : X × Y) : uniqueProd X Y p = p.2 :=
+  (rfl)
+
+@[simp, grind =]
+theorem uniqueProd_symm_apply [Unique X] (y : Y) : (uniqueProd X Y).symm y = (default, y) :=
+  (rfl)
+
+@[simp]
+theorem toEquiv_uniqueProd [Unique X] : (uniqueProd X Y).toEquiv = Equiv.uniqueProd Y X :=
   (rfl)
 
 end DSmoothEquiv

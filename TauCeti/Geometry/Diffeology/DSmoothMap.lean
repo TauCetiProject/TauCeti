@@ -37,10 +37,14 @@ manifold assumptions on the mapping space:
   multiplication define smooth maps `G → DSmoothMap G G`
   (`TauCeti.Diffeology.DSmoothMap.dSmooth_mulLeft`,
   `TauCeti.Diffeology.DSmoothMap.dSmooth_mulRight`, and their additive counterparts).
-* **D-topology of evaluation**: when `X` is locally compact, `DSmoothMap X Y × X` inherits
-  D-topology compatibility from
-  `TauCeti.Diffeology.instIsDTopologyCompatibleProdOfLocallyCompactSpaceRight`, so evaluation is
-  continuous for the product topology (`TauCeti.Diffeology.DSmoothMap.continuous_eval`).
+* **D-topology of evaluation**: pointwise evaluation at a fixed point gives a
+  `ContinuousEvalConst (DSmoothMap X Y) X Y` instance
+  (`TauCeti.Diffeology.DSmoothMap.instContinuousEvalConst`) whenever `DSmoothMap X Y` and `Y`
+  carry D-topology-compatible topologies, and joint evaluation gives
+  `ContinuousEval (DSmoothMap X Y) X Y` (`TauCeti.Diffeology.DSmoothMap.instContinuousEval`)
+  whenever `DSmoothMap X Y × X` and `Y` carry D-topology-compatible topologies (for instance when
+  `X` is locally compact via
+  `TauCeti.Diffeology.instIsDTopologyCompatibleProdOfLocallyCompactSpaceRight`).
 
 ## References
 
@@ -298,6 +302,9 @@ theorem coe_toDSmoothMap (e : DSmoothEquiv X Y) : ⇑e.toDSmoothMap = ⇑e :=
 theorem toDSmoothMap_apply (e : DSmoothEquiv X Y) (x : X) : e.toDSmoothMap x = e x :=
   (rfl)
 
+theorem toDSmoothMap_injective : Injective (toDSmoothMap : DSmoothEquiv X Y → DSmoothMap X Y) :=
+  fun _ _ h ↦ ext fun x ↦ congr($(h) x)
+
 @[simp]
 theorem toDSmoothMap_refl : (DSmoothEquiv.refl X).toDSmoothMap = DSmoothMap.id X :=
   DSmoothMap.ext fun _ ↦ by simp
@@ -308,7 +315,7 @@ theorem toDSmoothMap_trans (e₁ : DSmoothEquiv X Y) (e₂ : DSmoothEquiv Y Z) :
   DSmoothMap.ext fun _ ↦ by simp
 
 @[simp]
-theorem symm_toDSmoothMap_comp (e : DSmoothEquiv X Y) :
+theorem symm_comp_toDSmoothMap (e : DSmoothEquiv X Y) :
     e.symm.toDSmoothMap.comp e.toDSmoothMap = DSmoothMap.id X :=
   DSmoothMap.ext e.symm_apply_apply
 
@@ -332,6 +339,12 @@ theorem coe_ofDSmoothMap (f : DSmoothMap X Y) (g : DSmoothMap Y X)
 theorem ofDSmoothMap_apply (f : DSmoothMap X Y) (g : DSmoothMap Y X)
     (h₁ : g.comp f = DSmoothMap.id X) (h₂ : f.comp g = DSmoothMap.id Y) (x : X) :
     ofDSmoothMap f g h₁ h₂ x = f x :=
+  (rfl)
+
+@[simp, grind =]
+theorem toDSmoothMap_ofDSmoothMap (f : DSmoothMap X Y) (g : DSmoothMap Y X)
+    (h₁ : g.comp f = DSmoothMap.id X) (h₂ : f.comp g = DSmoothMap.id Y) :
+    (ofDSmoothMap f g h₁ h₂).toDSmoothMap = f :=
   (rfl)
 
 @[simp]
@@ -372,32 +385,12 @@ namespace DSmoothMap
 
 /-- A map from a Cartesian space into `DSmoothMap X Y` is a plot if and only if its uncurried
 form on `𝔼ⁿ × X` is smooth. -/
-@[simp]
 theorem isPlot_iff_dSmooth_uncurry {n : ℕ} {p : 𝔼ⁿ → DSmoothMap X Y} :
     _root_.Diffeology.IsPlot p ↔ _root_.Diffeology.DSmooth (fun q : 𝔼ⁿ × X ↦ p q.1 q.2) :=
   (Iff.rfl)
 
-/-- A map from a Cartesian space into `DSmoothMap X Y` is a local plot on a subset `u` if and only
-if `(q, x) ↦ p q.1 x` is smooth on `u × X` with `u` carrying its subspace diffeology. -/
-@[simp]
-theorem isPlotOn_iff_dSmooth_uncurry {n : ℕ} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → DSmoothMap X Y} :
-    IsPlotOn u p ↔ _root_.Diffeology.DSmooth (fun q : u × X ↦ p q.1.1 q.2) := by
-  refine ⟨fun hp m r hr ↦ ?_, fun h ↦ isPlotOn_iff.mpr fun f hfu hf ↦ ?_⟩
-  · obtain ⟨hr₁, hr₂⟩ := isPlot_prod_iff.mp hr
-    have hr₁_diff : ContDiff ℝ ∞ (Subtype.val ∘ Prod.fst ∘ r) :=
-      (isPlot_subtype_iff.mp hr₁).contDiff
-    have hpf : _root_.Diffeology.DSmooth (fun q : 𝔼ᵐ × X ↦ p ((r q.1).1 : 𝔼ⁿ) q.2) :=
-      hp.isPlot_comp (fun z _ ↦ (r z).1.2) hr₁_diff
-    exact hpf m (fun z ↦ (z, (r z).2))
-      (isPlot_prod_iff.mpr ⟨_root_.Diffeology.isPlot_id, hr₂⟩)
-  · have hF : _root_.Diffeology.DSmooth
-        (fun q : _ × X ↦ ((⟨f q.1, hfu (mem_univ q.1)⟩ : u), q.2)) :=
-      ((hf.dSmooth.comp dSmooth_fst).subtype_mk fun q ↦ hfu (mem_univ q.1)).prodMk dSmooth_snd
-    exact h.comp hF
-
 /-- **Universal property of the functional diffeology.** A map `g : Z → DSmoothMap X Y` is smooth
 if and only if `(z, x) ↦ g z x` is smooth on `Z × X`. -/
-@[simp]
 theorem dSmooth_iff_uncurry {g : Z → DSmoothMap X Y} :
     _root_.Diffeology.DSmooth g ↔ _root_.Diffeology.DSmooth (fun q : Z × X ↦ g q.1 q.2) := by
   refine ⟨fun hg n r hr ↦ ?_, fun hg n p hp ↦ ?_⟩
@@ -406,10 +399,23 @@ theorem dSmooth_iff_uncurry {g : Z → DSmoothMap X Y} :
       (isPlot_prod_iff.mpr ⟨_root_.Diffeology.isPlot_id, hr₂⟩)
   · exact hg.comp (hp.dSmooth.prodMap _root_.Diffeology.dSmooth_id)
 
+/-- A map from a Cartesian space into `DSmoothMap X Y` is a local plot on a subset `u` if and only
+if `(q, x) ↦ p q.1 x` is smooth on `u × X` with `u` carrying its subspace diffeology. -/
+theorem isPlotOn_iff_dSmooth_uncurry {n : ℕ} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → DSmoothMap X Y} :
+    IsPlotOn u p ↔ _root_.Diffeology.DSmooth (fun q : u × X ↦ p q.1.1 q.2) :=
+  isPlotOn_iff_dSmooth_domRestrict.trans dSmooth_iff_uncurry
+
 /-- Evaluation `DSmoothMap X Y × X → Y` is smooth. -/
 @[fun_prop]
 theorem dSmooth_eval : _root_.Diffeology.DSmooth (fun q : DSmoothMap X Y × X ↦ q.1 q.2) :=
   dSmooth_iff_uncurry.mp _root_.Diffeology.dSmooth_id
+
+/-- Pointwise evaluation of smooth families `f : Z → DSmoothMap X Y` and `g : Z → X` is smooth. -/
+@[fun_prop]
+protected theorem _root_.Diffeology.DSmooth.eval {f : Z → DSmoothMap X Y} {g : Z → X}
+    (hf : _root_.Diffeology.DSmooth f) (hg : _root_.Diffeology.DSmooth g) :
+    _root_.Diffeology.DSmooth fun z ↦ f z (g z) :=
+  dSmooth_eval.comp (hf.prodMk hg)
 
 /-- Evaluation as a bundled smooth map `DSmoothMap X Y × X → Y`. -/
 def eval : DSmoothMap (DSmoothMap X Y × X) Y :=
@@ -433,6 +439,13 @@ theorem evalAt_apply (x : X) (f : DSmoothMap X Y) : evalAt x f = f x :=
 theorem dSmooth_evalAt (x : X) : _root_.Diffeology.DSmooth (fun f : DSmoothMap X Y ↦ f x) :=
   (evalAt x).dSmooth
 
+/-- Evaluating a smooth family `f : Z → DSmoothMap X Y` at a fixed point `x : X` is smooth. -/
+@[fun_prop]
+protected theorem _root_.Diffeology.DSmooth.eval_const {f : Z → DSmoothMap X Y}
+    (hf : _root_.Diffeology.DSmooth f) (x : X) :
+    _root_.Diffeology.DSmooth (f · x) :=
+  (dSmooth_evalAt x).comp hf
+
 /-- Composition `DSmoothMap Y Z × DSmoothMap X Y → DSmoothMap X Z` is smooth. -/
 @[fun_prop]
 theorem dSmooth_comp :
@@ -441,6 +454,15 @@ theorem dSmooth_comp :
     dSmooth_eval.comp <|
       (dSmooth_fst.comp dSmooth_fst).prodMk
         (dSmooth_eval.comp ((dSmooth_snd.comp dSmooth_fst).prodMk dSmooth_snd))
+
+/-- Pointwise composition of smooth families `g : Q → DSmoothMap Y Z` and `f : Q → DSmoothMap X Y`
+is smooth. -/
+@[fun_prop]
+protected theorem _root_.Diffeology.DSmooth.comp_dSmoothMap {g : Q → DSmoothMap Y Z}
+    {f : Q → DSmoothMap X Y} (hg : _root_.Diffeology.DSmooth g)
+    (hf : _root_.Diffeology.DSmooth f) :
+    _root_.Diffeology.DSmooth fun q ↦ (g q).comp (f q) :=
+  dSmooth_comp.comp (hg.prodMk hf)
 
 /-- Composition as a bundled smooth map. -/
 def compMap : DSmoothMap (DSmoothMap Y Z × DSmoothMap X Y) (DSmoothMap X Z) :=
@@ -562,7 +584,11 @@ def constMap (X Y : Type*) [DiffeologicalSpace X] [DiffeologicalSpace Y] :
   ⟨const X, dSmooth_const⟩
 
 @[simp, grind =]
-theorem constMap_apply (y : Y) (x : X) : constMap X Y y x = y :=
+theorem coe_constMap : ⇑(constMap X Y) = const X :=
+  (rfl)
+
+@[simp, grind =]
+theorem constMap_apply (y : Y) : constMap X Y y = const X y :=
   (rfl)
 
 /-- When `X` is nonempty, the inclusion of constant maps `Y → DSmoothMap X Y` is an induction. -/
@@ -591,7 +617,6 @@ theorem evalUniqueEquiv_apply [Unique X] (f : DSmoothMap X Y) :
 @[simp, grind =]
 theorem evalUniqueEquiv_symm_apply [Unique X] (y : Y) :
     (evalUniqueEquiv X Y).symm y = const X y := by
-  ext
   simp [evalUniqueEquiv]
 
 /-! ### Smooth multiplication and translation families -/
@@ -625,14 +650,14 @@ theorem mulRight_apply (hmul : _root_.Diffeology.DSmooth (fun p : G × G ↦ p.1
   (rfl)
 
 /-- The left-translation family `g ↦ (x ↦ g * x)` is smooth into `DSmoothMap G G`. -/
-@[to_additive
+@[to_additive (attr := fun_prop)
 /-- The left-translation family `g ↦ (x ↦ g + x)` is smooth into `DSmoothMap G G`. -/]
 theorem dSmooth_mulLeft (hmul : _root_.Diffeology.DSmooth (fun p : G × G ↦ p.1 * p.2)) :
     _root_.Diffeology.DSmooth (mulLeft hmul) :=
   dSmooth_iff_uncurry.mpr hmul
 
 /-- The right-translation family `g ↦ (x ↦ x * g)` is smooth into `DSmoothMap G G`. -/
-@[to_additive
+@[to_additive (attr := fun_prop)
 /-- The right-translation family `g ↦ (x ↦ x + g)` is smooth into `DSmoothMap G G`. -/]
 theorem dSmooth_mulRight (hmul : _root_.Diffeology.DSmooth (fun p : G × G ↦ p.1 * p.2)) :
     _root_.Diffeology.DSmooth (mulRight hmul) :=
@@ -642,16 +667,23 @@ end Mul
 
 /-! ### Continuity of evaluation -/
 
-/-- When `X` is locally compact and `DSmoothMap X Y`, `X`, and `Y` carry topologies compatible
-with their D-topologies, evaluation `DSmoothMap X Y × X → Y` is continuous for the product
-topology. -/
-@[fun_prop]
-theorem continuous_eval
+/-- When `DSmoothMap X Y` and `Y` carry topologies compatible with their D-topologies, evaluation
+at any fixed point `x : X` is continuous. -/
+instance instContinuousEvalConst
     [TopologicalSpace (DSmoothMap X Y)] [_root_.Diffeology.IsDTopologyCompatible (DSmoothMap X Y)]
-    [TopologicalSpace X] [_root_.Diffeology.IsDTopologyCompatible X] [LocallyCompactSpace X]
     [TopologicalSpace Y] [_root_.Diffeology.IsDTopologyCompatible Y] :
-    Continuous (fun q : DSmoothMap X Y × X ↦ q.1 q.2) :=
-  dSmooth_eval.continuous'
+    ContinuousEvalConst (DSmoothMap X Y) X Y where
+  continuous_eval_const x := (dSmooth_evalAt x).continuous'
+
+/-- When `DSmoothMap X Y × X` and `Y` carry topologies compatible with their D-topologies (for
+instance when `DSmoothMap X Y` and `X` are D-topology-compatible and `X` is locally compact), joint
+evaluation `DSmoothMap X Y × X → Y` is continuous for the product topology. -/
+instance instContinuousEval
+    [TopologicalSpace (DSmoothMap X Y)] [TopologicalSpace X]
+    [_root_.Diffeology.IsDTopologyCompatible (DSmoothMap X Y × X)]
+    [TopologicalSpace Y] [_root_.Diffeology.IsDTopologyCompatible Y] :
+    ContinuousEval (DSmoothMap X Y) X Y where
+  continuous_eval := dSmooth_eval.continuous'
 
 end DSmoothMap
 

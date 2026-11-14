@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Diffeology.Induced
 public import TauCeti.Geometry.Diffeology.Prod
 public import TauCeti.Geometry.Manifold.ContMDiff.Parametrization
-public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # The diffeology of a smooth manifold
@@ -21,17 +20,23 @@ on a choice of smooth atlas or model.
 
 As for Mathlib's `NormedSpace.toDiffeology`, the construction is not a global instance:
 `IsContMDiffCompatible I M` records agreement with a diffeology already installed on a charted
-space `M`. This avoids conflicting diffeologies on normed spaces, open submanifolds, and products:
+space `M`. The model `I` is an explicit parameter rather than an `outParam`, because a single
+diffeological space (such as a product `E × F` of normed spaces) can be compatible with distinct
+manifold models (`𝓘(ℝ, E × F)` and `𝓘(ℝ, E).prod 𝓘(ℝ, F)`):
 
-* On a real normed space `V`, `manifoldDiffeology 𝓘(ℝ, V) V` agrees with `NormedSpace.toDiffeology`
+* On any real normed space `V` with `[IsContDiffCompatible V]`, the diffeology is compatible with
+  `𝓘(ℝ, V)` (`TauCeti.instIsContMDiffCompatibleSelf`); when `V` is finite-dimensional,
+  `manifoldDiffeology 𝓘(ℝ, V) V` agrees with `NormedSpace.toDiffeology V`
   (`TauCeti.manifoldDiffeology_self`).
-* On an open submanifold `U : Opens M`, the subspace diffeology is manifold-compatible whenever
-  `M` is (`TauCeti.instIsContMDiffCompatibleOpens`), so `manifoldDiffeology I U` agrees with the
-  subspace diffeology (`TauCeti.manifoldDiffeology_opens`).
+* On an open submanifold `U : Opens M`, the subspace diffeology is compatible with `I` whenever `M`
+  is (`TauCeti.instIsContMDiffCompatibleOpens`); when `M` is a finite-dimensional boundaryless
+  smooth manifold, `manifoldDiffeology I U` agrees with the subspace diffeology
+  (`TauCeti.manifoldDiffeology_opens`).
 * On a finite product `M × N`, the product diffeology is compatible with `I.prod J` whenever the
-  factors are compatible with `I` and `J` (`TauCeti.instIsContMDiffCompatibleProd`), so
-  `manifoldDiffeology (I.prod J) (M × N)` agrees with the product diffeology
-  (`TauCeti.manifoldDiffeology_prod`) and has the product topology as its D-topology.
+  factors are compatible with `I` and `J` (`TauCeti.instIsContMDiffCompatibleProd`); when `M` and
+  `N` are finite-dimensional boundaryless smooth manifolds, `manifoldDiffeology (I.prod J) (M × N)`
+  agrees with the product diffeology (`TauCeti.manifoldDiffeology_prod`) and has the product
+  topology as its D-topology (`TauCeti.isDTopologyCompatible_of_isContMDiffCompatible`).
 
 On open subsets of Cartesian spaces, local plots (`TauCeti.Diffeology.IsPlotOn`) are precisely
 `ContMDiffOn` maps (`TauCeti.isPlotOn_iff_contMDiffOn`). Globally, `hp.isPlot` and `hp.contMDiff`
@@ -107,9 +112,11 @@ theorem dTopology_manifoldDiffeology : @dTopology M (manifoldDiffeology I M) = t
 end Construction
 
 /-- A diffeology agrees with a smooth manifold structure if its Cartesian plots are
-exactly the smooth manifold maps. -/
-class IsContMDiffCompatible {E : outParam Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {H : outParam Type*} [TopologicalSpace H] (I : outParam (ModelWithCorners ℝ E H))
+exactly the smooth manifold maps. `I` is an explicit parameter rather than an `outParam`, since a
+single diffeological space (such as a product normed space `E × F`) can be compatible with distinct
+models (`𝓘(ℝ, E × F)` and `𝓘(ℝ, E).prod 𝓘(ℝ, F)`). -/
+class IsContMDiffCompatible {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
     (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [DiffeologicalSpace M] : Prop where
   /-- A Cartesian parametrization is a plot exactly when it is smooth in manifold charts. -/
   isPlot_iff {n : ℕ} {p : EuclideanSpace ℝ (Fin n) → M} :
@@ -138,43 +145,6 @@ protected theorem _root_.Diffeology.IsPlot.contMDiff {n : ℕ} {p : EuclideanSpa
     (hp : IsPlot p) : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I ∞ p :=
   isPlot_iff_contMDiff.mp hp
 
-/-- A manifold map defined on a subset of a Cartesian space that is smooth on that subset is a
-local plot on that subset. -/
-protected theorem _root_.ContMDiffOn.isPlotOn {n : ℕ} {u : Set (EuclideanSpace ℝ (Fin n))}
-    {p : EuclideanSpace ℝ (Fin n) → M}
-    (hp : ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I ∞ p u) : Diffeology.IsPlotOn u p :=
-  Diffeology.isPlotOn_iff.mpr fun _ hfu hf ↦
-    (hp.comp_contMDiff hf.contMDiff fun z ↦ hfu (mem_univ z)).isPlot
-
-/-- On an open subset of a Cartesian space, local plots of a compatible manifold are precisely
-the smooth manifold maps on that subset. -/
-theorem isPlotOn_iff_contMDiffOn {n : ℕ} {u : Set (EuclideanSpace ℝ (Fin n))} (hu : IsOpen u)
-    {p : EuclideanSpace ℝ (Fin n) → M} :
-    Diffeology.IsPlotOn u p ↔ ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I ∞ p u := by
-  refine ⟨fun hp z hz ↦ ?_, ContMDiffOn.isPlotOn⟩
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hu z hz
-  let φ := OpenPartialHomeomorph.univBall z ε
-  have htarget : φ.target = Metric.ball z ε := OpenPartialHomeomorph.univBall_target z hε
-  have hφu : MapsTo φ univ u := fun y _ ↦
-    hball (htarget ▸ φ.map_source (by simp [φ, OpenPartialHomeomorph.univBall_source]))
-  have hzt : z ∈ φ.target := htarget ▸ Metric.mem_ball_self hε
-  have hpφ : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I ∞ (p ∘ φ) :=
-    (hp.isPlot_comp hφu OpenPartialHomeomorph.contDiff_univBall).contMDiff
-  have hsymm : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) ∞
-      φ.symm z :=
-    (htarget ▸ OpenPartialHomeomorph.contDiffOn_univBall_symm).contMDiffOn.contMDiffAt
-      (φ.open_target.mem_nhds hzt)
-  exact ((hpφ.contMDiffAt.comp z hsymm).congr_of_eventuallyEq
-    (Filter.eventuallyEq_of_mem (φ.open_target.mem_nhds hzt) fun y hy ↦
-      congrArg p (φ.right_inv hy).symm)).contMDiffWithinAt
-
-/-- A local plot on an open subset of a Cartesian space is smooth as a manifold map on that
-subset. -/
-protected theorem Diffeology.IsPlotOn.contMDiffOn {n : ℕ} {u : Set (EuclideanSpace ℝ (Fin n))}
-    {p : EuclideanSpace ℝ (Fin n) → M} (hp : Diffeology.IsPlotOn u p) (hu : IsOpen u) :
-    ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I ∞ p u :=
-  (isPlotOn_iff_contMDiffOn hu).mp hp
-
 /-- A smooth manifold map between compatible diffeologies is diffeologically smooth.
 This implication needs neither finite-dimensionality nor smooth atlas assumptions. -/
 @[fun_prop]
@@ -202,6 +172,13 @@ canonical manifold structure. No finite-dimensionality is needed for this implic
 instance instIsContMDiffCompatibleSelf {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     [DiffeologicalSpace V] [IsContDiffCompatible V] : IsContMDiffCompatible 𝓘(ℝ, V) V where
   isPlot_iff := isPlot_iff_contDiff.trans contMDiff_iff_contDiff.symm
+
+/-- A manifold map defined on a subset of a Cartesian space that is smooth on that subset is a
+local plot on that subset. -/
+protected theorem _root_.ContMDiffOn.isPlotOn {n : ℕ} {u : Set (EuclideanSpace ℝ (Fin n))}
+    {p : EuclideanSpace ℝ (Fin n) → M}
+    (hp : ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I ∞ p u) : Diffeology.IsPlotOn u p :=
+  Diffeology.isPlotOn_iff_dSmooth_domRestrict.mpr hp.dSmooth_domRestrict
 
 /-- The subspace diffeology on an open submanifold is compatible with its open-submanifold
 charted space structure. -/
@@ -238,6 +215,13 @@ instance instIsContMDiffCompatibleManifoldDiffeology (I : ModelWithCorners ℝ E
   let := manifoldDiffeology I M
   exact ⟨isPlot_manifoldDiffeology_iff⟩
 
+/-- The D-topology of `manifoldDiffeology I M` agrees with the given manifold topology. -/
+instance instIsDTopologyCompatibleManifoldDiffeology (I : ModelWithCorners ℝ E H) (M : Type*)
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [BoundarylessManifold I M] :
+    @IsDTopologyCompatible M _ (manifoldDiffeology I M) := by
+  let := manifoldDiffeology I M
+  exact ⟨dTopology_manifoldDiffeology⟩
+
 /-- Characterization of the manifold diffeology by its plots. -/
 theorem isContMDiffCompatible_iff_eq_manifoldDiffeology [d : DiffeologicalSpace M] :
     IsContMDiffCompatible I M ↔ d = manifoldDiffeology I M := by
@@ -252,7 +236,7 @@ theorem manifoldDiffeology_self (E : Type*) [NormedAddCommGroup E] [NormedSpace 
     [FiniteDimensional ℝ E] :
     manifoldDiffeology 𝓘(ℝ, E) E = NormedSpace.toDiffeology E := by
   let := NormedSpace.toDiffeology E
-  exact (isContMDiffCompatible_iff_eq_manifoldDiffeology.mp inferInstance).symm
+  exact ((isContMDiffCompatible_iff_eq_manifoldDiffeology (I := 𝓘(ℝ, E))).mp inferInstance).symm
 
 /-- On an open submanifold, the manifold diffeology agrees with the subspace diffeology. -/
 theorem manifoldDiffeology_opens (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
@@ -262,7 +246,7 @@ theorem manifoldDiffeology_opens (I : ModelWithCorners ℝ E H) {M : Type*} [Top
       @Diffeology.instDiffeologicalSpaceSubtype M (manifoldDiffeology I M) (· ∈ U) := by
   let : DiffeologicalSpace M := manifoldDiffeology I M
   have : IsContMDiffCompatible I M := instIsContMDiffCompatibleManifoldDiffeology I M
-  exact (isContMDiffCompatible_iff_eq_manifoldDiffeology.mp
+  exact ((isContMDiffCompatible_iff_eq_manifoldDiffeology (I := I)).mp
     (instIsContMDiffCompatibleOpens (I := I) U)).symm
 
 /-- On a product of finite-dimensional boundaryless smooth manifolds, the manifold diffeology
@@ -281,7 +265,7 @@ theorem manifoldDiffeology_prod
   let : DiffeologicalSpace N := manifoldDiffeology J N
   have : IsContMDiffCompatible I M := instIsContMDiffCompatibleManifoldDiffeology I M
   have : IsContMDiffCompatible J N := instIsContMDiffCompatibleManifoldDiffeology J N
-  exact (isContMDiffCompatible_iff_eq_manifoldDiffeology.mp
+  exact ((isContMDiffCompatible_iff_eq_manifoldDiffeology (I := I.prod J)).mp
     (instIsContMDiffCompatibleProd (I := I) (J := J))).symm
 
 /-- Smoothly equivalent atlases give the same diffeology, even when their models differ. -/
@@ -298,13 +282,17 @@ theorem manifoldDiffeology_eq_of_contMDiff_id
 
 variable [DiffeologicalSpace M] [IsContMDiffCompatible I M]
 
+variable (I) in
+include I in
 /-- The D-topology of a manifold-compatible diffeology on a finite-dimensional boundaryless smooth
-manifold equals its original topology. -/
-instance instIsDTopologyCompatibleManifold : IsDTopologyCompatible M := by
-  rw [isContMDiffCompatible_iff_eq_manifoldDiffeology.mp
-    (inferInstance : IsContMDiffCompatible I M)]
-  let := manifoldDiffeology I M
-  exact ⟨dTopology_manifoldDiffeology⟩
+manifold equals its original topology. Because `I` is not an `outParam` of
+`IsContMDiffCompatible`, this is stated as a theorem taking `I` explicitly rather than a global
+instance. -/
+theorem isDTopologyCompatible_of_isContMDiffCompatible :
+    IsDTopologyCompatible M := by
+  have hd : ‹DiffeologicalSpace M› = manifoldDiffeology I M :=
+    (isContMDiffCompatible_iff_eq_manifoldDiffeology (I := I) (M := M)).mp inferInstance
+  exact hd ▸ instIsDTopologyCompatibleManifoldDiffeology I M
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
@@ -331,5 +319,32 @@ protected theorem _root_.Diffeology.DSmooth.contMDiff {f : M → N} (hf : DSmoot
   dSmooth_iff_contMDiff.mp hf
 
 end Manifold
+
+section PlotOn
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [DiffeologicalSpace M] [IsContMDiffCompatible I M]
+
+/-- On an open subset of a Cartesian space, local plots of a compatible manifold are precisely
+the smooth manifold maps on that subset. -/
+theorem isPlotOn_iff_contMDiffOn {n : ℕ} {u : Set (EuclideanSpace ℝ (Fin n))} (hu : IsOpen u)
+    {p : EuclideanSpace ℝ (Fin n) → M} :
+    Diffeology.IsPlotOn u p ↔ ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I ∞ p u := by
+  refine ⟨fun hp z hz ↦ ?_, ContMDiffOn.isPlotOn⟩
+  let U : TopologicalSpace.Opens (EuclideanSpace ℝ (Fin n)) := ⟨u, hu⟩
+  have hU : DSmooth (fun x : U ↦ p x) := Diffeology.isPlotOn_iff_dSmooth_domRestrict.mp hp
+  exact ((contMDiffAt_subtype_iff (U := U) (x := ⟨z, hz⟩)).mp
+    (hU.contMDiff (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin n))) ⟨z, hz⟩)).contMDiffWithinAt
+
+/-- A local plot on an open subset of a Cartesian space is smooth as a manifold map on that
+subset. -/
+protected theorem Diffeology.IsPlotOn.contMDiffOn {n : ℕ} {u : Set (EuclideanSpace ℝ (Fin n))}
+    {p : EuclideanSpace ℝ (Fin n) → M} (hp : Diffeology.IsPlotOn u p) (hu : IsOpen u) :
+    ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I ∞ p u :=
+  (isPlotOn_iff_contMDiffOn hu).mp hp
+
+end PlotOn
 
 end TauCeti

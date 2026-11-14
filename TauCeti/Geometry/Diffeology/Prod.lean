@@ -166,6 +166,30 @@ theorem isSubduction_prodMap_quotient_mk (s : Setoid X) (t : Setoid Y) :
     IsSubduction (Prod.map (Quotient.mk s) (Quotient.mk t)) :=
   (isSubduction_quotient_mk s).prodMap (isSubduction_quotient_mk t)
 
+section NormedSpace
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [DiffeologicalSpace E]
+  [_root_.Diffeology.IsContDiffCompatible E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [DiffeologicalSpace F] [_root_.Diffeology.IsContDiffCompatible F]
+
+/-- The product diffeology on a product of normed spaces carrying the diffeology of smooth maps is
+again the diffeology of smooth maps. -/
+instance instIsContDiffCompatibleProd : _root_.Diffeology.IsContDiffCompatible (E × F) where
+  isPlot_iff {_ _} := by
+    rw [isPlot_prod_iff, _root_.Diffeology.IsContDiffCompatible.isPlot_iff,
+      _root_.Diffeology.IsContDiffCompatible.isPlot_iff, contDiff_prod_iff]
+
+/-- For finite-dimensional normed spaces carrying the diffeology of smooth maps, the D-topology of
+the product diffeology is the product topology. -/
+instance instIsDTopologyCompatibleProd [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] :
+    _root_.Diffeology.IsDTopologyCompatible (E × F) where
+  dTop_eq := by
+    -- The D-topology of the normed-space diffeology is by construction the norm topology.
+    rw [NormedSpace.isContDiffCompatible_iff_eq_toDiffeology.mp instIsContDiffCompatibleProd]
+    rfl
+
+end NormedSpace
+
 /-! ### D-topologies -/
 
 /-- The D-topology of a product is finer than the product of the D-topologies. -/
@@ -176,11 +200,12 @@ theorem dTopology_prod_le :
     (continuous_iff_le_induced.mp dSmooth_snd.continuous)
 
 private theorem continuous_prod_dTopology_of_locallyCompactSpace_right {W : Type*}
-    [TopologicalSpace W] (hY : @LocallyCompactSpace Y _root_.Diffeology.dTopology) {f : X × Y → W}
-    (hf : ∀ {n : ℕ} {r : 𝔼ⁿ → X × Y}, _root_.Diffeology.IsPlot r → Continuous (f ∘ r)) :
+    [tW : TopologicalSpace W] (hY : @LocallyCompactSpace Y _root_.Diffeology.dTopology)
+    {f : X × Y → W} (hf : Continuous[_root_.Diffeology.dTopology, tW] f) :
     @Continuous (X × Y) W
       (@instTopologicalSpaceProd X Y _root_.Diffeology.dTopology _root_.Diffeology.dTopology)
-      ‹_› f := by
+      tW f := by
+  have hf_plot := continuous_dTopology_iff.mp hf
   let : TopologicalSpace X := _root_.Diffeology.dTopology
   let : TopologicalSpace Y := _root_.Diffeology.dTopology
   have : LocallyCompactSpace Y := hY
@@ -189,26 +214,21 @@ private theorem continuous_prod_dTopology_of_locallyCompactSpace_right {W : Type
       Continuous fun uy : 𝔼ⁿ × Y ↦ f (p uy.1, uy.2) := by
     let H : Y → C(𝔼ⁿ, W) := fun y ↦
       ⟨fun u ↦ f (p u, y),
-        hf (r := fun u ↦ (p u, y)) (isPlot_prod_iff.mpr ⟨hp, _root_.Diffeology.isPlot_const⟩)⟩
-    have hH : Continuous H := continuous_def.mpr fun s hs ↦
-      _root_.Diffeology.isOpen_iff_preimages_plots.mpr fun m q hq ↦ by
-        refine hs.preimage (ContinuousMap.continuous_of_continuous_uncurry (H ∘ q) ?_)
-        let e := toEuclidean (E := 𝔼ᵐ × 𝔼ⁿ)
-        have hplot : _root_.Diffeology.IsPlot (fun w ↦ (p (e.symm w).2, q (e.symm w).1)) :=
-          isPlot_prod_iff.mpr
-            ⟨_root_.Diffeology.isPlot_reparam hp (contDiff_snd.comp e.symm.contDiff),
-              _root_.Diffeology.isPlot_reparam hq (contDiff_fst.comp e.symm.contDiff)⟩
-        simpa [H, e, Function.uncurry_def, Function.comp_def] using (hf hplot).comp e.continuous
+        hf_plot n (fun u ↦ (p u, y)) (isPlot_prod_iff.mpr ⟨hp, _root_.Diffeology.isPlot_const⟩)⟩
+    have hH : Continuous H := continuous_dTopology_iff.mpr fun m q hq ↦ by
+      refine ContinuousMap.continuous_of_continuous_uncurry (H ∘ q) ?_
+      have hr : _root_.Diffeology.DSmooth (fun uv : 𝔼ᵐ × 𝔼ⁿ ↦ (p uv.2, q uv.1)) :=
+        (hp.dSmooth.comp dSmooth_snd).prodMk (hq.dSmooth.comp dSmooth_fst)
+      let : TopologicalSpace (X × Y) := _root_.Diffeology.dTopology
+      have : _root_.Diffeology.IsDTopologyCompatible (X × Y) := ⟨rfl⟩
+      exact hf.comp hr.continuous'
     exact (ContinuousMap.continuous_uncurry_of_continuous ⟨H, hH⟩).comp continuous_swap
   -- Now curry in the locally compact factor `Y` and test continuity on `X` against all plots.
   let G : X → C(Y, W) := fun x ↦
-    ⟨fun y ↦ f (x, y), continuous_def.mpr fun s hs ↦
-      _root_.Diffeology.isOpen_iff_preimages_plots.mpr fun m q hq ↦
-        hs.preimage (hf (r := fun v ↦ (x, q v))
-          (isPlot_prod_iff.mpr ⟨_root_.Diffeology.isPlot_const, hq⟩))⟩
-  have hG : Continuous G := continuous_def.mpr fun s hs ↦
-    _root_.Diffeology.isOpen_iff_preimages_plots.mpr fun n p hp ↦
-      hs.preimage (ContinuousMap.continuous_of_continuous_uncurry (G ∘ p) (hp_prod hp))
+    ⟨fun y ↦ f (x, y), continuous_dTopology_iff.mpr fun m q hq ↦
+      hf_plot m (fun v ↦ (x, q v)) (isPlot_prod_iff.mpr ⟨_root_.Diffeology.isPlot_const, hq⟩)⟩
+  have hG : Continuous G := continuous_dTopology_iff.mpr fun n p hp ↦
+    ContinuousMap.continuous_of_continuous_uncurry (G ∘ p) (hp_prod hp)
   exact ContinuousMap.continuous_uncurry_of_continuous ⟨G, hG⟩
 
 /-- When the right factor is locally compact in its D-topology, the D-topology of `X × Y` equals
@@ -223,7 +243,7 @@ theorem dTopology_prod_eq_of_locallyCompactSpace_right
     @instTopologicalSpaceProd X Y _root_.Diffeology.dTopology _root_.Diffeology.dTopology
   exact (@continuous_id_iff_le (X × Y) tProd tXY).mp
     (@continuous_prod_dTopology_of_locallyCompactSpace_right X Y _ _ (X × Y) tXY hY id
-      fun hr ↦ hr.continuous)
+      (@continuous_id (X × Y) tXY))
 
 /-- When the left factor is locally compact in its D-topology, the D-topology of `X × Y` equals
 the product of the D-topologies. See Christensen–Sinnamon–Wu (2014), Section 4. -/
@@ -267,30 +287,6 @@ instance instIsDTopologyCompatibleProdOfLocallyCompactSpaceLeft
     rw [dTopology_prod_eq_of_locallyCompactSpace_left hX,
       _root_.Diffeology.IsDTopologyCompatible.dTop_eq X,
       _root_.Diffeology.IsDTopologyCompatible.dTop_eq Y]
-
-section NormedSpace
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [DiffeologicalSpace E]
-  [_root_.Diffeology.IsContDiffCompatible E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [DiffeologicalSpace F] [_root_.Diffeology.IsContDiffCompatible F]
-
-/-- The product diffeology on a product of normed spaces carrying the diffeology of smooth maps is
-again the diffeology of smooth maps. -/
-instance instIsContDiffCompatibleProd : _root_.Diffeology.IsContDiffCompatible (E × F) where
-  isPlot_iff {_ _} := by
-    rw [isPlot_prod_iff, _root_.Diffeology.IsContDiffCompatible.isPlot_iff,
-      _root_.Diffeology.IsContDiffCompatible.isPlot_iff, contDiff_prod_iff]
-
-/-- For finite-dimensional normed spaces carrying the diffeology of smooth maps, the D-topology of
-the product diffeology is the product topology. -/
-instance instIsDTopologyCompatibleProd [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] :
-    _root_.Diffeology.IsDTopologyCompatible (E × F) where
-  dTop_eq := by
-    -- The D-topology of the normed-space diffeology is by construction the norm topology.
-    rw [NormedSpace.isContDiffCompatible_iff_eq_toDiffeology.mp instIsContDiffCompatibleProd]
-    rfl
-
-end NormedSpace
 
 /-- If the D-topology of `X × Y` is the product topology and the projections onto the quotients
 are open quotient maps, then the D-topology of the product of the quotient diffeologies is the

@@ -157,46 +157,49 @@ end Transport
 
 section Manifold
 
-variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E']
-  {C : Type*} [Groupoid C] [TopologicalSpace C] [ChartedSpace E C] [IsManifold 𝓘(ℝ, E) ∞ C]
-  [DiffeologicalSpace C] [IsContMDiffCompatible 𝓘(ℝ, E) C]
-  [TopologicalSpace (Quiver.Total C)] [ChartedSpace E' (Quiver.Total C)]
+variable {E H E' H' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {C : Type*} [Groupoid C] [TopologicalSpace C] [ChartedSpace H C] [IsManifold I ∞ C]
+  [BoundarylessManifold I C] [DiffeologicalSpace C] [IsContMDiffCompatible I C]
+  [TopologicalSpace (Quiver.Total C)] [ChartedSpace H' (Quiver.Total C)]
 
 /-- If the source is a smooth local diffeomorphism and the target is smooth, then following a
 local inverse of the source through an arrow `y ⟶ u` and then the target is a smooth local
 transport from `y` to `u`. -/
 private theorem exists_transport
-    (hs : IsLocalDiffeomorph 𝓘(ℝ, E') 𝓘(ℝ, E) ∞ (Quiver.Total.left : Quiver.Total C → C))
-    (ht : ContMDiff 𝓘(ℝ, E') 𝓘(ℝ, E) ∞ (Quiver.Total.right : Quiver.Total C → C))
+    (hs : IsLocalDiffeomorph I' I ∞ (Quiver.Total.left : Quiver.Total C → C))
+    (ht : ContMDiff I' I ∞ (Quiver.Total.right : Quiver.Total C → C))
     ⦃y u : C⦄ (f : y ⟶ u) :
     ∃ V : Set C, IsOpen[_root_.Diffeology.dTopology] V ∧ y ∈ V ∧ ∃ τ : C → C, τ y = u ∧
       _root_.Diffeology.DSmooth (V.domRestrict τ) ∧ ∀ z ∈ V, Nonempty (z ⟶ τ z) := by
   have ha := hs ⟨y, u, f⟩
+  have htop := isDTopologyCompatible_of_isContMDiffCompatible I (M := C)
   -- Every arrow `b` with source `z` gives an arrow from `z` to the target of `b`.
   have harrow (z : C) (b : Quiver.Total C) (hb : b.left = z) : Nonempty (z ⟶ b.right) := by
     obtain ⟨_, _, g⟩ := b
     exact hb ▸ ⟨g⟩
   refine ⟨ha.localInverse.source,
-    (_root_.Diffeology.IsDTopologyCompatible.dTop_eq C).symm ▸ ha.localInverse_open_source,
+    (htop.dTop_eq).symm ▸ ha.localInverse_open_source,
     ha.localInverse_mem_source, fun z ↦ (ha.localInverse z).right,
     congrArg Quiver.Total.right (ha.localInverse_left_inv ha.localInverse_mem_target),
     (ht.comp_contMDiffOn ha.contMDiffOn_localInverse).dSmooth_domRestrict,
     fun z hz ↦ harrow z _ (ha.localInverse_right_inv hz)⟩
 
 /-- **Finite quotient charts of the coarse diffeology of a proper étale groupoid.** Let `C` be a
-groupoid whose objects and total arrows are smooth manifolds, with source and target smooth local
-diffeomorphisms, continuous units and composition, Hausdorff arrows and proper source-target map,
-and give the objects their manifold diffeology. Every object `x` has an open neighbourhood `U` with
-a continuous action of the isotropy group `Aut x`, which is finite by
-`TauCeti.finite_hom_of_proper_source_target`, and a fully faithful functor
-`Aut x ⋉ U ⥤ C` that is the inclusion on objects, such that the map `U / Aut x → C / ≅` sending
-the orbit of `y` to its isomorphism class is an induction and an open embedding. So the coarse
-diffeology is glued from the quotient diffeologies of the finite isotropy charts `U / Aut x`. -/
+groupoid whose objects form a finite-dimensional boundaryless smooth manifold and total arrows form
+a smooth manifold, with source and target smooth local diffeomorphisms, continuous units and
+composition, Hausdorff arrows and proper source-target map, and give the objects their manifold
+diffeology. Every object `x` has an open neighbourhood `U` with a continuous action of the isotropy
+group `Aut x`, which is finite by `TauCeti.finite_hom_of_proper_source_target`, and a fully faithful
+functor `Aut x ⋉ U ⥤ C` that is the inclusion on objects, such that the map `U / Aut x → C / ≅`
+sending the orbit of `y` to its isomorphism class is an induction and an open embedding. So the
+coarse diffeology is glued from the quotient diffeologies of the finite isotropy charts
+`U / Aut x`. -/
 theorem exists_isotropy_action_isInduction_of_proper_source_target [T2Space (Quiver.Total C)]
     (hp : IsProperMap (fun a : Quiver.Total C ↦ (a.left, a.right)))
-    (hs : IsLocalDiffeomorph 𝓘(ℝ, E') 𝓘(ℝ, E) ∞ (Quiver.Total.left : Quiver.Total C → C))
-    (ht : IsLocalDiffeomorph 𝓘(ℝ, E') 𝓘(ℝ, E) ∞ (Quiver.Total.right : Quiver.Total C → C))
+    (hs : IsLocalDiffeomorph I' I ∞ (Quiver.Total.left : Quiver.Total C → C))
+    (ht : IsLocalDiffeomorph I' I ∞ (Quiver.Total.right : Quiver.Total C → C))
     (hu : Continuous fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C))
     (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
       p.1.1.comp p.1.2 p.2)
@@ -210,6 +213,7 @@ theorem exists_isotropy_action_isInduction_of_proper_source_target [T2Space (Qui
   obtain ⟨U, hxU, _, F, hU, hact, hF, hfull, hfaith, -, -⟩ :=
     exists_isotropy_action_of_proper_source_target hp hs.isLocalHomeomorph ht.isLocalHomeomorph
       hu hc x
+  have htop := isDTopologyCompatible_of_isContMDiffCompatible I (M := C)
   -- Since `F` is full and the inclusion on objects, orbits in `U` are isomorphism classes in `C`.
   have hback (y : U) : (ActionCategory.objEquiv (Aut x) U y).back = y :=
     (ActionCategory.objEquiv (Aut x) U).left_inv y
@@ -222,7 +226,7 @@ theorem exists_isotropy_action_isInduction_of_proper_source_target [T2Space (Qui
   have hφ (y : U) : φ (Quotient.mk _ y) = Quotient.mk (isIsomorphicSetoid C) (y : C) := rfl
   refine ⟨U, hxU, inferInstance, F, φ, hU, hact, hF, hfull, hfaith, hφ,
     isInduction_of_mk_eq_isomorphismClassesMk
-      ((_root_.Diffeology.IsDTopologyCompatible.dTop_eq C).symm ▸ hU)
+      ((htop.dTop_eq).symm ▸ hU)
       (fun _ _ f _ ↦ exists_transport hs ht.contMDiff f) (fun y y' ↦ (hr y y').mpr) hφ,
     isOpenEmbedding_of_mk_eq_isomorphismClassesMk hU hs.contMDiff.continuous ht.isOpenMap
       (fun y y' ↦ (hr y y').mpr) hφ⟩

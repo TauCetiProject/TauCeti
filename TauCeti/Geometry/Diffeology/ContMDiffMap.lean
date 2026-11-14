@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Algebra.LieGroup
-public import Mathlib.Geometry.Manifold.ContMDiffMap
+public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Diffeology.DSmoothMap
 public import TauCeti.Geometry.Diffeology.Manifold
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 
 /-!
 # Bundled manifold maps and diffeological mapping spaces
@@ -21,16 +21,13 @@ smooth maps (`TauCeti.Diffeology.DSmoothMap`) and diffeological diffeomorphisms
 * `ContMDiffMap.toDSmoothMap` views any smooth manifold map between manifold-compatible diffeologies
   as a `DSmoothMap`, without finite-dimensionality or smooth-atlas hypotheses.
 * When the source `M` is a finite-dimensional boundaryless smooth manifold,
-  `TauCeti.Diffeology.DSmoothMap.equivContMDiffMap` identifies `DSmoothMap M N` with
+  `TauCeti.Diffeology.DSmoothMap.toContMDiffMap` and
+  `TauCeti.Diffeology.DSmoothMap.equivContMDiffMap` identify `DSmoothMap M N` with
   `C^∞⟮I, M; J, N⟯`.
 * `Diffeomorph.toDSmoothEquiv` views any smooth manifold diffeomorphism between compatible
-  diffeologies as a `DSmoothEquiv`, and `TauCeti.Diffeology.DSmoothEquiv.equivDiffeomorph`
-  identifies `DSmoothEquiv M N` with `M ≃ₘ^∞⟮I, J⟯ N` when both `M` and `N` are finite-dimensional
-  boundaryless smooth manifolds.
-* For charted spaces with smooth multiplication (`ContMDiffMul I ∞ G`) and compatible diffeology,
-  multiplication is diffeologically smooth (`TauCeti.dSmooth_mul`), so left and right translation
-  `g ↦ (smoothLeftMul I g).toDSmoothMap` and `g ↦ (smoothRightMul I g).toDSmoothMap` are smooth
-  maps `G → DSmoothMap G G` for the functional diffeology.
+  diffeologies as a `DSmoothEquiv`, and `TauCeti.Diffeology.DSmoothEquiv.toDiffeomorph` and
+  `TauCeti.Diffeology.DSmoothEquiv.equivDiffeomorph` identify `DSmoothEquiv M N` with
+  `M ≃ₘ^∞⟮I, J⟯ N` when both `M` and `N` are finite-dimensional boundaryless smooth manifolds.
 
 ## References
 
@@ -80,7 +77,7 @@ theorem toDSmoothMap_injective :
 @[simp]
 theorem toDSmoothMap_id :
     (ContMDiffMap.id : C^∞⟮I, M; I, M⟯).toDSmoothMap = TauCeti.Diffeology.DSmoothMap.id M :=
-  TauCeti.Diffeology.DSmoothMap.ext fun _ ↦ by simp; rfl
+  TauCeti.Diffeology.DSmoothMap.ext fun _ ↦ by simp
 
 @[simp]
 theorem toDSmoothMap_comp (g : C^∞⟮J, N; K, P⟯) (f : C^∞⟮I, M; J, N⟯) :
@@ -91,24 +88,24 @@ theorem toDSmoothMap_comp (g : C^∞⟮J, N; K, P⟯) (f : C^∞⟮I, M; J, N⟯
 theorem toDSmoothMap_const (y : N) :
     (ContMDiffMap.const y : C^∞⟮I, M; J, N⟯).toDSmoothMap =
       TauCeti.Diffeology.DSmoothMap.const M y :=
-  TauCeti.Diffeology.DSmoothMap.ext fun _ ↦ by simp; rfl
+  TauCeti.Diffeology.DSmoothMap.ext fun _ ↦ by simp
 
 @[simp]
 theorem toDSmoothMap_fst :
     (ContMDiffMap.fst : C^∞⟮I.prod J, M × N; I, M⟯).toDSmoothMap =
       TauCeti.Diffeology.DSmoothMap.fst :=
-  TauCeti.Diffeology.DSmoothMap.ext fun _ ↦ by simp; rfl
+  TauCeti.Diffeology.DSmoothMap.ext fun _ ↦ by simp
 
 @[simp]
 theorem toDSmoothMap_snd :
     (ContMDiffMap.snd : C^∞⟮I.prod J, M × N; J, N⟯).toDSmoothMap =
       TauCeti.Diffeology.DSmoothMap.snd :=
-  TauCeti.Diffeology.DSmoothMap.ext fun _ ↦ by simp; rfl
+  TauCeti.Diffeology.DSmoothMap.ext fun _ ↦ by simp
 
 @[simp]
 theorem toDSmoothMap_prodMk (f : C^∞⟮K, P; I, M⟯) (g : C^∞⟮K, P; J, N⟯) :
     (f.prodMk g).toDSmoothMap = f.toDSmoothMap.prodMk g.toDSmoothMap :=
-  TauCeti.Diffeology.DSmoothMap.ext fun _ ↦ by simp; rfl
+  TauCeti.Diffeology.DSmoothMap.ext fun _ ↦ by simp
 
 end ContMDiffMap
 
@@ -130,6 +127,11 @@ theorem toDSmoothEquiv_apply (e : M ≃ₘ^∞⟮I, J⟯ N) (x : M) : e.toDSmoot
 theorem toDSmoothEquiv_injective :
     Injective (toDSmoothEquiv : (M ≃ₘ^∞⟮I, J⟯ N) → TauCeti.Diffeology.DSmoothEquiv M N) :=
   fun _ _ h ↦ ext fun x ↦ congr($(h) x)
+
+@[simp]
+theorem toDSmoothMap_toDSmoothEquiv (e : M ≃ₘ^∞⟮I, J⟯ N) :
+    e.toDSmoothEquiv.toDSmoothMap = (e : C^∞⟮I, M; J, N⟯).toDSmoothMap :=
+  TauCeti.Diffeology.DSmoothMap.ext fun _ ↦ by simp
 
 @[simp]
 theorem toDSmoothEquiv_refl :
@@ -181,6 +183,10 @@ theorem toContMDiffMap_apply (f : DSmoothMap M N) (x : M) :
     (f.toContMDiffMap : C^∞⟮I, M; J, N⟯) x = f x :=
   (rfl)
 
+theorem toContMDiffMap_injective :
+    Injective (toContMDiffMap : DSmoothMap M N → C^∞⟮I, M; J, N⟯) :=
+  fun _ _ h ↦ ext fun x ↦ congr($(h) x)
+
 @[simp]
 theorem toDSmoothMap_toContMDiffMap (f : DSmoothMap M N) :
     (f.toContMDiffMap : C^∞⟮I, M; J, N⟯).toDSmoothMap = f :=
@@ -190,6 +196,54 @@ theorem toDSmoothMap_toContMDiffMap (f : DSmoothMap M N) :
 theorem toContMDiffMap_toDSmoothMap (f : C^∞⟮I, M; J, N⟯) :
     f.toDSmoothMap.toContMDiffMap = f :=
   ContMDiffMap.ext fun _ ↦ rfl
+
+@[simp]
+theorem toContMDiffMap_id :
+    ((DSmoothMap.id M).toContMDiffMap : C^∞⟮I, M; I, M⟯) = ContMDiffMap.id :=
+  ContMDiffMap.ext fun _ ↦ by simp
+
+variable (J) in
+theorem toContMDiffMap_comp
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    {H' : Type*} [TopologicalSpace H'] {K : ModelWithCorners ℝ E' H'}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace H' P]
+    [DiffeologicalSpace P] [IsContMDiffCompatible K P]
+    [FiniteDimensional ℝ F] [IsManifold J ∞ N] [BoundarylessManifold J N]
+    (g : DSmoothMap N P) (f : DSmoothMap M N) :
+    ((g.comp f).toContMDiffMap : C^∞⟮I, M; K, P⟯) =
+      (g.toContMDiffMap : C^∞⟮J, N; K, P⟯).comp (f.toContMDiffMap : C^∞⟮I, M; J, N⟯) :=
+  ContMDiffMap.ext fun _ ↦ by simp
+
+@[simp]
+theorem toContMDiffMap_const (y : N) :
+    ((const M y).toContMDiffMap : C^∞⟮I, M; J, N⟯) = ContMDiffMap.const y :=
+  ContMDiffMap.ext fun _ ↦ by simp
+
+@[simp]
+theorem toContMDiffMap_fst [FiniteDimensional ℝ F] [IsManifold J ∞ N]
+    [BoundarylessManifold J N] :
+    ((fst : DSmoothMap (M × N) M).toContMDiffMap : C^∞⟮I.prod J, M × N; I, M⟯) =
+      ContMDiffMap.fst :=
+  ContMDiffMap.ext fun _ ↦ by simp
+
+@[simp]
+theorem toContMDiffMap_snd [FiniteDimensional ℝ F] [IsManifold J ∞ N]
+    [BoundarylessManifold J N] :
+    ((snd : DSmoothMap (M × N) N).toContMDiffMap : C^∞⟮I.prod J, M × N; J, N⟯) =
+      ContMDiffMap.snd :=
+  ContMDiffMap.ext fun _ ↦ by simp
+
+@[simp]
+theorem toContMDiffMap_prodMk
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    {H' : Type*} [TopologicalSpace H'] {K : ModelWithCorners ℝ E' H'}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace H' P]
+    [DiffeologicalSpace P] [IsContMDiffCompatible K P]
+    (f : DSmoothMap M N) (g : DSmoothMap M P) :
+    ((f.prodMk g).toContMDiffMap : C^∞⟮I, M; J.prod K, N × P⟯) =
+      (f.toContMDiffMap : C^∞⟮I, M; J, N⟯).prodMk
+        (g.toContMDiffMap : C^∞⟮I, M; K, P⟯) :=
+  ContMDiffMap.ext fun _ ↦ by simp
 
 /-- Equivalence identifying bundled diffeologically smooth maps `DSmoothMap M N` with
 `C^∞⟮I, M; J, N⟯` when the source `M` is a finite-dimensional boundaryless smooth manifold. -/
@@ -232,10 +286,36 @@ theorem toDiffeomorph_apply (e : DSmoothEquiv M N) (x : M) :
     (e.toDiffeomorph : M ≃ₘ^∞⟮I, J⟯ N) x = e x :=
   (rfl)
 
+theorem toDiffeomorph_injective :
+    Injective (toDiffeomorph : DSmoothEquiv M N → (M ≃ₘ^∞⟮I, J⟯ N)) :=
+  fun _ _ h ↦ ext fun x ↦ congr($(h) x)
+
+@[simp]
+theorem coe_toDiffeomorph_contMDiffMap (e : DSmoothEquiv M N) :
+    ((e.toDiffeomorph : M ≃ₘ^∞⟮I, J⟯ N) : C^∞⟮I, M; J, N⟯) = e.toDSmoothMap.toContMDiffMap :=
+  ContMDiffMap.ext fun _ ↦ by simp
+
+@[simp]
+theorem toDiffeomorph_refl :
+    ((DSmoothEquiv.refl M).toDiffeomorph : M ≃ₘ^∞⟮I, I⟯ M) = Diffeomorph.refl I M ∞ :=
+  Diffeomorph.ext fun _ ↦ by simp
+
 @[simp]
 theorem toDiffeomorph_symm (e : DSmoothEquiv M N) :
     (e.symm.toDiffeomorph : N ≃ₘ^∞⟮J, I⟯ M) = (e.toDiffeomorph : M ≃ₘ^∞⟮I, J⟯ N).symm :=
   Diffeomorph.ext fun _ ↦ EquivLike.injective (e.toDiffeomorph : M ≃ₘ^∞⟮I, J⟯ N) (by simp)
+
+variable (J) in
+theorem toDiffeomorph_trans
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+    {H' : Type*} [TopologicalSpace H'] {K : ModelWithCorners ℝ E' H'}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace H' P]
+    [IsManifold K ∞ P] [BoundarylessManifold K P]
+    [DiffeologicalSpace P] [IsContMDiffCompatible K P]
+    (e₁ : DSmoothEquiv M N) (e₂ : DSmoothEquiv N P) :
+    ((e₁.trans e₂).toDiffeomorph : M ≃ₘ^∞⟮I, K⟯ P) =
+      (e₁.toDiffeomorph : M ≃ₘ^∞⟮I, J⟯ N).trans (e₂.toDiffeomorph : N ≃ₘ^∞⟮J, K⟯ P) :=
+  Diffeomorph.ext fun _ ↦ by simp
 
 @[simp]
 theorem toDSmoothEquiv_toDiffeomorph (e : DSmoothEquiv M N) :
@@ -270,45 +350,3 @@ end DSmoothEquiv
 end ManifoldSource
 
 end TauCeti.Diffeology
-
-namespace TauCeti
-
-section SmoothMul
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
-  [DiffeologicalSpace G] [IsContMDiffCompatible I G]
-
-/-- Multiplication on a manifold-compatible space with smooth multiplication is diffeologically
-smooth. -/
-@[to_additive
-/-- Addition on a manifold-compatible space with smooth addition is diffeologically smooth. -/]
-theorem dSmooth_mul [Mul G] [ContMDiffMul I ∞ G] :
-    DSmooth (fun p : G × G ↦ p.1 * p.2) :=
-  (contMDiff_mul I ∞).dSmooth
-
-/-- Inversion on a manifold-compatible Lie group is diffeologically smooth. -/
-@[to_additive
-/-- Negation on a manifold-compatible additive Lie group is diffeologically smooth. -/]
-theorem dSmooth_inv [Group G] [LieGroup I ∞ G] :
-    DSmooth (Inv.inv : G → G) :=
-  (contMDiff_inv I ∞).dSmooth
-
-/-- Left translation `g ↦ (smoothLeftMul I g).toDSmoothMap` on a manifold-compatible space with
-smooth multiplication is smooth into the functional diffeology `DSmoothMap G G`. -/
-@[fun_prop]
-theorem dSmooth_smoothLeftMul_toDSmoothMap [Mul G] [ContMDiffMul I ∞ G] :
-    DSmooth (fun g : G ↦ (smoothLeftMul I g).toDSmoothMap) :=
-  Diffeology.DSmoothMap.dSmooth_iff_uncurry.mpr (dSmooth_mul I)
-
-/-- Right translation `g ↦ (smoothRightMul I g).toDSmoothMap` on a manifold-compatible space with
-smooth multiplication is smooth into the functional diffeology `DSmoothMap G G`. -/
-@[fun_prop]
-theorem dSmooth_smoothRightMul_toDSmoothMap [Mul G] [ContMDiffMul I ∞ G] :
-    DSmooth (fun g : G ↦ (smoothRightMul I g).toDSmoothMap) :=
-  Diffeology.DSmoothMap.dSmooth_iff_uncurry.mpr ((dSmooth_mul I).comp Diffeology.dSmooth_swap)
-
-end SmoothMul
-
-end TauCeti

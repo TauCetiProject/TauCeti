@@ -155,20 +155,22 @@ theorem exists_slice_isInduction_orbitRelQuotientMap [TopologicalSpace G] [Discr
     S.isOpenEmbedding_orbitRelQuotientMap hSo hslice⟩
 
 /-- **Local finite-quotient charts of the coarse diffeology of a manifold action.** Let a
-discrete group `G` act properly by smooth maps on a finite-dimensional smooth manifold `M`, whose
-diffeology is its manifold diffeology. Every neighbourhood of a point `x` contains an open
-neighbourhood `S` of `x`, invariant under the finite stabilizer `G_x`, whose orbit map
+discrete group `G` act properly by smooth maps on a finite-dimensional boundaryless smooth manifold
+`M`, whose diffeology is its manifold diffeology. Every neighbourhood of a point `x` contains an
+open neighbourhood `S` of `x`, invariant under the finite stabilizer `G_x`, whose orbit map
 `S / G_x → M / G` is an induction and an open embedding. So the quotient diffeology of `M / G` is
 glued from the quotient diffeologies of the finite quotient charts `S / G_x`. -/
-theorem exists_slice_isInduction_orbitRelQuotientMap_of_contMDiff {E M : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace M]
-    [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M] [DiffeologicalSpace M]
-    [IsContMDiffCompatible 𝓘(ℝ, E) M]
-    [MulAction G M] [ContMDiffConstSMul 𝓘(ℝ, E) ∞ G M] [TopologicalSpace G] [DiscreteTopology G]
+theorem exists_slice_isInduction_orbitRelQuotientMap_of_contMDiff {E H' M : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [TopologicalSpace H'] (I : ModelWithCorners ℝ E H') [TopologicalSpace M]
+    [ChartedSpace H' M] [IsManifold I ∞ M] [BoundarylessManifold I M] [DiffeologicalSpace M]
+    [IsContMDiffCompatible I M]
+    [MulAction G M] [ContMDiffConstSMul I ∞ G M] [TopologicalSpace G] [DiscreteTopology G]
     [ProperSMul G M] (x : M) {W : Set M} (hW : W ∈ 𝓝 x) :
     ∃ S : SubMulAction (stabilizer G x) M, IsOpen (S : Set M) ∧ x ∈ S ∧ (S : Set M) ⊆ W ∧
-      IsInduction S.orbitRelQuotientMap ∧ IsOpenEmbedding S.orbitRelQuotientMap :=
-  exists_slice_isInduction_orbitRelQuotientMap
-    (fun g ↦ (contMDiff_const_smul (I := 𝓘(ℝ, E)) (n := ∞) g).dSmooth) x hW
+      IsInduction S.orbitRelQuotientMap ∧ IsOpenEmbedding S.orbitRelQuotientMap := by
+  have := isDTopologyCompatible_of_isContMDiffCompatible I (M := M)
+  exact exists_slice_isInduction_orbitRelQuotientMap
+    (fun g ↦ (contMDiff_const_smul (I := I) (n := ∞) g).dSmooth) x hW
 
 end TauCeti.Diffeology
