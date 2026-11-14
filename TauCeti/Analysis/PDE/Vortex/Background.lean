@@ -115,6 +115,18 @@ theorem exp_two_mul_backgroundAmplitude_mul_sq_norm (f : ℂ → ℂ) (z : ℂ) 
     Real.exp (2 * backgroundAmplitude f z) * ‖f z‖ ^ 2 = backgroundWeight f z := by
   rw [exp_two_mul_backgroundAmplitude, backgroundWeight_def, inv_mul_eq_div]
 
+/-- The section reconstructed from the amplitude `u₀ + w` and `f` has squared modulus
+`exp (2w) h`, where `h` is `TauCeti.Vortex.backgroundWeight f`. -/
+theorem sq_norm_sectionValue_amplitudeField_backgroundAmplitude_add (f : ℂ → ℂ) (w : ℂ → ℝ)
+    (z : ℂ) :
+    ‖sectionValue (amplitudeField (fun z ↦ backgroundAmplitude f z + w z) f) z‖ ^ 2 =
+      Real.exp (2 * w z) * backgroundWeight f z := by
+  rw [← exp_two_mul_backgroundAmplitude_mul_sq_norm, sectionValue_amplitudeField, norm_mul,
+    mul_pow, Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le, ← Real.exp_nat_mul,
+    ← mul_assoc, ← Real.exp_add]
+  push_cast
+  ring_nf
+
 theorem backgroundWeight_nonneg (f : ℂ → ℂ) (z : ℂ) : 0 ≤ backgroundWeight f z := by
   rw [backgroundWeight_def]
   positivity

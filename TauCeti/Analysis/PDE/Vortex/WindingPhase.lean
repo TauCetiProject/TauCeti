@@ -356,8 +356,8 @@ theorem exists_framedGaugeGroup_sectionValue_smul_eq (hx : ContDiff ℝ ∞ x)
   have hnorm : ‖sectionValue x z * conj (windingPhase m z : ℂ)‖ = ‖sectionValue x z‖ := by
     rw [norm_mul, Complex.norm_conj, Circle.norm_coe, mul_one]
   rw [hnorm] at hz
-  rw [framedGaugeGroup_smul, sectionValue_gaugeTransform, norm_mul, Circle.norm_coe, one_mul,
-    ← hz, mul_assoc, mul_assoc, hconj, mul_one]
+  rw [norm_sectionValue_smul, framedGaugeGroup_smul, sectionValue_gaugeTransform, ← hz, mul_assoc,
+    mul_assoc, hconj, mul_one]
 
 /-- **A framed representative converging exponentially to the reference field.** Every smooth
 plane vortex with the degree-`m` end framing `α (z / |z|)^(-m) → 1` has a smooth framed gauge
@@ -381,8 +381,7 @@ theorem exists_framedGaugeGroup_norm_smul_sub_referenceField_le_mul_exp (hx : Co
       fun i ↦ (contDiff_euclidean.1 hx i).differentiable (by simp) z).2 (hsol z)
   have hlim : Tendsto (fun z ↦ 4 * ((u • x) z 2 ^ 2 + (u • x) z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
     refine (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe).congr fun z ↦ ?_
-    rw [← sq_norm_sectionValue, ← sq_norm_sectionValue, framedGaugeGroup_smul,
-      sectionValue_gaugeTransform, norm_mul, Circle.norm_coe, one_mul]
+    rw [← sq_norm_sectionValue, ← sq_norm_sectionValue, norm_sectionValue_smul]
   exact exists_norm_sub_referenceField_le_mul_exp (hcd 0).continuous (hcd 1).continuous
     ((hcd 2).of_le (by norm_cast)) ((hcd 3).of_le (by norm_cast)) hsol' hlim hu f hc
 

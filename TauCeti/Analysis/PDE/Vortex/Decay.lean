@@ -33,6 +33,9 @@ integrability needed to state the flux identity `(2π)⁻¹ ∫ i F_a = m`.
 
 ## Main results
 
+* `TauCeti.Vortex.neg_log_normSq_le_mul_exp_of_le_normSq`: the exterior bound
+  `-log |α|² ≤ M exp (-c (|z| - R))`, with the radius `R` of a disc outside which `|α|² ≥ 4 c²`
+  and a bound `M` on the circle of radius `R` as explicit inputs.
 * `TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp`: `1 - |α|² ≤ K exp (-c |z|)` for every
   `c < 1 / 2`.
 * `TauCeti.Vortex.exists_abs_curvature_le_mul_exp`: the same bound for the curvature coefficient
@@ -85,6 +88,38 @@ private theorem sq_mul_neg_log_normSq_le_laplacian
   rw [hΔ]
   linarith
 
+/-- **Exterior decay of the logarithmic modulus defect, with explicit constants.** Let `x` be a
+vortex on the whole plane whose section satisfies `|α| → 1` at infinity. Suppose that outside the
+disc of radius `R > 0` the squared modulus `s = |α|²` is positive and at least `4 c²`, with
+`c ≥ 0`, and that `-log s ≤ M` on the circle of radius `R`. Then
+`-log s(z) ≤ M exp (-c (|z| - R))` for `|z| ≥ R`. The constants are those of the hypotheses, so
+the bound is uniform over every family of vortices satisfying them with the same `c`, `R`
+and `M`. -/
+theorem neg_log_normSq_le_mul_exp_of_le_normSq
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c R M : ℝ}
+    (hR : 0 < R) (hc₀ : 0 ≤ c) (hM : 0 ≤ M)
+    (hsR : ∀ z, R ≤ ‖z‖ → 4 * c ^ 2 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2))
+    (hpos : ∀ z, R ≤ ‖z‖ → 0 < 4 * (x z 2 ^ 2 + x z 3 ^ 2))
+    (hbdry : ∀ z, ‖z‖ = R → -Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) ≤ M) {z : ℂ}
+    (hz : R ≤ ‖z‖) :
+    -Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) ≤ M * Real.exp (-(c * (‖z‖ - R))) := by
+  set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)
+  have hs₁ : ∀ z, s z ≤ 1 := normSq_le_one_of_tendsto hp hq hsol hlim
+  have hscd : ContDiff ℝ 2 s := contDiff_normSq hp hq
+  -- The logarithmic defect `u = -log |α|²` is a subsolution of `-Δ + c²` outside the disc.
+  set u : ℂ → ℝ := fun z ↦ -Real.log (s z) with hu
+  have hucont : ContinuousOn u {z | R ≤ ‖z‖} := fun z hz ↦
+    (hscd.continuous.continuousAt.log (hpos z hz).ne').neg.continuousWithinAt
+  have hucd : ∀ z, R < ‖z‖ → ContDiffAt ℝ 2 u z := fun z hz ↦
+    (hscd.contDiffAt.log (hpos z hz.le).ne').neg
+  have hsub : ∀ z, R < ‖z‖ → c ^ 2 * u z ≤ Δ u z := fun z hz ↦
+    sq_mul_neg_log_normSq_le_laplacian hp hq hsol (hsR z hz.le) (hpos z hz.le) (hs₁ z)
+  have hulim : Tendsto u (cocompact ℂ) (𝓝 0) := by
+    simpa [hu] using ((Real.continuousAt_log one_ne_zero).tendsto.comp hlim).neg
+  exact TauCeti.le_mul_exp_of_sq_mul_le_laplacian hR hc₀ hM hucont hucd hsub hbdry hulim hz
+
 /-- The case `0 ≤ c` of `exists_one_sub_normSq_le_mul_exp`, with a nonnegative constant. -/
 private theorem exists_one_sub_normSq_le_mul_exp_of_nonneg
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
@@ -93,7 +128,6 @@ private theorem exists_one_sub_normSq_le_mul_exp_of_nonneg
     (hc₀ : 0 ≤ c) (hc : c < 1 / 2) :
     ∃ K, 0 ≤ K ∧ ∀ z, 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ K * Real.exp (-(c * ‖z‖)) := by
   set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)
-  have hs₁ : ∀ z, s z ≤ 1 := normSq_le_one_of_tendsto hp hq hsol hlim
   have hscd : ContDiff ℝ 2 s := contDiff_normSq hp hq
   -- Outside a disc of radius `R`, `|α|² > 4 c²`.
   have h4c : 4 * c ^ 2 < 1 := by nlinarith
@@ -104,28 +138,20 @@ private theorem exists_one_sub_normSq_le_mul_exp_of_nonneg
   have hsR : ∀ z, R ≤ ‖z‖ → 4 * c ^ 2 < s z := fun z hz ↦ hR₀ ((le_max_left _ _).trans hz)
   have hpos : ∀ z, R ≤ ‖z‖ → 0 < s z := fun z hz ↦ (by positivity : 0 ≤ 4 * c ^ 2).trans_lt
     (hsR z hz)
-  -- The logarithmic defect `u = -log |α|²` is a subsolution of `-Δ + c²` there.
-  set u : ℂ → ℝ := fun z ↦ -Real.log (s z) with hu
-  have hucont : ContinuousOn u {z | R ≤ ‖z‖} := fun z hz ↦
-    (hscd.continuous.continuousAt.log (hpos z hz).ne').neg.continuousWithinAt
-  have hucd : ∀ z, R < ‖z‖ → ContDiffAt ℝ 2 u z := fun z hz ↦
-    (hscd.contDiffAt.log (hpos z hz.le).ne').neg
-  have hsub : ∀ z, R < ‖z‖ → c ^ 2 * u z ≤ Δ u z := fun z hz ↦
-    sq_mul_neg_log_normSq_le_laplacian hp hq hsol (hsR z hz.le).le (hpos z hz.le) (hs₁ z)
-  have hulim : Tendsto u (cocompact ℂ) (𝓝 0) := by
-    simpa [hu] using ((Real.continuousAt_log one_ne_zero).tendsto.comp hlim).neg
-  -- A bound for `u` on the sphere of radius `R`.
+  -- A bound for `u = -log |α|²` on the sphere of radius `R`.
   obtain ⟨M, hM⟩ := (isCompact_sphere (0 : ℂ) R).exists_bound_of_continuousOn
-    (hucont.mono fun z hz ↦ by simp [mem_sphere_zero_iff_norm.mp hz])
-  have hdecay : ∀ z, R ≤ ‖z‖ → u z ≤ max M 0 * Real.exp (-(c * (‖z‖ - R))) :=
-    fun z hz ↦ TauCeti.le_mul_exp_of_sq_mul_le_laplacian hR hc₀ (le_max_right _ _) hucont hucd
-      hsub (fun w hw ↦ ((le_abs_self _).trans (hM w (mem_sphere_zero_iff_norm.mpr hw))).trans
-        (le_max_left _ _)) hulim hz
+    (f := fun z ↦ -Real.log (s z)) fun z hz ↦
+      (hscd.continuous.continuousAt.log
+        (hpos z (mem_sphere_zero_iff_norm.mp hz).ge).ne').neg.continuousWithinAt
+  have hdecay : ∀ z, R ≤ ‖z‖ → -Real.log (s z) ≤ max M 0 * Real.exp (-(c * (‖z‖ - R))) :=
+    fun z hz ↦ neg_log_normSq_le_mul_exp_of_le_normSq hp hq hsol hlim hR hc₀
+      (le_max_right _ _) (fun w hw ↦ (hsR w hw).le) hpos (fun w hw ↦ ((le_abs_self _).trans
+        (hM w (mem_sphere_zero_iff_norm.mpr hw))).trans (le_max_left _ _)) hz
   -- Transfer to the modulus defect outside the disc, and extend the bound to the whole plane.
   obtain ⟨K, hK⟩ := exists_forall_le_mul_exp_of_eventually_le (continuous_const.sub hscd.continuous)
     (K := max M 0 * Real.exp (c * R)) (by
       filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop R] with z hz
-      calc 1 - s z ≤ u z := by linarith [Real.log_le_sub_one_of_pos (hpos z hz)]
+      calc 1 - s z ≤ -Real.log (s z) := by linarith [Real.log_le_sub_one_of_pos (hpos z hz)]
         _ ≤ max M 0 * Real.exp (-(c * (‖z‖ - R))) := hdecay z hz
         _ = max M 0 * Real.exp (c * R) * Real.exp (-(c * ‖z‖)) := by
           rw [exp_neg_mul_sub, mul_assoc])

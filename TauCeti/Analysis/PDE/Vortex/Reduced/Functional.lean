@@ -64,6 +64,12 @@ the energy. This gives, on `H¹(ℂ)`:
 * `TauCeti.Vortex.exists_norm_le_of_sobolevReducedFunctional_le`: each sublevel set of `I` is
   bounded in `H¹(ℂ)`.
 
+The constants depend on `P` only through a radius `R` outside which `‖P‖ ≥ 1` and a bound `K` on
+the square integral of the linear coefficient. The uniform statements
+`TauCeti.Vortex.exists_forall_le_two_mul_sobolevReducedFunctional_add` and
+`TauCeti.Vortex.exists_forall_norm_le_of_sobolevReducedFunctional_le` give one constant for all
+polynomials sharing `R` and `K`, such as the polynomials with roots in a fixed disc.
+
 For compactly supported `C¹` functions these specialize to
 `TauCeti.Vortex.exists_le_two_mul_reducedFunctional_add`,
 `TauCeti.Vortex.exists_le_reducedFunctional` and
@@ -368,9 +374,11 @@ private theorem setIntegral_compl_closedBall_le {R : ℝ}
           (Eventually.of_forall fun z ↦ mul_nonneg zero_le_two (potential_nonneg w z))
 
 /-- The energy `‖∇u‖₂² / 2 + (1 / 16) ∫ h (exp (2u) - 1 - 2u)` controls `‖u‖₂²`: its square is at
-most a constant times the cube of one plus the energy. -/
-private theorem exists_sq_norm_value_sq_le (hm : 0 < P.natDegree) :
-    ∃ γ : ℝ, 0 ≤ γ ∧ ∀ u : W1p (volume : Measure ℂ) ⊤ 2,
+most a constant times the cube of one plus the energy. The constant depends only on a radius `R`
+outside which `‖P‖ ≥ 1`. -/
+private theorem exists_forall_sq_norm_value_sq_le (R : ℝ) :
+    ∃ γ : ℝ, 0 ≤ γ ∧ ∀ P : Polynomial ℂ, (∀ z ∉ closedBall (0 : ℂ) R, 1 ≤ ‖P.eval z‖) →
+      ∀ u : W1p (volume : Measure ℂ) ⊤ 2,
       (Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
         (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)) →
       (‖W1p.value u‖ ^ 2) ^ 2 ≤ γ * (1 + (‖W1p.gradient u‖ ^ 2 / 2 +
@@ -378,16 +386,9 @@ private theorem exists_sq_norm_value_sq_le (hm : 0 < P.natDegree) :
           (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)) / 16)) ^ 3 := by
   obtain ⟨C₀, hC₀, hpl⟩ :=
     W1p.exists_norm_value_sq_le_of_finrank_eq_two (volume : Measure ℂ) Complex.finrank_real_complex
-  -- A nonconstant polynomial has modulus at least one outside a closed disc.
-  obtain ⟨R, -, hR⟩ := (hasBasis_cobounded_compl_closedBall (0 : ℂ)).eventually_iff.mp
-    (by
-      rw [cobounded_eq_cocompact]
-      exact (P.tendsto_norm_atTop (Polynomial.natDegree_pos_iff_degree_pos.mp hm)
-        tendsto_norm_cocompact_atTop).eventually_ge_atTop 1 :
-      ∀ᶠ z in Bornology.cobounded ℂ, 1 ≤ ‖P.eval z‖)
   set S := volume.real (closedBall (0 : ℂ) R)
   set β := 8 + 4 * C₀ ^ 2
-  refine ⟨8192 * β + 2 * β ^ 2 * S ^ 2, by positivity, fun u hpint ↦ ?_⟩
+  refine ⟨8192 * β + 2 * β ^ 2 * S ^ 2, by positivity, fun P hR u hpint ↦ ?_⟩
   set G := ‖W1p.gradient u‖
   set E := ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
     (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)
@@ -414,6 +415,58 @@ private theorem exists_sq_norm_value_sq_le (hm : 0 < P.natDegree) :
     nlinarith [sq_nonneg C₀]
   exact sq_le_mul_one_add_pow_three (by positivity) (by positivity) (by positivity) hW1 hk2
 
+/-- **Uniform coercivity of Taubes's functional on `H¹(ℂ)`.** Let `R` and `K` be constants. There
+is a constant `C` such that for every polynomial `P` of degree at least one with `‖P‖ ≥ 1` outside
+the closed disc of radius `R` and with linear coefficient
+`c = 2 ‖P'‖² / (1 + ‖P‖²)² - (1 + ‖P‖²)⁻¹ / 8` satisfying `∫ c² ≤ K`, every `u ∈ H¹(ℂ)` with
+integrable potential satisfies
+
+`‖∇u‖₂² / 2 + (1 / 16) ∫ h (exp (2u) - 1 - 2u) ≤ 2 I(u) + C`,
+
+where `I` is `TauCeti.Vortex.sobolevReducedFunctional P` and `h = ‖P‖² / (1 + ‖P‖²)`. -/
+theorem exists_forall_le_two_mul_sobolevReducedFunctional_add (R K : ℝ) :
+    ∃ C : ℝ, ∀ P : Polynomial ℂ, 0 < P.natDegree →
+      (∀ z ∉ closedBall (0 : ℂ) R, 1 ≤ ‖P.eval z‖) →
+      ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
+        (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) ^ 2 ≤ K →
+      ∀ u : W1p (volume : Measure ℂ) ⊤ 2,
+      (Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+        (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)) →
+      ((‖W1p.gradient u‖ ^ 2 / 2 + (∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+        (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)) / 16 : ℝ) : EReal) ≤
+        2 * sobolevReducedFunctional P u + C := by
+  obtain ⟨γ, hγ, hsq⟩ := exists_forall_sq_norm_value_sq_le R
+  set D := max K 0 ^ 2 * γ
+  refine ⟨1 + 16 * D, fun P hm hR hK u hpint ↦ ?_⟩
+  set c : ℂ → ℝ := fun z ↦
+    2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 - (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8
+  have hc : MemLp c 2 := memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm
+  set E := ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+    (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)
+  set M := ‖W1p.gradient u‖ ^ 2 / 2 + E / 16
+  have hM : 0 ≤ M := by
+    have : 0 ≤ E := integral_potential_nonneg _
+    positivity
+  -- The linear term: `x = |∫ c u|` has `x² ≤ K ‖u‖₂²`, hence `x⁴ ≤ D (1 + M)³`.
+  set x := |∫ z, c z * W1p.value u z|
+  have hx2 : x ^ 2 ≤ max K 0 * ‖W1p.value u‖ ^ 2 := by
+    rw [sq_abs, ← W1p.integral_value_sq_eq_norm_value_sq]
+    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
+    exact (sq_integral_mul_le_integral_sq_mul_integral_sq hc (W1p.memLp_value u)).trans
+      (mul_le_mul_of_nonneg_right (hK.trans (le_max_left _ _))
+        (integral_nonneg fun z ↦ sq_nonneg _))
+  have hx4 : x ^ 4 ≤ D * (1 + M) ^ 3 := by
+    calc x ^ 4 = (x ^ 2) ^ 2 := by ring
+      _ ≤ (max K 0 * ‖W1p.value u‖ ^ 2) ^ 2 := pow_le_pow_left₀ (sq_nonneg x) hx2 2
+      _ = max K 0 ^ 2 * (‖W1p.value u‖ ^ 2) ^ 2 := by ring
+      _ ≤ max K 0 ^ 2 * (γ * (1 + M) ^ 3) := by gcongr; exact hsq P hR u hpint
+      _ = D * (1 + M) ^ 3 := by simp only [D]; ring
+  have hxM := le_div_two_add_of_pow_four_le (by positivity) hM hx4
+  have key : M ≤ 2 * (M + ∫ z, c z * W1p.value u z) + (1 + 16 * D) := by
+    linarith [neg_abs_le (∫ z, c z * W1p.value u z)]
+  rw [sobolevReducedFunctional_eq_coe hpint, ← coe_two_mul_add, EReal.coe_le_coe_iff]
+  exact key
+
 /-- **Coercivity of Taubes's functional on `H¹(ℂ)`.** For a complex polynomial `P` of degree at
 least one there is a constant `C` such that every `u ∈ H¹(ℂ)` with integrable potential satisfies
 
@@ -427,36 +480,11 @@ theorem exists_le_two_mul_sobolevReducedFunctional_add (hm : 0 < P.natDegree) :
       ((‖W1p.gradient u‖ ^ 2 / 2 + (∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
         (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)) / 16 : ℝ) : EReal) ≤
         2 * sobolevReducedFunctional P u + C := by
-  obtain ⟨γ, hγ, hsq⟩ := exists_sq_norm_value_sq_le hm
-  set c : ℂ → ℝ := fun z ↦
-    2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 - (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8
-  have hc : MemLp c 2 := memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm
-  set K := ∫ z, c z ^ 2
-  set D := K ^ 2 * γ
-  refine ⟨1 + 16 * D, fun u hpint ↦ ?_⟩
-  set E := ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-    (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)
-  set M := ‖W1p.gradient u‖ ^ 2 / 2 + E / 16
-  have hM : 0 ≤ M := by
-    have : 0 ≤ E := integral_potential_nonneg _
-    positivity
-  -- The linear term: `x = |∫ c u|` has `x² ≤ K ‖u‖₂²`, hence `x⁴ ≤ D (1 + M)³`.
-  set x := |∫ z, c z * W1p.value u z|
-  have hx2 : x ^ 2 ≤ K * ‖W1p.value u‖ ^ 2 := by
-    rw [sq_abs, ← W1p.integral_value_sq_eq_norm_value_sq]
-    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
-    exact sq_integral_mul_le_integral_sq_mul_integral_sq hc (W1p.memLp_value u)
-  have hx4 : x ^ 4 ≤ D * (1 + M) ^ 3 := by
-    calc x ^ 4 = (x ^ 2) ^ 2 := by ring
-      _ ≤ (K * ‖W1p.value u‖ ^ 2) ^ 2 := pow_le_pow_left₀ (sq_nonneg x) hx2 2
-      _ = K ^ 2 * (‖W1p.value u‖ ^ 2) ^ 2 := by ring
-      _ ≤ K ^ 2 * (γ * (1 + M) ^ 3) := by gcongr; exact hsq u hpint
-      _ = D * (1 + M) ^ 3 := by simp only [D]; ring
-  have hxM := le_div_two_add_of_pow_four_le (by positivity) hM hx4
-  have key : M ≤ 2 * (M + ∫ z, c z * W1p.value u z) + (1 + 16 * D) := by
-    linarith [neg_abs_le (∫ z, c z * W1p.value u z)]
-  rw [sobolevReducedFunctional_eq_coe hpint, ← coe_two_mul_add, EReal.coe_le_coe_iff]
-  exact key
+  obtain ⟨R, hR⟩ := Polynomial.exists_forall_one_le_norm_eval hm
+  obtain ⟨C, hC⟩ := exists_forall_le_two_mul_sobolevReducedFunctional_add R
+    (∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
+      (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) ^ 2)
+  exact ⟨C, hC P hm hR le_rfl⟩
 
 /-- Taubes's functional on `H¹(ℂ)` is bounded below. -/
 theorem exists_le_sobolevReducedFunctional (hm : 0 < P.natDegree) :
@@ -473,15 +501,21 @@ theorem exists_le_sobolevReducedFunctional (hm : 0 < P.natDegree) :
   · rw [sobolevReducedFunctional_eq_top hpint]
     exact le_top
 
-/-- **Bounded sublevel sets.** For a complex polynomial `P` of degree at least one and every
-level `t`, the elements `u ∈ H¹(ℂ)` with `I(u) ≤ t` are bounded in `H¹(ℂ)`; here `I` is
-`TauCeti.Vortex.sobolevReducedFunctional P`. -/
-theorem exists_norm_le_of_sobolevReducedFunctional_le (hm : 0 < P.natDegree) (t : ℝ) :
-    ∃ C : ℝ, ∀ u : W1p (volume : Measure ℂ) ⊤ 2, sobolevReducedFunctional P u ≤ t → ‖u‖ ≤ C := by
-  obtain ⟨C₁, hC₁⟩ := exists_le_two_mul_sobolevReducedFunctional_add hm
-  obtain ⟨γ, hγ, hsq⟩ := exists_sq_norm_value_sq_le hm
+/-- **Uniformly bounded sublevel sets.** Let `R`, `K` and `t` be constants. There is a constant
+`C` such that for every polynomial `P` of degree at least one with `‖P‖ ≥ 1` outside the closed
+disc of radius `R` and with linear coefficient
+`c = 2 ‖P'‖² / (1 + ‖P‖²)² - (1 + ‖P‖²)⁻¹ / 8` satisfying `∫ c² ≤ K`, every `u ∈ H¹(ℂ)` with
+`I(u) ≤ t` has `‖u‖ ≤ C`; here `I` is `TauCeti.Vortex.sobolevReducedFunctional P`. -/
+theorem exists_forall_norm_le_of_sobolevReducedFunctional_le (R K t : ℝ) :
+    ∃ C : ℝ, ∀ P : Polynomial ℂ, 0 < P.natDegree →
+      (∀ z ∉ closedBall (0 : ℂ) R, 1 ≤ ‖P.eval z‖) →
+      ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
+        (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) ^ 2 ≤ K →
+      ∀ u : W1p (volume : Measure ℂ) ⊤ 2, sobolevReducedFunctional P u ≤ t → ‖u‖ ≤ C := by
+  obtain ⟨C₁, hC₁⟩ := exists_forall_le_two_mul_sobolevReducedFunctional_add R K
+  obtain ⟨γ, hγ, hsq⟩ := exists_forall_sq_norm_value_sq_le R
   set B := 2 * t + C₁
-  refine ⟨√(2 * B + 1 + γ * (1 + B) ^ 3), fun u ht ↦ ?_⟩
+  refine ⟨√(2 * B + 1 + γ * (1 + B) ^ 3), fun P hm hR hK u ht ↦ ?_⟩
   have hpint : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
       (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) := by
     by_contra hpint
@@ -494,17 +528,28 @@ theorem exists_norm_le_of_sobolevReducedFunctional_le (hm : 0 < P.natDegree) (t 
   have hE : 0 ≤ E := integral_potential_nonneg _
   have hMB : G ^ 2 / 2 + E / 16 ≤ B := by
     have hI := sobolevReducedFunctional_eq_coe hpint
-    have h := hC₁ u hpint
+    have h := hC₁ P hm hR hK u hpint
     rw [hI, ← coe_two_mul_add, EReal.coe_le_coe_iff] at h
     rw [hI, EReal.coe_le_coe_iff] at ht
     simp only [B]
     linarith
   have hW2 : W ^ 2 ≤ γ * (1 + B) ^ 3 := by
-    refine (hsq u hpint).trans (mul_le_mul_of_nonneg_left ?_ hγ)
+    refine (hsq P hR u hpint).trans (mul_le_mul_of_nonneg_left ?_ hγ)
     exact pow_le_pow_left₀ (by positivity) (by linarith) 3
   have hW : W ≤ 1 + γ * (1 + B) ^ 3 := by nlinarith [sq_nonneg (W - 1)]
   rw [← Real.sqrt_sq (norm_nonneg u), W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
   exact Real.sqrt_le_sqrt (by nlinarith [sq_nonneg G])
+
+/-- **Bounded sublevel sets.** For a complex polynomial `P` of degree at least one and every
+level `t`, the elements `u ∈ H¹(ℂ)` with `I(u) ≤ t` are bounded in `H¹(ℂ)`; here `I` is
+`TauCeti.Vortex.sobolevReducedFunctional P`. -/
+theorem exists_norm_le_of_sobolevReducedFunctional_le (hm : 0 < P.natDegree) (t : ℝ) :
+    ∃ C : ℝ, ∀ u : W1p (volume : Measure ℂ) ⊤ 2, sobolevReducedFunctional P u ≤ t → ‖u‖ ≤ C := by
+  obtain ⟨R, hR⟩ := Polynomial.exists_forall_one_le_norm_eval hm
+  obtain ⟨C, hC⟩ := exists_forall_norm_le_of_sobolevReducedFunctional_le R
+    (∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
+      (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) ^ 2) t
+  exact ⟨C, hC P hm hR le_rfl⟩
 
 /-- **Coercivity of Taubes's functional.** For a complex polynomial `P` of degree at least one
 there is a constant `C` such that every compactly supported `C¹` function `w` satisfies
