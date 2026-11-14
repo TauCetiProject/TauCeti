@@ -65,14 +65,14 @@ end DegreeZero
 
 section PositiveDegrees
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable (G : Type uG) [Group G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction G M] [ContinuousSMul G M]
   (U V : Subgroup G) (g : G) (κ : V →ₜ* U)
   (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g)
   (f : M →+ M) (hf : ∀ m : M, f m = g • m)
 
-omit [IsTopologicalGroup G] [ContinuousSMul G M] in
+omit [ContinuousSMul G M] in
 /-- Conjugating the restriction of a continuous `1`-cocycle changes it by the coboundary of its
 value at the conjugating element. This is the representative-level restriction identity. -/
 theorem smul_inverseConjugation_apply_sub_eq_d0 (c : Z1 G M) (g : G) (v : V) :
@@ -82,7 +82,6 @@ theorem smul_inverseConjugation_apply_sub_eq_d0 (c : Z1 G M) (g : G) (v : V) :
     d0_apply, Subgroup.smul_def]
   abel
 
-omit [IsTopologicalGroup G] in
 /-- Conjugation carries restriction to `U` to restriction to `V` in degree one.
 The equality is on classes; on cocycles the correction is `d⁰(c g)`. -/
 theorem explicitMap1_explicitRes1_of_conj (x : H1 G M) :
@@ -99,7 +98,7 @@ theorem explicitMap1_explicitRes1_of_conj (x : H1 G M) :
       (fun v => by simpa using hκ v) (fun m => by simpa using hf m))
 
 include hf in
-omit [ContinuousSMul G M] [IsTopologicalGroup G] in
+omit [ContinuousSMul G M] in
 /-- The degree-two conjugation correction on restricted cocycles is the differential of the
 restricted bar homotopy. This is an equality of cochains, before taking classes, and does not
 require continuity of the subgroup map. -/
@@ -115,7 +114,6 @@ theorem cochainsMap2_res_sub_eq_d1_of_conj (κ : V →* U)
   simpa [cochainsMap2_apply, hf, hκ, MulAut.conj_apply,
     d1_apply, Subgroup.smul_def] using h
 
-omit [IsTopologicalGroup G] in
 variable [ContinuousMul G] [ContinuousMul U] [ContinuousMul V] in
 /-- Conjugation carries restriction to `U` to restriction to `V` in degree two.
 The cochain correction is the differential of a continuous restricted bar homotopy. -/
