@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.ZMod.Four
 public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Character
 public import TauCeti.RepresentationTheory.CharacterTable.TensorGeneration
 public import TauCeti.RepresentationTheory.FDRep.Basic
@@ -40,9 +41,11 @@ statements.
 
 * `TauCeti.characterValues_cyclicFourFaithfulRep`: the character values of `U` are `2, 0, -2`.
 * `TauCeti.finrank_hom_tensorPower_add_three_cyclicFourFaithfulRep`: `m_{n+3} = 4 m_{n+1}`.
-* `TauCeti.finrank_hom_tensorPower_zero_cyclicFourChar`,
-  `TauCeti.finrank_hom_tensorPower_succ_cyclicFourChar`: the multiplicities of `χⱼ`.
-* `TauCeti.tensorMultiplicitySeries_cyclicFourChar_zero` and its siblings: the series
+* `TauCeti.finrank_hom_cyclicFourChar_tensorPower_zero_cyclicFourFaithfulRep`,
+  `TauCeti.finrank_hom_cyclicFourChar_tensorPower_succ_cyclicFourFaithfulRep`: the multiplicities
+  of `χⱼ`.
+* `TauCeti.tensorMultiplicitySeries_cyclicFourFaithfulRep_cyclicFourChar_zero` and its siblings:
+  the series
   `F₀ = (1 - 2z²)/(1 - 4z²)`, `F₁ = F₃ = z/(1 - 4z²)` and `F₂ = 2z²/(1 - 4z²)`.
 * `TauCeti.nonempty_iso_tensorPower_two_cyclicFourFaithfulRep`: `U^⊗2 ≅ χ₀ ⊕ χ₀ ⊕ χ₂ ⊕ χ₂`.
 * `TauCeti.mem_span_range_char_tensorPower_cyclicFourFaithfulRep_iff`: the span of the
@@ -74,10 +77,42 @@ theorem coe_cyclicFourChar_ofAdd (j a : ZMod 4) :
     (cyclicFourChar j (.ofAdd a) : ℂ) = I ^ (j.val * a.val) := by
   simp [cyclicFourChar, ← pow_mul]
 
+/-- `χ₀` is the trivial character. -/
+theorem cyclicFourChar_zero : cyclicFourChar 0 = 1 := by
+  refine MonoidHom.ext fun g ↦ Units.ext ?_
+  obtain ⟨a, rfl⟩ := Multiplicative.ofAdd.surjective g
+  simp
+
+/-- `χ_{j + k} = χⱼ χₖ`. -/
+theorem cyclicFourChar_add (j k : ZMod 4) :
+    cyclicFourChar (j + k) = cyclicFourChar j * cyclicFourChar k := by
+  have key (m : ℕ) : I ^ m = I ^ (m % 4) := by
+    conv_lhs => rw [← Nat.mod_add_div m 4, pow_add, pow_mul, I_pow_four, one_pow, mul_one]
+  refine MonoidHom.ext fun g ↦ Units.ext ?_
+  obtain ⟨a, rfl⟩ := Multiplicative.ofAdd.surjective g
+  simp only [MonoidHom.mul_apply, Units.val_mul, coe_cyclicFourChar_ofAdd, ← pow_add, ← add_mul]
+  rw [key, key (_ * _), ZMod.val_add, Nat.mod_mul_mod]
+
+/-- `χⱼ` determines `j`. -/
+theorem cyclicFourChar_injective : Function.Injective cyclicFourChar := fun j k h ↦ by
+  have h₁ := congrArg (fun χ : Multiplicative (ZMod 4) →* ℂˣ ↦ (χ (.ofAdd 1) : ℂ)) h
+  simp only [coe_cyclicFourChar_ofAdd, ZMod.val_one_eq_one_mod, Nat.one_mod, mul_one] at h₁
+  exact ZMod.val_injective _ (isPrimitiveRoot_I.pow_inj (ZMod.val_lt j) (ZMod.val_lt k) h₁)
+
+/-- `χⱼ = χₖ` exactly when `j = k`. -/
+@[simp]
+theorem cyclicFourChar_inj {j k : ZMod 4} : cyclicFourChar j = cyclicFourChar k ↔ j = k :=
+  cyclicFourChar_injective.eq_iff
+
 /-- The faithful two-dimensional representation `U = χ₁ ⊕ χ₃` of `C₄`, on which the generator
 acts by `diag(i, -i)`. -/
 noncomputable def cyclicFourFaithfulRep : FDRep ℂ (Multiplicative (ZMod 4)) :=
   FDRep.ofLinearCharacter (cyclicFourChar 1) ⊞ FDRep.ofLinearCharacter (cyclicFourChar 3)
+
+/-- `U` is the biproduct `χ₁ ⊞ χ₃`. -/
+theorem cyclicFourFaithfulRep_def : cyclicFourFaithfulRep =
+    (FDRep.ofLinearCharacter (cyclicFourChar 1) ⊞ FDRep.ofLinearCharacter (cyclicFourChar 3)) :=
+  (rfl)
 
 /-- The character of `U` at `ofAdd a` is `i ^ a + (-i) ^ a`. -/
 @[simp]
@@ -87,15 +122,28 @@ theorem char_cyclicFourFaithfulRep_ofAdd (a : ZMod 4) :
     FDRep.char_ofLinearCharacter, coe_cyclicFourChar_ofAdd, coe_cyclicFourChar_ofAdd]
   simp [ZMod.val_ofNat, ZMod.val_one_eq_one_mod, pow_mul, pow_succ]
 
-private theorem zmod_four_cases (a : ZMod 4) : a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3 := by
-  revert a
-  decide
+private theorem char_cyclicFourFaithfulRep_ofAdd_zero :
+    cyclicFourFaithfulRep.character (.ofAdd 0) = 2 := by
+  rw [char_cyclicFourFaithfulRep_ofAdd]; norm_num
 
-private theorem forall_cyclicFour {P : Multiplicative (ZMod 4) → Prop} (h₀ : P (.ofAdd 0))
-    (h₁ : P (.ofAdd 1)) (h₂ : P (.ofAdd 2)) (h₃ : P (.ofAdd 3)) (g : Multiplicative (ZMod 4)) :
-    P g := by
-  rw [← ofAdd_toAdd g]
-  rcases zmod_four_cases (Multiplicative.toAdd g) with h | h | h | h <;> rw [h] <;> assumption
+private theorem char_cyclicFourFaithfulRep_ofAdd_one :
+    cyclicFourFaithfulRep.character (.ofAdd 1) = 0 := by
+  rw [char_cyclicFourFaithfulRep_ofAdd]; simp [ZMod.val_one_eq_one_mod]
+
+private theorem char_cyclicFourFaithfulRep_ofAdd_two :
+    cyclicFourFaithfulRep.character (.ofAdd 2) = -2 := by
+  rw [char_cyclicFourFaithfulRep_ofAdd]; norm_num [ZMod.val_ofNat, pow_succ]
+
+private theorem char_cyclicFourFaithfulRep_ofAdd_three :
+    cyclicFourFaithfulRep.character (.ofAdd 3) = 0 := by
+  rw [char_cyclicFourFaithfulRep_ofAdd]; norm_num [ZMod.val_ofNat, pow_succ]
+
+/-- `U` is two-dimensional. -/
+@[simp]
+theorem finrank_cyclicFourFaithfulRep : Module.finrank ℂ cyclicFourFaithfulRep = 2 := by
+  have h := FDRep.char_one cyclicFourFaithfulRep
+  rw [← ofAdd_zero, char_cyclicFourFaithfulRep_ofAdd_zero] at h
+  exact_mod_cast h.symm
 
 /-- The character values of `U` are `2`, `0` and `-2`. -/
 theorem characterValues_cyclicFourFaithfulRep :
@@ -104,15 +152,18 @@ theorem characterValues_cyclicFourFaithfulRep :
   simp only [FDRep.mem_characterValues, Finset.mem_insert, Finset.mem_singleton]
   constructor
   · rintro ⟨g, rfl⟩
-    revert g
-    refine forall_cyclicFour ?_ ?_ ?_ ?_ <;> rw [char_cyclicFourFaithfulRep_ofAdd] <;>
-      norm_num [ZMod.val_one_eq_one_mod, ZMod.val_ofNat, pow_succ]
+    obtain ⟨a, rfl⟩ := Multiplicative.ofAdd.surjective g
+    rcases ZMod.eq_zero_or_eq_one_or_eq_two_or_eq_three a with rfl | rfl | rfl | rfl <;>
+      simp only [char_cyclicFourFaithfulRep_ofAdd_zero, char_cyclicFourFaithfulRep_ofAdd_one,
+        char_cyclicFourFaithfulRep_ofAdd_two, char_cyclicFourFaithfulRep_ofAdd_three] <;>
+      norm_num
   · rintro (rfl | rfl | rfl)
-    · exact ⟨.ofAdd 0, by rw [char_cyclicFourFaithfulRep_ofAdd]; norm_num⟩
-    · exact ⟨.ofAdd 1, by simp [char_cyclicFourFaithfulRep_ofAdd, ZMod.val_one_eq_one_mod]⟩
-    · exact ⟨.ofAdd 2, by simp [char_cyclicFourFaithfulRep_ofAdd, ZMod.val_ofNat]; norm_num⟩
+    exacts [⟨.ofAdd 0, char_cyclicFourFaithfulRep_ofAdd_zero⟩,
+      ⟨.ofAdd 1, char_cyclicFourFaithfulRep_ofAdd_one⟩,
+      ⟨.ofAdd 2, char_cyclicFourFaithfulRep_ofAdd_two⟩]
 
 /-- `U` has three distinct character values. -/
+@[simp]
 theorem characterValueCount_cyclicFourFaithfulRep :
     cyclicFourFaithfulRep.characterValueCount = 3 := by
   rw [← FDRep.card_characterValues, characterValues_cyclicFourFaithfulRep]
@@ -123,11 +174,14 @@ theorem cyclicFourFaithfulRep_ρ_injective : Function.Injective cyclicFourFaithf
   refine (injective_iff_map_eq_one _).mpr fun g hg ↦ ?_
   have h : cyclicFourFaithfulRep.character g = cyclicFourFaithfulRep.character 1 := by
     simp [FDRep.character, hg]
-  rw [← ofAdd_zero, char_cyclicFourFaithfulRep_ofAdd] at h
-  revert g
-  refine forall_cyclicFour ?_ ?_ ?_ ?_ <;> intro _ h <;> [rfl; skip; skip; skip] <;>
-    rw [char_cyclicFourFaithfulRep_ofAdd] at h <;>
-    norm_num [ZMod.val_one_eq_one_mod, ZMod.val_ofNat, pow_succ] at h
+  rw [← ofAdd_zero, char_cyclicFourFaithfulRep_ofAdd_zero] at h
+  obtain ⟨a, rfl⟩ := Multiplicative.ofAdd.surjective g
+  rcases ZMod.eq_zero_or_eq_one_or_eq_two_or_eq_three a with rfl | rfl | rfl | rfl
+  · exact ofAdd_zero
+  all_goals
+    simp only [char_cyclicFourFaithfulRep_ofAdd_one, char_cyclicFourFaithfulRep_ofAdd_two,
+      char_cyclicFourFaithfulRep_ofAdd_three] at h
+    norm_num at h
 
 /-- The denominator `Q(z) = ∏ₐ (1 - a z)` of the tensor-multiplicity series of `U` is `1 - 4 z²`. -/
 theorem tensorMultiplicityDenominator_cyclicFourFaithfulRep :
@@ -182,10 +236,7 @@ private theorem finrank_hom_tensorPower_cyclicFourChar_eq (j : ZMod 4) (n : ℕ)
   simp only [FDRep.char_tensorPower, FDRep.char_ofLinearCharacter, char_cyclicFourFaithfulRep_ofAdd,
     ← ofAdd_neg, coe_cyclicFourChar_ofAdd, Nat.card_eq_fintype_card, Fintype.card_multiplicative,
     ZMod.card]
-  rw [show (-(0 : ZMod 4)).val = 0 from rfl, show (-(1 : ZMod 4)).val = 3 from rfl,
-    show (-(2 : ZMod 4)).val = 2 from rfl, show (-(3 : ZMod 4)).val = 1 from rfl,
-    show (0 : ZMod 4).val = 0 from rfl, show (1 : ZMod 4).val = 1 from rfl,
-    show (2 : ZMod 4).val = 2 from rfl, show (3 : ZMod 4).val = 3 from rfl]
+  norm_num only [neg_zero, ZMod.neg_val', ZMod.val_zero, ZMod.val_one_eq_one_mod, ZMod.val_ofNat]
   have h2 : I ^ (j.val * 2) = (-1) ^ j.val := by rw [pow_mul', I_sq]
   have h3 : I ^ (j.val * 3) = (-I) ^ j.val := by rw [pow_mul', show I ^ 3 = -I by simp [pow_succ]]
   rw [h2, h3, mul_zero, mul_one]
@@ -194,7 +245,7 @@ private theorem finrank_hom_tensorPower_cyclicFourChar_eq (j : ZMod 4) (n : ℕ)
 
 /-- **The tensor multiplicities of the characters of `C₄` in the zero-fold power of `U`**: the
 trivial character occurs once and no other character occurs. -/
-theorem finrank_hom_tensorPower_zero_cyclicFourChar (j : ZMod 4) :
+theorem finrank_hom_cyclicFourChar_tensorPower_zero_cyclicFourFaithfulRep (j : ZMod 4) :
     Module.finrank ℂ (FDRep.ofLinearCharacter (cyclicFourChar j) ⟶
       cyclicFourFaithfulRep.tensorPower 0) = if j = 0 then 1 else 0 := by
   have h := finrank_hom_tensorPower_cyclicFourChar_eq j 0
@@ -202,12 +253,13 @@ theorem finrank_hom_tensorPower_zero_cyclicFourChar (j : ZMod 4) :
   · subst hj
     norm_num at h
     exact_mod_cast h
-  · rcases zmod_four_cases j with rfl | rfl | rfl | rfl <;> [contradiction; skip; skip; skip] <;>
+  · rcases ZMod.eq_zero_or_eq_one_or_eq_two_or_eq_three j with rfl | rfl | rfl | rfl <;>
+      [contradiction; skip; skip; skip] <;>
       norm_num [ZMod.val_one_eq_one_mod, ZMod.val_ofNat, pow_succ] at h <;> exact_mod_cast h
 
 /-- **The tensor multiplicities of the characters of `C₄` in the positive powers of `U`**:
 `χⱼ` occurs in `U^⊗(n+1)` with multiplicity `2ⁿ` if `n + j` is odd, and not at all otherwise. -/
-theorem finrank_hom_tensorPower_succ_cyclicFourChar (j : ZMod 4) (n : ℕ) :
+theorem finrank_hom_cyclicFourChar_tensorPower_succ_cyclicFourFaithfulRep (j : ZMod 4) (n : ℕ) :
     Module.finrank ℂ (FDRep.ofLinearCharacter (cyclicFourChar j) ⟶
       cyclicFourFaithfulRep.tensorPower (n + 1)) = if Odd (n + j.val) then 2 ^ n else 0 := by
   have h := finrank_hom_tensorPower_cyclicFourChar_eq j (n + 1)
@@ -255,9 +307,12 @@ theorem nonempty_iso_tensorPower_two_cyclicFourFaithfulRep :
       FDRep.ofLinearCharacter (cyclicFourChar 0) ⊞ FDRep.ofLinearCharacter (cyclicFourChar 0) ⊞
         FDRep.ofLinearCharacter (cyclicFourChar 2) ⊞
           FDRep.ofLinearCharacter (cyclicFourChar 2)) := by
-  refine FDRep.nonempty_iso_of_character_eq _ _ (funext (forall_cyclicFour ?_ ?_ ?_ ?_)) <;>
-    simp only [FDRep.char_tensorPower, char_cyclicFourFaithfulRep_ofAdd, FDRep.char_biprod,
-      Pi.add_apply, FDRep.char_ofLinearCharacter, coe_cyclicFourChar_ofAdd] <;>
+  refine FDRep.nonempty_iso_of_character_eq _ _
+    (funext (Multiplicative.forall_zmod_four.mpr ⟨?_, ?_, ?_, ?_⟩)) <;>
+    simp only [FDRep.char_tensorPower, char_cyclicFourFaithfulRep_ofAdd_zero,
+      char_cyclicFourFaithfulRep_ofAdd_one, char_cyclicFourFaithfulRep_ofAdd_two,
+      char_cyclicFourFaithfulRep_ofAdd_three, FDRep.char_biprod, Pi.add_apply,
+      FDRep.char_ofLinearCharacter, coe_cyclicFourChar_ofAdd] <;>
     norm_num [ZMod.val_one_eq_one_mod, ZMod.val_ofNat, pow_succ]
 
 /-- **Every irreducible representation of `C₄` occurs in `U^⊗n` for some `n ≤ 2`**: every nonzero
@@ -279,26 +334,19 @@ theorem mem_span_range_char_tensorPower_cyclicFourFaithfulRep_iff
     (f : Multiplicative (ZMod 4) → ℂ) :
     f ∈ Submodule.span ℂ (Set.range fun n ↦ (cyclicFourFaithfulRep.tensorPower n).character) ↔
       ∀ g, f (g ^ 3) = f g := by
-  have hval (a : ZMod 4) := char_cyclicFourFaithfulRep_ofAdd a
-  have h₀ : cyclicFourFaithfulRep.character (.ofAdd 0) = 2 := by rw [hval]; norm_num
-  have h₁ : cyclicFourFaithfulRep.character (.ofAdd 1) = 0 := by
-    rw [hval]; simp [ZMod.val_one_eq_one_mod]
-  have h₂ : cyclicFourFaithfulRep.character (.ofAdd 2) = -2 := by
-    rw [hval]; norm_num [ZMod.val_ofNat, pow_succ]
-  have h₃ : cyclicFourFaithfulRep.character (.ofAdd 3) = 0 := by
-    rw [hval]; norm_num [ZMod.val_ofNat, pow_succ]
   constructor
   · intro hf
     induction hf using Submodule.span_induction with
     | mem x hx =>
       obtain ⟨n, rfl⟩ := hx
-      refine forall_cyclicFour ?_ ?_ ?_ ?_ <;> simp only [FDRep.char_tensorPower]
+      refine Multiplicative.forall_zmod_four.mpr ⟨?_, ?_, ?_, ?_⟩ <;>
+        simp only [FDRep.char_tensorPower]
       · rw [show (Multiplicative.ofAdd 0 : Multiplicative (ZMod 4)) ^ 3 = .ofAdd 0 by decide]
       · rw [show (Multiplicative.ofAdd 1 : Multiplicative (ZMod 4)) ^ 3 = .ofAdd 3 by decide,
-          h₁, h₃]
+          char_cyclicFourFaithfulRep_ofAdd_one, char_cyclicFourFaithfulRep_ofAdd_three]
       · rw [show (Multiplicative.ofAdd 2 : Multiplicative (ZMod 4)) ^ 3 = .ofAdd 2 by decide]
       · rw [show (Multiplicative.ofAdd 3 : Multiplicative (ZMod 4)) ^ 3 = .ofAdd 1 by decide,
-          h₁, h₃]
+          char_cyclicFourFaithfulRep_ofAdd_one, char_cyclicFourFaithfulRep_ofAdd_three]
     | zero => simp
     | add x y _ _ hx hy => simp [hx, hy]
     | smul a x _ hx => simp [hx]
@@ -310,9 +358,11 @@ theorem mem_span_range_char_tensorPower_cyclicFourFaithfulRep_iff
         ((f (.ofAdd 0) - f (.ofAdd 2)) / 4) • (cyclicFourFaithfulRep.tensorPower 1).character +
         ((f (.ofAdd 0) + f (.ofAdd 2) - 2 * f (.ofAdd 1)) / 8) •
           (cyclicFourFaithfulRep.tensorPower 2).character := by
-      refine funext (forall_cyclicFour ?_ ?_ ?_ ?_) <;>
-        simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, FDRep.char_tensorPower, h₀, h₁, h₂,
-          h₃, hf₃] <;> ring
+      refine funext (Multiplicative.forall_zmod_four.mpr ⟨?_, ?_, ?_, ?_⟩) <;>
+        simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, FDRep.char_tensorPower,
+          char_cyclicFourFaithfulRep_ofAdd_zero, char_cyclicFourFaithfulRep_ofAdd_one,
+          char_cyclicFourFaithfulRep_ofAdd_two, char_cyclicFourFaithfulRep_ofAdd_three, hf₃] <;>
+        ring
     rw [e]
     refine add_mem (add_mem ?_ ?_) ?_ <;> refine Submodule.smul_mem _ _ (Submodule.subset_span ?_)
     exacts [⟨0, rfl⟩, ⟨1, rfl⟩, ⟨2, rfl⟩]
@@ -321,40 +371,44 @@ open PowerSeries
 
 /-- **The tensor-multiplicity series of the trivial character** is
 `F₀ = (1 - 2z²) / (1 - 4z²)`. -/
-theorem tensorMultiplicitySeries_cyclicFourChar_zero :
+theorem tensorMultiplicitySeries_cyclicFourFaithfulRep_cyclicFourChar_zero :
     cyclicFourFaithfulRep.tensorMultiplicitySeries (FDRep.ofLinearCharacter (cyclicFourChar 0)) =
       (1 - 2 * X ^ 2) * (1 - 4 * X ^ 2)⁻¹ := by
   rw [eq_mul_inv_iff_mul_eq (by simp), tensorMultiplicitySeries_mul_one_sub_four_mul_X_sq,
-    finrank_hom_tensorPower_zero_cyclicFourChar, finrank_hom_tensorPower_succ_cyclicFourChar,
-    finrank_hom_tensorPower_succ_cyclicFourChar]
+    finrank_hom_cyclicFourChar_tensorPower_zero_cyclicFourFaithfulRep,
+    finrank_hom_cyclicFourChar_tensorPower_succ_cyclicFourFaithfulRep,
+    finrank_hom_cyclicFourChar_tensorPower_succ_cyclicFourFaithfulRep]
   simp [map_ofNat C 2, map_ofNat C 4]
   ring
 
 /-- **The tensor-multiplicity series of `χ₁`** is `F₁ = z / (1 - 4z²)`. -/
-theorem tensorMultiplicitySeries_cyclicFourChar_one :
+theorem tensorMultiplicitySeries_cyclicFourFaithfulRep_cyclicFourChar_one :
     cyclicFourFaithfulRep.tensorMultiplicitySeries (FDRep.ofLinearCharacter (cyclicFourChar 1)) =
       X * (1 - 4 * X ^ 2)⁻¹ := by
   rw [eq_mul_inv_iff_mul_eq (by simp), tensorMultiplicitySeries_mul_one_sub_four_mul_X_sq,
-    finrank_hom_tensorPower_zero_cyclicFourChar, finrank_hom_tensorPower_succ_cyclicFourChar,
-    finrank_hom_tensorPower_succ_cyclicFourChar]
+    finrank_hom_cyclicFourChar_tensorPower_zero_cyclicFourFaithfulRep,
+    finrank_hom_cyclicFourChar_tensorPower_succ_cyclicFourFaithfulRep,
+    finrank_hom_cyclicFourChar_tensorPower_succ_cyclicFourFaithfulRep]
   simp [ZMod.val_one_eq_one_mod, show (1 : ZMod 4) ≠ 0 by decide]
 
 /-- **The tensor-multiplicity series of `χ₂`** is `F₂ = 2z² / (1 - 4z²)`. -/
-theorem tensorMultiplicitySeries_cyclicFourChar_two :
+theorem tensorMultiplicitySeries_cyclicFourFaithfulRep_cyclicFourChar_two :
     cyclicFourFaithfulRep.tensorMultiplicitySeries (FDRep.ofLinearCharacter (cyclicFourChar 2)) =
       2 * X ^ 2 * (1 - 4 * X ^ 2)⁻¹ := by
   rw [eq_mul_inv_iff_mul_eq (by simp), tensorMultiplicitySeries_mul_one_sub_four_mul_X_sq,
-    finrank_hom_tensorPower_zero_cyclicFourChar, finrank_hom_tensorPower_succ_cyclicFourChar,
-    finrank_hom_tensorPower_succ_cyclicFourChar]
+    finrank_hom_cyclicFourChar_tensorPower_zero_cyclicFourFaithfulRep,
+    finrank_hom_cyclicFourChar_tensorPower_succ_cyclicFourFaithfulRep,
+    finrank_hom_cyclicFourChar_tensorPower_succ_cyclicFourFaithfulRep]
   simp [ZMod.val_ofNat, show (2 : ZMod 4) ≠ 0 by decide, Nat.odd_iff, map_ofNat C 2]
 
 /-- **The tensor-multiplicity series of `χ₃`** is `F₃ = z / (1 - 4z²)`, equal to `F₁`. -/
-theorem tensorMultiplicitySeries_cyclicFourChar_three :
+theorem tensorMultiplicitySeries_cyclicFourFaithfulRep_cyclicFourChar_three :
     cyclicFourFaithfulRep.tensorMultiplicitySeries (FDRep.ofLinearCharacter (cyclicFourChar 3)) =
       X * (1 - 4 * X ^ 2)⁻¹ := by
   rw [eq_mul_inv_iff_mul_eq (by simp), tensorMultiplicitySeries_mul_one_sub_four_mul_X_sq,
-    finrank_hom_tensorPower_zero_cyclicFourChar, finrank_hom_tensorPower_succ_cyclicFourChar,
-    finrank_hom_tensorPower_succ_cyclicFourChar]
+    finrank_hom_cyclicFourChar_tensorPower_zero_cyclicFourFaithfulRep,
+    finrank_hom_cyclicFourChar_tensorPower_succ_cyclicFourFaithfulRep,
+    finrank_hom_cyclicFourChar_tensorPower_succ_cyclicFourFaithfulRep]
   simp [ZMod.val_ofNat, show (3 : ZMod 4) ≠ 0 by decide, Nat.odd_iff]
 
 end TauCeti

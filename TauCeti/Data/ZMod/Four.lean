@@ -24,6 +24,9 @@ the vanishing of the cup square of a class of `H¹(G, 𝔽₂)` that lifts to a 
 * `ZMod.cast_add_two_mul_cast_sub_mul`: the lift `(u, s) ↦ u + 2s` of a pair of residues modulo
   two to `ℤ/4` is additive up to the carry `u v` in the second coordinate.
 * `ZMod.cast_cast_add_two_mul_cast`: that lift reduces to its first coordinate modulo `2`.
+* `ZMod.eq_zero_or_eq_one_or_eq_two_or_eq_three`: every residue modulo four is `0`, `1`, `2` or `3`.
+* `Multiplicative.forall_zmod_four`: a statement holds on `C₄ = Multiplicative (ZMod 4)` iff it
+  holds at `ofAdd 0`, `ofAdd 1`, `ofAdd 2` and `ofAdd 3`.
 -/
 
 public section
@@ -60,4 +63,20 @@ theorem cast_cast_add_two_mul_cast (u s : ZMod 2) :
     (cast ((cast u : ZMod 4) + 2 * cast s) : ZMod 2) = u := by
   decide +revert
 
+/-- Every residue modulo four is `0`, `1`, `2` or `3`. -/
+theorem eq_zero_or_eq_one_or_eq_two_or_eq_three (a : ZMod 4) : a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3 := by
+  decide +revert
+
 end ZMod
+
+namespace Multiplicative
+
+/-- A statement holds for every element of `C₄ = Multiplicative (ZMod 4)` if and only if it holds
+at `ofAdd 0`, `ofAdd 1`, `ofAdd 2` and `ofAdd 3`. -/
+theorem forall_zmod_four {P : Multiplicative (ZMod 4) → Prop} :
+    (∀ g, P g) ↔ P (ofAdd 0) ∧ P (ofAdd 1) ∧ P (ofAdd 2) ∧ P (ofAdd 3) := by
+  refine ⟨fun h ↦ ⟨h _, h _, h _, h _⟩, fun ⟨h₀, h₁, h₂, h₃⟩ g ↦ ?_⟩
+  obtain ⟨a, rfl⟩ := ofAdd.surjective g
+  rcases ZMod.eq_zero_or_eq_one_or_eq_two_or_eq_three a with rfl | rfl | rfl | rfl <;> assumption
+
+end Multiplicative
