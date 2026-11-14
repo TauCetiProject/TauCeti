@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hypergraph.Colored.EditDiscrepancy
+public import TauCeti.Logic.Function.Embedding
 public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
@@ -65,6 +66,23 @@ theorem relDensityOn_def (H : Colored3Graph κ V) (c : κ)
     H.relDensityOn c supp =
       #{x ∈ supp | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} / #supp :=
   (rfl)
+
+/-- Restriction along a vertex embedding preserves density when the support is mapped into
+its image. This includes the empty support. -/
+@[simp]
+theorem relDensityOn_comap {W : Type*} (H : Colored3Graph κ W) (f : V ↪ W) (c : κ)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    (H.comap f).relDensityOn c supp = H.relDensityOn c (supp.map f.injectiveMap) := by
+  have htriple (x : {x : Fin 3 → V // Function.Injective x}) :
+      Set.powersetCard.map 3 f (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) =
+        Set.powersetCard.ofFinEmb 3 W ⟨(f.injectiveMap x).1, (f.injectiveMap x).2⟩ := by
+    apply Subtype.ext
+    simp only [Set.powersetCard.val_map, Set.powersetCard.val_ofFinEmb, Finset.map_map]
+    congr 1
+    ext i
+    simp
+  simp only [relDensityOn_def, Finset.filter_map, Finset.card_map, color_comap, htriple,
+    Function.comp_def]
 
 /-- Multiplying a relative density by the support size recovers the color count, including
 when the support is empty. -/
