@@ -42,6 +42,8 @@ diffeomorphism between them (`TauCeti.borderedInteriorDiffeomorph`).
   of a Riemann surface with boundary is an analytic manifold modelled on `ℂ`.
 * `TauCeti.mem_borderedInterior_iff_im_pos`: a point is in the interior exactly when one, or any,
   chart of the maximal atlas sends it to a point of positive imaginary part.
+* `TauCeti.mem_boundary_iff_im_eq_zero`: a point is a manifold boundary point exactly when one, or
+  any, chart of the maximal atlas sends it to the real axis.
 * `TauCeti.subtypeRestr_trans_upperHalfPlaneChart_mem_maximalAtlas`: a bordered holomorphic chart
   of a Riemann surface with boundary, restricted to the interior and read in `ℂ`, is a holomorphic
   chart of the interior. Its image and inverse are
@@ -132,6 +134,16 @@ theorem mem_borderedInterior_iff_im_pos {e : OpenPartialHomeomorph M ClosedUpper
   have hc := (he _ (chart_mem_atlas ClosedUpperHalfPlane x)).2
   simpa [hx] using im_pos_iff_of_mem_contDiffGroupoid hc one_ne_zero
     (z := chartAt ClosedUpperHalfPlane x x) (by simp [hx])
+
+/-- A point in the source of a chart of the maximal atlas is a manifold boundary point exactly
+when the chart sends it to the real axis. -/
+theorem mem_boundary_iff_im_eq_zero {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M) {x : M}
+    (hx : x ∈ e.source) :
+    x ∈ closedUpperHalfPlaneModel.boundary M ↔ (e x : ℂ).im = 0 := by
+  rw [← closedUpperHalfPlaneModel.compl_interior, mem_compl_iff]
+  exact ((mem_borderedInterior_iff_im_pos he hx).not.trans not_lt).trans
+    ⟨fun h ↦ le_antisymm h (e x).property, fun h ↦ h.le⟩
 
 /-- The interior of a `C^1` manifold modelled on the closed upper half-plane is a charted space
 modelled on `ℂ`: the chart at `x` restricts the chart of `M` at `x` to the interior and reads it
