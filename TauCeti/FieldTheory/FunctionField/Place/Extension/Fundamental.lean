@@ -49,6 +49,9 @@ integral closure in `F'` is a finite module over it — the hypothesis of Mathli
 
 ## Main results
 
+* `TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers_of_finiteDimensional`: for any
+  finite extension `F' / F` with `k' / k` integral, an element of `F'` is integral over `𝒪_P` if
+  and only if it is regular at every place of `F' / k'` lying over `P`.
 * `TauCeti.Place.sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isSeparable`: the
   fundamental identity at an arbitrary place, for a separable extension (Stichtenoth,
   Theorem 3.1.11).
@@ -76,11 +79,67 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-variable [FiniteDimensional F F'] [Algebra.IsIntegral k k']
-
-variable (k F)
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+private theorem isScalarTower_constants_integers_extension (P : Place k F) :
+    IsScalarTower k P.integers F' := .of_algebraMap_eq fun c ↦ by
+  rw [IsScalarTower.algebraMap_apply P.integers F F',
+    ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
+
+variable [Algebra.IsIntegral k k']
+
+/-- The integral closure `𝒪'_P` of `𝒪_P` in `F'` contains `k'` because `k'` is integral over
+`k ⊆ 𝒪_P`. -/
+@[instance_reducible]
+private noncomputable def algebraConstantsIntegralClosure (P : Place k F) :
+    Algebra k' (integralClosure P.integers F') :=
+  haveI := isScalarTower_constants_integers_extension (F' := F') P
+  ((algebraMap k' F').codRestrict (integralClosure P.integers F') fun c ↦
+    (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top).toAlgebra
+
+private theorem isScalarTower_constants_integralClosure (P : Place k F) :
+    letI := algebraConstantsIntegralClosure (k' := k') (F' := F') P
+    IsScalarTower k' (integralClosure P.integers F') F' :=
+  letI := algebraConstantsIntegralClosure (k' := k') (F' := F') P
+  .of_algebraMap_eq fun _ ↦ rfl
+
+variable [FiniteDimensional F F']
+
+/-- **The integral closure of `𝒪_P` is the intersection of the valuation rings above `P`** for any
+finite extension `F' / F` and integral constant extension `k' / k` (without assuming
+`IsFunctionField` or separability): an element of `F'` is integral over `𝒪_P` if and only if it is
+regular at every place of `F' / k'` lying over `P`. -/
+theorem isIntegral_iff_forall_restrict_eq_mem_integers_of_finiteDimensional
+    (P : Place k F) {x : F'} :
+    IsIntegral P.integers x ↔ ∀ P' : Place k' F', P'.restrict k F = P → x ∈ P'.integers := by
+  refine ⟨fun hx P' hP' ↦ P'.mem_integers_of_isIntegral (fun a ↦ ?_) hx, fun h ↦ ?_⟩
+  · subst hP'
+    exact (mem_integers_restrict_iff k F P' (a : F)).mp a.2
+  -- `𝒪'_P` is a Dedekind domain with fraction field `F'` for any finite extension `F' / F`;
+  -- its height-one primes contract to the maximal ideal of `𝒪_P` and give places over `P`.
+  let S := integralClosure P.integers F'
+  have : IsDedekindDomain S := integralClosure.isDedekindDomain P.integers F F'
+  have : Algebra.IsIntegral P.integers S := IsIntegralClosure.isIntegral_algebra P.integers F'
+  have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ by
+    rw [ValuationSubring.algebraMap_apply]
+    exact r.2
+  have := isScalarTower_constants_integers_extension (F' := F') P
+  let _ : Algebra k' S := algebraConstantsIntegralClosure P
+  have : IsScalarTower k' S F' := isScalarTower_constants_integralClosure P
+  obtain ⟨s, rfl⟩ := HeightOneSpectrum.mem_integers_of_valuation_le_one (R := S) F' x fun 𝔓 ↦ by
+    have := 𝔓.isMaximal
+    have hmax₁ : (𝔓.asIdeal.under P.integers).IsMaximal :=
+      Ideal.IsMaximal.under P.integers 𝔓.asIdeal
+    have hmax₂ : (P.center hR).asIdeal.IsMaximal := (P.center hR).isMaximal
+    have hlies : 𝔓.asIdeal.LiesOver (P.center hR).asIdeal :=
+      ⟨(IsLocalRing.eq_maximalIdeal hmax₂).trans (IsLocalRing.eq_maximalIdeal hmax₁).symm⟩
+    have hres : (ofPrime k' F' 𝔓).restrict k F = P := by
+      rw [restrict_ofPrime k F (P.center hR) 𝔓, ofPrime_center]
+    simpa only [mem_integers_iff, valuation_ofPrime] using h (ofPrime k' F' 𝔓) hres
+  exact s.2
+
+variable (k F)
 
 /-- **The fundamental identity** (Stichtenoth, Theorem 3.1.11) at an arbitrary place `P` of
 `F / k`, for an extension `F' / k'` whose extension of function fields `F' / F` is finite and
@@ -103,16 +162,10 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isSeparable [Algebr
   have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ by
     rw [ValuationSubring.algebraMap_apply]
     exact r.2
-  have : IsScalarTower k P.integers F' := .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply P.integers F F',
-      ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
-  -- The integral closure `S` of `𝒪_P` in `F'` is the matching affine model of `F' / k'`: it
-  -- contains the constants `k'`, because they are integral over `k ⊆ 𝒪_P`.
-  have hk' : ∀ c : k', algebraMap k' F' c ∈ integralClosure P.integers F' := fun c ↦
-    (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
-  let _ : Algebra k' (integralClosure P.integers F') :=
-    ((algebraMap k' F').codRestrict (integralClosure P.integers F') hk').toAlgebra
-  have : IsScalarTower k' (integralClosure P.integers F') F' := .of_algebraMap_eq fun _ ↦ rfl
+  have := isScalarTower_constants_integers_extension (F' := F') P
+  let _ : Algebra k' (integralClosure P.integers F') := algebraConstantsIntegralClosure P
+  have : IsScalarTower k' (integralClosure P.integers F') F' :=
+    isScalarTower_constants_integralClosure P
   -- `P` is the place of the maximal ideal of `𝒪_P`, so the affine-model identity applies to it.
   refine sum_ramificationIdx_mul_relativeDegree_eq_finrank (S := integralClosure P.integers F')
     k F (P.center hR) fun P' ↦ ?_

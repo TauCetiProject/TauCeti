@@ -73,18 +73,6 @@ variable {K : Type*} [Field K] [NumberField K]
 private abbrev placeAbove : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} :=
   ⟨w, inferInstance⟩
 
-/-- The trace pairing and scalar multiplication commute with extension from `K` to `K_v`. -/
-private theorem trace_tmul_mul_smul (a : v.adicCompletion K) (x b y : L) :
-    Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)
-        ((a ⊗ₜ x) * (1 ⊗ₜ b)) • ((1 : v.adicCompletion K) ⊗ₜ[K] y) =
-      a ⊗ₜ[K] (Algebra.trace K L (x * b) • y) := by
-  have ha : a ⊗ₜ[K] (x * b) = a • ((1 : v.adicCompletion K) ⊗ₜ[K] (x * b)) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha, map_smul,
-    Algebra.trace_baseChange_tmul]
-  simp only [smul_eq_mul, TensorProduct.smul_tmul', mul_one, mul_comm a,
-    ← Algebra.smul_def, TensorProduct.smul_tmul]
-
 /-- **Trace-dual expansions pass to completions.** If `x = ∑ᵢ Tr_{L/K}(x bᵢ) yᵢ` for every
 `x ∈ L`, then `z = ∑ᵢ Tr_{L_w/K_v}(z bᵢ) yᵢ` for every `z ∈ L_w`. -/
 theorem sum_trace_mul_smul_algebraMap_eq {ι : Type*} [Fintype ι] (b y : ι → L)
@@ -93,21 +81,10 @@ theorem sum_trace_mul_smul_algebraMap_eq {ι : Type*} [Fintype ι] (b y : ι →
         (z * algebraMap L (w.adicCompletion L) (b i)) • algebraMap L (w.adicCompletion L) (y i) =
       z := by
   classical
-  -- The expansion is `K`-linear, so it holds in `K_v ⊗[K] L`.
-  have hF (ξ : v.adicCompletion K ⊗[K] L) :
-      ∑ i, Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L) (ξ * (1 ⊗ₜ b i)) •
-        ((1 : v.adicCompletion K) ⊗ₜ[K] y i) = ξ := by
-    induction ξ using TensorProduct.inductionOn with
-    | add ξ η hξ hη =>
-      conv_rhs => rw [← hξ, ← hη]
-      simp only [add_mul, map_add, add_smul, Finset.sum_add_distrib]
-    | tmul a x =>
-      conv_rhs => rw [← h x, TensorProduct.tmul_sum]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      exact trace_tmul_mul_smul v a x (b i) (y i)
-  -- Place `z` in the `w`-component and read off that component.
+  -- Place `z` in the `w`-component of `K_v ⊗[K] L` and read off that component.
   have h' := congrArg (fun ξ ↦ semilocalEquiv L v ξ (placeAbove v w))
-    (hF ((semilocalEquiv L v).symm (Pi.single (placeAbove v w) z)))
+    (TauCeti.Algebra.sum_trace_mul_smul_baseChange_eq b y h
+      ((semilocalEquiv L v).symm (Pi.single (placeAbove v w) z)))
   simp only [AlgEquiv.apply_symm_apply, Pi.single_eq_same, map_sum, map_smul,
     Finset.sum_apply, Pi.smul_apply, semilocalEquiv_tmul, map_one, one_mul,
     trace_semilocalEquiv_symm_single_mul] at h'

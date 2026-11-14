@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
-public import Mathlib.Topology.Algebra.Valued.WithVal
+public import TauCeti.Topology.Algebra.Valued.WithVal
 public import Mathlib.RingTheory.AdicCompletion.Noetherian
 
 /-!
@@ -23,6 +23,12 @@ The inclusion identifies every finite interval of the order filtration with the 
 interval in the completion. In particular, completion does not change the residue field. These
 identifications allow local calculations with finitely many coefficients to pass between the
 field and its completion. No finiteness or perfectness of the residue field is assumed.
+
+The completed field `P.Completion` is globally an algebra over `F` and over `P.integers`. The
+algebra structure `P.completionIntegersAlgebra` (`Algebra P.integers P.completionPlace.integers`)
+and its companion scalar-tower, torsion-freeness, and locality instances are registered in the
+`PlaceCompletion` scope (`open scoped PlaceCompletion`) rather than globally so they do not
+compete with `Algebra.id` when applied to `P.completionPlace`.
 
 The underlying complete field and extension of the valuation are Mathlib's
 `Valuation.Completion` and `Valued.valuedCompletion`.
@@ -58,6 +64,38 @@ noncomputable def completionEmbedding : F →ₐ[k] P.Completion :=
 theorem completionEmbedding_apply (x : F) :
     P.completionEmbedding x =
       ((WithVal.toVal P.valuation x : WithVal P.valuation) : P.Completion) := (rfl)
+
+/-- Uniform continuity of `F`-scalar multiplication on `WithVal P.valuation`, unlocking
+`UniformSpace.Completion.algebra` (`Algebra F P.Completion`). -/
+instance uniformContinuousConstSMul_self_withVal :
+    UniformContinuousConstSMul F (WithVal P.valuation) :=
+  WithVal.uniformContinuousConstSMul_of_algebra F P.valuation
+
+/-- Uniform continuity of `𝒪_P`-scalar multiplication on `WithVal P.valuation`, unlocking
+`UniformSpace.Completion.algebra` (`Algebra P.integers P.Completion`). -/
+instance uniformContinuousConstSMul_integers_withVal :
+    UniformContinuousConstSMul P.integers (WithVal P.valuation) :=
+  WithVal.uniformContinuousConstSMul_of_algebra P.integers P.valuation
+
+/-- The canonical `F`-algebra map into `P.Completion` agrees with `P.completionEmbedding`. -/
+@[simp]
+theorem algebraMap_completion_eq_completionEmbedding (x : F) :
+    algebraMap F P.Completion x = P.completionEmbedding x := by
+  rw [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply,
+    Algebra.algebraMap_self_apply, ← P.completionEmbedding_apply]
+
+/-- The canonical `𝒪_P`-algebra map into `P.Completion` agrees with `P.completionEmbedding`. -/
+@[simp]
+theorem algebraMap_integers_completion_eq_completionEmbedding (r : P.integers) :
+    algebraMap P.integers P.Completion r = P.completionEmbedding r := by
+  rw [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply,
+    ValuationSubring.algebraMap_apply, ← P.completionEmbedding_apply]
+
+/-- The action of `𝒪_P` on `P.Completion` factors through `F`. -/
+instance isScalarTower_integers_completion : IsScalarTower P.integers F P.Completion :=
+  IsScalarTower.of_algebraMap_eq fun r ↦ by
+    rw [algebraMap_integers_completion_eq_completionEmbedding,
+      algebraMap_completion_eq_completionEmbedding, ValuationSubring.algebraMap_apply]
 
 /-- The embedding into the completion preserves the normalized valuation. -/
 @[simp]
@@ -266,6 +304,61 @@ instance isLocalHom_completionIntegersEmbedding : IsLocalHom P.completionInteger
     rw [P.isUnit_iff_valuation_eq_one]
     simpa only [P.completionPlace.isUnit_iff_valuation_eq_one, completionPlace_valuation,
       completionIntegersEmbedding_apply, valuation_completionEmbedding] using hx
+
+/-- The completed valuation ring `𝒪̂_P` as an `𝒪_P`-algebra via `completionIntegersEmbedding`.
+Kept as a `def` in the `PlaceCompletion` scope (`open scoped PlaceCompletion`) rather than a global
+instance because for `P.completionPlace` (`F = P.Completion`) it would compete with `Algebra.id`. -/
+@[instance_reducible]
+noncomputable def completionIntegersAlgebra : Algebra P.integers P.completionPlace.integers :=
+  P.completionIntegersEmbedding.toRingHom.toAlgebra
+
+-- The `PlaceCompletion` scope activates `Place.completionIntegersAlgebra` and its companion
+-- scalar-tower, torsion-freeness, and locality instances (as well as the fiber completion
+-- instances in `TauCeti.FieldTheory.FunctionField.Place.Completion.Semilocal`).
+scoped[PlaceCompletion] attribute [instance] TauCeti.Place.completionIntegersAlgebra
+
+section CompletionIntegersAlgebra
+
+open scoped PlaceCompletion
+
+/-- The `𝒪_P`-algebra map into `𝒪̂_P` is `P.completionIntegersEmbedding`. -/
+theorem algebraMap_completionIntegers :
+    algebraMap P.integers P.completionPlace.integers = P.completionIntegersEmbedding.toRingHom :=
+  RingHom.algebraMap_toAlgebra _
+
+/-- Coercing the `𝒪_P`-algebra map into `𝒪̂_P` to `P.Completion` gives `P.completionEmbedding`. -/
+@[simp]
+theorem coe_algebraMap_completionIntegers (r : P.integers) :
+    (algebraMap P.integers P.completionPlace.integers r : P.Completion) =
+      P.completionEmbedding r := (rfl)
+
+/-- The `𝒪_P`-action on `P.Completion` factors through `𝒪̂_P`. -/
+theorem isScalarTower_completionIntegers :
+    IsScalarTower P.integers P.completionPlace.integers P.Completion :=
+  IsScalarTower.of_algebraMap_eq fun r ↦ by
+    rw [algebraMap_integers_completion_eq_completionEmbedding,
+      ValuationSubring.algebraMap_apply, coe_algebraMap_completionIntegers]
+
+/-- `𝒪̂_P` is torsion-free over `𝒪_P`. -/
+theorem isTorsionFree_completionIntegers :
+    Module.IsTorsionFree P.integers P.completionPlace.integers :=
+  Module.isTorsionFree_iff_algebraMap_injective.mpr fun _ _ h ↦
+    Subtype.ext <| P.completionEmbedding.toRingHom.injective <| by
+      simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, coe_algebraMap_completionIntegers] using
+        congrArg (fun z : P.completionPlace.integers ↦ (z : P.Completion)) h
+
+/-- The `𝒪_P`-algebra map into `𝒪̂_P` is a local ring homomorphism. -/
+theorem isLocalHom_algebraMap_completionIntegers :
+    IsLocalHom (algebraMap P.integers P.completionPlace.integers) := by
+  rw [algebraMap_completionIntegers]
+  exact ⟨fun x hx ↦ P.isLocalHom_completionIntegersEmbedding.map_nonunit x hx⟩
+
+scoped[PlaceCompletion] attribute [instance]
+  TauCeti.Place.isScalarTower_completionIntegers
+  TauCeti.Place.isTorsionFree_completionIntegers
+  TauCeti.Place.isLocalHom_algebraMap_completionIntegers
+
+end CompletionIntegersAlgebra
 
 /-- Completion induces an isomorphism of residue fields over the original constants. -/
 noncomputable def residueFieldEquivCompletion : P.ResidueField ≃ₐ[k]

@@ -31,6 +31,8 @@ The uniform-continuity and completion-transport arguments are extracted and gene
 
 ## Main results
 
+* `WithVal.uniformContinuousConstSMul_of_algebra`: scalar multiplication by an algebra base on
+  `WithVal v` is uniformly continuous.
 * `WithVal.uniformContinuous_congr`: the map
   `WithVal.congr v w σ : WithVal v ≃+* WithVal w` is uniformly continuous.
 * `Valuation.Completion.continuous_valued`: if every value of `v` is attained, the completed
@@ -51,6 +53,13 @@ namespace WithVal
 
 variable {K K' : Type*} [Ring K] [Ring K'] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
   {v : Valuation K Γ₀} {w : Valuation K' Γ₀}
+
+/-- Scalar multiplication by an algebra base `S` on `WithVal v` is uniformly continuous. -/
+theorem uniformContinuousConstSMul_of_algebra (S : Type*) [CommSemiring S] [Algebra S K]
+    (v : Valuation K Γ₀) : UniformContinuousConstSMul S (WithVal v) := by
+  refine ⟨fun s ↦ ?_⟩
+  simp_rw [WithVal.smul_right_def, Algebra.smul_def]
+  exact (Ring.uniformContinuousConstSMul (WithVal v)).uniformContinuous_const_smul _
 
 /-- **A valuation-preserving isomorphism is uniformly continuous.** If `σ : K ≃+* K'` carries the
 valuation `v` to `w`, then `σ` is uniformly continuous as a map `WithVal v → WithVal w`. -/
