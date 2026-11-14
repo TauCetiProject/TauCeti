@@ -60,7 +60,7 @@ theorem map_failuresBeforeSuccess_uniformOn_powersetCard {N K r : ℕ}
   rw [← measureReal_def, ← measureReal_def,
     map_measureReal_apply_of_aemeasurable
       (Finset.aemeasurable_uniformOn_finset _ _) measurableSet_Iic,
-    negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail hr hK]
+    negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail]
   have hcount : μ.map (fun s ↦ #(s ∩ range (k + r))) =
       hypergeometricMeasure N K (min N (k + r)) := by
     rw [hypergeometricMeasure_comm N K]

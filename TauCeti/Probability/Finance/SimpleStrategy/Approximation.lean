@@ -68,19 +68,12 @@ private theorem exists_simpleHolding_ae_eq_of_mem_span
   let b (i : Fin k) : Ω → ℝ := fun ω ↦ c i * (A i).indicator (fun _ ↦ 1) ω
   have hb (i : Fin k) : StronglyMeasurable[ℱ (l i)] (b i) :=
     (stronglyMeasurable_const.indicator (hA i)).const_mul (c i)
-  obtain ⟨n, τ, a, hτ₀, hτ, ha, hhold⟩ :=
-    exists_simpleHolding_eq_sum_indicator_Ioc ℱ Finset.univ l u b (fun i _ ↦ hb i)
-  have hbound (t : ℝ≥0) (ω : Ω) : ‖simpleHolding τ n a t ω‖ ≤ ∑ i, ‖c i‖ := by
-    rw [hhold]
-    refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
-    by_cases ht : t ∈ Ioc (l i) (u i) <;> by_cases hω : ω ∈ A i <;>
-      simp [b, ht, hω]
+  obtain ⟨n, τ, a, hτ₀, hτ, ha, hbound, hhold, -⟩ :=
+    exists_simpleHolding_simpleGains_eq_sum ℱ Finset.univ l u b (fun i _ ↦ hb i)
   refine ⟨n, τ, a, ∑ i, ‖c i‖, hτ₀, hτ, ha, ?_, ?_⟩
   · intro j hj ω
-    have hmem : τ (j + 1) ∈ Ioc (τ j) (τ (j + 1)) :=
-      ⟨hτ hj.le (Nat.succ_le_of_lt hj) (Nat.lt_succ_self j), le_rfl⟩
-    simpa only [simpleHolding_of_mem_Ioc hτ.monotoneOn hj hmem] using
-      hbound (τ (j + 1)) ω
+    refine (hbound j hj ω).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+    by_cases hω : ω ∈ A i <;> simp [b, hω]
   -- Compare representatives only almost everywhere; L² coercions are not pointwise sums.
   · have hcoe := Lp.coeFn_finsetSum (s := Finset.univ) (fun i : Fin k ↦ c i • (v i).val)
     have hterms : ∀ i : Fin k, (c i • (v i).val : Lp ℝ 2 μ) =ᵐ[μ]
