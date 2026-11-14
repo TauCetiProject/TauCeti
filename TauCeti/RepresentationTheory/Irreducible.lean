@@ -53,6 +53,7 @@ irreducible by.
 * `Representation.isIrreducible_of_finrank_eq_one`: a line is irreducible.
 * `Representation.isIrreducible_of_linearEquiv`: irreducibility transports along an
   equivariant linear equivalence.
+* `Representation.Equiv.isIrreducible`: the same for Mathlib's bundled `Representation.Equiv`.
 * `Representation.isIrreducible_toRepresentation_of_isAtom`: an atom of the lattice of
   subrepresentations carries an irreducible representation.
 * `Representation.isIrreducible_of_asAlgebraHom_surjective`: a representation whose
@@ -156,6 +157,13 @@ theorem isIrreducible_of_linearEquiv {W : Type*} [AddCommGroup W] [Module k W]
   · refine Subrepresentation.toSubmodule_injective ?_
     rw [← hmap, hτ, Subrepresentation.toSubmodule_top, Submodule.map_top, LinearEquiv.range,
       Subrepresentation.toSubmodule_top]
+
+/-- **Irreducibility transports along an equivalence of representations**: the form of
+`Representation.isIrreducible_of_linearEquiv` for Mathlib's bundled `Representation.Equiv`. -/
+theorem Equiv.isIrreducible {W : Type*} [AddCommGroup W] [Module k W]
+    {ρ : Representation k G V} {σ : Representation k G W} (e : ρ.Equiv σ)
+    (h : ρ.IsIrreducible) : σ.IsIrreducible :=
+  isIrreducible_of_linearEquiv e.toLinearEquiv e.toIntertwiningMap.isIntertwining h
 
 /-- A subrepresentation that is an **atom** of the lattice of subrepresentations -- nonzero, with
 no subrepresentation strictly between it and zero -- carries an irreducible representation.  The
