@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Reduced
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Smooth
 
 /-!
@@ -28,11 +29,13 @@ apply to the group scheme directly, because the group scheme is a `def` whose bo
 outside this module; it applies only after rewriting with `TauCeti.AdditiveGroup.groupScheme_def`.
 
 The singleton basis of `R` identifies the coordinate algebra with a polynomial algebra on the
-same-universe singleton `ULift (Fin 1)`. Contravariant spectrum and Mathlib's affine-space
-spectrum isomorphism then identify the underlying scheme with affine one-space over `Spec R`.
-The identification is packaged in `Over (Spec R)`, so compatibility with the structural morphism
-is part of the isomorphism. This uses only the algebra equivalence: the standard bialgebra instance
-on `MvPolynomial` has group-like variables and is not the additive Hopf structure.
+same-universe singleton `ULift (Fin 1)`; over a reduced ring the coordinate algebra is reduced by
+the general instance `TauCeti.SymmetricAlgebra.instIsReduced`. Contravariant spectrum and
+Mathlib's affine-space spectrum isomorphism then identify the underlying scheme with affine
+one-space over `Spec R`. The identification is packaged in `Over (Spec R)`, so compatibility with
+the structural morphism is part of the isomorphism. This uses only the algebra equivalence: the
+standard bialgebra instance on `MvPolynomial` has group-like variables and is not the additive
+Hopf structure.
 
 For a same-universe commutative `R`-algebra `A`, Mathlib's spectrum-points equivalence followed by
 `AdditiveGroup.gaPointsMulEquiv` identifies scheme-valued points with `(A, +)`. The resulting
@@ -44,7 +47,6 @@ affine-space APIs.
 
 * `TauCeti.AdditiveGroup.coordinateHopfAlgebra`: the symmetric Hopf algebra representing `G_a`.
 * `TauCeti.AdditiveGroup.coordinateAlgEquiv`: its rank-one polynomial presentation.
-* `TauCeti.AdditiveGroup.isReduced_coordinateHopfAlgebra`: it is reduced over a reduced ring.
 * `TauCeti.AdditiveGroup.groupScheme`: the additive group scheme over `Spec R`.
 * `TauCeti.AdditiveGroup.groupSchemeAffineSpaceIso`: its canonical identification with affine
   one-space over the base.
@@ -118,12 +120,6 @@ variable (R : Type u) [CommRing R]
 `SymmetricAlgebra R R`, with primitive generator `SymmetricAlgebra.ι R R 1`. -/
 noncomputable abbrev coordinateHopfAlgebra : CommHopfAlgCat.{u} R :=
   CommHopfAlgCat.of R (SymmetricAlgebra R R)
-
-/-- The coordinate Hopf algebra of `𝔾ₐ` is reduced over a reduced ring: it is the polynomial
-algebra on the single generator `x`. -/
-theorem isReduced_coordinateHopfAlgebra [IsReduced R] :
-    IsReduced (coordinateHopfAlgebra R) :=
-  isReduced_of_injective (coordinateAlgEquiv R).toRingHom (coordinateAlgEquiv R).injective
 
 /-- The additive group scheme obtained by applying relative spectrum to the symmetric Hopf
 algebra on one generator.
