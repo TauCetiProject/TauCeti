@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
+public import Mathlib.MeasureTheory.Measure.Typeclasses.NoAtoms
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 import TauCeti.MeasureTheory.Measure.ZeroOne
@@ -14,18 +15,13 @@ import TauCeti.MeasureTheory.Measure.ZeroOne
 /-!
 # Images of measure atoms
 
-A positive finite-mass measurable atom is a measurable set whose measurable subsets have either
-zero or full mass. Every almost-everywhere measurable map sends such an atom to one point of a
-standard Borel target: the image of the measure restricted to the atom is a scalar multiple of a
-Dirac measure.
+An atom (`MeasureTheory.Measure.IsAtom`) of a measure is a measurable positive-mass set whose
+measurable subsets have either zero or full mass. When the atom has finite mass, every
+almost-everywhere measurable map sends it to one point of a standard Borel target: the image of the
+measure restricted to the atom is a scalar multiple of a Dirac measure.
 
 The finite-mass hypothesis is essential: a zero-infinity measure may make its whole carrier an
 atom while vanishing on every singleton.
-
-## Main definitions
-
-* `MeasureTheory.Measure.IsAtom` — a measurable positive-mass set whose measurable subsets
-  have either zero measure or the full measure of the set.
 
 ## Main results
 
@@ -51,21 +47,10 @@ namespace TauCeti
 
 namespace MeasureTheory
 
+section
+
 variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] [StandardBorelSpace Y]
 variable {T : X → Y} {μ : Measure X}
-
-/-- A measure atom is a measurable positive-mass set whose measurable subsets have either zero
-measure or the full measure of the set. -/
-def _root_.MeasureTheory.Measure.IsAtom (μ : Measure X) (A : Set X) : Prop :=
-  MeasurableSet A ∧ 0 < μ A ∧
-    ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A
-
-/-- The defining characterization of a measure atom. -/
-@[simp]
-theorem _root_.MeasureTheory.Measure.isAtom_iff {A : Set X} :
-    μ.IsAtom A ↔ MeasurableSet A ∧ 0 < μ A ∧
-      ∀ ⦃B : Set X⦄, MeasurableSet B → B ⊆ A → μ B = 0 ∨ μ B = μ A :=
-  Iff.rfl
 
 /-- **An a.e.-measurable map is a.e. constant on a measurable atom.** If `A` has positive finite
 mass and every measurable subset of `A` has either zero or full mass, then a map from `A` into a
@@ -74,30 +59,25 @@ theorem _root_.AEMeasurable.exists_ae_eq_const_restrict_of_atom
     {A : Set X} (hT : AEMeasurable T (μ.restrict A)) (hAfin : μ A ≠ ⊤)
     (hAatom : μ.IsAtom A) :
     ∃ y : Y, T =ᵐ[μ.restrict A] fun _ ↦ y := by
-  rcases hAatom with ⟨hA, hApos, hAatom⟩
   let ρ : Measure X := (μ A)⁻¹ • μ.restrict A
-  have hAne : μ A ≠ 0 := hApos.ne'
+  have hAne : μ A ≠ 0 := hAatom.measure_ne_zero
   have hInvne : (μ A)⁻¹ ≠ 0 := ENNReal.inv_ne_zero.2 hAfin
   let _ : IsZeroOneMeasure ρ := ⟨by
-      intro B hB
-      simp only [ρ, _root_.smul_apply, smul_eq_mul]
-      rw [Measure.restrict_apply hB]
-      rcases hAatom (hB.inter hA) Set.inter_subset_right with hzero | hfull
-      · exact Or.inl (by simp [hzero])
-      · exact Or.inr (by rw [hfull, ENNReal.inv_mul_cancel hAne hAfin])⟩
+    intro B hB
+    simp only [ρ, _root_.smul_apply, smul_eq_mul]
+    rw [Measure.restrict_apply hB]
+    rcases hAatom.measure_eq_zero_or_eq (t := B ∩ A) Set.inter_subset_right with hzero | hfull
+    · exact Or.inl (by simp [hzero])
+    · exact Or.inr (by rw [hfull, ENNReal.inv_mul_cancel hAne hAfin])⟩
   have hρne : ρ ≠ 0 := by
     rw [← Measure.measure_univ_ne_zero]
     simp only [ρ, _root_.smul_apply, smul_eq_mul]
     rw [Measure.restrict_apply_univ, ENNReal.inv_mul_cancel hAne hAfin]
     exact one_ne_zero
   let _ : NeZero ρ := ⟨hρne⟩
-  have hTρ : AEMeasurable T ρ := by
-    apply (aemeasurable_smul_measure_iff hInvne).2
-    exact hT
+  have hTρ : AEMeasurable T ρ := (aemeasurable_smul_measure_iff hInvne).2 hT
   obtain ⟨y, hy⟩ := IsZeroOneMeasure.exists_ae_eq_const hTρ
-  refine ⟨y, ?_⟩
-  apply (Measure.ae_ennreal_smul_measure_iff hInvne).1
-  exact hy
+  exact ⟨y, (Measure.ae_ennreal_smul_measure_iff hInvne).1 hy⟩
 
 /-- **An a.e.-measurable map sends a measurable atom to a point mass.** If `A` has positive
 finite mass and every measurable subset of `A` has either zero or full mass, then the image of
@@ -114,6 +94,8 @@ theorem _root_.AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom
     _ = μ.restrict A Set.univ • Measure.dirac y := Measure.map_const _ _
     _ = μ A • Measure.dirac y := by rw [Measure.restrict_apply_univ]
 
+end
+
 /-- **A finite measure proportional to each of its restrictions is a point mass.** On a standard
 Borel space, if the restriction of a finite measure `ν` to every measurable set is a scalar
 multiple of `ν`, then `ν` is its total mass times a Dirac measure.
@@ -129,7 +111,7 @@ theorem _root_.MeasureTheory.Measure.exists_eq_smul_dirac_of_forall_restrict_eq_
   rcases eq_or_ne ν 0 with rfl | hν
   · exact ⟨Classical.arbitrary Z, by simp⟩
   have hatom : ν.IsAtom Set.univ := by
-    refine ⟨MeasurableSet.univ, Measure.measure_univ_pos.mpr hν, fun s hs _ => ?_⟩
+    refine ⟨MeasurableSet.univ, Measure.measure_univ_pos.mpr hν, fun s _ hs => ?_⟩
     obtain ⟨c, hc⟩ := h s hs
     -- The restriction to `s` vanishes on `sᶜ`, so `c` or `ν sᶜ` is zero.
     have hcompl : c * ν sᶜ = 0 := by
