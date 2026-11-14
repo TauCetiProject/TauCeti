@@ -13,17 +13,21 @@ public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import TauCeti.Analysis.Normed.Lp.Basic
 public import TauCeti.Analysis.Normed.Lp.MapCLM
 public import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
+import Mathlib.Analysis.RCLike.Lemmas
 
 /-!
 # Bounded diagonal operators on sequence spaces
 
 A bounded scalar family defines coordinatewise multiplication on `lp` for every exponent
-`1 ≤ p ≤ ∞`. The operator norm is the supremum of the coefficient norms. Finite coordinate
-truncations have rank at most the number of retained coordinates, and the discarded coefficients
-bound their error in operator norm. These estimates provide finite-rank approximations of
-diagonal operators. Over a locally compact scalar field, coefficients tending to
-zero along the cofinite filter give a compact diagonal operator. Over `RCLike 𝕜`, every antitone
-`ℕ → ℝ≥0` sequence defines a nonnegative bounded sequence (`lp.ofAntitone`).
+`1 ≤ p ≤ ∞`. The operator norm is the supremum of the coefficient norms, and the multiplier is
+injective precisely when none of its coefficients vanish (`lp.injective_diagonalCLM_iff`). Finite
+coordinate truncations have rank at most the number of retained coordinates, and the discarded
+coefficients bound their error in operator norm. These estimates provide finite-rank approximations
+of diagonal operators. Over a locally compact scalar field, coefficients tending to zero along the
+cofinite filter give a compact diagonal operator. Over `RCLike 𝕜`, every antitone `ℕ → ℝ≥0`
+sequence defines a nonnegative bounded sequence (`lp.ofAntitone`), in particular the inverse-natural
+multiplier `n ↦ ((n + 1 : 𝕜)⁻¹)` (`lp.invNatSucc`), whose diagonal operator is compact and
+injective on infinite-dimensional `ℓ^p(ℕ, 𝕜)`.
 
 The construction uses Mathlib's `lp.mapCLM` for uniformly bounded families of operators.
 -/
@@ -74,6 +78,26 @@ theorem norm_diagonalCLM (d : ℓ^∞(ι, 𝕜)) : ‖diagonalCLM (p := p) d‖ 
   refine norm_le_of_forall_le (norm_nonneg _) fun i ↦ ?_
   have h : _ ≤ ‖diagonalCLM (p := p) d‖ := norm_le_norm_mapCLM (p := p) _ _ _ i
   rwa [norm_smul, ContinuousLinearMap.norm_id, mul_one] at h
+
+/-- A bounded diagonal operator on `ℓ^p(ι, 𝕜)` is injective if and only if every coefficient is
+nonzero. -/
+@[simp]
+theorem injective_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
+    Function.Injective (diagonalCLM (p := p) d) ↔ ∀ i, d i ≠ 0 := by
+  classical
+  refine ⟨fun h i hi ↦ one_ne_zero (α := 𝕜) ?_, fun hd x y hxy ↦ ?_⟩
+  · have h0 : diagonalCLM (p := p) d (lp.single p i 1) = diagonalCLM (p := p) d 0 := by
+      simp [hi]
+    simpa using congrArg (fun z : ℓ^p(ι, 𝕜) ↦ z i) (h h0)
+  · ext i
+    exact mul_left_cancel₀ (hd i) (by simpa using congrArg (fun z : ℓ^p(ι, 𝕜) ↦ z i) hxy)
+
+/-- The kernel of a bounded diagonal operator on `ℓ^p(ι, 𝕜)` is trivial if and only if every
+coefficient is nonzero. -/
+@[simp]
+theorem ker_diagonalCLM_eq_bot_iff (d : ℓ^∞(ι, 𝕜)) :
+    LinearMap.ker (diagonalCLM (p := p) d).toLinearMap = ⊥ ↔ ∀ i, d i ≠ 0 :=
+  LinearMap.ker_eq_bot.trans (injective_diagonalCLM_iff d)
 
 /-- The diagonal multiplier with all coefficients zero is zero. -/
 @[simp]
@@ -264,9 +288,83 @@ theorem norm_ofAntitone_apply (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0}
     ‖ofAntitone 𝕜 hc n‖ = c n := by
   rw [ofAntitone_apply, RCLike.norm_ofReal, abs_of_nonneg (NNReal.coe_nonneg _)]
 
+/-- The `ℓ^∞` norm of `lp.ofAntitone 𝕜 hc` is its initial value `c 0`. -/
+@[simp]
+theorem norm_ofAntitone (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) :
+    ‖ofAntitone 𝕜 hc‖ = c 0 := by
+  refine le_antisymm (norm_le_of_forall_le (NNReal.coe_nonneg _) fun n ↦ ?_) ?_
+  · rw [norm_ofAntitone_apply]
+    exact_mod_cast hc n.zero_le
+  · simpa only [norm_ofAntitone_apply] using
+      norm_apply_le_norm ENNReal.top_ne_zero (ofAntitone 𝕜 hc) 0
+
 open scoped ComplexOrder in
 /-- Every entry of `lp.ofAntitone 𝕜 hc` is nonnegative in the `RCLike` order. -/
 theorem ofAntitone_apply_nonneg (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) (n : ℕ) :
     0 ≤ ofAntitone 𝕜 hc n := by simp
+
+/-- The diagonal operator of `lp.ofAntitone 𝕜 hc` on `ℓ^p(ℕ, 𝕜)` is injective if and only if every
+term `c n` is nonzero. -/
+theorem injective_diagonalCLM_ofAntitone_iff {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {c : ℕ → ℝ≥0} (hc : Antitone c) :
+    Function.Injective (diagonalCLM (p := p) (ofAntitone 𝕜 hc)) ↔ ∀ n, c n ≠ 0 := by
+  simp [injective_diagonalCLM_iff]
+
+/-- If an antitone sequence `c : ℕ → ℝ≥0` tends to zero, its diagonal operator on `ℓ^p(ℕ, 𝕜)` is
+compact. -/
+theorem isCompactOperator_diagonalCLM_ofAntitone {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {c : ℕ → ℝ≥0} (hc : Antitone c) (h0 : Tendsto c atTop (𝓝 0)) :
+    IsCompactOperator (diagonalCLM (p := p) (ofAntitone 𝕜 hc)) := by
+  refine isCompactOperator_diagonalCLM _ ?_
+  rw [Nat.cofinite_eq_atTop]
+  simpa only [norm_ofAntitone_apply, NNReal.coe_zero] using NNReal.tendsto_coe.2 h0
+
+private theorem antitone_invNatSucc : Antitone fun n : ℕ ↦ ((n : ℝ≥0) + 1)⁻¹ :=
+  fun _ _ hmn ↦ inv_anti₀ (by positivity) (by exact_mod_cast Nat.add_le_add_right hmn 1)
+
+/-- The bounded harmonic multiplier sequence `n ↦ ((n + 1 : 𝕜)⁻¹)` in `ℓ^∞(ℕ, 𝕜)`. -/
+noncomputable def invNatSucc (𝕜 : Type*) [RCLike 𝕜] : ℓ^∞(ℕ, 𝕜) :=
+  ofAntitone 𝕜 antitone_invNatSucc
+
+/-- The `n`-th coordinate of `lp.invNatSucc 𝕜` is `((n : 𝕜) + 1)⁻¹`. -/
+@[simp]
+theorem invNatSucc_apply (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
+    invNatSucc 𝕜 n = ((n : 𝕜) + 1)⁻¹ := by
+  have h : invNatSucc 𝕜 = ofAntitone 𝕜 antitone_invNatSucc := rfl
+  rw [h, ofAntitone_apply]
+  push_cast
+  rfl
+
+/-- The norm of the `n`-th coordinate of `lp.invNatSucc 𝕜` is `((n : ℝ) + 1)⁻¹`. -/
+theorem norm_invNatSucc_apply (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
+    ‖invNatSucc 𝕜 n‖ = ((n : ℝ) + 1)⁻¹ := by
+  have h : invNatSucc 𝕜 = ofAntitone 𝕜 antitone_invNatSucc := rfl
+  rw [h, norm_ofAntitone_apply]
+  push_cast
+  rfl
+
+/-- The `ℓ^∞` norm of `lp.invNatSucc 𝕜` is `1`. -/
+@[simp]
+theorem norm_invNatSucc (𝕜 : Type*) [RCLike 𝕜] : ‖invNatSucc 𝕜‖ = 1 := by
+  have h : invNatSucc 𝕜 = ofAntitone 𝕜 antitone_invNatSucc := rfl
+  rw [h, norm_ofAntitone]
+  simp
+
+/-- Multiplication by `lp.invNatSucc 𝕜` on `ℓ^p(ℕ, 𝕜)` is injective. -/
+theorem injective_diagonalCLM_invNatSucc (𝕜 : Type*) [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)] :
+    Function.Injective (diagonalCLM (p := p) (invNatSucc 𝕜)) := by
+  have h : invNatSucc 𝕜 = ofAntitone 𝕜 antitone_invNatSucc := rfl
+  rw [h, injective_diagonalCLM_ofAntitone_iff]
+  intro n
+  exact inv_ne_zero (by exact_mod_cast Nat.succ_ne_zero n)
+
+/-- Multiplication by `lp.invNatSucc 𝕜` on `ℓ^p(ℕ, 𝕜)` is a compact operator. -/
+theorem isCompactOperator_diagonalCLM_invNatSucc (𝕜 : Type*) [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)] :
+    IsCompactOperator (diagonalCLM (p := p) (invNatSucc 𝕜)) := by
+  have h : invNatSucc 𝕜 = ofAntitone 𝕜 antitone_invNatSucc := rfl
+  rw [h]
+  refine isCompactOperator_diagonalCLM_ofAntitone antitone_invNatSucc (NNReal.tendsto_coe.1 ?_)
+  simpa only [NNReal.coe_inv, NNReal.coe_add, NNReal.coe_natCast, NNReal.coe_one, NNReal.coe_zero,
+    one_div] using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)
 
 end lp

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.Mul
+public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.StdBasis
 import TauCeti.Analysis.Normed.Operator.Dense
 
@@ -25,13 +26,14 @@ bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓ�
 (`IsUnit.memℓp_smul_iff`), and conversely, for `p ≠ 0` the geometric sequence `rⁱ`, or a nonzero
 multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞`
 (`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). The scalar coordinate vectors are
-linearly independent, and
-vectors in their span vanish outside the corresponding indices. These algebraic facts hold over
-normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum of single-coordinate
-vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
-`lp.enorm_sum_single` for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
-to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely many scalars `aᵢ`, have norm at
-most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
+linearly independent (so `ℓ^p(ι, 𝕜)` is not finitely generated when `ι` is infinite,
+`lp.not_finite`), and vectors in their span vanish outside the corresponding indices. These
+algebraic facts hold over normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum
+of single-coordinate vectors is the sum of the squared norms of its coordinates
+(`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It follows that the
+operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely
+many scalars `aᵢ`, have norm at most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`,
+`lp.norm_sum_lsmul_comp_evalCLM_le`).
 
 For a finite exponent `p` and a countable index type, `lp E p` is separable as soon as every
 `E i` is (`lp.separableSpace`): the finite sums of coordinate vectors with entries in countable
@@ -161,6 +163,13 @@ theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p
   simpa only [evalₗ_apply] using LinearMap.mem_ker.mp (hle hx)
 
 end Single
+
+/-- Over an infinite index type, the scalar sequence space `ℓ^p(ι, 𝕜)` is not finitely generated
+(in particular, not finite-dimensional when `𝕜` is a division ring). -/
+theorem not_finite [StrongRankCondition 𝕜] [Infinite ι] : ¬ Module.Finite 𝕜 ℓ^p(ι, 𝕜) := by
+  classical
+  exact fun _ ↦ Module.Finite.not_linearIndependent_of_infinite _
+    (linearIndependent_single_one (ι := ι) (𝕜 := 𝕜) (p := p))
 
 /-- The square of the `ℓ²` norm of a finite sum of single-coordinate vectors is the sum of the
 squared norms of the coordinates. -/
