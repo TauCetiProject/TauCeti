@@ -183,8 +183,7 @@ private theorem exists_contDiff_laplacian_eq_log_normSq_add
     -- Write `L + 4π K` as a sum of functions to apply additivity of the Laplacian.
     change Δ (L + fun y ↦ 4 * π * K y) w = _
     rw [ContDiffAt.laplacian_add (hs.contDiffAt.log (hsne hw')) (hKh w hw').1,
-      laplacian_log_normSq_of_equation_eq_zero ((hb₁.differentiable (by norm_num)) w)
-        ((hb₂.differentiable (by norm_num)) w) hp.contDiffAt hq.contDiffAt hα
+      laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt hα
         (Eventually.of_forall hsol), (hKh w hw').2.self_of_nhds, Pi.zero_apply, add_zero]
   exact ⟨g, hg, hΔ, fun w hw ↦ hgu w (huc w hw).continuousAt⟩
 
@@ -296,8 +295,7 @@ theorem integral_one_sub_normSq_eq_mul_finsum
   set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2) with hs
   set F : ℂ → ℝ := fun z ↦ (s z - 1) / 4 with hF
   have hFint : Integrable F := by
-    refine ((integrable_one_sub_normSq volume (hb₁.differentiable (by norm_num))
-      (hb₂.differentiable (by norm_num)) hp hq hsol hlim).div_const 4).neg.congr
+    refine ((integrable_one_sub_normSq volume hp hq hsol hlim).div_const 4).neg.congr
       (.of_forall fun z ↦ ?_)
     simp only [hF, hs, Pi.neg_apply]
     ring

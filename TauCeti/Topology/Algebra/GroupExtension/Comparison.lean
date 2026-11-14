@@ -79,13 +79,12 @@ theorem continuous_equivariantKernelMap [CompactSpace N] :
 variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
   [IsTopologicalGroup M] [ContinuousSMul G M] [CompactSpace M]
   [IsTopologicalGroup N] [ContinuousSMul G N] [CompactSpace N]
-  [TotallyDisconnectedSpace N]
 
 omit [IsTopologicalGroup M] [ContinuousSMul G M] in
 /-- The kernel restriction of a weak comparison carries the source extension class to the
 target extension class. -/
 @[simp]
-theorem contCohomologyClass_map_equivariantKernelMap :
+theorem contCohomologyClass_map_equivariantKernelMap [TotallyDisconnectedSpace N] :
     (X.map (X.equivariantKernelMap Y φ hright)
       (X.continuous_equivariantKernelMap Y φ hright)).contCohomologyClass =
         Y.contCohomologyClass :=
@@ -102,6 +101,10 @@ theorem zmultiples_contCohomologyClass_eq_top_of_comparison
     (hcard : Nat.card (H2 G (Additive M)) = Nat.card (H2 G (Additive N)))
     (hy : AddSubgroup.zmultiples Y.contCohomologyClass = ⊤) :
     AddSubgroup.zmultiples X.contCohomologyClass = ⊤ := by
+  -- The kernel `N` embeds in the totally disconnected `Y.E`.
+  have : TotallyDisconnectedSpace N :=
+    (Y.continuous_inl.isClosedEmbedding Y.toGroupExtension.inl_injective).isEmbedding
+      |>.isTotallyDisconnected_range.mp (isTotallyDisconnected_of_totallyDisconnectedSpace _)
   let k := X.equivariantKernelMap Y φ hright
   let c := explicitCoeff2 G (Additive M) k.toAdditive
     (k.continuous_toAdditive (X.continuous_equivariantKernelMap Y φ hright))
@@ -132,6 +135,10 @@ theorem exists_surjective_continuousMonoidHom_of_comparison
     ∃ (n : ℕ) (ψ : X.E →ₜ* Y.E), p.Coprime n ∧ Function.Surjective ψ ∧
       (∀ m, ψ (X.toGroupExtension.inl m) = Y.toGroupExtension.inl ((f m) ^ n)) ∧
       Y.toGroupExtension.rightHom.comp ψ.toMonoidHom = X.toGroupExtension.rightHom := by
+  -- The kernel `N` embeds in the totally disconnected `Y.E`.
+  have : TotallyDisconnectedSpace N :=
+    (Y.continuous_inl.isClosedEmbedding Y.toGroupExtension.inl_injective).isEmbedding
+      |>.isTotallyDisconnected_range.mp (isTotallyDisconnected_of_totallyDisconnectedSpace _)
   let c := explicitCoeff2 G (Additive M) f.toAdditive (f.continuous_toAdditive hf)
   let e := AddEquiv.ofBijective c hc
   have horder : Nat.card (H2 G (Additive M)) = Nat.card (H2 G (Additive N)) :=

@@ -33,6 +33,8 @@ of summands finishes the proof.
 
 * `TauCeti.exists_equiv_iso_of_biproduct_iso_of_isLocalRing`: uniqueness of decompositions into
   objects with local endomorphism rings.
+* `TauCeti.exists_isIso_comp_π_of_retract`: a direct summand with local endomorphism ring of a
+  biproduct of objects with local endomorphism rings is isomorphic to one of them.
 
 For finite-length modules the same statement, with indecomposable summands, is
 `TauCeti.exists_equiv_iso_of_biproduct_iso` (and `TauCeti.exists_equiv_iso_of_iso_biproduct`),
@@ -57,31 +59,38 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteBiproducts C]
 
 attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
 
+/-- **A summand with local endomorphism ring of a biproduct of objects with local endomorphism
+rings is one of them**: if `A` is a retract of `⨁ Y` and the rings `End A` and `End (Y j)` are
+local, then the component `A ⟶ Y j` of the inclusion is an isomorphism for some `j`. -/
+theorem exists_isIso_comp_π_of_retract {κ : Type w} [Finite κ] (Y : κ → C)
+    (hY : ∀ j, IsLocalRing (End (Y j))) {A : C} [IsLocalRing (End A)] (h : Retract A (⨁ Y)) :
+    ∃ j, IsIso (h.i ≫ biproduct.π Y j) := by
+  have := Fintype.ofFinite κ
+  -- The identity of `A` is the sum of its composites through the `Y j`; one is invertible.
+  have hsum : ∑ j, End.of (h.i ≫ biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r) = 1 := by
+    ext
+    have hr : ∑ j, biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r = h.r := by
+      simp only [← Category.assoc, ← Preadditive.sum_comp, biproduct.total, Category.id_comp]
+    simp only [End.sum_asHom, End.one_asHom, ← Preadditive.comp_sum, hr, h.retract]
+  obtain ⟨j, -, hj⟩ := IsLocalRing.exists_of_isUnit_sum (hsum ▸ isUnit_one : IsUnit (∑ j, _))
+  have := hY j
+  -- `A` is a retract of `Y j`, whose idempotents are trivial, so `A ≅ Y j`.
+  exact ⟨j, isIso_of_isIso_comp
+    (fun h₀ ↦ indecomposable_of_isLocalRing_end.1 ((IsZero.iff_id_eq_zero A).2 h₀))
+    (fun e he ↦ (IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing
+      (a := End.of e) (End.ext he)).imp (congrArg End.asHom) (congrArg End.asHom))
+    _ (biproduct.ι Y j ≫ h.r) (by simpa only [Category.assoc] using (isUnit_iff_isIso _).1 hj)⟩
+
 /-- **The exchange step.** If `A ⊞ A' ≅ ⨁ Y` with `End A` and all `End (Y j)` local, then
 `A ≅ Y j` for some `j`, and `A'` is isomorphic to the biproduct of the other summands. -/
 private theorem exchange {κ : Type w} [Finite κ] (Y : κ → C)
     (hY : ∀ j, IsLocalRing (End (Y j))) {A A' : C} [IsLocalRing (End A)] (g : A ⊞ A' ≅ ⨁ Y) :
     ∃ j, Nonempty (A ≅ Y j) ∧ Nonempty (A' ≅ ⨁ Subtype.restrict (· ≠ j) Y) := by
   classical
-  have := Fintype.ofFinite κ
-  -- The identity of `A` is the sum of its composites through the `Y j`; one is invertible.
-  have hsum : ∑ j, End.of (biprod.inl ≫ g.hom ≫ biproduct.π Y j ≫ biproduct.ι Y j ≫ g.inv ≫
-      biprod.fst) = 1 := by
-    ext
-    have h : ∑ j, biproduct.π Y j ≫ biproduct.ι Y j ≫ g.inv ≫ biprod.fst = g.inv ≫ biprod.fst := by
-      simp only [← Category.assoc, ← Preadditive.sum_comp, biproduct.total, Category.id_comp]
-    simp only [End.sum_asHom, End.one_asHom, ← Preadditive.comp_sum, h, Iso.hom_inv_id_assoc,
-      biprod.inl_fst]
-  obtain ⟨j, -, hj⟩ := IsLocalRing.exists_of_isUnit_sum (hsum ▸ isUnit_one : IsUnit (∑ j, _))
-  have := hY j
-  -- `A` is a retract of `Y j`, whose idempotents are trivial, so `A ≅ Y j`.
-  have : IsIso (biprod.inl ≫ g.hom ≫ biproduct.π Y j) :=
-    isIso_of_isIso_comp
-      (fun h ↦ indecomposable_of_isLocalRing_end.1 ((IsZero.iff_id_eq_zero A).2 h))
-      (fun e he ↦ (IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing
-        (a := End.of e) (End.ext he)).imp (congrArg End.asHom) (congrArg End.asHom))
-      _ (biproduct.ι Y j ≫ g.inv ≫ biprod.fst)
-      (by simpa only [Category.assoc] using (isUnit_iff_isIso _).1 hj)
+  obtain ⟨j, hj⟩ := exists_isIso_comp_π_of_retract Y hY
+    { i := biprod.inl ≫ g.hom, r := g.inv ≫ biprod.fst, retract := by simp }
+  have : IsIso (biprod.inl ≫ g.hom ≫ biproduct.π Y j) := by
+    simpa only [Category.assoc] using hj
   refine ⟨j, ⟨asIso (biprod.inl ≫ g.hom ≫ biproduct.π Y j)⟩, ⟨?_⟩⟩
   -- The complements of `A` and of `Y j` in the two decompositions are isomorphic.
   let f := g ≪≫ biproductSubtypeNeIso Y j

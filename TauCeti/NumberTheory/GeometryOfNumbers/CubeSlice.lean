@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Module.ZLattice.RationalSubspace
 public import TauCeti.Algebra.Module.ZLattice.SuccessiveMinima
 -- Proof-only: gauges of convex bodies as dilates.
-import TauCeti.Analysis.Convex.Gauge
+import TauCeti.Analysis.Convex.Gauge.Basic
 -- Proof-only: the sup norm of an integer vector as that of a real vector.
 import TauCeti.Analysis.Normed.Group.Int
 

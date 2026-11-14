@@ -151,7 +151,7 @@ theorem twistedCubicalToSingular_ofSubcube {n m : ℕ} (c : SingularCube X n)
     twistedCubicalToSingular L m (TwistedCubicalChain.ofSubcube L c ι a) =
       twistedCubePushforward L c m (cubicalToSingularSubcube (ULift.{v} ℤ) n ι) a := by
   -- the map from the model `Iᵐ` to the model `Iⁿ` underlying the subcube `ι`
-  set g : cubeModel.{v} m ⟶ cubeModel.{v} n := cubeToHom ((upCube n).comp ι) with hg
+  set g : cubeModel.{v} m ⟶ cubeModel.{v} n := cubeToHom ((upCube n).comp ι)
   have hmap : ((singularChains (ULift.{v} ℤ)).map g).f m (cubicalToSingularGen (ULift.{v} ℤ) m) =
       cubicalToSingularSubcube (ULift.{v} ℤ) n ι := by
     have := singularChains_map_cubicalToSingularSubcube (ULift.{v} ℤ) ι
