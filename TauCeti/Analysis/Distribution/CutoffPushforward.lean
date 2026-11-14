@@ -256,6 +256,7 @@ end Scalar
 
 /-- The complex-linear extension of a pushforward pairs a complex test function `f` with `T`
 through `T (χ (f ∘ Φ))`. -/
+@[simp]
 theorem complexPairing_cutoffPushforwardCLM {E E' : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [NormedAddCommGroup E'] [NormedSpace ℝ E'] {Ω : Opens E} {Ω' : Opens E'}
     {Φ : E → E'} {χ : 𝓓(Ω, ℝ)} {hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω} (T : 𝓓'(Ω, ℂ))
