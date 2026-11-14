@@ -457,21 +457,6 @@ theorem det_fderiv_realChart_plumbingMap_nonneg (q : Puncture) (L : ℝ) (w : �
   simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply,
     Complex.normSq_nonneg]
 
-/-- In real coordinates, the plumbing map carries the preimage of a set `A` to the preimage of
-its image. -/
-theorem preimage_image_plumbingMap (q : Puncture) (L : ℝ) (A : Set ℂ) :
-    Complex.equivRealProdCLM.symm ⁻¹' (q.plumbingMap L '' A) =
-      realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' A) := by
-  ext z
-  constructor
-  · rintro ⟨w, hw, hwz⟩
-    refine ⟨Complex.equivRealProdCLM w,
-      by rwa [mem_preimage, ContinuousLinearEquiv.symm_apply_apply], ?_⟩
-    rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, hwz,
-      ContinuousLinearEquiv.apply_symm_apply]
-  · rintro ⟨w, hw, rfl⟩
-    exact ⟨_, hw, by rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]⟩
-
 /-- A point of the receiving thrice-punctured sphere inside the circle `s_q = L/2` lies in the
 plumbed four-punctured sphere. -/
 theorem mem_plumbedSphere_of_endSign_mul_re_endCoord_le (hq : q ≠ inf) (hL : 0 < L) {w : ℂ}
