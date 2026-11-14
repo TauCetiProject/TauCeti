@@ -24,6 +24,8 @@ neighbours `v + 1` and `v - 1`; when `m ≥ 3`, they are distinct and really are
   that is, every degree is at most two.
 * `TauCeti.cycleGraph_adj_add_one`: on at least three vertices a vertex is adjacent to its
   successor.
+* `TauCeti.cycleGraph_sub_adj_iff`: subtracting a fixed residue `i : Fin m` preserves adjacency in
+  `cycleGraph m`.
 -/
 
 public section
@@ -72,5 +74,15 @@ theorem cycleGraph_adj_add_one (hm : 3 ≤ m) (v : Fin m) : (cycleGraph m).Adj v
     rw [cycleGraph_neighborSet]
     exact Set.mem_insert_of_mem _ rfl
   exact hv
+
+omit [NeZero m] in
+/-- **Translation by `-i` preserves adjacency in `cycleGraph m`.** -/
+@[simp]
+theorem cycleGraph_sub_adj_iff (i u v : Fin m) :
+    (cycleGraph m).Adj (u - i) (v - i) ↔ (cycleGraph m).Adj u v := by
+  cases m with
+  | zero => exact i.elim0
+  | succ n =>
+    rw [cycleGraph_adj', cycleGraph_adj', sub_sub_sub_cancel_right, sub_sub_sub_cancel_right]
 
 end TauCeti

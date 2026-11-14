@@ -306,9 +306,9 @@ namespace FDRep
 
 open CategoryTheory Module
 
-universe u
+universe u v
 
-variable {k G : Type u} [Field k] [Group G]
+variable {k : Type u} {G : Type v} [Field k] [Group G]
 
 /-- **The intertwiners `X → Y` are as many as the invariants of `Dual X ⊗ Y`**: Mathlib's
 contraction `Representation.Equiv.dualTensorHom` identifies `Dual X ⊗ Y` with `Hom_k(X, Y)` as

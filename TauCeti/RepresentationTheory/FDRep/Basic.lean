@@ -60,9 +60,10 @@ of `Representation.Equiv` apply to isomorphic objects.
 * `FDRep.ofShrink`: a module-finite representation on a carrier in an arbitrary universe, as an
   object of `FDRep k G`.
 * `LinearEquiv.toFDRepIso`: an isomorphism in `FDRep R G` from an equivariant linear
-  equivalence.
+  equivalence, with `FDRep.isoToLinearEquiv_toFDRepIso`.
 * `FDRep.isoToEquiv`: the equivalence of representations underlying an isomorphism in
   `FDRep R G`.
+* `FDRep.tensorEquivTprod`: the representation equivalence `(X ⊗ Y).ρ ≃ X.ρ.tprod Y.ρ`.
 
 ## Main statements
 
@@ -83,7 +84,8 @@ of `Representation.Equiv` apply to isomorphic objects.
   finite-dimensionality.
 * `FDRep.character_actionRes`: restricting an action along a monoid homomorphism pulls back its
   character.
-* `FDRep.character_of`: bundling a representation with `FDRep.of` does not change its character.
+* `FDRep.finrank_of` and `FDRep.character_of`: bundling a representation with `FDRep.of` does not
+  change its finrank or character.
 * `FDRep.character_ρ`: the character of the carried representation is the character of the
   object.
 * `FDRep.forget₂_additive`: forgetting is an additive functor, and `FDRep.forget₂_obj_tensor`:
@@ -91,9 +93,10 @@ of `Representation.Equiv` apply to isomorphic objects.
 * `FDRep.hom_hom_hom_comm`: a morphism intertwines the actions, read on the underlying linear
   maps.
 * `FDRep.op_smul_apply`: the opposite-endomorphism action is precomposition on underlying vectors.
-* `FDRep.tensorUnit_ρ` and `FDRep.tensor_ρ`: the actions on the tensor unit and on a tensor
-  product, read on the underlying linear maps.
-* `FDRep.of_ρ_eq_self`: rebundling the representation carried by an object returns that object.
+* `FDRep.tensorUnit_ρ`, `FDRep.tensor_ρ`, and `FDRep.finrank_tensor`: the actions on the tensor
+  unit and on a tensor product, and the `finrank` of a tensor product of free carriers.
+* `FDRep.of_ρ_eq_self` and `FDRep.of_trivial`: rebundling the carried representation returns the
+  object, and bundling the trivial action on `R` gives the tensor unit `𝟙_ (FDRep R G)`.
 * `FDRep.ofShrinkEquiv`: `FDRep.ofShrink ρ` carries a representation equivalent to `ρ`, whence
   `FDRep.finrank_ofShrink` and `FDRep.character_ofShrink`.
 * `FDRep.biprod_total_hom_hom_hom`: the identity of `X ⊞ Y` splits as the sum of the two
@@ -244,6 +247,13 @@ theorem character_ρ {k : Type u} {G : Type v} [Field k] [Monoid G] (A : FDRep k
     Representation.character A.ρ g = A.character g :=
   rfl
 
+/-- Bundling a module-finite representation with `FDRep.of` does not change its `finrank`. -/
+@[simp]
+theorem finrank_of {R : Type u} {G : Type v} {V : Type u} [CommRing R] [Monoid G]
+    [AddCommGroup V] [Module R V] [Module.Finite R V] (ρ : Representation R G V) :
+    Module.finrank R (FDRep.of ρ) = Module.finrank R V :=
+  (rfl)
+
 /-- Bundling a finite-dimensional representation with `FDRep.of` does not change its character. -/
 @[simp]
 theorem character_of {k : Type u} {G : Type v} {V : Type u} [Field k] [Monoid G]
@@ -313,6 +323,59 @@ maps: this is `CategoryTheory.Action.tensor_ρ` stated for `FDRep.ρ` rather tha
 the `FDRep` counterpart of Mathlib's `Rep.tensor_ρ`. -/
 theorem tensor_ρ {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G) (g : G) :
     (X ⊗ Y).ρ g = TensorProduct.map (X.ρ g) (Y.ρ g) := (rfl)
+
+open MonoidalCategory in
+/-- The `finrank` of a tensor product in `FDRep R G` is the product of the `finrank`s when the
+carriers are free (in particular, unconditionally over a field). -/
+-- Match before `Action.tensorObj_V` rewrites the carrier `(X ⊗ Y).V` to `X.V ⊗ Y.V`.
+@[simp↓]
+theorem finrank_tensor {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G)
+    [Module.Free R X] [Module.Free R Y] :
+    Module.finrank R (X ⊗ Y : FDRep R G) = Module.finrank R X * Module.finrank R Y := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · have : Subsingleton (X ⊗ Y : FDRep R G) := Module.subsingleton R _
+    have : Subsingleton X := Module.subsingleton R _
+    simp
+  · exact Module.finrank_tensorProduct
+
+open MonoidalCategory in
+open scoped TensorProduct in
+/-- **The representation carried by `X ⊗ Y` in `FDRep R G` is `X.ρ.tprod Y.ρ`.** -/
+noncomputable def tensorEquivTprod {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) :
+    _root_.Representation.Equiv (X ⊗ Y : FDRep R G).ρ (_root_.Representation.tprod X.ρ Y.ρ) :=
+  .mk (LinearEquiv.refl R (X ⊗[R] Y)) fun g => by
+    rw [LinearEquiv.refl_toLinearMap, LinearMap.id_comp, LinearMap.comp_id, tensor_ρ,
+      _root_.Representation.tprod_apply]
+
+open MonoidalCategory in
+open scoped TensorProduct in
+/-- The underlying linear equivalence of `FDRep.tensorEquivTprod` is the identity on `X ⊗[R] Y`. -/
+@[simp]
+theorem toLinearEquiv_tensorEquivTprod {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) :
+    (tensorEquivTprod X Y).toLinearEquiv = LinearEquiv.refl R (X ⊗[R] Y) :=
+  (rfl)
+
+open MonoidalCategory in
+open scoped TensorProduct in
+/-- `FDRep.tensorEquivTprod` is the identity on elements of `X ⊗[R] Y`. -/
+-- Match before `Action.tensorObj_V` rewrites the carrier `(X ⊗ Y).V` to `X.V ⊗ Y.V`.
+@[simp↓]
+theorem tensorEquivTprod_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) (z : X ⊗[R] Y) :
+    tensorEquivTprod X Y z = z :=
+  (rfl)
+
+open MonoidalCategory in
+open scoped TensorProduct in
+/-- `(FDRep.tensorEquivTprod X Y).symm` is the identity on elements of `X ⊗[R] Y`. -/
+-- Match before `Action.tensorObj_V` rewrites the carrier `(X ⊗ Y).V` to `X.V ⊗ Y.V`.
+@[simp↓]
+theorem tensorEquivTprod_symm_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) (z : X ⊗[R] Y) :
+    (tensorEquivTprod X Y).symm z = z :=
+  (rfl)
 
 section Shrink
 
@@ -419,6 +482,16 @@ section TensorUnit
 
 open CategoryTheory MonoidalCategory
 
+/-- **Bundling the trivial representation on `R` gives the tensor unit of `FDRep R G` on the nose.**
+`Action.instMonoidalCategory` takes the unit of `Action V G` to be the unit of `V` with the trivial
+action, and the unit of `FGModuleCat R` is `R` itself.
+
+Deliberately not a `simp` lemma, matching `FDRep.forget₂_obj_tensor`: it is an equation between
+objects of `FDRep R G`, used via `rw` or `CategoryTheory.eqToIso`. -/
+theorem of_trivial (R : Type u) (G : Type v) [CommRing R] [Monoid G] :
+    FDRep.of (_root_.Representation.trivial R G R) = 𝟙_ (FDRep R G) :=
+  (rfl)
+
 /-- **The character of the tensor unit of `FDRep k G` is the constant function `1`**, the unit
 being the trivial representation on `k` itself. Beside `FDRep.char_tensor` this is what makes the
 character multiplicative out of the representation ring, see `TauCeti.repRingCharacter`. -/
@@ -426,11 +499,7 @@ character multiplicative out of the representation ring, see `TauCeti.repRingCha
 theorem char_tensorUnit (k : Type u) (G : Type v) [Field k] [Monoid G] :
     (𝟙_ (FDRep k G)).character = 1 := by
   ext g
-  -- the two sides are the same object, not merely isomorphic ones: `Action.instMonoidalCategory`
-  -- takes the unit of `Action V G` to be the unit of `V` with the trivial action, and the unit of
-  -- `FGModuleCat k` is `k` itself, which is what `FDRep.of` bundles here
-  have hunit : 𝟙_ (FDRep k G) = FDRep.of (Representation.trivial k G k) := rfl
-  rw [hunit, Pi.one_apply, character_of_trivial]
+  rw [← of_trivial k G, Pi.one_apply, character_of_trivial]
 
 end TensorUnit
 
@@ -549,5 +618,14 @@ noncomputable def _root_.LinearEquiv.toFDRepIso {R : Type u} {G : Type v} [CommR
     (he : ∀ (g : G) (x : X), e (X.ρ g x) = Y.ρ g (e x)) : X ≅ Y :=
   Action.mkIso e.toFGModuleCatIso fun g =>
     FGModuleCat.hom_ext (by simpa using LinearMap.ext (he g))
+
+/-- `FDRep.isoToLinearEquiv` recovers the underlying linear equivalence of
+`LinearEquiv.toFDRepIso`. -/
+@[simp]
+theorem _root_.FDRep.isoToLinearEquiv_toFDRepIso {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    {X Y : FDRep R G} (e : X ≃ₗ[R] Y)
+    (he : ∀ (g : G) (x : X), e (X.ρ g x) = Y.ρ g (e x)) :
+    FDRep.isoToLinearEquiv (e.toFDRepIso he) = e :=
+  (rfl)
 
 end TauCeti

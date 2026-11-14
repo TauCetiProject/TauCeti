@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTable.Table
+public import TauCeti.RepresentationTheory.CharacterTable.IrreducibleClassification
 import TauCeti.RepresentationTheory.AsModule
-import TauCeti.RepresentationTheory.CharacterTable.IrreducibleClassification
 import TauCeti.RepresentationTheory.Rep.DirectSum.Basic
 import TauCeti.RingTheory.Semisimple.Multiplicity
 
@@ -56,10 +55,15 @@ non-isomorphic.
 * `Representation.intrinsicMultiplicity_of_isIrreducible`: an irreducible representation has
   multiplicity `1` at its own class and `0` at every other, and in particular
   `TauCeti.intrinsicMultiplicity_irreducibleRepresentation`: `m_{Zⱼ}(i) = δᵢⱼ`.
-* `Representation.nonempty_regrouping`: **the regrouping**. A finite-dimensional `ρ` is, as a
-  `k[G]`-module, the direct sum of `m_ρ(i)` copies of each `Zᵢ`.
+* `Representation.nonempty_regrouping` and
+  `Representation.nonempty_equiv_directSum_irreducibleRepresentation`: **the regrouping**. A
+  finite-dimensional `ρ` is, as a `k[G]`-module and as a `Representation`, the direct sum of
+  `m_ρ(i)` copies of each `Zᵢ`.
 * `Representation.nonempty_equiv_iff_intrinsicMultiplicity_eq`: two finite-dimensional
   representations are equivalent exactly when their intrinsic multiplicities agree.
+* `TauCeti.SimpleFDRepClasses.multiplicity_equivFinCardConjClasses_symm` and
+  `TauCeti.finrank_eq_sum_multiplicity_mul_finrank`: compatibility with
+  `SimpleFDRepClasses.multiplicity` and the dimension decomposition into simple classes.
 
 ## References
 
@@ -231,5 +235,48 @@ theorem nonempty_equiv_iff_intrinsicMultiplicity_eq [FiniteDimensional k V] {W :
   obtain ⟨eσ⟩ := σ.nonempty_regrouping
   rw [h] at eρ
   exact TauCeti.Representation.nonempty_equiv_iff.mpr ⟨eρ ≪≫ₗ eσ.symm⟩
+
+/-- **Direct-sum decomposition into irreducible models.** Every finite-dimensional representation
+`ρ` (with carrier in any universe) is equivalent to the direct sum of `m_ρ(i)` copies of
+`irreducibleRepresentation k i`. -/
+theorem nonempty_equiv_directSum_irreducibleRepresentation [FiniteDimensional k V] :
+    Nonempty (ρ.Equiv
+      (directSum fun s : Σ i : Fin (Nat.card (ConjClasses G)), Fin (ρ.intrinsicMultiplicity i) ↦
+        irreducibleRepresentation k s.1)) := by
+  rw [nonempty_equiv_iff_intrinsicMultiplicity_eq]
+  ext j
+  rw [intrinsicMultiplicity_directSum, Fintype.sum_sigma]
+  simp
+
+/-- `SimpleFDRepClasses.multiplicity` at row `i` of `equivFinCardConjClasses` agrees with
+`Representation.intrinsicMultiplicity`. -/
+theorem _root_.TauCeti.SimpleFDRepClasses.multiplicity_equivFinCardConjClasses_symm
+    (W : FDRep k G) (i : Fin (Nat.card (ConjClasses G))) :
+    ((SimpleFDRepClasses.equivFinCardConjClasses k G).symm i).multiplicity W =
+      intrinsicMultiplicity W.ρ i := by
+  rw [SimpleFDRepClasses.equivFinCardConjClasses_symm_apply, SimpleFDRepClasses.multiplicity_mk,
+    FDRep.intrinsicMultiplicity_ρ_eq_finrank_hom]
+
+/-- **Dimension decomposition into simple classes.** Every `W : FDRep k G` has dimension
+`∑ c, c.multiplicity W * c.finrank`. -/
+theorem _root_.TauCeti.finrank_eq_sum_multiplicity_mul_finrank
+    [Fintype (SimpleFDRepClasses k G)] (W : FDRep k G) :
+    finrank k W = ∑ c : SimpleFDRepClasses k G, c.multiplicity W * c.finrank := by
+  obtain ⟨e⟩ := nonempty_equiv_directSum_irreducibleRepresentation W.ρ
+  have hdim : finrank k W =
+      ∑ i : Fin (Nat.card (ConjClasses G)),
+        intrinsicMultiplicity W.ρ i *
+          finrank k (FDRep.of (irreducibleRepresentation k i) : FDRep k G) := by
+    rw [e.toLinearEquiv.finrank_eq,
+      (DirectSum.linearEquivFunOnFintype k _ _).finrank_eq, finrank_pi_fintype k,
+      Fintype.sum_sigma]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [FDRep.finrank_of]
+    simp
+  rw [hdim]
+  refine Finset.sum_equiv (SimpleFDRepClasses.equivFinCardConjClasses k G).symm
+    (s := Finset.univ) (t := Finset.univ) (fun _ ↦ by simp) fun i _ ↦ ?_
+  rw [SimpleFDRepClasses.multiplicity_equivFinCardConjClasses_symm,
+    SimpleFDRepClasses.equivFinCardConjClasses_symm_apply, SimpleFDRepClasses.finrank_mk]
 
 end Representation

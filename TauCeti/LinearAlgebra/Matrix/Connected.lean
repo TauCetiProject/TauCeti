@@ -27,6 +27,8 @@ on the intersection matrix of a numerical type.
 
 ## Main results
 
+* `Matrix.reflTransGen_ne_and_pos_of_pow_pos`: a positive entry in a matrix power `A ^ n` over a
+  canonically ordered domain semiring yields an off-diagonal positive-entry walk.
 * `Matrix.forall_reflTransGen_ne_and_pos_iff`: for a matrix with nonnegative off-diagonal
   entries, strong connectivity of its directed graph is the absence of a disconnecting cut.
 * `Matrix.eq_smul_of_mulVec_eq_zero`: if a matrix over a linear ordered field has nonnegative
@@ -37,6 +39,29 @@ on the intersection matrix of a numerical type.
 public section
 
 namespace Matrix
+
+/-- A positive `(i, j)`-entry in `A ^ n` over a canonically ordered domain semiring yields a
+reflexive-transitive path in the off-diagonal positive-entry relation `x ≠ y ∧ 0 < A x y`,
+dropping any diagonal steps automatically. -/
+theorem reflTransGen_ne_and_pos_of_pow_pos {C R : Type*} [Fintype C] [DecidableEq C]
+    [Semiring R] [PartialOrder R] [CanonicallyOrderedAdd R] [NoZeroDivisors R]
+    (A : Matrix C C R) :
+    ∀ {n : ℕ} {i j : C}, 0 < (A ^ n) i j →
+      Relation.ReflTransGen (fun x y ↦ x ≠ y ∧ 0 < A x y) i j
+  | 0, i, j, h => by
+    rw [pow_zero, Matrix.one_apply] at h
+    split_ifs at h with hij
+    · exact hij ▸ .refl
+    · exact absurd h (lt_irrefl 0)
+  | n + 1, i, j, h => by
+    rw [pow_succ', Matrix.mul_apply] at h
+    obtain ⟨k, -, hk⟩ := Finset.exists_ne_zero_of_sum_ne_zero h.ne'
+    have hAik : 0 < A i k := pos_iff_ne_zero.mpr (left_ne_zero_of_mul hk)
+    have hAkj : 0 < (A ^ n) k j := pos_iff_ne_zero.mpr (right_ne_zero_of_mul hk)
+    have ih := reflTransGen_ne_and_pos_of_pow_pos A hAkj
+    by_cases hik : i = k
+    · exact hik ▸ ih
+    · exact .head ⟨hik, hAik⟩ ih
 
 /-- For a matrix `A` whose off-diagonal entries are nonnegative, strong connectivity of the
 directed graph with an edge from `i` to a distinct `j` when `0 < A i j` is equivalent to the
