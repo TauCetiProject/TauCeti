@@ -48,6 +48,8 @@ the field with `q = p ^ n` elements behind the finite unitary groups.
   automorphism `x ↦ x ^ p` is an involution.
 * `TauCeti.FiniteField.iterateFrobenius_involutive`: on a field of order `p ^ (2 n)`, the iterated
   Frobenius `x ↦ x ^ p ^ n` is an involution.
+* `TauCeti.FiniteField.exists_ne_zero_mul_pow_ne_one`: in a field of order `q²` with `3 ≤ q`, some
+  nonzero element `c` has norm `c * c ^ q ≠ 1` under `x ↦ x ^ q`.
 
 ## Mathematical context
 
@@ -166,6 +168,24 @@ theorem iterateFrobenius_involutive {n : ℕ} (hK : Nat.card K = p ^ (n * 2)) :
     Nat.card_eq_fintype_card, FiniteField.pow_card]
 
 end Involutive
+
+/-- In a field of order `q²` with `3 ≤ q`, some nonzero element `c` has norm `c * c ^ q ≠ 1`
+under `x ↦ x ^ q`. The bound `3 ≤ q` is sharp: in `𝔽₄` (`q = 2`) every nonzero element satisfies
+`c * c ^ 2 = c ^ 3 = 1`. -/
+theorem exists_ne_zero_mul_pow_ne_one {K : Type*} [Field K] {q : ℕ} (hK : Nat.card K = q ^ 2)
+    (hq : 3 ≤ q) : ∃ c : K, c ≠ 0 ∧ c * c ^ q ≠ 1 := by
+  classical
+  have : Finite K := Nat.finite_of_card_ne_zero (by rw [hK]; positivity)
+  let := Fintype.ofFinite K
+  obtain ⟨g, hg⟩ := IsCyclic.exists_ofOrder_eq_natCard (α := Kˣ)
+  refine ⟨g, g.ne_zero, fun h ↦ ?_⟩
+  have hg1 : g ^ (q + 1) = 1 := Units.ext (by simpa [pow_succ'] using h)
+  have hle : q ^ 2 - 1 ≤ q + 1 := by
+    have hcard : Nat.card Kˣ = q ^ 2 - 1 := by
+      rw [Nat.card_eq_fintype_card, Fintype.card_units, ← Nat.card_eq_fintype_card, hK]
+    exact Nat.le_of_dvd (Nat.succ_pos q) (hcard ▸ hg ▸ orderOf_dvd_of_pow_eq_one hg1)
+  have hq2 : q * 3 ≤ q ^ 2 := by rw [sq]; exact Nat.mul_le_mul_left q hq
+  omega
 
 end TauCeti.FiniteField
 
