@@ -468,6 +468,18 @@ theorem contDiff_uncurry_perturbation {V : Type*} [NormedAddCommGroup V] [Normed
     ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk contDiff_snd)).clm_apply
     contDiff_const
 
+/-- In the end coordinates of the plane, the component of the perturbation of a PSS plane along a
+tangent vector `v` is `C^n` jointly in the domain point and the target point, for a period-one
+`C^n` Hamiltonian. -/
+theorem contDiff_uncurry_endComponent {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {H : ℝ → V → ℝ} {n : ℕ∞} (hH : Function.Periodic H 1)
+    (hHs : ContDiff ℝ n (Function.uncurry H)) (v : ℂ) :
+    ContDiff ℝ n (Function.uncurry (p.endComponent H v)) := by
+  rw [endComponent_eq hH]
+  exact contDiff_const.mul ((smoothTransition.contDiff.comp
+    ((contDiff_const.mul (contDiff_fst.comp contDiff_fst)).sub contDiff_const)).mul
+    (hHs.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)))
+
 /-- In the real coordinates `ℝ × ℝ ≃ ℂ` of the plane, the component of the perturbation of a PSS
 plane along a tangent vector `v` is `C¹` jointly in the domain point and the point of the
 manifold, for a period-one `C¹` Hamiltonian. -/
