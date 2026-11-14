@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
-public import TauCeti.RepresentationTheory.Symmetric.FrobeniusCharacteristic
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.Generators
+public import TauCeti.LinearAlgebra.BilinearForm.BasisToDual
+public import TauCeti.LinearAlgebra.Finsupp.VectorSpace
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.HallInner
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.Algebra
 
 /-!
 # The Hall inner product on the symmetric functions
@@ -25,15 +26,16 @@ projection forgets the Schur functions of the partitions with more than `d` part
 has norm `1`, while its image in one variable is `0`.
 
 Through this comparison the orthogonality of the power sums in finitely many variables passes to
-the symmetric functions: `⟨p_μ, p_ν⟩ = z_μ δ_(μν)` for the power-sum products `p_μ`
-(`TauCeti.stableHallInner_stablePsumPart`), where `z_μ` is the order of the centralizer of a
-permutation of cycle type `μ` (`TauCeti.zPart`).
+the symmetric functions: `⟨p_μ, p_ν⟩ = z_μ δ_(μν)` for the power-sum products `p_μ`. That needs the
+character table of the symmetric group, and is proved in
+`TauCeti/RepresentationTheory/Symmetric/StableHallInner.lean`.
 
 On all of `Λ_R` the Hall inner product `TauCeti.SymmetricFunction.hallInner R` is defined by the
 Schur basis `TauCeti.SymmetricFunction.schurBasis R`, indexed by `Σ n, n.Partition`, which collects
 the Schur bases of all degrees. It restricts to `TauCeti.stableHallInner R n` in degree `n`
 (`TauCeti.SymmetricFunction.hallInner_of_of`) and pairs different degrees to zero
-(`TauCeti.SymmetricFunction.hallInner_of_of_of_ne`).
+(`TauCeti.SymmetricFunction.hallInner_of_of_of_ne`), so it is the sum over all degrees of the Hall
+inner products of the homogeneous components (`TauCeti.SymmetricFunction.hallInner_apply`).
 
 ## Main definitions
 
@@ -47,18 +49,17 @@ the Schur bases of all degrees. It restricts to `TauCeti.stableHallInner R n` in
 * `TauCeti.hallInner_stableSymmetricProj`: in an alphabet of at least `n` letters, projection is
   an isometry from `TauCeti.stableHallInner R n` to the Hall inner product of symmetric
   polynomials.
-* `TauCeti.stableHallInner_stablePsumPart`: **the power sums are orthogonal**,
-  `⟨p_μ, p_ν⟩ = z_μ δ_(μν)`.
 * `TauCeti.SymmetricFunction.hallInner_schurBasis`: the Schur functions of all degrees are
   orthonormal.
+* `TauCeti.SymmetricFunction.hallInner_apply`: the Hall inner product on `Λ_R` is the sum of the
+  Hall inner products of the homogeneous components.
 * `TauCeti.SymmetricFunction.isSymm_hallInner`, `TauCeti.SymmetricFunction.nondegenerate_hallInner`:
   the Hall inner product on `Λ_R` is symmetric and nondegenerate.
 
 ## References
 
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,
-  Section 4, (4.5)–(4.8): the scalar product on `Λ`, the orthonormality of the Schur functions
-  and the orthogonality of the power sums.
+  Section 4, (4.5)–(4.8): the scalar product on `Λ` and the orthonormality of the Schur functions.
 -/
 
 public section
@@ -104,27 +105,22 @@ theorem stableHallInner_stableSchur (μ ν : n.Partition) :
 /-- **The Hall inner product is the dot product of Schur coordinates.** -/
 theorem stableHallInner_apply (f g : stableSymmetricSubmodule R n) :
     stableHallInner R n f g =
-      ∑ μ, (stableSchurBasis R n).repr f μ * (stableSchurBasis R n).repr g μ := by
-  conv_lhs => rw [← (stableSchurBasis R n).sum_repr g]
-  simp only [map_sum, map_smul, stableSchurBasis_apply, stableHallInner_stableSchur_right,
-    smul_eq_mul, mul_comm]
+      ∑ μ, (stableSchurBasis R n).repr f μ * (stableSchurBasis R n).repr g μ :=
+  Module.Basis.toDual_apply_eq_sum _ f g
 
 /-- **The Hall inner product is symmetric.** -/
 theorem stableHallInner_comm (f g : stableSymmetricSubmodule R n) :
-    stableHallInner R n f g = stableHallInner R n g f := by
-  simp only [stableHallInner_apply, mul_comm]
+    stableHallInner R n f g = stableHallInner R n g f :=
+  Module.Basis.toDual_comm _ f g
 
 /-- **The Hall inner product is a symmetric bilinear form.** -/
 theorem isSymm_stableHallInner : (stableHallInner R n).IsSymm :=
-  LinearMap.BilinForm.isSymm_def.mpr stableHallInner_comm
+  Module.Basis.isSymm_toDual _
 
 /-- **The Hall inner product is nondegenerate**: a symmetric function orthogonal to every Schur
 function has all its Schur coordinates `0`. -/
-theorem nondegenerate_stableHallInner : (stableHallInner R n).Nondegenerate := by
-  have hl : LinearMap.SeparatingLeft (stableHallInner R n) := fun f hf =>
-    (stableSchurBasis R n).ext_elem fun μ => by
-      rw [← stableHallInner_stableSchur_right, hf, map_zero, Finsupp.zero_apply]
-  exact ⟨hl, fun g hg => hl g fun f => by rw [stableHallInner_comm]; exact hg f⟩
+theorem nondegenerate_stableHallInner : (stableHallInner R n).Nondegenerate :=
+  Module.Basis.nondegenerate_toDual _
 
 /-- **The Hall inner product of symmetric functions is the Hall inner product of their projections
 to any alphabet of at least `n` letters.** In particular it does not depend on the alphabet. With
@@ -135,19 +131,6 @@ theorem hallInner_stableSymmetricProj {d : ℕ} (hn : n ≤ d) (f g : stableSymm
   rw [hallInner_apply, stableHallInner_apply]
   exact (Fintype.sum_equiv (partitionEquivSchurIndex (Fin d) n (by simpa using hn)) _ _
     fun μ => by rw [stableSchurBasis_repr_apply hn f, stableSchurBasis_repr_apply hn g]).symm
-
-/-- **The power sums are orthogonal for the Hall inner product**: `⟨p_μ, p_ν⟩ = z_μ δ_(μν)` for
-the power-sum products of partitions of `n`, where `z_μ = ∏ᵢ i^(mᵢ) mᵢ!` is the order of the
-centralizer of a permutation of cycle type `μ` (`TauCeti.zPart`). This holds over every commutative
-ring. -/
-@[simp]
-theorem stableHallInner_stablePsumPart (μ ν : n.Partition) :
-    stableHallInner R n (stablePsumPart R μ) (stablePsumPart R ν) =
-      if μ = ν then (zPart μ : R) else 0 := by
-  have h (ρ : n.Partition) : stableSymmetricProj R n n (stablePsumPart R ρ) =
-      ⟨psumPart (Fin n) R ρ, psumPart_mem_symmetricHomogeneousSubmodule R ρ⟩ :=
-    Subtype.ext (coe_stableSymmetricProj_stablePsumPart R ρ n)
-  rw [← hallInner_stableSymmetricProj le_rfl, h, h, hallInner_psumPart (by simp)]
 
 /-! ### The Hall inner product on the ring of symmetric functions -/
 
@@ -167,21 +150,16 @@ noncomputable def schurBasis : Module.Basis (Σ n : ℕ, n.Partition) R (Symmetr
 @[simp]
 theorem schurBasis_apply (μ : Σ n : ℕ, n.Partition) :
     schurBasis R μ = of _ μ.1 (stableSchur R μ.2) := by
-  classical
-  have h : schurBasis R μ = DFinsupp.single μ.1 (stableSchur R μ.2) := by
-    simp [schurBasis, DFinsupp.basis, Module.Basis.coe_ofRepr,
-      DFinsupp.mapRange.linearEquiv_apply]
+  rw [schurBasis, DFinsupp.basis_apply, stableSchurBasis_apply]
   -- `DirectSum.of` is `DFinsupp.single`, bundled as an additive monoid homomorphism.
-  exact h
+  rfl
 
 /-- **The Schur coordinates of a symmetric function are the Schur coordinates of its homogeneous
 components.** -/
 @[simp]
 theorem schurBasis_repr_apply (x : SymmetricFunction R) (μ : Σ n : ℕ, n.Partition) :
-    (schurBasis R).repr x μ = (stableSchurBasis R μ.1).repr (x μ.1) μ.2 := by
-  -- `DFinsupp.basis` reads off coordinates componentwise through `sigmaFinsuppEquivDFinsupp`, whose
-  -- inverse evaluates `f ⟨n, μ⟩` as `f n μ` by definition (`sigmaFinsuppEquivDFinsupp_symm_apply`).
-  rfl
+    (schurBasis R).repr x μ = (stableSchurBasis R μ.1).repr (x μ.1) μ.2 :=
+  DFinsupp.basis_repr _ x μ
 
 variable (R) in
 /-- **The Hall inner product on the ring of symmetric functions**: the bilinear form in which the
@@ -233,23 +211,38 @@ theorem hallInner_of_of_of_ne {m : ℕ} (h : n ≠ m) (f : stableSymmetricSubmod
     (stableSchurBasis R m).ext fun μ => by simp [lof_eq_of, of_eq_of_ne _ _ _ h.symm]
   exact LinearMap.congr_fun this g
 
+/-- **Pairing with a symmetric function of degree `n` on the left pairs it with the homogeneous
+component of degree `n`.** -/
+theorem hallInner_of_left (f : stableSymmetricSubmodule R n) (y : SymmetricFunction R) :
+    hallInner R (of _ n f) y = stableHallInner R n f (y n) := by
+  induction y using DirectSum.induction_on with
+  | zero => simp
+  | of m g =>
+    by_cases h : n = m
+    · subst h
+      rw [hallInner_of_of, of_eq_same]
+    · rw [hallInner_of_of_of_ne h, of_eq_of_ne _ _ _ h, map_zero]
+  | add y z hy hz => rw [map_add, hy, hz, DirectSum.add_apply, map_add]
+
+/-- **The Hall inner product on `Λ_R` is the sum over all degrees of the Hall inner products of the
+homogeneous components.** -/
+theorem hallInner_apply [∀ (i : ℕ) (f : stableSymmetricSubmodule R i), Decidable (f ≠ 0)]
+    (x y : SymmetricFunction R) :
+    hallInner R x y = ∑ n ∈ x.support, stableHallInner R n (x n) (y n) := by
+  conv_lhs => rw [← sum_support_of x]
+  simp only [map_sum, LinearMap.sum_apply, hallInner_of_left]
+
 /-- **The Hall inner product on `Λ_R` is symmetric.** -/
-theorem hallInner_comm (x y : SymmetricFunction R) : hallInner R x y = hallInner R y x := by
-  have : (hallInner R).flip = hallInner R :=
-    LinearMap.BilinForm.ext_basis (schurBasis R) fun μ ν =>
-      (hallInner_schurBasis ν μ).trans ((if_congr eq_comm rfl rfl).trans
-        (hallInner_schurBasis μ ν).symm)
-  exact LinearMap.congr_fun₂ this y x
+theorem hallInner_comm (x y : SymmetricFunction R) : hallInner R x y = hallInner R y x :=
+  Module.Basis.toDual_comm _ x y
 
 /-- **The Hall inner product on `Λ_R` is a symmetric bilinear form.** -/
 theorem isSymm_hallInner : (hallInner R).IsSymm :=
-  LinearMap.BilinForm.isSymm_def.mpr hallInner_comm
+  Module.Basis.isSymm_toDual _
 
 /-- **The Hall inner product on `Λ_R` is nondegenerate.** -/
-theorem nondegenerate_hallInner : (hallInner R).Nondegenerate := by
-  have hl : LinearMap.SeparatingLeft (hallInner R) := fun x hx =>
-    (schurBasis R).toDual_inj x (LinearMap.ext hx)
-  exact ⟨hl, fun y hy => hl y fun x => by rw [hallInner_comm]; exact hy x⟩
+theorem nondegenerate_hallInner : (hallInner R).Nondegenerate :=
+  Module.Basis.nondegenerate_toDual _
 
 end SymmetricFunction
 
