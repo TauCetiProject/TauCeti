@@ -50,6 +50,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   whose residue modulo `8` squares to `1`; `PadicInt.eight_dvd_sq_sub_one_of_isUnit`: so the
   square of a unit is `1` modulo `8`; `PadicInt.eight_dvd_sub_or_eight_dvd_sub_add_of_eq`: for
   `k ≥ 1`, a unit of the form `a x² + 2ᵏ b y²` is congruent to `a` or to `a + 2ᵏ b` modulo `8`.
+* `PadicInt.isUnit_of_toZModPow_three_prod_eq`: if a product of `2`-adic integers agrees modulo
+  `8` with a product of units, then every factor is a unit.
 * `PadicInt.not_isSquare_neg_three`: `-3` is not a square in `ℤ_[2]`.
 * `PadicInt.two_dvd_sq_sub_self`: every `2`-adic integer satisfies `x ^ 2 ≡ x` modulo `2`.
 * `PadicInt.toZModPow_eq_one_of_norm_sub_one_le`: a norm bound forcing a `p`-adic integer to
@@ -212,6 +214,15 @@ theorem isUnit_iff_toZModPow_three_mul_self {z : ℤ_[2]} :
     obtain ⟨w, rfl⟩ := not_isUnit_iff_dvd.mp h
     have key : ∀ a : ZMod (2 ^ 3), 2 * a * (2 * a) ≠ 1 := by decide
     exact key (toZModPow 3 w) (by simpa [map_ofNat] using hz)
+
+/-- A family of `ℤ_[2]` elements whose product agrees modulo `8` with a product of units consists of
+units. -/
+theorem isUnit_of_toZModPow_three_prod_eq {ι : Type*} [Fintype ι] {d v : ι → ℤ_[2]}
+    (hd : ∀ i, IsUnit (d i))
+    (hP : toZModPow 3 (∏ i, d i) = toZModPow 3 (∏ i, v i)) (i : ι) : IsUnit (v i) := by
+  refine (IsUnit.prod_univ_iff.mp ?_) i
+  rw [isUnit_iff_toZModPow_three_mul_self, ← hP, ← isUnit_iff_toZModPow_three_mul_self]
+  exact IsUnit.prod_univ_iff.mpr hd
 
 /-- The square of a unit of `ℤ_[2]` is `1` modulo `8`. -/
 theorem eight_dvd_sq_sub_one_of_isUnit {z : ℤ_[2]} (hz : IsUnit z) : (8 : ℤ_[2]) ∣ z ^ 2 - 1 := by

@@ -177,19 +177,6 @@ private theorem exists_toZModPow_three_apply_self_eq_of_four_le {B : BilinForm �
       (hbu (e 0)) (hbu (e 3)) hz0 hz3 (hoe 0 3 (by decide))
     exact ⟨x, w, hx.trans haz.symm, hw, hxw⟩
 
-/-- A family of `ℤ_[2]` elements whose product agrees modulo `8` with a product of units consists of
-units. -/
-private theorem isUnit_of_toZModPow_three_prod_eq {ι : Type*} [Fintype ι] {d v : ι → ℤ_[2]}
-    (hd : ∀ i, IsUnit (d i))
-    (hP : PadicInt.toZModPow 3 (∏ i, d i) = PadicInt.toZModPow 3 (∏ i, v i)) (i : ι) :
-    IsUnit (v i) := by
-  have hu : IsUnit (∏ i, PadicInt.toZModPow 3 (v i)) := by
-    rw [← map_prod, ← hP]
-    exact (IsUnit.prod_univ_iff.mpr hd).map _
-  obtain ⟨c, hc⟩ := (IsUnit.prod_univ_iff.mp hu i).exists_right_inv
-  have key : ∀ a c : ZMod (2 ^ 3), a * c = 1 → a * a = 1 := by decide
-  exact isUnit_iff_toZModPow_three_mul_self.mpr (key _ c hc)
-
 /-- The case of `exists_toZModPow_three_apply_self_eq` where no `vⱼ` is congruent modulo `8` to any
 `dᵢ` or `5 dᵢ`, with `dᵢ = B (b i) (b i)`. Under the product and sum hypotheses, some `vⱼ` is still
 represented modulo `8` by a vector `x` that is orthogonal to a vector `y` with unit self-pairing. -/
@@ -204,7 +191,7 @@ private theorem exists_toZModPow_three_apply_self_eq_of_forall_ne {B : BilinForm
       B x y = 0 := by
   have hr (i : Fin (m + 2)) := isUnit_iff_toZModPow_three_mul_self.mp (hbu i)
   have hq (j : Fin (m + 2)) :=
-    isUnit_iff_toZModPow_three_mul_self.mp (isUnit_of_toZModPow_three_prod_eq hbu hP j)
+    isUnit_iff_toZModPow_three_mul_self.mp (PadicInt.isUnit_of_toZModPow_three_prod_eq hbu hP j)
   -- Otherwise every `dᵢ` lies in `{y, 5y}` and every `vⱼ` in `{-y, -5y}`, where `y = d₀`.
   set y := PadicInt.toZModPow 3 (B (b 0) (b 0))
   have hdy (i : Fin (m + 2)) : PadicInt.toZModPow 3 (B (b i) (b i)) = y ∨
@@ -334,7 +321,7 @@ private theorem exists_basis_iIsOrtho_apply_self_eq_aux (n : ℕ) :
     exact ⟨b, hb, fun i ↦ i.elim0⟩
   | succ n ih =>
   intro M _ _ B b hb hbu v hP hS
-  have hv := isUnit_of_toZModPow_three_prod_eq hbu hP
+  have hv := PadicInt.isUnit_of_toZModPow_three_prod_eq hbu hP
   rcases n with _ | m
   · exact exists_basis_iIsOrtho_apply_self_eq_of_card_eq_one hv hP
   -- Choose a vector representing some `vⱼ` with an odd complement, rescaled to represent `vⱼ`.
