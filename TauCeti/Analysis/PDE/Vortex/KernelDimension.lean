@@ -33,21 +33,27 @@ is injective (`TauCeti.Vortex.principalPartMap_injective`) as soon as every kern
 `TauCeti.Vortex.eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto`.
 
 The second part of the file studies the whole space `gaugeFixedKernel x` of square-integrable
-`C²` classical solutions of `L_x y = 0`, of real dimension at most `2 m`
-(`TauCeti.Vortex.finrank_gaugeFixedKernel_le`).
+`C²` classical solutions of `L_x y = 0`, of real dimension at most `2 |D|` by the above.
 
-**The lower bound from translations.** At a vortex of positive degree the section has a zero,
-so the covariant translations `y_v = (ι_v F_a, ∇_v α)` form a two-dimensional subspace of the
-kernel (`TauCeti.Vortex.covariantTranslation_injective`); thus `2 ≤ dim_ℝ gaugeFixedKernel x`
-(`two_le_finrank_gaugeFixedKernel`). They move all zeros of the vortex by the same vector.
+**The lower bound from translations.** When the section has a zero, the covariant translations
+`y_v = (ι_v F_a, ∇_v α)` span a two-dimensional subspace of the kernel
+(`TauCeti.Vortex.finrank_range_covariantTranslationLinearMap`,
+`TauCeti.Vortex.range_covariantTranslationLinearMap_le`); thus `2 ≤ dim_ℝ gaugeFixedKernel x`
+(`two_le_finrank_gaugeFixedKernel_of_sectionValue_eq_zero`). They move all zeros of the vortex by
+the same vector. A vortex framed in positive degree has a zero
+(`TauCeti.exists_eq_zero_of_tendsto_mul_inv_pow`), so the bound holds there
+(`two_le_finrank_gaugeFixedKernel`).
 
-**Degrees zero and one.** In degree zero the kernel vanishes (`gaugeFixedKernel_eq_bot`). In
-degree one the two bounds agree: every kernel element is a covariant translation
-(`range_covariantTranslationLinearMap`), and the kernel has real dimension two
-(`finrank_gaugeFixedKernel_eq_two`), the dimension of `Sym¹ ℂ = ℂ`.
+**Degrees zero and one.** If the section has no zeros, the kernel vanishes
+(`gaugeFixedKernel_eq_bot_of_forall_sectionValue_ne_zero`, and `gaugeFixedKernel_eq_bot` in
+degree zero). If its divisor is a single point, the two bounds agree: every kernel element is a
+covariant translation (`range_covariantTranslationLinearMap_of_card_eq_one`), and the kernel has
+real dimension two (`finrank_gaugeFixedKernel_eq_two_of_card_eq_one`), the dimension of
+`Sym¹ ℂ = ℂ`. The degree-one framed forms are `range_covariantTranslationLinearMap` and
+`finrank_gaugeFixedKernel_eq_two`.
 
-In higher degree the lower bound `2 m` needs kernel elements that move the zeros independently,
-which are not constructed here.
+For divisors of degree at least two, the lower bound `2 |D|` needs kernel elements that move the
+zeros independently, which are not constructed here.
 
 ## Main results
 
@@ -57,12 +63,17 @@ which are not constructed here.
 * `TauCeti.Vortex.finiteDimensional_of_tendsto_sectionValue_mul_inv_pow` and
   `TauCeti.Vortex.finrank_le_two_mul_of_tendsto_sectionValue_mul_inv_pow`: the same for a vortex
   framed in degree `m`, with bound `2m`.
-* `TauCeti.Vortex.two_le_finrank_gaugeFixedKernel`: `2 ≤ dim_ℝ ker L_x` at a framed vortex of
-  positive degree.
-* `TauCeti.Vortex.gaugeFixedKernel_eq_bot`: the kernel vanishes in degree zero.
-* `TauCeti.Vortex.range_covariantTranslationLinearMap` and
-  `TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two`: in degree one the kernel consists exactly of
-  the covariant translations, and has real dimension two.
+* `TauCeti.Vortex.two_le_finrank_gaugeFixedKernel_of_sectionValue_eq_zero` and
+  `TauCeti.Vortex.two_le_finrank_gaugeFixedKernel`: `2 ≤ dim_ℝ ker L_x` when the section has a
+  zero, in particular at a framed vortex of positive degree.
+* `TauCeti.Vortex.gaugeFixedKernel_eq_bot_of_forall_sectionValue_ne_zero` and
+  `TauCeti.Vortex.gaugeFixedKernel_eq_bot`: the kernel vanishes when the section has no zeros,
+  in particular in degree zero.
+* `TauCeti.Vortex.range_covariantTranslationLinearMap_of_card_eq_one`,
+  `TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two_of_card_eq_one`,
+  `TauCeti.Vortex.range_covariantTranslationLinearMap` and
+  `TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two`: for a single zero, in particular in degree
+  one, the kernel consists exactly of the covariant translations and has real dimension two.
 
 ## References
 
@@ -193,6 +204,23 @@ theorem finrank_le_two_mul_of_tendsto_sectionValue_mul_inv_pow {m : ℕ} (hx : C
 
 /-! ### The kernel in degree zero -/
 
+/-- **The kernel of `L_x` vanishes when the section has no zeros.** At a `C²` field satisfying
+the holomorphicity rows of the vortex equation whose section has no zeros and modulus tending to
+one at infinity, the only square-integrable `C²` solution of `L_x y = 0` is zero. -/
+theorem gaugeFixedKernel_eq_bot_of_forall_sectionValue_ne_zero (hx : ContDiff ℝ 2 x)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hne : ∀ z, sectionValue x z ≠ 0) :
+    gaugeFixedKernel x = ⊥ := by
+  have hD : IsZeroMultiplicity (sectionValue x) fun z ↦ (0 : Multiset ℂ).count z := by
+    simpa [Pi.zero_def] using isZeroMultiplicity_zero_iff.2 ⟨(contDiff_sectionValue
+      (contDiff_euclidean.mp hx 2) (contDiff_euclidean.mp hx 3)).continuous, hne⟩
+  have hV (y : ℂ → EuclideanSpace ℝ (Fin 4)) (hy : y ∈ gaugeFixedKernel x) :=
+    mem_gaugeFixedKernel.1 hy
+  have := finiteDimensional_of_gaugeFixedOperator_eq_zero hx hhol hlim hD hV
+  exact Submodule.finrank_eq_zero.1 (Nat.le_zero.1 (by
+    simpa using finrank_le_two_mul_card_of_gaugeFixedOperator_eq_zero hx hhol hlim hD hV))
+
 /-- **The kernel of `L_x` vanishes in degree zero.** At a `C²` field satisfying the holomorphicity
 rows of the vortex equation whose section tends to one at infinity, the only square-integrable
 `C²` solution of `L_x y = 0` is zero. -/
@@ -207,7 +235,7 @@ theorem gaugeFixedKernel_eq_bot (hx : ContDiff ℝ 2 x)
   exact Submodule.finrank_eq_zero.1
     (Nat.le_zero.1 (finrank_gaugeFixedKernel_le hx hhol hframe₀))
 
-/-! ### Covariant translations -/
+/-! ### The lower bound from covariant translations -/
 
 section Translations
 
@@ -215,93 +243,103 @@ variable (hx : ContDiff ℝ 3 x) (hsol : ∀ z, equation x z = 0)
 
 include hx hsol
 
-/-- **Covariant translations lie in the kernel of `L_x`** at a `C³` vortex whose section has
-modulus tending to one at infinity. -/
-theorem covariantTranslation_mem_gaugeFixedKernel
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (v : ℂ) :
-    covariantTranslation x v ∈ gaugeFixedKernel x := by
+/-- **The kernel of `L_x` has real dimension at least two once the section has a zero.** At a
+`C³` vortex whose section has modulus tending to one at infinity, zero divisor `D` and a zero
+`z₀`, the covariant translations span a two-dimensional subspace of `gaugeFixedKernel x`. -/
+theorem two_le_finrank_gaugeFixedKernel_of_sectionValue_eq_zero
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) {z₀ : ℂ}
+    (hz₀ : sectionValue x z₀ = 0) :
+    2 ≤ finrank ℝ (gaugeFixedKernel x) := by
+  have hdx (i : Fin 4) : Differentiable ℝ fun w ↦ x w i :=
+    (contDiff_euclidean.mp hx i).differentiable (by norm_num)
+  have := finiteDimensional_of_gaugeFixedOperator_eq_zero (μ := volume) (hx.of_le (by norm_num))
+    (fun w ↦ by simp [hsol w]) hlim hD fun _ ↦ mem_gaugeFixedKernel.1
+  rw [← finrank_range_covariantTranslationLinearMap (hdx 2) (hdx 3) hlim hz₀]
+  exact Submodule.finrank_mono (range_covariantTranslationLinearMap_le hx hsol hlim)
+
+/-- **The kernel of `L_x` for a single zero consists of the covariant translations.** At a `C³`
+vortex whose section has modulus tending to one at infinity and a zero divisor `D` of degree one,
+the square-integrable `C²` solutions of `L_x y = 0` are exactly the covariant translations
+`y_v`, `v ∈ ℂ`. -/
+theorem range_covariantTranslationLinearMap_of_card_eq_one
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) (hcard : Multiset.card D = 1) :
+    LinearMap.range (covariantTranslationLinearMap x) = gaugeFixedKernel x := by
+  have hdx (i : Fin 4) : Differentiable ℝ fun w ↦ x w i :=
+    (contDiff_euclidean.mp hx i).differentiable (by norm_num)
+  have hhol (w : ℂ) : equation x w 1 = 0 ∧ equation x w 2 = 0 := by simp [hsol w]
+  obtain ⟨z₀, hz₀⟩ := Multiset.card_pos_iff_exists_mem.1 (hcard ▸ one_pos)
+  have hV (y : ℂ → EuclideanSpace ℝ (Fin 4)) (hy : y ∈ gaugeFixedKernel x) :=
+    mem_gaugeFixedKernel.1 hy
+  have := finiteDimensional_of_gaugeFixedOperator_eq_zero (hx.of_le (by norm_num)) hhol hlim hD hV
+  refine Submodule.eq_of_le_of_finrank_le (range_covariantTranslationLinearMap_le hx hsol hlim) ?_
+  rw [finrank_range_covariantTranslationLinearMap (hdx 2) (hdx 3) hlim
+    (hD.pos_iff.1 (Multiset.count_pos.2 hz₀))]
+  simpa [hcard] using
+    finrank_le_two_mul_card_of_gaugeFixedOperator_eq_zero (hx.of_le (by norm_num)) hhol hlim hD hV
+
+/-- **The kernel of `L_x` for a single zero has real dimension two**, under the hypotheses of
+`TauCeti.Vortex.range_covariantTranslationLinearMap_of_card_eq_one`. -/
+theorem finrank_gaugeFixedKernel_eq_two_of_card_eq_one
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) (hcard : Multiset.card D = 1) :
+    finrank ℝ (gaugeFixedKernel x) = 2 := by
+  obtain ⟨z₀, hz₀⟩ := Multiset.card_pos_iff_exists_mem.1 (hcard ▸ one_pos)
+  have hdx (i : Fin 4) : Differentiable ℝ fun w ↦ x w i :=
+    (contDiff_euclidean.mp hx i).differentiable (by norm_num)
+  rw [← range_covariantTranslationLinearMap_of_card_eq_one hx hsol hlim hD hcard,
+    finrank_range_covariantTranslationLinearMap (hdx 2) (hdx 3) hlim
+      (hD.pos_iff.1 (Multiset.count_pos.2 hz₀))]
+
+/-- The zero divisor of a `C³` vortex with the degree-`m` end framing, as a point of `Sym ℂ m`. -/
+private theorem exists_sym_isZeroMultiplicity {m : ℕ}
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
+    ∃ D : Sym ℂ m, IsZeroMultiplicity (sectionValue x) fun z ↦ (D : Multiset ℂ).count z := by
   have hxi (i : Fin 4) : ContDiff ℝ 3 fun w ↦ x w i := contDiff_euclidean.mp hx i
-  refine mem_gaugeFixedKernel.2 ⟨contDiff_covariantTranslation hx v,
-    memLp_covariantTranslation volume ((hxi 0).differentiable (by norm_num))
-      ((hxi 1).differentiable (by norm_num)) ((hxi 2).of_le (by norm_num))
-      ((hxi 3).of_le (by norm_num)) hsol hlim v, fun z ↦ ?_⟩
-  exact gaugeFixedOperator_covariantTranslation_of_equation_eq_zero
-    ((hxi 0).differentiable (by norm_num) z) ((hxi 1).differentiable (by norm_num) z)
-    ((hxi 2).of_le (by norm_num)).contDiffAt ((hxi 3).of_le (by norm_num)).contDiffAt
-    (Eventually.of_forall hsol) v
-
-variable {m : ℕ}
-  (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
-
-include hframe
-
-/-- The covariant translations span a subspace of the kernel of `L_x`. -/
-theorem range_covariantTranslationLinearMap_le :
-    LinearMap.range (covariantTranslationLinearMap x) ≤ gaugeFixedKernel x := by
-  rintro _ ⟨v, rfl⟩
-  rw [coe_covariantTranslationLinearMap]
-  exact covariantTranslation_mem_gaugeFixedKernel hx hsol
-    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) v
-
-/-- At a framed vortex of positive degree the covariant translations span a real
-two-dimensional subspace of the kernel of `L_x`. -/
-theorem finrank_range_covariantTranslationLinearMap (hm : m ≠ 0) :
-    finrank ℝ (LinearMap.range (covariantTranslationLinearMap x)) = 2 := by
-  have hxi (i : Fin 4) : ContDiff ℝ 3 fun w ↦ x w i := contDiff_euclidean.mp hx i
-  have hdx (i : Fin 4) : Differentiable ℝ fun w ↦ x w i := (hxi i).differentiable (by norm_num)
-  obtain ⟨z₀, hz₀⟩ := exists_sectionValue_eq_zero (k := 3) (by norm_num) (hxi 0) (hxi 1) (hdx 2)
-    (hdx 3) (fun w ↦ by simp [hsol w]) hm hframe
-  rw [LinearMap.finrank_range_of_inj (by
-      rw [coe_covariantTranslationLinearMap]
-      exact covariantTranslation_injective (hdx 2) (hdx 3)
-        (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) hz₀),
-    Complex.finrank_real_complex]
+  exact exists_sym_isZeroMultiplicity_sectionValue (k := 3) (by norm_num) (hxi 0) (hxi 1)
+    ((hxi 2).differentiable (by norm_num)) ((hxi 3).differentiable (by norm_num))
+    (fun w ↦ by simp [hsol w]) hframe
 
 /-- **The kernel of `L_x` has real dimension at least two** at a `C³` framed vortex of positive
-degree, spanned by the covariant translations. -/
-theorem two_le_finrank_gaugeFixedKernel (hm : m ≠ 0) : 2 ≤ finrank ℝ (gaugeFixedKernel x) := by
-  have := finiteDimensional_gaugeFixedKernel (hx.of_le (by norm_num))
-    (fun w ↦ by simp [hsol w]) hframe
-  rw [← finrank_range_covariantTranslationLinearMap hx hsol hframe hm]
-  exact Submodule.finrank_mono (range_covariantTranslationLinearMap_le hx hsol hframe)
-
-end Translations
+degree. -/
+theorem two_le_finrank_gaugeFixedKernel {m : ℕ}
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    (hm : m ≠ 0) : 2 ≤ finrank ℝ (gaugeFixedKernel x) := by
+  obtain ⟨D, hD⟩ := exists_sym_isZeroMultiplicity hx hsol hframe
+  obtain ⟨z₀, hz₀⟩ := exists_eq_zero_of_tendsto_mul_inv_pow (contDiff_sectionValue
+    (contDiff_euclidean.mp hx 2) (contDiff_euclidean.mp hx 3)).continuous hm hframe
+  exact two_le_finrank_gaugeFixedKernel_of_sectionValue_eq_zero hx hsol
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) hD hz₀
 
 /-! ### Degree one -/
 
-/-- The degree-one end framing in the form `α (z / |z|)⁻ᵐ → 1` with `m = 1`. -/
-private theorem tendsto_sectionValue_mul_inv_pow_one
-    (hframe : Tendsto (fun z ↦ sectionValue x z * (z / (‖z‖ : ℂ))⁻¹) (cocompact ℂ) (𝓝 1)) :
-    Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ 1)⁻¹) (cocompact ℂ) (𝓝 1) := by
-  simpa using hframe
+variable (hframe : Tendsto (fun z ↦ sectionValue x z * (z / (‖z‖ : ℂ))⁻¹) (cocompact ℂ) (𝓝 1))
 
-section DegreeOne
-
-variable (hx : ContDiff ℝ 3 x) (hsol : ∀ z, equation x z = 0)
-  (hframe : Tendsto (fun z ↦ sectionValue x z * (z / (‖z‖ : ℂ))⁻¹) (cocompact ℂ) (𝓝 1))
-
-include hx hsol hframe
+include hframe
 
 /-- **The kernel of `L_x` in degree one consists of the covariant translations.** At a `C³`
 vortex with the degree-one end framing `α (z / |z|)⁻¹ → 1`, the square-integrable `C²` solutions
 of `L_x y = 0` are exactly the covariant translations `y_v`, `v ∈ ℂ`. -/
 theorem range_covariantTranslationLinearMap :
     LinearMap.range (covariantTranslationLinearMap x) = gaugeFixedKernel x := by
-  have hframe₁ := tendsto_sectionValue_mul_inv_pow_one hframe
-  have := finiteDimensional_gaugeFixedKernel (hx.of_le (by norm_num))
-    (fun w ↦ by simp [hsol w]) hframe₁
-  refine Submodule.eq_of_le_of_finrank_le (range_covariantTranslationLinearMap_le hx hsol hframe₁)
-    ?_
-  rw [finrank_range_covariantTranslationLinearMap hx hsol hframe₁ one_ne_zero]
-  exact finrank_gaugeFixedKernel_le (hx.of_le (by norm_num)) (fun w ↦ by simp [hsol w]) hframe₁
+  have hframe₁ : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ 1)⁻¹) (cocompact ℂ)
+      (𝓝 1) := by
+    simpa using hframe
+  obtain ⟨D, hD⟩ := exists_sym_isZeroMultiplicity hx hsol hframe₁
+  exact range_covariantTranslationLinearMap_of_card_eq_one hx hsol
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₁) hD D.2
 
 /-- **The kernel of `L_x` in degree one has real dimension two**, the dimension of
 `Sym¹ ℂ = ℂ`. -/
 theorem finrank_gaugeFixedKernel_eq_two : finrank ℝ (gaugeFixedKernel x) = 2 := by
-  rw [← range_covariantTranslationLinearMap hx hsol hframe,
-    finrank_range_covariantTranslationLinearMap hx hsol
-      (tendsto_sectionValue_mul_inv_pow_one hframe) one_ne_zero]
+  have hframe₁ : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ 1)⁻¹) (cocompact ℂ)
+      (𝓝 1) := by
+    simpa using hframe
+  obtain ⟨D, hD⟩ := exists_sym_isZeroMultiplicity hx hsol hframe₁
+  exact finrank_gaugeFixedKernel_eq_two_of_card_eq_one hx hsol
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₁) hD D.2
 
-end DegreeOne
+end Translations
 
 end TauCeti.Vortex
