@@ -61,6 +61,9 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   differentiable at the point `(y, t)`.
 * `TauCeti.fderiv_slice_left`, `TauCeti.fderiv_slice_right`: the derivatives of the two slices
   of a function on a product are the restrictions of its derivative.
+* `TauCeti.differentiableAt_comp_snd_iff` and `TauCeti.fderiv_comp_snd`: a function of the
+  second variable alone is differentiable exactly when the function is, and its derivative is the
+  derivative of the function read on the second component, with no differentiability assumption.
 * `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
   derivative along the first factor.
 * `HasDerivAt.hasFDerivAt_comp_snd`: a function `p ↦ x p.2` of a scalar second variable alone has
@@ -153,20 +156,29 @@ theorem fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right {f : E × F →
   simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.inl_apply,
     ContinuousLinearMap.inr_apply, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
 
+/-- A function of the second variable alone is differentiable at `z` exactly when the function is
+differentiable at `z.2`. -/
+theorem differentiableAt_comp_snd_iff {f : F → G} {z : E × F} :
+    DifferentiableAt 𝕜 (f ∘ Prod.snd) z ↔ DifferentiableAt 𝕜 f z.2 :=
+  ⟨fun h ↦ (DifferentiableAt.comp (g := f ∘ Prod.snd) z.2 h
+      (hasFDerivAt_prodMk_right (𝕜 := 𝕜) z.1 z.2).differentiableAt :),
+    fun h ↦ h.comp z differentiableAt_snd⟩
+
+/-- The derivative of a function of the second variable alone is the derivative of the function
+read on the second component. No differentiability is needed: otherwise both sides are zero. -/
+theorem fderiv_comp_snd (f : F → G) (z : E × F) :
+    fderiv 𝕜 (f ∘ Prod.snd) z = (fderiv 𝕜 f z.2).comp (ContinuousLinearMap.snd 𝕜 E F) := by
+  by_cases hf : DifferentiableAt 𝕜 f z.2
+  · exact (hf.hasFDerivAt.comp z hasFDerivAt_snd).fderiv
+  · rw [fderiv_zero_of_not_differentiableAt hf,
+      fderiv_zero_of_not_differentiableAt (mt differentiableAt_comp_snd_iff.1 hf),
+      ContinuousLinearMap.zero_comp]
+
 /-- A function of the second variable alone has zero derivative along the first factor. No
 differentiability is needed: otherwise the derivative is zero. -/
 theorem fderiv_comp_snd_apply_mk_zero (f : F → G) (z : E × F) (v : E) :
     fderiv 𝕜 (fun w : E × F ↦ f w.2) z (v, 0) = 0 := by
-  by_cases hf : DifferentiableAt 𝕜 f z.2
-  · have h : HasFDerivAt (fun w : E × F ↦ f w.2)
-        ((fderiv 𝕜 f z.2).comp (ContinuousLinearMap.snd 𝕜 E F)) z :=
-      hf.hasFDerivAt.comp z hasFDerivAt_snd
-    simp [h.fderiv]
-  · have hf' : ¬DifferentiableAt 𝕜 (fun w : E × F ↦ f w.2) z := by
-      intro h
-      have h' : DifferentiableAt 𝕜 (fun w : E × F ↦ f w.2) (z.1, z.2) := h
-      exact hf (h'.comp z.2 (hasFDerivAt_prodMk_right (𝕜 := 𝕜) z.1 z.2).differentiableAt)
-    simp [fderiv_zero_of_not_differentiableAt hf']
+  simp [← Function.comp_def f Prod.snd, fderiv_comp_snd]
 
 /-- A function `p ↦ x p.2` of a scalar second variable alone, where `x` has derivative `x'` at
 `z.2`, has derivative `(σ, τ) ↦ τ • x'` at `z`. -/

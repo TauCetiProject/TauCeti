@@ -61,9 +61,9 @@ conversely a nondegenerate critical point lies on no critical submanifold of pos
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_ofOpens_const`: a constant function
   is Morse–Bott along every open subset, a critical submanifold of full dimension.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd`: the model example, the
-  slice `M × {0}` for `(x, v) ↦ q v` with `q` nondegenerate at `0`.
+  slice `M × {y}` for `(x, v) ↦ q v` with `q` nondegenerate at `y`.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd_iff`: conversely, the slice
-  is Morse–Bott only when `q` is nondegenerate at `0`.
+  is Morse–Bott only when `q` is nondegenerate at `y`.
 * `SmoothEmbedding.IsNondegenerateCriticalSubmanifold.isNondegenerateCriticalPoint_of_snd_eq`:
   more generally, a Morse–Bott critical submanifold of `(x, v) ↦ q v` inside a slice `M × {y}`
   forces `q` to be nondegenerate at `y`.
@@ -425,19 +425,20 @@ section Prod
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- **The model Morse–Bott function.** If `q` has a nondegenerate critical point at `0`, then the
-slice `M × {0}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v`. The slice is a
-smooth embedding for instance by `TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`. -/
-theorem isNondegenerateCriticalSubmanifold_comp_snd {q : V → ℝ}
-    (hq : IsNondegenerateCriticalPoint q 0)
-    (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, V)) n (fun x : M ↦ (x, (0 : V)))) :
+/-- **The model Morse–Bott function.** If `q` has a nondegenerate critical point at `y`, then the
+slice `M × {y}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v`. For `y = 0` the
+slice is a smooth embedding for instance by
+`TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`. -/
+theorem isNondegenerateCriticalSubmanifold_comp_snd {q : V → ℝ} {y : V}
+    (hq : IsNondegenerateCriticalPoint q y)
+    (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, V)) n (fun x : M ↦ (x, y))) :
     (ofIsSmoothEmbedding _ h).IsNondegenerateCriticalSubmanifold (q ∘ Prod.snd) where
   contMDiffAt x := by
     rw [ofIsSmoothEmbedding_apply]
-    exact hq.contDiffAt.contMDiffAt.comp (x, 0) contMDiffAt_snd
+    exact hq.contDiffAt.contMDiffAt.comp (x, y) contMDiffAt_snd
   mem_criticalPoints x := by
     rw [ofIsSmoothEmbedding_apply, mem_criticalPoints,
-      mvfderiv_comp (x, 0) (hq.contDiffAt.differentiableAt two_ne_zero).mdifferentiableAt
+      mvfderiv_comp (x, y) (hq.contDiffAt.differentiableAt two_ne_zero).mdifferentiableAt
         mdifferentiableAt_snd, mvfderiv_eq_fderiv, hq.fderiv_eq_zero,
       ContinuousLinearMap.zero_comp, ContinuousLinearMap.zero_comp]
   ker_criticalHessian_le x v hv := by
@@ -445,9 +446,9 @@ theorem isNondegenerateCriticalSubmanifold_comp_snd {q : V → ℝ}
     have hv₂ : v.2 = 0 := hq.isInvertible.injective
       (((criticalHessian_comp_snd_apply_eq_zero_iff hq.contDiffAt x v).1 hv).trans
         (map_zero _).symm)
-    have hD : mfderiv I (I.prod 𝓘(ℝ, V)) (fun y : M ↦ (y, (0 : V))) x =
+    have hD : mfderiv I (I.prod 𝓘(ℝ, V)) (fun z : M ↦ (z, y)) x =
         (ContinuousLinearMap.id ℝ _).prod 0 :=
-      ((hasMFDerivAt_id x).prodMk (hasMFDerivAt_const (0 : V) x)).mfderiv
+      ((hasMFDerivAt_id x).prodMk (hasMFDerivAt_const y x)).mfderiv
     refine ⟨v.1, ?_⟩
     rw [coe_ofIsSmoothEmbedding, hD]
     exact Prod.ext rfl hv₂.symm
@@ -491,12 +492,12 @@ theorem IsNondegenerateCriticalSubmanifold.isNondegenerateCriticalPoint_of_snd_e
   exact (congrArg Prod.snd hu).symm.trans hu₂
 
 /-- **The model Morse–Bott function, characterized.** For a nonempty `M` and a finite-dimensional
-`V`, the slice `M × {0}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v` exactly
-when `q` has a nondegenerate critical point at `0`. -/
+`V`, the slice `M × {y}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v` exactly
+when `q` has a nondegenerate critical point at `y`. -/
 theorem isNondegenerateCriticalSubmanifold_comp_snd_iff [FiniteDimensional ℝ V] [Nonempty M]
-    {q : V → ℝ} (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, V)) n (fun x : M ↦ (x, (0 : V)))) :
+    {q : V → ℝ} {y : V} (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, V)) n (fun x : M ↦ (x, y))) :
     (ofIsSmoothEmbedding _ h).IsNondegenerateCriticalSubmanifold (q ∘ Prod.snd) ↔
-      IsNondegenerateCriticalPoint q 0 :=
+      IsNondegenerateCriticalPoint q y :=
   ⟨fun hq ↦ hq.isNondegenerateCriticalPoint_of_snd_eq fun x ↦
       congrArg Prod.snd (ofIsSmoothEmbedding_apply _ h x),
     fun hq ↦ isNondegenerateCriticalSubmanifold_comp_snd hq h⟩

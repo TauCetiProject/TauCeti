@@ -12,6 +12,7 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.ODE.Basic
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Calculus.ContDiff.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 
 /-!
@@ -38,6 +39,9 @@ pair of gradients. The results above transfer to it through
   a separated sum are the pairs of nondegenerate critical points of the summands.
 * `TauCeti.morseIndex_comp_fst_add_comp_snd`: the Morse index of a separated sum is the sum of
   the Morse indices of the summands.
+* `TauCeti.hessianQuadraticForm_comp_snd` and `TauCeti.morseIndex_comp_snd`: a function of the
+  second variable alone has the Hessian and the Morse index of the function, with no regularity
+  assumption.
 * `TauCeti.separatedSum`: the separated sum on the `L²` product.
 * `TauCeti.gradient_separatedSum` and `TauCeti.lipschitzWith_gradient_separatedSum`: its gradient is
   the pair of gradients, and is Lipschitz when both gradients are.
@@ -119,6 +123,47 @@ theorem morseIndex_comp_fst_add_comp_snd [FiniteDimensional ℝ E] [FiniteDimens
     morseIndex (φ ∘ Prod.fst + ψ ∘ Prod.snd) (a, b) = morseIndex φ a + morseIndex ψ b := by
   simp only [morseIndex_def, hessianQuadraticForm_comp_fst_add_comp_snd hφ hψ,
     QuadraticForm.sigNeg_prod]
+
+/-- The Hessian quadratic form of a function `ψ` of the second variable alone is the Hessian of
+`ψ`, read on the second component. No regularity is needed: both sides use the totalized
+derivative. -/
+theorem hessianQuadraticForm_comp_snd (ψ : F → ℝ) (z : E × F) :
+    hessianQuadraticForm (ψ ∘ Prod.snd) z =
+      (hessianQuadraticForm ψ z.2).comp (LinearMap.snd ℝ E F) := by
+  -- Precomposition with the second projection, and its left inverse, restriction to `F`.
+  let P : (F →L[ℝ] ℝ) →L[ℝ] E × F →L[ℝ] ℝ := (compL ℝ (E × F) F ℝ).flip (snd ℝ E F)
+  let R : (E × F →L[ℝ] ℝ) →L[ℝ] F →L[ℝ] ℝ := (compL ℝ F (E × F) ℝ).flip (inr ℝ E F)
+  have hRP : R ∘ (P ∘ fderiv ℝ ψ) = fderiv ℝ ψ := funext fun y ↦ by ext; simp [R, P]
+  have hP : fderiv ℝ (P ∘ fderiv ℝ ψ) z.2 = P.comp (fderiv ℝ (fderiv ℝ ψ) z.2) := by
+    by_cases hd : DifferentiableAt ℝ (fderiv ℝ ψ) z.2
+    · exact (P.hasFDerivAt.comp z.2 hd.hasFDerivAt).fderiv
+    · have hd' : ¬DifferentiableAt ℝ (P ∘ fderiv ℝ ψ) z.2 := fun h ↦
+        hd (hRP ▸ R.differentiableAt.comp z.2 h)
+      rw [fderiv_zero_of_not_differentiableAt hd, fderiv_zero_of_not_differentiableAt hd',
+        ContinuousLinearMap.comp_zero]
+  have h1 : fderiv ℝ (ψ ∘ Prod.snd) = (P ∘ fderiv ℝ ψ) ∘ Prod.snd :=
+    funext fun w ↦ fderiv_comp_snd ψ w
+  ext v
+  rw [hessianQuadraticForm_apply, h1, fderiv_comp_snd, hP, QuadraticMap.comp_apply,
+    hessianQuadraticForm_apply]
+  simp [P]
+
+/-- **The Morse index of a function of the second variable alone** at `z` is the Morse index of
+the function at `z.2`: the first factor contributes nothing to the Hessian. -/
+@[simp]
+theorem morseIndex_comp_snd [FiniteDimensional ℝ E] (ψ : F → ℝ) (z : E × F) :
+    morseIndex (ψ ∘ Prod.snd) z = morseIndex ψ z.2 := by
+  by_cases hF : FiniteDimensional ℝ F
+  · have hH : hessianQuadraticForm (ψ ∘ Prod.snd) z =
+        (0 : QuadraticForm ℝ E).prod (hessianQuadraticForm ψ z.2) := by
+      ext v
+      simp [hessianQuadraticForm_comp_snd]
+    have h0 : sigNeg (0 : QuadraticForm ℝ E) = 0 :=
+      (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero _).mp fun _ ↦ le_of_eq (zero_apply _).symm
+    rw [morseIndex_def, morseIndex_def, hH, QuadraticForm.sigNeg_prod, h0, zero_add]
+  · rw [morseIndex_eq_zero_of_not_finiteDimensional hF,
+      morseIndex_eq_zero_of_not_finiteDimensional fun _ ↦
+        hF (Module.Finite.of_surjective (LinearMap.snd ℝ E F) LinearMap.snd_surjective)]
 
 end CompFstAddCompSnd
 
