@@ -27,9 +27,9 @@ the same charts as those of `V` and `V'`:
   each chart through `ContinuousLinearMap.inCoordinates` (`TauCeti.FiniteBundleAtlas.coord_hom`),
   so that applying a section of the hom bundle to a section of `V₁` is applying the chart readings
   pointwise (`TauCeti.FiniteBundleAtlas.coord_hom_apply`);
-* the bundle `x ↦ TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x` of `V`-valued one-forms
-  (`TauCeti.FiniteBundleAtlas.tangentHom`), which needs no hypothesis because the preferred
-  trivialization of the tangent bundle has the chart source as its base set.
+* the bundle `x ↦ TangentSpace I x →L[𝕜] V x` of `V`-valued one-forms for a model with corners
+  `I : ModelWithCorners 𝕜 E H` (`TauCeti.FiniteBundleAtlas.tangentHom`), which needs no hypothesis
+  because the preferred trivialization of the tangent bundle has the chart source as its base set.
 
 Joint atlases of two bundles exist on every compact Hausdorff manifold modelled on a locally
 compact space (`TauCeti.FiniteBundleAtlas.exists_closure_dom_subset_baseSet`).
@@ -40,15 +40,16 @@ compact space (`TauCeti.FiniteBundleAtlas.exists_closure_dom_subset_baseSet`).
 * `TauCeti.FiniteBundleAtlas.hom`: the atlas of the hom bundle of `V₁` and `V₂` on the charts of an
   atlas of `V₁`.
 * `TauCeti.FiniteBundleAtlas.tangent`: the charts of an atlas of `V` as an atlas of the tangent
-  bundle.
+  bundle `TangentSpace I`.
 * `TauCeti.FiniteBundleAtlas.tangentHom`: the atlas of the bundle of `V`-valued one-forms on the
   charts of an atlas of `V`.
 
 ## Main results
 
 * `TauCeti.FiniteBundleAtlas.coord_prod`, `TauCeti.FiniteBundleAtlas.coord_hom`,
-  `TauCeti.FiniteBundleAtlas.coord_hom_apply`, `TauCeti.FiniteBundleAtlas.coord_tangentHom`: the
-  chart readings of sections of the derived bundles.
+  `TauCeti.FiniteBundleAtlas.coord_hom_apply`, `TauCeti.FiniteBundleAtlas.coord_tangentHom`,
+  `TauCeti.FiniteBundleAtlas.coord_tangentHom_apply`: the chart readings of sections of the derived
+  bundles.
 -/
 
 public section
@@ -190,54 +191,58 @@ end Hom
 
 section Tangent
 
-variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : Type*} [TopologicalSpace M]
-  [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 1 M]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type u} [TopologicalSpace H] {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [TopologicalSpace F] {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
 
-variable (A : FiniteBundleAtlas E M F V)
+variable (A : FiniteBundleAtlas H M F V) (I : ModelWithCorners 𝕜 E H) [IsManifold I 1 M]
 
 /-- The charts of a finite bundle atlas of `V` as a finite bundle atlas of the tangent bundle of
-`M`. No hypothesis is needed: the preferred trivialization of the tangent bundle at a point has
-the source of the preferred chart as its base set (`TangentBundle.trivializationAt_baseSet`). -/
-abbrev tangent : FiniteBundleAtlas E M E (TangentSpace 𝓘(ℝ, E)) :=
+`M` for the model `I`. No hypothesis is needed: the preferred trivialization of the tangent bundle
+at a point has the source of the preferred chart as its base set
+(`TangentBundle.trivializationAt_baseSet`). -/
+abbrev tangent : FiniteBundleAtlas H M E (TangentSpace I) :=
   A.ofBaseSet A.closure_dom_subset_source
 
 end Tangent
 
 section TangentHom
 
-variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : Type*} [TopologicalSpace M]
-  [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 1 M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
-  [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type u} [TopologicalSpace H] {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {V : M → Type*}
+  [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
 
-variable (A : FiniteBundleAtlas E M F V)
+variable (A : FiniteBundleAtlas H M F V) (I : ModelWithCorners 𝕜 E H) [IsManifold I 1 M]
 
-/-- The finite bundle atlas of the bundle `x ↦ TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x` of `V`-valued
+/-- The finite bundle atlas of the bundle `x ↦ TangentSpace I x →L[𝕜] V x` of `V`-valued
 one-forms on the charts of a finite bundle atlas of `V`. -/
 abbrev tangentHom :
-    FiniteBundleAtlas E M (E →L[ℝ] F) (fun x ↦ TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x) :=
-  A.tangent.hom A.closure_dom_subset_baseSet
+    FiniteBundleAtlas H M (E →L[𝕜] F) (fun x ↦ TangentSpace I x →L[𝕜] V x) :=
+  (A.tangent I).hom A.closure_dom_subset_baseSet
 
-/-- A `V`-valued one-form read in a chart of `A.tangentHom` is its value at the corresponding point
-of `M` expressed in the preferred trivializations of the tangent bundle and of `V` at the centre
-of the chart. -/
-theorem coord_tangentHom (i : Fin A.n) (ω : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x) (y : E) :
-    A.tangentHom.coord i ω y =
-      ContinuousLinearMap.inCoordinates E (TangentSpace 𝓘(ℝ, E)) F V (A.center i)
+/-- A `V`-valued one-form read in a chart of `A.tangentHom I` is its value at the corresponding
+point of `M` expressed in the preferred trivializations of the tangent bundle and of `V` at the
+centre of the chart. -/
+theorem coord_tangentHom (i : Fin A.n) (ω : ∀ x, TangentSpace I x →L[𝕜] V x) (y : H) :
+    (A.tangentHom I).coord i ω y =
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) F V (A.center i)
         ((A.chart i).symm y) (A.center i) ((A.chart i).symm y) (ω ((A.chart i).symm y)) :=
-  A.tangent.coord_hom A.closure_dom_subset_baseSet i ω y
+  (A.tangent I).coord_hom A.closure_dom_subset_baseSet i ω y
 
 /-- On the image of a chart, applying the chart reading of a `V`-valued one-form `ω` to the chart
 reading of a vector field `v` gives the chart reading of the section `x ↦ ω x (v x)` of `V`. -/
-theorem coord_tangentHom_apply (i : Fin A.n) (ω : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x)
-    (v : ∀ x, TangentSpace 𝓘(ℝ, E) x) {y : E} (hy : y ∈ A.image i) :
-    A.tangentHom.coord i ω y (A.tangent.coord i v y) = A.coord i (fun x ↦ ω x (v x)) y :=
-  A.tangent.coord_hom_apply A.closure_dom_subset_baseSet i ω v
-    (A.tangent.mem_image.2 (A.mem_image.1 hy))
+theorem coord_tangentHom_apply (i : Fin A.n) (ω : ∀ x, TangentSpace I x →L[𝕜] V x)
+    (v : ∀ x, TangentSpace I x) {y : H} (hy : y ∈ A.image i) :
+    (A.tangentHom I).coord i ω y ((A.tangent I).coord i v y) =
+      A.coord i (fun x ↦ ω x (v x)) y :=
+  (A.tangent I).coord_hom_apply A.closure_dom_subset_baseSet i ω v
+    ((A.tangent I).mem_image.2 (A.mem_image.1 hy))
 
 end TangentHom
 

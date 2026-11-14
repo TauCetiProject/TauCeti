@@ -40,8 +40,9 @@ differentiable.
 
 * `TauCeti.SmoothAlmostComplexStructure.zeroOnePart`: the `(0,1)`-part of a `V`-valued one-form,
   its complex antilinear part (`TauCeti.SmoothAlmostComplexStructure.toLinearMap_zeroOnePart`), a
-  projection onto the `(0,1)`-forms
-  (`TauCeti.SmoothAlmostComplexStructure.zeroOnePart_eq_self_iff`).
+  projection onto the `(0,1)`-forms (`TauCeti.SmoothAlmostComplexStructure.zeroOnePart_eq_self_iff`)
+  whose kernel consists of the complex-linear one-forms
+  (`TauCeti.SmoothAlmostComplexStructure.zeroOnePart_eq_zero_iff`).
 * `TauCeti.SmoothAlmostComplexStructure.inCoordinates_zeroOnePart`,
   `TauCeti.SmoothAlmostComplexStructure.isZeroOneForm_iff_inCoordinates`: where `j` reads as
   multiplication by `i` in tangent coordinates, the `(0,1)`-part of a one-form is read as the
@@ -285,6 +286,15 @@ theorem zeroOnePart_add {x : M} (η η' : TangentSpace I x →L[ℝ] V x) :
 theorem zeroOnePart_zero {x : M} : j.zeroOnePart (0 : TangentSpace I x →L[ℝ] V x) = 0 := by
   ext v
   simp [zeroOnePart_apply]
+
+/-- The `(0,1)`-part of a one-form vanishes exactly when it is complex linear for `j` and
+multiplication by `i`. -/
+theorem zeroOnePart_eq_zero_iff {x : M} {η : TangentSpace I x →L[ℝ] V x} :
+    j.zeroOnePart η = 0 ↔ ∀ v, η (j x v) = Complex.I • η v := by
+  rw [← ContinuousLinearMap.coe_inj, ContinuousLinearMap.toLinearMap_zero,
+    toLinearMap_zeroOnePart,
+    ← isComplexLinear_iff_complexAntilinearPart_eq_zero Complex.toLinearMap_I_comp_toLinearMap_I]
+  exact ⟨fun h v ↦ h.apply v, fun h ↦ isComplexLinear_of_apply h⟩
 
 /-- The `(0,1)`-projection commutes with finite sums. -/
 theorem zeroOnePart_sum {κ : Type*} (s : Finset κ) {x : M}

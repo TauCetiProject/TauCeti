@@ -65,10 +65,13 @@ Conversely, the chart expression of every element lies in the local Sobolev clas
   sets.
 * `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_halfImage`: the interiors of the chart images
   have finite measure.
-* `TauCeti.BorderedSobolevSection.instCompleteSpace`: completeness.
-* `TauCeti.BorderedSobolevSection.norm_ofContMDiffSection_le`,
-  `TauCeti.BorderedSobolevSection.ofContMDiffSection_injective`: the norm bound and injectivity of
-  the inclusion of `Cᵏ` sections.
+* `TauCeti.BorderedSobolevSection.instCompleteSpace`,
+  `TauCeti.BorderedSobolevSection.eq_of_ae_eq_halfCoord`: completeness and uniqueness from chart
+  readings.
+* `TauCeti.BorderedSobolevSection.chartValueL_ofContMDiffSection_ae`,
+  `TauCeti.BorderedSobolevSection.norm_ofContMDiffSection_le`,
+  `TauCeti.BorderedSobolevSection.ofContMDiffSection_injective`: the chart data, norm bound and
+  injectivity of the inclusion of `Cᵏ` sections.
 * `TauCeti.BorderedSobolevSection.memWkpLoc_halfCoord`,
   `TauCeti.BorderedSobolevSection.exists_section_memWkpLoc`: localization to the local Sobolev
   classes on the chart images, up to the real axis.
@@ -153,6 +156,16 @@ the point. -/
       (A.triv (idx x)).apply_mk_symm (A.dom_subset_baseSet _ (hidx x))]
     rfl
 
+@[simp]
+theorem halfSectionChartData_image (i : Fin A.n) :
+    A.halfSectionChartData.image i = A.halfImage i :=
+  rfl
+
+@[simp]
+theorem halfSectionChartData_overlap (i i' : Fin A.n) :
+    A.halfSectionChartData.overlap i i' = A.halfOverlap i i' :=
+  rfl
+
 theorem halfSectionChartData_transition_of_mem {i i' : Fin A.n} {z : ℂ}
     (hz : z ∈ A.halfOverlap i i') :
     A.halfSectionChartData.transition i i' z = A.halfTransition i i' z := by
@@ -232,6 +245,20 @@ instance BorderedSobolevSection.instCompleteSpace [IsManifold closedUpperHalfPla
     CompleteSpace (BorderedSobolevSection A p k) :=
   SectionChartData.completeSpace_sobolevSections A.aeTransition_halfSectionChartData
 
+variable {A p k} in
+/-- **Uniqueness.** Two elements of `W^{k,p}(V)` over a base with boundary whose chart data are the
+coordinates `A.halfCoord i s` of the same section are equal. -/
+theorem BorderedSobolevSection.eq_of_ae_eq_halfCoord {w w' : BorderedSobolevSection A p k}
+    {s : ∀ x, V x}
+    (hw : ∀ i, A.halfSectionChartData.chartValueL volume p k i w
+      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s)
+    (hw' : ∀ i, A.halfSectionChartData.chartValueL volume p k i w'
+      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s) :
+    w = w' :=
+  SectionChartData.eq_of_ae_eq_coord (s := s)
+    (fun i ↦ (hw i).trans (A.halfSectionChartData_coord_ae_eq i s).symm)
+    (fun i ↦ (hw' i).trans (A.halfSectionChartData_coord_ae_eq i s).symm)
+
 end Sobolev
 
 section Smooth
@@ -294,6 +321,16 @@ def ofContMDiffSection :
     { toFun := fun s ↦ s, map_add' := ContMDiffSection.coe_add,
       map_smul' := ContMDiffSection.coe_smul }
     (exists_value_ae_eq_halfCoord A p k)
+
+/-- The chart data in chart `i` of the Sobolev section of a `Cᵏ` section `s` are the chart
+coordinates `A.halfCoord i s`, almost everywhere on the interior `A.halfImage i` of the image of
+the chart. -/
+theorem chartValueL_ofContMDiffSection_ae (s : Cₛ^k⟮closedUpperHalfPlaneModel; F, V⟯)
+    (i : Fin A.n) :
+    A.halfSectionChartData.chartValueL volume p k i (ofContMDiffSection A p k s)
+      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s :=
+  (A.halfSectionChartData.chartValueL_ofComponents_ae volume p k _ _ s i).trans
+    (A.halfSectionChartData_coord_ae_eq i s)
 
 /-- **Norm bound.** The norm of the Sobolev section of a `Cᵏ` section `s` is at most the sum, over
 all charts `i` and basis vectors `j`, of the `Lᵖ` norms on `A.halfImage i` of the classical
