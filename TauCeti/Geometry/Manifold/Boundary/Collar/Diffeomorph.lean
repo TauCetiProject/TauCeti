@@ -255,16 +255,15 @@ theorem diffeomorphProd_apply_of_mem_boundary (h : IsProductCollarChart k φ V �
     h.diffeomorphProd hk y =
       (⟨⟨(y : M), hy⟩,
         h.mem_sourceBoundaryOpens.2 (h.mem_sourceOpens.1 y.2)⟩,
-        ⟨0, EuclideanHalfSpace.mem_normalIioOpens.2
-          (EuclideanHalfSpace.mem_normalIio.1
-            (EuclideanHalfSpace.zero_mem_normalIio h.height_pos))⟩) := by
+        EuclideanHalfSpace.normalIioOpensZero h.height_pos) := by
   have hyzero : (φ y).2 = 0 :=
     EuclideanHalfSpace.eq_zero_iff.2 ((h.mem_boundary_iff y (h.mem_sourceOpens.1 y.2)).1 hy)
   have hfst : (((h.diffeomorphProd hk y).1 : ↥((𝓡∂ (n + 1)).boundary M)) : M) = (y : M) := by
     rw [h.coe_diffeomorphProd_fst hk y, ← hyzero]
     exact φ.left_inv (h.mem_sourceOpens.1 y.2)
   exact Prod.ext (Subtype.ext (Subtype.ext hfst))
-    (Subtype.ext ((h.coe_diffeomorphProd_snd hk y).trans hyzero))
+    (Subtype.ext (((h.coe_diffeomorphProd_snd hk y).trans hyzero).trans
+      (EuclideanHalfSpace.coe_normalIioOpensZero h.height_pos).symm))
 
 end Characteristic
 
