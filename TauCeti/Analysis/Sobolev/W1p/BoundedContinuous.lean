@@ -15,7 +15,8 @@ import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 The precise representative of a whole-space `W^{1,∞}` class is bounded and Lipschitz.
 `W1p.boundedContinuousRepresentativeL` packages it as a continuous linear map into bounded
 continuous functions. Its supremum norm equals the essential supremum norm of the value
-component, and its Lipschitz constant is the essential supremum norm of the weak gradient.
+component, and it is Lipschitz with constant at most the essential supremum norm of the weak
+gradient.
 This permits restriction to boundary sets after extending a Sobolev function to the whole space.
 
 ## References
