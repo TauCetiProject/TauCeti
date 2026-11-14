@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Analysis.Calculus.Jet.FirstOrder
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Topology.VectorBundle.Trivialization
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # The first-jet bundle of a vector bundle
@@ -567,6 +568,8 @@ theorem jet_snd_eq_mfderiv (s : ∀ x, V x) (x : M) :
     simp [writtenInExtChartAt, localRep_apply]
   · rw [mfderiv_zero_of_not_mdifferentiableAt hg,
       fderivWithin_zero_of_not_differentiableWithinAt]
+    -- Both zeros are the same map, typed by `E →L[𝕜] F` and by its synonym
+    -- `TangentSpace I x →L[𝕜] TangentSpace 𝓘(𝕜, F) _`.
     · rfl
     rwa [mdifferentiableAt_iff_source_of_mem_source (mem_chart_source H x),
       mdifferentiableWithinAt_iff_differentiableWithinAt, hw] at hg
@@ -576,20 +579,9 @@ theorem jet_snd_eq_mfderiv (s : ∀ x, V x) (x : M) :
 differentiable at `x`. -/
 theorem jet_snd_eq_mvfderiv (s : ∀ x, V x) (x : M) :
     (jet I F s x).2 = mvfderiv I (fun y ↦ (trivializationAt F V x ⟨y, s y⟩).2) x := by
-  -- Read through the inverse chart at `x`, the trivialized section is the local representative.
-  have hw : (fun y ↦ (trivializationAt F V x ⟨y, s y⟩).2) ∘ (extChartAt I x).symm =
-      localRep I F s x :=
-    funext fun z ↦ by simp [localRep_apply]
-  rw [jet_snd]
-  by_cases hg : MDifferentiableAt I 𝓘(𝕜, F) (fun y ↦ (trivializationAt F V x ⟨y, s y⟩).2) x
-  · rw [hg.mvfderiv]
-    refine congrArg (fderivWithin 𝕜 · (range I) (extChartAt I x x)) (funext fun z ↦ ?_)
-    simp [writtenInExtChartAt, localRep_apply]
-  · rw [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg, ContinuousLinearMap.comp_zero,
-      fderivWithin_zero_of_not_differentiableWithinAt]
-    · rfl
-    rwa [mdifferentiableAt_iff_source_of_mem_source (mem_chart_source H x),
-      mdifferentiableWithinAt_iff_differentiableWithinAt, hw] at hg
+  ext v
+  rw [jet_snd_eq_mfderiv]
+  exact (mvfderiv_apply_eq_mfderiv_apply _ x v).symm
 
 /-- The value of a first jet, the fibre of the projection `J¹V → V`. -/
 def value (x : M) : FirstJetBundle I F V x →L[𝕜] V x :=

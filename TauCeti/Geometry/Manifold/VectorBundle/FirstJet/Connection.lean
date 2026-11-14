@@ -205,26 +205,6 @@ theorem covariantDerivative_comp_ofDeriv (hcov : IsCovariantDerivativeOn F cov U
     covariantDerivative hcov x ∘L ofDeriv I F x = ContinuousLinearMap.id 𝕜 _ :=
   ContinuousLinearMap.ext (covariantDerivative_ofDeriv hcov)
 
-omit [IsManifold I 1 M] in
-/-- The flat derivative of the trivialization at `x` vanishes on a section with constant
-coordinates in that trivialization. -/
-private theorem frameCovariantDerivative_symm_eq_zero (w : F) :
-    Manifold.frameCovariantDerivative I (Module.finBasis 𝕜 F) (trivializationAt F V x)
-      (fun y ↦ (trivializationAt F V x).symm y w) x = 0 := by
-  set e := trivializationAt F V x
-  have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt F V x
-  -- The coefficients of the section in the frame are the constant coordinates of `w`.
-  have hcoeff (i : Fin (Module.finrank 𝕜 F)) :
-      (fun y ↦ e.localFrameCoeff I (Module.finBasis 𝕜 F) i y (e.symm y w)) =ᶠ[𝓝 x]
-        fun _ ↦ (Module.finBasis 𝕜 F).coord i w :=
-    eventually_of_mem (e.open_baseSet.mem_nhds hx) fun y hy ↦
-      (e.localFrameCoeff_eq_coeff (I := I) (b := Module.finBasis 𝕜 F)
-        (s := fun y ↦ e.symm y w) hy).trans (by simp [e.apply_mk_symm hy])
-  have hconst : HasMFDerivAt (M' := F) I 𝓘(𝕜, F) (fun _ : M ↦ w) x
-      (0 : TangentSpace I x →L[𝕜] F) := hasMFDerivAt_const _ _
-  rw [Manifold.frameCovariantDerivative_eq_symmL_comp _ hconst hcoeff hx,
-    ContinuousLinearMap.comp_zero]
-
 /-- **The covariant derivative of a first jet in coordinates.** At a point `x` of `U`, in the
 chart and trivialization `e` at `x`, a first jet `(w, A)` is sent to `A` read back in `Vₓ` plus
 the covariant derivative at `x` of the section `y ↦ e.symm y w` with constant coordinates `w`. -/
@@ -238,7 +218,7 @@ theorem covariantDerivative_apply (hcov : IsCovariantDerivativeOn F cov U) (hx :
       one_ne_zero).mdifferentiableAt
         ((trivializationAt F V x).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V x))
   rw [covariantDerivative_eq_add_christoffelAt, value_apply, christoffelAt_apply hcov hx hσ,
-    frameCovariantDerivative_symm_eq_zero, sub_zero]
+    Manifold.frameCovariantDerivative_symm_const, sub_zero]
 
 /-- **Characterization of the covariant derivative of first jets.** At a point `x` of `U`, a
 continuous linear map `J¹Vₓ → Hom(TₓM, Vₓ)` is `TauCeti.FirstJetBundle.covariantDerivative`
@@ -379,6 +359,8 @@ theorem eq_horizontalLift_iff (hcov : IsCovariantDerivativeOn F cov U)
 theorem horizontalLift_fst (hcov : IsCovariantDerivativeOn F cov U) (v : V x) :
     (horizontalLift hcov x v).1 = (trivializationAt F V x).continuousLinearMapAt 𝕜 x v := by
   rw [horizontalLift_eq_flatLift_sub]
+  -- The fibre of `J¹V` is a type synonym for `F × (E →L[𝕜] F)`, so `rw [Prod.fst_sub]` does not
+  -- see the subtraction; `change` restates it in the product.
   change (flatLift I F x v).1 - (ofDeriv I F x _).1 = _
   rw [ofDeriv_fst, sub_zero, flatLift_apply]
 
@@ -542,6 +524,8 @@ theorem connectionEquiv_trivial_apply
     connectionEquiv hcov x j = (j.1, j.2) := by
   rw [connectionEquiv_apply, covariantDerivative_trivial hcov hx, value_apply]
   simp only [Trivial.fiberBundle_trivializationAt', Trivial.trivialization_symm_apply]
+  -- The two pairs differ only in their `Prod.mk` types, `Trivial M F x × (TangentSpace I x →L[𝕜]
+  -- Trivial M F x)` and `F × (E →L[𝕜] F)`, which are definitionally equal.
   rfl
 
 /-- On a trivial bundle, the splitting isomorphism of the canonical flat connection decomposes the

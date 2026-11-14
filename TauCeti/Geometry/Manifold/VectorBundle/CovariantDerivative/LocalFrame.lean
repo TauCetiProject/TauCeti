@@ -52,7 +52,8 @@ they give the classical coordinate formula for `∇ σ` along a frame direction.
   there.
 * `TauCeti.Manifold.frameCovariantDerivative_eq_symmL_comp`: the flat derivative of a section whose
   frame coefficients are the coordinates of a model-valued map, and
-  `TauCeti.Manifold.frameCovariantDerivative_symmL_const`, its vanishing on constant coordinates.
+  `TauCeti.Manifold.frameCovariantDerivative_symmL_const` and
+  `TauCeti.Manifold.frameCovariantDerivative_symm_const`, its vanishing on constant coordinates.
 * `TauCeti.Manifold.covariantDerivative_eq_frameCovariantDerivative_add_sum`: the local frame
   formula for an arbitrary covariant derivative.
 * `TauCeti.Manifold.covariantDerivative_eq_of_localFrame_eq`: two covariant derivatives which
@@ -296,6 +297,30 @@ theorem frameCovariantDerivative_symmL_const (hx : x ∈ e.baseSet) (v : F) :
   rw [frameCovariantDerivative_apply]
   simp only [hconst, zero_apply, zero_smul, Finset.sum_const_zero]
 
+omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] in
+/-- The section `z ↦ e.symm z v` has constant coefficients in the frame of `e` near a point of
+the base set, so its flat frame derivative vanishes there; off the base set the frame itself
+vanishes. -/
+@[simp]
+theorem frameCovariantDerivative_symm_const (v : F) :
+    frameCovariantDerivative I b e (fun z ↦ e.symm z v) x = 0 := by
+  by_cases hx : x ∈ e.baseSet
+  · -- The `i`-th coefficient of the section is the constant `b.coord i v` on `e.baseSet`.
+    have hconst (i : ι) : mvfderiv I (LinearMap.piApply (e.localFrameCoeff I b i)
+        (fun z ↦ e.symm z v)) x = 0 := by
+      ext w
+      refine mvfderiv_localFrameCoeff_apply b (g := fun _ ↦ b.coord i v)
+        (hasMFDerivAt_const _ _) i ?_ w
+      filter_upwards [e.open_baseSet.mem_nhds hx] with z hz
+      rw [e.localFrameCoeff_eq_coeff (b := b) (s := fun z ↦ e.symm z v) hz]
+      simp [e.apply_mk_symm hz]
+    ext w
+    rw [frameCovariantDerivative_apply]
+    simp only [hconst, zero_apply, zero_smul, Finset.sum_const_zero]
+  · ext w
+    rw [frameCovariantDerivative_apply, zero_apply]
+    exact Finset.sum_eq_zero fun i _ ↦ by rw [e.localFrame_apply_of_notMem b hx, smul_zero]
+
 omit [FiniteDimensional 𝕜 F] in
 /-- The flat frame derivative satisfies the covariant-derivative axioms on the base set of the
 trivialization defining the frame. -/
@@ -406,16 +431,8 @@ theorem covariantDerivative_symm_eq_christoffelForm
   have hσ : MDiffAt (T% (fun y ↦ e.symm y v)) x :=
     ((contMDiffOn_symm_baseSet v).mdifferentiableOn one_ne_zero).mdifferentiableAt
       (e.open_baseSet.mem_nhds hx)
-  rw [covariantDerivative_eq_add_christoffelForm b hcov hx hσ, add_eq_right]
-  -- The `i`-th coefficient of the section is the constant `b.coord i v` on `e.baseSet`.
-  have hcoeff (i : ι) : (fun y ↦ e.localFrameCoeff I b i y (e.symm y v)) =ᶠ[𝓝 x]
-      fun _ ↦ b.coord i v :=
-    Filter.eventually_of_mem (e.open_baseSet.mem_nhds hx) fun y hy ↦
-      (e.localFrameCoeff_eq_coeff (I := I) (b := b) (s := fun y ↦ e.symm y v) hy).trans
-        (by simp [e.apply_mk_symm hy])
-  have hconst : HasMFDerivAt (M' := F) I 𝓘(𝕜, F) (fun _ : M ↦ v) x
-      (0 : TangentSpace I x →L[𝕜] F) := hasMFDerivAt_const _ _
-  rw [frameCovariantDerivative_eq_symmL_comp b hconst hcoeff hx, ContinuousLinearMap.comp_zero]
+  rw [covariantDerivative_eq_add_christoffelForm b hcov hx hσ, add_eq_right,
+    frameCovariantDerivative_symm_const b v]
 
 /-! ### Regularity of the flat covariant derivative of a local frame -/
 
