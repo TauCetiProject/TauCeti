@@ -52,8 +52,6 @@ first factor at every coordinate to reduce to the honest path case.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 6 (directing measures) — the
-  path-level form of the conditional disintegration the directing-measure layer is stated against.
 * O. Kallenberg, *Probabilistic Symmetries and Invariance Principles* (Springer, 2005), §1.1, where
   the conditional predicate is stated blockwise.
 

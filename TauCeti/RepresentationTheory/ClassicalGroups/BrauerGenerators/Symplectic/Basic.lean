@@ -167,7 +167,7 @@ section Cap
 implementation detail of `TauCeti.symplecticCap`; the public interface is
 `TauCeti.symplecticCap_tprod`. -/
 private noncomputable def symplecticCapMultilinear :
-    MultilinearMap k (fun _ : Fin 2 => ((Fin n ⊕ Fin n) → k)) k :=
+    MultilinearMap (RingHom.id k) (fun _ : Fin 2 => ((Fin n ⊕ Fin n) → k)) k :=
   ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n,
     Matrix.J (Fin n) k x y •
       (MultilinearMap.mkPiAlgebra k (Fin 2) k).compLinearMap

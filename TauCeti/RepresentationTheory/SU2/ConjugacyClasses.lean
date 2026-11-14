@@ -56,11 +56,6 @@ is drawn in `TauCeti/RepresentationTheory/SU2/Character.lean`.
 
 ## References
 
-This serves the engine case of
-`TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md`, "Engine case: `SU(2)` and the
-maximal torus", whose torus-conjugacy step asks for the identification of the class functions of
-`SU(2)` with the `W`-invariant functions on the maximal torus.
-
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 18.
 * T. Bröcker, T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
   Chapter I.

@@ -118,7 +118,7 @@ theorem contDiffOn_Icc_iff_exists_continuous_jet {n : ℕ} :
         ∀ j < n, ∀ x ∈ Ioo a b, HasDerivAt (J j) (J (j + 1) x) x := by
   rcases lt_or_ge a b with hab | hba
   swap
-  · refine ⟨fun hf ↦ ⟨fun _ ↦ f, eqOn_refl _ _,
+  · refine ⟨fun _ ↦ ⟨fun _ ↦ f, eqOn_refl _ _,
       fun _ _ ↦ (subsingleton_Icc_of_ge hba).continuousOn _, fun j _ x hx ↦ ?_⟩,
       fun ⟨J, hzero, hc, hd⟩ ↦ contDiffOn_Icc_of_continuous_jet hzero hc hd⟩
     exact absurd hx.2 (not_lt.2 (hba.trans hx.1.le))
