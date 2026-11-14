@@ -72,7 +72,7 @@ section FixedOrder
 
 variable [Fintype V] [LinearOrder V]
 
-theorem bddBelow_ratioSet (X : TwoComplex V) (ℓ : GroupNorm G) :
+private theorem bddBelow_setOf_defect_div_gaugeDist (X : TwoComplex V) (ℓ : GroupNorm G) :
     BddBelow {r : ℝ | ∃ α : Cochain X G, 0 < α.gaugeDist ℓ ∧ r = α.defect ℓ / α.gaugeDist ℓ} :=
   ⟨0, by rintro r ⟨α, hα, rfl⟩; exact div_nonneg (α.defect_nonneg ℓ) hα.le⟩
 
@@ -83,7 +83,7 @@ theorem h1_nonneg (X : TwoComplex V) (ℓ : GroupNorm G) : 0 ≤ h1 X ℓ :=
 /-- Every cochain at positive gauge distance gives an upper bound on `h1 X ℓ`. -/
 theorem h1_le_div {X : TwoComplex V} {ℓ : GroupNorm G} {α : Cochain X G}
     (hα : 0 < α.gaugeDist ℓ) : h1 X ℓ ≤ α.defect ℓ / α.gaugeDist ℓ :=
-  csInf_le (bddBelow_ratioSet X ℓ) ⟨α, hα, rfl⟩
+  csInf_le (bddBelow_setOf_defect_div_gaugeDist X ℓ) ⟨α, hα, rfl⟩
 
 /-- When some cochain has positive gauge distance, `c ≤ h1 X ℓ` holds iff `c` bounds every
 expansion ratio from below. -/
@@ -91,7 +91,8 @@ theorem le_h1_iff {X : TwoComplex V} {ℓ : GroupNorm G}
     (hne : ∃ α : Cochain X G, 0 < α.gaugeDist ℓ) {c : ℝ} :
     c ≤ h1 X ℓ ↔ ∀ α : Cochain X G, 0 < α.gaugeDist ℓ → c ≤ α.defect ℓ / α.gaugeDist ℓ := by
   obtain ⟨α₀, hα₀⟩ := hne
-  rw [h1_def, le_csInf_iff (bddBelow_ratioSet X ℓ) ⟨α₀.defect ℓ / α₀.gaugeDist ℓ, α₀, hα₀, rfl⟩]
+  rw [h1_def, le_csInf_iff (bddBelow_setOf_defect_div_gaugeDist X ℓ)
+    ⟨α₀.defect ℓ / α₀.gaugeDist ℓ, α₀, hα₀, rfl⟩]
   exact ⟨fun h α hα => h _ ⟨α, hα, rfl⟩, fun h _ ⟨α, hα, hr⟩ => hr ▸ h α hα⟩
 
 /-- When some cochain has positive gauge distance, `h1 X ℓ < c` holds iff some cochain at
@@ -100,7 +101,8 @@ theorem h1_lt_iff {X : TwoComplex V} {ℓ : GroupNorm G}
     (hne : ∃ α : Cochain X G, 0 < α.gaugeDist ℓ) {c : ℝ} :
     h1 X ℓ < c ↔ ∃ α : Cochain X G, 0 < α.gaugeDist ℓ ∧ α.defect ℓ / α.gaugeDist ℓ < c := by
   obtain ⟨α₀, hα₀⟩ := hne
-  rw [h1_def, csInf_lt_iff (bddBelow_ratioSet X ℓ) ⟨α₀.defect ℓ / α₀.gaugeDist ℓ, α₀, hα₀, rfl⟩]
+  rw [h1_def, csInf_lt_iff (bddBelow_setOf_defect_div_gaugeDist X ℓ)
+    ⟨α₀.defect ℓ / α₀.gaugeDist ℓ, α₀, hα₀, rfl⟩]
   exact ⟨fun ⟨_, ⟨α, hα, hr⟩, hlt⟩ => ⟨α, hα, hr ▸ hlt⟩, fun ⟨α, hα, hlt⟩ => ⟨_, ⟨α, hα, rfl⟩, hlt⟩⟩
 
 /-- Lower-bound criterion for `h1 X ℓ` in the presence of a cochain at positive gauge distance. -/
@@ -243,7 +245,7 @@ noncomputable def h1Sym [Fintype V] [LinearOrder V] (X : TwoComplex V) : ℝ :=
 theorem h1Sym_def [Fintype V] [LinearOrder V] (X : TwoComplex V) :
     h1Sym X = ⨅ n : ℕ, h1 X (Equiv.Perm.movedNorm (Fin (n + 2))) := (rfl)
 
-theorem bddBelow_range_h1_movedNorm [Fintype V] [LinearOrder V] (X : TwoComplex V) :
+private theorem bddBelow_range_h1_movedNorm [Fintype V] [LinearOrder V] (X : TwoComplex V) :
     BddBelow (Set.range fun n : ℕ => h1 X (Equiv.Perm.movedNorm (Fin (n + 2)))) :=
   ⟨0, by rintro _ ⟨n, rfl⟩; exact h1_nonneg X _⟩
 

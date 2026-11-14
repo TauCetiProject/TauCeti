@@ -195,7 +195,7 @@ theorem triangleDefect_of_mem_triangles {ℓ : GroupNorm G}
 
 /-- Under a conjugation-invariant norm, evaluating `triangleDefect` directly on a filled triangle
 `{u, v, w} ∈ X.triangles`. -/
-theorem triangleDefect_triple [DecidableEq V] {ℓ : GroupNorm G}
+@[simp, grind =] theorem triangleDefect_triple [DecidableEq V] {ℓ : GroupNorm G}
     (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (α : Cochain X G) {u v w : V}
     (ht : ({u, v, w} : Finset V) ∈ X.triangles) :
     α.triangleDefect ℓ {u, v, w} = ℓ (α.holonomy u v w) := by
@@ -393,8 +393,8 @@ def relabelEquiv (X : TwoComplex V) (e : V ≃ W) : Cochain X G ≃ Cochain (X.r
   · rw [edgeCost_of_notMem_edges _ _ _ hs,
       edgeCost_of_notMem_edges _ _ _ (mt (X.mem_edges_relabel e s).mpr hs)]
 
-theorem edgeCost_relabel_map (ℓ : GroupNorm G) (α : Cochain X G) (γ : W → G) (e : V ≃ W)
-    (s : Finset V) :
+@[simp 1100] theorem edgeCost_relabel_map (ℓ : GroupNorm G) (α : Cochain X G) (γ : W → G)
+    (e : V ≃ W) (s : Finset V) :
     (α.relabel e).edgeCost ℓ γ (s.map e.toEmbedding) = α.edgeCost ℓ (γ ∘ e) s := by
   rw [α.edgeCost_relabel ℓ γ e]
   congr 1; ext; simp
@@ -427,8 +427,8 @@ theorem edgeCost_relabel_map (ℓ : GroupNorm G) (α : Cochain X G) (γ : W → 
   · rw [triangleDefect_of_notMem_triangles _ _ ht,
       triangleDefect_of_notMem_triangles _ _ (mt (X.mem_triangles_relabel e t).mpr ht)]
 
-theorem triangleDefect_relabel_map {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant)
-    (α : Cochain X G) (e : V ≃ W) (t : Finset V) :
+@[simp 1100] theorem triangleDefect_relabel_map {ℓ : GroupNorm G}
+    (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (α : Cochain X G) (e : V ≃ W) (t : Finset V) :
     (α.relabel e).triangleDefect ℓ (t.map e.toEmbedding) = α.triangleDefect ℓ t := by
   rw [α.triangleDefect_relabel hℓ e]
   congr 1; ext; simp
