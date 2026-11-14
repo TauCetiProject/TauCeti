@@ -7,9 +7,12 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
+public import Mathlib.CategoryTheory.Abelian.LeftDerived
+public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import Mathlib.CategoryTheory.Monoidal.Tor
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.RingHom.Flat
+public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Category.ModuleCat.Projective.QuotientResolution
 
 import Mathlib.Algebra.Category.ModuleCat.Descent
@@ -17,9 +20,9 @@ import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 import Mathlib.Algebra.Homology.HomologySequence
 import Mathlib.RingTheory.Flat.CategoryTheory
 import Mathlib.RingTheory.Flat.Tensor
-import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.ChangeOfRings
 import TauCeti.CategoryTheory.Abelian.LeftDerived
+import TauCeti.CategoryTheory.Exact.Resolution.ProjectiveResolution
 import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.LinearAlgebra.End.TensorProduct
@@ -67,7 +70,14 @@ finitely generated submodule of `N`.
 a `B`-module `M` and an `A`-module `N`, `Torₙ^A(M, N)` vanishes exactly when
 `Torₙ^B(M, B ⊗[A] N)` does (`ModuleCat.isZero_Tor_restrictScalars_iff`). Extension of scalars
 along `f` carries a projective resolution of `N` to one of `B ⊗[A] N`, and
-`M ⊗[B] (B ⊗[A] -) ≅ M ⊗[A] -` (`ModuleCat.extendScalarsCompTensorLeftIso`).
+`M ⊗[B] (B ⊗[A] -) ≅ M ⊗[A] -` (`ModuleCat.extendScalarsCompTensorLeftIso`). More generally, for
+an arbitrary ring homomorphism `f : A →+* B`, the left derived functors of `B ⊗[A] -` at `N`
+vanish precisely when `Torₙ^A(B, N)` does (`ModuleCat.isZero_leftDerived_extendScalars_iff`). When
+`Torₙ₊₁^A(B, N) = 0` for all `n`, extension of scalars does not increase the projective dimension
+of `N` (`ModuleCat.hasProjectiveDimensionLE_extendScalars_of_isZero_Tor`); when `f` is surjective,
+`B ⊗[A] M ≅ M` for every `B`-module `M`, so `Torₙ₊₁^A(B, M) = 0` for all `n` bounds the projective
+dimension of `M` over `B` by its projective dimension over `A`
+(`ModuleCat.hasProjectiveDimensionLE_of_surjective_of_isZero_Tor`).
 
 ## References
 
@@ -358,7 +368,7 @@ theorem isZero_Tor_prod {X Y : ModuleCat.{u} A} (M : ModuleCat.{u} A) {n : ℕ}
 
 end ModuleCat
 
-/-! ### Flat base change -/
+/-! ### Base change -/
 
 namespace ModuleCat
 
@@ -367,6 +377,17 @@ open CategoryTheory Limits MonoidalCategory
 universe u
 
 variable {A B : Type u} [CommRing A] [CommRing B] (f : A →+* B)
+
+private instance preservesFiniteColimits_extendScalars :
+    PreservesFiniteColimits (extendScalars.{u, u, u} f) := by
+  have : PreservesColimitsOfSize.{0, 0} (extendScalars.{u, u, u} f) :=
+    (extendRestrictScalarsAdj.{u, u, u} f).leftAdjoint_preservesColimits
+  exact PreservesColimitsOfSize.preservesFiniteColimits _
+
+private instance preservesProjectiveObjects_extendScalars :
+    (extendScalars.{u, u, u} f).PreservesProjectiveObjects :=
+  Functor.preservesProjectiveObjects_of_adjunction_of_preservesEpimorphisms
+    (extendRestrictScalarsAdj.{u, u, u} f)
 
 /-- **Flat base change for the vanishing of `Tor`.** For a flat ring homomorphism `f : A →+* B`, a
 `B`-module `M` and an `A`-module `N`, `Torₙ^A(M, N)` vanishes exactly when `Torₙ^B(M, B ⊗[A] N)`
@@ -379,13 +400,6 @@ theorem isZero_Tor_restrictScalars_iff (hf : f.Flat) (M : ModuleCat.{u} B) (N : 
   -- scalars it preserves projectives, so it carries projective resolutions to projective
   -- resolutions.
   have := preservesFiniteLimits_extendScalars_of_flat hf
-  have : PreservesColimitsOfSize.{0, 0} (extendScalars.{u, u, u} f) :=
-    (extendRestrictScalarsAdj.{u, u, u} f).leftAdjoint_preservesColimits
-  have : PreservesFiniteColimits (extendScalars.{u, u, u} f) :=
-    PreservesColimitsOfSize.preservesFiniteColimits _
-  have : (extendScalars.{u, u, u} f).PreservesProjectiveObjects :=
-    Functor.preservesProjectiveObjects_of_adjunction_of_preservesEpimorphisms
-      (extendRestrictScalarsAdj.{u, u, u} f)
   let Q := projectiveResolution N
   let Q' := (extendScalars.{u, u, u} f).mapProjectiveResolution Q
   rw [isZero_Tor_iff Q, isZero_Tor_iff Q', ← HomologicalComplex.exactAt_iff_isZero_homology,
@@ -402,5 +416,67 @@ theorem isZero_Tor_restrictScalars_iff (hf : f.Flat) (M : ModuleCat.{u} B) (N : 
     ((tensorResolution Q' M).sc n).exact_map_iff_of_faithful (restrictScalars.{u} f)
   rw [← hR]
   exact ⟨fun h ↦ h.of_iso e.symm, fun h ↦ h.of_iso e⟩
+
+/-- The `n`-th left derived functor of `B ⊗[A] -` along `f : A →+* B` vanishes on `N` if and only
+if `Torₙ^A(B, N)` vanishes. -/
+theorem isZero_leftDerived_extendScalars_iff (N : ModuleCat.{u} A) (n : ℕ) :
+    IsZero (((extendScalars.{u, u, u} f).leftDerived n).obj N) ↔
+      IsZero (((Tor (ModuleCat.{u} A) n).obj ((restrictScalars f).obj (of B B))).obj N) := by
+  let Q := projectiveResolution N
+  let K := ((extendScalars.{u, u, u} f).mapHomologicalComplex _).obj Q.complex
+  have hQ : IsZero (((extendScalars.{u, u, u} f).leftDerived n).obj N) ↔ IsZero (K.homology n) :=
+    ⟨fun h ↦ h.of_iso (Q.isoLeftDerivedObj _ n).symm, fun h ↦ h.of_iso (Q.isoLeftDerivedObj _ n)⟩
+  have hR : (((restrictScalars.{u} f).mapHomologicalComplex _).obj K).ExactAt n ↔ K.ExactAt n :=
+    (K.sc n).exact_map_iff_of_faithful (restrictScalars.{u} f)
+  rw [hQ, isZero_Tor_iff Q, ← HomologicalComplex.exactAt_iff_isZero_homology,
+    ← HomologicalComplex.exactAt_iff_isZero_homology, ← hR]
+  let e : (((extendScalars.{u, u, u} f ⋙ restrictScalars.{u} f).mapHomologicalComplex _).obj
+      Q.complex) ≅ tensorResolution Q ((restrictScalars f).obj (of B B)) :=
+    (NatIso.mapHomologicalComplex (extendScalarsCompRestrictScalarsIso f) _).app Q.complex
+  exact ⟨fun h ↦ h.of_iso e, fun h ↦ h.of_iso e.symm⟩
+
+/-- **Projective dimension under `Tor`-acyclic extension of scalars.** If `f : A →+* B` and
+`Torₙ₊₁^A(B, N) = 0` for every `n`, then `B ⊗[A] N` has projective dimension at most `m` over `B`
+whenever `N` has projective dimension at most `m` over `A`. -/
+theorem hasProjectiveDimensionLE_extendScalars_of_isZero_Tor {N : ModuleCat.{u} A}
+    (h : ∀ n, IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj
+      ((restrictScalars f).obj (of B B))).obj N))
+    {m : ℕ} (hN : HasProjectiveDimensionLE N m) :
+    HasProjectiveDimensionLE ((extendScalars.{u, u, u} f).obj N) m :=
+  (extendScalars.{u, u, u} f).hasProjectiveDimensionLE_obj_of_isZero_leftDerived
+    (fun n ↦ (isZero_leftDerived_extendScalars_iff f N (n + 1)).2 (h n)) hN
+
+/-- If `f : A →+* B` and `Torₙ₊₁^A(B, N) = 0` for every `n`, then the projective dimension of
+`B ⊗[A] N` over `B` is at most that of `N` over `A`. -/
+theorem projectiveDimension_extendScalars_le_of_isZero_Tor {N : ModuleCat.{u} A}
+    (h : ∀ n, IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj
+      ((restrictScalars f).obj (of B B))).obj N)) :
+    projectiveDimension ((extendScalars.{u, u, u} f).obj N) ≤ projectiveDimension N :=
+  (extendScalars.{u, u, u} f).projectiveDimension_le_obj_of_isZero_leftDerived
+    (fun n ↦ (isZero_leftDerived_extendScalars_iff f N (n + 1)).2 (h n))
+
+/-- **Projective dimension along a surjective ring homomorphism.** If `f : A →+* B` is surjective
+and `Torₙ₊₁^A(B, M) = 0` for every `n`, then a `B`-module `M` has projective dimension at most `m`
+over `B` whenever its restriction of scalars has projective dimension at most `m` over `A`. -/
+theorem hasProjectiveDimensionLE_of_surjective_of_isZero_Tor (hf : Function.Surjective f)
+    {M : ModuleCat.{u} B}
+    (h : ∀ n, IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj
+      ((restrictScalars f).obj (of B B))).obj ((restrictScalars f).obj M)))
+    {m : ℕ} (hM : HasProjectiveDimensionLE ((restrictScalars f).obj M) m) :
+    HasProjectiveDimensionLE M m := by
+  have := f.full_restrictScalars hf
+  exact (extendRestrictScalarsAdj.{u, u, u} f).hasProjectiveDimensionLE_of_isZero_leftDerived
+    (fun n ↦ (isZero_leftDerived_extendScalars_iff f _ (n + 1)).2 (h n)) hM
+
+/-- If `f : A →+* B` is surjective and `Torₙ₊₁^A(B, M) = 0` for every `n`, then the projective
+dimension of `M` over `B` is at most its projective dimension over `A`. -/
+theorem projectiveDimension_le_of_surjective_of_isZero_Tor (hf : Function.Surjective f)
+    {M : ModuleCat.{u} B}
+    (h : ∀ n, IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj
+      ((restrictScalars f).obj (of B B))).obj ((restrictScalars f).obj M))) :
+    projectiveDimension M ≤ projectiveDimension ((restrictScalars f).obj M) := by
+  have := f.full_restrictScalars hf
+  exact (extendRestrictScalarsAdj.{u, u, u} f).projectiveDimension_le_of_isZero_leftDerived
+    (fun n ↦ (isZero_leftDerived_extendScalars_iff f _ (n + 1)).2 (h n))
 
 end ModuleCat

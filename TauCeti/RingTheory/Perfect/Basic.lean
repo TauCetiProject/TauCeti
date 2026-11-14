@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Perfect
 public import TauCeti.Algebra.GroupWithZero.Basic
 public import TauCeti.RingTheory.Perfection
+import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 
 /-!
 # Roots of elements of perfect rings
@@ -24,7 +25,8 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
 * `TauCeti.iterateFrobeniusEquiv_symm_succ_pow`: the `p`-th power of the `p ^ (n + 1)`-th root
   of `x` is its `p ^ n`-th root.
 * `TauCeti.iterateFrobeniusEquiv_symm_dvd_of_le`: deeper roots of `x` divide shallower ones.
-* `TauCeti.isReduced_of_perfectRing`: a perfect ring of prime characteristic is reduced.
+* `TauCeti.isReduced_of_perfectRing`: a semiring in which `x ↦ x ^ p` is bijective for a prime `p`
+  is reduced.
 * `TauCeti.mul_eq_zero_of_mul_pow_eq_zero_of_perfectRing`: `a * b ^ p = 0` implies `a * b = 0`.
 * `TauCeti.mul_iterateFrobeniusEquiv_symm_succ_eq_zero`: an element killing the `p ^ n`-th root
   of `x` also kills its `p ^ (n + 1)`-th root.
@@ -32,10 +34,15 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
   along the `p`-th root of the scalars.
 * `TauCeti.isRadical_iff_frobeniusEquiv_symm_mem`: an ideal is radical exactly when it contains
   the `p`-th roots of its elements.
+* `Ideal.IsRadical.isIdempotentElem`: every radical ideal of a perfect semiring for an exponent
+  `p ≠ 1` is idempotent (`I ^ 2 = I`).
 * `Ideal.IsRadical.sup`, `Ideal.IsRadical.map`, `Ideal.IsRadical.map_inf`: sums of radical ideals
   are radical, and extension along a homomorphism of perfect rings preserves radical ideals and
   their intersections. The first fails for general rings: in `ℚ[x, y]` the sum of the radical
   ideals `(x)` and `(x - y ^ 2)` is `(x, y ^ 2)`, which is not radical.
+* `RingHom.perfectRing_of_surjective_of_isReduced` and `Ideal.IsRadical.perfectRing_quotient`: a
+  reduced ring receiving a surjection from a perfect ring (in particular the quotient of a perfect
+  ring by a radical ideal) is perfect.
 -/
 
 public section
@@ -64,13 +71,19 @@ theorem iterateFrobeniusEquiv_symm_dvd_of_le (x : R) {m n : ℕ} (h : m ≤ n) :
   dvd_of_compatible_roots (r := fun n ↦ (iterateFrobeniusEquiv R p n).symm x)
     (iterateFrobeniusEquiv_symm_succ_pow x) h
 
+omit [ExpChar R p] in
 variable (R p) in
-/-- A perfect ring of prime characteristic `p` is reduced. -/
-theorem isReduced_of_perfectRing [hp : Fact p.Prime] : IsReduced R :=
-  -- If `x ^ n = 0`, then the `p ^ n`-th power of `x` vanishes, and Frobenius is injective.
-  ⟨fun x ⟨n, hn⟩ ↦ (iterateFrobeniusEquiv R p n).injective <| by
-    rw [map_zero, iterateFrobeniusEquiv_def,
-      pow_eq_zero_of_le (Nat.lt_pow_self hp.out.one_lt).le hn]⟩
+/-- A semiring in which `x ↦ x ^ p` is bijective for a prime `p` is reduced. -/
+theorem isReduced_of_perfectRing [hp : Fact p.Prime] : IsReduced R := by
+  have h0 {x : R} (n : ℕ) : x ^ p ^ n = 0 → x = 0 := by
+    induction n with
+    | zero => intro h; simpa using h
+    | succ n ih =>
+      intro h
+      refine ih ((PerfectRing.bijective_frobenius (R := R) (p := p)).1 ?_)
+      dsimp only
+      rwa [zero_pow hp.out.ne_zero, ← pow_mul, ← pow_succ]
+  exact ⟨fun x ⟨n, hn⟩ ↦ h0 n (pow_eq_zero_of_le (Nat.lt_pow_self hp.out.one_lt).le hn)⟩
 
 omit [ExpChar R p] in
 /-- In a perfect ring for the exponent `p`, if `a` kills `b ^ p` then `a` kills
@@ -129,6 +142,24 @@ open TauCeti
 
 variable {R S F : Type*} [CommSemiring R] [CommSemiring S] {I J : Ideal R}
 
+/-- In a perfect semiring for an exponent `p ≠ 1`, every radical ideal is idempotent: for `p = 0`
+the semiring is trivial, and for `p ≥ 2` each `x ∈ I` is `y * y ^ (p - 1)` for a `p`-th root
+`y ∈ I`. -/
+theorem isIdempotentElem {p : ℕ} (hp : p ≠ 1) [PerfectRing R p] (hI : I.IsRadical) :
+    IsIdempotentElem I := by
+  rcases eq_or_ne p 0 with rfl | hp0
+  · obtain ⟨y, hy⟩ := (PerfectRing.bijective_frobenius (R := R) (p := 0)).2 0
+    have : Subsingleton R := subsingleton_of_zero_eq_one (by simpa using hy.symm)
+    exact Subsingleton.elim _ _
+  · have hp1 : 1 < p := by omega
+    refine le_antisymm Ideal.mul_le_left fun x hx ↦ ?_
+    obtain ⟨y, hy⟩ := (PerfectRing.bijective_frobenius (R := R) (p := p)).2 x
+    dsimp only at hy
+    have hyI : y ∈ I := hI ⟨p, hy.symm ▸ hx⟩
+    have hpow : y ^ (p - 1) ∈ I := Ideal.pow_mem_of_mem I hyI (p - 1) (Nat.sub_pos_of_lt hp1)
+    have hx' : y * y ^ (p - 1) = x := by rw [← pow_succ', Nat.sub_add_cancel hp1.le, hy]
+    exact hx' ▸ Ideal.mul_mem_mul hyI hpow
+
 /-- In a perfect ring of prime characteristic, the sum of two radical ideals is radical: taking
 `p`-th roots is additive. -/
 theorem sup (p : ℕ) [Fact p.Prime] [ExpChar R p] [PerfectRing R p] (hI : I.IsRadical)
@@ -165,3 +196,40 @@ theorem map_inf (p : ℕ) [Fact p.Prime] [ExpChar R p] [PerfectRing R p] [ExpCha
     _ = (I ⊓ J).map φ := ((hI.inf hJ).map p φ).radical
 
 end Ideal.IsRadical
+
+section Surjective
+
+variable {R S : Type*} [CommRing R] [CommRing S] (p : ℕ) [ExpChar R p] [PerfectRing R p]
+
+/-- A reduced ring receiving a surjective homomorphism from a perfect ring of exponential
+characteristic `p` is perfect. -/
+theorem RingHom.perfectRing_of_surjective_of_isReduced [IsReduced S] {f : R →+* S}
+    (hf : Function.Surjective f) : PerfectRing S p := by
+  rcases subsingleton_or_nontrivial S with _ | _
+  · exact ⟨⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩⟩
+  obtain _ | ⟨hp⟩ := ‹ExpChar R p›
+  · exact PerfectRing.one S
+  · have : CharP S p := (CharP.charP_iff_prime_eq_zero hp).2 <| by
+      rw [← map_natCast f, CharP.cast_eq_zero, map_zero]
+    have : ExpChar S p := .prime hp
+    refine ⟨⟨fun x y (h : x ^ p = y ^ p) ↦ ?_, fun s ↦ ?_⟩⟩
+    · exact sub_eq_zero.1 <| IsNilpotent.eq_zero ⟨p, by rw [sub_pow_expChar, h, sub_self]⟩
+    · obtain ⟨r, rfl⟩ := hf s
+      obtain ⟨r', hr'⟩ := (PerfectRing.bijective_frobenius (R := R) (p := p)).2 r
+      exact ⟨f r', by dsimp only at hr' ⊢; rw [← map_pow, hr']⟩
+
+/-- For a surjective ring homomorphism from a perfect ring of prime characteristic `p`, the
+target ring is reduced if and only if it is perfect. -/
+theorem RingHom.isReduced_iff_perfectRing_of_surjective [Fact p.Prime] {f : R →+* S}
+    (hf : Function.Surjective f) : IsReduced S ↔ PerfectRing S p :=
+  ⟨fun _ ↦ f.perfectRing_of_surjective_of_isReduced p hf,
+    fun _ ↦ TauCeti.isReduced_of_perfectRing S p⟩
+
+/-- The quotient of a perfect ring of exponential characteristic `p` by a radical ideal is
+perfect. -/
+theorem Ideal.IsRadical.perfectRing_quotient {I : Ideal R} (hI : I.IsRadical) :
+    PerfectRing (R ⧸ I) p := by
+  have := (Ideal.isRadical_iff_quotient_reduced I).1 hI
+  exact (Ideal.Quotient.mk I).perfectRing_of_surjective_of_isReduced p Ideal.Quotient.mk_surjective
+
+end Surjective

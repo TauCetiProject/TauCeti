@@ -29,6 +29,9 @@ ring of global sections of a perfect scheme, which is the zero ring for the empt
 * `IsPRadical.isHomeomorph_comap`: a `p`-radical ring map induces a homeomorphism of prime spectra.
 * `IsPRadical.bijective_comp`: if `p = 0` in `K` and `M` is a perfect ring, then precomposition
   with a `p`-radical map `i : K →+* L` is a bijection `(L →+* M) → (K →+* M)`.
+* `IsPRadical.injective_of_isReduced`: a `p`-radical ring map from a reduced ring is injective.
+* `IsPRadical.surjective_of_surjective_comp`: a homomorphism between perfect semirings commuting
+  with a surjection into the source of a `p`-radical map is surjective.
 
 ## References
 
@@ -41,6 +44,37 @@ ring of global sections of a perfect scheme, which is the zero ring for the empt
 public section
 
 namespace IsPRadical
+
+section Surjective
+
+variable {P₀ P R₀ R : Type*} [CommSemiring P₀] [CommSemiring P] [CommSemiring R₀] [CommSemiring R]
+  (i₀ : P₀ →+* P) (i : R₀ →+* R) (p : ℕ) [PerfectRing P p] [PerfectRing R p] [IsPRadical i p]
+
+include p in
+/-- If `φ : P →+* R` between perfect semirings commutes with `i₀ : P₀ →+* P` and a `p`-radical map
+`i : R₀ →+* R` along a surjective `π : P₀ →+* R₀`, then `φ` is surjective: every `r ∈ R` has a
+`p ^ n`-th power in the image of `i ∘ π = φ ∘ i₀`, whose `p ^ n`-th root in `P` maps to `r`. -/
+theorem surjective_of_surjective_comp {π : P₀ →+* R₀} (hπ : Function.Surjective π) {φ : P →+* R}
+    (hφ : φ.comp i₀ = i.comp π) : Function.Surjective φ := fun r ↦ by
+  have hpow (k : ℕ) : (· ^ p : R → R)^[k] r = r ^ p ^ k := by
+    induction k with
+    | zero => simp
+    | succ k ih => rw [Function.iterate_succ_apply', ih, ← pow_mul, ← pow_succ]
+  obtain ⟨n, y, hy⟩ := IsPRadical.pow_mem i p r
+  obtain ⟨x, rfl⟩ := hπ y
+  obtain ⟨z, hz⟩ := (PerfectRing.bijective_frobenius (R := P) (p := p)).2.iterate n (i₀ x)
+  refine ⟨z, (PerfectRing.bijective_frobenius (R := R) (p := p)).1.iterate n ?_⟩
+  have hcomm : Function.Semiconj φ (· ^ p) (· ^ p) := fun a ↦ map_pow φ a p
+  rw [← hcomm.iterate_right n z, hz, ← RingHom.comp_apply, hφ, RingHom.comp_apply, hy, hpow]
+
+end Surjective
+
+/-- A `p`-radical homomorphism from a reduced ring is injective: its kernel lies in the
+`p`-nilradical, hence in the nilradical, which vanishes. -/
+theorem injective_of_isReduced {K L : Type*} [CommRing K] [CommSemiring L] (i : K →+* L) (p : ℕ)
+    [IsPRadical i p] [IsReduced K] : Function.Injective i :=
+  (RingHom.injective_iff_ker_eq_bot i).2 <| eq_bot_iff.2 <|
+    (IsPRadical.ker_le i p).trans <| pNilradical_le_nilradical.trans (nilradical_eq_zero K).le
 
 variable {K L M : Type*} [CommRing K] [CommRing L] [CommRing M] (i : K →+* L) (p : ℕ)
   [IsPRadical i p]
