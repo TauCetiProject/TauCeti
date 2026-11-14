@@ -7,10 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
-public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Level
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Minimum
-public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.IntegralLattice.StandardCoordinates
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Dynkin
 
@@ -205,6 +203,7 @@ private def typeE₆WeightCoeff : Fin 6 → ℤ := ![4, 3, 5, 6, 4, 2]
 def typeE₆MinusculeWeight : Fin 6 → ℚ :=
   fun j ↦ (typeE₆WeightCoeff j : ℚ) / 3
 
+/-- The coordinates of the minuscule weight of `E₆`: `(4, 3, 5, 6, 4, 2) / 3`. -/
 @[simp]
 theorem typeE₆MinusculeWeight_apply (j : Fin 6) :
     typeE₆MinusculeWeight j =
@@ -263,6 +262,8 @@ theorem typeE₆MinusculeWeight_mem_dualCarrier :
 noncomputable def typeE₆MinusculeWeightDual : typeE₆RootLattice.dualCarrier :=
   ⟨typeE₆MinusculeWeight, typeE₆MinusculeWeight_mem_dualCarrier⟩
 
+/-- The minuscule weight of `E₆`, read as an element of the dual lattice, has the same
+coordinates. -/
 @[simp]
 theorem coe_typeE₆MinusculeWeightDual :
     (typeE₆MinusculeWeightDual : Fin 6 → ℚ) = typeE₆MinusculeWeight := by
@@ -329,6 +330,7 @@ noncomputable def typeE₆DiscriminantGroupEquiv :
     (fun x ↦ by rw [zmultiples_typeE₆MinusculeWeightClass_eq_top]; exact AddSubgroup.mem_top x)
     natCard_discriminantGroup_typeE₆RootLattice
 
+/-- The generator `1` of `ℤ/3` corresponds to the class of the minuscule weight of `E₆`. -/
 @[simp]
 theorem typeE₆DiscriminantGroupEquiv_apply_one :
     typeE₆DiscriminantGroupEquiv 1 = typeE₆MinusculeWeightClass :=
@@ -486,6 +488,7 @@ private def typeE₇WeightCoeff : Fin 7 → ℤ := ![2, 3, 4, 6, 5, 4, 3]
 def typeE₇MinusculeWeight : Fin 7 → ℚ :=
   fun j ↦ (typeE₇WeightCoeff j : ℚ) / 2
 
+/-- The coordinates of the minuscule weight of `E₇`: `(2, 3, 4, 6, 5, 4, 3) / 2`. -/
 @[simp]
 theorem typeE₇MinusculeWeight_apply (j : Fin 7) :
     typeE₇MinusculeWeight j =
@@ -544,6 +547,8 @@ theorem typeE₇MinusculeWeight_mem_dualCarrier :
 noncomputable def typeE₇MinusculeWeightDual : typeE₇RootLattice.dualCarrier :=
   ⟨typeE₇MinusculeWeight, typeE₇MinusculeWeight_mem_dualCarrier⟩
 
+/-- The minuscule weight of `E₇`, read as an element of the dual lattice, has the same
+coordinates. -/
 @[simp]
 theorem coe_typeE₇MinusculeWeightDual :
     (typeE₇MinusculeWeightDual : Fin 7 → ℚ) = typeE₇MinusculeWeight := by
@@ -610,6 +615,7 @@ noncomputable def typeE₇DiscriminantGroupEquiv :
     (fun x ↦ by rw [zmultiples_typeE₇MinusculeWeightClass_eq_top]; exact AddSubgroup.mem_top x)
     natCard_discriminantGroup_typeE₇RootLattice
 
+/-- The generator `1` of `ℤ/2` corresponds to the class of the minuscule weight of `E₇`. -/
 @[simp]
 theorem typeE₇DiscriminantGroupEquiv_apply_one :
     typeE₇DiscriminantGroupEquiv 1 = typeE₇MinusculeWeightClass :=
@@ -704,8 +710,8 @@ open _root_.Matrix in
 Cartan norm. -/
 theorem norm_typeE₈RootLattice_intCast (v : Fin 8 → ℤ) :
     typeE₈RootLattice.norm (fun j ↦ (v j : ℚ)) =
-      (((v ᵥ* CartanMatrix.E 8) ⬝ᵥ v : ℤ) : ℚ) := by
-  exact norm_ofGramMatrix_basisFun_intCast _ _ v
+      (((v ᵥ* CartanMatrix.E 8) ⬝ᵥ v : ℤ) : ℚ) :=
+  norm_ofGramMatrix_basisFun_intCast _ _ v
 
 open _root_.Matrix in
 /-- The rational form of two integer vectors in simple-root coordinates is their integral Cartan
