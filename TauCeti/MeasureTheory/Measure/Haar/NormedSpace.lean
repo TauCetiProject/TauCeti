@@ -42,7 +42,8 @@ homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|�
 invertible affine map `x ↦ c + A x` pushes it to its multiple by `|det A|⁻¹`. Comparing the
 measure of the image of the closed unit ball under a linear endomorphism `f` with that of the
 closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dimension; restricting scalars
-to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` field.
+to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` field, and applying this bound
+to a left inverse `g` of `f` bounds `‖det f‖` below by `(‖g‖ ^ n)⁻¹`.
 
 For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
 `t⁻¹ • L (y - x)` turns integrals of functions of it into integrals over the target scaled by
@@ -106,6 +107,12 @@ For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
+* `ContinuousLinearMap.inv_pow_le_norm_det_of_comp_eq_id`,
+  `ContinuousLinearMap.inv_pow_le_abs_det_of_comp_eq_id`: if `g ∘L f = id` and `‖g‖ ≤ L`, then
+  `(L ^ n)⁻¹ ≤ ‖det f‖`.
+* `DifferentiableAt.inv_pow_le_norm_det_fderiv_of_eventuallyEq`,
+  `DifferentiableAt.inv_pow_le_abs_det_fderiv_of_eventuallyEq`: the corresponding Jacobian lower
+  bound for maps satisfying `g ∘ f =ᶠ[𝓝 x] id`.
 * `TauCeti.integral_comp_rescale_eq`: integrals of functions of the rescaled coordinate are the
   target integrals scaled by `tⁿ / ρ`.
 -/
@@ -534,7 +541,77 @@ theorem norm_det_le_opNorm_pow {𝕜 E : Type*} [RCLike 𝕜]
     ← finrank_mul_finrank ℝ 𝕜 E, pow_mul'] at h
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) finrank_pos.ne').1 h
 
+/-- If `g ∘L f = id` on a normed space over an `RCLike` field, then
+`1 ≤ ‖g‖ ^ finrank 𝕜 E * ‖det f‖`. No finite-dimensionality hypothesis is needed: in infinite
+dimension `finrank 𝕜 E = 0` and `det f = 1`. -/
+theorem one_le_opNorm_pow_mul_norm_det_of_comp_eq_id {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f g : E →L[𝕜] E}
+    (h : g.comp f = ContinuousLinearMap.id 𝕜 E) :
+    1 ≤ ‖g‖ ^ finrank 𝕜 E * ‖f.det‖ := by
+  by_cases hfd : FiniteDimensional 𝕜 E
+  · have hdet : g.det * f.det = 1 := by
+      rw [ContinuousLinearMap.det, ContinuousLinearMap.det, ← LinearMap.det_comp]
+      exact (congrArg ContinuousLinearMap.det h).trans LinearMap.det_id
+    calc (1 : ℝ) = ‖(1 : 𝕜)‖ := norm_one.symm
+      _ = ‖g.det‖ * ‖f.det‖ := by rw [← hdet, norm_mul]
+      _ ≤ ‖g‖ ^ finrank 𝕜 E * ‖f.det‖ :=
+        mul_le_mul_of_nonneg_right g.norm_det_le_opNorm_pow (norm_nonneg _)
+  · rw [Module.finrank_of_not_finite hfd, pow_zero, one_mul, ContinuousLinearMap.det,
+      LinearMap.det_eq_one_of_not_module_finite hfd, norm_one]
+
+/-- If `g ∘L f = id` on a normed space over an `RCLike` field and `‖g‖ ≤ L`, then
+`(L ^ finrank 𝕜 E)⁻¹ ≤ ‖det f‖`. -/
+theorem inv_pow_le_norm_det_of_comp_eq_id {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f g : E →L[𝕜] E}
+    (h : g.comp f = ContinuousLinearMap.id 𝕜 E) {L : ℝ} (hL : ‖g‖ ≤ L) :
+    (L ^ finrank 𝕜 E)⁻¹ ≤ ‖f.det‖ := by
+  have hL0 : 0 ≤ L := (norm_nonneg g).trans hL
+  have h1 : 1 ≤ L ^ finrank 𝕜 E * ‖f.det‖ :=
+    (one_le_opNorm_pow_mul_norm_det_of_comp_eq_id h).trans
+      (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg g) hL _) (norm_nonneg _))
+  have hpos : 0 < L ^ finrank 𝕜 E := by
+    rcases (pow_nonneg hL0 (finrank 𝕜 E)).eq_or_lt with hp | hp
+    · exfalso; linarith [hp ▸ h1]
+    · exact hp
+  exact (inv_le_iff_one_le_mul₀' hpos).2 h1
+
+/-- If `g ∘L f = id` on a real normed space, then `1 ≤ ‖g‖ ^ finrank ℝ E * |det f|`. -/
+theorem one_le_opNorm_pow_mul_abs_det_of_comp_eq_id {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : E →L[ℝ] E}
+    (h : g.comp f = ContinuousLinearMap.id ℝ E) :
+    1 ≤ ‖g‖ ^ finrank ℝ E * |f.det| := by
+  simpa only [Real.norm_eq_abs] using one_le_opNorm_pow_mul_norm_det_of_comp_eq_id h
+
+/-- If `g ∘L f = id` on a real normed space and `‖g‖ ≤ L`, then `(L ^ finrank ℝ E)⁻¹ ≤ |det f|`. -/
+theorem inv_pow_le_abs_det_of_comp_eq_id {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : E →L[ℝ] E}
+    (h : g.comp f = ContinuousLinearMap.id ℝ E) {L : ℝ} (hL : ‖g‖ ≤ L) :
+    (L ^ finrank ℝ E)⁻¹ ≤ |f.det| := by
+  simpa only [Real.norm_eq_abs] using inv_pow_le_norm_det_of_comp_eq_id h hL
+
 end ContinuousLinearMap
+
+/-- If `g ∘ f =ᶠ[𝓝 x] id` for maps differentiable at `x` and `f x` over an `RCLike` field, and
+`‖fderiv 𝕜 g (f x)‖ ≤ L`, then `(L ^ finrank 𝕜 E)⁻¹ ≤ ‖det (fderiv 𝕜 f x)‖`. -/
+theorem DifferentiableAt.inv_pow_le_norm_det_fderiv_of_eventuallyEq {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f g : E → E} {x : E} {L : ℝ}
+    (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g (f x))
+    (hgf : g ∘ f =ᶠ[nhds x] id) (hL : ‖fderiv 𝕜 g (f x)‖ ≤ L) :
+    (L ^ finrank 𝕜 E)⁻¹ ≤ ‖(fderiv 𝕜 f x).det‖ := by
+  refine ContinuousLinearMap.inv_pow_le_norm_det_of_comp_eq_id ?_ hL
+  calc (fderiv 𝕜 g (f x)).comp (fderiv 𝕜 f x)
+      = fderiv 𝕜 (g ∘ f) x := (hg.hasFDerivAt.comp x hf.hasFDerivAt).fderiv.symm
+    _ = fderiv 𝕜 (fun y ↦ y) x := hgf.fderiv_eq
+    _ = ContinuousLinearMap.id 𝕜 E := fderiv_fun_id
+
+/-- If `g ∘ f =ᶠ[𝓝 x] id` for real-differentiable maps at `x` and `f x`, and
+`‖fderiv ℝ g (f x)‖ ≤ L`, then `(L ^ finrank ℝ E)⁻¹ ≤ |det (fderiv ℝ f x)|`. -/
+theorem DifferentiableAt.inv_pow_le_abs_det_fderiv_of_eventuallyEq {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : E → E} {x : E} {L : ℝ}
+    (hf : DifferentiableAt ℝ f x) (hg : DifferentiableAt ℝ g (f x))
+    (hgf : g ∘ f =ᶠ[nhds x] id) (hL : ‖fderiv ℝ g (f x)‖ ≤ L) :
+    (L ^ finrank ℝ E)⁻¹ ≤ |(fderiv ℝ f x).det| := by
+  simpa only [Real.norm_eq_abs] using hf.inv_pow_le_norm_det_fderiv_of_eventuallyEq hg hgf hL
 
 namespace ContinuousAffineMap
 

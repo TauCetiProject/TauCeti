@@ -25,7 +25,11 @@ on `s` with `c > 0`, then `f` pushes `μ` on `s` forward to at most `c⁻¹ μ` 
 
 For `f` differentiable on an open set `s` and mapping it into `t`, the same bound holds with the
 Fréchet derivative `fderiv ℝ f` as Jacobian and `μ` on `t` in place of `μ` on `f '' s`
-(`MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`). If moreover the derivative is
+(`MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`). Without differentiability of
+`f`, a differentiable left inverse `g` on an open set `t` still controls the pushforward of `μ` on
+`s` by an upper bound on `|det Dg|` or on `‖Dg‖ ^ n` along `f '' s`
+(`MeasureTheory.map_restrict_le_smul_restrict_of_leftInvOn`,
+`MeasureTheory.map_restrict_le_smul_restrict_of_norm_fderiv_le`). If moreover the derivative is
 invertible on `s`, then almost-everywhere properties on `t` pull back along `f` to almost-everywhere
 properties on `s` (`MeasureTheory.ae_restrict_comp_of_differentiableOn`).
 
@@ -54,6 +58,9 @@ a permutation of the vertices of a simplex, acts on integrals over it.
   `c⁻¹ μ` on `f '' s`.
 * `MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`: the same for `f`
   differentiable on an open set `s` and mapping it into `t`, with `μ` on `t` as the target.
+* `MeasureTheory.map_restrict_le_smul_restrict_of_leftInvOn`,
+  `MeasureTheory.map_restrict_le_smul_restrict_of_norm_fderiv_le`: pushforward bounds on `s` from a
+  differentiable left inverse `g` on an open set `t`, without differentiability of `f`.
 * `MeasureTheory.ae_restrict_comp_of_differentiableOn`: almost-everywhere properties pull back
   along a map that is injective with invertible derivative on an open set.
 * `MeasureTheory.exists_det_bounds_of_isCompact`: Jacobian and derivative bounds on a compact
@@ -121,6 +128,52 @@ theorem map_restrict_le_smul_restrict_of_differentiableOn (hs : IsOpen s)
     (μ.restrict s).map f ≤ (ENNReal.ofReal c)⁻¹ • μ.restrict t :=
   (map_restrict_le_smul_restrict_image_of_differentiableOn μ hs hf hinj subset_rfl
     hs.measurableSet hc hdet).trans (by gcongr; exact hmaps.image_subset)
+
+/-- **Pushforward bound from a differentiable left inverse.** If `f` is almost everywhere
+measurable on `s`, `g` is differentiable on an open set `t`, `f` maps `s` into `t` with
+`g (f x) = x` on `s`, and `|det (fderiv ℝ g (f x))| ≤ M` on `s`, then `f` pushes `μ` restricted
+to `s` forward to at most `M` times `μ` restricted to `t`. Neither measurability of `s` nor
+differentiability of `f` is needed. -/
+theorem map_restrict_le_smul_restrict_of_leftInvOn {g : E → E} {M : ℝ}
+    (hf : AEMeasurable f (μ.restrict s)) (ht : IsOpen t) (hg : DifferentiableOn ℝ g t)
+    (hmaps : MapsTo f s t) (hgf : LeftInvOn g f s)
+    (hdet : ∀ x ∈ s, |(fderiv ℝ g (f x)).det| ≤ M) :
+    (μ.restrict s).map f ≤ ENNReal.ofReal M • μ.restrict t := by
+  set W : Set E := t ∩ {y | |(fderiv ℝ g y).det| ≤ M}
+  have hW : MeasurableSet W := ht.measurableSet.inter
+    (measurableSet_le (continuous_abs.measurable.comp
+      (ContinuousLinearMap.continuous_det.measurable.comp (measurable_fderiv ℝ g)))
+      measurable_const)
+  refine Measure.le_iff.2 fun B hB ↦ ?_
+  have hsub : f ⁻¹' B ∩ s ⊆ g '' (B ∩ W) := fun x ⟨hxB, hxs⟩ ↦
+    ⟨f x, ⟨hxB, hmaps hxs, hdet x hxs⟩, hgf hxs⟩
+  have hg' : ∀ y ∈ B ∩ W, HasFDerivWithinAt g (fderiv ℝ g y) (B ∩ W) y := fun y hy ↦
+    ((hg y hy.2.1).differentiableAt (ht.mem_nhds hy.2.1)).hasFDerivAt.hasFDerivWithinAt
+  calc ((μ.restrict s).map f) B
+      = (μ.restrict s) (f ⁻¹' B) := Measure.map_apply_of_aemeasurable hf hB
+    _ = μ (f ⁻¹' B ∩ s) := Measure.restrict_apply₀ (hf.nullMeasurable hB)
+    _ ≤ μ (g '' (B ∩ W)) := measure_mono hsub
+    _ ≤ ∫⁻ y in B ∩ W, ENNReal.ofReal |(fderiv ℝ g y).det| ∂μ :=
+        addHaar_image_le_lintegral_abs_det_fderiv μ (hB.inter hW) hg'
+    _ ≤ ∫⁻ _ in B ∩ W, ENNReal.ofReal M ∂μ :=
+        setLIntegral_mono measurable_const fun _ hy ↦ ENNReal.ofReal_le_ofReal hy.2.2
+    _ = ENNReal.ofReal M * μ (B ∩ W) := setLIntegral_const (B ∩ W) _
+    _ ≤ ENNReal.ofReal M * μ (B ∩ t) := by
+        gcongr; exact inter_subset_left
+    _ = (ENNReal.ofReal M • μ.restrict t) B := by
+        rw [_root_.smul_apply, smul_eq_mul, Measure.restrict_apply hB]
+
+/-- **Pushforward bound from an operator-norm bound on a left inverse.** If `f` is almost
+everywhere measurable on `s`, `g` is differentiable on an open set `t`, `f` maps `s` into `t`
+with `g (f x) = x` on `s`, and `‖fderiv ℝ g (f x)‖ ≤ L` on `s`, then `f` pushes `μ` restricted to
+`s` forward to at most `L ^ finrank ℝ E` times `μ` restricted to `t`. -/
+theorem map_restrict_le_smul_restrict_of_norm_fderiv_le {g : E → E} {L : ℝ}
+    (hf : AEMeasurable f (μ.restrict s)) (ht : IsOpen t) (hg : DifferentiableOn ℝ g t)
+    (hmaps : MapsTo f s t) (hgf : LeftInvOn g f s) (hL : ∀ x ∈ s, ‖fderiv ℝ g (f x)‖ ≤ L) :
+    (μ.restrict s).map f ≤ ENNReal.ofReal (L ^ Module.finrank ℝ E) • μ.restrict t :=
+  map_restrict_le_smul_restrict_of_leftInvOn μ hf ht hg hmaps hgf fun x hx ↦
+    (fderiv ℝ g (f x)).abs_det_le_opNorm_pow.trans
+      (pow_le_pow_left₀ (norm_nonneg _) (hL x hx) _)
 
 /-- **Null sets pull back along a map with invertible derivative.** If `f` is injective and
 differentiable on an open set `s`, with invertible derivative there, and maps `s` into `t`, then a
