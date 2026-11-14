@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.FDeriv.Norm
+public import Mathlib.Analysis.Calculus.LocalExtr.Basic
 public import TauCeti.LinearAlgebra.Matrix.Rank.Pencil
+import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # The Lefschetz–Whitehead rank estimate
@@ -42,8 +44,7 @@ because the derivative of a map of constant nonzero norm is orthogonal to its va
 
 public section
 
-open Module
-open scoped RealInnerProductSpace
+open Asymptotics Module
 
 namespace HasFDerivAt
 
@@ -85,24 +86,46 @@ theorem finrank_range_lt_of_infinite (hh : HasFDerivAt h h' x) (hg : HasFDerivAt
 end NontriviallyNormedField
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {g h : E → F} {g' h' : E →L[ℝ] F} {x : E}
 
 /-- **The Lefschetz–Whitehead rank estimate for unit directions.** Let `g` and `h` be
 differentiable at `x`, where `h x ≠ 0` and `‖h‖` has a local extremum at `x`, for instance when
 `h` is a map into the unit sphere. If the swept map `(y, t) ↦ g y + t • h y` has rank at most
-`p` at `(x, t)` for infinitely many `t`, then `h` has rank less than `p` at `x`. -/
+`p` at `(x, t)` for infinitely many `t`, then `h` has rank less than `p` at `x`. The norm on `F`
+need not come from an inner product. -/
 theorem finrank_range_lt_of_infinite_of_isLocalExtr_norm (hh : HasFDerivAt h h' x)
     (hg : HasFDerivAt g g' x) (hn : IsLocalExtr (fun y ↦ ‖h y‖) x) (h0 : h x ≠ 0) {p : ℕ}
     (hp : {t : ℝ | finrank ℝ (LinearMap.range
       (fderiv ℝ (fun q : E × ℝ ↦ g q.1 + q.2 • h q.1) (x, t) : E × ℝ →ₗ[ℝ] F)) ≤ p}.Infinite) :
     finrank ℝ (LinearMap.range (h' : E →ₗ[ℝ] F)) < p := by
   refine hh.finrank_range_lt_of_infinite hg ?_ hp
-  -- At a local extremum of the norm, the derivative is orthogonal to the value.
   rintro ⟨e, he⟩
-  have := hn.inner_fderiv_eq_zero e
   rw [ContinuousLinearMap.coe_coe] at he
-  rw [hh.fderiv, he, inner_self_eq_zero] at this
-  exact h0 this
+  -- If `h' e = h x`, then along the line `t ↦ x + t • e` the map `h` moves as
+  -- `(1 + t) • h x + o(t)`.
+  have hψ : HasDerivAt (fun t : ℝ ↦ h (x + t • e)) (h x) 0 := by
+    have hl : HasDerivAt (fun t : ℝ ↦ x + t • e) e 0 := by
+      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const e).const_add x
+    simpa [he, Function.comp_def] using hh.comp_hasDerivAt_of_eq (0 : ℝ) hl (by simp)
+  -- So `‖h (x + t • e)‖ = (1 + t) * ‖h x‖ + o(t)`: the norm of `h` has derivative `‖h x‖ ≠ 0`
+  -- along the line, which is impossible at a local extremum.
+  have hφ : HasDerivAt (fun t : ℝ ↦ ‖h (x + t • e)‖) ‖h x‖ 0 := by
+    rw [hasDerivAt_iff_isLittleO] at hψ ⊢
+    refine (IsBigO.of_bound' ?_).trans_isLittleO hψ
+    filter_upwards [Ioi_mem_nhds (show (-1 : ℝ) < 0 by norm_num)] with t (ht : -1 < t)
+    calc ‖‖h (x + t • e)‖ - ‖h (x + (0 : ℝ) • e)‖ - (t - 0) • ‖h x‖‖
+        = |‖h (x + t • e)‖ - ‖(1 + t) • h x‖| := by
+          rw [Real.norm_eq_abs, norm_smul, Real.norm_of_nonneg (by linarith : (0 : ℝ) ≤ 1 + t)]
+          simp only [zero_smul, add_zero, sub_zero, smul_eq_mul]
+          congr 1
+          ring
+      _ ≤ ‖h (x + t • e) - (1 + t) • h x‖ := abs_norm_sub_norm_le _ _
+      _ = ‖h (x + t • e) - h (x + (0 : ℝ) • e) - (t - 0) • h x‖ := by
+          rw [zero_smul, add_zero, sub_zero, add_smul, one_smul, sub_add_eq_sub_sub]
+  have hext : IsLocalExtr (fun t : ℝ ↦ ‖h (x + t • e)‖) 0 :=
+    IsLocalExtr.comp_continuous (f := fun y ↦ ‖h y‖) (g := fun t : ℝ ↦ x + t • e) (b := 0)
+      (by simpa using hn) (by fun_prop)
+  exact h0 (norm_eq_zero.mp (hext.hasDerivAt_eq_zero hφ))
 
 end HasFDerivAt
