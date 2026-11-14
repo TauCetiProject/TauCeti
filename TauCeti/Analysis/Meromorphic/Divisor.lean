@@ -39,6 +39,8 @@ of support finite and bounds sums over their subsets by the corresponding closed
   subset of a compact set in the meromorphic domain.
 * `MeromorphicOn.divisor_finite_inter_support` — finite divisor support on a bounded region
   whose closure lies in the meromorphic domain.
+* `MeromorphicOn.divisor_congr_nhdsNE` and `Filter.EventuallyEq.divisor_eq` — divisor congruence
+  from punctured-neighbourhood or neighbourhood-of-set germ equality.
 -/
 
 public section
@@ -176,3 +178,28 @@ theorem MeromorphicOn.divisor_finite_inter_support [ProperSpace 𝕜]
     (hR : Bornology.IsBounded R) (hRU : closure R ⊆ U) :
     (R ∩ Function.support (MeromorphicOn.divisor f U)).Finite :=
   MeromorphicOn.divisor_finite_inter_support_of_isCompact hR.isCompact_closure hRU subset_closure
+
+open scoped Topology in
+/-- Functions with identical punctured germs at every point of `U` have equal meromorphic divisors
+on `U`. No meromorphy hypothesis is required: if one is not meromorphic on `U`, neither is the
+other, and both divisors are zero. -/
+theorem MeromorphicOn.divisor_congr_nhdsNE {g : 𝕜 → E}
+    (hfg : ∀ z ∈ U, f =ᶠ[𝓝[≠] z] g) :
+    MeromorphicOn.divisor f U = MeromorphicOn.divisor g U := by
+  have hmero : MeromorphicOn f U ↔ MeromorphicOn g U :=
+    forall₂_congr fun z hz ↦ MeromorphicAt.meromorphicAt_congr (hfg z hz)
+  ext z
+  by_cases hz : z ∈ U
+  · by_cases hf : MeromorphicOn f U
+    · rw [hf.divisor_apply hz, (hmero.1 hf).divisor_apply hz,
+        meromorphicOrderAt_congr (hfg z hz)]
+    · rw [MeromorphicOn.divisor_eq_zero_of_not_meromorphicOn hf,
+        MeromorphicOn.divisor_eq_zero_of_not_meromorphicOn (hmero.not.1 hf)]
+  · simp [hz]
+
+open scoped Topology in
+/-- Functions equal on a neighbourhood of `U` have identical meromorphic divisors on `U`. -/
+theorem Filter.EventuallyEq.divisor_eq {g : 𝕜 → E} (hfg : f =ᶠ[𝓝ˢ U] g) :
+    MeromorphicOn.divisor f U = MeromorphicOn.divisor g U :=
+  MeromorphicOn.divisor_congr_nhdsNE fun _ hz ↦
+    hfg.filter_mono (nhdsWithin_le_nhds.trans (nhds_le_nhdsSet hz))
