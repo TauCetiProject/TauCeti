@@ -28,7 +28,11 @@ A real-linear map `A` intertwines a tame structure `J` with multiplication by `i
 is a complex multiple of the affine normalizer. For the differential of `f` at `z` this is the
 pointwise Beltrami equation `\bar∂f(z) = μ_J ∂f(z)`
 (`TauCeti.Beltrami.isComplexLinear_iff_conjWirtingerDeriv_eq`). The coefficient vanishes exactly
-at the standard structure (`TauCeti.Beltrami.coefficientEquiv_eq_zero_iff`).
+at the standard structure (`TauCeti.Beltrami.coefficientEquiv_eq_zero_iff`). Every structure on
+the plane, of either orientation, is carried to the standard one by a real-linear automorphism
+(`TauCeti.Beltrami.exists_transport_eq_std`). For a field `J` of class `Cⁿ` at a point `c`, such
+an automorphism carries `J c` to the standard structure and the field read through it stays `Cⁿ`
+(`TauCeti.Beltrami.exists_transport_eq_std_and_contDiffAt`).
 
 This is the pointwise normalization used before solving the variable-coefficient Beltrami
 equation. It does not construct isothermal charts or assume a solution of that equation.
@@ -311,6 +315,51 @@ theorem transport_linearEquiv_eq_std (J : AlmostComplexStructure ℂ)
   simpa only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
     smul_eq_mul, ContinuousLinearEquiv.coe_toLinearEquiv,
     ContinuousLinearEquiv.coe_symm_toLinearEquiv] using h
+
+/-- **Normalizing a planar structure.** Every almost complex structure on the plane, tame or not,
+is carried to the standard structure by a real-linear automorphism. -/
+theorem exists_transport_eq_std (J : AlmostComplexStructure ℂ) :
+    ∃ A : ℂ ≃L[ℝ] ℂ, J.transport A.toLinearEquiv = AlmostComplexStructure.ofComplexModule ℂ := by
+  rcases stdComplexSymplecticForm_tames_or_tames_transport_conj J with hJ | hJ
+  · exact ⟨_, transport_linearEquiv_eq_std J hJ⟩
+  · obtain ⟨A, hA⟩ : ∃ A : ℂ ≃L[ℝ] ℂ, (J.transport Complex.conjCLE.toLinearEquiv).transport
+        A.toLinearEquiv = AlmostComplexStructure.ofComplexModule ℂ :=
+      ⟨_, transport_linearEquiv_eq_std _ hJ⟩
+    refine ⟨Complex.conjCLE.trans A, ?_⟩
+    rw [← hA, AlmostComplexStructure.transport_trans]
+    rfl
+
+/-- **Normalization at a point.** Let `J` be a field of almost complex structures on the plane,
+with `z ↦ J z` of class `Cⁿ` at `c` in the operator norm. There is a real-linear automorphism `A`
+of the plane carrying `J c` to the standard structure, and the field `w ↦ J (c + A⁻¹ w)`
+transported by `A` is of class `Cⁿ` at `0`. -/
+theorem exists_transport_eq_std_and_contDiffAt {n : WithTop ℕ∞}
+    {J : ℂ → AlmostComplexStructure ℂ} {c : ℂ}
+    (hJs : ContDiffAt ℝ n (fun z ↦ LinearMap.toContinuousLinearMap (J z).toLinearMap) c) :
+    ∃ A : ℂ ≃L[ℝ] ℂ,
+      (J c).transport A.toLinearEquiv = AlmostComplexStructure.ofComplexModule ℂ ∧
+      ContDiffAt ℝ n (fun w ↦ LinearMap.toContinuousLinearMap
+        ((J (c + A.symm w)).transport A.toLinearEquiv).toLinearMap) 0 := by
+  obtain ⟨A, hA⟩ := exists_transport_eq_std (J c)
+  refine ⟨A, hA, ?_⟩
+  have hcl : (fun w ↦ LinearMap.toContinuousLinearMap
+      ((J (c + A.symm w)).transport A.toLinearEquiv).toLinearMap) = fun w ↦
+      (A : ℂ →L[ℝ] ℂ) ∘L LinearMap.toContinuousLinearMap (J (c + A.symm w)).toLinearMap ∘L
+        (A.symm : ℂ →L[ℝ] ℂ) := by
+    funext w
+    ext v
+    simp [AlmostComplexStructure.transport_toLinearMap, LinearEquiv.conj_apply]
+  rw [hcl]
+  have hin : ContDiffAt ℝ n (fun w : ℂ ↦ c + A.symm w) 0 :=
+    contDiffAt_const.add A.symm.contDiff.contDiffAt
+  have hJs' : ContDiffAt ℝ n (fun z ↦ LinearMap.toContinuousLinearMap (J z).toLinearMap)
+      (c + A.symm 0) := by
+    simpa using hJs
+  have hJc : ContDiffAt ℝ n
+      (fun w ↦ LinearMap.toContinuousLinearMap (J (c + A.symm w)).toLinearMap) 0 :=
+    ContDiffAt.comp (g := fun z ↦ LinearMap.toContinuousLinearMap (J z).toLinearMap)
+      (f := fun w ↦ c + A.symm w) (0 : ℂ) hJs' hin
+  exact contDiffAt_const.clm_comp (hJc.clm_comp contDiffAt_const)
 
 /-- Every coefficient with nonzero real Jacobian gives an actual smooth local diffeomorphism. -/
 theorem isLocalDiffeomorph_linearMap (μ : ℂ) (hμ : Complex.normSq μ ≠ 1) :
