@@ -505,8 +505,6 @@ private theorem toLevelThreeNormalForm_spec :
         (toLevelThreeNormalForm h).t := by
   have hσ : (toLevelThreeNormalForm h).s * (2 * y₁ + W.a₁ * x₁ + W.a₃) =
       W.a₄ + 2 * x₁ * W.a₂ - y₁ * W.a₁ + 3 * x₁ ^ 2 := h.slope_spec
-  have hv : IsUnit (3 * (2 * y₁ + W.a₁ * x₁ + W.a₃) +
-      (W.a₁ + 2 * (toLevelThreeNormalForm h).s) * (x₂ - x₁)) := h.isUnit_scalingNumerator
   have hu : ((toLevelThreeNormalForm h).u : R) * (3 * (x₂ - x₁)) = 3 * (2 * y₁ + W.a₁ * x₁ + W.a₃) +
       (W.a₁ + 2 * (toLevelThreeNormalForm h).s) * (x₂ - x₁) := by
     rw [toLevelThreeNormalForm_u]
@@ -653,23 +651,13 @@ theorem eq_levelThreeRootOfUnity {C : VariableChange R} (hr : C.r = x₁) (ht : 
     ζ = levelThreeRootOfUnity h := by
   obtain rfl := eq_levelThreeParameter h hr ht hC hx₂
   obtain rfl := eq_toLevelThreeNormalForm h hr ht hC hx₂
-  obtain ⟨-, hC₀, hx₀, hy₀⟩ := toLevelThreeNormalForm_spec h
-  have hζ : (toLevelThreeNormalForm h).u * (x₂ - x₁) * ζ = y₂ - y₁ -
-      (toLevelThreeNormalForm h).s * (x₂ - x₁) +
-        (toLevelThreeNormalForm h).u * (x₂ - x₁) * levelThreeParameter h := by
-    rw [hr] at hx₂
-    rw [ht] at hy₂
-    linear_combination -hy₂ + ((toLevelThreeNormalForm h).s -
-      (toLevelThreeNormalForm h).u * (levelThreeParameter h - ζ)) * hx₂
-  have hζ₀ : (toLevelThreeNormalForm h).u * (x₂ - x₁) * levelThreeRootOfUnity h =
-      y₂ - y₁ - (toLevelThreeNormalForm h).s * (x₂ - x₁) +
-        (toLevelThreeNormalForm h).u * (x₂ - x₁) * levelThreeParameter h := by
-    rw [toLevelThreeNormalForm_r] at hx₀
-    rw [toLevelThreeNormalForm_t] at hy₀
-    linear_combination -hy₀ + ((toLevelThreeNormalForm h).s -
-      (toLevelThreeNormalForm h).u * (levelThreeParameter h - levelThreeRootOfUnity h)) * hx₀
+  obtain ⟨-, -, -, hy₀⟩ := toLevelThreeNormalForm_spec h
+  rw [hr] at hx₂
+  rw [ht] at hy₂
+  rw [toLevelThreeNormalForm_t] at hy₀
   exact ((toLevelThreeNormalForm h).u.isUnit.mul h.isUnit_sub).mul_left_cancel
-    (by linear_combination hζ - hζ₀)
+    (by linear_combination hy₀ - hy₂ +
+      (toLevelThreeNormalForm h).u * (ζ - levelThreeRootOfUnity h) * hx₂)
 
 include h in
 /-- **Level-three normal form.** Let `(P, Q)` be a basis of the `3`-torsion of `W`, with
