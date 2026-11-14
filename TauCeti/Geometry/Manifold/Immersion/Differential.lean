@@ -45,6 +45,8 @@ finite-dimensional model is an immersion when its composite with a map different
 image is one
 (`ContMDiff.isImmersion_of_isImmersion_comp`). Pairing an immersion with any `C^n` map into a
 finite-dimensional manifold gives an immersion (`Manifold.IsImmersion.prodMk`).
+A map into a finite-dimensional manifold with injective differential at some point has a
+finite-dimensional source model (`TauCeti.finiteDimensional_of_injective_mfderiv`).
 
 Reference: M. Hirsch, *Differential Topology*, Chapter 1, §3 (the local immersion
 theorem), and Chapter 8, §1 (its use in isotopy extension).
@@ -216,6 +218,26 @@ theorem of_writtenInExtChartAt [I.Boundaryless] [J.Boundaryless]
     simpa [OpenPartialHomeomorph.extend, writtenInExtChartAt, extChartAt] using this
 
 end Manifold.IsImmersionAtOfComplement
+
+namespace TauCeti
+
+variable {𝕜 E V H G M N : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  [TopologicalSpace H] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 V G}
+  [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace N] [ChartedSpace G N]
+
+/-- A map into a finite-dimensional manifold whose differential is injective at some point has a
+finite-dimensional model space. -/
+theorem finiteDimensional_of_injective_mfderiv {f : M → N} {x : M}
+    (hinj : Function.Injective (mfderiv I J f x)) : FiniteDimensional 𝕜 E := by
+  have : FiniteDimensional 𝕜 (TangentSpace I x) :=
+    Module.Finite.of_injective (mfderiv I J f x).toLinearMap hinj
+  exact (tangentSpaceCastModel I x).toLinearEquiv.finiteDimensional
+
+end TauCeti
 
 section Manifold
 

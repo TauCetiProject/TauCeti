@@ -12,8 +12,6 @@ public import TauCeti.Geometry.Symplectic.Manifold.Flat
 public import TauCeti.Geometry.Symplectic.Restrict
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
-import TauCeti.Geometry.Manifold.VectorBundle.Pullback
-import TauCeti.Geometry.Manifold.VectorBundle.Pullback.TangentialCorrection
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -52,7 +50,7 @@ the map from the normal bundle to the ambient tangent bundle is `C^m` when `m + 
 (`TauCeti.SmoothEmbedding.contMDiff_symplecticNormalRepresentative`). As for the orthogonal
 representatives of a Riemannian metric
 (`TauCeti.SmoothEmbedding.contMDiff_normalRepresentative`), this is an instance of
-`TauCeti.contMDiff_of_eq_sub_mfderiv_inverse`, with the flat maps of `σ` and of
+`TauCeti.SmoothEmbedding.contMDiff_of_eq_sub_mfderiv_inverse`, with the flat maps of `σ` and of
 `f^* σ` in place of the ambient and induced metrics. No compactness of `M` and no closedness of `σ`
 is used.
 
@@ -355,6 +353,8 @@ theorem contMDiff_symplecticNormalRepresentative_normalClass (f : SmoothEmbeddin
   have hmtop : m ≤ ∞ := le_self_add.trans hm'
   have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
   have : IsManifold J 1 N := .of_le (n := ∞) (by simp)
+  have : IsManifold I (m + 1) M := .of_le hm'
+  have : IsManifold J (m + 1) N := .of_le hm'
   -- The flat map of the pulled-back form `f^* σ` is a `C^m` section, invertible at every point.
   let τ := TauCeti.mpullback I J f σ.1
   have hτ : IsSmoothForm I m τ :=
@@ -371,12 +371,10 @@ theorem contMDiff_symplecticNormalRepresentative_normalClass (f : SmoothEmbeddin
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x (a x)) :=
     fun x₀ ↦ contMDiffAt_sectionAlong_flatL (b := fun x ↦ x) (σ := τ) (hτ.contMDiff x₀)
-  let fc : C^m⟮I, M; J, N⟯ := ⟨f, f.contMDiff.of_le (le_self_add.trans hm)⟩
-  exact (Pullback.contMDiff_lift fc fc.contMDiff (E := fun y : N ↦ TangentSpace J y)).comp
-    (contMDiff_of_eq_sub_mfderiv_inverse f f.contMDiff hm hacont
-      (fun x ↦ isInvertible_of_eval₂_mfderiv f h x hn (a x) (ha x))
-      ((contMDiff_flat σ).of_le hmtop) _ fun x v ↦
-        f.symplecticNormalRepresentative_normalClass_eq_sub_mfderiv_inverse h x hn (a x) (ha x) v)
+  exact f.contMDiff_of_eq_sub_mfderiv_inverse hm hacont
+    (fun x ↦ isInvertible_of_eval₂_mfderiv f h x hn (a x) (ha x)) ((contMDiff_flat σ).of_le hmtop)
+    _ fun x v ↦
+      f.symplecticNormalRepresentative_normalClass_eq_sub_mfderiv_inverse h x hn (a x) (ha x) v
 
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
 

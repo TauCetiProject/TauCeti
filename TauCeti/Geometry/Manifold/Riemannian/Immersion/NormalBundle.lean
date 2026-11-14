@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
+import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Immersion.Projection
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
@@ -60,26 +61,6 @@ open Bundle Manifold Module Set
 open scoped ContDiff Manifold
 
 namespace TauCeti
-
-section FiniteDimensional
-
-variable {𝕜 E V H G M N : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
-  [TopologicalSpace H] [TopologicalSpace G]
-  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 V G}
-  [TopologicalSpace M] [ChartedSpace H M]
-  [TopologicalSpace N] [ChartedSpace G N]
-
-/-- A map into a finite-dimensional manifold whose differential is injective at some point has a
-finite-dimensional model space. -/
-theorem finiteDimensional_of_injective_mfderiv {f : M → N} {x : M}
-    (hinj : Function.Injective (mfderiv I J f x)) : FiniteDimensional 𝕜 E := by
-  have : FiniteDimensional 𝕜 (TangentSpace I x) :=
-    Module.Finite.of_injective (mfderiv I J f x).toLinearMap hinj
-  exact (tangentSpaceCastModel I x).toLinearEquiv.finiteDimensional
-
-end FiniteDimensional
 
 variable {E V H G M N K : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
