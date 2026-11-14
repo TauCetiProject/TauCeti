@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.LinearAlgebra.Trace
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.RingTheory.PowerSeries.Inverse
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
+import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Trace
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Reynolds
 
