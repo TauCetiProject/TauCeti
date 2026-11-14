@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Integral.PrekopaLeindler
+public import TauCeti.MeasureTheory.Integral.PrekopaLeindler.Basic
 -- Proof-only: the layer-cake formula in `ℝ≥0∞`.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 

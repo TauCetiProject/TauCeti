@@ -40,9 +40,6 @@ section PadicComplexAndProduct
 
 variable (p : ℕ) [Fact p.Prime]
 
-local instance : Fact (IsTopologicallyNilpotent (p : ℂ_[p])) :=
-  ⟨IsPerfectoidTateRing.isTopologicallyNilpotent_natCast p⟩
-
 local instance : IsTateRing (uniformTilt p ℂ_[p]) :=
   (RingHom.id ℂ_[p]).isTateRing_uniformTilt (p := p) continuous_id
 
