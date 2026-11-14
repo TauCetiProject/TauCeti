@@ -235,10 +235,10 @@ end ScalarExtension
 algebraic base-change map and the comparison to continuous differentials. -/
 theorem map_comp_fromKaehler_baseChange [Algebra B B'] [Algebra A B']
     [IsScalarTower A B B']
-    (h : (algebraMap B B').comp (algebraMap A B) =
-      (algebraMap A B').comp (RingHom.id A))
     (hc : Continuous (algebraMap B B')) [IsAdicHom (algebraMap A B')] :
-    (map (A' := A) (RingHom.id A) h hc).comp ((fromKaehler A B).baseChange B') =
+    (map (A' := A) (RingHom.id A)
+      (by rw [RingHom.comp_id, IsScalarTower.algebraMap_eq A B B']) hc).comp
+        ((fromKaehler A B).baseChange B') =
       (fromKaehler A B').comp (KaehlerDifferential.mapBaseChange A B B') := by
   apply LinearMap.ext
   intro x
