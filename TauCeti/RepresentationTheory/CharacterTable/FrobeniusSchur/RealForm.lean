@@ -29,7 +29,7 @@ conjugates (`Representation.exists_isInvariantForm_isSymm_ne_zero`, in
 `TauCeti.RepresentationTheory.InvariantForm.SumOfConjugates`); the only hypothesis on `W` is
 `[Nontrivial W]`, which is free here, because irreducibility over a finite group makes `V`
 nontrivial and the real form passes this to `W` (via `IsRealForm.finrank_eq`, using that `V`
-and `W` are finite-dimensional).  A real form then transports the form to a nonzero
+is finite-dimensional).  A real form then transports the form to a nonzero
 invariant symmetric form on `V`
 (`Representation.IsRealForm.exists_isInvariantForm_isSymm_ne_zero`), and
 `TauCeti.Representation.frobeniusSchurIndicator_eq_one_of_isSymm` reads off the indicator.
@@ -82,11 +82,7 @@ basis over the conjugates produces a nonzero invariant symmetric form on the rea
 transporting it along the real form makes the complex representation carry one too, which is
 exactly the orthogonal case of the Frobenius-Schur trichotomy.
 
-No finiteness is assumed of the real form: irreducibility over a finite group already makes `V`
-finite-dimensional (Mathlib's instance on `ρ.asModule`, read back on `V` along `ρ.asModuleEquiv`),
-which `W` inherits (`Representation.IsRealForm.finiteDimensional_iff`), and a real form has the
-same dimension as the representation it is a form of (`Representation.IsRealForm.finrank_eq`), so
-`W` is nontrivial too. -/
+Neither finite-dimensionality nor nontriviality is assumed of the real form `W`. -/
 theorem IsRealForm.frobeniusSchurIndicator_eq_one [ρ.IsIrreducible] (h : IsRealForm ρ σ) :
     frobeniusSchurIndicator ρ = 1 := by
   have : FiniteDimensional ℂ V := ρ.asModuleEquiv.finiteDimensional

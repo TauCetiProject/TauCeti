@@ -471,8 +471,7 @@ private theorem exists_isInvariantForm_flip_of_sq_eq_smul {H : V →ₗ⋆[ℂ] 
 
 /-- **A real structure, together with a positive definite invariant Hermitian form, produces a
 nondegenerate invariant symmetric form.**  Here the invariant form `H` is nonnegative and nonzero
-off the origin.  This is the flip sign `ε = 1` of the construction: the balanced form of `H` against
-the involution `K` is compatible with it, and `B x y = balance H K (K x) y` is then symmetric. -/
+off the origin. -/
 theorem exists_isInvariantForm_isSymm_nondegenerate_of_isRealStructure
     {H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ} {K : V →ₛₗ[starRingEnd ℂ] V} (hK : IsRealStructure ρ K)
     (hHinv : IsInvariantSesqForm ρ H) (hHnonneg : H.IsNonneg)
@@ -484,8 +483,7 @@ theorem exists_isInvariantForm_isSymm_nondegenerate_of_isRealStructure
 
 /-- **A quaternionic structure, together with a positive definite invariant Hermitian form,
 produces a nondegenerate invariant alternating form.**  Here the invariant form `H` is nonnegative
-and nonzero off the origin.  This is the flip sign `ε = -1` of the same construction: the form
-`B x y = balance H J (J x) y` obeys `B x y = -B y x`, which over `ℂ` is alternation. -/
+and nonzero off the origin. -/
 theorem exists_isInvariantForm_isAlt_nondegenerate_of_isQuaternionicStructure
     {H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ} {J : V →ₛₗ[starRingEnd ℂ] V} (hJ : IsQuaternionicStructure ρ J)
     (hHinv : IsInvariantSesqForm ρ H) (hHnonneg : H.IsNonneg)
