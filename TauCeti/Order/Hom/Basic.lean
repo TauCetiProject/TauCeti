@@ -10,8 +10,8 @@ public import Mathlib.Order.Hom.Basic
 /-!
 # Pointwise order and strictly monotone equivalence for order embeddings
 
-An order embedding `f : α ↪o β` carries the pointwise preorder and partial order lifted from
-`α → β` (`f ≤ g ↔ ∀ x, f x ≤ g x`), matching the Mathlib instances on `α →o β`.
+For any `[LE α]`, an order embedding `f : α ↪o β` carries the pointwise preorder and partial order
+lifted from `α → β` (`f ≤ g ↔ ∀ x, f x ≤ g x`), matching the Mathlib instances on `α →o β`.
 
 When `α` is a linear order, a strictly monotone map out of `α` is an order embedding
 (`OrderEmbedding.ofStrictMono`), and every order embedding is strictly monotone. Together these
@@ -25,12 +25,13 @@ namespace OrderEmbedding
 
 section Preorder
 
-variable {α β : Type*} [Preorder α]
+variable {α β : Type*} [LE α]
 
 /-- The preorder structure on `α ↪o β` is pointwise inequality: `f ≤ g ↔ ∀ x, f x ≤ g x`. -/
 instance instPreorder [Preorder β] : Preorder (α ↪o β) :=
   Preorder.lift DFunLike.coe
 
+/-- The partial order structure on `α ↪o β` is pointwise inequality. -/
 instance instPartialOrder [PartialOrder β] : PartialOrder (α ↪o β) :=
   PartialOrder.lift DFunLike.coe DFunLike.coe_injective
 

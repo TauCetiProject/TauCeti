@@ -33,7 +33,7 @@ base change through `Matrix.map_mvPolynomialMinor`.
 
 ## Main results
 
-* `Matrix.isHomogeneous_mvPolynomialMinor`, `MvPolynomial.determinantalIdeal_isHomogeneous`:
+* `Matrix.isHomogeneous_mvPolynomialMinor`, `MvPolynomial.isHomogeneous_determinantalIdeal`:
   generic `t × t` minors are homogeneous of degree `Fintype.card t`, so determinantal ideals are
   homogeneous.
 * `Matrix.mvPolynomialMinor_comp_perm_left`, `Matrix.mvPolynomialMinor_comp_perm_right`: generic
@@ -116,7 +116,7 @@ theorem mvPolynomialMinor_eq_zero_of_not_injective_right (r : t → m) {c : t �
 
 /-- On linearly ordered index types, an injective row-and-column minor equals a sorted minor up to
 a sign. -/
-theorem exists_orderEmbedding_mvPolynomialMinor_eq_zsmul [LinearOrder t] [LinearOrder m]
+theorem exists_orderEmbedding_mvPolynomialMinor_eq_units_smul [LinearOrder t] [LinearOrder m]
     [LinearOrder n] {r : t → m} {c : t → n} (hr : Function.Injective r)
     (hc : Function.Injective c) :
     ∃ (r' : t ↪o m) (c' : t ↪o n) (ε : ℤˣ),
@@ -252,7 +252,7 @@ theorem determinantalIdeal_eq_span_orderEmbedding [LinearOrder t] [LinearOrder m
   · by_cases hr : Function.Injective r
     · by_cases hc : Function.Injective c
       · obtain ⟨r', c', ε, hε⟩ :=
-          Matrix.exists_orderEmbedding_mvPolynomialMinor_eq_zsmul (R := R) hr hc
+          Matrix.exists_orderEmbedding_mvPolynomialMinor_eq_units_smul (R := R) hr hc
         rw [hε, Units.smul_def, zsmul_eq_mul]
         exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨r', c', rfl⟩)
       · rw [Matrix.mvPolynomialMinor_eq_zero_of_not_injective_right r hc]
@@ -284,7 +284,7 @@ theorem comap_rename_toLex_span_determinantalMinors [DecidableEq t] :
 
 attribute [local instance] MvPolynomial.gradedAlgebra in
 /-- Every determinantal ideal is homogeneous for the standard total-degree grading. -/
-theorem determinantalIdeal_isHomogeneous [DecidableEq t] :
+theorem isHomogeneous_determinantalIdeal [DecidableEq t] :
     (determinantalIdeal R m n t).IsHomogeneous (homogeneousSubmodule (m × n) R) := by
   rw [determinantalIdeal_eq_span_determinantalMinors]
   refine Ideal.homogeneous_span _ _ fun f hf ↦ ?_
