@@ -74,6 +74,10 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
 * `TauCeti.measurableSet_image_extChartAt_iff`: for Borel measurable spaces on the manifold and
   the model space, a subset of a chart source is measurable exactly when its image in the model
   space is.
+* `OpenPartialHomeomorph.measurableSet_extend_target_inter_preimage` and
+  `OpenPartialHomeomorph.extend_target_inter_preimage_mem_nhdsWithin`: the part of an extended
+  chart target over an open set is measurable, and a neighbourhood of its points within the range
+  of the model.
 * `TauCeti.IsChartMeasurable`: chartwise measurability without a measurable structure on the
   manifold.
 * `TauCeti.IsChartMeasurable.measurableSet_inter_preimage`: measurable parameter pieces for maps
@@ -391,6 +395,37 @@ theorem measurableSet_extChartAt_target [MeasurableSpace E] [OpensMeasurableSpac
   rw [extChartAt_target]
   exact ((chartAt H x).open_target.preimage I.continuous_symm).measurableSet.inter
     I.isClosed_range.measurableSet
+
+omit [ChartedSpace H M] in
+/-- The part of the extended target of a chart lying over an open set is measurable in the model
+space: it is an open set intersected with the closed range of the model. -/
+theorem _root_.OpenPartialHomeomorph.measurableSet_extend_target_inter_preimage
+    [MeasurableSpace E] [OpensMeasurableSpace E] (f : OpenPartialHomeomorph M H) {s : Set M}
+    (hs : IsOpen s) : MeasurableSet ((f.extend I).target ∩ (f.extend I).symm ⁻¹' s) := by
+  have h : (f.extend I).target ∩ (f.extend I).symm ⁻¹' s =
+      I.symm ⁻¹' (f.target ∩ f.symm ⁻¹' s) ∩ Set.range I := by
+    rw [f.extend_target, f.extend_coe_symm, Set.preimage_comp]
+    ext
+    simp only [Set.mem_inter_iff, Set.mem_preimage]
+    tauto
+  rw [h]
+  exact ((f.isOpen_inter_preimage_symm hs).preimage I.continuous_symm).measurableSet.inter
+    I.isClosed_range.measurableSet
+
+omit [ChartedSpace H M] in
+/-- The part of the extended target of a chart lying over an open set is a neighbourhood of each
+of its points within the range of the model. -/
+theorem _root_.OpenPartialHomeomorph.extend_target_inter_preimage_mem_nhdsWithin
+    (f : OpenPartialHomeomorph M H) {s : Set M} (hs : IsOpen s) {z : E}
+    (hz : z ∈ (f.extend I).target ∩ (f.extend I).symm ⁻¹' s) :
+    (f.extend I).target ∩ (f.extend I).symm ⁻¹' s ∈ 𝓝[Set.range I] z := by
+  have hy : (f.extend I).symm z ∈ f.source := by
+    simpa only [f.extend_source] using (f.extend I).map_target hz.1
+  rw [← (f.extend I).right_inv hz.1]
+  refine Filter.inter_mem (f.extend_target_mem_nhdsWithin hy) ?_
+  simpa only [Set.preimage_univ, Set.univ_inter] using
+    f.extend_preimage_mem_nhdsWithin (I := I) (s := Set.univ) hy
+      (mem_nhdsWithin_of_mem_nhds (hs.mem_nhds hz.2))
 
 /-- The coordinate image of an open subset of a chart source is measurable, without a
 measurable structure on the manifold. -/
