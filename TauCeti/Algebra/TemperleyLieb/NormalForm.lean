@@ -38,8 +38,8 @@ Two immediate structural consequences accompany the upper bound:
 * Over any commutative semiring satisfying `OrzechProperty` (including every commutative ring and
   every field), any `R`-linear map out of `TemperleyLieb R δ n` whose image has `finrank` at least
   `catalan n` is automatically injective and promotes the reduced-word evaluations to a free
-  `R`-basis of rank `catalan n`. On at most two strands, `algEquivOfLeOne` and `twoStrandRep`
-  furnish explicit free `R`-bases of ranks `1` and `2 = catalan 2`.
+  `R`-basis of rank `catalan n`. On two strands, combining `linearIndependent_two` with
+  reduced-word spanning furnishes the explicit free `R`-basis `basisTwo` of rank `2 = catalan 2`.
 
 ## Main definitions
 
@@ -53,8 +53,7 @@ Two immediate structural consequences accompany the upper bound:
   equal-sized subsets of `Fin (n - 1)` satisfying `jₛ ≤ iₛ` on sorted elements.
 * `TauCeti.TemperleyLieb.basisJonesWordOfCatalanLeFinrankRange`: free `R`-basis of reduced words
   witnessed by a linear map whose image has `finrank` at least `catalan n`.
-* `TauCeti.TemperleyLieb.basisOfLeOne`, `TauCeti.TemperleyLieb.basisTwo`: explicit free `R`-bases
-  on at most one strand and on two strands.
+* `TauCeti.TemperleyLieb.basisTwo`: explicit free `R`-basis `![1, e δ 0]` on two strands.
 
 ## Main results
 
@@ -73,8 +72,7 @@ Two immediate structural consequences accompany the upper bound:
   most `catalan n`.
 * `TauCeti.TemperleyLieb.injective_of_catalan_le_finrank_range`: a linear map out of
   `TemperleyLieb R δ n` whose range has `finrank` at least `catalan n` is injective.
-* `TauCeti.TemperleyLieb.finrank_of_le_one`, `TauCeti.TemperleyLieb.finrank_two`: exact `finrank`
-  on at most one strand and on two strands.
+* `TauCeti.TemperleyLieb.finrank_two`: exact `finrank` equal to `2` on two strands.
 
 ## References
 
@@ -1280,43 +1278,6 @@ theorem finrank_eq_catalan_of_catalan_le_finrank_range
 end Orzech
 
 section SmallCases
-
-/-- On at most one strand, `1` forms a singleton free `R`-basis of `TemperleyLieb R δ n`. -/
-noncomputable def basisOfLeOne (δ : R) {n : ℕ} (hn : n ≤ 1) :
-    Module.Basis (Fin 1) R (TemperleyLieb R δ n) :=
-  (Module.Basis.singleton (Fin 1) R).map (algEquivOfLeOne δ hn).symm.toLinearEquiv
-
-/-- The single basis vector of `basisOfLeOne` is `1`. -/
-@[simp]
-theorem basisOfLeOne_apply (δ : R) {n : ℕ} (hn : n ≤ 1) (i : Fin 1) :
-    basisOfLeOne (R := R) δ hn i = 1 := by
-  simp [basisOfLeOne]
-
-/-- On at most one strand, `TemperleyLieb R δ n` has `finrank` equal to `1` over every commutative
-semiring `R`. -/
-theorem finrank_of_le_one (δ : R) {n : ℕ} (hn : n ≤ 1) :
-    Module.finrank R (TemperleyLieb R δ n) = 1 := by
-  by_cases hR : Nontrivial R
-  · rw [Module.finrank_eq_card_basis (basisOfLeOne δ hn), Fintype.card_fin]
-  · have : Subsingleton R := not_nontrivial_iff_subsingleton.1 hR
-    exact Module.finrank_subsingleton
-
-/-- On two strands, `![1, e δ 0]` is `R`-linearly independent over every commutative
-semiring `R`. -/
-theorem linearIndependent_two (δ : R) :
-    LinearIndependent R ![1, e (R := R) (n := 2) δ 0] := by
-  intro g₁ g₂ hg
-  have hrep := congrArg (twoStrandRep δ) hg
-  have hcol (x : Fin 2 →₀ R) :
-      twoStrandRep δ (Finsupp.linearCombination R ![1, e (R := R) (n := 2) δ 0] x) =
-        x 0 • (1 : Matrix (Fin 2) (Fin 2) R) + x 1 • !![0, 0; 1, δ] := by
-    rw [Finsupp.linearCombination_apply, Finsupp.sum_fintype _ _ (by simp), Fin.sum_univ_two]
-    simp [twoStrandRep_e]
-  rw [hcol, hcol] at hrep
-  ext i
-  fin_cases i
-  · simpa using congr_fun₂ hrep 0 0
-  · simpa using congr_fun₂ hrep 1 0
 
 /-- On two strands, `![1, e δ 0]` is a free `R`-basis of `TemperleyLieb R δ 2` over every
 commutative semiring `R`. -/
