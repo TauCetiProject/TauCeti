@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Quadratic
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Change
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Root
 public import TauCeti.NumberTheory.QuadraticOrder.ComplexEmbedding
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # Complex submodules and lattices attached to binary quadratic forms
@@ -22,7 +21,12 @@ on which `complexOrder D` acts by multiplication (`complexOrder_le_leftOrder_com
 
 When `f ∈ posDef n` (`n > 0`, `D = -n`), the embedded generator equals `a · root f`
 (`complexEmbedding_idealGenerator_posDef`), so `f.complexOrderIdeal (-n)` is the lattice of
-`a • (root f).periodPair` (`complexOrderIdeal_eq_lattice_smul_periodPair_root`).
+`a • (root f).periodPair` (`complexOrderIdeal_eq_lattice_smul_periodPair_root`), and
+`(ℤ · root f + ℤ).leftOrder` equals `complexOrder f.primPart.discrim`
+(`leftOrder_lattice_periodPair_root_eq_complexOrder_discrim_primPart`), giving primitivity and CM
+upper-half-plane characterizations (`leftOrder_lattice_periodPair_eq_complexOrder_iff`) as well as
+`(f.complexOrderIdeal D).leftOrder = complexOrder D ↔ f.IsPrimitive` for any integral form `f` of
+negative discriminant `D < 0` (`leftOrder_complexOrderIdeal_eq_complexOrder_iff_isPrimitive`).
 Under `γ ∈ SL(2, ℤ)`, `f.idealChangeFactor (-n) γ` embeds to `conj (denom γ (root f))`
 (`complexEmbedding_idealChangeFactor_posDef`), giving `SL(2, ℤ)`-equivariance
 (`complexOrderIdeal_smul`, `complexOrderIdeal_smul_posDef`).
@@ -43,6 +47,11 @@ Under `γ ∈ SL(2, ℤ)`, `f.idealChangeFactor (-n) γ` embeds to `conj (denom 
   `complexOrderIdeal`.
 * `TauCeti.BinaryQuadraticForm.complexOrderIdeal_eq_lattice_smul_periodPair_root`: for
   `f : posDef n`, `f.1.complexOrderIdeal (-n)` equals `(a • (root f).periodPair).lattice`.
+* `TauCeti.BinaryQuadraticForm.leftOrder_lattice_periodPair_root_eq_complexOrder_discrim_primPart`,
+  `TauCeti.BinaryQuadraticForm.leftOrder_lattice_periodPair_root_eq_complexOrder_iff_isPrimitive`,
+  `TauCeti.BinaryQuadraticForm.leftOrder_lattice_periodPair_eq_complexOrder_iff`,
+  `TauCeti.BinaryQuadraticForm.leftOrder_complexOrderIdeal_eq_complexOrder_iff_isPrimitive`:
+  exact multiplier orders of form roots, CM upper-half-plane points, and `complexOrderIdeal`.
 * `TauCeti.BinaryQuadraticForm.complexEmbedding_idealChangeFactor_posDef`: for `f : posDef n` and
   `γ : SL(2, ℤ)`, `f.1.idealChangeFactor (-n) γ` embeds to `conj (denom γ (root f))`.
 
@@ -184,29 +193,14 @@ theorem complexOrderIdeal_smul (f : BinaryQuadraticForm ℤ) (D : ℤ) (hD0 : D 
       (f.complexOrderIdeal D hD0 hf).map
         (LinearMap.mulLeft ℤ (complexEmbedding (Int.cast_nonpos.mpr hD0)
           (f.idealChangeFactor D γ))) := by
-  have h₀ := congrArg (complexEmbedding (Int.cast_nonpos.mpr hD0))
-    (idealChangeFactor_mul_first f D hf hfa γ)
-  have h₁ := congrArg (complexEmbedding (Int.cast_nonpos.mpr hD0))
-    (idealChangeFactor_mul_second f D hf hfa γ)
-  simp only [map_mul, map_add, map_intCast, complexEmbedding_idealGenerator] at h₀ h₁
-  apply le_antisymm
-  · intro z hz
-    obtain ⟨m, n, rfl⟩ := (mem_complexOrderIdeal_iff _ _ _ _).mp hz
-    refine ⟨(m * γ 1 1 + n * γ 0 1 : ℤ) * (f.a : ℂ) +
-        (m * γ 1 0 + n * γ 0 0 : ℤ) * ((-(f.b : ℂ) + (√(-(D : ℝ)) : ℂ) * I) / 2),
-      (mem_complexOrderIdeal_iff f D hD0 hf).mpr ⟨_, _, rfl⟩, ?_⟩
-    simp only [LinearMap.mulLeft_apply]; push_cast
-    linear_combination (m : ℂ) * h₀ + (n : ℂ) * h₁
-  · rintro _ ⟨y, hy, rfl⟩
-    obtain ⟨m, n, rfl⟩ := (mem_complexOrderIdeal_iff f D hD0 hf).mp hy
-    have hdet : (γ 0 0 : ℂ) * γ 1 1 - γ 0 1 * γ 1 0 = 1 := by
-      exact_mod_cast Matrix.SpecialLinearGroup.intCast_fin_two_mul_sub_mul_eq_one (R := ℚ) γ
-    refine (mem_complexOrderIdeal_iff _ _ _ _).mpr ⟨γ 0 0 * m - γ 0 1 * n, -(γ 1 0 * m) + γ 1 1 * n,
-      ?_⟩
-    simp only [LinearMap.mulLeft_apply]; push_cast
-    linear_combination -((γ 0 0 : ℂ) * m - γ 0 1 * n) * h₀ - (-(γ 1 0 * m) + γ 1 1 * n) * h₁ +
-      complexEmbedding (Int.cast_nonpos.mpr hD0) (f.idealChangeFactor D γ) *
-        ((m : ℂ) * f.a + (n : ℂ) * ((-(f.b : ℂ) + (√(-(D : ℝ)) : ℂ) * I) / 2)) * hdet
+  have h : ((γ • f).orderIdeal D ((discrim_smul γ f).trans hf)).restrictScalars ℤ =
+      ((f.orderIdeal D hf).restrictScalars ℤ).map
+        (LinearMap.mulLeft ℤ (f.idealChangeFactor D γ)) := by
+    ext z
+    simp only [Submodule.restrictScalars_mem, orderIdeal_smul f D hf hfa γ, Submodule.mem_map,
+      LinearMap.mulLeft_apply]
+  rw [complexOrderIdeal_def, complexOrderIdeal_def, h, ← Submodule.map_comp, ← Submodule.map_comp]
+  congr 1; ext x; exact map_mul (complexEmbedding (Int.cast_nonpos.mpr hD0)) _ x
 
 end NonposDiscrim
 
@@ -266,6 +260,94 @@ theorem complexOrder_le_leftOrder_lattice_periodPair_root (f : posDef n) :
   exact complexOrder_le_leftOrder_complexOrderIdeal f.1 (-n)
     (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) (mem_posDef.mp f.2).1
 
+/-- **Exact multiplier order for a primitive positive definite form**: if `f ∈ posDef n` is
+primitive, the left order of `ℤ · root f + ℤ` is `QuadraticOrder.complexOrder (-n)`. -/
+theorem leftOrder_lattice_periodPair_root_eq_complexOrder_of_isPrimitive (f : posDef n)
+    (hfprim : f.1.IsPrimitive) :
+    (root f).periodPair.lattice.leftOrder =
+      QuadraticOrder.complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
+        ((mem_posDef.mp f.2).1 ▸ f.1.discrim_emod_four_eq_zero_or_one) := by
+  refine le_antisymm (fun x hx ↦ ?_) (complexOrder_le_leftOrder_lattice_periodPair_root f)
+  obtain ⟨m, k, rfl⟩ :=
+    (UpperHalfPlane.mem_leftOrder_lattice_periodPair_iff_of_quadratic_of_linearCombination_eq_one
+      ((eq_root_iff f (root f)).mp rfl) hfprim.exists_linearCombination_eq_one).mp hx
+  set O := QuadraticOrder.complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
+    ((mem_posDef.mp f.2).1 ▸ f.1.discrim_emod_four_eq_zero_or_one)
+  exact add_mem (O.intCast_mem m) (mul_mem (O.intCast_mem k)
+    (complexOrderIdeal_le_complexOrder f.1 (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
+      (mem_posDef.mp f.2).1 (a_mul_root_mem_complexOrderIdeal f)))
+
+/-- **Exact multiplier order of any positive definite form**: for `f ∈ posDef n` (not necessarily
+primitive), `(root f).periodPair.lattice.leftOrder` is `complexOrder f.1.primPart.discrim`. -/
+theorem leftOrder_lattice_periodPair_root_eq_complexOrder_discrim_primPart (f : posDef n) :
+    (root f).periodPair.lattice.leftOrder =
+      QuadraticOrder.complexOrder f.1.primPart.discrim (discrim_primPart_neg_of_posDef f).le
+        f.1.primPart.discrim_emod_four_eq_zero_or_one := by
+  obtain ⟨_, hfa⟩ := mem_posDef.mp f.2
+  have hf0 : f.1 ≠ 0 := fun h ↦ by simp [h] at hfa
+  have hdneg := discrim_primPart_neg_of_posDef f
+  set m : ℕ := (-f.1.primPart.discrim).toNat
+  have : NeZero m := ⟨by omega⟩
+  have hg_disc : f.1.primPart.discrim = -m := by omega
+  let g : posDef m := ⟨f.1.primPart, mem_posDef.mpr ⟨hg_disc, (a_primPart_pos_iff f.1).mpr hfa⟩⟩
+  rw [← root_eq_root_of_eq_primPart (f := f) (g := g) rfl,
+    leftOrder_lattice_periodPair_root_eq_complexOrder_of_isPrimitive g
+      (f.1.isPrimitive_primPart hf0)]
+  exact QuadraticOrder.complexOrder_eq_iff.mpr hg_disc.symm
+
+/-- **Primitivity criterion via the multiplier order**: for `f ∈ posDef n`, the left order of
+`ℤ · root f + ℤ` equals `complexOrder (-n)` if and only if `f` is primitive. -/
+theorem leftOrder_lattice_periodPair_root_eq_complexOrder_iff_isPrimitive (f : posDef n) :
+    (root f).periodPair.lattice.leftOrder =
+        QuadraticOrder.complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
+          ((mem_posDef.mp f.2).1 ▸ f.1.discrim_emod_four_eq_zero_or_one) ↔
+      f.1.IsPrimitive := by
+  refine ⟨fun h ↦ ?_, leftOrder_lattice_periodPair_root_eq_complexOrder_of_isPrimitive f⟩
+  have hd : f.1.primPart.discrim = -n := QuadraticOrder.complexOrder_eq_iff.mp
+    ((leftOrder_lattice_periodPair_root_eq_complexOrder_discrim_primPart f).symm.trans h)
+  have hsq := f.1.discrim_eq_content_sq_mul
+  rw [(mem_posDef.mp f.2).1, hd] at hsq
+  have hne : (-(n : ℤ)) ≠ 0 := neg_ne_zero.mpr (Nat.cast_ne_zero.mpr (NeZero.ne n))
+  have hc2z : (f.1.content : ℤ) ^ 2 = 1 := mul_right_cancel₀ hne
+    (show (f.1.content : ℤ) ^ 2 * -(n : ℤ) = 1 * -(n : ℤ) by linear_combination -hsq)
+  have : f.1.content ^ 2 = 1 := by exact_mod_cast hc2z
+  exact f.1.isPrimitive_iff.mpr (by nlinarith)
+
+/-- **Analytic-algebraic characterization of CM upper-half-plane points**: for `n > 0` with
+`-n ≡ 0, 1 mod 4`, the multiplier order of `ℤ τ + ℤ` is `complexOrder (-n)` if and only if
+`τ = root f` for a primitive positive definite form `f` of discriminant `-n`. -/
+theorem leftOrder_lattice_periodPair_eq_complexOrder_iff
+    (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) {τ : ℍ} :
+    τ.periodPair.lattice.leftOrder =
+        QuadraticOrder.complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn ↔
+      ∃ f : ↥(posDef n ⊓ primitiveForms (-n)),
+        root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩ = τ := by
+  constructor
+  · intro hleft
+    -- Since `complexOrder (-n) ≠ ⊥`, `τ` satisfies an integral quadratic `a τ² + b τ + c = 0`.
+    have hne : τ.periodPair.lattice.leftOrder ≠ ⊥ := hleft ▸ QuadraticOrder.complexOrder_ne_bot
+      (Int.neg_neg_of_pos (Nat.cast_pos.mpr (NeZero.pos n))) hn
+    obtain ⟨a, b, c, ha, hrel⟩ := UpperHalfPlane.leftOrder_lattice_periodPair_ne_bot_iff.mp hne
+    let f₀ : BinaryQuadraticForm ℤ := ⟨a, b, c⟩
+    have hd₀ : f₀.discrim < 0 := discrim_neg_of_quadratic_upperHalfPlane ha.ne' hrel
+    set m : ℕ := (-f₀.discrim).toNat
+    have : NeZero m := ⟨by omega⟩
+    let fp : posDef m := ⟨f₀, mem_posDef.mpr ⟨by omega, ha⟩⟩
+    have hroot₀ : τ = root fp := (eq_root_iff fp τ).mpr hrel
+    -- Dividing `f₀` by its content gives a primitive form of discriminant `-n` with the same root.
+    have hprim_ord := leftOrder_lattice_periodPair_root_eq_complexOrder_discrim_primPart fp
+    rw [← hroot₀, hleft] at hprim_ord
+    have hd_prim : f₀.primPart.discrim = -n :=
+      (QuadraticOrder.complexOrder_eq_iff.mp hprim_ord).symm
+    have hf₀_ne : f₀ ≠ 0 := fun h ↦ ha.ne' (by simpa [f₀] using congrArg BinaryQuadraticForm.a h)
+    exact ⟨⟨f₀.primPart, (mem_posDef_inf_primitiveForms n).mpr
+      ⟨hd_prim, (a_primPart_pos_iff f₀).mpr ha, f₀.isPrimitive_primPart hf₀_ne⟩⟩,
+      (root_eq_root_of_eq_primPart (f := fp) rfl).trans hroot₀.symm⟩
+  · rintro ⟨f, rfl⟩
+    exact leftOrder_lattice_periodPair_root_eq_complexOrder_of_isPrimitive
+      ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩
+      ((mem_posDef_inf_primitiveForms n).mp f.2).2.2
+
 /-- **Embedded proper-change factor as conjugate automorphy factor**: for `f ∈ posDef n` and
 `γ ∈ SL(2, ℤ)`, `f.1.idealChangeFactor (-n) γ` maps under `QuadraticAlgebra.complexEmbedding` to
 `conj (denom γ (root f))`. -/
@@ -273,11 +355,9 @@ theorem complexEmbedding_idealChangeFactor_posDef (f : posDef n) (γ : SL(2, ℤ
     (ha : ((-(n : ℤ) : ℤ) : ℚ) ≤ 0) :
     complexEmbedding ha (f.1.idealChangeFactor (-n) γ) = conj (denom γ (root f)) := by
   have hfa : (f.1.a : ℂ) ≠ 0 := Int.cast_ne_zero.mpr (mem_posDef.mp f.2).2.ne'
-  rw [idealChangeFactor_def, (complexEmbedding ha).map_smul_of_tower, Rat.smul_def, Rat.cast_inv,
-    Rat.cast_intCast, complexEmbedding_star, map_add, map_zsmul, map_zsmul, map_intCast,
-    complexEmbedding_idealGenerator_posDef, map_add, map_zsmul, map_zsmul, map_intCast, map_mul,
-    map_intCast, zsmul_eq_mul, zsmul_eq_mul, ModularGroup.denom_apply, map_add, map_mul,
-    map_intCast, map_intCast]
+  simp only [idealChangeFactor_def, Rat.smul_def, Rat.cast_inv, Rat.cast_intCast,
+    complexEmbedding_star, map_inv₀, map_add, map_intCast,
+    complexEmbedding_idealGenerator_posDef, map_mul, zsmul_eq_mul, ModularGroup.denom_apply]
   field_simp; ring
 
 /-- **Proper `SL(2, ℤ)`-equivariance of `complexOrderIdeal` on `posDef n`**: acting by
@@ -292,5 +372,55 @@ theorem complexOrderIdeal_smul_posDef (f : posDef n) (γ : SL(2, ℤ)) :
   rwa [complexEmbedding_idealChangeFactor_posDef] at h
 
 end PosDef
+
+section NegDiscrim
+
+/-- Negating and reflecting an integral form preserves `complexOrderIdeal` on the nose. -/
+private theorem complexOrderIdeal_reflected_neg (f : BinaryQuadraticForm ℤ) (D : ℤ) (hD0 : D ≤ 0)
+    (hf : f.discrim = D) (hfg : (-f).reflected.discrim = D) :
+    (-f).reflected.complexOrderIdeal D hD0 hfg = f.complexOrderIdeal D hD0 hf := by
+  ext z
+  simp only [mem_complexOrderIdeal_iff, reflected_a, neg_a, reflected_b, neg_b, neg_neg,
+    Int.cast_neg]
+  exact ⟨fun ⟨m, k, h⟩ ↦ ⟨-m, k, by push_cast; linear_combination h⟩,
+    fun ⟨m, k, h⟩ ↦ ⟨-m, k, by push_cast; linear_combination h⟩⟩
+
+/-- For any integral form `f` of negative discriminant `D < 0` (regardless of the sign of `f.a`),
+the left order of `f.complexOrderIdeal D` equals `complexOrder D` iff `f` is primitive. -/
+theorem leftOrder_complexOrderIdeal_eq_complexOrder_iff_isPrimitive (f : BinaryQuadraticForm ℤ)
+    (D : ℤ) (hD0 : D < 0) (hf : f.discrim = D) :
+    (f.complexOrderIdeal D hD0.le hf).leftOrder =
+        QuadraticOrder.complexOrder D hD0.le (hf ▸ f.discrim_emod_four_eq_zero_or_one) ↔
+      f.IsPrimitive := by
+  obtain ⟨n, hn0, rfl⟩ : ∃ n : ℕ, 0 < n ∧ D = -(n : ℤ) := ⟨(-D).toNat, by omega, by omega⟩
+  have : NeZero n := ⟨hn0.ne'⟩
+  rcases lt_trichotomy f.a 0 with hneg | ha0 | hpos
+  · have hfg : (-f).reflected.discrim = -n := by
+      rw [discrim_reflected, ← neg_one_smul ℤ f, discrim_smul']; simpa using hf
+    let fp : posDef n := ⟨(-f).reflected, mem_posDef.mpr ⟨hfg, by simpa using neg_pos.mpr hneg⟩⟩
+    rw [← complexOrderIdeal_reflected_neg f (-n) hD0.le hf hfg,
+      show (-f).reflected.complexOrderIdeal (-n) hD0.le hfg =
+        fp.1.complexOrderIdeal (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
+          (mem_posDef.mp fp.2).1 from rfl,
+      leftOrder_complexOrderIdeal_posDef fp,
+      leftOrder_lattice_periodPair_root_eq_complexOrder_iff_isPrimitive fp]
+    simp [fp, isPrimitive_iff]
+  · exfalso; rw [discrim_def, discrim, ha0] at hf; nlinarith [sq_nonneg f.b]
+  · let fp : posDef n := ⟨f, mem_posDef.mpr ⟨hf, hpos⟩⟩
+    rw [show f.complexOrderIdeal (-n) hD0.le hf =
+        fp.1.complexOrderIdeal (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
+          (mem_posDef.mp fp.2).1 from rfl,
+      leftOrder_complexOrderIdeal_posDef fp,
+      leftOrder_lattice_periodPair_root_eq_complexOrder_iff_isPrimitive fp]
+
+/-- If an integral form `f` of negative discriminant `D < 0` is primitive, the left order of
+`f.complexOrderIdeal D` is `QuadraticOrder.complexOrder D`. -/
+theorem leftOrder_complexOrderIdeal_of_isPrimitive (f : BinaryQuadraticForm ℤ) (D : ℤ)
+    (hD0 : D < 0) (hf : f.discrim = D) (hfprim : f.IsPrimitive) :
+    (f.complexOrderIdeal D hD0.le hf).leftOrder =
+      QuadraticOrder.complexOrder D hD0.le (hf ▸ f.discrim_emod_four_eq_zero_or_one) :=
+  (leftOrder_complexOrderIdeal_eq_complexOrder_iff_isPrimitive f D hD0 hf).mpr hfprim
+
+end NegDiscrim
 
 end TauCeti.BinaryQuadraticForm

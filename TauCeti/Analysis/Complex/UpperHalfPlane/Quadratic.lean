@@ -16,7 +16,8 @@ If `τ ∈ ℍ` satisfies `τ² + Bτ + C = 0` with integral coefficients, the l
 `ℤ τ + ℤ` is a subalgebra of `ℂ`. It is exactly the ring of complex scalars preserving that
 lattice, and evaluation at `τ` identifies it with `QuadraticAlgebra ℤ (-C) (-B)`.
 More generally, rescaling a period pair preserves `Submodule.leftOrder`
-(`PeriodPair.leftOrder_lattice_smul`), and for any `τ ∈ ℍ` the left order of `ℤ τ + ℤ` is strictly
+(`PeriodPair.leftOrder_lattice_smul`), so `leftOrder` descends to homothety classes
+(`PeriodPair.HomothetyClass.leftOrder`), and for any `τ ∈ ℍ` the left order of `ℤ τ + ℤ` is strictly
 larger than `ℤ` (`⊥`) if and only if `τ` satisfies an integral quadratic equation
 `a τ² + b τ + c = 0` with `a > 0` (`UpperHalfPlane.leftOrder_lattice_periodPair_ne_bot_iff`); when
 `(a, b, c)` generate the unit ideal of `ℤ`, the left order is `ℤ + ℤ(a τ) = ℤ[a τ]`.
@@ -52,6 +53,23 @@ theorem leftOrder_lattice_smul (c : ℂˣ) (L : PeriodPair) :
     (c • L).lattice.leftOrder = L.lattice.leftOrder := by
   rw [lattice_smul]
   exact L.lattice.leftOrder_smul c.isUnit.isRegular.left (by simp)
+
+/-- Homothetic period pairs have the same complex multiplier order. -/
+theorem Homothetic.leftOrder_lattice_eq {L L' : PeriodPair} (h : L.Homothetic L') :
+    L.lattice.leftOrder = L'.lattice.leftOrder := by
+  obtain ⟨c, hc⟩ := homothetic_def.mp h; rw [hc, leftOrder_lattice_smul]
+
+namespace HomothetyClass
+
+/-- The complex multiplier order (`Submodule.leftOrder`) of a homothety class of period lattices. -/
+def leftOrder : HomothetyClass → Subalgebra ℤ ℂ :=
+  lift (fun L ↦ L.lattice.leftOrder) fun _ _ h ↦ h.leftOrder_lattice_eq
+
+/-- On the homothety class of `L`, `leftOrder` is the left order of `L.lattice`. -/
+@[simp] theorem leftOrder_mk (L : PeriodPair) : (mk L).leftOrder = L.lattice.leftOrder :=
+  lift_mk _ _ L
+
+end HomothetyClass
 
 end PeriodPair
 

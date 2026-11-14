@@ -205,8 +205,9 @@ theorem complexGenerator_sq_mul (D : ℤ) (f : ℕ) :
 
 /-- **Span presentation of `complexOrder (f² D)`**: for `D ≤ 0` with `D ≡ 0, 1 mod 4` and any
 `f : ℕ`, the elements of `complexOrder (f² D)` are precisely `m + k · (f · complexGenerator D)` for
-`m, k ∈ ℤ` (the suborder of index `f` in `complexOrder D` when `D < 0` and `f > 0`, and the order
-of conductor `f` in `𝓞 K` when `D` is a negative fundamental discriminant). -/
+`m, k ∈ ℤ` (the suborder of index `f` in `complexOrder D` when `D < 0` and `f > 0`, and the complex
+image of the order `ℤ + f 𝓞 K` of conductor `f` when `D` is a negative fundamental discriminant and
+`f > 0`). -/
 theorem mem_complexOrder_sq_mul_iff {D : ℤ} (hD0 : D ≤ 0) (hD : D % 4 = 0 ∨ D % 4 = 1) (f : ℕ)
     {z : ℂ} :
     z ∈ complexOrder ((f : ℤ) ^ 2 * D) (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hD0)

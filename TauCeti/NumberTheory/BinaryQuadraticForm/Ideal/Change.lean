@@ -141,36 +141,46 @@ theorem idealChangeFactor_ne_zero (f : BinaryQuadraticForm ℤ) (D : ℤ)
   have hdet := Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
   simp [hs, hr] at hdet
 
+/-- Properly equivalent forms with nonzero original leading coefficient have order modules
+differing by left multiplication by `idealChangeFactor`. -/
+theorem orderIdeal_smul (f : BinaryQuadraticForm ℤ) (D : ℤ) (hf : f.discrim = D)
+    (hfa : f.a ≠ 0) (γ : SL(2, ℤ)) :
+    (γ • f).orderIdeal D ((discrim_smul γ f).trans hf) =
+      (f.orderIdeal D hf).map (LinearMap.mulLeft _ (f.idealChangeFactor D γ)) := by
+  have h₀ := idealChangeFactor_mul_first f D hf hfa γ
+  have h₁ := idealChangeFactor_mul_second f D hf hfa γ
+  apply le_antisymm
+  · intro z hz
+    obtain ⟨m, n, rfl⟩ := (mem_orderIdeal_iff _ _ _ _).mp hz
+    refine ⟨(m * γ 1 1 + n * γ 0 1) • (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) +
+        (m * γ 1 0 + n * γ 0 0) • f.idealGenerator D,
+      (mem_orderIdeal_iff f D hf _).mpr ⟨_, _, rfl⟩, ?_⟩
+    simp only [LinearMap.mulLeft_apply, zsmul_eq_mul, Int.cast_add, Int.cast_mul]
+    linear_combination (m : QuadraticAlgebra ℚ (D : ℚ) 0) * h₀ +
+      (n : QuadraticAlgebra ℚ (D : ℚ) 0) * h₁
+  · rintro _ ⟨y, hy, rfl⟩
+    obtain ⟨m, n, rfl⟩ := (mem_orderIdeal_iff f D hf y).mp hy
+    have hdet : (γ 0 0 : QuadraticAlgebra ℚ (D : ℚ) 0) * γ 1 1 - γ 0 1 * γ 1 0 = 1 :=
+      Matrix.SpecialLinearGroup.intCast_fin_two_mul_sub_mul_eq_one γ
+    refine (mem_orderIdeal_iff _ _ _ _).mpr
+      ⟨γ 0 0 * m - γ 0 1 * n, -(γ 1 0 * m) + γ 1 1 * n, ?_⟩
+    simp only [LinearMap.mulLeft_apply, zsmul_eq_mul, Int.cast_add, Int.cast_sub, Int.cast_mul,
+      Int.cast_neg]
+    linear_combination -((γ 0 0 : QuadraticAlgebra ℚ (D : ℚ) 0) * m - γ 0 1 * n) * h₀ -
+      (-(γ 1 0 * m) + γ 1 1 * n : QuadraticAlgebra ℚ (D : ℚ) 0) * h₁ +
+      f.idealChangeFactor D γ * ((m : QuadraticAlgebra ℚ (D : ℚ) 0) * f.a +
+        (n : QuadraticAlgebra ℚ (D : ℚ) 0) * f.idealGenerator D) * hdet
+
 /-- Properly equivalent forms have fractional ideals differing by the explicit principal factor. -/
 theorem fractionalIdeal_smul (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (hf : f.discrim = D) [Fact (¬ IsSquare D)] (γ : SL(2, ℤ)) :
     (γ • f).fractionalIdeal D ((discrim_smul γ f).trans hf) =
       FractionalIdeal.spanSingleton _ (f.idealChangeFactor D γ) * f.fractionalIdeal D hf := by
-  have hfa : f.a ≠ 0 := a_ne_zero_of_not_isSquare_discrim (hf ▸ Fact.out)
-  have h₀ := idealChangeFactor_mul_first f D hf hfa γ
-  have h₁ := idealChangeFactor_mul_second f D hf hfa γ
-  apply le_antisymm
-  · intro z hz
-    obtain ⟨m, n, rfl⟩ := (mem_fractionalIdeal_iff _ _ _ _).mp hz
-    apply FractionalIdeal.mem_singleton_mul.mpr
-    refine ⟨(m * γ 1 1 + n * γ 0 1) • (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) +
-      (m * γ 1 0 + n * γ 0 0) • f.idealGenerator D, ?_, ?_⟩
-    · exact (mem_fractionalIdeal_iff f D hf _).mpr ⟨_, _, rfl⟩
-    · simp only [zsmul_eq_mul, Int.cast_add, Int.cast_mul]
-      linear_combination -(m : QuadraticAlgebra ℚ (D : ℚ) 0) * h₀ -
-        (n : QuadraticAlgebra ℚ (D : ℚ) 0) * h₁
-  · intro z hz
-    obtain ⟨y, hy, rfl⟩ := FractionalIdeal.mem_singleton_mul.mp hz
-    obtain ⟨m, n, rfl⟩ := (mem_fractionalIdeal_iff f D hf y).mp hy
-    have hdet : (γ 0 0 : QuadraticAlgebra ℚ (D : ℚ) 0) * γ 1 1 - γ 0 1 * γ 1 0 = 1 := by
-      exact Matrix.SpecialLinearGroup.intCast_fin_two_mul_sub_mul_eq_one γ
-    apply (mem_fractionalIdeal_iff _ _ _ _).mpr
-    refine ⟨γ 0 0 * m - γ 0 1 * n, -(γ 1 0 * m) + γ 1 1 * n, ?_⟩
-    simp only [zsmul_eq_mul, Int.cast_add, Int.cast_sub, Int.cast_mul, Int.cast_neg]
-    linear_combination -((γ 0 0 : QuadraticAlgebra ℚ (D : ℚ) 0) * m - γ 0 1 * n) * h₀ -
-      (-(γ 1 0 * m) + γ 1 1 * n : QuadraticAlgebra ℚ (D : ℚ) 0) * h₁ +
-      f.idealChangeFactor D γ * ((m : QuadraticAlgebra ℚ (D : ℚ) 0) * f.a +
-        (n : QuadraticAlgebra ℚ (D : ℚ) 0) * f.idealGenerator D) * hdet
+  ext z
+  rw [← SetLike.mem_coe, coe_fractionalIdeal, SetLike.mem_coe,
+    orderIdeal_smul f D hf (a_ne_zero_of_not_isSquare_discrim (hf ▸ Fact.out)) γ,
+    Submodule.mem_map, FractionalIdeal.mem_singleton_mul]
+  simp only [LinearMap.mulLeft_apply, ← SetLike.mem_coe, coe_fractionalIdeal, eq_comm (b := z)]
 
 /-- The native invertible form ideals differ by the explicit proper-change principal factor. -/
 theorem invertibleFractionalIdeal_smul (f : BinaryQuadraticForm ℤ) (D : ℤ)

@@ -48,8 +48,9 @@ lies in the `SL(2, ℤ)`-orbit of `i`, `6` when it lies in that of `ρ`, and `2`
   the stabiliser of `f`.
 * `TauCeti.BinaryQuadraticForm.root_of_eq_reflected`: the root of the reflected form
   `a x² - b x y + c y²` is the reflection `-conj τ` of the root `τ` of `a x² + b x y + c y²`.
-* `TauCeti.BinaryQuadraticForm.root_eq_root_of_eq_primPart`: a positive definite form and its
-  primitive part have the same root in `ℍ`.
+* `TauCeti.BinaryQuadraticForm.root_of_eq_smul`,
+  `TauCeti.BinaryQuadraticForm.root_eq_root_of_eq_primPart`: positive definite forms related by
+  scalar multiplication (in particular, a form and its primitive part) have the same root in `ℍ`.
 
 ## References
 
@@ -184,22 +185,24 @@ theorem root_of_eq_reflected {f g : posDef D} (hg : g.1 = f.1.reflected) :
     ring
   · rw [im_root, J_smul_im, im_root, hg, reflected_a]
 
+/-- Positive definite forms related by scalar multiplication have the same root in the upper
+half-plane. -/
+theorem root_of_eq_smul {D' : ℕ} [NeZero D'] {f : posDef D} {g : posDef D'} {k : ℤ}
+    (hf : f.1 = k • g.1) : root f = root g := by
+  have hfa : 0 < f.1.a := (mem_posDef.mp f.2).2
+  have hk0 : (k : ℂ) ≠ 0 := Int.cast_ne_zero.mpr fun hk ↦ by simp [hf, hk] at hfa
+  refine (eq_root_iff g (root f)).mpr ?_
+  have hrel := (eq_root_iff f (root f)).mp rfl
+  simp only [hf, smul_a', smul_b', smul_c', smul_eq_mul, Int.cast_mul] at hrel
+  exact (mul_eq_zero.mp (by linear_combination hrel :
+    (k : ℂ) * ((g.1.a : ℂ) * (root f : ℂ) ^ 2 + g.1.b * (root f : ℂ) + g.1.c) = 0)).resolve_left
+    hk0
+
 /-- A positive definite form and its primitive part have the same root in the upper half-plane. -/
 theorem root_eq_root_of_eq_primPart {D' : ℕ} [NeZero D'] {f : posDef D} {g : posDef D'}
-    (hg : g.1 = f.1.primPart) : root g = root f := by
-  symm; rw [eq_root_iff]
-  have hf0 : f.1 ≠ 0 := fun h ↦ (mem_posDef.mp f.2).2.ne' (by simp [h])
-  have hc : (f.1.content : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr ((f.1.content_pos_iff).mpr hf0).ne'
-  have hsmul := hg ▸ f.1.content_smul_primPart
-  have ha : (f.1.content : ℤ) * g.1.a = f.1.a := by simpa [nsmul_eq_mul] using congrArg a hsmul
-  have hb : (f.1.content : ℤ) * g.1.b = f.1.b := by simpa [nsmul_eq_mul] using congrArg b hsmul
-  have hc' : (f.1.content : ℤ) * g.1.c = f.1.c := by simpa [nsmul_eq_mul] using congrArg c hsmul
-  have hrel := (eq_root_iff f (root f)).mp rfl
-  rw [← ha, ← hb, ← hc'] at hrel; push_cast at hrel
-  have hmul : (f.1.content : ℂ) *
-      ((g.1.a : ℂ) * (root f : ℂ) ^ 2 + g.1.b * (root f : ℂ) + g.1.c) = 0 := by
-    linear_combination hrel
-  exact (mul_eq_zero.mp hmul).resolve_left hc
+    (hg : g.1 = f.1.primPart) : root g = root f :=
+  (root_of_eq_smul (k := f.1.content)
+    (by rw [hg, natCast_zsmul, f.1.content_smul_primPart])).symm
 
 end BinaryQuadraticForm
 

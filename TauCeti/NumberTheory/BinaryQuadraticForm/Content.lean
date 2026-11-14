@@ -287,6 +287,17 @@ theorem a_primPart_pos_iff (f : BinaryQuadraticForm ℤ) : 0 < f.primPart.a ↔ 
       simpa only [smul_a', nsmul_eq_mul] using congrArg a f.content_smul_primPart
     rw [← ha, mul_pos_iff_of_pos_left hc]
 
+/-- The primitive part of an integral form has strictly negative discriminant if and only if the
+form itself has strictly negative discriminant. -/
+theorem discrim_primPart_lt_zero_iff (f : BinaryQuadraticForm ℤ) :
+    f.primPart.discrim < 0 ↔ f.discrim < 0 := by
+  by_cases hf : f = 0
+  · simp [hf]
+  · have hc2 : 0 < (f.content : ℤ) ^ 2 :=
+      sq_pos_of_pos (Nat.cast_pos.mpr (f.content_pos_iff.mpr hf))
+    rw [f.discrim_eq_content_sq_mul]
+    exact ⟨fun h ↦ by nlinarith, fun h ↦ by nlinarith⟩
+
 /-- Divisibility of every represented value is equivalent to divisibility of the content. -/
 theorem dvd_content_iff_forall_eval (f : BinaryQuadraticForm ℤ) (n : ℕ) :
     n ∣ f.content ↔ ∀ x y : ℤ, (n : ℤ) ∣ f.eval x y := by
@@ -345,15 +356,9 @@ def primitiveForms (D : ℤ) :
 
 /-- The primitive part of any positive definite form has strictly negative discriminant. -/
 theorem discrim_primPart_neg_of_posDef {n : ℕ} [NeZero n] (f : posDef n) :
-    f.1.primPart.discrim < 0 := by
-  obtain ⟨hfdisc, hfa⟩ := mem_posDef.mp f.2
-  have hf0 : f.1 ≠ 0 := fun h ↦ by simp [h] at hfa
-  have hc : 0 < (f.1.content : ℤ) ^ 2 :=
-    sq_pos_of_pos (Nat.cast_pos.mpr ((f.1.content_pos_iff).mpr hf0))
-  have hneg : (f.1.content : ℤ) ^ 2 * f.1.primPart.discrim < 0 := by
-    rw [← f.1.discrim_eq_content_sq_mul, hfdisc]
-    exact Int.neg_neg_of_pos (Nat.cast_pos.mpr (NeZero.pos n))
-  exact neg_of_mul_neg_right hneg hc.le
+    f.1.primPart.discrim < 0 :=
+  (discrim_primPart_lt_zero_iff f.1).mpr
+    ((mem_posDef.mp f.2).1 ▸ Int.neg_neg_of_pos (Nat.cast_pos.mpr (NeZero.pos n)))
 
 /-- The proper equivalence classes of primitive positive definite forms of discriminant `-n`. -/
 abbrev PosDefProperClass (n : ℕ) [NeZero n] :=
