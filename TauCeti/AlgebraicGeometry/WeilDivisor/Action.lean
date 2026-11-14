@@ -57,7 +57,8 @@ noncomputable scoped instance instDistribMulAction : DistribMulAction G (WeilDiv
   Finsupp.comapDistribMulAction
 
 /-- The action is the formal pushforward along the action on points. -/
-theorem smul_def (g : G) (D : WeilDivisor X) : g • D = pushforward (g • ·) D := rfl
+theorem smul_def (g : G) (D : WeilDivisor X) : g • D = pushforward (g • ·) D :=
+  (pushforward_apply (g • ·) D).symm
 
 /-- The action carries the point divisor at `x` to the point divisor at `g • x`. -/
 @[simp]
