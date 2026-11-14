@@ -16,14 +16,16 @@ jobs:
   candidate:
     # Deployment remains a separate, explicit operation. Unset is inert.
     if: ${{ vars.TAUCETI_MIXED_QUEUE_CI_ENABLED == 'true' }}
-    uses: TauCetiProject/TauCetiTools/.github/workflows/pr-build.yml@de7633dd55b5fb6e596b69c0f4345f3e82322640
+    uses: TauCetiProject/TauCetiTools/.github/workflows/pr-build.yml@8902fa12a4faafc7bb512ab0baa9a452249b93aa
     with:
       tools_repository: TauCetiProject/TauCetiTools
-      tools_ref: de7633dd55b5fb6e596b69c0f4345f3e82322640
+      tools_ref: 8902fa12a4faafc7bb512ab0baa9a452249b93aa
       project_ref: ${{ github.workflow_sha }}
       lean_root: TauCeti
       roadmap_dir: TauCetiRoadmap
       source_candidate_enabled: true
+      # Wait for reserved staging capacity on tauchonki2; never spill to bulk CI.
+      source_candidate_runner: '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]'
     secrets:
       CI_SOURCE_READ_TOKEN: ${{ secrets.CI_SOURCE_READ_TOKEN }}
       LAKE_CACHE_KEY: ${{ secrets.LAKE_CACHE_KEY }}
