@@ -21,8 +21,7 @@ exponential minima transfers directly to the least order statistic `orderStatist
 * `TauCeti.Probability.map_orderStatistic_zero_pi_expMeasure` — pushforward law of
   `orderStatistic 0` under a nonempty finite product of exponential laws with positive rates `r i`;
 * `TauCeti.Probability.hasLaw_orderStatistic_zero_indep_expMeasure` — `HasLaw` form for independent
-  heterogeneous exponential coordinates (inferring rate positivity from `HasLaw` and
-  `iIndepFun.isProbabilityMeasure`);
+  heterogeneous exponential coordinates, with no explicit positivity hypothesis on the rates;
 * `TauCeti.Probability.hasLaw_orderStatistic_zero_iid_expMeasure` — iid specialization with rate
   `n * r`.
 
@@ -50,7 +49,7 @@ theorem map_orderStatistic_zero_pi_expMeasure [NeZero n] {r : Fin n → ℝ} (hr
 
 /-- Random-variable form of `TauCeti.Probability.map_orderStatistic_zero_pi_expMeasure`: the least
 order statistic of `n ≠ 0` independent exponential variables with rates `r i` has law
-`expMeasure (∑ i, r i)`. Positivity of each `r i` follows automatically from `hindep` and `hX`. -/
+`expMeasure (∑ i, r i)`, with no explicit positivity hypothesis on `r`. -/
 theorem hasLaw_orderStatistic_zero_indep_expMeasure {Ω : Type*} {_ : MeasurableSpace Ω} [NeZero n]
     {P : Measure Ω} {r : Fin n → ℝ} {X : Fin n → Ω → ℝ} (hindep : iIndepFun X P)
     (hX : ∀ i, HasLaw (X i) (expMeasure (r i)) P) :

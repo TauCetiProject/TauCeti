@@ -536,8 +536,9 @@ theorem map_min_pi_expMeasure {ι : Type*} [Fintype ι] [Nonempty ι] {r : ι �
     rw [hterm, sub_self]
 
 /-- Random-variable form of `TauCeti.Probability.map_min_pi_expMeasure` for independent
-heterogeneous exponential random variables. Positivity of the rates is deduced automatically from
-`HasLaw` on the underlying probability space. -/
+heterogeneous exponential random variables. No positivity hypothesis on `r` is needed because
+`expMeasure (r i)` is the zero measure for `r i ≤ 0`, whereas the underlying space of a nonempty
+independent family is a probability space. -/
 theorem hasLaw_min_indep_expMeasure {Ω ι : Type*} {_ : MeasurableSpace Ω} [Fintype ι] [Nonempty ι]
     {P : Measure Ω} {r : ι → ℝ} {X : ι → Ω → ℝ} (hindep : iIndepFun X P)
     (hX : ∀ i, HasLaw (X i) (expMeasure (r i)) P) :
