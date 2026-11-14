@@ -92,7 +92,7 @@ theorem isOpen_ker_orthogonalSpinorNorm (hQ : Q.Nondegenerate) :
     rw [MonoidHom.comap_ker, hcomp, ← MonoidHom.comap_ker, ker_squareClassHom]
   rw [← Subgroup.map_comap_eq_self_of_surjective (lipschitzToOrthogonal_surjective Q hQ)
     (orthogonalSpinorNorm Q hQ).ker, hlift, Subgroup.coe_map, Subgroup.coe_comap]
-  exact isOpenMap_lipschitzToOrthogonal Q hQ _ 
+  exact isOpenMap_lipschitzToOrthogonal Q hQ _
     ((TauCeti.isOpen_square_units (Invertible.ne_zero (2 : K))).preimage
       (continuous_cliffordNorm Q))
 

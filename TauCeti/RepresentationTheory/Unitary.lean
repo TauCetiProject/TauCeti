@@ -73,4 +73,3 @@ theorem isSymmetricProjection_asAlgebraHom (hσ : ∀ g v w, ⟪σ g v, σ g w�
 end Unitary
 
 end Representation
-

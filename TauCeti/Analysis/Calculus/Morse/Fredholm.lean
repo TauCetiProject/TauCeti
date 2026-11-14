@@ -429,4 +429,3 @@ theorem bijective_trajectoryOperator_hessianOperator (hp : IsNondegenerateCritic
     hα hgap AL hAL
 
 end TauCeti.IsNondegenerateCriticalPoint
-

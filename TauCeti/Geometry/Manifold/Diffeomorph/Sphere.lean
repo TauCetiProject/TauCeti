@@ -230,7 +230,7 @@ theorem exists_diffeomorph_apply_eq {v W : E} (hn : 3 ≤ n) (hv : ‖v‖ = 1) 
       (norm_ne_zero_iff.1 (hv.symm ▸ one_ne_zero))]
     omega
   obtain ⟨Q, hQ, hQv, hQu, hQ1⟩ := exists_contDiff_linearIsometryEquiv_apply_eq (k := ∞)
-    (by simp) hfin hu (fun t => norm_smul_inv_norm (hA0 t)) 
+    (by simp) hfin hu (fun t => norm_smul_inv_norm (hA0 t))
     (fun t => by rw [hu_def, real_inner_smul_left, hAv, mul_zero]) 0
   set α : ℝ → ℝ := fun t => Real.log (‖W‖ / ‖A t‖) with hα_def
   have hα : ContDiff ℝ ∞ α :=

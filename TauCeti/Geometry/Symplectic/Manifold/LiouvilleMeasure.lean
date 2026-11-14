@@ -295,4 +295,3 @@ theorem liouvilleMeasure_constSmooth_stdSymplecticForm {ι : Type*} [Fintype ι]
     Basis.prod_addHaar, OrthonormalBasis.addHaar_eq_volume, Measure.volume_eq_prod]
 
 end TauCeti.SymplecticForm
-

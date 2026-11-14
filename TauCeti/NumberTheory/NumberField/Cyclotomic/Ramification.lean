@@ -134,4 +134,3 @@ theorem intValuation_sub_one_eq_exp_neg_one {L : Type*} [Field L] [NumberField L
   rw [← WithZero.exp_nsmul, smul_neg, nsmul_one]
 
 end IsCyclotomicExtension.Rat
-

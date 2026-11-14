@@ -26,4 +26,3 @@ theorem RestrictScalars.addEquiv_lie {R A L : Type*} [LieRing L]
     (x y : RestrictScalars R A L) :
     RestrictScalars.addEquiv R A L ⁅x, y⁆ =
       ⁅RestrictScalars.addEquiv R A L x, RestrictScalars.addEquiv R A L y⁆ := rfl
-

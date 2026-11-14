@@ -301,4 +301,3 @@ theorem homotopic_of_fiber {E B Y : Type*} [TopologicalSpace E]
      map_one_left := fun y ↦ Subtype.ext (h₁ y) }⟩
 
 end ContinuousMap
-

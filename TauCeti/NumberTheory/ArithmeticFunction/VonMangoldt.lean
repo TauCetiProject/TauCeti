@@ -38,4 +38,3 @@ theorem summable_nonprime_div :
   simpa only [h] using summable_residueClass_non_primes_div (1 : ZMod 1)
 
 end ArithmeticFunction.vonMangoldt
-
