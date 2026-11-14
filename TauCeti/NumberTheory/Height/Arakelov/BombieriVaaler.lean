@@ -103,21 +103,7 @@ theorem exists_linearIndependent_intPoints_prod_norm_le (V : Submodule ℚ (ι �
       V.intPoints.subtype V.intPoints.ker_subtype
   set e := finCongr (finrank_realSpan V)
   refine ⟨fun l ↦ u (e.symm l), hlin.comp _ e.symm.injective, fun l ↦ (u _).2, fun l ↦ ?_, ?_⟩
-  · -- Dividing `u i` by the gcd `g` of its coordinates gives an integral point `y` of `V` with
-    -- `g • y = a i`, so `g` is a unit by primitivity of `a i`.
-    set i := e.symm l
-    choose y hy using fun j ↦ Finset.gcd_dvd (f := (u i : ι → ℤ)) (Finset.mem_univ j)
-    set g := Finset.univ.gcd (u i : ι → ℤ)
-    have hg : g ≠ 0 := fun h ↦ hlin.ne_zero i (funext fun j ↦ Finset.gcd_eq_zero_iff.1 h j
-      (Finset.mem_univ j))
-    have hgy : g • y = (u i : ι → ℤ) := funext fun j ↦ (hy j).symm
-    have hyV : y ∈ V.intPoints := mem_intPoints_of_smul_mem hg (hgy ▸ (u i).2)
-    set w := V.intPointsEquivIntLattice ⟨y, hyV⟩
-    have hgw : g • (w : V.realSpan) = a i := by
-      ext j
-      simp only [w, coe_smul_of_tower, PiLp.smul_apply, coe_intPointsEquivIntLattice_apply,
-        zsmul_eq_mul, ← hu, hy j, Int.cast_mul]
-    exact Finset.normalize_gcd.symm.trans (normalize_eq_one.2 (hprim i _ w.2 g hgw))
+  · exact gcd_intPointsEquivIntLattice_symm_eq_one V (hprim _)
   · refine (Finset.prod_le_prod₀ (fun l _ ↦ norm_nonneg _) fun l _ ↦ ?_).trans
       (((e.symm.prod_comp fun i ↦ ‖WithLp.ofLp (a i : EuclideanSpace ℝ ι)‖)).le.trans hle)
     refine (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun j ↦ ?_
