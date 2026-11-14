@@ -75,7 +75,7 @@ theorem le_log_floor_factorial (hx : 1 ≤ x) :
   have hn₀ : ⌊x⌋₊ ≠ 0 := one_le_iff_ne_zero.mp <| one_le_floor_iff x |>.mpr hx
   have hn : (1 : ℝ) ≤ ⌊x⌋₊ := by exact_mod_cast one_le_floor_iff x |>.mpr hx
   set n : ℝ := (⌊x⌋₊ : ℝ)
-  have hnx : n ≤ x := floor_le (by linarith)
+  have _ : n ≤ x := floor_le (by linarith)
   have hxn : x < n + 1 := lt_floor_add_one x
   -- The increment of `t log t - t` from `n` to `x` is at most `(x - n) log x ≤ log x`, since
   -- `n (log x - log n) ≤ n (x / n - 1) = x - n`.

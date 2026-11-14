@@ -88,9 +88,9 @@ theorem eq_zero_of_isIdempotentElem_of_mem_separatingSpace (θ : A →ₙₐ[ℂ
   -- `θ` does not increase spectral radii, so by Gelfand's formula in the unitization the Gelfand
   -- radius of `y n` is at most `‖x n‖`.
   have hyx (n : ℕ) : gelfandRadius (y n) ≤ ‖x n‖ := by
-    have h := (spectralRadius_apply_le θ (x n)).trans (spectralRadius_le_nnnorm (x n))
+    have h := (spectralRadius_apply_le θ (x n)).trans (spectralRadius_le_nnNorm (x n))
     rw [TauCeti.spectralRadius_eq_gelfandRadius_toLp_inr] at h
-    simpa only [y, hι, toReal_coe_nnnorm] using
+    simpa only [y, hι, toReal_coe_nnNorm] using
       (ENNReal.ofReal_le_iff_le_toReal ENNReal.coe_ne_top).1 h
   -- `1 - P + y n → 1`, so it is eventually a unit.
   have hW : Tendsto (fun n ↦ 1 - P + y n) atTop (𝓝 1) := by

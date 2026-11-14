@@ -112,7 +112,6 @@ theorem exists_measurePreserving_graphPlan_prod_eq (hπ : IsCoupling π μ ν)
   let I : Set ι := {i | 0 < μ (A i)}
   have hI : I.Countable := Measure.countable_meas_pos_of_disjoint_iUnion hAm hAd
   have : Countable I := hI.to_subtype
-  let A' : Option I → Set X := fun o ↦ o.elim (⋃ i : I, A i)ᶜ fun i ↦ A i
   obtain ⟨hA'm, hA'd, hA'u⟩ := measurable_disjoint_iUnion_option (Z := fun i : I ↦ A i)
     (fun i ↦ hAm i) fun i j hij ↦ hAd fun h ↦ hij (Subtype.ext h)
   obtain ⟨T, hT, hcell⟩ :=
