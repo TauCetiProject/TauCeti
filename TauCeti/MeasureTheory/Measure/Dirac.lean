@@ -202,6 +202,19 @@ theorem isProbabilityMeasure_sum_smul_dirac {J X : Type*} [Fintype J] [Measurabl
   Measure.sum_fintype (fun j ↦ w j • Measure.dirac (y j)) ▸
     (hw ▸ hasSum_fintype w).isProbabilityMeasure_sum_dirac_nnreal
 
+/-- A finite nonnegative linear combination `∑ i ∈ t, w i • δ_{y i}` of Dirac measures gives
+nonzero mass to any set containing an entry `y j` (`j ∈ t`) of nonzero weight `w j ≠ 0`. -/
+theorem sum_smul_dirac_apply_ne_zero_of_mem {ι X : Type*} [MeasurableSpace X] {t : Finset ι}
+    {w : ι → ℝ≥0} {y : ι → X} {j : ι} (hjt : j ∈ t) (hj : w j ≠ 0) {s : Set X}
+    (hjs : y j ∈ s) : (∑ i ∈ t, w i • Measure.dirac (y i)) s ≠ 0 := by
+  refine ne_of_gt ?_
+  calc (0 : ℝ≥0∞) < w j := ENNReal.coe_pos.2 (pos_iff_ne_zero.2 hj)
+    _ = (w j • Measure.dirac (y j)) s := by simp [Measure.dirac_apply_of_mem hjs]
+    _ ≤ ∑ i ∈ t, (w i • Measure.dirac (y i)) s :=
+        Finset.single_le_sum (f := fun i ↦ (w i • Measure.dirac (y i)) s)
+          (fun _ _ ↦ bot_le) hjt
+    _ = (∑ i ∈ t, w i • Measure.dirac (y i)) s := by rw [FunLike.coe_sum, Finset.sum_apply]
+
 /-- If a sum of measures is a Dirac mass, both summands are multiples of that Dirac mass. -/
 theorem eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableSpace X]
     {μ ν : Measure X} {x : X}
