@@ -192,59 +192,55 @@ theorem units_eq_one_or_neg_one_of_neg (hneg : D < 0) (h₃ : D ≠ -3) (h₄ : 
 /-- Apart from the two exceptional negative discriminants, the unit group has order two. -/
 theorem card_units_of_neg_of_ne (hneg : D < 0) (h₃ : D ≠ -3) (h₄ : D ≠ -4) :
     Nat.card (toSubalgebra D hD)ˣ = 2 := by
-  let f : Fin 2 → (toSubalgebra D hD)ˣ := ![1, -1]
-  have hf : Function.Bijective f := by
-    constructor
-    · intro i j hij
-      fin_cases i <;> fin_cases j <;> first | rfl |
-        (have h := congrArg (fun u : (toSubalgebra D hD)ˣ ↦
-          (((u : toSubalgebra D hD) : QuadraticAlgebra ℚ (D : ℚ) 0).re)) hij
-         norm_num [f] at h)
-    · intro u
-      rcases units_eq_one_or_neg_one_of_neg D hD hneg h₃ h₄ u with h | h
-      · exact ⟨0, h.symm⟩
-      · exact ⟨1, h.symm⟩
-  simpa using (Nat.card_eq_of_bijective f hf).symm
+  refine Nat.card_eq_two_iff.mpr ⟨1, -1, fun h ↦ ?_, Set.eq_univ_of_forall fun u ↦ ?_⟩
+  · have h := congrArg (fun u : (toSubalgebra D hD)ˣ ↦
+      (((u : toSubalgebra D hD) : QuadraticAlgebra ℚ (D : ℚ) 0).re)) h
+    norm_num at h
+  · rcases units_eq_one_or_neg_one_of_neg D hD hneg h₃ h₄ u with h | h <;> simp [h]
 
 private def negFourUnitary (i : Fin 4) : unitary (QuadraticAlgebra ℤ (-5) (-4)) :=
   ⟨![⟨1, 0⟩, ⟨-1, 0⟩, ⟨2, 1⟩, ⟨-2, -1⟩] i, by
     apply QuadraticAlgebra.norm_eq_one_iff_mem_unitary.mp
     fin_cases i <;> norm_num [QuadraticAlgebra.norm_def]⟩
 
-private theorem negFourUnitary_bijective : Function.Bijective negFourUnitary := by
-  constructor
-  · intro i j hij
-    fin_cases i <;> fin_cases j <;> first | rfl |
-      (have h := congrArg (fun z : unitary (QuadraticAlgebra ℤ (-5) (-4)) ↦
-        ((z : QuadraticAlgebra ℤ (-5) (-4)).re, (z : QuadraticAlgebra ℤ (-5) (-4)).im)) hij
-       norm_num [negFourUnitary] at h)
-  · intro z
-    have hz := QuadraticAlgebra.norm_eq_one_iff_mem_unitary.mpr z.property
-    norm_num [QuadraticAlgebra.norm_def] at hz
-    have hi : (z : QuadraticAlgebra ℤ (-5) (-4)).im ^ 2 ≤ 1 := by
-      nlinarith [sq_nonneg ((z : QuadraticAlgebra ℤ (-5) (-4)).re - 2 * z.val.im)]
-    have hb : -1 ≤ z.val.im ∧ z.val.im ≤ 1 := by constructor <;> nlinarith
-    have hc : z.val.im = -1 ∨ z.val.im = 0 ∨ z.val.im = 1 := by omega
-    rcases hc with h | h | h
-    · have hr : z.val.re = -2 := by rw [h] at hz; nlinarith [hz]
-      refine ⟨3, ?_⟩
+private theorem negFourUnitary_injective : Function.Injective negFourUnitary := by
+  intro i j hij
+  fin_cases i <;> fin_cases j <;> first | rfl |
+    (have h := congrArg (fun z : unitary (QuadraticAlgebra ℤ (-5) (-4)) ↦
+      ((z : QuadraticAlgebra ℤ (-5) (-4)).re, (z : QuadraticAlgebra ℤ (-5) (-4)).im)) hij
+     norm_num [negFourUnitary] at h)
+
+private theorem negFourUnitary_surjective : Function.Surjective negFourUnitary := by
+  intro z
+  have hz := QuadraticAlgebra.norm_eq_one_iff_mem_unitary.mpr z.property
+  norm_num [QuadraticAlgebra.norm_def] at hz
+  have hi : (z : QuadraticAlgebra ℤ (-5) (-4)).im ^ 2 ≤ 1 := by
+    nlinarith [sq_nonneg ((z : QuadraticAlgebra ℤ (-5) (-4)).re - 2 * z.val.im)]
+  have hb : -1 ≤ z.val.im ∧ z.val.im ≤ 1 := by constructor <;> nlinarith
+  have hc : z.val.im = -1 ∨ z.val.im = 0 ∨ z.val.im = 1 := by omega
+  rcases hc with h | h | h
+  · have hr : z.val.re = -2 := by rw [h] at hz; nlinarith [hz]
+    refine ⟨3, ?_⟩
+    apply Subtype.ext
+    ext <;> simp [negFourUnitary, h, hr]
+  · have hr : z.val.re = 1 ∨ z.val.re = -1 := by
+      rw [h] at hz
+      apply sq_eq_one_iff.mp
+      nlinarith [hz]
+    rcases hr with hr | hr
+    · refine ⟨0, ?_⟩
       apply Subtype.ext
       ext <;> simp [negFourUnitary, h, hr]
-    · have hr : z.val.re = 1 ∨ z.val.re = -1 := by
-        rw [h] at hz
-        apply sq_eq_one_iff.mp
-        nlinarith [hz]
-      rcases hr with hr | hr
-      · refine ⟨0, ?_⟩
-        apply Subtype.ext
-        ext <;> simp [negFourUnitary, h, hr]
-      · refine ⟨1, ?_⟩
-        apply Subtype.ext
-        ext <;> simp [negFourUnitary, h, hr]
-    · have hr : z.val.re = 2 := by rw [h] at hz; nlinarith [hz]
-      refine ⟨2, ?_⟩
+    · refine ⟨1, ?_⟩
       apply Subtype.ext
       ext <;> simp [negFourUnitary, h, hr]
+  · have hr : z.val.re = 2 := by rw [h] at hz; nlinarith [hz]
+    refine ⟨2, ?_⟩
+    apply Subtype.ext
+    ext <;> simp [negFourUnitary, h, hr]
+
+private theorem negFourUnitary_bijective : Function.Bijective negFourUnitary :=
+  ⟨negFourUnitary_injective, negFourUnitary_surjective⟩
 
 /-- The discriminant-minus-four order has four units. -/
 theorem card_units_neg_four : Nat.card (toSubalgebra (-4) (by decide))ˣ = 4 := by
@@ -258,52 +254,74 @@ private def negThreeUnitary (i : Fin 6) : unitary (QuadraticAlgebra ℤ (-3) (-3
     apply QuadraticAlgebra.norm_eq_one_iff_mem_unitary.mp
     fin_cases i <;> norm_num [QuadraticAlgebra.norm_def]⟩
 
-private theorem negThreeUnitary_bijective : Function.Bijective negThreeUnitary := by
-  constructor
-  · intro i j hij
-    fin_cases i <;> fin_cases j <;> first | rfl |
-      (have h := congrArg (fun z : unitary (QuadraticAlgebra ℤ (-3) (-3)) ↦
-        ((z : QuadraticAlgebra ℤ (-3) (-3)).re, (z : QuadraticAlgebra ℤ (-3) (-3)).im)) hij
-       norm_num [negThreeUnitary] at h)
-  · intro z
-    have hz := QuadraticAlgebra.norm_eq_one_iff_mem_unitary.mpr z.property
-    norm_num [QuadraticAlgebra.norm_def] at hz
-    have hi : z.val.im ^ 2 ≤ 1 := by
-      nlinarith [sq_nonneg (2 * z.val.re - 3 * z.val.im)]
-    have hb : -1 ≤ z.val.im ∧ z.val.im ≤ 1 := by constructor <;> nlinarith
-    have hc : z.val.im = -1 ∨ z.val.im = 0 ∨ z.val.im = 1 := by omega
-    rcases hc with h | h | h
-    · have hr : (z.val.re + 1) * (z.val.re + 2) = 0 := by rw [h] at hz; nlinarith [hz]
-      rcases mul_eq_zero.mp hr with hr | hr
-      · have hr' : z.val.re = -1 := by omega
-        refine ⟨4, ?_⟩
-        apply Subtype.ext
-        ext <;> simp [negThreeUnitary, h, hr']
-      · have hr' : z.val.re = -2 := by omega
-        refine ⟨5, ?_⟩
-        apply Subtype.ext
-        ext <;> simp [negThreeUnitary, h, hr']
-    · have hr : z.val.re = 1 ∨ z.val.re = -1 := by
-        rw [h] at hz
-        apply sq_eq_one_iff.mp
-        nlinarith [hz]
-      rcases hr with hr | hr
-      · refine ⟨0, ?_⟩
-        apply Subtype.ext
-        ext <;> simp [negThreeUnitary, h, hr]
-      · refine ⟨1, ?_⟩
-        apply Subtype.ext
-        ext <;> simp [negThreeUnitary, h, hr]
-    · have hr : (z.val.re - 1) * (z.val.re - 2) = 0 := by rw [h] at hz; nlinarith [hz]
-      rcases mul_eq_zero.mp hr with hr | hr
-      · have hr' : z.val.re = 1 := by omega
-        refine ⟨2, ?_⟩
-        apply Subtype.ext
-        ext <;> simp [negThreeUnitary, h, hr']
-      · have hr' : z.val.re = 2 := by omega
-        refine ⟨3, ?_⟩
-        apply Subtype.ext
-        ext <;> simp [negThreeUnitary, h, hr']
+private theorem negThreeUnitary_injective : Function.Injective negThreeUnitary := by
+  intro i j hij
+  fin_cases i <;> fin_cases j <;> first | rfl |
+    (have h := congrArg (fun z : unitary (QuadraticAlgebra ℤ (-3) (-3)) ↦
+      ((z : QuadraticAlgebra ℤ (-3) (-3)).re, (z : QuadraticAlgebra ℤ (-3) (-3)).im)) hij
+     norm_num [negThreeUnitary] at h)
+
+/-- Every unitary element of `QuadraticAlgebra ℤ (-3) (-3)` with imaginary part `-1` lies in the
+range of `negThreeUnitary`. -/
+private theorem exists_negThreeUnitary_eq_of_im_eq_neg_one
+    (z : unitary (QuadraticAlgebra ℤ (-3) (-3))) (h : z.val.im = -1) :
+    ∃ i, negThreeUnitary i = z := by
+  have hz := QuadraticAlgebra.norm_eq_one_iff_mem_unitary.mpr z.property
+  norm_num [QuadraticAlgebra.norm_def] at hz
+  have hr : (z.val.re + 1) * (z.val.re + 2) = 0 := by rw [h] at hz; nlinarith [hz]
+  rcases mul_eq_zero.mp hr with hr | hr
+  · have hr' : z.val.re = -1 := by omega
+    refine ⟨4, ?_⟩
+    apply Subtype.ext
+    ext <;> simp [negThreeUnitary, h, hr']
+  · have hr' : z.val.re = -2 := by omega
+    refine ⟨5, ?_⟩
+    apply Subtype.ext
+    ext <;> simp [negThreeUnitary, h, hr']
+
+/-- Every unitary element of `QuadraticAlgebra ℤ (-3) (-3)` with imaginary part `1` lies in the
+range of `negThreeUnitary`. -/
+private theorem exists_negThreeUnitary_eq_of_im_eq_one
+    (z : unitary (QuadraticAlgebra ℤ (-3) (-3))) (h : z.val.im = 1) :
+    ∃ i, negThreeUnitary i = z := by
+  have hz := QuadraticAlgebra.norm_eq_one_iff_mem_unitary.mpr z.property
+  norm_num [QuadraticAlgebra.norm_def] at hz
+  have hr : (z.val.re - 1) * (z.val.re - 2) = 0 := by rw [h] at hz; nlinarith [hz]
+  rcases mul_eq_zero.mp hr with hr | hr
+  · have hr' : z.val.re = 1 := by omega
+    refine ⟨2, ?_⟩
+    apply Subtype.ext
+    ext <;> simp [negThreeUnitary, h, hr']
+  · have hr' : z.val.re = 2 := by omega
+    refine ⟨3, ?_⟩
+    apply Subtype.ext
+    ext <;> simp [negThreeUnitary, h, hr']
+
+private theorem negThreeUnitary_surjective : Function.Surjective negThreeUnitary := by
+  intro z
+  have hz := QuadraticAlgebra.norm_eq_one_iff_mem_unitary.mpr z.property
+  norm_num [QuadraticAlgebra.norm_def] at hz
+  have hi : z.val.im ^ 2 ≤ 1 := by
+    nlinarith [sq_nonneg (2 * z.val.re - 3 * z.val.im)]
+  have hb : -1 ≤ z.val.im ∧ z.val.im ≤ 1 := by constructor <;> nlinarith
+  have hc : z.val.im = -1 ∨ z.val.im = 0 ∨ z.val.im = 1 := by omega
+  rcases hc with h | h | h
+  · exact exists_negThreeUnitary_eq_of_im_eq_neg_one z h
+  · have hr : z.val.re = 1 ∨ z.val.re = -1 := by
+      rw [h] at hz
+      apply sq_eq_one_iff.mp
+      nlinarith [hz]
+    rcases hr with hr | hr
+    · refine ⟨0, ?_⟩
+      apply Subtype.ext
+      ext <;> simp [negThreeUnitary, h, hr]
+    · refine ⟨1, ?_⟩
+      apply Subtype.ext
+      ext <;> simp [negThreeUnitary, h, hr]
+  · exact exists_negThreeUnitary_eq_of_im_eq_one z h
+
+private theorem negThreeUnitary_bijective : Function.Bijective negThreeUnitary :=
+  ⟨negThreeUnitary_injective, negThreeUnitary_surjective⟩
 
 /-- The discriminant-minus-three order has six units. -/
 theorem card_units_neg_three : Nat.card (toSubalgebra (-3) (by decide))ˣ = 6 := by
@@ -381,22 +399,16 @@ theorem normOneUnits_eq_one_or_neg_one_of_sq (s : ℤ) (hs : s ≠ 0)
 /-- A nonzero square-discriminant order has two norm-one units, computed in the product order. -/
 theorem card_normOneUnits_sq (s : ℤ) (hs : s ≠ 0) :
     Nat.card (normOneUnits (s ^ 2) (by rw [Int.sq_emod_four]; omega)) = 2 := by
-  let U := normOneUnits (s ^ 2) (by rw [Int.sq_emod_four]; omega)
-  let f : Fin 2 → U := ![1, ⟨-1, neg_one_mem_normOneUnits _ _⟩]
-  have hf : Function.Bijective f := by
-    constructor
-    · intro i j hij
-      fin_cases i <;> fin_cases j <;> first | rfl |
-        (have h := congrArg (fun u : U ↦
-          ((((u : (toSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega))ˣ) :
-            toSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega)) :
-              QuadraticAlgebra ℚ ((s ^ 2 : ℤ) : ℚ) 0).re)) hij
-         norm_num [f] at h)
-    · intro u
-      rcases normOneUnits_eq_one_or_neg_one_of_sq s hs u with h | h
-      · exact ⟨0, Subtype.ext h.symm⟩
-      · exact ⟨1, Subtype.ext h.symm⟩
-  simpa only [U] using (Nat.card_eq_of_bijective f hf).symm.trans (Nat.card_fin _)
+  refine Nat.card_eq_two_iff.mpr ⟨1, ⟨-1, neg_one_mem_normOneUnits _ _⟩, fun h ↦ ?_,
+    Set.eq_univ_of_forall fun u ↦ ?_⟩
+  · have h := congrArg (fun u : normOneUnits (s ^ 2) (by rw [Int.sq_emod_four]; omega) ↦
+      ((((u : (toSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega))ˣ) :
+        toSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega)) :
+          QuadraticAlgebra ℚ ((s ^ 2 : ℤ) : ℚ) 0).re)) h
+    norm_num at h
+  · rcases normOneUnits_eq_one_or_neg_one_of_sq s hs u with h | h
+    · exact Or.inl (Subtype.ext h)
+    · exact Or.inr (Subtype.ext h)
 
 /-- Nonzero square-discriminant quadratic orders have finite norm-one unit groups. -/
 theorem finite_normOneUnits_sq (s : ℤ) (hs : s ≠ 0) :
