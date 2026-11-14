@@ -191,9 +191,7 @@ source's.
 
 public section
 
-noncomputable section
-
-open MeasureTheory Filter TopologicalSpace
+open MeasureTheory Filter
 
 open scoped ENNReal NNReal Function Topology
 
