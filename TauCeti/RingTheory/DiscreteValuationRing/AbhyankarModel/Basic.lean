@@ -19,6 +19,7 @@ import Mathlib.RingTheory.Unramified.Field
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.MinimalPrime
+import TauCeti.RingTheory.LocalRing.Localization
 import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.RingTheory.Flat.NonZeroDivisors
 import TauCeti.RingTheory.IntegralClosure.Transfer
@@ -67,6 +68,8 @@ integral closure of `B` in it.
 
 * `TauCeti.abhyankarModel ϖ u e d`: the ring `(B[y]/(y ^ e − u))[x]/(x ^ d − ϖ y)`.
 * `TauCeti.abhyankarModelRoot ϖ u e d`: its element `x`.
+* `TauCeti.abhyankarModelLift`: the `B`-algebra map out of `D` given `s ^ e = u` and
+  `t ^ d = ϖ s`, sending `y` to `s` and `x` to `t`.
 * `TauCeti.abhyankarModelAwayAlgEquiv`: after inverting `ϖ`, the root extraction
   `B[x]/(x ^ (e d) − u ϖ ^ e)` is isomorphic to `D`, compatibly with the roots.
 * `TauCeti.abhyankarModelIntegralClosureAlgEquiv`: the integral closure of `B` in the root
@@ -180,6 +183,35 @@ theorem abhyankarModelKummerHom_root (hπ : algebraMap A B π = u * ϖ ^ e) :
 
 end KummerMap
 
+section Lift
+
+variable {S : Type*} [CommRing S] [Algebra B S] {ϖ u : B} {e d : ℕ}
+
+/-- The universal property of the Abhyankar model `(B[y]/(y ^ e − u))[x]/(x ^ d − ϖ y)`: the
+`B`-algebra map sending `y` to `s` and `x` to `t`, for `s ^ e = u` and `t ^ d = ϖ s`. -/
+noncomputable def abhyankarModelLift {s t : S} (hs : s ^ e = algebraMap B S u)
+    (ht : t ^ d = algebraMap B S ϖ * s) : abhyankarModel ϖ u e d →ₐ[B] S :=
+  AdjoinRoot.liftAlgHom _ (AdjoinRoot.liftAlgHom (X ^ e - C u) (Algebra.ofId B S) s (by simp [hs]))
+    t (by simp [ht])
+
+/-- `TauCeti.abhyankarModelLift` sends the root `x` to `t`. -/
+@[simp]
+theorem abhyankarModelLift_root {s t : S} (hs : s ^ e = algebraMap B S u)
+    (ht : t ^ d = algebraMap B S ϖ * s) :
+    abhyankarModelLift hs ht (abhyankarModelRoot ϖ u e d) = t :=
+  AdjoinRoot.liftAlgHom_root ..
+
+/-- `TauCeti.abhyankarModelLift` sends the element `y` to `s`. This is not `@[simp]`: simp
+rewrites the `algebraMap` inside the relator `x ^ d − ϖ y` of the Abhyankar model by
+`AdjoinRoot.algebraMap_eq`, so the left-hand side is not in simp normal form. -/
+theorem abhyankarModelLift_algebraMap_root {s t : S} (hs : s ^ e = algebraMap B S u)
+    (ht : t ^ d = algebraMap B S ϖ * s) :
+    abhyankarModelLift hs ht (algebraMap (standardTameCover B u e) (abhyankarModel ϖ u e d)
+      (AdjoinRoot.root (X ^ e - C u))) = s :=
+  (AdjoinRoot.liftAlgHom_of ..).trans (AdjoinRoot.liftAlgHom_root ..)
+
+end Lift
+
 section Away
 
 variable (ϖ u : B) (e d : ℕ)
@@ -217,43 +249,39 @@ private theorem awayRoot_pow_mul :
 
 /-- In the localization of the root extraction away from `ϖ`, the element `y = x ^ d / ϖ` is an
 `e`-th root of `u`. -/
-private noncomputable def fromAbhyankarModelBase : standardTameCover B u e →ₐ[B] Cϖ :=
-  AdjoinRoot.liftAlgHom _ (Algebra.ofId B _)
-    (awayRoot ϖ u e d Cϖ ^ d * (isUnit_algebraMap_away_left ϖ u e d Cϖ).unit⁻¹) (by
-      simp only [eval₂_sub, eval₂_X_pow, eval₂_C, AlgHom.coe_toRingHom, Algebra.ofId_apply,
-        sub_eq_zero]
-      -- `(x ^ d / ϖ) ^ e = x ^ (e d) / ϖ ^ e = u`.
-      have hw := (isUnit_algebraMap_away_left ϖ u e d Cϖ).mul_val_inv
-      calc (awayRoot ϖ u e d Cϖ ^ d * _) ^ e = awayRoot ϖ u e d Cϖ ^ (e * d) *
-              (↑(isUnit_algebraMap_away_left ϖ u e d Cϖ).unit⁻¹ : Cϖ) ^ e := by ring
-        _ = algebraMap B Cϖ u * (algebraMap B Cϖ ϖ *
-              (isUnit_algebraMap_away_left ϖ u e d Cϖ).unit⁻¹) ^ e := by
-          rw [awayRoot_pow_mul]; ring
-        _ = algebraMap B Cϖ u := by rw [hw, one_pow, mul_one])
-
-private theorem fromAbhyankarModelBase_root :
-    fromAbhyankarModelBase ϖ u e d Cϖ (AdjoinRoot.root (X ^ e - C u)) =
-      awayRoot ϖ u e d Cϖ ^ d * (isUnit_algebraMap_away_left ϖ u e d Cϖ).unit⁻¹ :=
-  AdjoinRoot.liftAlgHom_root _ _ _ _
+private theorem awayRoot_pow_mul_inv_pow :
+    (awayRoot ϖ u e d Cϖ ^ d * (isUnit_algebraMap_away_left ϖ u e d Cϖ).unit⁻¹) ^ e =
+      algebraMap B Cϖ u := by
+  -- `(x ^ d / ϖ) ^ e = x ^ (e d) / ϖ ^ e = u`.
+  have hw := (isUnit_algebraMap_away_left ϖ u e d Cϖ).mul_val_inv
+  calc (awayRoot ϖ u e d Cϖ ^ d * _) ^ e = awayRoot ϖ u e d Cϖ ^ (e * d) *
+          (↑(isUnit_algebraMap_away_left ϖ u e d Cϖ).unit⁻¹ : Cϖ) ^ e := by ring
+    _ = algebraMap B Cϖ u * (algebraMap B Cϖ ϖ *
+          (isUnit_algebraMap_away_left ϖ u e d Cϖ).unit⁻¹) ^ e := by
+      rw [awayRoot_pow_mul]; ring
+    _ = algebraMap B Cϖ u := by rw [hw, one_pow, mul_one]
 
 /-- In the localization of the root extraction away from `ϖ`, the root `x` satisfies
-`x ^ d = ϖ y`. -/
+`x ^ d = ϖ (x ^ d / ϖ)`. -/
+private theorem awayRoot_pow_eq_mul :
+    awayRoot ϖ u e d Cϖ ^ d = algebraMap B Cϖ ϖ *
+      (awayRoot ϖ u e d Cϖ ^ d * (isUnit_algebraMap_away_left ϖ u e d Cϖ).unit⁻¹) := by
+  linear_combination -awayRoot ϖ u e d Cϖ ^ d *
+    (isUnit_algebraMap_away_left ϖ u e d Cϖ).mul_val_inv
+
+/-- The map from the Abhyankar model to the localization of the root extraction away from `ϖ`,
+sending `x` to `x` and `y` to `x ^ d / ϖ`. -/
 private noncomputable def fromAbhyankarModel : abhyankarModel ϖ u e d →ₐ[B] Cϖ :=
-  AdjoinRoot.liftAlgHom _ (fromAbhyankarModelBase ϖ u e d Cϖ) (awayRoot ϖ u e d Cϖ) (by
-    simp only [eval₂_sub, eval₂_X_pow, eval₂_C, AlgHom.coe_toRingHom]
-    rw [map_mul, AlgHom.commutes, fromAbhyankarModelBase_root]
-    -- `x ^ d − ϖ (x ^ d / ϖ) = 0`.
-    linear_combination -awayRoot ϖ u e d Cϖ ^ d *
-      (isUnit_algebraMap_away_left ϖ u e d Cϖ).mul_val_inv)
+  abhyankarModelLift (awayRoot_pow_mul_inv_pow ϖ u e d Cϖ) (awayRoot_pow_eq_mul ϖ u e d Cϖ)
 
 private theorem fromAbhyankarModel_root :
     fromAbhyankarModel ϖ u e d Cϖ (abhyankarModelRoot ϖ u e d) = awayRoot ϖ u e d Cϖ :=
-  AdjoinRoot.liftAlgHom_root _ _ _ _
+  abhyankarModelLift_root ..
 
-private theorem fromAbhyankarModel_of (b : standardTameCover B u e) :
-    fromAbhyankarModel ϖ u e d Cϖ (AdjoinRoot.of _ b) =
-      fromAbhyankarModelBase ϖ u e d Cϖ b :=
-  AdjoinRoot.liftAlgHom_of _ _ _ _ _
+private theorem fromAbhyankarModel_of_root :
+    fromAbhyankarModel ϖ u e d Cϖ (AdjoinRoot.of _ (AdjoinRoot.root (X ^ e - C u))) =
+      awayRoot ϖ u e d Cϖ ^ d * (isUnit_algebraMap_away_left ϖ u e d Cϖ).unit⁻¹ :=
+  abhyankarModelLift_algebraMap_root ..
 
 omit [IsLocalization.Away (algebraMap B (standardTameCover B (u * ϖ ^ e) (e * d)) ϖ) Cϖ] in
 private theorem isUnit_toAbhyankarModel_away :
@@ -294,7 +322,7 @@ noncomputable def abhyankarModelAwayAlgEquiv : Cϖ ≃ₐ[B] Dϖ :=
       apply IsLocalization.algHom_ext (.powers (algebraMap B (abhyankarModel ϖ u e d) ϖ))
       ext
       · simp only [AlgHom.comp_apply, AdjoinRoot.coe_ofAlgHom, AlgHom.id_apply, hD, hG,
-          fromAbhyankarModel_of, fromAbhyankarModelBase_root]
+          fromAbhyankarModel_of_root]
         -- `F` fixes `x` and inverts `ϖ`, and `x ^ d = ϖ y` in the Abhyankar model.
         have hx : F (awayRoot ϖ u e d Cϖ) = algebraMap _ Dϖ (abhyankarModelRoot ϖ u e d) := by
           rw [hF, abhyankarModelKummerHom_root]
@@ -342,8 +370,8 @@ theorem abhyankarModelAwayAlgEquiv_symm_of_root :
         (⟨_, Submonoid.mem_powers _⟩ :
           Submonoid.powers (algebraMap B (standardTameCover B (u * ϖ ^ e) (e * d)) ϖ)) :=
   (IsLocalization.Away.lift_eq _ (isUnit_fromAbhyankarModel_away ϖ u e d Cϖ) _).trans <| by
-    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, fromAbhyankarModel_of,
-      fromAbhyankarModelBase_root, IsLocalization.eq_mk'_iff_mul_eq,
+    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, fromAbhyankarModel_of_root,
+      IsLocalization.eq_mk'_iff_mul_eq,
       ← IsScalarTower.algebraMap_apply, mul_assoc, IsUnit.val_inv_mul, mul_one, map_pow]
 
 end Away
@@ -549,13 +577,7 @@ theorem isSeparable_residueField_localization_abhyankarModel (hϖ : ϖ ∈ maxim
   have : M.LiesOver (maximalIdeal B) :=
     ⟨by rw [← IsLocalization.AtPrime.under_maximalIdeal (Localization.AtPrime M) M,
       Ideal.under_under, ← Ideal.over_def _ (maximalIdeal B)]⟩
-  have := isSeparable_abhyankarModel_quotient M hϖ hu he hd
-  -- Localizing at `M` does not change the quotient by `M`, and `ResidueField R` is defined as
-  -- `R ⧸ maximalIdeal R` with the quotient algebra structures.
-  let τ := (IsLocalization.AtPrime.equivQuotMaximalIdeal M (Localization.AtPrime M)).restrictScalars
-    B
-  exact (AlgEquiv.Algebra.isSeparable_iff (τ.extendScalarsOfSurjective (R := B)
-    (S := B ⧸ maximalIdeal B) Ideal.Quotient.mk_surjective)).mp inferInstance
+  exact isSeparable_residueField_localization M (isSeparable_abhyankarModel_quotient M hϖ hu he hd)
 
 end LocalRing
 
