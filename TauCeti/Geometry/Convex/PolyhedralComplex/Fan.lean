@@ -21,9 +21,6 @@ conical, this recovers every cell, preserves the support and inverts the fan-to-
 construction. Subdivision of conical complexes with salient cone cells then agrees with fan
 subdivision.
 
-Rational cone duality characterizes the lattice-rational cones among rational-normal polyhedra.
-Exposed faces of a polyhedral cone identify its polyhedral faces with its cone faces.
-
 Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Fan.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
 commit `7f1e4c7714fb020473694755ad8748c8f15d0e7f` (Apache 2.0).

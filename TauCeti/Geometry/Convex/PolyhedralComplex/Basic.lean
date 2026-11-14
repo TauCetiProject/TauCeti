@@ -265,7 +265,7 @@ theorem cells_univ : (univ h).cells = {Set.univ} := by
 theorem mem_cells_univ {P : Set V} : P ∈ (univ h).cells ↔ P = Set.univ := by
   simp
 
-/-- The only cell of the whole-space complex is the carrier of the top cone. -/
+/-- The whole-space complex is conical. -/
 @[simp]
 theorem isConical_univ : (univ h).IsConical := by
   refine isConical_iff.mpr fun P hP => ?_
