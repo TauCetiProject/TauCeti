@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.LinearMap.Defs
 public import Mathlib.Algebra.Order.Group.Defs
 public import Mathlib.Algebra.Order.Hom.Monoid
 public import Mathlib.Geometry.Convex.Cone.Pointed
+public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.Combinatorics.Hive.Lattice
 public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
 import Mathlib.Algebra.Order.Ring.Int
@@ -60,8 +61,10 @@ weakly along each side (`Hive.boundary_antitone`), making each side of an intege
   `TauCeti.Hive.ofRhombusConcave_eq_iff`.
 * `TauCeti.Hive.mixedDiff_nonpos_of_isUnitStep`,
   `TauCeti.Hive.counterexampleSeven_nonunit_mixedDiff_pos`.
-* `TauCeti.Hive.sum_boundary`, `TauCeti.Hive.boundary_antitone`.
-* `TauCeti.Hive.rotate_rotate_apply`, `TauCeti.Hive.rotate_rotate_ofChart_apply`,
+* `TauCeti.Hive.sum_boundary`, `TauCeti.Hive.boundary_antitone`,
+  `TauCeti.Hive.apply_ofChart_zero_left`, `TauCeti.Hive.apply_ofChart_right`,
+  `TauCeti.Hive.apply_ofChart_self`.
+* `TauCeti.Hive.rotate_rotate_apply`, `TauCeti.Hive.rotate_rotate_apply_ofChart`,
   `TauCeti.Hive.boundary_rotate`, `TauCeti.Hive.boundaryWeight_reflect`,
   `TauCeti.Hive.boundary_injective_two`.
 
@@ -176,75 +179,6 @@ instance [Preorder R] [DecidableRel (· ≤ · : R → R → Prop)] (f : Vertex 
     Decidable (IsRhombusConcave f) :=
   decidable_of_iff _ (isRhombusConcave_def f).symm
 
-private theorem long_diag_of_sub_x_eq_neg_two {b d : Vertex n}
-    (h : b.sqDist d = 6) (hx : (d.x : ℤ) - b.x = -2) :
-    (d.y : ℤ) - b.y = 1 ∧ (d.z : ℤ) - b.z = 1 := by
-  rw [Vertex.sqDist_comm, Vertex.sqDist_def, hx] at h
-  have hz : (d.z : ℤ) - b.z = 2 - ((d.y : ℤ) - b.y) := by
-    have := b.sum_eq; have := d.sum_eq; omega
-  rw [hz] at h
-  have hy2 : ((d.y : ℤ) - b.y - 1) ^ 2 = 0 := by
-    linarith [(by ring : (-2 : ℤ) ^ 2 + ((d.y : ℤ) - b.y) ^ 2 + (2 - ((d.y : ℤ) - b.y)) ^ 2 =
-      6 + 2 * ((d.y : ℤ) - b.y - 1) ^ 2)]
-  have : (d.y : ℤ) - b.y - 1 = 0 := sq_eq_zero_iff.mp hy2
-  omega
-
-private theorem long_diag_cases_of_sqDist_six {b d : Vertex n} (h : b.sqDist d = 6) :
-    ((d.x : ℤ) - b.x = -1 ∧ (d.y : ℤ) - b.y = 2 ∧ (d.z : ℤ) - b.z = -1) ∨
-      ((d.x : ℤ) - b.x = 1 ∧ (d.y : ℤ) - b.y = -2 ∧ (d.z : ℤ) - b.z = 1) ∨
-      ((d.x : ℤ) - b.x = -1 ∧ (d.y : ℤ) - b.y = -1 ∧ (d.z : ℤ) - b.z = 2) ∨
-      ((d.x : ℤ) - b.x = 1 ∧ (d.y : ℤ) - b.y = 1 ∧ (d.z : ℤ) - b.z = -2) ∨
-      ((d.x : ℤ) - b.x = -2 ∧ (d.y : ℤ) - b.y = 1 ∧ (d.z : ℤ) - b.z = 1) ∨
-      ((d.x : ℤ) - b.x = 2 ∧ (d.y : ℤ) - b.y = -1 ∧ (d.z : ℤ) - b.z = -1) := by
-  have hsq : ((d.x : ℤ) - b.x) ^ 2 + ((d.y : ℤ) - b.y) ^ 2 + ((d.z : ℤ) - b.z) ^ 2 = 6 := by
-    simpa [Vertex.sqDist_def] using (Vertex.sqDist_comm b d).symm.trans h
-  have hbnd {u v w : ℤ} (hu : u ^ 2 + v ^ 2 + w ^ 2 = 6) : -2 ≤ u ∧ u ≤ 2 :=
-    ⟨by by_contra _; linarith [sq_nonneg (u + 3), sq_nonneg v, sq_nonneg w,
-        (by ring : (u + 3) ^ 2 = u ^ 2 + 6 * u + 9), (by omega : u ≤ -3)],
-     by by_contra _; linarith [sq_nonneg (u - 3), sq_nonneg v, sq_nonneg w,
-        (by ring : (u - 3) ^ 2 = u ^ 2 - 6 * u + 9), (by omega : 3 ≤ u)]⟩
-  have := hbnd hsq
-  have := hbnd (by linarith :
-    ((d.y : ℤ) - b.y) ^ 2 + ((d.x : ℤ) - b.x) ^ 2 + ((d.z : ℤ) - b.z) ^ 2 = 6)
-  have := hbnd (by linarith :
-    ((d.z : ℤ) - b.z) ^ 2 + ((d.x : ℤ) - b.x) ^ 2 + ((d.y : ℤ) - b.y) ^ 2 = 6)
-  have hsq1 {u : ℤ} (h1 : -1 ≤ u) (h2 : u ≤ 1) : u ^ 2 ≤ 1 :=
-    (Int.abs_le_sqrt_iff_sq_le (a := u) (b := 1) (by decide)).mp (abs_le.mpr ⟨h1, h2⟩)
-  have hex : ((d.y : ℤ) - b.y = 2 ∨ (d.y : ℤ) - b.y = -2) ∨
-      ((d.z : ℤ) - b.z = 2 ∨ (d.z : ℤ) - b.z = -2) ∨
-      ((d.x : ℤ) - b.x = -2 ∨ (d.x : ℤ) - b.x = 2) := by
-    by_contra _
-    linarith [hsq1 (u := (d.x : ℤ) - b.x) (by omega) (by omega),
-      hsq1 (u := (d.y : ℤ) - b.y) (by omega) (by omega),
-      hsq1 (u := (d.z : ℤ) - b.z) (by omega) (by omega)]
-  rcases hex with (hdy | hdy) | (hdz | hdz) | (hdx | hdx)
-  · have hr := long_diag_of_sub_x_eq_neg_two (b := d.rotate.rotate) (d := b.rotate.rotate)
-      (by simpa [Vertex.sqDist_comm] using h) (by simp; omega)
-    simp only [Vertex.rotate_x, Vertex.rotate_y, Vertex.rotate_z] at hr
-    exact Or.inl ⟨by omega, hdy, by omega⟩
-  · have hr := long_diag_of_sub_x_eq_neg_two (b := b.rotate.rotate) (d := d.rotate.rotate)
-      (by simpa using h) (by simp; omega)
-    simp only [Vertex.rotate_x, Vertex.rotate_y, Vertex.rotate_z] at hr
-    exact Or.inr (Or.inl ⟨by omega, hdy, by omega⟩)
-  · have hr := long_diag_of_sub_x_eq_neg_two (b := d.rotate) (d := b.rotate)
-      (by simpa [Vertex.sqDist_comm] using h) (by simp; omega)
-    simp only [Vertex.rotate_y, Vertex.rotate_z] at hr
-    exact Or.inr (Or.inr (Or.inl ⟨by omega, by omega, hdz⟩))
-  · have hr := long_diag_of_sub_x_eq_neg_two (b := b.rotate) (d := d.rotate)
-      (by simpa using h) (by simp; omega)
-    simp only [Vertex.rotate_y, Vertex.rotate_z] at hr
-    exact Or.inr (Or.inr (Or.inr (Or.inl ⟨by omega, by omega, hdz⟩)))
-  · have hr := long_diag_of_sub_x_eq_neg_two h hdx
-    exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨hdx, hr.1, hr.2⟩))))
-  · have := long_diag_of_sub_x_eq_neg_two (b := d) (d := b)
-      ((Vertex.sqDist_comm b d).symm.trans h) (by omega)
-    exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨hdx, by omega, by omega⟩))))
-
-private theorem eq_ofChart_of_z_x {i j : ℕ} {p : Vertex n} {hij : i ≤ j} {hj : j ≤ n}
-    (hz : p.z = i) (hx : p.x + j = n) :
-    p = Vertex.ofChart n i j hij hj := by
-  have := p.sum_eq; ext <;> simp <;> omega
-
 /-- **Product-chart characterization of rhombus concavity**: a lattice function `f : Vertex n → R`
 is rhombus-concave if and only if it satisfies the three product-chart unit-rhombus families
 (`isRhombus_ofChart_diag_y`, `isRhombus_ofChart_diag_z`, and `isRhombus_ofChart_diag_x`). -/
@@ -264,51 +198,14 @@ theorem isRhombusConcave_iff_ofChart [Preorder R] (f : Vertex n → R) :
         f (Vertex.ofChart n i j hij (by omega)) +
           f (Vertex.ofChart n (i + 1) (j + 2) (by omega) hj) ≤
           f (Vertex.ofChart n i (j + 1) (by omega) (by omega)) +
-            f (Vertex.ofChart n (i + 1) (j + 1) (Nat.succ_le_succ hij) (by omega))) := by
-  rw [isRhombusConcave_def]
-  refine ⟨fun hf => ⟨fun i j hij hj => hf (isRhombus_ofChart_diag_y hij hj),
+            f (Vertex.ofChart n (i + 1) (j + 1) (Nat.succ_le_succ hij) (by omega))) :=
+  ⟨fun hf => ⟨fun i j hij hj => hf (isRhombus_ofChart_diag_y hij hj),
     fun i j hij hj => hf (isRhombus_ofChart_diag_z hij hj),
-    fun i j hij hj => hf (isRhombus_ofChart_diag_x hij hj)⟩, ?_⟩
-  rintro ⟨hgtY, hgtZ, hgtX⟩
-  have hr_of_eq {a b b' c d d' a' c' : Vertex n} (hr : IsRhombus a b c d)
-      (hb : b = b') (hd : d = d') (hr' : IsRhombus a' b' c' d')
-      (hle : f b' + f d' ≤ f a' + f c') : f b + f d ≤ f a + f c := by
-    subst hb; subst hd
-    exact hle.trans_eq (hr'.add_obtuse_eq hr f)
-  have hpos {a b c d : Vertex n} (hr : IsRhombus a b c d)
-      (hcase : ((d.x : ℤ) - b.x = -1 ∧ (d.y : ℤ) - b.y = 2 ∧ (d.z : ℤ) - b.z = -1) ∨
-        ((d.x : ℤ) - b.x = -1 ∧ (d.y : ℤ) - b.y = -1 ∧ (d.z : ℤ) - b.z = 2) ∨
-        ((d.x : ℤ) - b.x = -2 ∧ (d.y : ℤ) - b.y = 1 ∧ (d.z : ℤ) - b.z = 1)) :
-      f b + f d ≤ f a + f c := by
-    have := b.sum_eq; have := d.sum_eq
-    rcases hcase with ⟨_, _, _⟩ | ⟨_, _, _⟩ | ⟨_, _, _⟩
-    · have hij : b.z - 1 < n - b.x := by omega
-      have hj : n - b.x < n := by omega
-      exact hr_of_eq hr (eq_ofChart_of_z_x (by omega) (by omega))
-        (eq_ofChart_of_z_x (by omega) (by omega))
-        (isRhombus_ofChart_diag_y hij hj) (hgtY (b.z - 1) (n - b.x) hij hj)
-    · have hij : b.z < n - b.x := by omega
-      have hj : n - b.x < n := by omega
-      exact hr_of_eq hr (eq_ofChart_of_z_x rfl (by omega))
-        (eq_ofChart_of_z_x (by omega) (by omega))
-        (isRhombus_ofChart_diag_z hij hj) (hgtZ b.z (n - b.x) hij hj)
-    · have hij : b.z ≤ n - b.x := by omega
-      have hj : n - b.x + 2 ≤ n := by omega
-      exact hr_of_eq hr (eq_ofChart_of_z_x rfl (by omega))
-        (eq_ofChart_of_z_x (by omega) (by omega))
-        (isRhombus_ofChart_diag_x hij hj) (hgtX b.z (n - b.x) hij hj)
-  intro a b c d hr
-  rcases long_diag_cases_of_sqDist_six hr.long with
-    ⟨hx, hy, hz⟩ | ⟨_, _, _⟩ | ⟨hx, hy, hz⟩ | ⟨_, _, _⟩ | ⟨hx, hy, hz⟩ | ⟨_, _, _⟩
-  · exact hpos hr (Or.inl ⟨hx, hy, hz⟩)
-  · rw [add_comm (f b) (f d)]
-    exact hpos hr.reverse (Or.inl ⟨by omega, by omega, by omega⟩)
-  · exact hpos hr (Or.inr (Or.inl ⟨hx, hy, hz⟩))
-  · rw [add_comm (f b) (f d)]
-    exact hpos hr.reverse (Or.inr (Or.inl ⟨by omega, by omega, by omega⟩))
-  · exact hpos hr (Or.inr (Or.inr ⟨hx, hy, hz⟩))
-  · rw [add_comm (f b) (f d)]
-    exact hpos hr.reverse (Or.inr (Or.inr ⟨by omega, by omega, by omega⟩))
+    fun i j hij hj => hf (isRhombus_ofChart_diag_x hij hj)⟩,
+   fun ⟨hy, hz, hx⟩ _ _ _ _ hr => hr.elim_ofChart
+    (P := fun a b c d => f b + f d ≤ f a + f c)
+    (fun {_ _ c _} h => by rwa [add_comm (f c)])
+    (fun {_ _ _ d} h => by rwa [add_comm (f d)]) hy hz hx⟩
 
 /-- A barycentric-affine function `p ↦ c₀ + p.x • α + p.y • β + p.z • γ` on `Vertex n`. -/
 def barycentricLinear (c₀ α β γ : R) (p : Vertex n) : R := c₀ + p.x • α + p.y • β + p.z • γ
@@ -753,6 +650,31 @@ theorem apply_edgePoint_two (h : Hive n R) (k : Fin (n + 1)) :
       _ = -h (Vertex.edgePoint n 2 0) + h (Vertex.edgePoint n 2 0) := by rw [hcompl]
       _ = 0 := neg_add_cancel _)
 
+/-- Along `A → B` (`i = 0`), `h(0, j)` equals `TauCeti.prefixSum j (h.boundary 0)`. -/
+theorem apply_ofChart_zero_left (h : Hive n R) {j : ℕ} (hj : j ≤ n) :
+    h (Vertex.ofChart n 0 j (Nat.zero_le j) hj) = TauCeti.prefixSum j (h.boundary 0) := by
+  rw [Vertex.ofChart_zero_left, h.apply_edgePoint_zero, TauCeti.prefixSum_def]
+
+/-- Along `B → C` (`j = n`), `h(i, n)` equals
+`(∑ r, h.boundary 0 r) + TauCeti.prefixSum i (h.boundary 1)`. -/
+theorem apply_ofChart_right (h : Hive n R) {i : ℕ} (hi : i ≤ n) :
+    h (Vertex.ofChart n i n hi le_rfl) =
+      (∑ r : Fin n, h.boundary 0 r) + TauCeti.prefixSum i (h.boundary 1) := by
+  rw [Vertex.ofChart_right, h.apply_edgePoint_one, TauCeti.prefixSum_def]
+
+/-- Along `C → A` (`i = j`), `h(j, j) = TauCeti.prefixSum j (fun r => -h.boundary 2 r.rev)`. -/
+theorem apply_ofChart_self (h : Hive n R) {j : ℕ} (hj : j ≤ n) :
+    h (Vertex.ofChart n j j le_rfl hj) = TauCeti.prefixSum j (fun r => -h.boundary 2 r.rev) := by
+  rw [Vertex.ofChart_self, h.apply_edgePoint_two, Fin.val_mk, Finset.sum_filter,
+    TauCeti.prefixSum_def, Finset.sum_filter, ← Finset.sum_neg_distrib]
+  refine (Equiv.sum_comp Fin.revPerm
+    (fun k : Fin n => -(if n - j ≤ k.val then h.boundary 2 k else 0))).symm.trans
+    (Finset.sum_congr rfl fun r _ => ?_)
+  simp only [Fin.revPerm_apply, Fin.val_rev]
+  by_cases hr : r.val < j
+  · rw [ite_eq_left (by omega), ite_eq_left hr]
+  · rw [ite_eq_right (by have := r.isLt; omega), ite_eq_right hr, neg_zero]
+
 /-- Side `0` edge differences of any rhombus-concave function are antitone. -/
 theorem antitone_boundaryLinear_zero_of_isRhombusConcave [IsOrderedAddMonoid R]
     {f : Vertex n → R} (hf : IsRhombusConcave f) : Antitone (boundaryLinear ℤ n R f 0) := by
@@ -832,6 +754,21 @@ theorem sum_productBoundary_eq_zero_iff (lam μ γ : DominantWeight n) :
   simp only [Fin.sum_univ_three, productBoundary_zero, productBoundary_one, productBoundary_two,
     DominantWeight.sum_dual]; omega
 
+theorem apply_ofChart_zero_left_of_productBoundary {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {j : ℕ} (hj : j ≤ n) :
+    h (Vertex.ofChart n 0 j (Nat.zero_le j) hj) = TauCeti.prefixSum j lam.1 := by
+  rw [h.apply_ofChart_zero_left hj, hb, productBoundary_zero]
+
+theorem apply_ofChart_right_of_productBoundary {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {i : ℕ} (hi : i ≤ n) :
+    h (Vertex.ofChart n i n hi le_rfl) = (∑ r : Fin n, lam.1 r) + TauCeti.prefixSum i μ.1 := by
+  rw [h.apply_ofChart_right hi, hb, productBoundary_zero, productBoundary_one]
+
+theorem apply_ofChart_self_of_productBoundary {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {j : ℕ} (hj : j ≤ n) :
+    h (Vertex.ofChart n j j le_rfl hj) = TauCeti.prefixSum j γ.1 := by
+  rw [h.apply_ofChart_self hj]; exact congrArg (TauCeti.prefixSum j) (funext fun r => by simp [hb])
+
 end Boundary
 
 /-! ### Dihedral action on normalized hives and boundaries -/
@@ -847,6 +784,26 @@ def rotate [IsOrderedAddMonoid R] (h : Hive n R) : Hive n R :=
 @[simp] theorem rotate_apply [IsOrderedAddMonoid R] (h : Hive n R) (p : Vertex n) :
     h.rotate p = h p.rotate - h (Vertex.cornerA n).rotate := (rfl)
 
+@[simp] theorem rotate_zero [IsOrderedAddMonoid R] : (0 : Hive n R).rotate = 0 := by
+  ext p; simp
+
+@[simp] theorem rotate_add [IsOrderedAddMonoid R] (h₁ h₂ : Hive n R) :
+    (h₁ + h₂).rotate = h₁.rotate + h₂.rotate := by
+  ext p; simp only [rotate_apply, add_apply]; abel
+
+@[simp] theorem rotate_nsmul [IsOrderedAddMonoid R] (k : ℕ) (h : Hive n R) :
+    (k • h).rotate = k • h.rotate := by
+  ext p; simp [rotate_apply, smul_sub]
+
+@[simp] theorem rotate_affine [IsOrderedAddMonoid R] (β γ : R) :
+    (affine n β γ).rotate = affine n (γ - β) (-β) := by
+  ext p
+  have hsum : n • β = p.x • β + p.y • β + p.z • β := by
+    rw [← add_nsmul, ← add_nsmul, p.sum_eq]
+  simp only [rotate_apply, affine_apply, Vertex.rotate_y, Vertex.rotate_z, Vertex.cornerA_x,
+    Vertex.cornerA_y, zero_smul, add_zero, hsum, smul_sub, smul_neg]
+  abel
+
 /-- Two clockwise rotations evaluate `h` at `p.rotate.rotate`, re-normalized by subtracting the
 value at `C = (0, 0, n) = (cornerA n).rotate.rotate`. -/
 theorem rotate_rotate_apply [IsOrderedAddMonoid R] (h : Hive n R) (p : Vertex n) :
@@ -856,7 +813,7 @@ theorem rotate_rotate_apply [IsOrderedAddMonoid R] (h : Hive n R) (p : Vertex n)
 
 /-- In the product chart, `h.rotate.rotate` evaluates `h` at `⟨j - i, i, n - j, _⟩` shifted by the
 constant gauge offset `∑ r : Fin n, h.boundary 2 r`. -/
-theorem rotate_rotate_ofChart_apply [IsOrderedAddMonoid R] (h : Hive n R) {i j : ℕ}
+theorem rotate_rotate_apply_ofChart [IsOrderedAddMonoid R] (h : Hive n R) {i j : ℕ}
     (hij : i ≤ j) (hj : j ≤ n) :
     h.rotate.rotate (Vertex.ofChart n i j hij hj) =
       h ⟨j - i, i, n - j, by omega⟩ + ∑ r : Fin n, h.boundary 2 r := by

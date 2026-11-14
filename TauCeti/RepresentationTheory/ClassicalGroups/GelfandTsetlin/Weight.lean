@@ -37,23 +37,25 @@ semistandard Young tableaux, `P.weight` agrees with Tau Ceti's `SemistandardYoun
 * `TauCeti.GTPattern.weight`: the torus weight `fun r => P.rowSum (r + 1) - P.rowSum r`.
 * `TauCeti.GTPattern.weightAddMonoidHom`: `GTPattern.weight` bundled as an additive monoid
   homomorphism `GTPattern n →+ (Fin n → ℤ)`.
-* `TauCeti.GTPattern.gtPatternThreeAdjointZeroEquiv`: explicit bijection between the weight-`0`
+* `TauCeti.GTPattern.threeAdjointZeroEquivBool`: explicit bijection between the weight-`0`
   Gelfand–Tsetlin fibre over the `SL 3` adjoint top row `(1, 0, -1)` and `Bool`.
 
 ## Main results
 
-* `TauCeti.GTPattern.prefixSum_weight` and `TauCeti.GTPattern.sum_weight`: leading prefix sums of
-  `P.weight` recover `P.rowSum`, and the total sum equals `∑ i, P.topRow i`.
+* `TauCeti.GTPattern.prefixSum_weight`, `TauCeti.GTPattern.sum_weight`,
+  `TauCeti.GTPattern.rowSum_le_prefixSum_topRow`, and `TauCeti.GTPattern.dominates_weight_topRow`:
+  leading prefix sums of `P.weight` recover `P.rowSum`, total sum equals `∑ i, P.topRow i`, and
+  `P.topRow` dominates `P.weight` (`TauCeti.Dominates P.weight P.topRow`).
 * `TauCeti.GTPattern.weight_shift`: determinant translation by `m` shifts every entry of `P.weight`
   by `m`.
 * `TauCeti.GTPattern.weight_mem_Icc`: every entry of `P.weight` lies between the last and first
   entries of `P.topRow`, so nonnegative patterns have nonnegative weights (`weight_nonneg`).
-* `TauCeti.GTPattern.eq_of_topRow_eq_of_weight_eq_two`,
-  `TauCeti.GTPattern.card_gtPattern_two_topRow_weight`, and
-  `TauCeti.GTPattern.card_gtPattern_three_adjoint_weight_zero`: low-rank weight-fibre uniqueness and
+* `TauCeti.GTPattern.eq_of_topRow_eq_of_weight_eq_two`, `TauCeti.GTPattern.card_topRow_weight_two`,
+  and `TauCeti.GTPattern.card_three_adjoint_weight_zero`: low-rank weight-fibre uniqueness and
   explicit counts.
-* `SemistandardYoungTableau.weight_toGTPattern` and `TauCeti.GTPattern.natCast_content_toTableau`:
-  under the pattern–tableau correspondence, `GTPattern.weight` equals tableau `content`.
+* `SemistandardYoungTableau.weight_toGTPattern`, `TauCeti.GTPattern.natCast_content_toTableau`,
+  `TauCeti.GTPattern.content_toTableau`, and `TauCeti.GTPattern.content_toTableau_eq_zero`: under
+  the pattern–tableau correspondence, `GTPattern.weight` equals tableau `content`.
 
 ## References
 
@@ -93,6 +95,14 @@ theorem rowSum_eq_zero_of_lt (P : GTPattern n) {j : ℕ} (hj : n < j) : P.rowSum
 theorem rowSum_top (P : GTPattern n) : P.rowSum n = ∑ i : Fin n, P.topRow i := by
   rw [rowSum_def, ← Fin.sum_univ_eq_sum_range]
   simp [topRow_apply]
+
+/-- For `j ≤ n`, the sum of row `j` is at most the leading partial sum of `P.topRow` of length
+`j`. -/
+theorem rowSum_le_prefixSum_topRow (P : GTPattern n) {j : ℕ} (hj : j ≤ n) :
+    P.rowSum j ≤ TauCeti.prefixSum j P.topRow := by
+  rw [rowSum_def, show P.topRow = fun i : Fin n => P i.val n from funext P.topRow_apply,
+    TauCeti.prefixSum_eq_sum_range j (fun k => P k n), min_eq_left hj]
+  exact Finset.sum_le_sum fun k hk => P.entry_le_entry_of_le (Finset.mem_range.mp hk) hj le_rfl
 
 @[simp]
 theorem rowSum_zero_left (j : ℕ) : (0 : GTPattern n).rowSum j = 0 := by
@@ -207,6 +217,15 @@ theorem prefixSum_weight (P : GTPattern n) {j : ℕ} (hj : j ≤ n) :
 theorem sum_weight (P : GTPattern n) : (∑ r : Fin n, P.weight r) = ∑ i : Fin n, P.topRow i := by
   rw [← TauCeti.prefixSum_of_le le_rfl, P.prefixSum_weight le_rfl, P.rowSum_top]
 
+/-- The highest weight `P.topRow` dominates `P.weight` in the leading-partial-sum order
+(`TauCeti.Dominates P.weight P.topRow`: equal total sums and
+`∑_{j < k} P.weight j ≤ ∑_{j < k} P.topRow j` for all `k ≤ n`). -/
+theorem dominates_weight_topRow (P : GTPattern n) : TauCeti.Dominates P.weight P.topRow :=
+  TauCeti.dominates_def.mpr ⟨P.sum_weight.symm, fun k hk => by
+    rw [← TauCeti.prefixSum_eq_sum_castLE hk, ← TauCeti.prefixSum_eq_sum_castLE hk,
+      P.prefixSum_weight hk]
+    exact P.rowSum_le_prefixSum_topRow hk⟩
+
 @[simp]
 theorem weight_truncate (P : GTPattern (n + 1)) (r : Fin n) :
     P.truncate.weight r = P.weight r.castSucc := by
@@ -270,7 +289,7 @@ theorem eq_of_topRow_eq_of_weight_eq_two {P Q : GTPattern 2} (ht : P.topRow = Q.
   · rw [P.entry_eq_zero (by omega), Q.entry_eq_zero (by omega)]
 
 /-- Cardinality of a rank-`2` Gelfand–Tsetlin weight fibre over an integer sequence `l`. -/
-theorem card_gtPattern_two_topRow_weight (l w : Fin 2 → ℤ) :
+theorem card_topRow_weight_two (l w : Fin 2 → ℤ) :
     Nat.card {P : GTPattern 2 // P.topRow = l ∧ P.weight = w} =
       if w 0 + w 1 = l 0 + l 1 ∧ l 1 ≤ w 0 ∧ w 0 ≤ l 0 then 1 else 0 := by
   have : Subsingleton {P : GTPattern 2 // P.topRow = l ∧ P.weight = w} :=
@@ -306,9 +325,9 @@ theorem card_gtPattern_two_topRow_weight (l w : Fin 2 → ℤ) :
     exact ⟨hsum, hmem.1, hmem.2⟩
 
 /-- Rank-`2` check: the weight-`(1, 1)` Gelfand–Tsetlin fibre over `(2, 0)` has cardinality `1`. -/
-theorem card_gtPattern_two_two_zero_one_one :
+theorem card_topRow_weight_two_two_zero_one_one :
     Nat.card {P : GTPattern 2 // P.topRow = ![2, 0] ∧ P.weight = ![1, 1]} = 1 := by
-  rw [card_gtPattern_two_topRow_weight]
+  rw [card_topRow_weight_two]
   decide
 
 private def adjointZeroPattern (b : Bool) : GTPattern 3 where
@@ -353,7 +372,7 @@ private theorem adjointZeroPattern_weight (b : Bool) :
 /-- Explicit bijection between the weight-`0` Gelfand–Tsetlin fibre over the rational `SL 3`
 adjoint top row `(1, 0, -1)` and `Bool`, corresponding to the two middle rows `(0, 0)` and
 `(1, -1)`. -/
-def gtPatternThreeAdjointZeroEquiv :
+def threeAdjointZeroEquivBool :
     {P : GTPattern 3 // P.topRow = ![1, 0, -1] ∧ P.weight = 0} ≃ Bool where
   toFun P := decide (P.1 0 2 = 1)
   invFun b := ⟨adjointZeroPattern b, adjointZeroPattern_topRow b, adjointZeroPattern_weight b⟩
@@ -385,12 +404,12 @@ def gtPatternThreeAdjointZeroEquiv :
     · rw [(adjointZeroPattern b).entry_eq_zero (by omega), P.entry_eq_zero (by omega)]
   right_inv b := by cases b <;> simp
 
-@[simp] theorem gtPatternThreeAdjointZeroEquiv_apply
+@[simp] theorem threeAdjointZeroEquivBool_apply
     (P : {P : GTPattern 3 // P.topRow = ![1, 0, -1] ∧ P.weight = 0}) :
-    gtPatternThreeAdjointZeroEquiv P = decide (P.1 0 2 = 1) := (rfl)
+    threeAdjointZeroEquivBool P = decide (P.1 0 2 = 1) := (rfl)
 
-@[simp] theorem gtPatternThreeAdjointZeroEquiv_symm_apply (b : Bool) (i j : ℕ) :
-    (gtPatternThreeAdjointZeroEquiv.symm b).1 i j =
+@[simp] theorem threeAdjointZeroEquivBool_symm_apply (b : Bool) (i j : ℕ) :
+    (threeAdjointZeroEquivBool.symm b).1 i j =
       match i, j with
       | 0, 3 => 1
       | 2, 3 => -1
@@ -401,9 +420,9 @@ def gtPatternThreeAdjointZeroEquiv :
 
 /-- Rank-`3` check: the weight-`0` Gelfand–Tsetlin fibre over the `SL 3` adjoint weight `(1, 0, -1)`
 has cardinality `2` (the `2`-dimensional zero weight space of `𝔰𝔩₃`). -/
-theorem card_gtPattern_three_adjoint_weight_zero :
+theorem card_three_adjoint_weight_zero :
     Nat.card {P : GTPattern 3 // P.topRow = ![1, 0, -1] ∧ P.weight = 0} = 2 := by
-  simp [Nat.card_congr gtPatternThreeAdjointZeroEquiv]
+  simp [Nat.card_congr threeAdjointZeroEquivBool]
 
 end TauCeti.GTPattern
 
@@ -448,5 +467,19 @@ theorem natCast_content_toTableau {n : ℕ} (P : GTPattern n) {μ : YoungDiagram
     have h := congrArg Subtype.val ((gtPatternEquivSSYT n μ hμ).symm_apply_apply ⟨P, hP⟩)
     rwa [gtPatternEquivSSYT_symm_apply_coe, gtPatternEquivSSYT_apply_coe] at h
   rw [← SemistandardYoungTableau.weight_toGTPattern (P.toTableau hμ hP) n r, hinv]
+
+/-- Under `TauCeti.GTPattern.toTableau`, the `ℕ`-valued content of the semistandard Young tableau
+attached to a pattern `P` of shape `μ` equals `(P.weight r).toNat` on `r : Fin n`. -/
+theorem content_toTableau {n : ℕ} (P : GTPattern n) {μ : YoungDiagram}
+    (hμ : μ.colLen 0 ≤ n) (hP : ∀ i : Fin n, P.topRow i = (μ.rowLen i : ℤ)) (r : Fin n) :
+    (P.toTableau hμ hP).content r.val = (P.weight r).toNat := by
+  rw [← P.natCast_content_toTableau hμ hP r, Int.toNat_natCast]
+
+/-- For `n ≤ k`, `P.toTableau hμ hP` uses no letter `k`, so `(P.toTableau hμ hP).content k = 0`. -/
+@[simp]
+theorem content_toTableau_eq_zero {n : ℕ} (P : GTPattern n) {μ : YoungDiagram}
+    (hμ : μ.colLen 0 ≤ n) (hP : ∀ i : Fin n, P.topRow i = (μ.rowLen i : ℤ)) {k : ℕ}
+    (hk : n ≤ k) : (P.toTableau hμ hP).content k = 0 := by
+  simpa using BoundedSSYT.content_eq_zero (gtPatternEquivSSYT n μ hμ ⟨P, hP⟩) hk
 
 end TauCeti.GTPattern

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.Combinatorics.Hive.Fibre
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Weight
 import Mathlib.Tactic.Abel
@@ -37,13 +36,13 @@ turns (1)–(2) into Gelfand–Tsetlin interlacing `P i j ≤ P i (j + 1)` and
 `fixedIntegerHiveEquivGTPattern`, `gt_reconstruction_iff`).
 
 Rotating twice (`TauCeti.Hive.rotateRotateEquiv`, adding gauge offset `∑ r, h.boundary 2 r` in chart
-coordinates by `TauCeti.Hive.rotate_rotate_ofChart_apply`) identifies cyclic boundary
+coordinates by `TauCeti.Hive.rotate_rotate_apply_ofChart`) identifies cyclic boundary
 `![lam.1, μ.1, ν.1]` with `productBoundary ν lam μ.dual`, yielding the quasi-hive equivalence with
 top row `lam` and weight `μ.dual - ν` (`cyclicFixedIntegerHiveEquivGTPattern`). Under the uniform
 input gap `P.topRow 0 - P.topRow (Fin.last n) ≤ λᵣ - λᵣ₊₁`, family (3) holds automatically
 (`isGTCompletable_of_uniform_input_gap`, `gt_completion_of_uniform_input_gap`), giving a bijection
-onto the full weight-`(γ - λ)` fibre over `μ` (`stableGTPatternEquiv`, `exists_stable_gt_equiv`).
-Rank-`2` and rank-`3` checks witness strict exclusion outside this range.
+onto the full weight-`(γ - λ)` fibre over `μ` (`fixedIntegerHiveEquivGTPatternOfUniformInputGap`,
+`exists_stable_gt_equiv`). Rank-`2` and rank-`3` checks witness strict exclusion outside this range.
 
 ## Main definitions
 
@@ -56,13 +55,15 @@ Rank-`2` and rank-`3` checks witness strict exclusion outside this range.
 * `TauCeti.Hive.toCyclicGTPattern`, `TauCeti.Hive.toCyclicGTPatternAddMonoidHom`,
   `TauCeti.Hive.cyclicFixedIntegerHiveEquivGTPattern`: cyclic `(λ, μ, ν)` difference map and
   quasi-hive equivalence.
-* `TauCeti.Hive.stableGTPatternEquiv`, `TauCeti.Hive.fixedIntegerHiveEquivGTPatternOfLeOne`: full
-  weight-fibre equivalences in the stable range and for `n ≤ 1`.
+* `TauCeti.Hive.fixedIntegerHiveEquivGTPatternOfUniformInputGap`,
+  `TauCeti.Hive.fixedIntegerHiveEquivGTPatternOfLeOne`: full weight-fibre equivalences in the stable
+  range and for `n ≤ 1`.
 
 ## Main results
 
 * `TauCeti.Hive.topRow_toGTPattern`, `TauCeti.Hive.weight_toGTPattern`,
-  `TauCeti.Hive.apply_eq_gtCompletion`: top row, weight, and chart inversion for `toGTPattern`.
+  `TauCeti.Hive.apply_eq_gtCompletion`, `TauCeti.Hive.apply_eq_gtCompletion_toCyclicGTPattern`: top
+  row, weight, and chart inversion for `toGTPattern` and `toCyclicGTPattern`.
 * `TauCeti.Hive.isGTCompletable_iff_sum_sub_le`, `TauCeti.Hive.gt_reconstruction_iff`: explicit
   difference-sum form of `IsGTCompletable` and fixed-boundary reconstruction criterion.
 * `TauCeti.Hive.isGTCompletable_of_uniform_input_gap`,
@@ -87,55 +88,6 @@ public section
 open scoped BigOperators
 
 namespace TauCeti.Hive
-
-/-! ### Product-chart boundary values -/
-
-section ChartBoundaryValues
-
-/-- Along `A → B` (`i = 0`), `h(0, j)` equals `TauCeti.prefixSum j (h.boundary 0)`. -/
-theorem apply_ofChart_zero_left {n : ℕ} {R : Type*} [AddCommGroup R] [PartialOrder R]
-    (h : Hive n R) {j : ℕ} (hj : j ≤ n) :
-    h (Vertex.ofChart n 0 j (Nat.zero_le j) hj) = TauCeti.prefixSum j (h.boundary 0) := by
-  rw [Vertex.ofChart_zero_left, h.apply_edgePoint_zero, TauCeti.prefixSum_def]
-
-/-- Along `B → C` (`j = n`), `h(i, n)` equals
-`(∑ r, h.boundary 0 r) + TauCeti.prefixSum i (h.boundary 1)`. -/
-theorem apply_ofChart_right {n : ℕ} {R : Type*} [AddCommGroup R] [PartialOrder R]
-    (h : Hive n R) {i : ℕ} (hi : i ≤ n) :
-    h (Vertex.ofChart n i n hi le_rfl) =
-      (∑ r : Fin n, h.boundary 0 r) + TauCeti.prefixSum i (h.boundary 1) := by
-  rw [Vertex.ofChart_right, h.apply_edgePoint_one, TauCeti.prefixSum_def]
-
-/-- Along `C → A` (`i = j`), `h(j, j) = TauCeti.prefixSum j (fun r => -h.boundary 2 r.rev)`. -/
-theorem apply_ofChart_self {n : ℕ} {R : Type*} [AddCommGroup R] [PartialOrder R]
-    (h : Hive n R) {j : ℕ} (hj : j ≤ n) :
-    h (Vertex.ofChart n j j le_rfl hj) = TauCeti.prefixSum j (fun r => -h.boundary 2 r.rev) := by
-  rw [Vertex.ofChart_self, h.apply_edgePoint_two, Fin.val_mk, Finset.sum_filter,
-    TauCeti.prefixSum_def, Finset.sum_filter, ← Finset.sum_neg_distrib]
-  refine (Equiv.sum_comp Fin.revPerm
-    (fun k : Fin n => -(if n - j ≤ k.val then h.boundary 2 k else 0))).symm.trans
-    (Finset.sum_congr rfl fun r _ => ?_)
-  simp only [Fin.revPerm_apply, Fin.val_rev]
-  by_cases hr : r.val < j
-  · rw [ite_eq_left (by omega), ite_eq_left hr]
-  · rw [ite_eq_right (by have := r.isLt; omega), ite_eq_right hr, neg_zero]
-
-theorem apply_ofChart_zero_left_of_productBoundary {n : ℕ} {lam μ γ : DominantWeight n}
-    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {j : ℕ} (hj : j ≤ n) :
-    h (Vertex.ofChart n 0 j (Nat.zero_le j) hj) = TauCeti.prefixSum j lam.1 := by
-  rw [h.apply_ofChart_zero_left hj, hb, productBoundary_zero]
-
-theorem apply_ofChart_right_of_productBoundary {n : ℕ} {lam μ γ : DominantWeight n}
-    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {i : ℕ} (hi : i ≤ n) :
-    h (Vertex.ofChart n i n hi le_rfl) = (∑ r : Fin n, lam.1 r) + TauCeti.prefixSum i μ.1 := by
-  rw [h.apply_ofChart_right hi, hb, productBoundary_zero, productBoundary_one]
-
-theorem apply_ofChart_self_of_productBoundary {n : ℕ} {lam μ γ : DominantWeight n}
-    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {j : ℕ} (hj : j ≤ n) :
-    h (Vertex.ofChart n j j le_rfl hj) = TauCeti.prefixSum j γ.1 := by
-  rw [h.apply_ofChart_self hj]; exact congrArg (TauCeti.prefixSum j) (funext fun r => by simp [hb])
-
-end ChartBoundaryValues
 
 /-! ### Directional finite-difference map and chart completion -/
 
@@ -270,9 +222,18 @@ theorem gtCompletion_def (lam : DominantWeight n) (P : GTPattern n) (i j : ℕ) 
 @[simp] theorem gtCompletion_zero_left (lam : DominantWeight n) (P : GTPattern n) (j : ℕ) :
     gtCompletion lam P 0 j = TauCeti.prefixSum j lam.1 := by simp [gtCompletion_def]
 
-@[simp] theorem gtCompletion_zero_right (lam : DominantWeight n) (i j : ℕ) :
+@[simp] theorem gtCompletion_zero_right (lam : DominantWeight n) (P : GTPattern n) (i : ℕ) :
+    gtCompletion lam P i 0 = 0 := by
+  simp [gtCompletion_def, P.entry_eq_zero_of_le (Nat.zero_le _)]
+
+@[simp] theorem gtCompletion_zero_gtPattern (lam : DominantWeight n) (i j : ℕ) :
     gtCompletion lam 0 i j = TauCeti.prefixSum j lam.1 := by
   simp [gtCompletion_def, GTPattern.zero_apply]
+
+theorem gtCompletion_zero_dominantWeight (P : GTPattern n) (i j : ℕ) :
+    gtCompletion 0 P i j = ∑ k ∈ Finset.range i, P k j := by
+  have h0 : (0 : DominantWeight n).1 = 0 := funext DominantWeight.zero_apply
+  simp [gtCompletion_def, h0, TauCeti.prefixSum_def]
 
 theorem gtCompletion_succ_left (lam : DominantWeight n) (P : GTPattern n) (i j : ℕ) :
     gtCompletion lam P (i + 1) j = gtCompletion lam P i j + P i j := by
@@ -291,15 +252,15 @@ theorem gtCompletion_succ_left (lam : DominantWeight n) (P : GTPattern n) (i j :
   simp only [gtCompletion_def, hlam, TauCeti.prefixSum_smul, GTPattern.nsmul_apply,
     ← Finset.smul_sum, smul_add]
 
-theorem gtCompletion_shift_left (lam : DominantWeight n) (m : ℤ) (P : GTPattern n) (i : ℕ)
-    {j : ℕ} (hj : j ≤ n) :
+theorem gtCompletion_shift_dominantWeight (lam : DominantWeight n) (m : ℤ) (P : GTPattern n)
+    (i : ℕ) {j : ℕ} (hj : j ≤ n) :
     gtCompletion (lam.shift m) P i j = gtCompletion lam P i j + j * m := by
   rw [gtCompletion_def, gtCompletion_def, TauCeti.prefixSum_eq_sum_castLE hj,
     TauCeti.prefixSum_eq_sum_castLE hj]
   simp only [DominantWeight.shift_apply, Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ,
     Fintype.card_fin, nsmul_eq_mul]; ring
 
-theorem gtCompletion_shift_right (lam : DominantWeight n) (P : GTPattern n) (m : ℤ) {i j : ℕ}
+theorem gtCompletion_shift_gtPattern (lam : DominantWeight n) (P : GTPattern n) (m : ℤ) {i j : ℕ}
     (hij : i ≤ j) (hj : j ≤ n) :
     gtCompletion lam (P.shift m) i j = gtCompletion lam P i j + i * m := by
   rw [gtCompletion_def, gtCompletion_def, Finset.sum_congr rfl fun k hk =>
@@ -309,13 +270,14 @@ theorem gtCompletion_shift_right (lam : DominantWeight n) (P : GTPattern n) (m :
 theorem gtCompletion_shift (lam : DominantWeight n) (a : ℤ) (P : GTPattern n) (b : ℤ) {i j : ℕ}
     (hij : i ≤ j) (hj : j ≤ n) :
     gtCompletion (lam.shift a) (P.shift b) i j = gtCompletion lam P i j + j * a + i * b := by
-  rw [gtCompletion_shift_left lam a (P.shift b) i hj, gtCompletion_shift_right lam P b hij hj]; ring
+  rw [gtCompletion_shift_dominantWeight lam a (P.shift b) i hj,
+    gtCompletion_shift_gtPattern lam P b hij hj]; ring
 
 theorem gtCompletion_const (lam : DominantWeight n) (m : ℤ) {i j : ℕ} (hij : i ≤ j) (hj : j ≤ n) :
     gtCompletion lam (GTPattern.const n m) i j = TauCeti.prefixSum j lam.1 + i * m := by
   have hc : GTPattern.const n m = (0 : GTPattern n).shift m := by
     rw [GTPattern.shift_eq_add_const, zero_add]
-  rw [hc, gtCompletion_shift_right lam 0 m hij hj, gtCompletion_zero_right]
+  rw [hc, gtCompletion_shift_gtPattern lam 0 m hij hj, gtCompletion_zero_gtPattern]
 
 theorem gtCompletion_self (lam : DominantWeight n) (P : GTPattern n) (j : ℕ) :
     gtCompletion lam P j j = TauCeti.prefixSum j lam.1 + P.rowSum j := by
@@ -328,13 +290,14 @@ theorem gtCompletion_self_of_weight {lam : DominantWeight n} {P : GTPattern n} {
     ext r; have hr := congrFun hw r; simp only [Pi.sub_apply, Pi.add_apply] at hr ⊢; linarith
   rw [gtCompletion_self, ← P.prefixSum_weight hj, hg, TauCeti.prefixSum_add]
 
-theorem gtCompletion_right (lam : DominantWeight n) (P : GTPattern n) {i : ℕ} (hi : i ≤ n) :
+theorem gtCompletion_right (lam : DominantWeight n) (P : GTPattern n) (i : ℕ) :
     gtCompletion lam P i n = (∑ r : Fin n, lam.1 r) + TauCeti.prefixSum i P.topRow := by
-  rw [gtCompletion_def, TauCeti.prefixSum_of_le le_rfl]; congr 1
-  induction i with
-  | zero => simp
-  | succ m ih =>
-    rw [Finset.sum_range_succ, ih (by omega), TauCeti.prefixSum_succ hi, GTPattern.topRow_apply]
+  rw [gtCompletion_def, TauCeti.prefixSum_of_le le_rfl,
+    show P.topRow = fun r : Fin n => P r.val n from funext P.topRow_apply,
+    TauCeti.prefixSum_eq_sum_range i (fun k => P k n)]
+  congr 1
+  exact (Finset.sum_subset (Finset.range_mono (min_le_left i n)) fun k hk' hk =>
+    P.entry_eq_zero_of_le (by simp only [Finset.mem_range, lt_min_iff] at hk' hk; omega)).symm
 
 /-- Every hive value in the product chart is recovered from `h.boundaryWeight 0` and
 `h.toGTPattern` via `gtCompletion`. -/
@@ -567,7 +530,7 @@ theorem ofGTPattern_shift {lam : DominantWeight n} {P : GTPattern n} (a b : ℤ)
     (hP : IsGTCompletable lam P) :
     (ofGTPattern lam P hP).boundaryWeight 1 = P.topWeight := Subtype.ext (by simp)
 
-@[simp] theorem dual_boundaryWeight_two_ofGTPattern (lam : DominantWeight n) (P : GTPattern n)
+theorem coe_dual_boundaryWeight_two_ofGTPattern (lam : DominantWeight n) (P : GTPattern n)
     (hP : IsGTCompletable lam P) :
     ((ofGTPattern lam P hP).boundaryWeight 2).dual.1 = lam.1 + P.weight := by
   have hw := weight_toGTPattern (ofGTPattern lam P hP)
@@ -578,12 +541,22 @@ theorem ofGTPattern_shift {lam : DominantWeight n} {P : GTPattern n} (a b : ℤ)
 (dominant), as the dual of side `2` of `ofGTPattern lam P hP`. -/
 theorem antitone_add_weight_of_isGTCompletable {lam : DominantWeight n} {P : GTPattern n}
     (hP : IsGTCompletable lam P) : Antitone (lam.1 + P.weight) :=
-  dual_boundaryWeight_two_ofGTPattern lam P hP ▸ ((ofGTPattern lam P hP).boundaryWeight 2).dual.2
+  coe_dual_boundaryWeight_two_ofGTPattern lam P hP ▸
+    ((ofGTPattern lam P hP).boundaryWeight 2).dual.2
+
+@[simp] theorem boundaryWeight_two_ofGTPattern (lam : DominantWeight n) (P : GTPattern n)
+    (hP : IsGTCompletable lam P) :
+    (ofGTPattern lam P hP).boundaryWeight 2 =
+      DominantWeight.dual ⟨lam.1 + P.weight, antitone_add_weight_of_isGTCompletable hP⟩ := by
+  rw [← DominantWeight.dual_dual ((ofGTPattern lam P hP).boundaryWeight 2)]
+  exact congrArg DominantWeight.dual
+    (Subtype.ext (coe_dual_boundaryWeight_two_ofGTPattern lam P hP))
 
 @[simp] theorem boundary_two_ofGTPattern (lam : DominantWeight n) (P : GTPattern n)
-    (hP : IsGTCompletable lam P) (r : Fin n) :
-    (ofGTPattern lam P hP).boundary 2 r = -(lam.1 r.rev + P.weight r.rev) := by
-  have hd := congrFun (dual_boundaryWeight_two_ofGTPattern lam P hP) r.rev
+    (hP : IsGTCompletable lam P) :
+    (ofGTPattern lam P hP).boundary 2 = fun r => -(lam.1 r.rev + P.weight r.rev) := by
+  ext r
+  have hd := congrFun (coe_dual_boundaryWeight_two_ofGTPattern lam P hP) r.rev
   simp only [DominantWeight.dual_apply, coe_boundaryWeight, Fin.rev_rev, Pi.add_apply] at hd
   linarith
 
@@ -689,31 +662,40 @@ theorem toCyclicGTPattern_def (h : IntegerHive n) :
     h.toCyclicGTPattern i j =
       h ⟨j - (i + 1), i + 1, n - j, by omega⟩ - h ⟨j - i, i, n - j, by omega⟩ := by
   rw [toCyclicGTPattern_def, toGTPattern_apply_of_lt_of_le _ hij hj,
-    h.rotate_rotate_ofChart_apply hij hj, h.rotate_rotate_ofChart_apply hij.le hj]; abel
+    h.rotate_rotate_apply_ofChart hij hj, h.rotate_rotate_apply_ofChart hij.le hj]; abel
+
+theorem toCyclicGTPattern_apply (h : IntegerHive n) (i j : ℕ) :
+    h.toCyclicGTPattern i j =
+      if hij : i < j then if hj : j ≤ n then
+        h ⟨j - (i + 1), i + 1, n - j, by omega⟩ - h ⟨j - i, i, n - j, by omega⟩
+      else 0 else 0 := by
+  by_cases hij : i < j
+  · by_cases hj : j ≤ n
+    · simp [hij, hj]
+    · rw [dite_eq_left hij, dite_eq_right hj, h.toCyclicGTPattern.entry_eq_zero (by omega)]
+  · rw [dite_eq_right hij, h.toCyclicGTPattern.entry_eq_zero (by omega)]
 
 @[simp] theorem toCyclicGTPattern_rotate (h : IntegerHive n) :
     h.rotate.toCyclicGTPattern = h.toGTPattern := by
   rw [toCyclicGTPattern_def, rotate_rotate_rotate]
 
 @[simp] theorem toCyclicGTPattern_zero : (0 : IntegerHive n).toCyclicGTPattern = 0 := by
-  ext i j; by_cases h : i < j ∧ j ≤ n
-  · simp [toCyclicGTPattern_apply_of_lt_of_le _ h.1 h.2, GTPattern.zero_apply]
-  · rw [GTPattern.entry_eq_zero _ (by omega), GTPattern.zero_apply]
+  simp [toCyclicGTPattern_def]
 
 @[simp] theorem toCyclicGTPattern_add (h₁ h₂ : IntegerHive n) :
     (h₁ + h₂).toCyclicGTPattern = h₁.toCyclicGTPattern + h₂.toCyclicGTPattern := by
-  ext i j; by_cases h : i < j ∧ j ≤ n
-  · simp only [toCyclicGTPattern_apply_of_lt_of_le _ h.1 h.2, add_apply, GTPattern.add_apply]; abel
-  · rw [GTPattern.entry_eq_zero _ (by omega), GTPattern.add_apply,
-      GTPattern.entry_eq_zero _ (by omega), GTPattern.entry_eq_zero _ (by omega), add_zero]
+  simp [toCyclicGTPattern_def]
 
 @[simp] theorem toCyclicGTPattern_nsmul (k : ℕ) (h : IntegerHive n) :
     (k • h).toCyclicGTPattern = k • h.toCyclicGTPattern := by
-  ext i j; by_cases hij : i < j ∧ j ≤ n
-  · simp only [toCyclicGTPattern_apply_of_lt_of_le _ hij.1 hij.2, nsmul_apply,
-      GTPattern.nsmul_apply, nsmul_eq_mul]; ring
-  · rw [GTPattern.entry_eq_zero _ (by omega), GTPattern.nsmul_apply,
-      GTPattern.entry_eq_zero _ (by omega), smul_zero]
+  simp [toCyclicGTPattern_def]
+
+/-- In the cyclic orientation, the normalized affine hive `affine n β γ` has constant difference
+pattern `GTPattern.const n β`. -/
+@[simp] theorem toCyclicGTPattern_affine (β γ : ℤ) :
+    (affine n β γ).toCyclicGTPattern = GTPattern.const n β := by
+  rw [toCyclicGTPattern_def, rotate_affine, rotate_affine, toGTPattern_affine]
+  exact congrArg (GTPattern.const n) (by ring)
 
 /-- `Hive.toCyclicGTPattern` bundled as an additive monoid homomorphism
 `IntegerHive n →+ GTPattern n`. -/
@@ -730,9 +712,49 @@ def toCyclicGTPatternAddMonoidHom : IntegerHive n →+ GTPattern n :=
 @[simp] theorem topWeight_toCyclicGTPattern (h : IntegerHive n) :
     h.toCyclicGTPattern.topWeight = h.boundaryWeight 0 := Subtype.ext (by simp)
 
+theorem rowSum_toCyclicGTPattern (h : IntegerHive n) {j : ℕ} (hj : j ≤ n) :
+    h.toCyclicGTPattern.rowSum j =
+      TauCeti.prefixSum j (h.boundaryWeight 1).dual.1 - TauCeti.prefixSum j (h.boundary 2) := by
+  rw [toCyclicGTPattern_def, rowSum_toGTPattern _ hj, boundaryWeight_rotate,
+    boundaryWeight_rotate, boundary_rotate, boundary_rotate]
+  rfl
+
 @[simp] theorem weight_toCyclicGTPattern (h : IntegerHive n) :
     h.toCyclicGTPattern.weight = (h.boundaryWeight 1).dual.1 - h.boundary 2 := by
   simp [toCyclicGTPattern_def, boundary_rotate, boundaryWeight_rotate]
+
+theorem isGTCompletable_toCyclicGTPattern (h : IntegerHive n) :
+    IsGTCompletable (h.boundaryWeight 2) h.toCyclicGTPattern := by
+  have hb : h.rotate.rotate.boundaryWeight 0 = h.boundaryWeight 2 := by
+    rw [boundaryWeight_rotate, boundaryWeight_rotate]; rfl
+  exact hb ▸ h.rotate.rotate.isGTCompletable_toGTPattern
+
+theorem rotate_ofGTPattern_apply (lam : DominantWeight n) (P : GTPattern n)
+    (hP : IsGTCompletable lam P) (p : Vertex n) :
+    (ofGTPattern lam P hP).rotate p =
+      gtCompletion lam P p.y (n - p.z) - ∑ r : Fin n, lam.1 r := by
+  simp [TauCeti.prefixSum_of_le le_rfl]
+
+@[simp] theorem rotate_ofGTPattern_toCyclicGTPattern (h : IntegerHive n) :
+    (ofGTPattern (h.boundaryWeight 2) h.toCyclicGTPattern
+      h.isGTCompletable_toCyclicGTPattern).rotate = h := by
+  have hb : h.boundaryWeight 2 = h.rotate.rotate.boundaryWeight 0 := by
+    rw [boundaryWeight_rotate, boundaryWeight_rotate]; rfl
+  have hof : ofGTPattern (h.boundaryWeight 2) h.toCyclicGTPattern
+      h.isGTCompletable_toCyclicGTPattern = h.rotate.rotate := by
+    ext p
+    rw [ofGTPattern_apply, hb, toCyclicGTPattern_def, ← h.rotate.rotate.apply_eq_gtCompletion p]
+  rw [hof, rotate_rotate_rotate]
+
+/-- **Cyclic chart inversion formula**: every integer hive `h` is recovered at `p : Vertex n` from
+`h.boundaryWeight 2` and `h.toCyclicGTPattern` as
+`gtCompletion (h.boundaryWeight 2) h.toCyclicGTPattern p.y (n - p.z) - ∑ r, h.boundary 2 r`. -/
+theorem apply_eq_gtCompletion_toCyclicGTPattern (h : IntegerHive n) (p : Vertex n) :
+    h p =
+      gtCompletion (h.boundaryWeight 2) h.toCyclicGTPattern p.y (n - p.z) -
+        ∑ r : Fin n, h.boundary 2 r := by
+  conv_lhs => rw [← h.rotate_ofGTPattern_toCyclicGTPattern]
+  rw [rotate_ofGTPattern_apply, coe_boundaryWeight]
 
 /-- **Cyclic quasi-hive equivalence (Henriques–Kamnitzer, Theorem 7.4)**: integer hives with
 clockwise cyclic boundary `![lam.1, μ.1, ν.1]` correspond bijectively to Gelfand–Tsetlin patterns
@@ -751,6 +773,13 @@ def cyclicFixedIntegerHiveEquivGTPattern (lam μ ν : DominantWeight n) :
     (P : {P : GTPattern n // P.topRow = lam.1 ∧ P.weight = μ.dual.1 - ν.1 ∧ IsGTCompletable ν P}) :
     ((cyclicFixedIntegerHiveEquivGTPattern lam μ ν).symm P).1 =
       (ofGTPattern ν P.1 P.2.2.2).rotate := by simp [cyclicFixedIntegerHiveEquivGTPattern]
+
+theorem cyclicFixedIntegerHiveEquivGTPattern_symm_apply (lam μ ν : DominantWeight n)
+    (P : {P : GTPattern n // P.topRow = lam.1 ∧ P.weight = μ.dual.1 - ν.1 ∧ IsGTCompletable ν P})
+    (p : Vertex n) :
+    ((cyclicFixedIntegerHiveEquivGTPattern lam μ ν).symm P).1 p =
+      gtCompletion ν P.1 p.y (n - p.z) - ∑ r : Fin n, ν.1 r := by
+  rw [cyclicFixedIntegerHiveEquivGTPattern_symm_apply_coe, rotate_ofGTPattern_apply]
 
 end CyclicOrientation
 
@@ -796,7 +825,7 @@ theorem gt_completion_of_uniform_input_gap {n : ℕ} (lam μ : DominantWeight (n
 /-- Under the uniform input gap on `lam`, fixed-boundary integer hives with boundary
 `productBoundary lam μ γ` are equivalent to the entire weight-`(γ - λ)` Gelfand–Tsetlin fibre over
 `μ`. -/
-def stableGTPatternEquiv {n : ℕ} (lam μ γ : DominantWeight (n + 1))
+def fixedIntegerHiveEquivGTPatternOfUniformInputGap {n : ℕ} (lam μ γ : DominantWeight (n + 1))
     (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ) :
     FixedIntegerHive (productBoundary lam μ γ) ≃
       {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.weight = γ.1 - lam.1} :=
@@ -804,29 +833,33 @@ def stableGTPatternEquiv {n : ℕ} (lam μ γ : DominantWeight (n + 1))
     ⟨fun ⟨ht, hw, _⟩ => ⟨ht, hw⟩,
       fun ⟨ht, hw⟩ => ⟨ht, hw, isGTCompletable_of_uniform_input_gap (by rwa [ht])⟩⟩
 
-@[simp] theorem stableGTPatternEquiv_apply_coe {n : ℕ} (lam μ γ : DominantWeight (n + 1))
+@[simp] theorem fixedIntegerHiveEquivGTPatternOfUniformInputGap_apply_coe {n : ℕ}
+    (lam μ γ : DominantWeight (n + 1))
     (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ)
     (h : FixedIntegerHive (productBoundary lam μ γ)) :
-    (stableGTPatternEquiv lam μ γ hGap h).1 = h.1.toGTPattern := (rfl)
+    (fixedIntegerHiveEquivGTPatternOfUniformInputGap lam μ γ hGap h).1 = h.1.toGTPattern := (rfl)
 
-@[simp] theorem stableGTPatternEquiv_symm_apply_coe {n : ℕ} (lam μ γ : DominantWeight (n + 1))
+@[simp] theorem fixedIntegerHiveEquivGTPatternOfUniformInputGap_symm_apply_coe {n : ℕ}
+    (lam μ γ : DominantWeight (n + 1))
     (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ)
     (P : {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.weight = γ.1 - lam.1}) :
-    ((stableGTPatternEquiv lam μ γ hGap).symm P).1 =
+    ((fixedIntegerHiveEquivGTPatternOfUniformInputGap lam μ γ hGap).symm P).1 =
       ofGTPattern lam P.1 (isGTCompletable_of_uniform_input_gap (by rwa [P.2.1])) := by
-  simp [stableGTPatternEquiv]
+  simp [fixedIntegerHiveEquivGTPatternOfUniformInputGap]
 
-theorem stableGTPatternEquiv_symm_apply {n : ℕ} (lam μ γ : DominantWeight (n + 1))
+theorem fixedIntegerHiveEquivGTPatternOfUniformInputGap_symm_apply {n : ℕ}
+    (lam μ γ : DominantWeight (n + 1))
     (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ)
     (P : {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.weight = γ.1 - lam.1}) (v : Vertex (n + 1)) :
-    ((stableGTPatternEquiv lam μ γ hGap).symm P).1 v =
+    ((fixedIntegerHiveEquivGTPatternOfUniformInputGap lam μ γ hGap).symm P).1 v =
       gtCompletion lam P.1 v.z (n + 1 - v.x) := by simp
 
 theorem hiveCount_eq_card_gtPattern_of_uniform_input_gap {n : ℕ} (lam μ γ : DominantWeight (n + 1))
     (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ) :
     hiveCount (productBoundary lam μ γ) =
       Nat.card {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.weight = γ.1 - lam.1} := by
-  rw [← natCard_fixedIntegerHive]; exact Nat.card_congr (stableGTPatternEquiv lam μ γ hGap)
+  rw [← natCard_fixedIntegerHive]
+  exact Nat.card_congr (fixedIntegerHiveEquivGTPatternOfUniformInputGap lam μ γ hGap)
 
 /-- In the stable range, the difference map gives an equivalence onto the full weight-`(γ - λ)`
 Gelfand–Tsetlin fibre over `μ` with `gtCompletion` as inverse chart formula. -/
@@ -835,7 +868,8 @@ theorem exists_stable_gt_equiv {n : ℕ} (lam μ γ : DominantWeight (n + 1))
     ∃ e : FixedIntegerHive (productBoundary lam μ γ) ≃
       {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.weight = γ.1 - lam.1},
       ∀ h v, h.1 v = gtCompletion lam (e h).1 v.z (n + 1 - v.x) :=
-  ⟨stableGTPatternEquiv lam μ γ hGap, fun h v => apply_eq_gtCompletion_of_productBoundary h.2 v⟩
+  ⟨fixedIntegerHiveEquivGTPatternOfUniformInputGap lam μ γ hGap,
+    fun h v => apply_eq_gtCompletion_of_productBoundary h.2 v⟩
 
 end UniformInputGap
 
@@ -929,11 +963,11 @@ theorem hiveCount_two_productBoundary (lam μ γ : DominantWeight 2) :
       have := (isGTCompletable_two_iff lam P).mp hc
       have := congrFun ht 0; have hw0 := congrFun hw 0
       simp only [Pi.sub_apply] at hw0; omega
-  rw [heq, GTPattern.card_gtPattern_two_topRow_weight μ.1 (γ.1 - lam.1)]
+  rw [heq, GTPattern.card_topRow_weight_two μ.1 (γ.1 - lam.1)]
   simp only [Pi.sub_apply, max_le_iff]; split_ifs <;> omega
 
 /-- Rank-`2` exclusion outside the stable range: although the weight-`(1, 1)` Gelfand–Tsetlin fibre
-over `μ = (2, 0)` has cardinality `1` (`GTPattern.card_gtPattern_two_two_zero_one_one`), the
+over `μ = (2, 0)` has cardinality `1` (`GTPattern.card_topRow_weight_two_two_zero_one_one`), the
 remaining rhombus inequality `λ₁ + μ₀ ≤ γ₀` (`2 ≤ 1`) fails at `λ = (0, 0)` and `γ = (1, 1)`. -/
 theorem hiveCount_two_zero_sym_det :
     hiveCount (productBoundary (0 : DominantWeight 2) ⟨![2, 0], by decide⟩ ⟨![1, 1], by decide⟩) =
@@ -965,7 +999,7 @@ theorem hiveCount_two_sym_sym_two_two :
   rw [hiveCount_two_productBoundary]; decide
 
 /-- Rank-`3` exclusion: although the weight-`0` Gelfand–Tsetlin fibre over `μ = (1, 0, -1)` has two
-patterns (`GTPattern.card_gtPattern_three_adjoint_weight_zero`), neither satisfies
+patterns (`GTPattern.card_three_adjoint_weight_zero`), neither satisfies
 `IsGTCompletable 0 P`, so `hiveCount (productBoundary 0 ⟨![1, 0, -1], _⟩ 0) = 0`. -/
 theorem hiveCount_three_zero_adjoint_zero :
     hiveCount (productBoundary (0 : DominantWeight 3) ⟨![1, 0, -1], by decide⟩ 0) = 0 := by
