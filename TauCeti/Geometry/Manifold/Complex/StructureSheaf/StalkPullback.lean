@@ -20,7 +20,9 @@ Pullback along a map with a local analytic inverse, such as a chart, is bijectiv
 (`stalkPullback_bijective`), in particular pullback along a continuous linear equivalence
 (`ContinuousLinearEquiv.holomorphicStalkPullback_bijective`) and along a chart followed by one
 (`stalkPullback_comp_extChartAt_bijective`), which identifies a stalk of a manifold with a stalk
-of its model.
+of its model. Together with isolated-point evaluation in dimension zero, this gives an induction
+principle on the complex dimension (`stalk_induction`) for isomorphism-invariant ring properties of
+holomorphic stalks on finite-dimensional boundaryless complex manifolds.
 On the complex line, `eventually_contMDiffAt_of_analyticAt` supplies the local hypothesis
 from `AnalyticAt`.
 -/
@@ -211,3 +213,41 @@ theorem holomorphicStalkPullback_bijective (e : V ≃L[ℂ] W) (x : V) :
     (Eventually.of_forall e.symm_apply_apply) (Eventually.of_forall e.apply_symm_apply)
 
 end ContinuousLinearEquiv
+
+namespace TauCeti.holomorphicStructureSheaf
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
+  {X : Type} [TopologicalSpace X] [ChartedSpace H X] [IsManifold I 1 X]
+
+/-- An isomorphism-invariant property of commutative rings holds for every holomorphic stalk of a
+finite-dimensional complex manifold without boundary as soon as it holds for `ℂ` and passes from
+all holomorphic stalks of a finite-dimensional complex normed space `V` to those of `V × ℂ`. -/
+theorem stalk_induction (P : ∀ (R : Type) [CommRing R], Prop)
+    (hequiv : ∀ {A B : Type} [CommRing A] [CommRing B], (A ≃+* B) → P A → P B)
+    (h₀ : P ℂ)
+    (hprod : ∀ {V : Type} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V],
+      (∀ x : V, P ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk x)) →
+      ∀ p : V × ℂ, P ((holomorphicStructureSheaf 𝓘(ℂ, V × ℂ) (V × ℂ)).presheaf.stalk p))
+    (x : X) :
+    P ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
+  have hmodel : ∀ (n : ℕ) (y : Fin n → ℂ),
+      P ((holomorphicStructureSheaf 𝓘(ℂ, Fin n → ℂ) (Fin n → ℂ)).presheaf.stalk y) := by
+    intro n
+    induction n with
+    | zero =>
+      intro y
+      exact hequiv
+        (evalEquivOfNhdsEqPure 𝓘(ℂ, Fin 0 → ℂ) (congrFun (nhds_discrete _) y)).symm h₀
+    | succ n ih =>
+      intro y
+      let e : (Fin (n + 1) → ℂ) ≃L[ℂ] (Fin n → ℂ) × ℂ :=
+        ContinuousLinearEquiv.ofFinrankEq (by simp)
+      exact hequiv (RingEquiv.ofBijective _ (e.holomorphicStalkPullback_bijective y))
+        (hprod ih (e y))
+  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  let e : E ≃L[ℂ] Fin (Module.finrank ℂ E) → ℂ := ContinuousLinearEquiv.ofFinrankEq (by simp)
+  exact hequiv (RingEquiv.ofBijective _ (stalkPullback_comp_extChartAt_bijective x e))
+    (hmodel (Module.finrank ℂ E) ((e ∘ extChartAt I x) x))
+
+end TauCeti.holomorphicStructureSheaf

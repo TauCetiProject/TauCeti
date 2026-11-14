@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.Noetherian.Defs
 
 import Mathlib.RingTheory.FiniteType
 import TauCeti.Analysis.Analytic.Uniqueness
-import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Weierstrass
 import TauCeti.RingTheory.Ideal.Quotient.Finite
@@ -30,11 +29,10 @@ Weierstrass preparation the quotient `𝒪_{E × ℂ, p} ⧸ (f)` is a finite mo
 ring `𝒪_{E, p.1}` (`TauCeti.holomorphicStructureSheaf.finite_quotientMk_comp_stalkPrecomp_fst`).
 An ideal containing `f` is then finitely generated (`Ideal.fg_of_le_of_finite_quotient`).
 
-Every finite-dimensional complex normed space is linearly isomorphic to some `(Fin n → ℂ) × ℂ` or
-is zero, and charts identify the stalks of a manifold with those of its model, so the result
-holds on every finite-dimensional complex manifold without boundary. Through the comparison of
-holomorphic and complex-smooth germs, the same holds for the stalks of Mathlib's complex-smooth
-structure sheaf.
+Dimension induction and chart pullback (`TauCeti.holomorphicStructureSheaf.stalk_induction`) then
+extend the result to every finite-dimensional complex manifold without boundary. Through the
+comparison of holomorphic and complex-smooth germs, the same holds for the stalks of Mathlib's
+complex-smooth structure sheaf.
 
 ## Main declarations
 
@@ -51,28 +49,14 @@ structure sheaf.
 
 public noncomputable section
 
-open Filter Module Topology
+open Filter Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti.holomorphicStructureSheaf
 
 section NormedSpace
 
-variable {V W : Type} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
-  [NormedSpace ℂ W]
-
-/-- On a zero-dimensional space, evaluation identifies every holomorphic stalk with `ℂ`. -/
-private theorem isNoetherianRing_stalk_of_finrank_eq_zero [FiniteDimensional ℂ V]
-    (hV : finrank ℂ V = 0) (x : V) :
-    IsNoetherianRing ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk x) := by
-  have hV' : ∀ y : V, y = x := fun y ↦
-    (finrank_zero_iff_forall_zero.1 hV y).trans (finrank_zero_iff_forall_zero.1 hV x).symm
-  refine isNoetherianRing_of_ringEquiv ℂ (RingEquiv.ofBijective (eval 𝓘(ℂ, V) V x)
-    ⟨(injective_iff_map_eq_zero _).2 fun s hs ↦ ?_, eval_surjective _ _ x⟩).symm
-  obtain ⟨φ, -, hφ⟩ := exists_toFilterGerm_eq x s
-  refine (eq_zero_iff_of_toFilterGerm_eq (hφ _ le_rfl)).2 ?_
-  refine Eventually.of_forall fun y ↦ ?_
-  rw [hV' y, ← eval_eq_of_toFilterGerm_eq (hφ _ le_rfl), hs, Pi.zero_apply]
+variable {V : Type} [NormedAddCommGroup V] [NormedSpace ℂ V]
 
 /-- If the holomorphic stalks of `V` are Noetherian, so are those of `V × ℂ`: an ideal containing
 a nonzero germ is finitely generated because, after a linear change of coordinates making
@@ -109,20 +93,6 @@ private theorem isNoetherianRing_stalk_prod [FiniteDimensional ℂ V]
     ((Ideal.span_singleton_le_iff_mem _).2 (Ideal.mem_map_of_mem σ.toRingHom hfI))
   simpa only [RingEquiv.toRingHom_eq_coe, Ideal.map_of_equiv] using hσI.map σ.symm.toRingHom
 
-/-- Holomorphic stalks of a finite-dimensional complex normed space are Noetherian, by induction
-on the dimension. -/
-private theorem isNoetherianRing_stalk_of_finrank_eq :
-    ∀ (n : ℕ) (V : Type) [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V],
-      finrank ℂ V = n → ∀ x : V,
-        IsNoetherianRing ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk x)
-  | 0, _, _, _, _, hV, x => isNoetherianRing_stalk_of_finrank_eq_zero hV x
-  | n + 1, V, _, _, _, hV, x => by
-    let e : V ≃L[ℂ] (Fin n → ℂ) × ℂ := ContinuousLinearEquiv.ofFinrankEq (by simp [hV])
-    have := isNoetherianRing_stalk_prod
-      (isNoetherianRing_stalk_of_finrank_eq n (Fin n → ℂ) (by simp)) (e x)
-    exact isNoetherianRing_of_surjective _ _ _
-      (e.holomorphicStalkPullback_bijective x).2
-
 end NormedSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
@@ -132,16 +102,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 /-- The stalk of holomorphic functions at any point of a finite-dimensional complex manifold
 without boundary is a Noetherian ring. -/
 instance stalkIsNoetherianRing (x : X) :
-    IsNoetherianRing ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
-  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  -- The model `E` may live in any universe, while the stalks of the model spaces compared above
-  -- live in `Type`: compose the chart at `x` with a linear isomorphism onto a space in `Type`.
-  obtain ⟨E', _, _, _, ⟨e⟩⟩ : ∃ (E' : Type) (_ : NormedAddCommGroup E') (_ : NormedSpace ℂ E')
-      (_ : FiniteDimensional ℂ E'), Nonempty (E ≃L[ℂ] E') :=
-    ⟨Fin (finrank ℂ E) → ℂ, inferInstance, inferInstance, inferInstance,
-      ⟨ContinuousLinearEquiv.ofFinrankEq (by simp)⟩⟩
-  have := isNoetherianRing_stalk_of_finrank_eq _ E' rfl ((e ∘ extChartAt I x) x)
-  exact isNoetherianRing_of_surjective _ _ _ (stalkPullback_comp_extChartAt_bijective x e).2
+    IsNoetherianRing ((holomorphicStructureSheaf I X).presheaf.stalk x) :=
+  stalk_induction (fun R _ ↦ IsNoetherianRing R)
+    (fun e _ ↦ isNoetherianRing_of_ringEquiv _ e) inferInstance
+    (fun hV p ↦ isNoetherianRing_stalk_prod hV p) x
 
 /-- A stalk of Mathlib's complex-smooth structure sheaf on a finite-dimensional complex manifold
 without boundary is a Noetherian ring, via its comparison with holomorphic germs. -/
