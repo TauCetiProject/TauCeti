@@ -8,10 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Symmetric.PermutationModule.PowerSum
 public import TauCeti.RepresentationTheory.Symmetric.PermutationModule.YoungRule
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Basis
-public import TauCeti.RepresentationTheory.Symmetric.ClassSize
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.HallInner
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Monomial
-import TauCeti.RepresentationTheory.Symmetric.Specht.Orthogonality
 
 /-!
 # The finite-variable Frobenius characteristic and Frobenius's formula
@@ -240,7 +237,6 @@ theorem frobeniusCharacteristic_eq_sum_psumPart (h : n ≤ Fintype.card σ)
       character_spechtModuleℂ_intCast, Int.cast_smul_eq_zsmul, sum_spechtChar_smul_psumPart,
       ← Nat.cast_smul_eq_nsmul ℂ, smul_smul, inv_mul_cancel₀ hfac, one_smul]
   exact congr($hL f)
-
 
 /-! ### The Hall inner product -/
 
