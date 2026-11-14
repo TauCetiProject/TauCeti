@@ -243,23 +243,26 @@ theorem isCompactOperator_restrict [ProperSpace E] {K : Set V} (hK : IsCompact K
     IsCompactOperator (restrict (E := E) (hU'K.trans hKU)) := by
   -- The unit ball of `H^∞(U, E)` is equicontinuous by the Cauchy estimate
   -- `dist_apply_le_of_ball_subset`, so the Arzelà–Ascoli theorem applies on the compact set `K`.
-  refine isCompactOperator_of_equicontinuousOn (isClosed_boundedHolomorphicFunctions U')
-    (K := (↑) ⁻¹' K) ?_ ⟨fun z => ⟨z, hKU (hU'K z.2)⟩, continuous_subtype_val.subtype_mk _⟩
-    (fun z => hU'K z.2) (restrict_apply _) fun x _ => EquicontinuousAt.equicontinuousWithinAt ?_ _
-  · rwa [Subtype.isCompact_iff, image_preimage_eq_of_subset fun x hx => ⟨⟨x, hKU hx⟩, rfl⟩]
-  · -- On a ball of radius `R` around `x` inside `U`, the Cauchy estimate gives the common
-    -- modulus `2 / R * dist z x`.
-    obtain ⟨R, hR, hRU⟩ := Metric.isOpen_iff.mp U.isOpen x x.2
-    refine equicontinuousAt_of_continuity_modulus (fun z : U => 2 / R * dist z x) ?_ _ ?_
-    · have hc : Continuous fun z : U => 2 / R * dist z x := by fun_prop
-      simpa using hc.tendsto x
-    · filter_upwards [ball_mem_nhds x hR] with z hz
-      rintro ⟨f, hf⟩
-      rw [mem_closedBall_zero_iff] at hf
-      rw [dist_comm]
-      refine (dist_apply_le_of_ball_subset f hRU hz).trans ?_
-      gcongr
-      linarith
+  refine (isCompactOperator_of_equicontinuousOn
+    (U.isOpenEmbedding'.isInducing.isCompact_preimage' hK (by simpa using hKU))
+    (ContinuousMap.inclusion (hU'K.trans hKU)) (fun z => hU'K z.2)
+    (T := fun f => (restrict (hU'K.trans hKU) f : U' →ᵇ E)) (restrict_apply _)
+    (Equicontinuous.equicontinuousOn ?_ _)).codRestrict (fun f => (restrict _ f).2)
+    (isClosed_boundedHolomorphicFunctions U')
+  -- On a ball of radius `R` around `x` inside `U`, the Cauchy estimate gives the common
+  -- modulus `2 / R * dist z x`.
+  intro x
+  obtain ⟨R, hR, hRU⟩ := Metric.isOpen_iff.mp U.isOpen x x.2
+  refine equicontinuousAt_of_continuity_modulus (fun z : U => 2 / R * dist z x) ?_ _ ?_
+  · have hc : Continuous fun z : U => 2 / R * dist z x := by fun_prop
+    simpa using hc.tendsto x
+  · filter_upwards [ball_mem_nhds x hR] with z hz
+    rintro ⟨f, hf⟩
+    rw [mem_closedBall_zero_iff] at hf
+    rw [dist_comm]
+    refine (dist_apply_le_of_ball_subset f hRU hz).trans ?_
+    gcongr
+    linarith
 
 /-- If `E` is proper, restriction to an open set with compact closure inside `U` is a compact
 operator. -/
