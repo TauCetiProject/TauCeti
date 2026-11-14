@@ -113,11 +113,12 @@ private theorem eLpNorm_rpow_smul_fourier_eq (s : ℝ) (f : E → F) (hf : Conti
       fun x ↦ Or.inl (add_pos_of_pos_of_nonneg one_pos (sq_nonneg ‖x‖)).ne')
   have hm : AEStronglyMeasurable (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • f ξ) volume :=
     (hw.smul hf).aestronglyMeasurable
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal two_ne_zero ENNReal.ofNat_ne_top hm]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hm]
   simp only [ENNReal.toReal_ofNat, ENNReal.rpow_two, ← ofReal_norm, norm_smul, Complex.norm_real]
   refine congrArg (· ^ (1 / 2 : ℝ)) (lintegral_congr fun ξ ↦ ?_)
   rw [Real.norm_of_nonneg (by positivity)]
 
+omit [CompleteSpace F] in
 /-- The pointwise Peetre bound behind the `H^s` estimate: for Schwartz functions `φ` and `f`,
 `⟨ξ⟩ ^ s ‖𝓕 (φ f) ξ‖` is bounded by the convolution of `2 ^ (|s| / 2) ⟨·⟩ ^ |s| ‖𝓕 φ‖` with
 `⟨·⟩ ^ s ‖𝓕 f‖`. -/
@@ -135,7 +136,7 @@ private theorem ofReal_rpow_mul_norm_fourier_smulLeftCLM_le (s : ℝ) (φ : 𝓢
   calc ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ (s / 2)) * ‖∫ y, 𝓕 φ (ξ - y) • 𝓕 f y‖ₑ
       ≤ ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ (s / 2)) * ∫⁻ y, ‖𝓕 φ (ξ - y) • 𝓕 f y‖ₑ := by
         gcongr
-        exact enorm_integral_le_lintegral_enorm _
+        exact eNorm_integral_le_lintegral_eNorm _
     _ = ∫⁻ y, ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ (s / 2) * (‖𝓕 φ (ξ - y)‖ * ‖𝓕 f y‖)) := by
         rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
         refine lintegral_congr fun y ↦ ?_

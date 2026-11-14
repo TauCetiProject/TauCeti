@@ -246,8 +246,7 @@ theorem ncard_irreducibleCharacters_GL2_degree_card_sub_one (hq : 3 ≤ Fintype.
       Fintype.card F * (Fintype.card F - 1) / 2 := by
   rw [irreducibleCharacters_GL2_degree_card_sub_one_eq_image F (gl2QuadraticExtension F)
       (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one hq,
-    ncard_image_GL2CuspidalVirtualCharacter F (gl2QuadraticExtension F)
-      (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one]
+    ncard_image_GL2CuspidalVirtualCharacter F (gl2QuadraticExtension F)]
 
 /-- The four degree counts `q - 1`, `q - 1`, `(q - 1)(q - 2)/2`, and `q(q - 1)/2`, weighted by
 the squares of the degrees `1`, `q`, `q + 1`, and `q - 1` they count, add up to `|GL₂(F)|`. -/
