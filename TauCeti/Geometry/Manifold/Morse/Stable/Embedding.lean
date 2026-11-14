@@ -123,6 +123,14 @@ noncomputable def stableParam (δ : ℝ) (v : φ.stableSubspace) : M :=
   hX.flow (-Real.log (1 + ‖v‖ / δ))
     (φ.toChart.symm (Real.exp (-Real.log (1 + ‖v‖ / δ)) • (v : E)))
 
+/-- The parametrization sends `0` to the critical point. -/
+@[simp]
+theorem stableParam_zero (δ : ℝ) : hX.stableParam φ δ 0 = x := by
+  rw [stableParam]
+  simp only [norm_zero, zero_div, add_zero, Real.log_one, neg_zero, ZeroMemClass.coe_zero,
+    smul_zero, Flow.map_zero_apply]
+  rw [← φ.apply_self, φ.toChart.left_inv φ.mem_source]
+
 variable (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
     fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
   {r : ℝ} (hrT : ∀ z, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target)
@@ -182,14 +190,6 @@ theorem stableParam_of_norm_lt {v : φ.stableSubspace} (hv : ‖v‖ < δ) :
     hX.stableParam φ δ v = φ.toChart.symm v := by
   rw [hX.stableParam_eq φ hφ hrT hδr (T := 0) (by simpa using hv)]
   simp
-
-omit hφ hrT hδr in
-/-- The parametrization sends `0` to the critical point. -/
-theorem stableParam_zero : hX.stableParam φ δ 0 = x := by
-  rw [stableParam]
-  simp only [norm_zero, zero_div, add_zero, Real.log_one, neg_zero, ZeroMemClass.coe_zero,
-    smul_zero, Flow.map_zero_apply]
-  rw [← φ.apply_self, φ.toChart.left_inv φ.mem_source]
 
 /-- **The tangent space of the stable manifold at the critical point.** Read in the Morse chart,
 the derivative of the parametrization at `0` is the inclusion of the stable subspace. -/
@@ -311,7 +311,7 @@ Morse chart at `x` sends the tangent vector `dι₀ u` of `W^s(x)` back to `u`. 
 theorem mfderiv_toChart_mfderiv_stableParam_zero (hδ : 0 < δ) (u : φ.stableSubspace) :
     mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x
       (mfderiv 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) (hX.stableParam φ δ) 0 u) = (u : E) := by
-  have h0 := hX.stableParam_zero φ (δ := δ)
+  have h0 := hX.stableParam_zero φ δ
   have h := mfderiv_comp_apply_of_eq (hg := φ.mdifferentiableAt_toChart φ.mem_source)
     (hf := (hX.isImmersionAt_stableParam_of_norm_lt φ hφ hrT hδr (v := 0)
       (by simpa using hδ)).contMDiffAt.mdifferentiableAt (by simp)) (hy := h0) (v := u)
@@ -421,7 +421,7 @@ theorem exists_stableParam
     (hsmall w hw).trans_le (min_le_left _ _)
   have hεs := fun y hy hyε ↦ (hε y hy hyε).1
   exact ⟨φ, δ, hX.isSmoothEmbedding_stableParam φ hφ hrT hδr hδ hεδ hεs,
-    hX.range_stableParam φ hφ hrT hδr hδ hε0 hεs, hX.stableParam_zero φ,
+    hX.range_stableParam φ hφ hrT hδr hδ hε0 hεs, hX.stableParam_zero φ δ,
     hX.mfderiv_toChart_mfderiv_stableParam_zero φ hφ hrT hδr hδ,
     hX.stableParam_smul φ hφ hrT hδr hδ⟩
 
