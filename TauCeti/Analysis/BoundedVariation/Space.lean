@@ -116,11 +116,11 @@ def bvSubmodule (μ : Measure E) (Ω : Opens E) : Submodule ℝ (E →₁[μ.res
     exact ENNReal.zero_lt_top
   add_mem' {u v} hu hv := by
     rw [Set.mem_ofPred_eq, totalVariationOn_congr_ae (Lp.coeFn_add u v)]
-    exact (memBV_iff.mp ((memBV_iff.mpr ⟨L1.integrable_coeFn u, hu⟩).add
-      (memBV_iff.mpr ⟨L1.integrable_coeFn v, hv⟩))).2
+    exact ((memBV_iff.mpr ⟨L1.integrable_coeFn u, hu⟩).add
+      (memBV_iff.mpr ⟨L1.integrable_coeFn v, hv⟩)).totalVariationOn_lt_top
   smul_mem' c u hu := by
     rw [Set.mem_ofPred_eq, totalVariationOn_congr_ae (Lp.coeFn_smul c u)]
-    exact (memBV_iff.mp ((memBV_iff.mpr ⟨L1.integrable_coeFn u, hu⟩).smul c)).2
+    exact ((memBV_iff.mpr ⟨L1.integrable_coeFn u, hu⟩).smul c).totalVariationOn_lt_top
 
 /-- Almost-everywhere classes of integrable functions with finite total variation on `Ω`.
 The wrapper gives this space its BV norm, independently of the weaker inherited `L¹` norm. -/
