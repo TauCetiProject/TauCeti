@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
-public import Mathlib.Analysis.Complex.UnitDisc.Basic
 public import TauCeti.Analysis.Complex.AtInfinity
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
@@ -44,8 +43,7 @@ A closed rectangle `[a, b] × [c, d]` with `0 < c` lies in `ℍ` and is compact 
 
 The real-part map `re : ℍ → ℝ` is continuous and open, so taking closures commutes with taking
 preimages under it. In particular the closure of the open half-plane `{z | a < z.re}` is the
-closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`; transported by the
-`PSL(2, ℝ)`-action, this identifies the boundary of a half-plane bounded by a geodesic line.
+closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`.
 
 Since `w ↦ re w + exp (im w) i` is a continuous bijection from `ℂ` onto `ℍ`, the complement of a
 countable subset of `ℍ` is path connected and dense, as it is in the plane. Removing countably
