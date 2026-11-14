@@ -140,10 +140,8 @@ image. -/
     (e : ClassGroup R ≃* ClassGroup S) (C : ClassGroup R) :
     elementaryTwoQuotientCongr e (elementaryTwoQuotientMk C) =
       elementaryTwoQuotientMk (e C) := by
-  -- Reduce the class-group wrapper names to the generic elementary-2 quotient statement.
-  change TauCeti.elementaryTwoQuotientCongr e (TauCeti.elementaryTwoQuotientMk C) =
-    TauCeti.elementaryTwoQuotientMk (e C)
-  exact TauCeti.elementaryTwoQuotientCongr_mk e C
+  simp only [elementaryTwoQuotientCongr_def, elementaryTwoQuotientMk_def,
+    TauCeti.elementaryTwoQuotientCongr_mk]
 
 /-- The inverse induced equivalence on `Cl/Cl²` sends the class of an ideal class to the class
 of its inverse image. -/
@@ -151,10 +149,8 @@ of its inverse image. -/
     (e : ClassGroup R ≃* ClassGroup S) (C : ClassGroup S) :
     (elementaryTwoQuotientCongr e).symm (elementaryTwoQuotientMk C) =
       elementaryTwoQuotientMk (e.symm C) := by
-  -- Reduce the class-group wrapper names to the generic elementary-2 quotient statement.
-  change (TauCeti.elementaryTwoQuotientCongr e).symm (TauCeti.elementaryTwoQuotientMk C) =
-    TauCeti.elementaryTwoQuotientMk (e.symm C)
-  exact TauCeti.elementaryTwoQuotientCongr_symm_mk e C
+  simp only [elementaryTwoQuotientCongr_def, elementaryTwoQuotientMk_def,
+    TauCeti.elementaryTwoQuotientCongr_symm_mk]
 
 /-- The identity equivalence of class groups induces the identity equivalence on `Cl/Cl²`. -/
 @[simp] theorem elementaryTwoQuotientCongr_refl_apply (x : ElementaryTwoQuotient R) :
@@ -178,7 +174,7 @@ opaque) can apply it without unfolding. -/
 theorem elementaryTwoQuotientCongr_apply_eq_self_of_apply_eq_inv (e : ClassGroup R ≃* ClassGroup R)
     (he : ∀ C, e C = C⁻¹) (x : ElementaryTwoQuotient R) :
     elementaryTwoQuotientCongr e x = x := by
-  change TauCeti.elementaryTwoQuotientCongr e x = x
+  rw [elementaryTwoQuotientCongr_def]
   exact TauCeti.elementaryTwoQuotientCongr_apply_eq_self_of_apply_eq_inv e he x
 
 variable (R)
