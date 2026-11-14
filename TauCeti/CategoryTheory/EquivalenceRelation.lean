@@ -157,7 +157,7 @@ theorem equivalence_ofPairHom (h : IsEquivalenceRelation p₁ p₂) (T : C) :
 
 /-- Morphisms into the total space of an internal equivalence relation agree when their composites
 with both projections agree. -/
-theorem hom_ext (h : IsEquivalenceRelation p₁ p₂) {T : C} {f g : T ⟶ R} (h₁ : f ≫ p₁ = g ≫ p₁)
+theorem hom_ext (_ : IsEquivalenceRelation p₁ p₂) {T : C} {f g : T ⟶ R} (h₁ : f ≫ p₁ = g ≫ p₁)
     (h₂ : f ≫ p₂ = g ≫ p₂) : f = g :=
   JointlyMono₂.right_cancellation f g h₁ h₂
 
