@@ -14,7 +14,8 @@ import Mathlib.Analysis.Normed.Operator.Banach
 
 The coordinate simplex is the set of nonnegative coordinate vectors with total mass at most
 one. Unlike the barycentric simplex, it is full dimensional: the missing mass is the
-coordinate of its vertex at the origin. Its frontier consists of the points with a zero
+coordinate of its vertex at the origin. Its dilation by `a ≥ 0` is the set of nonnegative
+coordinate vectors with total mass at most `a` (`TauCeti.smul_coordinateSimplex`). Its frontier consists of the points with a zero
 coordinate or total mass one. This identifies the proper barycentric faces with a geometric
 boundary, and allows Mathlib's convex-body rescaling theorem to identify that boundary with
 a round sphere. Affine vertex swaps transport the neighbourhood of the origin to the
@@ -195,6 +196,24 @@ theorem coordinateSimplex_subset_Icc : coordinateSimplex ι ⊆ Icc 0 1 := by
 theorem isCompact_coordinateSimplex : IsCompact (coordinateSimplex ι) :=
   isCompact_Icc.of_isClosed_subset (isClosed_coordinateSimplex ι)
     (coordinateSimplex_subset_Icc ι)
+
+open scoped Pointwise in
+/-- The dilation of the coordinate simplex by `a ≥ 0` is the set of nonnegative vectors with total
+mass at most `a`. -/
+theorem smul_coordinateSimplex {a : ℝ} (ha : 0 ≤ a) :
+    a • coordinateSimplex ι = {x | (∀ i, 0 ≤ x i) ∧ ∑ i, x i ≤ a} := by
+  rcases ha.eq_or_lt with rfl | ha
+  · rw [zero_smul_set ⟨0, by simp⟩]
+    ext x
+    simp only [mem_ofPred_eq, mem_zero]
+    refine ⟨fun hx ↦ by simp [hx], fun ⟨hx, hsum⟩ ↦ funext fun i ↦ ?_⟩
+    exact (Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ hx j).1
+      (le_antisymm hsum (Finset.sum_nonneg fun j _ ↦ hx j)) i (Finset.mem_univ i)
+  · ext x
+    rw [mem_smul_set_iff_inv_smul_mem₀ ha.ne']
+    simp only [mem_coordinateSimplex, mem_ofPred_eq, Pi.smul_apply, smul_eq_mul, ← Finset.mul_sum]
+    rw [inv_mul_le_iff₀ ha, mul_one]
+    exact and_congr_left' (forall_congr' fun i ↦ by rw [mul_nonneg_iff_of_pos_left (inv_pos.2 ha)])
 
 /-- The interior of the coordinate simplex consists of positive vectors with mass less than
 one. -/

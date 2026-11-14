@@ -7,8 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Probability.Distributions.IrwinHall.Cdf
--- Proof-only: the Irwin–Hall mgf, the bound on `(1 - exp (-l)) / l`, and the cdf of the
--- order-zero Irwin–Hall law.
+-- Proof-only: the Irwin–Hall mgf, the bound on `(1 - exp (-l)) / l`, the cdf of the
+-- order-zero Irwin–Hall law, and the dilations of the coordinate simplex.
+import TauCeti.Analysis.Convex.CoordinateSimplex
 import TauCeti.Probability.Distributions.Dirac
 import TauCeti.Probability.Distributions.IrwinHall.Transforms
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
@@ -175,24 +176,6 @@ theorem simplexVolume_eq_pow_div_factorial (m : ℕ) {t : ℝ} (ht₀ : 0 ≤ t)
   · rw [max_eq_right (by push_cast; linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]),
       zero_pow hm.ne', mul_zero]
 
-open scoped Pointwise in
-/-- The corner simplex of size `a ≥ 0` is the dilation by `a` of the corner simplex of size `1`. -/
-private theorem setOf_nonneg_sum_le_eq_smul (κ : Type*) [Fintype κ] {a : ℝ} (ha : 0 ≤ a) :
-    {x : κ → ℝ | (∀ k, 0 ≤ x k) ∧ ∑ k, x k ≤ a} =
-      a • {x : κ → ℝ | (∀ k, 0 ≤ x k) ∧ ∑ k, x k ≤ 1} := by
-  rcases ha.eq_or_lt with rfl | ha
-  · rw [zero_smul_set ⟨0, by simp⟩]
-    ext x
-    simp only [mem_ofPred_eq, mem_zero]
-    refine ⟨fun ⟨hx, hsum⟩ ↦ funext fun k ↦ ?_, fun hx ↦ by simp [hx]⟩
-    exact (Finset.sum_eq_zero_iff_of_nonneg fun k _ ↦ hx k).1
-      (le_antisymm hsum (Finset.sum_nonneg fun k _ ↦ hx k)) k (Finset.mem_univ k)
-  · ext x
-    rw [mem_smul_set_iff_inv_smul_mem₀ ha.ne']
-    simp only [mem_ofPred_eq, Pi.smul_apply, smul_eq_mul, ← Finset.mul_sum]
-    rw [inv_mul_le_iff₀ ha, mul_one]
-    exact and_congr_left' (forall_congr' fun k ↦ by rw [mul_nonneg_iff_of_pos_left (inv_pos.2 ha)])
-
 /-- **The volume of the corner simplex.** For `0 ≤ a`, the simplex
 `{x ∈ ℝ^κ | 0 ≤ x k for every k, ∑ k, x k ≤ a}` has volume `a ^ n / n!`, where `n = #κ`. -/
 theorem volume_setOf_nonneg_sum_le (κ : Type*) [Fintype κ] {a : ℝ} (ha : 0 ≤ a) :
@@ -227,7 +210,8 @@ theorem volume_setOf_nonneg_sum_le (κ : Type*) [Fintype κ] {a : ℝ} (ha : 0 �
     simp only [mem_preimage, mem_ofPred_eq, happ]
     exact and_congr (e.symm.surjective.forall (p := fun j ↦ 0 ≤ x j)).symm
       (by rw [e.symm.sum_comp x])
-  rw [setOf_nonneg_sum_le_eq_smul κ ha, Measure.addHaar_smul_of_nonneg volume ha, hκ,
+  rw [← smul_coordinateSimplex κ ha, Measure.addHaar_smul_of_nonneg volume ha, coordinateSimplex,
+    hκ,
     Module.finrank_fintype_fun_eq_card, ← ENNReal.ofReal_mul (pow_nonneg ha m), mul_one_div]
 
 /-- **The volume of the half-open corner simplex.** For `0 < a`, the set

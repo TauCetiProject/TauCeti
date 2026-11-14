@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.KreinMilman
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Algebra.Module.Primitive
 public import TauCeti.Analysis.Convex.Polyhedron.Extreme
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Coordinates
 
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
@@ -59,6 +60,10 @@ the normals (`TauCeti.Toric.facetPolyhedron_add`). It preserves the active const
 smoothness of vertices and the Delzant property (`TauCeti.Toric.isDelzant_add_iff`). This is the
 freedom of shifting a moment map by a constant.
 
+In the lattice coordinates `TauCeti.Toric.latticeCoord i b` of a basis `b` of `N`, the polyhedron
+is cut out by the coordinates of the normals in `b`
+(`TauCeti.Toric.IsIntegralLattice.image_latticeCoord_facetPolyhedron`).
+
 ## Main definitions
 
 * `TauCeti.Toric.facetPairing i u j`: the linear functional `x ↦ ⟨x, u j⟩` on `V*`.
@@ -83,6 +88,8 @@ freedom of shifting a moment map by a constant.
 * `TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`: for an injective lattice map, a Delzant
   polytope has a point on none of its facets.
 * `TauCeti.Toric.facetPolyhedron_add`, `TauCeti.Toric.isDelzant_add_iff`: translations.
+* `TauCeti.Toric.IsIntegralLattice.image_latticeCoord_facetPolyhedron`: a facet polyhedron in
+  lattice coordinates.
 
 ## References
 
@@ -384,5 +391,20 @@ theorem isDelzant_add_iff :
       exact vadd_mem_vadd_set hx
 
 end Translation
+
+/-! ### Lattice coordinates -/
+
+variable (u c) in
+/-- **A facet polyhedron in lattice coordinates.** In the coordinates of a lattice basis `b`, the
+polyhedron `{x | c j ≤ ⟨x, u j⟩}` is cut out by the coordinates of the normals `u j` in `b`. -/
+theorem IsIntegralLattice.image_latticeCoord_facetPolyhedron {κ : Type*} [Fintype κ]
+    (hi : IsIntegralLattice i) (b : Module.Basis κ ℤ N) :
+    latticeCoord i b '' facetPolyhedron i u c =
+      {y | ∀ j, c j ≤ ∑ k, (b.repr (u j) k : ℝ) * y k} := by
+  ext y
+  obtain ⟨x, rfl⟩ := (hi.bijective_latticeCoord b).2 y
+  rw [(hi.bijective_latticeCoord b).1.mem_set_image]
+  simp only [mem_facetPolyhedron, mem_ofPred_eq]
+  exact forall_congr' fun j ↦ by rw [apply_eq_sum_latticeCoord b x (u j)]
 
 end TauCeti.Toric

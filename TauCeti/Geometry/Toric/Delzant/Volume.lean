@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Geometry.Toric.Delzant.CornerChop
 public import TauCeti.Geometry.Toric.Delzant.Simplex
@@ -24,7 +23,7 @@ volume of the toric manifold is `(2π)ⁿ vol(Δ)`. This file computes that meas
 and evaluates it on the simplex and on corner chops.
 
 A basis `b` of the lattice `N` gives *lattice coordinates* `x ↦ (⟨x, b k⟩)_k` on `V*`
-(`TauCeti.Toric.latticeCoord i b`), a linear isomorphism `V* ≃ ℝ^κ`
+(`TauCeti.Toric.latticeCoord i b`), for an integral lattice a linear isomorphism `V* ≃ ℝ^κ`
 (`TauCeti.Toric.IsIntegralLattice.bijective_latticeCoord`) carrying the dual lattice onto `ℤ^κ`
 (`TauCeti.Toric.forall_apply_mem_range_intCast_iff`). The normalized volume of a set `S ⊆ V*` is
 the Lebesgue volume of its image in these coordinates. It does not depend on the basis: two bases
@@ -33,10 +32,10 @@ of `N` differ by an integral matrix with integral inverse, whose determinant is 
 the polyhedron cut out by the coordinates of the normals
 (`TauCeti.Toric.IsIntegralLattice.image_latticeCoord_facetPolyhedron`).
 
-* **The simplex.** The standard simplex of size `a ≥ 0` in `ℝ^κ`, the moment polytope of `ℂPⁿ`,
-  has normalized volume `aⁿ / n!` for `n = #κ`
-  (`TauCeti.Toric.volume_image_latticeCoord_facetPolyhedron_simplex`). For `n = 0` this is `1`,
-  the volume of the one-point polytope.
+* **The simplex.** The standard simplex of size `a ≥ 0` in `ℝ^κ` has normalized volume
+  `aⁿ / n!` for `n = #κ` (`TauCeti.Toric.volume_image_latticeCoord_facetPolyhedron_simplex`).
+  For `a > 0` it is the moment polytope of `ℂPⁿ`. For `n = 0` the volume is `1`, the volume of
+  the one-point polytope.
 * **Corner chops.** Chopping a smooth vertex `v` off a facet polyhedron at a small depth `ε > 0`
   removes exactly `εⁿ / n!` of normalized volume
   (`TauCeti.Toric.IsSmoothVertex.eventually_volume_image_latticeCoord_cornerChop`). In the
@@ -45,16 +44,10 @@ the polyhedron cut out by the coordinates of the normals
   through `v` to meet it. On the symplectic side this is the volume `(2π)ⁿ εⁿ / n!` of the ball
   removed by the toric blowup at the fixed point over `v`.
 
-## Main definitions
-
-* `TauCeti.Toric.latticeCoord i b`: the coordinates `x ↦ (⟨x, b k⟩)_k` of `V*` in a lattice basis.
-
 ## Main results
 
 * `TauCeti.Toric.volume_image_latticeCoord_congr`: the volume in lattice coordinates does not
   depend on the lattice basis.
-* `TauCeti.Toric.IsIntegralLattice.image_latticeCoord_facetPolyhedron`: a facet polyhedron in
-  lattice coordinates.
 * `TauCeti.Toric.volume_image_latticeCoord_facetPolyhedron_simplex`: the simplex of size `a`
   has normalized volume `aⁿ / n!`.
 * `TauCeti.Toric.IsSmoothVertex.eventually_volume_image_latticeCoord_cornerChop`: a small corner
@@ -78,72 +71,6 @@ namespace TauCeti.Toric
 
 variable {ι κ κ' N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {i : N →+ V}
-
-/-! ### Lattice coordinates -/
-
-variable (i) in
-/-- The *lattice coordinates* `x ↦ (⟨x, b k⟩)_k` of a point `x` of `V*` in a basis `b` of the
-lattice `N`. -/
-def latticeCoord (b : Module.Basis κ ℤ N) : StrongDual ℝ V →L[ℝ] κ → ℝ :=
-  ContinuousLinearMap.pi fun k ↦ ContinuousLinearMap.apply ℝ ℝ (i (b k))
-
-@[simp]
-theorem latticeCoord_apply (b : Module.Basis κ ℤ N) (x : StrongDual ℝ V) (k : κ) :
-    latticeCoord i b x k = x (i (b k)) :=
-  (rfl)
-
-/-- The value of a point of `V*` on a lattice vector `n` is the combination of its lattice
-coordinates with the coordinates of `n`. -/
-theorem apply_eq_sum_latticeCoord [Fintype κ] (b : Module.Basis κ ℤ N) (x : StrongDual ℝ V)
-    (n : N) : x (i n) = ∑ k, (b.repr n k : ℝ) * latticeCoord i b x k := by
-  conv_lhs => rw [← b.sum_repr n]
-  simp only [map_sum, map_zsmul, zsmul_eq_mul, latticeCoord_apply]
-
-/-- **Change of lattice basis.** The lattice coordinates in a basis `b'` are obtained from those in
-`b` by the transpose of the integral change-of-basis matrix. -/
-theorem latticeCoord_eq_mulVec [Fintype κ] (b : Module.Basis κ ℤ N) (b' : Module.Basis κ' ℤ N)
-    (x : StrongDual ℝ V) :
-    latticeCoord i b' x =
-      ((b.toMatrix b').transpose.map ((↑) : ℤ → ℝ)).mulVec (latticeCoord i b x) := by
-  funext k'
-  rw [latticeCoord_apply, apply_eq_sum_latticeCoord b x (b' k')]
-  simp only [Matrix.mulVec, dotProduct, Matrix.map_apply, Matrix.transpose_apply,
-    Module.Basis.toMatrix_apply]
-
-/-- **The dual lattice in lattice coordinates.** A point of `V*` takes integer values on the
-lattice exactly when its lattice coordinates are integers. So the lattice coordinates carry the
-dual lattice onto `ℤ^κ`, and Lebesgue measure in these coordinates gives it covolume one. -/
-theorem forall_apply_mem_range_intCast_iff [Finite κ] (b : Module.Basis κ ℤ N)
-    (x : StrongDual ℝ V) :
-    (∀ n, x (i n) ∈ range ((↑) : ℤ → ℝ)) ↔ ∀ k, latticeCoord i b x k ∈ range ((↑) : ℤ → ℝ) := by
-  have := Fintype.ofFinite κ
-  refine ⟨fun h k ↦ h (b k), fun h n ↦ ?_⟩
-  choose m hm using h
-  exact ⟨∑ k, b.repr n k * m k, by simp [apply_eq_sum_latticeCoord b x n, hm]⟩
-
-/-- For an integral lattice, the lattice coordinates in any basis are a linear isomorphism
-`V* ≃ ℝ^κ`: the images `i (b k)` of a lattice basis form a real basis of `V`. -/
-theorem IsIntegralLattice.bijective_latticeCoord [Finite κ] (hi : IsIntegralLattice i)
-    (b : Module.Basis κ ℤ N) : Function.Bijective (latticeCoord i b) := by
-  let B := hi.isBaseChange.basis b
-  have hB (k : κ) : B k = i (b k) := by simpa using hi.isBaseChange.basis_apply b k
-  refine ⟨fun x y hxy ↦ ContinuousLinearMap.coe_injective (B.ext fun k ↦ ?_), fun y ↦ ?_⟩
-  · simpa [hB] using congrFun hxy k
-  · have := Module.Finite.of_basis B
-    refine ⟨LinearMap.toContinuousLinearMap (B.constr ℝ y), funext fun k ↦ ?_⟩
-    simp [← hB, Module.Basis.constr_basis]
-
-/-- **A facet polyhedron in lattice coordinates.** In the coordinates of a lattice basis `b`, the
-polyhedron `{x | c j ≤ ⟨x, u j⟩}` is cut out by the coordinates of the normals `u j` in `b`. -/
-theorem IsIntegralLattice.image_latticeCoord_facetPolyhedron [Fintype κ]
-    (hi : IsIntegralLattice i) (b : Module.Basis κ ℤ N) (u : ι → N) (c : ι → ℝ) :
-    latticeCoord i b '' facetPolyhedron i u c =
-      {y | ∀ j, c j ≤ ∑ k, (b.repr (u j) k : ℝ) * y k} := by
-  ext y
-  obtain ⟨x, rfl⟩ := (hi.bijective_latticeCoord b).2 y
-  rw [(hi.bijective_latticeCoord b).1.mem_set_image]
-  simp only [mem_facetPolyhedron, mem_ofPred_eq]
-  exact forall_congr' fun j ↦ by rw [apply_eq_sum_latticeCoord b x (u j)]
 
 /-! ### Independence of the lattice basis -/
 
@@ -188,9 +115,9 @@ theorem volume_image_latticeCoord_congr [Fintype κ] [Fintype κ'] (b : Module.B
 /-! ### The simplex -/
 
 /-- **The volume of the simplex.** For `a ≥ 0`, the standard simplex
-`{x | 0 ≤ ⟨x, e k⟩, ∑ k, ⟨x, e k⟩ ≤ a}` of size `a` in `(ℝ^κ)*`, the moment polytope of `ℂPⁿ` for
-`n = #κ`, has lattice-normalized volume `aⁿ / n!`: its image in the coordinates of any basis of
-`ℤ^κ` has this Lebesgue volume. -/
+`{x | 0 ≤ ⟨x, e k⟩, ∑ k, ⟨x, e k⟩ ≤ a}` of size `a` in `(ℝ^κ)*` has lattice-normalized volume
+`aⁿ / n!` for `n = #κ`: its image in the coordinates of any basis of `ℤ^κ` has this Lebesgue
+volume. For `a > 0` this simplex is the moment polytope of `ℂPⁿ`. -/
 theorem volume_image_latticeCoord_facetPolyhedron_simplex [Fintype κ] [DecidableEq κ]
     [Fintype κ'] (b : Module.Basis κ' ℤ (κ → ℤ)) {a : ℝ} (ha : 0 ≤ a) :
     volume (latticeCoord ((Int.castAddHom ℝ).compLeft κ) b ''
