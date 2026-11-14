@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
 public import TauCeti.Algebra.Coalgebra.Comodule.Antipode
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
+public import TauCeti.RingTheory.TensorProduct.Module
 
 /-!
 # Descent of relative Hopf modules along Hopf–Galois extensions
@@ -116,33 +117,8 @@ variable {R H A B N : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
 
 variable (R H A N) in
 /-- The action `(a ⊗ h) • (n ⊗ h') = a • n ⊗ h h'` of `A ⊗[R] H` on `N ⊗[R] H`. -/
-private noncomputable def tensorSMul : A ⊗[R] H →ₗ[R] N ⊗[R] H →ₗ[R] N ⊗[R] H :=
+private noncomputable abbrev tensorSMul : A ⊗[R] H →ₗ[R] N ⊗[R] H →ₗ[R] N ⊗[R] H :=
   TensorProduct.map₂ (Algebra.lsmul R R N).toLinearMap (LinearMap.mul R H)
-
-private theorem tensorSMul_tmul_tmul (a : A) (h : H) (n : N) (h' : H) :
-    tensorSMul R H A N (a ⊗ₜ h) (n ⊗ₜ h') = (a • n) ⊗ₜ (h * h') :=
-  (rfl)
-
-private theorem tensorSMul_tmul_one_mul (a : A) (u : A ⊗[R] H) (v : N ⊗[R] H) :
-    tensorSMul R H A N ((a ⊗ₜ 1) * u) v = a • tensorSMul R H A N u v := by
-  induction u with
-  | add u u' hu hu' => simp only [mul_add, map_add, LinearMap.add_apply, hu, hu', smul_add]
-  | tmul x h =>
-    rw [Algebra.TensorProduct.tmul_mul_tmul, one_mul]
-    induction v with
-    | add v v' hv hv' => simp only [map_add, hv, hv', smul_add]
-    | tmul n h' => simp [tensorSMul_tmul_tmul, mul_smul, TensorProduct.smul_tmul']
-
-private theorem tensorSMul_one (v : N ⊗[R] H) : tensorSMul R H A N 1 v = v := by
-  induction v with
-  | add v v' hv hv' => simp only [map_add, hv, hv']
-  | tmul n h => simp [Algebra.TensorProduct.one_def, tensorSMul_tmul_tmul]
-
-private theorem tensorSMul_one_tmul (h : H) (v : N ⊗[R] H) :
-    tensorSMul R H A N (1 ⊗ₜ h) v = (LinearMap.mulLeft R h).lTensor N v := by
-  induction v with
-  | add v v' hv hv' => simp only [map_add, hv, hv']
-  | tmul n h' => simp [tensorSMul_tmul_tmul]
 
 variable [ComoduleAlgebra R H A] [Comodule R H N] [IsRelativeHopfModule R H A N]
 
@@ -158,14 +134,15 @@ private theorem coact_smul_eq_tensorSMul (a : A) (n : N) :
   | tmul a h =>
     induction Comodule.coact (R := R) (C := H) n with
     | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
-    | tmul n h' => simp [tensorSMul_tmul_tmul]
+    | tmul n h' => simp
 
 /-- The coaction of a relative Hopf module is linear over the coinvariants of `A`. -/
 theorem coact_smul_of_mem_coinvariants {a : A} (ha : a ∈ ComoduleAlgebra.coinvariants R H A)
     (n : N) :
     Comodule.coact (R := R) (C := H) (a • n) = a • Comodule.coact (R := R) (C := H) n := by
   rw [coact_smul_eq_tensorSMul, ComoduleAlgebra.mem_coinvariants.1 ha,
-    ← mul_one (a ⊗ₜ[R] (1 : H)), tensorSMul_tmul_one_mul, tensorSMul_one]
+    ← mul_one (a ⊗ₜ[R] (1 : H)), TensorProduct.map₂_lsmul_mul_tmul_one_mul,
+    TensorProduct.map₂_lsmul_mul_one]
 
 variable [CommSemiring B] [Algebra R B] [Algebra B A]
   [Module B N] [IsScalarTower B A N] [IsScalarTower R B N]
@@ -249,7 +226,7 @@ variable {R H A B N : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
 
 variable (R B N) in
 /-- `(x ⊗ y) ⊗ n ↦ x ⊗ y • n`. -/
-private noncomputable def actOne : (A ⊗[B] A) ⊗[R] N →ₗ[R] A ⊗[B] N :=
+private noncomputable abbrev actOne : (A ⊗[B] A) ⊗[R] N →ₗ[R] A ⊗[B] N :=
   ((((LinearMap.id : N →ₗ[R] N).liftBaseChange A).restrictScalars B).lTensor A ∘ₗ
     (TensorProduct.AlgebraTensorModule.assoc R B B A A N).toLinearMap).restrictScalars R
 
@@ -257,13 +234,6 @@ omit [IsScalarTower R B N] in
 private theorem actOne_tmul (x y : A) (n : N) :
     actOne R B N ((x ⊗ₜ[B] y) ⊗ₜ[R] n) = x ⊗ₜ[B] (y • n) :=
   (rfl)
-
-omit [IsScalarTower R B N] in
-private theorem actOne_mul_tmul (z : A ⊗[B] A) (x : A) (n : N) :
-    actOne R B N ((z * (1 ⊗ₜ x)) ⊗ₜ[R] n) = actOne R B N (z ⊗ₜ[R] (x • n)) := by
-  induction z with
-  | add z z' hz hz' => simp only [add_mul, TensorProduct.add_tmul, map_add, hz, hz']
-  | tmul a y => simp [actOne_tmul, mul_smul]
 
 private theorem galoisMap_actOne (z : A ⊗[B] A) (n : N) :
     galoisMap B N hB (actOne R B N (z ⊗ₜ[R] n)) =
@@ -273,7 +243,7 @@ private theorem galoisMap_actOne (z : A ⊗[B] A) (n : N) :
   | add z z' hz hz' => simp only [TensorProduct.add_tmul, map_add, LinearMap.add_apply, hz, hz']
   | tmul x y =>
     rw [actOne_tmul, galoisMap_tmul, coact_smul_eq_tensorSMul, ComoduleAlgebra.galoisMap_tmul,
-      tensorSMul_tmul_one_mul]
+      TensorProduct.map₂_lsmul_mul_tmul_one_mul]
 
 variable (hβ : Function.Bijective (ComoduleAlgebra.galoisMap B hB))
 
@@ -304,7 +274,8 @@ private theorem galoisMap_translationAct (t : H ⊗[R] N) :
   induction t with
   | add t t' ht ht' => simp only [map_add, ht, ht']
   | tmul h n =>
-    rw [translationAct_tmul, galoisMap_actOne, galoisMap_translation, tensorSMul_one_tmul,
+    rw [translationAct_tmul, galoisMap_actOne, galoisMap_translation,
+      TensorProduct.map₂_lsmul_mul_one_tmul,
       Comodule.mulCoact_tmul]
 
 variable (N) in
@@ -358,7 +329,8 @@ private theorem galoisMapInv_surjective : Function.Surjective (galoisMapInv N h�
     induction t with
     | add t t' ht ht' => rw [map_add, TensorProduct.add_tmul, map_add]; exact add_mem ht ht'
     | tmul h x =>
-      rw [untwist_tmul, actOne_mul_tmul, ← translationAct_tmul, ← galoisMapInv_mulCoact]
+      rw [untwist_tmul, TensorProduct.AlgebraTensorModule.lTensor_liftBaseChange_assoc_mul_tmul,
+        ← translationAct_tmul, ← galoisMapInv_mulCoact]
       exact LinearMap.mem_range_self _ _
   intro x
   induction x with
