@@ -264,7 +264,7 @@ private theorem mul_volume_le_tsum_maximalFunction_rpow (hg : ∀ i, Measurable 
     Measurable.tsum fun i => (measurable_maximalFunction volume (g i)).pow_const r
   have hdiag := lintegral_tsum_maximalFunction_rpow_le volume (f := g)
     (fun i => (hg i).eNorm.aemeasurable) hr
-  simp only [eNorm_eq_self, Module.finrank_fintype_fun_eq_card] at hdiag
+  simp only [eNorm_eq_self, Module.finrank_fintype_fun_eq_card, maximalFunctionConst_def] at hdiag
   exact (mul_meas_ge_le_lintegral₀ hM.aemeasurable s).trans hdiag
 
 variable [Nonempty ι]
@@ -277,7 +277,8 @@ private theorem ae_tsum_cubeAverage_rpow_rpow_le (hg : ∀ i, Measurable (g i)) 
       2 ^ Fintype.card ι * t := by
   set G : (ι → ℝ) → ℝ≥0∞ := fun y => (∑' i, g i y ^ r) ^ (1 / r)
   have hG : Measurable G := (Measurable.tsum fun i => (hg i).pow_const r).pow_const _
-  filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes hG.aemeasurable hfin ht] with x hx
+  filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes hG.aemeasurable le_rfl
+    (by simpa only [ENNReal.rpow_one] using hfin) ht] with x hx
   by_cases hmem : ∃ q ∈ calderonZygmundCubes G t, x ∈ dyadicCube q.1 q.2
   · obtain ⟨q, hq, hxq⟩ := hmem
     exact (tsum_cubeAverage_rpow_rpow_le hg hr hq hxq).trans
