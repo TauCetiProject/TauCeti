@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.BumpFunction
 public import TauCeti.Analysis.Calculus.Morse.Generic
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Covector
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.ManifoldFamily
 public import TauCeti.Geometry.Manifold.Morse.Persistence
 
@@ -85,24 +86,21 @@ variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] {n : ℕ∞}
 `c`, cut off by the bump function `β`: the function `y ↦ g y - a (β y • extChartAt I c y)`. -/
 private noncomputable def bumpPerturbation {c : M} (β : SmoothBumpFunction I c)
     (g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯) (a : E →L[ℝ] ℝ) : C^n⟮I, M; 𝓘(ℝ), ℝ⟯ :=
-  ⟨fun y ↦ g y - a (β y • extChartAt I c y),
-    g.contMDiff.sub (contMDiff_const.clm_apply
-      ((β.contMDiff_smul contMDiffOn_extChartAt).of_le (WithTop.coe_le_coe.2 le_top)))⟩
+  g - β.bumpCovector a
 
 omit [I.Boundaryless] [IsManifold I n M] in
 private theorem bumpPerturbation_apply {c : M} (β : SmoothBumpFunction I c)
     (g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯) (a : E →L[ℝ] ℝ) (y : M) :
-    bumpPerturbation β g a y = g y - a (β y • extChartAt I c y) := (rfl)
+    bumpPerturbation β g a y = g y - a (β y • extChartAt I c y) := by
+  simp [bumpPerturbation]
 
 omit [I.Boundaryless] in
 /-- The bump perturbation depends continuously on the functional, for the weak Whitney
 topology. -/
 private theorem continuous_bumpPerturbation {c : M} (β : SmoothBumpFunction I c)
     (g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯) : Continuous (bumpPerturbation β g) :=
-  ContMDiff.continuous_manifoldWeakWhitney <|
-    (g.contMDiff.comp contMDiff_snd).sub (contMDiff_fst.clm_apply
-      (((β.contMDiff_smul contMDiffOn_extChartAt).of_le (WithTop.coe_le_coe.2 le_top)).comp
-        contMDiff_snd))
+  continuous_const.sub ((β.bumpCovectorCLM (n := n)).continuous.congr
+    β.bumpCovectorCLM_apply)
 
 omit [I.Boundaryless] [IsManifold I n M] in
 /-- The difference between the bump perturbation and the function itself is supported in the
@@ -111,12 +109,11 @@ private theorem tsupport_bumpPerturbation_sub_subset {c : M} (β : SmoothBumpFun
     (g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯) (a : E →L[ℝ] ℝ) :
     tsupport (fun y ↦ bumpPerturbation β g a y - g y) ⊆ tsupport β := by
   have hdiff : (fun y ↦ bumpPerturbation β g a y - g y) =
-      (fun y ↦ β y * (-a (extChartAt I c y))) := by
+      -β.bumpCovector (n := n) a := by
     ext y
-    simp only [bumpPerturbation_apply, map_smul, smul_eq_mul]
-    ring
-  rw [hdiff]
-  exact tsupport_mul_subset_left
+    simp [bumpPerturbation]
+  rw [hdiff, tsupport_neg]
+  exact β.tsupport_bumpCovector_subset a
 
 /-- One local perturbation, with its support confined to a prescribed neighbourhood. -/
 private theorem exists_isOpen_forall_exists_isManifoldNondegenerateCriticalPoint (hn : 2 ≤ n)
