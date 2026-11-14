@@ -121,8 +121,8 @@ private theorem cup_δ_of_leftInverse_of_nonneg (M : Rep k G) {S : ShortComplex 
     cup M S.X₁ p (q + 1) (n + 1) (by omega) x (_root_.TateCohomology.δ hS q y) =
       p.negOnePow • _root_.TateCohomology.δ hMS n (cup M S.X₃ p q n h x y) := by
   have hD : (ShortComplex.mk (coindBotUnit S.X₁) (dimensionShiftUpπ S.X₁)
-      (coindBotUnit_comp_dimensionShiftUpπ S.X₁)).ShortExact := by
-    simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact S.X₁
+      (coindBotUnit_comp_dimensionShiftUpπ S.X₁)).ShortExact :=
+    dimensionShiftUpSES_shortExact S.X₁
   let Φ := toDimensionShiftUpSES hS hr
   -- The connecting maps of `S` and of the dimension-shifting sequence, and of their tensor
   -- products with `M`, are related through `Φ`, which is the identity on the first terms.
@@ -155,8 +155,8 @@ private theorem cup_δ_of_rightInverse_of_neg (M : Rep k G) {S : ShortComplex (R
     cup M S.X₁ p (q + 1) (n + 1) (by omega) x (_root_.TateCohomology.δ hS q y) =
       p.negOnePow • _root_.TateCohomology.δ hMS n (cup M S.X₃ p q n h x y) := by
   have hD : (ShortComplex.mk (dimensionShiftDownι S.X₃) (indBotCounit S.X₃)
-      (dimensionShiftDownι_comp_indBotCounit S.X₃)).ShortExact := by
-    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact S.X₃
+      (dimensionShiftDownι_comp_indBotCounit S.X₃)).ShortExact :=
+    dimensionShiftDownSES_shortExact S.X₃
   let Φ := fromDimensionShiftDownSES hS hs
   -- The connecting maps of the dimension-shifting sequence and of `S`, and of their tensor
   -- products with `M`, are related through `Φ`, which is the identity on the last terms.
@@ -252,8 +252,8 @@ theorem cup_δ_of_flat (M : Rep k G) [Module.Flat k M.V] {S : ShortComplex (Rep 
   have hT : T.ShortExact := TauCeti.kernelSequence_shortExact _
   let D := ShortComplex.mk (dimensionShiftDownι S.X₃) (indBotCounit S.X₃)
     (dimensionShiftDownι_comp_indBotCounit S.X₃)
-  have hD : D.ShortExact := by
-    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact S.X₃
+  have hD : D.ShortExact :=
+    dimensionShiftDownSES_shortExact S.X₃
   have := hD.mono_f
   obtain ⟨r, hr⟩ := exists_leftInverse_of_rightInverse hD.exact (rightInverse_indBotCounit S.X₃)
   -- The morphisms `φ : T ⟶ S` and `ψ : T ⟶ D`, both the identity on `N₃`.
@@ -266,8 +266,8 @@ theorem cup_δ_of_flat (M : Rep k G) [Module.Flat k M.V] {S : ShortComplex (Rep 
     (indBotMap S.g) (𝟙 S.X₃) (hD.exact.lift_f _ _)
     ((indBotCounit_naturality S.g).trans (Category.comp_id _).symm)
   have hMT := shortExact_map_tensorLeft_of_flat hT M
-  have hMD : (D.map (tensorLeft M)).ShortExact := by
-    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_tensorLeft_shortExact S.X₃ M
+  have hMD : (D.map (tensorLeft M)).ShortExact :=
+    dimensionShiftDownSES_tensorLeft_shortExact S.X₃ M
   -- The connecting maps of `M ⊗ T` and `M ⊗ D` are isomorphisms, so `M ◁ ψ.τ₁` induces an
   -- injection on Tate cohomology.
   have hinj : Function.Injective ((tateCohomologyFunctor (n + 1)).map (M ◁ ψ.τ₁)) := by
@@ -387,8 +387,8 @@ private theorem δ_cup_of_leftInverse_add_one (N : Rep k G) {p q n : ℤ} (hq : 
   obtain ⟨y, rfl⟩ : ∃ y', (dimensionShiftUpIso N q).hom y' = y :=
     ⟨(dimensionShiftUpIso N q).inv y, Iso.inv_hom_id_apply _ _⟩
   have hD : (ShortComplex.mk (coindBotUnit N) (dimensionShiftUpπ N)
-      (coindBotUnit_comp_dimensionShiftUpπ N)).ShortExact := by
-    simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact N
+      (coindBotUnit_comp_dimensionShiftUpπ N)).ShortExact :=
+    dimensionShiftUpSES_shortExact N
   rw [cup_dimensionShiftUpIso_hom S.X₃ N hq h rfl,
     cup_dimensionShiftUpIso_hom S.X₁ N hq (by omega : p + 1 + q = n + 1) rfl, ← ih,
     map_zsmul_unit, Int.negOnePow_succ, Units.neg_smul, ← smul_neg, tensorDimensionShiftUpIso_hom,
@@ -411,8 +411,8 @@ private theorem δ_cup_of_leftInverse_of_add_one (N : Rep k G) {p q n : ℤ} (hq
       Rep.shortExact_map_tensorRight_of_leftInverse hS.exact N hr) n (cup S.X₃ N p q n h x y) =
       cup S.X₁ N (p + 1) q (n + 1) (by omega) (_root_.TateCohomology.δ hS p x) y := by
   have hD : (ShortComplex.mk (dimensionShiftDownι N) (indBotCounit N)
-      (dimensionShiftDownι_comp_indBotCounit N)).ShortExact := by
-    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact N
+      (dimensionShiftDownι_comp_indBotCounit N)).ShortExact :=
+    dimensionShiftDownSES_shortExact N
   obtain ⟨ρ, hρ⟩ := Rep.exists_leftInverse_of_rightInverse hD.exact (rightInverse_indBotCounit N)
   refine (tensorDimensionShiftDownIso N S.X₁ (n + 1) (n + 1 + 1) rfl).toLinearEquiv.injective ?_
   rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply]
