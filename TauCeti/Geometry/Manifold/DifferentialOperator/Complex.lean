@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Complex
 public import TauCeti.Geometry.Manifold.VectorField.ComplexDerivation
 public import TauCeti.RingTheory.Derivation.FirstOrder
 public import TauCeti.RingTheory.Derivation.PrincipalSymbol
-import Mathlib.Data.Nat.Choose.Cast
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 
 /-!
@@ -38,7 +37,10 @@ and the **principal symbol** in the geometric convention, without factors of `i`
 `TauCeti.complexSmoothPrincipalSymbol I hx D ξ = (1 / m!) σ(ξ, …, ξ)`,
 
 so that `σ_geom(D)(df_x) = (1 / m!) ([⋯[D, f], …, f] 1)(x)`
-(`TauCeti.complexSmoothPrincipalSymbol_mvfderiv`). Since the commutator symbol is
+(`TauCeti.complexSmoothPrincipalSymbol_mvfderiv`). Both are instances of the point symbols
+`TauCeti.pointCommutatorSymbol` and `TauCeti.pointPrincipalSymbol` of evaluation at `x`, read
+through `I_x / I_x² ≃ (T_x M →L[ℝ] ℂ)` (`TauCeti.complexSmoothCotangentEquiv`), exactly as their
+real counterparts. Since the commutator symbol is
 complex-multilinear on the complex-valued covectors `T_x M →L[ℝ] ℂ`, it is the complex-multilinear
 extension of its restriction to real covectors, which enter as `Complex.ofRealCLM ∘ ξ`. The
 Fourier principal symbol of an operator of order `m`, in which `∂ⱼ` has symbol `i ξⱼ`, is `i ^ m`
@@ -74,6 +76,10 @@ so its Fourier principal symbol is `ξ ↦ i ξ(X_x) - ξ(Y_x)`.
 * `TauCeti.complexSmoothCommutatorSymbol_comp_perm`: the commutator symbol is symmetric.
 * `TauCeti.mk_algebraMap_complexSmoothCommutatorSymbol`: comparison with the cotangent symbol of
   the complex vanishing ideal.
+* `TauCeti.complexSmoothCommutatorSymbol_eq_zero_of_mem_differentialOperators`,
+  `TauCeti.complexSmoothPrincipalSymbol_eq_zero_of_mem_differentialOperators`: an operator of order
+  at most `m`, viewed as one of order at most `m + 1`, has vanishing commutator and principal
+  symbols.
 * `TauCeti.forall_complexSmoothCommutatorSymbol_eq_zero_iff`: on a boundaryless manifold, an
   operator of order at most `m + 1` has vanishing commutator symbol at every point exactly when it
   has order at most `m`.
@@ -84,12 +90,16 @@ so its Fourier principal symbol is `ξ ↦ i ξ(X_x) - ξ(Y_x)`.
   `TauCeti.complexSmoothPrincipalSymbol_derivation_mvfderiv`: an operator `D` of order at most one
   has principal symbol `df_x ↦ (D f)(x) - f(x) (D 1)(x)`, and a derivation `δ` has principal symbol
   `df_x ↦ (δ f)(x)`.
-* `TauCeti.differentialOperatorsOne_apply_eq_mvfderiv_add_mul`,
+* `TauCeti.coe_differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply`: the operator
+  corresponding to `(v, c)` is the derivation of `v` plus multiplication by `c`.
+* `TauCeti.differentialOperators_one_apply_eq_mvfderiv_add_I_mul_mvfderiv_add_mul`,
   `TauCeti.mem_differentialOperators_one_iff_existsUnique_vectorField_mul`: an operator of order at
   most one acts by `f ↦ df(X) + i df(Y) + c f`, with unique `X`, `Y` and `c`, and every such
   expression has order at most one.
-* `complexSmoothPrincipalSymbol_differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm`: the
-  operator `f ↦ df(X) + i df(Y) + c f` has principal symbol `ξ ↦ ξ(X_x) + i ξ(Y_x)`.
+* `complexSmoothPrincipalSymbol_differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm`,
+  `TauCeti.complexSmoothPrincipalSymbol_derivation`: the operator `f ↦ df(X) + i df(Y) + c f`, and
+  the derivation with complexified vector field `1 ⊗ X + i ⊗ Y`, have principal symbol
+  `ξ ↦ ξ(X_x) + i ξ(Y_x)`.
 
 ## References
 
@@ -111,78 +121,27 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   {x : M}
 
-/-! ### Lifting covectors to functions -/
-
-/-- The differential at `x` of the complex functions vanishing at `x`, as a complex-linear map. -/
-private def complexIdealDifferential (hx : I.IsInteriorPoint x) :
-    complexSmoothVanishingIdeal I x →ₗ[ℂ] (TangentSpace I x →L[ℝ] ℂ) :=
-  (complexSmoothCotangentEquiv hx).toLinearMap ∘ₗ
-    ((complexSmoothVanishingIdeal I x).toCotangent.restrictScalars ℂ)
-
-private theorem complexIdealDifferential_apply (hx : I.IsInteriorPoint x)
-    (f : complexSmoothVanishingIdeal I x) :
-    complexIdealDifferential hx f = mvfderiv I (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) x :=
-  complexSmoothCotangentEquiv_toCotangent hx f
-
-private theorem exists_complexIdealDifferential_comp_eq_id (hx : I.IsInteriorPoint x) :
-    ∃ s : (TangentSpace I x →L[ℝ] ℂ) →ₗ[ℂ] complexSmoothVanishingIdeal I x,
-      complexIdealDifferential hx ∘ₗ s = LinearMap.id :=
-  (complexIdealDifferential hx).exists_rightInverse_of_surjective <| LinearMap.range_eq_top.2 <|
-    (complexSmoothCotangentEquiv hx).surjective.comp
-      (complexSmoothVanishingIdeal I x).toCotangent_surjective
-
-/-- A complex-linear choice of a complex smooth function vanishing at `x` with prescribed
-differential at `x`. -/
-private def complexCovectorLift (hx : I.IsInteriorPoint x) :
-    (TangentSpace I x →L[ℝ] ℂ) →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ :=
-  (complexSmoothVanishingIdeal I x).subtype.restrictScalars ℂ ∘ₗ
-    (exists_complexIdealDifferential_comp_eq_id hx).choose
-
-private theorem complexCovectorLift_apply_self (hx : I.IsInteriorPoint x)
-    (ξ : TangentSpace I x →L[ℝ] ℂ) : complexCovectorLift hx ξ x = 0 :=
-  mem_complexSmoothVanishingIdeal_iff.mp
-    ((exists_complexIdealDifferential_comp_eq_id hx).choose ξ).2
-
-private theorem mvfderiv_complexCovectorLift (hx : I.IsInteriorPoint x)
-    (ξ : TangentSpace I x →L[ℝ] ℂ) : mvfderiv I (complexCovectorLift hx ξ) x = ξ := by
-  have h := congr($((exists_complexIdealDifferential_comp_eq_id hx).choose_spec) ξ)
-  rwa [LinearMap.comp_apply, complexIdealDifferential_apply] at h
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
+private theorem ker_complexEvalAlgHom (x : M) :
+    RingHom.ker (ContMDiffMap.complexEvalAlgHom x : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₐ[ℂ] ℂ) =
+      complexSmoothVanishingIdeal I x :=
+  Ideal.ext fun _ ↦ by simp
 
 /-! ### The commutator symbol -/
-
-/-- Evaluation at `x` of the image of `1` under a linear map of complex smooth functions. -/
-private def evalOneAt (x : M) :
-    (C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) →ₗ[ℂ] ℂ where
-  toFun L := L 1 x
-  map_add' _ _ := rfl
-  map_smul' _ _ := by simp
 
 variable (I) in
 /-- The commutator symbol of a differential operator `D` of order at most `m` on complex smooth
 functions at an interior point `x`: the complex-multilinear form on the complex-valued covectors
 `T_x M →L[ℝ] ℂ` sending `(df₁(x), …, dfₘ(x))` to the value at `x` of the iterated commutator
-`[⋯[D, f₁], …, fₘ] 1` (`TauCeti.complexSmoothCommutatorSymbol_mvfderiv`). It is symmetric
-(`TauCeti.complexSmoothCommutatorSymbol_comp_perm`) and `m!` times the polarization of the
-principal symbol `TauCeti.complexSmoothPrincipalSymbol`. -/
+`[⋯[D, f₁], …, fₘ] 1` (`TauCeti.complexSmoothCommutatorSymbol_mvfderiv`). It is the point
+commutator symbol `TauCeti.pointCommutatorSymbol` of evaluation at `x`, read through
+`I_x / I_x² ≃ (T_x M →L[ℝ] ℂ)`. It is symmetric (`TauCeti.complexSmoothCommutatorSymbol_comp_perm`)
+and `m!` times the polarization of the principal symbol `TauCeti.complexSmoothPrincipalSymbol`. -/
 def complexSmoothCommutatorSymbol (hx : I.IsInteriorPoint x) {m : ℕ} :
     differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
         C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m →ₗ[ℂ]
-      MultilinearMap (RingHom.id ℂ) (fun _ : Fin m ↦ TangentSpace I x →L[ℝ] ℂ) ℂ where
-  toFun D := ((evalOneAt x).compMultilinearMap
-      ((commutatorSymbol ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
-        C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) D)).compLinearMap
-    fun _ ↦ complexCovectorLift hx
-  map_add' D₁ D₂ := by ext; simp
-  map_smul' c D := by ext; simp
-
-private theorem complexSmoothCommutatorSymbol_apply (hx : I.IsInteriorPoint x) {m : ℕ}
-    (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
-      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
-    (ξ : Fin m → TangentSpace I x →L[ℝ] ℂ) :
-    complexSmoothCommutatorSymbol I hx D ξ =
-      commutatorSymbol ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
-        C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m D (fun i ↦ complexCovectorLift hx (ξ i)) 1 x :=
-  rfl
+      MultilinearMap (RingHom.id ℂ) (fun _ : Fin m ↦ TangentSpace I x →L[ℝ] ℂ) ℂ :=
+  pointCommutatorSymbol (ContMDiffMap.complexEvalAlgHom x) (complexSmoothCotangentEquiv hx)
 
 /-- The commutator symbol at `x`, evaluated on the differentials at `x` of complex smooth
 functions `f₁, …, fₘ`, is the value at `x` of the iterated commutator `[⋯[D, f₁], …, fₘ] 1`. -/
@@ -193,35 +152,26 @@ theorem complexSmoothCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : �
     complexSmoothCommutatorSymbol I hx D (fun i ↦ mvfderiv I (f i) x) =
       commutatorSymbol ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
         C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m D f 1 x := by
-  -- The lifts `gᵢ` of the differentials differ from `fᵢ - fᵢ(x)` by elements of `I_x²`.
-  set g : Fin m → C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ := fun i ↦ complexCovectorLift hx (mvfderiv I (f i) x)
+  -- The differential of `fᵢ` is that of `fᵢ - fᵢ(x)`, which lies in `I_x`.
   have hc (c : ℂ) : ⇑(algebraMap ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ c) = fun _ ↦ c := funext fun _ ↦ by simp
-  have hd (h : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : MDifferentiableAt I 𝓘(ℝ, ℂ) h x :=
-    (h.contMDiff.mdifferentiable (by simp)).mdifferentiableAt
-  have hg : ∀ i, (fun i ↦ g i + algebraMap ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ (f i x)) i - f i ∈
-      complexSmoothVanishingIdeal I x ^ 2 := fun i ↦ by
-    refine (mem_complexSmoothVanishingIdeal_sq_iff_of_isInteriorPoint hx _).2 ⟨?_, ?_⟩
-    · simp [g, complexCovectorLift_apply_self]
-    · rw [ContMDiffMap.coe_sub, ContMDiffMap.coe_add, hc,
-        mvfderiv_sub ((hd _).add mdifferentiableAt_const) (hd _), mvfderiv_add (hd _)
-          mdifferentiableAt_const, mvfderiv_const, add_zero, mvfderiv_complexCovectorLift,
-        sub_self]
-  have h := commutatorSymbol_apply_sub_mem_smul_top D hg 1
-  rw [commutatorSymbol_add_algebraMap, smul_eq_mul, Ideal.mul_top,
-    mem_complexSmoothVanishingIdeal_iff, ContMDiffMap.coe_sub, Pi.sub_apply, sub_eq_zero] at h
-  rw [complexSmoothCommutatorSymbol_apply]
-  exact h
+  have hd (i : Fin m) : mvfderiv I (f i) x = complexSmoothCotangentEquiv hx
+      ((complexSmoothVanishingIdeal I x).toCotangent
+        ⟨f i + algebraMap ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ (-f i x), by simp⟩) := by
+    rw [complexSmoothCotangentEquiv_toCotangent, ContMDiffMap.coe_add, hc,
+      mvfderiv_add ((f i).contMDiff.mdifferentiable (by simp) x) mdifferentiableAt_const,
+      mvfderiv_const, add_zero]
+  simp only [hd]
+  rw [complexSmoothCommutatorSymbol,
+    pointCommutatorSymbol_toCotangent _ (ker_complexEvalAlgHom x).ge,
+    commutatorSymbol_add_algebraMap, ContMDiffMap.complexEvalAlgHom_apply]
 
 /-- The commutator symbol is symmetric. -/
 theorem complexSmoothCommutatorSymbol_comp_perm (hx : I.IsInteriorPoint x) {m : ℕ}
     (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
       C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
     (ξ : Fin m → TangentSpace I x →L[ℝ] ℂ) (σ : Equiv.Perm (Fin m)) :
-    complexSmoothCommutatorSymbol I hx D (ξ ∘ σ) = complexSmoothCommutatorSymbol I hx D ξ := by
-  choose f _ hf using fun i ↦ exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℂ) (ξ i)
-  obtain rfl : (fun i ↦ mvfderiv I (f i) x) = ξ := funext hf
-  have h := complexSmoothCommutatorSymbol_mvfderiv hx D (f ∘ σ)
-  rwa [commutatorSymbol_comp_perm, ← complexSmoothCommutatorSymbol_mvfderiv hx D f] at h
+    complexSmoothCommutatorSymbol I hx D (ξ ∘ σ) = complexSmoothCommutatorSymbol I hx D ξ :=
+  pointCommutatorSymbol_comp_perm _ (ker_complexEvalAlgHom x).ge D ξ σ
 
 /-- **Comparison with the cotangent symbol.** The commutator symbol at `x` is the cotangent symbol
 `TauCeti.cotangentSymbol` of the complex vanishing ideal `I_x`, read through the identification
@@ -236,13 +186,20 @@ theorem mk_algebraMap_complexSmoothCommutatorSymbol (hx : I.IsInteriorPoint x) {
         (p := (complexSmoothVanishingIdeal I x • ⊤ : Submodule C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ _))
         (algebraMap ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
           (complexSmoothCommutatorSymbol I hx D fun i ↦ complexSmoothCotangentEquiv hx (u i))) =
-      cotangentSymbol ℂ (complexSmoothVanishingIdeal I x) D u (Submodule.Quotient.mk 1) := by
-  choose a ha using fun i ↦ (complexSmoothVanishingIdeal I x).toCotangent_surjective (u i)
-  obtain rfl : (fun i ↦ (complexSmoothVanishingIdeal I x).toCotangent (a i)) = u := funext ha
-  simp only [complexSmoothCotangentEquiv_toCotangent, cotangentSymbol_toCotangent]
-  rw [complexSmoothCommutatorSymbol_mvfderiv, Submodule.Quotient.eq, smul_eq_mul, Ideal.mul_top,
-    mem_complexSmoothVanishingIdeal_iff, ContMDiffMap.coe_sub, Pi.sub_apply, sub_eq_zero]
-  simp
+      cotangentSymbol ℂ (complexSmoothVanishingIdeal I x) D u (Submodule.Quotient.mk 1) :=
+  mk_algebraMap_pointCommutatorSymbol _ (ker_complexEvalAlgHom x) D u
+
+/-- The commutator symbol of an operator of order at most `m + 1` on complex smooth functions
+vanishes at every interior point if the operator has order at most `m`. -/
+theorem complexSmoothCommutatorSymbol_eq_zero_of_mem_differentialOperators
+    (hx : I.IsInteriorPoint x) {m : ℕ}
+    (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ (m + 1))
+    (hD : (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) ∈
+      differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+        C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) :
+    complexSmoothCommutatorSymbol I hx D = 0 :=
+  pointCommutatorSymbol_eq_zero_of_mem_differentialOperators _ (ker_complexEvalAlgHom x).ge D hD
 
 /-- On a boundaryless manifold, an operator of order at most `m + 1` on complex smooth functions
 has vanishing commutator symbol at every point if and only if it has order at most `m`. -/
@@ -262,11 +219,8 @@ theorem forall_complexSmoothCommutatorSymbol_eq_zero_iff [BoundarylessManifold I
     refine MultilinearMap.ext fun f ↦ LinearMap.ext_ring <| ContMDiffMap.ext fun y ↦ ?_
     rw [← complexSmoothCommutatorSymbol_mvfderiv BoundarylessManifold.isInteriorPoint, h y]
     simp
-  · intro h x
-    ext ξ
-    choose f _ hf using fun i ↦ exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℂ) (ξ i)
-    obtain rfl : (fun i ↦ mvfderiv I (f i) x) = ξ := funext hf
-    simp [complexSmoothCommutatorSymbol_mvfderiv, h]
+  · exact fun h x ↦ complexSmoothCommutatorSymbol_eq_zero_of_mem_differentialOperators _ D
+      ((commutatorSymbol_eq_zero_iff D).1 h)
 
 /-! ### The principal symbol -/
 
@@ -281,7 +235,7 @@ def complexSmoothPrincipalSymbol (hx : I.IsInteriorPoint x) {m : ℕ}
     (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
       C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℂ) : ℂ :=
-  (m.factorial : ℂ)⁻¹ * complexSmoothCommutatorSymbol I hx D fun _ ↦ ξ
+  pointPrincipalSymbol (ContMDiffMap.complexEvalAlgHom x) (complexSmoothCotangentEquiv hx) D ξ
 
 theorem complexSmoothPrincipalSymbol_def (hx : I.IsInteriorPoint x) {m : ℕ}
     (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
@@ -289,7 +243,7 @@ theorem complexSmoothPrincipalSymbol_def (hx : I.IsInteriorPoint x) {m : ℕ}
     (ξ : TangentSpace I x →L[ℝ] ℂ) :
     complexSmoothPrincipalSymbol I hx D ξ =
       (m.factorial : ℂ)⁻¹ * complexSmoothCommutatorSymbol I hx D fun _ ↦ ξ :=
-  (rfl)
+  pointPrincipalSymbol_def _ _ D ξ
 
 /-- The principal symbol at the differential of `f` is `1 / m!` times the value at `x` of the
 `m`-fold commutator `[⋯[D, f], …, f] 1`. -/
@@ -308,8 +262,8 @@ theorem complexSmoothPrincipalSymbol_zero (hx : I.IsInteriorPoint x) {m : ℕ}
     (ξ : TangentSpace I x →L[ℝ] ℂ) :
     complexSmoothPrincipalSymbol I hx
       (0 : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
-        C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) ξ = 0 := by
-  simp [complexSmoothPrincipalSymbol_def]
+        C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) ξ = 0 :=
+  pointPrincipalSymbol_zero _ _ ξ
 
 @[simp]
 theorem complexSmoothPrincipalSymbol_add (hx : I.IsInteriorPoint x) {m : ℕ}
@@ -317,18 +271,16 @@ theorem complexSmoothPrincipalSymbol_add (hx : I.IsInteriorPoint x) {m : ℕ}
       C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℂ) :
     complexSmoothPrincipalSymbol I hx (D₁ + D₂) ξ =
-      complexSmoothPrincipalSymbol I hx D₁ ξ + complexSmoothPrincipalSymbol I hx D₂ ξ := by
-  simp [complexSmoothPrincipalSymbol_def, mul_add]
+      complexSmoothPrincipalSymbol I hx D₁ ξ + complexSmoothPrincipalSymbol I hx D₂ ξ :=
+  pointPrincipalSymbol_add _ _ D₁ D₂ ξ
 
 @[simp]
 theorem complexSmoothPrincipalSymbol_smul (hx : I.IsInteriorPoint x) {m : ℕ} (c : ℂ)
     (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
       C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℂ) :
-    complexSmoothPrincipalSymbol I hx (c • D) ξ = c * complexSmoothPrincipalSymbol I hx D ξ := by
-  rw [complexSmoothPrincipalSymbol_def, complexSmoothPrincipalSymbol_def, map_smul,
-    smul_apply, smul_eq_mul]
-  ring
+    complexSmoothPrincipalSymbol I hx (c • D) ξ = c * complexSmoothPrincipalSymbol I hx D ξ :=
+  pointPrincipalSymbol_smul _ _ c D ξ
 
 /-- The principal symbol of an operator of order at most `m` is homogeneous of degree `m` under
 complex scalars. -/
@@ -337,12 +289,21 @@ theorem complexSmoothPrincipalSymbol_smul_covector (hx : I.IsInteriorPoint x) {m
       C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) (c : ℂ)
     (ξ : TangentSpace I x →L[ℝ] ℂ) :
     complexSmoothPrincipalSymbol I hx D (c • ξ) =
-      c ^ m * complexSmoothPrincipalSymbol I hx D ξ := by
-  have h := (complexSmoothCommutatorSymbol I hx D).map_smul_univ (fun _ ↦ c) fun _ ↦ ξ
-  simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul,
-    RingHom.id_apply] at h
-  rw [complexSmoothPrincipalSymbol_def, complexSmoothPrincipalSymbol_def, h]
-  ring
+      c ^ m * complexSmoothPrincipalSymbol I hx D ξ :=
+  pointPrincipalSymbol_smul_covector _ _ D c ξ
+
+/-- The principal symbol of an operator of order at most `m + 1` on complex smooth functions
+vanishes if the operator has order at most `m`. -/
+theorem complexSmoothPrincipalSymbol_eq_zero_of_mem_differentialOperators
+    (hx : I.IsInteriorPoint x) {m : ℕ}
+    (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ (m + 1))
+    (hD : (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) ∈
+      differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+        C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
+    (ξ : TangentSpace I x →L[ℝ] ℂ) :
+    complexSmoothPrincipalSymbol I hx D ξ = 0 :=
+  pointPrincipalSymbol_eq_zero_of_mem_differentialOperators _ (ker_complexEvalAlgHom x).ge D hD ξ
 
 /-- **Principal symbols multiply under composition.** For operators `P` and `Q` on complex smooth
 functions of orders at most `m` and `k`, the principal symbol of `P ∘ Q`, as an operator of order
@@ -357,24 +318,8 @@ theorem complexSmoothPrincipalSymbol_comp (hx : I.IsInteriorPoint x) {m k : ℕ}
         ⟨(P : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) ∘ₗ
             (Q : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯),
           comp_mem_differentialOperators P.2 Q.2⟩ ξ =
-      complexSmoothPrincipalSymbol I hx P ξ * complexSmoothPrincipalSymbol I hx Q ξ := by
-  obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℂ) ξ
-  -- The `(m + k)`-fold commutator of `P ∘ Q` with `f` is `(m + k).choose m` times the product of
-  -- the commutators of `P` and `Q`, and `(m + k).choose m / (m + k)! = 1 / (m! k!)`.
-  have key := congr($(commutatorSymbol_comp_const P Q f) 1 x)
-  rw [LinearMap.smul_apply, ← Nat.cast_smul_eq_nsmul ℂ, ContMDiffMap.complex_smul_apply,
-    LinearMap.comp_apply, ← Dual.apply_one_mul_eq
-      (commutatorSymbol ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
-        C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m P fun _ ↦ f),
-    ContMDiffMap.coe_mul, Pi.mul_apply] at key
-  simp only [complexSmoothPrincipalSymbol_def]
-  rw [complexSmoothCommutatorSymbol_mvfderiv hx _ fun _ ↦ f,
-    complexSmoothCommutatorSymbol_mvfderiv hx P fun _ ↦ f,
-    complexSmoothCommutatorSymbol_mvfderiv hx Q fun _ ↦ f, key, Nat.cast_add_choose]
-  have h₁ : ((m + k).factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _)
-  have h₂ : (m.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _)
-  have h₃ : (k.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _)
-  field_simp
+      complexSmoothPrincipalSymbol I hx P ξ * complexSmoothPrincipalSymbol I hx Q ξ :=
+  pointPrincipalSymbol_comp _ (ker_complexEvalAlgHom x).ge P Q ξ
 
 /-! ### First-order operators -/
 
@@ -437,23 +382,33 @@ theorem differentialOperatorsOneEquivComplexifiedVectorFieldProd_apply_snd
       (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) 1 := by
   simp [differentialOperatorsOneEquivComplexifiedVectorFieldProd]
 
-/-- The operator corresponding to `(1 ⊗ X + i ⊗ Y, c)` acts by `f ↦ df(X) + i df(Y) + c f`. -/
+/-- The operator corresponding to `(v, c)` is the derivation corresponding to `v` plus
+multiplication by `c`. -/
 @[simp]
+theorem coe_differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply
+    (p : (ℂ ⊗[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) × C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (differentialOperatorsOneEquivComplexifiedVectorFieldProd.symm p :
+        C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) =
+      (complexDerivationEquivComplexifiedVectorField.symm p.1).toLinearMap +
+        LinearMap.mulLeft ℂ p.2 := by
+  ext f : 1
+  simp [differentialOperatorsOneEquivComplexifiedVectorFieldProd, mul_comm]
+
+/-- The operator corresponding to `(1 ⊗ X + i ⊗ Y, c)` acts by `f ↦ df(X) + i df(Y) + c f`. -/
 theorem differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply_apply
     (X Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (c f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
     (differentialOperatorsOneEquivComplexifiedVectorFieldProd.symm
         (1 ⊗ₜ X + Complex.I ⊗ₜ Y, c) : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) f x =
       mvfderiv I f x (X x) + Complex.I * mvfderiv I f x (Y x) + f x * c x := by
-  simp only [differentialOperatorsOneEquivComplexifiedVectorFieldProd, LinearEquiv.trans_symm,
-    LinearEquiv.trans_apply, LinearEquiv.prodCongr_symm, LinearEquiv.prodCongr_apply,
-    LinearEquiv.refl_symm, LinearEquiv.refl_apply, coe_differentialOperatorsOneEquiv_symm_apply,
-    ContMDiffMap.coe_add, Pi.add_apply, smul_eq_mul, ContMDiffMap.coe_mul, Pi.mul_apply,
+  rw [coe_differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply, LinearMap.add_apply,
+    Derivation.coeFn_coe, ContMDiffMap.coe_add, Pi.add_apply,
     complexDerivationEquivComplexifiedVectorField_symm_apply_eq_mvfderiv]
+  simp [mul_comm]
 
 /-- **The splitting of operators of order at most one.** An operator of order at most one on
 complex smooth functions acts by `f ↦ df(X) + i df(Y) + f D(1)`, where `1 ⊗ X + i ⊗ Y` is its
 complexified vector field. -/
-theorem differentialOperatorsOne_apply_eq_mvfderiv_add_mul
+theorem differentialOperators_one_apply_eq_mvfderiv_add_I_mul_mvfderiv_add_mul
     (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
       C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ 1)
     (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
@@ -462,13 +417,9 @@ theorem differentialOperatorsOne_apply_eq_mvfderiv_add_mul
         Complex.I * mvfderiv I f x
           (imaginaryPart _ (differentialOperatorsOneEquivComplexifiedVectorFieldProd D).1 x) +
           f x * (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) 1 x := by
-  set e := differentialOperatorsOneEquivComplexifiedVectorFieldProd (I := I) (M := M)
-  have h : e D = (1 ⊗ₜ realPart _ (e D).1 + Complex.I ⊗ₜ imaginaryPart _ (e D).1,
-      (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) 1) := by
-    rw [one_tmul_realPart_add_I_tmul_imaginaryPart]
-    exact Prod.ext rfl (differentialOperatorsOneEquivComplexifiedVectorFieldProd_apply_snd D)
-  conv_lhs => rw [← e.symm_apply_apply D, h,
-    differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply_apply]
+  conv_lhs => rw [← differentialOperatorsOneEquivComplexifiedVectorFieldProd.symm_apply_apply D,
+    coe_differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply]
+  simp [complexDerivationEquivComplexifiedVectorField_symm_apply_eq_mvfderiv, mul_comm]
 
 /-- Vanishing double commutators characterize the unique expression of a complex-linear operator
 on complex smooth functions as `f ↦ df(X) + i df(Y) + c f`, for smooth vector fields `X`, `Y` and
@@ -500,7 +451,7 @@ theorem mem_differentialOperators_one_iff_existsUnique_vectorField_mul
     let d : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
       C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ 1 := ⟨D, hD⟩
     refine ⟨(realPart _ (e d).1, imaginaryPart _ (e d).1, D 1),
-      differentialOperatorsOne_apply_eq_mvfderiv_add_mul d, ?_⟩
+      differentialOperators_one_apply_eq_mvfderiv_add_I_mul_mvfderiv_add_mul d, ?_⟩
     rintro ⟨X, Y, c⟩ hp
     have h := congrArg e (Subtype.ext ((hrep _).mp hp) : d = _)
     rw [LinearEquiv.apply_symm_apply, Prod.ext_iff] at h
@@ -515,22 +466,32 @@ theorem mem_differentialOperators_one_iff_existsUnique_vectorField_mul
     rw [(hrep p).mp hp]
     exact (e.symm _).property
 
-/-- The principal symbol of the operator of order at most one corresponding to
-`(1 ⊗ X + i ⊗ Y, c)` is `ξ ↦ ξ(X_x) + i ξ(Y_x)`. -/
+/-- The principal symbol of the operator of order at most one corresponding to `(v, c)` is
+`ξ ↦ ξ(X_x) + i ξ(Y_x)`, where `v = 1 ⊗ X + i ⊗ Y`. -/
 @[simp]
 theorem complexSmoothPrincipalSymbol_differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm
-    (X Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (c : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (p : (ℂ ⊗[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) × C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯)
     (ξ : TangentSpace I x →L[ℝ] ℂ) :
     complexSmoothPrincipalSymbol I BoundarylessManifold.isInteriorPoint
-        (differentialOperatorsOneEquivComplexifiedVectorFieldProd.symm
-          (1 ⊗ₜ X + Complex.I ⊗ₜ Y, c)) ξ =
-      ξ (X x) + Complex.I * ξ (Y x) := by
+        (differentialOperatorsOneEquivComplexifiedVectorFieldProd.symm p) ξ =
+      ξ (realPart _ p.1 x) + Complex.I * ξ (imaginaryPart _ p.1 x) := by
   obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℂ) ξ
-  rw [complexSmoothPrincipalSymbol_one_mvfderiv,
-    differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply_apply,
-    differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply_apply, ContMDiffMap.coe_one,
-    show mvfderiv I (1 : M → ℂ) x = 0 from mvfderiv_const (1 : ℂ)]
-  simp only [zero_apply, mul_zero, add_zero, Pi.one_apply, one_mul]
-  ring
+  rw [complexSmoothPrincipalSymbol_one_mvfderiv]
+  simp [complexDerivationEquivComplexifiedVectorField_symm_apply_eq_mvfderiv, mul_comm]
+
+/-- On a boundaryless manifold, a derivation `δ` of the complex smooth functions has principal
+symbol `ξ ↦ ξ(X_x) + i ξ(Y_x)`, where `1 ⊗ X + i ⊗ Y` is its complexified vector field. -/
+@[simp]
+theorem complexSmoothPrincipalSymbol_derivation
+    (δ : Derivation ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (ξ : TangentSpace I x →L[ℝ] ℂ) :
+    complexSmoothPrincipalSymbol I BoundarylessManifold.isInteriorPoint
+        ⟨δ, δ.mem_differentialOperators_one⟩ ξ =
+      ξ (realPart _ (complexDerivationEquivComplexifiedVectorField δ) x) +
+        Complex.I * ξ (imaginaryPart _ (complexDerivationEquivComplexifiedVectorField δ) x) := by
+  obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℂ) ξ
+  rw [complexSmoothPrincipalSymbol_derivation_mvfderiv,
+    ← complexDerivationEquivComplexifiedVectorField_symm_apply_eq_mvfderiv,
+    LinearEquiv.symm_apply_apply]
 
 end TauCeti
