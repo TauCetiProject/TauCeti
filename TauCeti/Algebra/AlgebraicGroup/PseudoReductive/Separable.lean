@@ -17,10 +17,12 @@ import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
 
 Pseudo-reductivity of a finite-type affine group over a field `k` is reflected by every field
 extension `K / k` and preserved by every separable algebraic extension `K / k`. In particular,
-pseudo-reductivity over `k` is equivalent to triviality of the unipotent radical after scalar
-extension to `SeparableClosure k`, matching the characterization of reductivity by triviality of the
-unipotent radical over `AlgebraicClosure k`
-(`reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation`).
+pseudo-reductivity over `k` is equivalent to smoothness, geometric connectedness, and triviality of
+the unipotent radical after scalar extension to `SeparableClosure k`, matching the characterization
+of reductivity by smoothness, geometric connectedness, and triviality of the unipotent radical over
+`AlgebraicClosure k`
+(`reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation`) — or
+equivalently, pseudo-reductivity of the geometric fibre over `AlgebraicClosure k`.
 
 Over an arbitrary field extension `K / k`, a pseudo-reductive group over `k` remains
 pseudo-reductive after scalar extension to `K` if and only if the `K`-unipotent radical of
@@ -39,6 +41,9 @@ groups from reductive groups over imperfect fields.
     iff_unipotentRadicalDefiningIdeal_separableClosure_eq_augmentation`:
   pseudo-reductivity is equivalent to smoothness, geometric connectedness, and triviality of the
   unipotent radical over `SeparableClosure k`.
+* `TauCeti.pseudoReductiveCommHopfAlgProperty.baseChange_algebraicClosure_iff_reductive`: a
+  finite-type affine group over `k` is reductive iff its geometric fibre over `AlgebraicClosure k`
+  is pseudo-reductive.
 * `TauCeti.pseudoReductiveCommHopfAlgProperty.
     baseChange_iff_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal`:
   a pseudo-reductive group remains pseudo-reductive over `K / k` iff the `K`-unipotent radical
@@ -107,6 +112,25 @@ theorem baseChange_iff_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIde
       geometricallyConnectedCommHopfAlgProperty.baseChange k K H.obj hH.geometricallyConnected,
       h.symm⟩⟩
 
+-- The defining simp lemma `pseudoReductiveCommHopfAlgProperty_iff` already expands the left-hand
+-- side, so adding this equivalence to the simp set would violate simpNF.
+/-- A finite-type affine group over `k` is reductive if and only if its geometric fibre over
+`AlgebraicClosure k` is pseudo-reductive. -/
+theorem baseChange_algebraicClosure_iff_reductive
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    pseudoReductiveCommHopfAlgProperty (AlgebraicClosure k)
+        (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H) ↔
+      reductiveCommHopfAlgProperty k H := by
+  rw [pseudoReductiveCommHopfAlgProperty_iff,
+    reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation]
+  refine ⟨fun ⟨hs, hc, hr⟩ ↦ ?_, fun ⟨hs, hc, hr⟩ ↦
+    ⟨@Algebra.Smooth.baseChange k _ H (AlgebraicClosure k) _ _ _ _ hs,
+      geometricallyConnectedCommHopfAlgProperty.baseChange k (AlgebraicClosure k) H.obj hc, hr⟩⟩
+  let _ : Algebra.Smooth (AlgebraicClosure k) (AlgebraicClosure k ⊗[k] H.obj) := hs
+  exact ⟨Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat (R := k) (S := H.obj)
+      (AlgebraicClosure k),
+    geometricallyConnectedCommHopfAlgProperty.of_baseChange k (AlgebraicClosure k) H.obj hc, hr⟩
+
 /-- **Descent obstruction for pseudo-reductive groups.** A pseudo-reductive group over `k` is
 reductive if and only if its geometric unipotent radical over `AlgebraicClosure k` descends to
 `k`. -/
@@ -117,11 +141,8 @@ theorem reductive_iff_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdea
         CommHopfAlgCat.baseChangeHopfIdeal (K := AlgebraicClosure k) J =
           FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
             (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H) := by
-  rw [FiniteTypeCommHopfAlgCat.exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal_iff,
-    hH.unipotentRadicalDefiningIdeal_eq_augmentation,
-    CommHopfAlgCat.baseChangeHopfIdeal_augmentation,
-    reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation]
-  exact ⟨fun h ↦ h.2.2.symm, fun h ↦ ⟨hH.smooth, hH.geometricallyConnected, h.symm⟩⟩
+  rw [← baseChange_algebraicClosure_iff_reductive H,
+    hH.baseChange_iff_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal]
 
 end ArbitraryExtension
 

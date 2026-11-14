@@ -11,38 +11,42 @@ public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Basic
 public import TauCeti.FieldTheory.PurelyInseparable.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.WeilRestriction.Connected
 import TauCeti.Algebra.AlgebraicGroup.Reductive.Solvable
+import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.CharP
+import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.NoCharacters
 import TauCeti.Algebra.AlgebraicGroup.Torus.Recognition
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Construction
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Semisimple
-import TauCeti.RingTheory.FiniteType.PointSeparation
+import TauCeti.Algebra.Bialgebra.BaseChange
+import TauCeti.Algebra.Coalgebra.Convolution
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
-# The Weil restriction of `𝔾ₘ` along a purely inseparable extension
+# The Weil restriction of `𝔾ₘ` along a field extension
 
-For a nontrivial finite purely inseparable extension `K / k`, the Weil restriction `Res_{K/k} 𝔾ₘ`
-is the standard example of a commutative pseudo-reductive group which is not reductive. This file
-proves both properties, in characteristic `p > 0`; a nontrivial purely inseparable extension
-forces this.
+For any finite field extension `K / k` in arbitrary characteristic, the Weil restriction
+`Res_{K/k} 𝔾ₘ` is pseudo-reductive; when `K / k` is nontrivial and purely inseparable, it is the
+standard example of a commutative pseudo-reductive group which is not reductive.
 
-**Not reductive.** Let `B` be a finite-dimensional commutative `k`-algebra and `k'` an algebraic
-closure of `k`. The `k'`-points of `Res_{B/k} 𝔾ₘ` are the units of `B ⊗[k] k'`. If this ring has a
-nonzero nilpotent element `n`, then `1 + n` is a nonidentity point of `p`-power order, hence a
-nonidentity unipotent point. A commutative reductive group is a torus, all of whose geometric
-points are semisimple, and a point which is both semisimple and unipotent is the identity. Hence
-`Res_{B/k} 𝔾ₘ` is not reductive unless `B ⊗[k] k'` is reduced. For `B = K` as above, `K ⊗[k] k'` is
-a local ring with nonzero nilpotent maximal ideal
+**Not reductive.** In characteristic `p > 0`, let `B` be a finite-dimensional commutative
+`k`-algebra and `k'` an algebraic closure of `k`. The `k'`-points of `Res_{B/k} 𝔾ₘ` are the units of
+`B ⊗[k] k'`. If this ring has a nonzero nilpotent element `n`, then `1 + n` is a nonidentity point
+of `p`-power order, hence a nonidentity unipotent point. A commutative reductive group is a torus,
+all of whose geometric points are semisimple, and a point which is both semisimple and unipotent is
+the identity. Hence `Res_{B/k} 𝔾ₘ` is not reductive unless `B ⊗[k] k'` is reduced. For a nontrivial
+finite purely inseparable extension `K / k` (which forces positive characteristic), `K ⊗[k] k'` is a
+local ring with nonzero nilpotent maximal ideal
 (`TauCeti.IsPurelyInseparable.not_isReduced_tensorProduct`).
 
-**Pseudo-reductive.** For every finite field extension `K / k`, homomorphisms from a smooth
-unipotent group `U` to `Res_{K/k} 𝔾ₘ` are trivial. By the defining adjunction of the Weil
-restriction such a homomorphism is a unit `v` of `K ⊗[k] U`, a character of `U` over `K`. The
-`K`-algebra `K ⊗[k] U` is reduced, so `v = 1` can be tested at its `K`-algebra maps to `k'`, for
-`K` embedded in `k'`. Such a map is multiplication against a geometric point of `U`, which has
-`p`-power order since it is unipotent; so it sends `v` to a `p`-power root of unity in `k'`, that
-is, to one. In particular the unipotent radical of `Res_{K/k} 𝔾ₘ` over `k` is trivial, while
-smoothness and geometric connectedness are `TauCeti.Algebra.WeilRestriction.instSmooth` and
+**Pseudo-reductive.** For every finite field extension `K / k` in any characteristic, homomorphisms
+from a smooth unipotent group `U` to `Res_{K/k} 𝔾ₘ` are trivial. By the defining adjunction of the
+Weil restriction such a homomorphism is a group-like element `v` of `K ⊗[k] U`, a character of `U_K`
+over `K`. Embedding `K` into an algebraic closure `k'` of `k`, every `k'`-point of `U_K` comes from
+a geometric point of `U` and is therefore unipotent
+(`TauCeti.HopfAlgebra.IsUnipotentPoint.baseChangePointsMulEquiv`), while `K ⊗[k] U` is reduced by
+smoothness, so `v = 1` (`TauCeti.groupLike_eq_one_of_forall_isUnipotentPoint`). In particular the
+unipotent radical of `Res_{K/k} 𝔾ₘ` over `k` is trivial, while smoothness and geometric
+connectedness are `TauCeti.Algebra.WeilRestriction.instSmooth` and
 `TauCeti.Algebra.WeilRestriction.geometricallyConnectedCommHopfAlgProperty_multiplicativeGroup`.
 
 Consequently, when `K / k` is nontrivial and purely inseparable, the geometric unipotent radical of
@@ -57,13 +61,11 @@ dropped from `TauCeti.pseudoReductiveCommHopfAlgProperty.baseChange`.
   reduced.
 * `TauCeti.Algebra.WeilRestriction.not_reductive_multiplicativeGroup_of_isPurelyInseparable`: for
   a nontrivial finite purely inseparable extension `K / k`, `Res_{K/k} 𝔾ₘ` is not reductive.
-* `TauCeti.Algebra.WeilRestriction.toConv_eq_one_of_geometricallyUnipotentPoints`: in
-  characteristic `p > 0`, every homomorphism from a smooth unipotent group to `Res_{K/k} 𝔾ₘ` is
+* `TauCeti.Algebra.WeilRestriction.toConv_eq_one_of_geometricallyUnipotentPoints`: for any finite
+  field extension `K / k`, every homomorphism from a smooth unipotent group to `Res_{K/k} 𝔾ₘ` is
   trivial.
-* `TauCeti.Algebra.WeilRestriction.pseudoReductive_multiplicativeGroup` and
-  `TauCeti.Algebra.WeilRestriction.pseudoReductive_multiplicativeGroup_of_isPurelyInseparable`:
-  `Res_{K/k} 𝔾ₘ` is pseudo-reductive for every finite extension in characteristic `p > 0`, and in
-  particular for every nontrivial finite purely inseparable extension.
+* `TauCeti.Algebra.WeilRestriction.pseudoReductive_multiplicativeGroup`: `Res_{K/k} 𝔾ₘ` is
+  pseudo-reductive for every finite field extension `K / k` in any characteristic.
 * `TauCeti.Algebra.WeilRestriction.
     not_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal_multiplicativeGroup`:
   for a nontrivial finite purely inseparable extension `K / k`, the geometric unipotent radical of
@@ -147,11 +149,78 @@ theorem not_reductive_multiplicativeGroup_of_isPurelyInseparable {K : Type u} [F
     rw [Module.finrank_self] at this
     omega
 
-/-- **Every homomorphism from a smooth unipotent group to `Res_{K/k} 𝔾ₘ` is trivial**, for a
-finite field extension `K / k` in characteristic `p > 0`. A bialgebra map from the coordinate Hopf
+/-- A bialgebra map `Res_{B/k} 𝔾ₘ → U` is classified by a group-like element of `B ⊗[k] U`. -/
+private theorem isGroupLikeElem_multiplicativeGroupPoints_toConv
+    {B U : Type u} [CommRing B] [Algebra k B] [Module.Finite k B] [Module.Projective k B]
+    [CommRing U] [Bialgebra k U] (φ : WeilRestriction k B B[T;T⁻¹] →ₐc[k] U) :
+    IsGroupLikeElem B
+      (multiplicativeGroupPoints k B U (toConv (φ : WeilRestriction k B B[T;T⁻¹] →ₐ[k] U)) :
+        B ⊗[k] U) := by
+  let v := multiplicativeGroupPoints k B U (toConv (φ : WeilRestriction k B B[T;T⁻¹] →ₐ[k] U))
+  refine ⟨?_, ?_⟩
+  · -- Compatibility with the counit gives `(B ⊗ ε)(v) = 1` in `B ⊗[k] k ≃ B`.
+    have hc := congrArg (fun w : (B ⊗[k] k)ˣ ↦ Algebra.TensorProduct.rid k B B (w : B ⊗[k] k))
+      (multiplicativeGroupPoints_naturality (Bialgebra.counitAlgHom k U)
+        (toConv (φ : WeilRestriction k B B[T;T⁻¹] →ₐ[k] U)))
+    rw [ofConv_toConv, BialgHom.counitAlgHom_comp φ,
+      ← TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom, toConv_ofConv, map_one, Units.val_one,
+      map_one, Units.coe_map, MonoidHom.coe_ofClass] at hc
+    have hrid (z : B ⊗[k] U) :
+        Algebra.TensorProduct.rid k B B
+            (Algebra.TensorProduct.lTensor (S := B) B (Bialgebra.counitAlgHom k U) z) =
+          Coalgebra.counit (R := B) z := by
+      induction z using TensorProduct.inductionOn with
+      | add x y hx hy => simp only [map_add, hx, hy]
+      | tmul b u => simp [Algebra.smul_def, mul_comm]
+    exact (hrid v).symm.trans hc.symm
+  · -- Compatibility with comultiplication splits `(B ⊗ Δ)(v)` into the two tensor inclusions.
+    let e := TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv k B U U
+    have hd := multiplicativeGroupPoints_naturality (Bialgebra.comulAlgHom k U)
+      (toConv (φ : WeilRestriction k B B[T;T⁻¹] →ₐ[k] U))
+    have hmul :
+        toConv ((Bialgebra.comulAlgHom k U).comp (φ : WeilRestriction k B B[T;T⁻¹] →ₐ[k] U)) =
+          toConv ((Algebra.TensorProduct.includeLeft : U →ₐ[k] U ⊗[k] U).comp φ) *
+            toConv ((Algebra.TensorProduct.includeRight : U →ₐ[k] U ⊗[k] U).comp φ) := by
+      simpa only [← TauCeti.Bialgebra.comulPoint_eq_include_mul, BialgHom.mapDomain_apply,
+        ofConv_toConv] using
+        map_mul (BialgHom.mapDomain (A := U ⊗[k] U) φ)
+          (toConv (Algebra.TensorProduct.includeLeft : U →ₐ[k] U ⊗[k] U))
+          (toConv (Algebra.TensorProduct.includeRight : U →ₐ[k] U ⊗[k] U))
+    rw [ofConv_toConv, hmul, map_mul, multiplicativeGroupPoints_naturality,
+      multiplicativeGroupPoints_naturality] at hd
+    have hde := congrArg (fun w : (B ⊗[k] (U ⊗[k] U))ˣ ↦ e (w : B ⊗[k] (U ⊗[k] U))) hd.symm
+    simp only [Units.coe_map, MonoidHom.coe_ofClass, Units.val_mul, map_mul] at hde
+    have hleft (z : B ⊗[k] U) :
+        e (Algebra.TensorProduct.lTensor (S := B) B
+            (Algebra.TensorProduct.includeLeft : U →ₐ[k] U ⊗[k] U) z) = z ⊗ₜ[B] 1 := by
+      induction z using TensorProduct.inductionOn with
+      | add x y hx hy => simp only [map_add, TensorProduct.add_tmul, hx, hy]
+      | tmul b u => simp [e, Algebra.TensorProduct.one_def]
+    have hright (z : B ⊗[k] U) :
+        e (Algebra.TensorProduct.lTensor (S := B) B
+            (Algebra.TensorProduct.includeRight : U →ₐ[k] U ⊗[k] U) z) = 1 ⊗ₜ[B] z := by
+      induction z using TensorProduct.inductionOn with
+      | add x y hx hy => simp only [map_add, TensorProduct.tmul_add, hx, hy]
+      | tmul b u =>
+        apply e.symm.injective
+        simp [e, Algebra.TensorProduct.one_def]
+    have hlTensor (z : B ⊗[k] U) :
+        TensorProduct.AlgebraTensorModule.distribBaseChange k B U U
+            (Algebra.TensorProduct.map (AlgHom.id k B) (Bialgebra.comulAlgHom k U) z) =
+          e (Algebra.TensorProduct.lTensor (S := B) B (Bialgebra.comulAlgHom k U) z) := by
+      induction z using TensorProduct.inductionOn with
+      | add x y hx hy => simp only [map_add, hx, hy]
+      | tmul b u =>
+        simp [e, ← AlgEquiv.coe_toLinearEquiv,
+          TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv_toLinearEquiv]
+    rw [← Bialgebra.comulAlgHom_apply, TensorProduct.comulAlgHom_baseChange, hlTensor, hde,
+      hleft, hright, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+
+/-- **Every homomorphism from a smooth unipotent group to `Res_{K/k} 𝔾ₘ` is trivial**, for every
+finite field extension `K / k` in any characteristic. A bialgebra map from the coordinate Hopf
 algebra of `Res_{K/k} 𝔾ₘ` to that of a smooth affine group `U` of finite type whose geometric
 points are unipotent is the identity point `algebraMap k U ∘ counit` of `Res_{K/k} 𝔾ₘ` over `U`. -/
-theorem toConv_eq_one_of_geometricallyUnipotentPoints (p : ℕ) [Fact p.Prime] [CharP k p]
+theorem toConv_eq_one_of_geometricallyUnipotentPoints
     {K : Type u} [Field K] [Algebra k K] [FiniteDimensional k K]
     {U : Type u} [CommRing U] [HopfAlgebra k U] [Algebra.FiniteType k U] [Algebra.Smooth k U]
     (hU : geometricallyUnipotentPointsCommHopfAlgProperty k (CommHopfAlgCat.of k U))
@@ -165,36 +234,20 @@ theorem toConv_eq_one_of_geometricallyUnipotentPoints (p : ℕ) [Fact p.Prime] [
   rw [geometricallyUnipotentPointsCommHopfAlgProperty_iff] at hU
   apply (multiplicativeGroupPoints k K U).injective
   rw [map_one]
-  -- The unit `v` of `K ⊗[k] U` classifying `φ` is tested at the `K`-algebra maps to `k'`.
-  refine Units.ext (eq_of_forall_algHom_apply_eq (k := K) (K := k') fun ψ ↦ ?_)
-  -- The geometric point `y` of `U` underlying `ψ` has `p`-power order.
-  let y : U →ₐ[k] k' := (ψ.restrictScalars k).comp Algebra.TensorProduct.includeRight
-  obtain ⟨n, hn⟩ := (hU (toConv y)).exists_pow_char_pow_eq_one p
-  have hz : BialgHom.mapDomain φ (toConv y) ^ p ^ n = 1 :=
-    (map_pow (BialgHom.mapDomain φ) (toConv y) (p ^ n)).symm.trans (by rw [hn, map_one])
-  -- Its image in `(K ⊗[k] k')ˣ` is the image of `v` under `K ⊗ y`.
-  have hw := (map_pow (multiplicativeGroupPoints k K k') _ (p ^ n)).symm.trans
-    (congrArg (multiplicativeGroupPoints k K k') hz)
-  rw [map_one, BialgHom.mapDomain_apply, multiplicativeGroupPoints_naturality] at hw
-  -- Multiplication `K ⊗[k] k' → k'` recovers `ψ` from `K ⊗ y`.
-  let m : K ⊗[k] k' →ₐ[K] k' :=
-    Algebra.TensorProduct.lift (Algebra.ofId K k') (AlgHom.id k k') fun _ _ ↦ .all _ _
-  have hψ : m.comp (Algebra.TensorProduct.lTensor (S := K) K y) = ψ :=
-    Algebra.TensorProduct.ext_ring (AlgHom.ext fun _ ↦ by simp [m, y])
-  have hv := congrArg (fun w : (K ⊗[k] k')ˣ ↦ m w) hw
-  simp only [Units.val_pow_eq_pow_val, Units.coe_map, Units.val_one, map_pow, map_one] at hv
-  replace hv : ψ (multiplicativeGroupPoints k K U (toConv φ)) ^ p ^ n = 1 := by
-    simpa [← hψ] using hv
-  rw [Units.val_one, map_one]
-  exact iterateFrobenius_inj k' p n (by simpa [iterateFrobenius_def] using hv)
+  refine Units.ext ?_
+  have hv := groupLike_eq_one_of_forall_isUnipotentPoint (k := K) (H := K ⊗[k] U) (K := k')
+    (fun g ↦ (AlgHom.baseChangePointsMulEquiv (K := K)).apply_symm_apply g ▸
+      (hU ((AlgHom.baseChangePointsMulEquiv (K := K)).symm g)).baseChangePointsMulEquiv)
+    ⟨_, isGroupLikeElem_multiplicativeGroupPoints_toConv φ⟩
+  exact congrArg GroupLike.val hv
 
-/-- **`Res_{K/k} 𝔾ₘ` is pseudo-reductive** for a finite field extension `K / k` in
-characteristic `p > 0`: it is smooth and geometrically connected, and its unipotent radical over
-`k` is trivial because it has no nontrivial homomorphism from a smooth unipotent group
-(`TauCeti.Algebra.WeilRestriction.toConv_eq_one_of_geometricallyUnipotentPoints`). For a
-nontrivial purely inseparable `K / k` it is not reductive
+/-- **`Res_{K/k} 𝔾ₘ` is pseudo-reductive** for every finite field extension `K / k` in any
+characteristic: it is smooth and geometrically connected, and its unipotent radical over `k` is
+trivial because it has no nontrivial homomorphism from a smooth unipotent group
+(`TauCeti.Algebra.WeilRestriction.toConv_eq_one_of_geometricallyUnipotentPoints`). For a nontrivial
+purely inseparable `K / k` it is not reductive
 (`TauCeti.Algebra.WeilRestriction.not_reductive_multiplicativeGroup_of_isPurelyInseparable`). -/
-theorem pseudoReductive_multiplicativeGroup (p : ℕ) [Fact p.Prime] [CharP k p]
+theorem pseudoReductive_multiplicativeGroup
     {K : Type u} [Field K] [Algebra k K] [FiniteDimensional k K] :
     pseudoReductiveCommHopfAlgProperty k
       (FiniteTypeCommHopfAlgCat.of k (WeilRestriction k K K[T;T⁻¹])) := by
@@ -204,7 +257,7 @@ theorem pseudoReductive_multiplicativeGroup (p : ℕ) [Fact p.Prime] [CharP k p]
   rw [FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_eq_augmentation_iff]
   intro I hI
   obtain ⟨_, hunip⟩ := (smoothUnipotentCommHopfAlgProperty_iff k _).1 hI.smoothUnipotent
-  have h1 := toConv_eq_one_of_geometricallyUnipotentPoints p
+  have h1 := toConv_eq_one_of_geometricallyUnipotentPoints
     ((geometricallyUnipotentPointsCommHopfAlgProperty_iff k _).2 hunip)
     (FiniteTypeCommHopfAlgCat.toBialgHom (FiniteTypeCommHopfAlgCat.mkQuotient H I))
   refine HopfIdeal.ext fun x ↦ ⟨fun hx ↦ (HopfIdeal.mem_augmentation k _).2
@@ -213,24 +266,6 @@ theorem pseudoReductive_multiplicativeGroup (p : ℕ) [Fact p.Prime] [CharP k p]
   rw [← FiniteTypeCommHopfAlgCat.mkQuotient_eq_zero_iff]
   have := congrArg (fun f ↦ f.ofConv x) h1
   simpa [AlgHom.convOne_apply, hx] using this
-
-/-- **`Res_{K/k} 𝔾ₘ` is pseudo-reductive** for a nontrivial finite purely inseparable extension
-`K / k`, with no separate characteristic hypothesis (nontriviality of `K / k` forces positive
-characteristic). -/
-theorem pseudoReductive_multiplicativeGroup_of_isPurelyInseparable
-    {K : Type u} [Field K] [Algebra k K] [FiniteDimensional k K] [IsPurelyInseparable k K]
-    (hK : 1 < Module.finrank k K) :
-    pseudoReductiveCommHopfAlgProperty k
-      (FiniteTypeCommHopfAlgCat.of k (WeilRestriction k K K[T;T⁻¹])) := by
-  obtain ⟨p, hp⟩ := CharP.exists k
-  rcases CharP.char_is_prime_or_zero k p with hprime | rfl
-  · have : Fact p.Prime := ⟨hprime⟩
-    exact pseudoReductive_multiplicativeGroup p
-  · have : CharZero k := CharP.charP_to_charZero k
-    have := (LinearEquiv.ofBijective (Algebra.linearMap k K)
-      (IsPurelyInseparable.bijective_algebraMap_of_isSeparable k K)).finrank_eq
-    rw [Module.finrank_self] at this
-    omega
 
 /-- **The geometric unipotent radical of `Res_{K/k} 𝔾ₘ` does not descend to `k`** when `K / k` is a
 nontrivial finite purely inseparable extension (Milne, 6.47–6.48; Conrad–Gabber–Prasad, Example
@@ -243,8 +278,8 @@ theorem not_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal_multipli
         FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
           (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k)
             (FiniteTypeCommHopfAlgCat.of k (WeilRestriction k K K[T;T⁻¹]))) := by
-  rw [← (pseudoReductive_multiplicativeGroup_of_isPurelyInseparable hK
-    ).reductive_iff_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal]
+  rw [← (pseudoReductive_multiplicativeGroup (k := k) (K := K)
+    |>.reductive_iff_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal)]
   exact not_reductive_multiplicativeGroup_of_isPurelyInseparable hK
 
 /-- **Inseparable scalar extension can destroy pseudo-reductivity.** For a nontrivial finite purely
@@ -257,8 +292,7 @@ theorem not_pseudoReductive_baseChange_algebraicClosure_multiplicativeGroup
     ¬ pseudoReductiveCommHopfAlgProperty (AlgebraicClosure k)
       (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k)
         (FiniteTypeCommHopfAlgCat.of k (WeilRestriction k K K[T;T⁻¹]))) := by
-  rw [(pseudoReductive_multiplicativeGroup_of_isPurelyInseparable hK
-    ).baseChange_iff_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal]
-  exact not_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal_multiplicativeGroup hK
+  rw [pseudoReductiveCommHopfAlgProperty.baseChange_algebraicClosure_iff_reductive]
+  exact not_reductive_multiplicativeGroup_of_isPurelyInseparable hK
 
 end TauCeti.Algebra.WeilRestriction
