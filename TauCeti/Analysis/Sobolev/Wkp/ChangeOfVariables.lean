@@ -68,7 +68,7 @@ precomposition is constructed inductively on `k`: at order `0` by
 `TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo`, and at order `m + 2` by restricting to small
 balls with relatively compact target neighbourhoods, pulling back in `W^{m+2,q}` for `1 ≤ q < ∞`
 via `TauCeti.Wkp.ofExponentLEL`, passing `q → ∞` with
-`TauCeti.ae_norm_le_of_forall_nnreal_eLpNorm_le`, and gluing the local weak derivatives via
+`TauCeti.ae_norm_le_of_eventually_nnreal_eLpNorm_le`, and gluing the local weak derivatives via
 `TauCeti.exists_hasWeakFDerivOn_iSup`.
 
 ## Main declarations
@@ -617,17 +617,20 @@ theorem compLBound_nonneg (p : ℝ≥0∞) (k : ℕ) (L : ℝ) {c : ℝ} (hc : 0
     0 ≤ compLBound p k L c :=
   (compLBound_pos p k L hc).le
 
-/-- For `0 < c ≤ 1` and `1 ≤ p`, `compLBound p k L c` is bounded above by its `L¹` value
-`compLBound 1 k L c`. -/
-theorem compLBound_le_compLBound_one (p : ℝ≥0∞) [Fact (1 ≤ p)] (k : ℕ) (L : ℝ) {c : ℝ}
-    (hc0 : 0 < c) (hc1 : c ≤ 1) : compLBound p k L c ≤ compLBound 1 k L c := by
+/-- For `0 < c ≤ 1`, `compLBound p k L c` is antitone in nonzero exponents `p`. -/
+theorem compLBound_anti_left {p q : ℝ≥0∞} (hp0 : p ≠ 0) (hpq : p ≤ q) (k : ℕ) (L : ℝ) {c : ℝ}
+    (hc0 : 0 < c) (hc1 : c ≤ 1) : compLBound q k L c ≤ compLBound p k L c := by
   unfold compLBound
   refine mul_le_mul_of_nonneg_right ?_ (Finset.sum_nonneg fun _ _ => by
     have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _); positivity)
-  have hp1 : (1 / p).toReal ≤ (1 / (1 : ℝ≥0∞)).toReal :=
-    ENNReal.toReal_mono (by simp)
-      (by simpa only [div_one] using ENNReal.div_le_of_le_mul (by simpa using (Fact.out : 1 ≤ p)))
-  exact Real.rpow_le_rpow_of_exponent_le (one_le_inv₀ hc0 |>.2 hc1) hp1
+  exact Real.rpow_le_rpow_of_exponent_le (one_le_inv₀ hc0 |>.2 hc1)
+    (ENNReal.toReal_mono (by simp [hp0]) (ENNReal.div_le_div_left hpq 1))
+
+/-- For `0 < c ≤ 1` and `1 ≤ p`, `compLBound p k L c` is bounded above by its `L¹` value
+`compLBound 1 k L c`. -/
+theorem compLBound_le_compLBound_one {p : ℝ≥0∞} (hp : 1 ≤ p) (k : ℕ) (L : ℝ) {c : ℝ}
+    (hc0 : 0 < c) (hc1 : c ≤ 1) : compLBound p k L c ≤ compLBound 1 k L c :=
+  compLBound_anti_left one_ne_zero hp k L hc0 hc1
 
 section Calculus
 
@@ -1009,9 +1012,9 @@ private theorem exists_local_deriv_comp_top {m : ℕ} {B V' : Opens E}
     (hasWeakFDerivOn_iteratedGradient m v₁).congr_ae
       (hlow_eq ▸ iteratedGradient_ofExponentLEL_ae le_top m w_B)
   refine ⟨iteratedGradient (m + 1) v₁, hweak, ?_⟩
-  refine ae_norm_le_of_forall_nnreal_eLpNorm_le (mul_nonneg hM (norm_nonneg u))
-    (mul_pos (inv_pos.2 h.pos) (zero_lt_one.trans_le (le_max_left 1 (mu.real (V' : Set E)))))
-    fun q hq => ?_
+  refine ae_norm_le_of_eventually_nnreal_eLpNorm_le (a := c⁻¹ * mu.real (V' : Set E))
+    (mul_nonneg hM (norm_nonneg u)) (mul_nonneg (inv_nonneg.2 h.pos.le) measureReal_nonneg)
+    ((eventually_ge_atTop (1 : NNReal)).mono fun q hq => ?_)
   have : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨by exact_mod_cast hq⟩
   set v_q : Wkp mu B q (m + 2) :=
     compLFinite h ENNReal.coe_ne_top (ofExponentLEL le_top (m + 2) u)
@@ -1027,23 +1030,17 @@ private theorem exists_local_deriv_comp_top {m : ℕ} {B V' : Opens E}
   have h1 := norm_iteratedGradient_compLFinite_le h ENNReal.coe_ne_top
     (ofExponentLEL (p := q) le_top (m + 2) u)
   have h2 := norm_ofExponentLEL_apply_le (mu := mu) (Omega := V') (p := q) le_top (m + 2) u
-  have hmu : (mu V' ^ (1 / (q : ℝ≥0∞).toReal - 1 / (⊤ : ℝ≥0∞).toReal)).toReal ≤
-      max 1 (mu.real (V' : Set E)) ^ (1 / (q : ℝ)) := by
-    simp only [ENNReal.coe_toReal, ENNReal.toReal_top, div_zero, sub_zero,
-      ← ENNReal.toReal_rpow, ← measureReal_def]
-    exact Real.rpow_le_rpow measureReal_nonneg (le_max_right 1 _) (by positivity)
+  have hmu : (mu V' ^ (1 / (q : ℝ≥0∞).toReal - 1 / (⊤ : ℝ≥0∞).toReal)).toReal =
+      mu.real (V' : Set E) ^ (1 / (q : ℝ)) := by
+    simp [← ENNReal.toReal_rpow, measureReal_def]
   have hexp : (1 / (q : ℝ≥0∞)).toReal = 1 / (q : ℝ) := by
     rw [ENNReal.toReal_div, ENNReal.toReal_one, ENNReal.coe_toReal]
   rw [hexp] at h1
   calc ‖iteratedGradient (m + 1) v_q‖
-      ≤ M * c⁻¹ ^ (1 / (q : ℝ)) *
-          ((mu V' ^ (1 / (q : ℝ≥0∞).toReal - 1 / (⊤ : ℝ≥0∞).toReal)).toReal * ‖u‖) :=
-        h1.trans (mul_le_mul_of_nonneg_left h2 (by have := h.pos; positivity))
-    _ ≤ M * c⁻¹ ^ (1 / (q : ℝ)) * (max 1 (mu.real (V' : Set E)) ^ (1 / (q : ℝ)) * ‖u‖) :=
-        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hmu (norm_nonneg u))
-          (mul_nonneg hM (Real.rpow_nonneg (inv_nonneg.2 h.pos.le) _))
-    _ = M * ‖u‖ * (c⁻¹ * max 1 (mu.real (V' : Set E))) ^ (1 / (q : ℝ)) := by
-        rw [Real.mul_rpow (inv_nonneg.2 h.pos.le) (zero_le_one.trans (le_max_left 1 _))]
+      ≤ M * c⁻¹ ^ (1 / (q : ℝ)) * (mu.real (V' : Set E) ^ (1 / (q : ℝ)) * ‖u‖) :=
+        h1.trans (mul_le_mul_of_nonneg_left (hmu ▸ h2) (by have := h.pos; positivity))
+    _ = M * ‖u‖ * (c⁻¹ * mu.real (V' : Set E)) ^ (1 / (q : ℝ)) := by
+        rw [Real.mul_rpow (inv_nonneg.2 h.pos.le) measureReal_nonneg]
         ring
 
 private theorem exists_ball_deriv_comp_top {m : ℕ} (h : IsChangeOfVariables (m + 2) U V Φ L c)
@@ -1492,7 +1489,7 @@ theorem exists_norm_comp_le (E : Type*) [MeasurableSpace E] [NormedAddCommGroup 
       ⟨compOfLeftInvOnL hΦ hΨ hmaps hΨΦ hL hL' u,
         value_compOfLeftInvOnL_ae hΦ hΨ hmaps hΨΦ hL hL' u,
         (norm_compOfLeftInvOnL_le hΦ hΨ hmaps hΨΦ hL hL' u).trans
-          (mul_le_mul_of_nonneg_right (compLBound_le_compLBound_one p k L hc0 hc1)
+          (mul_le_mul_of_nonneg_right (compLBound_le_compLBound_one Fact.out k L hc0 hc1)
             (norm_nonneg u))⟩⟩
 
 end TauCeti.Wkp

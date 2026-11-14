@@ -37,11 +37,13 @@ the endpoint `∞` itself is `MeasureTheory.eLpNorm_exponent_top`.
 
 * `TauCeti.eLpNorm_exponent_top_le_liminf` — `eLpNorm f ∞ μ` is at most the `liminf` of the
   finite-exponent seminorms, for every measure;
-* `TauCeti.ae_norm_le_of_forall_nnreal_eLpNorm_le` — a family of bounds
-  `eLpNorm f q μ ≤ ENNReal.ofReal (M * a ^ (1 / q))` for `1 ≤ q < ∞` gives `‖f y‖ ≤ M` almost
-  everywhere;
+* `TauCeti.eLpNorm_exponent_top_le_of_eventually_le` — an eventual bound
+  `eLpNorm f p μ ≤ M * a ^ (1 / p)` as `p → ∞` with `a ≠ ∞` gives `eLpNorm f ∞ μ ≤ M`;
 * `TauCeti.tendsto_eLpNorm_atTop` — for a finite measure, the finite-exponent seminorms converge
-  to `eLpNorm f ∞ μ`.
+  to `eLpNorm f ∞ μ`;
+* `TauCeti.ae_norm_le_of_eventually_nnreal_eLpNorm_le` — an eventual bound
+  `eLpNorm f q μ ≤ ENNReal.ofReal (M * a ^ (1 / q))` as `q → ∞` with `0 ≤ M` and `0 ≤ a` gives
+  `‖f y‖ ≤ M` almost everywhere.
 
 ## References
 
@@ -98,6 +100,23 @@ theorem eLpNorm_exponent_top_le_liminf :
     ← ENNReal.rpow_mul, one_div_mul_cancel hppos.ne', ENNReal.rpow_one]
   exact (mul_le_mul' le_rfl (min_le_left c 1)).trans hcheb
 
+/-- **`L^∞` seminorm bound from eventual `Lᵖ` seminorm bounds.** If `a ≠ ∞` and
+`eLpNorm f p μ ≤ M * a ^ (1 / p)` for all sufficiently large `p : ℝ≥0`, then
+`eLpNorm f ∞ μ ≤ M`. -/
+theorem eLpNorm_exponent_top_le_of_eventually_le {M a : ℝ≥0∞} (ha : a ≠ ∞)
+    (h : ∀ᶠ p : ℝ≥0 in atTop, eLpNorm f p μ ≤ M * a ^ (1 / (p : ℝ))) :
+    eLpNorm f ∞ μ ≤ M := by
+  set a' := max 1 a
+  have ha'0 : a' ≠ 0 := (zero_lt_one.trans_le (le_max_left 1 a)).ne'
+  have ha'top : a' ≠ ∞ := max_ne_top ENNReal.one_ne_top ha
+  have hlim : Tendsto (fun p : ℝ≥0 ↦ M * a' ^ (1 / (p : ℝ))) atTop (𝓝 M) := by
+    simpa only [mul_one, Function.comp_def, id] using ENNReal.Tendsto.const_mul
+      ((ENNReal.tendsto_rpow_one_div_atTop ha'0 ha'top).comp
+        (NNReal.tendsto_coe_atTop.2 tendsto_id)) (.inl one_ne_zero)
+  refine eLpNorm_exponent_top_le_liminf.trans ((liminf_le_liminf ?_).trans_eq hlim.liminf_eq)
+  exact h.mono fun p hp ↦ hp.trans
+    (mul_le_mul' le_rfl (ENNReal.rpow_le_rpow (le_max_right 1 a) (by positivity)))
+
 /-- **The `Lᵖ` seminorms converge to the `L^∞` seminorm.** Against a finite measure, for every
 `f`, `eLpNorm f p μ` tends to `eLpNorm f ∞ μ` as `p → ∞`. For almost everywhere strongly
 measurable `f`, the limit is the essential supremum of `‖f‖ₑ`. -/
@@ -120,23 +139,17 @@ theorem tendsto_eLpNorm_atTop [IsFiniteMeasure μ] :
 
 end ENorm
 
-/-- **Pointwise `L^∞` bound from `L^q` seminorm bounds.** If `0 ≤ M`, `0 < a`, and
-`eLpNorm f q μ ≤ ENNReal.ofReal (M * a ^ (1 / q))` for every `q : ℝ≥0` with `1 ≤ q`, then
+/-- **Pointwise `L^∞` bound from eventual `L^q` seminorm bounds.** If `0 ≤ M`, `0 ≤ a`, and
+`eLpNorm f q μ ≤ ENNReal.ofReal (M * a ^ (1 / q))` for all sufficiently large `q : ℝ≥0`, then
 `‖f y‖ ≤ M` for `μ`-almost every `y`. -/
-theorem ae_norm_le_of_forall_nnreal_eLpNorm_le {α F : Type*} [MeasurableSpace α]
-    [NormedAddCommGroup F] {μ : Measure α} {f : α → F} {M a : ℝ} (hM : 0 ≤ M) (ha : 0 < a)
-    (h : ∀ q : ℝ≥0, 1 ≤ q → eLpNorm f q μ ≤ ENNReal.ofReal (M * a ^ (1 / (q : ℝ)))) :
+theorem ae_norm_le_of_eventually_nnreal_eLpNorm_le {α F : Type*} [MeasurableSpace α]
+    [SeminormedAddGroup F] {μ : Measure α} {f : α → F} {M a : ℝ} (hM : 0 ≤ M) (ha : 0 ≤ a)
+    (h : ∀ᶠ q : ℝ≥0 in atTop, eLpNorm f q μ ≤ ENNReal.ofReal (M * a ^ (1 / (q : ℝ)))) :
     ∀ᵐ y ∂μ, ‖f y‖ ≤ M := by
-  have ha0 : ENNReal.ofReal a ≠ 0 := by simp [ha]
-  have hlim : Tendsto (fun q : ℝ≥0 ↦ ENNReal.ofReal M * ENNReal.ofReal a ^ (1 / (q : ℝ))) atTop
-      (𝓝 (ENNReal.ofReal M)) := by
-    simpa only [mul_one, Function.comp_def, id] using ENNReal.Tendsto.const_mul
-      ((ENNReal.tendsto_rpow_one_div_atTop ha0 ENNReal.ofReal_ne_top).comp
-        (NNReal.tendsto_coe_atTop.2 tendsto_id)) (.inl one_ne_zero)
-  have htop : eLpNorm f ∞ μ ≤ ENNReal.ofReal M := by
-    refine eLpNorm_exponent_top_le_liminf.trans ((liminf_le_liminf ?_).trans_eq hlim.liminf_eq)
-    refine (eventually_ge_atTop (1 : ℝ≥0)).mono fun q hq ↦ (h q hq).trans_eq ?_
-    rw [ENNReal.ofReal_mul hM, ENNReal.ofReal_rpow_of_pos ha]
+  have htop : eLpNorm f ∞ μ ≤ ENNReal.ofReal M :=
+    eLpNorm_exponent_top_le_of_eventually_le (a := ENNReal.ofReal a) ENNReal.ofReal_ne_top <|
+      h.mono fun q hq ↦ hq.trans_eq <| by
+        rw [ENNReal.ofReal_mul hM, ENNReal.ofReal_rpow_of_nonneg ha (by positivity)]
   have hf : AEStronglyMeasurable f μ := by
     by_contra hf
     exact ENNReal.ofReal_ne_top (top_le_iff.1 (eLpNorm_of_not_aestronglyMeasurable hf ▸ htop))
