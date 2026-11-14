@@ -32,13 +32,14 @@ and when `O` is noetherian, flatness of `S` over `O` implies flatness of `S†` 
 
 * `TauCeti.Dagger.weakCompletion.faithfullyFlat_piAdicCompletion`: `S^∧` is faithfully flat over
   `S†` whenever `S†` is noetherian.
-* `TauCeti.Dagger.weakCompletion.flat_iff_flat_piAdicCompletion`: `S†` is flat over `O` iff `S^∧`
-  is flat over `O`.
+* `TauCeti.Dagger.weakCompletion.flat_iff_flat_piAdicCompletion`: when `S†` is noetherian, `S†` is
+  flat over `O` iff `S^∧` is flat over `O`.
 * `TauCeti.Dagger.weakCompletion.flat_of_flat`: if `O` and `S†` are noetherian and `S` is flat
   over `O`, then `S†` is flat over `O`.
 * `TauCeti.Dagger.weakCompletion.faithfullyFlat_piAdicCompletion_unitClosedBall` and
-  `TauCeti.Dagger.weakCompletion.flat_of_flat_unitClosedBall`: specializations over a noetherian
-  valuation unit ball `K°`.
+  `TauCeti.Dagger.weakCompletion.flat_of_flat_unitClosedBall`: specializations over the noetherian
+  valuation unit ball `K°` of a complete ultrametric field `K` for `π ∈ K°` with
+  `0 < ‖(π : K)‖ < 1`.
 
 ## References
 
@@ -94,17 +95,18 @@ variable {K S : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 local notation "O" => Subring.unitClosedBall K
 
-/-- Over a noetherian valuation unit ball `K°` of a complete ultrametric field, the `π`-adic
-completion `S^∧` of any finitely generated `K°`-algebra `S` is faithfully flat over its weak
-completion `S†`. -/
+/-- Over the noetherian valuation unit ball `K°` of a complete ultrametric field `K` with `π ∈ K°`
+satisfying `0 < ‖(π : K)‖ < 1`, the `π`-adic completion `S^∧` of any finitely generated
+`K°`-algebra `S` is faithfully flat over its weak completion `S†`. -/
 theorem faithfullyFlat_piAdicCompletion_unitClosedBall [IsNoetherianRing O] {π : O}
     (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖ < 1) :
     Module.FaithfullyFlat (weakCompletion π S) (piAdicCompletion π S) := by
   have := isNoetherianRing (S := S) hπ hπ1
   infer_instance
 
-/-- Over a noetherian valuation unit ball `K°` of a complete ultrametric field, the weak completion
-of a flat finitely generated `K°`-algebra is flat over `K°`. -/
+/-- Over the noetherian valuation unit ball `K°` of a complete ultrametric field `K` with `π ∈ K°`
+satisfying `0 < ‖(π : K)‖ < 1`, the `π`-adic weak completion `S†` of a flat finitely generated
+`K°`-algebra `S` is flat over `K°`. -/
 theorem flat_of_flat_unitClosedBall [IsNoetherianRing O] [Module.Flat O S] {π : O}
     (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖ < 1) :
     Module.Flat O (weakCompletion π S) := by

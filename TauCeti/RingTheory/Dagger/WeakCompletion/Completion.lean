@@ -50,20 +50,22 @@ private noncomputable def adicCompletionEquivAux :
 
 variable {S}
 
+private theorem evalₐ_adicCompletionEquivAux_symm (n : ℕ) (y : piAdicCompletion π S) :
+    AdicCompletion.evalₐ _ n ((adicCompletionEquivAux π S).symm y) =
+      (quotientPowEquiv π (S := S) n).symm (AdicCompletion.evalₐ _ n y) := by
+  rw [adicCompletionEquivAux, AlgEquiv.symm_symm, AlgEquiv.ofBijective_apply,
+    AdicCompletion.evalₐ_mapₐ]
+  obtain ⟨s, hs⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ _ n y)
+  rw [← hs]
+  simp
+
 private theorem evalₐ_adicCompletionEquivAux (n : ℕ)
     (z : piAdicCompletion π (weakCompletion π S)) :
     AdicCompletion.evalₐ _ n (adicCompletionEquivAux π S z) =
       quotientPowEquiv π n (AdicCompletion.evalₐ _ n z) := by
-  have h (y : piAdicCompletion π S) :
-      AdicCompletion.evalₐ _ n ((adicCompletionEquivAux π S).symm y) =
-        (quotientPowEquiv π (S := S) n).symm (AdicCompletion.evalₐ _ n y) := by
-    rw [adicCompletionEquivAux, AlgEquiv.symm_symm, AlgEquiv.ofBijective_apply,
-      AdicCompletion.evalₐ_mapₐ]
-    obtain ⟨s, hs⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ _ n y)
-    rw [← hs]
-    simp
   apply (quotientPowEquiv π (S := S) n).symm.injective
-  simpa only [AlgEquiv.symm_apply_apply] using (h (adicCompletionEquivAux π S z)).symm
+  simpa only [AlgEquiv.symm_apply_apply] using
+    (evalₐ_adicCompletionEquivAux_symm π n (adicCompletionEquivAux π S z)).symm
 
 private theorem adicCompletionEquivAux_of (z : weakCompletion π S) :
     adicCompletionEquivAux π S (AdicCompletion.of _ _ z) = (z : piAdicCompletion π S) := by
@@ -95,25 +97,34 @@ theorem evalₐ_adicCompletionEquiv (n : ℕ)
       quotientPowEquiv π n (AdicCompletion.evalₐ _ n z) :=
   evalₐ_adicCompletionEquivAux π n z
 
+/-- On each parameter-power quotient, the inverse completion comparison is the inverse
+quotient comparison of the weak completion with the original algebra. -/
+@[simp]
+theorem evalₐ_adicCompletionEquiv_symm (n : ℕ) (y : piAdicCompletion π S) :
+    AdicCompletion.evalₐ _ n ((adicCompletionEquiv π S).symm y) =
+      (quotientPowEquiv π n).symm (AdicCompletion.evalₐ _ n y) :=
+  evalₐ_adicCompletionEquivAux_symm π n y
+
 /-- The comparison fixes every weakly completed element in the ambient completion. -/
 @[simp]
 theorem adicCompletionEquiv_of (z : weakCompletion π S) :
     adicCompletionEquiv π S (AdicCompletion.of _ _ z) = (z : piAdicCompletion π S) :=
   adicCompletionEquivAux_of π z
 
-/-- The comparison extends the weak-completion inclusion along the algebra map. -/
-theorem adicCompletionEquiv_algebraMap (z : weakCompletion π S) :
-    adicCompletionEquiv π S
-      (algebraMap (weakCompletion π S) (piAdicCompletion π (weakCompletion π S)) z) =
-      (z : piAdicCompletion π S) :=
-  (adicCompletionEquiv π S).commutes z
-
 /-- The inverse comparison sends a weakly completed element to its canonical
 image in the parameter-adic completion of the weak completion. -/
 @[simp]
 theorem adicCompletionEquiv_symm_coe (z : weakCompletion π S) :
     (adicCompletionEquiv π S).symm (z : piAdicCompletion π S) =
-      algebraMap (weakCompletion π S) (piAdicCompletion π (weakCompletion π S)) z := by
-  rw [AlgEquiv.symm_apply_eq, adicCompletionEquiv_algebraMap]
+      algebraMap (weakCompletion π S) (piAdicCompletion π (weakCompletion π S)) z :=
+  (adicCompletionEquiv π S).symm.commutes z
+
+/-- The inverse comparison sends the canonical image of `s : S` in `S^∧` to the canonical
+image of `of π S s` in `(S†)^∧`. -/
+@[simp]
+theorem adicCompletionEquiv_symm_of (s : S) :
+    (adicCompletionEquiv π S).symm (AdicCompletion.of _ S s) =
+      algebraMap (weakCompletion π S) (piAdicCompletion π (weakCompletion π S)) (of π S s) := by
+  rw [← coe_of, adicCompletionEquiv_symm_coe]
 
 end TauCeti.Dagger.weakCompletion

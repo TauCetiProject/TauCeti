@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Dagger.WeakCompletion.Noetherian
 import Mathlib.RingTheory.MvPolynomial.Ideal
 import TauCeti.RingTheory.Dagger.WeakCompletion.Jacobson
 import TauCeti.RingTheory.Ideal.KrullIntersection
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # Quotient presentations of Monsky–Washnitzer weak completions
@@ -46,13 +47,16 @@ compatibly with evaluation of overconvergent series and with the canonical map `
 * `TauCeti.Dagger.weakCompletion.ker_map_of_surjective` and
   `TauCeti.Dagger.weakCompletion.quotientKerMapAlgEquiv`: when `R†` is noetherian and `f` is
   surjective, `ker (map π f) = (ker f).map (of π R)` and `R† ⧸ (ker f).map (of π R) ≃ₐ[O] S†`.
-* `TauCeti.Dagger.weakCompletion.quotientAlgEquiv`: `(R† ⧸ I.map (of π R)) ≃ₐ[O] (R ⧸ I)†`.
-* `TauCeti.Dagger.weakCompletion.ker_evalIntWashnitzerAlgebra`: identification of the kernel of
-  integral overconvergent evaluation at a finite generating family `x` as
+* `TauCeti.Dagger.weakCompletion.quotientAlgEquiv`: when `R†` is noetherian,
+  `(R† ⧸ I.map (of π R)) ≃ₐ[O] (R ⧸ I)†`.
+* `TauCeti.Dagger.weakCompletion.ker_evalIntWashnitzerAlgebra`: over the noetherian unit ball
+  `O = K°` of a complete ultrametric field `K` with `0 < ‖(π : K)‖ < 1`, the kernel of integral
+  overconvergent evaluation at a finite generating family `x` is
   `(ker (aeval x)).map ofMvPolynomial`.
 * `TauCeti.Dagger.weakCompletion.presentationAlgEquiv` and
-  `TauCeti.Dagger.weakCompletion.mvPolynomialQuotientEquiv`: quotient presentations of `S†` and
-  `(O[X_σ] ⧸ I)†` by the integral Monsky–Washnitzer algebra `O⟨X_σ⟩†`.
+  `TauCeti.Dagger.weakCompletion.mvPolynomialQuotientEquiv`: over the noetherian unit ball `O = K°`
+  of a complete ultrametric field `K` with `0 < ‖(π : K)‖ < 1` and finite `σ`, quotient
+  presentations of `S†` and `(O[X_σ] ⧸ I)†` by the integral Monsky–Washnitzer algebra `O⟨X_σ⟩†`.
 
 ## References
 
@@ -85,17 +89,13 @@ theorem ker_map_eq_iInf_of_surjective {f : R →ₐ[O] S} (hf : Function.Surject
     rw [Ideal.map_le_iff_le_comap]
     intro r hr
     rw [Ideal.mem_comap, RingHom.mem_ker, map_of, RingHom.mem_ker.mp hr, map_zero]
-  have hmap_pow (n : ℕ) :
-      (Ideal.span {algebraMap O (weakCompletion π R) π} ^ n).map (map π f) ≤
-        Ideal.span {algebraMap O (weakCompletion π S) π} ^ n := by
-    rw [Ideal.map_pow, Ideal.map_span, Set.image_singleton, AlgHom.commutes]
   apply le_antisymm
   · intro z hz
     rw [Ideal.mem_iInf]
     intro n
     obtain ⟨r, hr⟩ := exists_sub_mem_span_pow π z n
     have hfr : f r ∈ Ideal.span {algebraMap O S π} ^ n := by
-      have himg := hmap_pow n (Ideal.mem_map_of_mem _ hr)
+      have himg := Ideal.apply_mem_span_algebraMap_pow (map π f) hr
       rw [map_sub, RingHom.mem_ker.mp hz, zero_sub, map_of, neg_mem_iff, ← ker_eval] at himg
       have hev := RingHom.mem_ker.mp himg
       rwa [eval_of, Ideal.Quotient.eq_zero_iff_mem] at hev
@@ -121,7 +121,7 @@ theorem ker_map_eq_iInf_of_surjective {f : R →ₐ[O] S} (hf : Function.Surject
     rw [SModEq.zero, smul_eq_mul, Ideal.mul_top]
     obtain ⟨u, hu, v, hv, rfl⟩ := Submodule.mem_sup.mp (Ideal.mem_iInf.mp hz n)
     rw [map_add, RingHom.mem_ker.mp (hker_le hu), zero_add]
-    exact hmap_pow n (Ideal.mem_map_of_mem _ hv)
+    exact Ideal.apply_mem_span_algebraMap_pow (map π f) hv
 
 /-- When the weak completion `R†` is noetherian, every ideal `J` of `R†` is `π`-adically closed:
 `⨅ n, J ⊔ (π)ⁿ = J`. -/
@@ -216,9 +216,10 @@ variable {K S σ : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K
 
 local notation "O" => Subring.unitClosedBall K
 
-/-- Over a noetherian valuation unit ball `O = K°`, the kernel of integral overconvergent
-evaluation `O⟨X_σ⟩† →ₐ[O] S†` at a finite generating family `x : σ → S` is the ideal generated in
-`O⟨X_σ⟩†` by the polynomial relations among the `xᵢ`. -/
+/-- Over the noetherian valuation unit ball `O = K°` of a complete ultrametric field `K` with a
+parameter `π ∈ O` satisfying `0 < ‖(π : K)‖ < 1`, the kernel of integral overconvergent evaluation
+`O⟨X_σ⟩† →ₐ[O] S†` at a finite generating family `x : σ → S` is the ideal generated in `O⟨X_σ⟩†`
+by the polynomial relations among the `xᵢ`. -/
 theorem ker_evalIntWashnitzerAlgebra [IsNoetherianRing O] {π : O} (hπ : π ≠ 0)
     (hπ1 : ‖(π : K)‖ < 1) (x : σ → S) (hx : Algebra.adjoin O (Set.range x) = ⊤) :
     RingHom.ker (evalIntWashnitzerAlgebra hπ hπ1 x) =
@@ -237,8 +238,9 @@ theorem ker_evalIntWashnitzerAlgebra [IsNoetherianRing O] {π : O} (hπ : π ≠
   rw [RingHom.mem_ker, evalIntWashnitzerAlgebra_def, AlgHom.comp_apply, ← RingHom.mem_ker, hker]
   exact Ideal.symm_apply_mem_of_equiv_iff (f := e.toRingEquiv)
 
-/-- **Monsky–Washnitzer presentation of a weak completion.** Over a noetherian valuation unit ball
-`O = K°`, every finite generating family `x : σ → S` presents `S†` as the quotient of the integral
+/-- **Monsky–Washnitzer presentation of a weak completion.** Over the noetherian valuation unit
+ball `O = K°` of a complete ultrametric field `K` with `π ∈ O` satisfying `0 < ‖(π : K)‖ < 1`,
+every finite generating family `x : σ → S` presents `S†` as the quotient of the integral
 Monsky–Washnitzer algebra `O⟨X_σ⟩†` by the polynomial relation ideal `ker (aeval x) · O⟨X_σ⟩†`. -/
 noncomputable def presentationAlgEquiv [IsNoetherianRing O] {π : O} (hπ : π ≠ 0)
     (hπ1 : ‖(π : K)‖ < 1) (x : σ → S) (hx : Algebra.adjoin O (Set.range x) = ⊤) :
@@ -289,8 +291,9 @@ theorem presentationAlgEquiv_symm_of_apply [IsNoetherianRing O] {π : O} (hπ : 
       Ideal.Quotient.mk _ (intWashnitzerAlgebra.ofMvPolynomial σ K (MvPolynomial.X i)) := by
   simpa using presentationAlgEquiv_symm_of_aeval hπ hπ1 x hx (MvPolynomial.X i)
 
-/-- **Presentation of the weak completion of a polynomial quotient.** For any ideal `I` of
-`O[X_σ]` over a noetherian valuation unit ball `O = K°`, the weak completion `(O[X_σ] ⧸ I)†` is
+/-- **Presentation of the weak completion of a polynomial quotient.** Over the noetherian valuation
+unit ball `O = K°` of a complete ultrametric field `K` with `π ∈ O` satisfying `0 < ‖(π : K)‖ < 1`,
+for any finite index type `σ` and ideal `I` of `O[X_σ]`, the weak completion `(O[X_σ] ⧸ I)†` is
 canonically `O⟨X_σ⟩† ⧸ (I · O⟨X_σ⟩†)`, compatibly with `O[X_σ] ⧸ I → (O[X_σ] ⧸ I)†` on every
 polynomial class. -/
 noncomputable def mvPolynomialQuotientEquiv [IsNoetherianRing O] {π : O} (hπ : π ≠ 0)

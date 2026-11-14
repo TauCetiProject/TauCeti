@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Dagger.WeakCompletion.Basic
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # Parameter-power quotients of weak completions
@@ -148,12 +149,8 @@ theorem ker_eval (n : ℕ) :
   have he : eval π n z = 0 := RingHom.mem_ker.mp hz
   have hs0 := RingHom.mem_ker.mp (hle hs)
   rw [map_sub, he, zero_sub, neg_eq_zero, eval_of] at hs0
-  have hof : of π S s ∈ Ideal.span {algebraMap O (weakCompletion π S) π} ^ n := by
-    have hm : (Ideal.span {algebraMap O S π} ^ n).map (of π S).toRingHom =
-        Ideal.span {algebraMap O (weakCompletion π S) π} ^ n := by
-      simp [Ideal.map_pow, Ideal.map_span]
-    rw [← hm]
-    exact Ideal.mem_map_of_mem _ (Ideal.Quotient.eq_zero_iff_mem.mp hs0)
+  have hof := Ideal.apply_mem_span_algebraMap_pow (of π S)
+    (Ideal.Quotient.eq_zero_iff_mem.mp hs0)
   simpa only [sub_add_cancel] using Ideal.add_mem _ hs hof
 
 /-- Reduction modulo a parameter power identifies the weak completion with the
@@ -199,20 +196,12 @@ theorem algHom_ext {B : Type*} [CommRing B] [Algebra O B]
   ext z
   apply (IsHausdorff.eq_iff_smodEq (I := Ideal.span {algebraMap O B π})).mpr
   intro n
-  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
-  obtain ⟨s, hs⟩ := exists_sub_mem_span_pow π z n
-  have hφ : φ (z - of π S s) ∈ Ideal.span {algebraMap O B π} ^ n := by
-    have hm : (Ideal.span {algebraMap O (weakCompletion π S) π} ^ n).map φ ≤
-        Ideal.span {algebraMap O B π} ^ n := by
-      rw [Ideal.map_pow, Ideal.map_span, Set.image_singleton, AlgHom.commutes]
-    exact hm (Ideal.mem_map_of_mem _ hs)
-  have hψ : ψ (z - of π S s) ∈ Ideal.span {algebraMap O B π} ^ n := by
-    have hm : (Ideal.span {algebraMap O (weakCompletion π S) π} ^ n).map ψ ≤
-        Ideal.span {algebraMap O B π} ^ n := by
-      rw [Ideal.map_pow, Ideal.map_span, Set.image_singleton, AlgHom.commutes]
-    exact hm (Ideal.mem_map_of_mem _ hs)
-  convert Ideal.sub_mem _ hφ hψ using 1
-  rw [map_sub, map_sub, h s]
+  obtain ⟨s, t, rfl⟩ := exists_eq_of_add_pow_mul π z n
+  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow,
+    Ideal.mem_span_singleton]
+  refine ⟨φ t - ψ t, ?_⟩
+  rw [map_add, map_add, h s, map_mul, map_mul, map_pow, map_pow, AlgHom.commutes,
+    AlgHom.commutes]
   ring
 
 end weakCompletion

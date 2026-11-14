@@ -37,9 +37,10 @@ Nothing here requires `O` to be noetherian, a valuation ring, or `π`-adically c
 * `TauCeti.Dagger.weakCompletion.algebraMap_mem_jacobson` and
   `TauCeti.Dagger.weakCompletion.span_algebraMap_le_jacobson`: `algebraMap O S† π` lies in the
   Jacobson radical of `S†`.
-* `TauCeti.Dagger.weakCompletion.isLocalHom_eval`, `TauCeti.Dagger.weakCompletion.isUnit_iff_eval`,
-  and `TauCeti.Dagger.weakCompletion.isUnit_iff_eval_one`: reduction modulo any positive power `πⁿ`
-  is a local homomorphism, so an element of `S†` is a unit iff its image in `S ⧸ π S` is a unit.
+* `TauCeti.Dagger.weakCompletion.isLocalHom_eval` and
+  `TauCeti.Dagger.weakCompletion.isUnit_of_iff`: reduction modulo any positive power `πⁿ` is a
+  local homomorphism, so the image of `s : S` in `S†` is a unit iff its residue class in `S ⧸ π S`
+  is a unit.
 * `TauCeti.Dagger.weakCompletion.of_mvPolynomial_bijective_iff`: for nonempty finite `σ`,
   `S[X_σ] → S[X_σ]†` is bijective iff `algebraMap O S π` is nilpotent.
 
@@ -200,31 +201,18 @@ theorem span_algebraMap_le_jacobson :
 /-- Reduction modulo any positive power `πⁿ` is a local homomorphism on `S†`. -/
 instance isLocalHom_eval (n : ℕ) [NeZero n] : IsLocalHom (eval π n (S := S)) := by
   have h : IsLocalHom (eval π n (S := S)).toRingHom := by
-    rw [RingHom.isLocalHom_iff_ker_le_jacobson (eval_surjective π n)]
-    change RingHom.ker (eval π n (S := S)) ≤ _
-    rw [ker_eval]
+    rw [RingHom.isLocalHom_iff_ker_le_jacobson (eval_surjective π n), AlgHom.toRingHom_eq_coe,
+      RingHom.ker_coe_toRingHom, ker_eval]
     exact (Ideal.pow_le_self (NeZero.ne n)).trans (span_algebraMap_le_jacobson π S)
   exact ⟨h.map_nonunit⟩
-
-/-- An element of `S†` is a unit if and only if its reduction modulo any positive power `πⁿ` is
-a unit. -/
-theorem isUnit_iff_eval (n : ℕ) [NeZero n] (z : weakCompletion π S) :
-    IsUnit z ↔ IsUnit (eval π n z) :=
-  (isUnit_map_iff (eval π n (S := S)) z).symm
-
-/-- An element of `S†` is a unit if and only if its reduction modulo `π` is a unit in
-`S ⧸ π S`. -/
-theorem isUnit_iff_eval_one (z : weakCompletion π S) :
-    IsUnit z ↔ IsUnit (eval π 1 z) :=
-  isUnit_iff_eval π 1 z
 
 /-- The image of `s : S` in `S†` is a unit if and only if the residue class of `s` modulo `π` is
 a unit in `S ⧸ π S`. -/
 theorem isUnit_of_iff (s : S) :
     IsUnit (of π S s) ↔ IsUnit (Ideal.Quotient.mk (Ideal.span {algebraMap O S π}) s) := by
-  rw [isUnit_iff_eval_one, eval_of]
-  let e := Ideal.quotEquivOfEq (pow_one (Ideal.span {algebraMap O S π}))
-  exact ⟨fun h ↦ by simpa [e] using h.map e, fun h ↦ by simpa [e] using h.map e.symm⟩
+  rw [← isUnit_map_iff (eval π 1), eval_of,
+    ← MulEquiv.isUnit_map (Ideal.quotEquivOfEq (pow_one (Ideal.span {algebraMap O S π}))),
+    Ideal.quotEquivOfEq_mk]
 
 /-- For a nonempty finite index type `σ`, the canonical map `S[X_σ] → S[X_σ]†` is bijective if
 and only if the image of `π` in `S` is nilpotent. -/

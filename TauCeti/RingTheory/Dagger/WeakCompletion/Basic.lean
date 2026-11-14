@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.AdicCompletion.Algebra
 public import Mathlib.RingTheory.FiniteType
 import Mathlib.Data.Fintype.Order
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Algebra.MvPolynomial.Degrees
 import TauCeti.Algebra.MvPolynomial.Monad
 import TauCeti.RingTheory.AdicCompletion.Nilpotent
 
@@ -307,16 +308,6 @@ theorem weakCompletion.of_bijective_of_isNilpotent {π : O}
 
 end FiniteType
 
-private theorem exists_totalDegree_le_one_aeval_eq {s : Finset S}
-    (hs : Submodule.span O (s : Set S) = ⊤) (t : S) :
-    ∃ P : MvPolynomial s O, P.totalDegree ≤ 1 ∧ aeval ((↑) : s → S) P = t := by
-  have ht : t ∈ Submodule.span O (s : Set S) := hs.symm ▸ Submodule.mem_top
-  obtain ⟨c, rfl⟩ := Submodule.mem_span_finset'.mp ht
-  refine ⟨∑ i : s, monomial (Finsupp.single i 1) (c i), ?_, ?_⟩
-  · exact (totalDegree_finsetSum _ _).trans
-      (Finset.sup_le fun i _ ↦ (totalDegree_monomial_le _ _).trans (by simp))
-  · simp [aeval_monomial, Algebra.smul_def]
-
 /-- For any module-finite `O`-algebra `S`, the weak completion `S†` is the entire `π`-adic
 completion `S^∧`. -/
 theorem weakCompletion_eq_top_of_finite [Module.Finite O S] : weakCompletion π S = ⊤ := by
@@ -324,9 +315,11 @@ theorem weakCompletion_eq_top_of_finite [Module.Finite O S] : weakCompletion π 
   intro z _
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := O) (M := S)
   let x : s → S := (↑)
+  have hspan : Submodule.span O (Set.range x) = ⊤ := by
+    simpa [x] using hs
   have hgen : Algebra.adjoin O (Set.range x) = ⊤ := by
     rw [← Algebra.adjoin_span]
-    simp [x, hs]
+    simp [hspan]
   rw [mem_weakCompletion_iff π hgen]
   let I : Ideal S := Ideal.span {algebraMap O S π}
   obtain ⟨f, rfl⟩ := AdicCompletion.mk_surjective I S z
@@ -340,7 +333,9 @@ theorem weakCompletion_eq_top_of_finite [Module.Finite O S] : weakCompletion π 
       obtain ⟨t, ht⟩ := htr
       exact ⟨t, by simpa [b] using ht⟩
   choose t ht using hstep
-  choose P hPdeg hPev using fun j ↦ exists_totalDegree_le_one_aeval_eq hs (t j)
+  choose P hPdeg hPev using fun j ↦
+    MvPolynomial.exists_totalDegree_le_one_aeval_eq_of_mem_span
+      (x := x) (t := t j) (hspan.symm ▸ Submodule.mem_top)
   refine ⟨1, P, fun j ↦ (hPdeg j).trans (by omega), fun k ↦ ?_⟩
   rw [AdicCompletion.evalₐ_mk]
   rcases k with _ | k
