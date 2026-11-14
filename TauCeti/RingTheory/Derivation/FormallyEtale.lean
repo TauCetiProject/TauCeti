@@ -28,6 +28,8 @@ base and extension are arbitrary commutative rings and the derivations are modul
 
 * `Derivation.eq_of_formallyUnramified`: two derivations of a formally unramified extension
   agreeing on the base are equal;
+* `Derivation.algHom_apply_of_formallyUnramified`: an `S`-algebra homomorphism out of a formally
+  unramified `S`-algebra intertwines derivations agreeing on `S`;
 * `Derivation.extendOfFormallyEtale`: the extension of a derivation to a formally étale
   extension, with `Derivation.extendOfFormallyEtale_algebraMap` stating that it extends.
 -/
@@ -65,6 +67,28 @@ theorem eq_of_formallyUnramified [Algebra.FormallyUnramified S T] {δ₁ δ₂ :
   ext x
   -- `δ x` is `δ₁ x - δ₂ x` by construction of `δ`.
   exact sub_eq_zero.mp (hδ x)
+
+/-- **Algebra homomorphisms intertwine derivations of formally unramified extensions.** If `M` is
+formally unramified over `S`, any `S`-algebra homomorphism `φ : M →ₐ[S] L` intertwines
+`R`-derivations `δ₁ : M → M` and `δ₂ : L → L` that agree through `φ` on the image of `S`. -/
+theorem algHom_apply_of_formallyUnramified
+    {R S M L : Type*} [CommRing R] [CommRing S] [CommRing M] [CommRing L]
+    [Algebra R S] [Algebra R M] [Algebra S M] [IsScalarTower R S M]
+    [Algebra R L] [Algebra S L] [IsScalarTower R S L] [Algebra.FormallyUnramified S M]
+    (δ₁ : Derivation R M M) {δ₂ : Derivation R L L} (φ : M →ₐ[S] L)
+    (h : ∀ s : S, φ (δ₁ (algebraMap S M s)) = δ₂ (algebraMap S L s)) (x : M) :
+    φ (δ₁ x) = δ₂ (φ x) := by
+  let : Algebra M L := φ.toRingHom.toAlgebra
+  have : IsScalarTower S M L := .of_algebraMap_eq' φ.comp_algebraMap.symm
+  have : IsScalarTower R M L := .of_algebraMap_eq fun r ↦ by
+    rw [IsScalarTower.algebraMap_apply R S M, IsScalarTower.algebraMap_apply R S L,
+      ← IsScalarTower.algebraMap_apply S M L]
+  have hδ : (Algebra.linearMap M L).compDer δ₁ = δ₂.compAlgebraMap M :=
+    eq_of_formallyUnramified (S := S) fun s ↦ by
+      rw [coe_comp, LinearMap.comp_apply, coeFn_coe, LinearMap.coe_restrictScalars,
+        Algebra.linearMap_apply, compAlgebraMap_apply, RingHom.algebraMap_toAlgebra,
+        AlgHom.toRingHom_eq_coe, RingHom.coe_coe, h, φ.commutes]
+  exact congr($hδ x)
 
 end Unramified
 
