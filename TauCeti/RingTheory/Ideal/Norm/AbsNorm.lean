@@ -25,8 +25,10 @@ have nonnegative product generate principal ideals with congruent absolute norms
   ideal is unchanged by transporting it along a ring isomorphism, in either direction.
 * `Ideal.absNorm_map_of_ringEquiv_eq_natCard`: the absolute norm of an ideal transported from an
   arbitrary commutative ring is the cardinality of the original quotient.
-* `Ideal.natCast_notMem_of_coprime_absNorm`: a natural number prime to the absolute norm of a
-  proper ideal does not lie in it.
+* `Ideal.natCast_notMem_of_coprime_absNorm`, `Ideal.isCoprime_span_natCast_of_coprime_absNorm`,
+  `Ideal.isCoprime_span_natCast_iff`: a natural number prime to the absolute norm of a proper
+  ideal does not lie in it, so an ideal of a Dedekind domain free of finite rank over `ℤ` is
+  coprime to `(n)` if and only if its absolute norm is coprime to `n`.
 * `Int.absNorm_span_singleton`, `Int.absNorm_le_natAbs_of_dvd_span_singleton`: the absolute norm
   of the ideal `(n)` of `ℤ` is `|n|`, and that of an ideal dividing `(n)`, for `n ≠ 0`, is at most
   `|n|`.
@@ -80,6 +82,14 @@ theorem natCast_notMem_of_coprime_absNorm {I : Ideal R} (hI : I ≠ ⊤) {a : �
   rw [eq_top_iff_one, ← huv]
   simpa using I.add_mem (I.mul_mem_left u h) (I.mul_mem_left v (absNorm_mem I))
 
+/-- An ideal of a Dedekind domain whose absolute norm is coprime to `a` is coprime to `(a)`. -/
+theorem isCoprime_span_natCast_of_coprime_absNorm {I : Ideal R} {a : ℕ}
+    (ha : (absNorm I).Coprime a) : IsCoprime I (span {(a : R)}) := by
+  obtain ⟨u, v, huv⟩ := (Nat.isCoprime_iff_coprime.mpr ha).map (Int.castRingHom R)
+  refine Ideal.isCoprime_iff_exists.mpr ⟨u * (absNorm I : R), I.mul_mem_left u (absNorm_mem I),
+    v * (a : R), mul_mem_left _ v (mem_span_singleton_self _), ?_⟩
+  simpa using huv
+
 end Ideal
 
 namespace Int
@@ -127,6 +137,12 @@ theorem Ideal.absNorm_coprime_of_isCoprime_span_natCast [IsDedekindDomain S]
     rw [← hcop.sup_eq]
     exact sup_le hIle hnle
   exact hPmax.ne_top (top_unique htop)
+
+/-- In a Dedekind domain that is free of finite rank over `ℤ`, an ideal is coprime to `(n)` if and
+only if its absolute norm is coprime to `n`. -/
+theorem Ideal.isCoprime_span_natCast_iff [IsDedekindDomain S] {I : Ideal S} {n : ℕ} :
+    IsCoprime I (Ideal.span {(n : S)}) ↔ (Ideal.absNorm I).Coprime n :=
+  ⟨Ideal.absNorm_coprime_of_isCoprime_span_natCast, Ideal.isCoprime_span_natCast_of_coprime_absNorm⟩
 
 /-- **Congruent elements with norms of nonnegative product generate ideals of congruent norms.**
 If `a ≡ b` modulo the ideal `(m)` of a Dedekind domain `S` that is free of finite rank over `ℤ`,

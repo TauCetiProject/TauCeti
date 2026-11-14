@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Pointwise
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Basic
+import Mathlib.RingTheory.Int.Basic
 import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
@@ -37,6 +39,7 @@ zero ideal, which has no prime factors, is the trivial character.
   `𝔞` and `𝔟`.
 * `Ideal.powerResidueSymbolIdeal_mul_right_intCast`: the same for a rational integer `m`, read in
   each quotient.
+* `Ideal.powerResidueSymbolIdeal_prod_right`: `(α / ∏ᵢ 𝔞ᵢ)_n = ∏ᵢ (α / 𝔞ᵢ)_n` for nonzero ideals.
 * `Ideal.powerResidueSymbolIdeal_pow_right`: `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k`.
 * `Ideal.powerResidueSymbolIdeal_top`: `(α / 𝓞 K)_n = 1`.
 * `Ideal.powerResidueSymbolIdeal_bot`: the symbol at the zero ideal is the trivial character.
@@ -44,10 +47,14 @@ zero ideal, which has no prime factors, is the trivial character.
   not coprime.
 * `Ideal.powerResidueSymbolIdeal_pow_eq_one`: on units the symbol is an `n`-th root of unity.
 * `Ideal.powerResidueSymbolIdeal_neg`: `(-x / 𝔞)_n = (x / 𝔞)_n` for odd `n`.
-* `Ideal.powerResidueSymbolIdeal_mk_of_pow_eq_one`: `(ζ / 𝔞)_n = ζ ^ ((N 𝔞 - 1) / n)` for an
-  `n`-th root of unity `ζ` of `𝓞 K`, when `N 𝔞` is prime to `n`.
+* `Ideal.powerResidueSymbolIdeal_mk_of_pow_eq_one`,
+  `Ideal.powerResidueSymbolIdeal_span_natCast_mk_of_pow_eq_one`, and
+  `Ideal.powerResidueSymbolIdeal_span_intCast_mk_of_pow_eq_one`: `(ζ / 𝔞)_n = ζ ^ ((N 𝔞 - 1) / n)`
+  for an `n`-th root of unity `ζ` of `𝓞 K` when `N 𝔞` is prime to `n`, and
+  `(ζ / a)_n = ζ ^ ((|a| ^ [K : ℚ] - 1) / n)` at a rational integer `a` prime to `n`.
 * `Ideal.map_powerResidueSymbolIdeal`: Galois equivariance, `σ ((α / 𝔞)_n) = (σ α / σ 𝔞)_n` for a
   ring isomorphism `σ : 𝓞 K ≃+* 𝓞 L`.
+* `Ideal.smul_powerResidueSymbolIdeal`: action equivariance, `σ • (α / 𝔞)_n = (σ • α / σ • 𝔞)_n`.
 
 ## References
 
@@ -239,6 +246,31 @@ theorem powerResidueSymbolIdeal_mk_of_pow_eq_one (h𝔞 : (absNorm 𝔞).Coprime
     rw [hu, hv, hmul]
     simp [NeZero.pos n, pow_add, pow_mul, hζ]
 
+/-- **The power residue symbol of a root of unity at a natural number.** In a number field `K`,
+`(ζ / m)_n = ζ ^ ((m ^ [K : ℚ] - 1) / n)` for an `n`-th root of unity `ζ` of `𝓞 K` and a natural
+number `m` coprime to `n`. -/
+theorem powerResidueSymbolIdeal_span_natCast_mk_of_pow_eq_one {m : ℕ} (hm : m.Coprime n)
+    {ζ : 𝓞 K} (hζ : ζ ^ n = 1) :
+    powerResidueSymbolIdeal (span {(m : 𝓞 K)}) n (Quotient.mk _ ζ) =
+      ζ ^ ((m ^ Module.finrank ℚ K - 1) / n) := by
+  have hN : absNorm (span {(m : 𝓞 K)}) = m ^ Module.finrank ℚ K := by
+    rw [absNorm_span_natCast, RingOfIntegers.rank]
+  rw [powerResidueSymbolIdeal_mk_of_pow_eq_one (hN ▸ hm.pow_left _) hζ, hN]
+
+/-- **The power residue symbol of a root of unity at a rational integer.** In a number field `K`,
+`(ζ / a)_n = ζ ^ ((|a| ^ [K : ℚ] - 1) / n)` for an `n`-th root of unity `ζ` of `𝓞 K` and an integer
+`a` coprime to `n`. -/
+theorem powerResidueSymbolIdeal_span_intCast_mk_of_pow_eq_one {a : ℤ} (ha : IsCoprime a (n : ℤ))
+    {ζ : 𝓞 K} (hζ : ζ ^ n = 1) :
+    powerResidueSymbolIdeal (span {(a : 𝓞 K)}) n (Quotient.mk _ ζ) =
+      ζ ^ ((a.natAbs ^ Module.finrank ℚ K - 1) / n) := by
+  have hcop : a.natAbs.Coprime n := by simpa [Int.isCoprime_iff_nat_coprime] using ha
+  have hspan : span {(a : 𝓞 K)} = span {(a.natAbs : 𝓞 K)} := by
+    rcases Int.natAbs_eq a with h | h
+    · conv_lhs => rw [h, Int.cast_natCast]
+    · conv_lhs => rw [h, Int.cast_neg, Int.cast_natCast, span_singleton_neg]
+  rw [hspan, powerResidueSymbolIdeal_span_natCast_mk_of_pow_eq_one hcop hζ]
+
 /-- **Galois equivariance of the power residue symbol at an ideal.** A ring isomorphism
 `σ : 𝓞 K ≃+* 𝓞 L` carries the symbol at `𝔞` to the symbol at `σ 𝔞`:
 `σ ((α / 𝔞)_n) = (σ α / σ 𝔞)_n`. Taking `L = K`, this applies to every ring automorphism of
@@ -265,6 +297,31 @@ theorem map_powerResidueSymbolIdeal {L : Type*} [Field L] [NumberField L]
       powerResidueSymbolIdeal_mul_right (hσ hP₀) (hσ h𝔞), map_mul, ih,
       powerResidueSymbolIdeal_of_isMaximal P, powerResidueSymbolIdeal_of_isMaximal (P.map σ),
       map_powerResidueSymbol P σ]
+
+/-- **Multiplicativity in a finite product of nonzero ideals.**
+`(α / ∏ᵢ 𝔞ᵢ)_n = ∏ᵢ (α / 𝔞ᵢ)_n` when every factor `𝔞ᵢ` is nonzero. -/
+theorem powerResidueSymbolIdeal_prod_right {ι : Type*} (s : Finset ι) (f : ι → Ideal (𝓞 K))
+    (hf : ∀ i ∈ s, f i ≠ ⊥) (α : 𝓞 K) :
+    powerResidueSymbolIdeal (∏ i ∈ s, f i) n (Quotient.mk (∏ i ∈ s, f i) α) =
+      ∏ i ∈ s, powerResidueSymbolIdeal (f i) n (Quotient.mk (f i) α) := by
+  classical
+  induction s using Finset.cons_induction with
+  | empty => rw [Finset.prod_empty, Finset.prod_empty, one_eq_top, powerResidueSymbolIdeal_top]
+  | cons a s _ ih =>
+    have ha : f a ≠ ⊥ := hf a (Finset.mem_cons_self a s)
+    have hs : (∏ i ∈ s, f i) ≠ ⊥ :=
+      Finset.prod_ne_zero_iff.mpr fun i hi ↦ hf i (Finset.mem_cons_of_mem hi)
+    rw [Finset.prod_cons, Finset.prod_cons, powerResidueSymbolIdeal_mul_right ha hs,
+      ih fun i hi ↦ hf i (Finset.mem_cons_of_mem hi)]
+
+open scoped Pointwise in
+/-- **Action equivariance of the power residue symbol at an ideal.** For any group action by ring
+automorphisms on `𝓞 K`, `σ • (α / 𝔞)_n = (σ • α / σ • 𝔞)_n`. -/
+theorem smul_powerResidueSymbolIdeal {G : Type*} [Group G] [MulSemiringAction G (𝓞 K)]
+    (σ : G) (𝔞 : Ideal (𝓞 K)) (α : 𝓞 K) :
+    σ • powerResidueSymbolIdeal 𝔞 n (Quotient.mk 𝔞 α) =
+      powerResidueSymbolIdeal (σ • 𝔞) n (Quotient.mk (σ • 𝔞) (σ • α)) :=
+  map_powerResidueSymbolIdeal 𝔞 (MulSemiringAction.toRingEquiv G (𝓞 K) σ) α
 
 /-- For `n = 2`, a quadratic nonresidue modulo `P` has symbol `1` at `P ^ 2`, although it is not
 a square modulo `P ^ 2`: the value `1` does not detect residues at composite ideals. -/

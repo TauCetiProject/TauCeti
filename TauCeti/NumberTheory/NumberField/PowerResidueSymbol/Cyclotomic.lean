@@ -19,16 +19,23 @@ ideal `𝔞`, the symbol of `m` at the conjugate ideal `σ 𝔞` is the inverse 
 
 This is how conjugate ideals are paired off in the reciprocity laws involving rational integers:
 for instance, the symbol of an integer `m` prime to `p` at a rational prime that splits as
-`p = π (σ π)` is `1`.
+`p = π (σ π)` is `1`. Specialising `Ideal.powerResidueSymbolIdeal_span_natCast_mk_of_pow_eq_one` to
+`[K : ℚ] = φ(n)` also gives `(ζ / a)_n = ζ ^ ((|a| ^ φ(n) - 1) / n)` for an `n`-th root of unity
+`ζ` of `𝓞 K` and `a` prime to `n`.
 
 ## Main results
 
 * `Ideal.powerResidueSymbolIdeal_map_intCast_mul_eq_one`: `(m / σ 𝔞)_n (m / 𝔞)_n = 1` for complex
   conjugation `σ` and an integer `m` prime to `𝔞`.
+* `IsCyclotomicExtension.Rat.powerResidueSymbolIdeal_span_natCast_mk_of_pow_eq_one` and
+  `IsCyclotomicExtension.Rat.powerResidueSymbolIdeal_span_intCast_mk_of_pow_eq_one`:
+  `(ζ / a)_n = ζ ^ ((|a| ^ φ(n) - 1) / n)` for an `n`-th root of unity `ζ` of `𝓞 K` and `a` prime
+  to `n`.
 
 ## References
 
 * N. Xu, *Reciprocity Laws*, §5, proof of Proposition 5.10.
+* S. D. Adhikari, *The early reciprocity laws: from Gauss to Eisenstein*, §4, Proposition 4.1.
 -/
 
 public section
@@ -62,3 +69,31 @@ theorem powerResidueSymbolIdeal_map_intCast_mul_eq_one {σ : Gal(K/ℚ)}
   rw [← hmap, hτ, ← pow_succ, Nat.sub_add_cancel NeZero.one_le, hx]
 
 end Ideal
+
+namespace IsCyclotomicExtension.Rat
+
+open Ideal
+
+variable {n : ℕ} [NeZero n] {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {n} ℚ K]
+  [HasEnoughRootsOfUnity (𝓞 K) n]
+
+/-- **The power residue symbol of a root of unity at a natural number in `ℚ(ζ_n)`.** For `m`
+coprime to `n` and an `n`-th root of unity `ζ` of `𝓞 K`, `(ζ / m)_n = ζ ^ ((m ^ φ(n) - 1) / n)`. -/
+theorem powerResidueSymbolIdeal_span_natCast_mk_of_pow_eq_one {m : ℕ} (hm : m.Coprime n)
+    {ζ : 𝓞 K} (hζ : ζ ^ n = 1) :
+    powerResidueSymbolIdeal (span {(m : 𝓞 K)}) n (Ideal.Quotient.mk _ ζ) =
+      ζ ^ ((m ^ n.totient - 1) / n) := by
+  rw [Ideal.powerResidueSymbolIdeal_span_natCast_mk_of_pow_eq_one hm hζ,
+    IsCyclotomicExtension.finrank K (Polynomial.cyclotomic.irreducible_rat (NeZero.pos n))]
+
+/-- **The power residue symbol of a root of unity at a rational integer in `ℚ(ζ_n)`.** For `a`
+coprime to `n` and an `n`-th root of unity `ζ` of `𝓞 K`,
+`(ζ / a)_n = ζ ^ ((|a| ^ φ(n) - 1) / n)`. -/
+theorem powerResidueSymbolIdeal_span_intCast_mk_of_pow_eq_one {a : ℤ} (ha : IsCoprime a (n : ℤ))
+    {ζ : 𝓞 K} (hζ : ζ ^ n = 1) :
+    powerResidueSymbolIdeal (span {(a : 𝓞 K)}) n (Ideal.Quotient.mk _ ζ) =
+      ζ ^ ((a.natAbs ^ n.totient - 1) / n) := by
+  rw [Ideal.powerResidueSymbolIdeal_span_intCast_mk_of_pow_eq_one ha hζ,
+    IsCyclotomicExtension.finrank K (Polynomial.cyclotomic.irreducible_rat (NeZero.pos n))]
+
+end IsCyclotomicExtension.Rat
