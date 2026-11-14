@@ -9,9 +9,10 @@ public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.GroupTheory.PGroup
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.ProperSpace
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 public import TauCeti.Analysis.Normed.Ring.Units
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Finset.Max
@@ -27,8 +28,7 @@ Complements to Mathlib's `PadicInt` API, chiefly on the units of `ℤ_p`: `1 + x
 `p ∣ x`, because `ℤ_p` is a local ring whose maximal ideal is `pℤ_p`. This is the criterion
 that makes `1 + p^f ℤ_p` (for `f ≥ 1`) a subgroup of `ℤ_pˣ`. The file also contains summability
 and norm lemmas for `ℤ_p`, local-global statements for the ideals of `ℤ` (through the extensions
-to every `ℤ_p`), valuation lemmas for `ℚ_p`, and the vanishing of continuous additive
-homomorphisms `ℤ_p → ℤ`.
+to every `ℤ_p`) and valuation lemmas for `ℚ_p`.
 
 The unit group `ℤ_pˣ` is a profinite group: it is the closed unit sphere of the compact
 totally disconnected space `ℤ_p`, and the topology of the units is the subspace topology because
@@ -40,11 +40,6 @@ Two consequences of the ultrametric divisibility in `ℤ_p` are recorded as well
 divides every element of no larger norm, so that a finite family of `p`-adic integers is a common
 multiple `q • w` of a family `w` with a coordinate equal to `1`, namely at an index of maximal norm.
 This is the shape in which the exponent vector of a relator of a free pro-`p` group is read.
-
-Every continuous additive homomorphism from `ℤ_p` to the discrete integers is zero, by Mathlib's
-compact-domain vanishing theorem `ContinuousAddMonoidHom.eq_zero_of_isAddTorsionFree`. This
-supplies the homomorphism calculation for first continuous cohomology with trivial integer
-coefficients.
 
 ## Main results
 
@@ -369,4 +364,3 @@ theorem norm_natCast_eq_zpow {m : ℕ} (hm : m ≠ 0) :
     Padic.valuation_natCast]
 
 end Padic
-
