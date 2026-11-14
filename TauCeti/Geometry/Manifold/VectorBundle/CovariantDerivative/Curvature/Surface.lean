@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Chart
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
@@ -36,6 +37,9 @@ for the curvature tensor (`CovariantDerivative.curvatureTensor_symm_trivializati
 
 ## Main results
 
+* `CovariantDerivative.contMDiffAt_alongCurve_slice`: for a `C²` field on a parametrized surface,
+  the covariant derivatives along the second-parameter curves form a `C¹` field along each
+  first-parameter curve.
 * `CovariantDerivative.alongCurve_alongCurve_sub_alongCurve_alongCurve`: the commutator of the two
   covariant derivatives along a `C²` field on a parametrized surface is the curvature tensor.
 
@@ -112,6 +116,54 @@ private theorem sectionCoord_alongCurve_eventuallyEq
       hV.differentiableWithinAt,
     e.continuousLinearMapAt_symmL (R := ℝ) hqb, alongCurveInChartWithin_apply,
     derivWithin_univ, derivWithin_univ, Function.comp_def, hcoord q, hφdef]
+
+/-- **Regularity of the inner covariant derivatives.** For a `C²` vector field `W` along a
+parametrized surface `f`, the covariant derivatives along the second-parameter curves at `v` form
+a `C¹` field along the first-parameter curve `fun q ↦ f q v` at `u`. -/
+theorem contMDiffAt_alongCurve_slice
+    (hW : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I.tangent 2
+      (fun z : ℝ × ℝ ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (u, v)) :
+    ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 1
+      (fun q ↦ TotalSpace.mk' E (f q v) (alongCurve cov (f q) (W q) v)) u := by
+  set e := trivializationAt E (TangentSpace I) (f u v)
+  have hcov := cov.isCovariantDerivativeOn (s := e.baseSet)
+  set Γ := christoffelMap (finBasis ℝ E) hcov
+  set φ : ℝ × ℝ → E := fun z ↦ extChartAt I (f u v) (f z.1 z.2) with hφdef
+  set w : ℝ × ℝ → E := fun z ↦ e.continuousLinearMapAt ℝ (f z.1 z.2) (W z.1 z.2) with hwdef
+  have : ContMDiffCovariantDerivativeOn E ∞ cov.toFun e.baseSet :=
+    contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) cov e.open_baseSet
+  have : IsManifold I (∞ + 1 + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have : ContMDiffVectorBundle (∞ + 1) E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  have hbase : f u v ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) _
+  have hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ f z.1 z.2) (u, v) :=
+    (contMDiff_proj (TangentSpace I)).contMDiffAt.comp (u, v) hW
+  have hfv : ContMDiffAt 𝓘(ℝ, ℝ) I 1 (fun q ↦ f q v) u :=
+    (hf.comp u (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left (n := 2) v)).contMDiffAt).of_le
+      one_le_two
+  have hφ : ContDiffAt ℝ 2 φ (u, v) := hφdef ▸ contMDiffAt_iff_contDiffAt.mp
+    ((contMDiffAt_extChartAt' (mem_chart_source H (f u v))).comp (u, v) hf)
+  have hw : ContDiffAt ℝ 2 w (u, v) :=
+    hwdef ▸ hW.contDiffAt_continuousLinearMapAt_trivializationAt
+  have hΓ : ContMDiffAt I 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E) 1 Γ (f u v) :=
+    ((contMDiffOn_christoffelMap (n := ∞) (finBasis ℝ E) hcov).contMDiffAt
+      (e.open_baseSet.mem_nhds hbase)).of_le (by simp)
+  have hline : ContDiffAt ℝ 1 (fun q : ℝ ↦ (q, v)) u := contDiffAt_id.prodMk contDiffAt_const
+  -- The partial derivatives in the second parameter are `C¹` in the first parameter.
+  have hslice {g : ℝ × ℝ → E} (hg : ContDiffAt ℝ 2 g (u, v)) :
+      ContDiffAt ℝ 1 (fun q ↦ deriv (fun r ↦ g (q, r)) v) u :=
+    ContDiffAt.comp (g := fun z : ℝ × ℝ ↦ deriv (fun r ↦ g (z.1, r)) z.2) u
+      (hg.contDiffAt_deriv_snd (m := 1) (by norm_num)) hline
+  have hcoord : ContDiffAt ℝ 1 (fun q ↦ deriv (fun r ↦ w (q, r)) v +
+      Γ (f q v) (w (q, v)) (deriv (fun r ↦ φ (q, r)) v)) u := by
+    have hΓf : ContDiffAt ℝ 1 (fun q ↦ Γ (f q v)) u := (hΓ.comp u hfv).contDiffAt
+    have hwv : ContDiffAt ℝ 1 (fun q ↦ w (q, v)) u :=
+      ContDiffAt.comp (g := w) u (hw.of_le one_le_two) hline
+    exact (hslice hw).add ((hΓf.clm_apply hwv).clm_apply (hslice hφ))
+  rw [← contMDiffWithinAt_univ, ← contDiffWithinAt_sectionCoord_iff _ _ hfv.contMDiffWithinAt
+    hbase]
+  exact (hcoord.congr_of_eventuallyEq
+    (sectionCoord_alongCurve_eventuallyEq cov hW hφdef hwdef)).contDiffWithinAt
 
 /-- **The mixed covariant derivative in the chart at the point.** For a `C²` vector field `W`
 along a parametrized surface `f`, the covariant derivative along the first-parameter curve of the
