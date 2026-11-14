@@ -24,7 +24,9 @@ spheres back to their corresponding sets centered at zero.
 The preimage formulas need only `[Norm 𝕜] [SMul 𝕜 E] [NormSMulClass 𝕜 E]` on the
 scalars and their action. Balls and closed balls require `0 < ‖c‖`; spheres only require
 `‖c‖ ≠ 0`. Over a normed division ring these conditions are equivalent to `c ≠ 0`, via
-`norm_pos_iff` and `norm_ne_zero_iff` respectively.
+`norm_pos_iff` and `norm_ne_zero_iff` respectively. For a distributive action, scaling by `c`
+pulls `Metric.ball (c • x) (‖c‖ * r)` back to `Metric.ball x r`
+(`TauCeti.preimage_smul_ball_smul_norm`).
 
 Sets that agree on `ball x (r * R)` have preimages under the blow-up map `y ↦ x + r • y`,
 `r > 0`, that agree on `ball 0 R` (`TauCeti.preimage_add_smul_inter_ball_eq`), and hence the same
@@ -108,6 +110,22 @@ theorem preimage_smul_vadd_sphere (x : P) {c : 𝕜} (hc : ‖c‖ ≠ 0) (r : �
   exact mul_right_inj' hc
 
 end Preimage
+
+section PreimageSMul
+
+variable {𝕜 E : Type*} [Norm 𝕜] [SeminormedAddCommGroup E] [DistribSMul 𝕜 E]
+  [NormSMulClass 𝕜 E]
+
+/-- Scaling by `c` pulls the ball `Metric.ball (c • x) (‖c‖ * r)` back to `Metric.ball x r`, for a
+scale `c` of positive norm. -/
+@[simp]
+theorem preimage_smul_ball_smul_norm (x : E) {c : 𝕜} (hc : 0 < ‖c‖) (r : ℝ) :
+    ((fun y : E ↦ c • y) ⁻¹' Metric.ball (c • x) (‖c‖ * r)) = Metric.ball x r := by
+  ext y
+  simp only [Set.mem_preimage, Metric.mem_ball, dist_eq_norm, ← smul_sub, norm_smul]
+  exact mul_lt_mul_iff_right₀ hc
+
+end PreimageSMul
 
 section Locality
 

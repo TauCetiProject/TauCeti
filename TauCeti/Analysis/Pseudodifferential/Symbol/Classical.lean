@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.Pseudodifferential.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Pseudodifferential.Symbol.HighFrequency
 
 /-!
 # Classical symbols
@@ -39,6 +40,8 @@ and proves:
 * `TauCeti.ClassicalSymbol.principal`, the principal symbol, with
   `TauCeti.ClassicalSymbol.exists_sub_cutoffSymbol_principal`: the full symbol and its cut-off
   principal symbol differ by a symbol of order `m - 1`;
+* `TauCeti.ClassicalSymbol.tendsto_rpow_neg_smul_coefficient_smul`: at a nonzero frequency the
+  principal symbol is the high-frequency limit `σ(a)(x, ξ) = lim_{t → ∞} t ^ (-m) a(x, t ξ)`;
 * `TauCeti.ClassicalSymbol.principal_eq_zero_iff` and
   `TauCeti.ClassicalSymbol.principal_surjective`: the principal symbol vanishes exactly on the
   classical symbols of order `m - 1`, and every homogeneous symbol of degree `m` is a principal
@@ -84,6 +87,10 @@ and proves:
   `a(x, ξ)` is invertible at all large frequencies with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`. This bound is
   what the derivative estimates of the inverse symbol, and the parametrix built from it, start
   from. The radius beyond which `a(x, ξ)` is invertible depends on the compact set in general.
+  Ellipticity does not see terms of order `m - 1`
+  (`TauCeti.ClassicalSymbol.isElliptic_add_iff`), and the inverse of the principal symbol is the
+  unique homogeneous symbol of degree `-m` inverting it at every nonzero frequency
+  (`TauCeti.ClassicalSymbol.existsUnique_inversePrincipalSymbol`).
 
 ## References
 
@@ -353,6 +360,40 @@ theorem exists_norm_toSymbol_sub_principal_le {K : Set (CoordinateSpace n)} (hK 
   rw [Symbol.coefficient_sub, Pi.sub_apply, coefficient_cutoffSymbol_of_two_le_norm _ _ hξ] at h
   exact h ▸ hC x hx ξ
 
+/-- **The principal symbol is the high-frequency limit of the full symbol.** At a nonzero
+frequency `ξ`, `t ^ (-m) a(y, t ζ) → σ(a)(x, ξ)` as `t → ∞` and `(y, ζ) → (x, ξ)`. -/
+theorem tendsto_rpow_neg_smul_coefficient_smul {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    Tendsto (fun p : ℝ × (CoordinateSpace n × CoordinateSpace n) ↦
+        p.1 ^ (-m) • a.toSymbol.coefficient (p.2.1, p.1 • p.2.2))
+      (atTop ×ˢ 𝓝 (x, ξ)) (𝓝 (a.principal.coefficient (x, ξ))) := by
+  have hσ : ContinuousAt a.principal.coefficient (x, ξ) :=
+    a.principal.contDiffOn_coefficient.continuousOn.continuousAt
+      ((isOpen_ne.preimage continuous_snd).mem_nhds hξ)
+  obtain ⟨b, hb⟩ := a.exists_sub_cutoffSymbol_principal default
+  have hr : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  have hN : {p : CoordinateSpace n × CoordinateSpace n | ‖ξ‖ / 2 < ‖p.2‖} ∈ 𝓝 (x, ξ) :=
+    (isOpen_lt continuous_const (continuous_norm.comp continuous_snd)).mem_nhds (half_lt_self hr)
+  -- For `‖t ζ‖ ≥ 2` the cut-off principal symbol is `σ(a)(y, t ζ) = t ^ m σ(a)(y, ζ)`, so
+  -- `t ^ (-m) a(y, t ζ) = σ(a)(y, ζ) + t ^ (-m) b(y, t ζ)` with `b` of order `m - 1`.
+  have heq : ∀ᶠ p : ℝ × (CoordinateSpace n × CoordinateSpace n) in atTop ×ˢ 𝓝 (x, ξ),
+      a.principal.coefficient p.2 + p.1 ^ (-m) • b.coefficient (p.2.1, p.1 • p.2.2) =
+        p.1 ^ (-m) • a.toSymbol.coefficient (p.2.1, p.1 • p.2.2) := by
+    filter_upwards [prod_mem_prod (eventually_ge_atTop (4 / ‖ξ‖)) hN]
+    rintro ⟨t, y, ζ⟩ ⟨ht, hζ⟩
+    have ht : 4 / ‖ξ‖ ≤ t := ht
+    have hζ : ‖ξ‖ / 2 < ‖ζ‖ := hζ
+    have ht0 : 0 < t := (by positivity : 0 < 4 / ‖ξ‖).trans_le ht
+    have h2 : 2 ≤ ‖t • ζ‖ := by
+      rw [norm_smul, Real.norm_of_nonneg ht0.le]
+      have : 4 ≤ t * ‖ξ‖ := by rwa [div_le_iff₀ hr] at ht
+      nlinarith
+    have h := congrFun hb (y, t • ζ)
+    rw [Symbol.coefficient_sub, Pi.sub_apply, coefficient_cutoffSymbol_of_two_le_norm _ _ h2,
+      a.principal.homogeneous _ _ _ ht0] at h
+    simp [h, smul_sub, smul_smul, ← Real.rpow_add ht0]
+  simpa using ((hσ.tendsto.comp tendsto_snd).add
+    (b.tendsto_rpow_neg_smul_coefficient_smul_zero (by linarith) hξ)).congr' heq
+
 @[simp]
 theorem principal_zero : (0 : ClassicalSymbol n V W m).principal = 0 :=
   castDegree_zero _
@@ -399,12 +440,11 @@ theorem term_ofIsSmoothing (a : Symbol n V W m) (ha : a.IsSmoothing) (j : ℕ) :
 /-- A classical symbol is smoothing exactly when all of its homogeneous terms vanish. -/
 theorem isSmoothing_toSymbol_iff (a : ClassicalSymbol n V W m) :
     a.toSymbol.IsSmoothing ↔ ∀ j, a.term j = 0 := by
-  refine ⟨fun ha j => ?_, fun ha => Symbol.isSmoothing_iff.2 fun m' => ?_⟩
+  refine ⟨fun ha j => ?_, fun ha => Symbol.isSmoothing_iff_forall_nat.2 fun N => ?_⟩
   · exact (term_eq_of_toSymbol_eq (a := a) (b := ofIsSmoothing a.toSymbol ha) rfl j).trans
       (term_ofIsSmoothing _ _ j)
   · -- With vanishing terms the remainder after `N` terms is the symbol itself, of order `m - N`.
-    obtain ⟨N, hN⟩ := exists_nat_ge (m - m')
-    exact ⟨Symbol.inclusion (by linarith) (a.remainder default N), funext fun p => by simp [ha]⟩
+    exact ⟨a.remainder default N, funext fun p => by simp [ha]⟩
 
 /-- The classical symbol `χ(ξ) a(x, ξ)` of a single homogeneous term `a` of degree `m`: its
 principal symbol is `a` and its other homogeneous terms vanish. -/
@@ -1009,6 +1049,34 @@ theorem IsElliptic.comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {
     (ha : a.IsElliptic) : (b.comp a).IsElliptic := by
   rw [isElliptic_def, principal_comp]
   exact (isElliptic_def.1 hb).comp (isElliptic_def.1 ha)
+
+/-- Between Banach spaces, a classical symbol is elliptic exactly when its principal symbol is
+bijective at every position and every nonzero frequency. -/
+theorem isElliptic_iff_bijective [CompleteSpace V] [CompleteSpace W]
+    {a : ClassicalSymbol n V W m} :
+    a.IsElliptic ↔ ∀ x ξ, ξ ≠ 0 → Function.Bijective (a.principal.coefficient (x, ξ)) :=
+  HomogeneousSymbol.isElliptic_iff_bijective
+
+/-- Adding a classical symbol with vanishing principal symbol, that is, of order `m - 1`
+(`TauCeti.ClassicalSymbol.principal_eq_zero_iff`), does not change ellipticity. -/
+theorem isElliptic_add_iff {a b : ClassicalSymbol n V W m} (hb : b.principal = 0) :
+    (a + b).IsElliptic ↔ a.IsElliptic := by
+  rw [isElliptic_def, principal_add, hb, add_zero, isElliptic_def]
+
+/-- **The inverse principal symbol.** The principal symbol `a_m` of an elliptic classical symbol of
+order `m` has a unique two-sided inverse at every nonzero frequency that is a homogeneous symbol of
+degree `-m`, namely `TauCeti.HomogeneousSymbol.inverse`. -/
+theorem existsUnique_inversePrincipalSymbol [CompleteSpace V] {a : ClassicalSymbol n V W m}
+    (ha : a.IsElliptic) :
+    ∃! b : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) W V (-m),
+      ∀ x ξ, ξ ≠ 0 →
+        b.coefficient (x, ξ) ∘L a.principal.coefficient (x, ξ) = ContinuousLinearMap.id ℂ V ∧
+          a.principal.coefficient (x, ξ) ∘L b.coefficient (x, ξ) = ContinuousLinearMap.id ℂ W :=
+  have hp := isElliptic_def.1 ha
+  ⟨a.principal.inverse hp, fun _ _ hξ => ⟨coefficient_inverse_comp_coefficient _ hp hξ,
+    coefficient_comp_coefficient_inverse _ hp hξ⟩, fun b hb =>
+      eq_inverse_of_comp_eq_id_left _ hp <| ext_of_ne_zero fun x ξ hξ => by
+        simpa [hξ] using (hb x ξ hξ).1⟩
 
 /-- **Perturbation of an inverse bounded by `C₀ ⟨ξ⟩^(-m)`.** If `‖A⁻¹‖ ≤ C₀ ⟨ξ⟩^(-m)` and
 `‖B - A‖ ≤ C₁ ⟨ξ⟩^(m - 1)` at a frequency of norm at least `R ≥ 2 C₀ C₁`, `R > 0`, then

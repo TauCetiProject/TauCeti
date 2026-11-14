@@ -233,8 +233,10 @@ theorem ofReal_add {k : ℕ} (α β : closedForms I M k) :
     ofReal I (α + β) = ofReal I α + ofReal I β :=
   Subtype.ext (map_add _ α.1 β.1)
 
-/-- Viewing closed real forms as complex-valued forms turns real scalars into complex ones. -/
-@[simp]
+/-- Viewing closed real forms as complex-valued forms turns real scalars into complex ones.
+
+This is not a `simp` lemma: simplifying its right-hand side makes `simp` search for scalar
+instances on the closed complex forms, which can exhaust the instance-synthesis budget. -/
 theorem ofReal_smul {k : ℕ} (r : ℝ) (α : closedForms I M k) :
     ofReal I (r • α) = (r : ℂ) • ofReal I α := by
   apply Subtype.ext
@@ -243,8 +245,9 @@ theorem ofReal_smul {k : ℕ} (r : ℝ) (α : closedForms I M k) :
 
 end closedForms
 
-/-- A closed complex-valued form is the sum of its real part and `i` times its imaginary part. -/
-@[simp]
+/-- A closed complex-valued form is the sum of its real part and `i` times its imaginary part.
+
+This is not a `simp` lemma, for the same reason as `TauCeti.closedForms.ofReal_smul`. -/
 theorem complexClosedForms.ofReal_re_add_I_smul_ofReal_im {k : ℕ} (φ : complexClosedForms I M k) :
     closedForms.ofReal I (complexClosedForms.re I φ) +
       Complex.I • closedForms.ofReal I (complexClosedForms.im I φ) = φ :=

@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import Mathlib.Topology.Sets.Opens
+
+import TauCeti.Topology.Algebra.Module.Determinant
 
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Congr
@@ -34,7 +38,17 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
 * `OpenPartialHomeomorph.fderiv_symm_apply_fderiv_apply`,
   `OpenPartialHomeomorph.fderiv_apply_fderiv_symm_apply`: the same identities evaluated at a
   vector.
+* `OpenPartialHomeomorph.fderiv_symm_comp_fderiv_of_mem_source`,
+  `OpenPartialHomeomorph.fderiv_comp_fderiv_symm_of_mem_source` and their evaluated forms
+  `OpenPartialHomeomorph.fderiv_symm_apply_fderiv_apply_of_mem_source`,
+  `OpenPartialHomeomorph.fderiv_apply_fderiv_symm_apply_of_mem_source`: the identities at a point
+  `p` of the source and its image `e p`.
+* `OpenPartialHomeomorph.isInvertible_fderiv`, `OpenPartialHomeomorph.inverse_fderiv`: hence the
+  derivative at such a point is invertible, with inverse the derivative of `e.symm` at `e p`.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
+* `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable at `φ⁻¹ y` with its
+  inverse differentiable at `y`, the Jacobian determinants are reciprocal,
+  `det Dφ⁻¹(y) · det Dφ(φ⁻¹ y) = 1`.
 * `ContinuousLinearEquiv.image_vanishingFDeriv_comp`: precomposition by a continuous linear
   equivalence preserves the image of the vanishing-derivative locus.
 
@@ -98,6 +112,54 @@ theorem fderiv_apply_fderiv_symm_apply (e : OpenPartialHomeomorph E F) {p : F}
   simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] using
     DFunLike.congr_fun (e.fderiv_comp_fderiv_symm hp hd hds) w
 
+/-- Source-point form of `OpenPartialHomeomorph.fderiv_symm_comp_fderiv`: for `p` in the source,
+`De⁻¹_{e p} ∘ De_p = id`. -/
+theorem fderiv_symm_comp_fderiv_of_mem_source (e : OpenPartialHomeomorph E F) {p : E}
+    (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p) (hds : DifferentiableAt 𝕜 e.symm (e p)) :
+    (fderiv 𝕜 e.symm (e p)).comp (fderiv 𝕜 e p) = ContinuousLinearMap.id 𝕜 E := by
+  have h := e.fderiv_symm_comp_fderiv (e.map_source hp) (by rwa [e.left_inv hp]) hds
+  rwa [e.left_inv hp] at h
+
+/-- Source-point form of `OpenPartialHomeomorph.fderiv_comp_fderiv_symm`: for `p` in the source,
+`De_p ∘ De⁻¹_{e p} = id`. -/
+theorem fderiv_comp_fderiv_symm_of_mem_source (e : OpenPartialHomeomorph E F) {p : E}
+    (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p) (hds : DifferentiableAt 𝕜 e.symm (e p)) :
+    (fderiv 𝕜 e p).comp (fderiv 𝕜 e.symm (e p)) = ContinuousLinearMap.id 𝕜 F := by
+  have h := e.fderiv_comp_fderiv_symm (e.map_source hp) (by rwa [e.left_inv hp]) hds
+  rwa [e.left_inv hp] at h
+
+/-- Pointwise form of `OpenPartialHomeomorph.fderiv_symm_comp_fderiv_of_mem_source`: for `p` in
+the source, `De⁻¹_{e p} (De_p v) = v`. -/
+theorem fderiv_symm_apply_fderiv_apply_of_mem_source (e : OpenPartialHomeomorph E F) {p : E}
+    (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p) (hds : DifferentiableAt 𝕜 e.symm (e p))
+    (v : E) : fderiv 𝕜 e.symm (e p) (fderiv 𝕜 e p v) = v := by
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] using
+    DFunLike.congr_fun (e.fderiv_symm_comp_fderiv_of_mem_source hp hd hds) v
+
+/-- Pointwise form of `OpenPartialHomeomorph.fderiv_comp_fderiv_symm_of_mem_source`: for `p` in
+the source, `De_p (De⁻¹_{e p} w) = w`. -/
+theorem fderiv_apply_fderiv_symm_apply_of_mem_source (e : OpenPartialHomeomorph E F) {p : E}
+    (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p) (hds : DifferentiableAt 𝕜 e.symm (e p))
+    (w : F) : fderiv 𝕜 e p (fderiv 𝕜 e.symm (e p) w) = w := by
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] using
+    DFunLike.congr_fun (e.fderiv_comp_fderiv_symm_of_mem_source hp hd hds) w
+
+/-- An open partial homeomorphism which is differentiable at a point of its source, and whose
+inverse is differentiable at the image point, has an invertible derivative there. -/
+theorem isInvertible_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ e.source)
+    (he : DifferentiableAt 𝕜 e y) (hes : DifferentiableAt 𝕜 e.symm (e y)) :
+    (fderiv 𝕜 e y).IsInvertible :=
+  .of_inverse (e.fderiv_comp_fderiv_symm_of_mem_source hy he hes)
+    (e.fderiv_symm_comp_fderiv_of_mem_source hy he hes)
+
+/-- Under the same hypotheses, the inverse of the derivative at a point of the source is the
+derivative of the inverse at the image point. -/
+theorem inverse_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ e.source)
+    (he : DifferentiableAt 𝕜 e y) (hes : DifferentiableAt 𝕜 e.symm (e y)) :
+    (fderiv 𝕜 e y).inverse = fderiv 𝕜 e.symm (e y) :=
+  ContinuousLinearMap.inverse_eq (e.fderiv_comp_fderiv_symm_of_mem_source hy he hes)
+    (e.fderiv_symm_comp_fderiv_of_mem_source hy he hes)
+
 end OpenPartialHomeomorph
 
 namespace TauCeti
@@ -124,6 +186,21 @@ theorem fderiv_comp_fderiv_eq_id_of_invOn (hΦ : DifferentiableOn 𝕜 Φ U) (hm
   exact (hcomp.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id (Φ y))
 
 end TauCeti
+
+namespace Equiv
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] (φ : E ≃ E)
+
+/-- If a bijection `φ` is differentiable at `φ⁻¹ y` and its inverse is differentiable at `y`, the
+Jacobian determinants of `φ⁻¹` at `y` and of `φ` at `φ⁻¹ y` are reciprocal. -/
+theorem det_fderiv_symm_mul_det_fderiv {y : E} (hφ : DifferentiableAt 𝕜 φ (φ.symm y))
+    (hψ : DifferentiableAt 𝕜 φ.symm y) :
+    (fderiv 𝕜 φ.symm y).det * (fderiv 𝕜 φ (φ.symm y)).det = 1 := by
+  rw [mul_comm, ← ContinuousLinearMap.det_comp, ← fderiv_comp y hφ hψ, φ.self_comp_symm,
+    fderiv_id, ContinuousLinearMap.det_id]
+
+end Equiv
 
 /-- Precomposition by a continuous linear equivalence preserves the image of the locus where
 the totalized Fréchet derivative vanishes. No differentiability hypothesis is needed. -/

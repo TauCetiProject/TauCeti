@@ -188,7 +188,7 @@ private theorem sum_range_weight_upperTriangular (N : ℕ) (hN : 0 < N) :
   have hw : ∀ k ∈ Finset.range N, ((weight !![1, (k : ℤ); 0, (N : ℤ)] : ℤ) : ℚ) =
       12 * upperTriangularCoeff ((1 : ℕ) : ℤ) (k : ℤ) N := by
     intro k _
-    rw [weight_upperTriangular _ _ _ one_pos (by omega), upperTriangularCoeff_def]
+    rw [weight_upperTriangular _ _ _ one_pos, upperTriangularCoeff_def]
     push_cast
     split_ifs <;> norm_num
   rw [← Int.cast_inj (α := ℚ), Int.cast_sum, Finset.sum_congr rfl hw, ← Finset.mul_sum,
@@ -227,7 +227,7 @@ private theorem finsum_weight_traceDetFiber_of_lt (hn : 0 < n) (ht : n < t) :
     simp only [Function.mem_support, ne_eq, ite_eq_right_iff, Classical.not_imp] at hM
     obtain ⟨⟨ha, hc⟩, hne⟩ := hM
     obtain ⟨htr, -⟩ := mem_traceDetFiber_fin_two.mp M.2
-    rw [weight_upperTriangular _ _ _ one_pos (by omega)] at hne
+    rw [weight_upperTriangular _ _ _ one_pos] at hne
     have hb : 0 ≤ M.1 0 1 ∧ M.1 0 1 < N := by split_ifs at hne <;> omega
     refine Finset.mem_image.mpr ⟨(M.1 0 1).toNat, Finset.mem_range.mpr (by omega),
       Subtype.ext (Eq.trans ?_ (eta_fin_two M.1).symm)⟩

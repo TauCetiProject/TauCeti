@@ -84,6 +84,14 @@ theorem maximalGeodesic_def (p : M) (v : TangentSpace I p) (t : ℝ) :
       (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t).proj := by
   rfl
 
+/-- Maximal geodesics from equal base points with equal initial vectors agree. Both tangent spaces
+are the model space, so the initial vectors are compared there. -/
+theorem maximalGeodesic_congr {q p : M} (h : q = p) {w : TangentSpace I q}
+    {v : TangentSpace I p} (hw : (w : E) = v) (t : ℝ) :
+    maximalGeodesic I M q w t = maximalGeodesic I M p v t := by
+  subst h hw
+  rfl
+
 variable [I.Boundaryless]
 
 /-- The maximal integral-curve domain of the geodesic spray through `(p, v)` is the maximal

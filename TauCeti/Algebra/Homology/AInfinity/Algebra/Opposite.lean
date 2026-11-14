@@ -454,7 +454,7 @@ namespace IsDGAlgebra
 attribute [-instance] InternalGrading.instDecompositionSubmodulePiece
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
-  {G : InternalGrading R A} [GradedAlgebra G.piece] {d : A →ₗ[R] A}
+  {G : InternalGrading R A ℤ} [GradedAlgebra G.piece] {d : A →ₗ[R] A}
 
 /-- **The opposite of the `A∞` algebra of a DG algebra is the `A∞` algebra of its graded
 opposite.**  The passage `GradedOpposite.op` to the Koszul-signed graded opposite is a strict

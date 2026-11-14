@@ -16,8 +16,10 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 For a bundle with finite-dimensional model source, continuity of a fibrewise linear map
 on total spaces is equivalent to continuity as a section of Mathlib's Hom bundle.
-Consequently a continuous fibrewise linear equivalence gives a homeomorphism of total
-spaces: continuity of the inverse need not be supplied separately.
+Consequently a continuous fibrewise linear equivalence, or one whose underlying continuous linear
+maps form a continuous Hom-bundle section, gives a homeomorphism of total spaces
+(`TauCeti.bundleHomeomorph`, `TauCeti.bundleHomeomorphOfHom`): continuity of the inverse need not
+be supplied separately.
 
 We also prove local continuity of inversion for Hom-bundle sections with a Banach model
 source. This local result does not require finite rank or invertibility away from the
@@ -441,6 +443,25 @@ theorem bundleHomeomorph_symm_apply (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
     (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2)))
     (p : TotalSpace F₂ E₂) : (bundleHomeomorph e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ :=
   (rfl)
+
+section
+
+variable (e : ∀ x, E₁ x ≃L[𝕜] E₂ x) (he : Continuous (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+  (E := fun y ↦ E₁ y →L[𝕜] E₂ y) x (e x).toContinuousLinearMap))
+
+/-- The homeomorphism of total spaces induced by a family of fibrewise continuous linear
+equivalences whose underlying continuous linear maps form a continuous Hom-bundle section. -/
+def bundleHomeomorphOfHom : TotalSpace F₁ E₁ ≃ₜ TotalSpace F₂ E₂ :=
+  bundleHomeomorph e
+    (((continuous_hom_bundle_iff (fun x ↦ (e x).toContinuousLinearMap)).1 he).congr fun _ ↦ rfl)
+
+@[simp] theorem bundleHomeomorphOfHom_apply (p : TotalSpace F₁ E₁) :
+    bundleHomeomorphOfHom e he p = ⟨p.proj, e p.proj p.2⟩ := (rfl)
+
+@[simp] theorem bundleHomeomorphOfHom_symm_apply (p : TotalSpace F₂ E₂) :
+    (bundleHomeomorphOfHom e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ := (rfl)
+
+end
 
 /-- A continuous fibrewise bijective linear map between vector bundles with a
 finite-dimensional model source is induced by a homeomorphism of total spaces. -/
