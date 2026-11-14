@@ -275,7 +275,7 @@ theorem HasProjectiveInjectiveCoresolution.map (F : C ⥤ D) [F.PreservesZeroMor
 
 /-- An equivalence sends projective-injective objects to projective-injective objects. -/
 private theorem Equivalence.projective_and_injective_functor_obj {C D : Type*} [Category* C]
-    [Category* D] [Abelian C] [Abelian D] (F : C ≌ D) (Y : C) (hP : Projective Y)
+    [Category* D] (F : C ≌ D) (Y : C) (hP : Projective Y)
     (hI : Injective Y) : Projective (F.functor.obj Y) ∧ Injective (F.functor.obj Y) :=
   ⟨(F.map_projective_iff _).2 hP, (F.map_injective_iff _).2 hI⟩
 
