@@ -34,6 +34,11 @@ discrete set they are the pointwise operations `η ↦ η / ω` and `f ↦ f ω`
 `TauCeti.RiemannSurface.differentialSheafIsoDivisorSheafAdd_hom_app_smul` and
 `TauCeti.RiemannSurface.differentialSheafIsoDivisorSheafAdd_inv_app`).
 
+These identifications commute with the inclusions `Ω_D ⟶ Ω_D'` and `𝒪_E ⟶ 𝒪_E'`
+(`TauCeti.RiemannSurface.differentialSheafMapOfLE_comp_differentialSheafIsoDivisorSheaf_hom`);
+on a compact surface this is the naturality of `Ω_D ≅ 𝒪_(D + div ω)` in `D`
+(`TauCeti.RiemannSurface.differentialSheafMapOfLE_comp_differentialSheafIsoDivisorSheafAdd_hom`).
+
 Consequently, on a compact Riemann surface the holomorphic `1`-forms are the global sections of
 `𝒪_(div ω)` (`TauCeti.RiemannSurface.holomorphicOneFormsEquivDivisorSections`). The resulting
 finite-dimensionality of the global sections of every `Ω_D` is in
@@ -404,6 +409,65 @@ theorem differentialSheafIsoDivisorSheaf_inv_app (U : Opens X)
 
 end Sheaf
 
+/-! ### Naturality in the divisors -/
+
+section Naturality
+
+variable {ω : OneForm X} {D D' E E' : WeilDivisor X}
+
+/-- Two morphisms `Ω_D' ⟶ 𝒪_E'` and `Ω_D ⟶ 𝒪_E` which are both division by `ω` off a closed
+discrete set commute with the inclusions. -/
+private theorem differentialSheafMapOfLE_comp_eq_of_smul (hω : ∀ x, ω.MeromorphicAt x)
+    (hω₀ : ∀ x, ω.order x ≠ ⊤) (h : D ≤ D') (hE : E ≤ E')
+    (e' : differentialSheaf D' ⟶ divisorSheaf E') (e : differentialSheaf D ⟶ divisorSheaf E)
+    (he' : ∀ (U : Opens X) (s : (differentialSheaf D').obj.obj (op U)),
+      ∀ᶠ y in codiscrete U, (divisorSheafSectionsEquiv E' U (e'.hom.app (op U) s)).1 y • ω y =
+        (differentialSheafSectionsEquiv D' U s).1 y)
+    (he : ∀ (U : Opens X) (s : (differentialSheaf D).obj.obj (op U)),
+      ∀ᶠ y in codiscrete U, (divisorSheafSectionsEquiv E U (e.hom.app (op U) s)).1 y • ω y =
+        (differentialSheafSectionsEquiv D U s).1 y) :
+    differentialSheafMapOfLE h ≫ e' = e ≫ divisorSheafMapOfLE hE := by
+  have := ChartedSpace.t1Space ℂ X
+  apply Sheaf.hom_ext
+  apply NatTrans.ext
+  funext U
+  apply ModuleCat.hom_ext
+  apply LinearMap.ext
+  intro s
+  apply (divisorSheafSectionsEquiv E' U.unop).injective
+  apply Subtype.ext
+  refine eq_of_eventuallyEq_codiscrete (Subtype.prop _) (Subtype.prop _) ?_
+  refine eventually_codiscrete_iff_forall_eventually_nhdsNE.2 fun x ↦ ?_
+  have ht : Tendsto (Subtype.val : U.unop → X) (𝓝[≠] x) (𝓝[≠] (x : X)) :=
+    continuous_subtype_val.continuousAt.tendsto_nhdsNE (x := x) Subtype.val_injective
+  have hlhs := he' U.unop ((differentialSheafMapOfLE h).hom.app U s)
+  have hrhs := he U.unop s
+  rw [eventually_codiscrete_iff_forall_eventually_nhdsNE] at hlhs hrhs
+  filter_upwards [hlhs x, hrhs x, ht.eventually ((hω x).eventually_apply_ne_zero (hω₀ x)),
+    ht.eventually ((D'.eventually_eq_zero_nhdsNE x).mono fun _ hy ↦ hy.le),
+    ht.eventually ((E'.eventually_eq_zero_nhdsNE x).mono fun _ hy ↦ hy.le)]
+    with y h₁ h₂ hy hD hE'
+  refine smul_left_injective ℂ hy ?_
+  simp only [TopCat.Sheaf.comp_app, ModuleCat.hom_comp, LinearMap.comp_apply]
+  rw [h₁, differentialSheafMapOfLE_app, ite_eq_left hD, divisorSheafMapOfLE_app,
+    Set.indicator_of_mem (s := {y : U.unop | E' y ≤ 0}) hE', h₂]
+
+/-- **Division by `ω` commutes with the inclusions of differential and divisor sheaves.** If `ω`
+is meromorphic everywhere with `ord_x ω = E x - D x` and `ord_x ω = E' x - D' x`, `D ≤ D'` and
+`E ≤ E'` (the latter follows from the former), then `Ω_D ⟶ Ω_D' ≅ 𝒪_E'` equals
+`Ω_D ≅ 𝒪_E ⟶ 𝒪_E'`. -/
+@[reassoc]
+theorem differentialSheafMapOfLE_comp_differentialSheafIsoDivisorSheaf_hom
+    (hω : ∀ x, ω.MeromorphicAt x) (ho : ∀ x, ω.order x = ((E x - D x : ℤ) : WithTop ℤ))
+    (ho' : ∀ x, ω.order x = ((E' x - D' x : ℤ) : WithTop ℤ)) (h : D ≤ D') (hE : E ≤ E') :
+    differentialSheafMapOfLE h ≫ (differentialSheafIsoDivisorSheaf ω hω ho').hom =
+      (differentialSheafIsoDivisorSheaf ω hω ho).hom ≫ divisorSheafMapOfLE hE :=
+  differentialSheafMapOfLE_comp_eq_of_smul hω (fun x ↦ by rw [ho x]; exact WithTop.coe_ne_top)
+    h hE _ _ (differentialSheafIsoDivisorSheaf_hom_app_smul hω ho')
+    (differentialSheafIsoDivisorSheaf_hom_app_smul hω ho)
+
+end Naturality
+
 /-! ### Compact surfaces -/
 
 section Compact
@@ -452,6 +516,17 @@ theorem differentialSheafIsoDivisorSheafAdd_inv_app (hω : ∀ x, ω.Meromorphic
         ((differentialSheafIsoDivisorSheafAdd ω hω hω₀ D).inv.hom.app (op U) f)).1 y =
         (divisorSheafSectionsEquiv (D + ω.divisor) U f).1 y • ω y :=
   differentialSheafIsoDivisorSheaf_inv_app hω _ U f
+
+/-- **`Ω_D ≅ 𝒪_(D + div ω)` is natural in `D`.** On a compact surface, for a `1`-form `ω`
+meromorphic and of finite order everywhere and `D ≤ D'`, the inclusion `Ω_D ⟶ Ω_D'` corresponds
+under division by `ω` to the inclusion `𝒪_(D + div ω) ⟶ 𝒪_(D' + div ω)`. -/
+@[reassoc]
+theorem differentialSheafMapOfLE_comp_differentialSheafIsoDivisorSheafAdd_hom
+    (hω : ∀ x, ω.MeromorphicAt x) (hω₀ : ∀ x, ω.order x ≠ ⊤) {D D' : WeilDivisor X} (h : D ≤ D') :
+    differentialSheafMapOfLE h ≫ (differentialSheafIsoDivisorSheafAdd ω hω hω₀ D').hom =
+      (differentialSheafIsoDivisorSheafAdd ω hω hω₀ D).hom ≫
+        divisorSheafMapOfLE ((add_le_add_iff_right ω.divisor).2 h) :=
+  differentialSheafMapOfLE_comp_differentialSheafIsoDivisorSheaf_hom hω _ _ h _
 
 /-- **Holomorphic `1`-forms are divisor sections.** On a compact Riemann surface, a `1`-form `ω`
 which is meromorphic and of finite order everywhere identifies the holomorphic `1`-forms with the

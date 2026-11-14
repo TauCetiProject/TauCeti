@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Twist
 public import TauCeti.Topology.Sheaves.Cech.Colimit
 import TauCeti.Analysis.Complex.RiemannSurface.Differential.FiniteDimensional
+import TauCeti.Analysis.Complex.RiemannSurface.Differential.Sphere
 
 /-!
 # Čech cohomology of differential sheaves
@@ -29,7 +31,18 @@ identification of degree `0` Čech cohomology of a sheaf with its global section
 finite-dimensional on a compact connected surface, with no nonzero meromorphic `1`-form assumed
 to exist
 (`TauCeti.RiemannSurface.finiteDimensional_cechCohomology_zero_differentialSheaf`). That a
-nonzero meromorphic `1`-form exists is not proved here, so `ω` is a hypothesis throughout.
+nonzero meromorphic `1`-form exists is not proved here, so `ω` is a hypothesis of
+`TauCeti.RiemannSurface.differentialSheafCechCohomologyIso`.
+
+The comparison does not depend on the choice of `ω`, only on the existence of a `1`-form which is
+meromorphic and of finite order everywhere, that is, of a canonical divisor
+(`TauCeti.RiemannSurface.IsCanonicalDivisor`). For every canonical divisor `K` the cohomology of
+`Ω_D` is that of `𝒪_(D + K)`
+(`nonempty_iso_cechCohomology_differentialSheaf_divisorSheaf_add_of_isCanonicalDivisor`);
+on the Riemann sphere, `div dz = -2[∞]`, so `Ω_D` has the cohomology of `𝒪_(D - 2[∞])`
+(`nonempty_iso_cechCohomology_differentialSheaf_divisorSheaf_add_neg_two_infty`).
+A finite holomorphic map to the Riemann sphere supplies a canonical divisor, by pulling back
+`dz` (see `TauCeti.Analysis.Complex.RiemannSurface.Differential.RiemannHurwitz`).
 
 ## Main definitions
 
@@ -39,6 +52,10 @@ nonzero meromorphic `1`-form exists is not proved here, so `ω` is a hypothesis 
 
 * `TauCeti.RiemannSurface.finiteDimensional_cechCohomology_zero_differentialSheaf`: `H⁰(X, Ω_D)`
   is finite-dimensional on a compact connected surface.
+* `nonempty_iso_cechCohomology_differentialSheaf_divisorSheaf_add_of_isCanonicalDivisor`:
+  `Hⁿ(X, Ω_D) ≅ Hⁿ(X, 𝒪_(D + K))` for every canonical divisor `K` of a compact surface.
+* `nonempty_iso_cechCohomology_differentialSheaf_divisorSheaf_add_neg_two_infty`:
+  `Hⁿ(ℙ¹, Ω_D) ≅ Hⁿ(ℙ¹, 𝒪_(D - 2[∞]))` on the Riemann sphere.
 
 ## References
 
@@ -56,6 +73,8 @@ namespace TauCeti.RiemannSurface
 open _root_.TauCeti.AlgebraicGeometry (WeilDivisor)
 
 universe u
+
+section Iso
 
 variable {X : Type u} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   [CompactSpace X]
@@ -101,5 +120,39 @@ instance finiteDimensional_cechCohomology_zero_differentialSheaf [ConnectedSpace
       ((Topology.cechCohomology (TopCat.of X) (ModuleCat.{u} ℂ) 0).obj
         (differentialSheaf D).obj) :=
   Module.Finite.equiv (Topology.cechCohomologyZeroIso (differentialSheaf D)).toLinearEquiv
+
+end Iso
+
+section Canonical
+
+variable {X : Type u} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
+  [CompactSpace X]
+
+/-- **`Hⁿ(X, Ω_D) ≅ Hⁿ(X, 𝒪_(D + K))` for every canonical divisor `K`.** On a compact Riemann
+surface, if `K` is the divisor of some `1`-form meromorphic and of finite order everywhere, the
+degree `n` Čech cohomology of `Ω_D` is isomorphic to that of the divisor sheaf of `D + K`. -/
+theorem nonempty_iso_cechCohomology_differentialSheaf_divisorSheaf_add_of_isCanonicalDivisor
+    {K : WeilDivisor X} (hK : IsCanonicalDivisor K) (D : WeilDivisor X) (n : ℕ) :
+    Nonempty ((Topology.cechCohomology (TopCat.of X) (ModuleCat.{u} ℂ) n).obj
+        (differentialSheaf D).obj ≅
+      (Topology.cechCohomology (TopCat.of X) (ModuleCat.{u} ℂ) n).obj
+        (divisorSheaf (D + K)).obj) := by
+  obtain ⟨ω, hω, hω₀, rfl⟩ := hK.exists_divisor_eq
+  exact ⟨differentialSheafCechCohomologyIso ω hω hω₀ D n⟩
+
+end Canonical
+
+open OnePoint in
+/-- **`Hⁿ(ℙ¹, Ω_D) ≅ Hⁿ(ℙ¹, 𝒪_(D - 2[∞]))`.** Since `div dz = -2[∞]`, the sheaf `Ω_D` on the
+Riemann sphere `OnePoint ℂ` has the Čech cohomology of the divisor sheaf of `D - 2[∞]` in every
+degree. -/
+theorem nonempty_iso_cechCohomology_differentialSheaf_divisorSheaf_add_neg_two_infty
+    (D : WeilDivisor (OnePoint ℂ)) (n : ℕ) :
+    Nonempty ((Topology.cechCohomology (TopCat.of (OnePoint ℂ)) (ModuleCat.{0} ℂ) n).obj
+        (differentialSheaf D).obj ≅
+      (Topology.cechCohomology (TopCat.of (OnePoint ℂ)) (ModuleCat.{0} ℂ) n).obj
+        (divisorSheaf (D + (-2 : ℤ) • WeilDivisor.ofPoint (∞ : OnePoint ℂ))).obj) :=
+  nonempty_iso_cechCohomology_differentialSheaf_divisorSheaf_add_of_isCanonicalDivisor
+    isCanonicalDivisor_neg_two_infty D n
 
 end TauCeti.RiemannSurface
