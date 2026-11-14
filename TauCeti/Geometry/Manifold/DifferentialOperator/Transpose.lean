@@ -57,10 +57,13 @@ therefore linear, involutive and reverses compositions.
   `LinearMap.formalTranspose_mem_differentialOperators`: a differential operator of order at most
   `m` has a formal transpose with respect to an additive Haar measure, again of order at most `m`;
   by `LinearMap.formalTranspose_eq_of_isAddHaarMeasure` it does not depend on the Haar measure.
+* `LinearMap.formalTranspose_eq_iff`,
+  `LinearMap.integral_apply_mul_eq_integral_mul_formalTranspose_apply`: on differential operators,
+  `LinearMap.formalTranspose` is characterized by integration by parts.
 * `LinearMap.formalTranspose_formalTranspose`, `LinearMap.formalTranspose_comp`,
-  `LinearMap.formalTranspose_add`, `LinearMap.formalTranspose_smul`,
-  `LinearMap.formalTranspose_sum`: the formal transpose is a linear involution of the
-  differential operators that reverses compositions.
+  `LinearMap.formalTranspose_pow`, `LinearMap.formalTranspose_add`,
+  `LinearMap.formalTranspose_smul`, `LinearMap.formalTranspose_sum`: the formal transpose is a
+  linear involution of the differential operators that reverses compositions.
 * `LinearMap.formalTranspose_mulLeft_comp_lineDerivation`: the formal transpose of `c ∂_v` is
   `-c ∂_v - (∂_v c)`, not just `-c ∂_v`.
 
@@ -109,6 +112,13 @@ theorem isFormalTranspose_iff : D.IsFormalTranspose D' μ ↔
       ∫ x, D f x * g x ∂μ = ∫ x, f x * D' g x ∂μ :=
   Iff.rfl
 
+/-- Integration by parts against a formal transpose: if `D'` is a formal transpose of `D`, then
+`∫ (D f) g dμ = ∫ f (D' g) dμ` whenever `f` or `g` has compact support. -/
+theorem IsFormalTranspose.integral_mul_eq (h : D.IsFormalTranspose D' μ)
+    {f g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯} (hfg : HasCompactSupport f ∨ HasCompactSupport g) :
+    ∫ x, D f x * g x ∂μ = ∫ x, f x * D' g x ∂μ :=
+  h f g hfg
+
 /-- An operator without a formal transpose has formal transpose `0` by convention. -/
 theorem formalTranspose_eq_zero_of_not_exists (h : ¬∃ D', D.IsFormalTranspose D' μ) :
     D.formalTranspose μ = 0 := by
@@ -137,6 +147,11 @@ protected theorem IsFormalTranspose.one :
     (1 : Module.End ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯).IsFormalTranspose 1 μ :=
   fun _ _ _ ↦ rfl
 
+/-- The identity is its own formal transpose, for every measure. -/
+protected theorem IsFormalTranspose.id :
+    (LinearMap.id : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯).IsFormalTranspose LinearMap.id μ :=
+  fun _ _ _ ↦ rfl
+
 /-- Formal transposes are compatible with scalar multiplication. -/
 theorem IsFormalTranspose.smul (h : D.IsFormalTranspose D' μ) (c : ℝ) :
     (c • D).IsFormalTranspose (c • D') μ := by
@@ -161,9 +176,26 @@ theorem IsFormalTranspose.comp (h₁ : D₁.IsFormalTranspose D₁' μ)
     (D₁ ∘ₗ D₂).IsFormalTranspose (D₂' ∘ₗ D₁') μ := by
   intro f g hfg
   calc ∫ x, (D₁ ∘ₗ D₂) f x * g x ∂μ = ∫ x, D₂ f x * D₁' g x ∂μ :=
-        h₁ _ _ (hfg.imp (·.apply_of_tsupport_subset hD₂) _root_.id)
+        h₁ _ _ (hfg.imp (·.mono' ((subset_tsupport _).trans (hD₂ f))) _root_.id)
     _ = ∫ x, f x * (D₂' ∘ₗ D₁') g x ∂μ :=
-        h₂ _ _ (hfg.imp _root_.id (·.apply_of_tsupport_subset hD₁'))
+        h₂ _ _ (hfg.imp _root_.id (·.mono' ((subset_tsupport _).trans (hD₁' g))))
+
+/-- The formal transpose of a power is the power of the formal transpose, provided both do not
+enlarge supports. -/
+theorem IsFormalTranspose.pow (h : D.IsFormalTranspose D' μ)
+    (hD : ∀ f, tsupport (D f) ⊆ tsupport f) (hD' : ∀ g, tsupport (D' g) ⊆ tsupport g) (n : ℕ) :
+    (D ^ n).IsFormalTranspose (D' ^ n) μ := by
+  have hpow (n : ℕ) (g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) : tsupport ((D' ^ n) g) ⊆ tsupport g := by
+    induction n generalizing g with
+    | zero => simp
+    | succ n ih =>
+      rw [pow_succ, mul_apply_eq_comp]
+      exact (ih _).trans (hD' g)
+  induction n with
+  | zero => exact IsFormalTranspose.one
+  | succ n ih =>
+    rw [pow_succ, pow_succ']
+    exact ih.comp h hD (hpow n)
 
 section Integrable
 
@@ -236,6 +268,18 @@ theorem IsFormalTranspose.formalTranspose_eq (h : D.IsFormalTranspose D' μ) :
   simp only [formalTranspose, hex, ↓reduceDIte]
   exact hex.choose_spec.unique h
 
+/-- If `D` has a formal transpose `D'`, then `LinearMap.formalTranspose D μ` is characterized as
+the formal transpose of `D`. -/
+theorem IsFormalTranspose.formalTranspose_eq_iff (h : D.IsFormalTranspose D' μ) :
+    D.formalTranspose μ = D₁ ↔ D.IsFormalTranspose D₁ μ := by
+  rw [h.formalTranspose_eq]
+  exact ⟨fun h' ↦ h' ▸ h, h.unique⟩
+
+/-- If `D` has a formal transpose, then transposing twice gives back `D`. -/
+theorem IsFormalTranspose.formalTranspose_formalTranspose (h : D.IsFormalTranspose D' μ) :
+    (D.formalTranspose μ).formalTranspose μ = D := by
+  rw [h.formalTranspose_eq, h.symm.formalTranspose_eq]
+
 /-- The formal transpose of the zero operator is zero. -/
 @[simp]
 theorem formalTranspose_zero :
@@ -246,6 +290,13 @@ theorem formalTranspose_zero :
 @[simp]
 theorem formalTranspose_one : (1 : Module.End ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯).formalTranspose μ = 1 :=
   IsFormalTranspose.one.formalTranspose_eq
+
+/-- The identity is its own formal transpose. -/
+@[simp]
+theorem formalTranspose_id :
+    (LinearMap.id : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯).formalTranspose μ =
+      LinearMap.id :=
+  IsFormalTranspose.id.formalTranspose_eq
 
 /-- Formal transposition commutes with negation. -/
 @[simp]
@@ -418,8 +469,9 @@ theorem exists_isFormalTranspose_of_mem_differentialOperators
       ∀ (μ : Measure E) [μ.IsAddHaarMeasure], D.IsFormalTranspose D' μ := by
   set b := Module.finBasis ℝ E
   set c := coordinateCoeff b.smoothCoord D
-  refine ⟨_, sum_neg_one_pow_smul_multiIndexDeriv_comp_mulLeft_mem_differentialOperators
-    (fun i ↦ lineDerivation ℝ (b i)) (fun i j ↦ commute_lineDerivation (b i) (b j)) m c,
+  refine ⟨_, sum_smul_multiIndexDeriv_comp_mulLeft_mem_differentialOperators
+    (fun i ↦ lineDerivation ℝ (b i)) (fun i j ↦ commute_lineDerivation (b i) (b j)) m
+    (fun k ↦ (-1) ^ k) c,
     fun μ _ ↦ ?_⟩
   have h := isFormalTranspose_coordinateOperator (μ := μ) b m c
   rwa [← b.eq_coordinateOperator_coordinateCoeff hD] at h
@@ -434,6 +486,18 @@ transpose of a differential operator `D`. -/
 theorem isFormalTranspose_formalTranspose : D.IsFormalTranspose (D.formalTranspose μ) μ := by
   obtain ⟨D', -, h⟩ := exists_isFormalTranspose_of_mem_differentialOperators hD
   exact (h μ).isFormalTranspose_formalTranspose
+
+/-- On differential operators, `LinearMap.formalTranspose D μ` is characterized as the formal
+transpose of `D` with respect to an additive Haar measure. -/
+theorem formalTranspose_eq_iff : D.formalTranspose μ = D' ↔ D.IsFormalTranspose D' μ :=
+  (isFormalTranspose_formalTranspose μ hD).formalTranspose_eq_iff
+
+/-- **Integration by parts** for a differential operator `D`: `∫ (D f) g dμ = ∫ f (Dᵗ g) dμ`
+whenever `f` or `g` has compact support. -/
+theorem integral_apply_mul_eq_integral_mul_formalTranspose_apply {f g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯}
+    (hfg : HasCompactSupport f ∨ HasCompactSupport g) :
+    ∫ x, D f x * g x ∂μ = ∫ x, f x * D.formalTranspose μ g x ∂μ :=
+  (isFormalTranspose_formalTranspose μ hD).integral_mul_eq hfg
 
 /-- The formal transpose of a differential operator of order at most `m` is a differential
 operator of order at most `m`. -/
@@ -458,7 +522,7 @@ theorem formalTranspose_eq_of_isAddHaarMeasure (ν : Measure E) [ν.IsAddHaarMea
 
 /-- The formal transpose is an involution on differential operators. -/
 theorem formalTranspose_formalTranspose : (D.formalTranspose μ).formalTranspose μ = D :=
-  (isFormalTranspose_formalTranspose μ hD).symm.formalTranspose_eq
+  (isFormalTranspose_formalTranspose μ hD).formalTranspose_formalTranspose
 
 /-- The formal transpose of a sum of differential operators is the sum of their formal
 transposes. -/
@@ -494,6 +558,21 @@ theorem formalTranspose_comp
     (tsupport_apply_subset_of_mem_differentialOperators hD')
     (tsupport_formalTranspose_apply_subset μ hD)).formalTranspose_eq
 
+/-- The formal transpose of a product of differential operators is the product of their formal
+transposes in the reverse order. -/
+theorem formalTranspose_mul
+    (hD' : D' ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ k) :
+    (D * D').formalTranspose μ = D'.formalTranspose μ * D.formalTranspose μ :=
+  formalTranspose_comp μ hD hD'
+
+/-- The formal transpose of a power of a differential operator is the power of its formal
+transpose. -/
+theorem formalTranspose_pow (n : ℕ) : (D ^ n).formalTranspose μ = D.formalTranspose μ ^ n :=
+  ((isFormalTranspose_formalTranspose μ hD).pow
+    (tsupport_apply_subset_of_mem_differentialOperators hD)
+    (tsupport_formalTranspose_apply_subset μ hD) n).formalTranspose_eq
+
 end DifferentialOperator
 
 /-- The formal transpose of a finite sum of differential operators is the sum of their formal
@@ -518,6 +597,16 @@ theorem formalTranspose_lineDerivation (v : E) :
     (lineDerivation ℝ v : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯).formalTranspose μ =
       -(lineDerivation ℝ v : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :=
   (isFormalTranspose_lineDerivation v).formalTranspose_eq
+
+/-- The formal transpose of the power `∂_v ^ k` of a directional derivative is
+`(-1) ^ k ∂_v ^ k`. -/
+@[simp]
+theorem formalTranspose_lineDerivation_pow (v : E) (k : ℕ) :
+    ((lineDerivation ℝ v : Module.End ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯) ^ k).formalTranspose μ =
+      (-1 : ℝ) ^ k • (lineDerivation ℝ v : Module.End ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯) ^ k := by
+  rw [← smul_pow, neg_one_smul]
+  exact ((isFormalTranspose_lineDerivation v).pow (tsupport_lineDerivation_apply_subset v)
+    (fun g ↦ by simpa using tsupport_lineDerivation_apply_subset v g) k).formalTranspose_eq
 
 /-- The formal transpose of the first-order operator `c ∂_v` is `-c ∂_v - (∂_v c)`: integration
 by parts also differentiates the coefficient. -/
