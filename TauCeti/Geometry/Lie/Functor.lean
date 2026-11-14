@@ -193,15 +193,13 @@ theorem lieMap_id [FiniteDimensional ℝ E] :
 @[simp]
 theorem lieMap_one [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] :
     lieMap (1 : ContMDiffMonoidMorphism I I' ∞ G G') = 0 := by
-  apply LieHom.ext
-  intro D
+  ext D : 1
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
   let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
-  apply (leftInvariantDerivationLinearIsometryEquivModelVectorSpace
-    (I := I') (G := G')).injective
-  rw [zero_apply, map_zero, leftInvariantDerivationLinearIsometryEquivModelVectorSpace_lieMap]
+  apply (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I') (G := G')).injective
   have hconst : (⇑(1 : ContMDiffMonoidMorphism I I' ∞ G G') : G → G') = fun _ ↦ (1 : G') := rfl
-  rw [hconst, mfderiv_const]
+  rw [zero_apply, map_zero, leftInvariantDerivationLinearIsometryEquivModelVectorSpace_lieMap,
+    hconst, mfderiv_const]
   rfl
 
 /-- The Lie map of a composite is the composite of the two Lie maps. -/

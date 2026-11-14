@@ -182,45 +182,42 @@ def realSpinToSpecialOrthogonalRangeLieEquiv (n : ℕ) :
 theorem realSpinToSpecialOrthogonalRangeLieEquiv_apply (n : ℕ)
     (X : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0))) :
     realSpinToSpecialOrthogonalRangeLieEquiv n X =
-      lieMap (realSpinToSpecialOrthogonalSmoothRange n) X := by
-  -- Congruence avoids costly dependent rewriting through the Clifford and matrix Lie models.
-  calc
-    realSpinToSpecialOrthogonalRangeLieEquiv n X =
-        realCliffordSpinToSpecialOrthogonalRangeLieEquiv n (realSpinLieEquivUnitsRange n X) :=
-      rfl
-    _ = realCliffordSpinToSpecialOrthogonalRangeLieMap n
-          (lieMap (realSpinSmoothEquivUnitsRange n) X) :=
-      (realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply n _).trans
-        (congrArg (realCliffordSpinToSpecialOrthogonalRangeLieMap n)
-          (realSpinLieEquivUnitsRange_apply n X))
-    _ = lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n)
-          (lieMap (realSpinSmoothEquivUnitsRange n) X) :=
-      DFunLike.congr_fun (realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap n) _
-    _ = lieMap (realSpinToSpecialOrthogonalSmoothRange n) X :=
-      (DFunLike.congr_fun
-        (lieMap_comp (realSpinSmoothEquivUnitsRange n)
-          (realCliffordSpinToSpecialOrthogonalSmoothRange n)) X).symm
+      lieMap (realSpinToSpecialOrthogonalSmoothRange n) X :=
+  ((realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply n _).trans <|
+    congrArg (realCliffordSpinToSpecialOrthogonalRangeLieMap n)
+      (realSpinLieEquivUnitsRange_apply n X)).trans <|
+    (DFunLike.congr_fun (realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap n) _).trans
+      (DFunLike.congr_fun (lieMap_comp (realSpinSmoothEquivUnitsRange n)
+        (realCliffordSpinToSpecialOrthogonalSmoothRange n)) X).symm
+
+/-- Pushing forward the native Spin inverse lift to the units range recovers the units-range
+inverse lift. -/
+theorem realSpinLieEquivUnitsRange_realSpinToSpecialOrthogonalRangeLieEquiv_symm (n : ℕ)
+    (Ω : LeftInvariantDerivation 𝓘(ℝ, realSpecialOrthogonalLieModel n)
+      (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
+        (realCliffordForm n 0 : QuadraticForm ℝ (Fin n → ℝ))))) :
+    realSpinLieEquivUnitsRange n ((realSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω) =
+      (realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω :=
+  (realSpinLieEquivUnitsRange n).apply_symm_apply _
 
 /-- The Lie homomorphism underlying `realSpinToSpecialOrthogonalRangeLieEquiv` is `lieMap`. -/
 @[simp]
 theorem realSpinToSpecialOrthogonalRangeLieEquiv_toLieHom (n : ℕ) :
     (realSpinToSpecialOrthogonalRangeLieEquiv n).toLieHom =
-      lieMap (realSpinToSpecialOrthogonalSmoothRange n) := by
-  apply LieHom.ext
-  intro X
-  exact realSpinToSpecialOrthogonalRangeLieEquiv_apply n X
+      lieMap (realSpinToSpecialOrthogonalSmoothRange n) :=
+  LieHom.ext <| realSpinToSpecialOrthogonalRangeLieEquiv_apply n
 
 /-- The smooth projection from native compact Spin to the embedded special-orthogonal carrier is a
 local diffeomorphism in every dimension. -/
 theorem isLocalDiffeomorph_realSpinToSpecialOrthogonalSmoothRange (n : ℕ) :
     IsLocalDiffeomorph 𝓘(ℝ, realSpinLieModel n) 𝓘(ℝ, realSpecialOrthogonalLieModel n) ∞
-      (realSpinToSpecialOrthogonalSmoothRange n) := by
-  apply (realSpinToSpecialOrthogonalSmoothRange n).isLocalDiffeomorph_of_lieMap_bijective
-  refine ⟨fun X Y h ↦ (realSpinToSpecialOrthogonalRangeLieEquiv n).injective
-    ((realSpinToSpecialOrthogonalRangeLieEquiv_apply n X).trans
-      (h.trans (realSpinToSpecialOrthogonalRangeLieEquiv_apply n Y).symm)),
+      (realSpinToSpecialOrthogonalSmoothRange n) :=
+  (realSpinToSpecialOrthogonalSmoothRange n).isLocalDiffeomorph_of_lieMap_bijective
+    ⟨fun X Y h ↦ (realSpinToSpecialOrthogonalRangeLieEquiv n).injective <|
+      (realSpinToSpecialOrthogonalRangeLieEquiv_apply n X).trans <|
+        h.trans (realSpinToSpecialOrthogonalRangeLieEquiv_apply n Y).symm,
     fun Z ↦ ⟨(realSpinToSpecialOrthogonalRangeLieEquiv n).symm Z,
-      (realSpinToSpecialOrthogonalRangeLieEquiv_apply n _).symm.trans
-        ((realSpinToSpecialOrthogonalRangeLieEquiv n).apply_symm_apply Z)⟩⟩
+      (realSpinToSpecialOrthogonalRangeLieEquiv_apply n _).symm.trans <|
+        (realSpinToSpecialOrthogonalRangeLieEquiv n).apply_symm_apply Z⟩⟩
 
 end TauCeti.CliffordAlgebra

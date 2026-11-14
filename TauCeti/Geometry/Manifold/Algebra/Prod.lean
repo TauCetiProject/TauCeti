@@ -37,24 +37,17 @@ def inl : ContMDiffMonoidMorphism I (I.prod I') n G (G × G') where
   contMDiff_toFun := contMDiff_id.prodMk contMDiff_const
 
 @[to_additive (attr := simp)]
-theorem inl_apply (x : G) :
-    inl (I := I) (I' := I') (n := n) (G' := G') x = (x, 1) :=
-  (rfl)
+theorem inl_apply (x : G) : inl (I := I) (I' := I') (n := n) (G' := G') x = (x, 1) := (rfl)
 
 @[to_additive (attr := simp)]
 theorem fst_comp_inl :
-    (fst (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inl = id := by
-  apply DFunLike.coe_injective
-  funext x
-  simp
+    (fst (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inl = id :=
+  DFunLike.coe_injective <| funext fun x ↦ by simp
 
 @[to_additive (attr := simp)]
 theorem snd_comp_inl :
-    (snd (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inl = 1 := by
-  apply DFunLike.coe_injective
-  funext x
-  simp
-  rfl
+    (snd (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inl = 1 :=
+  DFunLike.coe_injective <| funext fun x ↦ by simp; rfl
 
 /-- The inclusion of the second factor into a product as a smooth monoid morphism. -/
 @[to_additive
@@ -64,24 +57,17 @@ def inr : ContMDiffMonoidMorphism I' (I.prod I') n G' (G × G') where
   contMDiff_toFun := contMDiff_const.prodMk contMDiff_id
 
 @[to_additive (attr := simp)]
-theorem inr_apply (y : G') :
-    inr (I := I) (I' := I') (n := n) (G := G) y = (1, y) :=
-  (rfl)
+theorem inr_apply (y : G') : inr (I := I) (I' := I') (n := n) (G := G) y = (1, y) := (rfl)
 
 @[to_additive (attr := simp)]
 theorem fst_comp_inr :
-    (fst (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inr = 1 := by
-  apply DFunLike.coe_injective
-  funext x
-  simp
-  rfl
+    (fst (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inr = 1 :=
+  DFunLike.coe_injective <| funext fun x ↦ by simp; rfl
 
 @[to_additive (attr := simp)]
 theorem snd_comp_inr :
-    (snd (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inr = id := by
-  apply DFunLike.coe_injective
-  funext x
-  simp
+    (snd (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inr = id :=
+  DFunLike.coe_injective <| funext fun x ↦ by simp
 
 section Prod
 
@@ -99,25 +85,17 @@ def prod (φ : ContMDiffMonoidMorphism I'' I n G'' G)
 
 @[to_additive (attr := simp)]
 theorem prod_apply (φ : ContMDiffMonoidMorphism I'' I n G'' G)
-    (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') (x : G'') :
-    φ.prod ψ x = (φ x, ψ x) :=
-  (rfl)
+    (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') (x : G'') : φ.prod ψ x = (φ x, ψ x) := (rfl)
 
 @[to_additive (attr := simp)]
 theorem fst_comp_prod (φ : ContMDiffMonoidMorphism I'' I n G'' G)
-    (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') :
-    fst.comp (φ.prod ψ) = φ := by
-  apply DFunLike.coe_injective
-  funext x
-  simp
+    (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') : fst.comp (φ.prod ψ) = φ :=
+  DFunLike.coe_injective <| funext fun x ↦ by simp
 
 @[to_additive (attr := simp)]
 theorem snd_comp_prod (φ : ContMDiffMonoidMorphism I'' I n G'' G)
-    (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') :
-    snd.comp (φ.prod ψ) = ψ := by
-  apply DFunLike.coe_injective
-  funext x
-  simp
+    (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') : snd.comp (φ.prod ψ) = ψ :=
+  DFunLike.coe_injective <| funext fun x ↦ by simp
 
 end Prod
 

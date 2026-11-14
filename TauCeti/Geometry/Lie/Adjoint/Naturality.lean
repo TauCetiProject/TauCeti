@@ -53,38 +53,27 @@ theorem lieMap_Ad (φ : ContMDiffMonoidMorphism I I' ∞ G G') (g : G)
     (D : LeftInvariantDerivation I G) :
     lieMap φ (TauCeti.Lie.Ad (I := I) g D) =
       TauCeti.Lie.Ad (I := I') (φ g) (lieMap φ D) := by
-  let hG := ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)
-  let hG' := ContMDiffMul.isInteriorPoint (I := I') (n := ∞) (by simp) (1 : G')
-  let e := leftInvariantDerivationLieEquivGroupLieAlgebra hG
-  let e' := leftInvariantDerivationLieEquivGroupLieAlgebra hG'
+  let e := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  let e' := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := I') (n := ∞) (by simp) (1 : G'))
   have hmap (X : LeftInvariantDerivation I G) :
       e' (lieMap φ X) = φ.toMonoidHom.groupLieAlgebraMap I I' (e X) :=
     (leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap φ X).trans
       (φ.toMonoidHom.groupLieAlgebraMap_apply I (e X)).symm
-  apply e'.injective
-  simp only [LieEquiv.coe_toLieHom]
-  have hleft : e' (lieMap φ (TauCeti.Lie.Ad (I := I) g D)) =
-      φ.toMonoidHom.groupLieAlgebraMap I I'
-        (TauCeti.Lie.adjointContinuousLinearMap (I := I) g (e D)) :=
-    (hmap _).trans (congrArg (φ.toMonoidHom.groupLieAlgebraMap I I')
-      ((TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_Ad g D).trans
-        (TauCeti.Lie.tangentAd_apply g (e D))))
-  have hright : e' (TauCeti.Lie.Ad (I := I') (φ g) (lieMap φ D)) =
-      TauCeti.Lie.adjointContinuousLinearMap (I := I') (φ g)
-        (φ.toMonoidHom.groupLieAlgebraMap I I' (e D)) :=
-    (TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_Ad (φ g) (lieMap φ D)).trans
-      ((TauCeti.Lie.tangentAd_apply (φ g) (e' (lieMap φ D))).trans
-        (congrArg (TauCeti.Lie.adjointContinuousLinearMap (I := I') (φ g)) (hmap D)))
-  exact hleft.trans
-    ((φ.toMonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap g (e D)).trans hright.symm)
+  refine e'.injective <| ((hmap _).trans <| congrArg (φ.toMonoidHom.groupLieAlgebraMap I I') <|
+    (TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_Ad g D).trans
+      (TauCeti.Lie.tangentAd_apply g (e D))).trans ?_
+  exact (φ.toMonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap g (e D)).trans
+    ((TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_Ad (φ g) (lieMap φ D)).trans <|
+      (TauCeti.Lie.tangentAd_apply (φ g) (e' (lieMap φ D))).trans <|
+        congrArg (TauCeti.Lie.adjointContinuousLinearMap (I := I') (φ g)) (hmap D)).symm
 
 /-- Bundled naturality of the derivation adjoint along a smooth homomorphism. -/
 theorem lieMap_comp_Ad (φ : ContMDiffMonoidMorphism I I' ∞ G G') (g : G) :
     (lieMap φ).comp (TauCeti.Lie.Ad (I := I) g).toLieHom =
-      (TauCeti.Lie.Ad (I := I') (φ g)).toLieHom.comp (lieMap φ) := by
-  apply LieHom.ext
-  intro D
-  exact lieMap_Ad φ g D
+      (TauCeti.Lie.Ad (I := I') (φ g)).toLieHom.comp (lieMap φ) :=
+  LieHom.ext <| lieMap_Ad φ g
 
 /-- **Naturality of the derivation adjoint for continuous homomorphisms.** -/
 @[simp]
@@ -112,17 +101,14 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 /-- The group adjoint on left-invariant derivations of a commutative Lie group is trivial. -/
 @[simp]
-theorem Ad_eq_refl [IsMulCommutative G] (g : G) :
-    Ad (I := I) g = LieEquiv.refl := by
-  apply LieEquiv.ext
-  intro D
-  rw [Ad_apply, tangentAd_apply, adjointContinuousLinearMap_eq_id, ContinuousLinearMap.id_apply,
-    LieEquiv.refl_apply, LieEquiv.symm_apply_apply]
+theorem Ad_eq_refl [IsMulCommutative G] (g : G) : Ad (I := I) g = LieEquiv.refl :=
+  LieEquiv.ext fun D ↦ by
+    rw [Ad_apply, tangentAd_apply, adjointContinuousLinearMap_eq_id, ContinuousLinearMap.id_apply,
+      LieEquiv.refl_apply, LieEquiv.symm_apply_apply]
 
 /-- Applying the group adjoint on a commutative Lie group leaves every derivation fixed. -/
 theorem Ad_apply_eq_self [IsMulCommutative G] (g : G) (D : LeftInvariantDerivation I G) :
-    Ad (I := I) g D = D := by
-  simp
+    Ad (I := I) g D = D := by simp
 
 /-- Under `TauCeti.Lie.prodLieEquiv`, the adjoint action on a product Lie group acts componentwise
 on the two factor Lie algebras. -/
@@ -137,8 +123,8 @@ actions. -/
 theorem Ad_prodLieEquiv_symm (p : G × G')
     (X : LeftInvariantDerivation I G × LeftInvariantDerivation I' G') :
     Ad (I := I.prod I') p (prodLieEquiv.symm X) =
-      prodLieEquiv.symm (Ad (I := I) p.1 X.1, Ad (I := I') p.2 X.2) := by
-  apply (prodLieEquiv (I := I) (I' := I') (G := G) (G' := G')).injective
-  simp only [LieEquiv.coe_toLieHom, prodLieEquiv_Ad, LieEquiv.apply_symm_apply]
+      prodLieEquiv.symm (Ad (I := I) p.1 X.1, Ad (I := I') p.2 X.2) :=
+  (prodLieEquiv (I := I) (I' := I') (G := G) (G' := G')).injective <| by
+    simp only [LieEquiv.coe_toLieHom, prodLieEquiv_Ad, LieEquiv.apply_symm_apply]
 
 end TauCeti.Lie

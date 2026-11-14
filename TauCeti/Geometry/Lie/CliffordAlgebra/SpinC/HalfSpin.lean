@@ -247,15 +247,12 @@ private def rawSpinCHalfSpinLieLinearMap :=
   AlgHom.realSpinCEvenLieLinearMap (A := S →L[ℂ] S)
     (framedSpinCHalfSpinAction o hQ b ρ ε) hpos
 
-private theorem rawSpinCHalfSpinLieLinearMap_add
-    (X Y : LeftInvariantDerivation I SpinC) :
+private theorem rawSpinCHalfSpinLieLinearMap_add (X Y : LeftInvariantDerivation I SpinC) :
     rawSpinCHalfSpinLieLinearMap o hQ b ρ ε (X + Y) =
-      rawSpinCHalfSpinLieLinearMap o hQ b ρ ε X +
-        rawSpinCHalfSpinLieLinearMap o hQ b ρ ε Y :=
+      rawSpinCHalfSpinLieLinearMap o hQ b ρ ε X + rawSpinCHalfSpinLieLinearMap o hQ b ρ ε Y :=
   map_add (rawSpinCHalfSpinLieLinearMap o hQ b ρ ε) X Y
 
-private theorem rawSpinCHalfSpinLieLinearMap_smul
-    (r : ℝ) (X : LeftInvariantDerivation I SpinC) :
+private theorem rawSpinCHalfSpinLieLinearMap_smul (r : ℝ) (X : LeftInvariantDerivation I SpinC) :
     rawSpinCHalfSpinLieLinearMap o hQ b ρ ε (r • X) =
       (algebraMap ℝ ℂ r) • rawSpinCHalfSpinLieLinearMap o hQ b ρ ε X :=
   map_smul (rawSpinCHalfSpinLieLinearMap o hQ b ρ ε) r X
@@ -266,14 +263,9 @@ private theorem coe_realSpinCHalfSpinUnitsSmoothHom_apply (x : SpinC) :
     (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε x : S →L[ℂ] S) =
       realSpinCHalfSpinSmoothHom o hQ b ρ ε x :=
   (spinCGroup.mk_surjective (realCliffordForm 4 0) hpos x).elim fun ⟨s, z⟩ hx ↦ by
-    have hlhs : (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε x : S →L[ℂ] S) =
-        (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε
-          (spinCGroup.mk (realCliffordForm 4 0) hpos (s, z)) : S →L[ℂ] S) :=
-      congrArg (fun y ↦ (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε y : S →L[ℂ] S)) hx.symm
-    have hrhs : realSpinCHalfSpinSmoothHom o hQ b ρ ε
-          (spinCGroup.mk (realCliffordForm 4 0) hpos (s, z)) =
-        realSpinCHalfSpinSmoothHom o hQ b ρ ε x :=
-      congrArg (realSpinCHalfSpinSmoothHom o hQ b ρ ε) hx
+    have hlhs := congrArg
+      (fun y ↦ (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε y : S →L[ℂ] S)) hx.symm
+    have hrhs := congrArg (realSpinCHalfSpinSmoothHom o hQ b ρ ε) hx
     have h1 := AlgHom.coe_realSpinCEvenSmoothHom_mk (A := S →L[ℂ] S)
       (framedSpinCHalfSpinAction o hQ b ρ ε) hpos (s, z)
     have h2 : (z : ℂ) • framedSpinCHalfSpinAction o hQ b ρ ε
@@ -281,10 +273,9 @@ private theorem coe_realSpinCHalfSpinUnitsSmoothHom_apply (x : SpinC) :
         realSpinCHalfSpinSmoothHom o hQ b ρ ε
           (spinCGroup.mk (realCliffordForm 4 0) hpos (s, z)) := by
       rw [framedSpinCHalfSpinAction_apply, realSpinCHalfSpinSmoothHom_mk]
-      apply ContinuousLinearMap.ext
-      intro ψ
-      simp only [smul_apply, LinearMap.coe_toContinuousLinearMap',
-        spinCHalfSpinRep_apply, LinearMap.smul_apply, halfSpinRep_apply,
+      ext ψ
+      simp only [smul_apply, LinearMap.coe_toContinuousLinearMap', spinCHalfSpinRep_apply,
+        LinearMap.smul_apply, halfSpinRep_apply,
         OrthonormalBasis.spinGroupToEven_realSpinGroupEquiv]
     exact hlhs.trans (h1.trans (h2.trans hrhs))
 
@@ -300,11 +291,9 @@ def realSpinCHalfSpinLieLinearMap :
     LeftInvariantDerivation I SpinC →ₗ[ℝ] (S →L[ℂ] S) where
   toFun X := rawSpinCHalfSpinLieLinearMap o hQ b ρ ε X
   map_add' X Y := rawSpinCHalfSpinLieLinearMap_add o hQ b ρ ε X Y
-  map_smul' r X := by
-    refine (rawSpinCHalfSpinLieLinearMap_smul o hQ b ρ ε r X).trans ?_
+  map_smul' r X := (rawSpinCHalfSpinLieLinearMap_smul o hQ b ρ ε r X).trans <| by
     have := IsScalarTower.restrictScalars ℝ ℂ W
-    ext ψ
-    exact algebraMap_smul ℂ r _
+    ext ψ; exact algebraMap_smul ℂ r _
 
 /-- `realSpinCHalfSpinLieLinearMap` sends the Lie bracket on `𝔰𝔭𝔦𝔫ᶜ(4)` to the operator
 commutator on `S`. -/
@@ -329,10 +318,10 @@ theorem realSpinCHalfSpinLieLinearMap_Ad (g : SpinC) (X : LeftInvariantDerivatio
         realSpinCHalfSpinSmoothHom o hQ b ρ ε g⁻¹ := by
   have h := AlgHom.realSpinCEvenLieLinearMap_Ad (A := S →L[ℂ] S)
     (framedSpinCHalfSpinAction o hQ b ρ ε) hpos g X
-  exact h.trans (congrArg₂ HMul.hMul
+  exact h.trans <| congrArg₂ HMul.hMul
     (congrArg (· * realSpinCHalfSpinLieLinearMap o hQ b ρ ε X)
       (coe_realSpinCHalfSpinUnitsSmoothHom_apply o hQ b ρ ε g))
-    (inv_coe_realSpinCHalfSpinUnitsSmoothHom_apply o hQ b ρ ε g))
+    (inv_coe_realSpinCHalfSpinUnitsSmoothHom_apply o hQ b ρ ε g)
 
 /-- The central determinant lift `realDetLieLift 4 hpos a` acts infinitesimally on half-spinors by
 `(ia / 2) • 1`. -/
@@ -391,8 +380,8 @@ theorem realSpinCHalfSpinLieLinearMap_realToSpecialOrthogonalProdDetLinearEquiv_
           (spinCGroup.realSpinOrthogonalLieLift 4 hpos Ω) +
         (Complex.I * (a / 2)) • (1 : S →L[ℂ] S) := by
   have h :=
-    AlgHom.realSpinCEvenLieLinearMap_realToSpecialOrthogonalProdDetLinearEquiv_symm (A := S →L[ℂ] S)
-      (framedSpinCHalfSpinAction o hQ b ρ ε) hpos Ω a
+    AlgHom.realSpinCEvenLieLinearMap_realToSpecialOrthogonalProdDetLinearEquiv_symm
+      (A := S →L[ℂ] S) (framedSpinCHalfSpinAction o hQ b ρ ε) hpos Ω a
   exact h
 
 /-- **Affine determinant shift on half-spinors.** Shifting the determinant component from `a` to
@@ -488,12 +477,9 @@ theorem inner_realSpinCHalfSpinLieLinearMap_add_inner_right
   let T := realSpinCHalfSpinLieLinearMap o hQ b ρ ε X
   have hT : ContinuousLinearMap.adjoint T = -T :=
     adjoint_realSpinCHalfSpinLieLinearMap o hQ b ρ ε hρ X
-  calc
-    ⟪T ψ, χ⟫_ℂ + ⟪ψ, T χ⟫_ℂ = ⟪ψ, ContinuousLinearMap.adjoint T χ⟫_ℂ + ⟪ψ, T χ⟫_ℂ :=
-      congrArg (· + ⟪ψ, T χ⟫_ℂ) (ContinuousLinearMap.adjoint_inner_right T ψ χ).symm
-    _ = ⟪ψ, (-T) χ⟫_ℂ + ⟪ψ, T χ⟫_ℂ :=
-      congrArg (fun S' : S →L[ℂ] S ↦ ⟪ψ, S' χ⟫_ℂ + _) hT
-    _ = 0 := by rw [neg_apply, inner_neg_right, neg_add_cancel]
+  refine (congrArg (· + ⟪ψ, T χ⟫_ℂ) (ContinuousLinearMap.adjoint_inner_right T ψ χ).symm).trans ?_
+  refine (congrArg (fun S' : S →L[ℂ] S ↦ ⟪ψ, S' χ⟫_ℂ + ⟪ψ, T χ⟫_ℂ) hT).trans ?_
+  rw [neg_apply, inner_neg_right, neg_add_cancel]
 
 end SkewAdjoint
 

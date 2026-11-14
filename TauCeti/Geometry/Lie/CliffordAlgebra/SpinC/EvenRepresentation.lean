@@ -116,36 +116,32 @@ private theorem coe_realSpinEvenSmoothHom_apply
     rfl
   exact hs.trans (coe_spinGroupToEven_apply (realCliffordForm n 0) s).symm
 
+omit [FiniteDimensional ℂ A] in
+private theorem coe_circleToAlgebraUnits (z : Circle) :
+    ((Units.map (Algebra.ofId ℂ A).toMonoidHom (Circle.toUnits z) : Aˣ) : A) =
+      (z : ℂ) • (1 : A) := by
+  simp [Algebra.algebraMap_eq_smul_one]
+
 private def realSpinCCoverEvenHom
     (f : CliffordAlgebra.even (realCliffordForm n 0) →ₐ[ℝ] A) :
     Spin × Circle →* Aˣ where
   toFun p := realSpinEvenSmoothHom f p.1 *
     Units.map (Algebra.ofId ℂ A).toMonoidHom (Circle.toUnits p.2)
   map_one' := by simp
-  map_mul' p q := by
-    have hz (z : Circle) :
-        ((Units.map (Algebra.ofId ℂ A).toMonoidHom (Circle.toUnits z) : Aˣ) : A) =
-          (z : ℂ) • (1 : A) := by
-      simp [Algebra.algebraMap_eq_smul_one]
-    apply Units.ext
-    simp only [Prod.fst_mul, Prod.snd_mul, map_mul, Units.val_mul, hz,
+  map_mul' p q := Units.ext <| by
+    simp only [Prod.fst_mul, Prod.snd_mul, map_mul, Units.val_mul, coe_circleToAlgebraUnits,
       mul_smul_comm, smul_mul_assoc, mul_one]
 
 private theorem realSpinCCoverEvenHom_negOne
     (f : CliffordAlgebra.even (realCliffordForm n 0) →ₐ[ℝ] A)
     (hQ : realCliffordForm n 0 ≠ 0) :
     realSpinCCoverEvenHom f (spinGroup.negOne (realCliffordForm n 0) hQ, -1) = 1 := by
-  have hz (z : Circle) :
-      ((Units.map (Algebra.ofId ℂ A).toMonoidHom (Circle.toUnits z) : Aˣ) : A) =
-        (z : ℂ) • (1 : A) := by
-    simp [Algebra.algebraMap_eq_smul_one]
   apply Units.ext
   have hs : spinGroupToEven (realCliffordForm n 0)
-      (spinGroup.negOne (realCliffordForm n 0) hQ) = -1 := by
-    apply Subtype.ext
-    exact (coe_spinGroupToEven_apply _ _).trans (spinGroup.coe_negOne _ hQ)
+      (spinGroup.negOne (realCliffordForm n 0) hQ) = -1 :=
+    Subtype.ext <| (coe_spinGroupToEven_apply _ _).trans (spinGroup.coe_negOne _ hQ)
   simp only [realSpinCCoverEvenHom, MonoidHom.coe_mk, OneHom.coe_mk, Units.val_mul, Units.val_one,
-    coe_realSpinEvenSmoothHom_apply, hs, map_neg, map_one, hz,
+    coe_realSpinEvenSmoothHom_apply, hs, map_neg, map_one, coe_circleToAlgebraUnits,
     Circle.coe_neg, Circle.coe_one, neg_smul, one_smul, neg_mul_neg, mul_one]
 
 /-- The smooth weight-one homomorphism `Spinᶜ(n) → Aˣ` induced by an algebra homomorphism out of
@@ -157,23 +153,19 @@ def realSpinCEvenSmoothHom
   toMonoidHom := spinCGroup.lift (realCliffordForm n 0) hQ (realSpinCCoverEvenHom f)
     (realSpinCCoverEvenHom_negOne f hQ)
   contMDiff_toFun := by
-    have hz (z : Circle) :
-        ((Units.map (Algebra.ofId ℂ A).toMonoidHom (Circle.toUnits z) : Aˣ) : A) =
-          (z : ℂ) • (1 : A) := by
-      simp [Algebra.algebraMap_eq_smul_one]
     let φz : Circle →ₜ* Aˣ :=
       ⟨(Units.map (Algebra.ofId ℂ A).toMonoidHom).comp Circle.toUnits,
         Continuous.of_coeHom_comp <|
           (continuous_subtype_val.smul (continuous_const (y := (1 : A)))).congr
-            fun z ↦ (hz z).symm⟩
+            fun z ↦ (coe_circleToAlgebraUnits z).symm⟩
     apply (spinCGroup.contMDiff_iff_contMDiff_comp_mk n hQ _).mpr
     refine (((realSpinEvenSmoothHom f).contMDiff_toFun.comp contMDiff_fst).mul
       ((φz.toContMDiffMonoidMorphism (𝓡 1) 𝓘(ℝ, A)).contMDiff_toFun.comp
         contMDiff_snd)).congr fun p ↦ ?_
-    refine (spinCGroup.lift_mk (realCliffordForm n 0) hQ (realSpinCCoverEvenHom f)
-      (realSpinCCoverEvenHom_negOne f hQ) p).trans ?_
-    exact congrArg (realSpinEvenSmoothHom f p.1 * ·)
-      (congrFun (φz.coe_toContMDiffMonoidMorphism (I := 𝓡 1) (I' := 𝓘(ℝ, A))) p.2).symm
+    exact (spinCGroup.lift_mk (realCliffordForm n 0) hQ (realSpinCCoverEvenHom f)
+      (realSpinCCoverEvenHom_negOne f hQ) p).trans <|
+      congrArg (realSpinEvenSmoothHom f p.1 * ·)
+        (congrFun (φz.coe_toContMDiffMonoidMorphism (I := 𝓡 1) (I' := 𝓘(ℝ, A))) p.2).symm
 
 /-- On a cover representative `(s, z)`, the smooth action acts by `z • f(s)`. -/
 @[simp]
@@ -182,17 +174,13 @@ theorem coe_realSpinCEvenSmoothHom_mk
     (hQ : realCliffordForm n 0 ≠ 0) (p : Spin × Circle) :
     ((f.realSpinCEvenSmoothHom hQ (spinCGroup.mk (realCliffordForm n 0) hQ p) : Aˣ) : A) =
       (p.2 : ℂ) • f (spinGroupToEven (realCliffordForm n 0) p.1) := by
-  have hz (z : Circle) :
-      ((Units.map (Algebra.ofId ℂ A).toMonoidHom (Circle.toUnits z) : Aˣ) : A) =
-        (z : ℂ) • (1 : A) := by
-    simp [Algebra.algebraMap_eq_smul_one]
   have h : f.realSpinCEvenSmoothHom hQ (spinCGroup.mk (realCliffordForm n 0) hQ p) =
       realSpinCCoverEvenHom f p :=
     spinCGroup.lift_mk (realCliffordForm n 0) hQ (realSpinCCoverEvenHom f)
       (realSpinCCoverEvenHom_negOne f hQ) p
   rw [congrArg Units.val h]
   simp only [realSpinCCoverEvenHom, MonoidHom.coe_mk, OneHom.coe_mk, Units.val_mul,
-    coe_realSpinEvenSmoothHom_apply, hz, mul_smul_comm, mul_one]
+    coe_realSpinEvenSmoothHom_apply, coe_circleToAlgebraUnits, mul_smul_comm, mul_one]
 
 /-- Restricting `realSpinCEvenSmoothHom` to `Spin(n)` evaluates `f` on the even Spin element. -/
 @[simp]
@@ -219,15 +207,13 @@ theorem realSpinCEvenSmoothHom_comp_ofSpin
     (f : CliffordAlgebra.even (realCliffordForm n 0) →ₐ[ℝ] A)
     (hQ : realCliffordForm n 0 ≠ 0) :
     (f.realSpinCEvenSmoothHom hQ).comp (spinCGroup.realOfSpinSmoothHom n hQ) =
-      f.realCliffordSpinEvenSmoothHom.comp (realSpinSmoothEquivUnitsRange n) := by
-  apply DFunLike.coe_injective
-  funext s
-  apply Units.ext
-  simp only [ContMDiffMonoidMorphism.coe_comp, Function.comp_apply,
-    spinCGroup.realOfSpinSmoothHom_apply, coe_realSpinCEvenSmoothHom_ofSpin]
-  exact (coe_realSpinEvenSmoothHom_apply f s).symm.trans
-    (congrArg Units.val (congrFun (ContMDiffMonoidMorphism.coe_comp
-      f.realCliffordSpinEvenSmoothHom (realSpinSmoothEquivUnitsRange n)) s))
+      f.realCliffordSpinEvenSmoothHom.comp (realSpinSmoothEquivUnitsRange n) :=
+  DFunLike.coe_injective <| funext fun s ↦ Units.ext <| by
+    simp only [ContMDiffMonoidMorphism.coe_comp, Function.comp_apply,
+      spinCGroup.realOfSpinSmoothHom_apply, coe_realSpinCEvenSmoothHom_ofSpin]
+    exact (coe_realSpinEvenSmoothHom_apply f s).symm.trans
+      (congrArg Units.val (congrFun (ContMDiffMonoidMorphism.coe_comp
+        f.realCliffordSpinEvenSmoothHom (realSpinSmoothEquivUnitsRange n)) s))
 
 /-! ### The differentiated representation on `𝔰𝔭𝔦𝔫ᶜ(n)` -/
 
@@ -266,16 +252,13 @@ theorem realSpinCEvenLieLinearMap_lie
   have hY : TauCeti.Lie.unitsLieAlgebraLieEquiv DY = f.realSpinCEvenLieLinearMap hQ Y :=
     (TauCeti.Lie.unitsLieAlgebraLieEquiv_apply DY).trans
       (f.unitsLieAlgebraEquiv_lieMap_realSpinCEvenSmoothHom hQ Y)
-  have h0 : f.realSpinCEvenLieLinearMap hQ ⁅X, Y⁆ =
-      TauCeti.Lie.unitsLieAlgebraLieEquiv (lieMap (f.realSpinCEvenSmoothHom hQ) ⁅X, Y⁆) :=
-    (f.unitsLieAlgebraEquiv_lieMap_realSpinCEvenSmoothHom hQ ⁅X, Y⁆).symm.trans
-      (TauCeti.Lie.unitsLieAlgebraLieEquiv_apply _).symm
-  have h1 := (congrArg TauCeti.Lie.unitsLieAlgebraLieEquiv
-    ((lieMap (f.realSpinCEvenSmoothHom hQ)).map_lie X Y)).trans
-    ((TauCeti.Lie.unitsLieAlgebraLieEquiv.map_lie DX DY).trans
-      (LieRing.of_associative_ring_bracket _ _))
-  have h2 := congrArg₂ HSub.hSub (congrArg₂ HMul.hMul hX hY) (congrArg₂ HMul.hMul hY hX)
-  exact h0.trans (h1.trans h2)
+  exact ((f.unitsLieAlgebraEquiv_lieMap_realSpinCEvenSmoothHom hQ ⁅X, Y⁆).symm.trans
+      (TauCeti.Lie.unitsLieAlgebraLieEquiv_apply _).symm).trans <|
+    ((congrArg TauCeti.Lie.unitsLieAlgebraLieEquiv
+      ((lieMap (f.realSpinCEvenSmoothHom hQ)).map_lie X Y)).trans
+      ((TauCeti.Lie.unitsLieAlgebraLieEquiv.map_lie DX DY).trans
+        (LieRing.of_associative_ring_bracket _ _))).trans
+      (congrArg₂ HSub.hSub (congrArg₂ HMul.hMul hX hY) (congrArg₂ HMul.hMul hY hX))
 
 /-- `realSpinCEvenLieLinearMap` intertwines the `Spinᶜ(n)` group adjoint with unit conjugation in
 `A`. -/
@@ -304,26 +287,19 @@ theorem realSpinCEvenLieLinearMap_lieMap_realOfSpinSmoothHom
           (realCliffordSpinLieEquivQuadratic n (realSpinLieEquivUnitsRange n X)).property⟩ := by
   have hcomp : lieMap (f.realSpinCEvenSmoothHom hQ)
         (lieMap (spinCGroup.realOfSpinSmoothHom n hQ) X) =
-      lieMap f.realCliffordSpinEvenSmoothHom (realSpinLieEquivUnitsRange n X) := by
-    calc
-      lieMap (f.realSpinCEvenSmoothHom hQ) (lieMap (spinCGroup.realOfSpinSmoothHom n hQ) X) =
-          lieMap ((f.realSpinCEvenSmoothHom hQ).comp (spinCGroup.realOfSpinSmoothHom n hQ)) X :=
-        (DFunLike.congr_fun
-          (lieMap_comp (spinCGroup.realOfSpinSmoothHom n hQ)
-            (f.realSpinCEvenSmoothHom hQ)) X).symm
-      _ = lieMap (f.realCliffordSpinEvenSmoothHom.comp (realSpinSmoothEquivUnitsRange n)) X :=
-        DFunLike.congr_fun (congrArg _root_.lieMap (f.realSpinCEvenSmoothHom_comp_ofSpin hQ)) X
-      _ = lieMap f.realCliffordSpinEvenSmoothHom
-            (lieMap (realSpinSmoothEquivUnitsRange n) X) :=
-        DFunLike.congr_fun
-          (lieMap_comp (realSpinSmoothEquivUnitsRange n) f.realCliffordSpinEvenSmoothHom) X
-      _ = lieMap f.realCliffordSpinEvenSmoothHom (realSpinLieEquivUnitsRange n X) :=
-        congrArg (lieMap f.realCliffordSpinEvenSmoothHom)
-          (realSpinLieEquivUnitsRange_apply n X).symm
-  exact (congrArg unitsLieAlgebraEquiv hcomp).trans
-    ((TauCeti.Lie.unitsLieAlgebraLieEquiv_apply _).symm.trans
+      lieMap f.realCliffordSpinEvenSmoothHom (realSpinLieEquivUnitsRange n X) :=
+    (DFunLike.congr_fun (lieMap_comp (spinCGroup.realOfSpinSmoothHom n hQ)
+      (f.realSpinCEvenSmoothHom hQ)) X).symm.trans <|
+      (DFunLike.congr_fun (congrArg _root_.lieMap (f.realSpinCEvenSmoothHom_comp_ofSpin hQ))
+        X).trans <|
+        (DFunLike.congr_fun (lieMap_comp (realSpinSmoothEquivUnitsRange n)
+          f.realCliffordSpinEvenSmoothHom) X).trans
+          (congrArg (lieMap f.realCliffordSpinEvenSmoothHom)
+            (realSpinLieEquivUnitsRange_apply n X).symm)
+  exact (congrArg unitsLieAlgebraEquiv hcomp).trans <|
+    (TauCeti.Lie.unitsLieAlgebraLieEquiv_apply _).symm.trans
       (unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinEvenSmoothHom f
-        (realSpinLieEquivUnitsRange n X)))
+        (realSpinLieEquivUnitsRange n X))
 
 /-- On the central determinant lift `realDetLieLift n hQ a`, the differentiated weight-one action
 acts by the scalar `(ia / 2) • 1`. -/
@@ -347,28 +323,16 @@ theorem realSpinCEvenLieLinearMap_realDetLieLift
     rw [coe_realSpinCEvenSmoothHom_ofCircle, Circle.coe_exp, Complex.exp_eq_exp_ℂ,
       ← Algebra.algebraMap_eq_smul_one, NormedSpace.map_exp (algebraMap ℂ A) hcont,
       Algebra.algebraMap_eq_smul_one]
-    congr 1
-    rw [← smul_assoc, Complex.real_smul]
-    congr 1
-    push_cast
-    ring
+    congr 1; rw [← smul_assoc, Complex.real_smul]; congr 1; push_cast; ring
   let D := lieMap (f.realSpinCEvenSmoothHom hQ) (spinCGroup.realDetLieLift n hQ a)
-  have hsmul : lieMap (f.realSpinCEvenSmoothHom hQ) (t • spinCGroup.realDetLieLift n hQ a) =
-      t • D := (lieMap (f.realSpinCEvenSmoothHom hQ)).map_smul t _
-  have h := congrArg Units.val
-    (map_lieExp (f.realSpinCEvenSmoothHom hQ) (t • spinCGroup.realDetLieLift n hQ a))
-  have hlhs : ((lieExp (lieMap (f.realSpinCEvenSmoothHom hQ)
-        (t • spinCGroup.realDetLieLift n hQ a)) : Aˣ) : A) =
-      NormedSpace.exp (t • f.realSpinCEvenLieLinearMap hQ (spinCGroup.realDetLieLift n hQ a)) :=
-    (congrArg (fun Y ↦ ((lieExp Y : Aˣ) : A)) hsmul).trans
-      ((h_units D).trans (congrArg (fun x ↦ NormedSpace.exp (t • x))
-        (f.unitsLieAlgebraEquiv_lieMap_realSpinCEvenSmoothHom hQ _)))
-  have hrhs : ((f.realSpinCEvenSmoothHom hQ
-        (lieExp (t • spinCGroup.realDetLieLift n hQ a)) : Aˣ) : A) =
-      NormedSpace.exp (t • ((Complex.I * (a / 2)) • (1 : A))) :=
-    (congrArg (fun x ↦ ((f.realSpinCEvenSmoothHom hQ x : Aˣ) : A))
-      (spinCGroup.lieExp_smul_realDetLieLift n hQ t a)).trans h_circle
-  exact hlhs.symm.trans (h.symm.trans hrhs)
+  exact ((congrArg (fun Y ↦ ((lieExp Y : Aˣ) : A))
+      ((lieMap (f.realSpinCEvenSmoothHom hQ)).map_smul t _)).trans
+    ((h_units D).trans (congrArg (fun x ↦ NormedSpace.exp (t • x))
+      (f.unitsLieAlgebraEquiv_lieMap_realSpinCEvenSmoothHom hQ _)))).symm.trans <|
+    (congrArg Units.val
+      (map_lieExp (f.realSpinCEvenSmoothHom hQ) (t • spinCGroup.realDetLieLift n hQ a))).symm.trans
+      ((congrArg (fun x ↦ ((f.realSpinCEvenSmoothHom hQ x : Aˣ) : A))
+        (spinCGroup.lieExp_smul_realDetLieLift n hQ t a)).trans h_circle)
 
 /-- On the canonical orthogonal Lie lift `realSpinOrthogonalLieLift n hQ Ω`, the differentiated
 action evaluates `f` on the quadratic Clifford lift of `Ω`. -/
@@ -381,49 +345,14 @@ theorem realSpinCEvenLieLinearMap_realSpinOrthogonalLieLift
           ((realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω),
         quadraticLieSubalgebra_le_even _
           (realCliffordSpinLieEquivQuadratic n
-            ((realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω)).property⟩ := by
-  let Y := (realSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω
-  have hcomp_range : (realCliffordSpinToSpecialOrthogonalSmoothRange n).comp
-      (realSpinSmoothEquivUnitsRange n) = realSpinToSpecialOrthogonalSmoothRange n := by
-    apply DFunLike.coe_injective
-    funext s
-    simp only [ContMDiffMonoidMorphism.coe_comp, Function.comp_apply,
-      realSpinSmoothEquivUnitsRange_apply, realCliffordSpinToSpecialOrthogonalSmoothRange_apply,
-      realCliffordSpinContinuousMulEquivUnitsRange_apply,
-      realCliffordSpinToSpecialOrthogonalRange_apply_toUnits,
-      realCliffordSpecialOrthogonalContinuousMulEquivRange_apply,
-      realSpinToSpecialOrthogonalSmoothRange_apply]
-  have hsymm : realSpinLieEquivUnitsRange n Y =
-      (realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω := by
-    apply (realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).injective
-    calc
-      realCliffordSpinToSpecialOrthogonalRangeLieEquiv n (realSpinLieEquivUnitsRange n Y) =
-          realCliffordSpinToSpecialOrthogonalRangeLieMap n
-            (lieMap (realSpinSmoothEquivUnitsRange n) Y) :=
-        (realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply n _).trans
-          (congrArg _ (realSpinLieEquivUnitsRange_apply n Y))
-      _ = lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n)
-            (lieMap (realSpinSmoothEquivUnitsRange n) Y) :=
-        DFunLike.congr_fun (realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap n) _
-      _ = lieMap ((realCliffordSpinToSpecialOrthogonalSmoothRange n).comp
-            (realSpinSmoothEquivUnitsRange n)) Y :=
-        (DFunLike.congr_fun (lieMap_comp (realSpinSmoothEquivUnitsRange n)
-          (realCliffordSpinToSpecialOrthogonalSmoothRange n)) Y).symm
-      _ = lieMap (realSpinToSpecialOrthogonalSmoothRange n) Y :=
-        DFunLike.congr_fun (congrArg _root_.lieMap hcomp_range) Y
-      _ = realSpinToSpecialOrthogonalRangeLieEquiv n Y :=
-        (realSpinToSpecialOrthogonalRangeLieEquiv_apply n Y).symm
-      _ = Ω := (realSpinToSpecialOrthogonalRangeLieEquiv n).apply_symm_apply Ω
-      _ = realCliffordSpinToSpecialOrthogonalRangeLieEquiv n
-            ((realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω) :=
-        ((realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).apply_symm_apply Ω).symm
-  refine (congrArg (f.realSpinCEvenLieLinearMap hQ)
-    (spinCGroup.realSpinOrthogonalLieLift_apply n hQ Ω)).trans ?_
-  refine (f.realSpinCEvenLieLinearMap_lieMap_realOfSpinSmoothHom hQ Y).trans ?_
-  apply congrArg f
-  apply Subtype.ext
-  exact congrArg (Subtype.val : quadraticLieSubalgebra (realCliffordForm n 0) → _)
-    (congrArg (realCliffordSpinLieEquivQuadratic n) hsymm)
+            ((realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω)).property⟩ :=
+  (congrArg (f.realSpinCEvenLieLinearMap hQ)
+    (spinCGroup.realSpinOrthogonalLieLift_apply n hQ Ω)).trans <|
+    (f.realSpinCEvenLieLinearMap_lieMap_realOfSpinSmoothHom hQ _).trans <|
+      congrArg f <| Subtype.ext <|
+        congrArg (Subtype.val : quadraticLieSubalgebra (realCliffordForm n 0) → _) <|
+          congrArg (realCliffordSpinLieEquivQuadratic n)
+            (realSpinLieEquivUnitsRange_realSpinToSpecialOrthogonalRangeLieEquiv_symm n Ω)
 
 /-- On `so(n, ℝ)` coordinates, the canonical orthogonal Lie lift acts by `f` applied to the
 normalized exterior bivector of the skew-symmetric matrix. -/
@@ -444,33 +373,25 @@ theorem realSpinCEvenLieLinearMap_realSoLieLift
   let X := (realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω
   let x := realCliffordSpinLieEquivQuadratic n X
   let z := (bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)).symm x
-  have hx : (realCliffordSpinLieEquivQuadratic n).symm x = X :=
-    (realCliffordSpinLieEquivQuadratic n).symm_apply_apply X
   have hzx : bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0) z = x :=
     (bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)).apply_symm_apply x
-  have hΩ : realCliffordSpinToSpecialOrthogonalRangeLieMap n X = Ω :=
-    (realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply n X).symm.trans
-      ((realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).apply_symm_apply Ω)
-  have hz : M = bivectorEquivSo n ℝ z := by
-    calc
-      M = realCliffordSpecialOrthogonalLieEquivSo n
-            (realCliffordSpinToSpecialOrthogonalRangeLieMap n X) :=
-        ((realCliffordSpecialOrthogonalLieEquivSo n).apply_symm_apply M).symm.trans
-          (congrArg (realCliffordSpecialOrthogonalLieEquivSo n) hΩ.symm)
-      _ = realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x :=
-        (congrArg (fun Y ↦ realCliffordSpecialOrthogonalLieEquivSo n
-          (realCliffordSpinToSpecialOrthogonalRangeLieMap n Y)) hx).symm.trans
-          (realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply n x).symm
-      _ = bivectorEquivSo n ℝ z :=
-        (congrArg (realCliffordSpinToSpecialOrthogonalCoordinateLieHom n) hzx).symm.trans
-          (realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_bivectorEquivSo n z)
+  have hz : M = bivectorEquivSo n ℝ z :=
+    (((realCliffordSpecialOrthogonalLieEquivSo n).apply_symm_apply M).symm.trans <|
+      congrArg (realCliffordSpecialOrthogonalLieEquivSo n)
+        ((realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply n X).symm.trans
+          ((realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).apply_symm_apply Ω)).symm).trans <|
+      ((congrArg (fun Y ↦ realCliffordSpecialOrthogonalLieEquivSo n
+          (realCliffordSpinToSpecialOrthogonalRangeLieMap n Y))
+        ((realCliffordSpinLieEquivQuadratic n).symm_apply_apply X)).symm.trans
+        (realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply n x).symm).trans <|
+      (congrArg (realCliffordSpinToSpecialOrthogonalCoordinateLieHom n) hzx).symm.trans
+        (realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_bivectorEquivSo n z)
   have hinv : (bivectorEquivSo n ℝ).symm M = z :=
     (congrArg (bivectorEquivSo n ℝ).symm hz).trans ((bivectorEquivSo n ℝ).symm_apply_apply z)
   refine (congrArg (f.realSpinCEvenLieLinearMap hQ)
-    (spinCGroup.realSoLieLift_apply n hQ M)).trans ?_
-  refine (f.realSpinCEvenLieLinearMap_realSpinOrthogonalLieLift hQ Ω).trans ?_
-  apply congrArg f
-  apply Subtype.ext
+    (spinCGroup.realSoLieLift_apply n hQ M)).trans <|
+    (f.realSpinCEvenLieLinearMap_realSpinOrthogonalLieLift hQ Ω).trans <|
+      congrArg f <| Subtype.ext ?_
   exact (congrArg (Subtype.val : quadraticLieSubalgebra (realCliffordForm n 0) → _) hzx).symm.trans
     ((congrArg (Subtype.val : quadraticLieSubalgebra (realCliffordForm n 0) → _)
       (congrArg (bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0))
@@ -535,20 +456,12 @@ theorem exp_smul_realSpinCEvenLieLinearMap
   have h_units (Y : LeftInvariantDerivation 𝓘(ℝ, A) Aˣ) :
       ((lieExp (t • Y) : Aˣ) : A) = NormedSpace.exp (t • unitsLieAlgebraEquiv Y) := by
     rw [lieExp_eq_expUnit, map_smul, TauCeti.expUnit_coe]
-  let D := lieMap (f.realSpinCEvenSmoothHom hQ) X
-  have h1 : NormedSpace.exp (t • f.realSpinCEvenLieLinearMap hQ X) =
-      ((lieExp (t • D) : Aˣ) : A) :=
-    (congrArg (fun a ↦ NormedSpace.exp (t • a))
+  exact ((congrArg (fun a ↦ NormedSpace.exp (t • a))
       (f.unitsLieAlgebraEquiv_lieMap_realSpinCEvenSmoothHom hQ X).symm).trans
-      (h_units D).symm
-  have h2 : ((lieExp (t • D) : Aˣ) : A) =
-      ((lieExp (lieMap (f.realSpinCEvenSmoothHom hQ) (t • X)) : Aˣ) : A) :=
-    congrArg (fun Y ↦ ((lieExp Y : Aˣ) : A))
-      ((lieMap (f.realSpinCEvenSmoothHom hQ)).map_smul t X).symm
-  have h3 : ((lieExp (lieMap (f.realSpinCEvenSmoothHom hQ) (t • X)) : Aˣ) : A) =
-      f.realSpinCEvenSmoothHom hQ (lieExp (t • X)) :=
-    (congrArg Units.val (map_lieExp (f.realSpinCEvenSmoothHom hQ) (t • X))).symm
-  exact h1.trans (h2.trans h3)
+    (h_units (lieMap (f.realSpinCEvenSmoothHom hQ) X)).symm).trans <|
+    (congrArg (fun Y ↦ ((lieExp Y : Aˣ) : A))
+      ((lieMap (f.realSpinCEvenSmoothHom hQ)).map_smul t X).symm).trans
+      (congrArg Units.val (map_lieExp (f.realSpinCEvenSmoothHom hQ) (t • X))).symm
 
 /-- If `f.realSpinCEvenSmoothHom hQ` takes values in `unitary A`, then every element in the image
 of `f.realSpinCEvenLieLinearMap hQ` is skew-adjoint. -/
