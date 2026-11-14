@@ -861,7 +861,7 @@ theorem bijective_postcomp_mk₀_supportedSectionsι
     -- the statement holds in degree `j` for the flasque sheaf `F₂` and for `F₃`
     have ih₂ := ih T.X₂ fun q ↦ isZero_supportedHSheaf_succ_of_isFlasque _ S q
     have ih₃ := ih T.X₃ fun q ↦ isZero_supportedHSheaf_X₃_of_shortExact S hT (h (q + 1))
-    exact hT'.bijective_postcomp_mk₀_τ₁ hT φ _ j ih₂.2 ih₃
+    exact hT'.postcomp_mk₀_τ₁_bijective hT φ _ j ih₂.2 ih₃
 
 /-- The base case `n = 1` of the degenerate edge comparison in positive degrees, for `Γ_S(F)`
 flasque and `𝓗_S^q(F) = 0` for `q ≥ 2`: `H_Z^k(-, F) ≅ H_Z^{j+1}(-, 𝓗_S¹(F))` for `k = j + 2`. -/

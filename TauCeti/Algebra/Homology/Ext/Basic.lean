@@ -45,9 +45,10 @@ This file collects general `Ext` API that Mathlib does not state in this form:
 * dimension shifting: the connecting map `Extⁿ⁺¹(P, S.X₃) ⟶ Extⁿ⁺²(P, S.X₁)` of a short exact
   sequence `S` is bijective when `Extⁿ⁺¹(P, S.X₂)` and `Extⁿ⁺²(P, S.X₂)` vanish
   (`CategoryTheory.ShortComplex.ShortExact.extClass_postcomp_bijective`);
-* the five lemma for covariant `Ext` along a morphism of short exact sequences: surjectivity on
-  the second and bijectivity on the third terms in degree `j` give bijectivity on the first terms
-  in degree `j + 1` (`CategoryTheory.ShortComplex.ShortExact.bijective_postcomp_mk₀_τ₁`);
+* the right-exact case of the five lemma for covariant `Ext` along a morphism of short exact
+  sequences: when `Ext^{j + 1}(P, S₁.X₂)` and `Ext^{j + 1}(P, S₂.X₂)` vanish, surjectivity on the
+  second and bijectivity on the third terms in degree `j` give bijectivity on the first terms in
+  degree `j + 1` (`CategoryTheory.ShortComplex.ShortExact.postcomp_mk₀_τ₁_bijective`);
 * extension of morphisms along a short exact sequence `S` whose cokernel `S.X₃` has
   `Ext¹(S.X₃, Y) = 0` (`CategoryTheory.ShortComplex.ShortExact.exists_f_comp_eq_of_ext_eq_zero`),
   and conversely when `S.X₂` is projective
@@ -426,7 +427,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C]
 `Ext^{j+1}(P, S₂.X₂)` trivial, induces a bijection `Ext^{j+1}(P, S₁.X₁) → Ext^{j+1}(P, S₂.X₁)`
 as soon as `Ext^j(P, φ.τ₂)` is surjective and `Ext^j(P, φ.τ₃)` is bijective (right-exact case of
 the five lemma for the long exact `Ext` sequences). -/
-theorem bijective_postcomp_mk₀_τ₁ {S₁ S₂ : ShortComplex C}
+theorem postcomp_mk₀_τ₁_bijective {S₁ S₂ : ShortComplex C}
     (hS₁ : S₁.ShortExact) (hS₂ : S₂.ShortExact) (φ : S₁ ⟶ S₂) (P : C) (j : ℕ)
     [Subsingleton (Ext.{w} P S₁.X₂ (j + 1))] [Subsingleton (Ext.{w} P S₂.X₂ (j + 1))]
     (hτ₂ : Function.Surjective ((Ext.mk₀ φ.τ₂).postcomp P (add_zero j) :
