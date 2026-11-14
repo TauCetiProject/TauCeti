@@ -9,6 +9,8 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Decomposition
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting.Equiv
 public import TauCeti.FieldTheory.FunctionField.Place.ConstantField
 import Mathlib.FieldTheory.Normal.Closure
+-- Proof-only: every place of the base has a place above it.
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 
 /-!
 # Complete splitting in composita

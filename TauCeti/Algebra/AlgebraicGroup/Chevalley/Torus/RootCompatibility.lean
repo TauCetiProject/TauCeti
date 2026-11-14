@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Generation
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.CharacterMap
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Comparison
 
 /-!
@@ -27,8 +27,9 @@ homomorphism is asserted. For a proper weight lattice over a general field the c
 only concerns the image of the full-weight parametrization: root compatibility alone need
 not determine the map on the entire actual torus.
 
-The argument uses `ChevalleyDatum.simpleCorootPoints_eq_weylElement_mul_inv` and
-`ChevalleyDatum.torusPoints_fullWeightTorusRestriction_eq_prod_simpleCorootPoints`.
+The coroot and full-weight statements are the case of identity node map, unit coefficients and
+exponent one of `ChevalleyDatum.map_simpleCorootPoints_eq_simpleCorootPoints_pow` and
+`ChevalleyDatum.map_torusPoints_fullWeightTorusRestriction_torusPointMap_of_rootSubgroupPoints`.
 
 ## References
 
@@ -54,9 +55,9 @@ theorem map_simpleCorootPoints_of_rootSubgroupPoints (i : Fin t.rank)
         E.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
           (t.simpleIndex ht i) (t.simpleIndex ht i)) A u)
     (s : Aˣ) : f (D.simpleCorootPoints i A s) = E.simpleCorootPoints i A s := by
-  rw [D.simpleCorootPoints_eq_weylElement_mul_inv,
-    E.simpleCorootPoints_eq_weylElement_mul_inv]
-  simp only [weylElement_def, map_mul, map_inv, hpos, hneg]
+  simpa only [pow_one] using D.map_simpleCorootPoints_eq_simpleCorootPoints_pow E f 1 (pow_one _)
+    (fun u => by simpa using hpos (Multiplicative.ofAdd u))
+    (fun u => by simpa using hneg (Multiplicative.ofAdd u)) s
 
 variable
   (hpos : ∀ i u, f (D.rootSubgroupPoints (t.simpleIndex ht i) A u) =
@@ -74,12 +75,9 @@ theorem map_torusPoints_fullWeightTorusRestriction_of_rootSubgroupPoints
     (s : Fin t.rank → Aˣ) :
     f (D.torusPoints A (D.fullWeightTorusRestriction A s)) =
       E.torusPoints A (E.fullWeightTorusRestriction A s) := by
-  rw [D.torusPoints_fullWeightTorusRestriction_eq_prod_simpleCorootPoints,
-    E.torusPoints_fullWeightTorusRestriction_eq_prod_simpleCorootPoints, map_list_prod]
-  simp only [List.map_ofFn, Function.comp_def]
-  congr 2
-  funext i
-  exact D.map_simpleCorootPoints_of_rootSubgroupPoints E f i (hpos i) (hneg i) (s i)
+  simpa using map_torusPoints_fullWeightTorusRestriction_torusPointMap_of_rootSubgroupPoints f id 1
+    (fun _ => 1) (fun _ => pow_one _) (fun i u => by simpa using hpos i (Multiplicative.ofAdd u))
+    (fun i u => by simpa using hneg i (Multiplicative.ofAdd u)) 1 (fun χ i => by simp) s
 
 /-- If full-weight restriction reaches every source torus parameter, root compatibility
 forces the actual torus equation by restriction of characters. -/

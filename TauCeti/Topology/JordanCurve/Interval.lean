@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.JordanCurve.Basic
+import TauCeti.Topology.Instances.AddCircle.LiftIco
 
 /-!
 # Jordan curves parametrized by compact intervals
@@ -49,28 +50,13 @@ theorem isJordanCurve_image_Icc [T2Space X] (hab : a < b) (hγ : ContinuousOn γ
     (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b)) : IsJordanCurve (γ '' Icc a b) := by
   have : Fact (0 < b - a) := ⟨sub_pos.2 hab⟩
   have hb : a + (b - a) = b := add_sub_cancel a b
+  have hf : γ a = γ (a + (b - a)) := by rwa [hb]
   set f := AddCircle.liftIco (b - a) a γ
-  have hf (t : ℝ) (ht : t ∈ Icc a b) : f t = γ t := by
-    rcases ht.2.lt_or_eq with htb | htb
-    · exact AddCircle.liftIco_coe_apply (by rw [hb]; exact ⟨ht.1, htb⟩)
-    -- The endpoint `t = b` is identified with `a`, where `γ` takes the same value.
-    · have hba := AddCircle.coe_add_period (b - a) a
-      rw [hb] at hba
-      rw [htb, hba, ← hclosed]
-      exact AddCircle.liftIco_coe_apply (by rw [hb]; exact left_mem_Ico.2 hab)
-  have hfc : Continuous f := AddCircle.liftIco_continuous (by rwa [hb]) (by rwa [hb])
-  -- Every point of `AddCircle (b - a)` is the class of a parameter in `[a, b)`.
-  have hrep (x : AddCircle (b - a)) : ∃ t ∈ Ico a b, (t : AddCircle (b - a)) = x :=
-    ⟨AddCircle.equivIco (b - a) a x, by simpa [hb] using (AddCircle.equivIco (b - a) a x).2,
-      AddCircle.coe_equivIco⟩
-  have hfi : Function.Injective f := by
-    intro x y hxy
-    obtain ⟨s, hs, rfl⟩ := hrep x
-    obtain ⟨t, ht, rfl⟩ := hrep y
-    rw [hf s (Ico_subset_Icc_self hs), hf t (Ico_subset_Icc_self ht)] at hxy
-    rw [hinj hs ht hxy]
+  have hfc : Continuous f := AddCircle.liftIco_continuous hf (by rwa [hb])
+  have hfi : Function.Injective f := AddCircle.injective_liftIco_iff.2 (by rwa [hb])
   have hrange : f '' univ = γ '' Icc a b := by
-    rw [← AddCircle.coe_image_Icc_eq (p := b - a) a, hb, image_image, image_congr hf]
+    rw [← AddCircle.coe_image_Icc_eq (p := b - a) a, image_image, hb]
+    exact image_congr fun t ht ↦ AddCircle.liftIco_coe_apply_of_mem_Icc hf (by rwa [hb])
   have huniv : IsJordanCurve (univ : Set (AddCircle (b - a))) :=
     isJordanCurve_iff.mpr ⟨(Homeomorph.Set.univ _).trans
       (AddCircle.homeomorphCircle (sub_pos.2 hab).ne')⟩

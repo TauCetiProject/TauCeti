@@ -279,7 +279,7 @@ theorem limComplexπ_comp_map {n k : ℕ} (f : op k ⟶ op n) :
     ((C.term i).transitionOfLE_comp_limπ _)
 
 /-- The limit complex, with its projections onto the complexes `Cₙ`, as a cone over the tower. -/
-@[expose]
+@[expose, implicit_reducible]
 def limComplexCone : Cone C where
   pt := C.limComplex
   π := NatTrans.ofOpSequence (fun n ↦ C.limComplexπ n) fun n ↦ by
@@ -306,21 +306,11 @@ end Complexes
 section ShortExact
 
 /-- The sequence of complexes `lim C → ∏ₙ Cₙ → ∏ₙ Cₙ` formed by the inclusion and the shift. -/
-@[expose]
+@[expose, implicit_reducible, simps]
 def shortComplex : ShortComplex (HomologicalComplex (ModuleCat.{v} R) c) :=
   ShortComplex.mk C.limComplexι C.productComplexShift <| by
     ext i : 2
     exact (ModuleTower.exact_lim_subtype_shift (C.term i)).linearMap_comp_eq_zero
-
-/-- The first map of the Milnor short complex is the inclusion of the limit complex. -/
-@[simp]
-theorem shortComplex_f : C.shortComplex.f = C.limComplexι :=
-  (rfl)
-
-/-- The second map of the Milnor short complex is the shift map of the product complex. -/
-@[simp]
-theorem shortComplex_g : C.shortComplex.g = C.productComplexShift :=
-  (rfl)
 
 variable {C} (hC : ∀ i, Function.Surjective (C.term i).shift)
 
@@ -518,8 +508,6 @@ theorem limOneToHomology_mk {i j : ι} (hij : c.Rel i j) (x : (C.homology i).Pro
       (C.shortComplex_shortExact hC).δ i j hij ((C.productHomologyEquiv i).symm x) := by
   rw [limOneToHomology, Submodule.liftQ_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
     connecting]
-  -- `ModuleCat.Hom.hom` is an abbreviation for the `ConcreteCategory.hom` coercion on the right.
-  rfl
 
 /-- **Exactness of the Milnor sequence at `lim¹`.** For a tower whose shift is surjective in
 every degree, the map `lim¹ Hᵢ(Cₙ) → Hⱼ(lim C)` is injective. -/
