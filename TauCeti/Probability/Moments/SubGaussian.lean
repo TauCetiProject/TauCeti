@@ -120,6 +120,44 @@ theorem integral_exp_mul_sq_le (h : HasSubgaussianMGF X c μ) {s : ℝ}
       (.of_forall fun _ ↦ (exp_pos _).le)]
   exact h.lintegral_ofReal_exp_mul_sq_le hs0 hs
 
+/-- The exponential moment of a squared sub-Gaussian variable at scale `4 * c` is at
+most two, with total real division also allowing a zero proxy. -/
+theorem integral_exp_sq_div_four_mul_le_two (h : HasSubgaussianMGF X c μ) :
+    ∫ ω, exp (X ω ^ 2 / (4 * (c : ℝ))) ∂μ ≤ 2 := by
+  by_cases hc : c = 0
+  · subst c
+    have hmass : ∫ _, (1 : ℝ) ∂μ ≤ 1 := by simpa [mgf] using h.mgf_le 0
+    simpa using hmass.trans one_le_two
+  have : 0 < (c : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hc)
+  have hs : 2 * (c : ℝ) * (4 * (c : ℝ))⁻¹ < 1 := by field_simp; norm_num
+  have h1 := h.integral_exp_mul_sq_le (by positivity) hs
+  have hhalf : 1 - 2 * (c : ℝ) * (4 * (c : ℝ))⁻¹ = 1 / 2 := by field_simp; norm_num
+  rw [hhalf] at h1
+  have hneg_half : (-1 / 2 : ℝ) = -(1 / 2 : ℝ) := by norm_num
+  have hrpow : (1 / 2 : ℝ) ^ (-1 / 2 : ℝ) ≤ 2 := by
+    rw [hneg_half,
+      Real.rpow_neg (by norm_num), ← Real.inv_rpow (by norm_num)]
+    norm_num only [inv_div, div_one]
+    exact (Real.rpow_le_rpow_of_exponent_le one_le_two (by norm_num)).trans_eq (rpow_one 2)
+  simpa [div_eq_inv_mul] using h1.trans hrpow
+
+/-- The second moment of a sub-Gaussian variable is at most four times its variance proxy.
+Zero proxies and the zero measure are included. -/
+theorem integral_sq_le [IsZeroOrProbabilityMeasure μ] (h : HasSubgaussianMGF X c μ) :
+    ∫ ω, X ω ^ 2 ∂μ ≤ 4 * (c : ℝ) := by
+  rcases eq_zero_or_isProbabilityMeasure μ with rfl | hprob
+  · simp
+  by_cases hc : c = 0
+  · subst c
+    have hzero : ∫ ω, X ω ^ 2 ∂μ = 0 := integral_eq_zero_of_ae
+      (h.ae_eq_zero_of_hasSubgaussianMGF_zero.mono fun _ hω ↦ by simp [hω])
+    simp [hzero]
+  have : 0 < (c : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hc)
+  have hs : 2 * (c : ℝ) * (4 * (c : ℝ))⁻¹ < 1 := by field_simp; norm_num
+  exact TauCeti.integral_le_of_integral_exp_div_le_two (h.memLp 2).integrable_sq
+    (by positivity) (by simpa [div_eq_inv_mul] using h.integrable_exp_mul_sq hs)
+    (h.integral_exp_sq_div_four_mul_le_two)
+
 /-- **Sub-exponential MGF bound for a centred squared sub-Gaussian variable.** -/
 theorem mgf_sq_sub_integral_le [IsZeroOrProbabilityMeasure μ] (h : HasSubgaussianMGF X c μ)
     {θ : ℝ} (hθ : (c : ℝ) * |θ| ≤ 1 / 8) :
@@ -142,16 +180,8 @@ theorem mgf_sq_sub_integral_le [IsZeroOrProbabilityMeasure μ] (h : HasSubgaussi
       have hs_lt : 2 * (c : ℝ) * B⁻¹ < 1 := by dsimp [B]; field_simp; norm_num
       have hexp_int : Integrable (fun ω ↦ exp (X ω ^ 2 / B)) μ := by
         simpa [div_eq_inv_mul] using h.integrable_exp_mul_sq hs_lt
-      have hexp_le : ∫ ω, exp (X ω ^ 2 / B) ∂μ ≤ 2 := by
-        have h1 := h.integral_exp_mul_sq_le (inv_nonneg.2 hB.le) hs_lt
-        have hhalf : 1 - 2 * (c : ℝ) * B⁻¹ = 1 / 2 := by dsimp [B]; field_simp; norm_num
-        rw [hhalf] at h1
-        have hneg_half : (-1 / 2 : ℝ) = -(1 / 2 : ℝ) := by norm_num
-        have hinv_half : (1 / 2 : ℝ)⁻¹ = 2 := by norm_num
-        have hrpow : (1 / 2 : ℝ) ^ (-1 / 2 : ℝ) ≤ 2 := by
-          rw [hneg_half, Real.rpow_neg (by norm_num), ← Real.inv_rpow (by norm_num), hinv_half]
-          exact (Real.rpow_le_rpow_of_exponent_le one_le_two (by norm_num)).trans_eq (rpow_one 2)
-        simpa [div_eq_inv_mul] using h1.trans hrpow
+      have hexp_le : ∫ ω, exp (X ω ^ 2 / B) ∂μ ≤ 2 :=
+        h.integral_exp_sq_div_four_mul_le_two
       obtain ⟨hint, hmgf⟩ := TauCeti.mgf_sub_integral_le_of_nonneg_exp_le_two (θ := θ)
         (h.aemeasurable.pow_const 2) (.of_forall fun _ ↦ sq_nonneg _) hB hexp_int hexp_le
         (by dsimp [B]; linarith)

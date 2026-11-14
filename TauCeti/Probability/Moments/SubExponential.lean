@@ -36,6 +36,18 @@ namespace TauCeti
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 
+/-- An integrable variable has expectation at most `B` if its exponential moment at scale
+`B > 0` is at most two. -/
+theorem integral_le_of_integral_exp_div_le_two [IsProbabilityMeasure μ] {Y : Ω → ℝ}
+    (hY : Integrable Y μ) {B : ℝ} (hB : 0 < B)
+    (hexp : Integrable (fun ω ↦ exp (Y ω / B)) μ)
+    (hbound : ∫ ω, exp (Y ω / B) ∂μ ≤ 2) : μ[Y] ≤ B := by
+  have hf : Integrable (fun ω ↦ 1 + Y ω / B) μ := (integrable_const 1).add (hY.div_const B)
+  have h1 := integral_mono hf hexp fun ω ↦ by linarith [add_one_le_exp (Y ω / B)]
+  rw [integral_add (integrable_const 1) (hY.div_const B), integral_const, probReal_univ,
+    one_smul, integral_div] at h1
+  exact (div_le_one hB).mp (by linarith)
+
 /-- **Sub-exponential MGF bound for a centered nonnegative variable** with `∫ exp (Y / B) ≤ 2`. -/
 theorem mgf_sub_integral_le_of_nonneg_exp_le_two [IsProbabilityMeasure μ] {Y : Ω → ℝ}
     (hY_meas : AEMeasurable Y μ) (hY_nonneg : 0 ≤ᵐ[μ] Y) {B : ℝ} (hB : 0 < B)
@@ -49,12 +61,7 @@ theorem mgf_sub_integral_le_of_nonneg_exp_le_two [IsProbabilityMeasure μ] {Y : 
       (by linarith [add_one_le_exp (Y ω / B)] : Y ω / B ≤ exp (Y ω / B)) hB.le
     rw [Real.norm_of_nonneg hω]; rwa [mul_div_cancel₀ _ hB.ne'] at h2
   let m : ℝ := μ[Y]; have hm_nonneg : 0 ≤ m := integral_nonneg_of_ae hY_nonneg
-  have hm_le : m ≤ B := by
-    have hf : Integrable (fun ω ↦ 1 + Y ω / B) μ := (integrable_const 1).add (hY_int.div_const B)
-    have h1 := integral_mono hf hY_int_exp fun ω ↦ by linarith [add_one_le_exp (Y ω / B)]
-    rw [integral_add (integrable_const 1) (hY_int.div_const B), integral_const, probReal_univ,
-      one_smul, integral_div] at h1
-    exact (div_le_one hB).mp (by linarith)
+  have hm_le : m ≤ B := integral_le_of_integral_exp_div_le_two hY_int hB hY_int_exp hY_exp
   let Z : Ω → ℝ := fun ω ↦ Y ω - m; have hZ_int : Integrable Z μ := hY_int.sub (integrable_const m)
   have hZ_mean : ∫ ω, Z ω ∂μ = 0 := by
     rw [integral_sub hY_int (integrable_const m), integral_const, probReal_univ, one_smul, sub_self]
