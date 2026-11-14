@@ -12,6 +12,8 @@ import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bound
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.Calculus.Deriv.Shift
+import Mathlib.Analysis.Calculus.LHopital
 
 /-!
 # Uniqueness of Jacobi fields
@@ -30,6 +32,11 @@ one point (`TauCeti.eq_zero_of_norm_deriv_le_mul_norm_self_of_mem_Icc`).
 
 ## Main results
 
+* `TauCeti.Manifold.IsJacobiFieldOn.hasDerivWithinAt_inner_alongCurveWithin_self`: the
+  differentiated pairing `(⟨DJ, J⟩)' = |DJ|² - ⟨R(J, γ')γ', J⟩`.
+* `TauCeti.Manifold.IsJacobiFieldOn.tendsto_norm_div_sub_nhdsGT`: a Jacobi field vanishing at `a`
+  satisfies `|J(t)| / (t - a) → |D_t J(a)|` as `t` decreases to `a`, by l'Hôpital's rule applied
+  to `|J|² / (t - a)²`.
 * `TauCeti.Manifold.IsJacobiFieldOn.hasDerivWithinAt_norm_sq_add_norm_sq`: the energy identity
   `(‖J‖² + ‖DJ‖²)' = 2⟨DJ, J⟩ - 2⟨R(J, γ')γ', DJ⟩`.
 * `TauCeti.Manifold.IsJacobiFieldOn.eq_zero_of_eq_zero_of_alongCurveWithin_eq_zero`: a Jacobi
@@ -48,8 +55,8 @@ one point (`TauCeti.eq_zero_of_norm_deriv_le_mul_norm_self_of_mem_Icc`).
 
 public section
 
-open Bundle CovariantDerivative Set
-open scoped ContDiff Manifold Topology
+open Bundle CovariantDerivative Filter Set
+open scoped ContDiff Manifold InnerProductSpace Topology
 
 noncomputable section
 
@@ -83,6 +90,64 @@ theorem IsJacobiFieldOn.hasDerivWithinAt_norm (h : IsJacobiFieldOn I γ V s)
   have hd := (h.hasDerivWithinAt_norm_sq ht).sqrt
     (pow_ne_zero 2 (norm_ne_zero_iff.mpr hV))
   simpa only [Real.sqrt_sq (norm_nonneg _), mul_div_mul_left _ _ (two_ne_zero' ℝ)] using hd
+
+/-- The differentiated metric pairing of a Jacobi field with its covariant derivative:
+`(⟨DJ, J⟩)' = |DJ|² - ⟨R(J, γ')γ', J⟩`. -/
+theorem IsJacobiFieldOn.hasDerivWithinAt_inner_alongCurveWithin_self
+    (h : IsJacobiFieldOn I γ V s) (ht : t ∈ s) :
+    HasDerivWithinAt
+      (fun r ↦ ⟪alongCurveWithin (leviCivitaConnection I M) γ V s r, V r⟫_ℝ)
+      (‖alongCurveWithin (leviCivitaConnection I M) γ V s t‖ ^ 2 -
+        ⟪(leviCivitaConnection I M).curvatureTensor (γ t) (V t)
+          (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t), V t⟫_ℝ) s t := by
+  have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
+  have hd := hm.hasDerivWithinAt_inner_alongCurveWithin (h.isGeodesicCurveOn.mdifferentiableOn t ht)
+    (h.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
+    (h.differentiableWithinAt_sectionCoord ht)
+  convert hd using 1
+  rw [h.alongCurveWithin_alongCurveWithin_eq ht, inner_neg_left,
+    real_inner_self_eq_norm_sq]
+  ring
+
+/-- A Jacobi field vanishing at `a` grows at `a⁺` with rate the norm of its initial covariant
+derivative: `|J(t)| / (t - a) → |D_t J(a)|` as `t` decreases to `a`. -/
+theorem IsJacobiFieldOn.tendsto_norm_div_sub_nhdsGT {a : ℝ} (h : IsJacobiFieldOn I γ V s)
+    (hs : s ∈ 𝓝[≥] a) (hVa : V a = 0) :
+    Tendsto (fun t ↦ ‖V t‖ / (t - a)) (𝓝[>] a)
+      (𝓝 ‖alongCurveWithin (leviCivitaConnection I M) γ V s a‖) := by
+  have ha : a ∈ s := mem_of_mem_nhdsWithin self_mem_Ici hs
+  obtain ⟨b, hab, hbs⟩ := (mem_nhdsGE_iff_exists_Icc_subset.1 hs)
+  have hle : 𝓝[>] a ≤ 𝓝[s \ {a}] a := by
+    rw [← nhdsWithin_Ioc_eq_nhdsGT hab]
+    exact nhdsWithin_mono a fun t ht ↦ ⟨hbs (Ioc_subset_Icc_self ht), ht.1.ne'⟩
+  have hslope : Tendsto
+      (fun t ↦ ⟪alongCurveWithin (leviCivitaConnection I M) γ V s t, V t⟫_ℝ / (t - a)) (𝓝[>] a)
+      (𝓝 (‖alongCurveWithin (leviCivitaConnection I M) γ V s a‖ ^ 2)) := by
+    have hd := h.hasDerivWithinAt_inner_alongCurveWithin_self ha
+    simp only [hVa, map_zero, inner_zero_right, sub_zero] at hd
+    refine ((hasDerivWithinAt_iff_tendsto_slope.1 hd).mono_left hle).congr fun t ↦ ?_
+    simp [slope_def_field, hVa]
+  have hsq : Tendsto (fun t ↦ ‖V t‖ ^ 2 / (t - a) ^ 2) (𝓝[>] a)
+      (𝓝 (‖alongCurveWithin (leviCivitaConnection I M) γ V s a‖ ^ 2)) := by
+    refine HasDerivAt.lhopital_zero_right_on_Ioo hab
+      (f' := fun t ↦ 2 * ⟪alongCurveWithin (leviCivitaConnection I M) γ V s t, V t⟫_ℝ)
+      (g' := fun t ↦ 2 * (t - a))
+      (fun t ht ↦ (h.hasDerivWithinAt_norm_sq (hbs (Ioo_subset_Icc_self ht))).hasDerivAt
+        (mem_of_superset (Icc_mem_nhds ht.1 ht.2) hbs))
+      (fun t _ ↦ by simpa using (hasDerivAt_pow 2 (t - a)).comp_sub_const t a)
+      (fun t ht ↦ mul_ne_zero two_ne_zero (sub_ne_zero.2 ht.1.ne'))
+      ?_ ?_ (hslope.congr fun t ↦ (mul_div_mul_left _ _ two_ne_zero).symm)
+    · have hc := (h.hasDerivWithinAt_norm_sq ha).continuousWithinAt.tendsto
+      rw [hVa, norm_zero, zero_pow two_ne_zero] at hc
+      exact hc.mono_left (hle.trans (nhdsWithin_mono a sdiff_subset))
+    · have hc := (by fun_prop : Continuous fun t : ℝ ↦ (t - a) ^ 2).tendsto a
+      rw [sub_self, zero_pow two_ne_zero] at hc
+      exact hc.mono_left nhdsWithin_le_nhds
+  have hsqrt := hsq.sqrt
+  rw [Real.sqrt_sq (norm_nonneg _)] at hsqrt
+  refine hsqrt.congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with t ht
+  rw [← div_pow, Real.sqrt_sq (div_nonneg (norm_nonneg _) (sub_pos.2 ht).le)]
 
 /-- **The energy identity for Jacobi fields.** The energy `‖J‖² + ‖DJ‖²` of a Jacobi field has
 derivative `2⟨DJ, J⟩ - 2⟨R(J, γ')γ', DJ⟩`. -/

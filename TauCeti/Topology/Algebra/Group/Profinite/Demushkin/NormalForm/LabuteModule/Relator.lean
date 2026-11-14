@@ -176,7 +176,7 @@ theorem exists_labuteRelatorClass_eq_add_smul_of_range_eq_unitsPlusMinus
     simp only [Nat.card_eq_fintype_card, Fintype.card_fin] at hrank hpos
     by_contra h
     obtain ⟨k, hk⟩ := hn
-    exact hr.range_demushkinCharacter_ne_unitsPlusMinus_of_demushkinRank_eq_two (by omega) hf hA
+    exact hr.range_demushkinCharacter_ne_unitsPlusMinus_of_demushkinRank_eq_two (by omega) hA
   -- Labute's Theorem 6: an automorphism `e` of `F` carries `r` to the normal-form word, so `r` is
   -- that word read on the basis `x = e⁻¹ ∘ freeProPGen`.
   obtain ⟨e, he⟩ :=

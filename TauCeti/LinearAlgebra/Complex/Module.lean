@@ -35,8 +35,7 @@ Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
 linear (`LinearMap.complexOfMapISmul`), and one that anticommutes with it is conjugate-linear
-(`LinearMap.map_smul_eq_conj_smul_of_map_I_smul`). Conversely, a conjugate-linear equivalence
-between complex modules is real-linear (`LinearEquiv.toRealLinearEquiv`). The non-instance
+(`LinearMap.map_smul_eq_conj_smul_of_map_I_smul`). The non-instance
 `RestrictScalars.realModule` normalizes the restricted real module at the additive-group parent
 for use in constructions on real modules.
 
@@ -223,30 +222,6 @@ theorem map_smul_eq_conj_smul_of_map_I_smul (u : V →ₗ[ℝ] W)
     Complex.conj_im, smul_neg, neg_smul]
 
 end LinearMap
-
-namespace LinearEquiv
-
-/-- A conjugate-linear equivalence of complex vector spaces is real-linear, since complex
-conjugation fixes the real scalars. -/
-def toRealLinearEquiv (f : V ≃ₛₗ[starRingEnd ℂ] W) : V ≃ₗ[ℝ] W where
-  toFun := f
-  invFun := f.symm
-  map_add' := map_add f
-  -- `f` sends the real scalar `r`, viewed in `ℂ`, to its conjugate, which is `r` again.
-  map_smul' r x := by simpa [← algebraMap_smul ℂ r] using f.map_smulₛₗ (r : ℂ) x
-  left_inv := f.left_inv
-  right_inv := f.right_inv
-
-@[simp]
-theorem coe_toRealLinearEquiv (f : V ≃ₛₗ[starRingEnd ℂ] W) : ⇑f.toRealLinearEquiv = f :=
-  (rfl)
-
-@[simp]
-theorem toRealLinearEquiv_symm (f : V ≃ₛₗ[starRingEnd ℂ] W) :
-    f.toRealLinearEquiv.symm = f.symm.toRealLinearEquiv :=
-  (rfl)
-
-end LinearEquiv
 
 end ComplexOfMapISmul
 

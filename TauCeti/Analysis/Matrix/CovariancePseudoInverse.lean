@@ -129,6 +129,25 @@ theorem eq_covariancePseudoInverse_of_penrose {C D : Matrix ι ι ℝ} (hC : C.P
   toEuclideanLin.injective ((isMoorePenroseInverse_toEuclideanLin_of_penrose h₁ h₂ h₃ h₄).unique
     (isMoorePenroseInverse_covariancePseudoInverse hC))
 
+/-- The pseudoinverse of a nonnegative diagonal covariance inverts each diagonal entry,
+with the usual zero inverse on zero-variance coordinates. -/
+@[simp]
+theorem covariancePseudoInverse_diagonal {d : ι → ℝ} (hd : ∀ i, 0 ≤ d i) :
+    (diagonal d).covariancePseudoInverse = diagonal (fun i ↦ (d i)⁻¹) := by
+  refine (eq_covariancePseudoInverse_of_penrose (PosSemidef.diagonal hd) ?_ ?_ ?_ ?_).symm
+  · simp only [diagonal_mul_diagonal]
+    congr 1
+    funext i
+    exact mul_inv_mul_cancel (d i)
+  · simp only [diagonal_mul_diagonal]
+    congr 1
+    funext i
+    simpa only [inv_inv] using mul_inv_mul_cancel (d i)⁻¹
+  · simp only [diagonal_mul_diagonal]
+    exact isHermitian_diagonal _
+  · simp only [diagonal_mul_diagonal]
+    exact isHermitian_diagonal _
+
 /-- The covariance pseudoinverse of a nonnegative multiple scales by the reciprocal. -/
 theorem covariancePseudoInverse_smul (C : Matrix ι ι ℝ) {c : ℝ} (hc : 0 ≤ c) :
     (c • C).covariancePseudoInverse = c⁻¹ • C.covariancePseudoInverse := by

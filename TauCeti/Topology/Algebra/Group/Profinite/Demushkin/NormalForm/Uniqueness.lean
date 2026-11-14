@@ -162,7 +162,7 @@ theorem freeProP.exists_continuousMulEquiv_apply_eq_of_range_demushkinCharacter_
       by_contra hn3
       obtain ⟨k, hk⟩ := hn
       exact hG.range_demushkinCharacter_ne_unitsPlusMinus_of_demushkinRank_eq_two
-        (hrank.trans (by omega)) hf hA
+        (hrank.trans (by omega)) hA
     obtain ⟨e, he⟩ :=
       exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq hr hG hn hn3 hf hA
     obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq hr' hG'

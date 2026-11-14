@@ -109,9 +109,8 @@ jobs:
     # next matching runner, including replacements on another enrolled host.
     # Picker outputs remain attempt-scoped. Staging retains exact guest labels
     # and waits for tauchonki2 when selection fails or is stale.
-    # Maintenance repairs must not wait behind the ordinary PR backlog. These
-    # use the same vetted Namespace sandbox shape as ordinary overflow, with
-    # the existing staging priority. This changes scheduling, never merge gates.
+    # Explicit maintenance builds use GitHub-hosted capacity and its bulk cap.
+    # Sandbox and merge checks are the same for every runner pool.
     #
     # Staging is restricted to tauchonki2. Prefer the picker's exact idle
     # staging guest; if occupied or selection failed, queue for the next staging
@@ -123,10 +122,10 @@ jobs:
     # roadmap merge builds. Waiting here consumes no runner. Other pools retain
     # their existing concurrency; failed pickers share conservative slot zero.
     concurrency:
-      group: ${{ contains(fromJSON('["ubuntu-latest","ubuntu-24.04","ubuntu-22.04"]'), (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"'))) && format('tauceti-hosted-bulk-{0}', needs.pick-runner.outputs.hosted-slot || '0') || format('unlimited-sandboxed-build-{0}', github.run_id) }}
+      group: ${{ contains(fromJSON('["ubuntu-latest","ubuntu-24.04","ubuntu-22.04"]'), (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && 'ubuntu-24.04' || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && !contains(needs.pick-runner.outputs.runner, 'nscloud-') && !contains(needs.pick-runner.outputs.runner, 'namespace-features:') && needs.pick-runner.outputs.runner || '"ubuntu-24.04"'))) && format('tauceti-hosted-bulk-{0}', needs.pick-runner.outputs.hosted-slot || '0') || format('unlimited-sandboxed-build-{0}', github.run_id) }}
       queue: max
       cancel-in-progress: false
-    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"')) }}
+    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && 'ubuntu-24.04' || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && !contains(needs.pick-runner.outputs.runner, 'nscloud-') && !contains(needs.pick-runner.outputs.runner, 'namespace-features:') && needs.pick-runner.outputs.runner || '"ubuntu-24.04"')) }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}
@@ -180,10 +179,10 @@ jobs:
             /tauceti.toml
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
@@ -1647,7 +1646,7 @@ jobs:
     # Finalizer (2x4) + publisher (4x8) fit within the freed compiler allocation (8x16).
     needs: sandboxed-build
     if: ${{ always() && (github.event_name == 'merge_group' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging')) }}
-    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || 'ubuntu-24.04' }}
     timeout-minutes: 30
     permissions:
       contents: read  # sparse immutable finalization tools only
@@ -1678,10 +1677,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: .
       - name: Select CI API credentials
         id: ci-api

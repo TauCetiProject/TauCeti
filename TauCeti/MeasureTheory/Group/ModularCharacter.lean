@@ -76,6 +76,7 @@ public section
 
 open MeasureTheory
 open scoped NNReal ENNReal
+open scoped Pointwise
 
 namespace TauCeti
 

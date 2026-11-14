@@ -63,7 +63,7 @@ coderivation, and `bar_square_zero` is the stored Stasheff law. -/
 structure AInfinityAlgebra (R : Type uR) (A : Type uA) [CommRing R] [AddCommGroup A]
     [Module R A] where
   /-- The internal cohomological grading of the carrier. -/
-  grading : InternalGrading R A
+  grading : InternalGrading R A ℤ
   /-- The unsuspended arity-`n` operation. -/
   m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A
   /-- The arity-zero operation vanishes: the algebra is uncurved. -/
@@ -145,7 +145,7 @@ theorem stasheff (𝒜 : AInfinityAlgebra R A) (n : ℕ)
 
 /-- Construct an `A∞` algebra from homogeneous operations satisfying the unsuspended Stasheff
 identities and a Taylor map realizing their suspension. -/
-def ofStasheff (G : InternalGrading R A)
+def ofStasheff (G : InternalGrading R A ℤ)
     (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A) (hm0 : m 0 = 0)
     (hm : ∀ n, 0 < n →
       MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n))
@@ -163,17 +163,17 @@ def ofStasheff (G : InternalGrading R A)
     (hFm.comp_self_eq_zero_iff_forall_stasheffSum_eq_zero hm).2 hSI
 
 @[simp]
-theorem ofStasheff_grading (G : InternalGrading R A)
+theorem ofStasheff_grading (G : InternalGrading R A ℤ)
     (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A) (hm0 hm F hFm hSI) :
     (ofStasheff G m hm0 hm F hFm hSI).grading = G := (rfl)
 
 @[simp]
-theorem ofStasheff_m (G : InternalGrading R A)
+theorem ofStasheff_m (G : InternalGrading R A ℤ)
     (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A) (hm0 hm F hFm hSI) :
     (ofStasheff G m hm0 hm F hFm hSI).m = m := (rfl)
 
 @[simp]
-theorem ofStasheff_taylor (G : InternalGrading R A)
+theorem ofStasheff_taylor (G : InternalGrading R A ℤ)
     (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A) (hm0 hm F hFm hSI) :
     (ofStasheff G m hm0 hm F hFm hSI).taylor = F := (rfl)
 
@@ -195,7 +195,7 @@ theorem ext {𝒜 𝒜' : AInfinityAlgebra R A} (hG : 𝒜.grading = 𝒜'.gradi
 
 /-- Construct an `A∞` algebra from a Taylor map of degree one for the suspended grading whose bar
 coderivation squares to zero.  Its operations are the desuspension of the Taylor map. -/
-noncomputable def ofTaylor (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+noncomputable def ofTaylor (G : InternalGrading R A ℤ) (F : ReducedTensorWords R A →ₗ[R] A)
     (hF : LinearMap.IsHomogeneous F (ReducedTensorWords.gradedPiece (G.shift 1))
       (G.shift 1).piece 1)
     (hsq : ReducedTensorWords.gradedCoderiv (G.shift 1) F 1 ∘ₗ
@@ -204,26 +204,26 @@ noncomputable def ofTaylor (G : InternalGrading R A) (F : ReducedTensorWords R A
   grading := G
   m := AInfinity.desuspension G F
   m_zero := AInfinity.desuspension_zero G F
-  m_degree _ hn := AInfinity.isHomogeneous_desuspension hF hn
+  m_degree _ _ := AInfinity.isHomogeneous_desuspension hF
   taylor := F
   taylor_isSuspension := AInfinity.isSuspension_desuspension G F
   bar_square_zero := hsq
 
 @[simp]
-theorem ofTaylor_grading (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+theorem ofTaylor_grading (G : InternalGrading R A ℤ) (F : ReducedTensorWords R A →ₗ[R] A)
     (hF hsq) : (ofTaylor G F hF hsq).grading = G := (rfl)
 
 @[simp]
-theorem ofTaylor_m (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A) (hF hsq) :
+theorem ofTaylor_m (G : InternalGrading R A ℤ) (F : ReducedTensorWords R A →ₗ[R] A) (hF hsq) :
     (ofTaylor G F hF hsq).m = AInfinity.desuspension G F := (rfl)
 
 @[simp]
-theorem ofTaylor_taylor (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+theorem ofTaylor_taylor (G : InternalGrading R A ℤ) (F : ReducedTensorWords R A →ₗ[R] A)
     (hF hsq) : (ofTaylor G F hF hsq).taylor = F := (rfl)
 
 /-- The bar differential of the algebra built from a Taylor map is the coderivation it generates. -/
 @[simp]
-theorem barDifferential_ofTaylor (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+theorem barDifferential_ofTaylor (G : InternalGrading R A ℤ) (F : ReducedTensorWords R A →ₗ[R] A)
     (hF hsq) :
     (ofTaylor G F hF hsq).barDifferential = ReducedTensorWords.gradedCoderiv (G.shift 1) F 1 :=
   (rfl)

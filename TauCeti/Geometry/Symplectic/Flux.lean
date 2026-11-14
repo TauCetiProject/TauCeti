@@ -259,19 +259,10 @@ theorem flux_def (σ : closedForms J M 2)
 @[simp]
 theorem fluxForm_refl (σ : SmoothForm J M ℝ 2) : (refl J ∞ M).fluxForm σ = 0 := by
   have hcyl : (refl J ∞ M).cylinderMap = Prod.fst := funext fun p ↦ by simp
-  apply Subtype.ext
-  funext x
-  rw [coe_fluxForm, SmoothForm.coe_mpullback, hcyl,
-    ← SmoothForm.coe_mpullback Prod.fst contMDiff_fst, homotopyOperator_apply, Submodule.coe_zero,
-    Pi.zero_apply]
-  refine (intervalIntegral.integral_congr (E := E [⋀^Fin 1]→L[ℝ] ℝ) (g := fun _ ↦ 0)
-    fun t _ ↦ ?_).trans intervalIntegral.integral_zero
-  ext v
   -- The motion of the constant diffeotopy is the projection to `M`, which kills the time vector.
-  refine (SmoothForm.mpullback_fst_apply (I' := 𝓡∂ 1) (M' := unitInterval) σ
-    (x, projIcc 0 1 zero_le_one t)
-    (Fin.cons _ fun i ↦ ((v i : E), (0 : EuclideanSpace ℝ (Fin 1))))).trans ?_
-  exact (σ.1 x).map_coord_zero 0 (by rw [Manifold.tangentSpaceProdEquiv_apply]; rfl)
+  apply Subtype.ext
+  rw [coe_fluxForm, SmoothForm.coe_mpullback, hcyl, homotopyOperator_mpullback_fst,
+    Submodule.coe_zero]
 
 /-- The constant diffeotopy has zero flux. -/
 @[simp]

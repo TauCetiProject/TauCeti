@@ -14,7 +14,8 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 This file provides conversions between Mathlib's Riemannian bundle classes and bundled
 Riemannian metrics, and records that the Riemannian norm of the differential of a `C¹` map
-depends continuously on both the base point and the tangent vector.
+depends continuously on both the base point and the tangent vector. It also gives a
+differentiability criterion for maps whose tangent maps preserve inner products.
 
 ## Main definitions
 
@@ -32,6 +33,8 @@ depends continuously on both the base point and the tangent vector.
   Riemannian bundle as a continuous Riemannian bundle.
 * `IsContMDiffRiemannianBundle.vectorSpace`: the standard metric of an inner product space is
   analytic.
+* `TauCeti.mdifferentiableAt_of_inner_mfderiv`: a map whose tangent map preserves the inner
+  products is differentiable.
 * `ContMDiffOn.continuousOn_norm_mfderiv_apply`: the norm `‖df_z ξ‖` is jointly continuous
   in `z` and `ξ` on an open domain.
 * `ContMDiffOn.continuousOn_norm_mfderiv`: for a `C¹` map `f` from an open subset of a normed space
@@ -179,6 +182,31 @@ theorem InducesRiemannianDistance.toIsRiemannianManifold
   simpa only [InducesRiemannianDistance] using h
 
 end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti
+
+open scoped InnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ F H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace I' y)]
+
+/-- A map whose tangent map at `x` preserves the Riemannian inner products is differentiable at
+`x`. -/
+theorem mdifferentiableAt_of_inner_mfderiv {Φ : M → N} {x : M}
+    (hinner : ∀ v : TangentSpace I x, ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x v⟫_ℝ = ⟪v, v⟫_ℝ) :
+    MDifferentiableAt I I' Φ x := by
+  refine mdifferentiableAt_of_mfderiv_injective ((injective_iff_map_eq_zero _).2 fun v hv ↦ ?_)
+  have h := hinner v
+  rw [hv, inner_zero_left] at h
+  exact inner_self_eq_zero (𝕜 := ℝ) (E := TangentSpace I x) |>.1 h.symm
+
+end TauCeti
 
 section NormMFDeriv
 

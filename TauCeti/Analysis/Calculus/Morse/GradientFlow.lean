@@ -61,6 +61,8 @@ route to Morse homology.
   consists entirely of critical points and is constant.
 * `IsIntegralCurve.exists_gradient_ne_zero`: a trajectory between distinct limits is
   not stationary.
+* `IsIntegralCurve.eq_const_of_tendsto`: a trajectory with the same limit at both ends is
+  constant.
 * `Flow.IsNegativeGradient`: every orbit of a flow solves the negative gradient equation.
 * `Flow.isNegativeGradient_iff`: the introduction and elimination rule for that predicate.
 * `Flow.IsNegativeGradient.isIntegralCurve`: the orbit curve through a point, as an integral
@@ -260,6 +262,24 @@ theorem exists_gradient_ne_zero (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)
   rw [hconst] at hbot htop
   exact hpq ((tendsto_nhds_unique tendsto_const_nhds hbot).symm.trans
     (tendsto_nhds_unique tendsto_const_nhds htop))
+
+/-- **A negative gradient trajectory with the same limit at both ends is constant.** If `f` is
+differentiable along the trajectory and continuous at the common limit `p`, then `f` takes the
+value `f p` all along it, so its gradient vanishes there and the trajectory stays at `p`. -/
+theorem eq_const_of_tendsto (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
+    (hf : ∀ t, DifferentiableAt ℝ f (γ t)) {p : E} (hfp : ContinuousAt f p)
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 p)) : γ = fun _ ↦ p := by
+  have hanti := antitone_comp_neg_gradient hγ hf
+  have hval : ∀ t, f (γ t) = f p := fun t ↦
+    le_antisymm (hanti.ge_of_tendsto (hfp.tendsto.comp hbot) t)
+      (hanti.le_of_tendsto (hfp.tendsto.comp htop) t)
+  have hconst : ∀ t, γ t = γ 0 := fun t ↦
+    is_const_of_deriv_eq_zero (fun t ↦ (hγ t).differentiableAt) (fun u ↦ by
+      simp only [(hγ u).deriv, gradient_eq_zero_of_eventually_const_value hγ
+        (Eventually.of_forall fun r ↦ hval r), neg_zero]) t 0
+  funext t
+  rw [hconst t]
+  exact tendsto_nhds_unique tendsto_const_nhds (htop.congr hconst)
 
 end IsIntegralCurve
 

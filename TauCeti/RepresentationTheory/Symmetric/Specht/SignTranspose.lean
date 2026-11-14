@@ -43,6 +43,8 @@ is nonzero, and Schur's lemma makes it bijective.
   `S^μ ⊗ sgn ≃ S^(μᵗ)` between the polytabloid Specht modules of the diagrams `μ` and `μᵗ`.
 * `TauCeti.spechtModuleTensorSignIso`: the partition-level isomorphism `S^μ ⊗ sgn ≅ S^(μᵗ)`, chosen
   by the row-superstandard tableau.
+* `TauCeti.spechtModuleCharTwistSignEquiv`: the same isomorphism as an equivalence of
+  representations out of the sign twist `Representation.charTwist`.
 
 ## Main results
 
@@ -55,9 +57,13 @@ is nonzero, and Schur's lemma makes it bijective.
 * `TauCeti.YoungTableau.factorial_div_finrank_spechtIdeal_transpose`: `κ_(tᵗ) = κ_t`.
 * `TauCeti.isoToLinearEquiv_spechtModuleTensorSignIso_apply`: the partition-level isomorphism is
   the tableau-level equivalence of the row-superstandard tableau.
+* `TauCeti.spechtModuleCharTwistSignEquiv_apply`,
+  `TauCeti.spechtModuleCharTwistSignEquiv_symm_apply`: the sign-twist form on elements.
 * `TauCeti.spechtModule_tensor_sign_iso`: **`S^μ ⊗ sgn ≅ S^(μᵗ)`** in
   `FDRep ℚ (Equiv.Perm (Fin n))`.
 * `TauCeti.spechtChar_conjugate`: **`χ^(μᵗ)(σ) = sgn(σ) χ^μ(σ)`**.
+* `TauCeti.spechtChar_eq_zero_of_conjugate_eq`: the character of a self-conjugate shape vanishes on
+  the odd permutations.
 
 ## References
 
@@ -338,6 +344,54 @@ theorem isoToLinearEquiv_spechtModuleTensorSignIso_apply (μ : n.Partition)
   exact (Representation.Equiv.trans_apply _ _ _).trans
     (congrArg _ (Representation.Equiv.res_apply _ _ _))
 
+/-- **The sign twist of a Specht module is the Specht module of the conjugate partition**,
+`S^μ ⊗ sgn ≅ S^(μᵗ)`, as an equivalence of representations out of the twist
+`Representation.charTwist`: it is `TauCeti.spechtModuleTensorSignIso` with the line of the sign
+absorbed. -/
+noncomputable def spechtModuleCharTwistSignEquiv (μ : n.Partition) :
+    (Representation.charTwist (signLinearCharacter ℚ (Fin n)) (spechtModule (R := ℚ) μ).ρ).Equiv
+      (spechtModule (R := ℚ) μ.conjugate).ρ :=
+  -- the action on `S^μ ⊗ FDRep.of (ofLinearCharacter sgn)` is `tprod` of the two actions by
+  -- definition (`FDRep.tensor_ρ` and `FDRep.of_ρ'` are both `rfl`)
+  (Representation.tprodOfLinearCharacterEquivCharTwist _ _).symm.trans <|
+    FDRep.isoToEquiv ((whiskerLeftIso (spechtModule (R := ℚ) μ)
+      (eqToIso (FDRep.ofLinearCharacter_def (signLinearCharacter ℚ (Fin n))))).symm ≪≫
+        spechtModuleTensorSignIso μ)
+
+/-- `TauCeti.spechtModuleCharTwistSignEquiv` sends `v` to the image of `v ⊗ 1` under the
+equivalence `YoungTableau.spechtSubrepresentationTensorSignEquiv` of the row-superstandard tableau
+of `μ`, transported along `YoungDiagram.ofPartition_conjugate`, as in
+`TauCeti.isoToLinearEquiv_spechtModuleTensorSignIso_apply`. -/
+theorem spechtModuleCharTwistSignEquiv_apply (μ : n.Partition) (v : spechtModule (R := ℚ) μ) :
+    spechtModuleCharTwistSignEquiv μ v =
+      spechtSubrepresentationCongr (YoungDiagram.ofPartition_conjugate μ).symm
+        ((YoungDiagram.card_ofPartition μ).symm.trans (YoungDiagram.card_transpose _).symm)
+        (YoungDiagram.card_ofPartition μ.conjugate).symm
+        (YoungTableau.spechtSubrepresentationTensorSignEquiv
+          (StandardYoungTableau.rowSuperstandard (YoungDiagram.ofPartition μ)).toTableau
+          (v ⊗ₜ[ℚ] (1 : ℚ))) := by
+  refine (Representation.Equiv.trans_apply _ _ v).trans <|
+    (DFunLike.congr_fun (FDRep.toLinearEquiv_isoToEquiv _) _).trans ?_
+  rw [Representation.tprodOfLinearCharacterEquivCharTwist_symm_apply,
+    FDRep.isoToLinearEquiv_trans, LinearEquiv.trans_apply,
+    isoToLinearEquiv_spechtModuleTensorSignIso_apply, FDRep.isoToLinearEquiv_symm,
+    LinearEquiv.apply_symm_apply]
+
+/-- The inverse of `TauCeti.spechtModuleCharTwistSignEquiv`, through the inverse of
+`YoungTableau.spechtSubrepresentationTensorSignEquiv`. -/
+theorem spechtModuleCharTwistSignEquiv_symm_apply (μ : n.Partition)
+    (w : spechtModule (R := ℚ) μ.conjugate) :
+    (spechtModuleCharTwistSignEquiv μ).symm w =
+      TensorProduct.rid ℚ _ ((YoungTableau.spechtSubrepresentationTensorSignEquiv
+          (StandardYoungTableau.rowSuperstandard (YoungDiagram.ofPartition μ)).toTableau).symm
+        ((spechtSubrepresentationCongr (YoungDiagram.ofPartition_conjugate μ).symm
+          ((YoungDiagram.card_ofPartition μ).symm.trans (YoungDiagram.card_transpose _).symm)
+          (YoungDiagram.card_ofPartition μ.conjugate).symm).symm w)) := by
+  rw [← (spechtModuleCharTwistSignEquiv μ).symm_apply_apply (TensorProduct.rid ℚ _ _),
+    spechtModuleCharTwistSignEquiv_apply, ← TensorProduct.rid_symm_apply,
+    LinearEquiv.symm_apply_apply, Representation.Equiv.apply_symm_apply,
+    Representation.Equiv.apply_symm_apply]
+
 /-- **The Specht module of the conjugate partition is the sign twist**: `S^μ ⊗ sgn_n ≅ S^(μᵗ)` in
 `FDRep ℚ (Equiv.Perm (Fin n))`. -/
 theorem spechtModule_tensor_sign_iso (μ : n.Partition) :
@@ -354,6 +408,14 @@ theorem spechtChar_conjugate (μ : n.Partition) (σ : Equiv.Perm (Fin n)) :
   rw [FDRep.char_tensor, Pi.mul_apply, FDRep.char_ofLinearCharacter,
     coe_signLinearCharacter_apply] at h
   rw [← Int.cast_inj (α := ℚ), Int.cast_mul, spechtChar_cast, spechtChar_cast, ← h, mul_comm]
+
+/-- **The character of a self-conjugate shape vanishes on the odd permutations**: if `μᵗ = μ` and
+`sgn σ = -1`, then `χ^μ(σ) = 0`. -/
+theorem spechtChar_eq_zero_of_conjugate_eq {μ : n.Partition} (hμ : μ.conjugate = μ)
+    {σ : Equiv.Perm (Fin n)} (hσ : Equiv.Perm.sign σ = -1) : spechtChar μ σ = 0 := by
+  have h := spechtChar_conjugate μ σ
+  rw [hμ, hσ, Units.val_neg, Units.val_one] at h
+  omega
 
 end Partition
 

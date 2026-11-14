@@ -12,7 +12,8 @@ import TauCeti.Analysis.Distribution.TemperateGrowth
 /-!
 # Directional differentiation and linear maps on Schwartz space
 
-Directional derivatives of a Schwartz function commute, since its second derivative is symmetric.
+Directional derivatives of a Schwartz function commute, since its second derivative is symmetric,
+and they commute with translation (`SchwartzMap.lineDerivOp_compSubConstCLM`).
 The partial derivatives of the coordinates of a Schwartz function valued in Euclidean space are
 the coordinates of its line derivatives.
 On the plane `ℂ`, the Laplacian is the sum of the second derivatives along `1` and `I`.
@@ -88,6 +89,14 @@ theorem lineDerivOp_comm (f : 𝓢(V, F)) (v w : V) : ∂_{v} (∂_{w} f) = ∂_
   rw [lineDerivOp_apply_eq_fderiv, lineDerivOp_apply_eq_fderiv, hfun, hfun,
     fderiv_clm_apply hd (differentiableAt_const _), fderiv_clm_apply hd (differentiableAt_const _)]
   simpa using ((f.smooth 2).contDiffAt.isSymmSndFDerivAt (by simp)).eq v w
+
+/-- Directional differentiation commutes with translation. -/
+@[simp]
+theorem lineDerivOp_compSubConstCLM {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] (f : 𝓢(V, F))
+    (a v : V) : ∂_{v} (f.compSubConstCLM 𝕜 a) = (∂_{v} f).compSubConstCLM 𝕜 a := by
+  ext x
+  rw [lineDerivOp_apply_eq_fderiv, funext (compSubConstCLM_apply f a), fderiv_comp_sub,
+    compSubConstCLM_apply, lineDerivOp_apply_eq_fderiv]
 
 /-- A coordinate partial derivative of a Schwartz function with values in Euclidean space is a
 coordinate of its line derivative. -/

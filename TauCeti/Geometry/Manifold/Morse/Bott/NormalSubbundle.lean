@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 import TauCeti.Geometry.Manifold.Morse.Bott.Index
 import TauCeti.Geometry.Manifold.Morse.Bott.NegativeNormal
+import TauCeti.Geometry.Manifold.VectorBundle.ComplementarySubbundle
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Topology.VectorBundle.Trivialization
 
@@ -61,6 +62,14 @@ itself. On each fibre it restricts to the linear isomorphism
 `IsNondegenerateCriticalSubmanifold.negativeNormalSpaceEquiv`, since the negative normal space for
 `g` meets the positive normal space for `g'` only in `0`: the normal Hessian is negative definite
 on the first and positive definite on the second.
+
+Together the two subbundles recover the normal bundle. When both indices are constant, adding a
+negative and a positive normal vector over the same point is a `C^k` diffeomorphism from the total
+space of the direct-sum bundle `ν⁻ ×ᵇ ν⁺` onto that of `ν`
+(`exists_bundleDiffeomorph_prod_negativeNormalSpace_positiveNormalSpace`, in the namespace
+`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`), since `ν⁻ s` and `ν⁺ s` are
+complementary in every normal space
+(`TauCeti.HasLocalContMDiffSubbundleFrames.exists_bundleDiffeomorph_prod_of_isCompl`).
 
 ## References
 
@@ -519,5 +528,50 @@ theorem exists_bundleDiffeomorph_positiveNormalSpace
       (.of_forall fun w ↦ TotalSpace.mk_inj.mpr <| Subtype.ext <| by simp)
   exact ⟨bundleDiffeomorph (fun s ↦ (h.positiveNormalSpaceEquiv hn g.toRiemannianMetric
     g'.toRiemannianMetric s).toContinuousLinearEquiv) hΦ, fun v ↦ by simp⟩
+
+/-- **The normal bundle of a Morse–Bott submanifold is the sum of its negative and positive normal
+bundles.** Let `i` be a nondegenerate critical submanifold of `f`, with `f` of class `C^{k+2}`
+along it and `i` of class `C^{k+1}`, and let `g` be a `C^k` fibre metric on its normal bundle `ν`.
+If the Morse indices of `f` and of `-f` are `r` and `r'` at every point of the submanifold, then
+`(s, u, v) ↦ (s, u + v)` is a `C^k` diffeomorphism from the total space of the direct-sum bundle
+`ν⁻ ×ᵇ ν⁺` of the negative and positive normal bundles relative to `g`
+(`hasLocalContMDiffSubbundleFrames_negativeNormalSpace` and
+`hasLocalContMDiffSubbundleFrames_positiveNormalSpace`) onto the total space of `ν`. -/
+theorem exists_bundleDiffeomorph_prod_negativeNormalSpace_positiveNormalSpace
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
+    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+    (g : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) {r r' : ℕ}
+    (hr : ∀ s, manifoldMorseIndex I f (i s) = r) (hr' : ∀ s, manifoldMorseIndex I (-f) (i s) = r') :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+    letI := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn hk hf hdim g hr).fiberBundle
+    letI := subbundleTopology P (F' := Fin r' → ℝ) (h.positiveNormalSpace hn g.toRiemannianMetric)
+    letI := (h.hasLocalContMDiffSubbundleFrames_positiveNormalSpace hn hk hf hdim g hr').fiberBundle
+    ∃ Φ : TotalSpace ((Fin r → ℝ) × (Fin r' → ℝ))
+          ((fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) ×ᵇ
+            fun s ↦ h.positiveNormalSpace hn g.toRiemannianMetric s)
+        ≃ₘ^k⟮J.prod 𝓘(ℝ, (Fin r → ℝ) × (Fin r' → ℝ)), J.prod 𝓘(ℝ, P)⟯
+        TotalSpace P (fun s ↦ i.NormalSpace s hn),
+      ∀ v, Φ v = ⟨v.proj, (v.2.1 : i.NormalSpace v.proj hn) + v.2.2⟩ := by
+  have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+  have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  have : IsManifold I (k + 1) M := .of_le (n := k + 2) (by gcongr; exact one_le_two)
+  let := i.normalSpaceContMDiffVectorBundle hn hk hdim
+  exact (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn hk hf hdim g hr
+    ).exists_bundleDiffeomorph_prod_of_isCompl
+    (h.hasLocalContMDiffSubbundleFrames_positiveNormalSpace hn hk hf hdim g hr')
+    (h.isCompl_negativeNormalSpace_positiveNormalSpace hn _ _)
 
 end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold

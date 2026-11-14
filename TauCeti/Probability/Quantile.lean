@@ -97,6 +97,8 @@ makes the monotone rearrangement of two real laws a transport plan between them.
   `MeasureTheory.Measure.upperQuantile_le_quantile` — the two quantile functions interleave, and
   `MeasureTheory.Measure.upperQuantile_eq_quantile_of_continuousWithinAt` — they agree where the
   lower quantile is right continuous;
+* `MeasureTheory.Measure.mem_Icc_quantile_upperQuantile_iff` — a point lies between the lower and
+  upper quantiles exactly when the corresponding closed rays carry the prescribed masses;
 * `MeasureTheory.Measure.continuousWithinAt_Iio_quantile` and
   `MeasureTheory.Measure.continuousWithinAt_Ioi_upperQuantile` — left continuity of the lower
   and right continuity of the upper quantile;
@@ -147,7 +149,7 @@ transport of an atomless standard-Borel space to the unit interval, proved as Th
 S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, Arkiv för
 Matematik 52 (2014); see also `TauCeti.MeasureTheory.Measure.exists_mpModNull_equiv_unitInterval`
 in `TauCeti.MeasureTheory.Measure.AtomlessStandardBorel`, which composes it with
-`TauCeti.embeddingRealMod0MeasureIso`.
+`MeasurableEmbedding.mod0MeasureIso` along `embeddingReal`.
 -/
 
 public section
@@ -571,6 +573,15 @@ theorem quantile_le_upperQuantile (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
     μ.quantile t ≤ μ.upperQuantile t :=
   csInf_le_csInf (bddBelow_setOf_le_cdf μ h0) (nonempty_setOf_lt_cdf μ h1)
     (ofPred_subset_ofPred.2 fun _ ↦ le_of_lt)
+
+/-- For a level strictly between `0` and `1`, a point lies between the lower and the upper
+quantile at that level exactly when the closed ray to its left carries mass at least the level and
+the closed ray to its right carries mass at least one minus the level. -/
+theorem mem_Icc_quantile_upperQuantile_iff [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
+    x ∈ Icc (μ.quantile t) (μ.upperQuantile t) ↔
+      t ≤ μ.real (Iic x) ∧ 1 - t ≤ μ.real (Ici x) := by
+  rw [mem_Icc, quantile_le_iff μ h0 h1, le_upperQuantile_iff μ h0 h1, cdf_eq_real, ← compl_Iio,
+    probReal_compl_eq_one_sub measurableSet_Iio, sub_le_sub_iff_left]
 
 /-- The upper quantile at a level does not exceed the lower quantile at any strictly larger
 level, so the two quantile functions interleave. -/

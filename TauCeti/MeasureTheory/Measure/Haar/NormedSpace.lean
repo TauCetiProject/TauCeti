@@ -51,6 +51,8 @@ For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
 ## Main results
 
 * `MeasureTheory.Measure.addHaar_real_ball_of_pos`: the real measure of a positive-radius ball.
+* `MeasureTheory.Measure.addHaar_real_ball_rpow`: `μ (ball x r) ^ e = r ^ (n e) μ (ball 0 1) ^ e` in
+  dimension `n`.
 * `MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball`:
   `(n / r) μ (ball x r) = n rⁿ⁻¹ μ (ball 0 1)` in dimension `n`.
 * `MeasureTheory.Measure.hasDerivAt_measureReal_ball`: `ρ ↦ μ (ball x ρ)` has derivative
@@ -136,6 +138,16 @@ theorem _root_.MeasureTheory.Measure.sqrt_addHaar_real_ball
   rw [addHaar_real_ball_of_pos _ _ hR, ← Real.rpow_natCast, Real.sqrt_mul (by positivity),
     Real.sqrt_eq_rpow, ← Real.rpow_mul hR.le]
   ring_nf
+
+/-- A real power of the real measure of a ball of radius `r > 0` is `r ^ (n e)` times the same power
+of the real measure of the unit ball, where `n` is the dimension. -/
+theorem addHaar_real_ball_rpow
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {r : ℝ} (hr : 0 < r) (e : ℝ) :
+    mu.real (ball x r) ^ e = r ^ ((finrank ℝ E : ℝ) * e) * mu.real (ball 0 1) ^ e := by
+  rw [addHaar_real_ball_of_pos _ _ hr, Real.mul_rpow (by positivity) measureReal_nonneg,
+    ← Real.rpow_natCast, ← Real.rpow_mul hr.le]
 
 /-- Hölder's inequality on a ball: for `p₀ ≤ p`, the `L^{p₀}` norm on `B(x₀, R)` is at most the
 `L^p` norm times `(Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`, where `n` is the dimension. For `R > 0` this

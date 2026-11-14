@@ -91,6 +91,8 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
   `TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_ncard_vars_add_one`: `κ(S)` is the number of
   variables of `S`, plus one when the coefficient `d` occurs; it equals `2 - χ(S)`
   (`TauCeti.GroupAlgGeom.Quadratic.Standard.eulerChar_eq_two_sub_kappa`).
+* `TauCeti.GroupAlgGeom.Quadratic.exists_standard_toWord_eq_commutator`: the commutator
+  `x⁻¹ y⁻¹ x y` is a standard quadratic word.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isCommutative_of_mem_V_genusTwo`: every solution of
   `[x₁, y₁][x₂, y₂] = 1` is commutative, so this equation has no solution in general position.
 * `TauCeti.GroupAlgGeom.Quadratic.isGeneralPosition_genusThree`: `[x₁, y₁][x₂, y₂][x₃, y₃] = 1`
@@ -713,6 +715,10 @@ theorem kappa_nonorientableCoeff {x : Fin n → X} (hn : 0 < n) (inj : (Sum.elim
 
 end Accessors
 
+/-- A standard quadratic equation has positive atomic rank. -/
+theorem atomicRank_pos (S : Standard G X) : 0 < S.atomicRank := by
+  cases S <;> simp <;> lia
+
 /-! ### Variables, coefficients and `κ` -/
 
 section Kappa
@@ -1024,6 +1030,13 @@ end OneCommutator
 /-! ### Examples -/
 
 section Examples
+
+/-- The commutator `x⁻¹ y⁻¹ x y` is a standard quadratic word. -/
+theorem exists_standard_toWord_eq_commutator : ∃ S : Standard G (Fin 2),
+    S.toWord = (inr (.of 0))⁻¹ * (inr (.of 1))⁻¹ * inr (.of 0) * inr (.of 1) :=
+  ⟨.orientable 1 one_pos ![0] ![1] ((Function.injective_of_subsingleton _).sumElim
+      (Function.injective_of_subsingleton _) (by simp)), by
+    simp [Standard.toWord_def, commutatorElement_def, mul_assoc]⟩
 
 /-- `x₁² x₂² x₃² = 1` is a standard quadratic equation of type (3), non-orientable of genus `3`,
 with atomic rank `3` and Euler characteristic `-1`. -/

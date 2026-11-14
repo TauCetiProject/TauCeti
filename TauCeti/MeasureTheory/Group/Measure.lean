@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.WithDensity
 -- Proof-only: change of variables in set integrals along a measurable embedding.
 import Mathlib.MeasureTheory.Integral.Lebesgue.Map
+import TauCeti.MeasureTheory.Group.Arithmetic
 -- Proof-only: pushing a measure forward along a measurable embedding.
 import TauCeti.MeasureTheory.Measure.AEMeasurable
 
@@ -22,8 +23,11 @@ in only boundedly many of infinitely many translates inside a subgroup of finite
 in that subgroup; over a local field this shows without Fubini's theorem that a set meeting every
 line of a fixed direction in boundedly many points is null. It also records that inverting or
 negating a probability measure gives a probability measure, so that the law of `X⁻¹` or `-X` can
-be used wherever a probability law is expected, and that restricting an inversion-invariant
-measure to a symmetric set, or weighting it by an even density, keeps it inversion-invariant.
+be used wherever a probability law is expected, that pulling a left- or right-invariant measure
+back along a group homomorphism, in particular to a subgroup, keeps it left- or right-invariant
+without any measurability hypotheses (for subgroups as typeclass instances), and that restricting
+an inversion-invariant measure to a symmetric set, or weighting it by an even density, keeps it
+inversion-invariant.
 
 ## Main results
 
@@ -41,6 +45,14 @@ measure to a symmetric set, or weighting it by an even density, keeps it inversi
 * `Measure.isInvInvariant_restrict`, `Measure.isNegInvariant_restrict`,
   `Measure.isInvInvariant_withDensity`, `Measure.isNegInvariant_withDensity`: restriction to a
   symmetric set and an even density preserve inversion or negation invariance.
+* `Measure.isMulLeftInvariant_comap`, `Measure.isAddLeftInvariant_comap`,
+  `Measure.isMulRightInvariant_comap`, `Measure.isAddRightInvariant_comap`: the pullback of a
+  left- or right-invariant measure along a group homomorphism is left- or right-invariant, without
+  measurability hypotheses on the homomorphism.
+* `Measure.isMulLeftInvariant_comap_subtype`, `Measure.isAddLeftInvariant_comap_subtype`,
+  `Measure.isMulRightInvariant_comap_subtype`, `Measure.isAddRightInvariant_comap_subtype`: the
+  instances for the pullback of an invariant measure to a subgroup, without measurability
+  hypotheses on the subgroup.
 -/
 
 public section
@@ -129,6 +141,79 @@ theorem _root_.MeasureTheory.Measure.measure_inter_addSubgroup_eq_zero_of_encard
 end TauCeti
 
 namespace MeasureTheory.Measure
+
+/-- **The pullback of a left-invariant measure along a group homomorphism is left-invariant**,
+without any measurability assumption on the homomorphism: if the pullback is undefined, it is the
+zero measure. -/
+@[to_additive /-- **The pullback of a left-invariant measure along an additive group homomorphism
+is left-invariant**, without any measurability assumption on the homomorphism: if the pullback is
+undefined, it is the zero measure. -/]
+theorem isMulLeftInvariant_comap {G H F : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G]
+    [Group H] [MeasurableSpace H] [MeasurableMul H] [FunLike F G H] [MonoidHomClass F G H]
+    (μ : Measure H) [μ.IsMulLeftInvariant] (f : F) : (μ.comap f).IsMulLeftInvariant := by
+  -- Adapted from Mathlib's `Measure.IsMulLeftInvariant.comap` (the image/preimage identity and
+  -- the invariance computation); the new case is the undefined pullback, which is the zero
+  -- measure and so trivially invariant.
+  refine ⟨fun h ↦ ?_⟩
+  by_cases hc : Function.Injective f ∧ ∀ s, MeasurableSet s → NullMeasurableSet (f '' s) μ
+  · ext s hs
+    rw [Measure.map_apply (by fun_prop) hs,
+      Measure.comap_apply₀ _ _ hc.1 hc.2 (hs.preimage (by fun_prop)).nullMeasurableSet,
+      Measure.comap_apply₀ _ _ hc.1 hc.2 hs.nullMeasurableSet]
+    have himg : f '' ((h * ·) ⁻¹' s) = (f h * ·) ⁻¹' (f '' s) := by
+      ext x
+      constructor
+      · rintro ⟨y, hy, rfl⟩
+        exact ⟨h * y, hy, by simp⟩
+      · rintro ⟨y, hy, hyx⟩
+        exact ⟨h⁻¹ * y, by simpa using hy, by simp [hyx]⟩
+    rw [himg, measure_preimage_mul]
+  · rw [Measure.comap_undef hc, Measure.map_zero]
+
+/-- **The pullback of a right-invariant measure along a group homomorphism is right-invariant**,
+without any measurability assumption on the homomorphism: if the pullback is undefined, it is the
+zero measure. -/
+@[to_additive /-- **The pullback of a right-invariant measure along an additive group homomorphism
+is right-invariant**, without any measurability assumption on the homomorphism: if the pullback is
+undefined, it is the zero measure. -/]
+theorem isMulRightInvariant_comap {G H F : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G]
+    [Group H] [MeasurableSpace H] [MeasurableMul H] [FunLike F G H] [MonoidHomClass F G H]
+    (μ : Measure H) [μ.IsMulRightInvariant] (f : F) : (μ.comap f).IsMulRightInvariant := by
+  -- Adapted from Mathlib's `Measure.IsMulRightInvariant.comap`, as for
+  -- `isMulLeftInvariant_comap` above.
+  refine ⟨fun h ↦ ?_⟩
+  by_cases hc : Function.Injective f ∧ ∀ s, MeasurableSet s → NullMeasurableSet (f '' s) μ
+  · ext s hs
+    rw [Measure.map_apply (by fun_prop) hs,
+      Measure.comap_apply₀ _ _ hc.1 hc.2 (hs.preimage (by fun_prop)).nullMeasurableSet,
+      Measure.comap_apply₀ _ _ hc.1 hc.2 hs.nullMeasurableSet]
+    have himg : f '' ((· * h) ⁻¹' s) = (· * f h) ⁻¹' (f '' s) := by
+      ext x
+      constructor
+      · rintro ⟨y, hy, rfl⟩
+        exact ⟨y * h, hy, by simp⟩
+      · rintro ⟨y, hy, hyx⟩
+        exact ⟨y * h⁻¹, by simpa using hy, by simp [hyx]⟩
+    rw [himg, measure_preimage_mul_right]
+  · rw [Measure.comap_undef hc, Measure.map_zero]
+
+/-- **The pullback of a left-invariant measure to a subgroup is left-invariant**, without any
+measurability assumption on the subgroup. -/
+@[to_additive /-- **The pullback of a left-invariant measure to an additive subgroup is
+left-invariant**, without any measurability assumption on the subgroup. -/]
+instance isMulLeftInvariant_comap_subtype {G S : Type*} [Group G] [MeasurableSpace G]
+    [MeasurableMul G] [SetLike S G] [SubgroupClass S G] (H : S) (μ : Measure G)
+    [μ.IsMulLeftInvariant] : (μ.comap ((↑) : H → G)).IsMulLeftInvariant :=
+  isMulLeftInvariant_comap μ (SubgroupClass.subtype H)
+
+/-- **The pullback of a right-invariant measure to a subgroup is right-invariant**, without any
+measurability assumption on the subgroup. -/
+@[to_additive /-- **The pullback of a right-invariant measure to an additive subgroup is
+right-invariant**, without any measurability assumption on the subgroup. -/]
+instance isMulRightInvariant_comap_subtype {G S : Type*} [Group G] [MeasurableSpace G]
+    [MeasurableMul G] [SetLike S G] [SubgroupClass S G] (H : S) (μ : Measure G)
+    [μ.IsMulRightInvariant] : (μ.comap ((↑) : H → G)).IsMulRightInvariant :=
+  isMulRightInvariant_comap μ (SubgroupClass.subtype H)
 
 /-- The inverse of a probability measure is a probability measure. -/
 @[to_additive /-- The negation of a probability measure is a probability measure. -/]

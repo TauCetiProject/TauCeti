@@ -71,6 +71,8 @@ bounds.
 * `MeasureTheory.Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion`: classes in `Lᵖ` on finitely many
   sets with a common representative glue to a class on any set they cover, with norm at most the
   sum of their norms.
+* `MeasureTheory.Lp.norm_le_mul_norm_of_ae_eq_smul`: multiplying an `Lᵖ` class by a function
+  bounded by `C` multiplies its norm by at most `C`.
 * `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
   the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
 -/
@@ -399,6 +401,23 @@ theorem Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] {
     (eLpNorm_restrict_le_sum_of_subset_iUnion g Fact.out hs)
 
 end Restrict
+
+section Smul
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
+
+/-- **Multiplication by a bounded function.** If `‖ψ‖ ≤ C` almost everywhere and `v = ψ • u`
+almost everywhere for `u, v ∈ Lᵖ`, then `‖v‖ ≤ C ‖u‖`. -/
+theorem Lp.norm_le_mul_norm_of_ae_eq_smul {𝕜 : Type*} [SeminormedAddGroup 𝕜] [SMulZeroClass 𝕜 F]
+    [IsBoundedSMul 𝕜 F] {p : ℝ≥0∞} {ψ : X → 𝕜} {C : ℝ} (hC : ∀ᵐ x ∂μ, ‖ψ x‖ ≤ C)
+    {u v : Lp F p μ} (hv : v =ᵐ[μ] fun x ↦ ψ x • u x) :
+    ‖v‖ ≤ C * ‖u‖ := by
+  refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
+  filter_upwards [hv, hC] with x hx hCx
+  rw [hx]
+  exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_right hCx (norm_nonneg _))
+
+end Smul
 
 section IntegralRpow
 

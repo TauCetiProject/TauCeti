@@ -28,6 +28,7 @@ the usual local Sobolev class. Derivatives take values in iterated continuous li
 rather than scalar jets.
 These predicates concern actual functions; almost-everywhere changes do not affect membership.
 They impose no global integrability condition on the possibly unbounded domain.
+Global `Lᵖ` membership on a set implies local membership there (`MeasureTheory.MemLp.memLpLoc`).
 
 This file supplies restriction to arbitrary subsets, linearity, continuous-linear composition,
 pairing of fields of continuous linear maps into product maps,
@@ -36,7 +37,8 @@ supported in the domain), composition of local `Lᵖ` operator families with con
 pairing, pointwise product maps of operator fields, decreasing the integrability exponent, and
 decreasing the derivative order. On an open set, local `Lᵖ` membership is detected on the open
 subsets with compact closure inside it.
-Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension.
+Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension,
+and smooth maps on the whole plane are in every class on every set.
 Conversely, if `g` is `Cᵏ` on an open set `Ω` and agrees almost everywhere there with
 `u ∈ MemWkpLoc p Ω (k + m)`, then `fderiv ℝ g` is a weak derivative of `u`
 (`TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`, for `k ≥ 1`) and
@@ -92,6 +94,11 @@ contained in `U`. -/
 theorem MemLpLoc.memLp_of_closure_subset (hf : MemLpLoc p U f) (hV : IsCompact (closure V))
     (hVU : closure V ⊆ U) : MemLp f p (volume.restrict V) :=
   (hf _ hVU hV).mono_measure (Measure.restrict_mono subset_closure le_rfl)
+
+/-- A function that is `Lᵖ` on `U` is locally `Lᵖ` there. -/
+theorem _root_.MeasureTheory.MemLp.memLpLoc (hf : MemLp f p (volume.restrict U)) :
+    MemLpLoc p U f :=
+  fun _ hK _ => hf.mono_measure (Measure.restrict_mono hK le_rfl)
 
 /-- Almost-everywhere equality on `U` preserves local `Lᵖ` membership. -/
 theorem MemLpLoc.congr_ae (hf : MemLpLoc p U f)
@@ -276,6 +283,15 @@ theorem MemLpLoc.continuousOn_smul {χ : ℂ → ℝ} (hf : MemLpLoc p U f) (hχ
     MemLpLoc p U (fun z => χ z • f z) :=
   memLpLoc_iff.2 fun K hK hc =>
     (memLpLoc_iff.1 (hχ.memLpLoc (p := ⊤)) K hK hc).smul (memLpLoc_iff.1 hf K hK hc)
+
+/-- A locally `Lᵖ` field of continuous linear maps applied to a map continuous on `U` is locally
+`Lᵖ` on `U`, since the map is bounded on every compact subset of `U`. -/
+theorem MemLpLoc.clm_apply_continuousOn {A : ℂ → F →L[ℝ] G} (hA : MemLpLoc p U A)
+    (hf : ContinuousOn f U) : MemLpLoc p U (fun z => A z (f z)) :=
+  memLpLoc_iff.2 fun K hK hc =>
+    (memLpLoc_iff.1 hA K hK hc).of_bilin (fun B x => B x) 1
+      (memLpLoc_iff.1 (hf.memLpLoc (p := ⊤)) K hK hc) isBoundedBilinearMap_apply.continuous
+      (.of_forall fun z => by simpa using (A z).le_opNNNorm (f z))
 
 /-- A continuous factor supported in `U` extends a local `Lᵖ` function on `U` by zero to a local
 `Lᵖ` function on the whole plane: on a compact set `K` the product only sees
@@ -537,6 +553,12 @@ theorem _root_.ContDiffOn.memWkpLoc [CompleteSpace F]
       hf.fderiv_of_isOpen Ω.isOpen (by simp)
     refine ⟨(hf.continuousOn.mono hU).memLpLoc, fderiv ℝ f, ?_, ih hD⟩
     exact (hf.of_le (by simp)).hasWeakFDerivOn_fderiv.mono (interior_subset.trans hU)
+
+/-- A `Cᵏ` map on the whole plane is in the local class `W^{k,p}` on every set, for every
+exponent. -/
+theorem _root_.ContDiff.memWkpLoc [CompleteSpace F] (hf : ContDiff ℝ k f) :
+    MemWkpLoc p U k f :=
+  hf.contDiffOn.memWkpLoc (Ω := ⊤) ((Set.subset_univ U).trans_eq Opens.coe_top.symm)
 
 /-! ### Bounds for chains of weak derivatives -/
 

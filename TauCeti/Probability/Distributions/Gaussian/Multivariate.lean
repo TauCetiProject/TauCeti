@@ -48,11 +48,6 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.indepFun_sumEquivProd_multivariateGaussian_iff` characterizes independence of
   two
   complementary coordinate blocks.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 1,
-  **Covariance matrices**.
 -/
 
 public section

@@ -50,6 +50,22 @@ two free points likewise leaves the grading unchanged
 (`TauCeti.StrandDiagram.grading_swapHorizontal`). Since the summands occupy the same pairs, their
 refined gradings agree too.
 
+The class map `g ↦ ∂[g]` makes `G' ⊓ matchedSubgroup M` a central extension of the group of
+boundaries `δ` with `M_*(δ) = 0` by the powers of `λ`: its elements with zero class are exactly
+the powers of `λ`
+(`TauCeti.StrandGradingGroup.mem_zpowers_lambda_iff_mem_gPrime_inf_matchedSubgroup`), and every
+boundary that cancels along every matched pair is the class of one of its elements
+(`TauCeti.StrandGradingGroup.mk_mem_gPrime_inf_matchedSubgroup`). For a pointed matched circle
+this is Lipshitz, Ozsváth and Thurston's extension of `H₁(F(Z))` by the powers of `λ`; the
+identification of these boundaries with `H₁(F(Z))` is topological and is not formalized here.
+When every matched set has at most two points, the form `L` takes integral values on these classes
+(`TauCeti.StrandGradingGroup.exists_linking_eq_intCast`), and so two elements commute up to an
+even power of `λ`: `g h = h g λ^(2 L([g], [h]))`
+(`TauCeti.StrandGradingGroup.exists_mul_eq_mul_mul_lambda_zpow`). This is the relation
+`g h = h g λ^(2 [g] ∩ [h])` of Lipshitz, Ozsváth and Thurston, where `L` restricted to these
+classes is the intersection pairing of `F(Z)`; that identification is topological and is not
+formalized here.
+
 Grading refinement data exist whenever every pair is the image of a point
 (`TauCeti.MatchedGradingRefinement.nonempty`), and two choices with the same base set give gradings
 conjugate by the elements `ψ'(s) ψ(s)⁻¹` of `matchedSubgroup M`, which depend only on the
@@ -68,6 +84,12 @@ idempotents at the two ends (`TauCeti.MatchedGradingRefinement.grading_eq_mul_gr
 
 ## Main results
 
+* `TauCeti.StrandGradingGroup.mem_zpowers_lambda_iff_mem_gPrime_inf_matchedSubgroup`,
+  `TauCeti.StrandGradingGroup.mk_mem_gPrime_inf_matchedSubgroup`: the kernel and the image of the
+  class map on `G(Z)`.
+* `TauCeti.StrandGradingGroup.exists_mul_eq_mul_mul_lambda_zpow`: when every fibre of `M` has at
+  most two points, elements of `matchedSubgroup M` (so of `G(Z)`) commute up to an even power of
+  `λ`.
 * `TauCeti.MatchedGradingRefinement.grading_mem_matchedSubgroup`,
   `TauCeti.MatchedGradingRefinement.grading_mem_gPrime_inf_matchedSubgroup`: refined gradings of
   the diagrams of `A(Z, i)` lie in `matchedSubgroup M`, and in `G(Z)`.
@@ -88,7 +110,8 @@ idempotents at the two ends (`TauCeti.MatchedGradingRefinement.grading_eq_mul_gr
 
 * R. Lipshitz, P. Ozsváth and D. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer. Math.
   Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687), §3.3.2 (the
-  group `G(Z)`, Lemma 3.43, the grading refinement data (3.44), Lemma 3.45 and Remark 3.46).
+  group `G(Z)`, equation (3.42), Lemma 3.43, the grading refinement data (3.44), Lemma 3.45 and
+  Remark 3.46).
 -/
 
 public section
@@ -137,6 +160,13 @@ theorem pushBoundary_indicator [DecidableEq α] {M : α → β} {S : Finset α} 
   · rw [card_eq_zero.2 (filter_eq_empty_iff.2 fun x _ h ↦ hb (mem_image.2 ⟨x, h.2, h.1⟩)),
       Nat.cast_zero]
 
+/-- A boundary carried to `0` by `M_*` has total sum zero. -/
+theorem sum_eq_zero_of_pushBoundary_eq_zero {M : α → β} {δ : α → ℤ}
+    (hδ : pushBoundary M δ = 0) : ∑ x, δ x = 0 := by
+  rw [← sum_fiberwise_of_maps_to (g := M) (t := univ.image M)
+    fun x _ ↦ mem_image_of_mem M (mem_univ x)]
+  exact sum_eq_zero fun b _ ↦ by rw [← pushBoundary_apply, hδ, Pi.zero_apply]
+
 variable [LinearOrder α]
 
 /-- The subgroup of the grading group of the elements whose boundary cancels along every fibre of
@@ -160,6 +190,79 @@ theorem mem_matchedSubgroup {M : α → β} {g : StrandGradingGroup α} :
 theorem lambda_mem_matchedSubgroup (M : α → β) :
     (lambda : StrandGradingGroup α) ∈ matchedSubgroup M := by
   simp [mem_matchedSubgroup]
+
+/-! ### The group `G(Z)` -/
+
+/-- **The kernel of the class map on `G' ⊓ matchedSubgroup M`.** The elements of
+`G' ⊓ matchedSubgroup M` with zero class are exactly the powers of `λ`. -/
+theorem mem_zpowers_lambda_iff_mem_gPrime_inf_matchedSubgroup {M : α → β}
+    {g : StrandGradingGroup α} :
+    g ∈ Subgroup.zpowers lambda ↔ g ∈ gPrime ⊓ matchedSubgroup M ∧ g.boundary = 0 := by
+  rw [mem_zpowers_lambda_iff, Subgroup.mem_inf, mem_matchedSubgroup]
+  exact ⟨fun h ↦ ⟨⟨h.1, by simp [h.2]⟩, h.2⟩, fun h ↦ ⟨h.1.1, h.2⟩⟩
+
+/-- **Lifting boundaries to `G' ⊓ matchedSubgroup M`.** Every boundary `δ = ∂β` that cancels
+along each fibre of `M` is the class of an element of `G' ⊓ matchedSubgroup M`, with Maslov
+component `ε(β)`. -/
+theorem mk_mem_gPrime_inf_matchedSubgroup {M : α → β} {δ : α → ℤ}
+    (hδ : pushBoundary M δ = 0) :
+    mk ((#{x | Odd (δ x)} : ℚ) / 4) δ ∈ gPrime ⊓ matchedSubgroup M :=
+  ⟨mk_mem_gPrime (sum_eq_zero_of_pushBoundary_eq_zero hδ),
+    mem_matchedSubgroup.2 (by simpa using hδ)⟩
+
+/-- **The form `L` is integral on `G(Z)` when fibres have at most two points.** If every fibre
+of `M` has at most two points and the boundaries `δ₁`, `δ₂` cancel along each fibre, then
+`L(δ₁, δ₂)` is an integer. -/
+theorem exists_linking_eq_intCast {M : α → β} (hM : ∀ b, #{x | M x = b} ≤ 2) {δ₁ δ₂ : α → ℤ}
+    (hδ₁ : pushBoundary M δ₁ = 0) (hδ₂ : pushBoundary M δ₂ = 0) :
+    ∃ k : ℤ, linking δ₁ δ₂ = k := by
+  -- Modulo `1`, `L(δ₁, δ₂)` is half of `∑ δ₁ δ₂`, which is even: on a fibre `{p, q}` the
+  -- summands at `p` and at `q` are equal.
+  obtain ⟨k, hk⟩ := exists_linking_eq_add δ₁ δ₂
+  have heven : Even (∑ x, δ₁ x * δ₂ x) := by
+    rw [← sum_fiberwise_of_maps_to (g := M) (t := univ.image M)
+      fun x _ ↦ mem_image_of_mem M (mem_univ x)]
+    refine even_sum _ fun b _ ↦ ?_
+    have h₁ : ∑ x with M x = b, δ₁ x = 0 := by rw [← pushBoundary_apply, hδ₁, Pi.zero_apply]
+    have h₂ : ∑ x with M x = b, δ₂ x = 0 := by rw [← pushBoundary_apply, hδ₂, Pi.zero_apply]
+    obtain h | h | h : #{x | M x = b} = 0 ∨ #{x | M x = b} = 1 ∨ #{x | M x = b} = 2 := by
+      have := hM b
+      omega
+    · rw [card_eq_zero.1 h, sum_empty]
+      exact Even.zero
+    · obtain ⟨p, hp⟩ := card_eq_one.1 h
+      rw [hp, sum_singleton] at h₁ ⊢
+      simp [h₁]
+    · obtain ⟨p, q, hpq, hpq'⟩ := card_eq_two.1 h
+      rw [hpq', sum_pair hpq] at h₁ h₂ ⊢
+      exact ⟨δ₁ p * δ₂ p, by linear_combination δ₂ q * h₁ - δ₁ p * h₂⟩
+  obtain ⟨r, hr⟩ := heven
+  have hr' : ∑ x, (δ₁ x : ℚ) * δ₂ x = r + r := by exact_mod_cast hr
+  refine ⟨k + r, ?_⟩
+  rw [hk, hr']
+  push_cast
+  ring
+
+/-- **Commutators in `G(Z)`** (Lipshitz, Ozsváth and Thurston, equation (3.42)). If every fibre
+of `M` has at most two points, two elements of `matchedSubgroup M`, and in particular of
+`G(Z) = G' ⊓ matchedSubgroup M`, commute up to an even power of `λ`:
+`g h = h g λ^(2 L([g], [h]))`, with `L([g], [h])` an integer. -/
+theorem exists_mul_eq_mul_mul_lambda_zpow {M : α → β} (hM : ∀ b, #{x | M x = b} ≤ 2)
+    {g h : StrandGradingGroup α} (hg : g ∈ matchedSubgroup M) (hh : h ∈ matchedSubgroup M) :
+    ∃ k : ℤ, linking g.boundary h.boundary = k ∧ g * h = h * g * lambda ^ (2 * k) := by
+  obtain ⟨k, hk⟩ := exists_linking_eq_intCast hM (mem_matchedSubgroup.1 hg)
+    (mem_matchedSubgroup.1 hh)
+  refine ⟨k, hk, ?_⟩
+  have hswap := linking_add_linking_swap g.boundary h.boundary
+  have hsum : ∑ x, (g.boundary x : ℚ) = 0 := by
+    exact_mod_cast sum_eq_zero_of_pushBoundary_eq_zero (mem_matchedSubgroup.1 hg)
+  rw [hsum, zero_mul, neg_zero] at hswap
+  rw [mul_lambda_zpow]
+  ext
+  · simp only [mul_maslov, mk_maslov]
+    push_cast
+    linear_combination -hswap + 2 * hk
+  · simp [add_comm]
 
 end StrandGradingGroup
 

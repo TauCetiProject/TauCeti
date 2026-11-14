@@ -24,17 +24,48 @@ C⋆-structure, so they apply, for instance, to real matrices with the Loewner o
 complex C⋆-algebra. They are the estimates that keep a map built from square roots of congruences
 inside an order interval `[α, β]` of scalars.
 
+In a non-unital algebra with a continuous functional calculus, the square root also commutes with
+passing to the opposite algebra `Aᵐᵒᵖ`, which has the same order and the same squares.
+
 ## Main statements
 
 * `CFC.sqrt_le_algebraMap`: if `a ≤ algebraMap ℝ A r`, then
   `CFC.sqrt a ≤ algebraMap ℝ A √r`.
 * `CFC.algebraMap_le_sqrt`: if `algebraMap ℝ A r ≤ a`, then
   `algebraMap ℝ A √r ≤ CFC.sqrt a`.
+* `CFC.unop_sqrt`, `CFC.op_sqrt`: the square root may be computed in `A` or in `Aᵐᵒᵖ`.
 -/
 
 public section
 
+open MulOpposite
+
 namespace CFC
+
+section MulOpposite
+
+variable {A : Type*} [PartialOrder A] [NonUnitalRing A] [TopologicalSpace A] [StarRing A]
+  [Module ℝ A] [SMulCommClass ℝ A A] [IsScalarTower ℝ A A] [StarOrderedRing A]
+  [NonUnitalContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
+  [NonUnitalContinuousFunctionalCalculus ℝ Aᵐᵒᵖ IsSelfAdjoint]
+  [NonnegSpectrumClass ℝ A] [NonnegSpectrumClass ℝ Aᵐᵒᵖ] [IsSemitopologicalRing A] [T2Space A]
+
+/-- The square root in the opposite algebra `Aᵐᵒᵖ` is the square root in `A`. -/
+@[simp]
+theorem unop_sqrt (a : Aᵐᵒᵖ) : unop (sqrt a) = sqrt (unop a) := by
+  by_cases ha : 0 ≤ a
+  · refine (sqrt_unique ?_ (unop_nonneg.mpr (sqrt_nonneg a))).symm
+    rw [← unop_mul, sqrt_mul_sqrt_self a ha]
+  · rw [sqrt_of_not_nonneg ha, sqrt_of_not_nonneg (unop_nonneg.not.mpr ha), unop_zero]
+
+/-- The square root in `A` is the square root in the opposite algebra `Aᵐᵒᵖ`. -/
+@[simp]
+theorem op_sqrt (a : A) : op (sqrt a) = sqrt (op a) := by
+  rw [← unop_inj, unop_sqrt, unop_op, unop_op]
+
+end MulOpposite
+
+section Scalar
 
 variable {A : Type*} [PartialOrder A] [Ring A] [StarRing A] [TopologicalSpace A]
   [StarOrderedRing A] [Algebra ℝ A] [StarModule ℝ A]
@@ -63,5 +94,7 @@ theorem algebraMap_le_sqrt {a : A} {r : ℝ} (h : algebraMap ℝ A r ≤ a) :
   rw [sqrt_eq_real_sqrt a ha, cfcₙ_eq_cfc]
   exact algebraMap_le_cfc _ _ a fun x hx ↦
     Real.sqrt_le_sqrt ((algebraMap_le_iff_le_spectrum (ha := ha.isSelfAdjoint)).1 h x hx)
+
+end Scalar
 
 end CFC
