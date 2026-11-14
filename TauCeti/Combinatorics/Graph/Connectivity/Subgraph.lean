@@ -75,8 +75,7 @@ theorem toGraph_toSubgraph_toSimpleGraph (p : (Graph.ofSimpleGraph H).Walk x y) 
     p.toSimpleGraph.toSubgraph.toGraph = (Graph.ofSimpleGraph H).walkGraph p := by
   rw [SimpleGraph.Walk.toGraph_toSubgraph, toGraph_toSimpleGraph]
 
-@[simp]
-theorem toSimpleGraphSubgraph_walkGraph (p : (Graph.ofSimpleGraph H).Walk x y)
+@[simp] theorem toSimpleGraphSubgraph_walkGraph (p : (Graph.ofSimpleGraph H).Walk x y)
     (hp : (Graph.ofSimpleGraph H).walkGraph p ≤ Graph.ofSimpleGraph H) :
     hp.toSimpleGraphSubgraph = p.toSimpleGraph.toSubgraph :=
   SimpleGraph.Subgraph.toGraph_injective (by simp)
@@ -91,29 +90,24 @@ variable {α : Type u} {H : SimpleGraph α} {S : H.Subgraph}
 `S.toGraph`. -/
 def walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) : S.toGraph.Walk x y :=
   p.toGraph.transfer S.toGraph_le_ofSimpleGraph fun e he ↦ by
-    rw [S.edgeSet_toGraph]
-    rw [SimpleGraph.Walk.edges_toGraph] at he
+    rw [S.edgeSet_toGraph]; rw [SimpleGraph.Walk.edges_toGraph] at he
     exact Subgraph.edgeSet_mono hp (p.mem_edges_toSubgraph.mpr he)
 
-@[simp]
-theorem mapLe_walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
+@[simp] theorem mapLe_walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
     (S.walkToGraph p hp).mapLe S.toGraph_le_ofSimpleGraph = p.toGraph :=
   Graph.Walk.mapLe_transfer S.toGraph_le_ofSimpleGraph p.toGraph _
 
-@[simp]
-theorem support_walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
+@[simp] theorem support_walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
     (S.walkToGraph p hp).support = p.support := by
   rw [← Graph.Walk.support_mapLe_eq_support S.toGraph_le_ofSimpleGraph, mapLe_walkToGraph,
     SimpleGraph.Walk.support_toGraph]
 
-@[simp]
-theorem edges_walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
+@[simp] theorem edges_walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
     (S.walkToGraph p hp).edges = p.edges := by
   rw [← Graph.Walk.edges_mapLe_eq_edges S.toGraph_le_ofSimpleGraph, mapLe_walkToGraph,
     SimpleGraph.Walk.edges_toGraph]
 
-@[simp]
-theorem length_walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
+@[simp] theorem length_walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
     (S.walkToGraph p hp).length = p.length := by
   rw [← Graph.Walk.length_mapLe S.toGraph_le_ofSimpleGraph, mapLe_walkToGraph,
     SimpleGraph.Walk.length_toGraph]
@@ -134,16 +128,14 @@ def walkToGraphEquiv (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α) :
   toFun p := S.walkToGraph p.1 p.2
   invFun q := ⟨(q.mapLe S.toGraph_le_ofSimpleGraph).toSimpleGraph,
     S.toSubgraph_toSimpleGraph_mapLe_le hx q⟩
-  left_inv p := Subtype.ext (by simp)
-  right_inv q := Graph.Walk.mapLe_injective S.toGraph_le_ofSimpleGraph x y (by simp)
+  left_inv _ := Subtype.ext (by simp)
+  right_inv _ := Graph.Walk.mapLe_injective S.toGraph_le_ofSimpleGraph x y (by simp)
 
-@[simp]
-theorem walkToGraphEquiv_apply (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α)
+@[simp] theorem walkToGraphEquiv_apply (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α)
     (p : {p : H.Walk x y // p.toSubgraph ≤ S}) :
     S.walkToGraphEquiv hx y p = S.walkToGraph p.1 p.2 := (rfl)
 
-@[simp]
-theorem coe_walkToGraphEquiv_symm_apply (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α)
+@[simp] theorem coe_walkToGraphEquiv_symm_apply (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α)
     (q : S.toGraph.Walk x y) :
     ((S.walkToGraphEquiv hx y).symm q : H.Walk x y) =
       (q.mapLe S.toGraph_le_ofSimpleGraph).toSimpleGraph := (rfl)
@@ -153,56 +145,39 @@ theorem coe_walkToGraphEquiv_symm_apply (S : H.Subgraph) {x : α} (hx : x ∈ S.
 theorem reachable_toGraph_iff {x y : α} :
     S.toGraph.Reachable x y ↔
       ∃ (hx : x ∈ S.verts) (hy : y ∈ S.verts), S.coe.Reachable ⟨x, hx⟩ ⟨y, hy⟩ := by
-  refine ⟨fun h ↦ ?_, fun ⟨hx, hy, hr⟩ ↦ ?_⟩
-  · let ux : V(S.toGraph) := ⟨x, h.left_mem⟩
-    let uy : V(S.toGraph) := ⟨y, h.right_mem⟩
-    have hx : x ∈ S.verts := S.vertexSet_toGraph ▸ h.left_mem
-    have hy : y ∈ S.verts := S.vertexSet_toGraph ▸ h.right_mem
-    have hux : S.toGraphToSimpleGraphIso ux = ⟨x, hx⟩ :=
-      Subtype.ext (S.coe_toGraphToSimpleGraphIso_apply ux)
-    have huy : S.toGraphToSimpleGraphIso uy = ⟨y, hy⟩ :=
-      Subtype.ext (S.coe_toGraphToSimpleGraphIso_apply uy)
-    have hr := S.toGraphToSimpleGraphIso.reachable_iff.mpr
-      ((Graph.toSimpleGraph_reachable_iff (G := S.toGraph) (u := ux) (v := uy)).mpr h)
-    rw [hux, huy] at hr
-    exact ⟨hx, hy, hr⟩
-  · let ux : V(S.toGraph) := ⟨x, S.vertexSet_toGraph.symm ▸ hx⟩
+  have key (hx : x ∈ S.verts) (hy : y ∈ S.verts) :
+      S.toGraph.Reachable x y ↔ S.coe.Reachable ⟨x, hx⟩ ⟨y, hy⟩ := by
+    let ux : V(S.toGraph) := ⟨x, S.vertexSet_toGraph.symm ▸ hx⟩
     let uy : V(S.toGraph) := ⟨y, S.vertexSet_toGraph.symm ▸ hy⟩
-    have hux : S.toGraphToSimpleGraphIso ux = ⟨x, hx⟩ :=
-      Subtype.ext (S.coe_toGraphToSimpleGraphIso_apply ux)
-    have huy : S.toGraphToSimpleGraphIso uy = ⟨y, hy⟩ :=
-      Subtype.ext (S.coe_toGraphToSimpleGraphIso_apply uy)
-    rw [← hux, ← huy] at hr
-    exact (Graph.toSimpleGraph_reachable_iff (G := S.toGraph) (u := ux) (v := uy)).mp
-      (S.toGraphToSimpleGraphIso.reachable_iff.mp hr)
+    rw [← Graph.toSimpleGraph_reachable_iff (G := S.toGraph) (u := ux) (v := uy),
+      ← S.toGraphToSimpleGraphIso.reachable_iff,
+      show S.toGraphToSimpleGraphIso ux = ⟨x, hx⟩ from
+        Subtype.ext (S.coe_toGraphToSimpleGraphIso_apply ux),
+      show S.toGraphToSimpleGraphIso uy = ⟨y, hy⟩ from
+        Subtype.ext (S.coe_toGraphToSimpleGraphIso_apply uy)]
+  exact ⟨fun h ↦ ⟨S.vertexSet_toGraph ▸ h.left_mem, S.vertexSet_toGraph ▸ h.right_mem,
+    (key _ _).mp h⟩, fun ⟨hx, hy, hr⟩ ↦ (key hx hy).mpr hr⟩
 
-@[simp]
-theorem connected_toGraph_iff : S.toGraph.Connected ↔ S.Connected := by
+@[simp] theorem connected_toGraph_iff : S.toGraph.Connected ↔ S.Connected := by
   rw [Graph.connected_iff_toSimpleGraph_connected, ← S.toGraphToSimpleGraphIso.symm.connected_iff,
     ← Subgraph.connected_iff']
 
-@[simp]
-theorem isForest_toGraph_iff : S.toGraph.IsForest ↔ S.coe.IsAcyclic :=
+@[simp] theorem isForest_toGraph_iff : S.toGraph.IsForest ↔ S.coe.IsAcyclic :=
   S.ofSimpleGraphCoeIso.isForest_iff.trans Graph.isForest_ofSimpleGraph_iff
 
-@[simp]
-theorem isEdgeConnected_toGraph_iff (k : ℕ) :
+@[simp] theorem isEdgeConnected_toGraph_iff (k : ℕ) :
     S.toGraph.IsEdgeConnected k ↔ S.coe.IsEdgeConnected k :=
   (S.ofSimpleGraphCoeIso.isEdgeConnected_iff k).trans
     (Graph.isEdgeConnected_ofSimpleGraph_iff S.coe k)
 
-@[simp]
-theorem edgeConnectivity_toGraph :
-    S.toGraph.edgeConnectivity = S.coe.edgeConnectivity :=
+@[simp] theorem edgeConnectivity_toGraph : S.toGraph.edgeConnectivity = S.coe.edgeConnectivity :=
   S.ofSimpleGraphCoeIso.edgeConnectivity_eq.trans (Graph.edgeConnectivity_ofSimpleGraph S.coe)
 
-@[simp]
-theorem isVertexConnected_toGraph_iff (k : ℕ) :
+@[simp] theorem isVertexConnected_toGraph_iff (k : ℕ) :
     S.toGraph.IsVertexConnected k ↔ S.coe.IsVertexConnected k :=
   S.toGraphToSimpleGraphIso.isVertexConnected_iff.symm
 
-@[simp]
-theorem vertexConnectivity_toGraph :
+@[simp] theorem vertexConnectivity_toGraph :
     S.toGraph.vertexConnectivity = S.coe.vertexConnectivity :=
   S.toGraphToSimpleGraphIso.vertexConnectivity_eq.symm
 
@@ -211,8 +186,7 @@ end SimpleGraph.Subgraph
 namespace Graph
 
 /-- `Graph.ofSimpleGraph H` is connected as a multigraph if and only if `H` is connected. -/
-@[simp]
-theorem connected_ofSimpleGraph_iff {α : Type u} (H : SimpleGraph α) :
+@[simp] theorem connected_ofSimpleGraph_iff {α : Type u} (H : SimpleGraph α) :
     (Graph.ofSimpleGraph H).Connected ↔ H.Connected := by
   rw [connected_iff_toSimpleGraph_connected, (toSimpleGraphOfSimpleGraphIso H).connected_iff]
 
@@ -227,13 +201,10 @@ theorem Preconnected.finite_of_finite_edgeSet {α : Type u} {H : SimpleGraph α}
   by_cases hsub : Subsingleton α
   · exact Finite.of_subsingleton
   · rw [not_subsingleton_iff_nontrivial] at hsub
-    have hpair : ∀ s : Sym2 α, {x : α | x ∈ s}.Finite :=
-      Sym2.ind fun u v ↦ by
-        have hset : {x : α | x ∈ s(u, v)} = {u, v} := by ext; simp
-        rw [hset]
-        exact (Set.finite_singleton v).insert u
     have hf : (⋃ e : H.edgeSet, {x : α | x ∈ (e : Sym2 α)}).Finite :=
-      Set.finite_iUnion fun e ↦ hpair e.1
+      Set.finite_iUnion fun e ↦ Sym2.ind (fun u v ↦ by
+        rw [show {x : α | x ∈ s(u, v)} = {u, v} by ext; simp]
+        exact (Set.finite_singleton v).insert u) e.1
     refine Set.finite_univ_iff.mp (hf.subset fun x _ ↦ ?_)
     obtain ⟨y, hyx⟩ := exists_ne x
     obtain ⟨p⟩ := hH x y

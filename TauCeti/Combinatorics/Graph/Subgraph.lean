@@ -58,39 +58,29 @@ def toGraph (S : H.Subgraph) : Graph α (Sym2 α) where
   IsLink e x y := e = s(x, y) ∧ S.Adj x y
   isLink_symm _ _ := ⟨fun _ _ ⟨he, hxy⟩ ↦ ⟨he.trans Sym2.eq_swap, hxy.symm⟩⟩
   eq_or_eq_of_isLink_of_isLink := by
-    rintro _ _ _ _ _ ⟨rfl, _⟩ ⟨heq, _⟩
-    exact Sym2.eq_iff.mp heq |>.imp And.left And.left
-  edge_mem_iff_exists_isLink e := by
-    induction e using Sym2.ind with
-    | _ x y =>
-      rw [S.mem_edgeSet]
-      exact ⟨fun h ↦ ⟨x, y, rfl, h⟩, fun ⟨u, v, heq, huv⟩ ↦ by
-        rcases Sym2.eq_iff.mp heq with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-        · exact huv
-        · exact huv.symm⟩
+    rintro _ _ _ _ _ ⟨rfl, _⟩ ⟨heq, _⟩; exact (Sym2.eq_iff.mp heq).imp And.left And.left
+  edge_mem_iff_exists_isLink := Sym2.ind fun x y ↦ by
+    rw [S.mem_edgeSet]
+    refine ⟨fun h ↦ ⟨x, y, rfl, h⟩, fun ⟨_, _, heq, huv⟩ ↦ ?_⟩
+    rcases Sym2.eq_iff.mp heq with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    exacts [huv, huv.symm]
   left_mem_of_isLink _ _ _ h := S.edge_vert h.2
 
-@[simp, grind =]
-theorem vertexSet_toGraph (S : H.Subgraph) : V(S.toGraph) = S.verts := (rfl)
+@[simp, grind =] theorem vertexSet_toGraph (S : H.Subgraph) : V(S.toGraph) = S.verts := (rfl)
 
-@[simp, grind =]
-theorem edgeSet_toGraph (S : H.Subgraph) : E(S.toGraph) = S.edgeSet := (rfl)
+@[simp, grind =] theorem edgeSet_toGraph (S : H.Subgraph) : E(S.toGraph) = S.edgeSet := (rfl)
 
 @[simp, grind =]
 theorem toGraph_isLink (S : H.Subgraph) (e : Sym2 α) (x y : α) :
     S.toGraph.IsLink e x y ↔ e = s(x, y) ∧ S.Adj x y := (Iff.rfl)
 
-@[simp]
-theorem toGraph_adj_iff (S : H.Subgraph) (x y : α) :
-    S.toGraph.Adj x y ↔ S.Adj x y := by
+@[simp] theorem toGraph_adj_iff (S : H.Subgraph) (x y : α) : S.toGraph.Adj x y ↔ S.Adj x y := by
   simp [Graph.Adj]
 
 /-- The multigraph associated to any simple-graph subgraph is simple (loopless with no parallel
 edges). -/
 instance instSimpleToGraph (S : H.Subgraph) : S.toGraph.Simple where
-  not_isLoopAt e x h := by
-    rw [Graph.IsLoopAt, toGraph_isLink] at h
-    exact S.loopless.irrefl x h.2
+  not_isLoopAt e x h := by rw [Graph.IsLoopAt, toGraph_isLink] at h; exact S.loopless.irrefl x h.2
   eq_of_isLink _ _ _ _ h₁ h₂ := h₁.1.trans h₂.1.symm
 
 /-- Every `S : H.Subgraph` embeds as a multigraph subgraph of `Graph.ofSimpleGraph H`. -/
@@ -107,21 +97,17 @@ theorem toGraph_mono {S T : H.Subgraph} (h : S ≤ T) : S.toGraph ≤ T.toGraph 
   isLink_mono _ _ _ hxy := ⟨hxy.1, h.2 hxy.2⟩
 
 @[simp]
-theorem toGraph_le_toGraph_iff {S T : H.Subgraph} :
-    S.toGraph ≤ T.toGraph ↔ S ≤ T := by
-  refine ⟨fun h ↦ ⟨h.vertexSet_mono, fun x y hxy ↦ ?_⟩, toGraph_mono⟩
-  exact ((T.toGraph_isLink s(x, y) x y).mp (h.isLink_mono ⟨rfl, hxy⟩)).2
+theorem toGraph_le_toGraph_iff {S T : H.Subgraph} : S.toGraph ≤ T.toGraph ↔ S ≤ T :=
+  ⟨fun h ↦ ⟨h.vertexSet_mono, fun x y hxy ↦
+    ((T.toGraph_isLink s(x, y) x y).mp (h.isLink_mono ⟨rfl, hxy⟩)).2⟩, toGraph_mono⟩
 
 theorem toGraph_injective : Function.Injective (toGraph (H := H)) :=
   fun _ _ h ↦ le_antisymm (toGraph_le_toGraph_iff.mp h.le) (toGraph_le_toGraph_iff.mp h.ge)
 
-@[simp]
-theorem toGraph_inj {S T : H.Subgraph} : S.toGraph = T.toGraph ↔ S = T :=
+@[simp] theorem toGraph_inj {S T : H.Subgraph} : S.toGraph = T.toGraph ↔ S = T :=
   toGraph_injective.eq_iff
 
-@[simp]
-theorem toGraph_lt_toGraph_iff {S T : H.Subgraph} :
-    S.toGraph < T.toGraph ↔ S < T :=
+@[simp] theorem toGraph_lt_toGraph_iff {S T : H.Subgraph} : S.toGraph < T.toGraph ↔ S < T :=
   lt_iff_lt_of_le_iff_le' toGraph_le_toGraph_iff toGraph_le_toGraph_iff
 
 @[simp]
@@ -131,41 +117,34 @@ theorem toGraph_top : (⊤ : H.Subgraph).toGraph = Graph.ofSimpleGraph H := by
   exact ⟨fun ⟨he, hxy⟩ ↦ ⟨he, he ▸ H.mem_edgeSet.mpr hxy⟩,
     fun ⟨he, hmem⟩ ↦ ⟨he, H.mem_edgeSet.mp (he ▸ hmem)⟩⟩
 
-@[simp]
-theorem toGraph_bot : (⊥ : H.Subgraph).toGraph = ⊥ := by
-  refine Graph.ext (by simp) fun _ _ _ ↦ by simp
+@[simp] theorem toGraph_bot : (⊥ : H.Subgraph).toGraph = ⊥ :=
+  Graph.ext (by simp) fun _ _ _ ↦ by simp
 
-@[simp]
-theorem toGraph_inf (S T : H.Subgraph) : (S ⊓ T).toGraph = S.toGraph ⊓ T.toGraph := by
-  refine Graph.ext (by simp) fun _ _ _ ↦ ?_
-  simp [and_left_comm, and_assoc]
+@[simp] theorem toGraph_inf (S T : H.Subgraph) : (S ⊓ T).toGraph = S.toGraph ⊓ T.toGraph :=
+  Graph.ext (by simp) fun _ _ _ ↦ by simp [and_left_comm, and_assoc]
 
 /-- Any two subgraphs of the same simple graph convert to compatible multigraphs. -/
 theorem toGraph_compatible (S T : H.Subgraph) : S.toGraph.Compatible T.toGraph :=
   .of_le_le S.toGraph_le_ofSimpleGraph T.toGraph_le_ofSimpleGraph
 
 /-- The supremum of two simple-graph subgraphs corresponds to the compatible multigraph union. -/
-theorem toGraph_sup (S T : H.Subgraph) :
-    (S ⊔ T).toGraph = (S.toGraph_compatible T).union := by
-  refine Graph.ext (by simp) fun _ _ _ ↦ ?_
-  simp [and_or_left]
+theorem toGraph_sup (S T : H.Subgraph) : (S ⊔ T).toGraph = (S.toGraph_compatible T).union :=
+  Graph.ext (by simp) fun _ _ _ ↦ by simp [and_or_left]
 
 /-- A singleton subgraph of `H` converts to the edgeless single-vertex multigraph. -/
 @[simp]
 theorem _root_.SimpleGraph.toGraph_singletonSubgraph (H : SimpleGraph α) (v : α) :
-    (H.singletonSubgraph v).toGraph = Graph.noEdge {v} (Sym2 α) := by
-  refine Graph.ext (by simp) fun _ _ _ ↦ by simp
+    (H.singletonSubgraph v).toGraph = Graph.noEdge {v} (Sym2 α) :=
+  Graph.ext (by simp) fun _ _ _ ↦ by simp
 
 /-- When `S.edgeSet` is finite, `S.toGraph` has finitely many actual edges. -/
 instance instFiniteEdgeSetToGraph (S : H.Subgraph) [Finite S.edgeSet] : Finite E(S.toGraph) := by
-  rw [S.edgeSet_toGraph]
-  infer_instance
+  rw [S.edgeSet_toGraph]; infer_instance
 
 @[simp]
 theorem isSpanningSubgraph_toGraph_iff {S : H.Subgraph} :
     S.toGraph ≤s Graph.ofSimpleGraph H ↔ S.IsSpanning := by
-  rw [Graph.isSpanningSubgraph_iff, Subgraph.isSpanning_iff]
-  simp [S.toGraph_le_ofSimpleGraph]
+  rw [Graph.isSpanningSubgraph_iff, Subgraph.isSpanning_iff]; simp [S.toGraph_le_ofSimpleGraph]
 
 @[simp]
 theorem isInducedSubgraph_toGraph_iff {S : H.Subgraph} :
@@ -175,37 +154,30 @@ theorem isInducedSubgraph_toGraph_iff {S : H.Subgraph} :
   · exact ((S.toGraph_isLink s(x, y) x y).mp
       (h (by simpa [Graph.ofSimpleGraph_isLink] using hxy) hx hy)).2
   · rintro e x y he hx hy
-    rw [Graph.ofSimpleGraph_isLink] at he
-    rcases he with ⟨rfl, he⟩
+    rw [Graph.ofSimpleGraph_isLink] at he; rcases he with ⟨rfl, he⟩
     exact ⟨rfl, h hx hy (H.mem_edgeSet.mp he)⟩
 
 /-- The underlying simple graph of `S.toGraph` is canonically isomorphic to `S.coe`. -/
 def toGraphToSimpleGraphIso (S : H.Subgraph) : S.toGraph.toSimpleGraph ≃g S.coe where
   toEquiv := Equiv.subtypeEquivRight fun _ ↦ by rw [S.vertexSet_toGraph]
-  map_rel_iff' {x y} := by
-    rw [S.toGraph.toSimpleGraph_adj_iff, S.toGraph_adj_iff, S.coe_adj]
-    rfl
+  map_rel_iff' {x y} := by rw [S.toGraph.toSimpleGraph_adj_iff, S.toGraph_adj_iff, S.coe_adj]; rfl
 
-@[simp]
-theorem coe_toGraphToSimpleGraphIso_apply (S : H.Subgraph) (x : V(S.toGraph)) :
+@[simp] theorem coe_toGraphToSimpleGraphIso_apply (S : H.Subgraph) (x : V(S.toGraph)) :
     (S.toGraphToSimpleGraphIso x : α) = x := (rfl)
 
-@[simp]
-theorem coe_toGraphToSimpleGraphIso_symm_apply (S : H.Subgraph) (x : S.verts) :
+@[simp] theorem coe_toGraphToSimpleGraphIso_symm_apply (S : H.Subgraph) (x : S.verts) :
     (S.toGraphToSimpleGraphIso.symm x : α) = x := (rfl)
 
 /-- The multigraph built from the coerced simple graph `S.coe` is canonically isomorphic to
 `S.toGraph`. -/
 noncomputable def ofSimpleGraphCoeIso (S : H.Subgraph) :
     Graph.Iso (Graph.ofSimpleGraph S.coe) S.toGraph where
-  vertexEquiv :=
-    (Equiv.Set.univ S.verts).trans
-      (Equiv.subtypeEquivRight fun _ ↦ by rw [S.vertexSet_toGraph]).symm
+  vertexEquiv := (Equiv.Set.univ S.verts).trans
+    (Equiv.subtypeEquivRight fun _ ↦ by rw [S.vertexSet_toGraph]).symm
   edgeEquiv := Equiv.ofBijective
     (fun e ↦ ⟨e.1.map Subtype.val, by
       have hm : e.1 ∈ S.coe.edgeSet := by simpa only [Graph.edgeSet_ofSimpleGraph] using e.2
-      rw [S.edgeSet_toGraph]
-      rwa [S.edgeSet_coe] at hm⟩)
+      rw [S.edgeSet_toGraph]; rwa [S.edgeSet_coe] at hm⟩)
     ⟨fun _ _ h ↦ Subtype.ext (Sym2.map.injective Subtype.val_injective (Subtype.ext_iff.mp h)),
      fun ⟨f, hf⟩ ↦ by
       rw [S.edgeSet_toGraph, ← S.image_coe_edgeSet_coe] at hf
@@ -214,18 +186,15 @@ noncomputable def ofSimpleGraphCoeIso (S : H.Subgraph) :
   map_isLink_iff e x y := by
     simp only [toGraph_isLink, Graph.ofSimpleGraph_isLink]
     have hm : e.1 ∈ S.coe.edgeSet := by simpa only [Graph.edgeSet_ofSimpleGraph] using e.2
-    refine ⟨fun ⟨he, _⟩ ↦ ⟨?_, hm⟩, fun ⟨he, _⟩ ↦ ⟨?_, ?_⟩⟩
-    · exact Sym2.map.injective Subtype.val_injective he
-    · exact congrArg (Sym2.map Subtype.val) he
-    · rwa [he, SimpleGraph.mem_edgeSet, S.coe_adj] at hm
+    refine ⟨fun ⟨he, _⟩ ↦ ⟨Sym2.map.injective Subtype.val_injective he, hm⟩,
+      fun ⟨he, _⟩ ↦ ⟨congrArg (Sym2.map Subtype.val) he, ?_⟩⟩
+    rwa [he, SimpleGraph.mem_edgeSet, S.coe_adj] at hm
 
-@[simp]
-theorem coe_ofSimpleGraphCoeIso_vertexEquiv_apply (S : H.Subgraph)
+@[simp] theorem coe_ofSimpleGraphCoeIso_vertexEquiv_apply (S : H.Subgraph)
     (x : V(Graph.ofSimpleGraph S.coe)) :
     (S.ofSimpleGraphCoeIso.vertexEquiv x : α) = (x.1 : α) := (rfl)
 
-@[simp]
-theorem coe_ofSimpleGraphCoeIso_edgeEquiv_apply (S : H.Subgraph)
+@[simp] theorem coe_ofSimpleGraphCoeIso_edgeEquiv_apply (S : H.Subgraph)
     (e : E(Graph.ofSimpleGraph S.coe)) :
     (S.ofSimpleGraphCoeIso.edgeEquiv e : Sym2 α) = e.1.map Subtype.val := (rfl)
 
@@ -244,87 +213,65 @@ def toSimpleGraphSubgraph (hK : K ≤ Graph.ofSimpleGraph H) : H.Subgraph where
   edge_vert hxy := hxy.left_mem
   symm := ⟨fun _ _ hxy ↦ hxy.symm⟩
 
-@[simp, grind =]
-theorem verts_toSimpleGraphSubgraph (hK : K ≤ Graph.ofSimpleGraph H) :
+@[simp, grind =] theorem verts_toSimpleGraphSubgraph (hK : K ≤ Graph.ofSimpleGraph H) :
     hK.toSimpleGraphSubgraph.verts = V(K) := (rfl)
 
-@[simp, grind =]
-theorem toSimpleGraphSubgraph_adj (hK : K ≤ Graph.ofSimpleGraph H) (x y : α) :
+@[simp, grind =] theorem toSimpleGraphSubgraph_adj (hK : K ≤ Graph.ofSimpleGraph H) (x y : α) :
     hK.toSimpleGraphSubgraph.Adj x y ↔ K.Adj x y := (Iff.rfl)
 
 @[simp, grind =]
 theorem edgeSet_toSimpleGraphSubgraph (hK : K ≤ Graph.ofSimpleGraph H) :
     hK.toSimpleGraphSubgraph.edgeSet = E(K) := by
-  ext e
-  induction e using Sym2.ind with
-  | _ x y =>
-    rw [SimpleGraph.Subgraph.mem_edgeSet, toSimpleGraphSubgraph_adj]
-    refine ⟨fun ⟨f, hf⟩ ↦ ?_, fun he ↦ ?_⟩
-    · have hf' := hf.mono hK
-      rw [Graph.ofSimpleGraph_isLink] at hf'
-      exact hf'.1 ▸ hf.edge_mem
-    · obtain ⟨u, v, huv⟩ := K.exists_isLink_of_mem_edgeSet he
-      have huv' := huv.mono hK
-      rw [Graph.ofSimpleGraph_isLink] at huv'
-      rcases Sym2.eq_iff.mp huv'.1.symm with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-      · exact huv.adj
-      · exact huv.symm.adj
+  ext e; induction e using Sym2.ind with | _ x y =>
+  rw [SimpleGraph.Subgraph.mem_edgeSet, toSimpleGraphSubgraph_adj]
+  refine ⟨fun ⟨f, hf⟩ ↦ ?_, fun he ↦ ?_⟩
+  · have hf' := hf.mono hK; rw [Graph.ofSimpleGraph_isLink] at hf'; exact hf'.1 ▸ hf.edge_mem
+  · obtain ⟨u, v, huv⟩ := K.exists_isLink_of_mem_edgeSet he
+    have huv' := huv.mono hK; rw [Graph.ofSimpleGraph_isLink] at huv'
+    rcases Sym2.eq_iff.mp huv'.1.symm with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    exacts [huv.adj, huv.symm.adj]
 
 @[simp]
 theorem toGraph_toSimpleGraphSubgraph (hK : K ≤ Graph.ofSimpleGraph H) :
     hK.toSimpleGraphSubgraph.toGraph = K := by
   refine Graph.ext rfl fun e x y ↦ ?_
   rw [SimpleGraph.Subgraph.toGraph_isLink, toSimpleGraphSubgraph_adj]
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨rfl, f, hf⟩
-    have hf' := hf.mono hK
-    rw [Graph.ofSimpleGraph_isLink] at hf'
-    exact hf'.1 ▸ hf
-  · have h' := h.mono hK
-    rw [Graph.ofSimpleGraph_isLink] at h'
-    exact ⟨h'.1, h.adj⟩
+  refine ⟨fun ⟨he, _, hf⟩ ↦ ?_, fun h ↦ ?_⟩
+  · have hf' := hf.mono hK; rw [Graph.ofSimpleGraph_isLink] at hf'; exact he ▸ hf'.1 ▸ hf
+  · have h' := h.mono hK; rw [Graph.ofSimpleGraph_isLink] at h'; exact ⟨h'.1, h.adj⟩
 
-@[simp]
-theorem _root_.SimpleGraph.Subgraph.toSimpleGraphSubgraph_toGraph (S : H.Subgraph)
-    (h : S.toGraph ≤ Graph.ofSimpleGraph H) :
-    h.toSimpleGraphSubgraph = S :=
+@[simp] theorem _root_.SimpleGraph.Subgraph.toSimpleGraphSubgraph_toGraph (S : H.Subgraph)
+    (h : S.toGraph ≤ Graph.ofSimpleGraph H) : h.toSimpleGraphSubgraph = S :=
   SimpleGraph.Subgraph.toGraph_injective (toGraph_toSimpleGraphSubgraph h)
 
-@[simp]
-theorem toSimpleGraphSubgraph_le_iff (hK : K ≤ Graph.ofSimpleGraph H)
+@[simp] theorem toSimpleGraphSubgraph_le_iff (hK : K ≤ Graph.ofSimpleGraph H)
     (hL : L ≤ Graph.ofSimpleGraph H) :
     hK.toSimpleGraphSubgraph ≤ hL.toSimpleGraphSubgraph ↔ K ≤ L := by
   rw [← SimpleGraph.Subgraph.toGraph_le_toGraph_iff, toGraph_toSimpleGraphSubgraph,
     toGraph_toSimpleGraphSubgraph]
 
-@[simp]
-theorem toSimpleGraphSubgraph_eq_iff (hK : K ≤ Graph.ofSimpleGraph H)
+@[simp] theorem toSimpleGraphSubgraph_eq_iff (hK : K ≤ Graph.ofSimpleGraph H)
     (hL : L ≤ Graph.ofSimpleGraph H) :
     hK.toSimpleGraphSubgraph = hL.toSimpleGraphSubgraph ↔ K = L := by
   rw [← SimpleGraph.Subgraph.toGraph_inj, toGraph_toSimpleGraphSubgraph,
     toGraph_toSimpleGraphSubgraph]
 
-@[simp]
-theorem toSimpleGraphSubgraph_ofSimpleGraph
-    (h : Graph.ofSimpleGraph H ≤ Graph.ofSimpleGraph H) :
-    h.toSimpleGraphSubgraph = ⊤ :=
+@[simp] theorem toSimpleGraphSubgraph_ofSimpleGraph
+    (h : Graph.ofSimpleGraph H ≤ Graph.ofSimpleGraph H) : h.toSimpleGraphSubgraph = ⊤ :=
   SimpleGraph.Subgraph.toGraph_injective (by simp)
 
-@[simp]
-theorem toSimpleGraphSubgraph_noEdge_singleton {v : α}
+@[simp] theorem toSimpleGraphSubgraph_noEdge_singleton {v : α}
     (hv : Graph.noEdge {v} (Sym2 α) ≤ Graph.ofSimpleGraph H) :
     hv.toSimpleGraphSubgraph = H.singletonSubgraph v :=
   SimpleGraph.Subgraph.toGraph_injective (by simp)
 
-@[simp]
-theorem toSimpleGraphSubgraph_inf (hK : K ≤ Graph.ofSimpleGraph H)
+@[simp] theorem toSimpleGraphSubgraph_inf (hK : K ≤ Graph.ofSimpleGraph H)
     (hL : L ≤ Graph.ofSimpleGraph H) :
     (inf_le_left.trans hK : K ⊓ L ≤ Graph.ofSimpleGraph H).toSimpleGraphSubgraph =
       hK.toSimpleGraphSubgraph ⊓ hL.toSimpleGraphSubgraph :=
   SimpleGraph.Subgraph.toGraph_injective (by simp)
 
-@[simp]
-theorem toSimpleGraphSubgraph_union (hK : K ≤ Graph.ofSimpleGraph H)
+@[simp] theorem toSimpleGraphSubgraph_union (hK : K ≤ Graph.ofSimpleGraph H)
     (hL : L ≤ Graph.ofSimpleGraph H) :
     (Graph.IsSubgraph.union_le hK hL).toSimpleGraphSubgraph =
       hK.toSimpleGraphSubgraph ⊔ hL.toSimpleGraphSubgraph := by
@@ -348,12 +295,10 @@ def subgraphOfSimpleGraphOrderIso (H : SimpleGraph α) :
   right_inv K := Subtype.ext K.2.toGraph_toSimpleGraphSubgraph
   map_rel_iff' := Subgraph.toGraph_le_toGraph_iff
 
-@[simp]
-theorem coe_subgraphOfSimpleGraphOrderIso_apply (H : SimpleGraph α) (S : H.Subgraph) :
+@[simp] theorem coe_subgraphOfSimpleGraphOrderIso_apply (H : SimpleGraph α) (S : H.Subgraph) :
     (H.subgraphOfSimpleGraphOrderIso S : Graph α (Sym2 α)) = S.toGraph := (rfl)
 
-@[simp]
-theorem subgraphOfSimpleGraphOrderIso_symm_apply (H : SimpleGraph α)
+@[simp] theorem subgraphOfSimpleGraphOrderIso_symm_apply (H : SimpleGraph α)
     (K : Set.Iic (Graph.ofSimpleGraph H)) :
     H.subgraphOfSimpleGraphOrderIso.symm K = K.2.toSimpleGraphSubgraph := (rfl)
 
@@ -364,7 +309,6 @@ namespace Graph
 /-- When `H.edgeSet` is finite, `Graph.ofSimpleGraph H` has finitely many actual edges. -/
 instance instFiniteEdgeSetOfSimpleGraph {α : Type u} (H : SimpleGraph α) [Finite H.edgeSet] :
     Finite E(Graph.ofSimpleGraph H) := by
-  rw [Graph.edgeSet_ofSimpleGraph]
-  infer_instance
+  rw [Graph.edgeSet_ofSimpleGraph]; infer_instance
 
 end Graph
