@@ -223,6 +223,14 @@ theorem homEquiv_apply (P : GroupPresentation) {G : Type*} [_root_.Group G]
     (P.homEquiv φ).1 = fun i ↦ φ (PresentedGroup.of i) := by
   rfl
 
+/-- Each transcribed relator evaluates to one on the canonical generators. -/
+@[simp]
+theorem eval_of_eq_one (P : GroupPresentation) (t : Relator (Fin P.generatorCount))
+    (ht : t ∈ P.transcribed) :
+    t.eval (PresentedGroup.of : Fin P.generatorCount → P.Group) = 1 := by
+  simpa only [Relator.lift_toFreeGroup, homEquiv_apply, MonoidHom.id_apply] using
+    (P.homEquiv (MonoidHom.id _)).property t ht
+
 /-- Extending a satisfying assignment sends each generator to its assigned value. -/
 @[simp]
 theorem homEquiv_symm_apply_of (P : GroupPresentation) {G : Type*} [_root_.Group G]
