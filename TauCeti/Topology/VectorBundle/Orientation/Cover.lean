@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Covering.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
+public import TauCeti.Logic.Function.Fiber
 
 /-!
 # The orientation double cover of a real vector bundle
@@ -197,6 +198,13 @@ theorem proj_comp_deck :
     proj ∘ ⇑(deck (F := F) (E := E) (ι := ι) :
       C(VectorBundleOrientationCover F E ι, VectorBundleOrientationCover F E ι)) = proj :=
   funext proj_deck
+
+/-- The deck involution, restricted to the fibre over `b`, negates the orientation. -/
+theorem fiberMap_deck_mk {b : B} (o : Orientation ℝ (E b) ι) :
+    Function.fiberMap ⇑(deck (F := F) (E := E) (ι := ι) :
+        C(VectorBundleOrientationCover F E ι, VectorBundleOrientationCover F E ι))
+      proj_comp_deck b ⟨⟨b, o⟩, rfl⟩ = ⟨⟨b, -o⟩, rfl⟩ :=
+  Subtype.ext (by rw [Function.fiberMap_apply_coe, ContinuousMap.coe_ofClass, deck_apply])
 
 /-- The deck involution reverses the orientation of each point. -/
 @[simp]

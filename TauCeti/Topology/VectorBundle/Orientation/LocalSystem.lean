@@ -124,11 +124,7 @@ priority so that `simp` applies it before unfolding the evaluation by
 theorem signLocalSystemFiberEquiv_neg {b : B} (o : Orientation ℝ (E b) ι)
     (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b)) :
     signLocalSystemFiberEquiv hι (-o) f = -signLocalSystemFiberEquiv hι o f := by
-  -- The deck involution sends the point `⟨b, o⟩` of the fibre to `⟨b, -o⟩`.
-  have h : Function.fiberMap _ proj_comp_deck b ⟨⟨b, o⟩, rfl⟩ =
-      (⟨⟨b, -o⟩, rfl⟩ : (proj ⁻¹' {b} : Set (VectorBundleOrientationCover F E ι))) :=
-    Subtype.ext (by simp [deck_apply])
-  rw [signLocalSystemFiberEquiv_apply, signLocalSystemFiberEquiv_apply, ← h]
+  rw [signLocalSystemFiberEquiv_apply, signLocalSystemFiberEquiv_apply, ← fiberMap_deck_mk o]
   exact mem_signFiber_iff.1 (signLocalSystemObjEquiv hι _ f).2 _
 
 section Tensor

@@ -39,6 +39,12 @@ standard models `Λ = 𝕜ⁿ` and `G = 𝕜ᵐ` form a vector prebundle
 chart (`ContinuousLinearMap.IsFredholm.exists_isInvertible_prod_coprod`), by the stabilization
 theorem `ContinuousLinearMap.IsFredholm.exists_stabilization_kernel_coordinates`.
 
+A family of vectors over a continuous family of operators, all lying in the base set of one kernel
+chart `(D, q)`, is continuous in the total space exactly when its coordinate in `(D, q)` is
+continuous. This holds for every kernel chart and not only those with standard models
+(`TauCeti.FredholmDetLine.continuous_chartCoord`,
+`TauCeti.FredholmDetLine.continuous_of_continuous_chartCoord`).
+
 ## Main definitions
 
 * `TauCeti.FredholmDetLine 𝕜 E F`: the determinant lines of the Fredholm operators from `E` to `F`,
@@ -54,6 +60,11 @@ theorem `ContinuousLinearMap.IsFredholm.exists_stabilization_kernel_coordinates`
   kernel charts is continuous on the overlap of their base sets.
 * `TauCeti.FredholmDetLine.fiberBundle`, `TauCeti.FredholmDetLine.vectorBundle`: the determinant
   lines form a vector bundle of rank one (`TauCeti.FredholmDetLine.finrank_eq_one`).
+* `TauCeti.FredholmDetLine.continuous_chartCoord`: every kernel chart is continuous on continuous
+  families in the total space.
+* `TauCeti.FredholmDetLine.continuous_of_continuous_chartCoord`: conversely, a family over a
+  continuous family of operators in the base set of a kernel chart is continuous in the total space
+  if its chart coordinate is continuous.
 
 ## References
 
@@ -364,6 +375,78 @@ theorem trivialization_symm_apply {T : {T : E →L[𝕜] F // T.IsFredholm}}
     (h : ((T.1.coprod D₂).prod q).IsInvertible) (c : 𝕜) :
     (trivialization D₂ q).symm T c = (chartCoord D₂ q h).symm c :=
   pretrivialization_symm_apply h c
+
+/-! ### Continuity in kernel charts -/
+
+section Continuity
+
+variable {X : Type*} [TopologicalSpace X] {D : Λ →L[𝕜] F} {q : E × Λ →L[𝕜] G}
+  {σ : X → TotalSpace 𝕜 (FredholmDetLine 𝕜 E F)}
+
+omit [CompleteSpace F] in
+/-- Along a continuous family of operators with two kernel charts `(D, q)` and `(D₃, q₃)`, a
+family of vectors continuous in the coordinate of `(D, q)` is continuous in the coordinate of
+`(D₃, q₃)`: the second coordinate is a continuous multiple of the first. -/
+private theorem continuous_chartCoord_of_continuous_chartCoord {D₃ : Λ₃ →L[𝕜] F}
+    {q₃ : E × Λ₃ →L[𝕜] G₃} (hp : Continuous fun x ↦ (σ x).proj)
+    (h : ∀ x, ((((σ x).proj).1.coprod D).prod q).IsInvertible)
+    (h₃ : ∀ x, ((((σ x).proj).1.coprod D₃).prod q₃).IsInvertible)
+    (hσ : Continuous fun x ↦ chartCoord D q (h x) (σ x).2) :
+    Continuous fun x ↦ chartCoord D₃ q₃ (h₃ x) (σ x).2 := by
+  refine continuous_iff_continuousAt.2 fun x₀ ↦ ?_
+  obtain ⟨c, hc, -, hcv⟩ := exists_continuous_chartCoord_symm_eq_smul hp h h₃ x₀
+  let L : 𝕜 →ₗ[𝕜] 𝕜 := (chartCoord D₃ q₃ (h₃ x₀)).toLinearMap ∘ₗ
+    (chartCoord D q (h x₀)).symm.toLinearMap
+  refine ((hc.mul (L.continuous_of_finiteDimensional.comp hσ)).congr fun x ↦ ?_).continuousAt
+  simpa [L] using (hcv x (chartCoord D q (h x) (σ x).2)).symm
+
+/-- **Kernel charts read continuous families continuously.** Let `σ` be a continuous family of
+vectors of the determinant line bundle, and `(D, q)` a kernel chart of every operator `(σ x).proj`.
+Then `σ` read in the chart coordinate of `(D, q)` is continuous. This holds for every kernel chart,
+not only for those with standard models that form the atlas of the bundle. -/
+theorem continuous_chartCoord (hσ : Continuous σ)
+    (h : ∀ x, ((((σ x).proj).1.coprod D).prod q).IsInvertible) :
+    Continuous fun x ↦ chartCoord D q (h x) (σ x).2 := by
+  refine continuous_iff_continuousAt.2 fun x₀ ↦ ?_
+  obtain ⟨n, m, D₂, q₂, h₀⟩ := (σ x₀).proj.2.exists_isInvertible_prod_coprod
+  let e := trivialization D₂ q₂
+  let W := σ ⁻¹' e.source
+  have hW : IsOpen W := e.open_source.preimage hσ
+  have h₂ (w : W) : ((((σ w).proj).1.coprod D₂).prod q₂).IsInvertible := e.mem_source.1 w.2
+  -- Along `σ`, the kernel chart `(D₂, q₂)` at `(σ x₀).proj` is continuous on `W`, being a
+  -- trivialization.
+  have hcoord : Continuous fun w : W ↦ chartCoord D₂ q₂ (h₂ w) (σ w).2 :=
+    (continuous_snd.comp <| e.continuousOn.comp_continuous (hσ.comp continuous_subtype_val)
+      fun w ↦ w.2).congr fun w ↦ congrArg Prod.snd (trivialization_apply_mk D₂ q₂ (h₂ w) (σ w).2)
+  have hcont : ContinuousOn (fun x ↦ chartCoord D q (h x) (σ x).2) W :=
+    continuousOn_iff_continuous_domRestrict.2 <| continuous_chartCoord_of_continuous_chartCoord
+      ((FiberBundle.continuous_proj 𝕜 _).comp (hσ.comp continuous_subtype_val)) h₂
+      (fun w ↦ h w) hcoord
+  exact hcont.continuousAt (hW.mem_nhds h₀)
+
+/-- **Continuity can be checked in any kernel chart.** Let `σ` be a family of vectors of the
+determinant line bundle over a continuous family of operators `(σ x).proj`, all in the base set of
+one kernel chart `(D, q)`. If `σ` read in the chart coordinate of `(D, q)` is continuous, then `σ`
+is continuous in the total space. -/
+theorem continuous_of_continuous_chartCoord (hp : Continuous fun x ↦ (σ x).proj)
+    (h : ∀ x, ((((σ x).proj).1.coprod D).prod q).IsInvertible)
+    (hσ : Continuous fun x ↦ chartCoord D q (h x) (σ x).2) : Continuous σ := by
+  refine continuous_iff_continuousAt.2 fun x₀ ↦ ?_
+  obtain ⟨n, m, D₂, q₂, h₀⟩ := (σ x₀).proj.2.exists_isInvertible_prod_coprod
+  let e := trivialization D₂ q₂
+  let W := (fun x ↦ (σ x).proj) ⁻¹' e.baseSet
+  have hW : IsOpen W := e.open_baseSet.preimage hp
+  have h₂ (w : W) : ((((σ w).proj).1.coprod D₂).prod q₂).IsInvertible := w.2
+  -- On `W`, the trivialization at `(σ x₀).proj` reads `σ` in the kernel chart `(D₂, q₂)`.
+  have hcoord : ContinuousOn (fun x ↦ (e (σ x)).2) W := by
+    refine continuousOn_iff_continuous_domRestrict.2 <|
+      (continuous_chartCoord_of_continuous_chartCoord (hp.comp continuous_subtype_val)
+        (fun w ↦ h w) h₂ (hσ.comp continuous_subtype_val)).congr fun w ↦ ?_
+    exact (congrArg Prod.snd (trivialization_apply_mk D₂ q₂ (h₂ w) (σ w).2)).symm
+  exact (e.tendsto_nhds_iff (e.mem_source.2 h₀)).2
+    ⟨hp.continuousAt, hcoord.continuousAt (hW.mem_nhds h₀)⟩
+
+end Continuity
 
 end FredholmDetLine
 
