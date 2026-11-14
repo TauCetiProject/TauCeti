@@ -43,7 +43,7 @@ When `g : ι' → ι` is injective, composing with `g` preserves `ℓᵖ` member
 norm (`Memℓp.comp_injective`, `lp.norm_le_of_forall_eq_comp`). In particular, when `e : ι ≃ ι'` is
 a bijection between index types (possibly in different universes), composing with `e` preserves `ℓᵖ`
 membership (`Memℓp.comp_equiv`, `Equiv.memℓp_comp_iff`) and the `ℓᵖ` norm
-(`lp.norm_eq_of_forall_eq_comp_equiv`), inducing the linear isometric equivalence
+(`lp.norm_eq_of_forall_eq_comp_equiv`), and for `1 ≤ p` induces the linear isometric equivalence
 `LinearIsometryEquiv.lpCongrLeft` between `ℓᵖ(ι, G)` and `ℓᵖ(ι', G)`.
 -/
 
@@ -256,20 +256,25 @@ theorem Equiv.memℓp_comp_iff {α : Type*} {β : Type*} {H : Type*} [NormedAddC
     {q : ℝ≥0∞} {f : β → H} (e : α ≃ β) : Memℓp (f ∘ e) q ↔ Memℓp f q :=
   ⟨fun h ↦ by simpa [Function.comp_def] using h.comp_equiv e.symm, fun h ↦ h.comp_equiv e⟩
 
-/-- Reindexing a sequence in `ℓᵖ` (`p ≠ 0`) along an injective map does not increase the `ℓᵖ`
-norm. -/
+/-- Reindexing a sequence in `ℓᵖ` along an injective map does not increase the `ℓᵖ` norm. -/
 theorem lp.norm_le_of_forall_eq_comp {α : Type*} {β : Type*} {H : Type*}
-    [NormedAddCommGroup H] {q : ℝ≥0∞} (hq : q ≠ 0) {f : lp (fun _ : β ↦ H) q}
+    [NormedAddCommGroup H] {q : ℝ≥0∞} {f : lp (fun _ : β ↦ H) q}
     {g : lp (fun _ : α ↦ H) q} {e : α → β} (he : Function.Injective e) (h : ∀ i, g i = f (e i)) :
-    ‖g‖ ≤ ‖f‖ :=
-  lp.norm_le_of_forall_eq_indicator_comp hq (s := Set.univ) he.injOn fun i ↦ by simpa using h i
+    ‖g‖ ≤ ‖f‖ := by
+  rcases eq_or_ne q 0 with rfl | hq
+  · rw [lp.norm_eq_card_dsupport, lp.norm_eq_card_dsupport]
+    exact_mod_cast Finset.card_le_card_of_injOn e
+      (fun i hi ↦ by simpa [← h i] using hi)
+      (fun _ _ _ _ hij ↦ he hij)
+  · exact lp.norm_le_of_forall_eq_indicator_comp hq (s := Set.univ) he.injOn fun i ↦ by
+      simpa using h i
 
-/-- Reindexing a sequence in `ℓᵖ` (`p ≠ 0`) along an equivalence preserves the `ℓᵖ` norm. -/
+/-- Reindexing a sequence in `ℓᵖ` along an equivalence preserves the `ℓᵖ` norm. -/
 theorem lp.norm_eq_of_forall_eq_comp_equiv {α : Type*} {β : Type*} {H : Type*}
-    [NormedAddCommGroup H] {q : ℝ≥0∞} (hq : q ≠ 0) {f : lp (fun _ : β ↦ H) q}
+    [NormedAddCommGroup H] {q : ℝ≥0∞} {f : lp (fun _ : β ↦ H) q}
     {g : lp (fun _ : α ↦ H) q} (e : α ≃ β) (h : ∀ i, g i = f (e i)) : ‖g‖ = ‖f‖ :=
-  le_antisymm (lp.norm_le_of_forall_eq_comp hq e.injective h)
-    (lp.norm_le_of_forall_eq_comp hq e.symm.injective fun j ↦ by simp [h (e.symm j)])
+  le_antisymm (lp.norm_le_of_forall_eq_comp e.injective h)
+    (lp.norm_le_of_forall_eq_comp e.symm.injective fun j ↦ by simp [h (e.symm j)])
 
 namespace LinearIsometryEquiv
 
@@ -288,8 +293,7 @@ def lpCongrLeft (e : α ≃ β) : lp (fun _ : α ↦ H) q ≃ₗᵢ[𝕜] lp (fu
   map_smul' _ _ := lp.ext rfl
   left_inv v := lp.ext (funext fun i ↦ by simp)
   right_inv w := lp.ext (funext fun j ↦ by simp)
-  norm_map' v := lp.norm_eq_of_forall_eq_comp_equiv (zero_lt_one.trans_le Fact.out).ne'
-    e.symm fun _ ↦ rfl
+  norm_map' _ := lp.norm_eq_of_forall_eq_comp_equiv e.symm fun _ ↦ rfl
 
 variable {q 𝕜 H}
 
