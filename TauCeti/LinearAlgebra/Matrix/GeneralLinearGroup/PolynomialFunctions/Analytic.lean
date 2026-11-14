@@ -59,9 +59,10 @@ theorem contMDiff_of_mem_rationalFunctions {𝕜 : Type*}
       (AnalyticOnNhd.eval_linearMap c Q).contDiff
     exact hc.contMDiff.comp Units.contMDiff_val
   have hd : ContMDiff 𝓘(𝕜, Matrix (Fin n) (Fin n) 𝕜) 𝓘(𝕜) ω
-      (fun g : GL (Fin n) 𝕜 ↦ (g : Matrix (Fin n) (Fin n) 𝕜).det) := by
-    simpa only [eval_entries_det_mvPolynomialX] using hev
-      (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) 𝕜))
+      (fun g : GL (Fin n) 𝕜 ↦ (g : Matrix (Fin n) (Fin n) 𝕜).det) :=
+    (hev (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) 𝕜))).congr fun g ↦ by
+      rw [_root_.Matrix.eval_det_mvPolynomialX]
+      exact congrArg Matrix.det (Matrix.ext fun _ _ ↦ (Matrix.of_apply _ _ _).symm)
   have hnonzero (g : GL (Fin n) 𝕜) : (g : Matrix (Fin n) (Fin n) 𝕜).det ^ m ≠ 0 :=
     pow_ne_zero m (Matrix.GeneralLinearGroup.det_ne_zero g)
   exact (((hd.pow m).inv₀ hnonzero).mul (hev P)).congr fun g ↦ by
