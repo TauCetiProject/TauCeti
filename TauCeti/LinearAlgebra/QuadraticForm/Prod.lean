@@ -46,7 +46,8 @@ the two summands gives an orthogonal family of the orthogonal sum.
 * `QuadraticMap.IsometryEquiv.prodAssoc`: `LinearEquiv.prodAssoc` is isometric.
 * `QuadraticMap.IsometryEquiv.prodLeftComm`: exchanging the first two factors of
   `Q₁ ⊕ (Q₂ ⊕ Q₃)` is isometric.
-* `QuadraticMap.IsometryEquiv.uniqueProd`: `LinearEquiv.uniqueProd` is isometric.
+* `QuadraticMap.IsometryEquiv.uniqueProd` and `QuadraticMap.IsometryEquiv.prodUnique`:
+  `LinearEquiv.uniqueProd` and `LinearEquiv.prodUnique` are isometric.
 * `QuadraticMap.IsometryEquiv.consPi`: `Fin.consLinearEquiv` is isometric.
 * `QuadraticMap.IsometryEquiv.piCongrLeft`: `LinearEquiv.piCongrLeft` is isometric.
 * `QuadraticMap.IsometryEquiv.piSubtype`: deleting the summands of an orthogonal sum that are
@@ -192,6 +193,31 @@ theorem IsometryEquiv.uniqueProd_symm_apply [Unique M₁] (Q₁ : QuadraticMap R
   -- Expose the underlying linear equivalence so its public inverse application lemma applies.
   change (LinearEquiv.uniqueProd (R := R) (M := M₂) (M₂ := M₁)).symm m = _
   exact LinearEquiv.uniqueProd_symm_apply m
+
+/-- `LinearEquiv.prodUnique` is isometric: a right factor carried by a trivial module may be
+deleted from an orthogonal product. -/
+def IsometryEquiv.prodUnique [Unique M₂] (Q₁ : QuadraticMap R M₁ P) (Q₂ : QuadraticMap R M₂ P) :
+    (Q₁.prod Q₂).IsometryEquiv Q₁ where
+  toLinearEquiv := LinearEquiv.prodUnique
+  map_app' m := by simp [Subsingleton.elim m.2 0]
+
+/-- The forward map of `QuadraticMap.IsometryEquiv.prodUnique`. -/
+@[simp]
+theorem IsometryEquiv.prodUnique_apply [Unique M₂] (Q₁ : QuadraticMap R M₁ P)
+    (Q₂ : QuadraticMap R M₂ P) (m : M₁ × M₂) :
+    IsometryEquiv.prodUnique Q₁ Q₂ m = m.1 := by
+  -- Expose the underlying linear equivalence so its public application lemma applies.
+  change LinearEquiv.prodUnique (R := R) (M := M₁) (M₂ := M₂) m = _
+  exact LinearEquiv.prodUnique_apply m
+
+/-- The inverse map of `QuadraticMap.IsometryEquiv.prodUnique`. -/
+@[simp]
+theorem IsometryEquiv.prodUnique_symm_apply [Unique M₂] (Q₁ : QuadraticMap R M₁ P)
+    (Q₂ : QuadraticMap R M₂ P) (m : M₁) :
+    (IsometryEquiv.prodUnique Q₁ Q₂).invFun m = (m, default) := by
+  -- Expose the underlying linear equivalence so its public inverse application lemma applies.
+  change (LinearEquiv.prodUnique (R := R) (M := M₁) (M₂ := M₂)).symm m = _
+  exact LinearEquiv.prodUnique_symm_apply m
 
 /-- `Fin.consLinearEquiv` is isometric: an orthogonal sum indexed by `Fin (n + 1)` is the orthogonal
 product of its first summand with the orthogonal sum of the remaining ones. -/
