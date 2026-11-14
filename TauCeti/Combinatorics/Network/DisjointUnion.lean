@@ -261,7 +261,8 @@ theorem map_disjointUnion {L : Type*} (f : Assignment Q K) (g : Assignment R K) 
   exact ⟨rfl, rfl⟩
 
 @[simp]
-theorem add_disjointUnion [Add K] (f f' : Assignment Q K) (g g' : Assignment R K) :
+theorem disjointUnion_add_disjointUnion [Add K]
+    (f f' : Assignment Q K) (g g' : Assignment R K) :
     f.disjointUnion g + f'.disjointUnion g' = (f + f').disjointUnion (g + g') := by
   apply eq_iff_restrictLeft_restrictRight.2
   exact ⟨rfl, rfl⟩
@@ -273,7 +274,8 @@ theorem neg_disjointUnion [Neg K] (f : Assignment Q K) (g : Assignment R K) :
   exact ⟨rfl, rfl⟩
 
 @[simp]
-theorem sub_disjointUnion [Sub K] (f f' : Assignment Q K) (g g' : Assignment R K) :
+theorem disjointUnion_sub_disjointUnion [Sub K]
+    (f f' : Assignment Q K) (g g' : Assignment R K) :
     f.disjointUnion g - f'.disjointUnion g' = (f - f').disjointUnion (g - g') := by
   apply eq_iff_restrictLeft_restrictRight.2
   exact ⟨rfl, rfl⟩
