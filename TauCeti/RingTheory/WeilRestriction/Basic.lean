@@ -245,7 +245,7 @@ variable (A B C : Type*) [CommRing A] [CommRing B] [CommRing C] [Algebra A B] [A
 `A`-algebra `B`: an `A`-algebra representing the functor sending an `A`-algebra `T` to the set
 `C →ₐ[B] B ⊗[A] T`, see `WeilRestriction.homEquiv`. -/
 def WeilRestriction : Type _ :=
-  WeilRestriction.RepresentingAlgebra (Presentation.ofGenerators (Generators.self B C))
+  WeilRestriction.RepresentingAlgebra (Generators.self B C).kerPresentation
     (WeilRestriction.coords A B)
 deriving CommRing, Algebra A
 
@@ -256,7 +256,7 @@ namespace WeilRestriction
 `B`-algebra homomorphism `C →ₐ[B] B ⊗[A] T` is its composite with `B ⊗[A] g` for a unique
 `g : WeilRestriction A B C →ₐ[A] T`. -/
 def universalPoint : C →ₐ[B] B ⊗[A] WeilRestriction A B C :=
-  universalPointOfPresentation (Presentation.ofGenerators (Generators.self B C)) (coords A B)
+  universalPointOfPresentation (Generators.self B C).kerPresentation (coords A B)
 
 variable (T : Type*) [CommRing T] [Algebra A T]
 
@@ -265,7 +265,7 @@ variable (T : Type*) [CommRing T] [Algebra A T]
 to the composite `C → B ⊗[A] WeilRestriction A B C → B ⊗[A] T` of the universal point with
 `B ⊗[A] g`. It is natural in `T`, see `WeilRestriction.homEquiv_comp`. -/
 def homEquiv : (WeilRestriction A B C →ₐ[A] T) ≃ (C →ₐ[B] B ⊗[A] T) :=
-  homEquivOfPresentation T (Presentation.ofGenerators (Generators.self B C)) (coords A B)
+  homEquivOfPresentation T (Generators.self B C).kerPresentation (coords A B)
 
 variable {A B C T}
 
@@ -293,37 +293,26 @@ theorem hom_ext {g₁ g₂ : WeilRestriction A B C →ₐ[A] T}
 
 -- Any presentation and any finite dual generating family give the same representing algebra.
 private def presentationAlgEquiv {ι σ : Type*} (P : Presentation B C ι σ) (K : Coords A B) :
-    RepresentingAlgebra P K ≃ₐ[A] WeilRestriction A B C := by
-  let R := RepresentingAlgebra P K
-  let u := universalPointOfPresentation P K
-  let f := (homEquiv A B C R).symm u
+    RepresentingAlgebra P K ≃ₐ[A] WeilRestriction A B C :=
+  let f := (homEquiv A B C (RepresentingAlgebra P K)).symm
+    (universalPointOfPresentation P K)
   let g := (homEquivOfPresentation (WeilRestriction A B C) P K).symm
     (universalPoint A B C)
-  have hf : homEquiv A B C R f = u := Equiv.apply_symm_apply _ _
+  have hf : homEquiv A B C (RepresentingAlgebra P K) f = universalPointOfPresentation P K :=
+    Equiv.apply_symm_apply _ _
   have hg : homEquivOfPresentation (WeilRestriction A B C) P K g =
       universalPoint A B C := Equiv.apply_symm_apply _ _
-  refine AlgEquiv.ofAlgHom g f ?_ ?_
-  · apply (homEquiv A B C (WeilRestriction A B C)).injective
-    rw [homEquiv_comp, hf]
-    simpa only [homEquivOfPresentation_apply, homEquiv_apply, Algebra.TensorProduct.map_id,
-      AlgHom.comp_id, AlgHom.id_comp] using hg
-  · apply (homEquivOfPresentation R P K).injective
-    rw [homEquivOfPresentation_comp, hg]
-    have hid : Algebra.TensorProduct.lTensor (S := B) B (AlgHom.id A R) =
-        AlgHom.id B (B ⊗[A] R) := Algebra.TensorProduct.map_id
-    rw [homEquivOfPresentation_apply, hid]
-    exact hf
-
--- The comparison preserves the point classified by a homomorphism.
-private lemma homEquivOfPresentation_comp_presentationAlgEquiv {ι σ : Type*}
-    (P : Presentation B C ι σ) (K : Coords A B) (g : WeilRestriction A B C →ₐ[A] T) :
-    homEquivOfPresentation T P K (g.comp (presentationAlgEquiv P K).toAlgHom) =
-      homEquiv A B C T g := by
-  rw [homEquivOfPresentation_comp]
-  have h : homEquivOfPresentation (WeilRestriction A B C) P K
-      (presentationAlgEquiv P K).toAlgHom = universalPoint A B C :=
-    Equiv.apply_symm_apply _ _
-  rw [h, homEquiv_apply]
+  AlgEquiv.ofAlgHom g f
+    (by
+      apply (homEquiv A B C (WeilRestriction A B C)).injective
+      rw [homEquiv_comp, hf]
+      simpa only [homEquivOfPresentation_apply, homEquiv_apply, Algebra.TensorProduct.map_id,
+        AlgHom.comp_id, AlgHom.id_comp] using hg)
+    (by
+      apply (homEquivOfPresentation (RepresentingAlgebra P K) P K).injective
+      rw [homEquivOfPresentation_comp, hg]
+      simpa only [homEquiv_apply, homEquivOfPresentation_apply, Algebra.TensorProduct.map_id,
+        AlgHom.id_comp] using hf)
 
 /-- The Weil restriction of a finitely presented algebra along a finite projective algebra is of
 finite presentation over `A`. -/
