@@ -23,6 +23,7 @@ For a prime `p` this pins the order down: `#A[p^∞]` is the full power of `p` d
 
 ## Main results
 
+* `AddEquiv.primaryComponent`: an additive equivalence restricts to each `n`-primary component.
 * `TauCeti.AddCommGroup.coprime_index_primaryComponent`: `[A : A[n^∞]]` is prime to `n`.
 * `TauCeti.AddCommGroup.dvd_of_prime_dvd_natCard_primaryComponent`: a prime dividing `#A[n^∞]`
   divides `n`.
@@ -31,9 +32,43 @@ For a prime `p` this pins the order down: `#A[p^∞]` is the full power of `p` d
   only depends on `#A`.
 * `TauCeti.AddCommGroup.natCard_primaryComponent`: for a prime `p` and a finite group,
   `#A[p^∞] = p ^ v_p(#A)`.
+* `TauCeti.AddCommGroup.natCard_eq_of_forall_primaryComponent`: finite commutative groups whose
+  `p`-primary components have equal orders at every prime have equal orders.
 -/
 
 public section
+
+namespace AddEquiv
+
+variable {A B : Type*} [AddCommGroup A] [AddCommGroup B]
+
+/-- An additive equivalence restricts to an equivalence between `n`-primary components. -/
+def primaryComponent (e : A ≃+ B) (n : ℕ) :
+    AddCommGroup.primaryComponent A n ≃+ AddCommGroup.primaryComponent B n where
+  toFun x := ⟨e x, by
+    obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.2
+    exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
+  invFun y := ⟨e.symm y, by
+    obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp y.2
+    exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
+  left_inv x := Subtype.ext (e.symm_apply_apply x)
+  right_inv y := Subtype.ext (e.apply_symm_apply y)
+  map_add' x y := Subtype.ext (e.map_add x y)
+
+/-- Restricting an additive equivalence to `n`-primary components commutes with coercion to the
+ambient group. -/
+@[simp]
+theorem coe_primaryComponent_apply (e : A ≃+ B) (n : ℕ)
+    (x : AddCommGroup.primaryComponent A n) : (e.primaryComponent n x : B) = e x :=
+  (rfl)
+
+/-- The inverse of the restriction to `n`-primary components is the restriction of the inverse. -/
+@[simp]
+theorem symm_primaryComponent (e : A ≃+ B) (n : ℕ) :
+    (e.primaryComponent n).symm = e.symm.primaryComponent n :=
+  (rfl)
+
+end AddEquiv
 
 namespace TauCeti
 
@@ -120,6 +155,20 @@ theorem natCard_primaryComponent (A : Type*) [AddCommGroup A] [Finite A] {p : �
   rw [← (AddCommGroup.primaryComponent A p).card_mul_index, hk,
     Nat.factorization_mul (pow_ne_zero _ hp.ne_zero) AddSubgroup.index_ne_zero_of_finite]
   simp [hp.factorization_pow, hi]
+
+/-- **Finite commutative groups whose prime-primary components have the same order at every prime
+have the same order.** -/
+theorem natCard_eq_of_forall_primaryComponent [Finite A] [Finite B]
+    (h : ∀ p : ℕ, p.Prime →
+      Nat.card (AddCommGroup.primaryComponent A p) =
+        Nat.card (AddCommGroup.primaryComponent B p)) :
+    Nat.card A = Nat.card B := by
+  refine Nat.factorization_inj Nat.card_pos.ne' Nat.card_pos.ne' (Finsupp.ext fun p ↦ ?_)
+  by_cases hp : p.Prime
+  · have hpow := h p hp
+    rw [natCard_primaryComponent A hp, natCard_primaryComponent B hp] at hpow
+    exact Nat.pow_right_injective hp.one_lt hpow
+  · rw [Nat.factorization_eq_zero_of_not_prime _ hp, Nat.factorization_eq_zero_of_not_prime _ hp]
 
 end AddCommGroup
 

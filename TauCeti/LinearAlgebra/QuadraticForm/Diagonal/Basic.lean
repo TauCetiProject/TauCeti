@@ -18,6 +18,8 @@ of squares.
 ## Main results
 
 * `TauCeti.equivalent_weightedSumSquares_comp`: reindexing the coefficients preserves equivalence.
+* `TauCeti.equivalent_weightedSumSquares_mul_of_forall_fiber`: fiberwise equivalences of unscaled
+  diagonal forms assemble into an equivalence of fiber-scaled diagonal forms.
 * `TauCeti.equivalent_weightedSumSquares_of_pair`: a binary equivalence extends across fixed
   coordinates.
 * `QuadraticMap.associated_weightedSumSquares`, `QuadraticForm.toMatrix'_weightedSumSquares`, and
@@ -175,6 +177,68 @@ theorem equivalent_weightedSumSquares_comp (w : ι → R) (σ : κ ≃ ι) :
     map_app' := fun x => ?_ }⟩
   simp only [QuadraticMap.weightedSumSquares_apply, Function.comp_apply, smul_eq_mul]
   simpa using (Equiv.sum_comp σ.symm (fun i => w (σ i) * (x (σ i) * x (σ i)))).symm
+
+/-- Fiberwise equivalences of unscaled diagonal forms assemble into an equivalence of the scaled
+diagonal forms `∑ uᵢ s(kᵢ) xᵢ²` and `∑ vᵢ s(kᵢ) xᵢ²`. -/
+theorem equivalent_weightedSumSquares_mul_of_forall_fiber {S : Type*} [DecidableEq S]
+    (k : ι → S) (u v : ι → R) (s : S → R)
+    (h : ∀ m : S,
+      (QuadraticMap.weightedSumSquares R (fun i : {i : ι // k i = m} => u i.1)).Equivalent
+        (QuadraticMap.weightedSumSquares R (fun i : {i : ι // k i = m} => v i.1))) :
+    (QuadraticMap.weightedSumSquares R (fun i => u i * s (k i))).Equivalent
+      (QuadraticMap.weightedSumSquares R (fun i => v i * s (k i))) := by
+  let e m := (h m).some
+  let T := Finset.univ.image k
+  let φ : (Σ m : T, {i : ι // k i = m.1}) ≃ ι :=
+    { toFun := fun p => p.2.1
+      invFun := fun i => ⟨⟨k i, Finset.mem_image_of_mem k (Finset.mem_univ i)⟩, ⟨i, rfl⟩⟩
+      left_inv := fun p => by
+        rcases p with ⟨⟨m, hm⟩, ⟨i, hi⟩⟩
+        have hm' : k i = m := hi
+        subst hm'
+        rfl
+      right_inv := fun _ => rfl }
+  let curry : ((Σ m : T, {i : ι // k i = m.1}) → R) ≃ₗ[R]
+      ∀ m : T, {i : ι // k i = m.1} → R :=
+    { toFun := fun f m j => f ⟨m, j⟩
+      invFun := fun g p => g p.1 p.2
+      left_inv := fun _ => rfl
+      right_inv := fun _ => rfl
+      map_add' := fun _ _ => rfl
+      map_smul' := fun _ _ => rfl }
+  let E : (ι → R) ≃ₗ[R] (ι → R) :=
+    (LinearEquiv.funCongrLeft R R φ).trans <|
+      curry.trans <|
+        (LinearEquiv.piCongrRight fun m : T => (e m.1).toLinearEquiv).trans <|
+          curry.symm.trans (LinearEquiv.funCongrLeft R R φ.symm)
+  refine ⟨{ toLinearEquiv := E, map_app' := fun x => ?_ }⟩
+  have hE (m : T) (j : {i : ι // k i = m.1}) :
+      E x j.1 = e m.1 (fun q => x q.1) j := by
+    -- Unfold the composition `E` and `curry` on `j.1 = φ ⟨m, j⟩` so `φ.symm_apply_apply` applies.
+    dsimp only [E, curry]
+    change (LinearEquiv.piCongrRight (fun m : T => (e m.1).toLinearEquiv)
+      (fun m q => LinearEquiv.funCongrLeft R R φ x ⟨m, q⟩) (φ.symm (φ ⟨m, j⟩)).1)
+      (φ.symm (φ ⟨m, j⟩)).2 = _
+    rw [φ.symm_apply_apply]
+    rfl
+  simp only [QuadraticMap.weightedSumSquares_apply, smul_eq_mul]
+  rw [← φ.sum_comp, ← φ.sum_comp, Fintype.sum_sigma, Fintype.sum_sigma]
+  refine Finset.sum_congr rfl fun m _ => ?_
+  have hmap := (e m.1).map_app (fun q => x q.1)
+  simp only [QuadraticMap.weightedSumSquares_apply, smul_eq_mul] at hmap
+  calc ∑ j : {i : ι // k i = m.1},
+          (v j.1 * s (k j.1)) * (E x j.1 * E x j.1)
+      = s m.1 * ∑ j : {i : ι // k i = m.1},
+          v j.1 * (e m.1 (fun q => x q.1) j * e m.1 (fun q => x q.1) j) := by
+        rw [Finset.mul_sum]
+        refine Finset.sum_congr rfl fun j _ => ?_
+        rw [hE m j, j.2, mul_comm (v j.1) (s m.1), mul_assoc]
+    _ = s m.1 * ∑ j : {i : ι // k i = m.1}, u j.1 * (x j.1 * x j.1) := by
+        rw [hmap]
+    _ = ∑ j : {i : ι // k i = m.1}, (u j.1 * s (k j.1)) * (x j.1 * x j.1) := by
+        rw [Finset.mul_sum]
+        refine Finset.sum_congr rfl fun j _ => ?_
+        rw [j.2, mul_comm (u j.1) (s m.1), mul_assoc]
 
 /-- A diagonal form with unit weights is the diagonal form with the underlying scalar weights. -/
 theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :

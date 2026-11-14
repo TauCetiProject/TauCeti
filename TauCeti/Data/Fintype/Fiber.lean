@@ -25,6 +25,8 @@ covering the range is weighted by its occurrence count.
   and zero outside.
 * `Function.occCount_le_of_comp`, `Function.occCount_lt_of_comp`: comparison along embeddings.
 * `Function.occCount_eq_card_preimage`: the count as the cardinality of a singleton preimage.
+* `Function.prod_fiber_subtype` and its additive form `Function.sum_fiber_subtype`:
+  regroup a product or sum over subtype fibers of a finite set covering the range.
 * `Function.prod_occCount_pow` and its additive form `Function.sum_occCount_nsmul`:
   regroup a product or sum by counting the occurrences of each value.
 * `Function.occCount_castSucc`, `Function.occCount_succ`: split off the last or first position.
@@ -128,6 +130,21 @@ theorem occCount_apply_of_injective (f : X → S) (hinj : Function.Injective f) 
     occCount f (f x) = 1 := by
   classical
   rw [occCount_of_injective f hinj, ite_eq_left ⟨x, rfl⟩]
+
+/-- Regrouping a product over the subtype fibers of a finite set covering the range gives the
+product over all indices. -/
+@[to_additive
+  /-- Regrouping a sum over the subtype fibers of a finite set covering the range gives the sum
+  over all indices. -/]
+theorem prod_fiber_subtype [Fintype X] [DecidableEq S] {K : Type*} [CommMonoid K]
+    (f : X → S) {T : Finset S} (hT : ∀ x, f x ∈ T) (w : X → K) :
+    ∏ y ∈ T, ∏ x : {x // f x = y}, w x.1 = ∏ x, w x := by
+  have hfib := Finset.prod_fiberwise_of_maps_to (s := Finset.univ) (t := T) (g := f)
+    (fun x _ => hT x) w
+  have hsub (y : S) : (∏ x with f x = y, w x) = ∏ x : {x // f x = y}, w x.1 :=
+    Finset.prod_subtype (p := fun x => f x = y) (Finset.univ.filter (fun x => f x = y))
+      (by simp) w
+  simpa only [hsub] using hfib
 
 /-- Raising each weight to its occurrence count gives the product over all indices. -/
 @[to_additive

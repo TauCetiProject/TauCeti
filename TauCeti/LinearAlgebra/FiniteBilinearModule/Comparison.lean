@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Wentao Li
+Authors: Wentao Li, The Tau Ceti contributors
 -/
 module
 
@@ -26,6 +26,13 @@ the quadratic maps.
   between nondegenerate quadratic modules with equal Gauss-sum invariants.
 * `TauCeti.FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_and_gaussSign_eq`:
   the classification comparison theorem.
+* `TauCeti.FiniteQuadraticModule.homOfBilinearHomOfOdd` and
+  `TauCeti.FiniteQuadraticModule.isometryOfBilinearIsometryOfOdd`: at odd order, a bilinear
+  morphism or isometry preserves the quadratic map as it stands, with no nondegeneracy or
+  Gauss-sum hypothesis.
+* `TauCeti.FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd`: two finite
+  quadratic modules of odd order are isometric if and only if their polar bilinear modules are
+  isometric.
 
 ## References
 
@@ -182,5 +189,62 @@ theorem nonempty_isometry_iff_bilinear_isometry_and_gaussSign_eq
     exact ⟨⟨f.toFiniteBilinearModule⟩, f.gaussSign_eq⟩
   · rintro ⟨⟨f⟩, h⟩
     exact ⟨isometryOfBilinearIsometry hA f h⟩
+
+/-! ### Odd order -/
+
+/-- **At odd order, a bilinear morphism is automatically a quadratic morphism.** No nondegeneracy
+hypothesis is required, and the underlying map is unchanged. -/
+def homOfBilinearHomOfOdd (hA : Odd (Nat.card A)) (hB : Odd (Nat.card B))
+    (f : FiniteBilinearModule.Hom A.toFiniteBilinearModule B.toFiniteBilinearModule) :
+    Hom A B where
+  toLinearMap := f.toAddMonoidHom.toIntLinearMap
+  map_app' x := by
+    -- `AddMonoidHom.coe_toIntLinearMap` is `rfl`.
+    change B.quadratic (f x) = A.quadratic x
+    rw [← sub_eq_zero]
+    refine (nsmul_eq_zero_iff_of_coprime (hA.mul hB).coprime_two_left).mp ⟨?_, ?_⟩
+    · rw [nsmul_sub, ← QuadraticMap.polar_self, ← QuadraticMap.polar_self,
+        A.polar_eq_pairing, B.polar_eq_pairing, f.map_pairing, sub_self]
+    · rw [nsmul_sub, mul_comm (Nat.card A), mul_nsmul, B.natCard_nsmul_quadratic_of_odd hB,
+        nsmul_zero, mul_comm (Nat.card B), mul_nsmul, A.natCard_nsmul_quadratic_of_odd hA,
+        nsmul_zero, sub_self]
+
+/-- Upgrading a bilinear morphism at odd order preserves the underlying map. -/
+@[simp]
+theorem homOfBilinearHomOfOdd_apply (hA : Odd (Nat.card A)) (hB : Odd (Nat.card B))
+    (f : FiniteBilinearModule.Hom A.toFiniteBilinearModule B.toFiniteBilinearModule) (x : A) :
+    homOfBilinearHomOfOdd hA hB f x = f x :=
+  (rfl)
+
+/-- **At odd order, a bilinear isometry is automatically a quadratic isometry.** No nondegeneracy
+or Gauss-sum hypothesis is needed, and the underlying equivalence is unchanged. -/
+def isometryOfBilinearIsometryOfOdd (hA : Odd (Nat.card A))
+    (f : FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule) :
+    Isometry A B where
+  toLinearEquiv := f.toAddEquiv.toIntLinearEquiv
+  map_app' x := by
+    have h :=
+      (homOfBilinearHomOfOdd hA (Nat.card_congr f.toAddEquiv.toEquiv ▸ hA) f.toHom).map_app x
+    rwa [homOfBilinearHomOfOdd_apply, FiniteBilinearModule.Isometry.toHom_apply] at h
+
+/-- Upgrading a bilinear isometry at odd order preserves the underlying equivalence. -/
+@[simp]
+theorem isometryOfBilinearIsometryOfOdd_apply (hA : Odd (Nat.card A))
+    (f : FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule)
+    (x : A) : isometryOfBilinearIsometryOfOdd hA f x = f x :=
+  (rfl)
+
+/-- At odd order, a bilinear isometry preserves the Gauss-sum invariant. -/
+theorem gaussSign_eq_of_bilinear_isometry_of_odd (hA : Odd (Nat.card A))
+    (f : FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule) :
+    A.gaussSign = B.gaussSign :=
+  (isometryOfBilinearIsometryOfOdd hA f).gaussSign_eq
+
+/-- **Odd-order comparison.** Two finite quadratic modules of odd order are isometric if and only
+if their polar bilinear modules are isometric; no nondegeneracy is required. -/
+theorem nonempty_isometry_iff_bilinear_isometry_of_odd (hA : Odd (Nat.card A)) :
+    Nonempty (Isometry A B) ↔
+      Nonempty (FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule) :=
+  ⟨fun ⟨f⟩ ↦ ⟨f.toFiniteBilinearModule⟩, fun ⟨f⟩ ↦ ⟨isometryOfBilinearIsometryOfOdd hA f⟩⟩
 
 end TauCeti.FiniteQuadraticModule

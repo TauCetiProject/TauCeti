@@ -12,6 +12,7 @@ import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.Filter
 import TauCeti.Data.Fintype.Fiber
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.ElementaryDivisors
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Comparison
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Classification
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.GaussSum
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Relations
@@ -60,8 +61,11 @@ a mismatched Legendre symbol onto another summand of the same order.
 ## Main declarations
 
 * `TauCeti.FiniteQuadraticModule.nonempty_isometry_pi_oddCyclic_iff`: two orthogonal sums of odd
-  cyclic generators at `p` are isometric exactly when they have the same number of summands of
-  each order `p^m`, `m ≥ 1`, and the same level products of Legendre symbols.
+  cyclic generators at `p` are isometric as finite quadratic modules exactly when they have the
+  same number of summands of each order `p^m`, `m ≥ 1`, and the same level products of Legendre
+  symbols.
+* `TauCeti.FiniteQuadraticModule.nonempty_isometry_pi_oddCyclic_toFiniteBilinearModule_iff`: the
+  same criterion for isometry of their polar bilinear modules.
 
 ## References
 
@@ -354,5 +358,25 @@ theorem nonempty_isometry_pi_oddCyclic_iff (hp : Odd p) (k : ι → ℕ) (l : κ
     exact fun m hm ↦ ⟨hcard m hm, (key hcard).mp hf m hm⟩
   · intro h
     exact (key fun m hm ↦ (h m hm).1).mpr fun m hm ↦ (h m hm).2
+
+/-- **Classification of orthogonal sums of odd cyclic bilinear pairings at an odd prime.** For an
+odd prime `p`, exponents `k_i`, `l_j`, and coefficients `θ_i`, `η_j` prime to `p`, two orthogonal
+sums of odd cyclic generators are isometric as finite bilinear modules if and only if, for every
+`m ≥ 1`, they have the same number of summands of order `p^m` and the same product of Legendre
+symbols at level `m`. -/
+theorem nonempty_isometry_pi_oddCyclic_toFiniteBilinearModule_iff (hp : Odd p) (k : ι → ℕ)
+    (l : κ → ℕ) {θ : ι → ℤ} {η : κ → ℤ} (hθ : ∀ i, IsCoprime (p : ℤ) (θ i))
+    (hη : ∀ j, IsCoprime (p : ℤ) (η j)) :
+    Nonempty (FiniteBilinearModule.Isometry
+      (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ i)).toFiniteBilinearModule
+      (pi fun j ↦ oddCyclic (p ^ l j) hp.pow (η j)).toFiniteBilinearModule) ↔
+      ∀ m, 0 < m → #{i | k i = m} = #{j | l j = m} ∧
+        ∏ i with k i = m, legendreSym p (θ i) = ∏ j with l j = m, legendreSym p (η j) := by
+  have hodd : Odd (Nat.card (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ i))) := by
+    rw [Nat.card_pi]
+    simp_rw [natCard_oddCyclic]
+    exact Finset.prod_induction _ Odd (fun _ _ ↦ Odd.mul) odd_one fun _ _ ↦ hp.pow
+  rw [← nonempty_isometry_iff_bilinear_isometry_of_odd hodd,
+    nonempty_isometry_pi_oddCyclic_iff hp k l hθ hη]
 
 end TauCeti.FiniteQuadraticModule
