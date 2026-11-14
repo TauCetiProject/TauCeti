@@ -394,32 +394,28 @@ theorem isLocalDiffeomorphAt_of_eqOn {Φ : PartialDiffeomorph I J M N n} {f : M 
     (hx : x ∈ Φ.source) (hf : EqOn f Φ Φ.source) : IsLocalDiffeomorphAt I J n f x :=
   ⟨Φ, hx, hf⟩
 
+/-- A chart in the `C^n` maximal atlas, as a partial diffeomorphism to the model space. -/
+private def partialDiffeomorphOfMemMaximalAtlas (e : OpenPartialHomeomorph M H)
+    (he : e ∈ IsManifold.maximalAtlas I n M) : PartialDiffeomorph I I M H n :=
+  { e.toPartialEquiv with
+    open_source := e.open_source
+    open_target := e.open_target
+    contMDiffOn_toFun := contMDiffOn_of_mem_maximalAtlas he
+    contMDiffOn_invFun := contMDiffOn_symm_of_mem_maximalAtlas he }
+
 /-- A chart in the `C^n` maximal atlas is a local diffeomorphism at every point of its source. -/
 theorem _root_.OpenPartialHomeomorph.isLocalDiffeomorphAt_of_mem_maximalAtlas
     (e : OpenPartialHomeomorph M H) (he : e ∈ IsManifold.maximalAtlas I n M) {x : M}
-    (hx : x ∈ e.source) : IsLocalDiffeomorphAt I I n e x := by
-  let φ : PartialDiffeomorph I I M H n :=
-    { e.toPartialEquiv with
-      open_source := e.open_source
-      open_target := e.open_target
-      contMDiffOn_toFun := contMDiffOn_of_mem_maximalAtlas he
-      contMDiffOn_invFun := contMDiffOn_symm_of_mem_maximalAtlas he }
-  apply isLocalDiffeomorphAt_of_eqOn (Φ := φ) hx
-  intro y _
-  simpa only [φ] using (congrFun e.coe_toPartialEquiv y).symm
+    (hx : x ∈ e.source) : IsLocalDiffeomorphAt I I n e x :=
+  isLocalDiffeomorphAt_of_eqOn (Φ := partialDiffeomorphOfMemMaximalAtlas e he) hx fun _ _ => rfl
 
 /-- The inverse of a chart in the `C^n` maximal atlas is a local diffeomorphism at every point of
 its target. -/
 theorem _root_.OpenPartialHomeomorph.isLocalDiffeomorphAt_symm_of_mem_maximalAtlas
     (e : OpenPartialHomeomorph M H) (he : e ∈ IsManifold.maximalAtlas I n M) {y : H}
-    (hy : y ∈ e.target) : IsLocalDiffeomorphAt I I n e.symm y := by
-  let φ : PartialDiffeomorph I I M H n :=
-    { e.toPartialEquiv with
-      open_source := e.open_source
-      open_target := e.open_target
-      contMDiffOn_toFun := contMDiffOn_of_mem_maximalAtlas he
-      contMDiffOn_invFun := contMDiffOn_symm_of_mem_maximalAtlas he }
-  exact isLocalDiffeomorphAt_of_eqOn (Φ := φ.symm) hy fun _ _ => rfl
+    (hy : y ∈ e.target) : IsLocalDiffeomorphAt I I n e.symm y :=
+  isLocalDiffeomorphAt_of_eqOn (Φ := (partialDiffeomorphOfMemMaximalAtlas e he).symm) hy
+    fun _ _ => rfl
 
 /-- **The maximal atlas consists of the local diffeomorphisms to the model.** An open partial
 homeomorphism to the model space lies in the `C^n` maximal atlas exactly when it is a `C^n` local
