@@ -99,7 +99,16 @@ theorem restrictedRadiusHom_restrictedMap {S : Type*} [NormedRing S] [IsUltramet
 
 section Norm
 
-variable [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s i)]
+variable [∀ i, Fact (0 < r i)]
+
+/-- Radius restriction has dense image, since every restricted monomial extends to any radii. -/
+theorem denseRange_restrictedRadiusHom : DenseRange (restrictedRadiusHom (R := R) hr hrs) := by
+  apply (dense_closure_monomial (c := r) (s := Set.univ) dense_univ).mono
+  apply (AddSubgroup.closure_le (restrictedRadiusHom (R := R) hr hrs).range.toAddSubgroup).mpr
+  rintro _ ⟨⟨n, a⟩, _, rfl⟩
+  exact ⟨⟨monomial n a, isRestricted_monomial s n a⟩, Subtype.ext (by simp)⟩
+
+variable [∀ i, Fact (0 < s i)]
 
 /-- Radius restriction is contractive for the Gauss norms. -/
 theorem norm_restrictedRadiusHom_le (f : IsRestricted.subring (R := R) s) :
@@ -123,14 +132,6 @@ theorem lipschitzWith_restrictedRadiusHom :
 @[continuity]
 theorem continuous_restrictedRadiusHom : Continuous (restrictedRadiusHom (R := R) hr hrs) :=
   (lipschitzWith_restrictedRadiusHom hr hrs).continuous
-
-omit [∀ i, Fact (0 < s i)] in
-/-- Radius restriction has dense image, since every restricted monomial extends to any radii. -/
-theorem denseRange_restrictedRadiusHom : DenseRange (restrictedRadiusHom (R := R) hr hrs) := by
-  apply (dense_closure_monomial (c := r) (s := Set.univ) dense_univ).mono
-  apply (AddSubgroup.closure_le (restrictedRadiusHom (R := R) hr hrs).range.toAddSubgroup).mpr
-  rintro _ ⟨⟨n, a⟩, _, rfl⟩
-  exact ⟨⟨monomial n a, isRestricted_monomial s n a⟩, Subtype.ext (by simp)⟩
 
 end Norm
 
