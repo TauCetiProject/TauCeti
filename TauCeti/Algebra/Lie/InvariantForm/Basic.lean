@@ -44,6 +44,8 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
   invariance.
 * `LinearMap.BilinForm.lieInvariant.apply_lie_cyclic`: a symmetric invariant form satisfies
   `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`.
+* `LinearMap.BilinForm.lieInvariant.apply_pow_toEnd`: a power `xʲ` of an operator moves across an
+  invariant form at the cost of the sign `(-1) ^ j`.
 * `TauCeti.LieModule.traceForm_mem_invariantForms`: the trace form of a Lie module, in particular
   the Killing form, is an invariant symmetric form on the Lie algebra.
 * `TauCeti.LieModule.invariantForms_le_maxTrivSubmodule`: invariant symmetric forms lie in the
@@ -82,6 +84,8 @@ open Module (Dual finrank)
 
 namespace LinearMap.BilinForm.lieInvariant
 
+section Cyclic
+
 variable {R L : Type*} [CommRing R] [LieRing L] [Module R L] {Φ : LinearMap.BilinForm R L}
 
 /-- A symmetric invariant form on a Lie algebra is invariant under cyclic permutation of a
@@ -89,6 +93,30 @@ bracket and a third argument: `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`. -/
 theorem apply_lie_cyclic (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a b c : L) :
     Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c := by
   rw [hΦ, ← lie_skew a b, map_neg, LinearMap.neg_apply, hΦs.eq]
+
+end Cyclic
+
+/-! ### Powers of an operator -/
+
+section Pow
+
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [AddCommGroup M] [Module R M]
+  [LieRingModule L M] [LieModule R L M] {Φ : LinearMap.BilinForm R M}
+
+/-- **Moving a power of an operator across an invariant form.** Each application of `x` changes
+sides at the cost of a sign, so `Φ (xʲ • y) z = (-1) ^ j * Φ y (xʲ • z)`. -/
+theorem apply_pow_toEnd (hΦ : Φ.lieInvariant L) (x : L) (j : ℕ) (y z : M) :
+    Φ ((LieModule.toEnd R L M x ^ j) y) z = (-1) ^ j * Φ y ((LieModule.toEnd R L M x ^ j) z) := by
+  induction j generalizing y z with
+  | zero => simp
+  | succ j ih =>
+    have hc := LinearMap.congr_fun (Commute.self_pow (LieModule.toEnd R L M x) j).eq z
+    simp only [mul_apply_eq_comp, LieModule.toEnd_apply_apply] at hc
+    rw [pow_succ', mul_apply_eq_comp, LieModule.toEnd_apply_apply, hΦ, ih, mul_apply_eq_comp,
+      LieModule.toEnd_apply_apply, hc]
+    ring
+
+end Pow
 
 end LinearMap.BilinForm.lieInvariant
 
