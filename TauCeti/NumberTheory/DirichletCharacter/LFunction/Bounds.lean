@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.LSeries.SumCoeff
 public import TauCeti.NumberTheory.DirichletCharacter.PartialSum
 import Mathlib.Analysis.Complex.Convex
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
 
 /-!
 # A level-dependent bound for continued Dirichlet L-functions
@@ -23,7 +24,9 @@ At `s = 1` the same integral is `∫_{t > 1} S(t) / t²`, where `S(t)` is the su
 `1 ≤ k ≤ t`. Using `‖S(t)‖ ≤ t` on `(1, N]` and `‖S(t)‖ ≤ N` beyond gives
 `‖L(1, χ)‖ ≤ 1 + log N`. No primitivity is assumed, so this bound also holds for imprimitive
 characters such as the product of two characters taken at the least common multiple of their
-levels.
+levels. Combining the nonprincipal bound with the fractional-part bound on `riemannZeta` also
+yields `‖L(s, χ)‖ ≤ N (3 + ‖s‖ / Re(s))` on `Re(s) > 0`, `‖s - 1‖ ≥ 1 / 2` for every character
+`χ` of level `N`, principal or nonprincipal.
 
 The function being bounded is the native analytic continuation, not the Dirichlet series
 (which need not converge absolutely in this half-plane). No zero-free hypothesis is required.
@@ -136,5 +139,28 @@ theorem norm_LFunction_one_le_one_add_log (hχ : χ ≠ 1) :
         (hint.mono_set Set.Ioc_subset_Ioi_self) (hint.mono_set (Set.Ioi_subset_Ioi hN)),
         Set.Ioc_union_Ioi_eq_Ioi hN]
     _ ≤ 1 + Real.log N := by linarith
+
+/-- On `Re(s) > 0` outside the open disk `‖s - 1‖ < 1 / 2`, the continued L-function of any
+Dirichlet character of level `N` — principal or nonprincipal — satisfies
+`‖L(s, χ)‖ ≤ N (3 + ‖s‖ / Re(s))`. -/
+theorem norm_LFunction_le_of_one_half_le_norm_sub_one {s : ℂ} (hs : 0 < s.re)
+    (hs1 : 1 / 2 ≤ ‖s - 1‖) :
+    ‖χ.LFunction s‖ ≤ (N : ℝ) * (3 + ‖s‖ / s.re) := by
+  by_cases hχ : χ = 1
+  · subst hχ
+    have hs_ne : s ≠ 1 := by rintro rfl; norm_num at hs1
+    have hinv : ‖s - 1‖⁻¹ ≤ 2 := by
+      rw [inv_le_comm₀ (by linarith) two_pos]
+      simpa using hs1
+    have hζ : ‖riemannZeta s‖ ≤ 3 + ‖s‖ / s.re :=
+      (TauCeti.norm_riemannZeta_le hs).trans (by linarith)
+    rw [← LFunctionTrivChar, LFunctionTrivChar_eq_mul_riemannZeta hs_ne, norm_mul]
+    exact mul_le_mul (TauCeti.norm_prod_primeFactors_one_sub_cpow_neg_le hs.le) hζ
+      (norm_nonneg _) (Nat.cast_nonneg N)
+  · calc ‖χ.LFunction s‖ ≤ (N : ℝ) * ‖s‖ / s.re :=
+          χ.norm_LFunction_le_level_mul_norm_div_re hχ hs
+      _ = (N : ℝ) * (‖s‖ / s.re) := mul_div_assoc _ _ _
+      _ ≤ (N : ℝ) * (3 + ‖s‖ / s.re) :=
+          mul_le_mul_of_nonneg_left (by linarith) (Nat.cast_nonneg N)
 
 end DirichletCharacter

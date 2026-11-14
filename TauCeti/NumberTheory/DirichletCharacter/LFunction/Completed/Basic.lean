@@ -109,6 +109,32 @@ theorem analyticAt_completedLFunction {s : ℂ} (h0 : s ≠ 0 ∨ N ≠ 1)
   filter_upwards [he0, he1] with z hz0 hz1
   exact χ.differentiableAt_completedLFunction z hz0 hz1
 
+/-- The continued Dirichlet L-function is analytic everywhere except possibly at `s = 1` for the
+principal character. -/
+theorem analyticAt_LFunction {s : ℂ} (h1 : s ≠ 1 ∨ χ ≠ 1) : AnalyticAt ℂ χ.LFunction s := by
+  rw [Complex.analyticAt_iff_eventually_differentiableAt]
+  have he1 : ∀ᶠ z in 𝓝 s, z ≠ 1 ∨ χ ≠ 1 := by
+    rcases h1 with h1 | h1
+    · filter_upwards [eventually_ne_nhds h1] with z hz using Or.inl hz
+    · exact Filter.Eventually.of_forall fun _ ↦ Or.inr h1
+  filter_upwards [he1] with z hz1
+  exact χ.differentiableAt_LFunction z hz1
+
+/-- Every Dirichlet character has a meromorphic continued L-function on the whole complex plane. -/
+theorem meromorphic_LFunction : Meromorphic χ.LFunction := by
+  intro z
+  rcases eq_or_ne z 1 with rfl | hz
+  · by_cases hχ : χ = 1
+    · subst hχ
+      refine MeromorphicAt.iff_eventuallyEq_zpow_smul_analyticAt.mpr
+        ⟨-1, LFunctionTrivChar₁ N, (differentiable_LFunctionTrivChar₁ N).analyticAt 1, ?_⟩
+      filter_upwards [self_mem_nhdsWithin] with s (hs : s ≠ 1)
+      rw [LFunctionTrivChar₁, Function.update_of_ne hs, LFunctionTrivChar, smul_eq_mul,
+        zpow_neg_one]
+      field_simp [sub_ne_zero.mpr hs]
+    · exact (χ.analyticAt_LFunction (.inr hχ)).meromorphicAt
+  · exact (χ.analyticAt_LFunction (.inl hz)).meromorphicAt
+
 omit [NeZero N] in
 /-- Conjugation exchanges the gamma factors of a character and its inverse. -/
 theorem gammaFactor_inv_conj (s : ℂ) :
