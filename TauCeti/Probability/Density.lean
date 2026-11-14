@@ -40,7 +40,8 @@ family can import it without acquiring the others.
   nonnegative and integrable is its integral over that set.
 
 The density bridges are stated for an arbitrary codomain and codomain measure, since neither proof
-uses anything about `ℝ` or `volume`, and both ask only for `AEMeasurable f μ`.
+uses anything about `ℝ` or `volume`; both ask for `AEMeasurable f μ`, and the second also needs
+the reference measure `μ` to be σ-finite.
 -/
 
 public section
