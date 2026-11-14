@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Polynomial.MahlerMeasure
 public import TauCeti.RingTheory.Polynomial.RootEnumeration
 import Mathlib.Analysis.Complex.Polynomial.Basic
-import Mathlib.Data.Nat.Choose.Bounds
 import Mathlib.RingTheory.Polynomial.Tower
+import TauCeti.Analysis.Polynomial.SupNorm.MahlerMeasure
 
 /-!
 # Root location and separated-disc evaluation estimates
@@ -28,12 +28,14 @@ When this small-value condition holds simultaneously at `n` points `β₀, …, 
 `r`-discs are pairwise disjoint, `p` acquires one root `αᵢ` in each disc; these `n` distinct roots
 exhaust the degree bound, so `p` has degree `n` and simple roots enumerated by `α`
 (`Polynomial.exists_isRootEnumeration_of_forall_norm_eval_lt`). Over any coefficient ring `R` in a
-scalar tower `R → ℝ → ℂ` (such as `ℤ`, `ℚ`, or `ℝ`), any complex root strictly closer to a real
-point `x` than every other complex root is real
+scalar tower `R → ℝ → ℂ` (such as `ℤ`, `ℚ`, or `ℝ`), evaluating `p.map (algebraMap R ℂ)` at
+`(x : ℂ)` has norm `|aeval x p|` (`Polynomial.norm_eval_map_algebraMap_ofReal`), and any complex
+root strictly closer to `x` than every other complex root is real and comes from a real root of `p`
 (`Polynomial.im_eq_zero_of_aeval_eq_zero_of_norm_sub_lt`,
-`Polynomial.IsRootEnumeration.im_eq_zero_of_norm_sub_lt`). Conversely, when all other roots stay at
-distance at least `1` from `z` and all roots are bounded by `B ≥ 1`, `p.supNorm * ‖z - αᵢ‖` is
-bounded above by `(2 B) ^ n * ‖p.eval z‖`
+`Polynomial.IsRootEnumeration.im_eq_zero_of_norm_sub_lt`,
+`Polynomial.IsRootEnumeration.exists_ofReal_eq_and_aeval_eq_zero_of_norm_sub_lt`). Conversely, when
+all other roots stay at distance at least `1` from `z` and all roots are bounded by `B ≥ 1`,
+`p.supNorm * ‖z - αᵢ‖` is bounded above by `(2 B) ^ n * ‖p.eval z‖`
 (`Polynomial.IsRootEnumeration.supNorm_mul_norm_sub_le_two_mul_pow_mul_norm_eval`).
 
 ## References
@@ -131,13 +133,10 @@ theorem pow_mul_supNorm_le_norm_eval_of_forall_isRoot_le_norm_sub (p : ℂ[X]) (
     div_le_one_of_le₀ (by linarith [norm_nonneg z]) (by positivity)
   have hpow : (r / (4 * (‖z‖ + 1))) ^ n ≤ (r / (4 * (‖z‖ + 1))) ^ p.natDegree :=
     pow_le_pow_of_le_one (by positivity) hle1 hn
-  have hsup : p.supNorm ≤ 2 ^ p.natDegree * p.mahlerMeasure :=
-    p.supNorm_le_choose_natDegree_div_two_mul_mahlerMeasure.trans
-      (mul_le_mul_of_nonneg_right (by exact_mod_cast Nat.choose_le_two_pow _ _)
-        p.mahlerMeasure_nonneg)
   calc (r / (4 * (‖z‖ + 1))) ^ n * p.supNorm
       ≤ (r / (4 * (‖z‖ + 1))) ^ p.natDegree * (2 ^ p.natDegree * p.mahlerMeasure) :=
-        mul_le_mul hpow hsup p.supNorm_nonneg (by positivity)
+        mul_le_mul hpow p.supNorm_le_two_pow_natDegree_mul_mahlerMeasure
+          p.supNorm_nonneg (by positivity)
     _ = (r / (2 * (‖z‖ + 1))) ^ p.natDegree * p.mahlerMeasure := by
         rw [← mul_assoc, ← mul_pow]
         congr 2
@@ -196,6 +195,13 @@ theorem exists_isRootEnumeration_of_forall_norm_eval_lt {ι : Type*} [Fintype ι
   rw [isRootEnumeration_comp_equiv_iff] at henum
   exact ⟨α, hinj, henum, hdeg, hdist⟩
 
+/-- Evaluating `p.map (algebraMap R ℂ)` at a real point `(x : ℂ)` for a scalar tower `R → ℝ → ℂ`
+has norm `|aeval x p|`. -/
+theorem norm_eval_map_algebraMap_ofReal {R : Type*} [CommSemiring R] [Algebra R ℝ] [Algebra R ℂ]
+    [IsScalarTower R ℝ ℂ] (p : R[X]) (x : ℝ) :
+    ‖(p.map (algebraMap R ℂ)).eval (x : ℂ)‖ = |aeval x p| := by
+  simpa [eval_map_algebraMap] using congrArg norm (aeval_algebraMap_apply ℂ x p)
+
 /-- If `z ∈ ℂ` is a root of a polynomial `p` over a base `R` in a scalar tower `R → ℝ → ℂ`
 (such as `ℤ`, `ℚ`, or `ℝ`) and is strictly closer to a real point `x` than every other complex
 root of `p`, then `z` is real: complex conjugation preserves `aeval · p = 0` and distance to
@@ -225,6 +231,21 @@ theorem im_eq_zero_of_norm_sub_lt {R ι : Type*} [CommRing R] [Algebra R ℝ] [A
   refine im_eq_zero_of_aeval_eq_zero_of_norm_sub_lt (x := x) hzi fun w hw hne ↦ ?_
   obtain ⟨j, rfl⟩ := hα.range_eq_rootSet.symm ▸ (mem_rootSet'.2 ⟨hp0, hw⟩)
   exact hfar j hne
+
+/-- If `α : ι → ℂ` is a root enumeration of `p ∈ R[X]` for a scalar tower `R → ℝ → ℂ` (such as
+`R = ℤ`, `ℚ`, or `ℝ`) and `α i` is strictly closer to a real point `x` than every distinct entry
+`α j`, then `α i` is the cast of a real root of `p`. -/
+theorem exists_ofReal_eq_and_aeval_eq_zero_of_norm_sub_lt {R ι : Type*} [CommRing R] [Algebra R ℝ]
+    [Algebra R ℂ] [IsScalarTower R ℝ ℂ] [Fintype ι] {p : R[X]} {α : ι → ℂ}
+    (hα : p.IsRootEnumeration α) {i : ι} {x : ℝ}
+    (hfar : ∀ j, α j ≠ α i → ‖(x : ℂ) - α i‖ < ‖(x : ℂ) - α j‖) :
+    ∃ y : ℝ, (y : ℂ) = α i ∧ aeval y p = 0 := by
+  have him : (α i).im = 0 := hα.im_eq_zero_of_norm_sub_lt hfar
+  have hyC : (((α i).re : ℝ) : ℂ) = α i := Complex.ext rfl him.symm
+  refine ⟨(α i).re, hyC, ?_⟩
+  have hmem : α i ∈ p.rootSet ℂ := hα.range_eq_rootSet ▸ Set.mem_range_self i
+  have hev : aeval (((α i).re : ℝ) : ℂ) p = 0 := hyC ▸ (mem_rootSet'.1 hmem).2
+  exact Complex.ofReal_eq_zero.1 (by simpa [hev] using (aeval_algebraMap_apply ℂ (α i).re p).symm)
 
 /-- **Value lower bound near an isolated simple root.** Let `α : ι → ℂ` enumerate the roots of
 `p ∈ ℂ[X]`. If all roots have norm at most `B ≥ 1` and all entries `α j` with `j ≠ i` stay at
@@ -263,9 +284,7 @@ theorem supNorm_mul_norm_sub_le_two_mul_pow_mul_norm_eval {ι : Type*} [Fintype 
       _ = B ^ Fintype.card ι := by simp
   have hsup : p.supNorm ≤ (2 * B) ^ Fintype.card ι * ‖p.leadingCoeff‖ := by
     calc p.supNorm ≤ 2 ^ p.natDegree * p.mahlerMeasure :=
-          p.supNorm_le_choose_natDegree_div_two_mul_mahlerMeasure.trans
-            (mul_le_mul_of_nonneg_right (by exact_mod_cast Nat.choose_le_two_pow _ _)
-              p.mahlerMeasure_nonneg)
+          p.supNorm_le_two_pow_natDegree_mul_mahlerMeasure
       _ ≤ 2 ^ Fintype.card ι * (‖p.leadingCoeff‖ * B ^ Fintype.card ι) := by rw [hdeg_eq]; gcongr
       _ = (2 * B) ^ Fintype.card ι * ‖p.leadingCoeff‖ := by rw [mul_pow]; ring
   calc p.supNorm * ‖z - α i‖ ≤ (2 * B) ^ Fintype.card ι * ‖p.leadingCoeff‖ * ‖z - α i‖ := by gcongr

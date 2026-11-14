@@ -22,7 +22,7 @@ with supermultiplicativity and the square-root bound for middle binomial coeffic
 Pulling back along a norm-preserving ring homomorphism into `ℂ` extends the bound to
 polynomials over `ℤ`, `ℚ`, or `ℝ`. Over `ℤ`, every nonzero cofactor has coefficient sup norm at
 least `1`, so any divisor of a nonzero integer polynomial `q` of degree `d` has coefficient sup
-norm at most `2 ^ d * q.supNorm` (`Polynomial.supNorm_le_two_pow_mul_supNorm_of_dvd`).
+norm at most `2 ^ d * q.supNorm` (`Polynomial.supNorm_le_two_pow_mul_supNorm_of_dvd_int`).
 
 ## References
 
@@ -75,13 +75,6 @@ theorem prod_supNorm_le_two_pow_mul_supNorm_prod
         exact mul_le_mul_of_nonneg_right (Nat.choose_middle_mul_sqrt_le_two_pow _)
           (Polynomial.supNorm_nonneg _)
 
-/-- The Gelfond bound for two complex polynomials: `f.supNorm * g.supNorm ≤ 2 ^ d * (f * g).supNorm`
-where `d = (f * g).natDegree`. -/
-theorem supNorm_mul_supNorm_le_two_pow_mul_supNorm_mul (f g : ℂ[X]) :
-    f.supNorm * g.supNorm ≤ 2 ^ (f * g).natDegree * (f * g).supNorm := by
-  simpa [Fin.prod_univ_two] using
-    prod_supNorm_le_two_pow_mul_supNorm_prod Finset.univ ![f, g]
-
 /-- The Gelfond factor bound over any normed commutative ring admitting a norm-preserving ring
 homomorphism into `ℂ` (such as `ℤ`, `ℚ`, `ℝ`, or `ℂ`). -/
 theorem prod_supNorm_le_two_pow_mul_supNorm_prod_of_ringHomIsometric
@@ -102,26 +95,14 @@ theorem supNorm_mul_supNorm_le_two_pow_mul_supNorm_mul_of_ringHomIsometric
   simpa [Fin.prod_univ_two] using
     prod_supNorm_le_two_pow_mul_supNorm_prod_of_ringHomIsometric Finset.univ ![f, g] φ
 
-/-- The Gelfond factor bound for a finite product of integer polynomials. -/
-theorem prod_supNorm_le_two_pow_mul_supNorm_prod_int {ι : Type*} (s : Finset ι) (f : ι → ℤ[X]) :
-    ∏ i ∈ s, (f i).supNorm ≤
-      2 ^ (∏ i ∈ s, f i).natDegree * (∏ i ∈ s, f i).supNorm :=
-  prod_supNorm_le_two_pow_mul_supNorm_prod_of_ringHomIsometric s f (Int.castRingHom ℂ)
-
-/-- The Gelfond bound for two integer polynomials: `f.supNorm * g.supNorm ≤ 2 ^ d * (f * g).supNorm`
-where `d = (f * g).natDegree`. -/
-theorem supNorm_mul_supNorm_le_two_pow_mul_supNorm_mul_int (f g : ℤ[X]) :
-    f.supNorm * g.supNorm ≤ 2 ^ (f * g).natDegree * (f * g).supNorm :=
-  supNorm_mul_supNorm_le_two_pow_mul_supNorm_mul_of_ringHomIsometric f g (Int.castRingHom ℂ)
-
 /-- A divisor of a nonzero integer polynomial `q` of degree `d` has coefficient sup norm at most
 `2 ^ d * q.supNorm`. -/
-theorem supNorm_le_two_pow_mul_supNorm_of_dvd {p q : ℤ[X]} (hpq : p ∣ q) (hq : q ≠ 0) :
+theorem supNorm_le_two_pow_mul_supNorm_of_dvd_int {p q : ℤ[X]} (hpq : p ∣ q) (hq : q ≠ 0) :
     p.supNorm ≤ 2 ^ q.natDegree * q.supNorm := by
   obtain ⟨r, rfl⟩ := hpq
   have hr : r ≠ 0 := right_ne_zero_of_mul hq
-  exact (le_mul_of_one_le_right p.supNorm_nonneg (one_le_supNorm_of_ne_zero hr)).trans
-    (supNorm_mul_supNorm_le_two_pow_mul_supNorm_mul_int p r)
+  exact (le_mul_of_one_le_right p.supNorm_nonneg (one_le_supNorm_of_ne_zero_int hr)).trans
+    (supNorm_mul_supNorm_le_two_pow_mul_supNorm_mul_of_ringHomIsometric p r (Int.castRingHom ℂ))
 
 /-! ### Failure of supermultiplicativity -/
 

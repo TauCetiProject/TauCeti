@@ -248,7 +248,7 @@ theorem naiveHeight_le_two_pow_mul_supNorm_of_aeval_eq_zero {x : F} {P : ℤ[X]}
     (hx : aeval x P = 0) :
     naiveHeight x ≤ 2 ^ P.natDegree * P.supNorm := by
   rw [naiveHeight_def]
-  exact supNorm_le_two_pow_mul_supNorm_of_dvd
+  exact supNorm_le_two_pow_mul_supNorm_of_dvd_int
     ((primitiveMinpoly_dvd_iff (isAlgebraic_rat_of_aeval_eq_zero hP hx)).2 hx) hP
 
 end TauCeti

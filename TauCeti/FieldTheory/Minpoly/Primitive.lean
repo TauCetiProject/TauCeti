@@ -51,7 +51,8 @@ clears the denominator of `x` when `F` is a field.
 * `TauCeti.rootSet_primitiveMinpoly`: `F_x` and `minpoly ℚ x` have the same
   roots in every commutative domain that is a `ℚ`-algebra.
 * `TauCeti.isAlgebraic_rat_of_aeval_eq_zero`, `TauCeti.primitiveMinpoly_dvd_iff`,
-  `TauCeti.natDegree_minpoly_rat_le_of_aeval_eq_zero`: any root of a nonzero `P ∈ ℤ[X]` is
+  `TauCeti.natDegree_minpoly_rat_le_of_aeval_eq_zero`,
+  `TauCeti.aeval_ne_zero_of_not_natDegree_minpoly_rat_le`: any root of a nonzero `P ∈ ℤ[X]` is
   algebraic over `ℚ` of degree at most `P.natDegree`, and for algebraic `x`, `F_x ∣ P` in `ℤ[X]`
   iff `P(x) = 0`.
 * `TauCeti.primitiveMinpoly_eq_of_irreducible`: the uniqueness characterisation of `F_x`.
@@ -258,6 +259,14 @@ theorem natDegree_minpoly_rat_le_of_aeval_eq_zero {x : F} {P : ℤ[X]} (hP : P �
   natDegree_primitiveMinpoly x ▸
     Polynomial.natDegree_le_of_dvd
       ((primitiveMinpoly_dvd_iff (isAlgebraic_rat_of_aeval_eq_zero hP hx)).2 hx) hP
+
+/-- If `x` is not algebraic over `ℚ` of degree at most `n`, no nonzero integer polynomial of
+degree at most `n` vanishes at `x`. -/
+theorem aeval_ne_zero_of_not_natDegree_minpoly_rat_le {x : F} {n : ℕ}
+    (hx : ¬(IsAlgebraic ℚ x ∧ (minpoly ℚ x).natDegree ≤ n)) {P : ℤ[X]} (hP0 : P ≠ 0)
+    (hP : P.natDegree ≤ n) : aeval x P ≠ 0 := fun h0 ↦
+  hx ⟨isAlgebraic_rat_of_aeval_eq_zero hP0 h0,
+    (natDegree_minpoly_rat_le_of_aeval_eq_zero hP0 h0).trans hP⟩
 
 /-- If the primitive minimal polynomial of `x` vanishes at `y`, possibly in another
 division ring, then `x` and `y` are conjugate: they have the same minimal polynomial over `ℚ`.

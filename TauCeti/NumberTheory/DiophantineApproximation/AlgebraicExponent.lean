@@ -7,7 +7,8 @@ module
 
 public import TauCeti.NumberTheory.DiophantineApproximation.LinearFormExponent
 public import TauCeti.NumberTheory.Height.Naive
--- Proof-only: Northcott finiteness for the naive height.
+-- Proof-only: Northcott finiteness for the naive height, and Liouville's bound for `wₙ`.
+import TauCeti.NumberTheory.DiophantineApproximation.MahlerExponent
 import TauCeti.NumberTheory.Height.Counting
 
 /-!
@@ -31,8 +32,11 @@ by the roots of such polynomials.
   `algebraicApproximationExponent_zero`: it vanishes for `n = 0`.
 * `algebraicApproximationExponent_le_mahlerExponent`: `w*ₙ(ξ) ≤ wₙ(ξ)` for every real `ξ`, with
   no hypothesis on `ξ`: the conjugates of an algebraic `ξ` are only finitely many approximations.
+  Consequently `w*ₙ(ξ) ≤ D - 1` for algebraic `ξ` of degree `D`
+  (`IsAlgebraic.algebraicApproximationExponent_le`) and `w*ₙ(q) = 0` for `q : ℚ`
+  (`algebraicApproximationExponent_ratCast`).
 * `algebraicApproximationExponent_one_add`: `w*₁(ξ) + 1 = μ(ξ)`, where `μ` is the irrationality
-  exponent.
+  exponent, and `one_le_algebraicApproximationExponent_iff`: `1 ≤ w*ₙ(ξ) ↔ 1 ≤ n ∧ Irrational ξ`.
 
 ## References
 
@@ -235,6 +239,23 @@ theorem algebraicApproximationExponent_le_mahlerExponent (n : ℕ) (ξ : ℝ) :
         exact le_linearFormExponent_of_infinite
           (infinite_linearFormApproximations_of_infinite (by linarith) (by linarith) hw)
 
+end TauCeti
+
+/-- **Liouville's bound for Koksma's exponent.** If `ξ` is a real algebraic number of degree `D`
+over `ℚ`, then `w*ₙ(ξ) ≤ D - 1` for every `n`. -/
+theorem IsAlgebraic.algebraicApproximationExponent_le {ξ : ℝ} (hξ : IsAlgebraic ℚ ξ) (n : ℕ) :
+    TauCeti.algebraicApproximationExponent n ξ ≤ ((minpoly ℚ ξ).natDegree - 1 : ℕ) :=
+  (TauCeti.algebraicApproximationExponent_le_mahlerExponent n ξ).trans (hξ.mahlerExponent_le n)
+
+namespace TauCeti
+
+/-- Rational numbers have Koksma exponent `0` in every degree. -/
+@[simp]
+theorem algebraicApproximationExponent_ratCast (n : ℕ) (q : ℚ) :
+    algebraicApproximationExponent n q = 0 :=
+  nonpos_iff_eq_zero.1 <|
+    (algebraicApproximationExponent_le_mahlerExponent n q).trans_eq (mahlerExponent_ratCast n q)
+
 /-! ### Approximation by rational numbers -/
 
 /-- If infinitely many rational numbers `s` satisfy `|ξ - s| < s.den ^ (-p)`, then for every
@@ -319,5 +340,18 @@ theorem algebraicApproximationExponent_one_add (ξ : ℝ) :
         gcongr
         exact le_algebraicApproximationExponent_of_infinite
           (infinite_algebraicApproximations_one_of_infinite (by linarith) (by linarith) hp)
+
+/-- Koksma's exponent `w*ₙ(ξ)` is at least `1` if and only if `1 ≤ n` and `ξ` is irrational. -/
+@[simp]
+theorem one_le_algebraicApproximationExponent_iff {n : ℕ} {ξ : ℝ} :
+    1 ≤ algebraicApproximationExponent n ξ ↔ 1 ≤ n ∧ Irrational ξ := by
+  refine ⟨fun h ↦ ⟨Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at h,
+    fun ⟨q, hq⟩ ↦ by simp [← hq] at h⟩, ?_⟩
+  rintro ⟨hn, hξ⟩
+  have h1 : 1 + 1 ≤ algebraicApproximationExponent 1 ξ + 1 := by
+    rw [algebraicApproximationExponent_one_add, one_add_one_eq_two]
+    exact (two_le_irrationalityExponent_iff ξ).2 hξ
+  exact ((ENNReal.add_le_add_iff_right ENNReal.one_ne_top).1 h1).trans
+    (algebraicApproximationExponent_mono ξ hn)
 
 end TauCeti
