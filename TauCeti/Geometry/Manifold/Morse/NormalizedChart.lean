@@ -188,6 +188,21 @@ variable [FiniteDimensional ℝ E] {H M : Type*} [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] {f : M → ℝ} {x : M}
 
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
+/-- Smoothness of a function near a point of a manifold with a boundaryless model transports to
+smoothness near the corresponding point of the model along the inverse of the model
+homeomorphism. -/
+private theorem eventually_contMDiffAt_comp_homeomorph_symm {x : BoundarylessModel I M}
+    (hf : ∀ᶠ y in 𝓝 ((BoundarylessModel.homeomorph I M).symm x), ContMDiffAt I 𝓘(ℝ) ∞ f y) :
+    ∀ᶠ y in 𝓝 x,
+      ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) ∞ (f ∘ (BoundarylessModel.homeomorph I M).symm) y := by
+  have hsymm : ContMDiff 𝓘(ℝ, E) I ∞ (BoundarylessModel.homeomorph I M).symm := by
+    rw [← BoundarylessModel.coe_diffeomorph_symm I ∞]
+    exact (BoundarylessModel.diffeomorph I (M := M) ∞).symm.contMDiff
+  filter_upwards
+    [((BoundarylessModel.homeomorph I M).symm.continuous.tendsto x).eventually hf] with y hy
+  exact hy.comp y (hsymm y)
+
 /-- **The normalized Morse lemma on a manifold.** At a nondegenerate critical point `x` of a
 function `f` which is smooth near `x`, on a manifold with a boundaryless model, there is a partial
 diffeomorphism `ψ` onto an open subset of `EuclideanSpace ℝ (Fin m)`, `m = dim M`, with
@@ -207,15 +222,7 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_normalized_morseChart
   set e := BoundarylessModel.diffeomorph I (M := M) ∞
   set x' := BoundarylessModel.homeomorph I M x
   have hx' : (BoundarylessModel.homeomorph I M).symm x' = x := Homeomorph.symm_apply_apply _ _
-  have hsymm : ContMDiff 𝓘(ℝ, E) I ∞ (BoundarylessModel.homeomorph I M).symm := by
-    rw [← BoundarylessModel.coe_diffeomorph_symm I ∞]
-    exact e.symm.contMDiff
-  have hg : ∀ᶠ y in 𝓝 x',
-      ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) ∞ (f ∘ (BoundarylessModel.homeomorph I M).symm) y := by
-    rw [← hx'] at hf
-    filter_upwards
-      [((BoundarylessModel.homeomorph I M).symm.continuous.tendsto x').eventually hf] with y hy
-    exact hy.comp y (hsymm y)
+  have hg := eventually_contMDiffAt_comp_homeomorph_symm (I := I) (f := f) (x := x') (by rwa [hx'])
   have hcrit : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E)
       (f ∘ (BoundarylessModel.homeomorph I M).symm) x' := by
     rwa [BoundarylessModel.isManifoldNondegenerateCriticalPoint_iff, hx']
