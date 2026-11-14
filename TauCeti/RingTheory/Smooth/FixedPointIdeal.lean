@@ -15,39 +15,23 @@ import TauCeti.SetTheory.Cardinal.Finite
 /-!
 # Edixhoven's tame fixed-point smoothness theorem
 
-Let a group `Γ` act by `R`-algebra automorphisms on a commutative `R`-algebra `A`. The
-**fixed-point ideal** `TauCeti.MulSemiringAction.fixedPointIdeal Γ A` (defined in
-`TauCeti.RingTheory.Ideal.FixedPoint`) cuts out the closed subscheme `(Spec A)^Γ` of fixed points.
+For a group `Γ` acting by `R`-algebra automorphisms on a commutative `R`-algebra `A`, the quotient
+`A ⧸ fixedPointIdeal Γ A` cuts out `(Spec A)^Γ`. Unlike `TauCeti.Comodule.fixedPointIdeal` (for
+diagonalizable coactions, formally smooth over any base), invertibility of `|Γ|` in `R` is essential
+here: `T ↦ T⁻¹` on `𝔽₂[T; T⁻¹]` has non-smooth quotient `𝔽₂[ε] ⧸ (ε²)`.
 
-This complements `TauCeti.Comodule.fixedPointIdeal` (for coactions of `MonoidAlgebra R M`, i.e.
-actions of diagonalizable monoid schemes `D(M)`), where formal smoothness holds over any base ring.
-For an abstract finite group `Γ`, invertibility of `|Γ|` in the base ring `R` is essential: the
-involution `T ↦ T⁻¹` on `𝔽₂[T; T⁻¹]` has quotient `𝔽₂[T; T⁻¹] ⧸ ((T - 1)²) ≃ 𝔽₂[ε] ⧸ (ε²)`, which
-is not formally smooth over `𝔽₂`.
-
-The main result is **Edixhoven's tame fixed-point smoothness theorem**
-(`formallySmooth_quotient_fixedPointIdeal`, `smooth_quotient_fixedPointIdeal`): if `Γ` is a group
-acting on a formally smooth (respectively smooth) `R`-algebra `A` by `R`-algebra automorphisms and
-`(Nat.card Γ : R)` is a unit in `R`, then `A ⧸ fixedPointIdeal Γ A` is formally smooth
-(respectively smooth) over `R`. Note that `[Finite Γ]` is deduced automatically from
-`IsUnit (Nat.card Γ : R)` when `R` is nontrivial, while over a subsingleton base ring every algebra
-is smooth.
-
-The proof uses the infinitesimal lifting criterion together with square-zero Reynolds averaging via
-`Representation.averageMap`. An `R`-algebra map `f : A ⧸ fixedPointIdeal Γ A →ₐ[R] C ⧸ J` with
-`J ^ 2 = ⊥` lifts by formal smoothness of `A` to an `R`-algebra map `φ : A →ₐ[R] C` whose
-displacements `δ γ a = φ (γ • a) - φ a` lie in `J`. Composing `φ` with the averaging projection
-`averageMap` sets `g a = ⅟|Γ| • ∑ γ : Γ, φ (γ • a) = φ a + D a` with
-`D a = ⅟|Γ| • ∑ γ : Γ, δ γ a ∈ J`; both `δ γ a * δ γ b` and `D a * D b` vanish because `J ^ 2 = ⊥`,
-so `g` is multiplicative, and right-invariance of `averageMap` makes `g` kill `fixedPointIdeal Γ A`,
-giving an `R`-algebra lift of `f` to `C`.
+We prove **Edixhoven's tame fixed-point smoothness theorem**
+(`formallySmooth_quotient_fixedPointIdeal`, `smooth_quotient_fixedPointIdeal`): when `A` is formally
+smooth (resp. smooth) over `R` and `(Nat.card Γ : R)` is a unit in `R`, `A ⧸ fixedPointIdeal Γ A` is
+formally smooth (resp. smooth) over `R` (`[Finite Γ]` is deduced automatically over nontrivial `R`).
+Given a square-zero extension `C ↠ C ⧸ J` (`J ^ 2 = ⊥`) and an unaveraged lift `φ : A →ₐ[R] C` with
+displacements `δ γ a = φ (γ • a) - φ a ∈ J`, composing `φ` with `Representation.averageMap` makes
+the lift multiplicative (as products of elements of `J` vanish) and `Γ`-invariant.
 
 ## Main results
 
 * `TauCeti.MulSemiringAction.formallySmooth_quotient_fixedPointIdeal` and
-  `TauCeti.MulSemiringAction.smooth_quotient_fixedPointIdeal`: **Edixhoven's theorem** that the
-  fixed-point quotient of a formally smooth (or smooth) `R`-algebra under a group of invertible
-  order is formally smooth (or smooth) over `R`.
+  `TauCeti.MulSemiringAction.smooth_quotient_fixedPointIdeal`: Edixhoven's smoothness theorem.
 
 ## References
 
@@ -61,30 +45,26 @@ namespace TauCeti.MulSemiringAction
 
 section Lift
 
-private theorem averagedLift_map_mul {R Γ A C : Type*} [CommRing R] [CommRing A] [Algebra R A]
-    [CommRing C] [Algebra R C] [Group Γ] [MulSemiringAction Γ A] [SMulCommClass Γ R A] [Fintype Γ]
-    [Invertible (Fintype.card Γ : R)] {J : Ideal C} (hJ : J ^ 2 = ⊥) (φ : A →ₐ[R] C)
+variable {R Γ A C : Type*} [CommRing R] [CommRing A] [Algebra R A] [CommRing C] [Algebra R C]
+  [Group Γ] [MulSemiringAction Γ A] [SMulCommClass Γ R A] [Fintype Γ]
+  [Invertible (Fintype.card Γ : R)] {J : Ideal C}
+
+private theorem averagedLift_map_mul (hJ : J ^ 2 = ⊥) (φ : A →ₐ[R] C)
     (hφ : ∀ (γ : Γ) (a : A), φ (γ • a) - φ a ∈ J) (a b : A) :
     φ ((Representation.ofDistribMulAction R Γ A).averageMap (a * b)) =
       φ ((Representation.ofDistribMulAction R Γ A).averageMap a) *
         φ ((Representation.ofDistribMulAction R Γ A).averageMap b) := by
-  let w : R := ⅟(Fintype.card Γ : R)
-  have hw : w = ⅟(Fintype.card Γ : R) := rfl
-  let D : A → C := fun x ↦ w • ∑ γ : Γ, (φ (γ • x) - φ x)
-  have hD (x : A) : D x = w • ∑ γ : Γ, (φ (γ • x) - φ x) := rfl
+  let D (x : A) : C := ⅟(Fintype.card Γ : R) • ∑ γ : Γ, (φ (γ • x) - φ x)
   have hDJ (x : A) : D x ∈ J := by
-    rw [hD, Algebra.smul_def]
-    exact J.mul_mem_left _ (sum_mem fun γ _ ↦ hφ γ x)
+    dsimp only [D]; rw [Algebra.smul_def]; exact J.mul_mem_left _ (sum_mem fun γ _ ↦ hφ γ x)
   have havg (x : A) : φ ((Representation.ofDistribMulAction R Γ A).averageMap x) = φ x + D x := by
-    rw [hD, Representation.averageMap_apply, map_smul, map_sum, ← hw]
+    rw [Representation.averageMap_apply, map_smul, map_sum]
     simp only [Representation.ofDistribMulAction_apply_apply]
     have hsum : (∑ γ : Γ, φ (γ • x)) = (∑ _γ : Γ, φ x) + ∑ γ : Γ, (φ (γ • x) - φ x) := by
-      rw [← Finset.sum_add_distrib]
-      exact Finset.sum_congr rfl fun _ _ ↦ (add_sub_cancel _ _).symm
-    rw [hsum, smul_add, hw, Fintype.invOf_card_smul_sum_const, ← hw]
+      rw [← Finset.sum_add_distrib]; exact Finset.sum_congr rfl fun _ _ ↦ (add_sub_cancel _ _).symm
+    rw [hsum, smul_add, Fintype.invOf_card_smul_sum_const]
   have hterm (γ : Γ) :
-      φ (γ • (a * b)) =
-        φ a * φ b + φ a * (φ (γ • b) - φ b) + (φ (γ • a) - φ a) * φ b := by
+      φ (γ • (a * b)) = φ a * φ b + φ a * (φ (γ • b) - φ b) + (φ (γ • a) - φ a) * φ b := by
     have hzero : (φ (γ • a) - φ a) * (φ (γ • b) - φ b) = 0 :=
       Ideal.mem_bot.mp (hJ ▸ sq J ▸ Ideal.mul_mem_mul (hφ γ a) (hφ γ b))
     calc φ (γ • (a * b))
@@ -98,46 +78,35 @@ private theorem averagedLift_map_mul {R Γ A C : Type*} [CommRing R] [CommRing A
         (∑ γ : Γ, (φ (γ • a) - φ a)) * φ b := by
     simp only [hterm, Finset.sum_add_distrib, Finset.mul_sum, Finset.sum_mul]
   have hDD : D a * D b = 0 := Ideal.mem_bot.mp (hJ ▸ sq J ▸ Ideal.mul_mem_mul (hDJ a) (hDJ b))
-  rw [Representation.averageMap_apply, map_smul, map_sum, ← hw]
+  rw [Representation.averageMap_apply, map_smul, map_sum]
   simp only [Representation.ofDistribMulAction_apply_apply]
-  calc w • ∑ γ : Γ, φ (γ • (a * b))
-      = w • (∑ _γ : Γ, φ a * φ b) + w • (φ a * ∑ γ : Γ, (φ (γ • b) - φ b)) +
-          w • ((∑ γ : Γ, (φ (γ • a) - φ a)) * φ b) := by rw [hsum, smul_add, smul_add]
+  calc ⅟(Fintype.card Γ : R) • ∑ γ : Γ, φ (γ • (a * b))
+      = ⅟(Fintype.card Γ : R) • (∑ _γ : Γ, φ a * φ b) +
+          ⅟(Fintype.card Γ : R) • (φ a * ∑ γ : Γ, (φ (γ • b) - φ b)) +
+          ⅟(Fintype.card Γ : R) • ((∑ γ : Γ, (φ (γ • a) - φ a)) * φ b) := by
+        rw [hsum, smul_add, smul_add]
     _ = φ a * φ b + φ a * D b + D a * φ b := by
-        rw [hD a, hD b, mul_smul_comm, smul_mul_assoc, hw, Fintype.invOf_card_smul_sum_const]
-    _ = φ a * φ b + φ a * D b + D a * φ b + D a * D b := by rw [hDD, add_zero]
-    _ = (φ a + D a) * (φ b + D b) := by ring
+        rw [mul_smul_comm, smul_mul_assoc, Fintype.invOf_card_smul_sum_const]
+    _ = (φ a + D a) * (φ b + D b) := by linear_combination -hDD
     _ = φ ((Representation.ofDistribMulAction R Γ A).averageMap a) *
           φ ((Representation.ofDistribMulAction R Γ A).averageMap b) := by rw [havg a, havg b]
 
-/-- Square-zero Reynolds averaging: given an `R`-algebra map `φ : A →ₐ[R] C` whose `Γ`-displacements
-lie in a square-zero ideal `J`, composing `φ` with `Representation.averageMap` yields an `R`-algebra
-map `A →ₐ[R] C`. -/
-private noncomputable def averagedLift {R Γ A C : Type*} [CommRing R] [CommRing A] [Algebra R A]
-    [CommRing C] [Algebra R C] [Group Γ] [MulSemiringAction Γ A] [SMulCommClass Γ R A] [Fintype Γ]
-    [Invertible (Fintype.card Γ : R)] {J : Ideal C} (hJ : J ^ 2 = ⊥) (φ : A →ₐ[R] C)
+/-- Square-zero Reynolds averaging via `Representation.averageMap`. -/
+private noncomputable def averagedLift (hJ : J ^ 2 = ⊥) (φ : A →ₐ[R] C)
     (hφ : ∀ (γ : Γ) (a : A), φ (γ • a) - φ a ∈ J) : A →ₐ[R] C :=
-  AlgHom.ofLinearMap
-    (φ.toLinearMap ∘ₗ (Representation.ofDistribMulAction R Γ A).averageMap)
-    (by
-      rw [LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-        Representation.averageMap_id _ 1 (by simp), map_one])
-    (averagedLift_map_mul hJ φ hφ)
+  AlgHom.ofLinearMap (φ.toLinearMap ∘ₗ (Representation.ofDistribMulAction R Γ A).averageMap)
+    (by rw [LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+      Representation.averageMap_id _ 1 (by simp), map_one])
+    (fun a b ↦ by
+      simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply]
+      exact averagedLift_map_mul hJ φ hφ a b)
 
-private theorem averagedLift_apply {R Γ A C : Type*} [CommRing R] [CommRing A] [Algebra R A]
-    [CommRing C] [Algebra R C] [Group Γ] [MulSemiringAction Γ A] [SMulCommClass Γ R A] [Fintype Γ]
-    [Invertible (Fintype.card Γ : R)] {J : Ideal C} (hJ : J ^ 2 = ⊥) (φ : A →ₐ[R] C)
-    (hφ : ∀ (γ : Γ) (a : A), φ (γ • a) - φ a ∈ J) (a : A) :
-    averagedLift hJ φ hφ a = φ ((Representation.ofDistribMulAction R Γ A).averageMap a) :=
-  rfl
-
-/-- Modulo `J`, `averagedLift` agrees with the unaveraged lift `φ`. -/
-private theorem mk_averagedLift {R Γ A C : Type*} [CommRing R] [CommRing A] [Algebra R A]
-    [CommRing C] [Algebra R C] [Group Γ] [MulSemiringAction Γ A] [SMulCommClass Γ R A] [Fintype Γ]
-    [Invertible (Fintype.card Γ : R)] {J : Ideal C} (hJ : J ^ 2 = ⊥) (φ : A →ₐ[R] C)
+private theorem mk_averagedLift (hJ : J ^ 2 = ⊥) (φ : A →ₐ[R] C)
     (hφ : ∀ (γ : Γ) (a : A), φ (γ • a) - φ a ∈ J) (a : A) :
     Ideal.Quotient.mk J (averagedLift hJ φ hφ a) = Ideal.Quotient.mk J (φ a) := by
-  rw [Ideal.Quotient.eq, averagedLift_apply, Representation.averageMap_apply, map_smul, map_sum]
+  have happly : averagedLift hJ φ hφ a =
+      φ ((Representation.ofDistribMulAction R Γ A).averageMap a) := rfl
+  rw [Ideal.Quotient.eq, happly, Representation.averageMap_apply, map_smul, map_sum]
   simp only [Representation.ofDistribMulAction_apply_apply]
   have hsub : ⅟(Fintype.card Γ : R) • (∑ γ : Γ, φ (γ • a)) - φ a =
       ⅟(Fintype.card Γ : R) • ∑ γ : Γ, (φ (γ • a) - φ a) := by
@@ -146,14 +115,10 @@ private theorem mk_averagedLift {R Γ A C : Type*} [CommRing R] [CommRing A] [Al
   rw [hsub, Algebra.smul_def]
   exact J.mul_mem_left _ (sum_mem fun γ _ ↦ hφ γ a)
 
-/-- Right-invariance of `Representation.averageMap` makes `averagedLift` invariant under `Γ`. -/
-private theorem averagedLift_smul {R Γ A C : Type*} [CommRing R] [CommRing A] [Algebra R A]
-    [CommRing C] [Algebra R C] [Group Γ] [MulSemiringAction Γ A] [SMulCommClass Γ R A] [Fintype Γ]
-    [Invertible (Fintype.card Γ : R)] {J : Ideal C} (hJ : J ^ 2 = ⊥) (φ : A →ₐ[R] C)
+private theorem averagedLift_smul (hJ : J ^ 2 = ⊥) (φ : A →ₐ[R] C)
     (hφ : ∀ (γ : Γ) (a : A), φ (γ • a) - φ a ∈ J) (θ : Γ) (a : A) :
-    averagedLift hJ φ hφ (θ • a) = averagedLift hJ φ hφ a := by
-  rw [averagedLift_apply, averagedLift_apply]
-  exact congrArg φ
+    averagedLift hJ φ hφ (θ • a) = averagedLift hJ φ hφ a :=
+  congrArg φ
     (LinearMap.congr_fun ((Representation.ofDistribMulAction R Γ A).averageMap_comp_ρ θ) a)
 
 end Lift
@@ -163,12 +128,11 @@ section Smooth
 variable {R Γ A : Type*} [CommRing R] [CommRing A] [Algebra R A]
   [Group Γ] [MulSemiringAction Γ A] [SMulCommClass Γ R A]
 
-/-- **Edixhoven's tame fixed-point formal smoothness theorem.** Let a group `Γ` act on a formally
-smooth commutative `R`-algebra `A` by `R`-algebra automorphisms. If `(Nat.card Γ : R)` is a unit in
-`R`, then the fixed-point quotient `A ⧸ fixedPointIdeal Γ A` is formally smooth over `R`. -/
+/-- **Edixhoven's tame fixed-point formal smoothness theorem.** If a group `Γ` acts on a formally
+smooth `R`-algebra `A` and `(Nat.card Γ : R)` is a unit in `R`, then `A ⧸ fixedPointIdeal Γ A` is
+formally smooth over `R`. -/
 theorem formallySmooth_quotient_fixedPointIdeal [Algebra.FormallySmooth R A]
-    (hΓ : IsUnit (Nat.card Γ : R)) :
-    Algebra.FormallySmooth R (A ⧸ fixedPointIdeal Γ A) := by
+    (hΓ : IsUnit (Nat.card Γ : R)) : Algebra.FormallySmooth R (A ⧸ fixedPointIdeal Γ A) := by
   rcases subsingleton_or_nontrivial R with _ | _
   · have : Subsingleton (A ⧸ fixedPointIdeal Γ A) := Module.subsingleton R _
     infer_instance
@@ -182,22 +146,17 @@ theorem formallySmooth_quotient_fixedPointIdeal [Algebra.FormallySmooth R A]
     rw [← Ideal.Quotient.eq, ← Ideal.Quotient.mkₐ_eq_mk R, ← AlgHom.comp_apply,
       ← AlgHom.comp_apply, hφ, AlgHom.comp_apply, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
       quotientMk_fixedPointIdeal_smul]
-  let g := averagedLift hJ φ hφJ
-  have hg : ∀ γ : Γ, g.comp (MulSemiringAction.toAlgHom R A γ) = g := fun γ ↦
-    AlgHom.ext (averagedLift_smul hJ φ hφJ γ)
-  refine ⟨(fixedPointQuotientAlgHomEquiv R Γ A C).symm ⟨g, hg⟩,
-    Ideal.Quotient.algHom_ext R ?_⟩
-  ext a
+  refine ⟨(fixedPointQuotientAlgHomEquiv R Γ A C).symm
+      ⟨averagedLift hJ φ hφJ, fun γ ↦ AlgHom.ext (averagedLift_smul hJ φ hφJ γ)⟩,
+    Ideal.Quotient.algHom_ext R (AlgHom.ext fun a ↦ ?_)⟩
   have hφa := congr($hφ a)
   simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
     fixedPointQuotientAlgHomEquiv_symm_apply_mk] at hφa ⊢
   exact (mk_averagedLift hJ φ hφJ a).trans hφa
 
-/-- **Edixhoven's tame fixed-point smoothness theorem.** Let a group `Γ` act on a smooth commutative
-`R`-algebra `A` by `R`-algebra automorphisms. If `(Nat.card Γ : R)` is a unit in `R`, then the
-fixed-point quotient `A ⧸ fixedPointIdeal Γ A` is smooth over `R`. -/
-theorem smooth_quotient_fixedPointIdeal [Algebra.Smooth R A]
-    (hΓ : IsUnit (Nat.card Γ : R)) :
+/-- **Edixhoven's tame fixed-point smoothness theorem.** If a group `Γ` acts on a smooth `R`-algebra
+`A` and `(Nat.card Γ : R)` is a unit in `R`, then `A ⧸ fixedPointIdeal Γ A` is smooth over `R`. -/
+theorem smooth_quotient_fixedPointIdeal [Algebra.Smooth R A] (hΓ : IsUnit (Nat.card Γ : R)) :
     Algebra.Smooth R (A ⧸ fixedPointIdeal Γ A) := by
   rcases subsingleton_or_nontrivial R with _ | _
   · have : Subsingleton (A ⧸ fixedPointIdeal Γ A) := Module.subsingleton R _

@@ -10,31 +10,19 @@ public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Equalizer
 /-!
 # The fixed-point Hopf ideal of a family of bialgebra endomorphisms
 
-Let `H` be a commutative Hopf `R`-algebra and `f : ι → (H →ₐc[R] H)` a family of bialgebra
-endomorphisms. Contravariantly, `Spec H` is an affine group scheme over `Spec R` and each `f i` is
-a group-scheme endomorphism `Spec H ⟶ Spec H`. This file defines the **fixed-point Hopf ideal**
-`TauCeti.HopfIdeal.fixedPoint f = ⨆ i, HopfIdeal.equalizer (f i) (BialgHom.id R H)`.
+For a commutative Hopf `R`-algebra `H` and bialgebra endomorphisms `f : ι → (H →ₐc[R] H)`, this file
+defines the **fixed-point Hopf ideal** `TauCeti.HopfIdeal.fixedPoint f` as the supremum of
+`HopfIdeal.equalizer (f i) (BialgHom.id R H)`. Contravariantly, `(Spec H)^f` is a closed subgroup
+scheme of `Spec H`: a ring homomorphism kills `(fixedPoint f).toIdeal` iff it is invariant under
+every `f i` (`fixedPoint_le_ker_iff`), and `fixedPoint f = ⊥` iff every `f i = id`
+(`fixedPoint_eq_bot_iff`). Bundled categorical versions and Edixhoven's smoothness theorem live in
+`TauCeti.Algebra.AlgebraicGroup.HopfIdeal.FixedPoint`.
 
-Because `HopfIdeal.equalizer` is a Hopf ideal and `HopfIdeal R H` is closed under arbitrary
-suprema, `fixedPoint f` is automatically a Hopf ideal of `H`: the fixed locus `(Spec H)^f` is a
-**closed subgroup scheme** of `Spec H`, not merely a closed subscheme. A ring homomorphism out of
-`H` kills `(fixedPoint f).toIdeal` precisely when it is invariant under every `f i`
-(`fixedPoint_le_ker_iff`), and `fixedPoint f = ⊥` precisely when every `f i` is the identity
-(`fixedPoint_eq_bot_iff`).
+## Main declarations
 
-Bundled categorical versions in `CommHopfAlgCat`, point-subgroup characterizations, and Edixhoven's
-tame fixed-point smoothness theorem live in `TauCeti.Algebra.AlgebraicGroup.HopfIdeal.FixedPoint`.
-
-## Main definitions
-
-* `TauCeti.HopfIdeal.fixedPoint`: the fixed-point Hopf ideal of a family `ι → (H →ₐc[R] H)`.
-
-## Main results
-
-* `TauCeti.HopfIdeal.fixedPoint_le_iff` and `TauCeti.HopfIdeal.fixedPoint_le_ker_iff`: universal
-  properties of `fixedPoint f` among Hopf ideals and ring homomorphisms.
-* `TauCeti.HopfIdeal.fixedPoint_eq_bot_iff`: `fixedPoint f = ⊥` if and only if every `f i` is
-  `BialgHom.id R H`.
+* `TauCeti.HopfIdeal.fixedPoint`: the fixed-point Hopf ideal of `f : ι → (H →ₐc[R] H)`.
+* `TauCeti.HopfIdeal.fixedPoint_le_iff`, `TauCeti.HopfIdeal.fixedPoint_le_ker_iff`, and
+  `TauCeti.HopfIdeal.fixedPoint_eq_bot_iff`: universal properties and triviality criterion.
 
 ## References
 
@@ -51,28 +39,21 @@ universe u v w
 
 variable {R : Type u} [CommRing R] {H : Type v} [CommRing H] [HopfAlgebra R H] {ι : Sort w}
 
-/-- The **fixed-point Hopf ideal** of a family `f : ι → (H →ₐc[R] H)` of bialgebra endomorphisms of
-a commutative Hopf algebra `H`: the supremum of the equalizer Hopf ideals `equalizer (f i) id`.
-
-Contravariantly, the quotient `H ⧸ (fixedPoint f).toIdeal` is the coordinate Hopf algebra of the
-closed subgroup scheme of `Spec H` on which every endomorphism `Spec (f i)` restricts to the
-identity. -/
+/-- The **fixed-point Hopf ideal** of bialgebra endomorphisms `f : ι → (H →ₐc[R] H)`: the supremum
+of `equalizer (f i) (BialgHom.id R H)`, cutting out `(Spec H)^f` as a closed subgroup scheme. -/
 def fixedPoint (f : ι → (H →ₐc[R] H)) : HopfIdeal R H :=
   ⨆ i, equalizer (f i) (BialgHom.id R H)
 
 /-- `fixedPoint f` is the supremum of `equalizer (f i) (BialgHom.id R H)`. -/
 theorem fixedPoint_def (f : ι → (H →ₐc[R] H)) :
-    fixedPoint f = ⨆ i, equalizer (f i) (BialgHom.id R H) :=
-  (rfl)
+    fixedPoint f = ⨆ i, equalizer (f i) (BialgHom.id R H) := (rfl)
 
-/-- The underlying ideal of `fixedPoint f` is the supremum of the individual displacement ideals. -/
+/-- The underlying ideal of `fixedPoint f` is the supremum of the displacement ideals. -/
 theorem fixedPoint_toIdeal (f : ι → (H →ₐc[R] H)) :
-    (fixedPoint f).toIdeal = ⨆ i, equalizerIdeal (f i) (BialgHom.id R H) := by
-  simp [fixedPoint_def]
+    (fixedPoint f).toIdeal = ⨆ i, equalizerIdeal (f i) (BialgHom.id R H) := by simp [fixedPoint_def]
 
 /-- Every displacement `f i a - a` lies in `fixedPoint f`. -/
-theorem sub_mem_fixedPoint (f : ι → (H →ₐc[R] H)) (i : ι) (a : H) :
-    f i a - a ∈ fixedPoint f := by
+theorem sub_mem_fixedPoint (f : ι → (H →ₐc[R] H)) (i : ι) (a : H) : f i a - a ∈ fixedPoint f := by
   rw [← mem_toIdeal, fixedPoint_toIdeal]
   exact Submodule.mem_iSup_of_mem i (sub_mem_equalizerIdeal (f i) (BialgHom.id R H) a)
 
@@ -85,17 +66,14 @@ theorem fixedPoint_toIdeal_le_iff {f : ι → (H →ₐc[R] H)} {J : Ideal H} :
 /-- `fixedPoint f` is the smallest Hopf ideal containing every displacement `f i a - a`. -/
 theorem fixedPoint_le_iff {f : ι → (H →ₐc[R] H)} {J : HopfIdeal R H} :
     fixedPoint f ≤ J ↔ ∀ (i : ι) (a : H), f i a - a ∈ J := by
-  rw [← toIdeal_le_toIdeal, fixedPoint_toIdeal_le_iff]
-  simp only [mem_toIdeal]
+  rw [← toIdeal_le_toIdeal, fixedPoint_toIdeal_le_iff]; simp only [mem_toIdeal]
 
-/-- A ring homomorphism out of `H` into a semiring `A` kills `(fixedPoint f).toIdeal` if and only
-if it is invariant under every `f i`. -/
+/-- A ring homomorphism into a semiring kills `(fixedPoint f).toIdeal` iff it is `f`-invariant. -/
 theorem fixedPoint_le_ker_iff {A : Type*} [Semiring A] (f : ι → (H →ₐc[R] H)) (φ : H →+* A) :
     (fixedPoint f).toIdeal ≤ RingHom.ker φ ↔ ∀ (i : ι) (a : H), φ (f i a) = φ a := by
   rw [fixedPoint_toIdeal_le_iff]
   refine forall₂_congr fun i a ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [RingHom.mem_ker] at h
-    rw [← sub_add_cancel (f i a) a, map_add, h, zero_add]
+  · rw [RingHom.mem_ker] at h; rw [← sub_add_cancel (f i a) a, map_add, h, zero_add]
   · rw [RingHom.mem_ker, sub_eq_add_neg, map_add, h, ← map_add, add_neg_cancel, map_zero]
 
 /-- `fixedPoint f` vanishes if and only if every `f i` is the identity bialgebra morphism. -/
