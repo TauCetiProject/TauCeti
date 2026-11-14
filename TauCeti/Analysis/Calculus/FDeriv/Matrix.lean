@@ -30,10 +30,10 @@ normed field. Neither completeness nor independence of the directions is require
 Over a complete nontrivially normed field, a family of finite matrices `y ↦ M y` induces a
 differentiable family of continuous linear maps `y ↦ (Matrix.toLin' (M y)).toContinuousLinearMap`
 within a set, at a point, or on a domain if and only if every matrix entry `y ↦ M y i j` is
-differentiable (`Matrix.differentiableWithinAt_toContinuousLinearMap_toLin'`,
-`Matrix.differentiableAt_toContinuousLinearMap_toLin'`,
-`Matrix.differentiableOn_toContinuousLinearMap_toLin'`,
-`Matrix.differentiable_toContinuousLinearMap_toLin'`).
+differentiable (`TauCeti.differentiableWithinAt_toContinuousLinearMap_toLin'`,
+`TauCeti.differentiableAt_toContinuousLinearMap_toLin'`,
+`TauCeti.differentiableOn_toContinuousLinearMap_toLin'`,
+`TauCeti.differentiable_toContinuousLinearMap_toLin'`).
 
 For a constant matrix `M`, a map that agrees near `x` with `M *ᵥ f + b` has derivative `M f'(x)`
 at `x` (`HasFDerivAt.of_eventuallyEq_mulVec_add`). Conversely, if the derivatives of two `C¹`
@@ -86,9 +86,31 @@ theorem sum_fderiv_mulVec_eq_trace_of_sum_fderiv_eq_zero
   rw [sum_fderiv_mulVec_eq_trace_add A v e x hA hv]
   simp only [hdiv, mul_zero, Finset.sum_const_zero, add_zero]
 
+end Matrix
+
+open Matrix Topology in
+/-- If `g = M *ᵥ f + b` near `x` for a constant matrix `M` and a constant vector `b`, and `f` has
+derivative `f'` at `x`, then `g` has derivative `M f'` at `x`. -/
+theorem HasFDerivAt.of_eventuallyEq_mulVec_add {ι κ E 𝕜 : Type*} [Fintype ι] [DecidableEq ι]
+    [Finite κ] [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E]
+    {f : E → ι → 𝕜} {g : E → κ → 𝕜} {f' : E →L[𝕜] ι → 𝕜} {M : Matrix κ ι 𝕜} {b : κ → 𝕜}
+    {x : E} (hf : HasFDerivAt f f' x) (h : ∀ᶠ y in 𝓝 x, g y = M *ᵥ f y + b) :
+    HasFDerivAt g ((Matrix.toLin' M).toContinuousLinearMap.comp f') x := by
+  have := Fintype.ofFinite κ
+  refine (((Matrix.toLin' M).toContinuousLinearMap.hasFDerivAt.comp x hf).add_const
+    b).congr_of_eventuallyEq ?_
+  filter_upwards [h] with y hy
+  simp [hy]
+
+namespace TauCeti
+
+open Set Function Matrix
+
 section DifferentiableToLin
 
-variable {κ : Type*} [DecidableEq ι] [Finite κ] [CompleteSpace 𝕜]
+variable {ι κ E 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [Finite κ]
+  [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- A family of finite matrices induces a continuous-linear-map family differentiable within `s` at
 `x` if and only if each matrix entry is differentiable within `s` at `x`. -/
@@ -98,9 +120,9 @@ theorem differentiableWithinAt_toContinuousLinearMap_toLin'
       ∀ i j, DifferentiableWithinAt 𝕜 (fun y ↦ M y i j) s x := by
   have := Fintype.ofFinite κ
   refine ⟨fun h i j ↦ ?_, fun h ↦ ?_⟩
-  · have hv := (TauCeti.differentiableWithinAt_clm_apply.mp h) (Pi.single j 1)
+  · have hv := (differentiableWithinAt_clm_apply.mp h) (Pi.single j 1)
     simpa [Matrix.mulVec_single] using differentiableWithinAt_pi.mp hv i
-  · refine TauCeti.differentiableWithinAt_clm_apply.mpr fun v ↦
+  · refine differentiableWithinAt_clm_apply.mpr fun v ↦
       differentiableWithinAt_pi.mpr fun i ↦ ?_
     simp only [LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply, Matrix.mulVec, dotProduct]
     exact DifferentiableWithinAt.fun_sum fun j _ ↦ (h i j).mul_const (v j)
@@ -134,27 +156,6 @@ theorem differentiable_toContinuousLinearMap_toLin'
   exact differentiableOn_toContinuousLinearMap_toLin'
 
 end DifferentiableToLin
-
-end Matrix
-
-open Matrix Topology in
-/-- If `g = M *ᵥ f + b` near `x` for a constant matrix `M` and a constant vector `b`, and `f` has
-derivative `f'` at `x`, then `g` has derivative `M f'` at `x`. -/
-theorem HasFDerivAt.of_eventuallyEq_mulVec_add {ι κ E 𝕜 : Type*} [Fintype ι] [DecidableEq ι]
-    [Finite κ] [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedAddCommGroup E]
-    [NormedSpace 𝕜 E]
-    {f : E → ι → 𝕜} {g : E → κ → 𝕜} {f' : E →L[𝕜] ι → 𝕜} {M : Matrix κ ι 𝕜} {b : κ → 𝕜}
-    {x : E} (hf : HasFDerivAt f f' x) (h : ∀ᶠ y in 𝓝 x, g y = M *ᵥ f y + b) :
-    HasFDerivAt g ((Matrix.toLin' M).toContinuousLinearMap.comp f') x := by
-  have := Fintype.ofFinite κ
-  refine (((Matrix.toLin' M).toContinuousLinearMap.hasFDerivAt.comp x hf).add_const
-    b).congr_of_eventuallyEq ?_
-  filter_upwards [h] with y hy
-  simp [hy]
-
-namespace TauCeti
-
-open Set Function Matrix
 
 variable {ι : Type*} [Fintype ι] {D : Set (ι → ℝ)} {A A' : (ι → ℝ) → ι → ℝ}
 

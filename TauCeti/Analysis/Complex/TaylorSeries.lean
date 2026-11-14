@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Complex.TaylorSeries
-public import TauCeti.Analysis.Calculus.FormalMultilinearSeries
+public import TauCeti.Analysis.Analytic.OfScalars
 
 /-!
 # Formal power series on open extended discs for holomorphic functions
@@ -16,8 +15,9 @@ Mathlib's `Complex.hasSum_taylorSeries_on_eball` shows that the Taylor series ar
 Banach-space-valued holomorphic function on `Metric.eball z₀ r` (`r ≤ ∞`) sums pointwise to `f`
 throughout that open extended disc. Packaging this with term decay on every smaller radius yields
 `HasFPowerSeriesOnBall` on the entire open extended disc `Metric.eball z₀ r` for `0 < r`
-(`DifferentiableOn.hasFPowerSeriesOnBall_eball`), without requiring continuity on the boundary or a
-finite radius.
+(`DifferentiableOn.hasFPowerSeriesOnBall_eball` and the scalar specialization
+`DifferentiableOn.hasFPowerSeriesOnBall_ofScalars_eball`), without requiring continuity on the
+boundary or a finite radius.
 -/
 
 public section
@@ -53,5 +53,17 @@ theorem DifferentiableOn.hasFPowerSeriesOnBall_eball
     simpa using (hsum hR_mem).summable.tendsto_atTop_zero.norm
   refine (TauCeti.mkPiRingSeries ℂ c).le_radius_of_tendsto (htend.congr fun n ↦ ?_)
   simp [norm_smul, mul_comm]
+
+/-- A scalar function `f : ℂ → ℂ` that is complex differentiable on an open extended disc
+`Metric.eball z₀ r` (`0 < r ≤ ∞`) admits its scalar iterated-derivative Taylor series
+`FormalMultilinearSeries.ofScalars ℂ (fun n ↦ (n ! : ℂ)⁻¹ * iteratedDeriv n f z₀)` on the full disc
+`Metric.eball z₀ r`. -/
+theorem DifferentiableOn.hasFPowerSeriesOnBall_ofScalars_eball
+    {f : ℂ → ℂ} {z₀ : ℂ} {r : ℝ≥0∞}
+    (hf : DifferentiableOn ℂ f (Metric.eball z₀ r)) (hr : 0 < r) :
+    HasFPowerSeriesOnBall f
+      (FormalMultilinearSeries.ofScalars ℂ fun n ↦ (n ! : ℂ)⁻¹ * iteratedDeriv n f z₀) z₀ r := by
+  simpa only [smul_eq_mul, TauCeti.mkPiRingSeries_eq_ofScalars] using
+    hf.hasFPowerSeriesOnBall_eball hr
 
 end

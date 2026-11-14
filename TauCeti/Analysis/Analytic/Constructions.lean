@@ -25,9 +25,11 @@ Finite sums of functions admitting power series on a common ball admit the summe
 that ball (`Finset.hasFPowerSeriesOnBall_sum`, `Finset.hasFPowerSeriesWithinOnBall_sum`).
 
 In one variable, pointwise evaluation `z ↦ A z (v z)` of a continuous-linear-map-valued series on a
-vector-valued series and multiplication `f * g` in a normed algebra admit the explicit
-Cauchy-product formal power series on the same ball (`HasFPowerSeriesOnBall.clm_apply`,
-`HasFPowerSeriesOnBall.mul`).
+vector-valued series, scalar multiplication `f • g` over a normed algebra, and multiplication
+`f * g` in a normed algebra admit the explicit Cauchy-product formal power series on the same ball
+(`HasFPowerSeriesWithinOnBall.clm_apply`, `HasFPowerSeriesOnBall.clm_apply`,
+`HasFPowerSeriesWithinOnBall.smul`, `HasFPowerSeriesOnBall.smul`,
+`HasFPowerSeriesWithinOnBall.mul`, `HasFPowerSeriesOnBall.mul`).
 -/
 
 public section
@@ -114,16 +116,16 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
 
 /-- Pointwise evaluation `z ↦ A z (v z)` of a continuous-linear-map-valued function `A` and a
 vector-valued function `v` admitting one-variable power series `p` and `q` on `Metric.eball z₀ r`
-admits the Cauchy-product power series on `Metric.eball z₀ r`. -/
-theorem HasFPowerSeriesOnBall.clm_apply
+within `s` admits the Cauchy-product power series on `Metric.eball z₀ r` within `s`. -/
+theorem HasFPowerSeriesWithinOnBall.clm_apply
     {A : 𝕜 → E →L[𝕜] F} {v : 𝕜 → E}
     {p : FormalMultilinearSeries 𝕜 𝕜 (E →L[𝕜] F)} {q : FormalMultilinearSeries 𝕜 𝕜 E}
-    {z₀ : 𝕜} {r : ℝ≥0∞}
-    (hA : HasFPowerSeriesOnBall A p z₀ r) (hv : HasFPowerSeriesOnBall v q z₀ r) :
-    HasFPowerSeriesOnBall (fun z ↦ A z (v z))
+    {s : Set 𝕜} {z₀ : 𝕜} {r : ℝ≥0∞}
+    (hA : HasFPowerSeriesWithinOnBall A p s z₀ r) (hv : HasFPowerSeriesWithinOnBall v q s z₀ r) :
+    HasFPowerSeriesWithinOnBall (fun z ↦ A z (v z))
       (TauCeti.mkPiRingSeries 𝕜 fun n ↦ ∑ k ∈ Finset.range (n + 1), p.coeff (n - k) (q.coeff k))
-      z₀ r := by
-  refine ⟨ENNReal.le_of_forall_nnreal_lt fun R hRr ↦ ?_, hA.r_pos, fun {y} hy ↦ ?_⟩
+      s z₀ r := by
+  refine ⟨ENNReal.le_of_forall_nnreal_lt fun R hRr ↦ ?_, hA.r_pos, fun {y} h'y hy ↦ ?_⟩
   · have hsumA : Summable fun n ↦ ‖p.coeff n‖ * (R : ℝ) ^ n := by
       simpa only [FormalMultilinearSeries.norm_apply_eq_norm_coef] using
         p.summable_norm_mul_pow (hRr.trans_le hA.r_le)
@@ -158,15 +160,77 @@ theorem HasFPowerSeriesOnBall.clm_apply
                     ring
   · have hyA := Metric.eball_subset_eball hA.r_le hy
     have hyv := Metric.eball_subset_eball hv.r_le hy
-    have hprod := (hA.hasSum hy).clm_apply_range (hv.hasSum hy)
+    have hprod := (hA.hasSum h'y hy).sum_clm_apply_range_of_summable_norm (hv.hasSum h'y hy)
       (p.summable_norm_apply hyA) (q.summable_norm_apply hyv)
     refine hprod.congr_fun fun n ↦ ?_
-    rw [TauCeti.mkPiRingSeries_apply, Finset.smul_sum]
+    rw [TauCeti.mkPiRingSeries_apply, Finset.smul_sum,
+      ← Finset.sum_range_reflect (fun j ↦ (p j fun _ ↦ y) (q (n - j) fun _ ↦ y))]
     refine Finset.sum_congr rfl fun k hk ↦ ?_
-    have hkn : k + (n - k) = n := Nat.add_sub_of_le (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
-    simp only [FormalMultilinearSeries.apply_eq_pow_smul_coeff, smul_apply,
-      map_smul, smul_smul]
-    rw [← pow_add, hkn]
+    have hkle : k ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
+    simp only [Nat.add_sub_cancel, Nat.sub_sub_self hkle,
+      FormalMultilinearSeries.apply_eq_pow_smul_coeff, smul_apply, map_smul, smul_smul]
+    rw [← pow_add, Nat.add_sub_of_le hkle]
+
+/-- Pointwise evaluation `z ↦ A z (v z)` of a continuous-linear-map-valued function `A` and a
+vector-valued function `v` admitting one-variable power series `p` and `q` on `Metric.eball z₀ r`
+admits the Cauchy-product power series on `Metric.eball z₀ r`. -/
+theorem HasFPowerSeriesOnBall.clm_apply
+    {A : 𝕜 → E →L[𝕜] F} {v : 𝕜 → E}
+    {p : FormalMultilinearSeries 𝕜 𝕜 (E →L[𝕜] F)} {q : FormalMultilinearSeries 𝕜 𝕜 E}
+    {z₀ : 𝕜} {r : ℝ≥0∞}
+    (hA : HasFPowerSeriesOnBall A p z₀ r) (hv : HasFPowerSeriesOnBall v q z₀ r) :
+    HasFPowerSeriesOnBall (fun z ↦ A z (v z))
+      (TauCeti.mkPiRingSeries 𝕜 fun n ↦ ∑ k ∈ Finset.range (n + 1), p.coeff (n - k) (q.coeff k))
+      z₀ r := by
+  rw [← hasFPowerSeriesWithinOnBall_univ] at hA hv ⊢
+  exact hA.clm_apply hv
+
+/-- Pointwise scalar multiplication `f • g` of a normed-`𝕜`-algebra-valued function `f` and a
+module-valued function `g` admitting formal power series `p` and `q` on `Metric.eball z₀ r` within
+`s` admits the Cauchy-product power series on `Metric.eball z₀ r` within `s`. -/
+@[to_fun]
+theorem HasFPowerSeriesWithinOnBall.smul
+    {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A]
+    [Module A E] [IsBoundedSMul A E] [IsScalarTower 𝕜 A E]
+    {f : 𝕜 → A} {g : 𝕜 → E} {p : FormalMultilinearSeries 𝕜 𝕜 A}
+    {q : FormalMultilinearSeries 𝕜 𝕜 E} {s : Set 𝕜} {z₀ : 𝕜} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesWithinOnBall f p s z₀ r)
+    (hg : HasFPowerSeriesWithinOnBall g q s z₀ r) :
+    HasFPowerSeriesWithinOnBall (f • g)
+      (TauCeti.mkPiRingSeries 𝕜 fun n ↦ ∑ k ∈ Finset.range (n + 1), p.coeff (n - k) • q.coeff k)
+      s z₀ r := by
+  simpa [Pi.smul_def'] using
+    ((ContinuousLinearMap.lsmul 𝕜 A).comp_hasFPowerSeriesWithinOnBall hf).clm_apply hg
+
+/-- Pointwise scalar multiplication `f • g` of a normed-`𝕜`-algebra-valued function `f` and a
+module-valued function `g` admitting formal power series `p` and `q` on `Metric.eball z₀ r` admits
+the Cauchy-product power series on `Metric.eball z₀ r`. -/
+@[to_fun]
+theorem HasFPowerSeriesOnBall.smul
+    {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A]
+    [Module A E] [IsBoundedSMul A E] [IsScalarTower 𝕜 A E]
+    {f : 𝕜 → A} {g : 𝕜 → E} {p : FormalMultilinearSeries 𝕜 𝕜 A}
+    {q : FormalMultilinearSeries 𝕜 𝕜 E} {z₀ : 𝕜} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f p z₀ r) (hg : HasFPowerSeriesOnBall g q z₀ r) :
+    HasFPowerSeriesOnBall (f • g)
+      (TauCeti.mkPiRingSeries 𝕜 fun n ↦ ∑ k ∈ Finset.range (n + 1), p.coeff (n - k) • q.coeff k)
+      z₀ r := by
+  rw [← hasFPowerSeriesWithinOnBall_univ] at hf hg ⊢
+  exact hf.smul hg
+
+/-- The product of two functions from `𝕜` into a normed `𝕜`-algebra admitting formal power series
+`p` and `q` on `Metric.eball z₀ r` within `s` admits the Cauchy-product power series on
+`Metric.eball z₀ r` within `s`. -/
+@[to_fun]
+theorem HasFPowerSeriesWithinOnBall.mul
+    {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A]
+    {f g : 𝕜 → A} {p q : FormalMultilinearSeries 𝕜 𝕜 A} {s : Set 𝕜} {z₀ : 𝕜} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesWithinOnBall f p s z₀ r)
+    (hg : HasFPowerSeriesWithinOnBall g q s z₀ r) :
+    HasFPowerSeriesWithinOnBall (f * g)
+      (TauCeti.mkPiRingSeries 𝕜 fun n ↦ ∑ k ∈ Finset.range (n + 1), p.coeff (n - k) * q.coeff k)
+      s z₀ r :=
+  hf.smul hg
 
 /-- The product of two functions from `𝕜` into a normed `𝕜`-algebra admitting formal power series
 `p` and `q` on `Metric.eball z₀ r` admits the Cauchy-product power series on `Metric.eball z₀ r`. -/
@@ -177,8 +241,7 @@ theorem HasFPowerSeriesOnBall.mul
     (hf : HasFPowerSeriesOnBall f p z₀ r) (hg : HasFPowerSeriesOnBall g q z₀ r) :
     HasFPowerSeriesOnBall (f * g)
       (TauCeti.mkPiRingSeries 𝕜 fun n ↦ ∑ k ∈ Finset.range (n + 1), p.coeff (n - k) * q.coeff k)
-      z₀ r := by
-  simpa [Pi.mul_def] using
-    ((ContinuousLinearMap.mul 𝕜 A).comp_hasFPowerSeriesOnBall hf).clm_apply hg
+      z₀ r :=
+  hf.smul hg
 
 end CauchyProduct

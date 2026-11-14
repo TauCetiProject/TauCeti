@@ -22,9 +22,9 @@ This module develops existence, uniqueness, and Taylor-series representation for
 ordinary differential equations around an ordinary point `z₀ ∈ ℂ`, in three layers:
 
 * **Banach-space first-order linear systems** `v'(z) = A(z) (v(z)) + b(z)`:
-  - On any open preconnected set `U ⊆ ℂ`, two solutions that agree at a point `z₀ ∈ U` where `A` is
-    analytic coincide throughout `U`, with no regularity hypothesis on `b`
-    (`TauCeti.eqOn_of_hasDerivAt_clm_apply_add`).
+  - On any open preconnected set `U ⊆ ℂ`, two holomorphic functions on `U` that satisfy the system
+    near a point `z₀ ∈ U` where `A` is analytic and agree at `z₀` coincide throughout `U`, with no
+    regularity hypothesis on `b` (`TauCeti.eqOn_of_hasDerivAt_clm_apply_add`).
   - On an open extended disc `Metric.eball z₀ r` (`0 < r ≤ ∞`) where `A` and `b` are holomorphic (or
     admit formal power series), every initial value `v₀` determines a unique holomorphic solution
     whose Taylor series `TauCeti.mkPiRingSeries ℂ (TauCeti.linearSystemCoeff ...)` converges on the
@@ -47,15 +47,17 @@ ordinary differential equations around an ordinary point `z₀ ∈ ℂ`, in thre
 * **Second-order scalar equations** `w'' + f(z) w' + g(z) w = h(z)`:
   - On preconnected open sets `U` (and on `ℂ`), solutions are uniquely determined by `(w z₀, w' z₀)`
     at any ordinary point `z₀ ∈ U` where `f` and `g` are analytic and the equation holds near `z₀`
-    (`TauCeti.eqOn_of_secondOrder_linear_ode`, `TauCeti.eq_of_entire_secondOrder_linear_ode`).
+    (`TauCeti.eqOn_of_deriv_deriv_add_mul_deriv_add_mul_eq`,
+    `TauCeti.eq_of_differentiable_of_deriv_deriv_add_mul_deriv_add_mul_eq`).
   - On open discs `Metric.eball z₀ r` (`0 < r ≤ ∞`), `Metric.ball z₀ r`, and `ℂ`, inhomogeneous
     initial-value problems admit unique holomorphic solutions
-    (`TauCeti.exists_secondOrder_linear_ode_eball`,
-    `TauCeti.existsUnique_entire_secondOrder_linear_ode`), and homogeneous solutions (`h = 0`) are
-    represented across the full disc by the Cauchy-product recurrence `TauCeti.ordinaryPointCoeff`
-    (`TauCeti.hasFPowerSeriesOnBall_of_ordinaryPoint_solution`,
-    `TauCeti.exists_ordinaryPoint_solution_eball`, `TauCeti.exists_ordinaryPoint_solution_ball`,
-    `TauCeti.exists_entire_ordinaryPoint_solution`).
+    (`TauCeti.exists_differentiableOn_eball_deriv_deriv_add_mul_deriv_add_mul_eq`,
+    `TauCeti.existsUnique_differentiable_deriv_deriv_add_mul_deriv_add_mul_eq`), and homogeneous
+    solutions (`h = 0`) are represented across the full disc by the Cauchy-product recurrence
+    `TauCeti.ordinaryPointCoeff` (`TauCeti.hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff`,
+    `TauCeti.exists_hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff_eball`,
+    `TauCeti.exists_hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff_ball`,
+    `TauCeti.exists_differentiable_hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff`).
 
 ### Coefficient normalization
 
@@ -67,12 +69,13 @@ whereas `LinearEquation.initialJet` records the **unscaled derivatives** `iterat
 ## Implementation notes
 
 Full-disc convergence (`TauCeti.le_radius_mkPiRingSeries_linearSystemCoeff`) is proved directly by
-Cauchy's method of majorants: on every smaller radius `ρ < r`, Cauchy coefficient bounds dominate
-`‖cₙ‖ ρⁿ` by a scalar sequence satisfying `(n + 1) μ_{n+1} = (n + 1 + α) μₙ`, whose consecutive
-ratios tend to `1`. Termwise differentiation (`HasFPowerSeriesOnBall.deriv`) and Banach-space
-Cauchy products (`HasFPowerSeriesOnBall.clm_apply`) verify the differential equation on the disc,
-while global uniqueness on preconnected open domains combines local power-series vanishing at `z₀`
-with analytic continuation (`AnalyticOnNhd.eqOn_zero_of_preconnected_of_eventuallyEq_zero`).
+Cauchy's method of majorants: on every smaller radius `ρ < r`, choosing `m : ℕ` with `ρ * CA ≤ m`
+bounds `‖cₙ‖ ρⁿ` by the binomial majorant `max ‖v₀‖ (ρ * Cb) * (n + m).choose m`, whose weighted
+geometric series converges on `R < ρ` by `summable_choose_mul_geometric_of_norm_lt_one`. Termwise
+differentiation (`HasFPowerSeriesOnBall.deriv`) and Banach-space Cauchy products
+(`HasFPowerSeriesOnBall.clm_apply`) verify the differential equation on the disc, while global
+uniqueness on preconnected open domains combines local power-series vanishing at `z₀` with analytic
+continuation (`AnalyticOnNhd.eqOn_zero_of_preconnected_of_eventuallyEq_zero`).
 
 ## References
 
@@ -177,75 +180,41 @@ theorem linearSystemCoeff_sub (A : ℕ → E →L[ℂ] E) (b₁ b₂ : ℕ → E
   rw [sub_eq_add_neg, sub_eq_add_neg v₁ v₂, linearSystemCoeff_add, linearSystemCoeff_neg,
     sub_eq_add_neg]
 
-private def majorantSeq (μ₀ α : ℝ) : ℕ → ℝ
-  | 0 => μ₀
-  | k + 1 => ((k + 1 + α) / (k + 1)) * majorantSeq μ₀ α k
-
-private theorem majorantSeq_pos {μ₀ α : ℝ} (hμ₀ : 0 < μ₀) (hα : 0 ≤ α) (n : ℕ) :
-    0 < majorantSeq μ₀ α n := by
-  induction n <;> dsimp [majorantSeq] <;> positivity
-
-private theorem majorantSeq_step (μ₀ α : ℝ) (n : ℕ) :
-    (n + 1 : ℝ) * majorantSeq μ₀ α (n + 1) = (n + 1 + α) * majorantSeq μ₀ α n := by
-  dsimp [majorantSeq]
-  have hn1 : (n : ℝ) + 1 ≠ 0 := by positivity
-  field_simp [hn1]
-
-private theorem majorantSeq_sum_le {μ₀ α : ℝ} (hμ₀ : 0 < μ₀) (hα : 0 ≤ α) (n : ℕ) :
-    μ₀ + α * ∑ k ∈ Finset.range (n + 1), majorantSeq μ₀ α k ≤
-      (n + 1 : ℝ) * majorantSeq μ₀ α (n + 1) := by
-  induction n with
-  | zero =>
-    rw [majorantSeq_step μ₀ α 0]
-    simp only [range_one, sum_singleton, Nat.cast_zero, zero_add, majorantSeq]
-    linarith
-  | succ n ih =>
-    rw [sum_range_succ, mul_add, majorantSeq_step μ₀ α (n + 1)]
-    push_cast
-    linarith [majorantSeq_pos hμ₀ hα (n + 1)]
-
-private theorem summable_majorantSeq_mul_pow {μ₀ α q : ℝ} (hμ₀ : 0 < μ₀) (hα : 0 ≤ α)
-    (hq₀ : 0 < q) (hq₁ : q < 1) :
-    Summable fun n ↦ majorantSeq μ₀ α n * q ^ n := by
-  refine summable_of_ratio_test_tendsto_lt_one hq₁
-    (Eventually.of_forall fun n ↦ ne_of_gt (mul_pos (majorantSeq_pos hμ₀ hα n) (pow_pos hq₀ n))) ?_
-  have hrat : (fun n : ℕ ↦ ‖majorantSeq μ₀ α (n + 1) * q ^ (n + 1)‖ /
-      ‖majorantSeq μ₀ α n * q ^ n‖) = fun n : ℕ ↦ (1 + α / (n + 1 : ℝ)) * q := by
-    ext n
-    have h1 := majorantSeq_pos hμ₀ hα n
-    have h3 := pow_pos hq₀ n
-    rw [Real.norm_of_nonneg (mul_pos (majorantSeq_pos hμ₀ hα (n + 1)) (pow_pos hq₀ (n + 1))).le,
-      Real.norm_of_nonneg (mul_pos h1 h3).le]
-    dsimp [majorantSeq]
-    rw [pow_succ]
-    have hn1 : (n : ℝ) + 1 ≠ 0 := by positivity
-    field_simp [h1.ne', h3.ne', hn1]
-  rw [hrat]
-  have hinv : Tendsto (fun n : ℕ ↦ α / (n + 1 : ℝ)) atTop (𝓝 0) :=
-    tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
-  simpa using ((tendsto_const_nhds (x := (1 : ℝ))).add hinv).mul (tendsto_const_nhds (x := q))
-
-private theorem norm_linearSystemCoeff_mul_pow_le_majorantSeq
-    {A : ℕ → E →L[ℂ] E} {b : ℕ → E} {v₀ : E} {ρ CA Cb : ℝ}
+private theorem norm_linearSystemCoeff_mul_pow_le_mul_choose
+    {A : ℕ → E →L[ℂ] E} {b : ℕ → E} {v₀ : E} {ρ CA Cb : ℝ} {m : ℕ}
     (hρ : 0 ≤ ρ) (hCA_nonneg : 0 ≤ CA)
-    (hCA : ∀ n, ‖A n‖ * ρ ^ n ≤ CA) (hCb : ∀ n, ‖b n‖ * ρ ^ n ≤ Cb) (n : ℕ) :
+    (hCA : ∀ n, ‖A n‖ * ρ ^ n ≤ CA) (hCb : ∀ n, ‖b n‖ * ρ ^ n ≤ Cb)
+    (hm : ρ * CA ≤ m) (n : ℕ) :
     ‖linearSystemCoeff A b v₀ n‖ * ρ ^ n ≤
-      majorantSeq (max ‖v₀‖ (ρ * Cb) + 1) (ρ * CA) n := by
-  let μ₀ : ℝ := max ‖v₀‖ (ρ * Cb) + 1
-  let α : ℝ := ρ * CA
-  have hμ₀ : 0 < μ₀ := by positivity
-  have hα : 0 ≤ α := mul_nonneg hρ hCA_nonneg
+      max ‖v₀‖ (ρ * Cb) * (n + m).choose m := by
+  let μ₀ : ℝ := max ‖v₀‖ (ρ * Cb)
+  have : 0 ≤ μ₀ := (norm_nonneg v₀).trans (le_max_left _ _)
   induction n using Nat.strong_induction_on with
   | ind n ih =>
     rcases n with _ | n
-    · simp only [linearSystemCoeff_zero, pow_zero, mul_one, majorantSeq]
-      exact (le_max_left _ _).trans (lt_add_one _).le
+    · simp only [linearSystemCoeff_zero, pow_zero, mul_one, zero_add, Nat.choose_self,
+        Nat.cast_one]
+      exact le_max_left _ _
     · have hn_norm : ‖((n + 1 : ℂ))‖ = (n + 1 : ℝ) := mod_cast Complex.norm_natCast (n + 1)
       have hlhs : ((n + 1 : ℝ)) * (‖linearSystemCoeff A b v₀ (n + 1)‖ * ρ ^ (n + 1)) =
           ‖((n + 1 : ℂ)) • linearSystemCoeff A b v₀ (n + 1)‖ * ρ ^ (n + 1) := by
         rw [norm_smul, hn_norm, mul_assoc]
+      have hsum_choose :
+          ∑ k ∈ Finset.range (n + 1), ((k + m).choose m : ℝ) =
+            ((n + m + 1).choose (m + 1) : ℝ) :=
+        mod_cast Nat.sum_range_add_choose n m
+      have hchoose_ge : (1 : ℝ) ≤ ((n + m + 1).choose (m + 1) : ℝ) :=
+        Nat.one_le_cast.mpr (Nat.choose_pos (by omega))
+      have hchoose_step :
+          (((n + m + 1).choose (m + 1) * (m + 1) : ℕ) : ℝ) =
+            (n + 1 : ℝ) * ((n + 1 + m).choose m : ℝ) := by
+        have hstep : (n + m + 1).choose (m + 1) * (m + 1) = (n + 1) * (n + 1 + m).choose m :=
+          (Nat.choose_succ_right_eq (n + m + 1) m).trans <| by
+            rw [show n + m + 1 - m = n + 1 by omega, show n + m + 1 = n + 1 + m by omega,
+              Nat.mul_comm]
+        exact_mod_cast hstep
       have hbound : ((n + 1 : ℝ)) * (‖linearSystemCoeff A b v₀ (n + 1)‖ * ρ ^ (n + 1)) ≤
-          (n + 1 : ℝ) * majorantSeq μ₀ α (n + 1) := by
+          (n + 1 : ℝ) * (μ₀ * ((n + 1 + m).choose m : ℝ)) := by
         rw [hlhs, natCast_add_one_smul_linearSystemCoeff_succ]
         calc
           ‖b n + ∑ k ∈ Finset.range (n + 1), A (n - k) (linearSystemCoeff A b v₀ k)‖ * ρ ^ (n + 1)
@@ -257,7 +226,7 @@ private theorem norm_linearSystemCoeff_mul_pow_le_majorantSeq
                   ‖A (n - k) (linearSystemCoeff A b v₀ k)‖ * ρ ^ n := by
                 rw [pow_succ, add_mul, Finset.sum_mul, Finset.mul_sum]
                 exact congrArg₂ (· + ·) (by ring) (Finset.sum_congr rfl fun _ _ ↦ by ring)
-          _ ≤ ρ * Cb + ρ * ∑ k ∈ Finset.range (n + 1), CA * majorantSeq μ₀ α k := by
+          _ ≤ ρ * Cb + ρ * ∑ k ∈ Finset.range (n + 1), CA * (μ₀ * (k + m).choose m) := by
                 refine add_le_add (mul_le_mul_of_nonneg_left (hCb n) hρ)
                   (mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun k hk ↦ ?_) hρ)
                 have hkn : n - k + k = n :=
@@ -268,14 +237,26 @@ private theorem norm_linearSystemCoeff_mul_pow_le_majorantSeq
                         rw [hkn]; gcongr; exact (A (n - k)).le_opNorm _
                   _ = (‖A (n - k)‖ * ρ ^ (n - k)) *
                         (‖linearSystemCoeff A b v₀ k‖ * ρ ^ k) := by rw [pow_add]; ring
-                  _ ≤ CA * majorantSeq μ₀ α k :=
+                  _ ≤ CA * (μ₀ * (k + m).choose m) :=
                         mul_le_mul (hCA (n - k)) (ih k (Finset.mem_range.mp hk))
                           (by positivity) hCA_nonneg
-          _ = ρ * Cb + α * ∑ k ∈ Finset.range (n + 1), majorantSeq μ₀ α k := by
-                rw [← Finset.mul_sum]; dsimp [α]; ring
-          _ ≤ μ₀ + α * ∑ k ∈ Finset.range (n + 1), majorantSeq μ₀ α k := by
-                gcongr; exact (le_max_right _ _).trans (lt_add_one _).le
-          _ ≤ (n + 1 : ℝ) * majorantSeq μ₀ α (n + 1) := majorantSeq_sum_le hμ₀ hα n
+          _ = ρ * Cb + (ρ * CA) * (μ₀ * ∑ k ∈ Finset.range (n + 1), ((k + m).choose m : ℝ)) := by
+                simp_rw [← mul_assoc]
+                rw [← Finset.mul_sum]
+                ring
+          _ ≤ μ₀ * 1 + (m : ℝ) * (μ₀ * ((n + m + 1).choose (m + 1) : ℝ)) := by
+                rw [mul_one, hsum_choose]
+                exact add_le_add (le_max_right _ _)
+                  (mul_le_mul_of_nonneg_right hm (by positivity))
+          _ ≤ μ₀ * ((n + m + 1).choose (m + 1) : ℝ) +
+                (m : ℝ) * (μ₀ * ((n + m + 1).choose (m + 1) : ℝ)) := by
+                gcongr
+          _ = μ₀ * (((n + m + 1).choose (m + 1) * (m + 1) : ℕ) : ℝ) := by
+                push_cast
+                ring
+          _ = (n + 1 : ℝ) * (μ₀ * ((n + 1 + m).choose m : ℝ)) := by
+                rw [hchoose_step]
+                ring
       exact le_of_mul_le_mul_left hbound (by positivity)
 
 /-- **Cauchy majorant convergence bound for first-order linear systems.** If the formal power series
@@ -297,41 +278,50 @@ theorem le_radius_mkPiRingSeries_linearSystemCoeff
   obtain ⟨Cb, _, hCb⟩ :=
     (mkPiRingSeries ℂ b).norm_mul_pow_le_of_lt_radius (hρr.trans_le hb)
   simp only [norm_mkPiRingSeries] at hCA hCb
+  obtain ⟨m, hm⟩ := exists_nat_ge ((ρ : ℝ) * CA)
   let q : ℝ := R / ρ
   have hq_pos : 0 < q := div_pos hR_pos hρ_pos
-  have hq_lt : q < 1 := (div_lt_one hρ_pos).mpr hRρ
-  have hμq_sum := summable_majorantSeq_mul_pow (μ₀ := max ‖v₀‖ ((ρ : ℝ) * Cb) + 1)
-    (α := (ρ : ℝ) * CA) (by positivity) (mul_nonneg ρ.2 hCA_pos.le) hq_pos hq_lt
+  have hq_norm : ‖q‖ < 1 := by
+    rw [Real.norm_of_nonneg hq_pos.le]
+    exact (div_lt_one hρ_pos).mpr hRρ
+  have hchoose_sum :=
+    (summable_choose_mul_geometric_of_norm_lt_one (R := ℝ) m hq_norm).mul_left
+      (max ‖v₀‖ ((ρ : ℝ) * Cb))
   apply FormalMultilinearSeries.le_radius_of_summable_norm
-  refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun n ↦ ?_) hμq_sum
+  refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun n ↦ ?_) hchoose_sum
   rw [norm_mkPiRingSeries, show (R : ℝ) = ρ * q by dsimp [q]; field_simp [hρ_pos.ne'],
-    mul_pow, ← mul_assoc]
+    mul_pow, ← mul_assoc, ← mul_assoc]
   exact mul_le_mul_of_nonneg_right
-    (norm_linearSystemCoeff_mul_pow_le_majorantSeq ρ.2 hCA_pos.le hCA hCb n)
+    (norm_linearSystemCoeff_mul_pow_le_mul_choose ρ.2 hCA_pos.le hCA hCb hm n)
     (pow_nonneg hq_pos.le n)
 
 variable [CompleteSpace E]
 
-/-- Any solution of `v'(z) = A(z) (v(z)) + b(z)` on `Metric.eball z₀ r`, where `A` and `b` admit
-formal power series `mkPiRingSeries ℂ As` and `mkPiRingSeries ℂ bs` on `Metric.eball z₀ r`, is
-represented on `Metric.eball z₀ r` by `mkPiRingSeries ℂ (linearSystemCoeff As bs (v z₀))`. -/
+/-- Any holomorphic function `v` on `Metric.eball z₀ r` (`0 < r ≤ ∞`) that satisfies
+`v'(z) = A(z) (v(z)) + b(z)` eventually near `z₀`, where `A` and `b` admit formal power series
+`mkPiRingSeries ℂ As` and `mkPiRingSeries ℂ bs` at `z₀`, is represented on `Metric.eball z₀ r` by
+`mkPiRingSeries ℂ (linearSystemCoeff As bs (v z₀))`. -/
 theorem hasFPowerSeriesOnBall_of_hasDerivAt_clm_apply_add
     {A : ℂ → E →L[ℂ] E} {b v : ℂ → E} {As : ℕ → E →L[ℂ] E} {bs : ℕ → E}
-    {z₀ : ℂ} {r : ℝ≥0∞}
-    (hA : HasFPowerSeriesOnBall A (mkPiRingSeries ℂ As) z₀ r)
-    (hb : HasFPowerSeriesOnBall b (mkPiRingSeries ℂ bs) z₀ r)
-    (hv : ∀ z ∈ Metric.eball z₀ r, HasDerivAt v (A z (v z) + b z) z) :
+    {z₀ : ℂ} {r : ℝ≥0∞} (hr : 0 < r)
+    (hA : HasFPowerSeriesAt A (mkPiRingSeries ℂ As) z₀)
+    (hb : HasFPowerSeriesAt b (mkPiRingSeries ℂ bs) z₀)
+    (hv : DifferentiableOn ℂ v (Metric.eball z₀ r))
+    (hode : ∀ᶠ z in 𝓝 z₀, HasDerivAt v (A z (v z) + b z) z) :
     HasFPowerSeriesOnBall v (mkPiRingSeries ℂ (linearSystemCoeff As bs (v z₀))) z₀ r := by
   let c : ℕ → E := fun n ↦ (n ! : ℂ)⁻¹ • iteratedDeriv n v z₀
-  have hv_diff : DifferentiableOn ℂ v (Metric.eball z₀ r) :=
-    fun z hz ↦ (hv z hz).differentiableAt.differentiableWithinAt
   have hv_ps : HasFPowerSeriesOnBall v (mkPiRingSeries ℂ c) z₀ r :=
-    hv_diff.hasFPowerSeriesOnBall_eball hA.r_pos
-  have hlhs_ps := hv_ps.deriv
-  have hrhs_ps := (hA.clm_apply hv_ps).add hb
-  have heq : deriv v =ᶠ[𝓝 z₀] fun z ↦ A z (v z) + b z :=
-    Filter.eventually_of_mem (Metric.isOpen_eball.mem_nhds (mem_eball_self hA.r_pos))
-      fun z hz ↦ (hv z hz).deriv
+    hv.hasFPowerSeriesOnBall_eball hr
+  obtain ⟨rA, hA_ball⟩ := hA
+  obtain ⟨rb, hb_ball⟩ := hb
+  let r₀ : ℝ≥0∞ := min r (min rA rb)
+  have hr₀ : 0 < r₀ := lt_min hr (lt_min hA_ball.r_pos hb_ball.r_pos)
+  have hv_r₀ := hv_ps.mono hr₀ (min_le_left _ _)
+  have hA_r₀ := hA_ball.mono hr₀ ((min_le_right _ _).trans (min_le_left _ _))
+  have hb_r₀ := hb_ball.mono hr₀ ((min_le_right _ _).trans (min_le_right _ _))
+  have hlhs_ps := hv_r₀.deriv
+  have hrhs_ps := (hA_r₀.clm_apply hv_r₀).add hb_r₀
+  have heq : deriv v =ᶠ[𝓝 z₀] fun z ↦ A z (v z) + b z := hode.mono fun _ hz ↦ hz.deriv
   have hser := hlhs_ps.hasFPowerSeriesAt.eq_formalMultilinearSeries_of_eventually
     hrhs_ps.hasFPowerSeriesAt heq
   have hc : c = linearSystemCoeff As bs (v z₀) := by
@@ -356,34 +346,36 @@ theorem inv_factorial_smul_iteratedDeriv_eq_linearSystemCoeff_of_hasDerivAt_clm_
   have hb_ps := (show DifferentiableOn ℂ b (Metric.eball z₀ r) from
     fun z hz ↦ (hr hz).2.1.differentiableAt.differentiableWithinAt).hasFPowerSeriesOnBall_eball
     hr_pos
-  have hv_ps := (show DifferentiableOn ℂ v (Metric.eball z₀ r) from
-    fun z hz ↦ (hr hz).2.2.differentiableAt.differentiableWithinAt).hasFPowerSeriesOnBall_eball
-    hr_pos
-  have hv_ps' := hasFPowerSeriesOnBall_of_hasDerivAt_clm_apply_add hA_ps hb_ps
-    fun z hz ↦ (hr hz).2.2
+  have hv_diff : DifferentiableOn ℂ v (Metric.eball z₀ r) :=
+    fun z hz ↦ (hr hz).2.2.differentiableAt.differentiableWithinAt
+  have hv_ps := hv_diff.hasFPowerSeriesOnBall_eball hr_pos
+  have hv_ps' := hasFPowerSeriesOnBall_of_hasDerivAt_clm_apply_add hr_pos
+    hA_ps.hasFPowerSeriesAt hb_ps.hasFPowerSeriesAt hv_diff hv
   exact congrFun (mkPiRingSeries_inj.mp
     (hv_ps.hasFPowerSeriesAt.eq_formalMultilinearSeries hv_ps'.hasFPowerSeriesAt)) n
 
-/-- If `A` is analytic at `z₀ ∈ U`, then any two solutions of `v'(z) = A(z) (v(z)) + b(z)` on an
-open preconnected set `U ⊆ ℂ` that agree at `z₀` agree throughout `U`. No regularity hypothesis on
-`b` is needed, and `A` need only be analytic at `z₀`. -/
+/-- If `A` is analytic at `z₀ ∈ U`, then any two holomorphic functions `v₁, v₂` on an open
+preconnected set `U ⊆ ℂ` that satisfy `v'(z) = A(z) (v(z)) + b(z)` eventually near `z₀` and agree
+at `z₀` agree throughout `U`. No regularity hypothesis on `b` is needed, and `A` need only be
+analytic at `z₀`. -/
 theorem eqOn_of_hasDerivAt_clm_apply_add {A : ℂ → E →L[ℂ] E} {b v₁ v₂ : ℂ → E} {U : Set ℂ}
     {z₀ : ℂ} (hU : IsOpen U) (hU_conn : IsPreconnected U) (hz₀ : z₀ ∈ U)
     (hA : AnalyticAt ℂ A z₀)
-    (hv₁ : ∀ z ∈ U, HasDerivAt v₁ (A z (v₁ z) + b z) z)
-    (hv₂ : ∀ z ∈ U, HasDerivAt v₂ (A z (v₂ z) + b z) z) (h₀ : v₁ z₀ = v₂ z₀) :
+    (hv₁ : DifferentiableOn ℂ v₁ U) (hv₂ : DifferentiableOn ℂ v₂ U)
+    (hode₁ : ∀ᶠ z in 𝓝 z₀, HasDerivAt v₁ (A z (v₁ z) + b z) z)
+    (hode₂ : ∀ᶠ z in 𝓝 z₀, HasDerivAt v₂ (A z (v₂ z) + b z) z) (h₀ : v₁ z₀ = v₂ z₀) :
     EqOn v₁ v₂ U := by
   let u : ℂ → E := v₁ - v₂
-  have hu_deriv : ∀ z ∈ U, HasDerivAt u (A z (u z) + (fun _ : ℂ ↦ (0 : E)) z) z := fun z hz ↦ by
-    simpa [u, map_sub, add_sub_add_right_eq_sub] using (hv₁ z hz).sub (hv₂ z hz)
-  have hu_diff : DifferentiableOn ℂ u U :=
-    fun z hz ↦ (hu_deriv z hz).differentiableAt.differentiableWithinAt
+  have hu_deriv : ∀ᶠ z in 𝓝 z₀, HasDerivAt u (A z (u z) + (fun _ : ℂ ↦ (0 : E)) z) z :=
+    (hode₁.and hode₂).mono fun z ⟨h₁, h₂⟩ ↦ by
+      simpa [u, map_sub, add_sub_add_right_eq_sub] using h₁.sub h₂
+  have hu_diff : DifferentiableOn ℂ u U := hv₁.sub hv₂
   obtain ⟨r, hr_pos, hrU⟩ := EMetric.isOpen_iff.mp hU z₀ hz₀
   have hu_ps := (hu_diff.mono hrU).hasFPowerSeriesOnBall_eball hr_pos
   have hu_coeff : (fun n : ℕ ↦ (n ! : ℂ)⁻¹ • iteratedDeriv n u z₀) = 0 := by
     ext n
     rw [inv_factorial_smul_iteratedDeriv_eq_linearSystemCoeff_of_hasDerivAt_clm_apply_add
-      hA analyticAt_const (Filter.eventually_of_mem (hU.mem_nhds hz₀) hu_deriv) n]
+      hA analyticAt_const hu_deriv n]
     have hb0 : (fun m : ℕ ↦ (m ! : ℂ)⁻¹ • iteratedDeriv m (fun _ : ℂ ↦ (0 : E)) z₀) = 0 := by
       ext m; simp
     rw [show u z₀ = 0 from sub_eq_zero.mpr h₀, hb0, linearSystemCoeff_zero_zero]
@@ -431,8 +423,13 @@ theorem exists_hasFPowerSeriesOnBall_hasDerivAt_clm_apply_add_of_hasFPowerSeries
     (hv_ps.analyticAt_of_mem hz).differentiableAt.hasDerivAt.congr_deriv
       ((hser_eq ▸ hlhs_ps).unique hrhs_ps hz)
   refine ⟨v, hv_ps, hv₀, hv_ode, fun u hu hu₀ ↦ ?_⟩
+  have heball_nhds : Metric.eball z₀ r ∈ 𝓝 z₀ :=
+    Metric.isOpen_eball.mem_nhds (mem_eball_self hA.r_pos)
   exact eqOn_of_hasDerivAt_clm_apply_add Metric.isOpen_eball isPreconnected_eball
-    (mem_eball_self hA.r_pos) hA.analyticAt hu hv_ode (hu₀.trans hv₀.symm)
+    (mem_eball_self hA.r_pos) hA.analyticAt
+    (fun z hz ↦ (hu z hz).differentiableAt.differentiableWithinAt) hv_ps.differentiableOn
+    (Filter.eventually_of_mem heball_nhds hu) (Filter.eventually_of_mem heball_nhds hv_ode)
+    (hu₀.trans hv₀.symm)
 
 /-- If `A : ℂ → E →L[ℂ] E` and `b : ℂ → E` are holomorphic on `Metric.eball z₀ r` (`0 < r ≤ ∞`),
 then for every `v₀ : E` there is a unique holomorphic solution `v` of `v'(z) = A(z) (v(z)) + b(z)`
@@ -473,7 +470,7 @@ variable {U : Opens ℂ} {n : ℕ}
 
 private theorem differentiableOn_companionCLM (E : LinearEquation U n) :
     DifferentiableOn ℂ (fun z ↦ (Matrix.toLin' (E.companion z)).toContinuousLinearMap) U :=
-  Matrix.differentiableOn_toContinuousLinearMap_toLin'.mpr fun i j ↦
+  differentiableOn_toContinuousLinearMap_toLin'.mpr fun i j ↦
     (E.analyticOnNhd_companion i j).differentiableOn
 
 private theorem analyticAt_companionCLM (E : LinearEquation U n) {a : ℂ} (ha : a ∈ U) :
@@ -486,10 +483,15 @@ theorem IsSolution.eqOn_of_isPreconnected {E : LinearEquation U n} {y₁ y₂ : 
     (hy₁ : E.IsSolution y₁) (hy₂ : E.IsSolution y₂) (hU : IsPreconnected (U : Set ℂ)) {a : ℂ}
     (ha : a ∈ U) (hjet : ∀ j < n, iteratedDeriv j y₁ a = iteratedDeriv j y₂ a) :
     EqOn y₁ y₂ U := by
+  have hU_nhds := U.isOpen.mem_nhds ha
   have heq := eqOn_of_hasDerivAt_clm_apply_add (b := 0) U.isOpen hU ha
     (E.analyticAt_companionCLM ha)
-    (fun z hz ↦ by simpa using hy₁.isCompanionSolution.hasDerivAt z hz)
-    (fun z hz ↦ by simpa using hy₂.isCompanionSolution.hasDerivAt z hz)
+    hy₁.isCompanionSolution.analyticOnNhd.differentiableOn
+    hy₂.isCompanionSolution.analyticOnNhd.differentiableOn
+    (Filter.eventually_of_mem hU_nhds fun z hz ↦ by
+      simpa using hy₁.isCompanionSolution.hasDerivAt z hz)
+    (Filter.eventually_of_mem hU_nhds fun z hz ↦ by
+      simpa using hy₂.isCompanionSolution.hasDerivAt z hz)
     (funext fun j ↦ hjet j j.isLt)
   exact fun z hz ↦ by simpa using congrFun (heq hz) ⟨0, E.order_pos⟩
 
@@ -812,7 +814,7 @@ private theorem differentiableOn_secondOrderCLM {f g : ℂ → ℂ} {U : Set ℂ
     (hf : DifferentiableOn ℂ f U) (hg : DifferentiableOn ℂ g U) :
     DifferentiableOn ℂ
       (fun z ↦ (Matrix.toLin' (secondOrderMatrix f g z)).toContinuousLinearMap) U := by
-  refine Matrix.differentiableOn_toContinuousLinearMap_toLin'.mpr fun i j ↦ ?_
+  refine differentiableOn_toContinuousLinearMap_toLin'.mpr fun i j ↦ ?_
   dsimp only [secondOrderMatrix]
   split_ifs
   · exact differentiableOn_const 0
@@ -830,15 +832,14 @@ private theorem analyticAt_secondOrderCLM {f g : ℂ → ℂ} {z₀ : ℂ}
     (fun z hz ↦ (hr hz).2.differentiableAt.differentiableWithinAt)).analyticOnNhd
     Metric.isOpen_eball z₀ (mem_eball_self hr_pos)
 
-private theorem hasDerivAt_secondOrder_vec {f g h w : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
-    (hw : DifferentiableOn ℂ w U)
-    (hode : ∀ z ∈ U, deriv (deriv w) z + f z * deriv w z + g z * w z = h z) :
-    ∀ z ∈ U, HasDerivAt (fun z (i : Fin 2) ↦ if i = 0 then w z else deriv w z)
+private theorem hasDerivAt_secondOrder_vec_at {f g w : ℂ → ℂ} {U : Set ℂ} {z hz_val : ℂ}
+    (hU : IsOpen U) (hw : DifferentiableOn ℂ w U) (hz : z ∈ U)
+    (hode : deriv (deriv w) z + f z * deriv w z + g z * w z = hz_val) :
+    HasDerivAt (fun z (i : Fin 2) ↦ if i = 0 then w z else deriv w z)
       ((Matrix.toLin' (secondOrderMatrix f g z)).toContinuousLinearMap
         (fun i ↦ if i = 0 then w z else deriv w z) +
-        fun i ↦ if i = 0 then 0 else h z) z := by
+        fun i ↦ if i = 0 then 0 else hz_val) z := by
   have hwd : DifferentiableOn ℂ (deriv w) U := hw.deriv hU
-  intro z hz
   rw [hasDerivAt_pi]
   intro i
   fin_cases i
@@ -846,7 +847,7 @@ private theorem hasDerivAt_secondOrder_vec {f g h w : ℂ → ℂ} {U : Set ℂ}
   · refine (hwd.differentiableAt (hU.mem_nhds hz)).hasDerivAt.congr_deriv ?_
     simp only [LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply,
       secondOrderMatrix_mulVec, Pi.add_apply, Fin.mk_one, Fin.isValue, one_ne_zero, ↓reduceIte]
-    linear_combination hode z hz
+    linear_combination hode
 
 private theorem secondOrder_of_hasDerivAt_vec {f g : ℂ → ℂ} {b v : ℂ → Fin 2 → ℂ} {U : Set ℂ}
     (hU : IsOpen U) (hb0 : ∀ z ∈ U, b z 0 = 0)
@@ -873,7 +874,7 @@ private theorem secondOrder_of_hasDerivAt_vec {f g : ℂ → ℂ} {b v : ℂ →
 /-- If `f` and `g` are analytic at an ordinary point `z₀ ∈ U` of an open preconnected set `U ⊆ ℂ`,
 and two holomorphic functions `w₁, w₂` on `U` satisfy the same second-order equation
 `w'' + f w' + g w` near `z₀` and agree to first order at `z₀`, then `EqOn w₁ w₂ U`. -/
-theorem eqOn_of_secondOrder_linear_ode {f g w₁ w₂ : ℂ → ℂ} {U : Set ℂ} {z₀ : ℂ}
+theorem eqOn_of_deriv_deriv_add_mul_deriv_add_mul_eq {f g w₁ w₂ : ℂ → ℂ} {U : Set ℂ} {z₀ : ℂ}
     (hU : IsOpen U) (hU_conn : IsPreconnected U) (hz₀ : z₀ ∈ U)
     (hf : AnalyticAt ℂ f z₀) (hg : AnalyticAt ℂ g z₀)
     (hw₁ : DifferentiableOn ℂ w₁ U) (hw₂ : DifferentiableOn ℂ w₂ U)
@@ -881,31 +882,32 @@ theorem eqOn_of_secondOrder_linear_ode {f g w₁ w₂ : ℂ → ℂ} {U : Set �
       deriv (deriv w₂) z + f z * deriv w₂ z + g z * w₂ z)
     (hw₀ : w₁ z₀ = w₂ z₀) (hdw₀ : deriv w₁ z₀ = deriv w₂ z₀) :
     EqOn w₁ w₂ U := by
-  obtain ⟨r, hr_pos, hr⟩ := EMetric.mem_nhds_iff.mp (Filter.inter_mem (hU.mem_nhds hz₀) hode)
-  have hVU : Metric.eball z₀ r ⊆ U := fun z hz ↦ (hr hz).1
   let h : ℂ → ℂ := fun z ↦ deriv (deriv w₂) z + f z * deriv w₂ z + g z * w₂ z
-  have hp₁ := hasDerivAt_secondOrder_vec Metric.isOpen_eball (hw₁.mono hVU) (h := h)
-    fun z hz ↦ (hr hz).2
-  have hp₂ := hasDerivAt_secondOrder_vec Metric.isOpen_eball (hw₂.mono hVU) (h := h)
-    fun _ _ ↦ rfl
+  have hvec₁_diff :
+      DifferentiableOn ℂ (fun z (i : Fin 2) ↦ if i = 0 then w₁ z else deriv w₁ z) U := by
+    rw [differentiableOn_pi]
+    intro i; fin_cases i <;> simp [hw₁, hw₁.deriv hU]
+  have hvec₂_diff :
+      DifferentiableOn ℂ (fun z (i : Fin 2) ↦ if i = 0 then w₂ z else deriv w₂ z) U := by
+    rw [differentiableOn_pi]
+    intro i; fin_cases i <;> simp [hw₂, hw₂.deriv hU]
+  have hU_nhds : U ∈ 𝓝 z₀ := hU.mem_nhds hz₀
+  have hvec₁_ode := ((Filter.eventually_mem_set.mpr hU_nhds).and hode).mono fun z ⟨hzU, hz_ode⟩ ↦
+    hasDerivAt_secondOrder_vec_at (hz_val := h z) hU hw₁ hzU hz_ode
+  have hvec₂_ode := (Filter.eventually_mem_set.mpr hU_nhds).mono fun z hzU ↦
+    hasDerivAt_secondOrder_vec_at (hz_val := h z) hU hw₂ hzU rfl
   have hinit : (fun i : Fin 2 ↦ if i = 0 then w₁ z₀ else deriv w₁ z₀) =
       (fun i : Fin 2 ↦ if i = 0 then w₂ z₀ else deriv w₂ z₀) := by
     ext i; fin_cases i <;> simp [hw₀, hdw₀]
-  have heq_ball := eqOn_of_hasDerivAt_clm_apply_add Metric.isOpen_eball isPreconnected_eball
-    (mem_eball_self hr_pos) (analyticAt_secondOrderCLM hf hg) hp₁ hp₂ hinit
-  have hu_ev : (w₁ - w₂) =ᶠ[𝓝 z₀] 0 :=
-    Filter.eventuallyEq_iff_exists_mem.mpr
-      ⟨Metric.eball z₀ r, Metric.isOpen_eball.mem_nhds (mem_eball_self hr_pos),
-        fun z hz ↦ sub_eq_zero.mpr (congrFun (heq_ball hz) 0)⟩
-  have hu_zero :=
-    ((hw₁.sub hw₂).analyticOnNhd hU).eqOn_zero_of_preconnected_of_eventuallyEq_zero
-      hU_conn hz₀ hu_ev
-  exact fun z hz ↦ sub_eq_zero.mp (hu_zero hz)
+  have heq := eqOn_of_hasDerivAt_clm_apply_add
+    (b := fun z i ↦ if i = 0 then 0 else h z)
+    hU hU_conn hz₀ (analyticAt_secondOrderCLM hf hg) hvec₁_diff hvec₂_diff hvec₁_ode hvec₂_ode hinit
+  exact fun z hz ↦ by simpa using congrFun (heq hz) 0
 
 /-- Two entire functions `w₁, w₂` satisfying the same second-order equation `w'' + f w' + g w`
 near an ordinary point `z₀` (where `f` and `g` are analytic) and agreeing to first order at `z₀`
 are equal everywhere on `ℂ`. -/
-theorem eq_of_entire_secondOrder_linear_ode {f g w₁ w₂ : ℂ → ℂ} {z₀ : ℂ}
+theorem eq_of_differentiable_of_deriv_deriv_add_mul_deriv_add_mul_eq {f g w₁ w₂ : ℂ → ℂ} {z₀ : ℂ}
     (hf : AnalyticAt ℂ f z₀) (hg : AnalyticAt ℂ g z₀)
     (hw₁ : Differentiable ℂ w₁) (hw₂ : Differentiable ℂ w₂)
     (hode : ∀ᶠ z in 𝓝 z₀, deriv (deriv w₁) z + f z * deriv w₁ z + g z * w₁ z =
@@ -913,41 +915,44 @@ theorem eq_of_entire_secondOrder_linear_ode {f g w₁ w₂ : ℂ → ℂ} {z₀ 
     (hw₀ : w₁ z₀ = w₂ z₀) (hdw₀ : deriv w₁ z₀ = deriv w₂ z₀) :
     w₁ = w₂ := by
   ext z
-  exact eqOn_of_secondOrder_linear_ode isOpen_univ isPreconnected_univ (mem_univ z₀)
+  exact eqOn_of_deriv_deriv_add_mul_deriv_add_mul_eq isOpen_univ isPreconnected_univ (mem_univ z₀)
     hf hg hw₁.differentiableOn hw₂.differentiableOn hode hw₀ hdw₀ (mem_univ z)
 
-/-- Any holomorphic solution of `w'' + f(z) w' + g(z) w = 0` on `Metric.eball z₀ r` (`0 < r`),
-where `f` and `g` have scalar power series `fs` and `gs` on `Metric.eball z₀ r`, is represented on
-the whole disc by
+/-- Any holomorphic function `w` on `Metric.eball z₀ r` (`0 < r ≤ ∞`) that satisfies
+`w'' + f(z) w' + g(z) w = 0` eventually near `z₀`, where `f` and `g` admit scalar formal power
+series `fs` and `gs` at `z₀`, is represented on `Metric.eball z₀ r` by
 `FormalMultilinearSeries.ofScalars ℂ (ordinaryPointCoeff fs gs (w z₀) (deriv w z₀))`. -/
-theorem hasFPowerSeriesOnBall_of_ordinaryPoint_solution {f g w : ℂ → ℂ} {fs gs : ℕ → ℂ}
-    {z₀ : ℂ} {r : ℝ≥0∞}
-    (hf : HasFPowerSeriesOnBall f (FormalMultilinearSeries.ofScalars ℂ fs) z₀ r)
-    (hg : HasFPowerSeriesOnBall g (FormalMultilinearSeries.ofScalars ℂ gs) z₀ r)
+theorem hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff {f g w : ℂ → ℂ} {fs gs : ℕ → ℂ}
+    {z₀ : ℂ} {r : ℝ≥0∞} (hr : 0 < r)
+    (hf : HasFPowerSeriesAt f (FormalMultilinearSeries.ofScalars ℂ fs) z₀)
+    (hg : HasFPowerSeriesAt g (FormalMultilinearSeries.ofScalars ℂ gs) z₀)
     (hw : DifferentiableOn ℂ w (Metric.eball z₀ r))
-    (hode : ∀ z ∈ Metric.eball z₀ r, deriv (deriv w) z + f z * deriv w z + g z * w z = 0) :
+    (hode : ∀ᶠ z in 𝓝 z₀, deriv (deriv w) z + f z * deriv w z + g z * w z = 0) :
     HasFPowerSeriesOnBall w
       (FormalMultilinearSeries.ofScalars ℂ (ordinaryPointCoeff fs gs (w z₀) (deriv w z₀)))
       z₀ r := by
   let a : ℕ → ℂ := fun n ↦ (n ! : ℂ)⁻¹ * iteratedDeriv n w z₀
-  have hw_ps : HasFPowerSeriesOnBall w (mkPiRingSeries ℂ a) z₀ r := by
-    simpa [a, smul_eq_mul] using hw.hasFPowerSeriesOnBall_eball hf.r_pos
-  have hdw_ps : HasFPowerSeriesOnBall (deriv w)
-      (mkPiRingSeries ℂ fun n ↦ ((n + 1 : ℂ)) * a (n + 1)) z₀ r := by
-    simpa [smul_eq_mul] using hw_ps.deriv
-  have hddw_ps : HasFPowerSeriesOnBall (deriv (deriv w))
-      (mkPiRingSeries ℂ fun n ↦ ((n + 2 : ℂ) * (n + 1 : ℂ)) * a (n + 2)) z₀ r := by
-    convert hdw_ps.deriv using 2
+  have hw_ps : HasFPowerSeriesOnBall w (FormalMultilinearSeries.ofScalars ℂ a) z₀ r :=
+    hw.hasFPowerSeriesOnBall_ofScalars_eball hr
+  obtain ⟨rf, hf_ball⟩ := hf
+  obtain ⟨rg, hg_ball⟩ := hg
+  let r₀ : ℝ≥0∞ := min r (min rf rg)
+  have hr₀ : 0 < r₀ := lt_min hr (lt_min hf_ball.r_pos hg_ball.r_pos)
+  have hw_r₀ := hw_ps.mono hr₀ (min_le_left _ _)
+  have hf_r₀ := hf_ball.mono hr₀ ((min_le_right _ _).trans (min_le_left _ _))
+  have hg_r₀ := hg_ball.mono hr₀ ((min_le_right _ _).trans (min_le_right _ _))
+  have hdw_r₀ : HasFPowerSeriesOnBall (deriv w)
+      (mkPiRingSeries ℂ fun n ↦ ((n + 1 : ℂ)) * a (n + 1)) z₀ r₀ := by
+    simpa [smul_eq_mul] using hw_r₀.deriv
+  have hddw_r₀ : HasFPowerSeriesOnBall (deriv (deriv w))
+      (mkPiRingSeries ℂ fun n ↦ ((n + 2 : ℂ) * (n + 1 : ℂ)) * a (n + 2)) z₀ r₀ := by
+    convert hdw_r₀.deriv using 2
     ext n
     simp only [coeff_mkPiRingSeries, smul_eq_mul]
     push_cast
     ring
-  have hsum_ps := (hddw_ps.add (hf.fun_mul hdw_ps)).add (hg.fun_mul hw_ps)
-  have hzero_ev :
-      (deriv (deriv w) + (fun z ↦ f z * deriv w z) + (fun z ↦ g z * w z)) =ᶠ[𝓝 z₀] 0 :=
-    Filter.eventuallyEq_iff_exists_mem.mpr
-      ⟨Metric.eball z₀ r, Metric.isOpen_eball.mem_nhds (mem_eball_self hf.r_pos), hode⟩
-  have hser_zero := hsum_ps.hasFPowerSeriesAt.eq_zero_of_eventually hzero_ev
+  have hsum_ps := (hddw_r₀.add (hf_r₀.fun_mul hdw_r₀)).add (hg_r₀.fun_mul hw_r₀)
+  have hser_zero := hsum_ps.hasFPowerSeriesAt.eq_zero_of_eventually hode
   have ha_eq : a = ordinaryPointCoeff fs gs (w z₀) (deriv w z₀) := by
     refine eq_ordinaryPointCoeff_iff.mpr ⟨by simp [a], by simp [a], fun n ↦ ?_⟩
     have hn := congrArg (FormalMultilinearSeries.coeff · n) hser_zero
@@ -956,7 +961,7 @@ theorem hasFPowerSeriesOnBall_of_ordinaryPoint_solution {f g w : ℂ → ℂ} {f
     rw [add_assoc, ← Finset.sum_add_distrib] at hn
     convert hn using 2
     exact Finset.sum_congr rfl fun _ _ ↦ by ring
-  rwa [← mkPiRingSeries_eq_ofScalars, ← ha_eq]
+  rwa [ha_eq] at hw_ps
 
 /-- If `f`, `g`, and `w` are analytic at `z₀` and `w` satisfies `w'' + f(z) w' + g(z) w = 0`
 eventually near `z₀`, then the factorial-scaled iterated derivatives of `w` at `z₀` equal
@@ -967,37 +972,27 @@ theorem inv_factorial_mul_iteratedDeriv_eq_ordinaryPointCoeff {f g w : ℂ → �
     (n ! : ℂ)⁻¹ * iteratedDeriv n w z₀ =
       ordinaryPointCoeff (fun m ↦ (m ! : ℂ)⁻¹ * iteratedDeriv m f z₀)
         (fun m ↦ (m ! : ℂ)⁻¹ * iteratedDeriv m g z₀) (w z₀) (deriv w z₀) n := by
-  obtain ⟨r, hr_pos, hr⟩ := EMetric.mem_nhds_iff.mp
-    (hf.eventually_analyticAt.and (hg.eventually_analyticAt.and
-      (hw.eventually_analyticAt.and hode)))
-  have hf_ps : HasFPowerSeriesOnBall f
-      (FormalMultilinearSeries.ofScalars ℂ fun m ↦ (m ! : ℂ)⁻¹ * iteratedDeriv m f z₀) z₀ r := by
-    rw [← mkPiRingSeries_eq_ofScalars]
-    simpa [smul_eq_mul] using (show DifferentiableOn ℂ f (Metric.eball z₀ r) from
-      fun z hz ↦ (hr hz).1.differentiableAt.differentiableWithinAt).hasFPowerSeriesOnBall_eball
-      hr_pos
-  have hg_ps : HasFPowerSeriesOnBall g
-      (FormalMultilinearSeries.ofScalars ℂ fun m ↦ (m ! : ℂ)⁻¹ * iteratedDeriv m g z₀) z₀ r := by
-    rw [← mkPiRingSeries_eq_ofScalars]
-    simpa [smul_eq_mul] using (show DifferentiableOn ℂ g (Metric.eball z₀ r) from
-      fun z hz ↦ (hr hz).2.1.differentiableAt.differentiableWithinAt).hasFPowerSeriesOnBall_eball
-      hr_pos
-  have hw_diff : DifferentiableOn ℂ w (Metric.eball z₀ r) :=
-    fun z hz ↦ (hr hz).2.2.1.differentiableAt.differentiableWithinAt
-  have hw_ps := hw_diff.hasFPowerSeriesOnBall_eball hr_pos
-  have hw_ps' := hasFPowerSeriesOnBall_of_ordinaryPoint_solution hf_ps hg_ps hw_diff
-    fun z hz ↦ (hr hz).2.2.2
-  rw [← mkPiRingSeries_eq_ofScalars] at hw_ps'
-  simpa [smul_eq_mul] using congrFun (mkPiRingSeries_inj.mp
-    (hw_ps.hasFPowerSeriesAt.eq_formalMultilinearSeries hw_ps'.hasFPowerSeriesAt)) n
+  obtain ⟨r, hw_ball⟩ := hw.hasFPowerSeriesAt
+  have hf_at : HasFPowerSeriesAt f
+      (FormalMultilinearSeries.ofScalars ℂ fun m ↦ (m ! : ℂ)⁻¹ * iteratedDeriv m f z₀) z₀ := by
+    simpa only [div_eq_inv_mul] using hf.hasFPowerSeriesAt
+  have hg_at : HasFPowerSeriesAt g
+      (FormalMultilinearSeries.ofScalars ℂ fun m ↦ (m ! : ℂ)⁻¹ * iteratedDeriv m g z₀) z₀ := by
+    simpa only [div_eq_inv_mul] using hg.hasFPowerSeriesAt
+  have hw_ps' := hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff
+    hw_ball.r_pos hf_at hg_at hw_ball.differentiableOn hode
+  have hser := hw_ball.hasFPowerSeriesAt.eq_formalMultilinearSeries hw_ps'.hasFPowerSeriesAt
+  simpa only [FormalMultilinearSeries.coeff_ofScalars, div_eq_inv_mul] using
+    congrArg (FormalMultilinearSeries.coeff · n) hser
 
 /-- If `f`, `g`, and `h` are holomorphic on `Metric.eball z₀ r` (`0 < r ≤ ∞`), then for all
 `w₀, w₁ : ℂ` there exists a unique holomorphic solution `w` of `w'' + f(z) w' + g(z) w = h(z)` on
 `Metric.eball z₀ r` with `w z₀ = w₀` and `deriv w z₀ = w₁`. -/
-theorem exists_secondOrder_linear_ode_eball {f g h : ℂ → ℂ} {z₀ : ℂ} {r : ℝ≥0∞} (hr : 0 < r)
-        (hf : DifferentiableOn ℂ f (Metric.eball z₀ r))
-        (hg : DifferentiableOn ℂ g (Metric.eball z₀ r))
-        (hh : DifferentiableOn ℂ h (Metric.eball z₀ r)) (w₀ w₁ : ℂ) :
+theorem exists_differentiableOn_eball_deriv_deriv_add_mul_deriv_add_mul_eq
+    {f g h : ℂ → ℂ} {z₀ : ℂ} {r : ℝ≥0∞} (hr : 0 < r)
+    (hf : DifferentiableOn ℂ f (Metric.eball z₀ r))
+    (hg : DifferentiableOn ℂ g (Metric.eball z₀ r))
+    (hh : DifferentiableOn ℂ h (Metric.eball z₀ r)) (w₀ w₁ : ℂ) :
     ∃ w : ℂ → ℂ,
       DifferentiableOn ℂ w (Metric.eball z₀ r) ∧
       w z₀ = w₀ ∧ deriv w z₀ = w₁ ∧
@@ -1025,7 +1020,7 @@ theorem exists_secondOrder_linear_ode_eball {f g h : ℂ → ℂ} {z₀ : ℂ} {
         deriv (deriv w) z + f z * deriv w z + g z * w z :=
     Filter.eventually_of_mem (Metric.isOpen_eball.mem_nhds (mem_eball_self hr))
       fun z hz ↦ (hu_ode z hz).trans (hw_ode z hz).symm
-  exact eqOn_of_secondOrder_linear_ode Metric.isOpen_eball isPreconnected_eball
+  exact eqOn_of_deriv_deriv_add_mul_deriv_add_mul_eq Metric.isOpen_eball isPreconnected_eball
     (mem_eball_self hr)
     (hf.analyticOnNhd Metric.isOpen_eball z₀ (mem_eball_self hr))
     (hg.analyticOnNhd Metric.isOpen_eball z₀ (mem_eball_self hr))
@@ -1034,8 +1029,8 @@ theorem exists_secondOrder_linear_ode_eball {f g h : ℂ → ℂ} {z₀ : ℂ} {
 /-- If `f` and `g` admit scalar power series `fs` and `gs` on `Metric.eball z₀ r`, then for all
 `w₀, w₁ : ℂ` there exists a unique holomorphic solution `w` of `w'' + f(z) w' + g(z) w = 0` on
 `Metric.eball z₀ r` with `w z₀ = w₀` and `deriv w z₀ = w₁`, given by `ordinaryPointCoeff`. -/
-theorem exists_ordinaryPoint_solution_of_hasFPowerSeriesOnBall {f g : ℂ → ℂ} {fs gs : ℕ → ℂ}
-    {z₀ : ℂ} {r : ℝ≥0∞}
+theorem exists_hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff_of_hasFPowerSeriesOnBall
+    {f g : ℂ → ℂ} {fs gs : ℕ → ℂ} {z₀ : ℂ} {r : ℝ≥0∞}
     (hf : HasFPowerSeriesOnBall f (FormalMultilinearSeries.ofScalars ℂ fs) z₀ r)
     (hg : HasFPowerSeriesOnBall g (FormalMultilinearSeries.ofScalars ℂ gs) z₀ r) (w₀ w₁ : ℂ) :
     let a := ordinaryPointCoeff fs gs w₀ w₁
@@ -1049,11 +1044,13 @@ theorem exists_ordinaryPoint_solution_of_hasFPowerSeriesOnBall {f g : ℂ → �
         u z₀ = w₀ → deriv u z₀ = w₁ → EqOn u w (Metric.eball z₀ r) := by
   intro a
   obtain ⟨w, hw_diff, hw₀, hdw₀, hw_ode, hw_uniq⟩ :=
-    exists_secondOrder_linear_ode_eball (h := 0) hf.r_pos hf.differentiableOn hg.differentiableOn
-      (differentiableOn_const 0) w₀ w₁
+    exists_differentiableOn_eball_deriv_deriv_add_mul_deriv_add_mul_eq (h := 0)
+      hf.r_pos hf.differentiableOn hg.differentiableOn (differentiableOn_const 0) w₀ w₁
   have hw_ps : HasFPowerSeriesOnBall w (FormalMultilinearSeries.ofScalars ℂ a) z₀ r := by
     dsimp only [a]; rw [← hw₀, ← hdw₀]
-    exact hasFPowerSeriesOnBall_of_ordinaryPoint_solution hf hg hw_diff hw_ode
+    exact hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff
+      hf.r_pos hf.hasFPowerSeriesAt hg.hasFPowerSeriesAt hw_diff
+      (Filter.eventually_of_mem (Metric.isOpen_eball.mem_nhds (mem_eball_self hf.r_pos)) hw_ode)
   have hw_sum : ∀ z ∈ Metric.eball z₀ r, HasSum (fun n ↦ a n * (z - z₀) ^ n) (w z) := fun z hz ↦ by
     simpa only [FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul] using hw_ps.hasSum_sub hz
   exact ⟨w, hw_ps, hw_sum, hw₀, hdw₀, hw_ode, hw_uniq⟩
@@ -1061,7 +1058,8 @@ theorem exists_ordinaryPoint_solution_of_hasFPowerSeriesOnBall {f g : ℂ → �
 /-- If `f` and `g` are holomorphic on `Metric.eball z₀ r` (`0 < r ≤ ∞`), then for all `w₀, w₁ : ℂ`
 there exists a unique holomorphic solution `w` of `w'' + f(z) w' + g(z) w = 0` on
 `Metric.eball z₀ r` with `w z₀ = w₀` and `deriv w z₀ = w₁`, given by `ordinaryPointCoeff`. -/
-theorem exists_ordinaryPoint_solution_eball {f g : ℂ → ℂ} {z₀ : ℂ} {r : ℝ≥0∞} (hr : 0 < r)
+theorem exists_hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff_eball
+    {f g : ℂ → ℂ} {z₀ : ℂ} {r : ℝ≥0∞} (hr : 0 < r)
     (hf : DifferentiableOn ℂ f (Metric.eball z₀ r))
     (hg : DifferentiableOn ℂ g (Metric.eball z₀ r)) (w₀ w₁ : ℂ) :
     let a := ordinaryPointCoeff (fun n ↦ (n ! : ℂ)⁻¹ * iteratedDeriv n f z₀)
@@ -1073,21 +1071,16 @@ theorem exists_ordinaryPoint_solution_eball {f g : ℂ → ℂ} {z₀ : ℂ} {r 
       (∀ z ∈ Metric.eball z₀ r, deriv (deriv w) z + f z * deriv w z + g z * w z = 0) ∧
       ∀ u : ℂ → ℂ, DifferentiableOn ℂ u (Metric.eball z₀ r) →
         (∀ z ∈ Metric.eball z₀ r, deriv (deriv u) z + f z * deriv u z + g z * u z = 0) →
-        u z₀ = w₀ → deriv u z₀ = w₁ → EqOn u w (Metric.eball z₀ r) := by
-  have hf_ps : HasFPowerSeriesOnBall f
-      (FormalMultilinearSeries.ofScalars ℂ fun n ↦ (n ! : ℂ)⁻¹ * iteratedDeriv n f z₀) z₀ r := by
-    rw [← mkPiRingSeries_eq_ofScalars]
-    simpa [smul_eq_mul] using hf.hasFPowerSeriesOnBall_eball hr
-  have hg_ps : HasFPowerSeriesOnBall g
-      (FormalMultilinearSeries.ofScalars ℂ fun n ↦ (n ! : ℂ)⁻¹ * iteratedDeriv n g z₀) z₀ r := by
-    rw [← mkPiRingSeries_eq_ofScalars]
-    simpa [smul_eq_mul] using hg.hasFPowerSeriesOnBall_eball hr
-  exact exists_ordinaryPoint_solution_of_hasFPowerSeriesOnBall hf_ps hg_ps w₀ w₁
+        u z₀ = w₀ → deriv u z₀ = w₁ → EqOn u w (Metric.eball z₀ r) :=
+  exists_hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff_of_hasFPowerSeriesOnBall
+    (hf.hasFPowerSeriesOnBall_ofScalars_eball hr)
+    (hg.hasFPowerSeriesOnBall_ofScalars_eball hr) w₀ w₁
 
 /-- If `f` and `g` are holomorphic on a finite open disc `Metric.ball z₀ r` (`0 < r`), then for all
 `w₀, w₁ : ℂ` there exists a unique holomorphic solution `w` of `w'' + f(z) w' + g(z) w = 0` on
 `Metric.ball z₀ r` with `w z₀ = w₀` and `deriv w z₀ = w₁`, converging on the whole disc. -/
-theorem exists_ordinaryPoint_solution_ball {f g : ℂ → ℂ} {z₀ : ℂ} {r : ℝ} (hr : 0 < r)
+theorem exists_hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff_ball
+    {f g : ℂ → ℂ} {z₀ : ℂ} {r : ℝ} (hr : 0 < r)
     (hf : DifferentiableOn ℂ f (Metric.ball z₀ r))
     (hg : DifferentiableOn ℂ g (Metric.ball z₀ r)) (w₀ w₁ : ℂ) :
     let a := ordinaryPointCoeff (fun n ↦ (n ! : ℂ)⁻¹ * iteratedDeriv n f z₀)
@@ -1104,7 +1097,8 @@ theorem exists_ordinaryPoint_solution_ball {f g : ℂ → ℂ} {z₀ : ℂ} {r :
   have heball : Metric.eball z₀ (ENNReal.ofReal r) = Metric.ball z₀ r := Metric.eball_ofReal
   have hr_enn : (0 : ℝ≥0∞) < ENNReal.ofReal r := ENNReal.ofReal_pos.mpr hr
   obtain ⟨w, hw_ps, hw_sum, hw₀, hdw₀, hw_ode, hw_uniq⟩ :=
-    exists_ordinaryPoint_solution_eball hr_enn (heball.symm ▸ hf) (heball.symm ▸ hg) w₀ w₁
+    exists_hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff_eball
+      hr_enn (heball.symm ▸ hf) (heball.symm ▸ hg) w₀ w₁
   refine ⟨w, heball ▸ hw_ps.differentiableOn, hw_ps, fun z hz ↦ hw_sum z (heball.symm ▸ hz),
     hw₀, hdw₀, fun z hz ↦ hw_ode z (heball.symm ▸ hz), fun u hu hu_ode hu₀ hdu₀ ↦ ?_⟩
   simpa only [heball] using hw_uniq u (heball.symm ▸ hu)
@@ -1112,15 +1106,15 @@ theorem exists_ordinaryPoint_solution_ball {f g : ℂ → ℂ} {z₀ : ℂ} {r :
 
 /-- For entire `f, g, h : ℂ → ℂ`, every initial-value problem `w'' + f(z) w' + g(z) w = h(z)` with
 `w z₀ = w₀` and `deriv w z₀ = w₁` has a unique entire solution. -/
-theorem existsUnique_entire_secondOrder_linear_ode {f g h : ℂ → ℂ}
+theorem existsUnique_differentiable_deriv_deriv_add_mul_deriv_add_mul_eq {f g h : ℂ → ℂ}
     (hf : Differentiable ℂ f) (hg : Differentiable ℂ g) (hh : Differentiable ℂ h)
     (z₀ w₀ w₁ : ℂ) :
     ∃! w : ℂ → ℂ, Differentiable ℂ w ∧
       (∀ z, deriv (deriv w) z + f z * deriv w z + g z * w z = h z) ∧
       w z₀ = w₀ ∧ deriv w z₀ = w₁ := by
   obtain ⟨w, hw_diff_on, hw₀, hdw₀, hw_ode_on, hw_uniq⟩ :=
-    exists_secondOrder_linear_ode_eball (z₀ := z₀) (r := ∞) ENNReal.coe_lt_top
-      hf.differentiableOn hg.differentiableOn hh.differentiableOn w₀ w₁
+    exists_differentiableOn_eball_deriv_deriv_add_mul_deriv_add_mul_eq (z₀ := z₀) (r := ∞)
+      ENNReal.coe_lt_top hf.differentiableOn hg.differentiableOn hh.differentiableOn w₀ w₁
   have hall : ∀ z : ℂ, z ∈ Metric.eball z₀ ∞ := fun z ↦ by simp
   have hw_diff : Differentiable ℂ w := differentiableOn_univ.mp (by simpa using hw_diff_on)
   refine ⟨w, ⟨hw_diff, fun z ↦ hw_ode_on z (hall z), hw₀, hdw₀⟩,
@@ -1130,7 +1124,8 @@ theorem existsUnique_entire_secondOrder_linear_ode {f g h : ℂ → ℂ}
 /-- For entire `f, g : ℂ → ℂ`, every initial-value problem `w'' + f(z) w' + g(z) w = 0` with
 `w z₀ = w₀` and `deriv w z₀ = w₁` has a unique entire solution `w`, and its Taylor series around
 `z₀` with coefficients `ordinaryPointCoeff` converges everywhere on `ℂ`. -/
-theorem exists_entire_ordinaryPoint_solution {f g : ℂ → ℂ} (hf : Differentiable ℂ f)
+theorem exists_differentiable_hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff
+    {f g : ℂ → ℂ} (hf : Differentiable ℂ f)
     (hg : Differentiable ℂ g) (z₀ w₀ w₁ : ℂ) :
     let a := ordinaryPointCoeff (fun n ↦ (n ! : ℂ)⁻¹ * iteratedDeriv n f z₀)
       (fun n ↦ (n ! : ℂ)⁻¹ * iteratedDeriv n g z₀) w₀ w₁
@@ -1144,8 +1139,8 @@ theorem exists_entire_ordinaryPoint_solution {f g : ℂ → ℂ} (hf : Different
         (∀ z : ℂ, deriv (deriv u) z + f z * deriv u z + g z * u z = 0) →
         u z₀ = w₀ → deriv u z₀ = w₁ → u = w := by
   obtain ⟨w, hw_ps, hw_sum, hw₀, hdw₀, hw_ode, hw_uniq⟩ :=
-    exists_ordinaryPoint_solution_eball (z₀ := z₀) (r := ∞) ENNReal.coe_lt_top
-      hf.differentiableOn hg.differentiableOn w₀ w₁
+    exists_hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff_eball (z₀ := z₀) (r := ∞)
+      ENNReal.coe_lt_top hf.differentiableOn hg.differentiableOn w₀ w₁
   have hall : ∀ z : ℂ, z ∈ Metric.eball z₀ ∞ := fun z ↦ by simp
   have hw_diff : Differentiable ℂ w :=
     differentiableOn_univ.mp (by simpa using hw_ps.differentiableOn)
