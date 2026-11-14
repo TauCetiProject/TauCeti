@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Vertex.Axioms
 public import TauCeti.Algebra.Vertex.Dong
+import TauCeti.Algebra.BigOperators.Finprod
+import TauCeti.RingTheory.Binomial
 import Mathlib.Algebra.Module.Rat
 
 /-!
@@ -27,18 +29,18 @@ and iterate formulas, the full three-parameter Borcherds identity, and skew symm
 
 * `TauCeti.FormalVertexAxioms.field_ncoeff_apply`: state–field correspondence
   `Y(a₍ₙ₎ b, z) = Y(a, z)₍ₙ₎ Y(b, z)` for all `n : ℤ` under `[HasUniqueDiv V]`.
-* `TauCeti.FormalVertexAxioms.lie_ncoeff_field`: the Borcherds commutator formula
+* `TauCeti.FormalVertexAxioms.lie_ncoeff_field_eq_sum`: the Borcherds commutator formula
   `⁅a₍ₘ₎, b₍ₙ₎⁆ = ∑_{j < N} (m choose j) (a₍ⱼ₎ b)₍ₘ₊ₙ₋ⱼ₎`, its `m = 0` specialization
   `TauCeti.FormalVertexAxioms.lie_ncoeff_zero_field` (`⁅a₍₀₎, b₍ₙ₎⁆ = (a₍₀₎ b)₍ₙ₎`), and the
   derivation identity `TauCeti.FormalVertexAxioms.ncoeff_zero_field_ncoeff_apply`.
-* `TauCeti.FormalVertexAxioms.ncoeff_field_ncoeff_apply`: the Borcherds iterate formula for
-  `((a₍ₙ₎ b)₍q₎) c`.
+* `TauCeti.FormalVertexAxioms.ncoeff_field_ncoeff_apply_apply_eq_sum`: the Borcherds iterate formula
+  for `((a₍ₙ₎ b)₍q₎) c`.
 * `TauCeti.FormalVertexAxioms.borcherds` and `TauCeti.FormalVertexAxioms.exists_borcherds`: the full
   three-parameter Borcherds identity for all `m, n, q : ℤ` under `[HasUniqueDiv V]`, proved by
   two-way Pascal induction on `m` combined with locality vanishing for large `n`.
 * `TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_sum_vacuum` and
-  `TauCeti.FormalVertexAxioms.ncoeff_field_apply_skewSymm`: skew symmetry of `a₍ₙ₎ b` in
-  division-free form and in Kac's exponential form over `ℚ`, together with
+  `TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_sum_translation_pow`: skew symmetry of `a₍ₙ₎ b`
+  in division-free form and in Kac's exponential form over `ℚ`, together with
   `TauCeti.FormalVertexAxioms.ncoeff_zero_field_apply_add_mem_range_translation`
   (`a₍₀₎ b + b₍₀₎ a ∈ LinearMap.range T`).
 
@@ -69,29 +71,6 @@ variable (A : FormalVertexAxioms R V)
 
 /-! ### State–field correspondence for integer products -/
 
-private theorem finsum_eq_sum_range_of_vanish {M : Type*} [AddCommGroup M] {f : ℕ → M} {K : ℕ}
-    (hK : ∀ i, K ≤ i → f i = 0) : (∑ᶠ i : ℕ, f i) = ∑ i ∈ range K, f i := by
-  have hsupp : f.support ⊆ ↑(range K) := fun i hi ↦
-    mem_coe.mpr (mem_range.mpr (not_le.mp fun hle ↦ hi (hK i hle)))
-  rw [finsum_eq_sum_of_support_subset f hsupp]
-
-private theorem factorial_smul_ncoeff_apply_vacuum {B : VertexOperator R V}
-    (hT : ∀ m : ℤ, ⁅A.translation, B[[m]]⁆ = (derivative B)[[m]]) (k : ℕ) :
-    k.factorial • (B[[-k - 1]]) A.vacuum = (A.translation ^ k) ((B[[-1]]) A.vacuum) := by
-  have hrec (m : ℤ) : A.translation ((B[[m]]) A.vacuum) = (-m) • (B[[m - 1]]) A.vacuum := by
-    have h := LinearMap.congr_fun (hT m) A.vacuum
-    rwa [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
-      A.translation_vacuum, map_zero, sub_zero, ncoeff_derivative, LinearMap.smul_apply] at h
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    have h := hrec (-(k : ℤ) - 1)
-    have h₁ : -(-(k : ℤ) - 1) = ((k + 1 : ℕ) : ℤ) := by push_cast; ring
-    have h₂ : -(k : ℤ) - 1 - 1 = -((k + 1 : ℕ) : ℤ) - 1 := by push_cast; ring
-    rw [h₁, h₂, natCast_zsmul] at h
-    rw [pow_succ', mul_apply_eq_comp, ← ih, map_nsmul, h, Nat.factorial_succ, mul_nsmul,
-      smul_comm]
-
 /-- **State–field correspondence for integer products.** When `V` has unique divisibility
 (in particular over any `ℚ`-module), the field of every `n`-th product `a₍ₙ₎ b` (`n : ℤ`) is the
 `n`-th field product `nthProduct n (Y(a, z)) (Y(b, z))`. -/
@@ -109,7 +88,7 @@ theorem field_ncoeff_apply [HasUniqueDiv V] (a b : V) (n : ℤ) :
         A.ncoeff_field_apply_vacuum_of_nonneg _ m hm]
     · obtain ⟨k, rfl⟩ : ∃ k : ℕ, m = -(k : ℤ) - 1 := ⟨(-m - 1).toNat, by omega⟩
       rw [← nsmul_right_inj k.factorial_ne_zero,
-        A.factorial_smul_ncoeff_apply_vacuum
+        factorial_smul_ncoeff_apply A.translation_vacuum
           (lie_ncoeff_nthProduct (A.lie_translation_ncoeff a) (A.lie_translation_ncoeff b) n) k,
         A.factorial_smul_ncoeff_field_apply_vacuum,
         ncoeff_neg_one_nthProduct_apply (A.ncoeff_field_apply_vacuum_of_nonneg a)
@@ -117,10 +96,9 @@ theorem field_ncoeff_apply [HasUniqueDiv V] (a b : V) (n : ℤ) :
         A.ncoeff_neg_one_field_apply_vacuum]
 
 /-- The field of the `(-1)`-st product `a₍₋₁₎ b` is the normal-ordered product `:Y(a,z) Y(b,z):`. -/
-@[simp]
 theorem field_ncoeff_neg_one_apply [HasUniqueDiv V] (a b : V) :
     A.field (((A.field a)[[-1]]) b) = normalOrder (A.field a) (A.field b) := by
-  rw [A.field_ncoeff_apply, nthProduct_neg_one]
+  simp [A.field_ncoeff_apply]
 
 /-- For `n : ℕ`, the field of `a₍ₙ₎ b` is `nonnegResidueProduct n (Y(a,z)) (Y(b,z))`. -/
 theorem field_ncoeff_natCast_apply [HasUniqueDiv V] (a b : V) (n : ℕ) :
@@ -136,7 +114,7 @@ theorem field_ncoeff_zero_apply [HasUniqueDiv V] (a b : V) :
 
 /-- **Borcherds commutator formula.** For any cutoff `N : ℕ` above which `a₍ⱼ₎ b = 0`,
 `⁅a₍ₘ₎, b₍ₙ₎⁆ = ∑_{j < N} (m choose j) (a₍ⱼ₎ b)₍ₘ₊ₙ₋ⱼ₎`. -/
-theorem lie_ncoeff_field [HasUniqueDiv V] (a b : V) (m n : ℤ) {N : ℕ}
+theorem lie_ncoeff_field_eq_sum [HasUniqueDiv V] (a b : V) (m n : ℤ) {N : ℕ}
     (hN : ∀ j : ℕ, N ≤ j → ((A.field a)[[(j : ℤ)]]) b = 0) :
     ⁅(A.field a)[[m]], (A.field b)[[n]]⁆ =
       ∑ j ∈ range N, Ring.choose m j • (A.field (((A.field a)[[(j : ℤ)]]) b))[[m + n - j]] := by
@@ -145,14 +123,14 @@ theorem lie_ncoeff_field [HasUniqueDiv V] (a b : V) (m n : ℤ) {N : ℕ}
   simp_rw [← A.field_ncoeff_apply]
   symm
   refine sum_subset (range_mono (le_max_left N L)) fun j _ hj ↦ ?_
-  rw [hN j (by simp only [mem_range] at hj; omega), map_zero, map_zero, Pi.zero_apply, smul_zero]
+  simp [hN j (by simp only [mem_range] at hj; omega)]
 
 /-- The `0`-th mode `a₍₀₎` commutes with `Y(b, z)` by `[a₍₀₎, b₍ₙ₎] = (a₍₀₎ b)₍ₙ₎`. -/
 @[simp]
 theorem lie_ncoeff_zero_field [HasUniqueDiv V] (a b : V) (n : ℤ) :
     ⁅(A.field a)[[0]], (A.field b)[[n]]⁆ = (A.field (((A.field a)[[0]]) b))[[n]] := by
   obtain ⟨N, hN⟩ := (A.field a).exists_forall_ncoeff_apply_eq_zero b
-  rw [A.lie_ncoeff_field a b 0 n (N := N + 1) (fun j hj ↦ hN j (by omega)), sum_range_succ']
+  rw [A.lie_ncoeff_field_eq_sum a b 0 n (N := N + 1) (fun j hj ↦ hN j (by omega)), sum_range_succ']
   simp
 
 /-- The `0`-th mode `a₍₀₎` is a derivation of every `n`-th product (`n : ℤ`):
@@ -167,7 +145,7 @@ theorem ncoeff_zero_field_ncoeff_apply [HasUniqueDiv V] (a b c : V) (n : ℤ) :
     sub_eq_iff_eq_add] at h
 
 /-- **Borcherds iterate formula.** Mode expansion of `((a₍ₙ₎ b)₍q₎) c` for any `n, q : ℤ`. -/
-theorem ncoeff_field_ncoeff_apply [HasUniqueDiv V] (a b c : V) (n q : ℤ) {K : ℕ}
+theorem ncoeff_field_ncoeff_apply_apply_eq_sum [HasUniqueDiv V] (a b c : V) (n q : ℤ) {K : ℕ}
     (ha : ∀ j : ℕ, K ≤ j → ((A.field a)[[(j : ℤ)]]) c = 0)
     (hb : ∀ j : ℕ, K ≤ j → ((A.field b)[[q + j]]) c = 0) :
     ((A.field (((A.field a)[[n]]) b))[[q]]) c =
@@ -197,23 +175,21 @@ private theorem borcherdsLhs₁_eq_sum (a b c : V) (m n q : ℤ) {K : ℕ}
     A.borcherdsLhs₁ a b c m n q =
       ∑ j ∈ range K, (-1 : ℤ) ^ j • Ring.choose n j •
         ((A.field a)[[m + n - j]]) (((A.field b)[[q + j]]) c) :=
-  finsum_eq_sum_range_of_vanish fun j hj ↦ by rw [hb j hj, map_zero, smul_zero, smul_zero]
+  finsum_eq_sum_range_of_forall_eq_zero fun j hj ↦ by simp [hb j hj]
 
 private theorem borcherdsLhs₂_eq_sum (a b c : V) (m n q : ℤ) {K : ℕ}
     (ha : ∀ j : ℕ, K ≤ j → ((A.field a)[[m + j]]) c = 0) :
     A.borcherdsLhs₂ a b c m n q =
       ∑ j ∈ range K, (-1 : ℤ) ^ j • Ring.choose n j •
         (Int.negOnePow n • ((A.field b)[[n + q - j]]) (((A.field a)[[m + j]]) c)) :=
-  finsum_eq_sum_range_of_vanish fun j hj ↦ by
-    rw [ha j hj, map_zero, smul_zero, smul_zero, smul_zero]
+  finsum_eq_sum_range_of_forall_eq_zero fun j hj ↦ by simp [ha j hj]
 
 private theorem borcherdsRhs_eq_sum (a b c : V) (m n q : ℤ) {K : ℕ}
     (hab : ∀ j : ℕ, K ≤ j → ((A.field a)[[n + j]]) b = 0) :
     A.borcherdsRhs a b c m n q =
       ∑ j ∈ range K, Ring.choose m j •
         ((A.field (((A.field a)[[n + j]]) b))[[m + q - j]]) c :=
-  finsum_eq_sum_range_of_vanish fun j hj ↦ by
-    rw [hab j hj, map_zero, map_zero, Pi.zero_apply, LinearMap.zero_apply, smul_zero]
+  finsum_eq_sum_range_of_forall_eq_zero fun j hj ↦ by simp [hab j hj]
 
 private theorem borcherdsLhs₁_succ (a b c : V) (m n q : ℤ) :
     A.borcherdsLhs₁ a b c (m + 1) n q =
@@ -309,7 +285,7 @@ private theorem borcherdsDelta_zero_left [HasUniqueDiv V] (a b c : V) (n q : ℤ
     simp
   rw [borcherdsDelta, A.borcherdsLhs₁_eq_sum a b c 0 n q hb,
     A.borcherdsLhs₂_eq_sum a b c 0 n q (by simpa only [zero_add] using ha),
-    hrhs, A.ncoeff_field_ncoeff_apply a b c n q ha hb, ← sum_sub_distrib]
+    hrhs, A.ncoeff_field_ncoeff_apply_apply_eq_sum a b c n q ha hb, ← sum_sub_distrib]
   refine sub_eq_zero.mpr (sum_congr rfl fun j _ ↦ ?_)
   rw [zero_add, zero_add, ← smul_sub, ← smul_sub]
 
@@ -317,38 +293,19 @@ private theorem borcherdsLhs₁_natCast (a b c : V) (m q : ℤ) (M : ℕ) :
     A.borcherdsLhs₁ a b c m (M : ℤ) q =
       ∑ x ∈ antidiagonal M, M.choose x.1 • (-1 : ℤ) ^ x.2 •
         ((A.field a)[[m + x.1]]) (((A.field b)[[q + x.2]]) c) := by
-  rw [borcherdsLhs₁, finsum_eq_sum_range_of_vanish (K := M + 1) fun j hj ↦ by
-    rw [Ring.choose_natCast, Nat.choose_eq_zero_of_lt hj, Nat.cast_zero, zero_smul, smul_zero] ]
-  rw [← Nat.sum_antidiagonal_swap]
-  simp only [Prod.fst_swap, Prod.snd_swap]
-  rw [Nat.sum_antidiagonal_eq_sum_range_succ
-    (fun j i ↦ M.choose i • (-1 : ℤ) ^ j • ((A.field a)[[m + i]]) (((A.field b)[[q + j]]) c))]
-  refine sum_congr rfl fun j hj ↦ ?_
-  have hjM : j ≤ M := Nat.lt_succ_iff.mp (mem_range.mp hj)
-  have hidx : m + ((M - j : ℕ) : ℤ) = m + (M : ℤ) - j := by omega
-  rw [Nat.choose_symm hjM, hidx, Ring.choose_natCast, ← natCast_zsmul, smul_comm]
+  rw [borcherdsLhs₁, finsum_eq_sum_range_of_forall_eq_zero (K := M + 1) fun j hj ↦ by
+      simp [Ring.choose_natCast, Nat.choose_eq_zero_of_lt hj],
+    ← FormalDistribution.sum_antidiagonal_choose_eq_sum_range_succ_left M
+      (fun x y ↦ ((A.field a)[[x]]) (((A.field b)[[y]]) c)) m q]
 
 private theorem borcherdsLhs₂_natCast (a b c : V) (m q : ℤ) (M : ℕ) :
     A.borcherdsLhs₂ a b c m (M : ℤ) q =
       ∑ x ∈ antidiagonal M, M.choose x.1 • (-1 : ℤ) ^ x.2 •
         ((A.field b)[[q + x.2]]) (((A.field a)[[m + x.1]]) c) := by
-  rw [borcherdsLhs₂, finsum_eq_sum_range_of_vanish (K := M + 1) fun j hj ↦ by
-    rw [Ring.choose_natCast, Nat.choose_eq_zero_of_lt hj, Nat.cast_zero, zero_smul, smul_zero] ]
-  rw [Nat.sum_antidiagonal_eq_sum_range_succ
-    (fun i j ↦ M.choose i • (-1 : ℤ) ^ j • ((A.field b)[[q + j]]) (((A.field a)[[m + i]]) c))]
-  refine sum_congr rfl fun j hj ↦ ?_
-  have hjM : j ≤ M := Nat.lt_succ_iff.mp (mem_range.mp hj)
-  have hpow : (-1 : ℤ) ^ (M - j) = (-1 : ℤ) ^ j * (-1 : ℤ) ^ M := by
-    have h₁ : (-1 : ℤ) ^ j * (-1 : ℤ) ^ j = 1 := by simp [← mul_pow]
-    calc
-      (-1 : ℤ) ^ (M - j) = (-1 : ℤ) ^ (M - j) * ((-1 : ℤ) ^ j * (-1 : ℤ) ^ j) := by
-        rw [h₁, mul_one]
-      _ = (-1 : ℤ) ^ j * (-1 : ℤ) ^ (M - j + j) := by rw [← pow_add]; ring
-      _ = (-1 : ℤ) ^ j * (-1 : ℤ) ^ M := by rw [Nat.sub_add_cancel hjM]
-  have hidx : q + ((M - j : ℕ) : ℤ) = (M : ℤ) + q - j := by omega
-  rw [hidx, Ring.choose_natCast, ← natCast_zsmul, Units.smul_def, Int.coe_negOnePow_natCast,
-    hpow, smul_smul, smul_smul, smul_smul]
-  exact congrArg (· • ((A.field b)[[(M : ℤ) + q - j]]) (((A.field a)[[m + j]]) c)) (by ring)
+  rw [borcherdsLhs₂, finsum_eq_sum_range_of_forall_eq_zero (K := M + 1) fun j hj ↦ by
+      simp [Ring.choose_natCast, Nat.choose_eq_zero_of_lt hj],
+    ← FormalDistribution.sum_antidiagonal_choose_eq_sum_range_succ_right M
+      (fun x y ↦ ((A.field b)[[y]]) (((A.field a)[[x]]) c)) m q]
 
 private theorem borcherdsDelta_natCast_mid (a b c : V) (m q : ℤ) {M : ℕ}
     (hloc : (A.field a).IsLocalOfOrder (A.field b) M)
@@ -399,17 +356,18 @@ private theorem borcherdsDelta_eq_zero [HasUniqueDiv V] (a b c : V) (m n q : ℤ
     rw [hshift s n' q', show n' + (s : ℤ) = (M : ℤ) by omega, hlarge _ _ (by omega), smul_zero]
 
 /-- **The Borcherds identity.** For any states `a, b, c : V`, any modes `m, n, q : ℤ`, and any
-cutoff `K : ℕ` above which `a₍ₘ₊ⱼ₎ c = 0`, `b₍q₊ⱼ₎ c = 0`, and `a₍ₙ₊ⱼ₎ b = 0`,
+cutoffs `K, L : ℕ` with `a₍ₘ₊ⱼ₎ c = 0` and `b₍q₊ⱼ₎ c = 0` for `K ≤ j` and `a₍ₙ₊ⱼ₎ b = 0` for
+`L ≤ j`,
 `∑_{j < K} (-1)ʲ (n choose j) (a₍ₘ₊ₙ₋ⱼ₎ (b₍q₊ⱼ₎ c) - (-1)ⁿ b₍ₙ₊q₋ⱼ₎ (a₍ₘ₊ⱼ₎ c)) =
-  ∑_{j < K} (m choose j) ((a₍ₙ₊ⱼ₎ b)₍ₘ₊q₋ⱼ₎ c)`. -/
-theorem borcherds [HasUniqueDiv V] (a b c : V) (m n q : ℤ) {K : ℕ}
+  ∑_{j < L} (m choose j) ((a₍ₙ₊ⱼ₎ b)₍ₘ₊q₋ⱼ₎ c)`. -/
+theorem borcherds [HasUniqueDiv V] (a b c : V) (m n q : ℤ) {K L : ℕ}
     (ha : ∀ j : ℕ, K ≤ j → ((A.field a)[[m + j]]) c = 0)
     (hb : ∀ j : ℕ, K ≤ j → ((A.field b)[[q + j]]) c = 0)
-    (hab : ∀ j : ℕ, K ≤ j → ((A.field a)[[n + j]]) b = 0) :
+    (hab : ∀ j : ℕ, L ≤ j → ((A.field a)[[n + j]]) b = 0) :
     ∑ j ∈ range K, (-1 : ℤ) ^ j • Ring.choose n j •
         (((A.field a)[[m + n - j]]) (((A.field b)[[q + j]]) c) -
           Int.negOnePow n • ((A.field b)[[n + q - j]]) (((A.field a)[[m + j]]) c)) =
-      ∑ j ∈ range K, Ring.choose m j •
+      ∑ j ∈ range L, Ring.choose m j •
         ((A.field (((A.field a)[[n + j]]) b))[[m + q - j]]) c := by
   have h := sub_eq_zero.mp (A.borcherdsDelta_eq_zero a b c m n q)
   rw [A.borcherdsLhs₁_eq_sum a b c m n q hb, A.borcherdsLhs₂_eq_sum a b c m n q ha,
@@ -418,10 +376,13 @@ theorem borcherds [HasUniqueDiv V] (a b c : V) (m n q : ℤ) {K : ℕ}
   refine sum_congr rfl fun j _ ↦ ?_
   rw [← smul_sub, ← smul_sub]
 
-/-- **Existence form of the Borcherds identity**, producing a finite cutoff `K : ℕ` automatically
-from field truncation. -/
+/-- **Existence form of the Borcherds identity**, producing a common finite cutoff `K : ℕ` for all
+three mode sequences from field truncation. -/
 theorem exists_borcherds [HasUniqueDiv V] (a b c : V) (m n q : ℤ) :
     ∃ K : ℕ,
+      (∀ j : ℕ, K ≤ j → ((A.field a)[[m + j]]) c = 0) ∧
+      (∀ j : ℕ, K ≤ j → ((A.field b)[[q + j]]) c = 0) ∧
+      (∀ j : ℕ, K ≤ j → ((A.field a)[[n + j]]) b = 0) ∧
       ∑ j ∈ range K, (-1 : ℤ) ^ j • Ring.choose n j •
           (((A.field a)[[m + n - j]]) (((A.field b)[[q + j]]) c) -
             Int.negOnePow n • ((A.field b)[[n + q - j]]) (((A.field a)[[m + j]]) c)) =
@@ -430,16 +391,15 @@ theorem exists_borcherds [HasUniqueDiv V] (a b c : V) (m n q : ℤ) :
   obtain ⟨Pₐ, hPₐ⟩ := (A.field a).exists_forall_ncoeff_apply_eq_zero c
   obtain ⟨P_b, hPb⟩ := (A.field b).exists_forall_ncoeff_apply_eq_zero c
   obtain ⟨P_ab, hPab⟩ := (A.field a).exists_forall_ncoeff_apply_eq_zero b
-  refine ⟨max Pₐ (max P_b P_ab) + m.natAbs + q.natAbs + n.natAbs,
-    A.borcherds a b c m n q (fun j hj ↦ hPₐ _ (by omega)) (fun j hj ↦ hPb _ (by omega))
-      fun j hj ↦ hPab _ (by omega)⟩
+  have ha : ∀ j : ℕ, max Pₐ (max P_b P_ab) + m.natAbs + q.natAbs + n.natAbs ≤ j →
+      ((A.field a)[[m + j]]) c = 0 := fun j hj ↦ hPₐ _ (by omega)
+  have hb : ∀ j : ℕ, max Pₐ (max P_b P_ab) + m.natAbs + q.natAbs + n.natAbs ≤ j →
+      ((A.field b)[[q + j]]) c = 0 := fun j hj ↦ hPb _ (by omega)
+  have hab : ∀ j : ℕ, max Pₐ (max P_b P_ab) + m.natAbs + q.natAbs + n.natAbs ≤ j →
+      ((A.field a)[[n + j]]) b = 0 := fun j hj ↦ hPab _ (by omega)
+  exact ⟨_, ha, hb, hab, A.borcherds a b c m n q ha hb hab⟩
 
 /-! ### Skew symmetry -/
-
-private theorem ringChoose_neg_one (j : ℕ) : Ring.choose (-1 : ℤ) j = (-1 : ℤ) ^ j := by
-  rw [Ring.choose_neg, show (1 : ℤ) + j - 1 = (j : ℤ) by ring, Ring.choose_natCast,
-    Nat.choose_self, Nat.cast_one]
-  simp [Units.smul_def, Int.coe_negOnePow_natCast]
 
 /-- **Skew symmetry (division-free form).** Over any module with unique divisibility, for any
 cutoff `K : ℕ` above which `b₍ₙ₊ⱼ₎ a = 0`,
@@ -449,47 +409,24 @@ theorem ncoeff_field_apply_eq_sum_vacuum [HasUniqueDiv V] (a b : V) (n : ℤ) {K
     ((A.field a)[[n]]) b =
       ∑ j ∈ range K, Int.negOnePow (n + j + 1) •
         ((A.field (((A.field b)[[n + j]]) a))[[-j - 1]]) A.vacuum := by
-  let M := max K 1
-  have h := A.borcherds b a A.vacuum (-1) n 0 (K := M)
+  have h := A.borcherds b a A.vacuum (-1) n 0 (K := 1) (L := K)
     (fun j hj ↦ A.ncoeff_field_apply_vacuum_of_nonneg b _ (by omega))
-    (fun j _ ↦ A.ncoeff_field_apply_vacuum_of_nonneg a _ (by omega))
-    (fun j hj ↦ hba j (le_trans (le_max_left K 1) hj))
-  have hlhs : ∑ j ∈ range M, (-1 : ℤ) ^ j • Ring.choose n j •
-        (((A.field b)[[-1 + n - j]]) (((A.field a)[[0 + j]]) A.vacuum) -
-          Int.negOnePow n • ((A.field a)[[n + 0 - j]]) (((A.field b)[[-1 + j]]) A.vacuum)) =
-      -(Int.negOnePow n • ((A.field a)[[n]]) b) := by
-    rw [show M = M - 1 + 1 by omega, sum_range_succ']
-    have htail : ∑ k ∈ range (M - 1), (-1 : ℤ) ^ (k + 1) • Ring.choose n (k + 1) •
-        (((A.field b)[[-1 + n - (k + 1 : ℕ)]]) (((A.field a)[[0 + (k + 1 : ℕ)]]) A.vacuum) -
-          Int.negOnePow n •
-            ((A.field a)[[n + 0 - (k + 1 : ℕ)]]) (((A.field b)[[-1 + (k + 1 : ℕ)]]) A.vacuum)) =
-        0 := sum_eq_zero fun k _ ↦ by
-      rw [A.ncoeff_field_apply_vacuum_of_nonneg a _ (by omega),
-        A.ncoeff_field_apply_vacuum_of_nonneg b _ (by omega), map_zero, map_zero, smul_zero,
-        sub_self, smul_zero, smul_zero]
-    rw [htail, zero_add]
-    simp [A.ncoeff_field_apply_vacuum_of_nonneg a 0 le_rfl]
-  have hrhs : ∑ j ∈ range M, Ring.choose (-1 : ℤ) j •
-        ((A.field (((A.field b)[[n + j]]) a))[[-1 + 0 - j]]) A.vacuum =
-      ∑ j ∈ range K, Ring.choose (-1 : ℤ) j •
-        ((A.field (((A.field b)[[n + j]]) a))[[-1 + 0 - j]]) A.vacuum := by
-    symm
-    refine sum_subset (range_mono (le_max_left K 1)) fun j _ hj ↦ ?_
-    rw [hba j (by simp only [mem_range] at hj; omega), map_zero, map_zero, Pi.zero_apply,
-      LinearMap.zero_apply, smul_zero]
-  rw [hlhs, hrhs] at h
+    (fun j _ ↦ A.ncoeff_field_apply_vacuum_of_nonneg a _ (by omega)) hba
+  simp only [range_one, sum_singleton, Nat.cast_zero, pow_zero, Ring.choose_zero_right, one_smul,
+    sub_zero, add_zero, A.ncoeff_field_apply_vacuum_of_nonneg a 0 le_rfl, map_zero,
+    A.ncoeff_neg_one_field_apply_vacuum, zero_sub] at h
   have hinv := congrArg (fun x : V ↦ -(Int.negOnePow n • x)) h
   simp only [smul_neg, neg_neg, smul_smul, Int.units_mul_self, one_smul, smul_sum,
     ← sum_neg_distrib] at hinv
   rw [hinv]
   refine sum_congr rfl fun j _ ↦ ?_
-  rw [ringChoose_neg_one, show (-1 : ℤ) + 0 - j = -(j : ℤ) - 1 by ring, Int.negOnePow_succ,
-    Units.neg_smul, Int.negOnePow_add, mul_smul, Units.smul_def (j : ℤ).negOnePow,
-    Int.coe_negOnePow_natCast]
+  rw [Ring.choose_neg_one, ← Int.coe_negOnePow_natCast, ← Units.smul_def,
+    show (-1 : ℤ) - j = -(j : ℤ) - 1 by ring, Int.negOnePow_succ, Units.neg_smul,
+    Int.negOnePow_add, mul_smul]
 
 /-- **Skew symmetry (`e^{zT}` form).** Over a `ℚ`-module, for any cutoff `K : ℕ` above which
 `b₍ₙ₊ⱼ₎ a = 0`, `a₍ₙ₎ b = ∑_{j < K} (-1)^{n + j + 1} (j!)⁻¹ • Tʲ (b₍ₙ₊ⱼ₎ a)`. -/
-theorem ncoeff_field_apply_skewSymm [Module ℚ V] (a b : V) (n : ℤ) {K : ℕ}
+theorem ncoeff_field_apply_eq_sum_translation_pow [Module ℚ V] (a b : V) (n : ℤ) {K : ℕ}
     (hba : ∀ j : ℕ, K ≤ j → ((A.field b)[[n + j]]) a = 0) :
     ((A.field a)[[n]]) b =
       ∑ j ∈ range K, Int.negOnePow (n + j + 1) • (j.factorial : ℚ)⁻¹ •
@@ -500,12 +437,14 @@ theorem ncoeff_field_apply_skewSymm [Module ℚ V] (a b : V) (n : ℤ) {K : ℕ}
   rw [A.ncoeff_field_apply_vacuum_neg]
 
 /-- Over a `ℚ`-module, the `0`-th product is skew-symmetric modulo `T(V)`:
-`a₍₀₎ b + b₍₀₎ a ∈ LinearMap.range A.translation`. Together with `ncoeff_zero_field_ncoeff_apply`
-and `ncoeff_field_translation`, this makes `V / T(V)` a Lie algebra under `a₍₀₎ b`. -/
+`a₍₀₎ b + b₍₀₎ a ∈ LinearMap.range A.translation`. Together with `ncoeff_zero_field_ncoeff_apply`,
+`ncoeff_field_translation`, and `translation_ncoeff_apply`, this supplies the identities needed for
+the induced Lie bracket on `V / T(V)`. -/
 theorem ncoeff_zero_field_apply_add_mem_range_translation [Module ℚ V] (a b : V) :
     ((A.field a)[[0]]) b + ((A.field b)[[0]]) a ∈ LinearMap.range A.translation := by
   obtain ⟨P, hP⟩ := (A.field b).exists_forall_ncoeff_apply_eq_zero a
-  rw [A.ncoeff_field_apply_skewSymm a b 0 (K := P + 1) (fun j hj ↦ by simpa using hP j (by omega)),
+  rw [A.ncoeff_field_apply_eq_sum_translation_pow a b 0 (K := P + 1)
+      (fun j hj ↦ by simpa using hP j (by omega)),
     sum_range_succ']
   simp only [Nat.cast_zero, add_zero, zero_add, Int.negOnePow_one, Units.neg_smul, one_smul,
     Nat.factorial_zero, Nat.cast_one, inv_one, pow_zero, one_apply_eq_self, neg_add_cancel_right]

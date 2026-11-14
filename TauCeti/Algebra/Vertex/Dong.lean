@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Vertex.NthProduct
+import TauCeti.Algebra.BigOperators.Finprod
+import TauCeti.Algebra.Ring.Commute
 
 /-!
 # Dong's lemma for vertex operators
@@ -20,9 +22,9 @@ We prove Dong's lemma over an arbitrary commutative ring `R`, without dividing b
    `(A, B)`, `(A, C)`, `(B, C)` have locality orders `r₀`, `r₁`, `r₂`. This is proved directly on
    three-variable endomorphism distributions via the Jacobi identity and the commuting difference
    operators `z₁ - z₂`, `z₁ - z₃`, `z₂ - z₃`.
-2. For `normalOrder A B`, decomposing `[(:AB:)₍ᵧ₎, C₍₂₎]` via the derivation property of `[·, C₍₂₎]`
+2. For `normalOrder A B`, decomposing `[(:AB:)₍ₘ₎, C₍ₙ₎]` via the derivation property of `[·, C₍ₙ₎]`
    gives one sum killed by `(w - z)^r₂` and a split Cauchy-kernel sum whose `(w - z)` differences
-   telescope in `r₁` steps to commutators `[B₍ᵧ₎, (A₍ⱼ₎ C)₍₂₎]`, which are killed by
+   telescope in `r₁` steps to commutators `[B₍ₘ₎, (A₍ⱼ₎ C)₍ₙ₎]`, which are killed by
    `(w - z)^(r₀ + r₁ + r₂)` by step 1. Thus `normalOrder A B` has locality order
    `r₀ + 2 * r₁ + r₂` with `C`.
 3. Combining step 2 with `IsLocalOfOrder.hasseDeriv_left` gives locality order
@@ -61,39 +63,45 @@ namespace VertexOperator
 
 section Dist3
 
-variable {M M' : Type*} [AddCommGroup M] [AddCommGroup M']
+variable {M : Type*} [AddCommGroup M]
 
 private def δ₁₂ : AddMonoid.End (ℤ → ℤ → ℤ → M) where
   toFun f x y z := f (x + 1) y z - f x (y + 1) z
   map_zero' := by ext; simp
-  map_add' _ _ := by ext; simp; abel
+  map_add' _ _ := by ext; simp only [Pi.add_apply]; abel
+
+@[simp]
+private theorem δ₁₂_apply (f : ℤ → ℤ → ℤ → M) (x y z : ℤ) :
+    δ₁₂ f x y z = f (x + 1) y z - f x (y + 1) z := (rfl)
 
 private def δ₁₃ : AddMonoid.End (ℤ → ℤ → ℤ → M) where
   toFun f x y z := f (x + 1) y z - f x y (z + 1)
   map_zero' := by ext; simp
-  map_add' _ _ := by ext; simp; abel
+  map_add' _ _ := by ext; simp only [Pi.add_apply]; abel
+
+@[simp]
+private theorem δ₁₃_apply (f : ℤ → ℤ → ℤ → M) (x y z : ℤ) :
+    δ₁₃ f x y z = f (x + 1) y z - f x y (z + 1) := (rfl)
 
 private def δ₂₃ : AddMonoid.End (ℤ → ℤ → ℤ → M) where
   toFun f x y z := f x (y + 1) z - f x y (z + 1)
   map_zero' := by ext; simp
-  map_add' _ _ := by ext; simp; abel
+  map_add' _ _ := by ext; simp only [Pi.add_apply]; abel
 
-private theorem end_mul_apply {α : Type*} [AddCommGroup α] (f g : AddMonoid.End α) (x : α) :
-    (f * g) x = f (g x) := rfl
-
-private theorem end_add_apply {α : Type*} [AddCommGroup α] (f g : AddMonoid.End α) (x : α) :
-    (f + g) x = f x + g x := rfl
+@[simp]
+private theorem δ₂₃_apply (f : ℤ → ℤ → ℤ → M) (x y z : ℤ) :
+    δ₂₃ f x y z = f x (y + 1) z - f x y (z + 1) := (rfl)
 
 private theorem δ₁₃_sub_δ₁₂ : δ₁₃ (M := M) - δ₁₂ = δ₂₃ := by
   ext f x y z
-  change (f (x + 1) y z - f x y (z + 1)) - (f (x + 1) y z - f x (y + 1) z) =
-    f x (y + 1) z - f x y (z + 1)
+  rw [← AddMonoid.End.smul_def, sub_smul, AddMonoid.End.smul_def, AddMonoid.End.smul_def]
+  simp only [Pi.sub_apply, δ₁₃_apply, δ₁₂_apply, δ₂₃_apply]
   abel
 
 private theorem commute_δ₁₂_δ₁₃ : Commute (δ₁₂ (M := M)) δ₁₃ := by
+  rw [commute_iff_eq]
   ext f x y z
-  change (f (x + 1 + 1) y z - f (x + 1) y (z + 1)) - (f (x + 1) (y + 1) z - f x (y + 1) (z + 1)) =
-    (f (x + 1 + 1) y z - f (x + 1) (y + 1) z) - (f (x + 1) y (z + 1) - f x (y + 1) (z + 1))
+  simp only [AddMonoid.End.coe_mul, Function.comp_apply, δ₁₂_apply, δ₁₃_apply]
   abel
 
 private theorem commute_δ₁₂_δ₂₃ : Commute (δ₁₂ (M := M)) δ₂₃ := by
@@ -109,61 +117,24 @@ private theorem δ₁₂_pow_apply (N : ℕ) (f : ℤ → ℤ → ℤ → M) (x 
   induction N generalizing x y with
   | zero => rfl
   | succ N ih =>
-    rw [pow_succ', pow_succ', end_mul_apply, end_mul_apply, FormalDistribution.mulSub_apply,
-      ← ih, ← ih]
-    rfl
+    rw [pow_succ', pow_succ', AddMonoid.End.coe_mul, AddMonoid.End.coe_mul,
+      Function.comp_apply, Function.comp_apply, δ₁₂_apply, FormalDistribution.mulSub_apply, ih, ih]
 
 private theorem δ₁₃_pow_apply (N : ℕ) (f : ℤ → ℤ → ℤ → M) (x y z : ℤ) :
     ((δ₁₃ ^ N) f) x y z = (FormalDistribution.mulSub ^ N) (fun x' z' ↦ f x' y z') x z := by
   induction N generalizing x z with
   | zero => rfl
   | succ N ih =>
-    rw [pow_succ', pow_succ', end_mul_apply, end_mul_apply, FormalDistribution.mulSub_apply,
-      ← ih, ← ih]
-    rfl
+    rw [pow_succ', pow_succ', AddMonoid.End.coe_mul, AddMonoid.End.coe_mul,
+      Function.comp_apply, Function.comp_apply, δ₁₃_apply, FormalDistribution.mulSub_apply, ih, ih]
 
 private theorem δ₂₃_pow_apply (N : ℕ) (f : ℤ → ℤ → ℤ → M) (x y z : ℤ) :
     ((δ₂₃ ^ N) f) x y z = (FormalDistribution.mulSub ^ N) (f x) y z := by
   induction N generalizing y z with
   | zero => rfl
   | succ N ih =>
-    rw [pow_succ', pow_succ', end_mul_apply, end_mul_apply, FormalDistribution.mulSub_apply,
-      ← ih, ← ih]
-    rfl
-
-private theorem mulSub_pow_comp (φ : M →+ M') (c : FormalDistribution M) (N : ℕ) (m n : ℤ) :
-    (FormalDistribution.mulSub ^ N) (fun x y ↦ φ (c x y)) m n =
-      φ ((FormalDistribution.mulSub ^ N) c m n) := by
-  induction N generalizing m n with
-  | zero => rfl
-  | succ N ih =>
-    rw [pow_succ', pow_succ', end_mul_apply, end_mul_apply, FormalDistribution.mulSub_apply,
-      FormalDistribution.mulSub_apply, ih, ih, map_sub]
-
-private theorem add_pow_apply_eq_zero {α : Type*} [AddCommGroup α] {x y : AddMonoid.End α}
-    (hxy : Commute x y) :
-    ∀ {r₁ r₀ : ℕ} {u : α}, (x ^ r₁) u = 0 → (y ^ r₀) u = 0 → ((x + y) ^ (r₁ + r₀)) u = 0
-  | 0, r₀, u, hx, _ => by simp only [pow_zero, AddMonoid.End.one_apply] at hx; simp [hx]
-  | r₁ + 1, 0, u, _, hy => by simp only [pow_zero, AddMonoid.End.one_apply] at hy; simp [hy]
-  | r₁ + 1, r₀ + 1, u, hx, hy => by
-    have hk : r₁ + 1 + (r₀ + 1) = (r₁ + (r₀ + 1)) + 1 := by omega
-    rw [hk, pow_succ, end_mul_apply, end_add_apply, map_add]
-    have hx₁ : (x ^ r₁) (x u) = 0 := by rwa [← end_mul_apply, ← pow_succ]
-    have hy₁ : (y ^ (r₀ + 1)) (x u) = 0 := by
-      rw [← end_mul_apply, (hxy.symm.pow_left (r₀ + 1)).eq, end_mul_apply, hy, map_zero]
-    have hx₂ : (x ^ (r₁ + 1)) (y u) = 0 := by
-      rw [← end_mul_apply, (hxy.pow_left (r₁ + 1)).eq, end_mul_apply, hx, map_zero]
-    have hy₂ : (y ^ r₀) (y u) = 0 := by rwa [← end_mul_apply, ← pow_succ]
-    rw [add_pow_apply_eq_zero hxy hx₁ hy₁, show r₁ + (r₀ + 1) = (r₁ + 1) + r₀ by omega,
-      add_pow_apply_eq_zero hxy hx₂ hy₂, add_zero]
-termination_by r₁ r₀ => r₁ + r₀
-
-private theorem sub_pow_apply_eq_zero {α : Type*} [AddCommGroup α] {x y : AddMonoid.End α}
-    (hxy : Commute x y) {r₁ r₀ : ℕ} {u : α} (hx : (x ^ r₁) u = 0) (hy : (y ^ r₀) u = 0) :
-    ((x - y) ^ (r₁ + r₀)) u = 0 := by
-  rw [sub_eq_add_neg]
-  refine add_pow_apply_eq_zero hxy.neg_right hx ?_
-  rw [neg_pow, end_mul_apply, hy, map_zero]
+    rw [pow_succ', pow_succ', AddMonoid.End.coe_mul, AddMonoid.End.coe_mul,
+      Function.comp_apply, Function.comp_apply, δ₂₃_apply, FormalDistribution.mulSub_apply, ih, ih]
 
 end Dist3
 
@@ -186,65 +157,38 @@ private theorem SplitTrunc.delta13 {G₁ G₂ : ℤ → ℤ → ℤ → M} (h : 
   obtain ⟨⟨P₁, hP₁⟩, ⟨Q₁, hQ₁⟩⟩ := h (y + 1) z
   obtain ⟨⟨P₂, hP₂⟩, ⟨Q₂, hQ₂⟩⟩ := h y (z + 1)
   refine ⟨⟨max (P₁ + 1) P₂, fun i hi ↦ ?_⟩, ⟨max Q₁ Q₂, fun i hi ↦ ?_⟩⟩
-  · change G₁ (-(i : ℤ) - 1 + 1) (y + i) z - G₁ (-(i : ℤ) - 1) (y + i) (z + 1) = 0
+  · rw [δ₁₃_apply]
     have h₁ : G₁ (-(i : ℤ) - 1 + 1) (y + i) z = 0 := by
       have hi₁ : P₁ + 1 ≤ i := le_trans (le_max_left _ _) hi
       simpa only [show -(i : ℤ) - 1 + 1 = -((i - 1 : ℕ) : ℤ) - 1 by omega,
         show y + (i : ℤ) = y + 1 + ((i - 1 : ℕ) : ℤ) by omega] using hP₁ (i - 1) (by omega)
     rw [h₁, hP₂ i (le_trans (le_max_right _ _) hi), sub_zero]
-  · change G₂ ((i : ℤ) + 1) (y - 1 - i) z - G₂ (i : ℤ) (y - 1 - i) (z + 1) = 0
+  · rw [δ₁₃_apply]
     have h₁ : G₂ ((i : ℤ) + 1) (y - 1 - i) z = 0 := by
       simpa only [Nat.cast_add, Nat.cast_one,
         show y + 1 - 1 - ((i : ℤ) + 1) = y - 1 - i by omega] using
         hQ₁ (i + 1) (by have := le_trans (le_max_left _ _) hi; omega)
     rw [h₁, hQ₂ i (le_trans (le_max_right _ _) hi), sub_zero]
 
-private theorem finsum_eq_sum_range_of_vanish {f : ℕ → M} {K : ℕ}
-    (hf : ∀ i : ℕ, K ≤ i → f i = 0) : (∑ᶠ i : ℕ, f i) = ∑ i ∈ range K, f i := by
-  refine finsum_eq_sum_of_support_subset f fun i hi ↦ ?_
-  rw [coe_range, Set.mem_Iio]
-  by_contra! hle
-  exact hi (hf i hle)
-
 private theorem mulSub_splitDist {G₁ G₂ : ℤ → ℤ → ℤ → M} (h : SplitTrunc G₁ G₂) :
     FormalDistribution.mulSub (splitDist G₁ G₂) =
       splitDist (δ₁₃ G₁) (δ₁₃ G₂) - fun y z ↦ G₁ 0 y z - G₂ 0 y z := by
   ext y z
+  -- Truncate all six finsums at a common cutoff `K`, then peel off `i = 0` to telescope.
   obtain ⟨⟨P₁, hP₁⟩, ⟨Q₁, hQ₁⟩⟩ := h (y + 1) z
   obtain ⟨⟨P₂, hP₂⟩, ⟨Q₂, hQ₂⟩⟩ := h y (z + 1)
-  let K := max (max P₁ P₂) (max Q₁ Q₂) + 1
-  have h₁ : (∑ᶠ i : ℕ, G₁ (-(i : ℤ) - 1) (y + 1 + i) z) =
-      ∑ i ∈ range K, G₁ (-(i : ℤ) - 1) (y + 1 + i) z :=
-    finsum_eq_sum_range_of_vanish fun i hi ↦ hP₁ i (by omega)
-  have h₂ : (∑ᶠ i : ℕ, G₁ (-(i : ℤ) - 1) (y + i) (z + 1)) =
-      ∑ i ∈ range (K + 1), G₁ (-(i : ℤ) - 1) (y + i) (z + 1) :=
-    finsum_eq_sum_range_of_vanish fun i hi ↦ hP₂ i (by omega)
-  have h₃ : (∑ᶠ i : ℕ, (δ₁₃ G₁) (-(i : ℤ) - 1) (y + i) z) =
-      ∑ i ∈ range (K + 1), (G₁ (-(i : ℤ) - 1 + 1) (y + i) z -
-        G₁ (-(i : ℤ) - 1) (y + i) (z + 1)) := by
-    refine finsum_eq_sum_range_of_vanish fun i hi ↦ ?_
-    change G₁ (-(i : ℤ) - 1 + 1) (y + i) z - G₁ (-(i : ℤ) - 1) (y + i) (z + 1) = 0
-    have ha : G₁ (-(i : ℤ) - 1 + 1) (y + i) z = 0 := by
-      simpa only [show -(i : ℤ) - 1 + 1 = -((i - 1 : ℕ) : ℤ) - 1 by omega,
-        show y + (i : ℤ) = y + 1 + ((i - 1 : ℕ) : ℤ) by omega] using hP₁ (i - 1) (by omega)
-    rw [ha, hP₂ i (by omega), sub_zero]
-  have h₄ : (∑ᶠ i : ℕ, G₂ (i : ℤ) (y + 1 - 1 - i) z) =
-      ∑ i ∈ range (K + 1), G₂ (i : ℤ) (y + 1 - 1 - i) z :=
-    finsum_eq_sum_range_of_vanish fun i hi ↦ hQ₁ i (by omega)
-  have h₅ : (∑ᶠ i : ℕ, G₂ (i : ℤ) (y - 1 - i) (z + 1)) =
-      ∑ i ∈ range K, G₂ (i : ℤ) (y - 1 - i) (z + 1) :=
-    finsum_eq_sum_range_of_vanish fun i hi ↦ hQ₂ i (by omega)
-  have h₆ : (∑ᶠ i : ℕ, (δ₁₃ G₂) (i : ℤ) (y - 1 - i) z) =
-      ∑ i ∈ range K, (G₂ ((i : ℤ) + 1) (y - 1 - i) z - G₂ (i : ℤ) (y - 1 - i) (z + 1)) := by
-    refine finsum_eq_sum_range_of_vanish fun i hi ↦ ?_
-    change G₂ ((i : ℤ) + 1) (y - 1 - i) z - G₂ (i : ℤ) (y - 1 - i) (z + 1) = 0
-    have ha : G₂ ((i : ℤ) + 1) (y - 1 - i) z = 0 := by
-      simpa only [Nat.cast_add, Nat.cast_one,
-        show y + 1 - 1 - ((i : ℤ) + 1) = y - 1 - i by omega] using hQ₁ (i + 1) (by omega)
-    rw [ha, hQ₂ i (by omega), sub_zero]
+  obtain ⟨⟨P₃, hP₃⟩, ⟨Q₃, hQ₃⟩⟩ := h.delta13 y z
+  let K := max (max P₁ P₂) (max (max Q₁ Q₂) (max P₃ Q₃)) + 1
+  have h₁ := finsum_eq_sum_range_of_forall_eq_zero (K := K) fun i hi ↦ hP₁ i (by omega)
+  have h₂ := finsum_eq_sum_range_of_forall_eq_zero (K := K + 1) fun i hi ↦ hP₂ i (by omega)
+  have h₃ := finsum_eq_sum_range_of_forall_eq_zero (K := K + 1) fun i hi ↦ hP₃ i (by omega)
+  have h₄ := finsum_eq_sum_range_of_forall_eq_zero (K := K + 1) fun i hi ↦ hQ₁ i (by omega)
+  have h₅ := finsum_eq_sum_range_of_forall_eq_zero (K := K) fun i hi ↦ hQ₂ i (by omega)
+  have h₆ := finsum_eq_sum_range_of_forall_eq_zero (K := K) fun i hi ↦ hQ₃ i (by omega)
   simp only [FormalDistribution.mulSub_apply, Pi.sub_apply, splitDist]
-  rw [h₁, h₂, h₃, h₄, h₅, h₆, sum_sub_distrib, sum_sub_distrib,
-    sum_range_succ' (fun j ↦ G₁ (-(j : ℤ) - 1 + 1) (y + j) z) K,
+  rw [h₁, h₂, h₃, h₄, h₅, h₆]
+  simp only [δ₁₃_apply, sum_sub_distrib]
+  rw [sum_range_succ' (fun j ↦ G₁ (-(j : ℤ) - 1 + 1) (y + j) z) K,
     sum_range_succ' (fun j ↦ G₂ (j : ℤ) (y + 1 - 1 - j) z) K]
   have e₁ : ∑ i ∈ range K, G₁ (-((i + 1 : ℕ) : ℤ) - 1 + 1) (y + (i + 1 : ℕ)) z =
       ∑ i ∈ range K, G₁ (-(i : ℤ) - 1) (y + 1 + i) z :=
@@ -271,14 +215,16 @@ private theorem mulSub_pow_splitDist_eq_zero {G₁ G₂ : ℤ → ℤ → ℤ �
     have hs : splitDist G₁ G₂ = 0 := by ext y z; simp [splitDist, hG₁, hG₂]
     simp [hs]
   | succ r₁ ih =>
-    rw [← Nat.add_assoc, pow_succ, end_mul_apply, mulSub_splitDist h, map_sub]
+    rw [← Nat.add_assoc, pow_succ, AddMonoid.End.coe_mul, Function.comp_apply,
+      mulSub_splitDist h, map_sub]
     have h₁ : (FormalDistribution.mulSub ^ (M₀ + r₁)) (splitDist (δ₁₃ G₁) (δ₁₃ G₂)) = 0 := by
       refine ih h.delta13 ?_ ?_ fun j hj ↦ ?_
-      · rwa [← end_mul_apply, ← pow_succ]
-      · rwa [← end_mul_apply, ← pow_succ]
-      · simpa only [← end_mul_apply, ← pow_succ] using hb (j + 1) (Nat.succ_lt_succ hj)
+      · rwa [← Function.comp_apply (f := δ₁₃ ^ r₁), ← AddMonoid.End.coe_mul, ← pow_succ]
+      · rwa [← Function.comp_apply (f := δ₁₃ ^ r₁), ← AddMonoid.End.coe_mul, ← pow_succ]
+      · simpa only [← Function.comp_apply (f := δ₁₃ ^ j), ← AddMonoid.End.coe_mul, ← pow_succ]
+          using hb (j + 1) (Nat.succ_lt_succ hj)
     have h₂ : (FormalDistribution.mulSub ^ (M₀ + r₁)) (fun y z ↦ G₁ 0 y z - G₂ 0 y z) = 0 := by
-      rw [Nat.add_comm M₀ r₁, pow_add, end_mul_apply]
+      rw [Nat.add_comm M₀ r₁, pow_add, AddMonoid.End.coe_mul, Function.comp_apply]
       simpa only [pow_zero, AddMonoid.End.one_apply, map_zero] using
         congrArg (FormalDistribution.mulSub ^ r₁) (hb 0 (Nat.zero_lt_succ r₁))
     rw [h₁, h₂, sub_zero]
@@ -291,60 +237,65 @@ namespace IsLocalOfOrder
 
 variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
 
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+private theorem mulSub_pow_lie_left (X : Module.End R V)
+    (c : FormalDistribution (Module.End R V)) (N : ℕ) (m n : ℤ) :
+    (FormalDistribution.mulSub ^ N) (fun x y ↦ ⁅X, c x y⁆) m n =
+      ⁅X, (FormalDistribution.mulSub ^ N) c m n⁆ :=
+  FormalDistribution.mulSub_pow_comp (LieAlgebra.ad R (Module.End R V) X).toAddMonoidHom c N m n
+
+private theorem mulSub_pow_lie_right (Y : Module.End R V)
+    (c : FormalDistribution (Module.End R V)) (N : ℕ) (m n : ℤ) :
+    (FormalDistribution.mulSub ^ N) (fun x y ↦ ⁅c x y, Y⁆) m n =
+      ⁅(FormalDistribution.mulSub ^ N) c m n, Y⁆ :=
+  FormalDistribution.mulSub_pow_comp
+    ((LieAlgebra.ad R (Module.End R V)).toLinearMap.flip Y).toAddMonoidHom c N m n
+
+private theorem mulSub_pow_apply_end (u : V)
+    (c : FormalDistribution (Module.End R V)) (N : ℕ) (m n : ℤ) :
+    (FormalDistribution.mulSub ^ N) (fun x y ↦ (c x y) u) m n =
+      ((FormalDistribution.mulSub ^ N) c m n) u :=
+  FormalDistribution.mulSub_pow_comp (LinearMap.applyₗ (R := R) u).toAddMonoidHom c N m n
+
+private theorem lie_ncoeff_eq_commutatorDistribution (A B : VertexOperator R V) (x y : ℤ) :
+    ⁅A[[x]], B[[y]]⁆ = A.commutatorDistribution B x y := by
+  rw [Ring.lie_def, commutatorDistribution_apply]
+
 private theorem δ₂₃_pow_jacobi_eq_zero {A B C : VertexOperator R V} {r₀ r₁ r₂ : ℕ}
     (hAB : A.IsLocalOfOrder B r₀) (hAC : A.IsLocalOfOrder C r₁) (hBC : B.IsLocalOfOrder C r₂) :
     (δ₂₃ ^ (r₀ + r₁ + r₂)) (fun x y z ↦ ⁅⁅A[[x]], B[[y]]⁆, C[[z]]⁆) = 0 := by
   let w : ℤ → ℤ → ℤ → Module.End R V := fun x y z ↦ ⁅⁅A[[x]], B[[y]]⁆, C[[z]]⁆
   let w₁ : ℤ → ℤ → ℤ → Module.End R V := fun x y z ↦ ⁅A[[x]], ⁅B[[y]], C[[z]]⁆⁆
   let w₂ : ℤ → ℤ → ℤ → Module.End R V := fun x y z ↦ ⁅B[[y]], ⁅A[[x]], C[[z]]⁆⁆
-  have hw : w = w₁ - w₂ := by
-    funext x y z
-    simp only [w, w₁, w₂, Pi.sub_apply, Ring.lie_def, mul_sub, sub_mul, mul_assoc]
-    abel
+  have hw : w = w₁ - w₂ := funext fun x ↦ funext fun y ↦ funext fun z ↦
+    eq_sub_of_add_eq (leibniz_lie (A[[x]]) (B[[y]]) (C[[z]])).symm
   have hAB' := (isLocalOfOrder_iff_mulSub_pow_eq_zero A B r₀).mp hAB
   have hAC' := (isLocalOfOrder_iff_mulSub_pow_eq_zero A C r₁).mp hAC
   have hBC' := (isLocalOfOrder_iff_mulSub_pow_eq_zero B C r₂).mp hBC
-  have hw_r₀ : (δ₁₂ ^ r₀) w = 0 := by
-    funext x y z
-    let ψ : Module.End R V →+ Module.End R V :=
-      { toFun := fun X ↦ ⁅X, C[[z]]⁆
-        map_zero' := by simp [Ring.lie_def]
-        map_add' := fun _ _ ↦ by simp only [Ring.lie_def, add_mul, mul_add]; abel }
-    have h := mulSub_pow_comp ψ (A.commutatorDistribution B) r₀ x y
-    simp only [ψ, AddMonoidHom.coe_mk, ZeroHom.coe_mk, commutatorDistribution_apply,
-      ← Ring.lie_def] at h
-    rw [(δ₁₂_pow_apply r₀ w x y z).trans h, hAB']
-    simp [Ring.lie_def]
-  have hw₁ : (δ₂₃ ^ r₂) w₁ = 0 := by
-    funext x y z
-    let ψ : Module.End R V →+ Module.End R V :=
-      { toFun := fun X ↦ ⁅A[[x]], X⁆
-        map_zero' := by simp [Ring.lie_def]
-        map_add' := fun _ _ ↦ by simp only [Ring.lie_def, add_mul, mul_add]; abel }
-    have h := mulSub_pow_comp ψ (B.commutatorDistribution C) r₂ y z
-    simp only [ψ, AddMonoidHom.coe_mk, ZeroHom.coe_mk, commutatorDistribution_apply,
-      ← Ring.lie_def] at h
-    rw [(δ₂₃_pow_apply r₂ w₁ x y z).trans h, hBC']
-    simp [Ring.lie_def]
-  have hw₂ : (δ₁₃ ^ r₁) w₂ = 0 := by
-    funext x y z
-    let ψ : Module.End R V →+ Module.End R V :=
-      { toFun := fun X ↦ ⁅B[[y]], X⁆
-        map_zero' := by simp [Ring.lie_def]
-        map_add' := fun _ _ ↦ by simp only [Ring.lie_def, add_mul, mul_add]; abel }
-    have h := mulSub_pow_comp ψ (A.commutatorDistribution C) r₁ x z
-    simp only [ψ, AddMonoidHom.coe_mk, ZeroHom.coe_mk, commutatorDistribution_apply,
-      ← Ring.lie_def] at h
-    rw [(δ₁₃_pow_apply r₁ w₂ x y z).trans h, hAC']
-    simp [Ring.lie_def]
+  have hw_r₀ : (δ₁₂ ^ r₀) w = 0 := funext fun x ↦ funext fun y ↦ funext fun z ↦ by
+    rw [δ₁₂_pow_apply]
+    simp only [w, lie_ncoeff_eq_commutatorDistribution A B]
+    rw [mulSub_pow_lie_right, hAB', Pi.zero_apply, Pi.zero_apply, zero_lie]; rfl
+  have hw₁ : (δ₂₃ ^ r₂) w₁ = 0 := funext fun x ↦ funext fun y ↦ funext fun z ↦ by
+    rw [δ₂₃_pow_apply]
+    simp only [w₁, lie_ncoeff_eq_commutatorDistribution B C]
+    rw [mulSub_pow_lie_left, hBC', Pi.zero_apply, Pi.zero_apply, lie_zero]; rfl
+  have hw₂ : (δ₁₃ ^ r₁) w₂ = 0 := funext fun x ↦ funext fun y ↦ funext fun z ↦ by
+    rw [δ₁₃_pow_apply]
+    simp only [w₂, lie_ncoeff_eq_commutatorDistribution A C]
+    rw [mulSub_pow_lie_left, hAC', Pi.zero_apply, Pi.zero_apply, lie_zero]; rfl
   have hu₁ : (δ₁₃ ^ r₁) ((δ₂₃ ^ r₂) w) = 0 := by
-    rw [hw, map_sub, hw₁, zero_sub, map_neg, neg_eq_zero, ← end_mul_apply,
-      ((commute_δ₁₃_δ₂₃.pow_left r₁).pow_right r₂).eq, end_mul_apply, hw₂, map_zero]
+    rw [hw, map_sub, hw₁, zero_sub, map_neg, neg_eq_zero, ← Function.comp_apply (f := δ₁₃ ^ r₁),
+      ← AddMonoid.End.coe_mul, ((commute_δ₁₃_δ₂₃.pow_left r₁).pow_right r₂).eq,
+      AddMonoid.End.coe_mul, Function.comp_apply, hw₂, map_zero]
   have hu₀ : (δ₁₂ ^ r₀) ((δ₂₃ ^ r₂) w) = 0 := by
-    rw [← end_mul_apply, ((commute_δ₁₂_δ₂₃.pow_left r₀).pow_right r₂).eq, end_mul_apply, hw_r₀,
-      map_zero]
-  have hsub := sub_pow_apply_eq_zero commute_δ₁₂_δ₁₃.symm hu₁ hu₀
-  rwa [δ₁₃_sub_δ₁₂, ← end_mul_apply, ← pow_add, show r₁ + r₀ + r₂ = r₀ + r₁ + r₂ by omega] at hsub
+    rw [← Function.comp_apply (f := δ₁₂ ^ r₀), ← AddMonoid.End.coe_mul,
+      ((commute_δ₁₂_δ₂₃.pow_left r₀).pow_right r₂).eq, AddMonoid.End.coe_mul,
+      Function.comp_apply, hw_r₀, map_zero]
+  have hsub := commute_δ₁₂_δ₁₃.symm.sub_pow_apply_eq_zero hu₁ hu₀
+  rwa [δ₁₃_sub_δ₁₂, ← Function.comp_apply (f := δ₂₃ ^ (r₁ + r₀)), ← AddMonoid.End.coe_mul,
+    ← pow_add, show r₁ + r₀ + r₂ = r₀ + r₁ + r₂ by omega] at hsub
 
 /-- **Dong's lemma for nonnegative residue products.** If `(A, B)`, `(A, C)`, `(B, C)` are mutually
 local of orders `r₀`, `r₁`, `r₂`, then `nonnegResidueProduct n A B` is local with `C` of order
@@ -357,22 +308,14 @@ theorem nonnegResidueProduct_left {A B C : VertexOperator R V} {r₀ r₁ r₂ :
   let w : ℤ → ℤ → ℤ → Module.End R V := fun x y z ↦ ⁅⁅A[[x]], B[[y]]⁆, C[[z]]⁆
   have hres : (nonnegResidueProduct n A B).commutatorDistribution C = ((δ₁₂ ^ n) w) 0 := by
     funext y z
-    let ψ : Module.End R V →+ Module.End R V :=
-      { toFun := fun X ↦ ⁅X, C[[z]]⁆
-        map_zero' := by simp [Ring.lie_def]
-        map_add' := fun _ _ ↦ by simp only [Ring.lie_def, add_mul, mul_add]; abel }
-    have h := mulSub_pow_comp ψ (A.commutatorDistribution B) n 0 y
-    simp only [ψ, AddMonoidHom.coe_mk, ZeroHom.coe_mk, commutatorDistribution_apply,
-      ← Ring.lie_def] at h
-    have hsum : (nonnegResidueProduct n A B)[[y]] =
-        (FormalDistribution.mulSub ^ n) (A.commutatorDistribution B) 0 y := by
-      rw [ncoeff_nonnegResidueProduct, FormalDistribution.mulSub_pow_apply]
-      exact sum_congr rfl fun ij _ ↦ by rw [zero_add, commutatorDistribution_apply]
-    rw [commutatorDistribution_apply, ← Ring.lie_def, hsum, (δ₁₂_pow_apply n w 0 y z).trans h]
+    rw [δ₁₂_pow_apply]
+    simp only [w, lie_ncoeff_eq_commutatorDistribution A B]
+    rw [mulSub_pow_lie_right, ← lie_ncoeff_eq_commutatorDistribution,
+      ncoeff_nonnegResidueProduct_eq_residue, FormalDistribution.residue_apply]
   funext y z
-  rw [hres, ← δ₂₃_pow_apply, ← end_mul_apply,
-    ((commute_δ₁₂_δ₂₃.pow_left n).pow_right (r₀ + r₁ + r₂)).symm.eq,
-    end_mul_apply, δ₂₃_pow_jacobi_eq_zero hAB hAC hBC, map_zero]
+  rw [hres, ← δ₂₃_pow_apply, ← Function.comp_apply (f := δ₂₃ ^ (r₀ + r₁ + r₂)),
+    ← AddMonoid.End.coe_mul, ((commute_δ₁₂_δ₂₃.pow_left n).pow_right (r₀ + r₁ + r₂)).symm.eq,
+    AddMonoid.End.coe_mul, Function.comp_apply, δ₂₃_pow_jacobi_eq_zero hAB hAC hBC, map_zero]
   rfl
 
 /-- Symmetric form of `nonnegResidueProduct_left` in the second factor. -/
@@ -389,6 +332,7 @@ private theorem mulSub_pow_normalOrder_bc_eq_zero {A B C : VertexOperator R V} {
         ∑ᶠ i : ℕ, (⁅B[[y - 1 - i]], C[[z]]⁆) ((A[[(i : ℤ)]]) v)) = 0 := by
   have hBC' := (isLocalOfOrder_iff_mulSub_pow_eq_zero B C r₂).mp hBC
   ext y z
+  -- Choose a uniform cutoff `K` across all `pq ∈ antidiagonal r₂`, swap sums, and kill inner sums.
   obtain ⟨Q, hQ⟩ := A.exists_forall_ncoeff_apply_eq_zero v
   obtain ⟨P₀, hP₀⟩ := B.exists_forall_ncoeff_apply_eq_zero v
   choose P hP using fun q : ℕ ↦ B.exists_forall_ncoeff_apply_eq_zero ((C[[z + q]]) v)
@@ -407,13 +351,12 @@ private theorem mulSub_pow_normalOrder_bc_eq_zero {A B C : VertexOperator R V} {
     have hle : P pq.2 ≤ ∑ q ∈ range (r₂ + 1), P q :=
       single_le_sum (fun q _ ↦ Nat.zero_le (P q)) hpq₂
     have hs₁ : (∑ᶠ i : ℕ, (A[[-(i : ℤ) - 1]]) ((⁅B[[y + pq.1 + i]], C[[z + pq.2]]⁆) v)) =
-        ∑ i ∈ range K, (A[[-(i : ℤ) - 1]]) ((⁅B[[y + pq.1 + i]], C[[z + pq.2]]⁆) v) := by
-      refine finsum_eq_sum_range_of_vanish fun i hi ↦ ?_
-      rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
-        hP pq.2 _ (by omega), hP₀ _ (by omega), map_zero, sub_self, map_zero]
+        ∑ i ∈ range K, (A[[-(i : ℤ) - 1]]) ((⁅B[[y + pq.1 + i]], C[[z + pq.2]]⁆) v) :=
+      finsum_eq_sum_range_of_forall_eq_zero fun i hi ↦ by
+        simp [Ring.lie_def, hP pq.2 (y + pq.1 + i) (by omega), hP₀ (y + pq.1 + i) (by omega)]
     have hs₂ : (∑ᶠ i : ℕ, (⁅B[[y + pq.1 - 1 - i]], C[[z + pq.2]]⁆) ((A[[(i : ℤ)]]) v)) =
         ∑ i ∈ range K, (⁅B[[y + pq.1 - 1 - i]], C[[z + pq.2]]⁆) ((A[[(i : ℤ)]]) v) :=
-      finsum_eq_sum_range_of_vanish fun i hi ↦ by rw [hQ _ (by omega), map_zero]
+      finsum_eq_sum_range_of_forall_eq_zero fun i hi ↦ by simp [hQ i (by omega)]
     rw [hs₁, hs₂, smul_add, smul_add, smul_sum, smul_sum, smul_sum, smul_sum]
     congr 1 <;> refine sum_congr rfl fun i _ ↦ ?_
     · rw [← map_zsmul, ← map_nsmul, LinearMap.smul_apply, LinearMap.smul_apply,
@@ -424,18 +367,17 @@ private theorem mulSub_pow_normalOrder_bc_eq_zero {A B C : VertexOperator R V} {
   rw [sum_congr rfl hterm, sum_add_distrib, sum_comm, sum_comm (s := antidiagonal r₂)]
   have hz₁ : ∑ i ∈ range K, ∑ pq ∈ antidiagonal r₂, (A[[-(i : ℤ) - 1]])
       ((r₂.choose pq.1 • (-1 : ℤ) ^ pq.2 •
-        B.commutatorDistribution C (y + i + pq.1) (z + pq.2)) v) = 0 := by
-    refine sum_eq_zero fun i _ ↦ ?_
-    rw [← map_sum, ← LinearMap.sum_apply, ← FormalDistribution.mulSub_pow_apply, hBC',
-      Pi.zero_apply, Pi.zero_apply, LinearMap.zero_apply, map_zero]
+        B.commutatorDistribution C (y + i + pq.1) (z + pq.2)) v) = 0 :=
+    sum_eq_zero fun i _ ↦ by
+      rw [← map_sum, ← LinearMap.sum_apply, ← FormalDistribution.mulSub_pow_apply, hBC',
+        Pi.zero_apply, Pi.zero_apply, LinearMap.zero_apply, map_zero]
   have hz₂ : ∑ i ∈ range K, ∑ pq ∈ antidiagonal r₂,
       (r₂.choose pq.1 • (-1 : ℤ) ^ pq.2 •
-        B.commutatorDistribution C (y - 1 - i + pq.1) (z + pq.2)) ((A[[(i : ℤ)]]) v) = 0 := by
-    refine sum_eq_zero fun i _ ↦ ?_
-    rw [← LinearMap.sum_apply, ← FormalDistribution.mulSub_pow_apply, hBC',
-      Pi.zero_apply, Pi.zero_apply, LinearMap.zero_apply]
-  rw [hz₁, hz₂, add_zero]
-  rfl
+        B.commutatorDistribution C (y - 1 - i + pq.1) (z + pq.2)) ((A[[(i : ℤ)]]) v) = 0 :=
+    sum_eq_zero fun i _ ↦ by
+      rw [← LinearMap.sum_apply, ← FormalDistribution.mulSub_pow_apply, hBC',
+        Pi.zero_apply, Pi.zero_apply, LinearMap.zero_apply]
+  rw [hz₁, hz₂, add_zero]; rfl
 
 private theorem normalOrder_commutator_decomp (A B C : VertexOperator R V) (v : V) (y z : ℤ) :
     ((normalOrder A B).commutatorDistribution C y z) v =
@@ -456,14 +398,12 @@ private theorem normalOrder_commutator_decomp (A B C : VertexOperator R V) (v : 
     ncoeff_normalOrder, normalOrderCoeff_eq_sum A B y ((C[[z]]) v) hBCv hACv,
     normalOrderCoeff_eq_sum A B y v hBv hAv, map_add, map_sum, map_sum]
   simp only [splitDist]
-  rw [finsum_eq_sum_range_of_vanish (K := K) fun i hi ↦ by
-      rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
-        hBCv i hi, hBv i hi, map_zero, sub_self, map_zero],
-    finsum_eq_sum_range_of_vanish (K := K) fun i hi ↦ by rw [hAv i hi, map_zero],
-    finsum_eq_sum_range_of_vanish (K := K) fun i hi ↦ by rw [hBv i hi, map_zero],
-    finsum_eq_sum_range_of_vanish (K := K) fun i hi ↦ by
-      rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
-        hACv i hi, hAv i hi, map_zero, sub_self, map_zero] ]
+  rw [finsum_eq_sum_range_of_forall_eq_zero (K := K) fun i hi ↦ by
+      simp [Ring.lie_def, hBCv i hi, hBv i hi],
+    finsum_eq_sum_range_of_forall_eq_zero (K := K) fun i hi ↦ by simp [hAv i hi],
+    finsum_eq_sum_range_of_forall_eq_zero (K := K) fun i hi ↦ by simp [hBv i hi],
+    finsum_eq_sum_range_of_forall_eq_zero (K := K) fun i hi ↦ by
+      simp [Ring.lie_def, hACv i hi, hAv i hi] ]
   have hleib (X Y Z : Module.End R V) :
       X (Y (Z v)) - Z (X (Y v)) = (⁅X, Z⁆) (Y v) + X ((⁅Y, Z⁆) v) := by
     simp only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, map_sub]
@@ -483,62 +423,49 @@ private theorem mulSub_pow_normalOrder_ac_eq_zero {A B C : VertexOperator R V} {
     (FormalDistribution.mulSub ^ (r₀ + 2 * r₁ + r₂))
       (splitDist (fun x y z ↦ (⁅A[[x]], C[[z]]⁆) ((B[[y]]) v))
         (fun x y z ↦ (B[[y]]) ((⁅A[[x]], C[[z]]⁆) v))) = 0 := by
+  -- Telescope `splitDist` in `r₁` steps along `δ₁₃`; each boundary residue is a commutator
+  -- `[B[[y]], (nonnegResidueProduct j A C)[[z]]] v`, killed in `r₀ + r₁ + r₂` steps by Dong step 1.
   have hAC' := (isLocalOfOrder_iff_mulSub_pow_eq_zero A C r₁).mp hAC
-  let ev : Module.End R V →+ V :=
-    { toFun := fun f ↦ f v, map_zero' := rfl, map_add' := fun _ _ ↦ rfl }
   let F₁ : ℤ → ℤ → ℤ → V := fun x y z ↦ (⁅A[[x]], C[[z]]⁆) ((B[[y]]) v)
   let F₂ : ℤ → ℤ → ℤ → V := fun x y z ↦ (B[[y]]) ((⁅A[[x]], C[[z]]⁆) v)
   have hF₁ (j : ℕ) (x y z : ℤ) : ((δ₁₃ ^ j) F₁) x y z =
       ((FormalDistribution.mulSub ^ j) (A.commutatorDistribution C) x z) ((B[[y]]) v) := by
-    let ψ : Module.End R V →+ V :=
-      { toFun := fun X ↦ X ((B[[y]]) v), map_zero' := rfl, map_add' := fun _ _ ↦ rfl }
-    have h := mulSub_pow_comp ψ (A.commutatorDistribution C) j x z
-    simp only [ψ, AddMonoidHom.coe_mk, ZeroHom.coe_mk, commutatorDistribution_apply,
-      ← Ring.lie_def] at h
-    exact (δ₁₃_pow_apply j F₁ x y z).trans h
+    rw [δ₁₃_pow_apply]
+    simp only [F₁, lie_ncoeff_eq_commutatorDistribution A C]
+    exact mulSub_pow_apply_end ((B[[y]]) v) (A.commutatorDistribution C) j x z
   have hF₂ (j : ℕ) (x y z : ℤ) : ((δ₁₃ ^ j) F₂) x y z =
       (B[[y]]) (((FormalDistribution.mulSub ^ j) (A.commutatorDistribution C) x z) v) := by
-    let ψ : Module.End R V →+ V :=
-      { toFun := fun X ↦ (B[[y]]) (X v), map_zero' := map_zero _,
-        map_add' := fun _ _ ↦ map_add _ _ _ }
-    have h := mulSub_pow_comp ψ (A.commutatorDistribution C) j x z
-    simp only [ψ, AddMonoidHom.coe_mk, ZeroHom.coe_mk, commutatorDistribution_apply,
-      ← Ring.lie_def] at h
-    exact (δ₁₃_pow_apply j F₂ x y z).trans h
+    rw [δ₁₃_pow_apply]
+    simp only [F₂, lie_ncoeff_eq_commutatorDistribution A C]
+    exact FormalDistribution.mulSub_pow_comp
+      (B[[y]] ∘ₗ LinearMap.applyₗ (R := R) v).toAddMonoidHom (A.commutatorDistribution C) j x z
   have htrunc : SplitTrunc F₁ F₂ := fun y z ↦ by
     obtain ⟨P, hP⟩ := B.exists_forall_ncoeff_apply_eq_zero v
     obtain ⟨Q₁, hQ₁⟩ := A.exists_forall_ncoeff_apply_eq_zero v
     obtain ⟨Q₂, hQ₂⟩ := A.exists_forall_ncoeff_apply_eq_zero ((C[[z]]) v)
-    refine ⟨⟨P + y.natAbs, fun i hi ↦ by dsimp only [F₁]; rw [hP _ (by omega), map_zero]⟩,
-      ⟨max Q₁ Q₂, fun i hi ↦ ?_⟩⟩
-    dsimp only [F₂]
-    rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
-      hQ₂ _ (by have := le_trans (le_max_right _ _) hi; omega),
-      hQ₁ _ (by have := le_trans (le_max_left _ _) hi; omega), map_zero, sub_self, map_zero]
+    refine ⟨⟨P + y.natAbs, fun i hi ↦ by simp [F₁, hP (y + i) (by omega)]⟩,
+      ⟨max Q₁ Q₂, fun i hi ↦ by
+        simp [F₂, Ring.lie_def, hQ₂ i (by have := le_trans (le_max_right _ _) hi; omega),
+          hQ₁ i (by have := le_trans (le_max_left _ _) hi; omega)]⟩⟩
   rw [show r₀ + 2 * r₁ + r₂ = (r₀ + r₁ + r₂) + r₁ by omega]
   refine mulSub_pow_splitDist_eq_zero htrunc
-    (by funext x y z; rw [hF₁, hAC', Pi.zero_apply, Pi.zero_apply, LinearMap.zero_apply]; rfl)
-    (by funext x y z
-        rw [hF₂, hAC', Pi.zero_apply, Pi.zero_apply, LinearMap.zero_apply, map_zero]; rfl)
+    (funext fun x ↦ funext fun y ↦ funext fun z ↦ by
+      rw [hF₁, hAC', Pi.zero_apply, Pi.zero_apply, LinearMap.zero_apply]; rfl)
+    (funext fun x ↦ funext fun y ↦ funext fun z ↦ by
+      rw [hF₂, hAC', Pi.zero_apply, Pi.zero_apply, LinearMap.zero_apply, map_zero]; rfl)
     fun j _ ↦ ?_
   have hloc := (hAC.nonnegResidueProduct_left hAB hBC.symm j).symm
   rw [show r₁ + r₀ + r₂ = r₀ + r₁ + r₂ by omega, isLocalOfOrder_iff_mulSub_pow_eq_zero] at hloc
   have hb : (fun y z ↦ ((δ₁₃ ^ j) F₁) 0 y z - ((δ₁₃ ^ j) F₂) 0 y z) =
-      -(fun y z ↦ ev (B.commutatorDistribution (nonnegResidueProduct j A C) y z)) := by
+      -(fun y z ↦ (B.commutatorDistribution (nonnegResidueProduct j A C) y z) v) := by
     ext y z
-    rw [Pi.neg_apply, Pi.neg_apply, hF₁, hF₂, FormalDistribution.mulSub_pow_apply]
-    have hres : ∑ ij ∈ antidiagonal j, j.choose ij.1 • (-1 : ℤ) ^ ij.2 •
-          A.commutatorDistribution C (0 + ij.1) (z + ij.2) =
-        (nonnegResidueProduct j A C)[[z]] := by
-      rw [ncoeff_nonnegResidueProduct]
-      exact sum_congr rfl fun ij _ ↦ by rw [zero_add, commutatorDistribution_apply]
-    rw [hres]
-    simp only [ev, AddMonoidHom.coe_mk, ZeroHom.coe_mk, commutatorDistribution_apply,
-      LinearMap.sub_apply, mul_apply_eq_comp, neg_sub]
+    rw [Pi.neg_apply, Pi.neg_apply, hF₁, hF₂, commutatorDistribution_apply,
+      ncoeff_nonnegResidueProduct_eq_residue, FormalDistribution.residue_apply,
+      LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp, neg_sub]
   rw [hb, map_neg, neg_eq_zero]
   ext y z
-  rw [mulSub_pow_comp ev _ (r₀ + r₁ + r₂) y z, hloc]
-  rfl
+  rw [mulSub_pow_apply_end, hloc]
+  simp only [Pi.zero_apply, LinearMap.zero_apply]
 
 /-- **Dong's lemma for normal ordering.** If `(A, B)`, `(A, C)`, `(B, C)` are mutually local of
 orders `r₀`, `r₁`, `r₂`, then `normalOrder A B` is local with `C` of order `r₀ + 2 * r₁ + r₂`. -/
@@ -547,12 +474,8 @@ theorem normalOrder_left {A B C : VertexOperator R V} {r₀ r₁ r₂ : ℕ}
     (normalOrder A B).IsLocalOfOrder C (r₀ + 2 * r₁ + r₂) := by
   rw [isLocalOfOrder_iff_mulSub_pow_eq_zero]
   ext y₀ z₀ v
-  let ev : Module.End R V →+ V :=
-    { toFun := fun f ↦ f v, map_zero' := rfl, map_add' := fun _ _ ↦ rfl }
-  have hev := mulSub_pow_comp ev ((normalOrder A B).commutatorDistribution C)
-    (r₀ + 2 * r₁ + r₂) y₀ z₀
-  simp only [ev, AddMonoidHom.coe_mk, ZeroHom.coe_mk] at hev
-  rw [← hev, Pi.zero_apply, Pi.zero_apply, LinearMap.zero_apply]
+  rw [← mulSub_pow_apply_end v ((normalOrder A B).commutatorDistribution C)
+    (r₀ + 2 * r₁ + r₂) y₀ z₀, Pi.zero_apply, Pi.zero_apply, LinearMap.zero_apply]
   have hdecomp : (fun y z ↦ ((normalOrder A B).commutatorDistribution C y z) v) =
       (fun y z ↦ (∑ᶠ i : ℕ, (A[[-(i : ℤ) - 1]]) ((⁅B[[y + i]], C[[z]]⁆) v)) +
         ∑ᶠ i : ℕ, (⁅B[[y - 1 - i]], C[[z]]⁆) ((A[[(i : ℤ)]]) v)) +
@@ -564,8 +487,9 @@ theorem normalOrder_left {A B C : VertexOperator R V} {r₀ r₁ r₂ : ℕ}
   have h₁ : ((FormalDistribution.mulSub ^ (r₀ + 2 * r₁ + r₂))
       (fun y z ↦ (∑ᶠ i : ℕ, (A[[-(i : ℤ) - 1]]) ((⁅B[[y + i]], C[[z]]⁆) v)) +
         ∑ᶠ i : ℕ, (⁅B[[y - 1 - i]], C[[z]]⁆) ((A[[(i : ℤ)]]) v))) y₀ z₀ = 0 := by
-    rw [show r₀ + 2 * r₁ + r₂ = (r₀ + 2 * r₁) + r₂ by omega, pow_add, end_mul_apply,
-      mulSub_pow_normalOrder_bc_eq_zero hBC v, map_zero, Pi.zero_apply, Pi.zero_apply]
+    rw [show r₀ + 2 * r₁ + r₂ = (r₀ + 2 * r₁) + r₂ by omega, pow_add, AddMonoid.End.coe_mul,
+      Function.comp_apply, mulSub_pow_normalOrder_bc_eq_zero hBC v, map_zero, Pi.zero_apply,
+      Pi.zero_apply]
   rw [h₁, mulSub_pow_normalOrder_ac_eq_zero hAB hAC hBC v, Pi.zero_apply, Pi.zero_apply, add_zero]
 
 /-- Symmetric form of `normalOrder_left` in the second factor. -/

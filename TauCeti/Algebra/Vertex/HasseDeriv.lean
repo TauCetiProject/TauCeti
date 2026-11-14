@@ -96,6 +96,7 @@ theorem ncoeff_hasseDeriv (k : ℕ) (A : VertexOperator R V) (n : ℤ) :
     Int.coe_negOnePow_natCast, smul_assoc]
 
 /-- The `(-1)`-st mode of the `k`-th Hasse derivative is `A₍₋ₖ₋₁₎`. -/
+@[simp high]
 theorem ncoeff_neg_one_hasseDeriv (k : ℕ) (A : VertexOperator R V) :
     (hasseDeriv k A)[[-1]] = A[[-(k : ℤ) - 1]] := by
   rw [ncoeff_apply, coeff_hasseDeriv, coeff_eq_ncoeff]
@@ -166,11 +167,13 @@ theorem hasseDeriv_left (h : A.IsLocalOfOrder B N) (k : ℕ) :
     refine sum_congr rfl fun j _ ↦ ?_
     rw [FormalDistribution.deltaTerm_apply, FormalDistribution.deltaTerm_apply,
       Pi.smul_apply, Pi.smul_apply]
-    have hchoose := Ring.choose_smul_choose m (Nat.le_add_left k j)
-    rw [Nat.add_sub_cancel, nsmul_eq_mul] at hchoose
+    have hchoose : ((j + k).choose k : ℤ) * Ring.choose m (j + k) =
+        Ring.choose m k * Ring.choose (m - (k : ℤ)) j := by
+      simpa [Nat.add_sub_cancel, nsmul_eq_mul] using
+        Ring.choose_smul_choose m (Nat.le_add_left k j)
     have hidx : m - (k : ℤ) + n - j = m + n - (j + k : ℕ) := by push_cast; omega
-    rw [hidx, ← natCast_zsmul, smul_smul, smul_smul, smul_smul, smul_smul]
-    exact congrArg (· • C j (m + n - (j + k : ℕ))) (by linear_combination -((-1 : ℤ) ^ k) * hchoose)
+    rw [hidx, ← natCast_zsmul, ← mul_smul (Ring.choose m k), ← hchoose,
+      mul_comm ((j + k).choose k : ℤ), mul_smul, smul_comm ((-1 : ℤ) ^ k)]
   rw [hexp, map_sum]
   exact sum_eq_zero fun j hj ↦ FormalDistribution.mulSub_pow_deltaTerm_eq_zero
     (Nat.add_lt_add_right (mem_range.mp hj) k) _
