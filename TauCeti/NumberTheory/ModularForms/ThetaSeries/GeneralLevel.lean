@@ -22,9 +22,10 @@ of weight `k` on `Γ₁(N)` with quadratic nebentypus `ZLattice.IsEven.thetaChar
 extends the evaluated Gauss-sum transformation law to every matrix of `Γ₀(N)` and bundles the
 result as `ZLattice.thetaFormOfLevel`. Membership in `TauCeti.modFormCharSpace` records the
 nebentypus in the diamond-eigenspace convention, without introducing a new type of modular form,
-and `ZLattice.mcast_thetaFormOfLevel_mem_modFormCharSpace` transports this membership across a
-computed level `level L = N` to any Dirichlet character modulo `N` agreeing on units with the
-Kronecker symbol of `signedDiscr L`.
+and `ZLattice.IsEven.mem_modFormCharSpace_of_coe_eq_thetaSeries` extends this membership to any
+multiple `N` of `level L`, any modular form on `Γ₁(N)` whose underlying function is `thetaSeries L`,
+and any Dirichlet character modulo `N` agreeing on integers coprime to `N` with the Kronecker
+symbol of `signedDiscr L`.
 
 When the quadratic theta character is trivial — in particular whenever `signedDiscr L` is a square
 (`ZLattice.IsEven.thetaCharacter_eq_one_of_isSquare`) — `TauCeti.modFormCharSpaceOneEquiv` descends
@@ -51,8 +52,9 @@ scalar `χ_L(d)`.
 * `ZLattice.IsEven.thetaSeries_slash_of_mem_Gamma0`: the Hecke–Schoeneberg transformation law on
   `Γ₀(level L)`.
 * `ZLattice.thetaFormOfLevel_mem_modFormCharSpace`,
-  `ZLattice.mcast_thetaFormOfLevel_mem_modFormCharSpace`: membership of `thetaFormOfLevel` (and
-  its cast along `level L = N`) in `TauCeti.modFormCharSpace`.
+  `ZLattice.IsEven.mem_modFormCharSpace_of_coe_eq_thetaSeries`: membership of `thetaFormOfLevel`
+  (and of any `Γ₁(N)` modular form with underlying function `thetaSeries L` for `level L ∣ N`) in
+  `TauCeti.modFormCharSpace`.
 * `ZLattice.diamondOp_thetaFormOfLevel`, `ZLattice.diamondOpNat_thetaFormOfLevel`: diamond-operator
   action on `thetaFormOfLevel`.
 * `ZLattice.coe_thetaFormGamma0`, `ZLattice.restrict_thetaFormGamma0`,
@@ -188,33 +190,32 @@ theorem thetaFormOfLevel_eq_restrict_thetaForm (hL : IsEven L) (hU : IsUnimodula
   apply ModularForm.ext
   exact congrFun (by rw [ModularForm.coe_restrict, coe_thetaForm, coe_thetaFormOfLevel])
 
-/-- Transporting `thetaFormOfLevel` along a computed level `level L = N` lands in the character
-space of any Dirichlet character modulo `N` whose values on integers coprime to `N` agree with the
-Kronecker symbol of `signedDiscr L`. -/
-theorem mcast_thetaFormOfLevel_mem_modFormCharSpace (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
-    {N : ℕ} (hN : level L = N)
-    {hΓ : (CongruenceSubgroup.Gamma1 N).map (mapGL ℝ) =
-      (CongruenceSubgroup.Gamma1 (level L)).map (mapGL ℝ)}
+/-- Any modular form on `Γ₁(N)` whose underlying function is `thetaSeries L`, for an even full
+lattice `L` of rank `2k` with `level L ∣ N`, lies in the character space of any Dirichlet character
+modulo `N` agreeing on integers coprime to `N` with the Kronecker symbol of `signedDiscr L`. -/
+theorem IsEven.mem_modFormCharSpace_of_coe_eq_thetaSeries (hL : IsEven L)
+    {N : ℕ} {k : ℤ} {f : ModularForm ((CongruenceSubgroup.Gamma1 N).map (mapGL ℝ)) k}
+    (hf : ⇑f = thetaSeries L) (hk : (finrank ℝ E : ℤ) = 2 * k) (hdvd : level L ∣ N)
     {χ : DirichletCharacter ℂ N}
     (hχ : ∀ a : ℤ, IsCoprime a N → χ a = (TauCeti.kroneckerSym (signedDiscr L) a : ℂ)) :
-    (thetaFormOfLevel hL hk).mcast rfl hΓ ∈
-      TauCeti.modFormCharSpace k (MulChar.equivToUnitHom χ) := by
+    f ∈ TauCeti.modFormCharSpace k (MulChar.equivToUnitHom χ) := by
+  obtain ⟨k₀, rfl⟩ : ∃ k₀ : ℕ, (k₀ : ℤ) = k := ⟨k.toNat, by omega⟩
+  have hk₀ : finrank ℝ E = 2 * k₀ := by omega
   apply (TauCeti.mem_modFormCharSpace_iff_nebentypus _ _ _).mpr
   intro A
-  have hA : (A : SL(2, ℤ)) ∈ CongruenceSubgroup.Gamma0 (level L) := hN ▸ A.property
-  have hunit : IsUnit (((A : SL(2, ℤ)) 1 1 : ℤ) : ZMod N) := by
-    simpa [CongruenceSubgroup.Gamma0Map_apply] using
-      ((CongruenceSubgroup.Gamma0Map N).toHomUnits A).isUnit
+  have hA : (A : SL(2, ℤ)) ∈ CongruenceSubgroup.Gamma0 (level L) :=
+    CongruenceSubgroup.Gamma0_le_Gamma0_of_dvd hdvd A.property
+  have hunit : IsUnit (((A : SL(2, ℤ)) 1 1 : ℤ) : ZMod N) :=
+    IsUnit.of_mul_eq_one_right _
+      (CongruenceSubgroup.intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 A.property)
   have haN : IsCoprime ((A : SL(2, ℤ)) 1 1) N :=
     isCoprime_comm.mp ((ZMod.isUnit_intCast_iff_isCoprime _ _).mp hunit)
-  have haL : IsCoprime ((A : SL(2, ℤ)) 1 1) (level L) := hN ▸ haN
-  have hval : hL.thetaCharacter ⟨k, by omega⟩ ((A : SL(2, ℤ)) 1 1 : ℤ) =
-      χ ((A : SL(2, ℤ)) 1 1 : ℤ) :=
-    (hL.thetaCharacter_intCast _ haL).trans (hχ _ haN).symm
-  simpa only [ModularForm.coe_mcast, coe_thetaFormOfLevel, MulChar.coe_equivToUnitHom,
-    MonoidHom.coe_toHomUnits, CongruenceSubgroup.Gamma0Map_apply, ModularForm.SL_slash,
-    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← hval] using
-    hL.thetaSeries_slash_of_mem_Gamma0 hk hA
+  have haL : IsCoprime ((A : SL(2, ℤ)) 1 1) (level L) :=
+    haN.of_isCoprime_of_dvd_right (Int.natCast_dvd_natCast.mpr hdvd)
+  rw [hf, ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash,
+    hL.thetaSeries_slash_of_mem_Gamma0 hk₀ hA, hL.thetaCharacter_intCast ⟨k₀, by omega⟩ haL,
+    ← hχ _ haN, MulChar.coe_equivToUnitHom, MonoidHom.coe_toHomUnits,
+    CongruenceSubgroup.Gamma0Map_apply]
 
 /-! ### Trivial theta character: descent to `Γ₀(level L)` -/
 

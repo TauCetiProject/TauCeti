@@ -34,8 +34,6 @@ lattice and the convergent `q`-series expansion of `Θ_{D₄}`.
 
 ## Main statements
 
-* `TauCeti.IntegralLattice.thetaSeries_realModel_checkerboardLattice_four_slash_of_mem_Gamma0`:
-  `Θ_{D₄} ∣[2] A = Θ_{D₄}` for every `A ∈ Γ₀(2)`.
 * `TauCeti.IntegralLattice.thetaFormRealModelCheckerboardLatticeFour_eq_neg_correctedE2`,
   `TauCeti.IntegralLattice.thetaSeries_realModel_checkerboardLattice_four`: equality of `Θ_{D₄}`
   with `-EisensteinSeries.correctedE2 2` (`2 E₂(2τ) - E₂(τ)`), as modular forms in `M₂(Γ₀(2))` and
@@ -79,19 +77,6 @@ theorem coe_thetaFormRealModelCheckerboardLatticeFour :
         ((checkerboardLattice 4).realModel (isPosDef_checkerboardLattice 4)) := by
   dsimp only [thetaFormRealModelCheckerboardLatticeFour, ModularForm.coe_mcast]
   exact ZLattice.coe_thetaFormGamma0 _ _ _
-
-/-- The theta series of the real model of `D₄` is invariant in weight two under every matrix
-`A ∈ Γ₀(2)`. -/
-theorem thetaSeries_realModel_checkerboardLattice_four_slash_of_mem_Gamma0 {A : SL(2, ℤ)}
-    (hA : A ∈ Gamma0 2) :
-    ZLattice.thetaSeries ((checkerboardLattice 4).realModel (isPosDef_checkerboardLattice 4))
-        ∣[(2 : ℤ)] A =
-      ZLattice.thetaSeries
-        ((checkerboardLattice 4).realModel (isPosDef_checkerboardLattice 4)) := by
-  rw [← coe_thetaFormRealModelCheckerboardLatticeFour, ModularForm.SL_slash,
-    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
-  exact thetaFormRealModelCheckerboardLatticeFour.slash_action_eq' _
-    (Subgroup.mem_map_of_mem _ hA)
 
 /-- As weight-two modular forms on `Γ₀(2)`, the theta form of the real model of `D₄` equals
 `-EisensteinSeries.correctedE2 2`, namely `2 E₂(2τ) - E₂(τ)`. -/

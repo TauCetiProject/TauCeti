@@ -41,8 +41,6 @@ The norm-two count and kissing number for all ranks are provided by
 
 * `TauCeti.IntegralLattice.thetaFormRealModelTypeARootLatticeTwo_mem_modFormCharSpace`:
   `Θ_{A₂}` lies in `M₁(Γ₀(3), χ₋₃)` (`TauCeti.modFormCharSpace` for `χ₋₃` at modulus `3`).
-* `TauCeti.IntegralLattice.thetaSeries_realModel_typeARootLattice_two_slash_of_mem_Gamma0`:
-  `Θ_{A₂} ∣[1] A = (-3 / A 1 1) • Θ_{A₂}` for every `A ∈ Γ₀(3)`.
 * `TauCeti.IntegralLattice.thetaFormRealModelTypeARootLatticeTwo_eq_smul_normalizedCharE1MF`,
   `TauCeti.IntegralLattice.thetaSeries_realModel_typeARootLattice_two`: equality of `Θ_{A₂}` with
   six times the normalized weight-one Eisenstein series of character `χ₋₃`, as modular forms and
@@ -101,30 +99,13 @@ theorem thetaFormRealModelTypeARootLatticeTwo_mem_modFormCharSpace :
     thetaFormRealModelTypeARootLatticeTwo ∈
       TauCeti.modFormCharSpace 1
         (MulChar.equivToUnitHom (χ₋₃.changeLevel (by decide))) :=
-  ZLattice.mcast_thetaFormOfLevel_mem_modFormCharSpace _ _
-    level_realModel_typeARootLattice_two fun _ ha ↦ by
+  ((isEven_realModel_iff _ (isPosDef_typeARootLattice 2)).mpr
+    (isEven_typeARootLattice 2)).mem_modFormCharSpace_of_coe_eq_thetaSeries
+    coe_thetaFormRealModelTypeARootLatticeTwo
+    (by simp [RealModelSpace.finrank_eq, finrank_carrier])
+    level_realModel_typeARootLattice_two.dvd fun _ ha ↦ by
       rw [DirichletCharacter.changeLevel_eq_cast_of_dvd' _ _ ha, kroneckerChar_intCast,
         signedDiscr_realModel_typeARootLattice_two]
-
-/-- Under every matrix `A ∈ Γ₀(3)`, the theta series of the real model of `A₂` transforms in
-weight one by the Kronecker symbol `(-3 / d)` of its lower-right entry `d = A 1 1`. -/
-theorem thetaSeries_realModel_typeARootLattice_two_slash_of_mem_Gamma0 {A : SL(2, ℤ)}
-    (hA : A ∈ CongruenceSubgroup.Gamma0 3) :
-    ZLattice.thetaSeries ((typeARootLattice 2).realModel (isPosDef_typeARootLattice 2))
-        ∣[(1 : ℤ)] A =
-      (kroneckerSym (-3) (A 1 1) : ℂ) •
-        ZLattice.thetaSeries ((typeARootLattice 2).realModel (isPosDef_typeARootLattice 2)) := by
-  have hmem := (TauCeti.mem_modFormCharSpace_iff_nebentypus _ _ _).mp
-    thetaFormRealModelTypeARootLatticeTwo_mem_modFormCharSpace ⟨A, hA⟩
-  have hunit : IsUnit ((A 1 1 : ℤ) : ZMod 3) := by
-    simpa [CongruenceSubgroup.Gamma0Map_apply] using
-      ((CongruenceSubgroup.Gamma0Map 3).toHomUnits ⟨A, hA⟩).isUnit
-  have ha : IsCoprime (A 1 1) 3 :=
-    isCoprime_comm.mp ((ZMod.isUnit_intCast_iff_isCoprime _ _).mp hunit)
-  simpa only [coe_thetaFormRealModelTypeARootLatticeTwo, ModularForm.SL_slash,
-    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, MulChar.coe_equivToUnitHom,
-    MonoidHom.coe_toHomUnits, CongruenceSubgroup.Gamma0Map_apply,
-    DirichletCharacter.changeLevel_eq_cast_of_dvd' _ _ ha, kroneckerChar_intCast] using hmem
 
 private theorem a2_eisenstein_constant :
     (qExpansion 1 (EisensteinSeries.normalizedCharE1MF
@@ -158,25 +139,21 @@ theorem thetaFormRealModelTypeARootLatticeTwo_eq_smul_normalizedCharE1MF :
     thetaFormRealModelTypeARootLatticeTwo =
       (6 : ℂ) • EisensteinSeries.normalizedCharE1MF
         (1 : DirichletCharacter ℂ 1) χ₋₃ (N := 3) (by decide) := by
-  have hindex : (CongruenceSubgroup.Gamma1 3).index = 8 := by
-    rw [CongruenceSubgroup.Gamma1_index,
+  have hi : Nat.card (𝒮ℒ ⧸
+      ((CongruenceSubgroup.Gamma1 3).map (Matrix.SpecialLinearGroup.mapGL ℝ)).subgroupOf 𝒮ℒ) =
+      8 := by
+    rw [Subgroup.card_quotient_mapGL_eq_index, CongruenceSubgroup.Gamma1_index,
       CongruenceSubgroup.Gamma0_prime_index 3 Nat.prime_three, Nat.card_eq_fintype_card]
     decide
-  rw [← sub_eq_zero]
-  apply ModularForm.sturm_bound_finiteIndex_SL2Z
-  rw [CongruenceSubgroup.strictWidthInfty_Gamma1, hindex]
-  norm_num only [Int.cast_ofNat, one_mul, Int.toNat_natCast, Nat.reduceDiv]
-  apply lt_of_lt_of_le (by norm_num : (0 : ℕ∞) < 1)
-  apply PowerSeries.nat_le_order
-  intro i hi
-  have hi0 : i = 0 := by omega
+  apply ModularForm.eq_of_sturm_bound
+  intro i hi'
+  rw [hi] at hi'
+  have hi0 : i = 0 := by norm_num at hi'; omega
   subst i
-  rw [FunLike.coe_sub, ModularForm.qExpansion_sub one_pos
-    (TauCeti.one_mem_strictPeriods_Gamma1_map 3), map_sub,
-    a2_six_eisenstein_coeff, coe_thetaFormRealModelTypeARootLatticeTwo,
+  rw [CongruenceSubgroup.strictWidthInfty_Gamma1, coe_thetaFormRealModelTypeARootLatticeTwo,
     ZLattice.IsEven.qExpansion_thetaSeries_coeff_zero
       ((isEven_realModel_iff _ _).mpr (isEven_typeARootLattice 2)),
-    a2_eisenstein_constant]
+    a2_six_eisenstein_coeff, a2_eisenstein_constant]
   norm_num
 
 /-- The theta series of the real model of `A₂` is six times the normalized weight-one
