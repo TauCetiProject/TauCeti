@@ -125,7 +125,7 @@ theorem cont_eq_empty_iff_one_mem_closure_zero :
     cont A = ∅ ↔ (1 : A) ∈ closure ({0} : Set A) := by
   refine ⟨fun h ↦ one_mem_closure_zero_of_spa_eq_empty _
     (Pair.powerBounded A).isRingOfIntegralElements ?_, cont_eq_empty_of_one_mem_closure_zero⟩
-  exact Set.subset_eq_empty (spa_bot (A := A) ▸ spa_antitone bot_le) h
+  exact Set.eq_empty_of_subset (spa_bot (A := A) ▸ spa_antitone bot_le) h
 
 end TauCeti.ValuationSpectrum
 

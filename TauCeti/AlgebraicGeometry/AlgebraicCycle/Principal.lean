@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.AlgebraicCycle.Basic
-public import Mathlib.AlgebraicGeometry.OrderOfVanishing
+public import Mathlib.AlgebraicGeometry.OrderOfVanishing.DVR
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Principal
 import TauCeti.AlgebraicGeometry.AlgebraicCycle.Basic
 
@@ -93,7 +93,7 @@ lemma div_mul (r s : W.functionFieldˣ) : div (r * s) = div r + div s := by
 @[simp]
 lemma div_inv (r : W.functionFieldˣ) : div r⁻¹ = -div r := by
   ext x
-  simp [Scheme.ord_inv]
+  simp
 
 /-- The principal cycle of the constant function one vanishes. -/
 @[simp]

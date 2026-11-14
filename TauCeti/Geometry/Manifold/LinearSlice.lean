@@ -235,7 +235,7 @@ theorem exists_isManifold_of_finrankSubspaceCharts [CompleteSpace 𝕜] [FiniteD
       IsManifold 𝓘(𝕜, L) n s ∧ ContMDiff 𝓘(𝕜, L) I n (Subtype.val : s → M) := by
   obtain ⟨N, hN⟩ := L.exists_isCompl
   have hLN : Submodule.IsTopCompl L N :=
-    Submodule.IsCompl.isTopCompl_of_isClosed_of_finiteDimensional hN L.closed_of_finiteDimensional
+    Submodule.IsCompl.isTopCompl_of_isClosed_of_finiteDimensional hN L.isClosed_of_finiteDimensional
   refine exists_isManifold_of_linearSubspaceCharts hLN fun y ↦ ?_
   obtain ⟨q, V, hy, hq, hqs, hmem, hdim⟩ := hcharts y y.2
   obtain ⟨Φ, hΦ⟩ := V.exists_continuousLinearEquiv_mem_iff L hdim

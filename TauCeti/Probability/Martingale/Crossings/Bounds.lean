@@ -58,7 +58,7 @@ private lemma lintegral_upcrossings_condExp_rev_bdd [IsFiniteMeasure μ]
     · -- Numerator ≠ ⊤ (finite measure keeps `μ Set.univ < ⊤`)
       refine (ENNReal.add_lt_top.2 ⟨?_, ?_⟩).ne
       · exact (memLp_one_iff_integrable.mpr hf).eLpNorm_lt_top
-      · exact ENNReal.mul_lt_top enorm_lt_top (measure_lt_top μ Set.univ)
+      · exact ENNReal.mul_lt_top eNorm_lt_top (measure_lt_top μ Set.univ)
     · -- Denominator ≠ 0
       exact (ENNReal.ofReal_pos.2 (sub_pos.2 hab)).ne'
   refine ⟨C, hC_finite, fun N => ?_⟩

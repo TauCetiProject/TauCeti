@@ -215,7 +215,7 @@ private theorem hasWeakFDerivOn_comp_of_isCompact_closure
     refine hDgu.tendsto_setLIntegral_enorm_clm_comp_sub V.isOpen.measurableSet (C := C.toNNReal)
       (fun x hx => ?_) (fun n => (hDn n).aestronglyMeasurable)
       (hDuS.mono_set hVS).aestronglyMeasurable hDD (hDuS.mono_set hVS).hasFiniteIntegral.ne
-    rw [← NNReal.coe_le_coe, coe_nnnorm]
+    rw [← NNReal.coe_le_coe, coe_nnNorm]
     exact (hC x (hVS hx)).trans (Real.le_coe_toNNReal C)
 
 /-- **The weak chain rule for continuous maps.** If `u` is continuous on `Ω` with weak derivative

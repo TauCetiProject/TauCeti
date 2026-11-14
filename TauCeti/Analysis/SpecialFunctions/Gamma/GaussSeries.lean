@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Complex.HalfPlane
 public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
 # Gauss' series for digamma
@@ -45,13 +46,6 @@ private theorem gaussTerm_eq {s : ℂ} {n : ℕ} (hsn : s + n ≠ 0) :
   rw [gaussTerm, div_sub_div _ _ n.cast_add_one_ne_zero hsn]
   ring
 
-private theorem nonpole_of_re_pos {s : ℂ} (hs : 0 < s.re) :
-    ∀ m : ℕ, s ≠ -(m : ℂ) := by
-  intro m hm
-  have h := congrArg Complex.re hm
-  simp only [Complex.neg_re, Complex.natCast_re] at h
-  linarith [Nat.cast_nonneg (α := ℝ) m]
-
 private theorem norm_natCast_add_one (n : ℕ) : ‖(n : ℂ) + 1‖ = (n : ℝ) + 1 := by
   simpa only [Nat.cast_add, Nat.cast_one] using Complex.norm_natCast (n + 1)
 
@@ -78,7 +72,7 @@ private theorem summable_gaussTerm (s : ℂ) : Summable (gaussTerm s) := by
 private theorem gaussTerm_sum (s : ℂ) (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) (N : ℕ) :
     ∑ n ∈ Finset.range N, gaussTerm s n =
       digamma s + Real.eulerMascheroniConstant + digamma (N + 1) - digamma (s + N) := by
-  rw [add_comm (N : ℂ) 1, digamma_apply_add_nat (nonpole_of_re_pos (by norm_num)) N,
+  rw [add_comm (N : ℂ) 1, digamma_apply_add_nat (ne_neg_natCast_of_re_pos (by norm_num)) N,
     digamma_apply_add_nat hs N, digamma_one]
   simp only [gaussTerm, Finset.sum_sub_distrib, add_comm (1 : ℂ), one_div]
   ring
@@ -129,7 +123,7 @@ private theorem differentiableOn_gaussSeries :
     apply DifferentiableOn.sub (by fun_prop)
     apply DifferentiableOn.div (by fun_prop) (by fun_prop)
     intro s hs
-    simpa only [ne_eq, add_eq_zero_iff_eq_neg] using nonpole_of_re_pos hs n
+    simpa only [ne_eq, add_eq_zero_iff_eq_neg] using ne_neg_natCast_of_re_pos hs n
   exact (hasSumLocallyUniformlyOn_gaussTerm.differentiableOn
     (Eventually.of_forall hfinite) (isOpen_re_gt 0)).const_add _
 
@@ -166,7 +160,7 @@ private theorem tendsto_digamma_nat_shift_diff {x : ℝ} (hx : 0 < x) :
 
 private theorem digamma_ofReal_eq_gaussSeries {x : ℝ} (hx : 0 < x) :
     digamma (x : ℂ) = gaussSeries x := by
-  have hs := nonpole_of_re_pos (by simpa using hx : 0 < (x : ℂ).re)
+  have hs := ne_neg_natCast_of_re_pos (by simpa using hx : 0 < (x : ℂ).re)
   have ht : Tendsto (fun N : ℕ ↦ ∑ n ∈ Finset.range N, gaussTerm x n) atTop
       (𝓝 (digamma (x : ℂ) + Real.eulerMascheroniConstant)) := by
     have h := (tendsto_digamma_nat_shift_diff hx).const_add
@@ -188,9 +182,9 @@ private theorem analyticOnNhd_digamma_pos :
   have hΓ : AnalyticOnNhd ℂ Gamma {s : ℂ | 0 < s.re} := by
     apply DifferentiableOn.analyticOnNhd _ (isOpen_re_gt 0)
     intro s hs
-    exact (differentiableAt_Gamma s (nonpole_of_re_pos hs)).differentiableWithinAt
+    exact (differentiableAt_Gamma s (ne_neg_natCast_of_re_pos hs)).differentiableWithinAt
   simpa only [digamma_def, logDeriv, Pi.div_def] using
-    hΓ.deriv.div hΓ (fun s hs ↦ Gamma_ne_zero (nonpole_of_re_pos hs))
+    hΓ.deriv.div hΓ (fun s hs ↦ Gamma_ne_zero (ne_neg_natCast_of_re_pos hs))
 
 private theorem digamma_eq_gaussSeries_of_re_pos {s : ℂ} (hs : 0 < s.re) :
     digamma s = gaussSeries s := by

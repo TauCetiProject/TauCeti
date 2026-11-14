@@ -48,7 +48,7 @@ this with completeness to construct a `TauCeti.HyperbolicMetric`.
 * `TauCeti.UpperHalfSpace.inner_def`: the inner product of tangent vectors at `x` is their
   Euclidean inner product divided by `height x ^ 2` (`TauCeti.UpperHalfSpace.riemannianMetric_inner`
   is the same formula for the bundled metric `riemannianMetric`);
-  `TauCeti.UpperHalfSpace.norm_def` and `TauCeti.UpperHalfSpace.enorm_def` are the corresponding
+  `TauCeti.UpperHalfSpace.norm_def` and `TauCeti.UpperHalfSpace.eNorm_def` are the corresponding
   norm forms.
 * `TauCeti.UpperHalfSpace.contMDiff_coe_comp_iff`: a map into the upper half-space is `C^n` iff
   its composite with the inclusion into `E × ℝ` is.
@@ -164,6 +164,12 @@ theorem ext_fst_height {x y : UpperHalfSpace E}
     (hheight : height x = height y) : x = y :=
   ext ((WithLp.ext_iff 2).2 (Prod.ext hfst hheight))
 
+/-- Every chart of the upper half-space is its inclusion in the model space. -/
+@[simp]
+theorem chartAt_apply (x y : UpperHalfSpace E) :
+    chartAt (WithLp 2 (E × ℝ)) x y = (y : WithLp 2 (E × ℝ)) :=
+  (rfl)
+
 section NormedSpace
 
 variable (E) [NormedSpace ℝ E]
@@ -216,19 +222,11 @@ theorem tangentSpaceCastModel_mfderiv_apply {f : UpperHalfSpace E → UpperHalfS
     tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (f x)
         (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x v) =
       L (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v) := by
-  -- The map `f` is differentiable, since its composite with the inclusion is.
-  have hf : MDifferentiableAt 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x := by
-    have hcoe : MDifferentiableAt 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ))
-        (coe ∘ f) x := by
-      rw [hcomp]
-      exact hA.differentiableAt.mdifferentiableAt.comp x
-        ((contMDiff_coe (E := E)).mdifferentiableAt (by simp))
-    exact (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff (U := upperHalfSpaceOpens E) f
-      Set.univ x).1 hcoe
   -- Read the base point of `hA` as a point of the open subset, as in the general lemma.
   have hA' : HasFDerivAt A L (show upperHalfSpaceOpens E from x).1 := hA
   have h := TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply
-    (U := upperHalfSpaceOpens E) (V := upperHalfSpaceOpens E) (f := f) hf hcomp v
+    (I := 𝓘(ℝ, WithLp 2 (E × ℝ))) (I' := 𝓘(ℝ, WithLp 2 (E × ℝ)))
+    (U := upperHalfSpaceOpens E) (V := upperHalfSpaceOpens E) (f := f) hcomp v
   rw [hA'.hasMFDerivAt.mfderiv] at h
   -- Both the open-subset identification and `tangentSpaceCastModel` are the identity of the model.
   have e₁ := TauCeti.Manifold.tangentSpaceOpenEquiv_apply (I := 𝓘(ℝ, WithLp 2 (E × ℝ)))
@@ -401,7 +399,7 @@ theorem norm_def (x : UpperHalfSpace E) (v : TangentSpace 𝓘(ℝ, WithLp 2 (E 
 /-- The extended norm of a tangent vector at a point of the upper half-space is its Euclidean
 extended norm divided by the height. -/
 @[simp]
-theorem enorm_def (x : UpperHalfSpace E) (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
+theorem eNorm_def (x : UpperHalfSpace E) (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
     ‖v‖ₑ = ‖tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v‖ₑ / ENNReal.ofReal (height x) := by
   rw [← ofReal_norm, ← ofReal_norm, norm_def,
     ENNReal.ofReal_div_of_pos (height_pos x)]
