@@ -55,8 +55,10 @@ Interval integrals of elementary functions in closed form or as series, continui
   over an interval is a difference of arctangents.
 * `Real.integral_one_div_add_sq`: `∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and
   `b ≥ 0`.
-* `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
-  sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
+* `Complex.hasSum_integral_exp_mul_cos_mul_exp`,
+  `Complex.hasSum_pow_div_factorial_integral_exp_mul_cos_mul_exp`, and
+  `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` as the sum
+  of its termwise Fourier integrals and in simplified factorial form, for complex `z` and real `κ`.
 * `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
   from `0` of an integrand `θ ↦ G (sin² θ)` is odd and quasi-periodic in its upper limit.
 -/
@@ -465,34 +467,78 @@ theorem integral_one_div_add_sq {a b : ℝ} (ha : 0 < a) (hb : 0 ≤ b) :
   simpa [sub_eq_add_neg, add_comm] using integral_eq_sub_of_hasDerivAt hd
     (hc.intervalIntegrable_of_Icc hb)
 
-/-- Termwise integration of the exponential series `e^{κ cos θ} = ∑ₖ κᵏ cosᵏ θ / k!` against the
-Fourier character `exp (n θ i)` over `[-π, π]`. -/
+end Real
+
+namespace Complex
+
+/-- For any complex `z` and integer `n`, `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` is the sum of the
+integrals of the exponential series terms `zᵏ cosᵏ θ exp (n θ i) / k!`. -/
+theorem hasSum_integral_exp_mul_cos_mul_exp (z : ℂ) (n : ℤ) :
+    HasSum (fun k : ℕ => z ^ k / k ! *
+        ∫ θ in -Real.pi..Real.pi, (Real.cos θ : ℂ) ^ k * exp (n * θ * I))
+      (∫ θ in -Real.pi..Real.pi, exp (z * Real.cos θ) * exp (n * θ * I)) := by
+  simp_rw [← intervalIntegral.integral_const_mul]
+  refine intervalIntegral.hasSum_integral_of_dominated_convergence (fun k _ => ‖z‖ ^ k / k !)
+    (fun k => by fun_prop) (fun k => MeasureTheory.ae_of_all _ fun θ _ => ?_)
+    (MeasureTheory.ae_of_all _ fun _ _ => Real.summable_pow_div_factorial ‖z‖)
+    intervalIntegrable_const (MeasureTheory.ae_of_all _ fun θ _ => ?_)
+  · have harg : (n : ℂ) * θ * I = ((n * θ : ℝ) : ℂ) * I := by
+      push_cast
+      ring
+    have hexp : ‖exp (n * θ * I)‖ = 1 := by
+      rw [harg, norm_exp_ofReal_mul_I]
+    have hcos : ‖(Real.cos θ : ℂ)‖ ≤ 1 := by
+      rw [norm_real, Real.norm_eq_abs]
+      exact Real.abs_cos_le_one θ
+    simpa [hexp] using
+      mul_le_of_le_one_right (by positivity : 0 ≤ ‖z‖ ^ k / k !) (pow_le_one₀ (norm_nonneg _) hcos)
+  · have h := (NormedSpace.expSeries_div_hasSum_exp (z * Real.cos θ)).mul_right (exp (n * θ * I))
+    rw [← exp_eq_exp_ℂ] at h
+    convert h using 2 with k
+    ring
+
+/-- For any complex `z` and natural `n`, `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` is the sum of
+`2 π (z / 2) ^ (2 l + n) / (l ! (l + n)!)` over `l : ℕ`. -/
+theorem hasSum_pow_div_factorial_integral_exp_mul_cos_mul_exp (z : ℂ) (n : ℕ) :
+    HasSum (fun l : ℕ => 2 * Real.pi * ((z / 2) ^ (2 * l + n) / (l ! * (l + n)!)))
+      (∫ θ in -Real.pi..Real.pi, exp (z * Real.cos θ) * exp (n * θ * I)) := by
+  have h := hasSum_integral_exp_mul_cos_mul_exp z n
+  simp only [TauCeti.integral_cos_pow_mul_cexp] at h
+  rw [Int.cast_natCast] at h
+  have hz : ∀ k ∉ Set.range (fun l : ℕ => 2 * l + n),
+      z ^ k / k ! * (∑ m ∈ Finset.range (k + 1), (1 / 2 : ℂ) ^ k * k.choose m *
+        if 2 * (m : ℤ) - k + n = 0 then 2 * (Real.pi : ℂ) else 0) = 0 := by
+    intro k hk
+    refine mul_eq_zero_of_right _ (Finset.sum_eq_zero fun m _ => ?_)
+    rw [ite_eq_right fun hm => hk ⟨m, by dsimp only; omega⟩, mul_zero]
+  have hinj : Function.Injective fun l : ℕ => 2 * l + n := fun a b hab => by simpa using hab
+  rw [← hinj.hasSum_iff hz] at h
+  convert h using 1
+  ext l
+  dsimp only [Function.comp_apply]
+  rw [Finset.sum_eq_single l (fun m _ hm => by rw [ite_eq_right (by omega), mul_zero])
+    (fun hl => absurd (Finset.mem_range.mpr (by omega)) hl), ite_eq_left (by push_cast; ring)]
+  have hfac := Nat.choose_mul_factorial_mul_factorial (by omega : l ≤ 2 * l + n)
+  have hsub : 2 * l + n - l = l + n := by omega
+  rw [hsub] at hfac
+  have hc : ((2 * l + n).choose l : ℂ) ≠ 0 := by exact_mod_cast (Nat.choose_pos (by omega)).ne'
+  rw [← hfac]
+  push_cast
+  field_simp
+  ring
+
+end Complex
+
+namespace Real
+
+/-- For any real `κ` and integer `n`, `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` is the sum of the
+integrals of the exponential series terms `κᵏ cosᵏ θ exp (n θ i) / k!`. -/
 theorem hasSum_integral_exp_mul_cos_mul_cexp (κ : ℝ) (n : ℤ) :
     HasSum (fun k : ℕ => ((κ ^ k / k ! : ℝ) : ℂ) *
         ∫ θ in -Real.pi..Real.pi, (Real.cos θ : ℂ) ^ k * Complex.exp (n * θ * Complex.I))
       (∫ θ in -Real.pi..Real.pi,
         (Real.exp (κ * Real.cos θ) : ℂ) * Complex.exp (n * θ * Complex.I)) := by
-  simp_rw [← intervalIntegral.integral_const_mul]
-  refine intervalIntegral.hasSum_integral_of_dominated_convergence (fun k _ => |κ| ^ k / k !)
-    (fun k => by fun_prop) (fun k => MeasureTheory.ae_of_all _ fun θ _ => ?_)
-    (MeasureTheory.ae_of_all _ fun _ _ => Real.summable_pow_div_factorial |κ|)
-    intervalIntegrable_const (MeasureTheory.ae_of_all _ fun θ _ => ?_)
-  · have harg : (n : ℂ) * θ * Complex.I = ((n * θ : ℝ) : ℂ) * Complex.I := by
-      push_cast
-      ring
-    have hexp : ‖Complex.exp (n * θ * Complex.I)‖ = 1 := by
-      rw [harg, Complex.norm_exp_ofReal_mul_I]
-    have hcos : ‖(Real.cos θ : ℂ)‖ ≤ 1 := by
-      rw [Complex.norm_real, Real.norm_eq_abs]
-      exact Real.abs_cos_le_one θ
-    simpa [hexp, abs_div] using
-      mul_le_of_le_one_right (by positivity : 0 ≤ |κ| ^ k / k !) (pow_le_one₀ (norm_nonneg _) hcos)
-  · have h := (Complex.hasSum_ofReal.mpr
-      (NormedSpace.expSeries_div_hasSum_exp (κ * Real.cos θ))).mul_right
-        (Complex.exp (n * θ * Complex.I))
-    rw [← Real.exp_eq_exp_ℝ] at h
-    convert h using 2 with k
-    push_cast
-    ring
+  simpa only [Complex.ofReal_div, Complex.ofReal_pow, Complex.ofReal_natCast, Complex.ofReal_exp,
+    Complex.ofReal_mul] using Complex.hasSum_integral_exp_mul_cos_mul_exp (κ : ℂ) n
 
 end Real

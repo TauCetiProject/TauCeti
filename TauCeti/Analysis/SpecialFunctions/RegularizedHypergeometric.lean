@@ -32,6 +32,9 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
   derivative.
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
+* `Complex.hasDerivAt_regularizedHGFun_zero_singleton`,
+  `Complex.deriv_regularizedHGFun_zero_singleton` — the complex derivative of `₀F₁(; b; z)` is
+  `₀F₁(; b + 1; z)` for every `b` and `z`.
 * `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F₁` at real
   arguments.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
@@ -110,6 +113,28 @@ theorem regularizedHGFunCoeff_one_singleton (b : ℂ) (n : ℕ) :
     regularizedHGFunCoeff {1} {b} n = (Gamma (b + n))⁻¹ := by
   simpa [regularizedHGFunCoeff] using div_mul_cancel_left₀ (Nat.cast_ne_zero.2 n.factorial_ne_zero)
     (Gamma (b + n))
+
+/-- The complex derivative of `₀F₁(; b; z)` with respect to `z` is `₀F₁(; b + 1; z)`, at every
+parameter `b` and argument `z`. -/
+@[simp]
+theorem deriv_regularizedHGFun_zero_singleton (b z : ℂ) :
+    deriv (regularizedHGFun 0 {b}) z = regularizedHGFun 0 {b + 1} z := by
+  refine (hasSum_deriv_regularizedHGFun (a := 0) (b := {b}) (by simp) z).unique ?_
+  convert hasSum_regularizedHGFun (a := 0) (b := {b + 1}) (by simp) z using 1
+  ext n
+  have hadd : b + ((n + 1 : ℕ) : ℂ) = b + 1 + n := by push_cast; ring
+  have hn : (n : ℂ) + 1 ≠ 0 := by exact_mod_cast n.succ_ne_zero
+  rw [regularizedHGFunCoeff_zero_singleton, regularizedHGFunCoeff_zero_singleton,
+    Nat.factorial_succ, hadd]
+  push_cast
+  field_simp
+
+/-- `₀F₁(; b; ·)` has complex derivative `₀F₁(; b + 1; z)` at every argument `z`. -/
+theorem hasDerivAt_regularizedHGFun_zero_singleton (b z : ℂ) :
+    HasDerivAt (regularizedHGFun 0 {b}) (regularizedHGFun 0 {b + 1} z) z := by
+  simpa only [deriv_regularizedHGFun_zero_singleton] using
+    (analyticAt_regularizedHGFun_of_card_le (a := 0) (b := {b}) (by simp) z
+      |>.differentiableAt.hasDerivAt)
 
 /-- The complex-valued `₀F₁` series at real parameters and arguments sums to its regularized
 hypergeometric value. -/
