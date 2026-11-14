@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.ComposableArrows.Basic
+public import TauCeti.Topology.CategoryTheory.ComposableArrows
 public import TauCeti.Topology.CategoryTheory.Nerve
 
 /-!
@@ -14,8 +15,9 @@ public import TauCeti.Topology.CategoryTheory.Nerve
 For a native groupoid `C`, its coarse space is the quotient of its objects by isomorphism,
 with the quotient topology. All vertices of a composable string have the same class. When
 source is continuous on total arrows, these classes give a continuous augmentation of the
-actual topological nerve and hence a map from its fat classifying space to the coarse space.
-No arrows are removed, even when distinct isotropy arrows induce the same object map.
+actual topological nerve (`TauCeti.topologicalNerve.coarseAugmentation`) and hence a map from
+its fat classifying space to the coarse space. No arrows are removed, even when distinct
+isotropy arrows induce the same object map.
 
 If units are also continuous, `TauCeti.fatClassifyingSpace.isQuotientMap_coarseMap` proves
 that the coarse projection is a quotient map. In particular the coarse topology is detected
@@ -36,7 +38,7 @@ public noncomputable section
 
 open CategoryTheory Opposite Topology
 
-namespace TauCeti.fatClassifyingSpace
+namespace TauCeti
 
 universe u
 
@@ -44,21 +46,40 @@ variable {C : Type u} [Category.{u} C] [IsGroupoid C] [TopologicalSpace C]
   [TopologicalSpace (Quiver.Total C)]
   (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
 
-/-- The augmentation of the topological nerve by the isomorphism class of a vertex.
-Its continuity uses only continuity of source on total arrows. -/
-def coarseAugmentation :
-    SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C ⟶
+/-- The augmentation of the full simplicial topological nerve by the isomorphism class of a
+vertex. Its continuity uses only continuity of source on total arrows. -/
+def topologicalNerve.coarseAugmentation :
+    topologicalNerve C ⟶
       (Functor.const _).obj (TopCat.of (Quotient (isIsomorphicSetoid C))) where
-  app _ := TopCat.ofHom ⟨fun F ↦ Quotient.mk _ (F.obj 0), by
-    apply continuous_quot_mk.comp
-    simpa only [Function.comp_def, ComposableArrows.totalArrow_left] using
-      hs.comp (ComposableArrows.continuous_totalArrow 0 0 le_rfl)⟩
+  app _ := TopCat.ofHom ⟨fun F ↦ Quotient.mk _ (F.obj 0),
+    continuous_quot_mk.comp (ComposableArrows.continuous_obj hs 0)⟩
   naturality _ _ f := by
     ext F
     -- The nerve operator reindexes vertices; every vertex has the same isomorphism class.
-    exact F.quotient_mk_obj
-      ((SimplexCategory.toCat.map (SemiSimplexCategory.toSimplexCategory.map f.unop)).toFunctor.obj
-        (0 : Fin (_ + 1)))
+    exact F.quotient_mk_obj ((SimplexCategory.toCat.map f.unop).toFunctor.obj (0 : Fin (_ + 1)))
+
+/-- The coarse augmentation reads the class of the first vertex. -/
+@[simp↓]
+theorem topologicalNerve.coarseAugmentation_app_apply (Δ : SimplexCategoryᵒᵖ)
+    (F : (topologicalNerve C).obj Δ) :
+    (topologicalNerve.coarseAugmentation hs).app Δ F =
+      Quotient.mk (isIsomorphicSetoid C) (F.obj 0) := (rfl)
+
+namespace fatClassifyingSpace
+
+/-- The augmentation of the semi-simplicial topological nerve by the isomorphism class of a
+vertex, obtained by whiskering `TauCeti.topologicalNerve.coarseAugmentation`. -/
+def coarseAugmentation :
+    SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C ⟶
+      (Functor.const _).obj (TopCat.of (Quotient (isIsomorphicSetoid C))) :=
+  Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
+    (topologicalNerve.coarseAugmentation hs)
+
+/-- The semi-simplicial coarse augmentation is the whiskered simplicial coarse augmentation. -/
+theorem coarseAugmentation_eq :
+    coarseAugmentation hs =
+      Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
+        (topologicalNerve.coarseAugmentation hs) := (rfl)
 
 /-- The coarse augmentation reads the class of the first vertex. -/
 @[simp↓]
@@ -112,4 +133,6 @@ theorem isQuotientMap_coarseMap
   exact IsQuotientMap.of_comp h₀ ((coarseAugmentation hs).app _).hom.continuous
     (heq.symm ▸ isQuotientMap_quot_mk)
 
-end TauCeti.fatClassifyingSpace
+end fatClassifyingSpace
+
+end TauCeti
