@@ -81,20 +81,17 @@ lemma dualCongrIso_inv {L K : InvertibleSheaf X} (e : L ≅ K) :
 
 /-- An isomorphism of line bundles induces an isomorphism of their duals. -/
 def dualCongr {L K : InvertibleSheaf X} (e : L ≅ K) : dual L ≅ dual K :=
-  ObjectProperty.isoMk (SheafOfModules.isInvertible X)
-    (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X (dualCongrIso e))
+  isoOfSheafIso (dualCongrIso e)
 
 @[simp]
 lemma dualCongr_hom_val {L K : InvertibleSheaf X} (e : L ≅ K) :
-    (dualCongr e).hom.hom.val = (dualCongrIso e).hom.val := by
-  simp only [dualCongr, ObjectProperty.isoMk, ObjectProperty.homMk,
-    _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_hom_val]
+    (dualCongr e).hom.hom.val = (dualCongrIso e).hom.val :=
+  isoOfSheafIso_hom_val _
 
 @[simp]
 lemma dualCongr_inv_val {L K : InvertibleSheaf X} (e : L ≅ K) :
-    (dualCongr e).inv.hom.val = (dualCongrIso e).inv.val := by
-  simp only [dualCongr, ObjectProperty.isoMk, ObjectProperty.homMk,
-    _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
+    (dualCongr e).inv.hom.val = (dualCongrIso e).inv.val :=
+  isoOfSheafIso_inv_val _
 
 /-- Evaluation of a line bundle against its internal-Hom dual, as an isomorphism of sheaves. -/
 def evaluationDualIsoSheaf (L : InvertibleSheaf X) :
@@ -146,20 +143,17 @@ lemma tensorDualIsoSheaf_inv (L : InvertibleSheaf X) :
 
 /-- Tensoring a line bundle with its dual gives the trivial line bundle. -/
 def tensorDualIso (L : InvertibleSheaf X) : tensorProduct L (dual L) ≅ trivial X :=
-  ObjectProperty.isoMk (SheafOfModules.isInvertible X)
-    (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X (tensorDualIsoSheaf L))
+  isoOfSheafIso (tensorDualIsoSheaf L)
 
 @[simp]
 lemma tensorDualIso_hom_val (L : InvertibleSheaf X) :
-    (tensorDualIso L).hom.hom.val = (tensorDualIsoSheaf L).hom.val := by
-  simp only [tensorDualIso, ObjectProperty.isoMk, ObjectProperty.homMk,
-    _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_hom_val]
+    (tensorDualIso L).hom.hom.val = (tensorDualIsoSheaf L).hom.val :=
+  isoOfSheafIso_hom_val _
 
 @[simp]
 lemma tensorDualIso_inv_val (L : InvertibleSheaf X) :
-    (tensorDualIso L).inv.hom.val = (tensorDualIsoSheaf L).inv.val := by
-  simp only [tensorDualIso, ObjectProperty.isoMk, ObjectProperty.homMk,
-    _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
+    (tensorDualIso L).inv.hom.val = (tensorDualIsoSheaf L).inv.val :=
+  isoOfSheafIso_inv_val _
 
 end InvertibleSheaf
 

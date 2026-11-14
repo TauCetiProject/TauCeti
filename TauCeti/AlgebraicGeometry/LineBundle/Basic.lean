@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTriviality
-public import Mathlib.AlgebraicGeometry.Modules.Sheaf
+public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Properties
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
@@ -28,6 +28,8 @@ over an arbitrary site. This file only packages it over a scheme:
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf X` is the full subcategory it cuts out;
 * `InvertibleSheaf.free X I` is the free sheaf on an indexing type with exactly one element, and
   `InvertibleSheaf.trivial X` is the globally free rank-one sheaf;
+* `InvertibleSheaf.isoOfSheafIso` turns an isomorphism of the underlying sheaves of modules of two
+  invertible sheaves into an isomorphism of invertible sheaves;
 * `SheafOfModules.isInvertible_unit` records that the structure sheaf `𝒪_X`, as a sheaf of
   modules over itself, is invertible;
 * `SheafOfModules.isInvertible_iff_exists_isOpenCover` characterizes invertible sheaves on a
@@ -148,6 +150,27 @@ def trivial (X : Scheme.{u}) : InvertibleSheaf X :=
 lemma trivial_obj (X : Scheme.{u}) :
     (trivial X).obj = SheafOfModules.free (R := X.ringCatSheaf) PUnit :=
   (rfl)
+
+/-- An isomorphism of the underlying sheaves of modules of two invertible sheaves, as an
+isomorphism of invertible sheaves. -/
+def isoOfSheafIso {L K : InvertibleSheaf X}
+    (e : @Iso (SheafOfModules X.ringCatSheaf) _ L.obj K.obj) : L ≅ K :=
+  ObjectProperty.isoMk (SheafOfModules.isInvertible X)
+    (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X e)
+
+@[simp]
+lemma isoOfSheafIso_hom_val {L K : InvertibleSheaf X}
+    (e : @Iso (SheafOfModules X.ringCatSheaf) _ L.obj K.obj) :
+    (isoOfSheafIso e).hom.hom.val = e.hom.val := by
+  simp only [isoOfSheafIso, ObjectProperty.isoMk, ObjectProperty.homMk,
+    _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_hom_val]
+
+@[simp]
+lemma isoOfSheafIso_inv_val {L K : InvertibleSheaf X}
+    (e : @Iso (SheafOfModules X.ringCatSheaf) _ L.obj K.obj) :
+    (isoOfSheafIso e).inv.hom.val = e.inv.val := by
+  simp only [isoOfSheafIso, ObjectProperty.isoMk, ObjectProperty.homMk,
+    _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
 
 end InvertibleSheaf
 
