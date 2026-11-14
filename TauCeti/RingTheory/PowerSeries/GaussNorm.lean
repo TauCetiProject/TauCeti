@@ -176,23 +176,26 @@ theorem hasGaussNorm_add (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
   ⟨_, Set.forall_mem_range.mpr fun m ↦ (norm_coeff_add_mul_pow_le_max f g hc m).trans
     (max_le_max (PowerSeries.le_gaussNorm norm c _ hf m) (PowerSeries.le_gaussNorm norm c _ hg m))⟩
 
+/-- Over an ultrametric ring, a weighted coefficient norm of a product is bounded by the largest
+weighted norm of the antidiagonal products. -/
+private theorem norm_coeff_mul_mul_pow_le_sup' (hc : 0 ≤ c) {m : ℕ}
+    (hne : (Finset.antidiagonal m).Nonempty) :
+    ‖(f * g).coeff m‖ * c ^ m ≤ (Finset.antidiagonal m).sup' hne
+      (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m) := by
+  rw [PowerSeries.coeff_mul, ← Finset.sup'_mul₀ (pow_nonneg hc m)]
+  exact mul_le_mul_of_nonneg_right (hne.norm_sum_le_sup'_norm _) (pow_nonneg hc m)
+
 /-- The product of two power series with bounded weighted coefficient norms again has bounded
 weighted coefficient norms at a nonnegative radius. -/
 theorem hasGaussNorm_mul (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
     (hg : g.HasGaussNorm norm c) : (f * g).HasGaussNorm norm c := by
   have key (m : ℕ) :
       ‖(f * g).coeff m‖ * c ^ m ≤ f.gaussNorm norm c * g.gaussNorm norm c := by
-    rw [PowerSeries.coeff_mul]
     have hne := Finset.HasAntidiagonal.nonempty_antidiagonal m
     calc
-      ‖∑ p ∈ Finset.antidiagonal m, f.coeff p.1 * g.coeff p.2‖ * c ^ m
-          ≤ (Finset.antidiagonal m).sup' hne
-              (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖) * c ^ m :=
-        mul_le_mul_of_nonneg_right (hne.norm_sum_le_sup'_norm
-          (fun p : ℕ × ℕ ↦ f.coeff p.1 * g.coeff p.2)) (pow_nonneg hc m)
-      _ = (Finset.antidiagonal m).sup' hne
+      ‖(f * g).coeff m‖ * c ^ m ≤ (Finset.antidiagonal m).sup' hne
           (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m) :=
-        Finset.sup'_mul₀ (pow_nonneg hc m) _ _ _
+        norm_coeff_mul_mul_pow_le_sup' hc hne
       _ ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
         (Finset.sup'_le_iff hne
           (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m)).2 fun p hp ↦ by
@@ -868,21 +871,11 @@ private theorem norm_coeff_mul_mul_pow_lt_of_forall_lt (hc : 0 ≤ c) {m : ℕ}
     (hlt : ∀ m₁ m₂, m₁ + m₂ = m →
       ‖f.coeff m₁ * g.coeff m₂‖ * c ^ (m₁ + m₂) < f.gaussNorm norm c * g.gaussNorm norm c) :
     ‖(f * g).coeff m‖ * c ^ m < f.gaussNorm norm c * g.gaussNorm norm c := by
-  rw [PowerSeries.coeff_mul]
   have hne := Finset.HasAntidiagonal.nonempty_antidiagonal m
-  calc
-    ‖∑ p ∈ Finset.antidiagonal m, f.coeff p.1 * g.coeff p.2‖ * c ^ m
-        ≤ (Finset.antidiagonal m).sup' hne
-            (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖) * c ^ m :=
-      mul_le_mul_of_nonneg_right (hne.norm_sum_le_sup'_norm
-        (fun p : ℕ × ℕ ↦ f.coeff p.1 * g.coeff p.2)) (pow_nonneg hc m)
-    _ = (Finset.antidiagonal m).sup' hne
-        (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m) :=
-      Finset.sup'_mul₀ (pow_nonneg hc m) _ _ _
-    _ < f.gaussNorm norm c * g.gaussNorm norm c :=
-      (Finset.sup'_lt_iff hne).2 fun p hp ↦ by
-        have hsum : p.1 + p.2 = m := Finset.mem_antidiagonal.mp hp
-        simpa only [hsum] using hlt p.1 p.2 hsum
+  refine (norm_coeff_mul_mul_pow_le_sup' hc hne).trans_lt <|
+    (Finset.sup'_lt_iff hne).2 fun p hp ↦ by
+      have hsum : p.1 + p.2 = m := Finset.mem_antidiagonal.mp hp
+      simpa only [hsum] using hlt p.1 p.2 hsum
 
 /-- A degree in which the coefficient of `f * g` realises the product of the Gauss norms makes the
 Gauss norm of `f * g` that product. -/
