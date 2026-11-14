@@ -352,7 +352,7 @@ theorem gromovProkhorovEDist_le_eLpNorm_rpow {p : ℝ≥0∞} (hp₀ : p ≠ 0) 
   have hεrtop : ε ^ r ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg hr.le hεtop
   refine (ENNReal.mul_le_mul_iff_right hεr₀ hεrtop).1 ?_
   calc ε ^ r * π {z | ε ≤ f z.1 z.2} ≤ E ^ r := by
-        simpa only [enorm_eq_self] using
+        simpa only [eNorm_eq_self] using
           mul_meas_ge_le_pow_eLpNorm' π hp₀ hp ε (f := fun z : X × Y ↦ f z.1 z.2)
     _ = (E ^ (r / (r + 1))) ^ (r + 1) := by
         rw [← ENNReal.rpow_mul, div_mul_cancel₀ _ (by positivity)]
@@ -368,7 +368,7 @@ theorem gromovProkhorovEDist_le_eLpNorm_top (hf : IsMetricCoupling f) (hπ : IsC
   calc π {z | ε ≤ f z.1 z.2}
       ≤ π {z | eLpNormEssSup (fun z : X × Y ↦ f z.1 z.2) π < ‖f z.1 z.2‖ₑ} :=
         measure_mono fun z (hz : ε ≤ f z.1 z.2) ↦ by
-          rw [mem_ofPred_eq, enorm_eq_self]
+          rw [mem_ofPred_eq, eNorm_eq_self]
           exact hε.trans_le hz
     _ = 0 := meas_eLpNormEssSup_lt
     _ ≤ ε := zero_le

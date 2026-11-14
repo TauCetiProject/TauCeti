@@ -78,10 +78,9 @@ namespace TauCeti
 
 section JacobsonMorozov
 
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
-  [IsKilling K L]
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [IsKilling K L]
 
-/-- **The Jacobson–Morozov theorem.** In a finite-dimensional Lie algebra with nondegenerate
+/-- **The Jacobson–Morozov theorem.** In a Lie algebra with nondegenerate
 Killing form over a field of characteristic zero, every nonzero `ad`-nilpotent element `e` is the
 nilpositive element of an `sl₂` triple `(h, e, f)`. -/
 theorem exists_isSl2Triple_of_isNilpotent_ad {e : L} (he : IsNilpotent (ad K L e)) (he0 : e ≠ 0) :
@@ -92,11 +91,11 @@ theorem exists_isSl2Triple_of_isNilpotent_ad {e : L} (he : IsNilpotent (ad K L e
     (left_ne_zero_of_lie_eq_nsmul hhe two_ne_zero he0)
   exact ⟨h, f, hf⟩
 
-/-- In a finite-dimensional Lie algebra with nondegenerate Killing form over a field of
-characteristic zero, the nilpositive elements of `sl₂` triples are exactly the nonzero
-`ad`-nilpotent elements. -/
+/-- In a Lie algebra with nondegenerate Killing form over a field of characteristic zero, the
+nilpositive elements of `sl₂` triples are exactly the nonzero `ad`-nilpotent elements. -/
 theorem exists_isSl2Triple_iff {e : L} :
     (∃ h f : L, IsSl2Triple h e f) ↔ IsNilpotent (ad K L e) ∧ e ≠ 0 := by
+  have := finite_of_isKilling (R := K) (L := L)
   refine ⟨fun ⟨_, _, t⟩ => ⟨t.isNilpotent_toEnd_e (M := L), t.e_ne_zero⟩, fun ⟨he, he0⟩ =>
     exists_isSl2Triple_of_isNilpotent_ad he he0⟩
 
@@ -137,7 +136,7 @@ private theorem expAd_add_sub_mem (hhe : ⁅h, e⁆ = 2 • e) (hh : h ∈ Linea
     exact sub_mem (neg_mem hz)
       (Submodule.smul_mem _ _ (antitone_ker_inf_range_pow e k.le_succ hw))
   have hrest := antitone_ker_inf_range_pow e (by omega : k + 1 ≤ k + k)
-    (expAd_apply_sub_sub_mem hy hyk hyvk)
+    (expAd_apply_sub_sub_mem hy.exists_pow_apply_eq_zero hyk hyvk)
   have heq : expAd ((k : K)⁻¹ • z) hy.exists_pow_apply_eq_zero (h + z) - h =
       (expAd ((k : K)⁻¹ • z) hy.exists_pow_apply_eq_zero (h + z) - (h + z) -
           ⁅(k : K)⁻¹ • z, h + z⁆) -

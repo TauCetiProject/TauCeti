@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.BoxIntegral.Basic
 
 /-!
-# Gluing Henstock integrals along a finite box partition
+# Gluing Henstock and McShane integrals along a finite box partition
 
 A gauge can prevent tags from crossing the faces of a fixed finite partition. Refinement then
 preserves the Henstock condition, allowing genuinely conditional integrals on the pieces to glue.
@@ -28,14 +28,13 @@ namespace TauCeti.BoxIntegral
 variable {ι E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {I J K : Box ι}
 
-/-- A point in both closed boxes lies in the closed box representing their intersection. -/
-theorem _root_.BoxIntegral.Box.mem_Icc_of_coe_eq_inf {A B C : Box ι} {x : ι → ℝ}
-    (h : (C : WithBot (Box ι)) = (A : WithBot (Box ι)) ⊓ B)
-    (hxA : x ∈ Box.Icc A) (hxB : x ∈ Box.Icc B) : x ∈ Box.Icc C := by
-  have hh : A.lower ⊔ B.lower = C.lower ∧ A.upper ⊓ B.upper = C.upper :=
-    Box.mk'_eq_coe.mp h.symm
-  rw [Box.Icc_def, mem_Icc, ← hh.1, ← hh.2]
-  exact ⟨sup_le hxA.1 hxB.1, le_inf hxA.2 hxB.2⟩
+/-- The closed box representing the intersection of two boxes is the intersection of their closed
+boxes. -/
+theorem _root_.BoxIntegral.Box.Icc_eq_inter_of_coe_eq_inf {A B C : Box ι}
+    (h : (C : WithBot (Box ι)) = (A : WithBot (Box ι)) ⊓ B) :
+    Box.Icc C = Box.Icc A ∩ Box.Icc B := by
+  obtain ⟨hl, hu⟩ := Box.mk'_eq_coe.mp h.symm
+  simp only [Box.Icc_def, Icc_inter_Icc, hl, hu]
 
 open scoped Classical in
 private def taggedPiece (p : Prepartition I) (π : TaggedPrepartition I) (J : Box ι)
@@ -55,18 +54,12 @@ private theorem integralSum_eq_sum_pieces {f : (ι → ℝ) → E} {vol : ι →
     (ht : ∀ J ∈ p, ∀ K ∈ πi J, (πi J).tag K = (π.infPrepartition p).tag K) :
     integralSum f vol π = ∑ J ∈ p.boxes, integralSum f vol (πi J) := by
   classical
-  rw [← integralSum_inf_partition f vol π hp]
-  have hboxes : (π.infPrepartition p).boxes = p.boxes.biUnion
-      (fun J ↦ (π.toPrepartition.restrict J).boxes) := by
-    rw [TaggedPrepartition.infPrepartition_toPrepartition, inf_comm]
-    rfl
-  rw [integralSum, hboxes, p.sum_biUnion_boxes]
-  apply Finset.sum_congr rfl
-  intro J hJ
+  rw [← integralSum_inf_partition f vol π hp, integralSum,
+    TaggedPrepartition.infPrepartition_toPrepartition, inf_comm, Prepartition.inf_def,
+    Prepartition.biUnion_boxes, p.sum_biUnion_boxes]
+  refine Finset.sum_congr rfl fun J hJ ↦ ?_
   rw [integralSum, ← hi J hJ]
-  apply Finset.sum_congr rfl
-  intro K hK
-  rw [ht J hJ K hK]
+  exact Finset.sum_congr rfl fun K hK ↦ by rw [ht J hJ K hK]
 
 /-- In the refinement `π.infPrepartition p`, any box `K ∈ p.restrict A` inherits the tag of the
 box `A ∈ π` containing it. -/
@@ -84,17 +77,13 @@ theorem _root_.BoxIntegral.Prepartition.exists_gauge_tag_mem_Icc (p : Prepartiti
       ∀ J ∈ p, z ∈ Box.Icc J → x ∈ Box.Icc J := by
   have h (x : ι → ℝ) : ∃ r > 0, ∀ z ∈ closedBall x r,
       ∀ J ∈ p, z ∈ Box.Icc J → x ∈ Box.Icc J := by
-    have hn : ∀ᶠ z in 𝓝 x, ∀ J ∈ p.boxes, x ∉ Box.Icc J → z ∉ Box.Icc J := by
-      rw [Finset.eventually_all]
-      intro J _
+    have hn : ∀ᶠ z in 𝓝 x, ∀ J ∈ p.boxes, z ∈ Box.Icc J → x ∈ Box.Icc J := by
+      refine p.boxes.eventually_all.mpr fun J _ ↦ ?_
       by_cases hx : x ∈ Box.Icc J
-      · exact Eventually.of_forall (by simp [hx])
-      · filter_upwards [J.isCompact_Icc.isClosed.isOpen_compl.mem_nhds hx] with z hz
-        exact fun _ ↦ hz
-    obtain ⟨r, hr, hball⟩ := nhds_basis_closedBall.mem_iff.mp hn
-    exact ⟨r, hr, fun z hz J hJ hzi ↦ by
-      by_contra hxi
-      exact hball hz J hJ hxi hzi⟩
+      · exact .of_forall fun _ _ ↦ hx
+      · exact (J.isCompact_Icc.isClosed.isOpen_compl.eventually_mem hx).mono
+          fun _ hz h ↦ (hz h).elim
+    exact nhds_basis_closedBall.mem_iff.mp hn
   choose r hr h using h
   exact ⟨fun x ↦ ⟨r x, hr x⟩, h⟩
 
@@ -129,35 +118,33 @@ theorem _root_.BoxIntegral.Prepartition.isHenstock_infPrepartition_of_gauge (p :
   obtain ⟨J, hJ, hKJ⟩ := (Prepartition.mem_restrict _).mp hKA
   have hK' : K ∈ π.toPrepartition.restrict J := (Prepartition.mem_restrict _).mpr
     ⟨A, hA, by simpa only [inf_comm] using hKJ⟩
-  exact Box.mem_Icc_of_coe_eq_inf hKJ
-    (by rw [π.infPrepartition_tag_of_mem hA hKA]; exact hH A hA)
-    (p.infPrepartition_tag_mem_Icc_of_gauge hr hπ hJ hK')
+  refine (Box.Icc_eq_inter_of_coe_eq_inf hKJ).superset
+    ⟨?_, p.infPrepartition_tag_mem_Icc_of_gauge hr hπ hJ hK'⟩
+  rw [π.infPrepartition_tag_of_mem hA hKA]
+  exact hH A hA
 
-/-- Genuine Henstock integrals on the members of a finite box partition glue to an integral
-on the entire box. No absolute-integrability or primitive hypothesis is used. -/
-theorem hasIntegral_Henstock_of_partition {f : (ι → ℝ) → E} {vol : ι →ᵇᵃ E →L[ℝ] F}
-    (p : Prepartition I) (hp : p.IsPartition) (y : Box ι → F)
-    (hy : ∀ J ∈ p, HasIntegral J IntegrationParams.Henstock f vol (y J)) :
-    HasIntegral I IntegrationParams.Henstock f vol (∑ J ∈ p.boxes, y J) := by
+/-- Integrals on the members of a finite box partition glue to an integral on the entire box, for
+integration parameters whose gauges may vary from point to point (`l.bRiemann = false`) and which
+impose no distortion bound (`l.bDistortion = false`), that is, for the Henstock and the McShane
+integrals. No absolute-integrability or primitive hypothesis is used. -/
+theorem _root_.BoxIntegral.Prepartition.IsPartition.hasIntegral_sum {p : Prepartition I}
+    (hp : p.IsPartition) {l : IntegrationParams} (hlR : l.bRiemann = false)
+    (hlD : l.bDistortion = false) {f : (ι → ℝ) → E} {vol : ι →ᵇᵃ E →L[ℝ] F} {y : Box ι → F}
+    (hy : ∀ J ∈ p, HasIntegral J l f vol (y J)) :
+    HasIntegral I l f vol (∑ J ∈ p.boxes, y J) := by
   classical
-  have hpne : p.boxes.Nonempty := by
-    by_contra h
-    have he : p = ⊥ := Prepartition.injective_boxes (Finset.not_nonempty_iff_eq_empty.mp h)
-    have hu := hp.iUnion_eq
-    rw [he, Prepartition.iUnion_bot] at hu
-    exact I.coe_ne_empty hu.symm
   -- Choose gauges for face crossing and each piece, then take their finite minimum.
   obtain ⟨r₀, hr₀⟩ := p.exists_gauge_tag_mem_Icc
   apply HasIntegral.of_mul (p.boxes.card : ℝ)
   intro ε hε
-  choose r hr he using fun J (hJ : J ∈ p) ↦ hasIntegral_iff.mp (hy J hJ) ε hε
+  choose r _ he using fun J (hJ : J ∈ p) ↦ hasIntegral_iff.mp (hy J hJ) ε hε
   let rJ (J : Box ι) (x : ι → ℝ) : Ioi (0 : ℝ) :=
     if hJ : J ∈ p then r J hJ 0 x else ⟨1, zero_lt_one⟩
-  let R (x : ι → ℝ) : Ioi (0 : ℝ) := min (r₀ x) (p.boxes.inf' hpne (fun J ↦ rJ J x))
+  let R (x : ι → ℝ) : Ioi (0 : ℝ) := min (r₀ x) (p.boxes.inf' hp.nonempty_boxes (fun J ↦ rJ J x))
   have hR₀ (x) : R x ≤ r₀ x := min_le_left _ _
-  have hRJ (J) (hJ : J ∈ p) (x) : R x ≤ r J hJ 0 x := by
-    exact (min_le_right _ _).trans ((Finset.inf'_le _ hJ).trans_eq (by simp [rJ, hJ]))
-  refine ⟨fun _ ↦ R, fun _ ↦ IntegrationParams.rCond_of_bRiemann_eq_false _ rfl, ?_⟩
+  have hRJ (J) (hJ : J ∈ p) (x) : R x ≤ r J hJ 0 x :=
+    (min_le_right _ _).trans ((Finset.inf'_le _ hJ).trans_eq (by simp [rJ, hJ]))
+  refine ⟨fun _ ↦ R, fun _ ↦ l.rCond_of_bRiemann_eq_false hlR, ?_⟩
   intro c π hπ hπp
   have hsub₀ := hπ.isSubordinate.mono' (fun K _ ↦ hR₀ (π.tag K))
   have htag (J) (hJ : J ∈ p) (K) (hK : K ∈ π.toPrepartition.restrict J) :=
@@ -176,30 +163,26 @@ theorem hasIntegral_Henstock_of_partition {f : (ι → ℝ) → E} {vol : ι →
   have hmem (J) (hJ : J ∈ p) (K) (hK : K ∈ πi J) : K ∈ π.infPrepartition p := by
     rw [← TaggedPrepartition.mem_toPrepartition, hi J hJ] at hK
     rw [← TaggedPrepartition.mem_toPrepartition, TaggedPrepartition.infPrepartition_toPrepartition,
-      inf_comm]
+      inf_comm, Prepartition.inf_def]
     exact p.mem_biUnion.mpr ⟨J, hJ, hK⟩
-  have hH := p.isHenstock_infPrepartition_of_gauge hr₀ hsub₀ (hπ.isHenstock rfl)
+  have hH (hl : l.bHenstock) :=
+    p.isHenstock_infPrepartition_of_gauge hr₀ hsub₀ (hπ.isHenstock hl)
   have hS := hπ.isSubordinate.infPrepartition p
-  -- Each restricted tagged partition meets the piece gauge and Henstock conditions.
+  -- Each restricted tagged partition meets the piece gauge and, if required, Henstock conditions.
   have hbound (J) (hJ : J ∈ p) : dist (integralSum f vol (πi J)) (y J) ≤ ε := by
     apply he J hJ 0 (πi J)
-    · refine ⟨?_, fun _ ↦ ?_, by simp [IntegrationParams.Henstock],
-        by simp [IntegrationParams.Henstock]⟩
+    · refine ⟨?_, fun hl ↦ ?_, by simp [hlD], by simp [hlD]⟩
       · intro K hK x hx
         rw [ht J hJ K hK]
         exact closedBall_subset_closedBall (hRJ J hJ _)
           (hS K (hmem J hJ K hK) hx)
       · intro K hK
         rw [ht J hJ K hK]
-        exact hH K (hmem J hJ K hK)
+        exact hH hl K (hmem J hJ K hK)
     · rw [TaggedPrepartition.IsPartition, hi J hJ]
       exact hπp.restrict (p.le_of_mem hJ)
   -- Sum the piecewise error bounds to obtain the global finite-cardinality estimate.
   rw [integralSum_eq_sum_pieces p hp π πi hi ht]
-  calc
-    dist (∑ J ∈ p.boxes, integralSum f vol (πi J)) (∑ J ∈ p.boxes, y J) ≤
-        ∑ J ∈ p.boxes, dist (integralSum f vol (πi J)) (y J) := dist_sum_sum_le _ _ _
-    _ ≤ ∑ _J ∈ p.boxes, ε := Finset.sum_le_sum hbound
-    _ = (p.boxes.card : ℝ) * ε := by simp
+  exact (dist_sum_sum_le_of_le _ hbound).trans_eq (by simp)
 
 end TauCeti.BoxIntegral
