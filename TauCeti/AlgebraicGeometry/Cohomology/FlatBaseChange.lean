@@ -75,9 +75,11 @@ the flat base change of sections over a quasi-compact quasi-separated open
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_trivial_of_isPullback`: their
   specialisation to the structure sheaf, whose pullback is identified with `𝒪_Y`, with
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_trivial_of_isPullback_of_isProper` the
-  finite-dimensionality for a proper scheme, and
+  finite-dimensionality for a proper scheme,
   `TauCeti.AlgebraicGeometry.eulerCharBelow_pullback_eq_of_isPullback`: the same invariance of the
-  truncated Euler characteristic `Scheme.Modules.eulerCharBelow`;
+  truncated Euler characteristic `Scheme.Modules.eulerCharBelow`, and
+  `TauCeti.AlgebraicGeometry.finrank_cohomology_trivial_eq_of_isIso`: the case of an isomorphism
+  of schemes over a field;
 * `TauCeti.AlgebraicGeometry.cohomologyOnBaseChange`: the base change map on the cohomology of an
   open subset, characterized by `cohomologyOnBaseChange_tmul`;
 * `TauCeti.AlgebraicGeometry.bijective_cohomologyOnBaseChange_zero` and
@@ -654,6 +656,22 @@ theorem eulerCharBelow_pullback_eq_of_isPullback [CompactSpace X]
   | succ n ih =>
     rw [eulerCharBelow_succ, eulerCharBelow_succ, ih,
       finrank_cohomology_pullback_eq_of_isPullback H]
+
+omit [Y.Over (Spec (.of K))] in
+/-- The dimension of `Hⁿ(X, 𝒪_X)` is unchanged by an isomorphism of schemes over a field `k`, on a
+quasi-compact quasi-separated scheme. This is the case of the trivial field extension in
+`finrank_cohomology_trivial_eq_of_isPullback`. -/
+theorem finrank_cohomology_trivial_eq_of_isIso [Y.Over (Spec (.of k))] [CompactSpace X]
+    [QuasiSeparatedSpace X] (e : Y ⟶ X) [IsIso e]
+    (he : e ≫ (X ↘ Spec (.of k)) = Y ↘ Spec (.of k)) (n : ℕ) :
+    Module.finrank k (Cohomology (InvertibleSheaf.trivial Y).obj n) =
+      Module.finrank k (Cohomology (InvertibleSheaf.trivial X).obj n) := by
+  -- `e` is a pullback square along `Spec.map (algebraMap k k) = 𝟙 _`.
+  have hid : Spec.map (CommRingCat.ofHom (algebraMap k k)) = 𝟙 _ := by
+    rw [Algebra.algebraMap_self, CommRingCat.ofHom_id, Spec.map_id]
+  have : IsIso (Spec.map (CommRingCat.ofHom (algebraMap k k))) := hid ▸ inferInstance
+  exact finrank_cohomology_trivial_eq_of_isPullback (K := k)
+    (.of_horiz_isIso ⟨by rw [hid, Category.comp_id, he]⟩) n
 
 end Field
 
