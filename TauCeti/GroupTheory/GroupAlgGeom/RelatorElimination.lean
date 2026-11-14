@@ -12,13 +12,16 @@ public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
 # Eliminating a relator which is a basis element
 
 Let `S` be a system of equations over `G` in the variables `X` and `s ∈ G[X]` a further relator.
-Suppose that after a coefficient-fixing automorphism `τ` of `G[X]` the relator `s` becomes `u x v`
+Suppose that after an automorphism `τ` of `G[X]` the relator `s` becomes `u x v`
 for a variable `x` occurring neither in the words `u`, `v` nor in the images of the relators of
 `S`; that is, `s` belongs to a free basis of `G[X]` over `G` whose other members generate, together
 with `G`, a free factor containing `S`. Then adding `s` to `S` kills a free factor: the group
-`G_S = G[X] ⧸ ncl(S)` presented by `S` is the free product of the group presented by `S` and `s`
-with an infinite cyclic group `⟨z⟩`, `z` corresponding to `s`, and sending `z` to `1` gives back
-the quotient map (`TauCeti.GroupAlgGeom.SystemGroup.exists_bijective_of_normalClosure_eq_insert`).
+`G_S = G[X] ⧸ ncl(S)` presented by `S` is the free product of the group `G_T` presented by `S` and
+`s` with an infinite cyclic group `⟨z⟩` (`TauCeti.GroupAlgGeom.SystemGroup.elimEquiv`). Under this
+isomorphism `s` corresponds to `z` and the class of a word whose image under `τ` avoids `x`
+corresponds to its class in `G_T`; sending `z` to `1` gives back the quotient map. In `G_T` the
+classes of these words generate, the remaining generator `τ⁻¹ x` being `τ⁻¹ (u⁻¹ v⁻¹)` there
+(`TauCeti.GroupAlgGeom.SystemGroup.mk_symm_inr_of_eq`).
 
 This is the Tietze transformation behind the elimination of a base of a generalised equation
 (Kharlampovich–Myasnikov, D4), where the basic equation of an eliminable base becomes, after a
@@ -113,71 +116,123 @@ private theorem eval_comp_toCoprod (hσx : τ.symm (inr (FreeGroup.of x)) = s)
   GX.hom_ext_of_avoiding (x := x) (fun a ha => by simp [toCoprod_of_mem_avoiding T ha])
     (by simp [toCoprod_inr_self, hσx, hsT])
 
-/-- The case `τ s = x` of `exists_bijective_of_normalClosure_eq_insert`. -/
-private theorem exists_bijective_of_apply_eq (hτ : ∀ g, τ (inl g) = inl g)
-    (hs : τ s = inr (FreeGroup.of x)) (hS : ∀ t ∈ S, τ t ∈ GX.avoiding x)
+/-- The homomorphism `G_S → G_T ∗ ⟨z⟩` induced by `toCoprod ∘ τ`. -/
+private def elimHom (τ : MulAut (GX G X)) (x : X) (hS : ∀ t ∈ S, τ t ∈ GX.avoiding x)
+    (hT : S ⊆ normalClosure T) : SystemGroup G S →* GX (SystemGroup G T) Unit :=
+  QuotientGroup.lift _ ((toCoprod τ x T).comp τ.toMonoidHom) <| normalClosure_le_normal
+    fun t ht => by
+      rw [SetLike.mem_coe, MonoidHom.mem_ker, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+        toCoprod_of_mem_avoiding T (hS t ht)]
+      simp [(QuotientGroup.eq_one_iff t).2 (hT ht)]
+
+/-- The homomorphism `G_T → G_S` induced by `retract ∘ τ`. -/
+private def elimInvHom (hs : τ s = inr (FreeGroup.of x)) (hS : ∀ t ∈ S, τ t ∈ GX.avoiding x)
+    (hT : normalClosure T = normalClosure (insert s S)) : SystemGroup G T →* SystemGroup G S :=
+  QuotientGroup.lift _ ((retract τ x S).comp τ.toMonoidHom) <| hT ▸ normalClosure_le_normal (by
+    rintro t (rfl | ht) <;>
+      rw [SetLike.mem_coe, MonoidHom.mem_ker, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
+    · rw [hs, retract_inr_self]
+    · rw [retract_of_mem_avoiding S (hS t ht)]
+      simpa using (QuotientGroup.eq_one_iff _).2 (subset_normalClosure ht))
+
+/-- The case `τ s = x` of `elimEquiv`. -/
+private def elimEquivAux (hs : τ s = inr (FreeGroup.of x)) (hS : ∀ t ∈ S, τ t ∈ GX.avoiding x)
     (hT : normalClosure T = normalClosure (insert s S)) :
-    ∃ e : GHom (coeff S) ((inl : SystemGroup G T →* GX (SystemGroup G T) Unit).comp (coeff T)),
-      Function.Bijective e ∧ (∀ w : GX G X,
-        eval (MonoidHom.id (SystemGroup G T)) (fun _ => 1) (e (w : SystemGroup G S)) =
-          (w : SystemGroup G T)) ∧ e (s : SystemGroup G S) = inr (FreeGroup.of ()) := by
+    SystemGroup G S ≃* GX (SystemGroup G T) Unit :=
   have hσx : τ.symm (inr (FreeGroup.of x)) = s := τ.symm_apply_eq.2 hs.symm
-  have hT' {t} (ht : t ∈ insert s S) : (t : SystemGroup G T) = 1 :=
-    (QuotientGroup.eq_one_iff t).2 (hT ▸ subset_normalClosure ht)
-  -- `e : G_S → G_T ∗ ⟨z⟩` is induced by `toCoprod ∘ τ`, and its inverse `f` by `retract ∘ τ` on
-  -- `G_T` and `z ↦ s`.
-  let e : SystemGroup G S →* GX (SystemGroup G T) Unit :=
-    QuotientGroup.lift _ ((toCoprod τ x T).comp τ.toMonoidHom) <| normalClosure_le_normal
-      fun t ht => by
-        rw [SetLike.mem_coe, MonoidHom.mem_ker, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-          toCoprod_of_mem_avoiding T (hS t ht)]
-        simp [hT' (Set.mem_insert_of_mem s ht)]
-  let f₁ : SystemGroup G T →* SystemGroup G S :=
-    QuotientGroup.lift _ ((retract τ x S).comp τ.toMonoidHom) <| hT ▸ normalClosure_le_normal (by
-      rintro t (rfl | ht) <;>
-        rw [SetLike.mem_coe, MonoidHom.mem_ker, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
-      · rw [hs, retract_inr_self]
-      · rw [retract_of_mem_avoiding S (hS t ht)]
-        simpa using (QuotientGroup.eq_one_iff _).2 (subset_normalClosure ht))
-  let f : GX (SystemGroup G T) Unit →* SystemGroup G S :=
-    lift f₁ (FreeGroup.lift fun _ => (s : SystemGroup G S))
-  have hfe := lift_comp_toCoprod hσx (φ := f₁) fun w => QuotientGroup.lift_mk _ _ w
-  have hef := comp_retract hσx (hT' (Set.mem_insert s S)) (ψ := e) fun w =>
-    QuotientGroup.lift_mk _ _ w
-  let E : SystemGroup G S ≃* GX (SystemGroup G T) Unit := e.toMulEquiv f
+  have hST : insert s S ⊆ normalClosure T := hT ▸ subset_normalClosure
+  have hsT : (s : SystemGroup G T) = 1 := (QuotientGroup.eq_one_iff s).2 (hST (Set.mem_insert s S))
+  (elimHom τ x hS ((Set.subset_insert s S).trans hST)).toMulEquiv
+    (lift (elimInvHom hs hS hT) (FreeGroup.lift fun _ => (s : SystemGroup G S)))
     (QuotientGroup.monoidHom_ext _ <| MonoidHom.ext fun w => by
-      simpa [e, f] using DFunLike.congr_fun hfe (τ w))
+      simpa [elimHom] using DFunLike.congr_fun (lift_comp_toCoprod hσx (φ := elimInvHom hs hS hT)
+        fun w => QuotientGroup.lift_mk _ _ w) (τ w))
     (hom_ext (QuotientGroup.monoidHom_ext _ <| MonoidHom.ext fun w => by
-        simpa [f, f₁] using DFunLike.congr_fun hef (τ w))
-      (FreeGroup.ext_hom _ _ fun _ => by simp [f, e, hs, toCoprod_inr_self]))
-  refine ⟨GHom.ofMulEquiv E fun g => ?_, GHom.ofMulEquiv_bijective _ _, fun w => ?_, ?_⟩
-  · simp [E, e, hτ, toCoprod_of_mem_avoiding T (GX.inl_mem_avoiding x g),
-      τ.symm_apply_eq.2 (hτ g).symm]
-  · simpa [E, e] using
-      DFunLike.congr_fun (eval_comp_toCoprod hσx (hT' (Set.mem_insert s S))) (τ w)
-  · simp [E, e, hs, toCoprod_inr_self]
+        simpa [elimInvHom] using DFunLike.congr_fun (comp_retract hσx hsT
+          (ψ := elimHom τ x hS ((Set.subset_insert s S).trans hST))
+          fun w => QuotientGroup.lift_mk _ _ w) (τ w))
+      (FreeGroup.ext_hom _ _ fun _ => by simp [elimHom, hs, toCoprod_inr_self]))
+
+private theorem elimEquivAux_mk (hs : τ s = inr (FreeGroup.of x))
+    (hS : ∀ t ∈ S, τ t ∈ GX.avoiding x) (hT : normalClosure T = normalClosure (insert s S))
+    (w : GX G X) : elimEquivAux hs hS hT (w : SystemGroup G S) = toCoprod τ x T (τ w) :=
+  rfl
 
 end Elimination
 
-/-- **Eliminating a relator which is a basis element.** Let `τ` be a coefficient-fixing
-automorphism of `G[X]` under which the relator `s` becomes `u x v`, where the variable `x` occurs
-neither in `u` and `v` nor in the images of the relators of `S`, and let `T` present the same group
-as `S` together with `s`. Then `G_S ≅ G_T ∗ ⟨z⟩` over `G`, by an isomorphism sending `s` to `z`
-after which sending `z` to `1` is the map `G_S → G_T` induced by the identity of `G[X]`. -/
-theorem exists_bijective_of_normalClosure_eq_insert {S T : Set (GX G X)} {s u v : GX G X} {x : X}
-    (τ : MulAut (GX G X)) (hτ : ∀ g, τ (inl g) = inl g) (hu : u ∈ GX.avoiding x)
-    (hv : v ∈ GX.avoiding x) (hs : τ s = u * inr (FreeGroup.of x) * v)
-    (hS : ∀ t ∈ S, τ t ∈ GX.avoiding x) (hT : normalClosure T = normalClosure (insert s S)) :
-    ∃ e : GHom (coeff S) ((inl : SystemGroup G T →* GX (SystemGroup G T) Unit).comp (coeff T)),
-      Function.Bijective e ∧ (∀ w : GX G X,
-        eval (MonoidHom.id (SystemGroup G T)) (fun _ => 1) (e (w : SystemGroup G S)) =
-          (w : SystemGroup G T)) ∧ e (s : SystemGroup G S) = inr (FreeGroup.of ()) := by
-  -- Compose `τ` with the transvection `x ↦ u⁻¹ x v⁻¹`, which sends `u x v` to `x`.
-  refine exists_bijective_of_apply_eq (x := x)
-    (τ := GX.transvection x u⁻¹ v⁻¹ (inv_mem hu) (inv_mem hv) * τ) (fun g => by simp [hτ]) ?_
-    (fun t ht => ?_) hT
-  · simp [hs, hu, hv, mul_assoc]
-  · simp [hS t ht]
+section ElimEquiv
+
+variable {S T : Set (GX G X)} {s u v : GX G X} {x : X} (τ : MulAut (GX G X))
+  (hu : u ∈ GX.avoiding x) (hv : v ∈ GX.avoiding x) (hs : τ s = u * inr (FreeGroup.of x) * v)
+  (hS : ∀ t ∈ S, τ t ∈ GX.avoiding x) (hT : normalClosure T = normalClosure (insert s S))
+
+/-- **Eliminating a relator which is a basis element.** Let `τ` be an automorphism of `G[X]` under
+which the relator `s` becomes `u x v`, where the variable `x` occurs neither in `u` and `v` nor in
+the images of the relators of `S`, and let `T` present the same group as `S` together with `s`.
+Then `G_S ≅ G_T ∗ ⟨z⟩`: the class of a word whose image under `τ` avoids `x` goes to its class in
+`G_T`, and the class of `s` goes to `z`. -/
+def elimEquiv : SystemGroup G S ≃* GX (SystemGroup G T) Unit :=
+  elimEquivAux (τ := GX.transvection x u⁻¹ v⁻¹ (inv_mem hu) (inv_mem hv) * τ) (x := x)
+    (by simp [hs, hu, hv, mul_assoc]) (fun t ht => by simp [hS t ht]) hT
+
+/-- The class of a word whose image under `τ` avoids `x` is sent to its class in `G_T`. -/
+theorem elimEquiv_mk_of_mem_avoiding {w : GX G X} (hw : τ w ∈ GX.avoiding x) :
+    elimEquiv τ hu hv hs hS hT (w : SystemGroup G S) = inl (w : SystemGroup G T) := by
+  have hw' : (GX.transvection x u⁻¹ v⁻¹ (inv_mem hu) (inv_mem hv) * τ) w ∈ GX.avoiding x := by
+    simp [hw]
+  rw [elimEquiv, elimEquivAux_mk, toCoprod_of_mem_avoiding T hw', MulEquiv.symm_apply_apply]
+
+/-- The isomorphism `G_S ≅ G_T ∗ ⟨z⟩` fixes the coefficients which `τ` fixes. -/
+theorem elimEquiv_mk_inl {g : G} (hg : τ (inl g) = inl g) :
+    elimEquiv τ hu hv hs hS hT ((inl g : GX G X) : SystemGroup G S) =
+      inl ((inl g : GX G X) : SystemGroup G T) :=
+  elimEquiv_mk_of_mem_avoiding τ hu hv hs hS hT (by simp [hg])
+
+/-- The class of the eliminated relator is sent to the free generator `z`. -/
+@[simp]
+theorem elimEquiv_mk_self :
+    elimEquiv τ hu hv hs hS hT (s : SystemGroup G S) = inr (FreeGroup.of ()) := by
+  rw [elimEquiv, elimEquivAux_mk]
+  simp [hs, hu, hv, mul_assoc, toCoprod_inr_self]
+
+/-- The free generator `z` corresponds to the class of the eliminated relator. -/
+@[simp]
+theorem elimEquiv_symm_inr_of :
+    (elimEquiv τ hu hv hs hS hT).symm (inr (FreeGroup.of ())) = (s : SystemGroup G S) :=
+  (MulEquiv.symm_apply_eq _).2 (elimEquiv_mk_self τ hu hv hs hS hT).symm
+
+/-- The class in `G_T` of a word whose image under `τ` avoids `x` corresponds to its class in
+`G_S`. -/
+theorem elimEquiv_symm_inl_mk_of_mem_avoiding {w : GX G X} (hw : τ w ∈ GX.avoiding x) :
+    (elimEquiv τ hu hv hs hS hT).symm (inl (w : SystemGroup G T)) = (w : SystemGroup G S) :=
+  (MulEquiv.symm_apply_eq _).2 (elimEquiv_mk_of_mem_avoiding τ hu hv hs hS hT hw).symm
+
+/-- Sending `z` to `1` after the isomorphism `G_S ≅ G_T ∗ ⟨z⟩` is the homomorphism `G_S → G_T`
+induced by the identity of `G[X]`. -/
+@[simp]
+theorem eval_elimEquiv_mk (w : GX G X) :
+    eval (MonoidHom.id (SystemGroup G T)) (fun _ => 1)
+      (elimEquiv τ hu hv hs hS hT (w : SystemGroup G S)) = (w : SystemGroup G T) := by
+  have hsT : (s : SystemGroup G T) = 1 :=
+    (QuotientGroup.eq_one_iff s).2 (hT ▸ subset_normalClosure (Set.mem_insert s S))
+  rw [elimEquiv, elimEquivAux_mk]
+  exact (DFunLike.congr_fun (eval_comp_toCoprod
+    ((MulEquiv.symm_apply_eq _).2 (by simp [hs, hu, hv, mul_assoc])) hsT) _).trans
+      (congrArg _ (MulEquiv.symm_apply_apply _ w))
+
+end ElimEquiv
+
+omit [DecidableEq X] in
+/-- If `s = τ⁻¹ (u x v)` is trivial in `G_T`, then `τ⁻¹ x = τ⁻¹ (u⁻¹ v⁻¹)` there: when `x` occurs
+neither in `u` nor in `v`, the generator `τ⁻¹ x` is expressed by the remaining ones. -/
+theorem mk_symm_inr_of_eq {T : Set (GX G X)} {s u v : GX G X} {x : X} (τ : MulAut (GX G X))
+    (hs : τ s = u * inr (FreeGroup.of x) * v) (hsT : s ∈ normalClosure T) :
+    ((τ.symm (inr (FreeGroup.of x)) : GX G X) : SystemGroup G T) =
+      ((τ.symm (u⁻¹ * v⁻¹) : GX G X) : SystemGroup G T) := by
+  have h := (QuotientGroup.eq_one_iff s).2 hsT
+  rw [← τ.symm_apply_apply s, hs] at h
+  simp only [map_mul, map_inv, QuotientGroup.mk_mul, QuotientGroup.mk_inv] at h ⊢
+  exact eq_mul_inv_of_mul_eq (eq_inv_of_mul_eq_one_right (by rwa [← mul_assoc]))
 
 end SystemGroup
 
