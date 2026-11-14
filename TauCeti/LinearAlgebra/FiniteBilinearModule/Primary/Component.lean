@@ -34,6 +34,9 @@ in pairwise distinct primary components.
   pairing of primary decompositions is the sum of the component pairings.
 * `TauCeti.FiniteQuadraticModule.quadratic_sum_of_mem_primaryComponent`: a quadratic value on a
   sum of primary components is the sum of the component values.
+* `TauCeti.FiniteBilinearModule.Isometry.restrictPrimaryComponent` and
+  `TauCeti.FiniteQuadraticModule.Isometry.restrictPrimaryComponent`: an isometry restricts to the
+  `n`-primary components.
 
 ## References
 
@@ -45,7 +48,7 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v
 
 private theorem eq_zero_of_coprime_nsmul_eq_zero {M : Type*} [AddMonoid M] {m n : ℕ} {x : M}
     (hmn : m.Coprime n) (hm : m • x = 0) (hn : n • x = 0) : x = 0 := by
@@ -157,6 +160,34 @@ theorem pairing_sum_eq_sum_pairing_of_mem_primaryComponent {ι : Type*}
       (hdistinct i hi j hj hji.symm) (hx i hi) (hy j hj)
   rw [Finset.sum_eq_single i hoff (fun hnot ↦ (hnot hi).elim), A.toBilin_apply]
 
+/-! ## Restriction of isometries -/
+
+/-- An isometry of finite bilinear modules restricts to an isometry between their `n`-primary
+components. -/
+def Isometry.restrictPrimaryComponent {A : FiniteBilinearModule.{u}} {B : FiniteBilinearModule.{v}}
+    (f : Isometry A B) (n : ℕ) :
+    Isometry (A.restrict (AddCommGroup.primaryComponent A n))
+      (B.restrict (AddCommGroup.primaryComponent B n)) where
+  toAddEquiv :=
+    { toFun x := ⟨f x.1, by
+        obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.2
+        exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
+      invFun y := ⟨f.symm y.1, by
+        obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp y.2
+        exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
+      left_inv x := Subtype.ext (f.symm_apply_apply x.1)
+      right_inv y := Subtype.ext (f.apply_symm_apply y.1)
+      map_add' x y := Subtype.ext (map_add f x.1 y.1) }
+  map_pairing' x y := f.map_pairing x.1 y.1
+
+/-- The restricted bilinear isometry on `n`-primary components acts as `f` on subtypes. -/
+@[simp]
+theorem Isometry.coe_restrictPrimaryComponent_apply {A : FiniteBilinearModule.{u}}
+    {B : FiniteBilinearModule.{v}} (f : Isometry A B) (n : ℕ)
+    (x : AddCommGroup.primaryComponent A n) :
+    (f.restrictPrimaryComponent n x : B) = f x.1 := by
+  rfl
+
 end FiniteBilinearModule
 
 namespace FiniteQuadraticModule
@@ -210,6 +241,49 @@ theorem quadratic_sum_of_mem_primaryComponent {ι : Type*}
         (fun j hj k hk hjk ↦ hdistinct j (Finset.mem_insert_of_mem hj) k
           (Finset.mem_insert_of_mem hk) hjk)
         (fun j hj ↦ hx j (Finset.mem_insert_of_mem hj))
+
+/-- An isometry of finite quadratic modules restricts to an isometry between their `n`-primary
+components. -/
+def Isometry.restrictPrimaryComponent {A : FiniteQuadraticModule.{u}}
+    {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ) :
+    Isometry (A.restrict (AddCommGroup.primaryComponent A n))
+      (B.restrict (AddCommGroup.primaryComponent B n)) :=
+  let e : AddCommGroup.primaryComponent A n ≃+ AddCommGroup.primaryComponent B n :=
+    { toFun x := ⟨f x.1, by
+        obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.2
+        exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
+      invFun y := ⟨f.symm y.1, by
+        obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp y.2
+        exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
+      left_inv x := Subtype.ext (f.symm_apply_apply x.1)
+      right_inv y := Subtype.ext (f.apply_symm_apply y.1)
+      map_add' x y := Subtype.ext (map_add f x.1 y.1) }
+  { toLinearEquiv := e.toIntLinearEquiv
+    map_app' x := f.map_app x.1 }
+
+/-- The restricted quadratic isometry on `n`-primary components acts as `f` on subtypes. -/
+@[simp]
+theorem Isometry.coe_restrictPrimaryComponent_apply {A : FiniteQuadraticModule.{u}}
+    {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ)
+    (x : AddCommGroup.primaryComponent A n) :
+    (f.restrictPrimaryComponent n x).1 = f x.1 := by
+  rfl
+
+/-- Forgetting the restricted quadratic isometry on `n`-primary components gives the restricted
+polar-bilinear isometry. -/
+@[simp]
+theorem Isometry.restrictPrimaryComponent_toFiniteBilinearModule {A : FiniteQuadraticModule.{u}}
+    {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ) :
+    (f.restrictPrimaryComponent n).toFiniteBilinearModule =
+      f.toFiniteBilinearModule.restrictPrimaryComponent n := by
+  apply FiniteBilinearModule.Isometry.toAddEquiv_injective
+  rw [toFiniteBilinearModule_toAddEquiv]
+  ext x
+  apply Subtype.ext
+  calc
+    (f.restrictPrimaryComponent n x).1 = f.toAddEquiv x.1 := rfl
+    _ = f.toFiniteBilinearModule.toAddEquiv x.1 := by rw [toFiniteBilinearModule_toAddEquiv]
+    _ = (f.toFiniteBilinearModule.restrictPrimaryComponent n x : B) := rfl
 
 end FiniteQuadraticModule
 
