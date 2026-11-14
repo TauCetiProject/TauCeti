@@ -31,7 +31,8 @@ here.
 
 ## Main results
 
-* `TauCeti.GridDiagram.two_mul_tau_torusLink`: `2 τ(torusLink p q) = -p q` on a torus knot grid.
+* `TauCeti.GridDiagram.two_mul_tau_torusLink` and `TauCeti.GridDiagram.tau_torusLink`:
+  `2 τ(torusLink p q) = -p q`, hence `τ(torusLink p q) = -(p * q / 2)`, on a torus knot grid.
 * `TauCeti.GridDiagram.tau_torusLink_one_two`, `TauCeti.GridDiagram.tau_torusLink_two_three`:
   `τ = -1` on the `5 × 5` trefoil grid and `τ = -3` on the `7 × 7` grid of the `(3, 4)` torus knot.
 * `TauCeti.GridDiagram.tau_unknot`: `τ = 0` on every unknot grid.
@@ -57,17 +58,24 @@ theorem two_mul_tau_torusLink :
     2 * ((isKnot_torusLink_iff p q).mpr h).tau K = -(p * q : ℤ) := by
   rw [IsKnot.tau_def, mul_neg, two_mul_supNonTorsionDegree_torusLink h K]
 
+/-- On the standard grid of the `(p + 1, q + 1)` torus knot, `τ = -(p * q / 2)`. -/
+theorem tau_torusLink :
+    ((isKnot_torusLink_iff p q).mpr h).tau K = -((p * q / 2 : ℕ) : ℤ) := by
+  have hτ := two_mul_tau_torusLink h K
+  rw [← Nat.cast_mul] at hτ
+  omega
+
 /-- On the `5 × 5` trefoil grid, `τ = -1`. -/
 @[simp]
 theorem tau_torusLink_one_two : ((isKnot_torusLink_iff 1 2).mpr (by decide)).tau K = -1 := by
-  have h := two_mul_tau_torusLink (p := 1) (q := 2) (by decide) K
-  omega
+  rw [tau_torusLink (by decide)]
+  norm_num
 
 /-- On the `7 × 7` grid of the `(3, 4)` torus knot, `τ = -3`. -/
 @[simp]
 theorem tau_torusLink_two_three : ((isKnot_torusLink_iff 2 3).mpr (by decide)).tau K = -3 := by
-  have h := two_mul_tau_torusLink (p := 2) (q := 3) (by decide) K
-  omega
+  rw [tau_torusLink (by decide)]
+  norm_num
 
 /-- **`τ` of an unknot grid is zero**: the unknot grids are the torus link grids with `q = 0`. -/
 @[simp]
