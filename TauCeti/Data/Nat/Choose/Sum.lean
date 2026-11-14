@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
+public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Choose.Vandermonde
@@ -39,8 +40,12 @@ element. Its recurrence follows from Pascal's identity, and the initial value is
 Weighting a binomial antidiagonal sum by its first index lowers its order by one. This identity
 applies to sums in any additive commutative monoid, including coefficient sums for formal fields.
 
+The binomial theorem for a difference of commuting elements of a noncommutative ring is stated
+over the antidiagonal, with the sign as an integer scalar, matching Mathlib's `Commute.add_pow'`.
+
 ## Main results
 
+* `Commute.sub_pow'`: the binomial expansion of `(x - y) ^ n` for commuting `x` and `y`.
 * `Nat.sum_antidiagonal_choose_add_mul_choose_add`: the upper-index Vandermonde convolution.
 * `Nat.sum_antidiagonal_snd_add_choose`: summing `(r + m).choose (k + m)` over the second
   coordinate of the antidiagonal of `N` gives `(N + (m + 1)).choose (k + (m + 1))`.
@@ -72,6 +77,20 @@ theorem sum_antidiagonal_choose_succ_nsmul_nsmul {M : Type*} [AddCommMonoid M]
   rw [smul_sum]
 
 end Finset
+
+namespace Commute
+
+/-- A version of the **binomial theorem** for the difference of commuting elements of a
+noncommutative ring, summing over the antidiagonal with the binomial coefficient and the sign
+applied as scalars. -/
+theorem sub_pow' {R : Type*} [Ring R] {x y : R} (h : Commute x y) (n : ℕ) :
+    (x - y) ^ n = ∑ m ∈ antidiagonal n, n.choose m.1 • (-1 : ℤ) ^ m.2 • (x ^ m.1 * y ^ m.2) := by
+  rw [sub_eq_add_neg, h.neg_right.add_pow']
+  refine sum_congr rfl fun m _ ↦ ?_
+  rw [neg_pow, ← mul_assoc, ((Commute.neg_one_right x).pow_pow _ _).eq, mul_assoc, zsmul_eq_mul,
+    Int.cast_pow, Int.cast_neg, Int.cast_one]
+
+end Commute
 
 namespace Nat
 
