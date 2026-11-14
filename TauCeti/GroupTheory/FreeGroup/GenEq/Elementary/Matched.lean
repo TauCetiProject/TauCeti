@@ -174,7 +174,7 @@ private theorem isReduced_subst_of_removePair (U : (Ω.removePair μ).Solution)
     obtain ⟨h₁, h₂, -, -⟩ := Ω.bounds_of_mem_connections c hc
     rw [left_eq_of_mem_pair hl hν] at h₁
     rw [right_eq_of_mem_pair hr hν] at h₂
-    rw [← Ω.segment_append h₁.le h₂.le (Ω.right μ).is_le, substituteVars_append] at h
+    rw [← Ω.segment_append h₁.le h₂.le, substituteVars_append] at h
     exact h.infix (List.prefix_append _ _).isInfix
 
 include hΩ hl hr in
