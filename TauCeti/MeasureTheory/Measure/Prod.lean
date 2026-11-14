@@ -30,7 +30,10 @@ its vertical sections (`map_fst_restrict_prod_eq_withDensity`).
 
 If the pushforward of a product `(μ.map Z).prod ρ` along `(z, t) ↦ (z, f z t)` is the joint law of
 `(Z, X)` for a nonzero finite `μ`, then `ρ` is a probability measure
-(`MeasureTheory.Measure.isProbabilityMeasure_of_map_prod_eq`).
+(`MeasureTheory.Measure.isProbabilityMeasure_of_map_prod_eq`). If such a coding `g` has a joint law
+with its base point invariant under a measurable involution `sw` of the base and the swap of the
+pair, then coding at the swapped base point and swapping the output has the same joint law
+(`MeasureTheory.Measure.map_prod_swap_apply_eq`).
 
 It also records that almost every section of an almost-everywhere measurable function on a
 product `μ.prod ν` is almost-everywhere measurable (`AEMeasurable.prodMk_left`), the counterpart of
@@ -256,6 +259,37 @@ theorem isProbabilityMeasure_of_map_prod_eq {Ω β δ ξ : Type*} [MeasurableSpa
     exact h
   · rw [Measure.prod_eq_zero_of_not_sfinite hs, FunLike.coe_zero, Pi.zero_apply] at h
     exact absurd h.symm hμu
+
+/-- **Swapping the output and the context of a swap-invariant coding.** Let `sw` be a measurable
+involution preserving a measure `L`, and let `g` code a pair from a point of the base and a point
+of a second space carrying a measure `ν`. If the joint law of the base point and the coded pair
+under `L.prod ν` is invariant under `sw` on the base point and the swap of the pair, then coding at
+the swapped base point and swapping the output gives the same joint law as the coding itself. -/
+theorem map_prod_swap_apply_eq {Z Y β : Type*} [MeasurableSpace Z] [MeasurableSpace Y]
+    [MeasurableSpace β] {sw : Z → Z} (hsw : Measurable sw) (hsw₂ : ∀ z, sw (sw z) = z)
+    {L : Measure Z} (hL : L.map sw = L) {ν : Measure Y} {g : Z → Y → β × β}
+    (hg : Measurable (Function.uncurry g))
+    (hJ : ((L.prod ν).map (fun p => (p.1, g p.1 p.2))).map (Prod.map sw Prod.swap) =
+      (L.prod ν).map (fun p => (p.1, g p.1 p.2))) :
+    (L.prod ν).map (fun p => (p.1, (g (sw p.1) p.2).swap)) =
+      (L.prod ν).map (fun p => (p.1, g p.1 p.2)) := by
+  -- A product with a measure that is not s-finite is zero.
+  by_cases hν : SFinite ν
+  swap
+  · simp [prod_eq_zero_of_not_sfinite hν]
+  have hg' : Measurable (Function.uncurry fun z s => (g (sw z) s).swap) :=
+    measurable_swap.comp (hg.comp (hsw.prodMap measurable_id))
+  have hfun : (fun p : Z × Y => (p.1, (g (sw p.1) p.2).swap)) ∘ Prod.map sw id =
+      Prod.map sw Prod.swap ∘ fun p => (p.1, g p.1 p.2) := by
+    funext p
+    simp [hsw₂]
+  have hF : Measurable fun p : Z × Y => (p.1, g p.1 p.2) := measurable_fst.prodMk hg
+  have hF' : Measurable fun p : Z × Y => (p.1, (g (sw p.1) p.2).swap) :=
+    measurable_fst.prodMk hg'
+  conv_lhs => rw [← hL, ← Measure.map_id (μ := ν),
+    Measure.map_prod_map _ _ hsw measurable_id,
+    Measure.map_map hF' (hsw.prodMap measurable_id), hfun,
+    ← Measure.map_map (hsw.prodMap measurable_swap) hF, hJ]
 
 end MeasureTheory.Measure
 
