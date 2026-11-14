@@ -27,8 +27,11 @@ torus, with inverse `x ↦ A⁻¹ • x` (`Diffeomorph.constSmul`), and the cota
 inherits the cotangent-lifted action (`TauCeti.CotangentBundle.instMulAction`).
 
 The covering map `(ι → ℝ) → Tⁿ`, `t ↦ ([t i])ᵢ`, has derivative the identity of `ι → ℝ` at every
-point (`AddCircle.hasMFDerivAt_coe_pi`), and it intertwines the action of `A` on the torus with
-multiplication of real vectors by the matrix `A` (`AddCircle.generalLinearGroup_smul_coe_pi`).
+point (`AddCircle.hasMFDerivAt_coe_pi`). In the same way the changes of charts of `Tⁿ` are
+translations, so the tangent trivializations of `Tⁿ` are the identity of `ι → ℝ` on the sources of
+their charts (`AddCircle.symmL_trivializationAt_pi`). The covering map intertwines the action of
+`A` on the torus with multiplication of real vectors by the matrix `A`
+(`AddCircle.generalLinearGroup_smul_coe_pi`).
 Hence the derivative of `x ↦ A • x` at every point is the matrix `A`, acting on `ι → ℝ`
 (`AddCircle.mfderiv_generalLinearGroup_smul_apply`). Choosing a basis of the period lattice of a
 torus is choosing such an `A`: these maps are the changes of angle coordinates of action–angle
@@ -42,7 +45,10 @@ For a torus `∀ i, AddCircle (p i)` with arbitrary positive periods, every tran
 * `AddCircle.instDistribMulActionGeneralLinearGroup`: the action of `GL(ι, ℤ)` on
   `ι → AddCircle p` by additive maps.
 * `AddCircle.instContMDiffConstSMulGeneralLinearGroup`: it acts by smooth maps.
-* `AddCircle.hasMFDerivAt_coe_pi`: the covering map `(ι → ℝ) → Tⁿ` has derivative the identity.
+* `AddCircle.hasMFDerivAt_coe_pi`, `AddCircle.contMDiff_coe_pi`: the covering map
+  `(ι → ℝ) → Tⁿ` is smooth, with derivative the identity.
+* `AddCircle.symmL_trivializationAt_pi`: the tangent trivializations of the torus are the identity
+  on the sources of their charts.
 * `AddCircle.hasMFDerivAt_pi_add_right`, `AddCircle.mfderiv_pi_add_right`: translations of a torus
   `∀ i, AddCircle (p i)` have derivative the identity.
 * `AddCircle.hasMFDerivAt_generalLinearGroup_smul`,
@@ -60,7 +66,7 @@ public section
 noncomputable section
 
 open Function Matrix
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 namespace AddCircle
 
@@ -83,6 +89,62 @@ theorem hasMFDerivAt_coe_pi (t : ι → ℝ) :
     -- The product of the coordinate projections is the identity of `ι → ℝ`.
     ext v i
     rfl
+
+/-- The covering map `(ι → ℝ) → (ι → AddCircle p)`, `t ↦ ([t i])ᵢ`, is `C^n` for every order `n`. -/
+theorem contMDiff_coe_pi (n : ℕ∞ω) :
+    ContMDiff 𝓘(ℝ, ι → ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) n
+      (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p)) :=
+  contMDiff_pi_iff.2 fun i ↦ (contMDiff_coe p n).comp (contMDiff_pi_module_iff.1 contMDiff_id i)
+
+/-- **The tangent bundle of the torus is trivialized by its charts.** On the source of the chart
+at `x`, the inverse tangent trivialization at `x` is the identity of `ι → ℝ`: in each coordinate
+two charts of `AddCircle p` differ near a common point by a constant integer multiple of `p`
+(`AddCircle.exists_eventuallyEq_add_zsmul`), so the changes of charts are translations. -/
+theorem symmL_trivializationAt_pi (x : ι → AddCircle p) {y : ι → AddCircle p}
+    (hy : y ∈ (chartAt (ModelPi fun _ : ι ↦ ℝ) x).source) :
+    (trivializationAt (ι → ℝ) (TangentSpace (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) x).symmL ℝ y =
+      ContinuousLinearMap.id ℝ (ι → ℝ) := by
+  rw [TangentBundle.symmL_trivializationAt_eq_core hy]
+  simp only [tangentBundleCore_coordChange, achart_val]
+  have hyi (i : ι) : y i ∈ (chartAt ℝ (x i)).source := by
+    simpa using (Set.mem_univ_pi.1 hy) i
+  -- In each coordinate, the two charts differ by an integer multiple of `p` near `y i`.
+  have hk (i : ι) : ∃ k : ℤ, chartAt ℝ (y i) =ᶠ[𝓝 (y i)] fun z ↦ chartAt ℝ (x i) z + k • p :=
+    exists_eventuallyEq_add_zsmul (fun _ hz ↦ coe_apply_of_mem_atlas (chart_mem_atlas ℝ _) hz)
+      (fun _ hz ↦ coe_apply_of_mem_atlas (chart_mem_atlas ℝ _) hz) (hyi i)
+      (mem_chart_source ℝ (y i))
+  choose k hk using hk
+  set q₀ := (chartAt (ModelPi fun _ : ι ↦ ℝ) x).extend (ModelWithCorners.pi fun _ ↦ 𝓘(ℝ)) y
+  -- Hence the change of charts is the translation by `(k i • p)ᵢ` near `q₀`.
+  have heq : (((chartAt (ModelPi fun _ : ι ↦ ℝ) y).extend (ModelWithCorners.pi fun _ ↦ 𝓘(ℝ))) ∘
+      ((chartAt (ModelPi fun _ : ι ↦ ℝ) x).extend (ModelWithCorners.pi fun _ ↦ 𝓘(ℝ))).symm) =ᶠ[𝓝 q₀]
+      fun q ↦ q + fun i ↦ k i • p := by
+    have hev (i : ι) : ∀ᶠ q in 𝓝 q₀, q i ∈ (chartAt ℝ (x i)).target ∧
+        chartAt ℝ (y i) ((chartAt ℝ (x i)).symm (q i)) =
+          chartAt ℝ (x i) ((chartAt ℝ (x i)).symm (q i)) + k i • p := by
+      have hq₀ : q₀ i = chartAt ℝ (x i) (y i) := (rfl)
+      have hev : ContinuousAt (fun q : ι → ℝ ↦ q i) q₀ := (continuous_apply i).continuousAt
+      have hc : Filter.Tendsto (fun q : ι → ℝ ↦ (chartAt ℝ (x i)).symm (q i)) (𝓝 q₀)
+          (𝓝 (y i)) := by
+        have h : ContinuousAt (chartAt ℝ (x i)).symm (q₀ i) :=
+          hq₀ ▸ (chartAt ℝ (x i)).continuousAt_symm ((chartAt ℝ (x i)).map_source (hyi i))
+        have h' := (h.comp (f := fun q : ι → ℝ ↦ q i) hev).tendsto
+        rwa [Function.comp_apply, hq₀, (chartAt ℝ (x i)).left_inv (hyi i)] at h'
+      have ht := hev.preimage_mem_nhds ((chartAt ℝ (x i)).open_target.mem_nhds
+        (hq₀ ▸ (chartAt ℝ (x i)).map_source (hyi i)))
+      filter_upwards [ht, hc.eventually (hk i)] with q hq hq'
+      exact ⟨hq, hq'⟩
+    filter_upwards [Filter.eventually_all.2 hev] with q hq
+    funext i
+    simp only [Function.comp_apply, OpenPartialHomeomorph.extend_coe,
+      OpenPartialHomeomorph.extend_coe_symm]
+    -- The model `ModelWithCorners.pi fun _ ↦ 𝓘(ℝ)` acts as the identity coordinatewise, so the
+    -- `i`-th coordinate of the change of charts is the change of charts of the `i`-th circle.
+    have h := (hq i).2
+    rw [(chartAt ℝ (x i)).right_inv (hq i).1] at h
+    exact h
+  have hr : Set.range (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) = Set.univ := by simp
+  rw [hr, fderivWithin_univ, heq.fderiv_eq, fderiv_add_const, fderiv_fun_id]
 
 end Cover
 
