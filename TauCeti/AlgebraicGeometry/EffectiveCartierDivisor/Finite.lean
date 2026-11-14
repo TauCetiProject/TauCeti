@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.AlgebraicGeometry.ZariskisMainTheorem
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.FinitePresentation
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Sum
 public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
 
 /-!
@@ -46,6 +47,10 @@ fibres.
 * `AlgebraicGeometry.Scheme.IdealSheafData.IsRelativeEffectiveCartier.isFinite`: on a proper
   morphism of relative dimension at most one, every relative effective Cartier divisor is finite
   over the base.
+* `AlgebraicGeometry.Scheme.IdealSheafData.IsRelativeEffectiveCartier.isFinite_mul` and
+  `AlgebraicGeometry.Scheme.IdealSheafData.isFinite_prod_subschemeι_comp`: on a separated morphism
+  locally of finite type of relative dimension at most one, finite sums of finite relative effective
+  Cartier divisors remain finite over the base without assuming properness of `f`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.isFinite_subschemeι_comp`: on a
   proper curve over a field, every effective Cartier divisor is finite over the field.
 * `AlgebraicGeometry.Scheme.IdealSheafData.IsRelativeEffectiveCartier.isLocallyConstant_finrank`:
@@ -171,5 +176,67 @@ theorem IsRelativeEffectiveCartier.isLocallyConstant_finrank {f : X ⟶ S}
   have := TauCeti.locallyOfFinitePresentation_subschemeι_comp_of_isEffectiveCartier
     hI.isEffectiveCartier (f := f)
   exact Scheme.Hom.isLocallyConstant_finrank _
+
+/-- **The sum of two finite relative effective Cartier divisors on a separated relative curve is
+finite.** Note that `f` need not be proper: the coproduct `V(I) ⨿ V(J)` surjects onto `V(I * J)`
+over `S`, so finiteness of the summands implies universal closedness and hence properness of
+`V(I * J) ⟶ S`. -/
+theorem IsRelativeEffectiveCartier.isFinite_mul {J : X.IdealSheafData} {f : X ⟶ S}
+    [LocallyOfFiniteType f] [IsSeparated f] [TauCeti.AlgebraicGeometry.RelativeDimensionLE 1 f]
+    (hI : I.IsRelativeEffectiveCartier f) (hJ : J.IsRelativeEffectiveCartier f)
+    [IsFinite (I.subschemeι ≫ f)] [IsFinite (J.subschemeι ≫ f)] :
+    IsFinite ((I * J).subschemeι ≫ f) := by
+  refine (TauCeti.isRelativeEffectiveCartier_mul hI hJ).isFinite_iff_isProper.mpr ?_
+  have hIle : I * J ≤ I := mul_le_of_le_one_right bot_le le_top
+  have hJle : I * J ≤ J := mul_le_of_le_one_left bot_le le_top
+  let q : I.subscheme ⨿ J.subscheme ⟶ (I * J).subscheme :=
+    Limits.coprod.desc (inclusion hIle) (inclusion hJle)
+  have hqcomp : q ≫ ((I * J).subschemeι ≫ f) =
+      Limits.coprod.desc (I.subschemeι ≫ f) (J.subschemeι ≫ f) := by
+    apply Limits.coprod.hom_ext
+    · rw [Limits.coprod.inl_desc_assoc, inclusion_subschemeι_assoc, Limits.coprod.inl_desc]
+    · rw [Limits.coprod.inr_desc_assoc, inclusion_subschemeι_assoc, Limits.coprod.inr_desc]
+  have : Surjective q := ⟨fun z ↦ by
+    have hz : (I * J).subschemeι z ∈ Set.range I.subschemeι ∪ Set.range J.subschemeι := by
+      rw [range_subschemeι, range_subschemeι, ← TopologicalSpace.Closeds.coe_sup, ← support_mul,
+        ← range_subschemeι]
+      exact ⟨z, rfl⟩
+    rcases hz with ⟨y, hy⟩ | ⟨y, hy⟩
+    · refine ⟨(Limits.coprod.inl : I.subscheme ⟶ I.subscheme ⨿ J.subscheme) y,
+        (I * J).subschemeι.isEmbedding.injective ?_⟩
+      rwa [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, Limits.coprod.inl_desc_assoc,
+        inclusion_subschemeι]
+    · refine ⟨(Limits.coprod.inr : J.subscheme ⟶ I.subscheme ⨿ J.subscheme) y,
+        (I * J).subschemeι.isEmbedding.injective ?_⟩
+      rwa [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, Limits.coprod.inr_desc_assoc,
+        inclusion_subschemeι]⟩
+  have : UniversallyClosed (q ≫ ((I * J).subschemeι ≫ f)) := by
+    rw [hqcomp]
+    infer_instance
+  have : UniversallyClosed ((I * J).subschemeι ≫ f) :=
+    .of_comp_surjective q ((I * J).subschemeι ≫ f)
+  exact ⟨⟩
+
+/-- **A finite sum of finite relative effective Cartier divisors on a separated relative curve is
+finite.** Properness of `f` is not assumed. -/
+theorem isFinite_prod_subschemeι_comp {f : X ⟶ S} [LocallyOfFiniteType f] [IsSeparated f]
+    [TauCeti.AlgebraicGeometry.RelativeDimensionLE 1 f] {ι : Type*} (s : Finset ι)
+    {I : ι → X.IdealSheafData} (hI : ∀ i ∈ s, (I i).IsRelativeEffectiveCartier f)
+    (hfin : ∀ i ∈ s, IsFinite ((I i).subschemeι ≫ f)) :
+    IsFinite ((∏ i ∈ s, I i).subschemeι ≫ f) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    rw [Finset.prod_empty]
+    have : IsEmpty (1 : X.IdealSheafData).subscheme :=
+      inferInstanceAs (IsEmpty (⊤ : X.IdealSheafData).subscheme)
+    infer_instance
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha]
+    have := hfin a (Finset.mem_insert_self a s)
+    have := ih (fun i hi ↦ hI i (Finset.mem_insert_of_mem hi))
+      (fun i hi ↦ hfin i (Finset.mem_insert_of_mem hi))
+    exact (hI a (Finset.mem_insert_self a s)).isFinite_mul
+      (TauCeti.isRelativeEffectiveCartier_prod fun i hi ↦ hI i (Finset.mem_insert_of_mem hi))
 
 end AlgebraicGeometry.Scheme.IdealSheafData

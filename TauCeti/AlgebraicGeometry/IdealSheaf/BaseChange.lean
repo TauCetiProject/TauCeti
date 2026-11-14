@@ -40,7 +40,10 @@ base change `T ⟶ X ×_S T` along `g : T ⟶ S` is the inverse image of the ide
 (`CategoryTheory.SplitEpi.ker_pullback_section`), and the same holds for the product of the
 ideal sheaves of finitely many sections
 (`AlgebraicGeometry.Scheme.IdealSheafData.prod_ker_pullback_section`). Taking the ideal sheaf of
-a section, or of a finite family of sections, therefore commutes with arbitrary base change.
+a section, or of a finite family of sections, therefore commutes with arbitrary base change, and
+for two closed-immersion sections `δ` and `x₀` of the same morphism, pulling `x₀.ker` back along
+`δ` agrees with pulling `δ.ker` back along `x₀`
+(`AlgebraicGeometry.Scheme.Hom.ker_comap_section_comm`).
 
 The closed subscheme of the inverse image `I.comap g` along `g : X' ⟶ X` is the base change of the
 closed subscheme of `I` along `g`; when `X'` is itself a base change of `X ⟶ S`, it is the base
@@ -224,6 +227,18 @@ theorem prod_ker_pullback_section {ι : Type*} (t : Finset ι) {f : X ⟶ S}
     ∏ i ∈ t, ((h i).pullback g).section_.ker =
       (∏ i ∈ t, (h i).section_.ker).comap (pullback.fst f g) := by
   simp only [comap_prod, SplitEpi.ker_pullback_section]
+
+/-- **Symmetry of section intersection.** For two closed-immersion sections `δ` and `x₀` of a
+morphism `f : X ⟶ S` (for instance, any two sections when `f` is separated), pulling the ideal
+sheaf of `x₀` back along `δ` agrees with pulling the ideal sheaf of `δ` back along `x₀`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_comap_section_comm {f : X ⟶ S}
+    {δ x₀ : S ⟶ X} [IsClosedImmersion δ] [IsClosedImmersion x₀]
+    (hδ : δ ≫ f = 𝟙 S) (hx₀ : x₀ ≫ f = 𝟙 S) :
+    x₀.ker.comap δ = δ.ker.comap x₀ := by
+  have hp : pullback.fst δ x₀ = pullback.snd δ x₀ := by
+    simpa [hδ, hx₀] using congrArg (· ≫ f) (pullback.condition (f := δ) (g := x₀))
+  rw [← ker_eq_comap_of_isPullback x₀ (IsPullback.of_hasPullback δ x₀),
+    ← ker_eq_comap_of_isPullback δ (IsPullback.of_hasPullback δ x₀).flip, hp]
 
 /-- If the closed subscheme of `I` is flat over `S`, then over an affine open `W` of `S`, the
 quotient `Γ(X, U) ⧸ I(U)` is flat over `Γ(S, W)` for every affine open `U ⊆ f⁻¹ W`. -/
