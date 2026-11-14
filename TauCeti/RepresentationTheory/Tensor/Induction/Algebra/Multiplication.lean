@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.PiTensorProduct.Map
 public import TauCeti.RepresentationTheory.Tensor.Induction.Algebra.Basic
 import Mathlib.Algebra.Polynomial.AlgebraMap
 
@@ -37,13 +36,15 @@ along subgroup towers `V ≤ U ≤ G`.
   `Subgroup.TensorInduced.mulAlgHom_smul`: `G`-equivariance of Evens' twisted multiplication.
 * `Subgroup.tensorInducedMulAlgHom_changeTransversal`,
   `Subgroup.tensorInducedMulAlgHom_comp_changeTransversal`,
+  `Subgroup.TensorInduced.mulAlgHom_changeTransversal`,
   `Subgroup.TensorInduced.mulSemiringActionHom_comp_changeTransversal`: independence of the chosen
   left transversal.
 * `Subgroup.tensorInducedMulAlgHom_transitivity`: compatibility of Evens' twisted multiplication
   with transitivity along `V ≤ U ≤ G`.
-* `Subgroup.tensorInducedMulAlgHom_of_smul_eq_self`,
-  `Subgroup.tensorInducedMulAlgHom_tprod_const_of_smul_eq`: specialization to trivial `G`-actions
-  and `G`-fixed elements.
+* `Subgroup.tensorInducedMulAlgHom_eq_mulAlgHom_of_smul_eq_self`,
+  `Subgroup.tensorInducedMulAlgHom_tprod_const_of_smul_eq_self`,
+  `Subgroup.tensorInducedMulAlgHom_eq_subsingletonEquiv`: specialization to trivial `G`-actions,
+  `G`-fixed elements, and index-one subgroups.
 
 ## References
 
@@ -74,6 +75,14 @@ noncomputable def tensorInducedMulAlgHom : (⨂[R] _ : G ⧸ U, A) →ₐ[R] A :
   PiTensorProduct.mulAlgHom.comp
     (PiTensorProduct.mapAlgHom fun x : G ⧸ U ↦
       MulSemiringAction.toAlgHom R A (U.leftTransversalRep s x))
+
+/-- `tensorInducedMulAlgHom` factors as slotwise transversal action via
+`PiTensorProduct.mapAlgHom` followed by `PiTensorProduct.mulAlgHom`. -/
+theorem tensorInducedMulAlgHom_def :
+    U.tensorInducedMulAlgHom s R A =
+      PiTensorProduct.mulAlgHom.comp
+        (PiTensorProduct.mapAlgHom fun x : G ⧸ U ↦
+          MulSemiringAction.toAlgHom R A (U.leftTransversalRep s x)) := (rfl)
 
 /-- On a pure tensor, `tensorInducedMulAlgHom` acts on each coset slot by its chosen transversal
 representative and multiplies the results in `A`. -/
@@ -175,36 +184,39 @@ theorem tensorInducedMulAlgHom_comp_changeTransversal (t : U.LeftTransversal) :
 
 /-- When `G` acts trivially on `A`, `U.tensorInducedMulAlgHom` reduces to untwisted factorwise
 multiplication `PiTensorProduct.mulAlgHom`. -/
-theorem tensorInducedMulAlgHom_of_smul_eq_self (hA : ∀ (g : G) (a : A), g • a = a) :
+theorem tensorInducedMulAlgHom_eq_mulAlgHom_of_smul_eq_self (hA : ∀ (g : G) (a : A), g • a = a) :
     U.tensorInducedMulAlgHom s R A = PiTensorProduct.mulAlgHom := by
   refine AlgHom.toLinearMap_injective <| PiTensorProduct.ext <| MultilinearMap.ext fun m ↦ ?_
   simp [hA]
 
-/-- On a constant pure tensor `⨂ₜ _, a`, `tensorInducedMulAlgHom` computes the multiplicative
-orbit norm `∏ x : G ⧸ U, r_s(x) • a`. -/
-theorem tensorInducedMulAlgHom_tprod_const (a : A) :
-    U.tensorInducedMulAlgHom s R A (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ a) =
-      ∏ x : G ⧸ U, U.leftTransversalRep s x • a :=
-  U.tensorInducedMulAlgHom_tprod s R A _
-
 /-- On a `G`-fixed element `a : A`, `tensorInducedMulAlgHom` sends the constant pure tensor
 `⨂ₜ _, a` to `a ^ U.index`. -/
-theorem tensorInducedMulAlgHom_tprod_const_of_smul_eq {a : A} (ha : ∀ g : G, g • a = a) :
+theorem tensorInducedMulAlgHom_tprod_const_of_smul_eq_self {a : A} (ha : ∀ g : G, g • a = a) :
     U.tensorInducedMulAlgHom s R A (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ a) =
       a ^ U.index := by
-  rw [tensorInducedMulAlgHom_tprod_const]
   simp [ha, Subgroup.index_eq_card, Nat.card_eq_fintype_card]
 
-/-- When `G ⧸ U` has a single coset and `1 ∈ s`, `tensorInducedMulAlgHom` evaluates a pure tensor
-at the unique coset without twist. -/
-theorem tensorInducedMulAlgHom_tprod_of_unique [Unique (G ⧸ U)] (h1 : (1 : G) ∈ (s : Set G))
-    (m : G ⧸ U → A) :
-    U.tensorInducedMulAlgHom s R A (PiTensorProduct.tprod R m) = m default := by
-  have hrep (q : G ⧸ U) : U.leftTransversalRep s q = 1 := by
-    rw [Subsingleton.elim q ((1 : G) : G ⧸ U)]
-    exact U.leftTransversalRep_mk_of_mem s h1
-  rw [tensorInducedMulAlgHom_tprod, Fintype.prod_unique, hrep, one_smul]
-  exact congrArg m (Subsingleton.elim _ _)
+/-- When `G ⧸ U` has at most one coset and `1 ∈ s`, `tensorInducedMulAlgHom` agrees with
+`PiTensorProduct.subsingletonEquiv` at any coset `q`. -/
+theorem tensorInducedMulAlgHom_eq_subsingletonEquiv [Subsingleton (G ⧸ U)]
+    (h1 : (1 : G) ∈ (s : Set G)) (q : G ⧸ U) (z : ⨂[R] _ : G ⧸ U, A) :
+    U.tensorInducedMulAlgHom s R A z = PiTensorProduct.subsingletonEquiv q z := by
+  have hlin : (U.tensorInducedMulAlgHom s R A).toLinearMap =
+      (PiTensorProduct.subsingletonEquiv (R := R) (s := fun _ ↦ A) q).toLinearMap := by
+    refine PiTensorProduct.ext <| MultilinearMap.ext fun m ↦ ?_
+    have hrep : U.leftTransversalRep s q = 1 := by
+      rw [Subsingleton.elim q ((1 : G) : G ⧸ U)]
+      exact U.leftTransversalRep_mk_of_mem s h1
+    simp [Fintype.prod_subsingleton _ q, hrep]
+  exact LinearMap.congr_fun hlin z
+
+/-- When `G ⧸ U` has at most one coset and `1 ∈ s`, `tensorInducedMulAlgHom` evaluates a pure tensor
+at any coset `q` without twist. -/
+theorem tensorInducedMulAlgHom_tprod_of_subsingleton [Subsingleton (G ⧸ U)]
+    (h1 : (1 : G) ∈ (s : Set G)) (m : G ⧸ U → A) (q : G ⧸ U) :
+    U.tensorInducedMulAlgHom s R A (PiTensorProduct.tprod R m) = m q :=
+  (U.tensorInducedMulAlgHom_eq_subsingletonEquiv s R A h1 q _).trans
+    (PiTensorProduct.subsingletonEquiv_apply_tprod q m)
 
 namespace TensorInduced
 
@@ -242,8 +254,23 @@ theorem mulAlgHom_singleAlgHom [DecidableEq (G ⧸ U)] (x : G ⧸ U) (a : A) :
 @[simp]
 theorem mulAlgHom_smul (g : G) (z : U.TensorInduced s R A) :
     mulAlgHom U s R A (g • z) = g • mulAlgHom U s R A z := by
-  rw [mulAlgHom_apply, mulAlgHom_apply, toTensor_smul_group]
+  rw [mulAlgHom_apply, mulAlgHom_apply, toTensor_smul_eq_tensorInducedAlgAut]
   exact U.tensorInducedMulAlgHom_tensorInducedAlgAut s R A g z.toTensor
+
+/-- Applying `changeTransversalAlgEquiv` followed by `TensorInduced.mulAlgHom` switches the left
+transversal. -/
+@[simp]
+theorem mulAlgHom_changeTransversal (t : U.LeftTransversal) (z : U.TensorInduced t R A) :
+    mulAlgHom U s R A (changeTransversalAlgEquiv U R A s t z) = mulAlgHom U t R A z := by
+  rw [mulAlgHom_apply, mulAlgHom_apply, toTensor_changeTransversalAlgEquiv,
+    U.tensorInducedMulAlgHom_changeTransversal]
+
+/-- Composition form of transversal independence for `TensorInduced.mulAlgHom`. -/
+@[simp]
+theorem mulAlgHom_comp_changeTransversal (t : U.LeftTransversal) :
+    (mulAlgHom U s R A).comp (changeTransversalAlgEquiv U R A s t).toAlgHom =
+      mulAlgHom U t R A :=
+  AlgHom.ext <| mulAlgHom_changeTransversal U s R A t
 
 /-- **Evens' twisted multiplication as a homomorphism of `G`-semirings** (`U.TensorInduced s R A`
 to `A`). -/
@@ -256,12 +283,6 @@ noncomputable def mulSemiringActionHom : U.TensorInduced s R A →+*[G] A where
 theorem mulSemiringActionHom_apply (z : U.TensorInduced s R A) :
     mulSemiringActionHom U s R A z = mulAlgHom U s R A z := (rfl)
 
-/-- On a pure tensor, `TensorInduced.mulSemiringActionHom` twists each coset entry by its
-transversal representative and multiplies the results in `A`. -/
-theorem mulSemiringActionHom_tprod (m : G ⧸ U → A) :
-    mulSemiringActionHom U s R A (tprod m) = ∏ x : G ⧸ U, U.leftTransversalRep s x • m x :=
-  mulAlgHom_tprod U s R A m
-
 /-- Precomposing `mulSemiringActionHom` with `changeTransversalMulSemiringActionHom` switches the
 left transversal. -/
 @[simp]
@@ -269,9 +290,7 @@ theorem mulSemiringActionHom_comp_changeTransversal (t : U.LeftTransversal) :
     (mulSemiringActionHom U s R A).comp (changeTransversalMulSemiringActionHom U R A s t) =
       mulSemiringActionHom U t R A := by
   ext z
-  simp only [MulSemiringActionHom.comp_apply, changeTransversalMulSemiringActionHom_apply,
-    mulSemiringActionHom_apply, mulAlgHom_apply, toTensor_changeTransversalAlgEquiv,
-    tensorInducedMulAlgHom_changeTransversal]
+  simp
 
 end TensorInduced
 

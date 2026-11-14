@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.Action.Subobjects
 public import Mathlib.GroupTheory.GroupAction.Hom
 public import TauCeti.RingTheory.PiTensorProduct.Equiv
 public import TauCeti.RepresentationTheory.Tensor.Induction.ChangeTransversal.Basic
@@ -27,8 +26,8 @@ constructed in `TauCeti.RepresentationTheory.Tensor.Induction.Algebra.Multiplica
 
 ## Main definitions
 
-* `TauCeti.WreathProduct.tensorAlgEquiv`, `TauCeti.WreathProduct.tensorAlgAut`: the action of the
-  permutation wreath product `WreathProduct D ι` on `⨂[R] _ : ι, A` by `R`-algebra automorphisms.
+* `TauCeti.WreathProduct.tensorAlgAut`: the action of the permutation wreath product
+  `WreathProduct D ι` on `⨂[R] _ : ι, A` by `R`-algebra automorphisms.
 * `Subgroup.tensorInducedAlgAut`: the `G`-action by `R`-algebra automorphisms on
   `⨂[R] _ : G ⧸ U, A` attached to `s : U.LeftTransversal`.
 * `Subgroup.tensorInducedChangeTransversalAlgEquiv`: the `G`-equivariant `R`-algebra isomorphism
@@ -71,67 +70,54 @@ variable (R : Type u) {D : Type v} (A : Type w) (ι : Type x)
   [CommSemiring R] [Group D] [Semiring A] [Algebra R A]
   [MulSemiringAction D A] [SMulCommClass D R A]
 
-/-- An element `w` of the permutation wreath product `WreathProduct D ι` acts on the tensor power
-`⨂[R] _ : ι, A` as an `R`-algebra automorphism: it reindexes the factors by `w.right` and applies
-`w.left i` in slot `i`. -/
-noncomputable def tensorAlgEquiv (w : WreathProduct D ι) :
-    (⨂[R] _ : ι, A) ≃ₐ[R] ⨂[R] _ : ι, A :=
-  (PiTensorProduct.reindexAlgEquiv (R := R) (fun _ : ι ↦ A) w.right).trans
-    (PiTensorProduct.congrAlgEquiv fun i ↦ MulSemiringAction.toAlgEquiv R A (w.left i))
-
-/-- On a pure tensor, `tensorAlgEquiv` permutes coordinates by `w.right⁻¹` and acts slotwise by
-`w.left`. -/
-@[simp]
-theorem tensorAlgEquiv_tprod (w : WreathProduct D ι) (m : ι → A) :
-    tensorAlgEquiv R A ι w (PiTensorProduct.tprod R m) =
-      PiTensorProduct.tprod R fun i ↦ w.left i • m (w.right.symm i) := by
-  simp [tensorAlgEquiv]
-
-/-- The underlying `R`-linear map of `tensorAlgEquiv` is `Representation.wreathTensor` of the
-`D`-action on `A`. -/
-@[simp]
-theorem tensorAlgEquiv_toLinearMap (w : WreathProduct D ι) :
-    (tensorAlgEquiv R A ι w).toLinearEquiv.toLinearMap =
+private theorem tensorAlgAutAux_toLinearMap (w : WreathProduct D ι) :
+    ((PiTensorProduct.reindexAlgEquiv (R := R) (fun _ : ι ↦ A) w.right).trans
+      (PiTensorProduct.congrAlgEquiv fun i ↦
+        MulSemiringAction.toAlgEquiv R A (w.left i))).toLinearMap =
       (Representation.ofDistribMulAction R D A).wreathTensor ι w := by
   ext m
-  simp [tensorAlgEquiv, Representation.wreathTensor_apply_tprod]
+  simp [Representation.wreathTensor_apply_tprod]
 
 variable (D) in
 /-- The group homomorphism from `WreathProduct D ι` to the `R`-algebra automorphism group of the
-indexed tensor power `⨂[R] _ : ι, A`. -/
+indexed tensor power `⨂[R] _ : ι, A`: an element `w` reindexes the factors by `w.right` and acts
+slotwise by `w.left`. -/
 noncomputable def tensorAlgAut :
     WreathProduct D ι →* ((⨂[R] _ : ι, A) ≃ₐ[R] ⨂[R] _ : ι, A) where
-  toFun := tensorAlgEquiv R A ι
-  map_one' := AlgEquiv.ext fun x ↦ by
-    induction x using PiTensorProduct.induction_on with
-    | smul_tprod r m => simp [Equiv.Perm.one_def]
-    | add x y hx hy => simp only [map_add, hx, hy]
-  map_mul' w₁ w₂ := AlgEquiv.ext fun x ↦ by
-    induction x using PiTensorProduct.induction_on with
-    | smul_tprod r m =>
-      simp only [AlgEquiv.mul_apply, map_smul, tensorAlgEquiv_tprod,
-        PermutationWreathProduct.mul_left, SemidirectProduct.mul_right, Equiv.Perm.mul_def,
-        Equiv.symm_trans_apply, Equiv.Perm.smul_def, Equiv.Perm.inv_def, mul_smul]
-    | add x y hx hy => simp only [map_add, hx, hy]
+  toFun w :=
+    (PiTensorProduct.reindexAlgEquiv (R := R) (fun _ : ι ↦ A) w.right).trans
+      (PiTensorProduct.congrAlgEquiv fun i ↦ MulSemiringAction.toAlgEquiv R A (w.left i))
+  map_one' := AlgEquiv.toLinearMap_injective <|
+    (tensorAlgAutAux_toLinearMap R A ι 1).trans
+      ((Representation.ofDistribMulAction R D A).wreathTensor ι).map_one
+  map_mul' w₁ w₂ := AlgEquiv.toLinearMap_injective <|
+    (tensorAlgAutAux_toLinearMap R A ι (w₁ * w₂)).trans <|
+      (((Representation.ofDistribMulAction R D A).wreathTensor ι).map_mul w₁ w₂).trans <| by
+        rw [← tensorAlgAutAux_toLinearMap, ← tensorAlgAutAux_toLinearMap]
+        rfl
 
-/-- Evaluating `tensorAlgAut` gives `tensorAlgEquiv`. -/
+/-- Evaluating `tensorAlgAut` at `w` reindexes the factors by `w.right` and acts slotwise by
+`w.left`. -/
 theorem tensorAlgAut_apply (w : WreathProduct D ι) :
-    tensorAlgAut R D A ι w = tensorAlgEquiv R A ι w := (rfl)
+    tensorAlgAut R D A ι w =
+      (PiTensorProduct.reindexAlgEquiv (R := R) (fun _ : ι ↦ A) w.right).trans
+        (PiTensorProduct.congrAlgEquiv fun i ↦
+          MulSemiringAction.toAlgEquiv R A (w.left i)) := (rfl)
 
 /-- The underlying `R`-linear map of `tensorAlgAut` at `w` is `Representation.wreathTensor`. -/
 @[simp]
 theorem tensorAlgAut_toLinearMap (w : WreathProduct D ι) :
     (tensorAlgAut R D A ι w).toLinearEquiv.toLinearMap =
       (Representation.ofDistribMulAction R D A).wreathTensor ι w :=
-  tensorAlgEquiv_toLinearMap R A ι w
+  tensorAlgAutAux_toLinearMap R A ι w
 
 /-- On a pure tensor, `tensorAlgAut` permutes coordinates by `w.right⁻¹` and acts slotwise by
 `w.left`. -/
 @[simp]
 theorem tensorAlgAut_apply_tprod (w : WreathProduct D ι) (m : ι → A) :
     tensorAlgAut R D A ι w (PiTensorProduct.tprod R m) =
-      PiTensorProduct.tprod R fun i ↦ w.left i • m (w.right.symm i) :=
-  tensorAlgEquiv_tprod R A ι w m
+      PiTensorProduct.tprod R fun i ↦ w.left i • m (w.right.symm i) := by
+  simp [tensorAlgAut_apply]
 
 /-- On pure tensors, the wreath-product algebra action agrees with the wreath-product action
 `WreathProduct.product_smul` on `ι → A`. -/
@@ -147,8 +133,8 @@ factor inclusion first. -/
 theorem tensorAlgAut_singleAlgHom [DecidableEq ι] (w : WreathProduct D ι) (i : ι) (a : A) :
     tensorAlgAut R D A ι w (PiTensorProduct.singleAlgHom i a) =
       PiTensorProduct.singleAlgHom (w.right i) (w.left (w.right i) • a) := by
-  rw [tensorAlgAut_apply, tensorAlgEquiv, AlgEquiv.trans_apply,
-    PiTensorProduct.reindexAlgEquiv_singleAlgHom, PiTensorProduct.congrAlgEquiv_singleAlgHom]
+  rw [tensorAlgAut_apply, AlgEquiv.trans_apply, PiTensorProduct.reindexAlgEquiv_singleAlgHom,
+    PiTensorProduct.congrAlgEquiv_singleAlgHom]
   rfl
 
 end AlgebraAction
@@ -229,6 +215,12 @@ It acts on `⨂[R] _ : G ⧸ U, A` by the base-group comparison element
 noncomputable def tensorInducedChangeTransversalAlgEquiv :
     (⨂[R] _ : G ⧸ U, A) ≃ₐ[R] ⨂[R] _ : G ⧸ U, A :=
   WreathProduct.tensorAlgAut R U A (G ⧸ U) (U.monomialChangeTransversal s t)
+
+/-- `tensorInducedChangeTransversalAlgEquiv` acts via `WreathProduct.tensorAlgAut` at
+`U.monomialChangeTransversal s t`. -/
+theorem tensorInducedChangeTransversalAlgEquiv_def :
+    U.tensorInducedChangeTransversalAlgEquiv s t R A =
+      WreathProduct.tensorAlgAut R U A (G ⧸ U) (U.monomialChangeTransversal s t) := (rfl)
 
 /-- The underlying linear equivalence of `tensorInducedChangeTransversalAlgEquiv` is
 `tensorInducedChangeTransversalLinearEquiv`. -/
@@ -395,8 +387,12 @@ instance : SMul R (U.TensorInduced s R A) := ⟨fun r x ↦ ofTensor (r • x.to
     (ofTensor (x + y) : U.TensorInduced s R A) = ofTensor x + ofTensor y := (rfl)
 @[simp] theorem toTensor_nsmul (n : ℕ) (x : U.TensorInduced s R A) :
     (n • x).toTensor = n • x.toTensor := (rfl)
-@[simp] theorem toTensor_smul_ring (r : R) (x : U.TensorInduced s R A) :
+@[simp] theorem ofTensor_nsmul (n : ℕ) (x : ⨂[R] _ : G ⧸ U, A) :
+    (ofTensor (n • x) : U.TensorInduced s R A) = n • ofTensor x := (rfl)
+@[simp] theorem toTensor_smul (r : R) (x : U.TensorInduced s R A) :
     (r • x).toTensor = r • x.toTensor := (rfl)
+@[simp] theorem ofTensor_smul (r : R) (x : ⨂[R] _ : G ⧸ U, A) :
+    (ofTensor (r • x) : U.TensorInduced s R A) = r • ofTensor x := (rfl)
 
 instance : AddCommMonoid (U.TensorInduced s R A) :=
   toTensor_injective.addCommMonoid toTensor rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
@@ -433,6 +429,22 @@ def tprod (m : G ⧸ U → A) : U.TensorInduced s R A :=
 theorem toTensor_tprod (m : G ⧸ U → A) :
     (tprod m : U.TensorInduced s R A).toTensor = PiTensorProduct.tprod R m := (rfl)
 
+/-- `ofTensor` of a pure tensor is `TensorInduced.tprod`. -/
+@[simp]
+theorem ofTensor_tprod (m : G ⧸ U → A) :
+    (ofTensor (PiTensorProduct.tprod R m) : U.TensorInduced s R A) = tprod m := (rfl)
+
+/-- Induct on `U.TensorInduced s R A` using scaled pure tensors `r • tprod m` and sums. -/
+@[elab_as_elim]
+protected theorem induction_on {motive : U.TensorInduced s R A → Prop} (z : U.TensorInduced s R A)
+    (smul_tprod : ∀ (r : R) (m : G ⧸ U → A), motive (r • tprod m))
+    (add : ∀ x y, motive x → motive y → motive (x + y)) :
+    motive z := by
+  rcases z with ⟨z⟩
+  induction z using PiTensorProduct.induction_on with
+  | smul_tprod r m => exact smul_tprod r m
+  | add x y hx hy => exact add (ofTensor x) (ofTensor y) hx hy
+
 end Module
 
 section AddCommGroup
@@ -453,6 +465,8 @@ instance : SMul ℤ (U.TensorInduced s R A) := ⟨fun n x ↦ ofTensor (n • x.
     (ofTensor (x - y) : U.TensorInduced s R A) = ofTensor x - ofTensor y := (rfl)
 @[simp] theorem toTensor_zsmul (n : ℤ) (x : U.TensorInduced s R A) :
     (n • x).toTensor = n • x.toTensor := (rfl)
+@[simp] theorem ofTensor_zsmul (n : ℤ) (x : ⨂[R] _ : G ⧸ U, A) :
+    (ofTensor (n • x) : U.TensorInduced s R A) = n • ofTensor x := (rfl)
 
 instance : AddCommGroup (U.TensorInduced s R A) :=
   toTensor_injective.addCommGroup toTensor rfl (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ _ ↦ rfl)
@@ -479,8 +493,12 @@ noncomputable instance : NatCast (U.TensorInduced s R A) := ⟨fun n ↦ ofTenso
     (ofTensor (x * y) : U.TensorInduced s R A) = ofTensor x * ofTensor y := (rfl)
 @[simp] theorem toTensor_pow (x : U.TensorInduced s R A) (n : ℕ) :
     (x ^ n).toTensor = x.toTensor ^ n := (rfl)
+@[simp] theorem ofTensor_pow (x : ⨂[R] _ : G ⧸ U, A) (n : ℕ) :
+    (ofTensor (x ^ n) : U.TensorInduced s R A) = ofTensor x ^ n := (rfl)
 @[simp] theorem toTensor_natCast (n : ℕ) :
     ((n : U.TensorInduced s R A)).toTensor = n := (rfl)
+@[simp] theorem ofTensor_natCast (n : ℕ) :
+    (ofTensor (n : ⨂[R] _ : G ⧸ U, A) : U.TensorInduced s R A) = n := (rfl)
 
 @[simp]
 theorem tprod_one : (tprod 1 : U.TensorInduced s R A) = 1 := (rfl)
@@ -504,6 +522,12 @@ theorem toTensor_algebraMap (r : R) :
     (algebraMap R (U.TensorInduced s R A) r).toTensor = algebraMap R (⨂[R] _ : G ⧸ U, A) r := by
   rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one]
   rfl
+
+@[simp]
+theorem ofTensor_algebraMap (r : R) :
+    (ofTensor (algebraMap R (⨂[R] _ : G ⧸ U, A) r) : U.TensorInduced s R A) =
+      algebraMap R (U.TensorInduced s R A) r :=
+  toTensor_injective (toTensor_algebraMap r).symm
 
 variable (U s R A) in
 /-- The tautological `R`-algebra equivalence between `U.TensorInduced s R A` and its underlying
@@ -541,6 +565,8 @@ noncomputable instance : IntCast (U.TensorInduced s R A) := ⟨fun n ↦ ofTenso
 
 @[simp] theorem toTensor_intCast (n : ℤ) :
     ((n : U.TensorInduced s R A)).toTensor = n := (rfl)
+@[simp] theorem ofTensor_intCast (n : ℤ) :
+    (ofTensor (n : ⨂[R] _ : G ⧸ U, A) : U.TensorInduced s R A) = n := (rfl)
 
 noncomputable instance : Ring (U.TensorInduced s R A) :=
   toTensor_injective.ring toTensor rfl rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ ↦ rfl)
@@ -582,7 +608,7 @@ noncomputable instance : SMul G (U.TensorInduced s R A) :=
 /-- `toTensor` intertwines the `G`-action on `U.TensorInduced s R A` with
 `U.tensorInducedAlgAut s R A`. -/
 @[simp]
-theorem toTensor_smul_group (g : G) (z : U.TensorInduced s R A) :
+theorem toTensor_smul_eq_tensorInducedAlgAut (g : G) (z : U.TensorInduced s R A) :
     (g • z).toTensor = U.tensorInducedAlgAut s R A g z.toTensor := (rfl)
 
 noncomputable instance : MulSemiringAction G (U.TensorInduced s R A) where
@@ -664,6 +690,14 @@ theorem repIsoTensorInductionFunctor_hom_hom_apply {R : Type u} {A : Type w}
     (z : U.TensorInduced s R A) :
     (repIsoTensorInductionFunctor U s R A).hom.hom z = z.toTensor := (rfl)
 
+variable (U s) in
+/-- The inverse morphism of `repIsoTensorInductionFunctor` wraps a tensor via `ofTensor`. -/
+@[simp]
+theorem repIsoTensorInductionFunctor_inv_hom_apply {R : Type u} {A : Type w}
+    [CommRing R] [Ring A] [Algebra R A] [MulSemiringAction U A] [SMulCommClass U R A]
+    (z : ⨂[R] _ : G ⧸ U, A) :
+    (repIsoTensorInductionFunctor U s R A).inv.hom z = ofTensor z := (rfl)
+
 variable (U R A) in
 /-- Changing the left transversal from `t` to `s` gives an `R`-algebra equivalence between
 `U.TensorInduced t R A` and `U.TensorInduced s R A`. -/
@@ -679,12 +713,54 @@ theorem toTensor_changeTransversalAlgEquiv (s t : U.LeftTransversal)
     (changeTransversalAlgEquiv U R A s t z).toTensor =
       U.tensorInducedChangeTransversalAlgEquiv s t R A z.toTensor := (rfl)
 
+/-- On `ofTensor z`, `changeTransversalAlgEquiv` wraps
+`U.tensorInducedChangeTransversalAlgEquiv`. -/
+@[simp]
+theorem changeTransversalAlgEquiv_ofTensor (s t : U.LeftTransversal) (z : ⨂[R] _ : G ⧸ U, A) :
+    changeTransversalAlgEquiv U R A s t (ofTensor z) =
+      ofTensor (U.tensorInducedChangeTransversalAlgEquiv s t R A z) := (rfl)
+
 /-- On a pure tensor, `changeTransversalAlgEquiv` acts slotwise by the transversal difference. -/
 @[simp]
 theorem changeTransversalAlgEquiv_tprod (s t : U.LeftTransversal) (m : G ⧸ U → A) :
     changeTransversalAlgEquiv U R A s t (tprod m) =
       tprod fun x ↦ (U.monomialChangeTransversal s t).left x • m x :=
   TensorInduced.ext (U.tensorInducedChangeTransversalAlgEquiv_tprod s t R A m)
+
+/-- `changeTransversalAlgEquiv` acts in place on `singleAlgHom x a` by the transversal difference
+at `x`. -/
+@[simp↓]
+theorem changeTransversalAlgEquiv_singleAlgHom [DecidableEq (G ⧸ U)] (s t : U.LeftTransversal)
+    (x : G ⧸ U) (a : A) :
+    changeTransversalAlgEquiv U R A s t (singleAlgHom x a) =
+      singleAlgHom x ((U.monomialChangeTransversal s t).left x • a) :=
+  TensorInduced.ext (U.tensorInducedChangeTransversalAlgEquiv_singleAlgHom s t R A x a)
+
+variable (U R A) in
+/-- Comparing a transversal with itself on `Subgroup.TensorInduced` gives `AlgEquiv.refl`. -/
+@[simp]
+theorem changeTransversalAlgEquiv_self (s : U.LeftTransversal) :
+    changeTransversalAlgEquiv U R A s s = AlgEquiv.refl :=
+  AlgEquiv.ext fun _ ↦ TensorInduced.ext <| by simp
+
+variable (U R A) in
+/-- `changeTransversalAlgEquiv` composes through an intermediate transversal. -/
+theorem changeTransversalAlgEquiv_trans (s t v : U.LeftTransversal) :
+    (changeTransversalAlgEquiv U R A t v).trans (changeTransversalAlgEquiv U R A s t) =
+      changeTransversalAlgEquiv U R A s v :=
+  AlgEquiv.ext fun z ↦ TensorInduced.ext <| by
+    simpa using AlgEquiv.congr_fun
+      (U.tensorInducedChangeTransversalAlgEquiv_trans s t R A v) z.toTensor
+
+variable (U R A) in
+/-- Reversing the two transversals gives the inverse of `changeTransversalAlgEquiv`. -/
+@[simp]
+theorem changeTransversalAlgEquiv_symm (s t : U.LeftTransversal) :
+    (changeTransversalAlgEquiv U R A s t).symm = changeTransversalAlgEquiv U R A t s :=
+  AlgEquiv.ext fun z ↦ (changeTransversalAlgEquiv U R A s t).injective <| by
+    rw [AlgEquiv.apply_symm_apply]
+    exact ((AlgEquiv.congr_fun (changeTransversalAlgEquiv_trans U R A s t s) z).trans
+      (by simp)).symm
 
 /-- `changeTransversalAlgEquiv` is `G`-equivariant. -/
 @[simp]
@@ -708,6 +784,24 @@ theorem changeTransversalMulSemiringActionHom_apply (s t : U.LeftTransversal)
     (z : U.TensorInduced t R A) :
     changeTransversalMulSemiringActionHom U R A s t z =
       changeTransversalAlgEquiv U R A s t z := (rfl)
+
+variable (U R A) in
+/-- Comparing a transversal with itself as a `MulSemiringActionHom` gives
+`MulSemiringActionHom.id G`. -/
+@[simp]
+theorem changeTransversalMulSemiringActionHom_self (s : U.LeftTransversal) :
+    changeTransversalMulSemiringActionHom U R A s s = MulSemiringActionHom.id G := by
+  ext z
+  simp
+
+variable (U R A) in
+/-- `changeTransversalMulSemiringActionHom` composes through an intermediate transversal. -/
+theorem changeTransversalMulSemiringActionHom_comp (s t v : U.LeftTransversal) :
+    (changeTransversalMulSemiringActionHom U R A s t).comp
+        (changeTransversalMulSemiringActionHom U R A t v) =
+      changeTransversalMulSemiringActionHom U R A s v :=
+  MulSemiringActionHom.ext fun z ↦
+    AlgEquiv.congr_fun (changeTransversalAlgEquiv_trans U R A s t v) z
 
 end Action
 

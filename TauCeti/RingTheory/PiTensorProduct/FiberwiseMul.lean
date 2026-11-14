@@ -44,8 +44,9 @@ together gives an algebra map from `⨂_{i : σ} B` to `B` itself. It is the ind
 * `PiTensorProduct.fiberwiseMul_tprod`, `PiTensorProduct.fiberwiseMul_singleAlgHom`: its values on
   pure tensors and on the factor inclusions.
 * `PiTensorProduct.fiberwiseMul_id`, `PiTensorProduct.fiberwiseMul_comp`: functoriality in `f`.
-* `PiTensorProduct.mulAlgHom_tprod`, `PiTensorProduct.mulAlgHom_singleAlgHom`: the values of
-  `PiTensorProduct.mulAlgHom` on pure tensors and on the factor inclusions.
+* `PiTensorProduct.mulAlgHom_tprod`, `PiTensorProduct.mulAlgHom_singleAlgHom`,
+  `PiTensorProduct.mulAlgHom_reindex`: the values of `PiTensorProduct.mulAlgHom` on pure tensors
+  and on the factor inclusions, and its invariance under reindexing.
 * `PiTensorProduct.tprod_eq_prod_singleAlgHom`: a pure tensor is the product of its factors.
 * `PiTensorProduct.fiberwiseMul_tprod_eq_tprod_prod`: for a constant family, the image of a pure
   tensor is the pure tensor of the products over the fibres.
@@ -180,6 +181,20 @@ since `singleAlgHom_apply` would otherwise rewrite the factor inclusion first. -
 theorem mulAlgHom_singleAlgHom [DecidableEq σ] (i : σ) (b : B) :
     mulAlgHom (R := R) (σ := σ) (singleAlgHom i b) = b := by
   rw [mulAlgHom, productMap_singleAlgHom, AlgHom.id_apply]
+
+/-- Multiplying the factors of a finite tensor power of a commutative algebra is invariant under
+reindexing the factors along a bijection. -/
+@[simp]
+theorem mulAlgHom_reindex {σ' : Type*} [Fintype σ'] (e : σ ≃ σ') (x : ⨂[R] _ : σ, B) :
+    mulAlgHom (R := R) (reindex R (fun _ ↦ B) e x) = mulAlgHom (R := R) x := by
+  have h : (mulAlgHom (R := R) (σ := σ') (B := B)).toLinearMap ∘ₗ
+      (reindex R (fun _ ↦ B) e).toLinearMap =
+      (mulAlgHom (R := R) (σ := σ) (B := B)).toLinearMap :=
+    ext <| MultilinearMap.ext fun b ↦ by
+      simp only [LinearMap.compMultilinearMap_apply, LinearMap.coe_comp, Function.comp_apply,
+        LinearEquiv.coe_coe, AlgHom.toLinearMap_apply, reindex_tprod, mulAlgHom_tprod]
+      exact e.symm.prod_comp b
+  exact LinearMap.congr_fun h x
 
 /-- For a constant family, `PiTensorProduct.fiberwiseMul f` sends a pure tensor to the pure tensor
 of the products of its factors over the fibres of `f`. In particular, an index `j` outside the

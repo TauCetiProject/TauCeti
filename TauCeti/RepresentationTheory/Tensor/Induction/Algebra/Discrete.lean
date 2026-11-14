@@ -223,6 +223,16 @@ theorem tensorInducedMulHom_apply_mul (a b : ⨂[R] _ : G ⧸ U, A) :
       (tensorInducedMulHom_apply U hU s R A a).symm
       (tensorInducedMulHom_apply U hU s R A b).symm))
 
+/-- On a `G`-fixed element `a : A`, `tensorInducedMulHom` sends the constant pure tensor
+`⨂ₜ _, a` to `a ^ U.index`. -/
+theorem tensorInducedMulHom_apply_tprod_const_of_smul_eq_self {a : A}
+    (ha : ∀ g : G, g • a = a) :
+    (tensorInducedMulHom U hU s R A).toLinearMap (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ a) =
+      a ^ U.index := by
+  let _ : Fintype (G ⧸ U) := U.fintypeQuotientOfFiniteIndex
+  exact (tensorInducedMulHom_apply U hU s R A _).trans
+    (U.tensorInducedMulAlgHom_tprod_const_of_smul_eq_self s R A ha)
+
 /-- Changing the left transversal commutes with `tensorInducedMulHom`. -/
 @[reassoc (attr := simp)]
 theorem tensorInducedChangeTransversalIso_hom_comp_mulHom (t : U.LeftTransversal) :
@@ -272,6 +282,33 @@ noncomputable def smoothTensorInducedAlgebraIso
         (DiscreteRep.tensorInduced U hU s ({ V := A } : DiscreteRep.{u, v, w} R U)) :=
   (toSmoothDiscrete R G).mapIso (DiscreteRep.tensorInducedAlgebraIso U hU s R A)
 
+/-- `smoothTensorInducedAlgebraIso` is `(toSmoothDiscrete R G).mapIso` of
+`DiscreteRep.tensorInducedAlgebraIso`. -/
+theorem smoothTensorInducedAlgebraIso_def
+    (A : Type w) [Ring A] [Algebra R A] [TopologicalSpace A] [DiscreteTopology A]
+    [MulSemiringAction U A] [SMulCommClass U R A] [ContinuousSMul U A] :
+    smoothTensorInducedAlgebraIso U hU s R A =
+      (toSmoothDiscrete R G).mapIso (DiscreteRep.tensorInducedAlgebraIso U hU s R A) := (rfl)
+
+/-- The forward morphism of `smoothTensorInducedAlgebraIso` unwraps `toTensor`. -/
+@[simp]
+theorem smoothTensorInducedAlgebraIso_hom_apply
+    (A : Type w) [Ring A] [Algebra R A] [TopologicalSpace A] [DiscreteTopology A]
+    [MulSemiringAction U A] [SMulCommClass U R A] [ContinuousSMul U A]
+    (z : U.TensorInduced s R A) :
+    (smoothTensorInducedAlgebraIso U hU s R A).hom.hom.hom z = z.toTensor :=
+  DiscreteRep.tensorInducedAlgebraIso_hom_apply U hU s R A z
+
+/-- The inverse morphism of `smoothTensorInducedAlgebraIso` wraps a tensor via `ofTensor`. -/
+@[simp]
+theorem smoothTensorInducedAlgebraIso_inv_apply
+    (A : Type w) [Ring A] [Algebra R A] [TopologicalSpace A] [DiscreteTopology A]
+    [MulSemiringAction U A] [SMulCommClass U R A] [ContinuousSMul U A]
+    (z : ⨂[R] _ : G ⧸ U, A) :
+    (smoothTensorInducedAlgebraIso U hU s R A).inv.hom.hom z =
+      Subgroup.TensorInduced.ofTensor z :=
+  DiscreteRep.tensorInducedAlgebraIso_inv_apply U hU s R A z
+
 variable (A : Type (max u v w)) [CommRing A] [Algebra R A]
   [TopologicalSpace A] [DiscreteTopology A]
   [MulSemiringAction G A] [SMulCommClass G R A] [ContinuousSMul G A]
@@ -289,6 +326,12 @@ noncomputable def smoothTensorInducedMulHom :
       (toSmoothDiscrete R G).obj ({ V := A } : DiscreteRep.{u, v, max u v w} R G) :=
   (toSmoothDiscrete R G).map (DiscreteRep.tensorInducedMulHom U hU s R A)
 
+/-- `smoothTensorInducedMulHom` is `(toSmoothDiscrete R G).map` of
+`DiscreteRep.tensorInducedMulHom`. -/
+theorem smoothTensorInducedMulHom_def :
+    smoothTensorInducedMulHom U hU s R A =
+      (toSmoothDiscrete R G).map (DiscreteRep.tensorInducedMulHom U hU s R A) := (rfl)
+
 /-- Pointwise evaluation of `smoothTensorInducedMulHom` agrees with
 `Subgroup.tensorInducedMulAlgHom`, which is an `R`-algebra homomorphism on the tensor power. -/
 theorem smoothTensorInducedMulHom_apply [Fintype (G ⧸ U)] (z : ⨂[R] _ : G ⧸ U, A) :
@@ -298,7 +341,6 @@ theorem smoothTensorInducedMulHom_apply [Fintype (G ⧸ U)] (z : ⨂[R] _ : G �
 
 /-- On a pure tensor, `smoothTensorInducedMulHom` applies each coset's transversal representative
 and multiplies the results in `A`. -/
-@[simp]
 theorem smoothTensorInducedMulHom_apply_tprod [Fintype (G ⧸ U)] (m : G ⧸ U → A) :
     (smoothTensorInducedMulHom U hU s R A).hom.hom (PiTensorProduct.tprod R m) =
       ∏ x : G ⧸ U, U.leftTransversalRep s x • m x :=
@@ -310,17 +352,21 @@ theorem smoothTensorInducedMulHom_apply_one :
     (smoothTensorInducedMulHom U hU s R A).hom.hom (1 : ⨂[R] _ : G ⧸ U, A) = (1 : A) :=
   DiscreteRep.tensorInducedMulHom_apply_one U hU s R A
 
+/-- `smoothTensorInducedMulHom` preserves tensor multiplication. -/
+theorem smoothTensorInducedMulHom_apply_mul (a b : ⨂[R] _ : G ⧸ U, A) :
+    ((smoothTensorInducedMulHom U hU s R A).hom.hom (a * b) : A) =
+      HMul.hMul (α := A) (β := A) (γ := A)
+        ((smoothTensorInducedMulHom U hU s R A).hom.hom a)
+        ((smoothTensorInducedMulHom U hU s R A).hom.hom b) :=
+  DiscreteRep.tensorInducedMulHom_apply_mul U hU s R A a b
+
 /-- On a `G`-fixed element `a : A`, `smoothTensorInducedMulHom` sends the constant pure tensor
 `⨂ₜ _, a` to `a ^ U.index`. -/
-theorem smoothTensorInducedMulHom_apply_tprod_const_of_smul_eq {a : A}
+theorem smoothTensorInducedMulHom_apply_tprod_const_of_smul_eq_self {a : A}
     (ha : ∀ g : G, g • a = a) :
     (smoothTensorInducedMulHom U hU s R A).hom.hom (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ a) =
-      a ^ U.index := by
-  let _ : Fintype (G ⧸ U) := U.fintypeQuotientOfFiniteIndex
-  rw [smoothTensorInducedMulHom_apply_tprod]
-  simp only [ha, Finset.prod_const, Finset.card_univ, Subgroup.index_eq_card,
-    Nat.card_eq_fintype_card]
-  rfl
+      a ^ U.index :=
+  DiscreteRep.tensorInducedMulHom_apply_tprod_const_of_smul_eq_self U hU s R A ha
 
 /-- Changing the left transversal commutes with `smoothTensorInducedMulHom`. -/
 @[reassoc (attr := simp)]
@@ -378,26 +424,12 @@ theorem smoothTensorInducedMulHom_apply_smoothTensorInduced_bil
         (congrArg (PiTensorProduct.map₂ (R := R) (s := fun _ : G ⧸ U ↦ A)
           (t := fun _ : G ⧸ U ↦ A) (t' := fun _ : G ⧸ U ↦ A)) (funext fun _ ↦ hbil)) a) b).trans
         (PiTensorProduct.map₂_mul_apply a b)
-  have hlhs : @Eq A
-      ((smoothTensorInducedMulHom U hU s R A).hom.hom
-        ((PU.smoothTensorInduced.{u, v, max u w} U hU s).bil a b))
-      (U.tensorInducedMulAlgHom s R A (a * b)) :=
+  exact Eq.trans (α := A)
     (congrArg (fun z : ⨂[R] _ : G ⧸ U, A ↦
-      ((smoothTensorInducedMulHom U hU s R A).hom.hom z : A)) hab).trans
-      (smoothTensorInducedMulHom_apply U hU s R A (a * b))
-  have hmain : @Eq A
-      ((smoothTensorInducedMulHom U hU s R A).hom.hom
-        ((PU.smoothTensorInduced.{u, v, max u w} U hU s).bil a b))
-      (PG.bil ((smoothTensorInducedMulHom U hU s R A).hom.hom a)
-        ((smoothTensorInducedMulHom U hU s R A).hom.hom b)) :=
-    hlhs.trans <|
-      (map_mul (U.tensorInducedMulAlgHom s R A) a b).trans <|
-        (congrArg₂ (HMul.hMul (α := A) (β := A) (γ := A))
-          (smoothTensorInducedMulHom_apply U hU s R A a).symm
-          (smoothTensorInducedMulHom_apply U hU s R A b).symm).trans
-          (hPG ((smoothTensorInducedMulHom U hU s R A).hom.hom a)
-            ((smoothTensorInducedMulHom U hU s R A).hom.hom b)).symm
-  exact hmain
+      ((smoothTensorInducedMulHom U hU s R A).hom.hom z : A)) hab)
+    (Eq.trans (α := A) (smoothTensorInducedMulHom_apply_mul U hU s R A a b)
+      (hPG ((smoothTensorInducedMulHom U hU s R A).hom.hom a)
+        ((smoothTensorInducedMulHom U hU s R A).hom.hom b)).symm)
 
 end Smooth
 
