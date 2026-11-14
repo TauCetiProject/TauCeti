@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Polynomial.Hermite.Basic
 
 import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import TauCeti.Analysis.SpecialFunctions.Hermite.FourierIntegral
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Probability.Distributions.Gaussian.Moments
 
 /-!
@@ -17,8 +18,9 @@ import TauCeti.Probability.Distributions.Gaussian.Moments
 
 The probabilists' Hermite polynomials, multiplied by the standard Gaussian, are uniformly
 bounded by the corresponding absolute Gaussian moment. Dividing by the factorial gives a
-bound with coefficient `2 ^ (-n / 2) / Gamma (n / 2 + 1)`, useful for absolute convergence
-of series involving Hermite polynomials.
+bound with coefficient `2 ^ (-n / 2) / Gamma (n / 2 + 1)`, and multiplying by a complex power `w^m`
+gives `‖He_m(y) w^m / m!‖ ≤ exp (y² / 2) * ((‖w‖ / √2)^m / Gamma (m / 2 + 1))`, useful for absolute
+convergence of series involving Hermite polynomials.
 -/
 
 public section
@@ -105,5 +107,38 @@ theorem abs_aeval_hermite_mul_exp_div_factorial_le (n : ℕ) (y : ℝ) :
   apply le_of_mul_le_mul_left _ (by positivity : 0 < Real.sqrt (2 * Real.pi))
   rw [← hmoment]
   exact fourier_moment_bound n y
+
+/-- Uniform Gaussian-weighted bound on complex powers multiplied by real-argument Hermite
+polynomials: for every `m : ℕ`, `y : ℝ`, and `w : ℂ`,
+`‖He_m(y) w^m / m!‖ ≤ exp(y² / 2) * ((‖w‖ / √2)^m / Γ(m / 2 + 1))`. -/
+theorem norm_aeval_hermite_mul_pow_div_factorial_le (m : ℕ) (y : ℝ) (w : ℂ) :
+    ‖Polynomial.aeval (y : ℂ) (Polynomial.hermite m) * w ^ m / (m ! : ℂ)‖ ≤
+      Real.exp (y ^ 2 / 2) * ((‖w‖ / √2) ^ m / Real.Gamma ((m : ℝ) / 2 + 1)) := by
+  have heval : Polynomial.aeval (y : ℂ) (Polynomial.hermite m) =
+      ((Polynomial.aeval y (Polynomial.hermite m) : ℝ) : ℂ) :=
+    Polynomial.aeval_algHom_apply (IsScalarTower.toAlgHom ℤ ℝ ℂ) y (Polynomial.hermite m)
+  have hnorm : ‖Polynomial.aeval (y : ℂ) (Polynomial.hermite m) * w ^ m / (m ! : ℂ)‖ =
+      |Polynomial.aeval y (Polynomial.hermite m)| * ‖w‖ ^ m / (m ! : ℝ) := by
+    rw [heval, norm_div, norm_mul, Complex.norm_real, Real.norm_eq_abs, norm_pow,
+      Complex.norm_natCast]
+  have hpow : (2 : ℝ) ^ (-(m : ℝ) / 2) * ‖w‖ ^ m = (‖w‖ / √2) ^ m := by
+    rw [← Real.inv_sqrt_pow_eq_rpow (zero_le_two : (0 : ℝ) ≤ 2) m, ← mul_pow, inv_mul_eq_div]
+  have hb := mul_le_mul_of_nonneg_left (abs_aeval_hermite_mul_exp_div_factorial_le m y)
+    (by positivity : 0 ≤ Real.exp (y ^ 2 / 2) * ‖w‖ ^ m)
+  have hexp : Real.exp (y ^ 2 / 2) * Real.exp (-(y ^ 2) / 2) = 1 := by
+    rw [← Real.exp_add, show y ^ 2 / 2 + -(y ^ 2) / 2 = 0 by ring, Real.exp_zero]
+  rw [hnorm]
+  calc |Polynomial.aeval y (Polynomial.hermite m)| * ‖w‖ ^ m / (m ! : ℝ)
+      = (Real.exp (y ^ 2 / 2) * Real.exp (-(y ^ 2) / 2)) *
+          (|Polynomial.aeval y (Polynomial.hermite m)| * ‖w‖ ^ m / (m ! : ℝ)) := by
+        rw [hexp, one_mul]
+    _ = Real.exp (y ^ 2 / 2) * ‖w‖ ^ m *
+          (|Polynomial.aeval y (Polynomial.hermite m)| * Real.exp (-(y ^ 2) / 2) /
+            (m ! : ℝ)) := by ring
+    _ ≤ Real.exp (y ^ 2 / 2) * ‖w‖ ^ m *
+          ((2 : ℝ) ^ (-(m : ℝ) / 2) / Real.Gamma ((m : ℝ) / 2 + 1)) := hb
+    _ = Real.exp (y ^ 2 / 2) *
+          (((2 : ℝ) ^ (-(m : ℝ) / 2) * ‖w‖ ^ m) / Real.Gamma ((m : ℝ) / 2 + 1)) := by ring
+    _ = Real.exp (y ^ 2 / 2) * ((‖w‖ / √2) ^ m / Real.Gamma ((m : ℝ) / 2 + 1)) := by rw [hpow]
 
 end TauCeti
