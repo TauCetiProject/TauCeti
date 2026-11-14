@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv
+public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv.Bound
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 
 /-!
@@ -14,7 +14,8 @@ public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 The archimedean factor of a Dirichlet character `χ` has the logarithmic derivative of `Γℝ` at
 `s + a`, where `a` is `0` for even and `1` for odd characters; off its poles this is
 `ψ((s + a)/2)/2 − ½ log π`. On each compact subset of the positive half-plane these logarithmic
-derivatives are bounded by one constant for all characters of all moduli.
+derivatives are bounded by one constant for all characters of all moduli, and on the real interval
+`[1, 2]` their norm is bounded explicitly by `TauCeti.gammaLogDerivBound`.
 
 On the positive half-plane, away from the zeros of `L(χ, ·)`, the logarithmic derivative of
 Mathlib's completed function `Λ(χ, s)` is the sum of those of the archimedean factor and of
@@ -86,6 +87,16 @@ theorem exists_norm_logDeriv_gammaFactor_le (K : Set ℂ) (hK : IsCompact K)
     exact hC s (.inl hs)
   · rw [ho.logDeriv_gammaFactor]
     exact hC (s + 1) (.inr ⟨s, hs, rfl⟩)
+
+/-- For `σ ∈ [1, 2]`, the logarithmic derivative of the archimedean factor of any Dirichlet
+character has norm at most `TauCeti.gammaLogDerivBound`. -/
+theorem norm_logDeriv_gammaFactor_ofReal_le {σ : ℝ} (hσ : σ ∈ Set.Icc 1 2) :
+    ‖logDeriv χ.gammaFactor σ‖ ≤ TauCeti.gammaLogDerivBound := by
+  rcases χ.even_or_odd with he | ho
+  · rw [he.logDeriv_gammaFactor]
+    exact norm_logDeriv_Gammaℝ_ofReal_le ⟨hσ.1, by linarith [hσ.2]⟩
+  · rw [ho.logDeriv_gammaFactor, show (σ : ℂ) + 1 = ((σ + 1 : ℝ) : ℂ) by push_cast; rfl]
+    exact norm_logDeriv_Gammaℝ_ofReal_le ⟨by linarith [hσ.1], by linarith [hσ.2]⟩
 
 variable [NeZero N]
 

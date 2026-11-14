@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CanonicalProduct.LogDeriv
 public import TauCeti.Analysis.Meromorphic.Divisor
+import TauCeti.Analysis.Complex.Basic
 
 /-!
 # The genus-one product of a native zero divisor
@@ -17,14 +18,14 @@ its index type and the divisor's natural values as multiplicities. For an entire
 zero, and has exactly the divisor of `f`.
 
 Its logarithmic derivative is the classical paired sum
-`∑' ρ, mρ * (1 / (z - ρ) + 1 / ρ)`. The series is absolutely convergent at every point
-off the divisor support and converges locally uniformly on its complement to the logarithmic
-derivative of the product. These series results assume only the weighted inverse-square
-summability of the zeros and that `0` is off the divisor support, rather than that `f` is entire
-with `f 0 ≠ 0`; for an entire `f` with `f 0 ≠ 0` the latter condition is
-`AnalyticAt.divisor_apply_eq_zero`. This constructs
-the product and logarithmic-derivative ingredients of Hadamard factorization; it does not
-assume an enumeration of the zeros or choose a representative for the divisor.
+`∑' ρ, mρ * (1 / (z - ρ) + 1 / ρ)`. Under total division, the paired series is absolutely
+convergent at every point `z : ℂ` from weighted inverse-square summability alone; when `0` is
+off the divisor support, it converges locally uniformly on the complement of the support to the
+logarithmic derivative of the product. For an entire `f` with `f 0 ≠ 0`, `0` lies off the support
+by `AnalyticAt.notMem_divisor_support`, and at any `s` to the right of all zeros of `f` the
+unsubtracted real-part `tsum` `∑' ρ, mρ * Re (1 / (s - ρ))` is nonnegative. This constructs
+the product and logarithmic-derivative ingredients of Hadamard factorization without assuming
+an enumeration of the zeros or choosing a representative for the divisor.
 
 ## References
 
@@ -105,11 +106,6 @@ variable {f : ℂ → ℂ} (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0)
   (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
     ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2))
 
-include hf hf0 in
-private theorem zero_notMem_divisor_support :
-    (0 : ℂ) ∉ (MeromorphicOn.divisor f Set.univ).support :=
-  Function.notMem_support.mpr ((hf.analyticAt 0).divisor_apply_eq_zero hf0)
-
 include hsum in
 /-- Weighted inverse-square summability makes the native divisor product entire. -/
 @[fun_prop]
@@ -151,8 +147,8 @@ theorem divisorProductOne_eq_zero_iff (z : ℂ) : divisorProductOne f z = 0 ↔ 
   constructor
   · intro hz
     by_contra hn
-    exact divisorProductOne_ne_zero hsum (zero_notMem_divisor_support hf hf0)
-      (Function.notMem_support.mpr ((hf.analyticAt z).divisor_apply_eq_zero hn)) hz
+    exact divisorProductOne_ne_zero hsum ((hf.analyticAt 0).notMem_divisor_support hf0)
+      ((hf.analyticAt z).notMem_divisor_support hn) hz
   · rw [divisorProductOne_def, tprod_weierstrassFactorOne_pow_eq_zero_iff _ _ hsum]
     intro hz
     have hz0 : z ≠ 0 := by rintro rfl; exact hf0 hz
@@ -177,8 +173,7 @@ include hf hf0 hsum in
 /-- For an entire function nonzero at zero, the product has exactly its native divisor. -/
 theorem divisor_divisorProductOne :
     MeromorphicOn.divisor (divisorProductOne f) Set.univ = MeromorphicOn.divisor f Set.univ := by
-  have h0 := zero_notMem_divisor_support hf hf0
-  have hfa : AnalyticOnNhd ℂ f Set.univ := fun z _ ↦ hf.analyticAt z
+  have h0 := (hf.analyticAt 0).notMem_divisor_support (U := Set.univ) hf0
   have hpa : AnalyticOnNhd ℂ (divisorProductOne f) Set.univ :=
     fun z _ ↦ (differentiable_divisorProductOne hsum).analyticAt z
   ext z
@@ -196,8 +191,8 @@ theorem divisor_divisorProductOne :
       hinj (inv_mul_cancel₀ (coe_ne_zero_of_mem_divisor_support h0 ρ))
     rw [← divisorProductOne_eq] at ho
     rw [ho]
-    simpa only [ENat.map_natCast, WithTop.untop₀_coe] using
-      Int.toNat_of_nonneg (MeromorphicOn.AnalyticOnNhd.divisor_nonneg hfa z)
+    simpa only [ENat.map_natCast, WithTop.untop₀_coe, Int.cast_id] using
+      (hf.analyticAt z).natCast_toNat_divisor (R := ℤ)
   · have hdz : MeromorphicOn.divisor f Set.univ z = 0 := by
       simpa only [Function.mem_support, not_not] using hz
     rw [(hpa z trivial).analyticOrderAt_eq_zero.mpr (divisorProductOne_ne_zero hsum h0 hz), hdz]
@@ -207,21 +202,31 @@ end TauCeti
 
 namespace TauCeti
 
-variable {f : ℂ → ℂ} (h0 : (0 : ℂ) ∉ (MeromorphicOn.divisor f Set.univ).support)
-  (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
-    ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2))
-
-include h0 hsum
-
-/-- The classical paired divisor series is absolutely convergent off the divisor support. -/
-theorem summable_norm_natCast_divisor_mul_one_div_sub_add_one_div {z : ℂ}
-    (hz : z ∉ (MeromorphicOn.divisor f Set.univ).support) :
+/-- The classical paired divisor series is absolutely convergent at every point, using total
+division at `ρ = 0` and `ρ = z`. -/
+theorem summable_norm_natCast_divisor_mul_one_div_sub_add_one_div {f : ℂ → ℂ}
+    (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2)) (z : ℂ) :
     Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
       ‖((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (z - ρ) + 1 / ρ)‖) := by
   have hs := summable_norm_natCast_mul_logDerivWeierstrassFactorOneMul
     (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦ (ρ : ℂ)⁻¹)
     (fun ρ ↦ (MeromorphicOn.divisor f Set.univ ρ).toNat) hsum z
-  exact hs.congr fun ρ ↦ by rw [logDerivWeierstrassFactorOneMul_inv_eq h0 hz]
+  refine hs.congr_cofinite ?_
+  rw [Filter.EventuallyEq, Filter.eventually_cofinite]
+  refine (((Set.finite_singleton (0 : ℂ)).union (Set.finite_singleton z)).preimage
+    Subtype.coe_injective.injOn).subset fun ρ hρ ↦ ?_
+  by_contra hnot
+  simp only [Set.mem_preimage, Set.mem_union, Set.mem_singleton_iff, not_or] at hnot
+  exact hρ (by rw [logDerivWeierstrassFactorOneMul_inv hnot.1 (Ne.symm hnot.2)])
+
+section
+
+variable {f : ℂ → ℂ} (h0 : (0 : ℂ) ∉ (MeromorphicOn.divisor f Set.univ).support)
+  (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+    ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2))
+
+include h0 hsum
 
 /-- The logarithmic derivative of the native divisor product is its paired divisor series. -/
 theorem logDeriv_divisorProductOne {z : ℂ}
@@ -261,5 +266,18 @@ theorem hasSumLocallyUniformlyOn_logDeriv_divisorProductOne :
     rw [logDerivWeierstrassFactorOneMul_inv_eq h0 (hKS hz)]
   exact hpair.congr_right fun z hz ↦
     (hpair.tsum_eqOn hz).symm.trans (logDeriv_divisorProductOne h0 hsum (hKS hz)).symm
+
+end
+
+/-- For an entire function `f` and a point `s : ℂ` whose real part is at least the real part of
+every zero of `f`, the `tsum` `∑' ρ, m_ρ * Re (1 / (s - ρ))` over the divisor support is
+nonnegative. -/
+theorem tsum_divisor_toNat_mul_re_one_div_sub_nonneg {f : ℂ → ℂ}
+    (hf : Differentiable ℂ f) {s : ℂ} (hle : ∀ ρ : ℂ, f ρ = 0 → ρ.re ≤ s.re) :
+    0 ≤ ∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re := by
+  refine tsum_nonneg fun ρ ↦ mul_nonneg (Nat.cast_nonneg _) ?_
+  rw [one_div, Complex.inv_re_nonneg, sub_re, sub_nonneg]
+  exact hle ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero ρ.property)
 
 end TauCeti
