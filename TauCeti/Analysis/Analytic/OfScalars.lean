@@ -16,11 +16,12 @@ This file computes the formal composition of two scalar series in an arbitrary a
 algebra need not be commutative: variables retain their original order inside every composition
 block. It also evaluates the change-of-origin series of a scalar series on constant vectors, and
 uses this to express the iterated derivatives of a scalar power series over a complete nontrivially
-normed field, at any point of its ball of convergence, as the termwise differentiated series; at
-zero they recover the coefficients. It also computes the scalar series of `z ↦ f (z ^ m)` on a
-ball of radius at most `1` from that of `f`, in any normed algebra with `‖1‖ = 1`. Over a densely
-normed field, a scalar series whose sum has no zero in a disk about the origin converges on that
-disk, because the sum is `0` wherever the series diverges.
+normed field, at any point of its ball of convergence, as the absolutely summable termwise
+differentiated series; at zero they recover the coefficients. It also computes the scalar series of
+`z ↦ f (z ^ m)` on a ball of radius at most `1` from that of `f`, in any normed algebra with
+`‖1‖ = 1`. Over a densely normed field, summability on a punctured disk about the origin bounds the
+convergence radius below; in particular, a scalar series whose sum has no zero in a disk about the
+origin converges on that disk, because the sum is `0` wherever the series diverges.
 
 In any normed `𝕜`-algebra `A` with summable geometric series (not necessarily commutative), the
 higher geometric series `∑ₙ C(n + k, k) xⁿ` has convergence radius at least `1`
@@ -125,6 +126,63 @@ theorem _root_.HasFPowerSeriesOnBall.iteratedDeriv_eq_tsum_descFactorial_mul_pow
     rw [Nat.choose_symm_add]
     ring
 
+/-- Inside its ball of convergence, the rescaled termwise differentiated series
+`∑ k, k.descFactorial n * c k * y ^ k` is absolutely summable. -/
+theorem _root_.HasFPowerSeriesOnBall.summable_norm_descFactorial_mul_pow
+    {𝕂 : Type*} [NontriviallyNormedField 𝕂]
+    {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) {y : 𝕂} (hy : ‖y‖ₑ < r) (n : ℕ) :
+    Summable fun k : ℕ ↦ ‖(k.descFactorial n : 𝕂) * c k * y ^ k‖ := by
+  obtain ⟨ρ, hyρ, hρr⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hy
+  have hρ_pos : 0 < (ρ : ℝ) := by exact_mod_cast (zero_le : 0 ≤ ‖y‖ₑ).trans_lt hyρ
+  obtain ⟨C, _, hC⟩ := (ofScalars 𝕂 c).norm_mul_pow_le_of_lt_radius (hρr.trans_le hf.r_le)
+  have hy_lt : ‖y‖ < (ρ : ℝ) := by exact_mod_cast (eNorm_lt_coe.mp hyρ)
+  set q : ℝ := ‖y‖ / ρ
+  have hq0 : 0 ≤ q := div_nonneg (norm_nonneg y) hρ_pos.le
+  have hq1 : ‖q‖ < 1 := by
+    rw [Real.norm_of_nonneg hq0, div_lt_one hρ_pos]
+    exact hy_lt
+  refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun k ↦ ?_)
+    ((summable_pow_mul_geometric_of_norm_lt_one n hq1).mul_left C)
+  have hk_desc : ‖(k.descFactorial n : 𝕂)‖ ≤ (k : ℝ) ^ n := by
+    calc ‖(k.descFactorial n : 𝕂)‖
+        ≤ (k.descFactorial n : ℝ) := by simpa using Nat.norm_cast_le (α := 𝕂) _
+      _ ≤ (k : ℝ) ^ n := by exact_mod_cast k.descFactorial_le_pow n
+  have hk_c : ‖c k * y ^ k‖ ≤ C * q ^ k := by
+    have hCk := hC k
+    rw [ofScalars_norm] at hCk
+    have hpow : ‖y‖ ^ k = (ρ : ℝ) ^ k * q ^ k := by
+      rw [← mul_pow, mul_div_cancel₀ _ hρ_pos.ne']
+    rw [norm_mul, norm_pow, hpow, ← mul_assoc]
+    exact mul_le_mul_of_nonneg_right hCk (pow_nonneg hq0 k)
+  calc ‖(k.descFactorial n : 𝕂) * c k * y ^ k‖
+      = ‖(k.descFactorial n : 𝕂)‖ * ‖c k * y ^ k‖ := by rw [mul_assoc, norm_mul]
+    _ ≤ (k : ℝ) ^ n * (C * q ^ k) :=
+        mul_le_mul hk_desc hk_c (norm_nonneg _) (by positivity)
+    _ = C * ((k : ℝ) ^ n * q ^ k) := by ring
+
+/-- Inside its ball of convergence, `y ^ n * iteratedDeriv n f y` is the sum of the rescaled
+termwise differentiated series `∑ k, k.descFactorial n * c k * y ^ k`. -/
+theorem _root_.HasFPowerSeriesOnBall.hasSum_descFactorial_mul_pow
+    {𝕂 : Type*} [NontriviallyNormedField 𝕂] [CompleteSpace 𝕂]
+    {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) {y : 𝕂} (hy : ‖y‖ₑ < r) (n : ℕ) :
+    HasSum (fun k : ℕ ↦ (k.descFactorial n : 𝕂) * c k * y ^ k)
+      (y ^ n * iteratedDeriv n f y) := by
+  have hval : y ^ n * iteratedDeriv n f y =
+      ∑' k : ℕ, (k.descFactorial n : 𝕂) * c k * y ^ k := by
+    rw [hf.iteratedDeriv_eq_tsum_descFactorial_mul_pow hy n, ← tsum_mul_left]
+    refine tsum_congr fun k ↦ ?_
+    rcases lt_or_ge k n with hkn | hnk
+    · simp [Nat.descFactorial_eq_zero_iff_lt.mpr hkn]
+    · have hpow : y ^ n * y ^ (k - n) = y ^ k := by
+        rw [← pow_add, Nat.add_sub_of_le hnk]
+      calc y ^ n * ((k.descFactorial n : 𝕂) * c k * y ^ (k - n))
+          = (k.descFactorial n : 𝕂) * c k * (y ^ n * y ^ (k - n)) := by ring
+        _ = (k.descFactorial n : 𝕂) * c k * y ^ k := by rw [hpow]
+  rw [hval]
+  exact (hf.summable_norm_descFactorial_mul_pow hy n).of_norm.hasSum
+
 /-- The iterated derivatives at zero of the sum of a scalar formal multilinear series over a
 complete nontrivially normed field recover its coefficients, up to the factorial normalization. -/
 theorem iteratedDeriv_ofScalarsSum_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
@@ -178,22 +236,43 @@ theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 A : Type*} [Nontri
       · exact zero_smul _ _
     · simp [Nat.mul_div_cancel_left _ hm, ← pow_mul]
 
+/-- Over a densely normed field, if `∑ a n * z ^ n` is summable at every nonzero point of the open
+disk `‖z‖ₑ < r`, then `ofScalars 𝕜 a` has convergence radius at least `r`. -/
+theorem le_radius_ofScalars_of_summable {𝕜 : Type*} [DenselyNormedField 𝕜]
+    (a : ℕ → 𝕜) {r : ℝ≥0∞}
+    (hsum : ∀ z : 𝕜, z ≠ 0 → ‖z‖ₑ < r → Summable fun n : ℕ ↦ a n * z ^ n) :
+    r ≤ (ofScalars 𝕜 a).radius := by
+  refine ENNReal.le_of_forall_pos_nnreal_lt fun t ht0 ht ↦ ?_
+  obtain ⟨u, htu, hur⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp ht
+  obtain ⟨z, htz, hzu⟩ := NormedField.exists_lt_nnNorm_lt 𝕜 (ENNReal.coe_lt_coe.mp htu)
+  have hz0 : z ≠ 0 :=
+    norm_pos_iff.mp ((NNReal.coe_pos.mpr ht0).trans (NNReal.coe_lt_coe.mpr htz))
+  have hz : ‖z‖ₑ < r := (eNorm_lt_coe.mpr hzu).trans hur
+  refine (ENNReal.coe_le_coe.mpr htz.le).trans (le_radius_of_tendsto _ (l := 0) ?_)
+  simpa [ofScalars_norm] using (hsum z hz0 hz).tendsto_atTop_zero.norm
+
+/-- Over a complete densely normed field, if `∑ a n * z ^ n` is summable at every nonzero point of
+the open disk `‖z‖ₑ < r` (`0 < r`), then `fun z ↦ ∑' n, a n * z ^ n` has formal power series
+`ofScalars 𝕜 a` on `eball 0 r`. -/
+theorem hasFPowerSeriesOnBall_tsum_of_summable {𝕜 : Type*} [DenselyNormedField 𝕜]
+    [CompleteSpace 𝕜] (a : ℕ → 𝕜) {r : ℝ≥0∞} (hr : 0 < r)
+    (hsum : ∀ z : 𝕜, z ≠ 0 → ‖z‖ₑ < r → Summable fun n : ℕ ↦ a n * z ^ n) :
+    HasFPowerSeriesOnBall (fun z : 𝕜 ↦ ∑' n : ℕ, a n * z ^ n) (ofScalars 𝕜 a) 0 r := by
+  have hrad := le_radius_ofScalars_of_summable a hsum
+  have hsum_eq : (ofScalars 𝕜 a).sum = fun z : 𝕜 ↦ ∑' n : ℕ, a n * z ^ n := by
+    simpa only [ofScalarsSum, smul_eq_mul] using ofScalarsSum_eq_tsum (E := 𝕜) a
+  exact hsum_eq ▸ ((ofScalars 𝕜 a).hasFPowerSeriesOnBall (hr.trans_le hrad)).mono hr hrad
+
 /-- **Zero-freeness of the analytic sum forces the disk into the disk of convergence.** Over a
 densely normed field, if the sum of a scalar series, which is `0` where the series does not
 converge, has no zero in a disk about the origin, then that disk lies in the disk of convergence. -/
 theorem le_radius_ofScalars_of_ofScalarsSum_ne_zero {𝕜 : Type*} [DenselyNormedField 𝕜]
     (a : ℕ → 𝕜) {r : ℝ≥0∞} (hne : ∀ z : 𝕜, ‖z‖ₑ < r → ofScalarsSum (E := 𝕜) a z ≠ 0) :
-    r ≤ (ofScalars 𝕜 a).radius := by
-  refine ENNReal.le_of_forall_nnreal_lt fun t ht ↦ ?_
-  obtain ⟨u, htu, hur⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp ht
-  obtain ⟨z, htz, hzu⟩ := NormedField.exists_lt_nnNorm_lt 𝕜 (ENNReal.coe_lt_coe.mp htu)
-  have hz : ‖z‖ₑ < r := (eNorm_lt_coe.mpr hzu).trans hur
-  have hsum : Summable fun n : ℕ ↦ a n * z ^ n := by
+    r ≤ (ofScalars 𝕜 a).radius :=
+  le_radius_ofScalars_of_summable a fun z _ hz ↦ by
     by_contra h
     refine hne z hz ?_
     simpa only [ofScalarsSum_eq_tsum, smul_eq_mul] using tsum_eq_zero_of_not_summable h
-  refine (ENNReal.coe_le_coe.mpr htz.le).trans (le_radius_of_tendsto _ (l := 0) ?_)
-  simpa [ofScalars_norm] using hsum.tendsto_atTop_zero.norm
 
 end FormalMultilinearSeries
 
