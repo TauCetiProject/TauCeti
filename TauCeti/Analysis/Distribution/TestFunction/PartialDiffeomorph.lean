@@ -9,8 +9,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 public import TauCeti.Analysis.Distribution.TestFunction.Pullback
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
-import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 /-!
 # Pushforward of test densities along partial diffeomorphisms
@@ -93,7 +92,7 @@ private def compSymmCLM (Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E �
   postcompCLM ((constOfIsEmptyLIE ℝ E G (Fin 0)).symm.toContinuousLinearEquiv :
       (E [⋀^Fin 0]→L[ℝ] G) →L[ℝ] G) ∘L
     pullbackCLM (k := 0) Φ.symm
-      ((contMDiffOn_iff_contDiffOn.1 Φ.symm.contMDiffOn).mono inter_subset_right)
+      (Φ.symm.contDiffOn.mono inter_subset_right)
       (fun K hK hKV ↦ by
         rw [targetOpens_inter_preimage_symm hV hVΩ hKV]
         exact hK.image_of_continuousOn (Φ.contMDiffOn.continuousOn.mono (hKV.trans hV))) ∘L
@@ -268,7 +267,7 @@ smooth on `Ω`: `Φ_* ((g ∘ Φ) φ) = g Φ_* φ`. -/
 theorem pushforwardTestFunction_smulLeftCLMOfContDiffOn {g : E → ℝ} (hg : ContDiffOn ℝ ∞ g Ω)
     (φ : 𝓓(V, G)) :
     Φ.pushforwardTestFunction hV hVΩ (smulLeftCLMOfContDiffOn
-        (hg.comp ((contMDiffOn_iff_contDiffOn.1 Φ.contMDiffOn).mono hV) hVΩ) φ) =
+        (hg.comp (Φ.contDiffOn.mono hV) hVΩ) φ) =
       smulLeftCLMOfContDiffOn hg (Φ.pushforwardTestFunction hV hVΩ φ) := by
   ext y
   by_cases hy : y ∈ Φ.target

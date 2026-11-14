@@ -51,6 +51,8 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
   chain rule `D(ψ ∘ φ⁻¹) = D(ψ ∘ χ⁻¹) ∘ D(χ ∘ φ⁻¹)`.
+* `PartialDiffeomorph.contDiffOn`: a `C^n` partial diffeomorphism between normed spaces is `C^n`
+  on its source.
 * `PartialDiffeomorph.det_fderiv_symm_mul_det_fderiv`,
   `PartialDiffeomorph.det_fderiv_mul_det_fderiv_symm`: for a partial diffeomorphism of a normed
   space, the Jacobian determinants of it and of its inverse at corresponding points are reciprocal.
@@ -179,6 +181,10 @@ section NormedSpace
 
 variable (Φ : PartialDiffeomorph 𝓘(𝕜, E) 𝓘(𝕜, F) E F n)
 
+/-- A `C^n` partial diffeomorphism between normed spaces is `C^n` on its source. -/
+theorem contDiffOn : ContDiffOn 𝕜 n Φ Φ.source :=
+  contMDiffOn_iff_contDiffOn.1 Φ.contMDiffOn
+
 /-- A partial diffeomorphism between normed spaces is differentiable at every point of its
 source. -/
 theorem differentiableAt (hn : n ≠ 0) {x : E} (hx : x ∈ Φ.source) : DifferentiableAt 𝕜 Φ x :=
@@ -225,7 +231,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {m : ℕ∞}
 theorem contDiffOn_abs_det_fderiv (Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E n)
     (hmn : m + 1 ≤ n) : ContDiffOn ℝ m (fun x ↦ |(fderiv ℝ Φ x).det|) Φ.source := by
   have hn : n ≠ 0 := by rintro rfl; simp at hmn
-  have hD := (contMDiffOn_iff_contDiffOn.1 Φ.contMDiffOn).fderiv_of_isOpen Φ.open_source hmn
+  have hD := Φ.contDiffOn.fderiv_of_isOpen Φ.open_source hmn
   intro x hx
   exact (contDiffAt_abs (Φ.det_fderiv_ne_zero hn hx)).comp_contDiffWithinAt x
     ((ContinuousLinearMap.contDiff_det.comp_contDiffOn hD) x hx)

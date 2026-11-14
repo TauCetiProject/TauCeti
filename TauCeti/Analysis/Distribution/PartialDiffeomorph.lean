@@ -8,8 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.LinearEquiv
 public import TauCeti.Analysis.Distribution.Restriction
 public import TauCeti.Analysis.Distribution.TestFunction.PartialDiffeomorph
-import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.MeasureTheory.Function.Jacobian
 
 /-!
@@ -179,7 +177,7 @@ theorem compCLMOfPartialDiffeomorph_ofFun [MeasurableSpace E] [BorelSpace E] {F 
   ext φ
   rw [compCLMOfPartialDiffeomorph_apply, ofFun_apply hf,
     ofFun_apply (hf.comp_contDiffOn_diffeo V.isOpen
-      (((contMDiffOn_iff_contDiffOn.1 Φ.contMDiffOn).of_le (by simp)).mono hV)
+      ((Φ.contDiffOn.of_le (by simp)).mono hV)
       (Φ.toPartialEquiv.injOn.mono hV)
       (fun x hx ↦ right_ne_zero_of_mul_eq_one (Φ.det_fderiv_symm_mul_det_fderiv (by simp) (hV hx)))
       hVΩ)]

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
 # Smooth multiplication of test forms and the Leibniz rule for currents
@@ -123,20 +124,13 @@ tests supported in a compact `K ⊆ Ω` it is multiplication by a globally smoot
 with `g` near `K`. -/
 noncomputable def smulLeftCLMOfContDiffOn (hg : ContDiffOn ℝ n g Ω) :
     𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F) :=
-  TestFunction.limitCLM ℝ
-    (fun φ ↦ ⟨fun x ↦ g x • φ x,
-      -- `g φ` is smooth on `Ω` and vanishes on the open complement of `tsupport φ`.
-      contDiff_of_contDiffOn_union_of_isOpen (hg.smul φ.contDiff.contDiffOn)
-        ((contDiffOn_const (c := (0 : F))).congr fun x hx ↦ by
-          simp [image_eq_zero_of_notMem_tsupport hx])
-        (eq_univ_of_forall fun x ↦ (em (x ∈ tsupport φ)).imp (φ.tsupport_subset ·) id)
-        Ω.isOpen (isClosed_tsupport _).isOpen_compl,
-      φ.hasCompactSupport.smul_left, (tsupport_smul_subset_right _ _).trans φ.tsupport_subset⟩)
+  TestFunction.limitCLM ℝ (fun φ ↦ (exists_coe_eq_smul_of_contDiffOn hg φ).choose)
     (fun K hK ↦ smulLeftCLM (hg.exists_contDiff_eventuallyEq_on_isCompact K.isCompact Ω.isOpen
       hK).choose_spec.1 ∘L ofSupportedInCLM ℝ hK)
     (fun K hK φ ↦ by
       ext x
-      rw [ContinuousLinearMap.comp_apply, smulLeftCLM_apply]
+      rw [ContinuousLinearMap.comp_apply, smulLeftCLM_apply,
+        (exists_coe_eq_smul_of_contDiffOn hg _).choose_spec]
       by_cases hx : x ∈ (K : Set E)
       · rw [((hg.exists_contDiff_eventuallyEq_on_isCompact K.isCompact Ω.isOpen
           hK).choose_spec.2.2.2.2 x hx).eq_of_nhds]
@@ -146,8 +140,7 @@ noncomputable def smulLeftCLMOfContDiffOn (hg : ContDiffOn ℝ n g Ω) :
 @[simp]
 theorem smulLeftCLMOfContDiffOn_apply (hg : ContDiffOn ℝ n g Ω) (φ : 𝓓^{n}(Ω, F)) (x : E) :
     smulLeftCLMOfContDiffOn hg φ x = g x • φ x := by
-  rw [smulLeftCLMOfContDiffOn, limitCLM_apply]
-  rfl
+  rw [smulLeftCLMOfContDiffOn, limitCLM_apply, (exists_coe_eq_smul_of_contDiffOn hg φ).choose_spec]
 
 /-- A multiple of a test function by a function smooth on `Ω`, as a function, is the pointwise
 product. -/
