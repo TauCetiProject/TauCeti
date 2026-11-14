@@ -8,13 +8,11 @@ module
 public import Mathlib.Analysis.MellinInversion
 public import TauCeti.Analysis.Contour.Residue.Basic
 public import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Basic
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 import TauCeti.Analysis.MellinInversion
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Residue
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
-import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Bounds
 import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Residue
@@ -356,12 +354,7 @@ theorem exp_neg_le_tsum_zetaMulPairCoeffs_div_cpow_mul_exp {χ : DirichletCharac
       ∑' n : ℕ, χ.zetaMulPairCoeffs ψ n / (n : ℂ) ^ (β : ℂ) * Real.exp (-n * x) := by
   have hu_nonneg (n : ℕ) :
       0 ≤ χ.zetaMulPairCoeffs ψ n / (n : ℂ) ^ (β : ℂ) * Real.exp (-n * x) := by
-    have hterm : χ.zetaMulPairCoeffs ψ n / (n : ℂ) ^ (β : ℂ) =
-        LSeries.term (χ.zetaMulPairCoeffs ψ) β n := by
-      rcases eq_or_ne n 0 with rfl | hn
-      · simp
-      · simp [hn]
-    rw [hterm]
+    rw [div_eq_mul_inv, ← cpow_neg, ← LSeries.term_def₀ ArithmeticFunction.map_zero β n]
     exact mul_nonneg (LSeries.term_nonneg (zetaMulPairCoeffs_nonneg hχ hψ n) β)
       (zero_le_real.mpr (Real.exp_pos _).le)
   simpa using hsum.le_tsum 1 fun n _ ↦ hu_nonneg n

@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Basic
 public import TauCeti.Analysis.Contour.Residue.Basic
+import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
 
 /-!
 # Regularity and poles of the four-factor Dirichlet L-function product
@@ -97,19 +98,15 @@ private theorem analyticAt_pair_double_regularization (hχ : χ ≠ 1) (hψ : ψ
 positive levels is analytic at every `s ≠ 1`. -/
 theorem analyticAt_pair {s : ℂ} (hs : s ≠ 1) :
     AnalyticAt ℂ
-      (fun z ↦ riemannZeta z * χ.LFunction z * ψ.LFunction z * (χ.mul ψ).LFunction z) s := by
-  have hζ : AnalyticAt ℂ riemannZeta s := by
-    simpa using (1 : DirichletCharacter ℂ 1).analyticAt_LFunction (.inl hs)
-  exact ((hζ.mul (χ.analyticAt_LFunction (.inl hs))).mul
+      (fun z ↦ riemannZeta z * χ.LFunction z * ψ.LFunction z * (χ.mul ψ).LFunction z) s :=
+  (((analyticOn_riemannZeta s hs).mul (χ.analyticAt_LFunction (.inl hs))).mul
     (ψ.analyticAt_LFunction (.inl hs))).mul ((χ.mul ψ).analyticAt_LFunction (.inl hs))
 
 /-- The four-factor product `ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)` of arbitrary characters of
 positive levels is meromorphic on `ℂ`. -/
 theorem meromorphic_pair :
-    Meromorphic fun s ↦ riemannZeta s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s := by
-  have hζ : Meromorphic riemannZeta := by
-    simpa using (1 : DirichletCharacter ℂ 1).meromorphic_LFunction
-  exact fun s ↦ (((hζ s).mul (χ.meromorphic_LFunction s)).mul
+    Meromorphic fun s ↦ riemannZeta s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s :=
+  fun s ↦ (((TauCeti.meromorphic_riemannZeta s).mul (χ.meromorphic_LFunction s)).mul
     (ψ.meromorphic_LFunction s)).mul ((χ.mul ψ).meromorphic_LFunction s)
 
 /-- The four-factor product of nonprincipal characters has an exactly simple pole at `1`

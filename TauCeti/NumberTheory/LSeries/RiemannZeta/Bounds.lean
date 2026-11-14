@@ -6,12 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
-import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Real.Pi.Bounds
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Function.Floor
-import Mathlib.NumberTheory.Harmonic.EulerMascheroni
-import Mathlib.NumberTheory.LSeries.RiemannZeta
 import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.NumberTheory.LSeries.SumCoeff
 
