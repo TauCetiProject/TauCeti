@@ -128,10 +128,10 @@ theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩc : Convex ℝ Ω)
   have hschur : ∫⁻ x in Ω, V x ^ p ∂μ ≤
       ENNReal.ofReal K ^ (p - 1) * ENNReal.ofReal K * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ ^ p ∂μ :=
     lintegral_rpow_lintegral_mul_le (by fun_prop)
-      (hcont.enorm.aemeasurable hΩ.measurableSet) hp
+      (hcont.eNorm.aemeasurable hΩ.measurableSet) hp
       ((ae_restrict_iff' hΩ.measurableSet).2 (ae_of_all _ hmarg))
       ((ae_restrict_iff' hΩ.measurableSet).2 (ae_of_all _ fun y hy => by
-        simpa only [k, enorm_sub_rev y] using hmarg y hy))
+        simpa only [k, eNorm_sub_rev y] using hmarg y hy))
   -- Assemble the constant.
   have hcK : c * ENNReal.ofReal K =
       ENNReal.ofReal (μ.real (ball 0 1) * d ^ (n + 1) / μ.real S) := by
@@ -205,10 +205,10 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex
   -- The kernel bound `∫_{A'} ‖x - y‖ ^ (1 - n) dx ≤ n ω ^ (1 - 1/n) μ(A') ^ (1/n)`.
   set K : ℝ := n * μ.real (ball 0 1) ^ (1 - (n : ℝ)⁻¹)
   have hkA (y : E) : ∫⁻ x in A', k x y ∂μ ≤ ENNReal.ofReal K * μ A' ^ (n : ℝ)⁻¹ := by
-    simpa only [k, enorm_sub_rev y] using setLIntegral_enorm_sub_rpow_le_finrank hA'm y
+    simpa only [k, eNorm_sub_rev y] using setLIntegral_enorm_sub_rpow_le_finrank hA'm y
   have hmeas : AEMeasurable (Function.uncurry fun x y => ‖fderiv ℝ u y‖ₑ * k x y)
       ((μ.restrict A').prod (μ.restrict Ω)) :=
-    ((hu.continuousOn_fderiv_of_isOpen hΩ le_rfl).enorm.aemeasurable
+    ((hu.continuousOn_fderiv_of_isOpen hΩ le_rfl).eNorm.aemeasurable
       hΩ.measurableSet).comp_snd.mul (by fun_prop)
   have hc : c * ENNReal.ofReal K =
       ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (n : ℝ)⁻¹) * d ^ n / μ.real S) :=
@@ -318,7 +318,7 @@ theorem setIntegral_norm_sq_le_of_convex (hΩc : Convex ℝ Ω)
           integral_const_mul, integral_const_mul]
       _ ≤ _ := by
         gcongr 2 * ?_ + _
-        exact setIntegral_mono_set hdev (ae_of_all _ fun _ ↦ by positivity) hS.eventuallyLE
+        exact setIntegral_mono_set hdev (ae_of_all _ fun _ ↦ by positivity) hS.eventuallySubset
   -- On `Ω`, `‖u‖²` is controlled by the deviation and the mean.
   have hU : ∫ x in Ω, ‖u x‖ ^ 2 ∂μ ≤
       2 * ∫ x in Ω, ‖u x - m‖ ^ 2 ∂μ + 2 * μ.real Ω * ‖m‖ ^ 2 := by
