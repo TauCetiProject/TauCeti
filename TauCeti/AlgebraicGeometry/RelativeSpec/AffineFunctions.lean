@@ -56,6 +56,14 @@ instance _root_.AlgebraicGeometry.Scheme.Hom.isQuasicoherent_pushforwardStructur
     (p : V ⟶ X) [IsAffineHom p] : p.pushforwardStructureAlgebra.X.IsQuasicoherent :=
   inferInstanceAs ((Scheme.Modules.pushforward p).obj (𝟙_ V.Modules)).IsQuasicoherent
 
+/-- The function algebra `p_* 𝒪_V` of `p : V ⟶ X` is finitely presented as an `𝒪ₓ`-module
+whenever the pushforward of `𝒪_V` is finitely presented. -/
+instance _root_.AlgebraicGeometry.Scheme.Hom.isFinitePresentation_pushforwardStructureAlgebra
+    (p : V ⟶ X)
+    [((Scheme.Modules.pushforward p).obj (𝟙_ V.Modules)).IsFinitePresentation] :
+    p.pushforwardStructureAlgebra.X.IsFinitePresentation :=
+  inferInstanceAs ((Scheme.Modules.pushforward p).obj (𝟙_ V.Modules)).IsFinitePresentation
+
 namespace AlgebraicGeometry
 
 /-- The coordinate-algebra functor: an affine scheme `p : V ⟶ X` over `X` goes to its

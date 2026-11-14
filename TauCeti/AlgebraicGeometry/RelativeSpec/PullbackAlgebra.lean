@@ -330,6 +330,32 @@ theorem pullbackComp_inv_app_hom_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) (A : Quasic
     CategoryTheory.Functor.map_id, Category.comp_id]
   rfl
 
+/-- Pullback of quasicoherent algebras along equal morphisms is canonically isomorphic. -/
+def pullbackCongr {f g : X ⟶ Y} (hf : f = g) : pullback f ≅ pullback g :=
+  eqToIso (hf ▸ rfl)
+
+/-- The congruence comparison of algebra pullback is Mathlib's congruence comparison of module
+pullback on underlying modules. -/
+@[simp]
+theorem pullbackCongr_hom_app_hom_hom_hom {f g : X ⟶ Y} (hf : f = g) (A : QuasicoherentAlgebra Y) :
+    ((pullbackCongr hf).hom.app A).hom.hom.hom =
+      eqToHom (pullback_obj_X f A) ≫ (Scheme.Modules.pullbackCongr hf).hom.app A.obj.X ≫
+        eqToHom (pullback_obj_X g A).symm := by
+  subst hf
+  simp [pullbackCongr, Scheme.Modules.pullbackCongr]
+  rfl
+
+/-- The inverse congruence comparison of algebra pullback is Mathlib's inverse congruence
+comparison of module pullback on underlying modules. -/
+@[simp]
+theorem pullbackCongr_inv_app_hom_hom_hom {f g : X ⟶ Y} (hf : f = g) (A : QuasicoherentAlgebra Y) :
+    ((pullbackCongr hf).inv.app A).hom.hom.hom =
+      eqToHom (pullback_obj_X g A) ≫ (Scheme.Modules.pullbackCongr hf).inv.app A.obj.X ≫
+        eqToHom (pullback_obj_X f A).symm := by
+  subst hf
+  simp [pullbackCongr, Scheme.Modules.pullbackCongr]
+  rfl
+
 end QuasicoherentAlgebra
 
 namespace QuasicoherentAlgebra

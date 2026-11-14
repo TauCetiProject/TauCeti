@@ -245,6 +245,34 @@ theorem map_comp (f : X ⟶ Y) (g : Y ⟶ Z) (hf : J.comap f ≤ I) (hg : K.coma
   rw [← cancel_mono (toScheme Z K n), map_app_toScheme, AdicThickeningSystem.comp_app,
     Category.assoc, map_app_toScheme, map_app_toScheme_assoc]
 
+/-- Congruence of `formalCompletion.map` in the scheme morphism. -/
+theorem map_congr {f₁ f₂ : X ⟶ Y} (h : f₁ = f₂) (hf₁ : J.comap f₁ ≤ I) (hf₂ : J.comap f₂ ≤ I) :
+    map f₁ hf₁ = map f₂ hf₂ := by
+  subst h
+  rfl
+
+/-- An isomorphism `e : X ≅ Y` with `J.comap e.hom = I` induces an isomorphism of formal
+completions `X.formalCompletion I ≅ Y.formalCompletion J`. -/
+noncomputable def mapIso (e : X ≅ Y) (he : J.comap e.hom = I) :
+    X.formalCompletion I ≅ Y.formalCompletion J where
+  hom := map e.hom he.le
+  inv := map e.inv <| by
+    rw [← he, ← comap_comp, e.inv_hom_id, comap_id]
+  hom_inv_id := by
+    rw [map_comp, map_congr e.hom_inv_id _ (comap_id I).le, map_id]
+  inv_hom_id := by
+    rw [map_comp, map_congr e.inv_hom_id _ (comap_id J).le, map_id]
+
+@[simp]
+theorem mapIso_hom (e : X ≅ Y) (he : J.comap e.hom = I) :
+    (mapIso e he).hom = map e.hom he.le :=
+  (rfl)
+
+@[simp]
+theorem mapIso_inv (e : X ≅ Y) (he : J.comap e.hom = I) :
+    (mapIso e he).inv = map e.inv (by rw [← he, ← comap_comp, e.inv_hom_id, comap_id]) :=
+  (rfl)
+
 /-- If `V(I)` is the scheme-theoretic inverse image of `V(J)` under `f`, i.e. `J.comap f = I`, then
 the induced morphism of formal completions is adic: each `V(I ^ (n + 1))` is the inverse image of
 `V(J ^ (n + 1))`. -/

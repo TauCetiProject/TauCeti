@@ -140,6 +140,29 @@ theorem pullbackComp_comp_inv_app_comp_eqToHom (x : V ⟶ T) (f : T ⟶ S) (g : 
   -- As above, the identity is checked in `Over V`.
   ObjectProperty.hom_ext _ (Over.pullbackComp_comp_inv_app_comp_eqToHom x f g X.obj)
 
+/-- Base changes of finite étale schemes along equal morphisms are canonically isomorphic. -/
+noncomputable def pullbackCongr {f g : T ⟶ S} (h : f = g) : pullback f ≅ pullback g :=
+  eqToIso (h ▸ rfl)
+
+@[simp]
+theorem pullbackCongr_hom_app_hom {f g : T ⟶ S} (h : f = g) (X : FiniteEtaleScheme S) :
+    ((pullbackCongr h).hom.app X).hom = eqToHom (by rw [h]) := by
+  subst h
+  rfl
+
+@[simp]
+theorem pullbackCongr_inv_app_hom {f g : T ⟶ S} (h : f = g) (X : FiniteEtaleScheme S) :
+    ((pullbackCongr h).inv.app X).hom = eqToHom (by rw [h]) := by
+  subst h
+  rfl
+
+/-- Base change of finite étale schemes along an isomorphism is an equivalence of categories. -/
+instance isEquivalence_pullback_of_isIso (f : T ⟶ S) [IsIso f] :
+    (pullback f).IsEquivalence :=
+  .mk' (pullback (inv f))
+    (pullbackId.symm ≪≫ pullbackCongr (IsIso.inv_hom_id f).symm ≪≫ pullbackComp (inv f) f)
+    ((pullbackComp f (inv f)).symm ≪≫ pullbackCongr (IsIso.hom_inv_id f) ≪≫ pullbackId)
+
 variable {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 
 /-- The geometric fibre functor at a geometric point `x : Spec Ω ⟶ S`, for `Ω` separably

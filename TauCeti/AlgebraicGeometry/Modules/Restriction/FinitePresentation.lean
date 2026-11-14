@@ -22,7 +22,9 @@ presentations descend. This is the finite-presentation analogue of
 As an application, the cokernel of a morphism from a quasi-coherent module of finite type to a
 finitely presented module is finitely presented on every scheme: restriction to an open
 subscheme preserves cokernels, and over the spectra of the affine opens this is
-`TauCeti.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_cokernel_spec`.
+`TauCeti.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_cokernel_spec`. Likewise, a
+quasi-coherent module is finitely presented if and only if its sections over every affine open are
+finitely presented (`isFinitePresentation_iff_finitePresentation_sections`).
 -/
 
 public section
@@ -128,5 +130,41 @@ instance isClosedUnderCokernels_isFinitePresentation (X : Scheme.{u}) :
     have := hN
     exact (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
       (colimit.isoColimitCocone ⟨c, hc⟩) (isFinitePresentation_cokernel f)
+
+/-- A quasi-coherent module whose sections over every affine open are finitely presented is
+finitely presented. This is the converse of
+`Scheme.Modules.finitePresentation_sections_of_isAffineOpen`. -/
+theorem isFinitePresentation_of_finitePresentation_sections {X : Scheme.{u}} (K : X.Modules)
+    [K.IsQuasicoherent]
+    (h : ∀ U : X.Opens, IsAffineOpen U → Module.FinitePresentation Γ(X, U) Γ(K, U)) :
+    K.IsFinitePresentation := by
+  refine isFinitePresentation_of_isFinitePresentation_restrict K (fun U : X.affineOpens ↦ U.1)
+      (iSup_affineOpens_eq_top X) fun U ↦ ?_
+  have hU := U.2
+  have : IsOpenImmersion hU.fromSpec := hU.isOpenImmersion_fromSpec
+  let L := K.restrict hU.fromSpec
+  have : L.IsQuasicoherent := isQuasicoherent_restrictFunctor _ _
+  have := h U.1 hU
+  have : Module.FinitePresentation Γ(X, U.1) (moduleSpecΓFunctor.obj L) := by
+    -- The global-section functor and `Γ(L, ⊤)` share the same sections and `Γ(X, U.1)`-action,
+    -- wrapped in `ModuleCat`.
+    convert! Module.FinitePresentation.of_equiv (K.fromSpecSectionsEquiv hU)
+  have : L.IsFinitePresentation :=
+    (SheafOfModules.isFinitePresentation (Spec Γ(X, U.1)).ringCatSheaf).prop_of_iso
+      (@asIso _ _ _ _ L.fromTildeΓ (isIso_fromTildeΓ_of_isQuasicoherent L))
+      (TauCeti.AlgebraicGeometry.isFinitePresentation_tilde (moduleSpecΓFunctor.obj L))
+  exact (SheafOfModules.isFinitePresentation U.1.toScheme.ringCatSheaf).prop_of_iso
+    (((restrictFunctorComp hU.isoSpec.hom hU.fromSpec).app K).symm ≪≫
+      (restrictFunctorCongr hU.isoSpec_hom_fromSpec).app K)
+    (isFinitePresentation_restrict hU.isoSpec.hom L)
+
+/-- A quasi-coherent module is finitely presented if and only if its sections over every affine
+open are finitely presented. -/
+theorem isFinitePresentation_iff_finitePresentation_sections {X : Scheme.{u}} (K : X.Modules)
+    [K.IsQuasicoherent] :
+    K.IsFinitePresentation ↔
+      ∀ U : X.Opens, IsAffineOpen U → Module.FinitePresentation Γ(X, U) Γ(K, U) :=
+  ⟨fun _ U hU ↦ K.finitePresentation_sections_of_isAffineOpen U hU,
+    isFinitePresentation_of_finitePresentation_sections K⟩
 
 end AlgebraicGeometry.Scheme.Modules

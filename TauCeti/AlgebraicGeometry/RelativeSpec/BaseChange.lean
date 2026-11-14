@@ -432,6 +432,20 @@ theorem relativeSpecPullbackFst_id :
   -- On sections, the identity and composition isomorphisms of pushforward are identities.
   rfl
 
+/-- Replacing a base morphism by an equal one commutes with the projection
+`Spec_Y (f^* A) ⟶ Spec_X A`. -/
+@[reassoc]
+theorem relativeSpecPullbackFst_congr {f' : Y ⟶ X} (hf : f = f') :
+    CommMon.relativeSpecMap ((QuasicoherentAlgebra.pullbackCongr hf).hom.app A).hom ≫
+        relativeSpecPullbackFst A f =
+      relativeSpecPullbackFst A f' := by
+  subst hf
+  have h : ((QuasicoherentAlgebra.pullbackCongr (rfl : f = f)).hom.app A).hom = 𝟙 _ := by
+    apply CommMon.hom_ext
+    simp [Scheme.Modules.pullbackCongr]
+    rfl
+  rw [h, CommMon.relativeSpecMap_id, Category.id_comp]
+
 /-- **Relative Spec commutes with base change, compatibly with composition.** For `g : Z ⟶ Y`
 and `f : Y ⟶ X`, the isomorphism `Spec_Z ((g ≫ f)^* A) ≅ Z ×_X Spec_X A` is the composite of the
 identification `Spec_Z ((g ≫ f)^* A) ≅ Spec_Z (g^* f^* A)`, the isomorphisms for `g` and for `f`,

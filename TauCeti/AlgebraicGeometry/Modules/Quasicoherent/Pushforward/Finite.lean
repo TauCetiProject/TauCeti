@@ -8,25 +8,33 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
+public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Noetherian
+import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 
 /-!
 # Finite pushforward of module sheaves
 
 Pushforward along a finite morphism preserves coherent sheaves when the target is locally
-Noetherian. This permits coherent coefficients on a closed subscheme to be viewed as coherent
-coefficients on its ambient scheme, in particular under a projective embedding.
+Noetherian, and preserves finitely presented sheaves over an arbitrary base when the morphism is
+also locally of finite presentation. This permits coherent coefficients on a closed subscheme to be
+viewed as coherent coefficients on its ambient scheme, and makes the coordinate algebra of any
+finite locally finitely presented morphism finitely presented as an `𝒪_Y`-module.
 
 The affine calculation uses the existing quasi-coherent pushforward theorem and the
 tilde/global-sections comparison. A finite module over a finite algebra is finite over the
-base ring; over a Noetherian base this gives a finite presentation.
+base ring; over a Noetherian base this gives a finite presentation, while for a finite locally
+finitely presented morphism a finitely presented module over a finitely presented finite algebra is
+finitely presented over the base ring.
 
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, Proposition II.5.5.
-* The Stacks Project, Tag 01Y6 (coherent pushforward along finite morphisms).
+* The Stacks Project, Tag 01Y6 (coherent pushforward along finite morphisms) and Tag 0564
+  (transitivity of finite presentation along finite finitely presented ring maps).
 -/
 
 public section
@@ -50,55 +58,46 @@ theorem finite_sections_pushforward (M : X.Modules) [M.IsQuasicoherent] [M.IsFin
     ((f.app U).hom.isFG_restrictScalars_of_finite (f.finite_app U hU)
       ((ModuleCat.isFG_iff _).mpr (M.finite_sections_of_isAffineOpen _ (hU.preimage f))))
 
--- First obtain a finite presentation on the spectrum of an affine open, then carry it
--- to the open subscheme and its slice site. Only these presentations are used in descent.
-private theorem exists_isFinite_presentation_over_pushforward [IsLocallyNoetherian Y]
-    (M : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType] (f : X ⟶ Y) [IsFinite f]
-    (U : Y.affineOpens) : ∃ P : (((pushforward f).obj M).over U.1).Presentation, P.IsFinite := by
-  let N := (pushforward f).obj M
-  have : N.IsQuasicoherent := Scheme.Modules.isQuasicoherent_pushforward M f
-  have : IsOpenImmersion U.2.fromSpec := U.2.isOpenImmersion_fromSpec
-  let K := N.restrict U.2.fromSpec
-  have : K.IsQuasicoherent := inferInstance
-  have : IsNoetherianRing Γ(Y, U.1) := IsLocallyNoetherian.component_noetherian U
-  have : Module.Finite Γ(Y, U.1) Γ(N, U.1) := M.finite_sections_pushforward f U.1 U.2
-  have : Module.FinitePresentation Γ(Y, U.1) Γ(N, U.1) :=
-    Module.finitePresentation_of_finite _ _
-  have : Module.FinitePresentation Γ(Y, U.1) (moduleSpecΓFunctor.obj K) := by
-    -- The global-section functor and `Γ(K, ⊤)` have the same sections and scalar action;
-    -- their category wrappers differ. Convert this comparison explicitly.
-    convert! Module.FinitePresentation.of_equiv (N.fromSpecSectionsEquiv U.2)
-  have : K.IsFinitePresentation :=
-    (SheafOfModules.isFinitePresentation (Spec Γ(Y, U.1)).ringCatSheaf).prop_of_iso
-      (@asIso _ _ _ _ K.fromTildeΓ (isIso_fromTildeΓ_of_isQuasicoherent K))
-      (TauCeti.AlgebraicGeometry.isFinitePresentation_tilde (moduleSpecΓFunctor.obj K))
-  obtain ⟨P, hP⟩ := K.exists_isFinite_presentation_of_isAffine
-  let F : SheafOfModules (Spec Γ(Y, U.1)).ringCatSheaf ⥤
-      SheafOfModules U.1.toScheme.ringCatSheaf := restrictFunctor U.2.isoSpec.hom
-  have : CategoryTheory.Limits.PreservesColimitsOfSize.{u, u} F :=
-    (restrictAdjunction U.2.isoSpec.hom).leftAdjoint_preservesColimits
-  let e : F.obj K ≅ N.restrict U.1.ι :=
-    ((restrictFunctorComp U.2.isoSpec.hom U.2.fromSpec).app N).symm ≪≫
-      (restrictFunctorCongr U.2.isoSpec_hom_fromSpec).app N
-  -- The isomorphism is stated in scheme modules, while presentations use sheaves of
-  -- modules. Supply its instance rather than asking instance search to cross the wrappers.
-  let Q := @SheafOfModules.Presentation.ofIsIso _ _ _ _ _ _ _ _ e.hom
-    (Iso.isIso_hom e) (P.map F (restrictUnitIso U.2.isoSpec.hom).symm)
-  have : Q.IsFinite := by
-    apply +allowSynthFailures SheafOfModules.instIsFiniteOfIsIso
-    exact SheafOfModules.Presentation.isFinite_map _ _ _
-  exact N.exists_isFinite_presentation_over_of_restrict U.1 Q
-
 /-- Finite pushforward on a locally Noetherian target preserves finite presentation.
 It suffices that the source coefficient is quasi-coherent and of finite type. -/
 instance isFinitePresentation_pushforward_of_isFinite [IsLocallyNoetherian Y]
     (f : X ⟶ Y) [IsFinite f] (M : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType] :
-    ((pushforward f).obj M).IsFinitePresentation := by
-  let N := (pushforward f).obj M
-  have (U : Y.affineOpens) : (N.over U.1).IsFinitePresentation := by
-    obtain ⟨P, hP⟩ := exists_isFinite_presentation_over_pushforward M f U
-    exact P.isFinitePresentation
-  exact SheafOfModules.IsFinitePresentation.of_coversTop N (fun U : Y.affineOpens ↦ U.1)
-    (by rw [Opens.coversTop_iff]; exact iSup_affineOpens_eq_top Y)
+    ((pushforward f).obj M).IsFinitePresentation :=
+  isFinitePresentation_of_finitePresentation_sections _ fun U hU ↦ by
+    have : IsNoetherianRing Γ(Y, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
+    have := M.finite_sections_pushforward f U hU
+    exact Module.finitePresentation_of_finite _ _
+
+/-- Over an affine open, the pushforward of a finitely presented module along a finite morphism
+locally of finite presentation has finitely presented sections, without any Noetherian
+hypothesis. -/
+theorem finitePresentation_sections_pushforward (M : X.Modules) [M.IsFinitePresentation]
+    (f : X ⟶ Y) [IsFinite f] [LocallyOfFinitePresentation f] (U : Y.Opens)
+    (hU : IsAffineOpen U) :
+    Module.FinitePresentation Γ(Y, U) Γ((pushforward f).obj M, U) := by
+  have hfp := f.finitePresentation_appLE hU (hU.preimage f) le_rfl
+  rw [Scheme.Hom.appLE_eq_app] at hfp
+  have hfin := f.finite_app U hU
+  algebraize [(f.app U).hom]
+  have : Module.FinitePresentation Γ(Y, U) Γ(X, f ⁻¹ᵁ U) :=
+    Module.FinitePresentation.of_finite_of_finitePresentation Γ(Y, U) Γ(X, f ⁻¹ᵁ U)
+  have : Module.FinitePresentation Γ(X, f ⁻¹ᵁ U) Γ(M, f ⁻¹ᵁ U) :=
+    M.finitePresentation_sections_of_isAffineOpen _ (hU.preimage f)
+  let : Module Γ(Y, U) Γ(M, f ⁻¹ᵁ U) := Module.compHom Γ(M, f ⁻¹ᵁ U) (f.app U).hom
+  have : IsScalarTower Γ(Y, U) Γ(X, f ⁻¹ᵁ U) Γ(M, f ⁻¹ᵁ U) :=
+    ⟨fun r s m ↦ mul_smul ((f.app U).hom r) s m⟩
+  -- Pushforward sections are `Γ(M, f ⁻¹ᵁ U)` with scalars restricted along `(f.app U).hom`.
+  have hYM : Module.FinitePresentation Γ(Y, U) Γ(M, f ⁻¹ᵁ U) :=
+    Module.FinitePresentation.trans Γ(Y, U) Γ(M, f ⁻¹ᵁ U) Γ(X, f ⁻¹ᵁ U)
+  exact hYM
+
+/-- Pushforward along a finite morphism locally of finite presentation preserves finite
+presentation on an arbitrary scheme. -/
+instance isFinitePresentation_pushforward_of_locallyOfFinitePresentation
+    (f : X ⟶ Y) [IsFinite f] [LocallyOfFinitePresentation f]
+    (M : X.Modules) [M.IsFinitePresentation] :
+    ((pushforward f).obj M).IsFinitePresentation :=
+  isFinitePresentation_of_finitePresentation_sections _
+    (M.finitePresentation_sections_pushforward f)
 
 end AlgebraicGeometry.Scheme.Modules

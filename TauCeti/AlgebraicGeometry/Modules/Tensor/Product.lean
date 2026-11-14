@@ -32,7 +32,12 @@ product of `𝒪ₓ`-modules is `M ⊗ N`.
   `𝒪ₓ`-modules;
 * `TauCeti.AlgebraicGeometry.isQuasicoherent_unit` and
   `TauCeti.AlgebraicGeometry.isQuasicoherent_structureSheaf`: the structure sheaf, viewed as a
-  module over itself, is quasi-coherent in monoidal-unit and explicit-unit notation.
+  module over itself, is quasi-coherent in monoidal-unit and explicit-unit notation;
+* `AlgebraicGeometry.Scheme.Modules.isFinitePresentation_tensorObj`,
+  `AlgebraicGeometry.Scheme.Modules.isMonoidal_isFinitePresentation`,
+  `TauCeti.AlgebraicGeometry.isFinitePresentation_unit` and
+  `TauCeti.AlgebraicGeometry.isFinitePresentation_structureSheaf`: the analogous monoidal closure
+  and unit instances for finitely presented `𝒪ₓ`-modules.
 
 -/
 
@@ -99,6 +104,30 @@ This instance also supports goals that do not use monoidal-unit notation. -/
 instance AlgebraicGeometry.isQuasicoherent_structureSheaf :
     (_root_.SheafOfModules.unit X.ringCatSheaf).IsQuasicoherent :=
   AlgebraicGeometry.isQuasicoherent_unit X
+
+/-- The tensor product of two finitely presented `𝒪ₓ`-modules is finitely presented. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_tensorObj (M N : X.Modules)
+    [M.IsFinitePresentation] [N.IsFinitePresentation] : (M ⊗ N).IsFinitePresentation :=
+  SheafOfModules.isFinitePresentation_tensorObj (R := X.sheaf)
+
+/-- Finite presentation is a monoidal property of `𝒪ₓ`-modules, so finitely presented `𝒪ₓ`-modules
+form a monoidal full subcategory of `X.Modules`. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isMonoidal_isFinitePresentation :
+    ObjectProperty.IsMonoidal (C := X.Modules)
+      (_root_.SheafOfModules.isFinitePresentation X.ringCatSheaf) :=
+  SheafOfModules.isMonoidal_isFinitePresentation (R := X.sheaf)
+
+/-- The structure sheaf, viewed as a module over itself, is finitely presented. -/
+instance AlgebraicGeometry.isFinitePresentation_unit :
+    (𝟙_ X.Modules).IsFinitePresentation :=
+  @ObjectProperty.prop_unit X.Modules _ (Scheme.Modules.instMonoidalCategory X)
+    (_root_.SheafOfModules.isFinitePresentation X.ringCatSheaf)
+    (Scheme.Modules.isMonoidal_isFinitePresentation X).toContainsUnit
+
+/-- The explicit structure-sheaf module is finitely presented. -/
+instance AlgebraicGeometry.isFinitePresentation_structureSheaf :
+    (_root_.SheafOfModules.unit X.ringCatSheaf).IsFinitePresentation :=
+  AlgebraicGeometry.isFinitePresentation_unit X
 
 variable {X} in
 /-- The sections over an open `U` of `𝒪ₓ`-modules, as a functor to `Γ(X, U)`-modules. It is the
