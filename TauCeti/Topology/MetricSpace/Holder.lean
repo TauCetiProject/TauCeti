@@ -23,12 +23,15 @@ Hölder with every smaller exponent, with a constant depending on the scale; in 
 function which is Lipschitz between nearby points. Local Hölder bounds around the points of a
 compact set are uniform on a thickening of the set.
 
-A function which is Hölder continuous, with positive exponent, on a dense subset `s` of a
-pseudo-emetric space and takes values in a complete emetric space extends to a function which is
-Hölder continuous on the whole space, with the same constant and exponent.
+A function which is Hölder continuous on a dense subset `s` of a pseudo-emetric space and takes
+values in a complete emetric space extends to a function which is Hölder continuous on the whole
+space, with the same constant and exponent.
 
-The extension is the uniformly continuous extension along the dense inclusion `s → X`, and the
-Hölder inequality passes from `s × s` to its closure because both of its sides are continuous.
+For a positive exponent, the extension is the uniformly continuous extension along the dense
+inclusion `s → X`, and the Hölder inequality passes from `s × s` to its closure because both of its
+sides are continuous. For exponent zero the Hölder condition only bounds the distances by the
+constant, and the extension is the function itself on `s` and a constant off `s`, which need not
+be continuous.
 
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
@@ -104,11 +107,30 @@ variable {X Y : Type*} [PseudoEMetricSpace X] [EMetricSpace Y] [CompleteSpace Y]
   {C r : ℝ≥0} {f : X → Y} {s : Set X}
 
 /-- **Hölder functions extend from dense sets.** If `f` is Hölder continuous with constant `C` and
-positive exponent `r` on a dense set `s`, and the target is complete, then some function which is
-Hölder continuous with constant `C` and exponent `r` on the whole space agrees with `f` on `s`.
+exponent `r` on a dense set `s`, and the target is complete, then some function which is Hölder
+continuous with constant `C` and exponent `r` on the whole space agrees with `f` on `s`. For
+`r = 0` the Hölder condition only bounds the distances by `C`, so the extension need not be
+continuous.
 Compare `LipschitzOnWith.extend_real`, which needs no density but only applies to real values. -/
-theorem HolderOnWith.extend_of_dense (hf : HolderOnWith C r f s) (hr : 0 < r)
+theorem HolderOnWith.extend_of_dense (hf : HolderOnWith C r f s)
     (hs : Dense s) : ∃ g : X → Y, HolderWith C r g ∧ EqOn f g s := by
+  classical
+  rcases eq_or_ne r 0 with rfl | hr
+  · -- Exponent zero: the condition says `edist ≤ C`; extend by a constant off `s`.
+    have key : ∀ x ∈ s, ∀ y ∈ s, edist (f x) (f y) ≤ C := fun x hx y hy => by
+      simpa using hf x hx y hy
+    rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
+    · have hX : IsEmpty X := ⟨fun x => by simpa using hs.nonempty_iff.2 ⟨x⟩⟩
+      exact ⟨f, fun x => (hX.false x).elim, by simp⟩
+    · refine ⟨fun x => if x ∈ s then f x else f x₀, fun x y => ?_, fun x hx => by simp [hx]⟩
+      have h0 : edist x y ^ (((0 : ℝ≥0) : ℝ)) = 1 := by simp
+      rw [h0, mul_one]
+      by_cases hx : x ∈ s <;> by_cases hy : y ∈ s <;> simp only [hx, hy, ite_true, ite_false]
+      · exact key _ hx _ hy
+      · exact key _ hx _ hx₀
+      · exact key _ hx₀ _ hy
+      · simp
+  replace hr : 0 < r := pos_iff_ne_zero.2 hr
   have hu : UniformContinuous (s.domRestrict f) := hf.holderWith.uniformContinuous hr
   have hi := isUniformInducing_val s
   have hd : DenseRange ((↑) : s → X) := hs.denseRange_val
