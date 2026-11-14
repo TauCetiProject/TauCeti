@@ -11,10 +11,13 @@ public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 /-!
 # Ratios of Gram determinants
 
-`LinearMap.BilinForm.detRatio` is the ratio of the Gram determinants of two bilinear
-forms. A change of basis multiplies both determinants by the same nonzero square, so the ratio
+`LinearMap.BilinForm.detRatio B B'` is the Gram determinant ratio `det B' / det B`,
+comparing a bilinear form `B'` against a reference form `B`. A change of basis multiplies both
+determinants by the same nonzero square, so the ratio
 is basis independent. For positive-definite symmetric forms it is positive; for a nondegenerate
-form its self ratio is one.
+form its self ratio is one. This provides a basis- and orientation-free comparison of bilinear
+forms; its square root gives
+`Bundle.ContMDiffRiemannianMetric.relativeVolumeDensity` for Riemannian metrics.
 -/
 
 public section
@@ -28,7 +31,7 @@ variable {R V : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- The Gram determinant of a symmetric positive-definite bilinear form is positive in every
 basis. -/
-theorem Module.Basis.det_toMatrix_pos {ι : Type*} [Fintype ι] [DecidableEq ι]
+theorem Module.Basis.det_bilinFormToMatrix_pos {ι : Type*} [Fintype ι] [DecidableEq ι]
     (b : Module.Basis ι R V)
     {B : BilinForm R V} (hsymm : ∀ v w, B v w = B w v) (hpos : ∀ v, v ≠ 0 → 0 < B v v) :
     0 < (BilinForm.toMatrix b B).det := by
@@ -64,7 +67,7 @@ theorem Module.Basis.bilinFormDetRatio_eq {ι : Type*} [Fintype ι] [DecidableEq
 
 /-- In a basis in which `B` has the identity Gram matrix, `BilinForm.detRatio B B'` is the Gram
 determinant of `B'`. -/
-theorem Module.Basis.bilinFormDetRatio_eq_det_of_toMatrix_eq_one
+theorem Module.Basis.bilinFormDetRatio_eq_det_bilinFormToMatrix_of_eq_one
     {ι : Type*} [Fintype ι] [DecidableEq ι]
     (b : Module.Basis ι K V) {B : BilinForm K V} (hB : BilinForm.toMatrix b B = 1)
     (B' : BilinForm K V) :
@@ -77,8 +80,8 @@ theorem LinearMap.BilinForm.detRatio_pos [LinearOrder K] [IsStrictOrderedRing K]
     (hpos : ∀ v, v ≠ 0 → 0 < B v v) (hsymm' : ∀ v w, B' v w = B' w v)
     (hpos' : ∀ v, v ≠ 0 → 0 < B' v v) :
     0 < BilinForm.detRatio B B' :=
-  div_pos (Module.Basis.det_toMatrix_pos _ hsymm' hpos')
-    (Module.Basis.det_toMatrix_pos _ hsymm hpos)
+  div_pos (Module.Basis.det_bilinFormToMatrix_pos _ hsymm' hpos')
+    (Module.Basis.det_bilinFormToMatrix_pos _ hsymm hpos)
 
 /-- The Gram determinant ratio of a nondegenerate bilinear form with itself is one. -/
 @[simp]
@@ -88,7 +91,7 @@ theorem LinearMap.BilinForm.detRatio_self (B : BilinForm K V) (hB : B.Nondegener
 
 /-- Reversing the forms inverts the determinant ratio. -/
 @[simp]
-theorem LinearMap.BilinForm.detRatio_inv (B B' : BilinForm K V) :
+theorem LinearMap.BilinForm.inv_detRatio (B B' : BilinForm K V) :
     (B.detRatio B')⁻¹ = B'.detRatio B := by
   simp only [detRatio, inv_div]
 
@@ -98,7 +101,7 @@ theorem LinearMap.BilinForm.detRatio_mul_detRatio (B B' B'' : BilinForm K V)
   rw [detRatio, detRatio, detRatio, mul_comm,
     div_mul_div_cancel₀ ((nondegenerate_iff_det_ne_zero (Module.finBasis K V)).1 hB')]
 
-/-- Scaling the numerator scales its Gram determinant by the dimension power. -/
+/-- Scaling the numerator form multiplies the determinant ratio by the dimension power. -/
 @[simp]
 theorem LinearMap.BilinForm.detRatio_smul_right (B B' : BilinForm K V) (c : K) :
     B.detRatio (c • B') = c ^ Module.finrank K V * B.detRatio B' := by

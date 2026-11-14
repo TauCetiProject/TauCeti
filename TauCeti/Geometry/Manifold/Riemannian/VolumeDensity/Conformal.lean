@@ -81,7 +81,8 @@ theorem relativeVolumeDensity_rescale
   rw [relativeVolumeDensity_eq_div_chartVolumeDensity g _ (mem_chart_source H x),
     WithMetric.chartVolumeDensity_rescale, mul_div_cancel_right₀ _ hpos.ne']
 
-/-- Rescaling the compared metric multiplies the relative density by the conformal factor. -/
+/-- In real dimension `N`, rescaling the compared metric by `f` multiplies the relative volume
+density by `f ^ (N / 2)`. -/
 @[simp]
 theorem relativeVolumeDensity_rescale_right {n' : ℕ∞ω}
     (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
@@ -91,7 +92,8 @@ theorem relativeVolumeDensity_rescale_right {n' : ℕ∞ω}
       f x ^ ((Module.finrank ℝ E : ℝ) / 2) * relativeVolumeDensity g g' x := by
   rw [relativeVolumeDensity_eq_mul g g', relativeVolumeDensity_rescale, mul_comm]
 
-/-- Rescaling the reference metric divides the relative density by the conformal factor. -/
+/-- In real dimension `N`, rescaling the reference metric by `f` divides the relative volume
+density by `f ^ (N / 2)`. -/
 @[simp]
 theorem relativeVolumeDensity_rescale_left {n' : ℕ∞ω}
     (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
@@ -99,8 +101,8 @@ theorem relativeVolumeDensity_rescale_left {n' : ℕ∞ω}
     {f : M → ℝ} {hf : ContMDiff I 𝓘(ℝ) n f} {hf_pos : ∀ x, 0 < f x} (x : M) :
     relativeVolumeDensity (g.rescale f hf hf_pos) g' x =
       relativeVolumeDensity g g' x / f x ^ ((Module.finrank ℝ E : ℝ) / 2) := by
-  rw [← relativeVolumeDensity_inv g' _, relativeVolumeDensity_rescale_right]
-  simp only [mul_inv_rev, relativeVolumeDensity_inv, div_eq_mul_inv]
+  rw [← inv_relativeVolumeDensity g' _, relativeVolumeDensity_rescale_right]
+  simp only [mul_inv_rev, inv_relativeVolumeDensity, div_eq_mul_inv]
 
 end Bundle.ContMDiffRiemannianMetric
 
