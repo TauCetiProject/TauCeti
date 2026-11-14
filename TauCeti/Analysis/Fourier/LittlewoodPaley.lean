@@ -376,10 +376,9 @@ private theorem adjoint_lpPi_block (n : ℕ) :
     letI : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
     adjoint (Lp.lpPi 2 (Finset.range (n + 1)) (block (F := F) φ)) = sqFunAdj φ n := by
   let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  refine ((eq_adjoint_iff _ _).2 fun g f ↦ ?_).symm
-  simp only [sqFunAdj, Lp.lpPi_apply, sum_apply, comp_apply, sum_inner, inner_sum]
+  rw [Lp.adjoint_lpPi, sqFunAdj]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [inner_block_left, L2.inner_evalCLM_compLpL]
+  rw [← (eq_adjoint_iff _ _).2 (inner_block_left φ j)]
 
 private theorem sqFunAdj_lpPi_block (n : ℕ) (f : Lp F 2 (volume : Measure V)) :
     sqFunAdj φ n (Lp.lpPi 2 (Finset.range (n + 1)) (block φ) f) =

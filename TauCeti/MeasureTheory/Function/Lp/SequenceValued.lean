@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.Analysis.Normed.Lp.lpSpace
+public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import TauCeti.Analysis.Normed.Lp.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Finite families of operators into sequence-valued `Lᵖ`
@@ -19,7 +23,8 @@ For a finite set `s` of indices and continuous linear maps `Tⱼ : E → Lᵖ(μ
 `x ↦ ∑_{j ∈ s} lp.single q j (Tⱼ f x)` (`MeasureTheory.Lp.coeFn_lpPi`). Evaluating coordinate
 `j` gives `Tⱼ` for `j ∈ s` and `0` otherwise (`MeasureTheory.Lp.evalCLM_compLpL_comp_lpPi`);
 applied to `f`, this is `MeasureTheory.Lp.evalCLM_compLpL_lpPi` and
-`MeasureTheory.Lp.evalCLM_compLpL_lpPi_of_notMem`.
+`MeasureTheory.Lp.evalCLM_compLpL_lpPi_of_notMem`. For `p = q = 2` between Hilbert spaces, the
+adjoint of `lpPi 2 s T` is `(gⱼ) ↦ ∑_{j ∈ s} Tⱼ† gⱼ` (`MeasureTheory.Lp.adjoint_lpPi`).
 
 A typical use is a vector-valued square function: with `q = 2` and blocks `Tⱼ`, the norm of
 `lpPi 2 s T f` at `x` is `(∑_{j ∈ s} ‖Tⱼ f x‖²)^{1/2}` for `μ`-almost every `x`.
@@ -92,5 +97,26 @@ theorem evalCLM_compLpL_lpPi_of_notMem {s : Finset ι} (T : ∀ j, E →L[𝕜] 
     (lp.evalCLM 𝕜 F q j).compLpL p μ (lpPi q s T f) = 0 := by
   rw [← ContinuousLinearMap.comp_apply, evalCLM_compLpL_comp_lpPi]
   simp [hj]
+
+end MeasureTheory.Lp
+
+namespace MeasureTheory.Lp
+
+open scoped InnerProductSpace
+
+variable {α 𝕜 ι E : Type*} {F : ι → Type*} {m : MeasurableSpace α} {μ : Measure α} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [∀ i, NormedAddCommGroup (F i)] [∀ i, InnerProductSpace 𝕜 (F i)] [∀ i, CompleteSpace (F i)]
+  [DecidableEq ι]
+
+/-- The adjoint of `lpPi 2 s T` is `(gⱼ) ↦ ∑_{j ∈ s} Tⱼ† gⱼ`. -/
+theorem adjoint_lpPi (s : Finset ι) (T : ∀ j, E →L[𝕜] Lp (F j) 2 μ) :
+    ContinuousLinearMap.adjoint (lpPi 2 s T) =
+      ∑ j ∈ s, ContinuousLinearMap.adjoint (T j) ∘L (lp.evalCLM 𝕜 F 2 j).compLpL 2 μ := by
+  refine ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun g f ↦ ?_).symm
+  simp only [lpPi_apply, sum_apply, ContinuousLinearMap.comp_apply,
+    sum_inner, inner_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [ContinuousLinearMap.adjoint_inner_left, L2.inner_evalCLM_compLpL]
 
 end MeasureTheory.Lp
