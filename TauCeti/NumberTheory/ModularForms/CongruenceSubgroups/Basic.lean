@@ -15,6 +15,7 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Data.Nat.Factorization.Induction
+import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.Data.Int.ChineseRemainder
 import TauCeti.Data.ZMod.Divisibility
 
@@ -59,6 +60,8 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.Gamma1_le_Gamma1_of_dvd`, `CongruenceSubgroup.Gamma0_le_Gamma0_of_dvd`,
   `CongruenceSubgroup.Gamma_le_Gamma_of_dvd`: all three families are antitone in the level,
   `Γ(N) ≤ Γ(M)` whenever `M ∣ N`.
+* `CongruenceSubgroup.index_Gamma`: `[SL₂(ℤ) : Γ(N)] = |SL₂(ℤ/Nℤ)|`; in particular
+  `CongruenceSubgroup.index_Gamma_three`: `[SL₂(ℤ) : Γ(3)] = 24`.
 * `CongruenceSubgroup.Gamma_le_Gamma1`, `CongruenceSubgroup.Gamma_le_Gamma0`: at a fixed level
   the three families are nested, `Γ(N) ≤ Γ₁(N) ≤ Γ₀(N)`.
 * `CongruenceSubgroup.map_eq_one_of_mem_Gamma`: a matrix of `Γ(N)` is the identity matrix modulo
@@ -116,7 +119,8 @@ infrastructure independent of the diamond operators.
   `CongruenceSubgroup.gamma0TwistOfUnit_apply_one_one`.
 * `CongruenceSubgroup.neg_one_mem_Gamma0` and
   `CongruenceSubgroup.Gamma0Map_toHomUnits_negOne`: `-I ∈ Γ₀(N)`, with lower-right entry the
-  unit `-1`; `CongruenceSubgroup.neg_one_mem_Gamma1_iff`: `-I ∈ Γ₁(N) ↔ N ∣ 2`.
+  unit `-1`; `CongruenceSubgroup.neg_one_mem_Gamma1_iff`: `-I ∈ Γ₁(N) ↔ N ∣ 2`, and
+  `CongruenceSubgroup.neg_one_mem_Gamma_iff`: `-I ∈ Γ(N) ↔ N ∣ 2`.
 * `CongruenceSubgroup.withCenter_le_Gamma0`: adjoining the centre of `SL₂(ℤ)` to a subgroup of
   `Γ₀(N)` keeps it inside `Γ₀(N)`, since `Γ₀(N)` already contains `-I`.
 * `CongruenceSubgroup.Gamma0_prime_index`: `[SL₂(ℤ) : Γ₀(p)] = p + 1` for prime `p`.
@@ -188,6 +192,19 @@ theorem map_eq_one_of_mem_Gamma {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma 
     (γ : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom (ZMod N)) = 1 := by
   simpa only [Matrix.SpecialLinearGroup.map_apply_coe, Matrix.SpecialLinearGroup.coe_one,
     RingHom.mapMatrix_apply] using congrArg Subtype.val (Gamma_mem'.mp hγ)
+
+/-- **The index of the principal congruence subgroup** is the order of `SL₂(ℤ/Nℤ)`: `Γ(N)` is
+the kernel of reduction modulo `N`, which is surjective by strong approximation
+(`Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`). At `N = 0` both sides are `0`. -/
+theorem index_Gamma (N : ℕ) : (Gamma N).index = Nat.card SL(2, ZMod N) := by
+  rw [Gamma, Subgroup.index_ker,
+    MonoidHom.range_eq_top.mpr Matrix.SpecialLinearGroup.map_intCast_zmod_surjective,
+    Subgroup.card_top]
+
+/-- `Γ(3)` has index `24 = |SL₂(𝔽₃)|` in `SL₂(ℤ)`. -/
+theorem index_Gamma_three : (Gamma 3).index = 24 := by
+  rw [index_Gamma, Matrix.card_SL_field]
+  simp [Fin.prod_univ_two, ZMod.card]
 
 /-- `Γ(N) ≤ Γ₁(N)`: the principal congruence subgroup sits inside `Γ₁(N)`, since the three
 congruences `a ≡ 1`, `d ≡ 1`, `c ≡ 0` that `Γ₁(N)` imposes are three of the four that `Γ(N)`
@@ -602,10 +619,12 @@ theorem Gamma0Map_toHomUnits_negOne :
 /-- `-I` lies in `Γ₁(N)` exactly when `N ∣ 2`, i.e. for `N ∈ {1, 2}`. This is the degenerate
 range in which `Γ₁(N)` contains `-I`, so that all odd-weight forms for it vanish. -/
 theorem neg_one_mem_Gamma1_iff : (-1 : SL(2, ℤ)) ∈ Gamma1 N ↔ N ∣ 2 := by
-  have h : (-1 : ZMod N) = 1 ↔ N ∣ 2 := by
-    rw [neg_eq_iff_add_eq_zero, ← ZMod.natCast_eq_zero_iff 2 N]
-    norm_num
-  simp [Gamma1_mem, h]
+  simp [Gamma1_mem, ZMod.neg_one_eq_one_iff, Nat.dvd_prime Nat.prime_two]
+
+/-- `-I` lies in `Γ(N)` exactly when `N ∣ 2`, i.e. for `N ∈ {1, 2}`: `-I ≡ I` modulo `N`
+exactly when `N ∣ 2`. -/
+theorem neg_one_mem_Gamma_iff : (-1 : SL(2, ℤ)) ∈ Gamma N ↔ N ∣ 2 := by
+  simp [Gamma_mem, ZMod.neg_one_eq_one_iff, Nat.dvd_prime Nat.prime_two]
 
 /-- **Every power of the translation matrix lies in `Γ₁(N)`, at every level.** `Tⁿ` has diagonal
 `(1, 1)` and vanishing lower-left entry, so the three congruences of `Gamma1_mem` hold with no
