@@ -25,7 +25,8 @@ has area `4π` (`TauCeti.liouvilleMeasure_sphereAreaForm_univ`), and rescaled by
 `4π |r|` (`TauCeti.liouvilleMeasure_smul_sphereAreaForm_univ`). By
 `TauCeti.mul_eval₂_sphereAreaForm_sphereRotationAction`, on the infinitesimal rotations, which span
 every tangent plane, `r σ` is the Kirillov–Kostant–Souriau form of the coadjoint orbit of `SO(3)` of
-radius `r`, carried to `S²` along `x ↦ r x`. So this is the KKS area `4π r` of that orbit.
+radius `r > 0`, carried to `S²` along `x ↦ r x`. So for `r > 0` this is the KKS area `4π r` of
+that orbit.
 
 ## Main results
 

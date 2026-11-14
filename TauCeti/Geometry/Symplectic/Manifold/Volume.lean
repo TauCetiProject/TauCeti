@@ -94,6 +94,7 @@ theorem volumeForm_apply (σ : SmoothTwoForm I M) (n : ℕ) (x : M) :
 
 /-- The symplectic volume form `σ¹ / 1!` is the two-form `σ` itself. On a surface it is the
 volume form of `σ`. -/
+@[simp]
 theorem volumeForm_one (σ : SmoothTwoForm I M) : σ.volumeForm 1 = σ := by
   ext x : 2
   rw [volumeForm_apply, ContinuousAlternatingMap.wedgePow_one, Nat.factorial_one, Nat.cast_one,

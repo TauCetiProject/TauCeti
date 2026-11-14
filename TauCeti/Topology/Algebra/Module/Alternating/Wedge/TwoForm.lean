@@ -102,6 +102,7 @@ theorem pairedWedge_mul_apply_two_two (ω β : E [⋀^Fin 2]→L[ℝ] ℝ) (a b 
   ring
 
 /-- The first power of a two-form is the two-form itself. -/
+@[simp]
 theorem wedgePow_one (ω : E [⋀^Fin 2]→L[ℝ] ℝ) : wedgePow ω 1 = ω := by
   ext v
   rw [wedgePow_succ, pairedWedge_apply_zero_left, wedgePow_zero_apply]
