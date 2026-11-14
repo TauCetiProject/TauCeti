@@ -94,7 +94,7 @@ theorem curvatureOperator_localFrame_eq_sum {x : M}
   let hs := (e).isLocalFrameOn_localFrame_baseSet I 2 b
   rw [hs.coeff_sum_eq (cov.curvatureOperator (X i) (X j) (X k)) hbase]
   refine Finset.sum_congr rfl fun l _ ↦ ?_
-  have h := hs.coeff_curvatureOperator_frame (e).open_baseSet cov hbase i j k l
+  have h := hs.coeff_curvatureOperator_frame le_rfl (e).open_baseSet cov hbase i j k l
   have : IsManifold I (minSmoothness 𝕜 2) M :=
     IsManifold.of_le (n := minSmoothness 𝕜 3)
       (minSmoothness_monotone (𝕜 := 𝕜) (by norm_num))

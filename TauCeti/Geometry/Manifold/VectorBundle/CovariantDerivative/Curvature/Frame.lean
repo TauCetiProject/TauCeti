@@ -114,15 +114,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 3 M]
-  {ι : Type*} [Fintype ι] {s : ι → Π x : M, TangentSpace I x} {u : Set M}
-  (hs : IsLocalFrameOn I E 2 s u) (hu : IsOpen u)
+  {ι : Type*} [Fintype ι] {n : ℕ∞ω} {s : ι → Π x : M, TangentSpace I x} {u : Set M}
+  (hs : IsLocalFrameOn I E n s u) (hn : 2 ≤ n) (hu : IsOpen u)
   (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
   [ContMDiffCovariantDerivativeOn E 1 cov.toFun u] {x : M}
 
 local notation "Γ" => fun i j l y ↦ hs.coeff l y (cov (s j) y (s i y))
 
 omit [FiniteDimensional 𝕜 E] in
-include hu in
+include hn hu in
 /-- The curvature coefficients in a C² tangent frame, with the Lie bracket expanded in the
 same frame. Its structure coefficients supply the correction absent from a coordinate frame. -/
 theorem coeff_curvatureOperator_frame (hx : x ∈ u) (i j k l : ι) :
@@ -133,8 +133,9 @@ theorem coeff_curvatureOperator_frame (hx : x ∈ u) (i j k l : ι) :
   have : IsManifold I (2 + 1) M := IsManifold.of_le (n := 3) (by norm_num)
   let : ContMDiffVectorBundle 2 E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
-  rw [hs.coeff_curvatureOperator le_rfl hu cov hx ((hs.contMDiffOn i).of_le one_le_two)
-    ((hs.contMDiffOn j).of_le one_le_two)]
+  rw [hs.coeff_curvatureOperator hn hu cov hx
+    ((hs.contMDiffOn i).of_le (one_le_two.trans hn))
+    ((hs.contMDiffOn j).of_le (one_le_two.trans hn))]
   congr 1
   conv_lhs => rw [hs.coeff_sum_eq (mlieBracket I (s i) (s j)) hx]
   simp only [map_sum, map_smul, smul_eq_mul]
