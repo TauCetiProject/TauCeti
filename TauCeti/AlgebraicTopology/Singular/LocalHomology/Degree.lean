@@ -59,7 +59,8 @@ that are not surjective and is invariant under proper homotopies, that is homoto
 * `TauCeti.HomologicalOrientation.surjective_of_degree_ne_zero`: a proper map of nonzero degree
   onto a preconnected manifold is surjective.
 * `TauCeti.HomologicalOrientation.degree_eq_of_homotopy`: the degree is invariant under proper
-  homotopies.
+  homotopies, and the local degree at `y` under homotopies whose fibre over `y` is compact
+  (`TauCeti.HomologicalOrientation.localDegree_eq_of_homotopy_of_isCompact`).
 * `TauCeti.HomologicalOrientation.mapFundamentalClass_eq_degree_smul`: for compact `M` and `N`,
   `f_*[M] = deg f • [N]` in `Hₙ(N; ℤ)`, and more generally
   `TauCeti.HomologicalOrientation.mapFundamentalClass_comp_eq_degree_smul`:
@@ -322,14 +323,15 @@ theorem degree_comp (hF : finrank ℝ F = n) (hG : finrank ℝ G = n) [Preconnec
   · rw [degree_eq_localDegree_some _ _ hE _ h, degree_eq_localDegree_some _ _ hF _ h,
       localDegree_comp o o' o'' hE hF hG hg hf, mul_comm]
 
-/-- **Invariance of the local degree under proper homotopies**: if `H` is a homotopy from `f₀`
-to `f₁` which is proper as a map `[0, 1] × M → N`, then `f₀` and `f₁` have the same local degree at
-every point. -/
-theorem localDegree_eq_of_homotopy (hF : finrank ℝ F = n) {f₀ f₁ : C(M, N)} (H : f₀.Homotopy f₁)
-    (hH : IsProperMap H) (y : N) : o.localDegree o' hE f₀ y = o.localDegree o' hE f₁ y := by
+/-- **Invariance of the local degree under homotopies with compact fibre**: if `H` is a homotopy
+from `f₀` to `f₁` whose fibre `H⁻¹(y) ⊆ [0, 1] × M` over `y` is compact, then `f₀` and `f₁` have
+the same local degree at `y`. -/
+theorem localDegree_eq_of_homotopy_of_isCompact (hF : finrank ℝ F = n) {f₀ f₁ : C(M, N)}
+    (H : f₀.Homotopy f₁) {y : N} (hH : IsCompact (H ⁻¹' {y})) :
+    o.localDegree o' hE f₀ y = o.localDegree o' hE f₁ y := by
   -- Both fibres over `y` lie in the compact projection `A` of `H⁻¹(y)` to `M`.
   set A : Set M := Prod.snd '' (H ⁻¹' {y})
-  have hA : IsCompact A := (hH.isCompact_preimage isCompact_singleton).image continuous_snd
+  have hA : IsCompact A := hH.image continuous_snd
   have h₀ : f₀ ⁻¹' {y} ⊆ A := fun x hx ↦ ⟨(0, x), by simpa using hx, rfl⟩
   have h₁ : f₁ ⁻¹' {y} ⊆ A := fun x hx ↦ ⟨(1, x), by simpa using hx, rfl⟩
   -- A map whose fibre over `y` lies in `A` carries `[M]_A` to its local degree times `o' y`.
@@ -351,6 +353,13 @@ theorem localDegree_eq_of_homotopy (hF : finrank ℝ F = n) {f₀ f₁ : C(M, N)
   have h := hdeg f₀ h₀
   rw [hmap, hdeg f₁ h₁] at h
   exact o'.zsmul_left_injective hF y h.symm
+
+/-- **Invariance of the local degree under proper homotopies**: if `H` is a homotopy from `f₀`
+to `f₁` which is proper as a map `[0, 1] × M → N`, then `f₀` and `f₁` have the same local degree at
+every point. -/
+theorem localDegree_eq_of_homotopy (hF : finrank ℝ F = n) {f₀ f₁ : C(M, N)} (H : f₀.Homotopy f₁)
+    (hH : IsProperMap H) (y : N) : o.localDegree o' hE f₀ y = o.localDegree o' hE f₁ y :=
+  o.localDegree_eq_of_homotopy_of_isCompact o' hE hF H (hH.isCompact_preimage isCompact_singleton)
 
 /-- **Invariance of the degree under proper homotopies**: maps joined by a homotopy which is
 proper as a map `[0, 1] × M → N` have the same degree. -/
