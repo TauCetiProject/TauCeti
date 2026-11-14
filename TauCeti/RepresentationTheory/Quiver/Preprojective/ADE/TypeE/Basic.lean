@@ -498,15 +498,9 @@ theorem preprojectiveMk_E6_ofPath_eq_zero_of_le
       (Symmetrify (OrientedQuiver (diagramGraph DynkinType.E6.cartanMatrix) o)))
     (hx : 24 ≤ x.2.2.length) :
     preprojectiveMk k (OrientedQuiver (diagramGraph DynkinType.E6.cartanMatrix) o)
-      (ofPath x) = 0 := by
-  -- Every orientation of the bipartite `E₆` graph is compared with the signless algebra.
-  have hc : ∀ ⦃i j : OrientedQuiver (diagramGraph DynkinType.E6.cartanMatrix) o⦄, (i ⟶ j) →
-      e6Coloring ((OrientedQuiver.vertexEquiv _ o).symm i) ≠
-        e6Coloring ((OrientedQuiver.vertexEquiv _ o).symm j) :=
-    fun _ _ a => e6Coloring.valid a.1
-  apply preprojectiveMk_ofPath_eq_zero_of_signless o k hc x
-  exact signlessPreprojectiveMk_E6_ofPath_eq_zero_of_le k _
-    (by rwa [Prefunctor.length_mapTotalPath])
+      (ofPath x) = 0 :=
+  e6Coloring.preprojectiveMk_ofPath_eq_zero_of_le k
+    (signlessPreprojectiveMk_E6_ofPath_eq_zero_of_le k) o x hx
 
 /-- **The preprojective relation ideal of every orientation of `E₆` is admissible.** It lies in
 the square of the arrow ideal, and it contains every path of length at least `24`. -/
@@ -579,15 +573,9 @@ every orientation of the `E₈` graph. -/
 theorem preprojectiveMk_E8_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath (Symmetrify (OrientedQuiver zigzagE8Graph o)))
     (hx : 46 ≤ x.2.2.length) :
-    preprojectiveMk k (OrientedQuiver zigzagE8Graph o) (ofPath x) = 0 := by
-  -- Every orientation of the bipartite `E₈` graph is compared with the signless algebra.
-  have hc : ∀ ⦃i j : OrientedQuiver zigzagE8Graph o⦄, (i ⟶ j) →
-      zigzagE8Coloring ((OrientedQuiver.vertexEquiv _ o).symm i) ≠
-        zigzagE8Coloring ((OrientedQuiver.vertexEquiv _ o).symm j) :=
-    fun _ _ a => zigzagE8Coloring.valid a.1
-  apply preprojectiveMk_ofPath_eq_zero_of_signless o k hc x
-  exact signlessPreprojectiveMk_E8_ofPath_eq_zero_of_le k _
-    (by rwa [Prefunctor.length_mapTotalPath])
+    preprojectiveMk k (OrientedQuiver zigzagE8Graph o) (ofPath x) = 0 :=
+  zigzagE8Coloring.preprojectiveMk_ofPath_eq_zero_of_le k
+    (signlessPreprojectiveMk_E8_ofPath_eq_zero_of_le k) o x hx
 
 /-- **The preprojective relation ideal of every orientation of `E₈` is admissible.** It lies in
 the square of the arrow ideal, and it contains every path of length at least `46`. -/
