@@ -48,6 +48,8 @@ its disk map is the identity (`TauCeti.TopCat.diskMap_eq_id_of_det_eq_one`); if 
 * `TauCeti.TopCat.diskMap_eq_id_of_det_eq_one`,
   `TauCeti.TopCat.diskBoundaryMap_eq_diskBoundaryNeg_of_det_eq_neg_one`: the two orthogonal maps
   of `D¹`.
+* `TauCeti.TopCat.diskMapFamily`: the disk maps of a continuous family of linear isometries,
+  as one map `P × D^n → D^n` of the parameter and the point of the disk.
 
 ## References
 
@@ -218,5 +220,32 @@ theorem diskBoundaryMap_eq_diskBoundaryNeg_of_det_eq_neg_one
     LinearIsometryEquiv.diskBoundaryMap_neg]
 
 end DimensionOne
+
+section Family
+
+variable {P : Type*} [TopologicalSpace P]
+  (g : P → EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+  (hg : Continuous fun q : P × EuclideanSpace ℝ (Fin n) ↦ g q.1 q.2)
+
+/-- The family `(p, w) ↦ g p w` of self-maps of the disk induced by a family `g` of linear
+isometries of `ℝⁿ` depending continuously on the parameter `p`. Over each `p` it is the disk map
+of `g p`. -/
+def diskMapFamily : C(P × TopCat.disk.{u} n, TopCat.disk.{u} n) where
+  toFun q := (g q.1).diskMap q.2
+  continuous_toFun := continuous_uliftUp.comp ((hg.comp (continuous_fst.prodMk
+    (continuous_subtype_val.comp (continuous_uliftDown.comp continuous_snd)))).subtype_mk _)
+
+@[simp]
+theorem diskMapFamily_apply (p : P) (w : TopCat.disk.{u} n) :
+    diskMapFamily g hg (p, w) = (g p).diskMap w :=
+  (rfl)
+
+/-- Over each parameter, the family of disk maps is a map of pairs `(D^n, ∂D^n) → (D^n, ∂D^n)`. -/
+theorem mapsTo_diskMapFamily_range_diskBoundaryInclusion (p : P) :
+    MapsTo (fun w ↦ diskMapFamily.{u} g hg (p, w)) (range (TopCat.diskBoundaryInclusion n))
+      (range (TopCat.diskBoundaryInclusion n)) :=
+  (g p).mapsTo_diskMap_range_diskBoundaryInclusion
+
+end Family
 
 end TauCeti.TopCat
