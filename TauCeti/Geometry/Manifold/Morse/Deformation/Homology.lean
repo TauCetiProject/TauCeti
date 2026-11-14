@@ -105,6 +105,21 @@ theorem isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero (hf : ContMDiff 
   exact TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel (X := TopCat.of M)
     (sublevel_mono f hab) r G R n
 
+/-- **Crossing a band without critical points does not change homology.** If the band `f⁻¹[a, b]`
+is compact and contains no critical point of the smooth function `f`, the inclusion of
+`{f ≤ a}` into `{f ≤ b}` induces isomorphisms on singular homology in every degree. -/
+theorem isIso_homologyMap_map_sublevelPair_of_mfderiv_ne_zero (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hreg : ∀ x, a ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0) (R : C) (n : ℕ) :
+    IsIso (SSet.homologyMap (TopCat.toSSet.map (sublevelPair f hab).map) R n) := by
+  obtain ⟨e, he⟩ := exists_sublevelHomotopyEquiv hf hab hcompact hreg
+  have h : (sublevelPair f hab).map = TopCat.ofHom e.toFun := by
+    ext x
+    exact Subtype.ext (he x).symm
+  have := (e.singularHomologyIso R n).isIso_hom
+  rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom, singularHomologyFunctor_obj_map] at this
+  rwa [h]
+
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
 /-- A collar `f⁻¹[a, a']` which the flow `φ` crosses at unit speed carries no homology relative to
 its lower level `f⁻¹(a)`: following the flow down to the level `a` is a strong deformation
@@ -145,17 +160,6 @@ private theorem isZero_singularHomology_collar {a' : ℝ} (hf : Continuous f) (�
         simp [r, hxa] } R n
 
 variable {A : Type v} [Category.{w} A] [HasCoproducts.{u} A] [Abelian A]
-
-/-- **Crossing a band without critical points does not change homology.** If the band `f⁻¹[a, b]`
-is compact and contains no critical point of the smooth function `f`, the inclusion of
-`{f ≤ a}` into `{f ≤ b}` induces isomorphisms on singular homology in every degree. -/
-theorem isIso_homologyMap_map_sublevelPair_of_mfderiv_ne_zero (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
-    (hreg : ∀ x, a ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0) (R : A) (n : ℕ) :
-    IsIso (SSet.homologyMap (TopCat.toSSet.map (sublevelPair f hab).map) R n) :=
-  (sublevelPair f hab).isIso_homologyMap_map_of_isZero R
-    (isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf hab hcompact hreg R (n + 1))
-    (isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf hab hcompact hreg R n)
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
 /-- The excision step: for a collar `f⁻¹[a, a']` with `a < a'`, or with `a' = b`, excising
