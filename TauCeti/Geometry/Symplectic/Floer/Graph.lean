@@ -17,6 +17,7 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Geometry.Symplectic.JHolomorphic.Prod.Skew
 
 /-!
 # Gromov's graph construction for the inhomogeneous Floer equation
@@ -134,25 +135,8 @@ theorem isJHolomorphicAt_graph_floerGraphAlmostComplex_iff {u : ℝ × ℝ → V
       DifferentiableAt ℝ u z ∧
         IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
           (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) := by
-  have hgraph (hu : DifferentiableAt ℝ u z) :
-      HasFDerivAt (fun w ↦ (w, u w)) ((ContinuousLinearMap.id ℝ (ℝ × ℝ)).prod (fderiv ℝ u z)) z :=
-    (hasFDerivAt_id z).prodMk hu.hasFDerivAt
-  have hlin : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-        (ω.floerGraphAlmostComplex J Ks Kt (z, u z))
-        ((ContinuousLinearMap.id ℝ (ℝ × ℝ)).prod (fderiv ℝ u z) : ℝ × ℝ →ₗ[ℝ] (ℝ × ℝ) × V) ↔
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
-        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) := by
-    rw [ContinuousLinearMap.coe_prod, ContinuousLinearMap.coe_id, floerGraphAlmostComplex_def,
-      AlmostComplexStructure.isComplexLinearMap_id_prod_skewProd_iff, perturbedFDeriv_eq_sub,
-      ContinuousLinearMap.toLinearMap_sub]
-  rw [isJHolomorphicAt_iff]
-  constructor
-  · rintro ⟨f', hf', hf'lin⟩
-    have hu : DifferentiableAt ℝ u z := hf'.differentiableAt.snd
-    rw [hf'.unique (hgraph hu)] at hf'lin
-    exact ⟨hu, hlin.mp hf'lin⟩
-  · rintro ⟨hu, hulin⟩
-    exact ⟨_, hgraph hu, hlin.mpr hulin⟩
+  rw [perturbedFDeriv_eq_sub, ContinuousLinearMap.toLinearMap_sub]
+  exact AlmostComplexStructure.isJHolomorphicAt_graph_skewProd_iff (J₁ := fun _ ↦ _)
 
 /-- **Gromov's graph construction, globally.** A map `u` solves the Floer equation everywhere
 exactly when its graph is `J_K`-holomorphic. -/
@@ -171,37 +155,15 @@ variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U] {J' : U → Almo
 of `ℝ × ℝ`. -/
 theorem _root_.TauCeti.IsJHolomorphicAt.fst_of_floerGraphAlmostComplex {f : U → (ℝ × ℝ) × V}
     {y : U} (hf : IsJHolomorphicAt J' (ω.floerGraphAlmostComplex J Ks Kt) f y) :
-    IsJHolomorphicAt J' (fun _ ↦ AlmostComplexStructure.product ℝ) (fun y ↦ (f y).1) y := by
-  obtain ⟨f', hf', hlin⟩ := (isJHolomorphicAt_iff _ _ _ _).mp hf
-  rw [floerGraphAlmostComplex_def, AlmostComplexStructure.isComplexLinearMap_skewProd_iff] at hlin
-  refine isJHolomorphicAt_of_hasFDerivAt (hasFDerivAt_fst.comp y hf') ?_
-  rw [ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_fst]
-  exact hlin.1
+    IsJHolomorphicAt J' (fun _ ↦ AlmostComplexStructure.product ℝ) (fun y ↦ (f y).1) y :=
+  IsJHolomorphicAt.fst_of_skewProd (J₁ := fun _ ↦ _) hf
 
 /-- **Vertical maps.** A map `y ↦ (z, g y)` into the fibre over a fixed domain point `z` is
 `J_K`-holomorphic exactly when `g` is holomorphic for the structure `J(z, ·)` frozen at `z`. -/
 theorem isJHolomorphicAt_prodMk_floerGraphAlmostComplex_iff {g : U → V} {z : ℝ × ℝ} {y : U} :
     IsJHolomorphicAt J' (ω.floerGraphAlmostComplex J Ks Kt) (fun y ↦ (z, g y)) y ↔
-      IsJHolomorphicAt J' (J z) g y := by
-  have hvert {g' : U →L[ℝ] V} (hg : HasFDerivAt g g' y) :
-      HasFDerivAt (fun y ↦ (z, g y)) ((0 : U →L[ℝ] ℝ × ℝ).prod g') y :=
-    (hasFDerivAt_const z y).prodMk hg
-  have hlin (g' : U →L[ℝ] V) :
-      IsComplexLinearMap (J' y) (ω.floerGraphAlmostComplex J Ks Kt (z, g y))
-          ((0 : U →L[ℝ] ℝ × ℝ).prod g' : U →ₗ[ℝ] (ℝ × ℝ) × V) ↔
-        IsComplexLinearMap (J' y) (J z (g y)) (g' : U →ₗ[ℝ] V) := by
-    rw [floerGraphAlmostComplex_def, AlmostComplexStructure.isComplexLinearMap_skewProd_iff,
-      ContinuousLinearMap.coe_prod, LinearMap.fst_prod, LinearMap.snd_prod,
-      ContinuousLinearMap.toLinearMap_zero, LinearMap.comp_zero, sub_zero]
-    exact and_iff_right (isComplexLinearMap_zero _ _)
-  rw [isJHolomorphicAt_iff, isJHolomorphicAt_iff]
-  constructor
-  · rintro ⟨f', hf', hf'lin⟩
-    have hg : DifferentiableAt ℝ g y := hf'.differentiableAt.snd
-    rw [hf'.unique (hvert hg.hasFDerivAt)] at hf'lin
-    exact ⟨_, hg.hasFDerivAt, (hlin _).mp hf'lin⟩
-  · rintro ⟨g', hg', hglin⟩
-    exact ⟨_, hvert hg', (hlin g').mpr hglin⟩
+      IsJHolomorphicAt J' (J z) g y :=
+  AlmostComplexStructure.isJHolomorphicAt_prodMk_right_skewProd_iff
 
 end AlmostComplex
 
