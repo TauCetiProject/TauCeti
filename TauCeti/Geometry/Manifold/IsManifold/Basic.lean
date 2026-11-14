@@ -43,7 +43,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 `C^(minSmoothness 𝕜 n)` manifold. This theorem is deliberately not a global instance, so the
 downgrade applies only in files that opt in with
 `attribute [local instance] IsManifold.minSmoothness_of_isRCLikeNormedField`. -/
-theorem IsManifold.minSmoothness_of_isRCLikeNormedField [IsRCLikeNormedField 𝕜] {n : ℕ∞ω}
+protected theorem IsManifold.minSmoothness_of_isRCLikeNormedField [IsRCLikeNormedField 𝕜] {n : ℕ∞ω}
     [IsManifold I n M] : IsManifold I (minSmoothness 𝕜 n) M := by
   rwa [_root_.minSmoothness_of_isRCLikeNormedField]
 

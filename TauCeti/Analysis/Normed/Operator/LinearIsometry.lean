@@ -36,7 +36,7 @@ variable {R ι E F : Type*} [Semiring R] [NormedAddCommGroup E] [SeminormedAddCo
 
 /-- A linear isometry preserves linear independence of an indexed family. -/
 @[simp]
-theorem linearIndependent_iff {v : ι → E} :
+protected theorem linearIndependent_iff {v : ι → E} :
     LinearIndependent R (l ∘ v) ↔ LinearIndependent R v :=
   l.toLinearMap.linearIndependent_iff_of_injOn l.injective.injOn
 
