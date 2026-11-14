@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
+import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Restriction
@@ -25,7 +26,8 @@ right:
 
 so `sup_t ‖u t‖ ≤ ‖u‖_{Lᵖ} + ‖u'‖_{Lᵖ} ≤ √2 ‖u‖_{W^{1,p}}`. Hence `u ↦ u` is a bounded linear
 map `W^{1,p}(ℝ, F) →L[ℝ] C₀(ℝ, F)`. Its values satisfy the fundamental theorem of calculus
-`∫ r in s..t, u' r = u t - u s`.
+`∫ r in s..t, u' r = u t - u s`, and when `u'` is integrable on `ℝ` its whole-line integral
+vanishes (`∫ r, u' r = 0`).
 
 The supremum bound is what makes nonlinear superposition operators `ξ ↦ V(γ + ξ)` on Sobolev
 paths tractable: a path `ξ` of small `W^{1,p}` norm stays uniformly close to zero, so `γ + ξ`
@@ -54,8 +56,11 @@ length one the `L¹` norm is at most the `Lᵖ` norm. These local `Lᵖ` norms t
   `TauCeti.WeakDerivStep.norm_toZeroAtInfty_le_sqrt_two_mul_norm`: the supremum bounds
   `‖u‖_{Lᵖ} + ‖u'‖_{Lᵖ}` and `√2 ‖u‖_{W^{1,p}}`; `TauCeti.WeakDerivStep.opNorm_toZeroAtInfty_le`
   bounds the norm of the embedding by `√2`.
-* `TauCeti.WeakDerivStep.integral_weakFDeriv_apply_one_eq_sub`: the fundamental theorem of
-  calculus `∫ r in s..t, u' r = u t - u s`.
+* `TauCeti.WeakDerivStep.integral_weakFDeriv_apply_one_eq_sub`,
+  `TauCeti.WeakDerivStep.integral_weakFDeriv_apply_one_eq_zero`: the fundamental theorem of
+  calculus `∫ r in s..t, u' r = u t - u s`, and `∫ r, u' r = 0` when `u'` is integrable.
+* `TauCeti.HasWeakLineDerivOn.integral_eq_zero_of_integrable`: for integrable `f, f' : ℝ → F` with
+  `f'` the weak derivative of `f` on `ℝ`, `∫ r, f' r = 0`.
 
 ## References
 
@@ -310,4 +315,62 @@ theorem integral_weakFDeriv_apply_one_eq_sub (hp : p ≠ ∞)
     hdI (toZeroAtInfty hp u).continuous.continuousOn
     (ae_restrict_of_ae (prev_ae_eq_toZeroAtInfty hp u)) hs ht)
 
+/-- When the weak derivative of a path in `W^{1,p}(ℝ, F)` (`p < ∞`) is integrable on `ℝ`, its
+whole-line integral vanishes, since the continuous representative tends to zero at `±∞`. -/
+theorem integral_weakFDeriv_apply_one_eq_zero (hp : p ≠ ∞)
+    (u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))))
+    (hd : Integrable (fun r ↦ weakFDeriv _ u r 1) volume) :
+    ∫ r, weakFDeriv _ u r 1 = 0 := by
+  have h0 := ZeroAtInftyContinuousMapClass.zero_at_infty (toZeroAtInfty hp u)
+  have htop : Tendsto (fun R : ℝ ↦ toZeroAtInfty hp u R) atTop (𝓝 0) :=
+    h0.mono_left atTop_le_cocompact
+  have hbot : Tendsto (fun R : ℝ ↦ toZeroAtInfty hp u (-R)) atTop (𝓝 0) :=
+    (h0.mono_left atBot_le_cocompact).comp tendsto_neg_atTop_atBot
+  have hsub : Tendsto (fun R : ℝ ↦ ∫ r in (-R)..R, weakFDeriv _ u r 1) atTop (𝓝 0) := by
+    simpa only [integral_weakFDeriv_apply_one_eq_sub hp u (-_) _, sub_zero] using htop.sub hbot
+  exact tendsto_nhds_unique
+    (intervalIntegral_tendsto_integral hd tendsto_neg_atTop_atBot tendsto_id) hsub
+
 end TauCeti.WeakDerivStep
+
+namespace TauCeti
+
+open _root_.MeasureTheory TopologicalSpace
+open scoped ENNReal
+
+/-- **Whole-line integration by parts against `1`.** If an integrable function `f : ℝ → F` into a
+Banach space has an integrable weak derivative `f'` on the line, then `∫ r, f' r = 0`: `f` and
+`f'` define an element of `W^{1,1}(ℝ, F)`, whose continuous representative vanishes at `±∞`. -/
+theorem HasWeakLineDerivOn.integral_eq_zero_of_integrable {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [CompleteSpace F] {f f' : ℝ → F}
+    (h : HasWeakLineDerivOn volume ⊤ f f' 1) (hf : Integrable f volume)
+    (hf' : Integrable f' volume) : ∫ r, f' r = 0 := by
+  have hfr : MemLp f 1 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
+    memLp_one_iff_integrable.2 (hf.mono_measure Measure.restrict_le_self)
+  have hf'r : MemLp f' 1 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
+    memLp_one_iff_integrable.2 (hf'.mono_measure Measure.restrict_le_self)
+  let lift := (ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap
+  let D := lift.compLp (hf'r.toLp f')
+  have hD : HasWeakFDerivOn volume ⊤
+      (ContinuousLinearMap.id ℝ (Lp F 1 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) (hfr.toLp f))
+      D := by
+    rw [hasWeakFDerivOn_iff]
+    intro c
+    refine (by simpa using (h.congr_ae hfr.coeFn_toLp.symm).smul_direction c :
+      HasWeakLineDerivOn _ _ _ _ c).congr_ae_deriv ?_
+    filter_upwards [lift.coeFn_compLp (hf'r.toLp f'), hf'r.coeFn_toLp] with s hs hs'
+    simp [D, lift, hs, hs']
+  let u := WeakDerivStep.mk _ (hfr.toLp f) D hD
+  have hae : (fun r ↦ WeakDerivStep.weakFDeriv _ u r 1) =ᵐ[volume] f' := by
+    rw [WeakDerivStep.weakFDeriv_mk]
+    refine (lift.coeFn_compLp (hf'r.toLp f')).and hf'r.coeFn_toLp
+      |>.filter_mono (ae_mono (by simp : volume ≤ volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+      |>.mono fun r ⟨hr, hr'⟩ ↦ ?_
+    simp [D, lift, hr, hr']
+  rw [← integral_congr_ae hae]
+  exact WeakDerivStep.integral_weakFDeriv_apply_one_eq_zero ENNReal.one_ne_top u
+    (hf'.congr hae.symm)
+
+end TauCeti
+
