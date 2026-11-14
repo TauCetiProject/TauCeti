@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.Beta.Symmetric
-public import TauCeti.Analysis.MvPolynomial.Sqrt
+public import Mathlib.Probability.Distributions.Beta
+public import Mathlib.MeasureTheory.Constructions.Pi
+public import Mathlib.Algebra.MvPolynomial.Eval
+import TauCeti.Probability.Distributions.Beta.Symmetric
+import TauCeti.Analysis.MvPolynomial.Sqrt
 
 /-!
 # Polynomial moments of centered Beta coordinates and their residuals

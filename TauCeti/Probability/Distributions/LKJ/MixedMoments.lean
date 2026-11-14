@@ -6,18 +6,23 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.LKJ.Basic
+public import TauCeti.Analysis.Matrix.PartialCorrelation.Polynomial
 import TauCeti.Analysis.Matrix.PosSemidef.Basic
+import TauCeti.Probability.Distributions.LKJ.PartialCorrelation
+import TauCeti.Probability.Distributions.Beta.Polynomial
 
 /-!
-# Integrability of LKJ mixed entry moments
+# LKJ mixed entry moments
 
 Every natural monomial in the entries of an LKJ correlation matrix is integrable. In fact, it
 belongs to every `Lᵖ`, including `L∞`, because positive-semidefiniteness and unit diagonal bound
 every matrix entry in absolute value by one. The result includes repeated symmetric entries,
 diagonal powers, the empty matrix, and nonpositive shapes, where `lkjMeasure` is the zero measure.
 
-This is the integrability input for the mixed-moment evaluation obtained by expanding the
-partial-correlation Cholesky representation. The finite Beta-product evaluation is separate.
+Expanding the partial-correlation Gram matrix as a polynomial in independent centered-Beta
+coordinates and their residual square roots gives an exact finite Beta-product formula for
+every natural mixed entry moment. Odd coordinate exponents vanish. This uses the independent
+coordinate law `map_coe_lkjMeasure`; entries in a Cholesky row are not generally independent.
 
 ## References
 
@@ -64,5 +69,37 @@ theorem integrable_prod_pow_coe_apply_lkjMeasure (p : ℕ) (η : ℝ)
     Integrable (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
       ∏ ij, (R : Matrix (Fin p) (Fin p) ℝ) ij.1 ij.2 ^ n ij) (lkjMeasure p η) :=
   memLp_one_iff_integrable.mp (memLp_prod_pow_coe_apply_lkjMeasure p η n 1)
+
+/-- Every natural mixed entry moment of a valid LKJ law equals a finite sum of Beta products.
+The exponents in each term are the coefficients' monomial indices in the explicit Gram
+expansion. Odd partial-correlation exponents vanish; residual exponents enter as half-integers. -/
+theorem integral_prod_pow_coe_apply_lkjMeasure {p : ℕ} {η : ℝ} (hη : 0 < η)
+    (n : Fin p × Fin p → ℕ) :
+    ∫ R, (∏ ij, (R.val ij.1 ij.2) ^ n ij) ∂lkjMeasure p η =
+      ∑ d ∈ (partialCorrelationGramMonomialPolynomial p n).support,
+        (partialCorrelationGramMonomialPolynomial p n).coeff d * ∏ ij : strictLowerTriangle p,
+          if Even (d (Sum.inl ij)) then
+            beta (((d (Sum.inl ij) : ℝ) + 1) / 2)
+                (lkjPartialCorrelationShape p η ij + (d (Sum.inr ij) : ℝ) / 2) /
+              beta (1 / 2) (lkjPartialCorrelationShape p η ij) else 0 := by
+  have hmap := map_coe_lkjMeasure (p := p) hη
+  have hcont : Continuous (fun R : Matrix (Fin p) (Fin p) ℝ ↦
+      ∏ ij, R ij.1 ij.2 ^ n ij) := by fun_prop
+  have htransfer :
+      (∫ R, (∏ ij, (R.val ij.1 ij.2) ^ n ij) ∂lkjMeasure p η) =
+        ∫ z : strictLowerTriangle p → ℝ,
+          MvPolynomial.eval (Sum.elim z (fun ij ↦ Real.sqrt (1 - z ij ^ 2)))
+            (partialCorrelationGramMonomialPolynomial p n)
+          ∂(Measure.pi fun ij ↦
+            (betaMeasure (lkjPartialCorrelationShape p η ij)
+              (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)) := by
+    rw [← integral_map (φ := Subtype.val)
+      (f := fun R : Matrix (Fin p) (Fin p) ℝ ↦ ∏ ij, R ij.1 ij.2 ^ n ij)
+      (by fun_prop) hcont.aestronglyMeasurable, hmap,
+      integral_map (by fun_prop) hcont.aestronglyMeasurable]
+    simp only [eval_partialCorrelationGramMonomialPolynomial]
+  rw [htransfer]
+  exact integral_eval_sumElim_sqrt_one_sub_sq_pi_centered_betaMeasure _
+    (lkjPartialCorrelationShape_pos hη) _
 
 end TauCeti.Probability
