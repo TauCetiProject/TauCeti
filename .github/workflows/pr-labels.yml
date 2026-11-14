@@ -50,7 +50,6 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
-          SELF_TESTED_TEAM_TOKEN: ${{ steps.app-token.outputs.token }}
           SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           INPUT_PR: ${{ github.event.inputs.pr }}
@@ -95,10 +94,10 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@1a2fd2de61b53e1721517aa4ff6adffdefa09520
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a94bf58e6032630c65da1a61a989bfb985ad8cd0
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 1a2fd2de61b53e1721517aa4ff6adffdefa09520
+          tools-ref: a94bf58e6032630c65da1a61a989bfb985ad8cd0
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
@@ -107,7 +106,6 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
-          SELF_TESTED_TEAM_TOKEN: ${{ steps.app-token.outputs.token }}
           SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR: ${{ needs.resolve.outputs.pr }}
@@ -144,10 +142,10 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@1a2fd2de61b53e1721517aa4ff6adffdefa09520
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a94bf58e6032630c65da1a61a989bfb985ad8cd0
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 1a2fd2de61b53e1721517aa4ff6adffdefa09520
+          tools-ref: a94bf58e6032630c65da1a61a989bfb985ad8cd0
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
@@ -156,7 +154,6 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
-          SELF_TESTED_TEAM_TOKEN: ${{ steps.app-token.outputs.token }}
           SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           REPO: ${{ github.repository }}

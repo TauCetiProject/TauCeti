@@ -51,6 +51,9 @@ factor `b ^ (|s| L)`. This compares dyadic weights `2 ^ (s j)` and `2 ^ (s k)` a
 For `0 < x` and natural numbers `a ≤ b`, `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))`, the form of the
 off-diagonal decay `2 ^ (-M |j - k|)` between dyadic indices `j` and `k`.
 
+The geometric weight `(b ^ (-s)) ^ d` cancels the excess of the dyadic weight `b ^ (s (d + k))`
+over `b ^ (s k)`, which is how the pieces of higher index are summed against a geometric series.
+
 A power `x ^ y` of a nonnegative real with exponent `0 ≤ y ≤ 1` is at most `1 + x`, which bounds
 the fractional powers `T ^ (α / 2)` and `√T` of a time horizon uniformly by `1 + T`.
 
@@ -73,8 +76,8 @@ An exponential upper bound on a nonnegative base passes to its nonnegative real 
 `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. This is how a bound `|q| ≤ e^{-t}` on a
 nome is turned into bounds on the fractional powers `|q| ^ c` in a product estimate.
 
-A positive factor splits off a real power of any real number, including a negative one:
-`(a t) ^ z = a ^ z t ^ z` for `0 < a`. For `t < 0` both sides carry the factor `cos (z π)`. This is
+A nonnegative factor splits off a real power of any real number, including a negative one:
+`(a t) ^ z = a ^ z t ^ z` for `0 ≤ a`. For `t < 0` both sides carry the factor `cos (z π)`. This is
 the form in which a positive rescaling is pulled out of a power without a sign hypothesis.
 
 For nonnegative `a`, `C`, `I` and `q > 0`, a bound `a ≤ C * I ^ (1 / q)` is equivalent to its
@@ -107,6 +110,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.rpow_mul_natCast_le_of_mem_Ico`, `Real.rpow_mul_natCast_le_of_mem_Ico'`:
   `b ^ (s k) ≤ b ^ (|s| L) b ^ (s j)` and `b ^ (s j) ≤ b ^ (|s| L) b ^ (s k)` when `1 ≤ b` and
   the natural number `k` lies in the window `j - L ≤ k < j + L`.
+* `Real.rpow_neg_pow_mul_rpow_mul_natCast_add`: `(b ^ (-s)) ^ d b ^ (s (d + k)) = b ^ (s k)` for
+  `0 < b` and natural numbers `d`, `k`.
 * `Real.rpow_le_one_add`: `x ^ y ≤ 1 + x` for `0 ≤ x` and `0 ≤ y ≤ 1`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.tendsto_pow_div_mul_sub_pow_atTop`: `D ^ n / (n ω (D ^ n - ρ ^ n)) → (n ω)⁻¹` as `D → ∞`.
@@ -115,7 +120,7 @@ with the corresponding integral of `q`-th powers.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
-* `Real.mul_rpow_of_pos_left`: `(a t) ^ z = a ^ z t ^ z` for `0 < a` and every real `t`.
+* `Real.mul_rpow_of_nonneg_left`: `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a` and every real `t`.
 * `Real.rpow_le_mul_of_mul_le_of_inv_le`: from `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q`, deduce
   `a ^ q ≤ K ^ q * c * t`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
@@ -253,6 +258,14 @@ theorem rpow_mul_natCast_le_of_mem_Ico' {b : ℝ} (hb : 1 ≤ b) (s : ℝ) {j k 
   refine rpow_mul_le_rpow_abs_mul_mul_rpow_mul hb s (abs_sub_le_iff.2 ⟨?_, ?_⟩)
   all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
 
+/-- For `0 < b`, the geometric weight `(b ^ (-s)) ^ d` turns the dyadic weight `b ^ (s (d + k))`
+back into `b ^ (s k)`. -/
+theorem rpow_neg_pow_mul_rpow_mul_natCast_add {b : ℝ} (hb : 0 < b) (s : ℝ) (d k : ℕ) :
+    (b ^ (-s)) ^ d * b ^ (s * (d + k : ℕ)) = b ^ (s * k) := by
+  rw [← rpow_mul_natCast hb.le, ← rpow_add hb]
+  push_cast
+  ring_nf
+
 /-- A power of a nonnegative real with exponent in `[0, 1]` is at most `1 + x`: `x ^ y ≤ 1` for
 `x ≤ 1` and `x ^ y ≤ x` for `1 ≤ x`. -/
 theorem rpow_le_one_add {x y : ℝ} (hx : 0 ≤ x) (hy₀ : 0 ≤ y) (hy₁ : y ≤ 1) : x ^ y ≤ 1 + x := by
@@ -308,15 +321,19 @@ theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) 
   rw [← exp_mul]
   ring_nf
 
-/-- `(a t) ^ z = a ^ z t ^ z` for `a > 0` and every real `t`, including `t < 0`, where both sides
-carry the same factor `cos (z π)`. -/
-theorem mul_rpow_of_pos_left {a : ℝ} (ha : 0 < a) (t z : ℝ) :
+/-- Real powers distribute over a product whose first factor is nonnegative, with no condition on
+the second factor: for `t < 0` both sides carry the same factor `cos (z π)`. -/
+theorem mul_rpow_of_nonneg_left {a : ℝ} (ha : 0 ≤ a) (t z : ℝ) :
     (a * t) ^ z = a ^ z * t ^ z := by
-  rcases le_or_gt 0 t with ht | ht
-  · exact mul_rpow ha.le ht
-  · rw [rpow_def_of_neg (mul_neg_of_pos_of_neg ha ht), rpow_def_of_neg ht, rpow_def_of_pos ha,
-      log_mul ha.ne' ht.ne, add_mul, exp_add]
-    ring
+  rcases ha.eq_or_lt with rfl | ha
+  · rcases eq_or_ne z 0 with rfl | hz
+    · simp
+    · simp [zero_rpow hz]
+  · rcases le_or_gt 0 t with ht | ht
+    · exact mul_rpow ha.le ht
+    · rw [rpow_def_of_neg (mul_neg_of_pos_of_neg ha ht), rpow_def_of_neg ht, rpow_def_of_pos ha,
+        log_mul ha.ne' ht.ne, add_mul, exp_add]
+      ring
 
 /-- For `a, C, I ≥ 0` and `q > 0`, `a ≤ C * I ^ (1 / q)` if and only if `a ^ q ≤ C ^ q * I`. -/
 theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (hI : 0 ≤ I)
