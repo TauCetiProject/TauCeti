@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Norm
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.ConnectingMapComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DeltaNaturality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 public import TauCeti.RingTheory.Norm.Units
@@ -515,6 +516,17 @@ theorem explicitIso_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
   -- The defining equation of `kummerMapCanonical`, which is `kummerMap` followed by the
   -- comparison isomorphism. Not a `rw` chain: each `rw` step re-checks a large motive.
   (rfl)
+
+/-- **The canonical Kummer map is the connecting map of the Kummer sequence.** The class of a unit
+`a` is the image under the degree-zero connecting map `δ⁰` of `kummerShortExact` of `a`, read in
+`H⁰(G_K, (Kˢ)ˣ)` through `baseUnitsEquivInvariants` and `explicitH0IsoContinuousCohomology`. -/
+theorem toAdd_kummerMapCanonical (hn : IsUnit (n : K)) (a : Kˣ) :
+    Multiplicative.toAdd (kummerMapCanonical K n hn a) =
+      (dsimp% only ((kummerShortExact K n hn).delta 0).hom
+        ((explicitH0IsoContinuousCohomology (AbsoluteGaloisGroup K) (UnitsCoeff K)).hom
+          (baseUnitsEquivInvariants K (Additive.ofMul a)))) := by
+  rw [ContCohomology.DiscreteShortExact.explicitIso_delta0, explicitIso_kummerMap, kummerMap_apply,
+    toAdd_ofAdd, explicitH1IsoContinuousCohomology_hom_apply, AddEquiv.apply_symm_apply]
 
 /-! ### Transport to another coefficient model -/
 
