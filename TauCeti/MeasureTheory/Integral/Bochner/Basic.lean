@@ -93,18 +93,19 @@ for set and probability integrals.
 * `ae_le_of_setIntegral_max_sub_sq_eq_zero` gives `g ≤ k` almost everywhere on `s` when the
   squared truncation `((g - k)⁺)²` has zero integral over `s`.
 * `integral_sq_le_two_mul_integral_sq_add` and `sqrt_integral_sq_le_of_ae_abs_sub_le`: if `u²` is
-  integrable and `|u - g| ≤ W` almost everywhere for a finite measure `ν` (with `0 ≤ W` for the
-  second), then `∫ g² ≤ 2 ∫ u² + 2 W² ν(univ)` and `√∫ g² ≤ √2 √∫ u² + √2 W √(ν univ)`.
+  integrable and `|u - g| ≤ W` almost everywhere for a finite measure `ν`, then
+  `∫ g² ≤ 2 ∫ u² + 2 W² ν(univ)` and `√∫ g² ≤ √2 √∫ u² + √2 W √(ν univ)`.
 * `measure_eq_zero_of_integral_eq_zero_of_ae_pos`: a measure against which an integrable, almost
   everywhere positive function has integral zero is zero.
 * `setIntegral_rpow_le_rpow_mul_setIntegral_rpow` interpolates `L^q` between `L^∞` and `Lᵖ`:
   `∫_s w^q ≤ F^{q-p} ∫_t wᵖ` for `0 ≤ F`, `p ≤ q`, `q ≠ 0`, `wᵖ` integrable on `t`, `0 ≤ w`
   almost everywhere on `t` and `w ≤ F` almost everywhere on `s ⊆ t`.
-* `setIntegral_le_setIntegral_sq_mul_of_eqOn` compares an integral over a set with a weighted
-  integral over a larger set, for a weight in `[0, 1]` almost everywhere on the larger set and
-  equal to one on the smaller set.
+* `setIntegral_le_setIntegral_sq_mul_of_ae_sq_eq_one` compares an integral over a set with a
+  weighted integral over a larger set, for a weight with `|ψ| ≤ 1` almost everywhere on the larger
+  set whose square is one almost everywhere on the smaller set.
 * `integral_max_sub_sq_le_mul_measureReal` bounds the integral of the squared truncation
-  `((f - l)⁺)²` of a function `f ≤ M` by `(M - l)²` times the measure of `{l ≤ f}`.
+  `((f - l)⁺)²` of a function `f ≤ M` by `(M - l)²` times the measure of `{l ≤ f}`, which is
+  assumed to be finite.
 * `exists_mem_sub_div_lt_of_sub_lt_integral`: if `f ≤ M` on a probability space has integral
   within `δ` of `M`, then `f` comes within `δ / μ B` of `M` on every set `B` of positive mass.
 
@@ -414,7 +415,7 @@ theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [Measurabl
 on a subset `t ⊆ s` bounds the integral over `t` of a function nonnegative almost everywhere on `s`
 by its `ψ²`-weighted integral over `s`. Only `ψ ^ 2` enters, so it need only be a.e. strongly
 measurable. -/
-theorem setIntegral_le_setIntegral_sq_mul_of_eqOn {X : Type*} [MeasurableSpace X]
+theorem setIntegral_le_setIntegral_sq_mul_of_ae_sq_eq_one {X : Type*} [MeasurableSpace X]
     {μ : Measure X} {s t : Set X} {f ψ : X → ℝ} (hf : IntegrableOn f s μ)
     (hf0 : 0 ≤ᵐ[μ.restrict s] f) (hψ : AEStronglyMeasurable (fun x => ψ x ^ 2) (μ.restrict s))
     (hψ01 : ∀ᵐ x ∂μ.restrict s, |ψ x| ≤ 1)
@@ -441,7 +442,7 @@ theorem integral_max_sub_sq_le_mul_measureReal {Ω : Type*} [MeasurableSpace Ω]
   have hT : MeasurableSet (toMeasurable μ {x | l ≤ f x}) := measurableSet_toMeasurable _ _
   have hTfin : μ (toMeasurable μ {x | l ≤ f x}) ≠ ∞ := by rwa [measure_toMeasurable]
   have hST : μ.real {x | l ≤ f x} = μ.real (toMeasurable μ {x | l ≤ f x}) := by
-    simp only [Measure.real, measure_toMeasurable]
+    simp only [measureReal_def, measure_toMeasurable]
   rw [hST]
   calc ∫ x, max (f x - l) 0 ^ 2 ∂μ
       ≤ ∫ x, (toMeasurable μ {x | l ≤ f x}).indicator (fun _ => (M - l) ^ 2) x ∂μ := by
@@ -884,6 +885,7 @@ theorem measureReal_inter_lt_le_setIntegral_max_sub_sq_div {X : Type*} [Measurab
     (Eventually.of_forall fun x => by positivity) hint ((l - k) ^ 2))
   have hfin : (ν.restrict s) {x | (l - k) ^ 2 ≤ max (g x - k) 0 ^ 2} ≠ ∞ := by
     exact (hint.measure_ge_lt_top hlk).ne
+  simp only [measureReal_def]
   refine mul_le_mul_of_nonneg_left (ENNReal.toReal_mono hfin
     ((measure_mono fun x hx => ?_).trans (Measure.le_restrict_apply s _))) hlk.le
   obtain ⟨hxs, hx⟩ := hx
