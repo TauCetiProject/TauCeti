@@ -104,12 +104,14 @@ open TauCeti
 variable {A G : Type*} [Semiring A] [Group G] [Pow G A] [IsExponentialGroup A G] {g h : G}
 
 /-- An element commuting with `h` commutes with the powers of `h` in an `A`-group. -/
+@[simp]
 theorem exponentialPow_right (hc : Commute g h) (a : A) : Commute g (h ^ a) := by
   have key := IsExponentialGroup.conj_pow g h a
   rw [hc.mul_inv_cancel, eq_mul_inv_iff_mul_eq] at key
   exact (commute_iff_eq _ _).2 key.symm
 
 /-- The powers of `g` in an `A`-group commute with every element commuting with `g`. -/
+@[simp]
 theorem exponentialPow_left (hc : Commute g h) (a : A) : Commute (g ^ a) h :=
   (hc.symm.exponentialPow_right a).symm
 
@@ -121,7 +123,7 @@ end Commute
 
 namespace TauCeti.IsExponentialGroup
 
-attribute [simp] IsExponentialGroup.pow_one
+attribute [simp] IsExponentialGroup.pow_one IsExponentialGroup.conj_pow
 
 section Semiring
 
@@ -163,8 +165,12 @@ theorem commute_pow_pow_self (g : G) (a b : A) : Commute (g ^ a) (g ^ b) :=
     rw [← IsExponentialGroup.pow_add, ← IsExponentialGroup.pow_add, add_comm]
 
 /-- An element commutes with its powers. -/
-theorem commute_self_pow (g : G) (a : A) : Commute g (g ^ a) := by
-  simpa using commute_pow_pow_self g (1 : A) a
+theorem commute_self_pow (g : G) (a : A) : Commute g (g ^ a) :=
+  (Commute.refl g).exponentialPow_right a
+
+/-- The powers of an element commute with it. -/
+theorem commute_pow_self (g : G) (a : A) : Commute (g ^ a) g :=
+  (Commute.refl g).exponentialPow_left a
 
 /-- Centralizers are closed under exponentiation. -/
 theorem pow_mem_centralizer {S : Set G} {h : G} (hh : h ∈ Subgroup.centralizer S) (a : A) :

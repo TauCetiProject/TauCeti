@@ -38,7 +38,8 @@ additive group of `A`, with `n ↦ (n : A)`: the free `A`-group on one generator
 * `TauCeti.IsExponentialGroup.IsCompletion.eq_mulEquiv`: the isomorphism between two
   `A`-completions is the only one commuting with the completion maps and with exponentiation.
 * `TauCeti.IsExponentialGroup.isCompletion_intCast`: for a commutative ring `A`, the map
-  `Multiplicative ℤ →* Multiplicative A`, `n ↦ (n : A)`, is an `A`-completion.
+  `Multiplicative ℤ →* Multiplicative A`, `n ↦ (n : A)`, is an `A`-completion, and
+  (`isCompletion_intCast_lift`) it extends `φ` to `powHom A (φ (ofAdd 1))`.
 
 ## Implementation notes
 
@@ -84,14 +85,14 @@ structure IsCompletion {K : Type uK} [Group K] [Pow K A] [IsExponentialGroup A K
   /-- Every homomorphism from `G` to an `A`-group `H` is `ψ ∘ μ` for a unique homomorphism
   `ψ : K → H` commuting with exponentiation. -/
   existsUnique (H : Type w) [Group H] [Pow H A] [IsExponentialGroup A H] (φ : G →* H) :
-    ∃! ψ : ExponentialHom A K H, ψ.toMonoidHom.comp μ = φ
+    ∃! ψ : ExponentialHom A K H, (ψ : K →* H).comp μ = φ
 
 variable {A}
 
 theorem isCompletion_iff {K : Type uK} [Group K] [Pow K A] [IsExponentialGroup A K]
     {μ : G →* K} :
     IsCompletion.{w} A μ ↔ ∀ (H : Type w) [Group H] [Pow H A] [IsExponentialGroup A H]
-      (φ : G →* H), ∃! ψ : ExponentialHom A K H, ψ.toMonoidHom.comp μ = φ :=
+      (φ : G →* H), ∃! ψ : ExponentialHom A K H, (ψ : K →* H).comp μ = φ :=
   ⟨fun h => h.existsUnique, fun h => ⟨h⟩⟩
 
 namespace IsCompletion
@@ -107,7 +108,7 @@ noncomputable def lift (h : IsCompletion.{w} A μ) (φ : G →* H) : Exponential
   (h.existsUnique H φ).exists.choose
 
 @[simp]
-theorem lift_comp (h : IsCompletion.{w} A μ) (φ : G →* H) : (h.lift φ).toMonoidHom.comp μ = φ :=
+theorem lift_comp (h : IsCompletion.{w} A μ) (φ : G →* H) : (h.lift φ : K →* H).comp μ = φ :=
   (h.existsUnique H φ).exists.choose_spec
 
 @[simp]
@@ -117,13 +118,13 @@ theorem lift_eq (h : IsCompletion.{w} A μ) (φ : G →* H) (g : G) : h.lift φ 
 /-- Homomorphisms commuting with exponentiation, out of an `A`-completion `μ : G →* K`, are equal
 if they agree on the image of `μ`. -/
 theorem hom_ext (h : IsCompletion.{w} A μ) {ψ ψ' : ExponentialHom A K H}
-    (hψ : ψ.toMonoidHom.comp μ = ψ'.toMonoidHom.comp μ) : ψ = ψ' :=
-  (h.existsUnique H (ψ'.toMonoidHom.comp μ)).unique hψ rfl
+    (hψ : (ψ : K →* H).comp μ = (ψ' : K →* H).comp μ) : ψ = ψ' :=
+  (h.existsUnique H ((ψ' : K →* H).comp μ)).unique hψ rfl
 
 /-- The extension of `φ` along an `A`-completion is the only homomorphism commuting with
 exponentiation that restricts to `φ`. -/
 theorem eq_lift (h : IsCompletion.{w} A μ) {φ : G →* H} {ψ : ExponentialHom A K H}
-    (hψ : ψ.toMonoidHom.comp μ = φ) : ψ = h.lift φ :=
+    (hψ : (ψ : K →* H).comp μ = φ) : ψ = h.lift φ :=
   h.hom_ext (hψ.trans (h.lift_comp φ).symm)
 
 /-- Composing the extension of `φ` with a homomorphism `f` commuting with exponentiation gives the
@@ -131,7 +132,7 @@ extension of `f ∘ φ`. -/
 @[simp]
 theorem comp_lift (h : IsCompletion.{w} A μ) {H' : Type w} [Group H'] [Pow H' A]
     [IsExponentialGroup A H'] (f : ExponentialHom A H H') (φ : G →* H) :
-    f.comp (h.lift φ) = h.lift (f.toMonoidHom.comp φ) :=
+    f.comp (h.lift φ) = h.lift ((f : H →* H').comp φ) :=
   h.eq_lift <| by rw [ExponentialHom.toMonoidHom_comp, MonoidHom.comp_assoc, lift_comp]
 
 end Lift
@@ -153,12 +154,16 @@ theorem lift_comp_lift (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w
 /-- Two `A`-completions of one group are isomorphic, by the isomorphism extending one along the
 other. -/
 noncomputable def mulEquiv (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂) : K₁ ≃* K₂ :=
-  (h₁.lift μ₂).toMonoidHom.toMulEquiv (h₂.lift μ₁).toMonoidHom
+  (h₁.lift μ₂ : K₁ →* K₂).toMulEquiv (h₂.lift μ₁)
     (by rw [← ExponentialHom.toMonoidHom_comp, lift_comp_lift, ExponentialHom.toMonoidHom_id])
     (by rw [← ExponentialHom.toMonoidHom_comp, lift_comp_lift, ExponentialHom.toMonoidHom_id])
 
 theorem coe_mulEquiv (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂) :
     ⇑(h₁.mulEquiv h₂) = h₁.lift μ₂ := by
+  rfl
+
+theorem toMonoidHom_mulEquiv (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂) :
+    (h₁.mulEquiv h₂ : K₁ →* K₂) = h₁.lift μ₂ := by
   rfl
 
 @[simp]
@@ -181,15 +186,22 @@ theorem mulEquiv_trans {K₃ : Type w} [Group K₃] [Pow K₃ A] [IsExponentialG
 /-- The comparison isomorphism of two `A`-completions is the only isomorphism commuting with the
 completion maps and with exponentiation. -/
 theorem eq_mulEquiv (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂) {e : K₁ ≃* K₂}
-    (he : e.toMonoidHom.comp μ₁ = μ₂) (hpow : ∀ (k : K₁) (a : A), e (k ^ a) = e k ^ a) :
+    (he : (e : K₁ →* K₂).comp μ₁ = μ₂) (hpow : ∀ (k : K₁) (a : A), e (k ^ a) = e k ^ a) :
     e = h₁.mulEquiv h₂ :=
-  MulEquiv.ext fun k => DFunLike.congr_fun (h₁.eq_lift (ψ := ⟨e.toMonoidHom, hpow⟩) he) k
+  MulEquiv.ext fun k => DFunLike.congr_fun (h₁.eq_lift (ψ := ⟨(e : K₁ →* K₂), hpow⟩) he) k
 
 /-- The comparison isomorphism of two `A`-completions commutes with the completion maps. -/
 @[simp]
 theorem mulEquiv_eq (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂) (g : G) :
     h₁.mulEquiv h₂ (μ₁ g) = μ₂ g :=
   h₁.lift_eq μ₂ g
+
+/-- The comparison isomorphism of two `A`-completions, composed with the first completion map, is
+the second. -/
+@[simp]
+theorem mulEquiv_comp (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂) :
+    (h₁.mulEquiv h₂ : K₁ →* K₂).comp μ₁ = μ₂ :=
+  MonoidHom.ext (h₁.mulEquiv_eq h₂)
 
 /-- The comparison isomorphism of two `A`-completions commutes with exponentiation. -/
 @[simp]
@@ -217,13 +229,16 @@ theorem isCompletion_intCast [CommRing A] :
   refine ⟨fun H _ _ _ φ => ⟨powHom A (φ (.ofAdd 1)), ?_, fun ψ hψ => ?_⟩⟩
   · ext
     simp
-  · ext x
-    have h1 : ψ (.ofAdd 1) = φ (.ofAdd 1) := by
-      simpa using DFunLike.congr_fun hψ (.ofAdd 1)
-    have hx : x = Multiplicative.ofAdd (1 : A) ^ x.toAdd := by
-      simp [MultiplicativePow.ofAdd_multiplicativePow]
-    rw [hx, ψ.map_pow, h1]
+  · rw [← powHom_unique ψ, ← hψ]
     simp
+
+/-- The extension of `φ : Multiplicative ℤ →* H` along the `A`-completion `n ↦ (n : A)` sends
+`ofAdd a` to `φ (ofAdd 1) ^ a`. -/
+@[simp]
+theorem isCompletion_intCast_lift [CommRing A] {H : Type w} [Group H] [Pow H A]
+    [IsExponentialGroup A H] (φ : Multiplicative ℤ →* H) :
+    (isCompletion_intCast A).lift φ = powHom A (φ (.ofAdd 1)) :=
+  ((isCompletion_intCast A).eq_lift (by ext; simp)).symm
 
 end RankOne
 

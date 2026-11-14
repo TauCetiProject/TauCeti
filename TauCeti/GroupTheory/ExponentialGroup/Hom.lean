@@ -24,6 +24,11 @@ group is defined.
 * `TauCeti.IsExponentialGroup.powHom g`: the `A`-homomorphism `Multiplicative A → G`,
   `ofAdd a ↦ g ^ a`, for an element `g` of an `A`-group over a commutative semiring `A`.
 
+## Main results
+
+* `TauCeti.IsExponentialGroup.powHom_unique`: every `A`-homomorphism `ψ : Multiplicative A → G`
+  is `powHom A (ψ (ofAdd 1))`.
+
 ## Implementation notes
 
 `powHom` uses the exponentiation `ofAdd a ^ b = ofAdd (b * a)` of `Multiplicative A` by `A`, a
@@ -66,8 +71,16 @@ instance : MonoidHomClass (ExponentialHom A G H) G H where
 theorem ext {f f' : ExponentialHom A G H} (h : ∀ g, f g = f' g) : f = f' :=
   DFunLike.ext f f' h
 
-@[simp]
 theorem coe_toMonoidHom (f : ExponentialHom A G H) : ⇑f.toMonoidHom = f := by
+  rfl
+
+@[simp]
+theorem toMonoidHom_eq_coe (f : ExponentialHom A G H) : f.toMonoidHom = (f : G →* H) := by
+  rfl
+
+@[simp]
+theorem toMonoidHom_mk (f : G →* H) (hf : ∀ (g : G) (a : A), f (g ^ a) = f g ^ a) :
+    ((⟨f, hf⟩ : ExponentialHom A G H) : G →* H) = f := by
   rfl
 
 @[simp]
@@ -94,7 +107,7 @@ theorem coe_id : ⇑(ExponentialHom.id A G) = id := by
   rfl
 
 @[simp]
-theorem toMonoidHom_id : (ExponentialHom.id A G).toMonoidHom = MonoidHom.id G := by
+theorem toMonoidHom_id : (ExponentialHom.id A G : G →* G) = MonoidHom.id G := by
   rfl
 
 /-- The composite of two homomorphisms commuting with exponentiation. -/
@@ -113,7 +126,7 @@ theorem comp_apply (f : ExponentialHom A H K) (f' : ExponentialHom A G H) (g : G
 
 @[simp]
 theorem toMonoidHom_comp (f : ExponentialHom A H K) (f' : ExponentialHom A G H) :
-    (f.comp f').toMonoidHom = f.toMonoidHom.comp f'.toMonoidHom := by
+    (f.comp f' : G →* K) = (f : H →* K).comp f' := by
   rfl
 
 @[simp]
@@ -149,6 +162,22 @@ def powHom (g : G) : ExponentialHom A (Multiplicative A) G where
 @[simp]
 theorem powHom_apply (g : G) (x : Multiplicative A) : powHom A g x = g ^ x.toAdd := by
   rfl
+
+variable {A} in
+/-- An `A`-homomorphism `ψ : Multiplicative A → G` is determined by its value at `ofAdd 1`: it is
+`powHom A (ψ (ofAdd 1))`. -/
+theorem powHom_unique (ψ : ExponentialHom A (Multiplicative A) G) :
+    powHom A (ψ (.ofAdd 1)) = ψ := by
+  ext x
+  rw [powHom_apply, ← ψ.map_pow, MultiplicativePow.ofAdd_multiplicativePow, smul_eq_mul, mul_one,
+    ofAdd_toAdd]
+
+/-- For a commutative ring `A`, `powHom A (ofAdd 1)`, `ofAdd a ↦ ofAdd 1 ^ a`, is the identity of
+`Multiplicative A`. -/
+@[simp]
+theorem powHom_ofAdd_one (A : Type*) [CommRing A] :
+    powHom A (Multiplicative.ofAdd (1 : A)) = ExponentialHom.id A (Multiplicative A) :=
+  powHom_unique (ExponentialHom.id A (Multiplicative A))
 
 end IsExponentialGroup
 
