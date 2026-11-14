@@ -81,7 +81,8 @@ theorem classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_circleToClassifyingSpac
     classifyingSpaceFundamentalGroupMulEquiv (Multiplicative ℤ)
         (FundamentalGroup.mapOfEq circleToClassifyingSpace circleToClassifyingSpace_one γ) =
       Circle.fundamentalGroupMulEquiv 1 γ :=
-  Circle.apply_mapOfEq_toCircle_out_symm_ofAdd_one _ γ
+  Circle.apply_mapOfEq_toCircle_of_apply_eq_ofAdd_one _ _
+    (by rw [FundamentalGroup.fromPath_mk_out, MulEquiv.apply_symm_apply]) γ
 
 /-- **The map from the circle to the classifying space of `ℤ` is a weak homotopy equivalence.**
 Both spaces are aspherical and the map induces an isomorphism of fundamental groups. -/
@@ -90,7 +91,8 @@ theorem isWeakHomotopyEquivalence_circleToClassifyingSpace :
   refine ((IsAspherical.mk inferInstance fun _ ↦ inferInstance).isWeakHomotopyEquivalence_iff
     (isEilenbergMacLaneSpaceOne_classifyingSpace (Multiplicative ℤ)).isAspherical
     circleToClassifyingSpace_one).2
-    (Circle.bijective_mapOfEq_toCircle_out_symm_ofAdd_one _)
+    (Circle.bijective_mapOfEq_toCircle_of_apply_eq_ofAdd_one _ _
+      (by rw [FundamentalGroup.fromPath_mk_out, MulEquiv.apply_symm_apply]))
 
 /-- **The circle is homotopy equivalent to the classifying space of `ℤ`**, by Whitehead's
 theorem applied to `circleToClassifyingSpace`. Its forward map induces the identity of `ℤ` on
