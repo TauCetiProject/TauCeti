@@ -163,7 +163,59 @@ theorem apply_smul_third : r ![a, b, t • x, d] = t * r ![a, b, x, d] := by
 theorem apply_smul_fourth : r ![a, b, c, t • x] = t * r ![a, b, c, x] := by
   simpa only [update_three, smul_eq_mul] using r.map_update_smul ![a, b, c, x] 3 t x
 
+/-- A four-tensor vanishes when its first entry is zero. -/
+@[simp]
+theorem apply_zero_first : r ![0, b, c, d] = 0 :=
+  r.map_coord_zero 0 rfl
+
+/-- A four-tensor vanishes when its second entry is zero. -/
+@[simp]
+theorem apply_zero_second : r ![a, 0, c, d] = 0 :=
+  r.map_coord_zero 1 rfl
+
+/-- A four-tensor vanishes when its third entry is zero. -/
+@[simp]
+theorem apply_zero_third : r ![a, b, 0, d] = 0 :=
+  r.map_coord_zero 2 rfl
+
+/-- A four-tensor vanishes when its fourth entry is zero. -/
+@[simp]
+theorem apply_zero_fourth : r ![a, b, c, 0] = 0 :=
+  r.map_coord_zero 3 rfl
+
 end Linearity
+
+/-- A four-tensor distributes over finite sums in its first argument. -/
+theorem apply_sum_first {ι : Type*} (r : FourTensor V) (s : Finset ι) (f : ι → V) (b c d : V) :
+    r ![∑ i ∈ s, f i, b, c, d] = ∑ i ∈ s, r ![f i, b, c, d] := by
+  simpa only [ContinuousMultilinearMap.coe_coe, update_zero] using
+    r.toMultilinearMap.map_update_sum s 0 f ![0, b, c, d]
+
+/-- A four-tensor distributes over finite sums in its second argument. -/
+theorem apply_sum_second {ι : Type*} (r : FourTensor V) (s : Finset ι) (a : V) (f : ι → V)
+    (c d : V) : r ![a, ∑ i ∈ s, f i, c, d] = ∑ i ∈ s, r ![a, f i, c, d] := by
+  simpa only [ContinuousMultilinearMap.coe_coe, update_one] using
+    r.toMultilinearMap.map_update_sum s 1 f ![a, 0, c, d]
+
+/-- A four-tensor distributes over finite sums in its third argument. -/
+theorem apply_sum_third {ι : Type*} (r : FourTensor V) (s : Finset ι) (a b : V) (f : ι → V)
+    (d : V) : r ![a, b, ∑ i ∈ s, f i, d] = ∑ i ∈ s, r ![a, b, f i, d] := by
+  simpa only [ContinuousMultilinearMap.coe_coe, update_two] using
+    r.toMultilinearMap.map_update_sum s 2 f ![a, b, 0, d]
+
+/-- A four-tensor distributes over finite sums in its fourth argument. -/
+theorem apply_sum_fourth {ι : Type*} (r : FourTensor V) (s : Finset ι) (a b c : V) (f : ι → V) :
+    r ![a, b, c, ∑ i ∈ s, f i] = ∑ i ∈ s, r ![a, b, c, f i] := by
+  simpa only [ContinuousMultilinearMap.coe_coe, update_three] using
+    r.toMultilinearMap.map_update_sum s 3 f ![a, b, c, 0]
+
+/-- Two four-tensors are equal if they agree on all four-tuples `![u, v, z, w]`. -/
+theorem ext_vec {r q : FourTensor V} (h : ∀ u v z w, r ![u, v, z, w] = q ![u, v, z, w]) :
+    r = q := by
+  ext m
+  have hm : m = ![m 0, m 1, m 2, m 3] := by funext i; fin_cases i <;> rfl
+  rw [hm]
+  exact h (m 0) (m 1) (m 2) (m 3)
 
 /-- The algebraic symmetries of a curvature four-tensor `r(u, v, z, w) = g(R(u, v)w, z)`:
 antisymmetry in the first and in the last pair of arguments, symmetry under interchanging the two
