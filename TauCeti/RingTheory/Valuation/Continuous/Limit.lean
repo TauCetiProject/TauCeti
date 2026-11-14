@@ -24,11 +24,13 @@ Consequently:
   `Valuation.IsContinuous.isClosed_le`).
 
 Passing to topological limits along a nontrivial filter then preserves upper bounds `v (f i) ≤ γ`
-for arbitrary `γ : Γ₀` (`Valuation.IsContinuous.le_of_tendsto`) — in particular at
-`γ = max (v x) (v y)`, which need not be attained when `v x = 0` and `v y = 0` or in general before
-case-splitting, and which underlies pulling continuous valuations back along limit constructions
-such as the tilt of a uniform Tate ring — as well as attained lower bounds `v b ≤ v (f i)`
-(`Valuation.IsContinuous.ge_of_tendsto`).
+for arbitrary `γ : Γ₀` (`Valuation.IsContinuous.le_of_tendsto`) — covering genuinely unattained
+thresholds `γ ∈ Γ₀ \ Set.range v` and applying directly to `γ = max (v x) (v y)` without
+case-splitting on `le_total (v x) (v y)` (including `γ = 0`, where `IsContinuous.isOpen_le`'s
+`v b ≠ 0` hypothesis fails), as needed when pulling continuous valuations back along limit
+constructions such as the tilt of a uniform Tate ring — as well as attained lower bounds
+`v b ≤ v (f i)` (`Valuation.IsContinuous.ge_of_tendsto`) and eventually constant values
+`v (f i) = γ` (`Valuation.IsContinuous.eq_of_tendsto`).
 
 ## Main results
 
@@ -39,7 +41,7 @@ such as the tilt of a uniform Tate ring — as well as attained lower bounds `v 
   `{a | γ < v a}` and closedness of `{a | v a ≤ γ}` for arbitrary `γ : Γ₀` under
   `[SeparatelyContinuousAdd A]`.
 * `Valuation.IsContinuous.le_of_tendsto` and `Valuation.IsContinuous.eq_of_tendsto` : preservation
-  of arbitrary upper bounds and attained values under limits.
+  of arbitrary upper bounds and eventually constant values under limits.
 
 ## References
 
@@ -102,12 +104,14 @@ theorem IsContinuous.le_of_tendsto {v : Valuation A Γ₀} (hv : v.IsContinuous)
     (hle : ∀ᶠ i in l, v (f i) ≤ γ) : v x ≤ γ :=
   (hv.isClosed_le γ).mem_of_tendsto hf hle
 
-/-- **Attained values pass to limits.** If `f` converges to `x` along a nontrivial filter and
-`v (f i) = v b` eventually, then `v x = v b`. -/
+/-- **Eventually constant values pass to limits.** If `f` converges to `x` along a nontrivial
+filter and `v (f i) = γ` eventually, then `v x = γ`. -/
 theorem IsContinuous.eq_of_tendsto {v : Valuation A Γ₀} (hv : v.IsContinuous) {ι : Type*}
-    {l : Filter ι} [l.NeBot] {f : ι → A} {x b : A} (hf : Tendsto f l (𝓝 x))
-    (heq : ∀ᶠ i in l, v (f i) = v b) : v x = v b :=
-  le_antisymm (hv.le_of_tendsto hf (heq.mono fun _ h ↦ h.le))
+    {l : Filter ι} [l.NeBot] {f : ι → A} {x : A} {γ : Γ₀} (hf : Tendsto f l (𝓝 x))
+    (heq : ∀ᶠ i in l, v (f i) = γ) : v x = γ := by
+  obtain ⟨i₀, hi₀⟩ := heq.exists
+  subst hi₀
+  exact le_antisymm (hv.le_of_tendsto hf (heq.mono fun _ h ↦ h.le))
     (hv.ge_of_tendsto hf (heq.mono fun _ h ↦ h.ge))
 
 end SeparatelyContinuousAdd

@@ -15,7 +15,7 @@ Let `B` be a complete Hausdorff uniform Tate ring in which `p` is topologically 
 `v : Valuation B Γ₀` be a *continuous* valuation (`Valuation.IsContinuous`). Although the sharp map
 `♯ = coeff p B 0 : uniformTilt p B →* B` is only multiplicative, composing `v` with `♯` defines a
 valuation `v ∘ ♯` on the tilt `B♭ = uniformTilt p B`, which is again continuous (Scholze,
-*Perfectoid spaces*, Lemma 6.2; *Étale cohomology of diamonds*, Lemma 3.16).
+*Perfectoid spaces*, Theorem 6.3(i); *Étale cohomology of diamonds*, Theorem 3.12).
 
 Continuity of `v` enters directly into the ultrametric inequality for `v ∘ ♯`: by definition of the
 limit addition on `B♭`, the zeroth coordinate `(f + g)♯` is the limit as `m → ∞` of
@@ -54,10 +54,10 @@ No group hypothesis on `Γ₀`, no base field, and no perfectoid hypothesis on `
 
 ## References
 
-* P. Scholze, *Perfectoid spaces*, Publ. Math. IHÉS 116 (2012), Lemma 6.2.
-* P. Scholze, *Étale cohomology of diamonds*, arXiv:1709.07343, Lemma 3.16.
-* K. S. Kedlaya, *Nonarchimedean geometry of Witt vectors and the tilting equivalence*, in
-  *Perfectoid Spaces: Lectures from the 2017 Arizona Winter School*, §2.7.
+* P. Scholze, *Perfectoid spaces*, Publ. Math. IHÉS 116 (2012), Theorem 6.3(i).
+* P. Scholze, *Étale cohomology of diamonds*, arXiv:1709.07343, Theorem 3.12.
+* K. S. Kedlaya, *Sheaves, stacks, and shtukas*, lecture notes, Arizona Winter School 2017,
+  §2.6, Lemma 2.6.12.
 -/
 
 public section
@@ -151,7 +151,8 @@ section CharP
 
 variable [CharP B p] [PerfectRing B p]
 
-/-- **In characteristic `p`, `comapValuation` is pullback along `equivOfCharP p B`.** -/
+/-- **When `B` is perfect of characteristic `p`, `comapValuation` is pullback along
+`equivOfCharP p B`.** -/
 theorem comapValuation_eq_comap_equivOfCharP {v : Valuation B Γ₀} (hv : v.IsContinuous) :
     comapValuation p hv = v.comap (equivOfCharP p B : uniformTilt p B →+* B) :=
   Valuation.ext fun f ↦ by simp

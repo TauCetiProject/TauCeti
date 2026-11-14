@@ -31,11 +31,11 @@ the bundled `Huber.Pair.spaTilt` on Huber pairs) and establishes its foundationa
 valuation-theoretic, and functorial properties prior to rational localisation and the tilting
 homeomorphism:
 
-* **Comparisons and uniqueness** (`spaTilt_vle_iff`, `spaTilt_vlt_iff`, `eq_spaTilt_iff`): `spaTilt
-  p h x` is the unique point `y ∈ Spa(B♭, B♭⁺)` satisfying `y.vle f g ↔ x.vle f♯ g♯` for all
-  `f, g : B♭`.
-* **Support** (`supp_spaTilt`, `mem_supp_spaTilt_iff`): the prime ideal `supp (x♭)` has underlying
-  set `♯ ⁻¹' (supp x)`.
+* **Comparisons and uniqueness** (`spaTilt_vle_iff`, `spaTilt_vlt_iff`, `eq_spaTilt_iff`,
+  `contTilt_vle_iff`, `contTilt_vlt_iff`, `eq_contTilt_iff`): `spaTilt p h x` is the unique point
+  `y ∈ Spa(B♭, B♭⁺)` satisfying `y.vle f g ↔ x.vle f♯ g♯` for all `f, g : B♭`.
+* **Support** (`supp_spaTilt`, `mem_supp_spaTilt_iff`, `supp_contTilt`, `mem_supp_contTilt_iff`):
+  the prime ideal `supp (x♭)` has underlying set `♯ ⁻¹' (supp x)`.
 * **Continuity** (`continuous_spaTilt`, `continuous_contTilt`): `spaTilt p h` is continuous without
   assuming `B♭` is Tate, because the preimage of every ambient basic open `Spv(B♭)(f/s)` is
   `Spv(B)(f♯/s♯)`.
@@ -49,7 +49,7 @@ homeomorphism:
   rational open of `Spa(B♭, B♭⁺)` admits a normalised presentation `R((T ∪ {ϖ♭ ^ N}) / s)` with
   `T ⊆ B♭⁺`, `ϖ♭ ^ N ∈ B♭⁺`, and `s ∈ B♭⁺`, so *every* rational subset of `Spa(B♭, B♭⁺)` pulls back
   under `spaTilt` to a rational subset of `Spa(B, B⁺)`.
-* **Functoriality** (`spaTilt_comp_valuationSpectrumSpaComap`,
+* **Functoriality** (`spaTilt_comp_spaComap`,
   `Huber.Pair.Hom.spaTilt_comp_spaComap`, `Huber.Pair.Hom.spaTilt_spaComap`): `spaTilt` commutes
   with `spaComap` along continuous plus-preserving ring homomorphisms and morphisms of Huber pairs.
 * **Characteristic-`p` self-identification** (`spaTilt_eq_spaComap_equivOfCharP`,
@@ -73,25 +73,26 @@ No perfectoid base field, perfectoidness of `B` itself, or nontriviality of `B` 
 ## Main results
 
 * `TauCeti.PerfectoidSpace.spaTilt_vle_iff`, `TauCeti.PerfectoidSpace.spaTilt_vlt_iff`,
-  `TauCeti.PerfectoidSpace.eq_spaTilt_iff`
-* `TauCeti.PerfectoidSpace.supp_spaTilt`, `TauCeti.PerfectoidSpace.mem_supp_spaTilt_iff`
+  `TauCeti.PerfectoidSpace.eq_spaTilt_iff`, `TauCeti.PerfectoidSpace.eq_contTilt_iff`
+* `TauCeti.PerfectoidSpace.supp_spaTilt`, `TauCeti.PerfectoidSpace.mem_supp_spaTilt_iff`,
+  `TauCeti.PerfectoidSpace.supp_contTilt`, `TauCeti.PerfectoidSpace.mem_supp_contTilt_iff`
 * `TauCeti.PerfectoidSpace.continuous_spaTilt`
 * `TauCeti.PerfectoidSpace.spaTilt_preimage_rationalSubset`,
   `TauCeti.PerfectoidSpace.exists_rationalSubset_eq_insert_pseudoUniformizer_pow`,
   `TauCeti.PerfectoidSpace.spaTilt_preimage_mem_spaRationalFamily`
-* `TauCeti.PerfectoidSpace.spaTilt_comp_valuationSpectrumSpaComap`,
+* `TauCeti.PerfectoidSpace.spaTilt_comp_spaComap`,
   `TauCeti.Huber.Pair.Hom.spaTilt_comp_spaComap`, `TauCeti.Huber.Pair.Hom.spaTilt_spaComap`
 * `TauCeti.PerfectoidSpace.spaTilt_eq_id_of_charP`,
   `TauCeti.PerfectoidSpace.isHomeomorph_spaTilt_of_charP`
 
 ## References
 
-* P. Scholze, *Perfectoid spaces*, Publ. Math. IHÉS 116 (2012), Lemma 6.2 and Theorem 6.3.
-* P. Scholze, *Étale cohomology of diamonds*, arXiv:1709.07343, Lemma 3.16 and Theorem 3.17.
-* K. S. Kedlaya, *Nonarchimedean geometry of Witt vectors and the tilting equivalence*, in
-  *Perfectoid Spaces: Lectures from the 2017 Arizona Winter School*, §2.7.
+* P. Scholze, *Perfectoid spaces*, Publ. Math. IHÉS 116 (2012), Theorem 6.3(i).
+* P. Scholze, *Étale cohomology of diamonds*, arXiv:1709.07343, Theorem 3.12.
+* K. S. Kedlaya, *Sheaves, stacks, and shtukas*, lecture notes, Arizona Winter School 2017,
+  §2.5, Theorem 2.5.1 and §2.6, Lemmas 2.6.12 and 2.6.17.
 * K. S. Kedlaya and R. Liu, *Relative p-adic Hodge theory: Foundations*, Astérisque 371 (2015),
-  Theorem 3.6.5.
+  Theorem 3.6.14.
 -/
 
 public section
@@ -129,8 +130,31 @@ theorem contTilt_vle_iff (x : cont B) (f g : uniformTilt p B) :
 theorem contTilt_vlt_iff (x : cont B) (f g : uniformTilt p B) :
     (contTilt p x).1.toValuativeRel.vlt f g ↔
       x.1.toValuativeRel.vlt (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) := by
-  rw [← valuation_lt_iff, ← valuation_lt_iff, ← not_le, ← not_le, valuation_le_iff,
-    valuation_le_iff, contTilt_vle_iff]
+  simp only [ValuativeRel.vlt, contTilt_vle_iff]
+
+/-- **Unique characterisation of `contTilt` by its valuative comparisons.** A continuous point
+`y ∈ Cont B♭` equals `contTilt p x` if and only if `y.vle f g ↔ x.vle f♯ g♯` for all `f, g : B♭`.
+-/
+theorem eq_contTilt_iff {x : cont B} {y : cont (uniformTilt p B)} :
+    y = contTilt p x ↔ ∀ f g : uniformTilt p B,
+      y.1.toValuativeRel.vle f g ↔
+        x.1.toValuativeRel.vle (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) := by
+  refine ⟨fun hy f g ↦ hy ▸ contTilt_vle_iff x f g, fun hfg ↦ Subtype.ext ?_⟩
+  exact ValuationSpectrum.ext' fun f g ↦ (hfg f g).trans (contTilt_vle_iff x f g).symm
+
+/-- An element `f : B♭` lies in the support of `contTilt p x` iff `f♯` lies in the support of `x`.
+Not `@[simp]`, because `ValuationSpectrum.mem_supp_iff` already unfolds `f ∈ v.supp` to `v.vle f 0`,
+which `contTilt_vle_iff` reduces. -/
+theorem mem_supp_contTilt_iff (x : cont B) (f : uniformTilt p B) :
+    f ∈ (contTilt p x).1.supp ↔ uniformTilt.coeff p B 0 f ∈ x.1.supp := by
+  rw [mem_supp_iff, mem_supp_iff, contTilt_vle_iff, uniformTilt.coeff_zero]
+
+/-- **The support of `contTilt p x` is the preimage under `♯` of the support of `x`.** -/
+@[simp]
+theorem supp_contTilt (x : cont B) :
+    ((contTilt p x).1.supp : Set (uniformTilt p B)) =
+      uniformTilt.coeff p B 0 ⁻¹' (x.1.supp : Set B) :=
+  Set.ext (mem_supp_contTilt_iff x)
 
 /-- On a point presented as `ofValuation v`, `contTilt` is `ofValuation (comapValuation p hv)`. -/
 theorem contTilt_ofValuation {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
@@ -159,7 +183,7 @@ theorem continuous_contTilt : Continuous (contTilt p (B := B)) := by
 
 variable (p) in
 /-- **The tilting map on adic spectra** `Spa(B, B⁺) → Spa(B♭, B♭⁺)`, sending `x` to `x♭` with
-`(x♭)(f) = x(f♯)` (Scholze, *Perfectoid spaces*, Lemma 6.2 and Theorem 6.3). For a bundled Huber
+`(x♭)(f) = x(f♯)` (Scholze, *Perfectoid spaces*, Theorem 6.3(i)). For a bundled Huber
 pair `P : Huber.Pair B` when `B♭` is Tate, see `TauCeti.Huber.Pair.spaTilt`. -/
 noncomputable def spaTilt {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus)
     (x : spa Bplus) : spa (uniformTilt.plusSubring p h) := by
@@ -207,15 +231,15 @@ Not `@[simp]`, because `ValuationSpectrum.mem_supp_iff` already unfolds `f ∈ v
 which `spaTilt_vle_iff` reduces. -/
 theorem mem_supp_spaTilt_iff {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus)
     (x : spa Bplus) (f : uniformTilt p B) :
-    f ∈ (spaTilt p h x).1.supp ↔ uniformTilt.coeff p B 0 f ∈ x.1.supp := by
-  rw [mem_supp_iff, mem_supp_iff, spaTilt_vle_iff, uniformTilt.coeff_zero]
+    f ∈ (spaTilt p h x).1.supp ↔ uniformTilt.coeff p B 0 f ∈ x.1.supp :=
+  mem_supp_contTilt_iff ⟨x.1, (spa_def Bplus ▸ Set.inter_subset_left) x.2⟩ f
 
 /-- **The support of `spaTilt p h x` is the preimage under `♯` of the support of `x`.** -/
 @[simp]
 theorem supp_spaTilt {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus) (x : spa Bplus) :
     ((spaTilt p h x).1.supp : Set (uniformTilt p B)) =
       uniformTilt.coeff p B 0 ⁻¹' (x.1.supp : Set B) :=
-  Set.ext (mem_supp_spaTilt_iff h x)
+  supp_contTilt ⟨x.1, (spa_def Bplus ▸ Set.inter_subset_left) x.2⟩
 
 variable (p) in
 /-- **Continuity of `spaTilt`.** No Tate hypothesis on `B♭` is required: the subspace topology on
@@ -231,22 +255,11 @@ theorem continuous_spaTilt {Bplus : Subring B} (h : IsRingOfIntegralElements Bpl
 /-! ### Preimages of rational subsets and normalised presentations -/
 
 open scoped Classical in
-/-- If `T` contains a unit of `B♭`, then `T.image ♯` generates the unit ideal of `B`: `♯` is a
-monoid homomorphism and so carries units to units. -/
-theorem span_image_coeff_zero_eq_top_of_exists_isUnit {T : Finset (uniformTilt p B)}
-    (hT : ∃ u ∈ T, IsUnit u) :
-    Ideal.span ((T.image (uniformTilt.coeff p B 0) : Finset B) : Set B) = ⊤ := by
-  obtain ⟨u, huT, hu⟩ := hT
-  exact Ideal.eq_top_of_isUnit_mem _
-    (Ideal.subset_span (Finset.mem_coe.mpr (Finset.mem_image_of_mem _ huT)))
-    (hu.map (uniformTilt.coeff p B 0))
-
-open scoped Classical in
 /-- **Preimage of a rational subset under `spaTilt`.** Set-theoretically, for *every* finite set
 `T ⊆ B♭` and denominator `s : B♭`, the preimage of `R(T/s)` under `spaTilt p h` is `R(T♯/s♯)`.
-When some `u ∈ T` is a unit of `B♭`, `T♯` generates the unit ideal of `B`
-(`span_image_coeff_zero_eq_top_of_exists_isUnit`), so `R(T♯/s♯)` belongs to `spaRationalFamily B⁺`
-(`spaTilt_preimage_rationalSubset_mem_spaRationalFamily_of_exists_isUnit`). -/
+When some `u ∈ T` is a unit of `B♭`, `T♯` generates the unit ideal of `B`, so `R(T♯/s♯)` belongs to
+`spaRationalFamily B⁺` (`spaTilt_preimage_rationalSubset_mem_spaRationalFamily_of_exists_isUnit`).
+-/
 theorem spaTilt_preimage_rationalSubset {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus)
     (T : Finset (uniformTilt p B)) (s : uniformTilt p B) :
     spaTilt p h ⁻¹' (Subtype.val ⁻¹' rationalSubset (uniformTilt.plusSubring p h) T s) =
@@ -263,15 +276,14 @@ theorem spaTilt_preimage_rationalSubset_mem_spaRationalFamily_of_exists_isUnit {
     (hT : ∃ u ∈ T, IsUnit u) (s : uniformTilt p B) :
     spaTilt p h ⁻¹' (Subtype.val ⁻¹' rationalSubset (uniformTilt.plusSubring p h) T s) ∈
       spaRationalFamily Bplus := by
+  obtain ⟨u, huT, hu⟩ := hT
   rw [spaTilt_preimage_rationalSubset]
   refine mem_spaRationalFamily_iff.mpr ⟨T.image (uniformTilt.coeff p B 0),
     uniformTilt.coeff p B 0 s, ?_, rfl⟩
-  rw [span_image_coeff_zero_eq_top_of_exists_isUnit hT]
+  rw [Ideal.eq_top_of_isUnit_mem _
+    (Ideal.subset_span (Finset.mem_coe.mpr (Finset.mem_image_of_mem _ huT)))
+    (hu.map (uniformTilt.coeff p B 0))]
   exact isOpen_univ
-
-section TateTilt
-
-variable [IsTateRing (uniformTilt p B)]
 
 open scoped Classical in
 /-- **Normalised presentation of rational subsets of `Spa(B♭, B♭⁺)`** (Scholze, *Perfectoid
@@ -288,9 +300,16 @@ theorem exists_rationalSubset_eq_insert_pseudoUniformizer_pow {Bplus : Subring B
       ϖ ^ N ∈ uniformTilt.plusSubring p h ∧
       s ∈ uniformTilt.plusSubring p h ∧
       rationalSubset (uniformTilt.plusSubring p h) T₀ s₀ =
-        rationalSubset (uniformTilt.plusSubring p h) (insert (ϖ ^ N) T) s :=
-  exists_rationalSubset_eq_insert_pow_of_isPseudoUniformizer
+        rationalSubset (uniformTilt.plusSubring p h) (insert (ϖ ^ N) T) s := by
+  let : IsTateRing (uniformTilt p B) :=
+    IsTateRing.of_isOpen_isBounded (uniformTilt.plusSubring p h)
+      (uniformTilt.isOpen_plusSubring h) (uniformTilt.isBounded_plusSubring h) hϖ
+  exact exists_rationalSubset_eq_insert_pow_of_isPseudoUniformizer
     (uniformTilt.isOpen_plusSubring h) hϖ hT₀
+
+section TateTilt
+
+variable [IsTateRing (uniformTilt p B)]
 
 /-- **Every rational subset of `Spa(B♭, B♭⁺)` pulls back under `spaTilt` to a rational subset of
 `Spa(B, B⁺)`.** Re-presenting `U` as `R((T ∪ {ϖ♭ ^ N}) / s)` puts the unit `ϖ♭ ^ N` among the
@@ -337,6 +356,20 @@ theorem spaTilt_val (P : Pair B) (x : spa P.plus) :
     (P.spaTilt p x).1 = (PerfectoidSpace.spaTilt p P.isRingOfIntegralElements x).1 :=
   (rfl)
 
+/-- `P.spaTilt p` compares elements via `♯`. -/
+@[simp]
+theorem spaTilt_vle_iff (P : Pair B) (x : spa P.plus) (f g : uniformTilt p B) :
+    (P.spaTilt p x).1.toValuativeRel.vle f g ↔
+      x.1.toValuativeRel.vle (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) :=
+  PerfectoidSpace.spaTilt_vle_iff P.isRingOfIntegralElements x f g
+
+/-- Strict comparison under `P.spaTilt p` is strict comparison of zeroth coordinates. -/
+@[simp]
+theorem spaTilt_vlt_iff (P : Pair B) (x : spa P.plus) (f g : uniformTilt p B) :
+    (P.spaTilt p x).1.toValuativeRel.vlt f g ↔
+      x.1.toValuativeRel.vlt (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) :=
+  PerfectoidSpace.spaTilt_vlt_iff P.isRingOfIntegralElements x f g
+
 variable (p) in
 /-- `P.spaTilt p` is continuous. -/
 @[fun_prop, continuity]
@@ -377,10 +410,11 @@ variable {C : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopo
 theorem spaTilt_comp_spaComap {P : Pair B} {Q : Pair C} (φ : Hom P Q) :
     P.spaTilt p ∘ φ.spaComap = (φ.tilt (p := p)).spaComap ∘ Q.spaTilt p := by
   funext x
-  refine Subtype.ext (ValuationSpectrum.ext' fun f g ↦ ?_)
-  rw [Function.comp_apply, Function.comp_apply, Pair.spaTilt_val, spaTilt_vle_iff,
-    Hom.spaComap_val, comap_vle, Hom.spaComap_val, comap_vle, Hom.toRingHom_tilt,
-    Pair.spaTilt_val, spaTilt_vle_iff, uniformTilt.coeff_map, uniformTilt.coeff_map]
+  apply Subtype.ext
+  simp only [Function.comp_apply, Pair.spaTilt_val, Hom.spaComap_val]
+  refine ValuationSpectrum.ext' fun f g ↦ ?_
+  rw [PerfectoidSpace.spaTilt_vle_iff, Hom.spaComap_val]
+  simp
 
 /-- Pointwise form of `Hom.spaTilt_comp_spaComap`. -/
 @[simp]
@@ -408,7 +442,7 @@ variable {C : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopo
 
 /-- **Unbundled naturality of `spaTilt` with respect to `ValuationSpectrum.spaComap`.** No Tate
 hypothesis on `B♭` or `C♭` is needed. -/
-theorem spaTilt_comp_valuationSpectrumSpaComap {Bplus : Subring B} {Cplus : Subring C}
+theorem spaTilt_comp_spaComap {Bplus : Subring B} {Cplus : Subring C}
     (hB : IsRingOfIntegralElements Bplus) (hC : IsRingOfIntegralElements Cplus)
     (φ : B →+* C) (hφ : Continuous φ) (hplus : ∀ b ∈ Bplus, φ b ∈ Cplus) :
     spaTilt p hB ∘ ValuationSpectrum.spaComap φ hφ Bplus Cplus hplus =
@@ -419,9 +453,8 @@ theorem spaTilt_comp_valuationSpectrumSpaComap {Bplus : Subring B} {Cplus : Subr
   rw [Function.comp_apply, Function.comp_apply]
   symm
   refine (eq_spaTilt_iff hB).mpr fun f g ↦ ?_
-  rw [ValuationSpectrum.spaComap_val, comap_vle,
-    spaTilt_vle_iff, uniformTilt.coeff_map, uniformTilt.coeff_map,
-    ValuationSpectrum.spaComap_val, comap_vle]
+  rw [ValuationSpectrum.spaComap_val, ValuationSpectrum.spaComap_val]
+  simp
 
 end Functoriality
 
@@ -431,24 +464,24 @@ section CharP
 
 variable [CharP B p] [PerfectRing B p]
 
-/-- **In characteristic `p`, `spaTilt` equals pullback along `uniformTilt.equivOfCharP p B`.** -/
+/-- **When `B` is perfect of characteristic `p`, `spaTilt` equals pullback along
+`uniformTilt.equivOfCharP p B`.** -/
 theorem spaTilt_eq_spaComap_equivOfCharP {Bplus : Subring B}
-    (h : IsRingOfIntegralElements Bplus)
-    {hcont : Continuous (uniformTilt.equivOfCharP p B : uniformTilt p B →+* B)}
-    {hplus : ∀ f ∈ uniformTilt.plusSubring p h,
-      (uniformTilt.equivOfCharP p B : uniformTilt p B →+* B) f ∈ Bplus} :
+    (h : IsRingOfIntegralElements Bplus) :
     spaTilt p h =
-      ValuationSpectrum.spaComap (uniformTilt.equivOfCharP p B : uniformTilt p B →+* B) hcont
-        (uniformTilt.plusSubring p h) Bplus hplus := by
+      ValuationSpectrum.spaComap (uniformTilt.equivOfCharP p B : uniformTilt p B →+* B)
+        ((uniformTilt.continuous_equivOfCharP p B).congr fun _ ↦ rfl)
+        (uniformTilt.plusSubring p h) Bplus
+        (fun _ hf ↦ by simpa using uniformTilt.mem_plusSubring_iff_coeff_zero.mp hf) := by
   funext x
   symm
   refine (eq_spaTilt_iff h).mpr fun f g ↦ ?_
-  rw [ValuationSpectrum.spaComap_val, comap_vle, RingHom.coe_coe,
-    uniformTilt.equivOfCharP_apply, uniformTilt.equivOfCharP_apply]
+  rw [ValuationSpectrum.spaComap_val]
+  simp
 
-/-- **Under the characteristic-`p` identification of `B` with its tilt, `spaTilt` is the identity.**
-Specifically, composing `spaTilt p h` with `spaComap` along `(uniformTilt.equivOfCharP p B).symm`
-yields `id` on `Spa(B, B⁺)`. -/
+/-- **When `B` is perfect of characteristic `p`, `spaTilt` is the identity under the identification
+of `B` with its tilt.** Specifically, composing `spaTilt p h` with `spaComap` along
+`(uniformTilt.equivOfCharP p B).symm` yields `id` on `Spa(B, B⁺)`. -/
 @[simp]
 theorem spaTilt_eq_id_of_charP {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus)
     {hcont : Continuous ((uniformTilt.equivOfCharP p B).symm : B →+* uniformTilt p B)}
@@ -458,14 +491,10 @@ theorem spaTilt_eq_id_of_charP {Bplus : Subring B} (h : IsRingOfIntegralElements
     ValuationSpectrum.spaComap ((uniformTilt.equivOfCharP p B).symm : B →+* uniformTilt p B) hcont
         Bplus (uniformTilt.plusSubring p h) hplus ∘ spaTilt p h = _root_.id := by
   funext x
-  rw [Function.comp_apply, spaTilt_eq_spaComap_equivOfCharP h
-    (hcont := uniformTilt.continuous_equivOfCharP p B)
-    (hplus := fun _ hf ↦ by simpa using uniformTilt.mem_plusSubring_iff_coeff_zero.mp hf)]
+  rw [Function.comp_apply, spaTilt_eq_spaComap_equivOfCharP h]
   exact spaComap_spaComap ((uniformTilt.equivOfCharP p B).symm : B →+* uniformTilt p B) hcont hplus
-    (uniformTilt.equivOfCharP p B : uniformTilt p B →+* B)
-    (uniformTilt.continuous_equivOfCharP p B)
-    (uniformTilt.equivOfCharP p B).apply_symm_apply
-    (fun _ hf ↦ by simpa using uniformTilt.mem_plusSubring_iff_coeff_zero.mp hf) x
+    (uniformTilt.equivOfCharP p B : uniformTilt p B →+* B) _
+    (uniformTilt.equivOfCharP p B).apply_symm_apply _ x
 
 /-- Pointwise form of `spaTilt_eq_id_of_charP`. -/
 @[simp]
@@ -492,31 +521,59 @@ theorem spaTilt_comp_spaComap_equivOfCharP_symm {Bplus : Subring B}
       ValuationSpectrum.spaComap ((uniformTilt.equivOfCharP p B).symm : B →+* uniformTilt p B)
         hcont Bplus (uniformTilt.plusSubring p h) hplus = _root_.id := by
   funext y
-  rw [Function.comp_apply, spaTilt_eq_spaComap_equivOfCharP h
-    (hcont := uniformTilt.continuous_equivOfCharP p B)
-    (hplus := fun _ hf ↦ by simpa using uniformTilt.mem_plusSubring_iff_coeff_zero.mp hf)]
-  exact spaComap_spaComap (uniformTilt.equivOfCharP p B : uniformTilt p B →+* B)
-    (uniformTilt.continuous_equivOfCharP p B)
-    (fun _ hf ↦ by simpa using uniformTilt.mem_plusSubring_iff_coeff_zero.mp hf)
+  rw [Function.comp_apply, spaTilt_eq_spaComap_equivOfCharP h]
+  exact spaComap_spaComap (uniformTilt.equivOfCharP p B : uniformTilt p B →+* B) _ _
     ((uniformTilt.equivOfCharP p B).symm : B →+* uniformTilt p B) hcont
     (uniformTilt.equivOfCharP p B).symm_apply_apply hplus y
 
+/-- Pointwise form of `spaTilt_comp_spaComap_equivOfCharP_symm`. -/
+@[simp]
+theorem spaTilt_spaComap_equivOfCharP_symm {Bplus : Subring B}
+    (h : IsRingOfIntegralElements Bplus)
+    {hcont : Continuous ((uniformTilt.equivOfCharP p B).symm : B →+* uniformTilt p B)}
+    {hplus : ∀ b ∈ Bplus,
+      ((uniformTilt.equivOfCharP p B).symm : B →+* uniformTilt p B) b ∈
+        uniformTilt.plusSubring p h}
+    (y : spa (uniformTilt.plusSubring p h)) :
+    spaTilt p h
+      (ValuationSpectrum.spaComap ((uniformTilt.equivOfCharP p B).symm : B →+* uniformTilt p B)
+        hcont Bplus (uniformTilt.plusSubring p h) hplus y) = y :=
+  congrFun (spaTilt_comp_spaComap_equivOfCharP_symm h) y
+
 variable (p) in
-/-- **Self-identification of `Spa(B, B⁺)` with `Spa(B♭, B♭⁺)` in characteristic `p`**, packaged as
-a homeomorphism with forward map `spaTilt p h` and inverse induced by `(equivOfCharP p B).symm`. -/
+/-- **Self-identification of `Spa(B, B⁺)` with `Spa(B♭, B♭⁺)` when `B` is perfect of
+characteristic `p`**, packaged as a homeomorphism with forward map `spaTilt p h` and inverse
+induced by `(equivOfCharP p B).symm`. -/
 noncomputable def spaTiltHomeomorphOfCharP {Bplus : Subring B}
     (h : IsRingOfIntegralElements Bplus) :
     spa Bplus ≃ₜ spa (uniformTilt.plusSubring p h) where
   toFun := spaTilt p h
   invFun := ValuationSpectrum.spaComap ((uniformTilt.equivOfCharP p B).symm : B →+* uniformTilt p B)
-    (uniformTilt.continuous_equivOfCharP_symm p B) Bplus (uniformTilt.plusSubring p h)
-    (fun b hb ↦ by simp [hb])
+    ((uniformTilt.continuous_equivOfCharP_symm p B).congr fun _ ↦ rfl)
+    Bplus (uniformTilt.plusSubring p h) (fun b hb ↦ by simp [hb])
   left_inv := congrFun (spaTilt_eq_id_of_charP h)
   right_inv := congrFun (spaTilt_comp_spaComap_equivOfCharP_symm h)
   continuous_toFun := continuous_spaTilt p h
   continuous_invFun := ValuationSpectrum.continuous_spaComap _ _ _ _ _
 
-/-- **In characteristic `p`, `spaTilt` is already a homeomorphism.** -/
+/-- `spaTiltHomeomorphOfCharP` evaluates on points as `spaTilt`. -/
+@[simp]
+theorem spaTiltHomeomorphOfCharP_apply {Bplus : Subring B}
+    (h : IsRingOfIntegralElements Bplus) (x : spa Bplus) :
+    spaTiltHomeomorphOfCharP p h x = spaTilt p h x :=
+  (rfl)
+
+/-- The inverse of `spaTiltHomeomorphOfCharP` is `spaComap` along `(equivOfCharP p B).symm`. -/
+@[simp]
+theorem spaTiltHomeomorphOfCharP_symm_apply {Bplus : Subring B}
+    (h : IsRingOfIntegralElements Bplus) (y : spa (uniformTilt.plusSubring p h)) :
+    (spaTiltHomeomorphOfCharP p h).symm y =
+      ValuationSpectrum.spaComap ((uniformTilt.equivOfCharP p B).symm : B →+* uniformTilt p B)
+        ((uniformTilt.continuous_equivOfCharP_symm p B).congr fun _ ↦ rfl)
+        Bplus (uniformTilt.plusSubring p h) (fun b hb ↦ by simp [hb]) y :=
+  (rfl)
+
+/-- **When `B` is perfect of characteristic `p`, `spaTilt` is already a homeomorphism.** -/
 theorem isHomeomorph_spaTilt_of_charP {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus) :
     IsHomeomorph (spaTilt p h) :=
   (spaTiltHomeomorphOfCharP p h).isHomeomorph

@@ -9,9 +9,9 @@ public import TauCeti.AlgebraicGeometry.PerfectoidSpace.Tilt.Spa
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Emptiness
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.NormedField
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.Field
+public import TauCeti.RingTheory.Perfectoid.UniformTilt.Gauge
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.OfHom
 public import TauCeti.RingTheory.Perfectoid.Padic
-public import TauCeti.NumberTheory.Padics.Complex.Basic
 
 /-!
 # Concrete checks for the tilting map on adic spectra
@@ -26,9 +26,9 @@ We exercise the tilting map `spaTilt` across five families of concrete examples 
    inhabited point of `Spa(ℂ_p, ℂ_p°)` along the two coordinate projections produces two points
    whose images under `Pair.spaTilt` remain distinct on `Spa((ℂ_p × ℂ_p)♭, (ℂ_p × ℂ_p)♭°)`,
    separated by the compatible idempotent `(1, 0)`.
-3. **Rational-subset preimages on `ℂ_p`**: a concrete rational subset `R({f, ϖ♭} / ϖ♭)` pulls back
-   to `R({f♯, ϖ} / ϖ)` inside `spaRationalFamily`, and every rational subset of `Spa(ℂ_p♭, ℂ_p♭°)`
-   pulls back to `spaRationalFamily` of `Spa(ℂ_p, ℂ_p°)`.
+3. **Rational-subset preimages on `ℂ_p`**: a concrete rational subset `R({f, ϖ♭} / ϖ♭)` on
+   `Spa(ℂ_p♭, ℂ_p♭°)` pulls back to `R({f♯, ϖ} / ϖ)` inside `spaRationalFamily` of
+   `Spa(ℂ_p, ℂ_p°)`.
 4. **Characteristic `p` and the zero ring**: on the characteristic-`p` perfectoid field
    `tiltField p ℂ_p`, `spaTilt` composes with `spaComap` of `(equivOfCharP).symm` to the identity
    and is a homeomorphism; on any trivial ring `B`, both adic spectra are empty and `Pair.spaTilt`
@@ -48,9 +48,6 @@ namespace TauCeti.Examples.PerfectoidSpaceTiltSpa
 variable (p : ℕ) [Fact p.Prime]
 
 /-! ### 1. Inhabitedness and norm comparison on `Spa(ℂ_p, ℂ_p°)` -/
-
-local instance : Fact (IsTopologicallyNilpotent (p : ℂ_[p])) :=
-  ⟨tendsto_pow_atTop_nhds_zero_of_norm_lt_one (PadicComplex.norm_p_lt_one p)⟩
 
 local instance : IsTateRing (uniformTilt p ℂ_[p]) :=
   (RingHom.id ℂ_[p]).isTateRing_uniformTilt (p := p) continuous_id
@@ -80,7 +77,7 @@ example (x : spa (Pair.powerBounded ℂ_[p]).plus) (f g : uniformTilt p ℂ_[p])
 point of `Spa(ℂ_p♭, ℂ_p♭°)`: `v(w²) < v(w) < 1`. -/
 example (ϖ : PseudoUniformizerRoots p ℂ_[p]) :
     ∃ x : spa (Pair.powerBounded ℂ_[p]).plus,
-      let w := uniformTilt.mk ϖ.root ϖ.root_succ_pow
+      let w := ϖ.toTilt
       let y := ((Pair.powerBounded ℂ_[p]).spaTilt p x).1
       y.toValuativeRel.vlt (w ^ 2) w ∧ y.toValuativeRel.vlt w 1 := by
   obtain ⟨x⟩ := nonempty_spa_padicComplex p
@@ -88,26 +85,15 @@ example (ϖ : PseudoUniformizerRoots p ℂ_[p]) :
     simpa only [Pair.powerBounded_plus] using x.2
   obtain ⟨h0, h1⟩ := isPseudoUniformizer_iff_norm_lt_one.mp ϖ.isPseudoUniformizer_root_zero
   refine ⟨x, ?_, ?_⟩
-  · change ¬ ((Pair.powerBounded ℂ_[p]).spaTilt p x).1.toValuativeRel.vle
-      (uniformTilt.mk ϖ.root ϖ.root_succ_pow) (uniformTilt.mk ϖ.root ϖ.root_succ_pow ^ 2)
-    rw [Pair.spaTilt_val, spaTilt_vle_iff, vle_iff_norm_le_of_mem_spa hx, map_pow,
-      uniformTilt.coeff_mk, norm_pow, not_le]
-    exact pow_lt_self_of_lt_one₀ (norm_pos_iff.mpr h0) h1 (by decide)
-  · change ¬ ((Pair.powerBounded ℂ_[p]).spaTilt p x).1.toValuativeRel.vle
-      1 (uniformTilt.mk ϖ.root ϖ.root_succ_pow)
-    rw [Pair.spaTilt_val, spaTilt_vle_iff, vle_iff_norm_le_of_mem_spa hx, map_one,
-      uniformTilt.coeff_mk, norm_one, not_le]
-    exact h1
+  · simpa [ValuativeRel.vlt, vle_iff_norm_le_of_mem_spa hx] using
+      pow_lt_self_of_lt_one₀ (norm_pos_iff.mpr h0) h1 (by decide)
+  · simpa [ValuativeRel.vlt, vle_iff_norm_le_of_mem_spa hx] using h1
 
 /-- Every tilted point of `Spa(ℂ_p, ℂ_p°)` has trivial prime support in `ℂ_p♭`. -/
 example (x : spa (Pair.powerBounded ℂ_[p]).plus) :
     ((Pair.powerBounded ℂ_[p]).spaTilt p x).1.supp = ⊥ := by
-  have hx : x.1 ∈ spa (powerBoundedSubring ℂ_[p]) := by
-    simpa only [Pair.powerBounded_plus] using x.2
   ext f
-  rw [Pair.spaTilt_val, ValuationSpectrum.mem_supp_iff, spaTilt_vle_iff, uniformTilt.coeff_zero,
-    vle_iff_norm_le_of_mem_spa hx, norm_zero, norm_le_zero_iff, uniformTilt.coeff_zero_eq_zero_iff,
-    Ideal.mem_bot]
+  simp
 
 /-! ### 2. Functoriality and point separation on `Spa(ℂ_p × ℂ_p, (ℂ_p × ℂ_p)°)` -/
 
@@ -119,24 +105,6 @@ local instance : Fact (IsTopologicallyNilpotent (p : ℂ_[p] × ℂ_[p])) :=
 local instance : IsTateRing (uniformTilt p (ℂ_[p] × ℂ_[p])) :=
   (RingHom.id (ℂ_[p] × ℂ_[p])).isTateRing_uniformTilt (p := p) continuous_id
 
-/-- First projection `(ℂ_p × ℂ_p, (ℂ_p × ℂ_p)°) → (ℂ_p, ℂ_p°)` as a Huber-pair morphism. -/
-private noncomputable def fstPair : Pair.Hom (Pair.powerBounded (ℂ_[p] × ℂ_[p]))
-    (Pair.powerBounded ℂ_[p]) where
-  toRingHom := RingHom.fst _ _
-  continuous_toRingHom := continuous_fst
-  map_mem_plus _ hx := by
-    rw [Pair.powerBounded_plus, mem_powerBoundedSubring] at hx ⊢
-    exact (isPowerBounded_prod_iff.mp hx).1
-
-/-- Second projection `(ℂ_p × ℂ_p, (ℂ_p × ℂ_p)°) → (ℂ_p, ℂ_p°)` as a Huber-pair morphism. -/
-private noncomputable def sndPair : Pair.Hom (Pair.powerBounded (ℂ_[p] × ℂ_[p]))
-    (Pair.powerBounded ℂ_[p]) where
-  toRingHom := RingHom.snd _ _
-  continuous_toRingHom := continuous_snd
-  map_mem_plus _ hx := by
-    rw [Pair.powerBounded_plus, mem_powerBoundedSubring] at hx ⊢
-    exact (isPowerBounded_prod_iff.mp hx).2
-
 /-- Two inhabited points of `Spa(ℂ_p × ℂ_p, (ℂ_p × ℂ_p)°)` pulled back from `Spa(ℂ_p, ℂ_p°)` along
 the two projections remain distinct after applying `Pair.spaTilt`. -/
 example :
@@ -144,27 +112,16 @@ example :
       (Pair.powerBounded (ℂ_[p] × ℂ_[p])).spaTilt p x₁ ≠
         (Pair.powerBounded (ℂ_[p] × ℂ_[p])).spaTilt p x₂ := by
   obtain ⟨x₀⟩ := nonempty_spa_padicComplex p
-  have hx₀ : x₀.1 ∈ spa (powerBoundedSubring ℂ_[p]) := by
-    simpa only [Pair.powerBounded_plus] using x₀.2
-  refine ⟨(fstPair p).spaComap x₀, (sndPair p).spaComap x₀, ?_⟩
-  rw [(fstPair p).spaTilt_spaComap, (sndPair p).spaTilt_spaComap]
+  refine ⟨(Pair.powerBoundedFst ℂ_[p] ℂ_[p]).spaComap x₀,
+    (Pair.powerBoundedSnd ℂ_[p] ℂ_[p]).spaComap x₀, ?_⟩
+  rw [(Pair.powerBoundedFst ℂ_[p] ℂ_[p]).spaTilt_spaComap,
+    (Pair.powerBoundedSnd ℂ_[p] ℂ_[p]).spaTilt_spaComap]
   intro h
   let e : uniformTilt p (ℂ_[p] × ℂ_[p]) :=
     uniformTilt.mk (fun _ ↦ (1, 0)) (fun _ ↦ by simp [(Fact.out : p.Prime).ne_zero])
-  have he :
-      (((fstPair p).tilt (p := p)).spaComap
-          ((Pair.powerBounded ℂ_[p]).spaTilt p x₀)).1.toValuativeRel.vle e 0 ↔
-        (((sndPair p).tilt (p := p)).spaComap
-          ((Pair.powerBounded ℂ_[p]).spaTilt p x₀)).1.toValuativeRel.vle e 0 := by
-    rw [h]
-  rw [Pair.Hom.spaComap_val, comap_vle, Pair.Hom.spaComap_val, comap_vle, map_zero, map_zero,
-    Pair.spaTilt_val, spaTilt_vle_iff, spaTilt_vle_iff, uniformTilt.coeff_zero,
-    vle_iff_norm_le_of_mem_spa hx₀, vle_iff_norm_le_of_mem_spa hx₀, norm_zero,
-    Pair.Hom.toRingHom_tilt, Pair.Hom.toRingHom_tilt, uniformTilt.coeff_map,
-    uniformTilt.coeff_map] at he
-  simp only [fstPair, sndPair, e, uniformTilt.coeff_mk, RingHom.coe_fst, RingHom.coe_snd,
-    norm_one, norm_zero] at he
-  exact absurd (he.mpr le_rfl) (by norm_num)
+  have he := congrArg (fun z ↦ z.1.toValuativeRel.vle e 0) h
+  rw [Pair.Hom.spaComap_val, Pair.Hom.spaComap_val] at he
+  simp [e, ← uniformTilt.coeff_zero_eq_zero_iff] at he
 
 /-! ### 3. Rational-subset preimages on `ℂ_p` -/
 
@@ -173,7 +130,7 @@ open scoped Classical in
 to `R({f♯, ϖ} / ϖ)` and belongs to `spaRationalFamily` of `Spa(ℂ_p, ℂ_p°)`. -/
 example (ϖ : PseudoUniformizerRoots p ℂ_[p]) (f : uniformTilt p ℂ_[p]) :
     let P := Pair.powerBounded ℂ_[p]
-    let w := uniformTilt.mk ϖ.root ϖ.root_succ_pow
+    let w := ϖ.toTilt
     let U := (Subtype.val : spa (P.tilt (p := p)).plus → _) ⁻¹'
       rationalSubset (P.tilt (p := p)).plus ({f, w} : Finset (uniformTilt p ℂ_[p])) w
     P.spaTilt p ⁻¹' U =
@@ -181,24 +138,15 @@ example (ϖ : PseudoUniformizerRoots p ℂ_[p]) (f : uniformTilt p ℂ_[p]) :
         rationalSubset P.plus {uniformTilt.coeff p ℂ_[p] 0 f, ϖ.root 0} (ϖ.root 0) ∧
     P.spaTilt p ⁻¹' U ∈ spaRationalFamily P.plus := by
   dsimp only
-  constructor
-  · rw [(Pair.powerBounded ℂ_[p]).spaTilt_preimage_rationalSubset]
-    simp
-  · refine (Pair.powerBounded ℂ_[p]).spaTilt_preimage_mem_spaRationalFamily (p := p)
-      (mem_spaRationalFamily_iff.mpr ⟨{f, uniformTilt.mk ϖ.root ϖ.root_succ_pow},
-        uniformTilt.mk ϖ.root ϖ.root_succ_pow, ?_, rfl⟩)
-    have hu : IsUnit (uniformTilt.mk ϖ.root ϖ.root_succ_pow) :=
-      uniformTilt.isUnit_iff_coeff_zero.mpr
-        (by simpa only [uniformTilt.coeff_mk] using ϖ.isPseudoUniformizer_root_zero.isUnit)
-    rw [Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) hu]
-    simp [isOpen_univ]
+  refine ⟨?_, (Pair.powerBounded ℂ_[p]).spaTilt_preimage_mem_spaRationalFamily
+    (val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit _ _
+      ϖ.isPseudoUniformizer_toTilt.isUnit)⟩
+  rw [(Pair.powerBounded ℂ_[p]).spaTilt_preimage_rationalSubset]
+  simp
 
 /-! ### 4. Characteristic `p` and the zero ring -/
 
 section CharacteristicP
-
-local instance : Fact (IsTopologicallyNilpotent (p : tiltField p ℂ_[p])) :=
-  ⟨by rw [CharP.cast_eq_zero]; exact IsTopologicallyNilpotent.zero⟩
 
 /-- On the characteristic-`p` perfectoid field `tiltField p ℂ_p`, `spaTilt` is a homeomorphism and
 composes with `spaComap` of `(equivOfCharP).symm` to the identity. -/
