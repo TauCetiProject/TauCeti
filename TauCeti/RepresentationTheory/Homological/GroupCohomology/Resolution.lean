@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Antigravity (Gemini 4 Carbon)
 -/
 module
 
@@ -44,16 +44,63 @@ sequence of `Hom(P, -)`: the identification respects the long exact sequences.
 * `TauCeti.Rep.δ_comp_groupCohomologyIso_inv`,
   `TauCeti.Rep.groupCohomology_δ_comp_groupCohomologyIso_hom`: `groupCohomologyIso` intertwines
   the connecting maps of the two long exact cohomology sequences.
+* `Rep.groupCohomologyIso_hom_comp_homologyMap`,
+  `Rep.homologyMap_comp_groupCohomologyIso_inv`: an augmentation-preserving chain map between two
+  projective resolutions intertwines their `groupCohomologyIso` identifications.
 
 ## References
 
 * K. S. Brown, *Cohomology of Groups*, Graduate Texts in Mathematics 87, Springer (1982),
   Chapter I, §7 (comparison of projective resolutions).
+
+The comparisons `groupCohomologyIso` and `groupCohomology.inhomogeneousCochainsIso` are Mathlib's
+constructions by Amelia Livingston.
 -/
 
 public section
 
 open CategoryTheory
+
+namespace Rep
+
+universe u
+
+variable {k G : Type u} [CommRing k] [Group G] (A : Rep.{u} k G)
+
+/-- **Group cohomology from two projective resolutions related by a chain map.** For projective
+resolutions `P` and `Q` of the trivial representation `k` and a chain map
+`φ : P.complex ⟶ Q.complex` lying over the identity of `k`, `groupCohomologyIso` intertwines the
+two cohomology computations via precomposition with `φ` on `Hom(-, A)`. -/
+@[reassoc]
+theorem groupCohomologyIso_hom_comp_homologyMap
+    (P Q : ProjectiveResolution (Rep.trivial k G k))
+    (φ : P.complex ⟶ Q.complex) (comm : φ.f 0 ≫ Q.π.f 0 = P.π.f 0) (n : ℕ) :
+    (groupCohomologyIso A n Q).hom ≫
+        HomologicalComplex.homologyMap
+          ((TauCeti.ChainComplex.linearYonedaFunctor k A).map φ.op) n =
+      (groupCohomologyIso A n P).hom := by
+  have hP : (groupCohomologyIso A n P).hom = _ := Iso.trans_hom _ _
+  have hQ : (groupCohomologyIso A n Q).hom = _ := Iso.trans_hom _ _
+  rw [hP, hQ]
+  exact (Category.assoc _ _ _).trans
+    (congrArg (_ ≫ ·) (ProjectiveResolution.isoExt_hom_comp_homologyMap (R := k) P Q φ comm n A))
+
+/-- Inverse form of `Rep.groupCohomologyIso_hom_comp_homologyMap`: precomposition with `φ` on
+cohomology commutes with the inverse identifications `groupCohomologyIso`. -/
+@[reassoc]
+theorem homologyMap_comp_groupCohomologyIso_inv
+    (P Q : ProjectiveResolution (Rep.trivial k G k))
+    (φ : P.complex ⟶ Q.complex) (comm : φ.f 0 ≫ Q.π.f 0 = P.π.f 0) (n : ℕ) :
+    HomologicalComplex.homologyMap
+        ((TauCeti.ChainComplex.linearYonedaFunctor k A).map φ.op) n ≫
+        (groupCohomologyIso A n P).inv =
+      (groupCohomologyIso A n Q).inv :=
+  -- Proved in term mode: `linearYonedaFunctor` and `linearYonedaObj` agree definitionally, not
+  -- syntactically under `implicit` transparency.
+  (Iso.comp_inv_eq _).2 <|
+    (Iso.eq_inv_comp _).2 (groupCohomologyIso_hom_comp_homologyMap A P Q φ comm n)
+
+end Rep
 
 namespace TauCeti.Rep
 
