@@ -45,6 +45,8 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
 * `norm_fderiv_norm_rpow_of_ne`: that derivative has norm `|p| ‖x‖ ^ (p - 1)`.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
+* `hasFDerivAt_comp_norm_sub`: the derivative of a radial function `y ↦ H ‖y - x‖` with `H`
+  constant near `0`, at every point.
 * `iteratedFDeriv_two_norm_rpow_apply`: the Hessian of an arbitrary real power away from zero.
 * `norm_iteratedFDeriv_two_norm_rpow_le`: the Hessian is `O(‖x‖ ^ (p - 2))`.
 * `inv_norm_le_norm_fderiv_fderiv_norm`: the second derivative of the norm is at least `‖x‖⁻¹`
@@ -253,6 +255,24 @@ theorem hasFDerivAt_norm_of_ne {x : E} (hx : x ≠ 0) :
   convert hasFDerivAt_norm_rpow_of_ne 1 hx using 1
   · simp
   · norm_num [Real.rpow_neg_one]
+
+/-- **The derivative of a radial function about a point.** If `H` is differentiable and constant
+near `0`, then `y ↦ H ‖y - x‖` has derivative `(H' ‖y - x‖ / ‖y - x‖) ⟪y - x, ·⟫` at every `y`;
+at `y = x` both sides vanish. -/
+theorem hasFDerivAt_comp_norm_sub {H : ℝ → ℝ} (hH : Differentiable ℝ H)
+    (hH₀ : ∀ᶠ t in 𝓝 0, H t = H 0) (x y : E) :
+    HasFDerivAt (fun z ↦ H ‖z - x‖) ((deriv H ‖y - x‖ / ‖y - x‖) • innerSL ℝ (y - x)) y := by
+  rcases eq_or_ne y x with rfl | hyx
+  · have ht : Tendsto (fun z ↦ ‖z - y‖) (𝓝 y) (𝓝 0) := by
+      simpa using (((continuous_id.sub continuous_const).norm.tendsto y) :
+        Tendsto (fun z : E ↦ ‖z - y‖) (𝓝 y) (𝓝 ‖y - y‖))
+    simpa using (hasFDerivAt_const (H 0) y).congr_of_eventuallyEq (ht.eventually hH₀)
+  · have hnorm := (hasFDerivAt_norm_of_ne (sub_ne_zero.2 hyx)).comp y
+      ((hasFDerivAt_id y).sub_const x)
+    convert (hH ‖y - x‖).hasDerivAt.comp_hasFDerivAt y hnorm using 1
+    · rfl
+    · ext a
+      simp [div_eq_mul_inv, mul_assoc]
 
 /-- The Hessian of `x ↦ ‖x‖ ^ p` away from the origin, evaluated on two directions. -/
 theorem iteratedFDeriv_two_norm_rpow_apply (p : ℝ) {x : E} (hx : x ≠ 0) (v w : E) :

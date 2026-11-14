@@ -82,6 +82,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
   `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` for self-dual `η`.
 * `lieMap_of_hodgeStar_eq_neg`: `D_J η = 0` for anti-self-dual `η`.
 * `ιMulti_sub_ιMulti_add_hodgeStar`: the self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`.
+* `hodgeStar_ιMulti_apply`: `⋆(u ∧ J u) = ‖u‖² ω - u ∧ J u`.
 * `eq_smul_kahlerForm_add_of_lieMap_eq_zero`: a `J`-invariant `η` is
   `(⟪ω, η⟫ / 2) ω + (η - ⋆η) / 2`.
 
@@ -478,6 +479,21 @@ theorem ιMulti_sub_ιMulti_add_hodgeStar (ξ a : V) :
     Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons,
     repr_apply h₀ h₂]
   ring
+
+include he h₀ h₂ in
+/-- **The Hodge star of `u ∧ J u`** is `‖u‖² ω - u ∧ J u`: for a unit vector `u` it is the wedge
+`w ∧ J w` of the complementary complex line of a unitary frame `(u, J u, w, J w)`. -/
+theorem hodgeStar_ιMulti_apply (u : V) :
+    o.hodgeStar hkl (ιMulti ℝ 2 ![u, J u]) = ‖u‖ ^ 2 • J.kahlerForm - ιMulti ℝ 2 ![u, J u] := by
+  -- The case `ξ = a = u` of `ιMulti_sub_ιMulti_add_hodgeStar`, where `u ∧ J u - J u ∧ u` is
+  -- `2 (u ∧ J u)`.
+  have h := ιMulti_sub_ιMulti_add_hodgeStar h₀ h₂ hkl he u u
+  have hswap : ιMulti ℝ 2 ![J u, u] = -ιMulti ℝ 2 ![u, J u] := by
+    rw [← (ιMulti ℝ 2).map_swap ![u, J u] (i := 0) (j := 1) (by decide)]
+    congr 1
+    ext i; fin_cases i <;> rfl
+  rw [hswap, sub_neg_eq_add, map_add, real_inner_self_eq_norm_sq] at h
+  linear_combination (norm := module) (2⁻¹ : ℝ) • h
 
 include he h₀ h₂ in
 /-- **A `J`-invariant two-form is a multiple of `ω` plus an anti-self-dual form**: for
