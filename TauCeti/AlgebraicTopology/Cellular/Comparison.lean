@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
 public import TauCeti.AlgebraicTopology.Cellular.Homology
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 public import TauCeti.AlgebraicTopology.Singular.Empty
+public import TauCeti.CategoryTheory.Limits.Constructions.EventuallyConstant
 public import TauCeti.Topology.CWComplex.Classical.CompactSupport
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Colimit
 
@@ -134,21 +134,14 @@ lemma isIso_homologyMap_skeletonBasePairToComplex_fst {m k : ℕ} (hk : k < m)
       exact ⟨n, fun x hx ↦ ⟨⟨x.1, hn ⟨x, hx, rfl⟩⟩, rfl⟩⟩
   -- From the `m`-skeleton on, the diagram of homology objects in degree `k` is constant.
   have hconst : (skeletonFunctor C ⋙
-      (AlgebraicTopology.singularHomologyFunctor A k).obj R).IsEventuallyConstantFrom (m + 1) := by
-    intro j φ
-    induction j, φ.le using Nat.le_induction with
-    | base => rw [Subsingleton.elim φ (𝟙 _), CategoryTheory.Functor.map_id]; infer_instance
-    | succ j hj ih =>
-      rw [Subsingleton.elim φ (homOfLE hj ≫ homOfLE j.le_succ), Functor.map_comp]
-      have := ih (homOfLE hj)
+      (AlgebraicTopology.singularHomologyFunctor A k).obj R).IsEventuallyConstantFrom (m + 1) :=
+    Functor.isEventuallyConstantFrom_of_isIso_map_succ fun j hj ↦ by
       have := hExact j (by lia)
       -- The diagram sends `j ≤ j + 1` to the inclusion of the pair of consecutive skeleta.
-      have hmap : (skeletonFunctor C).map (homOfLE j.le_succ) = (skeletonPair C j).map := rfl
-      have : IsIso ((skeletonFunctor C ⋙
-          (AlgebraicTopology.singularHomologyFunctor A k).obj R).map (homOfLE j.le_succ)) := by
-        rw [Functor.comp_map, hmap]
-        exact isIso_homologyMap_skeletonPair_map C R (by lia) (by lia)
-      infer_instance
+      have hmap : (skeletonFunctor C).map (homOfLE (Order.le_succ j)) =
+          (skeletonPair C j).map := rfl
+      rw [Functor.comp_map, hmap]
+      exact isIso_homologyMap_skeletonPair_map C R (by lia) (by lia)
   rw [skeletonBasePairToComplex_fst]
   -- The leg of the colimit cocone at `m + 1` is by definition the homology map of the inclusion.
   exact hconst.isIso_ι_of_isColimit hc
