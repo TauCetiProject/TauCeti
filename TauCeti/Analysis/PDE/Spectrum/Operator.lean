@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Inverse
 public import TauCeti.Analysis.PDE.Spectrum.Sequence
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 import TauCeti.Analysis.PDE.WeakLaplacian
+import TauCeti.MeasureTheory.Function.Lp.Integral
 
 /-!
 # The Dirichlet realization of a divergence-form operator
@@ -310,16 +311,6 @@ open scoped Distributions
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
 
-omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
-/-- Negating an `L²(Ω)` function negates its integral against a test function on `Ω`; the
-values of `-g` agree with `-g x` only almost everywhere. -/
-private theorem setIntegral_neg_lp_mul (g : Lp ℝ 2 (mu.restrict Omega)) (φ : 𝓓(Omega, ℝ)) :
-    ∫ x in Omega, (-g) x * φ x ∂mu = -∫ x in Omega, g x * φ x ∂mu := by
-  rw [← integral_neg]
-  refine integral_congr_ae ?_
-  filter_upwards [Lp.coeFn_neg g] with x hx
-  rw [hx, Pi.neg_apply, neg_mul]
-
 /-- **The graph of the Dirichlet Laplacian.** For `-Δ`, `x = (f, g)` lies on the graph of the
 Dirichlet realization exactly when `f` is the value of some `u ∈ H¹₀(Ω)` and `-Δf = g` in the
 sense of distributions on `Ω`. -/
@@ -357,7 +348,7 @@ theorem mem_domain_dirichletOperator_laplacian_iff
   simp only [LinearPMap.mem_domain_iff, mem_graph_dirichletOperator_laplacian_iff,
     exists_and_left]
   refine and_congr_right' <| (Equiv.neg _).exists_congr fun g ↦ forall_congr' fun φ ↦ ?_
-  rw [Equiv.neg_apply, setIntegral_neg_lp_mul, neg_eq_iff_eq_neg]
+  rw [Equiv.neg_apply, Lp.integral_neg_mul, neg_eq_iff_eq_neg]
 
 /-- On its domain, the Dirichlet Laplacian is the distributional `-Δ`: for `f` in the domain,
 `-∫_Ω Δφ f = ∫_Ω (A f) φ` for every test function `φ` on `Ω`. -/
@@ -397,7 +388,7 @@ theorem setIntegral_laplacian_mul_eq_setIntegral_neg_dirichletOperator_mul
     (f : (dirichletOperator hcoeff hcoercive).domain) (φ : 𝓓(Omega, ℝ)) :
     ∫ x in Omega, Δ (φ : EuclideanSpace ℝ ι → ℝ) x * (f : Lp ℝ 2 (mu.restrict Omega)) x ∂mu =
       ∫ x in Omega, (-dirichletOperator hcoeff hcoercive f) x * φ x ∂mu := by
-  rw [setIntegral_neg_lp_mul,
+  rw [Lp.integral_neg_mul,
     ← neg_setIntegral_laplacian_mul_eq_setIntegral_dirichletOperator_mul, neg_neg]
 
 /-- The Dirichlet Laplacian sends `f` in its domain to `-g` when `Δf = g` in the sense of
@@ -413,7 +404,7 @@ theorem dirichletOperator_apply_eq_neg_of_forall_setIntegral_laplacian_mul_eq
         ∫ x in Omega, g x * φ x ∂mu) :
     dirichletOperator hcoeff hcoercive f = -g :=
   dirichletOperator_apply_eq_of_forall_neg_setIntegral_laplacian_mul_eq hcoeff hcoercive
-    fun φ ↦ by rw [hg, setIntegral_neg_lp_mul]
+    fun φ ↦ by rw [hg, Lp.integral_neg_mul]
 
 end LaplacianDomain
 
