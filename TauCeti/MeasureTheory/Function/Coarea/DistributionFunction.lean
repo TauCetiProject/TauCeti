@@ -14,6 +14,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationTh
 import Mathlib.Topology.Perfect
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Measurable
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 
 /-!
 # The distribution function and regular level integrals
@@ -240,27 +241,6 @@ private theorem measureReal_setOf_lt_eq_add_add {c u v : ℝ} (hh : AEMeasurable
     ENNReal.toReal_add (ne_top_of_le_ne_top hfin (le_self_add.trans le_self_add))
       (ne_top_of_le_ne_top hfin (le_add_self.trans le_self_add))]
 
-/-- A locally finite measure on `ℝ` that is singular with respect to Lebesgue measure has right
-difference quotients `ρ (t, t + δ] / δ` tending to zero at almost every `t`. -/
-private theorem ae_tendsto_inv_mul_measureReal_Ioc_of_mutuallySingular {ρ : Measure ℝ}
-    [IsLocallyFiniteMeasure ρ] (hρ : ρ ⟂ₘ volume) :
-    ∀ᵐ t, Tendsto (fun δ : ℝ ↦ δ⁻¹ * ρ.real (Ioc t (t + δ))) (𝓝[>] 0) (𝓝 0) := by
-  set v := IsUnifLocDoublingMeasure.vitaliFamily (volume : Measure ℝ) 1
-  filter_upwards [v.ae_eventually_measure_zero_of_singular hρ] with t ht
-  have hshift : Tendsto (fun δ : ℝ ↦ t + δ) (𝓝[>] 0) (𝓝[>] t) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (((continuous_const_add t).tendsto' 0 t (add_zero t)).mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun δ (hδ : 0 < δ) ↦ lt_add_of_pos_right t hδ)
-  refine squeeze_zero' (eventually_nhdsWithin_of_forall fun δ (hδ : 0 < δ) ↦ by positivity)
-    (eventually_nhdsWithin_of_forall fun δ (hδ : 0 < δ) ↦ ?_)
-    ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
-      (ht.comp ((Real.tendsto_Icc_vitaliFamily_right t).comp hshift)))
-  calc δ⁻¹ * ρ.real (Ioc t (t + δ)) ≤ δ⁻¹ * ρ.real (Icc t (t + δ)) := by
-        gcongr
-        exacts [measure_Icc_lt_top.ne, Ioc_subset_Icc_self]
-    _ = (ρ (Icc t (t + δ)) / volume (Icc t (t + δ))).toReal := by
-        simp [ENNReal.toReal_div, measureReal_def, hδ.le, inv_mul_eq_div]
-
 /-- The equality `m(t) = -μ'(t)` at almost every `t > c`, for a fixed `c > 0`, when the critical
 values of `h` form a null set. -/
 private theorem ae_setLIntegral_inv_enorm_fderiv_eq_ofReal_neg_deriv_of_lt (hh : AEMeasurable h)
@@ -305,7 +285,8 @@ private theorem ae_setLIntegral_inv_enorm_fderiv_eq_ofReal_neg_deriv_of_lt (hh :
   filter_upwards [hμr.neg.ae_differentiableWithinAt_of_mem,
     LocallyIntegrable.ae_hasDerivAt_integral hg.locallyIntegrable,
     (ae_restrict_iff' measurableSet_Ioi).1 hfinite,
-    ae_tendsto_inv_mul_measureReal_Ioc_of_mutuallySingular hsing] with t hdiff hderiv hfin_t hρt hct
+    TauCeti.ae_tendsto_inv_mul_measureReal_Ioc_of_mutuallySingular hsing]
+    with t hdiff hderiv hfin_t hρt hct
   have hdμ : DifferentiableAt ℝ μr t := by
     simpa using ((hdiff (hc.trans hct)).differentiableAt (Ioi_mem_nhds (hc.trans hct))).neg
   have hF := (hdμ.hasDerivAt.add (hderiv c)).tendsto_slope_zero_right
