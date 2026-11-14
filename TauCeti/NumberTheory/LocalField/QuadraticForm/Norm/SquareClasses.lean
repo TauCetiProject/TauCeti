@@ -18,7 +18,9 @@ subgroup `TauCeti.unitQuadraticNormSquareClasses a ≤ TauCeti.unitSquareClasses
 `𝒪[K]` is already a valuation-one norm from `K[√a]`, the quotient map
 `U(K, 0) → unitSquareClasses K` pulls `unitQuadraticNormSquareClasses a` back to
 `(quadraticNormSubgroup a).subgroupOf (unitFiltration K 0)`, identifying their indices over a
-nonarchimedean local field (`TauCeti.relIndex_unitQuadraticNormSquareClasses`).
+nonarchimedean local field (`TauCeti.relIndex_unitQuadraticNormSquareClasses`) and characterizing
+when every unit square class is represented by a norm
+(`TauCeti.unitQuadraticNormSquareClasses_eq_unitSquareClasses_iff`).
 
 ## References
 
@@ -62,6 +64,18 @@ theorem unitQuadraticNormSquareClasses_le_unitSquareClasses (a : K) :
   rintro _ ⟨_, ⟨_, u, rfl⟩, rfl⟩
   exact (mem_unitSquareClasses_iff K _).mpr ⟨u, (squareClassHom_apply _).symm⟩
 
+/-- Rescaling the radicand by a square does not change the unit-norm square-class subgroup. -/
+@[simp]
+theorem unitQuadraticNormSquareClasses_mul_sq (a : K) (c : Kˣ) :
+    unitQuadraticNormSquareClasses (a * (c : K) ^ 2) = unitQuadraticNormSquareClasses a := by
+  rw [unitQuadraticNormSquareClasses, unitQuadraticNormSquareClasses, quadraticNormSubgroup_mul_sq]
+
+/-- Radicands whose product is a square have the same unit-norm square-class subgroup. -/
+theorem unitQuadraticNormSquareClasses_eq_of_isSquare_mul {a b : Kˣ} (h : IsSquare (a * b)) :
+    unitQuadraticNormSquareClasses (a : K) = unitQuadraticNormSquareClasses (b : K) := by
+  rw [unitQuadraticNormSquareClasses, unitQuadraticNormSquareClasses,
+    quadraticNormSubgroup_eq_of_isSquare_mul h]
+
 end ValuedField
 
 section LocalField
@@ -69,33 +83,53 @@ section LocalField
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
+private def unitToSquareClassesHom : unitFiltration K 0 →* unitSquareClasses K :=
+  (squareClassHom.comp (unitFiltration K 0).subtype).codRestrict (unitSquareClasses K) fun u ↦ by
+    obtain ⟨w, -, hwu⟩ := mem_unitFiltration_iff_exists.mp u.2
+    exact (mem_unitSquareClasses_iff K _).mpr ⟨w, by
+      rw [MonoidHom.comp_apply, Subgroup.coe_subtype, squareClassHom_apply,
+        QuotientGroup.mk'_apply]; congr 1; exact Units.ext hwu⟩
+
+private theorem unitToSquareClassesHom_surjective :
+    Function.Surjective (unitToSquareClassesHom (K := K)) := fun ⟨q, hq⟩ ↦ by
+  obtain ⟨w, rfl⟩ := (mem_unitSquareClasses_iff K q).mp hq
+  refine ⟨⟨Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) w, (mem_unitFiltration_zero _).mpr
+    ((Valuation.integer.integers (valuation K)).valuation_unit w)⟩, ?_⟩
+  ext; simp [unitToSquareClassesHom, squareClassHom_apply]
+
+private theorem comap_unitToSquareClassesHom (a : K) :
+    ((unitQuadraticNormSquareClasses a).subgroupOf (unitSquareClasses K)).comap
+        unitToSquareClassesHom =
+      (quadraticNormSubgroup a).subgroupOf (unitFiltration K 0) := by
+  ext u
+  simp only [unitToSquareClassesHom, Subgroup.mem_comap, Subgroup.mem_subgroupOf,
+    MonoidHom.codRestrict_apply, MonoidHom.comp_apply, Subgroup.coe_subtype,
+    mem_unitQuadraticNormSquareClasses_iff]
+  refine ⟨fun ⟨b, hb, _, hbu⟩ ↦ ?_, fun hu ↦ ⟨u, hu, (mem_unitFiltration_zero _).mp u.2, rfl⟩⟩
+  have hsq : b⁻¹ * (u : Kˣ) ∈ Subgroup.square Kˣ := by
+    rwa [← QuotientGroup.eq, ← squareClassHom_apply, ← squareClassHom_apply]
+  simpa only [mul_inv_cancel_left] using
+    (quadraticNormSubgroup a).mul_mem hb (square_le_quadraticNormSubgroup a hsq)
+
 /-- Over a nonarchimedean local field, the index of `unitQuadraticNormSquareClasses a` inside
 `unitSquareClasses K` equals the index of the valuation-one quadratic norms inside `U(K, 0)`. -/
 theorem relIndex_unitQuadraticNormSquareClasses (a : K) :
     (unitQuadraticNormSquareClasses a).relIndex (unitSquareClasses K) =
       ((quadraticNormSubgroup a).subgroupOf (unitFiltration K 0)).index := by
-  let φ : unitFiltration K 0 →* unitSquareClasses K :=
-    (squareClassHom.comp (unitFiltration K 0).subtype).codRestrict (unitSquareClasses K) fun u ↦ by
-      obtain ⟨w, -, hwu⟩ := mem_unitFiltration_iff_exists.mp u.2
-      exact (mem_unitSquareClasses_iff K _).mpr ⟨w, by
-        rw [MonoidHom.comp_apply, Subgroup.coe_subtype, squareClassHom_apply,
-          QuotientGroup.mk'_apply]; congr 1; exact Units.ext hwu⟩
-  have hφ_surj : Function.Surjective φ := fun ⟨q, hq⟩ ↦ by
-    obtain ⟨w, rfl⟩ := (mem_unitSquareClasses_iff K q).mp hq
-    refine ⟨⟨Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) w, (mem_unitFiltration_zero _).mpr
-      ((Valuation.integer.integers (valuation K)).valuation_unit w)⟩, ?_⟩
-    ext; simp [φ, squareClassHom_apply]
-  let H := (unitQuadraticNormSquareClasses a).subgroupOf (unitSquareClasses K)
-  have hcomap : H.comap φ = (quadraticNormSubgroup a).subgroupOf (unitFiltration K 0) := by
-    ext u
-    simp only [H, φ, Subgroup.mem_comap, Subgroup.mem_subgroupOf, MonoidHom.codRestrict_apply,
-      MonoidHom.comp_apply, Subgroup.coe_subtype, mem_unitQuadraticNormSquareClasses_iff]
-    refine ⟨fun ⟨b, hb, _, hbu⟩ ↦ ?_, fun hu ↦ ⟨u, hu, (mem_unitFiltration_zero _).mp u.2, rfl⟩⟩
-    have hsq : b⁻¹ * (u : Kˣ) ∈ Subgroup.square Kˣ := by
-      rwa [← QuotientGroup.eq, ← squareClassHom_apply, ← squareClassHom_apply]
-    simpa only [mul_inv_cancel_left] using
-      (quadraticNormSubgroup a).mul_mem hb (square_le_quadraticNormSubgroup a hsq)
-  rw [Subgroup.relIndex, ← hcomap, Subgroup.index_comap_of_surjective H hφ_surj]
+  rw [Subgroup.relIndex, ← comap_unitToSquareClassesHom a,
+    Subgroup.index_comap_of_surjective _ unitToSquareClassesHom_surjective]
+
+/-- Over a nonarchimedean local field, `unitQuadraticNormSquareClasses a` equals
+`unitSquareClasses K` if and only if every unit of `U(K, 0)` lies in `quadraticNormSubgroup a`. -/
+theorem unitQuadraticNormSquareClasses_eq_unitSquareClasses_iff (a : K) :
+    unitQuadraticNormSquareClasses a = unitSquareClasses K ↔
+      unitFiltration K 0 ≤ quadraticNormSubgroup a := by
+  have hle := unitQuadraticNormSquareClasses_le_unitSquareClasses a
+  rw [le_antisymm_iff, and_iff_right hle, ← Subgroup.subgroupOf_eq_top,
+    ← Subgroup.subgroupOf_eq_top, ← comap_unitToSquareClassesHom a]
+  refine ⟨fun h ↦ by rw [h, Subgroup.comap_top], fun h ↦ eq_top_iff.mpr fun q _ ↦ ?_⟩
+  obtain ⟨u, rfl⟩ := unitToSquareClassesHom_surjective q
+  exact Subgroup.mem_comap.mp (h ▸ Subgroup.mem_top u)
 
 end LocalField
 

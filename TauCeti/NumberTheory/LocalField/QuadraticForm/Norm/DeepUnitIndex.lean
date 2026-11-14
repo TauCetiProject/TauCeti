@@ -8,8 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Filtration
 public import TauCeti.NumberTheory.LocalField.UnitSquareClasses
 
-import TauCeti.NumberTheory.LocalField.QuadraticForm.Bimultiplicativity
-import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.UnitQuotient
+import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.DirectIndex
 import TauCeti.NumberTheory.LocalField.QuadraticForm.Ramification.Dictionary
 
 /-!
@@ -76,11 +75,8 @@ theorem unitFiltration_sup_square_inf_eq_quadraticNormSubgroup_inf_iff (h2 : (2 
       Nat.card 𝓀[K] ^ dyadicLevel K h2 = 2 := by
   have hsub := inf_le_inf_right (unitFiltration K 0)
     (unitFiltration_sup_square_le_quadraticNormSubgroup h2 ha hd)
-  have hN : (quadraticNormSubgroup (a : K)).relIndex (unitFiltration K 0) = 2 := by
-    rw [Subgroup.relIndex,
-      index_subgroupOf_unitFiltration_eq_quadraticNormSubgroup_index_of_odd_defectExponent hd
-        odd_one, quadraticNormSubgroup_index_eq_two_of_not_isSquare h2
-        (not_isSquare_of_defectExponent_eq hd)]
+  have hN : (quadraticNormSubgroup (a : K)).relIndex (unitFiltration K 0) = 2 :=
+    relIndex_quadraticNormSubgroup_unitFiltration_zero_of_odd_defectExponent h2 hd odd_one
   have hT := relIndex_unitFiltration_two_mul_dyadicLevel_sup_square h2
   constructor
   · intro h

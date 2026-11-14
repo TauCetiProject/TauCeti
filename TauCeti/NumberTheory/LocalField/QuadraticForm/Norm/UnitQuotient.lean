@@ -8,21 +8,26 @@ module
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Valuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 
+import TauCeti.GroupTheory.Index.Map
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.OddDefect
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 
 /-!
-# The quadratic norm quotient is detected on units
+# The quadratic norm quotient and the unit-valuation decomposition
 
-Let `a` have odd quadratic defect exponent. There is then a norm from `K(√a)` of every
-normalized valuation. Consequently, every class in the quotient of `Kˣ` by the quadratic norm
-subgroup has a representative in the depth-zero unit filtration `U(K, 0)`.
+Under the surjective homomorphism `normalizedValuation K : Kˣ →* Multiplicative ℤ` with kernel
+`U(K, 0)`, the index of `quadraticNormSubgroup a` factors into the index of its valuation image
+and its relative index in `U(K, 0)`
+(`TauCeti.index_map_normalizedValuation_quadraticNormSubgroup_mul_relIndex`).
 
-This identifies the full norm quotient with the quotient of `U(K, 0)` by the unit norms. In
-particular, their indices agree. This is the reduction from the valuation part to the unit part in
-the ramified cases of the quadratic norm-index theorem, especially for a unit radicand of odd
-defect.
+When `a` has odd quadratic defect exponent, there is a norm from `K(√a)` of every normalized
+valuation (`TauCeti.map_normalizedValuation_quadraticNormSubgroup_eq_top_of_odd_defectExponent`).
+Consequently, every class in `Kˣ ⧸ quadraticNormSubgroup (a : K)` has a representative in the
+depth-zero unit filtration `U(K, 0)`, identifying the full norm quotient with the quotient of
+`U(K, 0)` by the unit norms (`TauCeti.unitNormQuotientEquivOfOddDefectExponent`). In particular,
+their indices agree
+(`TauCeti.index_subgroupOf_unitFiltration_eq_quadraticNormSubgroup_index_of_odd_defectExponent`).
 
 ## References
 
@@ -35,6 +40,28 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
+
+/-- Under `normalizedValuation K`, the index of `quadraticNormSubgroup a` factors into the index
+of its valuation image and its relative index in the unit group `U(K, 0)`. -/
+theorem index_map_normalizedValuation_quadraticNormSubgroup_mul_relIndex (a : K) :
+    ((quadraticNormSubgroup a).map (normalizedValuation K)).index *
+        (quadraticNormSubgroup a).relIndex (unitFiltration K 0) =
+      (quadraticNormSubgroup a).index := by
+  simpa only [ker_normalizedValuation] using
+    (quadraticNormSubgroup a).index_map_mul_relIndex_ker (normalizedValuation K)
+      normalizedValuation_surjective
+
+/-- If the quadratic defect exponent of `a` is odd, `normalizedValuation K` maps
+`quadraticNormSubgroup (a : K)` onto `Multiplicative ℤ`. -/
+theorem map_normalizedValuation_quadraticNormSubgroup_eq_top_of_odd_defectExponent
+    {a : Kˣ} {d : ℤ} (hd : defectExponent a = d) (hodd : Odd d) :
+    (quadraticNormSubgroup (a : K)).map (normalizedValuation K) = ⊤ := by
+  rw [eq_top_iff]
+  intro v _
+  obtain ⟨b, hb, hbv⟩ :=
+    exists_mem_quadraticNormSubgroup_toAdd_normalizedValuation_eq_of_odd_defectExponent
+      hd hodd v.toAdd
+  exact ⟨b, hb, Multiplicative.toAdd.injective hbv⟩
 
 /-- The map from depth-zero units to the quotient by the quadratic norm subgroup. -/
 noncomputable def unitNormQuotientMap (a : Kˣ) :
