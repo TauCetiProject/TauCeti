@@ -10,8 +10,11 @@ public import Mathlib.Probability.Independence.Basic
 /-!
 # Independence of almost surely constant coordinates
 
-A dependent family of random variables is independent if all but at most one coordinate are
-almost surely constant. No measurability assumption or restriction on the index type is needed.
+A dependent family of random variables is independent if and only if its restriction to a set `s`
+of coordinates is independent, whenever all coordinates outside `s` are almost surely constant. In
+particular, a family on a probability space is independent if all coordinates outside a subsingleton
+set are almost surely constant. No measurability assumption or restriction on the index type is
+needed.
 -/
 
 public section
@@ -21,13 +24,15 @@ open MeasureTheory ProbabilityTheory
 namespace TauCeti.Probability
 
 variable {Ω ι : Type*} {β : ι → Type*} [MeasurableSpace Ω]
-  [∀ i, MeasurableSpace (β i)] {μ : Measure Ω} [IsProbabilityMeasure μ]
+  [∀ i, MeasurableSpace (β i)] {μ : Measure Ω}
 
-/-- A family is independent if its coordinates are almost surely constant outside a subsingleton
-set of indices. The constants and the exceptional null sets may depend on the coordinate. -/
-theorem iIndepFun_of_ae_eq_const_outside_subsingleton {f : ∀ i, Ω → β i} {s : Set ι}
-    (hs : s.Subsingleton) (hf : ∀ i ∉ s, ∃ c, f i =ᵐ[μ] fun _ => c) :
+/-- A family of random variables is independent if its restriction to a set `s` of indices is
+independent and all coordinates outside `s` are almost surely constant. The constants and the
+exceptional null sets may depend on the coordinate, and no measurability assumption is needed. -/
+theorem iIndepFun_of_ae_eq_const_outside {f : ∀ i, Ω → β i} {s : Set ι}
+    (hs : iIndepFun (fun i : s => f i) μ) (hf : ∀ i ∉ s, ∃ c, f i =ᵐ[μ] fun _ => c) :
     iIndepFun f μ := by
+  have : IsProbabilityMeasure μ := hs.isProbabilityMeasure
   classical
   let g (i : ι) : Ω → β i :=
     if hi : i ∈ s then f i else fun _ => (hf i hi).choose
@@ -37,10 +42,12 @@ theorem iIndepFun_of_ae_eq_const_outside_subsingleton {f : ∀ i, Ω → β i} {
     · exact Filter.EventuallyEq.rfl
     · exact (hf i hi).choose_spec
   suffices hg : iIndepFun g μ from hg.congr (fun i => (hfg i).symm)
+  have hgs : iIndepFun (fun i : s => g i) μ :=
+    hs.congr fun i => .of_forall fun _ => by simp [g, i.2]
   have hc (i : ι) (hi : i ∉ s) : ∃ c, g i = fun _ => c :=
     ⟨(hf i hi).choose, by simp [g, hi]⟩
   rw [iIndepFun_iff_measure_inter_preimage_eq_mul]
-  intro S sets _
+  intro S sets hmeas
   by_cases hbad : ∃ i ∈ S, ∃ c, g i = (fun _ => c) ∧ c ∉ sets i
   · obtain ⟨i, hi, c, hgi, hci⟩ := hbad
     have hempty : g i ⁻¹' sets i = ∅ := by simp [hgi, hci]
@@ -54,31 +61,49 @@ theorem iIndepFun_of_ae_eq_const_outside_subsingleton {f : ∀ i, Ω → β i} {
       obtain ⟨c, hgi⟩ := hc i hsi
       have hci : c ∈ sets i := by by_contra h; exact hbad ⟨i, hi, c, hgi, h⟩
       simp [hgi, hci]
-    by_cases hactive : ∃ i ∈ S, i ∈ s
-    · obtain ⟨i, hi, hsi⟩ := hactive
-      have hother (j : ι) (hj : j ∈ S) (hji : j ≠ i) : g j ⁻¹' sets j = Set.univ :=
-        hfull j hj (fun hsj => hji (hs hsj hsi))
-      have hInter : (⋂ j ∈ S, g j ⁻¹' sets j) = g i ⁻¹' sets i := by
-        ext ω
-        simp only [Set.mem_iInter]
-        constructor
-        · exact fun hω => hω i hi
-        · intro hω j hj
-          by_cases hji : j = i
-          · subst j
-            exact hω
-          · rw [hother j hj hji]
-            exact Set.mem_univ ω
-      rw [hInter, Finset.prod_eq_single_of_mem i hi]
-      intro j hj hji
-      rw [hother j hj hji, measure_univ]
-    · have hfull' (i : ι) (hi : i ∈ S) : g i ⁻¹' sets i = Set.univ :=
-        hfull i hi (fun hsi => hactive ⟨i, hi, hsi⟩)
-      have hInter : (⋂ i ∈ S, g i ⁻¹' sets i) = Set.univ := by
-        exact Set.eq_univ_iff_forall.mpr fun ω => Set.mem_iInter₂.mpr fun i hi => by
-          rw [hfull' i hi]
-          exact Set.mem_univ ω
-      rw [hInter, measure_univ]
-      exact (Finset.prod_eq_one fun i hi => by rw [hfull' i hi, measure_univ]).symm
+    let S' : Finset s := S.subtype (· ∈ s)
+    have hInter : (⋂ j ∈ S, g j ⁻¹' sets j) = ⋂ j ∈ S', g j.1 ⁻¹' sets j.1 := by
+      ext ω
+      simp only [Set.mem_iInter, Finset.mem_subtype, S']
+      refine ⟨fun hω j hj => hω j.1 hj, fun hω j hj => ?_⟩
+      by_cases hjs : j ∈ s
+      · exact hω ⟨j, hjs⟩ hj
+      · rw [hfull j hj hjs]
+        exact Set.mem_univ ω
+    have hind := (iIndepFun_iff_measure_inter_preimage_eq_mul.mp hgs) S' (sets := fun j => sets j.1)
+      fun j hj => hmeas j.1 (Finset.mem_subtype.mp hj)
+    rw [hInter, hind]
+    dsimp only [S']
+    rw [Finset.prod_subtype_eq_prod_filter (fun j => μ (g j ⁻¹' sets j)), Finset.prod_filter]
+    refine Finset.prod_congr rfl fun j hj => ?_
+    split_ifs with hjs
+    · rfl
+    · rw [hfull j hj hjs, measure_univ]
+
+/-- When all coordinates outside `s` are almost surely constant, independence of the full family is
+equivalent to independence of its restriction to `s`. -/
+theorem iIndepFun_iff_of_ae_eq_const_outside {f : ∀ i, Ω → β i} {s : Set ι}
+    (hf : ∀ i ∉ s, ∃ c, f i =ᵐ[μ] fun _ => c) :
+    iIndepFun f μ ↔ iIndepFun (fun i : s => f i) μ :=
+  ⟨fun h => h.precomp Subtype.val_injective, fun h => iIndepFun_of_ae_eq_const_outside h hf⟩
+
+/-- Extending an independent `{i // p i}`-indexed family by `0` outside `p` produces an independent
+family on the whole index type. -/
+theorem iIndepFun_ite_zero {f : ∀ i, Ω → β i} [∀ i, Zero (β i)] {p : ι → Prop} [DecidablePred p]
+    (hp : iIndepFun (fun i : {i // p i} => f i) μ) :
+    iIndepFun (fun i => if p i then f i else 0) μ :=
+  iIndepFun_of_ae_eq_const_outside (s := {i | p i})
+    (hp.congr fun i => .of_forall fun _ => by simp [show p i.1 from i.2])
+    fun i hi => ⟨0, .of_forall fun _ => by simp [show ¬ p i from hi]⟩
+
+/-- A family on a probability space is independent if its coordinates are almost surely constant
+outside a subsingleton set of indices. The constants and the exceptional null sets may depend on
+the coordinate. -/
+theorem iIndepFun_of_ae_eq_const_outside_subsingleton [IsProbabilityMeasure μ]
+    {f : ∀ i, Ω → β i} {s : Set ι}
+    (hs : s.Subsingleton) (hf : ∀ i ∉ s, ∃ c, f i =ᵐ[μ] fun _ => c) :
+    iIndepFun f μ := by
+  have := hs.coe_sort
+  exact iIndepFun_of_ae_eq_const_outside .of_subsingleton hf
 
 end TauCeti.Probability

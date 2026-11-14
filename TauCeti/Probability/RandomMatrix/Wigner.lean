@@ -15,6 +15,9 @@ public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
+import Mathlib.Logic.Equiv.Sum
+import TauCeti.Probability.Independence.Basic
+
 /-!
 # Wigner matrices
 
@@ -29,13 +32,16 @@ and resolvent methods:
 
 * the entry formulas and `wignerMatrix_isHermitian`;
 * the Hermitian trace-square identity `Matrix.IsHermitian.trace_mul_self_eq_sum_norm_sq`;
-* the matrix depends only on the entries in its corner (`wignerMatrix_congr`), and the top-left
-  `m × m` corner of `Hₙ` is `√(m/n) Hₘ` (`submatrix_castLE_wignerMatrix`);
+* the matrix depends only on the entries in its corner (`wignerMatrix_congr`,
+  `wignerMatrix_ite_lt`), and the top-left `m × m` corner of `Hₙ` is `√(m/n) Hₘ`
+  (`submatrix_castLE_wignerMatrix`);
 * measurability in the sample point;
 * when the entries are independent, the minor `Hₙ` is independent of the off-diagonal entries of
   the row and column removed from `Hₙ₊₁` (`indepFun_wignerMatrix_column`); the same holds for
-  the actual principal submatrix of `Hₙ₊₁` (`indepFun_submatrix_castSucc_wignerMatrix`), and the
-  law of `Hₙ` depends only on the laws of the entries (`identDistrib_wignerMatrix`);
+  the actual principal submatrix of `Hₙ₊₁` (`indepFun_submatrix_castSucc_wignerMatrix`),
+  independent corner entries zero-extended outside `< n` remain independent
+  (`iIndepFun_sumElim_ofReal_ite_lt`), and the law of `Hₙ` depends only on the laws of the entries
+  (`identDistrib_wignerMatrix`);
 * entries at distinct off-diagonal unordered positions, and their squared absolute values, are
   independent (`iIndepFun_wignerMatrix_apply_of_ne`,
   `iIndepFun_norm_wignerMatrix_apply_sq_of_ne`);
@@ -147,6 +153,13 @@ theorem wignerMatrix_congr {Ω' : Type*} {ξ' : StrictUpper → Ω' → ℂ} {η
   · obtain rfl := Fin.ext h
     rw [wignerMatrix_apply_self, wignerMatrix_apply_self, hη _ i.2]
   · rw [wignerMatrix_apply_of_gt _ _ _ h, wignerMatrix_apply_of_gt _ _ _ h, hξ ⟨_, h⟩ i.2]
+
+/-- Zeroing the array coordinates outside the top-left `n × n` corner leaves the Wigner matrix of
+size `n` unchanged. -/
+theorem wignerMatrix_ite_lt (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ) (n : ℕ) (ω : Ω) :
+    wignerMatrix (fun ij ↦ if ij.1.2 < n then ξ ij else 0)
+      (fun i ↦ if i < n then η i else 0) n ω = wignerMatrix ξ η n ω :=
+  wignerMatrix_congr ω (fun _ hij ↦ by simp [hij]) (fun _ hi ↦ by simp [hi])
 
 /-- The top-left `m × m` corner of the normalised Wigner matrix of size `n ≥ m` is `√(m/n)`
 times the normalised Wigner matrix of size `m`. -/
@@ -318,6 +331,30 @@ theorem identDistrib_wignerMatrix {Ω' : Type*} [MeasurableSpace Ω'] {P' : Meas
     | inr i => exact (hηη' i).comp Complex.measurable_ofReal
   rw [← wignerOfArray_comp, ← wignerOfArray_comp]
   exact (IdentDistrib.pi h hindep hindep').comp (measurable_wignerOfArray n)
+
+/-- Extending independent corner entries of size `n` by `0` outside the `n × n` corner produces an
+independent `StrictUpper ⊕ ℕ`-indexed entry array. -/
+theorem iIndepFun_sumElim_ofReal_ite_lt {n : ℕ}
+    (hindep : iIndepFun
+      (fun r : {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} ↦
+        Sum.elim (fun ij ↦ ξ ij.1) (fun i ω ↦ (η i.1 ω : ℂ)) r) P) :
+    iIndepFun (fun r : StrictUpper ⊕ ℕ ↦
+      Sum.elim (fun ij ↦ if ij.1.2 < n then ξ ij else 0)
+        (fun i ω ↦ ((if i < n then η i else 0) ω : ℂ)) r) P := by
+  let s : Set (StrictUpper ⊕ ℕ) :=
+    {r | Sum.elim (fun ij : StrictUpper ↦ ij.1.2 < n) (fun i : ℕ ↦ i < n) r}
+  let e : s ≃ {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} := Equiv.subtypeSum
+  refine Probability.iIndepFun_of_ae_eq_const_outside (s := s)
+    ((iIndepFun.precomp e.injective hindep).congr fun r ↦ .of_forall fun _ ↦ ?_)
+    fun r hr ↦ ?_
+  · rcases r with ⟨ij | i, h⟩
+    · change ξ ij _ = _
+      simp [show ij.1.2 < n from h]
+    · change (η i _ : ℂ) = _
+      simp [show i < n from h]
+  · rcases r with ij | i
+    · exact ⟨0, .of_forall fun _ ↦ by simp [show ¬ ij.1.2 < n from hr]⟩
+    · exact ⟨0, .of_forall fun _ ↦ by simp [show ¬ i < n from hr]⟩
 
 end Independence
 

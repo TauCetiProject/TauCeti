@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.TreeWalk.Basic
 public import TauCeti.Combinatorics.TreeWalk.Canonical
 public import TauCeti.Combinatorics.TreeWalk.Relabeling
 public import TauCeti.Combinatorics.TraceWord.Counting
+import Mathlib.Data.Fintype.Fin
 
 /-!
 # Leading trace words as canonical tree walks
@@ -40,9 +41,10 @@ cyclic word is traversed once in each direction, so its `2 * m` directed steps a
 * `TauCeti.TreeWalk.card_leading_cyclic_word` and
   `TauCeti.TreeWalk.card_filter_leading_cyclic_word`: leading cyclic words of positive length
   `2 * m` have cardinality `catalan m * (Fintype.card α).descFactorial (m + 1)`.
-* `TauCeti.TreeWalk.eq_and_eq_of_ne_of_sym2_eq` and
-  `TauCeti.TreeWalk.injective_step_of_leading`: opposite-direction edge pairing and injectivity of
-  the `2 * m` directed steps of a leading cyclic word.
+* `TauCeti.TreeWalk.eq_and_eq_of_no_singleton_edge_of_card_image_eq_of_ne_of_sym2_eq` and
+  `TauCeti.TreeWalk.prodMk_finRotate_injective_of_no_singleton_edge_of_card_image_eq`:
+  opposite-direction edge pairing and injectivity of the `2 * m` directed steps of a leading cyclic
+  word.
 
 ## References
 
@@ -112,8 +114,7 @@ theorem cyclicPath_castSucc_eq {k : ℕ} [NeZero k] {v : Fin (k + 1) → α}
     (hclosed : v (Fin.last k) = v 0) :
     cyclicPath (fun t : Fin k ↦ v t.castSucc) = v := by
   funext i
-  exact Fin.lastCases (by simp [hclosed])
-    (fun j ↦ congrArg v (Fin.ext (Nat.mod_eq_of_lt j.isLt))) i
+  exact Fin.lastCases (by simp [hclosed]) (cyclicPath_castSucc _) i
 
 variable [DecidableEq α]
 
@@ -167,6 +168,17 @@ theorem card_image_closedTreeWalk (c : ClosedTreeWalk m) :
   rw [← card_fixed_canonicalWalk, canonicalWalk_closedTreeWalk]
   exact c.2.1.card_vertices
 
+private theorem card_filter_range_sym2_canonicalWalk_eq {k : ℕ} (w : Fin (k + 1) → α)
+    (i : Fin k) :
+    #{j ∈ range k |
+      s(canonicalWalk w j, canonicalWalk w (j + 1)) =
+        s(canonicalWalk w i.castSucc, canonicalWalk w i.succ)} =
+      #{j : Fin k | s(w j.castSucc, w j.succ) = s(w i.castSucc, w i.succ)} := by
+  rw [← Finset.image_fin_univ, filter_image, card_image_of_injective _ Fin.val_injective]
+  refine congrArg card (filter_congr fun j _ ↦ ?_)
+  rw [← Fin.val_succ j, ← Fin.val_castSucc j]
+  simp only [Sym2.eq_iff, canonicalWalk_eq_iff]
+
 /-- A closed path with `m + 1` vertices and each unordered edge traversed twice becomes a tree
 walk after first-visit relabeling. No order on the original vertex type is needed. -/
 theorem isTreeWalk_canonicalWalk (w : Fin (2 * m + 1) → α)
@@ -181,24 +193,7 @@ theorem isTreeWalk_canonicalWalk (w : Fin (2 * m + 1) → α)
     exact (canonicalWalk_eq_iff w (Fin.last _) 0).2 hclosed
   le_self i _ := canonicalWalk_le w i
   card_vertices := (card_fixed_canonicalWalk w).trans hv
-  card_edge i hi := by
-    have hedge (a b : Fin (2 * m)) :
-        s(canonicalWalk w a.castSucc, canonicalWalk w a.succ) =
-          s(canonicalWalk w b.castSucc, canonicalWalk w b.succ) ↔
-        s(w a.castSucc, w a.succ) = s(w b.castSucc, w b.succ) := by
-      simp only [Sym2.eq_iff, canonicalWalk_eq_iff]
-    refine Eq.trans ?_ (he ⟨i, hi⟩)
-    apply card_bij (fun j hj => (⟨j, mem_range.mp (mem_filter.mp hj).1⟩ : Fin (2 * m)))
-    · intro j hj
-      simp only [mem_filter, mem_univ, true_and]
-      apply (hedge _ ⟨i, hi⟩).mp
-      simpa only [Fin.val_castSucc, Fin.val_succ] using (mem_filter.mp hj).2
-    · intro j hj k hk h
-      exact Fin.mk.inj h
-    · intro j hj
-      refine ⟨j.val, mem_filter.mpr ⟨mem_range.mpr j.isLt, ?_⟩, rfl⟩
-      have hh := (hedge j ⟨i, hi⟩).mpr (mem_filter.mp hj).2
-      simpa only [Fin.val_castSucc, Fin.val_succ] using hh
+  card_edge i hi := (card_filter_range_sym2_canonicalWalk_eq w ⟨i, hi⟩).trans (he ⟨i, hi⟩)
 
 /-- A finite path canonicalizes to a tree walk of semilength `m` if and only if it is closed,
 visits `m + 1` vertices, and traverses every unordered edge twice. -/
@@ -208,23 +203,11 @@ theorem isTreeWalk_canonicalWalk_iff (w : Fin (2 * m + 1) → α) :
         #(univ.image w) = m + 1 ∧
         ∀ i : Fin (2 * m),
           #{j : Fin (2 * m) | s(w j.castSucc, w j.succ) = s(w i.castSucc, w i.succ)} = 2 := by
-  refine ⟨fun hw ↦ ⟨?_, (card_fixed_canonicalWalk w).symm.trans hw.card_vertices, fun i ↦ ?_⟩,
+  refine ⟨fun hw ↦ ⟨?_, (card_fixed_canonicalWalk w).symm.trans hw.card_vertices,
+      fun i ↦ (card_filter_range_sym2_canonicalWalk_eq w i).symm.trans (hw.card_edge i i.isLt)⟩,
     fun ⟨hc, hv, he⟩ ↦ isTreeWalk_canonicalWalk w hc hv he⟩
-  · refine (canonicalWalk_eq_iff w (Fin.last (2 * m)) 0).mp ?_
-    simpa only [Fin.val_last, Fin.val_zero, canonicalWalk_zero] using hw.closed
-  · have hedge (a b : Fin (2 * m)) :
-        s(w a.castSucc, w a.succ) = s(w b.castSucc, w b.succ) ↔
-          s(canonicalWalk w a.castSucc, canonicalWalk w a.succ) =
-            s(canonicalWalk w b.castSucc, canonicalWalk w b.succ) := by
-      simp only [Sym2.eq_iff, canonicalWalk_eq_iff]
-    refine Eq.trans ?_ (hw.card_edge i i.isLt)
-    refine card_bij (fun j _ ↦ j.val) (fun j hj ↦ ?_) (fun _ _ _ _ h ↦ Fin.ext h) (fun j hj ↦ ?_)
-    · refine mem_filter.mpr ⟨mem_range.mpr j.isLt, ?_⟩
-      simpa only [Fin.val_castSucc, Fin.val_succ] using (hedge j i).mp (mem_filter.mp hj).2
-    · obtain ⟨hj_lt, hj_eq⟩ := mem_filter.mp hj
-      refine ⟨⟨j, mem_range.mp hj_lt⟩, mem_filter.mpr ⟨mem_univ _, ?_⟩, rfl⟩
-      exact (hedge ⟨j, mem_range.mp hj_lt⟩ i).mpr
-        (by simpa only [Fin.val_castSucc, Fin.val_succ] using hj_eq)
+  refine (canonicalWalk_eq_iff w (Fin.last (2 * m)) 0).mp ?_
+  simpa only [Fin.val_last, Fin.val_zero, canonicalWalk_zero] using hw.closed
 
 /-- A leading cyclic trace word becomes a tree walk under first-visit labeling. The endpoint
 is added by cycling back to the initial vertex. The no-singleton condition alone, together with
@@ -275,8 +258,6 @@ theorem card_isTreeWalk_canonicalWalk [Finite α] (m : ℕ) :
         Subtype.ext (u.2.trans (canonicalWalk_closedTreeWalk c))⟩
       left_inv := fun _ ↦ Subtype.ext (Subtype.ext rfl)
       right_inv := fun _ ↦ Subtype.ext rfl }
-  have : Finite (ClosedTreeWalk m) := Finite.of_equiv _ (closedTreeWalkEquiv m).symm
-  let _ := Fintype.ofFinite (ClosedTreeWalk m)
   rw [← Nat.card_congr (Equiv.sigmaFiberEquiv shape), Nat.card_sigma]
   have hcard (c : ClosedTreeWalk m) :
       Nat.card {v : {v : Fin (2 * m + 1) → α // IsTreeWalk m (canonicalWalk v)} // shape v = c} =
@@ -341,7 +322,7 @@ theorem card_filter_leading_cyclic_word [Fintype α] (hm : m ≠ 0) :
 
 /-- Distinct steps of a leading cyclic word that share an unordered edge traverse it in opposite
 directions. -/
-theorem eq_and_eq_of_ne_of_sym2_eq {w : Fin (2 * m) → α}
+theorem eq_and_eq_of_no_singleton_edge_of_card_image_eq_of_ne_of_sym2_eq {w : Fin (2 * m) → α}
     (h : ∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t)))
     (hv : #(univ.image w) = m + 1) {s t : Fin (2 * m)} (hst : s ≠ t)
     (he : s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) :
@@ -352,13 +333,13 @@ theorem eq_and_eq_of_ne_of_sym2_eq {w : Fin (2 * m) → α}
       s(canonicalWalk (cyclicPath w) t.castSucc, canonicalWalk (cyclicPath w) t.succ) := by
     simp only [Sym2.eq_iff, canonicalWalk_eq_iff, cyclicPath_castSucc, cyclicPath_succ]
     exact Sym2.eq_iff.mp he
-  obtain ⟨h1, h2⟩ := hw.eq_and_eq_of_sym2_eq s.isLt t.isLt (Fin.val_ne_of_ne hst) hec
+  obtain ⟨h1, h2⟩ := hw.eq_and_eq_of_ne_of_sym2_eq s.isLt t.isLt (Fin.val_ne_of_ne hst) hec
   exact ⟨by simpa using (canonicalWalk_eq_iff (cyclicPath w) s.castSucc t.succ).mp h1,
     by simpa using (canonicalWalk_eq_iff (cyclicPath w) s.succ t.castSucc).mp h2⟩
 
 /-- All `2 * m` directed steps `(w t, w (finRotate (2 * m) t))` of a leading cyclic word are
 distinct. -/
-theorem injective_step_of_leading {w : Fin (2 * m) → α}
+theorem prodMk_finRotate_injective_of_no_singleton_edge_of_card_image_eq {w : Fin (2 * m) → α}
     (h : ∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t)))
     (hv : #(univ.image w) = m + 1) :
     Function.Injective fun t : Fin (2 * m) ↦ (w t, w (finRotate (2 * m) t)) := by
@@ -366,7 +347,7 @@ theorem injective_step_of_leading {w : Fin (2 * m) → α}
   obtain ⟨h1, h2⟩ := Prod.mk.inj hst
   by_contra hne
   have he : s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t)) := by rw [h1, h2]
-  have hopp := (eq_and_eq_of_ne_of_sym2_eq h hv hne he).1
+  have hopp := (eq_and_eq_of_no_singleton_edge_of_card_image_eq_of_ne_of_sym2_eq h hv hne he).1
   exact (ne_and_card_edge_fiber_eq_two_of_no_singleton_edge_of_card_image_eq w h hv).1 s
     (hopp.trans h2.symm)
 
