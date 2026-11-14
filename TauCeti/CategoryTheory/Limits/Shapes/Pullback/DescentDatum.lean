@@ -383,34 +383,8 @@ noncomputable def pullbackAlong (D : DescentDatum p X) :
     · simp only [Category.assoc, pullback.lift_fst]
       -- Compare both sides with the original twice-iterated action space, where `D.act_assoc`
       -- applies directly.
-      calc
-        _ = (pullbackAlongActionAssocComparison (p := p) q X ≫
-              pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
-                (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫ D.act)
-                (by rw [Category.assoc, reassoc_of% D.act_hom]; exact pullback.condition)) ≫
-              D.act := by rw [← Category.assoc, pullbackAlongActionAssocComparison_act]
-        _ = pullbackAlongActionAssocComparison (p := p) q X ≫
-              (pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
-                (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫ D.act)
-                (by rw [Category.assoc, reassoc_of% D.act_hom]; exact pullback.condition) ≫
-              D.act) := Category.assoc _ _ _
-        _ = pullbackAlongActionAssocComparison (p := p) q X ≫
-              (pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
-                (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫
-                  pullback.snd p (X.hom ≫ p))
-                (by
-                  rw [Category.assoc, ← pullback.condition (f := p) (g := X.hom ≫ p)]
-                  exact pullback.condition) ≫ D.act) := congrArg _ D.act_assoc
-        _ = (pullbackAlongActionAssocComparison (p := p) q X ≫
-              pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
-                (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫
-                  pullback.snd p (X.hom ≫ p))
-                (by
-                  rw [Category.assoc, ← pullback.condition (f := p) (g := X.hom ≫ p)]
-                  exact pullback.condition)) ≫ D.act := (Category.assoc _ _ _).symm
-        _ = _ := by
-          simpa only [Category.assoc] using
-            congrArg (· ≫ D.act) (pullbackAlongActionAssocComparison_snd (p := p) q X).symm
+      rw [← Category.assoc, pullbackAlongActionAssocComparison_act, Category.assoc, D.act_assoc,
+        ← Category.assoc, ← pullbackAlongActionAssocComparison_snd, Category.assoc]
     · simp
 
 /-- The underlying map of the base-changed action, followed by the projection to `X`, is the
