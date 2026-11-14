@@ -31,7 +31,7 @@ The proof is a Neumann series. Write `Iⁿ⟨X⟩` for the series with all coeff
 inverse of `θ_ε` by the uniqueness half of the universal property, and a right inverse of the
 same shape for it makes the two inverses agree.
 
-The perturbation also preserves `S⟨X⟩` for every open subring `S` of `A` containing the
+The perturbation also preserves `S⟨X⟩` for every closed subring `S` of `A` containing the
 coefficients of the `εᵢ` (`TauCeti.Huber.perturbX_mem_weightedSubring`); the cases of interest
 are a ring of definition `A₀` and a ring of integral elements `A⁺`.
 
@@ -45,7 +45,7 @@ are a ring of definition `A₀` and a ring of integral elements `A⁺`.
 
 * `TauCeti.Huber.perturbX_eq_of_continuous`: `θ_ε` is the only continuous `A`-algebra
   endomorphism with `Xᵢ ↦ Xᵢ + εᵢ`.
-* `TauCeti.Huber.perturbX_mem_weightedSubring`: `θ_ε` preserves `S⟨X⟩` for open subrings `S`.
+* `TauCeti.Huber.perturbX_mem_weightedSubring`: `θ_ε` preserves `S⟨X⟩` for closed subrings `S`.
 * `TauCeti.Huber.perturbX_sub_mem_weightedNhd`: `θ_ε(f) - f ∈ Iᵐ⁺ⁿ⟨X⟩` for `f ∈ Iᵐ⟨X⟩` when
   every `εᵢ` lies in `Iⁿ⟨X⟩`.
 * `TauCeti.Huber.exists_perturbX_inverse`: `θ_ε` has a two-sided inverse `θ_ε'` with
@@ -54,7 +54,7 @@ are a ring of definition `A₀` and a ring of integral elements `A⁺`.
 * `TauCeti.Huber.coe_perturbXEquiv_symm`: the inverse is the perturbation by
   `θ_ε⁻¹(Xᵢ) - Xᵢ`.
 * `TauCeti.Huber.perturbXEquiv_mem_weightedSubring_iff`: `θ_ε` and its inverse preserve `S⟨X⟩`
-  for open subrings `S` containing `I`, in particular `A₀⟨X⟩`
+  for subrings `S` containing `I`, in particular `A₀⟨X⟩`
   (`TauCeti.Huber.perturbXEquiv_mem_weightedRingOfDefinition_iff`) and `A⁺⟨X⟩` for every ring of
   integral elements `A⁺`
   (`TauCeti.Huber.perturbXEquiv_mem_weightedSubring_iff_of_isRingOfIntegralElements`).
@@ -187,15 +187,15 @@ theorem hasSum_perturbX (f : A⟨X⟩) :
   rwa [← perturbX_apply ε hε, show weightedEvalTerm _ _ _ = _ from
     funext (weightedEvalTerm_def _ _ _)] at h
 
-/-- **`θ_ε` preserves `S⟨X⟩`** for an open subring `S` of `A` containing the coefficients of every
-`εᵢ`. With `S` a ring of definition or a ring of integral elements, this says that the
-perturbation preserves `A₀⟨X⟩` and `A⁺⟨X⟩`. -/
-theorem perturbX_mem_weightedSubring {S : Subring A} (hS : IsOpen (S : Set A))
+/-- **`θ_ε` preserves `S⟨X⟩`** for a closed subring `S` of `A` containing the coefficients of every
+`εᵢ`. With `S` a ring of definition or a ring of integral elements, which are open and hence
+closed, this says that the perturbation preserves `A₀⟨X⟩` and `A⁺⟨X⟩`. -/
+theorem perturbX_mem_weightedSubring {S : Subring A} (hS : IsClosed (S : Set A))
     (hεS : ∀ i, ε i ∈ weightedSubring _ isWeightFamily_one_weight S) {f : A⟨X⟩}
     (hf : f ∈ weightedSubring _ isWeightFamily_one_weight S) :
     perturbX ε hε f ∈ weightedSubring _ isWeightFamily_one_weight S := by
   refine mem_weightedSubring.mpr <| (hasSum_perturbX ε hε f).mem
-    (isClosed_weightedNhd isWeightFamily_one_weight (U := S.toAddSubgroup) hS) fun ν ↦
+    (isClosed_weightedNhd_one_weight (U := S.toAddSubgroup) hS) fun ν ↦
       mem_weightedSubring.mp <| mul_mem ?_ (prod_mem fun i _ ↦ pow_mem (add_mem ?_ (hεS i)) _)
   · refine (weightedC_mem_weightedSubring _).mpr ?_
     simpa [weightMul_one_weight] using mem_weightedNhd.mp (mem_weightedSubring.mp hf) ν
@@ -353,12 +353,15 @@ theorem coe_perturbXEquiv_symm (hεI : ∀ i, ε i ∈ 𝓘 1) :
     fun _ ↦ (add_sub_cancel _ _).symm).symm
 
 variable {ε} in
-/-- **`θ_ε` preserves `S⟨X⟩` in both directions**, for an open subring `S` of `A` containing the
-image of `I`: `θ_ε(f) ∈ S⟨X⟩` if and only if `f ∈ S⟨X⟩`. -/
-theorem perturbXEquiv_mem_weightedSubring_iff {S : Subring A} (hS : IsOpen (S : Set A))
+/-- **`θ_ε` preserves `S⟨X⟩` in both directions**, for a subring `S` of `A` containing the
+image of `I` (and therefore open): `θ_ε(f) ∈ S⟨X⟩` if and only if `f ∈ S⟨X⟩`. -/
+theorem perturbXEquiv_mem_weightedSubring_iff {S : Subring A}
     (hIS : P.idealImage 1 ≤ S.toAddSubgroup) (hεI : ∀ i, ε i ∈ 𝓘 1) {f : A⟨X⟩} :
     perturbXEquiv P hεI f ∈ weightedSubring _ isWeightFamily_one_weight S ↔
       f ∈ weightedSubring _ isWeightFamily_one_weight S := by
+  have hS : IsClosed (S : Set A) :=
+    AddSubgroup.isClosed_of_isOpen S.toAddSubgroup
+      (AddSubgroup.isOpen_mono hIS (P.isOpen_idealImage 1))
   have hle {g : A⟨X⟩} (hg : g ∈ 𝓘 1) : g ∈ weightedSubring _ isWeightFamily_one_weight S :=
     mem_weightedSubring.mpr (weightedNhd_mono hIS hg)
   refine ⟨fun hf ↦ ?_, fun hf ↦ perturbX_mem_weightedSubring _ _ hS (fun i ↦ hle (hεI i)) hf⟩
@@ -372,8 +375,7 @@ theorem perturbXEquiv_mem_weightedRingOfDefinition_iff (hεI : ∀ i, ε i ∈ �
     perturbXEquiv P hεI f ∈ P.weightedRingOfDefinition isWeightFamily_one_weight ↔
       f ∈ P.weightedRingOfDefinition isWeightFamily_one_weight := by
   rw [PairOfDefinition.weightedRingOfDefinition_def]
-  exact perturbXEquiv_mem_weightedSubring_iff P P.isOpen_ringOfDefinition
-    (P.idealImage_le_ringOfDefinition 1) hεI
+  exact perturbXEquiv_mem_weightedSubring_iff P (P.idealImage_le_ringOfDefinition 1) hεI
 
 variable {ε} in
 /-- **`θ_ε` preserves `A⁺⟨X⟩` in both directions**, for every ring of integral elements `A⁺`: it
@@ -382,7 +384,7 @@ theorem perturbXEquiv_mem_weightedSubring_iff_of_isRingOfIntegralElements {Aplus
     (hA : IsRingOfIntegralElements Aplus) (hεI : ∀ i, ε i ∈ 𝓘 1) {f : A⟨X⟩} :
     perturbXEquiv P hεI f ∈ weightedSubring _ isWeightFamily_one_weight Aplus ↔
       f ∈ weightedSubring _ isWeightFamily_one_weight Aplus :=
-  perturbXEquiv_mem_weightedSubring_iff P hA.isOpen
+  perturbXEquiv_mem_weightedSubring_iff P
     (fun _ ha ↦ hA.mem_of_isTopologicallyNilpotent
       (P.isTopologicallyNilpotent_of_mem_idealImage one_ne_zero ha)) hεI
 
