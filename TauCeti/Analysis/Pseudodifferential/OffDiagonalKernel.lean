@@ -292,9 +292,7 @@ theorem hasSum_quantizationKernel_littlewoodPaleyPiece (a : Symbol n V W m)
   have hgeo : Summable fun j : ℕ => ((2 : ℝ) ^ j) ^ (m - 2 * N + n) := by
     have h := summable_geometric_of_lt_one (by positivity : (0 : ℝ) ≤ 2 ^ (m - 2 * N + n))
       (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two hs)
-    refine h.congr fun j => ?_
-    rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, mul_comm, Real.rpow_mul zero_le_two,
-      Real.rpow_natCast]
+    exact h.congr fun j => Real.rpow_pow_comm zero_le_two _ j
   have hF_sum : Summable fun j => ∫ ζ, ‖𝐞 ⟪ζ, x - y⟫ • g j (x, (2 * π) • ζ)‖ := by
     refine Summable.of_nonneg_of_le (fun j => integral_nonneg fun _ => norm_nonneg _)
       (fun j => ?_) ((hgeo.mul_left C).mul_left |((2 * π) ^ n)⁻¹|)
@@ -349,6 +347,71 @@ theorem IsUniform.exists_one_add_mul_pow_mul_norm_quantizationKernel_littlewoodP
     exact (Finset.single_le_sum (fun k _ => hC₁ k) (Finset.mem_univ k)).trans
       (le_add_of_nonneg_left hC₀)
 
+/-- **Summing over the dyadic scales.** Let `0 < s < N`. If the terms of a sum `∑ⱼ Kⱼ = S` satisfy
+`(1 + 2^j r)^N ‖Kⱼ‖ ≤ C (2^j)^s` for some `r > 0`, then `‖S‖ ≤ C B r ^ (-s)`, where `B` depends
+only on `s` and `N`: the scales `2^j ≤ r⁻¹` contribute their sizes, and the higher ones decay. -/
+private theorem exists_norm_le_mul_rpow_of_hasSum {s : ℝ} (hs : 0 < s) {N : ℕ} (hN : s < N) :
+    ∃ B, 0 ≤ B ∧ ∀ {K : ℕ → V →L[ℂ] W} {S : V →L[ℂ] W} {C r : ℝ}, HasSum K S → 0 ≤ C → 0 < r →
+      (∀ j : ℕ, (1 + 2 ^ j * r) ^ N * ‖K j‖ ≤ C * ((2 : ℝ) ^ j) ^ s) → ‖S‖ ≤ C * B * r ^ (-s) := by
+  -- The per-scale bounds are `min (b^j u) ((b^j u)^(-δ))` with `b = 2^s`, `u = r^s` and
+  -- `δ = (N - s) / s`, which sum to at most `B` over every finite set of scales.
+  set b : ℝ := 2 ^ s
+  have hb : 1 < b := Real.one_lt_rpow one_lt_two hs
+  set δ := (N - s) / s with hδ_def
+  have hδ : 0 < δ := div_pos (by linarith) hs
+  set B := (1 - b⁻¹)⁻¹ + (1 - b ^ (-δ))⁻¹
+  have hB : 0 ≤ B := by
+    have h₁ := sub_pos.2 (inv_lt_one_of_one_lt₀ hb)
+    have h₂ := sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg hb (neg_neg_of_pos hδ))
+    positivity
+  refine ⟨B, hB, fun {K S C r} hKS hC0 hr hC => ?_⟩
+  have hterm (j : ℕ) : ‖K j‖ ≤
+      C * r ^ (-s) * min (b ^ (j : ℤ) * r ^ s) ((b ^ (j : ℤ) * r ^ s) ^ (-δ)) := by
+    set t := (2 : ℝ) ^ j * r
+    have ht : 0 < t := by positivity
+    have hK := hC j
+    have hbt : b ^ (j : ℤ) * r ^ s = t ^ s := by
+      rw [zpow_natCast, Real.mul_rpow (by positivity) hr.le]
+      congr 1
+      exact Real.rpow_pow_comm zero_le_two s j
+    have h2j : ((2 : ℝ) ^ j) ^ s = r ^ (-s) * t ^ s := by
+      have hrs := (Real.rpow_pos_of_pos hr s).ne'
+      rw [Real.mul_rpow (by positivity) hr.le, Real.rpow_neg hr.le]
+      field_simp
+    have htδ : (t ^ s) ^ (-δ) = t ^ (s - N) := by
+      rw [← Real.rpow_mul ht.le, hδ_def]
+      congr 1
+      field_simp [hs.ne']
+      ring
+    rw [hbt, htδ, mul_min_of_nonneg _ _ (by positivity)]
+    refine le_min ?_ ?_
+    · -- Near the diagonal, `‖Kⱼ‖ ≤ C (2^j)^s`.
+      calc ‖K j‖ ≤ (1 + t) ^ N * ‖K j‖ :=
+            le_mul_of_one_le_left (norm_nonneg _) (one_le_pow₀ (by linarith))
+        _ ≤ C * ((2 : ℝ) ^ j) ^ s := hK
+        _ = C * r ^ (-s) * t ^ s := by rw [h2j, mul_assoc]
+    · -- Away from it, `t^N ‖Kⱼ‖ ≤ C (2^j)^s`.
+      rw [Real.rpow_sub ht, Real.rpow_natCast, ← mul_div_assoc, le_div_iff₀ (by positivity),
+        mul_comm ‖K j‖]
+      calc t ^ N * ‖K j‖ ≤ (1 + t) ^ N * ‖K j‖ := by gcongr; linarith
+        _ ≤ C * ((2 : ℝ) ^ j) ^ s := hK
+        _ = C * r ^ (-s) * t ^ s := by rw [h2j, mul_assoc]
+  have hsum (T : Finset ℕ) :
+      ∑ j ∈ T, C * r ^ (-s) * min (b ^ (j : ℤ) * r ^ s) ((b ^ (j : ℤ) * r ^ s) ^ (-δ)) ≤
+        C * r ^ (-s) * B := by
+    rw [← Finset.mul_sum]
+    gcongr
+    have h := sum_min_zpow_mul_rpow_neg_le hb hδ (r ^ s) (T.map Nat.castEmbedding)
+    rwa [Finset.sum_map] at h
+  have hnonneg : 0 ≤ fun j : ℕ =>
+      C * r ^ (-s) * min (b ^ (j : ℤ) * r ^ s) ((b ^ (j : ℤ) * r ^ s) ^ (-δ)) :=
+    fun j => (norm_nonneg _).trans (hterm j)
+  calc ‖S‖
+      ≤ ∑' j : ℕ, C * r ^ (-s) * min (b ^ (j : ℤ) * r ^ s) ((b ^ (j : ℤ) * r ^ s) ^ (-δ)) :=
+        hKS.norm_le_of_bounded (summable_of_sum_le hnonneg hsum).hasSum hterm
+    _ ≤ C * r ^ (-s) * B := Real.tsum_le_of_sum_le hnonneg hsum
+    _ = C * B * r ^ (-s) := by ring
+
 /-- **The size estimate for the kernel of a uniform symbol.** If `a` is a symbol of order `m`
 whose estimates are uniform in the position, with `m + n > 0`, then its kernel off the diagonal
 satisfies
@@ -361,77 +424,17 @@ the estimates of the Littlewood–Paley pieces over the dyadic scales: the piece
 theorem IsUniform.exists_norm_offDiagonalKernel_le_rpow {a : Symbol n V W m} (ha : a.IsUniform)
     (hm : 0 < m + n) :
     ∃ C, 0 ≤ C ∧ ∀ x y, ‖offDiagonalKernel a x y‖ ≤ C * ‖x - y‖ ^ (-(m + n)) := by
-  set s := m + n
   let φ : ContDiffBump (0 : CoordinateSpace n) := ⟨1, 2, one_pos, one_lt_two⟩
-  obtain ⟨N, hN⟩ := exists_nat_gt s
+  obtain ⟨N, hN⟩ := exists_nat_gt (m + n)
   obtain ⟨C, hC0, hC⟩ :=
     ha.exists_one_add_mul_pow_mul_norm_quantizationKernel_littlewoodPaleyPiece_le φ N
-  -- The per-scale bounds are `min (b^j u) ((b^j u)^(-δ))` with `b = 2^s`, `u = ‖x - y‖^s` and
-  -- `δ = (N - s) / s`, which sum to at most `B` over every finite set of scales.
-  set b : ℝ := 2 ^ s
-  have hb : 1 < b := Real.one_lt_rpow one_lt_two hm
-  set δ := (N - s) / s with hδ_def
-  have hδ : 0 < δ := div_pos (by linarith) hm
-  set B := (1 - b⁻¹)⁻¹ + (1 - b ^ (-δ))⁻¹
-  have hB : 0 ≤ B := by
-    have h₁ := sub_pos.2 (inv_lt_one_of_one_lt₀ hb)
-    have h₂ := sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg hb (neg_neg_of_pos hδ))
-    positivity
+  obtain ⟨B, hB, hsum⟩ := exists_norm_le_mul_rpow_of_hasSum (V := V) (W := W) hm hN
   refine ⟨C * B, mul_nonneg hC0 hB, fun x y => ?_⟩
   rcases eq_or_ne x y with rfl | hxy
   · rw [offDiagonalKernel_self, norm_zero, sub_self, norm_zero,
       Real.zero_rpow (neg_ne_zero.2 hm.ne'), mul_zero]
-  set r := ‖x - y‖
-  have hr : 0 < r := norm_pos_iff.2 (sub_ne_zero.2 hxy)
-  have hterm (j : ℕ) : ‖quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x y‖ ≤
-      C * r ^ (-s) * min (b ^ (j : ℤ) * r ^ s) ((b ^ (j : ℤ) * r ^ s) ^ (-δ)) := by
-    set K := ‖quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x y‖
-    set t := (2 : ℝ) ^ j * r
-    have ht : 0 < t := by positivity
-    have hK := hC j x y
-    have hbt : b ^ (j : ℤ) * r ^ s = t ^ s := by
-      rw [zpow_natCast, Real.mul_rpow (by positivity) hr.le]
-      congr 1
-      rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, mul_comm, Real.rpow_mul zero_le_two,
-        Real.rpow_natCast]
-    have h2j : ((2 : ℝ) ^ j) ^ s = r ^ (-s) * t ^ s := by
-      have hrs := (Real.rpow_pos_of_pos hr s).ne'
-      rw [Real.mul_rpow (by positivity) hr.le, Real.rpow_neg hr.le]
-      field_simp
-    have htδ : (t ^ s) ^ (-δ) = t ^ (s - N) := by
-      rw [← Real.rpow_mul ht.le, hδ_def]
-      congr 1
-      field_simp [hm.ne']
-      ring
-    rw [hbt, htδ, mul_min_of_nonneg _ _ (by positivity)]
-    refine le_min ?_ ?_
-    · -- Near the diagonal, `‖K‖ ≤ C (2^j)^s`.
-      calc K ≤ (1 + t) ^ N * K :=
-            le_mul_of_one_le_left (norm_nonneg _) (one_le_pow₀ (by linarith))
-        _ ≤ C * ((2 : ℝ) ^ j) ^ s := hK
-        _ = C * r ^ (-s) * t ^ s := by rw [h2j, mul_assoc]
-    · -- Away from it, `t^N ‖K‖ ≤ C (2^j)^s`.
-      rw [Real.rpow_sub ht, Real.rpow_natCast, ← mul_div_assoc, le_div_iff₀ (by positivity),
-        mul_comm K]
-      calc t ^ N * K ≤ (1 + t) ^ N * K := by gcongr; linarith
-        _ ≤ C * ((2 : ℝ) ^ j) ^ s := hK
-        _ = C * r ^ (-s) * t ^ s := by rw [h2j, mul_assoc]
-  have hsum (S : Finset ℕ) :
-      ∑ j ∈ S, C * r ^ (-s) * min (b ^ (j : ℤ) * r ^ s) ((b ^ (j : ℤ) * r ^ s) ^ (-δ)) ≤
-        C * r ^ (-s) * B := by
-    rw [← Finset.mul_sum]
-    gcongr
-    have h := sum_min_zpow_mul_rpow_neg_le hb hδ (r ^ s) (S.map Nat.castEmbedding)
-    rwa [Finset.sum_map] at h
-  have hnonneg : 0 ≤ fun j : ℕ =>
-      C * r ^ (-s) * min (b ^ (j : ℤ) * r ^ s) ((b ^ (j : ℤ) * r ^ s) ^ (-δ)) :=
-    fun j => (norm_nonneg _).trans (hterm j)
-  calc ‖offDiagonalKernel a x y‖
-      ≤ ∑' j : ℕ, C * r ^ (-s) * min (b ^ (j : ℤ) * r ^ s) ((b ^ (j : ℤ) * r ^ s) ^ (-δ)) :=
-        (a.hasSum_quantizationKernel_littlewoodPaleyPiece φ hxy).norm_le_of_bounded
-          (summable_of_sum_le hnonneg hsum).hasSum hterm
-    _ ≤ C * r ^ (-s) * B := Real.tsum_le_of_sum_le hnonneg hsum
-    _ = C * B * r ^ (-s) := by ring
+  exact hsum (a.hasSum_quantizationKernel_littlewoodPaleyPiece φ hxy) hC0
+    (norm_pos_iff.2 (sub_ne_zero.2 hxy)) fun j => hC j x y
 
 end Size
 
