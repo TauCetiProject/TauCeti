@@ -23,8 +23,15 @@ ensemble, is turned into weak convergence of the corresponding laws.
 
 * `TauCeti.tendsto_integral_eval_of_tendsto_integral_pow` — convergence of all moments gives
   convergence of the integral of every real polynomial.
+* `TauCeti.tendsto_measure_ge_integral_eval_of_tendsto_integral_pow` — convergence in measure of
+  all moments of a family of random measures gives convergence in measure of every polynomial
+  integral.
 * `MeasureTheory.ProbabilityMeasure.tendsto_of_tendsto_integral_pow` — the method of moments:
   moment convergence to a compactly supported limit implies weak convergence.
+* `MeasureTheory.ProbabilityMeasure.tendsto_measure_ge_of_tendsto_integral_pow` — the random
+  method of moments in probability: convergence in measure of all moments of random probability
+  measures `μᵢ ω` to those of a compactly supported limit `μ` implies convergence in measure of
+  `∫ f d(μᵢ ω)` to `∫ f dμ` for every bounded continuous `f`.
 
 ## Implementation notes
 
@@ -59,6 +66,14 @@ private theorem eventually_forall_le_natDegree_integrable {μs : ι → Measure 
     ∀ᶠ i in l, ∀ k ≤ p.natDegree, Integrable (fun x : ℝ => x ^ k) (μs i) :=
   (eventually_all_finite (Set.finite_Iic p.natDegree)).2 fun n _ => hμs n
 
+private theorem eventually_ae_forall_le_natDegree_integrable {Ω : ι → Type*}
+    [∀ i, MeasurableSpace (Ω i)] {Ps : ∀ i, Measure (Ω i)} {μs : ∀ i, Ω i → Measure ℝ}
+    (hμs : ∀ n, ∀ᶠ i in l, ∀ᵐ ω ∂Ps i, Integrable (fun x : ℝ => x ^ n) (μs i ω)) (p : ℝ[X]) :
+    ∀ᶠ i in l, ∀ᵐ ω ∂Ps i, ∀ k ≤ p.natDegree, Integrable (fun x : ℝ => x ^ k) (μs i ω) := by
+  have hall := (eventually_all_finite (Set.finite_Iic p.natDegree)).2 fun k _ => hμs k
+  filter_upwards [hall] with i hi
+  exact (ae_ball_iff (Set.finite_Iic p.natDegree).countable).2 hi
+
 /-- If every moment `∫ xⁿ dμᵢ` converges to `∫ xⁿ dμ`, then so does the integral of every real
 polynomial. The moments must be genuine: each monomial is assumed integrable against `μ` and,
 eventually, against `μᵢ`. -/
@@ -71,6 +86,45 @@ theorem tendsto_integral_eval_of_tendsto_integral_pow {μs : ι → Measure ℝ}
   refine (tendsto_finsetSum _ fun n _ => (h n).const_mul (p.coeff n)).congr' ?_
   filter_upwards [eventually_forall_le_natDegree_integrable hμs p] with i hi
   exact (integral_eval_eq_sum_range hi).symm
+
+/-- If every moment `∫ xⁿ d(μᵢ ω)` of a family of random measures converges in measure to
+`∫ xⁿ dμ`, then so does `∫ p(x) d(μᵢ ω)` for every real polynomial `p`. -/
+theorem tendsto_measure_ge_integral_eval_of_tendsto_integral_pow {Ω : ι → Type*}
+    [∀ i, MeasurableSpace (Ω i)] {Ps : ∀ i, Measure (Ω i)} {μs : ∀ i, Ω i → Measure ℝ}
+    {μ : Measure ℝ}
+    (hμs : ∀ n, ∀ᶠ i in l, ∀ᵐ ω ∂Ps i, Integrable (fun x : ℝ => x ^ n) (μs i ω))
+    (hμ : ∀ n, Integrable (fun x : ℝ => x ^ n) μ)
+    (h : ∀ n {δ : ℝ}, 0 < δ → Tendsto (fun i =>
+      Ps i {ω | δ ≤ |(∫ x, x ^ n ∂μs i ω) - ∫ x, x ^ n ∂μ|}) l (𝓝 0))
+    (p : ℝ[X]) {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun i => Ps i {ω | ε ≤ |(∫ x, p.eval x ∂μs i ω) - ∫ x, p.eval x ∂μ|}) l (𝓝 0) := by
+  set N := p.natDegree + 1
+  set c : ℝ := (∑ k ∈ range N, |p.coeff k|) + 1
+  have hc : 0 < c := add_pos_of_nonneg_of_pos (sum_nonneg fun _ _ => abs_nonneg _) one_pos
+  have hsum : Tendsto (fun i => ∑ k ∈ range N,
+      Ps i {ω | ε / c ≤ |(∫ x, x ^ k ∂μs i ω) - ∫ x, x ^ k ∂μ|}) l (𝓝 0) := by
+    simpa using tendsto_finsetSum (range N) fun k _ => h k (div_pos hε hc)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
+    (Eventually.of_forall fun _ => bot_le) ?_
+  filter_upwards [eventually_ae_forall_le_natDegree_integrable hμs p] with i hi
+  refine (measure_mono_ae <| hi.mono fun ω hint hω => ?_).trans (measure_biUnion_finset_le _ _)
+  by_contra hall
+  simp only [mem_iUnion, Finset.mem_range, mem_ofPred_eq, not_exists, not_le] at hall
+  have hdiff : (∫ x, p.eval x ∂μs i ω) - ∫ x, p.eval x ∂μ =
+      ∑ k ∈ range N, p.coeff k * ((∫ x, x ^ k ∂μs i ω) - ∫ x, x ^ k ∂μ) := by
+    rw [integral_eval_eq_sum_range hint, integral_eval_eq_sum_range fun k _ => hμ k,
+      ← sum_sub_distrib]
+    exact sum_congr rfl fun k _ => (mul_sub _ _ _).symm
+  have habs : |(∫ x, p.eval x ∂μs i ω) - ∫ x, p.eval x ∂μ| ≤
+      (∑ k ∈ range N, |p.coeff k|) * (ε / c) := by
+    rw [hdiff, sum_mul]
+    refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun k hk => ?_)
+    rw [abs_mul]
+    exact mul_le_mul_of_nonneg_left (hall k (Finset.mem_range.mp hk)).le (abs_nonneg _)
+  have hlt : (∑ k ∈ range N, |p.coeff k|) * (ε / c) < ε := by
+    rw [mul_div_assoc', div_lt_iff₀ hc]
+    linarith
+  linarith [mem_ofPred.mp hω]
 
 /-- The pointwise domination behind the method of moments: if `|f| ≤ C` and `|p - f| < δ` on
 `[-M, M]`, then for all `t > 0` and `n`, everywhere on `ℝ`,
@@ -215,5 +269,75 @@ theorem tendsto_of_tendsto_integral_pow {μs : ι → ProbabilityMeasure ℝ}
       (∫ x, f x ∂(μ : Measure ℝ)),
     abs_sub_le (∫ x, p.eval x ∂(μs i : Measure ℝ)) (∫ x, p.eval x ∂(μ : Measure ℝ))
       (∫ x, f x ∂(μ : Measure ℝ))]
+
+private theorem abs_integral_sub_lt_six_mul {ν μ : ProbabilityMeasure ℝ} {f : ℝ →ᵇ ℝ}
+    {p q : ℝ[X]} {δ : ℝ}
+    (hpint : Integrable (fun x => p.eval x) (ν : Measure ℝ))
+    (hqint : Integrable (fun x => q.eval x) (ν : Measure ℝ))
+    (hfpq : ∀ x, |f x - p.eval x| ≤ q.eval x)
+    (hqμ : ∫ x, q.eval x ∂(μ : Measure ℝ) ≤ 3 * δ)
+    (hfpμ : |(∫ x, p.eval x ∂(μ : Measure ℝ)) - ∫ x, f x ∂(μ : Measure ℝ)| ≤ δ)
+    (hqp : |(∫ x, q.eval x ∂(ν : Measure ℝ)) - ∫ x, q.eval x ∂(μ : Measure ℝ)| < δ)
+    (hpp : |(∫ x, p.eval x ∂(ν : Measure ℝ)) - ∫ x, p.eval x ∂(μ : Measure ℝ)| < δ) :
+    |(∫ x, f x ∂(ν : Measure ℝ)) - ∫ x, f x ∂(μ : Measure ℝ)| < 6 * δ := by
+  have hfpi : |(∫ x, f x ∂(ν : Measure ℝ)) - ∫ x, p.eval x ∂(ν : Measure ℝ)| ≤
+      ∫ x, q.eval x ∂(ν : Measure ℝ) := by
+    rw [← integral_sub (f.integrable _) hpint]
+    exact norm_integral_le_of_norm_le hqint
+      (ae_of_all _ fun x => (Real.norm_eq_abs _).trans_le (hfpq x))
+  have hqν : ∫ x, q.eval x ∂(ν : Measure ℝ) < 4 * δ := by linarith [(abs_lt.mp hqp).2]
+  have hpp' := (abs_lt.mp hpp)
+  linarith [abs_sub_le (∫ x, f x ∂(ν : Measure ℝ)) (∫ x, p.eval x ∂(ν : Measure ℝ))
+      (∫ x, f x ∂(μ : Measure ℝ)),
+    abs_sub_le (∫ x, p.eval x ∂(ν : Measure ℝ)) (∫ x, p.eval x ∂(μ : Measure ℝ))
+      (∫ x, f x ∂(μ : Measure ℝ)), hpp'.1, hpp'.2]
+
+/-- **The random method of moments in probability.** Let `μᵢ ω` be random probability measures on
+`ℝ` and `μ` a deterministic probability measure concentrated on a compact set `K`. If each monomial
+is eventually almost everywhere integrable against `μᵢ ω` and every moment `∫ xⁿ d(μᵢ ω)` converges
+in measure to `∫ xⁿ dμ`, then `∫ f d(μᵢ ω)` converges in measure to `∫ f dμ` for every bounded
+continuous function `f : ℝ →ᵇ ℝ`. -/
+theorem tendsto_measure_ge_of_tendsto_integral_pow {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)]
+    {Ps : ∀ i, Measure (Ω i)} {μs : ∀ i, Ω i → ProbabilityMeasure ℝ} {μ : ProbabilityMeasure ℝ}
+    {K : Set ℝ} (hK : IsCompact K) (hμK : (μ : Measure ℝ) Kᶜ = 0)
+    (hμs : ∀ n, ∀ᶠ i in l, ∀ᵐ ω ∂Ps i, Integrable (fun x : ℝ => x ^ n) (μs i ω : Measure ℝ))
+    (h : ∀ n {δ : ℝ}, 0 < δ → Tendsto (fun i =>
+      Ps i {ω | δ ≤ |(∫ x, x ^ n ∂(μs i ω : Measure ℝ)) - ∫ x, x ^ n ∂(μ : Measure ℝ)|}) l (𝓝 0))
+    (f : ℝ →ᵇ ℝ) {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun i =>
+      Ps i {ω | ε ≤ |(∫ x, f x ∂(μs i ω : Measure ℝ)) - ∫ x, f x ∂(μ : Measure ℝ)|}) l (𝓝 0) := by
+  obtain ⟨R₀, hR₀⟩ := hK.isBounded.exists_norm_le
+  set R := max R₀ 0
+  have hR : 0 ≤ R := le_max_right _ _
+  have hae : ∀ᵐ x ∂(μ : Measure ℝ), |x| ≤ R := by
+    filter_upwards [ae_iff.mpr hμK] with x hx
+    exact (hR₀ x hx).trans (le_max_left _ _)
+  have hμ := integrable_pow_of_ae_abs_le hae
+  set δ := ε / 6 with hδε
+  have hδ : 0 < δ := by positivity
+  obtain ⟨p, hp⟩ :=
+    exists_polynomial_near_of_continuousOn (-(R + 1)) (R + 1) f f.continuous.continuousOn δ hδ
+  obtain ⟨q, hfpq, hqμ⟩ := exists_dominating_polynomial hR (lt_add_one R) hδ hae hp
+  have hfpμ := abs_integral_eval_sub_le (lt_add_one R).le hae hp
+  have hpoly (r : ℝ[X]) :=
+    tendsto_measure_ge_integral_eval_of_tendsto_integral_pow hμs hμ h r hδ
+  have hpolyμs (r : ℝ[X]) :
+      ∀ᶠ i in l, ∀ᵐ ω ∂Ps i, Integrable (fun x => r.eval x) (μs i ω : Measure ℝ) := by
+    filter_upwards [eventually_ae_forall_le_natDegree_integrable hμs r] with i hi
+    exact hi.mono fun _ hω => integrable_eval_of_forall_le_natDegree hω
+  have hlim : Tendsto (fun i =>
+      Ps i {ω | δ ≤ |(∫ x, q.eval x ∂(μs i ω : Measure ℝ)) - ∫ x, q.eval x ∂(μ : Measure ℝ)|} +
+      Ps i {ω | δ ≤ |(∫ x, p.eval x ∂(μs i ω : Measure ℝ)) - ∫ x, p.eval x ∂(μ : Measure ℝ)|})
+      l (𝓝 0) := by
+    simpa using (hpoly q).add (hpoly p)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
+    (Eventually.of_forall fun _ => bot_le) ?_
+  filter_upwards [hpolyμs p, hpolyμs q] with i hpint hqint
+  refine (measure_mono_ae <| (hpint.and hqint).mono fun ω hint hω => ?_).trans
+    (measure_union_le _ _)
+  by_contra hall
+  simp only [mem_union, mem_ofPred_eq, not_or, not_le] at hall
+  have hlt := abs_integral_sub_lt_six_mul hint.1 hint.2 hfpq hqμ hfpμ hall.1 hall.2
+  linarith [mem_ofPred.mp hω, hδε]
 
 end MeasureTheory.ProbabilityMeasure
