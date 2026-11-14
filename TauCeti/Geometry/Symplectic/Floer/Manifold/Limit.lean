@@ -42,11 +42,10 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 maps `A i : ℝ × ℝ → T_(x i) M` be complex linear for structures `J(z i, x i)`, where `J(z, x)` is a
 domain-dependent structure on `T_x M` and `z i → z₀`. If the values `A i e` converge in the tangent
 bundle to `L e`, for a linear map `L : ℝ × ℝ → T_(x₀) M`, and `J` is continuous at `(z₀, x₀)` in the
-tangent coordinates at `x₀`, then `L` is complex linear for `J(z₀, x₀)`. This is the coordinate
-argument shared by `TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_of_tendsto` and
-`TauCeti.SmoothTwoForm.isComplexLinearMap_of_tendsto_rescale`
-(`TauCeti/Geometry/Symplectic/Floer/Rescaling/Manifold.lean`), where it was first given for
-rescaled maps. -/
+tangent coordinates at `x₀`, then `L` is complex linear for `J(z₀, x₀)`. It is applied to
+perturbed derivatives in `TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_of_tendsto`, and
+to rescaled perturbed derivatives in `TauCeti.SmoothTwoForm.isComplexLinearMap_of_tendsto_rescale`
+(`TauCeti/Geometry/Symplectic/Floer/Rescaling/Manifold.lean`). -/
 theorem _root_.TauCeti.isComplexLinearMap_of_tendsto_tangentBundle [FiniteDimensional ℝ E]
     {ι : Type*} {l : Filter ι} [l.NeBot]
     {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)} {z : ι → ℝ × ℝ}
@@ -93,10 +92,7 @@ theorem _root_.TauCeti.isComplexLinearMap_of_tendsto_tangentBundle [FiniteDimens
 `T_x M`, and let their derivatives at `z i` converge in the tangent bundle to the derivative of a
 map `v` at `z₀`. If the Hamiltonian vector fields of `K` are continuous at `(z₀, v z₀)` as maps
 into the tangent bundle, and `J` is continuous at `(z₀, v z₀)` in the tangent coordinates at
-`v z₀`, then `v` solves the Floer equation at `z₀`. The perturbed derivatives converge by
-`TauCeti.SmoothTwoForm.tendsto_perturbedMFDeriv`, and the coordinate argument is
-`TauCeti.isComplexLinearMap_of_tendsto_tangentBundle`, adapted from
-`TauCeti.SmoothTwoForm.isComplexLinearMap_of_tendsto_rescale`. -/
+`v z₀`, then `v` solves the Floer equation at `z₀`. -/
 theorem isComplexLinearMap_perturbedMFDeriv_of_tendsto (ω : SmoothTwoForm I M)
     [FiniteDimensional ℝ E] {Ks Kt : ℝ × ℝ → M → ℝ} {ι : Type*} {l : Filter ι} [l.NeBot]
     {u : ι → ℝ × ℝ → M} {z : ι → ℝ × ℝ} {z₀ : ℝ × ℝ} {v : ℝ × ℝ → M}
