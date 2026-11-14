@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Group.Integral
 
 /-!
-# Integrals of odd functions over symmetric domains
+# Integrals of odd and even functions over symmetric domains
 
 An odd integrand into a real normed space integrates to zero over an interval `[-R, R]`
 symmetric about the origin, and more generally against any measure invariant under negation.
@@ -25,6 +25,7 @@ to its own negative is zero. In particular the statement is also true (vacuously
 ## Main results
 
 * `intervalIntegral.integral_eq_zero_of_odd` — `∫ t in -R..R, g t = 0` for odd `g`.
+* `intervalIntegral.integral_of_even` — `∫ t in -R..R, g t = 2 • ∫ t in 0..R, g t` for even `g`.
 * `MeasureTheory.integral_eq_zero_of_odd` — `∫ x, g x ∂μ = 0` for odd `g` and a measure `μ`
   invariant under negation.
 -/
@@ -50,6 +51,30 @@ theorem integral_eq_zero_of_odd {E : Type*} [NormedAddCommGroup E] [NormedSpace 
     nth_rewrite 1 [← hcomp]
     abel
   simpa using htwo
+
+open MeasureTheory Set in
+/-- **An even integrand integrates over a symmetric interval to twice its integral over the
+positive half.** No integrability hypothesis is needed: if `g` is not integrable on `[0, R]`,
+evenness shows it is not integrable on `[-R, R]` either, and both sides are `0`. -/
+theorem integral_of_even {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {g : ℝ → E} (heven : Function.Even g) (R : ℝ) :
+    ∫ t in (-R)..R, g t = (2 : ℝ) • ∫ t in (0 : ℝ)..R, g t := by
+  by_cases hg : IntervalIntegrable g volume 0 R
+  · have h1 : IntervalIntegrable g volume (-R) 0 := by
+      have := (hg.comp_sub_left 0).symm
+      simpa [heven _] using this
+    have hneg : ∫ t in (0 : ℝ)..-R, g t = -∫ t in (0 : ℝ)..R, g t := by
+      have h := intervalIntegral.integral_comp_neg (a := 0) (b := R) g
+      simp only [heven _, neg_zero] at h
+      rw [h, intervalIntegral.integral_symm]
+    rw [← intervalIntegral.integral_add_adjacent_intervals h1 hg,
+      intervalIntegral.integral_symm 0 (-R), hneg, neg_neg, two_smul]
+  · rw [intervalIntegral.integral_undef hg, smul_zero]
+    refine intervalIntegral.integral_undef fun h ↦ hg (h.mono_set (uIcc_subset_uIcc
+      (mem_uIcc.2 ?_) right_mem_uIcc))
+    rcases le_total 0 R with hR | hR
+    · exact Or.inl ⟨by linarith, hR⟩
+    · exact Or.inr ⟨hR, by linarith⟩
 
 end intervalIntegral
 
