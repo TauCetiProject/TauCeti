@@ -201,27 +201,18 @@ theorem exists_eqOn_ball_unitDiscStandardAutomorphismFormula_or_conj_of_pseudoHy
   refine ⟨u, -g 0 * conj u, hu, ?_, ?_⟩
   · rw [norm_mul, norm_neg, Complex.norm_conj, hu, mul_one]; exact ha
   · -- Undo the normalisation, using that the Moebius factor at `-g 0` inverts it.
-    rcases hcase with hcase | hcase
-    · left
-      intro z hz
-      have hz1 : (g z - g 0) / (1 - conj (g 0) * g z) = u * z := hcase hz
+    have key (z t : ℂ) (hz : z ∈ ball (0 : ℂ) 1)
+        (ht : (g z - g 0) / (1 - conj (g 0) * g z) = u * t) :
+        g z = u * ((t - -g 0 * conj u) / (1 - conj (-g 0 * conj u) * t)) := by
       have hinv := leftInvOn_unitDiscMoebiusFormula_of_norm_lt_one ha (hmaps hz)
-      -- Beta-reduce the scalar Moebius formulas so that `hz1` rewrites `hinv`.
+      -- Beta-reduce the scalar Moebius formulas so that `ht` rewrites `hinv`.
       dsimp only at hinv
-      rw [hz1] at hinv
+      rw [ht] at hinv
       simp only [map_neg, neg_mul, sub_neg_eq_add] at hinv
       rw [← hinv]
-      exact const_mul_add_div_eq_unitDiscStandardAutomorphismFormula hu z
-    · right
-      intro z hz
-      have hz1 : (g z - g 0) / (1 - conj (g 0) * g z) = u * conj z := hcase hz
-      have hinv := leftInvOn_unitDiscMoebiusFormula_of_norm_lt_one ha (hmaps hz)
-      -- Beta-reduce the scalar Moebius formulas so that `hz1` rewrites `hinv`.
-      dsimp only at hinv
-      rw [hz1] at hinv
-      simp only [map_neg, neg_mul, sub_neg_eq_add] at hinv
-      rw [← hinv]
-      exact const_mul_add_div_eq_unitDiscStandardAutomorphismFormula hu (conj z)
+      exact const_mul_add_div_eq_unitDiscStandardAutomorphismFormula hu t
+    exact hcase.imp (fun hcase z hz => key z z hz (hcase hz))
+      fun hcase z hz => key z (conj z) hz (hcase hz)
 
 /-- **The isometries of the Poincaré disc.** A self-map of the open unit disc preserving the
 hyperbolic distance is a standard disc automorphism `z ↦ u * (z - b) / (1 - conj b * z)` or the
