@@ -348,7 +348,7 @@ For an action of a subgroup of `GL(2, ℝ)` no further instance is needed: Mathl
 `𝒢 ≤ GL(2, ℝ)`, and the image of a finite-index `Γ ≤ SL(2, ℤ)` is arithmetic, so both shapes
 reach `Finite` through this instance alone. The stabiliser of a point under `SL(2, ℤ)` itself is
 *not* one of those shapes — `SL(2, ℤ)` is a type, not a `Subgroup (GL (Fin 2) ℝ)`, so there is no
-`ProperlyDiscontinuousSMul SL(2, ℤ) ℍ` to apply — and stays with the hand-proved
+`ProperlyDiscontinuousSMul SL(2, ℤ) ℍ` to apply — and is provided separately by
 `TauCeti.ModularGroup.finite_stabilizer`. -/
 @[to_additive
 /-- **A properly discontinuous additive action has finite point stabilisers**, as a `Finite`

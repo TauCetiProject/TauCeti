@@ -108,15 +108,18 @@ theorem trace_sq_lt_four_of_smul_eq_self_of_not_mem_center {γ : SL(2, ℤ)}
     exact hγ ((QuotientGroup.eq_one_iff γ).mp hq)
 
 /-- **Every point stabiliser is finite**, so the elliptic order `e_P` is defined at every point
-of `ℍ` and not only inside the fundamental domain. `SL(2, ℤ)` acts on `ℍ` through the injective
-`mapGL ℝ`, so its stabiliser is the preimage of the stabiliser in Mathlib's image group `𝒮ℒ`,
-which acts properly discontinuously. -/
+of `ℍ` and not only inside the fundamental domain. -/
 instance finite_stabilizer (z : ℍ) : Finite (stabilizer SL(2, ℤ) z) :=
+  -- `SL(2, ℤ)` acts on `ℍ` through the injective `mapGL ℝ`, so its stabiliser is the preimage of
+  -- the stabiliser in Mathlib's image group `𝒮ℒ`, which acts properly discontinuously.
   Set.Finite.to_subtype (s := (stabilizer SL(2, ℤ) z : Set SL(2, ℤ))) <|
     ((ProperlyDiscontinuousSMul.finite_stabilizer' 𝒮ℒ z).preimage
       (f := (Matrix.SpecialLinearGroup.mapGL ℝ : SL(2, ℤ) →* GL (Fin 2) ℝ).rangeRestrict)
       (MonoidHom.rangeRestrict_injective_iff.2
-        (Matrix.SpecialLinearGroup.mapGL_injective (R := ℤ) (S := ℝ))).injOn).subset fun _ hg ↦ hg
+        (Matrix.SpecialLinearGroup.mapGL_injective (R := ℤ) (S := ℝ))).injOn).subset fun _ hg ↦ by
+      simpa only [SetLike.mem_coe, MulAction.mem_stabilizer_iff, MulAction.compHom_smul_def,
+        Set.mem_preimage, Set.mem_ofPred_eq, Subgroup.smul_def,
+        MonoidHom.coe_rangeRestrict] using hg
 
 private theorem card_stabilizer_of_coe_eq {s : Finset SL(2, ℤ)}
     (h : (stabilizer SL(2, ℤ) w : Set SL(2, ℤ)) = ↑s) :
