@@ -40,7 +40,8 @@ open set.
   `TauCeti.contDiffAt_symm_trans_symm_of_mem_maximalAtlas`: its inverse is `C^n` on its target.
 * `TauCeti.exists_hasFDerivAt_symm_trans`: such a transition map, for `n ≠ 0`, has an invertible
   derivative at each point of its source, which is strict over `ℝ` or `ℂ`
-  (`TauCeti.exists_hasStrictFDerivAt_symm_trans`).
+  (`TauCeti.exists_hasStrictFDerivAt_symm_trans`), so the determinant of its derivative is nonzero
+  (`TauCeti.det_fderiv_symm_trans_ne_zero`).
 * `TauCeti.exists_hasFDerivAt_symm_trans_of_mem_atlas`: the same when the first chart is in the
   atlas, which avoids needing `IsManifold` to know that it lies in the maximal atlas; it rests on
   `TauCeti.contDiffAt_of_mem_contDiffGroupoid`.
@@ -238,6 +239,16 @@ theorem exists_hasFDerivAt_symm_trans (hn : n ≠ 0)
     ((contDiffAt_symm_trans_of_mem_maximalAtlas hq hq' hz).differentiableAt hn)
     ((contDiffAt_symm_trans_symm_of_mem_maximalAtlas hq hq'
       ((q.symm.trans q').map_source hz)).differentiableAt hn)
+
+/-- The derivative of the transition map `q.symm.trans q'` between two charts of the `C^n` maximal
+atlas, `n ≠ 0`, has nonzero determinant at each point of its source. -/
+theorem det_fderiv_symm_trans_ne_zero (hn : n ≠ 0)
+    (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (hq' : q' ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
+    {z : E} (hz : z ∈ (q.symm.trans q').source) :
+    (fderiv 𝕜 (q.symm.trans q') z).det ≠ 0 := by
+  obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans hn hq hq' hz
+  rw [hA.fderiv]
+  exact A.toLinearEquiv.isUnit_det'.ne_zero
 
 /-- The transition map `q.symm.trans q'` from a chart `q` of the atlas to a chart `q'` of the
 `C^n` maximal atlas, `n ≠ 0`, has an invertible derivative at each point of its source. Since `q`
