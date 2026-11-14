@@ -56,6 +56,8 @@ identify the underlying graph morphisms with the identity and the composite.
 * `TauCeti.GraphOfGroups.Hom.ext`: a morphism is determined by its graph morphism, its vertex
   group homomorphisms and its twisting elements.
 * `TauCeti.GraphOfGroups.Hom.vertexHom_ω`: the compatibility of a morphism with the maps `ω`.
+* `TauCeti.GraphOfGroups.Hom.vertexHom_αArrow`, `TauCeti.GraphOfGroups.Hom.vertexHom_ωArrow`: the
+  compatibility with `α` and `ω` at an arrow of the quiver of `Γ`, through `Hom.twistArrow`.
 * `TauCeti.GraphOfGroups.Hom.comp_assoc`, `TauCeti.GraphOfGroups.Hom.id_comp`,
   `TauCeti.GraphOfGroups.Hom.comp_id`: composition is associative and unital.
 * `TauCeti.GraphOfGroups.π₁Tree.map_id`, `TauCeti.GraphOfGroups.π₁Tree.map_comp_map`:
@@ -211,6 +213,35 @@ along `src (rev e) = tgt e`. -/
       MulEquiv.cast (M := 𝔹.vertexGroup) (congrArg Φ.graph.mapV (Γ.src_rev e))
         (Φ.twist (Γ.rev e)) :=
   Φ.twistArrow_eq_cast _ (by simp) _
+
+/-- Compatibility of a morphism with the boundary monomorphisms `α` of arrows: for an arrow
+`e : a ⟶ b`, `φ_a (α_e c) = δ_e · α_[e] (φ_e c) · δ_e⁻¹`. -/
+theorem vertexHom_αArrow (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    Φ.vertexHom a (𝔸.αArrow e c) =
+      Φ.twistArrow e * 𝔹.αArrow (Φ.graph.mapArrow e) (Φ.edgeHom e.1 c) * (Φ.twistArrow e)⁻¹ := by
+  obtain ⟨e, rfl, rfl⟩ := e
+  -- `αArrow_apply` at the image arrow, stated at the dart `[e]` itself.
+  have h : 𝔹.αArrow (Φ.graph.mapArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e)) (Φ.edgeHom e c) =
+      MulEquiv.cast (M := 𝔹.vertexGroup) (Φ.graph.map_src e)
+        (𝔹.α (Φ.graph.mapE e) (Φ.edgeHom e c)) :=
+    αArrow_apply ..
+  rw [αArrow_mk, twistArrow_mk, h]
+  exact Φ.vertexHom_α e c
+
+/-- Compatibility of a morphism with the boundary monomorphisms `ω` of arrows: for an arrow
+`e : a ⟶ b`, `φ_b (ω_e c) = δ_{rev e} · ω_[e] (φ_e c) · δ_{rev e}⁻¹`. -/
+theorem vertexHom_ωArrow (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    Φ.vertexHom b (𝔸.ωArrow e c) = Φ.twistArrow (Quiver.reverse e) *
+      𝔹.ωArrow (Φ.graph.mapArrow e) (Φ.edgeHom e.1 c) * (Φ.twistArrow (Quiver.reverse e))⁻¹ := by
+  obtain ⟨e, rfl, rfl⟩ := e
+  -- `ωArrow_apply` at the image arrow, stated at the dart `[e]` itself.
+  have h : 𝔹.ωArrow (Φ.graph.mapArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e)) (Φ.edgeHom e c) =
+      MulEquiv.cast (M := 𝔹.vertexGroup) (Φ.graph.map_tgt _ e)
+        (𝔹.ω (Φ.graph.mapE e) (Φ.edgeHom e c)) :=
+    ωArrow_apply ..
+  rw [ωArrow_mk, Φ.twistArrow_eq_cast (e' := Γ.rev e) _ (by simp)
+    (congrArg Φ.graph.mapV (Γ.src_rev e)), h]
+  exact Φ.vertexHom_ω e c
 
 end twistArrow
 

@@ -141,13 +141,13 @@ variable {x y z : 𝔸.LetterVertex}
 
 /-- The image of a path followed by an element `g ∈ A_a`: the image of the path followed by the
 letter `φ_a g`. -/
-private theorem mapPath_cons_vertex {a : Γ.V} (p : 𝔸.Path x ⟨a⟩) (g : 𝔸.vertexGroup a) :
+theorem mapPath_cons_vertex {a : Γ.V} (p : 𝔸.Path x ⟨a⟩) (g : 𝔸.vertexGroup a) :
     Φ.mapPath (p.cons (Letter.vertex g)) = (Φ.mapPath p).cons (Letter.vertex (Φ.vertexHom a g)) :=
   Path.comp_ofVertex ..
 
 /-- The image of a path followed by a dart `f`: the image of the path followed by the letters
 `δ_f, [f], δ_{rev f}⁻¹`. -/
-private theorem mapPath_cons_dart {a b : Γ.V} (p : 𝔸.Path x ⟨a⟩) (f : a ⟶ b) :
+theorem mapPath_cons_dart {a b : Γ.V} (p : 𝔸.Path x ⟨a⟩) (f : a ⟶ b) :
     Φ.mapPath (p.cons (Letter.dart f)) =
       (((Φ.mapPath p).cons (Letter.vertex (Φ.twistArrow f))).cons
         (Letter.dart (Φ.graph.mapArrow f))).cons
@@ -200,24 +200,16 @@ private theorem cons_dart_ωArrow_conj {z : 𝔹.LetterVertex} {a b : Δ.V} (r :
   rw [show d * 𝔹.αArrow e c * d⁻¹ * d = d * 𝔹.αArrow e c by group]
   exact (((Homotopic.mul _ _ _).symm.cons _).cons _)
 
-/-- The path map respects the elementary move `e, ω_e(c) ~ α_e(c), e`. -/
-private theorem mapPath_dart_ω (Φ : Hom 𝔸 𝔹) (e : Γ.E) (c : 𝔸.edgeGroup (Γ.toGeomEdge e))
-    (p : 𝔸.Path x ⟨Γ.src e⟩) :
-    (Φ.mapPath ((p.cons (Letter.dart (Γ.dart e))).cons (Letter.vertex (𝔸.ω e c)))).Homotopic
-      (Φ.mapPath ((p.cons (Letter.vertex (𝔸.α e c))).cons (Letter.dart (Γ.dart e)))) := by
+/-- The path map respects the elementary move `e, ω_e(c) ~ α_e(c), e` at an arrow `e`. -/
+private theorem mapPath_dart_ωArrow (Φ : Hom 𝔸 𝔹) {a b : Γ.V} (e : a ⟶ b)
+    (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) (p : 𝔸.Path x ⟨a⟩) :
+    (Φ.mapPath ((p.cons (Letter.dart e)).cons (Letter.vertex (𝔸.ωArrow e c)))).Homotopic
+      (Φ.mapPath ((p.cons (Letter.vertex (𝔸.αArrow e c))).cons (Letter.dart e))) := by
   -- By the compatibility of `Φ` with `α` and `ω`, both images are homotopic to
   -- `δ_e, α_[e](φ_e c), [e], δ_{rev e}⁻¹`.
   rw [Hom.mapPath_cons_vertex, Hom.mapPath_cons_dart, Hom.mapPath_cons_dart,
-    Hom.mapPath_cons_vertex, Φ.vertexHom_ω, Φ.vertexHom_α, Hom.twistArrow_dart,
-    Hom.twistArrow_reverse_dart, Γ.dart_def]
-  -- The image dart `[e]`, as an arrow between the images of the endpoints of `e`.
-  let E : Φ.graph.mapV (Γ.src e) ⟶ Φ.graph.mapV (Γ.tgt e) := Φ.graph.mapArrow ⟨e, rfl, rfl⟩
-  have hα : 𝔹.αArrow E (Φ.edgeHom e c) = MulEquiv.cast (M := 𝔹.vertexGroup)
-      (Φ.graph.map_src e) (𝔹.α (Φ.graph.mapE e) (Φ.edgeHom e c)) := αArrow_apply ..
-  have hω : 𝔹.ωArrow E (Φ.edgeHom e c) = MulEquiv.cast (M := 𝔹.vertexGroup)
-      (Φ.graph.map_tgt _ e) (𝔹.ω (Φ.graph.mapE e) (Φ.edgeHom e c)) := ωArrow_apply ..
-  rw [← hα, ← hω]
-  exact cons_dart_ωArrow_conj (Φ.mapPath p) _ _ E _
+    Hom.mapPath_cons_vertex, Φ.vertexHom_ωArrow, Φ.vertexHom_αArrow]
+  exact cons_dart_ωArrow_conj (Φ.mapPath p) _ _ _ _
 
 /-- The path map of a morphism of graphs of groups sends homotopic `𝔸`-paths to homotopic
 `𝔹`-paths. -/
@@ -240,7 +232,8 @@ theorem mapPath (Φ : Hom 𝔸 𝔹) {p q : 𝔸.Path x y} (h : p.Homotopic q) :
     rw [Hom.mapPath_cons, Hom.mapPath_cons, ← Letter.reverse_dart, Hom.mapLetter_reverse,
       Quiver.Path.comp_assoc]
     simpa using (comp_reverse (Φ.mapLetter (Letter.dart e))).comp_left (Φ.mapPath p)
-  | dart_ω e c p => exact mapPath_dart_ω Φ e c p
+  | dart_ω e c p =>
+    simpa only [αArrow_mk, ωArrow_mk, Γ.dart_def] using mapPath_dart_ωArrow Φ ⟨e, rfl, rfl⟩ c p
 
 /-- The path map of the identity morphism is homotopic to the identity. -/
 theorem id_mapPath (p : 𝔸.Path x y) : ((Hom.id 𝔸).mapPath p).Homotopic p := by

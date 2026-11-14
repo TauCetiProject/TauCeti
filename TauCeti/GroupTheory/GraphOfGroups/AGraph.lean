@@ -59,6 +59,8 @@ rank of its underlying graph plus the sum of the ranks of its vertex groups.
 
 ## Main results
 
+* `TauCeti.GraphOfGroups.AGraph.toHom_mapPath_ofDart`: the path map of `AGraph.toHom` reads a dart
+  `f` as the letters `f_α, [f], f_ω` of its label.
 * `TauCeti.GraphOfGroups.AGraph.mem_subgroup_iff`: `L(B, u₀)` consists of the elements read along
   the closed `𝔹`-paths at `u₀`.
 * `TauCeti.GraphOfGroups.AGraph.subgroup_eq_sup`: for any choice of `𝔹`-paths `γ_u` from `u₀` to
@@ -174,6 +176,46 @@ abbrev toHom : Hom B.toGraphOfGroups 𝔸 where
   vertexHom_α _ c := by
     obtain rfl : c = 1 := Subsingleton.elim _ _
     simp only [map_one, mul_one, mul_inv_cancel]
+
+section toHom
+
+theorem toHom_graph : B.toHom.graph = B.typ := (rfl)
+
+theorem toHom_vertexHom (z : B.graph.V) : B.toHom.vertexHom z = (B.grp z).subtype := (rfl)
+
+theorem toHom_edgeHom (f : B.graph.E) : B.toHom.edgeHom f = 1 := (rfl)
+
+/-- The twisting element of a dart `f` is its label `f_α`, read through `o([f]) = [o(f)]`. -/
+theorem toHom_twist (f : B.graph.E) :
+    B.toHom.twist f = MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f) (B.labelα f) :=
+  (rfl)
+
+variable {u u' : B.graph.V}
+
+/-- The twisting element of an arrow `f : u ⟶ u'` is the label `f_α`, read in `A_[u]`. -/
+theorem toHom_twistArrow (f : u ⟶ u') : B.toHom.twistArrow f = MulEquiv.cast (M := 𝔸.vertexGroup)
+    ((B.typ.map_src f.1).trans (congrArg B.typ.mapV f.2.1)) (B.labelα f.1) := by
+  simp only [Hom.twistArrow_def, MulEquiv.cast_apply, cast_cast]
+
+/-- The inverse of the twisting element of the reverse of an arrow `f : u ⟶ u'` is the label
+`f_ω`, read in `A_[u']`: this is `δ_{f⁻¹}⁻¹ = f_ω`. -/
+theorem inv_toHom_twistArrow_reverse (f : u ⟶ u') : (B.toHom.twistArrow (Quiver.reverse f))⁻¹ =
+    MulEquiv.cast (M := 𝔸.vertexGroup) ((B.typ.map_tgt _ f.1).trans (congrArg B.typ.mapV f.2.2))
+      (B.labelω f.1) := by
+  rw [B.toHom.twistArrow_eq_cast _ (e' := B.graph.rev f.1) (by simp)
+    (congrArg B.typ.mapV ((B.graph.src_rev f.1).trans f.2.2)), labelω_def, map_inv, inv_inj]
+  simp only [MulEquiv.cast_apply, cast_cast]
+
+/-- The path map of the morphism defined by an `𝔸`-graph reads an arrow `f` as its label: the
+letters `f_α, [f], f_ω`. -/
+theorem toHom_mapPath_ofDart (f : u ⟶ u') : B.toHom.mapPath (Path.ofDart f) =
+    ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup)
+      ((B.typ.map_src f.1).trans (congrArg B.typ.mapV f.2.1)) (B.labelα f.1))).cons
+      (Letter.dart (B.typ.mapArrow f))).cons (Letter.vertex (MulEquiv.cast (M := 𝔸.vertexGroup)
+        ((B.typ.map_tgt _ f.1).trans (congrArg B.typ.mapV f.2.2)) (B.labelω f.1))) := by
+  rw [Hom.mapPath_ofDart, toHom_twistArrow, inv_toHom_twistArrow_reverse]
+
+end toHom
 
 /-! ### The represented subgroup -/
 
