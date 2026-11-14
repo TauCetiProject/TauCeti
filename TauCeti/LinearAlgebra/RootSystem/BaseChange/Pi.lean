@@ -79,6 +79,12 @@ theorem piAlgebraMap_apply (x : κ → R) (j : κ) :
     Pi.algebraMap κ R S x j = algebraMap R S (x j) :=
   rfl
 
+/-- Entrywise base change of the standard lattice carries the dot product to the dot product. -/
+@[simp]
+theorem piAlgebraMap_dotProduct [Fintype κ] (x y : κ → R) :
+    Pi.algebraMap κ R S x ⬝ᵥ Pi.algebraMap κ R S y = algebraMap R S (x ⬝ᵥ y) :=
+  (RingHom.map_dotProduct (algebraMap R S) x y).symm
+
 /-- Entrywise base change along an injective algebra map is injective. -/
 theorem piAlgebraMap_injective [FaithfulSMul R S] : Injective (Pi.algebraMap κ R S) :=
   fun _ _ h => funext fun j => algebraMap_injective R S (congrFun h j)
