@@ -148,7 +148,7 @@ noncomputable def ofSemifield (ψ : F →+* F') (hφ : φ'.comp ψ.toMonoidWithZ
     rw [val_ofSemifield_normalizer, Units.coe_map, val_ofSemifield_normalizer,
       H.sum_map_coeff ψ.toMonoidWithZeroHom fun x ↦ x]
     simpa [← map_sum] using inv_eq_of_mul_eq_one_right
-      (by rw [← map_mul, mul_inv_cancel₀ (sum_coeff_ne_zero H), map_one])
+      (by rw [← map_mul, mul_inv_cancel₀ H.sum_coeff_ne_zero, map_one])
 
 @[simp]
 theorem toMonoidWithZeroHom_ofSemifield (ψ : F →+* F') (hφ : φ'.comp ψ.toMonoidWithZeroHom = φ) :

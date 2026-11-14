@@ -127,17 +127,15 @@ theorem normalizer_scale_of_mem {u : 𝕂ˣ} (hu : u ∈ c.normalizerSubgroup)
     obtain ⟨H', rfl⟩ := hx
     exact eq_inv_mul_of_mul_eq (by rw [mul_comm, c.normalizer_scale])
   | one => simp
-  | mul x y _ _ ihx ihy => rw [mul_comm x y, ← H.scale_scale, ihy, ihx, mul_inv, mul_assoc]
-  | inv x _ ihx =>
-    have h := ihx (H.scale x⁻¹)
-    rw [ExchangePolynomial.scale_scale, mul_inv_cancel, H.scale_one] at h
-    rw [h, inv_inv, mul_inv_cancel_left]
+  | mul x y _ _ ihx ihy =>
+    conv_lhs => rw [mul_comm x y]
+    simpa [ihx, mul_assoc] using ihy (H.scale x)
+  | inv x _ ihx => simpa [mul_assoc] using congrArg (x * ·) (ihx (H.scale x⁻¹)).symm
 
 /-- Normalization is invariant under scaling by any element of `G_ν`. -/
 theorem normalize_scale_of_mem {u : 𝕂ˣ} (hu : u ∈ c.normalizerSubgroup)
     (H : ExchangePolynomial 𝕂) : c.normalize (H.scale u) = c.normalize H := by
-  rw [normalize_def, normalize_def, c.normalizer_scale_of_mem hu H, ExchangePolynomial.scale_scale,
-    mul_comm _ u, mul_inv_cancel_left]
+  simp [normalize_def, c.normalizer_scale_of_mem hu H, mul_comm _ u]
 
 @[simp]
 theorem normalize_scale_normalizer (H H' : ExchangePolynomial 𝕂) :
@@ -253,24 +251,20 @@ section Semifield
 
 variable {F : Type*} [Semifield F] [Subsingleton (AddUnits F)] {R : Type*} [CommSemiring R]
 
-/-- In a semifield with trivial additive units, the sum of all coefficients of an exchange
-polynomial is nonzero because its constant coefficient is a unit. -/
-theorem sum_coeff_ne_zero (H : ExchangePolynomial F) : ∑ l, H.coeff l ≠ 0 := fun hsum ↦
-  H.coeff_zero_ne_zero ((Finset.sum_eq_zero_iff.mp hsum) 0 (Finset.mem_univ 0))
+private theorem mk0_sum_scale_inv (u : Fˣ) (H : ExchangePolynomial F) :
+    (Units.mk0 (∑ l, (H.scale u).coeff l) (H.scale u).sum_coeff_ne_zero)⁻¹ =
+      u⁻¹ * (Units.mk0 (∑ l, H.coeff l) H.sum_coeff_ne_zero)⁻¹ := by
+  ext
+  rw [Units.val_inv_eq_inv_val, Units.val_mk0, H.sum_scale_coeff u fun x ↦ x, ← Finset.mul_sum]
+  simp [mul_comm]
 
 /-- The *normalized coefficient system* of a zero-sum-free semifield `F` along `φ : F →*₀ R`, with
 normalizer `ν(H) = (∑ l, H.coeff l)⁻¹` formed in `F` before `φ` is applied. -/
 noncomputable def ofSemifield (φ : F →*₀ R) : CoefficientSystem F R where
   toScalar := φ
-  normalizer H := (Units.mk0 (∑ l, H.coeff l) (sum_coeff_ne_zero H))⁻¹
+  normalizer H := (Units.mk0 (∑ l, H.coeff l) H.sum_coeff_ne_zero)⁻¹
   normalizer_reverse H := inv_inj.mpr (Units.ext (H.sum_reverse_coeff fun x ↦ x))
-  normalizer_scale H H' := by
-    set u := (Units.mk0 (∑ l, H'.coeff l) (sum_coeff_ne_zero H'))⁻¹
-    have hmk : Units.mk0 (∑ l, (H.scale u).coeff l) (sum_coeff_ne_zero (H.scale u)) =
-        u * Units.mk0 (∑ l, H.coeff l) (sum_coeff_ne_zero H) :=
-      Units.ext (by simp only [Units.val_mk0, Units.val_mul, H.sum_scale_coeff u fun x ↦ x,
-        Finset.mul_sum])
-    rw [hmk, mul_inv, mul_comm (u⁻¹), inv_mul_cancel_right]
+  normalizer_scale H H' := by rw [mk0_sum_scale_inv]; simp
 
 @[simp] theorem ofSemifield_toScalar (φ : F →*₀ R) : (ofSemifield φ).toScalar = φ := (rfl)
 
@@ -279,10 +273,8 @@ theorem val_ofSemifield_normalizer (φ : F →*₀ R) (H : ExchangePolynomial F)
     (((ofSemifield φ).normalizer H : Fˣ) : F) = (∑ l, H.coeff l)⁻¹ := by simp [ofSemifield]
 
 theorem ofSemifield_normalizer_scale (φ : F →*₀ R) (u : Fˣ) (H : ExchangePolynomial F) :
-    (ofSemifield φ).normalizer (H.scale u) = u⁻¹ * (ofSemifield φ).normalizer H := by
-  ext
-  rw [val_ofSemifield_normalizer, Units.val_mul, Units.val_inv_eq_inv_val,
-    val_ofSemifield_normalizer, H.sum_scale_coeff u (fun x ↦ x), ← Finset.mul_sum, mul_inv]
+    (ofSemifield φ).normalizer (H.scale u) = u⁻¹ * (ofSemifield φ).normalizer H :=
+  mk0_sum_scale_inv u H
 
 @[simp]
 theorem isNormalized_ofSemifield_iff (φ : F →*₀ R) {H : ExchangePolynomial F} :

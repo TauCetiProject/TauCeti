@@ -131,11 +131,8 @@ theorem valueAtOne_def (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row
 
 protected theorem IsBinary.valueAtOne {d : ExchangeData 𝕂 row} (hd : d.IsBinary)
     (c : CoefficientSystem 𝕂 R) (k : K) : d.valueAtOne c k = 2 := by
-  rw [valueAtOne_def, hd k]
-  let e : Fin ((ExchangePolynomial.binary : ExchangePolynomial 𝕂).degree + 1) ≃ Fin 2 :=
-    finCongr (by simp)
-  rw [← Equiv.sum_comp e.symm, Fin.sum_univ_two]
-  simp [one_add_one_eq_two]
+  rw [valueAtOne_def, (d.polynomial k).sum_of_degree_eq_one (by simp [hd k])]
+  simp [ExchangePolynomial.coeff_eq_of_eq (hd k), one_add_one_eq_two]
 
 end Basic
 
@@ -272,13 +269,11 @@ theorem mutation_mutation {c : CoefficientSystem 𝕂 R} {d : ExchangeData 𝕂 
   funext j
   by_cases hj : j = k
   · subst hj; simp
-  · rw [mutation_polynomial, mutatedPolynomial_of_ne c (d.mutation c k) hj]
-    simp only [mutation_polynomial, mutatedPolynomial_self, dividedColumn_mutation_row,
-      ExchangePolynomial.dilationFactor_reverse, neg_neg, mutatedPolynomial_of_ne c d hj]
-    set κ := (d.polynomial k).dilationFactor (d.dividedColumn j (row k))
-    rw [c.normalize_def ((d.polynomial j).dilate κ), ExchangePolynomial.scale_dilate,
-      ExchangePolynomial.dilate_dilate, mul_inv_cancel, ExchangePolynomial.dilate_one,
-      c.normalize_scale_normalizer, (hd.apply j).normalize_eq]
+  · set κ := (d.polynomial k).dilationFactor (d.dividedColumn j (row k))
+    have hscale : (c.normalize ((d.polynomial j).dilate κ)).dilate κ⁻¹ =
+        (d.polynomial j).scale (c.normalizer ((d.polynomial j).dilate κ)) := by
+      simp [c.normalize_def, ExchangePolynomial.scale_dilate]
+    simp [mutatedPolynomial_of_ne _ _ hj, κ, hscale, (hd.apply j).normalize_eq]
 
 @[simp]
 theorem mutation_mutation_trivial (d : ExchangeData R row) (k : K) :
@@ -624,7 +619,7 @@ private theorem b2Exch_mutation (ε : Bool) (k : Fin 2) : (b2Exch ε).mutation k
       simp [b2Exch, ExchangeMatrix.mutation_matrix, matrixMutation_apply]
   · simp [b2Exch]
 
-private abbrev mkB2 (ε : Bool) (a₀ b₀ a₁ b₁ c₁ : ℚ≥0)
+private def mkB2 (ε : Bool) (a₀ b₀ a₁ b₁ c₁ : ℚ≥0)
     (ha₀ : a₀ ≠ 0 := by norm_num) (hb₀ : b₀ ≠ 0 := by norm_num)
     (ha₁ : a₁ ≠ 0 := by norm_num) (hc₁ : c₁ ≠ 0 := by norm_num) :
     ExchangeData ℚ≥0 (Function.Embedding.refl (Fin 2)) where
@@ -636,81 +631,89 @@ private abbrev mkB2 (ε : Bool) (a₀ b₀ a₁ b₁ c₁ : ℚ≥0)
       isUnit_iff_ne_zero.mpr (by simpa [Fin.last] using hc₁)⟩]
   degree_dvd i k := by cases ε <;> fin_cases i <;> fin_cases k <;> dsimp <;> decide
 
+@[simp] private theorem mkB2_exchange (ε : Bool) {a₀ b₀ a₁ b₁ c₁ : ℚ≥0} {ha₀ hb₀ ha₁ hc₁} :
+    (mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).exchange = b2Exch ε := (rfl)
+@[simp] private theorem mkB2_deg0 (ε : Bool) {a₀ b₀ a₁ b₁ c₁ : ℚ≥0} {ha₀ hb₀ ha₁ hc₁} :
+    ((mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).polynomial 0).degree = 1 := (rfl)
+@[simp] private theorem mkB2_deg1 (ε : Bool) {a₀ b₀ a₁ b₁ c₁ : ℚ≥0} {ha₀ hb₀ ha₁ hc₁} :
+    ((mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).polynomial 1).degree = 2 := (rfl)
+@[simp] private theorem mkB2_coeff0 (ε : Bool) {a₀ b₀ a₁ b₁ c₁ : ℚ≥0} {ha₀ hb₀ ha₁ hc₁}
+    (l : Fin (((mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).polynomial 0).degree + 1)) :
+    ((mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).polynomial 0).coeff l =
+      ![a₀, b₀] (l.cast (by simp)) := (rfl)
+@[simp] private theorem mkB2_coeff1 (ε : Bool) {a₀ b₀ a₁ b₁ c₁ : ℚ≥0} {ha₀ hb₀ ha₁ hc₁}
+    (l : Fin (((mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).polynomial 1).degree + 1)) :
+    ((mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).polynomial 1).coeff l =
+      ![a₁, b₁, c₁] (l.cast (by simp)) := (rfl)
+@[simp] private theorem mkB2_divCol0 (ε : Bool) {a₀ b₀ a₁ b₁ c₁ : ℚ≥0} {ha₀ hb₀ ha₁ hc₁} :
+    (mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).dividedColumn 1 0 = if ε then 1 else -1 := by
+  cases ε <;> simp [dividedColumn_def, mkB2]
+@[simp] private theorem mkB2_divCol1 (ε : Bool) {a₀ b₀ a₁ b₁ c₁ : ℚ≥0} {ha₀ hb₀ ha₁ hc₁} :
+    (mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).dividedColumn 0 1 = if ε then -1 else 1 := by
+  cases ε <;> simp [dividedColumn_def, mkB2]
+
 private noncomputable abbrev b2Sys : CoefficientSystem ℚ≥0 ℚ :=
   CoefficientSystem.ofSemifield NNRat.coeHom.toMonoidWithZeroHom
 
-private theorem b2_divCol0 (ε : Bool) {a₀ b₀ a₁ b₁ c₁ : ℚ≥0} {ha₀ hb₀ ha₁ hc₁} :
-    (mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).dividedColumn 1 0 = if ε then 1 else -1 := by
-  cases ε <;> simp [dividedColumn_def]
-
-private theorem b2_divCol1 (ε : Bool) {a₀ b₀ a₁ b₁ c₁ : ℚ≥0} {ha₀ hb₀ ha₁ hc₁} :
-    (mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).dividedColumn 0 1 = if ε then -1 else 1 := by
-  cases ε <;> simp [dividedColumn_def]
+private theorem b2_mutation_eq {d d' : ExchangeData ℚ≥0 (Function.Embedding.refl (Fin 2))}
+    {ε : Bool} (k j : Fin 2) (hex : d.exchange = b2Exch ε) (hex' : d'.exchange = b2Exch (!ε))
+    (hdeg : (d.polynomial j).degree = (d'.polynomial j).degree)
+    (hself : (d.polynomial k).reverse = d'.polynomial k)
+    (hne : ∀ l : Fin ((d.polynomial j).degree + 1),
+      let κ : ℚ≥0 := (d.polynomial k).coeff (Fin.last (d.polynomial k).degree) ^
+          (d.dividedColumn j k)⁺ * (d.polynomial k).coeff 0 ^ (-(d.dividedColumn j k)⁻)
+      (∑ m, κ ^ m.val * (d.polynomial j).coeff m)⁻¹ * (κ ^ l.val * (d.polynomial j).coeff l) =
+        (d'.polynomial j).coeff (l.cast (by rw [hdeg])))
+    (hjk : ∀ m : Fin 2, m ≠ k → m = j := by decide) :
+    d.mutation b2Sys k = d' := by
+  ext : 1; · rw [mutation_exchange, hex, hex', b2Exch_mutation]
+  funext m; by_cases hm : m = k
+  · subst hm; simpa using hself
+  · obtain rfl := hjk m hm
+    refine ExchangePolynomial.ext (by simp [hdeg]) fun l ↦ ?_
+    rw [ExchangePolynomial.coeff_eq_of_eq (congrFun (mutation_polynomial b2Sys d k) m) l,
+      coeff_mutatedPolynomial_ofSemifield_of_ne _ d hm]
+    have hcast {b c} (h₁ : _ = b) (h₂ : b = c) : (l.cast h₁).cast h₂ = l.cast (h₁.trans h₂) := rfl
+    have h := hne (l.cast (by simp))
+    simp only [Function.Embedding.refl_apply, Fin.val_cast, hcast] at h ⊢
+    exact h
 
 private theorem b2Step0 (ε : Bool) {a₀ b₀ a₁ b₁ c₁ a₁' b₁' c₁' : ℚ≥0}
-    {ha₀ : a₀ ≠ 0} {hb₀ : b₀ ≠ 0} {ha₁ : a₁ ≠ 0} {hc₁ : c₁ ≠ 0}
-    {ha₁' : a₁' ≠ 0} {hc₁' : c₁' ≠ 0}
+    {ha₀ hb₀ ha₁ hc₁ ha₁' hc₁'}
     (hg : let κ := if ε then b₀ else a₀⁻¹
       let s := (κ ^ 0 * a₁ + κ ^ 1 * b₁ + κ ^ 2 * c₁)⁻¹
       a₁' = s * (κ ^ 0 * a₁) ∧ b₁' = s * (κ ^ 1 * b₁) ∧ c₁' = s * (κ ^ 2 * c₁) := by
         dsimp; norm_num) :
     (mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).mutation b2Sys 0 =
       mkB2 (!ε) b₀ a₀ a₁' b₁' c₁' hb₀ ha₀ ha₁' hc₁' := by
-  symm; ext : 1; · exact (b2Exch_mutation ε 0).symm
-  rw [funext_iff, Fin.forall_fin_two]; simp only [mutation_polynomial]
-  refine ⟨ExchangePolynomial.ext (by rw [degree_mutatedPolynomial]; rfl) fun l ↦ ?_,
-    ExchangePolynomial.ext (by rw [degree_mutatedPolynomial]; rfl) fun l ↦ ?_⟩
-  · rw [coeff_mutatedPolynomial_self]; fin_cases l <;> rfl
-  · let u := mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁
-    let κ : ℚ≥0 := if ε then b₀ else a₀⁻¹
-    rw [coeff_mutatedPolynomial_ofSemifield_of_ne _ u (by decide)]
-    dsimp only
-    have hκ : (u.polynomial 0).coeff (Fin.last (u.polynomial 0).degree) ^
-        (u.dividedColumn 1 (Function.Embedding.refl (Fin 2) 0))⁺ *
-        (u.polynomial 0).coeff 0 ^
-          (-(u.dividedColumn 1 (Function.Embedding.refl (Fin 2) 0))⁻) = κ := by
-      have h0 : (u.polynomial 0).coeff 0 = a₀ := rfl
-      have h1 : (u.polynomial 0).coeff (Fin.last (u.polynomial 0).degree) = b₀ := rfl
-      rw [h0, h1]; dsimp [u, κ]; cases ε <;> simp [b2_divCol0]
-    have hsum : ∑ m, κ ^ m.val * (u.polynomial 1).coeff m =
-        κ ^ 0 * a₁ + κ ^ 1 * b₁ + κ ^ 2 * c₁ :=
-      Fin.sum_univ_three fun m ↦ κ ^ m.val * (u.polynomial 1).coeff m
-    rw [hκ, hsum]
-    fin_cases l
-    · exact hg.1
-    · exact hg.2.1
-    · exact hg.2.2
+  refine b2_mutation_eq 0 1 (mkB2_exchange ε) (mkB2_exchange (!ε)) (by simp) ?_ fun l ↦ ?_
+  · refine ExchangePolynomial.ext (by simp) fun m ↦ ?_
+    have hm : m.val < 2 := by simpa using m.isLt
+    rcases m with ⟨_ | _ | m, _⟩ <;> simp [Fin.rev] at hm ⊢
+  · dsimp only
+    rw [((mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).polynomial 1).sum_of_degree_eq (n := 2) (by simp),
+      Fin.sum_univ_three]
+    have hl : l.val < 3 := by simpa using l.isLt
+    rcases l with ⟨_ | _ | _ | l, _⟩ <;> simp at hl
+    all_goals first | omega | (cases ε <;> simp_all [Fin.last])
 
 private theorem b2Step1 (ε : Bool) {a₀ b₀ a₁ b₁ c₁ a₀' b₀' : ℚ≥0}
-    {ha₀ : a₀ ≠ 0} {hb₀ : b₀ ≠ 0} {ha₁ : a₁ ≠ 0} {hc₁ : c₁ ≠ 0}
-    {ha₀' : a₀' ≠ 0} {hb₀' : b₀' ≠ 0}
+    {ha₀ hb₀ ha₁ hc₁ ha₀' hb₀'}
     (hh : let κ := if ε then a₁⁻¹ else c₁
       let s := (κ ^ 0 * a₀ + κ ^ 1 * b₀)⁻¹
       a₀' = s * (κ ^ 0 * a₀) ∧ b₀' = s * (κ ^ 1 * b₀) := by dsimp; norm_num) :
     (mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).mutation b2Sys 1 =
       mkB2 (!ε) a₀' b₀' c₁ b₁ a₁ ha₀' hb₀' hc₁ ha₁ := by
-  symm; ext : 1; · exact (b2Exch_mutation ε 1).symm
-  rw [funext_iff, Fin.forall_fin_two]; simp only [mutation_polynomial]
-  refine ⟨ExchangePolynomial.ext (by rw [degree_mutatedPolynomial]; rfl) fun l ↦ ?_,
-    ExchangePolynomial.ext (by rw [degree_mutatedPolynomial]; rfl) fun l ↦ ?_⟩
-  · let u := mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁
-    let κ : ℚ≥0 := if ε then a₁⁻¹ else c₁
-    rw [coeff_mutatedPolynomial_ofSemifield_of_ne _ u (by decide)]
-    dsimp only
-    have hκ : (u.polynomial 1).coeff (Fin.last (u.polynomial 1).degree) ^
-        (u.dividedColumn 0 (Function.Embedding.refl (Fin 2) 1))⁺ *
-        (u.polynomial 1).coeff 0 ^
-          (-(u.dividedColumn 0 (Function.Embedding.refl (Fin 2) 1))⁻) = κ := by
-      have h0 : (u.polynomial 1).coeff 0 = a₁ := rfl
-      have h1 : (u.polynomial 1).coeff (Fin.last (u.polynomial 1).degree) = c₁ := rfl
-      rw [h0, h1]; dsimp [u, κ]; cases ε <;> simp [b2_divCol1]
-    have hsum : ∑ m, κ ^ m.val * (u.polynomial 0).coeff m = κ ^ 0 * a₀ + κ ^ 1 * b₀ :=
-      Fin.sum_univ_two fun m ↦ κ ^ m.val * (u.polynomial 0).coeff m
-    rw [hκ, hsum]
-    fin_cases l
-    · exact hh.1
-    · exact hh.2
-  · rw [coeff_mutatedPolynomial_self]; fin_cases l <;> rfl
+  refine b2_mutation_eq 1 0 (mkB2_exchange ε) (mkB2_exchange (!ε)) (by simp) ?_ fun l ↦ ?_
+  · refine ExchangePolynomial.ext (by simp) fun m ↦ ?_
+    have hm : m.val < 3 := by simpa using m.isLt
+    rcases m with ⟨_ | _ | _ | m, _⟩ <;> simp at hm
+    all_goals first | omega | simp [Fin.rev]
+  · dsimp only
+    rw [((mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).polynomial 0).sum_of_degree_eq (n := 1) (by simp),
+      Fin.sum_univ_two]
+    have hl : l.val < 2 := by simpa using l.isLt
+    rcases l with ⟨_ | _ | l, _⟩ <;> cases ε <;> simp_all [Fin.last]
 
 /-- Six-step periodicity in type `B₂`/`C₂` with degrees `(1, 2)` over `ℚ≥0`: for
 `B = !![0, 2; -1, 0]`, `H₀(T) = (1 + 2T)/3`, and `H₁(T) = (1 + 4T + 3T²)/8`, six alternating
@@ -729,17 +732,22 @@ example :
         fun i k ↦ by fin_cases i <;> fin_cases k <;> decide⟩
     d.mutationWord c [0, 1, 0, 1, 0, 1] = d := by
   intro c H₀ H₁ d
-  set s₀ := mkB2 true (1 / 3) (2 / 3) (1 / 8) (4 / 8) (3 / 8)
-  change s₀.mutationWord b2Sys [0, 1, 0, 1, 0, 1] = s₀
+  set s₀ := mkB2 true (1 / 3) (2 / 3) (1 / 8) (4 / 8) (3 / 8) with hs₀
+  have hd₀ : d = s₀ := by
+    rw [hs₀]; ext : 1; · ext i j : 2 <;> simp [d, b2Exch]
+    rw [funext_iff, Fin.forall_fin_two]
+    exact ⟨ExchangePolynomial.ext rfl fun l ↦ by fin_cases l <;> rfl,
+      ExchangePolynomial.ext rfl fun l ↦ by fin_cases l <;> rfl⟩
+  rw [hd₀, show c = b2Sys from rfl]
   have hd : s₀.IsNormalized b2Sys := by
-    rw [isNormalized_iff, Fin.forall_fin_two]
-    refine ⟨?_, ?_⟩
+    rw [hs₀, isNormalized_iff, Fin.forall_fin_two]; refine ⟨?_, ?_⟩
     · rw [CoefficientSystem.isNormalized_ofSemifield_iff,
-        show ∑ l, (s₀.polynomial 0).coeff l = (1 / 3 : ℚ≥0) + 2 / 3 from
-          Fin.sum_univ_two fun l ↦ (s₀.polynomial 0).coeff l]; norm_num
+        ((mkB2 true _ _ _ _ _).polynomial 0).sum_of_degree_eq (n := 1) (by simp), Fin.sum_univ_two]
+      simp; norm_num
     · rw [CoefficientSystem.isNormalized_ofSemifield_iff,
-        show ∑ l, (s₀.polynomial 1).coeff l = (1 / 8 : ℚ≥0) + 4 / 8 + 3 / 8 from
-          Fin.sum_univ_three fun l ↦ (s₀.polynomial 1).coeff l]; norm_num
+        ((mkB2 true _ _ _ _ _).polynomial 1).sum_of_degree_eq (n := 2) (by simp),
+        Fin.sum_univ_three]
+      simp; norm_num
   set s₁ := mkB2 false (2 / 3) (1 / 3) (3 / 15) (8 / 15) (4 / 15)
   set s₂ := mkB2 true (15 / 17) (2 / 17) (4 / 15) (8 / 15) (3 / 15)
   set mid := mkB2 false (2 / 17) (15 / 17) (289 / 360) (68 / 360) (3 / 360)

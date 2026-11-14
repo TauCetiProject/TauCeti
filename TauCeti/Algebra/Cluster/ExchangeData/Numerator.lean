@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Cluster.ExchangeData.Basic
 public import TauCeti.Algebra.MvPolynomial.Laurent.Basic
 
-import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -244,19 +243,10 @@ theorem exchangeNumerator_eq_sum_single {R : Type*} [CommSemiring R] [Finite I]
 theorem exchangeNumerator_mutation_self {R : Type*} [CommSemiring R] [Finite I] [DecidableEq I]
     [DecidableEq K] (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) (k : K) :
     (d.mutation c k).exchangeNumerator c k = d.exchangeNumerator c k := by
-  rw [exchangeNumerator_def, exchangeNumerator_def]
-  let e : Fin (((d.mutation c k).polynomial k).degree + 1) ≃ Fin ((d.polynomial k).degree + 1) :=
-    (finCongr (by simp)).trans Fin.revPerm
-  rw [← Equiv.sum_comp e]
-  refine Finset.sum_congr rfl fun l _ ↦ ?_
-  have hcoeff : ((d.mutation c k).polynomial k).coeff l = (d.polynomial k).coeff (e l) := by
-    rw [ExchangePolynomial.coeff_eq_of_eq (congrFun (d.mutation_polynomial c k) k) l,
-      coeff_mutatedPolynomial_self]; rfl
-  have hdeg : ((d.mutation c k).polynomial k).degree = (d.polynomial k).degree := by simp
-  have hval : (e l).val = (d.polynomial k).degree - l.val := by simp [e, Fin.val_rev]
-  rw [hcoeff, posMonomial_mutation_self, negMonomial_mutation_self,
-    show ((d.mutation c k).polynomial k).degree - l.val = (e l).val by omega,
-    show (d.polynomial k).degree - (e l).val = l.val by omega, mul_comm]
+  rw [exchangeNumerator_def, exchangeNumerator_def, mutation_polynomial, mutatedPolynomial_self]
+  refine ExchangePolynomial.sum_congr_degree_rev (d.polynomial k).reverse_degree fun l ↦ ?_
+  have hl : l.val ≤ (d.polynomial k).degree := Nat.lt_succ_iff.mp (by simpa using l.isLt)
+  simp [Fin.val_rev, Nat.add_sub_add_right, Nat.sub_sub_self hl, mul_comm]
 
 /-- Embedding the formal exchange numerator into `LaurentRing R I` and multiplying by
 `(unitX (row k))⁻¹` produces `∑ l, single (d.exchangeExponent k l) (φ(h_{k,l}))`. -/
@@ -294,9 +284,8 @@ theorem exchangeNumerator_ne_zero_of_ne_zero {R : Type*} [CommSemiring R] [Nontr
     d.exchangeNumerator c k ≠ 0 := by
   classical
   intro hzero
-  have hc := d.coeff_rename_exchangeNumerator_mul_inv_unitX_of_ne_zero c hi 0
-  simp [hzero] at hc
-  exact ((d.polynomial k).isUnit_coeff_zero.map c.toScalar).ne_zero hc.symm
+  refine ((d.polynomial k).isUnit_coeff_zero.map c.toScalar).ne_zero ?_
+  simpa [hzero] using (d.coeff_rename_exchangeNumerator_mul_inv_unitX_of_ne_zero c hi 0).symm
 
 /-- On a zero column, the formal exchange numerator collapses to the scalar `H_k(1)`. -/
 theorem exchangeNumerator_of_column_eq_zero {R : Type*} [CommSemiring R] [Finite I]
@@ -325,14 +314,8 @@ theorem exchangeNumerator_of_binomial {R : Type*} [CommSemiring R] [Finite I]
     (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) {k : K} (y : 𝕂ˣ)
     (hk : d.polynomial k = ExchangePolynomial.binomial y) :
     d.exchangeNumerator c k = d.negMonomial R k + c.toScalar (y : 𝕂) • d.posMonomial R k := by
-  rw [exchangeNumerator_def]
-  let e : Fin ((d.polynomial k).degree + 1) ≃ Fin 2 := finCongr (by simp [hk])
-  rw [← Equiv.sum_comp e.symm, Fin.sum_univ_two]
-  have hc0 : (d.polynomial k).coeff (e.symm 0) = 1 := by
-    rw [ExchangePolynomial.coeff_eq_of_eq hk]; simp [e]
-  have hc1 : (d.polynomial k).coeff (e.symm 1) = (y : 𝕂) := by
-    rw [ExchangePolynomial.coeff_eq_of_eq hk]; simp [e]
-  rw [hc0, hc1]; simp [e, show (d.polynomial k).degree = 1 by simp [hk]]
+  rw [exchangeNumerator_def, (d.polynomial k).sum_of_degree_eq_one (by simp [hk])]
+  simp [ExchangePolynomial.coeff_eq_of_eq hk, hk]
 
 /-- For a binary exchange polynomial `1 + T`, the formal exchange numerator is `M_k^- + M_k^+`. -/
 theorem exchangeNumerator_of_binary {R : Type*} [CommSemiring R] [Finite I]
@@ -347,15 +330,8 @@ theorem exchangeNumerator_map {R : Type*} [CommSemiring R] [Finite I]
     {c : CoefficientSystem 𝕂 R} {c' : CoefficientSystem 𝕂' R} (f : c.Hom c')
     (d : ExchangeData 𝕂 row) (k : K) :
     (d.map f.toMonoidWithZeroHom).exchangeNumerator c' k = d.exchangeNumerator c k := by
-  rw [exchangeNumerator_eq_sum_single, exchangeNumerator_eq_sum_single]
-  let e : Fin (((d.map f.toMonoidWithZeroHom).polynomial k).degree + 1) ≃
-      Fin ((d.polynomial k).degree + 1) := finCongr (by simp)
-  rw [← Equiv.sum_comp e]
-  refine Finset.sum_congr rfl fun l _ ↦ ?_
-  have hc : ((d.map f.toMonoidWithZeroHom).polynomial k).coeff l =
-      f ((d.polynomial k).coeff (e l)) := by
-    rw [ExchangePolynomial.coeff_eq_of_eq (d.map_polynomial f.toMonoidWithZeroHom k) l]; simp [e]
-  simp [e, hc, f.toScalar_apply]
+  rw [exchangeNumerator_eq_sum_single, exchangeNumerator_eq_sum_single, map_polynomial]
+  exact ExchangePolynomial.sum_congr_degree (by simp) fun _ ↦ by simp
 
 end Numerator
 
