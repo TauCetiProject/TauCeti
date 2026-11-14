@@ -17,8 +17,9 @@ This file records that the underlying vector of this action is scalar multiplica
 Over a noncommutative normed ring, such as the quaternions, the natural scalar action on a
 coordinate space is often on the right. A right action of `𝕜` on `F` is an action of `𝕜ᵐᵒᵖ`,
 and when it multiplies norms, right multiplication by unit scalars preserves every sphere centred
-at zero. This file packages it as a continuous action of the opposite monoid
-`(sphere (0 : 𝕜) 1)ᵐᵒᵖ` on the sphere, the right-handed counterpart of Mathlib's action.
+at zero. This file packages it as an action of the opposite monoid `(sphere (0 : 𝕜) 1)ᵐᵒᵖ` on
+the sphere, the right-handed counterpart of Mathlib's action. The action on the sphere is
+continuous whenever the ambient action is, for example when `F` is a `𝕜ᵐᵒᵖ`-module.
 
 ## Main declarations
 
@@ -66,6 +67,12 @@ theorem coe_op_sphere_smul (c : (sphere (0 : 𝕜) 1)ᵐᵒᵖ) (x : sphere (0 :
     ((c • x : sphere (0 : F) r) : F) = (x : F) <• ((unop c : sphere (0 : 𝕜) 1) : 𝕜) :=
   (rfl)
 
+/-- The right action of unit scalars on a sphere centred at zero is continuous whenever the
+ambient action is. -/
+instance instContinuousSMulMulOpposite [ContinuousSMul 𝕜ᵐᵒᵖ F] :
+    ContinuousSMul (sphere (0 : 𝕜) 1)ᵐᵒᵖ (sphere (0 : F) r) :=
+  ⟨Continuous.subtype_mk (by fun_prop) _⟩
+
 end SMul
 
 /-- Unit scalars act on the right on every sphere centred at zero. -/
@@ -74,12 +81,6 @@ instance instMulActionMulOpposite [NormMulClass 𝕜] [NormOneClass 𝕜] [Semin
     MulAction (sphere (0 : 𝕜) 1)ᵐᵒᵖ (sphere (0 : F) r) where
   one_smul x := Subtype.ext <| by simp
   mul_smul c d x := Subtype.ext <| by simp [mul_smul]
-
-/-- The right action of unit scalars on a sphere centred at zero is continuous. -/
-instance instContinuousSMulMulOpposite [SeminormedAddCommGroup F] [Module 𝕜ᵐᵒᵖ F]
-    [NormSMulClass 𝕜ᵐᵒᵖ F] :
-    ContinuousSMul (sphere (0 : 𝕜) 1)ᵐᵒᵖ (sphere (0 : F) r) :=
-  ⟨Continuous.subtype_mk (by fun_prop) _⟩
 
 end RightAction
 
