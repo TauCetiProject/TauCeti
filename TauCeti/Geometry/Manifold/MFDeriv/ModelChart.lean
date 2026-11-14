@@ -45,8 +45,8 @@ open set.
 * `TauCeti.exists_hasFDerivAt_symm_trans_of_mem_atlas`: the same when the first chart is in the
   atlas, which avoids needing `IsManifold` to know that it lies in the maximal atlas; it rests on
   `TauCeti.contDiffAt_of_mem_contDiffGroupoid`.
-* `TauCeti.fderiv_symm_trans_comp_eq`: the chain rule for transitions between charts of the
-  maximal atlas, read through the preferred chart.
+* `TauCeti.fderiv_symm_trans_comp_eq`: the chain rule for transitions between open partial
+  homeomorphisms into the model space, read through the preferred chart.
 * `TauCeti.trans_mem_maximalAtlas_of_contDiffAt`: a chart of the `C^n` maximal atlas followed by a
   `C^n` chart of the model space with `C^n` inverse is again in the maximal atlas.
 * `TauCeti.mfderiv_eq_zero_iff_of_eqOn`: on the source of `e`, the differential of `f` vanishes at
@@ -167,38 +167,27 @@ theorem contDiffOn_symm_trans_of_mem_maximalAtlas {q' : OpenPartialHomeomorph M 
     ContDiffOn 𝕜 n (q.symm.trans q') (q.symm.trans q').source := fun _ hz ↦
   (contDiffAt_symm_trans_of_mem_maximalAtlas hq hq' hz).contDiffWithinAt
 
-/-- **Chain rule for chart transitions.** Read through the preferred chart at `y`, the derivative
-at `q y` of the transition `e ∘ q⁻¹` between two charts of the maximal atlas, composed with the
-derivative `A` of the transition to `q`, is the derivative `B` of the transition to `e`. -/
+/-- **Chain rule for chart transitions.** Let `q` and `e` be open partial homeomorphisms from `M`
+to `E` with `y` in the source of `q`, and read them through the preferred chart at `y`: if the
+transition to `q` has an invertible derivative `A` at `chartAt E y y` and the transition to `e` has
+a derivative `B` there, then the derivative at `q y` of the transition `e ∘ q⁻¹`, composed with
+`A`, is `B`. -/
 theorem fderiv_symm_trans_comp_eq {e : OpenPartialHomeomorph M E} {y : M}
-    (hy : y ∈ q.source) {A B : E ≃L[𝕜] E}
+    (hy : y ∈ q.source) {A : E ≃L[𝕜] E} {B : E →L[𝕜] E}
     (hA : HasFDerivAt ((chartAt E y).symm.trans q) (A : E →L[𝕜] E) (chartAt E y y))
-    (hB : HasFDerivAt ((chartAt E y).symm.trans e) (B : E →L[𝕜] E) (chartAt E y y)) :
+    (hB : HasFDerivAt ((chartAt E y).symm.trans e) B (chartAt E y y)) :
     fderiv 𝕜 (q.symm.trans e) (q y) ∘L (A : E →L[𝕜] E) = B := by
-  have hqy : q y ∈ q.target := q.map_source hy
-  have hgy : chartAt E y (q.symm (q y)) = chartAt E y y := by rw [q.left_inv hy]
-  set g : E → E := fun z ↦ chartAt E y (q.symm z) with hg
-  -- The inverse of the transition to `q` is differentiable at `q y`, with derivative `A⁻¹`.
-  have hgc : ContinuousAt g (q y) :=
-    ((chartAt E y).continuousAt (mem_chart_source E y)).comp_of_eq
-      (q.continuousAt_symm hqy) (q.left_inv hy)
-  have hnear : ∀ᶠ z in 𝓝 (q y), q.symm z ∈ (chartAt E y).source :=
-    (q.continuousAt_symm hqy).preimage_mem_nhds (by
-      rw [q.left_inv hy]; exact (chartAt E y).open_source.mem_nhds (mem_chart_source E y))
-  have htgt : ∀ᶠ z in 𝓝 (q y), z ∈ q.target := q.open_target.mem_nhds hqy
-  have hfg : ∀ᶠ z in 𝓝 (q y), ((chartAt E y).symm.trans q) (g z) = z := by
-    filter_upwards [hnear, htgt] with z hz hzt
-    simp only [hg, OpenPartialHomeomorph.trans_apply, (chartAt E y).left_inv hz, q.right_inv hzt]
-  have hf : HasFDerivAt ((chartAt E y).symm.trans q) (A : E →L[𝕜] E) (g (q y)) := by
-    simpa only [hg, hgy] using hA
-  have hg' := HasFDerivAt.of_local_left_inverse hgc hf hfg
-  have hB' : HasFDerivAt ((chartAt E y).symm.trans e) (B : E →L[𝕜] E) (g (q y)) := by
-    simpa only [hg, hgy] using hB
-  have htot := (hB'.comp (q y) hg').congr_of_eventuallyEq (f₁ := q.symm.trans e) (by
-    filter_upwards [hnear] with z hz
-    simp only [Function.comp_apply, hg, OpenPartialHomeomorph.trans_apply,
-      (chartAt E y).left_inv hz])
-  rw [htot.fderiv]
+  set τ := (chartAt E y).symm.trans q
+  have hqy : q y ∈ τ.target := by simp [τ, q.map_source hy, q.left_inv hy]
+  have hτy : τ.symm (q y) = chartAt E y y := by simp [τ, q.left_inv hy]
+  have hτ := τ.hasFDerivAt_symm hqy (by rwa [hτy])
+  rw [← hτy] at hB
+  -- Near `q y`, the transition `e ∘ q⁻¹` is the transition to `e` after the inverse of `τ`.
+  have hτe := (hB.comp (q y) hτ).congr_of_eventuallyEq (f₁ := q.symm.trans e) <| by
+    filter_upwards [τ.open_target.mem_nhds hqy] with z hz
+    have hz' : q.symm z ∈ (chartAt E y).source := by simpa [τ] using hz.2
+    simp [τ, (chartAt E y).left_inv hz']
+  rw [hτe.fderiv]
   ext v
   simp
 
