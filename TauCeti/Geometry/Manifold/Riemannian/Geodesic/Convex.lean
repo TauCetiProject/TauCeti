@@ -6,17 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-public import Mathlib.Geometry.Manifold.Instances.Icc
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Distance
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Convex.Deriv
-import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Uniqueness
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment
-import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Reparametrization
 import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
@@ -26,9 +25,10 @@ import TauCeti.Topology.VectorBundle.Riemannian.Basic
 A subset `U` of a Riemannian manifold `M` is *strongly geodesically convex*
 (`TauCeti.Manifold.IsStronglyGeodesicallyConvex`) if every pair of points `x, y ∈ U` is joined by a
 minimizing geodesic segment on `[0, 1]` whose image lies in `U` and which is unique among **all**
-minimizing geodesics between `x` and `y` in `M`. It is *uniformly normal*
-(`TauCeti.Manifold.IsUniformlyNormal`) if each point `q ∈ U` admits a positive normal radius `r`
-such that `U` lies in the normal ball `exp_q '' B(0, r)`.
+minimizing geodesics between `x` and `y` in `M`. Recall from
+`TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform` that `U` is *uniformly normal*
+(`TauCeti.Manifold.IsUniformlyNormal`) if there exists a single positive radius `r` such that at
+every `q ∈ U`, the tangent ball `B(0, r)` is a normal domain whose exponential image contains `U`.
 
 Following Whitehead's argument in the presentation of Lee (Lemma 6.16 and Theorem 6.17), this file
 proves that sufficiently small Riemannian balls around any point are both strongly geodesically
@@ -44,41 +44,44 @@ consequently uniform positive radii over any compact set:
    `t ↦ (edist p (γ t)).toReal ^ 2` has strictly positive second derivative and is therefore
    strictly convex.
 2. **Strong geodesic convexity of small balls**
-   (`exists_mem_nhds_isStronglyGeodesicallyConvex_eball`): for `p` near `p₀` and sufficiently small
-   `ε > 0`, any `x, y` in the ball of radius `ε` around `p` lie at distance `< 2 ε`, well within
-   the uniform normal radius `R` at `x`. Every minimizing geodesic in `M` from `x` to `y` stays
-   within distance `< 2 ε ≤ R` of `x` and so coincides with the radial geodesic
+   (`exists_isOpen_mem_isStronglyGeodesicallyConvex_eball`): for `p` near `p₀` and sufficiently
+   small `ε > 0`, any `x, y` in the ball of radius `ε` around `p` lie at distance `< 2 ε`, well
+   within the uniform normal radius `R` at `x`. Every minimizing geodesic in `M` from `x` to `y`
+   stays within distance `< 2 ε ≤ R` of `x` and so coincides with the radial geodesic
    `t ↦ exp_x (t • log_x y)`, while convexity of squared distance from `p` keeps that radial
    geodesic strictly inside the `ε`-ball.
-3. **Intersections and smooth contractions**: finite intersections preserve both uniform normality
-   and strong geodesic convexity. On any open set `W` enjoying both properties, the radial homotopy
-   `H(s, x) = exp_q (s • log_q x)` from a chosen centre `q ∈ W` is smooth on an open domain
-   containing `[0, 1] × W` and maps `[0, 1] × W` into `W`; reparametrizing time by
-   `Real.smoothTransition` yields a globally smooth contraction `ℝ × W → W` fixing `q`, together
-   with its cylinder restriction `W × [0, 1] → W` modelled on `I.prod (𝓡∂ 1)`.
+3. **Intersections and smooth contractions**: binary intersections and intersections of nonempty
+   families preserve both uniform normality (`IsUniformlyNormal.biInter`) and strong geodesic
+   convexity (`IsStronglyGeodesicallyConvex.inter`, `IsStronglyGeodesicallyConvex.iInter`,
+   `IsStronglyGeodesicallyConvex.biInter`). On any open set `W` enjoying both properties, the
+   radial homotopy `H(s, x) = exp_q (s • log_q x)` from a chosen center `q ∈ W` is smooth on an
+   open domain containing `[0, 1] × W` and maps `[0, 1] × W` into `W`; reparametrizing time by
+   `Real.smoothTransition` yields a globally smooth contraction `ℝ × W → W` fixing `q`
+   (`TauCeti.Manifold.geodesicOpenContract`).
 
-All results are developed over an extended metric space
+All metric results are developed over an extended metric space
 `[EMetricSpace M] [IsRiemannianManifold I M]` so that disconnected and empty manifolds are covered
 without assuming finite distances between components; specializations to `[MetricSpace M]` are
-provided alongside.
+provided alongside, while the raw radial homotopy and its domain/smoothness lemmas require only
+`[TopologicalSpace M]`.
 
 ## Main definitions and results
 
-* `TauCeti.Manifold.IsUniformlyNormal`: every point of a set has a normal tangent ball covering it;
-  monotone under inclusion (`IsUniformlyNormal.mono`) and closed under nonempty intersections.
 * `TauCeti.Manifold.IsStronglyGeodesicallyConvex`: unique globally minimizing geodesics in `M`
-  staying in `U`; closed under intersections (`IsStronglyGeodesicallyConvex.inter`,
+  staying in `U`; closed under binary intersections and intersections of nonempty families
+  (`IsStronglyGeodesicallyConvex.inter`, `IsStronglyGeodesicallyConvex.iInter`,
   `IsStronglyGeodesicallyConvex.biInter`) and implying path-connectedness when nonempty.
 * `TauCeti.Manifold.exists_isOpen_mem_strictConvexOn_toReal_edist_sq`: strict convexity of squared
   distance along nonconstant short geodesics (Lee, Lemma 6.16).
-* `TauCeti.Manifold.exists_mem_nhds_isStronglyGeodesicallyConvex_eball`,
+* `TauCeti.Manifold.exists_isOpen_mem_isStronglyGeodesicallyConvex_eball`,
   `TauCeti.Manifold.exists_pos_isStronglyGeodesicallyConvex_eball`, and
-  `IsCompact.exists_pos_isNormalDomain_and_isStronglyGeodesicallyConvex_eball`: locally uniform and
-  compact-set uniform normal and strong-convexity radii (Lee, Theorem 6.17).
-* `TauCeti.Manifold.radialGeodesicHomotopy`, `TauCeti.Manifold.radialGeodesicHomotopyDomain`,
-  `TauCeti.Manifold.geodesicOpenContract`, and `TauCeti.Manifold.geodesicOpenCylinderContract`:
-  the raw radial geodesic contraction on its natural open domain, its `Real.smoothTransition`
-  reparametrization on an open submanifold, and its cylinder restriction on `W × [0, 1]`.
+  `IsCompact.exists_pos_isNormalDomain_and_isStronglyGeodesicallyConvex_eball` (along with their
+  `Metric.ball` counterparts): locally uniform and compact-set uniform normal and strong-convexity
+  radii (Lee, Theorem 6.17).
+* `TauCeti.Manifold.radialGeodesicHomotopy`, `TauCeti.Manifold.radialGeodesicHomotopyDomain`, and
+  `TauCeti.Manifold.geodesicOpenContract`: the raw radial geodesic contraction on its natural open
+  domain and its `Real.smoothTransition` reparametrization on a strongly geodesically convex open
+  submanifold.
 
 ## References
 
@@ -100,86 +103,6 @@ variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
 
-/-! ### Uniformly normal subsets -/
-
-section UniformlyNormal
-
-variable
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-
-variable (I) in
-/-- A subset `U` of a Riemannian manifold is *uniformly normal* if every point `q ∈ U` admits a
-normal tangent ball `B(0, r)` of positive radius whose exponential image contains `U`. Note that
-`r` may depend on `q`, so this property passes to arbitrary subsets. -/
-def IsUniformlyNormal (U : Set M) : Prop :=
-  ∀ ⦃q⦄, q ∈ U → ∃ r > 0, IsNormalDomain I M q (Metric.ball 0 r) ∧
-    U ⊆ riemannianExp I M q '' Metric.ball 0 r
-
-theorem isUniformlyNormal_def {U : Set M} :
-    IsUniformlyNormal I U ↔
-      ∀ ⦃q⦄, q ∈ U → ∃ r > 0, IsNormalDomain I M q (Metric.ball 0 r) ∧
-        U ⊆ riemannianExp I M q '' Metric.ball 0 r := by
-  rw [IsUniformlyNormal]
-
-@[simp]
-theorem isUniformlyNormal_empty : IsUniformlyNormal I (∅ : Set M) := by
-  rw [isUniformlyNormal_def]
-  intro _ hq
-  exact hq.elim
-
-/-- Uniform normality passes to arbitrary subsets. -/
-theorem IsUniformlyNormal.mono {U V : Set M} (hU : IsUniformlyNormal I U) (hVU : V ⊆ U) :
-    IsUniformlyNormal I V := by
-  rw [isUniformlyNormal_def] at hU ⊢
-  intro q hq
-  obtain ⟨r, hr, hdom, hsub⟩ := hU (hVU hq)
-  exact ⟨r, hr, hdom, hVU.trans hsub⟩
-
-theorem IsUniformlyNormal.inter_left {U V : Set M} (hU : IsUniformlyNormal I U) :
-    IsUniformlyNormal I (U ∩ V) :=
-  hU.mono inter_subset_left
-
-theorem IsUniformlyNormal.inter_right {U V : Set M} (hV : IsUniformlyNormal I V) :
-    IsUniformlyNormal I (U ∩ V) :=
-  hV.mono inter_subset_right
-
-/-- Every nonempty intersection of uniformly normal sets is uniformly normal. -/
-theorem IsUniformlyNormal.biInter {ι : Type*} {s : Set ι} {U : ι → Set M} (hs : s.Nonempty)
-    (hU : ∀ i ∈ s, IsUniformlyNormal I (U i)) : IsUniformlyNormal I (⋂ i ∈ s, U i) :=
-  (hU hs.some hs.some_mem).mono (biInter_subset_of_mem hs.some_mem)
-
-/-- Chosen positive normal radius at a point `q` of a uniformly normal set `U`. -/
-def IsUniformlyNormal.normalRadius {U : Set M} (hU : IsUniformlyNormal I U) {q : M}
-    (hq : q ∈ U) : ℝ :=
-  (isUniformlyNormal_def.1 hU hq).choose
-
-theorem IsUniformlyNormal.normalRadius_pos {U : Set M} (hU : IsUniformlyNormal I U) {q : M}
-    (hq : q ∈ U) : 0 < hU.normalRadius hq :=
-  (isUniformlyNormal_def.1 hU hq).choose_spec.1
-
-theorem IsUniformlyNormal.isNormalDomain_ball {U : Set M} (hU : IsUniformlyNormal I U) {q : M}
-    (hq : q ∈ U) : IsNormalDomain I M q (Metric.ball 0 (hU.normalRadius hq)) :=
-  (isUniformlyNormal_def.1 hU hq).choose_spec.2.1
-
-theorem IsUniformlyNormal.subset_image_riemannianExp_ball {U : Set M}
-    (hU : IsUniformlyNormal I U) {q : M} (hq : q ∈ U) :
-    U ⊆ riemannianExp I M q '' Metric.ball 0 (hU.normalRadius hq) :=
-  (isUniformlyNormal_def.1 hU hq).choose_spec.2.2
-
-/-- Every point has an open uniformly normal neighbourhood. -/
-theorem exists_isOpen_mem_isUniformlyNormal [I.Boundaryless] [T2Space M] (p : M) :
-    ∃ W : Set M, IsOpen W ∧ p ∈ W ∧ IsUniformlyNormal I W := by
-  obtain ⟨r, hr, W, hW, hnorm⟩ := exists_mem_nhds_forall_isNormalDomain_ball (I := I) (M := M) p
-  refine ⟨interior W, isOpen_interior, mem_interior_iff_mem_nhds.2 hW, ?_⟩
-  rw [isUniformlyNormal_def]
-  intro q hq
-  obtain ⟨hqdom, hqsub⟩ := hnorm q (interior_subset hq)
-  exact ⟨r, hr, hqdom, interior_subset.trans hqsub⟩
-
-end UniformlyNormal
-
 /-! ### Strict convexity of squared radial distance along short geodesics -/
 
 section StrictConvexDistance
@@ -189,22 +112,6 @@ variable
   {M : Type*} [EMetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-
-/-- On a tube of uniformly normal balls of radius `R` over an open set `W₀`, the two-point
-squared logarithmic distance `(p, y) ↦ ‖log_p y‖²` is jointly smooth on `W₀ ×ˢ W₀` whenever
-`W₀` lies in every normal neighbourhood `exp_p '' B(0, R)`. -/
-private theorem contMDiffOn_norm_riemannianLog_sq {W₀ : Set M} {R : ℝ} (hW₀ : IsOpen W₀)
-    (hnorm : ∀ p ∈ W₀, IsNormalDomain I M p (Metric.ball 0 R) ∧
-      W₀ ⊆ riemannianExp I M p '' Metric.ball 0 R) :
-    ContMDiffOn (I.prod I) 𝓘(ℝ) ∞
-      (fun x : M × M ↦ ‖riemannianLog I M x.1 (Metric.ball 0 R) x.2‖ ^ 2) (W₀ ×ˢ W₀) := by
-  have hsq : ContMDiff I.tangent 𝓘(ℝ) ∞ (fun z : TangentBundle I M ↦ ‖z.2‖ ^ 2) := by
-    simpa only [real_inner_self_eq_norm_sq] using
-      (contMDiff_id (I := I.tangent) (n := ∞)).inner_bundle contMDiff_id
-  have hlog := contMDiffOn_totalSpaceMk_riemannianLog hW₀ fun q hq ↦ (hnorm q hq).1
-  refine (hsq.comp_contMDiffOn hlog).mono ?_
-  rintro ⟨p, y⟩ ⟨hp, hy⟩
-  exact ⟨hp, (hnorm p hp).2 hy⟩
 
 /-- Joint smoothness at `(((p₀, p₀), w₀), 0)` of `((p, q, w), τ) ↦ ‖log_p (exp_q (τ • v))‖²`
 with `v = e.symmL ℝ q w` in the preferred trivialization `e` at `p₀`. -/
@@ -247,8 +154,11 @@ private theorem contMDiffAt_norm_riemannianLog_sq_riemannianExp {p₀ : M} {W₀
       (fun u : ((M × M) × E) × ℝ ↦ u.1.1.1) pt :=
     contMDiffAt_fst.comp pt (contMDiffAt_fst.comp pt contMDiffAt_fst)
   have hpt : (p₀, riemannianExp I M p₀ ((0 : ℝ) • e.symmL ℝ p₀ w₀)) ∈ W₀ ×ˢ W₀ := by simp [hp₀]
-  exact ((contMDiffOn_norm_riemannianLog_sq hW₀ hnorm).contMDiffAt
-    ((hW₀.prod hW₀).mem_nhds hpt)).comp pt (hp_fst.prodMk hexp)
+  have hlog_sq : ContMDiffOn (I.prod I) 𝓘(ℝ) ∞
+      (fun x : M × M ↦ ‖riemannianLog I M x.1 (Metric.ball 0 R) x.2‖ ^ 2) (W₀ ×ˢ W₀) :=
+    (contMDiffOn_norm_riemannianLog_sq hW₀ fun p hp ↦ (hnorm p hp).1).mono
+      fun x hx ↦ ⟨hx.1, (hnorm x.1 hx.1).2 hx.2⟩
+  exact (hlog_sq.contMDiffAt ((hW₀.prod hW₀).mem_nhds hpt)).comp pt (hp_fst.prodMk hexp)
 
 /-- Along an exponential ray `τ ↦ exp_q (τ • v)` read through the preferred trivialization at `p₀`,
 the second `τ`-derivative at `0` of `(p, y) ↦ ‖log_p y‖²` varies continuously in `(p, q, w)` near
@@ -270,6 +180,7 @@ private theorem continuousAt_iteratedDeriv_two_riemannianLog_sq {p₀ : M} {W₀
   set F : (M × M) × E → ℝ → ℝ := fun z τ ↦
     ‖riemannianLog I M z.1.1 (Metric.ball 0 R)
       (riemannianExp I M z.1.2 (τ • e.symmL ℝ z.1.2 z.2))‖ ^ 2
+  -- Read `F` through product extended charts around `p₀` to reduce to `(E × E) × E`.
   set c := extChartAt I p₀
   let toM : ((E × E) × E) → (M × M) × E := fun x ↦ ((c.symm x.1.1, c.symm x.1.2), x.2)
   let fromM : (M × M) × E → (E × E) × E := fun z ↦ ((c z.1.1, c z.1.2), z.2)
@@ -289,18 +200,17 @@ private theorem continuousAt_iteratedDeriv_two_riemannianLog_sq {p₀ : M} {W₀
     exact ((htoM_x₀ ▸ hF).comp (x₀, 0)
       ((htoM.comp (x₀, 0) contDiffAt_fst.contMDiffAt).prodMk contDiffAt_snd.contMDiffAt)).of_le
         (by simp)
+  -- Apply parametric slice second-derivative continuity on `(E × E) × E` and pull back via `fromM`.
   have hcont_x : ContinuousAt (fun x ↦ iteratedDeriv 2 (fun τ ↦ g (x, τ)) 0) x₀ := by
-    have hfd : ContinuousAt (fun x ↦ fderiv ℝ (fderiv ℝ g) (x, 0) (0, 1) (0, 1)) x₀ :=
-      (((hg.continuousAt_fderiv_fderiv le_rfl).comp (x := x₀)
-        (continuousAt_id.prodMk continuousAt_const)).clm_apply continuousAt_const).clm_apply
-          continuousAt_const
-    refine hfd.congr_of_eventuallyEq ?_
-    filter_upwards [(continuousAt_id.prodMk continuousAt_const).eventually
-      (hg.eventually (by simp))] with x hgx
-    dsimp only [id] at hgx
-    rw [← TauCeti.fderiv_fderiv_slice_right_apply hgx 1 1,
-      TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv]
-    simp
+    have hfun : (fun x ↦ iteratedDeriv 2 (fun τ ↦ g (x, τ)) 0) =
+        fun x ↦ fderiv ℝ (fderiv ℝ (fun τ ↦ g (x, τ))) 0 1 1 := by
+      ext x
+      rw [TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv]
+      simp
+    have h1 : ContinuousAt (fun _ : (E × E) × E ↦ (1 : ℝ)) x₀ := continuousAt_const
+    rw [hfun]
+    exact (((TauCeti.contDiffAt_fderiv_fderiv_slice_right (n := 0)
+      (by simpa using hg)).continuousAt).clm_apply h1).clm_apply h1
   have hfromM : ContinuousAt fromM ((p₀, p₀), w₀) :=
     ((ContinuousAt.comp (x := ((p₀, p₀), w₀)) (continuousAt_extChartAt (I := I) p₀)
       (continuous_fst.comp continuous_fst).continuousAt).prodMk
@@ -330,32 +240,8 @@ private theorem iteratedDeriv_two_riemannianLog_sq_self {p₀ : M} {R : ℝ} (hR
     filter_upwards [hpre.mem_nhds (by simp [Metric.mem_ball_self hR])] with τ hτ
     rw [hdom₀.riemannianLog_riemannianExp hτ, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
   have hderiv_quad : iteratedDeriv 2 (fun τ : ℝ ↦ τ ^ 2 * ‖v₀‖ ^ 2) 0 = 2 * ‖v₀‖ ^ 2 := by
-    rw [iteratedDeriv_succ, iteratedDeriv_one]
-    have hd1 : deriv (fun τ : ℝ ↦ τ ^ 2 * ‖v₀‖ ^ 2) = fun τ : ℝ ↦ (2 * τ) * ‖v₀‖ ^ 2 :=
-      funext fun τ ↦ (((hasDerivAt_pow 2 τ).mul_const (‖v₀‖ ^ 2)).deriv).trans (by simp)
-    rw [hd1]
-    exact (((hasDerivAt_id (0 : ℝ)).const_mul 2).mul_const (‖v₀‖ ^ 2)).deriv.trans (by ring)
+    norm_num [iteratedDeriv_mul_const_field, iteratedDeriv_pow]
   exact (hev.iteratedDeriv_eq 2).trans hderiv_quad
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] in
-/-- Continuity at `((p₀, p₀), w)` of the squared fibre norm `z ↦ ‖e.symmL ℝ z.1.2 z.2‖²` read
-through the preferred trivialization `e` at `p₀`. -/
-private theorem continuousAt_norm_symmL_sq (p₀ : M) (w : E) :
-    let e := trivializationAt E (TangentSpace I) p₀
-    ContinuousAt (fun z : (M × M) × E ↦ ‖e.symmL ℝ z.1.2 z.2‖ ^ 2) ((p₀, p₀), w) := by
-  intro e
-  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
-  have hp₀e : p₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) p₀
-  have hbase : ContinuousAt (fun z : (M × M) × E ↦ z.1.2) ((p₀, p₀), w) :=
-    (continuous_snd.comp continuous_fst).continuousAt
-  have hsec : ContinuousAt (fun z : (M × M) × E ↦
-      (⟨z.1.2, e.symmL ℝ z.1.2 z.2⟩ : TangentBundle I M)) ((p₀, p₀), w) := by
-    refine (FiberBundle.continuousAt_totalSpace E _).2 ⟨hbase, ?_⟩
-    refine continuous_snd.continuousAt.congr_of_eventuallyEq ?_
-    filter_upwards [hbase.preimage_mem_nhds (e.open_baseSet.mem_nhds hp₀e)] with z hz
-    rw [e.symmL_apply hz, e.apply_mk_symm hz]
-  exact ((TauCeti.continuous_norm_bundle E (TangentSpace I)).continuousAt.comp hsec).pow 2
 
 /-- Compactness on the unit sphere in `E` yields an open neighbourhood `W ⊆ W₀` of `p₀` on which
 `‖e.symmL ℝ q u‖²` is bounded above by the second `τ`-derivative at `0` for all `u ∈ sphere 0 1`. -/
@@ -373,15 +259,16 @@ private theorem exists_isOpen_mem_le_iteratedDeriv_two_on_sphere {p₀ : M} {W�
               ‖riemannianLog I M p (Metric.ball 0 R)
                 (riemannianExp I M q (τ • e.symmL ℝ q u))‖ ^ 2) 0 := by
   intro e
+  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
   set Q : (M × M) × E → ℝ := fun z ↦
     iteratedDeriv 2
       (fun τ : ℝ ↦
         ‖riemannianLog I M z.1.1 (Metric.ball 0 R)
           (riemannianExp I M z.1.2 (τ • e.symmL ℝ z.1.2 z.2))‖ ^ 2) 0
   set N : (M × M) × E → ℝ := fun z ↦ ‖e.symmL ℝ z.1.2 z.2‖ ^ 2
-  have hopen_lt : ∀ w ∈ sphere (0 : E) 1,
-      ∃ U : Set (M × M), IsOpen U ∧ (p₀, p₀) ∈ U ∧ U ⊆ W₀ ×ˢ W₀ ∧
-        ∃ V : Set E, IsOpen V ∧ w ∈ V ∧ ∀ z ∈ U ×ˢ V, N z ≤ Q z := by
+  -- At `(p₀, p₀)` and unit `w`, `Q = 2 * N > N`, so continuity gives `N ≤ Q` near `((p₀, p₀), w)`.
+  have hev : ∀ w ∈ sphere (0 : E) 1, ∀ᶠ z : (M × M) × E in 𝓝 ((p₀, p₀), w), N z ≤ Q z := by
     intro w hw
     have hw_ne : w ≠ 0 := by
       rw [mem_sphere_zero_iff_norm] at hw
@@ -395,67 +282,35 @@ private theorem exists_isOpen_mem_le_iteratedDeriv_two_on_sphere {p₀ : M} {W�
       have hNpos : 0 < N ((p₀, p₀), w) := sq_pos_of_ne_zero (norm_ne_zero_iff.2 hv_ne)
       linarith
     have hcontQ := continuousAt_iteratedDeriv_two_riemannianLog_sq hW₀ hp₀ hnorm w
-    have hcontN := continuousAt_norm_symmL_sq (I := I) p₀ w
-    have hev : ∀ᶠ z in 𝓝 ((p₀, p₀), w), N z ≤ Q z :=
-      (tendsto_order.1 (hcontQ.sub hcontN)).1 0 (sub_pos.2 hpos) |>.mono fun _ hz ↦
-        (sub_pos.1 hz).le
-    obtain ⟨U₁, hU₁, V₁, hV₁, hUV⟩ := mem_nhds_prod_iff.1 hev
-    obtain ⟨U, hUU₁, hUopen, hp₀U⟩ := _root_.mem_nhds_iff.1
-      (inter_mem hU₁ ((hW₀.prod hW₀).mem_nhds ⟨hp₀, hp₀⟩))
-    obtain ⟨V, hVV₁, hVopen, hwV⟩ := _root_.mem_nhds_iff.1 hV₁
-    exact ⟨U, hUopen, hp₀U, fun _ hx ↦ (hUU₁ hx).2, V, hVopen, hwV,
-      fun _ hz ↦ hUV ⟨(hUU₁ hz.1).1, hVV₁ hz.2⟩⟩
-  choose! U_w hU_open hp₀U _ V_w hV_open hwV hNQ using hopen_lt
-  obtain ⟨s, hs_sub, hs_cov⟩ := (isCompact_sphere (0 : E) 1).elim_nhds_subcover V_w
-    fun w hw ↦ (hV_open w hw).mem_nhds (hwV w hw)
-  set U_all : Set (M × M) := (W₀ ×ˢ W₀) ∩ ⋂ w ∈ s, U_w w
-  have hU_all_open : IsOpen U_all :=
-    (hW₀.prod hW₀).inter (isOpen_biInter_finset fun w hw ↦ hU_open w (hs_sub w hw))
-  have hp₀_all : (p₀, p₀) ∈ U_all :=
-    ⟨⟨hp₀, hp₀⟩, mem_iInter₂.2 fun w hw ↦ hp₀U w (hs_sub w hw)⟩
-  obtain ⟨A₁, hA₁, A₂, hA₂, hAA⟩ := mem_nhds_prod_iff.1 (hU_all_open.mem_nhds hp₀_all)
+    have hcontN : ContinuousAt N ((p₀, p₀), w) :=
+      (e.continuousAt_norm_symmL (b := fun z : (M × M) × E ↦ z.1.2) (w := Prod.snd)
+        (x₀ := ((p₀, p₀), w)) (continuous_snd.comp continuous_fst).continuousAt
+        continuous_snd.continuousAt (hW₀_base hp₀)).pow 2
+    exact (tendsto_order.1 (hcontQ.sub hcontN)).1 0 (sub_pos.2 hpos) |>.mono fun _ hz ↦
+      (sub_pos.1 hz).le
+  -- By compactness of the unit sphere, upgrade the tube bound to a neighbourhood of `(p₀, p₀)`.
+  have hunif : ∀ᶠ pq in 𝓝 (p₀, p₀), ∀ u ∈ sphere (0 : E) 1, N (pq, u) ≤ Q (pq, u) :=
+    (isCompact_sphere (0 : E) 1).eventually_forall_of_forall_eventually
+      (P := fun pq u ↦ N (pq, u) ≤ Q (pq, u)) hev
+  obtain ⟨A₁, hA₁, A₂, hA₂, hAA⟩ := mem_nhds_prod_iff.1 hunif
   refine ⟨interior (A₁ ∩ A₂) ∩ W₀, isOpen_interior.inter hW₀,
     ⟨mem_interior_iff_mem_nhds.2 (inter_mem hA₁ hA₂), hp₀⟩, inter_subset_right,
-    fun p hp q hq u hu ↦ ?_⟩
-  obtain ⟨w₁, hw₁s, huV⟩ := mem_iUnion₂.1 (hs_cov hu)
-  have hpq_all : (p, q) ∈ U_all := hAA ⟨(interior_subset hp.1).1, (interior_subset hq.1).2⟩
-  exact hNQ w₁ (hs_sub w₁ hw₁s) ((p, q), u) ⟨(mem_iInter₂.1 hpq_all.2) w₁ hw₁s, huV⟩
+    fun p hp q hq u hu ↦ @hAA (p, q) ⟨(interior_subset hp.1).1, (interior_subset hq.1).2⟩ u hu⟩
 
+omit [I.Boundaryless] in
 /-- Quadratic homogeneity in the tangent vector of the second `τ`-derivative at `0` of
 `τ ↦ ‖log_p (exp_q (τ • v))‖²`. -/
-private theorem iteratedDeriv_two_riemannianLog_sq_smul {p q : M} {R : ℝ}
-    (hdom_p : IsNormalDomain I M p (Metric.ball 0 R))
-    (hq_mem : q ∈ riemannianExp I M p '' Metric.ball 0 R)
-    (c : ℝ) (u : TangentSpace I q) :
+private theorem iteratedDeriv_two_riemannianLog_sq_smul (p q : M) (R c : ℝ)
+    (u : TangentSpace I q) :
     iteratedDeriv 2
       (fun τ : ℝ ↦
         ‖riemannianLog I M p (Metric.ball 0 R) (riemannianExp I M q (τ • (c • u)))‖ ^ 2) 0 =
       c ^ 2 * iteratedDeriv 2
         (fun τ : ℝ ↦
           ‖riemannianLog I M p (Metric.ball 0 R) (riemannianExp I M q (τ • u))‖ ^ 2) 0 := by
-  let φ : ℝ → ℝ := fun τ ↦
-    ‖riemannianLog I M p (Metric.ball 0 R) (riemannianExp I M q (τ • u))‖ ^ 2
-  have hφ_smooth : ContDiffAt ℝ 2 φ 0 := by
-    have hexp_u := contMDiffAt_riemannianExp_smul_zero (I := I) (M := M) q u
-    have hF_q : ContMDiffAt I 𝓘(ℝ) ∞
-        (fun y : M ↦ ‖riemannianLog I M p (Metric.ball 0 R) y‖ ^ 2) q :=
-      ((contDiff_norm_sq ℝ).contMDiff.comp_contMDiffOn
-        hdom_p.contMDiffOn_riemannianLog).contMDiffAt (hdom_p.isOpen_image.mem_nhds hq_mem)
-    have hexp0 : riemannianExp I M q ((0 : ℝ) • u) = q := by simp
-    rw [← contMDiffAt_iff_contDiffAt]
-    exact ((hexp0 ▸ hF_q).comp 0 hexp_u).of_le (by simp)
-  have hcomp := TauCeti.iteratedDeriv_two_comp (f := φ) (γ := fun τ : ℝ ↦ c * τ) (t := 0)
-    (by simpa using hφ_smooth) (contDiffAt_const.mul contDiffAt_id)
-  have hd1 : deriv (fun τ : ℝ ↦ c * τ) 0 = c := by simp
-  have hd2 : iteratedDeriv 2 (fun τ : ℝ ↦ c * τ) 0 = 0 := by
-    rw [iteratedDeriv_succ, iteratedDeriv_one]
-    have hc_fn : deriv (fun τ : ℝ ↦ c * τ) = fun _ ↦ c := funext fun _ ↦ by simp
-    simp [hc_fn]
-  have hfun : (fun τ : ℝ ↦
-      ‖riemannianLog I M p (Metric.ball 0 R) (riemannianExp I M q (τ • (c • u)))‖ ^ 2) =
-      φ ∘ fun τ : ℝ ↦ c * τ := funext fun _ ↦ by simp [φ, smul_smul, mul_comm]
-  rw [hfun, hcomp, hd1, hd2, mul_zero, map_zero, add_zero,
-    TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv, smul_eq_mul, ← sq]
+  simpa [smul_smul, mul_comm c] using
+    congrFun (TauCeti.iteratedDeriv_comp_mul_left 2 c fun τ : ℝ ↦
+      ‖riemannianLog I M p (Metric.ball 0 R) (riemannianExp I M q (τ • u))‖ ^ 2) 0
 
 /-- Lower bound on the second derivative of squared logarithmic distance along exponential rays
 near a point `p₀`: there is an open neighbourhood `W` of `p₀` such that for all `p, q ∈ W` and
@@ -502,8 +357,7 @@ private theorem exists_isOpen_mem_le_iteratedDeriv_two_riemannianLog_sq (p₀ : 
       simp [u, smul_smul, mul_inv_cancel₀ hc.ne']
     have hnorm_eq : ‖v‖ ^ 2 = c ^ 2 * ‖e.symmL ℝ q u‖ ^ 2 := by
       simp [hv_eq, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
-    rw [hv_eq, iteratedDeriv_two_riemannianLog_sq_smul (hnorm p (hWW₀ hp)).1
-      ((hnorm p (hWW₀ hp)).2 (hWW₀ hq)) c (e.symmL ℝ q u), ← hv_eq, hnorm_eq]
+    rw [hv_eq, iteratedDeriv_two_riemannianLog_sq_smul p q R c (e.symmL ℝ q u), ← hv_eq, hnorm_eq]
     exact mul_le_mul_of_nonneg_left (hsphere p hp q hq u hu_sphere) (sq_nonneg c)
 
 variable [IsRiemannianManifold I M]
@@ -537,7 +391,7 @@ private theorem strictConvexOn_norm_riemannianLog_sq_comp_geodesic {W : Set M} {
           hlen0.le
     exact hne (edist_eq_zero.1 hed0).symm
   have hcont : ContinuousOn (f ∘ γ) (Icc a b) :=
-    ((contDiff_norm_sq ℝ (n := 0)).continuous.comp_continuousOn
+    ((continuous_norm.pow 2).comp_continuousOn
       hdom_p.continuousOn_riemannianLog).comp hγ.continuousOn fun t ht ↦ hW_sub (hγW ht)
   refine strictConvexOn_of_deriv2_pos (convex_Icc a b) hcont ?_
   rw [interior_Icc]
@@ -592,11 +446,8 @@ theorem exists_isOpen_mem_strictConvexOn_toReal_edist_sq (p₀ : M) :
       have hmem : γ t ∈ riemannianExp I M p '' Metric.ball 0 R := (hnorm p hp).2 (hγW ht)
       simp only [Function.comp_apply, f, hdom_p.edist_eq_enorm_riemannianLog_of_mem_ball
         subset_rfl hmem, toReal_eNorm]
-    have hstrict := strictConvexOn_norm_riemannianLog_sq_comp_geodesic hdom_p (hnorm p hp).2
-      (hderiv2 p hp) hab hγ hγW hnonconst
-    refine ⟨convex_Icc a b, fun x hx y hy hxy α β hα hβ hαβ ↦ ?_⟩
-    rw [hf_eq ((convex_Icc a b) hx hy hα.le hβ.le hαβ), hf_eq hx, hf_eq hy]
-    exact hstrict.2 hx hy hxy hα hβ hαβ
+    exact (strictConvexOn_norm_riemannianLog_sq_comp_geodesic hdom_p (hnorm p hp).2
+      (hderiv2 p hp) hab hγ hγW hnonconst).congr hf_eq.symm
 
 end StrictConvexDistance
 
@@ -628,12 +479,12 @@ end StrictConvexMetricSpace
 
 /-! ### Strong geodesic convexity and Whitehead–Lee Theorem 6.17 -/
 
-section StronglyGeodesicallyConvex
+section StronglyGeodesicallyConvexBasic
 
 variable
-  {M : Type*} [EMetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {M : Type*} [EMetricSpace M] [ChartedSpace H M] [IsManifold I 2 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 variable (I) in
 /-- A subset `U` of a Riemannian manifold `M` is *strongly geodesically convex* if every pair of
@@ -677,34 +528,39 @@ theorem IsStronglyGeodesicallyConvex.isConnected {U : Set M}
     (hU : IsStronglyGeodesicallyConvex I U) (hne : U.Nonempty) : IsConnected U :=
   (hU.isPathConnected hne).isConnected
 
+/-- The intersection of any nonempty indexed family of strongly geodesically convex sets is
+strongly geodesically convex: global uniqueness forces the minimizing geodesic in one member to
+coincide with the minimizing geodesic in every other member. -/
+theorem IsStronglyGeodesicallyConvex.iInter {ι : Sort*} [Nonempty ι] {U : ι → Set M}
+    (hU : ∀ i, IsStronglyGeodesicallyConvex I (U i)) :
+    IsStronglyGeodesicallyConvex I (⋂ i, U i) := by
+  rw [isStronglyGeodesicallyConvex_def]
+  intro x hx y hy
+  let i₀ : ι := Classical.arbitrary ι
+  obtain ⟨γ₀, hγ₀, h0₀, h1₀, hlen₀, -, huniq₀⟩ :=
+    isStronglyGeodesicallyConvex_def.1 (hU i₀) (mem_iInter.1 hx i₀) (mem_iInter.1 hy i₀)
+  refine ⟨γ₀, hγ₀, h0₀, h1₀, hlen₀, fun t ht ↦ mem_iInter.2 fun i ↦ ?_, huniq₀⟩
+  obtain ⟨γᵢ, hγᵢ, h0ᵢ, h1ᵢ, hlenᵢ, hmapsᵢ, -⟩ :=
+    isStronglyGeodesicallyConvex_def.1 (hU i) (mem_iInter.1 hx i) (mem_iInter.1 hy i)
+  exact huniq₀ hγᵢ h0ᵢ h1ᵢ hlenᵢ.le ht ▸ hmapsᵢ ht
+
 /-- The intersection of two strongly geodesically convex sets is strongly geodesically convex:
 global uniqueness forces the minimizing geodesic in `U` and the minimizing geodesic in `V` between
 two points of `U ∩ V` to coincide. -/
 theorem IsStronglyGeodesicallyConvex.inter {U V : Set M}
     (hU : IsStronglyGeodesicallyConvex I U) (hV : IsStronglyGeodesicallyConvex I V) :
     IsStronglyGeodesicallyConvex I (U ∩ V) := by
-  rw [isStronglyGeodesicallyConvex_def] at hU hV ⊢
-  rintro x ⟨hxU, hxV⟩ y ⟨hyU, hyV⟩
-  obtain ⟨γU, hγU, h0U, h1U, hlenU, hmapsU, huniqU⟩ := hU hxU hyU
-  obtain ⟨γV, hγV, h0V, h1V, hlenV, hmapsV, -⟩ := hV hxV hyV
-  have heq : EqOn γV γU (Icc 0 1) := huniqU hγV h0V h1V hlenV.le
-  exact ⟨γU, hγU, h0U, h1U, hlenU, fun t ht ↦ ⟨hmapsU ht, heq ht ▸ hmapsV ht⟩, huniqU⟩
+  rw [inter_eq_iInter]
+  exact .iInter fun b ↦ by cases b <;> assumption
 
-/-- Every nonempty finite intersection of strongly geodesically convex sets is strongly
+/-- The intersection of any nonempty family of strongly geodesically convex sets is strongly
 geodesically convex. -/
-theorem IsStronglyGeodesicallyConvex.biInter {ι : Type*} {s : Finset ι} {U : ι → Set M}
+theorem IsStronglyGeodesicallyConvex.biInter {ι : Type*} {s : Set ι} {U : ι → Set M}
     (hs : s.Nonempty) (hU : ∀ i ∈ s, IsStronglyGeodesicallyConvex I (U i)) :
     IsStronglyGeodesicallyConvex I (⋂ i ∈ s, U i) := by
-  classical
-  induction hs using Finset.Nonempty.cons_induction with
-  | singleton i =>
-    simpa using hU i (Finset.mem_singleton_self i)
-  | cons i t hit _ ih =>
-    have hcons : (⋂ j ∈ Finset.cons i t hit, U j) = U i ∩ ⋂ j ∈ t, U j := by
-      simp [Finset.cons_eq_insert]
-    rw [hcons]
-    exact (hU i (Finset.mem_cons_self i t)).inter
-      (ih fun j hj ↦ hU j (Finset.mem_cons_of_mem hj))
+  have : Nonempty s := hs.to_subtype
+  rw [biInter_eq_iInter]
+  exact .iInter fun i ↦ hU i.1 i.2
 
 /-- Any two points of a strongly geodesically convex set lie at finite Riemannian distance. -/
 theorem IsStronglyGeodesicallyConvex.edist_ne_top {U : Set M}
@@ -715,9 +571,16 @@ theorem IsStronglyGeodesicallyConvex.edist_ne_top {U : Set M}
     (right_mem_Icc.2 zero_le_one) (left_mem_Icc.2 zero_le_one), ← ofReal_norm]
   exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top ENNReal.ofReal_ne_top
 
-variable [I.Boundaryless]
+end StronglyGeodesicallyConvexBasic
 
-variable [IsRiemannianManifold I M]
+section StronglyGeodesicallyConvex
+
+variable
+  [I.Boundaryless]
+  {M : Type*} [EMetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsRiemannianManifold I M]
 
 /-- If `U` is strongly geodesically convex and contained in the normal ball `exp_q '' B(0, r)`
 around `q ∈ U`, then for every `x ∈ U` the radial geodesic segment
@@ -728,43 +591,17 @@ theorem IsStronglyGeodesicallyConvex.mapsTo_riemannianExp_smul_riemannianLog {U 
     (hsub : U ⊆ riemannianExp I M q '' Metric.ball 0 r) {x : M} (hx : x ∈ U) :
     MapsTo (fun t : ℝ ↦ riemannianExp I M q (t • riemannianLog I M q (Metric.ball 0 r) x))
       (Icc 0 1) U := by
-  set v := riemannianLog I M q (Metric.ball 0 r) x
-  have hv : v ∈ Metric.ball (0 : TangentSpace I q) r := riemannianLog_mem (hsub hx)
-  have hIcc_sub : Icc (0 : ℝ) 1 ⊆ geodesicInterval I M q v := fun _ ht ↦
-    hq.mem_geodesicInterval hv ht.1 ht.2
-  have hgeo_rad : IsGeodesicCurveOn I (fun t : ℝ ↦ riemannianExp I M q (t • v)) (Icc 0 1) :=
-    ((isGeodesicCurveOnFrom_maximalGeodesic q v).isGeodesicCurveOn.mono
-      (uniqueDiffOn_Icc zero_lt_one) hIcc_sub).congr fun t _ ↦ riemannianExp_smul q v t
-  have h0 : riemannianExp I M q ((0 : ℝ) • v) = q := by simp
-  have h1 : riemannianExp I M q ((1 : ℝ) • v) = x := by
-    simpa [v] using riemannianExp_riemannianLog (hsub hx)
-  have hlen : pathELength I (fun t : ℝ ↦ riemannianExp I M q (t • v)) 0 1 = edist q x := by
-    rw [hq.pathELength_riemannianExp_smul_eq_edist_of_mem_ball subset_rfl hv,
-      riemannianExp_riemannianLog (hsub hx)]
+  have hgeo := hq.isGeodesicCurveOn_riemannianExp_smul_Icc (riemannianLog_mem (hsub hx))
+  have h0 : riemannianExp I M q ((0 : ℝ) • riemannianLog I M q (Metric.ball 0 r) x) = q := by simp
+  have h1 : riemannianExp I M q ((1 : ℝ) • riemannianLog I M q (Metric.ball 0 r) x) = x := by
+    simpa using riemannianExp_riemannianLog (hsub hx)
+  have hlen := hq.pathELength_riemannianExp_smul_riemannianLog_of_mem_ball subset_rfl (hsub hx)
   obtain ⟨γ, -, -, -, -, hmaps, huniq⟩ := isStronglyGeodesicallyConvex_def.1 hU hqU hx
-  have heq := huniq hgeo_rad h0 h1 hlen.le
-  exact fun t ht ↦ (heq ht).symm ▸ hmaps ht
-
-/-- On a strongly geodesically convex open set `U` whose points all have normal tangent ball
-`B(0, r)` covering `U`, the two-endpoint geodesic segment map `(x, y, t) ↦ exp_x (t • log_x y)`
-is smooth on `(U ×ˢ U) ×ˢ Icc 0 1` and maps `(U ×ˢ U) ×ˢ Icc 0 1` into `U`. -/
-theorem IsStronglyGeodesicallyConvex.contMDiffOn_and_mapsTo_segment {U : Set M} {r : ℝ}
-    (hUo : IsOpen U) (hU : IsStronglyGeodesicallyConvex I U)
-    (hnorm : ∀ x ∈ U, IsNormalDomain I M x (Metric.ball 0 r) ∧
-      U ⊆ riemannianExp I M x '' Metric.ball 0 r) :
-    ContMDiffOn ((I.prod I).prod 𝓘(ℝ)) I ∞
-      (fun p : (M × M) × ℝ ↦
-        riemannianExp I M p.1.1 (p.2 • riemannianLog I M p.1.1 (Metric.ball 0 r) p.1.2))
-      ((U ×ˢ U) ×ˢ Icc (0 : ℝ) 1) ∧
-      MapsTo
-        (fun p : (M × M) × ℝ ↦
-          riemannianExp I M p.1.1 (p.2 • riemannianLog I M p.1.1 (Metric.ball 0 r) p.1.2))
-        ((U ×ˢ U) ×ˢ Icc (0 : ℝ) 1) U := by
-  refine ⟨(contMDiffOn_riemannianExp_smul_riemannianLog hUo fun q hq ↦ (hnorm q hq).1).mono ?_, ?_⟩
-  · rintro ⟨⟨x, y⟩, t⟩ ⟨⟨hx, hy⟩, ht⟩
-    exact ⟨⟨hx, (hnorm x hx).2 hy⟩, ht⟩
-  · rintro ⟨⟨x, y⟩, t⟩ ⟨⟨hx, hy⟩, ht⟩
-    exact hU.mapsTo_riemannianExp_smul_riemannianLog hx (hnorm x hx).1 (hnorm x hx).2 hy ht
+  intro t ht
+  change riemannianExp I M q (t • riemannianLog I M q (Metric.ball 0 r) x) ∈ U
+  rw [show riemannianExp I M q (t • riemannianLog I M q (Metric.ball 0 r) x) = γ t from
+    huniq hgeo h0 h1 hlen.le ht]
+  exact hmaps ht
 
 omit [I.Boundaryless] [IsRiemannianManifold I M] in
 /-- Convexity of `(edist p (γ t)).toReal ^ 2` along `[0, 1]` keeps a geodesic segment `γ` with
@@ -785,26 +622,18 @@ private theorem mapsTo_eball_of_strictConvexOn_edist_sq {W₁ : Set M} {p : M} {
     rwa [hconst t ht]
   · push Not at hconst
     have hsc := hconv zero_lt_one hγ_geo hγ_W₁ hconst
+    have h0_sq : (edist p (γ 0)).toReal ^ 2 < ε ^ 2 :=
+      pow_lt_pow_left₀ (ENNReal.toReal_lt_of_lt_ofReal (mem_eball'.1 h0_mem))
+        ENNReal.toReal_nonneg two_ne_zero
+    have h1_sq : (edist p (γ 1)).toReal ^ 2 < ε ^ 2 :=
+      pow_lt_pow_left₀ (ENNReal.toReal_lt_of_lt_ofReal (mem_eball'.1 h1_mem))
+        ENNReal.toReal_nonneg two_ne_zero
     intro t ht
-    rcases eq_or_lt_of_le ht.1 with rfl | _
-    · exact h0_mem
-    rcases eq_or_lt_of_le ht.2 with rfl | ht1
-    · exact h1_mem
-    have hineq := hsc.convexOn.2 (left_mem_Icc.2 zero_le_one) (right_mem_Icc.2 zero_le_one)
-      (sub_nonneg.2 ht.2) ht.1 (by ring)
-    dsimp only [smul_eq_mul] at hineq
-    have ht_comb : (1 - t) * 0 + t * 1 = t := by ring
-    rw [ht_comb] at hineq
-    have h0_sq : (edist p (γ 0)).toReal ^ 2 < ε ^ 2 := by
-      have h := ENNReal.toReal_lt_of_lt_ofReal (mem_eball'.1 h0_mem)
-      nlinarith [ENNReal.toReal_nonneg (a := edist p (γ 0))]
-    have h1_sq : (edist p (γ 1)).toReal ^ 2 < ε ^ 2 := by
-      have h := ENNReal.toReal_lt_of_lt_ofReal (mem_eball'.1 h1_mem)
-      nlinarith [ENNReal.toReal_nonneg (a := edist p (γ 1))]
-    have ht_sq : (edist p (γ t)).toReal ^ 2 < ε ^ 2 := by
-      nlinarith [sub_pos.2 ht1]
-    have ht_lt : (edist p (γ t)).toReal < ε := lt_of_pow_lt_pow_left₀ 2 hε0.le ht_sq
-    exact mem_eball'.2 ((ENNReal.lt_ofReal_iff_toReal_lt (hfin t ht)).2 ht_lt)
+    have ht_sq : (edist p (γ t)).toReal ^ 2 < ε ^ 2 :=
+      ((hsc.convex_lt (ε ^ 2)).ordConnected.out
+        ⟨left_mem_Icc.2 zero_le_one, h0_sq⟩ ⟨right_mem_Icc.2 zero_le_one, h1_sq⟩ ht).2
+    exact mem_eball'.2 ((ENNReal.lt_ofReal_iff_toReal_lt (hfin t ht)).2
+      (lt_of_pow_lt_pow_left₀ 2 hε0.le ht_sq))
 
 /-- A radial exponential ray `t ↦ exp_x (t • v)` on `[0, 1]` starting at `x ∈ eball p (ofReal ε)`
 with `‖v‖ₑ < ofReal (2 * ε)` stays inside `eball p (ofReal (3 * ε))`. -/
@@ -825,6 +654,20 @@ private theorem mapsTo_riemannianExp_smul_eball_three_mul {p x : M} {ε : ℝ} (
     _ < ENNReal.ofReal ε + ENNReal.ofReal (2 * ε) := ENNReal.add_lt_add (mem_eball'.1 hx) hed_xt
     _ = ENNReal.ofReal (3 * ε) := by rw [← ENNReal.ofReal_add hε0.le (by positivity)]; ring_nf
 
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [ChartedSpace H M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsRiemannianManifold I M] in
+/-- Any two points of `eball p (ofReal ε)` lie at extended distance strictly less than `2 * ε`. -/
+private theorem edist_lt_two_mul_of_mem_eball {p x y : M} {ε : ℝ} (hε0 : 0 < ε)
+    (hx : x ∈ Metric.eball p (ENNReal.ofReal ε)) (hy : y ∈ Metric.eball p (ENNReal.ofReal ε)) :
+    edist x y < ENNReal.ofReal (2 * ε) :=
+  calc edist x y ≤ edist x p + edist p y := edist_triangle x p y
+    _ = edist p x + edist p y := by rw [edist_comm x p]
+    _ < ENNReal.ofReal ε + ENNReal.ofReal ε :=
+        ENNReal.add_lt_add (mem_eball'.1 hx) (mem_eball'.1 hy)
+    _ = ENNReal.ofReal (2 * ε) := by rw [← ENNReal.ofReal_add hε0.le hε0.le]; ring_nf
+
 /-- Core ball-convexity step of Lee Theorem 6.17: if `W₁` satisfies strict convexity of squared
 distance with normal radius `R`, and `eball p (ofReal (3 * ε)) ⊆ W₁` with `0 < ε` and `2 * ε ≤ R`,
 then `eball p (ofReal ε)` is strongly geodesically convex. -/
@@ -839,15 +682,11 @@ private theorem isStronglyGeodesicallyConvex_eball_of_strictConvex {W₁ : Set M
     IsStronglyGeodesicallyConvex I (Metric.eball p (ENNReal.ofReal ε)) := by
   rw [isStronglyGeodesicallyConvex_def]
   intro x hx y hy
+  -- 1. Existence: `x` and `y` have distance `< 2ε ≤ R`, giving the radial geodesic `γ` in `B_x(R)`.
   have hpW₁ : p ∈ W₁ := h3ε_W₁ (Metric.mem_eball_self (ENNReal.ofReal_pos.2 (by positivity)))
   have hxW₁ : x ∈ W₁ := h3ε_W₁ (Metric.eball_subset_eball (by gcongr; linarith) hx)
   have hdom_x := (hnorm₁ x hxW₁).1
-  have hed_xy : edist x y < ENNReal.ofReal (2 * ε) := by
-    calc edist x y ≤ edist x p + edist p y := edist_triangle x p y
-      _ = edist p x + edist p y := by rw [edist_comm x p]
-      _ < ENNReal.ofReal ε + ENNReal.ofReal ε :=
-          ENNReal.add_lt_add (mem_eball'.1 hx) (mem_eball'.1 hy)
-      _ = ENNReal.ofReal (2 * ε) := by rw [← ENNReal.ofReal_add hε0.le hε0.le]; ring_nf
+  have hed_xy : edist x y < ENNReal.ofReal (2 * ε) := edist_lt_two_mul_of_mem_eball hε0 hx hy
   have hed_xy_R : edist x y < ENNReal.ofReal R :=
     hed_xy.trans_le (ENNReal.ofReal_le_ofReal h2εR)
   have hy_exp : y ∈ riemannianExp I M x '' Metric.ball 0 R := by
@@ -859,18 +698,17 @@ private theorem isStronglyGeodesicallyConvex_eball_of_strictConvex {W₁ : Set M
     (hdom_x.edist_eq_enorm_riemannianLog_of_mem_ball subset_rfl hy_exp).symm
   let γ : ℝ → M := fun t ↦ riemannianExp I M x (t • v)
   have hγ_geo : IsGeodesicCurveOn I γ (Icc 0 1) :=
-    ((isGeodesicCurveOnFrom_maximalGeodesic x v).isGeodesicCurveOn.mono
-      (uniqueDiffOn_Icc zero_lt_one) fun _ ht ↦ hdom_x.mem_geodesicInterval hv_ball ht.1 ht.2
-    ).congr fun t _ ↦ riemannianExp_smul x v t
+    hdom_x.isGeodesicCurveOn_riemannianExp_smul_Icc hv_ball
   have hγ0 : γ 0 = x := by simp [γ]
   have hγ1 : γ 1 = y := by simpa [γ, v] using riemannianExp_riemannianLog hy_exp
-  have hγ_len : pathELength I γ 0 1 = edist x y := by
-    rw [hdom_x.pathELength_riemannianExp_smul_eq_edist_of_mem_ball subset_rfl hv_ball,
-      riemannianExp_riemannianLog hy_exp]
+  have hγ_len : pathELength I γ 0 1 = edist x y :=
+    hdom_x.pathELength_riemannianExp_smul_riemannianLog_of_mem_ball subset_rfl hy_exp
+  -- 2. Containment: `γ` stays in `eball p (3ε) ⊆ W₁`, so strict convexity keeps `γ` in `eball p ε`.
   have hγ_3ε := mapsTo_riemannianExp_smul_eball_three_mul (I := I) hε0 hx (hv_norm.trans_lt hed_xy)
   have hγ_maps := mapsTo_eball_of_strictConvexOn_edist_sq hε0 (hconv₁ p hpW₁) hγ_geo
     (hγ_3ε.mono_right h3ε_W₁) (hγ0.symm ▸ hx) (hγ1.symm ▸ hy)
     fun t ht ↦ (mem_eball'.1 (hγ_3ε ht)).ne_top
+  -- 3. Uniqueness: any globally minimizing geodesic `γ'` from `x` to `y` stays in `B_x(R)`.
   refine ⟨γ, hγ_geo, hγ0, hγ1, hγ_len, hγ_maps, fun γ' hγ' h0' h1' hlen' ↦ ?_⟩
   have hγ'_in_R : MapsTo γ' (Icc 0 1) (riemannianExp I M x '' Metric.ball 0 R) := fun t ht ↦ by
     rw [hdom_x.image_riemannianExp_ball subset_rfl, mem_eball']
@@ -885,31 +723,23 @@ private theorem isStronglyGeodesicallyConvex_eball_of_strictConvex {W₁ : Set M
     (h1'.trans (riemannianExp_riemannianLog hy_exp).symm) (hlen'.trans_eq hγ_len.symm)
 
 /-- If every point `q ∈ eball p (ofReal ε)` has normal domain `B(0, 2 * r)` with `0 < r` and
-`0 < ε ≤ r`, then `eball p (ofReal ε)` is uniformly normal. -/
+`0 < ε ≤ r`, then `eball p (ofReal ε)` is uniformly normal with uniform radius `2 * r`. -/
 private theorem isUniformlyNormal_eball_of_forall_isNormalDomain {p : M} {r ε : ℝ} (hr : 0 < r)
     (hε : ε ∈ Ioc 0 r)
     (hdom : ∀ q ∈ Metric.eball p (ENNReal.ofReal ε), IsNormalDomain I M q (Metric.ball 0 (2 * r))) :
     IsUniformlyNormal I (Metric.eball p (ENNReal.ofReal ε)) := by
-  rw [isUniformlyNormal_def]
-  intro q hq
-  refine ⟨2 * r, by positivity, hdom q hq, ?_⟩
+  refine isUniformlyNormal_def.2 ⟨2 * r, by positivity, fun q hq ↦ ⟨hdom q hq, ?_⟩⟩
   rw [(hdom q hq).image_riemannianExp_ball subset_rfl]
   intro y hy
-  refine mem_eball'.2 ?_
-  calc edist q y ≤ edist q p + edist p y := edist_triangle q p y
-    _ = edist p q + edist p y := by rw [edist_comm q p]
-    _ < ENNReal.ofReal ε + ENNReal.ofReal ε :=
-        ENNReal.add_lt_add (mem_eball'.1 hq) (mem_eball'.1 hy)
-    _ ≤ ENNReal.ofReal (2 * r) := by
-        rw [← ENNReal.ofReal_add hε.1.le hε.1.le]
-        exact ENNReal.ofReal_le_ofReal (by linarith [hε.2])
+  exact mem_eball'.2 <| (edist_lt_two_mul_of_mem_eball hε.1 hq hy).trans_le
+    (ENNReal.ofReal_le_ofReal (by linarith [hε.2]))
 
 /-- **Locally uniform strong geodesic convexity of Riemannian balls (Lee, Theorem 6.17).**
 Every point `p₀` has a radius `r > 0` and an open neighbourhood `W` such that for each `p ∈ W`,
 the tangent ball `B(0, 2 * r)` is a normal domain at `p`, and for every `ε ∈ (0, r]` the open
 ball `Metric.eball p (ENNReal.ofReal ε)` is both strongly geodesically convex and uniformly
 normal. -/
-theorem exists_mem_nhds_isStronglyGeodesicallyConvex_eball (p₀ : M) :
+theorem exists_isOpen_mem_isStronglyGeodesicallyConvex_eball (p₀ : M) :
     ∃ r > 0, ∃ W : Set M, IsOpen W ∧ p₀ ∈ W ∧
       (∀ p ∈ W, IsNormalDomain I M p (Metric.ball 0 (2 * r))) ∧
       ∀ p ∈ W, ∀ ε ∈ Ioc 0 r,
@@ -963,7 +793,7 @@ theorem exists_pos_isStronglyGeodesicallyConvex_eball (p : M) :
         IsStronglyGeodesicallyConvex I (Metric.eball p (ENNReal.ofReal ε)) ∧
           IsUniformlyNormal I (Metric.eball p (ENNReal.ofReal ε)) := by
   obtain ⟨r, hr, W, -, hpW, hdom, hconv⟩ :=
-    exists_mem_nhds_isStronglyGeodesicallyConvex_eball (I := I) p
+    exists_isOpen_mem_isStronglyGeodesicallyConvex_eball (I := I) p
   exact ⟨r, hr, hdom p hpW, hconv p hpW⟩
 
 /-- **Uniform normal and strong-convexity radii over a compact set.** For any compact subset `K`
@@ -980,7 +810,7 @@ theorem _root_.IsCompact.exists_pos_isNormalDomain_and_isStronglyGeodesicallyCon
         IsStronglyGeodesicallyConvex I (Metric.eball p (ENNReal.ofReal ε)) ∧
           IsUniformlyNormal I (Metric.eball p (ENNReal.ofReal ε)) := by
   choose R hR W hW_open hpW hdom hconv using
-    exists_mem_nhds_isStronglyGeodesicallyConvex_eball (I := I) (M := M)
+    exists_isOpen_mem_isStronglyGeodesicallyConvex_eball (I := I) (M := M)
   obtain ⟨t, -, hKt⟩ := hK.elim_nhds_subcover W fun p _ ↦ (hW_open p).mem_nhds (hpW p)
   rcases t.eq_empty_or_nonempty with rfl | ht
   · refine ⟨2, by positivity, 1, by positivity, by norm_num, fun _ hp ↦ ?_, fun _ hp ↦ ?_⟩ <;>
@@ -1004,6 +834,19 @@ variable
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [IsRiemannianManifold I M]
+
+/-- Metric-space form of `exists_isOpen_mem_isStronglyGeodesicallyConvex_eball` (Lee,
+Theorem 6.17). -/
+theorem exists_isOpen_mem_isStronglyGeodesicallyConvex_ball (p₀ : M) :
+    ∃ r > 0, ∃ W : Set M, IsOpen W ∧ p₀ ∈ W ∧
+      (∀ p ∈ W, IsNormalDomain I M p (Metric.ball 0 (2 * r))) ∧
+      ∀ p ∈ W, ∀ ε ∈ Ioc 0 r,
+        IsStronglyGeodesicallyConvex I (Metric.ball p ε) ∧
+          IsUniformlyNormal I (Metric.ball p ε) := by
+  obtain ⟨r, hr, W, hWo, hpW, hdom, hconv⟩ :=
+    exists_isOpen_mem_isStronglyGeodesicallyConvex_eball (I := I) p₀
+  refine ⟨r, hr, W, hWo, hpW, hdom, fun p hp ε hε ↦ ?_⟩
+  simpa only [Metric.eball_ofReal] using hconv p hp ε hε
 
 /-- Metric-space form of `exists_pos_isStronglyGeodesicallyConvex_eball`: small metric balls
 `Metric.ball p ε` are strongly geodesically convex and uniformly normal. -/
@@ -1034,20 +877,21 @@ end StronglyGeodesicallyConvexMetricSpace
 
 /-! ### Smooth radial geodesic contractions and smooth step reparametrization -/
 
-section RadialContraction
+section RadialHomotopy
 
 variable
-  {M : Type*} [EMetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
 variable (I M) in
-/-- The natural domain of the raw radial geodesic homotopy centred at `q` on the normal tangent
+/-- The natural domain of the raw radial geodesic homotopy centered at `q` on the normal tangent
 ball `B(0, r)`: pairs `(s, x) ∈ ℝ × M` with `x ∈ exp_q '' B(0, r)` and `s • log_q x ∈ expDomain`. -/
 def radialGeodesicHomotopyDomain (q : M) (r : ℝ) : Set (ℝ × M) :=
   {p : ℝ × M | p.2 ∈ riemannianExp I M q '' Metric.ball 0 r ∧
     p.1 • riemannianLog I M q (Metric.ball 0 r) p.2 ∈ expDomain I M q}
 
+@[simp]
 theorem mem_radialGeodesicHomotopyDomain_iff {q : M} {r : ℝ} {p : ℝ × M} :
     p ∈ radialGeodesicHomotopyDomain I M q r ↔
       p.2 ∈ riemannianExp I M q '' Metric.ball 0 r ∧
@@ -1056,7 +900,7 @@ theorem mem_radialGeodesicHomotopyDomain_iff {q : M} {r : ℝ} {p : ℝ × M} :
   rfl
 
 variable (I M) in
-/-- The raw radial geodesic contraction `H(s, x) = exp_q (s • log_q x)` centred at `q` using the
+/-- The raw radial geodesic contraction `H(s, x) = exp_q (s • log_q x)` centered at `q` using the
 normal tangent ball `B(0, r)`. -/
 def radialGeodesicHomotopy (q : M) (r : ℝ) (p : ℝ × M) : M :=
   riemannianExp I M q (p.1 • riemannianLog I M q (Metric.ball 0 r) p.2)
@@ -1071,6 +915,20 @@ theorem radialGeodesicHomotopy_one_left {q : M} {r : ℝ} {x : M}
     radialGeodesicHomotopy I M q r (1, x) = x := by
   simp [radialGeodesicHomotopy, riemannianExp_riemannianLog hx]
 
+/-- The raw radial geodesic homotopy at `(s, x)` does not depend on the normal radius `r` once `x`
+lies in both normal balls. -/
+theorem radialGeodesicHomotopy_eq_of_isNormalDomain {q x : M} {r₁ r₂ : ℝ} (s : ℝ)
+    (hq₁ : IsNormalDomain I M q (Metric.ball 0 r₁))
+    (hq₂ : IsNormalDomain I M q (Metric.ball 0 r₂))
+    (hx₁ : x ∈ riemannianExp I M q '' Metric.ball 0 r₁)
+    (hx₂ : x ∈ riemannianExp I M q '' Metric.ball 0 r₂) :
+    radialGeodesicHomotopy I M q r₁ (s, x) = radialGeodesicHomotopy I M q r₂ (s, x) := by
+  rcases le_total r₁ r₂ with hle | hle
+  · rw [radialGeodesicHomotopy_def, radialGeodesicHomotopy_def,
+      hq₂.riemannianLog_eq_of_subset (Metric.ball_subset_ball hle) hx₁]
+  · rw [radialGeodesicHomotopy_def, radialGeodesicHomotopy_def,
+      (hq₁.riemannianLog_eq_of_subset (Metric.ball_subset_ball hle) hx₂).symm]
+
 /-- For any subset `W ⊆ exp_q '' B(0, r)`, the cylinder `[0, 1] ×ˢ W` lies in
 `radialGeodesicHomotopyDomain I M q r`. -/
 theorem IsNormalDomain.Icc_prod_subset_radialGeodesicHomotopyDomain {q : M} {r : ℝ}
@@ -1081,7 +939,7 @@ theorem IsNormalDomain.Icc_prod_subset_radialGeodesicHomotopyDomain {q : M} {r :
   rw [mem_radialGeodesicHomotopyDomain_iff]
   exact ⟨hW hx, hq.subset_expDomain (hq.smul_mem (riemannianLog_mem (hW hx)) hs.1 hs.2)⟩
 
-variable [I.Boundaryless]
+variable [I.Boundaryless] [T2Space M]
 
 @[simp]
 theorem radialGeodesicHomotopy_zero_left (q : M) (r : ℝ) (x : M) :
@@ -1128,7 +986,16 @@ theorem IsNormalDomain.contMDiffOn_radialGeodesicHomotopy {q : M} {r : ℝ}
     contMDiffAt_fst.smul hlog
   exact ((contMDiffAt_riemannianExp hp.2).comp p hsmul).contMDiffWithinAt
 
-variable [IsRiemannianManifold I M]
+end RadialHomotopy
+
+section RadialContraction
+
+variable
+  [I.Boundaryless]
+  {M : Type*} [EMetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsRiemannianManifold I M]
 
 /-- When `W` is strongly geodesically convex and contained in the normal ball `exp_q '' B(0, r)`
 around `q ∈ W`, the raw radial geodesic homotopy maps `[0, 1] ×ˢ W` into `W`. -/
@@ -1142,7 +1009,7 @@ theorem IsStronglyGeodesicallyConvex.mapsTo_radialGeodesicHomotopy {W : Set M}
 
 variable (I) in
 /-- Smooth geodesic contraction `ℝ × W → W` of a strongly geodesically convex open submanifold
-`W : Opens M` to a centre `q ∈ W`, obtained by reparametrizing the radial geodesic homotopy with
+`W : Opens M` to a center `q ∈ W`, obtained by reparametrizing the radial geodesic homotopy with
 `Real.smoothTransition`. -/
 def geodesicOpenContract (W : Opens M) (hW : IsStronglyGeodesicallyConvex I (W : Set M))
     {q : M} (hqW : q ∈ W) {r : ℝ} (hq : IsNormalDomain I M q (Metric.ball 0 r))
@@ -1214,63 +1081,13 @@ theorem geodesicOpenContract_one_left (W : Opens M)
   geodesicOpenContract_of_one_le W hW hqW hq hsub le_rfl x
 
 @[simp]
-theorem geodesicOpenContract_centre (W : Opens M)
+theorem geodesicOpenContract_center (W : Opens M)
     (hW : IsStronglyGeodesicallyConvex I (W : Set M)) {q : M} (hqW : q ∈ W) {r : ℝ}
     (hq : IsNormalDomain I M q (Metric.ball 0 r))
     (hsub : (W : Set M) ⊆ riemannianExp I M q '' Metric.ball 0 r) (t : ℝ) :
     geodesicOpenContract I W hW hqW hq hsub (t, ⟨q, hqW⟩) = ⟨q, hqW⟩ := by
   ext
   rw [coe_geodesicOpenContract, hq.radialGeodesicHomotopy_self_right]
-
-variable (I) in
-/-- Cylinder-ordered smooth geodesic contraction `W × [0, 1] → W` modelled on `I.prod (𝓡∂ 1)`,
-matching the factor order expected by `TauCeti.homotopyOperator`. -/
-def geodesicOpenCylinderContract (W : Opens M) (hW : IsStronglyGeodesicallyConvex I (W : Set M))
-    {q : M} (hqW : q ∈ W) {r : ℝ} (hq : IsNormalDomain I M q (Metric.ball 0 r))
-    (hsub : (W : Set M) ⊆ riemannianExp I M q '' Metric.ball 0 r)
-    (p : ↥W × Icc (0 : ℝ) 1) : ↥W :=
-  geodesicOpenContract I W hW hqW hq hsub (p.2.1, p.1)
-
-theorem geodesicOpenCylinderContract_apply (W : Opens M)
-    (hW : IsStronglyGeodesicallyConvex I (W : Set M)) {q : M} (hqW : q ∈ W) {r : ℝ}
-    (hq : IsNormalDomain I M q (Metric.ball 0 r))
-    (hsub : (W : Set M) ⊆ riemannianExp I M q '' Metric.ball 0 r) (p : ↥W × Icc (0 : ℝ) 1) :
-    geodesicOpenCylinderContract I W hW hqW hq hsub p =
-      geodesicOpenContract I W hW hqW hq hsub (p.2.1, p.1) :=
-  (rfl)
-
-/-- The cylinder-ordered geodesic contraction `W × [0, 1] → W` is `C^∞` for `I.prod (𝓡∂ 1)`. -/
-theorem contMDiff_geodesicOpenCylinderContract (W : Opens M)
-    (hW : IsStronglyGeodesicallyConvex I (W : Set M)) {q : M} (hqW : q ∈ W) {r : ℝ}
-    (hq : IsNormalDomain I M q (Metric.ball 0 r))
-    (hsub : (W : Set M) ⊆ riemannianExp I M q '' Metric.ball 0 r) :
-    ContMDiff (I.prod (𝓡∂ 1)) I ∞ (geodesicOpenCylinderContract I W hW hqW hq hsub) :=
-  (contMDiff_geodesicOpenContract W hW hqW hq hsub).comp
-    (((contMDiff_subtypeVal_Icc (x := 0) (y := 1)).comp contMDiff_snd).prodMk contMDiff_fst)
-
-@[simp]
-theorem geodesicOpenCylinderContract_zero (W : Opens M)
-    (hW : IsStronglyGeodesicallyConvex I (W : Set M)) {q : M} (hqW : q ∈ W) {r : ℝ}
-    (hq : IsNormalDomain I M q (Metric.ball 0 r))
-    (hsub : (W : Set M) ⊆ riemannianExp I M q '' Metric.ball 0 r) (x : ↥W) :
-    geodesicOpenCylinderContract I W hW hqW hq hsub (x, 0) = ⟨q, hqW⟩ :=
-  geodesicOpenContract_zero_left W hW hqW hq hsub x
-
-@[simp]
-theorem geodesicOpenCylinderContract_one (W : Opens M)
-    (hW : IsStronglyGeodesicallyConvex I (W : Set M)) {q : M} (hqW : q ∈ W) {r : ℝ}
-    (hq : IsNormalDomain I M q (Metric.ball 0 r))
-    (hsub : (W : Set M) ⊆ riemannianExp I M q '' Metric.ball 0 r) (x : ↥W) :
-    geodesicOpenCylinderContract I W hW hqW hq hsub (x, 1) = x :=
-  geodesicOpenContract_one_left W hW hqW hq hsub x
-
-@[simp]
-theorem geodesicOpenCylinderContract_centre (W : Opens M)
-    (hW : IsStronglyGeodesicallyConvex I (W : Set M)) {q : M} (hqW : q ∈ W) {r : ℝ}
-    (hq : IsNormalDomain I M q (Metric.ball 0 r))
-    (hsub : (W : Set M) ⊆ riemannianExp I M q '' Metric.ball 0 r) (t : Icc (0 : ℝ) 1) :
-    geodesicOpenCylinderContract I W hW hqW hq hsub (⟨q, hqW⟩, t) = ⟨q, hqW⟩ :=
-  geodesicOpenContract_centre W hW hqW hq hsub t.1
 
 end RadialContraction
 

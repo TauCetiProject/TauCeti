@@ -40,8 +40,9 @@ In the namespace `TauCeti.Manifold.IsNormalDomain`:
 * `edist_riemannianExp_eq`: `exp_p` preserves the distance from the centre of a normal ball, and
   `dist_riemannianExp_eq` its version for an ordinary metric. The `_of_mem_ball` variants use only
   open-ball containment.
-* `pathELength_riemannianExp_smul_eq_edist`: the radial geodesic segment realizes the distance
-  between its endpoints.
+* `pathELength_riemannianExp_smul_eq_edist` and
+  `pathELength_riemannianExp_smul_riemannianLog_of_mem_ball`: the radial geodesic segment realizes
+  the distance between its endpoints.
 * `edist_eq_enorm_riemannianLog` and `dist_eq_norm_riemannianLog`: the distance from `p` is the
   norm of the logarithm, for extended and ordinary metrics. Their `_of_mem_ball` variants
   require only open-ball containment.
@@ -181,6 +182,17 @@ theorem pathELength_riemannianExp_smul_eq_edist_of_mem_ball
       edist p (riemannianExp I M p v) := by
   rw [pathELength_riemannianExp_smul_zero_one h (hU hv),
     h.edist_riemannianExp_eq_of_mem_ball hU hv]
+
+/-- On an open normal ball, the radial geodesic segment `t ↦ exp_p (t • log_p q)` realizes the
+distance from `p` to `q`. -/
+theorem pathELength_riemannianExp_smul_riemannianLog_of_mem_ball
+    (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r ⊆ U)
+    (hq : q ∈ riemannianExp I M p '' Metric.ball 0 r) :
+    pathELength I (fun t : ℝ ↦ riemannianExp I M p (t • riemannianLog I M p U q)) 0 1 =
+      edist p q := by
+  obtain ⟨v, hv, rfl⟩ := hq
+  rw [h.riemannianLog_riemannianExp (hU hv),
+    h.pathELength_riemannianExp_smul_eq_edist_of_mem_ball hU hv]
 
 /-- On a normal ball the distance from the centre is the norm of the Riemannian logarithm. -/
 theorem edist_eq_enorm_riemannianLog (h : IsNormalDomain I M p U) (hU : closedBall 0 r ⊆ U)

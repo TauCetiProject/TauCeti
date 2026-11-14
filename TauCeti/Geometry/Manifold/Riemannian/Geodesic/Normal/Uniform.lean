@@ -26,10 +26,15 @@ domains at all of them.
 These neighbourhoods are the starting point for geodesically convex neighbourhoods and for
 coordinates built from the Riemannian distance to finitely many nearby centres.
 
-## Main results
+## Main definitions and results
 
-* `TauCeti.Manifold.exists_mem_nhds_forall_isNormalDomain_ball`: every point has a uniformly
-  normal neighbourhood.
+* `TauCeti.Manifold.IsUniformlyNormal`: a subset `U` of `M` admits a single positive radius `r`
+  such that at every `q ∈ U`, the tangent ball `B(0, r)` is a normal domain whose exponential image
+  contains `U`; monotone under inclusion (`IsUniformlyNormal.mono`) and closed under intersections
+  of nonempty families (`IsUniformlyNormal.biInter`).
+* `TauCeti.Manifold.exists_mem_nhds_forall_isNormalDomain_ball` and
+  `TauCeti.Manifold.exists_isOpen_mem_isUniformlyNormal`: every point has an open uniformly normal
+  neighbourhood.
 * `IsCompact.exists_pos_exists_isOpen_superset_forall_isNormalDomain_ball`: on an open
   neighbourhood of a compact set, one positive radius gives normal domains at every point.
 
@@ -52,10 +57,72 @@ namespace TauCeti.Manifold
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+section UniformlyNormal
+
+variable (I) in
+/-- A subset `U` of a Riemannian manifold is *uniformly normal* (in the sense of Lee, Ch. 6) if
+there exists a single radius `r > 0` such that at every point `q ∈ U`, the tangent ball `B(0, r)`
+is a normal domain whose exponential image contains `U`. -/
+def IsUniformlyNormal (U : Set M) : Prop :=
+  ∃ r > 0, ∀ ⦃q⦄, q ∈ U → IsNormalDomain I M q (Metric.ball 0 r) ∧
+    U ⊆ riemannianExp I M q '' Metric.ball 0 r
+
+theorem isUniformlyNormal_def {U : Set M} :
+    IsUniformlyNormal I U ↔
+      ∃ r > 0, ∀ ⦃q⦄, q ∈ U → IsNormalDomain I M q (Metric.ball 0 r) ∧
+        U ⊆ riemannianExp I M q '' Metric.ball 0 r := by
+  rw [IsUniformlyNormal]
+
+@[simp]
+theorem isUniformlyNormal_empty : IsUniformlyNormal I (∅ : Set M) :=
+  ⟨1, one_pos, fun _ hq ↦ hq.elim⟩
+
+/-- Uniform normality passes to arbitrary subsets, keeping the same uniform normal radius. -/
+theorem IsUniformlyNormal.mono {U V : Set M} (hU : IsUniformlyNormal I U) (hVU : V ⊆ U) :
+    IsUniformlyNormal I V := by
+  obtain ⟨r, hr, h⟩ := isUniformlyNormal_def.1 hU
+  exact ⟨r, hr, fun q hq ↦ ⟨(h (hVU hq)).1, hVU.trans (h (hVU hq)).2⟩⟩
+
+theorem IsUniformlyNormal.inter_left {U V : Set M} (hU : IsUniformlyNormal I U) :
+    IsUniformlyNormal I (U ∩ V) :=
+  hU.mono inter_subset_left
+
+theorem IsUniformlyNormal.inter_right {U V : Set M} (hV : IsUniformlyNormal I V) :
+    IsUniformlyNormal I (U ∩ V) :=
+  hV.mono inter_subset_right
+
+/-- The intersection of any nonempty family of uniformly normal sets is uniformly normal. -/
+theorem IsUniformlyNormal.biInter {ι : Type*} {s : Set ι} {U : ι → Set M} (hs : s.Nonempty)
+    (hU : ∀ i ∈ s, IsUniformlyNormal I (U i)) : IsUniformlyNormal I (⋂ i ∈ s, U i) :=
+  (hU hs.some hs.some_mem).mono (biInter_subset_of_mem hs.some_mem)
+
+/-- Chosen positive uniform normal radius of a uniformly normal set `U`. -/
+def IsUniformlyNormal.normalRadius {U : Set M} (hU : IsUniformlyNormal I U) : ℝ :=
+  (isUniformlyNormal_def.1 hU).choose
+
+theorem IsUniformlyNormal.normalRadius_pos {U : Set M} (hU : IsUniformlyNormal I U) :
+    0 < hU.normalRadius :=
+  (isUniformlyNormal_def.1 hU).choose_spec.1
+
+theorem IsUniformlyNormal.isNormalDomain_ball {U : Set M} (hU : IsUniformlyNormal I U) {q : M}
+    (hq : q ∈ U) : IsNormalDomain I M q (Metric.ball 0 hU.normalRadius) :=
+  ((isUniformlyNormal_def.1 hU).choose_spec.2 hq).1
+
+theorem IsUniformlyNormal.subset_image_riemannianExp_ball {U : Set M}
+    (hU : IsUniformlyNormal I U) {q : M} (hq : q ∈ U) :
+    U ⊆ riemannianExp I M q '' Metric.ball 0 hU.normalRadius :=
+  ((isUniformlyNormal_def.1 hU).choose_spec.2 hq).2
+
+end UniformlyNormal
+
+section Existence
+
+variable [I.Boundaryless] [T2Space M]
 
 /-- A tangent ball at `q` is a normal domain as soon as all its vectors lie in a set of tangent
 vectors on which `(x, v) ↦ (x, exp_x v)` is injective, a local diffeomorphism and defined. -/
@@ -128,6 +195,14 @@ theorem exists_mem_nhds_forall_isNormalDomain_ball (p : M) :
     obtain ⟨rfl, rfl⟩ := hz
     exact ⟨w, mem_ball_zero_iff.2 hzr, rfl⟩
 
+/-- Every point has an open uniformly normal neighbourhood. -/
+theorem exists_isOpen_mem_isUniformlyNormal (p : M) :
+    ∃ W : Set M, IsOpen W ∧ p ∈ W ∧ IsUniformlyNormal I W := by
+  obtain ⟨r, hr, W, hW, hnorm⟩ := exists_mem_nhds_forall_isNormalDomain_ball (I := I) (M := M) p
+  refine ⟨interior W, isOpen_interior, mem_interior_iff_mem_nhds.2 hW,
+    ⟨r, hr, fun q hq ↦ ⟨(hnorm q (interior_subset hq)).1,
+      interior_subset.trans (hnorm q (interior_subset hq)).2⟩⟩⟩
+
 /-- **A uniform normal radius near a compact set.** For a compact set `K` of points there are a
 radius `r > 0` and an open set `U ⊇ K` such that the tangent ball of radius `r` at every point of
 `U` is a normal domain. -/
@@ -145,5 +220,7 @@ theorem _root_.IsCompact.exists_pos_exists_isOpen_superset_forall_isNormalDomain
     isOpen_biUnion fun _ _ ↦ isOpen_interior, hKt, fun q hq ↦ ?_⟩
   obtain ⟨p, hpt, hqp⟩ := mem_iUnion₂.1 hq
   exact (hRW p q (interior_subset hqp)).1.ball (Metric.ball_subset_ball (Finset.inf'_le R hpt)) hRt
+
+end Existence
 
 end TauCeti.Manifold

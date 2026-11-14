@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Instances.Icc
 public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.LocallyFinite
+public import Mathlib.Topology.Sets.OpenCover
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Convex
 import Mathlib.Data.Finset.Lattice.Fold
 import Mathlib.Geometry.Manifold.Riemannian.Basic
 import Mathlib.Topology.Compactness.Paracompact
-import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
 /-!
@@ -19,9 +20,9 @@ import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
 A *smooth good cover* (`TauCeti.SmoothGoodCover`) of a manifold `M` modelled on `I` is a locally
 finite indexed open cover `openSet : Index → Opens M` equipped, for every nonempty finite set `s`
-of indices whose open intersection `W = s.inf openSet` is nonempty, with a chosen centre in `W` and
-a smooth homotopy `contract s hs hW : ℝ × W → W` equal to the constant map at the centre at time
-`0`, equal to the identity at time `1`, and fixing the centre at all times.
+of indices whose open intersection `W = s.inf openSet` is nonempty, with a chosen center in `W` and
+a smooth homotopy `contract s hs hW : ℝ × W → W` equal to the constant map at the center at time
+`0`, equal to the identity at time `1`, and fixing the center at all times.
 
 Parametrizing the contraction over all of `ℝ` makes each slice and time reparametrization globally
 smooth without boundary conditions, while `SmoothGoodCover.cylinderContract` restricts and swaps
@@ -40,27 +41,34 @@ a neighbourhood basis at each point consisting of strongly geodesically convex, 
 open sets. Paracompactness refines the given open cover by a locally finite cover of such balls.
 Nonempty finite intersections inherit strong geodesic convexity and uniform normality, so radial
 geodesic contraction reparametrized by `Real.smoothTransition`
-(`TauCeti.Manifold.geodesicOpenContract`) contracts each intersection smoothly inside itself to a
-chosen point. On a compact manifold, second countability is automatic and extracting a finite
-subcover gives `TauCeti.exists_finite_smoothGoodCover_eball_refining` and
+(`TauCeti.Manifold.geodesicOpenContract`, packaged in `SmoothGoodCover.ofGeodesicallyConvex`)
+contracts each intersection smoothly inside itself to a chosen point. On a compact manifold, second
+countability is automatic and extracting a finite subcover gives
+`TauCeti.exists_finite_smoothGoodCover_eball_refining` and
 `TauCeti.exists_finite_smoothGoodCover_refining`.
 
 ## Main definitions and results
 
 * `TauCeti.SmoothGoodCover`: locally finite open cover with smooth basepoint-fixing contractions on
-  all nonempty finite intersections.
+  all nonempty finite intersections, forming a `TopologicalSpace.IsOpenCover`
+  (`SmoothGoodCover.isOpenCover`).
 * `TauCeti.SmoothGoodCover.cylinderContract`: the cylinder-ordered contraction `W × [0, 1] → W`
   smooth for `I.prod (𝓡∂ 1)`.
 * `TauCeti.SmoothGoodCover.contractibleSpace_inf`, `isPathConnected_inf`, `isConnected_inf`:
   topological consequences on nonempty finite intersections.
-* `TauCeti.SmoothGoodCover.comap`, `SmoothGoodCover.exists_finite`, `SmoothGoodCover.ofIsEmpty`:
-  pullback along an index map, finite subcover extraction on compact spaces, and the empty cover.
-* `TauCeti.exists_smoothGoodCover_eball_refining`,
-  `TauCeti.exists_smoothGoodCover_refining`: smooth good refinement of any open cover on a
-  finite-dimensional Hausdorff second-countable boundaryless smooth manifold.
-* `TauCeti.exists_finite_smoothGoodCover_eball_refining`,
-  `TauCeti.exists_finite_smoothGoodCover_refining`: finite smooth good refinement on a compact
-  finite-dimensional Hausdorff boundaryless smooth manifold.
+* `TauCeti.SmoothGoodCover.comap`, `SmoothGoodCover.exists_finite`, `SmoothGoodCover.ofIsEmpty`,
+  and `SmoothGoodCover.ofGeodesicallyConvex`: pullback along an index map, finite subcover
+  extraction on compact spaces, the empty cover, and assembly of a locally finite strongly
+  geodesically convex, uniformly normal cover into a smooth good cover.
+* `TauCeti.exists_smoothGoodCover_eball_refining` and
+  `TauCeti.exists_finite_smoothGoodCover_eball_refining`: smooth good refinement (and finite
+  refinement on a compact manifold) of any open cover on a finite-dimensional second-countable
+  boundaryless smooth Riemannian manifold by strongly geodesically convex, uniformly normal open
+  Riemannian balls `Metric.eball x (ENNReal.ofReal r)`.
+* `TauCeti.exists_smoothGoodCover_refining` and
+  `TauCeti.exists_finite_smoothGoodCover_refining`: metric-free smooth good refinement (and finite
+  refinement on a compact manifold) of any open cover on a finite-dimensional Hausdorff
+  second-countable boundaryless smooth manifold.
 
 ## References
 
@@ -86,9 +94,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
 
 /-- A *smooth good cover* of a manifold `M` modelled on `I`: a locally finite open cover whose
-every nonempty finite intersection `W` carries a chosen centre in `W` and a smooth homotopy
-`ℝ × W → W` from the constant map at the centre (at time `0`) to the identity (at time `1`) fixing
-the centre at all times. -/
+every nonempty finite intersection `W` carries a chosen center in `W` and a smooth homotopy
+`ℝ × W → W` from the constant map at the center (at time `0`) to the identity (at time `1`) fixing
+the center at all times. -/
 structure SmoothGoodCover where
   /-- The index type of the cover. -/
   Index : Type u
@@ -96,27 +104,27 @@ structure SmoothGoodCover where
   openSet : Index → TopologicalSpace.Opens M
   covers : ∀ x : M, ∃ i, x ∈ openSet i
   locallyFinite : LocallyFinite fun i ↦ (openSet i : Set M)
-  /-- The chosen centre of a nonempty finite intersection. -/
-  centre : ∀ (s : Finset Index), s.Nonempty →
+  /-- The chosen center of a nonempty finite intersection. -/
+  center : ∀ (s : Finset Index), s.Nonempty →
     Set.Nonempty ((s.inf openSet : TopologicalSpace.Opens M) : Set M) →
       ↥(s.inf openSet)
-  /-- The chosen smooth contraction of a nonempty finite intersection to its centre. -/
+  /-- The chosen smooth contraction of a nonempty finite intersection to its center. -/
   contract : ∀ (s : Finset Index) (_hs : s.Nonempty)
     (_hW : Set.Nonempty ((s.inf openSet : TopologicalSpace.Opens M) : Set M)),
       ℝ × ↥(s.inf openSet) → ↥(s.inf openSet)
   smooth : ∀ s hs hW, ContMDiff ((𝓘(ℝ, ℝ)).prod I) I ∞ (contract s hs hW)
-  at_zero : ∀ s hs hW x, contract s hs hW (0, x) = centre s hs hW
+  at_zero : ∀ s hs hW x, contract s hs hW (0, x) = center s hs hW
   at_one : ∀ s hs hW x, contract s hs hW (1, x) = x
-  fixes_centre : ∀ s hs hW t, contract s hs hW (t, centre s hs hW) = centre s hs hW
+  fixes_center : ∀ s hs hW t, contract s hs hW (t, center s hs hW) = center s hs hW
 
-attribute [simp] SmoothGoodCover.at_zero SmoothGoodCover.at_one SmoothGoodCover.fixes_centre
+attribute [simp] SmoothGoodCover.at_zero SmoothGoodCover.at_one SmoothGoodCover.fixes_center
 
 namespace SmoothGoodCover
 
 variable {I} (C : SmoothGoodCover I (M := M))
 
 /-- Two smooth good covers with equal index types, open-set families, and contractions are equal;
-each centre is uniquely determined as the value of its contraction at time `0`. -/
+each center is uniquely determined as the value of its contraction at time `0`. -/
 theorem ext {C₁ C₂ : SmoothGoodCover I (M := M)} (hIdx : C₁.Index = C₂.Index)
     (hOpen : HEq C₁.openSet C₂.openSet) (hContract : HEq C₁.contract C₂.contract) :
     C₁ = C₂ := by
@@ -130,14 +138,20 @@ theorem ext {C₁ C₂ : SmoothGoodCover I (M := M)} (hIdx : C₁.Index = C₂.I
   let x₀ : ↥(s.inf open₁) := ⟨hW.some, hW.some_mem⟩
   exact (z₁ s hs hW x₀).symm.trans (z₂ s hs hW x₀)
 
-/-- The open sets of a smooth good cover cover `Set.univ`. -/
-theorem iUnion_openSet : (⋃ i, (C.openSet i : Set M)) = univ :=
-  iUnion_eq_univ_iff.2 C.covers
-
 /-- The supremum in `Opens M` of the members of a smooth good cover is `⊤`. -/
+@[simp]
 theorem iSup_openSet : (⨆ i, C.openSet i) = ⊤ := by
   ext x
   simp [C.covers x]
+
+/-- The open sets of a smooth good cover form a `TopologicalSpace.IsOpenCover`. -/
+theorem isOpenCover : IsOpenCover C.openSet :=
+  .mk C.iSup_openSet
+
+/-- The open sets of a smooth good cover cover `Set.univ`. -/
+@[simp]
+theorem iUnion_openSet : (⋃ i, (C.openSet i : Set M)) = univ :=
+  C.isOpenCover.iSup_set_eq_univ
 
 /-- The underlying set of a finite intersection `s.inf C.openSet` is `⋂ i ∈ s, C.openSet i`. -/
 theorem coe_inf_openSet (s : Finset C.Index) :
@@ -185,7 +199,7 @@ theorem contMDiff_cylinderContract (s : Finset C.Index) (hs : s.Nonempty)
 @[simp]
 theorem cylinderContract_zero (s : Finset C.Index) (hs : s.Nonempty)
     (hW : ((s.inf C.openSet : Opens M) : Set M).Nonempty) (x : ↥(s.inf C.openSet)) :
-    C.cylinderContract s hs hW (x, 0) = C.centre s hs hW :=
+    C.cylinderContract s hs hW (x, 0) = C.center s hs hW :=
   C.at_zero s hs hW x
 
 @[simp]
@@ -195,22 +209,22 @@ theorem cylinderContract_one (s : Finset C.Index) (hs : s.Nonempty)
   C.at_one s hs hW x
 
 @[simp]
-theorem cylinderContract_centre (s : Finset C.Index) (hs : s.Nonempty)
+theorem cylinderContract_center (s : Finset C.Index) (hs : s.Nonempty)
     (hW : ((s.inf C.openSet : Opens M) : Set M).Nonempty) (t : Icc (0 : ℝ) 1) :
-    C.cylinderContract s hs hW (C.centre s hs hW, t) = C.centre s hs hW :=
-  C.fixes_centre s hs hW t.1
+    C.cylinderContract s hs hW (C.center s hs hW, t) = C.center s hs hW :=
+  C.fixes_center s hs hW t.1
 
 /-- Every nonempty finite intersection of a smooth good cover is a contractible space. -/
 theorem contractibleSpace_inf (s : Finset C.Index) (hs : s.Nonempty)
     (hW : ((s.inf C.openSet : Opens M) : Set M).Nonempty) :
     ContractibleSpace ↥(s.inf C.openSet) := by
-  let H : ContinuousMap.Homotopy (.id _) (.const _ (C.centre s hs hW)) :=
+  let H : ContinuousMap.Homotopy (.id _) (.const _ (C.center s hs hW)) :=
     { toFun := fun p : unitInterval × ↥(s.inf C.openSet) ↦ C.contract s hs hW (1 - p.1.1, p.2)
       continuous_toFun := (C.smooth s hs hW).continuous.comp
         ((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).prodMk continuous_snd)
       map_zero_left := fun x ↦ by simp
       map_one_left := fun x ↦ by simp }
-  exact (contractible_iff_id_nullhomotopic _).2 ⟨C.centre s hs hW, ⟨H⟩⟩
+  exact (contractible_iff_id_nullhomotopic _).2 ⟨C.center s hs hW, ⟨H⟩⟩
 
 /-- Every nonempty finite intersection of a smooth good cover is a path-connected space. -/
 theorem pathConnectedSpace_inf (s : Finset C.Index) (hs : s.Nonempty)
@@ -265,12 +279,15 @@ def ofIsEmpty [IsEmpty M] : SmoothGoodCover I (M := M) where
   openSet := PEmpty.elim
   covers x := isEmptyElim x
   locallyFinite x := isEmptyElim x
-  centre _ _ hW := isEmptyElim hW.some
+  center _ _ hW := isEmptyElim hW.some
   contract _ _ hW := isEmptyElim hW.some
   smooth _ _ hW := isEmptyElim hW.some
   at_zero _ _ hW := isEmptyElim hW.some
   at_one _ _ hW := isEmptyElim hW.some
-  fixes_centre _ _ hW := isEmptyElim hW.some
+  fixes_center _ _ hW := isEmptyElim hW.some
+
+instance instIsEmptyOfIsEmptyIndex [IsEmpty M] : IsEmpty (ofIsEmpty I (M := M)).Index :=
+  inferInstanceAs (IsEmpty PEmpty.{u + 1})
 
 /-- Pull back a smooth good cover along a reindexing `f : α → C.Index` whose open sets still cover
 `M` and remain locally finite (for instance, the inclusion of a finite subcover). -/
@@ -278,55 +295,31 @@ def comap {α : Type u} (f : α → C.Index) (hcov : ∀ x : M, ∃ a, x ∈ C.o
     (hlf : LocallyFinite fun a ↦ (C.openSet (f a) : Set M)) :
     SmoothGoodCover I (M := M) :=
   letI := Classical.decEq C.Index
+  let hinf : ∀ s : Finset α, (s.image f).inf C.openSet = s.inf (C.openSet ∘ f) :=
+    fun s ↦ Finset.inf_image s f C.openSet
   { Index := α
     openSet := C.openSet ∘ f
     covers := hcov
     locallyFinite := hlf
-    centre := fun s hs hW ↦
-      let hinf := Finset.inf_image s f C.openSet
-      let hWt : (((s.image f).inf C.openSet : Opens M) : Set M).Nonempty :=
-        ⟨hW.some, (congrArg (hW.some ∈ ·) hinf).mpr hW.some_mem⟩
-      let c := C.centre (s.image f) (hs.image f) hWt
-      ⟨c.1, (congrArg (c.1 ∈ ·) hinf).mp c.2⟩
+    center := fun s hs hW ↦
+      Opens.inclusion (hinf s).le
+        (C.center (s.image f) (hs.image f) ⟨hW.some, (hinf s).ge hW.some_mem⟩)
     contract := fun s hs hW p ↦
-      let hinf := Finset.inf_image s f C.openSet
-      let hWt : (((s.image f).inf C.openSet : Opens M) : Set M).Nonempty :=
-        ⟨hW.some, (congrArg (hW.some ∈ ·) hinf).mpr hW.some_mem⟩
-      let y := C.contract (s.image f) (hs.image f) hWt
-        (p.1, ⟨p.2.1, (congrArg (p.2.1 ∈ ·) hinf).mpr p.2.2⟩)
-      ⟨y.1, (congrArg (y.1 ∈ ·) hinf).mp y.2⟩
-    smooth := fun s hs hW ↦ by
-      let hinf := Finset.inf_image s f C.openSet
-      let hWt : (((s.image f).inf C.openSet : Opens M) : Set M).Nonempty :=
-        ⟨hW.some, (congrArg (hW.some ∈ ·) hinf).mpr hW.some_mem⟩
-      let incl : ↥(s.inf (C.openSet ∘ f)) → ↥((s.image f).inf C.openSet) :=
-        fun y ↦ ⟨y.1, (congrArg (y.1 ∈ ·) hinf).mpr y.2⟩
-      have hincl : ContMDiff I I ∞ incl :=
-        (TauCeti.ContMDiff.subtypeVal_comp_iff ((s.image f).inf C.openSet) incl).1
-          contMDiff_subtype_val
-      have harg : ContMDiff ((𝓘(ℝ, ℝ)).prod I) ((𝓘(ℝ, ℝ)).prod I) ∞
-          (fun p : ℝ × ↥(s.inf (C.openSet ∘ f)) ↦ (p.1, incl p.2)) :=
-        contMDiff_fst.prodMk (hincl.comp contMDiff_snd)
-      have hcomp : ContMDiff ((𝓘(ℝ, ℝ)).prod I) I ∞
-          (fun p : ℝ × ↥(s.inf (C.openSet ∘ f)) ↦
-            C.contract (s.image f) (hs.image f) hWt (p.1, incl p.2)) :=
-        (C.smooth (s.image f) (hs.image f) hWt).comp harg
-      refine (TauCeti.ContMDiff.subtypeVal_comp_iff (s.inf (C.openSet ∘ f)) _).1 ?_
-      exact (contMDiff_subtype_val (U := (s.image f).inf C.openSet)).comp hcomp
-    at_zero := fun s hs _ x ↦ Subtype.ext <| by
-      dsimp only
-      exact congrArg (@Subtype.val M (· ∈ (s.image f).inf C.openSet))
-        (C.at_zero (s.image f) (hs.image f) _
-          ⟨x.1, (congrArg (x.1 ∈ ·) (Finset.inf_image s f C.openSet)).mpr x.2⟩)
-    at_one := fun s hs _ x ↦ Subtype.ext <| by
-      dsimp only
-      exact congrArg (@Subtype.val M (· ∈ (s.image f).inf C.openSet))
-        (C.at_one (s.image f) (hs.image f) _
-          ⟨x.1, (congrArg (x.1 ∈ ·) (Finset.inf_image s f C.openSet)).mpr x.2⟩)
-    fixes_centre := fun s hs _ t ↦ Subtype.ext <| by
-      dsimp only
-      exact congrArg (@Subtype.val M (· ∈ (s.image f).inf C.openSet))
-        (C.fixes_centre (s.image f) (hs.image f) _ t) }
+      Opens.inclusion (hinf s).le
+        (C.contract (s.image f) (hs.image f) ⟨hW.some, (hinf s).ge hW.some_mem⟩
+          (p.1, Opens.inclusion (hinf s).ge p.2))
+    smooth := fun s hs hW ↦
+      (contMDiff_inclusion (hinf s).le).comp
+        ((C.smooth (s.image f) (hs.image f) _).comp
+          (contMDiff_fst.prodMk ((contMDiff_inclusion (hinf s).ge).comp contMDiff_snd)))
+    at_zero := fun _ _ _ _ ↦ by ext; simp only [SetLike.coe_eq_coe]; apply C.at_zero
+    at_one := fun s hs hW x ↦ by
+      ext
+      simpa using congrArg Subtype.val
+        (C.at_one (s.image f) (hs.image f) ⟨hW.some, (hinf s).ge hW.some_mem⟩
+          (Opens.inclusion (hinf s).ge x))
+    fixes_center := fun _ _ _ _ ↦ by
+      ext; simp only [Subtype.coe_eta, SetLike.coe_eq_coe]; apply C.fixes_center }
 
 /-- Identification of the index type of `C.comap f hcov hlf` with `α`. -/
 def comapIndexEquiv {α : Type u} (f : α → C.Index) (hcov : ∀ x : M, ∃ a, x ∈ C.openSet (f a))
@@ -347,19 +340,71 @@ theorem openSet_comap {α : Type u} (f : α → C.Index) (hcov : ∀ x : M, ∃ 
     (C.comap f hcov hlf).openSet i = C.openSet (f (C.comapIndexEquiv f hcov hlf i)) :=
   (rfl)
 
+/-- Finite intersections in `C.comap f hcov hlf` equal the intersections over `s.image` in `C`. -/
+theorem inf_openSet_comap {α : Type u} [DecidableEq C.Index] (f : α → C.Index)
+    (hcov : ∀ x : M, ∃ a, x ∈ C.openSet (f a))
+    (hlf : LocallyFinite fun a ↦ (C.openSet (f a) : Set M))
+    (s : Finset (C.comap f hcov hlf).Index) :
+    s.inf (C.comap f hcov hlf).openSet =
+      (s.image (f ∘ C.comapIndexEquiv f hcov hlf)).inf C.openSet :=
+  (Finset.inf_image s (f ∘ C.comapIndexEquiv f hcov hlf) C.openSet).symm
+
+/-- Coercion to `M` of the chosen center in `C.comap f hcov hlf`. -/
+@[simp]
+theorem coe_center_comap {α : Type u} [DecidableEq C.Index] (f : α → C.Index)
+    (hcov : ∀ x : M, ∃ a, x ∈ C.openSet (f a))
+    (hlf : LocallyFinite fun a ↦ (C.openSet (f a) : Set M))
+    (s : Finset (C.comap f hcov hlf).Index) (hs : s.Nonempty)
+    (hW : ((s.inf (C.comap f hcov hlf).openSet : Opens M) : Set M).Nonempty) :
+    (((C.comap f hcov hlf).center s hs hW : ↥(s.inf (C.comap f hcov hlf).openSet)) : M) =
+      (C.center (s.image (f ∘ C.comapIndexEquiv f hcov hlf))
+        (hs.image (f ∘ C.comapIndexEquiv f hcov hlf))
+        ⟨hW.some, (C.inf_openSet_comap f hcov hlf s).le hW.some_mem⟩ : M) := by
+  rcases Subsingleton.elim ‹DecidableEq C.Index› (Classical.decEq C.Index) with rfl
+  rfl
+
+/-- Coercion to `M` of the contraction in `C.comap f hcov hlf`. -/
+@[simp]
+theorem coe_contract_comap {α : Type u} [DecidableEq C.Index] (f : α → C.Index)
+    (hcov : ∀ x : M, ∃ a, x ∈ C.openSet (f a))
+    (hlf : LocallyFinite fun a ↦ (C.openSet (f a) : Set M))
+    (s : Finset (C.comap f hcov hlf).Index) (hs : s.Nonempty)
+    (hW : ((s.inf (C.comap f hcov hlf).openSet : Opens M) : Set M).Nonempty)
+    (p : ℝ × ↥(s.inf (C.comap f hcov hlf).openSet)) :
+    (((C.comap f hcov hlf).contract s hs hW p : ↥(s.inf (C.comap f hcov hlf).openSet)) : M) =
+      (C.contract (s.image (f ∘ C.comapIndexEquiv f hcov hlf))
+        (hs.image (f ∘ C.comapIndexEquiv f hcov hlf))
+        ⟨hW.some, (C.inf_openSet_comap f hcov hlf s).le hW.some_mem⟩
+        (p.1, Opens.inclusion (C.inf_openSet_comap f hcov hlf s).le p.2) : M) := by
+  rcases Subsingleton.elim ‹DecidableEq C.Index› (Classical.decEq C.Index) with rfl
+  rfl
+
+/-- Coercion to `M` of the cylinder contraction in `C.comap f hcov hlf`. -/
+@[simp]
+theorem coe_cylinderContract_comap {α : Type u} [DecidableEq C.Index] (f : α → C.Index)
+    (hcov : ∀ x : M, ∃ a, x ∈ C.openSet (f a))
+    (hlf : LocallyFinite fun a ↦ (C.openSet (f a) : Set M))
+    (s : Finset (C.comap f hcov hlf).Index) (hs : s.Nonempty)
+    (hW : ((s.inf (C.comap f hcov hlf).openSet : Opens M) : Set M).Nonempty)
+    (p : ↥(s.inf (C.comap f hcov hlf).openSet) × Icc (0 : ℝ) 1) :
+    (((C.comap f hcov hlf).cylinderContract s hs hW p :
+      ↥(s.inf (C.comap f hcov hlf).openSet)) : M) =
+      (C.cylinderContract (s.image (f ∘ C.comapIndexEquiv f hcov hlf))
+        (hs.image (f ∘ C.comapIndexEquiv f hcov hlf))
+        ⟨hW.some, (C.inf_openSet_comap f hcov hlf s).le hW.some_mem⟩
+        (Opens.inclusion (C.inf_openSet_comap f hcov hlf s).le p.1, p.2) : M) := by
+  rcases Subsingleton.elim ‹DecidableEq C.Index› (Classical.decEq C.Index) with rfl
+  rfl
+
 /-- On a compact space, any smooth good cover admits a smooth good subcover with finite index type
 whose members are members of the original cover. -/
 theorem exists_finite [CompactSpace M] :
     ∃ C' : SmoothGoodCover I (M := M),
       Finite C'.Index ∧ ∀ a', ∃ a, C'.openSet a' = C.openSet a := by
-  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover (fun a ↦ (C.openSet a : Set M))
-    (fun a ↦ (C.openSet a).isOpen) (by rw [C.iUnion_openSet])
-  have hcov : ∀ x : M, ∃ a : ↥t, x ∈ C.openSet a.1 := fun x ↦ by
-    obtain ⟨a, hat, hxa⟩ := mem_iUnion₂.1 (ht (mem_univ x))
-    exact ⟨⟨a, hat⟩, hxa⟩
-  exact ⟨C.comap Subtype.val hcov (locallyFinite_of_finite _), inferInstance,
-    fun a' ↦ ⟨(C.comapIndexEquiv Subtype.val hcov (locallyFinite_of_finite _) a').1,
-      C.openSet_comap Subtype.val hcov (locallyFinite_of_finite _) a'⟩⟩
+  obtain ⟨t, ht⟩ := C.isOpenCover.exists_finite_of_compactSpace
+  exact ⟨C.comap Subtype.val ht.exists_mem (locallyFinite_of_finite _), inferInstance,
+    fun a' ↦ ⟨(C.comapIndexEquiv Subtype.val ht.exists_mem (locallyFinite_of_finite _) a').1,
+      C.openSet_comap Subtype.val ht.exists_mem (locallyFinite_of_finite _) a'⟩⟩
 
 end SmoothGoodCover
 
@@ -371,16 +416,21 @@ section Existence
 
 open TauCeti.Manifold
 
+namespace SmoothGoodCover
+
+section OfGeodesicallyConvex
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [I.Boundaryless]
+  {M : Type u} [EMetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsRiemannianManifold I M]
+
 /-- Any locally finite open cover of a Riemannian manifold by strongly geodesically convex and
 uniformly normal open sets assembles into a `SmoothGoodCover` via radial geodesic contractions. -/
-private def smoothGoodCoverOfGeodesicallyConvex
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [I.Boundaryless]
-    {M : Type u} [EMetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    [IsRiemannianManifold I M]
-    {α : Type u} (V : α → Opens M) (hcov : ∀ x : M, ∃ a, x ∈ V a)
+def ofGeodesicallyConvex {α : Type u} (V : α → Opens M) (hcov : ∀ x : M, ∃ a, x ∈ V a)
     (hlf : LocallyFinite fun a ↦ (V a : Set M))
     (hconv : ∀ a, IsStronglyGeodesicallyConvex I (V a : Set M))
     (hnorm : ∀ a, IsUniformlyNormal I (V a : Set M)) :
@@ -388,7 +438,7 @@ private def smoothGoodCoverOfGeodesicallyConvex
   let hW_conv : ∀ (s : Finset α), s.Nonempty →
       IsStronglyGeodesicallyConvex I ((s.inf V : Opens M) : Set M) := fun s hs ↦ by
     rw [Opens.coe_finset_inf, Finset.inf_set_eq_iInter]
-    exact IsStronglyGeodesicallyConvex.biInter hs fun a _ ↦ hconv a
+    exact IsStronglyGeodesicallyConvex.biInter (Finset.coe_nonempty.2 hs) fun a _ ↦ hconv a
   let hW_norm : ∀ (s : Finset α), s.Nonempty →
       IsUniformlyNormal I ((s.inf V : Opens M) : Set M) := fun s hs ↦ by
     rw [Opens.coe_finset_inf, Finset.inf_set_eq_iInter]
@@ -397,27 +447,99 @@ private def smoothGoodCoverOfGeodesicallyConvex
     openSet := V
     covers := hcov
     locallyFinite := hlf
-    centre := fun _ _ hW ↦ ⟨hW.some, hW.some_mem⟩
+    center := fun _ _ hW ↦ ⟨hW.some, hW.some_mem⟩
     contract := fun s hs hW ↦
+      let hWn := hW_norm s hs
       geodesicOpenContract I (s.inf V) (hW_conv s hs) hW.some_mem
-        ((hW_norm s hs).isNormalDomain_ball hW.some_mem)
-        ((hW_norm s hs).subset_image_riemannianExp_ball hW.some_mem)
+        (hWn.isNormalDomain_ball hW.some_mem) (hWn.subset_image_riemannianExp_ball hW.some_mem)
     smooth := fun s hs hW ↦
+      let hWn := hW_norm s hs
       contMDiff_geodesicOpenContract (s.inf V) (hW_conv s hs) hW.some_mem
-        ((hW_norm s hs).isNormalDomain_ball hW.some_mem)
-        ((hW_norm s hs).subset_image_riemannianExp_ball hW.some_mem)
+        (hWn.isNormalDomain_ball hW.some_mem) (hWn.subset_image_riemannianExp_ball hW.some_mem)
     at_zero := fun s hs hW x ↦
+      let hWn := hW_norm s hs
       geodesicOpenContract_zero_left (s.inf V) (hW_conv s hs) hW.some_mem
-        ((hW_norm s hs).isNormalDomain_ball hW.some_mem)
-        ((hW_norm s hs).subset_image_riemannianExp_ball hW.some_mem) x
+        (hWn.isNormalDomain_ball hW.some_mem) (hWn.subset_image_riemannianExp_ball hW.some_mem) x
     at_one := fun s hs hW x ↦
+      let hWn := hW_norm s hs
       geodesicOpenContract_one_left (s.inf V) (hW_conv s hs) hW.some_mem
-        ((hW_norm s hs).isNormalDomain_ball hW.some_mem)
-        ((hW_norm s hs).subset_image_riemannianExp_ball hW.some_mem) x
-    fixes_centre := fun s hs hW t ↦
-      geodesicOpenContract_centre (s.inf V) (hW_conv s hs) hW.some_mem
-        ((hW_norm s hs).isNormalDomain_ball hW.some_mem)
-        ((hW_norm s hs).subset_image_riemannianExp_ball hW.some_mem) t }
+        (hWn.isNormalDomain_ball hW.some_mem) (hWn.subset_image_riemannianExp_ball hW.some_mem) x
+    fixes_center := fun s hs hW t ↦
+      let hWn := hW_norm s hs
+      geodesicOpenContract_center (s.inf V) (hW_conv s hs) hW.some_mem
+        (hWn.isNormalDomain_ball hW.some_mem) (hWn.subset_image_riemannianExp_ball hW.some_mem) t }
+
+variable {I}
+
+/-- Identification of the index type of `SmoothGoodCover.ofGeodesicallyConvex` with `α`. -/
+def ofGeodesicallyConvexIndexEquiv {α : Type u} (V : α → Opens M)
+    (hcov : ∀ x : M, ∃ a, x ∈ V a) (hlf : LocallyFinite fun a ↦ (V a : Set M))
+    (hconv : ∀ a, IsStronglyGeodesicallyConvex I (V a : Set M))
+    (hnorm : ∀ a, IsUniformlyNormal I (V a : Set M)) :
+    (ofGeodesicallyConvex I V hcov hlf hconv hnorm).Index ≃ α :=
+  Equiv.refl α
+
+instance instFiniteOfGeodesicallyConvexIndex {α : Type u} [Finite α] (V : α → Opens M)
+    (hcov : ∀ x : M, ∃ a, x ∈ V a) (hlf : LocallyFinite fun a ↦ (V a : Set M))
+    (hconv : ∀ a, IsStronglyGeodesicallyConvex I (V a : Set M))
+    (hnorm : ∀ a, IsUniformlyNormal I (V a : Set M)) :
+    Finite (ofGeodesicallyConvex I V hcov hlf hconv hnorm).Index :=
+  ‹Finite α›
+
+@[simp]
+theorem openSet_ofGeodesicallyConvex {α : Type u} (V : α → Opens M)
+    (hcov : ∀ x : M, ∃ a, x ∈ V a) (hlf : LocallyFinite fun a ↦ (V a : Set M))
+    (hconv : ∀ a, IsStronglyGeodesicallyConvex I (V a : Set M))
+    (hnorm : ∀ a, IsUniformlyNormal I (V a : Set M))
+    (a : (ofGeodesicallyConvex I V hcov hlf hconv hnorm).Index) :
+    (ofGeodesicallyConvex I V hcov hlf hconv hnorm).openSet a =
+      V (ofGeodesicallyConvexIndexEquiv V hcov hlf hconv hnorm a) :=
+  (rfl)
+
+@[simp]
+theorem coe_center_ofGeodesicallyConvex {α : Type u} (V : α → Opens M)
+    (hcov : ∀ x : M, ∃ a, x ∈ V a) (hlf : LocallyFinite fun a ↦ (V a : Set M))
+    (hconv : ∀ a, IsStronglyGeodesicallyConvex I (V a : Set M))
+    (hnorm : ∀ a, IsUniformlyNormal I (V a : Set M))
+    (s : Finset (ofGeodesicallyConvex I V hcov hlf hconv hnorm).Index) (hs : s.Nonempty)
+    (hW : ((s.inf (ofGeodesicallyConvex I V hcov hlf hconv hnorm).openSet : Opens M) :
+      Set M).Nonempty) :
+    (((ofGeodesicallyConvex I V hcov hlf hconv hnorm).center s hs hW :
+      ↥(s.inf (ofGeodesicallyConvex I V hcov hlf hconv hnorm).openSet)) : M) = hW.some :=
+  (rfl)
+
+/-- Coercion to `M` of the contraction in `SmoothGoodCover.ofGeodesicallyConvex`: it agrees with
+`radialGeodesicHomotopy` reparametrized by `Real.smoothTransition` for any normal radius `r` at
+the chosen center `hW.some` covering the finite intersection. -/
+theorem coe_contract_ofGeodesicallyConvex {α : Type u} (V : α → Opens M)
+    (hcov : ∀ x : M, ∃ a, x ∈ V a) (hlf : LocallyFinite fun a ↦ (V a : Set M))
+    (hconv : ∀ a, IsStronglyGeodesicallyConvex I (V a : Set M))
+    (hnorm : ∀ a, IsUniformlyNormal I (V a : Set M))
+    (s : Finset (ofGeodesicallyConvex I V hcov hlf hconv hnorm).Index) (hs : s.Nonempty)
+    (hW : ((s.inf (ofGeodesicallyConvex I V hcov hlf hconv hnorm).openSet : Opens M) :
+      Set M).Nonempty)
+    {r : ℝ} (hq : IsNormalDomain I M hW.some (Metric.ball 0 r))
+    (hsub : ((s.inf (ofGeodesicallyConvex I V hcov hlf hconv hnorm).openSet : Opens M) : Set M) ⊆
+      riemannianExp I M hW.some '' Metric.ball 0 r)
+    (p : ℝ × ↥(s.inf (ofGeodesicallyConvex I V hcov hlf hconv hnorm).openSet)) :
+    (((ofGeodesicallyConvex I V hcov hlf hconv hnorm).contract s hs hW p :
+      ↥(s.inf (ofGeodesicallyConvex I V hcov hlf hconv hnorm).openSet)) : M) =
+      radialGeodesicHomotopy I M hW.some r (Real.smoothTransition p.1, p.2.1) := by
+  let s' : Finset α := s
+  have hs' : s'.Nonempty := hs
+  have hWn : IsUniformlyNormal I ((s'.inf V : Opens M) : Set M) := by
+    rw [Opens.coe_finset_inf, Finset.inf_set_eq_iInter]
+    exact IsUniformlyNormal.biInter (Finset.coe_nonempty.2 hs') fun a _ ↦ hnorm a
+  exact (coe_geodesicOpenContract (s'.inf V) _ hW.some_mem
+    (hWn.isNormalDomain_ball hW.some_mem)
+    (hWn.subset_image_riemannianExp_ball hW.some_mem) p).trans <|
+    radialGeodesicHomotopy_eq_of_isNormalDomain (Real.smoothTransition p.1)
+      (hWn.isNormalDomain_ball hW.some_mem) hq
+      (hWn.subset_image_riemannianExp_ball hW.some_mem p.2.2) (hsub p.2.2)
+
+end OfGeodesicallyConvex
+
+end SmoothGoodCover
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
@@ -463,7 +585,7 @@ theorem exists_smoothGoodCover_eball_refining
   have hcov : ∀ x : M, ∃ a, x ∈ V a := fun x ↦ mem_iUnion.1 (hcov_univ.ge (mem_univ x))
   have hra : ∀ a, r a ∈ Ioc 0 (r_conv (c a)) :=
     fun a ↦ ⟨(hr a).1, (hr a).2.trans (min_le_left _ _)⟩
-  refine ⟨smoothGoodCoverOfGeodesicallyConvex I V hcov hlf
+  refine ⟨SmoothGoodCover.ofGeodesicallyConvex I V hcov hlf
     (fun a ↦ (hball (c a) (r a) (hra a)).1) (fun a ↦ (hball (c a) (r a) (hra a)).2),
     fun a ↦ ⟨idx (c a), (Metric.eball_subset_eball
       (ENNReal.ofReal_le_ofReal ((hr a).2.trans (min_le_right _ _)))).trans (hδU (c a))⟩,
@@ -488,7 +610,6 @@ theorem exists_smoothGoodCover_refining
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     Bundle.instIsContinuousRiemannianBundle g.toContinuousRiemannianMetric
   let : EMetricSpace M := .ofRiemannianMetric I M
-  have : IsRiemannianManifold I M := ⟨fun _ _ ↦ rfl⟩
   obtain ⟨C, href, -⟩ := exists_smoothGoodCover_eball_refining I U hU
   exact ⟨C, href⟩
 
