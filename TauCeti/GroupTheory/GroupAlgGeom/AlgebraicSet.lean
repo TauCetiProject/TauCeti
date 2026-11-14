@@ -126,7 +126,7 @@ system `{a, b, x}` has no solutions; its radical and its normal closure are both
 * `TauCeti.GroupAlgGeom.Rad_pow_eq_normalClosure`,
   `TauCeti.GroupAlgGeom.normalClosure_pow_ne_normalClosure`: over a torsion-free `H` with
   injective coefficients, the radical of `x ^ n` (`n ≠ 0`) is the normal closure of `x`, which
-  strictly contains that of `x ^ n` when `n ≠ 1`.
+  differs from that of `x ^ n` when `n ≠ 1`.
 * `TauCeti.GroupAlgGeom.Rad_pow_mul_inl_pow_eq_normalClosure`,
   `TauCeti.GroupAlgGeom.inr_of_mul_inl_notMem_normalClosure_pow_mul_inl`: over a group `H` with
   unique roots and injective coefficients, the radical of the one-variable equation
@@ -276,7 +276,8 @@ theorem wordMap_mem_V {Y : Type*} (ι : G →* H)
   have h := (Set.ext_iff.mp (preimage_wordMap_V_eq_V_image ι σ (σ ⁻¹' S))) v
   exact h.mpr (V_antitone ι (Set.image_preimage_subset σ S) hv)
 
-/-- A tuple solves `S` exactly when its word map solves the inverse-image system. -/
+/-- When `σ` is surjective, a tuple solves `S` exactly when its word map solves the inverse-image
+system. -/
 theorem wordMap_mem_V_iff {Y : Type*} (ι : G →* H)
     (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
     (hσ : Function.Surjective σ) (S : Set (GX G X)) (v : X → H) :
@@ -419,11 +420,11 @@ theorem GHom.comp_mem_V {K : Type*} [Group K] {κ : G →* K} (φ : GHom ι κ) 
 
 /-! ### Finite subsystems -/
 
-/-- A homomorphism `m : G[X] →* G'[Y]` together with a map of points `θ` compatible with
+/-- A map `m : G[X] → G'[Y]` together with a map of points `θ` compatible with
 evaluation carries finite subsystems of `m(S)` with the same solutions back to finite subsystems
 of `S` with the same solutions. -/
 theorem exists_finite_V_eq_of_map {G' Y : Type*} [Group G'] {ι : G →* H} {ι' : G' →* H}
-    (m : GX G X →* GX G' Y) (θ : (X → H) → (Y → H))
+    (m : GX G X → GX G' Y) (θ : (X → H) → (Y → H))
     (hθ : ∀ v s, eval ι' (θ v) (m s) = eval ι v s) {S : Set (GX G X)}
     (h : ∃ T ⊆ m '' S, T.Finite ∧ V ι' T = V ι' (m '' S)) :
     ∃ S₀ ⊆ S, S₀.Finite ∧ V ι S₀ = V ι S := by
@@ -629,6 +630,7 @@ theorem quotientHomEquiv_apply_coe (φ : GHom (quotientCoeff N) ι) (x : X) :
 
 /-- Evaluation at the point corresponding to a `G`-homomorphism `φ : G[X] ⧸ N → H` is `φ`
 composed with the quotient map. -/
+@[simp]
 theorem eval_quotientHomEquiv (φ : GHom (quotientCoeff N) ι) (w : GX G X) :
     eval ι (quotientHomEquiv ι N φ) w = φ (w : GX G X ⧸ N) :=
   DFunLike.congr_fun (eval_eq_comp_mk' φ) w
@@ -947,7 +949,8 @@ theorem homEquiv_comp_homOfMapsToWordMap (w : Y → GX G X)
   simp only [homEquiv_apply_coe, GHom.coe_comp, Function.comp_apply,
     homOfMapsToWordMap_mk, evalGHom_mk, wordMap_apply, eval_inr_of]
 
-/-- A coefficient-preserving word map induces a homomorphism between coordinate groups. -/
+/-- A coefficient-preserving homomorphism `σ : G[Y] →* G[X]` induces a `G`-homomorphism from the
+coordinate group of the inverse-image system `σ ⁻¹' S` to that of `S`; on classes it is `σ`. -/
 def homOfWordMap {Y : Type*} (ι : G →* H)
     (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
     (S : Set (GX G X)) : GHom (coeff ι (σ ⁻¹' S)) (coeff ι S) :=
@@ -1174,14 +1177,18 @@ section Pow
 
 open FreeGroup
 
-/-- Over a torsion-free group `H` with injective coefficients, the radical of the one-variable
-equation `x ^ n = 1` (`n ≠ 0`) is the normal closure of `x`. -/
-theorem Rad_pow_eq_normalClosure [IsMulTorsionFree H] (hι : Function.Injective ι) {n : ℕ}
-    (hn : n ≠ 0) :
+/-- Over a group `H` without nonidentity elements of `n`-th power `1` (for instance, a
+torsion-free group and `n ≠ 0`) and with injective coefficients, the radical of the one-variable
+equation `x ^ n = 1` is the normal closure of `x`. -/
+theorem Rad_pow_eq_normalClosure (hι : Function.Injective ι) {n : ℕ}
+    (hH : ∀ h : H, h ^ n = 1 → h = 1) :
     Rad ι {(inr (of ()) : GX G Unit) ^ n} = normalClosure {inr (of ())} := by
   have hV : V ι {(inr (of ()) : GX G Unit) ^ n} = {ι ∘ fun _ => 1} := by
     ext v
-    simp [hn, funext_iff, Unique.forall_iff]
+    simp only [mem_V, Set.mem_singleton_iff, forall_eq, map_pow, eval_inr, lift_apply_of,
+      funext_iff, Unique.forall_iff]
+    simp only [Function.comp_apply, PUnit.default_eq_unit]
+    exact ⟨fun h => (hH _ h).trans ι.map_one.symm, fun h => by simp [h]⟩
   rw [Rad_def, hV, I_singleton_comp hι]
   simp [Set.range_unique]
 
@@ -1236,7 +1243,8 @@ theorem rad_sq :
         normalClosure {inr (of ())} ∧
       normalClosure {(inr (of ()) : GX (FreeGroup (Fin 2)) Unit) ^ 2} ≠
         normalClosure {inr (of ())} :=
-  ⟨Rad_pow_eq_normalClosure Function.injective_id two_ne_zero,
+  ⟨Rad_pow_eq_normalClosure Function.injective_id
+      fun _ h => (pow_eq_one_iff_left two_ne_zero).1 h,
     normalClosure_pow_ne_normalClosure (by decide) ()⟩
 
 end Pow

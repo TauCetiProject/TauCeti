@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Empty
-public import TauCeti.AlgebraicTopology.Singular.Triple.Finrank
+public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Finrank
 public import TauCeti.Topology.Order.Sublevel
 
 /-!
@@ -32,7 +32,7 @@ natural number coefficients, when no step has homology in degree `n + 1`
 `TauCeti.exists_sum_range_monomial_sum_sublevelPair_eq_add_mul`), and the
 lacunary principle `b = c` when of any two consecutive `cᵢ` one vanishes
 (`TauCeti.finrank_singularHomology_eq_sum_sublevelPair`). These are the filtration statements of
-`TauCeti.AlgebraicTopology.Singular.Triple.Finrank` for the sublevels, read through the
+`TauCeti.AlgebraicTopology.Singular.FilteredSpace.Finrank` for the sublevels, read through the
 identification above.
 
 When `f` is a smooth function on a compact manifold cut at regular values between its critical
