@@ -11,7 +11,7 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Group.Action.Sigma
 public import Mathlib.Algebra.Group.Action.Sum
 public import Mathlib.Data.Set.Card
-import Mathlib.Logic.Equiv.Sigma
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # Burnside's lemma on a product of two `G`-sets
@@ -87,21 +87,21 @@ theorem ncard_fixedBy_sum (g : G) [Finite (fixedBy X g)] [Finite (fixedBy Y g)] 
 
 /-- For the fiberwise action on an indexed disjoint union, fixed-point counts add over the
 indices, provided each fixed-point set is finite. The monoid fixes the index of each point. -/
-theorem card_fixedBy_sigma {ι : Type*} [Finite ι] (X : ι → Type*) [∀ i, MulAction G (X i)]
+theorem card_fixedBy_sigma {ι : Type*} (X : ι → Type*) [∀ i, MulAction G (X i)]
     (g : G) [∀ i, Finite (fixedBy (X i) g)] :
     Nat.card (fixedBy (Σ i, X i) g) = ∑ᶠ i, Nat.card (fixedBy (X i) g) := by
-  have := Fintype.ofFinite ι
-  rw [finsum_eq_sum_of_fintype, ← Nat.card_sigma]
   have hset : fixedBy (Σ i, X i) g = Set.univ.sigma (fun i ↦ fixedBy (X i) g) := by
     ext ⟨i, x⟩
     simp [mem_fixedBy]
-  rw [hset]
-  exact Nat.card_congr <| (Equiv.Set.sigma _ _).trans <|
-    .sigmaCongrLeft (β := fun i ↦ fixedBy (X i) g) (Equiv.Set.univ ι)
+  have hcard : Nat.card (fixedBy (Σ i, X i) g) = Nat.card (Σ i, fixedBy (X i) g) := by
+    rw [hset]
+    exact Nat.card_congr <| (Equiv.Set.sigma _ _).trans <|
+      .sigmaCongrLeft (β := fun i ↦ fixedBy (X i) g) (Equiv.Set.univ ι)
+  rw [hcard, Nat.card_sigma_eq_finsum]
 
 /-- The fixed-point count on a fiberwise indexed disjoint union, in simp normal form. -/
 @[simp]
-theorem ncard_fixedBy_sigma {ι : Type*} [Finite ι] (X : ι → Type*) [∀ i, MulAction G (X i)]
+theorem ncard_fixedBy_sigma {ι : Type*} (X : ι → Type*) [∀ i, MulAction G (X i)]
     (g : G) [∀ i, Finite (fixedBy (X i) g)] :
     (fixedBy (Σ i, X i) g).ncard = ∑ᶠ i, (fixedBy (X i) g).ncard := by
   simpa only [Nat.card_coe_set_eq] using card_fixedBy_sigma X g

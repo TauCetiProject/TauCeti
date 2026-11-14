@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Basic.Denumerable
 
@@ -30,6 +31,8 @@ including when both types are infinite.
 
 * `Nat.card_pi_eq_prod_of_card_eq_one`: `Nat.card (∀ i, X i) = ∏ i ∈ s, Nat.card (X i)` when every
   factor outside `s` has cardinality one.
+* `Nat.card_sigma_eq_finsum`: `Nat.card (Σ i, β i) = ∑ᶠ i, Nat.card (β i)` for finite fibres, where
+  both sides are `0` if infinitely many fibres are nonempty.
 * `Nat.card_sigma_of_forall_card_eq`: `Nat.card (Sigma β) = d * Nat.card α` when every fibre has
   `Nat.card` equal to `d`, for arbitrary (possibly infinite) types, where `Nat.card` of an infinite
   type is `0`.
@@ -54,6 +57,22 @@ theorem card_pi_eq_prod_of_card_eq_one {ι : Type*} {X : ι → Type*} (s : Fins
   rw [Nat.card_congr (Equiv.piEquivPiSubtypeProd (· ∈ s) X), Nat.card_prod,
     Nat.card_unique (α := ∀ i : {i // i ∉ s}, X i), mul_one, Nat.card_pi]
   exact Finset.prod_coe_sort s fun i ↦ Nat.card (X i)
+
+/-- The cardinality of a sigma type of finite fibres is the finite sum of the fibre cardinalities:
+if infinitely many fibres are nonempty, both sides are `0`. -/
+theorem card_sigma_eq_finsum {ι : Type*} (β : ι → Type*) [∀ i, Finite (β i)] :
+    Nat.card (Σ i, β i) = ∑ᶠ i, Nat.card (β i) := by
+  set s := Function.support fun i ↦ Nat.card (β i)
+  have e : (Σ i : s, β i) ≃ Σ i, β i := Equiv.sigmaSubtypeEquivOfSubset β (· ∈ s)
+    fun i x ↦ have : Nonempty (β i) := ⟨x⟩; Nat.card_pos.ne'
+  rw [← Nat.card_congr e]
+  by_cases hs : s.Finite
+  · have := hs.fintype
+    rw [Nat.card_sigma, ← finsum_mem_support, ← finsum_set_coe_eq_finsum_mem,
+      finsum_eq_sum_of_fintype]
+  · have : Infinite s := Set.infinite_coe_iff.mpr hs
+    have (i : s) : Nonempty (β i) := (Nat.card_ne_zero.mp i.2).1
+    rw [Nat.card_eq_zero_of_infinite, finsum_of_infinite_support hs]
 
 /-- **A sigma type with constant fibre cardinality.** If every fibre `β a` has `Nat.card` equal to
 `d`, then `Nat.card (Sigma β) = d * Nat.card α`. This holds for arbitrary types, with `Nat.card` of
