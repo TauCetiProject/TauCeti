@@ -16,7 +16,6 @@ import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.NumberTheory.LegendreSymbol.Basic
 import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Algebra.Group.Units.Basic
-import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
@@ -248,19 +247,8 @@ theorem not_isSquare_neg_one_of_mod_four_ne_one (hp : p % 4 ≠ 1) :
   rcases (Fact.out : p.Prime).eq_two_or_odd with rfl | hodd
   · simpa using not_isSquare_intCast_of_not_isSquare_zmod (p := 2) (a := -1) (k := 2)
       (by rw [IsSquare]; decide)
-  have hp : p % 4 = 3 := by omega
-  intro hs0
-  have hs : IsSquare (-1 : ℚ_[p]ˣ) := Units.isSquare_coe_iff.mp hs0
-  have h2 : IsUnit (2 : 𝒪[ℚ_[p]]) := isUnit_two_integerRing (by omega)
-  have hsres : IsSquare (-1 : 𝓀[ℚ_[p]]ˣ) := by
-    have h := (TauCeti.isSquare_unitsMap_subtype_iff h2 (-1 : 𝒪[ℚ_[p]]ˣ)).mp
-    exact (by simpa using h (by simpa using hs))
-  have hs' : IsSquare (-1 : 𝓀[ℚ_[p]]) :=
-    Units.isSquare_coe_iff.mpr hsres
-  let : Fintype 𝓀[ℚ_[p]] := Fintype.ofFinite _
-  have hcard : Fintype.card 𝓀[ℚ_[p]] = p := by
-    simpa only [Nat.card_eq_fintype_card] using natCard_residueField p
-  exact ((FiniteField.isSquare_neg_one_iff).mp hs') (by simpa [hcard] using hp)
+  simpa using not_isSquare_intCast_of_not_isSquare_zmod (p := p) (a := -1) (k := 1)
+    (by rw [pow_one, Int.cast_neg, Int.cast_one, ZMod.exists_sq_eq_neg_one_iff]; omega)
 
 /-- `5` is not a square in `ℚ_[2]`, since no square is `5` modulo `8`. -/
 theorem not_isSquare_five : ¬IsSquare (5 : ℚ_[2]) := by

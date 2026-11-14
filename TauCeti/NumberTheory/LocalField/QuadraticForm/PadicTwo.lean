@@ -112,13 +112,6 @@ private theorem exists_eq_two_zpow_mul (b : ℚ_[2]ˣ) :
   obtain ⟨v, hv⟩ := Padic.exists_eq_zpow_valuation_mul b.ne_zero
   exact ⟨_, v, by exact_mod_cast hv⟩
 
-/-- A unit of `ℤ_2` that is not `1 mod 8` is a nonsquare of `ℚ_2ˣ`. -/
-private theorem not_isSquare_of_toZModPow_ne_one {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ}
-    (ha : (a : ℚ_[2]) = u) (hu : PadicInt.toZModPow 3 (u : ℤ_[2]) ≠ 1) : ¬IsSquare a := by
-  rw [isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero ha,
-    serreEps_eq_zero_and_serreOmega_eq_zero_iff, mem_unitsPrincipal_iff_toZModPow]
-  exact hu
-
 /-- For a nonsquare `c`, the symbol `(c, ·)` is nontrivial on one of the generators `2`, `-1`,
 `5` of `ℚ_2ˣ/(ℚ_2ˣ)²`. -/
 private theorem not_hilbertSymbol_generators_eq_one {c : ℚ_[2]ˣ} (hc : ¬IsSquare c)
@@ -144,9 +137,9 @@ private theorem hilbertSymbol_unitFive_unitFive : hilbertSymbol unitFive unitFiv
 /-- `(-1, -1) = −1` over `ℚ_2`: `-1` is not of the form `x² + y²` with `x, y ∈ ℚ_2`. -/
 theorem hilbertSymbol_neg_one_neg_one_padicTwo : hilbertSymbol (-1 : ℚ_[2]ˣ) (-1) = -1 := by
   -- `-1` is a nonsquare, and `(-1, 2) = (-1, 5) = +1`, so `(-1, -1)` must be `−1`.
-  have hc : ¬IsSquare (-1 : ℚ_[2]ˣ) :=
-    not_isSquare_of_toZModPow_ne_one (u := -1) (by simp)
-      (by rw [Units.val_neg, Units.val_one, map_neg, map_one]; decide)
+  have hc : ¬IsSquare (-1 : ℚ_[2]ˣ) := by
+    rw [← Units.isSquare_coe_iff]
+    simpa using Padic.not_isSquare_neg_one_of_mod_four_ne_one 2 (by decide)
   exact (Int.units_eq_one_or _).resolve_left fun h ↦ not_hilbertSymbol_generators_eq_one hc
     hilbertSymbol_neg_one_unitTwo h hilbertSymbol_neg_one_unitFive
 
