@@ -360,10 +360,10 @@ private theorem UniformlyEllipticOn.ae_invApprox_value_le_mul_setIntegral_rpow
   have hF0 : invApprox c 0 = 0 := by simp [invApprox]
   -- The bounds on `F'` and `F''` in the form required by `TauCeti.W1p.contDiffComp`.
   have hM : ∀ t, ‖deriv (invApprox c) t‖₊ ≤ ((c ^ 2)⁻¹).toNNReal := fun t => by
-    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity)]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity)]
     exact abs_deriv_invApprox_le hc t
   have hM' : ∀ t, ‖deriv (deriv (invApprox c)) t‖₊ ≤ (3 / c ^ 3).toNNReal := fun t => by
-    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity)]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity)]
     exact abs_deriv_deriv_invApprox_le hc t
   have hval := W1p.value_contDiffComp_ae ENNReal.ofNat_ne_top (hF.of_le one_le_two) hM hF0 u
   have hw := hsub _ fun v hv => h.energyFormH1_contDiffComp_nonpos ha hu hF hM hM' hF0 hum

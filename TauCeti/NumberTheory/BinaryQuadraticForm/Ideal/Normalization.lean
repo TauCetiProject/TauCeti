@@ -132,8 +132,8 @@ private theorem mul_im_eq_half_of_proper (D : ℤ) [Fact (¬ IsSquare D)]
   have hgen_stable : ∀ z ∈ I, QuadraticOrder.generator D * z ∈ I := by
     intro z hz
     have h := (I : Submodule O.toSubalgebra (QuadraticAlgebra ℚ (D : ℚ) 0)).smul_mem
-      ⟨QuadraticOrder.generator D, hgenO⟩ (FractionalIdeal.mem_coe.mpr hz)
-    apply FractionalIdeal.mem_coe.mp
+      ⟨QuadraticOrder.generator D, hgenO⟩ (FractionalIdeal.mem_coeToSubmodule.mpr hz)
+    apply FractionalIdeal.mem_coeToSubmodule.mp
     simpa only [Algebra.smul_def, Subalgebra.algebraMap_apply] using h
   have hθorder : θ ∈ QuadraticOrder.toSubalgebra D hD := by
     exact (congrArg (fun A ↦ θ ∈ A)

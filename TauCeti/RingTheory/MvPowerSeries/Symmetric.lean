@@ -504,8 +504,9 @@ theorem evalTopEsymm_sum_toMvPowerSeries [Nonempty σ] (γ : PowerSeries R) :
         (MvPolynomial.mem_symmetricSubalgebra _).mpr (MvPolynomial.psum_isSymmetric σ R m)⟩ :=
     fun m ↦ Subtype.ext (homogeneousComponentPolynomial_sum_toMvPowerSeries m γ)
   ext k
-  rw [coeff_evalTopEsymm, hcomp, map_smul, Polynomial.coeff_smul, PowerSeries.coeff_smul,
-    PowerSeries.coeff_cartier, add_zero, smul_eq_mul, smul_eq_mul, mul_comm (Fintype.card σ) k]
+  rw [coeff_evalTopEsymm, hcomp, map_smul, AddMonoidAlgebra.coeff_smul_apply,
+    PowerSeries.coeff_smul, PowerSeries.coeff_cartier, add_zero, smul_eq_mul, smul_eq_mul,
+    mul_comm (Fintype.card σ) k]
   rcases eq_or_ne k 0 with rfl | hk
   · -- For `k = 0`, `psum σ R 0 = card σ`.
     have hp0 : (⟨MvPolynomial.psum σ R 0,
