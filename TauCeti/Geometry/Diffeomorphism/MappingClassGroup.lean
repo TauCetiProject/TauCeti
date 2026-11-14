@@ -165,7 +165,7 @@ variable {ι : Type*} [Fintype ι]
 orientation-preserving diffeomorphisms fixing `∂M` pointwise. -/
 noncomputable def orientationPreserving (o : Manifold.Orientation I M ι) :
     Subgroup (MappingClassGroup I M) :=
-  (Diffeomorph.orientationPreservingSubgroup o).subgroupOf
+  (Diffeomorph.orientationPreservingSubgroup (n := ∞) (by simp) o).subgroupOf
     (fixingSubgroup (Diff I M ∞) (I.boundary M)) |>.map (mk I M)
 
 /-- A mapping class lies in `Mod⁺(M)` when it has an orientation-preserving representative. -/
