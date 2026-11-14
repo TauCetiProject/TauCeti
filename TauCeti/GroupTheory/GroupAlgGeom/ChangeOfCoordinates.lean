@@ -310,6 +310,42 @@ theorem imageMulEquiv_symm_coeff (S : Set (GX G X)) (g : G) :
     (imageMulEquiv ι φ hφ S).symm (coeff ι (φ '' S) g) = coeff ι S g := by
   rw [MulEquiv.symm_apply_eq, imageMulEquiv_coeff]
 
+/-- The coordinate-group isomorphism induced by a `G`-isomorphism `φ` sends a coordinate `x` of
+the generic point of the system to the class of the word `φ x`. -/
+@[simp]
+theorem imageMulEquiv_genericPoint (S : Set (GX G X)) (x : X) :
+    imageMulEquiv ι φ hφ S (genericPoint ι S x) =
+      (φ (inr (FreeGroup.of x)) : CoordGroup ι (φ '' S)) := by
+  simp [genericPoint_apply]
+
+/-- The inverse of the coordinate-group isomorphism induced by a `G`-isomorphism `φ` sends a
+coordinate `y` of the generic point of the image system to the class of the word `φ⁻¹ y`. -/
+@[simp]
+theorem imageMulEquiv_symm_genericPoint (S : Set (GX G X)) (y : Y) :
+    (imageMulEquiv ι φ hφ S).symm (genericPoint ι (φ '' S) y) =
+      (φ.symm (inr (FreeGroup.of y)) : CoordGroup ι S) := by
+  simp [genericPoint_apply]
+
+/-- The coordinate-group isomorphism induced by a `G`-isomorphism `φ` sends the generic point of
+the system to the image of the generic point of the image system under the word map of `φ`. -/
+@[simp]
+theorem imageMulEquiv_comp_genericPoint (S : Set (GX G X)) :
+    ⇑(imageMulEquiv ι φ hφ S) ∘ genericPoint ι S =
+      wordMap (coeff ι (φ '' S)) (fun x => φ (inr (FreeGroup.of x)))
+        (genericPoint ι (φ '' S)) := by
+  funext x
+  simp
+
+/-- The inverse of the coordinate-group isomorphism induced by a `G`-isomorphism `φ` sends the
+generic point of the image system to the image of the generic point of the system under the word
+map of `φ⁻¹`. -/
+@[simp]
+theorem imageMulEquiv_symm_comp_genericPoint (S : Set (GX G X)) :
+    ⇑(imageMulEquiv ι φ hφ S).symm ∘ genericPoint ι (φ '' S) =
+      wordMap (coeff ι S) (fun y => φ.symm (inr (FreeGroup.of y))) (genericPoint ι S) := by
+  funext y
+  simp
+
 end CoordGroup
 
 end MulEquiv
@@ -364,6 +400,19 @@ theorem sumExtend_map_inr (w : GX G Y) :
       Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr) :=
     hom_ext (MonoidHom.ext fun g => by simp) (FreeGroup.ext_hom _ _ fun y => by simp)
   exact DFunLike.congr_fun h w
+
+/-- The extension of `σ` restricts to `σ` on the coefficient-free words in the variables `X'`. -/
+@[simp]
+theorem sumExtend_inr_map_inl (u : FreeGroup X') :
+    sumExtend Y σ (inr (FreeGroup.map Sum.inl u)) =
+      Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inl) (σ (inr u)) := by
+  simpa using sumExtend_map_inl (Y := Y) σ (inr u)
+
+/-- The extension of `σ` fixes the coefficient-free words in the further variables `Y`. -/
+@[simp]
+theorem sumExtend_inr_map_inr (u : FreeGroup Y) :
+    sumExtend Y σ (inr (FreeGroup.map Sum.inr u)) = inr (FreeGroup.map Sum.inr u) := by
+  simpa using sumExtend_map_inr σ (inr u)
 
 variable (Y X) in
 /-- The extension of the identity is the identity. -/
