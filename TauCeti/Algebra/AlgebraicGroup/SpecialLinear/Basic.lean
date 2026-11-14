@@ -257,6 +257,15 @@ theorem pointsMulEquiv_toGL
     ← Matrix.SpecialLinearGroup.toGLKerEquiv_apply_coe, MulEquiv.apply_symm_apply,
     MulEquiv.subgroupCongr_apply, GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply]
 
+/-- Companion of `pointsMulEquiv_toGL` in the form consumers hold: the ambient point is the
+composite with `coordinateMap`, the normal form of `quotientPointsHom` under
+`CommHopfAlgCat.quotientPointsHom_apply`. -/
+theorem toGL_pointsMulEquiv
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :
+    Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := R) (A := A) n f) =
+      GeneralLinear.pointsMulEquiv n (toConv (f.ofConv.comp (coordinateMap R n).hom)) := by
+  rw [← pointsMulEquiv_toGL, CommHopfAlgCat.quotientPointsHom_apply]
+
 /-- The ambient point attached to a special-linear matrix is the general-linear point attached to
 its canonical inclusion. -/
 @[simp↓]

@@ -82,7 +82,7 @@ private theorem upperUnitriangularCoordinateAlgHom_counit
   apply UpperUnitriangular.coordinateHopfAlgebra_algHom_ext R m
   intro ij
   rw [AlgHom.comp_apply, Bialgebra.counitAlgHom_apply,
-    upperUnitriangularCoordinateAlgHom, UpperUnitriangular.upperUnitriangularToPoint_apply,
+    upperUnitriangularCoordinateAlgHom, UpperUnitriangular.upperUnitriangularToPoint_apply_X,
     h.coe_toGL, counit_coefficientMatrix]
   simp [Bialgebra.counitAlgHom_apply, ij.2.ne]
 
@@ -109,7 +109,7 @@ private theorem upperUnitriangularCoordinateAlgHom_comul
           (UpperUnitriangular.coordinateHopfAlgebraAlgEquiv R m (MvPolynomial.X ij)) =
         coefficientMatrix (C := H) b ij.1.1 ij.1.2 := by
     rw [upperUnitriangularCoordinateAlgHom,
-      UpperUnitriangular.upperUnitriangularToPoint_apply, h.coe_toGL]
+      UpperUnitriangular.upperUnitriangularToPoint_apply_X, h.coe_toGL]
   apply UpperUnitriangular.coordinateHopfAlgebra_algHom_ext R m
   intro ij
   simp only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply,
@@ -138,7 +138,7 @@ theorem upperUnitriangularCoordinateBialgHom_X
         (UpperUnitriangular.coordinateHopfAlgebraAlgEquiv R m (MvPolynomial.X ij)) =
       coefficientMatrix (C := H) b ij.1.1 ij.1.2 := by
   simp only [upperUnitriangularCoordinateBialgHom, BialgHom.ofAlgHom_apply,
-    upperUnitriangularCoordinateAlgHom, UpperUnitriangular.upperUnitriangularToPoint_apply,
+    upperUnitriangularCoordinateAlgHom, UpperUnitriangular.upperUnitriangularToPoint_apply_X,
     h.coe_toGL]
 
 /-- The upper-unitriangular coordinate morphism sends every entry of the generic matrix to the
