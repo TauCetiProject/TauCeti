@@ -250,7 +250,7 @@ theorem extDerivWithin_inChartAt_eq [IsManifold I 2 M]
         (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F) = 0 :=
       (ContinuousAlternatingMap.alternatizeUncurryFinCLM ℝ E F).map_zero
     rw [h0]
-    ext v
+    ext _
     simp
 
 /-- Reading the manifold exterior derivative within a subset in any preferred chart gives the

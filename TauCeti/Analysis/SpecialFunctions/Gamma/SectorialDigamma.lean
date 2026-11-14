@@ -124,7 +124,7 @@ private theorem sum_inv_add_eq_sub_integral_floor {s : ℂ} (hs : s ∈ slitPlan
   have hA := sum_mul_eq_sub_integral_mul' (fun _ : ℕ ↦ (1 : ℂ)) N
     (fun t ht ↦ (hd t ht).differentiableAt)
     (hc.integrableOn_Icc.congr_fun (fun t ht ↦ (hd t ht).deriv.symm) measurableSet_Icc)
-  have hsum (m : ℕ) : ∑ k ∈ Finset.Icc 0 m, (1 : ℂ) = (m : ℂ) + 1 := by simp
+  have hsum (m : ℕ) : ∑ _ ∈ Finset.Icc 0 m, (1 : ℂ) = (m : ℂ) + 1 := by simp
   simp only [hsum, mul_one] at hA
   rw [setIntegral_congr_fun measurableSet_Ioc
     (fun t ht ↦ by rw [(hd t (Ioc_subset_Icc_self ht)).deriv])] at hA
@@ -424,7 +424,6 @@ private theorem norm_integral_fract_kernel_le {s : ℂ} (hs : s ∈ slitPlane) {
       ‖(((Int.fract t ^ 2 - Int.fract t) / 2 : ℝ) : ℂ) / (s + t) ^ 3‖ ≤
         (8 * c ^ 3 * ‖s‖)⁻¹ * (1 / (‖s‖ + t) ^ 2) := by
     rw [norm_div, norm_pow, Complex.norm_real, Real.norm_eq_abs]
-    have hst : 0 < ‖s‖ + t := by linarith
     have hcube : c ^ 3 * (‖s‖ + t) ^ 3 ≤ ‖s + t‖ ^ 3 := by
       rw [← mul_pow]
       exact pow_le_pow_left₀ (by positivity) (hden t ht) 3
@@ -501,7 +500,6 @@ private theorem norm_digamma_sub_log_add_inv_two_mul_le_of_mul_norm_add_le {s : 
     ring
   rw [heq]
   have hsN := hden N (Nat.cast_nonneg N)
-  have hcN : 0 < c * (‖s‖ + N) := by positivity
   calc
     _ ≤ ‖(2 * (s + N))⁻¹‖ + 2 * (1 / (8 * c ^ 3 * ‖s‖ ^ 2)) := by
       refine (norm_add_le _ _).trans ?_

@@ -162,7 +162,7 @@ private theorem polar_basis_eq_zero {i j : ι} (hij : i ≠ j) : polar Q (b i) (
   have h : associated Q (b i) (b j) = 0 := hb hij
   rw [associated_apply] at h
   rw [polar]
-  simpa [invOf_eq_inv] using h
+  exact (isUnit_of_invertible (⅟(2 : ℚ_[p]))).smul_eq_zero.mp h
 
 omit [Fintype ι] [DecidableEq ι] in
 /-- For an orthogonal basis of unit norms, the polar form is integral on the basis. -/

@@ -21,6 +21,8 @@ torsion-free, hence flat over `ℤ`.
 
 * `LinearMap.SeparatingLeft.isTorsionFree`: a module with a left-separating map, linear in its
   first argument and semilinear in its second, into a torsion-free module is torsion-free.
+* `LinearMap.BilinForm.isTorsionFree_of_pos`: a positive definite form makes the module
+  torsion-free.
 -/
 
 public section
@@ -39,3 +41,18 @@ theorem SeparatingLeft.isTorsionFree {B : M →ₗ[R] N →ₛₗ[I] P} (hB : B.
     rw [← map_smul₂, smul_sub, sub_eq_zero.2 h, map_zero₂]
 
 end LinearMap
+
+namespace LinearMap.BilinForm
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- **A positive definite form makes the module torsion-free.** If `B x x > 0` for every nonzero
+`x`, then the form is left-separating, so the module is torsion-free by
+`LinearMap.SeparatingLeft.isTorsionFree`. -/
+theorem isTorsionFree_of_pos [LinearOrder R] {B : LinearMap.BilinForm R M}
+    (hpos : ∀ x, x ≠ 0 → 0 < B x x) : Module.IsTorsionFree R M :=
+  SeparatingLeft.isTorsionFree (B := B) fun x hx ↦ by
+    by_contra h
+    exact (hpos x h).ne' (hx x)
+
+end LinearMap.BilinForm

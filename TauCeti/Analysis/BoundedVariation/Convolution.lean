@@ -82,7 +82,7 @@ theorem totalVariationOn_convolution_le [SFinite μ] [μ.IsAddRightInvariant]
   -- variation on `Ω`.
   have htrans (t : E) (ht : t ∈ tsupport ρ) :
       ‖∫ x, ψ x * u (x - t) ∂μ‖ₑ ≤ totalVariationOn μ Ω u := by
-    rw [Real.enorm_eq_ofReal_abs]
+    rw [Real.eNorm_eq_ofReal_abs]
     simp_rw [sub_eq_add_neg]
     exact (ofReal_abs_integral_le_totalVariationOn φ hφ).trans
       (totalVariationOn_comp_add_right_le fun x hx => by
@@ -90,17 +90,17 @@ theorem totalVariationOn_convolution_le [SFinite μ] [μ.IsAddRightInvariant]
   rw [integral_mul_convolution_eq_integral_mul_integral_comp_sub ψ.continuous ψ.hasCompactSupport
     hρ hρc hu fun t ht x hx => hΩ t ht x (ψ.tsupport_subset hx)]
   calc ENNReal.ofReal (∫ t, ρ t * ∫ x, ψ x * u (x - t) ∂μ ∂μ)
-      ≤ ‖∫ t, ρ t * ∫ x, ψ x * u (x - t) ∂μ ∂μ‖ₑ := Real.ofReal_le_enorm _
+      ≤ ‖∫ t, ρ t * ∫ x, ψ x * u (x - t) ∂μ ∂μ‖ₑ := Real.ofReal_le_eNorm _
     _ ≤ ∫⁻ t, ‖ρ t‖ₑ * ‖∫ x, ψ x * u (x - t) ∂μ‖ₑ ∂μ := by
-        simpa only [enorm_mul] using
-          enorm_integral_le_lintegral_enorm fun t => ρ t * ∫ x, ψ x * u (x - t) ∂μ
+        simpa only [eNorm_mul] using
+          eNorm_integral_le_lintegral_eNorm fun t => ρ t * ∫ x, ψ x * u (x - t) ∂μ
     _ ≤ ∫⁻ t, ‖ρ t‖ₑ * totalVariationOn μ Ω u ∂μ := by
         refine lintegral_mono fun t => ?_
         by_cases ht : t ∈ tsupport ρ
         · exact mul_le_mul_right (htrans t ht) _
         · simp [image_eq_zero_of_notMem_tsupport ht]
     _ = (∫⁻ t, ‖ρ t‖ₑ ∂μ) * totalVariationOn μ Ω u :=
-        lintegral_mul_const'' _ hρ.aemeasurable.enorm
+        lintegral_mul_const'' _ hρ.aemeasurable.eNorm
 
 variable [μ.IsAddHaarMeasure]
 
@@ -111,7 +111,7 @@ theorem _root_.ContDiffBump.totalVariationOn_normed_convolution_le (φ : ContDif
     (hu : LocallyIntegrableOn u Ω μ) (hΩ : ∀ x ∈ Ω', closedBall x φ.rOut ⊆ Ω) :
     totalVariationOn μ Ω' (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) ≤ totalVariationOn μ Ω u := by
   have hnorm : ∫⁻ t, ‖φ.normed μ t‖ₑ ∂μ = 1 := by
-    simp_rw [Real.enorm_of_nonneg (φ.nonneg_normed _)]
+    simp_rw [Real.eNorm_of_nonneg (φ.nonneg_normed _)]
     rw [← ofReal_integral_eq_lintegral_ofReal φ.integrable_normed
       (.of_forall φ.nonneg_normed), φ.integral_normed, ENNReal.ofReal_one]
   simpa [hnorm] using totalVariationOn_convolution_le φ.integrable_normed

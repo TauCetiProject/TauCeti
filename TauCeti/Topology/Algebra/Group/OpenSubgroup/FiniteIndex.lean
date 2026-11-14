@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 import Mathlib.Algebra.Group.Subgroup.Order
+import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 import Mathlib.Order.Atoms.Finite
 
 /-!
@@ -35,6 +36,9 @@ an open subgroup is closed, so it is compact.
 Every proper open subgroup of a compact group lies in a maximal open subgroup. This follows
 by passing to a finite quotient by an open normal subgroup contained in the given subgroup.
 
+The normal core of an open subgroup of finite index is itself open, so such a subgroup contains an
+open normal subgroup of finite index. This needs no compactness.
+
 ## Main results
 
 * `OpenSubgroup.finiteIndex_toSubgroup`: the underlying subgroup of an open subgroup of a
@@ -43,6 +47,9 @@ by passing to a finite quotient by an open normal subgroup contained in the give
   compact group is compact.
 * `OpenSubgroup.finiteIndex_comap`: the preimage of an open subgroup of finite index under a
   continuous homomorphism has finite index.
+* `OpenSubgroup.isOpen_normalCore`: the normal core of an open subgroup of finite index is open.
+* `OpenSubgroup.exists_openNormalSubgroup_le`: an open subgroup of finite index
+  contains an open normal subgroup of finite index.
 * `Subgroup.exists_isOpen_isCoatom_le_of_isOpen`: a proper open subgroup of a compact group
   lies in a maximal open subgroup.
 -/
@@ -108,3 +115,27 @@ theorem Subgroup.exists_isOpen_isCoatom_le_of_isOpen [IsTopologicalGroup G]
     (Subgroup.comap_map_eq_self hUK).ge.trans (Subgroup.comap_mono hKL)⟩
 
 end MaximalOpenSubgroup
+
+section NormalCore
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+
+/-- The normal core of an open subgroup of finite index is open: it is closed, being an
+intersection of closed conjugates, and has finite index. -/
+@[to_additive /-- The normal core of an open additive subgroup of finite index is open: it is
+closed, being an intersection of closed conjugates, and has finite index. -/]
+theorem OpenSubgroup.isOpen_normalCore (U : OpenSubgroup G) [U.toSubgroup.FiniteIndex] :
+    IsOpen (U.toSubgroup.normalCore : Set G) :=
+  Subgroup.isOpen_of_isClosed_of_finiteIndex _ (Subgroup.normalCore_isClosed _ U.isClosed)
+
+/-- An open subgroup of finite index contains an open normal subgroup of finite index, namely its
+normal core. -/
+@[to_additive /-- An open additive subgroup of finite index contains an open normal additive
+subgroup of finite index, namely its normal core. -/]
+theorem OpenSubgroup.exists_openNormalSubgroup_le (U : OpenSubgroup G)
+    [U.toSubgroup.FiniteIndex] :
+    ∃ N : OpenNormalSubgroup G, N.toSubgroup ≤ U.toSubgroup ∧ N.toSubgroup.FiniteIndex :=
+  ⟨{ toSubgroup := U.toSubgroup.normalCore, isOpen' := U.isOpen_normalCore },
+    Subgroup.normalCore_le _, inferInstance⟩
+
+end NormalCore

@@ -86,9 +86,8 @@ theorem exists_rpow_mul_Gamma_div_le_exp_mul_log {c α : ℝ} (hc : 0 < c) (hα 
   let K := a + 3
   have hK : 0 < K := by dsimp [K]; positivity
   let B := (a * (a + 1))⁻¹
-  have hB : 0 < B := by dsimp [B]; positivity
+  have _ : 0 < B := by dsimp [B]; positivity
   let D := B + a
-  have hD : 0 < D := add_pos hB ha
   let C := 2 * D + 2 * |log c| * a + K * (2 * K + 1)
   have hC : 0 < C := by dsimp [C]; positivity
   refine ⟨C, hC, fun R hR ↦ ?_⟩
