@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
@@ -12,7 +12,7 @@ import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.Dirac
 
 /-!
-# Quantiles of LKJ matrix entries
+# Quantiles of LKJ entries and partial correlations
 
 For `η > 0` and `i ≠ j`, the off-diagonal entry `R i j` of a `p × p` LKJ matrix of shape `η` is
 `-1 + 2 * X` with `X ~ Beta(α, α)` and `α = η + (p - 2) / 2`
@@ -21,13 +21,25 @@ therefore `-1 + 2 * inverseRegularizedIncompleteBeta α α u`, and these quantil
 endpoints `-1` and `1` of the entry's support as `u` tends to `0` and `1`. Diagonal entries are
 almost surely one, so their interior quantiles are one.
 
+For a partial-correlation coordinate of shape `a = lkjPartialCorrelationShape p η ij`,
+the interior quantile is
+`-1 + 2 * inverseRegularizedIncompleteBeta a a u`. Its one-sided endpoint limits are `-1`
+and `1`. The quantile formulas use the native-matrix laws in
+`TauCeti.Probability.Distributions.LKJ.PartialCorrelation`.
+
 ## Main results
 
 * `TauCeti.Probability.quantile_map_coe_apply_lkjMeasure_of_ne`: the off-diagonal quantile;
 * `TauCeti.Probability.tendsto_quantile_map_coe_apply_lkjMeasure_of_ne_nhdsGT_zero` and
   `TauCeti.Probability.tendsto_quantile_map_coe_apply_lkjMeasure_of_ne_nhdsLT_one`: its
   endpoint limits;
-* `TauCeti.Probability.quantile_map_coe_apply_self_lkjMeasure`: the diagonal quantile.
+* `TauCeti.Probability.quantile_map_coe_apply_self_lkjMeasure`: the diagonal quantile;
+* `TauCeti.Probability.quantile_map_eval_partialCorrelationOfCorrelationCoordinates_lkjMeasure`:
+  the partial-correlation quantile;
+* `tendsto_quantile_map_eval_partialCorrelationOfCorrelationCoordinates_lkjMeasure_nhdsGT_zero`
+  and
+  `tendsto_quantile_map_eval_partialCorrelationOfCorrelationCoordinates_lkjMeasure_nhdsLT_one`:
+  its endpoint limits.
 
 ## References
 
@@ -76,8 +88,8 @@ theorem tendsto_quantile_map_coe_apply_lkjMeasure_of_ne_nhdsGT_zero (hη : 0 < �
     Tendsto ((lkjMeasure p η).map
         (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
           (R : Matrix (Fin p) (Fin p) ℝ) i j)).quantile (𝓝[>] 0) (𝓝 (-1)) := by
-  have ha := entry_shape_pos hη hij
-  have h := ((tendsto_inverseRegularizedIncompleteBeta_zero ha ha).const_mul 2).const_add (-1)
+  have h := ((tendsto_inverseRegularizedIncompleteBeta_zero (η + ((p : ℝ) - 2) / 2)
+    (η + ((p : ℝ) - 2) / 2)).const_mul 2).const_add (-1)
   simp only [mul_zero, add_zero] at h
   apply h.congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
@@ -103,5 +115,45 @@ theorem quantile_map_coe_apply_self_lkjMeasure (hη : 0 < η) (i : Fin p) {u : �
     ((lkjMeasure p η).map (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         (R : Matrix (Fin p) (Fin p) ℝ) i i)).quantile u = 1 := by
   rw [map_coe_apply_self_lkjMeasure hη i, Measure.quantile_dirac 1 hu.1 hu.2.le]
+
+/-- An interior quantile of an LKJ partial correlation is the centered inverse-Beta quantile
+with the shape of its column. -/
+@[simp]
+theorem quantile_map_eval_partialCorrelationOfCorrelationCoordinates_lkjMeasure (hη : 0 < η)
+    (ij : strictLowerTriangle p) {u : ℝ} (hu : u ∈ Ioo 0 1) :
+    ((lkjMeasure p η).map
+      (fun R ↦ partialCorrelationOfCorrelationCoordinates (correlationCoordinates p R) ij)).quantile
+        u = -1 + 2 * inverseRegularizedIncompleteBeta (lkjPartialCorrelationShape p η ij)
+          (lkjPartialCorrelationShape p η ij) u := by
+  have ha := lkjPartialCorrelationShape_pos hη ij
+  let _ := isProbabilityMeasureBeta ha ha
+  rw [map_eval_partialCorrelationOfCorrelationCoordinates_lkjMeasure hη ij,
+    quantile_map_affine_pos (by norm_num) hu.1 hu.2, quantile_betaMeasure ha ha hu]
+
+/-- LKJ partial-correlation quantiles tend to the lower support endpoint `-1`. -/
+theorem tendsto_quantile_map_eval_partialCorrelationOfCorrelationCoordinates_lkjMeasure_nhdsGT_zero
+    (hη : 0 < η) (ij : strictLowerTriangle p) :
+    Tendsto ((lkjMeasure p η).map
+      (fun R ↦ partialCorrelationOfCorrelationCoordinates (correlationCoordinates p R) ij)).quantile
+        (𝓝[>] 0) (𝓝 (-1)) := by
+  have h := ((tendsto_inverseRegularizedIncompleteBeta_zero (lkjPartialCorrelationShape p η ij)
+    (lkjPartialCorrelationShape p η ij)).const_mul 2).const_add (-1)
+  simp only [mul_zero, add_zero] at h
+  apply h.congr'
+  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
+  exact (quantile_map_eval_partialCorrelationOfCorrelationCoordinates_lkjMeasure hη ij hu).symm
+
+/-- LKJ partial-correlation quantiles tend to the upper support endpoint `1`. -/
+theorem tendsto_quantile_map_eval_partialCorrelationOfCorrelationCoordinates_lkjMeasure_nhdsLT_one
+    (hη : 0 < η) (ij : strictLowerTriangle p) :
+    Tendsto ((lkjMeasure p η).map
+      (fun R ↦ partialCorrelationOfCorrelationCoordinates (correlationCoordinates p R) ij)).quantile
+        (𝓝[<] 1) (𝓝 1) := by
+  have ha := lkjPartialCorrelationShape_pos hη ij
+  have h := ((tendsto_inverseRegularizedIncompleteBeta_one ha ha).const_mul 2).const_add (-1)
+  norm_num only [mul_one, neg_add_cancel_left] at h
+  apply h.congr'
+  filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
+  exact (quantile_map_eval_partialCorrelationOfCorrelationCoordinates_lkjMeasure hη ij hu).symm
 
 end TauCeti.Probability

@@ -55,7 +55,7 @@ theorem massMeasure_comp_monoCLM (hT : HasLocallyFiniteMass T) (h : Ω' ≤ Ω) 
   apply Measure.OuterRegular.ext_isOpen
   intro U hU
   obtain ⟨W, hW, rfl⟩ := isOpen_induced_iff.1 hU
-  rw [massMeasure_preimage_coe (hT.comp_monoCLM h) hW,
+  rw [massMeasure_preimage_coe hT.comp_monoCLM hW,
     hi.measurableEmbedding.comap_apply]
   have himage : Set.inclusion h '' ((↑) ⁻¹' W : Set Ω') =
       ((↑) ⁻¹' (W ∩ (Ω' : Set E)) : Set Ω) := by

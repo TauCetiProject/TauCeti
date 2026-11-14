@@ -113,8 +113,8 @@ theorem algebraEtale_coinvariants_of_le_identityComponentHopfIdeal
   have hsub : I.coinvariants ≤ f.range := (HopfIdeal.coinvariants_mono hI).trans_eq
     (coinvariants_identityComponentHopfIdeal_eq_range H)
   let j := Subalgebra.inclusion hsub
-  let _ : IsReduced I.coinvariants := isReduced_of_injective j (Subalgebra.inclusion_injective hsub)
-  let _ := moduleFinite_coinvariants_of_le_identityComponentHopfIdeal H I hI
-  exact algebraEtale_of_finite_of_isReduced k I.coinvariants
+  exact algebraEtale_iff_finite_and_isReduced.2
+    ⟨moduleFinite_coinvariants_of_le_identityComponentHopfIdeal H I hI,
+      isReduced_of_injective j (Subalgebra.inclusion_injective hsub)⟩
 
 end TauCeti.FiniteTypeCommHopfAlgCat

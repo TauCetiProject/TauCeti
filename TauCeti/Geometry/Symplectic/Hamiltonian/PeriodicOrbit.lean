@@ -57,6 +57,9 @@ the comparison of the Floer homology of a `C²`-small Morse function with its Mo
 * `SmoothTwoForm.IsNondegenerate.finite_contractiblePeriodicSolutions_hamiltonianVectorField`: a
   time-dependent Hamiltonian on a closed manifold whose contractible 1-periodic orbits are all
   nondegenerate has finitely many contractible 1-periodic orbits.
+* `SmoothTwoForm.IsNondegenerate.isMIntegralCurve_const_hamiltonianVectorField_smul_iff`: for
+  `s ≠ 0`, the constant curve at `x` is an orbit of `s F` exactly when `x` is a critical point of
+  `F`.
 
 ## References
 
@@ -143,6 +146,16 @@ theorem finite_contractiblePeriodicSolutions_hamiltonianVectorField [CompactSpac
   finite_contractiblePeriodicSolutions (h.contMDiff_hamiltonianVectorField_uncurry (n := 1)
     (by simp) (hH.of_le (by norm_num))) (fun t ↦ by rw [hP t]) one_pos 0
     (by simpa only [zero_add] using hnd)
+
+omit [T2Space M] [BoundarylessManifold I M] in
+/-- For `s ≠ 0`, the constant curve at `x` is an integral curve of the Hamiltonian vector field of
+`s F` exactly when `x` is a critical point of `F`. -/
+theorem isMIntegralCurve_const_hamiltonianVectorField_smul_iff (h : σ.IsNondegenerate) {F : M → ℝ}
+    {s : ℝ} (hs : s ≠ 0) {x : M} :
+    IsMIntegralCurve (fun _ : ℝ ↦ x) (σ.hamiltonianVectorField (s • F)) ↔
+      x ∈ criticalPoints I F := by
+  rw [isMIntegralCurve_const_iff, hamiltonianVectorField_const_smul, smul_eq_zero,
+    or_iff_right hs, h.hamiltonianVectorField_eq_zero_iff, mem_criticalPoints]
 
 end SmoothTwoForm.IsNondegenerate
 

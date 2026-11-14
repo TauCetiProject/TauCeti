@@ -22,14 +22,12 @@ subcomplexes that organise `K` around `σ`:
 * the **link** `link K σ`, the part of the closed star disjoint from `σ`;
 * the **deletion** `deletion K σ` (the *anti-star*), the faces of `K` that do not contain `σ`.
 
-These are the "basic API (faces, the star and link of a simplex)" that the geometric-topology
-roadmap (`TauCetiRoadmap/GeometricTopology/README.md`, layer 11) asks for on top of Mathlib's
-`AbstractSimplicialComplex`. The link is the load-bearing one downstream: a combinatorial
-`n`-manifold is defined there by the condition that the link of every vertex is a combinatorial
-`(n-1)`-sphere or `(n-1)`-ball, so `link` is the primitive that condition is phrased against. The
-definitions follow Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 3, and
-they work for `PreAbstractSimplicialComplex` (the singleton-free version), since the link of a
-simplex need not contain every vertex even when `K` does.
+Of the three, the link is the load-bearing one downstream: a combinatorial `n`-manifold
+(`CombinatorialManifold.Basic`) is defined by the condition that the link of every vertex is a
+combinatorial `(n-1)`-sphere or `(n-1)`-ball, so `link` is the primitive that condition is phrased
+against. The definitions follow Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*,
+Chapter 3, and they work for `PreAbstractSimplicialComplex` (the singleton-free version), since
+the link of a simplex need not contain every vertex even when `K` does.
 
 ## Main definitions
 
@@ -225,6 +223,16 @@ theorem link_le_deletion_of_nonempty (hσ : σ.Nonempty) : link K σ ≤ deletio
 theorem closedStar_empty : closedStar K ∅ = K := by
   refine SetLike.ext fun ρ => ?_
   simp only [mem_closedStar, union_empty, and_self]
+
+/-- Taking the closed star of `τ` inside the closed star of `σ` gives the closed star of their
+union. -/
+@[simp]
+theorem closedStar_closedStar {σ τ : Finset ι} :
+    closedStar (closedStar K σ) τ = closedStar K (σ ∪ τ) := by
+  refine SetLike.ext fun ρ => ?_
+  rw [mem_closedStar_nonempty, mem_closedStar_nonempty, mem_closedStar_nonempty, union_assoc,
+    union_comm τ σ]
+  exact ⟨fun h => ⟨h.1, h.2.2⟩, fun h => ⟨h.1, h.1.mono subset_union_left, h.2⟩⟩
 
 /-- The link at the empty simplex is the whole complex. -/
 @[simp]

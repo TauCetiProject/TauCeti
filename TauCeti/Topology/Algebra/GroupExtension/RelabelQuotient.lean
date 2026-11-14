@@ -58,7 +58,7 @@ theorem contCohomologyClass_relabelQuotient :
       rightInverse_rightHom := fun h ↦ by
         simp [Y, _root_.GroupExtension.Section.rightHom_section] }
   have hτ : Continuous ⇑τ := X.continuous_continuousSection.comp e.symm.continuous
-  have hτ₁ : τ 1 = 1 := by simp [τ, σ, continuousSection_one]
+  have hτ₁ : τ 1 = 1 := by simp [τ, σ]
   have hi : Y.toGroupExtension.inl = X.toGroupExtension.inl := by simp [Y]
   have hfactor (h k : H) :
       factorSet τ hτ₁ Y.inducesAction (h, k) =

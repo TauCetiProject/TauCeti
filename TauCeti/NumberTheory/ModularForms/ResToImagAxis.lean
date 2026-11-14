@@ -38,6 +38,9 @@ integrals of cusp forms along geodesics between cusps.
 * `UpperHalfPlane.resToImagAxis_slash_two_of_diagonal`: in weight `2`, the restriction of
   `F ∣[2] d` for a positive diagonal rational matrix `d = diag(a, b)` at `t` is `r` times the
   restriction of `F` at `r t`, where `r = a / b`.
+* `UpperHalfPlane.resToImagAxis_slash_J`: in every weight, the restriction of `F ∣[k] J` for
+  `J = diag(-1, 1)` is the complex conjugate of the restriction of `F`, and
+  `UpperHalfPlane.resToImagAxis_slash_of_map_eq_J` is the same for a rational matrix mapping to `J`.
 * `UpperHalfPlane.exists_isBigO_rat_slash_exp`: for a cusp form `f` on an arithmetic subgroup
   and `g ∈ GL(2, ℚ)`, `f ∣[k] g` is `O(exp (-c Im τ))` at `i∞` for some `c > 0`, and
   `UpperHalfPlane.exists_isBigO_resToImagAxis_rat_slash_exp`: its restriction to the imaginary axis
@@ -182,6 +185,35 @@ theorem resToImagAxis_slash_two_of_diagonal (F : ℍ → ℂ) {d : GL (Fin 2) �
     push_cast
     field_simp
   rw [hsmul, hden, hdetd, abs_of_pos (by exact_mod_cast hd'), mul_assoc, hc, mul_comm]
+
+open scoped ComplexConjugate in
+/-- The slash by `J = diag(-1, 1)` restricts to the imaginary axis as complex conjugation, in every
+weight: `J` fixes the points of the axis and `|det J| = 1`. -/
+@[simp]
+theorem resToImagAxis_slash_J (G : ℍ → ℂ) (k : ℤ) (t : ℝ) :
+    resToImagAxis (G ∣[k] J) t = conj (resToImagAxis G t) := by
+  by_cases ht : 0 < t
+  · simp only [resToImagAxis_of_pos _ ht]
+    rw [ModularForm.slash_apply]
+    have hJ : J • (⟨Complex.I * t, by simpa using ht⟩ : ℍ) =
+        ⟨Complex.I * t, by simpa using ht⟩ := by
+      ext
+      rw [coe_J_smul]
+      simp
+    rw [hJ]
+    simp
+  · simp [resToImagAxis_of_nonpos _ (not_lt.mp ht)]
+
+open scoped ComplexConjugate in
+/-- The slash by a rational matrix `D` mapping to `J = diag(-1, 1)` restricts to the imaginary axis
+as complex conjugation. -/
+theorem resToImagAxis_slash_of_map_eq_J (G : ℍ → ℂ) (k : ℤ) {D : GL (Fin 2) ℚ}
+    (hD : (D : Matrix (Fin 2) (Fin 2) ℚ) = !![-1, 0; 0, 1]) (t : ℝ) :
+    resToImagAxis (G ∣[k] D) t = conj (resToImagAxis G t) := by
+  have hDJ : Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) D = J := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [hD, J]
+  rw [ModularForm.rat_slash, hDJ, resToImagAxis_slash_J]
 
 open Asymptotics Filter in
 /-- **A cusp form slashed by a rational matrix decays exponentially at `i∞`**: `f ∣[k] g` is a

@@ -81,11 +81,8 @@ cause.
 * J. Birman, *Braids, Links, and Mapping Class Groups*, Annals of Mathematics Studies 82 (1974),
   Chapter 1.
 
-This is Layer 4 ("knot theory, done properly") of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`), which lists "braid closures (over
-`PresentedMonoid` braid groups with the Artin relations)" among the presentations of a knot, with
-the closure of a braid word and Markov's theorem as the edge joining that presentation to the
-diagram hub.
+In knot theory, braid closures present knots and links, and the closure of a braid word together
+with Markov's theorem relates this presentation to knot diagrams.
 -/
 
 public section

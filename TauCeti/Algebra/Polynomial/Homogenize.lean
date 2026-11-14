@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Expand
+public import Mathlib.Algebra.Polynomial.Expand
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.Algebra.Polynomial.Roots
@@ -76,6 +78,8 @@ roots of `F(X, 1)` multiplied by `a`.
   algebra and `natDegree p ≤ n`, as `p(a / b) b ^ n`.
 * `Polynomial.aeval_homogenize_of_eq_zero`, `Polynomial.aeval_homogenize_reflect`: the value
   at `(a, 0)` is `p_n a ^ n`, and reflecting `p` at `n` exchanges the two coordinates.
+* `Polynomial.homogenize_expand`: for `p ≠ 0`, homogenizing `q(X ^ p)` at degree `p n` is
+  substituting `(X₀ ^ p, X₁ ^ p)` into the homogenization of `q` at degree `n`.
 * `Polynomial.eval_homogenize_geom_sum`: the homogenization of degree `m (p - 1)` of the geometric
   sum `∑_{i < p} (X ^ m) ^ i` takes the value `∑_{i < p} (a ^ m) ^ i (b ^ m) ^ (p - 1 - i)`.
 * `MvPolynomial.aeval_X_one_map`: the dehomogenization `F(X, 1)` commutes with mapping the
@@ -275,6 +279,32 @@ theorem bijOn_eval_homogenize_integralNormalization [IsDomain S] {p : S[X]}
     exact mul_left_cancel₀ (pow_ne_zero _ ha) hG
 
 end IntegralNormalization
+
+section Expand
+
+variable {S : Type*} [CommSemiring S]
+
+/-- Homogenization commutes with expansion: for `p ≠ 0`, the homogenization of degree `p n` of
+`q(X ^ p)` is the homogenization of degree `n` of `q` with `X₀ ^ p` and `X₁ ^ p` substituted
+for the two variables. Coefficients of `q` beyond degree `n` are dropped on both sides. The
+hypothesis is needed: for `p = 0` the left side is the constant `q(1)` while the right side
+is the sum of the coefficients of `q` up to degree `n`. -/
+theorem homogenize_expand {p : ℕ} (hp : p ≠ 0) (q : S[X]) (n : ℕ) :
+    (expand S p q).homogenize (p * n) = MvPolynomial.expand p (q.homogenize n) := by
+  induction q using Polynomial.induction_on' with
+  | add q r hq hr => simp [hq, hr]
+  | monomial k c =>
+    rw [expand_monomial]
+    rcases le_or_gt k n with hkn | hnk
+    · rw [homogenize_monomial (by grw [hkn, mul_comm]), homogenize_monomial hkn,
+        MvPolynomial.expand_monomial]
+      congr 2
+      ext i
+      fin_cases i <;> simp [Nat.mul_sub, mul_comm]
+    · rw [homogenize_monomial_of_lt hnk, homogenize_monomial_of_lt (by rw [mul_comm]; gcongr),
+        map_zero]
+
+end Expand
 
 section Evaluation
 

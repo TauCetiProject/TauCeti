@@ -19,7 +19,7 @@ uniformly over all centres `p ∈ K` and all frames `e`. In particular, for `R =
 diffeomorphisms onto their images on a neighbourhood of the closed ball of radius `L`.
 
 The proof uses a single normal radius for all points of `K`,
-`IsCompact.exists_pos_forall_isNormalDomain_ball`.
+`IsCompact.exists_pos_exists_isOpen_superset_forall_isNormalDomain_ball`.
 
 See J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 6.
 -/
@@ -48,7 +48,8 @@ theorem _root_.IsCompact.eventually_exists_partialDiffeomorph_riemannianExp_inv_
     ∀ᶠ j in l, ∀ p ∈ K, ∀ e : F ≃ₗᵢ[ℝ] TangentSpace I p,
       ∃ Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M ∞,
         Φ.source = ball 0 R ∧ ⇑Φ = fun x ↦ riemannianExp I M p ((scale j)⁻¹ • e x) := by
-  obtain ⟨r, hr, hnormal⟩ := hK.exists_pos_forall_isNormalDomain_ball (I := I)
+  obtain ⟨r, hr, U, -, hKU, hnormal⟩ :=
+    hK.exists_pos_exists_isOpen_superset_forall_isNormalDomain_ball (I := I)
   filter_upwards [hscale.eventually_gt_atTop 0, hscale.eventually_gt_atTop (R / r)]
     with j hj hjR p hp e
   let A : F ≃L[ℝ] TangentSpace I p :=
@@ -63,7 +64,7 @@ theorem _root_.IsCompact.eventually_exists_partialDiffeomorph_riemannianExp_inv_
       LinearIsometryEquiv.norm_map, inv_mul_lt_iff₀ hj] at hx ⊢
     linarith
   obtain ⟨Φ, hsource, hΦ⟩ :=
-    (hnormal p hp).exists_partialDiffeomorph_riemannianExp_comp A isOpen_ball hmap
+    (hnormal p (hKU hp)).exists_partialDiffeomorph_riemannianExp_comp A isOpen_ball hmap
   exact ⟨Φ, hsource, hΦ.trans (funext fun x ↦ congrArg (riemannianExp I M p) (hA x))⟩
 
 end TauCeti.Manifold

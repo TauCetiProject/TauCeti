@@ -119,17 +119,13 @@ theorem gaugeTransform_rotateField_referenceField (f : ContDiffBump (0 : ℝ)) (
       ring
     · simp only [mul_im, I_re, I_im, smul_im, smul_eq_mul, add_im]
       ring
-  -- The constant gauge has vanishing logarithmic derivative.
-  have hconst : gaugeForm (fun _ ↦ u⁻¹ ^ m) z = 0 := by
-    ext v
-    simp
   refine apply_eq_of_sectionValue_eq ?_ ?_ ?_
-  · simp only [gaugeTransform_apply, hconst, rotateField_apply_zero,
+  · simp only [gaugeTransform_apply, gaugeForm_const, rotateField_apply_zero,
       referenceField_apply, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
       zero_apply, sub_zero]
     rw [hlin 1]
     simp only [add_im, smul_im, smul_eq_mul, mul_one]
-  · simp only [gaugeTransform_apply, hconst, rotateField_apply_one,
+  · simp only [gaugeTransform_apply, gaugeForm_const, rotateField_apply_one,
       referenceField_apply, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
       zero_apply, sub_zero]
     rw [hlin I]
@@ -201,7 +197,6 @@ private theorem contDiff_translationPhase (m : ℕ) (a : ℂ) :
       isOpen_lt (by fun_prop) continuous_const
     filter_upwards [hopen.mem_nhds hz] with w hw
     have hw' : ‖w‖ ^ 2 - ‖a‖ ^ 2 - 1 ≤ 0 := by
-      have hw : ‖w‖ ^ 2 < ‖a‖ ^ 2 + 1 := hw
       linarith
     simp [translationPhase, Real.smoothTransition.zero_of_nonpos hw']
   · obtain ⟨hza, hz0, -⟩ := norm_lt_of_sq_add_one_le hz
@@ -324,7 +319,6 @@ private theorem exterior_of_lt_norm {a z : ℂ} {r : ℝ} (hr : 0 < r)
   have hza : ‖z‖ - ‖a‖ ≤ ‖z + a‖ := by
     simpa using norm_sub_norm_le z (-a)
   refine ⟨by nlinarith, by nlinarith, ?_⟩
-  have h1 : r + 2 ≤ ‖z + a‖ := by linarith
   nlinarith
 
 /-- **Bounded derivatives of the translation gauge.** Every iterated derivative of the translation
@@ -418,7 +412,7 @@ theorem gaugeTransform_translationGauge_translateField_mem_framedFieldSpace
     exact (contDiff_referenceField f m).comp (contDiff_id.add contDiff_const)
   have hD : gaugeTransform (translationGauge m a) (translateField a (referenceField f m)) -
       referenceField f m ∈ sobolevFields k := mem_sobolevFields_of_hasCompactSupport
-    ((contDiff_gaugeTransform hg htr).sub (contDiff_referenceField f m))
+    ((contDiff_gaugeTransform (by simpa using hg) htr).sub (contDiff_referenceField f m))
     (hasCompactSupport_gaugeTransform_translationGauge_translateField_sub f m a) k
   have hsub : translateField a x - translateField a (referenceField f m) =
       translateField a (x - referenceField f m) := by

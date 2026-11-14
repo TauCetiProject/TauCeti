@@ -18,8 +18,7 @@ bracket with the commutator of its directional derivatives. It also records that
 fields on a model space have zero manifold Lie bracket.
 
 The chart argument follows the pullback idiom used for the manifold bracket in
-`Mathlib/Geometry/Manifold/VectorField/LieBracket.lean`. The resulting lemma is a general manifold
-prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
+`Mathlib/Geometry/Manifold/VectorField/LieBracket.lean`.
 
 ## Main results
 
@@ -48,8 +47,6 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
 
 * `Mathlib/Analysis/Calculus/VectorField.lean`, theorem `fderivWithin_apply_lieBracket`.
 * `Mathlib/Geometry/Manifold/VectorField/LieBracket.lean`, for the chart-transport construction.
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1.
 -/
 
 public section
@@ -200,7 +197,7 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
       |>.differentiableWithinAt_mpullbackWithin_vectorField
   rw [fderivWithin_apply_lieBracket hfcoord le_rfl I.uniqueDiffOn
     (I.range_subset_closure_interior (Set.mem_range_self (f := I) _))
-    (Set.mem_range_self (f := I) _) hWcoord hVcoord,
+    (Set.mem_range_self (f := I) _) hVcoord hWcoord,
     TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin hf hn hW,
     TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin hf hn hV]
 
@@ -303,6 +300,28 @@ omit [CompleteSpace E] in
 theorem mlieBracket_neg_left {V W : ∀ y : M, TangentSpace I y} {x : M} :
     mlieBracket I (-V) W x = -mlieBracket I V W x := by
   rw [mlieBracket_swap_apply, mlieBracket_neg_right, neg_neg, mlieBracket_swap_apply]
+
+omit [CompleteSpace E] in
+/-- Scaling the first vector field by a constant scales the manifold Lie bracket. This is Mathlib's
+`mlieBracket_const_smul_left` without its differentiability hypothesis, and without completeness:
+`fderivWithin` of a constant multiple is the constant multiple of `fderivWithin`
+(`fderivWithin_const_smul_field`). -/
+theorem mlieBracket_const_smul_left_field {V W : ∀ y : M, TangentSpace I y} {x : M} (c : 𝕜) :
+    mlieBracket I (c • V) W x = c • mlieBracket I V W x := by
+  have hs : UniqueDiffWithinAt 𝕜 ((extChartAt I x).symm ⁻¹' Set.univ ∩ Set.range I)
+      (extChartAt I x x) := by
+    rw [Set.preimage_univ, Set.univ_inter]
+    exact I.uniqueDiffOn _ (Set.mem_range_self _)
+  have key (V' W' : E → E) :
+      lieBracketWithin 𝕜 (c • V') W' ((extChartAt I x).symm ⁻¹' Set.univ ∩ Set.range I)
+          (extChartAt I x x) =
+        c • lieBracketWithin 𝕜 V' W' ((extChartAt I x).symm ⁻¹' Set.univ ∩ Set.range I)
+          (extChartAt I x x) := by
+    simp only [lieBracketWithin, fderivWithin_const_smul_field c hs, Pi.smul_apply, map_smul,
+      smul_apply, smul_sub]
+  simp only [← mlieBracketWithin_univ, mlieBracketWithin_def, mpullbackWithin_const_smul,
+    mpullback]
+  exact (congrArg _ (key _ _)).trans (map_smul _ _ _)
 
 /-- The **Jacobi identity** for the manifold Lie bracket, in cyclic form:
 `[U, [V, W]] + [V, [W, U]] + [W, [U, V]] = 0`. This rearranges Mathlib's Leibniz form
