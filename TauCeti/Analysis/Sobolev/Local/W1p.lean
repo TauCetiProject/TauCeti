@@ -16,13 +16,13 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 
 Let `Ω` be an open subset of a finite-dimensional real inner product space `E` carrying a Borel
 additive Haar measure. This file compares the first-order local Sobolev class
-`TauCeti.MemW1pLoc p Ω` of real-valued functions (and, on `ℂ`, the order-one planar class
-`TauCeti.MemWkpLoc p Ω 1`) with `TauCeti.W1p`: a real function lies in `MemW1pLoc p Ω` exactly when
-its restriction to every open `W` with compact closure contained in `Ω` is represented by an element
-of `W1p volume W p`. The weak gradient of that element is dual, through
-`InnerProductSpace.toDual`, to the weak derivative of the function on `Ω`. On `ℂ`, a real function
-of finite `W^{1,p}(Ω)` norm `TauCeti.eLpNormWkp p Ω 1` is represented by an element of
-`W1p volume Ω p` whose norm is at most that size.
+`TauCeti.MemW1pLoc p Ω` of real-valued functions with `TauCeti.W1p`: a real function lies in
+`MemW1pLoc p Ω` exactly when its restriction to every open `W` with compact closure contained in `Ω`
+is represented by an element of `W1p volume W p` (for the planar order-one class
+`TauCeti.MemWkpLoc p Ω 1`, combine with `TauCeti.memWkpLoc_one_iff_memW1pLoc`). The weak gradient
+of that element is dual, through `InnerProductSpace.toDual`, to the weak derivative of the function
+on `Ω`. On `ℂ`, a real function of finite `W^{1,p}(Ω)` norm `TauCeti.eLpNormWkp p Ω 1` is
+represented by an element of `W1p volume Ω p` whose norm is at most that size.
 
 ## Main declarations
 
@@ -30,8 +30,6 @@ of finite `W^{1,p}(Ω)` norm `TauCeti.eLpNormWkp p Ω 1` is represented by an el
   `W1p` on every relatively compact open subset of `Ω`, with the dual weak gradient.
 * `TauCeti.memW1pLoc_iff_forall_w1p`: characterization of real-valued `MemW1pLoc p Ω` by
   `W1p volume W p` on relatively compact open subsets `W` of `Ω`.
-* `TauCeti.MemWkpLoc.exists_w1p`, `TauCeti.memWkpLoc_one_iff_forall_w1p`: the planar
-  specializations for `MemWkpLoc p Ω 1`.
 * `TauCeti.exists_w1p_enorm_le_eLpNormWkp`: a real function on `Ω ⊆ ℂ` of finite `W^{1,p}(Ω)` norm
   is represented in `W1p volume Ω p` with no larger norm.
 
@@ -118,18 +116,6 @@ section Planar
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Opens ℂ}
 
-/-- **Local Sobolev functions on `ℂ` are Sobolev on relatively compact subdomains.** Let
-`u ∈ MemWkpLoc p Ω 1` be real-valued, with weak derivative `D` on `Ω`. On every open `W` whose
-closure is compact and contained in `Ω`, `u` is represented by an element of `W1p volume W p`
-whose weak gradient is dual to `D`. -/
-theorem MemWkpLoc.exists_w1p {u : ℂ → ℝ} (hu : MemWkpLoc p Ω 1 u)
-    {D : ℂ → ℂ →L[ℝ] ℝ} (hD : HasWeakFDerivOn volume Ω u D) {W : Opens ℂ}
-    (hWc : IsCompact (closure (W : Set ℂ))) (hWΩ : closure (W : Set ℂ) ⊆ Ω) :
-    ∃ v : W1p volume W p, W1p.value v =ᵐ[volume.restrict W] u ∧
-      W1p.gradient v =ᵐ[volume.restrict W]
-        fun z => (InnerProductSpace.toDual ℝ ℂ).symm (D z) :=
-  (memWkpLoc_one_iff_memW1pLoc.1 hu).exists_w1p hD hWc hWΩ
-
 /-- **The `W1p` norm is bounded by the `W^{1,p}` norm.** A real function `u` whose `W^{1,p}(Ω)`
 norm `TauCeti.eLpNormWkp p Ω 1 u` is finite is represented by an element of `W1p volume Ω p` whose
 extended norm is at most `eLpNormWkp p Ω 1 u`. -/
@@ -144,15 +130,6 @@ theorem exists_w1p_enorm_le_eLpNormWkp {u : ℂ → ℝ} (hu : eLpNormWkp p Ω 1
     W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn hu1 (memLp_iff.2 hDfin) hD
   rw [eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD, eLpNormWkp_zero]
   exact ⟨v, hv, W1p.enorm_le_eLpNorm_add_eLpNorm_of_ae_eq hv hg⟩
-
-/-- **Comparison with `W1p` at order one.** A real function lies in `MemWkpLoc p Ω 1` exactly when
-its restriction to every open `W` with compact closure contained in `Ω` is represented by an element
-of `W1p volume W p`. The weak gradients then correspond to the weak derivative of `u` on `Ω`
-through `InnerProductSpace.toDual`, by `TauCeti.MemWkpLoc.exists_w1p`. -/
-theorem memWkpLoc_one_iff_forall_w1p {u : ℂ → ℝ} :
-    MemWkpLoc p Ω 1 u ↔ ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) →
-      closure (W : Set ℂ) ⊆ Ω → ∃ v : W1p volume W p, W1p.value v =ᵐ[volume.restrict W] u :=
-  memWkpLoc_one_iff_memW1pLoc.trans memW1pLoc_iff_forall_w1p
 
 end Planar
 

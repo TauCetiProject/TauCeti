@@ -150,6 +150,9 @@ weaken them for no gain.
   weak derivative `0`.
 * `TauCeti.HasWeakLineDerivOn.add`, `.neg`, `.sub`, `.const_smul`, `.sum` and their
   `TauCeti.HasWeakFDerivOn` counterparts: linearity in the function.
+* `TauCeti.HasWeakLineDerivOn.smul_measure_nnreal` and
+  `TauCeti.HasWeakFDerivOn.smul_measure_nnreal`: scaling the reference measure by `c : ℝ≥0`
+  preserves weak derivatives.
 * `TauCeti.HasWeakLineDerivOn.clm_comp` and `TauCeti.HasWeakFDerivOn.clm_comp`: a continuous
   linear map on the codomain passes through the weak derivative, which is how a vector-valued weak
   derivative is read off its scalar components.
@@ -188,7 +191,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory TopologicalSpace
-open scoped ContDiff Distributions
+open scoped ContDiff Distributions ENNReal NNReal
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E} {v : E}
@@ -381,6 +384,22 @@ theorem HasWeakLineDerivOn.const_smul (h : HasWeakLineDerivOn μ Ω u u' v) (c :
 /-- Weak Fréchet differentiation commutes with multiplication by a real scalar. -/
 theorem HasWeakFDerivOn.const_smul {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U) (c : ℝ) :
     HasWeakFDerivOn μ Ω (c • u) (c • U) := fun v => (h v).const_smul c
+
+/-- Scaling the reference measure by a finite constant `c : ℝ≥0` preserves weak directional
+derivatives (for `c = 0` both integrals vanish). -/
+theorem HasWeakLineDerivOn.smul_measure_nnreal (h : HasWeakLineDerivOn μ Ω u u' v) (c : ℝ≥0) :
+    HasWeakLineDerivOn ((c : ℝ≥0∞) • μ) Ω u u' v := by
+  have := h.completeSpace
+  refine hasWeakLineDerivOn_iff_testFunction.2
+    ⟨inferInstance, h.locallyIntegrableOn.smul_measure ENNReal.coe_ne_top,
+      h.locallyIntegrableOn_deriv.smul_measure ENNReal.coe_ne_top, fun φ => ?_⟩
+  rw [integral_smul_measure, integral_smul_measure,
+    h.integral_lineDeriv_smul_eq_neg_integral_smul φ, smul_neg]
+
+/-- Scaling the reference measure by `c : ℝ≥0` preserves weak Fréchet derivatives. -/
+theorem HasWeakFDerivOn.smul_measure_nnreal {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U)
+    (c : ℝ≥0) : HasWeakFDerivOn ((c : ℝ≥0∞) • μ) Ω u U :=
+  fun v => (h v).smul_measure_nnreal c
 
 end Defs
 

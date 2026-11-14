@@ -11,13 +11,11 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import TauCeti.Analysis.Sobolev.Local.Basic
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.Analysis.Calculus.BumpFunction.Normed
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Sobolev.Local.Coordinates
 import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
+import TauCeti.Analysis.Sobolev.WeakDeriv.Hyperplane
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
@@ -70,18 +68,18 @@ order-one planar class `TauCeti.MemWkpLoc p Ω 1 u` (`TauCeti.memWkpLoc_one_iff_
   `t ↦ lp.single 2 t 1` into non-separable `ℓ²(ℝ)` satisfies scalar `MemW1pLoc p ⊤` after every
   continuous linear functional while failing `MemLpLoc p Set.univ`
   (`TauCeti.forall_strongDual_memW1pLoc_and_not_memLpLoc_lpSingle`, cf. Arendt–Kreuter).
-* **Haar-measure and linear invariance.** On finite-dimensional real normed spaces,
-  `HasWeakFDerivOn`, `MemLpLoc`, and `MemW1pLoc` are independent of the choice of additive Haar
-  measure and are preserved and reflected by every continuous linear equivalence `e : E₁ ≃L[ℝ] E`
+* **Haar-measure and linear invariance.** On finite-dimensional real normed spaces, `MemLpLoc` and
+  `MemW1pLoc` are independent of the choice of additive Haar measure and are preserved and reflected
+  by every continuous linear equivalence `e : E₁ ≃L[ℝ] E`
   (`ContinuousLinearEquiv.memW1pLoc_comp_iff`), regardless of Jacobian determinant or choice of
   equivalent norm (`TauCeti.memW1pLoc_comp_toLp_iff`).
-* **Sharpness checks.** The identity is in `MemW1pLoc p Ω` without belonging to global `Lᵖ` on a
-  nontrivial space; `x ↦ ‖x‖` lies in `MemW1pLoc p Ω` for all `p` (with non-inner-product derivative
-  on `(Fin 2 → ℝ)` equipped with the supremum norm); the unit radial map `x ↦ ‖x‖⁻¹ • x` on an inner
-  product space of dimension `d ≥ 2` with `0 ∈ Ω` belongs to `MemW1pLoc p Ω` if and only if `p < d`
-  (`TauCeti.memW1pLoc_norm_inv_smul_iff`); and the indicator of an open half-space `{x | 0 < ℓ x}`
-  belongs to `MemLpLoc p Ω` for all `p` but never to `MemW1pLoc p Ω` when `Ω` meets `{x | ℓ x = 0}`
-  (`TauCeti.not_memW1pLoc_indicator_pos`).
+* **Sharpness checks.** The identity is in `MemW1pLoc p Ω` without belonging to global `Lᵖ` for
+  `p ≠ 0` on a nontrivial space; `x ↦ ‖x‖` lies in `MemW1pLoc p Ω` for all `p` (with
+  non-inner-product derivative on `(Fin 2 → ℝ)` equipped with the supremum norm); the unit radial
+  map `x ↦ ‖x‖⁻¹ • x` on an inner product space of dimension `d ≥ 2` with `0 ∈ Ω` belongs to
+  `MemW1pLoc p Ω` if and only if `p < d` (`TauCeti.memW1pLoc_norm_inv_smul_iff`); and the indicator
+  of an open half-space `{x | 0 < ℓ x}` (`ℓ ≠ 0`) belongs to `MemLpLoc p Ω` for all `p` but never to
+  `MemW1pLoc p Ω` when `Ω` meets `{x | ℓ x = 0}` (`TauCeti.not_memW1pLoc_indicator_pos`).
 
 ## References
 
@@ -94,7 +92,7 @@ order-one planar class `TauCeti.MemWkpLoc p Ω 1 u` (`TauCeti.memWkpLoc_one_iff_
 public noncomputable section
 
 open Filter MeasureTheory Metric Set TopologicalSpace
-open scoped ContDiff Distributions ENNReal NNReal Topology RealInnerProductSpace
+open scoped ContDiff ENNReal NNReal Topology RealInnerProductSpace
 
 namespace TauCeti
 
@@ -567,82 +565,6 @@ end Coordinates
 
 section HaarAndLinear
 
-/-- Scaling the reference measure by a finite constant `c : ℝ≥0` preserves weak directional
-derivatives (for `c = 0` both integrals vanish). -/
-theorem HasWeakLineDerivOn.smul_measure_nnreal {E F : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [MeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {μ : Measure E} {Ω : Opens E} {u u' : E → F} {v : E}
-    (h : HasWeakLineDerivOn μ Ω u u' v) (c : ℝ≥0) :
-    HasWeakLineDerivOn ((c : ℝ≥0∞) • μ) Ω u u' v := by
-  have : CompleteSpace F := h.completeSpace
-  refine hasWeakLineDerivOn_iff_testFunction.2
-    ⟨inferInstance, h.locallyIntegrableOn.smul_measure ENNReal.coe_ne_top,
-      h.locallyIntegrableOn_deriv.smul_measure ENNReal.coe_ne_top, fun φ => ?_⟩
-  rw [integral_smul_measure, integral_smul_measure,
-    h.integral_lineDeriv_smul_eq_neg_integral_smul φ, smul_neg]
-
-/-- Scaling the reference measure by `c : ℝ≥0` preserves weak Fréchet derivatives. -/
-theorem HasWeakFDerivOn.smul_measure_nnreal {E F : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [MeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {μ : Measure E} {Ω : Opens E} {u : E → F} {Du : E → E →L[ℝ] F}
-    (h : HasWeakFDerivOn μ Ω u Du) (c : ℝ≥0) :
-    HasWeakFDerivOn ((c : ℝ≥0∞) • μ) Ω u Du :=
-  hasWeakFDerivOn_iff.2 fun v => (h.hasWeakLineDerivOn v).smul_measure_nnreal c
-
-/-- **Haar-measure independence of `HasWeakFDerivOn`.** On a finite-dimensional real normed space,
-weak Fréchet differentiability does not depend on the choice of additive Haar measure. -/
-theorem hasWeakFDerivOn_iff_of_isAddHaarMeasure {E F : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (μ ν : Measure E) [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure]
-    {Ω : Opens E} {u : E → F} {Du : E → E →L[ℝ] F} :
-    HasWeakFDerivOn μ Ω u Du ↔ HasWeakFDerivOn ν Ω u Du := by
-  constructor
-  · intro h
-    rw [Measure.isAddLeftInvariant_eq_smul ν μ]
-    exact h.smul_measure_nnreal (Measure.addHaarScalarFactor ν μ)
-  · intro h
-    rw [Measure.isAddLeftInvariant_eq_smul μ ν]
-    exact h.smul_measure_nnreal (Measure.addHaarScalarFactor μ ν)
-
-/-- **Weak chain rule for arbitrary continuous linear equivalences.** Any continuous linear
-equivalence `e : E₁ ≃L[ℝ] E` between finite-dimensional real normed spaces with additive Haar
-measures `μ` and `ν` transports weak Fréchet derivatives by `x ↦ Du (e x) ∘L e`, with no
-measure-preserving restriction on `e`. -/
-theorem HasWeakFDerivOn.comp_continuousLinearEquiv_of_isAddHaarMeasure {E₁ E F : Type*}
-    [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
-    [MeasurableSpace E₁] [BorelSpace E₁]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [MeasurableSpace E] [BorelSpace E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {μ : Measure E₁} [μ.IsAddHaarMeasure] {ν : Measure E} [ν.IsAddHaarMeasure]
-    {U : Opens E₁} {V : Opens E} {u : E → F} {Du : E → E →L[ℝ] F}
-    (h : HasWeakFDerivOn ν V u Du) (e : E₁ ≃L[ℝ] E) (hUV : MapsTo e U V) :
-    HasWeakFDerivOn μ U (u ∘ e) (fun x => (Du (e x)).comp (e : E₁ →L[ℝ] E)) := by
-  have : (μ.map e).IsAddHaarMeasure := e.isAddHaarMeasure_map μ
-  have hmap : HasWeakFDerivOn (μ.map e) V u Du :=
-    (hasWeakFDerivOn_iff_of_isAddHaarMeasure ν (μ.map e)).1 h
-  exact hmap.comp_continuousLinearEquiv e ⟨e.continuous.measurable, rfl⟩ hUV
-
-/-- **Two-sided weak chain rule for continuous linear equivalences** between finite-dimensional
-spaces with arbitrary additive Haar measures. -/
-theorem _root_.ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff_of_isAddHaarMeasure {E₁ E F : Type*}
-    [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
-    [MeasurableSpace E₁] [BorelSpace E₁]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [MeasurableSpace E] [BorelSpace E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {μ : Measure E₁} [μ.IsAddHaarMeasure] {ν : Measure E} [ν.IsAddHaarMeasure]
-    {U : Opens E₁} {V : Opens E} {u : E → F} {Du : E → E →L[ℝ] F}
-    (e : E₁ ≃L[ℝ] E) (hUV : (U : Set E₁) = e ⁻¹' V) :
-    HasWeakFDerivOn μ U (u ∘ e) (fun x => (Du (e x)).comp (e : E₁ →L[ℝ] E)) ↔
-      HasWeakFDerivOn ν V u Du := by
-  refine ⟨fun h => ?_, fun h =>
-    h.comp_continuousLinearEquiv_of_isAddHaarMeasure e (hUV ▸ mapsTo_preimage e V)⟩
-  have hVU : MapsTo e.symm V U := fun y hy => by simpa [hUV] using hy
-  simpa [Function.comp_def, ContinuousLinearMap.comp_assoc] using
-    h.comp_continuousLinearEquiv_of_isAddHaarMeasure e.symm hVU
-
 /-- **Haar-measure independence of `MemLpLoc`.** On a locally compact second-countable topological
 additive group, `MemLpLoc` does not depend on the choice of Borel additive Haar measure. -/
 theorem memLpLoc_iff_of_isAddHaarMeasure {G F : Type*} [AddGroup G] [TopologicalSpace G]
@@ -1002,162 +924,6 @@ theorem memLpLoc_indicator_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   exact memLp_indicator_const p
     (isOpen_lt continuous_const ℓ.continuous).measurableSet.nullMeasurableSet 1
     (Or.inr (measure_ne_top _ _))
-
-/-- Auxiliary model case on `ℝ × EuclideanSpace ℝ (Fin d)`: the indicator of `{q | 0 < q.1}` has no
-weak Fréchet derivative on any open set containing a point `(0, y₀)`. -/
-private theorem not_hasWeakFDerivOn_indicator_fst_pos {d : ℕ}
-    {Ω : Opens (ℝ × EuclideanSpace ℝ (Fin d))} {y₀ : EuclideanSpace ℝ (Fin d)}
-    (h0 : ((0 : ℝ), y₀) ∈ Ω)
-    (Du : ℝ × EuclideanSpace ℝ (Fin d) → (ℝ × EuclideanSpace ℝ (Fin d)) →L[ℝ] ℝ) :
-    ¬ HasWeakFDerivOn volume Ω
-        ({q : ℝ × EuclideanSpace ℝ (Fin d) | 0 < q.1}.indicator fun _ => (1 : ℝ)) Du := by
-  intro hDu
-  let Y := EuclideanSpace ℝ (Fin d)
-  have : (volume : Measure (ℝ × Y)).IsAddHaarMeasure :=
-    Measure.prod.instIsAddHaarMeasure volume volume
-  set u : ℝ × Y → ℝ := {q : ℝ × Y | 0 < q.1}.indicator fun _ => (1 : ℝ) with hu
-  set Ωp : Opens (ℝ × Y) := Ω ⊓ ⟨{q | 0 < q.1}, isOpen_lt continuous_const continuous_fst⟩
-  set Ωn : Opens (ℝ × Y) := Ω ⊓ ⟨{q | q.1 < 0}, isOpen_lt continuous_fst continuous_const⟩
-  have hconst : HasWeakFDerivOn volume Ωp (fun _ => (1 : ℝ)) 0 := hasWeakFDerivOn_iff.2 fun v => by
-    simpa using (hasWeakLineDerivOn_const (1 : ℝ) :
-      HasWeakLineDerivOn volume Ωp (fun _ => (1 : ℝ)) (fun _ => 0) v)
-  have hp : HasWeakFDerivOn volume Ωp u 0 := hconst.congr_ae <|
-    (ae_restrict_iff' Ωp.isOpen.measurableSet).2 <| Eventually.of_forall fun q hq => by
-      have hq' : 0 < q.1 := hq.2
-      simp [hu, hq']
-  have hn : HasWeakFDerivOn volume Ωn u 0 := (hasWeakFDerivOn_zero (μ := volume)).congr_ae <|
-    (ae_restrict_iff' Ωn.isOpen.measurableSet).2 <| Eventually.of_forall fun q hq => by
-      have hq' : ¬ 0 < q.1 := not_lt.2 (le_of_lt hq.2)
-      simp [hu, hq']
-  have hDp := (ae_restrict_iff' Ωp.isOpen.measurableSet).1 ((hDu.mono inf_le_left).ae_eq hp)
-  have hDn := (ae_restrict_iff' Ωn.isOpen.measurableSet).1 ((hDu.mono inf_le_left).ae_eq hn)
-  have hnull_zero : (volume : Measure (ℝ × Y)) {q : ℝ × Y | q.1 = 0} = 0 := by
-    have heq : {q : ℝ × Y | q.1 = 0} = ({0} : Set ℝ) ×ˢ (Set.univ : Set Y) := by
-      ext ⟨t, y⟩; simp
-    rw [heq, Measure.volume_eq_prod, Measure.prod_prod, Real.volume_singleton, zero_mul]
-  have hDu0 : Du =ᵐ[volume.restrict Ω] 0 := by
-    refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
-    filter_upwards [hDp, hDn, measure_eq_zero_iff_ae_notMem.1 hnull_zero] with q hqp hqn hq0 hqΩ
-    rcases lt_or_gt_of_ne hq0 with h | h
-    · exact hqn ⟨hqΩ, h⟩
-    · exact hqp ⟨hqΩ, h⟩
-  have hline := (hDu.congr_ae_deriv hDu0).hasWeakLineDerivOn ((1 : ℝ), (0 : Y))
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 Ω.isOpen (0, y₀) h0
-  let a : ContDiffBump (0 : ℝ) := ⟨ε / 6, ε / 3, by positivity, by linarith⟩
-  let b : ContDiffBump y₀ := ⟨ε / 6, ε / 3, by positivity, by linarith⟩
-  let f : ℝ × Y → ℝ := fun q => a q.1 * b q.2
-  have hfs : tsupport f ⊆ closedBall ((0 : ℝ), y₀) (ε / 3) := by
-    intro q hq
-    have h1 : q.1 ∈ tsupport a :=
-      tsupport_comp_subset_preimage (a : ℝ → ℝ) continuous_fst (tsupport_mul_subset_left hq)
-    have h2 : q.2 ∈ tsupport b :=
-      tsupport_comp_subset_preimage (b : Y → ℝ) continuous_snd (tsupport_mul_subset_right hq)
-    rw [a.tsupport_eq, mem_closedBall] at h1
-    rw [b.tsupport_eq, mem_closedBall] at h2
-    rw [mem_closedBall, Prod.dist_eq]
-    exact max_le h1 h2
-  have hfΩ : tsupport f ⊆ Ω := fun q hq =>
-    hball (closedBall_subset_ball (by linarith) (hfs hq))
-  let φ : 𝓓(Ω, ℝ) := ⟨f, (a.contDiff.comp contDiff_fst).mul (b.contDiff.comp contDiff_snd),
-    (isCompact_closedBall ((0 : ℝ), y₀) _).of_isClosed_subset (isClosed_tsupport f) hfs, hfΩ⟩
-  have hφ : (φ : ℝ × Y → ℝ) = f := TestFunction.coe_mk
-  have hkey := hline.integral_lineDeriv_smul_eq_neg_integral_smul φ
-  simp only [Pi.zero_apply, zero_apply, smul_zero, integral_zero, neg_zero] at hkey
-  have hda : ∀ t, HasDerivAt a (deriv a t) t := fun t =>
-    ((a.contDiff (n := 1)).differentiable one_ne_zero t).hasDerivAt
-  have hldf : ∀ q : ℝ × Y, lineDeriv ℝ (φ : ℝ × Y → ℝ) q (1, 0) = deriv a q.1 * b q.2 := by
-    intro q
-    refine HasLineDerivAt.lineDeriv
-      (?_ : HasDerivAt (fun t : ℝ => (φ : ℝ × Y → ℝ) (q + t • ((1 : ℝ), (0 : Y)))) _ 0)
-    have h := ((hda (q.1 + 0)).comp_const_add q.1 0).mul_const (b q.2)
-    simp only [add_zero] at h
-    convert h using 1
-    funext t
-    simp [hφ, f]
-  have hint : ∫ q : ℝ × Y, lineDeriv ℝ (φ : ℝ × Y → ℝ) q (1, 0) • u q =
-      ∫ q : ℝ × Y, (deriv a q.1 * (Ioi (0 : ℝ)).indicator 1 q.1) * b q.2 := by
-    refine integral_congr_ae (Eventually.of_forall fun q => ?_)
-    simp only [hldf, smul_eq_mul, hu]
-    by_cases hq : 0 < q.1 <;> simp [Set.indicator, hq]
-  have hprod := integral_prod_mul (μ := (volume : Measure ℝ)) (ν := (volume : Measure Y))
-    (fun x => deriv a x * (Ioi (0 : ℝ)).indicator 1 x) (fun y => b y)
-  rw [hint, Measure.volume_eq_prod, hprod] at hkey
-  have hIoi : ∫ x : ℝ, deriv a x * (Ioi (0 : ℝ)).indicator 1 x = -1 := by
-    have hfun : (fun x : ℝ => deriv a x * (Ioi (0 : ℝ)).indicator 1 x) =
-        (Ioi (0 : ℝ)).indicator (deriv a) := by
-      funext x
-      by_cases hx : 0 < x <;> simp [Set.indicator, hx]
-    rw [hfun, integral_indicator measurableSet_Ioi]
-    have hdc : Continuous (deriv a) := (a.contDiff (n := 1)).continuous_deriv le_rfl
-    rw [integral_Ioi_of_hasDerivAt_of_tendsto (m := 0) a.continuous.continuousWithinAt
-      (fun x _ => hda x)
-      (hdc.integrable_of_hasCompactSupport a.hasCompactSupport.deriv).integrableOn ?_,
-      a.one_of_mem_closedBall (mem_closedBall_self (by simp only [a]; positivity))]
-    · simp
-    · refine tendsto_const_nhds.congr' ?_
-      filter_upwards [eventually_ge_atTop (ε / 3)] with x hx
-      refine (a.zero_of_le_dist ?_).symm
-      simp only [a, Real.dist_eq, sub_zero]
-      exact hx.trans (le_abs_self x)
-  rw [hIoi] at hkey
-  have hb := b.integral_pos (μ := (volume : Measure Y))
-  linarith
-
-/-- **Jump discontinuities across hyperplanes have no weak derivative.** For any nonzero continuous
-linear functional `ℓ` on a finite-dimensional real normed space `E`, the indicator of
-`{x | 0 < ℓ x}` admits no weak Fréchet derivative on any open set `Ω` containing a point `x₀` with
-`ℓ x₀ = 0`. -/
-theorem not_hasWeakFDerivOn_indicator_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] [MeasureSpace E] [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure]
-    {ℓ : StrongDual ℝ E} (hℓ : ℓ ≠ 0) {Ω : Opens E} {x₀ : E} (hx₀ : x₀ ∈ Ω) (hx₀0 : ℓ x₀ = 0)
-    (Du : E → E →L[ℝ] ℝ) :
-    ¬ HasWeakFDerivOn volume Ω ({x : E | 0 < ℓ x}.indicator fun _ => (1 : ℝ)) Du := by
-  intro hDu
-  have hex : ∃ v : E, ℓ v ≠ 0 := by
-    by_contra! hall
-    exact hℓ (ContinuousLinearMap.ext hall)
-  obtain ⟨v₀, hv₀⟩ := hex
-  let w : E := (ℓ v₀)⁻¹ • v₀
-  have hℓw : ℓ w = 1 := by simp [w, inv_mul_cancel₀ hv₀]
-  let K := LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)
-  let d := Module.finrank ℝ K
-  let eK : K ≃ₗ[ℝ] EuclideanSpace ℝ (Fin d) :=
-    (Module.finBasis ℝ K).equivFun.trans (WithLp.linearEquiv 2 ℝ (Fin d → ℝ)).symm
-  let splitL : (ℝ × EuclideanSpace ℝ (Fin d)) ≃ₗ[ℝ] E :=
-    { toFun := fun q => q.1 • w + (eK.symm q.2 : E)
-      invFun := fun x => (ℓ x, eK ⟨x - ℓ x • w, by simp [K, hℓw]⟩)
-      map_add' := fun p q => by
-        simp only [Prod.fst_add, Prod.snd_add, add_smul, map_add, Submodule.coe_add]
-        abel
-      map_smul' := fun r q => by
-        simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_smul, map_smul,
-          Submodule.coe_smul_of_tower, RingHom.id_apply, smul_add]
-      left_inv := fun ⟨t, y⟩ => by
-        have hy0 : ℓ (eK.symm y : E) = 0 := (eK.symm y).2
-        ext1
-        · simp [hℓw, hy0]
-        · refine (eK.apply_symm_apply y).symm ▸ congrArg eK (Subtype.ext ?_)
-          simp [hℓw, hy0]
-      right_inv := fun x => by simp }
-  let e : (ℝ × EuclideanSpace ℝ (Fin d)) ≃L[ℝ] E := splitL.toContinuousLinearEquiv
-  have : (volume : Measure (ℝ × EuclideanSpace ℝ (Fin d))).IsAddHaarMeasure :=
-    Measure.prod.instIsAddHaarMeasure volume volume
-  have hℓe : ∀ q, ℓ (e q) = q.1 := fun q => by
-    have hy0 : ℓ (eK.symm q.2 : E) = 0 := (eK.symm q.2).2
-    simp [e, splitL, hℓw, hy0]
-  let y₀ : EuclideanSpace ℝ (Fin d) := eK ⟨x₀, hx₀0⟩
-  have he0 : e (0, y₀) = x₀ := by simp [e, splitL, y₀]
-  let Ω' : Opens (ℝ × EuclideanSpace ℝ (Fin d)) :=
-    Ω.comap (e.toHomeomorph : C(ℝ × EuclideanSpace ℝ (Fin d), E))
-  have h0Ω' : ((0 : ℝ), y₀) ∈ Ω' := by simpa [Ω', he0] using hx₀
-  have hpull := hDu.comp_continuousLinearEquiv_of_isAddHaarMeasure (μ := volume) (U := Ω') e
-    (mapsTo_preimage e (Ω : Set E))
-  have hcomp : (({x : E | 0 < ℓ x}.indicator fun _ => (1 : ℝ)) ∘ e) =
-      ({q : ℝ × EuclideanSpace ℝ (Fin d) | 0 < q.1}.indicator fun _ => (1 : ℝ)) := by
-    funext q
-    simp [Set.indicator, hℓe q]
-  rw [hcomp] at hpull
-  exact not_hasWeakFDerivOn_indicator_fst_pos h0Ω' _ hpull
 
 /-- **Jump discontinuities across hyperplanes are not in `MemW1pLoc`.** While the indicator of
 `{x : E | 0 < ℓ x}` belongs to `MemLpLoc p Ω` for every `p` (`TauCeti.memLpLoc_indicator_pos`), it
