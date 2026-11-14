@@ -5,12 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Abelian.LeftDerived
+public import Mathlib.CategoryTheory.Preadditive.Projective.Preserves
 public import TauCeti.CategoryTheory.Abelian.Projective.Resolution
 public import TauCeti.Algebra.Homology.ChainComplex.Exact
 public import TauCeti.CategoryTheory.Exact.Abelian
 public import TauCeti.CategoryTheory.Exact.Resolution.ChainComplex
+public import TauCeti.CategoryTheory.Exact.Resolution.HasFiniteResolution
 public import TauCeti.CategoryTheory.Exact.Resolution.OfChainComplex
 public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
+import Mathlib.CategoryTheory.Adjunction.FullyFaithful
+import TauCeti.CategoryTheory.Abelian.LeftDerived
 
 /-!
 # Finite resolutions in abelian categories are projective resolutions
@@ -31,7 +36,12 @@ sees chain complexes.
 Conversely, a projective resolution in Mathlib's sense whose term in degree `n + 1` vanishes is,
 by `TauCeti.ExactStructure.FiniteResolution.ofChainComplex`, a finite resolution by projective
 objects of length `n`, so the Euler-class and resolution-theorem API of finite resolutions applies
-to it.
+to it. In particular, in an abelian category with enough projectives, an object has projective
+dimension at most `n` if and only if it admits a projective resolution vanishing above degree `n`.
+Consequently, a right-exact additive functor preserving projective objects does not increase the
+projective dimension of an `F`-acyclic object, and along an adjunction `F ⊣ G` with `G` fully
+faithful and epimorphism-preserving (such as restriction of scalars along a surjective ring
+homomorphism) `F`-acyclicity of `G(Y)` bounds the projective dimension of `Y` by that of `G(Y)`.
 
 ## Main definitions
 
@@ -54,6 +64,13 @@ to it.
   `CategoryTheory.ProjectiveResolution.foldAlternating_toFiniteResolution`: that finite resolution
   has length `n`, and alternating folds along it are alternating sums over the terms of degree at
   most `n`.
+* `CategoryTheory.ProjectiveResolution.hasProjectiveDimensionLE` and
+  `CategoryTheory.exists_projectiveResolution_of_hasProjectiveDimensionLE`: projective resolutions
+  vanishing above degree `n` characterize `HasProjectiveDimensionLE X n`.
+* `CategoryTheory.Functor.hasProjectiveDimensionLE_obj_of_isZero_leftDerived` and
+  `CategoryTheory.Adjunction.hasProjectiveDimensionLE_of_isZero_leftDerived`: projective dimension
+  bounds along right-exact projective-preserving functors and reflective adjunctions on acyclic
+  objects.
 -/
 
 public section
@@ -213,4 +230,123 @@ theorem foldAlternating_toFiniteResolution (R : ProjectiveResolution X) {n : ℕ
       ∑ i : Fin (n + 1), (-1 : ℤ) ^ (i : ℕ) • f (R.complex.X i) (R.projective i) :=
   FiniteResolution.foldAlternating_ofChainComplex _ _ _ _ f hf
 
+/-- A projective resolution whose term in degree `n + 1` vanishes witnesses that the resolved
+object has projective dimension at most `n`. -/
+theorem hasProjectiveDimensionLE (R : ProjectiveResolution X) {n : ℕ}
+    (hn : IsZero (R.complex.X (n + 1))) : HasProjectiveDimensionLE X n :=
+  (R.length_toFiniteResolution hn ▸
+    (R.toFiniteResolution hn).hasFiniteResolutionOfLength).hasProjectiveDimensionLE
+
 end CategoryTheory.ProjectiveResolution
+
+namespace CategoryTheory
+
+open TauCeti.ExactStructure
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [EnoughProjectives C]
+
+/-- In an abelian category with enough projectives, an object of projective dimension at most `n`
+admits a projective resolution whose terms vanish above degree `n`. -/
+theorem exists_projectiveResolution_of_hasProjectiveDimensionLE {X : C} {n : ℕ}
+    (hX : HasProjectiveDimensionLE X n) :
+    ∃ P : ProjectiveResolution X, ∀ i, n < i → IsZero (P.complex.X i) := by
+  obtain ⟨r, rfl⟩ := exists_finiteResolution_isProjective_length_eq_iff.mpr hX
+  exact ⟨r.toProjectiveResolution le_rfl,
+    fun _ hi ↦ r.isZero_toProjectiveResolution_X_of_length_lt le_rfl hi⟩
+
+/-- In an abelian category with enough projectives, an object has projective dimension at most `n`
+if and only if it admits a projective resolution vanishing above degree `n`. -/
+theorem exists_projectiveResolution_isZero_X_iff_hasProjectiveDimensionLE {X : C} {n : ℕ} :
+    (∃ P : ProjectiveResolution X, ∀ i, n < i → IsZero (P.complex.X i)) ↔
+      HasProjectiveDimensionLE X n :=
+  ⟨fun ⟨P, hP⟩ ↦ P.hasProjectiveDimensionLE (hP (n + 1) (Nat.lt_succ_self n)),
+    exists_projectiveResolution_of_hasProjectiveDimensionLE⟩
+
+section LeftDerived
+
+omit [EnoughProjectives C]
+variable [HasProjectiveResolutions C] {D : Type*} [Category* D] [Abelian D]
+
+/-- A right-exact additive functor `F` preserving projective objects does not increase the
+projective dimension of an `F`-acyclic object. -/
+theorem Functor.hasProjectiveDimensionLE_obj_of_isZero_leftDerived (F : C ⥤ D) [F.Additive]
+    [PreservesFiniteColimits F] [F.PreservesProjectiveObjects] {X : C}
+    (h : ∀ n, IsZero ((F.leftDerived (n + 1)).obj X)) {m : ℕ}
+    (hX : HasProjectiveDimensionLE X m) :
+    HasProjectiveDimensionLE (F.obj X) m := by
+  have : EnoughProjectives C :=
+    ⟨fun Z ↦ ⟨{ p := (projectiveResolution Z).complex.X 0
+                projective := (projectiveResolution Z).projective 0
+                f := (projectiveResolution Z).π.f 0 ≫ (HomologicalComplex.singleObjXSelf _ 0 Z).hom
+                epi := inferInstance }⟩⟩
+  obtain ⟨P, hP⟩ := exists_projectiveResolution_of_hasProjectiveDimensionLE hX
+  exact (P.mapOfIsZeroLeftDerived F h).hasProjectiveDimensionLE
+    (F.map_isZero (hP (m + 1) (Nat.lt_succ_self m)))
+
+/-- Strict projective-dimension bound for a right-exact additive functor preserving projective
+objects on an `F`-acyclic object. -/
+theorem Functor.hasProjectiveDimensionLT_obj_of_isZero_leftDerived (F : C ⥤ D) [F.Additive]
+    [PreservesFiniteColimits F] [F.PreservesProjectiveObjects] {X : C}
+    (h : ∀ n, IsZero ((F.leftDerived (n + 1)).obj X)) {n : ℕ}
+    (hX : HasProjectiveDimensionLT X n) :
+    HasProjectiveDimensionLT (F.obj X) n := by
+  cases n with
+  | zero =>
+    rw [hasProjectiveDimensionLT_zero_iff_isZero] at hX ⊢
+    exact F.map_isZero hX
+  | succ m => exact F.hasProjectiveDimensionLE_obj_of_isZero_leftDerived h hX
+
+/-- A right-exact additive functor preserving projective objects satisfies
+`projectiveDimension (F.obj X) ≤ projectiveDimension X` when `Lₙ₊₁F(X) = 0` for all `n`. -/
+theorem Functor.projectiveDimension_le_obj_of_isZero_leftDerived (F : C ⥤ D) [F.Additive]
+    [PreservesFiniteColimits F] [F.PreservesProjectiveObjects] {X : C}
+    (h : ∀ n, IsZero ((F.leftDerived (n + 1)).obj X)) :
+    projectiveDimension (F.obj X) ≤ projectiveDimension X :=
+  sInf_le_sInf_of_subset_insert_top fun n hn ↦ by
+    simp only [Set.mem_ofPred_eq, not_top_lt, IsEmpty.forall_iff, implies_true,
+      Set.insert_eq_of_mem] at hn ⊢
+    exact fun i hi ↦ F.hasProjectiveDimensionLT_obj_of_isZero_leftDerived h (hn i hi)
+
+/-- Given an adjunction `F ⊣ G` with `G` fully faithful and preserving epimorphisms, if `G(Y)` is
+`F`-acyclic (`Lₙ₊₁F(G(Y)) = 0` for all `n`) and has projective dimension at most `m`, then `Y` has
+projective dimension at most `m`. -/
+theorem Adjunction.hasProjectiveDimensionLE_of_isZero_leftDerived {F : C ⥤ D} {G : D ⥤ C}
+    (adj : F ⊣ G) [F.Additive] [G.Full] [G.Faithful] [G.PreservesEpimorphisms] {Y : D}
+    (h : ∀ n, IsZero ((F.leftDerived (n + 1)).obj (G.obj Y))) {m : ℕ}
+    (hY : HasProjectiveDimensionLE (G.obj Y) m) :
+    HasProjectiveDimensionLE Y m := by
+  have : PreservesColimitsOfSize.{0, 0} F := adj.leftAdjoint_preservesColimits
+  have : PreservesFiniteColimits F := PreservesColimitsOfSize.preservesFiniteColimits F
+  have := Functor.preservesProjectiveObjects_of_adjunction_of_preservesEpimorphisms adj
+  have : HasProjectiveDimensionLT ((G ⋙ F).obj Y) (m + 1) :=
+    F.hasProjectiveDimensionLE_obj_of_isZero_leftDerived h hY
+  exact hasProjectiveDimensionLT_of_iso (asIso (adj.counit.app Y)) (m + 1)
+
+/-- Strict projective-dimension bound along an adjunction `F ⊣ G` with `G` fully faithful and
+epimorphism-preserving on an object `Y` whose image `G(Y)` is `F`-acyclic. -/
+theorem Adjunction.hasProjectiveDimensionLT_of_isZero_leftDerived {F : C ⥤ D} {G : D ⥤ C}
+    (adj : F ⊣ G) [F.Additive] [G.Full] [G.Faithful] [G.PreservesEpimorphisms] {Y : D}
+    (h : ∀ n, IsZero ((F.leftDerived (n + 1)).obj (G.obj Y))) {n : ℕ}
+    (hY : HasProjectiveDimensionLT (G.obj Y) n) :
+    HasProjectiveDimensionLT Y n := by
+  cases n with
+  | zero =>
+    have : PreservesColimitsOfSize.{0, 0} F := adj.leftAdjoint_preservesColimits
+    rw [hasProjectiveDimensionLT_zero_iff_isZero] at hY ⊢
+    exact (F.map_isZero hY).of_iso (asIso (adj.counit.app Y)).symm
+  | succ m => exact adj.hasProjectiveDimensionLE_of_isZero_leftDerived h hY
+
+/-- Given an adjunction `F ⊣ G` with `G` fully faithful and epimorphism-preserving, if
+`Lₙ₊₁F(G(Y)) = 0` for all `n`, then `projectiveDimension Y ≤ projectiveDimension (G.obj Y)`. -/
+theorem Adjunction.projectiveDimension_le_of_isZero_leftDerived {F : C ⥤ D} {G : D ⥤ C}
+    (adj : F ⊣ G) [F.Additive] [G.Full] [G.Faithful] [G.PreservesEpimorphisms] {Y : D}
+    (h : ∀ n, IsZero ((F.leftDerived (n + 1)).obj (G.obj Y))) :
+    projectiveDimension Y ≤ projectiveDimension (G.obj Y) :=
+  sInf_le_sInf_of_subset_insert_top fun n hn ↦ by
+    simp only [Set.mem_ofPred_eq, not_top_lt, IsEmpty.forall_iff, implies_true,
+      Set.insert_eq_of_mem] at hn ⊢
+    exact fun i hi ↦ adj.hasProjectiveDimensionLT_of_isZero_leftDerived h (hn i hi)
+
+end LeftDerived
+
+end CategoryTheory

@@ -8,9 +8,11 @@ module
 public import Mathlib.FieldTheory.IsPerfectClosure
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.MvPolynomial.Basic
+public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.RingHom.Flat
 import TauCeti.Algebra.CharP.Frobenius.Flat
 import TauCeti.RingTheory.Perfect.Basic
+import TauCeti.RingTheory.Perfect.IsPRadical
 import TauCeti.RingTheory.RingHom.Flat
 
 /-!
@@ -28,19 +30,23 @@ of perfect rings, such as the vanishing of `Tor_i^A(B, C)` for perfect `A`-algeb
 and `i > 0`, to quotients of perfect rings by radical ideals.
 
 Over a base which is not perfect, flatness of Frobenius takes the place of perfectness: if the
-Frobenius endomorphism of `K` is flat, then every perfect closure `K → L` is flat. For instance
-the perfection of a regular ring of characteristic `p` is flat over it, by Kunz's theorem.
+Frobenius endomorphism of `K` is flat, then every perfect closure `K → L` is faithfully flat, since
+it is flat and induces a homeomorphism on prime spectra (`IsPRadical.isHomeomorph_comap`). For
+instance the perfection of a regular ring of characteristic `p` is faithfully flat over it, by
+Kunz's theorem.
 
 ## Main results
 
 * `IsPRadical.pow_mem_of_finite`: finitely many elements of a `p`-radical extension have
   `p ^ n`-th powers in the base for a common exponent `n`.
+* `MvPolynomial.isPRadical_map`: applying a `p`-radical map to coefficients gives a `p`-radical map
+  of polynomial rings.
 * `Module.Flat.of_isPerfectClosure`: a perfect closure of a flat algebra over a perfect ring is
   flat.
 * `IsPerfectClosure.injective_of_flat_frobenius`: a perfect closure of a ring with flat
   Frobenius is injective.
-* `RingHom.Flat.of_isPerfectClosure`: a perfect closure of a ring with flat Frobenius is flat
-  over it.
+* `RingHom.Flat.of_isPerfectClosure` and `RingHom.FaithfullyFlat.of_isPerfectClosure`: a perfect
+  closure of a ring with flat Frobenius is faithfully flat over it.
 * `RingHom.Flat.perfectClosureOf_comp`: the colimit perfection of a flat algebra over a perfect
   ring is flat.
 * `TauCeti.flat_perfectClosureOf_comp_C`: the perfect polynomial algebra
@@ -74,6 +80,44 @@ theorem IsPRadical.pow_mem_of_finite {ι : Type*} [Finite ι] (z : ι → L) :
   refine ⟨Finset.univ.sup n, fun j ↦ y j ^ p ^ (Finset.univ.sup n - n j), fun j ↦ ?_⟩
   rw [map_pow, hy, ← pow_mul, ← pow_add,
     Nat.add_sub_cancel' (Finset.le_sup (Finset.mem_univ j))]
+
+/-- Mapping coefficients along a `p`-radical homomorphism from a semiring of exponential
+characteristic `p` gives a `p`-radical homomorphism of multivariate polynomial semirings. -/
+theorem MvPolynomial.isPRadical_map {σ : Type*} [ExpChar K p] :
+    IsPRadical (MvPolynomial.map (σ := σ) i) p where
+  pow_mem' g := by
+    obtain _ | ⟨hp⟩ := ‹ExpChar K p›
+    · have hi : Function.Surjective i := fun z ↦ by
+        obtain ⟨n, y, hy⟩ := IsPRadical.pow_mem i 1 z
+        exact ⟨y, by simpa using hy⟩
+      obtain ⟨h, rfl⟩ := MvPolynomial.map_surjective i hi g
+      exact ⟨0, h, by simp⟩
+    · have : Nontrivial K := CharP.nontrivial_of_char_ne_one hp.ne_one
+      have : Nontrivial L := by
+        refine (subsingleton_or_nontrivial L).resolve_left fun _ ↦ ?_
+        obtain ⟨n, hn⟩ := mem_pNilradical.1
+          (IsPRadical.ker_le i p ((RingHom.mem_ker (r := 1)).2 (Subsingleton.elim _ _)))
+        simp at hn
+      have : CharP L p := (CharP.charP_iff_prime_eq_zero hp).2 <| by
+        rw [← map_natCast i, CharP.cast_eq_zero, map_zero]
+      have : ExpChar L p := .prime hp
+      obtain ⟨n, y, hy⟩ := IsPRadical.pow_mem_of_finite i p fun m : g.support ↦ g.coeff m
+      refine ⟨n, ∑ m : g.support, MvPolynomial.monomial (p ^ n • m.1) (y m), ?_⟩
+      conv_rhs => rw [g.as_sum, ← Finset.sum_attach, sum_pow_char_pow]
+      simp [map_sum, MvPolynomial.map_monomial, hy, MvPolynomial.monomial_pow]
+  ker_le' f hf := by
+    have hcoeff (m : f.support) : f.coeff m ∈ pNilradical K p :=
+      IsPRadical.ker_le i p <| by
+        simpa [MvPolynomial.coeff_map] using congr_arg (fun g ↦ g.coeff m.1) hf
+    choose k hk using fun m ↦ mem_pNilradical.1 (hcoeff m)
+    refine mem_pNilradical.2 ⟨Finset.univ.sup k, ?_⟩
+    conv_lhs => enter [1]; rw [f.as_sum, ← Finset.sum_attach]
+    rw [sum_pow_char_pow]
+    refine Finset.sum_eq_zero fun m _ ↦ ?_
+    rw [MvPolynomial.monomial_pow,
+      pow_eq_zero_of_le (Nat.pow_le_pow_right (expChar_pos K p)
+        (Finset.le_sup (Finset.mem_univ m))) (hk m),
+      MvPolynomial.monomial_zero]
 
 end IsPRadical
 
@@ -185,6 +229,21 @@ theorem RingHom.Flat.of_isPerfectClosure (hF : (frobenius K p).Flat) : i.Flat :=
   simp_rw [iterateFrobeniusEquiv_def, sum_pow_char_pow, mul_pow, hL, ← map_pow, ← map_mul,
     ← map_sum, pow_add, pow_mul, ← hy, ← map_pow, hyw, iterateFrobenius_def]
   simp only [← pow_mul, ← pow_add]
+
+/-- A perfect closure of a ring with flat Frobenius is faithfully flat: it is flat and induces a
+homeomorphism on prime spectra (`IsPRadical.isHomeomorph_comap`). -/
+theorem RingHom.FaithfullyFlat.of_isPerfectClosure (hF : (frobenius K p).Flat) :
+    i.FaithfullyFlat := by
+  have : NeZero p := ⟨expChar_ne_zero K p⟩
+  exact iff_flat_and_comap_surjective.2
+    ⟨RingHom.Flat.of_isPerfectClosure i p hF, (IsPRadical.isHomeomorph_comap i p).surjective⟩
+
+/-- Algebra-structure form of `RingHom.FaithfullyFlat.of_isPerfectClosure`. -/
+theorem Module.FaithfullyFlat.of_isPerfectClosure_of_flat_frobenius [Algebra K L]
+    [IsPerfectClosure (algebraMap K L) p] (hF : (frobenius K p).Flat) :
+    Module.FaithfullyFlat K L :=
+  RingHom.faithfullyFlat_algebraMap_iff.1
+    (RingHom.FaithfullyFlat.of_isPerfectClosure (algebraMap K L) p hF)
 
 end FlatFrobenius
 

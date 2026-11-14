@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.FieldTheory.PerfectClosure
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor
 public import TauCeti.Algebra.Category.ModuleCat.Quotient
 public import TauCeti.RingTheory.Ideal.Radical
 public import TauCeti.RingTheory.Perfect.TensorProduct
-public import Mathlib.FieldTheory.PerfectClosure
 
 import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
+import TauCeti.LinearAlgebra.TensorProduct.Torsion
+import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Perfect.PerfectClosure
 
 /-!
@@ -31,6 +34,15 @@ radical ideal (`TauCeti.exists_surjective_perfectClosure_mvPolynomial`). Since `
 (`TauCeti.flat_perfectClosureOf_comp_C`), flat base change identifies the vanishing of
 `Tor_i^A(B, C)` with that of `Tor_i^P(B, P ⊗[A] C)` (`ModuleCat.isZero_Tor_restrictScalars_iff`),
 and `P ⊗[A] C` is a perfect `P`-algebra (`Algebra.TensorProduct.perfectRing`).
+
+When `B = A ⧸ I` for a radical ideal `I`, the same Mayer–Vietoris argument also gives
+`Tor_i^A(A ⧸ I, M) = 0` for `i > 0` and *every* `(A ⧸ I)`-module `M`, or equivalently every
+`A`-module `M` annihilated by `I`
+(`TauCeti.isZero_Tor_succ_quotient_of_isRadical_of_isTorsionBySet`):
+in degree `1`, `I` is idempotent (`Ideal.IsRadical.isIdempotentElem`) so `I ⊗[A] M = 0`, while
+Frobenius-root ideals have Tor dimension at most `1` against all `A`-modules. Equivalently, for a
+surjection `f : A →+* B` onto a reduced (hence perfect) ring `B`, `Tor_i^A(B, M) = 0` for every
+`B`-module `M` and every `i > 0` (`TauCeti.isZero_Tor_succ_of_surjective_of_isReduced`).
 
 As in the proof of Bhatt and Scholze, everything reduces to Frobenius-root ideals. For
 `J_f = √(f)`, the short exact sequence `0 → J_f → A → A ⧸ J_f → 0` and the flatness of `J_f`
@@ -65,6 +77,10 @@ flat: the bound is the number of equations.
   reduced `A`-algebra `C`.
 * `TauCeti.isZero_Tor_succ_quotient_of_isRadical`: `Tor_{n+1}^A(A ⧸ I, C) = 0` for every radical
   ideal `I` of `A` and every perfect `A`-algebra `C`.
+* `TauCeti.isZero_Tor_succ_quotient_of_isRadical_of_isTorsionBySet` and
+  `TauCeti.isZero_Tor_succ_of_surjective_of_isReduced`: `Tor_{n+1}^A(A ⧸ I, M) = 0` for every
+  `A`-module `M` annihilated by a radical ideal `I`, and `Tor_{n+1}^A(B, M) = 0` for every module
+  `M` over a reduced quotient `B` of `A`.
 * `TauCeti.isZero_Tor_succ_of_perfectRing`: `Tor_{n+1}^A(B, C) = 0` for all perfect `A`-algebras
   `B` and `C`.
 * `TauCeti.isZero_Tor_quotient_radical_span_range`: `Tor_n^A(A ⧸ √(f₁, …, f_m), M) = 0` for every
@@ -78,8 +94,8 @@ flat: the bound is the number of equations.
 ## References
 
 * B. Bhatt and P. Scholze, *Projectivity of the Witt vector affine Grassmannian*,
-  Invent. Math. 209 (2017), Lemma 3.16 and its proof, Remark 3.17, Proposition 11.29 and
-  Remark 11.33.
+  Invent. Math. 209 (2017), Lemma 3.16 and its proof, Remark 3.17, Proposition 11.29,
+  Proposition 11.31 and Remark 11.33.
 -/
 
 public section
@@ -153,6 +169,92 @@ theorem isZero_Tor_succ_quotient_of_isRadical [ExpChar C p] [PerfectRing C p] {I
     rwa [Ideal.iSup_radical_fg, hI.radical] at key
 
 end Quotient
+
+section Torsion
+
+variable (p)
+include p
+
+/-- **Tor of a radical quotient with a module it annihilates.** For a radical ideal `I` of a
+perfect ring `A` of prime characteristic `p` and an `A`-module `M` annihilated by `I`
+(`Module.IsTorsionBySet A M I`), `Tor_{n+1}^A(A ⧸ I, M) = 0` for every `n`. In degree `1`,
+idempotence of `I` (`Ideal.IsRadical.isIdempotentElem`) gives `I ⊗[A] M = 0`; higher degrees follow
+by Mayer–Vietoris from Frobenius-root ideals, which have Tor dimension at most `1`. -/
+theorem isZero_Tor_succ_quotient_of_isRadical_of_isTorsionBySet {I : Ideal A} (hI : I.IsRadical)
+    (M : ModuleCat.{u} A) (hM : Module.IsTorsionBySet A M I) (n : ℕ) :
+    IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj (ModuleCat.of A (A ⧸ I))).obj M) := by
+  induction n generalizing I with
+  | zero =>
+    have hsub := subsingleton_tensorProduct_of_isTorsionBySet_right
+      (Ideal.smul_top_eq_top_of_isIdempotentElem
+        (hI.isIdempotentElem (Fact.out : p.Prime).ne_one)) hM
+    exact I.shortExact_quotientShortComplex.isZero_Tor_one_X₃ M
+      (ModuleCat.isZero_Tor_succ_of_flat _ _ 0) fun _ _ _ ↦ hsub.elim _ _
+  | succ n ih =>
+    have fg : ∀ {N : Ideal A}, N.FG → N ≤ I →
+        IsZero (((Tor (ModuleCat.{u} A) (n + 1 + 1)).obj
+          (ModuleCat.of A (A ⧸ N.radical))).obj M) := fun {N} hN ↦ by
+      induction N, hN using Submodule.fg_induction with
+      | singleton f =>
+        intro _
+        rw [← Ideal.span, ← frobeniusRootIdeal_eq_radical (p := p)]
+        exact isZero_Tor_add_two_quotient_frobeniusRootIdeal M f n
+      | sup N₁ N₂ _ _ ih₁ ih₂ =>
+        intro hNI
+        have r₁ := Ideal.radical_isRadical N₁
+        have r₂ := Ideal.radical_isRadical N₂
+        rw [Ideal.radical_sup, (r₁.sup p r₂).radical]
+        have hM' : Module.IsTorsionBySet A M (Ideal.radical N₁ ⊓ Ideal.radical N₂ : Ideal A) :=
+          Module.isTorsionBySet_of_subset
+            (inf_le_left.trans (hI.radical_le_iff.2 (le_sup_left.trans hNI))) hM
+        exact (Submodule.shortExact_quotientInfSupShortComplex (Ideal.radical N₁)
+          (Ideal.radical N₂)).isZero_Tor_succ_X₃ M
+          (ModuleCat.isZero_Tor_prod M (ih₁ (le_sup_left.trans hNI))
+            (ih₂ (le_sup_right.trans hNI)))
+          (ih (r₁.inf r₂) hM')
+    have : Nonempty {N : Ideal A // N.FG ∧ N ≤ I} := ⟨⟨⊥, Submodule.fg_bot, bot_le⟩⟩
+    have key := ModuleCat.isZero_Tor_succ_quotient_iSup (M := M)
+      (X := ModuleCat.of A A) I.directed_radical_fg (n + 1) fun N ↦ fg N.2.1 N.2.2
+    rwa [Ideal.iSup_radical_fg, hI.radical] at key
+
+/-- **Tor of a reduced quotient of a perfect ring with any module over the quotient.** If
+`f : A →+* B` is a surjective homomorphism from a perfect ring `A` of prime characteristic `p` onto
+a reduced ring `B`, then `Tor_{n+1}^A(B, M) = 0` for every `B`-module `M` and every `n`. -/
+theorem isZero_Tor_succ_of_surjective_of_isReduced {B : Type u} [CommRing B] [IsReduced B]
+    {f : A →+* B} (hf : Function.Surjective f) (M : ModuleCat.{u} B) (n : ℕ) :
+    IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj
+      ((ModuleCat.restrictScalars f).obj (ModuleCat.of B B))).obj
+        ((ModuleCat.restrictScalars f).obj M)) := by
+  have hker : (RingHom.ker f).IsRadical :=
+    (RingHom.ker_isRadical_iff_reduced_of_surjective hf).2 inferInstance
+  let e := RingHom.quotientKerEquivOfSurjective hf
+  let X := (ModuleCat.restrictScalars f).obj (ModuleCat.of B B)
+  have he (a : A) (b : B) : e.symm (f a * b) = a • e.symm b := by
+    rw [map_mul, RingHom.quotientKerEquivOfSurjective_symm_apply, Algebra.smul_def,
+      Ideal.Quotient.algebraMap_eq]
+  let eB : X ≃ₗ[A] A ⧸ RingHom.ker f :=
+    { (e.toAddEquiv : A ⧸ RingHom.ker f ≃+ B).symm with
+      map_smul' := fun a b ↦ by
+        rw [ModuleCat.restrictScalars.smul_def]
+        exact he a (b : B) }
+  have hM : Module.IsTorsionBySet A ((ModuleCat.restrictScalars f).obj M) (RingHom.ker f) :=
+    fun m ⟨r, hr⟩ ↦ by
+      change r • m = 0
+      rw [ModuleCat.restrictScalars.smul_def, RingHom.mem_ker.1 hr, zero_smul]
+      rfl
+  exact (isZero_Tor_succ_quotient_of_isRadical_of_isTorsionBySet p hker _ hM n).of_iso
+    (((Tor (ModuleCat.{u} A) (n + 1)).mapIso eB.toModuleIso).app _)
+
+/-- **Tor of a perfect quotient of a perfect ring with any module over the quotient.** -/
+theorem isZero_Tor_succ_of_surjective_of_perfectRing {B : Type u} [CommRing B] [PerfectRing B p]
+    {f : A →+* B} (hf : Function.Surjective f) (M : ModuleCat.{u} B) (n : ℕ) :
+    IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj
+      ((ModuleCat.restrictScalars f).obj (ModuleCat.of B B))).obj
+        ((ModuleCat.restrictScalars f).obj M)) := by
+  have := isReduced_of_perfectRing B p
+  exact isZero_Tor_succ_of_surjective_of_isReduced p hf M n
+
+end Torsion
 
 /-- **Tor independence of perfect rings.** For perfect algebras `B` and `C` over a perfect ring `A`
 of prime characteristic `p`, `Tor_{n+1}^A(B, C) = 0`. -/

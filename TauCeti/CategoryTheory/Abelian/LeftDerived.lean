@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.LeftDerived
+public import Mathlib.CategoryTheory.Preadditive.Projective.Preserves
+public import TauCeti.CategoryTheory.Abelian.Projective.Resolution
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.Resolution
 public import TauCeti.CategoryTheory.ObjectProperty.Homology
@@ -34,15 +36,18 @@ Over a principal ideal domain every module has such a presentation, by a free mo
 kernel, which is again free; applied to the tensor product, this computes `Tor₁` in the Künneth
 and universal coefficient theorems.
 
-The file also records four general facts. The natural transformation `LₙF ⟶ LₙG` induced by
+The file also records five general facts. The natural transformation `LₙF ⟶ LₙG` induced by
 `α : F ⟶ G` is additive in `α` (`CategoryTheory.NatTrans.leftDerived_add`), so that a derived
 functor depending on a parameter through a natural transformation, such as `Tor` in its underived
 variable, is an additive functor of that parameter. In degree zero it is compatible with the
 comparison maps `L₀F ⟶ F` and `L₀G ⟶ G`
 (`CategoryTheory.NatTrans.leftDerived_zero_comp_fromLeftDerivedZero`). An exact additive functor
-has no positive left derived functors (`CategoryTheory.Functor.isZero_leftDerived_succ`). If an
-additive functor sends projective objects into a class closed under subobjects and quotients, for
-instance a Serre class, all its left derived functors take values in that class
+has no positive left derived functors (`CategoryTheory.Functor.isZero_leftDerived_succ`). More
+generally, a right-exact additive functor preserving projective objects sends a projective
+resolution of an `F`-acyclic object `X` to a projective resolution of `F(X)`
+(`CategoryTheory.ProjectiveResolution.mapOfIsZeroLeftDerived`). If an additive functor sends
+projective objects into a class closed under subobjects and quotients, for instance a Serre class,
+all its left derived functors take values in that class
 (`CategoryTheory.ObjectProperty.prop_leftDerived_obj`). Applied to tensoring with a fixed object,
 this turns closure of such a class under tensor products into closure under Tor.
 
@@ -312,6 +317,34 @@ lemma ObjectProperty.prop_leftDerived_obj (P : ObjectProperty D) [P.IsClosedUnde
   let Q := projectiveResolution X
   exact P.prop_of_iso (Q.isoLeftDerivedObj F n).symm
     (P.prop_homology ((F.mapHomologicalComplex _).obj Q.complex) n (hF _))
+
+/-- A right-exact additive functor `F` preserving projective objects carries a projective
+resolution `P` of an `F`-acyclic object `X` (`Lₙ₊₁F(X) = 0` for all `n`) to a projective
+resolution of `F(X)`. -/
+@[expose]
+def ProjectiveResolution.mapOfIsZeroLeftDerived {X : C} (P : ProjectiveResolution X)
+    (F : C ⥤ D) [F.Additive] [PreservesFiniteColimits F] [F.PreservesProjectiveObjects]
+    (h : ∀ n, IsZero ((F.leftDerived (n + 1)).obj X)) :
+    ProjectiveResolution (F.obj X) :=
+  let K : ChainComplex D ℕ := (F.mapHomologicalComplex _).obj P.complex
+  let ε : K.X 0 ⟶ F.obj X := F.map (P.π.f 0)
+  have hε : K.d 1 0 ≫ ε = 0 := by
+    change F.map (P.complex.d 1 0) ≫ F.map (P.π.f 0) = 0
+    rw [← F.map_comp, P.complex_d_comp_π_f_zero, F.map_zero]
+  have h₀ := (ShortComplex.exact_and_epi_g_iff_g_is_cokernel (ShortComplex.mk _ _ hε)).2
+    ⟨CokernelCofork.mapIsColimit _ P.isColimitCokernelCofork F⟩
+  haveI : Epi ε := h₀.2
+  K.toProjectiveResolution ε hε (fun n ↦ F.projective_obj_of_projective (P.projective n)) h₀.1
+    fun n ↦ (HomologicalComplex.exactAt_iff_isZero_homology _ _).2
+      ((h n).of_iso (P.isoLeftDerivedObj F (n + 1)).symm)
+
+/-- The underlying complex of `P.mapOfIsZeroLeftDerived F h` is `F` applied termwise to `P`. -/
+@[simp]
+theorem ProjectiveResolution.mapOfIsZeroLeftDerived_complex {X : C} (P : ProjectiveResolution X)
+    (F : C ⥤ D) [F.Additive] [PreservesFiniteColimits F] [F.PreservesProjectiveObjects]
+    (h : ∀ n, IsZero ((F.leftDerived (n + 1)).obj X)) :
+    (P.mapOfIsZeroLeftDerived F h).complex = (F.mapHomologicalComplex _).obj P.complex :=
+  (rfl)
 
 end Additive
 
