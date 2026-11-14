@@ -15,7 +15,7 @@ public import Mathlib.Tactic.NoncommRing
 /-!
 # Finite polynomial replacement
 
-Let `x, z` be nonzero elements of a division ring `D`, let `s` be a finite index set and let
+Let `x, z` be elements of a division ring `D` with `z ≠ 0`, let `s` be a finite index set and let
 `nₐ ≤ N` for every `a ∈ s`. Suppose that two exchange relations
 
 ```
@@ -71,12 +71,14 @@ variable {D ι : Type*} [DivisionRing D]
 
 /-- One summand of the finite replacement: multiplying out the defect
 `(x*) ^ n · x ^ n - g` recovers the difference of the two exchange terms. -/
-private theorem replacement_term {x xs φ g c : D} {n N : ℕ} (hx : x ≠ 0) (hn : n ≤ N) :
+private theorem replacement_term {x xs φ g c : D} {n N : ℕ} (hn : n ≤ N) :
     xs ^ N * φ * (x ^ n * c) -
         xs ^ (N - n) * (xs ^ n * x ^ n - g) * ((x ^ n)⁻¹ * φ * x ^ n) * c =
       xs ^ (N - n) * (g * ((x ^ n)⁻¹ * φ * x ^ n) * c) := by
   have hu : x ^ n * ((x ^ n)⁻¹ * φ * x ^ n) = φ * x ^ n := by
-    rw [← mul_assoc, ← mul_assoc, mul_inv_cancel₀ (pow_ne_zero n hx), one_mul]
+    rcases eq_or_ne (x ^ n) 0 with h | h
+    · simp [h]
+    · rw [← mul_assoc, ← mul_assoc, mul_inv_cancel₀ h, one_mul]
   have e : xs ^ (N - n) * (xs ^ n * x ^ n - g) * ((x ^ n)⁻¹ * φ * x ^ n) * c =
       xs ^ (N - n) * xs ^ n * (x ^ n * ((x ^ n)⁻¹ * φ * x ^ n)) * c -
         xs ^ (N - n) * (g * ((x ^ n)⁻¹ * φ * x ^ n) * c) := by
@@ -84,13 +86,13 @@ private theorem replacement_term {x xs φ g c : D} {n N : ℕ} (hx : x ≠ 0) (h
   rw [e, hu, ← pow_sub_mul_pow xs hn]
   noncomm_ring
 
-/-- **Finite polynomial replacement.** Let `x, z ≠ 0` and `nₐ ≤ N` for `a ∈ s`. If
+/-- **Finite polynomial replacement.** Let `z ≠ 0` and `nₐ ≤ N` for `a ∈ s`. If
 `z* · z = n₀ + ∑ₐ x ^ nₐ cₐ` and `z** · z = (x*) ^ N m₀ + ∑ₐ (x*) ^ (N - nₐ) dₐ` with
 `φ · n₀ = m₀` and `dₐ = gₐ · (x ^ nₐ)⁻¹ φ x ^ nₐ · cₐ`, then `z**` is `(x*) ^ N φ z*` minus the sum
 of the corrections `(x*) ^ (N - nₐ) ((x*) ^ nₐ x ^ nₐ - gₐ) (x ^ nₐ)⁻¹ φ x ^ nₐ cₐ`, multiplied
 by `z⁻¹` on the right. -/
 theorem eq_sub_sum_mul_inv_of_mul_eq_add_sum {x z xs zs zss φ n₀ m₀ : D} {N : ℕ} {s : Finset ι}
-    {n : ι → ℕ} {c d g : ι → D} (hx : x ≠ 0) (hz : z ≠ 0) (hN : ∀ a ∈ s, n a ≤ N)
+    {n : ι → ℕ} {c d g : ι → D} (hz : z ≠ 0) (hN : ∀ a ∈ s, n a ≤ N)
     (hm₀ : φ * n₀ = m₀) (hzs : zs * z = n₀ + ∑ a ∈ s, x ^ n a * c a)
     (hzss : zss * z = xs ^ N * m₀ + ∑ a ∈ s, xs ^ (N - n a) * d a)
     (hd : ∀ a ∈ s, d a = g a * ((x ^ n a)⁻¹ * φ * x ^ n a) * c a) :
@@ -102,7 +104,7 @@ theorem eq_sub_sum_mul_inv_of_mul_eq_add_sum {x z xs zs zss φ n₀ m₀ : D} {N
       ← Finset.sum_sub_distrib, mul_assoc]
     congr 1
     refine Finset.sum_congr rfl fun a ha ↦ ?_
-    rw [hd a ha, replacement_term hx (hN a ha)]
+    rw [hd a ha, replacement_term (hN a ha)]
   rw [← mul_inv_cancel_right₀ hz zss, key, sub_mul, mul_inv_cancel_right₀ hz]
 
 /-- **Finite polynomial replacement, membership.** Under the hypotheses of
@@ -110,7 +112,7 @@ theorem eq_sub_sum_mul_inv_of_mul_eq_add_sum {x z xs zs zss φ n₀ m₀ : D} {N
 every `cₐ`, and each defect `(x*) ^ nₐ x ^ nₐ - gₐ` lies in `z · C[z]`, then `z**` lies in every
 subring containing `C`, `x*`, `z*` and `z`. -/
 theorem mem_of_mul_eq_add_sum {C H : Subring D} {x z xs zs zss φ n₀ m₀ : D} {N : ℕ}
-    {s : Finset ι} {n : ι → ℕ} {c d g : ι → D} (hx : x ≠ 0) (hz : z ≠ 0)
+    {s : Finset ι} {n : ι → ℕ} {c d g : ι → D} (hz : z ≠ 0)
     (hxC : ∀ b ∈ C, x⁻¹ * b * x ∈ C) (hzC : ∀ b ∈ C, z * b * z⁻¹ ∈ C) (hφ : φ ∈ C)
     (hc : ∀ a ∈ s, c a ∈ C) (hN : ∀ a ∈ s, n a ≤ N) (hm₀ : φ * n₀ = m₀)
     (hzs : zs * z = n₀ + ∑ a ∈ s, x ^ n a * c a)
@@ -147,7 +149,7 @@ theorem mem_of_mul_eq_add_sum {C H : Subring D} {x z xs zs zss φ n₀ m₀ : D}
     exact hle (Subring.smul_mem_pointwise_smul u v _ hv)
   have hclosure : Subring.closure (insert z (C : Set D)) ≤ H :=
     Subring.closure_le.2 (Set.insert_subset hzH hCH)
-  rw [eq_sub_sum_mul_inv_of_mul_eq_add_sum hx hz hN hm₀ hzs hzss hd, Finset.sum_mul]
+  rw [eq_sub_sum_mul_inv_of_mul_eq_add_sum hz hN hm₀ hzs hzss hd, Finset.sum_mul]
   refine H.sub_mem (H.mul_mem (H.mul_mem (H.pow_mem hxs N) (hCH hφ)) hzsH)
     (H.sum_mem fun a ha ↦ ?_)
   obtain ⟨w, hw, hgw⟩ := hg a ha
@@ -167,26 +169,26 @@ theorem eq_pow_mul_mul_of_mul_eq_pow_mul {z xs zs zss φ n₀ m₀ : D} {N : ℕ
     (hm₀ : φ * n₀ = m₀) (hzs : zs * z = n₀) (hzss : zss * z = xs ^ N * m₀) :
     zss = xs ^ N * φ * zs := by
   simpa using eq_sub_sum_mul_inv_of_mul_eq_add_sum (s := (∅ : Finset Unit)) (n := fun _ ↦ 0)
-    (c := fun _ ↦ 0) (d := fun _ ↦ 0) (g := fun _ ↦ 0) (x := 1) one_ne_zero hz (by simp) hm₀
+    (c := fun _ ↦ 0) (d := fun _ ↦ 0) (g := fun _ ↦ 0) (x := 1) hz (by simp) hm₀
     (by simpa using hzs) (by simpa using hzss) (by simp)
 
-/-- **Binary replacement.** For one interacting term of full degree `N` and `x, z ≠ 0`, the
+/-- **Binary replacement.** For one interacting term of full degree `N` and `z ≠ 0`, the
 exchange relations `z* · z = n₀ + x ^ N c` and `z** · z = (x*) ^ N m₀ + d` with `φ · n₀ = m₀` and
 `d = g · (x ^ N)⁻¹ φ x ^ N · c` give
 `z** = (x*) ^ N φ z* - ((x*) ^ N x ^ N - g) (x ^ N)⁻¹ φ x ^ N c z⁻¹`. -/
-theorem eq_sub_mul_inv_of_mul_eq_add {x z xs zs zss φ n₀ m₀ c d g : D} {N : ℕ} (hx : x ≠ 0)
-    (hz : z ≠ 0) (hm₀ : φ * n₀ = m₀) (hzs : zs * z = n₀ + x ^ N * c)
+theorem eq_sub_mul_inv_of_mul_eq_add {x z xs zs zss φ n₀ m₀ c d g : D} {N : ℕ} (hz : z ≠ 0)
+    (hm₀ : φ * n₀ = m₀) (hzs : zs * z = n₀ + x ^ N * c)
     (hzss : zss * z = xs ^ N * m₀ + d) (hd : d = g * ((x ^ N)⁻¹ * φ * x ^ N) * c) :
     zss = xs ^ N * φ * zs - (xs ^ N * x ^ N - g) * ((x ^ N)⁻¹ * φ * x ^ N) * c * z⁻¹ := by
   simpa using eq_sub_sum_mul_inv_of_mul_eq_add_sum (s := {()}) (N := N) (n := fun _ ↦ N)
-    (c := fun _ ↦ c) (d := fun _ ↦ d) (g := fun _ ↦ g) hx hz (by simp) hm₀ (by simpa using hzs)
+    (c := fun _ ↦ c) (d := fun _ ↦ d) (g := fun _ ↦ g) hz (by simp) hm₀ (by simpa using hzs)
     (by simpa using hzss) (by simpa using hd)
 
 /-- **Binary replacement, membership.** Under the hypotheses of `eq_sub_mul_inv_of_mul_eq_add`,
 if `x` and `z` normalize a subring `C` containing `φ` and `c`, and `(x*) ^ N x ^ N - g` lies in
 `z · C[z]`, then `z**` lies in every subring containing `C`, `x*`, `z*` and `z`. -/
 theorem mem_of_mul_eq_add {C H : Subring D} {x z xs zs zss φ n₀ m₀ c d g : D} {N : ℕ}
-    (hx : x ≠ 0) (hz : z ≠ 0) (hxC : ∀ b ∈ C, x⁻¹ * b * x ∈ C)
+    (hz : z ≠ 0) (hxC : ∀ b ∈ C, x⁻¹ * b * x ∈ C)
     (hzC : ∀ b ∈ C, z * b * z⁻¹ ∈ C) (hφ : φ ∈ C) (hc : c ∈ C) (hm₀ : φ * n₀ = m₀)
     (hzs : zs * z = n₀ + x ^ N * c) (hzss : zss * z = xs ^ N * m₀ + d)
     (hd : d = g * ((x ^ N)⁻¹ * φ * x ^ N) * c)
@@ -194,7 +196,7 @@ theorem mem_of_mul_eq_add {C H : Subring D} {x z xs zs zss φ n₀ m₀ c d g : 
     (hCH : C ≤ H) (hxs : xs ∈ H) (hzsH : zs ∈ H) (hzH : z ∈ H) :
     zss ∈ H :=
   mem_of_mul_eq_add_sum (s := {()}) (N := N) (n := fun _ ↦ N) (c := fun _ ↦ c) (d := fun _ ↦ d)
-    (g := fun _ ↦ g) hx hz hxC hzC hφ (by simpa using hc) (by simp) hm₀ (by simpa using hzs)
+    (g := fun _ ↦ g) hz hxC hzC hφ (by simpa using hc) (by simp) hm₀ (by simpa using hzs)
     (by simpa using hzss) (by simpa using hd) (by simpa using hg) hCH hxs hzsH hzH
 
 end DivisionRing
@@ -210,41 +212,34 @@ private theorem pow_mul_pow_sub_eq_mul_eval₂_divX {R F : Type*} [Ring R] [Fiel
   rw [← mul_pow, mul_comm z x, ← h]
   ring
 
-/-- **Polynomial replacement.** Let `f : R →+* F` be a ring map into a field and let `x, y` be
-nonzero with `x z = P_f(y)` and `y w = Q_f(x)` for polynomials `P, Q` over `R`. For every
-`e ≥ deg Q`, the element `(∑ₐ f(Q.coeff a) f(P(0)) ^ a z ^ (e - a)) / y` equals
+/-- **Polynomial replacement.** Let `f : R →+* F` be a ring map into a field and let `y ≠ 0`
+with `x z = P_f(y)` and `y w = Q_f(x)` for polynomials `P, Q` over `R`. For every `e ≥ deg Q`,
+the element `(∑ₐ f(Q.coeff a) f(P(0)) ^ a z ^ (e - a)) / y` equals
 `z ^ e w - ∑ₐ f(Q.coeff a) z ^ (e - a) D_{P,a}(y)`, where `D_{P,a} = divX (P ^ a)`. -/
 theorem sum_div_eq_sub_sum_of_mul_eq_eval₂ {R F : Type*} [Ring R] [Field F] (f : R →+* F)
-    (P Q : R[X]) {e : ℕ} (he : Q.natDegree ≤ e) {x y z w : F} (hx : x ≠ 0) (hy : y ≠ 0)
+    (P Q : R[X]) {e : ℕ} (he : Q.natDegree ≤ e) {x y z w : F} (hy : y ≠ 0)
     (hxz : x * z = P.eval₂ f y) (hyw : y * w = Q.eval₂ f x) :
     (∑ a ∈ Q.support, f (Q.coeff a) * f (P.coeff 0) ^ a * z ^ (e - a)) / y =
       z ^ e * w - ∑ a ∈ Q.support, f (Q.coeff a) * z ^ (e - a) * (divX (P ^ a)).eval₂ f y := by
-  refine (eq_sub_sum_mul_inv_of_mul_eq_add_sum (x := x) (z := y) (xs := z) (zs := w) (φ := 1)
-    (n₀ := 0) (m₀ := 0) (N := e) (n := fun a ↦ a) (c := fun a ↦ f (Q.coeff a))
-    (d := fun a ↦ f (P.coeff 0) ^ a * f (Q.coeff a)) (g := fun a ↦ f (P.coeff 0) ^ a)
-    hx hy (fun a ha ↦ le_trans (le_natDegree_of_mem_supp a ha) he) (mul_zero _) ?_ ?_
-    (fun a _ ↦ by rw [mul_one, inv_mul_cancel₀ (pow_ne_zero a hx), mul_one])).trans ?_
-  · rw [mul_comm w y, hyw, eval₂_eq_sum, Polynomial.sum_def, zero_add]
-    exact Finset.sum_congr rfl fun a _ ↦ mul_comm _ _
-  · rw [div_mul_cancel₀ _ hy, mul_zero, zero_add]
-    exact Finset.sum_congr rfl fun a _ ↦ by ring
-  rw [mul_one, Finset.sum_mul]
-  refine congrArg _ (Finset.sum_congr rfl fun a _ ↦ ?_)
-  rw [pow_mul_pow_sub_eq_mul_eval₂_divX f P hxz, mul_one, inv_mul_cancel₀ (pow_ne_zero a hx),
-    mul_one]
-  calc _ = f (Q.coeff a) * z ^ (e - a) * (divX (P ^ a)).eval₂ f y * (y * y⁻¹) := by ring
-    _ = _ := by rw [mul_inv_cancel₀ hy, mul_one]
+  rw [div_eq_iff hy, sub_mul, mul_assoc, mul_comm w y, hyw, eval₂_eq_sum, Polynomial.sum_def,
+    Finset.mul_sum, Finset.sum_mul, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun a ha ↦ ?_
+  have h := pow_mul_pow_sub_eq_mul_eval₂_divX f P hxz a
+  rw [← pow_sub_mul_pow z (le_trans (le_natDegree_of_mem_supp a ha) he)]
+  calc _ = f (Q.coeff a) * z ^ (e - a) * (z ^ a * x ^ a - (z ^ a * x ^ a - f (P.coeff 0) ^ a)) := by
+        ring
+    _ = _ := by rw [h]; ring
 
 /-- **Polynomial replacement, membership.** Under the hypotheses of
 `sum_div_eq_sub_sum_of_mul_eq_eval₂`, the element
 `(∑ₐ f(Q.coeff a) f(P(0)) ^ a z ^ (e - a)) / y` lies in every subring of `F` containing `f(R)`,
 `y`, `z` and `w`. -/
 theorem sum_div_mem_of_mul_eq_eval₂ {R F : Type*} [Ring R] [Field F] (f : R →+* F)
-    (P Q : R[X]) {e : ℕ} (he : Q.natDegree ≤ e) {x y z w : F} (hx : x ≠ 0) (hy : y ≠ 0)
+    (P Q : R[X]) {e : ℕ} (he : Q.natDegree ≤ e) {x y z w : F} (hy : y ≠ 0)
     (hxz : x * z = P.eval₂ f y) (hyw : y * w = Q.eval₂ f x) {H : Subring F}
     (hfH : f.range ≤ H) (hyH : y ∈ H) (hzH : z ∈ H) (hwH : w ∈ H) :
     (∑ a ∈ Q.support, f (Q.coeff a) * f (P.coeff 0) ^ a * z ^ (e - a)) / y ∈ H := by
-  rw [sum_div_eq_sub_sum_of_mul_eq_eval₂ f P Q he hx hy hxz hyw]
+  rw [sum_div_eq_sub_sum_of_mul_eq_eval₂ f P Q he hy hxz hyw]
   refine H.sub_mem (H.mul_mem (H.pow_mem hzH e) hwH) (H.sum_mem fun a _ ↦
     H.mul_mem (H.mul_mem (hfH ⟨_, rfl⟩) (H.pow_mem hzH _)) ?_)
   rw [eval₂_eq_sum, Polynomial.sum_def]
