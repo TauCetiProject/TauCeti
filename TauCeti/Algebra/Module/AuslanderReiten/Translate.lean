@@ -294,6 +294,14 @@ theorem AuslanderReitenTranslate.linearEquivMatlisDual_symm_apply (k : Type*) [C
       MatlisDual.equivLinearMap k k (AuslanderReitenTranspose p₁) ψ :=
   (rfl)
 
+@[simp]
+theorem AuslanderReitenTranslate.linearEquivMatlisDual_equivLinearMap (k : Type*) [CommRing k]
+    [Algebra k A] {P₀ P₁ : Type*} [AddCommGroup P₀] [Module A P₀] [AddCommGroup P₁] [Module A P₁]
+    (p₁ : P₁ →ₗ[A] P₀) (ψ : MatlisDual k k (AuslanderReitenTranspose p₁)) :
+    AuslanderReitenTranslate.linearEquivMatlisDual k p₁
+      (MatlisDual.equivLinearMap k k (AuslanderReitenTranspose p₁) ψ) = ψ :=
+  (AuslanderReitenTranslate.linearEquivMatlisDual k p₁).apply_symm_apply ψ
+
 end MatlisDual
 
 end TauCeti

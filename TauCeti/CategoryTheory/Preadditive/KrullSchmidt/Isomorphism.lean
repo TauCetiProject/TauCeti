@@ -82,8 +82,7 @@ end ZeroMorphisms
 variable [Preadditive D] (F : C ⥤ D) [F.Additive]
 
 /-- **An endomorphism sent to the identity is invertible**, for an additive functor out of a
-Krull-Schmidt category that reflects zero retracts of `X`: `𝟙 X - u` is killed by `F`, hence
-radical. -/
+Krull-Schmidt category that reflects zero retracts of `X`. -/
 theorem isIso_of_map_eq_id_of_reflects_isZero_retract {X : C}
     (hZ : ∀ {K : C}, Retract K X → IsZero (F.obj K) → IsZero K)
     {u : X ⟶ X} (hu : F.map u = 𝟙 (F.obj X)) : IsIso u := by
