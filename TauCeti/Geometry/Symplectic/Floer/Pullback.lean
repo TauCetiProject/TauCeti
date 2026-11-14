@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Analysis.Complex.RealChart
 public import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -74,6 +75,9 @@ domain.
   integrated absolute curvature under all injective ones.
 * `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_image`: the same invariance of the
   integrated absolute curvature as a lower Lebesgue integral, along arbitrary maps.
+* `TauCeti.Floer.intervalIntegral_realChart_eq_of_periodic`: along the image of a vertical side of
+  a rectangle under a map periodic in the direction of `i`, a period-one boundary integral may be
+  taken over `[0, 1]` instead of `[-1/2, 1/2]`.
 
 ## References
 
@@ -252,6 +256,24 @@ theorem differentiableAt_target_of_differentiableAt
     ((differentiableAt_const _).prodMk differentiableAt_id)).clm_apply (differentiableAt_const v)
 
 end Differentiable
+
+/-- If `f` is periodic of period one in the direction of `i` along the vertical line `s = s₀`, the
+integral of a period-one function `G` along the image under the real chart of `f` of the side
+`s = s₀` of a rectangle may be taken over `[0, 1]` instead of `[-1/2, 1/2]`. -/
+theorem intervalIntegral_realChart_eq_of_periodic {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : ℂ → ℂ} {s : ℝ}
+    (hf : Function.Periodic (fun t : ℝ => f (s + t * Complex.I)) 1) {G : ℝ → X → E}
+    (hG : Function.Periodic G 1) (u : ℝ × ℝ → X) :
+    ∫ t in (-1 / 2 : ℝ)..1 / 2, G t (u (realChart f (s, t))) =
+      ∫ t in (0 : ℝ)..1, G t (u (Complex.equivRealProdCLM (f (s + t * Complex.I)))) := by
+  have hper : Function.Periodic
+      (fun t : ℝ => G t (u (Complex.equivRealProdCLM (f (s + t * Complex.I))))) 1 := fun t => by
+    have h' : f (s + ((t + 1 : ℝ) : ℂ) * Complex.I) = f (s + t * Complex.I) := hf t
+    simp only [hG t, h']
+  have h := Function.Periodic.intervalIntegral_add_eq hper (-1 / 2) 0
+  rw [show (-1 / 2 : ℝ) + 1 = 1 / 2 by norm_num, zero_add] at h
+  simp only [realChart_apply, Complex.equivRealProdCLM_symm_apply]
+  exact h
 
 end Floer
 

@@ -24,6 +24,9 @@ determinant is `|f'|²`, so the Jacobian determinant of the real chart is nonneg
 (`TauCeti.Complex.det_fderiv_realChart`, `TauCeti.Complex.det_fderiv_realChart_nonneg`), and a map
 that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`).
 The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`).
+
+The complement of finitely many points of `ℂ`, read in real coordinates, is open
+(`TauCeti.Complex.isOpen_setOf_forall_equivRealProdCLM_symm_ne`).
 -/
 
 public section
@@ -93,5 +96,12 @@ theorem contDiff_realChart {f : ℂ → ℂ} {n : WithTop ℕ∞} (hf : ContDiff
 theorem realChart_injective {f : ℂ → ℂ} (hf : Function.Injective f) :
     Function.Injective (realChart f) :=
   Complex.equivRealProdCLM.injective.comp (hf.comp Complex.equivRealProdCLM.symm.injective)
+
+/-- The complement of finitely many points `c i` of `ℂ`, in real coordinates, is open. -/
+theorem isOpen_setOf_forall_equivRealProdCLM_symm_ne {ι : Type*} [Finite ι] (c : ι → ℂ) :
+    IsOpen {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} := by
+  simp only [Set.ofPred_forall]
+  exact isOpen_iInter_of_finite fun i ↦
+    isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const
 
 end TauCeti.Complex
