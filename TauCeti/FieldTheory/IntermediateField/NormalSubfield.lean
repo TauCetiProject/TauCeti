@@ -43,10 +43,6 @@ correspond bijectively to the left cosets `(U ≃ₐ[K] U) ⧸ (inclusion h).res
 
 ## Main definitions
 
-* `IntermediateField.extendScalarsAlgEquiv`: `U`-algebra equivalences `extendScalars h₁ ≃ₐ[U]
-  extendScalars h₂` correspond to `K`-algebra equivalences `L₁ ≃ₐ[K] L₂` fixing `U` pointwise.
-* `IntermediateField.extendScalarsAlgEquivHom`: the injective homomorphism
-  `(extendScalars h ≃ₐ[U] extendScalars h) →* (L ≃ₐ[K] L)`.
 * `IntermediateField.restrictNormalOfLE`: the automorphism of `U / K` induced by `e : L₁ ≃ₐ[K] L₂`
   when `U ≤ L₁` and `U / K` is normal.
 * `IntermediateField.extendScalarsAlgEquivCongr`: the group isomorphism
@@ -81,104 +77,6 @@ open TauCeti
 namespace IntermediateField
 
 variable {K Ω : Type*} [Field K] [Field Ω] [Algebra K Ω]
-
-/-! ### Extending scalars on algebra equivalences -/
-
-section ExtendScalars
-
-variable {U L L₁ L₂ : IntermediateField K Ω}
-
-/-- An algebra equivalence `extendScalars h₁ ≃ₐ[U] extendScalars h₂` over an intermediate field
-`U` is the same data as a `K`-algebra equivalence `L₁ ≃ₐ[K] L₂` fixing `U` pointwise. -/
-def extendScalarsAlgEquiv (h₁ : U ≤ L₁) (h₂ : U ≤ L₂) :
-    (extendScalars h₁ ≃ₐ[U] extendScalars h₂) ≃
-      {e : L₁ ≃ₐ[K] L₂ // ∀ x : U, (e ⟨x.1, h₁ x.2⟩ : Ω) = x} where
-  toFun f :=
-    ⟨{ toFun x := ⟨(f ⟨x.1, x.2⟩).1, (f ⟨x.1, x.2⟩).2⟩
-       invFun y := ⟨(f.symm ⟨y.1, y.2⟩).1, (f.symm ⟨y.1, y.2⟩).2⟩
-       left_inv x := Subtype.ext (congrArg Subtype.val (f.symm_apply_apply ⟨x.1, x.2⟩))
-       right_inv y := Subtype.ext (congrArg Subtype.val (f.apply_symm_apply ⟨y.1, y.2⟩))
-       map_mul' x y := Subtype.ext (congrArg Subtype.val (f.map_mul ⟨x.1, x.2⟩ ⟨y.1, y.2⟩))
-       map_add' x y := Subtype.ext (congrArg Subtype.val (f.map_add ⟨x.1, x.2⟩ ⟨y.1, y.2⟩))
-       commutes' k := Subtype.ext <| by
-         have hk : (⟨(algebraMap K L₁ k).1, (algebraMap K L₁ k).2⟩ : extendScalars h₁) =
-             algebraMap U (extendScalars h₁) (algebraMap K U k) := Subtype.ext rfl
-         rw [hk, f.commutes]
-         rfl },
-     fun x ↦ congrArg Subtype.val (f.commutes x)⟩
-  invFun e :=
-    { toFun x := ⟨(e.1 ⟨x.1, x.2⟩).1, (e.1 ⟨x.1, x.2⟩).2⟩
-      invFun y := ⟨(e.1.symm ⟨y.1, y.2⟩).1, (e.1.symm ⟨y.1, y.2⟩).2⟩
-      left_inv x := Subtype.ext (congrArg Subtype.val (e.1.symm_apply_apply ⟨x.1, x.2⟩))
-      right_inv y := Subtype.ext (congrArg Subtype.val (e.1.apply_symm_apply ⟨y.1, y.2⟩))
-      map_mul' x y := Subtype.ext (congrArg Subtype.val (e.1.map_mul ⟨x.1, x.2⟩ ⟨y.1, y.2⟩))
-      map_add' x y := Subtype.ext (congrArg Subtype.val (e.1.map_add ⟨x.1, x.2⟩ ⟨y.1, y.2⟩))
-      commutes' u := Subtype.ext (e.2 u) }
-  left_inv f := by
-    ext x
-    rfl
-  right_inv e := by
-    ext x
-    rfl
-
-@[simp]
-theorem coe_extendScalarsAlgEquiv_apply (h₁ : U ≤ L₁) (h₂ : U ≤ L₂)
-    (f : extendScalars h₁ ≃ₐ[U] extendScalars h₂) (x : L₁) :
-    ((extendScalarsAlgEquiv h₁ h₂ f).1 x : Ω) = f ⟨x.1, x.2⟩ :=
-  (rfl)
-
-@[simp]
-theorem coe_extendScalarsAlgEquiv_symm_apply (h₁ : U ≤ L₁) (h₂ : U ≤ L₂)
-    (e : {e : L₁ ≃ₐ[K] L₂ // ∀ x : U, (e ⟨x.1, h₁ x.2⟩ : Ω) = x}) (x : extendScalars h₁) :
-    ((extendScalarsAlgEquiv h₁ h₂).symm e x : Ω) = e.1 ⟨x.1, x.2⟩ :=
-  (rfl)
-
-/-- Two extensions `extendScalars h₁` and `extendScalars h₂` are `U`-isomorphic precisely when
-there is a `K`-isomorphism `L₁ ≃ₐ[K] L₂` fixing `U` pointwise. -/
-theorem nonempty_extendScalars_algEquiv_iff (h₁ : U ≤ L₁) (h₂ : U ≤ L₂) :
-    Nonempty (extendScalars h₁ ≃ₐ[U] extendScalars h₂) ↔
-      ∃ e : L₁ ≃ₐ[K] L₂, ∀ x : U, (e ⟨x.1, h₁ x.2⟩ : Ω) = x :=
-  (extendScalarsAlgEquiv h₁ h₂).nonempty_congr.trans nonempty_subtype
-
-/-- Viewing a `U`-automorphism of `extendScalars h` as a `K`-automorphism of `L`. -/
-def extendScalarsAlgEquivHom (h : U ≤ L) :
-    (extendScalars h ≃ₐ[U] extendScalars h) →* (L ≃ₐ[K] L) where
-  toFun f := (extendScalarsAlgEquiv h h f).1
-  map_one' := by
-    ext x
-    rfl
-  map_mul' _ _ := by
-    ext x
-    rfl
-
-@[simp]
-theorem coe_extendScalarsAlgEquivHom_apply (h : U ≤ L)
-    (f : extendScalars h ≃ₐ[U] extendScalars h) (x : L) :
-    (extendScalarsAlgEquivHom h f x : Ω) = f ⟨x.1, x.2⟩ :=
-  (rfl)
-
-@[simp]
-theorem extendScalarsAlgEquivHom_symm (h : U ≤ L)
-    (e : {e : L ≃ₐ[K] L // ∀ x : U, (e ⟨x.1, h x.2⟩ : Ω) = x}) :
-    extendScalarsAlgEquivHom h ((extendScalarsAlgEquiv h h).symm e) = e.1 :=
-  congrArg Subtype.val ((extendScalarsAlgEquiv h h).apply_symm_apply e)
-
-/-- Forgetting the `U`-algebra structure on automorphisms of `extendScalars h` is injective. -/
-theorem extendScalarsAlgEquivHom_injective (h : U ≤ L) :
-    Function.Injective (extendScalarsAlgEquivHom h) := by
-  intro f g hfg
-  ext x
-  exact congrArg (fun σ : L ≃ₐ[K] L ↦ (σ ⟨x.1, x.2⟩ : Ω)) hfg
-
-/-- A `K`-automorphism of `L` comes from a `U`-automorphism of `extendScalars h` precisely when it
-fixes `U` pointwise. -/
-theorem mem_range_extendScalarsAlgEquivHom_iff (h : U ≤ L) {σ : L ≃ₐ[K] L} :
-    σ ∈ (extendScalarsAlgEquivHom h).range ↔ ∀ x : U, (σ ⟨x.1, h x.2⟩ : Ω) = x :=
-  ⟨fun ⟨f, hf⟩ ↦ hf ▸ (extendScalarsAlgEquiv h h f).2,
-   fun hσ ↦ ⟨(extendScalarsAlgEquiv h h).symm ⟨σ, hσ⟩,
-     extendScalarsAlgEquivHom_symm h ⟨σ, hσ⟩⟩⟩
-
-end ExtendScalars
 
 /-! ### Restriction to a normal intermediate field and automorphism count -/
 
@@ -307,8 +205,8 @@ def extendScalarsAlgEquivCongr (h₁ : U ≤ L₁) (h₂ : U ≤ L₂) (e : L₁
 theorem coe_extendScalarsAlgEquivCongr_apply (h₁ : U ≤ L₁) (h₂ : U ≤ L₂) (e : L₁ ≃ₐ[K] L₂)
     (f : extendScalars h₁ ≃ₐ[U] extendScalars h₁) (x : extendScalars h₂) :
     (extendScalarsAlgEquivCongr h₁ h₂ e f x : Ω) =
-      e (extendScalarsAlgEquivHom h₁ f (e.symm ⟨x.1, x.2⟩)) :=
-  (rfl)
+      e (extendScalarsAlgEquivHom h₁ f (e.symm ⟨x.1, x.2⟩)) := by
+  simp [extendScalarsAlgEquivCongr]
 
 /-- Two `K`-isomorphic intermediate fields containing a normal `U / K` have the same number of
 `U`-automorphisms. -/

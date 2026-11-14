@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Frobenius
 public import TauCeti.NumberTheory.LocalField.Unramified.Criterion
+import TauCeti.NumberTheory.LocalField.Unramified.BaseChange
 import TauCeti.RingTheory.RootsOfUnity.Adjoin
 
 /-!
@@ -59,6 +60,8 @@ of `TauCeti.finiteIntermediateFieldValuativeRel`.
   `TauCeti.finrank_unramifiedExtension`: it has degree `f` over `K`.
 * `IntermediateField.eq_unramifiedExtension_finrank`: every unramified intermediate field `E` of
   `Ω / K` is `unramifiedExtension K Ω [E : K]`.
+* `AlgHom.fieldRange_eq_unramifiedExtension`: the image of any `K`-embedding `ι : F →ₐ[K] Ω` of an
+  unramified extension `F / K` into `Ω` is `unramifiedExtension K Ω (inertiaDegree K F)`.
 * `TauCeti.existsUnique_isUnramified_finrank_eq`: for `f ≥ 1`, there is exactly one unramified
   intermediate field of `Ω / K` of degree `f`.
 
@@ -346,6 +349,24 @@ theorem _root_.IntermediateField.eq_unramifiedExtension_finrank (E : Intermediat
   refine (eq_of_le_of_finrank_eq ?_ (finrank_unramifiedExtension_of_isPrimitiveRoot hf hηΩ)).symm
   rw [unramifiedExtension_eq_adjoin_simple hf hηΩ, adjoin_simple_le_iff]
   exact η.2
+
+variable {K Ω} in
+/-- **The image of an unramified extension.** For an unramified extension `F / K` of
+nonarchimedean local fields, the image of any `K`-embedding `ι : F →ₐ[K] Ω` into an extension `Ω`
+of `K` is `unramifiedExtension K Ω (inertiaDegree K F)`. -/
+theorem _root_.AlgHom.fieldRange_eq_unramifiedExtension {F : Type*} [Field F] [ValuativeRel F]
+    [TopologicalSpace F] [IsNonarchimedeanLocalField F] [Algebra K F] [ValuativeExtension K F]
+    [IsUnramified K F] (ι : F →ₐ[K] Ω) :
+    ι.fieldRange = unramifiedExtension K Ω (inertiaDegree K F) := by
+  have : Module.Finite K F := finite_of_valuativeExtension K F
+  have : Module.Finite K ι.fieldRange := Module.Finite.equiv ι.equivFieldRange.toLinearEquiv
+  let _ := finiteIntermediateFieldValuativeRel K Ω ι.fieldRange
+  let _ := finiteIntermediateFieldTopology K Ω ι.fieldRange
+  have := finiteIntermediateField_isNonarchimedeanLocalField K Ω ι.fieldRange
+  have := finiteIntermediateField_valuativeExtension K Ω ι.fieldRange
+  have : IsUnramified K ι.fieldRange := IsUnramified.of_algEquiv ι.equivFieldRange
+  rw [ι.fieldRange.eq_unramifiedExtension_finrank,
+    ← ι.equivFieldRange.toLinearEquiv.finrank_eq, IsUnramified.inertiaDegree_eq_finrank]
 
 section IsSepClosed
 
