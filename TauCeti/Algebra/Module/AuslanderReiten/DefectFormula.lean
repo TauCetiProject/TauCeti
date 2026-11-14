@@ -40,8 +40,9 @@ Mathlib's `SnakeLemma.δ'`, in its module form.
 ## Main definitions
 
 * `LinearMap.contravariantDefect` and `LinearMap.covariantDefect`: the two defects.
-* `LinearMap.contravariantDefectEquivKer`: `δ^*(X) ≅ ker H(φ)`, from the snake lemma.
-* `LinearMap.defectFormula`: **Auslander's defect formula** `D δ^*(X) ≅ δ_*(D Tr X)`.
+* `Function.Exact.contravariantDefectEquivKer`: `δ^*(X) ≅ ker H(φ)`, from the snake lemma.
+* `Function.Exact.dualContravariantDefectEquivCovariantDefect`: **Auslander's defect formula**
+  `D δ^*(X) ≅ δ_*(D Tr X)`.
 
 ## References
 
@@ -79,6 +80,12 @@ abbrev covariantDefect (φ : M₁ →ₗ[A] M₂) (Y : Type*) [AddCommGroup Y] [
   (M₁ →ₗ[A] Y) ⧸ range (φ.lcomp k Y)
 
 end Defects
+
+end LinearMap
+
+namespace Function.Exact
+
+open LinearMap TauCeti
 
 section Defect
 
@@ -122,8 +129,8 @@ variable [Module.Finite A P₀] [Module.Finite A P₁] [Module.Projective A P₁
 `D = Hom_k(-, E)`. For an exact sequence `0 → M₁ → M₂ → M₃ → 0` of `A`-modules and a module `X`
 with a presentation `P₁ → P₀ → X → 0` by finitely generated projectives,
 `D δ^*(X) ≅ δ_*(D Tr X)`, where `Tr X` is the transpose of the presentation. -/
-noncomputable def defectFormula {f : P₁ →ₗ[A] P₀} {p : P₀ →ₗ[A] X} (hfp : Exact f p)
-    (hp : Surjective p) {φ : M₁ →ₗ[A] M₂} {ψ : M₂ →ₗ[A] M₃} (hφ : Injective φ)
+noncomputable def dualContravariantDefectEquivCovariantDefect {f : P₁ →ₗ[A] P₀} {p : P₀ →ₗ[A] X}
+    (hfp : Exact f p) (hp : Surjective p) {φ : M₁ →ₗ[A] M₂} {ψ : M₂ →ₗ[A] M₃} (hφ : Injective φ)
     (hψ : Surjective ψ) (hφψ : Exact φ ψ) :
     (contravariantDefect k ψ X →ₗ[k] E) ≃ₗ[k]
       covariantDefect k φ (MatlisDual k E (AuslanderReitenTranspose f)) :=
@@ -142,4 +149,4 @@ noncomputable def defectFormula {f : P₁ →ₗ[A] P₀} {p : P₀ →ₗ[A] X}
 
 end Defect
 
-end LinearMap
+end Function.Exact
