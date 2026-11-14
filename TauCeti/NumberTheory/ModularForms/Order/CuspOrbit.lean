@@ -710,7 +710,7 @@ theorem orderAtCuspOrbit_eq_add_of_coe_eq_mul {k₁ k₂ : ℤ}
     (analyticOrderAt_cuspFunction_ne_top hw2 hper2 hgγ)
 
 /-- Additivity of `orderAtCuspOrbit` on `ModularForm.mul`. -/
-theorem orderAtCuspOrbit_mul {k₁ k₂ : ℤ}
+theorem _root_.ModularForm.orderAtCuspOrbit_mul {k₁ k₂ : ℤ}
     (f : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₁)
     (g : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₂)
     (hf : (⇑f : ℍ → ℂ) ≠ 0) (hg : (⇑g : ℍ → ℂ) ≠ 0)

@@ -575,7 +575,8 @@ theorem weightedOrderOnCompactifiedQuotient_eq_add_of_coe_eq_mul {k₁ k₂ : �
   | ofQuotient P => exact weightedOrderOfVanishingOnEffectiveOrbit_eq_add_of_coe_eq_mul hf hg hfg P
   | ofCusp C => exact orderAtCuspOrbit_eq_add_of_coe_eq_mul hf hg hfg C
 
-theorem weightedOrderOnCompactifiedQuotient_mul {k₁ k₂ : ℤ}
+/-- Additivity of `weightedOrderOnCompactifiedQuotient` on `ModularForm.mul`. -/
+theorem _root_.ModularForm.weightedOrderOnCompactifiedQuotient_mul {k₁ k₂ : ℤ}
     (f : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₁)
     (g : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₂)
     (hf : (⇑f : ℍ → ℂ) ≠ 0) (hg : (⇑g : ℍ → ℂ) ≠ 0)

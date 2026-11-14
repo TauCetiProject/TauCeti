@@ -202,7 +202,7 @@ theorem orderOfVanishingOnEffectiveOrbit_eq_add_of_coe_eq_mul {k₁ k₂ k₃ : 
     exact orderOfVanishingAt_mul (ModularFormClass.holo f) (ModularFormClass.holo g) hf hg p
 
 /-- Additivity of `orderOfVanishingOnEffectiveOrbit` on `ModularForm.mul`. -/
-theorem orderOfVanishingOnEffectiveOrbit_mul {k₁ k₂ : ℤ}
+theorem _root_.ModularForm.orderOfVanishingOnEffectiveOrbit_mul {k₁ k₂ : ℤ}
     (f : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₁)
     (g : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₂)
     (hf : (⇑f : ℍ → ℂ) ≠ 0) (hg : (⇑g : ℍ → ℂ) ≠ 0)
@@ -293,7 +293,8 @@ theorem weightedOrderOfVanishingOnEffectiveOrbit_eq_add_of_coe_eq_mul {k₁ k₂
   push_cast
   ring
 
-theorem weightedOrderOfVanishingOnEffectiveOrbit_mul {k₁ k₂ : ℤ}
+/-- Additivity of `weightedOrderOfVanishingOnEffectiveOrbit` on `ModularForm.mul`. -/
+theorem _root_.ModularForm.weightedOrderOfVanishingOnEffectiveOrbit_mul {k₁ k₂ : ℤ}
     (f : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₁)
     (g : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₂)
     (hf : (⇑f : ℍ → ℂ) ≠ 0) (hg : (⇑g : ℍ → ℂ) ≠ 0)
