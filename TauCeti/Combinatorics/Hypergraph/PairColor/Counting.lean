@@ -190,11 +190,7 @@ private lemma abs_sum_colorWeight_sub_mul_routeWeight_le (S : PairColorSystem κ
   have hvol : (∏ l, (#(A l) : ℝ)) =
       #{h ∈ piFinset A | h p.1.1 = g₀ p.1.1 ∧ h p.1.2 = g₀ p.1.2} *
         (#(A p.1.1) * #(A p.1.2)) := by
-    have := hsplit fun _ ↦ (1 : ℝ)
-    simp only [sum_const, nsmul_eq_mul, mul_one] at this
-    rw [← this, card_piFinset]
-    push_cast
-    ring
+    exact_mod_cast prod_card_eq_card_filter_piFinset_mul_mul hne A (hg₀' _) (hg₀' _)
   rw [hsplit, hvol]
   refine (abs_sum_le_card_nsmul (B := ε * #(A p.1.1) * #(A p.1.2)) fun h _ ↦ ?_).trans_eq
     (by rw [nsmul_eq_mul]; ring)
