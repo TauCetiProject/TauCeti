@@ -24,6 +24,10 @@ real variables whose positive part has infinite mean and whose negative part has
 averages tend almost surely to infinity. This form permits inverting sums in renewal and occupation
 limit theorems without a finite-mean hypothesis.
 
+For variables with no moment assumptions, the fraction of coordinates whose norm exceeds a
+threshold tending to infinity still tends almost surely to zero. The event is simultaneous for
+all diverging thresholds; this is useful for removing large entries by rank bounds.
+
 ## Main results
 
 * `TauCeti.Probability.strong_law_ae_infinitePi` — for `f` integrable against `Q`, the averages
@@ -35,6 +39,8 @@ limit theorems without a finite-mean hypothesis.
 * `TauCeti.Probability.strong_law_ae_real_of_lintegral_eq_top` — real i.i.d. averages diverge
   almost surely to `+∞` when the positive part has infinite extended mean and the negative part
   finite extended mean; pairwise independence suffices.
+* `TauCeti.Probability.ae_tendsto_card_filter_norm_gt_div` — empirical tail frequencies at
+  diverging thresholds tend almost surely to zero, without a moment assumption.
 
 ## Implementation
 
@@ -228,6 +234,76 @@ theorem strong_law_ae_real_of_lintegral_eq_top (X : ℕ → Ω → ℝ)
     _ = X i ω := max_zero_sub_max_neg_zero_eq_self _
 
 end InfiniteMean
+
+section EscapingThresholds
+
+variable {Ω F : Type*} [MeasurableSpace Ω] [SeminormedAddCommGroup F]
+  [MeasurableSpace F] [OpensMeasurableSpace F] {P : Measure Ω} [IsFiniteMeasure P]
+
+/-- For pairwise independent identically distributed random variables, the proportion of the
+first `n` coordinates exceeding any threshold tending to infinity tends almost surely to zero.
+No moment assumption is needed. The full-measure event works simultaneously for all threshold
+sequences, so the thresholds may even be chosen after the sample point is fixed. -/
+theorem ae_tendsto_card_filter_norm_gt_div (X : ℕ → Ω → F)
+    (hindep : Pairwise fun i j ↦ IndepFun (X i) (X j) P)
+    (hid : ∀ i, IdentDistrib (X i) (X 0) P P) :
+    ∀ᵐ ω ∂P, ∀ b : ℕ → ℝ, Tendsto b atTop atTop →
+      Tendsto (fun n ↦
+        (((Finset.range n).filter fun i ↦ b n < ‖X i ω‖).card : ℝ) / n)
+        atTop (𝓝 0) := by
+  classical
+  let f (k : ℕ) : F → ℝ := {x | (k : ℝ) < ‖x‖}.indicator 1
+  have hfm (k : ℕ) : Measurable (f k) :=
+    measurable_const.indicator (measurableSet_lt measurable_const continuous_norm.measurable)
+  have hbound (k : ℕ) (x : F) : ‖f k x‖ ≤ 1 := by
+    simp only [f, Set.indicator_apply, Pi.one_apply]
+    split_ifs <;> norm_num
+  have hfi (k : ℕ) : Integrable (fun ω ↦ f k (X 0 ω)) P :=
+    Integrable.of_bound
+      ((hfm k).comp_aemeasurable (hid 0).aemeasurable_fst).aestronglyMeasurable 1
+      (ae_of_all _ fun ω ↦ hbound k (X 0 ω))
+  -- Apply the strong law only to bounded indicators at fixed integer thresholds.
+  have hsl (k : ℕ) : ∀ᵐ ω ∂P,
+      Tendsto (fun n ↦ (∑ i ∈ Finset.range n, f k (X i ω)) / n) atTop
+        (𝓝 (∫ ω, f k (X 0 ω) ∂P)) :=
+    strong_law_ae_real (fun i ω ↦ f k (X i ω)) (hfi k)
+      (fun i j hij ↦ (hindep hij).comp (hfm k) (hfm k))
+      (fun i ↦ (hid i).comp (hfm k))
+  -- The expectations vanish as the fixed threshold tends to infinity.
+  have htail : Tendsto (fun k ↦ ∫ ω, f k (X 0 ω) ∂P) atTop (𝓝 0) := by
+    have hpoint (ω : Ω) : Tendsto (fun k ↦ f k (X 0 ω)) atTop (𝓝 0) := by
+      apply tendsto_const_nhds.congr'
+      filter_upwards [(tendsto_natCast_atTop_atTop (R := ℝ)).eventually
+        (eventually_ge_atTop ‖X 0 ω‖)] with k hk
+      simp [f, not_lt.mpr hk]
+    simpa using tendsto_integral_of_dominated_convergence (fun _ ↦ (1 : ℝ))
+      (fun k ↦ (hfi k).aestronglyMeasurable)
+      (integrable_const 1) (fun k ↦ ae_of_all _ fun ω ↦ hbound k (X 0 ω))
+      (ae_of_all _ hpoint)
+  -- Intersect countably many events before allowing an arbitrary threshold sequence.
+  filter_upwards [ae_all_iff.2 hsl] with ω hω
+  intro b hb
+  apply tendsto_order.2
+  constructor
+  · intro a ha
+    exact Eventually.of_forall fun n ↦ ha.trans_le (by positivity)
+  · intro ε hε
+    obtain ⟨k, hk⟩ := (htail.eventually (gt_mem_nhds hε)).exists
+    filter_upwards [hb.eventually (eventually_ge_atTop (k : ℝ)),
+      (hω k).eventually (gt_mem_nhds hk)] with n hn hsum
+    refine lt_of_le_of_lt ?_ hsum
+    apply div_le_div_of_nonneg_right _ (Nat.cast_nonneg n)
+    rw [Finset.natCast_card_filter]
+    simp only [f, Set.indicator_apply, Pi.one_apply]
+    apply Finset.sum_le_sum
+    intro i _
+    split_ifs with h h' h'
+    · rfl
+    · exact False.elim (h' (hn.trans_lt h))
+    · norm_num
+    · rfl
+
+end EscapingThresholds
 
 end Probability
 
