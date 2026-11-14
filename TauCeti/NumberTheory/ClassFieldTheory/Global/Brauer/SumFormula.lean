@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.LocalizationKernel
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Compositum
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Splitting
+import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Compositum
+import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Splitting
 import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.SecondInequality
 import TauCeti.NumberTheory.Cyclotomic.Adjoin
-import TauCeti.RepresentationTheory.Homological.ContCohomology.Torsion
 
 /-!
 # The sum of the local invariants of a Brauer class

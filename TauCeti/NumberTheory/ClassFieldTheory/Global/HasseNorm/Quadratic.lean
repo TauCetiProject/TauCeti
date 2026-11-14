@@ -29,7 +29,7 @@ Infinite places remain in the statement, including complex places for a general 
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VI, §4 (the cyclic Hasse norm theorem).
-* J. S. Milne, *Class Field Theory*, v4.03, Chapter VII, §2.
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter VII, §2 and Chapter VIII, §3 (Theorem 3.1).
 -/
 
 public noncomputable section
