@@ -49,13 +49,16 @@ The two main results are:
   oscillation of `V'` times `‖ξ₁ - ξ₂‖`; the uniform bound on the continuous representative by the
   Sobolev norm keeps all nearby paths inside these balls, so one modulus of continuity of `V'`
   serves at every time. If `γ` has bounded range, it suffices that `V'` be uniformly continuous on
-  bounded sets, for instance continuous on a finite-dimensional space
-  (`TauCeti.WeakDerivStep.hasStrictFDerivAt_trajectorySection_of_isBounded_range`).
+  balls around `0`
+  (`TauCeti.WeakDerivStep.hasStrictFDerivAt_trajectorySection_of_isBounded_range`), for instance
+  continuous on a proper space
+  (`TauCeti.WeakDerivStep.hasStrictFDerivAt_trajectorySection_of_isBounded_range_of_continuous`).
 
 Strict differentiability is what the implicit function theorem needs: when the trajectory operator
-is moreover Fredholm and surjective, a neighbourhood of `ξ₀` in the zero set of the section is
-homeomorphic to an open subset of `ℝ^n`, `n` the index, by a chart
-(`TauCeti.levelSetChartModel`). Along a negative gradient trajectory this is
+is moreover Fredholm and surjective, a neighbourhood of `ξ₀` in the level set of the section
+through `ξ₀` (its zero set, when the section vanishes at `ξ₀`) is homeomorphic to an open subset
+of `ℝ^n`, `n` the index, by a chart (`TauCeti.levelSetChartModel`). Along a negative gradient
+trajectory this is
 `IsIntegralCurve.exists_openPartialHomeomorph_setOf_trajectorySection_neg_gradient_eq_zero`, in
 `TauCeti.Analysis.Calculus.Morse.Fredholm`.
 
@@ -63,6 +66,8 @@ homeomorphic to an open subset of `ℝ^n`, `n` the index, by a chart
 
 * `TauCeti.WeakDerivStep.trajectorySection`: the section `ξ ↦ ξ' - (V (γ + ξ) - V γ)`.
 * `TauCeti.WeakDerivStep.trajectorySection_apply_ae`: its pointwise formula.
+* `TauCeti.WeakDerivStep.trajectorySection_congr`: it does not depend on the Lipschitz constant
+  used to construct it.
 * `TauCeti.WeakDerivStep.lipschitzWith_trajectorySection`: it is `(1 + K)`-Lipschitz.
 * `TauCeti.WeakDerivStep.trajectorySection_eq_iff_isIntegralCurve`: its level set at `V γ - γ'`
   consists of the paths `ξ` for which `γ + ξ` is an integral curve of `V`.
@@ -74,6 +79,8 @@ homeomorphic to an open subset of `ℝ^n`, `n` the index, by a chart
   trajectory operator.
 * `TauCeti.WeakDerivStep.hasStrictFDerivAt_trajectorySection_of_isBounded_range`: the same along
   a reference path with bounded range.
+* `TauCeti.WeakDerivStep.hasStrictFDerivAt_trajectorySection_of_isBounded_range_of_continuous`:
+  the same for a continuous derivative on a proper space.
 
 ## References
 
@@ -134,6 +141,13 @@ theorem trajectorySection_def (hV : LipschitzWith K V) (hγ : AEStronglyMeasurab
     trajectorySection V γ hV hγ hp ξ =
       (ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLpL p _ (weakFDerivL _ ξ) -
         (memLp_comp_add_toZeroAtInfty_sub hp hV hγ ξ).toLp _ :=
+  (rfl)
+
+/-- The trajectory section does not depend on the Lipschitz constant of `V` used to construct it:
+sections built from two Lipschitz witnesses for the same field agree. -/
+theorem trajectorySection_congr {K₁ K₂ : ℝ≥0} (hV₁ : LipschitzWith K₁ V)
+    (hV₂ : LipschitzWith K₂ V) (hγ : AEStronglyMeasurable γ volume) (hp : p ≠ ∞) :
+    trajectorySection V γ hV₁ hγ hp = trajectorySection V γ hV₂ hγ hp :=
   (rfl)
 
 /-- The pointwise formula for the trajectory section: almost everywhere,
@@ -431,7 +445,7 @@ theorem hasStrictFDerivAt_trajectorySection_of_isBounded_range (hV : LipschitzWi
   rw [dist_zero_right]
   linarith [norm_add_le (γ t) (ξc t), hC _ (mem_range_self t)]
 
-/-- **The linearization along a bounded reference path, finite-dimensional case.** On a proper
+/-- **The linearization along a bounded reference path, continuous case.** On a proper
 space, a continuous derivative `V'` is uniformly continuous on balls, so
 `TauCeti.WeakDerivStep.hasStrictFDerivAt_trajectorySection_of_isBounded_range` applies. -/
 theorem hasStrictFDerivAt_trajectorySection_of_isBounded_range_of_continuous [ProperSpace F]
