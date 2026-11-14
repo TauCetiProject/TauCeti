@@ -10,8 +10,11 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 /-!
 # Elementary inequalities in seminormed rings
 
-This file records elementary consequences of the submultiplicativity of the norm, and an estimate
-for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative.
+This file records elementary consequences of the submultiplicativity of the norm, an estimate for
+`‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative, and norm bounds for powers of units —
+including the shell lemma `Units.exists_lt_norm_zpow_lt` showing that integer powers of a unit `u`
+with `‖u‖ < 1` in a nontrivial normed ring visit every interval `(a, b)` with `0 ≤ a` and
+`a * ‖u⁻¹‖ < b`.
 -/
 
 public section
@@ -77,6 +80,85 @@ theorem norm_mul_pow_le {R : Type*} [SeminormedRing R] (x y : R) (n : ℕ) :
   · simp
   · exact (norm_mul_le _ _).trans
       (mul_le_mul_of_nonneg_left (norm_pow_le' y n.succ_pos) (norm_nonneg x))
+
+/-- Left-multiplying by `uⁿ` decreases the norm by at most `‖u⁻¹‖ⁿ`, including the case `n = 0`. -/
+theorem _root_.Units.norm_le_pow_inv_mul_norm_pow_mul {R : Type*} [SeminormedRing R] (u : Rˣ)
+    (n : ℕ) (x : R) :
+    ‖x‖ ≤ ‖((u⁻¹ : Rˣ) : R)‖ ^ n * ‖(u : R) ^ n * x‖ := by
+  rcases n with _ | n
+  · simp
+  · have hx : x = ((u⁻¹ : Rˣ) : R) ^ (n + 1) * ((u : R) ^ (n + 1) * x) := by
+      rw [← mul_assoc, ← Units.val_pow_eq_pow_val, ← Units.val_pow_eq_pow_val, ← Units.val_mul,
+        inv_pow, inv_mul_cancel, Units.val_one, one_mul]
+    calc ‖x‖ = ‖((u⁻¹ : Rˣ) : R) ^ (n + 1) * ((u : R) ^ (n + 1) * x)‖ := congrArg norm hx
+      _ ≤ ‖((u⁻¹ : Rˣ) : R) ^ (n + 1)‖ * ‖(u : R) ^ (n + 1) * x‖ := norm_mul_le _ _
+      _ ≤ ‖((u⁻¹ : Rˣ) : R)‖ ^ (n + 1) * ‖(u : R) ^ (n + 1) * x‖ :=
+          mul_le_mul_of_nonneg_right (norm_pow_le' _ n.succ_pos) (norm_nonneg _)
+
+/-- In a nontrivial normed ring, `1 ≤ ‖u‖ⁿ * ‖u⁻ⁿ‖` for every unit `u` and every `n : ℕ`. -/
+theorem _root_.Units.one_le_pow_norm_mul_norm_zpow_neg {R : Type*} [NormedRing R] [Nontrivial R]
+    (u : Rˣ) (n : ℕ) :
+    1 ≤ ‖(u : R)‖ ^ n * ‖((u ^ (-(n : ℤ)) : Rˣ) : R)‖ := by
+  rcases n with _ | n
+  · simpa using one_le_norm_one R
+  · have hmul : (u : R) ^ (n + 1) * ((u ^ (-((n + 1 : ℕ) : ℤ)) : Rˣ) : R) = 1 := by
+      rw [← Units.val_pow_eq_pow_val, ← zpow_natCast, ← Units.val_mul, ← zpow_add,
+        add_neg_cancel, zpow_zero, Units.val_one]
+    calc (1 : ℝ) ≤ ‖(1 : R)‖ := one_le_norm_one R
+      _ = ‖(u : R) ^ (n + 1) * ((u ^ (-((n + 1 : ℕ) : ℤ)) : Rˣ) : R)‖ := congrArg norm hmul.symm
+      _ ≤ ‖(u : R) ^ (n + 1)‖ * ‖((u ^ (-((n + 1 : ℕ) : ℤ)) : Rˣ) : R)‖ := norm_mul_le _ _
+      _ ≤ ‖(u : R)‖ ^ (n + 1) * ‖((u ^ (-((n + 1 : ℕ) : ℤ)) : Rˣ) : R)‖ :=
+          mul_le_mul_of_nonneg_right (norm_pow_le' (u : R) n.succ_pos) (norm_nonneg _)
+
+/-- **Shells for submultiplicative unit powers.** In a nontrivial normed ring, the norms of integer
+powers of a unit `u` with `‖u‖ < 1` visit every open interval `(a, b)` with `0 ≤ a` and
+`a * ‖u⁻¹‖ < b`. Unlike `exists_mem_Ico_zpow` or `TauCeti.NormedRing.PseudoUniformizer`, the norm
+need not be multiplicative on `u`. -/
+theorem _root_.Units.exists_lt_norm_zpow_lt {R : Type*} [NormedRing R] [Nontrivial R]
+    (u : Rˣ) (hu : ‖(u : R)‖ < 1) {a b : ℝ} (ha : 0 ≤ a)
+    (hab : a * ‖((u⁻¹ : Rˣ) : R)‖ < b) :
+    ∃ z : ℤ, a < ‖((u ^ z : Rˣ) : R)‖ ∧ ‖((u ^ z : Rˣ) : R)‖ < b := by
+  let M : ℝ := ‖((u⁻¹ : Rˣ) : R)‖
+  have hM : 0 < M := Units.norm_pos u⁻¹
+  have hb : 0 < b := (mul_nonneg ha hM.le).trans_lt hab
+  let φ (z : ℤ) : ℝ := ‖((u ^ z : Rˣ) : R)‖
+  obtain ⟨m₁, hm₁⟩ := exists_pow_lt_of_lt_one hb hu
+  have hφ₁ : φ (m₁ + 1 : ℕ) < b := by
+    have hpow : ‖(u : R)‖ ^ (m₁ + 1) < b :=
+      (pow_le_pow_of_le_one (norm_nonneg _) hu.le (Nat.le_succ m₁)).trans_lt hm₁
+    simpa only [φ, zpow_natCast, Units.val_pow_eq_pow_val] using
+      (norm_pow_le' (u : R) m₁.succ_pos).trans_lt hpow
+  rcases ha.eq_or_lt with rfl | ha_pos
+  · exact ⟨(m₁ + 1 : ℕ), Units.norm_pos _, hφ₁⟩
+  obtain ⟨m₂, hm₂⟩ := exists_pow_lt_of_lt_one (inv_pos.mpr ha_pos) hu
+  have hpow₂ : ‖(u : R)‖ ^ (m₂ + 1) < a⁻¹ :=
+    (pow_le_pow_of_le_one (norm_nonneg _) hu.le (Nat.le_succ m₂)).trans_lt hm₂
+  let z₀ : ℤ := -((m₂ + 1 : ℕ) : ℤ)
+  have hφ₀ : a < φ z₀ := by
+    have h1 := u.one_le_pow_norm_mul_norm_zpow_neg (m₂ + 1)
+    calc a = a * 1 := (mul_one a).symm
+      _ ≤ a * (‖(u : R)‖ ^ (m₂ + 1) * φ z₀) := mul_le_mul_of_nonneg_left h1 ha
+      _ < a * (a⁻¹ * φ z₀) :=
+          mul_lt_mul_of_pos_left (mul_lt_mul_of_pos_right hpow₂ (Units.norm_pos _)) ha_pos
+      _ = φ z₀ := mul_inv_cancel_left₀ ha_pos.ne' _
+  have hstep (z : ℤ) : φ z ≤ φ (z + 1) * M := by
+    have hz : u ^ z = u ^ (z + 1) * u⁻¹ := by rw [zpow_add_one, mul_inv_cancel_right]
+    have hval : ((u ^ z : Rˣ) : R) = ((u ^ (z + 1) : Rˣ) : R) * ((u⁻¹ : Rˣ) : R) :=
+      congrArg Units.val hz
+    exact (congrArg norm hval).le.trans (norm_mul_le _ _)
+  suffices ∀ (k : ℕ) (w : ℤ), a < φ w → φ (w + k) < b → ∃ z, a < φ z ∧ φ z < b by
+    obtain ⟨k, hk⟩ := Int.le.dest (by omega : z₀ ≤ ((m₁ + 1 : ℕ) : ℤ))
+    exact this k z₀ hφ₀ (hk.symm ▸ hφ₁)
+  intro k
+  induction k with
+  | zero => exact fun w haw hbw ↦ ⟨w, haw, by simpa using hbw⟩
+  | succ k ih =>
+    intro w haw hb₁
+    rcases lt_or_ge a (φ (w + 1)) with hgt | hle
+    · refine ih (w + 1) hgt ?_
+      have heq : w + 1 + (k : ℤ) = w + ((k + 1 : ℕ) : ℤ) := by push_cast; ring
+      rwa [heq]
+    · exact ⟨w, haw, ((hstep w).trans (mul_le_mul_of_nonneg_right hle hM.le)).trans_lt hab⟩
 
 /-- Without the normalisation `‖1‖ = 1`, a product with a finite product of powers still
 satisfies `‖b * ∏_{s ∈ S} (a s) ^ (e s)‖ ≤ ‖b‖ * ∏_{s ∈ S} ‖a s‖ ^ (e s)`, including empty `S`
