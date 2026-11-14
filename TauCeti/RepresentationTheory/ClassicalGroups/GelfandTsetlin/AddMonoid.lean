@@ -23,7 +23,6 @@ nonnegative ones for this order: those whose top weight is polynomial.
 * `TauCeti.GTPattern.instAddCancelCommMonoid`, `TauCeti.GTPattern.instPartialOrder` and
   `TauCeti.GTPattern.instIsOrderedCancelAddMonoid`: the entrywise additive and order structures.
 * `TauCeti.GTPattern.coeFnAddMonoidHom`: the array of entries, as an additive monoid homomorphism.
-* `TauCeti.GTPattern.rowWeight`: the weight whose coordinates are consecutive row-sum differences.
 * `TauCeti.GTPattern.const n m`: the pattern all of whose informative entries equal `m`.
 
 ## Main results
@@ -31,7 +30,8 @@ nonnegative ones for this order: those whose top weight is polynomial.
 * `TauCeti.GTPattern.zero_le_iff_topRow`: a pattern is nonnegative exactly when its top row is.
 * `TauCeti.GTPattern.zero_le_iff_isPolynomial`: a pattern is nonnegative exactly when its top
   weight is polynomial.
-* `TauCeti.GTPattern.sum_rowWeight`: the weight coordinates sum to the top-row sum.
+* `TauCeti.GTPattern.rowWeight_add` and `TauCeti.GTPattern.rowWeight_nsmul`: row weights respect
+  addition and natural scaling.
 -/
 
 public section
@@ -116,26 +116,6 @@ theorem topRow_nsmul (k : ℕ) (P : GTPattern n) : (k • P).topRow = k • P.to
   rw [topRow_apply, nsmul_apply, Pi.smul_apply, topRow_apply]
 
 /-! ### Row weights -/
-
-/-- The weight of a pattern: coordinate `r` is the sum of row `r + 1` minus the sum of row `r`.
-Unlike the top row, this weight need not be dominant. -/
-def rowWeight (P : GTPattern n) (r : Fin n) : ℤ :=
-  (∑ k ∈ Finset.range (r.val + 1), P k (r.val + 1)) -
-    ∑ k ∈ Finset.range r.val, P k r.val
-
-theorem rowWeight_apply (P : GTPattern n) (r : Fin n) :
-    P.rowWeight r = (∑ k ∈ Finset.range (r.val + 1), P k (r.val + 1)) -
-      ∑ k ∈ Finset.range r.val, P k r.val :=
-  (rfl)
-
-/-- Consecutive row-sum differences telescope to the top-row sum. -/
-theorem sum_rowWeight (P : GTPattern n) : ∑ r, P.rowWeight r = ∑ i, P.topRow i := by
-  simp_rw [rowWeight_apply, topRow_apply]
-  rw [Fin.sum_univ_eq_sum_range (fun r =>
-    (∑ k ∈ Finset.range (r + 1), P k (r + 1)) - ∑ k ∈ Finset.range r, P k r),
-    Finset.sum_range_sub (fun r => ∑ k ∈ Finset.range r, P k r),
-    Fin.sum_univ_eq_sum_range (fun k => P k n)]
-  simp
 
 @[simp]
 theorem rowWeight_zero : (0 : GTPattern n).rowWeight = 0 := by

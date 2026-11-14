@@ -22,8 +22,8 @@ The vertices of the size-`n` triangle are nonnegative barycentric triples of sum
 parameterizes the three sides along the clockwise perimeter `A → B → C → A`, and `Vertex.ofYZ`
 gives the two-variable chart `(y, z) ↦ (n - y - z, y, z)`. `Vertex.chart` gives the triangular
 chart `(i, j) ↦ (n - j, j - i, i)` for `i ≤ j ≤ n`, with boundary equations and the three
-unit-rhombus orientations `chart_rhombus_left`, `chart_rhombus_right`, and
-`chart_rhombus_remaining`. The planar embedding sends `(x,y,z)`
+unit-rhombus orientations `isRhombus_chart_left`, `isRhombus_chart_right`, and
+`isRhombus_chart_step`. The planar embedding sends `(x,y,z)`
 to `(z + y/2, √3*y/2)`, so the corners `(n,0,0)`, `(0,n,0)`, `(0,0,n)` occur clockwise.
 
 `IsRhombus a b c d` records a unit rhombus in perimeter order, with **obtuse** corners
@@ -306,6 +306,33 @@ def chart (n i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) : Vertex n :=
 @[simp] theorem chart_z (n i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) :
     (chart n i j hij hj).z = i := (rfl)
 
+/-- Recover a vertex from its last coordinate and the sum of its last two coordinates. -/
+@[simp↓] theorem chart_z_y_add_z {n : ℕ} (p : Vertex n) :
+    chart n p.z (p.y + p.z) (by omega) (by have := p.sum_eq; omega) = p := by
+  have := p.sum_eq
+  ext <;> simp only [chart_x, chart_y, chart_z] <;> omega
+
+/-- Recover a vertex from its last coordinate and the complement of its first coordinate. -/
+@[simp↓] theorem chart_z_sub_x {n : ℕ} (p : Vertex n) :
+    chart n p.z (n - p.x) (by have := p.sum_eq; omega) (Nat.sub_le _ _) = p := by
+  have h : n - p.x = p.y + p.z := by have := p.sum_eq; omega
+  simpa only [h] using chart_z_y_add_z p
+
+/-- The origin of the triangular chart is the first corner. -/
+@[simp] theorem chart_zero_zero (n : ℕ) :
+    chart n 0 0 le_rfl (Nat.zero_le n) = cornerA n := by
+  ext <;> simp
+
+/-- Convert triangular coordinates to the `(y, z)` chart. -/
+theorem chart_eq_ofYZ (n i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) :
+    chart n i j hij hj = ofYZ n (j - i) i (by omega) := by
+  ext <;> simp; omega
+
+/-- Convert `(y, z)` coordinates to the triangular chart. -/
+theorem ofYZ_eq_chart (n y z : ℕ) (h : y + z ≤ n) :
+    ofYZ n y z h = chart n z (y + z) (by omega) h := by
+  simp only [chart_eq_ofYZ, Nat.add_sub_cancel]
+
 /-- The triangular chart identifies vertices exactly when both indices agree. -/
 @[simp] theorem chart_eq_iff {n i₁ j₁ i₂ j₂ : ℕ}
     {hij₁ : i₁ ≤ j₁} {hj₁ : j₁ ≤ n} {hij₂ : i₂ ≤ j₂} {hj₂ : j₂ ≤ n} :
@@ -568,7 +595,7 @@ theorem isRhombus_of_hasStep_iff {n : ℕ} {p pv pw pvw : Vertex n} {v w : Fin 3
       by rw [Vertex.sqDist_comm, sqDist_of_hasStep hs2]; exact hw.2⟩
 
 /-- A unit cell in the triangular chart, with obtuse corners `(i, j)` and `(i + 1, j + 1)`. -/
-theorem chart_rhombus_left {n i j : ℕ} (hij : i < j) (hj : j < n) :
+theorem isRhombus_chart_left {n i j : ℕ} (hij : i < j) (hj : j < n) :
     IsRhombus (Vertex.chart n i j (by omega) (by omega))
       (Vertex.chart n (i + 1) j (by omega) (by omega))
       (Vertex.chart n (i + 1) (j + 1) (by omega) (by omega))
@@ -585,7 +612,7 @@ theorem chart_rhombus_left {n i j : ℕ} (hij : i < j) (hj : j < n) :
     fin_cases k <;> simp [Vertex.chart, v, w] <;> omega
 
 /-- The triangular-chart rhombus with obtuse corners `(i + 1, j)` and `(i + 1, j + 1)`. -/
-theorem chart_rhombus_right {n i j : ℕ} (hij : i < j) (hj : j < n) :
+theorem isRhombus_chart_right {n i j : ℕ} (hij : i < j) (hj : j < n) :
     IsRhombus (Vertex.chart n (i + 1) j (by omega) (by omega))
       (Vertex.chart n i j (by omega) (by omega))
       (Vertex.chart n (i + 1) (j + 1) (by omega) (by omega))
@@ -603,7 +630,7 @@ theorem chart_rhombus_right {n i j : ℕ} (hij : i < j) (hj : j < n) :
 
 /-- The third triangular-chart orientation, with obtuse corners `(i, j + 1)` and
 `(i + 1, j + 1)`. -/
-theorem chart_rhombus_remaining {n i j : ℕ} (hij : i ≤ j) (hj : j + 2 ≤ n) :
+theorem isRhombus_chart_step {n i j : ℕ} (hij : i ≤ j) (hj : j + 2 ≤ n) :
     IsRhombus (Vertex.chart n i (j + 1) (by omega) (by omega))
       (Vertex.chart n i j hij (by omega))
       (Vertex.chart n (i + 1) (j + 1) (by omega) (by omega))

@@ -62,8 +62,8 @@ def toGTPattern (h : IntegerHive n) : GTPattern n where
   interlacing' hij hj := by
     rw [dite_eq_left ⟨hij, by omega⟩, dite_eq_left ⟨by omega, by omega⟩,
       dite_eq_left ⟨by omega, by omega⟩]
-    exact ⟨by linarith [h.le_of_isRhombus (chart_rhombus_left hij hj)],
-      by linarith [h.le_of_isRhombus (chart_rhombus_right hij hj)]⟩
+    exact ⟨by linarith [h.le_of_isRhombus (isRhombus_chart_left hij hj)],
+      by linarith [h.le_of_isRhombus (isRhombus_chart_right hij hj)]⟩
 
 /-- On an informative cell, the pattern is the difference
 `h(n-j,j-(i+1),i+1) - h(n-j,j-i,i)`. -/
@@ -255,13 +255,18 @@ theorem boundaryLinear_gtCompletion_of_topRow_of_rowWeight
     ext r
     simp [hweight]
 
+/-- Completion already vanishes at the normalization corner. -/
+@[simp] theorem coe_ofRhombusConcave_gtCompletion (lam : Fin n → ℤ) (P : GTPattern n)
+    (hf : IsRhombusConcave (gtCompletion lam P)) :
+    ⇑(ofRhombusConcave (gtCompletion lam P) hf) = gtCompletion lam P := by
+  funext p
+  simp
+
 /-- Normalizing a rhombus-concave completion preserves its original pattern. -/
 @[simp] theorem toGTPattern_ofRhombusConcave_gtCompletion (lam : Fin n → ℤ) (P : GTPattern n)
     (hf : IsRhombusConcave (gtCompletion lam P)) :
     (ofRhombusConcave (gtCompletion lam P) hf).toGTPattern = P := by
-  apply toGTPattern_eq_of_coe_eq_gtCompletion (lam := lam)
-  funext p
-  simp
+  exact toGTPattern_eq_of_coe_eq_gtCompletion (coe_ofRhombusConcave_gtCompletion lam P hf)
 
 /-- Bundling a rhombus-concave completion preserves its original pattern. -/
 @[simp] theorem toGTPattern_mk_gtCompletion (lam : Fin n → ℤ) (P : GTPattern n)
@@ -285,11 +290,17 @@ theorem boundaryLinear_gtCompletion_of_topRow_of_rowWeight
   abel
 
 /-- Completion commutes with natural-number scaling of its data. -/
-@[simp↓] theorem gtCompletion_nsmul (k : ℕ) (lam : Fin n → ℤ) (P : GTPattern n) :
+theorem gtCompletion_nsmul (k : ℕ) (lam : Fin n → ℤ) (P : GTPattern n) :
     gtCompletion (k • lam) (k • P) = k • gtCompletion lam P := by
   funext p
   simp only [gtCompletion_apply, Pi.smul_apply, GTPattern.nsmul_apply,
     ← Finset.smul_sum, smul_add]
+
+/-- Completion commutes with scaling in the pointwise ring normal form. -/
+@[simp] theorem gtCompletion_natCast_mul_nsmul (k : ℕ) (lam : Fin n → ℤ) (P : GTPattern n) :
+    gtCompletion ((k : Fin n → ℤ) * lam) (k • P) =
+      (k : Vertex n → ℤ) * gtCompletion lam P := by
+  simpa only [nsmul_eq_mul] using gtCompletion_nsmul k lam P
 
 /-- Every hive value is the prefix of the first boundary followed by the prefix
 of the corresponding row of its directional pattern. -/
@@ -297,11 +308,8 @@ theorem apply_eq_sum_boundary_zero_add_sum_toGTPattern (h : IntegerHive n) (p : 
     h p = (∑ r : Fin n with r.val < p.y + p.z, h.boundary 0 r) +
       ∑ k ∈ Finset.range p.z, h.toGTPattern k (p.y + p.z) := by
   have hj : p.y + p.z ≤ n := by have := p.sum_eq; omega
-  have hv : chart n p.z (p.y + p.z) (by omega) hj = p := by
-    have := p.sum_eq
-    ext <;> simp; omega
   have hs := sum_toGTPattern_chart h (i := p.z) (j := p.y + p.z) (by omega) hj
-  rw [hv, chart_zero, apply_edgePoint_zero] at hs
+  rw [Vertex.chart_z_y_add_z, chart_zero, apply_edgePoint_zero] at hs
   exact eq_add_of_sub_eq' hs.symm
 
 /-- Integrating the directional pattern with the hive's first boundary recovers
@@ -391,7 +399,7 @@ theorem sum_toGTPattern_sub_le (h : IntegerHive n) {i j : ℕ}
     rw [chart_zero, chart_zero, boundary_apply]
     rfl
   rw [Finset.sum_sub_distrib, Finset.sum_sub_distrib]
-  linarith [h.le_of_isRhombus (chart_rhombus_remaining hij hj),
+  linarith [h.le_of_isRhombus (isRhombus_chart_step hij hj),
     sum_toGTPattern_chart h hij (by omega),
     sum_toGTPattern_chart h (i := i) (j := j + 1) (by omega) (by omega),
     sum_toGTPattern_chart h (i := i + 1) (j := j + 1) (by omega) (by omega),
