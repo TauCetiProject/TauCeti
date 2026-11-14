@@ -211,7 +211,7 @@ theorem qExpansion_coeff_descendSlash_eq_zero_of_coprime [NeZero M] (hp : p.Prim
   have : NeZero p := ⟨hp.ne_zero⟩
   obtain ⟨F, χ', hF, hχ', hΔsum⟩ := exists_coe_eq_sum_coe_levelRaise_of_squarefree hsq hΔ hvan
   -- the descent at level `M` is the descent at level `M l²`
-  have h08a := descendSlash_mul_left_of_coprime k hp hpM (hpl.pow_right 2) (f := ⇑Δ)
+  have h08a := descendSlash_mul_left_of_coprime k hp (hpl.pow_right 2) (f := ⇑Δ)
     fun ε hε ↦ SlashInvariantFormClass.slash_action_eq Δ _ (Subgroup.mem_map_of_mem _ hε)
   rw [Nat.mul_comm] at h08a
   rw [← h08a, hΔsum, descendSlash_finsetSum]
@@ -255,7 +255,7 @@ theorem qExpansion_coeff_descendSlash_eq_of_coprime [NeZero N] (hp : p.Prime) (h
   have : NeZero (L * N) := ⟨Nat.mul_ne_zero hL.ne_zero (NeZero.ne N)⟩
   have hpM : p ∣ L * N := dvd_mul_of_dvd_right hpN L
   -- the descent at level `N` is the descent at level `L N`
-  have h08a := descendSlash_mul_left_of_coprime k hp hpN hpL (f := ⇑f)
+  have h08a := descendSlash_mul_left_of_coprime k hp hpL (f := ⇑f)
     fun ε hε ↦ SlashInvariantFormClass.slash_action_eq f _ (Subgroup.mem_map_of_mem _ hε)
   -- `f = Δ + V_p g` at level `L N`
   set Vg := CuspForm.levelRaise p (Gamma1_map_le_conjAct_scaleGL_of_dvd

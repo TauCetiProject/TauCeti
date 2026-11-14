@@ -64,7 +64,7 @@ theorem map_maximalIdeal_abhyankarModelKummerHom :
   have hn := mul_ne_zero he.neZero_natCast.out hd
   have := standardTameCover_isLocalRing ((mem_maximalIdeal π).mpr hπ.not_isUnit) hn
   have hmax := (isEisensteinAt_X_pow_sub_C_of_irreducible hπ (Nat.pos_of_ne_zero hn)
-    ).eq_span_singleton_of_isMaximal (monic_X_pow_sub_C π hn)
+    ).eq_span_singleton_of_isMaximal
       (by rw [AdjoinRoot.aeval_eq, AdjoinRoot.mk_self]) AdjoinRoot.adjoinRoot_eq_top
       (maximalIdeal (standardTameCover A π (e * d)))
   rw [hmax]
@@ -144,14 +144,9 @@ theorem isSeparable_abhyankarModelKummerHom
       ← Ideal.under_def (abhyankarModel ϖ u e d),
       IsLocalization.AtPrime.under_maximalIdeal S M,
       ← Ideal.under_def, ← Ideal.over_def M (maximalIdeal B)]
-  have := isSeparable_abhyankarModel_quotient M
-    ((mem_maximalIdeal ϖ).mpr hϖ.not_isUnit) hu he hd
-  -- Localization at a maximal ideal does not change its residue field.
-  let σ := (IsLocalization.AtPrime.equivQuotMaximalIdeal M S).restrictScalars B
-  let τ := σ.extendScalarsOfSurjective (R := B) (S := B ⧸ maximalIdeal B)
-    Ideal.Quotient.mk_surjective
   have : Algebra.IsSeparable (ResidueField B) (ResidueField S) :=
-    (AlgEquiv.Algebra.isSeparable_iff τ).mp inferInstance
+    isSeparable_residueField_localization_abhyankarModel M
+      ((mem_maximalIdeal ϖ).mpr hϖ.not_isUnit) hu he hd
   have : IsLocalHom (algebraMap A S) := by
     rw [IsScalarTower.algebraMap_eq A B S]
     infer_instance

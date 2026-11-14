@@ -30,6 +30,16 @@ dimensions do not depend on the metric `g`, although the subspaces themselves do
 locally constant along `S`. These are the fibres of the negative and positive normal bundles
 `ν⁻` and `ν⁺`, whose disc bundles are attached when a Morse–Bott critical level is crossed.
 
+The complementarity holds across metrics: the negative normal space for one fibre metric `g` and
+the positive normal space for another metric `g'` are complementary as well, because the normal
+Hessian is negative definite on the first and positive definite on the second. Hence projecting
+along the positive normal space for `g'` identifies the negative normal spaces for `g` and `g'`
+(`IsNondegenerateCriticalSubmanifold.negativeNormalSpaceEquiv`), and projecting along the
+negative normal space for `g'` identifies the positive ones
+(`IsNondegenerateCriticalSubmanifold.positiveNormalSpaceEquiv`). These identifications vary
+smoothly when the metrics do, so the isomorphism classes of `ν⁻` and `ν⁺` do not depend on the
+metric (`TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle`).
+
 ## Main declarations
 
 In the namespace `TauCeti.SmoothEmbedding`:
@@ -44,10 +54,15 @@ In the namespace `TauCeti.SmoothEmbedding`:
   `IsCriticalSubmanifold.normalHessian_eq_zero_of_mem_negativeNormalSpace`: the two spaces are
   orthogonal for the metric and for the normal Hessian.
 * `IsNondegenerateCriticalSubmanifold.isCompl_negativeNormalSpace_positiveNormalSpace`: for a
-  Morse–Bott submanifold the normal space is their direct sum.
+  Morse–Bott submanifold the normal space is the direct sum of the negative normal space for one
+  fibre metric and the positive normal space for any other.
 * `IsNondegenerateCriticalSubmanifold.finrank_negativeNormalSpace` and
   `IsNondegenerateCriticalSubmanifold.finrank_positiveNormalSpace`: their dimensions are the
   Morse indices of `f` and of `-f`.
+* `IsNondegenerateCriticalSubmanifold.negativeNormalSpaceEquiv` and
+  `IsNondegenerateCriticalSubmanifold.positiveNormalSpaceEquiv`: the negative, respectively
+  positive, normal spaces for two fibre metrics are identified by projection along the positive,
+  respectively negative, normal space for the second metric.
 * `IsNondegenerateCriticalSubmanifold.isLocallyConstant_finrank_negativeNormalSpace` and
   `IsNondegenerateCriticalSubmanifold.isLocallyConstant_finrank_positiveNormalSpace`: these
   dimensions are locally constant along the submanifold.
@@ -142,16 +157,7 @@ end IsCriticalSubmanifold
 namespace IsNondegenerateCriticalSubmanifold
 
 variable [I.Boundaryless] [IsManifold I 2 M] [FiniteDimensional ℝ E]
-  (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
-
-/-- **The normal space of a Morse–Bott submanifold splits into its negative and positive parts.**
-Since the normal Hessian is nondegenerate, the negative and positive normal spaces relative to any
-fibre metric are complementary. -/
-theorem isCompl_negativeNormalSpace_positiveNormalSpace (s : S) :
-    IsCompl (h.negativeNormalSpace hn g s) (h.positiveNormalSpace hn g s) :=
-  LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi
-    (g.isSymm_toBilinForm_inner s) (g.pos s)
-    (h.isSymm_normalHessian hn s) (h.ker_normalHessian hn s)
+  (h : i.IsNondegenerateCriticalSubmanifold f) (g g' : RiemannianMetric fun s ↦ i.NormalSpace s hn)
 
 /-- **The negative normal space has the dimension of the Morse index**, for every fibre metric. -/
 theorem finrank_negativeNormalSpace (s : S) :
@@ -171,6 +177,87 @@ theorem finrank_positiveNormalSpace (s : S) :
       (g.isSymm_toBilinForm_inner s) (g.pos s)
       (h.isSymm_normalHessian hn s),
     h.sigPos_normalHessian hn s]
+
+/-- **The normal space of a Morse–Bott submanifold splits into its negative and positive parts.**
+Since the normal Hessian is nondegenerate, the negative normal space relative to a fibre metric `g`
+and the positive normal space relative to a fibre metric `g'` are complementary. The two metrics
+may differ: the normal Hessian is negative definite on the first space and positive definite on
+the second, so they meet only in `0`, and their dimensions are the Morse indices of `f` and `-f`,
+which add up to the rank of the normal bundle. -/
+theorem isCompl_negativeNormalSpace_positiveNormalSpace (s : S) :
+    IsCompl (h.negativeNormalSpace hn g s) (h.positiveNormalSpace hn g' s) := by
+  have hsplit : IsCompl (h.negativeNormalSpace hn g' s) (h.positiveNormalSpace hn g' s) :=
+    LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi
+      (g'.isSymm_toBilinForm_inner s) (g'.pos s)
+      (h.isSymm_normalHessian hn s) (h.ker_normalHessian hn s)
+  refine (Submodule.isCompl_iff_disjoint _ _ ?_).2 (Submodule.disjoint_def.2 fun v hv hv' ↦ ?_)
+  · rw [← Submodule.finrank_add_eq_of_isCompl hsplit, h.finrank_negativeNormalSpace hn g,
+      h.finrank_negativeNormalSpace hn g']
+  · by_contra hv0
+    exact (h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g hv hv0).not_gt
+      (h.normalHessian_apply_self_pos_of_mem_positiveNormalSpace hn g' hv' hv0)
+
+/-- **The negative normal spaces for two fibre metrics are isomorphic.** The negative normal
+space relative to `g` is identified with the negative normal space relative to `g'` by projecting
+along the positive normal space relative to `g'`: both are complements of that space
+(`isCompl_negativeNormalSpace_positiveNormalSpace`). -/
+def negativeNormalSpaceEquiv (s : S) :
+    h.negativeNormalSpace hn g s ≃ₗ[ℝ] h.negativeNormalSpace hn g' s :=
+  (Submodule.quotientEquivOfIsCompl _ _
+      (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g' s).symm).symm.trans
+    (Submodule.quotientEquivOfIsCompl _ _
+      (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s).symm)
+
+/-- The identification of the negative normal spaces for two fibre metrics is the projection onto
+the negative normal space for `g'` along the positive normal space for `g'`. -/
+@[simp]
+theorem coe_negativeNormalSpaceEquiv_apply {s : S} (v : h.negativeNormalSpace hn g s) :
+    (h.negativeNormalSpaceEquiv hn g g' s v : i.NormalSpace s hn) =
+      (h.negativeNormalSpace hn g' s).projection (h.positiveNormalSpace hn g' s)
+        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s) v := by
+  rw [negativeNormalSpaceEquiv, LinearEquiv.trans_apply,
+    ← LinearEquiv.coe_toLinearMap (Submodule.quotientEquivOfIsCompl _ _ _).symm,
+    Submodule.toLinearMap_symm_quotientEquivOfIsCompl, LinearMap.comp_apply, Submodule.mkQ_apply,
+    Submodule.quotientEquivOfIsCompl_apply_mk, Submodule.coe_projectionOnto_apply,
+    Submodule.subtype_apply]
+
+/-- For a single metric the identification of the negative normal spaces is the identity. -/
+@[simp]
+theorem negativeNormalSpaceEquiv_self (s : S) :
+    h.negativeNormalSpaceEquiv hn g g s = LinearEquiv.refl ℝ _ := by
+  ext v
+  simp [Submodule.projection_apply_of_mem_left _ v.2]
+
+/-- **The positive normal spaces for two fibre metrics are isomorphic.** The positive normal
+space relative to `g` is identified with the positive normal space relative to `g'` by projecting
+along the negative normal space relative to `g'`: both are complements of that space
+(`isCompl_negativeNormalSpace_positiveNormalSpace`). -/
+def positiveNormalSpaceEquiv (s : S) :
+    h.positiveNormalSpace hn g s ≃ₗ[ℝ] h.positiveNormalSpace hn g' s :=
+  (Submodule.quotientEquivOfIsCompl _ _
+      (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g s)).symm.trans
+    (Submodule.quotientEquivOfIsCompl _ _
+      (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s))
+
+/-- The identification of the positive normal spaces for two fibre metrics is the projection onto
+the positive normal space for `g'` along the negative normal space for `g'`. -/
+@[simp]
+theorem coe_positiveNormalSpaceEquiv_apply {s : S} (v : h.positiveNormalSpace hn g s) :
+    (h.positiveNormalSpaceEquiv hn g g' s v : i.NormalSpace s hn) =
+      (h.positiveNormalSpace hn g' s).projection (h.negativeNormalSpace hn g' s)
+        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s).symm v := by
+  rw [positiveNormalSpaceEquiv, LinearEquiv.trans_apply,
+    ← LinearEquiv.coe_toLinearMap (Submodule.quotientEquivOfIsCompl _ _ _).symm,
+    Submodule.toLinearMap_symm_quotientEquivOfIsCompl, LinearMap.comp_apply, Submodule.mkQ_apply,
+    Submodule.quotientEquivOfIsCompl_apply_mk, Submodule.coe_projectionOnto_apply,
+    Submodule.subtype_apply]
+
+/-- For a single metric the identification of the positive normal spaces is the identity. -/
+@[simp]
+theorem positiveNormalSpaceEquiv_self (s : S) :
+    h.positiveNormalSpaceEquiv hn g g s = LinearEquiv.refl ℝ _ := by
+  ext v
+  simp [Submodule.projection_apply_of_mem_left _ v.2]
 
 /-- **The rank of the negative normal space is locally constant** along a Morse–Bott
 submanifold. -/
