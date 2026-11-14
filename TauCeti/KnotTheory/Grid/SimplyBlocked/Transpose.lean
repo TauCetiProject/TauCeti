@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Differential.Transpose
-public import TauCeti.KnotTheory.Grid.SimplyBlocked.Basic
+public import TauCeti.KnotTheory.Grid.Grading.SimplyBlocked
 
 /-!
 # Diagonal reflection of the simply blocked grid complex
@@ -14,7 +14,8 @@ public import TauCeti.KnotTheory.Grid.SimplyBlocked.Basic
 Reflection sends the `O`-marking in column `i` to column `G.O i`. Consequently it identifies
 chains with `V_i = 0` with reflected chains with `V_{G.O i} = 0`, renaming the surviving
 variables along `G.O`. The specified semilinear equivalence commutes with specialization
-from the unblocked complex and intertwines the simply blocked differentials.
+from the unblocked complex, intertwines the simply blocked differentials, and identifies the
+homogeneous pieces of the `(O-Maslov, Alexander)` bigrading of an odd-component grid.
 
 This symmetry exchanges row and column commutations while retaining the chosen blocked marking.
 The unsigned chain identities hold over any commutative semiring; characteristic two is needed
@@ -28,7 +29,11 @@ The construction specializes `GridDiagram.transposeRenameEquiv` and its differen
 
 public section
 
-namespace TauCeti.GridDiagram
+open MvPolynomial
+
+namespace TauCeti
+
+namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n) (R : Type*) [CommSemiring R] (i : Fin n)
 
@@ -97,4 +102,49 @@ theorem simplyBlockedDifferential_transpose_simplyBlockedTransposeEquiv
     simplyBlockedSpecialization_transposeRenameEquiv,
     simplyBlockedSpecialization_unblockedDifferential]
 
-end TauCeti.GridDiagram
+end GridDiagram
+
+namespace OddComponentGridDiagram
+
+variable {n : ℕ} (G : OddComponentGridDiagram n) {R : Type*} [CommSemiring R] {i : Fin n}
+
+/-- Diagonal reflection preserves the `(O-Maslov, Alexander)` bidegree of a grid state. -/
+@[simp]
+theorem bidegree_transpose (x : GridState n) :
+    G.transpose.bidegree x.transpose = G.bidegree x := by
+  refine Prod.ext ?_ ?_
+  · rw [bidegree_fst, bidegree_fst, val_transpose, GridDiagram.maslovOℤ_transpose]
+  · rw [bidegree_snd, bidegree_snd, alexanderℤ_transpose]
+
+/-- Diagonal reflection, renaming the surviving variables along `G.O`, identifies the homogeneous
+pieces of the specialized complexes blocking `i` and `G.O i`.
+
+Not a simp lemma: the chain-piece membership criterion is already a simp lemma. -/
+theorem simplyBlockedTransposeEquiv_mem_bigradedChainHatPiece_iff {g : ℤ × ℤ}
+    {c : GridChainHat R n i} :
+    G.1.simplyBlockedTransposeEquiv R i c ∈
+        G.transpose.bigradedChainHatPiece R (G.1.O i) g ↔
+      c ∈ G.bigradedChainHatPiece R i g := by
+  classical
+  have hs (x : GridState n) :
+      (G.1.simplyBlockedTransposeEquiv R i c x.transpose).support =
+        (c x).support.image (Finsupp.mapDomain (G.1.O.toPerm.subtypeEquiv
+          fun _ => not_congr G.1.O.toPerm.injective.eq_iff.symm)) := by
+    rw [GridDiagram.simplyBlockedTransposeEquiv_apply, GridState.transpose_transpose,
+      simplyBlockedRenameEquiv_apply, support_rename_of_injective (Equiv.injective _)]
+  rw [mem_bigradedChainHatPiece, mem_bigradedChainHatPiece]
+  constructor
+  · intro hc x e he
+    have hx := hc x.transpose (e.mapDomain _)
+      (by rw [hs]; exact Finset.mem_image_of_mem _ he)
+    rwa [bidegree_transpose, Finsupp.degree_mapDomain] at hx
+  · intro hc x e he
+    obtain ⟨x, rfl⟩ : ∃ x', x'.transpose = x := ⟨x.transpose, GridState.transpose_transpose x⟩
+    rw [hs, Finset.mem_image] at he
+    obtain ⟨e, he, rfl⟩ := he
+    rw [bidegree_transpose, Finsupp.degree_mapDomain]
+    exact hc x e he
+
+end OddComponentGridDiagram
+
+end TauCeti
