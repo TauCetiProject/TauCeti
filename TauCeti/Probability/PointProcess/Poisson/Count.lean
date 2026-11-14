@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.PointProcess.Poisson.Basic
+public import TauCeti.Probability.PointProcess.Poisson.IntegerValued
+public import TauCeti.Probability.PointProcess.Poisson.Superposition.Basic
 public import TauCeti.MeasureTheory.Measure.NNReal
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 import Mathlib.MeasureTheory.Function.Floor
@@ -24,9 +26,14 @@ realizations with infinite mass the representative is zero. No pathwise integral
 simplicity, or local finiteness assumption is required: the finite-window Poisson laws
 supply the almost-everywhere identities used here.
 
-These are the count-process implications of the real-line Poisson description in
-G. Last and M. Penrose, *Lectures on the Poisson Process*, Cambridge University Press,
-2018, Chapter 7.
+Finite independent superposition adds the interval intensities, and in the homogeneous
+case adds the rates. Natural counts commute with superposition on one event of full
+probability, simultaneously at every time. Local finiteness and integrality justify this
+identity despite the exceptional infinite masses being represented by zero.
+
+These are the count-process implications of the superposition theorem and real-line
+Poisson description in G. Last and M. Penrose, *Lectures on the Poisson Process*,
+Cambridge University Press, 2018, Theorem 3.3 and Chapter 7.
 -/
 
 public section
@@ -127,5 +134,87 @@ theorem hasIndepIncrements_nat_count [IsLocallyFiniteMeasure Λ]
   exact hfloor.congr fun i ↦ (h.ae_nat_count_sub_eq (ht i.castSucc_le_succ)).symm
 
 end IsPoissonRandomMeasure
+
+variable {ι : Type*} {I : Finset ι} {N : ι → Ω → Measure ℝ≥0}
+  {Λs : ι → Measure ℝ≥0}
+
+/-- Natural counts commute with finite superposition simultaneously at every time, almost
+surely. Only the selected intensities need be locally finite; independence is unnecessary. -/
+theorem ae_nat_count_finsetSum [∀ i : I, IsLocallyFiniteMeasure (Λs i)]
+    (h : ∀ i ∈ I, IsPoissonRandomMeasure P (N i) (Λs i)) :
+    ∀ᵐ ω ∂P, ∀ t : ℝ≥0,
+      ⌊((∑ i ∈ I, N i ω) (Ioc 0 t)).toNNReal⌋₊ =
+        ∑ i ∈ I, ⌊(N i ω (Ioc 0 t)).toNNReal⌋₊ := by
+  classical
+  filter_upwards [ae_all_iff.2 (fun i : I => (h i i.property).ae_isIntegerValued),
+    ae_all_iff.2 (fun i : I => (h i i.property).ae_isLocallyFiniteMeasure)] with ω hint hfin
+  let (i : I) : IsLocallyFiniteMeasure (N i ω) := hfin i
+  intro t
+  have he (i : I) : N i ω (Ioc 0 t) =
+      (⌊(N i ω (Ioc 0 t)).toNNReal⌋₊ : ℝ≥0∞) := by
+    obtain ⟨n, hn⟩ := (hint i).exists_eq_natCast (A := Ioc 0 t)
+      measurableSet_Ioc measure_Ioc_lt_top
+    simp [hn]
+  have hsum : (∑ i ∈ I, N i ω (Ioc 0 t)) =
+      ((∑ i ∈ I, ⌊(N i ω (Ioc 0 t)).toNNReal⌋₊ : ℕ) : ℝ≥0∞) := by
+    rw [Nat.cast_sum]
+    exact Finset.sum_congr rfl fun i hi => he ⟨i, hi⟩
+  rw [sum_apply, hsum, ENNReal.toNNReal_natCast, Nat.floor_natCast]
+
+/-- A finite sum of independent Poisson count processes with locally finite intensities
+has independent increments. Independence concerns the selected random measures, hence their
+entire histories, not merely the counts at a single time. -/
+theorem hasIndepIncrements_finsetSum_nat_count [∀ i : I, IsLocallyFiniteMeasure (Λs i)]
+    (h : ∀ i ∈ I, IsPoissonRandomMeasure P (N i) (Λs i))
+    (hind : iIndepFun (fun i : I => N i) P) :
+    HasIndepIncrements (fun t ω => ∑ i ∈ I, ⌊(N i ω (Ioc 0 t)).toNNReal⌋₊) P := by
+  let : IsFiniteMeasureOnCompacts (∑ i ∈ I, Λs i) := ⟨fun K hK => by
+    rw [sum_apply]
+    exact ENNReal.sum_lt_top.mpr fun i hi => by
+      let : IsLocallyFiniteMeasure (Λs i) := ‹∀ i : I, IsLocallyFiniteMeasure (Λs i)› ⟨i, hi⟩
+      exact hK.measure_lt_top⟩
+  have he := ae_nat_count_finsetSum h
+  intro n t ht
+  apply ((isPoissonRandomMeasure_finsetSum h hind).hasIndepIncrements_nat_count n t ht).congr
+  intro i
+  filter_upwards [he] with ω hω
+  rw [hω, hω]
+
+/-- A finite independent superposition has Poisson count increments with parameter the sum
+of the selected interval intensities. Locally finite intensities may be inhomogeneous or
+atomic. Equal endpoints and the empty family are included. -/
+theorem hasLaw_finsetSum_nat_count_sub [∀ i : I, IsLocallyFiniteMeasure (Λs i)]
+    (h : ∀ i ∈ I, IsPoissonRandomMeasure P (N i) (Λs i))
+    (hind : iIndepFun (fun i : I => N i) P) {s t : ℝ≥0} (hst : s ≤ t) :
+    HasLaw (fun ω => (∑ i ∈ I, ⌊(N i ω (Ioc 0 t)).toNNReal⌋₊) -
+      ∑ i ∈ I, ⌊(N i ω (Ioc 0 s)).toNNReal⌋₊)
+      (poissonMeasure (∑ i ∈ I, (Λs i (Ioc s t)).toNNReal)) P := by
+  let : IsFiniteMeasureOnCompacts (∑ i ∈ I, Λs i) := ⟨fun K hK => by
+    rw [sum_apply]
+    exact ENNReal.sum_lt_top.mpr fun i hi => by
+      let : IsLocallyFiniteMeasure (Λs i) := ‹∀ i : I, IsLocallyFiniteMeasure (Λs i)› ⟨i, hi⟩
+      exact hK.measure_lt_top⟩
+  have hfin (i) (hi : i ∈ I) : Λs i (Ioc s t) ≠ ∞ := by
+    let : IsLocallyFiniteMeasure (Λs i) := ‹∀ i : I, IsLocallyFiniteMeasure (Λs i)› ⟨i, hi⟩
+    exact measure_Ioc_lt_top.ne
+  have hlaw := (isPoissonRandomMeasure_finsetSum h hind).hasLaw_nat_count_sub hst
+  rw [sum_apply, ENNReal.toNNReal_sum hfin] at hlaw
+  apply hlaw.congr
+  filter_upwards [ae_nat_count_finsetSum h] with ω hω
+  rw [hω, hω]
+
+/-- A finite sum of independent homogeneous Poisson count processes has Poisson increments
+with rate the sum of the selected rates. Zero rates, equal endpoints and the empty family
+are included. -/
+theorem hasLaw_finsetSum_nat_count_sub_smul_nnvolume {rs : ι → ℝ≥0}
+    (h : ∀ i ∈ I, IsPoissonRandomMeasure P (N i) ((rs i : ℝ≥0∞) • nnvolume))
+    (hind : iIndepFun (fun i : I => N i) P) {s t : ℝ≥0} (hst : s ≤ t) :
+    HasLaw (fun ω => (∑ i ∈ I, ⌊(N i ω (Ioc 0 t)).toNNReal⌋₊) -
+      ∑ i ∈ I, ⌊(N i ω (Ioc 0 s)).toNNReal⌋₊)
+      (poissonMeasure ((∑ i ∈ I, rs i) * (t - s))) P := by
+  let (i : I) : IsLocallyFiniteMeasure ((rs i : ℝ≥0∞) • nnvolume) :=
+    nnvolume.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
+  simpa only [smul_nnvolume_Ioc, ENNReal.toNNReal_coe, Finset.sum_mul] using
+    hasLaw_finsetSum_nat_count_sub h hind hst
 
 end TauCeti.Probability
