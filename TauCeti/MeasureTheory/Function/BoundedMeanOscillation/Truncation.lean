@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
-public import TauCeti.MeasureTheory.Function.LpSeminorm.Clipping
-public import TauCeti.Data.Real.Truncation
+import TauCeti.Algebra.Order.Group.MinMax
 
 /-!
 # Bounded approximation of BMO multipliers
@@ -21,10 +20,11 @@ and preserves BMO and VMO for nonnegative heights (`TauCeti.MemBMO.max_min`,
 
 These explicit multipliers have pointwise norm at most `|M|` (`TauCeti.abs_max_min_le`),
 and for nonnegative heights at most the original norm (`TauCeti.abs_max_min_le_abs`). They are
-essentially bounded (`MeasureTheory.AEStronglyMeasurable.memLp_top_max_min`) and eventually agree
-with the original function at each point as natural heights tend to infinity
-(`Real.eventually_max_neg_min_eq`). Their scalar products converge in finite-exponent `Lᵖ`
-spaces whenever the original product lies there (`TauCeti.tendsto_eLpNorm_max_min_smul_sub`).
+equal to the original value once its absolute value is at most the height
+(`TauCeti.max_neg_min_eq_self_of_abs_le`). For essential boundedness and finite-exponent `Lᵖ`
+convergence of their scalar products, import `TauCeti.MeasureTheory.Function.LpSeminorm.Clipping`:
+see `MeasureTheory.AEStronglyMeasurable.memLp_top_max_min` and
+`TauCeti.tendsto_eLpNorm_max_min_smul_sub`.
 These facts permit passage from bounded multipliers to BMO multipliers in commutator estimates.
 This is not approximation in the BMO seminorm, which need not hold.
 

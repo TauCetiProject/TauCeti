@@ -101,7 +101,6 @@ theorem tendsto_eLpNorm_max_min_smul_sub {X F : Type*} [MeasurableSpace X] {μ :
           (mul_le_mul_of_nonneg_right (abs_max_min_le_abs hM (b x)) (norm_nonneg (f x))) le_rfl
       _ = 2 * ‖b x • f x‖ := (two_mul _).symm
   · filter_upwards [eventually_ge_atTop |b x|] with M hM
-    have h := abs_le.1 hM
-    simp [min_eq_right h.2, max_eq_right h.1]
+    rw [max_neg_min_eq_self_of_abs_le hM]
 
 end TauCeti
