@@ -121,7 +121,7 @@ private theorem quartic_reciprocity_natCast_prime_of_mod_four_eq_one {π : 𝓞 
           span_singleton_eq_top]
         exact fun hu ↦ hLmax.ne_top (span_singleton_eq_top.mpr (hττ β ▸ hu.map τ))
       exact (powerResidueSymbolIdeal_mk_eq_zero_iff.mpr hncop).symm
-    · have hp1 := powerResidueSymbol_pow_eq_one hL4 h0
+    · have hp1 := powerResidueSymbol_pow_eq_one (n := 4) h0
       rw [← hτ _ hp1, ← powerResidueSymbolIdeal_of_isMaximal, map_powerResidueSymbolIdeal, hmapL,
         hττ]
   rw [← hstick, hconj, ← powerResidueSymbolIdeal_of_isMaximal (span {β}), hqβ, mul_comm (τ β) β,
@@ -211,7 +211,7 @@ private theorem mk_pow_three_mul_pow_of_mod_four_eq_three {π : 𝓞 K} {q : ℕ
     _ = (Ideal.Quotient.mk Q π) ^ ((q ^ 2 - 1) / 4) *
           (Ideal.Quotient.mk Q π * (Ideal.Quotient.mk Q π) ^ q) := by
         rw [← pow_mul, hexp, pow_add, pow_succ' _ q]
-    _ = _ := by rw [← hNQ, ← mk_powerResidueSymbol hQ4 hπQ, hNP]
+    _ = _ := by rw [← hNQ, ← mk_powerResidueSymbol hQ4, hNP]
 
 /-- Comparing the Frobenius evaluation of `g(χ, ψ) ^ (q + 1)` in characteristic `q ≡ 3 (mod 4)`
 with `(g(χ, ψ) ^ 4) ^ ((q + 1) / 4)` modulo a prime of `integralClosure ℤ ℂ` over `Q = q 𝓞 K`
@@ -274,7 +274,6 @@ private theorem quartic_reciprocity_natCast_prime_of_mod_four_eq_three {π : �
     ((span_singleton_prime (by exact_mod_cast hq.ne_zero)).mpr
       (prime_natCast_of_mod_four_eq_three hq hq3)).isMaximal (by simpa using hq.ne_zero)
   let _ := Ideal.Quotient.field Q
-  have hP4 : (absNorm P).Coprime 4 := hπ.absNorm_span_singleton_coprime_four
   have hNQ : absNorm Q = q ^ 2 := absNorm_span_natCast_four q
   have hQ4 : (absNorm Q).Coprime 4 := by
     refine hNQ ▸ Nat.Coprime.pow_left 2 ?_
@@ -309,8 +308,9 @@ private theorem quartic_reciprocity_natCast_prime_of_mod_four_eq_three {π : �
     rw [map_neg, map_natCast, neg_ne_zero]
     exact hqF
   rw [powerResidueSymbolIdeal_of_isMaximal, powerResidueSymbolIdeal_of_isMaximal]
-  exact eq_of_pow_eq_one_of_mk_eq IsPrime.ne_top' hQ4 (powerResidueSymbol_pow_eq_one hP4 hnegq0)
-    (powerResidueSymbol_pow_eq_one hQ4 hπQ) hmk_eq
+  exact eq_of_pow_eq_one_of_mk_eq IsPrime.ne_top' hQ4
+    (powerResidueSymbol_pow_eq_one (n := 4) hnegq0) (powerResidueSymbol_pow_eq_one (n := 4) hπQ)
+    hmk_eq
 
 /-- Quartic reciprocity between a primary prime `π` and an odd rational prime `q`:
 `(((-1) ^ ((q - 1) / 2) * q) / π)_4 = (π / q)_4`. -/
@@ -547,19 +547,13 @@ example :
     simp only [π]
     push_cast
     linear_combination (-4 : 𝓞 K) * hsq
-  have hπ3_ne : Ideal.Quotient.mk (span {((3 : ℤ) : 𝓞 K)}) π ≠ 0 := by
-    intro h0
-    rw [h0, zero_pow two_ne_zero] at hcong
-    have hu : IsUnit (Ideal.Quotient.mk (span {((3 : ℤ) : 𝓞 K)}) (-hζ.toInteger)) :=
-      ((hζ.toInteger_isPrimitiveRoot.isUnit (by decide)).neg).map _
-    exact hu.ne_zero hcong
   have hnegi4 : (-hζ.toInteger) ^ 4 = 1 := by
     have hneg1 : (-1 : 𝓞 K) ^ 4 = 1 := by norm_num
     rw [neg_pow, hneg1, one_mul, hζ.toInteger_isPrimitiveRoot.pow_eq_one]
   have hrhs : powerResidueSymbolIdeal (span {((3 : ℤ) : 𝓞 K)}) 4 (Ideal.Quotient.mk _ π) =
       -hζ.toInteger := by
     rw [powerResidueSymbolIdeal_of_isMaximal,
-      powerResidueSymbol_eq_iff hcop4 hπ3_ne hnegi4, hNQ]
+      powerResidueSymbol_eq_iff hcop4 hnegi4, hNQ]
     exact hcong
   refine ⟨?_, hrhs⟩
   have hrec := hπ.quartic_reciprocity_intCast (a := -3) (by decide)
