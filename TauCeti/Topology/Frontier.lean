@@ -82,6 +82,14 @@ continuity puts a whole neighbourhood of `x` in `D`, so `x` is interior to `D`; 
 puts a whole neighbourhood of `x` outside `D`, so `x` is not adherent to `D`. Neither `D` nor `f`
 needs any further hypothesis: `D` need not be closed, and `f` need only be continuous at `x`.
 
+## The frontier of a set between an open and a closed interval
+
+A set `Ω` with `Ioo a b ⊆ Ω ⊆ Icc a b` has its frontier inside `{a, b}`: its closure lies in
+`Icc a b` and its interior contains `Ioo a b`. So every set avoiding `a` and `b` is disjoint from
+`frontier Ω` (`TauCeti.disjoint_frontier_of_Ioo_subset_of_subset_Icc`), whichever endpoints `Ω`
+contains. This is the form in which spectral projections onto intervals are shown to be continuous
+functions of a self-adjoint operator whose spectrum avoids the endpoints.
+
 ## Consumers
 
 The straddling, splitting and clinging lemmas serve Carathéodory's boundary correspondence for
@@ -112,6 +120,8 @@ let alone a holomorphic map.
 * `TauCeti.eq_of_mem_frontier_of_mem_iff_le` — a function whose superlevel set `{a ≤ f}` agrees
   with a set on an open set takes the value `a` at the frontier points of the set in that open
   set where it is continuous.
+* `TauCeti.disjoint_frontier_of_Ioo_subset_of_subset_Icc` — a set avoiding `a` and `b` is disjoint
+  from the frontier of every set between `Ioo a b` and `Icc a b`.
 * `TauCeti.nonneg_of_forall_abs_le_frontier` — a bound for the absolute value of a function on the
   frontier of a nonempty compact set in a preconnected noncompact space is nonnegative.
 -/
@@ -330,6 +340,25 @@ theorem eq_of_mem_frontier_of_mem_iff_le (hU : IsOpen U) (hD : ∀ y ∈ U, y �
     exact hyD hy
 
 end DefiningFunction
+
+section Interval
+
+variable {α : Type*} [LinearOrder α] [TopologicalSpace α] [OrderClosedTopology α] {s Ω : Set α}
+  {a b : α}
+
+/-- The frontier of a set `Ω` between `Ioo a b` and `Icc a b` lies in `{a, b}`, so every set `s`
+avoiding `a` and `b` is disjoint from it. -/
+theorem disjoint_frontier_of_Ioo_subset_of_subset_Icc (h₁ : Ioo a b ⊆ Ω) (h₂ : Ω ⊆ Icc a b)
+    (ha : a ∉ s) (hb : b ∉ s) : Disjoint s (frontier Ω) := by
+  refine disjoint_left.2 fun x hx ⟨hcl, hint⟩ ↦ ?_
+  obtain ⟨hax, hxb⟩ := closure_minimal h₂ isClosed_Icc hcl
+  rcases hax.eq_or_lt with rfl | hax
+  · exact ha hx
+  rcases hxb.eq_or_lt with rfl | hxb
+  · exact hb hx
+  exact hint (interior_maximal h₁ isOpen_Ioo ⟨hax, hxb⟩)
+
+end Interval
 
 section Bound
 

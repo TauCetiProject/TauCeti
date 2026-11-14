@@ -47,6 +47,7 @@ with closed range (`IsSelfAdjoint.exists_pos_spectrum_inter_Ioo_subset_of_isClos
   orthogonal projection onto its range.
 * `IsSelfAdjoint.cfc_indicator_eq_starProjection_ker`: the spectral projection for a set meeting the
   spectrum only at `0` is the projection onto the kernel.
+* `TauCeti.range_cfc_indicator_le_of_subset`: spectral projections are monotone in the set.
 * `IsSelfAdjoint.eventually_rank_range_cfc_indicator_eq` and
   `IsPreconnected.rank_range_cfc_indicator_eq`: the rank of the spectral projection is locally
   constant, and constant along paths.
@@ -81,6 +82,17 @@ theorem ContinuousLinearMap.cfc_indicator_eq_starProjection_range (T : H →L[�
     cfc (Ω.indicator (1 : ℝ → ℝ)) T = (cfc (Ω.indicator (1 : ℝ → ℝ)) T).range.starProjection :=
   (isStarProjection_iff_eq_starProjection_range.mp
     (TauCeti.isStarProjection_cfc_indicator T Ω)).2
+
+/-- If `Ω' ⊆ Ω` and both indicators are continuous on the spectrum of `T`, the spectral projection
+onto `Ω'` maps into the range of the spectral projection onto `Ω`. -/
+theorem TauCeti.range_cfc_indicator_le_of_subset {T : H →L[𝕜] H} {Ω Ω' : Set ℝ} (hsub : Ω' ⊆ Ω)
+    (hΩ : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ T))
+    (hΩ' : ContinuousOn (Ω'.indicator (1 : ℝ → ℝ)) (spectrum ℝ T)) :
+    (cfc (Ω'.indicator 1) T).range ≤ (cfc (Ω.indicator 1) T).range := by
+  have h : cfc (Ω'.indicator (1 : ℝ → ℝ)) T = cfc (Ω.indicator 1) T * cfc (Ω'.indicator 1) T := by
+    rw [← cfc_mul _ _ T hΩ hΩ', ← Pi.mul_def, ← inter_indicator_one, inter_eq_right.2 hsub]
+  rw [h, ContinuousLinearMap.toLinearMap_mul]
+  exact LinearMap.range_comp_le_range _ _
 
 /-! ### The spectral projection onto the kernel -/
 
