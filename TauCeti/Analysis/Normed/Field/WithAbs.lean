@@ -39,11 +39,13 @@ universes.
   `AbsoluteValue.Completion.continuous_congr`,
   `AbsoluteValue.Completion.continuous_congr_symm`: `congr` is an isometry, preserves the norm, and
   is continuous in both directions.
-* `AbsoluteValue.Completion.eq_congr_of_continuous`: `congr` is the unique continuous ring
-  homomorphism `v.Completion →+* w.Completion` extending `σ`.
+* `AbsoluteValue.Completion.eq_congr_of_continuous`: `congr` is the unique continuous map
+  `v.Completion → w.Completion` extending `σ`.
 * `AbsoluteValue.Completion.congr_refl`, `AbsoluteValue.Completion.congr_trans`,
-  `AbsoluteValue.Completion.congr_trans_apply`, `AbsoluteValue.Completion.congr_symm`:
-  functoriality.
+  `AbsoluteValue.Completion.congr_trans_apply`, `AbsoluteValue.Completion.congr_symm`,
+  `AbsoluteValue.Completion.isometryEquivCongr_refl`,
+  `AbsoluteValue.Completion.isometryEquivCongr_trans`,
+  `AbsoluteValue.Completion.isometryEquivCongr_symm`: functoriality.
 -/
 
 public section
@@ -124,6 +126,12 @@ noncomputable def isometryEquivCongr (σ : K ≃+* L) (hσ : ∀ x, w (σ x) = v
 theorem coe_isometryEquivCongr : ⇑(isometryEquivCongr σ hσ) = congr σ hσ :=
   (rfl)
 
+/-- The bijection underlying `isometryEquivCongr σ hσ` is `(congr σ hσ).toEquiv`. -/
+@[simp]
+theorem toEquiv_isometryEquivCongr :
+    (isometryEquivCongr σ hσ).toEquiv = (congr σ hσ).toEquiv :=
+  (rfl)
+
 /-- `AbsoluteValue.Completion.congr` preserves the norm. -/
 @[simp]
 theorem norm_congr (x : v.Completion) : ‖congr σ hσ x‖ = ‖x‖ :=
@@ -139,32 +147,32 @@ theorem continuous_congr : Continuous (congr σ hσ) :=
 theorem continuous_congr_symm : Continuous (congr σ hσ).symm :=
   (isometryEquivCongr σ hσ).symm.continuous
 
-/-- `AbsoluteValue.Completion.congr` is the only continuous ring homomorphism
-`v.Completion →+* w.Completion` extending `σ`. -/
-theorem eq_congr_of_continuous {f : v.Completion →+* w.Completion} (hf : Continuous f)
+/-- `AbsoluteValue.Completion.congr` is the only continuous map `v.Completion → w.Completion`
+extending `σ`. -/
+theorem eq_congr_of_continuous {f : v.Completion → w.Completion} (hf : Continuous f)
     (hfK : ∀ x : K, f (algebraMap K v.Completion x) = algebraMap L w.Completion (σ x)) :
-    f = (congr σ hσ).toRingHom :=
-  DFunLike.ext' <| ext hf (continuous_congr hσ) fun x ↦ by
+    f = congr σ hσ :=
+  ext hf (continuous_congr hσ) fun x ↦ by
     have hx : (x : v.Completion) = algebraMap K v.Completion x.ofAbs := by
       rw [algebraMap_def, WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply,
         WithAbs.toAbs_ofAbs]
-    rw [hx, hfK, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, congr_algebraMap]
+    rw [hx, hfK, congr_algebraMap]
 
 /-- `AbsoluteValue.Completion.congr` of the identity is the identity. -/
 @[simp]
-theorem congr_refl : congr (RingEquiv.refl K) (fun _ ↦ rfl) = RingEquiv.refl v.Completion :=
-  RingEquiv.toRingHom_injective
-    (eq_congr_of_continuous (fun _ ↦ rfl) (f := RingHom.id _) continuous_id fun _ ↦ rfl).symm
+theorem congr_refl (h : ∀ x, v (RingEquiv.refl K x) = v x := fun _ ↦ rfl) :
+    congr (RingEquiv.refl K) h = RingEquiv.refl v.Completion :=
+  DFunLike.coe_injective (eq_congr_of_continuous h continuous_id fun _ ↦ rfl).symm
 
 /-- `AbsoluteValue.Completion.congr` is compatible with composition of field isomorphisms. -/
 @[simp]
 theorem congr_trans {τ : L ≃+* M} (hτ : ∀ y, u (τ y) = w y) :
     (congr σ hσ).trans (congr τ hτ) =
       congr (σ.trans τ) (fun x ↦ by rw [RingEquiv.trans_apply, hτ, hσ]) :=
-  RingEquiv.toRingHom_injective <| eq_congr_of_continuous _
+  DFunLike.coe_injective <| eq_congr_of_continuous _
     ((continuous_congr hτ).comp (continuous_congr hσ)) fun x ↦ by
-      rw [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingEquiv.trans_apply,
-        congr_algebraMap, congr_algebraMap, RingEquiv.trans_apply]
+      rw [RingEquiv.coe_trans, Function.comp_apply, congr_algebraMap, congr_algebraMap,
+        RingEquiv.trans_apply]
 
 /-- Pointwise composition of `AbsoluteValue.Completion.congr`. -/
 @[simp]
@@ -178,10 +186,27 @@ inverse isomorphism. -/
 @[simp]
 theorem congr_symm :
     (congr σ hσ).symm = congr σ.symm (fun y ↦ by rw [← hσ, σ.apply_symm_apply]) :=
-  RingEquiv.toRingHom_injective <| eq_congr_of_continuous _
+  DFunLike.coe_injective <| eq_congr_of_continuous _
     (continuous_congr_symm hσ) fun y ↦ by
-      rw [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingEquiv.symm_apply_eq,
-        congr_algebraMap, σ.apply_symm_apply]
+      rw [RingEquiv.symm_apply_eq, congr_algebraMap, σ.apply_symm_apply]
+
+/-- `AbsoluteValue.Completion.isometryEquivCongr` of the identity is the identity. -/
+@[simp]
+theorem isometryEquivCongr_refl (h : ∀ x, v (RingEquiv.refl K x) = v x := fun _ ↦ rfl) :
+    isometryEquivCongr (RingEquiv.refl K) h = IsometryEquiv.refl v.Completion :=
+  IsometryEquiv.ext fun x ↦ by
+    rw [coe_isometryEquivCongr, congr_refl]
+    rfl
+
+/-- `AbsoluteValue.Completion.isometryEquivCongr` is compatible with composition of field
+isomorphisms. -/
+@[simp]
+theorem isometryEquivCongr_trans {τ : L ≃+* M} (hτ : ∀ y, u (τ y) = w y) :
+    (isometryEquivCongr σ hσ).trans (isometryEquivCongr τ hτ) =
+      isometryEquivCongr (σ.trans τ) (fun x ↦ by rw [RingEquiv.trans_apply, hτ, hσ]) :=
+  IsometryEquiv.ext fun x ↦ by
+    rw [IsometryEquiv.trans_apply, coe_isometryEquivCongr, coe_isometryEquivCongr,
+      coe_isometryEquivCongr, congr_trans_apply]
 
 /-- The inverse of `isometryEquivCongr σ hσ` is `isometryEquivCongr` of `σ.symm`. -/
 @[simp]

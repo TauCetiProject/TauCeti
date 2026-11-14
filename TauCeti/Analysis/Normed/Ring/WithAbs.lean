@@ -43,7 +43,8 @@ end SMul
 
 section Congr
 
-variable {R T : Type*} [Ring R] [Ring T] {v : AbsoluteValue R ℝ} {w : AbsoluteValue T ℝ}
+variable {R T U : Type*} [Ring R] [Ring T] [Ring U]
+  {v : AbsoluteValue R ℝ} {w : AbsoluteValue T ℝ} {u : AbsoluteValue U ℝ}
 
 /-- A ring isomorphism carrying the real absolute value `v` to `w` is an isometry from `WithAbs v`
 to `WithAbs w`. -/
@@ -64,6 +65,26 @@ noncomputable def isometryEquivCongr (σ : R ≃+* T) (hσ : ∀ x, w (σ x) = v
 theorem coe_isometryEquivCongr (σ : R ≃+* T) (hσ : ∀ x, w (σ x) = v x) :
     ⇑(isometryEquivCongr σ hσ) = WithAbs.congr v w σ :=
   (rfl)
+
+/-- The bijection underlying `isometryEquivCongr σ hσ` is `(WithAbs.congr v w σ).toEquiv`. -/
+@[simp]
+theorem toEquiv_isometryEquivCongr (σ : R ≃+* T) (hσ : ∀ x, w (σ x) = v x) :
+    (isometryEquivCongr σ hσ).toEquiv = (WithAbs.congr v w σ).toEquiv :=
+  (rfl)
+
+/-- `WithAbs.isometryEquivCongr` of the identity is the identity. -/
+@[simp]
+theorem isometryEquivCongr_refl (h : ∀ x, v (RingEquiv.refl R x) = v x := fun _ ↦ rfl) :
+    isometryEquivCongr (RingEquiv.refl R) h = IsometryEquiv.refl (WithAbs v) :=
+  IsometryEquiv.ext fun _ ↦ rfl
+
+/-- `WithAbs.isometryEquivCongr` is compatible with composition of ring isomorphisms. -/
+@[simp]
+theorem isometryEquivCongr_trans (σ : R ≃+* T) (hσ : ∀ x, w (σ x) = v x)
+    (τ : T ≃+* U) (hτ : ∀ y, u (τ y) = w y) :
+    (isometryEquivCongr σ hσ).trans (isometryEquivCongr τ hτ) =
+      isometryEquivCongr (σ.trans τ) (fun x ↦ by rw [RingEquiv.trans_apply, hτ, hσ]) :=
+  IsometryEquiv.ext fun _ ↦ rfl
 
 /-- The inverse of `isometryEquivCongr σ hσ` is `isometryEquivCongr` of `σ.symm`. -/
 @[simp]
