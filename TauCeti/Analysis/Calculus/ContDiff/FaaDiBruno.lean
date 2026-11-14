@@ -26,9 +26,10 @@ derivatives of `g` of order at most `m` (`ContDiffAt.norm_iteratedFDeriv_comp_le
 track of each order separately, as needed for changes of variables in Sobolev spaces.
 
 The same expansion shows that the `m`-th derivative of `g ∘ f` at `x` depends only on the
-derivatives of `g` at `f x` and of `f` at `x` of order at most `m` (`iteratedFDeriv_comp_congr`).
-Consequently the derivatives of `y ↦ g (y, s (h y))` up to order `r` depend only on those of `s`
-up to order `r` (`iteratedFDeriv_graph_comp_congr`), which makes jets of sections independent of
+derivatives of `g` at `f x` and of `f` at `x` of order at most `m`
+(`ContDiffAt.iteratedFDeriv_comp_congr`). Consequently the derivatives of `y ↦ g (y, s (h y))` up
+to order `r` depend only on those of `s` up to order `r`
+(`ContDiffAt.iteratedFDeriv_graph_comp_congr`), which makes jets of sections independent of
 bundle coordinates.
 -/
 
@@ -100,7 +101,8 @@ theorem FormalMultilinearSeries.taylorComp_congr {q₁ q₂ : FormalMultilinearS
 /-- **Locality of the derivatives of a composite.** The `m`-th derivative of `g ∘ f` at `x` depends
 only on the derivatives of `g` at `f x` of order at most `m` and on those of `f` at `x` of orders
 `1` through `m`. -/
-theorem iteratedFDeriv_comp_congr {g₁ g₂ : F → G} {f₁ f₂ : E → F} {x₁ x₂ : E} {m : ℕ}
+theorem ContDiffAt.iteratedFDeriv_comp_congr {g₁ g₂ : F → G} {f₁ f₂ : E → F} {x₁ x₂ : E}
+    {m : ℕ}
     (hg₁ : ContDiffAt 𝕜 m g₁ (f₁ x₁)) (hf₁ : ContDiffAt 𝕜 m f₁ x₁)
     (hg₂ : ContDiffAt 𝕜 m g₂ (f₂ x₂)) (hf₂ : ContDiffAt 𝕜 m f₂ x₂)
     (hg : ∀ k ≤ m, iteratedFDeriv 𝕜 k g₁ (f₁ x₁) = iteratedFDeriv 𝕜 k g₂ (f₂ x₂))
@@ -112,8 +114,8 @@ theorem iteratedFDeriv_comp_congr {g₁ g₂ : F → G} {f₁ f₂ : E → F} {x
 /-- The iterated derivatives of `y ↦ g (y, s (h y))` at `x` up to order `r` depend only on those
 of `s` at `h x`: transforming a section `s` by a base change `h` and a base-dependent fibre map
 `g` is well defined on jets of sections. -/
-theorem iteratedFDeriv_graph_comp_congr {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
-    {r : ℕ} {x : E} {h : E → F} {g : E × H → G} {s t : F → H}
+theorem ContDiffAt.iteratedFDeriv_graph_comp_congr {H : Type*} [NormedAddCommGroup H]
+    [NormedSpace 𝕜 H] {r : ℕ} {x : E} {h : E → F} {g : E × H → G} {s t : F → H}
     (hh : ContDiffAt 𝕜 r h x) (hg : ContDiffAt 𝕜 r g (x, s (h x)))
     (hs : ContDiffAt 𝕜 r s (h x)) (ht : ContDiffAt 𝕜 r t (h x))
     (hst : ∀ k ≤ r, iteratedFDeriv 𝕜 k s (h x) = iteratedFDeriv 𝕜 k t (h x)) {k : ℕ}
@@ -126,7 +128,7 @@ theorem iteratedFDeriv_graph_comp_congr {H : Type*} [NormedAddCommGroup H] [Norm
   -- First the jets of `s ∘ h` and `t ∘ h` agree, then those of the graphs `y ↦ (y, s (h y))`.
   have hcomp (i : ℕ) (hi : i ≤ r) :
       iteratedFDeriv 𝕜 i (s ∘ h) x = iteratedFDeriv 𝕜 i (t ∘ h) x :=
-    iteratedFDeriv_comp_congr ((hs.of_le (hcast hi))) (hh.of_le (hcast hi))
+    ContDiffAt.iteratedFDeriv_comp_congr ((hs.of_le (hcast hi))) (hh.of_le (hcast hi))
       (ht.of_le (hcast hi)) (hh.of_le (hcast hi)) (fun l hl ↦ hst l (hl.trans hi))
       (fun _ _ _ ↦ rfl)
   have hgraph (i : ℕ) (hi : i ≤ r) :
@@ -135,7 +137,7 @@ theorem iteratedFDeriv_graph_comp_congr {H : Type*} [NormedAddCommGroup H] [Norm
     rw [iteratedFDeriv_prodMk (f := fun y ↦ y) contDiffAt_id (hs.comp x hh) (hcast hi),
       iteratedFDeriv_prodMk (f := fun y ↦ y) contDiffAt_id (ht.comp x hh) (hcast hi), hcomp i hi]
   have hg' : ContDiffAt 𝕜 r g (x, t (h x)) := hv ▸ hg
-  exact iteratedFDeriv_comp_congr (f₁ := fun y ↦ (y, (s ∘ h) y))
+  exact ContDiffAt.iteratedFDeriv_comp_congr (f₁ := fun y ↦ (y, (s ∘ h) y))
     (f₂ := fun y ↦ (y, (t ∘ h) y)) (hg.of_le (hcast hk))
     ((contDiffAt_id.prodMk (hs.comp x hh)).of_le (hcast hk)) (hg'.of_le (hcast hk))
     ((contDiffAt_id.prodMk (ht.comp x hh)).of_le (hcast hk))

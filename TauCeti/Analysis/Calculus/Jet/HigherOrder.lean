@@ -21,8 +21,8 @@ sections defined on chart domains.
 The main result is that this equivalence relation does not depend on bundle coordinates: a base
 change `h` together with a base-dependent nonlinear fibre map `g` transforms jets of sections,
 `JetAt.map`, and the transformed jet depends only on the original jet (`JetAt.map_mk`). This is
-the locality of the Faà di Bruno formula, `iteratedFDeriv_comp_congr`. The induced maps satisfy
-the identity, composition and local inverse laws, and commute with the truncations
+the locality of the Faà di Bruno formula, `ContDiffAt.iteratedFDeriv_comp_congr`. The induced
+maps satisfy the identity, composition and local inverse laws, and commute with the truncations
 `JetAt.truncate` to lower order. Order zero recovers the field value (`JetAt.zeroEquiv`), and
 order one recovers `TauCeti.FirstJetAt` compatibly with coordinate changes
 (`JetAt.firstJetAtEquiv`, `JetAt.firstJetAtEquiv_map`).
@@ -170,8 +170,9 @@ theorem zeroEquiv_apply {x : E} (j : JetAt 𝕜 F 0 x) : zeroEquiv x j = value j
 open scoped Classical in
 /-- Transform a jet by a base change `h` and a base-dependent nonlinear fibre map `g`: the jet of
 a section `s` goes to the jet of `y ↦ g (y, s (h y))`, which depends only on the jet of `s`
-(`iteratedFDeriv_graph_comp_congr`). When `h` is not smooth at `x` or `g` is not smooth at
-`(x, value j)`, the result is, by convention, the jet of the constant section `g (x, value j)`. -/
+(`ContDiffAt.iteratedFDeriv_graph_comp_congr`). When `h` is not smooth at `x` or `g` is not
+smooth at `(x, value j)`, the result is, by convention, the jet of the constant section
+`g (x, value j)`. -/
 def map {x : E'} (h : E' → E) (g : E' × F → G) : JetAt 𝕜 F r (h x) → JetAt 𝕜 G r x :=
   Quotient.lift (fun s ↦
     if hsm : ContDiffAt 𝕜 ∞ h x ∧ ContDiffAt 𝕜 ∞ g (x, s.1 (h x)) then
@@ -183,7 +184,7 @@ def map {x : E'} (h : E' → E) (g : E' × F → G) : JetAt 𝕜 F r (h x) → J
       simpa using congrArg (fun m ↦ m Fin.elim0) (hst' 0 (Nat.zero_le r))
     simp only [hv]
     split_ifs with hsm
-    · exact (mk_eq_mk_iff _ _).2 fun k hk ↦ iteratedFDeriv_graph_comp_congr
+    · exact (mk_eq_mk_iff _ _).2 fun k hk ↦ ContDiffAt.iteratedFDeriv_graph_comp_congr
         (hsm.1.of_le (mod_cast le_top)) ((hv ▸ hsm.2).of_le (mod_cast le_top))
         (s.2.of_le (mod_cast le_top)) (t.2.of_le (mod_cast le_top)) hst' hk
     · rfl
