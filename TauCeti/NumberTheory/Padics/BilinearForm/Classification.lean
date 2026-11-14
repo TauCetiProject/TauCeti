@@ -17,6 +17,7 @@ import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
 import TauCeti.LinearAlgebra.BilinearForm.Modular
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
+import TauCeti.NumberTheory.LegendreSymbol.Complex
 import TauCeti.NumberTheory.Padics.BilinearForm.JordanGaussSum
 import TauCeti.NumberTheory.Padics.BilinearForm.SignWalking
 import TauCeti.NumberTheory.Padics.BilinearForm.Unimodular
@@ -42,7 +43,7 @@ are isometry invariants of `B`
 (`LinearMap.BilinForm.IsJordanSplitting.prod_χ₈_pow_mul_stdAddChar_sum_eq_of_equivalent`). This
 file proves that they classify `B` when no two adjacent constituents of `N` are of type I, that is,
 when every compartment of the Conway–Sloane `2`-adic symbol has a single constituent
-(`LinearMap.BilinForm.IsJordanSplitting.equivalent_iff_of_forall_or`). This extends the
+(`LinearMap.BilinForm.IsJordanSplitting.equivalent_iff_of_forall_even_or_even`). This extends the
 classification of the forms all of whose constituents are of type II
 (`LinearMap.BilinForm.IsJordanSplitting.equivalent_iff_forall_equivalent_restrict_of_even`), in
 which the constituents themselves are invariants, to forms such as
@@ -54,9 +55,10 @@ constituent are not treated here.
 
 ## Main results
 
-* `LinearMap.BilinForm.IsJordanSplitting.equivalent_iff_of_forall_or`: two forms with Jordan
-  splittings, the first without adjacent constituents of type I, are isometric exactly when their
-  constituents have the same ranks and types and the sign-oddity invariants agree.
+* `LinearMap.BilinForm.IsJordanSplitting.equivalent_iff_of_forall_even_or_even`:
+  two forms with Jordan splittings, the first without adjacent constituents of type I, are isometric
+  exactly when their constituents have the same ranks and types and the sign-oddity invariants
+  agree.
 
 ## Implementation notes
 
@@ -95,50 +97,12 @@ variable {M M' : Type*} [AddCommGroup M] [Module ℤ_[2] M] [AddCommGroup M'] [M
 
 /-! ### Signs and oddities of single constituents -/
 
-/-- If `ε · e(s / 8) = ε' · e(t / 8)` for signs `ε = χ₈ x`, `ε' = χ₈ y` of units, then either the
-signs and the residues agree, or both differ, the residues by `4`. -/
-private theorem χ₈_eq_and_eq_or_of_mul_stdAddChar_eq {x y s t : ZMod (2 ^ 3)} (hx : x * x = 1)
-    (hy : y * y = 1)
-    (h : ((χ₈ x : ℤ) : ℂ) * stdAddChar s = ((χ₈ y : ℤ) : ℂ) * stdAddChar t) :
-    χ₈ x = χ₈ y ∧ s = t ∨ χ₈ x = -χ₈ y ∧ s = t + 4 := by
-  -- `e(4 / 8) = -1`.
-  have h4 : (stdAddChar (4 : ZMod (2 ^ 3)) : ℂ) = -1 := by
-    have hsq : (stdAddChar (4 : ZMod (2 ^ 3)) : ℂ) * stdAddChar (4 : ZMod (2 ^ 3)) = 1 := by
-      rw [← AddChar.map_add_eq_mul, show (4 + 4 : ZMod (2 ^ 3)) = 0 by decide,
-        AddChar.map_zero_eq_one]
-    refine (mul_self_eq_one_iff.mp hsq).resolve_left fun h1 ↦ ?_
-    exact absurd (ZMod.injective_stdAddChar (h1.trans (AddChar.map_zero_eq_one _).symm))
-      (by decide)
-  have hχ : ∀ z : ZMod (2 ^ 3), z * z = 1 → χ₈ z = 1 ∨ χ₈ z = -1 := by decide
-  have hz (z : ZMod (2 ^ 3)) (hz : z * z = 1) :
-      ((χ₈ z : ℤ) : ℂ) = stdAddChar (if χ₈ z = 1 then 0 else 4 : ZMod (2 ^ 3)) := by
-    rcases hχ z hz with h | h <;> simp [h, h4]
-  rw [hz x hx, hz y hy, ← AddChar.map_add_eq_mul, ← AddChar.map_add_eq_mul] at h
-  have h' := ZMod.injective_stdAddChar h
-  clear h
-  rcases hχ x hx with hx' | hx' <;> rcases hχ y hy with hy' | hy' <;>
-    simp only [hx', hy', ite_true, ite_false, show (-1 : ℤ) ≠ 1 by decide] at h' ⊢ <;>
-    revert s t <;> decide
-
-/-- The rescaling of a constituent is even exactly when the constituent is of type II. -/
-private theorem forall_two_dvd_iff_of_smul_eq {i : ℕ} {P : Submodule ℤ_[2] M}
-    {C : BilinForm ℤ_[2] P} (hC : (2 : ℤ_[2]) ^ i • C = B.restrict P) :
-    (∀ x, (2 : ℤ_[2]) ∣ C x x) ↔ ∀ x ∈ P, 2 * 2 ^ i ∣ B x x := by
-  have hBC (x : P) : B x x = 2 ^ i * C x x := by
-    simpa using (LinearMap.congr_fun₂ hC x x).symm
-  refine ⟨fun H x hx ↦ ?_, fun H x ↦ ?_⟩
-  · have := mul_dvd_mul_left (2 ^ i) (H ⟨x, hx⟩)
-    rwa [← hBC, mul_comm] at this
-  · have := H x x.2
-    rw [hBC, mul_comm 2] at this
-    exact (mul_dvd_mul_iff_left (pow_ne_zero i (two_ne_zero : (2 : ℤ_[2]) ≠ 0))).mp this
-
 /-- **Constituents with the same rank, type, sign and oddity are isometric.** For Jordan
 splittings `N` of `B` and `N'` of `B'` with respect to `2`, with unimodular rescalings `C` and `C'`
 of the constituents of index `i`, bases of the same size and characteristic vectors `w` and `w'`,
 the constituents are isometric exactly when they have the same type, the same sign and the same
 oddity. -/
-private theorem IsJordanSplitting.restrict_equivalent_iff (h : B.IsJordanSplitting 2 N)
+theorem IsJordanSplitting.restrict_equivalent_iff (h : B.IsJordanSplitting 2 N)
     (h' : B'.IsJordanSplitting 2 N') (hB : B.IsSymm) (hB' : B'.IsSymm) {i : ℕ}
     {C : BilinForm ℤ_[2] (N i)} {C' : BilinForm ℤ_[2] (N' i)}
     (hC : (2 : ℤ_[2]) ^ i • C = B.restrict (N i)) (hC' : (2 : ℤ_[2]) ^ i • C' = B'.restrict (N' i))
@@ -161,11 +125,11 @@ private theorem IsJordanSplitting.restrict_equivalent_iff (h : B.IsJordanSplitti
   rw [← hC, ← hC', equivalent_smul_iff h2,
     hCs.equivalent_iff_two_dvd_iff_and_χ₈_eq_and_eight_dvd hC's d d''
       (d.isUnit_det_of_isPerfPair d C hCp) (d''.isUnit_det_of_isPerfPair d'' C' hC'p) hw hw',
-    det_toMatrix_reindex, forall_two_dvd_iff_of_smul_eq hC, forall_two_dvd_iff_of_smul_eq hC',
+    det_toMatrix_reindex, forall_dvd_iff_of_smul_eq h2 hC 2, forall_dvd_iff_of_smul_eq h2 hC' 2,
     PadicInt.eight_dvd_sub_iff_toZModPow_three_eq]
 
 /-- A constituent of type II has oddity `0`. -/
-private theorem IsJordanSplitting.toZModPow_apply_self_eq_zero [Module.Free ℤ_[2] M]
+theorem IsJordanSplitting.toZModPow_apply_self_eq_zero [Module.Free ℤ_[2] M]
     [Module.Finite ℤ_[2] M] (h : B.IsJordanSplitting 2 N) {i : ℕ} {C : BilinForm ℤ_[2] (N i)}
     (hC : (2 : ℤ_[2]) ^ i • C = B.restrict (N i)) {w : N i} (hw : C.IsCharacteristic w)
     (heven : ∀ x ∈ N i, 2 * 2 ^ i ∣ B x x) : PadicInt.toZModPow 3 (C w w) = 0 := by
@@ -174,17 +138,9 @@ private theorem IsJordanSplitting.toZModPow_apply_self_eq_zero [Module.Free ℤ_
     (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i (two_ne_zero : (2 : ℤ_[2]) ≠ 0))) hC
   rw [← map_zero (PadicInt.toZModPow 3), eq_comm, ← PadicInt.eight_dvd_sub_iff_toZModPow_three_eq,
     sub_zero]
-  exact hw.eight_dvd_apply_self_of_forall_two_dvd ((forall_two_dvd_iff_of_smul_eq hC).mpr heven)
-
-/-- A zero constituent has sign `1` and oddity `0`. -/
-private theorem χ₈_det_toMatrix_eq_one_and_toZModPow_apply_self_eq_zero {P : Type*}
-    [AddCommGroup P] [Module ℤ_[2] P] {C : BilinForm ℤ_[2] P} {ι : Type*} [Fintype ι]
-    [DecidableEq ι] (d : Basis ι ℤ_[2] P) (hι : Fintype.card ι = 0) (w : P) :
-    χ₈ (PadicInt.toZModPow 3 (C.toMatrix d).det) = 1 ∧ PadicInt.toZModPow 3 (C w w) = 0 := by
-  have := Fintype.card_eq_zero_iff.mp hι
-  refine ⟨by rw [Matrix.det_isEmpty, map_one, map_one], ?_⟩
-  rw [show w = 0 from d.ext_elem fun i ↦ isEmptyElim i]
-  simp
+  exact hw.eight_dvd_apply_self_of_forall_two_dvd ((forall_dvd_iff_of_smul_eq
+    (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i (two_ne_zero : (2 : ℤ_[2]) ≠ 0)))
+      hC 2).mpr heven)
 
 /-- **The constituent produced by a sign walk.** Let `N` and `N'` be Jordan splittings of `B` and
 `B'`, with constituents of index `k` of the same type and opposite signs, and let `N''` be a
@@ -245,6 +201,113 @@ private theorem IsJordanSplitting.restrict_equivalent_of_isSquare_five_mul
 
 /-! ### Matching the constituents one index at a time -/
 
+section PrefixCancellation
+
+variable (h : B.IsJordanSplitting 2 N) (h' : B'.IsJordanSplitting 2 N') (hB : B.IsSymm)
+    (hB' : B'.IsSymm)
+    {α α' : ℕ → Type*} [∀ i, Fintype (α i)] [∀ i, DecidableEq (α i)] [∀ i, Fintype (α' i)]
+    [∀ i, DecidableEq (α' i)] (C : ∀ i, BilinForm ℤ_[2] (N i))
+    (hC : ∀ i, (2 : ℤ_[2]) ^ i • C i = B.restrict (N i)) (d : ∀ i, Basis (α i) ℤ_[2] (N i))
+    (w : ∀ i, N i) (hw : ∀ i, (C i).IsCharacteristic (w i)) (C' : ∀ i, BilinForm ℤ_[2] (N' i))
+    (hC' : ∀ i, (2 : ℤ_[2]) ^ i • C' i = B'.restrict (N' i))
+    (d' : ∀ i, Basis (α' i) ℤ_[2] (N' i)) (w' : ∀ i, N' i)
+    (hw' : ∀ i, (C' i).IsCharacteristic (w' i))
+    (hcard : ∀ i, Fintype.card (α i) = Fintype.card (α' i))
+    (hgauss : ∀ j, (∀ x ∈ N (j + 1), 2 * 2 ^ (j + 1) ∣ B x x) →
+      (∏ i ∈ Finset.Iic j, ((χ₈ (PadicInt.toZModPow 3 ((C i).toMatrix (d i)).det) : ℤ) : ℂ) ^
+          (j + 1 - i)) * stdAddChar (PadicInt.toZModPow 3 (∑ i ∈ Finset.Iic j, C i (w i) (w i))) =
+        (∏ i ∈ Finset.Iic j, ((χ₈ (PadicInt.toZModPow 3 ((C' i).toMatrix (d' i)).det) : ℤ) : ℂ) ^
+          (j + 1 - i)) *
+          stdAddChar (PadicInt.toZModPow 3 (∑ i ∈ Finset.Iic j, C' i (w' i) (w' i))))
+
+include h h' hB hB' hC hC' hw hw' hcard hgauss in
+/-- Matching constituents below `k` cancel from every sign-oddity invariant of index `j ≥ k - 1`.
+No restriction on adjacent constituent types is needed. -/
+theorem IsJordanSplitting.prod_χ₈_pow_mul_stdAddChar_eq_of_forall_restrict_equivalent {k : ℕ}
+    (hlow : ∀ i < k, (B.restrict (N i)).Equivalent (B'.restrict (N' i)))
+    (j : ℕ) (hkj : k ≤ j + 1) (hj : ∀ x ∈ N (j + 1), 2 * 2 ^ (j + 1) ∣ B x x) :
+      ∏ i ∈ Finset.Ico k (j + 1),
+          ((χ₈ (PadicInt.toZModPow 3 ((C i).toMatrix (d i)).det) : ℤ) : ℂ) ^ (j + 1 - i) *
+            stdAddChar (PadicInt.toZModPow 3 (C i (w i) (w i))) =
+        ∏ i ∈ Finset.Ico k (j + 1),
+          ((χ₈ (PadicInt.toZModPow 3 ((C' i).toMatrix (d' i)).det) : ℤ) : ℂ) ^ (j + 1 - i) *
+            stdAddChar (PadicInt.toZModPow 3 (C' i (w' i) (w' i))) := by
+  have h2 : (2 : ℤ_[2]) ∈ nonZeroDivisors ℤ_[2] := mem_nonZeroDivisors_of_ne_zero two_ne_zero
+  have hδ' (i : ℕ) : PadicInt.toZModPow 3 ((C' i).toMatrix (d' i)).det *
+      PadicInt.toZModPow 3 ((C' i).toMatrix (d' i)).det = 1 :=
+    PadicInt.isUnit_iff_toZModPow_three_mul_self.mp
+      ((d' i).isUnit_det_of_isPerfPair (d' i) (C' i)
+        ((h'.isModular i).isPerfPair_of_smul_eq (pow_mem h2 i) (hC' i)))
+  have hχ0 : ∀ X : ZMod (2 ^ 3), X * X = 1 → χ₈ X ≠ 0 := by decide
+  have hlow' (i : ℕ) (hi : i < k) := (h.restrict_equivalent_iff h' hB hB' (hC i) (hC' i) (d i)
+    (d' i) (hcard i) (hw i) (hw' i)).mp (hlow i hi)
+  have hprod := hgauss j hj
+  simp only [map_sum, AddChar.map_sum_eq_prod, ← Finset.prod_mul_distrib,
+    ← Nat.range_succ_eq_Iic] at hprod
+  rw [← Finset.prod_range_mul_prod_Ico _ hkj, ← Finset.prod_range_mul_prod_Ico _ hkj] at hprod
+  refine mul_left_cancel₀ (Finset.prod_ne_zero_iff.mpr fun i _ ↦ ?_)
+    ((congrArg (· * _) (Finset.prod_congr rfl fun i hi ↦ ?_)).symm.trans hprod)
+  · exact mul_ne_zero (pow_ne_zero _ (Int.cast_ne_zero.mpr (hχ0 _ (hδ' i))))
+      (by rw [stdAddChar_apply]; exact Circle.coe_ne_zero _)
+  · rw [(hlow' i (Finset.mem_range.mp hi)).2.1, (hlow' i (Finset.mem_range.mp hi)).2.2]
+
+include h h' hB hB' hC hC' hw hw' hcard hgauss in
+/-- After cancelling matching lower constituents, the invariant of index `k` compares the
+sign times the oddity character of the constituents of index `k`. -/
+theorem IsJordanSplitting.χ₈_mul_stdAddChar_eq_of_forall_restrict_equivalent {k : ℕ}
+    (hlow : ∀ i < k, (B.restrict (N i)).Equivalent (B'.restrict (N' i)))
+    (hk1 : ∀ x ∈ N (k + 1), 2 * 2 ^ (k + 1) ∣ B x x) :
+      ((χ₈ (PadicInt.toZModPow 3 ((C k).toMatrix (d k)).det) : ℤ) : ℂ) *
+          stdAddChar (PadicInt.toZModPow 3 (C k (w k) (w k))) =
+        ((χ₈ (PadicInt.toZModPow 3 ((C' k).toMatrix (d' k)).det) : ℤ) : ℂ) *
+          stdAddChar (PadicInt.toZModPow 3 (C' k (w' k) (w' k))) := by
+  simpa [Nat.Ico_succ_singleton] using
+    h.prod_χ₈_pow_mul_stdAddChar_eq_of_forall_restrict_equivalent h' hB hB' C hC d w hw
+      C' hC' d' w' hw' hcard hgauss hlow k (by omega) hk1
+
+include h h' hB hB' hC hC' hw hw' hcard hgauss in
+/-- If the next constituents vanish, the invariant of index `k + 1` determines the oddity
+of index `k` after cancelling matching lower constituents. -/
+theorem IsJordanSplitting.toZModPow_apply_self_eq_of_forall_restrict_equivalent_of_card_eq_zero
+    {k : ℕ} (hlow : ∀ i < k, (B.restrict (N i)).Equivalent (B'.restrict (N' i)))
+    (hk2 : ∀ x ∈ N (k + 1 + 1), 2 * 2 ^ (k + 1 + 1) ∣ B x x)
+    (hz : Fintype.card (α (k + 1)) = 0) :
+      PadicInt.toZModPow 3 (C k (w k) (w k)) = PadicInt.toZModPow 3 (C' k (w' k) (w' k)) := by
+  have hcancelled := h.prod_χ₈_pow_mul_stdAddChar_eq_of_forall_restrict_equivalent
+    h' hB hB' C hC d w hw C' hC' d' w' hw' hcard hgauss hlow (k + 1) (by omega) hk2
+  have : IsEmpty (α (k + 1)) := Fintype.card_eq_zero_iff.mp hz
+  have : IsEmpty (α' (k + 1)) := Fintype.card_eq_zero_iff.mp
+    ((hcard (k + 1)).symm.trans hz)
+  have hw0 : w (k + 1) = 0 := (d (k + 1)).ext_elem fun i ↦ isEmptyElim i
+  have hw0' : w' (k + 1) = 0 := (d' (k + 1)).ext_elem fun i ↦ isEmptyElim i
+  rw [Finset.prod_Ico_succ_top (by omega : k ≤ k + 1),
+    Finset.prod_Ico_succ_top (by omega : k ≤ k + 1), Nat.Ico_succ_singleton,
+    Finset.prod_singleton, Finset.prod_singleton,
+    Matrix.det_eq_one_of_card_eq_zero hz,
+    Matrix.det_eq_one_of_card_eq_zero ((hcard (k + 1)).symm.trans hz), map_one, map_one,
+    show k + 1 + 1 - k = 2 by omega] at hcancelled
+  have hε (X : ZMod (2 ^ 3)) (hX : X * X = 1) : ((χ₈ X : ℤ) : ℂ) ^ 2 = 1 := by
+    have key : ∀ X : ZMod (2 ^ 3), X * X = 1 → χ₈ X ^ 2 = 1 := by decide
+    exact_mod_cast key X hX
+  have h2 : (2 : ℤ_[2]) ^ k ∈ nonZeroDivisors ℤ_[2] :=
+    mem_nonZeroDivisors_of_ne_zero (pow_ne_zero k (two_ne_zero : (2 : ℤ_[2]) ≠ 0))
+  have hδ : PadicInt.toZModPow 3 ((C k).toMatrix (d k)).det *
+      PadicInt.toZModPow 3 ((C k).toMatrix (d k)).det = 1 :=
+    PadicInt.isUnit_iff_toZModPow_three_mul_self.mp
+      ((d k).isUnit_det_of_isPerfPair (d k) (C k)
+        ((h.isModular k).isPerfPair_of_smul_eq h2 (hC k)))
+  have hδ' : PadicInt.toZModPow 3 ((C' k).toMatrix (d' k)).det *
+      PadicInt.toZModPow 3 ((C' k).toMatrix (d' k)).det = 1 :=
+    PadicInt.isUnit_iff_toZModPow_three_mul_self.mp
+      ((d' k).isUnit_det_of_isPerfPair (d' k) (C' k)
+        ((h'.isModular k).isPerfPair_of_smul_eq h2 (hC' k)))
+  rw [hε _ hδ, hε _ hδ'] at hcancelled
+  simp only [hw0, hw0', map_zero, one_mul,
+    Int.cast_one, one_pow, AddChar.map_zero_eq_one, mul_one] at hcancelled
+  exact ZMod.injective_stdAddChar hcancelled
+
+end PrefixCancellation
+
 /-- **The inductive step.** Let `N` and `N'` be Jordan splittings of `B` and `B'` with the same
 types and sign-oddity invariants and with bases of the same sizes, no two adjacent constituents of
 `N` being of type I, whose constituents of index below `k` are isometric. Then a sign walk, if
@@ -284,8 +347,6 @@ private theorem IsJordanSplitting.exists_restrict_equivalent [Module.Free ℤ_[2
     PadicInt.isUnit_iff_toZModPow_three_mul_self.mp
       ((d' i).isUnit_det_of_isPerfPair (d' i) (C' i)
         ((h'.isModular i).isPerfPair_of_smul_eq (pow_mem h2 i) (hC' i)))
-  have hχ0 : ∀ X : ZMod (2 ^ 3), X * X = 1 → χ₈ X ≠ 0 := by decide
-  have hχ2 : ∀ X : ZMod (2 ^ 3), X * X = 1 → χ₈ X ^ 2 = 1 := by decide
   have h4 : ∀ X : ZMod (2 ^ 3), X ≠ X + 4 := by decide
   have hequiv (hχ : χ₈ (PadicInt.toZModPow 3 ((C k).toMatrix (d k)).det) =
       χ₈ (PadicInt.toZModPow 3 ((C' k).toMatrix (d' k)).det))
@@ -294,55 +355,10 @@ private theorem IsJordanSplitting.exists_restrict_equivalent [Module.Free ℤ_[2
         (B.restrict (N k)).Equivalent (B'.restrict (N'' k)) :=
     ⟨N', h', fun _ _ ↦ rfl, (h.restrict_equivalent_iff h' hB hB' (hC k) (hC' k) (d k) (d' k)
       (hcard k) (hw k) (hw' k)).mpr ⟨htype k, hχ, ht⟩⟩
-  -- The constituents below `k` have the same signs and oddities, so they cancel from the
-  -- sign-oddity invariants of index at least `k`.
-  have hlow' (i : ℕ) (hi : i < k) := (h.restrict_equivalent_iff h' hB hB' (hC i) (hC' i) (d i)
-    (d' i) (hcard i) (hw i) (hw' i)).mp (hlow i hi)
-  have hcancel (j : ℕ) (hkj : k ≤ j + 1) (hj : ∀ x ∈ N (j + 1), 2 * 2 ^ (j + 1) ∣ B x x) :
-      ∏ i ∈ Finset.Ico k (j + 1),
-          ((χ₈ (PadicInt.toZModPow 3 ((C i).toMatrix (d i)).det) : ℤ) : ℂ) ^ (j + 1 - i) *
-            stdAddChar (PadicInt.toZModPow 3 (C i (w i) (w i))) =
-        ∏ i ∈ Finset.Ico k (j + 1),
-          ((χ₈ (PadicInt.toZModPow 3 ((C' i).toMatrix (d' i)).det) : ℤ) : ℂ) ^ (j + 1 - i) *
-            stdAddChar (PadicInt.toZModPow 3 (C' i (w' i) (w' i))) := by
-    have hprod := hgauss j hj
-    simp only [map_sum, AddChar.map_sum_eq_prod, ← Finset.prod_mul_distrib,
-      ← Nat.range_succ_eq_Iic] at hprod
-    rw [← Finset.prod_range_mul_prod_Ico _ hkj, ← Finset.prod_range_mul_prod_Ico _ hkj] at hprod
-    refine mul_left_cancel₀ (Finset.prod_ne_zero_iff.mpr fun i _ ↦ ?_)
-      ((congrArg (· * _) (Finset.prod_congr rfl fun i hi ↦ ?_)).symm.trans hprod)
-    · exact mul_ne_zero (pow_ne_zero _ (Int.cast_ne_zero.mpr (hχ0 _ (hδ' i))))
-        (by rw [stdAddChar_apply]; exact Circle.coe_ne_zero _)
-    · rw [(hlow' i (Finset.mem_range.mp hi)).2.1, (hlow' i (Finset.mem_range.mp hi)).2.2]
-  -- The invariant of index `k`.
-  have hG0 (hk1 : ∀ x ∈ N (k + 1), 2 * 2 ^ (k + 1) ∣ B x x) :
-      ((χ₈ (PadicInt.toZModPow 3 ((C k).toMatrix (d k)).det) : ℤ) : ℂ) *
-          stdAddChar (PadicInt.toZModPow 3 (C k (w k) (w k))) =
-        ((χ₈ (PadicInt.toZModPow 3 ((C' k).toMatrix (d' k)).det) : ℤ) : ℂ) *
-          stdAddChar (PadicInt.toZModPow 3 (C' k (w' k) (w' k))) := by
-    simpa [Nat.Ico_succ_singleton] using hcancel k (by omega) hk1
-  -- The invariant of index `k + 1`, when the constituents of index `k + 1` are zero.
-  have hG1 (hk2 : ∀ x ∈ N (k + 1 + 1), 2 * 2 ^ (k + 1 + 1) ∣ B x x)
-      (hz : Fintype.card (α (k + 1)) = 0) :
-      PadicInt.toZModPow 3 (C k (w k) (w k)) = PadicInt.toZModPow 3 (C' k (w' k) (w' k)) := by
-    have := hcancel (k + 1) (by omega) hk2
-    rw [Finset.prod_Ico_succ_top (by omega : k ≤ k + 1),
-      Finset.prod_Ico_succ_top (by omega : k ≤ k + 1), Nat.Ico_succ_singleton,
-      Finset.prod_singleton, Finset.prod_singleton,
-      (χ₈_det_toMatrix_eq_one_and_toZModPow_apply_self_eq_zero (d (k + 1)) hz
-        (w (k + 1))).1,
-      (χ₈_det_toMatrix_eq_one_and_toZModPow_apply_self_eq_zero (d (k + 1)) hz
-        (w (k + 1))).2,
-      (χ₈_det_toMatrix_eq_one_and_toZModPow_apply_self_eq_zero (d' (k + 1))
-        ((hcard (k + 1)).symm.trans hz) (w' (k + 1))).1,
-      (χ₈_det_toMatrix_eq_one_and_toZModPow_apply_self_eq_zero (d' (k + 1))
-        ((hcard (k + 1)).symm.trans hz) (w' (k + 1))).2,
-      show k + 1 + 1 - k = 2 by omega] at this
-    have hε (X : ZMod (2 ^ 3)) (hX : X * X = 1) : ((χ₈ X : ℤ) : ℂ) ^ 2 = 1 := by
-      exact_mod_cast hχ2 X hX
-    simp only [hε _ (hδ k), hε _ (hδ' k), one_mul, Int.cast_one, one_pow, AddChar.map_zero_eq_one,
-      mul_one] at this
-    exact ZMod.injective_stdAddChar this
+  have hG0 := h.χ₈_mul_stdAddChar_eq_of_forall_restrict_equivalent h' hB hB' C hC d w hw
+    C' hC' d' w' hw' hcard hgauss hlow
+  have hG1 := h.toZModPow_apply_self_eq_of_forall_restrict_equivalent_of_card_eq_zero
+    h' hB hB' C hC d w hw C' hC' d' w' hw' hcard hgauss hlow
   by_cases hTk : ∀ x ∈ N k, 2 * 2 ^ k ∣ B x x
   · -- `N k` is of type II, so both oddities vanish.
     have hTk' := (htype k).mp hTk
@@ -369,8 +385,8 @@ private theorem IsJordanSplitting.exists_restrict_equivalent [Module.Free ℤ_[2
       have h0 : Fintype.card (α' k) = 0 := by
         rw [← finrank_eq_card_basis (d' k), hbot, finrank_bot]
       exact hχ (by
-        rw [(χ₈_det_toMatrix_eq_one_and_toZModPow_apply_self_eq_zero (d k) ((hcard k).trans h0)
-          (w k)).1, (χ₈_det_toMatrix_eq_one_and_toZModPow_apply_self_eq_zero (d' k) h0 (w' k)).1])
+        rw [Matrix.det_eq_one_of_card_eq_zero ((hcard k).trans h0),
+          Matrix.det_eq_one_of_card_eq_zero h0, map_one, map_one])
     obtain ⟨N'', h'', hagree, hdk, -, -⟩ := h'.exists_signWalk_succ_of_even_of_odd hB' hTk' hne
       fun H ↦ hk1 ((htype (k + 1)).mpr H)
     refine ⟨N'', h'', fun i hi ↦ hagree i (by omega) (by omega),
@@ -432,9 +448,9 @@ The constituents themselves need not be isometric: `⟨1⟩ ⊥ 2 !![0, 1; 1, 0]
 (`TauCeti.equivalent_toBilin'_unary_two_hyperbolic`), although `⟨1⟩` and `⟨5⟩` have different
 signs. The invariants beyond the last nonzero constituent are needed as well: the forms
 `!![0, 1; 1, 0] ⊥ ⟨2⟩` and `!![2, 1; 1, 2] ⊥ ⟨2⟩` have the same ranks, types and invariant of
-index `1`, and only their invariants of index `2` separate them, through the signs `χ₈(-1) = 1`
+index `1`, and their invariants of index `2` first separate them, through the signs `χ₈(-1) = 1`
 and `χ₈(3) = -1` of their constituents of index `0`. -/
-theorem IsJordanSplitting.equivalent_iff_of_forall_or [Module.Free ℤ_[2] M]
+theorem IsJordanSplitting.equivalent_iff_of_forall_even_or_even [Module.Free ℤ_[2] M]
     [Module.Finite ℤ_[2] M] [Module.Free ℤ_[2] M'] [Module.Finite ℤ_[2] M']
     (h : B.IsJordanSplitting 2 N) (h' : B'.IsJordanSplitting 2 N') (hB : B.IsSymm)
     (hB' : B'.IsSymm)

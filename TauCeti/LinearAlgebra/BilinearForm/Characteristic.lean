@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+public import TauCeti.LinearAlgebra.BilinearForm.Prod
 
 /-!
 # Characteristic vectors of symmetric bilinear forms
@@ -69,6 +70,12 @@ def IsCharacteristic (B : BilinForm R M) (w : M) : Prop :=
 /-- The defining parity test for a characteristic vector. -/
 theorem isCharacteristic_iff : B.IsCharacteristic w ↔ ∀ x, (2 : R) ∣ B w x - B x x :=
   Iff.rfl
+
+/-- A pair of characteristic vectors is characteristic for the product form. -/
+theorem IsCharacteristic.prod {C : BilinForm R M'} {v : M'} (hw : B.IsCharacteristic w)
+    (hv : C.IsCharacteristic v) : (B.prod C).IsCharacteristic (w, v) := by
+  intro x
+  simpa only [prod_apply, add_sub_add_comm] using dvd_add (hw x.1) (hv x.2)
 
 /-- Zero is characteristic exactly when every self-pairing is even. -/
 @[simp]

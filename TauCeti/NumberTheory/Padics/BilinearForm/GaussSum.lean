@@ -20,6 +20,7 @@ import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.GaussSum
 import TauCeti.LinearAlgebra.Matrix.GaussSum
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.LegendreSymbol.ZModChar
+import TauCeti.NumberTheory.Padics.BilinearForm.OddUnimodular
 import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
@@ -294,28 +295,23 @@ theorem IsSymm.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq_χ₈ {C : Bilin
   set D : BilinForm ℤ_[2] (M × ℤ_[2]) := C.prod (LinearMap.mul ℤ_[2] ℤ_[2])
   set d := b.prod (Basis.singleton Unit ℤ_[2])
   have hDd : D.toMatrix d = Matrix.fromBlocks (C.toMatrix b) 0 0 1 := by
-    ext (i | i) (j | j) <;> simp [D, d, toMatrix_apply, prod_apply, Basis.prod_apply]
-  have hDs : D.IsSymm := isSymm_prod_iff.2
-    ⟨hC, ⟨fun x y ↦ by rw [LinearMap.mul_apply', LinearMap.mul_apply', mul_comm]⟩⟩
-  -- `D` represents the unit `1`, so it has an orthogonal basis with unit self-pairings.
+    rw [toMatrix_prod]
+    congr 1
+    ext i j
+    simp [toMatrix_apply]
   set e := d.reindex (Fintype.equivFin (ι ⊕ Unit))
   have hedet : (D.toMatrix e).det = (C.toMatrix b).det := by
     rw [det_toMatrix_reindex, hDd, Matrix.det_fromBlocks_zero₂₁, Matrix.det_one, mul_one]
-  obtain ⟨c, hc, hcu⟩ := hDs.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self e
-    (hedet ▸ hdet) ⟨(0, 1), by simp [D, prod_apply]⟩
-  -- `(w, 1)` is a characteristic vector of `D`, with self-pairing `C w w + 1`.
-  have hw' : D.IsCharacteristic (w, 1) := isCharacteristic_iff.mpr fun x ↦ by
-    have h := dvd_sub (isCharacteristic_iff.mp hw x.1) (PadicInt.two_dvd_sq_sub_self x.2)
-    simp only [D, prod_apply, LinearMap.mul_apply']
-    convert h using 1
-    ring
+  obtain ⟨c, hc, hcu⟩ := hC.exists_orthogonal_basis_isUnit_prod_mul b hdet
+  have hw' : D.IsCharacteristic (w, 1) := hw.prod <| isCharacteristic_iff.mpr fun x ↦ by
+    simpa [LinearMap.mul_apply', sq] using (PadicInt.two_dvd_sq_sub_self x).neg_right
   have hD := hc.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq hcu e hw' hk
   -- In the basis `d`, the Gauss sum of `D` is that of `C` times that of `⟨1⟩`.
   rw [sum_addChar_dotProduct_toMatrix_map_mulVec_eq D d e, hDd, Matrix.fromBlocks_map,
     Matrix.map_zero _ (map_zero f), Matrix.map_zero _ (map_zero f),
     Matrix.sum_addChar_dotProduct_fromBlocks_zero_zero_mulVec, ← Matrix.diagonal_one,
     sum_stdAddChar_dotProduct_diagonal_map_mulVec_eq hk fun _ ↦ isUnit_one, hedet] at hD
-  simp only [D, prod_apply, LinearMap.mul_apply', mul_one, map_add, AddChar.map_add_eq_mul,
+  simp only [prod_apply, LinearMap.mul_apply', mul_one, map_add, AddChar.map_add_eq_mul,
     Fintype.card_unit, one_mul, Finset.prod_const_one, map_one, Int.cast_one, one_pow,
     Fintype.sum_unique, Fintype.card_sum] at hD
   -- Cancel the Gauss sum `√2^{k + 1} e(1 / 8)` of `⟨1⟩`.

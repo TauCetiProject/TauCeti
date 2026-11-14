@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 
@@ -54,6 +55,13 @@ def prod (B : LinearMap.BilinForm R M) (C : LinearMap.BilinForm R N) :
 theorem prod_apply (B : LinearMap.BilinForm R M) (C : LinearMap.BilinForm R N) (x y : M × N) :
     B.prod C x y = B x.1 y.1 + C x.2 y.2 :=
   (rfl)
+
+/-- The Gram matrix in a product basis is block diagonal. -/
+theorem toMatrix_prod (B : LinearMap.BilinForm R M) (C : LinearMap.BilinForm R N)
+    {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
+    (b : Module.Basis ι R M) (c : Module.Basis κ R N) :
+    (B.prod C).toMatrix (b.prod c) = Matrix.fromBlocks (B.toMatrix b) 0 0 (C.toMatrix c) := by
+  ext (i | i) (j | j) <;> simp [toMatrix_apply, prod_apply, Module.Basis.prod_apply]
 
 /-- The quadratic map of a product of bilinear forms is the product of the quadratic maps. -/
 @[simp]

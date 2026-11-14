@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
+import TauCeti.Algebra.BigOperators.Ring.Finset
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Even.Henselian
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
@@ -103,31 +104,6 @@ theorem IsSymm.equivalent_iff_two_dvd_iff_and_isSquare_det_mul_det_and_eight_dvd
 
 /-! ### The determinant modulo `4`, and the classification by sign and oddity -/
 
-/-- For units `u i` of `ℤ_[2]`, the product is `1 + ∑ u i - #s` modulo `4`, and the sum is `#s`
-modulo `2`. -/
-private theorem four_dvd_prod_sub_one_sub_sum_add_card {ι : Type*} (s : Finset ι)
-    {u : ι → ℤ_[2]} (hu : ∀ i ∈ s, IsUnit (u i)) :
-    (4 : ℤ_[2]) ∣ ∏ i ∈ s, u i - 1 - ∑ i ∈ s, u i + s.card ∧
-      (2 : ℤ_[2]) ∣ ∑ i ∈ s, u i - s.card := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert a s has ih =>
-    obtain ⟨⟨f, hf⟩, ⟨e, he⟩⟩ := ih fun i hi ↦ hu i (Finset.mem_insert_of_mem hi)
-    -- A unit of `ℤ_[2]` is odd.
-    obtain ⟨c, hc⟩ : (2 : ℤ_[2]) ∣ u a - 1 := by
-      have hua := hu a (Finset.mem_insert_self a s)
-      obtain ⟨c, hc⟩ := PadicInt.two_dvd_sq_sub_self (u a)
-      refine ⟨↑hua.unit⁻¹ * c, ?_⟩
-      calc u a - 1 = ↑hua.unit⁻¹ * (u a * (u a - 1)) := by
-            rw [← mul_assoc, IsUnit.val_inv_mul, one_mul]
-        _ = 2 * (↑hua.unit⁻¹ * c) := by rw [show u a * (u a - 1) = u a ^ 2 - u a by ring, hc]; ring
-    rw [Finset.prod_insert has, Finset.sum_insert has, Finset.card_insert_of_notMem has]
-    push_cast
-    exact ⟨⟨f + c * (2 * f + e), by
-      linear_combination (∏ i ∈ s, u i - 1) * hc + (1 + 2 * c) * hf + 2 * c * he⟩,
-      ⟨c + e, by linear_combination hc + he⟩⟩
-
 /-- **The determinant of a unimodular form over `ℤ_[2]` modulo `4`.** Let `B` be a symmetric form
 over `ℤ_[2]` whose Gram matrix in a basis `b` of size `n` has a unit determinant, and let `w` be a
 characteristic vector. Then `det ≡ 1 + B w w - n` modulo `4`: the determinant modulo `4` is
@@ -142,21 +118,18 @@ theorem IsSymm.four_dvd_det_toMatrix_sub_one_sub_apply_self_add_card (hB : B.IsS
   set D : BilinForm ℤ_[2] (M × ℤ_[2]) := B.prod (LinearMap.mul ℤ_[2] ℤ_[2])
   set d := b.prod (Basis.singleton Unit ℤ_[2])
   have hDd : D.toMatrix d = Matrix.fromBlocks (B.toMatrix b) 0 0 1 := by
-    ext (i | i) (j | j) <;> simp [D, d, toMatrix_apply, prod_apply, Basis.prod_apply]
+    rw [toMatrix_prod]
+    congr 1
+    ext i j
+    simp [toMatrix_apply]
   have hDs : D.IsSymm := isSymm_prod_iff.2
     ⟨hB, ⟨fun x y ↦ by rw [LinearMap.mul_apply', LinearMap.mul_apply', mul_comm]⟩⟩
-  -- `D` represents the unit `1`, so it has an orthogonal basis `c` with unit self-pairings.
   set e := d.reindex (Fintype.equivFin (ι ⊕ Unit))
   have hedet : (D.toMatrix e).det = (B.toMatrix b).det := by
     rw [det_toMatrix_reindex, hDd, Matrix.det_fromBlocks_zero₂₁, Matrix.det_one, mul_one]
-  obtain ⟨c, hc, hcu⟩ := hDs.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self e
-    (hedet ▸ hdet) ⟨(0, 1), by simp [D, prod_apply]⟩
-  -- `(w, 1)` and `∑ i, c i` are characteristic vectors of `D`.
-  have hw' : D.IsCharacteristic (w, 1) := isCharacteristic_iff.mpr fun x ↦ by
-    have h := dvd_sub (isCharacteristic_iff.mp hw x.1) (PadicInt.two_dvd_sq_sub_self x.2)
-    simp only [D, prod_apply, LinearMap.mul_apply']
-    convert h using 1
-    ring
+  obtain ⟨c, hc, hcu⟩ := hB.exists_orthogonal_basis_isUnit_prod_mul b hdet
+  have hw' : D.IsCharacteristic (w, 1) := hw.prod <| isCharacteristic_iff.mpr fun x ↦ by
+    simpa [LinearMap.mul_apply', sq] using (PadicInt.two_dvd_sq_sub_self x).neg_right
   have : Module.Free ℤ_[2] (M × ℤ_[2]) := .of_basis c
   have : D.IsPerfPair := c.isPerfPair_of_isUnit_det c D (hc.isUnit_det_toMatrix hcu)
   obtain ⟨r, hr⟩ := hw'.eight_dvd_apply_self_sub_apply_self hDs
@@ -167,7 +140,13 @@ theorem IsSymm.four_dvd_det_toMatrix_sub_one_sub_apply_self_add_card (hB : B.IsS
   have hP : IsUnit (c.toMatrix e).det :=
     Matrix.isUnit_det_of_right_inverse (c.toMatrix_mul_toMatrix_flip e)
   obtain ⟨s, hs⟩ := PadicInt.eight_dvd_sq_sub_one_of_isUnit hP
-  obtain ⟨⟨f, hf⟩, -⟩ := four_dvd_prod_sub_one_sub_sum_add_card Finset.univ fun i _ ↦ hcu i
+  obtain ⟨f, hf⟩ := Finset.sq_dvd_prod_sub_one_sub_sum_add_card Finset.univ
+    (u := fun i ↦ D (c i) (c i)) (r := (2 : ℤ_[2])) fun i _ ↦ by
+      have hui : IsUnit (D (c i) (c i)) := hcu i
+      simpa only [pow_one, Nat.cast_ofNat, IsUnit.unit_spec] using
+        (TauCeti.mem_unitsPrincipal_iff (f := 1) (u := hui.unit)).mp
+          (by simp only [TauCeti.unitsPrincipal_two_one, Subgroup.mem_top])
+  norm_num1 at hf
   have hdet' := det_toMatrix_eq_det_sq_mul_det c e D
   rw [hedet, hc.det_toMatrix] at hdet'
   simp only [Finset.card_univ, Fintype.card_fin, Fintype.card_sum, Fintype.card_unit] at hf
