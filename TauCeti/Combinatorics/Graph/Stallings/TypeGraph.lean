@@ -23,6 +23,15 @@ acyclic, exactly the path hanging from the base vertex is removed
 there is no cyclically reduced closed path, as for the graph of the trivial subgroup, the base
 vertex alone is kept.
 
+In terms of degrees, as Kapovich and Myasnikov define it: the base vertex of a core is deleted
+exactly when it has degree one (`StallingsGraph.base_mem_typeVertices_iff`), and nothing is
+deleted otherwise, that is when every vertex has degree at least two or the core is a single
+vertex (`StallingsGraph.nonempty_unbasedIso_typeGraph_self_of_degree_ne_one`); the latter happens
+for a folded core exactly when it accepts the trivial subgroup
+(`StallingsGraph.IsFolded.subgroup_eq_bot_iff_isAcyclic`). When the base vertex has degree one,
+the vertices deleted are those of the path from it to the first vertex of degree at least three,
+other than that vertex (`StallingsGraph.notMem_typeVertices_iff_of_three_le_degree`).
+
 The type graph has no distinguished vertex. Since labelled graphs carry a base vertex,
 `StallingsGraph.typeGraph` takes the vertex to be used as a parameter, and type graphs are
 compared by isomorphisms that need not preserve it.
@@ -33,6 +42,10 @@ compared by isomorphisms that need not preserve it.
   graph at each of its vertices;
 * `StallingsGraph.typeGraph_isCore`: the type graph of a preconnected graph is a core at each of
   its vertices;
+* `StallingsGraph.notMem_typeVertices_iff_of_three_le_degree`: the type graph of a core whose
+  base vertex has degree one omits exactly the path to the first vertex of degree at least three;
+* `StallingsGraph.nonempty_unbasedIso_typeGraph_self_of_degree_ne_one`: otherwise the core is its
+  own type graph;
 * `StallingsGraph.UnbasedIso.nonempty_unbasedIso_typeGraph`: isomorphic labelled graphs have
   isomorphic type graphs, whatever their base vertices;
 * `StallingsGraph.nonempty_unbasedIso_typeGraph_iff`: two folded preconnected labelled graphs
@@ -204,6 +217,41 @@ theorem nonempty_unbasedIso_typeGraph_self (hS : S.graph.IsCore S.base)
      map_rev := fun _ => rfl
      map_label := fun _ => rfl }⟩
 
+/-! ### The type graph in terms of degrees -/
+
+/-- The base vertex of a based core is deleted in its type graph exactly when it has degree
+one. -/
+theorem base_mem_typeVertices_iff (hS : S.graph.IsCore S.base) :
+    S.base ∈ S.typeVertices ↔ S.graph.degree S.base ≠ 1 := by
+  rw [mem_typeVertices_iff, ← hS.two_le_degree_iff_mem_cyclicVertices,
+    ← hS.degree_eq_zero_iff_isAcyclic, and_iff_left rfl]
+  cases S.graph.degree S.base using ENat.recTopCoe with
+  | top => simp
+  | coe n => simp; omega
+
+/-- A based core whose base vertex does not have degree one is its own type graph: either every
+vertex has degree at least two, or the core is the base vertex alone. -/
+theorem nonempty_unbasedIso_typeGraph_self_of_degree_ne_one (hS : S.graph.IsCore S.base)
+    (h : S.graph.degree S.base ≠ 1) (u : S.typeVertices) :
+    Nonempty (UnbasedIso (S.typeGraph u) S) :=
+  S.nonempty_unbasedIso_typeGraph_self hS ((S.base_mem_typeVertices_iff hS).mpr h) u
+
+/-- **The type graph deletes the hanging path.** Let the base vertex of a based core have degree
+at most one, and let `q` be a path from it to the first vertex of degree at least three: every
+vertex that `q` leaves, other than the base vertex, has degree at most two. The vertices outside
+the type graph are exactly the vertices of `q` other than its end. The darts outside the type
+graph are the darts of `q` and their reverses
+(`SerreGraph.IsCore.notMem_cyclicDarts_iff_of_three_le_degree`); this is
+`SerreGraph.IsCore.notMem_cyclicVertices_iff_of_three_le_degree` for the underlying graph. -/
+theorem notMem_typeVertices_iff_of_three_le_degree (hS : S.graph.IsCore S.base)
+    (hv : S.graph.degree S.base ≤ 1) {w : S.graph.V} {q : S.graph.Path S.base w}
+    (hq : ∀ e ∈ SerreGraph.Path.darts S.graph q, S.graph.src e ≠ S.base →
+      S.graph.degree (S.graph.src e) ≤ 2) (hw : 3 ≤ S.graph.degree w) (a : S.graph.V) :
+    a ∉ S.typeVertices ↔ ∃ e ∈ SerreGraph.Path.darts S.graph q, S.graph.src e = a := by
+  rw [S.typeVertices_eq_cyclicVertices fun h => Set.Nonempty.ne_empty
+    ⟨w, hS.mem_cyclicVertices_of_three_le_degree hw⟩ (S.graph.cyclicVertices_eq_empty_iff.mpr h)]
+  exact hS.notMem_cyclicVertices_iff_of_three_le_degree hv hq hw a
+
 /-! ### Invariance under isomorphisms -/
 
 section Invariance
@@ -229,6 +277,17 @@ paths. -/
     f.vertexEquiv a ∈ T.graph.cyclicVertices ↔ a ∈ S.graph.cyclicVertices :=
   ⟨fun h => by simpa using f.symm.vertexEquiv_mem_cyclicVertices h,
     f.vertexEquiv_mem_cyclicVertices⟩
+
+/-- An isomorphism of labelled graphs preserves degrees. -/
+@[simp] theorem UnbasedIso.degree_vertexEquiv (f : UnbasedIso S T) (a : S.graph.V) :
+    T.graph.degree (f.vertexEquiv a) = S.graph.degree a := by
+  simpa using f.toGraphHom.degree_mapV f.toGraphHom_mapV_injective
+    ⟨f.toGraphHom_mapE_injective, fun e => ⟨f.dartEquiv.symm e, by simp⟩⟩ a
+
+/-- A based isomorphism of labelled graphs preserves degrees. -/
+@[simp] theorem Iso.degree_vertexEquiv (f : Iso S T) (a : S.graph.V) :
+    T.graph.degree (f.vertexEquiv a) = S.graph.degree a := by
+  simpa using f.toUnbasedIso.degree_vertexEquiv a
 
 /-- Isomorphic labelled graphs are acyclic together. -/
 theorem UnbasedIso.isAcyclic_iff (f : UnbasedIso S T) :

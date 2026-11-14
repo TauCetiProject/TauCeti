@@ -247,6 +247,17 @@ theorem Path.tgt_eq_of_mem_getLast?_darts {a b : Γ.V} (p : Γ.Path a b) {e : Γ
       Option.mem_def, Option.some.injEq] at he
     exact he ▸ f.2.2
 
+/-- A dart of a path whose target is the source of no dart of the path is the last dart of the
+path: its target is the end of the path. -/
+theorem Path.tgt_eq_of_forall_src_ne {a b : Γ.V} {p : Γ.Path a b} {e : Γ.E}
+    (he : e ∈ Path.darts Γ p) (hp : ∀ f ∈ Path.darts Γ p, Γ.src f ≠ Γ.tgt e) : Γ.tgt e = b := by
+  induction p with
+  | nil => simp at he
+  | cons p f ih =>
+    rcases (by simpa using he : e ∈ Path.darts Γ p ∨ e = f.1) with he | rfl
+    · exact (hp f.1 (by simp) (f.2.1.trans (ih he fun g hg => hp g (by simp [hg])).symm)).elim
+    · exact f.2.2
+
 /-- A path without darts joins a vertex to itself. -/
 theorem Path.eq_of_darts_eq_nil {a b : Γ.V} (p : Γ.Path a b) (hp : Path.darts Γ p = []) :
     a = b :=
