@@ -41,10 +41,10 @@ that value for Mathlib's total variation distance `etvDist`.
   `2 ^ r`;
 * `natCard_embedding_update_id_comp_eq_update_id_comp`: the number of embeddings with the same
   word is `1` if `r = 0` and `2` otherwise;
-* `sampleWithoutReplacement_dirac_update_id_comp_apply_singleton`,
-  `sampleWithReplacement_dirac_update_id_comp_apply_singleton`,
-  `sampleWithReplacement_dirac_update_id_comp_apply_singleton_eq`: singleton masses and likelihood
-  ratio on the support of the without-replacement law;
+* `sampleWithoutReplacement_dirac_update_id_apply_singleton_comp`,
+  `sampleWithReplacement_dirac_update_id_apply_singleton_comp`,
+  `sampleWithReplacement_dirac_update_id_apply_singleton_comp_eq_mul_sampleWithoutReplacement`:
+  singleton masses and likelihood ratio on the support of the without-replacement law;
 * `sampleWithoutReplacement_dirac_update_id_card_filter_eq_two`: probability `t` of observing `a`
   twice under sampling without replacement;
 * `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_id_eq`,
@@ -161,7 +161,7 @@ variable [Fintype ι] [Fintype κ] [DecidableEq κ] [MeasurableSpace κ] [Measur
 /-- Under sampling without replacement from the one-pair population `Function.update id b a`, the
 word `update id b a ∘ f` of an embedding `f : ι ↪ κ` has mass `1 / (|κ|)_|ι|` when `f` avoids
 `{a, b}`, and `2 / (|κ|)_|ι|` when `f` meets `{a, b}`. -/
-theorem sampleWithoutReplacement_dirac_update_id_comp_apply_singleton (hab : a ≠ b)
+theorem sampleWithoutReplacement_dirac_update_id_apply_singleton_comp (hab : a ≠ b)
     (f : ι ↪ κ) :
     sampleWithoutReplacement (ι := ι) (Measure.dirac (update id b a)) {update id b a ∘ f} =
       ((if #{i | update id b a (f i) = a} = 0 then 1 else 2 : ℕ) : ℝ≥0∞) /
@@ -172,7 +172,7 @@ theorem sampleWithoutReplacement_dirac_update_id_comp_apply_singleton (hab : a �
 /-- Under sampling with replacement from the one-pair population `Function.update id b a`, the
 word `update id b a ∘ f` of an index map `f : ι → κ` has mass `2 ^ r / |κ| ^ |ι|`, where `r` is
 the number of indices `f` sends into `{a, b}`. -/
-theorem sampleWithReplacement_dirac_update_id_comp_apply_singleton (hab : a ≠ b) (f : ι → κ) :
+theorem sampleWithReplacement_dirac_update_id_apply_singleton_comp (hab : a ≠ b) (f : ι → κ) :
     sampleWithReplacement (ι := ι) (Measure.dirac (update id b a)) {update id b a ∘ f} =
       ((2 ^ #{i | update id b a (f i) = a} : ℕ) : ℝ≥0∞) /
         (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
@@ -183,8 +183,8 @@ theorem sampleWithReplacement_dirac_update_id_comp_apply_singleton (hab : a ≠ 
 with-replacement singleton mass equals `p` times the without-replacement singleton mass when the
 word takes the value `a` at most once, and `2 * p` times it when the word takes the value `a`
 twice. -/
-theorem sampleWithReplacement_dirac_update_id_comp_apply_singleton_eq (hab : a ≠ b)
-    (f : ι ↪ κ) :
+theorem sampleWithReplacement_dirac_update_id_apply_singleton_comp_eq_mul_sampleWithoutReplacement
+    (hab : a ≠ b) (f : ι ↪ κ) :
     sampleWithReplacement (ι := ι) (Measure.dirac (update id b a)) {update id b a ∘ f} =
       (if #{i | update id b a (f i) = a} = 2 then 2 else 1) *
         ((Fintype.card κ).descFactorial (Fintype.card ι) /
@@ -201,8 +201,8 @@ theorem sampleWithReplacement_dirac_update_id_comp_apply_singleton_eq (hab : a �
   have hd0 : ((Fintype.card κ).descFactorial (Fintype.card ι) : ℝ≥0∞) ≠ 0 := by
     exact_mod_cast
       Nat.descFactorial_eq_zero_iff_lt.not.2 (not_lt.2 (Fintype.card_le_of_embedding f))
-  rw [sampleWithReplacement_dirac_update_id_comp_apply_singleton hab f,
-    sampleWithoutReplacement_dirac_update_id_comp_apply_singleton hab f, hr]
+  rw [sampleWithReplacement_dirac_update_id_apply_singleton_comp hab f,
+    sampleWithoutReplacement_dirac_update_id_apply_singleton_comp hab f, hr]
   push_cast
   simp only [div_eq_mul_inv]
   calc
@@ -229,7 +229,8 @@ private theorem sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_
   by_cases hy : Nonempty {f : ι ↪ κ // update id b a ∘ f = y}
   · obtain ⟨⟨f, rfl⟩⟩ := hy
     let := isProbabilityMeasure_sampleWithoutReplacement (Measure.dirac (update id b a)) f
-    rw [sampleWithReplacement_dirac_update_id_comp_apply_singleton_eq hab f]
+    rw [sampleWithReplacement_dirac_update_id_apply_singleton_comp_eq_mul_sampleWithoutReplacement
+      hab f]
     conv_lhs =>
       lhs
       rw [← one_mul (sampleWithoutReplacement (ι := ι) (Measure.dirac (update id b a)) _)]
@@ -262,6 +263,30 @@ theorem sampleWithoutReplacement_dirac_update_id_card_filter_eq_two (hab : a ≠
   ext k
   simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_preimage]
   exact and_congr_right fun hk => (card_filter_update_id_apply_eq_eq_two_iff hk hab).symm
+
+/-- For probabilities `p, t ∈ [0, 1]`, the two-point mixture `(1 - 2p)₊ t + (1 - p)(1 - t)` in
+`ℝ≥0∞` equals `ENNReal.ofReal (1 - p - t * min p (1 - p))`. -/
+private theorem one_sub_two_mul_ofReal_mul_add_eq_ofReal {p t : ℝ} (hp0 : 0 ≤ p) (hp1 : p ≤ 1)
+    (ht0 : 0 ≤ t) (ht1 : t ≤ 1) :
+    (1 - 2 * ENNReal.ofReal p) * ENNReal.ofReal t +
+        (1 - ENNReal.ofReal p) * (1 - ENNReal.ofReal t) =
+      ENNReal.ofReal (1 - p - t * min p (1 - p)) := by
+  rcases le_total p (1 - p) with hle | hle
+  · have h2p : 0 ≤ 1 - 2 * p := by linarith
+    have hEq : 1 - p - t * min p (1 - p) = (1 - 2 * p) * t + (1 - p) * (1 - t) := by
+      rw [min_eq_left hle]
+      ring
+    rw [hEq, ENNReal.ofReal_add (mul_nonneg h2p ht0)
+      (mul_nonneg (sub_nonneg.2 hp1) (sub_nonneg.2 ht1))]
+    simp [ENNReal.ofReal_sub, hp0, ht0, sub_nonneg.2 hp1, h2p, mul_nonneg zero_le_two hp0]
+  · have h2p : 1 ≤ 2 * p := by linarith
+    have h0 : 1 - 2 * ENNReal.ofReal p = 0 :=
+      tsub_eq_zero_of_le (by simpa using ENNReal.ofReal_le_ofReal h2p)
+    have hEq : 1 - p - t * min p (1 - p) = (1 - p) * (1 - t) := by
+      rw [min_eq_right hle]
+      ring
+    rw [h0, zero_mul, zero_add, hEq]
+    simp [ENNReal.ofReal_sub, hp0, ht0, sub_nonneg.2 hp1]
 
 /-- For the population `Function.update id b a` identifying one distinct pair of indices, the
 largest excess of sampling without replacement over sampling with replacement is
@@ -304,8 +329,6 @@ theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_id_
       simp
     rw [hH, hHc, prob_compl_eq_one_sub .of_discrete,
       sampleWithoutReplacement_dirac_update_id_card_filter_eq_two hab hmn]
-  rw [hsum]
-  -- Move from truncated subtraction in `ℝ≥0∞` to `ℝ` and split on `2 * p ≤ 1` (`p ≤ 1 - p`).
   have hn2 : 2 ≤ n := Fintype.one_lt_card_iff.2 ⟨a, b, hab⟩
   have hpow_pos : (0 : ℝ) < (n : ℝ) ^ m := pow_pos (Nat.cast_pos.2 (by omega)) m
   have hdesc2_pos : (0 : ℝ) < (n.descFactorial 2 : ℝ) :=
@@ -316,30 +339,10 @@ theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_id_
   have ht0 : 0 ≤ t := by positivity
   have ht1 : t ≤ 1 :=
     div_le_one_of_le₀ (by exact_mod_cast Nat.descFactorial_le 2 hmn) hdesc2_pos.le
-  have hp_ofReal : ENNReal.ofReal p = p₀ := by
-    rw [ENNReal.ofReal_div_of_pos hpow_pos, ENNReal.ofReal_natCast,
-      ENNReal.ofReal_pow (Nat.cast_nonneg n), ENNReal.ofReal_natCast]
-  have ht_ofReal : ENNReal.ofReal t = t₀ := by
-    rw [ENNReal.ofReal_div_of_pos hdesc2_pos, ENNReal.ofReal_natCast, ENNReal.ofReal_natCast]
-  have h1p : 1 - p₀ = ENNReal.ofReal (1 - p) := by
-    rw [ENNReal.ofReal_sub 1 hp0, ENNReal.ofReal_one, hp_ofReal]
-  have h1t : 1 - t₀ = ENNReal.ofReal (1 - t) := by
-    rw [ENNReal.ofReal_sub 1 ht0, ENNReal.ofReal_one, ht_ofReal]
-  have h12p : 1 - 2 * p₀ = ENNReal.ofReal (max (1 - 2 * p) 0) := by
-    rw [ENNReal.ofReal_max, ENNReal.ofReal_zero, max_eq_left zero_le,
-      ENNReal.ofReal_sub 1 (by linarith), ENNReal.ofReal_one,
-      ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat, hp_ofReal]
-  rw [h12p, h1p, h1t, ← ht_ofReal, ← ENNReal.ofReal_mul (le_max_right _ _),
-    ← ENNReal.ofReal_mul (sub_nonneg.2 hp1),
-    ← ENNReal.ofReal_add (mul_nonneg (le_max_right _ _) ht0)
-      (mul_nonneg (sub_nonneg.2 hp1) (sub_nonneg.2 ht1))]
-  congr 1
-  dsimp only
-  rcases le_total p (1 - p) with hle | hle
-  · rw [min_eq_left hle, max_eq_left (by linarith)]
-    ring
-  · rw [min_eq_right hle, max_eq_right (by linarith)]
-    ring
+  have hp_ofReal : p₀ = ENNReal.ofReal p := by simp [p₀, p, ENNReal.ofReal_div_of_pos hpow_pos]
+  have ht_ofReal : t₀ = ENNReal.ofReal t := by
+    simp only [t₀, t, ENNReal.ofReal_div_of_pos hdesc2_pos, ENNReal.ofReal_natCast]
+  rw [hsum, hp_ofReal, ht_ofReal, one_sub_two_mul_ofReal_mul_add_eq_ofReal hp0 hp1 ht0 ht1]
 
 /-- The converse largest excess of sampling with replacement over sampling without replacement for
 the one-pair population `Function.update id b a` equals the same quantity

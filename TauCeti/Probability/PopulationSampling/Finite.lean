@@ -10,6 +10,7 @@ public import TauCeti.Probability.Process.EmpiricalMeasure
 public import TauCeti.Probability.UniformSampling
 public import Mathlib.MeasureTheory.Measure.FiniteMeasurePi
 import TauCeti.Data.Fintype.Card.Embedding
+import TauCeti.Logic.Embedding.Basic
 
 /-!
 # Sampling finite populations with and without replacement
@@ -257,10 +258,12 @@ theorem sampleWithoutReplacement_dirac_apply_singleton (x : κ → α) (y : ι �
     ← ENNReal.div_eq_inv_mul]
   congr 1
   · norm_cast
-    rw [← Set.ncard_eq_toFinset_card _, ← Nat.card_coe_set_eq]
+    rw [← Set.ncard_eq_toFinset_card _, ← Nat.card_coe_set_eq, Set.preimage_singleton,
+      ← Set.ofPred_and, Set.coe_ofPred]
     exact Nat.card_congr
       ((Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm.trans
-        (Equiv.subtypeEquiv (Equiv.subtypeInjectiveEquivEmbedding ι κ) fun _ => Iff.rfl))
+        (Equiv.subtypeEquiv (Equiv.subtypeInjectiveEquivEmbedding ι κ)
+          fun _ => by simp [Function.comp_def]))
   · norm_cast
     simp only [Set.toFinite_toFinset, Set.toFinset_ofPred, ← Fintype.card_subtype]
     exact Fintype.card_subtype_injective
@@ -279,8 +282,9 @@ theorem sampleWithReplacement_dirac_apply_singleton (x : κ → α) (y : ι → 
     uniformOn_univ, Measure.count_apply_finite _ (Set.toFinite _), Fintype.card_fun, Nat.cast_pow]
   congr 1
   norm_cast
-  rw [← Set.ncard_eq_toFinset_card _, ← Nat.card_coe_set_eq]
-  rfl
+  rw [← Set.ncard_eq_toFinset_card _, ← Nat.card_coe_set_eq, Set.preimage_singleton,
+    Set.coe_ofPred]
+  exact Nat.card_congr (Equiv.subtypeEquivRight fun _ => by simp [Function.comp_def])
 
 end Singleton
 
