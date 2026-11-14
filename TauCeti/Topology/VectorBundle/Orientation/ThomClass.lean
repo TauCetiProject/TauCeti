@@ -326,7 +326,7 @@ orientation `ω` of the model fibre `F` and a class `g ∈ Hʳ(F, F ∖ {0}; R, 
 trivialization `e` is the pull-back of `g` along `e` if `e` reads `o b` as `ω`, and of `-g` if `e`
 reads `o b` as `-ω`
 (`TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_fiber`). When
-`g` generates `Hʳ(F, F ∖ {0}; K, K) ≅ K` it is a Thom class
+`g` generates `Hʳ(F, F ∖ {0}; R, M)` it is a Thom class
 (`TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel`). -/
 def thomClassOfModel : (thomPair F E).singularCohomology R' K M' (finrank ℝ F) :=
   (existsUnique_singularCohomology_thomPair_fiber hι o ω g).exists.choose
@@ -421,12 +421,12 @@ theorem exists_singularCohomologyMap_fiberThomPairMap_thomClassOfModel
         h).trans (map_neg _ _).symm⟩
 
 /-- **The Thom class of an oriented bundle normalized by a generator is a Thom class**: if `g`
-generates `Hʳ(F, F ∖ {0}; K, K) ≅ K`, then `thomClassOfModel o hι ω g` restricts to a generator of
-`Hʳ(E_b, E_b ∖ {0}; K, K)` on every fibre. -/
+generates `Hʳ(F, F ∖ {0}; R', M')`, then `thomClassOfModel o hι ω g` restricts to a generator of
+`Hʳ(E_b, E_b ∖ {0}; R', M')` on every fibre. -/
 theorem isThomClass_thomClassOfModel (o : VectorBundleOrientation F E ι)
-    (hι : Fintype.card ι = finrank ℝ F) (ω : Orientation ℝ F ι) {K : Type w} [CommRing K]
-    {g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology
-      (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
+    (hι : Fintype.card ι = finrank ℝ F) (ω : Orientation ℝ F ι)
+    {g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M'
+      (finrank ℝ F)}
     (hg : Submodule.span K {g} = ⊤) : IsThomClass F E (o.thomClassOfModel hι ω g) := by
   refine isThomClass_iff.2 ⟨inferInstance, fun b ↦ ?_⟩
   let e := trivializationAt F E b
@@ -435,7 +435,7 @@ theorem isThomClass_thomClassOfModel (o : VectorBundleOrientation F E ι)
   have hge : Submodule.span K
       {TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom
         (finrank ℝ F) g} = ⊤ := by
-    let L := ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
+    let L := ((TopPair.singularCohomologyFunctor R' K M'
       (finrank ℝ F)).mapIso (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.op).toLinearEquiv
     exact L.span_singleton_apply_eq_top_iff.2 hg
   rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω hι with h | h

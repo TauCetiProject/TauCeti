@@ -8,72 +8,27 @@ module
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Connecting
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.RelativeCup
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct
+import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Relative
 
 /-!
 # The relative cross product in singular homology
 
-For topological pairs `(X, A)` and `(Y, B)` given by subsets `A ⊆ X` and `B ⊆ Y`, and coefficient
-objects `R` and `S` in an abelian monoidal category, the **relative homology cross product** is the
-morphism
-
-`Hₚ(X, A; R) ⊗ H_q(Y, B; S) ⟶ Hₙ(X × Y, A × Y ∪ X × B; R ⊗ S)`, for `p + q = n`,
-
-where `A × Y` and `X × B` are the preimages `fst⁻¹(A)` and `snd⁻¹(B)`.
-
-At the chain level, the singular shuffle map `C(X; R) ⊗ C(Y; S) ⟶ C(X × Y; R ⊗ S)` carries
-`C(A; R) ⊗ C(Y; S)` into the singular chains of `A × Y` and `C(X; R) ⊗ C(B; S)` into the singular
-chains of `X × B`. Since the short exact sequences of singular chains of `(X, A)` and `(Y, B)`
-split in each degree, tensoring preserves their cokernels
-(`HomologicalComplex.shortExact_tensorRightShortComplex`,
-`HomologicalComplex.shortExact_tensorLeftShortComplex`), so the shuffle map followed by the
-quotient to the chains `C(X × Y; A × Y + X × B; R ⊗ S)` relative to simplices small for
-`{A × Y, X × B}` descends to a chain map
-
-`TopCat.relativeShuffle : C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y; A × Y + X × B; R ⊗ S)`.
-
-In the opposite direction, the relative Alexander–Whitney diagonal
-`TopCat.relativeAlexanderWhitneyDiagonal` followed by the projections onto `(X, A)` and `(Y, B)`
-defines
-
-`TopCat.relativeAlexanderWhitney : C(X × Y; A × Y + X × B; R ⊗ S) ⟶ C(X, A; R) ⊗ C(Y, B; S)`.
-
-Because the simplicial Eilenberg–Zilber chain homotopy `SSet.shuffleAlexanderWhitneyHomotopy` is
-natural in both simplicial sets, it carries the subcomplexes `C(A; R) ⊗ C(Y; S)` and
-`C(X; R) ⊗ C(B; S)` into the kernel of the quotient map `π_A ⊗ π_B`, and two applications of
-`Homotopy.descCokernel` produce the relative Eilenberg–Zilber chain homotopy
-
-`TopCat.relativeShuffleAlexanderWhitneyHomotopy :
-  Homotopy (relativeShuffle X Y A B R S ≫ relativeAlexanderWhitney X Y A B R S) (𝟙 _)`.
-
-Composing the algebraic homology cross product `HomologicalComplex.homologyCross` with
-`TopCat.relativeShuffle` and the inclusion `TopCat.smallSingularSubcomplexPairToUnion` of small
-simplices into `A × Y ∪ X × B` defines `TopCat.singularRelativeHomologyCross` for arbitrary subsets
-`A ⊆ X` and `B ⊆ Y`, without any openness hypothesis. It is natural in maps of pairs and in both
-coefficient objects, and compatible with `TopCat.singularHomologyCross` under the quotient maps
-from absolute to relative homology.
-
-## Main definitions and results
-
-* `TopCat.relativeShuffle`: the relative shuffle chain map
-  `C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y; A × Y + X × B; R ⊗ S)`, characterized by
-  `TopCat.singularChainComplexπ_tensorHom_relativeShuffle` and natural in maps of pairs
-  (`TopCat.relativeShuffle_naturality`).
-* `TopCat.relativeAlexanderWhitney`: the relative Alexander–Whitney chain map
-  `C(X × Y; A × Y + X × B; R ⊗ S) ⟶ C(X, A; R) ⊗ C(Y, B; S)`, characterized by
-  `TopCat.chainComplexπ_relativeAlexanderWhitney` and natural in maps of pairs
-  (`TopCat.relativeAlexanderWhitney_naturality`).
-* `TopCat.relativeShuffleAlexanderWhitneyHomotopy`: the chain homotopy from
-  `relativeShuffle ≫ relativeAlexanderWhitney` to the identity of `C(X, A; R) ⊗ C(Y, B; S)`.
-* `TopCat.singularRelativeHomologyCross`: the relative homology cross product
-  `Hₚ(X, A; R) ⊗ H_q(Y, B; S) ⟶ Hₙ(X × Y, A × Y ∪ X × B; R ⊗ S)`, natural in maps of pairs
-  (`TopCat.singularRelativeHomologyCross_naturality`) and compatible with
-  `TopCat.singularHomologyCross`
-  (`TopCat.singularHomologyπ_tensorHom_singularRelativeHomologyCross`).
+For subsets `A ⊆ X` and `B ⊆ Y` and coefficient objects `R, S`, tensoring preserves the degreewise
+split chain short exact sequences of `(X, A)` and `(Y, B)`, so `TopCat.shuffle` descends to
+`TopCat.relativeShuffle : C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y; A × Y + X × B; R ⊗ S)`
+(`TopCat.singularChainComplexπ_tensorHom_relativeShuffle`), and two applications of
+`Homotopy.descCokernel` to `SSet.shuffleAlexanderWhitneyHomotopy` give
+`TopCat.relativeShuffleAlexanderWhitneyHomotopy` from `relativeShuffle ≫ relativeAlexanderWhitney`
+to `𝟙 _`. Composing `HomologicalComplex.homologyCross` with `TopCat.relativeShuffle` and
+`TopCat.smallSingularSubcomplexPairToUnion` defines `TopCat.singularRelativeHomologyCross` without
+openness hypotheses, evaluated on cycles by
+`TopCat.homologyπ_tensorHom_singularRelativeHomologyCross` and compatible with
+`TopCat.singularHomologyCross`
+(`TopCat.singularHomologyπ_tensorHom_singularRelativeHomologyCross`).
 
 ## References
 
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 3.B, the relative cross product in homology.
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Section 3.B.
 * S. Eilenberg and J. A. Zilber, *On products of complexes*, Amer. J. Math. 75 (1953).
 -/
 
@@ -91,60 +46,33 @@ namespace TopCat
 attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
 attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
 
+/-- Cache `MonoidalCategory (ChainComplex C ℕ)` under `[Preadditive C]` before `[Abelian C]` enters
+scope so `[Abelian C]` does not push the synthesis term size past `synthInstance.maxSize`. -/
+local instance instMonoidalCategoryChainComplex {C : Type u} [Category.{v} C] [Preadditive C]
+    [HasCoproducts.{w} C] [MonoidalCategory C] [MonoidalPreadditive C] :
+    MonoidalCategory (ChainComplex C ℕ) :=
+  inferInstance
+
 section ChainLevel
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C]
+  [MonoidalCategory C] [MonoidalPreadditive C]
 
-/-- A continuous map `f : Z ⟶ W` taking values in a single member `U i` of a family of subsets
-induces the zero map into the singular chains of `W` relative to the simplices small for `U`. -/
-private lemma chainComplexMap_comp_smallSingularSubcomplex_chainComplexπ_eq_zero
-    {Z W : TopCat.{w}} {ι : Type*} (U : ι → Set W) (f : Z ⟶ W) {i : ι} (hf : ∀ z, f z ∈ U i)
-    (T : C) :
-    SSet.chainComplexMap (toSSet.map f) T ≫ (W.smallSingularSubcomplex U).pair.chainComplexπ T =
-      0 := by
-  have hι : SSet.chainComplexMap (W.smallSingularSubcomplex U).ι T ≫
-      (W.smallSingularSubcomplex U).pair.chainComplexπ T = 0 :=
-    (W.smallSingularSubcomplex U).pair.chainComplex_condition T
-  have hmap : SSet.chainComplexMap (toSSet.map f) T =
-      SSet.chainComplexMap
-        (toSSet.map (ofHom ⟨fun z ↦ ⟨f z, hf z⟩, f.hom.continuous.subtype_mk hf⟩) ≫
-          toSmallSingularSubcomplex U (subset_refl (U i))) T ≫
-      SSet.chainComplexMap (W.smallSingularSubcomplex U).ι T := by
-    refine Eq.trans ?_ (((SSet.chainComplexFunctor C).obj T).map_comp _ _)
-    congr 2
-    rw [Category.assoc, toSmallSingularSubcomplex_ι, ← toSSet.map_comp]
-    rfl
-  exact (eq_whisker hmap _).trans ((Category.assoc _ _ _).trans ((whisker_eq _ hι).trans comp_zero))
-
-variable [MonoidalCategory C] [MonoidalPreadditive C]
-
-/-- Functoriality of `⊗ₘ` on `ℕ`-indexed chain complexes without requiring the full
-`MonoidalCategory (ChainComplex C ℕ)` instance. -/
-private lemma chainComplex_tensorHom_comp {K₁ L₁ M₁ K₂ L₂ M₂ : ChainComplex C ℕ}
-    (f₁ : K₁ ⟶ L₁) (g₁ : L₁ ⟶ M₁) (f₂ : K₂ ⟶ L₂) (g₂ : L₂ ⟶ M₂) :
-    (f₁ ≫ g₁) ⊗ₘ (f₂ ≫ g₂) = (f₁ ⊗ₘ f₂) ≫ (g₁ ⊗ₘ g₂) :=
-  mapBifunctorMap_comp (curriedTensor C) (ComplexShape.down ℕ) f₁ g₁ f₂ g₂
-
-/-- The short exact sequence `0 ⟶ C(A; R) ⊗ C(Y; S) ⟶ C(X; R) ⊗ C(Y; S) ⟶ C(X, A; R) ⊗ C(Y; S) ⟶ 0`
-obtained by tensoring the chain short exact sequence of `(X, A)` on the right with `C(Y; S)`. -/
+/-- Short exact sequence `0 ⟶ C(A; R) ⊗ C(Y; S) ⟶ C(X; R) ⊗ C(Y; S) ⟶ C(X, A; R) ⊗ C(Y; S) ⟶ 0`. -/
 private lemma shortExact_leftFactor (X Y : TopCat.{w}) (A : Set X) (R S : C) :
     (tensorRightShortComplex ((toSSet.obj Y).chainComplex S)
       ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).chainComplexShortComplex R)).ShortExact :=
-  shortExact_tensorRightShortComplex ((toSSet.obj Y).chainComplex S)
-    ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).chainComplexShortComplex R)
+  shortExact_tensorRightShortComplex ((toSSet.obj Y).chainComplex S) _
     ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).shortExact_chainComplexShortComplex R)
 
-/-- The short exact sequence
-`0 ⟶ C(X, A; R) ⊗ C(B; S) ⟶ C(X, A; R) ⊗ C(Y; S) ⟶ C(X, A; R) ⊗ C(Y, B; S) ⟶ 0`
-obtained by tensoring the chain short exact sequence of `(Y, B)` on the left with `C(X, A; R)`. -/
+/-- Exactness of `0 ⟶ C(X, A; R) ⊗ C(B; S) ⟶ C(X, A; R) ⊗ C(Y; S) ⟶ C(X, A; R) ⊗ C(Y, B; S) ⟶ 0`. -/
 private lemma shortExact_rightFactor (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C) :
     (tensorLeftShortComplex ((TopPair.ofSubset A).singularChainComplex R)
       ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).chainComplexShortComplex S)).ShortExact :=
   shortExact_tensorLeftShortComplex ((TopPair.ofSubset A).singularChainComplex R)
     ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).shortExact_chainComplexShortComplex S)
 
-/-- The tensor product of the quotient maps `C(X; R) ⟶ C(X, A; R)` and `C(Y; S) ⟶ C(Y, B; S)` is an
-epimorphism of chain complexes. -/
+/-- Epimorphism `C(X; R) ⊗ C(Y; S) ↠ C(X, A; R) ⊗ C(Y, B; S)`. -/
 private instance epi_singularChainComplexπ_tensorHom
     (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C) :
     Epi ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
@@ -153,140 +81,43 @@ private instance epi_singularChainComplexπ_tensorHom
       𝟙 ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).right.chainComplex S)) :=
     (shortExact_leftFactor X Y A R S).epi_g
   have : Epi (𝟙 ((TopPair.ofSubset A).singularChainComplex R) ⊗ₘ
-      (TopPair.ofSubset B).singularChainComplexπ S) :=
-    (shortExact_rightFactor X Y A B R S).epi_g
-  rw [(congrArg₂ (· ⊗ₘ ·) (Category.comp_id _).symm (Category.id_comp _).symm).trans
-    (chainComplex_tensorHom_comp _ _ _ _)]
-  exact epi_comp _ _
-
-/-- **The relative Alexander–Whitney map**
-`C(X × Y; A × Y + X × B; R ⊗ S) ⟶ C(X, A; R) ⊗ C(Y, B; S)` for subsets `A ⊆ X` and `B ⊆ Y`: the
-relative Alexander–Whitney diagonal `TopCat.relativeAlexanderWhitneyDiagonal` of `fst⁻¹(A)` and
-`snd⁻¹(B)`, followed by the projections to `(X, A)` and `(Y, B)`. -/
-def relativeAlexanderWhitney (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C) :
-    ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplex (R ⊗ S) ⟶
-      (TopPair.ofSubset A).singularChainComplex R ⊗ (TopPair.ofSubset B).singularChainComplex S :=
-  relativeAlexanderWhitneyDiagonal (fst X Y ⁻¹' A) (snd X Y ⁻¹' B) (𝟙 (R ⊗ S)) ≫
-    (TopPair.singularChainComplexMap (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _)) R ⊗ₘ
-      TopPair.singularChainComplexMap (TopPair.ofSubsetMap (snd X Y) (Set.mapsTo_preimage _ _)) S)
-
-/-- Definitional unfolding of `TopCat.relativeAlexanderWhitney`. -/
-lemma relativeAlexanderWhitney_def (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C) :
-    relativeAlexanderWhitney X Y A B R S =
-      relativeAlexanderWhitneyDiagonal (fst X Y ⁻¹' A) (snd X Y ⁻¹' B) (𝟙 (R ⊗ S)) ≫
-        (TopPair.singularChainComplexMap
-            (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _)) R ⊗ₘ
-          TopPair.singularChainComplexMap
-            (TopPair.ofSubsetMap (snd X Y) (Set.mapsTo_preimage _ _)) S) :=
-  (rfl)
-
-/-- Precomposing the relative Alexander–Whitney map with the quotient from `C(X × Y; R ⊗ S)` gives
-the absolute Alexander–Whitney map followed by `π_A ⊗ π_B`. -/
-@[reassoc (attr := simp)]
-lemma chainComplexπ_relativeAlexanderWhitney
-    (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C) :
-    ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplexπ (R ⊗ S) ≫
-        relativeAlexanderWhitney X Y A B R S =
-      alexanderWhitney X Y R S ≫
-        ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
-          (TopPair.ofSubset B).singularChainComplexπ S) := by
-  have hdiag : lift (𝟙 (X ⊗ Y)) (𝟙 (X ⊗ Y)) ≫ (fst X Y ⊗ₘ snd X Y) = 𝟙 (X ⊗ Y) := by
-    ext <;> simp
-  have hAW : alexanderWhitney X Y R S =
-      (X ⊗ Y).alexanderWhitneyDiagonal (𝟙 (R ⊗ S)) ≫
-        (SSet.chainComplexMap (toSSet.map (fst X Y)) R ⊗ₘ
-          SSet.chainComplexMap (toSSet.map (snd X Y)) S) := by
-    rw [TauCeti.alexanderWhitneyDiagonal_def, (SSet.chainComplexFunctor C).map_id]
-    simp only [NatTrans.id_app, Category.id_comp, Category.assoc]
-    rw [← alexanderWhitney_naturality (fst X Y) (snd X Y) R S, ← Category.assoc,
-      ← ((SSet.chainComplexFunctor C).obj (R ⊗ S)).map_comp, ← toSSet.map_comp, hdiag,
-      toSSet.map_id, ((SSet.chainComplexFunctor C).obj (R ⊗ S)).map_id, Category.id_comp]
-  have hA := TopPair.singularChainComplexπ_pair_naturality
-    (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ A)) R
-  have hB := TopPair.singularChainComplexπ_pair_naturality
-    (TopPair.ofSubsetMap (snd X Y) (Set.mapsTo_preimage _ B)) S
-  rw [TopPair.ofSubsetMap_fst] at hA hB
-  have htensor : ((TopPair.ofSubset (fst X Y ⁻¹' A)).singularChainComplexπ R ⊗ₘ
-      (TopPair.ofSubset (snd X Y ⁻¹' B)).singularChainComplexπ S) ≫
-      (TopPair.singularChainComplexMap
-          (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _)) R ⊗ₘ
-        TopPair.singularChainComplexMap
-          (TopPair.ofSubsetMap (snd X Y) (Set.mapsTo_preimage _ _)) S) =
-      (SSet.chainComplexMap (toSSet.map (fst X Y)) R ⊗ₘ
-        SSet.chainComplexMap (toSSet.map (snd X Y)) S) ≫
-        ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
-          (TopPair.ofSubset B).singularChainComplexπ S) :=
-    (chainComplex_tensorHom_comp _ _ _ _).symm.trans
-      ((congrArg₂ (· ⊗ₘ ·) hA.symm hB.symm).trans (chainComplex_tensorHom_comp _ _ _ _))
-  exact (chainComplexπ_relativeAlexanderWhitneyDiagonal_assoc
-      (fst X Y ⁻¹' A) (snd X Y ⁻¹' B) (𝟙 (R ⊗ S)) _).trans <|
-    (Category.assoc _ _ _).trans <|
-    (congrArg (_ ≫ ·) htensor).trans <|
-    (Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hAW.symm)
-
-/-- **Naturality of the relative Alexander–Whitney map** in continuous maps `f : X ⟶ X'` carrying
-`A` into `A'` and `g : Y ⟶ Y'` carrying `B` into `B'`. -/
-@[reassoc]
-lemma relativeAlexanderWhitney_naturality {X Y X' Y' : TopCat.{w}} {A : Set X} {B : Set Y}
-    {A' : Set X'} {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
-    (hf : Set.MapsTo f A A') (hg : Set.MapsTo g B B') (R S : C) :
-    SSetPair.chainComplexMap (smallSingularSubcomplexPairMap (f ⊗ₘ g)
-        (mapsTo_tensorHom_preimage_fst f g hf) (mapsTo_tensorHom_preimage_snd f g hg)) (R ⊗ S) ≫
-        relativeAlexanderWhitney X' Y' A' B' R S =
-      relativeAlexanderWhitney X Y A B R S ≫
-        (TopPair.singularChainComplexMap (TopPair.ofSubsetMap f hf) R ⊗ₘ
-          TopPair.singularChainComplexMap (TopPair.ofSubsetMap g hg) S) := by
-  apply (cancel_epi
-    (((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplexπ
-      (R ⊗ S))).1
-  have hπ := SSetPair.chainComplexπ_naturality (R ⊗ S) (smallSingularSubcomplexPairMap (f ⊗ₘ g)
-    (mapsTo_tensorHom_preimage_fst f g hf) (mapsTo_tensorHom_preimage_snd f g hg))
-  have hA := TopPair.singularChainComplexπ_pair_naturality (TopPair.ofSubsetMap f hf) R
-  have hB := TopPair.singularChainComplexπ_pair_naturality (TopPair.ofSubsetMap g hg) S
-  rw [smallSingularSubcomplexPairMap_right] at hπ
-  rw [TopPair.ofSubsetMap_fst] at hA hB
-  exact (Category.assoc _ _ _).symm.trans <|
-    (congrArg (· ≫ _) hπ.symm).trans <|
-    (Category.assoc _ _ _).trans <|
-    (congrArg (_ ≫ ·) (chainComplexπ_relativeAlexanderWhitney X' Y' A' B' R S)).trans <|
-    (alexanderWhitney_naturality_assoc f g R S _).trans <|
-    ((chainComplexπ_relativeAlexanderWhitney_assoc X Y A B R S _).trans <|
-      (Category.assoc _ _ _).trans <|
-      whisker_eq _ ((chainComplex_tensorHom_comp _ _ _ _).symm.trans
-        ((congrArg₂ (· ⊗ₘ ·) hA.symm hB.symm).trans (chainComplex_tensorHom_comp _ _ _ _)))).symm
+      (TopPair.ofSubset B).singularChainComplexπ S) := (shortExact_rightFactor X Y A B R S).epi_g
+  have hfac : ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
+      (TopPair.ofSubset B).singularChainComplexπ S) =
+      ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
+        𝟙 ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).right.chainComplex S)) ≫
+      (𝟙 ((TopPair.ofSubset A).singularChainComplex R) ⊗ₘ
+        (TopPair.ofSubset B).singularChainComplexπ S) := by
+    simp only [tensorHom_comp_tensorHom, Category.comp_id, Category.id_comp]
+  exact hfac ▸ epi_comp _ _
 
 section Shuffle
 
 variable [∀ (T : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorLeft T)]
   [∀ (T : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorRight T)]
 
-/-- On `C(A; R) ⊗ C(Y; S)`, the singular shuffle map of `X` and `Y` lands in the singular chains of
-`A × Y`, so it vanishes in `C(X × Y; A × Y + X × B; R ⊗ S)`. -/
+/-- `shuffle X Y R S` vanishes on `C(A; R) ⊗ C(Y; S)` modulo `A × Y + X × B`. -/
 private lemma chainComplexMap_tensorHom_id_comp_shuffle_comp_chainComplexπ
     (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C) :
     (SSet.chainComplexMap (TopPair.toSSetPair.obj (TopPair.ofSubset A)).hom R ⊗ₘ
-        𝟙 ((toSSet.obj Y).chainComplex S)) ≫
-      shuffle X Y R S ≫
-        ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplexπ
-          (R ⊗ S) = 0 := by
+        𝟙 ((toSSet.obj Y).chainComplex S)) ≫ shuffle X Y R S ≫
+      ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplexπ
+        (R ⊗ S) = 0 := by
   let ιA : of ↥A ⟶ X := (TopPair.ofSubset A).map
   have hid : 𝟙 ((toSSet.obj Y).chainComplex S) = SSet.chainComplexMap (toSSet.map (𝟙 Y)) S :=
-    (((SSet.chainComplexFunctor C).obj S).map_id (toSSet.obj Y)).symm.trans
+    (((SSet.chainComplexFunctor C).obj S).map_id _).symm.trans
       (congrArg (SSet.chainComplexMap · S) (toSSet.map_id Y).symm)
-  have hsh : (SSet.chainComplexMap (TopPair.toSSetPair.obj (TopPair.ofSubset A)).hom R ⊗ₘ
-      𝟙 ((toSSet.obj Y).chainComplex S)) ≫ shuffle X Y R S =
-      shuffle (of ↥A) Y R S ≫ SSet.chainComplexMap (toSSet.map (ιA ⊗ₘ 𝟙 Y)) (R ⊗ S) :=
-    (eq_whisker (congrArg (SSet.chainComplexMap (toSSet.map ιA) R ⊗ₘ ·) hid)
+  have hsh := (eq_whisker (congrArg (SSet.chainComplexMap (toSSet.map ιA) R ⊗ₘ ·) hid)
       (shuffle X Y R S)).trans (shuffle_naturality ιA (𝟙 Y) R S)
   refine (Category.assoc _ _ _).symm.trans
     ((eq_whisker hsh _).trans ((Category.assoc _ _ _).trans ?_))
   have hf (z) : (ιA ⊗ₘ 𝟙 Y) z ∈ ![fst X Y ⁻¹' A, snd X Y ⁻¹' B] 0 := by
-    have hz : fst X Y ((ιA ⊗ₘ 𝟙 Y) z) = ιA (fst (of ↥A) Y z) :=
-      ConcreteCategory.congr_hom (tensorHom_fst ιA (𝟙 Y)) z
     rw [Matrix.cons_val_zero]
-    exact Set.mem_preimage.2 (hz.symm ▸ (fst (of ↥A) Y z).2)
+    exact Set.mem_preimage.2
+      ((ConcreteCategory.congr_hom (tensorHom_fst ιA (𝟙 Y)) z).symm ▸ (fst (of ↥A) Y z).2)
   exact (whisker_eq _
-    (chainComplexMap_comp_smallSingularSubcomplex_chainComplexπ_eq_zero _ _ hf _)).trans comp_zero
+    (TauCeti.chainComplexMap_comp_smallSingularSubcomplex_chainComplexπ_eq_zero _ _ hf _)).trans
+    comp_zero
 
 /-- Intermediate descent of the shuffle map to `C(X, A; R) ⊗ C(Y; S)`. -/
 private def leftRelativeShuffle (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C) :
@@ -317,53 +148,40 @@ private lemma id_tensorHom_chainComplexMap_comp_leftRelativeShuffle
         SSet.chainComplexMap (TopPair.toSSetPair.obj (TopPair.ofSubset B)).hom S) ≫
       leftRelativeShuffle X Y A B R S = 0 := by
   let ιB : of ↥B ⟶ Y := (TopPair.ofSubset B).map
-  let pA : ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).right.chainComplex R) ⊗
-      ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).left.chainComplex S) ⟶
-      (TopPair.ofSubset A).singularChainComplex R ⊗
-        ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).left.chainComplex S) :=
-    (TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
-      𝟙 ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).left.chainComplex S)
-  have : Epi pA := (shortExact_tensorRightShortComplex
-    ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).left.chainComplex S)
-    ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).chainComplexShortComplex R)
-    ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).shortExact_chainComplexShortComplex R)).epi_g
-  apply (cancel_epi pA).1
-  rw [comp_zero]
+  let pA := (TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
+    𝟙 ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).left.chainComplex S)
+  have : Epi pA := (shortExact_leftFactor X (of ↥B) A R S).epi_g
+  rw [← cancel_epi pA, comp_zero]
   have hcomm : pA ≫ (𝟙 ((TopPair.ofSubset A).singularChainComplex R) ⊗ₘ
       SSet.chainComplexMap (TopPair.toSSetPair.obj (TopPair.ofSubset B)).hom S) =
       (𝟙 ((toSSet.obj X).chainComplex R) ⊗ₘ SSet.chainComplexMap (toSSet.map ιB) S) ≫
-        ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
-          𝟙 ((toSSet.obj Y).chainComplex S)) := by
-    refine (chainComplex_tensorHom_comp _ _ _ _).symm.trans ?_
-    rw [Category.comp_id, Category.id_comp]
-    exact (congrArg₂ (· ⊗ₘ ·) (Category.id_comp _).symm (Category.comp_id _).symm).trans
-      (chainComplex_tensorHom_comp _ _ _ _)
+        ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ 𝟙 ((toSSet.obj Y).chainComplex S)) :=
+    (tensorHom_comp_tensorHom _ _ _ _).trans <|
+      (congrArg₂ (· ⊗ₘ ·) (Category.comp_id _) (Category.id_comp _)).trans <|
+      (congrArg₂ (· ⊗ₘ ·) (Category.id_comp _).symm (Category.comp_id _).symm).trans
+        (tensorHom_comp_tensorHom _ _ _ _).symm
   refine (Category.assoc _ _ _).symm.trans ((eq_whisker hcomm _).trans <|
     (Category.assoc _ _ _).trans <|
     (whisker_eq _ (singularChainComplexπ_tensorHom_id_leftRelativeShuffle X Y A B R S)).trans ?_)
   have hid : 𝟙 ((toSSet.obj X).chainComplex R) = SSet.chainComplexMap (toSSet.map (𝟙 X)) R :=
-    (((SSet.chainComplexFunctor C).obj R).map_id (toSSet.obj X)).symm.trans
+    (((SSet.chainComplexFunctor C).obj R).map_id _).symm.trans
       (congrArg (SSet.chainComplexMap · R) (toSSet.map_id X).symm)
-  have hsh : (𝟙 ((toSSet.obj X).chainComplex R) ⊗ₘ
-      SSet.chainComplexMap (toSSet.map ιB) S) ≫ shuffle X Y R S =
-      shuffle X (of ↥B) R S ≫ SSet.chainComplexMap (toSSet.map (𝟙 X ⊗ₘ ιB)) (R ⊗ S) :=
-    (eq_whisker (congrArg (· ⊗ₘ SSet.chainComplexMap (toSSet.map ιB) S) hid)
+  have hsh := (eq_whisker (congrArg (· ⊗ₘ SSet.chainComplexMap (toSSet.map ιB) S) hid)
       (shuffle X Y R S)).trans (shuffle_naturality (𝟙 X) ιB R S)
   refine (Category.assoc _ _ _).symm.trans
     ((eq_whisker hsh _).trans ((Category.assoc _ _ _).trans ?_))
   have hf (z) : (𝟙 X ⊗ₘ ιB) z ∈ ![fst X Y ⁻¹' A, snd X Y ⁻¹' B] 1 := by
-    have hz : snd X Y ((𝟙 X ⊗ₘ ιB) z) = ιB (snd X (of ↥B) z) :=
-      ConcreteCategory.congr_hom (tensorHom_snd (𝟙 X) ιB) z
     rw [Matrix.cons_val_one, Matrix.cons_val_zero]
-    exact Set.mem_preimage.2 (hz.symm ▸ (snd X (of ↥B) z).2)
+    exact Set.mem_preimage.2
+      ((ConcreteCategory.congr_hom (tensorHom_snd (𝟙 X) ιB) z).symm ▸ (snd X (of ↥B) z).2)
   exact (whisker_eq _
-    (chainComplexMap_comp_smallSingularSubcomplex_chainComplexπ_eq_zero _ _ hf _)).trans comp_zero
+    (TauCeti.chainComplexMap_comp_smallSingularSubcomplex_chainComplexπ_eq_zero _ _ hf _)).trans
+    comp_zero
 
 /-- **The relative shuffle map**
 `C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y; A × Y + X × B; R ⊗ S)` for subsets `A ⊆ X` and `B ⊆ Y`: the
-descent of the singular shuffle map `TopCat.shuffle X Y R S`, followed by the quotient map from
-`C(X × Y; R ⊗ S)` to the chains relative to singular simplices lying in `fst⁻¹(A)` or in
-`snd⁻¹(B)`. -/
+descent of `TopCat.shuffle X Y R S` followed by the quotient map from `C(X × Y; R ⊗ S)` to the
+chains relative to singular simplices lying in `fst⁻¹(A)` or in `snd⁻¹(B)`. -/
 def relativeShuffle (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C) :
     (TopPair.ofSubset A).singularChainComplex R ⊗ (TopPair.ofSubset B).singularChainComplex S ⟶
       ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplex
@@ -393,7 +211,7 @@ lemma singularChainComplexπ_tensorHom_relativeShuffle
         (𝟙 ((TopPair.ofSubset A).singularChainComplex R) ⊗ₘ
           (TopPair.ofSubset B).singularChainComplexπ S) :=
     (congrArg₂ (· ⊗ₘ ·) (Category.comp_id _).symm (Category.id_comp _).symm).trans
-      (chainComplex_tensorHom_comp _ _ _ _)
+      (tensorHom_comp_tensorHom _ _ _ _).symm
   exact (congrArg (· ≫ _) hfac).trans ((Category.assoc _ _ _).trans
     ((congrArg (_ ≫ ·) hdesc).trans
       (singularChainComplexπ_tensorHom_id_leftRelativeShuffle X Y A B R S)))
@@ -411,8 +229,8 @@ lemma relativeShuffle_naturality {X Y X' Y' : TopCat.{w}} {A : Set X} {B : Set Y
         SSetPair.chainComplexMap (smallSingularSubcomplexPairMap (f ⊗ₘ g)
           (mapsTo_tensorHom_preimage_fst f g hf) (mapsTo_tensorHom_preimage_snd f g hg))
           (R ⊗ S) := by
-  apply (cancel_epi ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
-    (TopPair.ofSubset B).singularChainComplexπ S)).1
+  rw [← cancel_epi ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
+    (TopPair.ofSubset B).singularChainComplexπ S)]
   have hπ := SSetPair.chainComplexπ_naturality (R ⊗ S) (smallSingularSubcomplexPairMap (f ⊗ₘ g)
     (mapsTo_tensorHom_preimage_fst f g hf) (mapsTo_tensorHom_preimage_snd f g hg))
   have hA := TopPair.singularChainComplexπ_pair_naturality (TopPair.ofSubsetMap f hf) R
@@ -420,8 +238,9 @@ lemma relativeShuffle_naturality {X Y X' Y' : TopCat.{w}} {A : Set X} {B : Set Y
   rw [smallSingularSubcomplexPairMap_right] at hπ
   rw [TopPair.ofSubsetMap_fst] at hA hB
   exact (Category.assoc _ _ _).symm.trans <|
-    (congrArg (· ≫ _) ((chainComplex_tensorHom_comp _ _ _ _).symm.trans
-      ((congrArg₂ (· ⊗ₘ ·) hA.symm hB.symm).trans (chainComplex_tensorHom_comp _ _ _ _)))).trans <|
+    (congrArg (· ≫ _) ((tensorHom_comp_tensorHom _ _ _ _).trans
+      ((congrArg₂ (· ⊗ₘ ·) hA.symm hB.symm).trans
+        (tensorHom_comp_tensorHom _ _ _ _).symm))).trans <|
     (Category.assoc _ _ _).trans <|
     (whisker_eq _ (singularChainComplexπ_tensorHom_relativeShuffle X' Y' A' B' R S)).trans <|
     ((singularChainComplexπ_tensorHom_relativeShuffle_assoc X Y A B R S _).trans <|
@@ -439,8 +258,8 @@ lemma relativeShuffle_coefficient_naturality (X Y : TopCat.{w}) (A : Set X) (B :
       relativeShuffle X Y A B R S ≫
         ((SSetPair.chainComplexFunctor C).map (φ ⊗ₘ ψ)).app
           ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair := by
-  apply (cancel_epi ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
-    (TopPair.ofSubset B).singularChainComplexπ S)).1
+  rw [← cancel_epi ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
+    (TopPair.ofSubset B).singularChainComplexπ S)]
   have hπ := NatTrans.congr_app ((SSetPair.chainComplexFunctorπ C).naturality (φ ⊗ₘ ψ)).symm
     ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair
   have hA := NatTrans.congr_app ((SSetPair.chainComplexFunctorπ C).naturality φ).symm
@@ -448,13 +267,44 @@ lemma relativeShuffle_coefficient_naturality (X Y : TopCat.{w}) (A : Set X) (B :
   have hB := NatTrans.congr_app ((SSetPair.chainComplexFunctorπ C).naturality ψ).symm
     (TopPair.toSSetPair.obj (TopPair.ofSubset B))
   exact (Category.assoc _ _ _).symm.trans <|
-    (eq_whisker ((chainComplex_tensorHom_comp _ _ _ _).symm.trans
-      ((congrArg₂ (· ⊗ₘ ·) hA hB).trans (chainComplex_tensorHom_comp _ _ _ _))) _).trans <|
+    (eq_whisker ((tensorHom_comp_tensorHom _ _ _ _).trans
+      ((congrArg₂ (· ⊗ₘ ·) hA hB).trans (tensorHom_comp_tensorHom _ _ _ _).symm)) _).trans <|
     (Category.assoc _ _ _).trans <|
     (whisker_eq _ (singularChainComplexπ_tensorHom_relativeShuffle X Y A B R' S')).trans <|
     ((singularChainComplexπ_tensorHom_relativeShuffle_assoc X Y A B R S _).trans <|
       (Category.assoc _ _ _).trans <|
       (whisker_eq _ hπ).trans (shuffle_coefficient_naturality_assoc X Y φ ψ _).symm).symm
+
+/-- On `C(A; R) ⊗ C(Y; S)`, the simplicial Eilenberg–Zilber homotopy followed by `π_A ⊗ π_B`
+vanishes in every bidegree. -/
+private lemma leftFactor_comp_shuffleAlexanderWhitneyHomotopy_hom
+    (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C) (i j : ℕ) :
+    (tensorRightShortComplex ((toSSet.obj Y).chainComplex S)
+        ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).chainComplexShortComplex R)).f.f i ≫
+      (SSet.shuffleAlexanderWhitneyHomotopy (toSSet.obj X) (toSSet.obj Y) R S).hom i j ≫
+      ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
+        (TopPair.ofSubset B).singularChainComplexπ S).f j = 0 := by
+  have hid : 𝟙 ((toSSet.obj Y).chainComplex S) = SSet.chainComplexMap (𝟙 (toSSet.obj Y)) S :=
+    (((SSet.chainComplexFunctor C).obj S).map_id _).symm
+  have hnat := SSet.shuffleAlexanderWhitneyHomotopy_hom_naturality_assoc
+    (R := R) (S := S) (toSSet.map (TopPair.ofSubset A).map) (𝟙 (toSSet.obj Y)) i j
+    (((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
+      (TopPair.ofSubset B).singularChainComplexπ S).f j)
+  have hzero : (SSet.chainComplexMap (toSSet.map (TopPair.ofSubset A).map) R ⊗ₘ
+      𝟙 ((toSSet.obj Y).chainComplex S)) ≫ ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
+        (TopPair.ofSubset B).singularChainComplexπ S) = 0 :=
+    (tensorHom_comp_tensorHom _ _ _ _).trans <|
+      (congrArg (· ⊗ₘ _)
+        ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).chainComplex_condition R)).trans
+        (zero_tensorHom _)
+  refine (eq_whisker (congrArg (fun g ↦
+    (SSet.chainComplexMap (toSSet.map (TopPair.ofSubset A).map) R ⊗ₘ g).f i) hid) _).trans
+    (hnat.trans ((whisker_eq _ (eq_whisker (congrArg (fun g ↦
+      (SSet.chainComplexMap (toSSet.map (TopPair.ofSubset A).map) R ⊗ₘ g).f j) hid.symm) _)).trans
+      ?_))
+  exact (whisker_eq _ ((HomologicalComplex.comp_f _ _ j).symm.trans
+    ((HomologicalComplex.congr_hom hzero j).trans (HomologicalComplex.zero_f _ _ j)))).trans
+    comp_zero
 
 /-- Intermediate descent of the Eilenberg–Zilber chain homotopy along the first quotient
 `C(X; R) ⊗ C(Y; S) ↠ C(X, A; R) ⊗ C(Y; S)`. -/
@@ -468,58 +318,28 @@ private def leftRelativeShuffleAlexanderWhitneyHomotopy
         ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).chainComplexShortComplex S)).g := by
   let S₁ := tensorRightShortComplex ((toSSet.obj Y).chainComplex S)
     ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).chainComplexShortComplex R)
-  have hS₁ := shortExact_leftFactor X Y A R S
-  let hH : _root_.Homotopy (shuffle X Y R S ≫ alexanderWhitney X Y R S) (𝟙 _) :=
-    (_root_.Homotopy.ofEq (shuffle_alexanderWhitney X Y R S)).trans
-      (SSet.shuffleAlexanderWhitneyHomotopy (toSSet.obj X) (toSSet.obj Y) R S)
-  have hH_hom (i j : ℕ) : hH.hom i j =
-      (SSet.shuffleAlexanderWhitneyHomotopy (toSSet.obj X) (toSSet.obj Y) R S).hom i j := by
-    simp [hH]
-  have hfac : S₁.g ≫
-      (tensorLeftShortComplex ((TopPair.ofSubset A).singularChainComplex R)
-        ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).chainComplexShortComplex S)).g =
+  have hfac : S₁.g ≫ (tensorLeftShortComplex ((TopPair.ofSubset A).singularChainComplex R)
+      ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).chainComplexShortComplex S)).g =
       ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
         (TopPair.ofSubset B).singularChainComplexπ S) :=
-    (chainComplex_tensorHom_comp _ _ _ _).symm.trans
+    (tensorHom_comp_tensorHom ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).chainComplexπ R)
+      (𝟙 ((toSSet.obj Y).chainComplex S)) (𝟙 ((TopPair.ofSubset A).singularChainComplex R))
+      ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).chainComplexπ S)).trans
       (congrArg₂ (· ⊗ₘ ·) (Category.comp_id _) (Category.id_comp _))
-  refine _root_.Homotopy.descCokernel hH S₁.f S₁.g
-    ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
-      (TopPair.ofSubset B).singularChainComplexπ S)
+  refine _root_.Homotopy.descCokernel
+    (SSet.shuffleAlexanderWhitneyHomotopy (toSSet.obj X) (toSSet.obj Y) R S) S₁.f S₁.g
+    ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ (TopPair.ofSubset B).singularChainComplexπ S)
     (fun i ↦ (HomologicalComplex.comp_f S₁.f S₁.g i).symm.trans
       ((HomologicalComplex.congr_hom S₁.zero i).trans (HomologicalComplex.zero_f _ _ i)))
-    (fun i ↦ ((shortExact_iff_degreewise_shortExact S₁).1 hS₁ i).gIsCokernel)
-    (fun i j ↦ ?_) ?_ ?_
-  · rw [hH_hom]
-    have hid : 𝟙 ((toSSet.obj Y).chainComplex S) = SSet.chainComplexMap (𝟙 (toSSet.obj Y)) S :=
-      (((SSet.chainComplexFunctor C).obj S).map_id _).symm
-    have hnat := SSet.shuffleAlexanderWhitneyHomotopy_hom_naturality_assoc
-      (R := R) (S := S) (toSSet.map (TopPair.ofSubset A).map) (𝟙 (toSSet.obj Y)) i j
-      (((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
-        (TopPair.ofSubset B).singularChainComplexπ S).f j)
-    have hzero : (SSet.chainComplexMap (toSSet.map (TopPair.ofSubset A).map) R ⊗ₘ
-        𝟙 ((toSSet.obj Y).chainComplex S)) ≫
-        ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
-          (TopPair.ofSubset B).singularChainComplexπ S) = 0 :=
-      (chainComplex_tensorHom_comp _ _ _ _).symm.trans <|
-        (congrArg (· ⊗ₘ _)
-          ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).chainComplex_condition R)).trans
-          (zero_tensorHom _)
-    refine (eq_whisker (congrArg (fun g ↦
-      (SSet.chainComplexMap (toSSet.map (TopPair.ofSubset A).map) R ⊗ₘ g).f i) hid) _).trans
-      (hnat.trans ?_)
-    refine (whisker_eq _ (eq_whisker (congrArg (fun g ↦
-      (SSet.chainComplexMap (toSSet.map (TopPair.ofSubset A).map) R ⊗ₘ g).f j)
-        hid.symm) _)).trans ?_
-    exact (whisker_eq _ ((HomologicalComplex.comp_f _ _ j).symm.trans
-      ((HomologicalComplex.congr_hom hzero j).trans (HomologicalComplex.zero_f _ _ j)))).trans
-      comp_zero
-  · exact (Category.assoc _ _ _).symm.trans <|
-      (eq_whisker hfac _).trans <|
-      (singularChainComplexπ_tensorHom_relativeShuffle_assoc X Y A B R S _).trans <|
-      (Category.assoc _ _ _).trans <|
-      (whisker_eq _ (chainComplexπ_relativeAlexanderWhitney X Y A B R S)).trans
-        (Category.assoc _ _ _).symm
-  · exact hfac.trans (Category.id_comp _).symm
+    (fun i ↦ ((shortExact_iff_degreewise_shortExact S₁).1
+      (shortExact_leftFactor X Y A R S) i).gIsCokernel)
+    (leftFactor_comp_shuffleAlexanderWhitneyHomotopy_hom X Y A B R S) ?_
+    (hfac.trans (Category.id_comp _).symm)
+  exact (Category.assoc _ _ _).symm.trans <| (eq_whisker hfac _).trans <|
+    (singularChainComplexπ_tensorHom_relativeShuffle_assoc X Y A B R S _).trans <|
+    (Category.assoc _ _ _).trans <|
+    (whisker_eq _ (chainComplexπ_relativeAlexanderWhitney X Y A B R S)).trans <|
+    (Category.assoc _ _ _).symm.trans (eq_whisker (shuffle_alexanderWhitney X Y R S) _)
 
 private lemma π_leftRelativeShuffleAlexanderWhitneyHomotopy_hom
     (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C) (i j : ℕ) :
@@ -529,50 +349,33 @@ private lemma π_leftRelativeShuffleAlexanderWhitneyHomotopy_hom
         ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
           (TopPair.ofSubset B).singularChainComplexπ S).f j := by
   unfold leftRelativeShuffleAlexanderWhitneyHomotopy
-  refine (_root_.Homotopy.π_descCokernel_hom _ _ _ _ _ _ _ _ _ i j).trans (eq_whisker ?_ _)
-  simp only [_root_.Homotopy.trans_hom, _root_.Homotopy.ofEq_hom, Pi.zero_apply, zero_add]
-  rfl
+  exact _root_.Homotopy.π_descCokernel_hom _ _ _ _ _ _ _ _ _ i j
 
-/-- **The relative Eilenberg–Zilber chain homotopy** `AW ∘ shuffle ≃ id`: for subsets `A ⊆ X` and
-`B ⊆ Y`, the relative shuffle map `TopCat.relativeShuffle` followed by the relative
-Alexander–Whitney map `TopCat.relativeAlexanderWhitney` is chain homotopic to the identity of
-`C(X, A; R) ⊗ C(Y, B; S)`. -/
-def relativeShuffleAlexanderWhitneyHomotopy
-    (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C) :
-    _root_.Homotopy
-      (relativeShuffle X Y A B R S ≫ relativeAlexanderWhitney X Y A B R S) (𝟙 _) := by
-  let S₂ := tensorLeftShortComplex ((TopPair.ofSubset A).singularChainComplex R)
-    ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).chainComplexShortComplex S)
-  have hS₂ := shortExact_rightFactor X Y A B R S
-  let H₁ := leftRelativeShuffleAlexanderWhitneyHomotopy X Y A B R S
-  refine _root_.Homotopy.descCokernel H₁ S₂.f S₂.g (𝟙 _)
-    (fun i ↦ (HomologicalComplex.comp_f S₂.f S₂.g i).symm.trans
-      ((HomologicalComplex.congr_hom S₂.zero i).trans (HomologicalComplex.zero_f _ _ i)))
-    (fun i ↦ ((shortExact_iff_degreewise_shortExact S₂).1 hS₂ i).gIsCokernel)
-    (fun i j ↦ ?_) (Category.comp_id _).symm rfl
-  let pA : ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).right.chainComplex R) ⊗
-      ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).left.chainComplex S) ⟶
-      (TopPair.ofSubset A).singularChainComplex R ⊗
-        ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).left.chainComplex S) :=
-    (TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
-      𝟙 ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).left.chainComplex S)
-  have : Epi (pA.f i) := by
-    have hE := shortExact_tensorRightShortComplex
-      ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).left.chainComplex S)
-      ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).chainComplexShortComplex R)
-      ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).shortExact_chainComplexShortComplex R)
-    exact ((shortExact_iff_degreewise_shortExact _).1 hE i).epi_g
-  apply (cancel_epi (pA.f i)).1
-  rw [comp_zero, HomologicalComplex.id_f, Category.comp_id]
-  have hcomm : pA ≫ S₂.f =
+/-- On `C(X, A; R) ⊗ C(B; S)`, the intermediate homotopy vanishes in every bidegree. -/
+private lemma rightFactor_comp_leftRelativeShuffleAlexanderWhitneyHomotopy_hom
+    (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C) (i j : ℕ) :
+    (tensorLeftShortComplex ((TopPair.ofSubset A).singularChainComplex R)
+        ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).chainComplexShortComplex S)).f.f i ≫
+      (leftRelativeShuffleAlexanderWhitneyHomotopy X Y A B R S).hom i j ≫
+      HomologicalComplex.Hom.f (𝟙 ((TopPair.ofSubset A).singularChainComplex R ⊗
+        (TopPair.ofSubset B).singularChainComplex S)) j = 0 := by
+  let pA := (TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
+    𝟙 ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).left.chainComplex S)
+  have : Epi (pA.f i) :=
+    ((shortExact_iff_degreewise_shortExact _).1 (shortExact_leftFactor X (of ↥B) A R S) i).epi_g
+  rw [← cancel_epi (pA.f i), comp_zero, HomologicalComplex.id_f, Category.comp_id]
+  have hcomm : pA ≫ (tensorLeftShortComplex ((TopPair.ofSubset A).singularChainComplex R)
+        ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).chainComplexShortComplex S)).f =
       (𝟙 ((toSSet.obj X).chainComplex R) ⊗ₘ
         SSet.chainComplexMap (toSSet.map (TopPair.ofSubset B).map) S) ≫
-        ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ 𝟙 ((toSSet.obj Y).chainComplex S)) := by
-    refine (chainComplex_tensorHom_comp _ _ _ _).symm.trans ?_
-    rw [Category.comp_id, Category.id_comp]
-    exact (congrArg₂ (· ⊗ₘ ·) (Category.id_comp _).symm (Category.comp_id _).symm).trans
-      (chainComplex_tensorHom_comp _ _ _ _)
-  have hπH₁ := π_leftRelativeShuffleAlexanderWhitneyHomotopy_hom X Y A B R S i j
+        ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ 𝟙 ((toSSet.obj Y).chainComplex S)) :=
+    (tensorHom_comp_tensorHom ((TopPair.ofSubset A).singularChainComplexπ R)
+      (𝟙 ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).left.chainComplex S))
+      (𝟙 ((TopPair.ofSubset A).singularChainComplex R))
+      (SSet.chainComplexMap (TopPair.toSSetPair.obj (TopPair.ofSubset B)).hom S)).trans <|
+      (congrArg₂ (· ⊗ₘ ·) (Category.comp_id _) (Category.id_comp _)).trans <|
+      (congrArg₂ (· ⊗ₘ ·) (Category.id_comp _).symm (Category.comp_id _).symm).trans
+        (tensorHom_comp_tensorHom _ _ _ _).symm
   have hid : 𝟙 ((toSSet.obj X).chainComplex R) = SSet.chainComplexMap (𝟙 (toSSet.obj X)) R :=
     (((SSet.chainComplexFunctor C).obj R).map_id _).symm
   have hnat := SSet.shuffleAlexanderWhitneyHomotopy_hom_naturality_assoc
@@ -583,7 +386,7 @@ def relativeShuffleAlexanderWhitneyHomotopy
       SSet.chainComplexMap (toSSet.map (TopPair.ofSubset B).map) S) ≫
       ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
         (TopPair.ofSubset B).singularChainComplexπ S) = 0 :=
-    (chainComplex_tensorHom_comp _ _ _ _).symm.trans <|
+    (tensorHom_comp_tensorHom _ _ _ _).trans <|
       (congrArg (_ ⊗ₘ ·)
         ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).chainComplex_condition S)).trans
         (tensorHom_zero _)
@@ -591,15 +394,33 @@ def relativeShuffleAlexanderWhitneyHomotopy
     (eq_whisker ((HomologicalComplex.comp_f _ _ i).symm.trans
       ((HomologicalComplex.congr_hom hcomm i).trans (HomologicalComplex.comp_f _ _ i))) _).trans <|
     (Category.assoc _ _ _).trans <|
-    (whisker_eq _ hπH₁).trans <|
+    (whisker_eq _ (π_leftRelativeShuffleAlexanderWhitneyHomotopy_hom X Y A B R S i j)).trans <|
     (eq_whisker (congrArg (fun g ↦
       (g ⊗ₘ SSet.chainComplexMap (toSSet.map (TopPair.ofSubset B).map) S).f i) hid) _).trans
-      (hnat.trans ?_)
-  refine (whisker_eq _ (eq_whisker (congrArg (fun g ↦
-    (g ⊗ₘ SSet.chainComplexMap (toSSet.map (TopPair.ofSubset B).map) S).f j) hid.symm) _)).trans ?_
+      (hnat.trans ((whisker_eq _ (eq_whisker (congrArg (fun g ↦
+        (g ⊗ₘ SSet.chainComplexMap (toSSet.map (TopPair.ofSubset B).map) S).f j) hid.symm) _)).trans
+        ?_))
   exact (whisker_eq _ ((HomologicalComplex.comp_f _ _ j).symm.trans
     ((HomologicalComplex.congr_hom hzero j).trans (HomologicalComplex.zero_f _ _ j)))).trans
     comp_zero
+
+/-- **The relative Eilenberg–Zilber chain homotopy** `AW ∘ shuffle ≃ id`: for subsets `A ⊆ X` and
+`B ⊆ Y`, `TopCat.relativeShuffle` followed by `TopCat.relativeAlexanderWhitney` is chain homotopic
+to the identity of `C(X, A; R) ⊗ C(Y, B; S)`. -/
+def relativeShuffleAlexanderWhitneyHomotopy
+    (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C) :
+    _root_.Homotopy
+      (relativeShuffle X Y A B R S ≫ relativeAlexanderWhitney X Y A B R S) (𝟙 _) :=
+  let S₂ := tensorLeftShortComplex ((TopPair.ofSubset A).singularChainComplex R)
+    ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).chainComplexShortComplex S)
+  _root_.Homotopy.descCokernel
+    (leftRelativeShuffleAlexanderWhitneyHomotopy X Y A B R S) S₂.f S₂.g (𝟙 _)
+    (fun i ↦ (HomologicalComplex.comp_f S₂.f S₂.g i).symm.trans
+      ((HomologicalComplex.congr_hom S₂.zero i).trans (HomologicalComplex.zero_f _ _ i)))
+    (fun i ↦ ((shortExact_iff_degreewise_shortExact S₂).1
+      (shortExact_rightFactor X Y A B R S) i).gIsCokernel)
+    (rightFactor_comp_leftRelativeShuffleAlexanderWhitneyHomotopy_hom X Y A B R S)
+    (Category.comp_id _).symm rfl
 
 /-- On homology, the relative shuffle map followed by the relative Alexander–Whitney map is the
 identity of `Hₙ(C(X, A; R) ⊗ C(Y, B; S))`. -/
@@ -624,9 +445,8 @@ variable {C : Type u} [Category.{v} C] [Abelian C]
 
 /-- **The relative homology cross product**
 `Hₚ(X, A; R) ⊗ H_q(Y, B; S) ⟶ Hₙ(X × Y, A × Y ∪ X × B; R ⊗ S)` for arbitrary subsets `A ⊆ X` and
-`B ⊆ Y`, and `p + q = n`: the algebraic homology cross product of the relative singular chain
-complexes, followed by the map induced on homology by `TopCat.relativeShuffle` and the inclusion
-`TopCat.smallSingularSubcomplexPairToUnion` of small simplices into `fst⁻¹(A) ∪ snd⁻¹(B)`. -/
+`B ⊆ Y` (`p + q = n`): `HomologicalComplex.homologyCross` followed by `TopCat.relativeShuffle` and
+`TopCat.smallSingularSubcomplexPairToUnion`. -/
 def singularRelativeHomologyCross (X Y : TopCat.{w}) (R S : C) (A : Set X) (B : Set Y)
     (p q n : ℕ) (h : p + q = n)
     [PreservesColimitsOfShape WalkingParallelPair
@@ -662,6 +482,34 @@ lemma singularRelativeHomologyCross_def (X Y : TopCat.{w}) (R S : C) (A : Set X)
             (R ⊗ S) n :=
   (rfl)
 
+/-- The relative cross product of the classes of two relative singular cycles is the class of their
+relative shuffle product in `(X × Y, A × Y ∪ X × B)`. -/
+@[simp, reassoc]
+lemma homologyπ_tensorHom_singularRelativeHomologyCross
+    (X Y : TopCat.{w}) (R S : C) (A : Set X) (B : Set Y) (p q n : ℕ) (h : p + q = n)
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorLeft (((TopPair.ofSubset A).singularChainComplex R).homology p))]
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorRight (((TopPair.ofSubset B).singularChainComplex S).cycles q))]
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorRight (((TopPair.ofSubset B).singularChainComplex S).X
+        ((ComplexShape.down ℕ).prev q)))] :
+    (((TopPair.ofSubset A).singularChainComplex R).homologyπ p ⊗ₘ
+        ((TopPair.ofSubset B).singularChainComplex S).homologyπ q) ≫
+        singularRelativeHomologyCross X Y R S A B p q n h =
+      cyclesCross ((TopPair.ofSubset A).singularChainComplex R)
+          ((TopPair.ofSubset B).singularChainComplex S) p q n h ≫
+        cyclesMap (relativeShuffle X Y A B R S) n ≫
+          cyclesMap (SSetPair.chainComplexMap
+            (smallSingularSubcomplexPairToUnion (fst X Y ⁻¹' A) (snd X Y ⁻¹' B)) (R ⊗ S)) n ≫
+            ((TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplex
+              (R ⊗ S)).homologyπ n :=
+  (homologyπ_tensorHom_homologyCross_assoc _ _ p q n h _).trans <|
+    (cyclesCross _ _ p q n h ≫= homologyπ_naturality_assoc (relativeShuffle X Y A B R S) n _).trans
+      (cyclesCross _ _ p q n h ≫= cyclesMap (relativeShuffle X Y A B R S) n ≫=
+        homologyπ_naturality (SSetPair.chainComplexMap
+          (smallSingularSubcomplexPairToUnion (fst X Y ⁻¹' A) (snd X Y ⁻¹' B)) (R ⊗ S)) n)
+
 /-- **Compatibility with the absolute homology cross product**: the quotient maps from absolute to
 relative singular homology intertwine `TopCat.singularHomologyCross` and
 `TopCat.singularRelativeHomologyCross`. -/
@@ -685,22 +533,18 @@ lemma singularHomologyπ_tensorHom_singularRelativeHomologyCross
         singularRelativeHomologyCross X Y R S A B p q n h =
       singularHomologyCross X Y R S p q n h ≫
         (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularHomologyπ (R ⊗ S) n := by
-  let πA : (toSSet.obj X).chainComplex R ⟶ (TopPair.ofSubset A).singularChainComplex R :=
-    (TopPair.ofSubset A).singularChainComplexπ R
-  let πB : (toSSet.obj Y).chainComplex S ⟶ (TopPair.ofSubset B).singularChainComplex S :=
-    (TopPair.ofSubset B).singularChainComplexπ S
-  let πU : (toSSet.obj (X ⊗ Y)).chainComplex (R ⊗ S) ⟶
-      (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplex (R ⊗ S) :=
+  let πA : (toSSet.obj X).chainComplex R ⟶ _ := (TopPair.ofSubset A).singularChainComplexπ R
+  let πB : (toSSet.obj Y).chainComplex S ⟶ _ := (TopPair.ofSubset B).singularChainComplexπ S
+  let πU : (toSSet.obj (X ⊗ Y)).chainComplex (R ⊗ S) ⟶ _ :=
     (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplexπ (R ⊗ S)
   let φ := relativeShuffle X Y A B R S
   let ψ := SSetPair.chainComplexMap
     (smallSingularSubcomplexPairToUnion (fst X Y ⁻¹' A) (snd X Y ⁻¹' B)) (R ⊗ S)
   have hsh : HomologicalComplex.tensorHom πA πB ≫ (φ ≫ ψ) = shuffle X Y R S ≫ πU :=
     (singularChainComplexπ_tensorHom_relativeShuffle_assoc X Y A B R S _).trans <|
-      (Category.assoc _ _ _).trans <|
-      whisker_eq _ (chainComplexπ_smallSingularSubcomplexPairToUnion (R := R ⊗ S)
+      (Category.assoc _ _ _).trans <| whisker_eq _
+      (chainComplexπ_smallSingularSubcomplexPairToUnion (R := R ⊗ S)
         (U := fst X Y ⁻¹' A) (V := snd X Y ⁻¹' B))
-  -- `singularHomologyπ` and `SSetPair.homologyMap` are by definition `homologyMap` on chains.
   exact (whisker_eq _ (whisker_eq _ (homologyMap_comp φ ψ n).symm)).trans <|
     (homologyCross_naturality_assoc πA πB p q n h (homologyMap (φ ≫ ψ) n)).trans <|
     (whisker_eq _ ((homologyMap_comp (HomologicalComplex.tensorHom πA πB) (φ ≫ ψ) n).symm.trans
@@ -708,8 +552,7 @@ lemma singularHomologyπ_tensorHom_singularRelativeHomologyCross
       (Category.assoc _ _ _).symm.trans
         (eq_whisker (singularHomologyCross_def X Y R S p q n h).symm _)
 
-/-- **Naturality of the relative homology cross product** in continuous maps `f : X ⟶ X'` carrying
-`A` into `A'` and `g : Y ⟶ Y'` carrying `B` into `B'`. -/
+/-- **Naturality of `singularRelativeHomologyCross`** in pair maps `(f, g)`. -/
 @[reassoc]
 lemma singularRelativeHomologyCross_naturality
     {X Y X' Y' : TopCat.{w}} {A : Set X} {B : Set Y} {A' : Set X'} {B' : Set Y'}
@@ -766,7 +609,7 @@ lemma singularRelativeHomologyCross_naturality
         ((homologyMap_comp (φ ≫ ψ) e n).trans (eq_whisker (homologyMap_comp φ ψ n) _))))).trans
       (Category.assoc _ _ _).symm
 
-/-- **Naturality of the relative homology cross product** in both coefficient objects. -/
+/-- **Naturality of `singularRelativeHomologyCross`** in both coefficient objects. -/
 @[reassoc]
 lemma singularRelativeHomologyCross_coefficient_naturality
     (X Y : TopCat.{w}) (A : Set X) (B : Set Y) {R S R' S' : C} (φ : R ⟶ R') (ψ : S ⟶ S')
@@ -793,14 +636,11 @@ lemma singularRelativeHomologyCross_coefficient_naturality
       singularRelativeHomologyCross X Y R S A B p q n h ≫
         homologyMap (((SSetPair.chainComplexFunctor C).map (φ ⊗ₘ ψ)).app
           (TopPair.toSSetPair.obj (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)))) n := by
-  let fA : (TopPair.ofSubset A).singularChainComplex R ⟶
-      (TopPair.ofSubset A).singularChainComplex R' :=
+  let fA : (TopPair.ofSubset A).singularChainComplex R ⟶ _ :=
     ((SSetPair.chainComplexFunctor C).map φ).app (TopPair.toSSetPair.obj (TopPair.ofSubset A))
-  let fB : (TopPair.ofSubset B).singularChainComplex S ⟶
-      (TopPair.ofSubset B).singularChainComplex S' :=
+  let fB : (TopPair.ofSubset B).singularChainComplex S ⟶ _ :=
     ((SSetPair.chainComplexFunctor C).map ψ).app (TopPair.toSSetPair.obj (TopPair.ofSubset B))
-  let e : (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplex (R ⊗ S) ⟶
-      (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplex (R' ⊗ S') :=
+  let e : (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplex (R ⊗ S) ⟶ _ :=
     ((SSetPair.chainComplexFunctor C).map (φ ⊗ₘ ψ)).app
       (TopPair.toSSetPair.obj (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)))
   let s := relativeShuffle X Y A B R S

@@ -58,9 +58,11 @@ relative chains (`TauCeti/AlgebraicTopology/Singular/AlexanderWhitney/RelativeCu
   `TopPair.singularCup_gradedComm`.
 * `TopCat.singularRelativeCup`, characterized by
   `TopCat.homologyMap_cochainComplexMap_singularRelativeCup`, with
-  `TopCat.singularCohomologyπ_singularRelativeCup` and `TopCat.singularRelativeCup_naturality`.
-* `TauCeti.singularRelativeCross`, with `TauCeti.singularRelativeCross_apply`,
-  `TauCeti.singularCohomologyπ_singularRelativeCross` and
+  `TopCat.singularCohomologyπ_singularRelativeCup`, `TopCat.singularRelativeCup_naturality`, and
+  chain-coefficient change `TauCeti.singularRelativeCup_eq_homologyMap_singularRelativeCup`.
+* `TauCeti.singularRelativeCross`, characterized on small chains by
+  `TauCeti.homologyMap_cochainComplexMap_singularRelativeCross`, with
+  `TauCeti.singularRelativeCross_apply`, `TauCeti.singularCohomologyπ_singularRelativeCross` and
   `TauCeti.singularRelativeCross_naturality`.
 * `TopCat.singularRelativeCupPullback`, the relative cup product of classes pulled back along two
   maps `f₁ : X ⟶ Y₁` and `f₂ : X ⟶ Y₂`, restricted to a subset of the union of the preimages, with
@@ -688,5 +690,82 @@ lemma singularRelativeCross_naturality {X Y X' Y' : TopCat.{w}} {A : Set X} {B :
         (TopCat.mapsTo_tensorHom_preimage_snd f g hg))]
   exact DFunLike.congr_fun (DFunLike.congr_fun (TopCat.singularRelativeCupPullback_congr k _ μ
     (tensorHom_fst f g).symm (tensorHom_snd f g).symm hA' hB' _ _ p q n h) a) b
+
+open AlgebraicTopology in
+/-- **The relative cup product changes chain coefficients along its coefficient morphism**: for
+`u : T ⟶ R ⊗ S`, the relative cup product along `u` is the relative cup product along `𝟙 (R ⊗ S)`
+followed by the cohomology map precomposing relative cochains with the chain map induced by `u`. -/
+lemma singularRelativeCup_eq_homologyMap_singularRelativeCup {W : TopCat.{w}} (u : T ⟶ R ⊗ S)
+    (μ : M ⊗ N ⟶ L) (U V : Set W) (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V)))
+    (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) (p q n : ℕ) (h : p + q = n)
+    (a : (TopPair.ofSubset U).singularCohomology R k M p)
+    (b : (TopPair.ofSubset V).singularCohomology S k N q) :
+    TopCat.singularRelativeCup k u μ U V hU hV p q n h a b =
+      homologyMap
+        (K := (TopPair.ofSubset (U ∪ V)).singularCochainComplex (R ⊗ S) k L)
+        (L := (TopPair.ofSubset (U ∪ V)).singularCochainComplex T k L)
+        ((ChainComplex.linearYonedaFunctor k L).map
+          (((SSetPair.chainComplexFunctor C).map u).app
+            (TopPair.toSSetPair.obj (TopPair.ofSubset (U ∪ V)))).op) n
+        (TopCat.singularRelativeCup k (𝟙 (R ⊗ S)) μ U V hU hV p q n h a b) := by
+  have :=
+    TopCat.isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion T k L U V hU hV n
+  apply (ModuleCat.mono_iff_injective (homologyMap (SSetPair.cochainComplexMap (R := T) (k := k)
+    (M := L) (TopCat.smallSingularSubcomplexPairToUnion U V)) n)).1 inferInstance
+  let e₁ := ((SSetPair.chainComplexFunctor C).map u).app (W.smallSingularSubcomplex ![U, V]).pair
+  let e₂ := ((SSetPair.chainComplexFunctor C).map u).app
+    (TopPair.toSSetPair.obj (TopPair.ofSubset (U ∪ V)))
+  let sT := SSetPair.chainComplexMap (TopCat.smallSingularSubcomplexPairToUnion U V) T
+  let sRS := SSetPair.chainComplexMap (TopCat.smallSingularSubcomplexPairToUnion U V) (R ⊗ S)
+  have hsq : sT ≫ e₂ = e₁ ≫ sRS :=
+    ((SSetPair.chainComplexFunctor C).map u).naturality
+      (TopCat.smallSingularSubcomplexPairToUnion U V)
+  let c := TopCat.singularRelativeCup k (𝟙 (R ⊗ S)) μ U V hU hV p q n h a b
+  rw [TopCat.homologyMap_cochainComplexMap_singularRelativeCup]
+  refine (Eq.trans ?_ (ChainComplex.homologyMap_linearYonedaFunctor_map_comp_apply
+    e₁ sRS n c).symm).trans ?_
+  · have hdiag : TopCat.relativeAlexanderWhitneyDiagonal U V u =
+        e₁ ≫ TopCat.relativeAlexanderWhitneyDiagonal U V (𝟙 (R ⊗ S)) := by
+      simpa [e₁] using relativeAlexanderWhitneyDiagonal_comp U V u (𝟙 (R ⊗ S))
+    rw [TopCat.homologyMap_cochainComplexMap_singularRelativeCup, hdiag]
+    exact ChainComplex.cup_precomp
+      (TopCat.relativeAlexanderWhitneyDiagonal U V (𝟙 (R ⊗ S))) μ e₁ p q n h a b
+  · rw [← hsq]
+    exact ChainComplex.homologyMap_linearYonedaFunctor_map_comp_apply sT e₂ n c
+
+open AlgebraicTopology in
+/-- **Characterization of the relative cohomology cross product on small chains**: under the
+small-chain isomorphism for `fst⁻¹(A)` and `snd⁻¹(B)`, `TauCeti.singularRelativeCross` is the
+cohomological cup product along `TopCat.relativeAlexanderWhitney`. -/
+@[simp]
+lemma homologyMap_cochainComplexMap_singularRelativeCross
+    (X Y : TopCat.{w}) {A : Set X} {B : Set Y} (hA : IsOpen A) (hB : IsOpen B)
+    (μ : M ⊗ N ⟶ L) (p q n : ℕ) (h : p + q = n)
+    (a : (TopPair.ofSubset A).singularCohomology R k M p)
+    (b : (TopPair.ofSubset B).singularCohomology S k N q) :
+    homologyMap (SSetPair.cochainComplexMap (R := R ⊗ S) (k := k) (M := L)
+        (TopCat.smallSingularSubcomplexPairToUnion (fst X Y ⁻¹' A) (snd X Y ⁻¹' B))) n
+        (singularRelativeCross k X Y hA hB μ p q n h a b) =
+      ChainComplex.cup k (TopCat.relativeAlexanderWhitney X Y A B R S) μ p q n h a b := by
+  rw [singularRelativeCross_apply, TopCat.homologyMap_cochainComplexMap_singularRelativeCup]
+  have hcup := ChainComplex.cup_naturality (k := k)
+    (TopCat.relativeAlexanderWhitney X Y A B R S) μ
+    (TopCat.relativeAlexanderWhitneyDiagonal (fst X Y ⁻¹' A) (snd X Y ⁻¹' B) (𝟙 (R ⊗ S)))
+    (𝟙 _)
+    (TopPair.singularChainComplexMap
+      (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _)) R)
+    (TopPair.singularChainComplexMap
+      (TopPair.ofSubsetMap (snd X Y) (Set.mapsTo_preimage _ _)) S)
+    ((Category.id_comp _).trans (TopCat.relativeAlexanderWhitney_def X Y A B R S))
+    p q n h a b
+  have hid : (ChainComplex.linearYonedaFunctor k L).map
+      (𝟙 (((X ⊗ Y).smallSingularSubcomplex
+        ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplex (R ⊗ S))).op =
+      𝟙 ((((X ⊗ Y).smallSingularSubcomplex
+        ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplex (R ⊗ S)).linearYonedaObj k L) := by
+    rw [op_id]
+    exact (ChainComplex.linearYonedaFunctor k L).map_id _
+  rw [hid, homologyMap_id, ModuleCat.id_apply] at hcup
+  exact hcup
 
 end TauCeti

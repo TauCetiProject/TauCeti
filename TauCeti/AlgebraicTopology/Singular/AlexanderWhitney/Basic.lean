@@ -38,8 +38,10 @@ of singular cochains and cap products of singular chains with singular cochains 
 * `TopCat.alexanderWhitney_coefficient_naturality`: it is natural in both coefficient objects.
 * `TopCat.alexanderWhitney_coassoc`: it is coassociative.
 * `TopCat.alexanderWhitneyDiagonal`: the Alexander–Whitney diagonal of a space, with
-  `TopCat.ιChainComplex_alexanderWhitneyDiagonal_f` its value on a singular simplex and
-  `TopCat.alexanderWhitneyDiagonal_naturality` its naturality.
+  `TopCat.ιChainComplex_alexanderWhitneyDiagonal_f` its value on a singular simplex,
+  `TopCat.alexanderWhitneyDiagonal_naturality` its naturality, and
+  `TopCat.alexanderWhitney_eq_alexanderWhitneyDiagonal_comp` factoring `TopCat.alexanderWhitney`
+  through it.
 * `TopCat.ιChainComplex_alexanderWhitneyDiagonal_f_tensorCochain`: the tensor product of two
   cochains, precomposed with the Alexander–Whitney diagonal, on a singular simplex.
 
@@ -244,6 +246,22 @@ lemma alexanderWhitneyDiagonal_naturality {X Y : TopCat.{w}} (f : X ⟶ Y)
     ← CategoryTheory.Functor.map_comp_assoc,
     ← CategoryTheory.Functor.map_comp, hdiag, CategoryTheory.Functor.map_comp,
     CategoryTheory.Functor.map_comp_assoc, alexanderWhitney_naturality]
+
+/-- The Alexander–Whitney map of a product factors through the Alexander–Whitney diagonal of
+`X × Y` followed by the two projections. -/
+@[reassoc]
+lemma alexanderWhitney_eq_alexanderWhitneyDiagonal_comp (X Y : TopCat.{w}) (R S : C) :
+    alexanderWhitney X Y R S =
+      (X ⊗ Y).alexanderWhitneyDiagonal (𝟙 (R ⊗ S)) ≫
+        (SSet.chainComplexMap (toSSet.map (fst X Y)) R ⊗ₘ
+          SSet.chainComplexMap (toSSet.map (snd X Y)) S) := by
+  have hdiag : lift (𝟙 (X ⊗ Y)) (𝟙 (X ⊗ Y)) ≫ (fst X Y ⊗ₘ snd X Y) = 𝟙 (X ⊗ Y) := by
+    ext <;> simp
+  rw [alexanderWhitneyDiagonal, (SSet.chainComplexFunctor C).map_id]
+  simp only [NatTrans.id_app, Category.id_comp, Category.assoc]
+  rw [← alexanderWhitney_naturality (fst X Y) (snd X Y) R S, ← Category.assoc,
+    ← ((SSet.chainComplexFunctor C).obj (R ⊗ S)).map_comp, ← toSSet.map_comp, hdiag,
+    toSSet.map_id, ((SSet.chainComplexFunctor C).obj (R ⊗ S)).map_id, Category.id_comp]
 
 end AlexanderWhitneyDiagonal
 

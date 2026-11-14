@@ -128,31 +128,12 @@ lemma singularCross_eq_singularCup (X Y : TopCat.{w}) (μ : M ⊗ N ⟶ P)
       (X ⊗ Y).singularCup k (𝟙 (R ⊗ S)) μ p q n h
         (TopCat.singularCohomologyMap (fst X Y) p a)
         (TopCat.singularCohomologyMap (snd X Y) q b) := by
-  have hdiag : lift (𝟙 (X ⊗ Y)) (𝟙 (X ⊗ Y)) ≫ (fst X Y ⊗ₘ snd X Y) = 𝟙 (X ⊗ Y) := by
-    ext <;> simp
-  have hD := TopCat.alexanderWhitney_naturality (fst X Y) (snd X Y) R S
-  have hD' : TopCat.alexanderWhitney X Y R S =
-      (X ⊗ Y).alexanderWhitneyDiagonal (𝟙 (R ⊗ S)) ≫
-        HomologicalComplex.tensorHom
-          (SSet.chainComplexMap (TopCat.toSSet.map (fst X Y)) R)
-          (SSet.chainComplexMap (TopCat.toSSet.map (snd X Y)) S) := by
-    rw [alexanderWhitneyDiagonal_def, (SSet.chainComplexFunctor C).map_id]
-    simp only [NatTrans.id_app, Category.id_comp, Category.assoc]
-    -- The singular-chain tensor notation is Mathlib's totalized tensor morphism.
-    have hD'' : SSet.chainComplexMap (TopCat.toSSet.map (fst X Y ⊗ₘ snd X Y)) (R ⊗ S) ≫
-        TopCat.alexanderWhitney X Y R S =
-      TopCat.alexanderWhitney (X ⊗ Y) (X ⊗ Y) R S ≫
-        HomologicalComplex.tensorHom
-          (SSet.chainComplexMap (TopCat.toSSet.map (fst X Y)) R)
-          (SSet.chainComplexMap (TopCat.toSSet.map (snd X Y)) S) := hD
-    rw [← hD'']
-    rw [← Category.assoc, ← ((SSet.chainComplexFunctor C).obj (R ⊗ S)).map_comp,
-      ← TopCat.toSSet.map_comp, hdiag, TopCat.toSSet.map_id,
-      ((SSet.chainComplexFunctor C).obj (R ⊗ S)).map_id, Category.id_comp]
   simpa [singularCross_def, singularCup_def] using
     (ChainComplex.cup_naturality (TopCat.alexanderWhitney X Y R S) μ
       ((X ⊗ Y).alexanderWhitneyDiagonal (𝟙 (R ⊗ S))) (𝟙 _) _ _
-      (by simpa using hD') p q n h a b).symm
+      ((Category.id_comp _).trans
+        (TopCat.alexanderWhitney_eq_alexanderWhitneyDiagonal_comp X Y R S))
+      p q n h a b).symm
 
 /-- The cup product, along a coefficient morphism `u : T ⟶ R ⊗ S`, of the pullbacks of `a` and `b`
 along the two projections is the external product `a × b` followed by the coefficient change

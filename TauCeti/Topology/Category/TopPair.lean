@@ -49,7 +49,8 @@ For subsets `A ⊆ X` and `B ⊆ Y`, the preimages `A × Y` and `X × B` of `A` 
 projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product of pairs. Each is open
 in the union when `A`, respectively `B`, is open
 (`TopCat.isOpen_subtypeVal_preimage_preimage_fst_union`), and a product of maps of pairs carries
-them into each other (`TopCat.mapsTo_tensorHom_preimage_fst`).
+them into each other (`TopCat.mapsTo_tensorHom_preimage_fst`). For spaces with a zero, the union of
+the preimages of `{0}ᶜ` is `{0}ᶜ` (`TauCeti.compl_zero_prod_eq`).
 
 For a map `π : X → Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, the pair `(π⁻¹ S, π⁻¹ S ∩ Z)` over
 `S` includes into `(X, Z)` (`TopCat.restrictPreimagePairMap`), isomorphically when `S` contains
@@ -683,3 +684,39 @@ lemma restrictPreimagePairRestrictPreimageIso_inv_fst (hSW : S ⊆ W) :
 end RestrictPreimage
 
 end TopCat
+
+namespace TauCeti
+
+/-- If a point of a product of two spaces with zero is nonzero, then one of its components is
+nonzero. -/
+theorem compl_zero_prod_subset (V₁ V₂ : Type u) [TopologicalSpace V₁] [TopologicalSpace V₂]
+    [Zero V₁] [Zero V₂] :
+    ({0}ᶜ : Set (TopCat.of (V₁ × V₂))) ⊆
+      (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {0}ᶜ ∪
+        (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {0}ᶜ := by
+  intro v hv
+  by_contra hc
+  simp only [Set.mem_union, Set.mem_preimage, Set.mem_compl_singleton_iff, not_or, not_not] at hc
+  exact hv (Prod.ext hc.1 hc.2)
+
+/-- If a point of a product of two spaces with zero has a nonzero component, then it is
+nonzero. -/
+theorem subset_compl_zero_prod (V₁ V₂ : Type u) [TopologicalSpace V₁] [TopologicalSpace V₂]
+    [Zero V₁] [Zero V₂] :
+    (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {0}ᶜ ∪
+      (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {0}ᶜ ⊆
+        ({0}ᶜ : Set (TopCat.of (V₁ × V₂))) := by
+  rintro v (hv | hv) h0
+  · exact Set.mem_compl_singleton_iff.1 hv (congrArg Prod.fst h0)
+  · exact Set.mem_compl_singleton_iff.1 hv (congrArg Prod.snd h0)
+
+/-- A point of a product of two spaces with zero is nonzero if and only if one of its components
+is nonzero. -/
+theorem compl_zero_prod_eq (V₁ V₂ : Type u) [TopologicalSpace V₁] [TopologicalSpace V₂]
+    [Zero V₁] [Zero V₂] :
+    ({0}ᶜ : Set (TopCat.of (V₁ × V₂))) =
+      (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {0}ᶜ ∪
+        (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {0}ᶜ :=
+  Set.Subset.antisymm (compl_zero_prod_subset V₁ V₂) (subset_compl_zero_prod V₁ V₂)
+
+end TauCeti
