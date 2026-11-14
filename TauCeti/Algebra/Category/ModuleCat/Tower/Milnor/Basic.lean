@@ -7,12 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
-public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.HomologySequence
-public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Category.ModuleCat.AB
-public import TauCeti.Algebra.Category.ModuleCat.Tower.Exact
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Subsequence.LimOne
 public import TauCeti.Algebra.Homology.ShortComplex.Limit
 
