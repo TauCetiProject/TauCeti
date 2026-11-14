@@ -30,17 +30,20 @@ the integrability needed on the unchanged tail.
 * `MeasureTheory.Measure.map_coe_projIcc` and `MeasureTheory.Measure.map_coe_projIcc_self`
   decompose the censored law on nondegenerate and degenerate closed intervals;
 * `MeasureTheory.Measure.map_coe_projIcc_singleton_left`,
-  `MeasureTheory.Measure.map_coe_projIcc_singleton_right`, and
+  `MeasureTheory.Measure.map_coe_projIcc_singleton_right`,
+  `MeasureTheory.Measure.map_coe_projIcc_singleton_ne_zero_iff`, and
   `MeasureTheory.Measure.nullSingletonClass_map_coe_projIcc_iff` evaluate singleton masses and
-  characterize when the censored law has null singletons;
-* `MeasureTheory.Measure.cdf_map_coe_projIcc` computes its cumulative distribution function;
+  characterize pointwise atoms and when the censored law has null singletons;
+* `MeasureTheory.Measure.cdf_map_coe_projIcc` and
+  `MeasureTheory.Measure.continuousAt_cdf_map_coe_projIcc_iff` compute its cumulative distribution
+  function and characterize its continuity points;
 * `MeasureTheory.Measure.quantile_map_coe_projIcc` says that censoring commutes with interior
   quantiles;
 * `MeasureTheory.Measure.integral_pow_map_coe_projIcc` decomposes every natural moment;
 * `MeasureTheory.Measure.integrableExpSet_id_map_coe_projIcc` shows that the exponential-
   integrability domain is all of `ℝ`;
 * `MeasureTheory.Measure.map_coe_projIci` and
-  `MeasureTheory.Measure.map_coe_projIic`, together with their singleton and
+  `MeasureTheory.Measure.map_coe_projIic`, together with their singleton, cdf-continuity, and
   `NullSingletonClass` characterizations, describe the two one-sided censored laws;
 * `MeasureTheory.Measure.integral_id_map_coe_projIci` and
   `MeasureTheory.Measure.integral_id_map_coe_projIic`, with their second-moment counterparts,
@@ -65,7 +68,7 @@ Dirac atom at `l`. -/
 @[simp] theorem map_coe_projIcc_self (l : ℝ) :
     μ.map clip[l, l; le_rfl] = μ univ • Measure.dirac l := by
   have hconst : clip[l, l; le_rfl] = fun _ ↦ l :=
-    funext fun x ↦ max_eq_left (min_le_left l x)
+    funext fun x ↦ (Set.coe_projIcc l l le_rfl x).trans (max_eq_left (min_le_left l x))
   rw [hconst, Measure.map_const]
 
 /-- Projecting a measure onto `[l, r]` moves the lower and upper tails to atoms at the endpoints
@@ -165,6 +168,45 @@ is `μ.real (Ici r)`. -/
     (μ.map clip[l, r; hlr.le]).real {r} = μ.real (Ici r) := by
   simp [Measure.real, map_coe_projIcc_singleton_right μ hlr]
 
+/-- A singleton `{x}` has nonzero mass under the law of `μ` projected onto `[l, r]` if and only
+if `x = l` with `μ (Iic l) ≠ 0`, or `x ∈ Ioo l r` with `μ {x} ≠ 0`, or `x = r` with
+`μ (Ici r) ≠ 0`. This holds for every `l ≤ r`, including `l = r` where `(l, r)` is empty and
+`Iic l ∪ Ici l = univ`. -/
+theorem map_coe_projIcc_singleton_ne_zero_iff {l r : ℝ} (hlr : l ≤ r) (x : ℝ) :
+    μ.map clip[l, r; hlr] {x} ≠ 0 ↔
+      x = l ∧ μ (Iic l) ≠ 0 ∨ x ∈ Ioo l r ∧ μ {x} ≠ 0 ∨ x = r ∧ μ (Ici r) ≠ 0 := by
+  rcases hlr.eq_or_lt with rfl | hlt
+  · rw [map_coe_projIcc_self, Ioo_self]
+    by_cases hx : x = l
+    · subst hx
+      simp only [mem_empty_iff_false, false_and, false_or, true_and, _root_.smul_apply,
+        Measure.dirac_apply_of_mem (mem_singleton x), smul_eq_mul, mul_one, ne_eq, ← not_and_or]
+      refine not_congr ⟨fun h ↦ ⟨measure_mono_null (subset_univ _) h,
+        measure_mono_null (subset_univ _) h⟩, fun ⟨h1, h2⟩ ↦ ?_⟩
+      rw [← Iic_union_Ici (a := x)]
+      exact measure_union_null h1 h2
+    · simp [Measure.dirac_apply' _ (measurableSet_singleton x), hx]
+  · by_cases hxl : x = l
+    · subst hxl
+      simp [map_coe_projIcc_singleton_left μ hlt, hlt.ne]
+    · by_cases hxr : x = r
+      · subst hxr
+        simp [map_coe_projIcc_singleton_right μ hlt, hlt.ne']
+      · by_cases hxI : x ∈ Icc l r
+        · have hxIoo : x ∈ Ioo l r :=
+            ⟨lt_of_le_of_ne hxI.1 (Ne.symm hxl), lt_of_le_of_ne hxI.2 hxr⟩
+          simp [map_coe_projIcc_singleton_of_mem_Ioo μ hlt.le hxIoo, hxl, hxr, hxIoo.1, hxIoo.2]
+        · have hxIoo : x ∉ Ioo l r := fun h ↦ hxI (Ioo_subset_Icc_self h)
+          simp [map_coe_projIcc_singleton_of_notMem_Icc μ hlt.le hxI, hxl, hxr,
+            show ¬ (l < x ∧ x < r) from hxIoo]
+
+/-- For a measure with null singletons, `{x}` has nonzero mass after projecting onto `[l, r]` if
+and only if `x = l` with `μ (Iic l) ≠ 0` or `x = r` with `μ (Ici r) ≠ 0`. -/
+theorem map_coe_projIcc_singleton_ne_zero_iff_of_nullSingletonClass [NullSingletonClass μ]
+    {l r : ℝ} (hlr : l ≤ r) (x : ℝ) :
+    μ.map clip[l, r; hlr] {x} ≠ 0 ↔ x = l ∧ μ (Iic l) ≠ 0 ∨ x = r ∧ μ (Ici r) ≠ 0 := by
+  simp [map_coe_projIcc_singleton_ne_zero_iff μ hlr x]
+
 /-- Projecting `μ` onto `[l, r]` produces a measure with null singletons if and only if both
 outer tails `Iic l` and `Ici r` are `μ`-null and `μ` has null singletons on `(l, r)`. This
 includes the degenerate case `l = r`, where `(l, r)` is empty and `Iic l ∪ Ici l = univ`. -/
@@ -217,6 +259,24 @@ theorem nullSingletonClass_map_coe_projIcc_iff_of_nullSingletonClass [NullSingle
         grind
       rw [hpre, measure_univ]
       simp
+
+/-- The cdf of a probability law projected onto `[l, r]` is continuous at `x` if and only if
+the corresponding atom mass vanishes: `μ (Iic l) = 0` when `x = l`, `μ {x} = 0` when
+`x ∈ Ioo l r`, and `μ (Ici r) = 0` when `x = r`. -/
+theorem continuousAt_cdf_map_coe_projIcc_iff [IsProbabilityMeasure μ] {l r : ℝ} (hlr : l ≤ r)
+    (x : ℝ) :
+    ContinuousAt (cdf (μ.map clip[l, r; hlr])) x ↔
+      (x = l → μ (Iic l) = 0) ∧ (x ∈ Ioo l r → μ {x} = 0) ∧ (x = r → μ (Ici r) = 0) := by
+  rw [continuousAt_cdf_iff, ← not_ne_iff, map_coe_projIcc_singleton_ne_zero_iff μ hlr x]
+  simp only [not_or, not_and, not_ne_iff]
+
+/-- For an atomless probability law, the cdf after projecting onto `[l, r]` is continuous at `x`
+if and only if `μ (Iic l) = 0` when `x = l` and `μ (Ici r) = 0` when `x = r`. -/
+theorem continuousAt_cdf_map_coe_projIcc_iff_of_nullSingletonClass [IsProbabilityMeasure μ]
+    [NullSingletonClass μ] {l r : ℝ} (hlr : l ≤ r) (x : ℝ) :
+    ContinuousAt (cdf (μ.map clip[l, r; hlr])) x ↔
+      (x = l → μ (Iic l) = 0) ∧ (x = r → μ (Ici r) = 0) := by
+  simp [continuousAt_cdf_map_coe_projIcc_iff μ hlr x]
 
 /-- For an interior probability level, the quantile of a law projected onto `[l, r]` is the
 projection of the original quantile. -/
@@ -338,6 +398,24 @@ theorem map_coe_projIci_singleton_of_notMem_Ici {l x : ℝ} (hx : x ∉ Ici l) :
     (μ.map fun x : ℝ ↦ (Set.projIci l x : ℝ)).real {l} = μ.real (Iic l) := by
   simp [Measure.real, map_coe_projIci_singleton_self μ l]
 
+/-- A singleton `{x}` has nonzero mass under lower censoring at `l` if and only if `x = l` with
+`μ (Iic l) ≠ 0` or `x ∈ Ioi l` with `μ {x} ≠ 0`. -/
+theorem map_coe_projIci_singleton_ne_zero_iff (l x : ℝ) :
+    μ.map (fun y : ℝ ↦ (Set.projIci l y : ℝ)) {x} ≠ 0 ↔
+      x = l ∧ μ (Iic l) ≠ 0 ∨ x ∈ Ioi l ∧ μ {x} ≠ 0 := by
+  rcases lt_trichotomy x l with hxl | rfl | hlx
+  · simp [map_coe_projIci_singleton_of_notMem_Ici μ (not_le.mpr hxl), hxl.ne,
+      not_lt.mpr hxl.le]
+  · simp [map_coe_projIci_singleton_self μ x]
+  · simp [map_coe_projIci_singleton_of_mem_Ioi μ hlx, hlx.ne', mem_Ioi.mpr hlx]
+
+/-- For a measure with null singletons, `{x}` has nonzero mass under lower censoring at `l` if
+and only if `x = l` and `μ (Iic l) ≠ 0`. -/
+theorem map_coe_projIci_singleton_ne_zero_iff_of_nullSingletonClass [NullSingletonClass μ]
+    (l x : ℝ) :
+    μ.map (fun y : ℝ ↦ (Set.projIci l y : ℝ)) {x} ≠ 0 ↔ x = l ∧ μ (Iic l) ≠ 0 := by
+  simp [map_coe_projIci_singleton_ne_zero_iff μ l x]
+
 /-- Lower censoring at `l` produces a measure with null singletons if and only if the lower tail
 `Iic l` is `μ`-null and `μ` has null singletons on `(l, ∞)`. -/
 theorem nullSingletonClass_map_coe_projIci_iff (l : ℝ) :
@@ -373,6 +451,22 @@ from `l` onwards. -/
       simp only [mem_preimage, mem_Iic, Set.coe_projIci]
       exact max_le_iff.trans (and_iff_right (le_of_not_gt hxl))
     rw [hpre]
+
+/-- The cdf of a probability law lower-censored at `l` is continuous at `x` if and only if
+`μ (Iic l) = 0` when `x = l` and `μ {x} = 0` when `x ∈ Ioi l`. -/
+theorem continuousAt_cdf_map_coe_projIci_iff [IsProbabilityMeasure μ] (l x : ℝ) :
+    ContinuousAt (cdf (μ.map fun y : ℝ ↦ (Set.projIci l y : ℝ))) x ↔
+      (x = l → μ (Iic l) = 0) ∧ (x ∈ Ioi l → μ {x} = 0) := by
+  rw [continuousAt_cdf_iff, ← not_ne_iff, map_coe_projIci_singleton_ne_zero_iff μ l x]
+  simp only [not_or, not_and, not_ne_iff]
+
+/-- For an atomless probability law, the cdf after lower censoring at `l` is continuous at `x`
+if and only if `μ (Iic l) = 0` when `x = l`. -/
+theorem continuousAt_cdf_map_coe_projIci_iff_of_nullSingletonClass [IsProbabilityMeasure μ]
+    [NullSingletonClass μ] (l x : ℝ) :
+    ContinuousAt (cdf (μ.map fun y : ℝ ↦ (Set.projIci l y : ℝ))) x ↔
+      x = l → μ (Iic l) = 0 := by
+  simp [continuousAt_cdf_map_coe_projIci_iff μ l x]
 
 /-- For an interior probability level, lower censoring takes the quantile to the maximum of the
 cutoff and the original quantile. -/
@@ -482,6 +576,24 @@ theorem map_coe_projIic_singleton_of_notMem_Iic {r x : ℝ} (hx : x ∉ Iic r) :
     (μ.map fun x : ℝ ↦ (Set.projIic r x : ℝ)).real {r} = μ.real (Ici r) := by
   simp [Measure.real, map_coe_projIic_singleton_self μ r]
 
+/-- A singleton `{x}` has nonzero mass under upper censoring at `r` if and only if `x ∈ Iio r`
+with `μ {x} ≠ 0` or `x = r` with `μ (Ici r) ≠ 0`. -/
+theorem map_coe_projIic_singleton_ne_zero_iff (r x : ℝ) :
+    μ.map (fun y : ℝ ↦ (Set.projIic r y : ℝ)) {x} ≠ 0 ↔
+      x ∈ Iio r ∧ μ {x} ≠ 0 ∨ x = r ∧ μ (Ici r) ≠ 0 := by
+  rcases lt_trichotomy x r with hxr | rfl | hrx
+  · simp [map_coe_projIic_singleton_of_mem_Iio μ hxr, hxr.ne, mem_Iio.mpr hxr]
+  · simp [map_coe_projIic_singleton_self μ x]
+  · simp [map_coe_projIic_singleton_of_notMem_Iic μ (not_le.mpr hrx), hrx.ne',
+      not_lt.mpr hrx.le]
+
+/-- For a measure with null singletons, `{x}` has nonzero mass under upper censoring at `r` if
+and only if `x = r` and `μ (Ici r) ≠ 0`. -/
+theorem map_coe_projIic_singleton_ne_zero_iff_of_nullSingletonClass [NullSingletonClass μ]
+    (r x : ℝ) :
+    μ.map (fun y : ℝ ↦ (Set.projIic r y : ℝ)) {x} ≠ 0 ↔ x = r ∧ μ (Ici r) ≠ 0 := by
+  simp [map_coe_projIic_singleton_ne_zero_iff μ r x]
+
 /-- Upper censoring at `r` produces a measure with null singletons if and only if `μ` has null
 singletons on `(-∞, r)` and the upper tail `Ici r` is `μ`-null. -/
 theorem nullSingletonClass_map_coe_projIic_iff (r : ℝ) :
@@ -523,6 +635,22 @@ from `r` onwards. -/
       exact (min_le_left r y).trans (le_of_not_gt hxr)
     rw [hpre, measure_univ]
     simp
+
+/-- The cdf of a probability law upper-censored at `r` is continuous at `x` if and only if
+`μ {x} = 0` when `x ∈ Iio r` and `μ (Ici r) = 0` when `x = r`. -/
+theorem continuousAt_cdf_map_coe_projIic_iff [IsProbabilityMeasure μ] (r x : ℝ) :
+    ContinuousAt (cdf (μ.map fun y : ℝ ↦ (Set.projIic r y : ℝ))) x ↔
+      (x ∈ Iio r → μ {x} = 0) ∧ (x = r → μ (Ici r) = 0) := by
+  rw [continuousAt_cdf_iff, ← not_ne_iff, map_coe_projIic_singleton_ne_zero_iff μ r x]
+  simp only [not_or, not_and, not_ne_iff]
+
+/-- For an atomless probability law, the cdf after upper censoring at `r` is continuous at `x`
+if and only if `μ (Ici r) = 0` when `x = r`. -/
+theorem continuousAt_cdf_map_coe_projIic_iff_of_nullSingletonClass [IsProbabilityMeasure μ]
+    [NullSingletonClass μ] (r x : ℝ) :
+    ContinuousAt (cdf (μ.map fun y : ℝ ↦ (Set.projIic r y : ℝ))) x ↔
+      x = r → μ (Ici r) = 0 := by
+  simp [continuousAt_cdf_map_coe_projIic_iff μ r x]
 
 /-- For an interior probability level, upper censoring takes the quantile to the minimum of the
 cutoff and the original quantile. -/

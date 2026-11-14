@@ -145,7 +145,7 @@ theorem nullSingletonClass_truncatedNormalMeasure_iff :
   · classical
     subst hv
     by_cases hm : m ∈ s
-    · simp [hm, Measure.not_nullSingletonClass_dirac]
+    · simp [hm]
     · refine iff_of_true ?_ (Or.inr hm)
       simp only [truncatedNormalMeasure_zero_var, hm, ↓reduceIte]
       infer_instance

@@ -32,7 +32,8 @@ zero contribute nothing, so no positivity hypothesis on the fibres is needed.
 
 Conditioning on almost-everywhere equal events gives equal conditional measures, and a function
 bounded on a measurable event is integrable for the conditional measure on it. Conditioning a
-measure with null singletons on any set preserves null singletons. A measurable map
+measure on any set on which its restriction has null singletons preserves null singletons. A
+measurable map
 that scales measure by a constant factor carries conditional measures to conditional measures.
 Conditional measures also depend measurably on a measurable family of finite measures and a
 jointly measurable family of conditioning events. In particular, conditioning between measurable
@@ -90,10 +91,10 @@ namespace ProbabilityTheory
 
 variable {Ω β : Type*} [MeasurableSpace Ω] [MeasurableSpace β]
 
-/-- Conditioning a measure with null singletons on any set preserves null singletons, including
-when the conditioning set has zero or infinite mass. -/
-instance instNullSingletonClass_cond {μ : Measure Ω} [NullSingletonClass μ] (s : Set Ω) :
-    NullSingletonClass (μ[|s]) := by
+/-- Conditioning a measure whose restriction to `s` has null singletons preserves null singletons,
+including when `s` has zero or infinite mass or `μ` has atoms outside `s`. -/
+instance instNullSingletonClass_cond {μ : Measure Ω} {s : Set Ω}
+    [NullSingletonClass (μ.restrict s)] : NullSingletonClass (μ[|s]) := by
   rw [cond]
   infer_instance
 

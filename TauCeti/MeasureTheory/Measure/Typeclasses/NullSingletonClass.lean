@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 /-!
@@ -42,37 +41,37 @@ theorem nullSingletonClass_add_iff {μ ν : Measure α} :
     ⟨fun x ↦ (add_eq_zero.mp (by simpa using h.measure_singleton x)).2⟩⟩,
     fun ⟨_, _⟩ ↦ inferInstance⟩
 
-/-- Scaling a measure with null singletons by an extended nonnegative real preserves null
-singletons, including at infinity. -/
-instance instNullSingletonClassSMulENNReal {μ : Measure α} [NullSingletonClass μ]
-    {c : ℝ≥0∞} : NullSingletonClass (c • μ) :=
-  ⟨fun x ↦ by simp⟩
-
 /-- Scaling a measure with null singletons by any scalar acting through `ℝ≥0∞` preserves null
-singletons. -/
+singletons, including at infinity. -/
 instance instNullSingletonClassSMul {R : Type*} [SMul R ℝ≥0∞] [IsScalarTower R ℝ≥0∞ ℝ≥0∞]
-    {μ : Measure α} [NullSingletonClass μ] {c : R} : NullSingletonClass (c • μ) := by
-  rw [← smul_one_smul ℝ≥0∞ c μ]
-  infer_instance
+    {μ : Measure α} [NullSingletonClass μ] {c : R} : NullSingletonClass (c • μ) :=
+  ⟨fun x ↦ by
+    rw [smul_apply, NullSingletonClass.measure_singleton,
+      ← smul_one_smul ℝ≥0∞ c (0 : ℝ≥0∞), smul_zero]⟩
 
-/-- Scaling by a nonzero extended nonnegative real preserves and reflects null singletons. -/
-theorem nullSingletonClass_smul_iff {c : ℝ≥0∞} {μ : Measure α} (hc : c ≠ 0) :
-    NullSingletonClass (c • μ) ↔ NullSingletonClass μ :=
-  ⟨fun h ↦ ⟨fun x ↦ (mul_eq_zero.mp (by simpa using h.measure_singleton x)).resolve_left hc⟩,
-    fun _ ↦ inferInstance⟩
+/-- Scaling a measure by an extended nonnegative real yields a measure with null singletons if and
+only if the scalar vanishes or the original measure has null singletons. -/
+theorem nullSingletonClass_smul_iff {c : ℝ≥0∞} {μ : Measure α} :
+    NullSingletonClass (c • μ) ↔ c = 0 ∨ NullSingletonClass μ := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp only [zero_smul, true_or, iff_true]
+    infer_instance
+  · simp only [hc, false_or]
+    exact ⟨fun h ↦ ⟨fun x ↦
+      (mul_eq_zero.mp (by simpa using h.measure_singleton x)).resolve_left hc⟩,
+      fun _ ↦ inferInstance⟩
 
 /-- A Dirac measure never has null singletons, without any singleton-measurability assumption. -/
-theorem Measure.not_nullSingletonClass_dirac (a : α) :
+@[simp]
+theorem not_nullSingletonClass_dirac (a : α) :
     ¬ NullSingletonClass (Measure.dirac a) := fun h ↦
   one_ne_zero ((Measure.dirac_apply_of_mem (mem_singleton a)).symm.trans (h.measure_singleton a))
 
 /-- A scaled Dirac measure has null singletons if and only if the scalar weight vanishes. -/
 @[simp]
-theorem Measure.nullSingletonClass_smul_dirac_iff {c : ℝ≥0∞} {a : α} :
+theorem nullSingletonClass_smul_dirac_iff {c : ℝ≥0∞} {a : α} :
     NullSingletonClass (c • Measure.dirac a) ↔ c = 0 := by
-  refine ⟨fun h ↦ ?_, fun hc ↦ by rw [hc, zero_smul]; infer_instance⟩
-  have ha := h.measure_singleton a
-  simpa [Measure.dirac_apply_of_mem (mem_singleton a)] using ha
+  simp [nullSingletonClass_smul_iff]
 
 end MeasureTheory
 
