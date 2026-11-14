@@ -27,7 +27,9 @@ holomorphic, in particular off the support of the divisor of `ω` on a compact R
 meromorphic function has residue `0` (`TauCeti.RiemannSurface.OneForm.residue_mvfderiv`), and the
 logarithmic differential `df / f` has residue the order of `f`
 (`TauCeti.RiemannSurface.OneForm.residue_inv_smul_mvfderiv`). These are the local facts behind the
-residue pairing of Serre duality and the vanishing of the degree of a principal divisor.
+residue pairing of Serre duality and the vanishing of the degree of a principal divisor. On a
+compact Riemann surface a `1`-form meromorphic everywhere has nonzero residue at only finitely many
+points (`TauCeti.RiemannSurface.OneForm.finite_support_residue`).
 
 ## References
 
@@ -120,6 +122,13 @@ theorem residue_eq_of_mem_maximalAtlas (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (
   rw [residue_def, Contour.residue_congr_nhdsNE ((coeff_eventuallyEq ω he
     (chart_mem_maximalAtlas x) hx hcx).filter_mono nhdsWithin_le_nhds), ← hψx]
   exact Contour.residue_comp_mul_deriv hψ hψ'
+
+/-- On a compact Riemann surface, a `1`-form meromorphic everywhere has nonzero residue at only
+finitely many points: a nonzero residue forces a pole. -/
+theorem finite_support_residue [CompactSpace X] (hω : ∀ x, ω.MeromorphicAt x) :
+    (support ω.residue).Finite :=
+  (finite_support_untop₀_order hω).subset fun _ hy h0 ↦
+    hy (residue_eq_zero_of_order_nonneg (WithTop.untop₀_nonneg.1 h0.ge))
 
 section Compact
 
