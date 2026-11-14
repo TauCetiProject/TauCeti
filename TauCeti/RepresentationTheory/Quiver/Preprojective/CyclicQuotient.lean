@@ -38,6 +38,10 @@ idempotent.
 * `SimpleGraph.Coloring.preprojectiveMk_ofPath_mem_commutatorSubmodule`: for a two-coloured graph,
   the vanishing for paths of positive length transfers from the signless algebra to the additive
   preprojective algebra of every orientation.
+* `SimpleGraph.Coloring.preprojectiveGrade_le_commutatorSubmodule_iff` and
+  `SimpleGraph.IsBipartite.preprojectiveGrade_le_commutatorSubmodule_iff`: for a bipartite graph,
+  each graded piece of the additive preprojective algebra of an orientation lies in the commutator
+  submodule if and only if the corresponding graded piece of the signless algebra does.
 
 ## References
 
@@ -186,4 +190,60 @@ theorem preprojectiveMk_ofPath_mem_commutatorSubmodule (C : G.Coloring Bool) (o 
   have hmap := map_mem_commutatorSubmodule e hsymm
   rwa [AlgEquiv.apply_symm_apply] at hmap
 
+/-- The inverse bipartite comparison preserves every path-length graded piece. -/
+theorem signlessPreprojectiveAlgebraEquiv_symm_mem_signlessPreprojectiveGrade (C : G.Coloring Bool)
+    (o : Orientation G) {n : ℕ} {y : preprojectiveAlgebra k (OrientedQuiver G o)}
+    (hy : y ∈ preprojectiveGrade k (OrientedQuiver G o) n) :
+    (C.signlessPreprojectiveAlgebraEquiv k o).symm y ∈
+      signlessPreprojectiveGrade k (DoubledQuiver G) n := by
+  obtain ⟨p, hp, rfl⟩ := (mem_preprojectiveGrade_iff k (OrientedQuiver G o)).1 hy
+  rw [signlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk]
+  apply signlessPreprojectiveMk_mem_grade
+  rw [orientationPathAlgebraEquiv_symm_apply]
+  have hresc := rescale_mem_grade
+    (doubledLabelling k fun _ j _ => if C.orientedColor o j then (1 : k) else -1) hp
+  rw [← gradeBy_const_one] at hresc ⊢
+  exact mapAlgHom_mem_gradeBy k _ _ (fun {_ _} _ => (1 : ℕ)) hresc
+
+/-- **For a two-coloured graph, each path-length graded piece of the preprojective algebra of an
+orientation lies in the commutator submodule if and only if the corresponding piece of the signless
+algebra does.** -/
+theorem preprojectiveGrade_le_commutatorSubmodule_iff (C : G.Coloring Bool) (o : Orientation G)
+    [inst : ∀ i, Fintype (G.neighborSet i)] (d : ℕ) :
+    preprojectiveGrade k (OrientedQuiver G o) d ≤
+        commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) ↔
+      signlessPreprojectiveGrade k (DoubledQuiver G) d ≤
+        commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
+  have hinst : inst = fun i => Fintype.ofFinite (G.neighborSet i) := Subsingleton.elim _ _
+  cases hinst
+  let e := C.signlessPreprojectiveAlgebraEquiv k o
+  refine ⟨fun h x hx => ?_, fun h y hy => ?_⟩
+  · simpa only [e, AlgEquiv.symm_apply_apply] using
+      map_mem_commutatorSubmodule e.symm
+        (h (C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hx))
+  · simpa only [e, AlgEquiv.apply_symm_apply] using
+      map_mem_commutatorSubmodule e
+        (h (C.signlessPreprojectiveAlgebraEquiv_symm_mem_signlessPreprojectiveGrade k o hy))
+
 end SimpleGraph.Coloring
+
+namespace SimpleGraph.IsBipartite
+
+open TauCeti TauCeti.DoubledQuiver
+
+universe u w
+
+variable {V : Type u} {G : SimpleGraph V} (k : Type w) [CommRing k] [Finite V]
+
+/-- **For a bipartite graph, each path-length graded piece of the preprojective algebra of an
+orientation lies in the commutator submodule if and only if the corresponding piece of the signless
+algebra does.** -/
+theorem preprojectiveGrade_le_commutatorSubmodule_iff (hG : G.IsBipartite) (o : Orientation G)
+    [∀ i, Fintype (G.neighborSet i)] (d : ℕ) :
+    preprojectiveGrade k (OrientedQuiver G o) d ≤
+        commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) ↔
+      signlessPreprojectiveGrade k (DoubledQuiver G) d ≤
+        commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) :=
+  hG.coloringBool.preprojectiveGrade_le_commutatorSubmodule_iff k o d
+
+end SimpleGraph.IsBipartite

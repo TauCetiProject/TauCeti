@@ -21,8 +21,11 @@ parameters, although the local relations are independent of the enumeration by
 `TauCeti.signlessPreprojectiveRelator_congr`.
 
 The construction descends `TauCeti.DoubledQuiver.pathAlgebraEquiv` through the quotient
-universal property. The signless presentation follows Huerfano--Khovanov,
-*A category for the adjoint representation*, Section 3, https://arxiv.org/abs/math/0002060.
+universal property; since relabelling preserves path length, this equivalence also preserves every
+path-length graded piece
+(`TauCeti.signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade`). The signless
+presentation follows Huerfano--Khovanov, *A category for the adjoint representation*, Section 3,
+https://arxiv.org/abs/math/0002060.
 -/
 
 public section
@@ -130,5 +133,27 @@ theorem signlessPreprojectiveAlgebraEquiv_trans {X : Type*} [Finite X] {K : Simp
     AlgEquiv.trans_apply, AlgEquiv.trans_apply,
     signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
     signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
+
+private theorem signlessPreprojectiveAlgebraEquiv_mem_grade_of_mem {X Y : Type*}
+    [Finite X] [Finite Y] {G' : SimpleGraph X} {H' : SimpleGraph Y}
+    [∀ i, Fintype (G'.neighborSet i)] [∀ j, Fintype (H'.neighborSet j)]
+    (f : G' ≃g H') {n : ℕ} {x : signlessPreprojectiveAlgebra k (DoubledQuiver G')}
+    (hx : x ∈ signlessPreprojectiveGrade k (DoubledQuiver G') n) :
+    signlessPreprojectiveAlgebraEquiv k f x ∈
+      signlessPreprojectiveGrade k (DoubledQuiver H') n := by
+  obtain ⟨p, hp, rfl⟩ := (mem_signlessPreprojectiveGrade_iff k _).1 hx
+  rw [signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
+  exact signlessPreprojectiveMk_mem_grade k _ ((pathAlgebraEquiv_mem_grade_iff k f).2 hp)
+
+/-- **A graph isomorphism preserves the path-length grading of signless preprojective algebras.**
+Stated as an explicit characterization rather than a `simp` lemma because
+`TauCeti.mem_signlessPreprojectiveGrade_iff` already rewrites membership in the graded piece. -/
+theorem signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade (e : G ≃g H) {n : ℕ}
+    {x : signlessPreprojectiveAlgebra k (DoubledQuiver G)} :
+    signlessPreprojectiveAlgebraEquiv k e x ∈ signlessPreprojectiveGrade k (DoubledQuiver H) n ↔
+      x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) n := by
+  refine ⟨fun hx => ?_, signlessPreprojectiveAlgebraEquiv_mem_grade_of_mem k e⟩
+  simpa only [← signlessPreprojectiveAlgebraEquiv_symm, AlgEquiv.symm_apply_apply] using
+    signlessPreprojectiveAlgebraEquiv_mem_grade_of_mem k e.symm hx
 
 end TauCeti
