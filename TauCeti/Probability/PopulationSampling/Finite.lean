@@ -9,6 +9,7 @@ public import TauCeti.Probability.PopulationSampling.Basic
 public import TauCeti.Probability.Process.EmpiricalMeasure
 public import TauCeti.Probability.UniformSampling
 public import Mathlib.MeasureTheory.Measure.FiniteMeasurePi
+import TauCeti.Probability.Distributions.Uniform.Permutation
 
 /-!
 # Sampling finite populations with and without replacement
@@ -33,9 +34,10 @@ Probability preservation is therefore stated with an embedding into the populati
 sampling without replacement, and with a nonempty selection space `ι → κ` for sampling with
 replacement, including when both index types are empty.
 
-Measurable observations of population values commute with both sampling laws. For deterministic
-populations, this expresses sampling a population that factors through another as a pushforward
-of the latter's sampling law, without separation assumptions on the value space.
+Measurable observations of population values and bijective reindexings of the population index
+commute with both sampling laws. Two-stage sampling without replacement collapses to a single
+without-replacement draw, and sampling with replacement after a full-size without-replacement
+shuffle recovers sampling with replacement from the original population.
 
 ## Main declarations
 
@@ -44,6 +46,11 @@ of the latter's sampling law, without separation assumptions on the value space.
   with sampling;
 * `sampleWithoutReplacement_dirac_comp`, `sampleWithReplacement_dirac_comp`: their
   deterministic-population composition forms;
+* `sampleWithoutReplacement_map_equiv`, `sampleWithReplacement_map_equiv`,
+  `sampleWithoutReplacement_dirac_comp_equiv`, `sampleWithReplacement_dirac_comp_equiv`:
+  invariance under bijective reindexing of the population;
+* `sampleWithoutReplacement_sampleWithoutReplacement`,
+  `sampleWithReplacement_sampleWithoutReplacement_of_equiv`: two-stage sampling identities;
 * `pi_empiricalMeasureOfFintype_eq_map_uniformOn`: independent empirical draws as uniform
   selections;
 * `sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype`: the empirical-product mixture;
@@ -91,6 +98,20 @@ theorem sampleWithoutReplacement_def {ι κ : Type*} [MeasurableSpace κ] (ρ : 
       samplePopulation (uniformOn {k : ι → κ | Function.Injective k}) ρ :=
   (rfl)
 
+/-- Sampling without replacement from an s-finite population law gives an s-finite law. -/
+instance sfinite_sampleWithoutReplacement {ι κ : Type*} [MeasurableSpace κ]
+    (ρ : Measure (κ → α)) [SFinite ρ] :
+    SFinite (sampleWithoutReplacement (ι := ι) ρ) := by
+  rw [sampleWithoutReplacement_def]
+  infer_instance
+
+/-- Sampling without replacement from a finite population law gives a finite law. -/
+instance isFiniteMeasure_sampleWithoutReplacement {ι κ : Type*} [MeasurableSpace κ]
+    (ρ : Measure (κ → α)) [IsFiniteMeasure ρ] :
+    IsFiniteMeasure (sampleWithoutReplacement (ι := ι) ρ) := by
+  rw [sampleWithoutReplacement_def]
+  infer_instance
+
 /-- Sampling a deterministic population without replacement is the pushforward of uniform
 injective selections. -/
 @[simp]
@@ -117,6 +138,47 @@ theorem sampleWithoutReplacement_dirac_comp {ι κ : Type*} [MeasurableSpace κ]
       (sampleWithoutReplacement (ι := ι) (Measure.dirac x)).map (fun y i => g (y i)) := by
   simp only [sampleWithoutReplacement_def, samplePopulation_dirac_comp _ _ hg]
 
+/-- Reindexing a random population along a bijection leaves sampling without replacement
+unchanged. -/
+theorem sampleWithoutReplacement_map_equiv {ι κ κ' : Type*}
+    [MeasurableSpace κ] [MeasurableSingletonClass κ] [Countable κ]
+    [MeasurableSpace κ'] [MeasurableSingletonClass κ']
+    (ρ : Measure (κ' → α)) [SFinite ρ] (e : κ ≃ κ') :
+    sampleWithoutReplacement (ι := ι) (ρ.map fun x j => x (e j)) =
+      sampleWithoutReplacement (ι := ι) ρ := by
+  have : Countable κ' := e.symm.injective.countable
+  rw [sampleWithoutReplacement_def, sampleWithoutReplacement_def,
+    samplePopulation_map_reindex _ ρ e]
+  congr 1
+  by_cases hι : Countable ι
+  · refine Set.BijOn.map_uniformOn ⟨fun k hk => e.injective.comp hk, ?_, ?_⟩
+    · intro k₁ _ k₂ _ h
+      funext i
+      exact e.injective (congrFun h i)
+    · intro k' hk'
+      exact ⟨fun i => e.symm (k' i), e.symm.injective.comp hk',
+        funext fun i => e.apply_symm_apply (k' i)⟩
+  · have h₁ : {k : ι → κ | Function.Injective k} = ∅ :=
+      Set.eq_empty_of_forall_notMem fun k hk => hι hk.countable
+    have h₂ : {k : ι → κ' | Function.Injective k} = ∅ :=
+      Set.eq_empty_of_forall_notMem fun k hk => hι hk.countable
+    simp [h₁, h₂]
+
+/-- Reindexing a deterministic population along a bijection leaves sampling without replacement
+unchanged. -/
+theorem sampleWithoutReplacement_dirac_comp_equiv {ι κ κ' : Type*}
+    [MeasurableSpace κ] [MeasurableSingletonClass κ] [Countable κ]
+    [MeasurableSpace κ'] [MeasurableSingletonClass κ']
+    (x : κ' → α) (e : κ ≃ κ') :
+    sampleWithoutReplacement (ι := ι) (Measure.dirac (x ∘ e)) =
+      sampleWithoutReplacement (ι := ι) (Measure.dirac x) := by
+  have : Countable κ' := e.symm.injective.countable
+  have he : Measurable (fun y : κ' → α => fun j => y (e j)) := by
+    have : Measurable e := measurable_of_countable e
+    fun_prop
+  simpa only [Measure.map_dirac' he, Function.comp_def] using
+    sampleWithoutReplacement_map_equiv (Measure.dirac x) e
+
 /-- Sampling without replacement preserves probability mass whenever an injective selection
 exists. -/
 theorem isProbabilityMeasure_sampleWithoutReplacement {ι κ : Type*} [Finite κ]
@@ -130,6 +192,53 @@ theorem isProbabilityMeasure_sampleWithoutReplacement {ι κ : Type*} [Finite κ
     isProbabilityMeasure_uniformOn (Set.toFinite E) ⟨e, e.injective⟩
   rw [sampleWithoutReplacement_def]
   infer_instance
+
+/-- Sampling without replacement preserves total mass whenever an injective selection exists. -/
+theorem sampleWithoutReplacement_univ {ι κ : Type*} [Finite κ]
+    [MeasurableSpace κ] [MeasurableSingletonClass κ] (ρ : Measure (κ → α)) [SFinite ρ]
+    (e : ι ↪ κ) :
+    sampleWithoutReplacement (ι := ι) ρ Set.univ = ρ Set.univ := by
+  have : Finite ι := Finite.of_injective e e.injective
+  let E : Set (ι → κ) := {k | Function.Injective k}
+  let _ : IsProbabilityMeasure (uniformOn E) :=
+    isProbabilityMeasure_uniformOn (Set.toFinite E) ⟨e, e.injective⟩
+  rw [sampleWithoutReplacement_def, samplePopulation_apply .univ]
+  simp
+
+/-- Sampling without replacement from an intermediate sample drawn without replacement is sampling
+without replacement from the original population, provided each stage admits an injective
+selection. -/
+theorem sampleWithoutReplacement_sampleWithoutReplacement {ι κ' κ : Type*}
+    [Finite κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
+    [MeasurableSpace κ'] [MeasurableSingletonClass κ']
+    (ρ : Measure (κ → α)) [SFinite ρ] (e' : ι ↪ κ') (e : κ' ↪ κ) :
+    sampleWithoutReplacement (ι := ι) (sampleWithoutReplacement (ι := κ') ρ) =
+      sampleWithoutReplacement (ι := ι) ρ := by
+  have : Finite κ' := Finite.of_injective e e.injective
+  have : Finite ι := Finite.of_injective e' e'.injective
+  let : MeasurableSpace (Equiv.Perm κ) := ⊤
+  rw [sampleWithoutReplacement_def, sampleWithoutReplacement_def, sampleWithoutReplacement_def,
+    samplePopulation_samplePopulation]
+  congr 1
+  let E' : Set (ι → κ') := {l | Function.Injective l}
+  have hE'fin : E'.Finite := Set.toFinite E'
+  let _ : IsProbabilityMeasure (uniformOn E') :=
+    isProbabilityMeasure_uniformOn hE'fin ⟨e', e'.injective⟩
+  have hae : ∀ᵐ l ∂uniformOn E', Function.Injective l := by
+    simpa only [uniformOn, E', Set.mem_ofPred_eq] using
+      ae_cond_mem (μ := Measure.count) hE'fin.measurableSet
+  apply Measure.ext fun A hA => ?_
+  rw [samplePopulation_apply hA]
+  calc
+    ∫⁻ l, uniformOn {k : κ' → κ | Function.Injective k}
+          ((fun k : κ' → κ => fun i : ι => k (l i)) ⁻¹' A) ∂uniformOn E' =
+        ∫⁻ _l, uniformOn {f : ι → κ | Function.Injective f} A ∂uniformOn E' := by
+      apply lintegral_congr_ae
+      filter_upwards [hae] with l hl
+      rw [← Measure.map_apply (by fun_prop) hA, ← e.map_uniformOn_perm,
+        Measure.map_map (by fun_prop) (measurable_of_countable _)]
+      exact congrArg (fun μ => μ A) (((Function.Embedding.mk l hl).trans e).map_uniformOn_perm)
+    _ = uniformOn {f : ι → κ | Function.Injective f} A := by simp
 
 section EmpiricalPopulation
 
@@ -177,6 +286,12 @@ theorem sampleWithReplacement_def [Fintype ι] (ρ : Measure (κ → α)) :
       samplePopulation (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)) ρ :=
   (rfl)
 
+/-- Sampling with replacement from an s-finite population law gives an s-finite law. -/
+instance sfinite_sampleWithReplacement [Fintype ι] (ρ : Measure (κ → α))
+    [SFinite ρ] : SFinite (sampleWithReplacement (ι := ι) ρ) := by
+  rw [sampleWithReplacement_def]
+  infer_instance
+
 /-- Sampling with replacement from a finite population law gives a finite law. -/
 instance isFiniteMeasure_sampleWithReplacement [Fintype ι] (ρ : Measure (κ → α))
     [IsFiniteMeasure ρ] : IsFiniteMeasure (sampleWithReplacement (ι := ι) ρ) := by
@@ -214,6 +329,34 @@ theorem sampleWithReplacement_dirac_comp [Fintype ι] [Countable κ] (x : κ →
       (sampleWithReplacement (ι := ι) (Measure.dirac x)).map (fun y i => g (y i)) := by
   simp only [sampleWithReplacement_def, samplePopulation_dirac_comp _ _ hg]
 
+/-- Reindexing a random population along a bijection leaves sampling with replacement
+unchanged. -/
+theorem sampleWithReplacement_map_equiv [Fintype ι] [Countable κ]
+    {κ' : Type*} [MeasurableSpace κ'] [MeasurableSingletonClass κ']
+    (ρ : Measure (κ' → α)) [SFinite ρ] (e : κ ≃ κ') :
+    sampleWithReplacement (ι := ι) (ρ.map fun x j => x (e j)) =
+      sampleWithReplacement (ι := ι) ρ := by
+  have : Countable κ' := e.symm.injective.countable
+  rw [sampleWithReplacement_def, sampleWithReplacement_def,
+    samplePopulation_map_reindex _ ρ e]
+  congr 1
+  rw [Measure.pi_map_pi fun _ : ι => (measurable_of_countable e).aemeasurable]
+  simp_rw [e.map_uniformOn_univ]
+
+/-- Reindexing a deterministic population along a bijection leaves sampling with replacement
+unchanged. -/
+theorem sampleWithReplacement_dirac_comp_equiv [Fintype ι] [Countable κ]
+    {κ' : Type*} [MeasurableSpace κ'] [MeasurableSingletonClass κ']
+    (x : κ' → α) (e : κ ≃ κ') :
+    sampleWithReplacement (ι := ι) (Measure.dirac (x ∘ e)) =
+      sampleWithReplacement (ι := ι) (Measure.dirac x) := by
+  have : Countable κ' := e.symm.injective.countable
+  have he : Measurable (fun y : κ' → α => fun j => y (e j)) := by
+    have : Measurable e := measurable_of_countable e
+    fun_prop
+  simpa only [Measure.map_dirac' he, Function.comp_def] using
+    sampleWithReplacement_map_equiv (Measure.dirac x) e
+
 /-- Sampling with replacement from a random population preserves probability mass whenever a
 selection exists. -/
 theorem isProbabilityMeasure_sampleWithReplacement [Fintype ι] [Finite κ] [Nonempty (ι → κ)]
@@ -221,6 +364,58 @@ theorem isProbabilityMeasure_sampleWithReplacement [Fintype ι] [Finite κ] [Non
     IsProbabilityMeasure (sampleWithReplacement (ι := ι) ρ) := by
   rw [sampleWithReplacement_eq_samplePopulation_uniformOn]
   infer_instance
+
+/-- Sampling with replacement preserves total mass whenever a selection exists. -/
+theorem sampleWithReplacement_univ [Fintype ι] [Finite κ] [Nonempty (ι → κ)]
+    (ρ : Measure (κ → α)) [SFinite ρ] :
+    sampleWithReplacement (ι := ι) ρ Set.univ = ρ Set.univ := by
+  rw [sampleWithReplacement_eq_samplePopulation_uniformOn, samplePopulation_apply .univ]
+  simp
+
+/-- Sampling with replacement from a full-size without-replacement shuffle of a finite population
+has the same law as sampling with replacement directly from the population. -/
+theorem sampleWithReplacement_sampleWithoutReplacement_of_equiv [Fintype ι] [Finite κ]
+    {κ' : Type*} [MeasurableSpace κ'] [MeasurableSingletonClass κ']
+    (ρ : Measure (κ → α)) [SFinite ρ] (e : κ' ≃ κ) :
+    sampleWithReplacement (ι := ι) (sampleWithoutReplacement (ι := κ') ρ) =
+      sampleWithReplacement (ι := ι) ρ := by
+  have : Finite κ' := e.finite_iff.mpr ‹Finite κ›
+  rw [sampleWithReplacement_eq_samplePopulation_uniformOn,
+    sampleWithReplacement_eq_samplePopulation_uniformOn,
+    sampleWithoutReplacement_def, samplePopulation_samplePopulation]
+  congr 1
+  let E : Set (κ' → κ) := {k | Function.Injective k}
+  have hEfin : E.Finite := Set.toFinite E
+  let _ : IsProbabilityMeasure (uniformOn E) :=
+    isProbabilityMeasure_uniformOn hEfin ⟨e, e.injective⟩
+  have hae : ∀ᵐ k ∂uniformOn E, Function.Injective k := by
+    simpa only [uniformOn, E, Set.mem_ofPred_eq] using
+      ae_cond_mem (μ := Measure.count) hEfin.measurableSet
+  apply Measure.ext fun A hA => ?_
+  rw [samplePopulation_apply_population hA]
+  calc
+    ∫⁻ k, uniformOn (Set.univ : Set (ι → κ'))
+          ((fun l : ι → κ' => fun i : ι => k (l i)) ⁻¹' A) ∂uniformOn E =
+        ∫⁻ _k, uniformOn (Set.univ : Set (ι → κ)) A ∂uniformOn E := by
+      apply lintegral_congr_ae
+      filter_upwards [hae] with k hk
+      have hsurj : Function.Surjective (k ∘ e.symm) :=
+        Finite.surjective_of_injective (hk.comp e.symm.injective)
+      let k_eq : κ' ≃ κ :=
+        Equiv.ofBijective k ⟨hk, fun y => let ⟨z, hz⟩ := hsurj y; ⟨e.symm z, hz⟩⟩
+      have hmap :=
+        congrArg (fun μ => μ A) ((Equiv.arrowCongr (Equiv.refl ι) k_eq).map_uniformOn_univ)
+      rwa [Measure.map_apply (measurable_of_countable _) hA] at hmap
+    _ = uniformOn (Set.univ : Set (ι → κ)) A := by simp
+
+/-- Sampling with replacement from a full-size without-replacement shuffle of a finite population
+recovers sampling with replacement from the original population. -/
+@[simp]
+theorem sampleWithReplacement_sampleWithoutReplacement_self [Fintype ι] [Finite κ]
+    (ρ : Measure (κ → α)) [SFinite ρ] :
+    sampleWithReplacement (ι := ι) (sampleWithoutReplacement (ι := κ) ρ) =
+      sampleWithReplacement (ι := ι) ρ :=
+  sampleWithReplacement_sampleWithoutReplacement_of_equiv ρ (Equiv.refl κ)
 
 /-- Sampling with replacement is the mixture of the finite product measures of the populations'
 empirical distributions. -/
