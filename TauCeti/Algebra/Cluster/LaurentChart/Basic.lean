@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MvPolynomial.Laurent.Polynomial
-public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+public import Mathlib.Algebra.Algebra.Subalgebra.Tower
 public import Mathlib.RingTheory.AlgebraicIndependent.Basic
 public import Mathlib.Algebra.Ring.Hom.InjSurj
 
@@ -353,7 +353,7 @@ theorem reindex_refl (c : LaurentChart R K F) : c.reindex (Equiv.refl K) = c := 
   simp [reindex]
 
 @[simp]
-theorem reindex_trans (c : LaurentChart R K F) (e : K ≃ K') (e' : K' ≃ K'') :
+theorem reindex_reindex (c : LaurentChart R K F) (e : K ≃ K') (e' : K' ≃ K'') :
     (c.reindex e).reindex e' = c.reindex (e.trans e') := by
   ext i
   simp
@@ -370,12 +370,16 @@ noncomputable def range (c : LaurentChart R K F) : Subalgebra R F := c.toAlgHom.
 /-- The chart range is the image of its evaluation homomorphism. -/
 theorem range_def (c : LaurentChart R K F) : c.range = c.toAlgHom.range := (rfl)
 
+/-- The underlying set of the Laurent subalgebra is the image of the chart. -/
+@[simp]
+theorem coe_range (c : LaurentChart R K F) : (c.range : Set F) = Set.range c := by rfl
+
 /-- Membership in the Laurent subalgebra is existence of a Laurent representative. -/
 theorem mem_range (c : LaurentChart R K F) (z : F) :
     z ∈ c.range ↔ ∃ p : LaurentRing R K, c p = z := Iff.rfl
 
 @[simp]
-theorem apply_mem_range (c : LaurentChart R K F) (p : LaurentRing R K) :
+theorem mem_range_self (c : LaurentChart R K F) (p : LaurentRing R K) :
     c p ∈ c.range := ⟨p, rfl⟩
 
 /-- The range of a mapped chart is the ambient map of the original range. -/
@@ -390,7 +394,7 @@ theorem range_restrict_le (c : LaurentChart R K F) (f : K' ↪ K) :
   exact ⟨LaurentRing.rename f p, rfl⟩
 
 @[simp]
-theorem set_range_reindex (c : LaurentChart R K F) (e : K ≃ K') :
+theorem setRange_reindex (c : LaurentChart R K F) (e : K ≃ K') :
     Set.range (c.reindex e) = Set.range c :=
   by
     calc
@@ -404,7 +408,7 @@ theorem set_range_reindex (c : LaurentChart R K F) (e : K ≃ K') :
 @[simp↓]
 theorem range_reindex (c : LaurentChart R K F) (e : K ≃ K') :
     (c.reindex e).range = c.range := by
-  exact SetLike.coe_injective (c.set_range_reindex e)
+  exact SetLike.coe_injective (c.setRange_reindex e)
 
 /-- A coordinate lies in the image of its chart. -/
 @[simp]
@@ -416,6 +420,24 @@ theorem coordinate_mem_range (c : LaurentChart R K F) (i : K) :
 theorem inv_coordinateUnit_mem_range (c : LaurentChart R K F) (i : K) :
     (((c.coordinateUnit i)⁻¹ : Fˣ) : F) ∈ c.range :=
   ⟨AddMonoidAlgebra.single (-Finsupp.single i 1) 1, c.apply_single_neg_single_one i⟩
+
+/-- A restricted evaluation belongs to its smaller Laurent subalgebra. -/
+@[simp]
+theorem restrict_rename_mem_range (c : LaurentChart R K F) (f : K' ↪ K)
+    (p : LaurentRing R K') : c (LaurentRing.rename f p) ∈ (c.restrict f).range :=
+  ⟨p, c.restrict_apply f p⟩
+
+/-- Each retained coordinate belongs to the restricted range. -/
+@[simp]
+theorem coordinate_restrict_mem_range (c : LaurentChart R K F) (f : K' ↪ K) (i : K') :
+    c.coordinate (f i) ∈ (c.restrict f).range := by
+  simpa only [coordinate_restrict] using (c.restrict f).coordinate_mem_range i
+
+/-- The inverse of a retained unit coordinate belongs to the restricted range. -/
+@[simp]
+theorem inv_coordinateUnit_restrict_mem_range (c : LaurentChart R K F) (f : K' ↪ K) (i : K') :
+    (((c.coordinateUnit (f i))⁻¹ : Fˣ) : F) ∈ (c.restrict f).range := by
+  simpa only [coordinateUnit_restrict] using (c.restrict f).inv_coordinateUnit_mem_range i
 
 /-- The range is generated as an algebra by the coordinates and their inverses. -/
 theorem range_eq_adjoin (c : LaurentChart R K F) :
@@ -450,7 +472,7 @@ theorem range_eq_adjoin (c : LaurentChart R K F) :
     · exact c.inv_coordinateUnit_mem_range i
 
 /-- Membership in a chart range can be tested in the coordinate-and-inverse algebra. -/
-theorem mem_range_iff_adjoin (c : LaurentChart R K F) (z : F) :
+theorem mem_range_iff_mem_adjoin (c : LaurentChart R K F) (z : F) :
     z ∈ c.range ↔ z ∈ Algebra.adjoin R
       (Set.range c.coordinate ∪ Set.range fun i ↦ (((c.coordinateUnit i)⁻¹ : Fˣ) : F)) := by
   rw [range_eq_adjoin]
@@ -482,7 +504,7 @@ theorem apply_laurentExpansion (c : LaurentChart R K F) (x : c.range) :
 /-- Expanding an evaluated Laurent polynomial returns that polynomial. -/
 @[simp↓]
 theorem laurentExpansion_apply (c : LaurentChart R K F) (p : LaurentRing R K) :
-    c.laurentExpansion ⟨c p, c.apply_mem_range p⟩ = p :=
+    c.laurentExpansion ⟨c p, c.mem_range_self p⟩ = p :=
   (AlgEquiv.ofInjective c.toAlgHom c.injective).symm_apply_apply p
 
 /-- Expanding a coordinate returns its Laurent variable. -/
@@ -498,15 +520,33 @@ theorem laurentExpansion_inv_coordinateUnit (c : LaurentChart R K F) (i : K)
     (h : (((c.coordinateUnit i)⁻¹ : Fˣ) : F) ∈ c.range) :
     c.laurentExpansion ⟨(((c.coordinateUnit i)⁻¹ : Fˣ) : F), h⟩ =
       AddMonoidAlgebra.single (-Finsupp.single i 1) 1 := by
-  apply c.injective
-  rw [toAlgHom_apply, toAlgHom_apply, apply_laurentExpansion]
-  symm
-  simpa only [Finsupp.prod_single_index, zpow_zero, one_smul, zpow_neg_one] using
-    c.apply_single_neg_single_one i
+  simpa only [apply_single_neg_single_one] using
+    c.laurentExpansion_apply (AddMonoidAlgebra.single (-Finsupp.single i 1) 1)
 
 end Semiring
 section RingCoordinates
 variable [CommRing R] [CommRing F] [Algebra R F]
+
+/-- Constructor-normal evaluation belongs to the chart image. -/
+@[simp]
+theorem aeval_mem_range_ofCoordinates (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (p : LaurentRing R K) :
+    LaurentRing.aeval x p ∈ (ofCoordinates x hx).range := ⟨p, rfl⟩
+
+/-- A unit coordinate belongs to the coordinate-family chart image. -/
+@[simp]
+theorem coordinate_mem_range_ofCoordinates (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (i : K) :
+    (x i : F) ∈ (ofCoordinates x hx).range := by
+  simpa only [coordinate_ofCoordinates] using (ofCoordinates x hx).coordinate_mem_range i
+
+/-- An inverse unit coordinate belongs to the coordinate-family chart image. -/
+@[simp]
+theorem inv_coordinateUnit_mem_range_ofCoordinates (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (i : K) :
+    (((x i)⁻¹ : Fˣ) : F) ∈ (ofCoordinates x hx).range := by
+  simpa only [coordinateUnit_ofCoordinates] using
+    (ofCoordinates x hx).inv_coordinateUnit_mem_range i
 
 /-- Constructor-normal evaluation expands to its complete Laurent polynomial. -/
 @[simp↓]
@@ -587,7 +627,7 @@ theorem coe_laurentExpansion_symm_apply (c : LaurentChart R K F) (p : LaurentRin
 
 @[simp↓]
 theorem coeff_apply (c : LaurentChart R K F) (p : LaurentRing R K) :
-    c.coeff ⟨c p, c.apply_mem_range p⟩ = p.coeff := by
+    c.coeff ⟨c p, c.mem_range_self p⟩ = p.coeff := by
   simp [coeff]
 
 /-- A coordinate has its single standard-basis coefficient. -/
@@ -717,53 +757,54 @@ theorem coeff_restrict_apply (c : LaurentChart R K F) (f : K' ↪ K)
   exact Finsupp.mapDomain_apply_of_injective (Finsupp.mapDomain_injective f.injective) _ m
 
 /-- Ambient algebra transport gives an equivalence between the two chart ranges. -/
-noncomputable def mapRange (c : LaurentChart R K F) (f : F →ₐ[R] G) (hf : Function.Injective f) :
+noncomputable def rangeEquivRangeMap (c : LaurentChart R K F) (f : F →ₐ[R] G)
+    (hf : Function.Injective f) :
     c.range ≃ₐ[R] (c.map f hf).range :=
   c.laurentExpansion.trans (c.map f hf).laurentExpansion.symm
 
 @[simp]
-theorem coe_mapRange_apply (c : LaurentChart R K F) (f : F →ₐ[R] G) (hf : Function.Injective f) (x
-  : c.range) :
-    ((c.mapRange f hf x : (c.map f hf).range) : G) = f x := by
-  simp [mapRange]
+theorem coe_rangeEquivRangeMap_apply (c : LaurentChart R K F) (f : F →ₐ[R] G)
+    (hf : Function.Injective f) (x : c.range) :
+    ((c.rangeEquivRangeMap f hf x : (c.map f hf).range) : G) = f x := by
+  simp [rangeEquivRangeMap]
 
 /-- Range transport sends a subtype constructor to the embedded element. -/
 @[simp]
-theorem mapRange_mk (c : LaurentChart R K F) (f : F →ₐ[R] G) (hf : Function.Injective f) (z : F)
-    (h : z ∈ c.range) :
-    c.mapRange f hf ⟨z, h⟩ = ⟨f z, (c.mem_range_map_iff f hf z).mpr h⟩ :=
-  Subtype.ext (c.coe_mapRange_apply f hf ⟨z, h⟩)
+theorem rangeEquivRangeMap_mk (c : LaurentChart R K F) (f : F →ₐ[R] G) (hf : Function.Injective f)
+    (z : F) (h : z ∈ c.range) :
+    c.rangeEquivRangeMap f hf ⟨z, h⟩ = ⟨f z, (c.mem_range_map_iff f hf z).mpr h⟩ :=
+  Subtype.ext (c.coe_rangeEquivRangeMap_apply f hf ⟨z, h⟩)
 
 /-- The inverse range transport is characterized by the ambient algebra embedding. -/
 @[simp]
-theorem map_coe_mapRange_symm_apply (c : LaurentChart R K F) (f : F →ₐ[R] G) (hf :
+theorem map_coe_rangeEquivRangeMap_symm_apply (c : LaurentChart R K F) (f : F →ₐ[R] G) (hf :
   Function.Injective f)
     (y : (c.map f hf).range) :
-    f ((c.mapRange f hf).symm y : F) = y := by
-  rw [← coe_mapRange_apply, AlgEquiv.apply_symm_apply]
+    f ((c.rangeEquivRangeMap f hf).symm y : F) = y := by
+  rw [← coe_rangeEquivRangeMap_apply, AlgEquiv.apply_symm_apply]
 
 /-- Inverse range transport cancels the ambient algebra embedding on arbitrary values. -/
 @[simp↓]
-theorem mapRange_symm_apply (c : LaurentChart R K F) (f : F →ₐ[R] G) (hf : Function.Injective f)
-  (z : F)
+theorem rangeEquivRangeMap_symm_apply (c : LaurentChart R K F) (f : F →ₐ[R] G)
+    (hf : Function.Injective f) (z : F)
     (h : f z ∈ (c.map f hf).range) :
-    (c.mapRange f hf).symm ⟨f z, h⟩ = ⟨z, (c.mem_range_map_iff f hf z).mp h⟩ := by
+    (c.rangeEquivRangeMap f hf).symm ⟨f z, h⟩ = ⟨z, (c.mem_range_map_iff f hf z).mp h⟩ := by
   apply Subtype.ext
   apply hf
-  exact c.map_coe_mapRange_symm_apply f hf ⟨f z, h⟩
+  exact c.map_coe_rangeEquivRangeMap_symm_apply f hf ⟨f z, h⟩
 
 /-- Expansion after an ambient embedding, for any element of the transported range. -/
 @[simp↓]
 theorem laurentExpansion_map (c : LaurentChart R K F) (f : F →ₐ[R] G) (hf : Function.Injective f)
     (y : (c.map f hf).range) :
-    (c.map f hf).laurentExpansion y = c.laurentExpansion ((c.mapRange f hf).symm y) := by
-  simp [mapRange]
+    (c.map f hf).laurentExpansion y = c.laurentExpansion ((c.rangeEquivRangeMap f hf).symm y) := by
+  simp [rangeEquivRangeMap]
 
 /-- Laurent coefficients are unchanged by an ambient algebra embedding. -/
 @[simp↓]
 theorem coeff_map (c : LaurentChart R K F) (f : F →ₐ[R] G) (hf : Function.Injective f)
     (y : (c.map f hf).range) :
-    (c.map f hf).coeff y = c.coeff ((c.mapRange f hf).symm y) := by
+    (c.map f hf).coeff y = c.coeff ((c.rangeEquivRangeMap f hf).symm y) := by
   rw [coeff_def, laurentExpansion_map, coeff_def]
 
 /-- Inverting an expansion commutes with ambient range transport. -/
@@ -771,7 +812,8 @@ theorem coeff_map (c : LaurentChart R K F) (f : F →ₐ[R] G) (hf : Function.In
 theorem laurentExpansion_map_symm (c : LaurentChart R K F) (f : F →ₐ[R] G) (hf :
   Function.Injective f)
     (p : LaurentRing R K) :
-    (c.map f hf).laurentExpansion.symm p = c.mapRange f hf (c.laurentExpansion.symm p) := by
+    (c.map f hf).laurentExpansion.symm p =
+      c.rangeEquivRangeMap f hf (c.laurentExpansion.symm p) := by
   apply (c.map f hf).laurentExpansion.injective
   rw [AlgEquiv.apply_symm_apply, laurentExpansion_map,
     AlgEquiv.symm_apply_apply, AlgEquiv.apply_symm_apply]
@@ -780,7 +822,7 @@ theorem laurentExpansion_map_symm (c : LaurentChart R K F) (f : F →ₐ[R] G) (
 @[simp]
 theorem coeff_map_symm (c : LaurentChart R K F) (f : F →ₐ[R] G) (hf : Function.Injective f)
     (g : (K →₀ ℤ) →₀ R) :
-    (c.map f hf).coeff.symm g = c.mapRange f hf (c.coeff.symm g) := by
+    (c.map f hf).coeff.symm g = c.rangeEquivRangeMap f hf (c.coeff.symm g) := by
   apply (c.map f hf).coeff.injective
   rw [LinearEquiv.apply_symm_apply, coeff_map,
     AlgEquiv.symm_apply_apply, LinearEquiv.apply_symm_apply]
@@ -792,9 +834,8 @@ theorem laurentExpansion_reindex (c : LaurentChart R K F) (e : K ≃ K')
     (c.reindex e).laurentExpansion y = LaurentRing.rename e
       (c.laurentExpansion ⟨y, c.range_reindex e ▸ y.property⟩) := by
   apply (c.reindex e).injective
-  rw [toAlgHom_apply, toAlgHom_apply, apply_laurentExpansion, reindex_apply,
-    LaurentRing.rename_rename]
-  rw [e.symm_comp_self, LaurentRing.rename_id, AlgHom.id_apply, apply_laurentExpansion]
+  rw [toAlgHom_apply, apply_laurentExpansion]
+  simp
 
 /-- Coefficient data of any reindexed range element follows its renamed expansion. -/
 @[simp]
@@ -847,6 +888,71 @@ theorem coeff_reindex_inv_coordinateUnit (c : LaurentChart R K F) (e : K ≃ K')
   rw [coeff_def, laurentExpansion_reindex_inv_coordinateUnit, AddMonoidAlgebra.coeff_single]
 
 end Semiring
+
+
+section ScalarRestriction
+variable {S : Type*} [CommSemiring R] [CommSemiring S] [CommSemiring F]
+  [Algebra R S] [Algebra R F] [Algebra S F] [IsScalarTower R S F]
+
+/-- Restrict the coefficient semiring of a faithful chart along an injective scalar inclusion. -/
+noncomputable def restrictScalars (c : LaurentChart S K F)
+    (hf : Function.Injective (algebraMap R S)) : LaurentChart R K F where
+  toAlgHom := (c.toAlgHom.restrictScalars R).comp
+    (AddMonoidAlgebra.mapAlgHom (K →₀ ℤ) (Algebra.ofId R S))
+  injective := c.injective.comp
+    (AddMonoidAlgebra.map_injective (algebraMap R S).toAddMonoidHom hf)
+
+/-- Scalar restriction evaluates the coefficientwise image of a Laurent polynomial. -/
+@[simp]
+theorem restrictScalars_apply (c : LaurentChart S K F)
+    (hf : Function.Injective (algebraMap R S)) (p : LaurentRing R K) :
+    c.restrictScalars hf p = c (AddMonoidAlgebra.mapRingHom (K →₀ ℤ) (algebraMap R S) p) := by rfl
+
+/-- Restricting coefficients leaves all coordinate values unchanged. -/
+@[simp]
+theorem coordinate_restrictScalars (c : LaurentChart S K F)
+    (hf : Function.Injective (algebraMap R S)) (i : K) :
+    (c.restrictScalars hf).coordinate i = c.coordinate i := by
+  simp only [coordinate_def, restrictScalars_apply, LaurentRing.mapRingHom_X]
+
+/-- Restricting coefficients leaves the coordinate units unchanged. -/
+@[simp]
+theorem coordinateUnit_restrictScalars (c : LaurentChart S K F)
+    (hf : Function.Injective (algebraMap R S)) (i : K) :
+    (c.restrictScalars hf).coordinateUnit i = c.coordinateUnit i := by
+  apply Units.ext
+  simp
+
+/-- The scalar-restricted Laurent range is contained in the original range. -/
+theorem range_restrictScalars_le (c : LaurentChart S K F)
+    (hf : Function.Injective (algebraMap R S)) :
+    (c.restrictScalars hf).range ≤ c.range.restrictScalars R := by
+  rintro _ ⟨p, rfl⟩
+  exact ⟨AddMonoidAlgebra.mapRingHom (K →₀ ℤ) (algebraMap R S) p, rfl⟩
+
+/-- The original expansion of a scalar-restricted value is its coefficientwise scalar image. -/
+theorem laurentExpansion_restrictScalars (c : LaurentChart S K F)
+    (hf : Function.Injective (algebraMap R S)) (x : (c.restrictScalars hf).range) :
+    c.laurentExpansion
+        ⟨x, (Subalgebra.mem_restrictScalars R).mp (c.range_restrictScalars_le hf x.property)⟩ =
+      AddMonoidAlgebra.mapRingHom (K →₀ ℤ) (algebraMap R S)
+        ((c.restrictScalars hf).laurentExpansion x) := by
+  apply c.injective
+  simp only [toAlgHom_apply, apply_laurentExpansion]
+  simpa only [restrictScalars_apply] using
+    ((c.restrictScalars hf).apply_laurentExpansion x).symm
+
+/-- Scalar restriction transports finite Laurent coefficients by the scalar inclusion. -/
+theorem coeff_restrictScalars (c : LaurentChart S K F)
+    (hf : Function.Injective (algebraMap R S)) (x : (c.restrictScalars hf).range) :
+    c.coeff ⟨x, (Subalgebra.mem_restrictScalars R).mp
+      (c.range_restrictScalars_le hf x.property)⟩ =
+      Finsupp.mapRange (algebraMap R S) (map_zero _) ((c.restrictScalars hf).coeff x) := by
+  ext m
+  rw [coeff_def, laurentExpansion_restrictScalars, AddMonoidAlgebra.coeff_mapRingHom]
+  rfl
+
+end ScalarRestriction
 
 
 end LaurentChart

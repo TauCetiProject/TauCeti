@@ -41,23 +41,23 @@ section CommRing
 variable [CommRing R] [CommRing F] [Algebra R F] [CommRing G] [Algebra R G]
 
 /-- A regular chart generates when its ambient algebra is its total ring of fractions. -/
-def Generates (c : LaurentChart R K F) : Prop :=
+def IsGenerating (c : LaurentChart R K F) : Prop :=
   let _ := c.toAlgHom.toRingHom.toAlgebra
   IsFractionRing (LaurentRing R K) F
 
 /-- A generating chart supplies the total ring of fractions under chart evaluation. -/
-theorem isFractionRing (c : LaurentChart R K F) (h : c.Generates) :
+theorem isFractionRing (c : LaurentChart R K F) (h : c.IsGenerating) :
     let _ := c.toAlgHom.toRingHom.toAlgebra
     IsFractionRing (LaurentRing R K) F := h
 
 /-- Public characterization of regular generation by the chart-induced localization structure. -/
-theorem generates_iff_isFractionRing (c : LaurentChart R K F) :
-    c.Generates ↔
+theorem isGenerating_iff_isFractionRing (c : LaurentChart R K F) :
+    c.IsGenerating ↔
       letI := c.toAlgHom.toRingHom.toAlgebra
       IsFractionRing (LaurentRing R K) F := Iff.rfl
 
 /-- Every ambient element of a generating regular chart has a regular Laurent denominator. -/
-theorem Generates.exists_mul {c : LaurentChart R K F} (h : c.Generates) (z : F) :
+theorem IsGenerating.exists_mul {c : LaurentChart R K F} (h : c.IsGenerating) (z : F) :
     ∃ p : LaurentRing R K, ∃ q : nonZeroDivisors (LaurentRing R K), z * c q = c p := by
   let _ := c.toAlgHom.toRingHom.toAlgebra
   have : IsFractionRing (LaurentRing R K) F := c.isFractionRing h
@@ -65,25 +65,24 @@ theorem Generates.exists_mul {c : LaurentChart R K F} (h : c.Generates) (z : F) 
   exact ⟨p, q, hpq⟩
 
 /-- Relabelling the Laurent variables preserves regular generation. -/
-theorem Generates.reindex {c : LaurentChart R K F} (h : c.Generates) {K' : Type*}
-    (e : K ≃ K') : (c.reindex e).Generates := by
+theorem IsGenerating.reindex {c : LaurentChart R K F} (h : c.IsGenerating) {K' : Type*}
+    (e : K ≃ K') : (c.reindex e).IsGenerating := by
   let _ := c.toAlgHom.toRingHom.toAlgebra
   let _ := (c.reindex e).toAlgHom.toRingHom.toAlgebra
   have : IsFractionRing (LaurentRing R K) F := c.isFractionRing h
   apply IsFractionRing.of_ringEquiv_left (LaurentRing.renameEquiv R e.symm).toRingEquiv
   intro p
-  change (c.reindex e) p = c (LaurentRing.renameEquiv R e.symm p)
-  simpa only [LaurentRing.renameEquiv_apply] using c.reindex_apply e p
+  simp [RingHom.algebraMap_toAlgebra, LaurentRing.renameEquiv_apply]
 
 /-- Relabelling coordinates does not change regular generation. -/
 @[simp]
-theorem generates_reindex_iff (c : LaurentChart R K F) {K' : Type*} (e : K ≃ K') :
-    (c.reindex e).Generates ↔ c.Generates := by
+theorem isGenerating_reindex_iff (c : LaurentChart R K F) {K' : Type*} (e : K ≃ K') :
+    (c.reindex e).IsGenerating ↔ c.IsGenerating := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.reindex e⟩
   simpa using h.reindex e.symm
 
 /-- A generating faithful chart also supplies the total quotient ring of its polynomial ring. -/
-theorem isFractionRing_mvPolynomial (c : LaurentChart R K F) (h : c.Generates) :
+theorem isFractionRing_mvPolynomial (c : LaurentChart R K F) (h : c.IsGenerating) :
     let _ := (c.toAlgHom.comp MvPolynomial.toLaurent).toRingHom.toAlgebra
     IsFractionRing (MvPolynomial K R) F := by
   let _ := c.toAlgHom.toRingHom.toAlgebra
@@ -99,7 +98,7 @@ theorem isFractionRing_mvPolynomial (c : LaurentChart R K F) (h : c.Generates) :
       exact isRegular_iff_mem_nonZeroDivisors.mp (MvPolynomial.isRegular_X (n := i)))
 
 /-- Algebra maps out of a generating ambient algebra are determined by its coordinates. -/
-theorem Generates.algHom_ext {c : LaurentChart R K F} (h : c.Generates)
+theorem IsGenerating.algHom_ext {c : LaurentChart R K F} (h : c.IsGenerating)
     {A : Type*} [Semiring A] [Algebra R A] {f g : F →ₐ[R] A}
     (hfg : ∀ i, f (c.coordinate i) = g (c.coordinate i)) : f = g := by
   let _ := c.toAlgHom.toRingHom.toAlgebra
@@ -115,7 +114,7 @@ theorem Generates.algHom_ext {c : LaurentChart R K F} (h : c.Generates)
 
 /-- The total quotient ring of the Laurent ring is canonically the ambient algebra of a generating
   chart. -/
-noncomputable def fractionRingEquiv (c : LaurentChart R K F) (h : c.Generates) :
+noncomputable def fractionRingEquiv (c : LaurentChart R K F) (h : c.IsGenerating) :
     FractionRing (LaurentRing R K) ≃ₐ[R] F := by
   let _ := c.toAlgHom.toRingHom.toAlgebra
   have : IsScalarTower R (LaurentRing R K) F :=
@@ -124,7 +123,7 @@ noncomputable def fractionRingEquiv (c : LaurentChart R K F) (h : c.Generates) :
   exact (FractionRing.algEquiv (LaurentRing R K) F).restrictScalars R
 
 @[simp]
-theorem fractionRingEquiv_algebraMap (c : LaurentChart R K F) (h : c.Generates)
+theorem fractionRingEquiv_algebraMap (c : LaurentChart R K F) (h : c.IsGenerating)
     (p : LaurentRing R K) :
     c.fractionRingEquiv h (algebraMap _ (FractionRing (LaurentRing R K)) p) = c p := by
   let _ := c.toAlgHom.toRingHom.toAlgebra
@@ -137,7 +136,7 @@ theorem fractionRingEquiv_algebraMap (c : LaurentChart R K F) (h : c.Generates)
 
 /-- The inverse total-quotient equivalence recovers the canonical class of a chart value. -/
 @[simp↓]
-theorem fractionRingEquiv_symm_apply (c : LaurentChart R K F) (h : c.Generates)
+theorem fractionRingEquiv_symm_apply (c : LaurentChart R K F) (h : c.IsGenerating)
     (p : LaurentRing R K) :
     (c.fractionRingEquiv h).symm (c p) =
       algebraMap _ (FractionRing (LaurentRing R K)) p := by
@@ -146,7 +145,7 @@ theorem fractionRingEquiv_symm_apply (c : LaurentChart R K F) (h : c.Generates)
 
 /-- The inverse total-quotient equivalence sends a chart coordinate to its Laurent variable. -/
 @[simp↓]
-theorem fractionRingEquiv_symm_apply_coordinate (c : LaurentChart R K F) (h : c.Generates)
+theorem fractionRingEquiv_symm_apply_coordinate (c : LaurentChart R K F) (h : c.IsGenerating)
     (i : K) : (c.fractionRingEquiv h).symm (c.coordinate i) =
       algebraMap _ (FractionRing (LaurentRing R K)) (LaurentRing.X (R := R) i) := by
   simpa only [apply_X] using c.fractionRingEquiv_symm_apply h (LaurentRing.X i)
@@ -154,7 +153,7 @@ theorem fractionRingEquiv_symm_apply_coordinate (c : LaurentChart R K F) (h : c.
 /-- Inverse total-quotient evaluation sends an inverse coordinate to its negative monomial. -/
 @[simp↓]
 theorem fractionRingEquiv_symm_apply_inv_coordinateUnit (c : LaurentChart R K F)
-    (h : c.Generates) (i : K) :
+    (h : c.IsGenerating) (i : K) :
     (c.fractionRingEquiv h).symm (((c.coordinateUnit i)⁻¹ : Fˣ) : F) =
       algebraMap _ (FractionRing (LaurentRing R K))
         (AddMonoidAlgebra.single (-Finsupp.single i 1) 1 : LaurentRing R K) := by
@@ -164,7 +163,7 @@ theorem fractionRingEquiv_symm_apply_inv_coordinateUnit (c : LaurentChart R K F)
 
 /-- The polynomial rational-function model is canonically the ambient algebra of a generating
   chart. -/
-noncomputable def fractionRingMvPolynomialEquiv (c : LaurentChart R K F) (h : c.Generates) :
+noncomputable def fractionRingMvPolynomialEquiv (c : LaurentChart R K F) (h : c.IsGenerating) :
     FractionRing (MvPolynomial K R) ≃ₐ[R] F := by
   let f := c.toAlgHom.comp MvPolynomial.toLaurent
   let _ := f.toRingHom.toAlgebra
@@ -174,7 +173,7 @@ noncomputable def fractionRingMvPolynomialEquiv (c : LaurentChart R K F) (h : c.
   exact (FractionRing.algEquiv (MvPolynomial K R) F).restrictScalars R
 
 @[simp]
-theorem fractionRingMvPolynomialEquiv_algebraMap (c : LaurentChart R K F) (h : c.Generates)
+theorem fractionRingMvPolynomialEquiv_algebraMap (c : LaurentChart R K F) (h : c.IsGenerating)
     (p : MvPolynomial K R) :
     c.fractionRingMvPolynomialEquiv h (algebraMap _ (FractionRing (MvPolynomial K R)) p) =
       MvPolynomial.aeval c.coordinate p := by
@@ -191,7 +190,7 @@ theorem fractionRingMvPolynomialEquiv_algebraMap (c : LaurentChart R K F) (h : c
 /-- The inverse polynomial total-quotient equivalence recovers a polynomial from its
 coordinate evaluation. -/
 @[simp↓]
-theorem fractionRingMvPolynomialEquiv_symm_aeval (c : LaurentChart R K F) (h : c.Generates)
+theorem fractionRingMvPolynomialEquiv_symm_aeval (c : LaurentChart R K F) (h : c.IsGenerating)
     (p : MvPolynomial K R) :
     (c.fractionRingMvPolynomialEquiv h).symm (MvPolynomial.aeval c.coordinate p) =
       algebraMap _ (FractionRing (MvPolynomial K R)) p := by
@@ -201,7 +200,7 @@ theorem fractionRingMvPolynomialEquiv_symm_aeval (c : LaurentChart R K F) (h : c
 /-- The inverse polynomial total-quotient equivalence sends coordinates to polynomial variables. -/
 @[simp↓]
 theorem fractionRingMvPolynomialEquiv_symm_apply_coordinate (c : LaurentChart R K F)
-    (h : c.Generates) (i : K) :
+    (h : c.IsGenerating) (i : K) :
     (c.fractionRingMvPolynomialEquiv h).symm (c.coordinate i) =
       algebraMap _ (FractionRing (MvPolynomial K R)) (MvPolynomial.X (R := R) i) := by
   simpa only [MvPolynomial.aeval_X] using
@@ -210,19 +209,19 @@ theorem fractionRingMvPolynomialEquiv_symm_apply_coordinate (c : LaurentChart R 
 /-- Change of generating Laurent chart on the canonical total-quotient models. The coordinate
 index types may differ; both charts have the same ambient algebra. -/
 noncomputable def fractionRingTransition {K' : Type*} (c : LaurentChart R K F)
-    (d : LaurentChart R K' F) (hc : c.Generates) (hd : d.Generates) :
+    (d : LaurentChart R K' F) (hc : c.IsGenerating) (hd : d.IsGenerating) :
     FractionRing (LaurentRing R K) ≃ₐ[R] FractionRing (LaurentRing R K') :=
   (c.fractionRingEquiv hc).trans (d.fractionRingEquiv hd).symm
 
 /-- The total-quotient transition is the composite through the common ambient algebra. -/
 theorem fractionRingTransition_def {K' : Type*} (c : LaurentChart R K F)
-    (d : LaurentChart R K' F) (hc : c.Generates) (hd : d.Generates) :
+    (d : LaurentChart R K' F) (hc : c.IsGenerating) (hd : d.IsGenerating) :
     c.fractionRingTransition d hc hd = (c.fractionRingEquiv hc).trans
       (d.fractionRingEquiv hd).symm := (rfl)
 
 /-- Evaluate change of total-quotient chart on any fraction, without an overlap hypothesis. -/
 theorem fractionRingTransition_apply {K' : Type*} (c : LaurentChart R K F)
-    (d : LaurentChart R K' F) (hc : c.Generates) (hd : d.Generates)
+    (d : LaurentChart R K' F) (hc : c.IsGenerating) (hd : d.IsGenerating)
     (x : FractionRing (LaurentRing R K)) :
     c.fractionRingTransition d hc hd x =
       (d.fractionRingEquiv hd).symm (c.fractionRingEquiv hc x) := (rfl)
@@ -230,20 +229,20 @@ theorem fractionRingTransition_apply {K' : Type*} (c : LaurentChart R K F)
 /-- On a Laurent polynomial class, transition is inverse evaluation in the target chart. -/
 @[simp↓]
 theorem fractionRingTransition_algebraMap {K' : Type*} (c : LaurentChart R K F)
-    (d : LaurentChart R K' F) (hc : c.Generates) (hd : d.Generates) (p : LaurentRing R K) :
+    (d : LaurentChart R K' F) (hc : c.IsGenerating) (hd : d.IsGenerating) (p : LaurentRing R K) :
     c.fractionRingTransition d hc hd (algebraMap _ (FractionRing (LaurentRing R K)) p) =
       (d.fractionRingEquiv hd).symm (c p) := by
   rw [fractionRingTransition_apply, fractionRingEquiv_algebraMap]
 
 @[simp]
-theorem fractionRingTransition_self (c : LaurentChart R K F) (hc : c.Generates) :
+theorem fractionRingTransition_self (c : LaurentChart R K F) (hc : c.IsGenerating) :
     c.fractionRingTransition c hc hc = AlgEquiv.refl := by
   ext x
   simp [fractionRingTransition]
 
 @[simp]
 theorem fractionRingTransition_symm {K' : Type*} (c : LaurentChart R K F)
-    (d : LaurentChart R K' F) (hc : c.Generates) (hd : d.Generates) :
+    (d : LaurentChart R K' F) (hc : c.IsGenerating) (hd : d.IsGenerating) :
     (c.fractionRingTransition d hc hd).symm = d.fractionRingTransition c hd hc := by
   ext x
   rfl
@@ -251,7 +250,7 @@ theorem fractionRingTransition_symm {K' : Type*} (c : LaurentChart R K F)
 @[simp]
 theorem fractionRingTransition_trans {K' K'' : Type*} (c : LaurentChart R K F)
     (d : LaurentChart R K' F) (e : LaurentChart R K'' F)
-    (hc : c.Generates) (hd : d.Generates) (he : e.Generates) :
+    (hc : c.IsGenerating) (hd : d.IsGenerating) (he : e.IsGenerating) :
     (c.fractionRingTransition d hc hd).trans (d.fractionRingTransition e hd he) =
       c.fractionRingTransition e hc he := by
   ext x
@@ -261,7 +260,7 @@ theorem fractionRingTransition_trans {K' K'' : Type*} (c : LaurentChart R K F)
 @[simp]
 theorem fractionRingTransition_fractionRingTransition {K' K'' : Type*} (c : LaurentChart R K F)
     (d : LaurentChart R K' F) (e : LaurentChart R K'' F)
-    (hc : c.Generates) (hd : d.Generates) (he : e.Generates)
+    (hc : c.IsGenerating) (hd : d.IsGenerating) (he : e.IsGenerating)
     (x : FractionRing (LaurentRing R K)) :
     d.fractionRingTransition e hd he (c.fractionRingTransition d hc hd x) =
       c.fractionRingTransition e hc he x := by
@@ -270,7 +269,7 @@ theorem fractionRingTransition_fractionRingTransition {K' K'' : Type*} (c : Laur
 /-- Evaluating a fraction transition agrees with its source chart's evaluation. -/
 @[simp]
 theorem fractionRingEquiv_fractionRingTransition {K' : Type*} (c : LaurentChart R K F)
-    (d : LaurentChart R K' F) (hc : c.Generates) (hd : d.Generates)
+    (d : LaurentChart R K' F) (hc : c.IsGenerating) (hd : d.IsGenerating)
     (x : FractionRing (LaurentRing R K)) :
     d.fractionRingEquiv hd (c.fractionRingTransition d hc hd x) =
       c.fractionRingEquiv hc x := by
@@ -279,31 +278,29 @@ theorem fractionRingEquiv_fractionRingTransition {K' : Type*} (c : LaurentChart 
 /-- Changing fraction coordinates commutes with inverse evaluation from the ambient algebra. -/
 @[simp]
 theorem fractionRingTransition_fractionRingEquiv_symm {K' : Type*}
-    (c : LaurentChart R K F) (d : LaurentChart R K' F) (hc : c.Generates) (hd : d.Generates)
+    (c : LaurentChart R K F) (d : LaurentChart R K' F) (hc : c.IsGenerating) (hd : d.IsGenerating)
     (z : F) :
     c.fractionRingTransition d hc hd ((c.fractionRingEquiv hc).symm z) =
       (d.fractionRingEquiv hd).symm z := by
   simp only [fractionRingTransition_apply, AlgEquiv.apply_symm_apply]
 
 /-- A bijective ambient algebra map preserves regular generation. -/
-theorem Generates.map {c : LaurentChart R K F} (h : c.Generates)
+theorem IsGenerating.map {c : LaurentChart R K F} (h : c.IsGenerating)
     {f : F →ₐ[R] G} (hf : Function.Injective f) (hs : Function.Surjective f) :
-    (c.map f hf).Generates := by
+    (c.map f hf).IsGenerating := by
   let _ := c.toAlgHom.toRingHom.toAlgebra
   let _ := (c.map f hf).toAlgHom.toRingHom.toAlgebra
   have : IsFractionRing (LaurentRing R K) F := c.isFractionRing h
-  change IsFractionRing (LaurentRing R K) G
-  let e : F ≃ₐ[LaurentRing R K] G :=
-    { (AlgEquiv.ofBijective f ⟨hf, hs⟩).toRingEquiv with
-      commutes' := fun p ↦ by
-        change f (c p) = (c.map f hf) p
-        exact (c.map_apply f hf p).symm }
-  exact IsFractionRing.of_algEquiv e
+  rw [isGenerating_iff_isFractionRing]
+  exact IsFractionRing.of_algEquiv
+    (AlgEquiv.ofBijective
+      { f.toRingHom with commutes' := fun p ↦ by simp [RingHom.algebraMap_toAlgebra] }
+      ⟨hf, hs⟩)
 
 /-- Ambient algebra equivalences preserve and reflect regular generation. -/
 @[simp]
-theorem generates_map_algEquiv_iff (c : LaurentChart R K F) (e : F ≃ₐ[R] G) :
-    (c.map e.toAlgHom e.injective).Generates ↔ c.Generates := by
+theorem isGenerating_map_algEquiv_iff (c : LaurentChart R K F) (e : F ≃ₐ[R] G) :
+    (c.map e.toAlgHom e.injective).IsGenerating ↔ c.IsGenerating := by
   constructor
   · intro h
     have hh := h.map (f := e.symm.toAlgHom) e.symm.injective e.symm.surjective
@@ -321,7 +318,7 @@ theorem generates_map_algEquiv_iff (c : LaurentChart R K F) (e : F ≃ₐ[R] G) 
 
 /-- Fraction evaluation commutes with an injective ambient algebra map when both charts generate. -/
 theorem toAlgHom_fractionRingEquiv_map (c : LaurentChart R K F) (f : F →ₐ[R] G)
-    (hf : Function.Injective f) (hc : c.Generates) (h : (c.map f hf).Generates) :
+    (hf : Function.Injective f) (hc : c.IsGenerating) (h : (c.map f hf).IsGenerating) :
     ((c.map f hf).fractionRingEquiv h).toAlgHom = f.comp (c.fractionRingEquiv hc).toAlgHom := by
   apply IsLocalization.algHom_ext (nonZeroDivisors (LaurentRing R K))
   apply LaurentRing.algHom_ext
@@ -330,15 +327,15 @@ theorem toAlgHom_fractionRingEquiv_map (c : LaurentChart R K F) (f : F →ₐ[R]
 
 /-- Pointwise fraction evaluation commutes with the ambient map. -/
 theorem fractionRingEquiv_map_apply (c : LaurentChart R K F) (f : F →ₐ[R] G)
-    (hf : Function.Injective f) (hc : c.Generates) (h : (c.map f hf).Generates)
+    (hf : Function.Injective f) (hc : c.IsGenerating) (h : (c.map f hf).IsGenerating)
     (z : FractionRing (LaurentRing R K)) :
     (c.map f hf).fractionRingEquiv h z = f (c.fractionRingEquiv hc z) :=
   DFunLike.congr_fun (c.toAlgHom_fractionRingEquiv_map f hf hc h) z
 
 /-- The polynomial fraction model has the same ambient-map compatibility. -/
 theorem toAlgHom_fractionRingMvPolynomialEquiv_map (c : LaurentChart R K F)
-    (f : F →ₐ[R] G) (hf : Function.Injective f) (hc : c.Generates)
-    (h : (c.map f hf).Generates) :
+    (f : F →ₐ[R] G) (hf : Function.Injective f) (hc : c.IsGenerating)
+    (h : (c.map f hf).IsGenerating) :
     ((c.map f hf).fractionRingMvPolynomialEquiv h).toAlgHom =
       f.comp (c.fractionRingMvPolynomialEquiv hc).toAlgHom := by
   apply IsLocalization.algHom_ext (nonZeroDivisors (MvPolynomial K R))
@@ -348,10 +345,10 @@ theorem toAlgHom_fractionRingMvPolynomialEquiv_map (c : LaurentChart R K F)
 
 /-- A simultaneous ambient embedding leaves the fraction transition unchanged whenever both
 source charts and both target charts generate. -/
-theorem fractionRingTransition_map_of_generates {K' : Type*} (c : LaurentChart R K F)
+theorem fractionRingTransition_map_of_isGenerating {K' : Type*} (c : LaurentChart R K F)
     (d : LaurentChart R K' F) (f : F →ₐ[R] G) (hf : Function.Injective f)
-    (hc : c.Generates) (hd : d.Generates)
-    (hc' : (c.map f hf).Generates) (hd' : (d.map f hf).Generates) :
+    (hc : c.IsGenerating) (hd : d.IsGenerating)
+    (hc' : (c.map f hf).IsGenerating) (hd' : (d.map f hf).IsGenerating) :
     (c.map f hf).fractionRingTransition (d.map f hf) hc' hd' =
       c.fractionRingTransition d hc hd := by
   ext z
@@ -362,7 +359,7 @@ theorem fractionRingTransition_map_of_generates {K' : Type*} (c : LaurentChart R
 /-- Inverse fraction evaluation recovers a constructor-normal Laurent evaluation. -/
 @[simp↓]
 theorem fractionRingEquiv_ofCoordinates_symm_aeval (x : K → Fˣ)
-    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (h : (ofCoordinates x hx).Generates)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (h : (ofCoordinates x hx).IsGenerating)
     (p : LaurentRing R K) :
     ((ofCoordinates x hx).fractionRingEquiv h).symm (LaurentRing.aeval x p) =
       algebraMap _ (FractionRing (LaurentRing R K)) p := by
@@ -371,23 +368,22 @@ theorem fractionRingEquiv_ofCoordinates_symm_aeval (x : K → Fˣ)
 /-- Inverse polynomial fraction evaluation recovers a constructor-normal polynomial value. -/
 @[simp↓]
 theorem fractionRingMvPolynomialEquiv_ofCoordinates_symm_aeval (x : K → Fˣ)
-    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (h : (ofCoordinates x hx).Generates)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (h : (ofCoordinates x hx).IsGenerating)
     (p : MvPolynomial K R) :
     ((ofCoordinates x hx).fractionRingMvPolynomialEquiv h).symm
       (MvPolynomial.aeval (fun i ↦ (x i : F)) p) =
         algebraMap _ (FractionRing (MvPolynomial K R)) p := by
-  simpa only [show (ofCoordinates x hx).coordinate = (fun i ↦ (x i : F)) from
-    funext (coordinate_ofCoordinates x hx)] using
+  simpa only [funext (coordinate_ofCoordinates x hx)] using
       (ofCoordinates x hx).fractionRingMvPolynomialEquiv_symm_aeval h p
 
 /-- Reindex the canonical Laurent fraction model using the existing localization equivalence. -/
 @[simp]
 theorem fractionRingEquiv_reindex {K' : Type*} (c : LaurentChart R K F) (σ : K ≃ K')
-    (h : (c.reindex σ).Generates) :
+    (h : (c.reindex σ).IsGenerating) :
     (c.reindex σ).fractionRingEquiv h =
       (IsFractionRing.algEquivOfAlgEquiv (K := FractionRing (LaurentRing R K'))
         (L := FractionRing (LaurentRing R K)) (LaurentRing.renameEquiv R σ.symm)).trans
-          (c.fractionRingEquiv ((c.generates_reindex_iff σ).mp h)) := by
+          (c.fractionRingEquiv ((c.isGenerating_reindex_iff σ).mp h)) := by
   apply AlgEquiv.coe_toAlgHom_injective
   apply IsLocalization.algHom_ext (nonZeroDivisors (LaurentRing R K'))
   apply LaurentRing.algHom_ext
@@ -397,11 +393,11 @@ theorem fractionRingEquiv_reindex {K' : Type*} (c : LaurentChart R K F) (σ : K 
 /-- Reindex the polynomial fraction model by the existing total-quotient functor. -/
 @[simp]
 theorem fractionRingMvPolynomialEquiv_reindex {K' : Type*}
-    (c : LaurentChart R K F) (σ : K ≃ K') (h : (c.reindex σ).Generates) :
+    (c : LaurentChart R K F) (σ : K ≃ K') (h : (c.reindex σ).IsGenerating) :
     (c.reindex σ).fractionRingMvPolynomialEquiv h =
       (IsFractionRing.algEquivOfAlgEquiv (K := FractionRing (MvPolynomial K' R))
         (L := FractionRing (MvPolynomial K R)) (MvPolynomial.renameEquiv R σ.symm)).trans
-          (c.fractionRingMvPolynomialEquiv ((c.generates_reindex_iff σ).mp h)) := by
+          (c.fractionRingMvPolynomialEquiv ((c.isGenerating_reindex_iff σ).mp h)) := by
   apply AlgEquiv.coe_toAlgHom_injective
   apply IsLocalization.algHom_ext (nonZeroDivisors (MvPolynomial K' R))
   apply MvPolynomial.algHom_ext
@@ -412,13 +408,219 @@ theorem fractionRingMvPolynomialEquiv_reindex {K' : Type*}
 expansion to the second Laurent expansion of the same ambient element. -/
 theorem fractionRingTransition_algebraMap_laurentExpansion {K' : Type*}
     (c : LaurentChart R K F) (d : LaurentChart R K' F)
-    (hc : c.Generates) (hd : d.Generates) (z : F)
+    (hc : c.IsGenerating) (hd : d.IsGenerating) (z : F)
     (hz : z ∈ c.range ⊓ d.range) :
     c.fractionRingTransition d hc hd
         (algebraMap _ (FractionRing (LaurentRing R K)) (c.laurentExpansion ⟨z, hz.1⟩)) =
       algebraMap _ (FractionRing (LaurentRing R K')) (d.laurentExpansion ⟨z, hz.2⟩) := by
   apply (d.fractionRingEquiv hd).injective
   simp
+
+/-- Ambient algebra equivalences transport the canonical Laurent total-quotient equivalence. -/
+@[simp]
+theorem fractionRingEquiv_map (c : LaurentChart R K F) (e : F ≃ₐ[R] G)
+    (h : (c.map e.toAlgHom e.injective).IsGenerating) :
+    (c.map e.toAlgHom e.injective).fractionRingEquiv h =
+      (c.fractionRingEquiv ((c.isGenerating_map_algEquiv_iff e).mp h)).trans e := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  exact c.toAlgHom_fractionRingEquiv_map e.toAlgHom e.injective
+    ((c.isGenerating_map_algEquiv_iff e).mp h) h
+
+
+/-- Ambient algebra equivalences transport the canonical polynomial total-quotient model. -/
+@[simp]
+theorem fractionRingMvPolynomialEquiv_map (c : LaurentChart R K F) (e : F ≃ₐ[R] G)
+    (h : (c.map e.toAlgHom e.injective).IsGenerating) :
+    (c.map e.toAlgHom e.injective).fractionRingMvPolynomialEquiv h =
+      (c.fractionRingMvPolynomialEquiv ((c.isGenerating_map_algEquiv_iff e).mp h)).trans e := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  exact c.toAlgHom_fractionRingMvPolynomialEquiv_map e.toAlgHom e.injective
+    ((c.isGenerating_map_algEquiv_iff e).mp h) h
+
+
+/-- Inverse Laurent fraction evaluation at a unit-family coordinate in constructor normal form. -/
+@[simp↓]
+theorem fractionRingEquiv_ofCoordinates_symm_coordinate (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F))
+    (h : (ofCoordinates x hx).IsGenerating) (i : K) :
+    ((ofCoordinates x hx).fractionRingEquiv h).symm (x i : F) =
+      algebraMap _ (FractionRing (LaurentRing R K)) (LaurentRing.X (R := R) i) := by
+  simpa only [coordinate_ofCoordinates] using
+    (ofCoordinates x hx).fractionRingEquiv_symm_apply_coordinate h i
+
+
+/-- Inverse polynomial fraction evaluation at a unit-family coordinate. -/
+@[simp↓]
+theorem fractionRingMvPolynomialEquiv_ofCoordinates_symm_coordinate (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F))
+    (h : (ofCoordinates x hx).IsGenerating) (i : K) :
+    ((ofCoordinates x hx).fractionRingMvPolynomialEquiv h).symm (x i : F) =
+      algebraMap _ (FractionRing (MvPolynomial K R)) (MvPolynomial.X (R := R) i) := by
+  simpa only [coordinate_ofCoordinates] using
+    (ofCoordinates x hx).fractionRingMvPolynomialEquiv_symm_apply_coordinate h i
+
+
+/-- Generation can be expressed using the intrinsic algebra structure of the chart range. -/
+theorem isGenerating_iff_isFractionRing_range (c : LaurentChart R K F) :
+    c.IsGenerating ↔ IsFractionRing c.range F := by
+  let _ := c.toAlgHom.toRingHom.toAlgebra
+  constructor
+  · intro h
+    have : IsFractionRing (LaurentRing R K) F := c.isFractionRing h
+    apply IsFractionRing.of_ringEquiv_left c.laurentExpansion.toRingEquiv
+    intro x
+    exact (c.apply_laurentExpansion x).symm
+  · intro h
+    have : IsFractionRing c.range F := h
+    rw [isGenerating_iff_isFractionRing]
+    apply IsFractionRing.of_ringEquiv_left c.laurentExpansion.symm.toRingEquiv
+    intro p
+    exact (c.coe_laurentExpansion_symm_apply p).symm
+
+/-- Generation is equivalent to an ambient equivalence extending the given Laurent chart. -/
+theorem isGenerating_iff_exists_algEquiv (c : LaurentChart R K F) :
+    c.IsGenerating ↔ ∃ e : FractionRing (LaurentRing R K) ≃ₐ[R] F,
+      ∀ p, e (algebraMap _ (FractionRing (LaurentRing R K)) p) = c p := by
+  constructor
+  · intro h
+    exact ⟨c.fractionRingEquiv h, c.fractionRingEquiv_algebraMap h⟩
+  · rintro ⟨e, he⟩
+    let _ := c.toAlgHom.toRingHom.toAlgebra
+    rw [isGenerating_iff_isFractionRing]
+    exact IsFractionRing.of_algEquiv
+      ({ e.toRingEquiv with commutes' := fun p ↦ he p } :
+        FractionRing (LaurentRing R K) ≃ₐ[LaurentRing R K] F)
+
+/-- The polynomial fraction-model evaluation commutes pointwise with an ambient embedding. -/
+theorem fractionRingMvPolynomialEquiv_map_apply (c : LaurentChart R K F)
+    (f : F →ₐ[R] G) (hf : Function.Injective f) (hc : c.IsGenerating)
+    (h : (c.map f hf).IsGenerating) (z : FractionRing (MvPolynomial K R)) :
+    (c.map f hf).fractionRingMvPolynomialEquiv h z = f (c.fractionRingMvPolynomialEquiv hc z) :=
+  DFunLike.congr_fun (c.toAlgHom_fractionRingMvPolynomialEquiv_map f hf hc h) z
+
+/-- Inverse fraction evaluation at an inverse unit coordinate in constructor normal form. -/
+@[simp↓]
+theorem fractionRingEquiv_ofCoordinates_symm_inv_coordinateUnit (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F))
+    (h : (ofCoordinates x hx).IsGenerating) (i : K) :
+    ((ofCoordinates x hx).fractionRingEquiv h).symm (((x i)⁻¹ : Fˣ) : F) =
+      algebraMap _ (FractionRing (LaurentRing R K))
+        (AddMonoidAlgebra.single (-Finsupp.single i 1) 1 : LaurentRing R K) := by
+  simpa only [coordinateUnit_ofCoordinates] using
+    (ofCoordinates x hx).fractionRingEquiv_symm_apply_inv_coordinateUnit h i
+
+/-- Ambient equivalences preserve total-quotient transitions. -/
+@[simp]
+theorem fractionRingTransition_map_algEquiv {K' : Type*} (c : LaurentChart R K F)
+    (d : LaurentChart R K' F) (e : F ≃ₐ[R] G)
+    (hc : (c.map e.toAlgHom e.injective).IsGenerating)
+    (hd : (d.map e.toAlgHom e.injective).IsGenerating) :
+    (c.map e.toAlgHom e.injective).fractionRingTransition
+        (d.map e.toAlgHom e.injective) hc hd =
+      c.fractionRingTransition d ((c.isGenerating_map_algEquiv_iff e).mp hc)
+        ((d.isGenerating_map_algEquiv_iff e).mp hd) :=
+  c.fractionRingTransition_map_of_isGenerating d e.toAlgHom e.injective
+    ((c.isGenerating_map_algEquiv_iff e).mp hc)
+    ((d.isGenerating_map_algEquiv_iff e).mp hd) hc hd
+
+/-- Change of generating chart on the polynomial total-quotient models. -/
+noncomputable def fractionRingMvPolynomialTransition {K' : Type*} (c : LaurentChart R K F)
+    (d : LaurentChart R K' F) (hc : c.IsGenerating) (hd : d.IsGenerating) :
+    FractionRing (MvPolynomial K R) ≃ₐ[R] FractionRing (MvPolynomial K' R) :=
+  (c.fractionRingMvPolynomialEquiv hc).trans (d.fractionRingMvPolynomialEquiv hd).symm
+
+/-- The polynomial transition is the composite through the common ambient algebra. -/
+theorem fractionRingMvPolynomialTransition_def {K' : Type*} (c : LaurentChart R K F)
+    (d : LaurentChart R K' F) (hc : c.IsGenerating) (hd : d.IsGenerating) :
+    c.fractionRingMvPolynomialTransition d hc hd =
+      (c.fractionRingMvPolynomialEquiv hc).trans (d.fractionRingMvPolynomialEquiv hd).symm := by rfl
+
+/-- Pointwise characterization of polynomial total-quotient transitions. -/
+theorem fractionRingMvPolynomialTransition_apply {K' : Type*} (c : LaurentChart R K F)
+    (d : LaurentChart R K' F) (hc : c.IsGenerating) (hd : d.IsGenerating)
+    (z : FractionRing (MvPolynomial K R)) :
+    c.fractionRingMvPolynomialTransition d hc hd z =
+      (d.fractionRingMvPolynomialEquiv hd).symm (c.fractionRingMvPolynomialEquiv hc z) := by rfl
+
+@[simp]
+theorem fractionRingMvPolynomialTransition_self (c : LaurentChart R K F)
+    (hc : c.IsGenerating) : c.fractionRingMvPolynomialTransition c hc hc = AlgEquiv.refl := by
+  ext x
+  simp [fractionRingMvPolynomialTransition]
+
+@[simp]
+theorem fractionRingMvPolynomialTransition_symm {K' : Type*} (c : LaurentChart R K F)
+    (d : LaurentChart R K' F) (hc : c.IsGenerating) (hd : d.IsGenerating) :
+    (c.fractionRingMvPolynomialTransition d hc hd).symm =
+      d.fractionRingMvPolynomialTransition c hd hc := by
+  ext x
+  rfl
+
+@[simp]
+theorem fractionRingMvPolynomialTransition_trans {K' K'' : Type*} (c : LaurentChart R K F)
+    (d : LaurentChart R K' F) (e : LaurentChart R K'' F)
+    (hc : c.IsGenerating) (hd : d.IsGenerating) (he : e.IsGenerating) :
+    (c.fractionRingMvPolynomialTransition d hc hd).trans
+        (d.fractionRingMvPolynomialTransition e hd he) =
+      c.fractionRingMvPolynomialTransition e hc he := by
+  ext x
+  simp [fractionRingMvPolynomialTransition]
+
+/-- A coordinate subfamily generates exactly when the original chart generates and all
+coordinates are retained. Nontriviality rules out the degenerate zero algebra. -/
+@[simp]
+theorem isGenerating_restrict_iff [Nontrivial F] (c : LaurentChart R K F) {K' : Type*}
+    (f : K' ↪ K) :
+    (c.restrict f).IsGenerating ↔ c.IsGenerating ∧ Function.Surjective f := by
+  have : Nontrivial R := (algebraMap R F).domain_nontrivial
+  have forward (h : (c.restrict f).IsGenerating) : Function.Surjective f := by
+    intro j
+    by_contra hj
+    obtain ⟨p, q, hpq⟩ := h.exists_mul (c.coordinate j)
+    have hq : (q : LaurentRing R K') ≠ 0 := nonZeroDivisors.coe_ne_zero q
+    obtain ⟨a, ha⟩ : ∃ a, (q : LaurentRing R K').coeff a ≠ 0 := by
+      contrapose! hq
+      ext a
+      exact hq a
+    have heq : LaurentRing.X j * LaurentRing.rename f (q : LaurentRing R K') =
+        LaurentRing.rename f p := by
+      apply c.injective
+      simpa only [map_mul, toAlgHom_apply, apply_X, restrict_apply] using hpq
+    have hz (b : K' →₀ ℤ) : Finsupp.mapDomain f b j = 0 :=
+      Finsupp.mapDomain_of_notMem_range b j hj
+    have hnot : Finsupp.single j 1 + Finsupp.mapDomain f a ∉
+        Set.range (Finsupp.mapDomain f : (K' →₀ ℤ) → K →₀ ℤ) := by
+      rintro ⟨b, hb⟩
+      have := congrArg (fun v : K →₀ ℤ ↦ v j) hb
+      simp only [hz, Finsupp.add_apply, Finsupp.single_eq_same, add_zero] at this
+      exact zero_ne_one this
+    have hc := congrArg (fun z : LaurentRing R K ↦
+      z.coeff (Finsupp.single j 1 + Finsupp.mapDomain f a)) heq
+    simp only [LaurentRing.X_def, LaurentRing.rename_apply,
+      AddMonoidAlgebra.coeff_single_mul_add, one_mul] at hc
+    rw [AddMonoidAlgebra.mapDomain, AddMonoidAlgebra.coeff_ofCoeff,
+      Finsupp.mapDomain_apply_of_injective (Finsupp.mapDomain_injective f.injective)] at hc
+    rw [AddMonoidAlgebra.mapDomain, AddMonoidAlgebra.coeff_ofCoeff,
+      Finsupp.mapDomain_of_notMem_range _ _ hnot] at hc
+    exact ha hc
+  have transport (hf : Function.Surjective f) :
+      c.restrict f = c.reindex (Equiv.ofBijective f ⟨f.injective, hf⟩).symm := by
+    ext i
+    simp only [coordinate_restrict, coordinate_reindex, Equiv.symm_symm]
+    exact congrArg c.coordinate
+      (congrFun (Equiv.coe_ofBijective f ⟨f.injective, hf⟩) i).symm
+  constructor
+  · intro h
+    have hf := forward h
+    exact ⟨(c.isGenerating_reindex_iff _).mp (transport hf ▸ h), hf⟩
+  · rintro ⟨h, hf⟩
+    rw [transport hf]
+    exact (c.isGenerating_reindex_iff _).mpr h
+
+/-- A proper coordinate subfamily cannot generate a nontrivial ambient commutative algebra. -/
+theorem not_isGenerating_restrict [Nontrivial F] (c : LaurentChart R K F) {K' : Type*}
+    (f : K' ↪ K) (hf : ¬ Function.Surjective f) : ¬ (c.restrict f).IsGenerating :=
+  fun h ↦ hf ((c.isGenerating_restrict_iff f).mp h).2
 
 end CommRing
 
@@ -428,7 +630,7 @@ variable [CommRing R] [Field F] [Algebra R F] [Field G] [Algebra R G]
 /-- In an ambient field the inverse coordinate has the same negative Laurent fraction class. -/
 @[simp↓]
 theorem fractionRingEquiv_symm_apply_inv_coordinate (c : LaurentChart R K F)
-    (h : c.Generates) (i : K) :
+    (h : c.IsGenerating) (i : K) :
     (c.fractionRingEquiv h).symm (c.coordinate i)⁻¹ =
       algebraMap _ (FractionRing (LaurentRing R K))
         (AddMonoidAlgebra.single (-Finsupp.single i 1) 1 : LaurentRing R K) := by
@@ -436,8 +638,8 @@ theorem fractionRingEquiv_symm_apply_inv_coordinate (c : LaurentChart R K F)
     c.fractionRingEquiv_symm_apply_inv_coordinateUnit h i
 
 /-- For fields, regular generation agrees with generation by the chart image as a subfield. -/
-theorem generates_iff (c : LaurentChart R K F) :
-    c.Generates ↔ Subfield.closure (Set.range c) = ⊤ := by
+theorem isGenerating_iff_closure_range_eq_top (c : LaurentChart R K F) :
+    c.IsGenerating ↔ Subfield.closure (Set.range c) = ⊤ := by
   constructor
   · intro h
     let _ := c.toAlgHom.toRingHom.toAlgebra
@@ -459,7 +661,7 @@ theorem generates_iff (c : LaurentChart R K F) :
     exact ⟨p, q, hxy.symm⟩
 
 /-- Every ambient field value has a quotient expression with a nonzero Laurent denominator. -/
-theorem Generates.exists_div {c : LaurentChart R K F} (h : c.Generates) (z : F) :
+theorem IsGenerating.exists_div {c : LaurentChart R K F} (h : c.IsGenerating) (z : F) :
     ∃ p q : LaurentRing R K, q ≠ 0 ∧ c p / c q = z := by
   let _ := c.toAlgHom.toRingHom.toAlgebra
   have : IsFractionRing (LaurentRing R K) F := c.isFractionRing h
@@ -483,18 +685,18 @@ theorem closure_range_map (c : LaurentChart R K F) (f : F →ₐ[R] G) :
 
 /-- An embedded chart generates precisely when the original chart generates and the ambient
 embedding is surjective. -/
-theorem generates_map_iff (c : LaurentChart R K F) (f : F →ₐ[R] G) :
-    (c.map f f.toRingHom.injective).Generates ↔ c.Generates ∧ Function.Surjective f := by
-  rw [generates_iff, closure_range_map]
+theorem isGenerating_map_iff (c : LaurentChart R K F) (f : F →ₐ[R] G) :
+    (c.map f f.toRingHom.injective).IsGenerating ↔ c.IsGenerating ∧ Function.Surjective f := by
+  rw [isGenerating_iff_closure_range_eq_top, closure_range_map]
   constructor
   · intro h
     have hc : Subfield.closure (Set.range c) = ⊤ := by
       rw [← Subfield.comap_map f.toRingHom (Subfield.closure (Set.range c)),
         h, Subfield.comap_top]
-    exact ⟨c.generates_iff.mpr hc, RingHom.fieldRange_eq_top_iff.mp
+    exact ⟨c.isGenerating_iff_closure_range_eq_top.mpr hc, RingHom.fieldRange_eq_top_iff.mp
       ((RingHom.fieldRange_eq_map f.toRingHom).trans (hc ▸ h))⟩
   · rintro ⟨h, hf⟩
-    rw [c.generates_iff.mp h]
+    rw [c.isGenerating_iff_closure_range_eq_top.mp h]
     exact (RingHom.fieldRange_eq_map f.toRingHom).symm.trans
       (RingHom.fieldRange_eq_top_iff.mpr hf)
 
@@ -532,27 +734,25 @@ theorem closure_range_eq (c : LaurentChart R K F) :
   simp_rw [Subfield.mem_closure_iff, hr]
 
 /-- Generation can be checked on coefficients and coordinates. -/
-theorem generates_iff_closure_range_coordinate (c : LaurentChart R K F) :
-    c.Generates ↔
+theorem isGenerating_iff_closure_range_coordinate_eq_top (c : LaurentChart R K F) :
+    c.IsGenerating ↔
       Subfield.closure (Set.range (algebraMap R F) ∪ Set.range c.coordinate) = ⊤ := by
-  rw [generates_iff, closure_range_eq]
+  rw [isGenerating_iff_closure_range_eq_top, closure_range_eq]
 
 /-- A chart constructed from independent units generates exactly when those units together
 with the coefficient image generate the ambient field. -/
 @[simp]
-theorem generates_ofCoordinates_iff (x : K → Fˣ)
+theorem isGenerating_ofCoordinates_iff (x : K → Fˣ)
     (hx : AlgebraicIndependent R fun i ↦ (x i : F)) :
-    (ofCoordinates x hx).Generates ↔
+    (ofCoordinates x hx).IsGenerating ↔
       Subfield.closure (Set.range (algebraMap R F) ∪ Set.range fun i ↦ (x i : F)) = ⊤ := by
-  rw [generates_iff_closure_range_coordinate]
-  rw [show (ofCoordinates x hx).coordinate = (fun i ↦ (x i : F)) from
-    funext (coordinate_ofCoordinates x hx)]
+  rw [isGenerating_iff_closure_range_coordinate_eq_top, funext (coordinate_ofCoordinates x hx)]
 
 /-- Generation is equivalent to a quotient expression for every ambient value. -/
-theorem generates_iff_exists_div (c : LaurentChart R K F) :
-    c.Generates ↔ ∀ z : F, ∃ p q : LaurentRing R K, q ≠ 0 ∧ c p / c q = z := by
+theorem isGenerating_iff_exists_div (c : LaurentChart R K F) :
+    c.IsGenerating ↔ ∀ z : F, ∃ p q : LaurentRing R K, q ≠ 0 ∧ c p / c q = z := by
   refine ⟨fun h ↦ h.exists_div, fun h ↦ ?_⟩
-  apply (c.generates_iff).mpr
+  apply (c.isGenerating_iff_closure_range_eq_top).mpr
   apply top_unique
   intro z _
   obtain ⟨p, q, -, rfl⟩ := h z
@@ -560,7 +760,7 @@ theorem generates_iff_exists_div (c : LaurentChart R K F) :
     (Subfield.subset_closure ⟨q, rfl⟩)
 
 /-- Coordinates of a generating chart are a transcendence basis of the ambient field. -/
-theorem isTranscendenceBasis (c : LaurentChart R K F) (h : c.Generates) :
+theorem isTranscendenceBasis (c : LaurentChart R K F) (h : c.IsGenerating) :
     IsTranscendenceBasis R c.coordinate := by
   have : IsDomain R := c.isDomain
   let _ := (c.toAlgHom.comp MvPolynomial.toLaurent).toRingHom.toAlgebra
@@ -574,122 +774,44 @@ theorem isTranscendenceBasis (c : LaurentChart R K F) (h : c.Generates) :
     toAlgHom_apply, apply_toLaurent, MvPolynomial.aeval_X] using
     (IsTranscendenceBasis.mvPolynomial K R).algebraMap_comp (A := F)
 
-/-- A coordinate subfamily generates exactly when the original chart generates and every
-coordinate was retained. -/
-@[simp]
-theorem generates_restrict_iff (c : LaurentChart R K F) {K' : Type*} (f : K' ↪ K) :
-    (c.restrict f).Generates ↔ c.Generates ∧ Function.Surjective f := by
-  have : IsDomain R := c.isDomain
-  constructor
-  · intro h
-    have hc : c.Generates := by
-      apply c.generates_iff.mpr
-      apply top_unique
-      rw [← (c.restrict f).generates_iff.mp h]
-      apply Subfield.closure_mono
-      rintro _ ⟨p, rfl⟩
-      exact ⟨LaurentRing.rename f p, (c.restrict_apply f p).symm⟩
-    refine ⟨hc, ?_⟩
-    have hb := (c.restrict f).isTranscendenceBasis h
-    have hs : Set.range (c.restrict f).coordinate ⊆ Set.range c.coordinate := by
-      rintro _ ⟨i, rfl⟩
-      exact ⟨f i, by simp⟩
-    have heq := hb.2 (Set.range c.coordinate) c.algebraicIndependent.coe_range hs
-    intro j
-    have hj : c.coordinate j ∈ Set.range (c.restrict f).coordinate := by
-      rw [heq]
-      exact ⟨j, rfl⟩
-    obtain ⟨i, hi⟩ := hj
-    exact ⟨i, c.algebraicIndependent.injective (by simpa using hi)⟩
-  · rintro ⟨h, hf⟩
-    let e := Equiv.ofBijective f ⟨f.injective, hf⟩
-    have he : c.restrict f = c.reindex e.symm := by
-      ext i
-      simp only [coordinate_restrict, coordinate_reindex, Equiv.symm_symm]
-      exact congrArg c.coordinate
-        (congrFun (Equiv.coe_ofBijective f ⟨f.injective, hf⟩) i).symm
-    rw [he]
-    exact (c.generates_reindex_iff e.symm).mpr h
-
-/-- A proper coordinate subfamily cannot generate the ambient field. -/
-theorem not_generates_restrict (c : LaurentChart R K F) {K' : Type*} (f : K' ↪ K)
-    (hf : ¬ Function.Surjective f) : ¬ (c.restrict f).Generates :=
-  fun h ↦ hf ((c.generates_restrict_iff f).mp h).2
-
-/-- Ambient algebra equivalences transport the canonical Laurent fraction-field equivalence. -/
-@[simp]
-theorem fractionRingEquiv_map (c : LaurentChart R K F) (e : F ≃ₐ[R] G)
-    (h : (c.map e.toAlgHom e.injective).Generates) :
-    (c.map e.toAlgHom e.injective).fractionRingEquiv h =
-      (c.fractionRingEquiv ((c.generates_map_algEquiv_iff e).mp h)).trans e := by
-  apply AlgEquiv.coe_toAlgHom_injective
-  exact c.toAlgHom_fractionRingEquiv_map e.toAlgHom e.injective
-    ((c.generates_map_algEquiv_iff e).mp h) h
-
 /-- For ambient fields, generation of both transported charts suffices for transition transport
 along any algebra homomorphism, without assuming surjectivity in advance. -/
 @[simp]
 theorem fractionRingTransition_map {K' : Type*} (c : LaurentChart R K F)
     (d : LaurentChart R K' F) (f : F →ₐ[R] G)
-    (hc : (c.map f f.toRingHom.injective).Generates)
-    (hd : (d.map f f.toRingHom.injective).Generates) :
+    (hc : (c.map f f.toRingHom.injective).IsGenerating)
+    (hd : (d.map f f.toRingHom.injective).IsGenerating) :
     (c.map f f.toRingHom.injective).fractionRingTransition
         (d.map f f.toRingHom.injective) hc hd =
-      c.fractionRingTransition d ((c.generates_map_iff f).mp hc).1
-        ((d.generates_map_iff f).mp hd).1 :=
-  c.fractionRingTransition_map_of_generates d f f.toRingHom.injective
-    ((c.generates_map_iff f).mp hc).1 ((d.generates_map_iff f).mp hd).1 hc hd
-
-/-- Ambient algebra equivalences transport the canonical polynomial fraction-field model. -/
-@[simp]
-theorem fractionRingMvPolynomialEquiv_map (c : LaurentChart R K F) (e : F ≃ₐ[R] G)
-    (h : (c.map e.toAlgHom e.injective).Generates) :
-    (c.map e.toAlgHom e.injective).fractionRingMvPolynomialEquiv h =
-      (c.fractionRingMvPolynomialEquiv ((c.generates_map_algEquiv_iff e).mp h)).trans e := by
-  apply AlgEquiv.coe_toAlgHom_injective
-  exact c.toAlgHom_fractionRingMvPolynomialEquiv_map e.toAlgHom e.injective
-    ((c.generates_map_algEquiv_iff e).mp h) h
-
-/-- Inverse Laurent fraction evaluation at a unit-family coordinate in constructor normal form. -/
-@[simp↓]
-theorem fractionRingEquiv_ofCoordinates_symm_coordinate (x : K → Fˣ)
-    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (h : (ofCoordinates x hx).Generates) (i : K) :
-    ((ofCoordinates x hx).fractionRingEquiv h).symm (x i : F) =
-      algebraMap _ (FractionRing (LaurentRing R K)) (LaurentRing.X (R := R) i) := by
-  simpa only [coordinate_ofCoordinates] using
-    (ofCoordinates x hx).fractionRingEquiv_symm_apply_coordinate h i
+      c.fractionRingTransition d ((c.isGenerating_map_iff f).mp hc).1
+        ((d.isGenerating_map_iff f).mp hd).1 :=
+  c.fractionRingTransition_map_of_isGenerating d f f.toRingHom.injective
+    ((c.isGenerating_map_iff f).mp hc).1 ((d.isGenerating_map_iff f).mp hd).1 hc hd
 
 /-- Inverse Laurent fraction evaluation at an inverse unit-family coordinate. -/
 @[simp↓]
 theorem fractionRingEquiv_ofCoordinates_symm_inv_coordinate (x : K → Fˣ)
-    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (h : (ofCoordinates x hx).Generates) (i : K) :
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F))
+    (h : (ofCoordinates x hx).IsGenerating) (i : K) :
     ((ofCoordinates x hx).fractionRingEquiv h).symm ((x i : F)⁻¹) =
       algebraMap _ (FractionRing (LaurentRing R K))
         (AddMonoidAlgebra.single (-Finsupp.single i 1) 1 : LaurentRing R K) := by
   simpa only [coordinate_ofCoordinates] using
     (ofCoordinates x hx).fractionRingEquiv_symm_apply_inv_coordinate h i
 
-/-- Inverse polynomial fraction evaluation at a unit-family coordinate. -/
-@[simp↓]
-theorem fractionRingMvPolynomialEquiv_ofCoordinates_symm_coordinate (x : K → Fˣ)
-    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (h : (ofCoordinates x hx).Generates) (i : K) :
-    ((ofCoordinates x hx).fractionRingMvPolynomialEquiv h).symm (x i : F) =
-      algebraMap _ (FractionRing (MvPolynomial K R)) (MvPolynomial.X (R := R) i) := by
-  simpa only [coordinate_ofCoordinates] using
-    (ofCoordinates x hx).fractionRingMvPolynomialEquiv_symm_apply_coordinate h i
 
 /-- Generating charts correspond to field-generating transcendence bases. -/
 noncomputable def generatingCoordinatesEquiv :
-    {c : LaurentChart R K F // c.Generates} ≃
+    {c : LaurentChart R K F // c.IsGenerating} ≃
       {x : K → F // IsTranscendenceBasis R x ∧
         Subfield.closure (Set.range (algebraMap R F) ∪ Set.range x) = ⊤} where
   toFun c := ⟨c.1.coordinate, c.1.isTranscendenceBasis c.2,
-    c.1.generates_iff_closure_range_coordinate.mp c.2⟩
+    c.1.isGenerating_iff_closure_range_coordinate_eq_top.mp c.2⟩
   invFun x := by
     have : IsDomain R := Function.Injective.isDomain (algebraMap R F) x.2.1.1.algebraMap_injective
     let u : K → Fˣ := fun i ↦ Units.mk0 (x.1 i) (x.2.1.1.ne_zero i)
     let c := ofCoordinates u (by simpa [u] using x.2.1.1)
-    refine ⟨c, c.generates_iff_closure_range_coordinate.mpr ?_⟩
+    refine ⟨c, c.isGenerating_iff_closure_range_coordinate_eq_top.mpr ?_⟩
     have hc : c.coordinate = x.1 := funext fun i ↦ by simp [c, u]
     rw [hc]
     exact x.2.2
@@ -703,7 +825,7 @@ noncomputable def generatingCoordinatesEquiv :
     simp
 
 @[simp]
-theorem val_generatingCoordinatesEquiv_apply (c : {c : LaurentChart R K F // c.Generates}) :
+theorem val_generatingCoordinatesEquiv_apply (c : {c : LaurentChart R K F // c.IsGenerating}) :
     (generatingCoordinatesEquiv c).1 = c.1.coordinate := (rfl)
 
 @[simp]

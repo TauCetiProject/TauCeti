@@ -34,12 +34,12 @@ theorem inv_mem_range_map_iff (c : LaurentChart R K F) (f : F →ₐ[R] G) (hf :
 
 /-- Inverse range transport cancels an embedded inverse in its algebra normal form. -/
 @[simp↓]
-theorem mapRange_symm_inv (c : LaurentChart R K F) (f : F →ₐ[R] G) (hf : Function.Injective f) (z
-  : F)
+theorem rangeEquivRangeMap_symm_inv (c : LaurentChart R K F) (f : F →ₐ[R] G)
+    (hf : Function.Injective f) (z : F)
     (h : (f z)⁻¹ ∈ (c.map f hf).range) :
-    (c.mapRange f hf).symm ⟨(f z)⁻¹, h⟩ =
+    (c.rangeEquivRangeMap f hf).symm ⟨(f z)⁻¹, h⟩ =
       ⟨z⁻¹, (c.inv_mem_range_map_iff f hf z).mp h⟩ := by
-  simpa only [map_inv₀] using c.mapRange_symm_apply f hf z⁻¹
+  simpa only [map_inv₀] using c.rangeEquivRangeMap_symm_apply f hf z⁻¹
     (by simpa only [map_inv₀] using h)
 
 /-- Ambient inverse coordinates belong to the Laurent subalgebra. -/
@@ -65,6 +65,12 @@ theorem coeff_inv_coordinate (c : LaurentChart R K F) (i : K)
     (h : (c.coordinate i)⁻¹ ∈ c.range) :
     c.coeff ⟨(c.coordinate i)⁻¹, h⟩ = Finsupp.single (-Finsupp.single i 1) 1 := by
   rw [coeff_def, laurentExpansion_inv_coordinate, AddMonoidAlgebra.coeff_single]
+
+/-- The ambient inverse of each retained coordinate belongs to the smaller range. -/
+@[simp]
+theorem inv_coordinate_restrict_mem_range (c : LaurentChart R K F) (f : K' ↪ K) (i : K') :
+    (c.coordinate (f i))⁻¹ ∈ (c.restrict f).range := by
+  simpa only [coordinate_restrict] using (c.restrict f).inv_coordinate_mem_range i
 
 /-- An ambient inverse of a retained coordinate expands in the smaller Laurent algebra. -/
 @[simp↓]
@@ -104,6 +110,14 @@ end Semifield
 
 section Field
 variable [CommRing R] [Field F] [Algebra R F]
+
+/-- Constructor-normal ambient inverse coordinates belong to their Laurent range. -/
+@[simp]
+theorem inv_coordinate_mem_range_ofCoordinates (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (i : K) :
+    (x i : F)⁻¹ ∈ (ofCoordinates x hx).range := by
+  simpa only [coordinate_ofCoordinates] using
+    (ofCoordinates x hx).inv_coordinate_mem_range i
 
 /-- Constructor-normal ambient inverse coordinates have their negative Laurent monomial. -/
 @[simp↓]
