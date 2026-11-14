@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.Length
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Sequence
-import TauCeti.Algebra.Category.ModuleCat.Connected
+import TauCeti.Algebra.Category.ModuleCat.Biproducts.Regular
 import TauCeti.Algebra.Category.ModuleCat.HaradaSai
 import TauCeti.Algebra.Category.FGModuleCat.RepresentationFinite
 import TauCeti.Algebra.Category.ModuleCat.Injective.LeftAlmostSplit
@@ -116,7 +116,8 @@ theorem isRepresentationFinite_of_length_le_of_isLeftAlmostSplit [IsArtinianRing
     (Set.finite_range P) (by rintro _ ⟨j, rfl⟩; exact hP j)
   refine isRepresentationFinite_of_forall_exists_iso hS fun M hf hi ↦ ?_
   -- A nonzero module receives a nonzero morphism from the ring, hence from a summand.
-  obtain ⟨j, f, hj⟩ := exists_hom_ne_zero_of_iso_biproduct e hi.1
+  obtain ⟨j, f, hj⟩ :=
+    exists_hom_ne_zero_of_iso_biproduct (ULift.moduleEquiv (R := A) (M := A)).symm e hi.1
   exact hSmem M ⟨hf, hi⟩ (P j) ⟨j, rfl⟩ f hj
 
 /-- **The first Brauer–Thrall conjecture** for a finite-dimensional algebra: if the finitely
