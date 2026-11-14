@@ -12,7 +12,8 @@ public import Mathlib.Analysis.Calculus.ImplicitContDiff
 # Smooth dependence of the quadratic correction on parameters
 
 Let `e p + D p x + N p x = 0` be a family of equations parametrized by `p` in a Banach space `P`,
-with right inverses `Q p` of `D p` satisfying `‖Q p y‖ ≤ C ‖y‖` and remainders `N p` satisfying the
+for an unknown `x` in a Banach space `E`, both over an `RCLike` field `𝕜`, with additive right
+inverses `Q p` of `D p : E → F p` satisfying `‖Q p y‖ ≤ C ‖y‖` and remainders `N p` satisfying the
 quadratic estimate `‖N p x - N p y‖ ≤ (L / 2) (‖x‖ + ‖y‖) ‖x - y‖` on the ball of radius `δ`, with
 `C` and `L` independent of `p`. If moreover `N p 0 = 0` and the residuals are small,
 `2 C ‖e p‖ ≤ δ` and `2 C² L ‖e p‖ < 1`, then by `TauCeti.exists_mem_range_norm_le_add_add_eq_zero`
@@ -23,22 +24,23 @@ correction of an approximate solution; the finite-dimensional reduction needs `x
 in `p` as the data.
 
 This file proves that it is. Let `x p` be solutions in the range of `Q p`, all of norm at most `r`,
-where `r < δ` and `C L r < 1`. If the fixed-point map `(p, z) ↦ Q p (e p + N p z)` is `C^n` at
-`(p₀, x p₀)`, with `n ≠ 0`, then `x` is `C^n` at `p₀`
-(`TauCeti.contDiffAt_of_eventually_add_add_eq_zero`, which only needs the hypotheses for `p` near
-`p₀`), and globally `C^n` if the fixed-point map is
-(`TauCeti.contDiff_of_forall_add_add_eq_zero`). No smoothness of `p ↦ D p` is needed, and the
-range of `Q p` may move with `p`.
+where `r < δ` and `C L r < 1`. If the map `(p, z) ↦ Q p (e p + N p z)` is `C^n` at `(p₀, x p₀)`,
+then `x` is `C^n` at `p₀` (`TauCeti.contDiffAt_of_eventually_add_add_eq_zero`, which only needs
+the hypotheses for `p` near `p₀`). Consequently `x` is `C^n` on an open set `U` of parameters if
+that map is `C^n` at every `(p, x p)` with `p ∈ U` (`TauCeti.contDiffOn_of_forall_add_add_eq_zero`),
+and globally `C^n` if it is so at every `(p, x p)` (`TauCeti.contDiff_of_forall_add_add_eq_zero`).
+No smoothness of `p ↦ D p` is needed, and the range of `Q p` may move with `p`.
 
 The solutions in the range of `Q p` are the zeros of `f (p, z) = z + Q p (e p + N p z)`
 (`TauCeti.mem_range_and_add_add_eq_zero_iff`). The quadratic estimate makes
 `z ↦ Q p₀ (e p₀ + N p₀ z)` Lipschitz with constant `C L r'` on the ball of radius `r'`, for every
 `r'` between `r` and `δ`, so its derivative `A` at `x p₀` has norm at most `C L r < 1`
 (`TauCeti.norm_le_of_hasFDerivAt_apply_add_apply`), and
-the partial derivative `1 + A` of `f` in `z` is invertible by the Neumann series. Mathlib's
-implicit function theorem `ContDiffAt.implicitFunction` then gives a `C^n` local solution, and it
-agrees with `x` near `p₀` because `x` is continuous
-(`TauCeti.continuousAt_of_eventually_add_add_eq_zero`).
+the partial derivative `1 + A` of `f` in `z` is invertible by the Neumann series. For `n ≠ 0`,
+Mathlib's implicit function theorem `ContDiffAt.implicitFunction` then gives a `C^n` local
+solution, and it agrees with `x` near `p₀` because `x` is continuous
+(`TauCeti.continuousAt_of_eventually_add_add_eq_zero`). For `n = 0` the same continuity theorem,
+applied at every point near `p₀`, shows that `x` is continuous near `p₀`.
 
 ## References
 
@@ -59,9 +61,9 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F G : Type*}
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [FunLike G F E]
   [AddMonoidHomClass G F E] {Q : G} {N : E → F} {e : F} {C L : ℝ≥0} {δ : ℝ}
 
-/-- The derivative `A` of the fixed-point map `z ↦ Q (e + N z)` at a point `x` with
-`‖x‖ ≤ r < δ` has norm at most `C L r`. It follows from the Lipschitz constant `C L r'` on the
-closed balls of radius `r' ∈ (r, δ)` (`TauCeti.lipschitzOnWith_apply_add_apply`). -/
+/-- Let `Q` be additive with `‖Q y‖ ≤ C ‖y‖`, and let `N` satisfy the quadratic estimate
+`‖N x - N y‖ ≤ (L / 2) (‖x‖ + ‖y‖) ‖x - y‖` on the closed ball of radius `δ`. Then the derivative
+`A` of the map `z ↦ Q (e + N z)` at a point `x` with `‖x‖ ≤ r < δ` has norm at most `C L r`. -/
 theorem norm_le_of_hasFDerivAt_apply_add_apply (hQ : ∀ y, ‖Q y‖ ≤ C * ‖y‖)
     (hN : ∀ x ∈ closedBall (0 : E) δ, ∀ y ∈ closedBall (0 : E) δ,
       ‖N x - N y‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖)
@@ -81,18 +83,20 @@ end Derivative
 
 section Parametric
 
-variable {𝕜 : Type*} [RCLike 𝕜] {P E F G : Type*}
+variable {𝕜 : Type*} [RCLike 𝕜] {P E : Type*} {F G : P → Type*}
   [NormedAddCommGroup P] [NormedSpace 𝕜 P] [CompleteSpace P]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-  [SeminormedAddCommGroup F] [FunLike G F E] [AddMonoidHomClass G F E]
-  {Q : P → G} {D N : P → E → F} {e : P → F} {C L : ℝ≥0} {δ : ℝ}
+  [∀ p, SeminormedAddCommGroup (F p)] [∀ p, FunLike (G p) (F p) E]
+  [∀ p, AddMonoidHomClass (G p) (F p) E]
+  {Q : ∀ p, G p} {D N : ∀ p, E → F p} {e : ∀ p, F p} {C L : ℝ≥0} {δ : ℝ}
 
 /-- **Smooth dependence on a parameter.** Let `e p + D p x + N p x = 0` be a family of equations
-over a Banach space `P`, with right inverses `Q p` of `D p` and remainders `N p` satisfying the
-bounds with constants `C` and `L` uniform in `p` near `p₀`. Let `x p` be solutions in the range of
-`Q p`, of norm at most `r` for `p` near `p₀`, where `r < δ` and `C L r < 1`. If the fixed-point map
-`(p, z) ↦ Q p (e p + N p z)` is `C^n` at `(p₀, x p₀)`, with `n ≠ 0`, then `x` is `C^n` at `p₀`. -/
-theorem contDiffAt_of_eventually_add_add_eq_zero {n : ℕ∞ω} (hn : n ≠ 0) {p₀ : P}
+over Banach spaces `P` and `E` over an `RCLike` field `𝕜`, with right inverses `Q p` of `D p` and
+remainders `N p` satisfying the bounds with constants `C` and `L` uniform in `p` near `p₀`. Let
+`x p` be solutions in the range of `Q p`, of norm at most `r` for `p` near `p₀`, where `r < δ` and
+`C L r < 1`. If the map `(p, z) ↦ Q p (e p + N p z)` is `C^n` at `(p₀, x p₀)`, then `x` is `C^n`
+at `p₀`. -/
+theorem contDiffAt_of_eventually_add_add_eq_zero {n : ℕ∞ω} {p₀ : P}
     (hDQ : ∀ᶠ p in 𝓝 p₀, ∀ y, D p (Q p y) = y) (hQ : ∀ᶠ p in 𝓝 p₀, ∀ y, ‖Q p y‖ ≤ C * ‖y‖)
     (hN : ∀ᶠ p in 𝓝 p₀, ∀ x ∈ closedBall (0 : E) δ, ∀ y ∈ closedBall (0 : E) δ,
       ‖N p x - N p y‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖)
@@ -101,6 +105,21 @@ theorem contDiffAt_of_eventually_add_add_eq_zero {n : ℕ∞ω} (hn : n ≠ 0) {
     (hxe : ∀ᶠ p in 𝓝 p₀, e p + D p (x p) + N p (x p) = 0)
     (hT : ContDiffAt 𝕜 n (fun v : P × E ↦ Q v.1 (e v.1 + N v.1 v.2)) (p₀, x p₀)) :
     ContDiffAt 𝕜 n x p₀ := by
+  have hcont : ContinuousAt x p₀ :=
+    continuousAt_of_eventually_add_add_eq_zero hDQ hQ hN hrδ.le hr hx hxQ hxe
+      (hT.continuousAt.comp (f := fun p : P ↦ (p, x p₀))
+        (continuousAt_id.prodMk continuousAt_const))
+  rcases eq_or_ne n 0 with rfl | hn
+  · -- For `n = 0`, the map is continuous near `(p₀, x p₀)`, so `x` is continuous near `p₀`.
+    obtain ⟨u, hu, hTu⟩ := contDiffAt_zero.1 hT
+    refine contDiffAt_zero.2 ⟨{p | ContinuousAt x p}, ?_, fun p hp ↦ hp.continuousWithinAt⟩
+    filter_upwards [hDQ.eventually_nhds, hQ.eventually_nhds, hN.eventually_nhds, hx.eventually_nhds,
+      hxQ.eventually_nhds, hxe.eventually_nhds,
+      (continuousAt_id.prodMk hcont).eventually (eventually_mem_nhds_iff.2 hu)]
+      with p hDQp hQp hNp hxp hxQp hxep hup
+    exact continuousAt_of_eventually_add_add_eq_zero hDQp hQp hNp hrδ.le hr hxp hxQp hxep
+      ((hTu.continuousAt hup).comp (f := fun p' : P ↦ (p', x p))
+        (continuousAt_id.prodMk continuousAt_const))
   -- The solutions in the range of `Q p` are the zeros of `f (p, z) = z + Q p (e p + N p z)`.
   have hzero {p : P} (hDQp : ∀ y, D p (Q p y) = y) (z : E) :
       z + Q p (e p + N p z) = 0 ↔ z ∈ range (Q p) ∧ e p + D p z + N p z = 0 := by
@@ -132,10 +151,6 @@ theorem contDiffAt_of_eventually_add_add_eq_zero {n : ℕ∞ω} (hn : n ≠ 0) {
     ext z
     simp [hw]
   -- The implicit function agrees with the continuous family `x` near `p₀`.
-  have hcont : ContinuousAt x p₀ :=
-    continuousAt_of_eventually_add_add_eq_zero hDQ hQ hN hrδ.le hr hx hxQ hxe
-      (hT.continuousAt.comp (f := fun p : P ↦ (p, x p₀))
-        (continuousAt_id.prodMk continuousAt_const))
   have hev : x =ᶠ[𝓝 p₀] hf.implicitFunction hn hinv := by
     filter_upwards [(continuousAt_id.prodMk hcont).tendsto.eventually
       (hf.eventually_apply_eq_iff_implicitFunction hn hinv), hDQ, hxQ, hxe]
@@ -143,21 +158,39 @@ theorem contDiffAt_of_eventually_add_add_eq_zero {n : ℕ∞ω} (hn : n ≠ 0) {
     exact (hp.1 (by rw [hfu]; exact (hzero hDQp (x p)).2 ⟨hxQp, hxep⟩)).symm
   exact (hf.contDiffAt_implicitFunction hn hinv).congr_of_eventuallyEq hev
 
+/-- **Smooth dependence on a parameter** on an open set `U` of parameters: a family of solutions
+`x p` in the range of `Q p` for `p ∈ U`, of norm at most `r < δ` with `C L r < 1`, is `C^n` on `U`
+when the map `(p, z) ↦ Q p (e p + N p z)` is `C^n` at `(p, x p)` for every `p ∈ U`, and the
+bounds on `Q p` and `N p` hold for `p ∈ U`. -/
+theorem contDiffOn_of_forall_add_add_eq_zero {n : ℕ∞ω} {U : Set P} (hU : IsOpen U)
+    (hDQ : ∀ p ∈ U, ∀ y, D p (Q p y) = y) (hQ : ∀ p ∈ U, ∀ y, ‖Q p y‖ ≤ C * ‖y‖)
+    (hN : ∀ p ∈ U, ∀ x ∈ closedBall (0 : E) δ, ∀ y ∈ closedBall (0 : E) δ,
+      ‖N p x - N p y‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖)
+    {x : P → E} {r : ℝ} (hrδ : r < δ) (hr : C * L * r < 1) (hx : ∀ p ∈ U, ‖x p‖ ≤ r)
+    (hxQ : ∀ p ∈ U, x p ∈ range (Q p)) (hxe : ∀ p ∈ U, e p + D p (x p) + N p (x p) = 0)
+    (hT : ∀ p ∈ U, ContDiffAt 𝕜 n (fun v : P × E ↦ Q v.1 (e v.1 + N v.1 v.2)) (p, x p)) :
+    ContDiffOn 𝕜 n x U := fun p hp ↦
+  have hUp := hU.mem_nhds hp
+  (contDiffAt_of_eventually_add_add_eq_zero (eventually_of_mem hUp hDQ) (eventually_of_mem hUp hQ)
+    (eventually_of_mem hUp hN) hrδ hr (eventually_of_mem hUp hx) (eventually_of_mem hUp hxQ)
+    (eventually_of_mem hUp hxe) (hT p hp)).contDiffWithinAt
+
 variable (hDQ : ∀ p y, D p (Q p y) = y) (hQ : ∀ p y, ‖Q p y‖ ≤ C * ‖y‖)
   (hN : ∀ p, ∀ x ∈ closedBall (0 : E) δ, ∀ y ∈ closedBall (0 : E) δ,
     ‖N p x - N p y‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖)
 include hDQ hQ hN
 
 /-- **Smooth dependence on a parameter**, global form: a family of solutions `x p` in the range of
-`Q p`, of norm at most `r < δ` with `C L r < 1`, is `C^n` when the fixed-point map
-`(p, z) ↦ Q p (e p + N p z)` is, for `n ≠ 0`. -/
-theorem contDiff_of_forall_add_add_eq_zero {n : ℕ∞ω} (hn : n ≠ 0) {x : P → E} {r : ℝ}
+`Q p`, of norm at most `r < δ` with `C L r < 1`, is `C^n` when the map
+`(p, z) ↦ Q p (e p + N p z)` is `C^n` at `(p, x p)` for every `p`. -/
+theorem contDiff_of_forall_add_add_eq_zero {n : ℕ∞ω} {x : P → E} {r : ℝ}
     (hrδ : r < δ) (hr : C * L * r < 1) (hx : ∀ p, ‖x p‖ ≤ r) (hxQ : ∀ p, x p ∈ range (Q p))
     (hxe : ∀ p, e p + D p (x p) + N p (x p) = 0)
-    (hT : ContDiff 𝕜 n fun v : P × E ↦ Q v.1 (e v.1 + N v.1 v.2)) : ContDiff 𝕜 n x :=
-  contDiff_iff_contDiffAt.2 fun _ ↦
-    contDiffAt_of_eventually_add_add_eq_zero hn (.of_forall hDQ) (.of_forall hQ) (.of_forall hN)
-      hrδ hr (.of_forall hx) (.of_forall hxQ) (.of_forall hxe) hT.contDiffAt
+    (hT : ∀ p, ContDiffAt 𝕜 n (fun v : P × E ↦ Q v.1 (e v.1 + N v.1 v.2)) (p, x p)) :
+    ContDiff 𝕜 n x :=
+  contDiffOn_univ.1 <| contDiffOn_of_forall_add_add_eq_zero isOpen_univ (fun p _ ↦ hDQ p)
+    (fun p _ ↦ hQ p) (fun p _ ↦ hN p) hrδ hr (fun p _ ↦ hx p) (fun p _ ↦ hxQ p)
+    (fun p _ ↦ hxe p) fun p _ ↦ hT p
 
 end Parametric
 
