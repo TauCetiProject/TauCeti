@@ -19,8 +19,9 @@ through the injective comparison with function germs. The two pullbacks agree wh
 Pullback along a map with a local analytic inverse, such as a chart, is bijective
 (`stalkPullback_bijective`), in particular pullback along a continuous linear equivalence
 (`ContinuousLinearEquiv.holomorphicStalkPullback_bijective`) and along a chart followed by one
-(`stalkPullback_comp_extChartAt_bijective`), which identifies a stalk of a manifold with a stalk
-of its model.
+(`stalkPullback_comp_extChartAt_bijective`,
+`OpenPartialHomeomorph.holomorphicStalkPullback_comp_bijective`), which identifies a stalk of a
+manifold or chart domain with a stalk of its model.
 On the complex line, `eventually_contMDiffAt_of_analyticAt` supplies the local hypothesis
 from `AnalyticAt`.
 -/
@@ -211,3 +212,31 @@ theorem holomorphicStalkPullback_bijective (e : V ≃L[ℂ] W) (x : V) :
     (Eventually.of_forall e.symm_apply_apply) (Eventually.of_forall e.apply_symm_apply)
 
 end ContinuousLinearEquiv
+
+namespace OpenPartialHomeomorph
+
+open IsManifold TauCeti.holomorphicStructureSheaf
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {X : Type} [TopologicalSpace X] [ChartedSpace E X] {V : Type}
+  [NormedAddCommGroup V] [NormedSpace ℂ V]
+
+/-- Pullback along a holomorphic chart `e` into `E`, followed by a continuous linear equivalence
+onto `V`, is bijective on holomorphic stalks without assuming a global manifold structure on `X`.
+The equivalence lets the target stalk live in `Type` even when `E` does not. -/
+theorem holomorphicStalkPullback_comp_bijective (e : OpenPartialHomeomorph X E)
+    (he : e ∈ maximalAtlas 𝓘(ℂ, E) ω X) {x : X} (hx : x ∈ e.source) (L : E ≃L[ℂ] V) :
+    Function.Bijective (stalkPullback (I := 𝓘(ℂ, E)) (J := 𝓘(ℂ, V)) (f := L ∘ e) (a := x)
+      ((e.open_source.eventually_mem hx).mono fun y hy ↦
+        L.contDiff.contMDiff.contMDiffAt.comp y (contMDiffAt_of_mem_maximalAtlas he hy))) := by
+  have hmem : ∀ᶠ z in 𝓝 (L (e x)), L.symm z ∈ e.target := by
+    have h := L.symm.continuous.tendsto (L (e x))
+    rw [L.symm_apply_apply] at h
+    exact h.eventually (e.open_target.mem_nhds (e.map_source hx))
+  exact stalkPullback_bijective _ (g := e.symm ∘ L.symm)
+    (hmem.mono fun z hz ↦
+      (contMDiffAt_symm_of_mem_maximalAtlas he hz).comp z L.symm.contDiff.contMDiff.contMDiffAt)
+    ((e.open_source.eventually_mem hx).mono fun y hy ↦ by simp [e.left_inv hy])
+    (hmem.mono fun z hz ↦ by simp [e.right_inv hz])
+
+end OpenPartialHomeomorph

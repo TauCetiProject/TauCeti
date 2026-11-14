@@ -33,7 +33,8 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
   complex normed space, `exists_analyticAt_toFilterGerm_eq`, `exists_toFilterGerm_eq_of_analyticAt`,
   and `exists_toFilterGerm_nhds_eq_iff_analyticAt` express this directly via `AnalyticAt`);
 * `eval_eq_of_toFilterGerm_eq`: the value of a holomorphic germ is the value of any function
-  with the same germ;
+  with the same germ, so at an isolated point (`{x} ∈ 𝓝 x`) evaluation identifies the stalk with
+  `ℂ` (`evalRingEquivOfSingletonMemNhds`);
 * `toFilterGerm_stalkPrecomp`: pulling a holomorphic germ back along a complex analytic map `f`
   is composition of germs with `f`;
 * `quotientMk_comp_stalkPrecomp_bijective`: if an ideal of germs at `p` on a normed space consists
@@ -253,6 +254,35 @@ theorem eval_eq_of_toFilterGerm_eq {x : X} {s : (holomorphicStructureSheaf I X).
 theorem eval_germOfContMDiff (f : X → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) (x : X) :
     eval I X x (germOfContMDiff f hf x) = f x :=
   eval_eq_of_toFilterGerm_eq (toFilterGerm_germOfContMDiff f hf le_rfl)
+
+/-- At an isolated point `x` (`{x} ∈ 𝓝 x`), point evaluation identifies the holomorphic stalk with
+`ℂ`. -/
+def evalRingEquivOfSingletonMemNhds (I : ModelWithCorners ℂ E H) {x : X} (hx : {x} ∈ 𝓝 x) :
+    (holomorphicStructureSheaf I X).presheaf.stalk x ≃+* ℂ where
+  toFun := eval I X x
+  invFun c := germOfContMDiff (fun _ ↦ c) contMDiff_const x
+  left_inv s := by
+    obtain ⟨f, -, hf⟩ := exists_toFilterGerm_eq x s
+    apply toFilterGerm_nhds_injective x
+    rw [toFilterGerm_germOfContMDiff, hf _ le_rfl, Germ.coe_eq]
+    filter_upwards [hx] with y hy
+    rw [mem_singleton_iff.1 hy, eval_eq_of_toFilterGerm_eq (hf _ le_rfl)]
+  right_inv c := eval_germOfContMDiff (fun _ ↦ c) contMDiff_const x
+  map_mul' := map_mul _
+  map_add' := map_add _
+
+/-- At an isolated point, `evalRingEquivOfSingletonMemNhds` evaluates a germ at `x`. -/
+@[simp]
+theorem evalRingEquivOfSingletonMemNhds_apply {x : X} (hx : {x} ∈ 𝓝 x)
+    (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    evalRingEquivOfSingletonMemNhds I hx s = eval I X x s := (rfl)
+
+/-- At an isolated point, the inverse of `evalRingEquivOfSingletonMemNhds` sends `c : ℂ` to the
+constant holomorphic germ `c`. -/
+@[simp]
+theorem evalRingEquivOfSingletonMemNhds_symm_apply {x : X} (hx : {x} ∈ 𝓝 x) (c : ℂ) :
+    (evalRingEquivOfSingletonMemNhds I hx).symm c =
+      germOfContMDiff (fun _ ↦ c) contMDiff_const x := (rfl)
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'}
