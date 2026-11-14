@@ -66,6 +66,8 @@ allowing the entire path or loop to be read in one stereographic chart.
   stereographic charts of its unit sphere take it.
 * `TauCeti.injective_fderiv_stereoInvFunAux_comp_coe`: the inverse of stereographic projection
   from `v`, as a map from `(ℝ ∙ v)ᗮ` to the ambient space, has injective derivative.
+* `TauCeti.coe_stereographic_symm_apply`: the value of the inverse of stereographic projection
+  from `v`, read in the ambient space.
 * `TauCeti.fact_finrank_orthogonal_span_singleton_coe_sphere`: the orthogonal complement `v^⊥` of
   a point `v` of `Sⁿ⁺¹` has dimension `n + 1`, so its unit sphere, the sphere of unit tangent
   vectors at `v`, is an `n`-dimensional manifold.
@@ -177,6 +179,14 @@ theorem injective_fderiv_stereoInvFunAux_comp_coe {v : E} (hv : ‖v‖ = 1) (w 
       fderiv_id]
   exact Function.LeftInverse.injective (g := fderiv ℝ (stereoToFun v) (ψ w)) fun u => by
     simpa using congrArg (fun L => L u) hcomp
+
+/-- Inverse stereographic projection from a unit vector `v` sends a point `w` of the hyperplane
+`vᗮ` to `(‖w‖² + 4)⁻¹ • (4 • w + (‖w‖² - 4) • v)`. -/
+theorem coe_stereographic_symm_apply {v : E} (hv : ‖v‖ = 1) (w : (ℝ ∙ v)ᗮ) :
+    ((stereographic hv).symm w : E) =
+      (‖w‖ ^ 2 + 4)⁻¹ • ((4 : ℝ) • (w : E) + (‖w‖ ^ 2 - 4) • v) :=
+  -- The inverse of `stereographic` is `stereoInvFun` by definition.
+  stereoInvFun_apply hv w
 
 end Stereographic
 
