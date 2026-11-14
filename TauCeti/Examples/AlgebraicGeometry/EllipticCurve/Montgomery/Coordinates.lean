@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Coordinates
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.Data.Set.Card
+import TauCeti.Data.Int.Round
 
 /-!
 # Examples of coordinate pairs and of the image and fibres of the projective `x`-coordinate
@@ -330,13 +331,12 @@ end Seven
 
 -- At `m = n = 0`, both multiples are infinity `(1, 0)` with cross difference `1 · 0 - 1 · 0 = 0`
 -- and `[0]Q = 0`, consistent with both sides of `cross_coordinates_zsmul_eq_zero_iff`.
-example {K : Type*} [Field K] [DecidableEq K] {A B : K} (hB : B ≠ 0)
+example {K : Type*} [Field K] [DecidableEq K] (A B : K)
     (Q : (model A B).toAffine.Point) :
     (coordinates A B ((0 : ℤ) • Q)).cross (coordinates A B ((0 : ℤ) • Q)) = 1 * 0 - 1 * 0 ∧
       ((0 : ℤ) - 0) • Q = 0 ∧
-      (coordinates A B ((0 : ℤ) • Q)).cross (coordinates A B ((0 : ℤ) • Q)) = 0 := by
-  refine ⟨by simp, by simp, ?_⟩
-  exact (cross_coordinates_zsmul_eq_zero_iff hB).mpr (.inl (by simp))
+      (coordinates A B ((0 : ℤ) • Q)).cross (coordinates A B ((0 : ℤ) • Q)) = 0 :=
+  ⟨by simp, by simp, cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero (zero_zsmul Q) (.inr rfl)⟩
 
 -- With step `w = 6`, `13 = 2 · 6 + 1` and `17 = 3 · 6 - 1` have strict remainder `2 j < 6`,
 -- whereas `15 = 2 · 6 + 3` requires the non-strict midpoint bound `2 j ≤ 6`, and `j = 0` occurs
@@ -345,13 +345,9 @@ example :
     (13 : ℤ) = 2 * 6 + 1 ∧ (17 : ℤ) = 3 * 6 - 1 ∧ (15 : ℤ) = 2 * 6 + 3 ∧
       (¬ ∃ i j : ℤ, ((15 : ℤ) = i * 6 + j ∨ (15 : ℤ) = i * 6 - j) ∧ 0 < j ∧ 2 * j < 6) ∧
       ∀ q i : ℤ, 2 * |q - i * 6| ≤ 6 → (|q - i * 6| = 0 ↔ 6 ∣ q) := by
-  refine ⟨by norm_num, by norm_num, by norm_num, ?_, ?_⟩
-  · rintro ⟨i, j, h, hj₀, hj₃⟩
-    omega
-  · intro q i hle
-    rw [abs_eq_zero]
-    rcases abs_cases (q - i * 6) with ⟨habs, _⟩ | ⟨habs, _⟩ <;> rw [habs] at hle
-    · exact ⟨fun _ ↦ ⟨i, by omega⟩, fun ⟨_, _⟩ ↦ by omega⟩
-    · exact ⟨fun _ ↦ ⟨i, by omega⟩, fun ⟨_, _⟩ ↦ by omega⟩
+  refine ⟨by norm_num, by norm_num, by norm_num, ?_, fun q i hle ↦
+    Int.abs_sub_mul_eq_zero_iff_dvd_of_two_mul_le (hle.trans (le_abs_self 6))⟩
+  rintro ⟨i, j, h, hj₀, hj₃⟩
+  omega
 
 end TauCeti.Montgomery
