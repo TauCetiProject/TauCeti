@@ -11,23 +11,22 @@ import Mathlib.Order.Filter.Finite
 import Mathlib.Topology.NhdsWithin
 
 /-!
-# Semicontinuity of lexicographically ordered product-valued functions
+# Semicontinuity of locally finite product-valued functions and lexicographic order
 
-Let `ι` be a well-ordered index type (`[LinearOrder ι] [WellFoundedLT ι]`) and `β : ι → Type*` a
-family of linear orders. Coordinatewise continuity or upper semicontinuity of `f : α → ∀ i, β i`
-does not in general imply upper semicontinuity of `fun x ↦ toLex (f x) : α → Lex (∀ i, β i)`: for
-example, `t ↦ (|t|, 0)` on `ℝ` is coordinatewise continuous at `0`, satisfies
-`toLex (0, 0) < toLex (0, 1)` at `t = 0`, yet satisfies `toLex (0, 1) < toLex (|t|, 0)` for every
-`t ≠ 0`.
+Coordinatewise continuity or upper semicontinuity of `f : α → ∀ i, β i` does not in general imply
+upper semicontinuity of `fun x ↦ toLex (f x) : α → Lex (∀ i, β i)`: for example, `t ↦ (|t|, 0)`
+on `ℝ` is coordinatewise continuous at `0`, satisfies `toLex (0, 0) < toLex (0, 1)` at `t = 0`,
+yet satisfies `toLex (0, 1) < toLex (|t|, 0)` for every `t ≠ 0`.
 
-When `f` locally takes finitely many values, however, coordinatewise upper (resp. lower)
-semicontinuity does lift to the lexicographic order. On any set `u : Set α`, monotonicity of
-`toLex` (`Pi.toLex_monotone`) decomposes every lexicographic superlevel set
-`{x ∈ u | y ≤ toLex (f x)}` as the union over attained values `v ∈ f '' u` with `y ≤ toLex v` of
-the pointwise superlevel sets `{x ∈ u | v ≤ f x}` (`TauCeti.setOf_mem_and_le_toLex_eq_biUnion`).
-When `f '' u` is finite on a neighbourhood of `x` within `s`, any frequent violation of `< y` near
-`x` repeats a single attained value `v` with `y ≤ toLex v`, whose coordinates are then bounded by
-`f x` via coordinatewise semicontinuity.
+When `f` locally takes finitely many values, however, coordinatewise upper semicontinuity forces
+`f x' ≤ f x` eventually near `x` without any ordering on the index type `ι`
+(`TauCeti.eventually_le_of_upperSemicontinuousWithinAt`): any frequent violation of `f x' ≤ f x`
+on a finite-range neighbourhood repeats a single attained value `v` with `¬ v ≤ f x`, contradicting
+coordinatewise upper semicontinuity at a witnessing coordinate. Post-composing with any monotone map
+into a preorder—in particular `toLex : (∀ i, β i) → Lex (∀ i, β i)` when `ι` is well-ordered
+(`Pi.toLex_monotone`)—then preserves upper semicontinuity
+(`Monotone.upperSemicontinuousWithinAt_comp_of_finite`,
+`TauCeti.upperSemicontinuousWithinAt_toLex`), and dually for lower semicontinuity via `OrderDual`.
 
 This mechanism underlies Zariski upper semicontinuity of lexicographically ordered invariants (such
 as Hilbert–Samuel functions on closed points) once pointwise upper semicontinuity and local
@@ -35,10 +34,13 @@ finiteness of attained values are established.
 
 ## Main results
 
-* `TauCeti.setOf_mem_and_le_toLex_eq_biUnion`, `TauCeti.setOf_mem_and_toLex_le_eq_biUnion`:
-  on any subset `u`, a lexicographic superlevel (resp. sublevel) set of `toLex ∘ f` is the union of
-  the pointwise superlevel (resp. sublevel) sets at the attained values `v ∈ f '' u` satisfying the
-  lexicographic bound.
+* `TauCeti.eventually_le_of_upperSemicontinuousWithinAt`,
+  `TauCeti.eventually_ge_of_lowerSemicontinuousWithinAt`: coordinatewise upper (resp. lower)
+  semicontinuity together with locally finite range implies `f x' ≤ f x` (resp. `f x ≤ f x'`)
+  eventually near `x`.
+* `Monotone.upperSemicontinuousWithinAt_comp_of_finite`,
+  `Monotone.lowerSemicontinuousWithinAt_comp_of_finite`: post-composing a coordinatewise
+  semicontinuous locally finite family with any monotone map preserves semicontinuity.
 * `TauCeti.upperSemicontinuousWithinAt_toLex`, `TauCeti.upperSemicontinuousAt_toLex`,
   `TauCeti.upperSemicontinuousOn_toLex`, `TauCeti.upperSemicontinuous_toLex`: coordinatewise upper
   semicontinuity lifts to `Lex (∀ i, β i)` whenever `f` locally takes finitely many values.
@@ -59,35 +61,81 @@ open Filter Set
 
 namespace TauCeti
 
-section LevelSets
+section Eventually
 
-variable {α ι : Type*} {β : ι → Type*} [LinearOrder ι] [WellFoundedLT ι]
+variable {α ι : Type*} {β : ι → Type*} [TopologicalSpace α] [∀ i, LinearOrder (β i)]
 
-/-- On any set `u`, the lexicographic superlevel set `{x ∈ u | y ≤ toLex (f x)}` is the union over
-attained values `v ∈ f '' u` with `y ≤ toLex v` of the pointwise superlevel sets
-`{x ∈ u | v ≤ f x}`. -/
-theorem setOf_mem_and_le_toLex_eq_biUnion [∀ i, PartialOrder (β i)]
-    (f : α → ∀ i, β i) (u : Set α) (y : Lex (∀ i, β i)) :
-    {x ∈ u | y ≤ toLex (f x)} = ⋃ v ∈ {v ∈ f '' u | y ≤ toLex v}, {x ∈ u | v ≤ f x} := by
-  ext x
-  simp only [mem_ofPred_eq, mem_iUnion, exists_prop]
-  exact ⟨fun ⟨hx, hy⟩ ↦ ⟨f x, ⟨⟨x, hx, rfl⟩, hy⟩, hx, le_rfl⟩,
-    fun ⟨v, ⟨_, hy⟩, hx, hvx⟩ ↦ ⟨hx, hy.trans (Pi.toLex_monotone hvx)⟩⟩
+/-- If each coordinate of `f` is upper semicontinuous within `s` at `x` and `f` takes finitely many
+values on a neighbourhood of `x` within `s`, then `f x' ≤ f x` eventually in `𝓝[s] x`. -/
+theorem eventually_le_of_upperSemicontinuousWithinAt {f : α → ∀ i, β i} {s : Set α} {x : α}
+    (hf : ∀ i, UpperSemicontinuousWithinAt (f · i) s x)
+    (hfin : ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
+    ∀ᶠ x' in 𝓝[s] x, f x' ≤ f x := by
+  by_contra hnot
+  rw [Filter.not_eventually] at hnot
+  obtain ⟨u, hu, hufin⟩ := hfin
+  have hV : {v ∈ f '' u | ¬ v ≤ f x}.Finite := hufin.subset (sep_subset _ _)
+  have hex : ∃ᶠ x' in 𝓝[s] x, ∃ v ∈ {v ∈ f '' u | ¬ v ≤ f x}, f x' = v :=
+    (hnot.and_eventually hu).mono fun x' ⟨hnotle, hx'⟩ ↦ ⟨f x', ⟨⟨x', hx', rfl⟩, hnotle⟩, rfl⟩
+  obtain ⟨v, ⟨-, hnotle⟩, hvfreq⟩ := hV.frequently_exists.mp hex
+  exact hnotle fun i ↦
+    (hf i).frequently (v i) (hvfreq.mono fun _ hx' ↦ (congr_fun hx' i).symm.le)
 
-/-- On any set `u`, the lexicographic sublevel set `{x ∈ u | toLex (f x) ≤ y}` is the union over
-attained values `v ∈ f '' u` with `toLex v ≤ y` of the pointwise sublevel sets
-`{x ∈ u | f x ≤ v}`. -/
-theorem setOf_mem_and_toLex_le_eq_biUnion [∀ i, PartialOrder (β i)]
-    (f : α → ∀ i, β i) (u : Set α) (y : Lex (∀ i, β i)) :
-    {x ∈ u | toLex (f x) ≤ y} = ⋃ v ∈ {v ∈ f '' u | toLex v ≤ y}, {x ∈ u | f x ≤ v} := by
-  ext x
-  simp only [mem_ofPred_eq, mem_iUnion, exists_prop]
-  exact ⟨fun ⟨hx, hy⟩ ↦ ⟨f x, ⟨⟨x, hx, rfl⟩, hy⟩, hx, le_rfl⟩,
-    fun ⟨v, ⟨_, hy⟩, hx, hvx⟩ ↦ ⟨hx, (Pi.toLex_monotone hvx).trans hy⟩⟩
+/-- If each coordinate of `f` is lower semicontinuous within `s` at `x` and `f` takes finitely many
+values on a neighbourhood of `x` within `s`, then `f x ≤ f x'` eventually in `𝓝[s] x`. -/
+theorem eventually_ge_of_lowerSemicontinuousWithinAt {f : α → ∀ i, β i} {s : Set α} {x : α}
+    (hf : ∀ i, LowerSemicontinuousWithinAt (f · i) s x)
+    (hfin : ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
+    ∀ᶠ x' in 𝓝[s] x, f x ≤ f x' := by
+  let f' : α → ∀ i, (β i)ᵒᵈ := fun a i ↦ OrderDual.toDual (f a i)
+  have hf' : ∀ i, UpperSemicontinuousWithinAt (f' · i) s x := fun i y hy ↦
+    (hf i (OrderDual.ofDual y) (OrderDual.toDual_lt.mp hy)).mono
+      fun _ hx' ↦ OrderDual.toDual_lt.mpr hx'
+  have hfin' : ∃ u ∈ 𝓝[s] x, (f' '' u).Finite := by
+    obtain ⟨u, hu, hufin⟩ := hfin
+    refine ⟨u, hu, ?_⟩
+    have himg : f' '' u = (fun v i ↦ OrderDual.toDual (v i)) '' (f '' u) := by
+      rw [← Set.image_comp]
+      rfl
+    rw [himg]
+    exact hufin.image _
+  exact (eventually_le_of_upperSemicontinuousWithinAt hf' hfin').mono
+    fun _ hx' i ↦ OrderDual.toDual_le_toDual.mp (hx' i)
 
-end LevelSets
+end Eventually
 
-section Semicontinuity
+end TauCeti
+
+section MonotoneComp
+
+variable {α ι γ : Type*} {β : ι → Type*} [TopologicalSpace α] [∀ i, LinearOrder (β i)]
+  [Preorder γ]
+
+/-- Post-composing a coordinatewise upper semicontinuous locally finite family with a monotone map
+preserves `UpperSemicontinuousWithinAt`. -/
+theorem Monotone.upperSemicontinuousWithinAt_comp_of_finite {g : (∀ i, β i) → γ}
+    (hg : Monotone g) {f : α → ∀ i, β i} {s : Set α} {x : α}
+    (hf : ∀ i, UpperSemicontinuousWithinAt (f · i) s x)
+    (hfin : ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
+    UpperSemicontinuousWithinAt (fun x' ↦ g (f x')) s x := fun _ hy ↦
+  (TauCeti.eventually_le_of_upperSemicontinuousWithinAt hf hfin).mono
+    fun _ hx' ↦ (hg hx').trans_lt hy
+
+/-- Post-composing a coordinatewise lower semicontinuous locally finite family with a monotone map
+preserves `LowerSemicontinuousWithinAt`. -/
+theorem Monotone.lowerSemicontinuousWithinAt_comp_of_finite {g : (∀ i, β i) → γ}
+    (hg : Monotone g) {f : α → ∀ i, β i} {s : Set α} {x : α}
+    (hf : ∀ i, LowerSemicontinuousWithinAt (f · i) s x)
+    (hfin : ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
+    LowerSemicontinuousWithinAt (fun x' ↦ g (f x')) s x := fun _ hy ↦
+  (TauCeti.eventually_ge_of_lowerSemicontinuousWithinAt hf hfin).mono
+    fun _ hx' ↦ hy.trans_le (hg hx')
+
+end MonotoneComp
+
+namespace TauCeti
+
+section PiLex
 
 variable {α ι : Type*} {β : ι → Type*} [TopologicalSpace α]
   [LinearOrder ι] [WellFoundedLT ι] [∀ i, LinearOrder (β i)]
@@ -98,17 +146,8 @@ within `s` at `x`. -/
 theorem upperSemicontinuousWithinAt_toLex {f : α → ∀ i, β i} {s : Set α} {x : α}
     (hf : ∀ i, UpperSemicontinuousWithinAt (f · i) s x)
     (hfin : ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
-    UpperSemicontinuousWithinAt (fun x' ↦ toLex (f x')) s x := by
-  rw [upperSemicontinuousWithinAt_iff_frequently]
-  intro y hfreq
-  obtain ⟨u, hu, hufin⟩ := hfin
-  have hV : {v ∈ f '' u | y ≤ toLex v}.Finite := hufin.subset (sep_subset _ _)
-  have hex : ∃ᶠ x' in 𝓝[s] x, ∃ v ∈ {v ∈ f '' u | y ≤ toLex v}, f x' = v :=
-    (hfreq.and_eventually hu).mono fun x' ⟨hy, hx'⟩ ↦ ⟨f x', ⟨⟨x', hx', rfl⟩, hy⟩, rfl⟩
-  obtain ⟨v, ⟨-, hyv⟩, hvfreq⟩ := hV.frequently_exists.mp hex
-  have hvx : v ≤ f x := fun i ↦
-    (hf i).frequently (v i) (hvfreq.mono fun _ hx' ↦ (congr_fun hx' i).symm.le)
-  exact hyv.trans (Pi.toLex_monotone hvx)
+    UpperSemicontinuousWithinAt (fun x' ↦ toLex (f x')) s x :=
+  Pi.toLex_monotone.upperSemicontinuousWithinAt_comp_of_finite hf hfin
 
 /-- If each coordinate of `f` is upper semicontinuous at `x` and `f` takes finitely many values on
 a neighbourhood of `x`, then `fun x' ↦ toLex (f x')` is upper semicontinuous at `x`. -/
@@ -143,17 +182,8 @@ within `s` at `x`. -/
 theorem lowerSemicontinuousWithinAt_toLex {f : α → ∀ i, β i} {s : Set α} {x : α}
     (hf : ∀ i, LowerSemicontinuousWithinAt (f · i) s x)
     (hfin : ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
-    LowerSemicontinuousWithinAt (fun x' ↦ toLex (f x')) s x := by
-  rw [lowerSemicontinuousWithinAt_iff_frequently]
-  intro y hfreq
-  obtain ⟨u, hu, hufin⟩ := hfin
-  have hV : {v ∈ f '' u | toLex v ≤ y}.Finite := hufin.subset (sep_subset _ _)
-  have hex : ∃ᶠ x' in 𝓝[s] x, ∃ v ∈ {v ∈ f '' u | toLex v ≤ y}, f x' = v :=
-    (hfreq.and_eventually hu).mono fun x' ⟨hy, hx'⟩ ↦ ⟨f x', ⟨⟨x', hx', rfl⟩, hy⟩, rfl⟩
-  obtain ⟨v, ⟨-, hvy⟩, hvfreq⟩ := hV.frequently_exists.mp hex
-  have hvx : f x ≤ v := fun i ↦
-    (hf i).frequently (v i) (hvfreq.mono fun _ hx' ↦ (congr_fun hx' i).le)
-  exact (Pi.toLex_monotone hvx).trans hvy
+    LowerSemicontinuousWithinAt (fun x' ↦ toLex (f x')) s x :=
+  Pi.toLex_monotone.lowerSemicontinuousWithinAt_comp_of_finite hf hfin
 
 /-- If each coordinate of `f` is lower semicontinuous at `x` and `f` takes finitely many values on
 a neighbourhood of `x`, then `fun x' ↦ toLex (f x')` is lower semicontinuous at `x`. -/
@@ -182,6 +212,6 @@ theorem lowerSemicontinuous_toLex {f : α → ∀ i, β i}
     LowerSemicontinuous (fun x' ↦ toLex (f x')) :=
   fun x ↦ lowerSemicontinuousAt_toLex (fun i ↦ hf i x) (hfin x)
 
-end Semicontinuity
+end PiLex
 
 end TauCeti

@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
-public import Mathlib.RingTheory.MvPowerSeries.Order
+public import Mathlib.RingTheory.MvPowerSeries.Inverse
 public import Mathlib.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 -- Proof-only: coefficients of a difference of substitutions.
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
+import Mathlib.Data.Finsupp.Order
+import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import Mathlib.Tactic.LinearCombination
-
-import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 
 /-!
 # Lowest-degree homogeneous components of powers, products and substitutions
@@ -69,6 +70,18 @@ For two-variable series with linear coefficients one, the degree-one component i
 Over a ring, vanishing of the constant coefficient then puts the remainder after subtracting
 `X + Y` in order at least two, and over a commutative ring the linear part of `f(x, y)` is the
 sum of the linear parts of `x` and `y` (`MvPowerSeries.homogeneousComponent_one_subst_pair`).
+
+Over a local commutative ring `R`, the constant-series inclusion into `MvPowerSeries σ R` is a
+local homomorphism (`MvPowerSeries.isLocalHom_C`, `MvPowerSeries.isLocalHom_algebraMap`), the
+maximal ideal of `MvPowerSeries σ R` consists of series with constant coefficient in `𝔪_R`
+(`MvPowerSeries.mem_maximalIdeal_iff_constantCoeff`), every coordinate variable `X i` lies in the
+maximal ideal (`MvPowerSeries.X_mem_maximalIdeal`), every pure monomial `monomial α 1` lies in
+`𝔪 ^ α.degree` (`MvPowerSeries.monomial_one_mem_maximalIdeal_pow`), and in finitely many variables
+every series of order at least `k` lies in `𝔪 ^ k`
+(`MvPowerSeries.mem_maximalIdeal_pow_of_le_order`). Over a field `K`, the converse also holds in
+any number of variables (`MvPowerSeries.natCast_le_order_of_mem_maximalIdeal_pow`), so membership
+in `𝔪 ^ k` coincides with having order at least `k` in finitely many variables
+(`MvPowerSeries.mem_maximalIdeal_pow_iff_le_order`).
 -/
 
 public section
@@ -673,5 +686,166 @@ theorem homogeneousComponent_one_subst_pair (h₀ : f.constantCoeff = 0)
   simp
 
 end CommRing
+
+section MaximalIdeal
+
+/-- The constant-series embedding `C : R →+* MvPowerSeries σ R` is a local homomorphism. -/
+instance isLocalHom_C {σ R : Type*} [Ring R] : IsLocalHom (C (σ := σ) (R := R)) where
+  map_nonunit r hr := by
+    rw [isUnit_iff_constantCoeff, constantCoeff_C] at hr
+    exact hr
+
+/-- The canonical algebra map `R →+* MvPowerSeries σ R` is a local homomorphism. -/
+instance isLocalHom_algebraMap {σ R : Type*} [CommRing R] :
+    IsLocalHom (algebraMap R (MvPowerSeries σ R)) :=
+  c_eq_algebraMap (σ := σ) (R := R) ▸ isLocalHom_C
+
+open scoped Classical in
+private noncomputable def peelMinVar {σ R : Type*} [Semiring R] [LinearOrder σ]
+    (g : MvPowerSeries σ R) (i : σ) : MvPowerSeries σ R :=
+  fun γ ↦ if ∀ j < i, γ j = 0 then coeff (γ + Finsupp.single i 1) g else 0
+
+open scoped Classical in
+private theorem coeff_peelMinVar {σ R : Type*} [Semiring R] [LinearOrder σ]
+    (g : MvPowerSeries σ R) (i : σ) (γ : σ →₀ ℕ) :
+    coeff γ (peelMinVar g i) =
+      if ∀ j < i, γ j = 0 then coeff (γ + Finsupp.single i 1) g else 0 := by
+  rw [coeff_apply]
+  rfl
+
+section LocalRing
+
+variable {σ R : Type*} [CommRing R] [IsLocalRing R]
+
+/-- Over a local commutative ring `R`, a power series lies in the maximal ideal of
+`MvPowerSeries σ R` if and only if its constant coefficient lies in the maximal ideal of `R`. -/
+theorem mem_maximalIdeal_iff_constantCoeff {f : MvPowerSeries σ R} :
+    f ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ R) ↔
+      constantCoeff f ∈ IsLocalRing.maximalIdeal R := by
+  simp only [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, isUnit_iff_constantCoeff]
+
+/-- Every coordinate indeterminate `X i` belongs to the maximal ideal of `MvPowerSeries σ R`. -/
+theorem X_mem_maximalIdeal (i : σ) :
+    (X i : MvPowerSeries σ R) ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ R) := by
+  rw [mem_maximalIdeal_iff_constantCoeff, constantCoeff_X]
+  exact zero_mem _
+
+/-- Every pure monomial `monomial α 1` lies in `𝔪 ^ α.degree`. -/
+theorem monomial_one_mem_maximalIdeal_pow (α : σ →₀ ℕ) :
+    monomial α (1 : R) ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ R) ^ α.degree := by
+  refine Finsupp.induction_linear α ?_ ?_ ?_
+  · simp
+  · intro β γ hβ hγ
+    rw [map_add, pow_add, ← one_mul (1 : R), ← monomial_mul_monomial]
+    exact Ideal.mul_mem_mul hβ hγ
+  · intro i m
+    rw [← X_pow_eq, Finsupp.degree_single]
+    exact Ideal.pow_mem_pow (X_mem_maximalIdeal i) m
+
+/-- Every power series is congruent to its constant term modulo the maximal ideal of
+`MvPowerSeries σ R`. -/
+@[simp]
+theorem residue_C_constantCoeff (f : MvPowerSeries σ R) :
+    IsLocalRing.residue (MvPowerSeries σ R) (C (constantCoeff f)) =
+      IsLocalRing.residue (MvPowerSeries σ R) f := by
+  rw [← sub_eq_zero, ← map_sub, IsLocalRing.residue_eq_zero_iff,
+    mem_maximalIdeal_iff_constantCoeff]
+  simp
+
+/-- Over a local commutative ring `R` in finitely many variables `σ`, any power series of order at
+least `k` belongs to `𝔪 ^ k`. -/
+theorem mem_maximalIdeal_pow_of_le_order [Finite σ] {g : MvPowerSeries σ R} {k : ℕ}
+    (hg : (k : ℕ∞) ≤ g.order) :
+    g ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ R) ^ k := by
+  classical
+  cases nonempty_fintype σ
+  let _ : LinearOrder σ := LinearOrder.lift' (Fintype.equivFin σ) (Fintype.equivFin σ).injective
+  induction k generalizing g with
+  | zero => simp
+  | succ k ih =>
+    have hq_ord : ∀ i : σ, (k : ℕ∞) ≤ (peelMinVar g i).order := fun i ↦
+      nat_le_order fun γ hγ ↦ by
+        rw [coeff_peelMinVar]
+        split_ifs with hmin
+        · refine coeff_of_lt_order ((Nat.cast_lt.mpr ?_).trans_le hg)
+          rw [map_add, Finsupp.degree_single]
+          exact Nat.add_lt_add_right hγ 1
+        · rfl
+    have hdecomp : g = ∑ i : σ, X i * peelMinVar g i := by
+      ext β
+      rw [map_sum]
+      rcases eq_or_ne β 0 with rfl | hβ0
+      · have h0 : coeff 0 g = 0 :=
+          coeff_of_lt_order ((by simp : ((0 : σ →₀ ℕ).degree : ℕ∞) < (k + 1 : ℕ)).trans_le hg)
+        rw [h0, Finset.sum_eq_zero fun i _ ↦ coeff_zero_X_mul _ i]
+      · have hne : β.support.Nonempty := Finsupp.support_nonempty_iff.mpr hβ0
+        let i₀ : σ := β.support.min' hne
+        rw [Finset.sum_eq_single i₀]
+        · have hi₀ : Finsupp.single i₀ 1 ≤ β := by
+            rw [Finsupp.single_le_iff, Nat.one_le_iff_ne_zero, ← Finsupp.mem_support_iff]
+            exact β.support.min'_mem hne
+          have hmin : ∀ j < i₀, (β - Finsupp.single i₀ (1 : ℕ)) j = 0 := fun j hj ↦ by
+            have hjnot : j ∉ β.support := fun hmem ↦ hj.not_ge (β.support.min'_le j hmem)
+            rw [Finsupp.tsub_apply, Finsupp.notMem_support_iff.mp hjnot, zero_tsub]
+          rw [X_def, coeff_monomial_mul, ite_eq_left hi₀, one_mul, coeff_peelMinVar,
+            ite_eq_left hmin, tsub_add_cancel_of_le hi₀]
+        · intro i _ hne_i
+          rw [X_def, coeff_monomial_mul]
+          split_ifs with hle
+          · rw [one_mul, coeff_peelMinVar]
+            have hnotmin : ¬ ∀ j < i, (β - Finsupp.single i (1 : ℕ)) j = 0 := by
+              intro hmin
+              have hi_mem : i ∈ β.support := by
+                rw [Finsupp.mem_support_iff, ← Nat.one_le_iff_ne_zero, ← Finsupp.single_le_iff]
+                exact hle
+              have hi₀_lt : i₀ < i :=
+                (β.support.min'_le i hi_mem).lt_of_ne hne_i.symm
+              have hne0 : (β - Finsupp.single i (1 : ℕ)) i₀ ≠ 0 := by
+                rw [Finsupp.tsub_apply, Finsupp.single_eq_of_ne hi₀_lt.ne, tsub_zero]
+                exact Finsupp.mem_support_iff.mp (β.support.min'_mem hne)
+              exact hne0 (hmin i₀ hi₀_lt)
+            rw [ite_eq_right hnotmin]
+          · rfl
+        · intro hmem
+          exact absurd (Finset.mem_univ i₀) hmem
+    rw [hdecomp, pow_succ']
+    exact sum_mem fun i _ ↦ Ideal.mul_mem_mul (X_mem_maximalIdeal i) (ih (hq_ord i))
+
+end LocalRing
+
+section Field
+
+variable {σ K : Type*} [Field K]
+
+/-- Over a field `K`, a power series belongs to the maximal ideal of `MvPowerSeries σ K` if and
+only if its constant coefficient is zero. -/
+theorem mem_maximalIdeal_iff_constantCoeff_eq_zero {f : MvPowerSeries σ K} :
+    f ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ↔ constantCoeff f = 0 := by
+  rw [mem_maximalIdeal_iff_constantCoeff]
+  simp
+
+/-- Over a field `K`, any element of `𝔪 ^ k` in `MvPowerSeries σ K` has order at least `k`. -/
+theorem natCast_le_order_of_mem_maximalIdeal_pow {g : MvPowerSeries σ K} {k : ℕ}
+    (hg : g ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ k) :
+    (k : ℕ∞) ≤ g.order := by
+  induction k generalizing g with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ] at hg
+    refine Submodule.mul_induction_on hg (fun a ha b hb ↦ ?_) (fun _ _ hx hy ↦ le_order_add hx hy)
+    have hb1 : (1 : ℕ∞) ≤ b.order :=
+      one_le_order_iff_constCoeff_eq_zero.mpr (mem_maximalIdeal_iff_constantCoeff_eq_zero.mp hb)
+    rw [Nat.cast_add, Nat.cast_one]
+    exact (add_le_add (ih ha) hb1).trans le_order_mul
+
+/-- Over a field `K` in finitely many variables `σ`, a power series lies in `𝔪 ^ k` if and only if
+its order is at least `k`. -/
+theorem mem_maximalIdeal_pow_iff_le_order [Finite σ] {g : MvPowerSeries σ K} {k : ℕ} :
+    g ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ k ↔ (k : ℕ∞) ≤ g.order :=
+  ⟨natCast_le_order_of_mem_maximalIdeal_pow, mem_maximalIdeal_pow_of_le_order⟩
+
+end Field
+
+end MaximalIdeal
 
 end MvPowerSeries

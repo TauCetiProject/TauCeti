@@ -9,7 +9,10 @@ public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Option
+public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Data.Finsupp.Order
+import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
+import Mathlib.Data.Nat.Choose.Sum
 
 /-!
 # Weights of finitely supported functions
@@ -62,8 +65,10 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   `i`-th coordinate vector.
 * `Finsupp.finite_degree_eq`, `Finsupp.finite_degree_le`: in finitely many variables there are
   finitely many exponent vectors of each degree, and of degree at most `n`.
-* `Finsupp.fintypeDegreeEq`: for a fintype of variables with decidable equality, the exponent
-  vectors of degree `n` form a fintype, enumerated by `Finset.finsuppAntidiag`.
+* `Finsupp.fintypeDegreeEq`, `Finsupp.fintypeDegreeLe`, `Finsupp.card_degree_eq`,
+  `Finsupp.natCard_degree_eq`, `Finsupp.card_degree_le`, `Finsupp.natCard_degree_le`: fintype
+  enumeration and multichoose/binomial cardinalities of exponent vectors of degree `n` and at most
+  `n`.
 * `Finsupp.weight_vecCons_one`, `Finsupp.injOn_weight_vecCons_one`: the weight `![1, B]` sends
   `μ : Fin 2 →₀ ℕ` to `μ 0 + B * μ 1`, and is injective on the exponents with `μ 0 < B`.
 -/
@@ -273,6 +278,61 @@ instance fintypeDegreeEq {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
     Fintype {s : σ →₀ ℕ // s.degree = n} :=
   Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree = n}) ((Finset.univ : Finset σ).finsuppAntidiag n)
     fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
+
+/-- For a fintype of variables with decidable equality, the exponent vectors of degree at most `n`
+form a fintype, enumerated by the union of `Finset.finsuppAntidiag` up to `n`. -/
+instance fintypeDegreeLe {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
+    Fintype {s : σ →₀ ℕ // s.degree ≤ n} :=
+  Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree ≤ n})
+    ((Finset.range (n + 1)).biUnion (Finset.univ : Finset σ).finsuppAntidiag)
+    fun s ↦ by simp [Finset.mem_finsuppAntidiag, ← degree_eq_sum]
+
+/-- The number of exponent vectors of degree `n` in `Fintype.card σ` variables is
+`(Fintype.card σ).multichoose n`. -/
+@[simp]
+theorem card_degree_eq (σ : Type*) [Fintype σ] [DecidableEq σ] (n : ℕ) :
+    Fintype.card {s : σ →₀ ℕ // s.degree = n} = (Fintype.card σ).multichoose n := by
+  let _ : Fintype ↑{s : σ →₀ ℕ | s.degree = n} := fintypeDegreeEq n
+  refine (Fintype.card_of_finset' (p := {s : σ →₀ ℕ | s.degree = n})
+    ((Finset.univ : Finset σ).finsuppAntidiag n)
+    (fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum])).trans ?_
+  rw [Finset.card_finsuppAntidiag_nat_eq_multichoose, Finset.card_univ]
+
+/-- The `Nat.card` of exponent vectors of degree `n` in finitely many variables `σ` is
+`(Nat.card σ).multichoose n`. -/
+@[simp]
+theorem natCard_degree_eq (σ : Type*) [Finite σ] (n : ℕ) :
+    Nat.card {s : σ →₀ ℕ // s.degree = n} = (Nat.card σ).multichoose n := by
+  classical
+  cases nonempty_fintype σ
+  simp [Nat.card_eq_fintype_card]
+
+/-- The number of exponent vectors of degree at most `n` in `Fintype.card σ` variables is
+`(Fintype.card σ + n).choose (Fintype.card σ)`. -/
+@[simp]
+theorem card_degree_le (σ : Type*) [Fintype σ] [DecidableEq σ] (n : ℕ) :
+    Fintype.card {s : σ →₀ ℕ // s.degree ≤ n} =
+      (Fintype.card σ + n).choose (Fintype.card σ) := by
+  let _ : Fintype ↑{s : σ →₀ ℕ | s.degree ≤ n} := fintypeDegreeLe n
+  refine (Fintype.card_of_finset' (p := {s : σ →₀ ℕ | s.degree ≤ n})
+    ((Finset.range (n + 1)).biUnion (Finset.univ : Finset σ).finsuppAntidiag)
+    (fun s ↦ by simp [Finset.mem_finsuppAntidiag, ← degree_eq_sum])).trans ?_
+  rw [Finset.card_biUnion]
+  · simp_rw [Finset.card_finsuppAntidiag_nat_eq_multichoose, Finset.card_univ]
+    rw [Nat.sum_range_multichoose, add_comm]
+  · intro d₁ _ d₂ _ hne
+    refine Finset.disjoint_left.mpr fun s h₁ h₂ ↦ hne ?_
+    rw [Finset.mem_finsuppAntidiag] at h₁ h₂
+    exact h₁.1.symm.trans h₂.1
+
+/-- The `Nat.card` of exponent vectors of degree at most `n` in finitely many variables `σ` is
+`(Nat.card σ + n).choose (Nat.card σ)`. -/
+@[simp]
+theorem natCard_degree_le (σ : Type*) [Finite σ] (n : ℕ) :
+    Nat.card {s : σ →₀ ℕ // s.degree ≤ n} = (Nat.card σ + n).choose (Nat.card σ) := by
+  classical
+  cases nonempty_fintype σ
+  simp [Nat.card_eq_fintype_card]
 
 end Finsupp
 
