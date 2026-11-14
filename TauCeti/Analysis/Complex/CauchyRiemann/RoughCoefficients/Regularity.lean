@@ -104,34 +104,6 @@ private local instance :
 private local instance :
     NormedSpace ℝ (WithLp 2 (V × V) →L[ℝ] WithLp 2 (V × V)) := inferInstance
 
-omit [CompleteSpace V] in
-/-- If `Θ ∈ 𝓓(Ω, V)` has `tsupport Θ ⊆ W`, `g n` and `g₀` are integrable against `Θ`, and
-`∫⁻ z in W, ‖g n z - g₀ z‖ₑ → 0`, then `∫ z, ⟪Θ z, g n z⟫_ℝ → ∫ z, ⟪Θ z, g₀ z⟫_ℝ`. -/
-private theorem tendsto_integral_inner_of_setLIntegral {W : Set ℂ}
-    (Θ : 𝓓(Ω, V)) (hΘW : tsupport (Θ : ℂ → V) ⊆ W) {g : ℕ → ℂ → V} {g₀ : ℂ → V}
-    (hg₀ : Integrable (fun z => ⟪(Θ : ℂ → V) z, g₀ z⟫_ℝ))
-    (hg : ∀ n, Integrable (fun z => ⟪(Θ : ℂ → V) z, g n z⟫_ℝ))
-    (hL1 : Tendsto (fun n => ∫⁻ z in W, ‖g n z - g₀ z‖ₑ) atTop (𝓝 0)) :
-    Tendsto (fun n => ∫ z, ⟪(Θ : ℂ → V) z, g n z⟫_ℝ) atTop
-      (𝓝 (∫ z, ⟪(Θ : ℂ → V) z, g₀ z⟫_ℝ)) := by
-  obtain ⟨M, hM⟩ := Θ.continuous.bounded_above_of_compact_support Θ.hasCompactSupport
-  have hlimM : Tendsto (fun n => ENNReal.ofReal M * ∫⁻ z in W, ‖g n z - g₀ z‖ₑ)
-      atTop (𝓝 0) := by
-    simpa using ENNReal.Tendsto.const_mul hL1 (Or.inr ENNReal.ofReal_ne_top)
-  refine tendsto_integral_of_L1 _ hg₀.aestronglyMeasurable (.of_forall hg) ?_
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlimM
-    (fun _ => zero_le) fun n => ?_
-  rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  refine (lintegral_mono fun z => ?_).trans (lintegral_indicator_le _ _)
-  by_cases hzW : z ∈ W
-  · rw [indicator_of_mem hzW, ← inner_sub_right, Real.eNorm_eq_ofReal_abs]
-    have h1 := (abs_real_inner_le_norm ((Θ : ℂ → V) z) (g n z - g₀ z)).trans
-      (mul_le_mul_of_nonneg_right (hM z) (norm_nonneg _))
-    exact (ENNReal.ofReal_le_ofReal h1).trans_eq
-      (by rw [ENNReal.ofReal_mul ((norm_nonneg _).trans (hM z)), _root_.ofReal_norm])
-  · simp [indicator_of_notMem hzW,
-      image_eq_zero_of_notMem_tsupport fun h => hzW (hΘW h)]
-
 /-- Pairing a test function supported in `W` against `A z (((ρ_n ⋆ 1_W D) z) v)` passes to the
 limit when `A ∈ Lᵖ(W)` and `D ∈ L^q(W)` with `q < ∞` and `p⁻¹ + q⁻¹ ≤ 1`. -/
 private theorem tendsto_integral_inner_clm_convolution {p q : ℝ≥0∞} (hq : q ≠ ⊤)
@@ -181,7 +153,8 @@ private theorem tendsto_integral_inner_clm_convolution {p q : ℝ≥0∞} (hq : 
         (.of_forall fun z hz => hC z (subset_closure hz))))
     simpa [ΘW, hB] using ΘW.integrable_inner
       (IntegrableOn.locallyIntegrableOn (hmem.integrable Fact.out))
-  refine tendsto_integral_inner_of_setLIntegral Θ hΘW hint_lim hint_n
+  refine Θ.tendsto_integral_inner_of_tendsto_lintegral_enorm_sub hΘW (.of_forall hint_n)
+    hint_lim.aestronglyMeasurable
     (hL1.congr fun n => setLIntegral_congr_fun W.isOpen.measurableSet fun z hz => ?_)
   rw [indicator_of_mem hz, hB, hB]
 
@@ -452,29 +425,6 @@ private theorem inner_crFormalAdjoint_withLp_eq
   simp [e, ContinuousLinearMap.coe_prodMap', hf1 1, hf1 I, hf2 1, hf2 I, hφ1, hφ2, inner_add_right]
   ring
 
-/-- Splits `∫ ⟪crFormalAdjoint J DJ S φ, u⟫` into its four additive terms under Sobolev
-coefficients and `p⁻¹ + q⁻¹ ≤ 1`. -/
-private theorem integral_inner_crFormalAdjoint_split {p q : ℝ≥0∞}
-    {J S : ℂ → V →L[ℝ] V} {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {u : ℂ → V}
-    (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
-    (hu : MemLpLoc q Ω u) (φ : 𝓓(Ω, V)) :
-    ∫ z, ⟪crFormalAdjoint J DJ S φ z, u z⟫_ℝ =
-      -(∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1, u z⟫_ℝ) -
-        (∫ z, ⟪fderiv ℝ (φ : ℂ → V) z I, J z (u z)⟫_ℝ) -
-        (∫ z, ⟪(φ : ℂ → V) z, DJ z I (u z)⟫_ℝ) + ∫ z, ⟪(φ : ℂ → V) z, S z (u z)⟫_ℝ := by
-  have hloc := Ω.isOpen.isLocallyClosed
-  have hDJI := hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)
-  have h₁ := φ.integrable_inner_fderiv
-    (hu.locallyIntegrableOn (ENNReal.inv_le_one.1 (le_add_self.trans hpq)) hloc) 1
-  have h₂ := φ.integrable_inner_fderiv (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply hu hpq hloc)
-    I
-  have h₃ : Integrable (fun z => ⟪(φ : ℂ → V) z, DJ z I (u z)⟫_ℝ) :=
-    φ.integrable_inner (hDJI.locallyIntegrableOn_clm_apply hu hpq hloc)
-  have h₄ := φ.integrable_inner (hc.memLpLoc_zeroth.locallyIntegrableOn_clm_apply hu hpq hloc)
-  simp only [inner_crFormalAdjoint]
-  rw [integral_add _ h₄, integral_sub _ h₃, integral_sub _ h₂, integral_neg]
-  exacts [h₁.neg, h₁.neg.sub h₂, (h₁.neg.sub h₂).sub h₃]
-
 omit [CompleteSpace V] in
 /-- Symmetry of mixed weak first derivatives against a test function:
 `∫ ⟪∂_s φ, ∂_t ξ⟫ = ∫ ⟪∂_t φ, ∂_s ξ⟫`. -/
@@ -537,14 +487,14 @@ private theorem integral_inner_crFormalAdjoint_differentiated_aux [FiniteDimensi
   have hrow1 : (∫ z, ⟪crFormalAdjoint J DJ S φ₁ z, Dξ z 1⟫_ℝ) +
       (∫ z, ⟪(φ₁ : ℂ → V) z, DJ z 1 (Dξ z I)⟫_ℝ) =
       ∫ z, ⟪(φ₁ : ℂ → V) z, Dη z 1 - DS z 1 (ξ z)⟫_ℝ := by
-    rw [integral_inner_crFormalAdjoint_split hc hpq (hDξv 1) φ₁]
+    rw [hc.integral_inner_crFormalAdjoint_eq_terms hpq (hDξv 1) φ₁]
     linarith [integral_commutator_of_hasWeakFDerivOn ENNReal.coe_ne_top ENNReal.coe_ne_top
         hpq hc hDξ hξ.memLpLoc hDξq φ₁,
       integral_lineDeriv_crEquation hp hq hqp hpq hc hS hDS hξ hDξ hη hDη heq 1 φ₁]
   have hrow2 : (∫ z, ⟪crFormalAdjoint J DJ S φ₂ z, Dξ z I⟫_ℝ) +
       (∫ z, ⟪(φ₂ : ℂ → V) z, DJ z I (Dξ z I)⟫_ℝ) =
       ∫ z, ⟪(φ₂ : ℂ → V) z, Dη z I - DS z I (ξ z)⟫_ℝ := by
-    rw [integral_inner_crFormalAdjoint_split hc hpq (hDξv I) φ₂,
+    rw [hc.integral_inner_crFormalAdjoint_eq_terms hpq (hDξv I) φ₂,
       integral_inner_fderiv_comm_of_hasWeakFDerivOn hDξ φ₂]
     linarith [integral_lineDeriv_crEquation hp hq hqp hpq hc hS hDS hξ hDξ hη hDη heq I φ₂]
   have hH := memLpLoc_differentiatedCR_rightSide hp hq.le hqp hS hDS hξ hη hDη

@@ -141,33 +141,6 @@ private theorem tendsto_integral_inner_clm_of_uniform (Θ : 𝓓(Ω, V)) {u : �
         rw [div_mul_eq_mul_div, div_lt_iff₀ (by linarith)]
         linarith
 
-omit [CompleteSpace V] in
-/-- If `Θ ∈ 𝓓(Ω, V)` has `tsupport Θ ⊆ W`, `g n` and `g₀` are integrable against `Θ`, and
-`∫⁻ z in W, ‖g n z - g₀ z‖ₑ → 0`, then `∫ z, ⟪Θ z, g n z⟫_ℝ → ∫ z, ⟪Θ z, g₀ z⟫_ℝ`. -/
-private theorem tendsto_integral_inner_of_setLIntegral {W : Set ℂ}
-    (Θ : 𝓓(Ω, V)) (hΘW : tsupport (Θ : ℂ → V) ⊆ W) {g : ℕ → ℂ → V} {g₀ : ℂ → V}
-    (hg₀ : Integrable (fun z => ⟪(Θ : ℂ → V) z, g₀ z⟫_ℝ))
-    (hg : ∀ n, Integrable (fun z => ⟪(Θ : ℂ → V) z, g n z⟫_ℝ))
-    (hL1 : Tendsto (fun n => ∫⁻ z in W, ‖g n z - g₀ z‖ₑ) atTop (𝓝 0)) :
-    Tendsto (fun n => ∫ z, ⟪(Θ : ℂ → V) z, g n z⟫_ℝ) atTop
-      (𝓝 (∫ z, ⟪(Θ : ℂ → V) z, g₀ z⟫_ℝ)) := by
-  obtain ⟨M, hM⟩ := Θ.continuous.bounded_above_of_compact_support Θ.hasCompactSupport
-  have hlimM : Tendsto (fun n => ENNReal.ofReal M * ∫⁻ z in W, ‖g n z - g₀ z‖ₑ)
-      atTop (𝓝 0) := by
-    simpa using ENNReal.Tendsto.const_mul hL1 (Or.inr ENNReal.ofReal_ne_top)
-  refine tendsto_integral_of_L1 _ hg₀.aestronglyMeasurable (.of_forall hg) ?_
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlimM
-    (fun _ => zero_le) fun n => ?_
-  rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  refine (lintegral_mono fun z => ?_).trans (lintegral_indicator_le _ _)
-  by_cases hzW : z ∈ W
-  · rw [indicator_of_mem hzW, ← inner_sub_right, Real.eNorm_eq_ofReal_abs]
-    have h1 := (abs_real_inner_le_norm ((Θ : ℂ → V) z) (g n z - g₀ z)).trans
-      (mul_le_mul_of_nonneg_right (hM z) (norm_nonneg _))
-    exact (ENNReal.ofReal_le_ofReal h1).trans_eq
-      (by rw [ENNReal.ofReal_mul ((norm_nonneg _).trans (hM z)), _root_.ofReal_norm])
-  · simp [indicator_of_notMem hzW, image_eq_zero_of_notMem_tsupport fun h => hzW (hΘW h)]
-
 /-- Pairing a test function supported in `W` against `((ρ_n ⋆ 1_W U) z v) (u z)` passes to the
 limit when `U ∈ Lᵖ(W)`, `u ∈ L^q(W)` and `p⁻¹ + q⁻¹ ≤ 1` with `p < ∞` (allowing `q = ∞`). -/
 private theorem tendsto_integral_inner_convolution_of_memLp (hp : p ≠ ⊤) (hpq : p⁻¹ + q⁻¹ ≤ 1)
@@ -215,7 +188,8 @@ private theorem tendsto_integral_inner_convolution_of_memLp (hp : p ≠ ⊤) (hp
         (.of_forall fun z hz => hC z (subset_closure hz)))) hu
     simpa [ΘW, hB] using ΘW.integrable_inner
       (IntegrableOn.locallyIntegrableOn (hmem.integrable Fact.out))
-  refine tendsto_integral_inner_of_setLIntegral Θ hΘW hint_lim hint_n
+  refine Θ.tendsto_integral_inner_of_tendsto_lintegral_enorm_sub hΘW (.of_forall hint_n)
+    hint_lim.aestronglyMeasurable
     (hL1.congr fun n => setLIntegral_congr_fun W.isOpen.measurableSet fun z hz => ?_)
   rw [indicator_of_mem hz, hB, hB]
 
@@ -537,8 +511,6 @@ private theorem IsSobolevCRCoefficients.integral_inner_lineDeriv_one_smul_eq (hp
         (∫ z, ⟪(∂_{I} (∂_{(1 : ℂ)} φ) : 𝓓(Ω, ℝ)) z • w, J z (ξ z)⟫_ℝ) =
       ∫ z, ⟪(∂_{(1 : ℂ)} φ : 𝓓(Ω, ℝ)) z • w, η z + DJ z I (ξ z) - S z (ξ z)⟫_ℝ := by
   have hloc := Ω.isOpen.isLocallyClosed
-  have hq1 : 1 ≤ q := ENNReal.inv_le_one.1 (le_add_self.trans hpq)
-  have hξloc := hsol.memLpLoc.locallyIntegrableOn hq1 hloc
   let Lw : ℝ →L[ℝ] V := (ContinuousLinearMap.id ℝ ℝ).smulRight w
   let smulTest : 𝓓(Ω, ℝ) → 𝓓(Ω, V) := TestFunction.postcompCLM Lw
   have hsmul_apply (θ : 𝓓(Ω, ℝ)) (z : ℂ) : (smulTest θ : ℂ → V) z = (θ : ℂ → ℝ) z • w := rfl
@@ -552,27 +524,14 @@ private theorem IsSobolevCRCoefficients.integral_inner_lineDeriv_one_smul_eq (hp
       hsol.memLpLoc hpq hloc
   have hS_loc : LocallyIntegrableOn (fun z => S z (ξ z)) Ω volume :=
     hc.memLpLoc_zeroth.locallyIntegrableOn_clm_apply hsol.memLpLoc hpq hloc
-  have i1 : Integrable (fun z => ⟪fderiv ℝ (Ψ₁ : ℂ → V) z 1, ξ z⟫_ℝ) :=
-    Ψ₁.integrable_inner_fderiv hξloc 1
-  have i2 : Integrable (fun z => ⟪fderiv ℝ (Ψ₁ : ℂ → V) z I, J z (ξ z)⟫_ℝ) :=
-    Ψ₁.integrable_inner_fderiv
-      (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply hsol.memLpLoc hpq hloc) I
   have iDJ : Integrable (fun z => ⟪(Ψ₁ : ℂ → V) z, DJ z I (ξ z)⟫_ℝ) :=
     Ψ₁.integrable_inner hDJI_loc
   have iS : Integrable (fun z => ⟪(Ψ₁ : ℂ → V) z, S z (ξ z)⟫_ℝ) :=
     Ψ₁.integrable_inner hS_loc
   have iη : Integrable (fun z => ⟪(Ψ₁ : ℂ → V) z, η z⟫_ℝ) :=
     Ψ₁.integrable_inner hsol.locallyIntegrableOn
-  have hsplit : ∫ z, ⟪crFormalAdjoint J DJ S Ψ₁ z, ξ z⟫_ℝ =
-      -(∫ z, ⟪fderiv ℝ (Ψ₁ : ℂ → V) z 1, ξ z⟫_ℝ) -
-        (∫ z, ⟪fderiv ℝ (Ψ₁ : ℂ → V) z I, J z (ξ z)⟫_ℝ) -
-        (∫ z, ⟪(Ψ₁ : ℂ → V) z, DJ z I (ξ z)⟫_ℝ) +
-        ∫ z, ⟪(Ψ₁ : ℂ → V) z, S z (ξ z)⟫_ℝ := by
-    simp only [inner_crFormalAdjoint]
-    rw [integral_add _ iS, integral_sub _ iDJ, integral_sub _ i2, integral_neg]
-    exacts [i1.neg, i1.neg.sub i2, (i1.neg.sub i2).sub iDJ]
   have h1 := hsol.integral_inner_crFormalAdjoint Ψ₁
-  rw [hsplit] at h1
+  rw [hc.integral_inner_crFormalAdjoint_eq_terms hpq hsol.memLpLoc Ψ₁] at h1
   simp only [← TestFunction.lineDerivOp_apply_eq_fderiv, Ψ₁, hsmul_op, hsmul_apply] at h1
   have hrhs : ∫ z, ⟪(Ψ₁ : ℂ → V) z, η z + DJ z I (ξ z) - S z (ξ z)⟫_ℝ =
       (∫ z, ⟪(Ψ₁ : ℂ → V) z, η z⟫_ℝ) + (∫ z, ⟪(Ψ₁ : ℂ → V) z, DJ z I (ξ z)⟫_ℝ) -
