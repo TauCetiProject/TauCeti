@@ -10,6 +10,8 @@ public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Equality
 -- containment in an open convex set from directional images.
 import TauCeti.Analysis.Convex.Measure
 import TauCeti.Analysis.Convex.Separation
+-- Proof-only: rescaling a set to volume one.
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Equality in Brunn–Minkowski for convex bodies: homothety
@@ -57,6 +59,13 @@ public section
 
 open MeasureTheory MeasureTheory.Measure ProbabilityTheory Set TauCeti
 open scoped ENNReal Pointwise RealInnerProductSpace
+
+/-- In a space with at most one point, any two nonempty sets are homothetic: both are the whole
+space. -/
+private theorem exists_eq_vadd_smul_of_subsingleton {E : Type*} [AddMonoid E] [MulAction ℝ E]
+    [Subsingleton E] {A B : Set E} (hA : A.Nonempty) (hB : B.Nonempty) :
+    ∃ v : E, ∃ r : ℝ, 0 < r ∧ B = v +ᵥ r • A :=
+  ⟨0, 1, one_pos, by rw [hA.eq_univ, hB.eq_univ, one_smul, zero_vadd]⟩
 
 namespace Convex
 
@@ -162,12 +171,10 @@ theorem exists_eq_vadd_smul_of_volume_real_rpow_le {A B : Set E} (hA : Convex �
       c * volume.real A ^ ((Module.finrank ℝ E : ℝ)⁻¹) +
         d * volume.real B ^ ((Module.finrank ℝ E : ℝ)⁻¹)) :
     ∃ v : E, ∃ r : ℝ, 0 < r ∧ B = v +ᵥ r • A := by
-  -- In dimension zero the space is a point, and both sets, being nonempty, are all of it.
   by_cases hn : Module.finrank ℝ E = 0
   · have : Subsingleton E := Module.finrank_zero_iff.mp hn
-    refine ⟨0, 1, one_pos, ?_⟩
-    rw [(nonempty_of_measure_ne_zero hA0).eq_univ, (nonempty_of_measure_ne_zero hB0).eq_univ,
-      one_smul, zero_vadd]
+    exact exists_eq_vadd_smul_of_subsingleton (nonempty_of_measure_ne_zero hA0)
+      (nonempty_of_measure_ne_zero hB0)
   set n := Module.finrank ℝ E
   have hVA : 0 < volume.real A := ENNReal.toReal_pos hA0 hAc.measure_lt_top.ne
   have hVB : 0 < volume.real B := ENNReal.toReal_pos hB0 hBc.measure_lt_top.ne
@@ -184,13 +191,8 @@ theorem exists_eq_vadd_smul_of_volume_real_rpow_le {A B : Set E} (hA : Convex �
     rw [eq_div_iff hS.ne', sub_mul, one_mul, div_mul_cancel₀ _ hS.ne']
     ring
   -- Rescale `A` and `B` to unit volume.
-  have hunit {s : Set E} (hsc : IsCompact s) (hVs : 0 < volume.real s) :
-      volume ((volume.real s ^ (n : ℝ)⁻¹)⁻¹ • s) = 1 := by
-    rw [addHaar_smul_of_nonneg _ (inv_nonneg.2 (Real.rpow_nonneg hVs.le _)),
-      ← ofReal_measureReal hsc.measure_lt_top.ne, ← ENNReal.ofReal_mul (by positivity), inv_pow,
-      Real.rpow_inv_natCast_pow hVs.le hn, inv_mul_cancel₀ hVs.ne', ENNReal.ofReal_one]
-  have hA1 : volume (a⁻¹ • A) = 1 := hunit hAc hVA
-  have hB1 : volume (b⁻¹ • B) = 1 := hunit hBc hVB
+  have hA1 : volume (a⁻¹ • A) = 1 := addHaar_inv_measureReal_rpow_smul_eq_one hn hVA
+  have hB1 : volume (b⁻¹ • B) = 1 := addHaar_inv_measureReal_rpow_smul_eq_one hn hVB
   have hset : (1 - θ) • a⁻¹ • A + θ • b⁻¹ • B = S⁻¹ • (c • A + d • B) := by
     rw [smul_add, smul_smul, smul_smul, smul_smul, smul_smul, h1θ]
     congr 2

@@ -46,7 +46,9 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
 
 For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
 `t⁻¹ • L (y - x)` turns integrals of functions of it into integrals over the target scaled by
-`tⁿ / ρ`, when `L` carries the measure to `ρ⁻¹` times a Haar measure of the target.
+`tⁿ / ρ`, when `L` carries the measure to `ρ⁻¹` times a Haar measure of the target. In positive
+dimension `n`, rescaling a set of positive finite measure by the inverse `n`-th root of its measure
+gives a set of measure one.
 
 ## Main results
 
@@ -108,6 +110,8 @@ For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
   `RCLike` field.
 * `TauCeti.integral_comp_rescale_eq`: integrals of functions of the rescaled coordinate are the
   target integrals scaled by `tⁿ / ρ`.
+* `TauCeti.addHaar_inv_measureReal_rpow_smul_eq_one`: rescaling a set `s` of positive finite
+  measure by `(μ.real s ^ (n : ℝ)⁻¹)⁻¹` gives measure one in positive dimension `n`.
 -/
 
 public section
@@ -616,6 +620,18 @@ theorem integral_comp_rescale_eq [FiniteDimensional ℝ F] [MeasurableSpace E] [
         simp [NNReal.smul_def, hρ.le]
     _ = (ρ⁻¹ * t ^ finrank ℝ F) • ∫ z, k z ∂ν := by
         rw [Measure.integral_comp_inv_smul_of_nonneg _ _ ht0.le, smul_smul]
+
+open scoped Pointwise in
+/-- Rescaling a set `s` of positive finite measure by the inverse of the `n`-th root of its
+measure, where `n ≠ 0` is the dimension, gives a set of measure one. -/
+theorem addHaar_inv_measureReal_rpow_smul_eq_one [MeasurableSpace E] [BorelSpace E]
+    {μ : Measure E} [μ.IsAddHaarMeasure] {s : Set E} (hn : finrank ℝ E ≠ 0)
+    (hs : 0 < μ.real s) :
+    μ ((μ.real s ^ (finrank ℝ E : ℝ)⁻¹)⁻¹ • s) = 1 := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (Nat.pos_of_ne_zero hn)
+  rw [addHaar_smul_of_nonneg _ (inv_nonneg.2 (Real.rpow_nonneg hs.le _)),
+    ← ofReal_measureReal (ENNReal.toReal_pos_iff.1 hs).2.ne, ← ENNReal.ofReal_mul (by positivity),
+    inv_pow, Real.rpow_inv_natCast_pow hs.le hn, inv_mul_cancel₀ hs.ne', ENNReal.ofReal_one]
 
 end Rescale
 
