@@ -16,7 +16,8 @@ import TauCeti.Topology.MetricSpace.Pseudo.Defs
 `MeasureTheory.AEEqFun Ω E μ`, for any topological space `E`. When `E` is a pseudometric
 space and `μ` is finite, its distance is the integral of `dist f g / (1 + dist f g)`.
 This is a metric when `E` is separated. The separate carrier permits these structures without
-changing any structures on `AEEqFun` or on the native `Lp` spaces.
+changing any structures on `AEEqFun` or on the native `Lp` spaces. Constants and continuous
+unary and binary post-composition are available for arbitrary topological codomains.
 -/
 
 public section
@@ -128,6 +129,68 @@ theorem ofFun_coeFn (f : L0 E μ) : ofFun f f.stronglyMeasurable.aestronglyMeasu
   apply equivAEEqFun.injective
   exact AEEqFun.mk_coeFn _
 
+/-- The random variable represented by a constant function. -/
+def const (μ : Measure Ω) (c : E) : L0 E μ := ⟨AEEqFun.const Ω c⟩
+
+/-- Forgetting a constant random variable gives the native constant class. -/
+@[simp]
+theorem toAEEqFun_const (c : E) : (const μ c).toAEEqFun = AEEqFun.const Ω c := (rfl)
+
+/-- A constant random variable is almost everywhere equal to its constant value. -/
+theorem coeFn_const (c : E) : (const μ c : Ω → E) =ᵐ[μ] fun _ ↦ c :=
+  AEEqFun.coeFn_const Ω c
+
+/-- Constructing a random variable from a constant function gives `const`. -/
+@[simp]
+theorem ofFun_const (c : E) : ofFun (fun _ : Ω ↦ c) aestronglyMeasurable_const = const μ c :=
+  (rfl)
+
+variable {F G : Type*} [TopologicalSpace F] [TopologicalSpace G]
+
+/-- Apply a continuous map to a random variable. -/
+def comp (g : E → F) (hg : Continuous g) (f : L0 E μ) : L0 F μ :=
+  ⟨AEEqFun.comp g hg f.toAEEqFun⟩
+
+/-- Forgetting composition gives composition on the native quotient. -/
+@[simp]
+theorem toAEEqFun_comp (g : E → F) (hg : Continuous g) (f : L0 E μ) :
+    (comp g hg f).toAEEqFun = AEEqFun.comp g hg f.toAEEqFun := (rfl)
+
+/-- Composition agrees almost everywhere with composition of representatives. -/
+theorem coeFn_comp (g : E → F) (hg : Continuous g) (f : L0 E μ) :
+    (comp g hg f : Ω → F) =ᵐ[μ] g ∘ f := AEEqFun.coeFn_comp g hg f.toAEEqFun
+
+/-- Composition commutes with the constructor from a measurable representative. -/
+@[simp]
+theorem comp_ofFun (g : E → F) (hg : Continuous g) (f : Ω → E)
+    (hf : AEStronglyMeasurable f μ) :
+    comp g hg (ofFun f hf) = ofFun (g ∘ f) (hg.comp_aestronglyMeasurable hf) := (rfl)
+
+/-- Apply a continuous function of two variables to random variables. -/
+def comp₂ (g : E → F → G) (hg : Continuous (Function.uncurry g))
+    (f₁ : L0 E μ) (f₂ : L0 F μ) : L0 G μ :=
+  ⟨AEEqFun.comp₂ g hg f₁.toAEEqFun f₂.toAEEqFun⟩
+
+/-- Forgetting binary composition gives binary composition on the native quotient. -/
+@[simp]
+theorem toAEEqFun_comp₂ (g : E → F → G) (hg : Continuous (Function.uncurry g))
+    (f₁ : L0 E μ) (f₂ : L0 F μ) :
+    (comp₂ g hg f₁ f₂).toAEEqFun = AEEqFun.comp₂ g hg f₁.toAEEqFun f₂.toAEEqFun := (rfl)
+
+/-- Binary composition agrees almost everywhere with the representative operation. -/
+theorem coeFn_comp₂ (g : E → F → G) (hg : Continuous (Function.uncurry g))
+    (f₁ : L0 E μ) (f₂ : L0 F μ) :
+    (comp₂ g hg f₁ f₂ : Ω → G) =ᵐ[μ] fun x ↦ g (f₁ x) (f₂ x) :=
+  AEEqFun.coeFn_comp₂ g hg f₁.toAEEqFun f₂.toAEEqFun
+
+/-- Binary composition commutes with construction from measurable representatives. -/
+@[simp]
+theorem comp₂_ofFun_ofFun (g : E → F → G) (hg : Continuous (Function.uncurry g))
+    (f₁ : Ω → E) (f₂ : Ω → F) (hf₁ : AEStronglyMeasurable f₁ μ)
+    (hf₂ : AEStronglyMeasurable f₂ μ) :
+    comp₂ g hg (ofFun f₁ hf₁) (ofFun f₂ hf₂) =
+      ofFun (fun x ↦ g (f₁ x) (f₂ x)) (hg.comp_aestronglyMeasurable (hf₁.prodMk hf₂)) := (rfl)
+
 end Topological
 
 section FiniteMeasure
@@ -180,6 +243,13 @@ theorem dist_ofFun (f g : Ω → E) (hf : AEStronglyMeasurable f μ)
   apply integral_congr_ae
   filter_upwards [coeFn_ofFun f hf, coeFn_ofFun g hg] with x hx hy
   rw [hx, hy]
+
+/-- The distance between constant random variables is the bounded target distance
+multiplied by the total mass. -/
+theorem dist_const (c d : E) :
+    dist (const μ c) (const μ d) = μ.real univ * (dist c d / (1 + dist c d)) := by
+  rw [← ofFun_const, ← ofFun_const, dist_ofFun]
+  simp
 
 /-- Every distance is bounded by the total mass of the finite measure. -/
 theorem dist_le_measureReal_univ (f g : L0 E μ) : dist f g ≤ μ.real univ := by

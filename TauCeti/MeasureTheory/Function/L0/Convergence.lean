@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Function.L0.Basic
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 
 /-!
 # The bounded integral pseudometric and convergence in measure
@@ -16,7 +17,8 @@ The pseudometric on `TauCeti.L0 E μ` induces exactly native convergence in meas
 quantitative estimates retain the total mass of an arbitrary finite measure; no probability
 normalization is imposed. The inclusion `TauCeti.L0.ofLp` preserves the native almost-everywhere
 class without requiring measure finiteness. On finite measure spaces, `TauCeti.L0.continuous_ofLp`
-proves its continuity for every `1 ≤ p`, including infinity.
+proves its continuity for every `1 ≤ p`, including infinity. Continuous unary and binary
+transformations lift to continuous maps on `L0`, and the constant-function inclusion is continuous.
 -/
 
 public section
@@ -160,6 +162,15 @@ theorem tendsto_nhds_ofFun_iff_tendstoInMeasure {ι : Type*} {l : Filter ι} {f 
   exact ⟨fun h ↦ h.congr_right (coeFn_ofFun g hg),
     fun h ↦ h.congr_right (coeFn_ofFun g hg).symm⟩
 
+/-- Convergence of constructed random variables to an existing random variable is convergence
+in measure of the supplied functions to its representative. -/
+theorem tendsto_ofFun_nhds_iff_tendstoInMeasure {ι : Type*} {l : Filter ι}
+    {f : ι → Ω → E} {g : L0 E μ} (hf : ∀ i, AEStronglyMeasurable (f i) μ) :
+    Tendsto (fun i ↦ ofFun (f i) (hf i)) l (𝓝 g) ↔ TendstoInMeasure μ f l g := by
+  rw [tendsto_iff_tendstoInMeasure]
+  exact ⟨fun h ↦ h.congr_left (fun i ↦ coeFn_ofFun (f i) (hf i)),
+    fun h ↦ h.congr_left (fun i ↦ (coeFn_ofFun (f i) (hf i)).symm)⟩
+
 /-- Constructed random variables converge exactly when the supplied functions converge in
 measure, for an arbitrary index filter. -/
 theorem tendsto_ofFun_iff_tendstoInMeasure {ι : Type*} {l : Filter ι}
@@ -169,6 +180,52 @@ theorem tendsto_ofFun_iff_tendstoInMeasure {ι : Type*} {l : Filter ι}
   rw [tendsto_nhds_ofFun_iff_tendstoInMeasure hg]
   exact ⟨fun h ↦ h.congr_left (fun i ↦ coeFn_ofFun (f i) (hf i)),
     fun h ↦ h.congr_left (fun i ↦ (coeFn_ofFun (f i) (hf i)).symm)⟩
+
+/-- Continuous post-composition is continuous for convergence in measure. -/
+@[fun_prop]
+theorem continuous_comp {F : Type*} [PseudoMetricSpace F] (φ : E → F)
+    (hφ : Continuous φ) : Continuous (comp (μ := μ) φ hφ) := by
+  apply continuous_iff_continuousAt.2
+  intro g
+  apply tendsto_iff_tendstoInMeasure.2
+  have hid : Tendsto (fun f : L0 E μ ↦ f) (𝓝 g) (𝓝 g) := tendsto_id
+  have h := (tendsto_iff_tendstoInMeasure.1 hid).continuous_comp hφ
+    (Eventually.of_forall fun f ↦ hφ.comp_aestronglyMeasurable f.aestronglyMeasurable)
+  exact h.congr (fun f ↦ (coeFn_comp φ hφ f).symm) (coeFn_comp φ hφ g).symm
+
+/-- A continuous binary map induces a jointly continuous map on random variables. -/
+@[fun_prop]
+theorem continuous_comp₂ {F G : Type*} [PseudoMetricSpace F] [PseudoMetricSpace G]
+    (φ : E → F → G) (hφ : Continuous (Function.uncurry φ)) :
+    Continuous (Function.uncurry (comp₂ (μ := μ) φ hφ)) := by
+  apply continuous_iff_continuousAt.2
+  intro g
+  apply tendsto_iff_tendstoInMeasure.2
+  have h₁ := tendsto_iff_tendstoInMeasure.1 (continuous_fst.tendsto g)
+  have h₂ := tendsto_iff_tendstoInMeasure.1 (continuous_snd.tendsto g)
+  have h := h₁.continuous_comp₂ h₂ hφ
+    (Eventually.of_forall fun f ↦ (hφ.comp_stronglyMeasurable
+      (f.1.stronglyMeasurable.prodMk f.2.stronglyMeasurable)).aestronglyMeasurable)
+  exact h.congr (fun f ↦ (coeFn_comp₂ φ hφ f.1 f.2).symm)
+    (coeFn_comp₂ φ hφ g.1 g.2).symm
+
+/-- The inclusion of constant functions into random variables is continuous. -/
+@[fun_prop]
+theorem continuous_const : Continuous (const μ : E → L0 E μ) := by
+  apply continuous_iff_continuousAt.2
+  intro c
+  apply tendsto_iff_tendstoInMeasure.2
+  have h : TendstoInMeasure μ (fun d : E ↦ fun _ : Ω ↦ d) (𝓝 c) (fun _ ↦ c) := by
+    rw [tendstoInMeasure_iff_dist]
+    intro ε hε
+    apply tendsto_const_nhds.congr'
+    filter_upwards [Metric.ball_mem_nhds c hε] with d hd
+    have hempty : {_x : Ω | ε ≤ dist d c} = ∅ :=
+      Set.eq_empty_iff_forall_notMem.mpr fun _ hx ↦ by
+        simp only [Set.mem_ofPred_eq, Metric.mem_ball] at hd hx
+        exact (not_le_of_gt hd) hx
+    simp only [hempty, measure_empty]
+  exact h.congr (fun d ↦ (coeFn_const d).symm) (coeFn_const c).symm
 
 end FiniteMeasure
 

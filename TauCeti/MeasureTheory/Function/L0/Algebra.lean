@@ -10,7 +10,6 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.Topology.Algebra.IsUniformGroup.Defs
 public import Mathlib.Topology.MetricSpace.IsometricSMul
-import Mathlib.Algebra.Module.TransferInstance
 public import Mathlib.Algebra.Ring.TransferInstance
 
 /-!
@@ -65,6 +64,10 @@ instance instSMul [SMul 𝕜 E] [ContinuousConstSMul 𝕜 E] : SMul 𝕜 (L0 E �
 instance instPow [Monoid E] [ContinuousMul E] : Pow (L0 E μ) ℕ := equivAEEqFun.pow ℕ
 
 /-- The additive monoid of native almost-everywhere classes, transported to `L0`. -/
+instance instAddMonoid [AddMonoid E] [ContinuousAdd E] : AddMonoid (L0 E μ) :=
+  equivAEEqFun.addMonoid
+
+/-- The commutative additive monoid of native almost-everywhere classes. -/
 instance instAddCommMonoid [AddCommMonoid E] [ContinuousAdd E] :
     AddCommMonoid (L0 E μ) := equivAEEqFun.addCommMonoid
 
@@ -113,6 +116,28 @@ theorem toAEEqFun_zero [Zero E] : (0 : L0 E μ).toAEEqFun = 0 := by
 @[simp]
 theorem toAEEqFun_one [One E] : (1 : L0 E μ).toAEEqFun = 1 := by
   simp only [← equivAEEqFun_apply, Equiv.one_def, Equiv.apply_symm_apply]
+
+/-- The native class vanishes exactly when the random variable does. -/
+@[simp]
+theorem toAEEqFun_eq_zero [Zero E] {f : L0 E μ} : f.toAEEqFun = 0 ↔ f = 0 := by
+  rw [← toAEEqFun_zero, toAEEqFun_inj]
+
+/-- The native class is one exactly when the random variable is one. -/
+@[simp]
+theorem toAEEqFun_eq_one [One E] {f : L0 E μ} : f.toAEEqFun = 1 ↔ f = 1 := by
+  rw [← toAEEqFun_one, toAEEqFun_inj]
+
+/-- The zero constant is zero. -/
+@[simp]
+theorem const_zero [Zero E] : const μ (0 : E) = 0 := by
+  apply toAEEqFun_injective
+  simp only [toAEEqFun_const, toAEEqFun_zero, AEEqFun.zero_def, AEEqFun.const]
+
+/-- The unit constant is one. -/
+@[simp]
+theorem const_one [One E] : const μ (1 : E) = 1 := by
+  apply toAEEqFun_injective
+  simp only [toAEEqFun_const, toAEEqFun_one, AEEqFun.one_def, AEEqFun.const]
 
 /-- Addition on `L0` is inherited from the native almost-everywhere quotient. -/
 @[simp]
@@ -173,6 +198,32 @@ theorem toAEEqFun_smul [SMul 𝕜 E] [ContinuousConstSMul 𝕜 E] (c : 𝕜) (f 
     (c • f).toAEEqFun = c • f.toAEEqFun := by
   simp only [← equivAEEqFun_apply, Equiv.smul_def, Equiv.apply_symm_apply]
 
+/-- The native scalar action preserves the monoid action laws. -/
+instance instMulAction [Monoid 𝕜] [MulAction 𝕜 E] [ContinuousConstSMul 𝕜 E] :
+    MulAction 𝕜 (L0 E μ) := equivAEEqFun.mulAction 𝕜
+
+/-- Distribution is inherited from the native almost-everywhere classes. -/
+instance instDistribMulAction [Monoid 𝕜] [AddMonoid E] [ContinuousAdd E]
+    [DistribMulAction 𝕜 E] [ContinuousConstSMul 𝕜 E] : DistribMulAction 𝕜 (L0 E μ) :=
+  toAEEqFun_injective.distribMulAction
+    { toFun := toAEEqFun, map_zero' := toAEEqFun_zero, map_add' := toAEEqFun_add }
+    toAEEqFun_smul
+
+/-- Commuting scalar actions descend to almost-everywhere classes. -/
+instance instSMulCommClass {𝕜' : Type*} [SMul 𝕜 E] [SMul 𝕜' E]
+    [ContinuousConstSMul 𝕜 E] [ContinuousConstSMul 𝕜' E] [SMulCommClass 𝕜 𝕜' E] :
+    SMulCommClass 𝕜 𝕜' (L0 E μ) := equivAEEqFun.smulCommClass 𝕜 𝕜'
+
+/-- Scalar towers descend to almost-everywhere classes. -/
+instance instIsScalarTower {𝕜' : Type*} [SMul 𝕜 𝕜'] [SMul 𝕜 E] [SMul 𝕜' E]
+    [ContinuousConstSMul 𝕜 E] [ContinuousConstSMul 𝕜' E] [IsScalarTower 𝕜 𝕜' E] :
+    IsScalarTower 𝕜 𝕜' (L0 E μ) := equivAEEqFun.isScalarTower 𝕜 𝕜'
+
+/-- Central scalar actions descend to almost-everywhere classes. -/
+instance instIsCentralScalar [SMul 𝕜 E] [SMul 𝕜ᵐᵒᵖ E] [ContinuousConstSMul 𝕜 E]
+    [IsCentralScalar 𝕜 E] : IsCentralScalar 𝕜 (L0 E μ) :=
+  equivAEEqFun.isCentralScalar 𝕜
+
 /-- The module of almost-everywhere classes, using the native scalar action. -/
 instance instModule [Semiring 𝕜] [AddCommMonoid E] [ContinuousAdd E] [Module 𝕜 E]
     [ContinuousConstSMul 𝕜 E] : Module 𝕜 (L0 E μ) :=
@@ -195,7 +246,6 @@ instance instAlgebra [CommSemiring 𝕜] [Ring E] [IsTopologicalRing E] [Algebra
         simp only [AEEqFun.smul_mk, AEEqFun.mk_mul_mk, mul_smul_comm]))
 
 /-- Algebra constants are the native constant almost-everywhere classes. -/
-@[simp]
 theorem toAEEqFun_algebraMap [CommSemiring 𝕜] [Ring E] [IsTopologicalRing E] [Algebra 𝕜 E]
     [ContinuousConstSMul 𝕜 E] (c : 𝕜) :
     (algebraMap 𝕜 (L0 E μ) c).toAEEqFun = AEEqFun.const Ω (algebraMap 𝕜 E c) := by
@@ -263,6 +313,29 @@ theorem coeFn_intCast [Ring E] [IsTopologicalRing E] (n : ℤ) :
   filter_upwards [coeFn_smul n (1 : L0 E μ), coeFn_one (E := E) (μ := μ)] with _x hx h1
   simpa only [zsmul_one, Pi.smul_apply, Pi.one_apply, h1, Function.const_apply] using hx
 
+/-- Natural-number constants retain their native constant class. -/
+@[simp]
+theorem toAEEqFun_natCast [Ring E] [IsTopologicalRing E] (n : ℕ) :
+    (n : L0 E μ).toAEEqFun = AEEqFun.const Ω (n : E) :=
+  AEEqFun.ext ((coeFn_natCast n).trans (AEEqFun.coeFn_const Ω (n : E)).symm)
+
+/-- Integer constants retain their native constant class. -/
+@[simp]
+theorem toAEEqFun_intCast [Ring E] [IsTopologicalRing E] (n : ℤ) :
+    (n : L0 E μ).toAEEqFun = AEEqFun.const Ω (n : E) :=
+  AEEqFun.ext ((coeFn_intCast n).trans (AEEqFun.coeFn_const Ω (n : E)).symm)
+
+/-- Numerals retain their native constant class. -/
+@[simp]
+theorem toAEEqFun_ofNat [Ring E] [IsTopologicalRing E] (n : ℕ) [n.AtLeastTwo] :
+    (ofNat(n) : L0 E μ).toAEEqFun = AEEqFun.const Ω (ofNat(n) : E) :=
+  toAEEqFun_natCast n
+
+/-- Numeral representatives equal the corresponding constant almost everywhere. -/
+theorem coeFn_ofNat [Ring E] [IsTopologicalRing E] (n : ℕ) [n.AtLeastTwo] :
+    ((ofNat(n) : L0 E μ) : Ω → E) =ᵐ[μ] Function.const Ω (ofNat(n) : E) :=
+  coeFn_natCast n
+
 /-- A finite sum has the pointwise sum as its representative almost everywhere. -/
 theorem coeFn_finsetSum [AddCommMonoid E] [ContinuousAdd E] {ι : Type*} (s : Finset ι)
     (f : ι → L0 E μ) :
@@ -277,14 +350,13 @@ theorem coeFn_finsetProd [CommMonoid E] [ContinuousMul E] {ι : Type*} (s : Fins
   simpa only [← toAEEqFun_prod] using
     (AEEqFun.coeFn_finsetProd s (fun i ↦ (f i).toAEEqFun))
 
-/-- Constructing a constant function gives the corresponding algebra constant. -/
+/-- Constant random variables agree with the algebra constants. -/
 @[simp]
-theorem ofFun_const [CommRing E] [IsTopologicalRing E] (c : E) :
-    ofFun (fun _ : Ω ↦ c) aestronglyMeasurable_const = algebraMap E (L0 E μ) c := by
-  apply ext
-  refine (coeFn_ofFun _ _).trans ?_
-  simpa only [Algebra.algebraMap_self_apply, ← Function.const_def] using
-    (coeFn_algebraMap (𝕜 := E) (E := E) c).symm
+theorem algebraMap_eq_const [CommSemiring 𝕜] [Ring E] [IsTopologicalRing E] [Algebra 𝕜 E]
+    [ContinuousConstSMul 𝕜 E] (c : 𝕜) :
+    algebraMap 𝕜 (L0 E μ) c = const μ (algebraMap 𝕜 E c) := by
+  apply toAEEqFun_injective
+  simp only [toAEEqFun_const, toAEEqFun_algebraMap]
 
 /-- Constructing a sum agrees with adding the constructed random variables. -/
 @[simp]
@@ -327,6 +399,20 @@ theorem ofFun_one [One E] : ofFun (1 : Ω → E) aestronglyMeasurable_const = (1
   rw [equivAEEqFun_apply, equivAEEqFun_apply, toAEEqFun_one]
   exact (toAEEqFun_ofFun _ _).trans AEEqFun.one_def.symm
 
+/-- A constructed random variable vanishes exactly when its function vanishes almost everywhere. -/
+@[simp]
+theorem ofFun_eq_zero [Zero E] {f : Ω → E} {hf : AEStronglyMeasurable f μ} :
+    ofFun f hf = 0 ↔ f =ᵐ[μ] 0 := by
+  rw [← toAEEqFun_eq_zero, toAEEqFun_ofFun, AEEqFun.zero_def]
+  exact AEEqFun.mk_eq_mk
+
+/-- A constructed random variable is one exactly when its function is one almost everywhere. -/
+@[simp]
+theorem ofFun_eq_one [One E] {f : Ω → E} {hf : AEStronglyMeasurable f μ} :
+    ofFun f hf = 1 ↔ f =ᵐ[μ] 1 := by
+  rw [← toAEEqFun_eq_one, toAEEqFun_ofFun, AEEqFun.one_def]
+  exact AEEqFun.mk_eq_mk
+
 /-- Negation commutes with constructing a random variable. -/
 @[simp]
 theorem neg_ofFun [AddGroup E] [IsTopologicalAddGroup E] (f : Ω → E)
@@ -358,6 +444,19 @@ end Topological
 theorem ofLp_zero [NormedAddCommGroup E] {p : ℝ≥0∞} : ofLp (0 : Lp E p μ) = (0 : L0 E μ) := by
   apply equivAEEqFun.injective
   simp [equivAEEqFun_apply]
+
+/-- The `Lp` inclusion detects zero. -/
+@[simp]
+theorem ofLp_eq_zero [NormedAddCommGroup E] {p : ℝ≥0∞} {f : Lp E p μ} :
+    ofLp f = 0 ↔ f = 0 := by
+  rw [← ofLp_zero, ofLp_inj]
+
+/-- The `Lp` inclusion preserves natural multiples. -/
+@[simp]
+theorem ofLp_nsmul [NormedAddCommGroup E] {p : ℝ≥0∞} (n : ℕ) (f : Lp E p μ) :
+    ofLp (n • f) = n • ofLp f := by
+  apply toAEEqFun_injective
+  simp
 
 /-- The inclusion of `Lp` preserves addition. -/
 @[simp]
@@ -399,53 +498,44 @@ section FiniteMeasure
 
 variable [IsFiniteMeasure μ]
 
-/-- Including a constant `Lp` function gives the corresponding algebra constant. -/
+/-- Including a constant `Lp` function gives the corresponding constant random variable. -/
 @[simp]
-theorem ofLp_const [NormedCommRing E] {p : ℝ≥0∞} (c : E) :
-    ofLp (Lp.const p μ c) = algebraMap E (L0 E μ) c := by
+theorem ofLp_const [NormedAddCommGroup E] {p : ℝ≥0∞} (c : E) :
+    ofLp (Lp.const p μ c) = const μ c := by
   apply toAEEqFun_injective
-  simp only [toAEEqFun_ofLp, Lp.const_val, toAEEqFun_algebraMap,
-    Algebra.algebraMap_self_apply]
+  simp only [toAEEqFun_ofLp, Lp.const_val, toAEEqFun_const]
 
 section PseudoMetric
 
 variable [PseudoMetricSpace E]
 
-private theorem continuous_binary {op : L0 E μ → L0 E μ → L0 E μ} {φ : E → E → E}
-    (hφ : Continuous (Function.uncurry φ))
-    (hop : ∀ f g, (op f g : Ω → E) =ᵐ[μ] fun x ↦ φ (f x) (g x)) :
-    Continuous (Function.uncurry op) := by
-  apply continuous_iff_continuousAt.2
-  intro g
-  apply tendsto_iff_tendstoInMeasure.2
-  have h₁ := tendsto_iff_tendstoInMeasure.1 (continuous_fst.tendsto g)
-  have h₂ := tendsto_iff_tendstoInMeasure.1 (continuous_snd.tendsto g)
-  have h := h₁.continuous_comp₂ h₂ hφ
-    (Eventually.of_forall fun f ↦ (hφ.comp_stronglyMeasurable
-      (f.1.stronglyMeasurable.prodMk f.2.stronglyMeasurable)).aestronglyMeasurable)
-  exact h.congr (fun f ↦ (hop f.1 f.2).symm) (hop g.1 g.2).symm
-
 /-- Addition of random variables is continuous for convergence in measure. -/
 instance instContinuousAdd [Add E] [ContinuousAdd E] : ContinuousAdd (L0 E μ) where
-  continuous_add := continuous_binary continuous_add coeFn_add
+  continuous_add := by
+    have heq : (Function.uncurry (· + ·) : L0 E μ × L0 E μ → L0 E μ) =
+        Function.uncurry (comp₂ (· + ·) continuous_add) := by
+      funext f
+      exact ext ((coeFn_add f.1 f.2).trans (coeFn_comp₂ _ _ _ _).symm)
+    -- Present the pointwise operation as its uncurried map so that heq applies.
+    change Continuous (Function.uncurry _)
+    rw [heq]
+    exact continuous_comp₂ _ _
 
 /-- Negation of random variables is continuous for convergence in measure. -/
 instance instContinuousNeg [AddGroup E] [IsTopologicalAddGroup E] : ContinuousNeg (L0 E μ) where
   continuous_neg := by
-    apply continuous_iff_continuousAt.2
-    intro g
-    apply tendsto_iff_tendstoInMeasure.2
-    have hid : Tendsto (fun f : L0 E μ ↦ f) (𝓝 g) (𝓝 g) := tendsto_id
-    have h := (tendsto_iff_tendstoInMeasure.1 hid).continuous_comp
-      continuous_neg (Eventually.of_forall fun f ↦ f.aestronglyMeasurable.neg)
-    exact h.congr (fun f ↦ (coeFn_neg f).symm) (coeFn_neg g).symm
+    have heq : (Neg.neg : L0 E μ → L0 E μ) = comp Neg.neg continuous_neg := by
+      funext f
+      exact ext ((coeFn_neg f).trans (coeFn_comp _ _ _).symm)
+    rw [heq]
+    exact continuous_comp _ _
 
 /-- The bounded integral topology preserves the topological additive group structure. -/
 instance instIsTopologicalAddGroup [AddGroup E] [IsTopologicalAddGroup E] :
     IsTopologicalAddGroup (L0 E μ) where
 
 /-- Translation preserves the bounded integral pseudometric for an isometric additive codomain. -/
-instance instIsIsometricVAdd [AddCommGroup E] [IsTopologicalAddGroup E]
+instance instIsIsometricVAdd [Add E] [ContinuousAdd E]
     [IsIsometricVAdd E E] : IsIsometricVAdd (L0 E μ) (L0 E μ) where
   isometry_vadd f := Isometry.of_dist_eq fun g h ↦ by
     -- The canonical additive action is addition; this changes only its notation.
@@ -455,31 +545,86 @@ instance instIsIsometricVAdd [AddCommGroup E] [IsTopologicalAddGroup E]
     filter_upwards [coeFn_add f g, coeFn_add f h] with x hx hy
     simp only [hx, hy, Pi.add_apply, dist_add_left]
 
-/-- Subtraction is uniformly continuous when codomain translations are isometries. -/
-instance instIsUniformAddGroup [AddCommGroup E] [IsTopologicalAddGroup E]
-    [IsIsometricVAdd E E] : IsUniformAddGroup (L0 E μ) where
+/-- Uniform continuity of subtraction passes to convergence in measure. -/
+instance instIsUniformAddGroup [AddGroup E] [IsUniformAddGroup E] :
+    IsUniformAddGroup (L0 E μ) where
   uniformContinuous_sub := by
-    apply LipschitzWith.uniformContinuous (K := 2)
-    apply LipschitzWith.of_dist_le_mul
-    intro f g
-    calc
-      dist (f.1 - f.2) (g.1 - g.2) ≤
-          dist (f.1 - f.2) (g.1 - f.2) + dist (g.1 - f.2) (g.1 - g.2) :=
-        dist_triangle _ _ _
-      _ = dist f.1 g.1 + dist f.2 g.2 := by simp
-      _ ≤ 2 * dist f g := by
-        rw [Prod.dist_eq]
-        have h₁ := le_max_left (dist f.1 g.1) (dist f.2 g.2)
-        have h₂ := le_max_right (dist f.1 g.1) (dist f.2 g.2)
-        linarith
+    rw [Metric.uniformContinuous_iff]
+    intro ε hε
+    let η := ε / (2 * (μ.real Set.univ + 1))
+    have hη : 0 < η := by dsimp [η]; positivity
+    obtain ⟨δ, hδ, hsub⟩ := Metric.uniformContinuous_iff.mp
+      (IsUniformAddGroup.uniformContinuous_sub (α := E)) η hη
+    let C := (1 + δ) / δ
+    have hC : 0 < C := by dsimp [C]; positivity
+    refine ⟨ε / (4 * C), div_pos hε (mul_pos (by norm_num) hC), ?_⟩
+    intro f g hfg
+    have h₁ : dist f.1 g.1 < ε / (4 * C) :=
+      (le_max_left _ _).trans_lt (by simpa only [Prod.dist_eq] using hfg)
+    have h₂ : dist f.2 g.2 < ε / (4 * C) :=
+      (le_max_right _ _).trans_lt (by simpa only [Prod.dist_eq] using hfg)
+    -- Outside the two exceptional sets, uniform continuity controls subtraction pointwise.
+    have hbad : ∀ᵐ x ∂μ, η < dist ((f.1 - f.2) x) ((g.1 - g.2) x) →
+        x ∈ {x | δ ≤ dist (f.1 x) (g.1 x)} ∪ {x | δ ≤ dist (f.2 x) (g.2 x)} := by
+      filter_upwards [coeFn_sub f.1 f.2, coeFn_sub g.1 g.2] with x hf hg
+      intro hx
+      by_contra h
+      simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at h
+      have hs := hsub (a := (f.1 x, f.2 x)) (b := (g.1 x, g.2 x))
+        (by simpa only [Prod.dist_eq, max_lt_iff] using h)
+      exact (not_lt_of_gt hx) (by simpa only [hf, hg, Pi.sub_apply] using hs)
+    have hmeasure : μ.real {x | η < dist ((f.1 - f.2) x) ((g.1 - g.2) x)} ≤
+        C * dist f.1 g.1 + C * dist f.2 g.2 := by
+      have hs : {x | η < dist ((f.1 - f.2) x) ((g.1 - g.2) x)} ≤ᵐ[μ]
+          {x | δ ≤ dist (f.1 x) (g.1 x)} ∪ {x | δ ≤ dist (f.2 x) (g.2 x)} := by
+        filter_upwards [hbad] with x hx
+        exact hx
+      apply le_trans (ENNReal.toReal_mono (by finiteness) (measure_mono_ae hs))
+      exact (measureReal_union_le _ _).trans (add_le_add
+        (measureReal_ge_le_mul_dist f.1 g.1 hδ)
+        (measureReal_ge_le_mul_dist f.2 g.2 hδ))
+    -- The bounded integral is small on the good set and the exceptional sets have small mass.
+    have hmass : η * μ.real Set.univ < ε / 2 := by
+      dsimp [η]
+      have hm := measureReal_nonneg (μ := μ) (s := Set.univ)
+      rw [div_mul_eq_mul_div]
+      apply (div_lt_iff₀ (by positivity)).2
+      nlinarith [hm]
+    have hb₁ : C * dist f.1 g.1 < ε / 4 := by
+      have := (lt_div_iff₀ (by positivity : 0 < 4 * C)).mp h₁
+      nlinarith
+    have hb₂ : C * dist f.2 g.2 < ε / 4 := by
+      have := (lt_div_iff₀ (by positivity : 0 < 4 * C)).mp h₂
+      nlinarith
+    have hb := dist_le_mul_measureReal_univ_add_measureReal_gt
+      (f.1 - f.2) (g.1 - g.2) hη.le
+    linarith
 
 /-- Multiplication of random variables is continuous for convergence in measure. -/
 instance instContinuousMul [Mul E] [ContinuousMul E] : ContinuousMul (L0 E μ) where
-  continuous_mul := continuous_binary continuous_mul coeFn_mul
+  continuous_mul := by
+    have heq : (Function.uncurry (· * ·) : L0 E μ × L0 E μ → L0 E μ) =
+        Function.uncurry (comp₂ (· * ·) continuous_mul) := by
+      funext f
+      exact ext ((coeFn_mul f.1 f.2).trans (coeFn_comp₂ _ _ _ _).symm)
+    -- Present the pointwise operation as its uncurried map so that heq applies.
+    change Continuous (Function.uncurry _)
+    rw [heq]
+    exact continuous_comp₂ _ _
 
 /-- The bounded integral topology preserves the topological ring structure. -/
 instance instIsTopologicalRing [Ring E] [IsTopologicalRing E] :
     IsTopologicalRing (L0 E μ) where
+
+/-- Multiplication by a fixed scalar is continuous without a topology on the scalars. -/
+instance instContinuousConstSMul [SMul 𝕜 E] [ContinuousConstSMul 𝕜 E] :
+    ContinuousConstSMul 𝕜 (L0 E μ) where
+  continuous_const_smul c := by
+    have heq : (fun f : L0 E μ ↦ c • f) = comp (c • ·) (continuous_const_smul c) := by
+      funext f
+      exact ext ((coeFn_smul c f).trans (coeFn_comp _ _ _).symm)
+    rw [heq]
+    exact continuous_comp _ _
 
 /-- Joint scalar multiplication is continuous for convergence in measure. -/
 instance instContinuousSMul [PseudoMetricSpace 𝕜] [SMul 𝕜 E] [ContinuousSMul 𝕜 E] :
