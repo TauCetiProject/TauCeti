@@ -53,6 +53,16 @@ theorem isNilpotent_ad_dualCotangentMap_iff_of_etaleKernel {R : Type u} [CommRin
   rw [← hf.cotangentDualLieEquivOfEtaleKernel_apply hker x]
   exact (hf.cotangentDualLieEquivOfEtaleKernel hker).isNilpotent_ad_apply_iff x
 
+/-- A characteristic-zero affine isogeny preserves and reflects ad-nilpotence.
+For semisimple Lie algebras this is the comparison of nilpotent elements. -/
+theorem isNilpotent_ad_dualCotangentMap_iff_of_charZero {k : Type u} [Field k] [CharZero k]
+    {H K : _root_.CommHopfAlgCat.{v} k} {f : H ⟶ K} (hf : IsIsogeny f)
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    IsNilpotent (LieAlgebra.ad k _ (dualCotangentMap f.hom x)) ↔
+      IsNilpotent (LieAlgebra.ad k _ x) := by
+  rw [← hf.cotangentDualLieEquivOfCharZero_apply x]
+  exact hf.cotangentDualLieEquivOfCharZero.isNilpotent_ad_apply_iff x
+
 variable {k : Type u} [Field k] [IsAlgClosed k]
   {H K : _root_.CommHopfAlgCat.{u} k} [Algebra.FiniteType k H] {f : H ⟶ K}
 
@@ -74,16 +84,6 @@ theorem exists_basePointsRepresentation_eq_iff_of_charZero (hf : IsIsogeny f)
   let _ := hf.finiteType_target
   exact CommHopfAlgCat.exists_basePointsRepresentation_eq_iff_of_injective hf.injective
     hf.dualCotangentMap_bijective_of_charZero.injective x y
-
-omit [IsAlgClosed k] [Algebra.FiniteType k H] in
-/-- A characteristic-zero affine isogeny preserves and reflects ad-nilpotence.
-For semisimple Lie algebras this is the comparison of nilpotent elements. -/
-theorem isNilpotent_ad_dualCotangentMap_iff_of_charZero (hf : IsIsogeny f)
-    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
-    IsNilpotent (LieAlgebra.ad k _ (dualCotangentMap f.hom x)) ↔
-      IsNilpotent (LieAlgebra.ad k _ x) := by
-  rw [← hf.cotangentDualLieEquivOfCharZero_apply x]
-  exact hf.cotangentDualLieEquivOfCharZero.isNilpotent_ad_apply_iff x
 
 /-- The actual scheme-theoretic adjoint orbits of corresponding elements have equal
 dimensions under a characteristic-zero affine isogeny. -/
