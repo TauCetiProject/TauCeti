@@ -96,16 +96,17 @@ namespace TauCeti
 
 variable {G X : Type*} [Group G] [MulAction G X]
 
-/-- The orbit relation of the trivial subgroup is equality. -/
+/-- The orbit relation of a trivial group is equality. -/
 @[simp]
-theorem MulAction.orbitRel_bot : MulAction.orbitRel (⊥ : Subgroup G) X = ⊥ := by
+theorem MulAction.orbitRel_of_subsingleton [Subsingleton G] : MulAction.orbitRel G X = ⊥ := by
   ext x y
-  simp [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, eq_comm]
+  simp [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, Subsingleton.elim _ (1 : G), eq_comm]
 
 /-- Quotienting a group action by the trivial subgroup gives back the original space. -/
 noncomputable def MulAction.orbitRelQuotientBotEquiv :
     MulAction.orbitRel.Quotient (⊥ : Subgroup G) X ≃ X :=
-  (Quotient.congrRight fun _ _ ↦ by rw [MulAction.orbitRel_bot]).trans Setoid.quotientBotEquiv
+  (Quotient.congrRight fun _ _ ↦ by rw [MulAction.orbitRel_of_subsingleton]).trans
+    Setoid.quotientBotEquiv
 
 /-- The bottom-subgroup quotient equivalence sends a class to its representative. -/
 @[simp]
