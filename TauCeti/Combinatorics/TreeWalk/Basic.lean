@@ -46,9 +46,13 @@ public counting equivalence is stated using Mathlib's `DyckWord`.
 ## Main results
 
 * `TauCeti.TreeWalk.isTreeWalk_walkOf`: the walk of a Dyck pattern is a tree walk.
-* `TauCeti.TreeWalk.closedTreeWalkEquiv`: closed tree walks of length `2 * k` (padded by zeros)
-  are in bijection with Dyck words of semilength `k`.
-* `TauCeti.TreeWalk.card_closedTreeWalk`: there are `catalan k` of them.
+* `TauCeti.TreeWalk.IsTreeWalk.exists_iterate_par_eq_of_le` and
+  `TauCeti.TreeWalk.IsTreeWalk.ne_edge_of_lt_of_le`: a tree walk stays inside the subtree of a
+  discovered vertex until the closing return step of its discovery edge, so no step before a root
+  visit shares an unordered edge with a step at or after that root visit.
+* `TauCeti.TreeWalk.closedTreeWalkEquiv` and `TauCeti.TreeWalk.instFintypeClosedTreeWalk`: closed
+  tree walks of length `2 * k` (padded by zeros) are in bijection with Dyck words of semilength
+  `k`, hence form a `Fintype` of cardinality `catalan k` (`TauCeti.TreeWalk.card_closedTreeWalk`).
 
 This file does not show that every closed walk is a relabelling of a unique first-visit walk,
 and contains no Wigner matrix content.
@@ -579,6 +583,65 @@ theorem exists_edge_fiber_eq_pair {i : ℕ} (hi : i < 2 * k) (hup : w (i + 1) = 
   obtain ⟨h₁, h₂⟩ := hw.reverse_step_of_edge_eq hi (mem_range.mp hj) hup hji he
   exact ⟨j, mem_range.mp hj, h₁, h₂, hpair⟩
 
+/-- Between a discovery step `i` (`w (i + 1) = i + 1`) and its unique closing return step `j`,
+every visited vertex `w t` (`i + 1 ≤ t ≤ j`) has `i + 1` as an ancestor under iterated `par w`. -/
+theorem exists_iterate_par_eq_of_le {i j t : ℕ} (hup : w (i + 1) = i + 1) (hj : j < 2 * k)
+    (hpair : {s ∈ range (2 * k) | s(w s, w (s + 1)) = s(w i, w (i + 1))} = {i, j})
+    (hit : i + 1 ≤ t) (htj : t ≤ j) :
+    ∃ n, (par w)^[n] (w t) = i + 1 := by
+  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hit
+  induction d with
+  | zero => exact ⟨0, hup⟩
+  | succ d ih =>
+    set s := i + 1 + d
+    obtain ⟨n, hn⟩ := ih (by omega) (by omega)
+    have hs2k : s < 2 * k := by omega
+    rw [show i + 1 + (d + 1) = s + 1 by omega]
+    by_cases hsup : w (s + 1) = s + 1
+    · refine ⟨n + 1, ?_⟩
+      rw [hsup, Function.iterate_succ_apply, par, Nat.add_sub_cancel]
+      exact hn
+    · obtain ⟨-, hpar, -⟩ := hw.step_down hs2k hsup
+      cases n with
+      | zero =>
+        exfalso
+        have hws : w s = i + 1 := hn
+        have hws1 : w (s + 1) = w i := by simpa [hws] using hpar
+        have hse : s(w s, w (s + 1)) = s(w i, w (i + 1)) := by rw [hws, hws1, hup, Sym2.eq_swap]
+        have hs_mem : s ∈ ({i, j} : Finset ℕ) := by
+          rw [← hpair]
+          exact mem_filter.mpr ⟨mem_range.mpr hs2k, hse⟩
+        simp only [mem_insert, mem_singleton] at hs_mem
+        omega
+      | succ n =>
+        refine ⟨n, ?_⟩
+        rw [show w (s + 1) = par w (w s) from hpar, ← Function.iterate_succ_apply]
+        exact hn
+
+/-- When a closed double-traversal tree walk returns to the root `0` at time `r`, every edge
+discovered before `r` is already closed before `r`, so no step in `[0, r)` can traverse the same
+unordered edge as a step in `[r, 2 * k)`. -/
+theorem ne_edge_of_lt_of_le {r a b : ℕ} (hr : w r = 0) (ha : a < r) (hrb : r ≤ b)
+    (hb : b < 2 * k) :
+    s(w a, w (a + 1)) ≠ s(w b, w (b + 1)) := by
+  intro hab
+  obtain ⟨i, hi, hup, hae⟩ := hw.exists_up_edge (ha.trans (hrb.trans_lt hb))
+  have hie : s(w i, w (i + 1)) = s(w i, i + 1) := by rw [hup]
+  obtain ⟨j, hj, hj1, -, hpair⟩ := hw.exists_edge_fiber_eq_pair hi hup
+  have ha_mem : a ∈ ({i, j} : Finset ℕ) := by
+    rw [← hpair]
+    exact mem_filter.mpr ⟨mem_range.mpr (ha.trans (hrb.trans_lt hb)), hae.trans hie.symm⟩
+  have hb_mem : b ∈ ({i, j} : Finset ℕ) := by
+    rw [← hpair]
+    exact mem_filter.mpr ⟨mem_range.mpr hb, hab.symm.trans (hae.trans hie.symm)⟩
+  have hij : i < j := by
+    have := hw.le_self j hj.le
+    omega
+  simp only [mem_insert, mem_singleton] at ha_mem hb_mem
+  obtain ⟨n, hn⟩ := hw.exists_iterate_par_eq_of_le hup hj hpair (t := r) (by omega) (by omega)
+  rw [hr, Function.iterate_fixed (by simpa [par] using hw.root) n] at hn
+  omega
+
 /-- Up steps reconstruct the original tree walk on its full interval of definition. -/
 theorem walkOf_upSteps : ∀ j ≤ 2 * k, walkOf (upSteps k w) j = w j := by
   intro j
@@ -797,6 +860,10 @@ def closedTreeWalkEquiv (k : ℕ) : ClosedTreeWalk k ≃ {p : DyckWord // p.semi
     change dyckWordOf (isTreeWalk_walkOf hs).isDyckPattern_upSteps = p
     rw [dyckWordOf_congr (upSteps_walkOf hs) _ hs]
     exact dyckWordOf_stepsOf p
+
+/-- Closed tree walks of semilength `k` form a finite type via `closedTreeWalkEquiv`. -/
+instance instFintypeClosedTreeWalk (k : ℕ) : Fintype (ClosedTreeWalk k) :=
+  Fintype.ofEquiv _ (closedTreeWalkEquiv k).symm
 
 /-- The Dyck word corresponding to a closed tree walk is the word of its up-step pattern. -/
 @[simp] theorem closedTreeWalkEquiv_apply_coe (k : ℕ) (w : ClosedTreeWalk k) :

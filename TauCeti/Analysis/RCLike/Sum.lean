@@ -20,6 +20,8 @@ the maximal absolute value all equal the common phase.
 
 * `RCLike.eq_norm_of_sum_eq_sum_norm`: a sum equal to the sum of the norms has every summand equal
   to its norm.
+* `RCLike.ofReal_sq_eq_mul_sum_mul_star`: squaring a real scalar `(r : 𝕜) = c * ∑ i, g i` with
+  self-adjoint `c` expands as `c ^ 2 * ∑ p : ι × ι, g p.1 * star (g p.2)`.
 * `Complex.eq_of_sum_mul_eq_of_norm_eq_one`: positively weighted unit complex numbers whose
   weighted sum has the maximal absolute value all equal the common phase.
 -/
@@ -36,6 +38,18 @@ theorem eq_norm_of_sum_eq_sum_norm {𝕜 : Type*} [RCLike 𝕜] {ι : Type*}
     simpa using congrArg re h
   exact norm_le_re_iff_eq_norm.1 <|
     ((Finset.sum_eq_sum_iff_of_le fun j _ ↦ re_le_norm (z j)).1 hre i hi).ge
+
+/-- If `(r : 𝕜) = c * ∑ i, g i` with self-adjoint scalar `c` (`star c = c`), then
+`((r ^ 2 : ℝ) : 𝕜) = c ^ 2 * ∑ p : ι × ι, g p.1 * star (g p.2)`. -/
+theorem ofReal_sq_eq_mul_sum_mul_star {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι]
+    {r : ℝ} {c : 𝕜} (hc : star c = c) {g : ι → 𝕜} (hr : (r : 𝕜) = c * ∑ i, g i) :
+    ((r ^ 2 : ℝ) : 𝕜) = c ^ 2 * ∑ p : ι × ι, g p.1 * star (g p.2) := by
+  calc
+    ((r ^ 2 : ℝ) : 𝕜) = (r : 𝕜) * star (r : 𝕜) := by simp [sq]
+    _ = (c * ∑ i, g i) * (star c * ∑ j, star (g j)) := by rw [hr, star_mul', star_sum]
+    _ = c ^ 2 * ((∑ i, g i) * ∑ j, star (g j)) := by rw [hc]; ring
+    _ = c ^ 2 * ∑ p : ι × ι, g p.1 * star (g p.2) := by
+      rw [Fintype.sum_prod_type, Finset.sum_mul_sum]
 
 end RCLike
 

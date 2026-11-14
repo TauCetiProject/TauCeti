@@ -25,6 +25,12 @@ ensemble, is turned into weak convergence of the corresponding laws.
   convergence of the integral of every real polynomial.
 * `MeasureTheory.ProbabilityMeasure.tendsto_of_tendsto_integral_pow` — the method of moments:
   moment convergence to a compactly supported limit implies weak convergence.
+* `MeasureTheory.ProbabilityMeasure.exists_nat_and_pos_of_isCompact` — quantitative finitary
+  consequence of the method of moments: finitely many moments within `η > 0` uniformly control
+  `|∫ f dν - ∫ f dμ| < ε` around a compactly supported `μ`.
+* `MeasureTheory.ProbabilityMeasure.tendsto_measure_abs_integral_sub_ge_of_isCompact` — random
+  in-probability method of moments: convergence in measure of each moment to a compactly supported
+  limit `μ` implies convergence in measure of `∫ f d(ν i ω)` for every `f : ℝ →ᵇ ℝ`.
 
 ## Implementation notes
 
@@ -215,5 +221,94 @@ theorem tendsto_of_tendsto_integral_pow {μs : ι → ProbabilityMeasure ℝ}
       (∫ x, f x ∂(μ : Measure ℝ)),
     abs_sub_le (∫ x, p.eval x ∂(μs i : Measure ℝ)) (∫ x, p.eval x ∂(μ : Measure ℝ))
       (∫ x, f x ∂(μ : Measure ℝ))]
+
+/-- Quantitative finitary consequence of `tendsto_of_tendsto_integral_pow`: for a compactly
+supported limit law `μ`, a bounded continuous test function `f`, and `ε > 0`, finitely many moments
+up to some order `N` within some tolerance `η > 0` uniformly control `|∫ f dν - ∫ f dμ| < ε` across
+all probability measures `ν` with finite moments of every order. -/
+theorem exists_nat_and_pos_of_isCompact {μ : ProbabilityMeasure ℝ} {K : Set ℝ}
+    (hK : IsCompact K) (hμK : (μ : Measure ℝ) Kᶜ = 0) (f : ℝ →ᵇ ℝ) {ε : ℝ} (hε : 0 < ε) :
+    ∃ N : ℕ, ∃ η : ℝ, 0 < η ∧ ∀ ν : ProbabilityMeasure ℝ,
+      (∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) (ν : Measure ℝ)) →
+      (∀ k ≤ N, |(∫ x, x ^ k ∂(ν : Measure ℝ)) - ∫ x, x ^ k ∂(μ : Measure ℝ)| < η) →
+      |(∫ x, f x ∂(ν : Measure ℝ)) - ∫ x, f x ∂(μ : Measure ℝ)| < ε := by
+  by_contra h
+  have hall (m : ℕ) : ∃ ν : ProbabilityMeasure ℝ,
+      (∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) (ν : Measure ℝ)) ∧
+      (∀ k ≤ m, |(∫ x, x ^ k ∂(ν : Measure ℝ)) - ∫ x, x ^ k ∂(μ : Measure ℝ)| <
+        (m + 1 : ℝ)⁻¹) ∧
+      ε ≤ |(∫ x, f x ∂(ν : Measure ℝ)) - ∫ x, f x ∂(μ : Measure ℝ)| := by
+    by_contra hm
+    apply h ⟨m, (m + 1 : ℝ)⁻¹, inv_pos.mpr (by positivity), fun ν hνint hνmom => ?_⟩
+    by_contra hge
+    exact hm ⟨ν, hνint, hνmom, not_lt.mp hge⟩
+  choose ν hνint hνmom hνbad using hall
+  have hmom (k : ℕ) :
+      Tendsto (fun m => ∫ x, x ^ k ∂(ν m : Measure ℝ)) atTop
+        (𝓝 (∫ x, x ^ k ∂(μ : Measure ℝ))) := by
+    refine Metric.tendsto_nhds.2 fun δ hδ => ?_
+    obtain ⟨M, hM⟩ := exists_nat_one_div_lt hδ
+    filter_upwards [eventually_ge_atTop (max k M)] with m hm
+    have hkm : k ≤ m := (le_max_left k M).trans hm
+    have hMm : (M + 1 : ℝ) ≤ m + 1 := by
+      exact_mod_cast Nat.add_le_add_right ((le_max_right k M).trans hm) 1
+    have hinv : (m + 1 : ℝ)⁻¹ ≤ (M + 1 : ℝ)⁻¹ := inv_anti₀ (by positivity) hMm
+    rw [Real.dist_eq]
+    exact (hνmom m k hkm).trans_le (hinv.trans (by simpa only [one_div] using hM.le))
+  have hweak : Tendsto ν atTop (𝓝 μ) :=
+    tendsto_of_tendsto_integral_pow hK hμK
+      (fun k => Eventually.of_forall fun m => hνint m k) hmom
+  have hf : Tendsto (fun m => ∫ x, f x ∂(ν m : Measure ℝ)) atTop
+      (𝓝 (∫ x, f x ∂(μ : Measure ℝ))) :=
+    (tendsto_iff_forall_integral_tendsto.1 hweak) f
+  obtain ⟨m, hm⟩ := (Metric.tendsto_nhds.1 hf ε hε).exists
+  rw [Real.dist_eq] at hm
+  exact (not_lt_of_ge (hνbad m)) hm
+
+/-- **Method of moments in measure.** For random probability measures `ν i ω` on possibly varying
+sample spaces `(Ω i, P i)` along a filter `l`, if `μ` is concentrated on a compact set `K`,
+`ν i ω` eventually has `P i`-almost everywhere finite moments of every order, and each moment
+`∫ x ^ k d(ν i ω)` converges to `∫ x ^ k dμ` in `P i`-measure, then `∫ f d(ν i ω)` converges to
+`∫ f dμ` in `P i`-measure for every bounded continuous `f : ℝ →ᵇ ℝ`. -/
+theorem tendsto_measure_abs_integral_sub_ge_of_isCompact
+    {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)] {P : ∀ i, Measure (Ω i)}
+    {ν : ∀ i, Ω i → ProbabilityMeasure ℝ} {μ : ProbabilityMeasure ℝ} {K : Set ℝ}
+    (hK : IsCompact K) (hμK : (μ : Measure ℝ) Kᶜ = 0)
+    (hν : ∀ᶠ i in l, ∀ᵐ ω ∂P i, ∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) (ν i ω : Measure ℝ))
+    (hmom : ∀ (k : ℕ) {η : ℝ}, 0 < η → Tendsto (fun i => P i {ω | η ≤
+      |(∫ x, x ^ k ∂(ν i ω : Measure ℝ)) - ∫ x, x ^ k ∂(μ : Measure ℝ)|}) l (𝓝 0))
+    (f : ℝ →ᵇ ℝ) {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun i => P i {ω | ε ≤
+      |(∫ x, f x ∂(ν i ω : Measure ℝ)) - ∫ x, f x ∂(μ : Measure ℝ)|}) l (𝓝 0) := by
+  obtain ⟨N, η, hη, hctrl⟩ := exists_nat_and_pos_of_isCompact hK hμK f hε
+  have hsum : Tendsto (fun i => ∑ k ∈ range (N + 1), P i {ω | η ≤
+      |(∫ x, x ^ k ∂(ν i ω : Measure ℝ)) - ∫ x, x ^ k ∂(μ : Measure ℝ)|}) l (𝓝 0) := by
+    simpa only [sum_const_zero] using tendsto_finsetSum (range (N + 1)) fun k _ => hmom k hη
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
+    (Eventually.of_forall fun _ => bot_le) ?_
+  filter_upwards [hν] with i hi
+  let E : Set (Ω i) := {ω | ¬ ∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) (ν i ω : Measure ℝ)}
+  have hPE : P i E = 0 := ae_iff.mp hi
+  have hsub : {ω | ε ≤ |(∫ x, f x ∂(ν i ω : Measure ℝ)) - ∫ x, f x ∂(μ : Measure ℝ)|} ⊆
+      E ∪ ⋃ k ∈ range (N + 1), {ω | η ≤
+        |(∫ x, x ^ k ∂(ν i ω : Measure ℝ)) - ∫ x, x ^ k ∂(μ : Measure ℝ)|} := by
+    intro ω hω
+    by_cases hE : ω ∈ E
+    · exact Or.inl hE
+    · refine Or.inr ?_
+      have hint : ∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) (ν i ω : Measure ℝ) := not_not.mp hE
+      simp only [Set.mem_ofPred_eq, Set.mem_iUnion, Finset.mem_range, exists_prop] at hω ⊢
+      by_contra hno
+      exact (not_lt_of_ge hω) (hctrl (ν i ω) hint fun k hk =>
+        lt_of_not_ge fun hge => hno ⟨k, Nat.lt_succ_of_le hk, hge⟩)
+  calc
+    P i {ω | ε ≤ |(∫ x, f x ∂(ν i ω : Measure ℝ)) - ∫ x, f x ∂(μ : Measure ℝ)|}
+      ≤ P i E + P i (⋃ k ∈ range (N + 1), {ω | η ≤
+          |(∫ x, x ^ k ∂(ν i ω : Measure ℝ)) - ∫ x, x ^ k ∂(μ : Measure ℝ)|}) :=
+        (measure_mono hsub).trans (measure_union_le _ _)
+    _ ≤ ∑ k ∈ range (N + 1), P i {ω | η ≤
+          |(∫ x, x ^ k ∂(ν i ω : Measure ℝ)) - ∫ x, x ^ k ∂(μ : Measure ℝ)|} := by
+        rw [hPE, zero_add]
+        exact measure_biUnion_finset_le (range (N + 1)) _
 
 end MeasureTheory.ProbabilityMeasure

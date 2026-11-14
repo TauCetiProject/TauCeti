@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrix.SpectralMoment.Second
-import Mathlib.Analysis.PSeries
-import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
+import TauCeti.Probability.Moments.Chebyshev
 
 /-!
 # Almost-sure convergence of second Wigner spectral moments
@@ -51,37 +50,9 @@ theorem ae_tendsto_second_spectralMoment_sub_mean {V : ℝ}
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) -
       ∫ ω, (∫ x, x ^ 2 ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) ∂P)
-      atTop (𝓝 0) := by
-  let X : ℕ → Ω → ℝ := fun n ω ↦
-    (∫ x, x ^ 2 ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
-      (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) -
-    ∫ ω, (∫ x, x ^ 2 ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
-      (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) ∂P
-  have hs : Summable (fun n : ℕ ↦ (n + 1 : ℝ)⁻¹ ^ 2) := by
-    simpa only [Nat.cast_add, Nat.cast_one, inv_pow] using
-      (summable_nat_add_iff 1).2
-        ((Real.summable_nat_pow_inv (p := 2)).2 (by decide : 1 < 2))
-  have hbc (k : ℕ) : ∀ᵐ ω ∂P,
-      ∀ᶠ n in atTop, |X n ω| < (k + 1 : ℝ)⁻¹ := by
-    have hbound (n : ℕ) : P {ω | (k + 1 : ℝ)⁻¹ ≤ |X n ω|} ≤
-        ENNReal.ofReal ((8 * V / (n + 1 : ℝ) ^ 2) / ((k + 1 : ℝ)⁻¹) ^ 2) :=
-      measure_second_spectralMoment_sub_mean_ge (ξ := ξ) (η := η) (P := P) n
-        (hindep n) (hmem n) (hvar n) (inv_pos.mpr (by positivity))
-    have hsum : Summable (fun n : ℕ ↦
-        (8 * V / (n + 1 : ℝ) ^ 2) / ((k + 1 : ℝ)⁻¹) ^ 2) := by
-      have ht := Summable.mul_right ((((k + 1 : ℝ)⁻¹) ^ 2)⁻¹)
-        (Summable.mul_left (8 * V) hs)
-      simpa only [div_eq_mul_inv, inv_pow, mul_assoc] using ht
-    have hfinite : (∑' n, P {ω | (k + 1 : ℝ)⁻¹ ≤ |X n ω|}) ≠ ∞ :=
-      ne_top_of_le_ne_top hsum.tsum_ofReal_ne_top (tsum_le_tsum hbound)
-    simpa only [Set.mem_ofPred_eq, not_le] using ae_eventually_notMem hfinite
-  -- Intersect the full-measure events for a countable sequence of tolerances tending to zero.
-  filter_upwards [ae_all_iff.2 hbc] with ω hω
-  apply Metric.tendsto_nhds.2
-  intro ε hε
-  obtain ⟨k, hk⟩ := exists_nat_one_div_lt hε
-  filter_upwards [hω k] with n hn
-  simpa only [Real.dist_eq, sub_zero] using hn.trans (by simpa only [one_div] using hk)
+      atTop (𝓝 0) :=
+  ae_tendsto_zero_of_measure_abs_ge_le_div_add_one_sq (C := 8 * V) fun hε n ↦
+    measure_second_spectralMoment_sub_mean_ge n (hindep n) (hmem n) (hvar n) hε
 
 /-- With unit off-diagonal second absolute moments and constant diagonal second moment,
 the second empirical spectral moment tends almost surely to one. Square-integrable squared

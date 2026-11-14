@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 public import Mathlib.Probability.Moments.Variance
+import TauCeti.Probability.Moments.Chebyshev
 
 /-!
 # First spectral moment of a Wigner matrix
@@ -152,21 +153,9 @@ theorem tendsto_integral_spectralMeasure_wignerMatrix_probability
     Tendsto (fun n ↦ P n {ω | ε ≤
       |∫ x, x ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)|})
-      atTop (𝓝 0) := by
-  have hinv : Tendsto (fun n : ℕ ↦ (n + 1 : ℝ)⁻¹) atTop (𝓝 0) := by
-    simpa only [one_div] using (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
-  have hreal : Tendsto (fun n : ℕ ↦ (V / (n + 1 : ℝ) ^ 2) / ε ^ 2)
-      atTop (𝓝 0) := by
-    convert ((hinv.pow 2).const_mul V).div_const (ε ^ 2) using 1
-    · ext n
-      simp [div_eq_mul_inv, inv_pow]
-    · simp
-  have hbound : Tendsto (fun n : ℕ ↦ ENNReal.ofReal
-      ((V / (n + 1 : ℝ) ^ 2) / ε ^ 2)) atTop (𝓝 0) := by
-    simpa using ENNReal.tendsto_ofReal hreal
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hbound
-    (fun _ ↦ bot_le) (fun n ↦
-      measure_integral_spectralMeasure_wignerMatrix_le n (hη n) (hcenter n)
-        (hindep n) (hvar n) hε)
+      atTop (𝓝 0) :=
+  tendsto_measure_abs_ge_of_le_div_add_one_sq fun n ↦
+    measure_integral_spectralMeasure_wignerMatrix_le n (hη n) (hcenter n)
+      (hindep n) (hvar n) hε
 
 end TauCeti.Probability

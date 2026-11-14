@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 public import Mathlib.Probability.IdentDistribIndep
 public import Mathlib.Probability.Independence.InfinitePi
+public import TauCeti.Algebra.BigOperators.Finset.Pairs
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
@@ -24,10 +25,11 @@ conjugates below the diagonal, and real entries `η i` on the diagonal. The norm
 `Hₙ = Wₙ/√n` built this way is Hermitian at every sample point. Placing all sizes on one infinite
 array is the coupling used by almost-sure global laws such as the semicircle law.
 
-This file defines `TauCeti.wignerMatrix` and proves the structural facts consumed by the moment
-and resolvent methods:
+This file defines `TauCeti.wignerMatrix` and `TauCeti.wignerCoordinateIndex` and proves the
+structural facts consumed by the moment and resolvent methods:
 
-* the entry formulas and `wignerMatrix_isHermitian`;
+* the entry formulas, `wignerMatrix_isHermitian`, `star_wignerMatrix_apply`, and
+  `star_prod_wignerMatrix_apply`;
 * the Hermitian trace-square identity `Matrix.IsHermitian.trace_mul_self_eq_sum_norm_sq`;
 * the matrix depends only on the entries in its corner (`wignerMatrix_congr`), and the top-left
   `m × m` corner of `Hₙ` is `√(m/n) Hₘ` (`submatrix_castLE_wignerMatrix`);
@@ -39,9 +41,11 @@ and resolvent methods:
 * entries at distinct off-diagonal unordered positions, and their squared absolute values, are
   independent (`iIndepFun_wignerMatrix_apply_of_ne`,
   `iIndepFun_norm_wignerMatrix_apply_sq_of_ne`);
-* centred entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ` entries
-  give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), and a product of `k` matrix entries is
-  integrable when the entries of the array lie in `Lᵏ` (`integrable_prod_wignerMatrix_apply`);
+* centred entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero_of_lt`,
+  `integral_wignerMatrix_apply_eq_zero`), `Lᵖ` entries give `Lᵖ` matrix entries
+  (`memLp_wignerMatrix_apply_of_lt`, `memLp_wignerMatrix_apply`), and a product of `k` matrix
+  entries lies in `Lᵖ` when the corner entries lie in `L^{p * k}` (`memLp_prod_wignerMatrix_apply`,
+  `integrable_prod_wignerMatrix_apply`);
 * the normalisation check `E trₙ Hₙ² = (σ² + (n - 1) s)/n` when the diagonal entries have second
   moment `σ²` and the off-diagonal ones second absolute moment `s`
   (`integral_re_trace_wignerMatrix_mul_self`).
@@ -66,6 +70,38 @@ namespace TauCeti
 
 /-- The strictly upper-triangular positions `(i, j)`, `i < j`, of a matrix indexed by `ℕ`. -/
 abbrev StrictUpper := {ij : ℕ × ℕ // ij.1 < ij.2}
+
+/-- Finite coordinates of the top-left `n × n` corner embedded in the Wigner array
+`StrictUpper ⊕ ℕ`. -/
+def wignerCoordinateIndex (n : ℕ) : Fin n ⊕ FinStrictUpper n → StrictUpper ⊕ ℕ
+  | .inl i => .inr i.val
+  | .inr p => .inl ⟨(p.val.1.val, p.val.2.val), p.property⟩
+
+/-- A diagonal coordinate maps to its diagonal array index. -/
+@[simp] theorem wignerCoordinateIndex_inl (n : ℕ) (i : Fin n) :
+    wignerCoordinateIndex n (.inl i) = .inr i.val := by rfl
+
+/-- A strict-upper coordinate maps to its upper array index. -/
+@[simp] theorem wignerCoordinateIndex_inr (n : ℕ) (p : FinStrictUpper n) :
+    wignerCoordinateIndex n (.inr p) = .inl ⟨(p.val.1.val, p.val.2.val), p.property⟩ := by rfl
+
+/-- The embedding of finite `n × n` Wigner coordinates into `StrictUpper ⊕ ℕ` is injective. -/
+theorem wignerCoordinateIndex_injective (n : ℕ) :
+    Function.Injective (wignerCoordinateIndex n) := by
+  intro a b h
+  cases a with
+  | inl i =>
+    cases b with
+    | inl j =>
+      simp only [wignerCoordinateIndex, Sum.inr.injEq] at h
+      exact congrArg Sum.inl (Fin.ext h)
+    | inr j => simp [wignerCoordinateIndex] at h
+  | inr i =>
+    cases b with
+    | inl j => simp [wignerCoordinateIndex] at h
+    | inr j =>
+      simp only [wignerCoordinateIndex, Sum.inl.injEq, Subtype.mk.injEq, Prod.mk.injEq] at h
+      exact congrArg Sum.inr (Subtype.ext (Prod.ext (Fin.ext h.1) (Fin.ext h.2)))
 
 variable {Ω : Type*}
 
@@ -133,6 +169,18 @@ theorem wignerMatrix_isHermitian (n : ℕ) : (wignerMatrix ξ η n ω).IsHermiti
     simp [Complex.conj_ofReal]
   · rw [wignerMatrix_apply_of_lt ξ η ω h, wignerMatrix_apply_of_gt ξ η ω h]
     simp [Complex.conj_ofReal]
+
+/-- Conjugating an entry of a Wigner matrix swaps its row and column indices. -/
+theorem star_wignerMatrix_apply (n : ℕ) (i j : Fin n) :
+    star (wignerMatrix ξ η n ω i j) = wignerMatrix ξ η n ω j i := by
+  simpa only [conjTranspose_apply] using (wignerMatrix_isHermitian ξ η ω n).apply j i
+
+/-- Conjugating a finite product of Wigner matrix entries swaps the row and column indices of each
+factor. -/
+theorem star_prod_wignerMatrix_apply {ι : Type*} [Fintype ι] {n : ℕ} (u v : ι → Fin n) :
+    star (∏ s, wignerMatrix ξ η n ω (u s) (v s)) = ∏ s, wignerMatrix ξ η n ω (v s) (u s) := by
+  rw [star_prod]
+  exact Finset.prod_congr rfl fun s _ ↦ star_wignerMatrix_apply ξ η ω n (u s) (v s)
 
 variable {ξ η}
 
@@ -372,29 +420,66 @@ section Entries
 variable [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
 
+/-- If the entries of the top-left `n × n` corner are centred, every entry of the Wigner matrix of
+size `n` has expectation zero. -/
+theorem integral_wignerMatrix_apply_eq_zero_of_lt {n : ℕ}
+    (hξ : ∀ ij, ij.1.2 < n → ∫ ω, ξ ij ω ∂P = 0)
+    (hη : ∀ i, i < n → ∫ ω, η i ω ∂P = 0) (i j : Fin n) :
+    ∫ ω, wignerMatrix ξ η n ω i j ∂P = 0 := by
+  rcases lt_trichotomy i.val j.val with h | h | h
+  · simp [wignerMatrix_apply_of_lt _ _ _ h, integral_const_mul, hξ ⟨(i.val, j.val), h⟩ j.2]
+  · obtain rfl := Fin.ext h
+    simp [integral_const_mul, integral_complex_ofReal, hη i.val i.2]
+  · simp [wignerMatrix_apply_of_gt _ _ _ h, integral_const_mul, integral_conj,
+      hξ ⟨(j.val, i.val), h⟩ i.2]
+
 /-- If the entries of the array are centred, every entry of the Wigner matrix has expectation
 zero. -/
 theorem integral_wignerMatrix_apply_eq_zero (hξ : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
     (hη : ∀ i, ∫ ω, η i ω ∂P = 0) {n : ℕ} (i j : Fin n) :
-    ∫ ω, wignerMatrix ξ η n ω i j ∂P = 0 := by
+    ∫ ω, wignerMatrix ξ η n ω i j ∂P = 0 :=
+  integral_wignerMatrix_apply_eq_zero_of_lt (fun ij _ ↦ hξ ij) (fun i _ ↦ hη i) i j
+
+/-- If the entries of the top-left `n × n` corner lie in `Lᵖ`, so does every entry of the Wigner
+matrix of size `n`. -/
+theorem memLp_wignerMatrix_apply_of_lt {p : ℝ≥0∞} {n : ℕ}
+    (hξ : ∀ ij, ij.1.2 < n → MemLp (ξ ij) p P) (hη : ∀ i, i < n → MemLp (η i) p P)
+    (i j : Fin n) :
+    MemLp (fun ω ↦ wignerMatrix ξ η n ω i j) p P := by
   rcases lt_trichotomy i.val j.val with h | h | h
-  · simp [wignerMatrix_apply_of_lt _ _ _ h, integral_const_mul, hξ]
+  · simp only [wignerMatrix_apply_of_lt _ _ _ h]
+    exact (hξ ⟨(i.val, j.val), h⟩ j.2).const_mul _
   · obtain rfl := Fin.ext h
-    simp [integral_const_mul, integral_complex_ofReal, hη]
-  · simp [wignerMatrix_apply_of_gt _ _ _ h, integral_const_mul, integral_conj, hξ]
+    simp only [wignerMatrix_apply_self]
+    exact (hη i.val i.2).ofReal.const_mul _
+  · simp only [wignerMatrix_apply_of_gt _ _ _ h]
+    exact (hξ ⟨(j.val, i.val), h⟩ i.2).star.const_mul _
 
 /-- If the entries of the array lie in `Lᵖ`, so does every entry of the Wigner matrix. -/
 theorem memLp_wignerMatrix_apply {p : ℝ≥0∞} (hξ : ∀ ij, MemLp (ξ ij) p P)
     (hη : ∀ i, MemLp (η i) p P) {n : ℕ} (i j : Fin n) :
-    MemLp (fun ω ↦ wignerMatrix ξ η n ω i j) p P := by
-  rcases lt_trichotomy i.val j.val with h | h | h
-  · simp only [wignerMatrix_apply_of_lt _ _ _ h]
-    exact (hξ _).const_mul _
-  · obtain rfl := Fin.ext h
-    simp only [wignerMatrix_apply_self]
-    exact (hη _).ofReal.const_mul _
-  · simp only [wignerMatrix_apply_of_gt _ _ _ h]
-    exact (hξ _).star.const_mul _
+    MemLp (fun ω ↦ wignerMatrix ξ η n ω i j) p P :=
+  memLp_wignerMatrix_apply_of_lt (fun ij _ ↦ hξ ij) (fun i _ ↦ hη i) i j
+
+/-- A product of `k` entries of a Wigner matrix of size `n`, indexed by a finite type `ι` of
+cardinality `k`, lies in `Lᵖ` whenever the entries of the `n × n` corner lie in `L^{p * k}`. -/
+theorem memLp_prod_wignerMatrix_apply [IsFiniteMeasure P] {p : ℝ≥0∞} {ι : Type*} [Fintype ι]
+    {n : ℕ} (hξ : ∀ ij, ij.1.2 < n → MemLp (ξ ij) (p * Fintype.card ι) P)
+    (hη : ∀ i, i < n → MemLp (η i) (p * Fintype.card ι) P) (u v : ι → Fin n) :
+    MemLp (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u s) (v s)) p P := by
+  cases isEmpty_or_nonempty ι
+  · simpa using memLp_const (1 : ℂ)
+  · have hcard : (Fintype.card ι : ℝ≥0∞) ≠ 0 := by simp [Fintype.card_ne_zero]
+    have htop : (Fintype.card ι : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top _
+    have h := MemLp.fun_prod (s := Finset.univ)
+      (p := fun _ : ι ↦ p * (Fintype.card ι : ℝ≥0∞))
+      fun s _ ↦ memLp_wignerMatrix_apply_of_lt hξ hη (u s) (v s)
+    have hexp : ∑ _s : ι, (p * (Fintype.card ι : ℝ≥0∞))⁻¹ = p⁻¹ := by
+      rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
+        ENNReal.mul_inv (Or.inr htop) (Or.inr hcard),
+        mul_left_comm (Fintype.card ι : ℝ≥0∞) p⁻¹ _,
+        ENNReal.mul_inv_cancel hcard htop, mul_one]
+    rwa [hexp, inv_inv] at h
 
 /-- A product of `k` entries of a Wigner matrix, indexed by a finite type `ι` of cardinality `k`,
 is integrable when the entries of the array lie in `Lᵏ`. -/
@@ -402,14 +487,9 @@ theorem integrable_prod_wignerMatrix_apply [IsFiniteMeasure P] {ι : Type*} [Fin
     (hξ : ∀ ij, MemLp (ξ ij) (Fintype.card ι) P) (hη : ∀ i, MemLp (η i) (Fintype.card ι) P)
     {n : ℕ} (u v : ι → Fin n) :
     Integrable (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u s) (v s)) P := by
-  cases isEmpty_or_nonempty ι
-  · simp
-  have hcard : (Fintype.card ι : ℝ≥0∞) ≠ 0 := by simp [Fintype.card_ne_zero]
-  have h := MemLp.fun_prod (s := Finset.univ) (p := fun _ ↦ (Fintype.card ι : ℝ≥0∞))
-    fun s _ ↦ memLp_wignerMatrix_apply hξ hη (u s) (v s)
-  rwa [Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
-    ENNReal.mul_inv_cancel hcard (ENNReal.natCast_ne_top _), inv_one, memLp_one_iff_integrable]
-    at h
+  rw [← memLp_one_iff_integrable]
+  exact memLp_prod_wignerMatrix_apply (fun ij _ ↦ by simpa using hξ ij)
+    (fun i _ ↦ by simpa using hη i) u v
 
 end Entries
 

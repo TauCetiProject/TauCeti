@@ -14,6 +14,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.Algebra.Order.Field.Basic
 
 /-!
 # Variants of Hölder's inequality
@@ -47,7 +48,8 @@ divergence-form equations.
 
 For a product of `k` functions, the norm of its integral is at most the average of their `k`th
 absolute moments. This form of the arithmetic-geometric mean inequality gives uniform bounds on
-expected products without any independence assumption.
+expected products without any independence assumption. On a finite or probability measure space,
+lower absolute moments `∫ ‖f‖ ^ j` (`j ≤ m`) are likewise bounded linearly by `μ(Ω) + ∫ ‖f‖ ^ m`.
 
 ## Main declarations
 
@@ -57,6 +59,9 @@ expected products without any independence assumption.
 * `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`: Hölder's inequality with a bounded weight.
 * `MeasureTheory.norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow`:
   the absolute-moment bound for an integral of a finite product.
+* `MeasureTheory.integral_norm_pow_le_measureReal_univ_add_of_le`,
+  `MeasureTheory.integral_norm_pow_le_one_add_of_le`: linear bounds on lower absolute moments
+  `∫ ‖f‖ ^ j` (`j ≤ m`) on finite and probability measure spaces.
 
 ## References
 
@@ -241,5 +246,35 @@ theorem norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow {Ω ι 𝕜 : T
     (Filter.Eventually.of_forall hpoint)
   simpa only [integral_finsetSum _ fun i hi ↦ (hf i hi).const_mul _, integral_const_mul,
     Finset.mul_sum] using hbound
+
+/-- On a finite measure space, for `j ≤ m` and `f ∈ L^m(μ)`, the `j`th absolute moment `∫ ‖f‖ ^ j`
+is at most `μ.real Set.univ + ∫ ‖f‖ ^ m`. -/
+theorem integral_norm_pow_le_measureReal_univ_add_of_le {Ω E : Type*} [MeasurableSpace Ω]
+    [NormedAddCommGroup E] {μ : Measure Ω} [IsFiniteMeasure μ] {f : Ω → E}
+    {j m : ℕ} (hjm : j ≤ m) (hfp : MemLp f (m : ℕ) μ) :
+    ∫ ω, ‖f ω‖ ^ j ∂μ ≤ μ.real Set.univ + ∫ ω, ‖f ω‖ ^ m ∂μ := by
+  have hfj : MemLp f (j : ℕ) μ := hfp.mono_exponent (by exact_mod_cast hjm)
+  calc
+    ∫ ω, ‖f ω‖ ^ j ∂μ
+      ≤ ∫ ω, (1 + ‖f ω‖ ^ m) ∂μ :=
+        integral_mono hfj.integrable_norm_pow'
+          ((integrable_const 1).add hfp.integrable_norm_pow')
+          fun ω ↦ TauCeti.pow_le_one_add_pow_of_le (norm_nonneg _) hjm
+    _ = μ.real Set.univ + ∫ ω, ‖f ω‖ ^ m ∂μ := by
+        rw [integral_add (integrable_const 1) hfp.integrable_norm_pow', integral_const, smul_eq_mul,
+          mul_one]
+
+/-- On a probability space, for `j ≤ m` and `f ∈ L^m(μ)` with `∫ ‖f‖ ^ m ≤ B`, the `j`th absolute
+moment satisfies `∫ ‖f‖ ^ j ≤ 1 + B`. -/
+theorem integral_norm_pow_le_one_add_of_le {Ω E : Type*} [MeasurableSpace Ω]
+    [NormedAddCommGroup E] {μ : Measure Ω} [IsProbabilityMeasure μ] {f : Ω → E}
+    {j m : ℕ} {B : ℝ} (hjm : j ≤ m) (hfp : MemLp f (m : ℕ) μ)
+    (hf : ∫ ω, ‖f ω‖ ^ m ∂μ ≤ B) :
+    ∫ ω, ‖f ω‖ ^ j ∂μ ≤ 1 + B := by
+  calc
+    ∫ ω, ‖f ω‖ ^ j ∂μ ≤ μ.real Set.univ + ∫ ω, ‖f ω‖ ^ m ∂μ :=
+      integral_norm_pow_le_measureReal_univ_add_of_le hjm hfp
+    _ = 1 + ∫ ω, ‖f ω‖ ^ m ∂μ := by simp
+    _ ≤ 1 + B := by gcongr
 
 end MeasureTheory
