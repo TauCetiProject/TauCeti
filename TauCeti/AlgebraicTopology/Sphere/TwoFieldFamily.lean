@@ -102,28 +102,42 @@ theorem isCompact_twoFieldEquators [FiniteDimensional ℝ E] (hu : Continuous u)
 variable (h : ∀ x : sphere (0 : E) 1, Orthonormal ℝ ![(x : E), u x, v x])
 include h
 
+/-! The orthonormality relations of `x`, `u x`, `v x`, read off from `h` by index. -/
+
+private theorem inner_u_eq_zero (x : sphere (0 : E) 1) : ⟪(x : E), u x⟫ = 0 := by
+  simpa using (h x).inner_eq_zero (by decide : (0 : Fin 3) ≠ 1)
+
+private theorem inner_v_eq_zero (x : sphere (0 : E) 1) : ⟪(x : E), v x⟫ = 0 := by
+  simpa using (h x).inner_eq_zero (by decide : (0 : Fin 3) ≠ 2)
+
+private theorem inner_v_u_eq_zero (x : sphere (0 : E) 1) : ⟪v x, u x⟫ = 0 := by
+  simpa using (h x).inner_eq_zero (by decide : (2 : Fin 3) ≠ 1)
+
+private theorem norm_u_eq_one (x : sphere (0 : E) 1) : ‖u x‖ = 1 := by
+  simpa using (h x).norm_eq_one 1
+
+private theorem norm_v_eq_one (x : sphere (0 : E) 1) : ‖v x‖ = 1 := by
+  simpa using (h x).norm_eq_one 2
+
 /-- A point of the sphere lies on its own equator. -/
 theorem mk_self_mem_twoFieldEquators (x : sphere (0 : E) 1) : (x, x) ∈ twoFieldEquators u v :=
-  ⟨(h x).inner_eq_zero (by decide : (0 : Fin 3) ≠ 1),
-    (h x).inner_eq_zero (by decide : (0 : Fin 3) ≠ 2)⟩
+  ⟨inner_u_eq_zero h x, inner_v_eq_zero h x⟩
 
 /-- A point `x` of the sphere lies on the equator orthogonal to `u x`. -/
 theorem mem_sphereEquator_self_of_orthonormal (x : sphere (0 : E) 1) :
     x ∈ sphereEquator (u x) :=
-  mem_sphereEquator.2 ((h x).inner_eq_zero (by decide : (0 : Fin 3) ≠ 1))
+  mem_sphereEquator.2 (inner_u_eq_zero h x)
 
 /-- The circle through `x` and `q` tangent to `v x` lies on the unit sphere. -/
 private theorem norm_tangentCircle_inner (xq : twoFieldEquators u v) (θ : ℝ) :
     ‖tangentCircle (xq.1.1 : E) (v xq.1.1) (xq.1.2 : E) θ‖ = 1 :=
-  norm_tangentCircle (norm_eq_of_mem_sphere xq.1.1) ((h xq.1.1).norm_eq_one 2)
-    ((h xq.1.1).inner_eq_zero (by decide : (0 : Fin 3) ≠ 2)) (norm_eq_of_mem_sphere xq.1.2)
-    xq.2.2 θ
+  norm_tangentCircle (norm_eq_of_mem_sphere xq.1.1) (norm_v_eq_one h xq.1.1)
+    (inner_v_eq_zero h xq.1.1) (norm_eq_of_mem_sphere xq.1.2) xq.2.2 θ
 
 /-- The circle through `x` and `q` tangent to `v x` is orthogonal to `u x`. -/
 private theorem inner_tangentCircle_inner (xq : twoFieldEquators u v) (θ : ℝ) :
     ⟪tangentCircle (xq.1.1 : E) (v xq.1.1) (xq.1.2 : E) θ, u xq.1.1⟫ = 0 :=
-  inner_tangentCircle_eq_zero ((h xq.1.1).inner_eq_zero (by decide : (0 : Fin 3) ≠ 1))
-    ((h xq.1.1).inner_eq_zero (by decide : (2 : Fin 3) ≠ 1)) xq.2.1 θ
+  inner_tangentCircle_eq_zero (inner_u_eq_zero h xq.1.1) (inner_v_u_eq_zero h xq.1.1) xq.2.1 θ
 
 /-- The **inner circle** of the two-sphere of `(x, q)`: the circle through `x` and `q` tangent to
 `v x`, `s ↦ tangentCircle x (v x) q (2π s)`, as a loop at `x` in the equator of the sphere
@@ -150,8 +164,8 @@ theorem coe_twoFieldInnerLoop_apply (xq : twoFieldEquators u v) (z : I^(Fin 1)) 
 private theorem norm_tangentCircle_outer (xq : twoFieldEquators u v) (s t : ℝ) :
     ‖tangentCircle (xq.1.1 : E) (u xq.1.1)
       (tangentCircle (xq.1.1 : E) (v xq.1.1) (xq.1.2 : E) s) t‖ = 1 :=
-  norm_tangentCircle (norm_eq_of_mem_sphere xq.1.1) ((h xq.1.1).norm_eq_one 1)
-    ((h xq.1.1).inner_eq_zero (by decide : (0 : Fin 3) ≠ 1)) (norm_tangentCircle_inner h xq s)
+  norm_tangentCircle (norm_eq_of_mem_sphere xq.1.1) (norm_u_eq_one h xq.1.1)
+    (inner_u_eq_zero h xq.1.1) (norm_tangentCircle_inner h xq s)
     (inner_tangentCircle_inner h xq s) t
 
 variable (hu : Continuous u) (hv : Continuous v)
@@ -212,8 +226,7 @@ theorem coe_twoFieldSphereFamily_sphereCollapse (xq : twoFieldEquators u v) (y :
 tangent to `u x` and through the points of the inner circle `twoFieldInnerLoop`. -/
 theorem twoFieldSphereFamily_sphereCollapse (xq : twoFieldEquators u v) (y : I^(Fin 2)) :
     twoFieldSphereFamily h hu hv xq (sphereCollapse 2 Sphere2.north y) =
-      tangentCircleGenLoop (by simpa using (h xq.1.1).norm_eq_one 1)
-        (twoFieldInnerLoop h xq) y :=
+      tangentCircleGenLoop (norm_u_eq_one h xq.1.1) (twoFieldInnerLoop h xq) y :=
   Subtype.ext (by
     rw [coe_twoFieldSphereFamily_sphereCollapse, coe_tangentCircleGenLoop_apply,
       coe_twoFieldInnerLoop_apply]
