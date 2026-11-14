@@ -120,7 +120,7 @@ instance isIntegrallyClosedIn_ratFunc : IsIntegrallyClosedIn k (RatFunc k) :=
 /-- The `RatFunc k`-algebra structure on `F` induced by a transcendental element `x`, with
 `RatFunc.X` acting as `x`. -/
 @[instance_reducible]
-noncomputable def ratFuncAlgebraOfTranscendental (hx : Transcendental k x) :
+def ratFuncAlgebraOfTranscendental (hx : Transcendental k x) :
     Algebra (RatFunc k) F :=
   (k⟮x⟯.val.comp (RatFunc.algEquivOfTranscendental x hx).toAlgHom).toRingHom.toAlgebra
 
@@ -357,7 +357,7 @@ end Polynomial
 
 /-- The `k`-algebra map `k⟮x⟯ → E` sending a transcendental `x` to a transcendental `z`: both
 `k⟮x⟯` and `k⟮z⟯` are identified with the rational function field `k(X)`. -/
-noncomputable def _root_.Transcendental.algHomAdjoin (hx : Transcendental k x) {E : Type*}
+def _root_.Transcendental.algHomAdjoin (hx : Transcendental k x) {E : Type*}
     [Field E] [Algebra k E] {z : E} (hz : Transcendental k z) : k⟮x⟯ →ₐ[k] E :=
   (IntermediateField.val _).comp ((RatFunc.algEquivOfTranscendental z hz).toAlgHom.comp
     (RatFunc.algEquivOfTranscendental x hx).symm.toAlgHom)
