@@ -15,7 +15,7 @@ Let `R` be a local topological `k`-algebra with open units and continuous invers
 units, T1 (for instance Hausdorff) and locally compact. If `X` is locally of finite type over
 `k`, then the chart topology on `X(R)` is locally compact. Every point lies in the image of an
 affine open chart, which is an open embedding; the algebra of that chart is of finite type over
-`k` (`AlgebraicGeometry.LocallyOfFiniteType.spec_algebraMap_iff`), so its
+`k` (`AlgebraicGeometry.LocallyOfFiniteType.Spec_algebraMap_iff`), so its
 coordinate-evaluation point space is locally compact.
 
 ## Main results
@@ -52,7 +52,7 @@ theorem locallyCompactSpace_of_locallyOfFiniteType [LocallyOfFiniteType f] :
   local_compact_nhds x n hn := by
     obtain ⟨A, i, hi, _, z, rfl⟩ := exists_mem_range_chartPoint f x
     have : Algebra.FiniteType k A :=
-      LocallyOfFiniteType.spec_algebraMap_iff.mp (hi ▸ inferInstance)
+      LocallyOfFiniteType.Spec_algebraMap_iff.mp (hi ▸ inferInstance)
     have := PointTopology.locallyCompactSpace_of_finiteType (k := k) (A := A) (R := R)
     have he := isOpenEmbedding_chartPoint (R := R) f A i hi
     obtain ⟨s, hs, hsn, hsc⟩ :=
