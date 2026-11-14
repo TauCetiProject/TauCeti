@@ -159,9 +159,8 @@ theorem IsRowCompact.encard_setOf_mem_spectrum_mapCoeffs_le (hu : u.IsRowCompact
   rintro μ ⟨hμ, hεμ⟩
   have hμ0 : μ ≠ 0 := norm_pos_iff.1 (hε.trans_le hεμ)
   refine ⟨by simpa only [norm_inv] using inv_anti₀ hε hεμ, ?_⟩
-  rw [(hu.mapCoeffs _ _).mem_spectrum_iff_evalAt_inv_eq_zero hμ0,
+  rwa [(hu.mapCoeffs _ _).mem_spectrum_iff_evalAt_inv_eq_zero hμ0,
     hu.charPowerSeries_map, PowerSeries.evalAt_map_algebraMap] at hμ
-  exact hμ
 
 /-- After extension to a complete normed field `L`, a row-compact endomorphism of `C₀(I, K)` has
 only finitely many spectral values of norm at least `ε`, for every `ε > 0`. -/
