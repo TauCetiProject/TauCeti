@@ -80,6 +80,10 @@ estimate with `C = 2 ^ (s + 1) ‖⟨·⟩ ^ (-s)‖₂`.
 * `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_mul`: the real form of
   `TemperedDistribution.MemSobolev.mul`.
 * `TemperedDistribution.mul_mem_realSobolevFunctions`: the same for pointwise representatives.
+* `TemperedDistribution.mul_mem_realSobolevFunctions_zero_of_bounded` and
+  `TemperedDistribution.mul_mem_realSobolevFunctions_one_of_bounded`: below the algebra threshold,
+  products with bounded factors stay in `L²`, and products of bounded `C¹` functions in `H¹` stay
+  in `H¹`.
 * `BesselPotentialSpace.mulCLM`: the product on `H^s(E)` as a continuous bilinear map, whose
   `L²` functions are the pointwise products (`BesselPotentialSpace.coeFn_toLp_inclusion_mulCLM`).
 
@@ -332,6 +336,42 @@ theorem mul_mem_realSobolevFunctions {s : ℝ} (hs : finrank ℝ E < 2 * s) {f g
   refine mem_realSobolevFunctions_of_ae_eq (coeFn_mem_realSobolevFunctions hw) ?_
   filter_upwards [hwuv, huf, hvg] with x h h₁ h₂
   rw [h, h₁, h₂, Pi.mul_apply]
+
+/-- Multiplication by a bounded continuous function preserves real `L²` functions. -/
+theorem mul_mem_realSobolevFunctions_zero_of_bounded {f g : E → ℝ} (hf : Continuous f)
+    {B : ℝ} (hB : ∀ x, |f x| ≤ B) (hg : g ∈ realSobolevFunctions E 0 2) :
+    f * g ∈ realSobolevFunctions E 0 2 := by
+  have hg' := mem_realSobolevFunctions_zero_iff.1 hg
+  refine mem_realSobolevFunctions_zero_iff.2 (hg'.of_le_mul (c := B)
+    (hf.aestronglyMeasurable.mul hg'.aestronglyMeasurable) (ae_of_all _ fun x ↦ ?_))
+  rw [Pi.mul_apply, norm_mul, Real.norm_eq_abs]
+  exact mul_le_mul_of_nonneg_right (hB x) (norm_nonneg _)
+
+/-- **Products of bounded `H¹` functions.** The product of two bounded real `C¹` functions in
+`H¹` lies in `H¹`, in every dimension: its derivatives `f' g + f g'` are products of bounded and
+`L²` functions. -/
+theorem mul_mem_realSobolevFunctions_one_of_bounded {f g : E → ℝ} (hf : ContDiff ℝ 1 f)
+    (hg : ContDiff ℝ 1 g) {B : ℝ} (hfB : ∀ x, |f x| ≤ B) (hgB : ∀ x, |g x| ≤ B)
+    (hf₁ : f ∈ realSobolevFunctions E 1 2) (hg₁ : g ∈ realSobolevFunctions E 1 2) :
+    f * g ∈ realSobolevFunctions E 1 2 := by
+  have hd (u : E → ℝ) (hu : ContDiff ℝ 1 u) (hu₁ : u ∈ realSobolevFunctions E 1 2) (v : E) :
+      (fun x ↦ fderiv ℝ u x v) ∈ realSobolevFunctions E 0 2 :=
+    fderiv_apply_mem_realSobolevFunctions (by norm_num) (by norm_num) le_rfl hu
+      (by simpa using hu₁) v
+  have h := mem_realSobolevFunctions_add_one_of_fderiv_apply (s := 0) (by norm_num)
+    (by norm_num) (hf.mul hg) (mul_mem_realSobolevFunctions_zero_of_bounded hf.continuous hfB
+      (realSobolevFunctions_mono (by norm_num) (by norm_num) zero_le_one hg₁)) fun v ↦ ?_
+  · rw [zero_add] at h
+    exact h
+  have hfg : (fun x ↦ fderiv ℝ (fun y ↦ f y * g y) x v) =
+      (fun x ↦ fderiv ℝ f x v) * g + f * fun x ↦ fderiv ℝ g x v := by
+    funext x
+    rw [fderiv_fun_mul (hf.differentiable one_ne_zero x) (hg.differentiable one_ne_zero x)]
+    simp only [add_apply, smul_apply, smul_eq_mul, Pi.add_apply, Pi.mul_apply]
+    ring
+  rw [hfg, mul_comm _ g]
+  exact add_mem (mul_mem_realSobolevFunctions_zero_of_bounded hg.continuous hgB (hd f hf hf₁ v))
+    (mul_mem_realSobolevFunctions_zero_of_bounded hf.continuous hfB (hd g hg hg₁ v))
 
 end TemperedDistribution
 

@@ -16,6 +16,7 @@ import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # The affine Sobolev space of framed plane vortex fields
@@ -42,6 +43,9 @@ represent `a = i (b₁ ds + b₂ dt)` and `α = 2 (p + i q)`.
 
 Changing the radial cutoff changes the reference by a smooth compactly supported field, so the
 affine space does not depend on the cutoff (`framedFieldSpace_eq`). The vacuum lies in `A_0^s`.
+
+The square-integrable fields making up `sobolevFields 0` (`mem_sobolevFields_zero_iff`) include
+the fields decaying exponentially (`mem_sobolevFields_zero_of_norm_le_mul_exp`).
 
 Off the disc where the cutoff is active, the reference field is the field reconstructed from the
 holomorphic factor `z ^ m` and the harmonic amplitude `-m log |z|`
@@ -313,6 +317,21 @@ theorem mem_sobolevFields_of_hasCompactSupport {y : ℂ → EuclideanSpace ℝ (
     (hy : ContDiff ℝ ∞ y) (hc : HasCompactSupport y) (s : ℝ) : y ∈ sobolevFields s :=
   mem_sobolevFields.2 fun i ↦ mem_realSobolevFunctions_of_hasCompactSupport
     (contDiff_euclidean.1 hy i) (hc.comp_left (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) rfl) s
+
+/-- An almost everywhere strongly measurable field bounded by `K exp (-c |z|)` with `0 < c` lies in
+`sobolevFields 0`. -/
+theorem mem_sobolevFields_zero_of_norm_le_mul_exp {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : AEStronglyMeasurable y) {K c : ℝ} (hc : 0 < c)
+    (hK : ∀ z, ‖y z‖ ≤ K * Real.exp (-(c * ‖z‖))) : y ∈ sobolevFields 0 := by
+  refine mem_sobolevFields_zero_iff.2 ((memLp_two_iff_integrable_sq_norm hy).2
+    (((integrable_exp_neg_mul_norm volume (mul_pos two_pos hc)).const_mul (K ^ 2)).mono'
+      (hy.norm.pow 2) (ae_of_all _ fun z ↦ ?_)))
+  rw [Real.norm_of_nonneg (sq_nonneg _)]
+  calc ‖y z‖ ^ 2 ≤ (K * Real.exp (-(c * ‖z‖))) ^ 2 :=
+        pow_le_pow_left₀ (norm_nonneg _) (hK z) 2
+    _ = K ^ 2 * Real.exp (-(2 * c * ‖z‖)) := by
+        rw [mul_pow, ← Real.exp_nat_mul]
+        ring_nf
 
 /-- **Decay of continuous Sobolev fields.** For `s > 1`, a continuous field in `sobolevFields s`
 tends to zero at infinity: by Sobolev embedding each coordinate agrees almost everywhere with a

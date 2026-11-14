@@ -51,10 +51,13 @@ prescribed `ε` (`TauCeti.exists_contDiff_angle_cutoff`). On the line, a smooth 
 identity equals `s` on `[-r, r]` and vanishes outside `(-R, R)`
 (`TauCeti.exists_contDiff_cutoff_id`). On an inner product space, a smooth, even, compactly
 supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes on the ball of radius `r / 2`
-(`TauCeti.exists_contDiff_cutoff_annulus`). Smooth plateaus supported in `[c - r - 1, c + r + 1]`
-have `L²` mass at least `2 r` and derivative energy bounded independently of `c` and `r`
-(`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a function supported in a closed
-ball with bounded gradient there has integral at most the squared bound times the volume of the ball
+(`TauCeti.exists_contDiff_cutoff_annulus`). A function smooth outside a closed ball has a smooth
+cutoff agreeing with it outside a larger ball and nowhere larger
+(`TauCeti.exists_contDiff_cutoff_outside_closedBall`). Smooth plateaus supported in
+`[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy bounded independently
+of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a function
+supported in a closed ball with bounded gradient there has integral at most the squared bound times
+the volume of the ball
 (`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`).
 
 Finally, the space-time cut-offs `(t, x) ↦ χ (s • x) * φ (t, x)` of a function `φ` vanishing outside
@@ -646,6 +649,38 @@ theorem exists_contDiff_cutoff_annulus [InnerProductSpace ℝ E] [FiniteDimensio
     simp only [ρ]
     constructor <;> linarith
 
+open Metric in
+/-- **Cutting off a function smooth outside a ball.** For `0 ≤ r < R`, a function `y` which is
+`Cⁿ` at every point of norm greater than `r` has a `Cⁿ` cutoff `ψ` which agrees with `y` near every
+point of norm greater than `R`, and at every point either vanishes or has norm at most `‖y‖` at a
+point of norm greater than `r`. It is `(1 - χ) • y` for a bump `χ` equal to one on the ball of
+radius `(r + R) / 2` and vanishing outside the ball of radius `R`. -/
+theorem exists_contDiff_cutoff_outside_closedBall [NormedSpace ℝ E] [HasContDiffBump E]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞} {y : E → F} {r R : ℝ}
+    (hr : 0 ≤ r) (hrR : r < R) (hy : ∀ z, r < ‖z‖ → ContDiffAt ℝ n y z) :
+    ∃ ψ : E → F, ContDiff ℝ n ψ ∧ (∀ z, R < ‖z‖ → ψ =ᶠ[𝓝 z] y) ∧
+      ∀ z, ψ z = 0 ∨ (r < ‖z‖ ∧ ‖ψ z‖ ≤ ‖y z‖) := by
+  let b : ContDiffBump (0 : E) := ⟨(r + R) / 2, R, by linarith, by linarith⟩
+  set χ : E → ℝ := fun z ↦ 1 - b z
+  have hχ0 {z : E} (hz : ‖z‖ ≤ (r + R) / 2) : χ z = 0 := by
+    simp only [χ, b.one_of_mem_closedBall (by simpa using hz), sub_self]
+  have hχ1 {z : E} (hz : R ≤ ‖z‖) : χ z = 1 := by
+    simp only [χ, b.zero_of_le_dist (by simpa using hz), sub_zero]
+  have hχ01 (z : E) : 0 ≤ χ z ∧ χ z ≤ 1 :=
+    ⟨by simp only [χ, sub_nonneg, b.le_one], by simp only [χ, sub_le_self_iff, b.nonneg]⟩
+  refine ⟨fun z ↦ χ z • y z, contDiff_iff_contDiffAt.2 fun z ↦ ?_, fun z hz ↦ ?_, fun z ↦ ?_⟩
+  · by_cases hz : ‖z‖ < (r + R) / 2
+    · refine contDiffAt_const (c := (0 : F)).congr_of_eventuallyEq ?_
+      filter_upwards [(isOpen_lt continuous_norm continuous_const).mem_nhds hz] with w hw
+      simp only [hχ0 hw.le, zero_smul]
+    · exact (contDiff_const.sub b.contDiff).contDiffAt.smul (hy z (by linarith))
+  · filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hz] with w hw
+    simp only [hχ1 hw.le, one_smul]
+  · by_cases hz : ‖z‖ ≤ (r + R) / 2
+    · exact .inl (by simp only [hχ0 hz, zero_smul])
+    · refine .inr ⟨by linarith, ?_⟩
+      rw [norm_smul, Real.norm_of_nonneg (hχ01 z).1]
+      exact mul_le_of_le_one_left (norm_nonneg _) (hχ01 z).2
 
 open MeasureTheory Metric in
 /-- **Smooth plateaus on the line with uniformly bounded derivative.** There is a constant `C`

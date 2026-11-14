@@ -115,6 +115,13 @@ theorem differentiableAt_windingPhase (m : ℕ) {z : ℂ} (hz : z ≠ 0) :
     DifferentiableAt ℝ (fun w ↦ (windingPhase m w : ℂ)) z :=
   (contDiffAt_windingPhase m hz (n := 1)).differentiableAt one_ne_zero
 
+/-- The inverse winding phase, the gauge of the winding end trivialization, is smooth off the
+origin. -/
+theorem contDiffAt_inv_windingPhase (m : ℕ) {z : ℂ} (hz : z ≠ 0) {n : WithTop ℕ∞} :
+    ContDiffAt ℝ n (fun w ↦ ((windingPhase m)⁻¹ w : ℂ)) z := by
+  simp only [Pi.inv_apply, Circle.coe_inv]
+  exact (contDiffAt_windingPhase m hz).inv (Circle.coe_ne_zero _)
+
 /-- Off the origin, the winding phase is its value at `z` times the exponential of the real
 phase `m Im (log (w / z))`, which is smooth near `w = z`. -/
 private theorem windingPhase_eq_mul_exp (m : ℕ) {z w : ℂ} (hz : z ≠ 0) (hw : w ≠ 0) :
@@ -186,7 +193,7 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {m : ℕ}
 
 /-- If the section of `x` is `|α|` times the winding phase near `z`, then its end
 trivialization has the real section `|α|` there. -/
-private theorem sectionValue_gaugeTransform_inv_windingPhase {z : ℂ}
+theorem sectionValue_gaugeTransform_inv_windingPhase {z : ℂ}
     (hphase : sectionValue x z = ‖sectionValue x z‖ * windingPhase m z) :
     sectionValue (gaugeTransform (windingPhase m)⁻¹ x) z = ‖sectionValue x z‖ := by
   have h1 : ((windingPhase m z)⁻¹ : Circle) * (windingPhase m z : ℂ) = 1 := by
