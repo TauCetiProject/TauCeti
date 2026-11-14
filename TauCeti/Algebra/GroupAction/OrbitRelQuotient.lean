@@ -52,7 +52,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `TauCeti.MulAction.normalizerOrbitRelQuotientPermHom`: the normalizer action on the
   quotient by `H`-orbits.
 * `TauCeti.MulAction.normalizerQuotientOrbitRelQuotientPermHom`: the descended action of
-  `N(H) / H` on the quotient by `H`-orbits.
+  `N(H) / H` on the quotient by `H`-orbits. For normal `H` it is the action of `G ⧸ H` along
+  `Subgroup.normalizerQuotientEquivQuotientOfNormal`
+  (`Subgroup.normalizerQuotientEquivQuotientOfNormal_smul`).
 * `Subgroup.normalizerQuotient_isPretransitive_orbitRelQuotient`: if the normalizer
   acts transitively, then the descended `N(H) / H` action on the `H`-orbit quotient is
   transitive.
@@ -982,6 +984,20 @@ instance instMulActionQuotientGroup : MulAction (G ⧸ H) (orbitRel.Quotient H P
     induction g' using QuotientGroup.induction_on with | H g' =>
     induction x using Quotient.inductionOn' with
     | h p => rw [← QuotientGroup.mk_mul, mk_smul_mk, mk_smul_mk, mk_smul_mk, mul_smul]
+
+/-- For a normal subgroup `H`, the action of `N(H) / H` on `H`-orbits
+(`TauCeti.MulAction.normalizerQuotientOrbitRelQuotientMulAction`) is the action of `G ⧸ H`
+along `Subgroup.normalizerQuotientEquivQuotientOfNormal`. -/
+theorem _root_.Subgroup.normalizerQuotientEquivQuotientOfNormal_smul
+    (a : Subgroup.normalizerQuotient H) (q : orbitRel.Quotient H P) :
+    letI := TauCeti.MulAction.normalizerQuotientOrbitRelQuotientMulAction (X := P) H
+    Subgroup.normalizerQuotientEquivQuotientOfNormal H a • q = a • q := by
+  let := TauCeti.MulAction.normalizerQuotientOrbitRelQuotientMulAction (X := P) H
+  obtain ⟨g, rfl⟩ := Subgroup.normalizerQuotientMk_surjective H a
+  induction q using Quotient.inductionOn' with | h x => ?_
+  rw [TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_mk,
+    Subgroup.normalizerQuotientEquivQuotientOfNormal_mk]
+  exact mk_smul_mk H (g : G) x
 
 end MulAction.orbitRel.Quotient
 
