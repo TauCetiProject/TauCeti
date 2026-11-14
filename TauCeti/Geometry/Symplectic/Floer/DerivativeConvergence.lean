@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Equicontinuity
 public import TauCeti.Analysis.Complex.Wirtinger.SecondDerivative
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
 import TauCeti.Topology.UniformSpace.Equicontinuity
@@ -49,6 +50,19 @@ The Arzelà–Ascoli theorem in `C¹` (`TauCeti.exists_strictMono_tendstoLocally
 gives a subsequence of every subsequence along which `Duₙ → Dv`; as the limit `Dv` is the same each
 time, the whole sequence converges. The equation passes to the limit pointwise.
 
+Combined with the compactness theorem
+`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset`, this shows that
+smooth Floer solutions of bounded energy converge in `C¹` off finitely many bubbling points, to a
+`C¹` solution of the same equation there
+(`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`).
+
+## Main results
+
+* `TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer`: `C¹` convergence of pointwise
+  convergent solutions with locally bounded derivatives.
+* `TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`: `C¹`
+  convergence of Floer solutions of bounded energy off finitely many bubbling points.
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS Colloquium
@@ -58,7 +72,7 @@ time, the whole sequence converges. The equation passes to the limit pointwise.
 
 public section
 
-open Complex Filter Metric Set Topology
+open Complex Filter MeasureTheory Metric Set Topology
 open scoped NNReal ContDiff
 
 namespace TauCeti.Floer
@@ -300,5 +314,57 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_floer {J : ℂ × V → V →L[ℝ] 
   -- Pass to the limit in the equation.
   exact ⟨hv, hconv, fun y hy ↦ fderiv_I_sub_eq_of_tendsto hW hJ.continuousOn hX.continuousOn
     (hvW y hy) (hconv.tendsto_at hy) (hlim y hy) fun n ↦ hCR n y hy⟩
+
+section OffBubbling
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- **Floer solutions converge in `C¹` off finitely many bubbling points.** Let `J` and `X` be
+`C²` on an open set `W ⊆ ℂ × V` containing `D × K` for compact `D ⊆ ℂ` and `K ⊆ V`, with
+`J(z, x)² = -1` on `D × K`, where `V` is a finite-dimensional real inner product space. There is
+a threshold `δ > 0` with the following property. Let `uₖ` be smooth solutions of
+`∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` on an open set `Ω ⊆ D`, with image in `K` and
+energy `∫_Ω ‖∂ₛuₖ‖² ≤ E`. Then there are a subsequence `φ`, a finite set `Z ⊆ Ω` with
+`#Z * δ ≤ E`, and a map `v` with values in `K` on `Ω \ Z`, such that along `φ` every disc about a
+point of `Z` eventually carries energy at least `δ`, the differentials are uniformly bounded on
+every compact subset of `Ω \ Z`, `u_{φ n} → v` and `Du_{φ n} → Dv` locally uniformly on `Ω \ Z`,
+and `v` is a `C¹` solution of the equation on `Ω \ Z`. -/
+theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
+    {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V} {W : Set (ℂ × V)} {D : Set ℂ} {K : Set V}
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W)
+    (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W)
+    (hJsq : ∀ z ∈ D, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v) :
+    ∃ δ > 0, ∀ ⦃Ω : Set ℂ⦄ ⦃u : ℕ → ℂ → V⦄ ⦃E : ℝ⦄, IsOpen Ω → Ω ⊆ D →
+      (∀ k, ContDiffOn ℝ ∞ (u k) Ω) →
+      (∀ k, ∀ y ∈ Ω, fderiv ℝ (u k) y I - X (y, u k y) I =
+        J (y, u k y) (fderiv ℝ (u k) y 1 - X (y, u k y) 1)) →
+      (∀ k, MapsTo (u k) Ω K) →
+      (∀ k, IntegrableOn (fun y ↦ ‖fderiv ℝ (u k) y 1‖ ^ 2) Ω) →
+      (∀ k, ∫ y in Ω, ‖fderiv ℝ (u k) y 1‖ ^ 2 ≤ E) →
+      ∃ (φ : ℕ → ℕ) (Z : Finset ℂ) (v : ℂ → V), StrictMono φ ∧
+        ↑Z ⊆ Ω ∧ Z.card * δ ≤ E ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
+          δ ≤ ∫ y in ball z ε ∩ Ω, ‖fderiv ℝ (u (φ n)) y 1‖ ^ 2) ∧
+        (∀ C, IsCompact C → C ⊆ Ω \ ↑Z →
+          ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
+        MapsTo v (Ω \ ↑Z) K ∧ ContDiffOn ℝ 1 v (Ω \ ↑Z) ∧
+        TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) ∧
+        TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u (φ n))) (fderiv ℝ v) atTop (Ω \ ↑Z) ∧
+        ∀ y ∈ Ω \ ↑Z,
+          fderiv ℝ v y I - X (y, v y) I = J (y, v y) (fderiv ℝ v y 1 - X (y, v y) 1) := by
+  obtain ⟨δ, hδ, hconv⟩ := exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset hW hJ hX
+    hD hK hDKW hJsq
+  refine ⟨δ, hδ, fun Ω u E hΩ hΩD hu hCR huK hint hE ↦ ?_⟩
+  obtain ⟨φ, Z, v, hφ, hZΩ, hcard, hconc, hbd, -, hvK, hlim⟩ := hconv hΩ hΩD
+    (fun k ↦ (hu k).of_le (WithTop.coe_le_coe.2 le_top)) hCR huK hint hE
+  -- Off `Z` the whole subsequence converges in `C¹`.
+  obtain ⟨hv, hdconv, hveq⟩ := tendstoLocallyUniformlyOn_fderiv_of_floer hW
+    (hJ.of_le one_le_two) (hX.of_le one_le_two) (hΩ.sdiff Z.finite_toSet.isClosed)
+    (u := fun n ↦ u (φ n)) (fun y hy ↦ hDKW ⟨hΩD hy.1, hvK hy⟩)
+    (fun n ↦ (hu _).mono sdiff_subset) (fun n y hy ↦ hJsq y (hΩD hy.1) _ (huK _ hy.1))
+    (fun n y hy ↦ hCR _ y hy.1) hbd fun y hy ↦ hlim.tendsto_at hy
+  exact ⟨φ, Z, v, hφ, hZΩ, hcard, hconc, hbd, hvK, hv, hlim, hdconv, hveq⟩
+
+end OffBubbling
 
 end TauCeti.Floer
