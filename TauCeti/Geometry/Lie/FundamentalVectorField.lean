@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Basic
 public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 public import TauCeti.Geometry.Manifold.Algebra.SMul
+public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
 public import TauCeti.Geometry.Manifold.VectorField.InfinitesimalAction
 public import TauCeti.Geometry.Manifold.VectorField.Regularity
 import Mathlib.Geometry.Manifold.Instances.Icc
@@ -61,6 +62,8 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
   (`TauCeti.finrank_orbitTangent_fundamental_smul`) and the fundamental vector fields span
   `T_{g • x} M` exactly when they span `T_x M`
   (`TauCeti.orbitTangent_fundamental_smul_eq_top_iff`).
+* `TauCeti.tangentRepresentation_mem_orbitTangent_fundamental`: the tangent representation of the
+  stabilizer of `x` preserves the orbit tangent space `𝔤 · x`.
 * `TauCeti.InfinitesimalAction.mem_ker_toLinearMap_fundamental_iff`: `ξ_M` vanishes identically
   exactly when every `exp (t ξ)` acts trivially.
 * `TauCeti.InfinitesimalAction.ker_toLinearMap_fundamental_eq_bot`: for a faithful action,
@@ -577,6 +580,26 @@ theorem orbitTangent_fundamental_smul_eq_top_iff (g : G) (x : M) :
     (Diffeomorph.smul I I' 1 g).isInvertible_mfderiv one_ne_zero
   rw [orbitTangent_fundamental_smul, ← he]
   exact Submodule.map_eq_top_iff (e := e.toLinearEquiv)
+
+/-- **The stabilizer preserves the orbit tangent space.** The tangent representation
+`g ↦ dg_x` of the stabilizer of `x` maps the orbit tangent space `𝔤 · x` of the fundamental vector
+fields into itself, since `dg_x` carries `ξ_M(x)` to `(Ad_g ξ)_M(x)`. -/
+theorem tangentRepresentation_mem_orbitTangent_fundamental {x : M}
+    (hd : ∀ g ∈ MulAction.stabilizer G x, MDifferentiableAt I' I' (fun y : M ↦ g • y) x)
+    (g : MulAction.stabilizer G x) {v : TangentSpace I' x}
+    (hv : v ∈ (InfinitesimalAction.fundamental I G I' M).orbitTangent x) :
+    tangentRepresentation hd g v ∈ (InfinitesimalAction.fundamental I G I' M).orbitTangent x := by
+  obtain ⟨ξ, rfl⟩ := (InfinitesimalAction.mem_orbitTangent_iff _ x).1 hv
+  have h := (InfinitesimalAction.fundamental I G I' M).mem_orbitTangent x
+    (Lie.adjointContinuousLinearMap (g : G) ξ)
+  -- `dg_x ξ_M(x) = (Ad_g ξ)_M(g • x)`, read in `T_x M` through `g • x = x`.
+  have key : tangentRepresentation hd g (fundamentalVectorField I' ξ x) =
+      fundamentalVectorField I' (Lie.adjointContinuousLinearMap (g : G) ξ) x := by
+    rw [tangentRepresentation_apply]
+    exact (mfderiv_smul_fundamentalVectorField (g : G) ξ x).trans (congrArg
+      (fun y ↦ (fundamentalVectorField I' (Lie.adjointContinuousLinearMap (g : G) ξ) y : E')) g.2)
+  rw [InfinitesimalAction.fundamental_apply] at h ⊢
+  rwa [key]
 
 section Kernel
 

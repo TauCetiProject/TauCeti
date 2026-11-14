@@ -39,7 +39,10 @@ At a point `x`, an infinitesimal action has an **orbit tangent space** `𝔤 · 
 (`TauCeti.InfinitesimalAction.orbitTangent`) and an **isotropy algebra** `𝔤_x = {Z | Z_M(x) = 0}`
 (`TauCeti.InfinitesimalAction.isotropy`), the range and the kernel of the linear map
 `Z ↦ Z_M(x)` (`TauCeti.InfinitesimalAction.eval`). The isotropy algebra is a Lie subalgebra, since
-the Lie bracket of two vector fields vanishing at `x` vanishes at `x`, and rank–nullity gives
+the Lie bracket of two vector fields vanishing at `x` vanishes at `x`. The orbit map identifies
+`𝔤 ⧸ 𝔤_x` with `𝔤 · x` (`TauCeti.InfinitesimalAction.quotIsotropyEquivOrbitTangent`), and more
+generally `𝔨 ⧸ (𝔨 ∩ 𝔤_x)` with `𝔨 · x` for a subspace `𝔨` of `𝔤`
+(`TauCeti.InfinitesimalAction.quotIsotropyEquivMap`); rank–nullity gives
 `dim (𝔤 · x) + dim 𝔤_x = dim 𝔤`. For the fundamental vector fields of a Lie group action, `𝔤 · x`
 and `𝔤_x` are the image and the kernel of the differential at the identity of the orbit map
 `g ↦ g • x`. These are the pointwise data entering the differential of a moment map.
@@ -53,6 +56,10 @@ and `𝔤_x` are the image and the kernel of the differential at the identity of
 * `TauCeti.InfinitesimalAction.eval a x`: the linear map `Z ↦ Z_M(x)`.
 * `TauCeti.InfinitesimalAction.orbitTangent a x`: the orbit tangent space `𝔤 · x`.
 * `TauCeti.InfinitesimalAction.isotropy a x`: the isotropy Lie subalgebra `𝔤_x`.
+* `TauCeti.InfinitesimalAction.quotIsotropyEquivOrbitTangent a x`: the identification
+  `𝔤 ⧸ 𝔤_x ≃ 𝔤 · x`.
+* `TauCeti.InfinitesimalAction.quotIsotropyEquivMap a x 𝔨`: the identification
+  `𝔨 ⧸ (𝔨 ∩ 𝔤_x) ≃ 𝔨 · x`.
 * `TauCeti.InfinitesimalAction.linear V`: the action of `Module.End ℝ V` on `V` by linear vector
   fields.
 * `TauCeti.InfinitesimalAction.translation τ`: the action of an abelian Lie algebra on a vector
@@ -206,6 +213,30 @@ theorem finrank_orbitTangent_add_finrank_isotropy [FiniteDimensional ℝ 𝔤] :
     Module.finrank ℝ (a.orbitTangent x) + Module.finrank ℝ (a.isotropy x) =
       Module.finrank ℝ 𝔤 :=
   LinearMap.finrank_range_add_finrank_ker (a.eval x)
+
+/-- The orbit map `Z ↦ Z_M(x)` identifies `𝔤 ⧸ 𝔤_x` with the orbit tangent space `𝔤 · x`. -/
+def quotIsotropyEquivOrbitTangent :
+    (𝔤 ⧸ (a.isotropy x).toSubmodule) ≃ₗ[ℝ] a.orbitTangent x :=
+  (Submodule.quotEquivOfEq _ _ (a.isotropy_toSubmodule x)).trans
+    ((a.eval x).quotKerEquivRange.trans (LinearEquiv.ofEq _ _ (a.orbitTangent_eq_range x).symm))
+
+@[simp]
+theorem coe_quotIsotropyEquivOrbitTangent_mk (Z : 𝔤) :
+    (a.quotIsotropyEquivOrbitTangent x (Submodule.Quotient.mk Z) : TangentSpace I x) = a Z x := by
+  simp [quotIsotropyEquivOrbitTangent]
+
+/-- For a subspace `𝔨` of `𝔤`, the orbit map `Z ↦ Z_M(x)` identifies `𝔨 ⧸ (𝔨 ∩ 𝔤_x)` with the
+subspace `𝔨 · x` of the orbit tangent space. -/
+def quotIsotropyEquivMap (p : Submodule ℝ 𝔤) :
+    (p ⧸ (a.isotropy x).toSubmodule.comap p.subtype) ≃ₗ[ℝ] p.map (a.eval x) :=
+  (Submodule.quotEquivOfEq _ _ (by rw [LinearMap.ker_domRestrict, a.isotropy_toSubmodule x])).trans
+    (((a.eval x).domRestrict p).quotKerEquivRange.trans
+      (LinearEquiv.ofEq _ _ (LinearMap.range_domRestrict p (a.eval x))))
+
+@[simp]
+theorem coe_quotIsotropyEquivMap_mk (p : Submodule ℝ 𝔤) (Z : p) :
+    (a.quotIsotropyEquivMap x p (Submodule.Quotient.mk Z) : TangentSpace I x) = a Z x := by
+  simp [quotIsotropyEquivMap]
 
 /-- Where the action is locally free, the orbit tangent space has the dimension of `𝔤`. -/
 theorem finrank_orbitTangent_of_isotropy_eq_bot (h : a.isotropy x = ⊥) :
