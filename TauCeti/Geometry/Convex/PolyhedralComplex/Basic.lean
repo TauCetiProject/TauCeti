@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
@@ -32,6 +32,9 @@ complex whose cells are among the cells of another. The simplest example is
 Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Basic.lean` and `Subcomplex.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
 commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0).
+The local cell-containment lemma is adapted from the same `Basic.lean` source at
+commit `7f1e4c7714fb020473694755ad8748c8f15d0e7f`. Original copyright (c) 2026 Mei contributors;
+original author: Codex.
 -/
 
 public section
@@ -99,6 +102,17 @@ theorem subset_of_mem_intrinsicInterior (C : FinitePolyhedralComplex h) {P Q : S
   exact Set.inter_eq_left.mp
     ((C.inter_face P hP Q hQ ⟨x, hx⟩).eq_of_mem_intrinsicInterior hx hxP)
 
+open Filter Topology in
+/-- Near a relative interior point of a cell, every cell encountered contains
+that entire cell. This is uniform over the finite complex. -/
+theorem eventually_subset_of_mem_intrinsicInterior (C : FinitePolyhedralComplex h) {P : Set V}
+    (hP : P ∈ C.cells) {x : V} (hx : x ∈ intrinsicInterior ℝ P) :
+    ∀ᶠ y in 𝓝 x, ∀ Q ∈ C.cells, y ∈ Q → P ⊆ Q := by
+  have hnear := (locallyFinite_of_finite (fun Q : C.cells => (Q : Set V))).eventually_subset
+    (fun Q => (C.isConvexPolyhedron Q.property).isClosed) x
+  filter_upwards [hnear] with y hy Q hQ hyQ
+  exact C.subset_of_mem_intrinsicInterior hP hQ hx (hy (a := ⟨Q, hQ⟩) hyQ)
+
 /-- Cells with a common point in their intrinsic interiors are equal. -/
 theorem eq_of_mem_intrinsicInterior (C : FinitePolyhedralComplex h) {P Q : Set V}
     (hP : P ∈ C.cells) (hQ : Q ∈ C.cells) {x : V}
@@ -112,6 +126,20 @@ theorem disjoint_intrinsicInterior (C : FinitePolyhedralComplex h) {P Q : Set V}
     (hP : P ∈ C.cells) (hQ : Q ∈ C.cells) (hne : P ≠ Q) :
     Disjoint (intrinsicInterior ℝ P) (intrinsicInterior ℝ Q) :=
   Set.disjoint_left.mpr fun _ hxP hxQ => hne (C.eq_of_mem_intrinsicInterior hP hQ hxP hxQ)
+
+/-- If one cell is contained in another and their affine spans have the same dimension,
+the cells are equal. -/
+theorem eq_of_subset_of_finrank_direction_eq (C : FinitePolyhedralComplex h)
+    {P Q : Set V} (hP : P ∈ C.cells) (hQ : Q ∈ C.cells) (hPQ : P ⊆ Q)
+    (hdim : Module.finrank ℝ (affineSpan ℝ P).direction =
+      Module.finrank ℝ (affineSpan ℝ Q).direction) : P = Q := by
+  have := h.finiteDimensional
+  by_contra hne
+  have hlt := TauCeti.finrank_vectorSpan_lt_of_disjoint_intrinsicInterior
+    (C.isConvexPolyhedron hP).convex (C.nonempty P hP) hPQ
+    (C.disjoint_intrinsicInterior hP hQ hne)
+  rw [direction_affineSpan, direction_affineSpan] at hdim
+  exact (ne_of_lt hlt) hdim
 
 /-- A cell contained in another cell is a face of it. -/
 theorem isPolyhedralFace_of_subset (C : FinitePolyhedralComplex h) {P Q : Set V}
