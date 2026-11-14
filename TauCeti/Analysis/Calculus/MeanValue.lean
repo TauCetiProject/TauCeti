@@ -564,17 +564,13 @@ theorem Convex.locallyLipschitzOn_inter_of_contDiffOn {C U : Set E} (hC : Convex
     (hU : IsOpen U) {f : E → F} (hf : ContDiffOn ℝ 1 f (U ∩ C)) :
     LocallyLipschitzOn (U ∩ C) f := by
   intro x hx
-  have hf_at : ContDiffWithinAt ℝ 1 f (C ∩ U) x := by
-    rw [inter_comm]
-    exact hf x hx
   have hfC : ContDiffWithinAt ℝ 1 f C x :=
-    (contDiffWithinAt_inter (hU.mem_nhds hx.1)).mp hf_at
+    (contDiffWithinAt_inter (hU.mem_nhds hx.1)).mp (inter_comm U C ▸ hf x hx)
   obtain ⟨K, t, ht, hLip⟩ := hfC.exists_lipschitzOnWith hC
-  refine ⟨K, U ∩ t, ?_, hLip.mono inter_subset_right⟩
-  rw [mem_nhdsWithin_iff_exists_mem_nhds_inter] at ht ⊢
-  obtain ⟨V, hV, hVt⟩ := ht
-  exact ⟨U ∩ V, inter_mem (hU.mem_nhds hx.1) hV,
-    fun y ⟨⟨hyU, hyV⟩, _, hyC⟩ ↦ ⟨hyU, hVt ⟨hyV, hyC⟩⟩⟩
+  obtain ⟨V, hV, hVt⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.mp ht
+  exact ⟨K, U ∩ t, mem_nhdsWithin_iff_exists_mem_nhds_inter.mpr
+    ⟨U ∩ V, inter_mem (hU.mem_nhds hx.1) hV,
+      fun y ⟨⟨hyU, hyV⟩, _, hyC⟩ ↦ ⟨hyU, hVt ⟨hyV, hyC⟩⟩⟩, hLip.mono inter_subset_right⟩
 
 /-- **Uniform first-order Taylor bound on a compact subset of `U ∩ C`.** If `C` is convex, `U` is
 open, `U ∩ C` has unique derivatives, and `f` is `C¹` on `U ∩ C`, then for every compact subset
@@ -598,36 +594,26 @@ theorem Convex.exists_pos_norm_sub_fderivWithin_le_of_compact {C U K : Set E} (h
       Metric.continuousWithinAt_iff.mp (hdf_cont x.1 (hKsub x.2)) (η / 2) (half_pos hη)
     have hmin1 : 2 * (min r₁ r₂ / 3) ≤ r₁ := by linarith [min_le_left r₁ r₂]
     refine ⟨min r₁ r₂ / 3, by positivity, (ball_subset_ball hmin1).trans hsubU, fun z hz ↦ ?_⟩
-    have hzU : z ∈ U ∩ C := ⟨hsubU (ball_subset_ball hmin1 hz.1), hz.2⟩
     have hdist : dist z x.1 < r₂ := lt_of_lt_of_le hz.1 (by linarith [min_le_right r₁ r₂])
-    simpa [dist_eq_norm] using (hclose hzU hdist).le
+    simpa [dist_eq_norm] using
+      (hclose ⟨hsubU (ball_subset_ball hmin1 hz.1), hz.2⟩ hdist).le
   choose r hr_pos hr_U hr_df using hloc
   obtain ⟨F, hFcov⟩ := hK.elim_finite_subcover (fun x : K ↦ ball x.1 (r x))
     (fun _ ↦ isOpen_ball) (fun x hx ↦ mem_iUnion.mpr ⟨⟨x, hx⟩, mem_ball_self (hr_pos ⟨x, hx⟩)⟩)
   rcases F.eq_empty_or_nonempty with rfl | hFne
-  · refine ⟨1, zero_lt_one, fun z₁ hz₁ ↦ False.elim ?_⟩
-    simpa using hFcov hz₁
+  · exact ⟨1, zero_lt_one, fun _ hz₁ ↦ False.elim (by simpa using hFcov hz₁)⟩
   refine ⟨F.inf' hFne r, (Finset.lt_inf'_iff hFne).mpr fun x _ ↦ hr_pos x,
     fun z₁ hz₁ z₂ hz₂C hdist ↦ ?_⟩
   obtain ⟨x, hxF, hz₁x⟩ := mem_iUnion₂.mp (hFcov hz₁)
   have hz₂x : z₂ ∈ ball x.1 (2 * r x) := by
     rw [mem_ball] at hz₁x ⊢
-    have hle : F.inf' hFne r ≤ r x := Finset.inf'_le r hxF
-    linarith [dist_triangle z₂ z₁ x.1]
-  have hsub : ball x.1 (2 * r x) ∩ C ⊆ U ∩ C :=
-    fun w hw ↦ ⟨hr_U x hw.1, hw.2⟩
+    linarith [Finset.inf'_le r hxF, dist_triangle z₂ z₁ x.1]
+  have hsub : ball x.1 (2 * r x) ∩ C ⊆ U ∩ C := fun w hw ↦ ⟨hr_U x hw.1, hw.2⟩
   exact ((convex_ball x.1 (2 * r x)).inter hC).norm_image_sub_le_of_norm_hasFDerivWithin_le'
     (fun w hw ↦ (hf_diff w (hsub hw)).hasFDerivWithinAt.mono hsub)
-    (fun w hw ↦ by
-      have h1 := hr_df x w hw
-      have h2 := hr_df x z₁ ⟨ball_subset_ball (by linarith [hr_pos x]) hz₁x, (hKsub hz₁).2⟩
-      calc ‖fderivWithin ℝ f (U ∩ C) w - fderivWithin ℝ f (U ∩ C) z₁‖
-          = ‖(fderivWithin ℝ f (U ∩ C) w - fderivWithin ℝ f (U ∩ C) x.1) -
-              (fderivWithin ℝ f (U ∩ C) z₁ - fderivWithin ℝ f (U ∩ C) x.1)‖ := by congr 1; abel
-        _ ≤ ‖fderivWithin ℝ f (U ∩ C) w - fderivWithin ℝ f (U ∩ C) x.1‖ +
-              ‖fderivWithin ℝ f (U ∩ C) z₁ - fderivWithin ℝ f (U ∩ C) x.1‖ := norm_sub_le _ _
-        _ ≤ η / 2 + η / 2 := add_le_add h1 h2
-        _ = η := by ring)
+    (fun w hw ↦ (norm_sub_le_norm_sub_add_norm_sub _ (fderivWithin ℝ f (U ∩ C) x.1) _).trans
+      (by rw [norm_sub_rev (fderivWithin ℝ f (U ∩ C) x.1)]; linarith [hr_df x w hw,
+        hr_df x z₁ ⟨ball_subset_ball (by linarith [hr_pos x]) hz₁x, (hKsub hz₁).2⟩]))
     ⟨ball_subset_ball (by linarith [hr_pos x]) hz₁x, (hKsub hz₁).2⟩ ⟨hz₂x, hz₂C⟩
 
 end OpenInterConvex
