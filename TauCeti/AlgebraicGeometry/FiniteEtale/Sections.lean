@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Depth.Basic
 import Mathlib.AlgebraicGeometry.Morphisms.Etale
 import Mathlib.AlgebraicGeometry.Morphisms.Finite
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Sections
 import TauCeti.RingTheory.Depth.WeaklyRegular
 import TauCeti.RingTheory.Etale.Finiteness
@@ -71,9 +72,7 @@ theorem finite_etale_awayMap_puncturedSpectrum (hdepth : 2 ≤ depth (ModuleCat.
   set φ := (Scheme.ΓSpecIso (.of A)).inv ≫ (V.obj.hom ≫ (puncturedSpectrum A).ι).appTop
   let U := puncturedSpectrum A
   let g := Spec.map φ
-  -- Instance search does not derive `RespectsIso` for these properties at a fixed universe.
-  have : MorphismProperty.RespectsIso @IsFinite.{u} :=
-    MorphismProperty.IsStableUnderBaseChange.respectsIso
+  -- Instance search does not derive `RespectsIso` for `Etale` at a fixed universe.
   have : MorphismProperty.RespectsIso @Etale.{u} :=
     MorphismProperty.IsStableUnderBaseChange.respectsIso
   -- Over `U`, the morphism `Spec Γ(V, 𝒪_V) ⟶ Spec A` is the finite étale `V ⟶ U`.

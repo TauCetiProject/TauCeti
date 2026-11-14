@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Module.Alternating.Curry
 public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.LinearAlgebra.BilinearForm.Contact.NormalForm
@@ -43,6 +44,8 @@ condition whenever its value at `x` is nonzero (`TauCeti.isContactFormAt_fun_smu
 interior point the condition can be checked in the preferred chart
 (`TauCeti.isContactFormAt_inChartAt_iff`), which reduces local questions about contact forms on
 manifolds, such as the existence of Darboux charts, to open subsets of the model space.
+On a normed space it is the linear condition `Module.Dual.IsContact` for the covector `α(x)` and the
+bilinear form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`).
 
 ## Main declarations
 
@@ -62,6 +65,8 @@ manifolds, such as the existence of Darboux charts, to open subsets of the model
   `TauCeti.SmoothForm.isContactForm_iff_forall_isContactFormAt`.
 * `TauCeti.isContactFormAt_inChartAt_iff`: at an interior point, the pointwise contact condition
   holds exactly when it holds for the coordinate expression in the preferred chart.
+* `TauCeti.isContactFormAt_modelSpace_iff_isContact`: on a normed space, the pointwise contact
+  condition is the linear contact condition for the values of `α` and `dα`.
 
 ## References
 
@@ -353,5 +358,36 @@ theorem SmoothForm.isContactForm_iff_forall_isContactFormAt [IsManifold I 2 M]
     · simpa only [RoughForm.mem_ker] using h.nondegenerate
 
 end Pointwise
+
+section ModelSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- On a normed space, a one-form `α` is a contact form at `x` exactly when the covector `α(x)` is
+a contact covector for the bilinear form of `dα(x)`. -/
+theorem isContactFormAt_modelSpace_iff_isContact {α : E → E [⋀^Fin 1]→L[ℝ] ℝ} {x : E} :
+    IsContactFormAt (I := 𝓘(ℝ, E)) α x ↔
+      Module.Dual.IsContact (ContinuousAlternatingMap.toDual (α x) : E →ₗ[ℝ] ℝ)
+        (ContinuousAlternatingMap.flatL ℝ E ℝ (extDeriv α x)).toLinearMap₁₂ := by
+  rw [Module.Dual.isContact_iff_of_isRefl
+    (ContinuousAlternatingMap.isAlt_toLinearMap₁₂_flatL (extDeriv α x)).isRefl]
+  have hB (v w : E) :
+      (ContinuousAlternatingMap.flatL ℝ E ℝ (extDeriv α x)).toLinearMap₁₂ v w =
+        extDeriv α x ![v, w] :=
+    ContinuousAlternatingMap.flatL_apply_apply _ v w
+  simp only [ContinuousLinearMap.coe_coe, ContinuousAlternatingMap.toDual_apply, hB]
+  have hd (v w : E) : mextDeriv α x ![v, w] = extDeriv α x ![v, w] :=
+    DFunLike.congr_fun (mextDeriv_eq_extDeriv α x) _
+  refine ⟨fun h ↦ ⟨fun h0 ↦ h.ne_zero <| RoughForm.ker_eq_top_iff.1 <| eq_top_iff.2 fun v _ ↦
+    RoughForm.mem_ker.2 <| (ContinuousAlternatingMap.toDual_apply (α x) v).symm.trans
+      (LinearMap.congr_fun h0 v),
+    fun v hv hvw ↦ h.nondegenerate v (RoughForm.mem_ker.2 hv) fun w hw ↦
+      (hd v w).trans (hvw w (RoughForm.mem_ker.1 hw))⟩,
+    fun ⟨h0, h⟩ ↦ ⟨fun hz ↦ h0 <| LinearMap.ext fun v ↦
+      (ContinuousAlternatingMap.toDual_apply (α x) v).trans (by rw [hz]; rfl),
+      fun v hv hvw ↦ h v (RoughForm.mem_ker.1 hv) fun w hw ↦
+        (hd v w).symm.trans (hvw w (RoughForm.mem_ker.2 hw))⟩⟩
+
+end ModelSpace
 
 end TauCeti
