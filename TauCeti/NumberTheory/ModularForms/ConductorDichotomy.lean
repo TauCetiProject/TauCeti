@@ -215,7 +215,7 @@ theorem eq_zero_of_not_forall_apply_eq_one_of_unitsMap_eq_one {l : ℕ} [NeZero 
     intro v
     have h := slash_conjScale_eq_smul_of_slash_scaleGL (k := k) f (gamma0TwistOfUnit v)
       (gamma0TwistOfUnit_apply_one_zero_eq_mul hlN _)
-      ((mem_functionCharSpace_iff k χ _).mp hnb ⟨_, gamma0TwistOfUnit_mem_Gamma0 _⟩)
+      (slash_mapGL_eq_smul_of_mem_functionCharSpace hnb ⟨_, gamma0TwistOfUnit_mem_Gamma0 _⟩)
     rwa [Gamma0Map_toHomUnits_gamma0TwistOfUnit] at h
   -- the same slash, read through the refactoring, has the multiplier of the separating unit
   have halt : f ∣[k] (mapGL ℝ (conjScale l (gamma0TwistOfUnit 1) ((N / l : ℕ) : ℤ)
@@ -258,7 +258,7 @@ theorem cuspFormOfSmulSlashScaleGL_mem_cuspFormCharSpace {l : ℕ} [NeZero l]
     rw [hcomp, MonoidHom.comp_apply, hu]
   rw [← hval]
   exact slash_mapGL_eq_smul_of_unitsMap_eq l N hlN k χ hχ f
-    (nebentypus_slash_scaleGL_of_mem_cuspFormCharSpace hgχ hg) hT γ' u hu
+    (slash_scaleGL_mem_functionCharSpace_of_mem_cuspFormCharSpace hgχ hg) hT γ' u hu
 
 /-- **The level-lowering dichotomy.** For `l ∣ N`, a Dirichlet character `χ` of level `N`, and a
 `T`-periodic `f : ℍ → ℂ` whose level-raise by `l` is a cusp form in `S_k(N, χ)`: *either* `χ`
@@ -288,7 +288,7 @@ theorem exists_cuspForm_mem_cuspFormCharSpace_or_eq_zero {l : ℕ} [NeZero l]
       cuspFormOfSmulSlashScaleGL_mem_cuspFormCharSpace hlN k hcomp f g hgχ hg hT,
       coe_cuspFormOfSmulSlashScaleGL l N hlN k χ.toUnitHom _ f g hgχ hg hT⟩
   · refine .inr (eq_zero_of_not_forall_apply_eq_one_of_unitsMap_eq_one hlN k ?_ f
-      (nebentypus_slash_scaleGL_of_mem_cuspFormCharSpace hgχ hg) hT)
+      (slash_scaleGL_mem_functionCharSpace_of_mem_cuspFormCharSpace hgχ hg) hT)
     exact fun h ↦ hfac
       ((DirichletCharacter.factorsThrough_iff_ker_unitsMap (Nat.div_dvd_of_dvd hlN)).mpr
         fun u hu ↦ MonoidHom.mem_ker.mpr (h u (MonoidHom.mem_ker.mp hu)))

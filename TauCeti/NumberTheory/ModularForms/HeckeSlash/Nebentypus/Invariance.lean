@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Ring
 
 /-!
@@ -13,8 +14,9 @@ public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Ring
 `HeckeSlash/Nebentypus/Basic.lean` defines `twistedHeckeSlashSum`, weighting each summand of a
 double-coset sum by `delta0NebentypusChar χ` of its own representative, and says twice over that
 the point of the weighting is left unproved: the sum is meant to be well defined on, and to
-preserve, the `χ`-invariant functions. `HeckeSlash/Nebentypus/Ring.lean` names that subspace,
-`functionCharSpace`, and repeats the omission. This file supplies what both defer.
+preserve, the `χ`-invariant functions. `ModularForms/DiamondOperators.lean` names that subspace,
+`functionCharSpace`, and `HeckeSlash/Nebentypus/Ring.lean` repeats the omission for the `ℤ`-linear
+extension. This file supplies what both defer.
 
 ## Why the weights are exactly right
 

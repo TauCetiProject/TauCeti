@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Data.Nat.Prime.Int
 import TauCeti.Data.ZMod.Divisibility
+import TauCeti.Data.ZMod.Units
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 public import Mathlib.RingTheory.Radical.NatInt
 public import TauCeti.Algebra.GroupWithZero.Divisibility
@@ -126,9 +126,10 @@ The old subspace is spanned by the images of the `V_d`.
   `2baa76f742bdb4fb8ee323fabba41203bd390e08`. The source's `levelRaiseConjOfDvd` (:98) is this
   file's `conjScale`, so the statement is phrased with `conjScale` and TauCeti's `Gamma0` API
   rather than porting a second conjugation; the source's `shiftJ`/`shiftJ_spec` pair is not
-  ported at all, its Bézout step being TauCeti's existing `ZMod.exists_dvd_sub_val_mul`, and the
-  coprime shift (`exists_shift_isCoprime` and its prime-product supports) is proved here from
-  Mathlib's `ZMod.unitsMap_surjective` instead.
+  ported at all, its Bézout step being TauCeti's existing `ZMod.exists_dvd_sub_val_mul`. The
+  coprime shift `exists_shift_isCoprime` is `IsCoprime.exists_sub_mul_isCoprime` in
+  `TauCeti/Data/ZMod/Units.lean`, proved there from `ZMod.exists_isCoprime_mul_intCast_eq`, so its
+  prime-product supports are not ported.
 * The descent section adapts [AINTLIB](https://github.com/CBirkbeck/AINTLIB) commit
   `2baa76f74`, Apache-2.0, Chris Birkbeck,
   `projects/LeanModularForms/LeanModularForms/Eigenforms/ConductorTheorem.lean` lines 84-137 —
@@ -748,29 +749,6 @@ end Gamma1Conj
 
 section TFactor
 
-/-- **A coprime shift.** If `a` and `c` are coprime then some translate `a - i * c` is coprime to
-a prescribed nonzero modulus `l`: lift the unit `a` modulo `|c|` to a unit modulo `|c| * l`
-(`ZMod.unitsMap_surjective`) and subtract the matching multiple of `c`. -/
-private lemma exists_sub_mul_isCoprime (a c : ℤ) (l : ℕ) [NeZero l] (hac : IsCoprime a c) :
-    ∃ i : ℤ, IsCoprime (a - i * c) (l : ℤ) := by
-  rcases eq_or_ne c.natAbs 0 with hc | hc
-  · obtain ⟨u, rfl⟩ := isCoprime_zero_right.mp (Int.natAbs_eq_zero.mp hc ▸ hac)
-    exact ⟨0, by simpa using isCoprime_one_left.of_isCoprime_of_dvd_left u.isUnit.dvd⟩
-  have : NeZero (c.natAbs * l) := ⟨mul_ne_zero hc (NeZero.ne l)⟩
-  have hu : IsUnit (a : ZMod c.natAbs) := by
-    rw [ZMod.isUnit_intCast_iff_isCoprime, Int.natCast_natAbs, IsCoprime.abs_left_iff]
-    exact hac.symm
-  obtain ⟨v, hv⟩ := ZMod.unitsMap_surjective (Dvd.intro l rfl) hu.unit
-  have hval := congrArg Units.val hv
-  rw [ZMod.unitsMap_val, IsUnit.unit_spec, ZMod.cast_eq_val, ← Int.cast_natCast,
-    ZMod.intCast_eq_intCast_iff_dvd_sub, Int.natAbs_dvd] at hval
-  obtain ⟨i, hi⟩ := hval
-  refine ⟨i, ?_⟩
-  have hcop := Nat.isCoprime_iff_coprime.mpr (ZMod.val_coe_unit_coprime v)
-  push_cast at hcop
-  rw [show a - i * c = ((v : ZMod (c.natAbs * l)).val : ℤ) by linear_combination hi]
-  exact hcop.of_mul_right_right
-
 /-- Membership in `Γ₀(N)` from a factored lower-left entry: if `l ∣ N` and `γ 1 0 = l * c` with
 `N / l ∣ c`, then `γ ∈ Γ₀(N)`. -/
 private lemma mem_Gamma0_of_eq_mul_of_dvd {l N : ℕ} (hlN : l ∣ N) {γ : SL(2, ℤ)} {c : ℤ}
@@ -808,8 +786,8 @@ theorem exists_eq_T_zpow_mul_conjScale_mul_T_zpow (l N : ℕ) (hlN : l ∣ N) (�
   have hdet : γ' 0 0 * γ' 1 1 - γ' 0 1 * γ' 1 0 = 1 :=
     Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ'
   -- move the upper-left entry, along its own column, until it is coprime to `l`
-  obtain ⟨i, hi⟩ := exists_sub_mul_isCoprime (γ' 0 0) (γ' 1 0) l
-    ⟨γ' 1 1, -γ' 0 1, by linear_combination hdet⟩
+  obtain ⟨i, hi⟩ := IsCoprime.exists_sub_mul_isCoprime (a := γ' 0 0) (c := γ' 1 0)
+    ⟨γ' 1 1, -γ' 0 1, by linear_combination hdet⟩ l
   -- then clear the upper-right entry modulo `l`, which the previous step made possible
   have hunit : IsUnit ((γ' 0 0 - i * γ' 1 0 : ℤ) : ZMod l) :=
     (ZMod.isUnit_intCast_iff_isCoprime _ _).mpr (isCoprime_comm.mp hi)
@@ -1055,7 +1033,7 @@ theorem slash_mapGL_eq_smul_of_unitsMap_eq (l N : ℕ) [NeZero l] (hlN : l ∣ N
     exists_eq_T_zpow_mul_conjScale_mul_T_zpow l N hlN (γ' : SL(2, ℤ)) γ'.property
   have hdet := det_pos_of_mem_slGL (MonoidHom.mem_range.mpr ⟨ModularGroup.T, rfl⟩)
   have hconj := slash_conjScale_eq_smul_of_slash_scaleGL (k := k) f γ hc
-    ((mem_functionCharSpace_iff k χ _).mp hnb ⟨γ, hγ⟩)
+    (slash_mapGL_eq_smul_of_mem_functionCharSpace hnb ⟨γ, hγ⟩)
   -- the lift and `u` have the same label after reduction, so they differ by a kernel element
   have hchar : (χ ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩) : ℂ) = (χ u : ℂ) := by
     have hlab : ZMod.unitsMap (Nat.div_dvd_of_dvd hlN) ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩) =

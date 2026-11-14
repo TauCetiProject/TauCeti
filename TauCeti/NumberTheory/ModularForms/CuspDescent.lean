@@ -37,8 +37,9 @@ pushforward to `scaleGL d` (`map_natDiagGL_d_one_eq_scaleGL`).
 * `TauCeti.isZeroAt_of_smul_slash_scaleGL_eq`: **vanishing at the cusps descends** — if the
   level-raise of `f` is a cusp form for any arithmetic subgroup, then `f` vanishes at every cusp of
   any arithmetic subgroup.
-* `TauCeti.nebentypus_slash_scaleGL_of_mem_cuspFormCharSpace`: the nebentypus relation of the
-  level-raise, read off `f ∣[k] diag(l, 1)` with the normalizing scalar cancelled.
+* `TauCeti.slash_scaleGL_mem_functionCharSpace_of_mem_cuspFormCharSpace`: the nebentypus relation
+  of the level-raise, read off `f ∣[k] diag(l, 1)` with the normalizing scalar cancelled, as
+  membership in `TauCeti.functionCharSpace`.
 * `TauCeti.cuspFormOfSmulSlashScaleGL`, `TauCeti.coe_cuspFormOfSmulSlashScaleGL`: **the descent
   bundle** — `f` as a cusp form of level `Γ₁(N / l)`, and its underlying function.
 
@@ -69,8 +70,9 @@ Of the second window's three declarations, one is likewise not reproduced:
   character-space hypothesis from the cusp form to its underlying modular form, because the
   source's transformation law is stated for a `ModularForm`. This repository's
   `slash_mapGL_eq_self_of_mem_Gamma1_div` asks instead for the nebentypus relation of the bare
-  function, so the bridge is not a coercion but a scalar cancellation, and it is
-  `nebentypus_slash_scaleGL_of_mem_cuspFormCharSpace` below.
+  function, membership in `functionCharSpace`, so the bridge is the coercion
+  `coe_mem_functionCharSpace_iff_mem_cuspFormCharSpace` followed by a scalar cancellation, and it
+  is `slash_scaleGL_mem_functionCharSpace_of_mem_cuspFormCharSpace` below.
 
 The source is phrased over its own `levelRaiseFun` and `levelRaiseMatrix`, neither of which exists
 here; the statements below use `scaleGL` and the hypothesis shape
@@ -166,19 +168,14 @@ the classical nebentypus relation for `χ` on the nose, that is, it lies in
 `TauCeti.functionCharSpace k χ`.
 
 This is the hypothesis `slash_mapGL_eq_self_of_mem_Gamma1_div` asks for. -/
-lemma nebentypus_slash_scaleGL_of_mem_cuspFormCharSpace {l N : ℕ} [NeZero l] {k : ℤ}
+lemma slash_scaleGL_mem_functionCharSpace_of_mem_cuspFormCharSpace {l N : ℕ} [NeZero l] {k : ℤ}
     {χ : (ZMod N)ˣ →* ℂˣ} {f : ℍ → ℂ} {g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
     (hgχ : g ∈ cuspFormCharSpace k χ) (hg : ⇑g = (l : ℂ) ^ (1 - k) • (f ∣[k] scaleGL l)) :
-    f ∣[k] scaleGL l ∈ functionCharSpace k χ := by
-  refine (mem_functionCharSpace_iff k χ _).mpr fun γ ↦ ?_
-  have h := (mem_cuspFormCharSpace_iff_nebentypus k χ g).mp hgχ γ
-  -- the normalizing scalar `l ^ (1 - k)` relating `g` to `f ∣[k] diag(l, 1)` passes through
-  -- the slash — `mapGL ℝ γ` has positive determinant — and then cancels, so the relation is
-  -- inherited unchanged: `smul_slash` moves the scalar out, `σ_mapGL_real_eq_refl` kills the
-  -- twist it leaves behind, and `smul_comm` lines the two scalars up for `smul_right_injective`
-  rw [hg, _root_.ModularForm.smul_slash, σ_mapGL_real_eq_refl,
-    ContinuousAlgEquiv.refl_apply, smul_comm] at h
-  exact smul_right_injective _ (zpow_ne_zero _ (Nat.cast_ne_zero.mpr (NeZero.ne l))) h
+    f ∣[k] scaleGL l ∈ functionCharSpace k χ :=
+  -- `functionCharSpace` is a `ℂ`-submodule, so the nonzero normalizing scalar `l ^ (1 - k)`
+  -- relating `g` to `f ∣[k] diag(l, 1)` cancels from the membership of `⇑g`
+  ((functionCharSpace k χ).smul_mem_iff (zpow_ne_zero _ (Nat.cast_ne_zero.mpr (NeZero.ne l)))).mp
+    (hg ▸ (coe_mem_functionCharSpace_iff_mem_cuspFormCharSpace k χ g).mpr hgχ)
 
 /-- **The conductor descent, bundled.** If the level-raise of `f` is a cusp form `g` of level `N`
 whose nebentypus `χ` is trivial on the kernel of `(ZMod N)ˣ → (ZMod (N / l))ˣ`, and if `f` is
@@ -196,7 +193,7 @@ noncomputable def cuspFormOfSmulSlashScaleGL (l N : ℕ) [NeZero l] [NeZero N] (
   slash_action_eq' _ hγ := by
     obtain ⟨δ, hδ, rfl⟩ := Subgroup.mem_map.mp hγ
     exact slash_mapGL_eq_self_of_mem_Gamma1_div l N hlN k χ hχ f
-      (nebentypus_slash_scaleGL_of_mem_cuspFormCharSpace hgχ hg) hT δ hδ
+      (slash_scaleGL_mem_functionCharSpace_of_mem_cuspFormCharSpace hgχ hg) hT δ hδ
   holo' := mdifferentiable_of_comp_scaleGL_smul (d := l) (f := f) <| by
     rw [← smul_slash_scaleGL_eq k f, ← hg]
     exact CuspFormClass.holo g
