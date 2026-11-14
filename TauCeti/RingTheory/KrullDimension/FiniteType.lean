@@ -224,7 +224,7 @@ theorem ringKrullDim_tensorProduct_field_of_finiteType (K A : Type*) [Field K] [
 
 variable (k) in
 /-- A finitely generated domain over a field `k` has Krull dimension its transcendence degree over
-`k`. The transcendence degree is finite by `Algebra.trdeg_lt_aleph0_of_finiteType`. -/
+`k`. The transcendence degree is finite by `trdeg_lt_aleph0_of_finiteType`. -/
 theorem ringKrullDim_eq_toNat_trdeg (A : Type*) [CommRing A] [IsDomain A] [Algebra k A]
     [Algebra.FiniteType k A] : ringKrullDim A = (Algebra.trdeg k A).toNat := by
   -- Noether normalization `k[X₁, …, Xₛ] → A` gives `dim A = s`, and the variables form a
