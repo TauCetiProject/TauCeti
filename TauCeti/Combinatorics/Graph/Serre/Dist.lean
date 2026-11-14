@@ -61,6 +61,10 @@ theorem exists_length_eq_dist {a b : Γ.V} (h : Nonempty (Γ.Path a b)) :
 theorem dist_of_isEmpty {a b : Γ.V} (h : IsEmpty (Γ.Path a b)) : Γ.dist a b = 0 := by
   rw [dist, Set.range_eq_empty_iff.mpr h, Nat.sInf_empty]
 
+/-- Vertices at nonzero distance are joined by a path. -/
+theorem nonempty_path_of_dist_ne_zero {a b : Γ.V} (h : Γ.dist a b ≠ 0) : Nonempty (Γ.Path a b) :=
+  not_isEmpty_iff.mp fun he => h (dist_of_isEmpty he)
+
 @[simp] theorem dist_self (a : Γ.V) : Γ.dist a a = 0 :=
   Nat.le_zero.mp (dist_le_length (Quiver.Path.nil : Γ.Path a a))
 
@@ -160,6 +164,26 @@ theorem dist_getElem_vertices {a b : Γ.V} {p : Γ.Path a b} (hp : p.length = Γ
   have h₁ := length_eq_dist_of_comp_left hp
   rw [hx, ← hy, ← length_eq_dist_of_comp_right h₁, Quiver.Path.length_comp,
     Nat.add_sub_cancel_left]
+
+/-- A shortest path traverses no dart twice. -/
+theorem Path.nodup_darts_of_length_eq_dist {a b : Γ.V} {p : Γ.Path a b}
+    (hp : p.length = Γ.dist a b) : (Path.darts Γ p).Nodup := by
+  induction p with
+  | nil => simp
+  | @cons c d p f ih =>
+    have hp' : (p.comp f.toPath).length = Γ.dist a d := by
+      rwa [Quiver.Path.comp_toPath_eq_cons]
+    rw [Path.darts_cons, List.nodup_append]
+    refine ⟨ih (length_eq_dist_of_comp_left hp'), List.nodup_singleton _, ?_⟩
+    -- A second occurrence of the last dart would reach its target by a shorter piece.
+    rintro g hg _ hf rfl
+    rw [List.mem_singleton] at hf
+    subst hf
+    obtain ⟨q, r, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p hg
+    have h₁ := dist_le_length (q.cons (Γ.dart f.1))
+    have h₂ : Γ.dist a (Γ.tgt f.1) = Γ.dist a d := by rw [f.2.2]
+    simp only [Quiver.Path.length_cons, Quiver.Path.length_comp] at hp h₁
+    lia
 
 /-- A graph morphism does not increase the distance between joined vertices. -/
 theorem Hom.dist_le {Δ : SerreGraph} (f : Γ.Hom Δ) {a b : Γ.V} (h : Nonempty (Γ.Path a b)) :
