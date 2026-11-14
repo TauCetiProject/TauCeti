@@ -10,7 +10,9 @@ public import TauCeti.GroupTheory.FreeGroup.CSA
 public import TauCeti.GroupTheory.FreeGroup.Discrimination
 public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
 public import TauCeti.GroupTheory.GroupAlgGeom.Domain
+public import TauCeti.GroupTheory.MalcevEquation
 import TauCeti.GroupTheory.FreeGroup.MaximalExponent
+import TauCeti.GroupTheory.FreeGroup.Vaught
 
 /-!
 # Residually free and fully residually free groups
@@ -29,7 +31,10 @@ coefficients in the sense of `TauCeti.GroupAlgGeom`. This makes both properties 
 universes and gives their inheritance by subgroups.
 
 Free groups are fully residually free, and residually free groups have unique roots, hence are
-torsion-free; in particular a nontrivial finite group is not residually free. Every nonidentity
+torsion-free; in particular a nontrivial finite group is not residually free. Residually free
+groups satisfy Vaught's condition: if `x ^ 2 * y ^ 2 * z ^ 2 = 1` and two of `x`, `y`, `z` did not
+commute, their commutator would survive in a free group where the equation holds, contradicting
+Lyndon's theorem there (`IsFreeGroup.isVaught`). Every nonidentity
 element of a residually free group is a positive power of an element that is not a proper power,
 because its root exponents are bounded by those of a nonidentity image in a free group. With unique
 roots, that root has the same centralizer as the element (`Subgroup.centralizer_pow_eq`), so an
@@ -38,6 +43,8 @@ Fully residually free groups are CSA, hence commutative transitive with abelian 
 nonidentity elements: one homomorphism to a free group can keep any two nonidentity elements
 nontrivial, and the CSA property is witnessed by pairs of elements. Consequently a nonabelian
 fully residually free group is a domain in the sense of algebraic geometry over groups.
+Every power `ℤ^ι` of the infinite cyclic group, in particular the free abelian group `ℤⁿ`, is
+discriminated by `ℤ` through integer linear forms, hence fully residually free.
 Residual freeness passes to arbitrary products, so `FreeGroup (Fin 2) × Multiplicative ℤ` is
 residually free; like every product of a nonabelian group and a nontrivial group it is not
 commutative transitive, hence not fully residually free. Thus the two notions differ. For the
@@ -64,6 +71,8 @@ every entry of a tuple and every commutator of consecutive entries nontrivial.
 * `TauCeti.LimitGroup.IsResiduallyFree.hasUniqueRoots`: residually free groups have unique roots.
 * `TauCeti.LimitGroup.IsResiduallyFree.isMulTorsionFree`: residually free groups are
   torsion-free.
+* `TauCeti.LimitGroup.IsResiduallyFree.isVaught`: residually free groups satisfy Vaught's
+  condition.
 * `TauCeti.LimitGroup.IsResiduallyFree.exists_maximalRoot`: in a residually free group every
   nonidentity element is `r ^ k` with `k ≠ 0`, `r` not a proper power, and `k` the greatest root
   exponent of the element.
@@ -77,6 +86,8 @@ every entry of a tuple and every commutator of consecutive entries nontrivial.
   groups are domains.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.isBP`: fully residually free groups have the big
   powers property.
+* `TauCeti.LimitGroup.isFullyResiduallyFree_multiplicative_pi_int`: every power `ℤ^ι` of `ℤ`, in
+  particular `ℤⁿ`, is fully residually free.
 * `TauCeti.LimitGroup.not_isFullyResiduallyFree_freeGroup_prod_int`: `F₂ × ℤ` is residually free
   but not fully residually free.
 * `TauCeti.LimitGroup.not_isFullyResiduallyFree_freeGroup_prod_freeGroup`: `F₂ × F₂` is
@@ -87,7 +98,8 @@ every entry of a tuple and every commutator of consecutive entries nontrivial.
 * C. Champetier, V. Guirardel, *Limit groups as limits of free groups*, Israel J. Math. 146
   (2005), §2.3 (Definition 2.5) and Proposition 3.1.
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
-  (2005), §2.6.
+  (2005), §2.6 and §3.1 (Lemma 2).
+* R. C. Lyndon, *The equation `a²b² = c²` in free groups*, Michigan Math. J. 6 (1959).
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
   and ideal theory*, J. Algebra 219 (1999), §2.1.
 -/
@@ -258,6 +270,23 @@ theorem IsResiduallyFree.isMulTorsionFree (h : IsResiduallyFree G) : IsMulTorsio
   have := h.hasUniqueRoots
   inferInstance
 
+/-- A residually free group satisfies Vaught's condition: `x ^ 2 * y ^ 2 * z ^ 2 = 1` forces `x`,
+`y` and `z` to commute pairwise. For a fully residually free group, apply it to
+`IsFullyResiduallyFree.isResiduallyFree`. -/
+theorem IsResiduallyFree.isVaught (h : IsResiduallyFree G) : IsVaught G := by
+  refine (isVaught_iff G).2 fun x y z hxyz => ?_
+  -- Two elements whose images commute in every free group commute: otherwise their commutator
+  -- would survive in some free group.
+  have key {a b : G} (hab : ∀ (ι : Type u) (φ : G →* FreeGroup ι), Commute (φ a) (φ b)) :
+      Commute a b := by
+    by_contra hne
+    obtain ⟨ι, φ, hφ⟩ := h ⁅a, b⁆ (mt commutatorElement_eq_one_iff_commute.1 hne)
+    simp [map_commutatorElement, commutatorElement_eq_one_iff_commute, hab ι φ] at hφ
+  -- The images of `x`, `y`, `z` in a free group commute pairwise by Lyndon's theorem.
+  have hφ (ι : Type u) (φ : G →* FreeGroup ι) :=
+    (isVaught_iff _).1 IsFreeGroup.isVaught (φ x) (φ y) (φ z) (by simpa using congrArg φ hxyz)
+  exact ⟨key fun ι φ => (hφ ι φ).1, key fun ι φ => (hφ ι φ).2.1, key fun ι φ => (hφ ι φ).2.2⟩
+
 /-- Every nonidentity element `u` of a residually free group is `r ^ k` for some `k ≠ 0` and some
 `r` that is not a proper power, with `k` the greatest exponent of a root of `u`: root exponents of
 `u` are bounded by the reduced-word length of a nonidentity image of `u` in a free group. -/
@@ -315,6 +344,19 @@ consecutive entries nontrivial. -/
 theorem IsFullyResiduallyFree.isBP (h : IsFullyResiduallyFree G) : IsBP G :=
   FreeGroup.isBP.of_forall_finset_exists_monoidHom (isFullyResiduallyFree_iff_fin_two.1 h)
 
+/-- The infinite cyclic group `ℤ` is fully residually free: it is the free group of rank one. -/
+theorem isFullyResiduallyFree_multiplicative_int : IsFullyResiduallyFree (Multiplicative ℤ) :=
+  (isFullyResiduallyFree_of_isFreeGroup (G := FreeGroup Unit)).of_injective
+    (f := FreeGroup.mulEquivIntOfUnique.symm.toMonoidHom)
+    FreeGroup.mulEquivIntOfUnique.symm.injective
+
+/-- Every power `ℤ^ι` of the infinite cyclic group, in particular the free abelian group `ℤⁿ` of
+rank `n`, is fully residually free. -/
+theorem isFullyResiduallyFree_multiplicative_pi_int (ι : Type*) :
+    IsFullyResiduallyFree (Multiplicative (ι → ℤ)) :=
+  isFullyResiduallyFree_multiplicative_int.of_isDiscriminatedBy
+    (isDiscriminatedBy_multiplicative_pi_int ι)
+
 /-- The product of a nonabelian group and a nontrivial group is not fully residually free, since
 it is not commutative transitive. -/
 theorem not_isFullyResiduallyFree_prod_of_nontrivial [Nontrivial H] (hG : ¬IsMulCommutative G) :
@@ -325,9 +367,7 @@ theorem not_isFullyResiduallyFree_prod_of_nontrivial [Nontrivial H] (hG : ¬IsMu
 theorem isResiduallyFree_freeGroup_prod_int :
     IsResiduallyFree (FreeGroup (Fin 2) × Multiplicative ℤ) :=
   isFullyResiduallyFree_of_isFreeGroup.isResiduallyFree.prod
-    ((isFullyResiduallyFree_of_isFreeGroup (G := FreeGroup Unit)).isResiduallyFree.of_injective
-      (f := FreeGroup.mulEquivIntOfUnique.symm.toMonoidHom)
-      FreeGroup.mulEquivIntOfUnique.symm.injective)
+    isFullyResiduallyFree_multiplicative_int.isResiduallyFree
 
 /-- `F₂ × ℤ` is not fully residually free, since it is not commutative transitive. Together with
 `isResiduallyFree_freeGroup_prod_int` this separates the two notions. -/
