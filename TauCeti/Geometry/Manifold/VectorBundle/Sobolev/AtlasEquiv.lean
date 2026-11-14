@@ -103,6 +103,16 @@ def TransfersTo : Prop :=
 
 variable {A A' μ p k}
 
+/-- Unfolding `TauCeti.SobolevSection.TransfersTo`, for establishing and using the transfer
+property outside this file. -/
+theorem transfersTo_iff : TransfersTo A A' μ p k ↔
+    ∀ (w : SobolevSection A μ p k) (s : ∀ x, V x),
+      (∀ i, A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s) →
+        ∃ w' : SobolevSection A' μ p k,
+          ∀ i', A'.sectionChartData.chartValueL μ p k i' w' =ᵐ[μ.restrict (A'.image i')]
+            A'.coord i' s :=
+  Iff.rfl
+
 theorem transfersTo_refl : TransfersTo A A μ p k :=
   fun w _ hs ↦ ⟨w, hs⟩
 
