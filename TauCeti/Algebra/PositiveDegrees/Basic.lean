@@ -24,7 +24,8 @@ graded objects can be defined by finite coefficient sums.
 
 This file proves sharpness and finiteness of the addition fibers, supplies Mathlib's
 `Finset.HasAntidiagonal` interface on the positive monoid, and constructs the standard
-example of the nonnegative orthant in a finite power of `ℤ`, graded by coordinate sum.
+examples of `ℕ`, the nonnegative integers, and the nonnegative orthant in a finite power
+of `ℤ`, graded by coordinate sum.
 
 Adapted from `Mei/Algebra/PositiveDegrees/Basic.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
@@ -197,6 +198,29 @@ theorem neg_mem_iff {n : G} (hn : n ∈ d.monoid) : -n ∈ d.monoid ↔ n = 0 :=
     simp
 
 end Group
+
+/-- The natural numbers with their canonical integer-valued degree. -/
+def naturals : PositiveDegrees ℕ where
+  monoid := ⊤
+  degree := Nat.castAddMonoidHom ℤ
+  degree_pos := by
+    intro n _ hne
+    simp only [Nat.coe_castAddMonoidHom]
+    omega
+  finite_le k := by
+    apply (Set.finite_Icc (a := (0 : ℤ)) (b := k)).of_injOn (f := fun n : ℕ => (n : ℤ))
+    · intro n hn
+      exact ⟨Int.natCast_nonneg n, hn.2⟩
+    · intro _ _ _ _ h
+      exact Nat.cast_inj.mp h
+
+/-- Every natural number belongs to the allowed monoid of `naturals`. -/
+@[simp]
+theorem mem_naturals_monoid {n : ℕ} : n ∈ naturals.monoid := trivial
+
+/-- The degree of a natural number in `naturals` is its integer cast. -/
+@[simp]
+theorem naturals_degree (n : ℕ) : naturals.degree n = n := (rfl)
 
 /-- The nonnegative integers with their identity degree. -/
 def nonnegIntegers : PositiveDegrees ℤ where

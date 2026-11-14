@@ -34,6 +34,15 @@ namespace TauCeti.AlgFiltration
 
 variable {A : Type*} [Ring A] (F : AlgFiltration A)
 
+/-- Elements congruent to one modulo a completion ideal remain so under multiplication. -/
+theorem mul_sub_one_mem_completionIdeal {n : ℕ} {u v : F.completion}
+    (hu : u - 1 ∈ F.completionIdeal n) (hv : v - 1 ∈ F.completionIdeal n) :
+    u * v - 1 ∈ F.completionIdeal n := by
+  have huv : u * v - 1 = u * (v - 1) + (u - 1) := by
+    rw [mul_sub, mul_one, sub_add_sub_cancel]
+  rw [huv]
+  exact add_mem ((F.completionIdeal n).mul_mem_left u hv) hu
+
 variable [Algebra ℚ A]
 
 /-- The completed exponential, defined by the finite exponential at every order. -/
@@ -140,6 +149,20 @@ theorem completedExp_add (x y : F.completionIdeal 1)
   intro k
   simpa using IsNilpotent.exp_add_of_commute (h.map (F.projection k))
     (F.isNilpotent_projection x.property k) (F.isNilpotent_projection y.property k)
+
+/-- Logarithms of commuting elements congruent to one take products to sums. -/
+theorem completedLog_mul (u v : {u : F.completion // u - 1 ∈ F.completionIdeal 1})
+    (h : Commute (u : F.completion) v) :
+    F.completedLog ⟨(u : F.completion) * v,
+      F.mul_sub_one_mem_completionIdeal u.property v.property⟩ =
+      F.completedLog u + F.completedLog v := by
+  apply F.completion_ext
+  intro k
+  have hu : IsNilpotent (F.projection k u - 1) := by
+    simpa only [map_sub, map_one] using F.isNilpotent_projection u.property k
+  have hv : IsNilpotent (F.projection k v - 1) := by
+    simpa only [map_sub, map_one] using F.isNilpotent_projection v.property k
+  simpa using IsNilpotent.log_mul_of_commute (h.map (F.projection k)) hu hv
 
 /-- Negating the exponential argument gives a right multiplicative inverse. -/
 @[simp]

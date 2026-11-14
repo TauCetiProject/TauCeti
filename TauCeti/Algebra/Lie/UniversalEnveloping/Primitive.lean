@@ -101,6 +101,11 @@ algebra. -/
 @[simp]
 theorem coe_primitiveEquiv_apply (x : L) : (primitiveEquiv R L x : U) = ι x := (rfl)
 
+/-- Over a commutative rational algebra `R : Type`, the canonical map `ι : L → U(L)` is injective
+without a freeness or flatness hypothesis. -/
+theorem ι_injective_of_algebra_rat : Function.Injective (ι : L → U) := fun _ _ h =>
+  (primitiveEquiv R L).injective <| Subtype.ext h
+
 /-- Recovering a Lie element from its primitive image returns that element. -/
 theorem primitiveEquiv_symm_ι (x : L) (h : Bialgebra.IsPrimitiveElem R (ι x)) :
     (primitiveEquiv R L).symm ⟨ι x, h⟩ = x := by

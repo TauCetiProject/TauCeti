@@ -224,6 +224,30 @@ theorem completionComponent_completionLieEquivPi_symm (x : ∀ n, ℒ n) (n : N)
       ((d.completionLieEquivPi ℒ).symm x) = x n :=
   d.completionComponent_completionEquivPi_symm ℒ Js hs _ _ x n
 
+/-- At cutoff `k`, the inverse Lie comparison projects to the finite sum of homogeneous
+coefficients in the cutoff. -/
+@[simp]
+theorem completionProjection_completionLieEquivPi_symm (x : ∀ n, ℒ n) (k : ℕ) :
+    letI := d.lieRingPi ℒ
+    letI := d.lieAlgebraPi ℒ
+    LieIdeal.completionProjection (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ) k
+        ((d.completionLieEquivPi ℒ).symm x) =
+      (d.degreeIdeal ℒ k).mkQ (∑ n ∈ (d.finite_cutoff k).toFinset, (x n : L)) :=
+  LieIdeal.completionProjection_of_representative (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ)
+    k _ _ (d.projection_completionEquivPi_symm ℒ Js hs
+      (fun k => d.degreeIdeal_toSubmodule ℒ k)
+      (fun n hn => IsPositiveGrading.eq_bot n (Or.inl hn)) x k).symm
+
+/-- Every finite Lie projection is the class of the sum of completed components in its cutoff. -/
+theorem completionProjection_eq_mkQ_sum (x : d.completedLie ℒ) (k : ℕ) :
+    LieIdeal.completionProjection (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ) k x =
+      (d.degreeIdeal ℒ k).mkQ
+        (∑ n ∈ (d.finite_cutoff k).toFinset, (d.completionLieEquivPi ℒ x n : L)) := by
+  let _ := d.lieRingPi ℒ
+  let _ := d.lieAlgebraPi ℒ
+  simpa only [LieEquiv.symm_apply_apply] using
+    d.completionProjection_completionLieEquivPi_symm ℒ (d.completionLieEquivPi ℒ x) k
+
 /-- The completed Lie bracket has the finite convolution formula on homogeneous
 coefficients, expressed directly on the compatible-family completion. -/
 theorem completionComponent_lie (x y : d.completedLie ℒ) (n : N) :
