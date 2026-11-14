@@ -140,42 +140,6 @@ theorem bipartiteNetwork_lower (b : V(G) → ℕ) {x y : V(G) ⊕ Bool}
     (bipartiteNetwork G L R b).lower e = 0 :=
   rfl
 
-section Excess
-
-variable [Fintype V(G)] [Fintype E(G)]
-
-/-- An edge assignment, oriented from left to right, has excess minus its incident sum on the
-left side. -/
-theorem IsBipartition.excessAt_bipartiteHom_left (hLR : G.IsBipartition L R)
-    {K : Type*} [AddCommGroup K] (x : E(G) → K) {a : V(G)} (ha : a ∈ L) :
-    excessAt (fun {v w} (e : G.BipartiteHom L v w) ↦ x e.edge) a =
-      -(∑ e ∈ G.incidentEdges {a}, x e) := by
-  rw [excessAt_def, BipartiteHom.sum_outgoing_eq_sum_incidentEdges a ha]
-  have hin : ∑ y, ∑ e : G.BipartiteHom L y a, x e.edge = 0 := by
-    apply sum_eq_zero
-    intro y _
-    apply sum_eq_zero
-    intro e _
-    exact (disjoint_left.1 hLR.disjoint ha (e.target_mem hLR)).elim
-  rw [hin, zero_sub]
-
-/-- An edge assignment, oriented from left to right, has excess its incident sum on the right
-side. -/
-theorem IsBipartition.excessAt_bipartiteHom_right (hLR : G.IsBipartition L R)
-    {K : Type*} [AddCommGroup K] (x : E(G) → K) {a : V(G)} (ha : a ∈ R) :
-    excessAt (fun {v w} (e : G.BipartiteHom L v w) ↦ x e.edge) a =
-      ∑ e ∈ G.incidentEdges {a}, x e := by
-  rw [excessAt_def, BipartiteHom.sum_incoming_eq_sum_incidentEdges hLR a ha]
-  have hout : ∑ y, ∑ e : G.BipartiteHom L a y, x e.edge = 0 := by
-    apply sum_eq_zero
-    intro y _
-    apply sum_eq_zero
-    intro e _
-    exact (disjoint_left.1 hLR.disjoint e.source_mem ha).elim
-  rw [hout, sub_zero]
-
-end Excess
-
 /-! ### Matchings as integral flows -/
 
 /-- The auxiliary-network assignment associated to edge multiplicities `x`. An original arrow

@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.Combinatorics.Graph.Incidence.Basic
 public import TauCeti.Combinatorics.Graph.VertexCover.Basic
+public import TauCeti.Combinatorics.Network.Excess
 
 /-!
 # Bipartitions of multigraphs
@@ -45,6 +46,9 @@ usage of either side by edge multiplicities equals their sum.
 * `Graph.BipartiteHom.sum_outgoing_eq_sum_incidentEdges` and
   `Graph.BipartiteHom.sum_incoming_eq_sum_incidentEdges`: sums over arrows at a vertex agree with
   sums over its incident edges.
+* `Graph.IsBipartition.excessAt_bipartiteHom_left` and
+  `Graph.IsBipartition.excessAt_bipartiteHom_right`: the excess of an oriented edge assignment is
+  minus its incident sum on the left side and its incident sum on the right side.
 -/
 
 public section
@@ -334,6 +338,44 @@ theorem sum_incoming_eq_sum_incidentEdges [Fintype V(G)] [Fintype E(G)]
   exact (Finset.sum_subtype (G.incidentEdges {x}) (by simp [mem_incidentEdges]) f).symm
 
 end BipartiteHom
+
+section Excess
+
+open TauCeti
+
+variable [Fintype V(G)] [Fintype E(G)]
+
+/-- An edge assignment, oriented from left to right, has excess minus its incident sum on the
+left side. -/
+theorem IsBipartition.excessAt_bipartiteHom_left (hLR : G.IsBipartition L R)
+    {K : Type*} [AddCommGroup K] (x : E(G) → K) {a : V(G)} (ha : a ∈ L) :
+    excessAt (fun {v w} (e : G.BipartiteHom L v w) ↦ x e.edge) a =
+      -(∑ e ∈ G.incidentEdges {a}, x e) := by
+  rw [excessAt_def, BipartiteHom.sum_outgoing_eq_sum_incidentEdges a ha]
+  have hin : ∑ y, ∑ e : G.BipartiteHom L y a, x e.edge = 0 := by
+    apply sum_eq_zero
+    intro y _
+    apply sum_eq_zero
+    intro e _
+    exact (disjoint_left.1 hLR.disjoint ha (e.target_mem hLR)).elim
+  rw [hin, zero_sub]
+
+/-- An edge assignment, oriented from left to right, has excess its incident sum on the right
+side. -/
+theorem IsBipartition.excessAt_bipartiteHom_right (hLR : G.IsBipartition L R)
+    {K : Type*} [AddCommGroup K] (x : E(G) → K) {a : V(G)} (ha : a ∈ R) :
+    excessAt (fun {v w} (e : G.BipartiteHom L v w) ↦ x e.edge) a =
+      ∑ e ∈ G.incidentEdges {a}, x e := by
+  rw [excessAt_def, BipartiteHom.sum_incoming_eq_sum_incidentEdges hLR a ha]
+  have hout : ∑ y, ∑ e : G.BipartiteHom L a y, x e.edge = 0 := by
+    apply sum_eq_zero
+    intro y _
+    apply sum_eq_zero
+    intro e _
+    exact (disjoint_left.1 hLR.disjoint e.source_mem ha).elim
+  rw [hout, sub_zero]
+
+end Excess
 
 end Graph
 
