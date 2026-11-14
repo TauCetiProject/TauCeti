@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 
 /-!

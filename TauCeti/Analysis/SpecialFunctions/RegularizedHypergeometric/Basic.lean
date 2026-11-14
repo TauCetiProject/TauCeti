@@ -11,12 +11,13 @@ public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
-# The regularized hypergeometric function `₀F₁`
+# Regularized hypergeometric series and the function `₀F₁`
 
 Mathlib defines the regularized hypergeometric function `Complex.regularizedHGFun a b` as the sum
-of its power series. This file records that series as a `HasSum` statement and develops the
-function `₀F₁(; b; z) = ∑ zⁿ / (n! Γ(b + n))`, the case `a = 0`, `b = {b}`, which underlies the
-Bessel functions.
+of its power series. This file records that series as a `HasSum` statement, proves that
+differentiation shifts all parameters by one and multiplies by the product of the upper parameters
+when `a.card ≤ b.card`, and develops the function `₀F₁(; b; z) = ∑ zⁿ / (n! Γ(b + n))`, the case
+`a = 0`, `b = {b}`, which underlies the Bessel functions.
 
 For every complex `b`, Mathlib provides the contiguous relation
 `₀F₁(; b; z) = b ₀F₁(; b + 1; z) + z ₀F₁(; b + 2; z)`.
@@ -30,6 +31,8 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
   everywhere when `a.card ≤ b.card`, absolutely by `Complex.summable_norm_regularizedHGFun`.
 * `Complex.hasSum_deriv_regularizedHGFun` — the termwise differentiated series converges to the
   derivative.
+* `Complex.hasDerivAt_regularizedHGFun` and `Complex.deriv_regularizedHGFun` — differentiation
+  shifts all parameters by one and multiplies by the product of the upper parameters.
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
 * `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F₁` at real
@@ -102,6 +105,44 @@ theorem hasSum_deriv_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.car
     rw [norm_mul, norm_mul, norm_pow, norm_pow, Complex.norm_real,
       Real.norm_of_nonneg (by positivity)]
     gcongr
+
+/-- Shifting all parameters by one and multiplying by the product of the upper parameters
+`a.prod` gives the coefficients of the derivative series, without any exclusion on the lower
+parameters. -/
+theorem mul_regularizedHGFunCoeff_add_one (a b : Multiset ℂ) (n : ℕ) :
+    (n + 1 : ℂ) * regularizedHGFunCoeff a b (n + 1) =
+      a.prod * regularizedHGFunCoeff (a.map (· + 1)) (b.map (· + 1)) n := by
+  simp only [regularizedHGFunCoeff, Multiset.map_map, Function.comp_def,
+    ascPochhammer_succ_left, Polynomial.eval_mul, Polynomial.eval_X,
+    Polynomial.eval_comp, Polynomial.eval_add, Polynomial.eval_one,
+    Multiset.prod_map_mul, Multiset.map_id', Nat.factorial_succ, Nat.cast_mul,
+    Nat.cast_add, Nat.cast_one]
+  have hb : (fun x : ℂ => Gamma (x + (n + 1 : ℂ))) =
+      (fun x : ℂ => Gamma (x + 1 + n)) := by
+    funext x
+    congr 1
+    ring
+  rw [hb]
+  field_simp
+
+/-- When there are at most as many upper as lower parameters, differentiation shifts all
+parameters by one and multiplies by the product of the upper parameters. -/
+theorem hasDerivAt_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z : ℂ) :
+    HasDerivAt (regularizedHGFun a b)
+      (a.prod * regularizedHGFun (a.map (· + 1)) (b.map (· + 1)) z) z := by
+  have hshift : (a.map (· + 1)).card ≤ (b.map (· + 1)).card := by simpa using h
+  have hd := (hasSum_deriv_regularizedHGFun h z).unique
+    (((hasSum_regularizedHGFun hshift z).mul_left a.prod).congr_fun fun n => by
+      rw [mul_regularizedHGFunCoeff_add_one, mul_assoc])
+  rw [← hd]
+  exact (analyticAt_regularizedHGFun_of_card_le h z).differentiableAt.hasDerivAt
+
+/-- The derivative of the entire regularized hypergeometric function, as a function. -/
+@[simp]
+theorem deriv_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) :
+    deriv (regularizedHGFun a b) =
+      fun z => a.prod * regularizedHGFun (a.map (· + 1)) (b.map (· + 1)) z :=
+  funext fun z => (hasDerivAt_regularizedHGFun h z).deriv
 
 /-- The coefficients of the Kummer function `𝐌(1, b, z) = ₁F₁(1; b; z) / Γ(b)` are
 `1 / Γ(b + n)`. -/

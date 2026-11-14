@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
-public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
 /-!
 # Tricomi's entire incomplete Gamma function
