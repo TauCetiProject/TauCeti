@@ -293,6 +293,24 @@ theorem continuous_iff {Y : Type v} [TopologicalSpace Y] {f : DoubleAlong A → 
     cases x <;> rfl
   rw [hcomp, continuous_sumElim]
 
+/-- Continuity on an open subset of the double can be checked on its two sheets, for an arbitrary
+target space. -/
+theorem continuousOn_iff_of_isOpen {Y : Type v} [TopologicalSpace Y] {f : DoubleAlong A → Y}
+    {s : Set (DoubleAlong A)} (hs : IsOpen s) :
+    ContinuousOn f s ↔
+      ContinuousOn (f ∘ inl A) (inl A ⁻¹' s) ∧ ContinuousOn (f ∘ inr A) (inr A ⁻¹' s) := by
+  rw [(isQuotientMap_quotientMap A).continuousOn_isOpen_iff hs,
+    (hs.preimage (quotientMap A).continuous).continuousOn_iff,
+    (hs.preimage (inl A).continuous).continuousOn_iff,
+    (hs.preimage (inr A).continuous).continuousOn_iff, Sum.forall]
+  -- on each summand, `f ∘ quotientMap A` is `f ∘ inl A`, respectively `f ∘ inr A`
+  have hl : (f ∘ quotientMap A) ∘ Sum.inl = f ∘ inl A := by
+    rw [Function.comp_assoc, coe_quotientMap, Sum.elim_comp_inl]
+  have hr : (f ∘ quotientMap A) ∘ Sum.inr = f ∘ inr A := by
+    rw [Function.comp_assoc, coe_quotientMap, Sum.elim_comp_inr]
+  simp only [mem_preimage, quotientMap_inl, quotientMap_inr,
+    ← IsOpenEmbedding.inl.continuousAt_iff, ← IsOpenEmbedding.inr.continuousAt_iff, hl, hr]
+
 /-- Fibres of the canonical sum quotient have at most two points, without a closedness premise. -/
 theorem finite_fiber_quotientMap (z : DoubleAlong A) :
     (quotientMap A ⁻¹' {z}).Finite := by

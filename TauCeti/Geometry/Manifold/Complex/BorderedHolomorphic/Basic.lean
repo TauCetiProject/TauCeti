@@ -50,7 +50,8 @@ the points of imaginary part less than one.
   together with complex differentiability of the map and of its inverse in the interior.
 * `TauCeti.borderedHolomorphicGroupoid_le_contDiffGroupoid`: members are smooth, so a charted
   space with this groupoid is a smooth manifold
-  (`TauCeti.isManifold_of_hasGroupoid_borderedHolomorphicGroupoid`).
+  (`TauCeti.isManifold_of_hasGroupoid_borderedHolomorphicGroupoid`), whose maximal atlas contains
+  the bordered holomorphic charts (`TauCeti.maximalAtlas_borderedHolomorphicGroupoid_subset`).
 * `TauCeti.ofSet_mem_borderedHolomorphicGroupoid` and
   `TauCeti.closedUnderRestriction_borderedHolomorphicGroupoid`: the groupoid contains the
   restrictions of the identity to open sets, so it is closed under restriction and open subsets
@@ -190,6 +191,15 @@ instance isManifold_of_hasGroupoid_borderedHolomorphicGroupoid (M : Type*) [Topo
   haveI := hasGroupoid_of_le ‹HasGroupoid M borderedHolomorphicGroupoid›
     borderedHolomorphicGroupoid_le_contDiffGroupoid
   IsManifold.mk' _ _ _
+
+/-- The bordered holomorphic charts of a charted space modelled on the closed upper half-plane are
+charts of its underlying `C^n` manifold, for every `n ≤ ∞`. -/
+theorem maximalAtlas_borderedHolomorphicGroupoid_subset {M : Type*} [TopologicalSpace M]
+    [ChartedSpace ClosedUpperHalfPlane M] {n : ℕ∞ω} (hn : n ≤ ∞) :
+    borderedHolomorphicGroupoid.maximalAtlas M ⊆
+      IsManifold.maximalAtlas closedUpperHalfPlaneModel n M :=
+  StructureGroupoid.maximalAtlas_mono
+    (borderedHolomorphicGroupoid_le_contDiffGroupoid.trans (contDiffGroupoid_le hn))
 
 /-- The restriction of the identity to an open set is a bordered holomorphic chart change. -/
 theorem ofSet_mem_borderedHolomorphicGroupoid {s : Set ClosedUpperHalfPlane} (hs : IsOpen s) :
