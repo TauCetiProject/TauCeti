@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Equicontinuity
 public import TauCeti.Analysis.Complex.Wirtinger.SecondDerivative
-public import TauCeti.Geometry.Symplectic.Floer.Compactness
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
 import TauCeti.Topology.UniformSpace.Ascoli
