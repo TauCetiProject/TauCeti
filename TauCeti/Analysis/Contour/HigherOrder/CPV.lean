@@ -160,7 +160,7 @@ theorem IsPwC1ImmersionOn.hasCauchyPVAt_pow_inv {γ : ℝ → ℂ} {a b : ℝ} {
     exists_common_window_radius_le h_Ioo (fun _ => 1) fun _ _ => one_pos
   exact hasCauchyPVAt_of_perWindow_boundary_tendsto_of_interiorDisjoint
     (Φ := fun z => c * (-(↑(k - 1) : ℂ)⁻¹ * ((z - s) ^ (k - 1))⁻¹))
-    hab.le T (fun _ => hρ_pos.le)
+    hab.le T
     (fun t ht => by linarith [(h_endpts t ht).1])
     (fun t ht => by linarith [(h_endpts t ht).2])
     (fun t ht t' ht' hne => (h_pair t ht t' ht' hne).le)

@@ -7,12 +7,17 @@ module
 
 public import Mathlib.Data.Finsupp.Basic
 public import Mathlib.Data.Finsupp.Lex
+import Mathlib.LinearAlgebra.Finsupp.Supported
 
 /-!
 # Injective relabeling as extension by zero
 
 For an injective index map, pushing forward a finitely supported function is ordinary
-function extension by zero, over any additive commutative monoid.
+function extension by zero, over any additive commutative monoid. For an arbitrary index map `f`,
+the range of `Finsupp.mapDomain f` consists of the finitely supported functions vanishing outside
+the range of `f` (`Finsupp.mem_range_mapDomain_iff'`). Restricting to a predicate commutes with
+pushing forward along `f` when the predicate on the source is the pullback along `f` of a
+predicate on the target (`Finsupp.mapDomain_subtypeDomain`).
 
 Pushing forward along a strictly monotone map of linearly ordered indices preserves and reflects
 the strict and non-strict lexicographic orders, since the relabeled functions vanish off the image
@@ -35,6 +40,17 @@ theorem coe_mapDomain_eq_extend {α β M : Type*} [AddCommMonoid M]
     simp [he]
   · simp [mapDomain_of_notMem_range _ _ hj, Function.extend_apply' _ _ _ hj]
 
+/-- **The range of `Finsupp.mapDomain f` for an arbitrary index map `f`** consists of the finitely
+supported functions vanishing outside the range of `f`. Mathlib's `Finsupp.mem_range_mapDomain_iff`
+is the case of an injective `f`; this one needs no injectivity. -/
+theorem mem_range_mapDomain_iff' {α β M : Type*} [AddCommMonoid M] (f : α → β) (x : β →₀ M) :
+    x ∈ Set.range (mapDomain f) ↔ ∀ b ∉ Set.range f, x b = 0 := by
+  have h : LinearMap.range (lmapDomain M ℕ f) = supported M ℕ (Set.range f) := by
+    simpa only [supported_univ, Submodule.map_top, Set.image_univ] using
+      lmapDomain_supported M ℕ f Set.univ
+  simpa only [LinearMap.mem_range, lmapDomain_apply, mem_supported', Set.mem_range] using
+    SetLike.ext_iff.1 h x
+
 /-- A finitely supported function supported on a set `s` is the push-forward along the inclusion
 of its restriction to `s`. -/
 theorem mapDomain_subtypeDomain_subtype {α M : Type*} [AddCommMonoid M] {s : Set α} {f : α →₀ M}
@@ -42,6 +58,29 @@ theorem mapDomain_subtypeDomain_subtype {α M : Type*} [AddCommMonoid M] {s : Se
   classical
   have h := extendDomain_subtypeDomain f (P := (· ∈ s)) fun _ ha ↦ hf ha
   rwa [extendDomain_eq_embDomain_subtype, embDomain_eq_mapDomain] at h
+
+/-- If the predicate `p` on the source is the pullback along `f` of the predicate `q` on the
+target, restricting to `p` and then pushing forward along `f` is pushing forward along `f` and
+then restricting to `q`. -/
+theorem mapDomain_subtypeDomain {α β M : Type*} [AddCommMonoid M] {p : α → Prop} {q : β → Prop}
+    {f : α → β} (hf : ∀ a, q (f a) ↔ p a) (c : α →₀ M) :
+    mapDomain (Subtype.map f fun a ↦ (hf a).2) (c.subtypeDomain p) =
+      (mapDomain f c).subtypeDomain q := by
+  classical
+  induction c using induction_linear with
+  | zero => simp
+  | add c d hc hd => simp [mapDomain_add, hc, hd]
+  | single a m =>
+    ext ⟨b, hb⟩
+    by_cases ha : p a
+    · have h : (single a m).subtypeDomain p = single ⟨a, ha⟩ m := by
+        ext
+        simp [single_apply, Subtype.ext_iff]
+      simp [h, single_apply, Subtype.ext_iff, Subtype.map]
+    · have h : (single a m).subtypeDomain p = 0 := by
+        ext ⟨x, hx⟩
+        simp [show a ≠ x by rintro rfl; exact ha hx]
+      simp [h, show f a ≠ b by rintro rfl; exact ha ((hf a).1 hb)]
 
 /-- Pushing forward along a strictly monotone map of indices preserves and reflects the strict
 lexicographic order: the first position at which two relabeled functions differ is the image of

@@ -58,6 +58,9 @@ at `0` while releasing the first.
   connected.
 * `Cube.boundary_option_iff`, `Cube.boundary_fin_succ_iff`: the boundaries of `I^(Option N)`
   and `I^(Fin (n + 1))`.
+* `Cube.append_mem_boundary_iff`, `Cube.preimage_appendHomeomorph_boundary`: the boundary of
+  `I^(Fin (m + n))` is `∂Iᵐ × Iⁿ ∪ Iᵐ × ∂Iⁿ`.
+* `Cube.dense_boundary`: for an infinite index set the boundary of `I^N` is dense.
 * `Cube.boundary_eq_empty`: the boundary of the cube over an empty index type is empty.
 * `Cube.update_mem_boundary`: changing an endpoint coordinate of a boundary point to an endpoint
   value stays on the boundary.
@@ -141,6 +144,47 @@ theorem Cube.boundary_fin_one_iff {y : I^(Fin 1)} :
     y ∈ Cube.boundary (Fin 1) ↔ y 0 = 0 ∨ y 0 = 1 := by
   rw [Cube.boundary_fin_succ_iff]
   simp
+
+open scoped Topology unitInterval in
+/-- A point `Fin.append x y` of the cube `I^(Fin (m + n))` lies on its boundary exactly when `x`
+lies on the boundary of `I^(Fin m)` or `y` lies on the boundary of `I^(Fin n)`. This is the
+`Fin`-indexed form of Mathlib's `Cube.boundary_sum_iff`. -/
+theorem Cube.append_mem_boundary_iff {m n : ℕ} {x : I^(Fin m)} {y : I^(Fin n)} :
+    Fin.append x y ∈ Cube.boundary (Fin (m + n)) ↔
+      x ∈ Cube.boundary (Fin m) ∨ y ∈ Cube.boundary (Fin n) := by
+  constructor
+  · rintro ⟨j, hj⟩
+    induction j using Fin.addCases with
+    | left i => exact Or.inl ⟨i, by simpa using hj⟩
+    | right i => exact Or.inr ⟨i, by simpa using hj⟩
+  · rintro (⟨i, hi⟩ | ⟨i, hi⟩)
+    · exact ⟨Fin.castAdd n i, by simpa using hi⟩
+    · exact ⟨Fin.natAdd m i, by simpa using hi⟩
+
+open scoped Topology unitInterval in
+/-- **The boundary of a product of cubes**: under the homeomorphism
+`Fin.appendHomeomorph : I^(Fin m) × I^(Fin n) ≃ₜ I^(Fin (m + n))`, the boundary of `I^(Fin (m + n))`
+is `∂Iᵐ × Iⁿ ∪ Iᵐ × ∂Iⁿ`. -/
+theorem Cube.preimage_appendHomeomorph_boundary (m n : ℕ) :
+    Fin.appendHomeomorph (X := I) m n ⁻¹' Cube.boundary (Fin (m + n)) =
+      Cube.boundary (Fin m) ×ˢ Set.univ ∪ Set.univ ×ˢ Cube.boundary (Fin n) := by
+  ext ⟨x, y⟩
+  simp only [Set.mem_preimage, Set.mem_union, Set.mem_prod, Set.mem_univ, and_true, true_and]
+  exact Cube.append_mem_boundary_iff
+
+open scoped Topology unitInterval in
+/-- **The boundary of a cube indexed by an infinite set is dense.** -/
+theorem Cube.dense_boundary (N : Type*) [Infinite N] : Dense (Cube.boundary N) := fun y ↦ by
+  -- A basic open set constrains only finitely many coordinates, so it meets the boundary through
+  -- a free coordinate set to `0`.
+  rw [mem_closure_iff]
+  intro U hU hyU
+  obtain ⟨s, u, hu, hsU⟩ := isOpen_pi_iff.1 hU y hyU
+  classical
+  obtain ⟨i, hi⟩ := Infinite.exists_notMem_finset s
+  refine ⟨Function.update y i 0, hsU fun a ha ↦ ?_, i, Or.inl (by simp)⟩
+  rw [Function.update_of_ne (by rintro rfl; exact hi (Finset.mem_coe.1 ha))]
+  exact (hu a ha).2
 
 namespace TauCeti
 
