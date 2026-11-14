@@ -105,7 +105,7 @@ private noncomputable def taylorPolynomial (a : A) : A[X] :=
 private theorem coeff_taylorPolynomial (a : A) (n : ℕ) :
     (taylorPolynomial D hD a).coeff n = (n ! : ℚ)⁻¹ • D^[n] a := by
   classical
-  simp only [taylorPolynomial, finsetSum_coeff, coeff_monomial]
+  simp only [taylorPolynomial, finsetSum_coeff, coeff_monomial_apply]
   rw [sum_ite_eq']
   split_ifs with h
   · rfl

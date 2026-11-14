@@ -397,12 +397,12 @@ theorem pullback_cayleyPath {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSp
 /-! ### Smoothness from weighted sums of Cayley coordinates -/
 
 /-- A tame structure on a tangent space whose Cayley coordinate at `J₀` is a weighted sum of the
-Cayley coordinates of smooth tame structures is the inverse Cayley expression of the weighted sum
+Cayley coordinates of smooth structures is the inverse Cayley expression of the weighted sum
 of their Cayley formulas, as continuous endomorphisms. -/
 private theorem toContinuousLinearMap_eq_of_cayley_eq_sum {ι : Type*} [Fintype ι] (x : M)
     {K : AlmostComplexStructure (TangentSpace I x)}
     (hK : (h₀.isNondegenerate.symplecticFormAt x).Tames K)
-    {L : ι → SmoothAlmostComplexStructure I M} (hL : ∀ i, σ.Tames (L i)) {a : ι → ℝ}
+    {L : ι → SmoothAlmostComplexStructure I M} {a : ι → ℝ}
     (hKL : (J₀.almostComplexStructureAt x).cayley K =
       ∑ i, a i • (J₀.almostComplexStructureAt x).cayley ((L i).almostComplexStructureAt x)) :
     LinearMap.toContinuousLinearMap K.toLinearMap =
@@ -419,8 +419,8 @@ private theorem toContinuousLinearMap_eq_of_cayley_eq_sum {ι : Type*} [Fintype 
     rw [hKL, map_sum]
     refine Finset.sum_congr rfl fun i _ => ?_
     rw [map_smul]
-    exact congrArg (a i • ·) ((h₀.compatibleAt x).tames.toContinuousLinearMap_cayley
-      (h₀.isNondegenerate.tames_iff.mp (hL i) x)
+    exact congrArg (a i • ·) ((J₀.almostComplexStructureAt x).toContinuousLinearMap_cayley
+      ((L i).almostComplexStructureAt x)
       (J₀.almostComplexStructureAt_toLinearMap x).symm
       ((L i).almostComplexStructureAt_toLinearMap x).symm)
   have hc : (LinearMap.toContinuousLinearMap
@@ -499,8 +499,7 @@ theorem contMDiffAt_of_cayley_eq_sum {ι : Type*} [Fintype ι]
       coord (b y) (∑ i, a i y •
         cayleyFormula (J₀.toEndomorphism (b y)) ((L i y).toEndomorphism (b y))) = C y := by
     simp only [hconj hy, map_sum, map_smul, map_cayleyFormula, C, A, B]
-  have hfib (y : N) := toContinuousLinearMap_eq_of_cayley_eq_sum h₀ (b y) (hK y)
-    (fun i => hL i y) (hKL y)
+  have hfib (y : N) := toContinuousLinearMap_eq_of_cayley_eq_sum h₀ (b y) (hK y) (hKL y)
   have hCu : IsUnit (1 - C y₀) := by
     rw [← hcoordC hx₀, hconj hx₀, ← map_one φ₀, ← map_sub]
     exact (hfib y₀).2.map φ₀

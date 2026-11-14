@@ -50,8 +50,7 @@ particular linear for the right action of `A`, hence is multiplication on the le
 * `TauCeti.exists_unit_conj_of_algEquiv`: every `K`-algebra automorphism of a finite-dimensional
   central simple `K`-algebra is inner.
 * `TauCeti.exists_unit_conj_subalgebra_val`: a `K`-algebra homomorphism out of a central simple
-  subalgebra `B ⊆ A` is conjugate to the inclusion of `B`. This is the form the centralizer theorem
-  consumes.
+  subalgebra `B ⊆ A` is conjugate to the inclusion of `B`.
 
 ## Implementation notes
 
@@ -68,9 +67,7 @@ injective and `A` is finite-dimensional.
 Centrality of the source really is needed, and not just by this proof: the worked example at the end
 of the file exhibits `ℂ` as a simple finite-dimensional `ℝ`-algebra, not central over `ℝ`, whose
 complex conjugation is not conjugation by a unit. The classical theorem does hold for a merely
-simple `B` provided the ambient `A` is central simple, but that form needs the centralizer theorem
-and is not formalised here; the form with `B` central simple proved here is the one the centralizer
-theorem itself consumes.
+simple `B` provided the ambient `A` is central simple; that form is not formalised here.
 
 `TauCeti.Bimodule f` is a type synonym for `A` rather than a `Module` instance on `A` itself,
 because the whole point is to compare the two different `B ⊗[K] Aᵐᵒᵖ`-module structures coming from
@@ -141,7 +138,7 @@ theorem exists_unit_conj_of_algEquiv [Algebra.IsCentral K A] [IsSimpleRing A]
 
 /-- A `K`-algebra homomorphism out of a **central simple** subalgebra `B` of a finite-dimensional
 simple `K`-algebra `A` is conjugate to the inclusion of `B`: it extends to an inner automorphism of
-`A`. This is the form the centralizer theorem consumes. -/
+`A`. -/
 theorem exists_unit_conj_subalgebra_val [IsSimpleRing A] [FiniteDimensional K A]
     (B : Subalgebra K A) [Algebra.IsCentral K B] [IsSimpleRing B] (f : B →ₐ[K] A) :
     ∃ u : Aˣ, ∀ x : B, f x = (u : A) * (x : A) * (↑u⁻¹ : A) :=

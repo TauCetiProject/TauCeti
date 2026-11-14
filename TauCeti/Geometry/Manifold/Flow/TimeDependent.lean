@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.Complete
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
@@ -41,6 +42,8 @@ the initial position of the submanifold to the later ones.
   `ℝ × M`.
 * `TauCeti.timeDependentFlowDomain X`: the domain of the maximal time-dependent flow.
 * `TauCeti.timeDependentFlowOf X s t x`: the maximal time-dependent flow from time `s` to time `t`.
+* `TauCeti.timeDependentFlowPartialDiffeomorph`: the time map from `s` to `t` as a partial
+  diffeomorphism between the open sets on which it and its inverse are defined.
 * `TauCeti.timeDependentFlowDiffeomorph`: for a complete suspension, the time map from `s` to `t`
   as a `C^n` diffeomorphism.
 * `TauCeti.timeDependentFlowMFDerivEquiv`: for a complete suspension, the differential of the
@@ -269,6 +272,13 @@ theorem timeDependentFlowOf_self (X : ℝ → (x : M) → TangentSpace I x) (s :
     timeDependentFlowOf X s s x = x := by
   rw [timeDependentFlowOf_def, sub_self, flowOf_zero]
 
+/-- The linearized time-dependent flow from time `s` to time `s` is the identity. -/
+@[simp]
+theorem mfderiv_timeDependentFlowOf_self (X : ℝ → (x : M) → TangentSpace I x) (s : ℝ) (x : M) :
+    mfderiv I I (timeDependentFlowOf X s s) x = ContinuousLinearMap.id ℝ (TangentSpace I x) := by
+  have hid : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self X s)
+  rw [hid, mfderiv_id]
+
 /-- If a triple `((s, t), x)` lies in the domain of the time-dependent flow, so does
 `((s, s), x)`. -/
 theorem mem_timeDependentFlowDomain_self_of_mem {X : ℝ → (x : M) → TangentSpace I x} {s t : ℝ}
@@ -470,6 +480,69 @@ theorem exists_timeDependentFlow [FiniteDimensional ℝ E] [T2Space M]
     (by fun_prop : Continuous (fun t : ℝ ↦ ((p.1, t), p.2))).continuousAt.preimage_mem_nhds
       ((isOpen_timeDependentFlowDomain hX).mem_nhds (mem_timeDependentFlowDomain_self hX _ _))
   exact hdom.mono fun _ ht ↦ hasMFDerivAt_timeDependentFlowOf hX ht
+
+/-! ### Time maps as partial diffeomorphisms -/
+
+section PartialDiffeomorph
+
+variable [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [IsManifold I 1 M]
+  {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
+  (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
+    (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+
+/-- The time map from `s` to `t` of the time-dependent flow of a jointly `C^n` field, `1 ≤ n`, on a
+finite-dimensional boundaryless manifold, as a `C^n` partial diffeomorphism of `M`. Its source is
+the open set of points from which the flow is defined from time `s` up to time `t`, its target is
+the open set of points from which it is defined from time `t` back to time `s`, and its inverse is
+the time map from `t` to `s`. No completeness is needed. -/
+def timeDependentFlowPartialDiffeomorph (s t : ℝ) : PartialDiffeomorph I I M M n :=
+  have hX₁ := hX.of_le (m := 1) (by exact_mod_cast hn)
+  { toFun := timeDependentFlowOf X s t
+    invFun := timeDependentFlowOf X t s
+    source := {x | ((s, t), x) ∈ timeDependentFlowDomain X}
+    target := {x | ((t, s), x) ∈ timeDependentFlowDomain X}
+    map_source' _ hx := (timeDependentFlowOf_symm_of_mem hX₁ hx).1
+    map_target' _ hx := (timeDependentFlowOf_symm_of_mem hX₁ hx).1
+    left_inv' _ hx := (timeDependentFlowOf_symm_of_mem hX₁ hx).2
+    right_inv' _ hx := (timeDependentFlowOf_symm_of_mem hX₁ hx).2
+    open_source := (isOpen_timeDependentFlowDomain hX₁).preimage (by fun_prop)
+    open_target := (isOpen_timeDependentFlowDomain hX₁).preimage (by fun_prop)
+    contMDiffOn_toFun := (contMDiffOn_timeDependentFlowOf hn hX).comp
+      ((contMDiff_const (c := (s, t))).prodMk contMDiff_id).contMDiffOn fun _ hx ↦ hx
+    contMDiffOn_invFun := (contMDiffOn_timeDependentFlowOf hn hX).comp
+      ((contMDiff_const (c := (t, s))).prodMk contMDiff_id).contMDiffOn fun _ hx ↦ hx }
+
+/-- The partial diffeomorphism `timeDependentFlowPartialDiffeomorph` is the time-dependent flow. -/
+@[simp]
+theorem timeDependentFlowPartialDiffeomorph_apply (s t : ℝ) (x : M) :
+    timeDependentFlowPartialDiffeomorph hn hX s t x = timeDependentFlowOf X s t x :=
+  (rfl)
+
+/-- The inverse of `timeDependentFlowPartialDiffeomorph` from `s` to `t` is the time-dependent
+flow from `t` to `s`. -/
+@[simp]
+theorem timeDependentFlowPartialDiffeomorph_symm_apply (s t : ℝ) (x : M) :
+    (timeDependentFlowPartialDiffeomorph hn hX s t).toPartialEquiv.symm x =
+      timeDependentFlowOf X t s x :=
+  (rfl)
+
+/-- A point lies in the source of the time map from `s` to `t` exactly when the flow from `(s, x)`
+is defined up to time `t`. -/
+@[simp]
+theorem mem_timeDependentFlowPartialDiffeomorph_source_iff {s t : ℝ} {x : M} :
+    x ∈ (timeDependentFlowPartialDiffeomorph hn hX s t).source ↔
+      ((s, t), x) ∈ timeDependentFlowDomain X :=
+  (Iff.rfl)
+
+/-- A point lies in the target of the time map from `s` to `t` exactly when the flow from `(t, x)`
+is defined back to time `s`. -/
+@[simp]
+theorem mem_timeDependentFlowPartialDiffeomorph_target_iff {s t : ℝ} {x : M} :
+    x ∈ (timeDependentFlowPartialDiffeomorph hn hX s t).target ↔
+      ((t, s), x) ∈ timeDependentFlowDomain X :=
+  (Iff.rfl)
+
+end PartialDiffeomorph
 
 /-! ### Complete suspensions -/
 

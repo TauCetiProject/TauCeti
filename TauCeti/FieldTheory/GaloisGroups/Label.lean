@@ -387,7 +387,7 @@ theorem hasGaloisLabel_one_iff (j : TransitiveGroupIndex 1) :
     rw [separable_iff_derivative_ne_zero (irreducible_of_degree_eq_one
       ((degree_eq_iff_natDegree_eq_of_pos one_pos).mpr hdeg))]
     intro h0
-    have h := congrArg (coeff · 0) h0
+    have h := congrArg (AddMonoidAlgebra.coeff · 0) h0
     simp only [coeff_derivative, coeff_zero, zero_add, Nat.cast_zero, mul_one] at h
     have hf : f ≠ 0 := by rintro rfl; simp at hdeg
     exact hf (leadingCoeff_eq_zero.mp (by rwa [leadingCoeff, hdeg]))
