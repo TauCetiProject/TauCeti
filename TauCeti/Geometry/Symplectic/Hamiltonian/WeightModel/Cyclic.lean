@@ -177,7 +177,9 @@ theorem forall_weightRotation_zsmul_single_apply_eq_self_iff
     (∀ n : ℤ, weightRotation (n • Pi.single j₀ (2 * π * a)) x = x) ↔
       x.1 j₀ = 0 ∧ x.2 j₀ = 0 := by
   rw [forall_weightRotation_zsmul_apply_eq_self_iff]
-  refine ⟨fun h ↦ h j₀ (by rw [Pi.single_eq_same]; exact fun ⟨k, hk⟩ ↦ ha.intCast_mul_ne_mul two_pi_pos.ne' k hk), ?_⟩
+  refine ⟨fun h ↦ h j₀ ?_, ?_⟩
+  · rw [Pi.single_eq_same]
+    exact fun ⟨k, hk⟩ ↦ ha.intCast_mul_ne_mul two_pi_pos.ne' k hk
   intro h j hj
   by_cases hj₀ : j = j₀
   · exact hj₀ ▸ h

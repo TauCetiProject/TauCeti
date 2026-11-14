@@ -475,9 +475,10 @@ theorem weightModelCoords_symm_apply_snd (u : ι ⊕ ι → ℝ) (i : ι) :
     (weightModelCoords.symm u).2 i = u (Sum.inr i) :=
   (rfl)
 
+omit [Fintype ι] in
 /-- In the real coordinates `(q_i)_i ⊔ (p_i)_i`, a subspace `W` of `ℂ^ι` cut out by `z_i = 0` for
 every `i` with `¬ P (θ i)` is spanned by the coordinates `i` with `P (θ i)`. -/
-theorem map_weightModelCoords_eq_spanSubset
+theorem map_weightModelCoords_eq_spanSubset [Finite ι]
     {W : Submodule ℝ (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)} (θ : ι → ℝ) (P : ℝ → Prop)
     (hW : ∀ x, x ∈ W ↔ ∀ i, ¬ P (θ i) → x.1 i = 0 ∧ x.2 i = 0) :
     W.map weightModelCoords.toLinearMap = Pi.spanSubset ℝ {j | P (Sum.elim θ θ j)} := by
@@ -490,9 +491,10 @@ theorem map_weightModelCoords_eq_spanSubset
     · exact (h i hi).2
   · exact fun h i hi ↦ ⟨h (Sum.inl i) hi, h (Sum.inr i) hi⟩
 
+omit [Fintype ι] in
 /-- A subspace `W` of `ℂ^ι` cut out by `z_i = 0` for every `i` with `¬ P (θ i)` has real dimension
 twice the number of `i` with `P (θ i)`. -/
-theorem finrank_eq_two_mul_ncard_of_mem_iff
+theorem finrank_eq_two_mul_ncard_of_mem_iff [Finite ι]
     {W : Submodule ℝ (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)} (θ : ι → ℝ) (P : ℝ → Prop)
     (hW : ∀ x, x ∈ W ↔ ∀ i, ¬ P (θ i) → x.1 i = 0 ∧ x.2 i = 0) :
     Module.finrank ℝ W = 2 * {i | P (θ i)}.ncard := by
