@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Basic
-public import TauCeti.Analysis.Normed.Module.WeakDual.Basic
-public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Measure.Regular
 import Mathlib.Analysis.LocallyConvex.Separation
+import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import TauCeti.Algebra.Order.Module.Field
 import TauCeti.Analysis.Normed.Module.RCLike.Rpow
+import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 import TauCeti.Analysis.Normed.Module.WeakDual.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Integral.RieszMarkovKakutani.Compact
