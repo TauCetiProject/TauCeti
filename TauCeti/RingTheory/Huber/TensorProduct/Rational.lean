@@ -46,8 +46,10 @@ are compared; rings of integral elements are not.
 
 ## Main results
 
-* `TauCeti.Huber.CompletedTensor.hasDenominatorPower_inl_mul_inr`: if `T · B` and `T' · C` are
-  open, the localisation of `D` at `T''` and `inl(s) · inr(s')` is defined.
+* `TauCeti.Huber.CompletedTensor.isOpen_span_inl_mul_inr`,
+  `TauCeti.Huber.CompletedTensor.hasDenominatorPower_inl_mul_inr`: if `T · B` and `T' · C` are
+  open, the product numerators `({inl(s)} ∪ inl(T)) · ({inr(s')} ∪ inr(T'))` span an open ideal in
+  `D` and the localisation of `D` at those numerators and `inl(s) · inr(s')` is defined.
 * `TauCeti.Huber.CompletedTensor.isHomeomorph_completionLocEquiv`: the isomorphism is a
   homeomorphism.
 * `TauCeti.Huber.CompletedTensor.completionLocEquiv_inl_toCompletionLoc` and `…_inr_…`: it sends
@@ -74,6 +76,32 @@ variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C] [Algebra A B]
   [Algebra A C] [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C]
   [IsTopologicalRing A] [IsTopologicalRing B] [IsTopologicalRing C]
   [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)] [DecidableEq (CompletedTensor A B C)]
+
+/-- If `T · B` and `T' · C` are open ideals, then the product numerators
+`({inl(s)} ∪ inl(T)) · ({inr(s')} ∪ inr(T'))` span an open ideal in `B ⊗̂_A C`. -/
+theorem isOpen_span_inl_mul_inr {T : Finset B} (s : B) {T' : Finset C} (s' : C)
+    (hT : IsOpen (Ideal.span (T : Set B) : Set B))
+    (hT' : IsOpen (Ideal.span (T' : Set C) : Set C)) :
+    IsOpen (Ideal.span ((insert (inl A B C s) (T.image (inl A B C)) *
+        insert (inr A B C s') (T'.image (inr A B C)) : Finset _) :
+      Set (CompletedTensor A B C)) : Set (CompletedTensor A B C)) := by
+  obtain ⟨Q⟩ := IsHuberRing.nonempty_pairOfDefinition (A := CompletedTensor A B C)
+  rw [Finset.coe_mul]
+  refine Q.isOpen_span_mul ?_ ?_
+  · refine AddSubgroup.isOpen_mono (H₁ := (Ideal.span (inl A B C '' (T : Set B))).toAddSubgroup)
+      (H₂ := (Ideal.span ((insert (inl A B C s) (T.image (inl A B C)) : Finset _) :
+        Set (CompletedTensor A B C))).toAddSubgroup)
+      (Ideal.span_mono (by rw [Finset.coe_insert, Finset.coe_image]; exact Set.subset_insert _ _))
+      ?_
+    rw [← Ideal.map_span]
+    exact (isAdicHom_inl A B C).isOpen_map hT
+  · refine AddSubgroup.isOpen_mono (H₁ := (Ideal.span (inr A B C '' (T' : Set C))).toAddSubgroup)
+      (H₂ := (Ideal.span ((insert (inr A B C s') (T'.image (inr A B C)) : Finset _) :
+        Set (CompletedTensor A B C))).toAddSubgroup)
+      (Ideal.span_mono (by rw [Finset.coe_insert, Finset.coe_image]; exact Set.subset_insert _ _))
+      ?_
+    rw [← Ideal.map_span]
+    exact (isAdicHom_inr A B C).isOpen_map hT'
 
 /-- If `T · B` and `T' · C` are open, the standing hypothesis of the localisation of `B ⊗̂_A C` at
 the numerators `insert (inl s) (inl T) * insert (inr s') (inr T')` and the denominator
