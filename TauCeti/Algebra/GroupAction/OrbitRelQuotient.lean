@@ -96,29 +96,17 @@ namespace TauCeti
 
 variable {G X : Type*} [Group G] [MulAction G X]
 
-private lemma eq_of_bot_orbitRel {x y : X}
-    (h : MulAction.orbitRel (⊥ : Subgroup G) X x y) : x = y := by
-  rw [MulAction.orbitRel_apply] at h
-  rcases h with ⟨g, hg⟩
-  have hg_one : (g : G) = 1 := Subgroup.mem_bot.mp g.2
-  have hsmul : (g : G) • y = x := by
-    simpa [Subgroup.smul_def] using hg
-  rw [hg_one, one_smul] at hsmul
-  exact hsmul.symm
+/-- The orbit relation of a trivial group is equality. -/
+@[simp]
+theorem MulAction.orbitRel_of_subsingleton [Subsingleton G] : MulAction.orbitRel G X = ⊥ := by
+  ext x y
+  simp [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, Subsingleton.elim _ (1 : G), eq_comm]
 
 /-- Quotienting a group action by the trivial subgroup gives back the original space. -/
 noncomputable def MulAction.orbitRelQuotientBotEquiv :
     MulAction.orbitRel.Quotient (⊥ : Subgroup G) X ≃ X :=
-  { toFun := Quotient.lift (fun x : X => x) fun _ _ h => eq_of_bot_orbitRel h
-    invFun := Quotient.mk''
-    left_inv := by
-      intro x
-      refine Quotient.inductionOn' x ?_
-      intro x
-      rfl
-    right_inv := by
-      intro x
-      rfl }
+  (Quotient.congrRight fun _ _ ↦ by rw [MulAction.orbitRel_of_subsingleton]).trans
+    Setoid.quotientBotEquiv
 
 /-- The bottom-subgroup quotient equivalence sends a class to its representative. -/
 @[simp]
