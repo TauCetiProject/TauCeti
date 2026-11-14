@@ -52,7 +52,7 @@ interior regularity (McDuff–Salamon, Proposition B.4.9):
    with `J² = -1` almost everywhere, `S ∈ W^{k,p}_loc(Ω)`, and `η ∈ W^{k,q}_loc(Ω)`, then every
    weak solution `ξ ∈ L^q_loc(Ω)` belongs to `W^{k+1,q}_loc(Ω)`.
 3. **Regularity on general finite-dimensional normed spaces**
-   (`TauCeti.IsWeakLinearCauchyRiemannOn.memWkpLoc_succ`,
+   (`TauCeti.IsWeakLinearCauchyRiemannOn.memWkpLoc_succ_of_memWkpLoc`,
    `TauCeti.IsWeakLinearCauchyRiemannOn.contDiffOn`, and
    `TauCeti.IsWeakLinearCauchyRiemannOn.contDiffOn_top`). Transporting along a continuous linear
    equivalence to Euclidean space removes the inner-product structure from the hypotheses for
@@ -67,7 +67,7 @@ interior regularity (McDuff–Salamon, Proposition B.4.9):
   `TauCeti.IsWeakCRSolution.memWkpLoc_succ_self`: exponent-raising forms when `η ∈ W^{k,r}_loc` or
   `η ∈ W^{k,p}_loc` and `(p : ℝ≥0∞)⁻¹ + q⁻¹ < 1`.
 * `TauCeti.IsWeakCRSolution.exists_contDiffOn_ae_eq`: `C^k` representative almost everywhere on `Ω`.
-* `TauCeti.IsWeakLinearCauchyRiemannOn.memWkpLoc_succ`,
+* `TauCeti.IsWeakLinearCauchyRiemannOn.memWkpLoc_succ_of_memWkpLoc`,
   `TauCeti.IsWeakLinearCauchyRiemannOn.contDiffOn`, and
   `TauCeti.IsWeakLinearCauchyRiemannOn.contDiffOn_top`: `W^{k+1,p}_loc`, `C^k`, and `C^∞`
   regularity of continuous weak linear Cauchy–Riemann solutions valued in any finite-dimensional
@@ -822,7 +822,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 real normed space.** If `2 < p`, `(p : ℝ≥0∞)⁻¹ + q⁻¹ < 1`, `J ∈ W^{max 1 k, p}_loc(Ω)` with
 `J² = -1` almost everywhere on `Ω`, and `S ∈ W^{k,p}_loc(Ω)`, then every weak solution `ξ` of
 `∂_s ξ + J ∂_t ξ + S ξ = 0` on `Ω` at exponent `q` lies in `W^{k+1,p}_loc(Ω)`. -/
-theorem IsWeakLinearCauchyRiemannOn.memWkpLoc_succ {p : ℝ≥0} {q : ℝ≥0∞} {k : ℕ}
+theorem IsWeakLinearCauchyRiemannOn.memWkpLoc_succ_of_memWkpLoc {p : ℝ≥0} {q : ℝ≥0∞} {k : ℕ}
     {J S : ℂ → V →L[ℝ] V} {ξ : ℂ → V} (hp : 2 < p) (hpq : (p : ℝ≥0∞)⁻¹ + q⁻¹ < 1)
     (hJ : MemWkpLoc p Ω (max 1 k) J) (hJsq : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1)
     (hS : MemWkpLoc p Ω k S) (h : IsWeakLinearCauchyRiemannOn q Ω J S ξ) :
@@ -865,14 +865,14 @@ theorem IsWeakLinearCauchyRiemannOn.memWkpLoc_succ {p : ℝ≥0} {q : ℝ≥0∞
     (hsol'.memWkpLoc_succ_self hp hpq₀ hJ' hDJ' hJsq' hS' memWkpLoc_zero_fun)
 
 /-- **`C^k` interior regularity for `TauCeti.IsWeakLinearCauchyRiemannOn`.** Under the hypotheses
-of `TauCeti.IsWeakLinearCauchyRiemannOn.memWkpLoc_succ`, a continuous weak solution `ξ` of
-`∂_s ξ + J ∂_t ξ + S ξ = 0` on `Ω` is of class `C^k` on `Ω`. -/
+of `TauCeti.IsWeakLinearCauchyRiemannOn.memWkpLoc_succ_of_memWkpLoc`, a continuous weak solution `ξ`
+of `∂_s ξ + J ∂_t ξ + S ξ = 0` on `Ω` is of class `C^k` on `Ω`. -/
 theorem IsWeakLinearCauchyRiemannOn.contDiffOn {p : ℝ≥0} {q : ℝ≥0∞} {k : ℕ}
     {J S : ℂ → V →L[ℝ] V} {ξ : ℂ → V} (hp : 2 < p) (hpq : (p : ℝ≥0∞)⁻¹ + q⁻¹ < 1)
     (hJ : MemWkpLoc p Ω (max 1 k) J) (hJsq : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1)
     (hS : MemWkpLoc p Ω k S) (h : IsWeakLinearCauchyRiemannOn q Ω J S ξ) :
     ContDiffOn ℝ k ξ Ω := by
-  have hW : MemWkpLoc p Ω (k + 1) ξ := h.memWkpLoc_succ hp hpq hJ hJsq hS
+  have hW : MemWkpLoc p Ω (k + 1) ξ := h.memWkpLoc_succ_of_memWkpLoc hp hpq hJ hJsq hS
   obtain ⟨g, hg, hae⟩ := hW.exists_contDiffOn_ae_eq (by exact_mod_cast hp)
   exact hg.congr (Measure.eqOn_open_of_ae_eq hae Ω.isOpen h.continuousOn hg.continuousOn)
 
