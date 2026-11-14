@@ -8,8 +8,6 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.LieType
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.BasicProperties.TwistedA.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.Simple
-import TauCeti.FieldTheory.Finite.PowAddSelf
-import TauCeti.FieldTheory.Finite.PowNeOne
 
 /-!
 # Perfectness of `SU₃(q)`, the projective unitary identification, and simplicity of `²A₂(q)`
@@ -25,17 +23,10 @@ power Frobenius `σ`.
 
 A valid `²A₂(q)` has `q ≥ 3`: the group `SU₃(2)` is solvable of order `216` (the Hessian group
 `3^{1+2} : Q₈`), so `q = 2` is excluded by `LieTypeIndex.InStandardRange`. For `q ≥ 3`, the finite
-field `𝔽_{q²}` satisfies all four hypotheses of the rank-one unitary simplicity theorem in
-`TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.Simple`:
-
-* `σ` is involutive (`TauCeti.ValidLieTypeIndex.involutive_iterateFrobenius_galoisField`);
-* `x ↦ x + σ x` has a nonzero kernel element
-  (`TauCeti.FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero`);
-* `x ↦ x + σ x` is surjective onto `{s | σ s = s}`
-  (`TauCeti.FiniteField.exists_pow_add_self_eq`);
-* `𝔽_{q²}ˣ` is cyclic of order `q² - 1 > q - 2 ≥ 1`, so some nonzero `a ∈ 𝔽_{q²}` satisfies
-  `a ^ (q - 2) ≠ 1`, hence `a ^ 2 ≠ a ^ q = σ a`
-  (`TauCeti.FiniteField.exists_ne_zero_pow_ne_one`).
+field `𝔽_{q²}` has cardinality `q²` (`TauCeti.ValidLieTypeIndex.natCard_galoisField`) and `σ` acts
+as `a ↦ a ^ q` (`TauCeti.ValidLieTypeIndex.coe_iterateFrobenius_galoisField`), so
+`TauCeti.UnitaryRankOne.commutator_eq_top_of_natCard_eq_sq` and
+`TauCeti.UnitaryRankOne.isSimpleGroup_quotient_center_of_natCard_eq_sq` apply directly.
 
 Consequently `SU₃(q)` is perfect (`TauCeti.TypeALieIndex.commutator_specialUnitary_two_eq_top`),
 the candidate group attached to `²A₂(q)` is isomorphic to the projective special unitary group
@@ -76,52 +67,14 @@ section RankTwoUnitary
 
 variable {d : ValidLieTypeIndex}
 
-private theorem natCard_galoisField_eq_sq :
-    Nat.card (GaloisField d.characteristic (d.fieldExponent * 2)) =
-      (d.characteristic ^ d.fieldExponent) ^ 2 := by
-  rw [GaloisField.card _ _ (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero), pow_mul]
-
-private theorem exists_ne_zero_add_iterateFrobenius_eq_zero :
-    ∃ b : GaloisField d.characteristic (d.fieldExponent * 2), b ≠ 0 ∧
-      b + iterateFrobenius _ d.characteristic d.fieldExponent b = 0 := by
-  obtain ⟨b, hb0, hb⟩ :=
-    FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero (d.natCard_galoisField_eq_sq) 2
-  exact ⟨b, hb0, by simpa [iterateFrobenius_def] using hb⟩
-
-private theorem exists_add_iterateFrobenius_eq
-    (s : GaloisField d.characteristic (d.fieldExponent * 2))
-    (hs : iterateFrobenius _ d.characteristic d.fieldExponent s = s) :
-    ∃ t : GaloisField d.characteristic (d.fieldExponent * 2),
-      t + iterateFrobenius _ d.characteristic d.fieldExponent t = s := by
-  rw [iterateFrobenius_def] at hs
-  obtain ⟨t, ht⟩ := FiniteField.exists_pow_add_self_eq d.natCard_galoisField_eq_sq hs
-  exact ⟨t, by rw [iterateFrobenius_def, add_comm, ht]⟩
-
-private theorem exists_ne_zero_sq_ne_iterateFrobenius (hd : 3 ≤ d.fieldOrder) :
-    ∃ a : GaloisField d.characteristic (d.fieldExponent * 2), a ≠ 0 ∧
-      a ^ 2 ≠ iterateFrobenius _ d.characteristic d.fieldExponent a := by
-  have hk0 : d.fieldOrder - 2 ≠ 0 := by omega
-  have hk2 : (d.fieldOrder - 2) + 2 = d.fieldOrder := by omega
-  have hcard : d.fieldOrder - 2 + 1 <
-      Nat.card (GaloisField d.characteristic (d.fieldExponent * 2)) := by
-    rw [d.natCard_galoisField_eq_sq, ← d.fieldOrder_eq_characteristic_pow]
-    exact lt_of_lt_of_le (by omega) (Nat.le_self_pow two_ne_zero _)
-  obtain ⟨a, ha0, ha⟩ := FiniteField.exists_ne_zero_pow_ne_one hk0 hcard
-  refine ⟨a, ha0, fun heq ↦ ha ?_⟩
-  rw [d.coe_iterateFrobenius_galoisField] at heq
-  have hpow : a ^ d.fieldOrder = a ^ 2 * a ^ (d.fieldOrder - 2) := by
-    rw [← pow_add, add_comm, hk2]
-  apply mul_left_cancel₀ (pow_ne_zero 2 ha0)
-  rw [← hpow, mul_one, heq]
-
 /-- **The finite special unitary group `SU₃(q)` is perfect** whenever `3 ≤ d.fieldOrder`. -/
 theorem commutator_fixedSubgroup_galoisFieldTwistedFrobenius_two_eq_top
     (hd : 3 ≤ d.fieldOrder) :
     commutator (fixedSubgroup (d.galoisFieldTwistedFrobenius 2)) = ⊤ := by
   rw [d.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup 2]
-  exact UnitaryRankOne.commutator_eq_top d.involutive_iterateFrobenius_galoisField
-    d.exists_ne_zero_add_iterateFrobenius_eq_zero d.exists_add_iterateFrobenius_eq
-    (d.exists_ne_zero_sq_ne_iterateFrobenius hd)
+  exact UnitaryRankOne.commutator_eq_top_of_natCard_eq_sq hd
+    (by rw [d.natCard_galoisField, ← d.fieldOrder_eq_characteristic_pow])
+    (congrFun d.coe_iterateFrobenius_galoisField)
 
 /-- **The projective special unitary group `PSU₃(q)` is simple** whenever `3 ≤ d.fieldOrder`. -/
 theorem isSimpleGroup_quotient_center_fixedSubgroup_galoisFieldTwistedFrobenius_two
@@ -129,9 +82,9 @@ theorem isSimpleGroup_quotient_center_fixedSubgroup_galoisFieldTwistedFrobenius_
     IsSimpleGroup (fixedSubgroup (d.galoisFieldTwistedFrobenius 2) ⧸
       Subgroup.center (fixedSubgroup (d.galoisFieldTwistedFrobenius 2))) := by
   rw [d.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup 2]
-  exact UnitaryRankOne.isSimpleGroup_quotient_center d.involutive_iterateFrobenius_galoisField
-    d.exists_ne_zero_add_iterateFrobenius_eq_zero d.exists_add_iterateFrobenius_eq
-    (d.exists_ne_zero_sq_ne_iterateFrobenius hd)
+  exact UnitaryRankOne.isSimpleGroup_quotient_center_of_natCard_eq_sq hd
+    (by rw [d.natCard_galoisField, ← d.fieldOrder_eq_characteristic_pow])
+    (congrFun d.coe_iterateFrobenius_galoisField)
 
 end RankTwoUnitary
 

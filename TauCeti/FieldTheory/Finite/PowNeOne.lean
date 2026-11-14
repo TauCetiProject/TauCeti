@@ -22,6 +22,8 @@ is the input to the perfectness of the special linear groups in rank two.
 
 * `TauCeti.FiniteField.exists_ne_zero_pow_ne_one`: a field with more than `k + 1` elements has a
   nonzero element `a` with `a ^ k ≠ 1`.
+* `TauCeti.FiniteField.exists_ne_zero_pow_ne_pow`: for `m < n`, a field with more than
+  `n - m + 1` elements has a nonzero element `a` with `a ^ m ≠ a ^ n`.
 -/
 
 public section
@@ -39,5 +41,14 @@ theorem exists_ne_zero_pow_ne_one {k : ℕ} (hk : k ≠ 0) (hF : k + 1 < Nat.car
   obtain ⟨a, ha⟩ := exists_pow_ne_one_of_isCyclic (G := Fˣ) hk
     (by rw [Nat.card_eq_card_units_add_one F] at hF; omega)
   exact ⟨a, a.ne_zero, fun h ↦ ha (Units.ext <| by simpa using h)⟩
+
+/-- In a field with more than `n - m + 1` elements, for `m < n`, some nonzero element has distinct
+`m`-th and `n`-th powers. -/
+theorem exists_ne_zero_pow_ne_pow {m n : ℕ} (hmn : m < n) (hF : n - m + 1 < Nat.card F) :
+    ∃ a : F, a ≠ 0 ∧ a ^ m ≠ a ^ n := by
+  obtain ⟨a, ha0, ha⟩ := exists_ne_zero_pow_ne_one (Nat.sub_ne_zero_of_lt hmn) hF
+  refine ⟨a, ha0, fun heq ↦ ha ?_⟩
+  apply mul_left_cancel₀ (pow_ne_zero m ha0)
+  rw [← pow_add, Nat.add_sub_cancel' hmn.le, mul_one, heq]
 
 end TauCeti.FiniteField

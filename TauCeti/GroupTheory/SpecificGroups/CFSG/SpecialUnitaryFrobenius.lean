@@ -78,6 +78,11 @@ description of the special linear matrices with coordinates in it from
 * `TauCeti.ValidLieTypeIndex.unitaryForm_mulVec_mulVec`: `SU_{r+1}(q)` preserves the form.
 * `TauCeti.ValidLieTypeIndex.unitaryForm_single_single`: the coordinate vectors off the middle
   coordinate are isotropic.
+* `TauCeti.ValidLieTypeIndex.natCard_galoisField`: the field `𝔽_{q²}` has `(p ^ e) ^ 2` elements.
+* `TauCeti.ValidLieTypeIndex.exists_add_neg_one_pow_mul_iterateFrobenius_eq` and
+  `TauCeti.ValidLieTypeIndex.exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero`: the
+  twisted trace `t ↦ t + (-1) ^ r σ(t)` on `𝔽_{q²}` is onto `{s | σ(s) = (-1) ^ r s}` and has a
+  nonzero kernel element.
 * `TauCeti.ValidLieTypeIndex.isPreprimitive_isotropicPoints_galoisField`: `SU_{r+1}(q)` acts
   primitively on its isotropic points.
 * `TauCeti.ValidLieTypeIndex.mem_center_specialIsometryGroup_of_forall_smul_eq_galoisField`: an
@@ -299,21 +304,23 @@ section IsotropicPoints
 variable {r : ℕ}
 
 /-- The field with `q²` elements has `q²` elements, with `q = p ^ e`. -/
-private theorem natCard_galoisField :
+theorem natCard_galoisField :
     Nat.card (GaloisField d.characteristic (d.fieldExponent * 2)) =
       (d.characteristic ^ d.fieldExponent) ^ 2 := by
   rw [GaloisField.card _ _ (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero), pow_mul]
 
+variable (r) in
 /-- The trace `t ↦ t + (-1) ^ r σ(t)` is onto the elements `s` with `σ(s) = (-1) ^ r s`. -/
-private theorem exists_add_neg_one_pow_mul_iterateFrobenius_eq
+theorem exists_add_neg_one_pow_mul_iterateFrobenius_eq
     {s : GaloisField d.characteristic (d.fieldExponent * 2)}
     (hs : iterateFrobenius _ d.characteristic d.fieldExponent s = (-1) ^ r * s) :
     ∃ t, t + (-1) ^ r * iterateFrobenius _ d.characteristic d.fieldExponent t = s := by
   simp_rw [iterateFrobenius_def] at hs ⊢
   exact FiniteField.exists_add_neg_one_pow_mul_pow_eq natCard_galoisField r hs
 
+variable (r) in
 /-- The trace `t ↦ t + (-1) ^ r σ(t)` has a nonzero kernel element. -/
-private theorem exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero :
+theorem exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero :
     ∃ a ≠ (0 : GaloisField d.characteristic (d.fieldExponent * 2)),
       a + (-1) ^ r * iterateFrobenius _ d.characteristic d.fieldExponent a = 0 := by
   simp_rw [iterateFrobenius_def]
@@ -334,8 +341,8 @@ instance isPreprimitive_isotropicPoints_galoisField :
         (iterateFrobenius _ d.characteristic d.fieldExponent)) :=
   isPreprimitive_isotropicPoints involutive_iterateFrobenius_galoisField
     transpose_map_typeAGraphConjugator_galoisField (isUnits_det_units _).ne_zero
-    (fun _ ↦ exists_add_neg_one_pow_mul_iterateFrobenius_eq)
-    exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero
+    (fun _ ↦ exists_add_neg_one_pow_mul_iterateFrobenius_eq r)
+    (exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero r)
 
 /-- In positive rank `r`, the coordinate vector `e₀` gives an isotropic point. -/
 instance nonempty_isotropicPoints_galoisField [NeZero r] :
@@ -374,8 +381,8 @@ theorem mem_center_specialIsometryGroup_of_forall_smul_eq_galoisField
   have : NeZero r := ⟨hr.ne'⟩
   exact mem_center_specialIsometryGroup_of_forall_smul_eq involutive_iterateFrobenius_galoisField
     transpose_map_typeAGraphConjugator_galoisField (isUnits_det_units _).ne_zero
-    (fun _ ↦ exists_add_neg_one_pow_mul_iterateFrobenius_eq)
-    exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero hg
+    (fun _ ↦ exists_add_neg_one_pow_mul_iterateFrobenius_eq r)
+    (exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero r) hg
 
 end IsotropicPoints
 

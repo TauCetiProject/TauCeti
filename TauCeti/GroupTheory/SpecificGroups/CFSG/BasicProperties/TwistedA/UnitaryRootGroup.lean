@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Unitary
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.BasicProperties.TwistedA.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.Bruhat
 
 /-!
 # The twisted root group of `SU₃(q)` in the Steinberg fixed points
 
 The upper unitriangular root group of `SU₃(q)` has matrices
 `!![1, x, z; 0, 1, x^q; 0, 0, 1]` with `z + z^q = x x^q`.
-We embed the corresponding unitary subgroup of the Heisenberg group into the finite
-special unitary model and then into the actual Steinberg fixed points of `²A₂(q)`.
+We transport `TauCeti.UnitaryRankOne.unipotentHom` into the finite special unitary model and then
+into the actual Steinberg fixed points of `²A₂(q)`.
 The embedding is injective and retains the matrix coordinates under finite-field descent.
 The inherited multiplication and central commutator formulas describe this root subgroup.
 
@@ -48,18 +48,17 @@ theorem heisenbergGroup_toSpecialLinear_mem_fixedSubgroup_galoisFieldTwistedFrob
     ← HeisenbergGroup.mem_unitarySubgroup_iff_transpose_map_toMatrix_mul_mul_eq]
 
 /-- The embedding of the unitary Heisenberg root subgroup into the finite special unitary
-model `SU₃(q)` by its upper unitriangular matrix. -/
+model `SU₃(q)` by its upper unitriangular matrix, obtained by transporting
+`TauCeti.UnitaryRankOne.unipotentHom` along
+`fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup`. -/
 def rankTwoUpperUnitaryRootHom :
     HeisenbergGroup.unitarySubgroup
         (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2))
           d.characteristic d.fieldExponent) →*
       fixedSubgroup (d.galoisFieldTwistedFrobenius 2) :=
-  (HeisenbergGroup.toSpecialLinear.comp
-    (HeisenbergGroup.unitarySubgroup _).subtype).codRestrict
-      (fixedSubgroup (d.galoisFieldTwistedFrobenius 2)) fun a ↦ by
-        simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype] using
-          (d.heisenbergGroup_toSpecialLinear_mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff
-            a).mpr a.property
+  (MulEquiv.subgroupCongr
+    (d.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup 2)).symm.toMonoidHom.comp
+    (UnitaryRankOne.unipotentHom _ _)
 
 /-- The root homomorphism is the standard upper unitriangular special linear matrix. -/
 @[simp]
@@ -68,15 +67,15 @@ theorem coe_rankTwoUpperUnitaryRootHom (a : HeisenbergGroup.unitarySubgroup
       d.characteristic d.fieldExponent)) :
     (d.rankTwoUpperUnitaryRootHom a : SpecialLinearGroup (Fin 3)
         (GaloisField d.characteristic (d.fieldExponent * 2))) =
-      HeisenbergGroup.toSpecialLinear a := (rfl)
+      HeisenbergGroup.toSpecialLinear a := by
+  simp [rankTwoUpperUnitaryRootHom]
 
 /-- No two root parameters give the same unitary matrix. -/
 theorem rankTwoUpperUnitaryRootHom_injective :
-    Function.Injective d.rankTwoUpperUnitaryRootHom := by
-  intro a b h
-  apply Subtype.ext
-  apply HeisenbergGroup.toSpecialLinear_injective
-  exact congrArg Subtype.val h
+    Function.Injective d.rankTwoUpperUnitaryRootHom :=
+  (MulEquiv.subgroupCongr
+    (d.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup 2)).symm.injective.comp
+    (UnitaryRankOne.unipotentHom_injective _ _)
 
 /-- An element of the finite special unitary group lies in the range of the rank-two upper
 root embedding exactly when its matrix is upper unitriangular. -/
@@ -86,15 +85,16 @@ theorem mem_range_rankTwoUpperUnitaryRootHom_iff
       ((g : SpecialLinearGroup (Fin 3)
         (GaloisField d.characteristic (d.fieldExponent * 2))) : Matrix (Fin 3) (Fin 3)
           (GaloisField d.characteristic (d.fieldExponent * 2))).IsUpperUnitriangular := by
-  rw [← HeisenbergGroup.mem_range_toSpecialLinear_iff]
-  constructor
-  · rintro ⟨a, rfl⟩
-    exact ⟨a, rfl⟩
-  · rintro ⟨a, hga⟩
-    have ha' :=
-      (d.heisenbergGroup_toSpecialLinear_mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff a).mp
-        (hga.symm ▸ g.property)
-    exact ⟨⟨a, ha'⟩, Subtype.ext hga⟩
+  let e := MulEquiv.subgroupCongr
+    (d.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup 2)
+  have hmem : g ∈ d.rankTwoUpperUnitaryRootHom.range ↔
+      e g ∈ UnitaryRankOne.unipotentSubgroup _ _ := by
+    rw [UnitaryRankOne.unipotentSubgroup_def, rankTwoUpperUnitaryRootHom, MonoidHom.mem_range,
+      MonoidHom.mem_range]
+    exact ⟨fun ⟨a, ha⟩ ↦ ⟨a, by simpa [e] using congrArg e ha⟩,
+      fun ⟨a, ha⟩ ↦ ⟨a, by simpa [e] using congrArg e.symm ha⟩⟩
+  rw [hmem, UnitaryRankOne.mem_unipotentSubgroup_iff]
+  simp [e]
 
 end TauCeti.ValidLieTypeIndex
 
