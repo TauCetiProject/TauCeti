@@ -14,6 +14,7 @@ import Mathlib.Topology.Sheaves.LocallySurjective
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Category.ModuleCat.FilteredColimits
 import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Geometry.Manifold.ContMDiff.Analytic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Order
 
 /-!
@@ -119,14 +120,16 @@ theorem pointTwistCoefficient_restrict {V : Opens X} (h : V ≤ U) (hx : x ∈ V
 
 /-- Where `D + [x]` vanishes at `x`, the newly permitted coefficient at `x` of a section of
 `𝒪(D + [x])` is its value at `x`. -/
-theorem pointTwistCoefficient_eq_apply [IsManifold 𝓘(ℂ) 1 X] {x : U} (hD : D x.1 = -1)
+theorem pointTwistCoefficient_eq_apply {x : U} (hD : D x.1 = -1)
     (f : divisorSections (D + WeilDivisor.ofPoint x.1) U) :
     pointTwistCoefficient D U x f = f.1 x := by
   have hx : (D + WeilDivisor.ofPoint x.1) x.1 = 0 := by
     have h₁ : (WeilDivisor.ofPoint x.1) x.1 = 1 := WeilDivisor.coeff_ofPoint_self x.1
     simp [hD, h₁]
-  have hg := analyticAt_comp_chartAt_symm ((contMDiffAt_iff_eventually_mdifferentiableAt
-    (by simp)).1 ((isDivisorSectionAt_extend f.2 x).contMDiffAt hx.le))
+  have hg : AnalyticAt ℂ (Subtype.val.extend f.1 (0 : X → ℂ) ∘ (chartAt ℂ x.1).symm)
+      (chartAt ℂ x.1 x.1) := by
+    simpa using contMDiffAt_omega_iff_analyticAt.1
+      ((isDivisorSectionAt_extend f.2 x).contMDiffAt hx.le)
   have hm : _root_.MeromorphicAt
       (fun z ↦ (Subtype.val.extend f.1 (0 : X → ℂ) ∘ (chartAt ℂ x.1).symm) z /
         (z - chartAt ℂ x.1 x.1)) (chartAt ℂ x.1 x.1) :=

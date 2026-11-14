@@ -27,10 +27,17 @@ in the exactness statements. Consequently finiteness of the first cohomology is 
 adding a point; when it is finite, adding a point raises `h⁰ - h¹` by one. These are the
 point-twist steps in the Euler-characteristic calculation for divisor sheaves.
 
+Since the point divisors generate the divisor group, `H¹(𝒪(D))` is finite-dimensional for one
+divisor exactly when it is for every divisor
+(`TauCeti.RiemannSurface.finiteDimensional_divisorCechCohomology_one_iff`). On a connected curve
+with finite-dimensional `H¹(𝒪)`, every divisor satisfies
+`h⁰(𝒪(D)) - h¹(𝒪(D)) = deg D + 1 - h¹(𝒪)`
+(`finrank_divisorSheaf_globalSections_sub_finrank_divisorCechCohomology_one`).
+The finiteness of `H¹(𝒪)` itself is not proved here.
+
 Where `D + [x]` vanishes at `x`, the new coefficient of a global section is its value at `x`
 (`TauCeti.RiemannSurface.pointTwistGlobalCoefficient_eq_apply`). On a compact connected curve
-`h⁰(𝒪) = 1`, so the coefficient map of the sequence for `𝒪(-[x]) → 𝒪` is bijective and
-`h⁰(𝒪(-[x])) = 0`.
+`h⁰(𝒪) = 1`, so the coefficient map of the sequence for `𝒪(-[x]) → 𝒪` is bijective.
 
 ## References
 
@@ -111,6 +118,30 @@ theorem pointTwistCohomologyMap_def (n : ℕ) :
       ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
         (divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom).hom := (rfl)
 
+variable {D x} in
+/-- Where `D + [x]` vanishes at `x`, the newly permitted coefficient at `x` of a global section of
+`𝒪(D + [x])` is its value at `x`. -/
+theorem pointTwistGlobalCoefficient_eq_apply (hD : D x = -1)
+    (f : (divisorSheaf (D + WeilDivisor.ofPoint x)).obj.obj (op ⊤)) :
+    pointTwistGlobalCoefficient D x f = (divisorSheafSectionsEquiv _ ⊤ f).1 ⟨x, trivial⟩ :=
+  divisorSections.pointTwistCoefficient_eq_apply (x := ⟨x, trivial⟩) hD _
+
+/-- At a twist of `-[x]`, every scalar is the newly permitted coefficient of a global section of
+`𝒪(-[x] + [x])`. -/
+theorem pointTwistGlobalCoefficient_neg_ofPoint_surjective :
+    Function.Surjective (pointTwistGlobalCoefficient (-WeilDivisor.ofPoint x) x) := fun c ↦
+  ⟨(divisorSheafSectionsEquiv _ ⊤).symm ⟨(fun _ : X ↦ c) ∘ Subtype.val,
+      comp_val_mem_divisorSections fun y _ ↦
+        have hy : (-WeilDivisor.ofPoint x + WeilDivisor.ofPoint x) y = 0 := by simp
+        { meromorphicAt := meromorphicAt_const c y
+          neg_le_meromorphicOrderAt := by
+            simpa [hy] using meromorphicOrderAt_nonneg_of_continuousAt continuousAt_const
+          contMDiffAt := fun _ ↦ contMDiffAt_const
+          apply_eq_zero := fun h ↦ absurd hy h.ne' }⟩, by
+    have h₁ : (WeilDivisor.ofPoint x) x = 1 := WeilDivisor.coeff_ofPoint_self x
+    rw [pointTwistGlobalCoefficient_eq_apply (by simp [h₁]), LinearEquiv.apply_symm_apply]
+    rfl⟩
+
 variable [IsManifold 𝓘(ℂ) 1 X]
 
 open Classical in
@@ -138,25 +169,6 @@ theorem exact_pointTwist_globalSections_coefficient :
   exact ((ModuleCat.mono_iff_injective (skyscraperSectionsIso x).inv).mp
     inferInstance).comp_exact_iff_exact.mp he
 
-variable {D x} in
-/-- Where `D + [x]` vanishes at `x`, the newly permitted coefficient at `x` of a global section of
-`𝒪(D + [x])` is its value at `x`. -/
-theorem pointTwistGlobalCoefficient_eq_apply (hD : D x = -1)
-    (f : (divisorSheaf (D + WeilDivisor.ofPoint x)).obj.obj (op ⊤)) :
-    pointTwistGlobalCoefficient D x f = (divisorSheafSectionsEquiv _ ⊤ f).1 ⟨x, trivial⟩ :=
-  divisorSections.pointTwistCoefficient_eq_apply (x := ⟨x, trivial⟩) hD _
-
-/-- At a twist of `-[x]`, every scalar is the newly permitted coefficient of a global section of
-`𝒪(-[x] + [x])`. -/
-theorem pointTwistGlobalCoefficient_neg_ofPoint_surjective :
-    Function.Surjective (pointTwistGlobalCoefficient (-WeilDivisor.ofPoint x) x) := fun c ↦
-  ⟨(divisorSheafSectionsEquiv _ ⊤).symm ⟨(fun _ : X ↦ c) ∘ Subtype.val,
-      comp_val_mem_divisorSections fun _ _ ↦
-        (isDivisorSectionAt_iff_of_eq_zero (by simp)).2 contMDiffAt_const⟩, by
-    have h₁ : (WeilDivisor.ofPoint x) x = 1 := WeilDivisor.coeff_ofPoint_self x
-    rw [pointTwistGlobalCoefficient_eq_apply (by simp [h₁]), LinearEquiv.apply_symm_apply]
-    rfl⟩
-
 section Compact
 
 variable [CompactSpace X] [ConnectedSpace X]
@@ -168,15 +180,6 @@ theorem pointTwistGlobalCoefficient_neg_ofPoint_bijective :
   have hs := pointTwistGlobalCoefficient_neg_ofPoint_surjective x
   refine ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).2 hs, hs⟩
   rw [neg_add_cancel, finrank_divisorSheaf_zero_globalSections, Module.finrank_self]
-
-/-- On a compact connected complex curve `h⁰(𝒪(-[x])) = 0`. -/
-@[simp]
-theorem finrank_divisorSheaf_neg_ofPoint_globalSections :
-    Module.finrank ℂ ((divisorSheaf (-WeilDivisor.ofPoint x)).obj.obj (op ⊤)) = 0 := by
-  have h₀ := (exact_pointTwist_globalSections_coefficient (-WeilDivisor.ofPoint x) x).finrank_eq_add
-    (divisorSheafMapOfLE_app_injective _ ⊤) (pointTwistGlobalCoefficient_neg_ofPoint_surjective x)
-  rw [neg_add_cancel, finrank_divisorSheaf_zero_globalSections, Module.finrank_self] at h₀
-  omega
 
 end Compact
 
@@ -299,5 +302,37 @@ theorem finrank_pointTwist_euler_characteristic [ConnectedSpace X]
   rw [LinearMap.range_eq_top.mpr (pointTwistCohomologyMap_one_surjective D x),
     finrank_top] at h₂
   omega
+
+/-- On a compact Hausdorff complex curve, finiteness of the first divisor cohomology does not
+depend on the divisor: point twists preserve it, and the point divisors generate the divisor
+group. -/
+theorem finiteDimensional_divisorCechCohomology_one_iff (D E : WeilDivisor X) :
+    FiniteDimensional ℂ (divisorCechCohomology D 1) ↔
+      FiniteDimensional ℂ (divisorCechCohomology E 1) := by
+  have h (D : WeilDivisor X) : FiniteDimensional ℂ (divisorCechCohomology D 1) ↔
+      FiniteDimensional ℂ (divisorCechCohomology (0 : WeilDivisor X) 1) := by
+    induction D using WeilDivisor.induction_add_ofPoint with
+    | zero => rfl
+    | add_ofPoint D x => rw [finiteDimensional_divisorCechCohomology_one_add_point_iff]
+  rw [h D, h E]
+
+/-- **The Euler characteristic of a divisor sheaf.** On a compact connected complex curve whose
+structure sheaf has finite-dimensional `H¹(𝒪)`, every divisor sheaf satisfies
+`h⁰(𝒪(D)) - h¹(𝒪(D)) = deg D + 1 - h¹(𝒪)`. Both sides change by one under a point twist. -/
+theorem finrank_divisorSheaf_globalSections_sub_finrank_divisorCechCohomology_one
+    [ConnectedSpace X] [FiniteDimensional ℂ (divisorCechCohomology (0 : WeilDivisor X) 1)]
+    (D : WeilDivisor X) :
+    (Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) : ℤ) -
+        Module.finrank ℂ (divisorCechCohomology D 1) =
+      WeilDivisor.degree D + 1 -
+        Module.finrank ℂ (divisorCechCohomology (0 : WeilDivisor X) 1) := by
+  induction D using WeilDivisor.induction_add_ofPoint with
+  | zero =>
+    rw [finrank_divisorSheaf_zero_globalSections]
+    simp
+  | add_ofPoint D x =>
+    have := (finiteDimensional_divisorCechCohomology_one_iff D 0).2 inferInstance
+    rw [finrank_pointTwist_euler_characteristic, map_add, WeilDivisor.degree_ofPoint]
+    constructor <;> intro h <;> omega
 
 end TauCeti.RiemannSurface
