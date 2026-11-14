@@ -36,6 +36,9 @@ a bijective continuous linear map between Banach spaces is invertible.
   preimage of norm at most `C' * ‖y‖`.
 * `ContinuousLinearMap.isInvertible_iff_bijective`: by the open mapping theorem, a continuous
   linear map between Banach spaces is invertible exactly when it is bijective.
+* `ContinuousLinearMap.coe_coprodSubtypeLEquivOfIsCompl`: Mathlib's equivalence
+  `f.coprodSubtypeLEquivOfIsCompl` of `E × G` with `F`, for an injective `f` whose range has
+  the complement `G`, is `f.coprod G.subtypeL` as a continuous linear map.
 * `ContinuousLinearMap.spectrum_restrictScalars`: realification preserves the spectrum of an
   operator on a Banach space.
 
@@ -157,6 +160,15 @@ is, a continuous linear equivalence, exactly when it is bijective. -/
 theorem isInvertible_iff_bijective {f : E →L[𝕜] F} : f.IsInvertible ↔ Bijective f :=
   ⟨IsInvertible.bijective, fun h ↦ ⟨.ofBijective f (LinearMap.ker_eq_bot.2 h.1)
     (LinearMap.range_eq_top.2 h.2), ContinuousLinearEquiv.coe_ofBijective _ _ _⟩⟩
+
+/-- The equivalence `f.coprodSubtypeLEquivOfIsCompl h hker` of `E × G` with `F`, given by an
+injective `f` whose range has the complement `G`, is `f.coprod G.subtypeL` as a continuous linear
+map. -/
+@[simp]
+theorem coe_coprodSubtypeLEquivOfIsCompl (f : E →L[𝕜] F) {G : Submodule 𝕜 F}
+    (h : IsCompl f.range G) [CompleteSpace G] (hker : f.ker = ⊥) :
+    (f.coprodSubtypeLEquivOfIsCompl h hker : E × G →L[𝕜] F) = f.coprod G.subtypeL :=
+  ContinuousLinearEquiv.coe_ofBijective _ _ _
 
 end ContinuousLinearMap
 

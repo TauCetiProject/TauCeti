@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Normed.Operator.Banach
 
 /-!
 # Immersion normal forms from split differentials
@@ -64,37 +66,13 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
   {n : ℕ∞ω} {f : E → F} {s : Set E} {x : E}
 
-/-- The source of a continuous linear map with a continuous left inverse into a complete space is
-complete: the map is a uniform embedding onto a closed subset. -/
-theorem ContinuousLinearMap.HasLeftInverse.completeSpace {L : E →L[𝕜] F} (hL : L.HasLeftInverse) :
-    CompleteSpace E :=
-  (completeSpace_iff_isComplete_range
-    (IsUniformInducing.of_comp L.uniformContinuous hL.leftInverse.uniformContinuous
-      (by
-        rw [show hL.leftInverse ∘ L = id from funext hL.leftInverse_leftInverse]
-        exact IsUniformInducing.id))).2
-    hL.isClosed_range.isComplete
-
-omit [CompleteSpace F] in
-/-- The map `(y, v) ↦ f y + v` on the product of the source with a submodule of the target has
-derivative the coproduct of the derivative of `f` with the inclusion of the submodule. -/
-theorem hasFDerivAt_add_coe_snd {f : E → F} {f' : E →L[𝕜] F} (hf : HasFDerivAt f f' x)
-    (G : Submodule 𝕜 F) :
-    HasFDerivAt (fun p : E × G => f p.1 + (p.2 : F)) (f'.coprod G.subtypeL) (x, 0) := by
-  convert (hf.comp (x, (0 : G)) hasFDerivAt_fst).add
-    (G.subtypeL.hasFDerivAt.comp (x, 0) hasFDerivAt_snd) using 1
-  · rfl
-  · apply ContinuousLinearMap.ext
-    intro p
-    rfl
-
 /-- A `C^n` map on an open set has an immersion normal form at any point where its
 derivative admits a continuous linear left inverse. Both spaces may be infinite dimensional. -/
 theorem ContDiffOn.isImmersionAt_of_hasLeftInverse
     (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (hx : x ∈ s) (hn : 1 ≤ n)
     (hdf : (fderiv 𝕜 f x).HasLeftInverse) :
     IsImmersionAt 𝓘(𝕜, E) 𝓘(𝕜, F) n f x := by
-  -- `E` is complete: the derivative is a uniform embedding onto a closed subset of `F`.
+  -- `E` is complete, as a retract of `F` through the derivative and its left inverse.
   have : CompleteSpace E := hdf.completeSpace
   -- Adjoin the closed complement so that the augmented derivative is invertible.
   let G := hdf.complement
@@ -110,7 +88,9 @@ theorem ContDiffOn.isImmersionAt_of_hasLeftInverse
       (G.subtypeL.contDiff.comp contDiff_snd).contDiffOn
   have hn0 : n ≠ 0 := by rintro rfl; simp at hn
   have hderiv : HasFDerivAt g (e : (E × G) →L[𝕜] F) (x, 0) :=
-    hasFDerivAt_add_coe_snd ((hf.contDiffAt (hs.mem_nhds hx)).differentiableAt hn0).hasFDerivAt G
+    (((hf.contDiffAt (hs.mem_nhds hx)).differentiableAt hn0).hasFDerivAt.comp_fst_add_comp_snd
+      G.subtypeL.hasFDerivAt).congr_fderiv
+      (ContinuousLinearMap.coe_coprodSubtypeLEquivOfIsCompl _ _ _).symm
   obtain ⟨Θ, hΘ, hxΘ, hsub, hinv⟩ :=
     TauCeti.ContDiffOn.exists_openPartialHomeomorph hg ht hx hn hderiv.fderiv.symm
   have hforward : ContDiffOn 𝕜 n Θ Θ.source := hΘ ▸ hg.mono hsub
