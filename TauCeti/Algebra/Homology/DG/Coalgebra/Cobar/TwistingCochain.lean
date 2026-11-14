@@ -12,8 +12,8 @@ public import TauCeti.Algebra.Homology.DG.Algebra.KoszulTwist
 /-!
 # Twisting cochains and the cobar universal property
 
-A twisting cochain from a noncounital DG coalgebra `C` to a unital DG algebra `A` is a
-linear map `τ : C → A` of degree one satisfying
+A twisting cochain from a noncounital DG coalgebra `C` to a DG algebra `A`, unital or not, is
+a linear map `τ : C → A` of degree one satisfying
 
 `d_A τ + τ d_C + μ (τ ⊗ τ) Δ = 0`,
 
@@ -21,7 +21,8 @@ where the tensor product of the two degree-one maps contributes the sign
 `(-1) ^ |c'|` on a coproduct term `c' ⊗ c''`. The equation makes sense over any
 commutative ring; it involves no division or infinite sum.
 
-The cobar universal property identifies these cochains with DG algebra maps `ΩC → A`.
+The cobar universal property identifies the twisting cochains into a unital `A` with DG algebra
+maps `ΩC → A`.
 With the differential of `cobarDifferential`, the universal twisting cochain is **minus**
 the inclusion of desuspended generators. Thus a twisting cochain `τ` extends uniquely to
 the DG algebra map taking `s⁻¹ c` to `-τ c`. We prove the full chain-map equation on the
@@ -44,19 +45,27 @@ namespace TauCeti
 universe uR uC uA uB
 
 variable {R : Type uR} {C : Type uC} {A : Type uA}
-  [CommRing R] [AddCommGroup C] [Module R C] [Ring A] [Algebra R A]
+  [CommRing R] [AddCommGroup C] [Module R C]
   (G : InternalGrading R C ℤ) (Δ : C →ₗ[R] C ⊗[R] C) (dC : C →ₗ[R] C)
+
+section NonUnital
+
+variable [NonUnitalRing A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
   (𝒜 : ℤ → Submodule R A) (dA : A →ₗ[R] A)
 
 /-- A degree-one twisting cochain, with the tensor-map Koszul sign in its quadratic term.
 For a coaugmented coalgebra this definition is applied to its coaugmentation coideal and
-reduced coproduct. -/
+reduced coproduct. The target only needs to be a nonunital algebra. -/
 structure IsTwistingCochain (τ : C →ₗ[R] A) : Prop where
   /-- A twisting cochain raises degree by one. -/
   isHomogeneous : LinearMap.IsHomogeneous τ G.piece 𝒜 1
   /-- The twisting equation, including the sign of the tensor product of degree-one maps. -/
   equation (c : C) : dA (τ c) + τ (dC c) +
     LinearMap.mul' R A (TensorProduct.map (τ ∘ₗ G.koszulTwist 1) τ (Δ c)) = 0
+
+end NonUnital
+
+variable [Ring A] [Algebra R A] (𝒜 : ℤ → Submodule R A) (dA : A →ₗ[R] A)
 
 variable {G Δ dC 𝒜 dA}
 

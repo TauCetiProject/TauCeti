@@ -42,6 +42,10 @@ vanish.
 * `TauCeti.IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_one_apply`,
   `toAInfinityAlgebra_m_two_apply`, and `toAInfinityAlgebra_m_of_three_le`: its operations are the
   differential, the product, and zero.
+* `TauCeti.IsNonUnitalDGAlgebra.toAInfinityAlgebra_taylor`: its Taylor map is the differential on
+  single letters and the signed product on two-letter words.
+* `TauCeti.IsNonUnitalDGAlgebra.taylor_barDifferential_apply`: the component equation of an `A∞`
+  morphism into a nonunital DG algebra.
 * `TauCeti.IsDGAlgebra.strictUnit_one`: the unit of a DG algebra is a strict unit.
 * `TauCeti.AInfinityAlgebra.isNonUnitalDGAlgebra_differential` and
   `TauCeti.AInfinityAlgebra.isDGAlgebra_differential`: the unary operation of an `A∞` algebra
@@ -195,6 +199,49 @@ theorem toAInfinityAlgebra_mul (h : IsNonUnitalDGAlgebra 𝒜 d) :
     h.toAInfinityAlgebra.mul = LinearMap.mul R A := by
   ext x y
   simp
+
+/-- The Taylor map of the `A∞` algebra of a nonunital DG algebra: the differential on single
+letters, and the product on two-letter words, with the Koszul twist `a ↦ (-1) ^ |a| a` of the left
+letter carrying the suspension sign. -/
+theorem toAInfinityAlgebra_taylor (h : IsNonUnitalDGAlgebra 𝒜 d) :
+    h.toAInfinityAlgebra.taylor = d ∘ₗ ReducedTensorWords.letter R A +
+      LinearMap.mul' R A ∘ₗ
+        TensorProduct.map
+          ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1 ∘ₗ ReducedTensorWords.letter R A)
+          (ReducedTensorWords.letter R A) ∘ₗ ReducedTensorWords.deconcatenation R A := by
+  have hμ : TensorProduct.lift (LinearMap.mul R A) = LinearMap.mul' R A :=
+    TensorProduct.ext' fun _ _ ↦ by simp
+  rw [h.toAInfinityAlgebra.taylor_eq_of_m_eq_zero fun _ ↦ h.toAInfinityAlgebra_m_of_three_le,
+    toAInfinityAlgebra_differential, toAInfinityAlgebra_mul, toAInfinityAlgebra_grading, hμ]
+
+/-- The Taylor map of the `A∞` algebra of a nonunital DG algebra after the Taylor expansion of
+`g`: the differential of `g` plus the product of the two halves of each cut, the left one
+Koszul-twisted. -/
+theorem toAInfinityAlgebra_taylor_coalgHom_apply {M : Type*} [AddCommGroup M] [Module R M]
+    (h : IsNonUnitalDGAlgebra 𝒜 d) (g : ReducedTensorWords R M →ₗ[R] A)
+    (z : ReducedTensorWords R M) :
+    h.toAInfinityAlgebra.taylor (ReducedTensorWords.coalgHom R g z) =
+      d (g z) + LinearMap.mul' R A (TensorProduct.map
+        ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1 ∘ₗ g) g
+          (ReducedTensorWords.deconcatenation R M z)) := by
+  rw [toAInfinityAlgebra_taylor, LinearMap.add_apply, LinearMap.comp_apply,
+    ← LinearMap.comp_apply (ReducedTensorWords.letter R A), ReducedTensorWords.letter_comp_coalgHom,
+    LinearMap.comp_apply, LinearMap.comp_apply,
+    (ReducedTensorWords.isCoalgHom_coalgHom g).deconcatenation_apply, TensorProduct.map_map,
+    LinearMap.comp_assoc, ReducedTensorWords.letter_comp_coalgHom]
+
+/-- The component equation of an `A∞` morphism `f` into a nonunital DG algebra: the Taylor
+components after the bar differential are the differential of the Taylor components plus the
+product of the Taylor components on the two halves of each cut, the left one Koszul-twisted. -/
+theorem taylor_barDifferential_apply {M : Type*} [AddCommGroup M] [Module R M]
+    {𝒜' : AInfinityAlgebra R M} (h : IsNonUnitalDGAlgebra 𝒜 d)
+    (f : AInfinityHom 𝒜' h.toAInfinityAlgebra) (z : ReducedTensorWords R M) :
+    f.taylor (𝒜'.barDifferential z) =
+      d (f.taylor z) + LinearMap.mul' R A (TensorProduct.map
+        ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1 ∘ₗ f.taylor) f.taylor
+          (ReducedTensorWords.deconcatenation R M z)) := by
+  rw [← h.toAInfinityAlgebra_taylor_coalgHom_apply, ← f.barMap_eq_coalgHom,
+    ← LinearMap.comp_apply h.toAInfinityAlgebra.taylor, f.taylor_comp_barMap, LinearMap.comp_apply]
 
 end IsNonUnitalDGAlgebra
 

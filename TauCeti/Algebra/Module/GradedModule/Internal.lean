@@ -605,12 +605,33 @@ theorem InternalGrading.koszulTwist_comp_self (G : InternalGrading R M ℤ) (q :
     koszulTwist G q ∘ₗ koszulTwist G q = LinearMap.id := by
   rw [koszulTwist_comp, ← two_mul, koszulTwist_two_mul]
 
+/-- The Koszul twist of any parameter is an involution, after another linear map. -/
+@[simp]
+theorem InternalGrading.koszulTwist_comp_self_assoc {N : Type w} [AddCommMonoid N] [Module R N]
+    (G : InternalGrading R M ℤ) (q : ℤ) (g : N →ₗ[R] M) :
+    koszulTwist G q ∘ₗ koszulTwist G q ∘ₗ g = g := by
+  rw [← LinearMap.comp_assoc, koszulTwist_comp_self, LinearMap.id_comp]
+
 /-- The Koszul twist of any parameter is an involution, pointwise. -/
 @[simp]
 theorem InternalGrading.koszulTwist_koszulTwist (G : InternalGrading R M ℤ) (q : ℤ) (x : M) :
     koszulTwist G q (koszulTwist G q x) = x := by
   have h := LinearMap.congr_fun (koszulTwist_comp_self G q) x
   rwa [LinearMap.comp_apply, LinearMap.id_apply] at h
+
+/-- An element lies in a homogeneous piece exactly when its Koszul twist does. -/
+@[simp]
+theorem InternalGrading.koszulTwist_mem_piece_iff (G : InternalGrading R M ℤ) {x : M} {e : ℤ}
+    (q : ℤ) : koszulTwist G q x ∈ G.piece e ↔ x ∈ G.piece e :=
+  ⟨fun h ↦ by simpa using koszulTwist_mem_piece G h q, fun h ↦ koszulTwist_mem_piece G h q⟩
+
+/-- An element lies in a piece `ℳ k` of a decomposition exactly when its Koszul twist does. -/
+@[simp]
+theorem InternalGrading.koszulTwist_mem_ofDecomposition_iff (ℳ : ℤ → Submodule R M)
+    [DirectSum.Decomposition ℳ] {x : M} {k : ℤ} (q : ℤ) :
+    koszulTwist (InternalGrading.ofDecomposition ℳ) q x ∈ ℳ k ↔ x ∈ ℳ k :=
+  ⟨fun h ↦ by simpa using koszulTwist_mem_ofDecomposition ℳ h q,
+    fun h ↦ koszulTwist_mem_ofDecomposition ℳ h q⟩
 
 /-- The Koszul twist only depends on the parity of its parameter; in particular, negating the
 parameter does not change it. -/
