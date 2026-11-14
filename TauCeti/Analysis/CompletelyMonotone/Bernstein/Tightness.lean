@@ -31,8 +31,6 @@ tight.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B, Bernstein's theorem
-  milestone (“measure extraction via Prokhorov tightness”).
 * R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions: Theory and Applications*
   (de Gruyter, 2nd ed. 2012), Ch. 1.
 * D. Chafaï, *Aspects of the Bernstein theorem* (2013).

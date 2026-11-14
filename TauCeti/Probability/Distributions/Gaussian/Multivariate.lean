@@ -35,6 +35,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
   of the standard Gaussian.
 * `TauCeti.Probability.multivariateGaussian_zero_right` identifies the zero-covariance law with
   the point mass at its mean.
+* `TauCeti.Probability.multivariateGaussian_eq_dirac_iff` shows that this is the only
+  positive-semidefinite Gaussian law equal to that point mass.
 * `TauCeti.Probability.measurable_multivariateGaussian_inv_smul` shows that the family
   `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`.
 * `TauCeti.Probability.measurable_multivariateGaussian_prodMk_left_apply` shows that the Gaussian
@@ -46,11 +48,6 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.indepFun_sumEquivProd_multivariateGaussian_iff` characterizes independence of
   two
   complementary coordinate blocks.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 1,
-  **Covariance matrices**.
 -/
 
 public section
@@ -104,6 +101,15 @@ theorem multivariateGaussian_zero_eq_map_stdGaussian_sqrt [Fintype ι] [Decidabl
 theorem multivariateGaussian_zero_right [Fintype ι] [DecidableEq ι] (m : EuclideanSpace ℝ ι) :
     multivariateGaussian m (0 : Matrix ι ι ℝ) = Measure.dirac m := by
   simp [multivariateGaussian]
+
+/-- A positive-semidefinite multivariate Gaussian is the point mass at its mean exactly when its
+covariance parameter vanishes. -/
+theorem multivariateGaussian_eq_dirac_iff [Fintype ι] [DecidableEq ι] (m : EuclideanSpace ℝ ι)
+    {S : Matrix ι ι ℝ} (hS : S.PosSemidef) :
+    multivariateGaussian m S = Measure.dirac m ↔ S = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ multivariateGaussian_zero_right m⟩
+  rw [← covMatrix_multivariateGaussian m hS, h, ← multivariateGaussian_zero_right m,
+    covMatrix_multivariateGaussian m Matrix.PosSemidef.zero]
 
 /-- The Gaussian family `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`. -/
 theorem measurable_multivariateGaussian_inv_smul [Fintype ι] [DecidableEq ι]

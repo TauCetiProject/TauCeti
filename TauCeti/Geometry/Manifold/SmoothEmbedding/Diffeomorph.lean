@@ -33,11 +33,10 @@ transport moves it by the ambient diffeomorphism, and the two assemble into an a
 self-diffeomorphism group `TauCeti.Diff` of the target and a right action of that of the source;
 the two actions commute, which is recorded as a `SMulCommClass` instance.
 
-This is the transport layer that layer 4 of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`) needs for its geometric presentations, where a knot
-presentation is a smooth embedding of the circle into the ambient manifold `N`: reversing the
-orientation of such a presentation and rotating its parametrisation are precisely precomposition
-with a diffeomorphism of the circle, while the ambient `Diff(N)`-action is postcomposition.
+This is the transport needed by geometric knot presentations, where a knot presentation is a
+smooth embedding of the circle into the ambient manifold `N`: reversing the orientation of such a
+presentation and rotating its parametrisation are precisely precomposition with a diffeomorphism
+of the circle, while the ambient `Diff(N)`-action is postcomposition.
 
 ## Main results
 

@@ -131,7 +131,7 @@ theorem HasLaw.ae_mem_affineRange_properComplexGaussianMeasure
       AffineSubspace.mk' (complexToRealEuclidean iota m)
         (LinearMap.range (Matrix.toEuclideanLin (complexGaussianRealCovariance C))) := by
   exact (hX.ae_iff (measurableSet_setOfPred.mp
-    ((AffineSubspace.closed_of_finiteDimensional _).measurableSet.preimage (by fun_prop)))).2
+    ((AffineSubspace.isClosed_of_finiteDimensional _).measurableSet.preimage (by fun_prop)))).2
       (TauCeti.Probability.ae_mem_affineRange_properComplexGaussianMeasure C m)
 
 end ProbabilityTheory

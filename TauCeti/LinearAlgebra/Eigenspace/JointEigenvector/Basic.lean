@@ -5,6 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
+import TauCeti.SetTheory.Cardinal.Finite
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.LinearAlgebra.Eigenspace.Pi
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
@@ -241,8 +242,8 @@ lemma iSupIndep_iInf_eigenspace {ι : Type*} (f : ι → Module.End K V) :
 /-- **Summands of a spanning family with distinct joint scalars are joint eigenspaces.** If the
 `W j` span `V`, every `W j` consists of joint eigenvectors of the family `f` with eigenvalues
 `g j`, and `g` is injective, then the joint eigenspace of `f` for `g k` is exactly `W k`. This is
-the joint form of `Module.End.eigenspace_eq_of_iSup_eq_top`: the scalars of a single operator
-need not separate the summands, only those of the whole family. -/
+the joint form of the eigenspace case (`n = 1`) of `Module.End.genEigenspace_eq_of_iSup_eq_top`:
+the scalars of a single operator need not separate the summands, only those of the whole family. -/
 theorem iInf_eigenspace_eq_of_iSup_eq_top {ι κ : Type*} (f : ι → Module.End K V)
     {W : κ → Submodule K V} {g : κ → ι → K} (hW : ∀ j, W j ≤ ⨅ i, (f i).eigenspace (g j i))
     (htop : ⨆ j, W j = ⊤) (hg : Function.Injective g) (k : κ) :
@@ -373,15 +374,13 @@ variable {ρ : G →* Module.End K V}
 /-- The Fourier projector for `χ₀`, applied to a vector: the character idempotent
 `TauCeti.charIdempotent χ₀` acting through `ρ`. -/
 private def fourierComponent (χ₀ : G →* Kˣ) (v : V) : V :=
-  MonoidAlgebra.lift K (Module.End K V) G ρ (charIdempotent χ₀) v
+  Representation.asAlgebraHom ρ (charIdempotent χ₀) v
 
 variable (ρ) in
 private lemma fourierComponent_mem (χ₀ : G →* Kˣ) (v : V) (g : G) :
     fourierComponent (ρ := ρ) χ₀ v ∈ (ρ g).eigenspace (χ₀ g) := by
-  rw [Module.End.mem_eigenspace_iff, fourierComponent]
-  simpa only [map_mul, MonoidAlgebra.lift_single, one_smul, map_smul, mul_apply_eq_comp,
-    LinearMap.smul_apply] using
-    congr(MonoidAlgebra.lift K (Module.End K V) G ρ $(single_mul_charIdempotent χ₀ g) v)
+  rw [fourierComponent]
+  exact Submodule.mem_iInf _ |>.1 (Representation.asAlgebraHom_charIdempotent_apply_mem ρ χ₀ v) g
 
 end FourierProjector
 
@@ -407,17 +406,14 @@ theorem iSup_inf_iInf_eigenspace_unitHom_of_invariant_of_commGroup
     (hcard : IsUnit (Nat.card G : K))
     (p : Submodule K V) (hp : ∀ g, ∀ x ∈ p, ρ g x ∈ p) :
     (⨆ χ₀ : G →* Kˣ, p ⊓ ⨅ g, (ρ g).eigenspace (χ₀ g)) = p := by
-  have : Finite G := Nat.finite_of_card_ne_zero fun h0 => by
-    simp only [h0, Nat.cast_zero, isUnit_zero_iff] at hcard
-    exact zero_ne_one hcard
+  have : Finite G := TauCeti.finite_of_natCast_card_ne_zero hcard.ne_zero
   refine le_antisymm (iSup_le fun _ ↦ inf_le_left) fun v hv ↦ ?_
   rw [← sum_fourierComponent (ρ := ρ) hcard v]
   refine Submodule.sum_mem _ fun χ₀ _ ↦ Submodule.mem_iSup_of_mem χ₀ ?_
   refine Submodule.mem_inf.mpr ⟨?_, Submodule.mem_iInf _ |>.mpr fun g ↦
     fourierComponent_mem ρ χ₀ v g⟩
-  rw [fourierComponent, charIdempotent_eq_sum]
-  simp only [map_smul, map_sum, MonoidAlgebra.lift_of, LinearMap.smul_apply,
-    LinearMap.sum_apply]
+  rw [fourierComponent, Representation.asAlgebraHom_charIdempotent]
+  simp only [LinearMap.smul_apply, LinearMap.coe_sum, Finset.sum_apply]
   exact Submodule.smul_mem _ _ (Submodule.sum_mem _ fun d _ ↦
     Submodule.smul_mem _ _ (hp d v hv))
 

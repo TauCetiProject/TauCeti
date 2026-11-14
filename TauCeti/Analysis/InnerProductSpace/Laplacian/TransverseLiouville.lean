@@ -122,7 +122,6 @@ private theorem le_add_div_of_barrier {K : Submodule ℝ E} (hn : 0 < Module.fin
   set d : ℝ := (Module.finrank ℝ Kᗮ : ℝ)
   have hn' : 0 < n := Nat.cast_pos.2 hn
   set c : ℝ := M / (n * L ^ 2)
-  have hc : 0 ≤ c := div_nonneg hM0 (by positivity)
   -- The harmonic barrier `ψ`, compared with `f` on the box `S`.
   set ψ : E → ℝ := fun y ↦
     ε + c * (n * ‖Q (y - x₀)‖ ^ 2 - d * ‖P (y - x₀)‖ ^ 2 + d * (2 * R) ^ 2)

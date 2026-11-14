@@ -54,7 +54,7 @@ theorem _root_.Polynomial.coeff_ofFn_mul_ofFn {m n : ℕ} (a : Fin m → R) (b :
     (ofFn m a * ofFn n b).coeff j =
       ∑ l : Fin m × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = j, a l.1 * b l.2 := by
   rw [ofFn_eq_sum_monomial, ofFn_eq_sum_monomial, Finset.sum_mul_sum, finsetSum_coeff]
-  simp only [finsetSum_coeff, monomial_mul_monomial, coeff_monomial]
+  simp only [finsetSum_coeff, monomial_mul_monomial, coeff_monomial_apply]
   rw [Finset.sum_filter, Fintype.sum_prod_type]
 
 -- Mathlib's `ofFn` takes `[DecidableEq R]`, so this instance occurs in the statement.
@@ -81,7 +81,7 @@ theorem _root_.Polynomial.X_sub_C_pow_dvd_ofFn_iff {R : Type*} [CommRing R] [Dec
       ∀ k < r, ∑ i : Fin n, f i * (t ^ ((i : ℕ) - k) * ((i : ℕ).choose k : R)) = 0 := by
   rw [ofFn_eq_sum_monomial, X_sub_C_pow_dvd_iff, X_pow_dvd_iff]
   refine forall₂_congr fun k _ ↦ ?_
-  simp [← C_mul_X_pow_eq_monomial, finsetSum_coeff, coeff_X_add_C_pow]
+  simp [← C_mul_X_pow_eq_monomial, coeff_X_add_C_pow]
 
 /-- If a basis `b` of the span of finitely many vectors `Qⱼ` is given, the polynomials
 `∑ⱼ (b.repr Qⱼ k) Tʲ`, one for each basis index `k`, are linearly independent: a relation among
