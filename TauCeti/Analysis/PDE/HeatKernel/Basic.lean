@@ -127,7 +127,7 @@ theorem heatKernel_mul_eq_mul_heatKernel_smul {t s : ℝ} (ht : 0 < t) (x : E) :
     rw [norm_smul, norm_inv, norm_of_nonneg hst.le, mul_pow, inv_pow, sq_sqrt ht.le]
     ring
   rw [heatKernel_apply, heatKernel_apply, hnorm, inv_sqrt_pow_eq_rpow ht.le,
-    show 4 * π * (t * s) = t * (4 * π * s) by ring, mul_rpow_of_pos_left ht,
+    show 4 * π * (t * s) = t * (4 * π * s) by ring, mul_rpow_of_nonneg_left ht.le,
     show -‖x‖ ^ 2 / (4 * (t * s)) = -(‖x‖ ^ 2 / t) / (4 * s) by ring]
   ring
 
