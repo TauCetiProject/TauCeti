@@ -112,22 +112,6 @@ theorem IsPiecewiseContMDiffOn.sum_sectionAlong {ι : Type*} (A : Finset ι) (s 
       (hs i (Finset.mem_insert_self i A)).add_sectionAlong
         (ih fun j hj ↦ hs j (Finset.mem_insert_of_mem hj))
 
-/-- Scaling a local `C^n` section on an open set `u` by a piecewise `C^n` scalar function `ψ` along
-`γ` gives a piecewise `C^n` section along `γ` whenever `γ` maps `Icc a b ∩ tsupport ψ` into `u`. -/
-theorem IsPiecewiseContMDiffOn.smul_sectionAlong_of_tsupport {σ : ∀ x, V x} {ψ : ℝ → ℝ} {u : Set M}
-    (hψ : IsPiecewiseContMDiffOn 𝓘(ℝ, ℝ) n ψ a b) (hγ : IsPiecewiseContMDiffOn I n γ a b)
-    (hu : IsOpen u) (hγu : MapsTo γ (Icc a b ∩ tsupport ψ) u)
-    (hσ : ContMDiffOn I (I.prod 𝓘(ℝ, F)) n (fun x ↦ TotalSpace.mk' F x (σ x)) u) :
-    IsPiecewiseContMDiffOn (I.prod 𝓘(ℝ, F)) n (fun t ↦ TotalSpace.mk' F (γ t) (ψ t • σ (γ t)))
-      a b := by
-  obtain ⟨k, τ, hτa, hτb, hτ, hpair⟩ := (hψ.prodMk hγ).exists_partition
-  have hmono := (Fin.strictMono_iff_lt_succ.mpr hτ).monotone
-  refine .of_partition τ hτa hτb hτ fun i ↦
-    (contMDiff_fst.comp_contMDiffOn (hpair i)).smul_sectionAlong_of_tsupport
-      (contMDiff_snd.comp_contMDiffOn (hpair i)) hu (hγu.mono_left ?_) hσ
-  exact inter_subset_inter_left _
-    (Icc_subset_Icc (hτa ▸ hmono (Fin.zero_le _)) (hτb ▸ hmono (Fin.le_last _)))
-
 /-- The real submodule of continuous piecewise `C^n` sections along `γ` on `[a,b]`.
 Only interval values are carried; the extension and partition witnessing membership are
 existential. The base curve is assumed piecewise `C^n` so that the zero field belongs. -/

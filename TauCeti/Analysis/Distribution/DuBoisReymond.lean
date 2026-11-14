@@ -335,18 +335,14 @@ theorem _root_.ContinuousOn.eqOn_zero_Icc_of_integral_smul_eq_zero {a b : ℝ} (
     {f : ℝ → F} (hf : ContinuousOn f (Icc a b))
     (h : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b → ∫ t in a..b, ψ t • f t = 0) :
     EqOn f 0 (Icc a b) := by
-  have hkey : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ Ioo a b →
-      ∫ t, ψ t • f t = 0 := by
-    intro ψ hψ _ hψs
-    exact (_root_.intervalIntegral.integral_eq_integral_of_support_subset
-      ((Function.support_smul_subset_left ψ f).trans
-        ((subset_tsupport _).trans (hψs.trans Ioo_subset_Ioc_self)))).symm.trans (h ψ hψ hψs)
   have hae := isOpen_Ioo.ae_eq_zero_of_integral_contDiff_smul_eq_zero
-    ((hf.mono Ioo_subset_Icc_self).locallyIntegrableOn measurableSet_Ioo) hkey
-  have hIoo : EqOn f 0 (Ioo a b) := Measure.eqOn_open_of_ae_eq
-    ((ae_restrict_iff' measurableSet_Ioo).mpr hae) isOpen_Ioo
-    (hf.mono Ioo_subset_Icc_self) continuousOn_const
-  exact hIoo.of_subset_closure hf continuousOn_const Ioo_subset_Icc_self (closure_Ioo hab.ne).ge
+    ((hf.mono Ioo_subset_Icc_self).locallyIntegrableOn measurableSet_Ioo) fun ψ hψ _ hψs ↦
+      (_root_.intervalIntegral.integral_eq_integral_of_support_subset
+        ((Function.support_smul_subset_left ψ f).trans
+          ((subset_tsupport _).trans (hψs.trans Ioo_subset_Ioc_self)))).symm.trans (h ψ hψ hψs)
+  exact (Measure.eqOn_open_of_ae_eq ((ae_restrict_iff' measurableSet_Ioo).mpr hae) isOpen_Ioo
+    (hf.mono Ioo_subset_Icc_self) continuousOn_const).of_subset_closure hf continuousOn_const
+      Ioo_subset_Icc_self (closure_Ioo hab.ne).ge
 
 /-- **Weak-derivative `C¹` regularity on a closed interval.** If `f, g : ℝ → F` are continuous on
 `[a, b]` and `∫ t in a..b, (deriv ψ t • f t + ψ t • g t) = 0` for every smooth `ψ` with
@@ -357,19 +353,16 @@ theorem _root_.ContinuousOn.contDiffOn_one_Icc_of_integral_deriv_smul_add_eq_zer
       ∫ t in a..b, (deriv ψ t • f t + ψ t • g t) = 0) :
     ContDiffOn ℝ 1 f (Icc a b) := by
   rcases le_or_gt b a with hba | hab
-  · intro x hx
-    rw [(subsingleton_Icc_of_ge hba).eq_singleton_of_mem hx]
-    exact contDiffWithinAt_singleton
+  · exact fun x hx ↦ (subsingleton_Icc_of_ge hba).eq_singleton_of_mem hx ▸
+      contDiffWithinAt_singleton
   obtain ⟨g', hg', hgf⟩ := hg.exists_continuous_eqOn_Icc
   set G : ℝ → F := fun t ↦ ∫ s in a..t, g' s
-  have hGd (t : ℝ) : HasDerivAt G (g' t) t :=
-    integral_hasDerivAt_right (hg'.intervalIntegrable _ _)
-      hg'.aestronglyMeasurable.stronglyMeasurableAtFilter hg'.continuousAt
+  have hGd (t : ℝ) : HasDerivAt G (g' t) t := integral_hasDerivAt_right (hg'.intervalIntegrable _ _)
+    hg'.aestronglyMeasurable.stronglyMeasurableAtFilter hg'.continuousAt
   have hG : ContDiff ℝ 1 G := contDiff_one_iff_deriv.mpr
     ⟨fun t ↦ (hGd t).differentiableAt, (funext fun t ↦ (hGd t).deriv) ▸ hg'⟩
   have hdb : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b →
-      ∫ t, deriv ψ t • (f t - G t) = 0 := by
-    intro ψ hψ hψs
+      ∫ t, deriv ψ t • (f t - G t) = 0 := fun ψ hψ hψs ↦ by
     have hdψ : Continuous (deriv ψ) := (contDiff_infty_iff_deriv.mp hψ).2.continuous
     have hdf : IntervalIntegrable (fun t ↦ deriv ψ t • f t) volume a b :=
       (hdψ.continuousOn.smul (uIcc_of_le hab.le ▸ hf)).intervalIntegrable
@@ -381,23 +374,20 @@ theorem _root_.ContinuousOn.contDiffOn_one_Icc_of_integral_deriv_smul_add_eq_zer
       rw [TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le hab.le
         (hψ.of_le (by simp)) (hg'.intervalIntegrable a b),
         image_eq_zero_of_notMem_tsupport fun hm ↦ (hψs hm).2.ne rfl, zero_smul, zero_sub]
-      congr 1
-      exact _root_.intervalIntegral.integral_congr fun t ht ↦ by
-        rw [hgf (uIcc_of_le hab.le ▸ ht)]
-    refine Eq.trans ?_ (b := ∫ t in a..b, deriv ψ t • (f t - G t)) ?_
-    · exact (_root_.intervalIntegral.integral_eq_integral_of_support_subset
-        ((Function.support_smul_subset_left (deriv ψ) (f - G)).trans ((subset_tsupport _).trans
-          (tsupport_deriv_subset.trans (hψs.trans Ioo_subset_Ioc_self))))).symm
-    · simp_rw [smul_sub]
-      rw [_root_.intervalIntegral.integral_sub hdf hdG, hibp, sub_neg_eq_add,
-        ← _root_.intervalIntegral.integral_add hdf hψg]
-      exact h ψ hψ hψs
+      exact congrArg Neg.neg (_root_.intervalIntegral.integral_congr fun t ht ↦ by
+        rw [hgf (uIcc_of_le hab.le ▸ ht)])
+    refine (_root_.intervalIntegral.integral_eq_integral_of_support_subset
+      ((Function.support_smul_subset_left (deriv ψ) (f - G)).trans ((subset_tsupport _).trans
+        (tsupport_deriv_subset.trans (hψs.trans Ioo_subset_Ioc_self))))).symm.trans ?_
+    change ∫ t in a..b, deriv ψ t • (f t - G t) = 0
+    simp_rw [smul_sub]
+    rw [_root_.intervalIntegral.integral_sub hdf hdG, hibp, sub_neg_eq_add,
+      ← _root_.intervalIntegral.integral_add hdf hψg]
+    exact h ψ hψ hψs
   obtain ⟨c, hc⟩ := ((hf.sub hG.continuous.continuousOn).mono
     Ioo_subset_Icc_self).exists_eqOn_const_Ioo_of_integral_deriv_smul_eq_zero hdb
-  have hc_Icc : EqOn (fun t ↦ f t - G t) (fun _ ↦ c) (Icc a b) :=
+  exact ((contDiff_const (c := c)).add hG).contDiffOn.congr fun t ht ↦ sub_eq_iff_eq_add.mp <|
     hc.of_subset_closure (hf.sub hG.continuous.continuousOn) continuousOn_const
-      Ioo_subset_Icc_self (closure_Ioo hab.ne).ge
-  exact ((contDiff_const (c := c)).add hG).contDiffOn.congr fun t ht ↦
-    sub_eq_iff_eq_add.mp (hc_Icc ht)
+      Ioo_subset_Icc_self (closure_Ioo hab.ne).ge ht
 
 end TauCeti
