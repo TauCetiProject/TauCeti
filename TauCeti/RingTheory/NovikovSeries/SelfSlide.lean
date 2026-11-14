@@ -144,9 +144,9 @@ theorem eq_one_of_forall_algebraNorm_sub_one_mem_periodFiltration
     mem_periodFiltration.1 (mem_periodIdeal.1 (hnil.log_mem hcutfirst)) h (by linarith)
   have hlog := eq_zero_of_forall_algebraNorm_exp_sub_one_mem_periodFiltration hh hpos
     (hnil.log_mem hu) (by
-      simpa only [coe_log_nonnegSubring, AddSubgroup.coe_toAddSubmonoid] using
+      simpa only [coe_log_nonnegSubring] using
         support_log_subset (u : NovikovSeries R H N)
-          (S := (AddSubgroup.zmultiples h).toAddSubmonoid) hsupp)
+          (S := AddSubgroup.zmultiples h) hsupp)
     hlogfirst (by
       intro k _ hk
       obtain ⟨C, hC, hcutC⟩ := hcut k hk

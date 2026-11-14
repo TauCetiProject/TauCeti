@@ -195,7 +195,7 @@ theorem log_algebraNorm [Algebra ℚ R] {u : nonnegSubring R N}
       (u : NovikovSeries R H N)) =
       Algebra.trace (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N)
         (NormedSpace.log (u : NovikovSeries R H N)) := by
-  rw [← coe_normNonnegSubring, ← coe_log_nonnegSubring, ← coe_log_nonnegSubring]
+  rw [← coe_normNonnegSubring]
   set A := NovikovSeries R H N
   set B := NovikovSeries R K (N.comp K.subtype)
   have hφ := exists_period_rescale_subtype (N := N) K
@@ -216,7 +216,8 @@ theorem log_algebraNorm [Algebra ℚ R] {u : nonnegSubring R N}
   by_cases hk : N k ≤ 0
   · -- Both sides lie in the positive ideal.
     have hlogB := hnil.log_mem (I := posIdeal R N) hu
-    rw [coeff_sub, trace_eq_index_smul_comap hφ hker, coeff_smul, coeff_comap,
+    rw [← coe_log_nonnegSubring, ← coe_log_nonnegSubring, coeff_sub,
+      trace_eq_index_smul_comap hφ hker, coeff_smul, coeff_comap,
       mem_posIdeal.1 ((isTopologicallyNilpotent_of_mem_posIdeal' hu').log_mem hu') k hk,
       mem_posIdeal.1 hlogB (K.subtype k) hk, smul_zero, sub_zero]
   -- Away from period zero, the coefficient is detected by the degree derivations along `N`.

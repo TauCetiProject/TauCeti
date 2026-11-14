@@ -45,8 +45,8 @@ they differentiate the logarithm of a principal unit logarithmically: `u * D (lo
   ring.
 * `TauCeti.NovikovSeries.coe_log_nonnegSubring`: the analogous compatibility for the logarithm.
 * `TauCeti.NovikovSeries.support_exp_subset`, `TauCeti.NovikovSeries.support_log_subset`: the
-  totalized exponential and logarithm preserve support in an additive submonoid of the exponent
-  monoid, without a positivity assumption.
+  totalized exponential and logarithm preserve support in an additive submonoid or subgroup of
+  the exponent monoid, without a positivity assumption.
 * `TauCeti.NovikovSeries.mul_degreeDerivation_log`: the logarithmic derivative of the logarithm
   along a degree derivation.
 
@@ -89,58 +89,42 @@ theorem coe_log_nonnegSubring (a : nonnegSubring K N) :
   exact (isClosed_nonnegSubring.isClosedEmbedding_subtypeVal.map_tsum
     (g := (nonnegSubring K N).subtype.toAddMonoidHom) _).trans (by simp)
 
-/-- The exponential of a series supported in an additive submonoid is supported in that
-submonoid. This holds for the totalized exponential without a positivity assumption. -/
-theorem support_exp_subset (a : NovikovSeries K H N) {S : AddSubmonoid H}
-    (ha : a.support ⊆ S) : (NormedSpace.exp a).support ⊆ S := by
-  have h_pow (n : ℕ) : (a ^ n).support ⊆ S := by
-    induction n with
-    | zero =>
-      intro h hh
-      rw [pow_zero, ← single_zero_one] at hh
-      exact (Set.mem_singleton_iff.1 (support_single_subset 0 1 hh)) ▸ S.zero_mem
-    | succ n hn =>
-      rw [pow_succ]
-      intro h hh
-      obtain ⟨a, ha', b, hb, rfl⟩ := support_mul_subset _ _ hh
-      exact S.add_mem (hn ha') (ha hb)
-  rw [NormedSpace.exp_eq_tsum_rat]
-  intro h hh
-  by_contra hs
-  apply mem_support.1 hh
-  apply coeff_tsum_eq_zero
-  intro n
-  by_contra hn
-  exact hs (h_pow n (support_smul_subset ((n.factorial : ℚ)⁻¹) _ (mem_support.2 hn)))
+private def supportSubalgebra {M : Type*} [SetLike M H] [AddSubmonoidClass M H]
+    (S : M) : Subalgebra ℚ (NovikovSeries K H N) where
+  carrier := {a | a.support ⊆ S}
+  add_mem' ha hb := (support_add_subset _ _).trans (Set.union_subset ha hb)
+  mul_mem' ha hb h hh := by
+    obtain ⟨a, ha', b, hb', rfl⟩ := support_mul_subset _ _ hh
+    exact add_mem (ha ha') (hb hb')
+  algebraMap_mem' r h hh := by
+    rw [algebraMap_apply] at hh
+    exact (Set.mem_singleton_iff.1 (support_single_subset 0 (algebraMap ℚ K r) hh)) ▸
+      zero_mem S
 
-/-- The logarithm of a series supported in an additive submonoid is supported in that
-submonoid. This holds for the totalized logarithm without a positivity assumption. -/
-theorem support_log_subset (u : NovikovSeries K H N) {S : AddSubmonoid H}
-    (hu : u.support ⊆ S) : (NormedSpace.log u).support ⊆ S := by
-  have h_one : (1 : NovikovSeries K H N).support ⊆ S := by
-    intro h hh
-    rw [← single_zero_one] at hh
-    exact (Set.mem_singleton_iff.1 (support_single_subset 0 1 hh)) ▸ S.zero_mem
-  have h_sub : (u - 1).support ⊆ S :=
-    (support_sub_subset _ _).trans (Set.union_subset hu h_one)
-  have h_pow (n : ℕ) : ((u - 1) ^ n).support ⊆ S := by
-    induction n with
-    | zero => simpa using h_one
-    | succ n hn =>
-      rw [pow_succ]
-      intro h hh
-      obtain ⟨a, ha, b, hb, rfl⟩ := support_mul_subset _ _ hh
-      exact S.add_mem (hn ha) (h_sub hb)
-  rw [NormedSpace.log_eq_tsum ℚ]
-  intro h hh
-  by_contra hs
-  apply mem_support.1 hh
-  apply coeff_tsum_eq_zero
-  intro n
-  by_contra hn
-  apply hs
-  apply h_pow n
-  exact support_smul_subset ((-1) ^ (n + 1) / n : ℚ) _ (by simpa using mem_support.2 hn)
+private theorem isClosed_supportSubalgebra {M : Type*} [SetLike M H] [AddSubmonoidClass M H]
+    (S : M) : IsClosed (supportSubalgebra (K := K) (N := N) S : Set (NovikovSeries K H N)) := by
+  have hset : (supportSubalgebra (K := K) (N := N) S : Set (NovikovSeries K H N)) =
+      ⋂ h ∈ {h | h ∉ S}, {a | a.coeff h = 0} := by
+    ext a
+    simp only [supportSubalgebra, Set.mem_ofPred_eq, Set.mem_iInter]
+    exact ⟨fun ha h hh => not_not.1 fun hn => hh (ha (mem_support.2 hn)),
+      fun ha h hh => not_not.1 fun hn => mem_support.1 hh (ha h hn)⟩
+  rw [hset]
+  exact isClosed_biInter fun h _ => (isLocallyConstant_coeff h).isClosed_fiber 0
+
+/-- The exponential of a series supported in an additive submonoid or subgroup is supported in
+that subobject. This holds for the totalized exponential without a positivity assumption. -/
+theorem support_exp_subset (a : NovikovSeries K H N) {M : Type*} [SetLike M H]
+    [AddSubmonoidClass M H] {S : M} (ha : a.support ⊆ S) :
+    (NormedSpace.exp a).support ⊆ S :=
+  NormedSpace.exp_mem (R := ℚ) (s := supportSubalgebra S) (isClosed_supportSubalgebra S) ha
+
+/-- The logarithm of a series supported in an additive submonoid or subgroup is supported in
+that subobject. This holds for the totalized logarithm without a positivity assumption. -/
+theorem support_log_subset (u : NovikovSeries K H N) {M : Type*} [SetLike M H]
+    [AddSubmonoidClass M H] {S : M} (hu : u.support ⊆ S) :
+    (NormedSpace.log u).support ⊆ S :=
+  NormedSpace.log_mem (R := ℚ) (s := supportSubalgebra S) (isClosed_supportSubalgebra S) hu
 
 end Ring
 
@@ -172,12 +156,12 @@ theorem coe_expMulEquiv_symm_apply (u : (posIdeal K N).principalUnitGroup) :
 subring logarithmically: `u * D (log u) = D u`, read in the Novikov series. -/
 theorem mul_degreeDerivation_log (ℓ : H →+ K) {u : nonnegSubring K N}
     (hu : u - 1 ∈ posIdeal K N) :
-    (u : NovikovSeries K H N) * degreeDerivation ℓ (NormedSpace.log u : nonnegSubring K N) =
+    (u : NovikovSeries K H N) * degreeDerivation ℓ (NormedSpace.log (u : NovikovSeries K H N)) =
       degreeDerivation ℓ (u : NovikovSeries K H N) := by
   have := congrArg Subtype.val
     ((isTopologicallyNilpotent_of_mem_posIdeal' hu).mul_derivation_log
       (nonnegDegreeDerivation ℓ) (continuous_nonnegDegreeDerivation ℓ))
-  simpa only [Subring.coe_mul, coe_nonnegDegreeDerivation] using this
+  simpa only [Subring.coe_mul, coe_nonnegDegreeDerivation, coe_log_nonnegSubring] using this
 
 end NovikovSeries
 
