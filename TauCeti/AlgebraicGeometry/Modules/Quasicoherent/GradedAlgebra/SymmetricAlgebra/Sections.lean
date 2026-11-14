@@ -35,9 +35,10 @@ grading of `TauCeti.SymmetricAlgebra.gradedAlgebra`.
 
 Through this comparison, properties of symmetric algebras of modules transfer to `Sym F`: the
 graded symmetric algebra is generated in degree one
-(`TauCeti.AlgebraicGeometry.isGeneratedInDegreeOne_gradedSymmetricAlgebra`), its affine sections
-in degree zero are a quotient of `Γ(X, U)`, and they form a `Γ(X, U)`-algebra of finite type when
-`F` is of finite type. These are the inputs for the relative `Proj` of `Sym F` to be proper over
+(`TauCeti.AlgebraicGeometry.isGeneratedInDegreeOne_gradedSymmetricAlgebra`), its sections
+in degree zero are isomorphic to `Γ(X, U)` for every open `U`, and the graded ring of affine
+sections `⨁ n, Γ(Symⁿ F, U)` is a `Γ(X, U)`-algebra of finite type when `F` is of finite type.
+These are the inputs for the relative `Proj` of `Sym F` to be proper over
 `X` with invertible twisting sheaves.
 
 ## Main results
@@ -51,8 +52,8 @@ in degree zero are a quotient of `Γ(X, U)`, and they form a `Γ(X, U)`-algebra 
   in degree one.
 * `TauCeti.AlgebraicGeometry.finite_sections_gradedSymmetricAlgebra_zero` and
   `TauCeti.AlgebraicGeometry.finiteType_gradedSections_gradedSymmetricAlgebra`: over an affine open
-  `U`, `Γ(Sym⁰ F, U)` is a finite `Γ(X, U)`-module, and `⨁ n, Γ(Symⁿ F, U)` is a `Γ(X, U)`-algebra
-  of finite type if `F` is of finite type.
+  `U`, `⨁ n, Γ(Symⁿ F, U)` is a `Γ(X, U)`-algebra of finite type if `F` is of finite type;
+  `Γ(Sym⁰ F, U)` is a finite `Γ(X, U)`-module over every open `U`.
 
 ## References
 
@@ -317,26 +318,16 @@ theorem isGeneratedInDegreeOne_gradedSymmetricAlgebra :
   CommMon.isGeneratedInDegreeOne_of_adjoin_eq_top fun _ hU ↦
     adjoin_gradedSectionsGrading_one_gradedSymmetricAlgebra_eq_top F hU
 
-/-- Over an affine open `U`, the sections of `Sym⁰ F` form a finite `Γ(X, U)`-module: they are
-the degree-zero part of the symmetric algebra of `Γ(F, U)`, which is `Γ(X, U)`. -/
-theorem finite_sections_gradedSymmetricAlgebra_zero (hU : IsAffineOpen U) :
+/-- Over every open `U`, the sections of `Sym⁰ F` form a finite `Γ(X, U)`-module. -/
+instance finite_sections_gradedSymmetricAlgebra_zero (U : X.Opens) :
     Module.Finite Γ(X, U) Γ(((gradedSymmetricAlgebra X).obj F).obj.X 0, U) := by
-  let M := (Scheme.Modules.sectionsFunctor U).obj F.obj
-  let e := gradedSymmetricAlgebraSectionsEquiv F hU
-  have : Module.Finite Γ(X, U) (TauCeti.SymmetricAlgebra.homogeneousSubmodule Γ(X, U) M 0) :=
-    Module.Finite.equiv (TauCeti.SymmetricAlgebra.homogeneousSubmoduleZeroEquiv Γ(X, U) M).symm
-  -- the degree-zero component of `e` maps the degree-zero tensors onto `Γ(Sym⁰ F, U)`
-  refine Module.Finite.of_surjective ((DirectSum.component Γ(X, U) ℕ _ 0).comp
-    (e.toLinearMap.comp (TauCeti.SymmetricAlgebra.homogeneousSubmodule Γ(X, U) M 0).subtype))
-      fun y ↦ ?_
-  have hy : e (e.symm (DirectSum.of _ 0 y)) ∈
-      ((gradedSymmetricAlgebra X).obj F).obj.gradedSectionsGrading U 0 := by
-    rw [e.apply_symm_apply]
-    exact CommMon.of_mem_gradedSectionsGrading _ 0 y
-  refine ⟨⟨_, (gradedSymmetricAlgebraSectionsEquiv_mem_grade_iff F hU 0 _).mp hy⟩, ?_⟩
-  simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
-    AlgEquiv.toLinearMap_apply, AlgEquiv.apply_symm_apply]
-  exact DirectSum.component.lof_self _ _ _
+  have : IsIso (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U)) := by
+    rw [Scheme.Modules.sectionsFunctor_ε]
+    exact (Iso.refl (ModuleCat.of Γ(X, U) Γ(X, U))).isIso_hom
+  exact Module.Finite.equiv
+    (asIso (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U)) ≪≫
+      (Scheme.Modules.sectionsFunctor U).mapIso
+        (asIso ((gradedSymmetricAlgebra X).obj F).obj.toMon.one)).toLinearEquiv
 
 /-- Over an affine open `U`, the graded ring of sections `⨁ n, Γ(Symⁿ F, U)` of the graded
 symmetric algebra of a quasicoherent sheaf of finite type is a `Γ(X, U)`-algebra of finite type. -/

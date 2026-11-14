@@ -44,6 +44,8 @@ In the namespace `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra`, for `Sy
 * `exists_mem_basicOpen_gradedSymmetricAlgebraLift`: over an affine open over which `A` is
   generated in degree one, the standard opens of the images of the degree-one sections of `Sym A₁`
   cover the chart `Proj (⨁ n, Γ(Aₙ, U))`.
+* `irrelevant_le_map_gradedSymmetricAlgebraLift`: the canonical map satisfies the irrelevant-ideal
+  containment needed to induce a relative `Proj` morphism.
 * `isClosedImmersion_relativeProjMap_gradedSymmetricAlgebraLift`: if `A` is generated in degree
   one, `Proj_X(A) ⟶ Proj_X(Sym A₁)` is a closed immersion.
 
@@ -124,6 +126,19 @@ theorem exists_mem_basicOpen_gradedSymmetricAlgebraLift (U : X.Opens) (hU : IsAf
   have := epi_gradedSymmetricAlgebraLift_one A
   CommMon.exists_mem_basicOpen_gradedSectionsGradedHom_of_epi_one _ U hU h y
 
+/-- The canonical map `Sym A₁ ⟶ A` satisfies the irrelevant-ideal containment needed to
+induce a morphism on relative `Proj` when `A` is generated in degree one. -/
+theorem irrelevant_le_map_gradedSymmetricAlgebraLift (h : A.obj.IsGeneratedInDegreeOne) :
+    ∀ U : X.Opens, IsAffineOpen U →
+      HomogeneousIdeal.irrelevant (A.obj.gradedSectionsGrading U) ≤
+        (HomogeneousIdeal.irrelevant
+          (((gradedSymmetricAlgebra X).obj (degreeOne.obj A)).obj.gradedSectionsGrading U)).map
+            (CommMon.gradedSectionsGradedHom
+              (gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A))).hom U) :=
+  fun U hU ↦ HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _
+    (grade_subset_range_gradedSymmetricAlgebraLift A U hU
+      (CommMon.isGeneratedInDegreeOne_iff_adjoin_zero_union_one_eq_top.mp h U hU))
+
 /-- **The relative `Proj` of an algebra generated in degree one is a closed subscheme of
 `Proj_X(Sym A₁)`.** If `A` is generated in degree one, then the morphism
 `Proj_X(A) ⟶ Proj_X(Sym A₁)` over `X` induced by `Sym A₁ ⟶ A` is a closed immersion. -/
@@ -132,9 +147,7 @@ theorem isClosedImmersion_relativeProjMap_gradedSymmetricAlgebraLift
     (h : A.obj.IsGeneratedInDegreeOne) :
     IsClosedImmersion (CommMon.relativeProjMap
       (gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A))).hom
-      fun U hU ↦ HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _
-        (grade_subset_range_gradedSymmetricAlgebraLift A U hU
-          (CommMon.isGeneratedInDegreeOne_iff_adjoin_zero_union_one_eq_top.mp h U hU))) :=
+      (irrelevant_le_map_gradedSymmetricAlgebraLift A h)) :=
   have := epi_gradedSymmetricAlgebraLift_one A
   CommMon.isClosedImmersion_relativeProjMap_of_epi_one _ h
 

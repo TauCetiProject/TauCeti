@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.SymmetricAlgebra.Sections
-public import TauCeti.AlgebraicGeometry.RelativeProj.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.RelativeProj.Proper
 public import TauCeti.AlgebraicGeometry.RelativeProj.TwistingSheaf.Pullback
 
@@ -35,14 +34,13 @@ immersion together with its consequence that `Proj_X(A) ⟶ X` is proper.
 
 * `TauCeti.AlgebraicGeometry.isProper_relativeProjToBase_gradedSymmetricAlgebra`: `Proj_X(Sym F)`
   is proper over `X` for a quasicoherent `F` of finite type.
-
-In the namespace `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra`:
-
-* `isIso_relativeProjTwistingSheafMap_gradedSymmetricAlgebraLift`: the closed immersion
-  `Proj_X(A) ⟶ Proj_X(Sym A₁)` pulls `𝒪(n)` back to `𝒪(n)`.
-* `relativeProj_closedImmersion`: the bundled statement for an algebra generated in degree one.
-* `isProper_relativeProjToBase_of_isGeneratedInDegreeOne`: `Proj_X(A)` is proper over `X` when `A`
-  is generated in degree one and `A₁` is of finite type.
+* `TauCeti.AlgebraicGeometry.isInvertible_relativeProjTwistingSheaf_gradedSymmetricAlgebra`:
+  every twisting sheaf of `Proj_X(Sym F)` is invertible.
+* `TauCeti.AlgebraicGeometry.isIso_relativeProjTwistingSheafMap_gradedSymmetricAlgebra`:
+  any graded morphism out of `Sym F` inducing a relative `Proj` morphism pulls
+  `𝒪(n)` back to `𝒪(n)`.
+* `CategoryTheory.CommMon.isProper_relativeProjToBase_of_isGeneratedInDegreeOne`: `Proj_X(A)`
+  is proper over `X` when `A` is generated in degree one and `A₁` is of finite type.
 
 ## References
 
@@ -63,67 +61,53 @@ universe u
 
 variable {X : Scheme.{u}}
 
-/-- **`Proj_X(Sym F)` is proper over `X` when `F` is of finite type**: over every affine open `U`
-of `X`, the sections of `Sym F` form a `Γ(X, U)`-algebra of finite type whose degree-zero part is a
-finite `Γ(X, U)`-module. -/
-theorem isProper_relativeProjToBase_gradedSymmetricAlgebra (F : QuasicoherentSheaf X)
+/-- For a quasicoherent sheaf `F` of finite type on `X`, the structure morphism
+`Proj_X(Sym F) ⟶ X` is proper. -/
+instance isProper_relativeProjToBase_gradedSymmetricAlgebra (F : QuasicoherentSheaf X)
     [F.obj.IsFiniteType] :
     IsProper ((gradedSymmetricAlgebra X).obj F).obj.relativeProjToBase :=
   CommMon.isProper_relativeProjToBase
     (fun _ hU ↦ finiteType_gradedSections_gradedSymmetricAlgebra F hU)
-    (fun _ hU ↦ finite_sections_gradedSymmetricAlgebra_zero F hU)
+    (fun U _ ↦ finite_sections_gradedSymmetricAlgebra_zero F U)
 
-namespace GradedQuasicoherentAlgebra
+/-- Every twisting sheaf `𝒪(n)` on `Proj_X(Sym F)` is invertible. -/
+instance isInvertible_relativeProjTwistingSheaf_gradedSymmetricAlgebra
+    (F : QuasicoherentSheaf X) (n : ℤ) :
+    SheafOfModules.isInvertible ((gradedSymmetricAlgebra X).obj F).obj.relativeProj
+      (((gradedSymmetricAlgebra X).obj F).obj.relativeProjTwistingSheaf n) :=
+  CommMon.isInvertible_relativeProjTwistingSheaf _
+    (isGeneratedInDegreeOne_gradedSymmetricAlgebra F) n
 
-variable (A : GradedQuasicoherentAlgebra X)
+/-- Any graded morphism out of `Sym F` inducing a relative `Proj` morphism pulls each twisting
+sheaf back isomorphically. -/
+instance isIso_relativeProjTwistingSheafMap_gradedSymmetricAlgebra
+    (F : QuasicoherentSheaf X) {A : CommMon (GradedObject ℕ X.Modules)}
+    [∀ n, (A.X n).IsQuasicoherent] (φ : ((gradedSymmetricAlgebra X).obj F).obj ⟶ A)
+    (hφ : ∀ U : X.Opens, IsAffineOpen U →
+      HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
+        (HomogeneousIdeal.irrelevant
+          (((gradedSymmetricAlgebra X).obj F).obj.gradedSectionsGrading U)).map
+            (CommMon.gradedSectionsGradedHom φ U)) (n : ℤ) :
+    IsIso (CommMon.relativeProjTwistingSheafMap φ hφ n) :=
+  CommMon.isIso_relativeProjTwistingSheafMap_of_isGeneratedInDegreeOne φ hφ n
+    (isGeneratedInDegreeOne_gradedSymmetricAlgebra F)
 
-/-- **`Proj_X(A) ⟶ Proj_X(Sym A₁)` pulls `𝒪(n)` back to `𝒪(n)`.** If `A` is generated in degree
-one, then the glued morphism `f^* 𝒪(n) ⟶ 𝒪(n)` of twisting sheaves along the morphism
-`f : Proj_X(A) ⟶ Proj_X(Sym A₁)` induced by `Sym A₁ ⟶ A` is an isomorphism for every `n : ℤ`. -/
-@[stacks 01N1]
-theorem isIso_relativeProjTwistingSheafMap_gradedSymmetricAlgebraLift
-    (h : A.obj.IsGeneratedInDegreeOne) (n : ℤ) :
-    IsIso (CommMon.relativeProjTwistingSheafMap
-      (gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A))).hom
-      (fun U hU ↦ HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _
-        (grade_subset_range_gradedSymmetricAlgebraLift A U hU
-          (CommMon.isGeneratedInDegreeOne_iff_adjoin_zero_union_one_eq_top.mp h U hU))) n) :=
-  CommMon.isIso_relativeProjTwistingSheafMap _ _ n fun U ↦
-    exists_mem_basicOpen_gradedSymmetricAlgebraLift A U.toOpens U.2
-      (CommMon.isGeneratedInDegreeOne_iff_adjoin_zero_union_one_eq_top.mp h U.toOpens U.2)
-
-/-- **The relative `Proj` of an algebra generated in degree one is a closed subscheme of
-`Proj_X(Sym A₁)`.** If `A` is generated in degree one, then the morphism `Sym A₁ ⟶ A` extending
-the identity of `A₁` is an epimorphism in every positive degree, and the morphism
-`f : Proj_X(A) ⟶ Proj_X(Sym A₁)` it induces is a closed immersion over `X` along which the glued
-morphisms `f^* 𝒪(n) ⟶ 𝒪(n)` of twisting sheaves are isomorphisms. -/
-@[stacks 01N1]
-theorem relativeProj_closedImmersion (h : A.obj.IsGeneratedInDegreeOne) :
-    (∀ i, 0 < i → Epi ((gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A))).hom.hom.hom i)) ∧
-      ∃ hφ, IsClosedImmersion
-          (CommMon.relativeProjMap (gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A))).hom hφ) ∧
-        CommMon.relativeProjMap _ hφ ≫
-            ((gradedSymmetricAlgebra X).obj (degreeOne.obj A)).obj.relativeProjToBase =
-          A.obj.relativeProjToBase ∧
-        ∀ n, IsIso (CommMon.relativeProjTwistingSheafMap _ hφ n) :=
-  ⟨epi_gradedSymmetricAlgebraLift A h, _,
-    isClosedImmersion_relativeProjMap_gradedSymmetricAlgebraLift A h,
-    CommMon.relativeProjMap_relativeProjToBase _ _,
-    isIso_relativeProjTwistingSheafMap_gradedSymmetricAlgebraLift A h⟩
-
-/-- **The relative `Proj` of an algebra generated in degree one by a finite type `A₁` is proper.**
-If `A` is generated in degree one and `A₁` is of finite type, then `Proj_X(A) ⟶ X` is proper: it
-factors as the closed immersion into `Proj_X(Sym A₁)` (`relativeProj_closedImmersion`) followed by
-the proper morphism `Proj_X(Sym A₁) ⟶ X`. -/
-theorem isProper_relativeProjToBase_of_isGeneratedInDegreeOne (h : A.obj.IsGeneratedInDegreeOne)
-    [(A.obj.X 1).IsFiniteType] :
-    IsProper A.obj.relativeProjToBase := by
-  obtain ⟨-, hφ, hi, hf, -⟩ := relativeProj_closedImmersion A h
-  have : (degreeOne.obj A).obj.IsFiniteType := degree_obj_obj A 1 ▸ inferInstance
-  have := isProper_relativeProjToBase_gradedSymmetricAlgebra (degreeOne.obj A)
-  rw [← hf]
+open GradedQuasicoherentAlgebra in
+/-- If `A` is generated in degree one and `A₁` is of finite type, then `Proj_X(A) ⟶ X`
+is proper. -/
+theorem _root_.CategoryTheory.CommMon.isProper_relativeProjToBase_of_isGeneratedInDegreeOne
+    {A : CommMon (GradedObject ℕ X.Modules)} [∀ n, (A.X n).IsQuasicoherent]
+    (h : A.IsGeneratedInDegreeOne) [(A.X 1).IsFiniteType] :
+    IsProper A.relativeProjToBase := by
+  let A' : GradedQuasicoherentAlgebra X :=
+    ⟨A, (isGradedQuasicoherentAlgebra_iff A).mpr inferInstance⟩
+  let hφ := GradedQuasicoherentAlgebra.irrelevant_le_map_gradedSymmetricAlgebraLift A' h
+  have : (degreeOne.obj A').obj.IsFiniteType :=
+    GradedQuasicoherentAlgebra.degree_obj_obj A' 1 ▸ inferInstance
+  have := GradedQuasicoherentAlgebra.isClosedImmersion_relativeProjMap_gradedSymmetricAlgebraLift
+    A' h
+  rw [← CommMon.relativeProjMap_relativeProjToBase
+    (gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A'))).hom hφ]
   infer_instance
-
-end GradedQuasicoherentAlgebra
 
 end TauCeti.AlgebraicGeometry
