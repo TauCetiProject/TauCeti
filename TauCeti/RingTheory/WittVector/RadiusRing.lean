@@ -717,31 +717,6 @@ private theorem exists_division {X : RadiusRing p hv hϖ hϖ' hρ} {m : ℕ} {t 
       rw [h, hbc]
       exact hY'
 
-/-- The Teichmüller expansion of a nonzero `y ∈ 𝕎 O` beyond its Gauss degree is smaller than `y`
-for the Gauss valuation. -/
-private theorem gaussValuation_sub_teichSum_lt {y : 𝕎 O} (hy0 : y ≠ 0) :
-    gaussValuation p hv ρ hρ.2 (y - teichSum p y.teichmullerCoeff (gaussDegree p hv ρ hρ.2 y + 1)) <
-      gaussValuation p hv ρ hρ.2 y := by
-  set m := gaussDegree p hv ρ hρ.2 y
-  have hL0 : 0 < gaussValuation p hv ρ hρ.2 y := gaussValuation_pos hv hρ.1 hρ.2 hy0
-  obtain ⟨N, hN⟩ := NNReal.exists_pow_lt_of_lt_one hL0 hρ.2
-  obtain ⟨w, hw⟩ := pow_dvd_sub_sum_teichmullerCoeff y (m + N)
-  rw [← Nat.range_succ_eq_Iic] at hw
-  have hsplit : y - teichSum p y.teichmullerCoeff (m + 1) = (p : 𝕎 O) ^ (m + N + 1) * w +
-      ∑ l ∈ Finset.Ico (m + 1) (m + N + 1), teichmuller p (y.teichmullerCoeff l) *
-        (p : 𝕎 O) ^ l := by
-    rw [← hw, teichSum, ← Finset.sum_range_add_sum_Ico _ (by omega : m + 1 ≤ m + N + 1)]
-    ring
-  rw [hsplit]
-  refine Valuation.map_add_lt _ ?_ (Valuation.map_sum_lt _ hL0.ne' fun l hl ↦ ?_)
-  · rw [map_mul, map_pow, gaussValuation_p]
-    calc ρ ^ (m + N + 1) * gaussValuation p hv ρ hρ.2 w ≤ ρ ^ N :=
-          (mul_le_of_le_one_right' (gaussValuation_le_one hv hρ.2 w)).trans
-            (pow_le_pow_of_le_one zero_le hρ.2.le (by omega))
-      _ < _ := hN
-  · rw [gaussValuation_teichmuller_mul_pow]
-    exact mul_pow_lt_gaussValuation_of_gaussDegree_lt hv hρ.1 hρ.2 hy0 (Finset.mem_Ico.mp hl).1
-
 /-- A nonzero `x ∈ A^r` of degree `m`, multiplied by a suitable power of `[ϖ]`, is closer to a
 Teichmüller sum `∑_{l ≤ m} [tₗ] pˡ` than `v(t_m) ρᵐ`, which bounds all the weighted coefficients
 `v(tₗ) ρˡ` of the sum. -/
@@ -768,8 +743,9 @@ private theorem exists_teichSum_degree {x : RadiusRing p hv hϖ hϖ' hρ} (hx : 
       coe_nnNorm, ← IsUltrametricDist.norm_eq_of_norm_sub_lt_left hy]
     exact hy
   have h₂ : gaussValuation p hv ρ hρ.2 (y - teichSum p y.teichmullerCoeff (m + 1)) < L := by
-    rw [hm]
-    exact (gaussValuation_sub_teichSum_lt p hv hρ hy0).trans_eq hL
+    rw [teichSum, hm]
+    exact (gaussValuation_sub_sum_range_teichmuller_mul_pow_lt hv hρ.1 hρ.2 hy0
+      (Nat.lt_succ_self _)).trans_eq hL
   calc ‖ι (teichmuller p ϖ ^ k) * x - ι (teichSum p y.teichmullerCoeff (m + 1))‖₊
       = ‖(ι (teichmuller p ϖ ^ k) * x - ι y) +
           ι (y - teichSum p y.teichmullerCoeff (m + 1))‖₊ := by
