@@ -136,6 +136,16 @@ theorem _root_.LipschitzWith.normalGraphEmbedding [SeminormedAddCommGroup E] {K 
     _ ≤ K * dist x y + dist x y := add_le_add (hφ.dist_le_mul x y) le_rfl
     _ = (K + 1) * dist x y := by ring
 
+/-- A graphing function Lipschitz on a parameter set has a Lipschitz parametrization
+on that set, with no regularity required outside it. -/
+theorem _root_.LipschitzOnWith.normalGraphEmbedding [SeminormedAddCommGroup E]
+    {K : ℝ≥0} {φ : E → ℝ} {s : Set E} (hφ : LipschitzOnWith K φ s) :
+    LipschitzOnWith (K + 1) (TauCeti.normalGraphEmbedding φ) s := by
+  obtain ⟨ψ, hψ, heq⟩ := hφ.extend_real
+  intro x hx y hy
+  simpa only [TauCeti.normalGraphEmbedding, heq hx, heq hy] using
+    hψ.normalGraphEmbedding x y
+
 section
 
 variable [TopologicalSpace E]
