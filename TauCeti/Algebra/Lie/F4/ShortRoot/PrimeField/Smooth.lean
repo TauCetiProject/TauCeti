@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Field.ZMod
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Carrier
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.PerfectField
-import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Scheme
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.Smooth
 
 /-!
@@ -41,10 +40,7 @@ instance algebraSmooth_quotient :
       (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra (ZMod 2) 26)
         definingIdeal) := by
   let : ∀ j, IsReduced (generatorCodomain j) := by
-    intro j
-    cases j with
-    | inl _ => exact AdditiveGroup.isReduced_coordinateHopfAlgebra (ZMod 2)
-    | inr _ => exact inferInstance
+    rintro (_ | _) <;> exact inferInstance
   rw [definingIdeal_def]
   exact (smoothCommHopfAlgProperty_iff _).mp
     (CommHopfAlgCat.smoothCommHopfAlgProperty_quotient_commonKernelHopfIdeal_of_perfectField
