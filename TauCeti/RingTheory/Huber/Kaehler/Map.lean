@@ -106,6 +106,20 @@ noncomputable def mapSemilinear :
   ext
   simp
 
+/-- The induced map depends only on the upper ring map, not on its lower witness. -/
+theorem mapSemilinear_congr (α₂ : A →+* A') (φ₂ : B →+* B')
+    (hφ₂ : φ₂.comp (algebraMap A B) = (algebraMap A' B').comp α₂)
+    (hφc₂ : Continuous φ₂) (e : φ = φ₂) (ω : ContinuousKaehlerDifferential A B) :
+    mapSemilinear α φ hφ hφc ω = mapSemilinear α₂ φ₂ hφ₂ hφc₂ ω := by
+  subst φ₂
+  obtain ⟨x, rfl⟩ := fromIdeal_surjective A B ω
+  simp only [mapSemilinear_fromIdeal]
+  congr 1
+  ext
+  exact congrArg (fun f : CompletedTensor A B B →+* CompletedTensor A' B' B' ↦ f x)
+    (CompletedTensor.hom_ext (CompletedTensor.continuous_map ..)
+      (CompletedTensor.continuous_map ..) (by ext; simp) (by ext; simp))
+
 /-- The identity square induces the identity on every differential. -/
 @[simp] theorem mapSemilinear_id (ω : ContinuousKaehlerDifferential A B) :
     mapSemilinear (RingHom.id A) (RingHom.id B) rfl continuous_id ω = ω := by
@@ -154,10 +168,32 @@ noncomputable def map
     map α h hc (b ⊗ₜ[B] ω) = b • mapSemilinear α (algebraMap B B') h hc ω := by
   simp [map]
 
+/-- A pure tensor with a differential maps to the corresponding scalar multiple of `d`. -/
+theorem map_tmul_D
+    (h : (algebraMap B B').comp (algebraMap A B) = (algebraMap A' B').comp α)
+    (hc : Continuous (algebraMap B B')) (b' : B') (b : B) :
+    map α h hc (b' ⊗ₜ[B] D A B b) = b' • D A' B' (algebraMap B B' b) := by
+  simp
+
+/-- Scalar-extended change of rings is independent of the lower witnessing map. -/
+theorem map_congr
+    (h : (algebraMap B B').comp (algebraMap A B) = (algebraMap A' B').comp α)
+    (hc : Continuous (algebraMap B B')) (α₂ : A →+* A')
+    (h₂ : (algebraMap B B').comp (algebraMap A B) = (algebraMap A' B').comp α₂)
+    (hc₂ : Continuous (algebraMap B B')) :
+    map α h hc = map α₂ h₂ hc₂ := by
+  apply LinearMap.ext
+  intro x
+  induction x using TensorProduct.inductionOn with
+  | tmul b ω =>
+    simp only [map_tmul]
+    exact congrArg (b • ·) (mapSemilinear_congr α _ h hc α₂ _ h₂ hc₂ rfl ω)
+  | add x y hx hy => simp only [map_add, hx, hy]
+
 end ScalarExtension
 
 /-- The identity change-of-rings map is the canonical scalar cancellation. -/
-theorem map_id :
+@[simp] theorem map_id :
     map (B := B) (B' := B) (RingHom.id A) rfl continuous_id =
       (TensorProduct.lid B (ContinuousKaehlerDifferential A B)).toLinearMap := by
   ext
@@ -183,16 +219,9 @@ theorem map_comp (b'' : B'') (b' : B') (ω : ContinuousKaehlerDifferential A B) 
   simp only [map_tmul, map_smulₛₗ]
   rw [mapSemilinear_comp]
   simp only [mul_smul]
-  -- The ring homomorphism indexes the semilinear map's type, so transport its application.
-  have H (f g : B →+* B'') (hf : f.comp (algebraMap A B) =
-      (algebraMap A'' B'').comp (α'.comp α))
-      (hg : g.comp (algebraMap A B) = (algebraMap A'' B'').comp (α'.comp α))
-      (hfc : Continuous f) (hgc : Continuous g) (e : f = g) :
-      mapSemilinear (α'.comp α) f hf hfc ω = mapSemilinear (α'.comp α) g hg hgc ω := by
-    subst g
-    rfl
   exact congrArg (fun z ↦ b'' • algebraMap B' B'' b' • z)
-    (H _ _ _ _ _ _ (IsScalarTower.algebraMap_eq B B' B'').symm)
+    (mapSemilinear_congr _ _ _ _ _ _ _ _
+      (IsScalarTower.algebraMap_eq B B' B'').symm ω)
 
 end Composition
 

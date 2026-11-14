@@ -141,6 +141,11 @@ noncomputable def cotangentEquiv :
 @[simp] theorem cotangentEquiv_symm_toCotangent (x : ideal A B) :
     (cotangentEquiv A B).symm ((ideal A B).toCotangent x) = fromIdeal A B x := (rfl)
 
+/-- The cotangent presentation carries the `B`-action to the left-coprojection action. -/
+@[simp] theorem cotangentEquiv_smul (b : B) (ω : ContinuousKaehlerDifferential A B) :
+    cotangentEquiv A B (b • ω) = inl A B B b • cotangentEquiv A B ω :=
+  (cotangentEquiv A B).map_smul (inl A B B b) ω
+
 /-- Every continuous differential is the class of an element of the completed diagonal ideal. -/
 theorem fromIdeal_surjective : Function.Surjective (fromIdeal A B) :=
   (ideal A B).toCotangent_surjective
@@ -212,6 +217,13 @@ noncomputable def D : Derivation A B (ContinuousKaehlerDifferential A B) :=
 /-- `d b` is the class of `1 ⊗ b − b ⊗ 1`. -/
 theorem D_apply (b : B) :
     D A B b = fromIdeal A B ⟨inr A B B b - inl A B B b, inr_sub_inl_mem_ideal A B b⟩ := (rfl)
+
+/-- In the cotangent presentation, `d b` is the class of `1 ⊗ b − b ⊗ 1`. -/
+@[simp] theorem cotangentEquiv_D (b : B) :
+    cotangentEquiv A B (D A B b) =
+      (ideal A B).toCotangent
+        ⟨inr A B B b - inl A B B b, inr_sub_inl_mem_ideal A B b⟩ := by
+  rw [D_apply, cotangentEquiv_fromIdeal]
 
 /-- The **comparison with Kähler differentials**: the `B`-linear map `Ω[B⁄A] → Ωᶜ[B⁄A]` induced,
 by the universal property of `Ω[B⁄A]`, by the derivation `d`. -/

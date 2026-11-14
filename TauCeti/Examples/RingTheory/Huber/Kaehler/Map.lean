@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.Huber.Kaehler.Map
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Data.ZMod.Basic
-public import TauCeti.Topology.Discrete
 
 /-!
 # Using change of rings for continuous differentials
@@ -22,6 +21,8 @@ public section
 
 open TensorProduct TauCeti.Huber
 open ContinuousKaehlerDifferential
+
+namespace TauCeti.Examples.ContinuousKaehlerDifferentialMap
 
 section Generic
 
@@ -38,7 +39,6 @@ variable {A B A' B' A'' B'' : Type*}
   [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A' B')]
   [IsAdicHom (algebraMap A'' B'')]
 
-
 variable (α : A →+* A') (φ : B →+* B')
   (h : φ.comp (algebraMap A B) = (algebraMap A' B').comp α) (hc : Continuous φ)
 
@@ -51,12 +51,28 @@ example (ω : (ideal A B).Cotangent) :
 example (x : ideal A B) :
     cotangentEquiv A B (fromIdeal A B x) = (ideal A B).toCotangent x := by simp
 
+example (b : B) (ω : ContinuousKaehlerDifferential A B) :
+    cotangentEquiv A B (b • ω) =
+      CompletedTensor.inl A B B b • cotangentEquiv A B ω := by simp
+
+example (b : B) :
+    cotangentEquiv A B (D A B b) = (ideal A B).toCotangent
+      ⟨CompletedTensor.inr A B B b - CompletedTensor.inl A B B b,
+        inr_sub_inl_mem_ideal A B b⟩ := by simp
+
 example (x : ideal A B) :
     mapSemilinear α φ h hc (fromIdeal A B x) =
       fromIdeal A' B' ⟨CompletedTensor.map α φ φ h h hc hc x,
         ideal_le_comap_map α φ h hc x.2⟩ := by simp
 
 example (b : B) : mapSemilinear α φ h hc (D A B b) = D A' B' (φ b) := by simp
+
+-- The upper map determines the induced map, even with independent lower witnesses.
+example (α₂ : A →+* A') (φ₂ : B →+* B')
+    (h₂ : φ₂.comp (algebraMap A B) = (algebraMap A' B').comp α₂)
+    (hc₂ : Continuous φ₂) (e : φ = φ₂) (ω : ContinuousKaehlerDifferential A B) :
+    mapSemilinear α φ h hc ω = mapSemilinear α₂ φ₂ h₂ hc₂ ω :=
+  mapSemilinear_congr α φ h hc α₂ φ₂ h₂ hc₂ e ω
 
 variable [Algebra B B']
   (hB : (algebraMap B B').comp (algebraMap A B) = (algebraMap A' B').comp α)
@@ -67,7 +83,14 @@ example (b' : B') (ω : ContinuousKaehlerDifferential A B) :
       b' • mapSemilinear α (algebraMap B B') hB hcB ω := by simp
 
 example (b' : B') (b : B) :
-    map α hB hcB (b' ⊗ₜ[B] D A B b) = b' • D A' B' (algebraMap B B' b) := by simp
+    b' • D A' B' (algebraMap B B' b) = map α hB hcB (b' ⊗ₜ[B] D A B b) := by
+  rw [← map_tmul_D α hB hcB b' b]
+
+example (α₂ : A →+* A')
+    (h₂ : (algebraMap B B').comp (algebraMap A B) = (algebraMap A' B').comp α₂)
+    (hc₂ : Continuous (algebraMap B B')) (x : B' ⊗[B] ContinuousKaehlerDifferential A B) :
+    map α hB hcB x = map α₂ h₂ hc₂ x := by
+  rw [map_congr α hB hcB α₂ h₂ hc₂]
 
 -- The construction also works in a context with independently selected compatible target actions.
 example [Module B (ContinuousKaehlerDifferential A' B')]
@@ -78,9 +101,7 @@ example [Module B (ContinuousKaehlerDifferential A' B')]
 
 example (x : B ⊗[B] ContinuousKaehlerDifferential A B) :
     map (B := B) (B' := B) (RingHom.id A) rfl continuous_id x =
-      TensorProduct.lid B (ContinuousKaehlerDifferential A B) x := by
-  rw [ContinuousKaehlerDifferential.map_id]
-  rfl
+      TensorProduct.lid B (ContinuousKaehlerDifferential A B) x := by simp
 
 variable [Algebra B' B''] [Algebra B B''] [IsScalarTower B B' B'']
   (α' : A' →+* A'')
@@ -121,3 +142,5 @@ example : mapSemilinear (Int.castRingHom (ZMod 4))
       D (ZMod 4) (Polynomial (ZMod 4)) Polynomial.X := by simp
 
 end Polynomial
+
+end TauCeti.Examples.ContinuousKaehlerDifferentialMap
