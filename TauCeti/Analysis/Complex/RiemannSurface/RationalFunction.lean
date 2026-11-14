@@ -87,8 +87,8 @@ def coordinate : MeromorphicFunction (OnePoint ℂ) where
   ne_infty' h := OnePoint.coe_ne_infty (0 : ℂ) (congrFun h ((0 : ℂ) : OnePoint ℂ))
 
 @[simp]
-theorem coordinate_apply (x : OnePoint ℂ) : coordinate x = x := by
-  simp [coordinate]
+theorem coordinate_apply (x : OnePoint ℂ) : coordinate x = x :=
+  (rfl)
 
 /-- The sphere coordinate is not the zero meromorphic function. -/
 @[simp]
