@@ -10,6 +10,8 @@ import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.CharacterTable.IrreducibleClassification
 import TauCeti.RepresentationTheory.Rep.DirectSum.Basic
 import TauCeti.RingTheory.Semisimple.Multiplicity
+import TauCeti.RepresentationTheory.Maschke
+import Mathlib.RepresentationTheory.Equiv
 
 /-!
 # Intrinsic multiplicities of the irreducible representations
@@ -60,11 +62,20 @@ non-isomorphic.
   `k[G]`-module, the direct sum of `m_ρ(i)` copies of each `Zᵢ`.
 * `Representation.nonempty_equiv_iff_intrinsicMultiplicity_eq`: two finite-dimensional
   representations are equivalent exactly when their intrinsic multiplicities agree.
+* `Representation.finrank_eq_sum_intrinsicMultiplicity_mul_characterDegree`: the dimension of
+  `ρ` is `∑ᵢ m_ρ(i) · deg Zᵢ`.
+* `Representation.character_eq_sum_intrinsicMultiplicity_nsmul`: the character of `ρ` is
+  `∑ᵢ m_ρ(i) • χᵢ`.
+* `Representation.character_eq_iff_forall_intrinsicMultiplicity_modEq`: in characteristic `p`,
+  two finite-dimensional representations have the same character exactly when their
+  multiplicities are congruent modulo `p`.
+* `Representation.intrinsicMultiplicity_leftRegular`: `Zᵢ` occurs in the left regular
+  representation with multiplicity its degree.
 
 ## References
 
-* W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, Corollary 2.16 and
-  §2.4, formula (2.31).
+* W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, Corollaries 2.14–2.18
+  and §2.4, formula (2.31).
 -/
 
 public section
@@ -231,5 +242,65 @@ theorem nonempty_equiv_iff_intrinsicMultiplicity_eq [FiniteDimensional k V] {W :
   obtain ⟨eσ⟩ := σ.nonempty_regrouping
   rw [h] at eρ
   exact TauCeti.Representation.nonempty_equiv_iff.mpr ⟨eρ ≪≫ₗ eσ.symm⟩
+
+/-- **The dimension formula**: a finite-dimensional representation has dimension
+`∑ᵢ m_ρ(i) · deg Zᵢ`. -/
+theorem finrank_eq_sum_intrinsicMultiplicity_mul_characterDegree [FiniteDimensional k V] :
+    finrank k V = ∑ i, ρ.intrinsicMultiplicity i * characterDegree k i := by
+  classical
+  obtain ⟨e⟩ := ρ.nonempty_regrouping
+  rw [← ρ.asModuleEquiv.finrank_eq, (e.restrictScalars k).finrank_eq,
+    (DFinsupp.linearEquivFunOnFintype (R := k)).finrank_eq, finrank_pi_fintype]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [finrank_pi_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul,
+    (irreducibleRepresentation k i).asModuleEquiv.finrank_eq, finrank_fin_fun]
+
+/-- **The character expansion**: the character of a finite-dimensional representation is
+`∑ᵢ m_ρ(i) • χᵢ`. This is `TauCeti.character_eq_sum_nsmul_irreducibleCharacter` with the
+coefficients written as intrinsic multiplicities, for carriers in any universe. -/
+theorem character_eq_sum_intrinsicMultiplicity_nsmul [FiniteDimensional k V] :
+    ρ.character = ∑ i, ρ.intrinsicMultiplicity i • irreducibleCharacter k i := by
+  have : Fintype G := Fintype.ofFinite G
+  funext g
+  have h := ClassFunction.apply_eq_sum_characterPairing_mul_character
+    (irreducibleRepresentation k) (pairwise_isEmpty_equiv_irreducibleRepresentation k)
+    (by simp) (ClassFunction.ofCharacter ρ) g
+  rw [ClassFunction.ofCharacter_apply] at h
+  rw [h, Finset.sum_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [ClassFunction.characterPairing_symm,
+    characterPairing_ofCharacter_irreducibleRepresentation_eq_intrinsicMultiplicity,
+    Pi.smul_apply, nsmul_eq_mul, character_irreducibleRepresentation]
+
+/-- **Characters determine multiplicities modulo the characteristic.** In characteristic `p`
+(not dividing `|G|`), two finite-dimensional representations have the same character exactly when
+their intrinsic multiplicities are congruent modulo `p`. For `p = 0` this says that the character
+determines the multiplicities; for `p > 0` the congruence cannot be sharpened to equality, since
+`p` copies of a representation have the zero character. -/
+theorem character_eq_iff_forall_intrinsicMultiplicity_modEq (p : ℕ) [CharP k p]
+    [FiniteDimensional k V] {W : Type w'} [AddCommGroup W] [Module k W] [FiniteDimensional k W]
+    (σ : Representation k G W) :
+    ρ.character = σ.character ↔
+      ∀ i, ρ.intrinsicMultiplicity i ≡ σ.intrinsicMultiplicity i [MOD p] := by
+  have : Fintype G := Fintype.ofFinite G
+  refine ⟨fun h i ↦ ?_, fun h ↦ ?_⟩
+  · rw [← CharP.natCast_eq_natCast k p,
+      ← characterPairing_ofCharacter_irreducibleRepresentation_eq_intrinsicMultiplicity,
+      ← characterPairing_ofCharacter_irreducibleRepresentation_eq_intrinsicMultiplicity]
+    exact congrArg (ClassFunction.characterPairing · _)
+      (Subtype.ext (funext fun g ↦ by simpa using congrFun h g))
+  · rw [character_eq_sum_intrinsicMultiplicity_nsmul, character_eq_sum_intrinsicMultiplicity_nsmul]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [← Nat.cast_smul_eq_nsmul k, ← Nat.cast_smul_eq_nsmul k,
+      (CharP.natCast_eq_natCast k p).mpr (h i)]
+
+/-- **The regular multiplicity**: the `i`-th irreducible representation occurs in the left regular
+representation `k[G]` with multiplicity its degree, in every characteristic not dividing `|G|`. -/
+@[simp]
+theorem intrinsicMultiplicity_leftRegular (i : Fin (Nat.card (ConjClasses G))) :
+    (leftRegular k G).intrinsicMultiplicity i = characterDegree k i := by
+  have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
+  rw [intrinsicMultiplicity_def, finrank_intertwiningMap_comm,
+    (leftRegularMapEquiv (irreducibleRepresentation k i)).finrank_eq, finrank_fin_fun]
 
 end Representation
