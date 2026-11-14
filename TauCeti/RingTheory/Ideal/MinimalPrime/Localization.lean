@@ -27,6 +27,8 @@ of the localization at every prime minimal over `f`.
 
 * `TauCeti.le_of_mem_minimalPrimes_of_isDomain_localization`: if `A_m` is a domain, a minimal
   prime `P ≤ m` lies below every prime `q ≤ m`.
+* `TauCeti.isCoprime_of_mem_minimalPrimes_of_isDomain_localization`: distinct minimal primes
+  are coprime when all maximal localizations are domains.
 * `IsLocalization.AtPrime.map_eq_maximalIdeal_of_mem_minimalPrimes`: if `m` is minimal over a
   radical ideal `I`, then `I` generates the maximal ideal of `A_m`.
 -/
@@ -48,6 +50,23 @@ theorem le_of_mem_minimalPrimes_of_isDomain_localization {A : Type*} [CommSemiri
     exact (‹q'.IsPrime›.mem_or_mem (hsa ▸ q'.zero_mem)).resolve_left fun h ↦ hs (hq' h)
   have := hP.1.1
   exact (hP.2 ⟨RingHom.ker_isPrime _, bot_le⟩ (hker hPm)).trans (hker hqm)
+
+/-- Over a ring whose localizations at maximal ideals are domains, distinct minimal primes are
+coprime: a maximal ideal containing both would contain two minimal primes of a local domain. -/
+theorem isCoprime_of_mem_minimalPrimes_of_isDomain_localization {A : Type*} [CommRing A]
+    (h : ∀ (m : Ideal A) [m.IsMaximal], IsDomain (Localization.AtPrime m)) {P Q : Ideal A}
+    (hP : P ∈ minimalPrimes A) (hQ : Q ∈ minimalPrimes A) (hPQ : P ≠ Q) : IsCoprime P Q := by
+  rw [Ideal.isCoprime_iff_sup_eq]
+  by_contra hne
+  obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ hne
+  have := h m
+  have := hP.1.1
+  have := hQ.1.1
+  exact hPQ (le_antisymm
+    (le_of_mem_minimalPrimes_of_isDomain_localization (Localization.AtPrime m)
+      hP (le_sup_left.trans hle) (le_sup_right.trans hle))
+    (le_of_mem_minimalPrimes_of_isDomain_localization (Localization.AtPrime m)
+      hQ (le_sup_right.trans hle) (le_sup_left.trans hle)))
 
 end TauCeti
 
