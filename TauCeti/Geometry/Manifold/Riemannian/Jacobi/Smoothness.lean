@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Basic
-import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Bootstrap
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
@@ -14,17 +13,16 @@ import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 /-!
 # Smoothness of Jacobi fields
 
-On a smooth Riemannian manifold, every `C²` Jacobi field is smooth, as is its
-covariant derivative. These statements concern the actual tangent-bundle lifts of
-sections along the geodesic. They hold within the parameter set, including the
-endpoints of nondegenerate closed intervals, and imply ordinary smoothness at
-interior parameters.
+On a smooth Riemannian manifold (with or without boundary), every `C²` Jacobi field is smooth, as
+is its covariant derivative. These statements concern the actual tangent-bundle lifts of sections
+along the geodesic. They hold within the parameter set, including the endpoints of nondegenerate
+closed intervals, and imply ordinary smoothness at interior parameters.
 
-The geodesic and its velocity are smooth. The Jacobi equation therefore makes the
-second covariant derivative as regular as the field itself. Solving the fixed-chart
-covariant derivative formula for the ordinary derivative upgrades the field and its
-first covariant derivative together. No completeness or extension beyond the
-parameter interval is needed.
+The geodesic and its velocity are bootstrapped to `C^∞` directly from vanishing covariant
+acceleration, without requiring the manifold to be boundaryless. The Jacobi equation therefore
+makes the second covariant derivative as regular as the field itself. Solving the fixed-chart
+covariant derivative formula for the ordinary derivative upgrades the field and its first covariant
+derivative together. No completeness or extension beyond the parameter interval is needed.
 
 ## References
 
@@ -42,12 +40,49 @@ namespace TauCeti.Manifold
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
   [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {J : ∀ t, TangentSpace I (γ t)} {s : Set ℝ}
+
+omit [T2Space M] in
+/-- Simultaneous finite-order bootstrap for a geodesic and its velocity lift on `s`, without
+requiring `M` to be boundaryless. -/
+private theorem IsGeodesicCurveOn.contMDiffOn_nat_pair (h : IsGeodesicCurveOn I γ s) (n : ℕ) :
+    ContMDiffOn 𝓘(ℝ, ℝ) I (n + 2 : ℕ) γ s ∧
+      ContMDiffOn 𝓘(ℝ, ℝ) I.tangent (n + 1 : ℕ) (curveVelocityLiftWithin I γ s) s := by
+  induction n with
+  | zero =>
+    have hγ2 : ContMDiffOn 𝓘(ℝ, ℝ) I ((1 : ℕ) + 1) γ s := h.contMDiffOn
+    exact ⟨h.contMDiffOn, hγ2.contMDiffOn_curveVelocityLiftWithin le_rfl
+      h.uniqueDiffOn.uniqueMDiffOn⟩
+  | succ n ih =>
+    let cov := leviCivitaConnection I M
+    have hcov (t : ℝ) (_ht : t ∈ s) :
+        ContMDiffCovariantDerivativeOn E (n + 1 : ℕ) cov.toFun
+          (trivializationAt E (TangentSpace I) (γ t)).baseSet :=
+      contMDiffCovariantDerivativeOn_leviCivitaConnection (m := ∞) (k := ∞)
+        (trivializationAt E (TangentSpace I) (γ t)).open_baseSet (by simp) (by simp)
+    have hvel : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent (n + 1 : ℕ)
+        (fun r ↦ TotalSpace.mk' E (γ r) (curveVelocityWithin I γ s r)) s := by
+      simpa only [funext (curveVelocityLiftWithin_apply (I := I) γ s)] using ih.2
+    have hacc : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent (n + 1 : ℕ)
+        (fun r ↦ TotalSpace.mk' E (γ r)
+          (alongCurveWithin cov γ (curveVelocityWithin I γ s) s r)) s :=
+      ((Bundle.contMDiff_zeroSection ℝ (TangentSpace I) (n := (n + 1 : ℕ))).comp_contMDiffOn
+        (ih.1.of_le (by exact_mod_cast Nat.le_succ (n + 1)))).congr fun r hr ↦
+          congrArg (TotalSpace.mk' E (γ r))
+            (accelerationWithin_def cov γ s r ▸ h.accelerationWithin_eq_zero r hr)
+    have hvel_succ : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent (n + 2 : ℕ)
+        (curveVelocityLiftWithin I γ s) s := by
+      simpa only [funext (curveVelocityLiftWithin_apply (I := I) γ s)] using
+        contMDiffOn_succ_of_alongCurveWithin cov γ (curveVelocityWithin I γ s)
+          (by omega) hcov h.uniqueDiffOn ih.1 hvel hacc
+    have : IsManifold I ((n + 2 : ℕ) + 1) M := IsManifold.of_le (n := ∞) (by simp)
+    exact ⟨contMDiffOn_succ_of_contMDiffOn_curveVelocityLiftWithin h.uniqueDiffOn
+        h.mdifferentiableOn hvel_succ, hvel_succ⟩
 
 /-- If the lift of a Jacobi field is `C^(n + 1)` within its parameter set, so is the lift of its
 second covariant derivative. -/
@@ -61,11 +96,10 @@ private theorem IsJacobiFieldOn.contMDiffOn_alongCurveWithin_alongCurveWithin
           (alongCurveWithin (leviCivitaConnection I M) γ J s) s r)) s := by
   let cov := leviCivitaConnection I M
   have hn_le_infty : (n + 1 : ℕ) ≤ (∞ : ℕ∞ω) := by simp
-  have hvel := h.isGeodesicCurveOn.contMDiffOn_curveVelocityLiftWithin_infty
   have hvel' : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent (n + 1 : ℕ)
       (fun r ↦ TotalSpace.mk' E (γ r) (curveVelocityWithin I γ s r)) s := by
     simpa only [funext (curveVelocityLiftWithin_apply (I := I) γ s)] using
-      hvel.of_le hn_le_infty
+      (h.isGeodesicCurveOn.contMDiffOn_nat_pair n).2
   have hcurv := cov.contMDiffOn_curvatureTensor (F := E) (V := TangentSpace I)
         hn_le_infty hJ hvel' hvel'
   refine (contMDiffOn_const (c := (-1 : ℝ))).smul_totalSpace hcurv |>.congr ?_
@@ -85,7 +119,6 @@ private theorem IsJacobiFieldOn.contMDiffOn_nat_pair (h : IsJacobiFieldOn I γ J
   | succ n ih =>
     let cov := leviCivitaConnection I M
     have hDDJ := h.contMDiffOn_alongCurveWithin_alongCurveWithin n ih.1
-    have hγ := h.isGeodesicCurveOn.contMDiffOn_infty
     -- Both first-order equations now have right-hand sides of class C^(n + 1).
     have hcov (t : ℝ) (_ht : t ∈ s) :
         ContMDiffCovariantDerivativeOn E (n + 1 : ℕ) cov.toFun
@@ -93,7 +126,8 @@ private theorem IsJacobiFieldOn.contMDiffOn_nat_pair (h : IsJacobiFieldOn I γ J
       contMDiffCovariantDerivativeOn_leviCivitaConnection
         (m := ∞) (k := ∞) (trivializationAt E (TangentSpace I) (γ t)).open_baseSet
         (by simp) (by simp)
-    have hγ' : ContMDiffOn 𝓘(ℝ, ℝ) I (n + 1 + 1 : ℕ) γ s := hγ.of_le (by simp)
+    have hγ' : ContMDiffOn 𝓘(ℝ, ℝ) I (n + 1 + 1 : ℕ) γ s :=
+      (h.isGeodesicCurveOn.contMDiffOn_nat_pair n).1
     exact ⟨contMDiffOn_succ_of_alongCurveWithin cov γ J (by omega) hcov h.uniqueDiffOn
         hγ' ih.1 ih.2,
       contMDiffOn_succ_of_alongCurveWithin cov γ (alongCurveWithin cov γ J s)

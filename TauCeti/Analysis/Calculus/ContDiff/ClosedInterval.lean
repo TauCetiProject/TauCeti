@@ -31,6 +31,8 @@ derivatives. No completeness assumption on the codomain is needed.
 
 `ContDiffOn.isBounded_image_deriv` bounds the derivative of a `C¹` function on a closed interval:
 it agrees with the continuous within-interval derivative away from the two endpoints.
+`TauCeti.contDiffOn_one_Icc_of_derivWithin_eq` glues `C¹` smoothness across an interior point when
+the two one-sided within-interval derivatives agree there.
 -/
 
 public section
@@ -133,6 +135,55 @@ theorem contDiffOn_Icc_iff_exists_continuous_jet {n : ℕ} :
       exact hf.hasDerivAt_iteratedDerivWithin (mod_cast hj) (Icc_mem_nhds hx.1 hx.2)
   · rintro ⟨J, hzero, hc, hd⟩
     exact contDiffOn_Icc_of_continuous_jet hzero hc hd
+
+/-- If `f` is `C¹` on `[a, c]` and `[c, b]` with matching within-interval derivatives at `c`, then
+`f` is `C¹` on `[a, b]`. When `c ≤ a` or `b ≤ c`, one of `[a, c]`, `[c, b]` already covers
+`[a, b]`. -/
+theorem contDiffOn_one_Icc_of_derivWithin_eq {c : ℝ}
+    (hf₁ : ContDiffOn ℝ 1 f (Icc a c)) (hf₂ : ContDiffOn ℝ 1 f (Icc c b))
+    (hderiv : derivWithin f (Icc a c) c = derivWithin f (Icc c b) c) :
+    ContDiffOn ℝ 1 f (Icc a b) := by
+  rcases le_or_gt c a with hca | hac
+  · exact hf₂.mono (Icc_subset_Icc hca le_rfl)
+  rcases le_or_gt b c with hbc | hcb
+  · exact hf₁.mono (Icc_subset_Icc le_rfl hbc)
+  let g : ℝ → F := fun t ↦ if t ≤ c then derivWithin f (Icc a c) t else derivWithin f (Icc c b) t
+  have hg₁ : ContinuousOn g (Icc a c) :=
+    (hf₁.continuousOn_derivWithin (uniqueDiffOn_Icc hac) le_rfl).congr fun t ht ↦ by simp [g, ht.2]
+  have hg₂ : ContinuousOn g (Icc c b) :=
+    (hf₂.continuousOn_derivWithin (uniqueDiffOn_Icc hcb) le_rfl).congr fun t ht ↦ by
+      dsimp only [g]
+      split_ifs with htc
+      · obtain rfl : t = c := le_antisymm htc ht.1
+        exact hderiv
+      · rfl
+  have hg : ContinuousOn g (Icc a b) :=
+    Icc_union_Icc_eq_Icc hac.le hcb.le ▸ hg₁.union_of_isClosed hg₂ isClosed_Icc isClosed_Icc
+  have hf : ContinuousOn f (Icc a b) :=
+    Icc_union_Icc_eq_Icc hac.le hcb.le ▸
+      hf₁.continuousOn.union_of_isClosed hf₂.continuousOn isClosed_Icc isClosed_Icc
+  refine contDiffOn_Icc_of_continuous_jet (n := 1)
+    (J := fun j ↦ if j = 0 then f else g) (eqOn_refl _ _)
+    (fun j hj ↦ by rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hj with rfl | rfl; exacts [hf, hg])
+    fun j hj t ht ↦ ?_
+  obtain rfl : j = 0 := by omega
+  simp only [↓reduceIte, Nat.zero_add, one_ne_zero]
+  rcases lt_trichotomy t c with htc | rfl | hct
+  · simpa only [g, htc.le, ↓reduceIte] using
+      (hf₁.differentiableOn one_ne_zero t ⟨ht.1.le, htc.le⟩).hasDerivWithinAt.hasDerivAt
+        (Icc_mem_nhds ht.1 htc)
+  · have hd₁ : HasDerivWithinAt f (g t) (Iic t) t := by
+      simpa only [g, le_rfl, ↓reduceIte] using
+        (hf₁.differentiableOn one_ne_zero t ⟨hac.le, le_rfl⟩).hasDerivWithinAt
+          |>.mono_of_mem_nhdsWithin (Icc_mem_nhdsLE hac)
+    have hd₂ : HasDerivWithinAt f (g t) (Ici t) t := by
+      simpa only [g, le_rfl, ↓reduceIte, hderiv] using
+        (hf₂.differentiableOn one_ne_zero t ⟨le_rfl, hcb.le⟩).hasDerivWithinAt
+          |>.mono_of_mem_nhdsWithin (Icc_mem_nhdsGE hcb)
+    simpa only [Iic_union_Ici, hasDerivWithinAt_univ] using hd₁.union hd₂
+  · simpa only [g, hct.not_ge, ↓reduceIte] using
+      (hf₂.differentiableOn one_ne_zero t ⟨hct.le, ht.2.le⟩).hasDerivWithinAt.hasDerivAt
+        (Icc_mem_nhds hct ht.2)
 
 end TauCeti
 

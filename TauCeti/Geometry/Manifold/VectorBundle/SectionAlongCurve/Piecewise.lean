@@ -117,6 +117,24 @@ namespace PiecewiseContMDiffSectionAlong
 
 variable {hγ : IsPiecewiseContMDiffOn I n γ a b}
 
+/-- Direct additive-monoid instance on `PiecewiseContMDiffSectionAlong`, avoiding multi-level
+subtype unification with `Bundle` instances when forming downstream submodules. -/
+instance instAddCommMonoid :
+    AddCommMonoid (PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :=
+  Submodule.addCommMonoid _
+
+/-- Direct additive-group instance on `PiecewiseContMDiffSectionAlong`, avoiding multi-level
+subtype unification with `Bundle` instances when forming downstream submodules. -/
+instance instAddCommGroup :
+    AddCommGroup (PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :=
+  Submodule.addCommGroup _
+
+/-- Direct real-module instance on `PiecewiseContMDiffSectionAlong`, avoiding multi-level
+subtype unification with `Bundle` instances when forming downstream submodules. -/
+instance instModule :
+    Module ℝ (PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :=
+  Submodule.module _
+
 /-- Restrict a piecewise smooth field on the real parameter line to its interval. -/
 def ofPiecewise (U : ∀ t, V (γ t))
     (hU : IsPiecewiseContMDiffOn (I.prod 𝓘(ℝ, F)) n
@@ -177,6 +195,24 @@ theorem endpointValues_apply (W : PiecewiseContMDiffSectionAlong (F := F) (V := 
 def endpointZero : Submodule ℝ (PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :=
   LinearMap.ker endpointValues
 
+/-- Direct additive-monoid instance on `endpointZero`, avoiding multi-level subtype unification
+with `Bundle` instances when taking kernels or submodules of `endpointZero`. -/
+instance instAddCommMonoidEndpointZero :
+    AddCommMonoid (endpointZero (F := F) (V := V) (hγ := hγ)) :=
+  Submodule.addCommMonoid _
+
+/-- Direct additive-group instance on `endpointZero`, avoiding multi-level subtype unification
+with `Bundle` instances when taking kernels or submodules of `endpointZero`. -/
+instance instAddCommGroupEndpointZero :
+    AddCommGroup (endpointZero (F := F) (V := V) (hγ := hγ)) :=
+  Submodule.addCommGroup _
+
+/-- Direct real-module instance on `endpointZero`, avoiding multi-level subtype unification
+with `Bundle` instances when taking kernels or submodules of `endpointZero`. -/
+instance instModuleEndpointZero :
+    Module ℝ (endpointZero (F := F) (V := V) (hγ := hγ)) :=
+  Submodule.module _
+
 /-- A field belongs to the fixed-endpoint subspace exactly when both endpoint values vanish. -/
 @[simp]
 theorem mem_endpointZero_iff (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :
@@ -210,6 +246,116 @@ theorem restrict_self :
     restrict (hγ := hγ) (V := V) (F := F) le_rfl hγ.lt le_rfl = LinearMap.id := by
   ext W t
   rfl
+
+/-- Restrict a `C^n` field on the closed interval to a bundled piecewise `C^n` interval field. -/
+def ofContMDiffOn (U : ∀ t, V (γ t))
+    (hU : ContMDiffOn 𝓘(ℝ, ℝ) (I.prod 𝓘(ℝ, F)) n
+      (fun t ↦ TotalSpace.mk' F (γ t) (U t)) (Icc a b)) :
+    PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ :=
+  ofPiecewise U (.of_contMDiffOn hγ.lt hU)
+
+/-- The bundled field built from a `C^n` section on `[a, b]` has that section's interval values. -/
+@[simp]
+theorem ofContMDiffOn_apply (U : ∀ t, V (γ t))
+    (hU : ContMDiffOn 𝓘(ℝ, ℝ) (I.prod 𝓘(ℝ, F)) n
+      (fun t ↦ TotalSpace.mk' F (γ t) (U t)) (Icc a b)) (t : Icc a b) :
+    (ofContMDiffOn (hγ := hγ) U hU).val t = U t :=
+  (rfl)
+
+/-- Extend an interval field by zero outside `[a, b]`, as a real linear map to sections along the
+full parameter line. -/
+def extendZero :
+    PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ →ₗ[ℝ] ∀ t, V (γ t) where
+  toFun W t := open Classical in if ht : t ∈ Icc a b then W.val ⟨t, ht⟩ else 0
+  map_add' U W := by
+    ext t
+    dsimp only [Pi.add_apply]
+    split_ifs <;> simp
+  map_smul' c W := by
+    ext t
+    dsimp only [Pi.smul_apply, RingHom.id_apply]
+    split_ifs <;> simp
+
+/-- On the parameter interval, `extendZero` agrees with the bundled interval field. -/
+@[simp]
+theorem extendZero_apply_of_mem (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ)
+    {t : ℝ} (ht : t ∈ Icc a b) :
+    W.extendZero t = W.val ⟨t, ht⟩ :=
+  dite_eq_left ht
+
+/-- Outside the parameter interval, `extendZero` vanishes. -/
+@[simp]
+theorem extendZero_apply_of_notMem (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ)
+    {t : ℝ} (ht : t ∉ Icc a b) :
+    W.extendZero t = 0 :=
+  dite_eq_right ht
+
+/-- Evaluating `extendZero` at a bundled interval parameter returns the field's value there. -/
+theorem extendZero_coe (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) (t : Icc a b) :
+    W.extendZero t = W.val t :=
+  W.extendZero_apply_of_mem t.property
+
+/-- The canonical zero extension of a bundled interval field is piecewise `C^n` on `[a, b]`. -/
+theorem isPiecewiseContMDiffOn_extendZero
+    (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :
+    IsPiecewiseContMDiffOn (I.prod 𝓘(ℝ, F)) n
+      (fun t ↦ TotalSpace.mk' F (γ t) (W.extendZero t)) a b := by
+  obtain ⟨U, hU, hUW⟩ := W.exists_extension
+  exact hU.congr fun t ht ↦ congrArg (TotalSpace.mk' F (γ t))
+    ((W.extendZero_apply_of_mem ht).trans (hUW ⟨t, ht⟩).symm)
+
+/-- Restricting the canonical zero extension recovers the original interval field. -/
+@[simp]
+theorem ofPiecewise_extendZero (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :
+    ofPiecewise (hγ := hγ) W.extendZero W.isPiecewiseContMDiffOn_extendZero = W := by
+  ext t
+  exact W.extendZero_coe t
+
+/-- The canonical zero extension determines the bundled interval field. -/
+theorem extendZero_injective :
+    Function.Injective (extendZero (hγ := hγ) (F := F) (V := V)) := by
+  intro U W h
+  ext t
+  simpa only [extendZero_coe] using congrFun h t
+
+/-- Lower the differentiability order of a bundled piecewise smooth field linearly. -/
+def ofLE {m : ℕ∞ω} (hnm : n ≤ m) {hγm : IsPiecewiseContMDiffOn I m γ a b} :
+    PiecewiseContMDiffSectionAlong (F := F) (V := V) hγm →ₗ[ℝ]
+      PiecewiseContMDiffSectionAlong (F := F) (V := V) (hγm.of_le hnm) where
+  toFun W := ⟨W.val, by
+    obtain ⟨U, hU, hUW⟩ := W.exists_extension
+    exact ⟨U, hU.of_le hnm, hUW⟩⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+/-- Lowering the differentiability order preserves interval values. -/
+@[simp]
+theorem ofLE_apply {m : ℕ∞ω} (hnm : n ≤ m) {hγm : IsPiecewiseContMDiffOn I m γ a b}
+    (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγm) (t : Icc a b) :
+    (ofLE hnm W).val t = W.val t :=
+  (rfl)
+
+/-- Lowering the differentiability order commutes with zero extension. -/
+@[simp]
+theorem extendZero_ofLE {m : ℕ∞ω} (hnm : n ≤ m) {hγm : IsPiecewiseContMDiffOn I m γ a b}
+    (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγm) :
+    (ofLE hnm W).extendZero = W.extendZero := by
+  ext t
+  by_cases ht : t ∈ Icc a b <;> simp [ht]
+
+/-- Lowering the differentiability order is injective. -/
+theorem ofLE_injective {m : ℕ∞ω} (hnm : n ≤ m) {hγm : IsPiecewiseContMDiffOn I m γ a b} :
+    Function.Injective (ofLE (F := F) (V := V) (hγm := hγm) hnm) := by
+  intro U W h
+  ext t
+  exact congrArg (fun S ↦ S.val t) h
+
+/-- Lowering the differentiability order preserves the fixed-endpoint condition. -/
+theorem ofLE_mem_endpointZero_iff {m : ℕ∞ω} (hnm : n ≤ m)
+    {hγm : IsPiecewiseContMDiffOn I m γ a b}
+    (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγm) :
+    ofLE hnm W ∈ endpointZero ↔ W ∈ endpointZero := by
+  simp [mem_endpointZero_iff]
 
 /-- Successive restrictions to nested nondegenerate intervals equal direct restriction. -/
 theorem restrict_comp {c d e f : ℝ} (hac : a ≤ c) (hcd : c < d) (hdb : d ≤ b)
