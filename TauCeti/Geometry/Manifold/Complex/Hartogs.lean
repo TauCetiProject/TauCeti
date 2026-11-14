@@ -19,8 +19,8 @@ import TauCeti.Analysis.Complex.Hartogs
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ContMDiff.Analytic
 import TauCeti.Geometry.Manifold.ExtChartAt
-import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Topology.Perfect
+import TauCeti.Geometry.Manifold.ModelWithCorners.Perfect
+import TauCeti.Topology.DiscreteSubset
 
 /-!
 # Hartogs' extension theorem on complex manifolds
@@ -87,7 +87,7 @@ theorem exists_contMDiffAt_omega_and_eventuallyEq_nhdsNE (hE : 2 ≤ Module.finr
   have htgt : e.target ∈ 𝓝 (e p) := extChartAt_target_mem_nhds p
   have hd : ∀ᶠ z in 𝓝[≠] (e p), DifferentiableAt ℂ (f ∘ e.symm) z := by
     filter_upwards [nhdsWithin_le_nhds htgt,
-      (tendsto_extChartAt_symm_nhdsNE I p).eventually hf] with z hzt hmd
+      (I.tendsto_extChartAt_symm_nhdsNE p).eventually hf] with z hzt hmd
     exact ((hmd.comp_mdifferentiableWithinAt z
       (mdifferentiableWithinAt_extChartAt_symm hzt)).mdifferentiableAt
       (I.range_eq_univ ▸ univ_mem)).differentiableAt
@@ -95,7 +95,7 @@ theorem exists_contMDiffAt_omega_and_eventuallyEq_nhdsNE (hE : 2 ≤ Module.finr
   refine ⟨G ∘ e, contMDiffAt_omega_iff_analyticAt.2 (hG_an.congr ?_), ?_⟩
   · filter_upwards [htgt] with z hzt
     exact (congrArg G (e.right_inv hzt)).symm
-  · exact EventuallyEq.trans ((tendsto_extChartAt_nhdsNE I p).eventually hG_eq)
+  · exact EventuallyEq.trans ((I.tendsto_extChartAt_nhdsNE p).eventually hG_eq)
       ((comp_extChartAt_symm_comp_extChartAt_eventuallyEq f p).filter_mono nhdsWithin_le_nhds)
 
 /-- On a boundaryless complex manifold of dimension at least two, updating `f` at `p` by its
@@ -204,7 +204,7 @@ theorem frequently_nhdsNE_eq_zero_of_eventually_mdifferentiableAt (hE : 2 ≤ Mo
     contMDiffAt_omega_iff_analyticAt.1 hcont
   have h0 : (f ∘ (extChartAt I p).symm) (extChartAt I p p) = 0 := by
     simpa [Function.comp_apply, extChartAt_to_inv] using hfp
-  exact (tendsto_extChartAt_symm_nhdsNE I p).frequently
+  exact (I.tendsto_extChartAt_symm_nhdsNE p).frequently
     (frequently_nhdsNE_eq_zero_of_analyticAt hE han h0)
 
 end Manifold

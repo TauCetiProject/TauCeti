@@ -47,7 +47,9 @@ function supported in the closed unit ball gives a function supported in `closed
 In a nontrivial real normed space, one ball lies in another exactly when its radius plus the
 distance between the centres is at most the radius of the other. The sufficiency holds in every
 pseudometric space (`Metric.closedBall_subset_closedBall'`, `Metric.ball_subset_ball'`); the
-necessity uses a point of the smaller ball on the far side of its centre.
+necessity uses a point of the smaller ball on the far side of its centre. A concentric annulus
+`ball x R \ closedBall x r` in a seminormed real space with nontrivial topology is nonempty
+exactly when `r < R` and `0 < R` (`TauCeti.ball_sdiff_closedBall_nonempty_iff`).
 
 For `t ≥ 0`, the outer parallel set `K + t • closedBall 0 1` of a compact set `K` is its closed
 `t`-thickening (`IsCompact.add_smul_closedBall_eq_cthickening`).
@@ -294,6 +296,31 @@ theorem ball_subset_ball_iff (hr : 0 < r) :
   linarith [le_max_left t 0, (closedBall_subset_closedBall_iff (le_max_right t 0)).1 hsub]
 
 end Subset
+
+section Annulus
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [NontrivialTopology E]
+  {x : E} {r R : ℝ}
+
+/-- In a seminormed real vector space with nontrivial topology, the open-closed concentric annulus
+`Metric.ball x R \ Metric.closedBall x r` is nonempty if and only if `r < R` and `0 < R`. -/
+@[simp]
+theorem ball_sdiff_closedBall_nonempty_iff :
+    (Metric.ball x R \ Metric.closedBall x r).Nonempty ↔ r < R ∧ 0 < R := by
+  refine ⟨?_, fun ⟨hrR, hR⟩ ↦ ?_⟩
+  · rintro ⟨y, hyR, hyr⟩
+    rw [Metric.mem_ball] at hyR
+    rw [Metric.mem_closedBall, not_le] at hyr
+    exact ⟨hyr.trans hyR, dist_nonneg.trans_lt hyR⟩
+  · obtain ⟨y, hy⟩ :=
+      (NormedSpace.sphere_nonempty (x := x) (r := (max 0 r + R) / 2)).2
+        (by linarith [le_max_left 0 r])
+    refine ⟨y, Metric.mem_ball.2 ?_, fun h ↦ ?_⟩
+    · rw [Metric.mem_sphere.1 hy]
+      linarith [max_lt hR hrR]
+    · linarith [Metric.mem_closedBall.1 h, Metric.mem_sphere.1 hy, max_lt hR hrR, le_max_right 0 r]
+
+end Annulus
 
 end TauCeti
 

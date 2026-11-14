@@ -8,8 +8,7 @@ module
 public import Mathlib.Topology.Perfect
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.DerivedSet
-public import Mathlib.Topology.DiscreteSubset
-import Mathlib.Topology.Separation.Hausdorff
+import TauCeti.Topology.DiscreteSubset
 
 /-!
 # Perfect sets and spaces: homeomorphic images, products, and discrete subsets
@@ -23,8 +22,7 @@ set `U` leaves `U \ S` dense in `U` (`Preperfect.subset_closure_sdiff_of_isDiscr
 open sets in perfect spaces by `IsOpen.subset_closure_sdiff_of_isDiscrete`), so continuous maps into
 a Hausdorff space are determined on `U` by their values on `U \ S`
 (`Preperfect.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`,
-`IsOpen.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`). When `U` is open, `U \ S` is also a
-punctured neighbourhood of every point of `U ∩ S` (`IsOpen.sdiff_mem_nhdsNE_of_isDiscrete`).
+`IsOpen.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`).
 
 A product of infinitely many nontrivial topological spaces has no isolated points: a
 neighbourhood of a point in the product topology constrains only finitely many coordinates, so
@@ -36,13 +34,11 @@ perfect.
 
 * `Homeomorph.perfect_image`, `Homeomorph.perfectSpace`: perfect sets and perfect spaces are
   preserved by homeomorphisms.
-* `IsOpen.sdiff_mem_nhdsNE_of_isDiscrete`,
-  `Preperfect.subset_closure_sdiff_of_isDiscrete`,
+* `Preperfect.subset_closure_sdiff_of_isDiscrete`,
   `IsOpen.subset_closure_sdiff_of_isDiscrete`,
   `Preperfect.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`,
-  `IsOpen.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`: punctured neighbourhoods, density, and
-  continuous-extension uniqueness across discrete subsets of preperfect sets and open sets in
-  perfect spaces.
+  `IsOpen.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`: density and continuous-extension
+  uniqueness across discrete subsets of preperfect sets and open sets in perfect spaces.
 * `TauCeti.perfectSpace_pi`: a product of infinitely many nontrivial spaces is a perfect space.
 
 ## References
@@ -85,31 +81,14 @@ protected theorem perfectSpace [PerfectSpace X] (h : X ≃ₜ Y) : PerfectSpace 
 
 end Homeomorph
 
-private theorem sdiff_mem_nhdsWithin_of_isDiscrete {X : Type u} [TopologicalSpace X] {U S : Set X}
-    (hS : IsDiscrete (U ∩ S)) {x : X} (hxU : x ∈ U) (hxS : x ∈ S) :
-    U \ S ∈ 𝓝[≠] x ⊓ 𝓟 U := by
-  have hdisj : (U ∩ S)ᶜ ∈ 𝓝[≠] x :=
-    disjoint_principal_right.1 (disjoint_iff.2 (isDiscrete_iff_nhdsNE.1 hS x ⟨hxU, hxS⟩))
-  filter_upwards [mem_inf_of_left hdisj, mem_inf_of_right (mem_principal_self U)] with y hyS hyU
-  exact ⟨hyU, fun h ↦ hyS ⟨hyU, h⟩⟩
-
-/-- If `U` is open and `U ∩ S` is discrete, then `U \ S` is a punctured neighbourhood of every point
-of `U ∩ S`. -/
-theorem IsOpen.sdiff_mem_nhdsNE_of_isDiscrete {X : Type u} [TopologicalSpace X] {U S : Set X}
-    (hU : IsOpen U) (hS : IsDiscrete (U ∩ S)) {x : X} (hxU : x ∈ U) (hxS : x ∈ S) :
-    U \ S ∈ 𝓝[≠] x := by
-  have hle : 𝓝[≠] x ≤ 𝓝[≠] x ⊓ 𝓟 U :=
-    le_inf le_rfl (le_principal_iff.2 (nhdsWithin_le_nhds (hU.mem_nhds hxU)))
-  exact hle (sdiff_mem_nhdsWithin_of_isDiscrete hS hxU hxS)
-
 /-- Every preperfect set `U` is contained in the closure of `U \ S` whenever `U ∩ S` is discrete. -/
 theorem Preperfect.subset_closure_sdiff_of_isDiscrete {X : Type u} [TopologicalSpace X]
     {U S : Set X} (hU : Preperfect U) (hS : IsDiscrete (U ∩ S)) :
     U ⊆ closure (U \ S) := fun x hx ↦ by
   by_cases hxS : x ∈ S
   · rw [mem_closure_iff_nhdsWithin_neBot]
-    exact Filter.NeBot.mono (hU x hx) (le_inf (inf_le_left.trans nhdsWithin_le_nhds)
-      (le_principal_iff.2 (sdiff_mem_nhdsWithin_of_isDiscrete hS hx hxS)))
+    exact (accPt_principal_iff_nhdsWithin.1 (hU x hx)).mono
+      (le_inf nhdsWithin_le_nhds (le_principal_iff.2 (hS.sdiff_mem_nhdsWithin hx hxS)))
   · exact subset_closure ⟨hx, hxS⟩
 
 /-- In a perfect space, every open set `U` is contained in the closure of `U \ S` whenever `U ∩ S`

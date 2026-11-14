@@ -189,12 +189,6 @@ theorem coe_restrictAlgHom_ringHom {U V : Opens X} (h : V ≤ U) :
       (restrictAlgHom I h) =
       ((holomorphicStructureSheaf I X).obj.map (op (homOfLE h))).hom := (rfl)
 
-variable (I) in
-/-- The underlying ring homomorphism of `restrictAlgHom` is the sheaf restriction map. -/
-theorem restrictAlgHom_toRingHom {U V : Opens X} (h : V ≤ U) :
-    (restrictAlgHom I h).toRingHom =
-      ((holomorphicStructureSheaf I X).obj.map (op (homOfLE h))).hom := (rfl)
-
 /-- Taking the stalk germ at `x ∈ V` after `restrictAlgHom` recovers the germ of the original
 section on `U`. -/
 @[simp]
@@ -206,8 +200,7 @@ theorem germ_restrictAlgHom {U V : Opens X} (h : V ≤ U) (x : X) (hx : x ∈ V)
       (DFunLike.coe (F := no_index _) (α := no_index _) (β := no_index _)
         (restrictAlgHom I h) s) =
       (holomorphicStructureSheaf I X).presheaf.germ U x (h hx) s := by
-  change (holomorphicStructureSheaf I X).presheaf.germ V x hx
-    ((holomorphicStructureSheaf I X).presheaf.map (op (homOfLE h)) s) = _
+  rw [← RingHom.coe_coe (restrictAlgHom I h), coe_restrictAlgHom_ringHom]
   exact (holomorphicStructureSheaf I X).presheaf.germ_res_apply (homOfLE h) x hx s
 
 variable (I) in

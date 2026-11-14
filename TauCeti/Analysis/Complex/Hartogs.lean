@@ -19,7 +19,8 @@ import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Piecewise
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
-import TauCeti.Topology.Perfect
+import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.Topology.DiscreteSubset
 
 /-!
 # Hartogs' extension theorem across product shells and isolated singularities
@@ -87,17 +88,6 @@ section ProdShell
 variable {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [Nontrivial V]
   [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-private theorem sdiff_closedBall_nonempty (w₀ : V) {r₁ R₁ : ℝ} (hR₁ : r₁ < R₁)
-    (hR₁_pos : 0 < R₁) : (ball w₀ R₁ \ closedBall w₀ r₁).Nonempty := by
-  have hmax : max 0 r₁ < R₁ := max_lt hR₁_pos hR₁
-  obtain ⟨w₁, hw₁⟩ :=
-    (NormedSpace.sphere_nonempty (x := w₀) (r := (max 0 r₁ + R₁) / 2)).2
-      (by linarith [le_max_left 0 r₁])
-  refine ⟨w₁, mem_ball.2 ?_, fun h ↦ ?_⟩
-  · rw [mem_sphere.1 hw₁]
-    linarith
-  · linarith [mem_closedBall.1 h, mem_sphere.1 hw₁, le_max_right 0 r₁]
-
 /-- **Uniqueness of analytic extensions across a product shell.** Two functions analytic on
 `ball w₀ R₁ ×ˢ ball c R₂`, with `V` nontrivial and `r₁ < R₁`, that agree outside
 `closedBall w₀ r₁ ×ˢ closedBall c r₂` agree on the entire product ball. -/
@@ -111,12 +101,12 @@ theorem eqOn_prod_ball_of_eqOn_sdiff_prod_closedBall {g₁ g₂ : V × ℂ → F
   · simp [ball_eq_empty.2 hR₁_le]
   rcases le_or_gt R₂ 0 with hR₂_le | hR₂_pos
   · simp [ball_eq_empty.2 hR₂_le]
-  obtain ⟨w₁, hw₁⟩ := sdiff_closedBall_nonempty w₀ hR₁ hR₁_pos
+  obtain ⟨w₁, hw₁⟩ := (ball_sdiff_closedBall_nonempty_iff (x := w₀)).2 ⟨hR₁, hR₁_pos⟩
   have hopen : IsOpen ((ball w₀ R₁ \ closedBall w₀ r₁) ×ˢ ball c R₂) :=
     (isOpen_ball.sdiff isClosed_closedBall).prod isOpen_ball
+  have hw₁c : (w₁, c) ∈ ball w₀ R₁ ×ˢ ball c R₂ := ⟨hw₁.1, mem_ball_self hR₂_pos⟩
   refine hg₁.eqOn_of_preconnected_of_eventuallyEq hg₂
-    ((convex_ball w₀ R₁).prod (convex_ball c R₂)).isPreconnected
-    (show (w₁, c) ∈ ball w₀ R₁ ×ˢ ball c R₂ from ⟨hw₁.1, mem_ball_self hR₂_pos⟩) ?_
+    ((convex_ball w₀ R₁).prod (convex_ball c R₂)).isPreconnected hw₁c ?_
   filter_upwards [hopen.mem_nhds ⟨hw₁, mem_ball_self hR₂_pos⟩] with p hp
   exact heq ⟨⟨hp.1.1, hp.2⟩, fun hc ↦ hp.1.2 hc.1⟩
 
@@ -185,7 +175,7 @@ theorem exists_analyticOnNhd_prod_ball_eqOn_sdiff_prod_closedBall {f : V × ℂ 
     rintro ⟨w, z⟩ ⟨⟨hw, hz⟩, hwzS⟩
     by_cases hw_in : w ∈ closedBall w₀ r₁
     · have hz_out : z ∉ closedBall c r₂ := fun hz_in ↦ hwzS.2 ⟨hw_in, hz_in⟩
-      obtain ⟨w₁, hw₁⟩ := sdiff_closedBall_nonempty w₀ hR₁ (hr₁.trans_lt hR₁)
+      obtain ⟨w₁, hw₁⟩ := (ball_sdiff_closedBall_nonempty_iff (x := w₀)).2 ⟨hR₁, hr₁.trans_lt hR₁⟩
       have h₁ : AnalyticOnNhd ℂ (fun w' ↦ shellCauchy f c ρ (w', z)) (ball w₀ R₁) := fun w' hw' ↦
         (hH_an (w', z) ⟨hw', hz⟩).comp_of_eq (analyticAt_id.prod analyticAt_const) rfl
       have h₂ : AnalyticOnNhd ℂ (fun w' ↦ f (w', z)) (ball w₀ R₁) := fun w' hw' ↦

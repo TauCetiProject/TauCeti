@@ -68,9 +68,9 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   preferred extended chart is the preferred chart.
 * `TauCeti.comp_extChartAt_symm_comp_extChartAt_eventuallyEq`: a chart representative
   composed with its chart agrees locally with the original function.
-* `TauCeti.tendsto_extChartAt_nhdsNE`, `TauCeti.tendsto_extChartAt_symm_nhdsNE`: punctured
-  neighbourhoods at a point and at its extended chart image map into one another (the inverse
-  direction for a boundaryless model).
+* `ModelWithCorners.tendsto_extChartAt_nhdsNE`, `ModelWithCorners.tendsto_extChartAt_symm_nhdsNE`:
+  punctured neighbourhoods at a point and at its extended chart image map into one another (the
+  inverse direction for a boundaryless model).
 * `TauCeti.measurableEmbedding_extChartAt_restrict`: an extended chart restricted to its source is
   a measurable embedding.
 * `MeasurableSet.image_extChartAt`: for a Borel measurable space on the manifold, the image of a
@@ -231,14 +231,14 @@ theorem comp_extChartAt_symm_comp_extChartAt_eventuallyEq {α : Type*} (f : M �
 variable (I) in
 /-- The extended chart at `x` maps punctured neighbourhoods of `x` into punctured neighbourhoods of
 `extChartAt I x x`. -/
-theorem tendsto_extChartAt_nhdsNE (x : M) :
+theorem _root_.ModelWithCorners.tendsto_extChartAt_nhdsNE (x : M) :
     Filter.Tendsto (extChartAt I x) (𝓝[≠] x) (𝓝[≠] (extChartAt I x x)) :=
   (I.continuous.continuousAt.tendsto_nhdsNE I.injective).comp (tendsto_chartAt_nhdsNE x)
 
 variable (I) in
 /-- For a boundaryless model, the inverse of the extended chart at `x` maps punctured
 neighbourhoods of `extChartAt I x x` into punctured neighbourhoods of `x`. -/
-theorem tendsto_extChartAt_symm_nhdsNE [I.Boundaryless] (x : M) :
+theorem _root_.ModelWithCorners.tendsto_extChartAt_symm_nhdsNE [I.Boundaryless] (x : M) :
     Filter.Tendsto (extChartAt I x).symm (𝓝[≠] (extChartAt I x x)) (𝓝[≠] x) := by
   have hI : Filter.Tendsto I.symm (𝓝[≠] (extChartAt I x x)) (𝓝[≠] (chartAt H x x)) := by
     have h := (I.toHomeomorph.symm.map_punctured_nhds_eq (I.toHomeomorph (chartAt H x x))).le

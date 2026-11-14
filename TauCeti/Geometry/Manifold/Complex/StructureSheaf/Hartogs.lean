@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.DiscreteSubset
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.SmoothComparison
 import TauCeti.Geometry.Manifold.Complex.Hartogs
-import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.ModelWithCorners.Perfect
 import TauCeti.Topology.Perfect
 
 /-!
