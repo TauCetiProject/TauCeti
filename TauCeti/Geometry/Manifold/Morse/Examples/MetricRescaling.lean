@@ -8,7 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
-import TauCeti.Geometry.Manifold.Riemannian.MetricBridge
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.Riemannian.Scaling
 
 /-!
 # The rate of gradient convergence depends on the metric
@@ -20,12 +21,12 @@ the Morse index at a critical point do not depend on the metric, but the gradien
 trajectories and the distance do, and so does the rate. This file computes the trajectories of
 `f(x) = x²` on `ℝ` for the constant metric `c dx²`, `c > 0` (`TauCeti.scaledLineMetric`).
 
-* **The gradient.** For `c dx²` the gradient of `f` is `2 x / c`
+* **The gradient.** For `c dx²` the gradient of `f` is `1 / c` times its standard gradient `2 x`
   (`TauCeti.mgradient_sq_scaledLineMetric`), so the trajectory of `-grad f` through `x₀` is
   `t ↦ x₀ exp (-2 t / c)` (`TauCeti.maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric`).
 * **The distance.** The Riemannian distance of `c dx²` is `√c |x - y|`
-  (`TauCeti.riemannianEDist_scaledLineMetric`): the map `y ↦ √c y` preserves the length of tangent
-  vectors, and the segment from `x` to `y` has length `√c |x - y|`.
+  (`TauCeti.riemannianEDist_scaledLineMetric`): every tangent vector has `√c` times its standard
+  length, and the standard metric induces the usual distance.
 * **The rate.** Hence the trajectory through `x₀` is at distance exactly `√c |x₀| exp (-2 t / c)`
   from the critical point `0`
   (`TauCeti.riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric`), and for
@@ -52,8 +53,7 @@ smooth metrics apply to it.
 ## References
 
 The construction follows two existing examples. The metric is installed by a local
-`RiemannianBundle` instance, and its gradient computed from its inner products, as for
-`TauCeti.singularLineMetric` and `TauCeti.mgradient_id_singularLineMetric` in
+`RiemannianBundle` instance, as for `TauCeti.singularLineMetric` in
 `TauCeti/Geometry/Manifold/Morse/Examples/Trajectory.lean`. The explicit trajectory, its distance
 to the critical point and the sharpness of the rate are adapted from
 `TauCeti.maximalIntegralCurve_neg_mgradient_sq_sub_sq`,
@@ -99,12 +99,12 @@ private theorem eNorm_scaledLineMetric (hc : 0 < c) (x : ℝ) (v : TangentSpace 
     ‖v‖ₑ = ENNReal.ofReal √c * ‖NormedSpace.fromTangentSpace x v‖ₑ := by
   intro _
   have h : ‖v‖ = √c * ‖NormedSpace.fromTangentSpace x v‖ := by
-    rw [norm_eq_sqrt_real_inner]
-    -- The inner product of the installed metric is `c v v`.
-    have h2 : inner ℝ v v =
+    -- `TangentSpace 𝓘(ℝ, ℝ) x` is `ℝ`, so `scaledLineMetric_inner` applies to `v`.
+    have h2 : (scaledLineMetric hc).inner x v v =
         c * (NormedSpace.fromTangentSpace x v * NormedSpace.fromTangentSpace x v) :=
       scaledLineMetric_inner hc x v v
-    rw [h2, Real.sqrt_mul hc.le, Real.sqrt_mul_self_eq_abs, Real.norm_eq_abs]
+    rw [norm_eq_sqrt_real_inner, ContMDiffRiemannianMetric.inner_riemannianBundle, h2,
+      Real.sqrt_mul hc.le, Real.sqrt_mul_self_eq_abs, Real.norm_eq_abs]
   rw [← ofReal_norm, h, ENNReal.ofReal_mul (Real.sqrt_nonneg _), ofReal_norm]
 
 /-- For the metric `scaledLineMetric`, the gradient of `f(x) = x²` is `2 x / c`. -/
@@ -112,17 +112,11 @@ theorem mgradient_sq_scaledLineMetric (hc : 0 < c) (x : ℝ) :
     let _ : RiemannianBundle (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
       ⟨(scaledLineMetric hc).toRiemannianMetric⟩
     mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2) x = (2 / c * x : ℝ) := by
-  intro _
-  have h := inner_mgradient_model_space (fun y : ℝ ↦ y ^ 2) x 1
-  obtain ⟨m, hm⟩ : ∃ m : ℝ, mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2) x = m := ⟨_, rfl⟩
-  rw [hm] at h ⊢
-  have h2 : fderiv ℝ (fun y : ℝ ↦ y ^ 2) x 1 = 2 * x := by simp
-  rw [h2] at h
-  -- The inner product of the installed metric is `c v w`.
-  have h' : (scaledLineMetric hc).inner x m (1 : ℝ) = 2 * x := h
-  rw [scaledLineMetric_inner, mul_one] at h'
-  field_simp
-  linarith
+  refine ((riemannianMetricVectorSpace ℝ).mgradient_rescale_const hc _ x).trans ?_
+  rw [mgradient_eq_gradient, gradient_eq_deriv']
+  simp only [deriv_pow_field]
+  -- The tangent space of `ℝ` at `x` is `ℝ`, so the scalar multiplication is multiplication.
+  exact (by rw [smul_eq_mul]; push_cast; ring : c⁻¹ • ((2 : ℕ) * x ^ (2 - 1) : ℝ) = 2 / c * x)
 
 /-- For the metric `scaledLineMetric`, the negative gradient of `f(x) = x²` is `-2 x / c`. -/
 private theorem neg_mgradient_sq_scaledLineMetric_apply (hc : 0 < c) (x : ℝ) :
@@ -172,36 +166,19 @@ theorem riemannianEDist_scaledLineMetric (hc : 0 < c) (x y : ℝ) :
     let _ : RiemannianBundle (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
       ⟨(scaledLineMetric hc).toRiemannianMetric⟩
     Manifold.riemannianEDist 𝓘(ℝ, ℝ) x y = ENNReal.ofReal (√c * |x - y|) := by
+  -- For the standard metric, the Riemannian distance is the usual distance.
+  have h₀ := IsRiemannianManifold.out (I := 𝓘(ℝ, ℝ)) x y
+  simp only [Manifold.riemannianEDist_def, eNorm_tangentSpace_vectorSpace] at h₀
   intro _
-  apply le_antisymm
-  · -- The segment from `x` to `y` has length `√c |x - y|`.
-    let γ : ℝ → ℝ := fun t ↦ x + t * (y - x)
-    have hγ : ContDiff ℝ 1 γ := by fun_prop
-    refine (Manifold.riemannianEDist_le_pathELength (I := 𝓘(ℝ, ℝ)) (x := x) (y := y)
-      (hγ.contMDiff.contMDiffOn (s := Icc 0 1)) (by simp [γ]) (by simp [γ]) zero_le_one).trans_eq
-      ?_
-    rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc]
-    have hd (t : ℝ) : ‖mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) γ t 1‖ₑ = ENNReal.ofReal (√c * |x - y|) := by
-      rw [eNorm_scaledLineMetric hc, mfderiv_eq_fderiv]
-      -- The tangent vector `1` at `t` is the real number `1`.
-      have h1 : |NormedSpace.fromTangentSpace (𝕜 := ℝ) t 1| = 1 := abs_one
-      simp [γ, Real.eNorm_eq_ofReal_abs, abs_sub_comm, h1]
-    simp_rw [hd]
-    simp
-  · -- The map `y ↦ √c y` preserves the length of tangent vectors, so it does not increase
-    -- distances.
-    have h := edist_le_mul_riemannianEDist (I := 𝓘(ℝ, ℝ)) (f := fun y : ℝ ↦ √c * y)
-      (contDiff_const.mul contDiff_id).contMDiff one_ne_zero (fun z v ↦ ?_) x y
-    · rw [ENNReal.coe_one, one_mul, edist_dist, Real.dist_eq, ← mul_sub, abs_mul,
-        abs_of_nonneg (Real.sqrt_nonneg _)] at h
-      exact h
-    · have hf : fderiv ℝ (fun y : ℝ ↦ √c * y) z = ContinuousLinearMap.toSpanSingleton ℝ √c := by
-        simpa using ((hasDerivAt_id z).const_mul √c).hasFDerivAt.fderiv
-      rw [eNorm_scaledLineMetric hc, mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, hf,
-        ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, eNorm_mul, ENNReal.coe_one,
-        one_mul, mul_comm, Real.eNorm_of_nonneg (Real.sqrt_nonneg _)]
-      -- The two sides differ only in the coercion of `NormedSpace.fromTangentSpace z`.
-      exact le_rfl
+  -- The lengths of tangent vectors for `c dx²` are `√c` times the standard ones.
+  have h0 : ENNReal.ofReal √c ≠ 0 := by simpa using hc
+  rw [ENNReal.ofReal_mul (Real.sqrt_nonneg _), ← Real.dist_eq, ← edist_dist, h₀,
+    Manifold.riemannianEDist_def, ENNReal.mul_iInf_of_ne h0 ENNReal.ofReal_ne_top]
+  refine iInf_congr fun γ ↦ ?_
+  rw [ENNReal.mul_iInf_of_ne h0 ENNReal.ofReal_ne_top]
+  refine iInf_congr fun _ ↦ ?_
+  rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  exact lintegral_congr fun t ↦ eNorm_scaledLineMetric hc _ _
 
 /-- **The distance to the critical point decays at the rate `2 / c`.** For the metric
 `scaledLineMetric`, the trajectory of `-grad x²` through `x₀` is at Riemannian distance exactly
@@ -219,24 +196,24 @@ theorem riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric (
 
 /-- **The rate `2 / c` is sharp.** For the metric `scaledLineMetric`, `x₀ ≠ 0` and `μ > 2 / c`,
 the distance from the trajectory of `-grad x²` through `x₀` to the critical point `0` is not
-bounded by `C exp (-μ t)` for large `t`, for any `C > 0`. For `c = 4` this excludes the rate `2`
+bounded by `C exp (-μ t)` for large `t`, for any `C`. For `c = 4` this excludes the rate `2`
 of the standard metric. -/
 theorem not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric
     (hc : 0 < c) {x₀ μ : ℝ} (hx₀ : x₀ ≠ 0) (hμ : 2 / c < μ) :
     let _ : RiemannianBundle (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
       ⟨(scaledLineMetric hc).toRiemannianMetric⟩
-    ¬ ∃ C > 0, ∀ᶠ t in atTop,
+    ¬ ∃ C, ∀ᶠ t in atTop,
       Manifold.riemannianEDist 𝓘(ℝ, ℝ)
           (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀ t) 0 ≤
         ENNReal.ofReal (C * Real.exp (-(μ * t))) := by
   intro _
-  rintro ⟨C, hC, h⟩
+  rintro ⟨C, h⟩
   have hK : 0 < √c * |x₀| := mul_pos (Real.sqrt_pos.2 hc) (abs_pos.2 hx₀)
   have hgrow : Tendsto (fun t : ℝ ↦ Real.exp ((μ - 2 / c) * t)) atTop atTop :=
     Real.tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop (sub_pos.2 hμ))
   obtain ⟨t, ht, hbig⟩ := (h.and (hgrow.eventually_gt_atTop (C / (√c * |x₀|)))).exists
   rw [riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric hc,
-    ENNReal.ofReal_le_ofReal_iff (by positivity)] at ht
+    ENNReal.ofReal_le_ofReal_iff', or_iff_left (not_le.2 (by positivity))] at ht
   -- Multiplying the bound by `exp (μ t)` gives `√c |x₀| exp ((μ - 2 / c) t) ≤ C`.
   have hle : √c * |x₀| * Real.exp ((μ - 2 / c) * t) ≤ C :=
     calc √c * |x₀| * Real.exp ((μ - 2 / c) * t) =
@@ -247,54 +224,46 @@ theorem not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
       _ = C := by simp [Real.exp_neg]
   linarith [(div_lt_iff₀ hK).1 hbig]
 
-/-- **The length of a trajectory.** For the metric `scaledLineMetric` and `t ≤ s`, the trajectory
-of `-grad x²` through `x₀` has Riemannian length `√c |x₀| (exp (-2 t / c) - exp (-2 s / c))`
-between the times `t` and `s`. -/
-theorem pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric (hc : 0 < c) (x₀ : ℝ)
-    {t s : ℝ} (hts : t ≤ s) :
+/-- **The length of a trajectory.** For the metric `scaledLineMetric`, the trajectory of `-grad x²`
+through `x₀` has Riemannian length `√c |x₀| (exp (-2 t / c) - exp (-2 s / c))` between the times
+`t` and `s`; for `s < t` both sides vanish. -/
+theorem pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric (hc : 0 < c)
+    (x₀ t s : ℝ) :
     let _ : RiemannianBundle (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
       ⟨(scaledLineMetric hc).toRiemannianMetric⟩
     Manifold.pathELength 𝓘(ℝ, ℝ)
         (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀) t s =
       ENNReal.ofReal (√c * |x₀| * (Real.exp (-(2 / c * t)) - Real.exp (-(2 / c * s)))) := by
   intro _
+  have hf : Antitone fun τ : ℝ ↦ Real.exp (-(2 / c * τ)) := fun _ _ h ↦
+    Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_left h (by positivity)))
+  rcases lt_or_ge s t with hst | hts
+  · rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc, Icc_eq_empty hst.not_ge,
+      Measure.restrict_empty, lintegral_zero_measure, eq_comm, ENNReal.ofReal_eq_zero]
+    exact mul_nonpos_of_nonneg_of_nonpos (by positivity) (sub_nonpos.2 (hf hst.le))
+  -- The trajectory is the line `u ↦ x₀ u` reparametrized by the antitone `τ ↦ exp (-2 τ / c)`.
   have hγ : maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀ =
-      fun τ ↦ x₀ * Real.exp (-(2 / c * τ)) :=
+      (fun u ↦ x₀ * u) ∘ fun τ ↦ Real.exp (-(2 / c * τ)) :=
     funext (maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric hc x₀)
-  rw [hγ, Manifold.pathELength_eq_lintegral_mfderiv_Icc]
-  -- The derivative of `τ ↦ a exp (-2 τ / c)`.
-  have hD (a τ : ℝ) : HasDerivAt (fun τ ↦ a * Real.exp (-(2 / c * τ)))
-      (a * (Real.exp (-(2 / c * τ)) * -(2 / c))) τ := by
-    simpa using (((hasDerivAt_id τ).const_mul (2 / c)).neg.exp).const_mul a
-  -- The speed of the trajectory at time `τ`.
-  set g : ℝ → ℝ := fun τ ↦ √c * |x₀| * (2 / c) * Real.exp (-(2 / c * τ))
-  have hd (τ : ℝ) : ‖mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (fun τ ↦ x₀ * Real.exp (-(2 / c * τ))) τ 1‖ₑ =
-      ENNReal.ofReal (g τ) := by
-    rw [eNorm_scaledLineMetric hc, mfderiv_eq_fderiv,
-      (hD x₀ τ).hasFDerivAt.fderiv]
-    -- The tangent vector `1` at `τ` is the real number `1`.
-    have h1 : NormedSpace.fromTangentSpace (𝕜 := ℝ) τ 1 = 1 := rfl
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearMap.toSpanSingleton_apply, h1,
-      one_smul]
-    rw [← ofReal_norm, ← ENNReal.ofReal_mul (Real.sqrt_nonneg _), Real.norm_eq_abs, abs_mul,
-      abs_mul, abs_neg, Real.abs_exp, abs_of_pos (by positivity : (0 : ℝ) < 2 / c)]
-    congr 1
-    simp only [g]
-    ring
+  rw [hγ, Manifold.pathELength_comp_of_antitoneOn hts (hf.antitoneOn _) (by fun_prop)
+    ((by fun_prop : ContDiff ℝ 1 fun u : ℝ ↦ x₀ * u).contMDiff.mdifferentiable
+      one_ne_zero).mdifferentiableOn,
+    Manifold.pathELength_eq_lintegral_mfderiv_Icc]
+  -- The line `u ↦ x₀ u` has constant speed `√c |x₀|`.
+  have hd (u : ℝ) : ‖mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (fun u ↦ x₀ * u) u 1‖ₑ =
+      ENNReal.ofReal (√c * |x₀|) := by
+    have hD : HasDerivAt (fun u : ℝ ↦ x₀ * u) x₀ u := by
+      simpa using (hasDerivAt_id u).const_mul x₀
+    -- The tangent vector `1` at `u` is the real number `1`.
+    have h1 : NormedSpace.fromTangentSpace (𝕜 := ℝ) u 1 = (1 : ℝ) :=
+      NormedSpace.fromTangentSpace_apply u 1
+    rw [eNorm_scaledLineMetric hc, mfderiv_eq_fderiv, hD.hasFDerivAt.fderiv,
+      ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe, h1, ContinuousLinearMap.toSpanSingleton_apply, one_smul,
+      Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_mul (Real.sqrt_nonneg _)]
   simp_rw [hd]
-  -- The length is the integral of the speed, computed from an antiderivative.
-  have hG (τ : ℝ) : HasDerivAt (fun τ ↦ -(√c * |x₀| * Real.exp (-(2 / c * τ)))) (g τ) τ := by
-    exact (hD (√c * |x₀|) τ).neg.congr_deriv
-      (by simp only [g]; ring)
-  rw [← ofReal_integral_eq_lintegral_ofReal, integral_Icc_eq_integral_Ioc,
-    ← intervalIntegral.integral_of_le hts,
-    intervalIntegral.integral_eq_sub_of_hasDerivAt (fun τ _ ↦ hG τ)]
-  · congr 1
-    ring
-  · exact (by fun_prop : Continuous g).intervalIntegrable _ _
-  · exact (by fun_prop : Continuous g).integrableOn_Icc
-  · exact ae_of_all _ fun τ ↦ by simp only [g]; positivity
+  rw [setLIntegral_const, Real.volume_Icc, ← ENNReal.ofReal_mul (by positivity)]
 
 /-- **The tail length of a trajectory.** For the metric `scaledLineMetric`, the trajectory of
 `-grad x²` through `x₀` has Riemannian length `√c |x₀| exp (-2 t / c)` after the time `t`. This is
@@ -307,27 +276,12 @@ theorem iSup_pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric 
         (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀) t s =
       ENNReal.ofReal (√c * |x₀| * Real.exp (-(2 / c * t))) := by
   intro _
-  apply le_antisymm
-  · refine iSup_le fun s ↦ ?_
-    rcases le_or_gt t s with hts | hst
-    · rw [pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric hc x₀ hts]
-      gcongr
-      linarith [Real.exp_pos (-(2 / c * s))]
-    · rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc, Icc_eq_empty hst.not_ge,
-        Measure.restrict_empty, lintegral_zero_measure]
-      exact zero_le
-  · -- The lengths up to the times `s → ∞` tend to the claimed value.
-    have hlim : Tendsto (fun s ↦ ENNReal.ofReal
-        (√c * |x₀| * (Real.exp (-(2 / c * t)) - Real.exp (-(2 / c * s))))) atTop
-        (𝓝 (ENNReal.ofReal (√c * |x₀| * Real.exp (-(2 / c * t))))) := by
-      refine ENNReal.tendsto_ofReal ?_
-      have hexp : Tendsto (fun s ↦ Real.exp (-(2 / c * s))) atTop (𝓝 0) :=
-        Real.tendsto_exp_atBot.comp
-          (tendsto_neg_atTop_atBot.comp (tendsto_id.const_mul_atTop (by positivity)))
-      simpa using (tendsto_const_nhds.sub hexp).const_mul (√c * |x₀|)
-    refine le_of_tendsto hlim (eventually_atTop.2 ⟨t, fun s hs ↦ ?_⟩)
-    rw [← pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric hc x₀ hs]
-    exact le_iSup (fun s ↦ Manifold.pathELength 𝓘(ℝ, ℝ)
-      (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀) t s) s
+  -- The lengths up to the times `s → ∞` increase to the claimed value.
+  refine tendsto_nhds_unique (tendsto_atTop_iSup fun _ _ h ↦ Manifold.pathELength_mono le_rfl h)
+    ((ENNReal.tendsto_ofReal ?_).congr fun s ↦
+      (pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric hc x₀ t s).symm)
+  have hexp : Tendsto (fun s ↦ Real.exp (-(2 / c * s))) atTop (𝓝 0) :=
+    Real.tendsto_exp_neg_atTop_nhds_zero.comp (tendsto_id.const_mul_atTop (by positivity))
+  simpa using (tendsto_const_nhds.sub hexp).const_mul (√c * |x₀|)
 
 end TauCeti
