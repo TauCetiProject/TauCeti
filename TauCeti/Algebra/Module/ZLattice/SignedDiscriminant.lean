@@ -235,22 +235,9 @@ discriminant by `mⁿ`. For `m = 0` both sides vanish when the space is nontrivi
 otherwise; if `L` does not span the space, both sides vanish. -/
 theorem IsIntegral.signedDiscr_sqrt_smul (h : IsIntegral L) {m : ℕ} :
     signedDiscr (√(m : ℝ) • L) = (m : ℤ) ^ finrank ℝ E * signedDiscr L := by
-  rcases eq_or_ne m 0 with rfl | hm
-  · rcases subsingleton_or_nontrivial E with _ | _
-    · simp [signedDiscr_of_subsingleton, Module.finrank_zero_of_subsingleton]
-    · simp [Module.finrank_pos.ne']
-  by_cases hfull : span ℝ (L : Set E) = ⊤
-  · have := h.discreteTopology
-    have : IsZLattice ℝ L := ⟨hfull⟩
-    rw [signedDiscr_def, signedDiscr_def, h.card_discriminantGroup_sqrt_smul hm]
-    push_cast
-    ring
-  · have hne : span ℝ ((√(m : ℝ) • L : Submodule ℤ E) : Set E) ≠ ⊤ := fun hc ↦
-      hfull <| top_unique <| by
-        rw [← hc, coe_pointwise_smul]
-        exact Submodule.span_smul_le _ _
-    rw [signedDiscr_eq_zero_iff.mpr (infinite_discriminantGroup_of_span_ne_top hne),
-      signedDiscr_eq_zero_iff.mpr (infinite_discriminantGroup_of_span_ne_top hfull), mul_zero]
+  rw [signedDiscr_def, signedDiscr_def, h.card_discriminantGroup_sqrt_smul]
+  push_cast
+  ring
 
 omit [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- The `ℤ`-span of an orthonormal basis indexed by `ι` has signed discriminant

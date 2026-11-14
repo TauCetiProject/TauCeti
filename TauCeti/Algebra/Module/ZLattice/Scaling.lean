@@ -300,6 +300,40 @@ theorem det_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] (b : Ortho
   rw [← b.coe_toBasis] at hu ⊢
   rw [det_sqrt_smul, hu.det_eq_one, mul_one]
 
+variable {L}
+
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- Scaling an integral lattice `L` in a space of dimension `n` by `√m` multiplies the order of its
+discriminant group by `mⁿ`, where the order is the junk value `0` if the group is infinite. For
+`m = 0` both sides vanish when the space is nontrivial, and equal `1` otherwise; if `L` does not
+span the space, both sides vanish. -/
+theorem IsIntegral.card_discriminantGroup_sqrt_smul (h : IsIntegral L) {m : ℕ} :
+    Nat.card (DiscriminantGroup (√(m : ℝ) • L)) =
+      m ^ finrank ℝ E * Nat.card (DiscriminantGroup L) := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · rw [Nat.cast_zero, Real.sqrt_zero, zero_smul]
+    rcases subsingleton_or_nontrivial E with _ | _
+    · have _ (M : Submodule ℤ E) : Unique (DiscriminantGroup M) :=
+        ⟨⟨0⟩, fun x ↦ Subsingleton.elim _ _⟩
+      rw [Module.finrank_zero_of_subsingleton, Nat.card_unique, Nat.card_unique, pow_zero, mul_one]
+    · have := infinite_discriminantGroup_bot (E := E)
+      rw [Nat.card_eq_zero_of_infinite, zero_pow Module.finrank_pos.ne', zero_mul]
+  by_cases hfull : span ℝ (L : Set E) = ⊤
+  · borelize E
+    have := h.discreteTopology
+    have : IsZLattice ℝ L := ⟨hfull⟩
+    have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm))⟩
+    refine Nat.cast_injective (R := ℝ) ?_
+    rw [← (h.sqrt_smul m).det_eq_card_discriminantGroup, det_sqrt_smul L,
+      h.det_eq_card_discriminantGroup, Nat.cast_mul, Nat.cast_pow]
+  · have hne : span ℝ ((√(m : ℝ) • L : Submodule ℤ E) : Set E) ≠ ⊤ := fun hc ↦
+      hfull <| top_unique <| by
+        rw [← hc, coe_pointwise_smul]
+        exact Submodule.span_smul_le _ _
+    have := infinite_discriminantGroup_of_span_ne_top hne
+    have := infinite_discriminantGroup_of_span_ne_top hfull
+    rw [Nat.card_eq_zero_of_infinite, Nat.card_eq_zero_of_infinite, mul_zero]
+
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
   [IsZLattice ℝ L] in
 /-- For an orthonormal basis `b` and a natural number `m`, the discriminant group of the scaled
@@ -312,42 +346,9 @@ theorem natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis {ι : Type*} [
     (b : OrthonormalBasis ι ℝ E) {m : ℕ} :
     Nat.card (DiscriminantGroup (√(m : ℝ) • span ℤ (Set.range b))) = m ^ finrank ℝ E := by
   have := b.toBasis.finiteDimensional_of_finite
-  rcases eq_or_ne m 0 with rfl | hm
-  · -- The lattice is `0`, so its discriminant group is the whole space.
-    rw [Nat.cast_zero, Real.sqrt_zero, zero_smul]
-    rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
-    · have hE : finrank ℝ E = 0 := by
-        rw [Module.finrank_eq_card_basis b.toBasis, Fintype.card_eq_zero]
-      have : Subsingleton E := finrank_zero_iff.mp hE
-      have : Unique (DiscriminantGroup (⊥ : Submodule ℤ E)) :=
-        ⟨⟨0⟩, fun x ↦ Subsingleton.elim _ _⟩
-      rw [hE, Nat.card_unique, pow_zero]
-    · have hE : 0 < finrank ℝ E := by
-        rw [Module.finrank_eq_card_basis b.toBasis]
-        exact Fintype.card_pos_iff.mpr ⟨i⟩
-      have : Nontrivial E := Module.finrank_pos_iff.mp hE
-      have := infinite_discriminantGroup_bot (E := E)
-      rw [Nat.card_eq_zero_of_infinite, zero_pow hE.ne']
-  borelize E
-  have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (by positivity)⟩
-  have h :=
-    ((isUnimodular_span_orthonormalBasis b).isIntegral.sqrt_smul m).det_eq_card_discriminantGroup
-  rw [det_sqrt_smul_span_orthonormalBasis b] at h
-  exact_mod_cast h.symm
-
-variable {L}
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- Scaling an integral full lattice `L` of rank `n` by `√m` (`m ≠ 0`) multiplies the order of its
-discriminant group by `mⁿ`. -/
-theorem IsIntegral.card_discriminantGroup_sqrt_smul (h : IsIntegral L) {m : ℕ} (hm : m ≠ 0) :
-    Nat.card (DiscriminantGroup (√(m : ℝ) • L)) =
-      m ^ finrank ℝ E * Nat.card (DiscriminantGroup L) := by
-  borelize E
-  have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm))⟩
-  refine Nat.cast_injective (R := ℝ) ?_
-  rw [← (h.sqrt_smul m).det_eq_card_discriminantGroup, det_sqrt_smul L,
-    h.det_eq_card_discriminantGroup, Nat.cast_mul, Nat.cast_pow]
+  have hu := isUnimodular_span_orthonormalBasis b
+  rw [← b.coe_toBasis] at hu ⊢
+  rw [hu.isIntegral.card_discriminantGroup_sqrt_smul, hu.card_discriminantGroup_eq_one, mul_one]
 
 omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- In positive dimension, scaling an integral lattice by `c` with `1 < |c|` never gives a
