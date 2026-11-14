@@ -25,10 +25,13 @@ value is `t + t³ - t⁴`.
 ## Main definitions
 
 * `TauCeti.rightHandedTrefoilArcPair`: the six arcs in crossing-slot coordinates.
+* `TauCeti.rightHandedTrefoilOverArc`: the Wirtinger arc through each crossing slot.
 * `TauCeti.rightHandedTrefoilPDCode`: the standard three-crossing oriented PD-code.
 
 ## Main results
 
+* `TauCeti.apply_eq_apply_rightHandedTrefoilOverArc`: a family constant along arcs and
+  over-strands is constant on each Wirtinger arc.
 * `TauCeti.rightHandedTrefoilPDCode_writhe`: the diagram has writhe three.
 * `TauCeti.rightHandedTrefoilPDCode_componentCount`: the diagram is a knot.
 * `TauCeti.normalizedKauffmanBracket_rightHandedTrefoilPDCode`: its normalized bracket is
@@ -71,6 +74,66 @@ theorem rightHandedTrefoilArcPair_pairs :
       rightHandedTrefoilArcPair.val (2, 3) = (0, 0) ∧
       rightHandedTrefoilArcPair.val (0, 0) = (2, 3) := by
   simp [rightHandedTrefoilArcPair, PerfectMatching.val_mk, Equiv.swap_apply_def]
+
+/-- The Wirtinger arc through each crossing slot of the trefoil diagram, numbered by the crossing
+it passes over: arc `0` runs from slot `(2, 3)` over crossing `0` to slot `(1, 1)`, arc `1` from
+`(0, 3)` over crossing `1` to `(2, 1)`, and arc `2` from `(1, 3)` over crossing `2` to `(0, 1)`. -/
+def rightHandedTrefoilOverArc (p : Fin 3 × Fin 4) : Fin 3 :=
+  ![![0, 2, 0, 1], ![1, 0, 1, 2], ![2, 1, 2, 0]] p.1 p.2
+
+/-- The table of Wirtinger arcs of the trefoil diagram. -/
+theorem rightHandedTrefoilOverArc_def (p : Fin 3 × Fin 4) :
+    rightHandedTrefoilOverArc p = ![![0, 2, 0, 1], ![1, 0, 1, 2], ![2, 1, 2, 0]] p.1 p.2 :=
+  (rfl)
+
+/-- Slot `0` of each crossing lies on the over-arc numbered by that crossing. -/
+@[simp]
+theorem rightHandedTrefoilOverArc_zero (i : Fin 3) : rightHandedTrefoilOverArc (i, 0) = i := by
+  fin_cases i <;> rfl
+
+/-- Slot `2` of each crossing lies on the over-arc numbered by that crossing. -/
+@[simp]
+theorem rightHandedTrefoilOverArc_two (i : Fin 3) : rightHandedTrefoilOverArc (i, 2) = i := by
+  fin_cases i <;> rfl
+
+/-- Slot `1` lies on the arc that passes over the preceding crossing. -/
+@[simp]
+theorem rightHandedTrefoilOverArc_one (i : Fin 3) :
+    rightHandedTrefoilOverArc (i, 1) = i - 1 := by
+  fin_cases i <;> rfl
+
+/-- Slot `3` lies on the arc that passes over the following crossing. -/
+@[simp]
+theorem rightHandedTrefoilOverArc_three (i : Fin 3) :
+    rightHandedTrefoilOverArc (i, 3) = i + 1 := by
+  fin_cases i <;> rfl
+
+/-- The two ends of each arc belong to the same Wirtinger arc. -/
+@[simp]
+theorem rightHandedTrefoilOverArc_arcPair (p : Fin 3 × Fin 4) :
+    rightHandedTrefoilOverArc (rightHandedTrefoilArcPair.val p) =
+      rightHandedTrefoilOverArc p := by
+  rcases p with ⟨i, slot⟩
+  fin_cases i <;> fin_cases slot <;> simp [rightHandedTrefoilOverArc_def]
+
+/-- A family indexed by the crossing slots of the trefoil diagram that is constant along each arc
+and along the over-strand `0`-`2` of each crossing is constant on each Wirtinger arc: its value at
+a slot is its value at slot `0` of the crossing that the arc passes over. -/
+theorem apply_eq_apply_rightHandedTrefoilOverArc {X : Type*} (x : Fin 3 × Fin 4 → X)
+    (harc : ∀ p, x (rightHandedTrefoilArcPair.val p) = x p) (hover : ∀ i, x (i, 2) = x (i, 0))
+    (p : Fin 3 × Fin 4) : x p = x (rightHandedTrefoilOverArc p, 0) := by
+  have _ := hover 0
+  have _ := hover 1
+  have _ := hover 2
+  have h11 := harc (0, 2)
+  have h23 := harc (0, 0)
+  have h03 := harc (1, 0)
+  have h21 := harc (1, 2)
+  have h13 := harc (2, 0)
+  have h01 := harc (2, 2)
+  simp only [rightHandedTrefoilArcPair_pairs] at h11 h23 h03 h21 h13 h01
+  rcases p with ⟨i, slot⟩
+  fin_cases i <;> fin_cases slot <;> simp_all [rightHandedTrefoilOverArc_def]
 
 /-- The slot matching transported to the twelve finite half-edge labels used by `PDCode`. -/
 private def trefoilEdgePair : PerfectMatching (Fin 12) :=

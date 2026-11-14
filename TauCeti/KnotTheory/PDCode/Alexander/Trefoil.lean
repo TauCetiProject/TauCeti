@@ -69,35 +69,18 @@ private theorem alexanderWeight_rightHandedTrefoilPDCode (i : Fin 3) (slot : Fin
         rightHandedTrefoilPDCode_orientation_crossing, rightHandedTrefoilPDCode_crossingSign]
       simp
 
-/-- The Wirtinger arc through each crossing slot of the trefoil code: arc `0` runs from slot
-`(2, 3)` over crossing `0` to slot `(1, 1)`, arc `1` from `(0, 3)` over crossing `1` to `(2, 1)`,
-and arc `2` from `(1, 3)` over crossing `2` to `(0, 1)`. -/
-private def trefoilArc (p : Fin 3 × Fin 4) : Fin 3 :=
-  ![![0, 2, 0, 1], ![1, 0, 1, 2], ![2, 1, 2, 0]] p.1 p.2
-
 /-- In the trefoil's Alexander module, the generator of a slot is the generator of its Wirtinger
 arc where that arc passes over its crossing. -/
 private theorem alexanderGenerator_rightHandedTrefoilPDCode (p : Fin 3 × Fin 4) :
-    gen p = gen (trefoilArc p, 0) := by
-  have hover (i : Fin 3) : gen (i, 2) = gen (i, 0) := by
-    simpa [crossing_rightHandedTrefoilPDCode] using
-      rightHandedTrefoilPDCode.alexanderGenerator_crossing_add_two_of_isOver (i := i) (slot := 0)
-        (by simp)
-  have harc (p : Fin 3 × Fin 4) : gen (rightHandedTrefoilArcPair.val p) = gen p := by
-    have := rightHandedTrefoilPDCode.alexanderGenerator_edgePair (PDCode.crossingSlotEquiv 3 p)
-    rwa [rightHandedTrefoilPDCode_edgePair_apply] at this
-  have _ := hover 0
-  have _ := hover 1
-  have _ := hover 2
-  have h11 := harc (0, 2)
-  have h23 := harc (0, 0)
-  have h03 := harc (1, 0)
-  have h21 := harc (1, 2)
-  have h13 := harc (2, 0)
-  have h01 := harc (2, 2)
-  simp only [rightHandedTrefoilArcPair_pairs] at h11 h23 h03 h21 h13 h01
-  rcases p with ⟨i, slot⟩
-  fin_cases i <;> fin_cases slot <;> simp_all [trefoilArc]
+    gen p = gen (rightHandedTrefoilOverArc p, 0) :=
+  apply_eq_apply_rightHandedTrefoilOverArc (fun p ↦ gen p)
+    (fun p ↦ by
+      have := rightHandedTrefoilPDCode.alexanderGenerator_edgePair (PDCode.crossingSlotEquiv 3 p)
+      rwa [rightHandedTrefoilPDCode_edgePair_apply] at this)
+    (fun i ↦ by
+      simpa [crossing_rightHandedTrefoilPDCode] using
+        rightHandedTrefoilPDCode.alexanderGenerator_crossing_add_two_of_isOver (i := i)
+          (slot := 0) (by simp)) p
 
 /-- The crossing relations of the trefoil at its first two crossings, read on the three arcs. -/
 private theorem alexanderGenerator_rightHandedTrefoilPDCode_relations :
@@ -114,7 +97,7 @@ private theorem alexanderGenerator_rightHandedTrefoilPDCode_relations :
   rw [alexanderGenerator_rightHandedTrefoilPDCode (1, 3),
     alexanderGenerator_rightHandedTrefoilPDCode (1, 1),
     alexanderGenerator_rightHandedTrefoilPDCode (1, 2)] at h1
-  exact ⟨by simpa [trefoilArc] using h0, by simpa [trefoilArc] using h1⟩
+  exact ⟨by simpa [Fin.reduceSub, Fin.neg_def] using h0, by simpa using h1⟩
 
 /-- The Alexander module of the trefoil maps onto `ℤ[T;T⁻¹] ⧸ (Δ) × ℤ[T;T⁻¹]`, sending the arcs
 `a`, `b`, `c` to `(0, 1)`, `(1, 1)` and `(1 - t, 1)`. -/
@@ -136,13 +119,13 @@ private theorem exists_surjective_alexanderModule_rightHandedTrefoilPDCode :
     ![(0, 1), ((trefoilIdeal).mkQ 1, 1), ((trefoilIdeal).mkQ (1 - T 1), 1)]
   let v : Fin (4 * 3) ⊕ Fin rightHandedTrefoilPDCode.crossinglessComponentCount →
       (ℤ[T;T⁻¹] ⧸ trefoilIdeal) × ℤ[T;T⁻¹] := Sum.elim
-    (fun h ↦ arc (trefoilArc ((PDCode.crossingSlotEquiv 3).symm h))) fun j ↦
+    (fun h ↦ arc (rightHandedTrefoilOverArc ((PDCode.crossingSlotEquiv 3).symm h))) fun j ↦
       absurd j.isLt (by simp)
   have harc (h : Fin (4 * 3)) :
       v (.inl (rightHandedTrefoilPDCode.edgePair.val h)) = v (.inl h) := by
     obtain ⟨⟨i, slot⟩, rfl⟩ := (PDCode.crossingSlotEquiv 3).surjective h
     rw [rightHandedTrefoilPDCode_edgePair_apply]
-    fin_cases i <;> fin_cases slot <;> simp [v, trefoilArc]
+    simp [v]
   have hcross (i : Fin 3) (slot : Fin 4) :
       v (.inl (rightHandedTrefoilPDCode.crossing i (slot + 2))) =
         rightHandedTrefoilPDCode.alexanderWeight i slot •
@@ -151,9 +134,11 @@ private theorem exists_surjective_alexanderModule_rightHandedTrefoilPDCode :
           v (.inl (rightHandedTrefoilPDCode.crossing i (slot + 1))) := by
     simp only [crossing_rightHandedTrefoilPDCode, alexanderWeight_rightHandedTrefoilPDCode]
     fin_cases i <;> fin_cases slot <;>
-      simp only [v, arc, trefoilArc, hsmul, Sum.elim_inl, Equiv.symm_apply_apply, Fin.isValue,
-        Fin.mk_one, Fin.reduceAdd, Fin.reduceFinMk, Fin.zero_eta, Matrix.cons_val,
-        Matrix.cons_val', Matrix.cons_val_fin_one, Matrix.cons_val_one, Matrix.cons_val_zero,
+      simp only [v, arc, rightHandedTrefoilOverArc_zero, rightHandedTrefoilOverArc_one,
+        rightHandedTrefoilOverArc_two, rightHandedTrefoilOverArc_three, Fin.reduceSub,
+        hsmul, Sum.elim_inl, Equiv.symm_apply_apply,
+        Fin.isValue, Fin.mk_one, Fin.reduceAdd, Fin.reduceFinMk, Fin.zero_eta, Matrix.cons_val,
+        Matrix.cons_val_one, Matrix.cons_val_zero,
         Prod.ext_iff, Prod.mk_add_mk, Prod.smul_mk, Ideal.Quotient.mk_eq_mk, mkQ_apply, map_one,
         map_sub, smul_eq_mul, one_smul, zero_smul, mul_one, mul_zero, add_zero, zero_add,
         add_sub_cancel, sub_self, and_true, Int.reduceNeg]
@@ -168,7 +153,7 @@ private theorem exists_surjective_alexanderModule_rightHandedTrefoilPDCode :
     ⟨((Ideal.Quotient.mk_surjective x.1).choose, x.2),
       Prod.ext (Ideal.Quotient.mk_surjective x.1).choose_spec rfl⟩
   refine ⟨r • gen (0, 0) + y • (gen (1, 0) - gen (0, 0)), ?_⟩
-  simp [v, arc, trefoilArc, hsmul]
+  simp [v, arc, hsmul]
 
 /-- `ℤ[T;T⁻¹] ⧸ (Δ) × ℤ[T;T⁻¹]` maps onto the Alexander module of the trefoil, sending `(1, 0)` to
 `b - a` and `(0, 1)` to `a`. -/
@@ -201,7 +186,7 @@ private theorem exists_surjective_onto_alexanderModule_rightHandedTrefoilPDCode 
   rintro _ ⟨g | j, rfl⟩
   · obtain ⟨p, rfl⟩ := (PDCode.crossingSlotEquiv 3).surjective g
     rw [alexanderGenerator_rightHandedTrefoilPDCode p]
-    generalize trefoilArc p = k
+    generalize rightHandedTrefoilOverArc p = k
     fin_cases k
     exacts [ha, hb, hc]
   · exact absurd j.isLt (by simp)
