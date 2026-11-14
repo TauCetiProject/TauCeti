@@ -56,7 +56,7 @@ theorem coe_extendScalarsSymmetricPowerIso_hom_apply (n : ℕ)
     ((f.extendScalarsSymmetricPowerIso n M).hom.hom x :
         SymmetricAlgebra S ((ModuleCat.extendScalars f).obj M)) =
       (letI := f.toAlgebra
-       TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv (k := R) (K := S)
+       SymmetricAlgebra.scalarTensorBialgEquiv (k := R) (K := S)
          ((TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n).subtype.baseChange S x)) := by
   let _ := f.toAlgebra
   -- Unwrap the categorical isomorphism to identify the degreewise linear equivalence.
@@ -72,7 +72,7 @@ theorem coe_extendScalarsSymmetricPowerIso_hom_tmul (n : ℕ)
     ((f.extendScalarsSymmetricPowerIso n M).hom.hom (s ⊗ₜ[R,f] x) :
         SymmetricAlgebra S ((ModuleCat.extendScalars f).obj M)) =
       (letI := f.toAlgebra
-       TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv (k := R) (K := S) (s ⊗ₜ[R] x.1)) := by
+       SymmetricAlgebra.scalarTensorBialgEquiv (k := R) (K := S) (s ⊗ₜ[R] x.1)) := by
   let _ := f.toAlgebra
   -- Compute through the degreewise linear equivalence, avoiding the categorical scalar wrappers.
   change ((TauCeti.SymmetricAlgebra.homogeneousSubmoduleEquivBaseChange
@@ -97,7 +97,7 @@ theorem coe_extendScalarsSymmetricPowerIso_hom_one_tmul_prod (M : ModuleCat.{max
   rw [Algebra.TensorProduct.includeRight_apply] at h
   rw [h, map_list_prod, List.map_map, List.map_map]
   exact congrArg List.prod (List.map_congr_left fun m _ ↦
-    TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv_tmul_ι 1 m)
+    SymmetricAlgebra.scalarTensorBialgEquiv_tmul_ι 1 m)
 
 /-- The inverse comparison is the inverse ambient scalar-extension equivalence,
 after inclusion of the extended homogeneous piece. -/
@@ -107,7 +107,7 @@ theorem subtype_baseChange_extendScalarsSymmetricPowerIso_inv_apply (n : ℕ)
     letI := f.toAlgebra
     (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n).subtype.baseChange S
         ((f.extendScalarsSymmetricPowerIso n M).inv.hom x) =
-      (TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv (k := R) (K := S)).symm x.1 := by
+      (SymmetricAlgebra.scalarTensorBialgEquiv (k := R) (K := S)).symm x.1 := by
   let _ := f.toAlgebra
   -- Unwrap the inverse categorical comparison to use the degreewise inclusion formula.
   change (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n).subtype.baseChange S
@@ -206,7 +206,7 @@ theorem extendScalarsSymmetricPowerNatIso_id (n : ℕ) :
   intro x
   let a : (ModuleCat.extendScalars (RingHom.id R)).obj M →ₗ[R] M :=
     ((ModuleCat.extendScalarsId R).hom.app M).hom
-  let e := TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv (k := R) (K := R) (M := M)
+  let e := SymmetricAlgebra.scalarTensorBialgEquiv (k := R) (K := R) (M := M)
   have h : (SymmetricAlgebra.map R a).toRingHom.comp
       (e.toAlgEquiv.toRingHom.comp Algebra.TensorProduct.includeRight.toRingHom) =
         RingHom.id (SymmetricAlgebra R M) := by
@@ -219,12 +219,12 @@ theorem extendScalarsSymmetricPowerNatIso_id (n : ℕ) :
         ← Algebra.TensorProduct.tmul_one_eq_one_tmul, RingHom.algebraMap_toAlgebra,
         RingHom.id_apply]
       simp only [e]
-      erw [TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv_tmul_one, AlgHom.commutes]
+      erw [SymmetricAlgebra.scalarTensorBialgEquiv_tmul_one, AlgHom.commutes]
     · intro m
       -- Evaluate the ambient comparison on a generator.
       change (SymmetricAlgebra.map R a) (e ((1 : R) ⊗ₜ[R] SymmetricAlgebra.ι R M m)) =
         SymmetricAlgebra.ι R M m
-      simp only [e, TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv_tmul_ι]
+      simp only [e, SymmetricAlgebra.scalarTensorBialgEquiv_tmul_ι]
       erw [SymmetricAlgebra.map_apply_ι]
       exact congrArg (SymmetricAlgebra.ι R M)
         (ModuleCat.extendScalarsId_hom_app_one_tmul M m)

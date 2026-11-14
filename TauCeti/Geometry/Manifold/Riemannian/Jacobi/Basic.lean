@@ -98,7 +98,8 @@ theorem IsJacobiFieldOn.contMDiffOn_alongCurveWithin (h : IsJacobiFieldOn I γ V
     ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r)
         (alongCurveWithin (leviCivitaConnection I M) γ V s r)) s :=
-  contMDiffOn_alongCurveWithin_leviCivitaConnection h.uniqueDiffOn h.contMDiffOn
+  contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 1) (m := ∞) (k := ∞)
+    (by simp) (by simp) h.uniqueDiffOn h.contMDiffOn
 
 /-- The covariant derivative has differentiable coordinate readings within the parameter set. -/
 theorem IsJacobiFieldOn.differentiableWithinAt_sectionCoord_alongCurveWithin
@@ -106,7 +107,7 @@ theorem IsJacobiFieldOn.differentiableWithinAt_sectionCoord_alongCurveWithin
     DifferentiableWithinAt ℝ
       (sectionCoord (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
   differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection
-    h.uniqueDiffOn h.contMDiffOn ht
+    h.uniqueDiffOn (h.contMDiffOn t ht) ht
 
 /-- The Jacobi equation solved for the second covariant derivative. -/
 theorem IsJacobiFieldOn.alongCurveWithin_alongCurveWithin_eq
@@ -212,6 +213,26 @@ theorem IsJacobiFieldOn.mono (h : IsJacobiFieldOn I γ V s)
       (h.isGeodesicCurveOn.mdifferentiableOn r (hus hr))
   rw [hvel]
   exact h.equation r (hus hr)
+
+/-- The pairing `⟪D_t V, W⟫` of a Jacobi field with a differentiable field has derivative
+`⟪D_t V, D_t W⟫ - ⟪R(V, γ')γ', W⟫`. -/
+theorem IsJacobiFieldOn.hasDerivWithinAt_inner_alongCurveWithin
+    (h : IsJacobiFieldOn I γ V s) {t : ℝ} (ht : t ∈ s)
+    (hW : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I.tangent
+      (fun r ↦ TotalSpace.mk' E (γ r) (W r)) s t) :
+    HasDerivWithinAt (fun r ↦ inner ℝ
+        (alongCurveWithin (leviCivitaConnection I M) γ V s r) (W r))
+      (inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s t)
+          (alongCurveWithin (leviCivitaConnection I M) γ W s t) -
+        inner ℝ ((leviCivitaConnection I M).curvatureTensor (γ t) (V t)
+          (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t)) (W t)) s t := by
+  have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
+  have hd := hm.hasDerivWithinAt_inner_alongCurveWithin (h.isGeodesicCurveOn.mdifferentiableOn t ht)
+      (h.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
+      (TauCeti.Manifold.differentiableWithinAt_sectionCoord γ W hW
+        (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
+  simpa only [h.alongCurveWithin_alongCurveWithin_eq ht, inner_neg_left, neg_add_eq_sub]
+    using hd
 
 /-- The Wronskian of two Jacobi fields has zero derivative, including within a closed interval. -/
 theorem IsJacobiFieldOn.hasDerivWithinAt_wronskian (hV : IsJacobiFieldOn I γ V s)

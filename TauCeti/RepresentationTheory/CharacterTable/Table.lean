@@ -296,28 +296,8 @@ a Wedderburn presentation of `k[G]` up to a relabelling of the blocks; the squar
 dimensions add up to the dimension `|G|` of `k[G]`. -/
 theorem sum_characterDegree_sq_eq_card :
     ∑ i : Fin (Nat.card (ConjClasses G)), characterDegree k i ^ 2 = Nat.card G := by
-  classical
-  have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
-  let _ : Fintype (ConjClasses G) := Fintype.ofFinite (ConjClasses G)
-  obtain ⟨d, ρ, hirr, hind, hsum⟩ := exists_irreducible_family_conjClasses k G
-  have := hirr
-  choose C hC using fun i : Fin (Nat.card (ConjClasses G)) =>
-    ClassFunction.exists_nonempty_equiv ρ hind rfl (irreducibleRepresentation k i)
-  have hdeg : ∀ i, characterDegree k i ^ 2 = d (C i) ^ 2 := fun i => by
-    have := (hC i).some.toLinearEquiv.finrank_eq
-    simp only [Module.finrank_fin_fun] at this
-    rw [this]
-  have hinj : Function.Injective C := by
-    intro i j hij
-    by_contra hne
-    have e : (irreducibleRepresentation k i).Equiv (ρ (C j)) := hij ▸ (hC i).some
-    exact (pairwise_isEmpty_equiv_irreducibleRepresentation k hne).elim
-      (e.trans (hC j).some.symm)
-  have hbij : Function.Bijective C :=
-    (Fintype.bijective_iff_injective_and_card C).2
-      ⟨hinj, by rw [Fintype.card_fin, Fintype.card_eq_nat_card]⟩
-  rw [← hsum, finsum_eq_sum_of_fintype]
-  exact Fintype.sum_bijective C hbij _ _ hdeg
+  simpa using sum_finrank_sq_eq_card (irreducibleRepresentation k)
+    (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp)
 
 /-- **The degree of an irreducible character divides the order of the group.** -/
 theorem characterDegree_dvd_card [CharZero k] (i : Fin (Nat.card (ConjClasses G))) :

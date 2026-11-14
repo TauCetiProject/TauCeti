@@ -28,7 +28,9 @@ Since an increasing approximate unit eventually lies in the closed unit ball, th
 
 `TauCeti.CStarAlgebra.norm_mul_star_sub_star_sq_le` is the estimate for a positive contraction `e`
 that drives the approximate-unit argument showing that closed two-sided ideals are self-adjoint:
-`‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖`.
+`‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖`. Its companion
+`TauCeti.CStarAlgebra.norm_sub_mul_sq_le`, `‖a - a * e‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z - z * e‖`,
+drives the proof of the C⋆-identity on the quotient by a closed two-sided ideal.
 -/
 
 public section
@@ -148,5 +150,32 @@ theorem norm_mul_star_sub_star_sq_le {e : A} (he₀ : 0 ≤ e) (he₁ : ‖e‖ 
       rw [Unitization.norm_inr]
       exact mul_le_mul_of_nonneg_left h1_norm (norm_nonneg _)
     _ = ‖star a * a - e * (star a * a)‖ := mul_one _
+
+/-- For a positive contraction `e` in a nonunital C⋆-algebra and any `a` and `z`, the C⋆-identity in
+the unitization applied to `a * (1 - e)` gives `‖a - a * e‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z - z * e‖`.
+With `z` in a closed two-sided ideal `I` and `e` running through an approximate unit of `I`, the
+last term tends to `0`; this bounds `‖mk I a‖ ^ 2` by `‖star a * a + z‖` in the quotient `A ⧸ I`.
+-/
+theorem norm_sub_mul_sq_le {e : A} (he₀ : 0 ≤ e) (he₁ : ‖e‖ ≤ 1) (a z : A) :
+    ‖a - a * e‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z - z * e‖ := by
+  have h1_icc : 1 - (e : A⁺¹) ∈ Set.Icc (0 : A⁺¹) 1 :=
+    Set.sub_mem_Icc_zero_iff_right.mpr (CStarAlgebra.inr_mem_Icc_iff_norm_le.mpr ⟨he₀, he₁⟩)
+  obtain ⟨h1_nonneg, h1_norm⟩ := CStarAlgebra.mem_Icc_iff_norm_le_one.mp h1_icc
+  have h1_star : star (1 - (e : A⁺¹)) = 1 - (e : A⁺¹) :=
+    (IsSelfAdjoint.of_nonneg h1_nonneg).star_eq
+  have hb : ((a - a * e : A) : A⁺¹) = (a : A⁺¹) * (1 - (e : A⁺¹)) := by
+    rw [Unitization.inr_sub, Unitization.inr_mul, mul_sub, mul_one]
+  have hb_mul : star ((a : A⁺¹) * (1 - (e : A⁺¹))) * ((a : A⁺¹) * (1 - (e : A⁺¹))) =
+      (1 - (e : A⁺¹)) * ((star a * a + z : A) : A⁺¹) * (1 - (e : A⁺¹)) -
+        (1 - (e : A⁺¹)) * ((z - z * e : A) : A⁺¹) := by
+    simp only [star_mul, h1_star, Unitization.inr_add, Unitization.inr_sub, Unitization.inr_mul,
+      Unitization.inr_star]
+    noncomm_ring
+  rw [← Unitization.norm_inr (𝕜 := ℂ), hb, sq, ← CStarRing.norm_star_mul_self, hb_mul,
+    ← Unitization.norm_inr (𝕜 := ℂ) (star a * a + z), ← Unitization.norm_inr (𝕜 := ℂ) (z - z * e)]
+  refine (norm_sub_le _ _).trans (add_le_add ?_ ?_)
+  · simpa only [one_mul, mul_one] using
+      norm_mul_le_of_le (norm_mul_le_of_le h1_norm le_rfl) h1_norm
+  · simpa only [one_mul] using norm_mul_le_of_le h1_norm le_rfl
 
 end TauCeti.CStarAlgebra
