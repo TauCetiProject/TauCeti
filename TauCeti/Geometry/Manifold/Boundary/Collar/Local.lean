@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Chart
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Local collars of a manifold with boundary
@@ -261,6 +264,66 @@ theorem interiorEmbedding_coe_apply_succ (n : ℕ) (v : EuclideanSpace ℝ (Fin 
     (i : Fin n) : (interiorEmbedding n v).1 i.succ = v i.succ := by
   rw [interiorEmbedding, collarDiffeomorph_apply_succ, Prod.map_fst, id_eq,
     euclideanHalfSpaceBoundaryNormalEquiv_symm_apply_fst, euclideanHalfSpaceBoundaryProj_apply]
+
+/-- Read in the ambient Euclidean space, `interiorEmbedding` exponentiates the zeroth coordinate
+through the boundary-normal splitting. -/
+theorem coe_interiorEmbedding (n : ℕ) (v : EuclideanSpace ℝ (Fin (n + 1))) :
+    (interiorEmbedding n v).1 = euclideanHalfSpaceBoundaryNormalEquiv n
+      (((euclideanHalfSpaceBoundaryNormalEquiv n).symm v).1, Real.exp (v 0)) := by
+  ext i
+  induction i using Fin.cases <;> simp
+
+/-- Read in the ambient Euclidean space, `interiorEmbedding` is smooth, indeed analytic. -/
+theorem contDiff_coe_interiorEmbedding (n : ℕ) {k : WithTop ℕ∞} :
+    ContDiff ℝ k fun v ↦ (interiorEmbedding n v).1 := by
+  simp_rw [coe_interiorEmbedding]
+  exact (euclideanHalfSpaceBoundaryNormalEquiv n).contDiff.comp
+    ((euclideanHalfSpaceBoundaryNormalEquiv n).symm.contDiff.fst.prodMk
+      (Real.contDiff_exp.comp (contDiff_piLp_apply (p := 2) (i := (0 : Fin (n + 1))))))
+
+/-- The inverse of `interiorEmbedding` read in the ambient Euclidean space, the logarithm of the
+zeroth coordinate through the boundary-normal splitting. -/
+def interiorCoord {n : ℕ} (w : EuclideanSpace ℝ (Fin (n + 1))) : EuclideanSpace ℝ (Fin (n + 1)) :=
+  euclideanHalfSpaceBoundaryNormalEquiv n
+    (((euclideanHalfSpaceBoundaryNormalEquiv n).symm w).1, Real.log (w 0))
+
+/-- The zeroth ambient inverse coordinate is the logarithm of the zeroth coordinate. -/
+@[simp]
+theorem interiorCoord_apply_zero {n : ℕ} (w : EuclideanSpace ℝ (Fin (n + 1))) :
+    interiorCoord w 0 = Real.log (w 0) := by
+  rw [interiorCoord, euclideanHalfSpaceBoundaryNormalEquiv_apply_zero]
+
+/-- The other ambient inverse coordinates are unchanged. -/
+@[simp]
+theorem interiorCoord_apply_succ {n : ℕ} (w : EuclideanSpace ℝ (Fin (n + 1))) (i : Fin n) :
+    interiorCoord w i.succ = w i.succ := by
+  rw [interiorCoord, euclideanHalfSpaceBoundaryNormalEquiv_apply_succ,
+    euclideanHalfSpaceBoundaryNormalEquiv_symm_apply_fst, euclideanHalfSpaceBoundaryProj_apply]
+
+/-- On the open half-space, `interiorEmbedding` undoes the ambient inverse coordinates, so the two
+maps are inverse to each other there. -/
+@[simp]
+theorem coe_interiorEmbedding_interiorCoord {n : ℕ} {w : EuclideanSpace ℝ (Fin (n + 1))}
+    (hw : 0 < w 0) : (interiorEmbedding n (interiorCoord w)).1 = w := by
+  ext i
+  induction i using Fin.cases <;> simp [Real.exp_log hw]
+
+/-- The ambient inverse coordinates undo `interiorEmbedding`. -/
+@[simp]
+theorem interiorCoord_coe_interiorEmbedding {n : ℕ} (v : EuclideanSpace ℝ (Fin (n + 1))) :
+    interiorCoord (EuclideanHalfSpace.interiorEmbedding n v).1 = v := by
+  rw [interiorCoord, EuclideanHalfSpace.interiorEmbedding_coe_apply_zero, Real.log_exp,
+    EuclideanHalfSpace.coe_interiorEmbedding, ContinuousLinearEquiv.symm_apply_apply,
+    ← euclideanHalfSpaceBoundaryNormalEquiv_symm_apply_snd]
+  exact (euclideanHalfSpaceBoundaryNormalEquiv n).apply_symm_apply v
+
+/-- The ambient inverse coordinates are smooth, indeed analytic, on the open half-space. -/
+theorem contDiffOn_interiorCoord {n : ℕ} {k : WithTop ℕ∞} :
+    ContDiffOn ℝ k (interiorCoord (n := n)) {w | 0 < w 0} :=
+  (euclideanHalfSpaceBoundaryNormalEquiv n).contDiff.comp_contDiffOn
+    ((euclideanHalfSpaceBoundaryNormalEquiv n).symm.contDiff.fst.contDiffOn.prodMk
+      (Real.contDiffOn_log.comp (contDiff_piLp_apply (p := 2) (i := 0)).contDiffOn
+        fun _ hw => ne_of_gt hw))
 
 /-- `interiorEmbedding` is an open embedding, with image the open half-space
 (`TauCeti.EuclideanHalfSpace.range_interiorEmbedding`). -/

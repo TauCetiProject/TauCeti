@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
 public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
+public import TauCeti.Geometry.Manifold.IsManifold.Ambient
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 
 /-!
 # The side of a bicollared hypersurface is a manifold with boundary
@@ -32,6 +35,12 @@ This is how the manifolds with boundary of geometric topology arise from closed 
 exterior of a knot is the side of the boundary torus of a solid torus neighbourhood, and the
 complement of an open ball, deleted for a connected sum, is a side of the boundary sphere.
 
+If `M` and `N` are `C^k` manifolds and the bicollar is a `C^k` local diffeomorphism, these charts
+are `C^k` compatible, so the side is a `C^k` manifold with boundary and its inclusion into `M` is
+`C^k`. The comparison runs through `M`: an interior chart is a chart of `M` up to the exponential
+of one coordinate, and a collar chart reads the inverse of the bicollar in a chart of `N`; the two
+are compared by `TauCeti.isManifold_of_forall_mem_atlas_exists_contMDiffOn`.
+
 ## Main definitions
 
 * `TauCeti.IsBicollar.sideChartedSpace`: the charted-space structure on a side of a bicollar,
@@ -43,6 +52,9 @@ complement of an open ball, deleted for a connected sum, is a side of the bounda
 * `TauCeti.IsBicollar.boundary_sideChartedSpace`: the manifold boundary of the side is the image
   of `f`.
 * `TauCeti.IsBicollar.interior_sideChartedSpace`: its manifold interior is the rest of the side.
+* `TauCeti.IsBicollar.isManifold_sideChartedSpace`: the side of a `C^k` bicollar is a `C^k`
+  manifold with boundary.
+* `TauCeti.IsBicollar.contMDiff_subtype_val_sideChartedSpace`: its inclusion into `M` is `C^k`.
 
 ## Implementation notes
 
@@ -225,6 +237,170 @@ theorem interior_sideChartedSpace (hb : IsBicollar f b) (hC : b ⁻¹' C = univ 
     (𝓡∂ (n + 1)).interior C = Subtype.val ⁻¹' (range f)ᶜ := by
   let := hb.sideChartedSpace (n := n) hC hCo
   rw [← ModelWithCorners.compl_boundary, hb.boundary_sideChartedSpace hC hCo, preimage_compl]
+
+/-! ### Smooth bicollars
+
+If `M` and `N` are `C^k` manifolds and the bicollar `b` is a `C^k` local diffeomorphism, the side
+charts read smoothly through the inclusion of the side into `M`: an interior chart is a chart of
+`M` followed by `interiorEmbedding`, and a collar chart reads the inverse of `b` in a chart of `N`.
+The criterion `TauCeti.isManifold_of_forall_mem_atlas_exists_contMDiffOn` then makes the side a
+`C^k` manifold with boundary. -/
+
+section Smooth
+
+variable {k : WithTop ℕ∞}
+
+variable [IsManifold (𝓡 (n + 1)) k M]
+
+omit [TopologicalSpace N] [ChartedSpace (EuclideanSpace ℝ (Fin n)) N] in
+/-- An interior chart of a side is read smoothly through the inclusion into `M`: by
+`interiorEmbedding` after the chart of `M`, and back by `EuclideanHalfSpace.interiorCoord` before
+its inverse. -/
+private theorem interiorChart_exists_contMDiffOn (hCo : IsOpen (C \ range f)) (x : C)
+    (hx : (x : M) ∉ range f) :
+    ∃ (F : M → EuclideanSpace ℝ (Fin (n + 1))) (G : EuclideanSpace ℝ (Fin (n + 1)) → M)
+      (U : Set M) (V : Set (EuclideanSpace ℝ (Fin (n + 1)))),
+      ContMDiffOn (𝓡 (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) k F U ∧
+        ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) (𝓡 (n + 1)) k G V ∧
+        ∀ z ∈ (interiorChart (n := n) hCo x hx).source, (z : M) ∈ U ∧
+          (𝓡∂ (n + 1)) (interiorChart hCo x hx z) ∈ V ∧
+          F z = (𝓡∂ (n + 1)) (interiorChart hCo x hx z) ∧
+          G ((𝓡∂ (n + 1)) (interiorChart hCo x hx z)) = z := by
+  have : Nonempty ↥(C \ range f) := ⟨⟨x, x.2, hx⟩⟩
+  set c := chartAt (EuclideanSpace ℝ (Fin (n + 1))) (x : M)
+  refine ⟨fun m => (EuclideanHalfSpace.interiorEmbedding n (c m)).1,
+    fun w => c.symm (EuclideanHalfSpace.interiorCoord w), c.source,
+    {w | 0 < w 0 ∧ EuclideanHalfSpace.interiorCoord w ∈ c.target},
+    (EuclideanHalfSpace.contDiff_coe_interiorEmbedding n).contMDiff.comp_contMDiffOn
+      contMDiffOn_chart,
+    contMDiffOn_chart_symm.comp
+      (EuclideanHalfSpace.contDiffOn_interiorCoord.contMDiffOn.mono fun _ hw => hw.1)
+      fun _ hw => hw.2, fun z hz => ?_⟩
+  -- A point of the source is the inclusion of a point of `C \ range f` lying in the source of `c`,
+  -- and the chart sends it to `interiorEmbedding` of its coordinates in `c`.
+  have hinc := isOpenEmbedding_inclusion_sdiff (f := f) hCo
+  simp only [interiorChart, OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source,
+    IsOpenEmbedding.toOpenPartialHomeomorph_target, IsOpenEmbedding.toOpenPartialHomeomorph_source,
+    preimage_univ, inter_univ, univ_inter, mem_inter_iff, mem_preimage,
+    IsOpenEmbedding.toOpenPartialHomeomorph_apply] at hz
+  obtain ⟨⟨w, rfl⟩, hw⟩ := hz
+  have hsymm : (hinc.toOpenPartialHomeomorph _).symm (inclusion sdiff_subset w) = w :=
+    hinc.toOpenPartialHomeomorph_left_inv
+  rw [hsymm] at hw
+  have happ : interiorChart (n := n) hCo x hx (inclusion sdiff_subset w) =
+      EuclideanHalfSpace.interiorEmbedding n (c w) := by
+    simp only [interiorChart, OpenPartialHomeomorph.coe_trans, Function.comp_apply, hsymm,
+      IsOpenEmbedding.toOpenPartialHomeomorph_apply, c]
+  rw [happ, modelWithCornersEuclideanHalfSpace_apply, coe_inclusion]
+  simp only [mem_ofPred_eq, EuclideanHalfSpace.interiorCoord_coe_interiorEmbedding, c.left_inv hw,
+    EuclideanHalfSpace.interiorEmbedding_coe_apply_zero, Real.exp_pos, c.map_source hw, and_self,
+    and_true]
+  exact hw
+
+variable [IsManifold (𝓡 n) k N]
+
+omit [IsManifold (𝓡 (n + 1)) k M] in
+/-- A collar chart of a side is read smoothly through the inclusion into `M`, when the bicollar is
+a `C^k` local diffeomorphism: by the chart of `N` after the inverse of `b`, and back by `b` after
+the inverse chart of `N`. -/
+private theorem collarChart_exists_contMDiffOn (hb : IsBicollar f b)
+    (hC : b ⁻¹' C = univ ×ˢ Ici 0)
+    (hd : IsLocalDiffeomorph ((𝓡 n).prod 𝓘(ℝ)) (𝓡 (n + 1)) k b) (y : N) :
+    ∃ (F : M → EuclideanSpace ℝ (Fin (n + 1))) (G : EuclideanSpace ℝ (Fin (n + 1)) → M)
+      (U : Set M) (V : Set (EuclideanSpace ℝ (Fin (n + 1)))),
+      ContMDiffOn (𝓡 (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) k F U ∧
+        ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) (𝓡 (n + 1)) k G V ∧
+        ∀ z ∈ (collarChart (n := n) hC hb y).source, (z : M) ∈ U ∧
+          (𝓡∂ (n + 1)) (collarChart hC hb y z) ∈ V ∧
+          F z = (𝓡∂ (n + 1)) (collarChart hC hb y z) ∧
+          G ((𝓡∂ (n + 1)) (collarChart hC hb y z)) = z := by
+  have : Nonempty (N × ℝ) := ⟨(y, 0)⟩
+  have : Nonempty (N × EuclideanHalfSpace 1) := ⟨(y, 0)⟩
+  set c := chartAt (EuclideanSpace ℝ (Fin n)) y
+  set S := euclideanHalfSpaceBoundaryNormalEquiv n
+  set binv := Function.invFunOn b univ
+  have hinv : ∀ q, binv (b q) = q := fun q =>
+    hb.isOpenEmbedding.injective.injOn.leftInvOn_invFunOn (mem_univ q)
+  have hbinv : ContMDiffOn (𝓡 (n + 1)) ((𝓡 n).prod 𝓘(ℝ)) k binv (range b) := by
+    rw [← image_univ]
+    exact (hd.isLocalDiffeomorphOn univ).contMDiffOn_invFunOn isOpen_univ
+      hb.isOpenEmbedding.injective.injOn
+  refine ⟨fun m => S (c (binv m).1, (binv m).2), fun w => b (c.symm (S.symm w).1, (S.symm w).2),
+    {m | m ∈ range b ∧ (binv m).1 ∈ c.source}, {w | (S.symm w).1 ∈ c.target},
+    S.contDiff.contMDiff.comp_contMDiffOn (ContMDiffOn.prodMk_space
+      (contMDiffOn_chart.comp (contMDiff_fst.comp_contMDiffOn (hbinv.mono fun _ hm => hm.1))
+        fun _ hm => hm.2)
+      (contMDiff_snd.comp_contMDiffOn (hbinv.mono fun _ hm => hm.1))),
+    hd.contMDiff.comp_contMDiffOn ((contMDiffOn_chart_symm.comp
+      S.symm.contDiff.fst.contMDiff.contMDiffOn fun _ hw => hw).prodMk
+        S.symm.contDiff.snd.contMDiff.contMDiffOn), fun z hz => ?_⟩
+  -- A point of the source is the image `b (p.1, p.2 0)` of a point `p` of `N × [0, ∞)` with `p.1`
+  -- in the source of `c`, and the chart sends it to the collar identification of `(c p.1, p.2)`.
+  have hpiece := isOpenEmbedding_collarPiece hb hC
+  simp only [collarChart, OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source,
+    IsOpenEmbedding.toOpenPartialHomeomorph_target, OpenPartialHomeomorph.prod_source,
+    OpenPartialHomeomorph.refl_source, Homeomorph.toOpenPartialHomeomorph_source, preimage_univ,
+    inter_univ, mem_inter_iff, mem_preimage, mem_prod, mem_univ, and_true] at hz
+  obtain ⟨⟨p, rfl⟩, hp⟩ := hz
+  have hsymm : (hpiece.toOpenPartialHomeomorph _).symm (collarPiece hC p) = p :=
+    hpiece.toOpenPartialHomeomorph_left_inv
+  rw [hsymm] at hp
+  have happ : (𝓡∂ (n + 1)) (collarChart (n := n) hC hb y (collarPiece hC p)) =
+      S (c p.1, p.2.1 0) := by
+    simp only [collarChart, OpenPartialHomeomorph.coe_trans, Function.comp_apply, hsymm,
+      OpenPartialHomeomorph.prod_apply, OpenPartialHomeomorph.refl_apply, id_eq,
+      Homeomorph.toOpenPartialHomeomorph_apply, Diffeomorph.coe_toHomeomorph,
+      modelWithCornersEuclideanHalfSpace_apply, EuclideanHalfSpace.coe_collarDiffeomorph_apply,
+      EuclideanHalfSpace.collarAmbientEquiv_apply, S, c]
+  rw [happ, coe_collarPiece]
+  simp only [mem_ofPred_eq]
+  rw [hinv, ContinuousLinearEquiv.symm_apply_apply, c.left_inv hp]
+  exact ⟨⟨mem_range_self _, hp⟩, c.map_source hp, rfl, rfl⟩
+
+omit [IsManifold (𝓡 (n + 1)) k M] [IsManifold (𝓡 n) k N] in
+/-- Every chart of a side of a `C^k` bicollar is read smoothly through the inclusion into `M`. -/
+private theorem forall_mem_atlas_exists_contMDiffOn [IsManifold (𝓡 (n + 1)) k M]
+    [IsManifold (𝓡 n) k N] (hb : IsBicollar f b) (hC : b ⁻¹' C = univ ×ˢ Ici 0)
+    (hCo : IsOpen (C \ range f)) (hd : IsLocalDiffeomorph ((𝓡 n).prod 𝓘(ℝ)) (𝓡 (n + 1)) k b) :
+    letI := hb.sideChartedSpace (n := n) hC hCo
+    ∀ e ∈ atlas (EuclideanHalfSpace (n + 1)) C,
+      ∃ (F : M → EuclideanSpace ℝ (Fin (n + 1))) (G : EuclideanSpace ℝ (Fin (n + 1)) → M)
+        (U : Set M) (V : Set (EuclideanSpace ℝ (Fin (n + 1)))),
+        ContMDiffOn (𝓡 (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) k F U ∧
+          ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) (𝓡 (n + 1)) k G V ∧
+          ∀ z ∈ e.source, (z : M) ∈ U ∧ (𝓡∂ (n + 1)) (e z) ∈ V ∧ F z = (𝓡∂ (n + 1)) (e z) ∧
+            G ((𝓡∂ (n + 1)) (e z)) = z := by
+  rintro _ ⟨x, rfl⟩
+  by_cases h : (x : M) ∈ range f
+  · rw [sideChart, dite_eq_left h]
+    exact collarChart_exists_contMDiffOn hb hC hd _
+  · rw [sideChart, dite_eq_right h]
+    exact interiorChart_exists_contMDiffOn hCo x h
+
+/-- **The side of a smooth bicollar is a smooth manifold with boundary.** If `M` and `N` are `C^k`
+manifolds and the bicollar `b : N × ℝ → M` is a `C^k` local diffeomorphism, then the charts of
+`TauCeti.IsBicollar.sideChartedSpace` make the side `C` a `C^k` manifold modelled on the
+half-space `EuclideanHalfSpace (n + 1)`, with boundary the image of `f`
+(`TauCeti.IsBicollar.boundary_sideChartedSpace`). -/
+theorem isManifold_sideChartedSpace (hb : IsBicollar f b) (hC : b ⁻¹' C = univ ×ˢ Ici 0)
+    (hCo : IsOpen (C \ range f)) (hd : IsLocalDiffeomorph ((𝓡 n).prod 𝓘(ℝ)) (𝓡 (n + 1)) k b) :
+    letI := hb.sideChartedSpace (n := n) hC hCo
+    IsManifold (𝓡∂ (n + 1)) k C :=
+  letI := hb.sideChartedSpace (n := n) hC hCo
+  isManifold_of_forall_mem_atlas_exists_contMDiffOn (I' := 𝓡 (n + 1)) (Subtype.val : C → M)
+    (forall_mem_atlas_exists_contMDiffOn hb hC hCo hd)
+
+/-- The inclusion of the side of a smooth bicollar into `M` is `C^k`. -/
+theorem contMDiff_subtype_val_sideChartedSpace (hb : IsBicollar f b)
+    (hC : b ⁻¹' C = univ ×ˢ Ici 0) (hCo : IsOpen (C \ range f))
+    (hd : IsLocalDiffeomorph ((𝓡 n).prod 𝓘(ℝ)) (𝓡 (n + 1)) k b) :
+    letI := hb.sideChartedSpace (n := n) hC hCo
+    ContMDiff (𝓡∂ (n + 1)) (𝓡 (n + 1)) k (Subtype.val : C → M) :=
+  letI := hb.sideChartedSpace (n := n) hC hCo
+  contMDiff_of_forall_mem_atlas_exists_contMDiffOn (Subtype.val : C → M)
+    (forall_mem_atlas_exists_contMDiffOn hb hC hCo hd)
+
+end Smooth
 
 end IsBicollar
 
