@@ -176,7 +176,8 @@ lemma weightedE1_add (W W' : (Fin 2 → ZMod N) → ℂ) :
 lemma weightedE1_smul (c : ℂ) (W : (Fin 2 → ZMod N) → ℂ) :
     weightedE1 (c • W) = c • weightedE1 W := by
   ext z
-  simp [weightedE1, Finset.mul_sum, mul_assoc, mul_left_comm]
+  simp only [weightedE1, Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun a _ ↦ by ring
 
 /-! ### The corrected division values of `ζ` -/
 
