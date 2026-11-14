@@ -508,19 +508,15 @@ theorem _root_.Diffeomorph.det_id_sub_fixedPointDerivative_of_semiconj
     DFunLike.congr_fun (h.mfderivToContinuousLinearEquiv_coe hn (x := x)) v
   have he' (v : TangentSpace I' (h x)) : e.symm v = A' v :=
     e.symm_apply_eq.2 (by rw [he]; exact (DFunLike.congr_fun h₂ v).symm)
-  have hconj : LinearMap.id - ((A.comp (D.comp A') : TangentSpace I' (h x) →L[𝕜] _) :
+  -- So `A D A'` is the conjugate of `D` by `e`, and conjugation commutes with `1 - ·`.
+  have hconj : ((A.comp (D.comp A') : TangentSpace I' (h x) →L[𝕜] _) :
       TangentSpace I' (h x) →ₗ[𝕜] TangentSpace I' (h x)) =
-        (e : TangentSpace I x →ₗ[𝕜] TangentSpace I' (h x)) ∘ₗ
-          (LinearMap.id - (D : TangentSpace I x →ₗ[𝕜] TangentSpace I x)) ∘ₗ
-            (e.symm : TangentSpace I' (h x) →ₗ[𝕜] TangentSpace I x) := by
-    refine LinearMap.ext fun v ↦ ?_
-    simp only [LinearMap.sub_apply, LinearMap.id_apply, ContinuousLinearMap.coe_coe,
-      ContinuousLinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, map_sub, he', he]
-    have hv := DFunLike.congr_fun h₂ v
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] at hv
-    rw [hv]
+        e.conjRingEquiv (D : TangentSpace I x →ₗ[𝕜] TangentSpace I x) :=
+    LinearMap.ext fun v ↦ by rw [LinearEquiv.conjRingEquiv_apply_apply, he', he]; rfl
   rw [HasMFDerivAt.fixedPointDerivative_eq (x := ⟨h x, IsFixedPt.map hx hfg⟩) hB,
-    HasMFDerivAt.fixedPointDerivative_eq (x := ⟨x, hx⟩) hD, hconj, LinearMap.det_conj]
+    HasMFDerivAt.fixedPointDerivative_eq (x := ⟨x, hx⟩) hD, hconj, ← Module.End.one_eq_id,
+    ← map_one e.conjRingEquiv, ← map_sub]
+  exact LinearMap.det_conj (1 - (D : TangentSpace I x →ₗ[𝕜] TangentSpace I x)) e
 
 /-- **The local Lefschetz sign is constant along an orbit.** For a `Cⁿ` diffeomorphism `φ`,
 `n ≠ 0`, and a point `x` of period `k`, the points `φ^[j] x` of the same orbit are fixed points
