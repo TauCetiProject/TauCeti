@@ -27,9 +27,8 @@ index `2` carries all the ramification, so the compositum is unramified over it.
 subfield is the quadratic base, and the hypothesis is the total ramification of `ℚ(√d)` at the
 primes dividing its discriminant, which are exactly the primes of the prime-discriminant factors.
 
-An imaginary `d` is in particular not a rational square (`not_isSquare_of_neg`), and the base is
-then totally complex, hence unramified at the infinite places too
-(`isUnramifiedAtInfinitePlaces_candidateGenusField`), so for `d < 0` the two results together give
+For `d < 0` the base is totally complex, hence unramified at the infinite places too
+(`isUnramifiedAtInfinitePlaces_candidateGenusField`), so the two results together give
 unramifiedness at *every* place: the candidate genus field of an imaginary quadratic field is an
 everywhere-unramified abelian extension of it, so it lies inside the Hilbert class field. What
 remains for the genus-field identification is maximality — that it is the largest such extension
