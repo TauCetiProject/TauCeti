@@ -65,6 +65,9 @@ congruence `η_R(v_n) ≡ η_L(v_n)` modulo `I_n`
 * `FormalGroup.heightIdeal_succ`: `I_(n+1) = I_n + (v_n)` for commutative `F`.
 * `FormalGroup.heightIdeal_one`: `I₁ = (p)` for commutative `F`.
 * `FormalGroup.heightIdeal_eq_span`: `I_n = (v₀, …, v_(n-1))` for commutative `F`.
+* `FormalGroup.iSup_heightIdeal_le_ker_iff` and `FormalGroup.iSup_heightIdeal_eq_span`: for
+  `1 < p`, a ring homomorphism kills `⨆ n, I_n(F)` exactly when the `p`-series vanishes, and for
+  commutative `F` and prime `p`, `⨆ n, I_n(F) = (v₀, v₁, v₂, …)`.
 * `FormalGroup.heightIdeal_eq_bot_iff_le_height`: over a field of characteristic `p`, `I_n = 0`
   exactly when `F` has height at least `n`.
 
@@ -86,6 +89,11 @@ coefficients of the `p`-series `[p]_F(X)` in degrees below `pⁿ`, that is, the 
 modulo which `[p]_F` vanishes to order `pⁿ`. -/
 noncomputable def heightIdeal (F : FormalGroup R) (p n : ℕ) : Ideal R :=
   Ideal.span ((fun k ↦ PowerSeries.coeff k (F.nsmulSeries p)) '' Set.Iio (p ^ n))
+
+theorem heightIdeal_def (F : FormalGroup R) (p n : ℕ) :
+    F.heightIdeal p n =
+      Ideal.span ((fun k ↦ PowerSeries.coeff k (F.nsmulSeries p)) '' Set.Iio (p ^ n)) :=
+  (rfl)
 
 variable {F : FormalGroup R} {p : ℕ}
 
@@ -131,6 +139,36 @@ theorem heightIdeal_mono : Monotone (F.heightIdeal p) := fun _ _ hmn ↦
 theorem map_heightIdeal (φ : R →+* S) (n : ℕ) :
     (F.heightIdeal p n).map φ = (F.map φ).heightIdeal p n := by
   simp only [heightIdeal, Ideal.map_span, Set.image_image, coeff_nsmulSeries_map]
+
+/-- The supremum of the height ideals commutes with base change. -/
+theorem map_iSup_heightIdeal (φ : R →+* S) :
+    (⨆ n, F.heightIdeal p n).map φ = ⨆ n, (F.map φ).heightIdeal p n := by
+  simp [Ideal.map_iSup]
+
+/-- For `1 < p`, the supremum `⨆ n, I_n(F)` of the height ideals is contained in an ideal `I`
+exactly when all coefficients of `[p]_F` lie in `I`. -/
+theorem iSup_heightIdeal_le_iff (hp : 1 < p) {I : Ideal R} :
+    ⨆ n, F.heightIdeal p n ≤ I ↔ ∀ k, PowerSeries.coeff k (F.nsmulSeries p) ∈ I := by
+  simp only [iSup_le_iff, heightIdeal_le_iff]
+  exact ⟨fun h k ↦ h k k (k.lt_pow_self hp), fun h _ k _ ↦ h k⟩
+
+/-- For `1 < p`, every coefficient of `[p]_F` lies in `⨆ n, I_n(F)`. -/
+theorem coeff_nsmulSeries_mem_iSup_heightIdeal (hp : 1 < p) (k : ℕ) :
+    PowerSeries.coeff k (F.nsmulSeries p) ∈ ⨆ n, F.heightIdeal p n :=
+  (iSup_heightIdeal_le_iff hp).mp le_rfl k
+
+/-- **The universal property of the infinite height ideal.** For `1 < p`, a ring homomorphism `φ`
+kills `⨆ n, I_n(F)` exactly when the `p`-series of the base change of `F` along `φ` vanishes. -/
+theorem iSup_heightIdeal_le_ker_iff (hp : 1 < p) (φ : R →+* S) :
+    ⨆ n, F.heightIdeal p n ≤ RingHom.ker φ ↔ (F.map φ).nsmulSeries p = 0 := by
+  rw [iSup_heightIdeal_le_iff hp, PowerSeries.ext_iff]
+  simp [RingHom.mem_ker, coeff_nsmulSeries_map]
+
+/-- For `1 < p`, the supremum `⨆ n, I_n(F)` vanishes exactly when `[p]_F = 0`. -/
+theorem iSup_heightIdeal_eq_bot_iff (hp : 1 < p) :
+    ⨆ n, F.heightIdeal p n = ⊥ ↔ F.nsmulSeries p = 0 := by
+  rw [← le_bot_iff, iSup_heightIdeal_le_iff hp, PowerSeries.ext_iff]
+  simp
 
 end FormalGroup
 
@@ -273,6 +311,16 @@ theorem heightIdeal_eq_span (hp : p.Prime) (n : ℕ) :
       ext; simp
     rw [F.heightIdeal_succ hp, ih, hI, Set.image_insert_eq, Ideal.span_insert, sup_comm]
 
+/-- **Landweber's generators for the infinite height ideal.** For a commutative formal group law
+`F` and a prime `p`, `⨆ n, I_n(F) = (v₀, v₁, v₂, …)`, where `v_i` is the coefficient of `X^(pⁱ)` in
+`[p]_F`. -/
+theorem iSup_heightIdeal_eq_span (hp : p.Prime) :
+    ⨆ n, F.heightIdeal p n =
+      Ideal.span (Set.range fun i ↦ PowerSeries.coeff (p ^ i) (F.nsmulSeries p)) := by
+  have hIio : ⋃ n : ℕ, Set.Iio n = Set.univ :=
+    Set.ext fun i ↦ ⟨fun _ ↦ trivial, fun _ ↦ Set.mem_iUnion.mpr ⟨i + 1, i.lt_succ_self⟩⟩
+  simp_rw [F.heightIdeal_eq_span hp, ← Ideal.span_iUnion, ← Set.image_iUnion, hIio, Set.image_univ]
+
 omit [F.IsComm] in
 /-- The height ideals of a formal group law are finitely generated. -/
 theorem heightIdeal_fg (n : ℕ) : (F.heightIdeal p n).FG :=
@@ -301,5 +349,12 @@ has height less than `n`. -/
 theorem heightIdeal_eq_top_iff_height_lt {n : ℕ} : F.heightIdeal p n = ⊤ ↔ F.height p < n := by
   rw [← not_le, ← heightIdeal_eq_bot_iff_le_height]
   exact ⟨fun h hb ↦ bot_ne_top (hb.symm.trans h), (Ideal.eq_bot_or_top _).resolve_left⟩
+
+omit [F.IsComm] [CharP K p] in
+/-- For `1 < p`, the supremum `⨆ n, I_n(F)` vanishes over a field `K` exactly when `F` has infinite
+height at `p`. -/
+theorem iSup_heightIdeal_eq_bot_iff_height_eq_top (hp : 1 < p) :
+    ⨆ n, F.heightIdeal p n = ⊥ ↔ F.height p = ⊤ := by
+  rw [iSup_heightIdeal_eq_bot_iff hp, F.height_eq_top_iff]
 
 end FormalGroup
