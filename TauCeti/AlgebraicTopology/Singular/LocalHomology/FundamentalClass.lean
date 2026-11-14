@@ -432,6 +432,8 @@ def mapFundamentalClass (f : C(M, X)) :
   (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
     (TopCat.ofHom f)).hom (o.fundamentalClass hn)
 
+/-- Unfolding `mapFundamentalClass`: the image of the fundamental class under the map induced on
+singular homology by `f`. -/
 theorem mapFundamentalClass_def (f : C(M, X)) :
     o.mapFundamentalClass hn f =
       (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
@@ -563,6 +565,8 @@ def fundamentalClassEquiv :
       ModuleCat.{0} ℤ) :=
   LinearEquiv.ofBijective _ (o.bijective_toSpanSingleton_fundamentalClass hn)
 
+/-- The equivalence `fundamentalClassEquiv` sends `c : ℤ` to the multiple
+`c • o.fundamentalClass hn`. -/
 @[simp]
 theorem fundamentalClassEquiv_apply (c : ℤ) :
     o.fundamentalClassEquiv hn c = c • o.fundamentalClass hn :=
