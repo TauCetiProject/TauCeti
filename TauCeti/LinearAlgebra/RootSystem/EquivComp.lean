@@ -108,6 +108,10 @@ theorem smul_index_eq_indexEquiv (g : Aut P) (i : ι) :
     g • i = g.indexEquiv i :=
   (rfl)
 
+/-- An automorphism acts on weights by its weight map. -/
+theorem smul_eq_weightEquiv (g : P.Aut) (x : M) : g • x = g.weightEquiv x :=
+  rfl
+
 noncomputable section Conjugation
 
 /-- **Conjugation by an equivalence of root pairings**, as a group isomorphism of automorphism

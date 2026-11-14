@@ -10,7 +10,11 @@ public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
 public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import Mathlib.LinearAlgebra.RootSystem.IsValuedIn
+public import TauCeti.LinearAlgebra.Dual.Lattice
+public import TauCeti.LinearAlgebra.RootSystem.Flip
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+import TauCeti.LinearAlgebra.RootSystem.EquivComp
+import Mathlib.Algebra.Pointwise.Stabilizer
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 
 /-!
@@ -65,6 +69,14 @@ crystallographic (`RootPairing.corootSpan_le_coweightLattice`). The Weyl group, 
 through the coreflections, preserves it and moves each of its points by an element of the coroot
 lattice (`RootPairing.sub_mem_corootSpan_of_mem_closure_range_coreflection`). This is the lattice
 of translations of the extended affine Weyl group `P∨ ⋊ W`.
+
+More generally, `RootPairing.dualLattice` pulls back `Submodule.dualLattice` along the pairing:
+it consists of the coweights pairing integrally with a specified additive subgroup of weights.
+The dual of the root lattice is the coweight lattice (`RootPairing.dualLattice_rootSpan`).
+The reflection in a root lying in a lattice preserves that lattice when the coroot lies in its dual
+(`RootPairing.reflection_smul_eq_of_mem_dualLattice`).
+Every automorphism preserves the root and weight lattices
+(`RootPairing.Equiv.smul_rootSpan` and `RootPairing.Equiv.smul_coweightLattice_flip`).
 
 Over a linearly ordered ring the coroot lattice of a crystallographic pairing with finitely many
 roots contains no nonzero minuscule element, no nonzero `v` at which every root takes one of the
@@ -314,6 +326,93 @@ def coweightLattice : Submodule ℤ N where
 @[simp]
 theorem mem_coweightLattice {x : N} : x ∈ P.coweightLattice ↔ ∀ i, ∃ z : ℤ, P.root' i x = z :=
   Iff.rfl
+
+/-- The **dual lattice** of an additive subgroup `X₀` of the weight space: the coweights `y`
+pairing integrally with every weight of `X₀`, `⟨x, y⟩ ∈ ℤ`. -/
+def dualLattice (X₀ : Submodule ℤ M) : Submodule ℤ N :=
+  (X₀.dualLattice R).comap (P.toLinearMap.flip.restrictScalars ℤ)
+
+variable {P}
+
+/-- Membership in the dual lattice means pairing integrally with every weight of the lattice. -/
+@[simp]
+theorem mem_dualLattice {X₀ : Submodule ℤ M} {y : N} :
+    y ∈ P.dualLattice X₀ ↔ ∀ x ∈ X₀, ∃ n : ℤ, P.toLinearMap x y = n := by
+  simp [dualLattice, Submodule.mem_dualLattice, Submodule.mem_one, eq_comm]
+
+variable (P) in
+/-- Dualizing reverses inclusions. -/
+theorem dualLattice_antitone : Antitone P.dualLattice :=
+  fun _ _ h ↦ Submodule.comap_mono ((Submodule.dualLattice_antitone R) h)
+
+/-- The pairing is integral on `X₀ × Y₀` exactly when `Y₀` lies in the dual of `X₀`, exactly
+when `X₀` lies in the dual of `Y₀` for the flipped pairing. -/
+theorem le_flip_dualLattice_iff {X₀ : Submodule ℤ M} {Y₀ : Submodule ℤ N} :
+    X₀ ≤ P.flip.dualLattice Y₀ ↔ Y₀ ≤ P.dualLattice X₀ := by
+  simp only [IsConcreteLE.le_iff, mem_dualLattice]
+  exact ⟨fun h _ hy _ hx ↦ h hx _ hy, fun h _ hx _ hy ↦ h hy _ hx⟩
+
+variable (P) in
+/-- **The dual of the root lattice is the coweight lattice**: a coweight pairs integrally with
+every integral combination of roots exactly when it pairs integrally with every root. -/
+@[simp]
+theorem dualLattice_rootSpan : P.dualLattice (P.rootSpan ℤ) = P.coweightLattice := by
+  ext y
+  simp only [dualLattice, Submodule.mem_comap, rootSpan, Submodule.mem_dualLattice_span_iff]
+  simp [Submodule.mem_one, mem_coweightLattice, root', eq_comm]
+
+open Pointwise Set in
+/-- The coweight action preserves the dual of every lattice preserved by the weight action. -/
+theorem autFlip_smul_dualLattice_of_smul_eq {X₀ : Submodule ℤ M} {g : P.Aut}
+    (hg : g • (X₀ : Set M) = X₀) :
+    Equiv.autFlip P g • (P.dualLattice X₀ : Set N) = P.dualLattice X₀ := by
+  have hpair (x : M) (y : N) :
+      P.toLinearMap (g • x) (Equiv.autFlip P g • y) = P.toLinearMap x y := by
+    simpa only [Equiv.smul_eq_weightEquiv] using Equiv.toLinearMap_weightEquiv_autFlip g x y
+  have hmem := MulAction.mem_stabilizer_set.mp hg
+  apply MulAction.mem_stabilizer_iff.mp
+  refine MulAction.mem_stabilizer_set.mpr fun y ↦ ?_
+  simp only [SetLike.mem_coe, mem_dualLattice]
+  refine ⟨fun hy x hx ↦ ?_, fun hy x hx ↦ ?_⟩
+  · rw [← hpair]
+    exact hy _ ((hmem x).mpr hx)
+  · rw [← smul_inv_smul g x, hpair]
+    exact hy _ ((hmem (g⁻¹ • x)).mp (by simpa using hx))
+
+open Pointwise Set in
+/-- The reflection in a root `αᵢ` of `X₀` whose coroot pairs integrally with `X₀` preserves `X₀`:
+it moves `x` by the integer multiple `⟨x, αᵢ^∨⟩ αᵢ`. -/
+theorem reflection_smul_eq_of_mem_dualLattice {X₀ : Submodule ℤ M} {i : ι}
+    (hroot : P.root i ∈ X₀) (hcoroot : P.coroot i ∈ P.dualLattice X₀) :
+    Equiv.reflection P i • (X₀ : Set M) = X₀ := by
+  have h : ∀ x ∈ X₀, Equiv.reflection P i • x ∈ X₀ := fun x hx ↦ by
+    obtain ⟨n, hn⟩ := mem_dualLattice.mp hcoroot x hx
+    rw [Equiv.reflection_smul, reflection_apply, coroot', LinearMap.flip_apply, hn,
+      Int.cast_smul_eq_zsmul]
+    exact X₀.sub_mem hx (zsmul_mem hroot n)
+  refine (smul_set_subset_iff.mpr h).antisymm (subset_smul_set_iff.mpr ?_)
+  rw [Equiv.reflection_inv]
+  exact smul_set_subset_iff.mpr h
+
+open Pointwise Set in
+/-- Every automorphism maps the root lattice onto itself, since it permutes the roots. -/
+@[simp]
+theorem Equiv.smul_rootSpan (g : P.Aut) : g • (P.rootSpan ℤ : Set M) = P.rootSpan ℤ := by
+  rw [← Submodule.coe_pointwise_smul]
+  congr 1
+  rw [rootSpan, Submodule.smul_span, Set.smul_set_range]
+  simp only [← Equiv.root_indexEquiv_eq_smul]
+  exact congrArg (Submodule.span ℤ) (g.indexEquiv.surjective.range_comp P.root)
+
+open Pointwise Set in
+/-- Every automorphism maps the weight lattice onto itself by preservation of the pairing. -/
+@[simp]
+theorem Equiv.smul_coweightLattice_flip (g : P.Aut) :
+    g • (P.flip.coweightLattice : Set M) = P.flip.coweightLattice := by
+  rw [← P.flip.dualLattice_rootSpan, ← MulEquiv.apply_symm_apply (autFlip P.flip) g]
+  exact autFlip_smul_dualLattice_of_smul_eq ((autFlip P.flip).symm g).smul_rootSpan
+
+variable (P)
 
 /-- A coroot lies in the coweight lattice of a crystallographic pairing. -/
 theorem coroot_mem_coweightLattice [P.IsCrystallographic] (i : ι) :

@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Transport
+import TauCeti.GroupTheory.Complement.Local
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Automorphism
 
@@ -61,6 +62,8 @@ preserving the Cartan matrix extends uniquely to a based automorphism
   coefficient ring, an automorphism is based exactly when it preserves the open dominant chamber.
 * `RootPairing.Base.isComplement'_weylGroup_basedAut`: **the Weyl group complements the based
   automorphisms**.
+* `RootPairing.Base.isComplement'_weylGroup_subgroupOf_basedAut_subgroupOf`: this complement
+  restricts to every subgroup of automorphisms containing the Weyl group.
 * `RootPairing.Base.existsUnique_basedAut_of_cartanMatrix`: for a root system, each symmetry of
   the Cartan matrix extends uniquely to a based automorphism.
 * `RootPairing.Base.coe_mul_left`: the product formula `(w, δ) (v, η) = (w δ v δ⁻¹, δ η)` in the
@@ -210,6 +213,15 @@ theorem isComplement'_weylGroup_basedAut (b : P.Base) :
     refine Set.mem_mul.mpr ⟨w, w.2, (w : P.Aut)⁻¹ * g, ?_, mul_inv_cancel_left _ _⟩
     rw [SetLike.mem_coe, mem_basedAut_iff_map_eq, Base.map_mul, ← hw, ← Base.map_mul,
       inv_mul_cancel, Base.map_one]
+
+/-- **In every subgroup of automorphisms containing the Weyl group, the Weyl group complements the
+based automorphisms**: an element of the subgroup is uniquely `w δ` with `w` in the Weyl group
+and `δ` a based automorphism of the subgroup. -/
+theorem isComplement'_weylGroup_subgroupOf_basedAut_subgroupOf (b : P.Base) {L : Subgroup P.Aut}
+    (hL : P.weylGroup ≤ L) :
+    (P.weylGroup.subgroupOf L).IsComplement' (b.basedAut.subgroupOf L) := by
+  rw [← Subgroup.inf_subgroupOf_right b.basedAut L]
+  exact ((isComplement'_weylGroup_basedAut b).isLocalComplement_inf hL).isComplement'_subgroupOf
 
 /-- **Every symmetry of the Cartan matrix extends uniquely to a based automorphism.** For a finite
 reduced crystallographic root system over a characteristic-zero domain, every permutation `σ` of
