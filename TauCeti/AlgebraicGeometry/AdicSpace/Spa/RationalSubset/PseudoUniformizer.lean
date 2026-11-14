@@ -94,16 +94,12 @@ theorem exists_subset_rationalSubset_eq_of_isPseudoUniformizer {Aplus : Subring 
   · intro x hx
     obtain ⟨t₀, ht₀, rfl⟩ := Finset.mem_image.mp (Finset.mem_coe.mp hx)
     exact hM t₀ (Finset.mem_insert_of_mem ht₀)
-  · apply le_antisymm
-    · rw [Ideal.span_le]
-      intro x hx
-      obtain ⟨t₀, ht₀, rfl⟩ := Finset.mem_image.mp (Finset.mem_coe.mp hx)
-      exact Ideal.mul_mem_right (ϖ ^ M) _ (Ideal.subset_span (Finset.mem_coe.mpr ht₀))
-    · rw [Ideal.span_le]
-      intro t₀ ht₀
-      have hmul : t₀ * ϖ ^ M ∈ Ideal.span ((T₀.image (· * ϖ ^ M) : Finset A) : Set A) :=
-        Ideal.subset_span (Finset.mem_coe.mpr (Finset.mem_image_of_mem _ (Finset.mem_coe.mp ht₀)))
-      simpa [mul_assoc, hu.mul_val_inv] using Ideal.mul_mem_right (↑hu.unit⁻¹ : A) _ hmul
+  · open scoped Pointwise in
+    have himg : ((T₀.image (· * ϖ ^ M) : Finset A) : Set A) = (ϖ ^ M) • (T₀ : Set A) := by
+      ext x
+      simp [Set.mem_smul_set, mul_comm]
+    simpa only [himg, Ideal.submodule_span_eq] using
+      Submodule.span_smul_eq_of_isUnit (T₀ : Set A) (ϖ ^ M) hu
 
 end ClearDenominators
 

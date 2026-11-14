@@ -8,40 +8,32 @@ module
 public import TauCeti.RingTheory.Valuation.Continuous.Basic
 
 /-!
-# Closedness of valuation bounds and passage to limits
+# Passage of continuous valuation bounds to limits
 
-Let `v : Valuation A Γ₀` be a continuous valuation (`Valuation.IsContinuous`). While `{a | v a < γ}`
-is only guaranteed to be open at *attained* thresholds `γ = v b` (see the module docstring of
-`TauCeti.RingTheory.Valuation.Continuous.Basic`), the opposite strict inequality behaves uniformly
-across the entire codomain `Γ₀` as soon as addition is separately continuous: any `x` with
-`γ < v x` satisfies `v x ≠ 0`, so `v` is locally constant at `x` (`IsContinuous.eventually_eq`).
+Let `v : Valuation A Γ₀` be a continuous valuation (`Valuation.IsContinuous`). By
+`Valuation.IsContinuous.isClosed_ge` and `Valuation.IsContinuous.isClosed_le` (in
+`TauCeti.RingTheory.Valuation.Continuous.Basic`), attained superlevel sets `{a | v b ≤ v a}` are
+closed with no compatibility between the topology and the ring operations, and under
+`[SeparatelyContinuousAdd A]` closed balls `{a | v a ≤ γ}` are closed for *every* `γ : Γ₀`,
+attained or not.
 
-Consequently:
-* `{a | v b ≤ v a}` is closed for every `b : A`, with no compatibility between the topology and the
-  ring operations (`Valuation.IsContinuous.isClosed_ge`);
-* under `[SeparatelyContinuousAdd A]`, `{a | γ < v a}` is open and `{a | v a ≤ γ}` is closed for
-  *every* `γ : Γ₀`, attained or not (`Valuation.IsContinuous.isOpen_gt`,
-  `Valuation.IsContinuous.isClosed_le`).
-
-Passing to topological limits along a nontrivial filter then preserves upper bounds `v (f i) ≤ γ`
-for arbitrary `γ : Γ₀` (`Valuation.IsContinuous.le_of_tendsto`) — covering genuinely unattained
-thresholds `γ ∈ Γ₀ \ Set.range v` and applying directly to `γ = max (v x) (v y)` without
-case-splitting on `le_total (v x) (v y)` (including `γ = 0`, where `IsContinuous.isOpen_le`'s
-`v b ≠ 0` hypothesis fails), as needed when pulling continuous valuations back along limit
-constructions such as the tilt of a uniform Tate ring — as well as attained lower bounds
-`v b ≤ v (f i)` (`Valuation.IsContinuous.ge_of_tendsto`) and eventually constant values
-`v (f i) = γ` (`Valuation.IsContinuous.eq_of_tendsto`).
+Passing to topological limits along a nontrivial filter therefore preserves:
+* attained lower bounds `v b ≤ v (f i)` (`Valuation.IsContinuous.ge_of_tendsto`), needing only a
+  topology on `A`;
+* upper bounds `v (f i) ≤ γ` for arbitrary `γ : Γ₀` (`Valuation.IsContinuous.le_of_tendsto`) —
+  covering genuinely unattained thresholds `γ ∈ Γ₀ \ Set.range v` and applying directly to
+  `γ = max (v x) (v y)` without case-splitting on `le_total (v x) (v y)` (including `γ = 0`, where
+  `IsContinuous.isOpen_le`'s `v b ≠ 0` hypothesis fails), as needed when pulling continuous
+  valuations back along limit constructions such as the tilt of a uniform Tate ring;
+* eventually constant values `v (f i) = γ` (`Valuation.IsContinuous.eq_of_tendsto`).
 
 ## Main results
 
-* `Valuation.IsContinuous.isClosed_ge` and `Valuation.IsContinuous.ge_of_tendsto` : closedness of
-  `{a | v b ≤ v a}` and preservation of attained lower bounds under limits, needing only a topology
-  on `A`.
-* `Valuation.IsContinuous.isOpen_gt` and `Valuation.IsContinuous.isClosed_le` : openness of
-  `{a | γ < v a}` and closedness of `{a | v a ≤ γ}` for arbitrary `γ : Γ₀` under
-  `[SeparatelyContinuousAdd A]`.
+* `Valuation.IsContinuous.ge_of_tendsto` : preservation of attained lower bounds under limits,
+  needing only a topology on `A`.
 * `Valuation.IsContinuous.le_of_tendsto` and `Valuation.IsContinuous.eq_of_tendsto` : preservation
-  of arbitrary upper bounds and eventually constant values under limits.
+  of arbitrary upper bounds and eventually constant values under limits under
+  `[SeparatelyContinuousAdd A]`.
 
 ## References
 
@@ -52,20 +44,10 @@ public section
 
 namespace Valuation
 
-open Filter Set Topology
+open Filter Topology
 
 variable {A : Type*} [Ring A] [TopologicalSpace A]
   {Γ₀ : Type*} [LinearOrderedCommMonoidWithZero Γ₀]
-
-/-- **Attained superlevel sets of a continuous valuation are closed.** For every `b : A`, the set
-`{a | v b ≤ v a}` is the complement of the defining open `{a | v a < v b}`, so no compatibility
-between the topology and the ring operations is required. -/
-theorem IsContinuous.isClosed_ge {v : Valuation A Γ₀} (hv : v.IsContinuous) (b : A) :
-    IsClosed {a : A | v b ≤ v a} := by
-  have hcompl : ({a : A | v a < v b} : Set A)ᶜ = {a : A | v b ≤ v a} := by
-    ext a
-    simp
-  exact hcompl ▸ (isContinuous_def.mp hv b).isClosed_compl
 
 /-- **Attained lower bounds pass to limits.** If `f` converges to `x` along a nontrivial filter and
 `v b ≤ v (f i)` eventually, then `v b ≤ v x`. -/
@@ -77,25 +59,6 @@ theorem IsContinuous.ge_of_tendsto {v : Valuation A Γ₀} (hv : v.IsContinuous)
 section SeparatelyContinuousAdd
 
 variable [SeparatelyContinuousAdd A]
-
-/-- **Strict superlevel sets `{a | γ < v a}` are open for every `γ : Γ₀`**, whether or not `γ` lies
-in the value group: `γ < v x` forces `v x ≠ 0`, and off its support `v` is locally constant
-(`IsContinuous.eventually_eq`). -/
-theorem IsContinuous.isOpen_gt {v : Valuation A Γ₀} (hv : v.IsContinuous) (γ : Γ₀) :
-    IsOpen {a : A | γ < v a} := by
-  refine isOpen_iff_mem_nhds.mpr fun x hx ↦ ?_
-  have hx0 : v x ≠ 0 := ne_of_gt (zero_le.trans_lt hx)
-  filter_upwards [hv.eventually_eq hx0] with y hy
-  exact hy.symm ▸ hx
-
-/-- **Closed balls `{a | v a ≤ γ}` are closed for every `γ : Γ₀`.** For `γ = 0` this recovers
-closedness of the support (`IsContinuous.isClosed_supp`, without needing commutativity of `A`). -/
-theorem IsContinuous.isClosed_le {v : Valuation A Γ₀} (hv : v.IsContinuous) (γ : Γ₀) :
-    IsClosed {a : A | v a ≤ γ} := by
-  have hcompl : ({a : A | γ < v a} : Set A)ᶜ = {a : A | v a ≤ γ} := by
-    ext a
-    simp
-  exact hcompl ▸ (hv.isOpen_gt γ).isClosed_compl
 
 /-- **Upper bounds pass to limits.** If `f` converges to `x` along a nontrivial filter and
 `v (f i) ≤ γ` eventually, then `v x ≤ γ`. The bound `γ` may be any element of `Γ₀`. -/

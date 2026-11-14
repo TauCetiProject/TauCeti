@@ -53,10 +53,10 @@ homeomorphism:
   `Huber.Pair.Hom.spaTilt_comp_spaComap`, `Huber.Pair.Hom.spaTilt_spaComap`): `spaTilt` commutes
   with `spaComap` along continuous plus-preserving ring homomorphisms and morphisms of Huber pairs.
 * **Characteristic-`p` self-identification** (`spaTilt_eq_spaComap_equivOfCharP`,
-  `spaTilt_eq_id_of_charP`, `spaTiltHomeomorphOfCharP`, `isHomeomorph_spaTilt_of_charP`): when `B`
-  is perfect of characteristic `p`, `spaTilt` coincides with pullback along
-  `uniformTilt.equivOfCharP p B : B♭ ≃+* B` and composes with the inverse identification to the
-  identity, making it a homeomorphism.
+  `spaComap_equivOfCharP_symm_comp_spaTilt`, `spaTiltHomeomorphOfCharP`,
+  `isHomeomorph_spaTilt_of_charP`): when `B` is perfect of characteristic `p`, `spaTilt` coincides
+  with pullback along `uniformTilt.equivOfCharP p B : B♭ ≃+* B` and composes with the inverse
+  identification to the identity, making it a homeomorphism.
 
 No perfectoid base field, perfectoidness of `B` itself, or nontriviality of `B` is assumed.
 
@@ -82,7 +82,7 @@ No perfectoid base field, perfectoidness of `B` itself, or nontriviality of `B` 
   `TauCeti.PerfectoidSpace.spaTilt_preimage_mem_spaRationalFamily`
 * `TauCeti.PerfectoidSpace.spaTilt_comp_spaComap`,
   `TauCeti.Huber.Pair.Hom.spaTilt_comp_spaComap`, `TauCeti.Huber.Pair.Hom.spaTilt_spaComap`
-* `TauCeti.PerfectoidSpace.spaTilt_eq_id_of_charP`,
+* `TauCeti.PerfectoidSpace.spaComap_equivOfCharP_symm_comp_spaTilt`,
   `TauCeti.PerfectoidSpace.isHomeomorph_spaTilt_of_charP`
 
 ## References
@@ -479,11 +479,12 @@ theorem spaTilt_eq_spaComap_equivOfCharP {Bplus : Subring B}
   rw [ValuationSpectrum.spaComap_val]
   simp
 
-/-- **When `B` is perfect of characteristic `p`, `spaTilt` is the identity under the identification
-of `B` with its tilt.** Specifically, composing `spaTilt p h` with `spaComap` along
-`(uniformTilt.equivOfCharP p B).symm` yields `id` on `Spa(B, B⁺)`. -/
+/-- **When `B` is perfect of characteristic `p`, `spaTilt` composes with the inverse
+characteristic-`p` identification to the identity.** Specifically, composing `spaTilt p h` with
+`spaComap` along `(uniformTilt.equivOfCharP p B).symm` yields `id` on `Spa(B, B⁺)`. -/
 @[simp]
-theorem spaTilt_eq_id_of_charP {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus)
+theorem spaComap_equivOfCharP_symm_comp_spaTilt {Bplus : Subring B}
+    (h : IsRingOfIntegralElements Bplus)
     {hcont : Continuous ((uniformTilt.equivOfCharP p B).symm : B →+* uniformTilt p B)}
     {hplus : ∀ b ∈ Bplus,
       ((uniformTilt.equivOfCharP p B).symm : B →+* uniformTilt p B) b ∈
@@ -496,7 +497,7 @@ theorem spaTilt_eq_id_of_charP {Bplus : Subring B} (h : IsRingOfIntegralElements
     (uniformTilt.equivOfCharP p B : uniformTilt p B →+* B) _
     (uniformTilt.equivOfCharP p B).apply_symm_apply _ x
 
-/-- Pointwise form of `spaTilt_eq_id_of_charP`. -/
+/-- Pointwise form of `spaComap_equivOfCharP_symm_comp_spaTilt`. -/
 @[simp]
 theorem spaComap_equivOfCharP_symm_spaTilt {Bplus : Subring B}
     (h : IsRingOfIntegralElements Bplus)
@@ -507,7 +508,7 @@ theorem spaComap_equivOfCharP_symm_spaTilt {Bplus : Subring B}
     (x : spa Bplus) :
     ValuationSpectrum.spaComap ((uniformTilt.equivOfCharP p B).symm : B →+* uniformTilt p B) hcont
         Bplus (uniformTilt.plusSubring p h) hplus (spaTilt p h x) = x :=
-  congrFun (spaTilt_eq_id_of_charP h) x
+  congrFun (spaComap_equivOfCharP_symm_comp_spaTilt h) x
 
 /-- Composing in the opposite order also yields the identity on `Spa(B♭, B♭⁺)`. -/
 @[simp]
@@ -551,7 +552,7 @@ noncomputable def spaTiltHomeomorphOfCharP {Bplus : Subring B}
   invFun := ValuationSpectrum.spaComap ((uniformTilt.equivOfCharP p B).symm : B →+* uniformTilt p B)
     ((uniformTilt.continuous_equivOfCharP_symm p B).congr fun _ ↦ rfl)
     Bplus (uniformTilt.plusSubring p h) (fun b hb ↦ by simp [hb])
-  left_inv := congrFun (spaTilt_eq_id_of_charP h)
+  left_inv := congrFun (spaComap_equivOfCharP_symm_comp_spaTilt h)
   right_inv := congrFun (spaTilt_comp_spaComap_equivOfCharP_symm h)
   continuous_toFun := continuous_spaTilt p h
   continuous_invFun := ValuationSpectrum.continuous_spaComap _ _ _ _ _

@@ -159,7 +159,7 @@ example :
         (uniformTilt.continuous_equivOfCharP_symm p (tiltField p ℂ_[p]))
         (powerBoundedSubring (tiltField p ℂ_[p])) (uniformTilt.plusSubring p hplus)
         (fun b hb ↦ by simp [hb]) ∘ spaTilt p hplus) = _root_.id :=
-  ⟨isHomeomorph_spaTilt_of_charP _, spaTilt_eq_id_of_charP _⟩
+  ⟨isHomeomorph_spaTilt_of_charP _, spaComap_equivOfCharP_symm_comp_spaTilt _⟩
 
 end CharacteristicP
 
