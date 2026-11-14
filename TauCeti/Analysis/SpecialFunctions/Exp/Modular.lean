@@ -48,7 +48,9 @@ theorem convexOn_exp_two_mul_sub_one_sub_two_mul :
   refine ⟨convex_univ, fun x _ y _ a b ha hb hab ↦ ?_⟩
   have h := convexOn_exp.2 (Set.mem_univ (2 * x)) (Set.mem_univ (2 * y)) ha hb hab
   simp only [smul_eq_mul] at h ⊢
-  rw [show a * (2 * x) + b * (2 * y) = 2 * (a * x + b * y) by ring] at h
+  -- Rewrite the convex combination of the arguments `2x` and `2y` as `2` times that of `x`, `y`.
+  have harg : a * (2 * x) + b * (2 * y) = 2 * (a * x + b * y) := by ring
+  rw [harg] at h
   linarith
 
 /-- The potential `exp (2t) - 1 - 2t` dominates the modular `√(1 + t²) - 1`. -/

@@ -589,8 +589,11 @@ private theorem potential_midpoint_le_ae (u v : W1p (volume : Measure ℂ) ⊤ 2
     (mem_univ (W1p.value v z)) (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num : (0 : ℝ) ≤ 1 / 2)
     (by norm_num)
   simp only [smul_eq_mul] at hconv
-  rw [hz, ← mul_add, mul_div_assoc, show (W1p.value u z + W1p.value v z) / 2 =
-    1 / 2 * W1p.value u z + 1 / 2 * W1p.value v z by ring]
+  -- Write the average of the values as the convex combination with weights `1 / 2`, the form in
+  -- which `hconv` is stated.
+  have hmid : (W1p.value u z + W1p.value v z) / 2 =
+      1 / 2 * W1p.value u z + 1 / 2 * W1p.value v z := by ring
+  rw [hz, ← mul_add, mul_div_assoc, hmid]
   exact mul_le_mul_of_nonneg_left (by linarith) (by positivity)
 
 /-- If the potentials of `u` and `v` are integrable, so is the potential of their midpoint. -/
