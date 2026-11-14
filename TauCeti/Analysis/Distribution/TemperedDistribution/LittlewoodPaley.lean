@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 public import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Convolution.Commutator
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
@@ -84,6 +85,10 @@ blocks `Δⱼ u`.
   truncations by `φ (2^{-N} ·)`.
 * `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`; in
   particular `u` is determined by its blocks (`eq_of_forall_littlewoodPaleyBlock_eq`).
+* `TemperedDistribution.littlewoodPaleyBlock_apply_apply`: the transpose of a block is the block of
+  the same index on scalar Schwartz functions, `(Δⱼ u) f = u (Δⱼ f)`.
+* `TemperedDistribution.littlewoodPaleyBlock_eq_sum_Ico_littlewoodPaleyBlock`: a block is
+  reproduced by the blocks of nearby index, `Δₖ u = ∑_{|j - k| < L} Δⱼ Δₖ u`.
 * `TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock`: the Fourier transform of
   `Δⱼ u` vanishes outside the ball of radius `2^j φ.rOut`, and for `j ≥ 1` also inside the ball of
   radius `2^{j-1} φ.rIn` (`isVanishingOn_fourier_littlewoodPaleyBlock_succ`); the Fourier transform
@@ -253,6 +258,40 @@ theorem littlewoodPaleyBlock_apply (j : ℕ) (u : 𝓢'(E, F)) :
       fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) u :=
   (rfl)
 
+/-- **The transpose of a block.** Since the piece `ψⱼ` is even, the block `Δⱼ` of a tempered
+distribution is the transpose of the block `Δⱼ` of scalar Schwartz functions: `(Δⱼ u) f = u (Δⱼ f)`.
+-/
+theorem littlewoodPaleyBlock_apply_apply (j : ℕ) (u : 𝓢'(E, F)) (f : 𝓢(E, ℂ)) :
+    littlewoodPaleyBlock F φ j u f = u (SchwartzMap.fourierMultiplierCLM ℂ
+      (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f) := by
+  rw [littlewoodPaleyBlock_apply, fourierMultiplierCLM_apply_apply,
+    SchwartzMap.fourier_smulLeftCLM_fourierInv_eq
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
+  simp only [ContDiffBump.inhomogeneousLittlewoodPaley_neg]
+
+/-- **A block is reproduced by its neighbours.** If the pieces of the partition whose indices
+differ by at least `L` have disjoint supports, as for the `L` of
+`ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ φ`, then
+`Δₖ u = ∑_{k + 1 - L ≤ j < k + L} Δⱼ Δₖ u`. -/
+theorem littlewoodPaleyBlock_eq_sum_Ico_littlewoodPaleyBlock {L : ℕ}
+    (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ : E,
+      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0)
+    (k : ℕ) (u : 𝓢'(E, F)) :
+    littlewoodPaleyBlock F φ k u = ∑ j ∈ Finset.Ico (k + 1 - L) (k + L),
+      littlewoodPaleyBlock F φ j (littlewoodPaleyBlock F φ k u) := by
+  simp_rw [littlewoodPaleyBlock_apply φ _ (littlewoodPaleyBlock F φ k u),
+    littlewoodPaleyBlock_apply, fourierMultiplierCLM_fourierMultiplierCLM_apply
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k)
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley _)]
+  rw [← sum_apply, ← fourierMultiplierCLM_sum F fun j _ ↦
+    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k).mul
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
+  congr 2
+  funext ξ
+  simp only [Pi.mul_apply, ← Complex.ofReal_mul, ← Complex.ofReal_sum, ← Finset.mul_sum]
+  rw [mul_comm, ← φ.enlargedLittlewoodPaley_apply,
+    φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL]
+
 /-- The partial sums of the Littlewood–Paley blocks are the low-pass truncations:
 `∑_{j ≤ N} Δⱼ = 𝓕⁻ (φ (2^{-N} ·) • 𝓕 ·)`. -/
 theorem sum_littlewoodPaleyBlock_range (N : ℕ) :
@@ -275,6 +314,13 @@ theorem tendsto_sum_littlewoodPaleyBlock (u : 𝓢'(E, F)) :
     ((fourierCLM ℂ 𝓢(E, ℂ)).continuous.tendsto _).comp
       (SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow φ (𝓕⁻ f))
   rwa [fourierCLM_apply, FourierTransform.fourier_fourierInv_eq] at h
+
+/-- **Littlewood–Paley reconstruction, tested.** For every scalar Schwartz function `f`, the
+series `∑ⱼ (Δⱼ u) f` converges to `u f`. -/
+theorem tendsto_sum_littlewoodPaleyBlock_apply (u : 𝓢'(E, F)) (f : 𝓢(E, ℂ)) :
+    Tendsto (fun N ↦ ∑ j ∈ Finset.range N, littlewoodPaleyBlock F φ j u f) atTop (𝓝 (u f)) := by
+  simpa only [sum_apply] using PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.1
+    (tendsto_sum_littlewoodPaleyBlock φ u) f
 
 /-- A tempered distribution is determined by its Littlewood–Paley blocks. -/
 theorem eq_of_forall_littlewoodPaleyBlock_eq {u v : 𝓢'(E, F)}

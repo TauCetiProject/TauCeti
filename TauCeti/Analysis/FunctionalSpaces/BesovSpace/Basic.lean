@@ -56,6 +56,9 @@ both its tempered distribution and this `Lᵖ` data.
   single-block bound `TauCeti.BesovSpace.rpow_mul_norm_block_le`; conversely
   `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq` bounds the norm of a
   distribution by any `ℓ^q` majorant of its weighted block norms.
+* `TauCeti.BesovSpace.windowNorms`: the window sums `∑_{j - L ≤ k < j + L} 2^{ks} ‖Δₖ u‖_p` of
+  the weighted block norms, an `ℓ^q` sequence of norm at most `2 L ‖u‖`
+  (`TauCeti.BesovSpace.norm_windowNorms_le`).
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_block`: a tempered distribution whose
   blocks are `L^{p'}` functions with weighted norms `2^{js'} ‖Δⱼ w‖_{p'} ≤ B 2^{js} ‖Δⱼ u‖_p` for
   some `u ∈ B^s_{p,q}` lies in `B^{s'}_{p',q}`, with norm at most `B ‖u‖`.
@@ -530,6 +533,16 @@ def _root_.TemperedDistribution.MemBesov.toBesovSpace {u : 𝓢'(E, F)}
 theorem _root_.TemperedDistribution.MemBesov.toDistr_toBesovSpace {u : 𝓢'(E, F)}
     (hu : u.MemBesov φ s p q) : hu.toBesovSpace.toDistr = u := (rfl)
 
+/-- The window sums `∑_{j - L ≤ k < j + L} 2^{ks} ‖Δₖ u‖_p` of the weighted block norms of `u`, an
+`ℓ^q` sequence of norm at most `2 L ‖u‖` (`TauCeti.BesovSpace.norm_windowNorms_le`). -/
+def windowNorms (L : ℕ) (u : BesovSpace F φ s p q) : lp (fun _ : ℕ ↦ ℝ) q :=
+  ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), ‖u.weightedBlocks k‖,
+    (lp.memℓp u.weightedBlocks).norm.sum_Ico_sub_add L⟩
+
+theorem windowNorms_apply (L : ℕ) (u : BesovSpace F φ s p q) (j : ℕ) :
+    windowNorms L u j = ∑ k ∈ Finset.Ico (j - L) (j + L), ‖u.weightedBlocks k‖ :=
+  (rfl)
+
 section Normed
 
 variable [Fact (1 ≤ q)]
@@ -575,6 +588,12 @@ theorem norm_eq_ciSup (u : BesovSpace F φ s p ∞) :
     ‖u‖ = ⨆ j : ℕ, 2 ^ (s * j) * ‖u.block j‖ := by
   rw [← norm_weightedBlocks, lp.norm_eq_ciSup]
   simp_rw [norm_weightedBlocks_apply]
+
+/-- The window sums of the weighted block norms of `u` have `ℓ^q` norm at most `2 L ‖u‖`. -/
+theorem norm_windowNorms_le (L : ℕ) (u : BesovSpace F φ s p q) :
+    ‖windowNorms L u‖ ≤ 2 * L * ‖u‖ := by
+  simpa [lp.norm_toNorm] using lp.norm_le_of_forall_eq_sum_Ico_sub_add
+    (f := lp.toNorm u.weightedBlocks) L (windowNorms_apply L u)
 
 /-- **Membership from a bound on the blocks.** If the blocks `Δⱼ u` of a tempered distribution
 are `Lᵖ` functions `gⱼ` with `2^{js} ‖gⱼ‖_p ≤ bⱼ` for a sequence `b ∈ ℓ^q`, then `u` is an element
@@ -962,29 +981,17 @@ private theorem exists_norm_toBesovSpace_of_bump_le (φ' : ContDiffBump (0 : E))
   obtain ⟨K, L, hK, hKL⟩ := exists_littlewoodPaleyBlock_eq_and_le (F := F) φ φ' s
   refine ⟨K * (2 * L), fun u ↦ ?_⟩
   obtain ⟨f', hf', hle⟩ := hKL u.block fun k ↦ (coe_block u k).symm
-  -- The weighted block norms of `u`, and their window sums, as elements of `ℓ^q`.
-  set b : lp (fun _ : ℕ ↦ ℝ) q := ⟨fun k ↦ ‖u.weightedBlocks k‖, (lp.memℓp _).norm⟩
-  set w : lp (fun _ : ℕ ↦ ℝ) q :=
-    ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), b k, (lp.memℓp b).sum_Ico_sub_add L⟩
-  -- The entries of the anonymous `lp` elements `b` and `w` are their defining sequences by
-  -- definition: `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous
-  -- constructor.
-  have hw (j : ℕ) : w j = ∑ k ∈ Finset.Ico (j - L) (j + L), ‖u.weightedBlocks k‖ := rfl
-  have hp : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-  have hb : ‖b‖ ≤ ‖u‖ := by
-    rw [← norm_weightedBlocks]
-    exact lp.norm_mono hp fun k ↦ (norm_norm _).le
-  obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq f' (K • w) hf'
-    fun j ↦ by
-      rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hw]
+  obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq f'
+    (K • windowNorms L u) hf' fun j ↦ by
+      rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, windowNorms_apply]
       simpa only [norm_weightedBlocks_apply] using hle j
   rw [← ext (hv.trans (MemBesov.toDistr_toBesovSpace _).symm)]
-  calc ‖v‖ ≤ ‖K • w‖ := hvn
-    _ = K * ‖w‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
-    _ ≤ K * (2 * L * ‖b‖) := by
+  calc ‖v‖ ≤ ‖K • windowNorms L u‖ := hvn
+    _ = K * ‖windowNorms L u‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
+    _ ≤ K * (2 * L * ‖u‖) := by
         gcongr
-        exact lp.norm_le_of_forall_eq_sum_Ico_sub_add L fun _ ↦ rfl
-    _ ≤ K * (2 * L) * ‖u‖ := by rw [mul_assoc K]; gcongr
+        exact norm_windowNorms_le L u
+    _ = K * (2 * L) * ‖u‖ := by ring
 
 variable (F) in
 /-- **Independence of the bump function.** The Besov spaces `B^s_{p,q}` built from the

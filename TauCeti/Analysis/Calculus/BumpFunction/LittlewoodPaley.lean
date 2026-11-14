@@ -55,6 +55,8 @@ derivative bounds; it localizes operators to the frequencies of a single block.
   is identically zero.
 * `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces,
   also between the partitions of two bump functions.
+* `ContDiffBump.littlewoodPaleyOverlap`: the least such `L` for a single partition, with
+  `ContDiffBump.inhomogeneousLittlewoodPaley_mul_eq_zero_of_add_littlewoodPaleyOverlap_le`.
 * `ContDiffBump.exists_card_filter_inhomogeneousLittlewoodPaley_ne_zero_le`: at each `ξ` at most a
   fixed number of pieces are nonzero.
 * `ContDiffBump.exists_sum_sq_inhomogeneousLittlewoodPaley_le`: `∑ⱼ ψⱼ ξ ²` is bounded uniformly
@@ -299,6 +301,13 @@ theorem contDiff_inhomogeneousLittlewoodPaley {n : ℕ∞} (j : ℕ) :
   · rw [inhomogeneousLittlewoodPaley_succ]
     exact φ.contDiff_littlewoodPaley _
 
+/-- Each piece of the inhomogeneous partition is even, `ψⱼ (-ξ) = ψⱼ ξ`, since the bump function
+`φ` is radial. -/
+@[simp]
+theorem inhomogeneousLittlewoodPaley_neg (j : ℕ) (ξ : E) :
+    φ.inhomogeneousLittlewoodPaley j (-ξ) = φ.inhomogeneousLittlewoodPaley j ξ := by
+  simp [inhomogeneousLittlewoodPaley, ContDiffBump.neg]
+
 /-- Every piece `ψⱼ` vanishes outside the open ball of radius `2^j φ.rOut`. -/
 theorem inhomogeneousLittlewoodPaley_eq_zero_of_le_norm {j : ℕ} {ξ : E}
     (hξ : 2 ^ j * φ.rOut ≤ ‖ξ‖) : φ.inhomogeneousLittlewoodPaley j ξ = 0 := by
@@ -437,6 +446,21 @@ theorem exists_inhomogeneousLittlewoodPaley_mul_eq_zero (φ' : ContDiffBump (0 :
       _ = 2 ^ (j + n) * φ'.rIn := by rw [pow_add, mul_assoc]
       _ ≤ 2 ^ k * φ'.rIn :=
           mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ'.rIn_pos.le
+
+open Classical in
+/-- The **overlap** of the inhomogeneous partition of `φ`: the least `L` such that the pieces `ψⱼ`
+and `ψₖ` have disjoint supports whenever `j + L ≤ k`
+(`exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ φ`). -/
+noncomputable def littlewoodPaleyOverlap : ℕ :=
+  Nat.find (φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ)
+
+/-- The pieces `ψⱼ` and `ψₖ` of the partition have disjoint supports whenever
+`j + φ.littlewoodPaleyOverlap ≤ k`. -/
+theorem inhomogeneousLittlewoodPaley_mul_eq_zero_of_add_littlewoodPaleyOverlap_le (j k : ℕ)
+    (hjk : j + φ.littlewoodPaleyOverlap ≤ k) (ξ : E) :
+    φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0 := by
+  classical
+  exact Nat.find_spec (φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ) j k hjk ξ
 
 /-- The **enlarged Littlewood–Paley cutoff** `Ψⱼ = ∑_{j + 1 - L ≤ k < j + L} ψₖ`, the sum of the
 pieces of the inhomogeneous partition whose indices are within `L` of `j`. It is supported in the
