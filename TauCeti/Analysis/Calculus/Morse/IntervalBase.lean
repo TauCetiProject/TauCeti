@@ -74,6 +74,11 @@ bijective.
 * `TauCeti.intervalBaseOrbit_sq_eq_sigmoid`, `TauCeti.one_sub_intervalBaseOrbit_sq` and
   `TauCeti.intervalBaseFlow_eq_intervalBaseOrbit`: the trajectory `q` through the sigmoid, and
   every flow line through `(0, 1)` as a reparametrization of `q`.
+* `TauCeti.intervalBaseOrbit_one_add_log` and `TauCeti.intervalBaseOrbit_one_sub_log`: the unit-rate
+  trajectory at times `c ∓ T` in the gluing parameter `ρ = e^{-T}`, `ρ` times a function of `ρ²`
+  near `0` and a function of `ρ²` near `1`; `TauCeti.intervalBaseFlow_one_mul_inv_sqrt_one_add_sq`
+  and `TauCeti.intervalBaseFlow_one_inv_sqrt_one_add_sq`: the flow acts on these two forms by
+  scaling `x` with `e^{s}` and `y` with `e^{-s}`.
 * `TauCeti.index_trajectoryOperator_intervalBasePotential`,
   `TauCeti.exists_ker_trajectoryOperator_intervalBasePotential_eq_span`,
   `TauCeti.surjective_trajectoryOperator_intervalBasePotential` and
@@ -434,6 +439,28 @@ theorem one_sub_intervalBaseOrbit_sq (C s : ℝ) :
     1 - intervalBaseOrbit C s ^ 2 = Real.sigmoid (-(2 * C * s)) := by
   rw [intervalBaseOrbit_sq_eq_sigmoid, Real.sigmoid_neg]
 
+/-- **Arrival at rate `2`.** In the gluing parameter `ρ = e^{-T}`, the unit-rate trajectory at time
+`c + T` is `1 / √(1 + (e^{-c} ρ)²)`: it depends on `ρ` only through `ρ²`. -/
+theorem intervalBaseOrbit_one_sub_log (c : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
+    intervalBaseOrbit 1 (c - Real.log ρ) = (√(1 + (Real.exp (-c) * ρ) ^ 2))⁻¹ := by
+  rw [intervalBaseOrbit_apply,
+    show -(2 * 1 * (c - Real.log ρ)) = (-c + Real.log ρ) + (-c + Real.log ρ) by ring,
+    Real.exp_add, Real.exp_add, Real.exp_log hρ, sq]
+
+/-- **Departure at rate `1`.** In the gluing parameter `ρ = e^{-T}`, the unit-rate trajectory at
+time `c - T` is `x / √(1 + x²)` for `x = e^{c} ρ`: it is `ρ` times a function of `ρ²`. -/
+theorem intervalBaseOrbit_one_add_log (c : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
+    intervalBaseOrbit 1 (c + Real.log ρ) =
+      Real.exp c * ρ * (√(1 + (Real.exp c * ρ) ^ 2))⁻¹ := by
+  have hx : 0 < Real.exp c * ρ := mul_pos (Real.exp_pos c) hρ
+  have hsq : 1 + ((Real.exp c * ρ) ^ 2)⁻¹ = (1 + (Real.exp c * ρ) ^ 2) / (Real.exp c * ρ) ^ 2 := by
+    field_simp
+    ring
+  rw [intervalBaseOrbit_apply,
+    show -(2 * 1 * (c + Real.log ρ)) = -((c + Real.log ρ) + (c + Real.log ρ)) by ring,
+    Real.exp_neg, Real.exp_add, Real.exp_add, Real.exp_log hρ, ← sq, hsq,
+    Real.sqrt_div' _ (sq_nonneg _), Real.sqrt_sq hx.le, inv_div, div_eq_mul_inv]
+
 private theorem inv_sqrt_two_mem_Ioo : (√2)⁻¹ ∈ Ioo (0 : ℝ) 1 :=
   ⟨by positivity, inv_lt_one_of_one_lt₀ Real.one_lt_sqrt_two⟩
 
@@ -456,10 +483,51 @@ theorem intervalBaseFlow_intervalBaseOrbit (C s r : ℝ) :
   rw [intervalBaseOrbit_eq_intervalBaseFlow, intervalBaseOrbit_eq_intervalBaseFlow,
     intervalBaseFlow_add C s r inv_sqrt_two_mem_Icc]
 
+/-- The flow of the base moves a signed copy of its trajectory `q` along itself, for a sign `a`
+in `{-1, 0, 1}`. -/
+theorem intervalBaseFlow_mul_intervalBaseOrbit (C s : ℝ) {a : ℝ} (ha : a = -1 ∨ a = 0 ∨ a = 1)
+    (t : ℝ) :
+    intervalBaseFlow C s (a * intervalBaseOrbit C t) = a * intervalBaseOrbit C (s + t) := by
+  rcases ha with rfl | rfl | rfl <;> simp [intervalBaseFlow_neg]
+
+/-- The flow of the base for time `s` acts on the departing form `x / √(1 + x²)` of the unit-rate
+trajectory (`TauCeti.intervalBaseOrbit_one_add_log`) by `x ↦ e^{s} x`, for every real `x`. -/
+theorem intervalBaseFlow_one_mul_inv_sqrt_one_add_sq (s x : ℝ) :
+    intervalBaseFlow 1 s (x * (√(1 + x ^ 2))⁻¹) =
+      Real.exp s * x * (√(1 + (Real.exp s * x) ^ 2))⁻¹ := by
+  have key : ∀ x : ℝ, 0 < x → intervalBaseFlow 1 s (x * (√(1 + x ^ 2))⁻¹) =
+      Real.exp s * x * (√(1 + (Real.exp s * x) ^ 2))⁻¹ := fun x hx ↦ by
+    have h0 := intervalBaseOrbit_one_add_log 0 hx
+    rw [Real.exp_zero, one_mul, zero_add] at h0
+    rw [← h0, intervalBaseFlow_intervalBaseOrbit, intervalBaseOrbit_one_add_log s hx]
+  rcases lt_trichotomy x 0 with hx | rfl | hx
+  · simpa only [neg_sq, mul_neg, neg_mul, intervalBaseFlow_neg, neg_inj] using
+      key (-x) (by linarith)
+  · simp
+  · exact key x hx
+
+/-- The flow of the base for time `s` acts on the arriving form `1 / √(1 + y²)` of the unit-rate
+trajectory (`TauCeti.intervalBaseOrbit_one_sub_log`) by `y ↦ e^{-s} y`, for every real `y`. -/
+theorem intervalBaseFlow_one_inv_sqrt_one_add_sq (s y : ℝ) :
+    intervalBaseFlow 1 s (√(1 + y ^ 2))⁻¹ = (√(1 + (Real.exp (-s) * y) ^ 2))⁻¹ := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp
+  have h0 := intervalBaseOrbit_one_sub_log 0 (abs_pos.2 hy)
+  have hs := intervalBaseOrbit_one_sub_log s (abs_pos.2 hy)
+  rw [neg_zero, Real.exp_zero, one_mul, sq_abs, zero_sub] at h0
+  rw [mul_pow, sq_abs, ← mul_pow] at hs
+  rw [← h0, intervalBaseFlow_intervalBaseOrbit, ← sub_eq_add_neg, hs]
+
 /-- The trajectory `q` takes values in `(0, 1)`. -/
 theorem intervalBaseOrbit_mem_Ioo (C s : ℝ) : intervalBaseOrbit C s ∈ Ioo 0 1 := by
   rw [intervalBaseOrbit_eq_intervalBaseFlow]
   exact intervalBaseFlow_mem_Ioo_zero_one C s inv_sqrt_two_mem_Ioo
+
+/-- The trajectory `q` is smooth. -/
+theorem contDiff_intervalBaseOrbit (C : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (intervalBaseOrbit C) := by
+  have h : ContDiff ℝ n fun s : ℝ ↦ 1 + Real.exp (-(2 * C * s)) := by fun_prop
+  exact (h.sqrt fun _ ↦ by positivity).inv fun _ ↦ by positivity
 
 /-- The trajectory `q` solves `q' = C q (1 - q²)`. -/
 theorem hasDerivAt_intervalBaseOrbit (C s : ℝ) :
@@ -542,6 +610,12 @@ theorem intervalBaseTimeCoordinate_intervalBaseOrbit (C s : ℝ) :
   rw [intervalBaseOrbit_eq_intervalBaseFlow,
     intervalBaseTimeCoordinate_intervalBaseFlow C s inv_sqrt_two_mem_Ioo,
     intervalBaseTimeCoordinate_inv_sqrt_two, zero_add]
+
+/-- For `C ≠ 0` the trajectory `q` is injective: its time coordinate is `C s`. -/
+theorem intervalBaseOrbit_injective (hC : C ≠ 0) : Function.Injective (intervalBaseOrbit C) :=
+  fun a b h ↦ mul_left_cancel₀ hC <| by
+    simpa only [intervalBaseTimeCoordinate_intervalBaseOrbit] using
+      congrArg intervalBaseTimeCoordinate h
 
 /-- The time coordinate is strictly increasing on `(0, 1)`. -/
 theorem strictMonoOn_intervalBaseTimeCoordinate :
