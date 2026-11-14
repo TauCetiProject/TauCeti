@@ -324,6 +324,14 @@ theorem IsSerreSystem.F_eq_zero_of_H_eq_zero [IsAddTorsionFree L]
   apply (IsAddTorsionFree.zsmul_eq_zero_iff_right hij).mp
   simpa [hH] using (hs.lie_H_F i j).symm
 
+omit [DecidableEq B] in
+/-- In a torsion-free Serre system, a zero Cartan generator forces every Cartan generator
+with a nonzero Cartan entry in its row to vanish. -/
+theorem IsSerreSystem.H_eq_zero_of_H_eq_zero [IsAddTorsionFree L]
+    (hs : IsSerreSystem R CM H E F) {i j : B} (hH : H i = 0) (hij : CM i j ≠ 0) :
+    H j = 0 := by
+  rw [← hs.lie_E_F_self j, hs.E_eq_zero_of_H_eq_zero hH hij, zero_lie]
+
 end CartanWeights
 
 /-! ### Orthogonal generators commute

@@ -6,32 +6,164 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Presentation.Serre
+public import TauCeti.Algebra.Lie.Sl2.Weyl.Automorphism
+import TauCeti.Algebra.Lie.Sl2.Weyl.WeightOne
 public import TauCeti.Algebra.Lie.Sl2.Weyl.WeightThree
 
 /-!
-# Triple-bond Weyl normalization for Serre systems
+# Triple-bond Weyl normalization and the braid relation for Serre operators
 
-At a directed Cartan entry minus three, the pinned Weyl unit sends the raising generator
-to one sixth of its third raising bracket, and the lowering generator to minus one sixth
-of its third lowering bracket. Both signs are needed to conjugate the Weyl representative
-at the adjacent node, and hence to establish the triple-bond braid relation.
+The pinned Weyl units of a nilpotent rational Serre system satisfy the length-six
+braid relation at a triple bond. The result is equality of units in the associative
+algebra, not just equality of their conjugation actions. It can therefore be restricted
+to an admissible lattice and extended to arbitrary coefficient rings.
 
-These are rational operator identities. They impose no faithfulness or nonvanishing on the
-Serre system and divide by six only in the rational algebra, not in a value ring of positive
-characteristic. The matrix convention is `⁅H i, E j⁆ = CM i j • E j`.
+At a directed Cartan entry minus three, conjugation carries the raising generator
+to one sixth of its third raising bracket and the lowering generator to minus one
+sixth of its third lowering bracket. These normalization identities divide by six
+only in the rational algebra, not in a value ring of positive characteristic.
 
-The formulas use the root-string calculations in
-`TauCeti.Algebra.Lie.Sl2.Weyl.WeightThree`, as the double-bond formulas use `WeightTwo`.
+The calculation follows the long-root string in the rank-two subsystem: the five-letter
+word starting and ending at the short node fixes both long-node root operators.
+Functoriality of the nilpotent exponential then makes that word commute with the
+long-node Weyl unit. The signed exchange of a Serre system supplies the lowering case.
+No faithfulness, finite-dimensionality or nonvanishing assumption is imposed.
+The unit-level exponentiation step shares `TauCeti.conj_weylUnit_of_conj_eq` with the
+single-bond argument in `TauCeti.Algebra.Lie.Presentation.Serre.SingleBond`.
 
 ## References
 
-* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 19.
+* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 19 and Chapter 6.
 * R. W. Carter, *Simple Groups of Lie Type*, §§6.4 and 7.2.
 -/
 
 public section
 
 namespace TauCeti.IsSerreSystem
+
+open LieAlgebra
+
+section Lie
+
+variable {B L : Type*} [LieRing L] [LieAlgebra ℚ L]
+  {CM : Matrix B B ℤ} {H E F : B → L}
+
+private theorem lie_H_triple_E (hs : IsSerreSystem ℚ CM H E F) (k i j : B) :
+    ⁅H k, ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆⁆ =
+      (3 * CM k i + CM k j) • ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆ := by
+  rw [leibniz_lie (H k) (E i) ⁅E i, ⁅E i, E j⁆⁆,
+    leibniz_lie (H k) (E i) ⁅E i, E j⁆, leibniz_lie (H k) (E i) (E j)]
+  simp only [hs.lie_H_E, zsmul_lie, lie_zsmul, lie_add]
+  module
+
+-- The two long roots at the far end of the short-node string form a length-two
+-- string for the long node. Record its orientation, including the returning minus sign.
+private theorem long_node_string (hs : IsSerreSystem ℚ CM H E F)
+    {i j : B} (hjj : CM j j = 2) (hji : CM j i = -1) (hj : H j ≠ 0)
+    (hej : IsNilpotent (ad ℚ L (E j))) (hfj : IsNilpotent (ad ℚ L (F j))) :
+    let b := weylAut (hs.isSl2Triple hjj hj)
+      hej.exists_pow_apply_eq_zero hfj.exists_pow_apply_eq_zero
+    let c := (6⁻¹ : ℚ) • ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆
+    b c = ⁅E j, c⁆ ∧ b ⁅E j, c⁆ = -c := by
+  let tj := hs.isSl2Triple hjj hj
+  let b := weylAut tj hej.exists_pow_apply_eq_zero hfj.exists_pow_apply_eq_zero
+  let c := (6⁻¹ : ℚ) • ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆
+  let d := ⁅E j, c⁆
+  have hne : i ≠ j := ne_of_apply_ne (CM j) (by omega)
+  have hfa : ⁅F j, E i⁆ = 0 := by
+    rw [← lie_skew, hs.lie_E_F_of_ne i j hne, neg_zero]
+  have hjc : ⁅H j, c⁆ = -c := by
+    dsimp only [c]
+    rw [lie_smul, lie_H_triple_E hs, hji, hjj]
+    module
+  have hfjc : ⁅F j, c⁆ = 0 := by
+    dsimp only [c]
+    rw [lie_smul, leibniz_lie (F j) (E i) ⁅E i, ⁅E i, E j⁆⁆, hfa, zero_lie, zero_add,
+      leibniz_lie (F j) (E i) ⁅E i, E j⁆, hfa, zero_lie, zero_add,
+      leibniz_lie (F j) (E i) (E j), hfa, zero_lie, zero_add,
+      ← lie_skew (F j) (E j), hs.lie_E_F_self, lie_neg,
+      ← lie_skew (E i) (H j), hs.lie_H_E, hji]
+    simp
+  have heec : ⁅E j, ⁅E j, c⁆⁆ = 0 := by
+    simpa [pow_succ', mul_apply_eq_comp] using tj.pow_ad_apply_eq_zero_of_weight_neg_nat hej 1
+      (by simpa using hjc) hfjc
+  have hbc : b c = d := tj.weylAut_apply_of_lie_h_eq_neg hej hfj hjc hfjc heec
+  have hfjd : ⁅F j, d⁆ = c := by
+    dsimp only [d]
+    rw [leibniz_lie (F j) (E j) c, ← lie_skew (F j) (E j), tj.lie_e_f, neg_lie,
+      hjc, neg_neg, hfjc, lie_zero, add_zero]
+  have hbd : b d = -c := by
+    dsimp only [d]
+    rw [LieEquiv.map_lie, weylAut_apply_e, hbc, neg_lie, hfjd]
+  exact ⟨hbc, hbd⟩
+
+private theorem fivefold_fixes_long_raising (hs : IsSerreSystem ℚ CM H E F)
+    {i j : B} (hii : CM i i = 2) (hjj : CM j j = 2)
+    (hij : CM i j = -3) (hji : CM j i = -1)
+    (hi : H i ≠ 0) (hj : H j ≠ 0)
+    (hei : IsNilpotent (ad ℚ L (E i))) (hfi : IsNilpotent (ad ℚ L (F i)))
+    (hej : IsNilpotent (ad ℚ L (E j))) (hfj : IsNilpotent (ad ℚ L (F j))) :
+    let a := weylAut (hs.isSl2Triple hii hi)
+      hei.exists_pow_apply_eq_zero hfi.exists_pow_apply_eq_zero
+    let b := weylAut (hs.isSl2Triple hjj hj)
+      hej.exists_pow_apply_eq_zero hfj.exists_pow_apply_eq_zero
+    a (b (a (b (a (E j))))) = E j := by
+  let ti := hs.isSl2Triple hii hi
+  let a := weylAut ti hei.exists_pow_apply_eq_zero hfi.exists_pow_apply_eq_zero
+  let c := (6⁻¹ : ℚ) • ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆
+  let d := ⁅E j, c⁆
+  have hne : i ≠ j := by intro h; subst j; omega
+  have hw : ⁅H i, E j⁆ = (-3 : ℚ) • E j := by
+    simpa [hij] using hs.lie_H_E_smul i j
+  have hfi0 : ⁅F i, E j⁆ = 0 := by
+    rw [← lie_skew, hs.lie_E_F_of_ne j i hne.symm, neg_zero]
+  have ha : a (E j) = c := ti.weylAut_apply_of_weight_neg_three hei hfi hw hfi0
+  have hfc : ⁅F i, c⁆ = (2⁻¹ : ℚ) • ⁅E i, ⁅E i, E j⁆⁆ := by
+    have h := ti.lie_f_pow_succ_toEnd_e hw hfi0 2
+    norm_num [pow_succ', mul_apply_eq_comp] at h
+    simp only [c, lie_smul, h]
+    module
+  -- The highest long root d has short-node weight zero. Its lowering bracket
+  -- vanishes by the long-node Serre relation, so the whole short-node triple fixes it.
+  have hbc2 : ⁅E j, ⁅E i, ⁅E i, E j⁆⁆⁆ = 0 := by
+    have h := congrArg (fun z => ⁅E i, z⁆) (hs.lie_E_lie_E_E_swap_of_eq_neg_one hji)
+    rw [leibniz_lie, lie_self, zero_add, lie_zero] at h
+    exact h
+  have hfd : ⁅F i, d⁆ = 0 := by
+    dsimp only [d]
+    rw [leibniz_lie, hfi0, zero_lie, zero_add, hfc, lie_smul, hbc2, smul_zero]
+  have hhc : ⁅H i, c⁆ = (3 : ℚ) • c := by
+    dsimp only [c]
+    rw [lie_smul, lie_H_triple_E hs, hii, hij]
+    module
+  have hhd : ⁅H i, d⁆ = (0 : ℚ) • d := by
+    dsimp only [d]
+    rw [leibniz_lie, hw, hhc]
+    simp only [smul_lie, lie_smul]
+    module
+  have hed : ⁅E i, d⁆ = 0 := by
+    simpa using ti.pow_ad_apply_eq_zero_of_weight_neg_nat hei 0 hhd hfd
+  have had : a d = d := weylAut_apply_of_lie_eq_zero
+    hei.exists_pow_apply_eq_zero hfi.exists_pow_apply_eq_zero ti
+    (by rw [← lie_skew d (E i), hed, neg_zero])
+    (by rw [← lie_skew d (F i), hfd, neg_zero])
+  obtain ⟨hbc, hbd⟩ := long_node_string hs hjj hji hj hej hfj
+  -- Returning down the short-node string contributes the second minus sign.
+  have hac : a c = -E j := by
+    conv_lhs => dsimp only [c]
+    rw [map_smul, LieEquiv.map_lie, LieEquiv.map_lie, LieEquiv.map_lie,
+      weylAut_apply_e, ha]
+    have h1 := ti.lie_f_pow_succ_toEnd_e hw hfi0 0
+    have h2 := ti.lie_f_pow_succ_toEnd_e hw hfi0 1
+    norm_num [pow_succ', mul_apply_eq_comp] at h1 h2
+    simp only [neg_lie, lie_neg, lie_smul, hfc, h2, h1]
+    module
+  dsimp only
+  rw [ha, hbc, had, hbd, map_neg, hac, neg_neg]
+
+end Lie
+
+section Associative
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance] HasUniqueDiv.of_module_rat
@@ -70,5 +202,58 @@ theorem weylUnit_conj_F_of_cartan_eq_neg_three (hs : IsSerreSystem ℚ CM H E F)
   have ht := hs.isSl2Triple hii hH
   have hne : i ≠ j := ne_of_apply_ne (CM i) (by omega)
   exact ht.weylUnit_conj_of_weight_three hE hF hweight (hs.lie_E_F_of_ne i j hne)
+
+/-- At a triple bond, the pinned Weyl units satisfy the length-six braid relation.
+Only the four root operators at the two nodes need be nilpotent. -/
+theorem weylUnit_braid_of_cartan_eq_neg_three (hs : IsSerreSystem ℚ CM H E F)
+    {i j : B} (hii : CM i i = 2) (hjj : CM j j = 2)
+    (hij : CM i j = -3) (hji : CM j i = -1)
+    (hEi : IsNilpotent (E i)) (hFi : IsNilpotent (F i))
+    (hEj : IsNilpotent (E j)) (hFj : IsNilpotent (F j)) :
+    weylUnit hEi hFi * weylUnit hEj hFj * weylUnit hEi hFi *
+        weylUnit hEj hFj * weylUnit hEi hFi * weylUnit hEj hFj =
+      weylUnit hEj hFj * weylUnit hEi hFi * weylUnit hEj hFj *
+        weylUnit hEi hFi * weylUnit hEj hFj * weylUnit hEi hFi := by
+  -- A zero short-node Cartan operator makes the long-node Weyl unit trivial.
+  by_cases hi : H i = 0
+  · rw [weylUnit_eq_one_of_eq_zero hEj hFj
+      (hs.E_eq_zero_of_H_eq_zero hi (by omega : CM i j ≠ 0))
+      (hs.F_eq_zero_of_H_eq_zero hi (by omega : CM i j ≠ 0))]
+    simp
+  have hj : H j ≠ 0 := fun hz =>
+    hi (hs.H_eq_zero_of_H_eq_zero hz (by omega : CM j i ≠ 0))
+  let hei := ad_nilpotent_of_nilpotent (R := ℚ) hEi
+  let hfi := ad_nilpotent_of_nilpotent (R := ℚ) hFi
+  let hej := ad_nilpotent_of_nilpotent (R := ℚ) hEj
+  let hfj := ad_nilpotent_of_nilpotent (R := ℚ) hFj
+  -- The signed exchange gives the same Weyl automorphisms on the lowering operators.
+  have hE := fivefold_fixes_long_raising hs hii hjj hij hji hi hj hei hfi hej hfj
+  have hF := fivefold_fixes_long_raising hs.neg_swap hii hjj hij hji
+    (neg_ne_zero.mpr hi) (neg_ne_zero.mpr hj)
+    (by simpa using hfi.neg) (by simpa using hei.neg)
+    (by simpa using hfj.neg) (by simpa using hej.neg)
+  dsimp only at hE hF
+  simp only [(hs.isSl2Triple hii hi).weylAut_neg_symm
+      hei.exists_pow_apply_eq_zero hfi.exists_pow_apply_eq_zero,
+    (hs.isSl2Triple hjj hj).weylAut_neg_symm
+      hej.exists_pow_apply_eq_zero hfj.exists_pow_apply_eq_zero, map_neg, neg_inj] at hF
+  let a := weylUnit hEi hFi
+  let b := weylUnit hEj hFj
+  let w := a * b * a * b * a
+  have hwE : (w : A) * E j * ↑w⁻¹ = E j := by
+    simpa only [weylAut_apply_eq_weylUnit_conj (hs.isSl2Triple hii hi) hEi hFi,
+      weylAut_apply_eq_weylUnit_conj (hs.isSl2Triple hjj hj) hEj hFj,
+      w, a, b, Units.val_mul, mul_inv_rev, mul_assoc] using hE
+  have hwF : (w : A) * F j * ↑w⁻¹ = F j := by
+    simpa only [weylAut_apply_eq_weylUnit_conj (hs.isSl2Triple hii hi) hEi hFi,
+      weylAut_apply_eq_weylUnit_conj (hs.isSl2Triple hjj hj) hEj hFj,
+      w, a, b, Units.val_mul, mul_inv_rev, mul_assoc] using hF
+  -- Exponentiation turns the operator equalities into commutation with the actual Weyl unit.
+  have hcomm : w * b * w⁻¹ = b :=
+    conj_weylUnit_of_conj_eq hEj hFj hEj hFj w hwE hwF
+  have heq : w * b = b * w := (mul_inv_eq_iff_eq_mul).mp hcomm
+  simpa only [w, mul_assoc] using heq
+
+end Associative
 
 end TauCeti.IsSerreSystem
