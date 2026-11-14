@@ -8,6 +8,7 @@ module
 public import TauCeti.Computability.SingleOracle.Primrec
 public import TauCeti.Computability.TuringDegree
 import TauCeti.Computability.RecursiveIn
+import TauCeti.Data.List.Infix
 
 /-!
 # Finite binary oracle strings, forcing alternatives, and growing bit chains
@@ -188,44 +189,6 @@ end Set
 /-! ### Bounded evaluation against binary strings and the forcing alternative -/
 
 namespace TauCeti.Oracle.Single.Code
-
-/-- If the partial oracle answers `τ` supply `none` at every address `z ≥ m`, then every successful
-bounded run against `τ` has use at most `m`. -/
-theorem evaln_use_le_of_forall_eq_none {τ : ℕ → Option ℕ} {m : ℕ}
-    (hτ : ∀ z, m ≤ z → τ z = none) :
-    ∀ {k : ℕ} {c : Code} {n : ℕ} {d : Halt}, evaln τ k c n = some d → d.use ≤ m
-  | 0, _, _, _, h => by simp at h
-  | k + 1, c, n, d, h => by
-    induction c generalizing n d with
-    | zero | succ | left | right =>
-      simp only [evaln_succ_zero_eq_some, evaln_succ_succ_eq_some, evaln_succ_left_eq_some,
-        evaln_succ_right_eq_some] at h
-      obtain ⟨-, rfl⟩ := h
-      exact Nat.zero_le m
-    | oracle =>
-      obtain ⟨-, y, hy, rfl⟩ := evaln_succ_oracle_eq_some.1 h
-      dsimp only
-      by_contra hlt
-      have hnone := hτ n (by omega)
-      simp [hnone] at hy
-    | pair cf cg hf hg =>
-      obtain ⟨-, df, dg, hdf, hdg, rfl⟩ := evaln_succ_pair_eq_some.1 h
-      exact max_le (hf _ _ hdf) (hg _ _ hdg)
-    | comp cf cg hf hg =>
-      obtain ⟨-, dg, df, hdg, hdf, rfl⟩ := evaln_succ_comp_eq_some.1 h
-      exact max_le (hg _ _ hdg) (hf _ _ hdf)
-    | prec cf cg hf hg =>
-      obtain ⟨a, y, rfl⟩ : ∃ a y, n = Nat.pair a y := ⟨_, _, (Nat.pair_unpair n).symm⟩
-      cases y with
-      | zero => exact hf _ _ (evaln_succ_prec_zero_eq_some.1 h).2
-      | succ y =>
-        obtain ⟨-, di, d', hdi, hd', rfl⟩ := evaln_succ_prec_succ_eq_some.1 h
-        exact max_le (evaln_use_le_of_forall_eq_none hτ hdi) (hg _ _ hd')
-    | rfind' cf hf =>
-      obtain ⟨a, y, rfl⟩ : ∃ a y, n = Nat.pair a y := ⟨_, _, (Nat.pair_unpair n).symm⟩
-      obtain ⟨-, dx, hdx, ⟨-, rfl⟩ | ⟨-, d', hd', rfl⟩⟩ := evaln_succ_rfind'_eq_some.1 h
-      · exact hf _ dx hdx
-      · exact max_le (hf _ _ hdx) (evaln_use_le_of_forall_eq_none hτ hd')
 
 /-- The partial oracle answers supplied by a finite binary string `σ : List Bool`: `some b.toNat`
 when `σ[z]? = some b`, and `none` for addresses `z ≥ σ.length`. -/
@@ -483,25 +446,12 @@ theorem bitChainOracle_apply (σs : ℕ → List Bool) (x : ℕ) :
     bitChainOracle σs x = Nat.rfindOpt fun s => Code.bitAnswers (σs s) x :=
   (rfl)
 
-/-- Coherence of a prefix-monotone sequence of lists: any two stages defining coordinate `x`
-assign the same value there. -/
-theorem getElem?_eq_of_forall_prefix_succ {α : Type*} {σs : ℕ → List α}
-    (hpref : ∀ s, σs s <+: σs (s + 1)) {s₁ s₂ x : ℕ} {b₁ b₂ : α}
-    (h₁ : (σs s₁)[x]? = some b₁) (h₂ : (σs s₂)[x]? = some b₂) : b₁ = b₂ := by
-  obtain ⟨hlt₁, rfl⟩ := List.getElem?_eq_some_iff.1 h₁
-  obtain ⟨hlt₂, rfl⟩ := List.getElem?_eq_some_iff.1 h₂
-  have hm₁ := List.prefix_iff_getElem?.1
-    (Nat.rel_of_forall_rel_succ_of_le (· <+: ·) hpref (le_max_left s₁ s₂)) x hlt₁
-  have hm₂ := List.prefix_iff_getElem?.1
-    (Nat.rel_of_forall_rel_succ_of_le (· <+: ·) hpref (le_max_right s₁ s₂)) x hlt₂
-  exact Option.some.inj (hm₁.symm.trans hm₂)
-
 /-- Along a prefix-monotone sequence of binary strings, `bitLimit σs` extends every stage `σs s`. -/
 theorem extendsBits_bitLimit {σs : ℕ → List Bool} (hpref : ∀ s, σs s <+: σs (s + 1)) (s : ℕ) :
     (bitLimit σs).ExtendsBits (σs s) := by
   intro x b hxs
   rw [mem_bitLimit]
-  exact ⟨fun ⟨t, hxt⟩ => getElem?_eq_of_forall_prefix_succ hpref hxs hxt,
+  exact ⟨fun ⟨t, hxt⟩ => List.getElem?_eq_of_forall_prefix_succ hpref hxs hxt,
     fun hb => ⟨s, hb ▸ hxs⟩⟩
 
 /-- Along a prefix-monotone sequence, at any stage `s` covering `x`, `x ∈ bitLimit σs` iff
