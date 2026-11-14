@@ -38,10 +38,7 @@ example (R : Type u) [CommRing R] (n : Type u) [Fintype n] [DecidableEq n] :
     homOfAlgebra R (MvPolynomial.X : n → MvPolynomial n R) ≫
         linearMap (Spec (.of R)) ((1 : Matrix n n R).map (Scheme.ΓSpecIso (.of R)).inv) =
       (SpecIso n (.of R)).inv := by
-  have h1 : (1 : Matrix n n R).map (Scheme.ΓSpecIso (.of R)).inv = 1 := by
-    ext i j
-    by_cases hij : i = j <;> simp [Matrix.one_apply, hij]
-  rw [h1, linearMap_one, Category.comp_id, homOfAlgebra_X]
+  rw [Matrix.map_one _ (map_zero _) (map_one _), linearMap_one, Category.comp_id, homOfAlgebra_X]
 
 -- Any proper ideal `I ≠ ⊤` in `MvPolynomial n k` over an infinite field `k` defines a closed
 -- subscheme `Spec (.of (MvPolynomial n k ⧸ I)) ↪ 𝔸(n; Spec (.of k))` with a finite surjective
@@ -99,18 +96,11 @@ example (k : Type u) [Field k] :
     simp [q, y₀, y, x, eMv]
   have hind : AlgebraicIndependent k y := by
     rw [← hqy]
-    refine AlgebraicIndependent.of_comp q.symm.toAlgHom ?_
-    have hsymm : q.symm.toAlgHom ∘ q.toAlgHom ∘ y₀ ∘ ULift.down = y₀ ∘ ULift.down := by
-      funext j; simp
-    rw [hsymm]
-    exact (algebraicIndependent_equiv Equiv.ulift).mpr
-      (TauCeti.NoetherNormalizationExamples.algebraicIndependent_mk_span_X_one_sq k)
+    exact ((algebraicIndependent_equiv Equiv.ulift).mpr
+      (TauCeti.NoetherNormalizationExamples.algebraicIndependent_mk_span_X_one_sq k)).map'
+      (f := q.toAlgHom) q.injective
   have hfin : (aeval (R := k) y).Finite := by
-    have haeval : aeval (R := k) y =
-        q.toAlgHom.comp ((aeval (R := k) y₀).comp (MvPolynomial.rename ULift.down)) := by
-      ext ⟨i⟩
-      simp [← hqy]
-    rw [haeval]
+    rw [← hqy, Function.comp_def, ← MvPolynomial.comp_aeval, ← MvPolynomial.aeval_comp_rename]
     exact AlgHom.Finite.comp (AlgHom.Finite.of_surjective _ q.surjective)
       (AlgHom.Finite.comp
         (TauCeti.NoetherNormalizationExamples.finite_aeval_mk_span_X_one_sq k)

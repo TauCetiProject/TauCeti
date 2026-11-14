@@ -9,6 +9,7 @@ public import Mathlib.Data.Matrix.Basic
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.KrullDimension.FiniteType
 import Mathlib.LinearAlgebra.Matrix.Invertible
+import Mathlib.LinearAlgebra.Matrix.Module
 import TauCeti.LinearAlgebra.Matrix.BlockSucc
 import TauCeti.LinearAlgebra.Matrix.LastRowTransvection
 import TauCeti.RingTheory.AlgebraicIndependent.BaseChange
@@ -191,7 +192,9 @@ theorem exists_linear_normalization_units_of_finite [Nontrivial A] {n : ℕ} (x 
     have hy : (fun i : Fin m ↦ ∑ j : Fin m,
         ((1 : (Matrix (Fin m) (Fin m) k)ˣ) : Matrix (Fin m) (Fin m) k)
           (Fin.castLE le_rfl i) j • w j) = w := by
-      funext i; simp [Matrix.one_apply]
+      open scoped Matrix.Module in
+      simpa only [Fin.castLE_rfl, id_eq, Units.val_one, ← Matrix.Module.smul_def] using
+        one_smul (Matrix (Fin m) (Fin m) k) w
     rw [hy]
     exact ⟨hind, hw, by
       simpa using ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial
@@ -255,14 +258,9 @@ theorem exists_linear_normalization_units [Nontrivial A] {n : ℕ} (x : Fin n �
   refine Algebra.adjoin_le ?_
   rintro _ ⟨l, rfl⟩
   have hinv : x l = ∑ i : Fin n, M⁻¹.val l i • (∑ j : Fin n, M.val i j • x j) := by
-    calc
-      x l = ∑ j : Fin n, (M⁻¹.val * M.val) l j • x j := by
-        simp [Matrix.one_apply]
-      _ = ∑ j : Fin n, (∑ i : Fin n, M⁻¹.val l i * M.val i j) • x j := by
-        simp [Matrix.mul_apply]
-      _ = ∑ i : Fin n, M⁻¹.val l i • (∑ j : Fin n, M.val i j • x j) := by
-        simp_rw [Finset.sum_smul, Finset.smul_sum, mul_smul]
-        exact Finset.sum_comm
+    open scoped Matrix.Module in
+    simpa only [Units.smul_def, Matrix.Module.smul_apply] using
+      congr_fun (inv_smul_smul M x).symm l
   rw [hinv]
   refine Subalgebra.sum_mem _ fun i _ ↦ Subalgebra.smul_mem _ ?_ (M⁻¹.val l i)
   exact Algebra.subset_adjoin ⟨i, rfl⟩

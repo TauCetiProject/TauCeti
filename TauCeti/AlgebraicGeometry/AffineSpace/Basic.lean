@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.AffineSpace
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
 # Algebra evaluation morphisms into affine space
@@ -123,10 +124,8 @@ applies `f` to the coordinates `x`. -/
 lemma specMap_homOfAlgebra {B : Type u} [CommRing B] [Algebra R B] (f : A →ₐ[R] B) (x : n → A) :
     Spec.map (CommRingCat.ofHom (f : A →+* B)) ≫ homOfAlgebra R x =
       homOfAlgebra R (f ∘ x) := by
-  have hcomp : f.comp (MvPolynomial.aeval (R := R) x) = MvPolynomial.aeval (R := R) (f ∘ x) :=
-    MvPolynomial.algHom_ext fun i ↦ by simp
   simp only [homOfAlgebra_def, ← Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
-    AlgHom.toRingHom_eq_coe, ← AlgHom.comp_toRingHom, hcomp]
+    AlgHom.toRingHom_eq_coe, ← AlgHom.comp_toRingHom, MvPolynomial.comp_aeval, Function.comp_def]
 
 /-- `homOfAlgebra R x : Spec (.of A) ⟶ 𝔸(n; Spec (.of R))` is a closed immersion if and only if
 `x` generates `A` as an `R`-algebra. -/
@@ -144,8 +143,6 @@ only if `MvPolynomial.aeval y` is module-finite. -/
 @[simp]
 theorem isFinite_homOfAlgebra_iff {y : n → A} :
     IsFinite (homOfAlgebra R y) ↔ (MvPolynomial.aeval (R := R) y).Finite := by
-  have : MorphismProperty.RespectsIso @IsFinite :=
-    MorphismProperty.RespectsIso.mk _ (fun _ _ _ ↦ inferInstance) (fun _ _ _ ↦ inferInstance)
   rw [homOfAlgebra_def,
     MorphismProperty.cancel_right_of_respectsIso @IsFinite _ (SpecIso n (.of R)).inv,
     IsFinite.SpecMap_iff, CommRingCat.hom_ofHom, ← AlgHom.Finite]
