@@ -44,11 +44,13 @@ computes the singular homology of `RPᴺ`. The undetermined units do not affect 
 * `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_ne_zero`: over a division ring in
   which `2 ≠ 0`, `Hₖ(RPᴺ; R)` is one-dimensional only in degree `0` and, for odd `N`, in degree
   `N`.
+* `TauCeti.RealProjectiveSpace.singularHomologyIsoProjectivization`: the homology of `RPᴺ` is
+  that of the projectivization `ℙ ℝ (Fin (N + 1) → ℝ)`.
 * `TauCeti.RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_eq_zero`,
   `TauCeti.RealProjectiveSpace.isZero_singularHomology_projectivization_of_even` and
   `TauCeti.RealProjectiveSpace.singularHomologyProjectivizationIntLinearEquivOfOdd`: the same
-  statements on the projectivization `ℙ ℝ (Fin (N + 1) → ℝ)`, transported along
-  `TauCeti.RealProjectiveSpace.homeomorphProjectivization`.
+  statements on the projectivization, transported along
+  `TauCeti.RealProjectiveSpace.singularHomologyIsoProjectivization`.
 
 ## References
 
@@ -315,6 +317,19 @@ theorem finrank_singularHomology_of_two_ne_zero {F : Type} [DivisionRing F] (h2 
 
 /-! ### The projectivization carrier -/
 
+variable (N) in
+/-- **The homology of `RPᴺ` is that of the projectivization.** For coefficients `M` in any
+category, `Hₖ(RPᴺ; M) ≅ Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); M)`, transported along
+`TauCeti.RealProjectiveSpace.homeomorphProjectivization`. -/
+def singularHomologyIsoProjectivization {C : Type*} [Category* C] [HasCoproducts.{0} C]
+    [Preadditive C] [CategoryWithHomology C] (M : C) (k : ℕ) :
+    ((AlgebraicTopology.singularHomologyFunctor C k).obj M).obj
+        (TopCat.of (RealProjectiveSpace N)) ≅
+      ((AlgebraicTopology.singularHomologyFunctor C k).obj M).obj
+        (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) :=
+  ((AlgebraicTopology.singularHomologyFunctor C k).obj M).mapIso
+    (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N)) (homeomorphProjectivization N))
+
 /-- **Homology of `ℙ ℝ (Fin (N + 1) → ℝ)` in characteristic two.** If `2 = 0` in the division ring
 `R`, then `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); R)` is one-dimensional for `k ≤ N` and zero for `k > N`. -/
 theorem finrank_singularHomology_projectivization_of_two_eq_zero {R : Type} [DivisionRing R]
@@ -322,9 +337,7 @@ theorem finrank_singularHomology_projectivization_of_two_eq_zero {R : Type} [Div
     Module.finrank R (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
       (ModuleCat.of R R)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) =
       if k ≤ N then 1 else 0 :=
-  (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
-    (ModuleCat.of R R)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N))
-      (homeomorphProjectivization N))).toLinearEquiv.finrank_eq.symm.trans
+  (singularHomologyIsoProjectivization N (ModuleCat.of R R) k).toLinearEquiv.finrank_eq.symm.trans
     (finrank_singularHomology_of_two_eq_zero h2 k)
 
 /-- If right multiplication by `2` is injective on `R`, then `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); R)`
@@ -334,18 +347,14 @@ theorem isZero_singularHomology_projectivization_of_even (h2 : IsRightRegular (2
     IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
       (ModuleCat.of R R)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) :=
   (isZero_singularHomology_of_even (N := N) R h2 hk hk0).of_iso
-    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
-      (ModuleCat.of R R)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N))
-        (homeomorphProjectivization N))).symm
+    (singularHomologyIsoProjectivization N (ModuleCat.of R R) k).symm
 
 /-- **Odd-degree integral homology of `ℙ ℝ (Fin (N + 1) → ℝ)`.** For odd `k < N`,
 `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); ℤ) ≅ ℤ/2`. -/
 def singularHomologyProjectivizationIntLinearEquivOfOdd (hk : Odd k) (hkN : k < N) :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ ℤ)).obj
       (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) ≃ₗ[ℤ] ZMod 2 :=
-  (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj
-    (ModuleCat.of ℤ ℤ)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N))
-      (homeomorphProjectivization N))).symm.toLinearEquiv ≪≫ₗ
+  (singularHomologyIsoProjectivization N (ModuleCat.of ℤ ℤ) k).symm.toLinearEquiv ≪≫ₗ
     singularHomologyIntLinearEquivOfOdd hk hkN
 
 end TauCeti.RealProjectiveSpace
