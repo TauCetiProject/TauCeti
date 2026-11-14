@@ -37,6 +37,8 @@ over `ℝ` the standard smooth structure on real projective space `ℝℙⁿ`.
   maximal atlas of either manifold structure.
 * `Projectivization.contMDiffOn_affineChart` and `Projectivization.contMDiff_affineChart_symm`:
   the affine charts and their inverses are `C^r` maps.
+* `Projectivization.contMDiffOn_insertNth_affineChart`: the homogeneous coordinates normalized in
+  a standard affine chart are a local `C^r` lift of points to nonzero vectors.
 * `Projectivization.contMDiff_of_contDiffOn_mk`: a function on projective space given by a `C^r`
   function of the nonzero homogeneous coordinates is `C^r`.
 * `Projectivization.contMDiffAt_of_eventually_eq_mk`: a map to projective space given near a point
@@ -144,6 +146,16 @@ theorem contMDiff_affineChart_symm (i : Fin (n + 1)) (r : ℕ∞ω) :
   rw [← contMDiffOn_univ]
   simpa using contMDiffOn_symm_of_mem_maximalAtlas
     (IsManifold.subset_maximalAtlas (n := r) (affineOpenPartialHomeomorph_mem_atlas (𝕜 := 𝕜) i))
+
+/-- The homogeneous coordinates `Fin.insertNth i 1 (affineChart i x)` of `x`, normalized to have
+`i`-th entry `1`, are a `C^r` function of `x` on the standard affine open of `i`; for `r = ω` they
+are analytic. They represent `x` there, being `(affineChart i).symm (affineChart i x) = x`, so they
+give a local `C^r` lift of points of projective space to nonzero vectors. -/
+theorem contMDiffOn_insertNth_affineChart (i : Fin (n + 1)) (r : ℕ∞ω) :
+    ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin (n + 1) → 𝕜) r
+      (fun x ↦ Fin.insertNth (α := fun _ ↦ 𝕜) i 1 (affineChart i x)) (affineOpen (K := 𝕜) i) :=
+  ((contDiff_const (c := (1 : 𝕜))).finInsertNth (F := fun _ ↦ 𝕜) i
+    contDiff_id).contMDiff.comp_contMDiffOn (contMDiffOn_affineChart i r)
 
 /-- A function on projective space with values in a normed space, given in homogeneous coordinates
 by a function `F` which is `C^r` on the nonzero vectors, is `C^r`; for `r = ω` it is analytic.
