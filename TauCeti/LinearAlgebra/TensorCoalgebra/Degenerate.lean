@@ -27,7 +27,10 @@ keeps the letter `e`, up to the sign of the Koszul twist.  Hence the brace and t
 bracket of two such maps vanish on degenerate words again; these are the normalized Hochschild
 cochains.  Degenerate words are also spanned by the pure words of homogeneous letters with a
 letter equal to `e`, so vanishing on them may be tested on homogeneous inputs
-(`degenerateWords_le_iff_of_mem_piece`).
+(`degenerateWords_le_iff_of_mem_piece`).  Letterwise maps killing `e` vanish on degenerate words
+(`degenerateWords_le_ker_map`), and subtracting the letterwise action of a linear endomorphism that
+modifies every element by a scalar multiple of `e` lands in the degenerate words
+(`sub_map_mem_degenerateWords`).
 
 ## References
 
@@ -236,6 +239,16 @@ theorem coalgHom_mem_degenerateWords (f : ReducedTensorWords R M →ₗ[R] N)
   | add x y _ _ hx hy => simpa using Submodule.add_mem _ hx hy
   | smul c x _ hx => simpa using Submodule.smul_mem _ c hx
 
+/-- The letterwise map of a linear map killing `e` vanishes on degenerate words. -/
+theorem degenerateWords_le_ker_map (f : M →ₗ[R] N) {e : M} (he : f e = 0) :
+    degenerateWords R M e ≤ LinearMap.ker (ReducedTensorWords.map (R := R) f) := by
+  rw [degenerateWords_le_iff]
+  rintro n x ⟨i, hi⟩
+  rw [LinearMap.mem_ker, map_of_tprod]
+  have hzero : PiTensorProduct.tprod R (fun j ↦ f (x j)) = 0 :=
+    (PiTensorProduct.tprod R).map_coord_zero i (by simp [hi, he])
+  rw [hzero, map_zero]
+
 /-! ### Graded Taylor expansions and homogeneous spanning words -/
 
 section Graded
@@ -249,6 +262,70 @@ theorem of_tprod_mem_degenerateWords_of_eq_smul {e : M} (n : {n : ℕ // 0 < n})
   have hx : x = Function.update x i (c • e) := by rw [← hi, Function.update_eq_self]
   rw [hx, (PiTensorProduct.tprod R).map_update_smul, map_smul]
   exact Submodule.smul_mem _ _ (of_tprod_mem_degenerateWords _ _ ⟨i, by simp⟩)
+
+section Sub
+
+variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
+
+private theorem of_tprod_sub_map_mem_degenerateWords (P : M →ₗ[R] M) {e : M}
+    (hP : ∀ a, ∃ c : R, a - P a = c • e) (n : {n : ℕ // 0 < n}) (x : Fin n.1 → M) :
+    of R M n (PiTensorProduct.tprod R x) -
+      of R M n (PiTensorProduct.tprod R (fun j ↦ P (x j))) ∈ degenerateWords R M e := by
+  -- Replace the letters `x 0, ..., x (k - 1)` by `P (x j)` one position at a time.
+  let tupleAt (k : ℕ) : Fin n.1 → M := fun j ↦ if j.1 < k then P (x j) else x j
+  suffices hstep : ∀ k ≤ n.1,
+      of R M n (PiTensorProduct.tprod R x) -
+        of R M n (PiTensorProduct.tprod R (tupleAt k)) ∈ degenerateWords R M e by
+    have hfin : tupleAt n.1 = fun j ↦ P (x j) := funext fun j ↦ ite_eq_left j.isLt
+    simpa only [hfin] using hstep n.1 le_rfl
+  intro k hk
+  induction k with
+  | zero =>
+    have h0 : tupleAt 0 = x := funext fun j ↦ ite_eq_right (Nat.not_lt_zero j.1)
+    rw [h0, sub_self]
+    exact Submodule.zero_mem _
+  | succ k ih =>
+    let i : Fin n.1 := ⟨k, hk⟩
+    have hprev := ih (Nat.le_of_succ_le hk)
+    have hupd : tupleAt k =
+        Function.update (tupleAt (k + 1)) i ((x i - P (x i)) + P (x i)) := by
+      funext j
+      by_cases hji : j = i
+      · subst hji
+        simp [tupleAt, i, sub_add_cancel]
+      · have hjne : j.1 ≠ k := fun hval ↦ hji (Fin.ext hval)
+        have hiff : (j.1 < k) ↔ (j.1 < k + 1) := by omega
+        simp [tupleAt, hji, hiff]
+    have hself : Function.update (tupleAt (k + 1)) i (P (x i)) = tupleAt (k + 1) := by
+      rw [Function.update_eq_iff]
+      exact ⟨by simp [tupleAt, i], fun _ _ ↦ rfl⟩
+    have hdiff : of R M n (PiTensorProduct.tprod R (tupleAt k)) -
+        of R M n (PiTensorProduct.tprod R (tupleAt (k + 1))) ∈ degenerateWords R M e := by
+      rw [hupd, (PiTensorProduct.tprod R).map_update_add, hself, map_add, add_sub_cancel_right]
+      obtain ⟨c, hc⟩ := hP (x i)
+      exact of_tprod_mem_degenerateWords_of_eq_smul n _ (i := i) (by simpa using hc)
+    simpa only [sub_add_sub_cancel] using Submodule.add_mem _ hprev hdiff
+
+/-- Subtracting the letterwise action of a linear endomorphism that modifies every element by a
+scalar multiple of `e` lands in `degenerateWords R M e`. -/
+theorem sub_map_mem_degenerateWords (P : M →ₗ[R] M) {e : M}
+    (hP : ∀ a, ∃ c : R, a - P a = c • e) (z : ReducedTensorWords R M) :
+    z - ReducedTensorWords.map (R := R) P z ∈ degenerateWords R M e := by
+  suffices hle : (⊤ : Submodule R (ReducedTensorWords R M)) ≤
+      (degenerateWords R M e).comap (LinearMap.id - ReducedTensorWords.map (R := R) P) from
+    hle Submodule.mem_top
+  rw [← iSup_range_of R M, iSup_le_iff]
+  intro n
+  rw [LinearMap.range_le_iff_comap]
+  refine top_unique fun t ht ↦ ?_
+  clear ht
+  induction t using PiTensorProduct.induction_on with
+  | smul_tprod r x =>
+    simp only [map_smul, Submodule.mem_comap, LinearMap.sub_apply, LinearMap.id_apply, map_of_tprod]
+    exact Submodule.smul_mem _ r (of_tprod_sub_map_mem_degenerateWords P hP n x)
+  | add t u ht hu => simpa using Submodule.add_mem _ ht hu
+
+end Sub
 
 /-- Vanishing on degenerate words may be tested on pure words of homogeneous letters, one of which
 is the homogeneous element `e` with its degree. -/
