@@ -13,18 +13,23 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # The two-piece Laurent cover
 
-Let `A` be a complete separated nonarchimedean ring and let `f : A`.  The two Laurent pieces and
-their overlap have the presentations
+Let `A` be a complete separated nonarchimedean ring and let `f : A`.  Following Wedhorn (8.2.1),
+we use the presentations
 
 ```text
-A⟨X⟩/(f-X),   A⟨Y⟩/(1-fY),   A⟨X,Y⟩/(1-XY, f-X).
+A⟨X⟩/(f-X),   A⟨Y⟩/(1-fY),   A⟨X,Y⟩/(1-XY, f-X)
 ```
+
+for the two Laurent pieces and their overlap.  These are the algebraic quotients by the relation
+ideals; they are the coordinate rings of the pieces when `A` is a strongly noetherian Tate ring
+(Wedhorn, Examples 6.38 and 6.39), where the relation ideals are closed.
 
 This file descends the exact Laurent row from
 `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Laurent.Basic` to these presentations.  The
 difference of the two restriction maps is surjective, and its kernel consists exactly of pairs of
-equal constants.  This is the algebraic exactness assertion for the two-piece Laurent cover in
-Wedhorn's Lemma 8.33.
+equal constants.  This is exactness in the middle and at the right end of the algebraic sequence
+for the two-piece Laurent cover in Wedhorn's Lemma 8.33; injectivity of the first map (Wedhorn,
+Corollary 8.32) is not proved in this file.
 
 The proof uses the decomposition of every restricted Laurent series as a series in `X` plus `Y`
 times a series in `Y`.  Multiplying that decomposition by `f-X` expresses an arbitrary element of
@@ -32,7 +37,7 @@ the overlap relation ideal as the image of the two piece relation ideals.
 
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 8.33, p. 84.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 8.33, pp. 83-84.
 
 ## Provenance
 
@@ -120,13 +125,17 @@ theorem mem_laurentCoverOverlapIdeal_iff (f : A) {a : R±} :
           (weightedX _ isWeightFamily_one_weight 0)) = a := by
   rw [laurentCoverOverlapIdeal_def, Ideal.mem_span_singleton']
 
-/-- The coordinate ring of the Laurent piece `{|f| ≤ 1}`. -/
+/-- The algebraic quotient presentation `A⟨X⟩/(f-X)` of the Laurent piece `{|f| ≤ 1}`. It is the
+coordinate ring of the piece when `A` is a complete separated strongly noetherian Tate ring. -/
 noncomputable abbrev laurentCoverLe (f : A) := R₁ ⧸ laurentCoverLeIdeal A f
 
-/-- The coordinate ring of the Laurent piece `{|f| ≥ 1}`. -/
+/-- The algebraic quotient presentation `A⟨Y⟩/(1-fY)` of the Laurent piece `{|f| ≥ 1}`. It is the
+coordinate ring of the piece when `A` is a complete separated strongly noetherian Tate ring. -/
 noncomputable abbrev laurentCoverGe (f : A) := R₁ ⧸ laurentCoverGeIdeal A f
 
-/-- The coordinate ring of the overlap `{|f| = 1}` of the two Laurent pieces. -/
+/-- The algebraic quotient presentation `A⟨X,Y⟩/(1-XY, f-X)` of the overlap `{|f| = 1}` of the two
+Laurent pieces. It is the coordinate ring of the overlap when `A` is a complete separated
+strongly noetherian Tate ring. -/
 noncomputable abbrev laurentCoverOverlap (f : A) :=
   R± ⧸ laurentCoverOverlapIdeal A f
 
@@ -270,7 +279,8 @@ local notation "R₂" =>
 
 local notation "R±" => R₂ ⧸ laurentIdeal A
 
-/-- The Čech differential of the two-piece Laurent cover is surjective. -/
+/-- The difference of the two restriction maps from the quotient presentations `laurentCoverLe`
+and `laurentCoverGe` to `laurentCoverOverlap` is surjective. -/
 theorem laurentCoverDiff_surjective (f : A) : Function.Surjective (laurentCoverDiff A f) := by
   intro z
   obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective z
@@ -365,9 +375,12 @@ private theorem exists_algebraMap_eq_of_laurentCoverDiff_mk_eq_zero (f : A) (a b
     rw [laurentCoverGeIdeal]
     exact Ideal.mul_mem_right d _ (Ideal.mem_span_singleton_self _)
 
-/-- **Wedhorn's Lemma 8.33, exactness in the middle.** For the two Laurent pieces
-`{|f| ≤ 1}` and `{|f| ≥ 1}`, a pair of sections has equal restrictions to the overlap exactly
-when it is a pair of equal constants. -/
+/-- **Wedhorn's Lemma 8.33, exactness in the middle, for the algebraic presentations.** For the
+quotients `laurentCoverLe` and `laurentCoverGe`, a pair of elements has equal restrictions to
+`laurentCoverOverlap` exactly when it is a pair of equal constants. The corresponding
+statement for the completed rational localisations is
+`TauCeti.ValuationSpectrum.laurentCover_exact`, and the one for the structure presheaf is
+`TauCeti.ValuationSpectrum.exists_presentationLimitMap_eq_of_laurentCoverOpen`. -/
 theorem exact_algebraMap_laurentCoverDiff (f : A) :
     Function.Exact
       (algebraMap A (laurentCoverLe A f × laurentCoverGe A f))
