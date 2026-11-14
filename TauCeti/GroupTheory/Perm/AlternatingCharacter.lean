@@ -67,8 +67,8 @@ vacuously about the trivial character.
   that a nontrivial linear character and its conjugate by an odd permutation are two distinct
   members of one orbit.
 * `TauCeti.card_abelianization_alternatingGroup`: **the abelianization of `A₄` has order three.**
-* `TauCeti.monoidHom_alternatingGroup_apply_pow_three` and
-  `TauCeti.monoidHom_alternatingGroup_pow_three`: **the linear characters of an alternating group
+* `MonoidHom.alternatingGroup_apply_pow_three` and
+  `MonoidHom.alternatingGroup_pow_three`: **the linear characters of an alternating group
   are cube-root-of-unity valued**, over arbitrary commutative coefficients.
 * `TauCeti.card_monoidHom_alternatingGroup`: **`A₄` has exactly three linear characters**, with
   `TauCeti.exists_monoidHom_alternatingGroup_ne_one` the corollary that one of them is nontrivial.
@@ -212,6 +212,29 @@ theorem comp_conjNormal_alternatingGroup_ne (hχ : χ ≠ 1) {s : Perm α}
 
 end Nontrivial
 
+section CubeRoots
+
+variable {M : Type*} [CommMonoid M]
+
+/-- **A linear character of an alternating group is a cube root of unity in the character
+monoid**, over arbitrary commutative coefficients: the three-cycles generate the alternating group
+and have order three. -/
+@[simp]
+theorem alternatingGroup_pow_three (χ : alternatingGroup α →* M) : χ ^ 3 = 1 :=
+  MonoidHom.eq_of_eqOn_dense alternatingGroup.closure_isThreeCycles_eq_top
+    fun c (hc : (c : Perm α).IsThreeCycle) => by
+      rw [MonoidHom.pow_apply, MonoidHom.one_apply, ← map_pow, ← hc.orderOf,
+        Subgroup.orderOf_coe, pow_orderOf_eq_one, map_one]
+
+/-- **The linear characters of an alternating group are cube-root-of-unity valued**, the pointwise
+form of `MonoidHom.alternatingGroup_pow_three`. -/
+@[simp]
+theorem alternatingGroup_apply_pow_three (χ : alternatingGroup α →* M)
+    (x : alternatingGroup α) : χ x ^ 3 = 1 := by
+  rw [← MonoidHom.pow_apply, alternatingGroup_pow_three, MonoidHom.one_apply]
+
+end CubeRoots
+
 end MonoidHom
 
 namespace TauCeti
@@ -230,29 +253,6 @@ theorem card_abelianization_alternatingGroup (hα : Nat.card α = 4) :
     Subgroup.card_eq_card_quotient_mul_card_subgroup _
   rw [alternatingGroup.card_of_card_eq_four hα, hcomm] at hsplit
   omega
-
-section CubeRoots
-
-variable {M : Type*} [CommMonoid M]
-
-/-- **A linear character of an alternating group is a cube root of unity in the character
-monoid**, over arbitrary commutative coefficients: the three-cycles generate the alternating group
-and have order three. -/
-@[simp]
-theorem monoidHom_alternatingGroup_pow_three (χ : alternatingGroup α →* M) : χ ^ 3 = 1 :=
-  MonoidHom.eq_of_eqOn_dense alternatingGroup.closure_isThreeCycles_eq_top
-    fun c (hc : (c : Perm α).IsThreeCycle) => by
-      rw [MonoidHom.pow_apply, MonoidHom.one_apply, ← map_pow, ← hc.orderOf,
-        Subgroup.orderOf_coe, pow_orderOf_eq_one, map_one]
-
-/-- **The linear characters of an alternating group are cube-root-of-unity valued**, the pointwise
-form of `TauCeti.monoidHom_alternatingGroup_pow_three`. -/
-@[simp]
-theorem monoidHom_alternatingGroup_apply_pow_three (χ : alternatingGroup α →* M)
-    (x : alternatingGroup α) : χ x ^ 3 = 1 := by
-  rw [← MonoidHom.pow_apply, monoidHom_alternatingGroup_pow_three, MonoidHom.one_apply]
-
-end CubeRoots
 
 section EnoughRoots
 
@@ -278,14 +278,16 @@ theorem exists_monoidHom_alternatingGroup_ne_one (hα : Nat.card α = 4) :
 variable {M}
 
 /-- **Once a nontrivial linear character `χ` of an alternating group is fixed, the linear characters
-are `1`, `χ` and `χ⁻¹`**: for `A₄` there are exactly three of them. Some hypothesis on `M` is
-needed on both counts: without roots of unity there are too few characters, while over
-`M = ℂ × ℂ` there are nine of them and the conclusion fails. -/
+are `1`, `χ` and `χ⁻¹`**: for `A₄` there are exactly three of them. The nontrivial `χ` is
+supplied by `hχ`; the enough-roots hypothesis on `M` is what excludes extra characters for `A₄`:
+over `M = ℂ × ℂ` the group `A₄` has nine linear characters and the conclusion fails. Producing a
+nontrivial character in the first place, as in `exists_monoidHom_alternatingGroup_ne_one`, is where
+the roots are needed to have any characters at all. -/
 theorem monoidHom_alternatingGroup_eq_one_or_eq_or_eq_inv
     {χ : alternatingGroup α →* Mˣ} (hχ : χ ≠ 1) (ψ : alternatingGroup α →* Mˣ) :
     ψ = 1 ∨ ψ = χ ∨ ψ = χ⁻¹ := by
   have _ : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
-  have hcube : χ ^ 3 = 1 := monoidHom_alternatingGroup_pow_three χ
+  have hcube : χ ^ 3 = 1 := χ.alternatingGroup_pow_three
   have hord : orderOf χ = 3 := orderOf_eq_prime hcube hχ
   -- The character group has order three: the alternating group is perfect for `5 ≤ #α`, has
   -- order at most three for `#α ≤ 3`, and the case `#α = 4` is `card_monoidHom_alternatingGroup`.
