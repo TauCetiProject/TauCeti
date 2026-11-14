@@ -210,8 +210,11 @@ theorem epi_twistedSkeletonBasePairToSucc {n k : ℕ} (hk : k ≠ n + 1) :
       (skeletonSystem C L (n + 1 + 1)) k) :=
     ((skeletonBaseTriple C n).twistedHomology_exact_total _ k).epi_f
       ((isZero_twistedHomology_skeletonPair_of_ne C hk _).eq_of_tgt _ _)
-  have := TopPair.isIso_twistedHomologyCoefficientMap (skeletonBasePair C n)
-    (skeletonPairSubspaceSystemIso C L (n + 1)).inv k
+  -- The coefficient isomorphisms below live on ambient spaces that agree with that of
+  -- `skeletonBasePair C n` only after unfolding the pair constructors, so instance search does
+  -- not find their `IsIso` instances; they are supplied explicitly.
+  have := @TopPair.isIso_twistedHomologyCoefficientMap _ _ (skeletonBasePair C n) _ _
+    (skeletonPairSubspaceSystemIso C L (n + 1)).inv (Iso.isIso_inv _) k
   exact epi_comp' inferInstance h
 
 instance epi_twistedSkeletonBasePairToSucc_self (n : ℕ) :
@@ -227,8 +230,8 @@ theorem isIso_twistedSkeletonBasePairToSucc {n k : ℕ} (hk : k < n) :
       (skeletonSystem C L (n + 1 + 1)) k) :=
     ((skeletonBaseTriple C n).twistedHomology_exact_inner _ (k + 1) k rfl).mono_g
       ((isZero_twistedHomology_skeletonPair_of_ne C (by lia) _).eq_of_src _ _)
-  have := TopPair.isIso_twistedHomologyCoefficientMap (skeletonBasePair C n)
-    (skeletonPairSubspaceSystemIso C L (n + 1)).inv k
+  have := @TopPair.isIso_twistedHomologyCoefficientMap _ _ (skeletonBasePair C n) _ _
+    (skeletonPairSubspaceSystemIso C L (n + 1)).inv (Iso.isIso_inv _) k
   have : Mono (twistedSkeletonBasePairToSucc C L n k) := mono_comp' inferInstance h
   exact isIso_of_mono_of_epi _
 
@@ -289,8 +292,9 @@ private lemma twistedCellularCycles_exact (n : ℕ) :
     have : Epi φ.τ₁ := inferInstanceAs (Epi (𝟙 _))
     have : IsIso φ.τ₂ :=
       inferInstanceAs (IsIso (eqToHom (twistedCellularChainComplex_X C L (n + 1)).symm))
-    have : Mono φ.τ₃ := mono_comp' (TopPair.isIso_twistedHomologyCoefficientMap
-      (skeletonBasePair C n) (skeletonPairSubspaceSystemIso C L (n + 1)).hom n).mono_of_iso
+    have : Mono φ.τ₃ := mono_comp' (@TopPair.isIso_twistedHomologyCoefficientMap _ _
+      (skeletonBasePair C n) _ _ (skeletonPairSubspaceSystemIso C L (n + 1)).hom
+      (Iso.isIso_hom _) n).mono_of_iso
       inferInstance
     exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).1
       ((skeletonBaseTriple C n).twistedHomology_exact_outer _ (n + 1) n rfl)
@@ -315,8 +319,8 @@ lemma twistedSkeletonBaseTriple_exact_inner (n : ℕ) :
           (skeletonBasePair C n) (skeletonPairSubspaceSystemIso C L (n + 1)) n _).trans
             (Category.comp_id _).symm) }
   have : Epi φ.τ₁ := inferInstanceAs (Epi (𝟙 _))
-  have : IsIso φ.τ₂ := TopPair.isIso_twistedHomologyCoefficientMap
-    (skeletonBasePair C n) (skeletonPairSubspaceSystemIso C L (n + 1)).hom n
+  have : IsIso φ.τ₂ := @TopPair.isIso_twistedHomologyCoefficientMap _ _
+    (skeletonBasePair C n) _ _ (skeletonPairSubspaceSystemIso C L (n + 1)).hom (Iso.isIso_hom _) n
   have : Mono φ.τ₃ := inferInstanceAs (Mono (𝟙 _))
   exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).1
     ((skeletonBaseTriple C n).twistedHomology_exact_inner _ (n + 1) n rfl)
@@ -444,8 +448,8 @@ theorem isIso_twistedSkeletonBasePairToComplex_of_eq {m : ℕ}
       (inv (skeletonBasePairToComplex C m))
       ⟨(IsIso.hom_inv_id (skeletonBasePairToComplex C m)) ▸ TopPair.Homotopy.refl _⟩
       ⟨(IsIso.inv_hom_id (skeletonBasePairToComplex C m)) ▸ TopPair.Homotopy.refl _⟩ k
-  have := TopPair.isIso_twistedHomologyCoefficientMap (skeletonBasePair C m)
-    (skeletonComplexSystemIso C L m).hom k
+  have := @TopPair.isIso_twistedHomologyCoefficientMap _ _ (skeletonBasePair C m) _ _
+    (skeletonComplexSystemIso C L m).hom (Iso.isIso_hom _) k
   exact IsIso.comp_isIso
 
 /-- **Cellular homology with local coefficients is twisted singular homology**, for a complex
