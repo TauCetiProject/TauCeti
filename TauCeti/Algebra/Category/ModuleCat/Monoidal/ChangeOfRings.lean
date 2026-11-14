@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Adjunction
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
+import Mathlib.CategoryTheory.Adjunction.FullyFaithful
 
 /-!
 # Change of rings and tensor products of modules
@@ -17,7 +18,9 @@ braiding on module categories.
 For a morphism `f : A →+* P` and a `P`-module `M`, tensoring an extension of scalars with `M`
 over `P` is tensoring with `M` over `A`: `M ⊗[P] (P ⊗[A] X) ≅ M ⊗[A] X`, naturally in the
 `A`-module `X` (`ModuleCat.extendScalarsCompTensorLeftIso`). This computes `Tor` over `A` by a
-projective resolution over `P` after a flat extension of scalars.
+projective resolution over `P` after a flat extension of scalars. When restriction of scalars along
+`f` is full, the counit `P ⊗[A] M₂ ⟶ M₂` is an isomorphism, so restriction of scalars preserves
+binary tensor products (`ModuleCat.isIso_laxMonoidal_μ_restrictScalars`).
 -/
 
 public section
@@ -88,5 +91,24 @@ theorem extendScalarsCompTensorLeftIso_inv_app_tmul (M : ModuleCat.{u} P) (X : M
         (TensorProduct.tmul A (M := (restrictScalars f).obj M) (N := X) m x) =
       TensorProduct.tmul P (M := M) (N := (extendScalars f).obj X) m ((1 : P) ⊗ₜ[A, f] x) :=
   (rfl)
+
+/-- When restriction of scalars along `f : A →+* P` is full, for instance when `f` is surjective or
+a localization, it preserves binary tensor products: the lax monoidal comparison
+`M₁ ⊗[A] M₂ ⟶ M₁ ⊗[P] M₂` is an isomorphism. -/
+instance isIso_laxMonoidal_μ_restrictScalars [(restrictScalars.{u} f).Full]
+    (M₁ M₂ : ModuleCat.{u} P) :
+    IsIso (Functor.LaxMonoidal.μ (restrictScalars.{u} f) M₁ M₂) := by
+  have h : Functor.LaxMonoidal.μ (restrictScalars.{u} f) M₁ M₂ =
+      (extendScalarsCompTensorLeftIso f M₁).inv.app ((restrictScalars f).obj M₂) ≫
+        (restrictScalars.{u} f).map (M₁ ◁ (extendRestrictScalarsAdj f).counit.app M₂) := by
+    refine MonoidalCategory.tensor_ext fun m₁ m₂ ↦ ?_
+    simp only [hom_comp, LinearMap.comp_apply]
+    -- `tensor_ext` exposes `ModuleCat` tensor products; `erw` evaluates `restrictScalars.map` and
+    -- the counit on `1 ⊗ₜ m₂`, after which both sides reduce definitionally to `m₁ ⊗ₜ m₂`.
+    erw [restrictScalars.map_apply, MonoidalCategory.whiskerLeft_apply,
+      extendRestrictScalarsAdj_counit_app_apply_one_tmul]
+    rfl
+  rw [h]
+  infer_instance
 
 end ModuleCat
