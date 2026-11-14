@@ -106,6 +106,8 @@ product.
 * `TauCeti.StrandDiagram.grading_addHorizontal`, `TauCeti.StrandDiagram.grading_swapHorizontal`:
   adding horizontal strands away from the ends, or moving a horizontal strand to a free point, does
   not change the grading.
+* `TauCeti.StrandDiagram.grading_eraseHorizontal`: removing the horizontal strands does not
+  change the grading.
 * `TauCeti.StrandDiagram.grading_resolve`, `TauCeti.StrandsAlgebra.differential_mem_gradedPart`:
   every term of the differential of `φ` has grading `λ⁻¹ gr(φ)`, so the differential maps the part
   of grading `g` to the part of grading `λ⁻¹ g`.
@@ -937,6 +939,13 @@ theorem grading_swapHorizontal (φ : StrandDiagram α) (a b : α) :
     linear_combination hinv' - hsum
   · rw [grading_boundary, grading_boundary, hb]
 
+/-- **A diagram has the grading of its strands that are not horizontal.** -/
+@[simp]
+theorem grading_eraseHorizontal (φ : StrandDiagram α) :
+    φ.eraseHorizontal.grading = φ.grading := by
+  conv_rhs => rw [← φ.addHorizontal_eraseHorizontal_horizontals]
+  rw [grading_addHorizontal (by simpa using sdiff_disjoint) (by simpa using sdiff_disjoint)]
+
 end Horizontal
 
 end StrandDiagram
@@ -1043,6 +1052,11 @@ noncomputable def gradedPart (g : StrandGradingGroup α) : Submodule R (StrandsA
   gradedPartBy R grading g
 
 variable {R}
+
+/-- The part of grading `g` is the part of degree `g` for the function `grading`. -/
+theorem gradedPart_eq_gradedPartBy (g : StrandGradingGroup α) :
+    gradedPart R g = gradedPartBy R grading g := by
+  rw [gradedPart]
 
 /-- An element has grading `g` exactly when every strand diagram in its support has grading `g`. -/
 theorem mem_gradedPart {g : StrandGradingGroup α} {x : StrandsAlgebra R α} :

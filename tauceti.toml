@@ -66,6 +66,9 @@ deployment = "cloudflare"
 mode = "hosted"
 url = "https://fleet.taucetiproject.org"
 pr_order = ["github", "fleet"]
+# Keep a few PR builds waiting for the next fleet runner when GitHub is full.
+# This observational limit can briefly overshoot under simultaneous pickers.
+pr_queue_limit = 3
 staging_order = ["tauchonki2"]
 
 # Staging is reserved for these hosts; other membership comes from the registered runners.
