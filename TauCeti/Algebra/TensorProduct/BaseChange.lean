@@ -260,6 +260,14 @@ def baseChangeTowerAlgEquiv : M ⊗[L] (L ⊗[K] A) ≃ₐ[M] M ⊗[K] A :=
     (by simp [Algebra.TensorProduct.one_def])
     (LinearMap.map_mul_of_map_mul_tmul fun _ _ _ _ ↦ by simp)).symm
 
+/-- The linear equivalence underlying the scalar-extension tower comparison is tensor
+cancellation. -/
+@[simp]
+theorem baseChangeTowerAlgEquiv_toLinearEquiv :
+    (baseChangeTowerAlgEquiv K L A M).toLinearEquiv =
+      _root_.TensorProduct.AlgebraTensorModule.cancelBaseChange K L M M A :=
+  (rfl)
+
 /-- The tower comparison moves the intermediate scalar onto the top scalar factor. -/
 @[simp]
 theorem baseChangeTowerAlgEquiv_tmul (m : M) (l : L) (a : A) :
