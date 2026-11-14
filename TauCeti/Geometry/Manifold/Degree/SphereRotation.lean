@@ -54,7 +54,8 @@ In the statements, `n = m + 1`, so that `Sⁿ⁻¹ = Sᵐ` is modelled on `ℝ�
 ## Main declarations
 
 * `TauCeti.sphereRotationFamily`: the rotation family `(v, z) ↦ Re z • p + Im z • v`.
-* `TauCeti.contMDiff_sphereRotationFamily`: it is smooth.
+* `TauCeti.continuous_sphereRotationFamily`, `TauCeti.contMDiff_sphereRotationFamily`: it is
+  continuous, and smooth.
 * `TauCeti.mvfderiv_coe_sphereRotationFamily_apply`: its derivative.
 * `TauCeti.sphereRotationFamily_eq_sphereRotationFamily_iff`: the two preimages of a point
   `q ≠ ±p`.
@@ -114,6 +115,13 @@ theorem coe_sphereRotationFamily (p : sphere (0 : E) 1)
     (sphereRotationFamily p x : E) =
       (x.2 : ℂ).re • (p : E) + (x.2 : ℂ).im • ((x.1 : (ℝ ∙ (p : E))ᗮ) : E) :=
   (rfl)
+
+/-- The rotation family is continuous. -/
+theorem continuous_sphereRotationFamily (p : sphere (0 : E) 1) :
+    Continuous (sphereRotationFamily p) :=
+  continuous_induced_rng.2 <| by
+    simp only [Function.comp_def, coe_sphereRotationFamily]
+    fun_prop
 
 /-- The rotation family is smooth. -/
 theorem contMDiff_sphereRotationFamily (p : sphere (0 : E) 1) :
