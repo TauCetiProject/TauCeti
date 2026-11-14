@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Basis.Base
 public import Mathlib.Algebra.Lie.Weights.RootSystem
+public import Mathlib.LinearAlgebra.RootSystem.Base
 import TauCeti.Algebra.Lie.Weights.Basic
 -- Proof-only: a Killing Lie algebra is finite over the base ring.
 import TauCeti.Algebra.Lie.Killing.Basic
