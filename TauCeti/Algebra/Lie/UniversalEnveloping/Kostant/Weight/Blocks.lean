@@ -80,7 +80,7 @@ theorem orderedWeightBlockEquiv_apply (degree : (κ → ℤ) →+ D) (wt : η �
 /-- The inverse block equivalence recovers the weight of a basis index. -/
 -- Rewrite before simp descends into the cardinality-indexed equivalence.
 @[simp↓]
-theorem orderedWeightBlockEquiv_symm_apply (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
+theorem orderedWeightBlockEquiv_symm_orderedWeightBlock (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
     (x : η) :
     (orderedWeightBlockEquiv degree wt).symm (orderedWeightBlock degree wt x) =
       ⟨wt x, Set.mem_range_self x⟩ := by
