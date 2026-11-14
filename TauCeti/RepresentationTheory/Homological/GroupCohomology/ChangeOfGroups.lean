@@ -143,6 +143,16 @@ theorem homologyMap_linearYonedaObjMap_eq_of_homotopy
     (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
       (congrArg (HomologicalComplex.homologyMap · n) hβ)
 
+/-- For the identity homomorphism and identity coefficient map, `linearYonedaObjMap` is
+precomposition via `TauCeti.ChainComplex.linearYonedaFunctor`. -/
+@[simp]
+theorem linearYonedaObjMap_id {M : Rep.{u} k G} {P Q : ChainComplex (Rep.{u} k G) ℕ}
+    (α : P ⟶ Q) :
+    (MonoidHom.id G).linearYonedaObjMap (𝟙 M) α =
+      (TauCeti.ChainComplex.linearYonedaFunctor k M).map α.op :=
+  HomologicalComplex.hom_ext _ _ fun n ↦ ModuleCat.hom_ext <| LinearMap.ext fun (g : Q.X n ⟶ M) ↦
+    congrArg (α.f n ≫ ·) (Category.comp_id g)
+
 end CochainMap
 
 variable {k G H : Type u} [CommRing k] [Group G] [Group H] {A : Rep.{u} k H} {B : Rep.{u} k G}
@@ -272,3 +282,40 @@ theorem groupCohomologyIso_hom_naturality (n : ℕ) :
 end Naturality
 
 end MonoidHom
+
+namespace Rep
+
+variable {k G : Type u} [CommRing k] [Group G] (A : Rep.{u} k G)
+  (P Q : ProjectiveResolution (Rep.trivial k G k))
+  (α : P.complex ⟶ Q.complex) (hα : α.f 0 ≫ Q.π.f 0 = P.π.f 0)
+
+include hα in
+/-- **Two projective resolutions compute group cohomology compatibly**, inverse form: an
+augmentation-preserving chain map `α : P ⟶ Q` between projective resolutions of the trivial
+representation intertwines the inverses of Mathlib's identifications `groupCohomologyIso`. -/
+@[reassoc]
+theorem homologyMap_comp_groupCohomologyIso_inv (n : ℕ) :
+    HomologicalComplex.homologyMap
+        ((TauCeti.ChainComplex.linearYonedaFunctor k A).map α.op) n ≫
+      (groupCohomologyIso A n P).inv =
+      (groupCohomologyIso A n Q).inv := by
+  have h := (MonoidHom.id G).groupCohomologyIso_inv_naturality (𝟙 A) P Q α hα n
+  rw [MonoidHom.linearYonedaObjMap_id] at h
+  exact h.trans ((congrArg (_ ≫ ·) (groupCohomology.map_id n)).trans (Category.comp_id _))
+
+include hα in
+/-- **Two projective resolutions compute group cohomology compatibly**: an augmentation-preserving
+chain map `α : P ⟶ Q` between projective resolutions of the trivial representation intertwines
+Mathlib's identifications `groupCohomologyIso`. -/
+@[reassoc]
+theorem groupCohomologyIso_hom_comp_homologyMap (n : ℕ) :
+    (groupCohomologyIso A n Q).hom ≫
+        HomologicalComplex.homologyMap
+          ((TauCeti.ChainComplex.linearYonedaFunctor k A).map α.op) n =
+      (groupCohomologyIso A n P).hom :=
+  (cancel_mono (groupCohomologyIso A n P).inv).mp <|
+    (Category.assoc _ _ _).trans <|
+      (congrArg (_ ≫ ·) (homologyMap_comp_groupCohomologyIso_inv A P Q α hα n)).trans <|
+        (Iso.hom_inv_id _).trans (Iso.hom_inv_id _).symm
+
+end Rep

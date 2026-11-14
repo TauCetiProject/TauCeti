@@ -24,6 +24,26 @@ public section
 
 open CategoryTheory
 
+namespace Rep
+
+universe u v w t
+
+variable {k : Type u} [Ring k] {G : Type v} [Monoid G] {H : Type t} [Monoid H]
+
+/-- `Rep.resMap` respects composition, matching the beta-reduced form of `(Rep.resFunctor φ).map`.
+-/
+@[reassoc]
+theorem resMap_comp {M N P : Rep.{w} k H} (φ : G →* H) (u : M ⟶ N) (v : N ⟶ P) :
+    Rep.resMap φ (u ≫ v) = Rep.resMap φ u ≫ Rep.resMap φ v :=
+  (Rep.resFunctor φ).map_comp u v
+
+/-- `Rep.resMap` carries `eqToHom` to `eqToHom` on restricted representations. -/
+theorem resMap_eqToHom {M N : Rep.{w} k H} (φ : G →* H) (h : M = N) :
+    Rep.resMap φ (eqToHom h) = eqToHom (congrArg (Rep.res φ) h) :=
+  eqToHom_map (Rep.resFunctor φ) h
+
+end Rep
+
 namespace HomologicalComplex
 
 universe u v w t
