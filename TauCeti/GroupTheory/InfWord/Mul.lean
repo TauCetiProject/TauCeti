@@ -61,9 +61,12 @@ function with values in `Λ` on groups of cyclically decomposable words.
   `TauCeti.InfWord.length_add_two_nsmul_eq_of_isMul_inv_left`: `|u⁻¹ ∗ v| + 2 δ = |u| + |v|`,
   where `δ` is the length of the longest common initial segment of `u` and `v`.
 * `TauCeti.InfWord.mul_eq_some_iff`: `u.mul v = Part.some w ↔ IsMul u v w`; and
-  `TauCeti.InfWord.empty_mul`, `TauCeti.InfWord.mul_empty`, `TauCeti.InfWord.inv_mul_self`,
-  `TauCeti.InfWord.mul_inv_self`, `TauCeti.InfWord.mul_inv_rev`, `TauCeti.InfWord.mul_assoc`:
+  `TauCeti.InfWord.empty_mul`, `TauCeti.InfWord.mul_empty`, `TauCeti.InfWord.inv_mul_cancel`,
+  `TauCeti.InfWord.mul_inv_cancel`, `TauCeti.InfWord.mul_inv_rev`, `TauCeti.InfWord.mul_assoc`:
   (P1)–(P4) for the partial function `TauCeti.InfWord.mul`.
+* `TauCeti.InfWord.append_inv_mul_append_cancel`, `TauCeti.InfWord.append_mul_inv_append_cancel`,
+  `TauCeti.InfWord.append_mul_eq_mul_append`: the cancellation and reassociation rules above for
+  the partial function `TauCeti.InfWord.mul`.
 
 ## References
 
@@ -121,7 +124,7 @@ theorem isMul_append (h : (u ++ v).IsReduced) : IsMul u v (u ++ v) :=
   ⟨h.left_of_append, h.right_of_append, u, v, empty Λ X, by simp, by simp, rfl, h⟩
 
 /-- The concatenation `u ++ v` is the product `u ∗ v` exactly when it is reduced. -/
-@[simp]
+@[simp, grind =]
 theorem isMul_append_iff : IsMul u v (u ++ v) ↔ (u ++ v).IsReduced :=
   ⟨IsMul.isReduced, isMul_append⟩
 
@@ -165,13 +168,13 @@ theorem isMul_empty_left (hu : u.IsReduced) : IsMul (empty Λ X) u u := by
   simpa using isMul_append (u := empty Λ X) (v := u) (by simpa using hu)
 
 /-- `u ∗ ε` is defined exactly when `u` is reduced, and is then `u`. -/
-@[simp]
+@[simp, grind =]
 theorem isMul_empty_right_iff : IsMul u (empty Λ X) w ↔ u.IsReduced ∧ w = u :=
   ⟨fun h => ⟨h.isReduced_left, h.unique (isMul_empty_right h.isReduced_left)⟩,
     by rintro ⟨hu, rfl⟩; exact isMul_empty_right hu⟩
 
 /-- `ε ∗ v` is defined exactly when `v` is reduced, and is then `v`. -/
-@[simp]
+@[simp, grind =]
 theorem isMul_empty_left_iff : IsMul (empty Λ X) v w ↔ v.IsReduced ∧ w = v :=
   ⟨fun h => ⟨h.isReduced_right, h.unique (isMul_empty_left h.isReduced_right)⟩,
     by rintro ⟨hv, rfl⟩; exact isMul_empty_left hv⟩
@@ -185,13 +188,13 @@ theorem isMul_self_inv (hu : u.IsReduced) : IsMul u u⁻¹ (empty Λ X) := by
   simpa using isMul_inv_self hu.inv
 
 /-- `u⁻¹ ∗ u` is defined exactly when `u` is reduced, and is then the empty word. -/
-@[simp]
+@[simp, grind =]
 theorem isMul_inv_self_iff : IsMul u⁻¹ u w ↔ u.IsReduced ∧ w = empty Λ X :=
   ⟨fun h => ⟨h.isReduced_right, h.unique (isMul_inv_self h.isReduced_right)⟩,
     by rintro ⟨hu, rfl⟩; exact isMul_inv_self hu⟩
 
 /-- `u ∗ u⁻¹` is defined exactly when `u` is reduced, and is then the empty word. -/
-@[simp]
+@[simp, grind =]
 theorem isMul_self_inv_iff : IsMul u u⁻¹ w ↔ u.IsReduced ∧ w = empty Λ X :=
   ⟨fun h => ⟨h.isReduced_left, h.unique (isMul_self_inv h.isReduced_left)⟩,
     by rintro ⟨hu, rfl⟩; exact isMul_self_inv hu⟩
@@ -405,22 +408,47 @@ theorem mem_mul_iff : w ∈ u.mul v ↔ IsMul u v w :=
   ⟨fun ⟨h, hw⟩ => hw ▸ h.choose_spec, fun h => ⟨⟨w, h⟩, IsMul.unique (Exists.choose_spec _) h⟩⟩
 
 /-- When `u ∗ v` is defined, its value is the product of `u` and `v`. -/
+@[simp]
 theorem isMul_get (h : (u.mul v).Dom) : IsMul u v ((u.mul v).get h) :=
   mem_mul_iff.1 (Part.get_mem h)
 
+grind_pattern isMul_get => (u.mul v).get h
+
+/-- When `u ∗ v` is defined, its value is `w` exactly when `IsMul u v w`. -/
+theorem get_mul_eq_iff (h : (u.mul v).Dom) : (u.mul v).get h = w ↔ IsMul u v w :=
+  (Part.get_eq_iff_mem h).trans mem_mul_iff
+
 /-- `u ∗ v = w` exactly when `IsMul u v w`. -/
-@[simp]
+@[simp, grind =]
 theorem mul_eq_some_iff : u.mul v = Part.some w ↔ IsMul u v w :=
   Part.eq_some_iff.trans mem_mul_iff
 
 /-- `u ∗ v` is undefined exactly when `IsMul u v w` holds for no `w`. -/
-@[simp]
+@[simp, grind =]
 theorem mul_eq_none_iff : u.mul v = Part.none ↔ ∀ w, ¬IsMul u v w := by
   simp [Part.eq_none_iff]
 
 /-- The product of two words is their concatenation when it is reduced. -/
 theorem mul_eq_some_append (h : (u ++ v).IsReduced) : u.mul v = Part.some (u ++ v) :=
   mul_eq_some_iff.2 (isMul_append h)
+
+/-- `(p ∘ q⁻¹) ∗ (q ∘ r) = p ∗ r`: if `p ++ q⁻¹` and `q ++ r` are reduced, then one side is defined
+exactly when the other is, and they are then equal. -/
+theorem append_inv_mul_append_cancel {p q r : InfWord Λ X} (h₁ : (p ++ q⁻¹).IsReduced)
+    (h₂ : (q ++ r).IsReduced) : (p ++ q⁻¹).mul (q ++ r) = p.mul r :=
+  Part.ext fun _ => by simp [isMul_append_inv_append_iff h₁ h₂]
+
+/-- `(p ∘ q) ∗ (q⁻¹ ∘ r) = p ∗ r`: if `p ++ q` and `q⁻¹ ++ r` are reduced, then one side is defined
+exactly when the other is, and they are then equal. -/
+theorem append_mul_inv_append_cancel {p q r : InfWord Λ X} (h₁ : (p ++ q).IsReduced)
+    (h₂ : (q⁻¹ ++ r).IsReduced) : (p ++ q).mul (q⁻¹ ++ r) = p.mul r :=
+  Part.ext fun _ => by simp [isMul_append_inv_append_iff' h₁ h₂]
+
+/-- `(p ∘ m) ∗ q = p ∗ (m ∘ q)`: if `p ++ m` and `m ++ q` are reduced, then one side is defined
+exactly when the other is, and they are then equal. -/
+theorem append_mul_eq_mul_append {p m q : InfWord Λ X} (h₁ : (p ++ m).IsReduced)
+    (h₂ : (m ++ q).IsReduced) : (p ++ m).mul q = p.mul (m ++ q) :=
+  Part.ext fun _ => by simp [isMul_append_left_iff_isMul_append_right h₁ h₂]
 
 /-- (P1) `ε ∗ u = u`. -/
 theorem empty_mul (hu : u.IsReduced) : (empty Λ X).mul u = Part.some u :=
@@ -431,16 +459,16 @@ theorem mul_empty (hu : u.IsReduced) : u.mul (empty Λ X) = Part.some u :=
   mul_eq_some_iff.2 (isMul_empty_right hu)
 
 /-- (P2) `u⁻¹ ∗ u = ε`. -/
-theorem inv_mul_self (hu : u.IsReduced) : u⁻¹.mul u = Part.some (empty Λ X) :=
+protected theorem inv_mul_cancel (hu : u.IsReduced) : u⁻¹.mul u = Part.some (empty Λ X) :=
   mul_eq_some_iff.2 (isMul_inv_self hu)
 
 /-- (P2) `u ∗ u⁻¹ = ε`. -/
-theorem mul_inv_self (hu : u.IsReduced) : u.mul u⁻¹ = Part.some (empty Λ X) :=
+protected theorem mul_inv_cancel (hu : u.IsReduced) : u.mul u⁻¹ = Part.some (empty Λ X) :=
   mul_eq_some_iff.2 (isMul_self_inv hu)
 
 /-- (P3) `(u ∗ v)⁻¹ = v⁻¹ ∗ u⁻¹`: one side is defined exactly when the other is, and they are then
 equal. -/
-@[simp]
+@[simp, grind =]
 protected theorem mul_inv_rev (u v : InfWord Λ X) : (u.mul v)⁻¹ = v⁻¹.mul u⁻¹ := by
   ext w
   rw [Part.inv_def, Part.mem_map_iff, mem_mul_iff]
