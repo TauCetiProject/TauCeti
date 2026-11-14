@@ -6,20 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Adjoin
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 public import TauCeti.Algebra.Coalgebra.Comodule.Transport
 
 /-!
 # Transport invariance of matrix coefficients
 
-This file records how the matrix coefficients of a right comodule behave under transport of
-a comodule structure across a linear equivalence. The general functoriality lemmas for
-comodule morphisms live with the coefficient span and adjoin API in
+This file records how the matrix coefficients and coefficient matrices of a right comodule behave
+under transport of a comodule structure across a linear equivalence. The general functoriality
+lemmas for comodule morphisms live with the coefficient span and adjoin API in
 `TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Adjoin`; this file keeps the
 transport-specific consequences behind the `Comodule.Transport` import.
 
-These lemmas are bookkeeping for the faithful-representation criterion: faithfulness is detected by
-whether the matrix coefficients, together with their antipode images, generate the coordinate Hopf
-algebra.
+These lemmas are bookkeeping for the faithful-representation criterion and for passing between an
+abstract finite free comodule and its coordinate presentation on `ι → R`.
 
 ## Main declarations
 
@@ -28,6 +28,9 @@ algebra.
 * `TauCeti.Comodule.matrixCoefficientSubmodule_transport` and
   `TauCeti.Comodule.matrixCoefficientSubalgebra_transport`: coefficient objects are
   invariant under transported coactions.
+* `TauCeti.Comodule.coefficientMatrix_map_transport` and
+  `TauCeti.Comodule.coefficientMatrix_basisFun_transport_equivFun`: coefficient matrices are
+  invariant under transporting along a linear equivalence and mapping the basis.
 
 ## References
 
@@ -36,6 +39,8 @@ Chapter 2.
 -/
 
 public section
+
+open Module
 
 namespace TauCeti
 
@@ -75,6 +80,34 @@ theorem matrixCoefficientSubmodule_transport (e : M ≃ₗ[R] N₀) :
       matrixCoefficientSubmodule (R := R) (C := C) (M := M) := by
   let : Comodule R C N₀ := Transport (R := R) (C := C) (M := M) (N := N₀) e
   rw [matrixCoefficientSubmodule, matrixCoefficientSubmodule, matrixCoefficientSet_transport]
+
+/-- Transporting a comodule structure along a linear equivalence `e` preserves the coefficient
+matrix with respect to the mapped basis `b.map e`. -/
+@[simp]
+theorem coefficientMatrix_map_transport {ι : Type*} (e : M ≃ₗ[R] N₀) (b : Basis ι R M) :
+    letI : Comodule R C N₀ := Transport e
+    coefficientMatrix (C := C) (b.map e) = coefficientMatrix (C := C) b := by
+  let _ : Comodule R C N₀ := Transport e
+  ext i j
+  have hbj : b.map e j = transportToHom (C := C) e (b j) := by simp
+  have hci : (b.map e).coord i ∘ₗ (transportToHom (C := C) e).toLinearMap = b.coord i := by
+    apply b.ext
+    intro k
+    simp [Basis.coord_apply]
+  rw [coefficientMatrix_apply, hbj, matrixCoefficient_map, hci, ← coefficientMatrix_apply]
+
+/-- Transporting a comodule along `b.equivFun` turns `b` into the standard basis `Pi.basisFun`
+with the exact same coefficient matrix. -/
+theorem coefficientMatrix_basisFun_transport_equivFun {ι : Type*} [Finite ι] (b : Basis ι R M) :
+    letI : Comodule R C (ι → R) := Transport b.equivFun
+    coefficientMatrix (C := C) (Pi.basisFun R ι) = coefficientMatrix (C := C) b := by
+  classical
+  cases nonempty_fintype ι
+  let _ : Comodule R C (ι → R) := Transport b.equivFun
+  have hmap : b.map b.equivFun = Pi.basisFun R ι := by
+    ext j k
+    simp [Pi.basisFun_apply, Pi.single_apply, eq_comm]
+  rw [← hmap, coefficientMatrix_map_transport]
 
 end Transport
 
