@@ -35,6 +35,7 @@ through Mathlib's `MulEquiv.cast` along equalities of indices.
 * `TauCeti.GraphOfGroups.αArrow`, `TauCeti.GraphOfGroups.ωArrow`: the boundary monomorphisms of
   a dart `e : a ⟶ b` of the quiver of `Γ`, with values in `A_a` and `A_b`.
 * `TauCeti.GraphOfGroups.segment`: the graph of groups of an amalgamated product.
+* `TauCeti.GraphOfGroups.freeProductGraph`: the segment graph of groups of a free product `A ∗ B`.
 * `TauCeti.GraphOfGroups.loop`: the graph of groups of an HNN extension.
 * `TauCeti.GraphOfGroups.trivial`: the graph of groups with trivial vertex and edge groups.
 * `TauCeti.GraphOfGroups.restrict`: the restriction of a graph of groups to the subgraph spanned
@@ -246,6 +247,33 @@ variable {A B : Type w} {C : Type x} [Group A] [Group B] [Group C] (f : C →* A
   MonoidHom.ext fun c => (segment f g hf hg).α_rev_apply false c
 
 end segment
+
+/-- The one-edge graph of groups of a free product `A ∗ B`: the segment with vertex groups `A` at
+`false` and `B` at `true` and trivial edge group `PUnit`. -/
+@[expose] def freeProductGraph (A B : Type w) [Group A] [Group B] :
+    GraphOfGroups.{0, 0, w, 0} SerreGraph.segment :=
+  segment (1 : PUnit →* A) (1 : PUnit →* B) (Function.injective_of_subsingleton _)
+    (Function.injective_of_subsingleton _)
+
+section freeProductGraph
+
+variable (A B : Type w) [Group A] [Group B]
+
+@[simp] theorem freeProductGraph_ω_false :
+    (freeProductGraph A B).ω false = (1 : PUnit →* B) := (rfl)
+
+@[simp] theorem freeProductGraph_ω_true :
+    (freeProductGraph A B).ω true = (1 : PUnit →* A) := (rfl)
+
+@[simp] theorem freeProductGraph_α_false :
+    (freeProductGraph A B).α false = (1 : PUnit →* A) :=
+  segment_α_false ..
+
+@[simp] theorem freeProductGraph_α_true :
+    (freeProductGraph A B).α true = (1 : PUnit →* B) :=
+  segment_α_true ..
+
+end freeProductGraph
 
 /-- The graph of groups of an HNN extension: one vertex with group `G`, one loop with edge
 group `C`, and monomorphisms `f g : C →* G`. The dart `((), true)` has `α = f` and `ω = g`. -/

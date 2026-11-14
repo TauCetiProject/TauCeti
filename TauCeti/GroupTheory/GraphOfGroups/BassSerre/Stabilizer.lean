@@ -72,10 +72,8 @@ private theorem homotopic_comp_iff_homotopic_comp_reverse {v : Γ.V} (s : 𝔸.P
     Path.Homotopic (s.comp p) (p.cons (Letter.vertex a)) ↔
       Path.Homotopic s ((p.comp (Path.ofVertex a)).comp p.reverse) := by
   rw [← Path.comp_ofVertex]
-  refine ⟨fun h => ?_, fun h => ?_⟩
-  · exact (Path.Homotopic.comp_comp_reverse s p).symm.trans (h.comp_right p.reverse)
-  · exact (h.comp_right p).trans <| by
-      simpa using Path.Homotopic.comp_reverse_comp_comp (p.comp (Path.ofVertex a)) p .nil
+  exact ⟨fun h => (Path.Homotopic.comp_comp_reverse s p).symm.trans (h.comp_right p.reverse),
+    fun h => (h.comp_right p).trans (Path.Homotopic.comp_reverse_comp _ p)⟩
 
 /-- The stabilizer in `π₁(𝔸, v₀)` of the vertex `p A_v` of `X(𝔸, v₀)` is `p A_v p⁻¹`, the image of
 `π₁.vertexHom p : A_v →* π₁(𝔸, v₀)`. -/
@@ -93,11 +91,12 @@ theorem stabilizer_vertex {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
 /-- At the base vertex `1 · A_{v₀}`, the stabilizer is the image of `A_{v₀}` in `π₁(𝔸, v₀)`. -/
 @[simp] theorem stabilizer_bassSerreBaseVertex :
     stabilizer (π₁ 𝔸 v₀) (𝔸.bassSerreBaseVertex v₀) =
-      (π₁.vertexHom (Quiver.Path.nil : 𝔸.Path ⟨v₀⟩ ⟨v₀⟩)).range :=
-  stabilizer_vertex (𝔸 := 𝔸) (v₀ := v₀) .nil
+      (π₁.vertexHom (Quiver.Path.nil : 𝔸.Path ⟨v₀⟩ ⟨v₀⟩)).range := by
+  rw [bassSerreBaseVertex_def]
+  exact stabilizer_vertex .nil
 
-/-- Because `π₁.vertexHom p` is injective, the vertex group `A_v` is isomorphic to the stabilizer
-of `p A_v` in `π₁(𝔸, v₀)`. -/
+/-- The isomorphism of `A_v` onto the stabilizer of `p A_v` in `π₁(𝔸, v₀)` sending `a` to
+`π₁.vertexHom p a`. -/
 noncomputable def vertexStabilizerEquiv {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
     𝔸.vertexGroup v ≃* stabilizer (π₁ 𝔸 v₀) (𝔸.bassSerreVertex v₀ p) :=
   (MonoidHom.ofInjective (π₁.vertexHom_injective p)).trans
@@ -124,8 +123,8 @@ theorem stabilizer_edge (e : Γ.E) (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) :
     exact (homotopic_comp_iff_homotopic_comp_reverse s p (𝔸.α e c)).mpr
       (π₁.mk_eq_mk_iff.mp hc.symm)
 
-/-- Because both `𝔸.α e` and `π₁.vertexHom p` are injective, the edge group `A_e` is isomorphic to
-the stabilizer of `[e, p]` in `π₁(𝔸, v₀)`. -/
+/-- The isomorphism of `A_e` onto the stabilizer of `[e, p]` in `π₁(𝔸, v₀)` sending `c` to
+`π₁.vertexHom p (𝔸.α e c)`. -/
 noncomputable def edgeStabilizerEquiv (e : Γ.E) (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) :
     𝔸.edgeGroup (Γ.toGeomEdge e) ≃* stabilizer (π₁ 𝔸 v₀) (𝔸.bassSerreDart v₀ e p) :=
   (MonoidHom.ofInjective (f := (π₁.vertexHom p).comp (𝔸.α e))
@@ -174,17 +173,17 @@ private theorem bassSerreQuotientToComponent_mapV_bijective :
     obtain ⟨u₂, rfl⟩ := (𝔸.bassSerreTree v₀).quotientMap_mapV_surjective y
     rw [bassSerreQuotientToComponent_mapV_quotientMap,
       bassSerreQuotientToComponent_mapV_quotientMap]
-    refine bassSerreVertex_induction u₁ fun {v₁} p₁ =>
-      bassSerreVertex_induction u₂ fun {v₂} p₂ => fun h => ?_
+    refine bassSerreVertex_induction_on u₁ fun {v₁} p₁ =>
+      bassSerreVertex_induction_on u₂ fun {v₂} p₂ => fun h => ?_
     have hv_eq : v₁ = v₂ := by simpa using congrArg Subtype.val h
     subst hv_eq
     refine GTree.quotientMap_mapV_eq_iff.mpr ⟨π₁.mk (p₂.comp p₁.reverse), ?_⟩
     rw [mk_smul_bassSerreVertex]
-    exact bassSerreVertex_congr (by simpa using Path.Homotopic.comp_reverse_comp_comp p₂ p₁ .nil)
+    exact bassSerreVertex_congr (Path.Homotopic.comp_reverse_comp p₂ p₁)
   · obtain ⟨P⟩ := (Γ.mem_componentVertices_iff v₀ v).mp hv
     refine ⟨(𝔸.bassSerreTree v₀).quotientMap.mapV
       (𝔸.bassSerreVertex v₀ ((dartPrefunctor 𝔸).mapPath P)), Subtype.ext ?_⟩
-    rw [bassSerreQuotientToComponent_mapV_quotientMap, bassSerreComponentHom_mapV]
+    rw [bassSerreQuotientToComponent_mapV_quotientMap, bassSerreComponentHom_mapV_val]
 
 private theorem bassSerreQuotientToComponent_mapE_bijective :
     Function.Bijective (𝔸.bassSerreQuotientToComponent v₀).mapE := by
@@ -193,17 +192,17 @@ private theorem bassSerreQuotientToComponent_mapE_bijective :
     obtain ⟨d₂, rfl⟩ := (𝔸.bassSerreTree v₀).quotientMap_mapE_surjective y
     rw [bassSerreQuotientToComponent_mapE_quotientMap,
       bassSerreQuotientToComponent_mapE_quotientMap]
-    refine bassSerreDart_induction d₁ fun e₁ p₁ =>
-      bassSerreDart_induction d₂ fun e₂ p₂ => fun h => ?_
+    refine bassSerreDart_induction_on d₁ fun e₁ p₁ =>
+      bassSerreDart_induction_on d₂ fun e₂ p₂ => fun h => ?_
     have he_eq : e₁ = e₂ := by simpa using congrArg Subtype.val h
     subst he_eq
     refine GTree.quotientMap_mapE_eq_iff.mpr ⟨π₁.mk (p₂.comp p₁.reverse), ?_⟩
     rw [mk_smul_bassSerreDart]
-    exact bassSerreDart_congr (by simpa using Path.Homotopic.comp_reverse_comp_comp p₂ p₁ .nil)
+    exact bassSerreDart_congr (Path.Homotopic.comp_reverse_comp p₂ p₁)
   · obtain ⟨P⟩ := (Γ.mem_componentDarts_iff v₀ e).mp he
     refine ⟨(𝔸.bassSerreTree v₀).quotientMap.mapE
       (𝔸.bassSerreDart v₀ e ((dartPrefunctor 𝔸).mapPath P)), Subtype.ext ?_⟩
-    rw [bassSerreQuotientToComponent_mapE_quotientMap, bassSerreComponentHom_mapE]
+    rw [bassSerreQuotientToComponent_mapE_quotientMap, bassSerreComponentHom_mapE_val]
 
 /-- The quotient of the Bass–Serre tree `X(𝔸, v₀)` by `π₁(𝔸, v₀)` is isomorphic to the connected
 component `Γ.component v₀` of the base vertex in `Γ`. -/
@@ -215,16 +214,93 @@ noncomputable def bassSerreQuotientIso : (𝔸.bassSerreQuotient v₀).Iso (Γ.c
     (𝔸.bassSerreQuotientIso v₀).toHom = 𝔸.bassSerreQuotientToComponent v₀ :=
   SerreGraph.Hom.toIso_toHom _ _ _
 
+@[simp] theorem bassSerreQuotientIso_equivV_quotientMap (u : (𝔸.bassSerreTree v₀).V) :
+    (𝔸.bassSerreQuotientIso v₀).equivV ((𝔸.bassSerreTree v₀).quotientMap.mapV u) =
+      (𝔸.bassSerreComponentHom v₀).mapV u := by
+  rw [← SerreGraph.Iso.toHom_mapV, bassSerreQuotientIso_toHom,
+    bassSerreQuotientToComponent_mapV_quotientMap]
+
+@[simp] theorem bassSerreQuotientIso_equivE_quotientMap (d : (𝔸.bassSerreTree v₀).E) :
+    (𝔸.bassSerreQuotientIso v₀).equivE ((𝔸.bassSerreTree v₀).quotientMap.mapE d) =
+      (𝔸.bassSerreComponentHom v₀).mapE d := by
+  rw [← SerreGraph.Iso.toHom_mapE, bassSerreQuotientIso_toHom,
+    bassSerreQuotientToComponent_mapE_quotientMap]
+
+@[simp] theorem bassSerreQuotientIso_equivV_symm_componentBase :
+    (𝔸.bassSerreQuotientIso v₀).equivV.symm (Γ.componentBase v₀) =
+      (𝔸.bassSerreTree v₀).quotientMap.mapV (𝔸.bassSerreBaseVertex v₀) :=
+  (Equiv.symm_apply_eq _).mpr (by simp)
+
 /-- When the underlying graph `Γ` is preconnected, the quotient `X(𝔸, v₀) / π₁(𝔸, v₀)` is
 isomorphic to `Γ` itself. -/
 noncomputable def bassSerreQuotientIsoOfPreconnected (hΓ : Γ.Preconnected) :
     (𝔸.bassSerreQuotient v₀).Iso Γ :=
   (𝔸.bassSerreQuotientIso v₀).trans (Γ.componentIsoOfPreconnected hΓ)
 
+theorem bassSerreQuotientIsoOfPreconnected_def (hΓ : Γ.Preconnected) :
+    𝔸.bassSerreQuotientIsoOfPreconnected v₀ hΓ =
+      (𝔸.bassSerreQuotientIso v₀).trans (Γ.componentIsoOfPreconnected hΓ) :=
+  (rfl)
+
+@[simp] theorem bassSerreQuotientIsoOfPreconnected_toHom (hΓ : Γ.Preconnected) :
+    (𝔸.bassSerreQuotientIsoOfPreconnected v₀ hΓ).toHom =
+      (Γ.componentInclusion v₀).comp (𝔸.bassSerreQuotientToComponent v₀) := by
+  simp [bassSerreQuotientIsoOfPreconnected_def]
+
+@[simp] theorem bassSerreQuotientIsoOfPreconnected_equivV_quotientMap (hΓ : Γ.Preconnected)
+    (u : (𝔸.bassSerreTree v₀).V) :
+    (𝔸.bassSerreQuotientIsoOfPreconnected v₀ hΓ).equivV ((𝔸.bassSerreTree v₀).quotientMap.mapV u) =
+      (𝔸.bassSerreTypeHom v₀).mapV u := by
+  rw [bassSerreQuotientIsoOfPreconnected_def, SerreGraph.Iso.trans_equivV, Equiv.trans_apply,
+    bassSerreQuotientIso_equivV_quotientMap, SerreGraph.componentIsoOfPreconnected_equivV_apply,
+    ← componentInclusion_comp_bassSerreComponentHom, SerreGraph.Hom.comp_mapV]
+  rfl
+
+@[simp] theorem bassSerreQuotientIsoOfPreconnected_equivE_quotientMap (hΓ : Γ.Preconnected)
+    (d : (𝔸.bassSerreTree v₀).E) :
+    (𝔸.bassSerreQuotientIsoOfPreconnected v₀ hΓ).equivE ((𝔸.bassSerreTree v₀).quotientMap.mapE d) =
+      (𝔸.bassSerreTypeHom v₀).mapE d := by
+  rw [bassSerreQuotientIsoOfPreconnected_def, SerreGraph.Iso.trans_equivE, Equiv.trans_apply,
+    bassSerreQuotientIso_equivE_quotientMap, SerreGraph.componentIsoOfPreconnected_equivE_apply,
+    ← componentInclusion_comp_bassSerreComponentHom, SerreGraph.Hom.comp_mapE]
+  rfl
+
+@[simp] theorem bassSerreQuotientIsoOfPreconnected_equivV_symm_self (hΓ : Γ.Preconnected) :
+    (𝔸.bassSerreQuotientIsoOfPreconnected v₀ hΓ).equivV.symm v₀ =
+      (𝔸.bassSerreTree v₀).quotientMap.mapV (𝔸.bassSerreBaseVertex v₀) :=
+  (Equiv.symm_apply_eq _).mpr (by simp)
+
 /-- When `Γ` is connected, the quotient `X(𝔸, v₀) / π₁(𝔸, v₀)` is isomorphic to `Γ`. -/
 noncomputable def bassSerreQuotientIsoOfConnected (hΓ : Γ.Connected) :
     (𝔸.bassSerreQuotient v₀).Iso Γ :=
   𝔸.bassSerreQuotientIsoOfPreconnected v₀ (Γ.connected_iff.mp hΓ).2
+
+theorem bassSerreQuotientIsoOfConnected_def (hΓ : Γ.Connected) :
+    𝔸.bassSerreQuotientIsoOfConnected v₀ hΓ =
+      𝔸.bassSerreQuotientIsoOfPreconnected v₀ (Γ.connected_iff.mp hΓ).2 :=
+  (rfl)
+
+@[simp] theorem bassSerreQuotientIsoOfConnected_toHom (hΓ : Γ.Connected) :
+    (𝔸.bassSerreQuotientIsoOfConnected v₀ hΓ).toHom =
+      (Γ.componentInclusion v₀).comp (𝔸.bassSerreQuotientToComponent v₀) :=
+  𝔸.bassSerreQuotientIsoOfPreconnected_toHom v₀ (Γ.connected_iff.mp hΓ).2
+
+@[simp] theorem bassSerreQuotientIsoOfConnected_equivV_quotientMap (hΓ : Γ.Connected)
+    (u : (𝔸.bassSerreTree v₀).V) :
+    (𝔸.bassSerreQuotientIsoOfConnected v₀ hΓ).equivV ((𝔸.bassSerreTree v₀).quotientMap.mapV u) =
+      (𝔸.bassSerreTypeHom v₀).mapV u :=
+  𝔸.bassSerreQuotientIsoOfPreconnected_equivV_quotientMap v₀ (Γ.connected_iff.mp hΓ).2 u
+
+@[simp] theorem bassSerreQuotientIsoOfConnected_equivE_quotientMap (hΓ : Γ.Connected)
+    (d : (𝔸.bassSerreTree v₀).E) :
+    (𝔸.bassSerreQuotientIsoOfConnected v₀ hΓ).equivE ((𝔸.bassSerreTree v₀).quotientMap.mapE d) =
+      (𝔸.bassSerreTypeHom v₀).mapE d :=
+  𝔸.bassSerreQuotientIsoOfPreconnected_equivE_quotientMap v₀ (Γ.connected_iff.mp hΓ).2 d
+
+@[simp] theorem bassSerreQuotientIsoOfConnected_equivV_symm_self (hΓ : Γ.Connected) :
+    (𝔸.bassSerreQuotientIsoOfConnected v₀ hΓ).equivV.symm v₀ =
+      (𝔸.bassSerreTree v₀).quotientMap.mapV (𝔸.bassSerreBaseVertex v₀) :=
+  𝔸.bassSerreQuotientIsoOfPreconnected_equivV_symm_self v₀ (Γ.connected_iff.mp hΓ).2
 
 end GraphOfGroups
 

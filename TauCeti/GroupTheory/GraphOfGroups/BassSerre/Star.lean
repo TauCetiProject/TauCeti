@@ -15,7 +15,7 @@ In the Bass–Serre tree `X(𝔸, v₀)` of a graph of groups `𝔸` over `Γ`, 
 vertex `p A_v` correspond bijectively to the disjoint union, over all darts `e` of `Γ` with
 `src e = v`, of the left coset spaces `A_v ⧸ α_e(A_e)` (`GraphOfGroups.bassSerreStarEquiv`).
 Because `X(𝔸, v₀)` is acyclic, the target map identifies the outgoing darts at any vertex `u` with
-its adjacent vertices (`GraphOfGroups.bassSerreStarEquivAdjacent`), yielding the neighbour
+its adjacent vertices (`SerreGraph.IsAcyclic.starEquivAdjacent`), yielding the neighbour
 bijection `GraphOfGroups.bassSerreAdjacentEquiv` sending `(e, a α_e(A_e))` to `(p a e) A_{tgt e}`
 and the vertex degree formula `GraphOfGroups.card_bassSerreStar`.
 
@@ -25,8 +25,6 @@ and the vertex degree formula `GraphOfGroups.card_bassSerreStar`.
   from `v`.
 * `TauCeti.GraphOfGroups.bassSerreStarEquiv`: canonical bijection between the star of `p A_v` in
   `X(𝔸, v₀)` and `Σ e : {e : Γ.E // Γ.src e = v}, A_v ⧸ (𝔸.αArrow ⟨e.1, e.2, rfl⟩).range`.
-* `TauCeti.GraphOfGroups.bassSerreStarEquivAdjacent`: bijection between outgoing darts at a vertex
-  of `X(𝔸, v₀)` and its adjacent vertices.
 * `TauCeti.GraphOfGroups.bassSerreAdjacentEquiv`: canonical bijection identifying the neighbours of
   `p A_v` in `X(𝔸, v₀)`.
 
@@ -96,20 +94,12 @@ private theorem bassSerreDartOfSrcEq_cons_eq_iff (e : Γ.E) {v : Γ.V} (he : Γ.
   · have hmul : Path.Homotopic (p.cons (Letter.vertex a₁))
         (p.cons (Letter.vertex (a₂ * 𝔸.α e c))) :=
       hc.trans (Path.Homotopic.mul p a₂ (𝔸.α e c))
-    have hkey : ∀ x y : 𝔸.vertexGroup (Γ.src e),
-        Path.Homotopic (p.cons (Letter.vertex x)) (p.cons (Letter.vertex y)) → x = y := by
-      intro x y hxy
-      rw [← Path.comp_ofVertex, ← Path.comp_ofVertex] at hxy
-      have hx : Path.Homotopic (p.reverse.comp (p.comp (Path.ofVertex x))) (Path.ofVertex x) := by
-        simpa using Path.Homotopic.comp_reverse_comp_comp .nil p (Path.ofVertex x)
-      have hy : Path.Homotopic (p.reverse.comp (p.comp (Path.ofVertex y))) (Path.ofVertex y) := by
-        simpa using Path.Homotopic.comp_reverse_comp_comp .nil p (Path.ofVertex y)
-      exact Path.ofVertex_homotopic_ofVertex_iff.mp
-        (hx.symm.trans ((hxy.comp_left p.reverse).trans hy))
-    have ha : a₁ = a₂ * 𝔸.α e c := hkey _ _ hmul
-    rw [ha, map_inv, mul_inv_rev, mul_assoc, inv_mul_cancel, mul_one]
-  · have ha : a₁ = a₂ * 𝔸.α e c⁻¹ := by
-      rw [map_inv, hc, mul_inv_rev, inv_inv, ← mul_assoc, mul_inv_cancel, one_mul]
+    have ha : a₁ = a₂ * 𝔸.α e c :=
+      π₁.vertexHom_injective p <| by
+        rw [π₁.vertexHom_apply, π₁.vertexHom_apply, π₁.mk_eq_mk_iff]
+        simpa only [Path.comp_ofVertex] using hmul.comp_right p.reverse
+    simp [ha]
+  · have ha : a₁ = a₂ * 𝔸.α e c⁻¹ := by simp [hc]
     rw [ha]
     exact (Path.Homotopic.mul p a₂ (𝔸.α e c⁻¹)).symm
 
@@ -135,7 +125,7 @@ private theorem starFromCosets_bijective {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ �
     exact Sigma.ext rfl (heq_of_eq ((bassSerreDartOfSrcEq_cons_eq_iff e₁ he₁ p a₁ a₂).mp hval))
   · rintro ⟨E, hE⟩
     revert hE
-    refine bassSerreDart_induction E fun e₀ q hE => ?_
+    refine bassSerreDart_induction_on E fun e₀ q hE => ?_
     have hsrc : 𝔸.bassSerreVertex v₀ q = 𝔸.bassSerreVertex v₀ p :=
       (bassSerreTree_src_dart e₀ q).symm.trans hE
     have he₀ : Γ.src e₀ = v := (bassSerreVertex_eq_iff_exists_eq.mp hsrc).choose
@@ -158,33 +148,10 @@ noncomputable def bassSerreStarEquiv {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v�
       Σ e : {e : Γ.E // Γ.src e = v}, 𝔸.vertexGroup v ⧸ (𝔸.αArrow ⟨e.1, e.2, rfl⟩).range :=
   (Equiv.ofBijective (starFromCosets p) (starFromCosets_bijective p)).symm
 
-@[simp] theorem bassSerreStarEquiv_symm_apply {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩)
+@[simp] theorem bassSerreStarEquiv_symm_apply_val {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩)
     (e : {e : Γ.E // Γ.src e = v}) (a : 𝔸.vertexGroup v) :
     ((𝔸.bassSerreStarEquiv v₀ p).symm ⟨e, a⟩).1 =
       𝔸.bassSerreDartOfSrcEq v₀ e.1 e.2 (p.cons (Letter.vertex a)) :=
-  (rfl)
-
-variable (𝔸 v₀) in
-/-- Because `X(𝔸, v₀)` is acyclic, the target map identifies the outgoing darts at any vertex `u`
-with the adjacent vertices `{w // Nonempty (u ⟶ w)}`. -/
-noncomputable def bassSerreStarEquivAdjacent (u : (𝔸.bassSerreTree v₀).V) :
-    {E : (𝔸.bassSerreTree v₀).E // (𝔸.bassSerreTree v₀).src E = u} ≃
-      {w : (𝔸.bassSerreTree v₀).V // Nonempty (u ⟶ w)} :=
-  Equiv.ofBijective (fun E => ⟨(𝔸.bassSerreTree v₀).tgt E.1, ⟨⟨E.1, E.2, rfl⟩⟩⟩)
-    ⟨fun ⟨E₁, h₁⟩ ⟨E₂, h₂⟩ h => Subtype.ext <| by
-      have htgt : (𝔸.bassSerreTree v₀).tgt E₁ = (𝔸.bassSerreTree v₀).tgt E₂ :=
-        congrArg Subtype.val h
-      let f₁ : u ⟶ (𝔸.bassSerreTree v₀).tgt E₁ := ⟨E₁, h₁, rfl⟩
-      let f₂ : u ⟶ (𝔸.bassSerreTree v₀).tgt E₁ := ⟨E₂, h₂, htgt.symm⟩
-      have hpath := (𝔸.bassSerreGraph_isAcyclic v₀).eq_of_isReduced
-        (SerreGraph.Path.isReduced_toPath _ f₁) (SerreGraph.Path.isReduced_toPath _ f₂)
-      injection hpath with _ _ _ hf
-      exact congrArg (fun f : u ⟶ (𝔸.bassSerreTree v₀).tgt E₁ => f.1) hf,
-     fun ⟨w, ⟨f⟩⟩ => ⟨⟨f.1, f.2.1⟩, Subtype.ext f.2.2⟩⟩
-
-@[simp] theorem bassSerreStarEquivAdjacent_apply (u : (𝔸.bassSerreTree v₀).V)
-    (E : {E : (𝔸.bassSerreTree v₀).E // (𝔸.bassSerreTree v₀).src E = u}) :
-    (𝔸.bassSerreStarEquivAdjacent v₀ u E).1 = (𝔸.bassSerreTree v₀).tgt E.1 :=
   (rfl)
 
 variable (𝔸 v₀) in
@@ -194,13 +161,14 @@ noncomputable def bassSerreAdjacentEquiv {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ �
     (Σ e : {e : Γ.E // Γ.src e = v}, 𝔸.vertexGroup v ⧸ (𝔸.αArrow ⟨e.1, e.2, rfl⟩).range) ≃
       {w : (𝔸.bassSerreTree v₀).V // Nonempty (𝔸.bassSerreVertex v₀ p ⟶ w)} :=
   (𝔸.bassSerreStarEquiv v₀ p).symm.trans
-    (𝔸.bassSerreStarEquivAdjacent v₀ (𝔸.bassSerreVertex v₀ p))
+    ((𝔸.bassSerreTree v₀).isTree.isAcyclic.starEquivAdjacent (𝔸.bassSerreVertex v₀ p))
 
-@[simp] theorem bassSerreAdjacentEquiv_apply {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩)
+@[simp] theorem bassSerreAdjacentEquiv_apply_val {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩)
     (e : {e : Γ.E // Γ.src e = v}) (a : 𝔸.vertexGroup v) :
     (𝔸.bassSerreAdjacentEquiv v₀ p ⟨e, a⟩).1 =
-      𝔸.bassSerreVertex v₀ ((p.cons (Letter.vertex a)).cons (Letter.dart ⟨e.1, e.2, rfl⟩)) :=
-  bassSerreTree_tgt_dartOfSrcEq e.1 e.2 (p.cons (Letter.vertex a))
+      𝔸.bassSerreVertex v₀ ((p.cons (Letter.vertex a)).cons (Letter.dart ⟨e.1, e.2, rfl⟩)) := by
+  rw [bassSerreAdjacentEquiv, Equiv.trans_apply, SerreGraph.IsAcyclic.starEquivAdjacent_apply_val,
+    bassSerreStarEquiv_symm_apply_val, bassSerreTree_tgt_dartOfSrcEq]
 
 /-- When finitely many darts issue from `v` in `Γ` and each edge-group image has finite index in
 `A_v`, the degree of `p A_v` in `X(𝔸, v₀)` is `∑_{src e = v} [A_v : α_e(A_e)]`. -/

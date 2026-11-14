@@ -77,6 +77,8 @@ over its subgroup of squares when `-1 ≠ 1`.
   elements of order two, and `Subgroup.mem_zpowers_neg_one_iff` to `-1`, giving `{1, -1}`
 * `Subgroup.map_powMonoidHom_two_zpowers_neg_one`: `{±1}² = 1`;
   `Subgroup.relIndex_map_powMonoidHom_two_zpowers_neg_one`: `({±1} : {±1}²) = 2` when `-1 ≠ 1`
+* `Subgroup.index_range_zpowGroupHom_int`: the `m`-th power subgroup of `Multiplicative ℤ` has
+  index `|m|`
 -/
 
 public section
@@ -229,5 +231,15 @@ theorem relIndex_map_powMonoidHom_two_zpowers_neg_one {G : Type*} [CommGroup G] 
     ((zpowers (-1 : G)).map (powMonoidHom 2)).relIndex (zpowers (-1 : G)) = 2 := by
   rw [map_powMonoidHom_two_zpowers_neg_one, relIndex_bot_left, Nat.card_zpowers]
   exact orderOf_eq_prime neg_one_sq h
+
+/-- The subgroup of `Multiplicative ℤ` consisting of `m`-th powers has index `|m|`. -/
+@[simp] theorem index_range_zpowGroupHom_int (m : ℤ) :
+    (zpowGroupHom m : Multiplicative ℤ →* Multiplicative ℤ).range.index = m.natAbs := by
+  have hrange : (zpowGroupHom m : Multiplicative ℤ →* Multiplicative ℤ).range =
+      (AddSubgroup.zmultiples m).toSubgroup := by
+    ext x
+    simp [Int.mem_zmultiples_iff, dvd_def, ← Multiplicative.toAdd.injective.eq_iff, toAdd_zpow,
+      eq_comm]
+  rw [hrange, AddSubgroup.index_toSubgroup, Int.index_zmultiples]
 
 end Subgroup

@@ -6,16 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Iso
-public import TauCeti.Combinatorics.Graph.Serre.Path.Basic
+import TauCeti.Combinatorics.Graph.Serre.Path.Basic
 
 /-!
 # Connected components of Serre graphs
 
 The connected component `Γ.component v` of a vertex `v` in a Serre graph `Γ` is the subgraph
-consisting of the vertices reachable from `v` by a path of `Γ` and the darts whose source is
-reachable from `v`. Because extending a path from `v` to `src e` by `e` reaches `tgt e`, a dart
-has reachable source if and only if its reverse does, so `componentDarts` is closed under reversal
-and contains every dart with an endpoint in `componentVertices`.
+(`SerreGraph.subgraph`) consisting of the vertices reachable from `v` by a path of `Γ` and the
+darts whose source is reachable from `v`. Because extending a path from `v` to `src e` by `e`
+reaches `tgt e`, a dart has reachable source if and only if its reverse does, so `componentDarts`
+is closed under reversal and contains every dart with an endpoint in `componentVertices`.
 
 Every path of `Γ` starting in the component of `v` stays in it and lifts through the inclusion
 `Γ.componentInclusion v`, so `Γ.component v` is always connected. When `Γ` is preconnected every
@@ -108,53 +108,19 @@ theorem tgt_mem_componentVertices {e : Γ.E} (he : e ∈ Γ.componentDarts v) :
   Γ.tgt_mem_componentVertices_of_src_mem v he
 
 /-- The connected component of `v` in `Γ`, as a Serre graph. -/
-@[expose] def component : SerreGraph.{u, v} where
-  V := Γ.componentVertices v
-  E := Γ.componentDarts v
-  src e := ⟨Γ.src e.1, Γ.src_mem_componentVertices v e.2⟩
-  rev e := ⟨Γ.rev e.1, (Γ.rev_mem_componentDarts_iff v e.1).mpr e.2⟩
-  rev_rev e := Subtype.ext (Γ.rev_rev e.1)
-  rev_ne e he := Γ.rev_ne e.1 (congrArg Subtype.val he)
+abbrev component : SerreGraph.{u, v} :=
+  Γ.subgraph (Γ.componentVertices v) (Γ.componentDarts v) (fun _ => Γ.src_mem_componentVertices v)
+    fun e => (Γ.rev_mem_componentDarts_iff v e).mpr
 
 /-- The base vertex `v` as a vertex of `Γ.component v`. -/
 @[expose] def componentBase : (Γ.component v).V :=
   ⟨v, Γ.self_mem_componentVertices v⟩
 
 /-- The inclusion morphism from `Γ.component v` into `Γ`. -/
-@[expose] def componentInclusion : (Γ.component v).Hom Γ where
-  mapV := Subtype.val
-  mapE := Subtype.val
-  map_src _ := rfl
-  map_rev _ := rfl
-
-@[simp] theorem componentInclusion_mapV (a : (Γ.component v).V) :
-    (Γ.componentInclusion v).mapV a = a.1 := (rfl)
-
-@[simp] theorem componentInclusion_mapE (e : (Γ.component v).E) :
-    (Γ.componentInclusion v).mapE e = e.1 := (rfl)
+abbrev componentInclusion : (Γ.component v).Hom Γ :=
+  Γ.subgraphInclusion _ _ _ _
 
 @[simp] theorem componentBase_val : (Γ.componentBase v).1 = v := (rfl)
-
-@[simp] theorem component_src_val (e : (Γ.component v).E) :
-    ((Γ.component v).src e).1 = Γ.src e.1 := (rfl)
-
-@[simp] theorem component_rev_val (e : (Γ.component v).E) :
-    ((Γ.component v).rev e).1 = Γ.rev e.1 := (rfl)
-
-@[simp] theorem component_tgt_val (e : (Γ.component v).E) :
-    ((Γ.component v).tgt e).1 = Γ.tgt e.1 := (rfl)
-
-theorem componentInclusion_mapV_injective : Function.Injective (Γ.componentInclusion v).mapV :=
-  Subtype.val_injective
-
-theorem componentInclusion_mapE_injective : Function.Injective (Γ.componentInclusion v).mapE :=
-  Subtype.val_injective
-
-instance [Finite Γ.V] : Finite (Γ.component v).V :=
-  inferInstanceAs (Finite (Γ.componentVertices v))
-
-instance [Finite Γ.E] : Finite (Γ.component v).E :=
-  inferInstanceAs (Finite (Γ.componentDarts v))
 
 instance : Nonempty (Γ.component v).V :=
   ⟨Γ.componentBase v⟩
@@ -162,32 +128,14 @@ instance : Nonempty (Γ.component v).V :=
 instance [IsEmpty Γ.E] : IsEmpty (Γ.component v).E :=
   ⟨fun e => isEmptyElim e.1⟩
 
-/-- Over an edgeless graph, the connected component of `v` consists solely of `v`. -/
-instance [IsEmpty Γ.E] : Unique (Γ.component v).V where
-  default := Γ.componentBase v
-  uniq a := by
-    obtain ⟨a, ha⟩ := a
-    obtain ⟨p⟩ := (Γ.mem_componentVertices_iff v a).mp ha
-    refine Subtype.ext (p.eq_of_length_zero ?_).symm
-    cases p with
-    | nil => rfl
-    | cons _ e => exact isEmptyElim e.1
-
 /-- Every path in `Γ` starting at a vertex in the component of `v` lifts to `Γ.component v`. -/
 theorem exists_component_path {a b : Γ.V} (p : Γ.Path a b) (ha : a ∈ Γ.componentVertices v) :
     ∃ q : (Γ.component v).Path ⟨a, ha⟩ ⟨b, Γ.mem_componentVertices_of_path v ha p⟩,
-      (Γ.componentInclusion v).toPrefunctor.mapPath q = p := by
-  induction p with
-  | nil => exact ⟨.nil, rfl⟩
-  | @cons b c p e ih =>
-    have hb : b ∈ Γ.componentVertices v := Γ.mem_componentVertices_of_path v ha p
-    have he : e.1 ∈ Γ.componentDarts v :=
-      (Γ.mem_componentDarts_iff v e.1).mpr (e.2.1.symm ▸ (Γ.mem_componentVertices_iff v b).mp hb)
-    obtain ⟨q, hq⟩ := ih
-    let f : @Quiver.Hom (Γ.component v).V (Γ.component v).toQuiver
-        ⟨b, hb⟩ ⟨c, Γ.mem_componentVertices_of_path v ha (p.cons e)⟩ :=
-      ⟨⟨e.1, he⟩, Subtype.ext e.2.1, Subtype.ext e.2.2⟩
-    exact ⟨q.cons f, congrArg (·.cons e) hq⟩
+      (Γ.componentInclusion v).toPrefunctor.mapPath q = p :=
+  Γ.exists_subgraph_path _ _ _ _ p
+    (fun _ he => let ⟨q, _, _⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p he
+      Γ.mem_componentVertices_of_path v ha q)
+    ha _
 
 /-- Every vertex of `Γ.component v` is reachable from `Γ.componentBase v` within `Γ.component v`. -/
 theorem component_reachable (a : (Γ.component v).V) :
@@ -205,9 +153,14 @@ theorem component_preconnected : (Γ.component v).Preconnected :=
 theorem component_connected : (Γ.component v).Connected :=
   ((Γ.component v).connected_iff).mpr ⟨⟨Γ.componentBase v⟩, Γ.component_preconnected v⟩
 
-variable {v} in
+/-- When the connected component of `v` has no darts, it consists solely of `v`. -/
+instance [IsEmpty (Γ.component v).E] : Unique (Γ.component v).V :=
+  @uniqueOfSubsingleton _ (Γ.component_preconnected v).subsingleton_of_isEmpty (Γ.componentBase v)
+
+variable {v}
+
 /-- When `Γ` is preconnected, the inclusion of `Γ.component v` is an isomorphism onto `Γ`. -/
-@[expose] def componentIsoOfPreconnected (hΓ : Γ.Preconnected) : (Γ.component v).Iso Γ where
+def componentIsoOfPreconnected (hΓ : Γ.Preconnected) : (Γ.component v).Iso Γ where
   equivV := Equiv.subtypeUnivEquiv fun a =>
     (Γ.mem_componentVertices_iff v a).mpr (Γ.preconnected_iff.mp hΓ v a)
   equivE := Equiv.subtypeUnivEquiv fun e =>
@@ -215,13 +168,22 @@ variable {v} in
   map_src _ := rfl
   map_rev _ := rfl
 
-@[simp] theorem componentIsoOfPreconnected_equivV_apply {v : Γ.V} (hΓ : Γ.Preconnected)
+@[simp] theorem componentIsoOfPreconnected_equivV_apply (hΓ : Γ.Preconnected)
     (a : (Γ.component v).V) : (Γ.componentIsoOfPreconnected hΓ).equivV a = a.1 := (rfl)
 
-@[simp] theorem componentIsoOfPreconnected_equivE_apply {v : Γ.V} (hΓ : Γ.Preconnected)
+@[simp] theorem componentIsoOfPreconnected_equivE_apply (hΓ : Γ.Preconnected)
     (e : (Γ.component v).E) : (Γ.componentIsoOfPreconnected hΓ).equivE e = e.1 := (rfl)
 
-@[simp] theorem componentIsoOfPreconnected_toHom {v : Γ.V} (hΓ : Γ.Preconnected) :
+@[simp] theorem componentIsoOfPreconnected_equivV_symm_apply_val (hΓ : Γ.Preconnected)
+    (a : Γ.V) : ((Γ.componentIsoOfPreconnected (v := v) hΓ).equivV.symm a).1 = a := (rfl)
+
+@[simp] theorem componentIsoOfPreconnected_equivE_symm_apply_val (hΓ : Γ.Preconnected)
+    (e : Γ.E) : ((Γ.componentIsoOfPreconnected (v := v) hΓ).equivE.symm e).1 = e := (rfl)
+
+@[simp] theorem componentIsoOfPreconnected_equivV_symm_self (hΓ : Γ.Preconnected) :
+    (Γ.componentIsoOfPreconnected hΓ).equivV.symm v = Γ.componentBase v := (rfl)
+
+@[simp] theorem componentIsoOfPreconnected_toHom (hΓ : Γ.Preconnected) :
     (Γ.componentIsoOfPreconnected hΓ).toHom = Γ.componentInclusion v := (rfl)
 
 end TauCeti.SerreGraph

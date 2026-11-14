@@ -728,6 +728,11 @@ instance : Unique segment.GeomEdge where
     · exact .inr rfl
     · exact .inl rfl
 
+/-- Every vertex of the segment has a unique outgoing dart: the dart with the same Boolean label. -/
+instance (v : segment.V) : Unique {e : segment.E // segment.src e = v} where
+  default := ⟨v, segment_src v⟩
+  uniq e := Subtype.ext ((segment_src e.1).symm.trans e.2)
+
 end SerreGraph
 
 end TauCeti
