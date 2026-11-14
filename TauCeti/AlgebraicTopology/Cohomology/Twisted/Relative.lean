@@ -324,10 +324,8 @@ lemma twistedCochainComplexMap_naturality
       twistedCochainComplexMap k M f K ≫
         P.twistedCochainComplexCoefficientMap k M
           ((LocalCoefficientSystem.pullback (Hom.fst f).hom).map η) :=
-  ((ChainComplex.linearYonedaFunctor k M).map_comp _ _).symm.trans
-    ((congrArg (fun φ ↦ (ChainComplex.linearYonedaFunctor k M).map (Opposite.op φ))
-      (twistedChainComplexMap_naturality f L η)).trans
-      ((ChainComplex.linearYonedaFunctor k M).map_comp _ _))
+  ((CommSq.mk (twistedChainComplexMap_naturality f L η)).op.map
+    (ChainComplex.linearYonedaFunctor k M)).w.symm
 
 /-- The cohomology form of `TopPair.twistedCochainComplexMap_naturality`. -/
 @[reassoc]
@@ -337,10 +335,8 @@ lemma twistedCohomologyMap_naturality
       twistedCohomologyMap k M f K n ≫
         P.twistedCohomologyCoefficientMap k M
           ((LocalCoefficientSystem.pullback (Hom.fst f).hom).map η) n :=
-  ((HomologicalComplex.homologyFunctor _ _ n).map_comp _ _).symm.trans
-    ((congrArg (fun φ ↦ (HomologicalComplex.homologyFunctor _ _ n).map φ)
-      (twistedCochainComplexMap_naturality k M f L η)).trans
-      ((HomologicalComplex.homologyFunctor _ _ n).map_comp _ _))
+  ((CommSq.mk (twistedCochainComplexMap_naturality k M f L η)).map
+    (HomologicalComplex.homologyFunctor _ _ n)).w
 
 /-- The identity map of a pair induces on relative twisted cochains the coefficient-change map
 coming from the canonical identification of a system with its pullback along the identity. -/
