@@ -85,8 +85,8 @@ theorem memLp_inner_add_mul_and_lpNorm_le {𝕜 E : Type*} [RCLike 𝕜] [Normed
   have hd : MemLp (fun x => ⟪b x, G x⟫_𝕜) p μ := hG.of_le_mul hdm hdle
   refine ⟨hd.add (hV.of_le_mul (hc.mul hV.aestronglyMeasurable) hzle),
     (lpNorm_add_le hd hp).trans ?_⟩
-  exact add_le_add (lpNorm_le_mul_lpNorm_of_ae_le_mul hdm hG hdle)
-    (lpNorm_smul_le_mul_lpNorm_of_ae_le hV hcγ)
+  refine add_le_add (lpNorm_le_mul_lpNorm_of_ae_le_mul hdm hG hdle) ?_
+  simpa only [smul_eq_mul] using lpNorm_smul_le_mul_lpNorm_of_ae_le hV hcγ
 
 /-- **Moving the lower-order terms to the right-hand side.** For `1 ≤ p` and `𝕜 = ℝ` or `ℂ`, if
 `P + ⟪b, G⟫ + c V = f` almost everywhere, where `f`, `G` and `V` lie in `Lᵖ(μ)` and `‖b‖ ≤ β`,

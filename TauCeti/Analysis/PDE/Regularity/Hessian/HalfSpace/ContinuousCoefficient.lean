@@ -207,9 +207,9 @@ private theorem exists_lpNorm_iteratedGradient_inter_ball_le (hp : 1 < p) (hp_to
         (C₀ / lam * Module.finrank ℝ (WithLp 2 (ℝ × E)) * (‖A₀‖ + δ * lam) + 1) *
           (2 * (c₀ / r) * ‖G‖ + c₀ / r ^ 2 * ‖V‖) := by
         gcongr
-        exact ((lpNorm_smul_le_mul_lpNorm_of_ae_le (Lp.memLp g) (.of_forall hψabs)).trans_eq
-          (one_mul _)).trans
-          ((Lp.norm_eq_lpNorm_of_ae_eq .rfl).ge.trans hgnorm)
+        simpa only [smul_eq_mul] using
+          ((lpNorm_smul_le_mul_lpNorm_of_ae_le (Lp.memLp g) (.of_forall hψabs)).trans_eq
+            (one_mul _)).trans ((Lp.norm_eq_lpNorm_of_ae_eq .rfl).ge.trans hgnorm)
     _ = _ := by ring
 
 /-- **The Calderón–Zygmund estimate near a flat boundary for continuous coefficients.** Let
