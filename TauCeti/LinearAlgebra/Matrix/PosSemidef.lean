@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.Matrix.Block
 # Positive-semidefinite matrix algebra
 
 This file supplements Mathlib's `Matrix.PosSemidef` API for matrices indexed by arbitrary types.
-It provides rank-one and constant matrices, finite Schur products, Schur powers,
+It provides constant matrices, finite Schur products, Schur powers,
 products of weights over unions and symmetric differences of finite sets, the quadratic-form
 characterization, and conversion of quadratic forms to nonnegative reals.
 It also gives block matrix-vector constraints over commutative star-ordered rings with a
@@ -26,7 +26,6 @@ but do not depend on Tau Ceti's positive-definite-function theory.
 
 ## Main declarations
 
-* `TauCeti.posSemidef_rankOne`: rank-one positive-semidefinite matrices.
 * `TauCeti.posSemidef_const_one` and `TauCeti.posSemidef_const_of_nonneg`: constant matrices.
 * `TauCeti.posSemidef_iff_finite_sum`: the quadratic-form characterization.
 * `TauCeti.posSemidef_of_support_posSemidef`: a Hermitian matrix is positive semidefinite when
@@ -92,23 +91,13 @@ theorem posSemidef_of_support_posSemidef {R : Type u}
     rw [Finset.sum_subtype x.support (by intro a; rfl)]
   simpa only [Matrix.of_apply, Finsupp.sum, mul_assoc] using h''
 
-/-- The rank-one matrix `(a, b) ↦ star (g a) · g b` is positive semidefinite for an arbitrary
-index type. Such matrices are elementary building blocks for positive-semidefinite matrices;
-taking `g ≡ 1` gives the constant matrix `1`. -/
-theorem posSemidef_rankOne {R : Type u}
-    [Ring R] [PartialOrder R] [StarRing R] [StarOrderedRing R] (g : α → R) :
-    Matrix.PosSemidef (fun a b => star (g a) * g b) := by
-  refine posSemidef_of_support_posSemidef (fun a b => star (g a) * g b) ?_ fun x => ?_
-  · exact Matrix.IsHermitian.ext fun a b => by simp
-  · convert Matrix.posSemidef_vecMulVec_star_self (fun a : x.support => g a) using 1
-    ext a b
-    simp [Matrix.vecMulVec_apply]
-
 /-- The constant matrix with value `1` is positive semidefinite. -/
 theorem posSemidef_const_one {R : Type u}
     [Ring R] [PartialOrder R] [StarRing R] [StarOrderedRing R] :
     Matrix.PosSemidef (fun _ _ : α => (1 : R)) := by
-  simpa using posSemidef_rankOne (R := R) (α := α) (fun _ => (1 : R))
+  refine (congrArg PosSemidef ?_).mp (posSemidef_vecMulVec_star_self fun _ : α => (1 : R))
+  ext
+  simp [vecMulVec_apply]
 
 /-- A nonnegative constant gives a positive-semidefinite constant matrix. -/
 theorem posSemidef_const_of_nonneg {R : Type u}
@@ -175,7 +164,8 @@ theorem posSemidef_prod_union {ι : Type w} [DecidableEq α] (L : ι → Finset 
   let χ : α → ι → ℝ := fun a i => if a ∈ L i then 0 else 1
   have hfactor (a : α) :
       Matrix.PosSemidef (fun i j => w a + star (√(1 - w a) * χ a i) * (√(1 - w a) * χ a j)) :=
-    (posSemidef_const_of_nonneg (hw₀ a)).add (posSemidef_rankOne fun i => √(1 - w a) * χ a i)
+    (posSemidef_const_of_nonneg (hw₀ a)).add
+      (posSemidef_vecMulVec_star_self fun i => √(1 - w a) * χ a i)
   have hterm (i j : ι) (a : α) :
       (w a + star (√(1 - w a) * χ a i) * (√(1 - w a) * χ a j)) =
         if a ∈ L i ∪ L j then w a else 1 := by
@@ -213,7 +203,7 @@ theorem posSemidef_prod_symmDiff {𝕜 ι : Type*} [RCLike 𝕜] [DecidableEq α
       (((1 + w a) / 2 : ℝ) : 𝕜) + star ((√((1 - w a) / 2) * σ a i : ℝ) : 𝕜) *
         ((√((1 - w a) / 2) * σ a j : ℝ) : 𝕜)) :=
     (posSemidef_const_of_nonneg (RCLike.ofReal_nonneg.2 (by linarith [(abs_le.1 (hw a)).1]))).add
-      (posSemidef_rankOne _)
+      (posSemidef_vecMulVec_star_self fun i => ((√((1 - w a) / 2) * σ a i : ℝ) : 𝕜))
   have hterm (i j : ι) (a : α) :
       (((1 + w a) / 2 : ℝ) : 𝕜) + star ((√((1 - w a) / 2) * σ a i : ℝ) : 𝕜) *
         ((√((1 - w a) / 2) * σ a j : ℝ) : 𝕜) =
