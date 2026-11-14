@@ -227,12 +227,13 @@ theorem tangentRepresentation_mem_orthogonal_orbitTangent
       ((InfinitesimalAction.fundamental I G I' M).orbitTangent x)) :
     tangentRepresentation hd g u ∈ (hσ.symplecticFormAt x).orthogonal
       ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) := by
+  have : ContMDiffConstSMul I' ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
   refine SymplecticForm.mem_orthogonal_iff.2 fun w hw ↦ ?_
   -- Write `w = dg_x w'` with `w' = d(g⁻¹)_x w`, again an orbit direction, and use that `dg_x`
   -- preserves `σ_x`.
   have hw' := tangentRepresentation_mem_orbitTangent_fundamental hd g⁻¹ hw
   rw [← tangentRepresentation_apply_inv_apply hd g w,
-    hσ.symplecticFormAt_tangentRepresentation (IG := I) hσG hd g]
+    hσ.symplecticFormAt_tangentRepresentation hσG hd g]
   exact SymplecticForm.mem_orthogonal_iff.1 hu _ hw'
 
 /-- **The stabilizer representation on the symplectic slice.** If the stabilizer `H = G_x` of a
@@ -244,9 +245,10 @@ def symplecticSliceRepresentation :
     stabilizer G x →*
       hσ.SymplecticSlice (InfinitesimalAction.fundamental I G I' M) x ≃ₗ[ℝ]
         hσ.SymplecticSlice (InfinitesimalAction.fundamental I G I' M) x :=
+  haveI : ContMDiffConstSMul I' ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
   (hσ.symplecticFormAt x).reducedSpaceRepresentation
     (tangentAut (mdifferentiableAt_smul_of_mem_stabilizer I (n := ∞) (by simp) x))
-    (hσ.isSymplectomorphism_tangentAut (IG := I) hσG
+    (hσ.isSymplectomorphism_tangentAut hσG
       (mdifferentiableAt_smul_of_mem_stabilizer I (n := ∞) (by simp) x)) _ fun g u hu ↦ by
       rw [tangentAut_apply]
       exact hσ.tangentRepresentation_mem_orthogonal_orbitTangent hσG _ g hu
