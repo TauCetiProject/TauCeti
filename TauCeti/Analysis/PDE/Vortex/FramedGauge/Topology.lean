@@ -30,21 +30,16 @@ The group laws in these coordinates are
 
 `(u v) - 1 = (u - 1) + (v - 1) + (u - 1) (v - 1)`,    `u⁻¹ - 1 = conj (u - 1)`.
 
-The first is polynomial, and continuous for the `H^s` norm because pointwise multiplication is a
-continuous bilinear map on `H^s(ℂ)`, `s > 1` (`BesselPotentialSpace.mulCLM`). To make inversion
-continuous without discussing complex conjugation on `H^s`, the topology is induced by the pair
-`u ↦ (u - 1, u⁻¹ - 1) ∈ H^s(ℂ) × H^s(ℂ)`: inversion exchanges the two coordinates, and
-multiplication acts on each by the polynomial above, using `(u v)⁻¹ = v⁻¹ u⁻¹`. Thus a net
-converges exactly when both `u - 1` and `conj (u - 1)` converge in `H^s`.
-
-The coordinate `u⁻¹ - 1` is nevertheless a locally Lipschitz function of `u - 1` alone, so the
-Sobolev topology is that of the distance `‖u - v‖_{H^s}`
-(`TauCeti.Vortex.SobolevTopologicalGaugeGroup.isEmbedding_subOne`). Only the algebra structure
-of `H^s(ℂ)` enters. The element `w = u⁻¹ - 1` is the quasi-inverse of `h = u - 1`,
-`h + w + h w = 0`. If `c`, `w₀` are the coordinates of `v`, `v⁻¹`, and `δ`, `ε` are the
-differences of the coordinates of `u, v` and of `u⁻¹, v⁻¹`, the quasi-inverse relations give
-`ε + c ε = X` with `X = -δ - δ w`, and multiplying by the quasi-inverse `1 + w₀` of `1 + c` gives
-`ε = X + w₀ X`.
+The topology is induced by `u ↦ u - 1 ∈ H^s(ℂ)`, so it is that of the distance `‖u - v‖_{H^s}`
+(`TauCeti.Vortex.SobolevTopologicalGaugeGroup.isEmbedding_subOne`). The product law is polynomial,
+and continuous for the `H^s` norm because pointwise multiplication is a continuous bilinear map on
+`H^s(ℂ)`, `s > 1` (`BesselPotentialSpace.mulCLM`). Inversion is continuous without discussing
+complex conjugation on `H^s`: the coordinate `u⁻¹ - 1` is a locally Lipschitz function of `u - 1`,
+and only the algebra structure of `H^s(ℂ)` enters. The element `w = u⁻¹ - 1` is the quasi-inverse
+of `h = u - 1`, `h + w + h w = 0`. If `c`, `w₀` are the coordinates of `v`, `v⁻¹`, and `δ`, `ε`
+are the differences of the coordinates of `u, v` and of `u⁻¹, v⁻¹`, the quasi-inverse relations
+give `ε + c ε = X` with `X = -δ - δ w`, and multiplying by the quasi-inverse `1 + w₀` of `1 + c`
+gives `ε = X + w₀ X`.
 
 ## Main definitions
 
@@ -62,14 +57,15 @@ differences of the coordinates of `u, v` and of `u⁻¹, v⁻¹`, the quasi-inve
   `u - 1` in `H^s(ℂ)`.
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup.norm_subOne_inv_sub_le`: `u⁻¹ - 1` is a locally
   Lipschitz function of `u - 1` for the `H^s` norm.
-* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.isEmbedding_subOne_prod`: the topology of `G_s` is
-  induced by the injective map `u ↦ (u - 1, u⁻¹ - 1)` into `H^s(ℂ) × H^s(ℂ)`.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.tendsto_subOne_inv`: if `u - 1` converges in
+  `H^s(ℂ)`, then so does `u⁻¹ - 1`.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.isEmbedding_subOne`: the topology of `G_s` is
+  induced by the injective map `u ↦ u - 1` into `H^s(ℂ)`, that is, by the distance
+  `‖u - v‖_{H^s}`.
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup.continuous_iff`: a map into `G_s` is continuous
-  exactly when `u - 1` and `u⁻¹ - 1` depend continuously on the parameter in `H^s(ℂ)`.
+  exactly when `u - 1` depends continuously on the parameter in `H^s(ℂ)`.
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup.instIsTopologicalGroup`,
   `TauCeti.Vortex.SobolevTopologicalGaugeGroup.instT2Space`: `G_s` is a Hausdorff topological group.
-* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.isEmbedding_subOne`: the topology of `G_s` is
-  already induced by `u ↦ u - 1` alone, that is, by the distance `‖u - v‖_{H^s}`.
 
 The Banach charts of `G_s`, its completeness and the continuity of its action on the field space
 `A_m^k` are not treated here.
@@ -95,9 +91,8 @@ variable {s : ℝ}
 
 /-- **The Sobolev framed gauge group `G_s` with its Sobolev topology**, `s > 1`. As a group it is
 the subgroup `sobolevGaugeGroup hs` of `ℂ → Circle` (`SobolevTopologicalGaugeGroup.toSubgroup`);
-its topology is that of `u - 1` and `u⁻¹ - 1` in `H^s(ℂ)`
-(`SobolevTopologicalGaugeGroup.continuous_iff`), rather than the pointwise topology of the
-subgroup. -/
+its topology is that of `u - 1` in `H^s(ℂ)` (`SobolevTopologicalGaugeGroup.isEmbedding_subOne`),
+rather than the pointwise topology of the subgroup. -/
 def SobolevTopologicalGaugeGroup (hs : 1 < s) : Type := sobolevGaugeGroup hs
 
 namespace SobolevTopologicalGaugeGroup
@@ -261,63 +256,46 @@ theorem tendsto_subOne_inv {α : Type*} {l : Filter α} {f : α → SobolevTopol
   filter_upwards [hsmall] with a ha
   exact norm_subOne_inv_sub_le ha
 
-/-- **The Sobolev topology of `G_s`**, induced by `u ↦ (u - 1, u⁻¹ - 1) ∈ H^s(ℂ) × H^s(ℂ)`. -/
+/-- **The Sobolev topology of `G_s`**, induced by `u ↦ u - 1 ∈ H^s(ℂ)`. -/
 instance : TopologicalSpace (SobolevTopologicalGaugeGroup hs) :=
-  .induced (fun u ↦ (subOne u, subOne u⁻¹)) inferInstance
+  .induced subOne inferInstance
 
-/-- **The defining embedding of `G_s`**: its Sobolev topology is that of
-`u ↦ (u - 1, u⁻¹ - 1) ∈ H^s(ℂ) × H^s(ℂ)`, which is injective since `u ↦ u - 1` is. -/
-theorem isEmbedding_subOne_prod :
-    IsEmbedding fun u : SobolevTopologicalGaugeGroup hs ↦ (subOne u, subOne u⁻¹) :=
-  ⟨⟨rfl⟩, fun _ _ h ↦ subOne_injective (congrArg Prod.fst h)⟩
+/-- **The Sobolev topology of `G_s` is that of the distance `‖u - v‖_{H^s}`**: it is induced by
+`u ↦ u - 1`, which is injective. -/
+theorem isEmbedding_subOne :
+    IsEmbedding (subOne : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) :=
+  ⟨⟨rfl⟩, subOne_injective⟩
 
-/-- **Continuity into `G_s`.** A map into `G_s` is continuous exactly when `u - 1` and `u⁻¹ - 1`
-depend continuously on the parameter in `H^s(ℂ)`. -/
+/-- **Continuity into `G_s`.** A map into `G_s` is continuous exactly when `u - 1` depends
+continuously on the parameter in `H^s(ℂ)`. -/
 theorem continuous_iff {X : Type*} [TopologicalSpace X]
     {f : X → SobolevTopologicalGaugeGroup hs} :
-    Continuous f ↔
-      Continuous (fun x ↦ subOne (f x)) ∧ Continuous (fun x ↦ subOne (f x)⁻¹) :=
-  isEmbedding_subOne_prod.continuous_iff.trans continuous_prodMk
+    Continuous f ↔ Continuous (fun x ↦ subOne (f x)) :=
+  isEmbedding_subOne.continuous_iff
 
 /-- `u ↦ u - 1` is continuous from `G_s` to `H^s(ℂ)`. -/
 @[fun_prop, continuity]
 theorem continuous_subOne : Continuous (subOne : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) :=
-  ((continuous_iff (f := (id : SobolevTopologicalGaugeGroup hs → _))).1 continuous_id).1
+  isEmbedding_subOne.continuous
 
-/-- `u ↦ u⁻¹ - 1` is continuous from `G_s` to `H^s(ℂ)`. -/
+/-- `u ↦ u⁻¹ - 1` is continuous from `G_s` to `H^s(ℂ)`, since `u⁻¹ - 1` depends continuously on
+`u - 1` (`tendsto_subOne_inv`). -/
 @[fun_prop, continuity]
 theorem continuous_subOne_inv :
     Continuous (fun u : SobolevTopologicalGaugeGroup hs ↦ subOne u⁻¹) :=
-  ((continuous_iff (f := (id : SobolevTopologicalGaugeGroup hs → _))).1 continuous_id).2
+  continuous_iff_continuousAt.2 fun u ↦
+    tendsto_subOne_inv (f := id) (continuous_subOne.tendsto u)
 
 /-- **`G_s` is a topological group** for its Sobolev topology: by `subOne_mul`, multiplication
-acts on `u - 1` and, through `(u v)⁻¹ = v⁻¹ u⁻¹`, on `u⁻¹ - 1` by continuous polynomial maps of
-`H^s(ℂ)`, while inversion exchanges `u - 1` and `u⁻¹ - 1`. -/
+acts on `u - 1` by a continuous polynomial map of `H^s(ℂ)`, and inversion is continuous by
+`continuous_subOne_inv`. -/
 instance instIsTopologicalGroup : IsTopologicalGroup (SobolevTopologicalGaugeGroup hs) where
-  continuous_mul := by
-    have hu : Continuous fun p : SobolevTopologicalGaugeGroup hs ×
-        SobolevTopologicalGaugeGroup hs ↦ subOne p.1⁻¹ :=
-      continuous_subOne_inv.comp continuous_fst
-    have hv : Continuous fun p : SobolevTopologicalGaugeGroup hs ×
-        SobolevTopologicalGaugeGroup hs ↦ subOne p.2⁻¹ :=
-      continuous_subOne_inv.comp continuous_snd
-    exact continuous_iff.2 ⟨by simp only [subOne_mul]; fun_prop,
-      by simp only [mul_inv_rev, subOne_mul]; fun_prop⟩
-  continuous_inv := continuous_iff.2 ⟨continuous_subOne_inv, by
-    simpa only [inv_inv] using continuous_subOne⟩
-
-/-- **The Sobolev topology of `G_s` is that of the distance `‖u - v‖_{H^s}`**: it is induced by
-`u ↦ u - 1` alone, since `u⁻¹ - 1` depends continuously on `u - 1` (`tendsto_subOne_inv`). -/
-theorem isEmbedding_subOne :
-    IsEmbedding (subOne : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
-  refine ⟨isInducing_iff_nhds.2 fun u ↦ le_antisymm (continuous_subOne.tendsto u).le_comap ?_,
-    subOne_injective⟩
-  rw [isEmbedding_subOne_prod.isInducing.nhds_eq_comap u, ← tendsto_iff_comap]
-  exact tendsto_comap.prodMk_nhds (tendsto_subOne_inv tendsto_comap)
+  continuous_mul := continuous_iff.2 <| by simp only [subOne_mul]; fun_prop
+  continuous_inv := continuous_iff.2 continuous_subOne_inv
 
 /-- `G_s` is Hausdorff for its Sobolev topology, since `u ↦ u - 1` is injective. -/
 instance instT2Space : T2Space (SobolevTopologicalGaugeGroup hs) :=
-  isEmbedding_subOne_prod.t2Space
+  isEmbedding_subOne.t2Space
 
 end SobolevTopologicalGaugeGroup
 
