@@ -62,6 +62,9 @@ is carried by a shear automorphism of `F × F'` onto `ker φ × F'`.
 * `TauCeti.fittingIdeal_eq_top_iff_finrank_le`: over a nontrivial ring, a free module of rank
   `n` has `Fitt_k = ⊤` exactly when `n ≤ k`.
 * `TauCeti.fittingIdeal_quotient_zero`: `Fitt₀(R ⧸ I) = I`.
+* `Submodule.minorsIdeal_map_semilinearEquiv`, `LinearEquiv.fittingIdeal_eq_map`, and
+  `LinearEquiv.fittingIdeal_eq_comap`: transport of minors ideals and Fitting ideals along a
+  semilinear equivalence over a ring isomorphism.
 
 ## References
 
@@ -154,6 +157,56 @@ theorem minorsIdeal_map_equiv (e : F ≃ₗ[R] F') (N : Submodule R F) (p : ℕ)
 theorem minorsIdeal_comap_equiv (e : F ≃ₗ[R] F') (N : Submodule R F') (p : ℕ) :
     (N.comap (e : F →ₗ[R] F')).minorsIdeal p = N.minorsIdeal p := by
   rw [comap_equiv_eq_map_symm, minorsIdeal_map_equiv]
+
+private theorem minorsIdeal_map_semilinearEquiv_le {S F₁ : Type*} [CommRing S] [AddCommGroup F₁]
+    [Module S F₁] {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+    (e : F ≃ₛₗ[σ] F₁) (N : Submodule R F) (p : ℕ) :
+    (N.map (e : F →ₛₗ[σ] F₁)).minorsIdeal p ≤ (N.minorsIdeal p).map σ := by
+  refine minorsIdeal_le_iff.2 fun f v hv ↦ ?_
+  choose w hw hwv using fun i ↦ mem_map.1 (hv i)
+  obtain rfl : v = fun i ↦ e (w i) := funext fun i ↦ (hwv i).symm
+  let f₀ : Fin p → Dual R F := fun j ↦
+    { toFun x := σ' (f j (e x))
+      map_add' x y := by simp
+      map_smul' r x := by
+        simp only [map_smulₛₗ, smul_eq_mul, map_mul, RingHomInvPair.comp_apply_eq₂,
+          RingHom.id_apply] }
+  have hdet : (Matrix.of fun i j ↦ f j (e (w i))).det =
+      σ (Matrix.of fun i j ↦ f₀ j (w i)).det := by
+    rw [σ.map_det]
+    congr 1
+    ext i j
+    simp [f₀]
+  rw [hdet]
+  exact Ideal.mem_map_of_mem σ (det_mem_minorsIdeal f₀ hw)
+
+/-- Along a ring isomorphism, a semilinear equivalence of ambient modules transports the minors
+ideals by mapping scalars. -/
+@[simp]
+theorem minorsIdeal_map_semilinearEquiv {S F₁ : Type*} [CommRing S] [AddCommGroup F₁]
+    [Module S F₁] {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+    (e : F ≃ₛₗ[σ] F₁) (N : Submodule R F) (p : ℕ) :
+    (N.map (e : F →ₛₗ[σ] F₁)).minorsIdeal p = (N.minorsIdeal p).map σ := by
+  refine le_antisymm (minorsIdeal_map_semilinearEquiv_le e N p) ?_
+  have hsymm := minorsIdeal_map_semilinearEquiv_le e.symm (N.map (e : F →ₛₗ[σ] F₁)) p
+  have hmap : (N.map (e : F →ₛₗ[σ] F₁)).map (e.symm : F₁ →ₛₗ[σ'] F) = N := by
+    ext x
+    simp [mem_map_equiv]
+  rw [hmap] at hsymm
+  calc (N.minorsIdeal p).map σ ≤
+        (((N.map (e : F →ₛₗ[σ] F₁)).minorsIdeal p).map σ').map σ := Ideal.map_mono hsymm
+    _ = (N.map (e : F →ₛₗ[σ] F₁)).minorsIdeal p := by
+        rw [Ideal.map_map, RingHomInvPair.comp_eq₂, Ideal.map_id]
+
+/-- Along a ring isomorphism, pulling back a submodule by a semilinear equivalence pulls back its
+minors ideals. -/
+@[simp]
+theorem minorsIdeal_comap_semilinearEquiv {S F₁ : Type*} [CommRing S] [AddCommGroup F₁]
+    [Module S F₁] {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+    (e : F ≃ₛₗ[σ] F₁) (N : Submodule S F₁) (p : ℕ) :
+    (N.comap (e : F →ₛₗ[σ] F₁)).minorsIdeal p = (N.minorsIdeal p).comap σ := by
+  rw [comap_equiv_eq_map_symm, minorsIdeal_map_semilinearEquiv]
+  exact (Ideal.comap_symm (RingHomInvPair.toRingEquiv σ σ').symm).symm
 
 /-- The zero submodule has no nonzero minors of positive size. -/
 @[simp]
@@ -456,3 +509,47 @@ theorem fittingIdeal_quotient_zero (I : Ideal R) : fittingIdeal R (R ⧸ I) 0 = 
     finrank_self, Nat.sub_zero, Ideal.minorsIdeal_one]
 
 end TauCeti
+
+namespace LinearEquiv
+
+variable {R S M M₁ : Type*} [CommRing R] [CommRing S] [AddCommGroup M] [Module R M]
+  [Module.Finite R M] [AddCommGroup M₁] [Module S M₁] [Module.Finite S M₁]
+  {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+
+/-- **Transport of Fitting ideals along a ring isomorphism.** A `σ`-semilinear equivalence
+`e : M ≃ M₁` over a ring isomorphism `σ : R → S` maps the `k`-th Fitting ideal of `M` to that of
+`M₁`. -/
+theorem fittingIdeal_eq_map (e : M ≃ₛₗ[σ] M₁) (k : ℕ) :
+    TauCeti.fittingIdeal S M₁ k = (TauCeti.fittingIdeal R M k).map σ := by
+  nontriviality S
+  have : Nontrivial R := (RingHomInvPair.toRingEquiv σ σ').toEquiv.nontrivial
+  obtain ⟨n, φ, hφ⟩ := Module.Finite.exists_fin' R M
+  let Pσ : (Fin n → R) ≃ₛₗ[σ] (Fin n → S) :=
+    { toFun v i := σ (v i)
+      invFun v i := σ' (v i)
+      map_add' _ _ := funext fun _ ↦ map_add σ _ _
+      map_smul' _ _ := funext fun _ ↦ map_mul σ _ _
+      left_inv _ := funext fun _ ↦ RingHomInvPair.comp_apply_eq₂
+      right_inv _ := funext fun _ ↦ RingHomInvPair.comp_apply_eq₂ }
+  let φ' : (Fin n → S) →ₗ[S] M₁ :=
+    { toFun v := e (φ (Pσ.symm v))
+      map_add' x y := by simp
+      map_smul' s v := by
+        rw [Pσ.symm.map_smulₛₗ, φ.map_smul, e.map_smulₛₗ, RingHomInvPair.comp_apply_eq₂,
+          RingHom.id_apply] }
+  have hφ' : Surjective φ' := e.surjective.comp (hφ.comp Pσ.symm.surjective)
+  have hker : ker φ' = (ker φ).map (Pσ : (Fin n → R) →ₛₗ[σ] (Fin n → S)) := by
+    ext v
+    rw [Submodule.mem_map_equiv, mem_ker, mem_ker]
+    exact e.map_eq_zero_iff
+  rw [TauCeti.fittingIdeal_eq_minorsIdeal_ker hφ', TauCeti.fittingIdeal_eq_minorsIdeal_ker hφ,
+    finrank_fin_fun, finrank_fin_fun, hker, Submodule.minorsIdeal_map_semilinearEquiv]
+
+/-- **Pullback of Fitting ideals along a ring isomorphism.** A `σ`-semilinear equivalence
+`e : M ≃ M₁` over a ring isomorphism `σ : R → S` identifies `Fitt_k(M)` with `σ⁻¹(Fitt_k(M₁))`. -/
+theorem fittingIdeal_eq_comap (e : M ≃ₛₗ[σ] M₁) (k : ℕ) :
+    TauCeti.fittingIdeal R M k = (TauCeti.fittingIdeal S M₁ k).comap σ := by
+  rw [e.symm.fittingIdeal_eq_map k]
+  exact (Ideal.comap_symm (RingHomInvPair.toRingEquiv σ σ').symm).symm
+
+end LinearEquiv
