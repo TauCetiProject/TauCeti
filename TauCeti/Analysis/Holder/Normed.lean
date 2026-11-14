@@ -66,7 +66,7 @@ supremum-plus-Hölder norm. The wrapper separates this norm from the inherited s
 the underlying submodule. -/
 structure HolderSpace where
   /-- The underlying bounded continuous Hölder function. -/
-  toHolderSubmodule : holderSubmodule (X := X) (Y := Y) α
+  toHolderSubmodule : holderSubmodule (X := X) (Y := Y) ℝ α
 
 namespace HolderSpace
 
@@ -223,7 +223,7 @@ noncomputable instance instNormedAddCommGroup : NormedAddCommGroup (HolderSpace 
         exact holderNorm_nonneg f.toBoundedContinuousFunction
       norm_smul := fun c f ↦ by
         rw [norm_eq_holderNorm, norm_eq_holderNorm, toBoundedContinuousFunction_smul]
-        exact holderNorm_smul c f.toBoundedContinuousFunction f.memHolder
+        exact holderNorm_smul c f.toBoundedContinuousFunction
       norm_triangle := fun f g ↦ by
         rw [norm_eq_holderNorm, norm_eq_holderNorm, norm_eq_holderNorm,
           toBoundedContinuousFunction_add]
@@ -250,7 +250,7 @@ noncomputable instance instNormedSpace : NormedSpace ℝ (HolderSpace α X Y) :=
   { toModule := inferInstance
     norm_smul_le := fun c f ↦ by
       rw [norm_eq_holderNorm, norm_eq_holderNorm, toBoundedContinuousFunction_smul]
-      exact (holderNorm_smul c f.toBoundedContinuousFunction f.memHolder).le }
+      exact (holderNorm_smul c f.toBoundedContinuousFunction).le }
 
 /-- The supremum norm is controlled by the Hölder-space norm. -/
 theorem norm_toBoundedContinuousFunction_le (f : HolderSpace α X Y) :
