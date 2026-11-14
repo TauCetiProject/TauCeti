@@ -47,8 +47,8 @@ is a Dirac mass, which has no density; its characteristic function is not integr
   parameter value.
 * `TauCeti.Probability.stablePDFReal_nonneg`, `TauCeti.Probability.continuous_stablePDFReal` and
   `TauCeti.Probability.stablePDFReal_le`: nonnegativity, continuity and the uniform bound.
-* `TauCeti.Probability.norm_stablePDFReal_le_integral`: the bound `(2π)⁻¹ ∫ |φ|` for every
-  parameter value.
+* `TauCeti.Probability.norm_stablePDFReal_le_integral`: the bound `(2π)⁻¹ ∫ ‖φ‖` (Bochner
+  integral) for every parameter value.
 * `TauCeti.Probability.mutuallySingular_stableMeasure_zero_scale`: a zero-scale stable law is
   singular with respect to Lebesgue measure.
 * `TauCeti.Probability.hasPDF_of_hasLaw_stableMeasure`,
@@ -186,15 +186,18 @@ theorem measurable_stablePDF (α β : ℝ) (s : ℝ≥0) (m : ℝ) : Measurable 
   (measurable_stablePDFReal α β s m).ennreal_ofReal
 
 /-- The stable density is uniformly bounded for every parameter value, by `(2π)⁻¹` times the
-`L¹` norm of its characteristic function. -/
+Bochner integral `∫ t, ‖φ t‖` of the modulus of its characteristic function `φ`. For positive
+scale this integral is the `L¹` norm of `φ`; it vanishes when `φ` is not integrable (valid
+parameters at scale zero) and when `φ = 0` (invalid parameters). -/
 theorem norm_stablePDFReal_le_integral (α β : ℝ) (s : ℝ≥0) (m x : ℝ) :
     ‖stablePDFReal α β s m x‖ ≤ (2 * Real.pi)⁻¹ * ∫ t, ‖charFun (stableMeasure α β s m) t‖ := by
   rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β s m x), stablePDFReal_def]
   exact Measure.charFunDensity_le _ x
 
 /-- **The stable density is bounded.** For `0 < α ≤ 2` it is at most `Γ(1/α) / (π α s)`, which is
-`(2π)⁻¹ ∫ |φ|` for valid skewness and positive scale. For invalid skewness and at scale zero the
-density vanishes and the bound holds by the division-by-zero convention. -/
+`(2π)⁻¹ ∫ |φ|` for valid skewness and positive scale. For invalid skewness the density vanishes
+and the right-hand side is nonnegative. At scale zero both sides vanish by the division-by-zero
+convention. -/
 theorem stablePDFReal_le (hα : α ∈ Ioc 0 2) (β : ℝ) (s : ℝ≥0) (m x : ℝ) :
     stablePDFReal α β s m x ≤ Real.Gamma α⁻¹ / (π * α * s) := by
   by_cases hβ : |β| ≤ 1
