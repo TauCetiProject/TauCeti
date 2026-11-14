@@ -60,6 +60,9 @@ the corresponding bound in the limit of the `Lᵖ` seminorms.
 A real power of `ENNReal.ofReal (a * r)` with `0 ≤ a` splits as `ofReal a ^ d * ofReal r ^ d`
 for every exponent `d`, since neither factor is `∞`. This rescales the gauge `(2 r) ^ d` of
 densities and Hausdorff measures.
+For nonnegative bases and exponents, `ofReal a ^ p * ofReal b ^ q` is the image under
+`ENNReal.ofReal` of the real product `a ^ p * b ^ q`; this transfers weighted geometric means
+of nonnegative real functions to `ℝ≥0∞`.
 
 For a finite `x`, or a negative exponent `q`, the extended product `x * x ^ q` is the image under
 `ENNReal.ofReal` of the real product `x.toReal * x.toReal ^ q`; both sides vanish at `x = 0` and,
@@ -86,6 +89,8 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
   `(F⁻¹ * a) ^ p * (G⁻¹ * b) ^ q = (F ^ p * G ^ q)⁻¹ * (a ^ p * b ^ q)` for finite `F`, `G`.
 * `ENNReal.sq_rpow_one_half`: `(x ^ 2) ^ (1 / 2) = x`, with no hypothesis on `x`.
 * `ENNReal.ofReal_mul_rpow`: `ofReal (a * r) ^ d = ofReal a ^ d * ofReal r ^ d` for `0 ≤ a`.
+* `ENNReal.ofReal_rpow_mul_ofReal_rpow`: `ofReal a ^ p * ofReal b ^ q = ofReal (a ^ p * b ^ q)`
+  for nonnegative `a`, `b`, `p`, `q`.
 * `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
 * `ENNReal.rpow_le_rpow_sub_mul_rpow`: `a ^ (p - q) ≤ b ^ (p - q)` gives
@@ -190,6 +195,14 @@ theorem ofReal_mul_rpow {a : ℝ} (ha : 0 ≤ a) (r d : ℝ) :
     ENNReal.ofReal (a * r) ^ d = ENNReal.ofReal a ^ d * ENNReal.ofReal r ^ d := by
   rw [ofReal_mul ha, mul_rpow_of_ne_top ofReal_ne_top ofReal_ne_top]
 
+/-- For nonnegative bases and exponents, `ENNReal.ofReal` commutes with a product of real powers
+`a ^ p * b ^ q`. -/
+theorem ofReal_rpow_mul_ofReal_rpow {a b p q : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hp : 0 ≤ p)
+    (hq : 0 ≤ q) :
+    ENNReal.ofReal a ^ p * ENNReal.ofReal b ^ q = ENNReal.ofReal (a ^ p * b ^ q) := by
+  rw [ofReal_rpow_of_nonneg ha hp, ofReal_rpow_of_nonneg hb hq,
+    ofReal_mul (Real.rpow_nonneg ha p)]
+
 /-- For `p ∈ [0, 1]`, the weighted geometric mean `x ^ (1 - p) * y ^ p` dominates `min x y`. -/
 theorem min_le_rpow_one_sub_mul_rpow (x y : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :
     min x y ≤ x ^ (1 - p) * y ^ p :=
@@ -256,7 +269,7 @@ agree for `x > 0`; for `x ≤ 0` the left side is `0`. -/
 theorem ofReal_inv_sqrt_le_enorm_rpow (x : ℝ) : ENNReal.ofReal (√x)⁻¹ ≤ ‖x‖ₑ ^ (-2⁻¹ : ℝ) := by
   rcases le_or_gt x 0 with hx | hx
   · simp [Real.sqrt_eq_zero'.mpr hx]
-  rw [Real.inv_sqrt_eq_rpow, ← ofReal_rpow_of_pos hx, Real.enorm_of_nonneg hx.le]
+  rw [Real.inv_sqrt_eq_rpow, ← ofReal_rpow_of_pos hx, Real.eNorm_of_nonneg hx.le]
   norm_num
 
 /-- If `y > 0` and `y³ ≤ 2 |d|`, then `1 / √d ≤ √2 y^(-3/2)`, as values in `ℝ≥0∞`. This is the
@@ -445,7 +458,7 @@ at `0`. -/
 theorem tendsto_const_mul_nnnorm_rpow_nhds_zero {E : Type*} [SeminormedAddGroup E] (c : ℝ≥0)
     {a : ℝ} (ha : 0 < a) : Filter.Tendsto (fun x : E ↦ c * ‖x‖₊ ^ a) (𝓝 0) (𝓝 0) := by
   have h : Continuous fun x : E ↦ c * ‖x‖₊ ^ a :=
-    continuous_const.mul ((NNReal.continuous_rpow_const ha.le).comp continuous_nnnorm)
+    continuous_const.mul ((NNReal.continuous_rpow_const ha.le).comp continuous_nnNorm)
   simpa [NNReal.zero_rpow ha.ne'] using h.tendsto 0
 
 end TauCeti

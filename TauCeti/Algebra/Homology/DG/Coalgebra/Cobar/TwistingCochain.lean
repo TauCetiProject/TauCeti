@@ -45,7 +45,7 @@ universe uR uC uA uB
 
 variable {R : Type uR} {C : Type uC} {A : Type uA}
   [CommRing R] [AddCommGroup C] [Module R C] [Ring A] [Algebra R A]
-  (G : InternalGrading R C) (Δ : C →ₗ[R] C ⊗[R] C) (dC : C →ₗ[R] C)
+  (G : InternalGrading R C ℤ) (Δ : C →ₗ[R] C ⊗[R] C) (dC : C →ₗ[R] C)
   (𝒜 : ℤ → Submodule R A) (dA : A →ₗ[R] A)
 
 /-- A degree-one twisting cochain, with the tensor-map Koszul sign in its quadratic term.

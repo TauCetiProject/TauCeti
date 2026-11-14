@@ -111,7 +111,7 @@ omit [CompleteSpace 𝕜] [CompleteSpace E] in
 /-- The determinant line of a Fredholm operator is a line. -/
 @[simp]
 theorem finrank_eq_one : finrank 𝕜 (FredholmDetLine 𝕜 E F T) = 1 :=
-  (linearEquiv T).finrank_eq.trans T.2.finrank_detLine
+  (linearEquiv T).finrank_eq.trans (LinearMap.finrank_detLine _)
 
 variable {Λ G : Type*} [NormedAddCommGroup Λ] [NormedSpace 𝕜 Λ] [FiniteDimensional 𝕜 Λ]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
@@ -172,7 +172,7 @@ omit [FiniteDimensional 𝕜 G] in
 form an open set. -/
 theorem isOpen_setOf_isInvertible_prod_coprod :
     IsOpen {T : {T : E →L[𝕜] F // T.IsFredholm} | ((T.1.coprod D₂).prod q).IsInvertible} := by
-  have : CompleteSpace Λ := FiniteDimensional.complete 𝕜 Λ
+  have : CompleteSpace Λ := FiniteDimensional.completeSpace 𝕜 Λ
   have hc : Continuous fun T : {T : E →L[𝕜] F // T.IsFredholm} ↦ (T.1.coprod D₂).prod q :=
     (prodL (E := E × Λ) (F := F) (G := G) 𝕜).continuous.comp
       ((continuous_subtype_val.continuousLinearMapCoprod continuous_const).prodMk

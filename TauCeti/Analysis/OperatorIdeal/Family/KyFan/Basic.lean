@@ -46,11 +46,11 @@ def kyFan (k : ℕ) (hk : 0 < k) : OperatorIdealFamily.{u, v, w} 𝕜 where
   gauge A := A.kyFanGauge k
   gauge_add_le A B := by exact_mod_cast A.kyFanGauge_add_le B k
   gauge_smul c A := by
-    simp [ContinuousLinearMap.kyFanGauge_smul, enorm_eq_nnnorm]
+    simp [ContinuousLinearMap.kyFanGauge_smul, eNorm_eq_nnNorm]
   enorm_le_gauge A := by
-    simpa only [enorm_eq_nnnorm, ENNReal.coe_le_coe] using A.nnnorm_le_kyFanGauge hk
+    simpa only [eNorm_eq_nnNorm, ENNReal.coe_le_coe] using A.nnnorm_le_kyFanGauge hk
   gauge_comp_le L A R := by
-    simpa only [enorm_eq_nnnorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using
+    simpa only [eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using
       L.kyFanGauge_comp_comp_le A R k
 
 variable {𝕜}
@@ -80,7 +80,7 @@ instance kyFan_isComplete (k : ℕ) (hk : 0 < k) :
 @[simp]
 theorem kyFan_one : kyFan.{u, v, w} 𝕜 1 (by decide) = opNorm 𝕜 := by
   ext
-  simp [enorm_eq_nnnorm]
+  simp [eNorm_eq_nnNorm]
 
 end OperatorIdealFamily
 

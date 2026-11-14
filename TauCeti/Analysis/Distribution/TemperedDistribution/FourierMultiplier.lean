@@ -29,6 +29,8 @@ the starting point of Bernstein's inequalities.
 ## Main results
 
 * `TemperedDistribution.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
+* `TemperedDistribution.lineDerivOp_fourierMultiplierCLM`: directional derivatives commute with
+  Fourier multipliers.
 * `TemperedDistribution.fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth`: the multiplier of
   a symbol without temperate growth is the junk value `0`.
 * `TemperedDistribution.fourierMultiplierCLM_eq_self_of_isVanishingOn`: a multiplier whose symbol
@@ -67,6 +69,15 @@ theorem fourierMultiplierCLM_add {g₁ g₂ : E → ℂ} (hg₁ : g₁.HasTemper
     fourierMultiplierCLM F (g₁ + g₂) = fourierMultiplierCLM F g₁ + fourierMultiplierCLM F g₂ := by
   ext f u
   simp [SchwartzMap.smulLeftCLM_add hg₁ hg₂]
+
+/-- A directional derivative, the Fourier multiplier with symbol `2πi ⟪ξ, m⟫`, commutes with every
+Fourier multiplier of temperate growth. -/
+theorem lineDerivOp_fourierMultiplierCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) (m : E)
+    (u : 𝓢'(E, F)) : ∂_{m} (fourierMultiplierCLM F g u) = fourierMultiplierCLM F g (∂_{m} u) := by
+  have hinner : (fun ξ : E ↦ ((inner ℝ ξ m : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
+  rw [lineDeriv_eq_fourierMultiplierCLM, lineDeriv_eq_fourierMultiplierCLM, map_smul,
+    fourierMultiplierCLM_fourierMultiplierCLM_apply hg hinner,
+    fourierMultiplierCLM_fourierMultiplierCLM_apply hinner hg, mul_comm g]
 
 /-- **Differentiation does not enlarge the spectrum.** If the Fourier transform of `u` vanishes on
 `s`, so does that of `∂_m u`. -/
