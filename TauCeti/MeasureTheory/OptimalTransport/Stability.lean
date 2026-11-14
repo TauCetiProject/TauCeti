@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 public import TauCeti.MeasureTheory.Measure.Prokhorov
 public import TauCeti.MeasureTheory.OptimalTransport.Compactness
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Cost.CyclicalMonotonicity
 -- Proof-only: the order-topology criterion turning a `liminf`/`limsup` sandwich into convergence.
 import Mathlib.Topology.Order.LiminfLimsup
 
@@ -68,7 +69,10 @@ replaced by passing to a finer filter.
 * `TauCeti.transportCost_le_liminf_transportCost_of_lowerSemicontinuous` — the fixed-cost
   corollary: on Polish spaces the optimal transport cost of a lower semicontinuous cost is weakly
   lower semicontinuous in the pair of marginals, with `TauCeti.lowerSemicontinuous_transportCost`
-  its topological form on `ProbabilityMeasure X × ProbabilityMeasure Y`.
+  its topological form on `ProbabilityMeasure X × ProbabilityMeasure Y`;
+* `TauCeti.isCyclicallyMonotone_support_of_tendsto` — stability of cyclical monotonicity of the
+  support along a weakly convergent family of probability measures under continuous convergence of
+  the costs.
 
 ## References
 
@@ -443,5 +447,48 @@ theorem lowerSemicontinuous_transportCost (hc : LowerSemicontinuous c) :
     (liminf_le_of_frequently_le' (Frequently.of_forall hqs))
 
 end Polish
+
+section CyclicalMonotonicity
+
+variable {ι X Y M : Type*} [TopologicalSpace X] [MeasurableSpace X]
+  [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace (X × Y)]
+  [HasOuterApproxClosed (X × Y)] [HereditarilyLindelofSpace (X × Y)]
+  [AddCommMonoid M] [LinearOrder M] [TopologicalSpace M] [OrderTopology M] [ContinuousAdd M]
+  {l : Filter ι} [l.NeBot] {πs : ι → ProbabilityMeasure (X × Y)}
+  {π : ProbabilityMeasure (X × Y)} {cs : ι → X × Y → M} {c : X × Y → M}
+
+/-- **Stability of cyclically monotone supports.** Let `πs` be a family of probability measures on
+`X × Y` converging weakly to `π` along a nontrivial filter `l`, and let `cs` converge continuously
+to `c`, that is, `cs i z' → c z` as `(i, z') → (l, z)`. If `(πs i).toMeasure.support` is eventually
+`cs i`-cyclically monotone, then `π.toMeasure.support` is `c`-cyclically monotone. No integrability
+or finiteness of total cost is needed, and `M` may be `ℝ` or `ℝ≥0∞`. -/
+theorem isCyclicallyMonotone_support_of_tendsto (hπ : Tendsto πs l (𝓝 π))
+    (hcm : ∀ᶠ i in l, IsCyclicallyMonotone (cs i) (πs i).toMeasure.support)
+    (hc : ∀ z, Tendsto (Function.uncurry cs) (l ×ˢ 𝓝 z) (𝓝 (c z))) :
+    IsCyclicallyMonotone c π.toMeasure.support := by
+  refine isCyclicallyMonotone_iff.2 fun n x y hmem σ ↦ not_lt.1 fun hlt ↦ ?_
+  let z : Fin n → X × Y := fun j ↦ (x j, y j)
+  have ht₁ : Tendsto (fun p : ι × (Fin n → X × Y) ↦ ∑ j, cs p.1 ((p.2 j).1, (p.2 (σ j)).2))
+      (l ×ˢ 𝓝 z) (𝓝 (∑ j, c (x j, y (σ j)))) :=
+    tendsto_finsetSum _ fun j _ ↦ (hc (x j, y (σ j))).comp <| tendsto_fst.prodMk <|
+      (((continuous_apply j).fst.prodMk (continuous_apply (σ j)).snd).tendsto z).comp tendsto_snd
+  have ht₂ : Tendsto (fun p : ι × (Fin n → X × Y) ↦ ∑ j, cs p.1 (p.2 j))
+      (l ×ˢ 𝓝 z) (𝓝 (∑ j, c (x j, y j))) :=
+    tendsto_finsetSum _ fun j _ ↦ (hc (x j, y j)).comp <| tendsto_fst.prodMk <|
+      ((continuous_apply j).tendsto z).comp tendsto_snd
+  obtain ⟨P, hP, Q, hQ, hPQ⟩ := Filter.eventually_prod_iff.1 (ht₁.eventually_lt ht₂ hlt)
+  obtain ⟨V, hVQ, hVopen, hzV⟩ := mem_nhds_iff.1 hQ
+  obtain ⟨U, hU, hUV⟩ := isOpen_pi_iff'.1 hVopen z hzV
+  have hpos : ∀ᶠ i in l, ∀ j, 0 < (πs i).toMeasure (U j) := eventually_all.2 fun j ↦ by
+    have hUj : 0 < π.toMeasure (U j) :=
+      (Measure.mem_support_iff_forall _).1 (hmem j) _ ((hU j).1.mem_nhds (hU j).2)
+    exact eventually_lt_of_lt_liminf
+      (hUj.trans_le (ProbabilityMeasure.le_liminf_measure_open_of_tendsto hπ (hU j).1))
+  obtain ⟨i, hci, hPi, hi⟩ := (hcm.and (hP.and hpos)).exists
+  choose w hw using fun j ↦ Measure.nonempty_inter_support_of_pos (hi j)
+  exact (hci.sum_le n (fun j ↦ (w j).1) (fun j ↦ (w j).2) (fun j ↦ (hw j).2) σ).not_gt
+    (hPQ hPi (hVQ (hUV fun j _ ↦ (hw j).1)))
+
+end CyclicalMonotonicity
 
 end TauCeti
