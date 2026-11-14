@@ -52,7 +52,8 @@ compatibility of the normalizations of `K` and `L` with one another.
 public section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace Module
-open scoped NumberField AdicCompletionExtension NumberField.LiesOver
+open scoped NumberField AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -97,11 +98,11 @@ private theorem normalizedAbsValue_inr_algebraMap_eq_completionMap (w : Infinite
     [w.LiesOver v] (x : K) :
     normalizedAbsValue (Sum.inr w) (algebraMap K L x) =
       completionNormalizedAbsValue w
-        (LiesOver.completionMap v w (algebraMap K v.Completion x)) := by
+        (AbsoluteValue.Completion.map v.1 w.1 (algebraMap K v.Completion x)) := by
   rw [normalizedAbsValue_inr, ← completionNormalizedAbsValue_algebraMap,
     ← IsScalarTower.algebraMap_apply K L w.Completion,
-    IsScalarTower.algebraMap_apply K v.Completion w.Completion]
-  rfl
+    IsScalarTower.algebraMap_apply K v.Completion w.Completion,
+    AbsoluteValue.Completion.algebraMap_apply_of_liesOver]
 
 /-- **Normalized absolute values at an infinite place under extension.** If the infinite place `w`
 of `L` lies over the infinite place `v` of `K`, then `‖x‖_w = ‖x‖_v ^ [L_w : K_v]` for `x ∈ K`.
