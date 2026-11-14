@@ -15,8 +15,8 @@ Let `M` be a Riemann surface with boundary: a charted space modelled on the clos
 half-plane whose transition maps lie in `TauCeti.borderedHolomorphicGroupoid`. Its *Schottky
 double* `TauCeti.SchottkyDouble M` is the topological double `TauCeti.DoubleAlong` of `M` along
 its manifold boundary: two copies of `M` glued by the identity along the boundary. This file makes
-it a Riemann surface without boundary, with the sheet exchange as an antiholomorphic involution
-whose fixed set is the boundary.
+it a Riemann surface without boundary, whose sheet exchange is an involution that reads as complex
+conjugation in the charts of the double, with fixed set the boundary.
 
 A chart `e` of `M` gives the chart `TauCeti.schottkyDoubleChart e` of the double, defined on both
 copies of the source of `e`: it is `e` on the first copy and `conj ∘ e` on the second, so the
@@ -25,8 +25,8 @@ two formulas agree on the boundary, which `e` sends to the real axis. The change
 charts of `e` and `e'` is the Schwarz reflection `TauCeti.ClosedUpperHalfPlane.schwarzDouble` of
 the chart change `e.symm ≫ₕ e'` (`TauCeti.schottkyDoubleChart_symm_trans_eqOnSource`), which is
 holomorphic with holomorphic inverse by the Schwarz reflection principle. In each doubled chart
-the sheet exchange reads as complex conjugation (`TauCeti.schottkyDoubleChart_swap`), so it is
-antiholomorphic; its fixed set is the image of the boundary (`TauCeti.DoubleAlong.fixed_locus`).
+the sheet exchange reads as complex conjugation (`TauCeti.schottkyDoubleChart_swap`); its fixed
+set is the image of the boundary (`TauCeti.DoubleAlong.fixed_locus`).
 
 The gluing is by `z ↦ conj z` in the boundary charts. With `z ↦ -conj z` in its place the
 chart changes would not be holomorphic across the real axis
@@ -46,8 +46,8 @@ chart changes would not be holomorphic across the real axis
   is, a Riemann surface.
 * `TauCeti.schottkyDoubleChart_mem_maximalAtlas`: every doubled chart is a holomorphic chart of the
   double.
-* `TauCeti.eqOn_writtenInExtChartAt_schottkyDouble_swap`: in every chart of the double the sheet
-  exchange is complex conjugation, so it is an antiholomorphic involution.
+* `TauCeti.eqOn_writtenInExtChartAt_schottkyDouble_swap`: written in the preferred extended chart
+  at any point of the double, the sheet exchange is complex conjugation.
 * `TauCeti.t2Space_schottkyDouble` and `TauCeti.secondCountableTopology_schottkyDouble`: the double
   of a Hausdorff, respectively second countable, `C^1` surface with boundary is Hausdorff,
   respectively second countable. The double of a compact surface is compact.
@@ -265,6 +265,21 @@ theorem fold_schottkyDoubleChart_symm (w : ℂ) :
     DoubleAlong.fold _ ((schottkyDoubleChart e he).symm w) = e.symm (fold w) :=
   fold_doubleChartInvFun w
 
+/-- Folding the doubled chart is the chart of `M` after folding. -/
+@[simp]
+theorem fold_schottkyDoubleChart (z : SchottkyDouble M) :
+    fold (schottkyDoubleChart e he z) = e (DoubleAlong.fold _ z) := by
+  change fold (doubleChartFun e z) = _
+  unfold doubleChartFun
+  split_ifs <;> simp only [fold_conj, fold_coe]
+
+/-- On the closed upper half-plane, the inverse of the doubled chart is the inverse of the chart of
+`M`, landing in the first copy. -/
+@[simp]
+theorem schottkyDoubleChart_symm_coe (w : ClosedUpperHalfPlane) :
+    (schottkyDoubleChart e he).symm w = DoubleAlong.inl _ (e.symm w) := by
+  rw [schottkyDoubleChart_symm_apply_of_im_nonneg he w.property, fold_coe]
+
 /-- **The doubled chart turns the sheet exchange into complex conjugation.** -/
 theorem schottkyDoubleChart_swap {z : SchottkyDouble M}
     (hz : z ∈ (schottkyDoubleChart e he).source) :
@@ -369,11 +384,13 @@ theorem chartAt_schottkyDouble_apply_swap (z : SchottkyDouble M) {z' : SchottkyD
     chartAt ℂ z (DoubleAlong.swap _ z') = conj (chartAt ℂ z z') :=
   schottkyDoubleChart_swap _ hz'
 
-/-- **The sheet exchange is antiholomorphic.** In every chart of the double, it is complex
-conjugation. -/
-theorem eqOn_writtenInExtChartAt_schottkyDouble_swap (z : SchottkyDouble M) :
-    EqOn (writtenInExtChartAt 𝓘(ℂ) 𝓘(ℂ) z (DoubleAlong.swap _)) (starRingEnd ℂ)
-      (extChartAt 𝓘(ℂ) z).target := by
+/-- Written in the preferred extended chart at `z`, the sheet exchange is complex conjugation on
+the whole target of that chart. The scalar field `𝕜` of the model is arbitrary, so this applies to
+the holomorphic model `𝓘(ℂ)` as well as to the real model `𝓘(ℝ, ℂ)`. -/
+theorem eqOn_writtenInExtChartAt_schottkyDouble_swap (𝕜 : Type*) [NontriviallyNormedField 𝕜]
+    [NormedSpace 𝕜 ℂ] (z : SchottkyDouble M) :
+    EqOn (writtenInExtChartAt 𝓘(𝕜, ℂ) 𝓘(𝕜, ℂ) z (DoubleAlong.swap _)) (starRingEnd ℂ)
+      (extChartAt 𝓘(𝕜, ℂ) z).target := by
   intro w hw
   simp only [extChartAt_target, modelWithCornersSelf_coe_symm, modelWithCornersSelf_coe,
     preimage_id_eq, id_eq, range_id, inter_univ] at hw

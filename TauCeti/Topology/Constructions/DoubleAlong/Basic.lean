@@ -300,20 +300,16 @@ theorem continuousOn_iff_of_isOpen {Y : Type v} [TopologicalSpace Y] {f : Double
     ContinuousOn f s ↔
       ContinuousOn (f ∘ inl A) (inl A ⁻¹' s) ∧ ContinuousOn (f ∘ inr A) (inr A ⁻¹' s) := by
   rw [(isQuotientMap_quotientMap A).continuousOn_isOpen_iff hs,
-    (hs.preimage (quotientMap A).continuous).continuousOn_iff]
-  constructor
-  · intro h
-    refine ⟨(hs.preimage (inl A).continuous).continuousOn_iff.2 fun x hx ↦ ?_,
-      (hs.preimage (inr A).continuous).continuousOn_iff.2 fun x hx ↦ ?_⟩
-    · exact IsOpenEmbedding.inl.continuousAt_iff.2 (h (a := Sum.inl x) (by simpa using hx))
-    · exact IsOpenEmbedding.inr.continuousAt_iff.2 (h (a := Sum.inr x) (by simpa using hx))
-  · rintro ⟨hl, hr⟩ (x | x) hx
-    · exact IsOpenEmbedding.inl.continuousAt_iff.1
-        ((hl x (by simpa using hx)).continuousAt
-          ((hs.preimage (inl A).continuous).mem_nhds (by simpa using hx)))
-    · exact IsOpenEmbedding.inr.continuousAt_iff.1
-        ((hr x (by simpa using hx)).continuousAt
-          ((hs.preimage (inr A).continuous).mem_nhds (by simpa using hx)))
+    (hs.preimage (quotientMap A).continuous).continuousOn_iff,
+    (hs.preimage (inl A).continuous).continuousOn_iff,
+    (hs.preimage (inr A).continuous).continuousOn_iff, Sum.forall]
+  -- on each summand, `f ∘ quotientMap A` is `f ∘ inl A`, respectively `f ∘ inr A`
+  have hl : (f ∘ quotientMap A) ∘ Sum.inl = f ∘ inl A := by
+    rw [Function.comp_assoc, coe_quotientMap, Sum.elim_comp_inl]
+  have hr : (f ∘ quotientMap A) ∘ Sum.inr = f ∘ inr A := by
+    rw [Function.comp_assoc, coe_quotientMap, Sum.elim_comp_inr]
+  simp only [mem_preimage, quotientMap_inl, quotientMap_inr,
+    ← IsOpenEmbedding.inl.continuousAt_iff, ← IsOpenEmbedding.inr.continuousAt_iff, hl, hr]
 
 /-- Fibres of the canonical sum quotient have at most two points, without a closedness premise. -/
 theorem finite_fiber_quotientMap (z : DoubleAlong A) :
