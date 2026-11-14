@@ -23,6 +23,10 @@ members in each of three residue classes. It comes from finite basis covers of t
 shells of an exhaustion. Intersections of disjoint families remain disjoint families after
 reindexing, so no continuity assumption for increasing unions is needed.
 
+The same principle holds for the opens contained in a fixed open set `W`, with a basis of `W`
+and the union hypotheses required only below `W` (`TauCeti.mayerVietoris_induction_le`). It is
+proved by applying the principle to the subspace `W`.
+
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 18,
@@ -163,5 +167,57 @@ theorem mayerVietoris_induction {X : Type*} [TopologicalSpace X] [T2Space X]
   exact hsup _ _ (hDP (hD_inf (hDA 0) (hDA 2)))
     (hDP (hD_inf (hDA 1) (hDA 2)))
     (hDP (hD_inf (hD_inf (hDA 0) (hDA 2)) (hD_inf (hDA 1) (hDA 2))))
+
+/-- **Mayer–Vietoris induction below an open set.** Let `W` be an open subset of a
+second-countable locally compact Hausdorff space. A property of the opens contained in `W` holds
+on all of them if it holds on the empty set and on an intersection-stable family `B` of opens
+contained in `W` that is a basis of the topology of `W`, is preserved by binary unions of opens
+contained in `W` when it holds on their intersection, and is preserved by countable disjoint
+unions of opens contained in `W`. -/
+theorem mayerVietoris_induction_le {X : Type*} [TopologicalSpace X] [T2Space X]
+    [LocallyCompactSpace X] [SecondCountableTopology X] (W : Opens X) (P : Opens X → Prop)
+    (B : Set (Opens X)) (hBW : ∀ U ∈ B, U ≤ W)
+    (hB : ∀ U ≤ W, ∀ x ∈ U, ∃ V ∈ B, x ∈ V ∧ V ≤ U)
+    (hB_inf : ∀ U ∈ B, ∀ V ∈ B, U ⊓ V ∈ B) (hbot : P ⊥) (hbase : ∀ U ∈ B, P U)
+    (hsup : ∀ U V, U ≤ W → V ≤ W → P U → P V → P (U ⊓ V) → P (U ⊔ V))
+    (hdisjoint : ∀ s : ℕ → Opens X, (∀ n, s n ≤ W) → (∀ i j, i ≠ j → Disjoint (s i) (s j)) →
+      (∀ n, P (s n)) → P (⨆ n, s n)) :
+    ∀ U ≤ W, P U := by
+  have : LocallyCompactSpace W := W.isOpen.locallyCompactSpace
+  -- Transport the induction to the opens of the subspace `W`, through the image of the
+  -- inclusion, which identifies them with the opens of `X` contained in `W`.
+  let ι : Opens W → Opens X := fun V ↦
+    ⟨Subtype.val '' (V : Set W), W.isOpen.isOpenMap_subtype_val _ V.isOpen⟩
+  let κ : Opens X → Opens W := fun U ↦
+    ⟨Subtype.val ⁻¹' (U : Set X), U.isOpen.preimage continuous_subtype_val⟩
+  have hικ (U : Opens X) (hU : U ≤ W) : ι (κ U) = U :=
+    Opens.ext ((Subtype.image_preimage_coe _ _).trans (inter_eq_right.2 hU))
+  have hιW (V : Opens W) : ι V ≤ W := fun _ ⟨y, _, hy⟩ ↦ hy ▸ y.2
+  have hι_inf (V V' : Opens W) : ι (V ⊓ V') = ι V ⊓ ι V' :=
+    Opens.ext (image_inter Subtype.val_injective)
+  have hι_sup (V V' : Opens W) : ι (V ⊔ V') = ι V ⊔ ι V' := Opens.ext (image_union _ _ _)
+  have hι_bot : ι ⊥ = ⊥ := Opens.ext (image_empty _)
+  have hι_iSup (s : ℕ → Opens W) : ι (⨆ n, s n) = ⨆ n, ι (s n) :=
+    Opens.ext (by simp only [ι, Opens.coe_iSup, Opens.coe_mk, image_iUnion])
+  have hι_disjoint {V V' : Opens W} (h : Disjoint V V') : Disjoint (ι V) (ι V') := by
+    rw [disjoint_iff, ← hι_inf, disjoint_iff.1 h, hι_bot]
+  have hbasis : Opens.IsBasis {V : Opens W | ι V ∈ B} := by
+    refine Opens.isBasis_iff_nbhd.2 fun {V'} y hy ↦ ?_
+    obtain ⟨V, hVB, hyV, hVV'⟩ := hB (ι V') (hιW V') y ⟨y, hy, rfl⟩
+    refine ⟨κ V, by simpa only [Set.mem_ofPred_eq, hικ V (hBW V hVB)] using hVB, hyV, ?_⟩
+    rintro z (hz : (z : X) ∈ V)
+    obtain ⟨w, hw, hwz⟩ := hVV' hz
+    rwa [← Subtype.ext hwz]
+  intro U hU
+  rw [← hικ U hU]
+  refine mayerVietoris_induction (fun V ↦ P (ι V)) _ hbasis
+    (fun V hV V' hV' ↦ by simpa only [Set.mem_ofPred_eq, hι_inf] using hB_inf _ hV _ hV')
+    (by simpa only [hι_bot] using hbot) (fun V hV ↦ hbase _ hV) ?_ ?_ (κ U)
+  · intro V V' hV hV' hVV'
+    rw [hι_sup]
+    exact hsup _ _ (hιW V) (hιW V') hV hV' (by rwa [← hι_inf])
+  · intro s hs hPs
+    rw [hι_iSup]
+    exact hdisjoint _ (fun n ↦ hιW (s n)) (fun i j hij ↦ hι_disjoint (hs i j hij)) hPs
 
 end TauCeti
