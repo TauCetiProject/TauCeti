@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Veronese.Subalgebra
 
@@ -14,8 +15,10 @@ public import TauCeti.RingTheory.GradedAlgebra.Veronese.Subalgebra
 Let `A = ⨁ₙ 𝒜 n` be an `ℕ`-graded commutative `R`-algebra, `d ≠ 0`, and
 `A^{(d)} = ⨁ₖ 𝒜 (d k)` its Veronese subalgebra. Reinterpreting a fraction of degree `k` in
 `A^{(d)}` as one of degree `d k` in `A` gives an `R`-algebra map on homogeneous localizations.
-When the target denominator submonoid is the image of the source submonoid, this map is
-bijective: a fraction `a / b` can be written as `a b^(d-1) / b^d`, whose degree is divisible by `d`.
+When the source denominator submonoid is the preimage of the target submonoid, this map is
+surjective: a fraction `a / b` can be written as `a b^(d-1) / b^d`, whose degree is divisible
+by `d`.
+When the target submonoid is the image of the source submonoid, the map is also injective.
 
 In particular, for every `f ∈ A^{(d)}` there is an `R`-algebra isomorphism
 `A^{(d)}_{(f)} ≅ A_{(f)}`. These isomorphisms provide the affine charts of the identification
@@ -65,18 +68,6 @@ private def ofVeronese
 end HomogeneousLocalization.NumDenSameDeg
 
 namespace TauCeti.GradedAlgebra
-
-section Powers
-
-variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-  {𝒜 : ℕ → Submodule R A} [SetLike.GradedMonoid 𝒜] {d : ℕ} {f : veronese 𝒜 d}
-
-/-- The powers of a Veronese element map into its powers in the original algebra. -/
-theorem powers_le_comap_val_powers :
-    Submonoid.powers f ≤ (Submonoid.powers (f : A)).comap (veronese 𝒜 d).val.toRingHom :=
-  Submonoid.map_le_iff_le_comap.mp (Submonoid.map_powers (veronese 𝒜 d).val f).le
-
-end Powers
 
 variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
   (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜] (d : ℕ)
@@ -166,26 +157,25 @@ theorem veroneseHomogeneousLocalizationMap_injective
     ((val_veroneseHomogeneousLocalizationMap ..).symm.trans
       ((congrArg val h).trans (val_veroneseHomogeneousLocalizationMap ..)))
 
-/-- The Veronese homogeneous localization map is surjective when every target denominator
-comes from the source submonoid: replace `a / b` by `a b^(d-1) / b^d`. -/
+/-- The Veronese homogeneous localization map is surjective when the source denominator
+submonoid is the preimage of the target submonoid: replace `a / b` by `a b^(d-1) / b^d`. -/
 theorem veroneseHomogeneousLocalizationMap_surjective
-    (hQP : Q ≤ P.map (veronese 𝒜 d).val) :
+    (hQP : Q.comap (veronese 𝒜 d).val.toRingHom ≤ P) :
     Function.Surjective (veroneseHomogeneousLocalizationMap 𝒜 d hPQ) := by
   intro z
   obtain ⟨c, rfl⟩ := z.mk_surjective
-  obtain ⟨b, hb, he⟩ := hQP c.den_mem
-  simp only [Subalgebra.val_apply] at he
   have hdeg : c.deg + (d - 1) • c.deg = d * c.deg := by
     rw [smul_eq_mul, add_comm, ← Nat.succ_mul, Nat.succ_eq_add_one,
       Nat.sub_one_add_one (NeZero.ne d)]
   have hn : (c.num : A) * (c.den : A) ^ (d - 1) ∈ 𝒜 (d * c.deg) :=
     hdeg ▸ SetLike.mul_mem_graded c.num.2 (SetLike.pow_mem_graded (d - 1) c.den.2)
-  have hd : (b ^ d : veronese 𝒜 d) ∈ veroneseGrading 𝒜 d c.deg := by
-    simpa [mem_veroneseGrading, he, smul_eq_mul] using SetLike.pow_mem_graded d c.den.2
-  refine ⟨mk ⟨c.deg, ⟨⟨_, mem_veronese_of_mem hn⟩, hn⟩, ⟨b ^ d, hd⟩, P.pow_mem hb d⟩,
+  have hd : (c.den : A) ^ d ∈ 𝒜 (d * c.deg) := by
+    simpa only [smul_eq_mul] using SetLike.pow_mem_graded d c.den.2
+  refine ⟨mk ⟨c.deg, ⟨⟨_, mem_veronese_of_mem hn⟩, hn⟩,
+    ⟨⟨_, mem_veronese_of_mem hd⟩, hd⟩, hQP (Q.pow_mem c.den_mem d)⟩,
     val_injective Q ?_⟩
   simp only [veroneseHomogeneousLocalizationMap_mk, val_mk,
-    Localization.mk_eq_mk', Subalgebra.coe_pow, he]
+    Localization.mk_eq_mk']
   convert IsLocalization.mk'_cancel (S := Localization Q) (c.num : A)
     ⟨c.den, c.den_mem⟩ (⟨c.den, c.den_mem⟩ ^ (d - 1)) using 1
   simp [← pow_succ', Nat.sub_one_add_one (NeZero.ne d)]
@@ -222,16 +212,18 @@ noncomputable def awayVeroneseEquiv :
     Away (veroneseGrading 𝒜 d) f ≃ₐ[R] Away 𝒜 (f : A) :=
   AlgEquiv.ofBijective
     (veroneseHomogeneousLocalizationMap 𝒜 d
-      (powers_le_comap_val_powers (f := f)))
-    ⟨veroneseHomogeneousLocalizationMap_injective 𝒜 d (powers_le_comap_val_powers (f := f))
+      (Subalgebra.powers_le_comap_val_powers (f := f)))
+    ⟨veroneseHomogeneousLocalizationMap_injective 𝒜 d
+        (Subalgebra.powers_le_comap_val_powers (f := f))
         (Submonoid.map_powers (veronese 𝒜 d).val f).ge,
-      veroneseHomogeneousLocalizationMap_surjective 𝒜 d (powers_le_comap_val_powers (f := f))
-        (Submonoid.map_powers (veronese 𝒜 d).val f).ge⟩
+      veroneseHomogeneousLocalizationMap_surjective 𝒜 d
+        (Subalgebra.powers_le_comap_val_powers (f := f))
+        (fun _ ⟨n, hn⟩ ↦ ⟨n, Subtype.ext hn⟩)⟩
 
 /-- The algebra homomorphism underlying the Veronese chart equivalence. -/
 theorem toAlgHom_awayVeroneseEquiv :
     (awayVeroneseEquiv f).toAlgHom = veroneseHomogeneousLocalizationMap 𝒜 d
-      (powers_le_comap_val_powers (f := f)) := by
+      (Subalgebra.powers_le_comap_val_powers (f := f)) := by
   ext x
   rfl
 
@@ -239,7 +231,7 @@ theorem toAlgHom_awayVeroneseEquiv :
 theorem val_awayVeroneseEquiv (x : Away (veroneseGrading 𝒜 d) f) :
     (awayVeroneseEquiv f x).val =
       IsLocalization.map (Localization.Away (f : A)) (veronese 𝒜 d).val.toRingHom
-        (powers_le_comap_val_powers (f := f)) x.val :=
+        (Subalgebra.powers_le_comap_val_powers (f := f)) x.val :=
   val_veroneseHomogeneousLocalizationMap 𝒜 d _ x
 
 variable {f}
@@ -256,10 +248,10 @@ theorem awayVeroneseEquiv_mk {k : ℕ} (hf : f ∈ veroneseGrading 𝒜 d k) (n 
 /-- The inverse chart equivalence regards the numerator of a homogeneous fraction as an
 element of the Veronese subalgebra. -/
 @[simp]
-theorem awayVeroneseEquiv_symm_mk {k : ℕ} (hf : f ∈ veroneseGrading 𝒜 d k) (n : ℕ)
+theorem awayVeroneseEquiv_symm_mk {k : ℕ} (hf : (f : A) ∈ 𝒜 (d * k)) (n : ℕ)
     (a : A) (ha : a ∈ 𝒜 (n • (d * k))) :
-    (awayVeroneseEquiv f).symm (Away.mk 𝒜 (mem_veroneseGrading.1 hf) n a ha) =
-      Away.mk (veroneseGrading 𝒜 d) hf n
+    (awayVeroneseEquiv f).symm (Away.mk 𝒜 hf n a ha) =
+      Away.mk (veroneseGrading 𝒜 d) (mem_veroneseGrading.2 hf) n
         ⟨a, mem_veronese_of_mem (k := n • k)
           (by simpa only [smul_eq_mul, mul_left_comm] using ha)⟩
         (by simpa only [mem_veroneseGrading, smul_eq_mul, mul_left_comm] using ha) := by
@@ -281,11 +273,11 @@ theorem awayVeroneseEquiv_awayMap {g x : veronese 𝒜 d} {k' : ℕ}
   simp [Localization.awayLift]
 
 /-- The inverse Veronese chart equivalence commutes with chart transitions. -/
-theorem awayVeroneseEquiv_symm_awayMap {g x : veronese 𝒜 d} {k' : ℕ}
-    (hg : g ∈ veroneseGrading 𝒜 d k') (hfg : x = f * g) (a : Away 𝒜 (f : A)) :
-    (awayVeroneseEquiv x).symm
-        (awayMap 𝒜 (mem_veroneseGrading.1 hg) (congrArg Subtype.val hfg) a) =
-      awayMap _ hg hfg ((awayVeroneseEquiv f).symm a) := by
+theorem awayVeroneseEquiv_symm_awayMap {g : A} {x : veronese 𝒜 d} {k' : ℕ}
+    (hg : g ∈ 𝒜 (d * k')) (hfg : (x : A) = f * g) (a : Away 𝒜 (f : A)) :
+    (awayVeroneseEquiv x).symm (awayMap 𝒜 hg hfg a) =
+      awayMap (veroneseGrading 𝒜 d) (g := ⟨g, mem_veronese_of_mem hg⟩)
+        (mem_veroneseGrading.2 hg) (Subtype.ext hfg) ((awayVeroneseEquiv f).symm a) := by
   apply (awayVeroneseEquiv x).injective
   simp only [AlgEquiv.apply_symm_apply, awayVeroneseEquiv_awayMap]
 
