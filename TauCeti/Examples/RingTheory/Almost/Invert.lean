@@ -87,6 +87,15 @@ example (n : ℕ) : Subsingleton ((Algebra.invert S ϖ).obj ((Algebra.toAlmost S
   (Algebra.subsingleton_invert_toAlmost_obj_iff S hϖ _).mpr
     ⟨n + 1, (Ideal.Quotient.eq_zero_iff_mem).mpr (Ideal.subset_span rfl)⟩
 
+-- `Algebra.invertToAlmostObjEquiv` identifies canonical numerators of `(R^a)_*[1/ϖ]` and `R[1/ϖ]`.
+example (R : CommAlgCat V) (r : R) :
+    (Algebra.invertToAlmostObjEquiv S hϖ R).symm
+      (algebraMap R (Localization (_root_.Algebra.algebraMapSubmonoid R (Submonoid.powers ϖ))) r) =
+      algebraMap ((Algebra.elements S).obj ((Algebra.toAlmost S).obj R))
+        ((Algebra.invert S ϖ).obj ((Algebra.toAlmost S).obj R))
+        ((Algebra.adj S).unit.app R r) := by
+  simp
+
 -- Inverting `ϖ ∈ m` sends `V^a` to the free rank-one module `Localization.Away ϖ`.
 example : Nonempty ((invert S hϖ).obj ((Module.toAlmost S).obj (ModuleCat.of V V)) ≅
     ModuleCat.of (Localization.Away ϖ) (Localization.Away ϖ)) :=
@@ -213,15 +222,12 @@ example :
         (algebraMap 𝓞_ℂ_[p] (Localization.Away (p : 𝓞_ℂ_[p])))).obj
           ((invert S hp).obj ((Module.toAlmost S).obj (ModuleCat.of 𝓞_ℂ_[p] 𝓞_ℂ_[p])))) ≃ₗ[𝓞_ℂ_[p]]
         ℂ_[p]) := by
-  let S := ofValuationRing (TauCeti.PadicComplexInt.not_fg_maximalIdeal p)
+  let hfg := TauCeti.PadicComplexInt.not_fg_maximalIdeal p
+  let S := ofValuationRing hfg
   have hp1 : (1 : ℝ≥0) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
   have hp0 : (0 : ℝ≥0) < p := zero_lt_one.trans hp1
-  have hp : (p : 𝓞_ℂ_[p]) ∈ S.ideal := by
-    rw [ofValuationRing_ideal]
-    have hpv : Valued.v ((p : 𝓞_ℂ_[p]) : ℂ_[p]) < 1 := by
-      rw [SubringClass.coe_natCast, PadicComplex.valuation_p]
-      exact (div_lt_one hp0).mpr hp1
-    exact (Valuation.mem_maximalIdeal_iff (v := (PadicComplex.valued p).v)).mpr hpv
+  have hp : (p : 𝓞_ℂ_[p]) ∈ S.ideal :=
+    (ofValuationRing_ideal hfg).symm ▸ TauCeti.PadicComplexInt.natCast_mem_maximalIdeal p
   have hLoc : IsLocalization.Away (p : 𝓞_ℂ_[p]) ℂ_[p] := by
     rw [IsLocalization.Away, isLocalization_iff]
     have hpne : (p : ℂ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
@@ -261,12 +267,8 @@ example :
   let S := ofValuationRing hfg
   let Q := (Module.toAlmost S).obj
     (ModuleCat.of 𝓞_ℂ_[p] (𝓞_ℂ_[p] ⧸ Ideal.span {(p : 𝓞_ℂ_[p])}))
-  have hpMax : (p : 𝓞_ℂ_[p]) ∈ maximalIdeal 𝓞_ℂ_[p] := by
-    have hp1 : (1 : ℝ≥0) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
-    have hpv : Valued.v ((p : 𝓞_ℂ_[p]) : ℂ_[p]) < 1 := by
-      rw [SubringClass.coe_natCast, PadicComplex.valuation_p]
-      exact (div_lt_one (zero_lt_one.trans hp1)).mpr hp1
-    exact (Valuation.mem_maximalIdeal_iff (v := (PadicComplex.valued p).v)).mpr hpv
+  have hpMax : (p : 𝓞_ℂ_[p]) ∈ maximalIdeal 𝓞_ℂ_[p] :=
+    TauCeti.PadicComplexInt.natCast_mem_maximalIdeal p
   have hp : (p : 𝓞_ℂ_[p]) ∈ S.ideal := (ofValuationRing_ideal hfg).symm ▸ hpMax
   have hQ : ¬ IsZero Q := by
     rw [Module.isZero_toAlmost_obj_iff, ofValuationRing_isAlmostZero_quotient_span_singleton_iff]
@@ -301,13 +303,8 @@ example :
   let S := ofValuationRing hfg
   let A := ModuleCat.of 𝓞_ℂ_[p] (ResidueField 𝓞_ℂ_[p])
   let K := (HomologicalComplex.single (ModuleCat 𝓞_ℂ_[p]) (ComplexShape.up ℤ) 0).obj A
-  have hp : (p : 𝓞_ℂ_[p]) ∈ S.ideal := by
-    rw [ofValuationRing_ideal]
-    have hp1 : (1 : ℝ≥0) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
-    have hpv : Valued.v ((p : 𝓞_ℂ_[p]) : ℂ_[p]) < 1 := by
-      rw [SubringClass.coe_natCast, PadicComplex.valuation_p]
-      exact (div_lt_one (zero_lt_one.trans hp1)).mpr hp1
-    exact (Valuation.mem_maximalIdeal_iff (v := (PadicComplex.valued p).v)).mpr hpv
+  have hp : (p : 𝓞_ℂ_[p]) ∈ S.ideal :=
+    (ofValuationRing_ideal hfg).symm ▸ TauCeti.PadicComplexInt.natCast_mem_maximalIdeal p
   have hNotExact : ¬ K.ExactAt 0 := by
     rw [HomologicalComplex.exactAt_iff_isZero_homology,
       (HomologicalComplex.singleObjHomologySelfIso (ComplexShape.up ℤ) 0 A).isZero_iff,

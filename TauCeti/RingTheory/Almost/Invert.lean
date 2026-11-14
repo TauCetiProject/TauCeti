@@ -240,116 +240,20 @@ noncomputable def invertUniq (G : Module S ⥤ ModuleCat.{u} (Localization.Away 
   Module.liftUniq S (ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ))
     (isZero_localizedModuleFunctor_obj S hϖ) G e
 
-/-- Removing `Shrink.{u}` from `(ModuleCat.localizedModuleFunctor.{u} p).obj N` when `V` and `N`
-live in universe `u`. -/
-private noncomputable def localizedModuleObjIso {p : Submonoid V} (N : ModuleCat.{u} V) :
-    (ModuleCat.localizedModuleFunctor.{u} p).obj N ≅
-      ModuleCat.of (Localization p) (LocalizedModule p N) :=
-  (Shrink.linearEquiv.{u} (Localization p) (LocalizedModule p N)).toModuleIso
-
-private theorem localizedModuleObjIso_hom_mkLinearMap {p : Submonoid V} (N : ModuleCat.{u} V)
-    (x : N) :
-    (localizedModuleObjIso N).hom (N.localizedModuleMkLinearMap p x) =
-      LocalizedModule.mk x 1 := by
-  -- Both `Shrink.linearEquiv` maps come from the same underlying `equivShrink`.
-  change Shrink.linearEquiv.{u} (Localization p) (LocalizedModule p N)
-    ((Shrink.linearEquiv.{u} V (LocalizedModule p N)).symm (LocalizedModule.mk x 1)) = _
-  simp
-
-private theorem localizedModuleObjIso_naturality {p : Submonoid V} {N₁ N₂ : ModuleCat.{u} V}
-    (f : N₁ ⟶ N₂) :
-    (ModuleCat.localizedModuleFunctor.{u} p).map f ≫ (localizedModuleObjIso N₂).hom =
-      (localizedModuleObjIso N₁).hom ≫ ModuleCat.ofHom (LocalizedModule.map p f.hom) := by
-  rw [ModuleCat.localizedModuleFunctor_map]
-  -- Express the domain as `N₁.localizedModule p` so `Module V` and `IsScalarTower V` are found.
-  change ModuleCat.localizedModuleMap p f ≫ (localizedModuleObjIso N₂).hom =
-    (localizedModuleObjIso N₁).hom ≫ ModuleCat.ofHom (LocalizedModule.map p f.hom)
-  apply ModuleCat.hom_ext
-  apply LinearMap.restrictScalars_injective V
-  apply IsLocalizedModule.linearMap_ext p (N₁.localizedModuleMkLinearMap p)
-    (LocalizedModule.mkLinearMap p N₂)
-  ext x
-  -- Evaluate both `ModuleCat` composites directly on `N₁.localizedModuleMkLinearMap p x`.
-  change (localizedModuleObjIso N₂).hom
-      ((IsLocalizedModule.mapExtendScalars p (N₁.localizedModuleMkLinearMap p)
-        (N₂.localizedModuleMkLinearMap p) (Localization p) f.hom)
-        (N₁.localizedModuleMkLinearMap p x)) =
-    LocalizedModule.map p f.hom
-      ((localizedModuleObjIso N₁).hom (N₁.localizedModuleMkLinearMap p x))
-  calc (localizedModuleObjIso N₂).hom
-        ((IsLocalizedModule.mapExtendScalars p (N₁.localizedModuleMkLinearMap p)
-          (N₂.localizedModuleMkLinearMap p) (Localization p) f.hom)
-          (N₁.localizedModuleMkLinearMap p x))
-      = (localizedModuleObjIso N₂).hom (N₂.localizedModuleMkLinearMap p (f.hom x)) :=
-        congrArg (localizedModuleObjIso N₂).hom
-          (IsLocalizedModule.map_apply p (N₁.localizedModuleMkLinearMap p)
-            (N₂.localizedModuleMkLinearMap p) f.hom x)
-    _ = LocalizedModule.mk (f.hom x) 1 :=
-        localizedModuleObjIso_hom_mkLinearMap N₂ (f.hom x)
-    _ = LocalizedModule.map p f.hom (LocalizedModule.mk x 1) :=
-        (LocalizedModule.map_mk p f.hom x 1).symm
-    _ = LocalizedModule.map p f.hom
-          ((localizedModuleObjIso N₁).hom (N₁.localizedModuleMkLinearMap p x)) :=
-        congrArg (LocalizedModule.map p f.hom)
-          (localizedModuleObjIso_hom_mkLinearMap N₁ x).symm
-
-/-- Extension of scalars to `Localization p` is naturally isomorphic to
-`ModuleCat.localizedModuleFunctor p`. -/
-private noncomputable def extendScalarsIsoLocalizedModuleFunctor (p : Submonoid V) :
-    ModuleCat.extendScalars.{u, u, u} (algebraMap V (Localization p)) ≅
-      ModuleCat.localizedModuleFunctor.{u} p :=
-  NatIso.ofComponents
-    (fun N ↦ N.extendScalarsLocalizationIso p ≪≫ (localizedModuleObjIso N).symm)
-    fun {N₁ N₂} f ↦ by
-      rw [← cancel_mono (localizedModuleObjIso N₂).hom]
-      simp only [Iso.trans_hom, Iso.symm_hom, Category.assoc, Iso.inv_hom_id, Category.comp_id,
-        localizedModuleObjIso_naturality, Iso.inv_hom_id_assoc]
-      apply ModuleCat.ExtendScalars.hom_ext
-      intro x
-      -- Express `1 ⊗ₜ x` with the `ChangeOfRings` tensor notation and evaluate both composites.
-      change (N₂.extendScalarsLocalizationIso p).hom
-          ((ModuleCat.extendScalars (algebraMap V (Localization p))).map f
-            ((1 : Localization p) ⊗ₜ[V, algebraMap V (Localization p)] x)) =
-        (ModuleCat.ofHom (LocalizedModule.map p f.hom))
-          ((N₁.extendScalarsLocalizationIso p).hom
-            ((1 : Localization p) ⊗ₜ[V, algebraMap V (Localization p)] x))
-      calc (N₂.extendScalarsLocalizationIso p).hom
-            ((ModuleCat.extendScalars (algebraMap V (Localization p))).map f
-              ((1 : Localization p) ⊗ₜ[V, algebraMap V (Localization p)] x))
-          = (N₂.extendScalarsLocalizationIso p).hom
-              ((1 : Localization p) ⊗ₜ[V, algebraMap V (Localization p)] f x) :=
-            congrArg (N₂.extendScalarsLocalizationIso p).hom
-              (ModuleCat.ExtendScalars.map_tmul (algebraMap V (Localization p)) f 1 x)
-        _ = LocalizedModule.mk (f x) 1 :=
-            N₂.extendScalarsLocalizationIso_hom_one_tmul p (f x)
-        _ = (ModuleCat.ofHom (LocalizedModule.map p f.hom)) (LocalizedModule.mk x 1) :=
-            (LocalizedModule.map_mk p f.hom x 1).symm
-        _ = (ModuleCat.ofHom (LocalizedModule.map p f.hom))
-              ((N₁.extendScalarsLocalizationIso p).hom
-                ((1 : Localization p) ⊗ₜ[V, algebraMap V (Localization p)] x)) :=
-            congrArg (ModuleCat.ofHom (LocalizedModule.map p f.hom))
-              (N₁.extendScalarsLocalizationIso_hom_one_tmul p x).symm
-
-/-- `ModuleCat.localizedModuleFunctor` is naturally isomorphic to extension of scalars to the
-localized ring. -/
-private noncomputable def localizedModuleFunctorIsoExtendScalars (p : Submonoid V) :
-    ModuleCat.localizedModuleFunctor.{u} p ≅
-      ModuleCat.extendScalars.{u, u, u} (algebraMap V (Localization p)) :=
-  (extendScalarsIsoLocalizedModuleFunctor p).symm
-
 /-- Composing almostification with `invert S hϖ` is naturally isomorphic to extension of scalars
 `M ↦ Localization.Away ϖ ⊗[V] M`. -/
 noncomputable def toAlmostCompInvertIsoExtendScalars :
     Module.toAlmost S ⋙ invert S hϖ ≅
       ModuleCat.extendScalars.{u, u, u} (algebraMap V (Localization.Away ϖ)) :=
-  toAlmostCompInvertIso S hϖ ≪≫ localizedModuleFunctorIsoExtendScalars (Submonoid.powers ϖ)
+  toAlmostCompInvertIso S hϖ ≪≫
+    (ModuleCat.extendScalarsIsoLocalizedModuleFunctor (Submonoid.powers ϖ)).symm
 
 /-- Evaluating `invert S hϖ` on an almostification `N^a` recovers
 `LocalizedModule (Submonoid.powers ϖ) N`. -/
 noncomputable def invertToAlmostObjIso (N : ModuleCat.{u} V) :
     (invert S hϖ).obj ((Module.toAlmost S).obj N) ≅
       ModuleCat.of (Localization.Away ϖ) (LocalizedModule (Submonoid.powers ϖ) N) :=
-  (toAlmostCompInvertIso S hϖ).app N ≪≫ localizedModuleObjIso N
+  (toAlmostCompInvertIso S hϖ).app N ≪≫ N.localizedModuleObjIso (Submonoid.powers ϖ)
 
 /-- Naturality of `invertToAlmostObjIso`: `(invert S hϖ).map (f^a)` acts as
 `LocalizedModule.map` on `LocalizedModule (Submonoid.powers ϖ)`. -/
@@ -361,8 +265,8 @@ theorem invert_map_toAlmost_comp_invertToAlmostObjIso_hom {N₁ N₂ : ModuleCat
         ModuleCat.ofHom (LocalizedModule.map (Submonoid.powers ϖ) f.hom) := by
   simp only [invertToAlmostObjIso, Iso.trans_hom, Iso.app_hom]
   rw [← Category.assoc, ← Functor.comp_map (Module.toAlmost S) (invert S hϖ),
-    (toAlmostCompInvertIso S hϖ).hom.naturality, Category.assoc, localizedModuleObjIso_naturality,
-    Category.assoc]
+    (toAlmostCompInvertIso S hϖ).hom.naturality, Category.assoc,
+    ModuleCat.localizedModuleObjIso_naturality, Category.assoc]
 
 /-- Inverting `ϖ ∈ m` sends `V^a` to the free rank-one module `Localization.Away ϖ`. -/
 noncomputable def invertToAlmostRingIso :
@@ -459,21 +363,28 @@ noncomputable def Module.baseChangeAwayEquiv (W : Type u) [CommRing W] [_root_.A
 
 section IsUnit
 
+/-- Localizing `V` away from a unit `ϖ` is isomorphic to `V` via `algebraMap`. -/
+private noncomputable def ringEquivAwayOfIsUnit (hu : IsUnit ϖ) :
+    V ≃+* Localization.Away ϖ :=
+  (IsLocalization.atUnits V (Submonoid.powers ϖ) (Submonoid.powers_le.mpr hu)).toRingEquiv
+
+/-- When `S.ideal` contains a unit `ϖ`, `Module.toAlmost S` is an equivalence of categories. -/
+private theorem isEquivalence_toAlmost_of_isUnit (hϖ : ϖ ∈ S.ideal) (hu : IsUnit ϖ) :
+    (Module.toAlmost S).IsEquivalence := by
+  rw [S.eq_classical_of_isUnit_mem hϖ hu]
+  infer_instance
+
 /-- When `ϖ ∈ m` is a unit of `V` (so `S` is classical and `V ≃+* V[1/ϖ]`), `invert S hϖ`
 followed by restriction of scalars along `V → V[1/ϖ]` is naturally isomorphic to
 `Almost.Module.elements S`. -/
 noncomputable def invertCompRestrictScalarsIsoElements (hu : IsUnit ϖ) :
     invert S hϖ ⋙ ModuleCat.restrictScalars (algebraMap V (Localization.Away ϖ)) ≅
       Module.elements S := by
-  have hS : S = BasicSetup.classical V := by
-    ext1; simp [Ideal.eq_top_of_isUnit_mem S.ideal hϖ hu]
-  have : (Module.toAlmost S).IsEquivalence := by rw [hS]; infer_instance
+  have := isEquivalence_toAlmost_of_isUnit S hϖ hu
   let Q := (Module.toAlmost S).asEquivalence
   let eElem : Module.elements S ≅ Q.inverse :=
     (Module.adjElements S).rightAdjointUniq Q.toAdjunction
-  let eRing : V ≃+* Localization.Away ϖ :=
-    (IsLocalization.atUnits V (Submonoid.powers ϖ) (Submonoid.powers_le.mpr hu)).toRingEquiv
-  let E := ModuleCat.restrictScalarsEquivalenceOfRingEquiv eRing
+  let E := ModuleCat.restrictScalarsEquivalenceOfRingEquiv (ringEquivAwayOfIsUnit hu)
   let eExt : ModuleCat.extendScalars.{u, u, u} (algebraMap V (Localization.Away ϖ)) ≅ E.inverse :=
     (ModuleCat.extendRestrictScalarsAdj (algebraMap V (Localization.Away ϖ))).leftAdjointUniq
       E.symm.toAdjunction
@@ -491,16 +402,13 @@ noncomputable def invertCompRestrictScalarsIsoElements (hu : IsUnit ϖ) :
 
 /-- When `ϖ ∈ m` is a unit of `V`, `invert S hϖ` is an equivalence of categories. -/
 theorem isEquivalence_invert_of_isUnit (hu : IsUnit ϖ) : (invert S hϖ).IsEquivalence := by
-  have hS : S = BasicSetup.classical V := by
-    ext1; simp [Ideal.eq_top_of_isUnit_mem S.ideal hϖ hu]
-  have : (Module.toAlmost S).IsEquivalence := by rw [hS]; infer_instance
+  have := isEquivalence_toAlmost_of_isUnit S hϖ hu
   have : (Module.elements S).IsEquivalence :=
     Functor.isEquivalence_of_iso
       ((Module.adjElements S).rightAdjointUniq (Module.toAlmost S).asEquivalence.toAdjunction).symm
-  let eRing : V ≃+* Localization.Away ϖ :=
-    (IsLocalization.atUnits V (Submonoid.powers ϖ) (Submonoid.powers_le.mpr hu)).toRingEquiv
   have : (ModuleCat.restrictScalars (algebraMap V (Localization.Away ϖ))).IsEquivalence :=
-    inferInstanceAs (ModuleCat.restrictScalars eRing.toRingHom).IsEquivalence
+    inferInstanceAs
+      (ModuleCat.restrictScalars (ringEquivAwayOfIsUnit hu).toRingHom).IsEquivalence
   have : (invert S hϖ ⋙
       ModuleCat.restrictScalars (algebraMap V (Localization.Away ϖ))).IsEquivalence :=
     Functor.isEquivalence_of_iso (invertCompRestrictScalarsIsoElements S hϖ hu).symm
@@ -512,10 +420,6 @@ end IsUnit
 end InvertFunctor
 
 /-! ### The symmetric monoidal structure on `Almost.invert` -/
-
-private noncomputable instance extendScalarsBraided {V W : Type u} [CommRing V] [CommRing W]
-    (f : V →+* W) : (ModuleCat.extendScalars.{u, u, u} f).Braided :=
-  (ModuleCat.extendRestrictScalarsAdj f).leftAdjointBraided
 
 section Monoidal
 
@@ -668,7 +572,7 @@ theorem BasicSetup.IsAlmostZero.exactAt_extendScalars {S : BasicSetup V} {ϖ : V
       (algebraMap V (Localization.Away ϖ))).mapHomologicalComplex c).obj K).ExactAt i :=
   (hK.exactAt_localizedModuleFunctor hϖ).of_iso
     ((NatIso.mapHomologicalComplex
-      (localizedModuleFunctorIsoExtendScalars (Submonoid.powers ϖ)) c).app K)
+      (ModuleCat.extendScalarsIsoLocalizedModuleFunctor (Submonoid.powers ϖ)).symm c).app K)
 
 /-- A complex of `V`-modules whose homology is almost zero in every degree becomes acyclic after
 base-changing to `Localization.Away ϖ` for `ϖ ∈ m`. -/
@@ -809,59 +713,6 @@ noncomputable def baseChangeAwayEquiv (W : Type u) [CommRing W] [_root_.Algebra 
   have := isEquivalence_toAlmost_baseChange_away S W hϖ
   (toAlmost (S.baseChange W)).asEquivalence
 
-/-- Extension of scalars of a commutative `V`-algebra `R` via `ModuleCat.extendScalars` on
-commutative monoid objects agrees with `Localization.Away ϖ ⊗[V] R`. -/
-private noncomputable def extendScalarsCommAlgIso (ϖ : V) (R : CommAlgCat.{u} V) :
-    CommAlgCat.of (Localization.Away ϖ) (Localization.Away ϖ ⊗[V] R) ≅
-      ModuleCat.CommMonModuleEquivalenceCommAlgebra.functor.obj
-        ((ModuleCat.extendScalars.{u, u, u}
-          (algebraMap V (Localization.Away ϖ))).mapCommMon.obj
-          (ModuleCat.CommMonModuleEquivalenceCommAlgebra.inverse.obj R)) := by
-  let S₀ := Localization.Away ϖ
-  let φ := algebraMap V S₀
-  let G := ModuleCat.extendScalars.{u, u, u} φ
-  let R₀ := ModuleCat.of V R
-  let M := G.mapCommMon.obj (ModuleCat.CommMonModuleEquivalenceCommAlgebra.inverse.obj R)
-  let eLin : (S₀ ⊗[V] R) ≃ₗ[S₀] M.X :=
-    (ModuleCat.extendScalarsAlgebraMapIso (S := S₀) R₀).symm.toLinearEquiv
-  have heLin (s : S₀) (r : R) : eLin (s ⊗ₜ[V] r) = show M.X from s ⊗ₜ[V, φ] (r : R₀) :=
-    ModuleCat.extendScalarsAlgebraMapIso_inv_tmul R₀ s r
-  have hμ (r₁ r₂ : R) :
-      (Functor.LaxMonoidal.μ G R₀ R₀)
-          (((1 : S₀) ⊗ₜ[V, φ] (r₁ : R₀)) ⊗ₜ[S₀] ((1 : S₀) ⊗ₜ[V, φ] (r₂ : R₀))) =
-        (1 : S₀) ⊗ₜ[V, φ] ((r₁ : R₀) ⊗ₜ[V] (r₂ : R₀) : ↑(R₀ ⊗ R₀)) :=
-    (congrArg (Functor.LaxMonoidal.μ G R₀ R₀)
-      (ModuleCat.extendScalars_δ_tmul φ R₀ R₀ r₁ r₂).symm).trans
-      (ConcreteCategory.congr_hom (Functor.Monoidal.δ_μ G R₀ R₀) _)
-  have h1 (r₁ r₂ : R) : eLin (1 ⊗ₜ[V] r₁) * eLin (1 ⊗ₜ[V] r₂) = eLin (1 ⊗ₜ[V] (r₁ * r₂)) :=
-    (congrArg₂ (· * ·) (heLin 1 r₁) (heLin 1 r₂)).trans <|
-      ((congrArg (G.map (ModuleCat.ofHom (LinearMap.mul' V R))) (hμ r₁ r₂)).trans
-        (ModuleCat.ExtendScalars.map_tmul φ (ModuleCat.ofHom (LinearMap.mul' V R)) 1
-          ((r₁ : R₀) ⊗ₜ[V] (r₂ : R₀) : ↑(R₀ ⊗ R₀)))).trans
-        (heLin 1 (r₁ * r₂)).symm
-  have hsmul (s : S₀) (r : R) : eLin (s ⊗ₜ[V] r) = s • eLin (1 ⊗ₜ[V] r) := by
-    rw [← eLin.map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  have hMul (x y : S₀ ⊗[V] R) : eLin (x * y) = eLin x * eLin y := by
-    refine TensorProduct.inductionOn x (fun s₁ r₁ ↦ ?_) fun a b ha hb ↦ by
-      simp only [add_mul, map_add] at ha hb ⊢; exact congrArg₂ (· + ·) ha hb
-    refine TensorProduct.inductionOn y (fun s₂ r₂ ↦ ?_) fun a b ha hb ↦ by
-      simp only [mul_add, map_add] at ha hb ⊢; exact congrArg₂ (· + ·) ha hb
-    rw [_root_.Algebra.TensorProduct.tmul_mul_tmul, hsmul (s₁ * s₂), hsmul s₁, hsmul s₂,
-      smul_mul_smul_comm, h1]
-  have hOne : eLin 1 = 1 :=
-    calc eLin 1 = eLin 1 * 1 := (mul_one _).symm
-      _ = eLin 1 * eLin (eLin.symm 1) := by rw [eLin.apply_symm_apply]
-      _ = eLin (1 * eLin.symm 1) := (hMul 1 (eLin.symm 1)).symm
-      _ = eLin (eLin.symm 1) := by rw [one_mul]
-      _ = 1 := eLin.apply_symm_apply 1
-  exact CommAlgCat.isoMk (AlgEquiv.ofLinearEquiv eLin hOne hMul)
-
-private theorem extendScalarsCommAlgIso_hom_tmul (ϖ : V) (R : CommAlgCat.{u} V)
-    (s : Localization.Away ϖ) (r : R) :
-    (extendScalarsCommAlgIso ϖ R).hom (s ⊗ₜ[V] r) =
-      s ⊗ₜ[V, algebraMap V (Localization.Away ϖ)] r :=
-  ModuleCat.extendScalarsAlgebraMapIso_inv_tmul (ModuleCat.of V R) s r
-
 /-- Component comparison morphism `(Localization.Away ϖ ⊗[V] A_*) → (Almost.invert S hϖ).obj A` of
 commutative monoid objects. -/
 private noncomputable def extendScalarsElementsToInvertCommMon {ϖ : V} (hϖ : ϖ ∈ S.ideal)
@@ -882,7 +733,7 @@ private noncomputable def invertObjIsoMapCommMonObj {ϖ : V} (hϖ : ϖ ∈ S.ide
         ((Almost.invert S hϖ).mapCommMon.obj A) :=
   CommAlgCat.isoMk
       (Localization.tensorRightAlgEquiv (Submonoid.powers ϖ) ((elements S).obj A)).symm ≪≫
-    extendScalarsCommAlgIso ϖ ((elements S).obj A) ≪≫
+    ModuleCat.extendScalarsCommAlgIso (Localization.Away ϖ) ((elements S).obj A) ≪≫
     ModuleCat.CommMonModuleEquivalenceCommAlgebra.functor.mapIso
       (((Functor.mapCommMonCompIso.symm ≪≫
           Functor.mapCommMonNatIso (toAlmostCompInvertIsoExtendScalars S hϖ)).app
@@ -904,12 +755,12 @@ private theorem invertObjIsoMapCommMonObj_hom_algebraMap {ϖ : V} (hϖ : ϖ ∈ 
   -- `extendScalarsCommAlgIso` and `extendScalarsElementsToInvertCommMon`.
   change (ModuleCat.CommMonModuleEquivalenceCommAlgebra.functor.map
       (extendScalarsElementsToInvertCommMon S hϖ A))
-    ((extendScalarsCommAlgIso ϖ ((elements S).obj A)).hom
+    ((ModuleCat.extendScalarsCommAlgIso (Localization.Away ϖ) ((elements S).obj A)).hom
       ((Localization.tensorRightAlgEquiv (Submonoid.powers ϖ) ((elements S).obj A)).symm
         (Localization.tensorRightAlgEquiv (Submonoid.powers ϖ) ((elements S).obj A)
           ((1 : Localization.Away ϖ) ⊗ₜ[V] x)))) = _
-  rw [AlgEquiv.symm_apply_apply, extendScalarsCommAlgIso_hom_tmul]
-  rfl
+  rw [AlgEquiv.symm_apply_apply, ModuleCat.extendScalarsCommAlgIso_hom_tmul]
+  exact ModuleCat.CommMonModuleEquivalenceCommAlgebra.functor_map_apply _ _
 
 /-- For `ϖ ∈ m`, `Algebra.invert S ϖ` is naturally isomorphic to the functor induced on
 commutative monoid objects by the braided monoidal functor `Almost.invert S hϖ`. -/
@@ -978,6 +829,35 @@ noncomputable def invertToAlmostObjEquiv {ϖ : V} (hϖ : ϖ ∈ S.ideal) (R : Co
     rw [hcoe]
     exact (isAlmostIso_adj_unit_app S R).bijective_isLocalizedModule_map hϖ _ _
   exact (AlgEquiv.ofBijective φ hbij).symm
+
+/-- The inverse of `invertToAlmostObjEquiv` sends a canonical numerator `algebraMap R R[1/ϖ] r` to
+the canonical numerator of `(adj S).unit.app R r` in `(R^a)_*[1/ϖ]`. -/
+@[simp]
+theorem invertToAlmostObjEquiv_symm_algebraMap {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+    (R : CommAlgCat.{u} V) (r : R) :
+    (invertToAlmostObjEquiv S hϖ R).symm
+        (algebraMap R (Localization (_root_.Algebra.algebraMapSubmonoid R (Submonoid.powers ϖ)))
+          r) =
+      algebraMap ((elements S).obj ((toAlmost S).obj R))
+        ((invert S ϖ).obj ((toAlmost S).obj R)) ((adj S).unit.app R r) := by
+  rw [invertToAlmostObjEquiv, AlgEquiv.symm_symm, AlgEquiv.ofBijective_apply]
+  let u : R ⟶ (elements S).obj ((toAlmost S).obj R) := (adj S).unit.app R
+  exact IsLocalization.map_eq
+    (S := Localization (_root_.Algebra.algebraMapSubmonoid R (Submonoid.powers ϖ)))
+    (Q := (invert S ϖ).obj ((toAlmost S).obj R))
+    (g := u.hom.toRingHom)
+    (_root_.Algebra.algebraMapSubmonoid_le_comap (Submonoid.powers ϖ) u.hom) r
+
+/-- `invertToAlmostObjEquiv` sends the canonical numerator of `(adj S).unit.app R r` in
+`(R^a)_*[1/ϖ]` to `algebraMap R R[1/ϖ] r`. -/
+theorem invertToAlmostObjEquiv_algebraMap_unit_app {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+    (R : CommAlgCat.{u} V) (r : R) :
+    invertToAlmostObjEquiv S hϖ R
+        (algebraMap ((elements S).obj ((toAlmost S).obj R))
+          ((invert S ϖ).obj ((toAlmost S).obj R)) ((adj S).unit.app R r)) =
+      algebraMap R
+        (Localization (_root_.Algebra.algebraMapSubmonoid R (Submonoid.powers ϖ))) r := by
+  rw [← invertToAlmostObjEquiv_symm_algebraMap S hϖ R r, AlgEquiv.apply_symm_apply]
 
 /-- For `ϖ ∈ m`, `(Algebra.invert S ϖ).obj (R^a)` is the zero ring iff a power of `ϖ` maps to `0`
 in `R`. -/

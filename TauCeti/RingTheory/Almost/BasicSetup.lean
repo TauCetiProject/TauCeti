@@ -75,8 +75,9 @@ pseudouniformiser.
   for every `δ ∈ m`, a linear map `g` back with `f ∘ g = δ • id` and `g ∘ f = δ • id`.
 * `TauCeti.Almost.BasicSetup.flat_tilde_map`: `mW ⊗[W] mW ≅ W ⊗[V] m~` is flat, so basic setups
   base change (the isomorphism is `Ideal.baseChangeTensorSelfEquiv`, valid for every idempotent
-  ideal); `TauCeti.Almost.BasicSetup.baseChange_away_eq_classical`: inverting an element of
-  `m` makes the setup classical.
+  ideal); `TauCeti.Almost.BasicSetup.eq_classical_of_isUnit_mem` and
+  `TauCeti.Almost.BasicSetup.baseChange_away_eq_classical`: a setup whose ideal contains a unit, in
+  particular after inverting an element of `m`, is the classical setup.
 * `TauCeti.Almost.BasicSetup.IsFilteredPrincipal.powersGenerate`: condition (A) implies
   condition (B); `TauCeti.Almost.BasicSetup.IsFilteredPrincipal.exists_le_span_singleton`: under
   condition (A), every finitely generated ideal inside `m` lies in a principal ideal `(z)` with
@@ -547,6 +548,13 @@ def classical : BasicSetup V where
 theorem classical_ideal : (classical V).ideal = ⊤ :=
   (rfl)
 
+variable {S} in
+/-- A basic setup whose ideal contains a unit is the classical setup. -/
+theorem eq_classical_of_isUnit_mem {ε : V} (hε : ε ∈ S.ideal)
+    (hu : IsUnit ε) : S = classical V := by
+  ext1
+  exact Ideal.eq_top_of_isUnit_mem S.ideal hε hu
+
 variable (V) in
 /-- The zero setup `(V, 0)`: the zero ideal is idempotent and `m~ = 0` is flat. Every module is
 almost zero for it. -/
@@ -648,10 +656,8 @@ theorem baseChange_quotient_eq_zero : S.baseChange (V ⧸ S.ideal) = zero (V ⧸
 /-- Inverting an element of `m` makes the setup classical (Gabber–Ramero Remark 2.1.4(ii)); this
 includes `ε = 0`, where `V[1/ε] = 0`. -/
 theorem baseChange_away_eq_classical {ε : V} (hε : ε ∈ S.ideal) [IsLocalization.Away ε W] :
-    S.baseChange W = classical W := by
-  ext1
-  exact Ideal.eq_top_of_isUnit_mem _ (Ideal.mem_map_of_mem _ hε)
-    (IsLocalization.Away.algebraMap_isUnit ε)
+    S.baseChange W = classical W :=
+  eq_classical_of_isUnit_mem (Ideal.mem_map_of_mem _ hε) (IsLocalization.Away.algebraMap_isUnit ε)
 
 end BaseChange
 
