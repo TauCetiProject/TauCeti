@@ -19,11 +19,14 @@ given by `(α g ∘ L ∘ α g⁻¹, α g ∘ R ∘ α g⁻¹)`, and it restrict
 The extended action is generally not point-norm continuous; for instance, translation on
 `C₀(ℝ)` does not act norm-continuously on `C_b(ℝ)`. It is strictly continuous: for every
 multiplier `m` and every `a : A`, both `g ↦ α.multiplier g m * a` and
-`g ↦ a * α.multiplier g m` are norm continuous.
+`g ↦ a * α.multiplier g m` are norm continuous, and on norm-bounded strictly continuous multiplier
+families this upgrades to joint norm continuity (`continuous_multiplier_fst_apply_of_norm_le` and
+`continuous_multiplier_snd_apply_of_norm_le`). It also preserves both the center and the unitary
+group of `𝓜(ℂ, A)` (`multiplier_mem_center_iff` and `multiplier_mem_unitary_iff`).
 Mathlib has no strict topology on `𝓜(ℂ, A)`, so this continuity is stated pointwise. No
-continuity of inversion in `G` is assumed. This is the form in which multiplier-valued
-covariant homomorphisms and unitary group maps into multiplier algebras are compared with
-actions.
+continuity of inversion in `G` is assumed except for varying multiplier families. This is the form
+in which multiplier-valued covariant homomorphisms, unitary group maps, and central multiplier
+cocycles are compared with actions.
 
 ## References
 
@@ -58,6 +61,14 @@ theorem multiplier_apply_fst (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) (
 theorem multiplier_apply_snd (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) (a : A) :
     (α.multiplier g m).snd a = α g (m.snd (α g⁻¹ a)) := by
   simp [multiplier_apply]
+
+theorem multiplier_apply_fst_apply (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) (a : A) :
+    (α.multiplier g m).fst (α g a) = α g (m.fst a) := by
+  simp
+
+theorem multiplier_apply_snd_apply (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) (a : A) :
+    (α.multiplier g m).snd (α g a) = α g (m.snd a) := by
+  simp
 
 /-- The inverse of an automorphism of the induced action is the action of the inverse element. -/
 @[simp]
@@ -106,5 +117,41 @@ theorem continuous_coe_mul_multiplier_apply (α : CStarAction G A) (m : 𝓜(ℂ
   simp only [DoubleCentralizer.coe_mul_eq_coe_snd]
   exact DoubleCentralizer.isometry_coe.continuous.comp
     (α.continuous_multiplier_apply_snd m a)
+
+/-- The induced multiplier action preserves the center of `𝓜(ℂ, A)`. -/
+@[simp]
+theorem multiplier_mem_center_iff (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) :
+    α.multiplier g m ∈ Subalgebra.center ℂ 𝓜(ℂ, A) ↔ m ∈ Subalgebra.center ℂ 𝓜(ℂ, A) := by
+  rw [← SetLike.mem_coe, ← SetLike.mem_coe, Subalgebra.coe_center]
+  exact MulEquivClass.apply_mem_center_iff (α.multiplier g)
+
+/-- The induced multiplier action preserves unitary multipliers. -/
+@[simp]
+theorem multiplier_mem_unitary_iff (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) :
+    α.multiplier g m ∈ unitary 𝓜(ℂ, A) ↔ m ∈ unitary 𝓜(ℂ, A) :=
+  ⟨fun h => by simpa using Unitary.map_mem (α.multiplier g).symm h,
+    Unitary.map_mem (α.multiplier g)⟩
+
+/-- Joint strict left continuity of the induced multiplier action on a norm-bounded strictly
+left-continuous multiplier family and a continuously varying element of `A`. -/
+theorem continuous_multiplier_fst_apply_of_norm_le [ContinuousInv G] (α : CStarAction G A)
+    {X : Type*} [TopologicalSpace X] {g : X → G} {u : X → 𝓜(ℂ, A)} {f : X → A} {C : ℝ}
+    (hg : Continuous g) (hu : ∀ a : A, Continuous fun x => (u x).fst a)
+    (hC : ∀ x, ‖u x‖ ≤ C) (hf : Continuous f) :
+    Continuous fun x => (α.multiplier (g x) (u x)).fst (f x) := by
+  simp only [multiplier_apply_fst]
+  refine α.continuous_apply hg <| DoubleCentralizer.continuous_fst_apply_of_norm_le hu
+    (fun x => by simpa using hC x) (α.continuous_apply hg.inv hf)
+
+/-- Joint strict right continuity of the induced multiplier action on a norm-bounded strictly
+right-continuous multiplier family and a continuously varying element of `A`. -/
+theorem continuous_multiplier_snd_apply_of_norm_le [ContinuousInv G] (α : CStarAction G A)
+    {X : Type*} [TopologicalSpace X] {g : X → G} {u : X → 𝓜(ℂ, A)} {f : X → A} {C : ℝ}
+    (hg : Continuous g) (hu : ∀ a : A, Continuous fun x => (u x).snd a)
+    (hC : ∀ x, ‖u x‖ ≤ C) (hf : Continuous f) :
+    Continuous fun x => (α.multiplier (g x) (u x)).snd (f x) := by
+  simp only [multiplier_apply_snd]
+  refine α.continuous_apply hg <| DoubleCentralizer.continuous_snd_apply_of_norm_le hu
+    (fun x => by simpa using hC x) (α.continuous_apply hg.inv hf)
 
 end TauCeti.CStarAction
