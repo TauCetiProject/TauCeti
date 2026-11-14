@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Eval.Defs
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Trigonometric
 public import Mathlib.Analysis.SpecialFunctions.Artanh
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
+import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Data.Nat.Factorial.Basic
 
@@ -40,6 +43,10 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 * `Real.hasDerivAt_inv_cosh` — the derivative of `(cosh x)⁻¹` is `-tanh x * (cosh x)⁻¹`.
 * `Real.one_add_tanh`, `Real.one_sub_tanh`, `Real.one_add_tanh_le` and `Real.one_sub_tanh_le` —
   `1 ± tanh x = exp (± x) / cosh x`, so `Real.tanh` approaches `∓1` at the rate `2 * exp (± 2 x)`.
+* `Real.one_sub_tanh_sq_le`, `Real.exists_iteratedDeriv_succ_tanh_eq` and
+  `Real.exists_abs_iteratedDeriv_succ_tanh_le` — every derivative of positive order of
+  `Real.tanh` is `1 - tanh x ^ 2 ≤ 4 * exp (-(2 * |x|))` times a polynomial in `tanh x`, so it is
+  at most a constant times `exp (-(2 * |x|))`: `Real.tanh` converges to `±1` in every `C^k` norm.
 * `Real.tendsto_cosh_atTop` and `Real.tendsto_cosh_atBot` — `Real.cosh` tends to infinity at both
   ends of the line.
 * `Real.hasDerivAt_log_cosh` and `Real.abs_sub_log_two_le_log_cosh` — `log (cosh x)` has
@@ -222,6 +229,62 @@ theorem one_add_tanh_le (x : ℝ) : 1 + tanh x ≤ 2 * exp (2 * x) := by
 `1 - tanh x ≤ 2 * exp (-(2 * x))`. -/
 theorem one_sub_tanh_le (x : ℝ) : 1 - tanh x ≤ 2 * exp (-(2 * x)) := by
   simpa [tanh_neg, sub_eq_add_neg] using one_add_tanh_le (-x)
+
+/-- `1 - tanh x ^ 2 ≤ 4 * exp (-(2 * |x|))`: the derivative `1 - tanh x ^ 2 = 1 / cosh x ^ 2` of
+the hyperbolic tangent decays exponentially at both ends of the line. -/
+theorem one_sub_tanh_sq_le (x : ℝ) : 1 - tanh x ^ 2 ≤ 4 * exp (-(2 * |x|)) := by
+  have ha := neg_one_lt_tanh x
+  have hb := tanh_lt_one x
+  have e : 1 - tanh x ^ 2 = (1 + tanh x) * (1 - tanh x) := by ring
+  rw [e]
+  rcases le_total 0 x with hx | hx
+  · rw [abs_of_nonneg hx]
+    calc (1 + tanh x) * (1 - tanh x) ≤ 2 * (2 * exp (-(2 * x))) :=
+          mul_le_mul (by linarith) (one_sub_tanh_le x) (by linarith) zero_le_two
+      _ = 4 * exp (-(2 * x)) := by ring
+  · rw [abs_of_nonpos hx, mul_neg, neg_neg]
+    calc (1 + tanh x) * (1 - tanh x) ≤ 2 * exp (2 * x) * 2 :=
+          mul_le_mul (one_add_tanh_le x) (by linarith) (by linarith) (by positivity)
+      _ = 4 * exp (2 * x) := by ring
+
+open _root_.Polynomial in
+/-- Every derivative of positive order of the hyperbolic tangent is `1 - tanh x ^ 2` times a
+polynomial in `tanh x`, since `tanh' = 1 - tanh ^ 2`. -/
+theorem exists_iteratedDeriv_succ_tanh_eq (n : ℕ) :
+    ∃ p : ℝ[X], ∀ x, iteratedDeriv (n + 1) tanh x = (1 - tanh x ^ 2) * p.eval (tanh x) := by
+  have ht (x : ℝ) : HasDerivAt tanh (1 - tanh x ^ 2) x := by
+    simpa [one_sub_tanh_sq] using hasDerivAt_tanh x
+  induction n with
+  | zero => exact ⟨1, fun x ↦ by simp [(ht x).deriv]⟩
+  | succ n ih =>
+    obtain ⟨p, hp⟩ := ih
+    refine ⟨-2 * X * p + (1 - X ^ 2) * derivative p, fun x ↦ ?_⟩
+    rw [iteratedDeriv_succ, funext hp]
+    have h : HasDerivAt (fun y ↦ (1 - tanh y ^ 2) * p.eval (tanh y)) _ x :=
+      (((ht x).pow 2).const_sub 1).fun_mul ((p.hasDerivAt (tanh x)).comp x (ht x))
+    rw [h.deriv]
+    simp only [Nat.cast_ofNat, Nat.add_one_sub_one, pow_one, eval_add, eval_mul, eval_neg,
+      eval_ofNat, eval_X, eval_sub, eval_one, eval_pow, Pi.pow_apply]
+    ring
+
+/-- **The derivatives of the hyperbolic tangent decay exponentially.** For every `n` there is a
+constant `C` with `|tanh⁽ⁿ⁺¹⁾ x| ≤ C exp (-2 |x|)` for all `x`: every derivative of positive
+order is `1 - tanh x ^ 2` (`Real.one_sub_tanh_sq_le`) times a polynomial in `tanh x`, which is
+bounded since `tanh x ∈ [-1, 1]`. So `tanh` converges to `±1` at `±∞` in every `C^k` norm, at the
+rate `exp (-2 |x|)`. -/
+theorem exists_abs_iteratedDeriv_succ_tanh_le (n : ℕ) :
+    ∃ C, ∀ x, |iteratedDeriv (n + 1) tanh x| ≤ C * exp (-(2 * |x|)) := by
+  obtain ⟨p, hp⟩ := exists_iteratedDeriv_succ_tanh_eq n
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
+    (p.differentiable.continuous.continuousOn (s := Set.Icc (-1 : ℝ) 1))
+  refine ⟨4 * C, fun x ↦ ?_⟩
+  have hs : 0 ≤ 1 - tanh x ^ 2 := by nlinarith [neg_one_lt_tanh x, tanh_lt_one x]
+  have hb : |p.eval (tanh x)| ≤ C := by
+    simpa [Real.norm_eq_abs] using hC (tanh x) ⟨(neg_one_lt_tanh x).le, (tanh_lt_one x).le⟩
+  rw [hp, abs_mul, abs_of_nonneg hs]
+  calc (1 - tanh x ^ 2) * |p.eval (tanh x)| ≤ 4 * exp (-(2 * |x|)) * C :=
+        mul_le_mul (one_sub_tanh_sq_le x) hb (abs_nonneg _) (by positivity)
+    _ = 4 * C * exp (-(2 * |x|)) := by ring
 
 /-- The square of `sinh (r / 2)` in terms of `exp (± r / 2)`:
 `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`. -/

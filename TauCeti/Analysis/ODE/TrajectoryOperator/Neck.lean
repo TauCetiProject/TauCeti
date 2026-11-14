@@ -25,7 +25,15 @@ positive end of `D₁` to the negative end of `D₂` along a neck of length `2R`
 `D_R = d/ds - a_R(s)`, `a_R(s) = 1 - tanh (s + R) + tanh (s - R)`
 
 (`TauCeti.neckCoeff`), which is `D₁` near `s = -R` and `D₂` near `s = R`, and whose coefficient
-tends to `1` at both ends. This file shows that `D_R` is invertible, for every `R`: the kernel of
+tends to `1` at both ends. Both statements hold in every `C^k` norm with exponential rates. The
+`k`-th derivative of `a_R` at `s - R` differs from that of `-tanh` at `s` by at most
+`C exp (2 (s - 2 R))`, and at `s + R` from that of `tanh` at `s` by at most
+`C exp (-2 (s + 2 R))`, so the translated operators converge to `D₁` and `D₂` locally in `C^k`
+as `R → ∞`; for each `R` the `k`-th derivative of `a_R - 1` is at most `C exp (2 (|R| - |s|))`.
+All of this follows from the exponential decay of the derivatives of `tanh`
+(`Real.exists_abs_iteratedDeriv_succ_tanh_le`), since `a_R(s) - 1 = tanh (s - R) - tanh (s + R)`.
+
+This file shows that `D_R` is invertible, for every `R`: the kernel of
 `D₁` cancels against the cokernel of `D₂`, so the index `0 = 1 + (-1)` is additive under gluing
 while the kernel and the cokernel separately are not. It also shows that the inverse is not
 uniformly bounded as the neck grows: its norm is at least `exp (2 R) / 2`. These are the two
@@ -66,6 +74,13 @@ zero mode alone.
   form `TauCeti.neckCoeff_eq`, the bounds `-1 < a_R ≤ 1` for `R ≥ 0` and `|a_R'| ≤ 1`, the limits
   `1` at both ends, and the exponential comparisons with `-tanh` and `tanh` after translation by
   `∓R`.
+* `TauCeti.exists_abs_iteratedDeriv_neckCoeff_sub_add_iteratedDeriv_tanh_le` and
+  `TauCeti.exists_abs_iteratedDeriv_neckCoeff_add_sub_iteratedDeriv_tanh_le`: the exponential
+  `C^k` comparisons of the translated coefficients with `-tanh` and `tanh`, with the resulting
+  local `C^k` convergence `TauCeti.tendstoUniformlyOn_iteratedDeriv_neckCoeff_sub` and
+  `TauCeti.tendstoUniformlyOn_iteratedDeriv_neckCoeff_add` as `R → ∞`.
+* `TauCeti.exists_abs_iteratedDeriv_neckCoeff_sub_one_le`: the exponential `C^k` convergence of
+  the coefficient to `1` at both ends.
 * `TauCeti.neckSolution`: the positive solution `F_R` of `v' = a_R v`, with its asymptotics.
 * `TauCeti.squareIntegrableSolutions_neg_neckCoeff_smul_id` and
   `TauCeti.squareIntegrableSolutions_neckCoeff_smul_id`: neither `v' = a_R v` nor `v' = -a_R v`
@@ -254,6 +269,155 @@ theorem abs_neckCoeff_add_sub_tanh_le (R s : ℝ) :
     ring
   rw [h, abs_of_pos (by linarith [tanh_lt_one (s + 2 * R)])]
   exact one_sub_tanh_le _
+
+/-! ### Convergence of the coefficient in every `C^k` norm -/
+
+/-- Every derivative of positive order of the neck coefficient is the difference
+`tanh⁽ⁿ⁺¹⁾ (s - R) - tanh⁽ⁿ⁺¹⁾ (s + R)` of two translated derivatives of `tanh`. -/
+theorem iteratedDeriv_succ_neckCoeff (n : ℕ) (R s : ℝ) :
+    iteratedDeriv (n + 1) (neckCoeff R) s =
+      iteratedDeriv (n + 1) tanh (s - R) - iteratedDeriv (n + 1) tanh (s + R) := by
+  have h₁ : ContDiffAt ℝ ((n + 1 : ℕ) : WithTop ℕ∞) (fun x ↦ 1 - tanh (x + R)) s := by fun_prop
+  have h₂ : ContDiffAt ℝ ((n + 1 : ℕ) : WithTop ℕ∞) (fun x ↦ tanh (x - R)) s := by fun_prop
+  rw [show neckCoeff R = fun x ↦ (1 - tanh (x + R)) + tanh (x - R) from
+      funext (neckCoeff_def R), iteratedDeriv_fun_add h₁ h₂, iteratedDeriv_const_sub n.succ_pos,
+    iteratedDeriv_neg, iteratedDeriv_comp_add_const, iteratedDeriv_comp_sub_const]
+  ring
+
+/-- **The neck near `-R` is `d/ds + tanh s` in every `C^k` norm.** For each order `k` there is a
+constant `C` such that, for every `R` and `s`, the `k`-th derivative of the neck coefficient at
+`s - R` differs from that of `-tanh` at `s` by at most `C exp (2 (s - 2 R))`. So the translated
+coefficients `a_R(· - R)` converge to `-tanh` in `C^k` on every half-line `s ≤ c`,
+exponentially fast as `R → ∞`. At order `0` this is `TauCeti.abs_neckCoeff_sub_add_tanh_le`. -/
+theorem exists_abs_iteratedDeriv_neckCoeff_sub_add_iteratedDeriv_tanh_le (k : ℕ) :
+    ∃ C, ∀ R s, |iteratedDeriv k (neckCoeff R) (s - R) + iteratedDeriv k tanh s| ≤
+      C * exp (2 * (s - 2 * R)) := by
+  cases k with
+  | zero => exact ⟨2, fun R s ↦ by simpa using abs_neckCoeff_sub_add_tanh_le R s⟩
+  | succ n =>
+    -- `a_R(s - R) = 1 + tanh (s - 2 R) - tanh s`, so only `tanh⁽ⁿ⁺¹⁾ (s - 2 R)` remains.
+    obtain ⟨C, hC⟩ := exists_abs_iteratedDeriv_succ_tanh_le n
+    refine ⟨C, fun R s ↦ ?_⟩
+    rw [iteratedDeriv_succ_neckCoeff, sub_add_cancel, show s - R - R = s - 2 * R by ring,
+      sub_add_cancel]
+    have hC₀ : 0 ≤ C := by simpa using (abs_nonneg _).trans (hC 0)
+    refine (hC _).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)
+    linarith [neg_abs_le (s - 2 * R)]
+
+/-- **The neck near `R` is `d/ds - tanh s` in every `C^k` norm.** For each order `k` there is a
+constant `C` such that, for every `R` and `s`, the `k`-th derivative of the neck coefficient at
+`s + R` differs from that of `tanh` at `s` by at most `C exp (-2 (s + 2 R))`. So the translated
+coefficients `a_R(· + R)` converge to `tanh` in `C^k` on every half-line `s ≥ c`, exponentially
+fast as `R → ∞`. At order `0` this is `TauCeti.abs_neckCoeff_add_sub_tanh_le`. -/
+theorem exists_abs_iteratedDeriv_neckCoeff_add_sub_iteratedDeriv_tanh_le (k : ℕ) :
+    ∃ C, ∀ R s, |iteratedDeriv k (neckCoeff R) (s + R) - iteratedDeriv k tanh s| ≤
+      C * exp (-(2 * (s + 2 * R))) := by
+  cases k with
+  | zero => exact ⟨2, fun R s ↦ by simpa using abs_neckCoeff_add_sub_tanh_le R s⟩
+  | succ n =>
+    -- `a_R(s + R) = 1 - tanh (s + 2 R) + tanh s`, so only `-tanh⁽ⁿ⁺¹⁾ (s + 2 R)` remains.
+    obtain ⟨C, hC⟩ := exists_abs_iteratedDeriv_succ_tanh_le n
+    have hC₀ : 0 ≤ C := by simpa using (abs_nonneg _).trans (hC 0)
+    refine ⟨C, fun R s ↦ ?_⟩
+    rw [iteratedDeriv_succ_neckCoeff, add_sub_cancel_right, show s + R + R = s + 2 * R by ring,
+      sub_sub_cancel_left, abs_neg]
+    refine (hC _).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)
+    linarith [le_abs_self (s + 2 * R)]
+
+/-- The translated neck coefficients `a_R(· - R)` converge to `-tanh` as `R → ∞` in every `C^k`
+norm, uniformly on every half-line `s ≤ c`: the neck operator `d/ds - a_R`, read near `-R`,
+converges to `d/ds + tanh s`. -/
+theorem tendstoUniformlyOn_iteratedDeriv_neckCoeff_sub (k : ℕ) (c : ℝ) :
+    TendstoUniformlyOn (fun R s ↦ iteratedDeriv k (neckCoeff R) (s - R))
+      (fun s ↦ -iteratedDeriv k tanh s) atTop (Iic c) := by
+  obtain ⟨C, hC⟩ := exists_abs_iteratedDeriv_neckCoeff_sub_add_iteratedDeriv_tanh_le k
+  have hC₀ : 0 ≤ C := by simpa using (abs_nonneg _).trans (hC 0 0)
+  -- On `s ≤ c` the bound is at most `C exp (2 (c - 2 R))`, which tends to `0`.
+  have hlim : Tendsto (fun R ↦ C * exp (2 * (c - 2 * R))) atTop (𝓝 0) := by
+    have h : Tendsto (fun R : ℝ ↦ 2 * (c - 2 * R)) atTop atBot :=
+      (tendsto_atBot_add_const_left _ (2 * c) (tendsto_id.const_mul_atTop_of_neg
+        (by norm_num : (-4 : ℝ) < 0))).congr fun R ↦ by simp only [id]; ring
+    simpa using (tendsto_exp_atBot.comp h).const_mul C
+  rw [Metric.tendstoUniformlyOn_iff]
+  intro ε hε
+  filter_upwards [(tendsto_order.1 hlim).2 ε hε] with R hR s hs
+  rw [Real.dist_eq, ← abs_neg, neg_sub, sub_neg_eq_add]
+  refine ((hC R s).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)).trans_lt hR
+  linarith [mem_Iic.1 hs]
+
+/-- The translated neck coefficients `a_R(· + R)` converge to `tanh` as `R → ∞` in every `C^k`
+norm, uniformly on every half-line `s ≥ c`: the neck operator `d/ds - a_R`, read near `R`,
+converges to `d/ds - tanh s`. -/
+theorem tendstoUniformlyOn_iteratedDeriv_neckCoeff_add (k : ℕ) (c : ℝ) :
+    TendstoUniformlyOn (fun R s ↦ iteratedDeriv k (neckCoeff R) (s + R))
+      (iteratedDeriv k tanh) atTop (Ici c) := by
+  obtain ⟨C, hC⟩ := exists_abs_iteratedDeriv_neckCoeff_add_sub_iteratedDeriv_tanh_le k
+  have hC₀ : 0 ≤ C := by simpa using (abs_nonneg _).trans (hC 0 0)
+  -- On `s ≥ c` the bound is at most `C exp (-2 (c + 2 R))`, which tends to `0`.
+  have hlim : Tendsto (fun R ↦ C * exp (-(2 * (c + 2 * R)))) atTop (𝓝 0) := by
+    have h : Tendsto (fun R : ℝ ↦ -(2 * (c + 2 * R))) atTop atBot :=
+      (tendsto_atBot_add_const_left _ (-(2 * c)) (tendsto_id.const_mul_atTop_of_neg
+        (by norm_num : (-4 : ℝ) < 0))).congr fun R ↦ by simp only [id]; ring
+    simpa using (tendsto_exp_atBot.comp h).const_mul C
+  rw [Metric.tendstoUniformlyOn_iff]
+  intro ε hε
+  filter_upwards [(tendsto_order.1 hlim).2 ε hε] with R hR s hs
+  rw [Real.dist_eq, abs_sub_comm]
+  refine ((hC R s).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)).trans_lt hR
+  linarith [mem_Ici.1 hs]
+
+/-- `a_R(s) - 1 = tanh (s - R) - tanh (s + R)`. -/
+theorem neckCoeff_sub_one (R s : ℝ) : neckCoeff R s - 1 = tanh (s - R) - tanh (s + R) := by
+  rw [neckCoeff_def]
+  ring
+
+/-- **The neck coefficient converges to `1` at both ends in every `C^k` norm.** For each order `k`
+there is a constant `C` such that, for every `R` and `s`, the `k`-th derivative of `a_R - 1` at
+`s` is at most `C exp (2 (|R| - |s|))` in absolute value. So for each fixed neck length the
+coefficient of `d/ds - a_R` converges to its limit `1` at both ends exponentially in `C^k`, at
+the rate `exp (-2 |s|)` set by the ends of the two pieces `d/ds ± tanh s`. -/
+theorem exists_abs_iteratedDeriv_neckCoeff_sub_one_le (k : ℕ) :
+    ∃ C, ∀ R s, |iteratedDeriv k (fun s ↦ neckCoeff R s - 1) s| ≤ C * exp (2 * (|R| - |s|)) := by
+  cases k with
+  | zero =>
+    -- Compare both terms of `tanh (s - R) - tanh (s + R)` with `1` at `+∞` and with `-1` at `-∞`.
+    refine ⟨4, fun R s ↦ ?_⟩
+    rw [iteratedDeriv_zero, neckCoeff_sub_one, abs_le]
+    have hR₁ := neg_abs_le R
+    have hR₂ := le_abs_self R
+    rcases le_total 0 s with hs | hs
+    · have h₁ := one_sub_tanh_le (s - R)
+      have h₂ := one_sub_tanh_le (s + R)
+      have e₁ : exp (-(2 * (s - R))) ≤ exp (2 * (|R| - |s|)) :=
+        exp_le_exp.2 (by rw [abs_of_nonneg hs]; linarith)
+      have e₂ : exp (-(2 * (s + R))) ≤ exp (2 * (|R| - |s|)) :=
+        exp_le_exp.2 (by rw [abs_of_nonneg hs]; linarith)
+      constructor <;> linarith [tanh_lt_one (s - R), tanh_lt_one (s + R)]
+    · have h₁ := one_add_tanh_le (s - R)
+      have h₂ := one_add_tanh_le (s + R)
+      have e₁ : exp (2 * (s - R)) ≤ exp (2 * (|R| - |s|)) :=
+        exp_le_exp.2 (by rw [abs_of_nonpos hs]; linarith)
+      have e₂ : exp (2 * (s + R)) ≤ exp (2 * (|R| - |s|)) :=
+        exp_le_exp.2 (by rw [abs_of_nonpos hs]; linarith)
+      constructor <;> linarith [neg_one_lt_tanh (s - R), neg_one_lt_tanh (s + R)]
+  | succ n =>
+    obtain ⟨C, hC⟩ := exists_abs_iteratedDeriv_succ_tanh_le n
+    have hC₀ : 0 ≤ C := by simpa using (abs_nonneg _).trans (hC 0)
+    refine ⟨2 * C, fun R s ↦ ?_⟩
+    rw [iteratedDeriv_fun_sub ((contDiff_neckCoeff R).contDiffAt) contDiffAt_const]
+    simp only [iteratedDeriv_const, Nat.add_one_ne_zero, ↓reduceIte, sub_zero]
+    rw [iteratedDeriv_succ_neckCoeff]
+    -- Each term is at most `C exp (-2 |s ∓ R|) ≤ C exp (2 (|R| - |s|))`.
+    have hb (y : ℝ) (hy : |s| ≤ |y| + |R|) :
+        |iteratedDeriv (n + 1) tanh y| ≤ C * exp (2 * (|R| - |s|)) :=
+      (hC y).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 (by linarith)) hC₀)
+    have hy₁ : |s| ≤ |s - R| + |R| := by
+      simpa using abs_add_le (s - R) R
+    have hy₂ : |s| ≤ |s + R| + |R| := by
+      simpa [abs_neg] using abs_add_le (s + R) (-R)
+    calc _ ≤ |iteratedDeriv (n + 1) tanh (s - R)| + |iteratedDeriv (n + 1) tanh (s + R)| :=
+          abs_sub _ _
+      _ ≤ _ := by linarith [hb _ hy₁, hb _ hy₂]
 
 /-! ### The solution `F_R` of `v' = a_R v` -/
 
