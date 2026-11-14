@@ -9,8 +9,11 @@ public import Mathlib.Algebra.Homology.DerivedCategory.FullyFaithful
 public import Mathlib.Algebra.Homology.DerivedCategory.ShortExact
 public import TauCeti.Algebra.Homology.DerivedCategory.Perfect
 public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian.Frobenius
+public import TauCeti.CategoryTheory.ObjectProperty.Syzygy
 public import TauCeti.CategoryTheory.Triangulated.TriangleIso
 public import TauCeti.CategoryTheory.Triangulated.VerdierLocalization
+
+import TauCeti.Algebra.Homology.DerivedCategory.Singularity.Syzygy
 
 /-!
 # Gorenstein-projective objects in the singularity category
@@ -52,6 +55,9 @@ vanishing of `δₘ ≫ f` descend to `δ₁ ≫ f = 0`, which says that `f` fac
   (`TauCeti.SingularityCategory.nonempty_iso_Q_obj_singleFunctor_cycles`), so
   `CategoryTheory.GorensteinProjective.mem_essImage_toSingularityCategory`: it lies in the essential
   image of Chen's functor.
+* `CategoryTheory.GorensteinProjective.essSurj_toSingularityCategory_of_isSyzygy`: in an abelian
+  category with enough projectives where every `d`-th projective syzygy is Gorenstein-projective,
+  Chen's functor is essentially surjective.
 
 ## References
 
@@ -478,5 +484,21 @@ theorem mem_essImage_toSingularityCategory {G : C} (hG : isGorensteinProjective 
   obtain ⟨G', hG', ⟨e⟩⟩ :=
     TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective hG n
   exact ⟨(exactStructure C).projectiveStableFunctor.obj ⟨G', hG'⟩, ⟨e.symm⟩⟩
+
+variable {C} in
+/-- **Buchweitz–Chen density criterion**: in an abelian category with enough projectives, if every
+`d`-th projective syzygy is Gorenstein-projective, then Chen's functor `toSingularityCategory C`
+is essentially surjective. -/
+theorem essSurj_toSingularityCategory_of_isSyzygy [EnoughProjectives C] (d : ℕ)
+    (h : ∀ M : C, (isProjective C).IsSyzygy d M → isGorensteinProjective C M) :
+    (toSingularityCategory C).EssSurj where
+  mem_essImage Y := by
+    have := Localization.essSurj (TauCeti.SingularityCategory.Q C)
+      (TauCeti.DerivedCategory.Bounded.perfect C).trW
+    obtain ⟨M, n, hM, ⟨e⟩⟩ :=
+      TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_obj_isSyzygy
+        ((TauCeti.SingularityCategory.Q C).objPreimage Y) d
+    exact (mem_essImage_toSingularityCategory (h M hM) n).ofIso
+      (e.symm ≪≫ (TauCeti.SingularityCategory.Q C).objObjPreimageIso Y)
 
 end CategoryTheory.GorensteinProjective

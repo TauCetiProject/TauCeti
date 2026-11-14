@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.FullyFaithful
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Triangulated
+public import TauCeti.Algebra.Homology.GorensteinProjective.FGModuleCat
 public import TauCeti.Algebra.Homology.TotallyAcyclic.FGModuleCat
 public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian.Singularity
 
@@ -24,18 +26,26 @@ The specialization to reduction modulo `w` is
 `TauCeti.MatrixFactorization.HomotopyCategory.quotientSingularityCokernel`; it requires
 only the quotient ring to be noetherian and also applies to the zero potential.
 
-When `w` is a non-zero-divisor, the quotient-ring specialization is fully faithful. The reduced
-cokernels are Gorenstein-projective, so Chen's theorem identifies their singularity-category
-morphisms with module maps modulo projectives. Lifting module maps to matrix
-factorizations, and identifying projective factorizations of cokernel maps with
-null-homotopies, gives full faithfulness. No regularity or finite global dimension
-of `S` is needed for this embedding. No essential-surjectivity or triangle-functor
-assertion is made here.
+When `w` is a non-zero-divisor, the quotient-ring specialization is a fully faithful triangle
+functor. The reduced cokernels are Gorenstein-projective, so `quotientSingularityCokernel`
+factors literally as the Gorenstein-projective stable cokernel functor
+`quotientGorensteinProjectiveStableCokernel` followed by Chen's functor
+`GorensteinProjectiveModuleCat.toSingularityCategory`
+(`quotientGorensteinProjectiveStableCokernel_comp_toSingularityCategory`). Both factors are
+fully faithful triangle functors—the first for the parity-shift triangulation of `HMF(S,w)`
+and Happel's triangulation of the stable category, and the second into the Verdier-quotient
+triangulation of `D_sg(mod-S/(w))`—so `quotientSingularityCokernel` inherits shift
+compatibility (`quotientSingularityCokernelCommShift`) and preserves distinguished triangles
+(`quotientSingularityCokernel_isTriangulated`) with no regularity or finite global dimension
+hypothesis on `S`. Essential surjectivity under global-dimension and regularity hypotheses is
+proved in `TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Orlov`.
 
 ## References
 
 * D. Eisenbud, *Homological algebra on a complete intersection, with an application to group
   representations*, Trans. Amer. Math. Soc. **260** (1980), Sections 5–6.
+* R.-O. Buchweitz, *Maximal Cohen–Macaulay Modules and Tate Cohomology*, Mathematical Surveys
+  and Monographs **262**, American Mathematical Society (2021), Section 4.
 * Xiao-Wu Chen, *Relative singularity categories and Gorenstein-projective modules*,
   Math. Nachr. **284** (2011), 199–212.
 * D. Orlov, *Triangulated categories of singularities and D-branes in Landau–Ginzburg
@@ -129,6 +139,22 @@ theorem singularityCokernel_map_quotientFunctor_map (f : S →+* T) (hw : f w = 
   Functor.congr_hom (quotientFunctor_comp_singularityCokernel f hw) g
 
 end HomotopyCategory
+
+/-- Forgetting Gorenstein-projectivity into `FGModuleCat` after
+`quotientGorensteinProjectiveCokernel` recovers reduction modulo `w` followed by
+`cokernelFunctor`. -/
+theorem quotientGorensteinProjectiveCokernel_comp_ιOfLE
+    (hw : w ∈ nonZeroDivisors S) :
+    quotientGorensteinProjectiveCokernel hw ⋙
+        ObjectProperty.ιOfLE (fun X hX ↦ (ModuleCat.isFG_iff X).2 hX.finite) =
+      baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w})) ⋙ cokernelFunctor := by
+  refine CategoryTheory.Functor.ext (fun X ↦ ObjectProperty.FullSubcategory.ext
+    (quotientGorensteinProjectiveCokernel_obj_obj hw X)) fun X Y g ↦ ?_
+  apply (forget₂ (FGModuleCat.{u} (S ⧸ Ideal.span {w}))
+    (ModuleCat.{u} (S ⧸ Ideal.span {w}))).map_injective
+  rw [Functor.comp_map, Functor.comp_map, Functor.map_comp, Functor.map_comp,
+    eqToHom_map, eqToHom_map]
+  exact Functor.congr_hom (quotientGorensteinProjectiveCokernel_comp_ι hw) g
 
 variable [IsNoetherianRing (S ⧸ Ideal.span {w})]
   [HasDerivedCategory.{v} (FGModuleCat.{u} (S ⧸ Ideal.span {w}))]
@@ -267,6 +293,97 @@ def fullyFaithfulQuotientSingularityCokernel (hw : w ∈ nonZeroDivisors S) :
   haveI := quotientSingularityCokernel_full hw
   haveI := quotientSingularityCokernel_faithful hw
   .ofFullyFaithful _
+
+/-- **Factorization of the singularity-category cokernel functor.** For a non-zero-divisor `w`,
+`quotientSingularityCokernel` is the composite of the Gorenstein-projective stable cokernel
+functor `HMF(S,w) ⥤ stable(Gproj-S/(w))` with Chen's functor
+`stable(Gproj-S/(w)) ⥤ D_sg(mod-S/(w))`. -/
+theorem quotientGorensteinProjectiveStableCokernel_comp_toSingularityCategory
+    (hw : w ∈ nonZeroDivisors S) :
+    quotientGorensteinProjectiveStableCokernel hw ⋙
+        GorensteinProjectiveModuleCat.toSingularityCategory.{v, u} (S ⧸ Ideal.span {w}) =
+      quotientSingularityCokernel (S := S) (w := w) := by
+  apply Quotient.lift_unique' (nullHomotopic (S := S) (w := w)).rel
+  -- `MorphismIdeal.quotientFunctor` is `Quotient.functor` for the underlying relation.
+  change ((nullHomotopic (S := S) (w := w)).quotientFunctor ⋙
+      quotientGorensteinProjectiveStableCokernel hw) ⋙
+      GorensteinProjectiveModuleCat.toSingularityCategory.{v, u} (S ⧸ Ideal.span {w}) =
+    (nullHomotopic (S := S) (w := w)).quotientFunctor ⋙
+      quotientSingularityCokernel (S := S) (w := w)
+  rw [quotientFunctor_comp_quotientGorensteinProjectiveStableCokernel, Functor.assoc,
+    GorensteinProjectiveModuleCat.projectiveStableFunctor_comp_toSingularityCategory,
+    ← Functor.assoc, quotientGorensteinProjectiveCokernel_comp_ιOfLE hw, Functor.assoc,
+    quotientFunctor_comp_quotientSingularityCokernel]
+
+/-- Natural isomorphism exhibiting `quotientSingularityCokernel` as the composite of
+`quotientGorensteinProjectiveStableCokernel` and Chen's functor
+`GorensteinProjectiveModuleCat.toSingularityCategory`. -/
+def quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso
+    (hw : w ∈ nonZeroDivisors S) :
+    quotientGorensteinProjectiveStableCokernel hw ⋙
+        GorensteinProjectiveModuleCat.toSingularityCategory.{v, u} (S ⧸ Ideal.span {w}) ≅
+      quotientSingularityCokernel (S := S) (w := w) :=
+  eqToIso (quotientGorensteinProjectiveStableCokernel_comp_toSingularityCategory hw)
+
+/-- Compatibility of `quotientSingularityCokernel` with the integral shifts: the parity shift on
+`HMF(S,w)` and the Verdier-quotient shift on `D_sg(mod-S/(w))`, transported along its
+factorization through the stable category of Gorenstein-projective `S/(w)`-modules. -/
+@[instance_reducible]
+def quotientSingularityCokernelCommShift (hw : w ∈ nonZeroDivisors S) :
+    (quotientSingularityCokernel (S := S) (w := w)).CommShift ℤ :=
+  letI := (GorensteinProjectiveModuleCat.exactStructure_isFrobenius.{u, u}
+    (A := S ⧸ Ideal.span {w})).stableHasShift
+  letI := quotientGorensteinProjectiveStableCokernelCommShift hw
+  letI := GorensteinProjectiveModuleCat.toSingularityCategoryCommShift.{v, u}
+    (S ⧸ Ideal.span {w})
+  Functor.CommShift.ofIso
+    (quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso hw) ℤ
+
+/-- The factorization isomorphism
+`quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso` commutes with all
+integral shifts. -/
+theorem quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso_commShift
+    (hw : w ∈ nonZeroDivisors S) :
+    letI := (GorensteinProjectiveModuleCat.exactStructure_isFrobenius.{u, u}
+      (A := S ⧸ Ideal.span {w})).stableHasShift
+    letI := quotientGorensteinProjectiveStableCokernelCommShift hw
+    letI := GorensteinProjectiveModuleCat.toSingularityCategoryCommShift.{v, u}
+      (S ⧸ Ideal.span {w})
+    letI := quotientSingularityCokernelCommShift.{v, u} hw
+    NatTrans.CommShift
+      (quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso.{v, u}
+        hw).hom ℤ := by
+  let := (GorensteinProjectiveModuleCat.exactStructure_isFrobenius.{u, u}
+    (A := S ⧸ Ideal.span {w})).stableHasShift
+  let := quotientGorensteinProjectiveStableCokernelCommShift hw
+  let := GorensteinProjectiveModuleCat.toSingularityCategoryCommShift.{v, u}
+    (S ⧸ Ideal.span {w})
+  exact Functor.CommShift.ofIso_compatibility
+    (quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso.{v, u} hw) ℤ
+
+/-- **The singularity-category cokernel functor of matrix factorizations is a triangle functor.**
+For a non-zero-divisor `w` of a commutative ring `S` with `S/(w)` Noetherian, the functor
+`HMF(S,w) ⥤ D_sg(mod-S/(w))` sending a finite-projective matrix factorization to its reduced
+cokernel placed in degree zero preserves distinguished triangles. -/
+theorem quotientSingularityCokernel_isTriangulated (hw : w ∈ nonZeroDivisors S) :
+    letI := quotientSingularityCokernelCommShift.{v, u} hw
+    (quotientSingularityCokernel (S := S) (w := w)).IsTriangulated := by
+  have hE' := GorensteinProjectiveModuleCat.exactStructure_isFrobenius.{u, u}
+    (A := S ⧸ Ideal.span {w})
+  let := hE'.stableHasShift
+  let := hE'.stableShiftFunctor_additive
+  let := hE'.stablePretriangulated
+  let := quotientGorensteinProjectiveStableCokernelCommShift hw
+  let := GorensteinProjectiveModuleCat.toSingularityCategoryCommShift.{v, u}
+    (S ⧸ Ideal.span {w})
+  let := quotientSingularityCokernelCommShift.{v, u} hw
+  have := quotientGorensteinProjectiveStableCokernel_isTriangulated hw
+  have := GorensteinProjectiveModuleCat.toSingularityCategory_isTriangulated.{v, u}
+    (S ⧸ Ideal.span {w})
+  have := quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso_commShift.{v, u}
+    hw
+  exact Functor.isTriangulated_of_iso
+    (quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso.{v, u} hw)
 
 end HomotopyCategory
 
