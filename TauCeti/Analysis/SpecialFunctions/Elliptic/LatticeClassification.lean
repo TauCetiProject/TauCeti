@@ -206,52 +206,39 @@ theorem weierstrassCurve_eq_iff_lattice_eq :
 
 /-- Two period pairs `L` and `L'` are **homothetic** when `L'.lattice = (c • L).lattice` for some
 nonzero complex number `c ∈ ℂˣ`. -/
-def Homothetic (L L' : PeriodPair) : Prop :=
-  ∃ c : ℂˣ, L'.lattice = (c • L).lattice
+def Homothetic (L L' : PeriodPair) : Prop := ∃ c : ℂˣ, L'.lattice = (c • L).lattice
 
 /-- Unfolding `PeriodPair.Homothetic`. -/
 theorem homothetic_def {L L' : PeriodPair} :
-    L.Homothetic L' ↔ ∃ c : ℂˣ, L'.lattice = (c • L).lattice :=
-  Iff.rfl
+    L.Homothetic L' ↔ ∃ c : ℂˣ, L'.lattice = (c • L).lattice := Iff.rfl
 
 /-- Period pairs with the same underlying lattice are homothetic. -/
 theorem Homothetic.of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) :
-    L.Homothetic L' :=
-  ⟨1, by rw [one_smul, h]⟩
+    L.Homothetic L' := ⟨1, by rw [one_smul, h]⟩
 
 /-- Homothety of period pairs is reflexive. -/
-@[refl, simp]
-theorem Homothetic.refl (L : PeriodPair) : L.Homothetic L :=
-  .of_lattice_eq rfl
+@[refl, simp] theorem Homothetic.refl (L : PeriodPair) : L.Homothetic L := .of_lattice_eq rfl
 
 /-- Homothety of period pairs is symmetric. -/
-@[symm]
-theorem Homothetic.symm {L L' : PeriodPair} (h : L.Homothetic L') : L'.Homothetic L := by
-  obtain ⟨c, hc⟩ := h
-  exact ⟨c⁻¹, by rw [lattice_smul_eq_of_lattice_eq c⁻¹ hc, inv_smul_smul]⟩
+@[symm] theorem Homothetic.symm {L L' : PeriodPair} (h : L.Homothetic L') : L'.Homothetic L :=
+  let ⟨c, hc⟩ := h; ⟨c⁻¹, by rw [lattice_smul_eq_of_lattice_eq c⁻¹ hc, inv_smul_smul]⟩
 
 /-- Homothety of period pairs is transitive. -/
-@[trans]
-theorem Homothetic.trans {L₁ L₂ L₃ : PeriodPair}
-    (h₁ : L₁.Homothetic L₂) (h₂ : L₂.Homothetic L₃) : L₁.Homothetic L₃ := by
-  obtain ⟨c₁, hc₁⟩ := h₁
-  obtain ⟨c₂, hc₂⟩ := h₂
-  exact ⟨c₂ * c₁, by rw [hc₂, lattice_smul_eq_of_lattice_eq c₂ hc₁, mul_smul]⟩
+@[trans] theorem Homothetic.trans {L₁ L₂ L₃ : PeriodPair}
+    (h₁ : L₁.Homothetic L₂) (h₂ : L₂.Homothetic L₃) : L₁.Homothetic L₃ :=
+  let ⟨c₁, hc₁⟩ := h₁; let ⟨c₂, hc₂⟩ := h₂
+  ⟨c₂ * c₁, by rw [hc₂, lattice_smul_eq_of_lattice_eq c₂ hc₁, mul_smul]⟩
 
-/-- Homothety of period pairs is equivalent to equality of the `j`-invariants of their Weierstrass
-curves. -/
+/-- Homothety of period pairs is equivalent to equality of their Weierstrass `j`-invariants. -/
 theorem homothetic_iff_weierstrassCurve_j_eq {L L' : PeriodPair} :
     L.Homothetic L' ↔ L.weierstrassCurve.j = L'.weierstrassCurve.j :=
   weierstrassCurve_j_eq_iff.symm
 
 /-- Every period pair is homothetic to any nonzero complex rescaling of itself. -/
-@[simp]
-theorem homothetic_smul_right (c : ℂˣ) (L : PeriodPair) : L.Homothetic (c • L) :=
-  ⟨c, rfl⟩
+@[simp] theorem homothetic_smul_right (c : ℂˣ) (L : PeriodPair) : L.Homothetic (c • L) := ⟨c, rfl⟩
 
 /-- Any nonzero complex rescaling of a period pair is homothetic to the original pair. -/
-@[simp]
-theorem homothetic_smul_left (c : ℂˣ) (L : PeriodPair) : (c • L).Homothetic L :=
+@[simp] theorem homothetic_smul_left (c : ℂˣ) (L : PeriodPair) : (c • L).Homothetic L :=
   (L.homothetic_smul_right c).symm
 
 end PeriodPair
@@ -262,60 +249,48 @@ namespace UpperHalfPlane
 lies in the `SL(2, ℤ)`-orbit of `τ`.** -/
 theorem homothetic_periodPair_iff {τ τ' : ℍ} :
     τ.periodPair.Homothetic τ'.periodPair ↔ ∃ γ : SL(2, ℤ), γ • τ = τ' := by
-  refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun ⟨γ, hγ⟩ ↦ ?_⟩
-  · obtain ⟨γ, hγ, -⟩ := exists_smul_eq_and_denom_eq_of_lattice_periodPair_eq hc
-    exact ⟨γ⁻¹, by rw [← hγ, inv_smul_smul]⟩
-  · rw [← hγ]
-    exact ⟨(Units.mk0 (denom γ τ) (denom_ne_zero γ τ))⁻¹, lattice_periodPair_smul γ τ⟩
+  refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun ⟨γ, hγ⟩ ↦ hγ ▸ ⟨(Units.mk0 _ (denom_ne_zero γ τ))⁻¹,
+    lattice_periodPair_smul γ τ⟩⟩
+  obtain ⟨γ, hγ, -⟩ := exists_smul_eq_and_denom_eq_of_lattice_periodPair_eq hc
+  exact ⟨γ⁻¹, by rw [← hγ, inv_smul_smul]⟩
 
 end UpperHalfPlane
 
 namespace PeriodPair
 
 /-- The equivalence relation of homothety on `PeriodPair`. -/
-private def homotheticSetoid : Setoid PeriodPair where
-  r := Homothetic
-  iseqv := ⟨Homothetic.refl, Homothetic.symm, Homothetic.trans⟩
+private def homotheticSetoid : Setoid PeriodPair :=
+  ⟨Homothetic, Homothetic.refl, Homothetic.symm, Homothetic.trans⟩
 
 /-- A **homothety class** of complex period lattices: the quotient of `PeriodPair` by
 `PeriodPair.Homothetic`. -/
-def HomothetyClass : Type :=
-  Quotient homotheticSetoid
+def HomothetyClass : Type := Quotient homotheticSetoid
 
 namespace HomothetyClass
 
 /-- The homothety class of a period pair `L`. -/
-def mk (L : PeriodPair) : HomothetyClass :=
-  Quotient.mk homotheticSetoid L
+def mk (L : PeriodPair) : HomothetyClass := Quotient.mk homotheticSetoid L
 
 /-- Every homothety class is represented by a period pair. -/
-theorem mk_surjective : Function.Surjective mk :=
-  Quotient.mk_surjective
+theorem mk_surjective : Function.Surjective mk := Quotient.mk_surjective
 
 /-- Induction principle for `PeriodPair.HomothetyClass`. -/
-@[elab_as_elim]
-protected theorem ind {motive : HomothetyClass → Prop} (h : ∀ L, motive (mk L))
-    (x : HomothetyClass) : motive x :=
-  Quotient.ind h x
+@[elab_as_elim] protected theorem ind {motive : HomothetyClass → Prop} (h : ∀ L, motive (mk L))
+    (x : HomothetyClass) : motive x := Quotient.ind h x
 
 /-- Lift a homothety-invariant function on `PeriodPair` to `PeriodPair.HomothetyClass`. -/
 def lift {α : Sort*} (f : PeriodPair → α) (hf : ∀ L L', L.Homothetic L' → f L = f L') :
-    HomothetyClass → α :=
-  Quotient.lift f hf
+    HomothetyClass → α := Quotient.lift f hf
 
 /-- Evaluating `HomothetyClass.lift` on `mk L` applies the underlying function to `L`. -/
-@[simp]
-theorem lift_mk {α : Sort*} (f : PeriodPair → α) (hf : ∀ L L', L.Homothetic L' → f L = f L')
-    (L : PeriodPair) : lift f hf (mk L) = f L :=
-  (rfl)
+@[simp] theorem lift_mk {α : Sort*} (f : PeriodPair → α)
+    (hf : ∀ L L', L.Homothetic L' → f L = f L') (L : PeriodPair) : lift f hf (mk L) = f L := (rfl)
 
 /-- Two period pairs determine the same homothety class if and only if they are homothetic. -/
-theorem mk_eq_mk_iff {L L' : PeriodPair} : mk L = mk L' ↔ L.Homothetic L' :=
-  Quotient.eq
+theorem mk_eq_mk_iff {L L' : PeriodPair} : mk L = mk L' ↔ L.Homothetic L' := Quotient.eq
 
 /-- Rescaling a period pair does not change its homothety class. -/
-@[simp]
-theorem mk_smul (c : ℂˣ) (L : PeriodPair) : mk (c • L) = mk L :=
+@[simp] theorem mk_smul (c : ℂˣ) (L : PeriodPair) : mk (c • L) = mk L :=
   mk_eq_mk_iff.mpr (homothetic_smul_left c L)
 
 /-- Period pairs with the same lattice determine the same homothety class. -/
@@ -323,16 +298,14 @@ theorem mk_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) : m
   mk_eq_mk_iff.mpr (.of_lattice_eq h)
 
 /-- Every homothety class is represented by `ℤ τ + ℤ` for some `τ ∈ ℍ`. -/
-theorem mk_periodPair_surjective : Function.Surjective fun τ : ℍ ↦ mk τ.periodPair := by
-  intro x
+theorem mk_periodPair_surjective : Function.Surjective fun τ : ℍ ↦ mk τ.periodPair := fun x ↦ by
   obtain ⟨L, rfl⟩ := mk_surjective x
   obtain ⟨c, τ, hL⟩ := L.exists_lattice_eq_smul_periodPair
   exact ⟨τ, (mk_smul c τ.periodPair).symm.trans (mk_eq_of_lattice_eq hL.symm)⟩
 
 -- Not `@[simp]`: `ModularGroup.sl_moeb` simplifies its left side, so it fails `simpNF`.
 /-- The Möbius action of `SL(2, ℤ)` preserves the homothety class of `ℤ τ + ℤ`. -/
-theorem mk_periodPair_smul (γ : SL(2, ℤ)) (τ : ℍ) :
-    mk (γ • τ).periodPair = mk τ.periodPair :=
+theorem mk_periodPair_smul (γ : SL(2, ℤ)) (τ : ℍ) : mk (γ • τ).periodPair = mk τ.periodPair :=
   mk_eq_mk_iff.mpr (UpperHalfPlane.homothetic_periodPair_iff.mpr ⟨γ⁻¹, inv_smul_smul γ τ⟩)
 
 /-- Upper-half-plane points have the same lattice homothety class iff they lie in the same
@@ -346,9 +319,7 @@ def j : HomothetyClass → ℂ :=
   lift (fun L ↦ L.weierstrassCurve.j) fun _ _ h ↦ homothetic_iff_weierstrassCurve_j_eq.mp h
 
 /-- On the homothety class of `L`, `j` is the `j`-invariant of `L.weierstrassCurve`. -/
-@[simp]
-theorem j_mk (L : PeriodPair) : (mk L).j = L.weierstrassCurve.j :=
-  (rfl)
+@[simp] theorem j_mk (L : PeriodPair) : (mk L).j = L.weierstrassCurve.j := (rfl)
 
 /-- On the homothety class of `ℤ τ + ℤ`, `j` is the modular invariant `TauCeti.ModularForm.j τ`. -/
 theorem j_mk_periodPair (τ : ℍ) : (mk τ.periodPair).j = TauCeti.ModularForm.j τ :=
@@ -359,27 +330,21 @@ theorem j_injective : Function.Injective j :=
   Quotient.ind₂ fun _ _ h ↦ Quotient.sound (homothetic_iff_weierstrassCurve_j_eq.mpr h)
 
 /-- Every complex number is the `j`-invariant of a homothety class of complex lattices. -/
-theorem j_surjective : Function.Surjective j := fun z ↦ by
-  obtain ⟨τ, hτ⟩ := TauCeti.ModularForm.j_surjective z
-  exact ⟨mk τ.periodPair, (j_mk_periodPair τ).trans hτ⟩
+theorem j_surjective : Function.Surjective j := fun z ↦
+  let ⟨τ, hτ⟩ := TauCeti.ModularForm.j_surjective z
+  ⟨mk τ.periodPair, (j_mk_periodPair τ).trans hτ⟩
 
 /-- **Classification of complex lattices up to homothety by the `j`-invariant.** -/
-def jEquiv : HomothetyClass ≃ ℂ :=
-  Equiv.ofBijective j ⟨j_injective, j_surjective⟩
+def jEquiv : HomothetyClass ≃ ℂ := Equiv.ofBijective j ⟨j_injective, j_surjective⟩
 
 /-- Applying `HomothetyClass.jEquiv` evaluates `HomothetyClass.j`. -/
-@[simp]
-theorem jEquiv_apply (x : HomothetyClass) : jEquiv x = x.j :=
-  (rfl)
+@[simp] theorem jEquiv_apply (x : HomothetyClass) : jEquiv x = x.j := (rfl)
 
 /-- The `j`-invariant of `jEquiv.symm z` is `z`. -/
-@[simp]
-theorem j_jEquiv_symm (z : ℂ) : (jEquiv.symm z).j = z :=
-  jEquiv.apply_symm_apply z
+@[simp] theorem j_jEquiv_symm (z : ℂ) : (jEquiv.symm z).j = z := jEquiv.apply_symm_apply z
 
 /-- `jEquiv.symm` recovers a homothety class from its `j`-invariant. -/
-@[simp]
-theorem jEquiv_symm_j (x : HomothetyClass) : jEquiv.symm x.j = x :=
+@[simp] theorem jEquiv_symm_j (x : HomothetyClass) : jEquiv.symm x.j = x :=
   jEquiv.symm_apply_apply x
 
 end HomothetyClass
