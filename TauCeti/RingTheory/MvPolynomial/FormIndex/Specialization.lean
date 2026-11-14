@@ -37,7 +37,7 @@ form by `(M h (i₀ h))⁻¹` yields `MvPolynomial.exists_elimination`.
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
   (2006), proof of Lemma 7.5.19.
-* Ralf Stephan, `DiophantineApproximation/GeneralizedRothLemma.lean` in `rwst/Subspace-Theorems`,
+* Ralf Stephan, `DiophantineApproximation/FormSpecialization.lean` in `rwst/Subspace-Theorems`,
   commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
 -/
 
@@ -61,30 +61,17 @@ theorem formIndex_le_formIndex_modMonomial_single {d : κ → ℕ} {M : κ → �
       formIndex d (Function.update M h₁ (Function.update (M h₁) j 0))
         (P.modMonomial (Finsupp.single (h₁, j) 1)) := by
   set M' := Function.update M h₁ (Function.update (M h₁) j 0)
-  set ev : MvPolynomial (κ × ι) R →ₐ[R] MvPolynomial (κ × ι) R :=
-    aeval (Function.update X (h₁, j) 0)
-  have hev_form (h : κ) :
-      ev (∑ i, C (M h i) * X (h, i)) = ∑ i, C (M' h i) * X (h, i) := by
-    simp only [ev, map_sum, map_mul, algHom_C, algebraMap_eq, aeval_X]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rcases eq_or_ne h h₁ with rfl | hh
-    · rcases eq_or_ne i j with rfl | hi
-      · simp [M']
-      · have hne : (h, i) ≠ (h, j) := fun hc ↦ hi (Prod.mk.inj hc).2
-        simp [M', Function.update_of_ne hi, Function.update_of_ne hne]
-    · have hne : (h, i) ≠ (h₁, j) := fun hc ↦ hh (Prod.mk.inj hc).1
-      simp [M', Function.update_of_ne hh, Function.update_of_ne hne]
-  rw [formIndex_def]
-  refine iSup₂_le fun t ht ↦ le_formIndex_of_mem ?_
   rw [← aeval_update_X_zero_eq_modMonomial]
-  have hmap : Ideal.map ev (formIdeal t d M) ≤ formIdeal t d M' := by
-    rw [formIdeal_def, Ideal.map_span, Ideal.span_le]
-    rintro _ ⟨_, ⟨k, hk, rfl⟩, rfl⟩
-    dsimp only
-    rw [SetLike.mem_coe, map_prod]
-    simp only [map_pow, hev_form]
-    exact prod_pow_mem_formIdeal hk
-  exact hmap (Ideal.mem_map_of_mem _ ht)
+  refine formIndex_le_formIndex_map (aeval (Function.update X (h₁, j) 0)) (fun h ↦ ?_) P
+  simp only [map_sum, map_mul, algHom_C, algebraMap_eq, aeval_X]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rcases eq_or_ne h h₁ with rfl | hh
+  · rcases eq_or_ne i j with rfl | hi
+    · simp [M']
+    · have hne : (h, i) ≠ (h, j) := fun hc ↦ hi (Prod.mk.inj hc).2
+      simp [M', Function.update_of_ne hi, Function.update_of_ne hne]
+  · have hne : (h, i) ≠ (h₁, j) := fun hc ↦ hh (Prod.mk.inj hc).1
+    simp [M', Function.update_of_ne hh, Function.update_of_ne hne]
 
 end CommSemiring
 
@@ -256,16 +243,23 @@ private theorem exists_eliminate_finset {d : κ → ℕ} {i₀ : κ → ι} (S :
       obtain ⟨n, hn, hc⟩ := hP₁coeff n₁ hn₁
       exact ⟨n, hn, hc₁.trans hc⟩
 
+omit [Fintype κ] [DecidableEq κ] [Fintype ι] in
+private theorem twoCoord_injective {i₀ i₁ : κ → ι} (hne : ∀ h, i₀ h ≠ i₁ h) :
+    Function.Injective (fun p : κ × Fin 2 ↦ (p.1, ![i₁ p.1, i₀ p.1] p.2)) := by
+  rintro ⟨h, c₁⟩ ⟨_, c₂⟩ heq
+  obtain ⟨rfl, hc⟩ := Prod.mk.inj heq
+  exact Prod.ext rfl (Matrix.injective_pair_iff_ne.mpr (hne h).symm hc)
+
 omit [DecidableEq κ] in
 /-- Pulling `formIndex` back along the injective two-coordinate embedding
 `emb (h, 0) = (h, i₁ h), emb (h, 1) = (h, i₀ h)` when all outside coefficients of `M'` vanish. -/
 private theorem formIndex_rename_twoCoord {d : κ → ℕ} {i₀ i₁ : κ → ι} (hne : ∀ h, i₀ h ≠ i₁ h)
-    (hemb : Function.Injective (fun p : κ × Fin 2 ↦ (p.1, ![i₁ p.1, i₀ p.1] p.2)))
     {M' : κ → ι → K} (hM' : ∀ h, M' h (i₀ h) ≠ 0)
     (hzero : ∀ h i, i ≠ i₀ h → i ≠ i₁ h → M' h i = 0) (Q : MvPolynomial (κ × Fin 2) K) :
     formIndex d M' (rename (fun p : κ × Fin 2 ↦ (p.1, ![i₁ p.1, i₀ p.1] p.2)) Q) =
       formIndex d (fun h ↦ ![M' h (i₁ h), M' h (i₀ h)]) Q := by
   classical
+  have hemb := twoCoord_injective hne
   set emb : κ × Fin 2 → κ × ι := fun p ↦ (p.1, ![i₁ p.1, i₀ p.1] p.2)
   set N : κ → Fin 2 → K := fun h ↦ ![M' h (i₁ h), M' h (i₀ h)]
   have hsub : substFormInv M' i₀ (rename emb Q) = rename emb (substFormInv N (fun _ ↦ 1) Q) := by
@@ -315,10 +309,7 @@ theorem exists_elimination {d e : κ → ℕ} {M : κ → ι → K} {i₀ i₁ :
   set emb : κ × Fin 2 → κ × ι := fun p ↦ (p.1, ![i₁ p.1, i₀ p.1] p.2)
   have hf (h : κ) : Function.Injective ![i₁ h, i₀ h] :=
     Matrix.injective_pair_iff_ne.mpr (hne h).symm
-  have hemb : Function.Injective emb :=
-    (Equiv.sigmaEquivProd κ ι).injective.comp <|
-      (Function.injective_id.sigma_map (β₁ := fun _ ↦ Fin 2) (β₂ := fun _ ↦ ι) hf).comp
-        (Equiv.sigmaEquivProd κ (Fin 2)).symm.injective
+  have hemb : Function.Injective emb := twoCoord_injective hne
   have hrange : (P₁.vars : Set (κ × ι)) ⊆ Set.range emb := by
     rintro ⟨h, i⟩ hp
     have hnotS : (h, i) ∉ S := Finset.disjoint_left.mp hdisj hp
@@ -344,7 +335,7 @@ theorem exists_elimination {d e : κ → ℕ} {M : κ → ι → K} {i₀ i₁ :
     fin_cases c <;> simp [hM'0, hM'1, div_eq_inv_mul, hM h]
   refine ⟨Q, e', hQne, he', (isMultiHomogeneous_rename_iff hf).mp (hQeq.symm ▸ hP₁hom),
     hQcoeff, hidx.trans_eq ?_⟩
-  rw [← hQeq, formIndex_rename_twoCoord hne hemb (fun h ↦ (hM'0 h).symm ▸ hM h) hM'z,
+  rw [← hQeq, formIndex_rename_twoCoord hne (fun h ↦ (hM'0 h).symm ▸ hM h) hM'z,
     ← formIndex_smul_form (c := fun h ↦ (M h (i₀ h))⁻¹)
       (fun h ↦ isUnit_iff_ne_zero.mpr (inv_ne_zero (hM h))), hscale]
 

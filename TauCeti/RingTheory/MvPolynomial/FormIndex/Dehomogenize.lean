@@ -32,8 +32,10 @@ Consequently:
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
   (2006), proof of Lemma 7.5.19.
-* Ralf Stephan, `DiophantineApproximation/GeneralizedRothLemma.lean` in `rwst/Subspace-Theorems`,
-  commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
+* Ralf Stephan, `DiophantineApproximation/FormIndex.lean`,
+  `DiophantineApproximation/FormSpecialization.lean`, and
+  `DiophantineApproximation/GeneralizedRothLemma.lean` in `rwst/Subspace-Theorems`, commit
+  `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
 -/
 
 public section

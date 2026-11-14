@@ -39,8 +39,10 @@ preserves the set of nonzero coefficients
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
   (2006), proof of Lemma 7.5.19.
-* Ralf Stephan, `DiophantineApproximation/GeneralizedRothLemma.lean` in `rwst/Subspace-Theorems`,
-  commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
+* Ralf Stephan, `DiophantineApproximation/FormIndex.lean`,
+  `DiophantineApproximation/FormSpecialization.lean`, and
+  `DiophantineApproximation/GeneralizedRothLemma.lean` in `rwst/Subspace-Theorems`, commit
+  `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
 -/
 
 public section
@@ -140,14 +142,10 @@ theorem blockDehomogenize_monomial (n : κ × Fin 2 →₀ ℕ) (c : R) :
   have hn : n = n₀.mapDomain (·, 0) + n₁.mapDomain (·, 1) := by
     ext ⟨h, i⟩
     fin_cases i
-    · rw [Fin.zero_eta, Finsupp.add_apply,
-        Finsupp.mapDomain_apply_of_injective (Prod.mk_left_injective 0) n₀ h,
-        Finsupp.mapDomain_of_notMem_range n₁ (h, 0) (by simp), add_zero (n₀ h)]
-      rfl
-    · rw [Fin.mk_one, Finsupp.add_apply,
-        Finsupp.mapDomain_of_notMem_range n₀ (h, 1) (by simp),
-        Finsupp.mapDomain_apply_of_injective (Prod.mk_left_injective 1) n₁ h, zero_add (n₁ h)]
-      rfl
+    · simpa [n₀, Finsupp.mapDomain_of_notMem_range] using
+        (Finsupp.mapDomain_apply_of_injective (Prod.mk_left_injective 0) n₀ h).symm
+    · simpa [n₁, Finsupp.mapDomain_of_notMem_range] using
+        (Finsupp.mapDomain_apply_of_injective (Prod.mk_left_injective 1) n₁ h).symm
   have h0 : blockDehomogenize (rename (·, 0) (monomial n₀ (1 : R))) = 1 := by
     simp [blockDehomogenize_def, aeval_rename, Function.comp_def, aeval_monomial]
   conv_lhs => rw [hn, ← one_mul c]
@@ -168,7 +166,7 @@ theorem exists_mem_support_of_mem_support_blockDehomogenize {P : MvPolynomial (�
   rw [blockDehomogenize_monomial, coeff_monomial, ite_eq_right]
   rintro rfl
   obtain ⟨h, hh⟩ := hnone n hn
-  exact hh rfl
+  exact hh (Finsupp.comapDomain_apply _ _ _ _)
 
 section MultiHomogeneous
 
@@ -240,7 +238,8 @@ theorem IsMultiHomogeneous.exists_coeff_blockDehomogenize_eq_of_mem_support
       (∀ h, m h = n (h, 1)) ∧ (blockDehomogenize P).coeff m = P.coeff n := by
   have hc := hP.coeff_blockDehomogenize (add_eq_of_mem_support hP hn)
   exact ⟨n.comapDomain (·, 1) (Prod.mk_left_injective 1).injOn,
-    mem_support_iff.mpr (hc ▸ mem_support_iff.mp hn), fun _ ↦ rfl, hc⟩
+    mem_support_iff.mpr (hc ▸ mem_support_iff.mp hn),
+    fun _ ↦ Finsupp.comapDomain_apply _ _ _ _, hc⟩
 
 /-- Dehomogenization of a multihomogeneous polynomial vanishes if and only if the polynomial itself
 vanishes. -/

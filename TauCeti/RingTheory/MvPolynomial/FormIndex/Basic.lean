@@ -53,6 +53,9 @@ products, by `MvPolynomial.iInf_support_weight_mul`.
   `MvPolynomial.formIndex_mul`, `MvPolynomial.formIndex_pow`, `MvPolynomial.formIndex_smul`,
   `MvPolynomial.formIndex_smul_form`: the index is a valuation and invariant under unit scaling of
   each block's form.
+* `MvPolynomial.map_mem_formIdeal`, `MvPolynomial.formIndex_le_formIndex_map`: ring homomorphisms
+  carrying each block's form to a block's form push `formIdeal` forward and do not decrease
+  `formIndex`.
 * `MvPolynomial.IsMultiHomogeneous.substForm`, `MvPolynomial.IsMultiHomogeneous.substFormInv`:
   both coordinate substitutions preserve multihomogeneity.
 
@@ -60,7 +63,7 @@ products, by `MvPolynomial.iInf_support_weight_mul`.
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
   (2006), Definition 7.5.17 and 7.5.18.
-* Ralf Stephan, `DiophantineApproximation/GeneralizedRothLemma.lean` in `rwst/Subspace-Theorems`,
+* Ralf Stephan, `DiophantineApproximation/FormIndex.lean` in `rwst/Subspace-Theorems`,
   commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
 -/
 
@@ -335,6 +338,44 @@ theorem formIndex_smul_form {c : κ → R} (hc : ∀ h, IsUnit (c h)) (d : κ �
     (M : κ → ι → R) (P : MvPolynomial (κ × ι) R) :
     formIndex d (fun h ↦ c h • M h) P = formIndex d M P := by
   simp only [formIndex, formIdeal_smul_form hc]
+
+/-- Any ring homomorphism mapping each block's linear form `∑ i, C (M h i) * X (h, i)` to
+`∑ a, C (M' h a) * X (h, a)` maps `formIdeal t d M` into `formIdeal t d M'`. -/
+theorem map_mem_formIdeal {S τ : Type*} [CommSemiring S] [Fintype τ]
+    {F : Type*} [FunLike F (MvPolynomial (κ × ι) R) (MvPolynomial (κ × τ) S)]
+    [RingHomClass F (MvPolynomial (κ × ι) R) (MvPolynomial (κ × τ) S)] (f : F)
+    {t : ℝ≥0∞} {d : κ → ℕ} {M : κ → ι → R} {M' : κ → τ → S}
+    (hf : ∀ h, f (∑ i, C (M h i) * X (h, i)) = ∑ a, C (M' h a) * X (h, a))
+    {P : MvPolynomial (κ × ι) R} (hP : P ∈ formIdeal t d M) :
+    f P ∈ formIdeal t d M' := by
+  rw [formIdeal_def] at hP
+  induction hP using Submodule.span_induction with
+  | mem g hg =>
+    obtain ⟨j, hj, rfl⟩ := hg
+    rw [map_prod]
+    simp only [map_pow, hf]
+    exact prod_pow_mem_formIdeal hj
+  | zero =>
+    rw [map_zero]
+    exact Ideal.zero_mem _
+  | add p q _ _ hp hq =>
+    rw [map_add]
+    exact Ideal.add_mem _ hp hq
+  | smul r p _ hp =>
+    rw [smul_eq_mul, map_mul]
+    exact Ideal.mul_mem_left _ (f r) hp
+
+/-- Any ring homomorphism mapping each block's linear form `∑ i, C (M h i) * X (h, i)` to
+`∑ a, C (M' h a) * X (h, a)` does not decrease `formIndex`. -/
+theorem formIndex_le_formIndex_map {S τ : Type*} [CommSemiring S] [Fintype τ]
+    {F : Type*} [FunLike F (MvPolynomial (κ × ι) R) (MvPolynomial (κ × τ) S)]
+    [RingHomClass F (MvPolynomial (κ × ι) R) (MvPolynomial (κ × τ) S)] (f : F)
+    {d : κ → ℕ} {M : κ → ι → R} {M' : κ → τ → S}
+    (hf : ∀ h, f (∑ i, C (M h i) * X (h, i)) = ∑ a, C (M' h a) * X (h, a))
+    (P : MvPolynomial (κ × ι) R) :
+    formIndex d M P ≤ formIndex d M' (f P) := by
+  rw [formIndex_def]
+  exact iSup₂_le fun _ ht ↦ le_formIndex_of_mem (map_mem_formIdeal f hf ht)
 
 variable [DecidableEq ι] {i₀ : κ → ι}
 

@@ -47,6 +47,8 @@ characteristic (using Hasse derivatives rather than naive partial derivatives) a
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
   (2006), §7.5, Definition 7.5.17 and p. 221.
+* Ralf Stephan, `DiophantineApproximation/FormIndexSubspace.lean` in `rwst/Subspace-Theorems`,
+  commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
 -/
 
 public section
@@ -72,6 +74,17 @@ theorem substForm_eq_aeval_blockLinearForm (M : κ → ι → R) (i₀ : κ → 
     simp [blockLinearForm_apply]
   · simp [hl, blockLinearForm_apply]
 
+omit [DecidableEq ι] in
+private theorem aeval_blockLinearForm_eq_linearSubst [Fintype κ] [DecidableEq κ]
+    (A : κ → ι → ι → R) :
+    aeval (blockLinearForm A) =
+      linearSubst (Matrix.of fun p q : κ × ι ↦
+        if p.1 = q.1 then A p.1 p.2 q.2 else 0) := by
+  ext ⟨h, l⟩ : 1
+  rw [aeval_X, blockLinearForm_apply, linearSubst_X, Fintype.sum_prod_type,
+    Finset.sum_eq_single h (fun h' _ hh' ↦ by simp [hh'.symm]) (by simp)]
+  simp
+
 /-- `substForm M i₀` is a linear substitution (`MvPolynomial.linearSubst`) by a block-diagonal
 matrix. -/
 theorem substForm_eq_linearSubst [Fintype κ] [DecidableEq κ] (M : κ → ι → R) (i₀ : κ → ι) :
@@ -79,13 +92,7 @@ theorem substForm_eq_linearSubst [Fintype κ] [DecidableEq κ] (M : κ → ι �
       linearSubst (Matrix.of fun p q : κ × ι ↦
         if p.1 = q.1 then (if p.2 = i₀ p.1 then M p.1 q.2 else if p.2 = q.2 then 1 else 0)
         else 0) := by
-  ext ⟨h, l⟩ : 1
-  rw [linearSubst_X, Fintype.sum_prod_type]
-  rw [Finset.sum_eq_single h (fun h' _ hh' ↦ by simp [hh'.symm]) (by simp)]
-  by_cases hl : l = i₀ h
-  · subst hl
-    simp
-  · simp [hl]
+  rw [substForm_eq_aeval_blockLinearForm, aeval_blockLinearForm_eq_linearSubst]
 
 /-- `substFormInv M i₀` is a block-linear substitution (`MvPolynomial.blockLinearForm`). -/
 theorem substFormInv_eq_aeval_blockLinearForm [Field K] (M : κ → ι → K) (i₀ : κ → ι) :
@@ -116,11 +123,7 @@ theorem substFormInv_eq_linearSubst [Field K] [Fintype κ] [DecidableEq κ] (M :
             (if q.2 = i₀ p.1 then (M p.1 (i₀ p.1))⁻¹ else - ((M p.1 (i₀ p.1))⁻¹ * M p.1 q.2))
           else if p.2 = q.2 then 1 else 0)
         else 0) := by
-  rw [substFormInv_eq_aeval_blockLinearForm]
-  ext ⟨h, l⟩ : 1
-  rw [aeval_X, blockLinearForm_apply, linearSubst_X, Fintype.sum_prod_type,
-    Finset.sum_eq_single h (fun h' _ hh' ↦ by simp [hh'.symm]) (by simp)]
-  simp
+  rw [substFormInv_eq_aeval_blockLinearForm, aeval_blockLinearForm_eq_linearSubst]
 
 end LinearSubst
 
@@ -135,26 +138,14 @@ theorem taylor_map_mem_formIdeal {A : Type*} [CommSemiring A] [Algebra R A]
     (hP : P ∈ formIdeal t d M) {y : κ × ι → A} (hy : ∀ h, ∑ i, M h i • y (h, i) = 0) :
     taylor y (map (algebraMap R A) P) ∈
       formIdeal t d (fun h i ↦ algebraMap R A (M h i)) := by
-  set Ψ : MvPolynomial (κ × ι) R →+* MvPolynomial (κ × ι) A :=
-    (taylor y).toRingHom.comp (map (algebraMap R A))
-  -- On each block's linear form, the constant shift vanishes because `y` lies in `ker (M h)`.
-  have hΨ_form (h : κ) :
-      Ψ (∑ i, C (M h i) * X (h, i)) = ∑ i, C (algebraMap R A (M h i)) * X (h, i) := by
-    have hy' : ∑ i, algebraMap R A (M h i) * y (h, i) = 0 := by
-      simpa only [Algebra.smul_def] using hy h
-    change taylor y (map (algebraMap R A) (∑ i, C (M h i) * X (h, i))) = _
-    simp only [map_sum, map_mul, map_C, map_X, algHom_C, algebraMap_eq, taylor_X, mul_add,
-      Finset.sum_add_distrib]
-    simp only [← C_mul, ← map_sum, hy', C_0, add_zero]
-  have hmap : Ideal.map Ψ (formIdeal t d M) ≤
-      formIdeal t d (fun h i ↦ algebraMap R A (M h i)) := by
-    rw [formIdeal_def, Ideal.map_span, Ideal.span_le]
-    rintro _ ⟨_, ⟨j, hj, rfl⟩, rfl⟩
-    dsimp only
-    rw [SetLike.mem_coe, map_prod]
-    simp only [map_pow, hΨ_form]
-    exact prod_pow_mem_formIdeal hj
-  exact hmap (Ideal.mem_map_of_mem Ψ hP)
+  have hmap : map (algebraMap R A) P ∈ formIdeal t d (fun h i ↦ algebraMap R A (M h i)) :=
+    map_mem_formIdeal (map (algebraMap R A)) (fun h ↦ by simp) hP
+  refine map_mem_formIdeal (taylor y) (fun h ↦ ?_) hmap
+  have hy' : ∑ i, algebraMap R A (M h i) * y (h, i) = 0 := by
+    simpa only [Algebra.smul_def] using hy h
+  simp only [map_sum, map_mul, algHom_C, algebraMap_eq, taylor_X, mul_add,
+    Finset.sum_add_distrib]
+  simp only [← C_mul, ← map_sum, hy', C_0, add_zero]
 
 /-- **Vanishing of low-order Hasse derivatives on the common kernel.** For any `R`-algebra `A` and
 any tuple `y : κ × ι → A` annihilated by every linear form `M h`, every Hasse derivative

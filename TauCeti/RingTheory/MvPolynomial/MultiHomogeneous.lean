@@ -237,10 +237,7 @@ protected theorem IsMultiHomogeneous.aeval {τ : Type*} (hP : IsMultiHomogeneous
 protected theorem IsMultiHomogeneous.rename {τ : Type*} (hP : IsMultiHomogeneous d P)
     (f : κ → ι → τ) :
     IsMultiHomogeneous d (MvPolynomial.rename (fun p : κ × ι ↦ (p.1, f p.1 p.2)) P) := by
-  have hre : MvPolynomial.rename (fun p : κ × ι ↦ (p.1, f p.1 p.2)) P =
-      MvPolynomial.aeval (fun p : κ × ι ↦ (X (p.1, f p.1 p.2) : MvPolynomial (κ × τ) R)) P :=
-    AlgHom.congr_fun (by ext; simp) P
-  rw [hre]
+  rw [rename_eq_aeval]
   exact hP.aeval fun h i ↦ isMultiHomogeneous_X h (f h i)
 
 /-- Blockwise injective variable renaming preserves and reflects multihomogeneity. -/
@@ -250,9 +247,10 @@ theorem isMultiHomogeneous_rename_iff {τ : Type*} {f : κ → τ → ι}
       IsMultiHomogeneous d Q := by
   refine ⟨fun hhom h u hu ↦ ?_, fun hQ ↦ hQ.rename f⟩
   set emb : κ × τ → κ × ι := fun p ↦ (p.1, f p.1 p.2)
-  have hemb : Function.Injective emb :=
-    (Equiv.sigmaEquivProd κ ι).injective.comp <|
-      (Function.injective_id.sigma_map hf).comp (Equiv.sigmaEquivProd κ τ).symm.injective
+  have hemb : Function.Injective emb := by
+    rintro ⟨h, a₁⟩ ⟨_, a₂⟩ heq
+    obtain ⟨rfl, ha⟩ := Prod.mk.inj heq
+    exact Prod.ext rfl (hf h ha)
   have hc : (rename emb Q).coeff (u.mapDomain emb) ≠ 0 := by
     rwa [coeff_rename_mapDomain emb hemb]
   have hw := hhom h hc
