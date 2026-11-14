@@ -14,7 +14,7 @@ import Mathlib.Analysis.Normed.Ring.Lemmas
 /-!
 # Polynomials with converging coefficients
 
-Let `P i` be polynomials over a normed field, indexed along a filter `l`, whose coefficients
+Let `P i` be polynomials over a normed ring, indexed along a filter `l`, whose coefficients
 converge to those of a polynomial `P₀`, and whose degrees are eventually at most a fixed `N`.
 This file records the estimates which make such a family behave uniformly:
 
@@ -29,7 +29,7 @@ This file records the estimates which make such a family behave uniformly:
   (`Polynomial.exists_eventually_forall_mul_pow_le_norm_eval`). In particular, if `deg P₀ ≥ 1`,
   then eventually `‖P i‖ ≥ 1` outside a fixed ball
   (`Polynomial.exists_eventually_forall_one_le_norm_eval`);
-* in any case the degree can only jump up in the limit: eventually `deg P₀ ≤ deg P i`
+* in any case the degree can only drop in the limit: eventually `deg P₀ ≤ deg P i`
   (`Polynomial.eventually_natDegree_le_natDegree_of_tendsto_coeff`).
 
 The degree bound cannot be dropped: `z + z ^ 2 / i` has coefficients converging to those of `z`,
@@ -49,44 +49,70 @@ namespace Polynomial
 
 open Filter Finset Metric Topology
 
-variable {𝕜 ι : Type*} [NormedField 𝕜] {l : Filter ι} {P : ι → Polynomial 𝕜} {P₀ : Polynomial 𝕜}
+variable {R ι : Type*} {l : Filter ι}
 
-/-- If the coefficients of `P i` converge to those of `P₀`, so do the coefficients of their
-derivatives. -/
-theorem tendsto_coeff_derivative (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k)))
-    (k : ℕ) :
+section Topological
+
+variable [Semiring R] [TopologicalSpace R] {P : ι → Polynomial R} {P₀ : Polynomial R}
+
+/-- If the coefficients of `P i` of index `k + 1` converge to that of `P₀`, then the coefficients
+of index `k` of their derivatives converge as well. -/
+theorem tendsto_coeff_derivative [ContinuousMul R] {k : ℕ}
+    (hP : Tendsto (fun i ↦ (P i).coeff (k + 1)) l (𝓝 (P₀.coeff (k + 1)))) :
     Tendsto (fun i ↦ (derivative (P i)).coeff k) l (𝓝 ((derivative P₀).coeff k)) := by
   simp only [coeff_derivative]
-  exact (hP (k + 1)).mul_const _
+  exact hP.mul_const _
+
+/-- **The degree is lower semicontinuous.** If the coefficients of `P i` of index `deg P₀`
+converge to the leading coefficient of `P₀`, then eventually `deg P₀ ≤ deg P i`. -/
+theorem eventually_natDegree_le_natDegree_of_tendsto_coeff [T1Space R]
+    (hP : Tendsto (fun i ↦ (P i).coeff P₀.natDegree) l (𝓝 (P₀.coeff P₀.natDegree))) :
+    ∀ᶠ i in l, P₀.natDegree ≤ (P i).natDegree := by
+  rcases eq_or_ne P₀ 0 with rfl | hP₀
+  · exact Eventually.of_forall fun i ↦ by simp
+  have hlead : P₀.coeff P₀.natDegree ≠ 0 := by
+    rw [coeff_natDegree]
+    exact leadingCoeff_ne_zero.mpr hP₀
+  filter_upwards [hP.eventually_ne hlead] with i hi
+  exact le_natDegree_of_ne_zero hi
+
+end Topological
+
+section SeminormedRing
+
+variable [SeminormedRing R] {P : ι → Polynomial R} {P₀ : Polynomial R}
 
 /-- The norm of the value of a polynomial of degree less than `n` at `z` is at most the sum of
 the norms of its first `n` coefficients times `‖z‖ ^ k`. -/
-theorem norm_eval_le_sum_norm_coeff_mul_pow {p : Polynomial 𝕜} {n : ℕ} (hn : p.natDegree < n)
-    (z : 𝕜) :
+theorem norm_eval_le_sum_norm_coeff_mul_pow {p : Polynomial R} {n : ℕ} (hn : p.natDegree < n)
+    (z : R) :
     ‖p.eval z‖ ≤ ∑ k ∈ range n, ‖p.coeff k‖ * ‖z‖ ^ k := by
   rw [eval_eq_sum_range' hn]
-  refine (norm_sum_le _ _).trans (le_of_eq (sum_congr rfl fun k _ ↦ ?_))
-  rw [norm_mul, norm_pow]
+  refine (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦ ?_)
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · simp
+  · exact (norm_mul_le _ _).trans (by gcongr; exact norm_pow_le' z hk)
 
-/-- **Uniform convergence on balls.** If the degrees of `P i` are eventually at most `N`, the
-degree of `P₀` is at most `N`, and the coefficients converge, then `P i → P₀` uniformly on every
-closed ball. -/
+/-- **Uniform convergence on balls.** If the degrees of `P i` are eventually at most `N` and the
+coefficients converge, then `P i → P₀` uniformly on every closed ball. -/
 theorem tendstoUniformlyOn_eval_closedBall_of_tendsto_coeff {N : ℕ}
-    (hN : ∀ᶠ i in l, (P i).natDegree ≤ N) (hN₀ : P₀.natDegree ≤ N)
-    (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k))) (R : ℝ) :
-    TendstoUniformlyOn (fun i z ↦ (P i).eval z) P₀.eval l (closedBall 0 R) := by
+    (hN : ∀ᶠ i in l, (P i).natDegree ≤ N)
+    (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k))) (r : ℝ) :
+    TendstoUniformlyOn (fun i z ↦ (P i).eval z) P₀.eval l (closedBall 0 r) := by
   rw [Metric.tendstoUniformlyOn_iff]
   intro ε hε
-  -- The coefficientwise errors, weighted by `R ^ k`, sum to a quantity tending to zero.
-  have hsum : Tendsto (fun i ↦ ∑ k ∈ range (N + 1), ‖(P i).coeff k - P₀.coeff k‖ * |R| ^ k) l
-      (𝓝 (∑ k ∈ range (N + 1), ‖P₀.coeff k - P₀.coeff k‖ * |R| ^ k)) :=
+  set M := max N P₀.natDegree
+  -- The coefficientwise errors, weighted by `r ^ k`, sum to a quantity tending to zero.
+  have hsum : Tendsto (fun i ↦ ∑ k ∈ range (M + 1), ‖(P i).coeff k - P₀.coeff k‖ * |r| ^ k) l
+      (𝓝 (∑ k ∈ range (M + 1), ‖P₀.coeff k - P₀.coeff k‖ * |r| ^ k)) :=
     tendsto_finsetSum _ fun k _ ↦ (((hP k).sub_const _).norm).mul_const _
   simp only [sub_self, norm_zero, zero_mul, sum_const_zero] at hsum
   filter_upwards [hN, hsum.eventually (gt_mem_nhds hε)] with i hi hlt z hz
-  have hz' : ‖z‖ ≤ |R| := (mem_closedBall_zero_iff.mp hz).trans (le_abs_self R)
+  have hz' : ‖z‖ ≤ |r| := (mem_closedBall_zero_iff.mp hz).trans (le_abs_self r)
   rw [dist_eq_norm, ← eval_sub]
   refine lt_of_le_of_lt ((norm_eval_le_sum_norm_coeff_mul_pow
-    ((natDegree_sub_le _ _).trans_lt (Nat.lt_succ_of_le (max_le hN₀ hi))) z).trans
+    ((natDegree_sub_le _ _).trans_lt (Nat.lt_succ_of_le
+      (max_le (le_max_right _ _) (hi.trans (le_max_left _ _))))) z).trans
     (sum_le_sum fun k _ ↦ ?_)) hlt
   rw [coeff_sub, norm_sub_rev]
   gcongr
@@ -110,16 +136,24 @@ theorem exists_eventually_forall_norm_eval_le {N : ℕ} (hN : ∀ᶠ i in l, (P 
       (pow_le_pow_right₀ h1 (Nat.lt_succ_iff.mp (mem_range.mp hk)))
   exact mul_le_mul (hlt k hk).le hzk (by positivity) (by positivity)
 
+end SeminormedRing
+
+section NormMulClass
+
+variable [NormedRing R] [NormMulClass R] {P : ι → Polynomial R} {P₀ : Polynomial R}
+
 /-- **A uniform lower growth bound outside a ball.** If `P₀ ≠ 0`, the degrees of `P i` are
-eventually at most that of `P₀`, and the coefficients converge, then there are `c > 0` and `R ≥ 1`
-such that `c ‖z‖ ^ deg P₀ ≤ ‖P i z‖` whenever `R ≤ ‖z‖`, eventually in `i`. -/
+eventually at most that of `P₀`, and the coefficients converge, then there are `c > 0` and `r ≥ 1`
+such that `c ‖z‖ ^ deg P₀ ≤ ‖P i z‖` whenever `r ≤ ‖z‖`, eventually in `i`. -/
 theorem exists_eventually_forall_mul_pow_le_norm_eval (hP₀ : P₀ ≠ 0)
     (hN : ∀ᶠ i in l, (P i).natDegree ≤ P₀.natDegree)
     (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k))) :
-    ∃ c > 0, ∃ R ≥ 1, ∀ᶠ i in l, ∀ z, R ≤ ‖z‖ → c * ‖z‖ ^ P₀.natDegree ≤ ‖(P i).eval z‖ := by
+    ∃ c > 0, ∃ r ≥ 1, ∀ᶠ i in l, ∀ z, r ≤ ‖z‖ → c * ‖z‖ ^ P₀.natDegree ≤ ‖(P i).eval z‖ := by
   set N := P₀.natDegree
   set a := ‖P₀.leadingCoeff‖
   have ha : 0 < a := norm_pos_iff.mpr (leadingCoeff_ne_zero.mpr hP₀)
+  have : Nontrivial R := ⟨⟨_, 0, leadingCoeff_ne_zero.mpr hP₀⟩⟩
+  have : NormOneClass R := NormMulClass.toNormOneClass
   set S := ∑ k ∈ range N, (‖P₀.coeff k‖ + 1)
   refine ⟨a / 4, by positivity, max 1 (4 * S / a), le_max_left _ _, ?_⟩
   have hb : ∀ k ∈ range N, ∀ᶠ i in l, ‖(P i).coeff k‖ < ‖P₀.coeff k‖ + 1 := fun k _ ↦
@@ -154,32 +188,19 @@ theorem exists_eventually_forall_mul_pow_le_norm_eval (hP₀ : P₀ ≠ 0)
   rw [norm_neg, sub_neg_eq_add, add_comm] at this
   linarith
 
-/-- **The degree is lower semicontinuous.** If the coefficients of `P i` converge to those of
-`P₀`, then eventually `deg P₀ ≤ deg P i`. -/
-theorem eventually_natDegree_le_natDegree_of_tendsto_coeff
-    (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k))) :
-    ∀ᶠ i in l, P₀.natDegree ≤ (P i).natDegree := by
-  rcases eq_or_ne P₀ 0 with rfl | hP₀
-  · exact Eventually.of_forall fun i ↦ by simp
-  have hlead : P₀.coeff P₀.natDegree ≠ 0 := by
-    rw [coeff_natDegree]
-    exact leadingCoeff_ne_zero.mpr hP₀
-  filter_upwards [(hP P₀.natDegree).eventually_ne hlead] with i hi
-  exact le_natDegree_of_ne_zero hi
-
 /-- **Uniform modulus at least one outside a ball.** If `P₀` has degree at least one, the degrees
 of `P i` are eventually at most that of `P₀`, and the coefficients converge, then there is a radius
-`R` such that eventually `1 ≤ ‖P i z‖` for every `z` outside the closed ball of radius `R`. -/
+`r` such that eventually `1 ≤ ‖P i z‖` for every `z` outside the closed ball of radius `r`. -/
 theorem exists_eventually_forall_one_le_norm_eval (hm : 0 < P₀.natDegree)
     (hN : ∀ᶠ i in l, (P i).natDegree ≤ P₀.natDegree)
     (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k))) :
-    ∃ R : ℝ, ∀ᶠ i in l, ∀ z ∉ closedBall (0 : 𝕜) R, 1 ≤ ‖(P i).eval z‖ := by
-  obtain ⟨c, hc, R, hR, hb⟩ :=
+    ∃ r : ℝ, ∀ᶠ i in l, ∀ z ∉ closedBall (0 : R) r, 1 ≤ ‖(P i).eval z‖ := by
+  obtain ⟨c, hc, r, hR, hb⟩ :=
     exists_eventually_forall_mul_pow_le_norm_eval (ne_zero_of_natDegree_gt hm) hN hP
-  refine ⟨max R c⁻¹, ?_⟩
+  refine ⟨max r c⁻¹, ?_⟩
   filter_upwards [hb] with i hi z hz
   rw [mem_closedBall_zero_iff, not_le] at hz
-  have hzR : R ≤ ‖z‖ := (le_max_left _ _).trans hz.le
+  have hzR : r ≤ ‖z‖ := (le_max_left _ _).trans hz.le
   have hz1 : 1 ≤ ‖z‖ := hR.trans hzR
   calc (1 : ℝ) = c * c⁻¹ := (mul_inv_cancel₀ hc.ne').symm
     _ ≤ c * ‖z‖ ^ P₀.natDegree := by
@@ -195,13 +216,13 @@ theorem exists_eventually_forall_inv_one_add_norm_eval_sq_le (hm : 0 < P₀.natD
     (hN : ∀ᶠ i in l, (P i).natDegree ≤ P₀.natDegree)
     (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k))) :
     ∃ A : ℝ, ∀ᶠ i in l, ∀ z, (1 + ‖(P i).eval z‖ ^ 2)⁻¹ ≤ A / (1 + ‖z‖) ^ 2 := by
-  obtain ⟨c, hc, R, hR, hb⟩ :=
+  obtain ⟨c, hc, r, hR, hb⟩ :=
     exists_eventually_forall_mul_pow_le_norm_eval (ne_zero_of_natDegree_gt hm) hN hP
-  refine ⟨max (4 / c ^ 2) ((1 + R) ^ 2), ?_⟩
+  refine ⟨max (4 / c ^ 2) ((1 + r) ^ 2), ?_⟩
   filter_upwards [hb] with i hi z
   rw [inv_le_iff_one_le_mul₀ (by positivity), div_mul_eq_mul_div, le_div_iff₀ (by positivity),
     one_mul]
-  by_cases hz : R ≤ ‖z‖
+  by_cases hz : r ≤ ‖z‖
   · -- Far out, `‖P i z‖ ≥ c ‖z‖ ^ m ≥ c ‖z‖` and `1 + ‖z‖ ≤ 2 ‖z‖`.
     have hz1 : 1 ≤ ‖z‖ := hR.trans hz
     have hPz : c * ‖z‖ ≤ ‖(P i).eval z‖ :=
@@ -213,15 +234,15 @@ theorem exists_eventually_forall_inv_one_add_norm_eval_sq_le (hm : 0 < P₀.natD
       _ ≤ 4 / c ^ 2 * (1 + ‖(P i).eval z‖ ^ 2) := by
           gcongr
           nlinarith [pow_le_pow_left₀ (by positivity) hPz 2]
-      _ ≤ max (4 / c ^ 2) ((1 + R) ^ 2) * (1 + ‖(P i).eval z‖ ^ 2) := by
+      _ ≤ max (4 / c ^ 2) ((1 + r) ^ 2) * (1 + ‖(P i).eval z‖ ^ 2) := by
           gcongr
           exact le_max_left _ _
-  · -- On the ball, `(1 + ‖z‖) ^ 2 ≤ (1 + R) ^ 2`.
-    calc (1 + ‖z‖) ^ 2 ≤ (1 + R) ^ 2 * 1 := by
+  · -- On the ball, `(1 + ‖z‖) ^ 2 ≤ (1 + r) ^ 2`.
+    calc (1 + ‖z‖) ^ 2 ≤ (1 + r) ^ 2 * 1 := by
           rw [mul_one]
           gcongr
           exact (not_le.mp hz).le
-      _ ≤ max (4 / c ^ 2) ((1 + R) ^ 2) * (1 + ‖(P i).eval z‖ ^ 2) := by
+      _ ≤ max (4 / c ^ 2) ((1 + r) ^ 2) * (1 + ‖(P i).eval z‖ ^ 2) := by
           gcongr
           · exact le_max_right _ _
           · exact le_add_of_nonneg_right (by positivity)
@@ -235,15 +256,15 @@ theorem exists_eventually_forall_norm_derivative_eval_sq_le (hm : 0 < P₀.natDe
     ∃ B : ℝ, ∀ᶠ i in l, ∀ z,
       ‖(derivative (P i)).eval z‖ ^ 2 ≤ B * (1 + ‖(P i).eval z‖ ^ 2) := by
   set m := P₀.natDegree
-  obtain ⟨c, hc, R, hR, hb⟩ :=
+  obtain ⟨c, hc, r, hR, hb⟩ :=
     exists_eventually_forall_mul_pow_le_norm_eval (ne_zero_of_natDegree_gt hm) hN hP
   obtain ⟨D, hD⟩ := exists_eventually_forall_norm_eval_le (N := m)
     (hN.mono fun i hi ↦ (natDegree_derivative_le _).trans (Nat.sub_le_of_le_add (by omega)))
-    (tendsto_coeff_derivative hP)
-  refine ⟨(D * 2 ^ m / c) ^ 2 + (D * (1 + R) ^ m) ^ 2, ?_⟩
+    fun k ↦ tendsto_coeff_derivative (hP (k + 1))
+  refine ⟨(D * 2 ^ m / c) ^ 2 + (D * (1 + r) ^ m) ^ 2, ?_⟩
   filter_upwards [hb, hD] with i hi hDi z
   have hd := hDi z
-  by_cases hz : R ≤ ‖z‖
+  by_cases hz : r ≤ ‖z‖
   · -- Far out, `(1 + ‖z‖) ^ m ≤ 2 ^ m ‖z‖ ^ m ≤ (2 ^ m / c) ‖P i z‖`.
     have hz1 : 1 ≤ ‖z‖ := hR.trans hz
     have h1 : (1 + ‖z‖) ^ m ≤ 2 ^ m / c * ‖(P i).eval z‖ := by
@@ -259,15 +280,17 @@ theorem exists_eventually_forall_norm_derivative_eval_sq_le (hm : 0 < P₀.natDe
         _ = D * 2 ^ m / c * ‖(P i).eval z‖ := by ring
     have h3 := pow_le_pow_left₀ (norm_nonneg _) h2 2
     rw [mul_pow] at h3
-    nlinarith [sq_nonneg (D * (1 + R) ^ m), sq_nonneg (D * 2 ^ m / c)]
-  · -- On the ball, `‖(P i)' z‖ ≤ D (1 + R) ^ m`.
-    have h1 : ‖(derivative (P i)).eval z‖ ≤ D * (1 + R) ^ m := by
+    nlinarith [sq_nonneg (D * (1 + r) ^ m), sq_nonneg (D * 2 ^ m / c)]
+  · -- On the ball, `‖(P i)' z‖ ≤ D (1 + r) ^ m`.
+    have h1 : ‖(derivative (P i)).eval z‖ ≤ D * (1 + r) ^ m := by
       have hD0 : 0 ≤ D :=
         nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hd) (by positivity)
       refine hd.trans (mul_le_mul_of_nonneg_left ?_ hD0)
       gcongr
       exact (not_le.mp hz).le
     have h3 := pow_le_pow_left₀ (norm_nonneg _) h1 2
-    nlinarith [sq_nonneg (D * (1 + R) ^ m), sq_nonneg (D * 2 ^ m / c)]
+    nlinarith [sq_nonneg (D * (1 + r) ^ m), sq_nonneg (D * 2 ^ m / c)]
+
+end NormMulClass
 
 end Polynomial

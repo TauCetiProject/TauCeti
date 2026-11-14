@@ -28,7 +28,8 @@ of the functional `I` of `TauCeti.Vortex.sobolevReducedFunctional` on `H¹(ℂ) 
 This file carries out the direct method of the calculus of variations:
 
 * `TauCeti.Vortex.lowerSemicontinuous_add_lintegral_ofReal_mul_exp_sub_one_sub`: functionals of the
-  form of `I`, with an arbitrary weight in the potential and an arbitrary square-integrable
+  form of `I`, with an arbitrary a.e.-measurable weight in the potential (where the weight is
+  negative, `ENNReal.ofReal` cuts the integrand off at zero) and an arbitrary square-integrable
   coefficient in the linear term, are lower semicontinuous for the weak topology of `H¹(ℂ)`.
 * `TauCeti.Vortex.lowerSemicontinuous_sobolevReducedFunctional`: `I` is lower semicontinuous for
   the weak topology of `H¹(ℂ)`. The Dirichlet energy and the potential are convex integral
@@ -84,9 +85,10 @@ private theorem add_lintegral_eq_add (h c : ℂ → ℝ) (u : W1p (volume : Meas
 /-- **Weak lower semicontinuity of functionals of Taubes's form.** For an a.e.-measurable weight
 `h` and a square-integrable coefficient `c`, the functional
 
-`u ↦ (‖∇u‖₂² / 2 + ∫ c u) + (1 / 16) ∫⁻ h (exp (2u) - 1 - 2u)`
+`u ↦ (‖∇u‖₂² / 2 + ∫ c u) + (1 / 16) ∫⁻ ENNReal.ofReal (h (exp (2u) - 1 - 2u))`
 
-is lower semicontinuous for the weak topology of `H¹(ℂ) = W^{1,2}(ℂ)`. Taubes's functional
+is lower semicontinuous for the weak topology of `H¹(ℂ) = W^{1,2}(ℂ)`. Where `h` is negative, the
+integrand of the potential is cut off at zero by `ENNReal.ofReal`. Taubes's functional
 `TauCeti.Vortex.sobolevReducedFunctional P` is the case `h = ‖P‖² / (1 + ‖P‖²)`,
 `c = 2 ‖P'‖² / (1 + ‖P‖²)² - (1 + ‖P‖²)⁻¹ / 8`. -/
 theorem lowerSemicontinuous_add_lintegral_ofReal_mul_exp_sub_one_sub {h c : ℂ → ℝ}
