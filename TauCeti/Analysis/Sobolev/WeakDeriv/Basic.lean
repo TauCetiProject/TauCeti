@@ -181,6 +181,13 @@ weaken them for no gain.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`: where
   the classical derivative exists and is locally integrable on `Ω`, the weak one agrees with it
   almost everywhere.
+* `TauCeti.HasWeakLineDerivOn.smul_measure`, `TauCeti.HasWeakFDerivOn.smul_measure`,
+  `TauCeti.hasWeakLineDerivOn_smul_measure_iff`, `TauCeti.hasWeakFDerivOn_smul_measure_iff`:
+  scaling the measure by a finite (nonzero) constant preserves (and reflects) weak derivatives.
+* `TauCeti.HasWeakLineDerivOn.of_isAddHaarMeasure`, `TauCeti.HasWeakFDerivOn.of_isAddHaarMeasure`,
+  `TauCeti.hasWeakLineDerivOn_iff_of_isAddHaarMeasure`,
+  `TauCeti.hasWeakFDerivOn_iff_of_isAddHaarMeasure`: weak derivatives are independent of the
+  choice of additive Haar measure.
 -/
 
 public section
@@ -999,5 +1006,74 @@ theorem HasWeakFDerivOn.ae_eq_fderiv {U : E → E →L[ℝ] F} (h : HasWeakFDeri
   h.ae_eq (hasWeakFDerivOn_of_differentiableOn hd hdiff)
 
 end Comparison
+
+/-! ### Scaling the measure and independence of the choice of Haar measure -/
+
+section MeasureScaling
+
+open scoped ENNReal
+
+variable [MeasurableSpace E] {u u' : E → F} {D : E → E →L[ℝ] F}
+
+/-- Multiplying the measure by a finite constant preserves weak directional derivatives. -/
+theorem HasWeakLineDerivOn.smul_measure {μ : Measure E} (h : HasWeakLineDerivOn μ Ω u u' v)
+    {a : ℝ≥0∞} (ha : a ≠ ⊤) : HasWeakLineDerivOn (a • μ) Ω u u' v := by
+  rw [hasWeakLineDerivOn_iff_testFunction]
+  refine ⟨h.completeSpace, h.locallyIntegrableOn.smul_measure ha,
+    h.locallyIntegrableOn_deriv.smul_measure ha, fun φ ↦ ?_⟩
+  rw [integral_smul_measure, integral_smul_measure,
+    h.integral_lineDeriv_smul_eq_neg_integral_smul φ, smul_neg]
+
+/-- Multiplying the measure by a finite constant preserves weak Fréchet derivatives. -/
+theorem HasWeakFDerivOn.smul_measure {μ : Measure E} (h : HasWeakFDerivOn μ Ω u D) {a : ℝ≥0∞}
+    (ha : a ≠ ⊤) : HasWeakFDerivOn (a • μ) Ω u D := by
+  rw [hasWeakFDerivOn_iff] at h ⊢
+  exact fun v ↦ (h v).smul_measure ha
+
+/-- Multiplying the measure by a nonzero finite constant preserves and reflects weak directional
+derivatives. -/
+theorem hasWeakLineDerivOn_smul_measure_iff {μ : Measure E} {a : ℝ≥0∞} (ha₀ : a ≠ 0) (ha : a ≠ ⊤) :
+    HasWeakLineDerivOn (a • μ) Ω u u' v ↔ HasWeakLineDerivOn μ Ω u u' v := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.smul_measure ha⟩
+  have h' := h.smul_measure (a := a⁻¹) (ENNReal.inv_ne_top.2 ha₀)
+  rwa [smul_smul, ENNReal.inv_mul_cancel ha₀ ha, one_smul] at h'
+
+/-- Multiplying the measure by a nonzero finite constant preserves and reflects weak Fréchet
+derivatives. -/
+theorem hasWeakFDerivOn_smul_measure_iff {μ : Measure E} {a : ℝ≥0∞} (ha₀ : a ≠ 0) (ha : a ≠ ⊤) :
+    HasWeakFDerivOn (a • μ) Ω u D ↔ HasWeakFDerivOn μ Ω u D := by
+  simp only [hasWeakFDerivOn_iff, hasWeakLineDerivOn_smul_measure_iff ha₀ ha]
+
+/-- Weak directional differentiability on an open set does not depend on the choice of additive
+Haar measure. -/
+theorem HasWeakLineDerivOn.of_isAddHaarMeasure [LocallyCompactSpace E] [SecondCountableTopology E]
+    [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] (ν : Measure E) [ν.IsAddHaarMeasure]
+    (h : HasWeakLineDerivOn μ Ω u u' v) : HasWeakLineDerivOn ν Ω u u' v := by
+  rw [Measure.isAddLeftInvariant_eq_smul ν μ]
+  exact h.smul_measure ENNReal.coe_ne_top
+
+/-- Weak Fréchet differentiability on an open set does not depend on the choice of additive Haar
+measure. -/
+theorem HasWeakFDerivOn.of_isAddHaarMeasure [LocallyCompactSpace E] [SecondCountableTopology E]
+    [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] (ν : Measure E) [ν.IsAddHaarMeasure]
+    (h : HasWeakFDerivOn μ Ω u D) : HasWeakFDerivOn ν Ω u D := by
+  rw [Measure.isAddLeftInvariant_eq_smul ν μ]
+  exact h.smul_measure ENNReal.coe_ne_top
+
+/-- Two additive Haar measures on the same space yield the same weak directional derivatives. -/
+theorem hasWeakLineDerivOn_iff_of_isAddHaarMeasure [LocallyCompactSpace E]
+    [SecondCountableTopology E] [BorelSpace E] (μ ν : Measure E) [μ.IsAddHaarMeasure]
+    [ν.IsAddHaarMeasure] :
+    HasWeakLineDerivOn μ Ω u u' v ↔ HasWeakLineDerivOn ν Ω u u' v :=
+  ⟨fun h ↦ h.of_isAddHaarMeasure ν, fun h ↦ h.of_isAddHaarMeasure μ⟩
+
+/-- Two additive Haar measures on the same space yield the same weak Fréchet derivatives. -/
+theorem hasWeakFDerivOn_iff_of_isAddHaarMeasure [LocallyCompactSpace E]
+    [SecondCountableTopology E] [BorelSpace E] (μ ν : Measure E) [μ.IsAddHaarMeasure]
+    [ν.IsAddHaarMeasure] :
+    HasWeakFDerivOn μ Ω u D ↔ HasWeakFDerivOn ν Ω u D :=
+  ⟨fun h ↦ h.of_isAddHaarMeasure ν, fun h ↦ h.of_isAddHaarMeasure μ⟩
+
+end MeasureScaling
 
 end TauCeti
