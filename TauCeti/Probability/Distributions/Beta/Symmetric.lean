@@ -137,6 +137,17 @@ theorem integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure (ha : 0 < a) (
   · exact integral_eq_zero_of_odd fun z ↦ by
       simp [(Nat.not_even_iff_odd.1 hn).neg_pow, neg_mul]
 
+/-- A centered symmetric Beta variable of positive shape `a` has second moment
+`1 / (2 * a + 1)`. -/
+theorem integral_sq_map_centered_betaMeasure (ha : 0 < a) :
+    ∫ x, x ^ 2 ∂((betaMeasure a a).map (fun t ↦ -1 + 2 * t)) = 1 / (2 * a + 1) := by
+  have h := integral_id_betaMeasure (by norm_num : (0 : ℝ) < 1 / 2) ha
+  rw [← betaMeasure_map_centered_sq, integral_map (by fun_prop) (by fun_prop)] at h
+  rw [integral_map (by fun_prop) (by fun_prop)]
+  convert h using 1
+  field_simp
+  ring
+
 /-- Products of weighted natural powers of independent centered symmetric Beta variables
 are integrable when every residual exponent is above its endpoint threshold. -/
 theorem integrable_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure {ι : Type*} [Fintype ι]

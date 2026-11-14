@@ -43,6 +43,9 @@ sign of the permutation.
   invariant under permuting the indices.
 * `Finset.prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag`: a product over weakly increasing
   pairs separates into the strictly increasing pairs and the diagonal.
+* `Finset.prod_product_mul_pow` and `Finset.sum_product_nsmul_add`: over `s ×ˢ s`, a product of
+  powers `(f ab.1 * f ab.2) ^ d ab` collects each factor `f a` with exponent equal to the sum of
+  row and column weights `d (a, b) + d (b, a)`.
 * `TauCeti.prod_prod_Ioi_eq_of_two`: separates the first pair and its cross terms from a product
   over the increasing pairs of a finite ordinal.
 * `TauCeti.prod_prod_Ioi_three` and `TauCeti.prod_prod_Ioi_four`: the products over the increasing
@@ -69,6 +72,20 @@ theorem prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag
     (∏ i ∈ s, ∏ j ∈ Ici i, f i j) = (∏ i ∈ s, ∏ j ∈ Ioi i, f i j) * ∏ i ∈ s, f i i := by
   simp_rw [← prod_Ioi_mul_eq_prod_Ici]
   exact prod_mul_distrib
+
+/-- Over `s ×ˢ s`, a product of natural powers `(f ab.1 * f ab.2) ^ d ab` collects each factor
+`f a` with exponent equal to the sum of row and column weights `d (a, b) + d (b, a)` over
+`b ∈ s`. -/
+@[to_additive sum_product_nsmul_add /-- Over `s ×ˢ s`, a sum of natural multiples
+`d ab • (f ab.1 + f ab.2)` collects each term `f a` with multiplicity equal to the sum of row and
+column weights `d (a, b) + d (b, a)` over `b ∈ s`. -/]
+theorem prod_product_mul_pow {ι M : Type*} [CommMonoid M] (s : Finset ι) (f : ι → M)
+    (d : ι × ι → ℕ) :
+    ∏ ab ∈ s ×ˢ s, (f ab.1 * f ab.2) ^ d ab =
+      ∏ a ∈ s, f a ^ ∑ b ∈ s, (d (a, b) + d (b, a)) := by
+  simp_rw [mul_pow, prod_mul_distrib]
+  rw [prod_product, prod_product_right]
+  simp_rw [prod_pow_eq_pow_sum, ← prod_mul_distrib, ← pow_add, sum_add_distrib]
 
 end Finset
 

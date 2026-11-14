@@ -15,6 +15,7 @@ import TauCeti.Algebra.Order.BigOperators.Sum.IioIci
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Order.Interval.Finset.Fin
+import TauCeti.LinearAlgebra.Matrix.Gram
 
 /-!
 # Cholesky construction from partial correlations
@@ -80,6 +81,20 @@ theorem strictLowerTriangleColumnEquiv_symm_apply_coe (j : Fin p) (i : Set.Ioi j
 theorem card_strictLowerTriangle_column (j : Fin p) :
     Fintype.card {ij : strictLowerTriangle p // ij.1.2 = j} = p - 1 - j.val := by
   rw [Fintype.card_congr (strictLowerTriangleColumnEquiv j), Fintype.card_Ioi, Fin.card_Ioi]
+
+/-- The product over the three strictly lower positions of a `3 × 3` matrix. -/
+@[to_additive /-- The sum over the three strictly lower positions of a `3 × 3` matrix. -/]
+theorem prod_strictLowerTriangle_three {M : Type*} [CommMonoid M]
+    (f : strictLowerTriangle 3 → M) :
+    ∏ ij : strictLowerTriangle 3, f ij =
+      f ⟨(1, 0), by decide⟩ * f ⟨(2, 0), by decide⟩ * f ⟨(2, 1), by decide⟩ := by
+  have huniv :
+      (Finset.univ : Finset (strictLowerTriangle 3)) =
+        {⟨(1, 0), by decide⟩, ⟨(2, 0), by decide⟩, ⟨(2, 1), by decide⟩} := by
+    ext ⟨⟨a, b⟩, hab⟩
+    fin_cases a <;> fin_cases b <;> simp at hab ⊢
+  rw [huniv, Finset.prod_insert (by decide), Finset.prod_insert (by decide),
+    Finset.prod_singleton, ← mul_assoc]
 
 /-- Distinct strictly lower positions `ij ≠ kl` have an index of `ij` that is not an index of
 `kl`. Flipping the sign of that axis negates entry `ij` and fixes entry `kl`. -/
@@ -207,6 +222,26 @@ theorem partialCorrelationGram_apply_eq_sum_Iic (z : strictLowerTriangle p → �
   intro k _ hk
   simp only [Finset.mem_Iic, not_le] at hk
   rw [partialCorrelationCholesky_apply_of_lt z hk, mul_zero]
+
+/-- Every entry of the partial-correlation Gram matrix sums only over Cholesky columns at most
+`min i j`. -/
+theorem partialCorrelationGram_apply_eq_sum_Iic_min (z : strictLowerTriangle p → ℝ)
+    (i j : Fin p) :
+    partialCorrelationGram z i j =
+      ∑ k ∈ Finset.Iic (min i j),
+        partialCorrelationCholesky z i k * partialCorrelationCholesky z j k := by
+  rw [partialCorrelationGram_def]
+  exact (isLowerTriangular_partialCorrelationCholesky z).mul_transpose_apply_eq_sum_Iic i j
+
+/-- Below the diagonal, the first column of the triangular factor consists of the first-column
+partial correlations. -/
+theorem partialCorrelationCholesky_apply_zero_of_pos [NeZero p]
+    (z : strictLowerTriangle p → ℝ) {i : Fin p} (h : 0 < i) :
+    partialCorrelationCholesky z i 0 = z ⟨(i, 0), h⟩ := by
+  have hlt (k : Fin p) : ¬ k < 0 := by
+    rw [Fin.lt_def, Fin.val_zero]
+    exact Nat.not_lt_zero _
+  simp [partialCorrelationCholesky_apply_of_gt z h, hlt]
 
 /-- The first column of the Gram matrix consists of the first-column partial correlations. -/
 theorem partialCorrelationGram_apply_zero_of_pos (z : strictLowerTriangle (p + 1) → ℝ)

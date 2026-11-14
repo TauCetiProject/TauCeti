@@ -5,21 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `Matrix.IsSymm` occurs in the statements below.
+-- `Matrix.IsSymm` and `Matrix.IsLowerTriangular` occur in the statements below.
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import Mathlib.Data.Nat.Choose.Multinomial
+import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.Pairs
+import TauCeti.Algebra.Order.Antidiag.Pi
 
 /-!
-# Gram forms, matrix reflection and Gram determinants
+# Gram forms, matrix reflection, Gram determinants and Gram entry monomials
 
 This file records the basic symmetry and quadratic-form preservation identities for the bilinear
-and quadratic forms attached to a symmetric matrix, and the basic facts about the Gram
-determinant `det (A * Aᵀ)` of the rows of a matrix `A`.
+and quadratic forms attached to a symmetric matrix, the basic facts about the Gram determinant
+`det (A * Aᵀ)` of the rows of a matrix `A`, and the multinomial expansion of entry monomials of
+`A * Aᵀ` into monomials in the entries of `A`.
 
 ## Main results
 
@@ -31,6 +37,11 @@ determinant `det (A * Aᵀ)` of the rows of a matrix `A`.
   of `A`.
 * `Matrix.det_mul_transpose_ne_zero_iff`: over a linearly ordered commutative ring, the Gram
   determinant `det (A * Aᵀ)` is nonzero exactly when the rows of `A` are linearly independent.
+* `Matrix.prod_pow_mul_transpose_apply`: every monomial in the entries of `A * Aᵀ` expands as a
+  multinomial sum of monomials in the entries of `A`.
+* `Matrix.IsLowerTriangular.mul_transpose_apply_eq_sum_Iic` and
+  `Matrix.IsLowerTriangular.prod_pow_mul_transpose_apply`: for a lower-triangular matrix `A`, the
+  Gram entries and Gram entry monomials sum only over columns at most `min i j`.
 -/
 
 public section
@@ -64,6 +75,8 @@ end TauCeti
 
 namespace Matrix
 
+section
+
 variable {m n R : Type*} [Fintype m] [DecidableEq m] [Fintype n]
 
 /-- The Gram determinant of the rows of `B * A` is `det B ^ 2` times that of `A`. -/
@@ -85,5 +98,92 @@ theorem det_mul_transpose_ne_zero_iff [CommRing R] [LinearOrder R] [IsStrictOrde
     injective_iff_map_eq_zero]
   simp only [key, vecMulLinear_apply]
   grind
+
+section Monomial
+
+omit [DecidableEq m] in
+private theorem prod_pow_mul_eq_prod_pow_add [CommSemiring R] (A : Matrix m n R)
+    (K : m × m → n → ℕ) :
+    (∏ ij : m × m, ∏ k : n, (A ij.1 k * A ij.2 k) ^ K ij k) =
+      ∏ q : m × n, A q.1 q.2 ^ ∑ j : m, (K (q.1, j) q.2 + K (j, q.1) q.2) := by
+  rw [Finset.prod_comm, Fintype.prod_prod_type_right]
+  exact Finset.prod_congr rfl fun k _ ↦
+    Finset.prod_product_mul_pow Finset.univ (fun i ↦ A i k) (fun ij ↦ K ij k)
+
+private theorem prod_pow_sum_mul_eq_sum_piFinset [CommSemiring R] [DecidableEq n]
+    (A : Matrix m n R) (s : m × m → Finset n) (d : m × m → ℕ)
+    (hs : ∀ ij : m × m, (A * Aᵀ) ij.1 ij.2 = ∑ k ∈ s ij, A ij.1 k * A ij.2 k) :
+    (∏ ij, (A * Aᵀ) ij.1 ij.2 ^ d ij) =
+      ∑ K ∈ Fintype.piFinset (fun ij : m × m ↦ Finset.piAntidiag (s ij) (d ij)),
+        (∏ ij, (Nat.multinomial Finset.univ (K ij) : R)) *
+          ∏ q : m × n, A q.1 q.2 ^ ∑ j, (K (q.1, j) q.2 + K (j, q.1) q.2) := by
+  simp_rw [hs, Finset.sum_pow_eq_sum_piAntidiag]
+  rw [Finset.prod_univ_sum]
+  refine Finset.sum_congr rfl fun K hK ↦ ?_
+  have hmult (ij : m × m) :
+      Nat.multinomial (s ij) (K ij) = Nat.multinomial Finset.univ (K ij) :=
+    Nat.multinomial_congr_of_sdiff (Finset.subset_univ _)
+      (fun k hk ↦ Finset.eq_zero_of_notMem_of_mem_piAntidiag (Finset.mem_sdiff.mp hk).2
+        (Fintype.mem_piFinset.mp hK ij))
+      (fun _ _ ↦ rfl)
+  have hprod (ij : m × m) :
+      (∏ k ∈ s ij, (A ij.1 k * A ij.2 k) ^ K ij k) =
+        ∏ k : n, (A ij.1 k * A ij.2 k) ^ K ij k :=
+    Finset.prod_subset (Finset.subset_univ _) fun k _ hk ↦ by
+      rw [Finset.eq_zero_of_notMem_of_mem_piAntidiag hk (Fintype.mem_piFinset.mp hK ij), pow_zero]
+  simp_rw [hmult, hprod]
+  rw [Finset.prod_mul_distrib, prod_pow_mul_eq_prod_pow_add]
+
+/-- Every natural monomial in the entries of a Gram matrix `A * Aᵀ` expands as a multinomial sum
+of monomials in the entries of `A`. Each summand chooses a column-split exponent vector `K ij` of
+sum `d ij` for every entry pair `ij`, and `A i k` collects its occurrences as both left and right
+factor in column `k`. -/
+theorem prod_pow_mul_transpose_apply [CommSemiring R] [DecidableEq n]
+    (A : Matrix m n R) (d : m × m → ℕ) :
+    (∏ ij, (A * Aᵀ) ij.1 ij.2 ^ d ij) =
+      ∑ K ∈ Fintype.piFinset (fun ij : m × m ↦ Finset.piAntidiag Finset.univ (d ij)),
+        (∏ ij, (Nat.multinomial Finset.univ (K ij) : R)) *
+          ∏ q : m × n, A q.1 q.2 ^ ∑ j, (K (q.1, j) q.2 + K (j, q.1) q.2) :=
+  prod_pow_sum_mul_eq_sum_piFinset A (fun _ ↦ Finset.univ) d fun ij ↦ by
+    simp [Matrix.mul_apply]
+
+end Monomial
+
+end
+
+section LowerTriangular
+
+variable {m R : Type*} [Fintype m]
+
+/-- For a lower-triangular matrix `A`, the `(i, j)` entry of `A * Aᵀ` sums only over columns at
+most `min i j`. -/
+theorem IsLowerTriangular.mul_transpose_apply_eq_sum_Iic [NonUnitalNonAssocSemiring R]
+    [LinearOrder m] [LocallyFiniteOrderBot m] {A : Matrix m m R} (hA : A.IsLowerTriangular)
+    (i j : m) :
+    (A * Aᵀ) i j = ∑ k ∈ Finset.Iic (min i j), A i k * A j k := by
+  rw [Matrix.mul_apply]
+  simp only [transpose_apply]
+  symm
+  refine Finset.sum_subset (Finset.subset_univ _) fun k _ hk ↦ ?_
+  rw [Finset.mem_Iic, le_min_iff, not_and_or, not_le, not_le] at hk
+  rcases hk with hik | hjk
+  · rw [hA hik, zero_mul]
+  · rw [hA hjk, mul_zero]
+
+/-- For a lower-triangular matrix `A`, every natural monomial in the entries of `A * Aᵀ` expands
+over column-split exponent vectors supported on `Finset.Iic (min ij.1 ij.2)`. Consequently every
+surviving factor power in `A` is supported on or below the diagonal. -/
+theorem IsLowerTriangular.prod_pow_mul_transpose_apply [CommSemiring R]
+    [LinearOrder m] [LocallyFiniteOrderBot m] {A : Matrix m m R} (hA : A.IsLowerTriangular)
+    (d : m × m → ℕ) :
+    (∏ ij, (A * Aᵀ) ij.1 ij.2 ^ d ij) =
+      ∑ K ∈ Fintype.piFinset
+          (fun ij : m × m ↦ Finset.piAntidiag (Finset.Iic (min ij.1 ij.2)) (d ij)),
+        (∏ ij, (Nat.multinomial Finset.univ (K ij) : R)) *
+          ∏ q : m × m, A q.1 q.2 ^ ∑ j, (K (q.1, j) q.2 + K (j, q.1) q.2) :=
+  prod_pow_sum_mul_eq_sum_piFinset A (fun ij ↦ Finset.Iic (min ij.1 ij.2)) d fun ij ↦
+    hA.mul_transpose_apply_eq_sum_Iic ij.1 ij.2
+
+end LowerTriangular
 
 end Matrix
