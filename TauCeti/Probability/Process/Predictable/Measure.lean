@@ -131,6 +131,12 @@ theorem predictableMeasure_restrict (ℱ : Filtration ℝ≥0 m) (P : Measure Ω
   rw [predictableMeasure_def, restrict_trim ℱ.predictable_le_prod _ hS,
     ← Measure.restrict_prod_eq_prod_univ, timeMeasure_restrict, predictableMeasure_def]
 
+/-- Increasing the horizon increases the predictable time-product measure. -/
+theorem predictableMeasure_mono (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [SFinite P]
+    {S T : ℝ≥0} (hST : S ≤ T) : ℱ.predictableMeasure P S ≤ ℱ.predictableMeasure P T := by
+  rw [← min_eq_left hST, ← predictableMeasure_restrict]
+  exact Measure.restrict_le_self
+
 /-- The identity from a larger predictable sigma-algebra to a smaller one preserves
 finite-horizon time-product measure. Its native Lᵖ pullback embeds the smaller integrand space
 isometrically into the larger one. No finiteness assumption on the sample measure is needed. -/
