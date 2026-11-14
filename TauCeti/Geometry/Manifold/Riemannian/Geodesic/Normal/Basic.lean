@@ -66,8 +66,9 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 * `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianLog_self_apply` and
   `TauCeti.Manifold.IsNormalDomain.mvfderiv_riemannianLog_self`: the differential of the logarithm
   at the base point is the identity.
-* `TauCeti.Manifold.IsNormalDomain.mem_geodesicInterval`: the geodesic towards a vector of a
-  normal domain is defined at least up to time one.
+* `TauCeti.Manifold.IsNormalDomain.mem_geodesicInterval` and
+  `TauCeti.Manifold.IsNormalDomain.isGeodesicCurveOn_riemannianExp_smul_Icc`: the radial geodesic
+  towards a vector of a normal domain is defined and a geodesic on `[0, 1]`.
 
 ## References
 
@@ -161,6 +162,13 @@ theorem mem_geodesicInterval (h : IsNormalDomain I M p U) (hv : v ∈ U)
     (mem_expDomain_iff.1 (h.subset_expDomain hv)) ⟨ht₀, ht₁⟩
 
 variable [I.Boundaryless] [T2Space M]
+
+/-- **The radial segment of a normal domain is a geodesic on `[0, 1]`.** -/
+theorem isGeodesicCurveOn_riemannianExp_smul_Icc (h : IsNormalDomain I M p U) (hv : v ∈ U) :
+    IsGeodesicCurveOn I (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc 0 1) :=
+  ((isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.mono
+    (uniqueDiffOn_Icc zero_lt_one) fun _ ht ↦ h.mem_geodesicInterval hv ht.1 ht.2).congr
+      fun t _ ↦ riemannianExp_smul p v t
 
 /-- The base point belongs to every normal neighbourhood. -/
 theorem self_mem_image (h : IsNormalDomain I M p U) : p ∈ riemannianExp I M p '' U :=

@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Distance
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential.VariableBase
-import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
@@ -57,11 +57,14 @@ smoothly varying segments interpolate broken geodesics through finitely many nea
 
 ## Main results
 
-* `TauCeti.Manifold.contMDiffOn_totalSpaceMk_riemannianLog`: the logarithm is jointly smooth in
-  both points.
+* `TauCeti.Manifold.contMDiffOn_totalSpaceMk_riemannianLog`,
+  `TauCeti.Manifold.contMDiffOn_norm_riemannianLog_sq`, and
+  `TauCeti.Manifold.contMDiffOn_toReal_edist_sq`: the logarithm, its squared norm, and the squared
+  Riemannian distance near the diagonal are jointly smooth in both points.
 * `TauCeti.Manifold.contMDiffAt_riemannianExp_smul_riemannianLog`,
-  `TauCeti.Manifold.contMDiffOn_riemannianExp_smul_riemannianLog`: the short geodesic segments are
-  jointly smooth in both endpoints and time.
+  `TauCeti.Manifold.contMDiffOn_riemannianExp_smul_riemannianLog`, and
+  `TauCeti.Manifold.IsUniformlyNormal.contMDiffOn_riemannianExp_smul_riemannianLog`: the short
+  geodesic segments are jointly smooth in both endpoints and time.
 * `IsCompact.exists_pos_contMDiffAt_riemannianExp_smul_riemannianLog`,
   `TauCeti.Manifold.exists_pos_contMDiffAt_riemannianExp_smul_riemannianLog`: a single radius
   gives smooth segments from each point of a compact set, or between any two points of a compact
@@ -81,7 +84,7 @@ smoothly varying segments interpolate broken geodesics through finitely many nea
 public section
 
 open Bundle Manifold Set Function
-open scoped ContDiff Manifold Topology
+open scoped ContDiff ENNReal Manifold Topology
 
 namespace TauCeti.Manifold
 
@@ -130,6 +133,19 @@ theorem contMDiffOn_totalSpaceMk_riemannianLog (hWo : IsOpen W)
       _ = invFunOn F S y := by rw [(hL y hy).2]
   exact (h x hx).congr hinv (hinv x hx)
 
+/-- **The squared norm of the Riemannian logarithm is smooth in both points.** For an open set `W`
+of points at which the tangent ball of radius `r` is a normal domain, the map
+`(x, y) ↦ ‖log_x y‖²` is smooth on the pairs with `x ∈ W` and `y ∈ exp_x '' B(0, r)`. -/
+theorem contMDiffOn_norm_riemannianLog_sq (hWo : IsOpen W)
+    (hW : ∀ q ∈ W, IsNormalDomain I M q (Metric.ball 0 r)) :
+    ContMDiffOn (I.prod I) 𝓘(ℝ) ∞
+      (fun x : M × M ↦ ‖riemannianLog I M x.1 (Metric.ball 0 r) x.2‖ ^ 2)
+      {x : M × M | x.1 ∈ W ∧ x.2 ∈ riemannianExp I M x.1 '' Metric.ball 0 r} := by
+  have hsq : ContMDiff I.tangent 𝓘(ℝ) ∞ (fun z : TangentBundle I M ↦ ‖z.2‖ ^ 2) := by
+    simpa only [real_inner_self_eq_norm_sq] using
+      (contMDiff_id (I := I.tangent) (n := ∞)).inner_bundle contMDiff_id
+  exact hsq.comp_contMDiffOn (contMDiffOn_totalSpaceMk_riemannianLog hWo hW)
+
 /-- **Geodesics from `x` towards `y` are smooth in both endpoints and time.** For an open set `W`
 of points at which the tangent ball of radius `r` is a normal domain, the map
 `(x, y, t) ↦ exp_x (t • log_x y)` is smooth at every `(x, y, t)` with `x ∈ W`,
@@ -172,6 +188,19 @@ theorem contMDiffOn_riemannianExp_smul_riemannianLog (hWo : IsOpen W)
   exact (contMDiffAt_riemannianExp_smul_riemannianLog hWo hW hx hy ((hW x hx).subset_expDomain
     ((hW x hx).smul_mem (riemannianLog_mem hy) ht.1 ht.2))).contMDiffWithinAt
 
+/-- On an open uniformly normal set `W`, the radial geodesic segment map
+`(x, y, t) ↦ exp_x (t • log_x y)` using `hW.normalRadius` is smooth on `(W ×ˢ W) ×ˢ Icc 0 1`. -/
+theorem IsUniformlyNormal.contMDiffOn_riemannianExp_smul_riemannianLog (hWo : IsOpen W)
+    (hW : IsUniformlyNormal I W) :
+    ContMDiffOn ((I.prod I).prod 𝓘(ℝ)) I ∞
+      (fun x : (M × M) × ℝ ↦
+        riemannianExp I M x.1.1
+          (x.2 • riemannianLog I M x.1.1 (Metric.ball 0 hW.normalRadius) x.1.2))
+      ((W ×ˢ W) ×ˢ Icc (0 : ℝ) 1) :=
+  (TauCeti.Manifold.contMDiffOn_riemannianExp_smul_riemannianLog hWo
+    fun _ hq ↦ hW.isNormalDomain_ball hq).mono fun _ ⟨⟨hx, hy⟩, ht⟩ ↦
+      ⟨⟨hx, hW.subset_image_riemannianExp_ball hx hy⟩, ht⟩
+
 end Topological
 
 section Metric
@@ -192,6 +221,19 @@ theorem setOf_mem_riemannianExp_image_ball_eq
   ext ⟨x, y⟩
   refine and_congr_right fun hx ↦ ?_
   rw [(hW x hx).image_riemannianExp_ball subset_rfl, Metric.mem_eball']
+
+/-- **The squared Riemannian distance is smooth in both points near the diagonal.** For an open set
+`W` of points at which the tangent ball of radius `r` is a normal domain, the map
+`(x, y) ↦ (edist x y).toReal ^ 2` is smooth on
+`{x : M × M | x.1 ∈ W ∧ edist x.1 x.2 < ENNReal.ofReal r}`. -/
+theorem contMDiffOn_toReal_edist_sq (hWo : IsOpen W)
+    (hW : ∀ q ∈ W, IsNormalDomain I M q (Metric.ball 0 r)) :
+    ContMDiffOn (I.prod I) 𝓘(ℝ) ∞
+      (fun x : M × M ↦ (edist x.1 x.2).toReal ^ 2)
+      {x : M × M | x.1 ∈ W ∧ edist x.1 x.2 < ENNReal.ofReal r} := by
+  rw [← setOf_mem_riemannianExp_image_ball_eq hW]
+  refine (contMDiffOn_norm_riemannianLog_sq hWo hW).congr fun x hx ↦ ?_
+  rw [(hW x.1 hx.1).edist_eq_enorm_riemannianLog_of_mem_ball subset_rfl hx.2, toReal_eNorm]
 
 /-- **Short geodesic segments near a compact set.** For a compact set `K` of points of a
 Riemannian manifold there is a radius `r > 0` such that the tangent ball of radius `r` at every

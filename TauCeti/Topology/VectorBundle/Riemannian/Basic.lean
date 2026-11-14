@@ -35,6 +35,9 @@ continuous reference inner products on the fibres.
 
 * `Continuous.norm_bundle`: the fiber norm of a continuous map into the fibers of a continuous
   Riemannian bundle is continuous, with `TauCeti.continuous_norm_bundle` its tautological case.
+* `Bundle.Trivialization.continuousAt_norm_symmL`: in a continuous Riemannian bundle, the fiber
+  norm of `e.symmL ℝ (b x) (w x)` is continuous at `x₀` when `b` and `w` are continuous at `x₀`
+  and `b x₀ ∈ e.baseSet`.
 * `IsOpen.norm_lt_bundle`: the vectors of norm less than `r` over an open set form an open subset
   of the total space.
 * `IsCompact.norm_le_bundle`: the vectors of norm at most `r` over a compact set form a compact
@@ -79,6 +82,20 @@ theorem continuous_norm_bundle : Continuous fun z : TotalSpace F E ↦ ‖z.2‖
     (continuous_id.congr fun z ↦ (TotalSpace.eta z).symm)
 
 end TauCeti
+
+/-- In a continuous Riemannian bundle, the fiber norm of `e.symmL ℝ (b x) (w x)` is continuous at
+`x₀` whenever `b` and `w` are continuous at `x₀` and `b x₀ ∈ e.baseSet`. -/
+theorem Bundle.Trivialization.continuousAt_norm_symmL (e : Trivialization F (π F E))
+    [e.IsLinear ℝ] {w : X → F} {x₀ : X} (hb : ContinuousAt b x₀) (hw : ContinuousAt w x₀)
+    (hb₀ : b x₀ ∈ e.baseSet) :
+    ContinuousAt (fun x ↦ ‖e.symmL ℝ (b x) (w x)‖) x₀ := by
+  have hsec : ContinuousAt (fun x ↦ TotalSpace.mk' F (b x) (e.symmL ℝ (b x) (w x))) x₀ := by
+    refine ((e.continuousOn_symm.continuousAt
+      ((e.open_baseSet.prod isOpen_univ).mem_nhds ⟨hb₀, mem_univ _⟩)).comp
+      (hb.prodMk hw)).congr_of_eventuallyEq ?_
+    filter_upwards [hb.preimage_mem_nhds (e.open_baseSet.mem_nhds hb₀)] with x hx
+    simp [e.symmL_apply hx]
+  exact (TauCeti.continuous_norm_bundle F E).continuousAt.comp hsec
 
 /-- In a continuous Riemannian bundle, the vectors of norm less than `r` lying over an open subset
 of the base form an open subset of the total space. -/
