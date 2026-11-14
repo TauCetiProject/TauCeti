@@ -28,14 +28,15 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.exists_perm_eqOn_le_apply` gives a permutation of `ℕ` fixing one finite set pointwise
   and carrying a disjoint one past any bound.
 * `TauCeti.product_union_eq_union_product` rearranges a union of products of finsets.
-* `TauCeti.card_nonempty_finset` counts the nonempty finsets of a type.
+* `TauCeti.card_nonempty_finset` gives the `Nat.card` of the nonempty finsets of a type, counting
+  them when the type is finite.
 * `TauCeti.card_even_card_finset` and `TauCeti.card_odd_card_finset` count the finsets of a
   nonempty finite type by the parity of their cardinality: each parity accounts for exactly half
   of them.
 * `Finset.filter_lt_eq_insert_of_forall_lt` splits the elements of a finite set after `s` into its
   first such element and the elements after a later point.
-* `Finset.convex_filter_erase_le` shows that the elements of a finite set up to a given point, other
-  than its least element, contain every element of the set between two of them.
+* `Finset.convex_filter_erase_le` shows that the elements of a finite set up to a given point, once
+  a lower bound `m` of the set is removed, contain every element of the set between two of them.
 * `Finset.sum_powerset_neg_one_pow_card_of_ring` evaluates the alternating sum over the subsets of
   a finset in an arbitrary ring.
 * `Finset.sum_powerset_neg_one_pow_mul_eq_zero` pairs subsets that differ by one element
@@ -118,9 +119,9 @@ theorem product_union_eq_union_product {s s' : Finset α} {t t' : Finset β}
   rw [Finset.union_product, Finset.product_union]
   ac_rfl
 
-/-- **The number of nonempty subsets of a type is `2ⁿ - 1`.** The `2ⁿ` subsets of an `n`-element
-type are the nonempty ones together with the empty set, so the nonempty ones number `2ⁿ - 1`. For
-an infinite type both sides are `0`, by the convention for `Nat.card`. -/
+/-- **The number of nonempty finsets of an `n`-element type is `2ⁿ - 1`.** The `2ⁿ` finsets of an
+`n`-element type are the nonempty ones together with the empty finset, so the nonempty ones number
+`2ⁿ - 1`. For an infinite type both sides are `0`, by the convention for `Nat.card`. -/
 theorem card_nonempty_finset {ι : Type*} :
     Nat.card {S : Finset ι // S.Nonempty} = 2 ^ Nat.card ι - 1 := by
   cases finite_or_infinite ι
@@ -486,8 +487,8 @@ theorem sum_filter_le_sum_filter_le {α M : Type*} [Fintype α] [LE α] [AddComm
       ∑ c, ∑ b ∈ univ.filter (fun b => a ≤ b ∧ b ≤ c), f b c :=
   sum_comm' fun _ _ => by simp
 
-/-- The positions of `s` other than the least one `m`, up to a position `y`, contain every
-position of `s` between two of them. -/
+/-- Let `m` be a lower bound of `s`. The positions of `s` other than `m`, up to a position `y`,
+contain every position of `s` between two of them. -/
 theorem convex_filter_erase_le {α : Type*} [Preorder α] [DecidableEq α] [DecidableLE α]
     {s : Finset α} {m : α}
     (hmin : ∀ z ∈ s, m ≤ z) (y : α) :
