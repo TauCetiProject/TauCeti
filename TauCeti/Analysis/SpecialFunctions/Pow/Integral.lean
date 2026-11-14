@@ -618,10 +618,7 @@ for every exponent `0 < p < q`
 `∫⁻ u ^ p ∂ν ≤ (1 + C p / (q - p)) ν univ`.
 
 This is the inclusion of weak `L^q` in `L^p` for `p < q` over a finite measure, in the normalized
-form used to turn a weak-type estimate into an integral one. It is proved by the layer cake formula
-`TauCeti.lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul`: on `(0, 1]` the superlevel sets are
-bounded by `ν univ`, and on `(1, ∞)` by the hypothesis, whose power `t ^ (p - 1 - q)` is integrable
-at infinity because `p < q`. -/
+form used to turn a weak-type estimate into an integral one. -/
 theorem lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_mul (ν : Measure β) {u : β → ℝ≥0∞}
     (hu : AEMeasurable u ν) {p q C : ℝ} (hp : 0 < p) (hpq : p < q) (hC : 0 ≤ C)
     (h : ∀ t : ℝ, 1 < t → ν {y | ENNReal.ofReal t < u y} ≤
@@ -656,6 +653,7 @@ theorem lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_mul (ν : Measure β) {u : �
           rw [lintegral_const_mul _ (by fun_prop),
             lintegral_ofReal_rpow_Ioi_of_lt (by linarith) one_pos]
           rw [Real.one_rpow, show p - 1 - q + 1 = -(q - p) by ring, neg_div_neg_eq]
+  -- Split the layer cake formula at `t = 1`.
   rw [lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul ν hu hp, ← Ioc_union_Ioi_eq_Ioi zero_le_one,
     lintegral_union measurableSet_Ioi Ioc_disjoint_Ioi_same]
   calc ENNReal.ofReal p * ((∫⁻ t in Ioc (0 : ℝ) 1, ν {y | ENNReal.ofReal t < u y} *
