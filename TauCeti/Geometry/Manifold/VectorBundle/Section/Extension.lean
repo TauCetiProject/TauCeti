@@ -58,6 +58,7 @@ noncomputable def contMDiffExtend [∀ x, SMul ℝ (V x)] {x : M} (v : V x) : Π
     (trivializationAt F V x).open_baseSet.mem_nhds <| mem_baseSet_trivializationAt F V x).choose :
       M → ℝ) • extend F v
 
+variable (V) in
 /-- `FiberBundle.contMDiffExtend I F v` is `FiberBundle.extend F v` times one smooth bump function,
 centred at the base point `x` of `v`, supported in the base set of the trivialization at `x`, and
 the same for every `v : V x`. -/
@@ -78,7 +79,7 @@ theorem contMDiffExtend_apply_self [∀ x, MulAction ℝ (V x)] {x : M} (v : V x
 `FiberBundle.extend F v`. -/
 theorem eventually_contMDiffExtend_eq_extend [∀ x, MulAction ℝ (V x)] {x : M} (v : V x) :
     ∀ᶠ y in 𝓝 x, contMDiffExtend I F v y = extend F v y := by
-  obtain ⟨ρ, -, hρ⟩ := exists_contMDiffExtend_eq_smul I F (V := V) x
+  obtain ⟨ρ, -, hρ⟩ := exists_contMDiffExtend_eq_smul I F V x
   filter_upwards [ρ.eventuallyEq_one] with y hy
   simp [hρ, hy]
 
@@ -101,14 +102,14 @@ variable [∀ x, SMulWithZero ℝ (V x)]
 trivialization at the base point of `v`. -/
 theorem closure_setOf_contMDiffExtend_ne_zero_subset_baseSet {x : M} (v : V x) :
     closure {y | contMDiffExtend I F v y ≠ 0} ⊆ (trivializationAt F V x).baseSet := by
-  obtain ⟨ρ, hρs, hρ⟩ := exists_contMDiffExtend_eq_smul I F (V := V) x
+  obtain ⟨ρ, hρs, hρ⟩ := exists_contMDiffExtend_eq_smul I F V x
   refine (closure_mono fun y hy ↦ Function.mem_support.2 fun h ↦ ?_).trans hρs
   simp [hρ, h] at hy
 
 /-- The closed support of `FiberBundle.contMDiffExtend I F v` is compact. -/
 theorem isCompact_closure_setOf_contMDiffExtend_ne_zero {x : M} (v : V x) :
     IsCompact (closure {y | contMDiffExtend I F v y ≠ 0}) := by
-  obtain ⟨ρ, -, hρ⟩ := exists_contMDiffExtend_eq_smul I F (V := V) x
+  obtain ⟨ρ, -, hρ⟩ := exists_contMDiffExtend_eq_smul I F V x
   refine ρ.hasCompactSupport.isCompact.of_isClosed_subset isClosed_closure
     (closure_mono fun y hy ↦ Function.mem_support.2 fun h ↦ ?_)
   simp [hρ, h] at hy
@@ -127,12 +128,13 @@ variable [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 section Linear
 
+variable (V) in
 /-- At each point `y`, `FiberBundle.contMDiffExtend I F v y` is a continuous `ℝ`-linear function
 of `v`: off the base set of the trivialization at the base point the cut-off vanishes, and on it
 `FiberBundle.extend` is the continuous linear inverse of the trivialization. -/
 private theorem exists_continuousLinearMap_contMDiffExtend_apply (x y : M) :
     ∃ L : V x →L[ℝ] V y, ∀ v, contMDiffExtend I F v y = L v := by
-  obtain ⟨ρ, hρs, hρ⟩ := exists_contMDiffExtend_eq_smul I F (V := V) x
+  obtain ⟨ρ, hρs, hρ⟩ := exists_contMDiffExtend_eq_smul I F V x
   refine ⟨(trivializationAt F V x).symmL ℝ y ∘L
     (ρ y • (trivializationAt F V x).continuousLinearMapAt ℝ x), fun v ↦ ?_⟩
   by_cases hy : y ∈ (trivializationAt F V x).baseSet
@@ -144,35 +146,35 @@ private theorem exists_continuousLinearMap_contMDiffExtend_apply (x y : M) :
 @[simp]
 theorem contMDiffExtend_zero {x : M} : contMDiffExtend I F (0 : V x) = 0 := by
   funext y
-  obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F (V := V) x y
+  obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F V x y
   simp [hL]
 
 /-- `FiberBundle.contMDiffExtend I F` is additive in the fibre vector. -/
 theorem contMDiffExtend_add {x : M} (v w : V x) :
     contMDiffExtend I F (v + w) = contMDiffExtend I F v + contMDiffExtend I F w := by
   funext y
-  obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F (V := V) x y
+  obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F V x y
   simp [hL]
 
 /-- `FiberBundle.contMDiffExtend I F` commutes with real scalar multiplication. -/
 theorem contMDiffExtend_smul {x : M} (c : ℝ) (v : V x) :
     contMDiffExtend I F (c • v) = c • contMDiffExtend I F v := by
   funext y
-  obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F (V := V) x y
+  obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F V x y
   simp [hL]
 
 /-- `FiberBundle.contMDiffExtend I F` commutes with negation. -/
 theorem contMDiffExtend_neg {x : M} (v : V x) :
     contMDiffExtend I F (-v) = -contMDiffExtend I F v := by
   funext y
-  obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F (V := V) x y
+  obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F V x y
   simp [hL]
 
 /-- `FiberBundle.contMDiffExtend I F` commutes with subtraction. -/
 theorem contMDiffExtend_sub {x : M} (v w : V x) :
     contMDiffExtend I F (v - w) = contMDiffExtend I F v - contMDiffExtend I F w := by
   funext y
-  obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F (V := V) x y
+  obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F V x y
   simp [hL]
 
 /-- In a vector bundle, `FiberBundle.contMDiffExtend I F v` is the zero section exactly when `v`
@@ -181,6 +183,7 @@ is zero. -/
 theorem contMDiffExtend_eq_zero {x : M} {v : V x} : contMDiffExtend I F v = 0 ↔ v = 0 := by
   rw [← contMDiffExtend_zero I F (x := x), contMDiffExtend_inj]
 
+variable (V) in
 /-- `FiberBundle.contMDiffExtend I F` as a linear map from the fibre over `x` to the sections
 of `V`. -/
 noncomputable def contMDiffExtendₗ (x : M) : V x →ₗ[ℝ] Π y : M, V y where
@@ -188,11 +191,12 @@ noncomputable def contMDiffExtendₗ (x : M) : V x →ₗ[ℝ] Π y : M, V y whe
   map_add' := contMDiffExtend_add I F
   map_smul' := contMDiffExtend_smul I F
 
-/-- `FiberBundle.contMDiffExtendₗ I F x` applies `FiberBundle.contMDiffExtend I F`. -/
+/-- `FiberBundle.contMDiffExtendₗ I F V x` applies `FiberBundle.contMDiffExtend I F`. -/
 @[simp]
 theorem contMDiffExtendₗ_apply {x : M} (v : V x) :
-    contMDiffExtendₗ I F x v = contMDiffExtend I F v := (rfl)
+    contMDiffExtendₗ I F V x v = contMDiffExtend I F v := (rfl)
 
+variable (V) in
 /-- `FiberBundle.contMDiffExtend I F` evaluated at `y`, as a continuous linear map from the fibre
 over `x` to the fibre over `y`. -/
 noncomputable def contMDiffExtendL (x y : M) : V x →L[ℝ] V y where
@@ -200,18 +204,35 @@ noncomputable def contMDiffExtendL (x y : M) : V x →L[ℝ] V y where
   map_add' v w := by simp [contMDiffExtend_add]
   map_smul' c v := by simp [contMDiffExtend_smul]
   cont := by
-    obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F (V := V) x y
+    obtain ⟨L, hL⟩ := exists_continuousLinearMap_contMDiffExtend_apply I F V x y
     simpa only [hL] using L.continuous
 
-/-- `FiberBundle.contMDiffExtendL I F x y` evaluates `FiberBundle.contMDiffExtend I F` at `y`. -/
+/-- `FiberBundle.contMDiffExtendL I F V x y` evaluates `FiberBundle.contMDiffExtend I F` at
+`y`. -/
 @[simp]
 theorem contMDiffExtendL_apply {x : M} (y : M) (v : V x) :
-    contMDiffExtendL I F x y v = contMDiffExtend I F v y := (rfl)
+    contMDiffExtendL I F V x y v = contMDiffExtend I F v y := (rfl)
 
+/-- At the base point, `FiberBundle.contMDiffExtendL I F V x x` is the identity of the fibre
+over `x`. -/
+@[simp]
+theorem contMDiffExtendL_self (x : M) :
+    contMDiffExtendL I F V x x = ContinuousLinearMap.id ℝ (V x) := by
+  ext v
+  simp
+
+/-- Off the base set of the trivialization at `x`, `FiberBundle.contMDiffExtendL I F V x y`
+is zero. -/
+theorem contMDiffExtendL_of_notMem_baseSet {x y : M}
+    (hy : y ∉ (trivializationAt F V x).baseSet) : contMDiffExtendL I F V x y = 0 := by
+  ext v
+  exact contMDiffExtend_apply_of_notMem_baseSet I F v hy
+
+variable (V) in
 /-- At each point `y`, `FiberBundle.contMDiffExtend I F v y` depends continuously on `v`. -/
 theorem continuous_contMDiffExtend_apply (x y : M) :
     Continuous fun v : V x ↦ contMDiffExtend I F v y :=
-  (contMDiffExtendL I F x y).continuous
+  (contMDiffExtendL I F V x y).continuous
 
 end Linear
 
@@ -220,7 +241,7 @@ end Linear
 theorem contMDiff_contMDiffExtend {n : ℕ∞ω} [ENat.LEInfty n] [IsManifold I n M]
     [ContMDiffVectorBundle n F V I] {x : M} (v : V x) :
     CMDiff n (T% (contMDiffExtend I F v)) := by
-  obtain ⟨ρ, hρs, hρ⟩ := exists_contMDiffExtend_eq_smul I F (V := V) x
+  obtain ⟨ρ, hρs, hρ⟩ := exists_contMDiffExtend_eq_smul I F V x
   rw [hρ]
   refine (SmoothBumpFunction.contMDiff_of_isManifold ρ).contMDiffOn.smul_section_of_tsupport
     (trivializationAt F V x).open_baseSet hρs ?_
