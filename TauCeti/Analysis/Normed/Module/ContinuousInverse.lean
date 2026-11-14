@@ -17,11 +17,11 @@ Mathlib's `ContinuousLinearMap.HasLeftInverse` records that a continuous linear 
 inverse which is itself continuous and linear. This file adds two facts about it, and the
 corresponding statement for continuous pseudo-inverses.
 
-* Over `ℝ` or `ℂ`, every continuous linear map `f` of finite rank, for instance one out of a
-  finite-dimensional space, has a continuous pseudo-inverse `g`, with `f ∘ g ∘ f = f`, whatever
-  the domain and the locally convex codomain: its range is finite-dimensional, hence has a closed
-  complement by the Hahn–Banach theorem. When `f` is injective, `g` is a continuous left inverse
-  of `f`.
+* Over `ℝ` or `ℂ`, every continuous linear map `f` of finite rank (for instance, one out of a
+  finite-dimensional space) from a topological vector space into a Hausdorff locally convex
+  space has a continuous pseudo-inverse `g`, with `f ∘ g ∘ f = f`: its range is
+  finite-dimensional, hence has a closed complement by the Hahn–Banach theorem. When `f` is
+  injective, `g` is a continuous left inverse of `f`.
 * Having a continuous left inverse is stable in families of operators from a Banach space into
   a topological vector space. If `A x` depends continuously on `x` and `A x₀` has a continuous
   left inverse, then so does `A x` for `x` near `x₀`, and the left inverses can be chosen to
@@ -38,11 +38,12 @@ This gives continuity of quotient-range coordinates for families of valid splitt
 
 ## Main results
 
-* `ContinuousLinearMap.exists_comp_comp_eq_self`: a continuous linear map of finite rank over
-  `ℝ` or `ℂ` has a continuous pseudo-inverse.
-* `ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional_domain`: an injective
-  continuous linear map out of a finite-dimensional space over `ℝ` or `ℂ` has a continuous left
-  inverse.
+* `ContinuousLinearMap.exists_comp_comp_eq_self`: over `ℝ` or `ℂ`, a continuous linear map of
+  finite rank from a topological vector space into a Hausdorff locally convex space has a
+  continuous pseudo-inverse.
+* `ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional_domain`: over `ℝ` or `ℂ`,
+  an injective continuous linear map from a finite-dimensional topological vector space into a
+  Hausdorff locally convex space has a continuous left inverse.
 * `ContinuousAt.clm_inverse_of_eventually_isInvertible`: inversion preserves continuity at a point
   where the family is eventually invertible, without completeness.
 * `Continuous.clm_inverse`: inversion is continuous along a continuous family
@@ -67,9 +68,10 @@ variable {G : Type*} [TopologicalSpace G] [AddCommGroup G] [Module 𝕜 G] [IsTo
   [ContinuousSMul 𝕜 F] [T2Space F]
 
 /-- Over `ℝ` or `ℂ`, a continuous linear map `f` of finite rank (for instance, one out of a
-finite-dimensional space) into a locally convex (polynormable) space has a continuous
-*pseudo-inverse*: a continuous linear map `g` in the opposite direction with `f ∘ g ∘ f = f`.
-This is the continuous counterpart of `LinearMap.exists_comp_comp_eq_self`. -/
+finite-dimensional space) from a topological vector space into a Hausdorff locally convex
+(polynormable) space has a continuous *pseudo-inverse*: a continuous linear map `g` in the
+opposite direction with `f ∘ g ∘ f = f`. This is the continuous counterpart of
+`LinearMap.exists_comp_comp_eq_self`. -/
 theorem exists_comp_comp_eq_self [IsRCLikeNormedField 𝕜] [PolynormableSpace 𝕜 F]
     (f : G →L[𝕜] F) [FiniteDimensional 𝕜 f.range] : ∃ g : F →L[𝕜] G, f ∘L g ∘L f = f := by
   let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
@@ -83,9 +85,9 @@ theorem exists_comp_comp_eq_self [IsRCLikeNormedField 𝕜] [PolynormableSpace �
   have hv : p (f v) = ⟨f v, LinearMap.mem_range_self _ v⟩ := hp ⟨f v, _⟩
   simpa [hv] using congrArg Subtype.val (hσ ⟨f v, LinearMap.mem_range_self _ v⟩)
 
-/-- Over `ℝ` or `ℂ`, an injective continuous linear map out of a finite-dimensional space into a
-locally convex (polynormable) space has a continuous left inverse: any continuous pseudo-inverse
-`g` of `f` (`ContinuousLinearMap.exists_comp_comp_eq_self`) is one, since `f (g (f v)) = f v`. -/
+/-- Over `ℝ` or `ℂ`, an injective continuous linear map `f` from a finite-dimensional
+topological vector space into a Hausdorff locally convex (polynormable) space has a continuous
+left inverse. -/
 theorem HasLeftInverse.of_injective_of_finiteDimensional_domain [IsRCLikeNormedField 𝕜]
     [PolynormableSpace 𝕜 F] [FiniteDimensional 𝕜 G] {f : G →L[𝕜] F} (hf : Injective f) :
     f.HasLeftInverse := by
