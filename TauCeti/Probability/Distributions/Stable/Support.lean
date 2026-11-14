@@ -14,10 +14,10 @@ import TauCeti.Probability.Distributions.Stable.Compensation
 import TauCeti.Probability.Distributions.Stable.SmallJump.Limit
 
 /-!
-# Support, singularity, and density positivity of stable laws
+# Support and density positivity of stable laws
 
 A zero-scale stable law is a Dirac mass at its location, so its support is the corresponding
-singleton and it is singular with respect to Lebesgue measure. A positive-scale stable law has
+singleton. A positive-scale stable law has
 topological support all of `ℝ`, except in the fully skewed
 cases of shape below one. Those are supported on a half-line ending at the `S₁` location
 `d = stableS1Location α β s m`: on `[d, ∞)` at skewness `1`, and on `(-∞, d]` at skewness `-1`.
@@ -42,8 +42,7 @@ even before either density is known to be positive in the interior of its suppor
 
 ## Main results
 
-* `TauCeti.Probability.support_stableMeasure_zero_scale` and
-  `TauCeti.Probability.mutuallySingular_stableMeasure_zero_scale` describe the atomic boundary.
+* `TauCeti.Probability.support_stableMeasure_zero_scale` describes the atomic boundary.
 * `TauCeti.Probability.support_stableMeasure_of_abs_lt_one` and
   `TauCeti.Probability.support_stableMeasure_of_one_le` give full topological support.
 * `TauCeti.Probability.support_stableMeasure_one_of_lt_one` and

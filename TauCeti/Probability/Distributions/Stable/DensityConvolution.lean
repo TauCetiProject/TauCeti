@@ -44,13 +44,6 @@ namespace TauCeti.Probability
 
 variable {α β : ℝ} {s : ℝ≥0}
 
-/-- The stable density is uniformly bounded for every parameter value, by `(2π)⁻¹` times the
-`L¹` norm of its characteristic function. -/
-private lemma norm_stablePDFReal_le_integral (α β : ℝ) (s : ℝ≥0) (m x : ℝ) :
-    ‖stablePDFReal α β s m x‖ ≤ (2 * Real.pi)⁻¹ * ∫ t, ‖charFun (stableMeasure α β s m) t‖ := by
-  rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β s m x), stablePDFReal_def]
-  exact Measure.charFunDensity_le _ x
-
 /-- The convolution of an integrable function with a stable density exists. -/
 lemma convolutionExists_stablePDFReal {f : ℝ → ℝ} (hf : Integrable f) (α β : ℝ) (s : ℝ≥0)
     (m : ℝ) : ConvolutionExists f (stablePDFReal α β s m) (mul ℝ ℝ) volume :=
