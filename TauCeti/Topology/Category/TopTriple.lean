@@ -22,7 +22,7 @@ so a morphism of triples is a triple of continuous maps commuting with the two e
 three pair constructions are therefore functorial, and the two maps of pairs between them are
 natural.
 
-Nested subsets `s ⊆ t ⊆ u` of a topological space give the triple `TopTriple.ofInclusions`, whose
+Nested subsets `s ⊆ t ⊆ w` of a topological space give the triple `TopTriple.ofInclusions`, whose
 three pairs are the pairs `TopPair.ofInclusion` of the three inclusions among them.
 Nested subsets `B ⊆ A` of a topological space `X` give the triple `TopTriple.ofSubset`, whose outer
 and total pairs are the pairs `TopPair.ofSubset A` and `TopPair.ofSubset B`.
@@ -97,12 +97,12 @@ variable {B A X : TopCat.{u}} (i : B ⟶ A) (j : A ⟶ X) (hi : IsEmbedding i) (
 
 end
 
-/-- The triple `(u, t, s)` determined by nested subsets `s ⊆ t ⊆ u` of a topological space, with
+/-- The triple `(w, t, s)` determined by nested subsets `s ⊆ t ⊆ w` of a topological space, with
 the two inclusions as its embeddings. -/
-abbrev ofInclusions {X : TopCat.{u}} {s t u : Set X} (hst : s ⊆ t) (htu : t ⊆ u) : TopTriple.{u} :=
-  of (B := TopCat.of s) (A := TopCat.of t) (X := TopCat.of u)
-    (TopCat.ofHom (ContinuousMap.inclusion hst)) (TopCat.ofHom (ContinuousMap.inclusion htu))
-    (Topology.IsEmbedding.inclusion hst) (Topology.IsEmbedding.inclusion htu)
+abbrev ofInclusions {X : TopCat.{u}} {s t w : Set X} (hst : s ⊆ t) (htw : t ⊆ w) : TopTriple.{u} :=
+  of (B := TopCat.of s) (A := TopCat.of t) (X := TopCat.of w)
+    (TopCat.ofHom (ContinuousMap.inclusion hst)) (TopCat.ofHom (ContinuousMap.inclusion htw))
+    (Topology.IsEmbedding.inclusion hst) (Topology.IsEmbedding.inclusion htw)
 
 /-- The triple `(X, A, B)` determined by nested subsets `B ⊆ A` of a topological space `X`, with
 the inclusion of `B` into `A` and the embedding of `A` into `X`. -/
@@ -170,16 +170,16 @@ abbrev outerPair : TopTriple.{u} ⥤ TopPair.{u} where
 
 section
 
-variable {X : TopCat.{u}} {s t u : Set X} (hst : s ⊆ t) (htu : t ⊆ u)
+variable {X : TopCat.{u}} {s t w : Set X} (hst : s ⊆ t) (htw : t ⊆ w)
 
 @[simp] lemma innerPair_obj_ofInclusions :
-    innerPair.obj (ofInclusions hst htu) = TopPair.ofInclusion hst := rfl
+    innerPair.obj (ofInclusions hst htw) = TopPair.ofInclusion hst := rfl
 
 @[simp] lemma totalPair_obj_ofInclusions :
-    totalPair.obj (ofInclusions hst htu) = TopPair.ofInclusion (hst.trans htu) := rfl
+    totalPair.obj (ofInclusions hst htw) = TopPair.ofInclusion (hst.trans htw) := rfl
 
 @[simp] lemma outerPair_obj_ofInclusions :
-    outerPair.obj (ofInclusions hst htu) = TopPair.ofInclusion htu := rfl
+    outerPair.obj (ofInclusions hst htw) = TopPair.ofInclusion htw := rfl
 
 end
 
@@ -225,11 +225,11 @@ def totalToOuter : totalPair.{u} ⟶ outerPair.{u} where
 
 @[simp] lemma totalToOuter_app_snd : TopPair.Hom.snd (totalToOuter.app T) = T.innerMap := (rfl)
 
-/-- For nested subsets `s ⊆ t ⊆ u`, the map of pairs `(u, s) ⟶ (u, t)` of the triple is induced by
-the identity of `u`. -/
-lemma totalToOuter_app_ofInclusions {X : TopCat.{u}} {s t u : Set X} (hst : s ⊆ t) (htu : t ⊆ u) :
-    totalToOuter.app (ofInclusions hst htu) =
-      TopPair.ofInclusionMap (hst.trans htu) htu (ContinuousMap.id _) fun _ hx ↦ hst hx := by
+/-- For nested subsets `s ⊆ t ⊆ w`, the map of pairs `(w, s) ⟶ (w, t)` of the triple is induced by
+the identity of `w`. -/
+lemma totalToOuter_app_ofInclusions {X : TopCat.{u}} {s t w : Set X} (hst : s ⊆ t) (htw : t ⊆ w) :
+    totalToOuter.app (ofInclusions hst htw) =
+      TopPair.ofInclusionMap (hst.trans htw) htw (ContinuousMap.id _) fun _ hx ↦ hst hx := by
   ext x : 2
   · exact Subtype.ext (TopPair.ofInclusionMap_snd_apply (g := ContinuousMap.id _) _ x).symm
   · exact (TopPair.ofInclusionMap_fst_apply _ _ x).symm
