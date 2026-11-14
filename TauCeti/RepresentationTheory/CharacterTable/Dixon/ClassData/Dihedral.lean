@@ -29,7 +29,7 @@ merely printing them.
   `TauCeti.card_classFinset_dihedralClassData_three` and
   `TauCeti.structureConstantTable_dihedralClassData_three`: the class count, class sizes, and
   structure constants of the dihedral group of order `6`, evaluated by the kernel.
-* `TauCeti.numClasses_dihedralClassData_four`,
+* `TauCeti.numClasses_dihedralClassData_four` (with `TauCeti.card_conjClasses_dihedralGroupFour`),
   `TauCeti.card_classFinset_dihedralClassData_four` and
   `TauCeti.structureConstantTable_dihedralClassData_four`: the class count, the class sizes, and
   the structure constants of the dihedral group of order `8`, evaluated by the kernel.
@@ -69,6 +69,11 @@ theorem structureConstantTable_dihedralClassData_three :
 /-- **The dihedral group of order `8` has five conjugacy classes**, computed by the kernel from
 `TauCeti.dihedralClassData`. -/
 theorem numClasses_dihedralClassData_four : (dihedralClassData 4).numClasses = 5 := by decide
+
+/-- **The dihedral group of order `8` has five conjugacy classes**, read off
+`TauCeti.numClasses_dihedralClassData_four`. -/
+theorem card_conjClasses_dihedralGroupFour : Nat.card (ConjClasses (DihedralGroup 4)) = 5 :=
+  (dihedralClassData 4).numClasses_eq_card_conjClasses.symm.trans numClasses_dihedralClassData_four
 
 /-- **The five conjugacy classes of the dihedral group of order `8` have sizes `1, 1, 2, 2, 2`.**
 The order is the one `TauCeti.ClassData.ofList` produces from `TauCeti.dihedralElements`, with

@@ -33,6 +33,8 @@ same proof serves both the integer-valued stage and the exact cyclotomic stage.
   maps to the complex character-table specification under any star-preserving ring homomorphism.
 * `TauCeti.ClassData.IsExactCharacterTableSpec.sum_characterDegree_eq_sum_degree`: its supplied
   degree vector sums to the character degrees of the group.
+* `TauCeti.ClassData.IsExactCharacterTableSpec.exists_equiv_characterTable`: the rows of the
+  character table, numbered along a certified exact table, with their values and degrees.
 * `TauCeti.ClassData.IsExactCharacterTableSpec.map_central_injective`: central rows remain
   distinct under maps to rings without zero divisors in which the group order is nonzero.
 
@@ -324,6 +326,28 @@ theorem sum_characterDegree_eq_sum_degree (f : R →+* ℂ)
   have key := (h.isCharacterTableSpec f hf).sum_apply_mk_one_eq_sum_characterDegree
   rw [hcol] at key
   exact_mod_cast key.symm
+
+/-- **The rows of the character table, numbered along a certified exact table**: for a
+star-preserving ring homomorphism `f` to `ℂ`, some bijection `τ` from the numbering of `d` to the
+rows of `TauCeti.characterTable` sends each row `j` of `table` to a row of the character table whose
+value at `g` is `f (table j (d.index g))` and whose degree is `degree j`. -/
+theorem exists_equiv_characterTable (f : R →+* ℂ) (hf : ∀ x, f (conj x) = star (f x)) :
+    ∃ τ : Fin d.numClasses ≃ Fin (Nat.card (ConjClasses G)),
+      (∀ j g, characterTable ℂ G (τ j) (ConjClasses.mk g) = f (table j (d.index g))) ∧
+        ∀ j, characterDegree ℂ (τ j) = degree j := by
+  obtain ⟨σ, hσ⟩ := characterTable_unique_rows (h.isCharacterTableSpec f hf)
+  let τ := (finCongr d.numClasses_eq_card_conjClasses).trans σ
+  have hval (j : Fin d.numClasses) (g : G) :
+      characterTable ℂ G (τ j) (ConjClasses.mk g) = f (table j (d.index g)) := by
+    have hj : d.reindexTableOfMap f table (finCongr d.numClasses_eq_card_conjClasses j)
+          (d.classOf (d.index g)) =
+        (characterTable ℂ G).submatrix σ id (finCongr d.numClasses_eq_card_conjClasses j)
+          (d.classOf (d.index g)) := by
+      rw [hσ]
+    rw [d.reindexTableOfMap_apply_classOf, Matrix.submatrix_apply, id_eq, d.classOf_index] at hj
+    rw [hj, Equiv.trans_apply]
+  refine ⟨τ, hval, fun j => Nat.cast_injective (R := ℂ) ?_⟩
+  rw [← characterTable_one, hval, h.table_index_one, map_natCast]
 
 end IsExactCharacterTableSpec
 
