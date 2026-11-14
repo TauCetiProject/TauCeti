@@ -216,6 +216,24 @@ private theorem typeE₈IsometryEquivAut_apply (g : Isometry typeE₈RootLattice
     typeE₈IsometryEquivAut g = typeE₈IsometryToAut g :=
   rfl
 
+/-- **The isomorphism acts on weights as the isometry acts on the lattice.** Identifying a lattice
+vector with its pairings with the simple roots, the induced automorphism of the weight lattice of
+the datum sends the pairings of `x` to the pairings of `g x`. -/
+theorem weightMap_typeE₈IsometryEquivAut_integralForm
+    (g : Isometry typeE₈RootLattice typeE₈RootLattice) (x : typeE₈RootLattice) :
+    (typeE₈IsometryEquivAut g).weightMap
+        (fun j : Fin 8 ↦
+          typeE₈RootLattice.integralForm x (typeE₈RootVector (e8SimpleIndex j))) =
+      fun j : Fin 8 ↦
+        typeE₈RootLattice.integralForm (g.carrierEquiv x) (typeE₈RootVector (e8SimpleIndex j)) := by
+  have key : ∀ y : typeE₈RootLattice, typeE₈WeightEquiv y =
+      fun j : Fin 8 ↦ typeE₈RootLattice.integralForm y (typeE₈RootVector (e8SimpleIndex j)) :=
+    fun y ↦ funext fun j ↦ by
+      rw [← dotProduct_typeE₈WeightEquiv_e8Coroot, coroot_e8SimpleIndex, dotProduct_single,
+        mul_one]
+  rw [← key x, ← key (g.carrierEquiv x), typeE₈IsometryEquivAut_apply,
+    typeE₈IsometryToAut_weightMap_apply]
+
 /-- **The isomorphism permutes the root indices as the isometry permutes the lattice roots.** This
 characterizes it, since an automorphism of a root system is determined by its permutation of the
 roots. -/
