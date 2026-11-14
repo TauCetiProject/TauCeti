@@ -19,7 +19,8 @@ common point `y`, the triangle inequality reads `‖x - z‖ ≤ max ‖x - y‖
 same norm, and if `x` and `y - x` both have norm at most `C`, so does `y`. Consequently a dense
 subset attains every nonzero norm (`IsUltrametricDist.exists_norm_eq_of_denseRange'`, additively
 `IsUltrametricDist.exists_norm_eq_of_denseRange`): passing to a completion adds no new nonzero
-norms.
+norms. We also record the carrier coercion `IsUltrametricDist.coe_closedBall_openSubgroup` for
+`IsUltrametricDist.closedBall_openSubgroup`.
 
 A separable ultrametric additive group with a strictly decreasing sequence of norms `‖cₙ‖`
 bounded away from `0` is not spherically complete: there are decreasing closed balls of radii
@@ -83,6 +84,15 @@ theorem exists_norm_eq_of_denseRange' {α : Type*} {f : α → S} (hf : DenseRan
   rw [dist_eq_norm_inv_mul] at ha
   refine ⟨a, ?_⟩
   rw [← mul_inv_cancel_left y (f a), norm_mul_eq_max_of_norm_ne_norm ha.ne', max_eq_left ha.le]
+
+variable (S) in
+/-- The carrier of `IsUltrametricDist.closedBall_openSubgroup S hr` is `Metric.closedBall 1 r`. -/
+@[to_additive (attr := simp, norm_cast)
+/-- The carrier of `IsUltrametricDist.closedBall_openAddSubgroup S hr` is
+`Metric.closedBall 0 r`. -/]
+theorem coe_closedBall_openSubgroup {r : ℝ} (hr : 0 < r) :
+    (closedBall_openSubgroup S hr : Set S) = Metric.closedBall (1 : S) r :=
+  (rfl)
 
 section SphericalCompleteness
 

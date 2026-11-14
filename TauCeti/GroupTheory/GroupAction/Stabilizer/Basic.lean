@@ -75,7 +75,8 @@ normality of it is equivalent to freeness of the action of the image.
 
 * `TauCeti.conj_smul_eq_conj_smul_of_smul_eq`: if the stabilizer of `a` normalizes `T`, then the
   conjugate `g T g⁻¹` depends only on `g • a`.
-* `TauCeti.mem_stabilizer_set_iff_mapsTo`: an element stabilizes a set if and only if it and its
+* `TauCeti.mem_stabilizer_set_iff_mapsTo`, and its additive form
+  `TauCeti.mem_addStabilizer_set_iff_mapsTo`: an element stabilizes a set if and only if it and its
   inverse map the set into itself.
 * `TauCeti.smul_eq_smul_iff_inv_mul_mem_stabilizer`: two group elements carry `x₀` to the same
   point exactly when they differ on the right by an element of the stabilizer of `x₀`.
@@ -216,6 +217,9 @@ variable {G α : Type*} [Group G] [MulAction G α]
 open Set in
 open scoped Pointwise in
 /-- An element stabilizes a set if and only if it and its inverse map the set into itself. -/
+@[to_additive mem_addStabilizer_set_iff_mapsTo
+/-- An element additively stabilizes a set if and only if it and its negation map the set into
+itself. -/]
 theorem mem_stabilizer_set_iff_mapsTo {a : G} {s : Set α} :
     a ∈ MulAction.stabilizer G s ↔ MapsTo (a • ·) s s ∧ MapsTo (a⁻¹ • ·) s s := by
   rw [MulAction.mem_stabilizer_set]

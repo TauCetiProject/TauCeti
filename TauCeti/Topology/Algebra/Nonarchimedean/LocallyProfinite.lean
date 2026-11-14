@@ -9,11 +9,8 @@ public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
 public import Mathlib.Topology.Separation.Connected
 public import Mathlib.Topology.Separation.Regular
-public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
-public import TauCeti.Topology.Algebra.MulAction.Stabilizer
 public import TauCeti.Topology.Algebra.Nonarchimedean.Basic
-import Mathlib.Topology.InductiveDimension.Functions
 
 /-!
 # Van Dantzig's theorem and compact open subgroup bases in locally profinite groups
@@ -25,7 +22,7 @@ Hausdorff) topological group `G`, three conditions are equivalent:
 1. `G` is locally compact and totally disconnected (`LocallyCompactSpace G` and
    `TotallyDisconnectedSpace G`);
 2. `G` is locally compact and nonarchimedean (`LocallyCompactSpace G` and `NonarchimedeanGroup G`);
-3. every neighbourhood of `1` in `G` contains a compact open subgroup.
+3. every neighbourhood of `1` contains a compact open subgroup.
 
 The implications separate cleanly according to the minimal hypotheses each uses:
 
@@ -37,9 +34,7 @@ The implications separate cleanly according to the minimal hypotheses each uses:
   stabilizer is a compact open subgroup inside `C`
   (`TauCeti.IsTopologicalGroup.exists_openSubgroup_isCompact_subset`). In particular, `G` is a
   `NonarchimedeanGroup`
-  (`TauCeti.IsTopologicalGroup.nonarchimedeanGroup_of_weaklyLocallyCompactSpace`),
-  extending `TauCeti.IsTopologicalGroup.nonarchimedeanGroup_of_compactSpace` from compact to weakly
-  locally compact groups.
+  (`TauCeti.IsTopologicalGroup.nonarchimedeanGroup_of_weaklyLocallyCompactSpace`).
 * **Nonarchimedean locally compact case (`(2) ⇒ (3)`):** in any weakly locally compact
   nonarchimedean group (without any separation axiom), intersecting an identity neighbourhood with a
   compact neighbourhood `K` of `1` and picking an open subgroup inside that intersection gives a
@@ -51,16 +46,16 @@ The implications separate cleanly according to the minimal hypotheses each uses:
   Hausdorff) the nonarchimedean property makes `G` totally separated and therefore totally
   disconnected.
 
-We also record the profinite structure of compact open subgroups: on `U : OpenSubgroup G` with
-`IsCompact (U : Set G)`, `OpenSubgroup.instNonarchimedeanGroup` supplies `NonarchimedeanGroup U`,
-and when `G` is zero-dimensional the open normal subgroups of `U` (each of finite index in `U`) push
-forward along `U.mapSubtype` to a neighbourhood basis of `1` in `G` consisting of compact open
-subgroups contained in `U` (`OpenSubgroup.nhds_one_hasBasis_mapSubtype_openNormalSubgroup`).
+We also record the profinite structure of compact open subgroups: whenever `U : OpenSubgroup G` is
+compact and `NonarchimedeanGroup U` holds (for example via `OpenSubgroup.instNonarchimedeanGroup`
+when `G` is nonarchimedean or weakly locally compact and zero-dimensional), the open normal
+subgroups of `U` (each of finite index in `U`) push forward along `U.mapSubtype` to a neighbourhood
+basis of `1` in `G` consisting of open subgroups contained in `U`
+(`OpenSubgroup.nhds_one_hasBasis_mapSubtype_openNormalSubgroup`), via Mathlib's
+`IsTopologicalGroup.exist_openNormalSubgroup_sub_clopen_nhds_of_one`.
 
 ## Main results
 
-* `OpenSubgroup.instNonarchimedeanGroup`: an open subgroup of a nonarchimedean group is
-  nonarchimedean.
 * `TauCeti.IsTopologicalGroup.exists_openSubgroup_isCompact_subset` and
   `TauCeti.IsTopologicalGroup.nonarchimedeanGroup_of_weaklyLocallyCompactSpace`: Van Dantzig's
   construction for weakly locally compact zero-dimensional topological groups.
@@ -69,7 +64,7 @@ subgroups contained in `U` (`OpenSubgroup.nhds_one_hasBasis_mapSubtype_openNorma
   `NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup_le`: compact open subgroup bases of
   `𝓝 1` (globally, and restricted below any fixed compact open subgroup `U₀`).
 * `OpenSubgroup.nhds_one_hasBasis_mapSubtype_openNormalSubgroup`: open normal subgroups of a
-  compact open subgroup `U` form a neighbourhood basis of `1` in `G`.
+  compact nonarchimedean open subgroup `U` form a neighbourhood basis of `1` in `G`.
 * `TauCeti.IsTopologicalGroup.locallyProfinite_tfae` and its pairwise `iff` corollaries: the
   three-way characterization of locally profinite groups.
 
@@ -86,16 +81,6 @@ subgroups contained in `U` (`OpenSubgroup.nhds_one_hasBasis_mapSubtype_openNorma
 public section
 
 open Filter Set Topology
-
-/-- **An open subgroup of a nonarchimedean group is nonarchimedean** in the subspace topology.
-Instance search does not unfold `↥(U : OpenSubgroup G)` to `↥U.toSubgroup`, so
-`Subgroup.instNonarchimedeanGroup` is bridged explicitly here. -/
-@[to_additive
-/-- **An open additive subgroup of a nonarchimedean additive group is nonarchimedean** in the
-subspace topology. -/]
-instance OpenSubgroup.instNonarchimedeanGroup {G : Type*} [Group G] [TopologicalSpace G]
-    [NonarchimedeanGroup G] (U : OpenSubgroup G) : NonarchimedeanGroup U where
-  is_nonarchimedean := (inferInstance : NonarchimedeanGroup ↥U.toSubgroup).is_nonarchimedean
 
 namespace TauCeti
 
@@ -124,8 +109,8 @@ theorem IsTopologicalGroup.exists_openSubgroup_isCompact_subset {U : Set G}
   exact ⟨H, hHc, hHC.trans (hCUK.trans inter_subset_left)⟩
 
 /-- **A weakly locally compact zero-dimensional topological group is nonarchimedean.** This covers
-all locally compact totally disconnected topological groups (which are Hausdorff and hence
-zero-dimensional), generalizing `TauCeti.IsTopologicalGroup.nonarchimedeanGroup_of_compactSpace`. -/
+all locally compact totally disconnected topological groups (as well as all compact totally
+disconnected topological groups), which are Hausdorff and hence zero-dimensional. -/
 @[to_additive IsTopologicalAddGroup.nonarchimedeanAddGroup_of_weaklyLocallyCompactSpace
 /-- **A weakly locally compact zero-dimensional topological additive group is nonarchimedean.**
 This covers all locally compact totally disconnected topological additive groups. -/]
@@ -187,32 +172,33 @@ end NonarchimedeanGroup
 
 namespace OpenSubgroup
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [ZeroDimensionalSpace G]
-
-/-- **Profinite neighbourhood basis inside a compact open subgroup.** If `U` is a compact open
-subgroup of a zero-dimensional topological group `G` (for instance a locally compact totally
-disconnected topological group), then `U` is a compact zero-dimensional topological group and its
-open normal subgroups `N : OpenNormalSubgroup U` (each of finite index in `U`) push forward via
-`U.mapSubtype` to a basis of `𝓝 (1 : G)` consisting of compact open subgroups contained in `U`. -/
+/-- **Profinite neighbourhood basis inside a compact nonarchimedean open subgroup.** If `U` is a
+compact open subgroup of `G` and `U` is nonarchimedean in the subspace topology (synthesized
+automatically under `[NonarchimedeanGroup G]` or `[IsTopologicalGroup G]
+[WeaklyLocallyCompactSpace G] [ZeroDimensionalSpace G]`), then the open normal subgroups
+`N : OpenNormalSubgroup U` (each of finite index in `U`) push forward via `U.mapSubtype` to a basis
+of `𝓝 (1 : G)`. No continuity of the ambient group operations on `G` is required. -/
 @[to_additive
-/-- **Profinite neighbourhood basis inside a compact open additive subgroup.** If `U` is a compact
-open additive subgroup of a zero-dimensional topological additive group `G`, then the open normal
-additive subgroups `N : OpenNormalAddSubgroup U` push forward via `U.mapSubtype` to a basis of
-`𝓝 (0 : G)` consisting of compact open additive subgroups contained in `U`. -/]
-theorem nhds_one_hasBasis_mapSubtype_openNormalSubgroup {U : OpenSubgroup G}
-    (hU : IsCompact (U : Set G)) :
+/-- **Profinite neighbourhood basis inside a compact nonarchimedean open additive subgroup.** If `U`
+is a compact open additive subgroup of `G` and `U` is nonarchimedean in the subspace topology, then
+the open normal additive subgroups `N : OpenNormalAddSubgroup U` push forward via `U.mapSubtype` to
+a basis of `𝓝 (0 : G)`. No continuity of the ambient group operations on `G` is required. -/]
+theorem nhds_one_hasBasis_mapSubtype_openNormalSubgroup {G : Type*} [Group G] [TopologicalSpace G]
+    {U : OpenSubgroup G} [NonarchimedeanGroup U] (hU : IsCompact (U : Set G)) :
     (𝓝 (1 : G)).HasBasis (fun _ : OpenNormalSubgroup U ↦ True)
       fun N ↦ ((U.mapSubtype N.toOpenSubgroup : OpenSubgroup G) : Set G) := by
-  have : CompactSpace U := U.compactSpace_of_isCompact hU
+  have : CompactSpace U := isCompact_iff_compactSpace.mp hU
   refine ⟨fun W ↦ ⟨fun hW ↦ ?_, fun ⟨N, _, hNW⟩ ↦
     mem_of_superset (U.mapSubtype N.toOpenSubgroup).mem_nhds_one hNW⟩⟩
-  obtain ⟨V, hVW, hVo, h1V⟩ := mem_nhds_iff.mp hW
-  have hpre : IsOpen ((Subtype.val : U → G) ⁻¹' V) := hVo.preimage continuous_subtype_val
-  obtain ⟨N, hN⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hpre h1V
+  have hpre : (Subtype.val : U → G) ⁻¹' W ∈ 𝓝 (1 : U) :=
+    continuous_subtype_val.continuousAt.preimage_mem_nhds hW
+  obtain ⟨K, hKW⟩ := NonarchimedeanGroup.is_nonarchimedean _ hpre
+  obtain ⟨N, hNK⟩ :=
+    IsTopologicalGroup.exist_openNormalSubgroup_sub_clopen_nhds_of_one K.isClopen K.one_mem
   refine ⟨N, trivial, ?_⟩
   rw [U.coe_mapSubtype]
   rintro _ ⟨x, hxN, rfl⟩
-  exact hVW (hN hxN)
+  exact hKW (hNK hxN)
 
 end OpenSubgroup
 

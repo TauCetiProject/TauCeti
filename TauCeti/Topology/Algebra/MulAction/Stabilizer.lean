@@ -6,39 +6,42 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Pointwise.Stabilizer
-public import Mathlib.Topology.Algebra.OpenSubgroup
+public import Mathlib.Topology.Algebra.Group.Defs
+public import Mathlib.Topology.Algebra.MulAction
+import Mathlib.Topology.Algebra.OpenSubgroup
 import Mathlib.Topology.Compactness.Compact
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
 # Open and compact set stabilizers for continuous group actions
 
-For a group `G` acting continuously on a topological space `X`, the pointwise set stabilizer
-`MulAction.stabilizer G s` of a compact open subset `s ⊆ X` is open in `G`. Indeed, for each
-`g` stabilizing `s`, both `{g} ×ˢ s` and `{g⁻¹} ×ˢ s` map into the open set `s` under the action,
-so the generalized tube lemma supplies open neighbourhoods `U₁` of `g` and `U₂` of `g⁻¹` sending `s`
-into itself; then `U₁ ∩ U₂⁻¹` is an open neighbourhood of `g` inside `MulAction.stabilizer G s`.
-Only continuity of inversion on `G` and joint continuity of the action on `X` are required;
-continuity of multiplication on `G` is not used.
+For a topological space `M` acting continuously on a topological space `X`, the set
+`{m : M | MapsTo (m • ·) K U}` of elements carrying a compact subset `K ⊆ X` into an open subset
+`U ⊆ X` is open in `M` (`IsCompact.isOpen_setOf_mapsTo_smul`), by the generalized tube lemma applied
+to `{m} ×ˢ K` inside the preimage of `U` under `(· • ·)`.
+
+Consequently, for a group `G` with continuous inversion acting continuously on `X`, the setwise
+stabilizer `MulAction.stabilizer G s` (under `open scoped Pointwise`, `{g | g • s = s}`) of a
+compact open subset `s ⊆ X` is open in `G`, being `{g | MapsTo (g • ·) s s} ∩
+(·⁻¹) ⁻¹' {g | MapsTo (g • ·) s s}` via `TauCeti.mem_stabilizer_set_iff_mapsTo`. Only continuity of
+inversion on `G` and joint continuity of the action on `X` are required; continuity of
+multiplication on `G` is not used.
 
 When `G` is a topological group acting on itself by left translation and `s` is nonempty, compact,
 and open, `MulAction.stabilizer G s` is an open (hence closed) subgroup contained in `s / {a}` for
-any `a ∈ s`, and is therefore compact. In particular, every compact open neighbourhood `s` of `1`
-contains a compact open subgroup, namely its left translation stabilizer. This strengthens
-Mathlib's `IsTopologicalGroup.exist_openSubgroup_sub_clopen_nhds_of_one`, which assumes
-`[CompactSpace G]`, to arbitrary (possibly noncompact) topological groups.
+any `a ∈ s`, and is therefore compact.
 
 ## Main results
 
+* `IsCompact.isOpen_setOf_mapsTo_smul`, and its additive form
+  `IsCompact.isOpen_setOf_mapsTo_vadd`: the elements carrying a compact set into an open set under a
+  continuous action form an open set.
 * `TauCeti.MulAction.isOpen_stabilizer_of_isCompact_of_isOpen`, and its additive form
-  `TauCeti.AddAction.isOpen_stabilizer_of_isCompact_of_isOpen`: the stabilizer of a compact open
-  set under a continuous action is open.
+  `TauCeti.AddAction.isOpen_stabilizer_of_isCompact_of_isOpen`: the setwise stabilizer of a compact
+  open set under a continuous action is open.
 * `TauCeti.MulAction.isCompact_stabilizer_of_isCompact_of_isOpen`, and its additive form
   `TauCeti.AddAction.isCompact_stabilizer_of_isCompact_of_isOpen`: in a topological group, the left
   translation stabilizer of a nonempty compact open subset is compact.
-* `TauCeti.IsTopologicalGroup.exists_openSubgroup_isCompact_subset_of_isCompact_of_isOpen`, and its
-  additive form
-  `TauCeti.IsTopologicalAddGroup.exists_openAddSubgroup_isCompact_subset_of_isCompact_of_isOpen`:
-  every compact open identity neighbourhood in a topological group contains a compact open subgroup.
 
 ## References
 
@@ -51,38 +54,46 @@ public section
 open Set
 open scoped Pointwise
 
+namespace IsCompact
+
+/-- **Elements carrying a compact set into an open set under a continuous action form an open set.**
+For each `m` mapping `K` into `U`, the generalized tube lemma supplies an open neighbourhood of `m`
+mapping `K` into `U`. -/
+@[to_additive
+/-- **Elements carrying a compact set into an open set under a continuous additive action form an
+open set.** For each `m` mapping `K` into `U`, the generalized tube lemma supplies an open
+neighbourhood of `m` mapping `K` into `U`. -/]
+theorem isOpen_setOf_mapsTo_smul {M X : Type*} [TopologicalSpace M] [TopologicalSpace X]
+    [SMul M X] [ContinuousSMul M X] {K U : Set X} (hK : IsCompact K) (hU : IsOpen U) :
+    IsOpen {m : M | MapsTo (m • ·) K U} := by
+  rw [isOpen_iff_forall_mem_open]
+  intro m hm
+  obtain ⟨V, _, hVo, _, hmV, hKV, hVU⟩ := generalized_tube_lemma isCompact_singleton hK
+    (hU.preimage continuous_smul) (by rintro ⟨m', x⟩ ⟨rfl : m' = m, hx⟩; exact hm hx)
+  exact ⟨V, fun m' hm' x hx ↦ hVU (mk_mem_prod hm' (hKV hx)), hVo, singleton_subset_iff.mp hmV⟩
+
+end IsCompact
+
 namespace TauCeti
 
-/-- **The set stabilizer of a compact open set is open.** If `G` has continuous inversion and acts
-continuously on `X`, then `MulAction.stabilizer G s` is open in `G` for every compact open
+/-- **The setwise stabilizer of a compact open set is open.** If `G` has continuous inversion and
+acts continuously on `X`, then `MulAction.stabilizer G s` is open in `G` for every compact open
 `s ⊆ X`. Continuity of multiplication on `G` is not required. -/
 @[to_additive AddAction.isOpen_stabilizer_of_isCompact_of_isOpen
-/-- **The set stabilizer of a compact open set is open.** If `G` has continuous negation and acts
-continuously on `X`, then `AddAction.stabilizer G s` is open in `G` for every compact open
+/-- **The setwise stabilizer of a compact open set is open.** If `G` has continuous negation and
+acts continuously on `X`, then `AddAction.stabilizer G s` is open in `G` for every compact open
 `s ⊆ X`. Continuity of addition on `G` is not required. -/]
 theorem MulAction.isOpen_stabilizer_of_isCompact_of_isOpen {G X : Type*} [Group G]
     [TopologicalSpace G] [ContinuousInv G] [TopologicalSpace X] [MulAction G X]
     [ContinuousSMul G X] {s : Set X} (hs : IsCompact s) (hso : IsOpen s) :
     IsOpen (MulAction.stabilizer G s : Set G) := by
-  rw [isOpen_iff_forall_mem_open]
-  intro g hg
-  have hpre : IsOpen {p : G × X | p.1 • p.2 ∈ s} := hso.preimage continuous_smul
-  have hsub₁ : ({g} : Set G) ×ˢ s ⊆ {p : G × X | p.1 • p.2 ∈ s} := by
-    rintro ⟨g', x⟩ ⟨rfl : g' = g, hx⟩
-    exact (_root_.MulAction.mem_stabilizer_set.mp hg x).mpr hx
-  have hsub₂ : ({g⁻¹} : Set G) ×ˢ s ⊆ {p : G × X | p.1 • p.2 ∈ s} := by
-    rintro ⟨g', x⟩ ⟨rfl : g' = g⁻¹, hx⟩
-    exact (_root_.MulAction.mem_stabilizer_set.mp (inv_mem hg) x).mpr hx
-  obtain ⟨U₁, _, hU₁o, _, hgU₁, hs₁, hU₁s⟩ :=
-    generalized_tube_lemma isCompact_singleton hs hpre hsub₁
-  obtain ⟨U₂, _, hU₂o, _, hginvU₂, hs₂, hU₂s⟩ :=
-    generalized_tube_lemma isCompact_singleton hs hpre hsub₂
-  refine ⟨U₁ ∩ U₂⁻¹, ?_, hU₁o.inter hU₂o.inv, singleton_subset_iff.mp hgU₁,
-    Set.mem_inv.mpr (singleton_subset_iff.mp hginvU₂)⟩
-  rintro h ⟨hh₁, hh₂⟩
-  refine _root_.MulAction.mem_stabilizer_set.mpr fun x ↦ ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
-  · exact inv_smul_smul h x ▸ hU₂s (mk_mem_prod (Set.mem_inv.mp hh₂) (hs₂ hx))
-  · exact hU₁s (mk_mem_prod hh₁ (hs₁ hx))
+  have h : (MulAction.stabilizer G s : Set G) =
+      {g : G | MapsTo (g • ·) s s} ∩ (·⁻¹) ⁻¹' {g : G | MapsTo (g • ·) s s} := by
+    ext g
+    exact mem_stabilizer_set_iff_mapsTo
+  rw [h]
+  exact (hs.isOpen_setOf_mapsTo_smul hso).inter
+    ((hs.isOpen_setOf_mapsTo_smul hso).preimage continuous_inv)
 
 /-- **The left translation stabilizer of a nonempty compact open subset is compact.** In a
 topological group `G`, the stabilizer `MulAction.stabilizer G s` of a nonempty compact open
@@ -101,22 +112,5 @@ theorem MulAction.isCompact_stabilizer_of_isCompact_of_isOpen {G : Type*} [Group
     simp_rw [div_singleton, div_eq_mul_inv]
     exact hs.image (continuous_mul_const a⁻¹)
   exact hdiv.of_isClosed_subset hclosed (_root_.MulAction.stabilizer_subset_div_right ha)
-
-/-- **Every compact open identity neighbourhood contains a compact open subgroup.** Given a compact
-open subset `s` of a topological group `G` with `1 ∈ s`, its left translation stabilizer
-`MulAction.stabilizer G s` is a compact open subgroup contained in `s`. -/
-@[to_additive
-IsTopologicalAddGroup.exists_openAddSubgroup_isCompact_subset_of_isCompact_of_isOpen
-/-- **Every compact open neighbourhood of zero contains a compact open additive subgroup.** Given a
-compact open subset `s` of a topological additive group `G` with `0 ∈ s`, its translation
-stabilizer `AddAction.stabilizer G s` is a compact open additive subgroup contained in `s`. -/]
-theorem IsTopologicalGroup.exists_openSubgroup_isCompact_subset_of_isCompact_of_isOpen
-    {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] {s : Set G}
-    (hs : IsCompact s) (hso : IsOpen s) (h1 : (1 : G) ∈ s) :
-    ∃ H : OpenSubgroup G, IsCompact (H : Set G) ∧ (H : Set G) ⊆ s :=
-  ⟨⟨_root_.MulAction.stabilizer G s, MulAction.isOpen_stabilizer_of_isCompact_of_isOpen hs hso⟩,
-    MulAction.isCompact_stabilizer_of_isCompact_of_isOpen ⟨1, h1⟩ hs hso,
-    fun g hg ↦ by simpa only [smul_eq_mul, mul_one] using
-      (_root_.MulAction.mem_stabilizer_set.mp hg 1).mpr h1⟩
 
 end TauCeti
