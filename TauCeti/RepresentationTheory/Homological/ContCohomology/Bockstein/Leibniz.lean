@@ -116,7 +116,8 @@ private theorem inclPair_cupCochain_left (μ : B →+ B →+ B)
     rw [AddMonoidHom.compl₂_apply, AddMonoidHom.compl₂_apply, S.proj_equivariant, hμL]
   have h₁ := (ofDiscreteModulePairing (μL.compl₂ S.proj) hν).cupCochain_cochainsMap_left_id
     (ofDiscreteModulePairing μL hμL) S.projPair (𝟙 (ofDiscreteModule ℤ G A))
-    (fun a b ↦ (ofDiscreteModulePairing_bil_apply (μL.compl₂ S.proj) hν a b).trans
+    (fun a b ↦ (TopRep.id_apply (ofDiscreteModule ℤ G A) _).trans <|
+      (ofDiscreteModulePairing_bil_apply (μL.compl₂ S.proj) hν a b).trans
       ((ofDiscreteModulePairing_bil_apply μL hμL a (S.proj b)).symm.trans
         (congrArg ((ofDiscreteModulePairing μL hμL).bil a)
           (ofDiscreteModulePair_hom_apply (ContinuousMonoidHom.id G : G →* G)
@@ -154,7 +155,8 @@ private theorem inclPair_cupCochain_right (μ : B →+ B →+ B)
     rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, S.proj_equivariant, hμR]
   have h₁ := (ofDiscreteModulePairing (μR.comp S.proj) hν).cupCochain_cochainsMap_right_id
     (ofDiscreteModulePairing μR hμR) S.projPair (𝟙 (ofDiscreteModule ℤ G A))
-    (fun b a ↦ (ofDiscreteModulePairing_bil_apply (μR.comp S.proj) hν b a).trans
+    (fun b a ↦ (TopRep.id_apply (ofDiscreteModule ℤ G A) _).trans <|
+      (ofDiscreteModulePairing_bil_apply (μR.comp S.proj) hν b a).trans
       ((ofDiscreteModulePairing_bil_apply μR hμR (S.proj b) a).symm.trans
         (congrArg (fun c ↦ (ofDiscreteModulePairing μR hμR).bil c a)
           (ofDiscreteModulePair_hom_apply (ContinuousMonoidHom.id G : G →* G)
