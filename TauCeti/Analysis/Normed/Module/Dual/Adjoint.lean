@@ -156,7 +156,7 @@ theorem isClosed_range_precomp_of_isClosed_range (T : E →L[𝕜] F)
 
 /-- If a bounded operator `T : E →L[𝕜] F` between Banach spaces has closed range, then the kernel
 of its bidual adjoint `T**` equals the range of the bidual adjoint of `T.ker.subtypeL`. -/
-theorem ker_precomp_precomp_eq_range_precomp_subtypeL (T : E →L[𝕜] F)
+theorem ker_precomp_precomp_eq_range_precomp_precomp_subtypeL (T : E →L[𝕜] F)
     (hT : IsClosed (T.range : Set F)) :
     (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :
         StrongDual 𝕜 (StrongDual 𝕜 E) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)).ker =
@@ -172,9 +172,9 @@ noncomputable def kerBidualEquivKerPrecompPrecomp (T : E →L[𝕜] F)
     StrongDual 𝕜 (StrongDual 𝕜 T.ker) ≃ₗᵢ[𝕜]
       (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :
         StrongDual 𝕜 (StrongDual 𝕜 E) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)).ker :=
-  T.ker.bidualEquivDoubleAnnihilator.trans <| LinearIsometryEquiv.ofEq _ _ <| by
-    rw [← T.range_precomp_eq_orthogonalBilin_ker hT,
-      ← (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).ker_precomp_eq_orthogonalBilin_range]
+  T.ker.bidualEquivDoubleAnnihilator.trans <| LinearIsometryEquiv.ofEq _ _ <|
+    T.ker.range_precomp_precomp_subtypeL.symm.trans
+      (T.ker_precomp_precomp_eq_range_precomp_precomp_subtypeL hT).symm
 
 /-- Forgetting the kernel subtype of `T.kerBidualEquivKerPrecompPrecomp hT` recovers the bidual
 adjoint of `T.ker.subtypeL`. -/

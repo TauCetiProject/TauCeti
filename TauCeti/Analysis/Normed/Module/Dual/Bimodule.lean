@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
+public import TauCeti.Analysis.Normed.Operator.Restrict
 import TauCeti.Analysis.Normed.Module.Dual.Functoriality
 
 /-!
@@ -55,13 +56,13 @@ weak-star closed submodules of `E*`.
   bimodule satisfy the bimodule laws.
 * `ContinuousLinearMap.continuous_toWeakDual_dualAction`: each dual action is weak-star
   continuous in the dual variable.
-* `ContinuousLinearMap.precomp_dualAction_apply`: the adjoint of a module map intertwines the
-  dual actions.
-* `ContinuousLinearMap.dualAction_dualAction_apply`,
-  `ContinuousLinearMap.dualAction_dualAction_inclusionInDoubleDual`, and
+* `ContinuousLinearMap.precomp_dualAction_apply` and
+  `ContinuousLinearMap.dualAction_restrictAction_comp_subtypeL`: the adjoint of a module map
+  intertwines the dual actions, in particular when restricting to an invariant submodule.
+* `ContinuousLinearMap.dualAction_dualAction_inclusionInDoubleDual` and
   `ContinuousLinearMap.precomp_precomp_dualAction_dualAction_apply`: the iterated dual action on
-  the bidual `E**` is the bidual adjoint `(M a)**`, extends `M` along the canonical embedding,
-  and is intertwined by bidual adjoints of module maps.
+  the bidual `E**` extends `M` along the canonical embedding and is intertwined by bidual adjoints
+  of module maps.
 
 ## References
 
@@ -143,11 +144,15 @@ theorem precomp_dualAction_apply {M : A →L[𝕜] E →L[𝕜] E} {N : A →L[�
   ext x
   simp [hT]
 
-/-- The iterated dual action of `a` on the bidual `E**` is the bidual adjoint `(M a)**`. -/
-theorem dualAction_dualAction_apply (M : A →L[𝕜] E →L[𝕜] E) (a : A) :
-    dualAction (dualAction M) a =
-      precomp 𝕜 (precomp 𝕜 (M a) : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 E) := by
-  rw [dualAction_apply, dualAction_apply]
+/-- Restricting a functional to an invariant submodule intertwines the dual action with the dual of
+the restricted action. -/
+@[simp]
+theorem dualAction_restrictAction_comp_subtypeL (M : A →L[𝕜] E →L[𝕜] E) (p : Submodule 𝕜 E)
+    (hM : ∀ a x, x ∈ p → M a x ∈ p) (a : A) (φ : StrongDual 𝕜 E) :
+    dualAction (M.restrictAction p hM) a (φ.comp p.subtypeL) =
+      (dualAction M a φ).comp p.subtypeL := by
+  ext x
+  simp
 
 /-- The iterated dual action on the bidual extends the original action along the canonical
 embedding `NormedSpace.inclusionInDoubleDual`. -/

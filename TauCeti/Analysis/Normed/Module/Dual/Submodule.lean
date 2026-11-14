@@ -177,14 +177,6 @@ theorem norm_comp_precomp_subtypeL (S : Submodule 𝕜 E)
   exact (Ψ.opNorm_comp_le _).trans <| mul_le_of_le_one_right (norm_nonneg Ψ)
     S.quotientAnnihilatorEquivDual.symm.toLinearIsometry.norm_toContinuousLinearMap_le
 
-/-- The bidual adjoint of `S.subtypeL` is an isometry. -/
-theorem norm_precomp_precomp_subtypeL_apply (S : Submodule 𝕜 E)
-    (Φ : StrongDual 𝕜 (StrongDual 𝕜 S)) :
-    ‖ContinuousLinearMap.precomp 𝕜
-      (ContinuousLinearMap.precomp 𝕜 S.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 S) Φ‖ =
-      ‖Φ‖ :=
-  S.norm_comp_precomp_subtypeL Φ
-
 /-- The bidual of a submodule is isometrically the double annihilator `(Sᗮ)ᗮ` of the submodule in
 the bidual of the ambient space. The forward map is the bidual adjoint of `S.subtypeL`. -/
 noncomputable def bidualEquivDoubleAnnihilator (S : Submodule 𝕜 E) :
@@ -212,7 +204,7 @@ noncomputable def bidualEquivDoubleAnnihilator (S : Submodule 𝕜 E) :
     simp [ContinuousLinearMap.precomp_apply]
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  norm_map' Φ := S.norm_precomp_precomp_subtypeL_apply Φ
+  norm_map' Φ := S.norm_comp_precomp_subtypeL Φ
 
 /-- Forgetting the double-annihilator subtype recovers the bidual adjoint of `S.subtypeL`. -/
 @[simp]

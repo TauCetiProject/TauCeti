@@ -40,12 +40,8 @@ diagonal (eventually bounded by `C`).
 
 ## Main results
 
-* `TauCeti.arensMul_inclusionInDoubleDual_left`, `TauCeti.arensMulRev_inclusionInDoubleDual_left`,
-  `TauCeti.arensMul_inclusionInDoubleDual_right`, and
-  `TauCeti.arensMulRev_inclusionInDoubleDual_right`: the Arens products with an element of `J_A(A)`
-  coincide with the iterated dual multiplication actions on `A**`.
 * `TauCeti.IsVirtualDiagonal.dualAction_mul_flip_precomp_mul'`: a virtual diagonal also satisfies
-  `Δ** M · a = J_A a`.
+  `Δ** M · a = J_A a`, so `Δ** M` acts as a two-sided identity on `J_A(A)` for both Arens products.
 * `TauCeti.IsApproximateDiagonal.isVirtualDiagonal_of_mapClusterPt` and
   `TauCeti.IsApproximateDiagonal.exists_isVirtualDiagonal`: passage from a bounded approximate
   diagonal to a virtual diagonal with the same norm bound.
@@ -76,49 +72,6 @@ attribute [local instance] ContinuousLinearMap.strongDualSeminormedAddCommGroup
   ContinuousLinearMap.strongDualNormedSpace
   ContinuousLinearMap.strongBidualSeminormedAddCommGroup
   ContinuousLinearMap.strongBidualNormedSpace
-
-section ArensBridge
-
-variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalSeminormedRing A]
-  [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
-
-/-- Left multiplication by `J_A a` in the first Arens product is the iterated dual action of left
-multiplication by `a`. -/
-theorem arensMul_inclusionInDoubleDual_left (a : A) (G : StrongDual 𝕜 (StrongDual 𝕜 A)) :
-    arensMul 𝕜 A (inclusionInDoubleDual 𝕜 A a) G =
-      dualAction (dualAction (ContinuousLinearMap.mul 𝕜 A)) a G := by
-  ext f
-  rw [arensMul_apply, dual_def, bilinearTranspose_apply, dualAction_apply_apply]
-  congr 1
-  ext b
-  simp
-
-/-- Left multiplication by `J_A a` in the second Arens product is the iterated dual action of left
-multiplication by `a`. -/
-theorem arensMulRev_inclusionInDoubleDual_left (a : A) (G : StrongDual 𝕜 (StrongDual 𝕜 A)) :
-    arensMulRev 𝕜 A (inclusionInDoubleDual 𝕜 A a) G =
-      dualAction (dualAction (ContinuousLinearMap.mul 𝕜 A)) a G := by
-  rw [← arensMul_inclusionInDoubleDual_left_eq_arensMulRev, arensMul_inclusionInDoubleDual_left]
-
-/-- Right multiplication by `J_A a` in the second Arens product is the iterated dual action of
-right multiplication by `a`. -/
-theorem arensMulRev_inclusionInDoubleDual_right (G : StrongDual 𝕜 (StrongDual 𝕜 A)) (a : A) :
-    arensMulRev 𝕜 A G (inclusionInDoubleDual 𝕜 A a) =
-      dualAction (dualAction (ContinuousLinearMap.mul 𝕜 A).flip) a G := by
-  ext f
-  rw [arensMulRev_apply, dual_def, bilinearTranspose_apply, dualAction_apply_apply]
-  congr 1
-  ext b
-  simp
-
-/-- Right multiplication by `J_A a` in the first Arens product is the iterated dual action of right
-multiplication by `a`. -/
-theorem arensMul_inclusionInDoubleDual_right (G : StrongDual 𝕜 (StrongDual 𝕜 A)) (a : A) :
-    arensMul 𝕜 A G (inclusionInDoubleDual 𝕜 A a) =
-      dualAction (dualAction (ContinuousLinearMap.mul 𝕜 A).flip) a G := by
-  rw [arensMul_inclusionInDoubleDual_right_eq_arensMulRev, arensMulRev_inclusionInDoubleDual_right]
-
-end ArensBridge
 
 open CompletedProjectiveTensor
 

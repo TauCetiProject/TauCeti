@@ -11,8 +11,8 @@ import Mathlib.Algebra.Module.Shrink
 import Mathlib.Analysis.Normed.Module.Shrink
 import TauCeti.Analysis.Normed.Module.Dual.Adjoint
 import TauCeti.Analysis.Normed.Module.Dual.Goldstine
-import TauCeti.Analysis.Normed.Operator.Restrict
 import TauCeti.Analysis.Normed.Ring.ApproximateUnit
+import TauCeti.Analysis.RCLike.Basic
 
 /-!
 # Amenable Banach algebras and Johnson's diagonal theorem
@@ -63,9 +63,10 @@ a normed bimodule in *any* universe (without completeness) is inner.
 
 For the sufficiency of a virtual diagonal `M ∈ (A ⊗̂π A)**`, no compactness or completeness of `E`
 is needed: pulling `M` and `Δ** M ∈ A**` back along the operator `Φ : A ⊗̂π A → E*` induced by
-`(a, b) ↦ a · D b` and along `D` produces functionals `φ`, `ψ`, and `ρ` in `E*` directly, and the
-same algebraic calculation as in the ultrafilter argument shows that `D` is the inner derivation of
-`φ + ρ - ψ`.
+`(a, b) ↦ a · D b` and along `D` produces functionals `φ`, `ψ`, and `ρ` in `E*` directly.
+Evaluating the commutator identity `a · Φ m - Φ m · a = Φ (a · m - m · a) + Δ m · D a` against `M`
+gives `D a = a · φ - φ · a + ψ · a`; the derivation law then forces `a · (ψ · b) = 0`, whence
+`a · ρ = a · ψ` and `ρ · a = 0`, so `D` is the inner derivation of `φ + ρ - ψ`.
 
 For the converse over `ℝ` or `ℂ`, amenability is first applied to the one-sided bimodule structures
 on `A*` to obtain bounded left and right approximate identities via Goldstine's theorem, combined
@@ -140,6 +141,25 @@ private theorem dualAction_leftDerivationLift_sub [CompleteSpace 𝕜]
   ext x
   simpa using congr($key m x)
 
+/-- Transposed form of `dualAction_leftDerivationLift_sub` at `x : E`, expressing
+`Φ.flip (R a x) - Φ.flip (L a x)` in terms of the outer actions on `A ⊗̂π A` and
+`Δ* = precomp 𝕜 (mul' 𝕜 A)`. -/
+private theorem flip_leftDerivationLift_sub [CompleteSpace 𝕜]
+    (hR : ∀ a b x, R (a * b) x = R b (R a x)) (hLR : ∀ a b x, L a (R b x) = R b (L a x))
+    {D : A →L[𝕜] StrongDual 𝕜 E}
+    (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a))
+    (a : A) (x : E) :
+    (leftDerivationLift R D).flip (R a x) - (leftDerivationLift R D).flip (L a x) =
+      (dualAction (mulLeft 𝕜 A) a ((leftDerivationLift R D).flip x) -
+          dualAction (mulRight 𝕜 A) a ((leftDerivationLift R D).flip x)) +
+        (precomp 𝕜 (mul' 𝕜 A) (dualAction (ContinuousLinearMap.mul 𝕜 A).flip a (D.flip x)) -
+          precomp 𝕜 (mul' 𝕜 A) (D.flip (L a x))) := by
+  refine DFunLike.ext _ _ fun m ↦ ?_
+  have hcomm := congr($(dualAction_leftDerivationLift_sub hR hLR hD a m) x)
+  simp only [map_sub, sub_apply, add_apply, comp_apply, precomp_apply,
+    dualAction_apply_apply, flip_apply, mul_apply', hD (mul' 𝕜 A m) a] at hcomm ⊢
+  linear_combination hcomm
+
 /-- If a Banach algebra `A` over a complete field has a virtual diagonal, then every bounded
 derivation `D` of `A` into the dual `E*` of a normed `A`-bimodule `E` (in any universe, without
 completeness of `E`) is inner. -/
@@ -157,28 +177,22 @@ theorem IsVirtualDiagonal.exists_eq_dualAction_sub_dualAction [CompleteSpace �
   let φ : StrongDual 𝕜 E := M.comp Φ.flip
   let ψ : StrongDual 𝕜 E := E₁.comp D.flip
   let ρ : StrongDual 𝕜 E := E₁.comp ((dualAction R).flip ψ).flip
+  -- Evaluating the commutator identity for `Φ` against `M` gives `D a = a · φ - φ · a + ψ · a`.
   have hDφψ (a : A) (x : E) : D a x = φ (R a x) - φ (L a x) + ψ (L a x) := by
-    have hg : Φ.flip (R a x) - Φ.flip (L a x) =
-        (dualAction (mulLeft 𝕜 A) a (Φ.flip x) - dualAction (mulRight 𝕜 A) a (Φ.flip x)) +
-          (precomp 𝕜 (mul' 𝕜 A) (dualAction (ContinuousLinearMap.mul 𝕜 A).flip a (D.flip x)) -
-            precomp 𝕜 (mul' 𝕜 A) (D.flip (L a x))) := by
-      refine DFunLike.ext _ _ fun m ↦ ?_
-      have hcomm := congr($(dualAction_leftDerivationLift_sub hR hLR hD a m) x)
-      simp only [Φ, map_sub, sub_apply, add_apply, comp_apply, precomp_apply,
-        dualAction_apply_apply, flip_apply, mul_apply', hD (mul' 𝕜 A m) a] at hcomm ⊢
-      linear_combination hcomm
     have h₁ := congr($(hM.dualAction_mulLeft_eq a) (Φ.flip x))
     have h₂ := congr($(hM.dualAction_mul_flip_precomp_mul' a) (D.flip x))
     simp only [dualAction_apply_apply, precomp_apply, comp_apply, dual_def] at h₁ h₂
     have hM_eq : φ (R a x) - φ (L a x) = M (Φ.flip (R a x) - Φ.flip (L a x)) := by
       simp [φ, ← map_sub]
-    rw [hM_eq, hg, map_add, map_sub, map_sub, h₁, sub_self, zero_add, precomp_apply, precomp_apply,
-      h₂]
+    rw [hM_eq, flip_leftDerivationLift_sub hR hLR hD a x, map_add, map_sub, map_sub, h₁, sub_self,
+      zero_add, precomp_apply, precomp_apply, h₂]
     simp [ψ, E₁]
+  -- Substituting this decomposition into the derivation law forces `a · (ψ · b) = 0`.
   have hψLR (a b : A) (x : E) : ψ (R a (L b x)) = 0 := by
     have := congr($(hD a b) x)
     simp only [dualAction_apply_apply, add_apply, hDφψ, hL, hR, hLR] at this
     linear_combination -this
+  -- Since `Δ** M` acts as a right identity on `J_A(A)`, `ρ` agrees with `ψ` on the image of `R`.
   have hρR (a : A) (x : E) : ρ (R a x) = ψ (R a x) := by
     have hEq : ((dualAction R).flip ψ).flip (R a x) =
         dualAction (ContinuousLinearMap.mul 𝕜 A) a (((dualAction R).flip ψ).flip x) := by
@@ -186,6 +200,7 @@ theorem IsVirtualDiagonal.exists_eq_dualAction_sub_dualAction [CompleteSpace �
       simp [hR]
     have h₃ := congr($(hM.dualAction_mul_precomp_mul' a) (((dualAction R).flip ψ).flip x))
     simpa [ρ, E₁, hEq] using h₃
+  -- Vanishing of `a · (ψ · b)` kills `ρ` on the image of `L`, so `φ + ρ - ψ` realizes `D`.
   have hρL (a : A) (x : E) : ρ (L a x) = 0 := by
     have hEq : ((dualAction R).flip ψ).flip (L a x) = 0 := by
       ext e
@@ -287,6 +302,8 @@ theorem IsAmenable.exists_eq_dualAction_sub_dualAction_of_small (h : IsAmenable 
     (hLR : ∀ a b x, L a (R b x) = R b (L a x)) (D : A →L[𝕜] StrongDual 𝕜 E)
     (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a)) :
     ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ := by
+  -- `Shrink` carries `NormedAddCommGroup.induced` along `(equivShrink E).symm`, which is also the
+  -- underlying map of `Shrink.linearEquiv 𝕜 E`, so `norm_map'` holds definitionally.
   let e : Shrink.{u} E ≃ₗᵢ[𝕜] E :=
     { toLinearEquiv := Shrink.linearEquiv 𝕜 E
       norm_map' := fun _ ↦ rfl }
@@ -348,72 +365,63 @@ attribute [local instance] ContinuousLinearMap.strongDualSeminormedAddCommGroup
   ContinuousLinearMap.strongBidualSeminormedAddCommGroup
   ContinuousLinearMap.strongBidualNormedSpace
 
-/-- Every `RCLike` field is `Small` in any universe, since `re` and `im` embed it into `ℝ × ℝ`. -/
-private theorem small_rclike : Small.{u} 𝕜 :=
-  small_of_injective (β := ℝ × ℝ) (f := fun z ↦ (RCLike.re z, RCLike.im z)) fun _ _ h ↦
-    RCLike.ext (congrArg Prod.fst h) (congrArg Prod.snd h)
+omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
+/-- Applying amenability to a bimodule structure `(L, R)` on `A*` for which `J_A : A →L[𝕜] A**` is
+a derivation yields `φ ∈ A**` with `φ (R a f) - φ (L a f) = f a`; when `e φ` rewrites this as
+`(T a)** (e φ) = J_A a`, Goldstine–Mazur produces a bounded net `(u)` with `T a u → a`. -/
+private theorem exists_tendsto_of_isAmenable (h : IsAmenable 𝕜 A)
+    {L R : A →L[𝕜] StrongDual 𝕜 A →L[𝕜] StrongDual 𝕜 A}
+    (hL : ∀ a b f, L (a * b) f = L a (L b f))
+    (hR : ∀ a b f, R (a * b) f = R b (R a f))
+    (hLR : ∀ a b f, L a (R b f) = R b (L a f))
+    (hD : ∀ a b f, f (a * b) = R a f b + L b f a)
+    {T : A → A →L[𝕜] A}
+    (e : StrongDual 𝕜 (StrongDual 𝕜 A) → StrongDual 𝕜 (StrongDual 𝕜 A))
+    (hT : ∀ (φ : StrongDual 𝕜 (StrongDual 𝕜 A)) a f,
+      e φ (precomp 𝕜 (T a) f) = φ (R a f) - φ (L a f)) :
+    ∃ (C : ℝ) (l : Filter A), l.NeBot ∧ (∀ᶠ u in l, ‖u‖ ≤ C) ∧ ∀ a, Tendsto (T a) l (𝓝 a) := by
+  have : Small.{u} (StrongDual 𝕜 A) := small_of_injective DFunLike.coe_injective
+  have hD' (a b : A) :
+      inclusionInDoubleDual 𝕜 A (a * b) =
+        dualAction R a (inclusionInDoubleDual 𝕜 A b) +
+          dualAction L b (inclusionInDoubleDual 𝕜 A a) := by
+    ext f
+    simpa [dual_def] using hD a b f
+  obtain ⟨φ, hφ⟩ := h.exists_eq_dualAction_sub_dualAction_of_small
+    hL hR hLR (inclusionInDoubleDual 𝕜 A) hD'
+  have hE (a : A) :
+      precomp 𝕜 (precomp 𝕜 (T a) : StrongDual 𝕜 A →L[𝕜] StrongDual 𝕜 A) (e φ) =
+        inclusionInDoubleDual 𝕜 A a := by
+    ext f
+    have hφf : f a = φ (R a f) - φ (L a f) := by simpa [dual_def] using congr($(hφ a) f)
+    simpa [dual_def, hφf] using hT φ a f
+  obtain ⟨l, hl, hbound, htend⟩ :=
+    (e φ).exists_neBot_tendsto_of_forall_precomp_precomp_eq le_rfl T id hE
+  exact ⟨‖e φ‖, l, hl, hbound, htend⟩
 
 /-- An amenable normed algebra over `ℝ` or `ℂ` has a bounded right approximate identity, obtained
 by applying amenability to `A*` with trivial left action and right action dual to left
 multiplication. -/
 private theorem exists_tendsto_mul_left_of_isAmenable (h : IsAmenable 𝕜 A) :
-    ∃ (C : ℝ) (l : Filter A), l.NeBot ∧ (∀ᶠ f in l, ‖f‖ ≤ C) ∧ ∀ a, Tendsto (a * ·) l (𝓝 a) := by
-  have : Small.{u} 𝕜 := small_rclike
-  have : Small.{u} (StrongDual 𝕜 A) := small_of_injective DFunLike.coe_injective
-  let R : A →L[𝕜] StrongDual 𝕜 A →L[𝕜] StrongDual 𝕜 A :=
-    dualAction (ContinuousLinearMap.mul 𝕜 A)
-  have hR (a b : A) (f : StrongDual 𝕜 A) : R (a * b) f = R b (R a f) :=
-    dualAction_mul_apply_of_left (fun x y z ↦ by simp [mul_assoc]) a b f
-  have hD (a b : A) :
-      inclusionInDoubleDual 𝕜 A (a * b) =
-        dualAction R a (inclusionInDoubleDual 𝕜 A b) +
-          dualAction (0 : A →L[𝕜] StrongDual 𝕜 A →L[𝕜] StrongDual 𝕜 A) b
-            (inclusionInDoubleDual 𝕜 A a) := by
-    ext f
-    simp [R, dual_def]
-  obtain ⟨E, hE⟩ := h.exists_eq_dualAction_sub_dualAction_of_small
-    (L := 0) (R := R) (fun _ _ _ ↦ by simp) hR (fun _ _ _ ↦ by simp) (inclusionInDoubleDual 𝕜 A) hD
-  have hT (a : A) :
-      precomp 𝕜 (precomp 𝕜 (ContinuousLinearMap.mul 𝕜 A a) :
-          StrongDual 𝕜 A →L[𝕜] StrongDual 𝕜 A) E =
-        inclusionInDoubleDual 𝕜 A a := by
-    ext f
-    simpa [R, dualAction_apply] using (congr($(hE a) f)).symm
-  obtain ⟨l, hl, hbound, htend⟩ :=
-    E.exists_neBot_tendsto_of_forall_precomp_precomp_eq le_rfl
-      (fun a ↦ ContinuousLinearMap.mul 𝕜 A a) id hT
-  exact ⟨‖E‖, l, hl, hbound, htend⟩
+    ∃ (C : ℝ) (l : Filter A), l.NeBot ∧ (∀ᶠ f in l, ‖f‖ ≤ C) ∧ ∀ a, Tendsto (a * ·) l (𝓝 a) :=
+  exists_tendsto_of_isAmenable h
+    (L := 0) (R := dualAction (ContinuousLinearMap.mul 𝕜 A))
+    (fun _ _ _ ↦ by simp) (dualAction_mul_apply_of_left fun _ _ _ ↦ by simp [mul_assoc])
+    (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)
+    (T := fun a ↦ ContinuousLinearMap.mul 𝕜 A a) id
+    (fun _ _ _ ↦ by simp [dualAction_apply])
 
 /-- An amenable normed algebra over `ℝ` or `ℂ` has a bounded left approximate identity, obtained
 by applying amenability to `A*` with left action dual to right multiplication and trivial right
 action. -/
 private theorem exists_tendsto_mul_right_of_isAmenable (h : IsAmenable 𝕜 A) :
-    ∃ (C : ℝ) (l : Filter A), l.NeBot ∧ (∀ᶠ e in l, ‖e‖ ≤ C) ∧ ∀ a, Tendsto (· * a) l (𝓝 a) := by
-  have : Small.{u} 𝕜 := small_rclike
-  have : Small.{u} (StrongDual 𝕜 A) := small_of_injective DFunLike.coe_injective
-  let L : A →L[𝕜] StrongDual 𝕜 A →L[𝕜] StrongDual 𝕜 A :=
-    dualAction (ContinuousLinearMap.mul 𝕜 A).flip
-  have hL (a b : A) (f : StrongDual 𝕜 A) : L (a * b) f = L a (L b f) :=
-    dualAction_mul_apply_of_right (fun x y z ↦ by simp [mul_assoc]) a b f
-  have hD (a b : A) :
-      inclusionInDoubleDual 𝕜 A (a * b) =
-        dualAction (0 : A →L[𝕜] StrongDual 𝕜 A →L[𝕜] StrongDual 𝕜 A) a
-          (inclusionInDoubleDual 𝕜 A b) +
-          dualAction L b (inclusionInDoubleDual 𝕜 A a) := by
-    ext f
-    simp [L, dual_def]
-  obtain ⟨E, hE⟩ := h.exists_eq_dualAction_sub_dualAction_of_small
-    (L := L) (R := 0) hL (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp) (inclusionInDoubleDual 𝕜 A) hD
-  have hT (a : A) :
-      precomp 𝕜 (precomp 𝕜 ((ContinuousLinearMap.mul 𝕜 A).flip a) :
-          StrongDual 𝕜 A →L[𝕜] StrongDual 𝕜 A) (-E) =
-        inclusionInDoubleDual 𝕜 A a := by
-    ext f
-    simpa [L, dualAction_apply] using (congr($(hE a) f)).symm
-  obtain ⟨l, hl, hbound, htend⟩ :=
-    (-E).exists_neBot_tendsto_of_forall_precomp_precomp_eq le_rfl
-      (fun a ↦ (ContinuousLinearMap.mul 𝕜 A).flip a) id hT
-  exact ⟨‖-E‖, l, hl, hbound, htend⟩
+    ∃ (C : ℝ) (l : Filter A), l.NeBot ∧ (∀ᶠ e in l, ‖e‖ ≤ C) ∧ ∀ a, Tendsto (· * a) l (𝓝 a) :=
+  exists_tendsto_of_isAmenable h
+    (L := dualAction (ContinuousLinearMap.mul 𝕜 A).flip) (R := 0)
+    (dualAction_mul_apply_of_right fun _ _ _ ↦ by simp [mul_assoc]) (fun _ _ _ ↦ by simp)
+    (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)
+    (T := fun a ↦ (ContinuousLinearMap.mul 𝕜 A).flip a) (- ·)
+    (fun _ _ _ ↦ by simp [dualAction_apply])
 
 /-- An amenable normed algebra over `ℝ` or `ℂ` has a bounded two-sided approximate identity. -/
 theorem IsAmenable.exists_isApproximateUnit (h : IsAmenable 𝕜 A) :
@@ -449,40 +457,6 @@ private theorem bidualKerMap_apply {X : Type*} [SeminormedAddCommGroup X] [Norme
     bidualKerMap T Φ =
       precomp 𝕜 (precomp 𝕜 T.ker.subtypeL : StrongDual 𝕜 X →L[𝕜] StrongDual 𝕜 T.ker) Φ := rfl
 
-private theorem mem_ker_of_map_left {X : Type*} [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
-    {L : A →L[𝕜] X →L[𝕜] X} {T : X →L[𝕜] A} (hTL : ∀ a x, T (L a x) = a * T x)
-    (a : A) {x : X} (hx : x ∈ T.ker) : L a x ∈ T.ker := by
-  simp only [LinearMap.mem_ker, coe_coe] at hx ⊢
-  rw [hTL, hx, mul_zero]
-
-private theorem mem_ker_of_map_right {X : Type*} [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
-    {R : A →L[𝕜] X →L[𝕜] X} {T : X →L[𝕜] A} (hTR : ∀ a x, T (R a x) = T x * a)
-    (a : A) {x : X} (hx : x ∈ T.ker) : R a x ∈ T.ker := by
-  simp only [LinearMap.mem_ker, coe_coe] at hx ⊢
-  rw [hTR, hx, zero_mul]
-
-/-- Restriction of a bounded action `M` on `X` to an invariant kernel `T.ker`. -/
-private def kerAction {X : Type*} [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
-    (M : A →L[𝕜] X →L[𝕜] X) (T : X →L[𝕜] A)
-    (hM : ∀ a {x : X}, x ∈ T.ker → M a x ∈ T.ker) :
-    A →L[𝕜] T.ker →L[𝕜] T.ker :=
-  M.restrictAction T.ker fun a _ hx ↦ hM a hx
-
-@[simp]
-private theorem coe_kerAction_apply {X : Type*} [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
-    (M : A →L[𝕜] X →L[𝕜] X) (T : X →L[𝕜] A)
-    (hM : ∀ a {x : X}, x ∈ T.ker → M a x ∈ T.ker) (a : A) (x : T.ker) :
-    (kerAction M T hM a x : X) = M a x :=
-  coe_restrictAction_apply _ _ _ a x
-
-private theorem dualAction_kerAction_comp_subtypeL {X : Type*} [SeminormedAddCommGroup X]
-    [NormedSpace 𝕜 X] (M : A →L[𝕜] X →L[𝕜] X) (T : X →L[𝕜] A)
-    (hM : ∀ a {x : X}, x ∈ T.ker → M a x ∈ T.ker) (a : A) (f : StrongDual 𝕜 X) :
-    dualAction (kerAction M T hM) a (f.comp T.ker.subtypeL) =
-      (dualAction M a f).comp T.ker.subtypeL := by
-  ext x
-  simp
-
 end
 
 variable [CompleteSpace A]
@@ -495,8 +469,8 @@ private theorem exists_derivation_ker {X : Type*} [NormedAddCommGroup X] [Normed
     (hL : ∀ a b x, L (a * b) x = L a (L b x))
     (hR : ∀ a b x, R (a * b) x = R b (R a x))
     (hLR : ∀ a b x, L a (R b x) = R b (L a x))
-    (hTL : ∀ a x, T (L a x) = a * T x)
-    (hTR : ∀ a x, T (R a x) = T x * a)
+    (hTL : ∀ a x, x ∈ T.ker → L a x ∈ T.ker)
+    (hTR : ∀ a x, x ∈ T.ker → R a x ∈ T.ker)
     (hclosed : IsClosed (T.range : Set A))
     (E₀ : StrongDual 𝕜 (StrongDual 𝕜 X))
     (hker : ∀ a : A,
@@ -506,8 +480,8 @@ private theorem exists_derivation_ker {X : Type*} [NormedAddCommGroup X] [Normed
         D a (f.comp T.ker.subtypeL) =
           E₀ (dualAction L a f) - E₀ (dualAction R a f)) ∧
       ∀ a b, D (a * b) =
-        dualAction (dualAction (kerAction L T (mem_ker_of_map_left hTL))) a (D b) +
-          dualAction (dualAction (kerAction R T (mem_ker_of_map_right hTR))) b (D a) := by
+        dualAction (dualAction (L.restrictAction T.ker hTL)) a (D b) +
+          dualAction (dualAction (R.restrictAction T.ker hTR)) b (D a) := by
   let bL := dualAction (dualAction L)
   let bR := dualAction (dualAction R)
   let D₀ := bL.flip E₀ - bR.flip E₀
@@ -525,7 +499,7 @@ private theorem exists_derivation_ker {X : Type*} [NormedAddCommGroup X] [Normed
   ext g
   obtain ⟨f, rfl⟩ := T.ker.surjective_precomp_subtypeL g
   rw [precomp_apply, add_apply, dualAction_apply_apply, dualAction_apply_apply,
-    dualAction_kerAction_comp_subtypeL, dualAction_kerAction_comp_subtypeL,
+    dualAction_restrictAction_comp_subtypeL, dualAction_restrictAction_comp_subtypeL,
     hD_eval, hD_eval, hD_eval,
     dualAction_mul_apply_of_left hL a b f, dualAction_mul_apply_of_right hR a b f,
     dualAction_apply_dualAction_apply_comm hLR b a f]
@@ -539,8 +513,8 @@ private theorem exists_bidual_intertwining_of_isAmenable (h : IsAmenable 𝕜 A)
     (hL : ∀ a b x, L (a * b) x = L a (L b x))
     (hR : ∀ a b x, R (a * b) x = R b (R a x))
     (hLR : ∀ a b x, L a (R b x) = R b (L a x))
-    (hTL : ∀ a x, T (L a x) = a * T x)
-    (hTR : ∀ a x, T (R a x) = T x * a)
+    (hTL : ∀ a x, x ∈ T.ker → L a x ∈ T.ker)
+    (hTR : ∀ a x, x ∈ T.ker → R a x ∈ T.ker)
     (hclosed : IsClosed (T.range : Set A))
     (E₀ : StrongDual 𝕜 (StrongDual 𝕜 X))
     (hE₀_left : ∀ a : A,
@@ -554,8 +528,8 @@ private theorem exists_bidual_intertwining_of_isAmenable (h : IsAmenable 𝕜 A)
         (precomp 𝕜 (precomp 𝕜 T) M) = inclusionInDoubleDual 𝕜 A a := by
   obtain ⟨D, hD_eval, hD⟩ := exists_derivation_ker hL hR hLR hTL hTR hclosed E₀ hE₀_ker
   have : Small.{u} (StrongDual 𝕜 T.ker) := small_of_surjective T.ker.surjective_precomp_subtypeL
-  let kL := kerAction L T (mem_ker_of_map_left hTL)
-  let kR := kerAction R T (mem_ker_of_map_right hTR)
+  let kL := L.restrictAction T.ker hTL
+  let kR := R.restrictAction T.ker hTR
   have hkL (a b : A) (x : T.ker) : kL (a * b) x = kL a (kL b x) := Subtype.ext (by simp [kL, hL])
   have hkR (a b : A) (x : T.ker) : kR (a * b) x = kR b (kR a x) := Subtype.ext (by simp [kR, hR])
   have hkLR (a b : A) (x : T.ker) : kL a (kR b x) = kR b (kL a x) :=
@@ -569,7 +543,7 @@ private theorem exists_bidual_intertwining_of_isAmenable (h : IsAmenable 𝕜 A)
     ext f
     have hN₀_eval := congr($(hN₀ a) (f.comp T.ker.subtypeL))
     rw [hD_eval, sub_apply, dualAction_apply_apply, dualAction_apply_apply,
-      dualAction_kerAction_comp_subtypeL, dualAction_kerAction_comp_subtypeL] at hN₀_eval
+      dualAction_restrictAction_comp_subtypeL, dualAction_restrictAction_comp_subtypeL] at hN₀_eval
     simp only [dualAction_apply_apply, sub_apply, bidualKerMap_apply, precomp_apply, comp_apply]
     linear_combination hN₀_eval
   · intro a
@@ -579,6 +553,22 @@ private theorem exists_bidual_intertwining_of_isAmenable (h : IsAmenable 𝕜 A)
       rwa [LinearMap.mem_ker, coe_coe, T.coe_kerBidualEquivKerPrecompPrecomp_apply] at hm
     rw [← bidualMap_apply T (E₀ - bidualKerMap T N₀), map_sub, hker_N₀, sub_zero]
     exact hE₀_left a
+
+/-- If `E₀ ∈ (A ⊗̂π A)**` is a weak-star cluster point of `e ↦ e ⊗ e` along `l` and
+`M a (e * e) → a` along `l`, then the iterated dual action of `M` sends `(a, Δ** E₀)` to `J_A a`. -/
+private theorem dualAction_bidualMap_mul'_eq_of_mapClusterPt {l : Filter A}
+    {E₀ : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A))}
+    (hE₀ : MapClusterPt (StrongDual.toWeakDual E₀)
+      (l.map fun e ↦ (⟨e ⊗ₜ e⟩ : ProjectiveTensor 𝕜 A A))
+      (fun m ↦ StrongDual.toWeakDual
+        (inclusionInDoubleDual 𝕜 (CompletedProjectiveTensor 𝕜 A A) m)))
+    (M : A →L[𝕜] A →L[𝕜] A) {a : A}
+    (htend : Tendsto (fun e ↦ M a (e * e)) l (𝓝 a)) :
+    dualAction (dualAction M) a (bidualMap (mul' 𝕜 A) E₀) = inclusionInDoubleDual 𝕜 A a := by
+  ext f
+  suffices E₀ (precomp 𝕜 (mul' 𝕜 A) (dualAction M a f)) = f a by simpa [bidualMap, dual_def]
+  refine hE₀.apply_eq_of_tendsto_inclusionInDoubleDual _ (tendsto_map'_iff.2 ?_)
+  simpa [Function.comp_def] using (f.continuous.tendsto a).comp htend
 
 /-- A weak-star cluster point `E₀ ∈ (A ⊗̂π A)**` of `e ↦ e ⊗ e` along a bounded two-sided
 approximate identity satisfies `a · Δ** E₀ = J_A a` and `a · E₀ - E₀ · a ∈ ker Δ**`. -/
@@ -600,26 +590,10 @@ private theorem exists_bidual_of_isApproximateUnit {l : Filter A} (hl : l.IsAppr
       (norm_coe_tmul_le e e).trans (mul_le_mul he he (norm_nonneg e) hC0)
   obtain ⟨E₀, -, hE₀⟩ := hu.exists_mapClusterPt_inclusionInDoubleDual (𝕜 := 𝕜)
   have hsq := hl.map_mul_self hC
-  have hleft (a : A) :
-      dualAction (dualAction (ContinuousLinearMap.mul 𝕜 A)) a (bidualMap (mul' 𝕜 A) E₀) =
-        inclusionInDoubleDual 𝕜 A a := by
-    ext f
-    rw [dualAction_apply_apply, bidualMap_apply, precomp_apply, comp_apply, precomp_apply,
-      dual_def]
-    refine hE₀.apply_eq_of_tendsto_inclusionInDoubleDual _ (tendsto_map'_iff.2 ?_)
-    simpa only [u, Function.comp_def, comp_apply, dualAction_apply_apply, mul_apply',
-      mul'_coe_tmul] using
-      (f.continuous.tendsto a).comp (tendsto_map'_iff.1 (hsq.tendsto_mul_left a))
-  have hright (a : A) :
-      dualAction (dualAction (ContinuousLinearMap.mul 𝕜 A).flip) a (bidualMap (mul' 𝕜 A) E₀) =
-        inclusionInDoubleDual 𝕜 A a := by
-    ext f
-    rw [dualAction_apply_apply, bidualMap_apply, precomp_apply, comp_apply, precomp_apply,
-      dual_def]
-    refine hE₀.apply_eq_of_tendsto_inclusionInDoubleDual _ (tendsto_map'_iff.2 ?_)
-    simpa only [u, Function.comp_def, comp_apply, dualAction_apply_apply, flip_apply, mul_apply',
-      mul'_coe_tmul] using
-      (f.continuous.tendsto a).comp (tendsto_map'_iff.1 (hsq.tendsto_mul_right a))
+  have hleft (a : A) := dualAction_bidualMap_mul'_eq_of_mapClusterPt hE₀
+    (ContinuousLinearMap.mul 𝕜 A) (tendsto_map'_iff.1 (hsq.tendsto_mul_left a))
+  have hright (a : A) := dualAction_bidualMap_mul'_eq_of_mapClusterPt hE₀
+    (ContinuousLinearMap.mul 𝕜 A).flip (tendsto_map'_iff.1 (hsq.tendsto_mul_right a))
   refine ⟨E₀, hleft, fun a ↦ ?_⟩
   have hL := precomp_precomp_dualAction_dualAction_apply
     (M := mulLeft 𝕜 A) (N := ContinuousLinearMap.mul 𝕜 A) (T := mul' 𝕜 A)
@@ -643,13 +617,13 @@ theorem IsAmenable.exists_isVirtualDiagonal (h : IsAmenable 𝕜 A) :
   have hclosed : IsClosed ((mul' 𝕜 A).range : Set A) := by
     rw [LinearMap.coe_range, coe_coe, hsurj.range_eq]
     exact isClosed_univ
-  have : Small.{u} 𝕜 := small_rclike
   have : Small.{u} (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A)) :=
     small_of_injective (f := fun f (p : A × A) ↦ f (⟨p.1 ⊗ₜ p.2⟩ : ProjectiveTensor 𝕜 A A))
       fun _ _ hf ↦ continuousLinearMap_ext fun x y ↦ congrFun hf (x, y)
   obtain ⟨M, hM₁, hM₂⟩ := exists_bidual_intertwining_of_isAmenable h
     mulLeft_mul_apply mulRight_mul_apply mulLeft_mulRight_apply_comm
-    (fun a x ↦ mul'_mulLeft_apply a x) (fun a x ↦ mul'_mulRight_apply a x)
+    (fun a _ hx ↦ by simpa using congrArg (a * ·) (LinearMap.mem_ker.mp hx))
+    (fun a _ hx ↦ by simpa using congrArg (· * a) (LinearMap.mem_ker.mp hx))
     hclosed E₀ hE₀_left hE₀_ker
   exact ⟨M, hM₁, hM₂⟩
 
