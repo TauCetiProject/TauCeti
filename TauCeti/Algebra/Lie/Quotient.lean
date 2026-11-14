@@ -131,6 +131,7 @@ theorem liftQ_injective_iff (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) :
 
 /-- The homomorphism induced on the quotient is surjective exactly when the original homomorphism
 is. -/
+@[simp]
 theorem liftQ_surjective_iff (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) :
     Function.Surjective (I.liftQ f h) ↔ Function.Surjective f := by
   rw [← LieHom.coe_toLinearMap, ← LinearMap.range_eq_top, coe_liftQ, Submodule.range_liftQ,
