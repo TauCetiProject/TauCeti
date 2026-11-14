@@ -8,8 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Regular.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Positivity
 public import Mathlib.Analysis.InnerProductSpace.Defs
--- Private: naturality of the Clifford/exterior equivalence is used only in the map proof.
-import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 
 /-!
 # The positive metric on real regular Clifford spinors
@@ -126,13 +124,7 @@ variable {N : Type*} [AddCommGroup N] [Module R N] {Q' : QuadraticForm R N}
 finiteness or definiteness assumption. -/
 theorem regularBilinForm_map (f : Q →qᵢ Q') (x y : CliffordAlgebra Q) :
     regularBilinForm Q' (map f x) (map f y) = regularBilinForm Q x y := by
-  simp only [regularBilinForm_apply, ← map_star, ← map_mul, scalarTrace_apply,
-    equivExterior_map]
-  have h : ExteriorAlgebra.algebraMapInv.comp (ExteriorAlgebra.map f.toLinearMap) =
-      ExteriorAlgebra.algebraMapInv :=
-    ExteriorAlgebra.hom_ext <| LinearMap.ext fun m ↦ by
-      simp [ExteriorAlgebra.algebraMapInv]
-  exact AlgHom.congr_fun h _
+  simp [regularBilinForm_apply, ← map_star, ← map_mul]
 
 /-- Quadratic isometry equivalences preserve the regular scalar-part form. -/
 theorem regularBilinForm_equivOfIsometry (f : Q.IsometryEquiv Q')
