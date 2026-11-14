@@ -23,6 +23,11 @@ the same order. A smooth bump function performs the extension while preserving t
 function near the base point. Since the bump is compactly supported, so is the representative,
 and a representative of order at least one is moreover globally Lipschitz.
 
+Dually, a function smooth outside a compact set agrees near every point outside a larger compact
+set with a globally smooth function, obtained by cutting it off near the origin
+(`TauCeti.exists_contDiff_eventually_eventuallyEq`). This lets estimates at infinity be proved for
+globally smooth functions only.
+
 A function which is `C^n` at every point of a sphere can be filled in across the open ball it
 bounds: it agrees near every point outside the ball with a function which is `C^n` at every point
 of the closed ball (`TauCeti.exists_contDiffAt_closedBall_eventuallyEq`).
@@ -94,6 +99,29 @@ theorem ContDiffOn.exists_lipschitzWith_contDiff_eventuallyEq_of_finiteDimension
   exact ⟨g, C, hg, hC, hgf⟩
 
 namespace TauCeti
+
+open Filter Topology
+
+/-- A function smooth outside a compact set agrees, near every point outside a larger compact set,
+with a globally smooth function. -/
+theorem exists_contDiff_eventually_eventuallyEq [FiniteDimensional ℝ E] {n : ℕ∞} {f : E → F}
+    (hf : ∀ᶠ x in cocompact E, ContDiffAt ℝ n f x) :
+    ∃ g : E → F, ContDiff ℝ n g ∧ ∀ᶠ x in cocompact E, g =ᶠ[𝓝 x] f := by
+  obtain ⟨R, -, hR⟩ :=
+    hasBasis_cobounded_norm.eventually_iff.mp (Metric.cobounded_eq_cocompact (α := E) ▸ hf)
+  set r := max R 0 + 1
+  let b : ContDiffBump (0 : E) := ⟨r, r + 1, by positivity, by linarith⟩
+  refine ⟨fun x ↦ (1 - b x) • f x, contDiff_iff_contDiffAt.2 fun x ↦ ?_, ?_⟩
+  · by_cases hx : ‖x‖ < r
+    · -- Near the ball of radius `r` the cutoff vanishes.
+      refine contDiffAt_const (c := (0 : F)).congr_of_eventuallyEq ?_
+      filter_upwards [(isOpen_lt continuous_norm continuous_const).mem_nhds hx] with y hy
+      rw [b.one_of_mem_closedBall (by simpa using hy.le), sub_self, zero_smul]
+    · exact (contDiffAt_const.sub b.contDiff.contDiffAt).smul
+        (hR (Set.mem_ofPred.mpr (by linarith [le_max_left R 0, not_lt.mp hx])))
+  · filter_upwards [(tendsto_norm_cocompact_atTop (E := E)).eventually_gt_atTop (r + 1)] with x hx
+    filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hx] with y hy
+    rw [b.zero_of_le_dist (by simpa using hy.le), sub_zero, one_smul]
 
 open Metric
 

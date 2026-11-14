@@ -474,7 +474,7 @@ theorem f4_ad_pow_rootVector_eq_zero_of_no_endpoint (α β : Fin 48) (n : ℕ)
 
 /-- A missing second root-string endpoint makes the second adjoint divided power vanish. -/
 theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint
-    (α β : Fin 48) (hopp : β ≠ f4OppositeRootIndex α)
+    (α β : Fin 48)
     (hno : ∀ γ : Fin 48, f4SimplyConnectedRootDatum.root γ ≠
       f4SimplyConnectedRootDatum.root β +
         (2 : ℤ) • f4SimplyConnectedRootDatum.root α) :
@@ -482,6 +482,12 @@ theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint
         (ad ℚ (F4.lieAlgebra valid_F4)
           (f4ChevalleyRootVector (f4KillingRoot α))) •
         f4ChevalleyRootVector (f4KillingRoot β) = 0 := by
+  have hopp : β ≠ f4OppositeRootIndex α := by
+    rintro rfl
+    refine hno α ?_
+    rw [f4OppositeRootIndex_eq_reflectionPerm, f4SimplyConnectedRootDatum.root_reflectionPerm,
+      f4SimplyConnectedRootDatum.reflection_apply_self]
+    module
   exact (Associative.dividedPower_apply_eq_zero_iff _ 2 _).2
     (f4_ad_pow_rootVector_eq_zero_of_no_endpoint α β 2 hopp hno)
 
@@ -521,7 +527,7 @@ theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_short (α β : Fin 48)
         (ad ℚ (F4.lieAlgebra valid_F4)
           (f4ChevalleyRootVector (f4KillingRoot α))) •
         f4ChevalleyRootVector (f4KillingRoot β) = 0 := by
-  apply f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint α β hopp
+  apply f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint α β
   intro δ hpinned
   rcases f4Length_eq_one_or_eq_two α with hα | hα
   · have hneg : f4SimplyConnectedRootDatum.root β ≠
@@ -546,7 +552,7 @@ theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_long
         (ad ℚ (F4.lieAlgebra valid_F4)
           (f4ChevalleyRootVector (f4KillingRoot α))) •
         f4ChevalleyRootVector (f4KillingRoot β) = 0 := by
-  apply f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint α β hopp
+  apply f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint α β
   intro γ hγ
   have hneg : f4SimplyConnectedRootDatum.root β ≠
       -f4SimplyConnectedRootDatum.root α := by
