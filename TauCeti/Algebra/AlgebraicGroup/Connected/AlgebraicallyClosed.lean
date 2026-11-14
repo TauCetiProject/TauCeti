@@ -86,7 +86,7 @@ theorem geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace
     (k : Type u) [Field k] [IsAlgClosed k] (H : CommHopfAlgCat.{v} k) :
     geometricallyConnectedCommHopfAlgProperty k H ↔ ConnectedSpace (PrimeSpectrum H) := by
   constructor
-  · exact geometricallyConnectedCommHopfAlgProperty.connectedSpace k H
+  · exact geometricallyConnectedCommHopfAlgProperty.connectedSpace
   · intro h
     rw [geometricallyConnectedCommHopfAlgProperty_iff]
     intro K _ _

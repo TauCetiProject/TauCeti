@@ -73,7 +73,7 @@ theorem centerDefiningIdeal_le_of_isNormal_of_isSolvable
   let q := (CommHopfAlgCat.mkQuotient H I).hom
   let _ : IsReduced H := isReduced_of_smooth k H
   let _ : ConnectedSpace (PrimeSpectrum H) :=
-    geometricallyConnectedCommHopfAlgProperty.connectedSpace k H
+    geometricallyConnectedCommHopfAlgProperty.connectedSpace
       (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k n)
   -- Lie–Kolchin and normality make the standard action scalar on rational subgroup points.
   have hcentral (f : Q →ₐ[k] k) :
@@ -179,7 +179,7 @@ theorem centerDefiningIdeal_le_of_isSolvableRadicalCandidate
   let _ : Algebra.Smooth K (CommHopfAlgCat.quotient G.obj J) := hJ.smooth
   let _ : IsReduced (CommHopfAlgCat.quotient G.obj J) := isReduced_of_smooth K _
   let _ : ConnectedSpace (PrimeSpectrum (CommHopfAlgCat.quotient G.obj J)) :=
-    geometricallyConnectedCommHopfAlgProperty.connectedSpace K _ hJ.geometricallyConnected
+    geometricallyConnectedCommHopfAlgProperty.connectedSpace hJ.geometricallyConnected
   let _ : Group.IsSolvable
       (WithConv (CommHopfAlgCat.quotient G.obj J →ₐ[K] AlgebraicClosure K)) :=
     (geometricallySolvablePointsCommHopfAlgProperty_iff K _).mp hJ.geometricallySolvable

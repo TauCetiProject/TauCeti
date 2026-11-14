@@ -169,7 +169,7 @@ theorem semisimpleCommHopfAlgProperty_of_geometricFiber_iso_of_isReduced_isSolva
   let _ : Algebra.Smooth K (CommHopfAlgCat.quotient G I) := hsmoothI
   have := (geometricallySolvablePointsCommHopfAlgProperty_iff K _).mp hsolvable
   exact htrivial I hI (isReduced_of_smooth K _)
-    (geometricallyConnectedCommHopfAlgProperty.connectedSpace K _ hconn)
+    (geometricallyConnectedCommHopfAlgProperty.connectedSpace hconn)
     (Group.isSolvable_of_isSolvable_injective
       (AlgHom.mapValue_injective (Algebra.ofId K (AlgebraicClosure K)).injective))
 

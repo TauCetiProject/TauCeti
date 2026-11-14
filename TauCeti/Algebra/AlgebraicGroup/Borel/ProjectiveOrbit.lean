@@ -75,7 +75,7 @@ theorem IsBorelCandidate.exists_conjugate_le {D J : HopfIdeal k H}
   let _ : Algebra.Smooth k Q := (smoothCommHopfAlgProperty_iff _).mp hJ.smooth
   let _ : IsReduced Q := isReduced_of_smooth k Q
   let _ : ConnectedSpace (PrimeSpectrum Q) :=
-    hJ.geometricallyConnected.connectedSpace k Q.obj
+    hJ.geometricallyConnected.connectedSpace
   let _ : Group.IsSolvable (WithConv (Q →ₐ[k] AlgebraicClosure k)) :=
     (geometricallySolvablePointsCommHopfAlgProperty_iff _ _).mp hJ.geometricallySolvable
   let _ : Group.IsSolvable (WithConv (Q →ₐ[k] k)) :=

@@ -54,7 +54,7 @@ theorem geometricallyConnectedCommHopfAlgProperty.derived
     (CommHopfAlgCat.derivedDefiningIdeal H)
   rw [CommHopfAlgCat.baseChangeHopfIdeal_derivedDefiningIdeal] at e
   have hG := geometricallyConnectedCommHopfAlgProperty.baseChange k K H hH
-  let _ : ConnectedSpace (PrimeSpectrum G) := hG.connectedSpace K G
+  let _ : ConnectedSpace (PrimeSpectrum G) := hG.connectedSpace
   apply geometricallyConnectedCommHopfAlgProperty.of_baseChange k K
   exact (geometricallyConnectedCommHopfAlgProperty K).prop_of_iso e
     (CommHopfAlgCat.geometricallyConnectedCommHopfAlgProperty_derived G)

@@ -64,7 +64,7 @@ theorem geometricallyConnected_iff_isPGroup (G : Type v) [CommGroup G] [Finite G
       IsPGroup p G := by
   refine ⟨fun h => ?_, geometricallyConnected_of_isPGroup k p⟩
   exact (connectedSpace_primeSpectrum_monoidAlgebra_iff_isPGroup k G p).mp
-    (h.connectedSpace k _)
+    (h.connectedSpace)
 
 variable {M N : Type v} [CommGroup M] [CommGroup N] (f : M →* N)
 variable [Finite (N ⧸ f.range)]

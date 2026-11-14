@@ -72,7 +72,7 @@ theorem geometricallyConnectedCommHopfAlgProperty_iff
 
 /-- A geometrically connected commutative Hopf algebra has connected prime spectrum. -/
 theorem geometricallyConnectedCommHopfAlgProperty.connectedSpace
-    (k : Type u) [Field k] (H : CommHopfAlgCat.{v} k)
+    {k : Type u} [Field k] {H : CommHopfAlgCat.{v} k}
     (h : geometricallyConnectedCommHopfAlgProperty k H) :
     ConnectedSpace (PrimeSpectrum (H : Type v)) :=
   (PrimeSpectrum.homeomorphOfRingEquiv
