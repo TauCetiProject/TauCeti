@@ -36,8 +36,8 @@ Over a field, with `a ≠ 0`:
 * `Polynomial.card_rootSet_quadratic_of_discrim_eq_zero`: if it splits and `discrim a b c = 0`, it
   has exactly one root.
 
-The three splitting criteria below need no condition on `a`, since for `a = 0` the quadratic is
-linear and splits (`Polynomial.splits_quadratic_of_eq_zero`):
+The three splitting criteria below need no hypothesis `a ≠ 0`, since for `a = 0` the quadratic is
+linear and splits (`Polynomial.Splits.of_degree_le_one`):
 
 * `Polynomial.splits_quadratic_iff_isSquare`: over a field away from characteristic two, splits
   exactly when `discrim a b c` is a square;
@@ -47,7 +47,8 @@ linear and splits (`Polynomial.splits_quadratic_of_eq_zero`):
   where the discriminant degenerates to `b²` (`discrim_eq_sq_of_two_eq_zero`) and the square-class
   criterion says nothing, splits exactly when the
   Artin-Schreier invariant `a c / b²` lies in the image of `z ↦ z² + z`, written division-free.
-  Here `b ≠ 0` is required, which by `separable_quadratic_iff_discrim_ne_zero` is separability.
+  Here `b ≠ 0` is required when `a ≠ 0`, where by `separable_quadratic_iff_discrim_ne_zero` it is
+  separability.
 
 Three statements need neither a field nor `a ≠ 0`, and are stated over a commutative (semi)ring:
 `Polynomial.derivative_quadratic`, computing the derivative as `2 a X + b`; the Bézout-type
@@ -158,11 +159,6 @@ theorem splits_quadratic_iff_exists_root {k : Type*} [Field k] {a b c : k} (ha :
     simp only [hp, eval_add, eval_mul, eval_pow, eval_C, eval_X]
     linear_combination hx
 
-/-- A quadratic `a X² + b X + c` with vanishing leading coefficient is linear, so it splits. -/
-theorem splits_quadratic_of_eq_zero {k : Type*} [Field k] (b c : k) :
-    (C (0 : k) * X ^ 2 + C b * X + C c).Splits :=
-  Splits.of_degree_le_one (by simpa using degree_linear_le (a := b) (b := c))
-
 /-- Over a field of characteristic `≠ 2`, a quadratic `a X² + b X + c` *splits*
 exactly when `discrim a b c` is a square. Compare `separable_quadratic_iff_discrim_ne_zero`,
 which asks for the discriminant to be nonzero rather than square, and holds in every
@@ -170,7 +166,8 @@ characteristic. -/
 theorem splits_quadratic_iff_isSquare {k : Type*} [Field k] [NeZero (2 : k)] {a b c : k} :
     (C a * X ^ 2 + C b * X + C c).Splits ↔ IsSquare (discrim a b c) := by
   rcases eq_or_ne a 0 with rfl | ha
-  · exact iff_of_true (splits_quadratic_of_eq_zero b c) ⟨b, by simp [discrim, sq]⟩
+  · exact iff_of_true (by simpa using Splits.of_degree_le_one (degree_linear_le (a := b) (b := c)))
+      ⟨b, by simp [discrim, sq]⟩
   rw [splits_quadratic_iff_exists_root ha]
   constructor
   · rintro ⟨x, hx⟩
@@ -180,17 +177,20 @@ theorem splits_quadratic_iff_isSquare {k : Type*} [Field k] [NeZero (2 : k)] {a 
     obtain ⟨x, hx⟩ := exists_quadratic_eq_zero ha ⟨s, by rw [hs]⟩
     exact ⟨x, by linear_combination hx⟩
 
-/-- Over a field of characteristic `2`, a quadratic `a X² + b X + c` with `b ≠ 0` splits
-exactly when its Artin-Schreier invariant `a c / b²` lies in the image of `z ↦ z² + z`, written
-division-free as `∃ z, b² (z² + z) = a c`. Here the square-class criterion
+/-- Over a field of characteristic `2`, a quadratic `a X² + b X + c` with `b ≠ 0` whenever
+`a ≠ 0` splits exactly when its Artin-Schreier invariant `a c / b²` lies in the image of
+`z ↦ z² + z`, written division-free as `∃ z, b² (z² + z) = a c`. Here the square-class criterion
 `splits_quadratic_iff_isSquare` says nothing, since `discrim a b c = b²` is automatically a
-square; the hypothesis `b ≠ 0` is
-exactly separability, by `separable_quadratic_iff_discrim_ne_zero`. -/
+square. For `a = 0` the quadratic is linear and both sides hold; for `a ≠ 0` the hypothesis
+`b ≠ 0` is exactly separability, by `separable_quadratic_iff_discrim_ne_zero`, and cannot be
+dropped: over `ZMod 2`, `X² + 1 = (X + 1)²` splits, while its right-hand side reads `∃ z, 0 = 1`. -/
 theorem splits_quadratic_iff_exists_artinSchreier_of_two_eq_zero {k : Type*} [Field k]
-    (h2 : (2 : k) = 0) {a b c : k} (hb : b ≠ 0) :
+    (h2 : (2 : k) = 0) {a b c : k} (hb : a ≠ 0 → b ≠ 0) :
     (C a * X ^ 2 + C b * X + C c).Splits ↔ ∃ z, b ^ 2 * (z ^ 2 + z) = a * c := by
   rcases eq_or_ne a 0 with rfl | ha
-  · exact iff_of_true (splits_quadratic_of_eq_zero b c) ⟨0, by simp⟩
+  · exact iff_of_true (by simpa using Splits.of_degree_le_one (degree_linear_le (a := b) (b := c)))
+      ⟨0, by simp⟩
+  have hb := hb ha
   rw [splits_quadratic_iff_exists_root ha]
   constructor
   · rintro ⟨x, hx⟩
@@ -208,7 +208,7 @@ without a root. -/
 theorem splits_quadratic_of_discrim_eq_zero {k : Type*} [Field k] [PerfectField k] {a b c : k}
     (hd : discrim a b c = 0) : (C a * X ^ 2 + C b * X + C c).Splits := by
   rcases eq_or_ne a 0 with rfl | ha
-  · exact splits_quadratic_of_eq_zero b c
+  · simpa using Splits.of_degree_le_one (degree_linear_le (a := b) (b := c))
   set p := C a * X ^ 2 + C b * X + C c
   have hdeg : p.natDegree = 2 := natDegree_quadratic ha
   have hsep : ¬ p.Separable := by

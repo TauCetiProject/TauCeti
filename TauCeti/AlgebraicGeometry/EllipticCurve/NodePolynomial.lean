@@ -99,7 +99,7 @@ theorem nodePolynomial_eq_of_isSingular_zero (W : WeierstrassCurve A)
   simpa using W.nodePolynomial_eq_C_mul hn
 
 /-- The discriminant of the node polynomial is `-c₄ c₆`. Hence — away from residue characteristic
-two — the tangent directions at the node are rational
+two, and provided `c₄` survives the reduction — the tangent directions at the node are rational
 over the residue field exactly when the image of `-c₄ c₆` is a square there
 (`splits_nodePolynomial_map_iff_isSquare`); twisting by `(t, n)` multiplies `-c₄ c₆` by
 `(t² - 4n)⁵ = (t² - 4n)⁴ · (t² - 4n)`, i.e. by the twisting parameter up to a square. -/
@@ -220,20 +220,11 @@ lemma splits_nodePolynomial_map_iff_exists_artinSchreier_of_two_eq_zero (h2 : (2
     (W.nodePolynomial.map φ).Splits ↔ ∃ z, φ (W.a₁ * W.c₄) ^ 2 * (z ^ 2 + z)
       = φ W.c₄ * (-φ (54 * W.b₆ - 3 * W.b₂ * W.b₄ + W.a₂ * W.c₄)) := by
   let : CharP k 2 := (CharP.charP_iff_prime_eq_zero Nat.prime_two).2 h2
-  by_cases hc₄ : φ W.c₄ = 0
-  · have hsplit : (W.nodePolynomial.map φ).Splits := by
-      rw [nodePolynomial_map_eq_quadratic]
-      simp only [map_mul, hc₄, mul_zero, Polynomial.C_0, zero_mul, zero_add]
-      exact Polynomial.Splits.C _
-    refine iff_of_true hsplit ⟨0, ?_⟩
-    simp [map_mul, hc₄]
-  have ha₁ : φ W.a₁ ≠ 0 := by
+  have hb : φ W.c₄ ≠ 0 → φ (W.a₁ * W.c₄) ≠ 0 := fun hc₄ ↦ by
     have h := (W.map φ).c₄_of_char_two
     rw [map_c₄, map_a₁] at h
-    exact fun h0 ↦ hc₄ (by simp [h, h0])
-  have hb : φ (W.a₁ * W.c₄) ≠ 0 := by
     rw [map_mul]
-    exact mul_ne_zero ha₁ hc₄
+    exact mul_ne_zero (fun h0 ↦ hc₄ (by simp [h, h0])) hc₄
   rw [nodePolynomial_map_eq_quadratic,
     Polynomial.splits_quadratic_iff_exists_artinSchreier_of_two_eq_zero h2 hb]
 
