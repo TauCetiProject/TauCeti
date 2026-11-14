@@ -8,19 +8,23 @@ module
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Gelfand
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Basic
 public import TauCeti.Analysis.Normed.Module.Dual.Embedding
-public import TauCeti.Analysis.Normed.Module.HahnBanach
+public import TauCeti.Analysis.Normed.Lp.HahnBanach
 
 /-!
 # Pietsch's embedding identity
 
-The Gelfand numbers of `T : E →L[𝕜] F` are the approximation numbers of `J ∘L T`, where
-`J` is evaluation on the closed unit ball of the continuous dual of `F`. Thus Gelfand
-numbers become approximation numbers after placing the target in its canonical `ℓ∞` space.
+Over `ℝ` or `ℂ`, the Gelfand numbers of `T : E →L[𝕜] F` are the approximation numbers of
+`J ∘L T`, where `J` is evaluation on the closed unit ball of the continuous dual of `F`
+(`ContinuousLinearMap.singularValue_dualBallEmbedding_comp`). Thus Gelfand numbers become
+approximation numbers after placing the target in its canonical `ℓ∞` space. More generally, the
+same identity holds for every linear isometry `J` of `F` into a scalar-valued `ℓ∞` space
+(`ContinuousLinearMap.singularValue_linearIsometry_lpInfty_comp`).
 
-The lower bound holds for every linear isometry into any target. For the reverse bound,
-extend the restriction of `J ∘L T` from an admissible subspace without increasing its norm.
-Subtracting this extension leaves an operator factoring through the finite-dimensional
-quotient. Neither space needs to be complete.
+The lower bound holds over every nontrivially normed field, for every linear isometry into any
+target (`ContinuousLinearMap.gelfandNumber_le_singularValue_linearIsometry_comp`). For the reverse
+bound, which uses Hahn–Banach and hence needs `ℝ` or `ℂ`, extend the restriction of `J ∘L T`
+from an admissible subspace without increasing its norm. Subtracting this extension leaves an
+operator factoring through the finite-dimensional quotient. Neither space needs to be complete.
 
 ## References
 
@@ -30,7 +34,7 @@ quotient. Neither space needs to be complete.
 
 public section
 
-open scoped NNReal
+open scoped ENNReal NNReal
 
 namespace ContinuousLinearMap
 
@@ -43,35 +47,33 @@ variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
 
 /-- Gelfand numbers are bounded by approximation numbers after any isometric embedding
 of the target. -/
-theorem gelfandNumber_le_singularValue_comp (T : E →L[𝕜] F) (J : F →ₗᵢ[𝕜] G) (n : ℕ) :
-    T.gelfandNumber n ≤ (J.toContinuousLinearMap ∘L T).singularValue n := by
-  refine le_singularValue_iff.mpr fun R hR ↦ ?_
-  have hrank : Module.rank 𝕜 (E ⧸ LinearMap.ker R.toLinearMap) ≤ n := by
-    have h := R.toLinearMap.quotKerEquivRange.lift_rank_eq
-    exact Cardinal.lift_le_nat_iff.mp (h.trans_le (Cardinal.lift_le_nat_iff.mpr hR))
-  refine (T.gelfandNumber_le hrank).trans (opNNNorm_le_bound _ _ fun x ↦ ?_)
-  have hx : R x = 0 := x.2
-  have h : ‖T x‖ ≤ ‖J.toContinuousLinearMap ∘L T - R‖ * ‖x‖ := by
-    simpa [hx, Submodule.norm_coe] using
-      (J.toContinuousLinearMap ∘L T - R).le_opNorm (x : E)
-  exact_mod_cast h
+theorem gelfandNumber_le_singularValue_linearIsometry_comp (T : E →L[𝕜] F) (J : F →ₗᵢ[𝕜] G)
+    (n : ℕ) : T.gelfandNumber n ≤ (J.toContinuousLinearMap ∘L T).singularValue n := by
+  have hJ : T.gelfandNumber n ≤ (J.toContinuousLinearMap ∘L T).gelfandNumber n :=
+    le_gelfandNumber_iff.mpr fun M _ hM ↦ (T.gelfandNumber_le hM).trans_eq <| by
+      rw [comp_assoc, ← NNReal.coe_inj, coe_nnNorm, coe_nnNorm, J.norm_toContinuousLinearMap_comp]
+  refine hJ.trans (le_singularValue_iff.mpr fun R hR ↦ ?_)
+  simpa [gelfandNumber_eq_zero_of_rank_le hR] using
+    R.gelfandNumber_add_le (J.toContinuousLinearMap ∘L T - R) n
 
 end LowerBound
 
-variable {𝕜 E F : Type*} [RCLike 𝕜]
+section Embedding
+
+variable {𝕜 E F ι : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- **Pietsch's embedding identity.** Gelfand numbers are the approximation numbers after
-evaluation on the dual unit ball of the target. -/
-theorem singularValue_dualBallEmbedding_comp (T : E →L[𝕜] F) (n : ℕ) :
-    ((TauCeti.dualBallEmbedding 𝕜 F).toContinuousLinearMap ∘L T).singularValue n =
-      T.gelfandNumber n := by
-  let J := (TauCeti.dualBallEmbedding 𝕜 F).toContinuousLinearMap
+/-- Gelfand numbers are the approximation numbers after any isometric embedding of the target
+into a scalar-valued `ℓ∞` space. -/
+theorem singularValue_linearIsometry_lpInfty_comp (T : E →L[𝕜] F)
+    (J : F →ₗᵢ[𝕜] lp (fun _ : ι ↦ 𝕜) ∞) (n : ℕ) :
+    (J.toContinuousLinearMap ∘L T).singularValue n = T.gelfandNumber n := by
   refine le_antisymm (le_gelfandNumber_iff.mpr fun M _ hM ↦ ?_)
-    (T.gelfandNumber_le_singularValue_comp _ n)
-  obtain ⟨U, hU, hnorm⟩ := M.exists_extension_lpInfty ((J ∘L T) ∘L M.subtypeL)
-  let R := J ∘L T - U
+    (T.gelfandNumber_le_singularValue_linearIsometry_comp J n)
+  let JT := J.toContinuousLinearMap ∘L T
+  obtain ⟨U, hU, hnorm⟩ := M.exists_extension_lpInfty_norm_eq (JT ∘L M.subtypeL)
+  let R := JT - U
   have hker : M ≤ LinearMap.ker R.toLinearMap := by
     intro x hx
     have h := congrArg (fun f ↦ f (⟨x, hx⟩ : M)) hU
@@ -84,10 +86,24 @@ theorem singularValue_dualBallEmbedding_comp (T : E →L[𝕜] F) (n : ℕ) :
     rw [hL]
     exact (LinearMap.rank_comp_le_left M.mkQ L).trans h
   calc
-    (J ∘L T).singularValue n ≤ ‖J ∘L T - R‖₊ := singularValue_le_nnnorm_sub _ hR
+    JT.singularValue n ≤ ‖JT - R‖₊ := singularValue_le_nnnorm_sub _ hR
     _ = ‖U‖₊ := by simp [R]
     _ = ‖T ∘L M.subtypeL‖₊ := by
-      rw [hnorm, comp_assoc, ← NNReal.coe_inj, coe_nnNorm, coe_nnNorm]
-      exact (TauCeti.dualBallEmbedding 𝕜 F).norm_toContinuousLinearMap_comp
+      rw [← NNReal.coe_inj, coe_nnNorm, coe_nnNorm, hnorm, comp_assoc]
+      exact J.norm_toContinuousLinearMap_comp
+
+end Embedding
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- **Pietsch's embedding identity.** Gelfand numbers are the approximation numbers after
+evaluation on the dual unit ball of the target. -/
+@[simp]
+theorem singularValue_dualBallEmbedding_comp (T : E →L[𝕜] F) (n : ℕ) :
+    ((TauCeti.dualBallEmbedding 𝕜 F).toContinuousLinearMap ∘L T).singularValue n =
+      T.gelfandNumber n :=
+  T.singularValue_linearIsometry_lpInfty_comp _ n
 
 end ContinuousLinearMap

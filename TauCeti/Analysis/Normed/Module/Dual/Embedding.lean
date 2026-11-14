@@ -31,26 +31,33 @@ variable (𝕜 E : Type*) [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 
 
 /-- The canonical norm-preserving evaluation map into `ℓ∞` of the dual unit ball. -/
 noncomputable def dualBallEmbedding :
-    E →ₗᵢ[𝕜] lp (fun _ : Metric.closedBall (0 : StrongDual 𝕜 E) 1 ↦ 𝕜) ∞ := by
-  let f (φ : Metric.closedBall (0 : StrongDual 𝕜 E) 1) : E →L[𝕜] 𝕜 := φ.1
-  have hf (φ : Metric.closedBall (0 : StrongDual 𝕜 E) 1) : ‖f φ‖₊ ≤ 1 := by
-    exact_mod_cast mem_closedBall_zero_iff.mp φ.2
-  let J := ContinuousLinearMap.piLpInfty f 1 hf
-  refine ⟨J.toLinearMap, fun x ↦ le_antisymm ?_ ?_⟩
-  · have hJ : ‖J‖ ≤ 1 := by
-      exact_mod_cast ContinuousLinearMap.nnnorm_piLpInfty_le f 1 hf
-    exact (J.le_opNorm x).trans (by
-      simpa using mul_le_mul_of_nonneg_right hJ (norm_nonneg x))
-  · obtain ⟨φ, hφ, hx⟩ := exists_dual_vector'' 𝕜 x
-    let i : Metric.closedBall (0 : StrongDual 𝕜 E) 1 :=
-      ⟨φ, mem_closedBall_zero_iff.mpr hφ⟩
-    have h := lp.norm_apply_le_norm (by simp : (∞ : ℝ≥0∞) ≠ 0) (J x) i
-    simpa [J, f, i, hx] using h
+    E →ₗᵢ[𝕜] lp (fun _ : Metric.closedBall (0 : StrongDual 𝕜 E) 1 ↦ 𝕜) ∞ :=
+  have hf (φ : Metric.closedBall (0 : StrongDual 𝕜 E) 1) : ‖(φ.1 : E →L[𝕜] 𝕜)‖ ≤ 1 :=
+    mem_closedBall_zero_iff.mp φ.2
+  let J := ContinuousLinearMap.piLpInfty (fun φ : Metric.closedBall (0 : StrongDual 𝕜 E) 1 ↦
+    (φ.1 : E →L[𝕜] 𝕜)) (bddAbove_def.2 ⟨1, Set.forall_mem_range.2 hf⟩)
+  { J.toLinearMap with
+    norm_map' x := by
+      refine le_antisymm ?_ ?_
+      · simpa using J.le_of_opNorm_le (ContinuousLinearMap.norm_piLpInfty_le _ zero_le_one hf) x
+      · obtain ⟨φ, hφ, hx⟩ := exists_dual_vector'' 𝕜 x
+        simpa [J, hx] using lp.norm_apply_le_norm (by simp) (J x)
+          ⟨φ, mem_closedBall_zero_iff.mpr hφ⟩ }
+
+variable {𝕜 E}
 
 /-- Evaluation at a dual unit-ball coordinate is the original functional. -/
 @[simp]
 theorem dualBallEmbedding_apply (x : E) (φ : Metric.closedBall (0 : StrongDual 𝕜 E) 1) :
     dualBallEmbedding 𝕜 E x φ = (φ : StrongDual 𝕜 E) x := by
-  simp [dualBallEmbedding, ContinuousLinearMap.piLpInfty_apply]
+  simp [dualBallEmbedding]
+
+/-- Composing the embedding with a dual unit-ball coordinate recovers the functional. -/
+@[simp]
+theorem evalCLM_comp_dualBallEmbedding (φ : Metric.closedBall (0 : StrongDual 𝕜 E) 1) :
+    lp.evalCLM 𝕜 _ ∞ φ ∘L (dualBallEmbedding 𝕜 E).toContinuousLinearMap =
+      (φ : StrongDual 𝕜 E) := by
+  ext x
+  simp
 
 end TauCeti

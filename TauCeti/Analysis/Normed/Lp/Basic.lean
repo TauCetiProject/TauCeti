@@ -34,7 +34,8 @@ to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for fini
 most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
 
 A uniformly bounded family of operators with a common domain assembles into an `ℓ∞`-valued
-operator (`ContinuousLinearMap.piLpInfty`), with the same norm bound.
+operator (`ContinuousLinearMap.piLpInfty`), whose norm is the supremum of their norms
+(`ContinuousLinearMap.norm_piLpInfty`).
 
 For a finite exponent `p` and a countable index type, `lp E p` is separable as soon as every
 `E i` is (`lp.separableSpace`): the finite sums of coordinate vectors with entries in countable
@@ -47,43 +48,8 @@ operators on `lp E p` that converges on every `single i x` converges at every ve
 
 public section
 
-open scoped ENNReal NNReal Topology
+open scoped ENNReal Topology
 open Filter
-
-namespace ContinuousLinearMap
-
-variable {ι 𝕜 X : Type*} {E : ι → Type*} [NontriviallyNormedField 𝕜]
-  [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
-  [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
-
-/-- A uniformly bounded family of operators, assembled into an operator with values in `ℓ∞`. -/
-noncomputable def piLpInfty (f : ∀ i, X →L[𝕜] E i) (C : ℝ≥0) (hf : ∀ i, ‖f i‖₊ ≤ C) :
-    X →L[𝕜] lp E ∞ :=
-  LinearMap.mkContinuous
-    { toFun x := ⟨fun i ↦ f i x, memℓp_infty ⟨C * ‖x‖, by
-        rintro _ ⟨i, rfl⟩
-        exact (f i).le_opNorm x |>.trans
-          (mul_le_mul_of_nonneg_right (by exact_mod_cast hf i) (norm_nonneg x))⟩⟩
-      map_add' x y := lp.ext <| funext fun i ↦ (f i).map_add x y
-      map_smul' c x := lp.ext <| funext fun i ↦ (f i).map_smul c x }
-    C fun x ↦ lp.norm_le_of_forall_le (by positivity) fun i ↦
-      (f i).le_opNorm x |>.trans
-        (mul_le_mul_of_nonneg_right (by exact_mod_cast hf i) (norm_nonneg x))
-
-/-- Each coordinate of the assembled operator is the corresponding member of the family. -/
-@[simp]
-theorem piLpInfty_apply (f : ∀ i, X →L[𝕜] E i) (C : ℝ≥0) (hf : ∀ i, ‖f i‖₊ ≤ C)
-    (x : X) (i : ι) : piLpInfty f C hf x i = f i x := (rfl)
-
-/-- The norm of the assembled operator is at most the uniform bound. -/
-theorem nnnorm_piLpInfty_le (f : ∀ i, X →L[𝕜] E i) (C : ℝ≥0) (hf : ∀ i, ‖f i‖₊ ≤ C) :
-    ‖piLpInfty f C hf‖₊ ≤ C := by
-  refine opNNNorm_le_bound _ _ fun x ↦ ?_
-  exact_mod_cast lp.norm_le_of_forall_le (by positivity : 0 ≤ (C : ℝ) * ‖x‖)
-    (fun i ↦ (f i).le_opNorm x |>.trans
-      (mul_le_mul_of_nonneg_right (by exact_mod_cast hf i) (norm_nonneg x)))
-
-end ContinuousLinearMap
 
 namespace lp
 
@@ -287,6 +253,75 @@ theorem tendsto_apply_of_tendsto_apply_single [DecidableEq ι] {Z : Type*}
 end Density
 
 end lp
+
+namespace ContinuousLinearMap
+
+variable {ι 𝕜 X Y : Type*} {E : ι → Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup X] [NormedSpace 𝕜 X] [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+  [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)] {f : ∀ i, X →L[𝕜] E i}
+
+/-- A uniformly bounded family of operators, assembled into an operator with values in `ℓ∞`.
+Its norm is the supremum of the norms of the family (`ContinuousLinearMap.norm_piLpInfty`). -/
+noncomputable def piLpInfty (f : ∀ i, X →L[𝕜] E i) (hf : BddAbove (Set.range fun i ↦ ‖f i‖)) :
+    X →L[𝕜] lp E ∞ :=
+  have hbound (x : X) (i : ι) : ‖f i x‖ ≤ (⨆ i, ‖f i‖) * ‖x‖ :=
+    (f i).le_of_opNorm_le (le_ciSup hf i) x
+  LinearMap.mkContinuous
+    { toFun x := ⟨fun i ↦ f i x, memℓp_infty ⟨_, by rintro _ ⟨i, rfl⟩; exact hbound x i⟩⟩
+      map_add' x y := lp.ext <| funext fun i ↦ (f i).map_add x y
+      map_smul' c x := lp.ext <| funext fun i ↦ (f i).map_smul c x }
+    (⨆ i, ‖f i‖) fun x ↦ lp.norm_le_of_forall_le
+      (mul_nonneg (Real.iSup_nonneg fun i ↦ norm_nonneg (f i)) (norm_nonneg x)) (hbound x)
+
+/-- Each coordinate of the assembled operator is the corresponding member of the family. -/
+@[simp]
+theorem piLpInfty_apply (hf : BddAbove (Set.range fun i ↦ ‖f i‖)) (x : X) (i : ι) :
+    piLpInfty f hf x i = f i x := (rfl)
+
+/-- Composing the assembled operator with a coordinate evaluation recovers the family. -/
+@[simp]
+theorem evalCLM_comp_piLpInfty (hf : BddAbove (Set.range fun i ↦ ‖f i‖)) (i : ι) :
+    lp.evalCLM 𝕜 E ∞ i ∘L piLpInfty f hf = f i := by
+  ext x
+  simp
+
+/-- An operator into `ℓ∞` is the assembled operator exactly when its coordinates are the
+members of the family. -/
+theorem eq_piLpInfty_iff (hf : BddAbove (Set.range fun i ↦ ‖f i‖)) {g : X →L[𝕜] lp E ∞} :
+    g = piLpInfty f hf ↔ ∀ i, lp.evalCLM 𝕜 E ∞ i ∘L g = f i := by
+  refine ⟨fun h i ↦ h ▸ evalCLM_comp_piLpInfty hf i, fun h ↦ ?_⟩
+  ext x i
+  simpa using congr($(h i) x)
+
+/-- Precomposing the assembled operator precomposes each member of the family. -/
+theorem piLpInfty_comp (hf : BddAbove (Set.range fun i ↦ ‖f i‖)) (g : Y →L[𝕜] X)
+    (hfg : BddAbove (Set.range fun i ↦ ‖f i ∘L g‖)) :
+    piLpInfty f hf ∘L g = piLpInfty (fun i ↦ f i ∘L g) hfg := by
+  ext x i
+  simp
+
+/-- The norm of the assembled operator is the supremum of the norms of the family. -/
+theorem norm_piLpInfty (hf : BddAbove (Set.range fun i ↦ ‖f i‖)) :
+    ‖piLpInfty f hf‖ = ⨆ i, ‖f i‖ := by
+  have hle : ‖piLpInfty f hf‖ ≤ ⨆ i, ‖f i‖ := by
+    rw [piLpInfty]
+    exact LinearMap.mkContinuous_norm_le _ (Real.iSup_nonneg fun i ↦ norm_nonneg (f i)) _
+  refine hle.antisymm (Real.iSup_le (fun i ↦ ?_) (norm_nonneg _))
+  refine (f i).opNorm_le_bound (norm_nonneg _) fun x ↦ ?_
+  simpa using (lp.norm_apply_le_norm (by simp) (piLpInfty f hf x) i).trans
+    ((piLpInfty f hf).le_opNorm x)
+
+/-- The `ℝ≥0`-valued norm of the assembled operator is the supremum of those of the family. -/
+theorem nnnorm_piLpInfty (hf : BddAbove (Set.range fun i ↦ ‖f i‖)) :
+    ‖piLpInfty f hf‖₊ = ⨆ i, ‖f i‖₊ :=
+  NNReal.eq <| by simpa [NNReal.coe_iSup] using norm_piLpInfty hf
+
+/-- The norm of the assembled operator is at most any uniform bound on the family. -/
+theorem norm_piLpInfty_le (hf : BddAbove (Set.range fun i ↦ ‖f i‖)) {C : ℝ} (hC₀ : 0 ≤ C)
+    (hC : ∀ i, ‖f i‖ ≤ C) : ‖piLpInfty f hf‖ ≤ C :=
+  (norm_piLpInfty hf).trans_le (Real.iSup_le hC hC₀)
+
+end ContinuousLinearMap
 
 section Smul
 
