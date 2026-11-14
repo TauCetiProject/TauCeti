@@ -27,7 +27,7 @@ inequality**
 
 and `φ(a)⋆ φ(a) ≤ φ(a⋆a)` when the codomain is unital and `φ 1 = 1`. A non-unital codomain `B`
 is handled through its unitization `B⁺¹`. Together with the bound `‖φ p‖ ≤ ‖φ 1‖ ‖p‖` for
-positive `p`, this gives `‖φ a‖ ≤ ‖φ 1‖ ‖a‖`, so the operator norm of a completely positive map
+positive `p`, this gives `‖φ a‖ ≤ ‖φ 1‖ ‖a‖`, so the operator norm of a continuous `2`-positive map
 with unital domain is `‖φ 1‖`.
 
 ## Main declarations
@@ -35,17 +35,20 @@ with unital domain is `‖φ 1‖`.
 * `TauCeti.IsNPositive`: `n`-positivity of a complex-linear map, with
   `CompletelyPositiveMap.isNPositive` and `CompletelyPositiveMap.ofIsNPositive`: a linear map is
   completely positive exactly when it is `n`-positive for every `n`.
+* `TauCeti.IsNPositive.mono`: an `n`-positive map is `m`-positive for `m ≤ n`, and
+  `TauCeti.isNPositive_one_iff`: `1`-positivity is positivity.
 * `TauCeti.IsNPositive.toPositiveLinearMap`: an `n`-positive map with `0 < n` is positive.
 * `PositiveLinearMap.eq_zero_of_map_one_eq_zero`: a positive map on a unital C⋆-algebra that
   vanishes at `1` is zero.
 * `TauCeti.IsNPositive.star_map_mul_map_le`: the Kadison–Schwarz inequality
   `φ(a)⋆ φ(a) ≤ ‖φ 1‖ • φ(a⋆a)` for `2`-positive maps, and
   `TauCeti.IsNPositive.star_map_mul_map_le_of_map_one` for unital ones.
-* `TauCeti.IsNPositive.norm_apply_le`: `‖φ a‖ ≤ ‖φ 1‖ * ‖a‖` for `2`-positive maps.
-* `CompletelyPositiveMap.star_map_mul_map_le`,
-  `CompletelyPositiveMap.star_map_mul_map_le_of_map_one` and
-  `CompletelyPositiveMap.opNorm_ofClass_eq_norm_map_one`: the Schwarz inequality for completely
-  positive maps, and `‖φ‖ = ‖φ 1‖`.
+* `TauCeti.IsNPositive.norm_apply_le`: `‖φ a‖ ≤ ‖φ 1‖ * ‖a‖` for `2`-positive maps, and
+  `TauCeti.IsNPositive.opNorm_eq_norm_map_one`: `‖ψ‖ = ‖ψ 1‖` for continuous ones.
+* `CompletelyPositiveMapClass.star_map_mul_map_le`,
+  `CompletelyPositiveMapClass.star_map_mul_map_le_of_map_one` and
+  `CompletelyPositiveMapClass.opNorm_ofClass_eq_norm_map_one`: the Schwarz inequality for
+  completely positive maps, and `‖φ‖ = ‖φ 1‖`.
 
 ## References
 
@@ -88,6 +91,17 @@ theorem _root_.CompletelyPositiveMap.isNPositive (φ : A →CP B) (n : ℕ) :
     IsNPositive n φ.toLinearMap :=
   φ.map_cstarMatrix_nonneg' n
 
+/-- A map in a class of completely positive maps is `n`-positive for every `n`. -/
+@[simp]
+theorem _root_.CompletelyPositiveMapClass.isNPositive {F : Type*} [FunLike F A B]
+    [LinearMapClass F ℂ A B] [CompletelyPositiveMapClass F A B] (φ : F) (n : ℕ) :
+    IsNPositive n (φ : A →ₗ[ℂ] B) :=
+  CompletelyPositiveMapClass.map_cstarMatrix_nonneg' φ n
+
+@[simp]
+theorem _root_.CompletelyPositiveMap.coe_toLinearMap (φ : A →CP B) : ⇑φ.toLinearMap = φ :=
+  (rfl)
+
 /-- A linear map that is `n`-positive for every `n`, as a completely positive map. -/
 def _root_.CompletelyPositiveMap.ofIsNPositive (φ : A →ₗ[ℂ] B) (hφ : ∀ n, IsNPositive n φ) :
     A →CP B where
@@ -104,11 +118,49 @@ theorem _root_.CompletelyPositiveMap.toLinearMap_ofIsNPositive (φ : A →ₗ[�
     (hφ : ∀ n, IsNPositive n φ) : (CompletelyPositiveMap.ofIsNPositive φ hφ).toLinearMap = φ :=
   (rfl)
 
+@[simp]
+theorem _root_.CompletelyPositiveMap.ofIsNPositive_toLinearMap (φ : A →CP B)
+    (hφ : ∀ n, IsNPositive n φ.toLinearMap) :
+    CompletelyPositiveMap.ofIsNPositive φ.toLinearMap hφ = φ :=
+  (rfl)
+
+/-- Every linear map is `0`-positive. -/
+@[simp]
+theorem isNPositive_zero (φ : A →ₗ[ℂ] B) : IsNPositive 0 φ :=
+  fun _ _ => (CStarMatrix.ext fun i _ => i.elim0).ge
+
+/-- The identity is `n`-positive. -/
+@[simp]
+theorem IsNPositive.id (n : ℕ) : IsNPositive n (LinearMap.id : A →ₗ[ℂ] A) :=
+  fun M hM => by simpa using hM
+
+/-- The zero map is `n`-positive. -/
+@[simp]
+theorem IsNPositive.zero (n : ℕ) : IsNPositive n (0 : A →ₗ[ℂ] B) :=
+  fun _ _ => (CStarMatrix.ext fun _ _ => by simp [CStarMatrix.zero_apply]).ge
+
+/-- The sum of `n`-positive maps is `n`-positive. -/
+theorem IsNPositive.add {n : ℕ} {φ ψ : A →ₗ[ℂ] B} (hφ : IsNPositive n φ) (hψ : IsNPositive n ψ) :
+    IsNPositive n (φ + ψ) := fun M hM => by
+  have h : M.map ⇑(φ + ψ) = M.map φ + M.map ψ :=
+    CStarMatrix.ext fun _ _ => by simp [CStarMatrix.add_apply]
+  rw [h]
+  exact add_nonneg (hφ M hM) (hψ M hM)
+
 /-- The composition of `n`-positive maps is `n`-positive. -/
 theorem IsNPositive.comp [NonUnitalCStarAlgebra C] [PartialOrder C] [StarOrderedRing C] {n : ℕ}
     {ψ : B →ₗ[ℂ] C} {φ : A →ₗ[ℂ] B} (hψ : IsNPositive n ψ) (hφ : IsNPositive n φ) :
-    IsNPositive n (ψ ∘ₗ φ) :=
-  fun M hM => hψ _ (hφ M hM)
+    IsNPositive n (ψ ∘ₗ φ) := fun M hM => by
+  simpa only [LinearMap.coe_comp, CStarMatrix.map_comp] using hψ _ (hφ M hM)
+
+/-- An `n`-positive map is `m`-positive for every `m ≤ n`. -/
+theorem IsNPositive.mono {m n : ℕ} {φ : A →ₗ[ℂ] B} (hmn : m ≤ n) (hφ : IsNPositive n φ) :
+    IsNPositive m φ := fun M hM => by
+  -- Pad `M` with zeros to an `n × n` matrix, apply `φ`, and restrict back.
+  have hf := Fin.castLE_injective hmn
+  convert CStarMatrix.submatrix_nonneg hf (hφ _ (CStarMatrix.extend_nonneg hf hM)) using 1
+  ext i j
+  simp [hf.extend_apply]
 
 /-- An `n`-positive map with `0 < n` sends positive elements to positive elements. -/
 theorem IsNPositive.map_nonneg {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ : IsNPositive n φ) (hn : 0 < n)
@@ -137,6 +189,29 @@ theorem IsNPositive.toPositiveLinearMap_apply {n : ℕ} {φ : A →ₗ[ℂ] B} (
 theorem IsNPositive.toLinearMap_toPositiveLinearMap {n : ℕ} {φ : A →ₗ[ℂ] B}
     (hφ : IsNPositive n φ) (hn : 0 < n) : (hφ.toPositiveLinearMap hn).toLinearMap = φ :=
   (rfl)
+
+/-- An `n`-positive map with `0 < n` preserves `star`. -/
+theorem IsNPositive.map_star {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ : IsNPositive n φ) (hn : 0 < n)
+    (a : A) : φ (star a) = star (φ a) :=
+  StarHomClass.map_star (hφ.toPositiveLinearMap hn) a
+
+/-- A linear map is `1`-positive exactly when it is positive. -/
+theorem isNPositive_one_iff {φ : A →ₗ[ℂ] B} : IsNPositive 1 φ ↔ ∀ a, 0 ≤ a → 0 ≤ φ a := by
+  refine ⟨fun hφ _ ha => hφ.map_nonneg one_pos ha, fun h M hM => ?_⟩
+  refine CStarMatrix.nonneg_iff_forall_sum_nonneg.mpr fun x => ?_
+  simpa using star_left_conjugate_nonneg (h _ (CStarMatrix.diag_nonneg_of_nonneg hM 0)) (x 0)
+
+/-- A positive linear map is `1`-positive. -/
+@[simp]
+theorem _root_.OrderHomClass.isNPositive_one {F : Type*} [FunLike F A B] [LinearMapClass F ℂ A B]
+    [OrderHomClass F A B] (φ : F) : IsNPositive 1 (φ : A →ₗ[ℂ] B) :=
+  isNPositive_one_iff.mpr fun _ ha => map_nonneg φ ha
+
+/-- A positive linear map is `1`-positive. -/
+@[simp]
+theorem _root_.PositiveLinearMap.isNPositive_one (φ : A →ₚ[ℂ] B) :
+    IsNPositive 1 φ.toLinearMap :=
+  isNPositive_one_iff.mpr fun _ ha => φ.map_nonneg ha
 
 end NonUnital
 
@@ -192,12 +267,9 @@ private theorem IsNPositive.quadratic_nonneg (hφ : IsNPositive 2 φ) (a : A) (x
     rw [h]
     exact star_mul_self_nonneg _
   have hN := hφ M hM
-  -- The image matrix is self-adjoint, which identifies `φ(a⋆)` with `φ(a)⋆`.
-  have hstar : φ (star a) = star (φ a) := by
-    simpa [M, CStarMatrix.star_apply, CStarMatrix.map_apply, CStarMatrix.ofMatrix_apply]
-      using (CStarMatrix.star_apply_of_isSelfAdjoint hN.isSelfAdjoint (i := 1) (j := 0)).symm
   have := CStarMatrix.nonneg_iff_forall_sum_nonneg.mp hN ![x, y]
-  simpa [M, Fin.sum_univ_two, CStarMatrix.map_apply, CStarMatrix.ofMatrix_apply, hstar,
+  simpa [M, Fin.sum_univ_two, CStarMatrix.map_apply, CStarMatrix.ofMatrix_apply,
+    hφ.map_star two_pos a,
     add_assoc] using this
 
 /-- **Kadison–Schwarz inequality** for a unital `2`-positive map: `φ(a)⋆ φ(a) ≤ φ(a⋆a)`. -/
@@ -275,43 +347,52 @@ theorem IsNPositive.norm_apply_le (hφ : IsNPositive 2 φ) (a : A) : ‖φ a‖ 
       _ = (‖φ 1‖ * ‖a‖) * (‖φ 1‖ * ‖a‖) := by rw [CStarRing.norm_star_mul_self]; ring
   exact (mul_self_le_mul_self_iff (norm_nonneg _) (by positivity)).mpr h
 
+/-- The operator norm of a continuous `2`-positive map with unital domain is `‖ψ 1‖`. -/
+theorem IsNPositive.opNorm_eq_norm_map_one {ψ : A →L[ℂ] B} (hψ : IsNPositive 2 (ψ : A →ₗ[ℂ] B)) :
+    ‖ψ‖ = ‖ψ 1‖ := by
+  refine le_antisymm (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) hψ.norm_apply_le) ?_
+  rcases subsingleton_or_nontrivial A with hA | hA
+  · simp [Subsingleton.elim (1 : A) 0]
+  simpa using ψ.le_opNorm 1
+
 end UnitalDomain
 
 end TauCeti
 
-namespace CompletelyPositiveMap
+namespace CompletelyPositiveMapClass
 
-variable {A B : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+open TauCeti
+
+variable {A B F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
 section NonUnital
 
-variable [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+variable [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B] [FunLike F A B]
+  [LinearMapClass F ℂ A B] [CompletelyPositiveMapClass F A B]
 
 /-- **Kadison–Schwarz inequality** for a completely positive map with unital domain:
 `φ(a)⋆ φ(a) ≤ ‖φ 1‖ • φ(a⋆a)`. -/
-theorem star_map_mul_map_le (φ : A →CP B) (a : A) :
+theorem star_map_mul_map_le (φ : F) (a : A) :
     star (φ a) * φ a ≤ ‖φ 1‖ • φ (star a * a) :=
-  (φ.isNPositive 2).star_map_mul_map_le a
+  (isNPositive φ 2).star_map_mul_map_le a
 
 /-- A completely positive map with unital domain is bounded by `‖φ 1‖`. -/
-theorem norm_apply_le (φ : A →CP B) (a : A) : ‖φ a‖ ≤ ‖φ 1‖ * ‖a‖ :=
-  (φ.isNPositive 2).norm_apply_le a
+theorem norm_apply_le (φ : F) (a : A) : ‖φ a‖ ≤ ‖φ 1‖ * ‖a‖ :=
+  (isNPositive φ 2).norm_apply_le a
 
 /-- The operator norm of a completely positive map with unital domain, made continuous by
 `PositiveContinuousLinearMap.ofClass`, is `‖φ 1‖`. -/
-theorem opNorm_ofClass_eq_norm_map_one (φ : A →CP B) :
-    ‖((PositiveContinuousLinearMap.ofClass φ : A →P[ℂ] B) : A →L[ℂ] B)‖ = ‖φ 1‖ := by
-  refine le_antisymm (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) φ.norm_apply_le) ?_
-  rcases subsingleton_or_nontrivial A with hA | hA
-  · simp [Subsingleton.elim (1 : A) 0]
-  simpa using ((PositiveContinuousLinearMap.ofClass φ : A →P[ℂ] B) : A →L[ℂ] B).le_opNorm 1
+theorem opNorm_ofClass_eq_norm_map_one (φ : F) :
+    ‖((PositiveContinuousLinearMap.ofClass φ : A →P[ℂ] B) : A →L[ℂ] B)‖ = ‖φ 1‖ :=
+  (isNPositive φ 2).opNorm_eq_norm_map_one
 
 end NonUnital
 
 /-- **Kadison–Schwarz inequality** for a unital completely positive map:
 `φ(a)⋆ φ(a) ≤ φ(a⋆a)`. -/
 theorem star_map_mul_map_le_of_map_one [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-    (φ : A →CP B) (hφ : φ 1 = 1) (a : A) : star (φ a) * φ a ≤ φ (star a * a) :=
-  (φ.isNPositive 2).star_map_mul_map_le_of_map_one hφ a
+    [FunLike F A B] [LinearMapClass F ℂ A B] [CompletelyPositiveMapClass F A B] (φ : F)
+    (hφ : φ 1 = 1) (a : A) : star (φ a) * φ a ≤ φ (star a * a) :=
+  (isNPositive φ 2).star_map_mul_map_le_of_map_one hφ a
 
-end CompletelyPositiveMap
+end CompletelyPositiveMapClass

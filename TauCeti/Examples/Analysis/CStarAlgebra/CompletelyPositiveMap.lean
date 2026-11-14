@@ -33,8 +33,8 @@ theorem not_isNPositive_two_transpose :
     CStarMatrix.ofMatrixₗ.toLinearMap ∘ₗ
       (Matrix.transposeLinearEquiv (Fin 2) (Fin 2) ℂ ℂ).toLinearMap ∘ₗ
         (CStarMatrix.ofMatrixₗ (R := ℂ)).symm.toLinearMap
-  -- `CStarMatrix.ofMatrixₗ` is the identity equivalence, so `T` is the entrywise transpose.
-  have hT (M : CStarMatrix (Fin 2) (Fin 2) ℂ) (i j : Fin 2) : T M i j = M j i := rfl
+  have hT (M : CStarMatrix (Fin 2) (Fin 2) ℂ) (i j : Fin 2) : T M i j = M j i := by
+    simp [T, CStarMatrix.ofMatrix_apply]
   intro h
   have h1 : T 1 = 1 := by
     ext i j
