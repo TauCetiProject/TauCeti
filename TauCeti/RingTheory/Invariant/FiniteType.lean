@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Adjoin.Tower
 public import Mathlib.RingTheory.FiniteType
 public import TauCeti.RingTheory.Invariant.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
+import TauCeti.Algebra.MvPolynomial.Coeff
 
 /-!
 # Finite generation of invariant algebras of finite groups
@@ -128,15 +129,9 @@ private theorem sum_smul_prod_pow_mem_adjoin_of_finite [Finite ι] (x : ι → A
   have hcoeff (k : ℕ) (e : ι →₀ ℕ) : (∑ g, y g ^ k).coeff e =
       if e.degree = k then (e.multinomial : A) * ∑ g : G, g • e.prod fun i n ↦ x i ^ n
       else 0 := by
-    simp only [y, coeff_sum, coeff_linearCombination_X_pow_of_fintype]
     have hdeg : (e.sum fun _ m ↦ m) = e.degree := (Finsupp.degree_apply e).symm
-    rw [hdeg]
-    split_ifs
-    · rw [mul_sum]
-      refine sum_congr rfl fun g _ ↦ ?_
-      rw [Finsupp.prod, Finsupp.prod, smul_prod']
-      simp only [smul_pow']
-    · simp
+    simp only [y, coeff_sum_linearCombination_X_pow_of_fintype, hdeg, Finsupp.prod, smul_prod',
+      smul_pow']
   -- The polynomials over `A` with all coefficients in `B`.
   let T : Subalgebra R (MvPolynomial ι A) := (mapAlgHom B.val).range
   have hT (P : MvPolynomial ι A) : P ∈ T ↔ ∀ e, P.coeff e ∈ B := by

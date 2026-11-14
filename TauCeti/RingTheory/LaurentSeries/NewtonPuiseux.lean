@@ -84,6 +84,15 @@ private theorem exists_isRoot_map_expand_mul {P Q : K⸨X⸩[X]} (hQ : Q.Monic) 
 
 variable [IsAlgClosed K] [CharZero K]
 
+omit [IsAlgClosed K] [CharZero K] in
+/-- A root of `P(X + c)` after a ramification gives a root of `P` after the same ramification. -/
+private theorem exists_isRoot_map_expand_of_taylor {P : K⸨X⸩[X]} (c : K⸨X⸩)
+    (h : ∃ (n : ℕ+) (y : K⸨X⸩), ((taylor c P).map (expand K n)).IsRoot y) :
+    ∃ (n : ℕ+) (y : K⸨X⸩), (P.map (expand K n)).IsRoot y := by
+  obtain ⟨n, y, hy⟩ := h
+  refine ⟨n, y + expand K n c, ?_⟩
+  rwa [IsRoot, map_taylor, taylor_eval, RingHom.coe_coe] at hy
+
 /-- The monic case of `exists_isRoot_map_expand`, by strong induction on the degree. -/
 private theorem exists_isRoot_map_expand_of_monic (m : ℕ) :
     ∀ P : K⸨X⸩[X], P.Monic → P.natDegree = m → 0 < m →
@@ -99,10 +108,8 @@ private theorem exists_isRoot_map_expand_of_monic (m : ℕ) :
   have hP₁ : P₁.Monic := by rw [Monic, leadingCoeff_taylor, hP.leadingCoeff]
   have hP₁m : P₁.natDegree = m := by rw [natDegree_taylor, hPm]
   have hnext : P₁.nextCoeff = 0 := nextCoeff_taylor_neg_div_eq_zero (hPm ▸ hm')
-  suffices ∃ (n : ℕ+) (y : K⸨X⸩), (P₁.map (expand K n)).IsRoot y by
-    obtain ⟨n, y, hy⟩ := this
-    refine ⟨n, y + expand K n c, ?_⟩
-    rwa [IsRoot, map_taylor, taylor_eval, RingHom.coe_coe] at hy
+  suffices ∃ (n : ℕ+) (y : K⸨X⸩), (P₁.map (expand K n)).IsRoot y from
+    exists_isRoot_map_expand_of_taylor c this
   by_cases hX : P₁ = X ^ m
   · exact ⟨1, 0, by simp [hX, hm.ne']⟩
   -- Ramify and rescale to a monic polynomial over `K⟦X⟧` whose reduction is not `Y ^ m`, and

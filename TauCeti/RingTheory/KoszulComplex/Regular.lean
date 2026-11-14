@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Regular.RegularSequence
 public import TauCeti.RingTheory.KoszulComplex.Basic
+import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # Koszul complexes of weakly regular sequences
@@ -142,14 +143,7 @@ theorem exactAt_of_isWeaklyRegular {n : ℕ} (x : Fin n → R)
     (koszulComplex (Fintype.linearCombination R x)).ExactAt (k + 1) := by
   rw [exactAt_succ_iff]
   induction n generalizing k with
-  | zero =>
-    intro z
-    obtain rfl : z = 0 := by
-      rcases subsingleton_or_nontrivial R with _ | _
-      · exact (Module.subsingleton R _).elim z 0
-      · exact exteriorPower.eq_zero_of_finrank_lt _
-          (by rw [Module.finrank_zero_of_subsingleton]; omega) z
-    exact ⟨fun _ ↦ ⟨0, map_zero _⟩, fun _ ↦ map_zero _⟩
+  | zero => exact exact_koszulDifferential_of_subsingleton k
   | succ n ih =>
     rw [List.ofFn_succ', List.concat_eq_append, RingTheory.Sequence.isWeaklyRegular_append_iff,
       RingTheory.Sequence.isWeaklyRegular_singleton_iff] at hx
@@ -157,10 +151,7 @@ theorem exactAt_of_isWeaklyRegular {n : ℕ} (x : Fin n → R)
     set x' : Fin n → R := fun i ↦ x i.castSucc
     have hrange : (Ideal.ofList (List.ofFn x') • ⊤ : Submodule R R) =
         LinearMap.range (Fintype.linearCombination R x') := by
-      rw [Fintype.range_linearCombination, smul_eq_mul, Ideal.mul_top, Ideal.ofList]
-      congr 1
-      ext r
-      simp [List.mem_ofFn]
+      rw [Fintype.range_linearCombination, smul_eq_mul, Ideal.mul_top, Ideal.ofList_ofFn]
     rw [hrange] at hx₂
     have hexact : ∀ k, Function.Exact
         (koszulDifferential ((Fintype.linearCombination R x').coprod

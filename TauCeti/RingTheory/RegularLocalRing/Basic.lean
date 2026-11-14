@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Localization.LocalizationLocalization
 public import Mathlib.RingTheory.Localization.Submodule
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.LocalProperties.Reduced
+import TauCeti.RingTheory.Ideal.Quotient.IsPrincipal
 
 /-!
 # Regular local rings are domains, and localizations of regular rings
@@ -148,16 +149,8 @@ ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_notMem_minimalPrime
     -- a minimal prime `P ⊆ (x)` satisfies `P = x P`, hence vanishes by Nakayama's lemma
     obtain ⟨P, hP, hPx⟩ := exists_minimalPrimes_le (bot_le : ⊥ ≤ span {x})
     have hPprime : P.IsPrime := IsMinimalPrime.isPrime hP
-    have hP0 : P = ⊥ := by
-      refine Submodule.eq_bot_of_le_smul_of_le_jacobson (span {x}) P
-        P.fg_of_isNoetherianRing (fun y hy ↦ ?_) ?_
-      · obtain ⟨z, rfl⟩ := mem_span_singleton'.mp (hPx hy)
-        have hz : z ∈ P := (hPprime.mem_or_mem hy).resolve_right (hmin P hP)
-        rw [mul_comm, ← smul_eq_mul]
-        exact Submodule.smul_mem_smul (mem_span_singleton_self x) hz
-      · rw [← Ideal.jacobson_bot, jacobson_eq_maximalIdeal ⊥ bot_ne_top,
-          span_singleton_le_iff_mem]
-        exact hxm
+    have hP0 := hPprime.eq_bot_of_le_span_singleton P.fg_of_isNoetherianRing
+      (by rwa [jacobson_eq_maximalIdeal ⊥ bot_ne_top]) (hmin P hP) hPx
     have : (⊥ : Ideal R).IsPrime := hP0 ▸ hPprime
     exact IsDomain.of_bot_isPrime R
 

@@ -272,6 +272,32 @@ private theorem isSymmetricCocycleCoeff_lazardCoeff (n : ℕ) :
     IsSymmetricCocycleCoeff n (lazardCoeff n) :=
   isSymmetricCocycleCoeff_coeff (isSymmetric_lazardCocycle n) (isAddCocycle₂_lazardCocycle n) n
 
+/-- If `m` determines the `p`-torsion solutions of the coefficient equations in degree `n ≥ 2` over
+`M × ZMod p`, then the coefficient `c m` of `C_n` is nonzero modulo `p`, since the `c i` have no
+common factor. -/
+private theorem natCast_choose_div_lazardGcd_ne_zero {p n m : ℕ} (hp : p.Prime) (hn : 2 ≤ n)
+    (hm0 : 0 < m) (hmn : m < n)
+    (hm : ∀ b : ℕ → M × ZMod p, (∀ i, 0 < i → i < n → p • b i = 0) →
+      IsSymmetricCocycleCoeff n b → b m = 0 → ∀ i, 0 < i → i < n → b i = 0) :
+    ((n.choose m / lazardGcd n : ℕ) : ZMod p) ≠ 0 := by
+  have := Fact.mk hp
+  intro hcm
+  set c : ℕ → ℕ := fun i => n.choose i / lazardGcd n
+  have hcZ : ∀ i, 0 < i → i < n → lazardCoeff n i = c i := fun i hi hin =>
+    coeff_single_add_single_lazardCocycle hi hin
+  have hcm' : ((c m : ℕ) : ZMod p) = 0 := hcm
+  set φ : ℤ →+ M × ZMod p := (AddMonoidHom.inr _ _).comp (Int.castAddHom (ZMod p))
+  have hzero := hm (fun i => φ (lazardCoeff n i)) (fun i _ _ => by ext <;> simp [φ])
+    ((isSymmetricCocycleCoeff_lazardCoeff n).map φ) (by rw [hcZ m hm0 hmn]; ext <;> simp [φ, hcm'])
+  have hdvd : p ∣ (Icc 1 (n - 1)).gcd c := Finset.dvd_gcd fun i hi => by
+    rw [mem_Icc] at hi
+    have := congrArg Prod.snd (hzero i (by omega) (by omega))
+    simp only [φ, hcZ i (by omega) (by omega), AddMonoidHom.comp_apply, Int.coe_castAddHom,
+      Int.cast_natCast, AddMonoidHom.inr_apply, Prod.snd_zero] at this
+    exact (ZMod.natCast_eq_zero_iff _ _).1 this
+  rw [gcd_choose_div_lazardGcd_eq_one hn] at hdvd
+  exact hp.one_lt.ne' (Nat.dvd_one.1 hdvd)
+
 /-- Over a group killed by a prime `p`, every solution of the coefficient equations in degree
 `n ≥ 2` is, at the indices `0 < i < n`, a multiple of the coefficients of `C_n`. -/
 private theorem exists_eq_nsmul_of_torsion {p n : ℕ} (hp : p.Prime) (hn : 2 ≤ n) {b : ℕ → M}
@@ -284,19 +310,7 @@ private theorem exists_eq_nsmul_of_torsion {p n : ℕ} (hp : p.Prime) (hn : 2 �
   have hcZ : ∀ i, 0 < i → i < n → lazardCoeff n i = c i := fun i hi hin =>
     coeff_single_add_single_lazardCocycle hi hin
   -- The coefficient `c m` of `C_n` is a unit modulo `p`, since the `c i` have no common factor.
-  have hcm : ((c m : ℕ) : ZMod p) ≠ 0 := by
-    intro hcm
-    set φ : ℤ →+ M × ZMod p := (AddMonoidHom.inr _ _).comp (Int.castAddHom (ZMod p))
-    have hzero := hm (fun i => φ (lazardCoeff n i)) (fun i _ _ => by ext <;> simp [φ])
-      ((isSymmetricCocycleCoeff_lazardCoeff n).map φ) (by rw [hcZ m hm0 hmn]; ext <;> simp [φ, hcm])
-    have hdvd : p ∣ (Icc 1 (n - 1)).gcd c := Finset.dvd_gcd fun i hi => by
-      rw [mem_Icc] at hi
-      have := congrArg Prod.snd (hzero i (by omega) (by omega))
-      simp only [φ, hcZ i (by omega) (by omega), AddMonoidHom.comp_apply, Int.coe_castAddHom,
-        Int.cast_natCast, AddMonoidHom.inr_apply, Prod.snd_zero] at this
-      exact (ZMod.natCast_eq_zero_iff _ _).1 this
-    rw [gcd_choose_div_lazardGcd_eq_one hn] at hdvd
-    exact hp.one_lt.ne' (Nat.dvd_one.1 hdvd)
+  have hcm : ((c m : ℕ) : ZMod p) ≠ 0 := natCast_choose_div_lazardGcd_ne_zero hp hn hm0 hmn hm
   set u : ℕ := (((c m : ℕ) : ZMod p)⁻¹).val
   have hu : c m * u ≡ 1 [MOD p] := by
     rw [← ZMod.natCast_eq_natCast_iff, Nat.cast_mul, ZMod.natCast_zmod_val, Nat.cast_one,
