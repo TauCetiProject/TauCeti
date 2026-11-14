@@ -346,9 +346,8 @@ theorem mem_framedFieldSpace_of_sectionValue_eq (hx : ContDiff ℝ ∞ x)
     (f : ContDiffBump (0 : ℝ)) (s : ℝ) : x ∈ framedFieldSpace f m s := by
   have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := contDiff_euclidean.1 hx i
   set ℓ : ℂ → ℝ := fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) with hℓ
-  have hle (z : ℂ) := normSq_le_one_of_tendsto ((hxi 0).differentiable (by simp))
-    ((hxi 1).differentiable (by simp)) ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
-    hlim z
+  have hle (z : ℂ) :=
+    normSq_le_one_of_tendsto ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol hlim z
   -- Outside a disc of radius `R`, the section is normalized, `|α|² ≥ 1 / 2`, and the reference
   -- field has its exact tail.
   have hev : ∀ᶠ z in cocompact ℂ,
@@ -390,9 +389,8 @@ theorem mem_framedFieldSpace_of_sectionValue_eq (hx : ContDiff ℝ ∞ x)
     · exact mul_nonpos_of_nonneg_of_nonpos (by linarith [b.le_one (x := z)])
         (Real.log_nonpos (by positivity) (hle z))
   have hu2 : MemLp u 2 volume := by
-    obtain ⟨K, hK⟩ := exists_one_sub_normSq_le_mul_exp ((hxi 0).differentiable (by simp))
-      ((hxi 1).differentiable (by simp)) ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
-      hlim (c := 1 / 4) (by norm_num)
+    obtain ⟨K, hK⟩ := exists_one_sub_normSq_le_mul_exp ((hxi 2).of_le (by simp))
+      ((hxi 3).of_le (by simp)) hsol hlim (c := 1 / 4) (by norm_num)
     obtain ⟨K', hK'⟩ := exists_forall_le_mul_exp_of_eventually_le hu.continuous.abs
       (c := 1 / 4) (K := 2 * K) <| by
         filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop R] with z hz
@@ -425,7 +423,6 @@ theorem mem_framedFieldSpace_of_sectionValue_eq (hx : ContDiff ℝ ∞ x)
     have hz' : R + 2 < ‖z‖ := by simpa using hz
     have hRz : R < ‖z‖ := by linarith
     have hΔ := laplacian_log_normSq_of_equation_eq_zero
-      ((hxi 0).differentiable (by simp) z) ((hxi 1).differentiable (by simp) z)
       ((hxi 2).contDiffAt.of_le (by simp)) ((hxi 3).contDiffAt.of_le (by simp))
       (hpos hRz).ne' (Eventually.of_forall hsol)
     simp only [hh_def]
