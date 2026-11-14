@@ -183,6 +183,17 @@ private theorem prod_sub_zpow_ne_zero {s : Finset ℂ} (n : ℂ → ℤ) {y : �
     ∏ u ∈ s, (y - u) ^ n u ≠ 0 :=
   Finset.prod_ne_zero_iff.2 fun _ hu ↦ zpow_ne_zero _ (sub_ne_zero.2 fun h ↦ hy (h ▸ hu))
 
+/-- The product of the `(z - u) ^ n u` over a finite set of `u` is a nonzero meromorphic
+function. -/
+private theorem prod_coordinate_sub_zpow_ne_zero (s : Finset ℂ) (n : ℂ → ℤ) :
+    ∏ u ∈ s, (coordinate - algebraMap ℂ (MeromorphicFunction (OnePoint ℂ)) u) ^ n u ≠ 0 := by
+  -- It takes a nonzero value at a finite point outside the finite set.
+  obtain ⟨y, hy⟩ := s.finite_toSet.infinite_compl.nonempty
+  intro h
+  have := prod_coordinate_sub_zpow_apply s n hy
+  rw [h, coe_zero] at this
+  exact prod_sub_zpow_ne_zero n hy (coe_injective this).symm
+
 /-- If on `ℂ` the finite part of `f` is `∏ (z - u) ^ d(u)` times an analytic function `g`, away
 from a codiscrete set, then the quotient of `f` by the rational function `∏ (z - u) ^ d(u)` agrees
 with `g` at every point of `ℂ`. -/
@@ -234,12 +245,7 @@ private theorem ofRatFunc_surjective : Surjective ofRatFunc := by
   have hcoord : coordinate ∈ S :=
     AlgHom.mem_fieldRange.2 ⟨RatFunc.X, by simpa using ofRatFunc_algebraMap Polynomial.X⟩
   have hφS : φ ∈ S := prod_mem fun u _ ↦ zpow_mem (sub_mem hcoord (algebraMap_mem S u)) _
-  have hφne : φ ≠ 0 := by
-    obtain ⟨y, hy⟩ := s.finite_toSet.infinite_compl.nonempty
-    intro h
-    have : φ y = _ := prod_coordinate_sub_zpow_apply s d hy
-    rw [h, coe_zero] at this
-    exact prod_sub_zpow_ne_zero d hy (coe_injective this).symm
+  have hφne : φ ≠ 0 := prod_coordinate_sub_zpow_ne_zero s d
   -- The quotient `G = f / φ` agrees on `ℂ` with the analytic function `g` without zeros, so it is
   -- constant, and `f = G * φ` is rational.
   set G := f * φ⁻¹
