@@ -39,8 +39,8 @@ At zero inner radius the inner boundary integral vanishes, giving Green's formul
   `Set.Icc a b` for points `a ≤ b` of `ℝ × ℝ`.
 * `ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus`: the corresponding formula on a
   translated annulus of nonnegative inner radius, with outer minus inner circle boundary terms.
-* `ContinuousLinearMap.integral_bilinear_fderiv_sub_annularSector`: the formula on a closed
-  annular sector, with two arcs and two radial edges as boundary terms.
+* `ContinuousLinearMap.integral_bilinear_fderiv_sub_annularSector`: the formula on an annular
+  sector, with two arcs and two radial edges as boundary terms.
 -/
 
 public section
@@ -127,11 +127,14 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus
   simpa [bilinearPullbackOneForm, ContinuousAlternatingMap.compContinuousLinearMap_apply,
     Function.comp_def, smul_smul] using h
 
-/-- **Green's formula on a closed annular sector.** For a `C²` map near the points `z` with
-`a ≤ ‖z - z₀‖ ≤ b` whose argument about `z₀` lies in `[c, d] ⊆ [-π, π]`, the integral of the
-alternating part of a bilinear pairing of its derivatives is the integral of `B u du` over the
+/-- **Green's formula on an annular sector.** For a map that is `C²` on the image of the closed
+polar rectangle `[a, b] × [c, d]` under `(r, θ) ↦ circleMap z₀ r θ`, with `[c, d] ⊆ [-π, π]`, the
+integral over the points `z` with `a ≤ ‖z - z₀‖ ≤ b` whose argument about `z₀` lies in `[c, d]` of
+the alternating part of a bilinear pairing of its derivatives is the integral of `B u du` over the
 positively oriented boundary: the outer arc minus the inner arc, both counterclockwise, minus the
-radial edge at angle `d` plus the radial edge at angle `c`, both traversed outward. -/
+radial edge at angle `d` plus the radial edge at angle `c`, both traversed outward. The domain of
+integration, defined through `Complex.arg`, can miss a null subset of the closed sector: the ray
+at angle `-π` and the centre `z₀`. -/
 theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_annularSector
     (B : V →L[ℝ] V →L[ℝ] W) {u : ℂ → V} (z₀ : ℂ) {a b c d : ℝ}
     (ha : 0 ≤ a) (hab : a ≤ b) (hc : -π ≤ c) (hcd : c ≤ d) (hd : d ≤ π)

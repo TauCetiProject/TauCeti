@@ -173,7 +173,7 @@ midpoint of the endpoints, by at most `‖B‖ / 2` times the square of the leng
 point of the path lies within half its length of `m`. For a loop the correction term vanishes, and
 for a skew form `B m (f b - f a) = B (f a) (f b)`. -/
 theorem norm_intervalIntegral_apply_apply_sub_apply_midpoint_le {V G : Type*}
-    [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V] [NormedAddCommGroup G]
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup G]
     [NormedSpace ℝ G] [CompleteSpace G] (B : V →L[ℝ] V →L[ℝ] G) {a b : ℝ} (hab : a ≤ b)
     {f f' : ℝ → V} (hf : ∀ x ∈ Icc a b, HasDerivAt f (f' x) x)
     (hf' : IntervalIntegrable f' volume a b) :
@@ -198,12 +198,13 @@ theorem norm_intervalIntegral_apply_apply_sub_apply_midpoint_le {V G : Type*}
   have hBm : IntervalIntegrable (fun x ↦ B m (f' x)) volume a b :=
     ⟨(B m).integrable_comp hf'.1, (B m).integrable_comp hf'.2⟩
   -- Splitting off the constant `m` leaves the integral of `B m f' = B m (f b - f a)`.
+  have hBmf : ∫ x in a..b, B m (f' x) = B m (f b - f a) := by
+    rw [_root_.intervalIntegral.integral_eq_sub_of_hasDerivAt (f := fun x ↦ B m (f x))
+      (fun x hx ↦ (B m).hasFDerivAt.comp_hasDerivAt x (hf x (by rwa [uIcc_of_le hab] at hx))) hBm,
+      map_sub]
   have hsplit : (∫ x in a..b, B (f x) (f' x)) - B m (f b - f a) =
       ∫ x in a..b, B (f x - m) (f' x) := by
-    rw [← _root_.intervalIntegral.integral_eq_sub_of_hasDerivAt
-        (fun x hx ↦ hf x (by rwa [uIcc_of_le hab] at hx)) hf',
-      ← (B m).intervalIntegral_comp_comm hf',
-      ← _root_.intervalIntegral.integral_sub (by simpa [map_sub] using hint.add hBm) hBm]
+    rw [← hBmf, ← _root_.intervalIntegral.integral_sub (by simpa [map_sub] using hint.add hBm) hBm]
     simp [map_sub]
   rw [hsplit]
   refine (_root_.intervalIntegral.norm_integral_le_of_norm_le hab

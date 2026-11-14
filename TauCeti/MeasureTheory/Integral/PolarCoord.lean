@@ -21,11 +21,14 @@ import Mathlib.Tactic.Module
 /-!
 # Polar-coordinate derivatives and integration over closed annuli and annular sectors
 
-The polar-coordinate change of variables for a translated closed annular sector, the points with
+The polar-coordinate change of variables for a translated annular sector, the points with
 `a ≤ ‖z - z₀‖ ≤ b` whose argument about `z₀` lies in `[c, d] ⊆ [-π, π]`, is the integral on
 `[a, b] × [c, d]` with radial Jacobian `r`, when `a ≥ 0`
-(`Complex.integral_comp_polarCoord_symm_Icc_Icc`). The edges of the rectangle have measure zero,
-so the closed polar rectangle gives the same integral as the slit-plane chart. The closed annulus
+(`Complex.integral_comp_polarCoord_symm_Icc_Icc`). Since `Complex.arg` takes values in `(-π, π]`
+with `arg 0 = 0`, this set need not be closed: it can miss the ray at angle `-π` and the centre
+`z₀`, which lie in the closed sector `circleMap z₀ '' (Icc a b ×ˢ Icc c d)`. These missing points,
+like the edges of the rectangle, have measure zero, so the closed polar rectangle gives the same
+integral as the slit-plane chart. The closed annulus
 is the case `[c, d] = [-π, π]`, and its upper half, the points with `0 ≤ im (z - z₀)`, is the case
 `[c, d] = [0, π]`.
 This form of Mathlib's `Complex.integral_comp_polarCoord_symm` is suitable for combining polar
@@ -61,8 +64,8 @@ theorem add_polarCoord_symm_mem_annulus (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a)
   simpa only [mem_Icc, mem_ofPred_eq, add_sub_cancel_left, Complex.norm_polarCoord_symm,
     abs_of_nonneg (ha.trans hp.1)] using hp
 
-/-- A closed annular sector, the points `z` with `a ≤ ‖z - z₀‖ ≤ b` whose argument about `z₀`
-lies in `[c, d]`, is measurable. -/
+/-- An annular sector, the points `z` with `a ≤ ‖z - z₀‖ ≤ b` whose argument about `z₀` lies in
+`[c, d]`, is measurable. -/
 theorem measurableSet_annularSector (z₀ : ℂ) (a b c d : ℝ) :
     MeasurableSet {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ arg (z - z₀) ∈ Icc c d} := by
   have hn : Measurable (fun z : ℂ ↦ ‖z - z₀‖) := by fun_prop
@@ -163,10 +166,12 @@ theorem _root_.MeasureTheory.Integrable.integral_eq_integral_circleMap {f : ℂ 
     ← integral_Ioc_eq_integral_Ioo,
     intervalIntegral.integral_of_le (by linarith [Real.pi_pos] : -π ≤ π)]
 
-/-- Polar integration over a closed annular sector: the points `z` with `a ≤ ‖z - z₀‖ ≤ b` whose
+/-- Polar integration over an annular sector: the points `z` with `a ≤ ‖z - z₀‖ ≤ b` whose
 argument about `z₀` lies in `[c, d] ⊆ [-π, π]` correspond to the closed polar rectangle
 `[a, b] × [c, d]`, with radial Jacobian `p.1`. The inner radius may be zero, and the edges of the
-rectangle, where polar coordinates fail to be a chart, contribute nothing. -/
+rectangle, where polar coordinates fail to be a chart, contribute nothing. The sector agrees with
+its closure `circleMap z₀ '' (Icc a b ×ˢ Icc c d)` up to a null set: it may miss the ray at angle
+`-π` and the centre `z₀`, since `Complex.arg` takes values in `(-π, π]` with `arg 0 = 0`. -/
 theorem integral_comp_polarCoord_symm_Icc_Icc (f : ℂ → W) (z₀ : ℂ) {a b c d : ℝ} (ha : 0 ≤ a)
     (hc : -π ≤ c) (hd : d ≤ π) :
     (∫ p in Icc (a, c) (b, d), p.1 • f (z₀ + Complex.polarCoord.symm p)) =

@@ -20,13 +20,16 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 # Stokes' formula for one-forms on rectangles, annular sectors and annuli
 
 The integral of the exterior derivative of a vector-valued real one-form over a rectangle,
-closed annular sector or closed annulus is its positively oriented boundary integral. An annular
+annular sector or closed annulus is its positively oriented boundary integral. An annular
 sector is the set of points at distance between `a` and `b` from `z₀` whose argument about `z₀`
 lies in `[c, d] ⊆ [-π, π]` (`TauCeti.integral_extDeriv_annularSector`); its boundary consists of
 two arcs and two radial edges, and the upper half-annulus `[c, d] = [0, π]` is the domain of the
 boundary analysis of holomorphic half-discs. Zero inner radius gives the disc formula. Only C¹
 regularity near the region of integration is required; in the annular case no regularity on the
-missing inner disc is needed. On a rectangle the formula is stated both
+missing inner disc is needed. For an annular sector the region is the closed polar image
+`circleMap z₀ '' (Icc a b ×ˢ Icc c d)`, which can be larger than the set defined through
+`Complex.arg` by a null set (the ray at angle `-π` and the centre `z₀`). On a rectangle the
+formula is stated both
 for the set integral over `Icc a b` (`TauCeti.integral_extDeriv_prod_Icc`) and for the iterated
 integral over oriented intervals (`TauCeti.integral2_extDeriv`). For a scalar one-form
 `f_s ds + f_t dt` it is Green's theorem `TauCeti.integral_fderiv_sub_fderiv_Icc`, written in
@@ -287,11 +290,14 @@ theorem extDeriv_pullback_polarCoord_symm_apply
     ContinuousLinearMap.coe_coe, LinearMap.id_apply, hB] using
     B.toLinearMap₁₂.apply_exp_circleMap_sub_swap (LinearMap.id) p.1 p.2
 
-/-- Stokes' formula for a real one-form near a closed annular sector, the points `z` with
+/-- Stokes' formula for a real one-form near an annular sector, the points `z` with
 `a ≤ ‖z - z₀‖ ≤ b` whose argument about `z₀` lies in `[c, d] ⊆ [-π, π]`. The boundary integral
 is the outer arc minus the inner arc, both traversed counterclockwise, minus the radial edge at
 angle `d` plus the radial edge at angle `c`, both traversed outward. The inner radius may be zero.
-The one-form is required to be C¹ on the image of the closed polar rectangle `[a, b] × [c, d]`. -/
+The one-form is required to be C¹ on the image of the closed polar rectangle `[a, b] × [c, d]`
+under `(r, θ) ↦ circleMap z₀ r θ`. This closed sector can differ from the domain of integration
+by a null set, the ray at angle `-π` and the centre `z₀`, since `Complex.arg` takes values in
+`(-π, π]` with `arg 0 = 0`. -/
 theorem integral_extDeriv_annularSector
     {ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F} (z₀ : ℂ) {a b c d : ℝ}
     (ha : 0 ≤ a) (hab : a ≤ b) (hc : -π ≤ c) (hcd : c ≤ d) (hd : d ≤ π)

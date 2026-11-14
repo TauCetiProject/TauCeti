@@ -94,6 +94,7 @@ theorem abs_integral_apply_le (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hab : a <
     _ ≤ 1 * ((b - a) / (2 * π)) * ∫ x in a..b, ‖γ' x‖ ^ 2 := by gcongr
     _ = (b - a) / (2 * π) * ∫ x in a..b, ‖γ' x‖ ^ 2 := by rw [one_mul]
 
+omit [FiniteDimensional ℝ V] in
 /-- **The isoperimetric inequality for arcs.** If the inner product of `V` is the metric
 `ω(·, J ·)`, then for a path `γ` on `[a, b]` with square-integrable derivative, the action
 `∫ ω(γ, γ')` differs from `ω(γ a, γ b)` by at most `(b - a) / 2` times the energy `∫ ‖γ'‖²`.
@@ -105,7 +106,6 @@ theorem abs_integral_apply_sub_apply_le (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) 
     (hγ' : MemLp γ' 2 (volume.restrict (Ioc a b))) :
     |(∫ x in a..b, ω (γ x) (γ' x)) - ω (γ a) (γ b)| ≤
       (b - a) / 2 * ∫ x in a..b, ‖γ' x‖ ^ 2 := by
-  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   let B : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.mkContinuous₂ ω.toBilinForm 1 fun v w => by
     rw [one_mul, Real.norm_eq_abs]
     exact abs_apply_le_norm_mul_norm hg v w
