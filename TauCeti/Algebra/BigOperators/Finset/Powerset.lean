@@ -35,6 +35,8 @@ which commutes pairwise everywhere.
   `TauCeti.sum_powerset_eq_add_sum_singleton_add_sum_filter_add`: the four-part splitting.
 * `Finset.prod_powersetCard_succ_insert`, `Finset.sum_powersetCard_succ_insert`: splitting over
   the `n + 1`-element subsets of `insert a s`.
+* `Finset.prod_powersetCard_succ_prod`, `Finset.sum_powersetCard_succ_sum`: each element of `s`
+  lies in `(#s - 1).choose n` of the `n + 1`-element subsets of `s`.
 * `Finset.sum_noncommProd_powersetCard_eq_indicator`: sums of noncommutative products over
   `n`-element subsets, rewritten with the family extended by zero.
 * `Finset.sum_noncommProd_powersetCard_succ_insert`: the recursion for the sum of the products
@@ -65,6 +67,34 @@ theorem prod_powersetCard_succ_insert [DecidableEq α] {s : Finset α} {a : α} 
   · exact insert_erase_invOn.2.injOn.mono fun t ht ↦
       notMem_mono (mem_powersetCard.1 ht).1 ha
   · aesop (add simp [disjoint_left, insert_subset_iff, mem_powersetCard])
+
+/-- Every element of `s` lies in `(#s - 1).choose n` of the `n + 1`-element subsets of `s`, so the
+product over these subsets of the products over their elements is the product over `s` raised to
+that power. -/
+@[to_additive /-- Every element of `s` lies in `(#s - 1).choose n` of the `n + 1`-element subsets of
+`s`, so the sum over these subsets of the sums over their elements is that multiple of the sum over
+`s`. -/]
+theorem prod_powersetCard_succ_prod (s : Finset α) (n : ℕ) (f : α → β) :
+    ∏ t ∈ s.powersetCard (n + 1), ∏ i ∈ t, f i = (∏ i ∈ s, f i) ^ (#s - 1).choose n := by
+  classical
+  induction s using Finset.induction_on generalizing n with
+  | empty => rw [powersetCard_eq_empty.2 (by simp), prod_empty, prod_empty, one_pow]
+  | insert a s ha ih =>
+    have hins : ∏ t ∈ s.powersetCard n, ∏ i ∈ insert a t, f i =
+        f a ^ (#s).choose n * ∏ t ∈ s.powersetCard n, ∏ i ∈ t, f i := by
+      rw [← card_powersetCard n s, ← prod_const, ← prod_mul_distrib]
+      exact prod_congr rfl fun t ht ↦ prod_insert fun h ↦ ha ((mem_powersetCard.1 ht).1 h)
+    rw [prod_powersetCard_succ_insert ha, ih, hins, card_insert_of_notMem ha, Nat.add_sub_cancel,
+      prod_insert ha, mul_pow]
+    rcases n with _ | m
+    · simp [mul_comm]
+    · rw [ih m]
+      rcases Nat.eq_zero_or_pos #s with hs | hs
+      · simp [card_eq_zero.1 hs]
+      · obtain ⟨r, hr⟩ := Nat.exists_eq_succ_of_ne_zero hs.ne'
+        rw [hr, Nat.succ_sub_one, Nat.choose_succ_succ]
+        simp only [pow_add]
+        ac_rfl
 
 /-- For `u ⊆ s` and a family commuting pairwise on `s`, the sum of the products over the
 `n`-element subsets of `u` is the corresponding sum for the family extended by zero outside `s`. -/

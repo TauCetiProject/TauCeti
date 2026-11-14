@@ -30,7 +30,8 @@ increasing triples.
 For `k + p = N`, the indices `k, …, N - 1` of `Fin N` form the `p`-subset `TauCeti.topBlock h`,
 built through `Set.powersetCard.ofFinEmbEquiv` from the order embedding `a ↦ k + a`. Its increasing
 enumeration is `a ↦ k + a`, an index lies in it exactly when it is at least `k`, and every other
-`p`-subset meets the first `k` indices.
+`p`-subset meets the first `k` indices. Transported along `σ : Fin N ≃ ι`, its image is the only
+`p`-subset of `ι` all of whose elements have `σ`-index at least `k`.
 
 The shuffle of two disjoint fixed-cardinality subsets lists the increasing enumeration of the first
 followed by that of the second. The shuffle of a singleton `{i}` with `s.erase i` lists `i` first
@@ -233,5 +234,18 @@ theorem exists_lt_of_ne_topBlock {k : ℕ} (h : k + p = N) {J : Set.powersetCard
     (hJ : J ≠ topBlock h) : ∃ j ∈ J, (j : ℕ) < k := by
   by_contra! hc
   exact hJ (eq_iff_subset.2 fun j hj ↦ (mem_topBlock h).2 (hc j hj))
+
+/-- For `σ : Fin N ≃ ι`, a `p`-subset `T` of `ι` has `k ≤ σ⁻¹ t` for every `t ∈ T` exactly when it
+is the image of the top block under `σ`. -/
+theorem forall_le_symm_iff_eq_map_topBlock {ι : Type*} (σ : Fin N ≃ ι) {k : ℕ} (h : k + p = N)
+    {T : Set.powersetCard ι p} :
+    (∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ)) ↔ T = map p σ.toEmbedding (topBlock h) := by
+  refine ⟨fun hT ↦ eq_iff_subset.2 fun t ht ↦ ?_, ?_⟩
+  · rw [mem_coe_iff, mem_map_iff_mem_range]
+    exact ⟨σ.symm t, (mem_topBlock h).2 (hT t ht), by simp⟩
+  · rintro rfl t ht
+    rw [mem_coe_iff, mem_map_iff_mem_range] at ht
+    obtain ⟨j, hj, rfl⟩ := ht
+    simpa using (mem_topBlock h).1 hj
 
 end TauCeti
