@@ -172,6 +172,15 @@ private theorem finiteDimensional_of_injective_mfderiv
     (mfderiv (J.prod 𝓘(ℝ, P)) I Φ (zeroSection P V s)).toLinearMap ∘ₗ LinearMap.inr ℝ E' P
   Module.Finite.of_injective L (hΦ'.comp LinearMap.inr_injective)
 
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 2 M] [∀ s, AddCommMonoid (V s)]
+  [∀ s, Module ℝ (V s)] [VectorBundle ℝ P V] in
+/-- A diffeomorphism of the total space onto an open subset of `M` is a local diffeomorphism into
+`M` at every point. -/
+private theorem isLocalDiffeomorphAt_coe_diffeomorph
+    (Ψ : TotalSpace P V ≃ₘ^m⟮J.prod 𝓘(ℝ, P), I⟯ W) (x : TotalSpace P V) :
+    IsLocalDiffeomorphAt (J.prod 𝓘(ℝ, P)) I m (fun x ↦ (Ψ x : M)) x :=
+  (Ψ.isLocalDiffeomorph x).comp (K := I) (P := M) (isLocalDiffeomorph_subtype_val _)
+
 namespace IsCriticalSubmanifold
 
 variable (h : i.IsCriticalSubmanifold f)
@@ -256,7 +265,7 @@ theorem morseIndex_comp_diffeomorph_mk_trivializationAt_symm (hm : 2 ≤ m)
       manifoldMorseIndex I f (i s) :=
   h.morseIndex_comp_mk_trivializationAt_symm_of_isLocalDiffeomorphAt hn hm
     (Filter.Eventually.of_forall hΨi)
-    ((Ψ.isLocalDiffeomorph _).comp (K := I) (P := M) (isLocalDiffeomorph_subtype_val _))
+    (isLocalDiffeomorphAt_coe_diffeomorph Ψ _)
 
 end IsCriticalSubmanifold
 
@@ -315,7 +324,7 @@ theorem isNondegenerateCriticalPoint_comp_diffeomorph_mk_trivializationAt_symm (
       (fun w : P ↦ f (Ψ ⟨s, (trivializationAt P V s).symm s w⟩)) 0 :=
   h.isNondegenerateCriticalPoint_comp_mk_trivializationAt_symm_of_isLocalDiffeomorphAt hn hm
     (Filter.Eventually.of_forall hΨi)
-    ((Ψ.isLocalDiffeomorph _).comp (K := I) (P := M) (isLocalDiffeomorph_subtype_val _))
+    (isLocalDiffeomorphAt_coe_diffeomorph Ψ _)
 
 end IsNondegenerateCriticalSubmanifold
 
@@ -350,8 +359,7 @@ theorem IsCriticalSubmanifold.morseIndex_comp_diffeomorph_mk (h : i.IsCriticalSu
     (hm : 2 ≤ m) (Ψ : TotalSpace P V ≃ₘ^m⟮J.prod 𝓘(ℝ, P), I⟯ W)
     (hΨi : ∀ s, (Ψ (zeroSection P V s) : M) = i s) (s : S) :
     morseIndex (fun v : V s ↦ f (Ψ ⟨s, v⟩)) 0 = manifoldMorseIndex I f (i s) := by
-  have hΨ : IsLocalDiffeomorphAt (J.prod 𝓘(ℝ, P)) I m (fun x ↦ (Ψ x : M)) (zeroSection P V s) :=
-    (Ψ.isLocalDiffeomorph _).comp (K := I) (P := M) (isLocalDiffeomorph_subtype_val _)
+  have hΨ := isLocalDiffeomorphAt_coe_diffeomorph Ψ (zeroSection P V s)
   have hΨi' : ∀ᶠ s' in 𝓝 s, (Ψ (zeroSection P V s') : M) = i s' := Filter.Eventually.of_forall hΨi
   have hΨ2 := hΨ.contMDiffAt.of_le hm
   -- The fibre slice read in the trivialization at `s` is `C²` and critical at `0`.

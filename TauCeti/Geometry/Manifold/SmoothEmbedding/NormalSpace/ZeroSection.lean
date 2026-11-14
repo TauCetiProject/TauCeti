@@ -75,6 +75,8 @@ theorem bijective_normalClass_mfderiv_comp_mk_trivializationAt_symm
     have h₂ : mfderiv J I (Φ ∘ zeroSection P V) s ξ =
         mfderiv (J.prod 𝓘(𝕜, P)) I Φ (zeroSection P V s) (ξ, 0) := by
       rw [mfderiv_comp s hΦ hζd.mdifferentiableAt, hζd.mfderiv]
+      -- `(L ∘L inl) ξ` unfolds to `L (ξ, 0)`: the tangent space of the total space at
+      -- `zeroSection P V s` is by definition the product `TangentSpace J s × P`.
       rfl
     exact h₁.trans h₂
   -- The normal derivative is a linear map between spaces of the same finite dimension.
