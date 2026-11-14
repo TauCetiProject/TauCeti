@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.Tactic.LinearCombination
 public import Mathlib.Tactic.Module
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Intertwining
@@ -36,7 +37,8 @@ The isometry and unitarity of the Cayley transform of a symmetric or self-adjoin
 * `LinearPMap.cayley_neg_I_smul_sub_apply`: `U (-i y - A y) = i y - A y` on `dom A`.
 * `LinearPMap.mem_graph_iff_exists_cayley`: the graph of `A` is
   `{(x - U x, i (x + U x)) | x}`.
-* `LinearPMap.cayley_apply_eq_self_iff`: `1` is not an eigenvalue of `U`.
+* `LinearPMap.cayley_apply_eq_self_iff`, `LinearPMap.not_hasEigenvalue_cayley_one`: `1` is not
+  an eigenvalue of `U`.
 * `LinearPMap.cayley_surjective`: `U` is surjective when `±i` are resolvent points.
 * `LinearPMap.intertwines_iff_comp_cayley_eq`: `X A ⊆ B X` exactly when `X U_A = U_B X`.
 
@@ -102,6 +104,13 @@ theorem cayley_apply_eq_self_iff (h : -I ∈ A.resolventSet) {x : E} :
   rw [hx, sub_self] at hmem
   have h0 : I • (x + x) = 0 := A.graph_fst_eq_zero_snd hmem rfl
   rwa [← two_smul ℂ x, smul_smul, smul_eq_zero_iff_right (by simp)] at h0
+
+/-- `1` is not an eigenvalue of the Cayley transform at an operator having `-i` as a resolvent
+point, stated with `Module.End.HasEigenvalue`. -/
+theorem not_hasEigenvalue_cayley_one (h : -I ∈ A.resolventSet) :
+    ¬ Module.End.HasEigenvalue (A.cayley : E →ₗ[ℂ] E) 1 := fun hμ => by
+  obtain ⟨x, hx⟩ := hμ.exists_hasEigenvector
+  exact hx.2 ((cayley_apply_eq_self_iff h).mp (by simpa using hx.apply_eq_smul))
 
 /-- The Cayley transform is surjective when both `i` and `-i` are resolvent points. -/
 theorem cayley_surjective (hp : I ∈ A.resolventSet) (hm : -I ∈ A.resolventSet) :

@@ -13,7 +13,7 @@ public import TauCeti.Analysis.Normed.Operator.LinearPMap.Cayley
 
 Let `A` be a partial linear map on a complex Hilbert space with `-i` as a resolvent point, for
 instance a self-adjoint one, and let `U` be its Cayley transform `LinearPMap.cayley A`. Since
-`1` is not an eigenvalue of `U` (`LinearPMap.cayley_apply_eq_self_iff`), the spectral projection
+`1` is not an eigenvalue of `U` (`LinearPMap.not_hasEigenvalue_cayley_one`), the spectral projection
 of the point `1` for the spectral measure of a normal `U` vanishes, and every diagonal measure of
 that spectral measure assigns mass zero to `{1}`.
 
@@ -49,8 +49,7 @@ the spectral projection of the Cayley transform at the point `1` is zero. -/
 theorem spectralPVM_cayley_proj_preimage_one (h : -I ∈ A.resolventSet) :
     A.cayley.spectralPVM.proj (Subtype.val ⁻¹' {1})
       (measurable_subtype_coe (measurableSet_singleton 1)) = 0 :=
-  A.cayley.spectralPVM_proj_preimage_singleton_eq_zero fun x hx =>
-    (cayley_apply_eq_self_iff h).mp (by rwa [one_smul] at hx)
+  A.cayley.spectralPVM_proj_preimage_singleton_eq_zero (not_hasEigenvalue_cayley_one h)
 
 /-- **Zero mass at the Cayley singular point.** If `-i` is a resolvent point of `A` and its
 Cayley transform is normal, as for self-adjoint `A` (`IsSelfAdjoint.isStarNormal_cayley`), every
@@ -58,7 +57,6 @@ diagonal measure of the spectral measure of the Cayley transform assigns mass ze
 @[simp]
 theorem diagMeasure_cayley_preimage_one (h : -I ∈ A.resolventSet) (ξ : H) :
     A.cayley.diagMeasure ξ (Subtype.val ⁻¹' {1}) = 0 :=
-  A.cayley.diagMeasure_preimage_singleton_eq_zero
-    (fun x hx => (cayley_apply_eq_self_iff h).mp (by rwa [one_smul] at hx)) ξ
+  A.cayley.diagMeasure_preimage_singleton_eq_zero (not_hasEigenvalue_cayley_one h) ξ
 
 end LinearPMap
