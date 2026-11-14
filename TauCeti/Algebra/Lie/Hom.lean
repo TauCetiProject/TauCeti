@@ -10,9 +10,9 @@ public import Mathlib.Algebra.Lie.Basic
 /-!
 # Intertwining Lie algebra homomorphisms
 
-Basic constructors, simp, and intertwining lemmas for `LieHom` and `LieEquiv`: coercion of
-`LieEquiv.mk`, construction of `LieEquiv` from mutually inverse `LieHom`s (`LieEquiv.ofLieHoms`),
-composition of intertwining homomorphisms, and intertwining of inverse equivalences.
+Basic constructors, simp, and intertwining lemmas for `LieHom` and `LieEquiv`: construction of
+`LieEquiv` from mutually inverse `LieHom`s (`LieEquiv.ofLieHoms`), composition of intertwining
+homomorphisms, and intertwining of inverse equivalences.
 -/
 
 public section
@@ -35,12 +35,6 @@ theorem comp_intertwines (u : L →ₗ⁅R⁆ M) (v : M →ₗ⁅R⁆ N)
 end LieHom
 
 namespace LieEquiv
-
-/-- Coercion of `LieEquiv.mk` to a function is the underlying `LieHom`. -/
-@[simp]
-theorem coe_mk (f : L →ₗ⁅R⁆ M) (invFun h₁ h₂) :
-    ((⟨f, invFun, h₁, h₂⟩ : L ≃ₗ⁅R⁆ M) : L → M) = f :=
-  (rfl)
 
 /-- Construct a `LieEquiv` from two mutually inverse `LieHom`s. -/
 def ofLieHoms (f : L →ₗ⁅R⁆ M) (g : M →ₗ⁅R⁆ L)
