@@ -49,14 +49,14 @@ the pullback of the chart over `U`.
 
 ## References
 
-* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NS)
+* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NM)
 * A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique II*, §3.1.
 * R. Hartshorne, *Algebraic Geometry*, Section II.7, before Proposition II.7.10.
 -/
 
 public section
 
-open CategoryTheory Limits Opposite DirectSum
+open CategoryTheory Limits DirectSum
 
 namespace CategoryTheory.CommMon
 
@@ -217,7 +217,7 @@ instance isLocallyDirected_relativeProjGluingData :
 /-- The **relative `Proj`** `Proj_X(A)` of a graded algebra `A` on `X` with quasi-coherent
 homogeneous components, glued from the schemes `Proj (⨁ n, Γ(Aₙ, U))` over the affine opens `U`
 of `X`. -/
-@[expose, stacks 01NS]
+@[expose, stacks 01NQ]
 def relativeProj : Scheme.{u} :=
   A.relativeProjGluingData.glued
 
