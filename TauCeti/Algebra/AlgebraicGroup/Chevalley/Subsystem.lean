@@ -139,7 +139,8 @@ theorem subsystemSubgroup_empty (A : CommAlgCat.{v} ℤ) :
 
 /-- A root-set lattice subgroup is nilpotent if an additive degree is positive on its roots. -/
 theorem isNilpotent_subsystemSubgroup_of_degree_pos
-    (degree : (Fin t.rank → ℤ) →+ ℚ) {S : Set (Fin t.numRoots)}
+    {G : Type*} [AddCommGroup G] [LinearOrder G] [IsOrderedAddMonoid G]
+    (degree : (Fin t.rank → ℤ) →+ G) {S : Set (Fin t.numRoots)}
     (hS : ∀ γ ∈ S, 0 < degree ((t.simplyConnectedRootDatum ht).root γ))
     (A : Type v) [CommRing A] :
     Group.IsNilpotent (D.subsystemSubgroup S (CommAlgCat.of ℤ A)) := by
@@ -313,7 +314,7 @@ theorem coe_subsystemSubgroupMulEquivPoints_symm_apply (A : Type v) [CommRing A]
 
 /-- The lattice-to-points equivalence sends each root generator to its point realization. -/
 @[simp]
-theorem subsystemSubgroupMulEquivPoints_rootSubgroup (A : Type v) [CommRing A]
+theorem subsystemSubgroupMulEquivPoints_chevalleyRootSubgroup (A : Type v) [CommRing A]
     {γ : Fin t.numRoots} (hγ : γ ∈ S) (u : Multiplicative A) :
     D.subsystemSubgroupMulEquivPoints S A
         ⟨chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
@@ -326,7 +327,7 @@ theorem subsystemSubgroupMulEquivPoints_rootSubgroup (A : Type v) [CommRing A]
 
 /-- The inverse equivalence sends a root point to its lattice root generator. -/
 @[simp]
-theorem subsystemSubgroupMulEquivPoints_symm_rootSubgroup (A : Type v) [CommRing A]
+theorem subsystemSubgroupMulEquivPoints_symm_rootSubgroupPoints (A : Type v) [CommRing A]
     {γ : Fin t.numRoots} (hγ : γ ∈ S) (u : Multiplicative A) :
     (D.subsystemSubgroupMulEquivPoints S A).symm
         ⟨D.rootSubgroupPoints γ A u, D.rootSubgroupPoints_mem_subsystemPoints A hγ u⟩ =
@@ -334,11 +335,12 @@ theorem subsystemSubgroupMulEquivPoints_symm_rootSubgroup (A : Type v) [CommRing
         D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) u,
           D.chevalleyRootSubgroup_mem_subsystemSubgroup (CommAlgCat.of ℤ A) hγ u⟩ :=
   (D.subsystemSubgroupMulEquivPoints S A).symm_apply_eq.mpr
-    (D.subsystemSubgroupMulEquivPoints_rootSubgroup S A hγ u).symm
+    (D.subsystemSubgroupMulEquivPoints_chevalleyRootSubgroup S A hγ u).symm
 
 /-- A root-set point subgroup is nilpotent if an additive degree is positive on its roots. -/
 theorem isNilpotent_subsystemPoints_of_degree_pos
-    (degree : (Fin t.rank → ℤ) →+ ℚ) {S : Set (Fin t.numRoots)}
+    {G : Type*} [AddCommGroup G] [LinearOrder G] [IsOrderedAddMonoid G]
+    (degree : (Fin t.rank → ℤ) →+ G) {S : Set (Fin t.numRoots)}
     (hS : ∀ γ ∈ S, 0 < degree ((t.simplyConnectedRootDatum ht).root γ))
     (A : Type v) [CommRing A] : Group.IsNilpotent (D.subsystemPoints S A) := by
   let := D.isNilpotent_subsystemSubgroup_of_degree_pos degree hS A
@@ -361,7 +363,7 @@ theorem coe_mapSubsystemPoints_apply {A : Type v} {B : Type w} [CommRing A] [Com
 
 /-- Restricted ring maps apply the ring homomorphism to each root parameter. -/
 @[simp]
-theorem mapSubsystemPoints_rootSubgroup {A : Type v} {B : Type w}
+theorem mapSubsystemPoints_rootSubgroupPoints {A : Type v} {B : Type w}
     [CommRing A] [CommRing B] (f : A →+* B) {γ : Fin t.numRoots}
     (hγ : γ ∈ S) (u : Multiplicative A) :
     D.mapSubsystemPoints S f
