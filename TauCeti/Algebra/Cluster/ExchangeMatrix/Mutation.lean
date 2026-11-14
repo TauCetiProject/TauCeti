@@ -243,6 +243,17 @@ protected theorem _root_.Matrix.IsSkewSymmetrizer.matrixMutation (h : B.IsSkewSy
 
 end square
 
+/-- Matrix mutation preserves skew-symmetry of the principal block of a rectangular matrix. -/
+theorem matrixMutation_skew [DecidableEq I] [DecidableEq K] {row : K ↪ I} {B : Matrix I K ℤ}
+    (hB : ∀ i j, B (row i) j = -B (row j) i) (k : K) :
+    ∀ i j, matrixMutation row B k (row i) j = -matrixMutation row B k (row j) i := by
+  have hs : (B.submatrix row id).IsSkewSymmetrizer (fun _ ↦ 1) :=
+    ⟨fun _ ↦ by decide, fun i j ↦ by simpa using hB i j⟩
+  have hm := hs.matrixMutation k
+  rw [matrixMutation_refl_submatrix_row] at hm
+  intro i j
+  simpa using hm.mul_apply i j
+
 /-- The matrix with rows `(0, 1)` and `(-2, 0)` is negated by mutation in its first direction. -/
 example :
     matrixMutation (Function.Embedding.refl (Fin 2)) !![0, 1; -2, 0] 0 = -!![0, 1; -2, 0] := by
