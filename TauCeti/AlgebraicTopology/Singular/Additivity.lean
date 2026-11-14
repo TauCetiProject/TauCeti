@@ -9,11 +9,13 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.CategoryTheory.Limits.Types.Coproducts
 public import Mathlib.Topology.Category.TopCat.Limits.Products
 public import Mathlib.Topology.ContinuousMap.Sigma
+public import Mathlib.Topology.Sets.Opens
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.Singular.Relative
 public import TauCeti.Topology.Category.TopPair
+public import TauCeti.Topology.Connected.Basic
 
 /-!
 # Additivity of singular chains and singular homology
@@ -38,6 +40,11 @@ additive, and cokernels commute with coproducts.
 Every map in sight is induced by one of the inclusions `X i ⟶ Σ i, X i`, so the results are
 statements about cofans rather than unrelated degreewise decompositions.
 
+The same holds for a union `⨆ i, s i` of pairwise disjoint open subsets `s i` of a space, with
+the inclusions `s i → ⨆ i, s i` as the cofan legs: a singular simplex of the union has connected
+image, so it lies in exactly one of the open sets `s i`. This is the form in which additivity
+enters inductions over the open subsets of a space.
+
 ## Main results
 
 * `TauCeti.isColimitCofanSingularChainComplex`: the singular chain complex of `Σ i, X i` is the
@@ -45,6 +52,9 @@ statements about cofans rather than unrelated degreewise decompositions.
 * `TauCeti.isColimitCofanSingularHomology`: if coproducts indexed by `ι` are exact in the
   coefficient category, the singular homology of `Σ i, X i` in each degree is the coproduct of the
   singular homologies of the `X i`.
+* `TauCeti.isColimitCofanSingularChainComplexOpens`,
+  `TauCeti.isColimitCofanSingularHomologyOpens`: the same for a union of pairwise disjoint open
+  subsets of a space.
 * `TopPair.isColimitCofanSingularChainComplex` and `TopPair.isColimitCofanSingularHomology`: the
   same for the relative singular chains and relative singular homology of `∐ᵢ (Xᵢ, Aᵢ)`.
 * `TopPair.isColimitCofanSingularHomologyOfIsColimit`: relative singular homology carries every
@@ -192,6 +202,99 @@ def isColimitCofanSingularHomology :
   isColimitCofanMkObjOfIsColimit _ X _ (sigmaCofanIsColimit X)
 
 end Homology
+
+section Opens
+
+open Function Set TopologicalSpace
+
+variable {M : Type w} [TopologicalSpace M] (s : ι → Opens M)
+
+/-- In each degree, the singular simplices of a union of pairwise disjoint open sets `s i` are
+exactly the singular simplices of the members: the topological simplex is connected, so a
+singular simplex of `⨆ i, s i` lies in a unique `s i`, and it comes from a unique singular simplex
+there. -/
+lemma toSSet_map_inclusion_app_bijective (hs : Pairwise (Disjoint on s)) : Function.Bijective
+    (fun p : Σ i, (toSSet.obj (of (s i))).obj n ↦
+      (toSSet.map (ofHom ⟨Opens.inclusion (le_iSup s p.1), continuous_inclusion _⟩)).app n
+        p.2) := by
+  have hs' : Pairwise (Disjoint on fun i ↦ (s i : Set M)) := fun i j hij ↦
+    Opens.coe_disjoint.2 (hs hij)
+  obtain ⟨x₀⟩ : Nonempty (StdSimplex ℝ (Fin (n.unop.len + 1))) := inferInstance
+  refine ⟨?_, fun τ ↦ ?_⟩
+  · rintro ⟨i, σ⟩ ⟨j, σ'⟩ h
+    have h' (x) : ((toSSetObjEquiv (of (s i)) n σ x : s i) : M) =
+        ((toSSetObjEquiv (of (s j)) n σ' x : s j) : M) := by
+      have h₁ := congrArg (toSSetObjEquiv (of ↥(⨆ i, s i)) n) h
+      dsimp only at h₁
+      rw [TopCat.toSSetObjEquiv_toSSet_map_app, TopCat.toSSetObjEquiv_toSSet_map_app] at h₁
+      simpa using congrArg (fun f ↦ (f x : M)) h₁
+    obtain rfl : i = j := by
+      by_contra hij
+      exact (hs' hij).ne_of_mem (toSSetObjEquiv _ n σ x₀).2 (toSSetObjEquiv _ n σ' x₀).2 (h' x₀)
+    refine Sigma.ext rfl (heq_of_eq ((toSSetObjEquiv (of (s i)) n).injective ?_))
+    ext x
+    exact h' x
+  · let f := toSSetObjEquiv (of ↥(⨆ i, s i)) n τ
+    obtain ⟨i, hi⟩ := Opens.mem_iSup.1 (f x₀).2
+    have hrange : range (fun x ↦ (f x : M)) ⊆ s i :=
+      (isPreconnected_range (continuous_subtype_val.comp f.continuous)).subset_of_subset_iUnion
+        (fun j ↦ (s j).isOpen) hs'
+        (by rintro _ ⟨x, rfl⟩; exact mem_iUnion.2 (Opens.mem_iSup.1 (f x).2))
+        ⟨_, ⟨x₀, rfl⟩, hi⟩
+    refine ⟨⟨i, (toSSetObjEquiv (of (s i)) n).symm
+      ⟨fun x ↦ ⟨f x, hrange ⟨x, rfl⟩⟩, by fun_prop⟩⟩, ?_⟩
+    apply (toSSetObjEquiv (of ↥(⨆ i, s i)) n).injective
+    rw [TopCat.toSSetObjEquiv_toSSet_map_app, Equiv.apply_symm_apply]
+    ext x
+    simp [f]
+
+/-- The singular simplicial set of a union of pairwise disjoint open sets `s i` is the coproduct
+of the singular simplicial sets of the `s i`, with the inclusions as the cofan legs. -/
+def isColimitCofanToSSetOpens (hs : Pairwise (Disjoint on s)) :
+    IsColimit (Cofan.mk (toSSet.obj (of ↥(⨆ i, s i)))
+      (fun i ↦ toSSet.map (ofHom ⟨Opens.inclusion (le_iSup s i), continuous_inclusion _⟩)) :
+      Cofan fun i ↦ toSSet.obj (of (s i))) :=
+  evaluationJointlyReflectsColimits _ fun n ↦ (isColimitMapCoconeCofanMkEquiv _ _ _).symm
+    ((Cofan.nonempty_isColimit_iff_bijective_fromSigma _).2
+      (toSSet_map_inclusion_app_bijective n s hs)).some
+
+section Chains
+
+variable (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] (R : C)
+
+/-- **Additivity of singular chains over disjoint open sets.** The singular chain complex of a
+union of pairwise disjoint open sets `s i`, with coefficients in `R`, is the coproduct of the
+singular chain complexes of the `s i`, with the inclusions as the cofan legs. -/
+def isColimitCofanSingularChainComplexOpens (hs : Pairwise (Disjoint on s)) :
+    IsColimit (Cofan.mk ((toSSet.obj (of ↥(⨆ i, s i))).chainComplex R)
+      (fun i ↦ SSet.chainComplexMap
+        (toSSet.map (ofHom ⟨Opens.inclusion (le_iSup s i), continuous_inclusion _⟩)) R) :
+      Cofan fun i ↦ (toSSet.obj (of (s i))).chainComplex R) :=
+  isColimitCofanMkObjOfIsColimit ((SSet.chainComplexFunctor C).obj R) _ _
+    (isColimitCofanToSSetOpens s hs)
+
+end Chains
+
+section Homology
+
+variable (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+  [HasExactColimitsOfShape (Discrete ι) C] (R : C) (k : ℕ)
+
+/-- **Additivity of singular homology over disjoint open sets.** If coproducts indexed by `ι` are
+exact in `C`, then in every degree the singular homology of a union of pairwise disjoint open sets
+`s i`, with coefficients in `R`, is the coproduct of the singular homologies of the `s i`, with the
+maps induced by the inclusions as the cofan legs. -/
+def isColimitCofanSingularHomologyOpens (hs : Pairwise (Disjoint on s)) :
+    IsColimit (Cofan.mk ((toSSet.obj (of ↥(⨆ i, s i))).homology R k)
+      (fun i ↦ SSet.homologyMap
+        (toSSet.map (ofHom ⟨Opens.inclusion (le_iSup s i), continuous_inclusion _⟩)) R k) :
+      Cofan fun i ↦ (toSSet.obj (of (s i))).homology R k) :=
+  isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor C _ k) _ _
+    (isColimitCofanSingularChainComplexOpens s C R hs)
+
+end Homology
+
+end Opens
 
 end TauCeti
 
