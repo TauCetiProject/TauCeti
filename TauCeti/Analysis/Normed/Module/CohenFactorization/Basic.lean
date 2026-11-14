@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.RCLike.Basic
-public import Mathlib.Analysis.SpecificLimits.Normed
-public import TauCeti.Analysis.Normed.Module.Essential
+import TauCeti.Analysis.Normed.Module.Essential
 public import TauCeti.Analysis.Normed.Module.Unitization.Basic
-public import TauCeti.Analysis.Normed.Ring.Units
+import TauCeti.Analysis.Normed.Ring.Units
 
 /-!
 # Cohen–Hewitt factorization for Banach left modules
@@ -229,9 +227,10 @@ private lemma exists_step_pow (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z,
     exact ⟨e, he, fun h₁ h₂ ↦ absurd ⟨h₁, h₂⟩ h⟩
 
 /-- The recursive part of the Cohen–Hewitt construction. Iterating `exists_step` with
-`s = (1 - τ) ^ n`, starting from `f 0 = 0`, produces `A`-parts `f n` whose increments are
-`τ (1 - τ) ^ n eₙ` with `‖eₙ‖ ≤ C`, such that `aₙ = (1 - τ) ^ n + f n` is a unit of the `ℓ¹`
-unitization and `y n = aₙ⁻¹ · x` moves by at most `ε / 2 / 2 / 2 ^ n` at each step. -/
+`s = (1 - τ) ^ n`, starting from `f 0 = 0` and `y 0 = x`, produces `A`-parts `f n` whose increments
+are at most `‖τ (1 - τ) ^ n‖ * C` and elements `y n` that move by at most `ε / 2 / 2 / 2 ^ n` at
+each step, lie in `closure (A · x)`, and satisfy the factorization
+`(1 - τ) ^ n • y n + f n · y n = x`. -/
 private lemma exists_seq (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z, L (a * b) z = L a (L b z))
     {l : Filter A} [l.NeBot] {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C)
     (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) {x : E} (hlx : Tendsto (fun e ↦ L e x) l (𝓝 x))
@@ -269,9 +268,11 @@ private lemma exists_seq (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z, L (a
     exact (hE' n (f n) (hinv n).1 (hinv n).2).2.2
 
 omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
-/-- The limit step of the Cohen–Hewitt construction. If `f n → a` in `A` and `y n → y₀` in `E`
-geometrically, starting from `f 0 = 0` and `y 0 = x`, and `(1 - τ) ^ n • y n + f n · y n = x` for
-all `n` with `‖1 - τ‖ < 1`, then `‖a‖ ≤ C`, `‖y₀ - x‖ ≤ ε / 2` and `a · y₀ = x`. -/
+/-- The limit step of the Cohen–Hewitt construction. Let `f 0 = 0` and `y 0 = x`, let the increments
+of `f` be at most `t * C * (1 - t) ^ n` for some `0 < t` and those of `y` at most
+`ε / 2 / 2 / 2 ^ n`, and let `(1 - τ) ^ n • y n + f n · y n = x` for all `n` with `‖1 - τ‖ < 1`.
+Then `f` and `y` converge, to some `a` with `‖a‖ ≤ C` and some `z` with `‖z - x‖ ≤ ε / 2`
+respectively, and `a · z = x`. -/
 private lemma exists_apply_eq_of_tendsto [CompleteSpace E] (L : A →L[𝕜] E →L[𝕜] E) {x : E}
     {τ : 𝕜} (hτ : ‖1 - τ‖ < 1) {t C ε : ℝ} (ht₀ : 0 < t) {f : ℕ → A} {y : ℕ → E}
     (hf₀ : f 0 = 0) (hy₀ : y 0 = x) (hf : ∀ n, dist (f n) (f (n + 1)) ≤ t * C * (1 - t) ^ n)
