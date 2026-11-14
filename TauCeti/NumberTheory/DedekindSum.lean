@@ -16,6 +16,8 @@ import TauCeti.Algebra.BigOperators.Field
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.NumberTheory.FloorSum
 import TauCeti.Data.Nat.Cast.Basic
+import Mathlib.Data.Nat.ModEq
+import Mathlib.Data.Rat.BigOperators
 import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
@@ -59,6 +61,7 @@ sum for `(h, c)` to the sums of `⌊c s / h⌋` and `⌊c s / h⌋²`, and the r
 * `TauCeti.dedekindSum_eq_zero_of_dvd`: `s(d, c) = 0` when `c ∣ d`.
 * `TauCeti.dedekindSum_add_dedekindSum`: the reciprocity law of Dedekind sums.
 * `TauCeti.dedekindSum_one_left`: `s(1, c) = (c - 1)(c - 2) / (12 c)` for `c ≥ 0`.
+* `TauCeti.dedekindSum_eq_of_mul_modEq_one`: `s(a, c) = s(d, c)` when `a d ≡ 1 (mod c)`.
 
 ## References
 
@@ -210,6 +213,16 @@ theorem IsCoprime.dedekindSum_eq {d c : ℤ} (hdc : IsCoprime d c) :
     exact (Int.le_of_dvd hr0 hdvd).not_gt hrc
   rw [ite_eq_right hfract]
 
+/-- For coprime arguments, casting `TauCeti.dedekindSum d c` into an ordered field with a floor
+ring pushes the cast inside the finite sum and `Int.fract`. -/
+theorem IsCoprime.cast_dedekindSum {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    [FloorRing α] {d c : ℤ} (hdc : IsCoprime d c) :
+    (TauCeti.dedekindSum d c : α) =
+      ∑ r ∈ Ioo 0 c, ((r : α) / c) * (Int.fract (((d * r : ℤ) : α) / c) - 1 / 2) := by
+  rw [hdc.dedekindSum_eq]
+  push_cast
+  rfl
+
 namespace TauCeti
 
 /-- The Dedekind sum is odd in its first argument: `s(-d, c) = -s(d, c)`. -/
@@ -350,4 +363,55 @@ theorem dedekindSum_one_left {c : ℤ} (hc : 0 ≤ c) :
   rw [h]
   field_simp
   ring
+
+/-- Symmetric sawtooth form of `s(h, c)` for coprime natural arguments (`c > 0`), including the
+`r = 0` term `(-1/2) * (-1/2) = 1/4`. -/
+private theorem dedekindSum_natCast_add_one_div_four {h c : ℕ} (hc : 0 < c) (hhc : h.Coprime c) :
+    dedekindSum h c + 1 / 4 =
+      ∑ r ∈ range c, ((r : ℚ) / c - 1 / 2) * (((h * r % c : ℕ) : ℚ) / c - 1 / 2) := by
+  have hc' : (c : ℚ) ≠ 0 := by positivity
+  have hsum : ∑ r ∈ range c, (((h * r % c : ℕ) : ℚ) / c - 1 / 2) = -1 / 2 := by
+    rw [hhc.sum_range_mul_mod (fun r ↦ ((r : ℚ) / c - 1 / 2)), sum_sub_distrib, ← sum_div,
+      sum_range_natCast, sum_const, card_range, nsmul_eq_mul]
+    field_simp
+    ring
+  have hterm (r : ℕ) : ((r : ℚ) / c - 1 / 2) * (((h * r % c : ℕ) : ℚ) / c - 1 / 2) =
+      ((r : ℚ) / c) * (((h * r % c : ℕ) : ℚ) / c - 1 / 2) -
+        1 / 2 * (((h * r % c : ℕ) : ℚ) / c - 1 / 2) := by ring
+  rw [dedekindSum_natCast hhc, sum_congr rfl fun r _ ↦ hterm r, sum_sub_distrib, ← mul_sum, hsum]
+  ring
+
+/-- Modular-inverse symmetry of Dedekind sums (Rademacher–Grosswald, Chapter 2, equation (26)):
+if `a d ≡ 1 (mod c)`, then `s(a, c) = s(d, c)`. -/
+theorem dedekindSum_eq_of_mul_modEq_one {a d c : ℤ} (h : a * d ≡ 1 [ZMOD c]) :
+    dedekindSum a c = dedekindSum d c := by
+  by_cases hc2 : c ≤ 2
+  · rw [dedekindSum_eq_zero_of_le_two a hc2, dedekindSum_eq_zero_of_le_two d hc2]
+  lift c to ℕ using (by omega : 0 ≤ c)
+  have hc : 2 < c := by omega
+  have hc0 : (0 : ℤ) < c := by positivity
+  set a' : ℕ := (a % c).toNat
+  set d' : ℕ := (d % c).toNat
+  have ha'z : (a' : ℤ) = a % c := Int.toNat_of_nonneg (Int.emod_nonneg a hc0.ne')
+  have hd'z : (d' : ℤ) = d % c := Int.toNat_of_nonneg (Int.emod_nonneg d hc0.ne')
+  have had' : a' * d' ≡ 1 [MOD c] := by
+    rw [← Int.natCast_modEq_iff]
+    push_cast
+    rw [ha'z, hd'z]
+    exact ((Int.mod_modEq a c).mul (Int.mod_modEq d c)).trans h
+  have ha'c : a'.Coprime c := Nat.coprime_of_mul_modEq_one d' had'
+  have hd'c : d'.Coprime c := Nat.coprime_of_mul_modEq_one a' (mul_comm a' d' ▸ had')
+  rw [← dedekindSum_emod a c, ← dedekindSum_emod d c, ← ha'z, ← hd'z]
+  suffices dedekindSum a' c + 1 / 4 = dedekindSum d' c + 1 / 4 by linarith
+  rw [dedekindSum_natCast_add_one_div_four (by omega) ha'c,
+    dedekindSum_natCast_add_one_div_four (by omega) hd'c,
+    ← hd'c.sum_range_mul_mod (fun r ↦ ((r : ℚ) / c - 1 / 2) * (((a' * r % c : ℕ) : ℚ) / c - 1 / 2))]
+  refine sum_congr rfl fun r hr ↦ ?_
+  have hinv : a' * (d' * r % c) % c = r := by
+    calc a' * (d' * r % c) % c
+      _ = a' * d' * r % c := by rw [Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, mul_assoc]
+      _ = 1 * r % c := had'.mul_right r
+      _ = r := by rw [one_mul]; exact Nat.mod_eq_of_lt (mem_range.1 hr)
+  rw [hinv, mul_comm]
+
 end TauCeti
