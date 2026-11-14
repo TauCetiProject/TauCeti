@@ -35,12 +35,17 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_restrictL_add_const_nonpos`,
   `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`: the restriction of a weak subsolution
   or supersolution with no mass term, shifted by a constant, is again one.
+* `TauCeti.PDE.setIntegral_mul_value_extendByZeroL`,
+  `TauCeti.PDE.setIntegral_inner_gradient_extendByZeroL`: the pairings `∫ f v` and `∫ F · ∇v`
+  of a zero extension over `Ω` are those of `v` over `U`.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`: weak solutions restrict to weak solutions.
 * `TauCeti.PDE.exists_forcing_restrictL_of_eqOn`: for `b, c ∈ L∞(Ω)`, the restriction of a weak
   solution to a set where the principal coefficient is replaced by an essentially bounded one
   solves the equation without lower-order terms, with some `L²` forcing.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_neg_setIntegral_inner`: weak solutions of `L u = div F`
   restrict to weak solutions of the same equation.
+* `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_inner`: weak solutions of
+  `L u = f + ∂ᵢFⁱ` restrict to weak solutions of the same equation.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_of_forall_testFunction`: if a continuous functional
   `ℓ` on `H¹(B)` agrees with `a(u, ·)` on test functions on `B ⊆ Ω`, then `a(u|_B, v) = ℓ(v)`
   for every `v ∈ H¹₀(B)`.
@@ -65,6 +70,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -210,6 +216,25 @@ theorem energyFormH1_restrictL_add_const_nonneg {a : EuclideanSpace ℝ ι → M
   rw [energyFormH1_add_const_left]
   exact energyFormH1_restrictL_nonneg hU hu v hv
 
+/-- Pairing a function `f` over `Ω` with the zero extension of `v ∈ W^{1,p}_0(U)` is pairing it with
+`v` over `U`. -/
+theorem setIntegral_mul_value_extendByZeroL {p : ℝ≥0∞} [Fact (1 ≤ p)] (hU : U ≤ Omega)
+    (f : EuclideanSpace ℝ ι → ℝ) (v : W1p0 mu U p) :
+    ∫ x in Omega, f x * W1p.value (W1p0.extendByZeroL hU v : W1p mu Omega p) x ∂mu =
+      ∫ x in U, f x * W1p.value (v : W1p mu U p) x ∂mu := by
+  rw [W1p0.value_extendByZeroL]
+  exact setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => f x * y) (fun _ => mul_zero _) _
+
+open scoped InnerProductSpace in
+/-- Pairing a vector field `F` over `Ω` with the gradient of the zero extension of
+`v ∈ W^{1,p}_0(U)` is pairing it with the gradient of `v` over `U`. -/
+theorem setIntegral_inner_gradient_extendByZeroL {p : ℝ≥0∞} [Fact (1 ≤ p)] (hU : U ≤ Omega)
+    (F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (v : W1p0 mu U p) :
+    ∫ x in Omega, ⟪F x, W1p.gradient (W1p0.extendByZeroL hU v : W1p mu Omega p) x⟫_ℝ ∂mu =
+      ∫ x in U, ⟪F x, W1p.gradient (v : W1p mu U p) x⟫_ℝ ∂mu := by
+  rw [W1p0.gradient_extendByZeroL]
+  exact setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => ⟪F x, y⟫_ℝ) (fun _ => inner_zero_right _) _
+
 /-- **Weak solutions restrict to weak solutions.** If `u ∈ H¹(Ω)` satisfies
 `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction `u|_U`
 satisfies `a(u|_U, v) = ∫_U f v` for every `v ∈ H¹₀(U)`. -/
@@ -221,20 +246,7 @@ theorem energyFormH1_restrictL_eq_setIntegral {a : EuclideanSpace ℝ ι → Mat
     (v : W1p0 mu U 2) :
     energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) =
       ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
-  have hUm := U.isOpen.measurableSet
-  have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
-  rw [energyFormH1_restrictL, hu, W1p0.value_extendByZeroL]
-  calc ∫ x in Omega, f x * extendByZeroLpₗᵢ ℝ mu hUm hUO (W1p.value (v : W1p mu U 2)) x ∂mu
-      = ∫ x in Omega, (U : Set (EuclideanSpace ℝ ι)).indicator
-          (fun x => f x * W1p.value (v : W1p mu U 2) x) x ∂mu := by
-        refine integral_congr_ae ?_
-        filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.value (v : W1p mu U 2))] with x hx
-        rw [hx]
-        by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
-        · rw [indicator_of_mem hxU, indicator_of_mem hxU]
-        · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, mul_zero]
-    _ = ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
-        rw [integral_indicator hUm, Measure.restrict_restrict hUm, inter_eq_left.2 hUO]
+  rw [energyFormH1_restrictL, hu, setIntegral_mul_value_extendByZeroL]
 
 /-- If `a'` agrees with `a` on an open `U ≤ Ω`, is essentially bounded on `U`, `b, c ∈ L∞(Ω)`, and
 `u ∈ H¹(Ω)` solves the equation with coefficients `a, b, c` and right-hand side `f`, then the
@@ -280,21 +292,25 @@ theorem energyFormH1_restrictL_eq_neg_setIntegral_inner {a : EuclideanSpace ℝ 
     (v : W1p0 mu U 2) :
     energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) =
       -∫ x in U, ⟪F x, W1p.gradient (v : W1p mu U 2) x⟫_ℝ ∂mu := by
-  have hUm := U.isOpen.measurableSet
-  have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
-  rw [energyFormH1_restrictL, hu, W1p0.gradient_extendByZeroL, neg_inj]
-  calc ∫ x in Omega, ⟪F x, extendByZeroLpₗᵢ ℝ mu hUm hUO (W1p.gradient (v : W1p mu U 2)) x⟫_ℝ ∂mu
-      = ∫ x in Omega, (U : Set (EuclideanSpace ℝ ι)).indicator
-          (fun x => ⟪F x, W1p.gradient (v : W1p mu U 2) x⟫_ℝ) x ∂mu := by
-        refine integral_congr_ae ?_
-        filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.gradient (v : W1p mu U 2))]
-          with x hx
-        rw [hx]
-        by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
-        · rw [indicator_of_mem hxU, indicator_of_mem hxU]
-        · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, inner_zero_right]
-    _ = ∫ x in U, ⟪F x, W1p.gradient (v : W1p mu U 2) x⟫_ℝ ∂mu := by
-        rw [integral_indicator hUm, Measure.restrict_restrict hUm, inter_eq_left.2 hUO]
+  rw [energyFormH1_restrictL, hu, setIntegral_inner_gradient_extendByZeroL]
+
+open scoped InnerProductSpace in
+/-- **Weak solutions with a datum `f + ∂ᵢFⁱ` restrict to weak solutions.** If `u ∈ H¹(Ω)`
+satisfies `a(u, v) = ∫_Ω f v - ∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω`
+its restriction `u|_U` satisfies `a(u|_U, v) = ∫_U f v - ∫_U ⟪F, ∇v⟫` for every `v ∈ H¹₀(U)`. -/
+theorem energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_inner
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega) {u : W1p mu Omega 2}
+    {f : EuclideanSpace ℝ ι → ℝ} {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu -
+        ∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu)
+    (v : W1p0 mu U 2) :
+    energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) =
+      ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu -
+        ∫ x in U, ⟪F x, W1p.gradient (v : W1p mu U 2) x⟫_ℝ ∂mu := by
+  rw [energyFormH1_restrictL, hu, setIntegral_mul_value_extendByZeroL,
+    setIntegral_inner_gradient_extendByZeroL]
 
 section Transfer
 
