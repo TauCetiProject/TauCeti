@@ -34,7 +34,7 @@ variable (A : Type*) [Ring A] {I : Type*} (g : I → ℤ)
 
 /-- The internal grading of the free module on `I` assigning its `i`-th basis vector
 degree `g i`. The degree-`p` piece consists of functions supported in the fibre of `p`. -/
-noncomputable def finsupp : InternalGrading A (I →₀ A) where
+noncomputable def finsupp : InternalGrading A (I →₀ A) ℤ where
   piece p := Finsupp.supported A A {i | g i = p}
   isInternal := by
     classical

@@ -242,7 +242,7 @@ private theorem exists_smul_eq_mul_of_subalgebra (hJ : J ≤ Ideal.jacobson ⊥)
     by_contra hne
     obtain ⟨M, hM, hle⟩ := Ideal.exists_le_maximal _ ((Ideal.ne_top_iff_one _).mpr hne)
     have hJM : J.map (algebraMap S C') ≤ M :=
-      (Ideal.map_le_jacobson_bot_of_isIntegral hJ).trans (sInf_le ⟨bot_le, hM⟩)
+      (Ideal.map_le_jacobson_of_isIntegral bot_le hJ).trans (sInf_le ⟨bot_le, hM⟩)
     have hsM : Ideal.span {x : C' | (x : C) ∈ s} ≤ M := Ideal.span_le.mpr fun x hx ↦
       hM.isPrime.mem_of_pow_mem m (hle (Ideal.mem_sup_left (Ideal.subset_span ⟨x, hx, rfl⟩)))
     have heM : e ∈ M := by simpa using M.add_mem (hJM heγ) (hsM hγ)
