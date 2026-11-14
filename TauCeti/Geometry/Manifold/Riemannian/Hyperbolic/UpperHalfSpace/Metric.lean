@@ -10,12 +10,21 @@ public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.Completeness
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic
 
 /-!
-# The complete hyperbolic metric on upper half-space
+# The Riemannian distance and complete hyperbolic metric on upper half-space
 
-Package the standard metric `(‖dx‖² + dt²) / t²` with its proved completeness and
-constant-curvature tensor as a `HyperbolicMetric`. This gives an explicit metric witness
-for hyperbolic space in every positive dimension, usable by the hyperbolic volume API.
-The underlying Riemannian metric is exactly the previously installed upper-half-space metric.
+Equip `UpperHalfSpace E` with its Riemannian metric space structure
+`TauCeti.MetricSpace.ofRiemannianMetric`, whose topology is definitionally the manifold topology
+and whose distance is the infimum of lengths of `C¹` curves in the hyperbolic metric
+`(‖dx‖² + dt²) / t²`. In finite dimension this metric space is complete, and packaging the metric
+with completeness and its constant-curvature tensor yields a `TauCeti.HyperbolicMetric` witness for
+hyperbolic space in every positive dimension.
+
+## Main definitions and instances
+
+* `TauCeti.UpperHalfSpace.instMetricSpace`: the Riemannian `MetricSpace` on `UpperHalfSpace E`.
+* `TauCeti.UpperHalfSpace.instIsRiemannianManifold`: `IsRiemannianManifold` for `UpperHalfSpace E`.
+* `TauCeti.UpperHalfSpace.instCompleteSpace`: metric completeness when `E` is finite-dimensional.
+* `TauCeti.UpperHalfSpace.hyperbolicMetric`: bundled `HyperbolicMetric` on `UpperHalfSpace E`.
 
 ## References
 
@@ -32,10 +41,38 @@ open scoped Manifold ContDiff
 
 namespace TauCeti.UpperHalfSpace
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 local notation "P" => WithLp 2 (E × ℝ)
 local notation "J" => 𝓘(ℝ, P)
+
+/-- The Riemannian metric space structure on `UpperHalfSpace E` induced by the hyperbolic metric
+`(‖dx‖² + dt²) / t²`. Its underlying topology is definitionally the manifold topology. -/
+instance instMetricSpace : MetricSpace (UpperHalfSpace E) :=
+  MetricSpace.ofRiemannianMetric J (UpperHalfSpace E)
+
+/-- Equipped with its Riemannian distance, `UpperHalfSpace E` satisfies `IsRiemannianManifold`:
+its extended distance is the infimum of hyperbolic lengths of `C¹` curves. -/
+instance instIsRiemannianManifold : IsRiemannianManifold J (UpperHalfSpace E) :=
+  ⟨fun _ _ ↦ rfl⟩
+
+/-- The extended distance on `UpperHalfSpace E` is its Riemannian extended distance. -/
+theorem edist_eq_riemannianEDist (x y : UpperHalfSpace E) :
+    edist x y = Manifold.riemannianEDist J x y :=
+  (rfl)
+
+/-- The distance on `UpperHalfSpace E` is the real value of its Riemannian extended distance. -/
+theorem dist_eq_toReal_riemannianEDist (x y : UpperHalfSpace E) :
+    dist x y = (Manifold.riemannianEDist J x y).toReal :=
+  IsRiemannianManifold.dist_eq_toReal_riemannianEDist J x y
+
+section FiniteDimensional
+
+variable [FiniteDimensional ℝ E]
+
+/-- In finite dimension, `UpperHalfSpace E` with its Riemannian distance is complete. -/
+instance instCompleteSpace : CompleteSpace (UpperHalfSpace E) :=
+  completeSpace_of_riemannianMetric
 
 /-- The standard complete metric of constant curvature `-1` on upper half-space. -/
 def hyperbolicMetric : HyperbolicMetric (I := J) (M := UpperHalfSpace E) where
@@ -53,5 +90,7 @@ def hyperbolicMetric : HyperbolicMetric (I := J) (M := UpperHalfSpace E) where
 /-- Upper half-space with its standard manifold structure admits a complete hyperbolic metric. -/
 theorem isHyperbolic : IsHyperbolic (I := J) (M := UpperHalfSpace E) :=
   TauCeti.isHyperbolic_iff.mpr ⟨hyperbolicMetric⟩
+
+end FiniteDimensional
 
 end TauCeti.UpperHalfSpace
