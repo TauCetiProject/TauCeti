@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
+public import Mathlib.Analysis.RCLike.Basic
 import TauCeti.Analysis.Normed.Module.Essential
-public import TauCeti.Analysis.Normed.Module.Unitization.Basic
+import TauCeti.Analysis.Normed.Module.Unitization.Basic
 import TauCeti.Analysis.Normed.Ring.Units
 
 /-!
@@ -226,11 +228,12 @@ private lemma exists_step_pow (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z,
   · obtain ⟨e, he⟩ := hC.exists
     exact ⟨e, he, fun h₁ h₂ ↦ absurd ⟨h₁, h₂⟩ h⟩
 
-/-- The recursive part of the Cohen–Hewitt construction. Iterating `exists_step` with
-`s = (1 - τ) ^ n`, starting from `f 0 = 0` and `y 0 = x`, produces `A`-parts `f n` whose increments
-are at most `‖τ (1 - τ) ^ n‖ * C` and elements `y n` that move by at most `ε / 2 / 2 / 2 ^ n` at
-each step, lie in `closure (A · x)`, and satisfy the factorization
-`(1 - τ) ^ n • y n + f n · y n = x`. -/
+/-- The recursive part of the Cohen–Hewitt construction. Let `l` be a `C`-bounded left approximate
+identity of `A` with `L e x → x` along `l`, let `‖τ‖ * (1 + C) ≤ 1 / 2` and
+`‖τ * (1 - τ) ^ n‖ ≤ 1` for all `n`, and let `0 < ε`. Then there are a sequence `f` in `A` and a
+sequence `y` in `E` with `f 0 = 0` and `y 0 = x`, such that `f` has increments at most
+`‖τ (1 - τ) ^ n‖ * C`, `y` moves by at most `ε / 2 / 2 / 2 ^ n` at each step, every `y n` lies in
+`closure (A · x)`, and `(1 - τ) ^ n • y n + f n · y n = x`. -/
 private lemma exists_seq (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z, L (a * b) z = L a (L b z))
     {l : Filter A} [l.NeBot] {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C)
     (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) {x : E} (hlx : Tendsto (fun e ↦ L e x) l (𝓝 x))
@@ -271,8 +274,8 @@ omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
 /-- The limit step of the Cohen–Hewitt construction. Let `f 0 = 0` and `y 0 = x`, let the increments
 of `f` be at most `t * C * (1 - t) ^ n` for some `0 < t` and those of `y` at most
 `ε / 2 / 2 / 2 ^ n`, and let `(1 - τ) ^ n • y n + f n · y n = x` for all `n` with `‖1 - τ‖ < 1`.
-Then `f` and `y` converge, to some `a` with `‖a‖ ≤ C` and some `z` with `‖z - x‖ ≤ ε / 2`
-respectively, and `a · z = x`. -/
+Then there are `a` with `‖a‖ ≤ C` and `z` with `‖z - x‖ ≤ ε / 2` such that `y` tends to `z`
+and `a · z = x`. -/
 private lemma exists_apply_eq_of_tendsto [CompleteSpace E] (L : A →L[𝕜] E →L[𝕜] E) {x : E}
     {τ : 𝕜} (hτ : ‖1 - τ‖ < 1) {t C ε : ℝ} (ht₀ : 0 < t) {f : ℕ → A} {y : ℕ → E}
     (hf₀ : f 0 = 0) (hy₀ : y 0 = x) (hf : ∀ n, dist (f n) (f (n + 1)) ≤ t * C * (1 - t) ^ n)
