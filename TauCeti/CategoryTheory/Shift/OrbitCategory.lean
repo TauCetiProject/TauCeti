@@ -336,11 +336,12 @@ theorem shiftIso_hom_eq_comp (X : D) {m₁ m₂ m i j k : ℤ} (h₁ : n * i = m
   congr 1
   simp [ShiftedHom.comp]
 
-/-- The shift isomorphism of degree `0` is the projection of the shift isomorphism `X⟦n * 0⟧ ≅ X`
-of `D`. -/
-theorem shiftIso_mul_zero_hom (X : D) :
-    (shiftIso (n := n) X (n * 0) 0 rfl).hom =
-      projection.map ((shiftFunctorZero' D (n * 0) (mul_zero n)).hom.app X) := by
+/-- The shift isomorphism of degree `0` is the projection of the shift isomorphism `X⟦m⟧ ≅ X`
+of `D`, for any `m` with `n * 0 = m`. -/
+theorem shiftIso_zero_hom (X : D) {m : ℤ} (h : n * 0 = m) :
+    (shiftIso (n := n) X m 0 h).hom =
+      projection.map ((shiftFunctorZero' D m (by rw [← h, mul_zero])).hom.app X) := by
+  subst h
   simp [ShiftedHom.mk₀]
 
 /-- Induction principle for morphisms of the orbit category: a property of morphisms that holds
@@ -488,7 +489,7 @@ private theorem conjShiftNatIso_eq
     conjShiftNatIso F e = φ.periodicityZPow := by
   apply Iso.periodicityZPow_unique
   · ext X
-    rw [conjShiftNatIso_hom_app, shiftIso_mul_zero_hom, ← Functor.comp_map,
+    rw [conjShiftNatIso_hom_app, shiftIso_zero_hom, ← Functor.comp_map,
       ← e.inv.naturality_assoc]
     simp
   · rintro i _ rfl
@@ -638,7 +639,7 @@ private theorem mapPeriodicity_periodicityZPow_hom_app (i : ℤ) (X : D) :
       simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, Functor.associator_inv_app,
         Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, Functor.associator_hom_app,
         Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, shiftNatIso_hom_app,
-        shiftIso_mul_zero_hom,
+        shiftIso_zero_hom,
         Functor.leftUnitor_hom_app, Category.id_comp, Functor.comp_map,
         F.commShiftIso_zero' ℤ (n * 0) (mul_zero n), Functor.CommShift.isoZero'_hom_app]
       rw [homOf_comp_homOf_eq (add_zero 0), ShiftedHom.mk₀_comp_mk₀, Category.assoc,
