@@ -435,6 +435,15 @@ theorem coe_torusPoints (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
       UniversalEnvelopingAlgebra.kostantTorusMatrix D.lattice D.basis D.coordinateWeight s :=
   (rfl)
 
+/-- Actual torus points are block upper triangular for every block indexing, since they
+are diagonal in the datum's original weight basis. -/
+theorem blockTriangular_torusPoints (A : Type v) [CommRing A] {α : Type*} [Preorder α]
+    (b : Fin D.dim → α) (s : Fin t.rank → Aˣ) :
+    ((D.torusPoints A s : Matrix.GeneralLinearGroup (Fin D.dim) A) :
+      Matrix (Fin D.dim) (Fin D.dim) A).BlockTriangular b := by
+  rw [D.coe_torusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
+  exact Matrix.blockTriangular_diagonal _
+
 /-- Maps of value rings carry actual torus parameters coordinatewise to their images. -/
 @[simp]
 theorem map_torusPoints {A : Type v} {B : Type v'} [CommRing A] [CommRing B] (f : A →+* B)
