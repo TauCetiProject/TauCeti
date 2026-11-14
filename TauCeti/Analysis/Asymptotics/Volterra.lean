@@ -30,10 +30,11 @@ converge. Then the Volterra integral equation
 has a solution `h`, continuous on `(a, ∞)`, with `‖h x‖ ≤ P x * Φ x * exp (Ψ x)` for every
 `x > a`.
 
-This is Olver's theorem on Volterra integral equations (Chapter 6, Theorem 10.1), on the
-half-line `(a, ∞)`. The existence and error-bound theorems for the Liouville–Green
-approximation and for the solutions of linear differential equations at an irregular singularity
-of rank one (DLMF §§2.7, 2.8) reduce to equations of this form.
+This is the existence part of Olver's theorem on Volterra integral equations (Chapter 6,
+Theorem 10.1), on the half-line `(a, ∞)`; the uniqueness, differentiability and finite-endpoint
+parts of that theorem are not treated here. The existence and error-bound theorems for the
+Liouville–Green approximation and for the solutions of linear differential equations at an
+irregular singularity of rank one (DLMF §§2.7, 2.8) reduce to equations of this form.
 
 The kernel `K` and the coefficient `ψ` take values in any normed field `𝕜`, and the forcing `J`
 and the unknown `h` in any real Banach space which is also a normed `𝕜`-space; for `𝕜 = E = ℂ`
@@ -129,6 +130,14 @@ private lemma norm_integral_kernel_smul_le
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with v hv
   exact norm_kernel_smul_le hKle hx (le_of_lt hv) _
 
+/-- Near each `x₀ > a` there is a `c` with `a < c < x₀` such that `P` is bounded on
+`[c, x₀ + 1]`. -/
+private lemma exists_bound_Icc (hP : ContinuousOn P (Ioi a)) {x₀ : ℝ} (hx₀ : a < x₀) :
+    ∃ c M, a < c ∧ c < x₀ ∧ ∀ x ∈ Icc c (x₀ + 1), ‖P x‖ ≤ M := by
+  obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn
+    (hP.mono fun x (hx : x ∈ Icc ((a + x₀) / 2) (x₀ + 1)) ↦ (by linarith : a < _).trans_le hx.1)
+  exact ⟨(a + x₀) / 2, M, by linarith, by linarith, hM⟩
+
 /-- If `F` is continuous on `(a, ∞)` and `Q * ‖F‖` is integrable on every `(x, ∞)` with `x > a`,
 then `x ↦ ∫ v in Ioi x, K x v • F v` is continuous on `(a, ∞)`. -/
 private lemma continuousOn_integral_kernel_smul
@@ -139,11 +148,7 @@ private lemma continuousOn_integral_kernel_smul
     ContinuousOn (fun x ↦ ∫ v in Ioi x, K x v • F v) (Ioi a) := by
   intro x₀ (hx₀ : a < x₀)
   refine ContinuousAt.continuousWithinAt ?_
-  set c := (a + x₀) / 2
-  have hac : a < c := by simp only [c]; linarith
-  have hcx : c < x₀ := by simp only [c]; linarith
-  obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn
-    (hP.mono fun x (hx : x ∈ Icc c (x₀ + 1)) ↦ hac.trans_le hx.1)
+  obtain ⟨c, M, hac, hcx, hM⟩ := exists_bound_Icc hP hx₀
   have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x₀ ⟨hcx.le, by linarith⟩)
   -- extend the integrands by zero to the fixed ray `(c, ∞)`
   have heq : (fun x ↦ ∫ v in Ioi c, (Ioi x).indicator (fun v ↦ K x v • F v) v) =ᶠ[𝓝 x₀]
@@ -323,11 +328,7 @@ private lemma continuousOn_tsum_picardTerm :
     ContinuousOn (fun x ↦ ∑' k, picardTerm K J ψ k x) (Ioi a) := by
   intro x₀ (hx₀ : a < x₀)
   refine ContinuousAt.continuousWithinAt ?_
-  set c := (a + x₀) / 2
-  have hac : a < c := by simp only [c]; linarith
-  have hcx : c < x₀ := by simp only [c]; linarith
-  obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn
-    (hP.mono fun x (hx : x ∈ Icc c (x₀ + 1)) ↦ hac.trans_le hx.1)
+  obtain ⟨c, M, hac, hcx, hM⟩ := exists_bound_Icc hP hx₀
   refine (continuousOn_tsum
     (fun k ↦ (picardTerm_spec hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ k).1.mono
       fun x (hx : x ∈ Icc c (x₀ + 1)) ↦ hac.trans_le hx.1)
@@ -391,7 +392,7 @@ private lemma tsum_picardTerm_eq {x : ℝ} (hx : a < x) :
   simp only [hinner] at hser
   calc h x = T 0 x + ∑' k, T (k + 1) x := (summable_picardTerm hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ
         hx).tsum_eq_zero_add
-    _ = _ := by rw [← hser.tsum_eq]; rfl
+    _ = _ := by rw [← hser.tsum_eq]; simp only [T, picardTerm]
 
 end Iteration
 
@@ -401,7 +402,8 @@ end Iteration
 `Φ x = ∫ v in Ioi x, Q v * ‖J v‖` and `Ψ x = ∫ v in Ioi x, P v * Q v * ‖ψ v‖` converge for
 every `x > a`. Then the Volterra integral equation
 `h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)` has a solution, continuous on `(a, ∞)`, such
-that `‖h x‖ ≤ P x * Φ x * exp (Ψ x)` for every `x > a` (Olver, Chapter 6, Theorem 10.1). -/
+that `‖h x‖ ≤ P x * Φ x * exp (Ψ x)` for every `x > a` (the existence part of Olver, Chapter 6,
+Theorem 10.1). -/
 theorem exists_volterra_solution [CompleteSpace E]
     (hK : ContinuousOn (uncurry K) {p | a < p.1 ∧ p.1 ≤ p.2})
     (hJ : ContinuousOn J (Ioi a)) (hψ : ContinuousOn ψ (Ioi a))
