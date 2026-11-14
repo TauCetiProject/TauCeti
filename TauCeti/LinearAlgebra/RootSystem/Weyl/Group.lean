@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Finite.Perm
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+public import TauCeti.LinearAlgebra.RootSystem.Reduced
 import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 
 /-!
@@ -48,6 +49,11 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   on the weight space is the identity.
 * `RootPairing.weylGroup.ext` says two Weyl-group elements agreeing on the weight space are
   equal.
+* `RootPairing.weylGroupRootRep_injective` says the weight-space representation of the Weyl group
+  is faithful.
+* `RootPairing.weylGroup.ofIdx_eq_of_ker_coroot'_le` says that in a finite reduced root pairing
+  over a field of characteristic zero, a root reflection in the Weyl group is determined by its
+  fixed hyperplane.
 * `RootPairing.weylGroup.eq_one_of_forall_smul_root_eq` says a Weyl-group element fixing every root
   of a finite anisotropic root pairing over a domain is the identity, whether or not the roots
   span.
@@ -320,6 +326,15 @@ theorem weylGroup.ext
   refine weylGroup.eq_one_of_smul_eq_self fun x ↦ ?_
   rw [mul_smul, h, smul_inv_smul]
 
+/-- The weight-space representation of the Weyl group is its action on the weights. -/
+@[simp]
+theorem weylGroupRootRep_apply (w : P.weylGroup) (x : M) : P.weylGroupRootRep w x = w • x :=
+  (rfl)
+
+/-- The Weyl group acts faithfully on the weight space. -/
+theorem weylGroupRootRep_injective : Function.Injective P.weylGroupRootRep :=
+  fun _ _ h ↦ weylGroup.ext fun x ↦ by simpa using LinearMap.congr_fun h x
+
 /-- **Conjugating a simple reflection transports it along the permutation action**: the reflection
 in the image of a root index is the conjugate of the reflection in that root index. -/
 theorem weylGroup.ofIdx_weylGroupToPerm_eq_conj (w : P.weylGroup) (i : ι) :
@@ -532,5 +547,20 @@ theorem card_weylGroup_le_factorial [P.IsRootSystem] :
 end
 
 end RootSystem
+
+section Field
+
+variable {K : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M] [AddCommGroup N]
+  [Module K N] (P : RootPairing ι K M N)
+
+/-- **A Weyl-group root reflection is determined by its fixed hyperplane.** In a finite reduced
+root pairing over a field of characteristic zero, if the kernel of the coroot of `i` lies in the
+kernel of the coroot of `j`, then `sᵢ = sⱼ` in the Weyl group. -/
+theorem weylGroup.ofIdx_eq_of_ker_coroot'_le [Finite ι] [P.IsReduced] {i j : ι}
+    (h : LinearMap.ker (P.coroot' i) ≤ LinearMap.ker (P.coroot' j)) :
+    weylGroup.ofIdx P i = weylGroup.ofIdx P j :=
+  weylGroup.ext fun x ↦ by simp [P.reflection_eq_of_ker_coroot'_le h]
+
+end Field
 
 end RootPairing
