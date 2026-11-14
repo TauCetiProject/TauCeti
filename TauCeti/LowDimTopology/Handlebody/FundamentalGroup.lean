@@ -363,8 +363,8 @@ private def holeWeight (k : Fin g) (z : ℂ) : ℝ := max 0 (1 - 4 * (‖z - hol
 
 variable (g) in
 /-- The boundary weight: on the planar surface it is `1` on the boundary circles and `0` at distance
-at least `1 / 4` from them. It is defined on all of `ℂ`, where it can exceed `1` (it is `5` at
-distance `1` from the only circle when `g = 0`). -/
+at least `1 / 4` from them. It is defined on all of `ℂ`, where it can exceed `1` (for
+`g = 0` it is `5` at `‖z‖ = 2`, at distance `1` outside the only circle). -/
 private def boundaryWeight (z : ℂ) : ℝ := outerWeight g z + ∑ k, holeWeight g k z
 
 variable (g) in
