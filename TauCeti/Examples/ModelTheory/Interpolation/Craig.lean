@@ -203,7 +203,7 @@ def evenCardSentence : Language.empty.Sentenceω :=
     (Sentence.cardGe Language.empty (n + n)).toInf ⊓
       (Sentence.cardGe Language.empty (n + n + 1)).toInf.not
 
-private theorem involutionGraphSentence_realize_iff {M : Type w} [InvLang.Structure M] :
+private theorem realize_involutionGraphSentence_iff {M : Type w} [InvLang.Structure M] :
     SentenceInf.Realize involutionGraphSentence M ↔
       (∀ x : M, ∃ y : M, Structure.RelMap (L := InvLang) invRel ![x, y]) ∧
       (∀ x y z : M,
@@ -226,7 +226,7 @@ private theorem exists_perm_of_involutionGraphSentence {M : Type w} [InvLang.Str
     (h : SentenceInf.Realize involutionGraphSentence M) :
     ∃ σ : Equiv.Perm M, σ ^ (2 ^ 1) = 1 ∧
       ∀ x y : M, Structure.RelMap (L := InvLang) invRel ![x, y] ↔ σ x = y := by
-  obtain ⟨htot, hfun, hsym⟩ := involutionGraphSentence_realize_iff.1 h
+  obtain ⟨htot, hfun, hsym⟩ := realize_involutionGraphSentence_iff.1 h
   let f : M → M := fun x => (htot x).choose
   have hf : ∀ x, Structure.RelMap (L := InvLang) invRel ![x, f x] := fun x => (htot x).choose_spec
   have hinvf : Function.Involutive f := fun x =>
@@ -252,7 +252,7 @@ private theorem realize_involutionGraphSentence_graphStructure {M : Type w}
     [Language.empty.Structure M] {f : M → M} (hf : Function.Involutive f) :
     @SentenceInf.Realize _ ℕ involutionGraphSentence M (graphStructure f) := by
   let : InvLang.Structure M := graphStructure f
-  rw [involutionGraphSentence_realize_iff]
+  rw [realize_involutionGraphSentence_iff]
   simp only [relMap_graphStructure, Matrix.cons_val_zero, Matrix.cons_val_one]
   exact ⟨fun x => ⟨f x, rfl⟩, fun _ _ _ hxy hxz => hxy.symm.trans hxz,
     fun x _ hxy => by rw [← hxy, hf x]⟩
