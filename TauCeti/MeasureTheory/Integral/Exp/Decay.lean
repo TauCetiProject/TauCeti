@@ -36,9 +36,11 @@ inclusion.
   `a < 0`.
 * `TauCeti.integrableOn_exp_mul_Iic_iff`: `exp (a * ·)` is integrable on `(-∞, c]` exactly when
   `0 < a`.
-* `TauCeti.integrableOn_rpow_mul_exp_mul_Ioi_iff`,
-  `TauCeti.integrableOn_rpow_mul_exp_neg_mul_Ioi_of_pos`: for `0 < c`, `x ↦ x ^ s * exp (a * x)` is
-  integrable on `(c, ∞)` precisely when `a < 0`, or `a = 0` and `s < -1`.
+* `TauCeti.not_integrableOn_rpow_mul_exp_mul_Ioi`,
+  `TauCeti.integrableOn_rpow_mul_exp_mul_Ioi_iff`,
+  `TauCeti.integrableOn_rpow_mul_exp_neg_mul_Ioi_of_pos`: `x ↦ x ^ s * exp (a * x)` is not
+  integrable on `(c, ∞)` for any `c : ℝ` when `0 < a`, and for `0 < c` is integrable on `(c, ∞)`
+  precisely when `a < 0`, or `a = 0` and `s < -1`.
 * `TauCeti.integrable_exp_neg_mul_abs`: `exp (-(a * |·|))` is integrable when `0 < a`.
 * `TauCeti.integral_exp_neg_mul_abs`: its integral is `2 / a`.
 * `TauCeti.lintegral_ofReal_mul_exp_neg_mul_abs`: the same evaluation as a lower Lebesgue integral
@@ -206,38 +208,14 @@ theorem integrableOn_exp_mul_Iic_iff {a c : ℝ} :
     neg_lt_zero] using (integrableOn_exp_mul_Ioi_iff (a := -a) (c := -c))
 
 /-- At a positive rate `0 < a`, `exp (a * x)` dominates `x ^ (-s)` for large `x`, so
-`x ↦ x ^ s * exp (a * x)` is bounded below by a positive constant on a half-line of infinite
-measure and is not integrable on `(c, ∞)`. -/
-private theorem not_integrableOn_rpow_mul_exp_mul_Ioi {a s c : ℝ} (ha : 0 < a) :
+`x ↦ x ^ s * exp (a * x)` is not integrable on `(c, ∞)` for any `c : ℝ`. -/
+theorem not_integrableOn_rpow_mul_exp_mul_Ioi {a s c : ℝ} (ha : 0 < a) :
     ¬ IntegrableOn (fun x : ℝ => x ^ s * Real.exp (a * x)) (Set.Ioi c) := by
-  intro hint
-  set M := max c 1
-  set n := ⌈max (-s) 0⌉₊
-  have hM : 1 ≤ M := le_max_right c 1
-  have hintM : IntegrableOn (fun x : ℝ => x ^ s * Real.exp (a * x)) (Set.Ioi M) :=
-    hint.mono_set (Set.Ioi_subset_Ioi (le_max_left c 1))
-  have hsub : Set.Ioi M ⊆ {x : ℝ | a ^ n / n.factorial ≤ x ^ s * Real.exp (a * x)} := by
-    intro x hx
-    have hx1 : 1 < x := hM.trans_lt hx
-    have hx0 : 0 < x := zero_lt_one.trans hx1
-    have hns : -s ≤ (n : ℝ) := (le_max_left (-s) 0).trans (Nat.le_ceil _)
-    have hrpow : x ^ (-s) ≤ x ^ n := by
-      simpa [Real.rpow_natCast] using Real.rpow_le_rpow_of_exponent_le hx1.le hns
-    have hexp := Real.pow_div_factorial_le_exp (x := a * x) (by positivity) n
-    rw [mul_pow, div_le_iff₀ (by positivity)] at hexp
-    have hmul : a ^ n * x ^ (-s) ≤ Real.exp (a * x) * n.factorial :=
-      (mul_le_mul_of_nonneg_left hrpow (by positivity)).trans hexp
-    exact (div_le_iff₀ (by positivity : (0 : ℝ) < n.factorial)).mpr <|
-      calc a ^ n = a ^ n * (x ^ (-s) * x ^ s) := by
-            rw [← Real.rpow_add hx0, neg_add_cancel, Real.rpow_zero, mul_one]
-        _ = (a ^ n * x ^ (-s)) * x ^ s := by ring
-        _ ≤ (Real.exp (a * x) * n.factorial) * x ^ s :=
-            mul_le_mul_of_nonneg_right hmul (Real.rpow_nonneg hx0.le s)
-        _ = x ^ s * Real.exp (a * x) * n.factorial := by ring
-  have h1 : (volume.restrict (Set.Ioi M)) (Set.Ioi M) < ⊤ :=
-    lt_of_le_of_lt (measure_mono hsub) (hintM.measure_ge_lt_top (by positivity))
-  rw [Measure.restrict_apply_self, Real.volume_Ioi] at h1
-  exact absurd h1 (by simp)
+  refine MeasureTheory.not_integrableOn_Ioi_of_eventually_le_norm one_pos c ?_
+  filter_upwards [Filter.eventually_gt_atTop (0 : ℝ),
+    (tendsto_exp_mul_div_rpow_atTop (-s) a ha).eventually_ge_atTop 1] with x hx hge
+  rw [Real.rpow_neg hx.le, div_inv_eq_mul, mul_comm] at hge
+  exact hge.trans ((le_abs_self _).trans_eq (Real.norm_eq_abs _).symm)
 
 /-- On a right half-line `(c, ∞)` bounded away from zero (`0 < c`), a real power times an
 exponential `x ↦ x ^ s * exp (a * x)` is integrable precisely when either `a < 0`, or `a = 0` and
