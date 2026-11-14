@@ -151,12 +151,8 @@ theorem plucker_map (f : R →+* S) (x : Fin p → ι → R) (s : powersetCard �
 /-- The maximal minors of a matrix with a ring homomorphism applied to all entries are the
 images of the maximal minors of the matrix. -/
 theorem _root_.Matrix.plucker_row_map (f : R →+* S) (A : Matrix (Fin p) ι R) :
-    plucker (A.map f).row = f ∘ plucker A.row := by
-  have h : (A.map f).row = fun i k ↦ f (A.row i k) := by
-    ext i k
-    simp
-  ext s
-  rw [h, plucker_map, Function.comp_apply]
+    plucker (A.map f).row = f ∘ plucker A.row :=
+  funext fun s ↦ plucker_map f A.row s
 
 /-- Replacing a family by its product with a square matrix `A` multiplies its Plücker
 coordinates by `det A`. -/
