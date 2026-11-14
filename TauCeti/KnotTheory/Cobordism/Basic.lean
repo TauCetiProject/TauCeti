@@ -200,6 +200,7 @@ theorem genus_def (S : KnotCobordism K₀ K₁) : S.genus = surfaceGenus S.carri
   (rfl)
 
 /-- A knot cobordism from `K₀` to `K₁` is one between any knots with the same images. -/
+@[expose]
 def congrRange (S : KnotCobordism K₀ K₁) (h₀ : range K₀ = range K₀')
     (h₁ : range K₁ = range K₁') : KnotCobordism K₀' K₁' where
   carrier := S.carrier
@@ -228,6 +229,7 @@ theorem range_toFun_congrRange (S : KnotCobordism K₀ K₁) (h₀ : range K₀ 
 
 /-- The **cobordism traced by a concordance**: the track `S¹ × ℝ → Sⁿ × ℝ` of a smooth concordance
 from `K₀` to `K₁` is a knot cobordism, its surface the cylinder `S¹ × ℝ`. -/
+@[expose]
 def ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) : KnotCobordism K₀ K₁ where
   carrier := Circle × ℝ
   toFun := F
@@ -274,6 +276,7 @@ theorem genus_ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) :
 
 /-- The **reverse** of a knot cobordism from `K₀` to `K₁`: the same surface, with its heights
 reflected by `t ↦ 1 - t`, is a knot cobordism from `K₁` to `K₀`. -/
+@[expose]
 def symm (S : KnotCobordism K₀ K₁) : KnotCobordism K₁ K₀ where
   carrier := S.carrier
   toFun x := ((S.toFun x).1, 1 - (S.toFun x).2)
@@ -331,6 +334,7 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [Fact (fin
 
 /-- Transport of a knot cobordism along a diffeomorphism `Ψ : Sⁿ ≃ₘ Sⁿ` of the ambient spheres: the
 same surface, embedded by `Ψ × id`, is a knot cobordism between the transported knots. -/
+@[expose]
 def transDiffeomorph (S : KnotCobordism K₀ K₁)
     (Ψ : sphere (0 : E) 1 ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ sphere (0 : F) 1) :
     KnotCobordism (K₀.transDiffeomorph Ψ) (K₁.transDiffeomorph Ψ) where
@@ -802,6 +806,7 @@ variable {K₀' K₀ K₁ : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
 /-- **Composing a concordance with a knot cobordism**: a concordance `C` from `K₀'` to `K₀`
 followed by a knot cobordism `S` from `K₀` to `K₁` is a knot cobordism from `K₀'` to `K₁` on the
 same surface. It is the reverse of the composite of the reverse of `S` with the reverse of `C`. -/
+@[expose]
 def transKnotCobordism (C : SmoothEmbedding.Concordance K₀' K₀) (S : KnotCobordism K₀ K₁) :
     KnotCobordism K₀' K₁ :=
   (S.symm.transConcordance C.symm).symm
