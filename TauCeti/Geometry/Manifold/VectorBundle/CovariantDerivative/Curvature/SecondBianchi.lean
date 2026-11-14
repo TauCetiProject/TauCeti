@@ -48,7 +48,7 @@ Torsion-freeness of `∇ᵀ` then converts the bracket terms into the derivative
 
 public section
 
-open Bundle FiberBundle VectorField
+open Bundle VectorField
 open scoped ContDiff Manifold
 
 namespace CovariantDerivative
