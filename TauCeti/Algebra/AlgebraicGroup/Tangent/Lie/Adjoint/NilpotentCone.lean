@@ -49,6 +49,10 @@ algebraically closed field of characteristic zero.
 * `TauCeti.adjointInvariantPolynomials_le_lieInvariants` and
   `TauCeti.adjointInvariantPolynomials_eq_lieInvariants`: they are Lie invariants, and for
   connected `G` over an algebraically closed field of characteristic zero they are all of them.
+* `TauCeti.lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials` and
+  `TauCeti.lift_eval_basePointsRepresentation_of_mem_lieInvariants`: invariant polynomial
+  functions (and, for connected `G`, Lie-invariant polynomial functions) are constant on rational
+  adjoint orbits.
 * `TauCeti.nilpotentConeIdeal`: the ideal of the zero fibre of the adjoint quotient.
 * `TauCeti.nilpotentConeIdeal_isHomogeneous` and `TauCeti.nilpotentConeSubcomodule`: it is
   stable under scaling and under the adjoint action.
@@ -226,6 +230,36 @@ theorem mem_nilpotentConeSubcomodule {p : SymmetricAlgebra k (Module.Dual k 𝔤
     p ∈ nilpotentConeSubcomodule k H ↔ p ∈ nilpotentConeIdeal k H :=
   ComoduleAlgebra.mem_spanSubcomodule _
 
+/-- **Invariant polynomial functions are constant on rational adjoint orbits.** Every base-valued
+point `g` of `G` preserves the evaluation of `p ∈ O(𝔤)^G` on `𝔤`. -/
+theorem lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials
+    {p : SymmetricAlgebra k (Module.Dual k 𝔤)} (hp : p ∈ adjointInvariantPolynomials k H)
+    (g : WithConv (H →ₐ[k] k)) (x : 𝔤) :
+    SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 (Comodule.basePointsRepresentation 𝔤 g x)) p =
+      SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x) p := by
+  let A := SymmetricAlgebra k (Module.Dual k 𝔤)
+  let ψ : A →ₐ[k] A :=
+    (Algebra.TensorProduct.rid k k A).toAlgHom.comp
+      ((Algebra.TensorProduct.map (AlgHom.id k A) g⁻¹.ofConv).comp
+        (ComoduleAlgebra.coactAlgHom k H A))
+  have hcomp :
+      SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 (Comodule.basePointsRepresentation 𝔤 g x)) =
+        (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x)).comp ψ := by
+    ext φ
+    have key (t : Module.Dual k 𝔤 ⊗[k] H) :
+        SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x)
+            (Algebra.TensorProduct.rid k k A
+              (Algebra.TensorProduct.map (AlgHom.id k A) g⁻¹.ofConv
+                ((SymmetricAlgebra.ι k (Module.Dual k 𝔤)).rTensor H t))) =
+          g⁻¹.ofConv (dualTensorHom k 𝔤 H t x) := by
+      induction t using _root_.TensorProduct.inductionOn with
+      | tmul ξ h => simp [dualTensorHom_apply, mul_comm]
+      | add s t hs ht => simp only [map_add, LinearMap.add_apply, hs, ht]
+    simp [ψ, A, adjointPolynomialComoduleAlgebra_coact_ι, key, ← WithConv.algHom_inv_apply]
+  have hψp : ψ p = p := by
+    simp [ψ, A, mem_adjointInvariantPolynomials.mp hp]
+  rw [hcomp, AlgHom.comp_apply, hψp]
+
 /-- **Nilpotent elements lie on the nilpotent cone.** Over a field of characteristic zero, if the
 Killing form of the Lie algebra is nondegenerate, then evaluation at an `ad`-nilpotent element kills
 the ideal of the nilpotent cone. -/
@@ -257,6 +291,17 @@ theorem adjointInvariantPolynomials_eq_lieInvariants :
     (Comodule.coact_eq_tmul_one_iff_forall_differential_eq_zero p).mpr fun d ↦ by
       rw [differential_adjointPolynomialComoduleAlgebra]
       exact SymmetricAlgebra.mem_lieInvariants.mp hp _
+
+/-- **Lie-invariant polynomial functions are constant on rational adjoint orbits of a connected
+group.** -/
+theorem lift_eval_basePointsRepresentation_of_mem_lieInvariants
+    {p : SymmetricAlgebra k (Module.Dual k 𝔤)}
+    (hp : p ∈ SymmetricAlgebra.lieInvariants k 𝔤 (Module.Dual k 𝔤))
+    (g : WithConv (H →ₐ[k] k)) (x : 𝔤) :
+    SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 (Comodule.basePointsRepresentation 𝔤 g x)) p =
+      SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x) p :=
+  lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials
+    (by rwa [adjointInvariantPolynomials_eq_lieInvariants]) g x
 
 /-- **Points of the nilpotent cone act nilpotently.** For a connected affine group over an
 algebraically closed field of characteristic zero, if evaluation at an element `x` of the Lie
