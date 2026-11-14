@@ -15,11 +15,13 @@ public import TauCeti.CategoryTheory.Sites.ComparableTopologies
 Let `X` be a scheme. The small Nisnevich topology on the category `X.Etale` of étale `X`-schemes
 is coarser than the small étale topology
 (`AlgebraicGeometry.Scheme.smallNisnevichTopology_le_smallEtaleTopology`), so every étale sheaf
-is a Nisnevich sheaf. This defines the comparison morphism of topoi `Sh(X_ét) → Sh(X_Nis)`
-through its two functors:
+is a Nisnevich sheaf and the identity of `X.Etale` is continuous from the Nisnevich to the étale
+topology. This defines the comparison morphism of topoi `Sh(X_ét) → Sh(X_Nis)` through its two
+functors:
 
-* its direct image `AlgebraicGeometry.Scheme.etaleToNisnevichPushforward X A`, which regards an
-  étale sheaf as a Nisnevich sheaf and is fully faithful;
+* its direct image `AlgebraicGeometry.Scheme.etaleToNisnevichPushforward X A`, Mathlib's
+  pushforward of sheaves along the identity, which regards an étale sheaf as a Nisnevich sheaf
+  and is fully faithful;
 * its inverse image `AlgebraicGeometry.Scheme.etaleToNisnevichPullback X A`, étale
   sheafification of a Nisnevich sheaf, which is left adjoint to the direct image
   (`AlgebraicGeometry.Scheme.etaleToNisnevichAdjunction`).
@@ -54,11 +56,14 @@ namespace AlgebraicGeometry.Scheme
 
 variable (X : Scheme.{u}) (A : Type u') [Category.{v'} A]
 
+instance : (𝟭 X.Etale).IsContinuous (smallNisnevichTopology X) (smallEtaleTopology X) :=
+  isContinuous_id_of_le (smallNisnevichTopology_le_smallEtaleTopology X)
+
 /-- The direct image of the comparison morphism of topoi `Sh(X_ét) → Sh(X_Nis)`: an étale sheaf
 on `X` is a Nisnevich sheaf. -/
 abbrev etaleToNisnevichPushforward :
     Sheaf (smallEtaleTopology X) A ⥤ Sheaf (smallNisnevichTopology X) A :=
-  sheafInclusionOfLE (smallNisnevichTopology_le_smallEtaleTopology X) A
+  (𝟭 X.Etale).sheafPushforwardContinuous A (smallNisnevichTopology X) (smallEtaleTopology X)
 
 variable [HasWeakSheafify (smallEtaleTopology X) A]
 
@@ -72,7 +77,7 @@ noncomputable abbrev etaleToNisnevichPullback :
 is left adjoint to its direct image, the inclusion of étale sheaves into Nisnevich sheaves. -/
 noncomputable abbrev etaleToNisnevichAdjunction :
     etaleToNisnevichPullback X A ⊣ etaleToNisnevichPushforward X A :=
-  sheafifyAdjunctionOfLE (smallNisnevichTopology_le_smallEtaleTopology X) A
+  sheafifyAdjunctionPushforwardId (smallNisnevichTopology X) (smallEtaleTopology X) A
 
 noncomputable instance : (etaleToNisnevichPullback X A).IsLeftAdjoint :=
   (etaleToNisnevichAdjunction X A).isLeftAdjoint
