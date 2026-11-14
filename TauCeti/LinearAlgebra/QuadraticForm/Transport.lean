@@ -137,7 +137,7 @@ theorem transport_eq_zero (f : M ≃ₛₗ[σ] M') (Q : QuadraticForm R M) :
   rw [← transport_zero f, transport_inj]
 
 /-- Successive transports agree with transport along the composite semilinear equivalence. -/
-theorem transport_trans {T : Type*} [CommSemiring T]
+theorem transport_transport {T : Type*} [CommSemiring T]
     {τ : S →+* T} {τ' : T →+* S} [RingHomInvPair τ τ'] [RingHomInvPair τ' τ]
     {ρ : R →+* T} {ρ' : T →+* R} [RingHomInvPair ρ ρ'] [RingHomInvPair ρ' ρ]
     [RingHomCompTriple σ τ ρ] [RingHomCompTriple τ' σ' ρ']
@@ -266,7 +266,7 @@ theorem Isometry.toLinearMap_transport (g : Q₁ →qᵢ Q₂)
   (rfl)
 
 @[simp]
-theorem Isometry.id_transport (Q : QuadraticForm R M₁) (f : M₁ ≃ₛₗ[σ] M₁') :
+theorem Isometry.transport_id (Q : QuadraticForm R M₁) (f : M₁ ≃ₛₗ[σ] M₁') :
     (Isometry.id Q).transport f f = Isometry.id (Q.transport f) := by
   ext
   simp
@@ -316,7 +316,7 @@ theorem IsometryEquiv.symm_transport (e : Q₁.IsometryEquiv Q₂)
   (rfl)
 
 @[simp]
-theorem IsometryEquiv.refl_transport (Q : QuadraticForm R M₁) (f : M₁ ≃ₛₗ[σ] M₁') :
+theorem IsometryEquiv.transport_refl (Q : QuadraticForm R M₁) (f : M₁ ≃ₛₗ[σ] M₁') :
     (IsometryEquiv.refl Q).transport f f = IsometryEquiv.refl (Q.transport f) := by
   apply DFunLike.ext
   intro x
