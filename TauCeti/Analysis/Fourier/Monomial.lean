@@ -28,7 +28,8 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
 * `TauCeti.norm_fourier_apply`: every Fourier monomial on `AddCircle T` has pointwise modulus `1`.
 * `TauCeti.fourier_pow`, `TauCeti.fourier_one_pow`: `fourier k ^ m = fourier (m * k)` and
   `fourier 1 ^ m = fourier m` in `C(AddCircle T, ℂ)`.
-* `TauCeti.fourier_apply_add`: `fourier n (x + y) = fourier n x * fourier n y`.
+* `TauCeti.fourier_apply_add`, `TauCeti.fourier_apply_sub`: `fourier n` turns sums and differences
+  of points into `fourier n x * fourier n y` and `fourier n x * fourier (-n) y`.
 * `TauCeti.norm_two_pi_I_mul_intCast_div`: `‖2πin/T‖ = 2π/T |n|` for `T > 0`.
 * `TauCeti.norm_fourier_coe_sub_le`: `‖e_n φ - e_n ψ‖ ≤ ‖2πin/T‖ |φ - ψ|` for real `φ, ψ`.
 * `TauCeti.norm_fourier_sub_one_le`: `‖e_n h - 1‖ ≤ ‖2πin/T‖ ‖h‖` on the circle, where `‖h‖` is
@@ -84,6 +85,12 @@ theorem fourier_one_pow (m : ℕ) :
 theorem fourier_apply_add (n : ℤ) (x y : AddCircle T) :
     fourier n (x + y) = fourier n x * fourier n y := by
   simp [AddCircle.toCircle_add]
+
+/-- A Fourier monomial turns a difference of points into `fourier n x * fourier (-n) y`. -/
+theorem fourier_apply_sub (n : ℤ) (x y : AddCircle T) :
+    fourier n (x - y) = fourier n x * fourier (-n) y := by
+  rw [fourier_apply, zsmul_sub, sub_eq_add_neg, AddCircle.toCircle_add, Circle.coe_mul,
+    ← fourier_apply, ← neg_zsmul, ← fourier_apply]
 
 /-- The frequency factor `2πin/T` by which differentiation multiplies the Fourier monomial
 `fourier n` (`hasDerivAt_fourier`) has norm `2π/T |n|`. -/
