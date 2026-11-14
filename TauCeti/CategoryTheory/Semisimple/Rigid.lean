@@ -44,6 +44,9 @@ No pivotal structure is used: the dual class is formed with right duals througho
 ## Main declarations
 
 * `TauCeti.nonempty_iso_rightDual_rightDual`: a simple object is isomorphic to its double dual.
+* `TauCeti.simpleSwapExactPairing` and
+  `TauCeti.simpleSwapExactPairing_coevaluation_comp_evaluation`: a simple object `X` forms an exact
+  pairing `ExactPairing Xᘁ X` whose coevaluation splits `ε_ X Xᘁ`.
 * `TauCeti.SimpleClasses.dual_dual`: duality of simple classes is an involution.
 * `TauCeti.exists_nonzero_to_tensor_rightDual_of_nonzero_from_simple` and
   `TauCeti.exists_nonzero_rightDual_of_nonzero_from_simple`: Frobenius reciprocity and duality
@@ -103,6 +106,49 @@ theorem nonempty_iso_rightDual_rightDual (X : C) [Simple X] : Nonempty (X ≅ (X
     exact CategoryTheory.id_ne_zero (𝟙_ C) (by rw [← IsSplitMono.id (η_ X Xᘁ)]; exact h0)
   have := isIso_of_hom_simple hg
   exact ⟨asIso g⟩
+
+omit [MonoidalPreadditive C] in
+/-- Auxiliary morphism `(Xᘁ)ᘁ ⟶ X` obtained by transposing a section of `ε_ X Xᘁ`. -/
+private def simpleSwapDualHom (X : C) [Simple X] : (Xᘁ)ᘁ ⟶ X :=
+  letI := isSplitEpi_of_nonzero_to_simple (evaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
+  (ρ_ (Xᘁ)ᘁ).inv ≫ (tensorLeftHomEquiv (𝟙_ C) Xᘁ (Xᘁ)ᘁ X).symm (section_ (ε_ X Xᘁ))
+
+omit [MonoidalPreadditive C] in
+@[reassoc]
+private theorem coevaluation_comp_simpleSwapDualHom (X : C) [Simple X] :
+    letI := isSplitEpi_of_nonzero_to_simple (evaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
+    η_ Xᘁ (Xᘁ)ᘁ ≫ Xᘁ ◁ simpleSwapDualHom X = section_ (ε_ X Xᘁ) := by
+  have := isSplitEpi_of_nonzero_to_simple (evaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
+  refine (?_ : _ = tensorLeftHomEquiv (𝟙_ C) Xᘁ (Xᘁ)ᘁ X
+    ((tensorLeftHomEquiv (𝟙_ C) Xᘁ (Xᘁ)ᘁ X).symm (section_ (ε_ X Xᘁ)))).trans
+      ((tensorLeftHomEquiv (𝟙_ C) Xᘁ (Xᘁ)ᘁ X).apply_symm_apply _)
+  dsimp only [simpleSwapDualHom, tensorLeftHomEquiv, Equiv.coe_fn_mk]
+  monoidal
+
+private theorem isIso_simpleSwapDualHom (X : C) [Simple X] : IsIso (simpleSwapDualHom X) := by
+  have := isSplitEpi_of_nonzero_to_simple (evaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
+  refine isIso_of_hom_simple fun h ↦ CategoryTheory.id_ne_zero (𝟙_ C) ?_
+  rw [← IsSplitEpi.id (ε_ X Xᘁ), ← coevaluation_comp_simpleSwapDualHom X, h,
+    MonoidalPreadditive.whiskerLeft_zero, comp_zero, zero_comp]
+
+/-- In a finite semisimple rigid category with simple tensor unit, every simple object `X` forms a
+swapped exact pairing `ExactPairing Xᘁ X` with its right dual, normalized without a pivotal
+structure so that its coevaluation splits `ε_ X Xᘁ`
+(`TauCeti.simpleSwapExactPairing_coevaluation_comp_evaluation`). -/
+@[instance_reducible]
+def simpleSwapExactPairing (X : C) [Simple X] : ExactPairing Xᘁ X :=
+  haveI := isIso_simpleSwapDualHom X
+  exactPairingCongrRight (asIso (simpleSwapDualHom X)).symm
+
+/-- The coevaluation of `simpleSwapExactPairing X` is a section of `ε_ X Xᘁ`. -/
+@[reassoc]
+theorem simpleSwapExactPairing_coevaluation_comp_evaluation (X : C) [Simple X] :
+    @ExactPairing.coevaluation C _ _ Xᘁ X (simpleSwapExactPairing X) ≫ ε_ X Xᘁ = 𝟙 (𝟙_ C) := by
+  have := isIso_simpleSwapDualHom X
+  have := isSplitEpi_of_nonzero_to_simple (evaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
+  rw [simpleSwapExactPairing, exactPairingCongrRight_coevaluation_assoc, Iso.symm_inv, asIso_hom,
+    coevaluation_comp_simpleSwapDualHom_assoc]
+  exact IsSplitEpi.id (ε_ X Xᘁ)
 
 end DoubleDual
 

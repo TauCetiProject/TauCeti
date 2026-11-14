@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Biproduct
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Simple
-public import TauCeti.CategoryTheory.Semisimple.Basic
+public import TauCeti.CategoryTheory.Semisimple.Rigid
 
 /-!
 # Pivotal structures on finite semisimple categories
@@ -24,6 +24,9 @@ pivotal structures and their traces are controlled by what happens on simple obj
 * Every endomorphism of a biproduct of simple objects has trace equal to the sum of the scalars of
   its diagonal components times the dimensions of the summands. So a pivotal structure is spherical
   exactly when the left and right dimensions of every simple object agree.
+* When the tensor unit is simple, closing up the coevaluation `η_ X Xᘁ` against the evaluation of
+  the normalized swapped pairing `TauCeti.simpleSwapExactPairing X` produces
+  `leftDim X ≫ rightDim X`.
 
 ## Main results
 
@@ -33,6 +36,8 @@ pivotal structures and their traces are controlled by what happens on simple obj
   dimensions on simple objects are equal.
 * `TauCeti.sphericalCategory_iff_leftDim_eq_rightDim`: a pivotal structure is spherical if and
   only if its left and right dimensions agree on simple objects.
+* `TauCeti.coevaluation_comp_simpleSwapExactPairing_evaluation`: `η_ X Xᘁ` composed with the
+  evaluation of `simpleSwapExactPairing X` equals `leftDim X ≫ rightDim X`.
 
 ## References
 
@@ -106,6 +111,27 @@ theorem sphericalCategory_iff_leftDim_eq_rightDim :
   rw [← leftTrace_conj e, ← rightTrace_conj e, leftTrace_biproduct, rightTrace_biproduct]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [leftTrace_eq_smul_leftDim k, rightTrace_eq_smul_rightDim k, h]
+
+include k in
+/-- Over an algebraically closed field, closing up the coevaluation `η_ X Xᘁ` of a simple object `X`
+against the evaluation of the normalized swapped pairing `TauCeti.simpleSwapExactPairing X` yields
+`leftDim X ≫ rightDim X`. -/
+@[reassoc]
+theorem coevaluation_comp_simpleSwapExactPairing_evaluation [Simple (𝟙_ C)] (X : C) [Simple X] :
+    η_ X Xᘁ ≫ @ExactPairing.evaluation C _ _ Xᘁ X (simpleSwapExactPairing X) =
+      leftDim X ≫ rightDim X := by
+  let p₁ : ExactPairing Xᘁ X := simpleSwapExactPairing X
+  let p₂ : ExactPairing Xᘁ X := pivotalExactPairing X
+  have hinv : leftTrace (rightDualIso p₁ p₂).inv = 𝟙 (𝟙_ C) := by
+    rw [leftTrace_def, ExactPairing.rightDualIso_inv p₁ p₂,
+      @ExactPairing.coevaluation_comp_rightMate_assoc C _ _ Xᘁ X Xᘁ X p₁ p₂ (𝟙 Xᘁ),
+      id_whiskerRight, Category.id_comp]
+    exact simpleSwapExactPairing_coevaluation_comp_evaluation X
+  have hhom : rightTrace (rightDualIso p₁ p₂).hom =
+      η_ X Xᘁ ≫ @ExactPairing.evaluation C _ _ Xᘁ X (simpleSwapExactPairing X) := by
+    rw [rightTrace_def, @ExactPairing.rightDualIso_hom_whiskerRight_evaluation C _ _ Xᘁ X X p₁ p₂]
+  rw [← hhom, ← Category.id_comp (rightTrace (rightDualIso p₁ p₂).hom), ← hinv,
+    leftTrace_inv_comp_rightTrace_hom k (rightDualIso p₁ p₂)]
 
 end Spherical
 
