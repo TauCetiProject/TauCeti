@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Presentation.Serre.Reflection
 public import TauCeti.Algebra.Lie.Presentation.Serre.Word
 import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Group.Subsemigroup.Pointwise
+import TauCeti.Algebra.Lie.Weights.Killing
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.RootWeight
 
 /-!
@@ -197,7 +198,8 @@ theorem map_serreLift_iInf_eigenspace_ad_pairingIn (j : H.root) :
   ext x
   simp only [Submodule.mem_iInf, Module.End.mem_eigenspace_iff, ad_apply, hpair,
     LieSubmodule.mem_toSubmodule]
-  exact (mem_rootSpace_iff_forall_lie_coroot b (j : Weight K H L).toLinear).symm
+  simpa only [Weight.toLinear_apply, Weight.coe_coe] using
+    (mem_rootSpace_iff_forall_lie_coroot b (j : Weight K H L).toLinear).symm
 
 /-- **The Serre lift is injective on the weight space of a root.** -/
 theorem ker_serreLift_inf_iInf_eigenspace_ad_pairingIn (j : H.root) :
