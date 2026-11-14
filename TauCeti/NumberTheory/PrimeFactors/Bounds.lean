@@ -7,21 +7,30 @@ module
 
 public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
-# Subpower bounds for products over prime divisors
+# Subpower and linear bounds for products over prime divisors
 
 For every fixed `C ≥ 1` and `ε > 0`, the product `C ^ ω(n)` is at most `A n ^ ε`, with
 `A` independent of the positive integer `n`. Here `ω(n)` counts distinct prime divisors.
-This controls finite Euler corrections whose local factors are uniformly bounded.
+This controls finite Euler corrections whose local factors are uniformly bounded. On `Re s ≥ 0`,
+each Euler factor `1 - p⁻ˢ` at a prime divisor `p ∣ N` has norm at most `2 ≤ p`, giving the linear
+bound `‖∏_{p ∣ N} (1 - p⁻ˢ)‖ ≤ N` for `N ≠ 0`.
 
 The elementary argument separates the finitely many primes for which `p ^ ε < C`.
 See Davenport, *Multiplicative Number Theory*, the discussion of elementary divisor bounds.
+
+## Main results
+
+* `TauCeti.exists_pow_card_primeFactors_le_mul_rpow`: `C ^ ω(n) ≤ A n ^ ε` for all `n ≠ 0`.
+* `TauCeti.norm_prod_primeFactors_one_sub_cpow_neg_le`: `‖∏_{p ∣ N} (1 - p⁻ˢ)‖ ≤ N` for `N ≠ 0` and
+  `Re s ≥ 0`.
 -/
 
 public section
 
-open Finset Filter
+open Complex Finset Filter
 
 namespace TauCeti
 
@@ -55,5 +64,25 @@ theorem exists_pow_card_primeFactors_le_mul_rpow {C ε : ℝ} (hC : 1 ≤ C) (h�
       rw [prod_mul_distrib, ← prod_filter, prod_const, Real.finsetProd_rpow]
       exact fun _ _ ↦ Nat.cast_nonneg _
     _ ≤ C ^ P * (n : ℝ) ^ ε := by gcongr
+
+/-- On the closed right half-plane `Re s ≥ 0`, the finite Euler-factor product
+`∏ p ∈ N.primeFactors, (1 - p⁻ˢ)` for `N ≠ 0` has norm at most `N`, since each factor at a prime
+`p ∣ N` has norm at most `1 + p^{-Re s} ≤ 2 ≤ p`. -/
+theorem norm_prod_primeFactors_one_sub_cpow_neg_le {N : ℕ} [NeZero N] {s : ℂ} (hs : 0 ≤ s.re) :
+    ‖∏ p ∈ N.primeFactors, (1 - (p : ℂ) ^ (-s))‖ ≤ N := by
+  rw [norm_prod]
+  calc ∏ p ∈ N.primeFactors, ‖(1 : ℂ) - (p : ℂ) ^ (-s)‖
+      ≤ ∏ p ∈ N.primeFactors, (p : ℝ) := by
+        refine Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun p hp ↦ ?_
+        have hprime := Nat.prime_of_mem_primeFactors hp
+        have hp2 : (2 : ℝ) ≤ p := by exact_mod_cast hprime.two_le
+        have hcpow : ‖(p : ℂ) ^ (-s)‖ ≤ 1 := by
+          rw [norm_natCast_cpow_of_pos hprime.pos, neg_re]
+          exact Real.rpow_le_one_of_one_le_of_nonpos (by linarith) (by linarith)
+        calc ‖(1 : ℂ) - (p : ℂ) ^ (-s)‖ ≤ ‖(1 : ℂ)‖ + ‖(p : ℂ) ^ (-s)‖ := norm_sub_le _ _
+          _ ≤ 2 := by rw [norm_one]; linarith
+          _ ≤ p := hp2
+    _ = ((∏ p ∈ N.primeFactors, p : ℕ) : ℝ) := by push_cast; rfl
+    _ ≤ N := by exact_mod_cast Nat.le_of_dvd (NeZero.pos N) (Nat.prod_primeFactors_dvd N)
 
 end TauCeti

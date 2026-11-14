@@ -12,15 +12,12 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 import TauCeti.Analysis.MellinInversion
-import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Gamma.Residue
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic
-import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
+import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Bounds
 import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Residue
-import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
 import TauCeti.NumberTheory.LSeries.SmoothedSum
 import TauCeti.NumberTheory.LSeries.Twist
 
@@ -54,10 +51,6 @@ producing Goldfeld's real-part inequalities in both the simple-pole and double-p
 
 ## Main results
 
-* `DirichletCharacter.norm_pair_le_of_one_half_le_norm_sub_one`,
-  `DirichletCharacter.norm_pair_le_of_one_half_le_re`,
-  `DirichletCharacter.norm_pair_one_half_add_mul_I_le`: explicit vertical growth bounds on `F(s)`
-  for arbitrary characters (principal or nonprincipal).
 * `DirichletCharacter.hasSum_zetaMulPairCoeffs_div_cpow_mul_exp`: Mellin integral representation of
   `∑ a(n) n^{-β} e^{-n x}` on `Re w = σ > 0` with `σ + β > 1`.
 * `DirichletCharacter.tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq`,
@@ -66,7 +59,7 @@ producing Goldfeld's real-part inequalities in both the simple-pole and double-p
   contour formula in general and specialized to the simple-pole and double-pole cases.
 * `DirichletCharacter.norm_mellinInv_Gamma_mul_pair_le`: explicit `O((M N)² x^{β - 1 / 2})` bound
   on the shifted vertical integral across `1 / 2 < β < 3 / 2`.
-* `DirichletCharacter.exp_neg_le_tsum_zetaMulPairCoeffs`,
+* `DirichletCharacter.exp_neg_le_tsum_zetaMulPairCoeffs_div_cpow_mul_exp`,
   `DirichletCharacter.exp_neg_le_re_pair_add_of_mul_ne_one`,
   `DirichletCharacter.exp_neg_le_re_pair_add_of_mul_eq_one`: quadratic positivity lower bound
   `e^{-x}` and Goldfeld's resulting real-part inequalities.
@@ -92,83 +85,21 @@ variable (χ : DirichletCharacter ℂ M) (ψ : DirichletCharacter ℂ N)
 private noncomputable abbrev pairLFunction (s : ℂ) : ℂ :=
   riemannZeta s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s
 
-private theorem analyticAt_pair {s : ℂ} (hs : s ≠ 1) : AnalyticAt ℂ (pairLFunction χ ψ) s :=
-  (((analyticOn_riemannZeta s hs).mul (χ.analyticAt_LFunction (.inl hs))).mul
-    (ψ.analyticAt_LFunction (.inl hs))).mul ((χ.mul ψ).analyticAt_LFunction (.inl hs))
+omit [NeZero M] [NeZero N] in
+private theorem ne_neg_natCast_of_re_gt_neg_one {z : ℂ} (hz₀ : -1 < z.re) (hz : z ≠ 0) (n : ℕ) :
+    z ≠ -n := by
+  rcases n with _ | k
+  · simpa using hz
+  · intro hn
+    have hre := congrArg re hn
+    simp only [neg_re, Nat.cast_add, Nat.cast_one, add_re, natCast_re, one_re] at hre
+    linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
 
-private theorem meromorphic_pair : Meromorphic (pairLFunction χ ψ) := fun s ↦
-  (((TauCeti.meromorphic_riemannZeta s).mul (χ.meromorphic_LFunction s)).mul
-    (ψ.meromorphic_LFunction s)).mul ((χ.mul ψ).meromorphic_LFunction s)
-
-/-- On `Re s > 0` outside the open disk `‖s - 1‖ < 1 / 2`, the four-factor product
-`ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)` of arbitrary characters of levels `M` and `N` satisfies
-`‖F(s)‖ ≤ (M N)² (3 + ‖s‖ / Re s)⁴`. Neither quadraticity nor nonprincipality is required. -/
-theorem norm_pair_le_of_one_half_le_norm_sub_one {s : ℂ} (hs : 0 < s.re) (hs1 : 1 / 2 ≤ ‖s - 1‖) :
-    ‖riemannZeta s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s‖ ≤
-      ((M : ℝ) * N) ^ 2 * (3 + ‖s‖ / s.re) ^ 4 := by
-  have hinv : ‖s - 1‖⁻¹ ≤ 2 := by
-    rw [inv_le_comm₀ (by linarith) two_pos]
-    simpa using hs1
-  have hζ : ‖riemannZeta s‖ ≤ 3 + ‖s‖ / s.re :=
-    (TauCeti.norm_riemannZeta_le hs).trans (by linarith)
-  have hlcm : (Nat.lcm M N : ℝ) ≤ (M : ℝ) * N := by
-    exact_mod_cast Nat.le_of_dvd (Nat.mul_pos (NeZero.pos M) (NeZero.pos N)) (Nat.lcm_dvd_mul M N)
-  have hpos : 0 ≤ 3 + ‖s‖ / s.re := by positivity
-  rw [norm_mul, norm_mul, norm_mul]
-  calc ‖riemannZeta s‖ * ‖χ.LFunction s‖ * ‖ψ.LFunction s‖ * ‖(χ.mul ψ).LFunction s‖
-      ≤ (3 + ‖s‖ / s.re) * ((M : ℝ) * (3 + ‖s‖ / s.re)) *
-          ((N : ℝ) * (3 + ‖s‖ / s.re)) * ((Nat.lcm M N : ℝ) * (3 + ‖s‖ / s.re)) :=
-        mul_le_mul
-          (mul_le_mul
-            (mul_le_mul hζ (χ.norm_LFunction_le_of_one_half_le_norm_sub_one hs hs1)
-              (norm_nonneg _) hpos)
-            (ψ.norm_LFunction_le_of_one_half_le_norm_sub_one hs hs1) (norm_nonneg _)
-            (by positivity))
-          ((χ.mul ψ).norm_LFunction_le_of_one_half_le_norm_sub_one hs hs1) (norm_nonneg _)
-          (by positivity)
-    _ = (M : ℝ) * N * (Nat.lcm M N : ℝ) * (3 + ‖s‖ / s.re) ^ 4 := by ring
-    _ ≤ (M : ℝ) * N * ((M : ℝ) * N) * (3 + ‖s‖ / s.re) ^ 4 := by gcongr
-    _ = ((M : ℝ) * N) ^ 2 * (3 + ‖s‖ / s.re) ^ 4 := by ring
-
-/-- On the half-plane `Re s ≥ 1 / 2` outside `‖s - 1‖ < 1 / 2`, the four-factor product satisfies
-the uniform polynomial vertical bound `‖F(s)‖ ≤ 625 (M N)² (1 + (Im s)²)²`. -/
-theorem norm_pair_le_of_one_half_le_re {s : ℂ} (hre : 1 / 2 ≤ s.re) (hs1 : 1 / 2 ≤ ‖s - 1‖) :
-    ‖riemannZeta s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s‖ ≤
-      625 * ((M : ℝ) * N) ^ 2 * (1 + s.im ^ 2) ^ 2 := by
-  have hs_pos : 0 < s.re := by linarith
-  have hsq : ‖s‖ ^ 2 ≤ (2 * s.re * √(1 + s.im ^ 2)) ^ 2 := by
-    rw [Complex.sq_norm, normSq_apply, mul_pow, mul_pow, Real.sq_sqrt (by positivity)]
-    have hre_sq : 1 ≤ 4 * s.re ^ 2 := by nlinarith
-    nlinarith [mul_le_mul_of_nonneg_right hre_sq (sq_nonneg s.im), sq_nonneg s.re]
-  have hnorm : ‖s‖ ≤ 2 * s.re * √(1 + s.im ^ 2) :=
-    le_of_pow_le_pow_left₀ two_ne_zero (by positivity) hsq
-  have hdiv : ‖s‖ / s.re ≤ 2 * √(1 + s.im ^ 2) :=
-    (div_le_iff₀ hs_pos).mpr (by linarith)
-  have hone : 1 ≤ √(1 + s.im ^ 2) := Real.le_sqrt_of_sq_le (by nlinarith [sq_nonneg s.im])
-  have hbase : 3 + ‖s‖ / s.re ≤ 5 * √(1 + s.im ^ 2) := by linarith
-  have hpow : (3 + ‖s‖ / s.re) ^ 4 ≤ 625 * (1 + s.im ^ 2) ^ 2 :=
-    calc (3 + ‖s‖ / s.re) ^ 4 ≤ (5 * √(1 + s.im ^ 2)) ^ 4 :=
-          pow_le_pow_left₀ (by positivity) hbase 4
-      _ = 625 * (√(1 + s.im ^ 2) ^ 2) ^ 2 := by ring
-      _ = 625 * (1 + s.im ^ 2) ^ 2 := by rw [Real.sq_sqrt (by positivity)]
-  calc ‖riemannZeta s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s‖
-      ≤ ((M : ℝ) * N) ^ 2 * (3 + ‖s‖ / s.re) ^ 4 :=
-        norm_pair_le_of_one_half_le_norm_sub_one χ ψ hs_pos hs1
-    _ ≤ ((M : ℝ) * N) ^ 2 * (625 * (1 + s.im ^ 2) ^ 2) :=
-        mul_le_mul_of_nonneg_left hpow (by positivity)
-    _ = 625 * ((M : ℝ) * N) ^ 2 * (1 + s.im ^ 2) ^ 2 := by ring
-
-/-- On the critical line `s = 1 / 2 + i t`, the four-factor product satisfies
-`‖F(1 / 2 + i t)‖ ≤ 625 (M N)² (1 + t²)²` for all `t : ℝ`. -/
-theorem norm_pair_one_half_add_mul_I_le (t : ℝ) :
-    ‖riemannZeta (1 / 2 + t * I) * χ.LFunction (1 / 2 + t * I) *
-        ψ.LFunction (1 / 2 + t * I) * (χ.mul ψ).LFunction (1 / 2 + t * I)‖ ≤
-      625 * ((M : ℝ) * N) ^ 2 * (1 + t ^ 2) ^ 2 := by
-  have hs1 : 1 / 2 ≤ ‖(1 / 2 : ℂ) + t * I - 1‖ := by
-    have h := abs_re_le_norm ((1 / 2 : ℂ) + t * I - 1)
-    norm_num at h
-    exact h
-  simpa using norm_pair_le_of_one_half_le_re χ ψ (s := 1 / 2 + t * I) (by simp) hs1
+omit [NeZero M] [NeZero N] in
+private theorem ne_neg_natCast_of_gt_neg_one {σ : ℝ} (hσ₀ : -1 < σ) (hσ : σ ≠ 0) (n : ℕ) :
+    σ ≠ -n := fun hn ↦
+  ne_neg_natCast_of_re_gt_neg_one (z := σ) (by simpa using hσ₀) (ofReal_ne_zero.mpr hσ) n
+    (by exact_mod_cast hn)
 
 /-- **Mellin integral representation of the twisted smoothed four-factor sum.** On any vertical line
 `Re w = σ > 0` with `σ + β > 1` and `x > 0`, the exponentially smoothed twisted Dirichlet series
@@ -271,14 +202,9 @@ private theorem analyticAt_Gamma_mul_pair {β : ℝ} {z : ℂ}
       (analyticAt_pair χ ψ hz_1) (by fun_prop))
 
 private theorem meromorphicAt_Gamma_mul_pair (β : ℝ) (s : ℂ) :
-    MeromorphicAt (fun w ↦ Gamma w * pairLFunction χ ψ (w + β)) s := by
-  have hΓm : MeromorphicAt Gamma s := by
-    simpa only [Pi.inv_def, inv_inv] using
-      (differentiable_one_div_Gamma.analyticAt s).meromorphicAt.inv
-  have hpm : MeromorphicAt (fun w ↦ pairLFunction χ ψ (w + β)) s :=
-    MeromorphicAt.comp_analyticAt (x := s) (g := fun w : ℂ ↦ w + β)
-      (meromorphic_pair χ ψ (s + β)) (by fun_prop)
-  exact hΓm.mul hpm
+    MeromorphicAt (fun w ↦ Gamma w * pairLFunction χ ψ (w + β)) s :=
+  (Meromorphic.Gamma s).mul (MeromorphicAt.comp_analyticAt (x := s) (g := fun w : ℂ ↦ w + β)
+    (meromorphic_pair χ ψ (s + β)) (by fun_prop))
 
 /-- **Goldfeld's shifted contour formula (general residue form).** For `1 / 2 < β < 3 / 2` with
 `β ≠ 1` and `x > 0`, shifting the Mellin inversion contour of `w ↦ Γ(w) F(w + β)` from `2 - β` to
@@ -296,16 +222,18 @@ theorem tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq {β x : ℝ} (hβ₀ : 1 / 2 
           (fun w ↦ Gamma w * (riemannZeta (w + β) * χ.LFunction (w + β) *
             ψ.LFunction (w + β) * (χ.mul ψ).LFunction (w + β))) x := by
   classical
-  set f : ℂ → ℂ := fun w ↦ Gamma w * pairLFunction χ ψ (w + β)
+  rw [(hasSum_zetaMulPairCoeffs_div_cpow_mul_exp χ ψ (σ := 2 - β) (by linarith) (by linarith)
+    hx).tsum_eq]
+  set f : ℂ → ℂ := fun w ↦ Gamma w * (riemannZeta (w + β) * χ.LFunction (w + β) *
+    ψ.LFunction (w + β) * (χ.mul ψ).LFunction (w + β))
   obtain ⟨B, hB, hbound⟩ := exists_norm_Gamma_mul_pair_horiz_le χ ψ β
   have hne01 : (0 : ℂ) ≠ 1 - β := fun h ↦ hβ (by have := congrArg re h; simp at this; linarith)
   have hanal (z : ℂ) (hz : z.re ∈ Icc (1 / 2 - β) (2 - β))
       (hzS : z ∉ ({0, 1 - (β : ℂ)} : Finset ℂ)) : AnalyticAt ℂ f z := by
     simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hzS
-    refine analyticAt_Gamma_mul_pair χ ψ (fun n hn ↦ ?_) fun h1 ↦ hzS.2 (by linear_combination h1)
-    rcases n with _ | k
-    · exact hzS.1 (by simpa using hn)
-    · have hre := congrArg re hn; simp at hre; linarith [hz.1, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
+    exact analyticAt_Gamma_mul_pair χ ψ
+      (ne_neg_natCast_of_re_gt_neg_one (by linarith [hz.1]) hzS.1)
+      fun h1 ↦ hzS.2 (by linear_combination h1)
   have hv {σ : ℝ} (h1 : 1 / 2 ≤ σ + β) (h2 : 1 / 2 ≤ |σ + β - 1|) (hσ : ∀ n : ℕ, σ ≠ -n) :
       VerticalIntegrable f σ := by
     have hc : Continuous fun t : ℝ ↦ pairLFunction χ ψ (σ + t * I + β) :=
@@ -316,45 +244,41 @@ theorem tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq {β x : ℝ} (hβ₀ : 1 / 2 
           linarith [abs_eq_zero.mpr (show σ + β - 1 = 0 by linarith)]).continuousAt (by fun_prop)
     simpa only [VerticalIntegrable, smul_eq_mul, f] using
       verticalIntegrable_Gamma_smul_of_norm_le (E := ℂ) (g := fun w ↦ pairLFunction χ ψ (w + β))
-        (C := 625 * ((M : ℝ) * N) ^ 2) (m := 2) hσ hc.aestronglyMeasurable fun t ↦ by
+        (C := 625 * ((M : ℝ) * N) ^ 2) (m := 2) hσ hc.aestronglyMeasurable
+        (Eventually.of_forall fun t ↦ by
           have hs1 : 1 / 2 ≤ ‖(σ : ℂ) + t * I + β - 1‖ :=
             h2.trans (by simpa [add_right_comm] using abs_re_le_norm ((σ : ℂ) + t * I + β - 1))
           simpa [pairLFunction] using
-            norm_pair_le_of_one_half_le_re χ ψ (s := σ + t * I + β) (by simp; linarith) hs1
-  have hshift := mellinInv_eq_mellinInv_add_sum_residue_of_norm_le
+            norm_pair_le_of_one_half_le_re χ ψ (s := σ + t * I + β) (by simp; linarith) hs1)
+  have hshift := TauCeti.mellinInv_eq_mellinInv_add_sum_residue_of_norm_le
     (f := f) (S := {0, 1 - (β : ℂ)}) (σ₀ := 1 / 2 - β) (σ₁ := 2 - β) (by linarith) hx.le
     hanal (fun s _ ↦ meromorphicAt_Gamma_mul_pair χ ψ β s)
     (fun s hs ↦ by
       rcases Finset.mem_insert.mp hs with rfl | hs'
       · simp; constructor <;> linarith
       · rw [Finset.mem_singleton.mp hs']; simp; linarith)
-    (hv (by linarith) (by norm_num) fun n hn ↦ by
-      rcases n with _ | k
-      · simp at hn; linarith
-      · push_cast at hn; linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)])
-    (hv (by linarith) (by norm_num) fun n hn ↦ by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)])
+    (hv (by linarith) (by norm_num) (ne_neg_natCast_of_gt_neg_one (by linarith) (by linarith)))
+    (hv (by linarith) (by norm_num) (ne_neg_natCast_of_gt_neg_one (by linarith) (by linarith)))
     hB hbound
-  rw [(hasSum_zetaMulPairCoeffs_div_cpow_mul_exp χ ψ (σ := 2 - β) (by linarith) (by linarith)
-    hx).tsum_eq]
-  change mellinInv (2 - β) f x = _
   rw [hshift, Finset.sum_pair hne01, residue_cpow_mul_Gamma_mul_pair_zero χ ψ hβ hx.ne',
     residue_cpow_mul_Gamma_mul_pair_one_sub χ ψ β x]
   ring
 
 omit [NeZero M] [NeZero N] in
-private theorem analyticAt_Gamma_sub_mul_cpow {β : ℝ} (x : ℝ) (hβ : ∀ n : ℕ, β ≠ n + 1) :
+private theorem analyticAt_Gamma_sub_mul_cpow {β : ℝ} (x : ℝ) (hβ₁ : β < 2) (hβ : β ≠ 1) :
     AnalyticAt ℂ (fun s ↦ Gamma (s - β) * (x : ℂ) ^ ((β : ℂ) - s)) 1 := by
+  have hne : (β : ℂ) - 1 ≠ 0 := sub_ne_zero.mpr (ofReal_ne_one.mpr hβ)
   rcases eq_or_ne x 0 with rfl | hx
-  · have hne : (β : ℂ) - 1 ≠ 0 := sub_ne_zero.mpr (ofReal_ne_one.mpr (by simpa using hβ 0))
-    refine (analyticAt_const (v := (0 : ℂ))).congr ?_
-    filter_upwards [((continuous_const.sub continuous_id).continuousAt.eventually_ne hne)]
+  · refine (analyticAt_const (v := (0 : ℂ))).congr ?_
+    filter_upwards [(continuous_const.sub continuous_id).continuousAt.eventually_ne hne]
       with s (hs : (β : ℂ) - s ≠ 0)
     simp [zero_cpow hs]
   · have hcpow : AnalyticAt ℂ (fun s : ℂ ↦ (x : ℂ) ^ ((β : ℂ) - s)) 1 :=
       (((differentiable_const (β : ℂ)).sub differentiable_id).const_cpow
         (.inl (ofReal_ne_zero.mpr hx))).analyticAt 1
-    refine ((analyticAt_Gamma fun n hn ↦ ?_).comp (by fun_prop)).mul hcpow
-    exact hβ n (by have := congrArg re hn; simp at this; linarith)
+    exact (AnalyticAt.comp (g := Gamma) (f := fun s : ℂ ↦ s - β) (x := 1)
+      (analyticAt_Gamma (ne_neg_natCast_of_re_gt_neg_one (by simp; linarith)
+        (sub_ne_zero.mpr (ofReal_ne_one.mpr hβ).symm))) (by fun_prop)).mul hcpow
 
 /-- **Goldfeld's shifted contour formula (simple-pole case).** When `χ ≠ 1`, `ψ ≠ 1`, and
 `χ.mul ψ ≠ 1`, the `s = 1` pole is simple with residue
@@ -369,12 +293,9 @@ theorem tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq_of_mul_ne_one
         mellinInv (1 / 2 - β)
           (fun w ↦ Gamma w * (riemannZeta (w + β) * χ.LFunction (w + β) *
             ψ.LFunction (w + β) * (χ.mul ψ).LFunction (w + β))) x := by
-  have hanal := analyticAt_Gamma_sub_mul_cpow x fun n hn ↦ by
-    rcases n with _ | k
-    · exact hβ (by simpa using hn)
-    · push_cast at hn; linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
   rw [tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq χ ψ hβ₀ hβ₁ hβ hx,
-    residue_pair_mul_of_mul_ne_one χ ψ hχ hψ hχψ hanal]
+    residue_pair_mul_of_mul_ne_one χ ψ hχ hψ hχψ
+      (analyticAt_Gamma_sub_mul_cpow x (by linarith) hβ)]
 
 /-- **Goldfeld's shifted contour formula (double-pole case).** When `χ ≠ 1` and `χ.mul ψ = 1`
 (which implies `ψ ≠ 1`), the `s = 1` pole is double and its residue is the derivative at `1` of the
@@ -390,16 +311,9 @@ theorem tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq_of_mul_eq_one
         mellinInv (1 / 2 - β)
           (fun w ↦ Gamma w * (riemannZeta (w + β) * χ.LFunction (w + β) *
             ψ.LFunction (w + β) * (χ.mul ψ).LFunction (w + β))) x := by
-  have hψ : ψ ≠ 1 := by
-    rintro rfl
-    rw [DirichletCharacter.mul, map_one, mul_one, changeLevel_eq_one_iff] at hχψ
-    exact hχ hχψ
-  have hanal := analyticAt_Gamma_sub_mul_cpow x fun n hn ↦ by
-    rcases n with _ | k
-    · exact hβ (by simpa using hn)
-    · push_cast at hn; linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
   rw [tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq χ ψ hβ₀ hβ₁ hβ hx,
-    residue_pair_mul_of_mul_eq_one χ ψ hχ hψ hχψ hanal]
+    residue_pair_mul_of_mul_eq_one χ ψ hχ (ne_one_of_mul_eq_one_right hχ hχψ) hχψ
+      (analyticAt_Gamma_sub_mul_cpow x (by linarith) hβ)]
 
 /-- **Goldfeld's vertical-line error estimate.** Across the pole-free strip `1 / 2 < β < 3 / 2` and
 for all `x ≥ 0`, the shifted Mellin integral on `Re w = 1 / 2 - β` satisfies
@@ -419,21 +333,22 @@ theorem norm_mellinInv_Gamma_mul_pair_le {β x : ℝ} (hβ₀ : 1 / 2 < β) (hβ
     rw [← integral_univ_inv_one_add_sq, ← integral_const_mul]
     refine integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ norm_nonneg _)
       (integrable_inv_one_add_sq.const_mul _) (Eventually.of_forall fun t ↦ ?_)
-    have hΓ := norm_Gamma_add_mul_I_le_of_mem_Ioo (σ := σ) (by dsimp [σ]; linarith)
-      (by dsimp [σ]; linarith) t
-    have hadd : (σ : ℂ) + t * I + β = 1 / 2 + t * I := by dsimp [σ]; push_cast; ring
+    have hΓ : ‖Gamma (σ + t * I)‖ ≤ 120 / (D * (1 + t ^ 2) ^ 3) := by
+      have h := norm_Gamma_le_of_re_mem_Ioo (s := σ + t * I)
+        ⟨by simp [σ]; linarith, by simp [σ]; linarith⟩ 2
+      have hσD : -σ * (σ + 1) = D := by dsimp [σ, D]; ring
+      simpa [Nat.factorial, hσD] using h
     have hF : ‖pairLFunction χ ψ (σ + t * I + β)‖ ≤
         625 * ((M : ℝ) * N) ^ 2 * (1 + t ^ 2) ^ 2 := by
-      rw [hadd]; exact norm_pair_one_half_add_mul_I_le χ ψ t
-    have hσD : -σ * (σ + 1) = D := by dsimp [σ, D]; ring
-    rw [hσD] at hΓ
+      simpa [pairLFunction] using
+        norm_pair_le_of_re_eq_one_half χ ψ (s := σ + t * I + β) (by simp [σ])
     dsimp only
     rw [norm_mul]
     calc ‖Gamma (σ + t * I)‖ * ‖pairLFunction χ ψ (σ + t * I + β)‖
         ≤ (120 / (D * (1 + t ^ 2) ^ 3)) * (625 * ((M : ℝ) * N) ^ 2 * (1 + t ^ 2) ^ 2) :=
           mul_le_mul hΓ hF (norm_nonneg _) (by positivity)
       _ = 75000 * ((M : ℝ) * N) ^ 2 / D * (1 + t ^ 2)⁻¹ := by field_simp; ring
-  have hm := norm_mellinInv_le σ (fun w ↦ Gamma w * pairLFunction χ ψ (w + β)) hx
+  have hm := TauCeti.norm_mellinInv_le σ (fun w ↦ Gamma w * pairLFunction χ ψ (w + β)) hx
   have hrpow : x ^ (-σ) = x ^ (β - 1 / 2) := by congr 1; dsimp [σ]; ring
   calc ‖mellinInv σ (fun w ↦ Gamma w * pairLFunction χ ψ (w + β)) x‖
       ≤ x ^ (-σ) / (2 * π) *
@@ -447,7 +362,7 @@ omit [NeZero M] [NeZero N] in
 /-- For quadratic characters `χ` and `ψ`, all terms of `∑ a(n) n^{-β} e^{-n x}` are nonnegative real
 numbers and the `n = 1` term is `e^{-x}`, so whenever the series converges its sum is at least
 `e^{-x}` in `ComplexOrder`. -/
-theorem exp_neg_le_tsum_zetaMulPairCoeffs {χ : DirichletCharacter ℂ M}
+theorem exp_neg_le_tsum_zetaMulPairCoeffs_div_cpow_mul_exp {χ : DirichletCharacter ℂ M}
     {ψ : DirichletCharacter ℂ N} (hχ : χ.IsQuadratic) (hψ : ψ.IsQuadratic) {β x : ℝ}
     (hsum : Summable fun n : ℕ ↦
       χ.zetaMulPairCoeffs ψ n / (n : ℂ) ^ (β : ℂ) * Real.exp (-n * x)) :
@@ -466,15 +381,7 @@ theorem exp_neg_le_tsum_zetaMulPairCoeffs {χ : DirichletCharacter ℂ M}
       dsimp [u]
       rw [div_eq_mul_inv]
       exact mul_nonneg (mul_nonneg (zetaMulPairCoeffs_nonneg hχ hψ n) hd) he
-  have h1 : u 1 = Real.exp (-x) := by simp [u]
-  rw [← h1, Complex.le_def]
-  refine ⟨?_, ?_⟩
-  · rw [Complex.re_tsum hsum]
-    exact Summable.le_tsum (Complex.reCLM.summable hsum) 1 fun n _ ↦
-      (Complex.le_def.mp (hu_nonneg n)).1
-  · rw [Complex.im_tsum hsum, ← (Complex.le_def.mp (hu_nonneg 1)).2, zero_im]
-    symm
-    exact (tsum_congr fun n ↦ ((Complex.le_def.mp (hu_nonneg n)).2).symm).trans tsum_zero
+  simpa [u] using hsum.le_tsum 1 fun n _ ↦ hu_nonneg n
 
 /-- **Goldfeld's real-part lower bound (simple-pole case).** For nonprincipal quadratic characters
 `χ` and `ψ` with `χ.mul ψ ≠ 1`, `1 / 2 < β < 3 / 2` with `β ≠ 1`, and `x > 0`,
@@ -492,7 +399,7 @@ theorem exp_neg_le_re_pair_add_of_mul_ne_one
         37500 * ((M : ℝ) * N) ^ 2 / ((β - 1 / 2) * (3 / 2 - β)) * x ^ (β - 1 / 2) := by
   have hsum := (hasSum_zetaMulPairCoeffs_div_cpow_mul_exp χ ψ (σ := 2 - β) (β := β) (by linarith)
     (by linarith) hx).summable
-  have hlo := (Complex.le_def.mp (exp_neg_le_tsum_zetaMulPairCoeffs hχ hψ hsum)).1
+  have hlo := (Complex.le_def.mp (exp_neg_le_tsum_zetaMulPairCoeffs_div_cpow_mul_exp hχ hψ hsum)).1
   rw [ofReal_re, tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq_of_mul_ne_one χ ψ hχ1 hψ1 hχψ
     hβ₀ hβ₁ hβ hx] at hlo
   have hΓx : Gamma ((1 : ℂ) - β) * (x : ℂ) ^ ((β : ℂ) - 1) =
@@ -504,7 +411,7 @@ theorem exp_neg_le_re_pair_add_of_mul_ne_one
       (Gamma (1 - β) * (x : ℂ) ^ ((β : ℂ) - 1))).re =
       (χ.LFunction 1 * ψ.LFunction 1 * (χ.mul ψ).LFunction 1).re *
         Real.Gamma (1 - β) * x ^ (β - 1) := by
-    rw [hΓx, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero, ← mul_assoc]
+    simp [hΓx]; ring
   have herr := (re_le_norm _).trans (norm_mellinInv_Gamma_mul_pair_le χ ψ hβ₀ hβ₁ hx.le)
   rw [add_re, add_re, hmid] at hlo
   linarith
@@ -523,22 +430,11 @@ theorem exp_neg_le_re_pair_add_of_mul_eq_one
           LFunctionTrivChar₁ (Nat.lcm M N) s *
           (Gamma (s - β) * (x : ℂ) ^ ((β : ℂ) - s))) 1).re +
         37500 * ((M : ℝ) * N) ^ 2 / ((β - 1 / 2) * (3 / 2 - β)) * x ^ (β - 1 / 2) := by
-  have hψ : ψ.IsQuadratic := by
-    rw [← isQuadratic_changeLevel_iff (Nat.dvd_lcm_right M N)]
-    have hsq : (changeLevel (Nat.dvd_lcm_left M N) χ) ^ 2 = 1 :=
-      (hχ.changeLevel (Nat.dvd_lcm_left M N)).sq_eq_one
-    have heq : changeLevel (Nat.dvd_lcm_right M N) ψ = changeLevel (Nat.dvd_lcm_left M N) χ := by
-      calc changeLevel (Nat.dvd_lcm_right M N) ψ
-          = changeLevel (Nat.dvd_lcm_left M N) χ ^ 2 *
-              changeLevel (Nat.dvd_lcm_right M N) ψ := by rw [hsq, one_mul]
-        _ = changeLevel (Nat.dvd_lcm_left M N) χ * (χ.mul ψ) := by
-            rw [sq, DirichletCharacter.mul, mul_assoc]
-        _ = changeLevel (Nat.dvd_lcm_left M N) χ := by rw [hχψ, mul_one]
-    rw [heq]
-    exact hχ.changeLevel _
   have hsum := (hasSum_zetaMulPairCoeffs_div_cpow_mul_exp χ ψ (σ := 2 - β) (β := β) (by linarith)
     (by linarith) hx).summable
-  have hlo := (Complex.le_def.mp (exp_neg_le_tsum_zetaMulPairCoeffs hχ hψ hsum)).1
+  have hlo := (Complex.le_def.mp
+    (exp_neg_le_tsum_zetaMulPairCoeffs_div_cpow_mul_exp hχ
+      (isQuadratic_of_mul_eq_one_right hχ hχψ) hsum)).1
   rw [ofReal_re, tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq_of_mul_eq_one χ ψ hχ1 hχψ
     hβ₀ hβ₁ hβ hx] at hlo
   have herr := (re_le_norm _).trans (norm_mellinInv_Gamma_mul_pair_le χ ψ hβ₀ hβ₁ hx.le)

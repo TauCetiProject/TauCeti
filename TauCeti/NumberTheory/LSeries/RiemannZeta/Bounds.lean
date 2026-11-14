@@ -10,6 +10,7 @@ import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.MellinTransform
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.NumberTheory.LSeries.SumCoeff
@@ -33,8 +34,7 @@ bounds
 `‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / Re s`   and   `‖riemannZeta s‖ ≤ ‖s - 1‖⁻¹ + 1 + ‖s‖ / Re s`
 
 for all `Re s > 0` (including at `s = 1`, where Mathlib's junk value `(γ - log(4π)) / 2` has norm
-strictly less than `2`). We also record the elementary bound `‖∏_{p ∣ N} (1 - p⁻ˢ)‖ ≤ N` on
-`Re s ≥ 0` for the finite Euler-factor correction of the principal Dirichlet character mod `N`.
+strictly less than `2`).
 
 ## Main results
 
@@ -45,8 +45,6 @@ strictly less than `2`). We also record the elementary bound `‖∏_{p ∣ N} (
 * `TauCeti.norm_riemannZeta₀_le_one_add_norm_div_re`: `‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / Re s` on
   `Re s > 0`.
 * `TauCeti.norm_riemannZeta_le`: `‖riemannZeta s‖ ≤ ‖s - 1‖⁻¹ + 1 + ‖s‖ / Re s` on `Re s > 0`.
-* `TauCeti.norm_prod_primeFactors_one_sub_cpow_neg_le`: `‖∏_{p ∣ N} (1 - p⁻ˢ)‖ ≤ N` for `N ≠ 0` and
-  `Re s ≥ 0`.
 
 ## References
 
@@ -96,15 +94,15 @@ private lemma differentiableOn_mul_integral_sub_natFloor :
       (fun s : ℂ ↦ s * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
       {s | 0 < s.re} := by
   set u : ℝ → ℂ := (Set.Ici (1 : ℝ)).indicator fun t : ℝ ↦ ((t - ⌊t⌋₊ : ℝ) : ℂ)
-  have hfl_meas : Measurable fun t : ℝ ↦ (⌊t⌋₊ : ℝ) :=
-    Monotone.measurable fun _ _ h ↦ mod_cast Nat.floor_mono h
+  have hfl_meas : Measurable fun t : ℝ ↦ (⌊t⌋₊ : ℝ) := measurable_from_nat.comp Nat.measurable_floor
   have hu_meas : Measurable u :=
     (Complex.measurable_ofReal.comp (measurable_id.sub hfl_meas)).indicator measurableSet_Ici
   have hu_norm (t : ℝ) : ‖u t‖ ≤ 1 := by
+    dsimp only [u]
     by_cases ht : 1 ≤ t
-    · rw [show u t = ((t - ⌊t⌋₊ : ℝ) : ℂ) from Set.indicator_of_mem (Set.mem_Ici.mpr ht) _]
+    · rw [Set.indicator_of_mem (Set.mem_Ici.mpr ht)]
       exact norm_sub_natFloor_le_one (zero_le_one.trans ht)
-    · rw [show u t = 0 from Set.indicator_of_notMem (by simpa using ht) _]
+    · rw [Set.indicator_of_notMem (by simpa using ht)]
       simp
   have hloc : LocallyIntegrableOn u (Set.Ioi 0) :=
     ((memLp_top_of_bound hu_meas.aestronglyMeasurable 1
@@ -127,8 +125,7 @@ private lemma differentiableOn_mul_integral_sub_natFloor :
 `t ↦ t^{-z}`. -/
 private lemma integrableOn_natFloor_mul_cpow {z : ℂ} (hz : 1 < z.re) :
     IntegrableOn (fun t : ℝ ↦ (⌊t⌋₊ : ℂ) * (t : ℂ) ^ (-(z + 1))) (Set.Ioi 1) := by
-  have hfl_meas : Measurable fun t : ℝ ↦ (⌊t⌋₊ : ℂ) :=
-    Complex.measurable_ofReal.comp (Monotone.measurable fun _ _ h ↦ mod_cast Nat.floor_mono h)
+  have hfl_meas : Measurable fun t : ℝ ↦ (⌊t⌋₊ : ℂ) := measurable_from_nat.comp Nat.measurable_floor
   have hc : ContinuousOn (fun t : ℝ ↦ (t : ℂ) ^ (-(z + 1))) (Set.Ioi 1) := fun t ht ↦
     (ContinuousAt.cpow continuous_ofReal.continuousAt continuousAt_const
       (ofReal_mem_slitPlane.mpr (zero_lt_one.trans ht))).continuousWithinAt
@@ -258,25 +255,5 @@ theorem norm_riemannZeta_le {s : ℂ} (hs : 0 < s.re) :
           rw [norm_inv]
           exact add_le_add_right (norm_riemannZeta₀_le_one_add_norm_div_re hs) _
       _ = ‖s - 1‖⁻¹ + 1 + ‖s‖ / s.re := by ring
-
-/-- On the closed right half-plane `Re s ≥ 0`, the finite Euler-factor product
-`∏ p ∈ N.primeFactors, (1 - p⁻ˢ)` for `N ≠ 0` has norm at most `N`, since each factor at a prime
-`p ∣ N` has norm at most `1 + p^{-Re s} ≤ 2 ≤ p`. -/
-theorem norm_prod_primeFactors_one_sub_cpow_neg_le {N : ℕ} [NeZero N] {s : ℂ} (hs : 0 ≤ s.re) :
-    ‖∏ p ∈ N.primeFactors, (1 - (p : ℂ) ^ (-s))‖ ≤ N := by
-  rw [norm_prod]
-  calc ∏ p ∈ N.primeFactors, ‖(1 : ℂ) - (p : ℂ) ^ (-s)‖
-      ≤ ∏ p ∈ N.primeFactors, (p : ℝ) := by
-        refine Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun p hp ↦ ?_
-        have hprime := Nat.prime_of_mem_primeFactors hp
-        have hp2 : (2 : ℝ) ≤ p := by exact_mod_cast hprime.two_le
-        have hcpow : ‖(p : ℂ) ^ (-s)‖ ≤ 1 := by
-          rw [norm_natCast_cpow_of_pos hprime.pos, neg_re]
-          exact Real.rpow_le_one_of_one_le_of_nonpos (by linarith) (by linarith)
-        calc ‖(1 : ℂ) - (p : ℂ) ^ (-s)‖ ≤ ‖(1 : ℂ)‖ + ‖(p : ℂ) ^ (-s)‖ := norm_sub_le _ _
-          _ ≤ 2 := by rw [norm_one]; linarith
-          _ ≤ p := hp2
-    _ = ((∏ p ∈ N.primeFactors, p : ℕ) : ℝ) := by push_cast; rfl
-    _ ≤ N := by exact_mod_cast Nat.le_of_dvd (NeZero.pos N) (Nat.prod_primeFactors_dvd N)
 
 end TauCeti

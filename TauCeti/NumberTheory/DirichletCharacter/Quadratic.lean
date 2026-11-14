@@ -37,6 +37,8 @@ have absolute value one.
   character is quadratic exactly when the original character is quadratic.
 * `DirichletCharacter.isQuadratic_mul`: the common-level product of two quadratic characters is
   quadratic.
+* `DirichletCharacter.isQuadratic_of_mul_eq_one_right`: if `χ` of nonzero level is quadratic and
+  `χ.mul ψ = 1`, then `ψ` is quadratic.
 * `DirichletCharacter.isQuadratic_iff_eq_one_or_eq_quadraticChar`: at a prime level, the quadratic
   characters are the principal one and the Legendre character.
 * `DirichletCharacter.conductor_changeLevel_quadraticChar`: for odd `p`, with values in a
@@ -87,6 +89,18 @@ theorem isQuadratic_mul {R : Type*} [CommRing R] {n m : ℕ} {χ : DirichletChar
     (χ.mul ψ).IsQuadratic := by
   rw [DirichletCharacter.mul]
   exact (hχ.changeLevel _).mul (hψ.changeLevel _)
+
+/-- If `χ` of nonzero level `M` is quadratic and `χ.mul ψ = 1`, then `ψ` is quadratic. -/
+theorem isQuadratic_of_mul_eq_one_right {R : Type*} [CommRing R] {M N : ℕ} [NeZero M]
+    {χ : DirichletCharacter R M} {ψ : DirichletCharacter R N}
+    (hχ : χ.IsQuadratic) (hχψ : χ.mul ψ = 1) : ψ.IsQuadratic := by
+  have hlift : (changeLevel (Nat.dvd_lcm_right M N) ψ).IsQuadratic := by
+    rw [eq_inv_of_mul_eq_one_right hχψ, (hχ.changeLevel _).inv]
+    exact hχ.changeLevel _
+  rcases eq_or_ne N 0 with rfl | hN
+  · simpa [← changeLevel_trans] using hlift.changeLevel (dvd_zero (M.lcm 0))
+  · have : NeZero (M.lcm N) := ⟨Nat.lcm_ne_zero (NeZero.ne M) hN⟩
+    exact (isQuadratic_changeLevel_iff (Nat.dvd_lcm_right M N)).mp hlift
 
 section Prime
 

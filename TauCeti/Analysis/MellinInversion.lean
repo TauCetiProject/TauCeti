@@ -9,6 +9,7 @@ public import Mathlib.Analysis.MellinInversion
 public import TauCeti.Analysis.Contour.Residue.Basic
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.Contour.Residue.Rectangle
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Integrability, norm bounds, and contour shifts of Mellin inversion integrals
@@ -21,7 +22,7 @@ most `(y^{-σ} / 2π) ∫ ‖f(σ + i t)‖ dt`.
 When `f : ℂ → ℂ` is meromorphic in a strip `σ₀ ≤ Re z ≤ σ₁` with finitely many poles `S` inside the
 open strip `σ₀ < Re z < σ₁`, integrable on both boundary lines, and decays on horizontal segments at
 heights `±T`, applying
-`TauCeti.Contour.verticalIntegral_sub_verticalIntegral_eq_two_pi_mul_sum_residue`
+`TauCeti.Contour.integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue`
 to `z ↦ x^{-z} f(z)` shifts the Mellin inversion contour across `S`:
 
 `mellinInv σ₁ f x = mellinInv σ₀ f x + ∑_{s ∈ S} Res_s (z ↦ x^{-z} f(z))`.
@@ -30,11 +31,11 @@ to `z ↦ x^{-z} f(z)` shifts the Mellin inversion contour across `S`:
 
 * `Complex.VerticalIntegrable.integrable_cpow_smul`: the integrand of `mellinInv σ f y` is
   integrable for `y > 0` when `VerticalIntegrable f σ`.
-* `Complex.mellinInv_zero`: `mellinInv σ f 0 = 0`.
-* `Complex.norm_mellinInv_le`: `‖mellinInv σ f x‖ ≤ (x^{-σ} / 2π) ∫ ‖f(σ + i t)‖ dt` for `x ≥ 0`.
-* `Complex.mellinInv_sub_mellinInv_eq_sum_residue`: shifting `mellinInv` from `σ₁` to `σ₀` for
+* `TauCeti.mellinInv_zero`: `mellinInv σ f 0 = 0`.
+* `TauCeti.norm_mellinInv_le`: `‖mellinInv σ f x‖ ≤ (x^{-σ} / 2π) ∫ ‖f(σ + i t)‖ dt` for `x ≥ 0`.
+* `TauCeti.mellinInv_sub_mellinInv_eq_sum_residue`: shifting `mellinInv` from `σ₁` to `σ₀` for
   `x ≥ 0` when the horizontal segment integrals tend to `0`.
-* `Complex.mellinInv_eq_mellinInv_add_sum_residue_of_norm_le`: shifting `mellinInv` for `x ≥ 0`
+* `TauCeti.mellinInv_eq_mellinInv_add_sum_residue_of_norm_le`: shifting `mellinInv` for `x ≥ 0`
   under a uniform norm decay bound on horizontal segments.
 
 ## References
@@ -46,7 +47,7 @@ to `z ↦ x^{-z} f(z)` shifts the Mellin inversion contour across `S`:
 public section
 
 open Real Set MeasureTheory Filter
-open scoped Topology
+open scoped Interval Topology
 open Complex hiding exp continuous_exp
 
 namespace Complex
@@ -63,6 +64,10 @@ theorem VerticalIntegrable.integrable_cpow_smul {E : Type*} [NormedAddCommGroup 
       (Or.inl (ofReal_ne_zero.mpr hy.ne'))).aestronglyMeasurable
   · rw [norm_cpow_eq_rpow_re_of_pos hy]
     simp
+
+end Complex
+
+namespace TauCeti
 
 /-- At `x = 0`, `mellinInv σ f 0 = 0` for every `σ` and `f`, since `0^{-(σ + i y)} = 0` for every
 `y ≠ 0`. -/
@@ -99,7 +104,7 @@ theorem norm_mellinInv_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
         ring
 
 private lemma residue_zero_cpow_mul (f : ℂ → ℂ) (s : ℂ) :
-    TauCeti.Contour.residue (fun z ↦ (0 : ℂ) ^ (-z) * f z) s = 0 := by
+    Contour.residue (fun z ↦ (0 : ℂ) ^ (-z) * f z) s = 0 := by
   have hz0 : ∀ᶠ z in 𝓝[≠] s, z ≠ 0 := by
     rcases eq_or_ne s 0 with rfl | hs
     · exact self_mem_nhdsWithin
@@ -107,8 +112,8 @@ private lemma residue_zero_cpow_mul (f : ℂ → ℂ) (s : ℂ) :
   have heq : (fun z ↦ (0 : ℂ) ^ (-z) * f z) =ᶠ[𝓝[≠] s] fun _ ↦ (0 : ℂ) := by
     filter_upwards [hz0] with z hz
     rw [zero_cpow (neg_ne_zero.mpr hz), zero_mul]
-  exact (TauCeti.Contour.residue_congr_nhdsNE heq).trans
-    (TauCeti.Contour.residue_eq_zero_of_analyticAt analyticAt_const)
+  exact (Contour.residue_congr_nhdsNE heq).trans
+    (Contour.residue_eq_zero_of_analyticAt analyticAt_const)
 
 /-- **Shifting a Mellin inversion contour across poles.** Let `σ₀ ≤ σ₁` and `x ≥ 0`. Suppose `f` is
 analytic on `σ₀ ≤ Re z ≤ σ₁` away from a finite set `S` contained in `σ₀ < Re z < σ₁`, meromorphic
@@ -129,13 +134,13 @@ theorem mellinInv_sub_mellinInv_eq_sum_residue
       (fun T : ℝ ↦ ∫ u : ℝ in σ₀..σ₁, (x : ℂ) ^ (-((u : ℂ) + T * I)) * f (u + T * I))
       atTop (𝓝 0)) :
     mellinInv σ₁ f x - mellinInv σ₀ f x =
-      ∑ s ∈ S, TauCeti.Contour.residue (fun z ↦ (x : ℂ) ^ (-z) * f z) s := by
+      ∑ s ∈ S, Contour.residue (fun z ↦ (x : ℂ) ^ (-z) * f z) s := by
   rcases hx.eq_or_lt with rfl | hx
   · simp [residue_zero_cpow_mul]
   have hx_slit : (x : ℂ) ∈ slitPlane := ofReal_mem_slitPlane.mpr hx
   have hcpow (z : ℂ) : AnalyticAt ℂ (fun w : ℂ ↦ (x : ℂ) ^ (-w)) z :=
     analyticAt_const.cpow (by fun_prop) hx_slit
-  have hshift := TauCeti.Contour.verticalIntegral_sub_verticalIntegral_eq_two_pi_mul_sum_residue
+  have hshift := Contour.integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue
     (f := fun z ↦ (x : ℂ) ^ (-z) * f z) hσ
     (fun z hz hzS ↦ (hcpow z).mul (hf z hz hzS))
     (fun s hs ↦ (hcpow s).meromorphicAt.mul (hmero s hs)) hS
@@ -161,33 +166,36 @@ theorem mellinInv_eq_mellinInv_add_sum_residue_of_norm_le
     (hbound : ∀ᶠ (T : ℝ) in atTop, ∀ u ∈ Icc σ₀ σ₁,
       ‖f ((u : ℂ) + T * I)‖ ≤ B T ∧ ‖f ((u : ℂ) - T * I)‖ ≤ B T) :
     mellinInv σ₁ f x =
-      mellinInv σ₀ f x + ∑ s ∈ S, TauCeti.Contour.residue (fun z ↦ (x : ℂ) ^ (-z) * f z) s := by
-  rcases hx.eq_or_lt with rfl | hx
-  · simp [residue_zero_cpow_mul]
-  have hx_slit : (x : ℂ) ∈ slitPlane := ofReal_mem_slitPlane.mpr hx
-  have hcpow (z : ℂ) : AnalyticAt ℂ (fun w : ℂ ↦ (x : ℂ) ^ (-w)) z :=
-    analyticAt_const.cpow (by fun_prop) hx_slit
+      mellinInv σ₀ f x + ∑ s ∈ S, Contour.residue (fun z ↦ (x : ℂ) ^ (-z) * f z) s := by
   set M : ℝ := max (x ^ (-σ₀)) (x ^ (-σ₁))
-  have hrpow {u : ℝ} (hu : u ∈ Icc σ₀ σ₁) : x ^ (-u) ≤ M := by
-    rcases le_or_gt 1 x with hx1 | hx1
-    · exact (Real.rpow_le_rpow_of_exponent_le hx1 (neg_le_neg hu.1)).trans (le_max_left _ _)
-    · exact (Real.rpow_le_rpow_of_exponent_ge hx hx1.le (neg_le_neg hu.2)).trans (le_max_right _ _)
-  have hshift := TauCeti.Contour.verticalIntegral_sub_verticalIntegral_eq_of_norm_le
-    (f := fun z ↦ (x : ℂ) ^ (-z) * f z) (B := fun T ↦ M * B T) hσ
-    (fun z hz hzS ↦ (hcpow z).mul (hf z hz hzS))
-    (fun s hs ↦ (hcpow s).meromorphicAt.mul (hmero s hs)) hS
-    (by simpa only [VerticalIntegrable, smul_eq_mul] using hint₀.integrable_cpow_smul hx)
-    (by simpa only [VerticalIntegrable, smul_eq_mul] using hint₁.integrable_cpow_smul hx)
-    (by simpa using hB.const_mul M)
-    (hbound.mono fun T hT u hu ↦ by
-      refine ⟨?_, ?_⟩
-      · rw [norm_mul, norm_cpow_eq_rpow_re_of_pos hx, show (-((u : ℂ) + T * I)).re = -u by simp]
-        exact mul_le_mul (hrpow hu) (hT u hu).1 (norm_nonneg _) (by positivity)
-      · rw [norm_mul, norm_cpow_eq_rpow_re_of_pos hx, show (-((u : ℂ) - T * I)).re = -u by simp]
-        exact mul_le_mul (hrpow hu) (hT u hu).2 (norm_nonneg _) (by positivity))
-  rw [← sub_eq_iff_eq_add', mellinInv, mellinInv, ← smul_sub, real_smul]
-  simp only [smul_eq_mul, hshift]
-  push_cast
-  field_simp [pi_ne_zero]
+  have hM0 : 0 ≤ M := le_max_of_le_left (Real.rpow_nonneg hx _)
+  have hcpow {z : ℂ} (hre : z.re ∈ Icc σ₀ σ₁) (him : z.im ≠ 0) : ‖(x : ℂ) ^ (-z)‖ ≤ M := by
+    rcases hx.eq_or_lt with rfl | hx
+    · have hne : -z ≠ 0 := fun h ↦ him (by simpa using congrArg im h)
+      simpa [zero_cpow hne] using hM0
+    · rw [norm_cpow_eq_rpow_re_of_pos hx, neg_re]
+      rcases le_or_gt 1 x with hx1 | hx1
+      · exact (Real.rpow_le_rpow_of_exponent_le hx1 (neg_le_neg hre.1)).trans (le_max_left _ _)
+      · exact (Real.rpow_le_rpow_of_exponent_ge hx hx1.le (neg_le_neg hre.2)).trans
+          (le_max_right _ _)
+  have hseg {s : ℝ → ℂ} (hre : ∀ T u : ℝ, ((u : ℂ) + s T).re = u)
+      (him : ∀ᶠ T in atTop, ∀ u : ℝ, ((u : ℂ) + s T).im ≠ 0)
+      (hg : ∀ᶠ T in atTop, ∀ u ∈ Icc σ₀ σ₁, ‖f ((u : ℂ) + s T)‖ ≤ B T) :
+      Tendsto (fun T : ℝ ↦ ∫ u : ℝ in σ₀..σ₁,
+        (x : ℂ) ^ (-((u : ℂ) + s T)) * f ((u : ℂ) + s T)) atTop (𝓝 0) :=
+    intervalIntegral.tendsto_integral_nhds_zero_of_ae_norm_le (by simpa using hB.const_mul M) <|
+      (him.and hg).mono fun T ⟨hTim, hTB⟩ ↦ Eventually.of_forall fun u hu ↦ by
+        have hu' : u ∈ Icc σ₀ σ₁ := Ioc_subset_Icc_self (by rwa [uIoc_of_le hσ] at hu)
+        rw [norm_mul]
+        exact mul_le_mul (hcpow (by simpa [hre T u] using hu') (hTim u)) (hTB u hu')
+          (norm_nonneg _) hM0
+  rw [← sub_eq_iff_eq_add']
+  refine mellinInv_sub_mellinInv_eq_sum_residue hσ hx hf hmero hS hint₀ hint₁ ?_ ?_
+  · simpa only [sub_eq_add_neg] using hseg (s := fun T ↦ -(T * I)) (by simp)
+      ((eventually_ne_atTop (0 : ℝ)).mono fun T hT u ↦ by simpa using hT)
+      (hbound.mono fun T hT u hu ↦ (hT u hu).2)
+  · exact hseg (s := fun T ↦ T * I) (by simp)
+      ((eventually_ne_atTop (0 : ℝ)).mono fun T hT u ↦ by simpa using hT)
+      (hbound.mono fun T hT u hu ↦ (hT u hu).1)
 
-end Complex
+end TauCeti

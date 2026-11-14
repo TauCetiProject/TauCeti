@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Contour.Residue.Basic
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Contour.Residue.Cycle
 import TauCeti.Analysis.Contour.Winding.Number.Rectangle
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The residue theorem on a rectangle and vertical-line contour shifts
@@ -37,12 +38,12 @@ the vertical lines cancels the `I` in `2πi`.
 
 * `TauCeti.Contour.classicalResidueTheorem_rectBoundary`: the residue theorem along
   `Complex.rectBoundary z w`.
-* `TauCeti.Contour.edgeIntegral_rectBoundary_eq_sum_residue`: the unpacked four-edge residue
-  formula on `Rectangle (σ₀ + T₁ * I) (σ₁ + T₂ * I)`.
-* `TauCeti.Contour.verticalIntegral_sub_verticalIntegral_eq_two_pi_mul_sum_residue`: shifting an
+* `TauCeti.Contour.integral_boundary_rect_eq_two_pi_I_mul_sum_residue`: the unpacked four-edge
+  residue formula on `Rectangle (σ₀ + T₁ * I) (σ₁ + T₂ * I)`.
+* `TauCeti.Contour.integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue`: shifting an
   improper vertical-line integral across a strip with finitely many poles.
-* `TauCeti.Contour.verticalIntegral_sub_verticalIntegral_eq_of_norm_le`: the same vertical-line
-  shift under a uniform decay bound on horizontal segments.
+* `TauCeti.Contour.integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue_of_norm_le`:
+  the same vertical-line shift under a uniform decay bound on horizontal segments.
 
 ## References
 
@@ -103,7 +104,7 @@ if `f` is analytic on `Icc σ₀ σ₁ ×ℂ Icc T₁ T₂ \ S` and meromorphic 
 rectangle, and `S` avoids the boundary of the rectangle, then the signed sum of the four edge
 integrals equals `2πi` times the sum of the residues of `f` in the open rectangle
 `Ioo σ₀ σ₁ ×ℂ Ioo T₁ T₂`. -/
-theorem edgeIntegral_rectBoundary_eq_sum_residue {f : ℂ → ℂ} {S : Finset ℂ}
+theorem integral_boundary_rect_eq_two_pi_I_mul_sum_residue {f : ℂ → ℂ} {S : Finset ℂ}
     {σ₀ σ₁ T₁ T₂ : ℝ} (hσ : σ₀ ≤ σ₁) (hT : T₁ ≤ T₂)
     (hf : ∀ x ∈ Icc σ₀ σ₁ ×ℂ Icc T₁ T₂, x ∉ S → AnalyticAt ℂ f x)
     (hmero : ∀ s ∈ S, s ∈ Icc σ₀ σ₁ ×ℂ Icc T₁ T₂ → MeromorphicAt f s)
@@ -145,7 +146,7 @@ lines `Re z = σ₀` and `Re z = σ₁`. If the horizontal segment integrals at 
 to `0` as `T → +∞`, then
 
 `(∫ y, f (σ₁ + y * I)) - (∫ y, f (σ₀ + y * I)) = 2π · ∑ s ∈ S, residue f s`. -/
-theorem verticalIntegral_sub_verticalIntegral_eq_two_pi_mul_sum_residue
+theorem integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue
     {f : ℂ → ℂ} {S : Finset ℂ} {σ₀ σ₁ : ℝ} (hσ : σ₀ ≤ σ₁)
     (hf : ∀ z : ℂ, z.re ∈ Icc σ₀ σ₁ → z ∉ S → AnalyticAt ℂ f z)
     (hmero : ∀ s ∈ S, MeromorphicAt f s)
@@ -177,7 +178,7 @@ theorem verticalIntegral_sub_verticalIntegral_eq_two_pi_mul_sum_residue
         rw [interior_rectangle (by simpa using hσ) (by simp; linarith)]
         simpa using hST s hs
       exact disjoint_left.1 disjoint_interior_frontier hint
-    have hedge := edgeIntegral_rectBoundary_eq_sum_residue hσ (by linarith : -T ≤ T)
+    have hedge := integral_boundary_rect_eq_two_pi_I_mul_sum_residue hσ (by linarith : -T ≤ T)
       (fun x hx hxS ↦ hf x hx.1 hxS) (fun s hs _ ↦ hmero s hs) hfr
     have hsub : ∀ x : ℝ, (x : ℂ) + (-T : ℝ) * I = (x : ℂ) - T * I := fun x ↦ by
       push_cast; ring
@@ -199,8 +200,8 @@ theorem verticalIntegral_sub_verticalIntegral_eq_two_pi_mul_sum_residue
 /-- **Shifting a vertical-line integral under uniform horizontal decay.** If on horizontal
 segments `[σ₀, σ₁] ± i T` the integrand is eventually bounded by `B T` with `B T → 0` as
 `T → +∞`, the horizontal segment integrals vanish in the limit and
-`verticalIntegral_sub_verticalIntegral_eq_two_pi_mul_sum_residue` applies. -/
-theorem verticalIntegral_sub_verticalIntegral_eq_of_norm_le
+`integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue` applies. -/
+theorem integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue_of_norm_le
     {f : ℂ → ℂ} {S : Finset ℂ} {σ₀ σ₁ : ℝ} {B : ℝ → ℝ} (hσ : σ₀ ≤ σ₁)
     (hf : ∀ z : ℂ, z.re ∈ Icc σ₀ σ₁ → z ∉ S → AnalyticAt ℂ f z)
     (hmero : ∀ s ∈ S, MeromorphicAt f s)
@@ -213,16 +214,12 @@ theorem verticalIntegral_sub_verticalIntegral_eq_of_norm_le
       2 * π * ∑ s ∈ S, residue f s := by
   have hseg (g : ℝ → ℝ → ℂ)
       (hg : ∀ᶠ (T : ℝ) in atTop, ∀ x ∈ Icc σ₀ σ₁, ‖g T x‖ ≤ B T) :
-      Tendsto (fun T : ℝ ↦ ∫ x : ℝ in σ₀..σ₁, g T x) atTop (𝓝 0) := by
-    refine tendsto_zero_iff_norm_tendsto_zero.mpr
-      (squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_
-        (by simpa using hB.const_mul (σ₁ - σ₀)))
-    filter_upwards [hg] with T hTB
-    have hb : ∀ x ∈ uIoc σ₀ σ₁, ‖g T x‖ ≤ B T := fun x hx ↦
-      hTB x (Ioc_subset_Icc_self (by rwa [uIoc_of_le hσ] at hx))
-    simpa [abs_of_nonneg (sub_nonneg.mpr hσ), mul_comm] using
-      intervalIntegral.norm_integral_le_of_norm_le_const hb
-  exact verticalIntegral_sub_verticalIntegral_eq_two_pi_mul_sum_residue hσ hf hmero hS hint₀ hint₁
+      Tendsto (fun T : ℝ ↦ ∫ x : ℝ in σ₀..σ₁, g T x) atTop (𝓝 0) :=
+    TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_ae_norm_le hB <|
+      hg.mono fun T hTB ↦ Eventually.of_forall fun x hx ↦
+        hTB x (Ioc_subset_Icc_self (by rwa [uIoc_of_le hσ] at hx))
+  exact integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue hσ hf hmero hS
+    hint₀ hint₁
     (hseg (fun T x ↦ f ((x : ℂ) - T * I)) (hbound.mono fun T hT x hx ↦ (hT x hx).2))
     (hseg (fun T x ↦ f ((x : ℂ) + T * I)) (hbound.mono fun T hT x hx ↦ (hT x hx).1))
 

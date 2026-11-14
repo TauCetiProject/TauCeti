@@ -5,14 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Basic
 public import TauCeti.Analysis.Contour.Residue.Basic
 
 /-!
-# Poles of the four-factor Dirichlet L-function product
+# Regularity and poles of the four-factor Dirichlet L-function product
 
-For nonprincipal characters `χ` and `ψ`, the product
-`F(s) = ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)` has a simple pole at `1` if the product
+For arbitrary characters `χ` and `ψ` of positive levels `M` and `N`, the product
+`F(s) = ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)` is meromorphic on `ℂ` and analytic away from `1`.
+For nonprincipal characters `χ` and `ψ`, `F(s)` has a simple pole at `1` if the product
 character is nonprincipal, and a double pole otherwise. This includes characters of different
 levels: the product character is taken at their least common multiple, exactly as in
 `DirichletCharacter.zetaMulPairCoeffs`.
@@ -90,6 +92,25 @@ private theorem analyticAt_pair_double_regularization (hχ : χ ≠ 1) (hψ : ψ
   ((((differentiable_LFunctionTrivChar₁ 1).mul (differentiable_LFunction hχ)).mul
     (differentiable_LFunction hψ)).mul
       (differentiable_LFunctionTrivChar₁ (Nat.lcm M N))).analyticAt 1
+
+/-- The four-factor product `ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)` of arbitrary characters of
+positive levels is analytic at every `s ≠ 1`. -/
+theorem analyticAt_pair {s : ℂ} (hs : s ≠ 1) :
+    AnalyticAt ℂ
+      (fun z ↦ riemannZeta z * χ.LFunction z * ψ.LFunction z * (χ.mul ψ).LFunction z) s := by
+  have hζ : AnalyticAt ℂ riemannZeta s := by
+    simpa using (1 : DirichletCharacter ℂ 1).analyticAt_LFunction (.inl hs)
+  exact ((hζ.mul (χ.analyticAt_LFunction (.inl hs))).mul
+    (ψ.analyticAt_LFunction (.inl hs))).mul ((χ.mul ψ).analyticAt_LFunction (.inl hs))
+
+/-- The four-factor product `ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)` of arbitrary characters of
+positive levels is meromorphic on `ℂ`. -/
+theorem meromorphic_pair :
+    Meromorphic fun s ↦ riemannZeta s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s := by
+  have hζ : Meromorphic riemannZeta := by
+    simpa using (1 : DirichletCharacter ℂ 1).meromorphic_LFunction
+  exact fun s ↦ (((hζ s).mul (χ.meromorphic_LFunction s)).mul
+    (ψ.meromorphic_LFunction s)).mul ((χ.mul ψ).meromorphic_LFunction s)
 
 /-- The four-factor product of nonprincipal characters has an exactly simple pole at `1`
 when the product character is nonprincipal. -/
