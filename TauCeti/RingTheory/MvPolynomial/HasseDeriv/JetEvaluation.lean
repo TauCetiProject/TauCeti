@@ -5,10 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Defs
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import TauCeti.Algebra.MvPolynomial.HasseDeriv.Basic
 public import TauCeti.RingTheory.MvPolynomial.Box
 public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
+
+import Mathlib.Data.Nat.Factorial.NatCast
+import Mathlib.Data.ZMod.Basic
 
 /-!
 # The jet evaluation map on a finite polynomial space
@@ -43,14 +49,23 @@ interpolation matrix whose minors the arithmetic determinant method estimates.
 * `MvPolynomial.jetEval_mapRestrictSupport`, `MvPolynomial.jetMatrix_map`: naturality for a ring
   map `R →+* S`. Applied to `Ideal.Quotient.mk J`, they say that the jet map and the jet matrix
   over `R ⧸ J` are the reductions of those over `R`.
-* `MvPolynomial.ordinaryJetEval_apply_eq_factorial_mul`, `MvPolynomial.toMatrix_ordinaryJetEval`:
-  the ordinary jet map along multi-indices `k i • eᵥ₍ᵢ₎` is the Hasse one with row `i`
-  multiplied by `(k i)!`.
+* `MvPolynomial.ordinaryJetEval_apply_eq_factorial_mul`, `MvPolynomial.toMatrix_ordinaryJetEval`,
+  `MvPolynomial.toMatrix_ordinaryJetEval_eq_diagonal_mul`: the ordinary jet map along multi-indices
+  `k i • eᵥ₍ᵢ₎` is the Hasse one with row `i` multiplied by `(k i)!` (left multiplication by
+  `Matrix.diagonal (fun i ↦ ((k i).factorial : R))`).
+* `MvPolynomial.ker_ordinaryJetEval`, `MvPolynomial.rank_ordinaryJetEval`,
+  `MvPolynomial.finrank_range_ordinaryJetEval`: when every `(k i)!` is a unit in `R` — in
+  particular when `∀ i, k i < p` in any commutative ring of prime characteristic `p`
+  (`MvPolynomial.ker_ordinaryJetEval_of_lt_charP`,
+  `MvPolynomial.rank_ordinaryJetEval_of_lt_charP`,
+  `MvPolynomial.finrank_range_ordinaryJetEval_of_lt_charP`) — the ordinary and Hasse jet maps have
+  the same kernel and the same rank.
 
 ## References
 
 * H. Iwaniec and E. Kowalski, *Analytic Number Theory*, AMS Colloquium Publications 53 (2004),
-  §11.6, p. 282: the Hasse derivative `E^k X^n = choose n k · X^(n - k)` in one variable.
+  §11.6, pp. 282–283: the Hasse derivative `E^k X^n = choose n k · X^(n - k)` in one variable and
+  its comparison with ordinary derivatives below the characteristic.
 * L. Pottmeyer, *Diophantine Approximation*, lecture notes (version of 17 January 2022),
   Lemma 2.6.1 and (2.34), pp. 68–69: normalised derivatives of monomials in several variables.
 -/
@@ -146,21 +161,21 @@ end Hasse
 
 section Ordinary
 
-variable (s : Set (σ →₀ ℕ)) (a : ι → σ → R) (v : ι → σ) (k : ι → ℕ)
+variable (s : Set (σ →₀ ℕ)) (a : ι → σ → R) (v : ι → σ)
 
 /-- The jet map of ordinary derivatives: a polynomial `f` supported on `s` goes to the vector of
 its ordinary jets `(∂ᵥ₍ᵢ₎^(k i) f)(a i)`, `i : ι`. -/
-noncomputable def ordinaryJetEval : restrictSupport R s →ₗ[R] ι → R :=
+noncomputable def ordinaryJetEval (k : ι → ℕ) : restrictSupport R s →ₗ[R] ι → R :=
   LinearMap.pi fun i ↦
     (aeval (a i)).toLinearMap ∘ₗ ((pderiv (v i)).toLinearMap ^ k i) ∘ₗ (restrictSupport R s).subtype
 
 @[simp]
-theorem ordinaryJetEval_apply (f : restrictSupport R s) (i : ι) :
+theorem ordinaryJetEval_apply (k : ι → ℕ) (f : restrictSupport R s) (i : ι) :
     ordinaryJetEval s a v k f i = eval (a i) ((pderiv (v i))^[k i] (f : MvPolynomial σ R)) := by
   simp [ordinaryJetEval, pow_apply_eq_iterate]
 
 /-- The ordinary jets along the multi-indices `k i • eᵥ₍ᵢ₎` are the Hasse jets times `(k i)!`. -/
-theorem ordinaryJetEval_apply_eq_factorial_mul (f : restrictSupport R s) (i : ι) :
+theorem ordinaryJetEval_apply_eq_factorial_mul (k : ι → ℕ) (f : restrictSupport R s) (i : ι) :
     ordinaryJetEval s a v k f i =
       ((k i).factorial : R) * jetEval s a (fun i ↦ single (v i) (k i)) f i := by
   rw [ordinaryJetEval_apply, jetEval_apply, ← factorial_smul_hasseDeriv_single, map_nsmul,
@@ -168,7 +183,7 @@ theorem ordinaryJetEval_apply_eq_factorial_mul (f : restrictSupport R s) (i : ι
 
 /-- The matrix of the ordinary jet map is the Hasse jet matrix with row `i` multiplied by
 `(k i)!`. -/
-theorem toMatrix_ordinaryJetEval [Fintype s] [Finite ι] [DecidableEq s] :
+theorem toMatrix_ordinaryJetEval (k : ι → ℕ) [Fintype s] [Finite ι] [DecidableEq s] :
     LinearMap.toMatrix (basisRestrictSupport R s) (Pi.basisFun R ι) (ordinaryJetEval s a v k) =
       Matrix.of fun i μ ↦
         ((k i).factorial : R) * jetMatrix s a (fun i ↦ single (v i) (k i)) i μ := by
@@ -177,7 +192,90 @@ theorem toMatrix_ordinaryJetEval [Fintype s] [Finite ι] [DecidableEq s] :
     jetEval_apply]
   simp
 
+/-- The matrix of the ordinary jet map is the diagonal matrix of factorials `(k i)!` times the
+Hasse jet matrix. -/
+theorem toMatrix_ordinaryJetEval_eq_diagonal_mul (k : ι → ℕ) [Fintype s] [Fintype ι] [DecidableEq s]
+    [DecidableEq ι] :
+    LinearMap.toMatrix (basisRestrictSupport R s) (Pi.basisFun R ι) (ordinaryJetEval s a v k) =
+      Matrix.diagonal (fun i ↦ ((k i).factorial : R)) *
+        jetMatrix s a (fun i ↦ single (v i) (k i)) := by
+  rw [toMatrix_ordinaryJetEval]
+  ext i μ
+  simp [Matrix.diagonal_mul]
+
+/-- The kernel of the ordinary jet map consists of the polynomials supported on `s` all of whose
+prescribed ordinary jets vanish. -/
+theorem mem_ker_ordinaryJetEval (k : ι → ℕ) {f : restrictSupport R s} :
+    f ∈ LinearMap.ker (ordinaryJetEval s a v k) ↔
+      ∀ i, eval (a i) ((pderiv (v i))^[k i] (f : MvPolynomial σ R)) = 0 := by
+  simp [funext_iff]
+
+/-- When every `(k i)!` is a unit in `R`, the ordinary jet map and the corresponding Hasse jet map
+have the same kernel. -/
+theorem ker_ordinaryJetEval {k : ι → ℕ} (hk : ∀ i, IsUnit ((k i).factorial : R)) :
+    LinearMap.ker (ordinaryJetEval s a v k) =
+      LinearMap.ker (jetEval s a (fun i ↦ single (v i) (k i))) := by
+  ext f
+  rw [mem_ker_ordinaryJetEval, mem_ker_jetEval]
+  simp [eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero (hk _)]
+
+/-- Coordinatewise scaling by the units `(k i)!` identifies the image of the Hasse jet map with
+the image of the ordinary jet map. -/
+private noncomputable def rangeOrdinaryJetEvalEquiv {k : ι → ℕ}
+    (hk : ∀ i, IsUnit ((k i).factorial : R)) :
+    LinearMap.range (jetEval s a (fun i ↦ single (v i) (k i))) ≃ₗ[R]
+      LinearMap.range (ordinaryJetEval s a v k) := by
+  let e : (ι → R) ≃ₗ[R] (ι → R) :=
+    LinearEquiv.piCongrRight fun i ↦ DistribMulAction.toLinearEquiv R R (hk i).unit
+  refine e.ofSubmodules _ _ ?_
+  rw [← LinearMap.range_comp]
+  congr 1
+  ext f i
+  simp [e, Units.smul_def, eval_iterate_pderiv_eq_factorial_mul]
+
+/-- When every `(k i)!` is a unit in `R`, the ordinary jet map and the corresponding Hasse jet map
+have the same rank. -/
+theorem rank_ordinaryJetEval {k : ι → ℕ} (hk : ∀ i, IsUnit ((k i).factorial : R)) :
+    LinearMap.rank (ordinaryJetEval s a v k) =
+      LinearMap.rank (jetEval s a (fun i ↦ single (v i) (k i))) :=
+  (rangeOrdinaryJetEvalEquiv s a v hk).symm.rank_eq
+
+/-- When every `(k i)!` is a unit in `R`, the images of the ordinary and Hasse jet maps have the
+same `Module.finrank`. -/
+theorem finrank_range_ordinaryJetEval {k : ι → ℕ} (hk : ∀ i, IsUnit ((k i).factorial : R)) :
+    Module.finrank R (LinearMap.range (ordinaryJetEval s a v k)) =
+      Module.finrank R (LinearMap.range (jetEval s a (fun i ↦ single (v i) (k i)))) :=
+  (rangeOrdinaryJetEvalEquiv s a v hk).symm.finrank_eq
+
 end Ordinary
+
+section CharP
+
+variable {R : Type*} [CommRing R] {p : ℕ} [Fact p.Prime] [CharP R p]
+variable (s : Set (σ →₀ ℕ)) (a : ι → σ → R) (v : ι → σ)
+
+/-- In prime characteristic `p`, when every derivative order satisfies `k i < p`, the ordinary and
+Hasse jet maps have the same kernel. -/
+theorem ker_ordinaryJetEval_of_lt_charP {k : ι → ℕ} (hk : ∀ i, k i < p) :
+    LinearMap.ker (ordinaryJetEval s a v k) =
+      LinearMap.ker (jetEval s a (fun i ↦ single (v i) (k i))) :=
+  ker_ordinaryJetEval s a v fun i ↦ (IsUnit.natCast_factorial_iff_of_charP p).mpr (hk i)
+
+/-- In prime characteristic `p`, when every derivative order satisfies `k i < p`, the ordinary and
+Hasse jet maps have the same rank. -/
+theorem rank_ordinaryJetEval_of_lt_charP {k : ι → ℕ} (hk : ∀ i, k i < p) :
+    LinearMap.rank (ordinaryJetEval s a v k) =
+      LinearMap.rank (jetEval s a (fun i ↦ single (v i) (k i))) :=
+  rank_ordinaryJetEval s a v fun i ↦ (IsUnit.natCast_factorial_iff_of_charP p).mpr (hk i)
+
+/-- In prime characteristic `p`, when every derivative order satisfies `k i < p`, the images of the
+ordinary and Hasse jet maps have the same `Module.finrank`. -/
+theorem finrank_range_ordinaryJetEval_of_lt_charP {k : ι → ℕ} (hk : ∀ i, k i < p) :
+    Module.finrank R (LinearMap.range (ordinaryJetEval s a v k)) =
+      Module.finrank R (LinearMap.range (jetEval s a (fun i ↦ single (v i) (k i)))) :=
+  finrank_range_ordinaryJetEval s a v fun i ↦ (IsUnit.natCast_factorial_iff_of_charP p).mpr (hk i)
+
+end CharP
 
 section Box
 
@@ -232,5 +330,15 @@ example : ordinaryJetEval {single (0 : Fin 1) 2} (fun _ : Unit ↦ fun _ ↦ (0 
     (fun _ ↦ 0) (fun _ ↦ 2) ⟨X 0 ^ 2, by simp [X_pow_eq_monomial]⟩ () = 0 := by
   have h2 : ((Nat.factorial 2 : ℕ) : ZMod 2) = 0 := by decide
   rw [ordinaryJetEval_apply_eq_factorial_mul, h2, zero_mul]
+
+/-- Below the characteristic (`k = 2 < 3` over `ZMod 3`), the ordinary and Hasse jet maps have the
+same kernel and the same rank. -/
+example (s : Set (Fin 2 →₀ ℕ)) (a : Fin 2 → Fin 2 → ZMod 3) :
+    LinearMap.ker (ordinaryJetEval s a (fun _ ↦ 0) ![0, 2]) =
+      LinearMap.ker (jetEval s a fun i ↦ single 0 (![0, 2] i)) ∧
+    LinearMap.rank (ordinaryJetEval s a (fun _ ↦ 0) ![0, 2]) =
+      LinearMap.rank (jetEval s a fun i ↦ single 0 (![0, 2] i)) :=
+  have hk : ∀ i : Fin 2, (![0, 2] : Fin 2 → ℕ) i < 3 := by decide
+  ⟨ker_ordinaryJetEval_of_lt_charP s a _ hk, rank_ordinaryJetEval_of_lt_charP s a _ hk⟩
 
 end MvPolynomial
