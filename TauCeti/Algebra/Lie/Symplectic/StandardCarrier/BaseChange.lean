@@ -367,10 +367,10 @@ theorem mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap
     CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1)))
           (baseChangeDefiningIdeal n A) ≫
         rootSubgroupToBaseChangeCoordinateMap n A k =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap (rootGenerator n)
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap (rootGenerator n)
         (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
         (rep_kostantForm_mem_lattice n)
-        (isNilpotent_rep_rootGenerator n) (latticeBasis n) A k := by
+        k (isNilpotent_rep_rootGenerator n k) (latticeBasis n) A := by
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
     (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
@@ -506,10 +506,10 @@ theorem baseChangeDefiningIdeal_le_commonKernel :
     baseChangeDefiningIdeal n A ≤
       CommHopfAlgCat.commonKernelHopfIdeal (K := K)
         (fun j => match j with
-          | .inl k => kostantRootSubgroupBaseChangePresentationCoordinateMap (rootGenerator n)
+          | .inl k => kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap (rootGenerator n)
               (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
               (rep_kostantForm_mem_lattice n)
-              (isNilpotent_rep_rootGenerator n) (latticeBasis n) A k
+              k (isNilpotent_rep_rootGenerator n k) (latticeBasis n) A
           | .inr _ => GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A (basisWeight n)) := by
   have h := kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal (rootGenerator n)
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
