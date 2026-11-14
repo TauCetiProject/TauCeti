@@ -110,13 +110,14 @@ variable (hG : IsDemushkin 2 G)
 include hG
 
 /-- **The non-procyclic family does not occur at rank two**: the orientation image of a Demushkin
-group of rank two at `p = 2` is not `{±1} × U^(f)`, `2 ≤ f < ∞`. -/
+group of rank two at `p = 2` is not `{±1} × U^(f)`, `f < ∞` (for `f ≤ 2` this group is all of
+`ℤ_2ˣ`, which is not procyclic either). -/
 theorem range_demushkinCharacter_ne_unitsPlusMinus_of_demushkinRank_eq_two
-    (hn : demushkinRank hG = 2) {f : ℕ} (hf : 2 ≤ f) :
+    (hn : demushkinRank hG = 2) {f : ℕ} :
     (demushkinCharacter hG).toMonoidHom.range ≠ unitsPlusMinus f := fun h ↦ by
   obtain ⟨u, hu⟩ :=
     hG.exists_topologicalClosure_zpowers_eq_range_demushkinCharacter_of_demushkinRank_eq_two hn
-  exact not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus hf ⟨u, hu.trans h⟩
+  exact not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus ⟨u, hu.trans h⟩
 
 end Dyadic
 
@@ -155,12 +156,12 @@ theorem profiniteIndex_subgroupOf_map_powMonoidHom_range_lt_of_even_demushkinRan
       rw [h]
       refine (Supernatural.primePower_lt_primePower_iff _).2 ?_
       have hn₃ : 2 < demushkinRank hG := by
-        obtain ⟨f, hf, hA'⟩ :=
+        obtain ⟨f, -, hA'⟩ :=
           (profiniteIndex_subgroupOf_map_powMonoidHom_two_eq_primePower_two_iff hA).1 h
         rcases Nat.lt_or_ge 2 (demushkinRank hG) with hlt | hle
         · exact hlt
         · exact absurd hA'
-            (hG.range_demushkinCharacter_ne_unitsPlusMinus_of_demushkinRank_eq_two (by omega) hf)
+            (hG.range_demushkinCharacter_ne_unitsPlusMinus_of_demushkinRank_eq_two (by omega))
       exact_mod_cast hn₃
   · exact hG.profiniteIndex_subgroupOf_map_powMonoidHom_range_lt_of_demushkinQ_ne_two hq
 

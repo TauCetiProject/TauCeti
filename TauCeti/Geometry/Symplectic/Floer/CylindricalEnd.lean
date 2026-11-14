@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Compactness
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.Algebra.Ring.Periodic
@@ -26,7 +26,7 @@ import TauCeti.Topology.ContinuousMap.Ascoli
 On a cylindrical end of a punctured Floer domain, such as an end of a pair of pants or of a Floer
 cylinder, a solution is read in the coordinate `z = s + i t`, with `s` running along the end and
 `t ∈ ℝ / ℤ` the circle coordinate. In the local coordinates of
-`TauCeti.Geometry.Symplectic.Floer.Compactness` it solves
+`TauCeti.Geometry.Symplectic.Floer.Compactness.Basic` it solves
 
 `∂ₜu - X(z, u) i = J(z, u) (∂ₛu - X(z, u) 1)`
 
@@ -443,11 +443,12 @@ private theorem contDiff_hamiltonianOneForm_comp_equivRealProdCLM (hH : ContDiff
       (equivRealProdCLM z) x).comp (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) 1) ∧
     ∀ x, Periodic (fun z ↦ (ω.hamiltonianOneForm (fun _ _ ↦ 0) (fun w ↦ H w.2)
       (equivRealProdCLM z) x).comp (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) I := by
-  have h := ω.contDiffOn_hamiltonianOneForm (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2) (n := 2)
-    isOpen_univ (contDiff_const (c := (0 : ℝ))).contDiffOn
-    (contDiff_uncurry_cylindrical hH).contDiffOn
+  have h := ω.contDiffOn_hamiltonianOneForm (Ks := fun (_ : Unit) _ _ ↦ 0)
+    (Kt := fun _ w ↦ H w.2) (n := 2) isOpen_univ (contDiff_const (c := (0 : ℝ))).contDiffOn
+    ((contDiff_uncurry_cylindrical hH).comp contDiff_snd).contDiffOn
   rw [contDiffOn_univ] at h
-  refine ⟨(h.comp ((equivRealProdCLM.contDiff.comp contDiff_fst).prodMk contDiff_snd)).clm_comp
+  refine ⟨(h.comp ((contDiff_const (c := ())).prodMk
+    ((equivRealProdCLM.contDiff.comp contDiff_fst).prodMk contDiff_snd))).clm_comp
     contDiff_const, fun x z ↦ ?_, fun x z ↦ ?_⟩ <;> ext w <;> simp [hHper z.im]
 
 /-- **Floer cylinders in the complex coordinate.** Read in the coordinate `z = s + i t`, the
