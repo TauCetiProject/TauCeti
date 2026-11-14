@@ -28,6 +28,9 @@ of squares.
   diagonal form with regular weights is nondegenerate.
 * `QuadraticMap.weightedSumSquares_units`: unit weights may be replaced by the scalars they name.
 * `QuadraticMap.neg_weightedSumSquares`: negating a diagonal form negates its weights.
+* `QuadraticMap.weightedSumSquares_apply_single`, `QuadraticMap.isOrtho_weightedSumSquares_single`,
+  and `QuadraticMap.isOrthoᵢ_associated_weightedSumSquares`: single-coordinate evaluation and
+  orthogonality of distinct coordinate vectors and of the standard coordinate basis `Pi.basisFun`.
 * `QuadraticMap.weightedSumSquares_fin_two_apply`: evaluating a binary diagonal form.
 * `QuadraticMap.weightedSumSquares_apply_three_single` and
   `QuadraticMap.not_anisotropic_weightedSumSquares_of_ternary_eq_zero`: evaluating a diagonal form
@@ -183,6 +186,34 @@ theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :
   ext x
   simp [QuadraticMap.weightedSumSquares_apply, Units.smul_def]
 
+/-- Evaluate a diagonal form on a single-coordinate vector `Pi.single i x`.
+
+Not a `simp` lemma: Mathlib marks `QuadraticMap.weightedSumSquares_apply` as `@[simp]` for arbitrary
+`v`, so a `simp` attribute here would form a critical pair with `weightedSumSquares_apply`. -/
+theorem _root_.QuadraticMap.weightedSumSquares_apply_single {S : Type*} [Monoid S]
+    [DistribMulAction S R] [SMulCommClass S R R] [DecidableEq ι] (w : ι → S) (i : ι) (x : R) :
+    QuadraticMap.weightedSumSquares R w (Pi.single i x) = w i • (x * x) := by
+  rw [QuadraticMap.weightedSumSquares_apply, Fintype.sum_eq_single i]
+  · simp
+  · intro j hji
+    simp [hji]
+
+/-- Distinct single-coordinate vectors are orthogonal for any diagonal quadratic form. -/
+theorem _root_.QuadraticMap.isOrtho_weightedSumSquares_single {S : Type*} [Monoid S]
+    [DistribMulAction S R] [SMulCommClass S R R] [DecidableEq ι] (w : ι → S)
+    {i j : ι} (hij : i ≠ j) (x y : R) :
+    (QuadraticMap.weightedSumSquares R w).IsOrtho (Pi.single i x) (Pi.single j y) := by
+  rw [QuadraticMap.isOrtho_def]
+  simp only [QuadraticMap.weightedSumSquares_apply, ← Finset.sum_add_distrib, Pi.add_apply]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  by_cases hki : k = i
+  · subst hki
+    simp [hij]
+  · by_cases hkj : k = j
+    · subst hkj
+      simp [hki]
+    · simp [hki, hkj]
+
 /-- Evaluate a binary diagonal form `⟨a, b⟩` on a vector of `R²`. -/
 theorem _root_.QuadraticMap.weightedSumSquares_fin_two_apply (a b : R) (x : Fin 2 → R) :
     QuadraticMap.weightedSumSquares R ![a, b] x = a * (x 0 * x 0) + b * (x 1 * x 1) := by
@@ -257,6 +288,18 @@ theorem _root_.QuadraticMap.associated_weightedSumSquares (w : ι → R) (x y : 
     exact Finset.sum_congr rfl fun i _ => by ring
   have h := congrArg (fun r : R => ⅟(2 : R) * r) h2
   simpa only [← mul_assoc, invOf_mul_self, one_mul] using h
+
+/-- The standard coordinate basis `Pi.basisFun R ι` is orthogonal for any diagonal quadratic
+form. -/
+theorem _root_.QuadraticMap.isOrthoᵢ_associated_weightedSumSquares {S : Type*} [Monoid S]
+    [DistribMulAction S R] [SMulCommClass S R R] (w : ι → S) :
+    (QuadraticMap.associated (QuadraticMap.weightedSumSquares R w)).IsOrthoᵢ
+      (Pi.basisFun R ι) := by
+  classical
+  intro i j hij
+  simpa [Function.onFun, Pi.basisFun_apply] using
+    QuadraticMap.associated_isOrtho.mpr
+      (QuadraticMap.isOrtho_weightedSumSquares_single w hij (1 : R) (1 : R))
 
 /-- The matrix of a diagonal quadratic form in the standard basis is the diagonal matrix of its
 weights. -/
