@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
+import TauCeti.Topology.Order.MonotoneConvergence
 
 /-!
 # Finite-energy pairs of pants have limiting end actions
@@ -39,7 +40,9 @@ input ends and from above on the output end.
 ## Main results
 
 * `SymplecticForm.monotoneOn_hamiltonianAction_endChart`: on the part `±s ≥ 2` of an end, the
-  action of the end loops of a Floer solution increases with the end coordinate `s`.
+  action of the end loops of a Floer solution increases with the end coordinate `s`; this only
+  needs the solution near that part of the end
+  (`SymplecticForm.monotoneOn_endSign_mul_hamiltonianAction` for the signed form).
 * `SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_ne_top_iff`: a Floer
   solution has finite energy exactly when the actions of its end loops converge.
 * `SymplecticForm.sum_endSign_mul_hamiltonianAction_le`: for `R ≥ 2`, the signed sum of the end
@@ -74,8 +77,8 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 coordinates, is the energy density of the cylindrical datum `H_q(t) dt`, and it is nonnegative. -/
 private theorem floerEnergyDensity_endChart_nonneg (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) {J : AlmostComplexStructure V}
-    {q : Puncture} {ζ : ℝ × ℝ} (hζ : 2 ≤ q.endSign * ζ.1) (hJ : ω.Tames J)
+    {J : AlmostComplexStructure V} {q : Puncture} {ζ : ℝ × ℝ}
+    (hu : DifferentiableAt ℝ u (endChart q ζ)) (hζ : 2 ≤ q.endSign * ζ.1) (hJ : ω.Tames J)
     (hfloer : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J (ω.perturbedFDeriv
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -86,8 +89,7 @@ private theorem floerEnergyDensity_endChart_nonneg (ω : SymplecticForm V)
   have hpb := ω.floerEnergyDensity_perturbationPullback
     (Ks := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (Kt := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-    (hasFDerivAt_endChart q ζ).differentiableAt
-    ((hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hS)).differentiableAt two_ne_zero)
+    (hasFDerivAt_endChart q ζ).differentiableAt hu
     (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ 1)
     (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ Complex.I)
   -- In the end coordinates, the pulled-back datum is `H_q(t) dt` at `ζ`.
@@ -119,14 +121,16 @@ private theorem floerEnergyDensity_endChart_nonneg (ω : SymplecticForm V)
   rw [heq, hpb]
   exact mul_nonneg (det_fderiv_endChart_nonneg q ζ) (ω.floerEnergyDensity_nonneg hJ hfloer)
 
-/-- **The end actions increase along the ends.** Let `u` be `C²` on `S = ℂ ∖ {0, 1}` and solve
-the Floer equation `(du - X_K)^{0,1} = 0` for the pair-of-pants perturbation `K` and almost complex
-structures `J(z)` tamed by `ω`, at the points of the part `±s ≥ 2` of the end `q`. Then on that
-part the action of the end loop `t ↦ u(φ_q(s + i t))` is a monotone function of `s`. -/
+/-- **The end actions increase along the ends.** Let `u` be `C²` on an open set `U` containing
+the part `±s ≥ 2` of the end `q`, for instance on `S = ℂ ∖ {0, 1}`, and solve the Floer equation
+`(du - X_K)^{0,1} = 0` for the pair-of-pants perturbation `K` and almost complex structures `J(z)`
+tamed by `ω`, at the points of that part. Then on that part the action of the end loop
+`t ↦ u(φ_q(s + i t))` is a monotone function of `s`. -/
 theorem monotoneOn_hamiltonianAction_endChart (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) {J : ℝ × ℝ → AlmostComplexStructure V}
-    {q : Puncture}
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {q : Puncture}
+    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U)
+    (hUq : ∀ ζ : ℝ × ℝ, 2 ≤ q.endSign * ζ.1 → endChart q ζ ∈ U)
+    {J : ℝ × ℝ → AlmostComplexStructure V}
     (hJ : ∀ ζ : ℝ × ℝ, 2 ≤ q.endSign * ζ.1 → ω.Tames (J (endChart q ζ)))
     (hfloer : ∀ ζ : ℝ × ℝ, 2 ≤ q.endSign * ζ.1 →
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (endChart q ζ)) (ω.perturbedFDeriv
@@ -141,19 +145,30 @@ theorem monotoneOn_hamiltonianAction_endChart (ω : SymplecticForm V)
     rw [mem_ofPred_eq] at hc hd
     rcases endSign_eq_one_or_eq_neg_one q with h | h <;> rw [h] at hc hd ⊢ <;> linarith [hs.1, hs.2]
   -- The energy over the rectangle is the change of action, and it is nonnegative.
-  have h := ω.integral_floerEnergyDensity_endChart_eq_hamiltonianAction_sub (hHs q) hu q hcd
-    fun s hs ↦ by linarith [hmem hs]
+  have h := ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub (hHs q)
+    (hU.preimage (contDiff_endChart q 0).continuous)
+    (hu.comp (contDiff_endChart q 2).contDiffOn fun _ hw ↦ hw) hcd
+    (fun ζ hζ ↦ hUq ζ (hmem hζ.1)) fun s _ ↦ by
+      -- The end loops close up: `φ_q(s + i) = φ_q(s)`.
+      simp only [comp_apply, endChart_mk]
+      simpa using congrArg (fun w ↦ u (Complex.equivRealProdCLM w))
+        (q.periodic_cylindricalEndLift s 0)
+  simp only [comp_apply] at h
   have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
-    fun ζ (hζ : ζ ∈ Icc c d ×ˢ Icc 0 1) ↦ floerEnergyDensity_endChart_nonneg ω hH hHs hu (hmem hζ.1)
+    fun ζ (hζ : ζ ∈ Icc c d ×ˢ Icc 0 1) ↦ floerEnergyDensity_endChart_nonneg ω hH hHs
+      ((hu.contDiffAt (hU.mem_nhds (hUq ζ (hmem hζ.1)))).differentiableAt two_ne_zero) (hmem hζ.1)
       (hJ ζ (hmem hζ.1)) (hfloer ζ (hmem hζ.1))
   linarith
 
-/-- In the parametrization `R ↦ ±R` of the ends by their signed longitudinal coordinate, the
-signed end action `±A_q(R)` increases with `R ≥ 2`. -/
-private theorem monotoneOn_endSign_mul_hamiltonianAction (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) {J : ℝ × ℝ → AlmostComplexStructure V}
-    {q : Puncture}
+/-- **The signed end actions increase with the height.** Under the hypotheses of
+`SymplecticForm.monotoneOn_hamiltonianAction_endChart`, in the parametrization `R ↦ ±R` of the end
+`q` by its signed longitudinal coordinate, the signed action `±A_{H_q}(ℓ_q(R))` of the end loop
+`ℓ_q(R)(t) = u(φ_q(±R + i t))` increases with `R ≥ 2`. -/
+theorem monotoneOn_endSign_mul_hamiltonianAction (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {q : Puncture}
+    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U)
+    (hUq : ∀ ζ : ℝ × ℝ, 2 ≤ q.endSign * ζ.1 → endChart q ζ ∈ U)
+    {J : ℝ × ℝ → AlmostComplexStructure V}
     (hJ : ∀ ζ : ℝ × ℝ, 2 ≤ q.endSign * ζ.1 → ω.Tames (J (endChart q ζ)))
     (hfloer : ∀ ζ : ℝ × ℝ, 2 ≤ q.endSign * ζ.1 →
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (endChart q ζ)) (ω.perturbedFDeriv
@@ -164,7 +179,7 @@ private theorem monotoneOn_endSign_mul_hamiltonianAction (ω : SymplecticForm V)
       (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))) (Ici 2) := by
   intro R₁ hR₁ R₂ _ hR
   have hR₁' : (2 : ℝ) ≤ R₁ := hR₁
-  have hle := ω.monotoneOn_hamiltonianAction_endChart hH hHs hu hJ hfloer
+  have hle := ω.monotoneOn_hamiltonianAction_endChart hH hHs hU hu hUq hJ hfloer
   simp only [← endChart_mk]
   rcases endSign_eq_one_or_eq_neg_one q with h | h
   · simp only [h, one_mul]
@@ -276,43 +291,31 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_ne_top_iff (ω : Sy
   have hS {q : Puncture} {ζ : ℝ × ℝ} (hζ : 2 ≤ q.endSign * ζ.1) :
       endChart q ζ ∈ thricePuncturedSphereReal :=
     endChart_mem_thricePuncturedSphereReal (by linarith)
-  have hmono (q : Puncture) := monotoneOn_endSign_mul_hamiltonianAction ω hH hHs hu (q := q)
-    (fun _ hζ ↦ hJ _ (hS hζ)) (fun _ hζ ↦ hfloer _ (hS hζ))
+  have hmono (q : Puncture) := ω.monotoneOn_endSign_mul_hamiltonianAction hH hHs (q := q)
+    isOpen_thricePuncturedSphereReal hu (fun _ hζ ↦ hS hζ) (fun _ hζ ↦ hJ _ (hS hζ))
+    (fun _ hζ ↦ hfloer _ (hS hζ))
   have hsum {R : ℝ} (hR : 2 ≤ R) : ∑ q, q.endSign * A q R ≤ C :=
     ω.sum_endSign_mul_hamiltonianAction_le hH hHs hu hJ hfloer hE hR
   -- Each signed end action is increasing and bounded above, so it converges.
-  have hconv (q : Puncture) : ∃ b, Tendsto (fun R ↦ q.endSign * A q R) atTop (𝓝 b) := by
-    set g : ℝ → ℝ := fun R ↦ q.endSign * A q (max R 2)
-    have hg : Monotone g := fun R₁ R₂ hR ↦ hmono q (le_max_right R₁ 2) (le_max_right R₂ 2)
-      (max_le_max_right 2 hR)
-    have hbdd : BddAbove (range g) := by
-      refine ⟨C - ∑ r ∈ Finset.univ.erase q, r.endSign * A r 2, ?_⟩
-      rintro _ ⟨R, rfl⟩
-      have hR : 2 ≤ max R 2 := le_max_right R 2
-      have hrest : ∑ r ∈ Finset.univ.erase q, r.endSign * A r 2 ≤
-          ∑ r ∈ Finset.univ.erase q, r.endSign * A r (max R 2) :=
-        Finset.sum_le_sum fun r _ ↦ hmono r (mem_Ici.2 le_rfl) hR hR
-      have h := hsum hR
-      rw [← Finset.add_sum_erase _ _ (Finset.mem_univ q)] at h
-      simp only [g]
-      linarith
-    refine ⟨⨆ R, g R, (tendsto_atTop_ciSup hg hbdd).congr' ?_⟩
-    filter_upwards [eventually_ge_atTop 2] with R hR
-    simp only [g, max_eq_left hR]
+  have hconv (q : Puncture) : ∃ b, Tendsto (fun R ↦ q.endSign * A q R) atTop (𝓝 b) :=
+    exists_tendsto_of_monotoneOn_Ici_of_sum_le (f := fun r R ↦ r.endSign * A r R)
+      (fun r _ ↦ hmono r) (fun _ hR ↦ hsum hR) (Finset.mem_univ q)
   choose b hb using hconv
   refine ⟨fun q ↦ q.endSign * b q, fun q ↦ ((hb q).const_mul q.endSign).congr fun R ↦ ?_⟩
   rw [← mul_assoc, endSign_mul_self, one_mul]
 
-/-- **The end actions approach their limits monotonically.** Let `u` be `C²` on `S = ℂ ∖ {0, 1}`
-and solve the Floer equation `(du - X_K)^{0,1} = 0` for the pair-of-pants perturbation `K` and
-almost complex structures `J(z)` tamed by `ω`, at the points of the part `±s ≥ 2` of the end `q`.
+/-- **The end actions approach their limits monotonically.** Let `u` be `C²` on an open set `U`
+containing the part `±s ≥ 2` of the end `q`, for instance on `S = ℂ ∖ {0, 1}`, and solve the Floer
+equation `(du - X_K)^{0,1} = 0` for the pair-of-pants perturbation `K` and almost complex
+structures `J(z)` tamed by `ω`, at the points of that part.
 If the actions of the loops `ℓ_q(t) = u(φ_q(±R + i t))` of the end `q` tend to `a` as `R → ∞`, then
 `±A_{H_q}(ℓ_q) ≤ ±a` for every `R ≥ 2`: the actions of the input loops are at most their limits,
 and the action of the output loop is at least its limit. -/
 theorem endSign_mul_hamiltonianAction_le_of_tendsto (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) {J : ℝ × ℝ → AlmostComplexStructure V}
-    {q : Puncture}
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {q : Puncture}
+    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U)
+    (hUq : ∀ ζ : ℝ × ℝ, 2 ≤ q.endSign * ζ.1 → endChart q ζ ∈ U)
+    {J : ℝ × ℝ → AlmostComplexStructure V}
     (hJ : ∀ ζ : ℝ × ℝ, 2 ≤ q.endSign * ζ.1 → ω.Tames (J (endChart q ζ)))
     (hfloer : ∀ ζ : ℝ × ℝ, 2 ≤ q.endSign * ζ.1 →
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (endChart q ζ)) (ω.perturbedFDeriv
@@ -325,7 +328,7 @@ theorem endSign_mul_hamiltonianAction_le_of_tendsto (ω : SymplecticForm V)
     {R : ℝ} (hR : 2 ≤ R) :
     q.endSign * ω.hamiltonianAction (H q) (fun t ↦ u (Complex.equivRealProdCLM
       (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) ≤ q.endSign * a := by
-  have hmono := monotoneOn_endSign_mul_hamiltonianAction ω hH hHs hu hJ hfloer
+  have hmono := ω.monotoneOn_endSign_mul_hamiltonianAction hH hHs hU hu hUq hJ hfloer
   refine ge_of_tendsto (ha.const_mul q.endSign) ?_
   filter_upwards [eventually_ge_atTop R] with R' hR'
   exact hmono (mem_Ici.2 hR) (mem_Ici.2 (hR.trans hR')) hR'

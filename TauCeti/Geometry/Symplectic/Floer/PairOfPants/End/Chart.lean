@@ -369,12 +369,8 @@ theorem fderiv_endChart_apply (q : Puncture) (z v : ℝ × ℝ) :
 theorem isComplexLinearMap_fderiv_endChart (q : Puncture) (z : ℝ × ℝ) :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
       (fderiv ℝ (endChart q) z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-  rw [isComplexLinearMap_iff_apply]
-  intro v
-  simp only [ContinuousLinearMap.coe_coe, fderiv_endChart_apply,
-    AlmostComplexStructure.product_apply]
-  apply Prod.ext <;>
-    simp [Complex.equivRealProdCLM_symm_apply, Complex.mul_re, Complex.mul_im] <;> ring
+  rw [endChart_eq_realChart]
+  exact isComplexLinearMap_fderiv_realChart (q.hasDerivAt_cylindricalEndLift _)
 
 theorem contDiff_endChart (q : Puncture) (n : WithTop ℕ∞) : ContDiff ℝ n (endChart q) := by
   exact Complex.equivRealProdCLM.contDiff.comp
