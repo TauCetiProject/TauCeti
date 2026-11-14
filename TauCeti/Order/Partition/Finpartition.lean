@@ -391,15 +391,9 @@ theorem part_eq_part_of_le (h : P ≤ Q) {a b : α} (hab : P.part a = P.part b) 
 
 /-- A point lies in the union of the parts through two points of `s` exactly when its part is one
 of the two. -/
-theorem mem_union_part_iff {i j x : α} (hi : i ∈ s) (hj : j ∈ s) :
+theorem mem_part_union_part_iff {i j x : α} (hi : i ∈ s) (hj : j ∈ s) :
     x ∈ P.part i ∪ P.part j ↔ P.part x = P.part i ∨ P.part x = P.part j := by
-  by_cases hx : x ∈ s
-  · rw [mem_union, P.mem_part_iff_part_eq_part hx hi, P.mem_part_iff_part_eq_part hx hj]
-  · rw [P.part_eq_empty.2 hx]
-    refine iff_of_false (fun h => (mem_union.1 h).elim (fun h => hx (P.part_subset i h))
-      fun h => hx (P.part_subset j h)) ?_
-    rintro (h | h)
-    exacts [(P.part_nonempty.2 hi).ne_empty h.symm, (P.part_nonempty.2 hj).ne_empty h.symm]
+  rw [mem_union, ← P.part_eq_iff_mem (P.part_mem.2 hi), ← P.part_eq_iff_mem (P.part_mem.2 hj)]
 
 /-- Membership in a union of parts is constant on each part. -/
 theorem mem_iff_mem_of_part_eq_part {X : Finset α} (hX : ∀ C ∈ P.parts, C ⊆ X ∨ Disjoint C X)

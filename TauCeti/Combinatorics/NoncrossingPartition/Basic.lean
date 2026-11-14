@@ -353,10 +353,9 @@ private theorem IsNoncrossing.false_of_mem_union (hP : P.IsNoncrossing) {i j : �
     rcases hp with rfl | rfl <;> rcases hq with rfl | rfl <;> exact ⟨‹_›, ‹_›⟩
 
 /-- Merging the parts through two adjacent positions `i ≤ j` of a noncrossing partition `P` keeps
-it noncrossing: a partition `Q` whose classes are those of a key identifying two positions exactly
-when they lie in a common part of `P` or both lie in the union of the parts through `i` and `j`
-is noncrossing. -/
-private theorem IsNoncrossing.of_key_merge (hP : P.IsNoncrossing) {i j : α} (hi : i ∈ s)
+it noncrossing: a partition `Q` in which two positions share a part exactly when they lie in a
+common part of `P` or both lie in the union of the parts through `i` and `j` is noncrossing. -/
+private theorem IsNoncrossing.of_mem_part_iff (hP : P.IsNoncrossing) {i j : α} (hi : i ∈ s)
     (hj : j ∈ s) (hij : i ≤ j) (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z) {Q : Finpartition s}
     (hQ : ∀ {x y}, y ∈ Q.part x ↔ x ∈ s ∧ y ∈ s ∧
       (P.part x = P.part y ∨ x ∈ P.part i ∪ P.part j ∧ y ∈ P.part i ∪ P.part j)) :
@@ -373,7 +372,7 @@ private theorem IsNoncrossing.of_key_merge (hP : P.IsNoncrossing) {i j : α} (hi
   · exact Or.inl (hP.part_eq_part ha hb hac hbd hab hbc hcd).symm
   · have haM : a ∉ P.part i ∪ P.part j := fun haM => habM ⟨hbM, haM⟩
     refine (hP.false_of_mem_union hi hj hij hadj hbM hdM hcs ?_ ?_ hbc hcd (Or.inl hab)).elim
-    · rwa [P.mem_union_part_iff hi hj, ← hac, ← P.mem_union_part_iff hi hj]
+    · rwa [P.mem_part_union_part_iff hi hj, ← hac, ← P.mem_part_union_part_iff hi hj]
     · exact P.mem_part_iff_part_eq_part ha hcs |>.2 hac
   · have hbM : b ∉ P.part i ∪ P.part j := fun hbM => habM ⟨hbM, haM⟩
     exact (hP.false_of_mem_union hi hj hij hadj haM hcM hb hbM
@@ -399,14 +398,14 @@ theorem IsNoncrossing.exists_part_eq_union (hP : P.IsNoncrossing) {i j : α} (hi
   have hkey : ∀ {x y}, key x = key y ↔
       P.part x = P.part y ∨ x ∈ P.part i ∪ P.part j ∧ y ∈ P.part i ∪ P.part j := by
     intro x y
-    rw [P.mem_union_part_iff hi hj, P.mem_union_part_iff hi hj]
+    rw [P.mem_part_union_part_iff hi hj, P.mem_part_union_part_iff hi hj]
     simp only [key]
     split_ifs <;> grind
   have hQ : ∀ {x y}, y ∈ Q.part x ↔ x ∈ s ∧ y ∈ s ∧
       (P.part x = P.part y ∨ x ∈ P.part i ∪ P.part j ∧ y ∈ P.part i ∪ P.part j) := fun {x y} => by
     rw [mem_part_ofSetSetoid_iff_rel, Setoid.ker_def]
     exact and_congr_right fun _ => and_congr_right fun _ => hkey
-  refine ⟨Q, hP.of_key_merge hi hj hij hadj hQ, ?_, ?_⟩
+  refine ⟨Q, hP.of_mem_part_iff hi hj hij hadj hQ, ?_, ?_⟩
   · refine fun B hB => ?_
     obtain ⟨x, hx⟩ := P.nonempty_of_mem_parts hB
     refine ⟨Q.part x, Q.part_mem.2 (P.le hB hx), fun y hy => hQ.2 ⟨P.le hB hx, P.le hB hy, ?_⟩⟩
