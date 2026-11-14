@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Integrable
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Linear
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.Complex.Inner
-import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # The rotational moment map of planar central forces
@@ -159,57 +158,6 @@ theorem hamiltonianTorusData_angularMomentum :
   rw [h]
   exact SymplecticForm.hamiltonianTorusData_linearActionMomentMap (I := 𝓡 1) (T := Circle)
     stdSymplecticForm fun g u w ↦ stdSymplecticForm_smul (V := ℂ) g u w
-
-/-! ### The rotations of the punctured phase space -/
-
-section PuncturedPhaseSpace
-
-variable {V G : Type*} [NormedAddCommGroup V] [Group G] [DistribMulAction G V]
-
-/-- A group acting linearly on `V` acts on the punctured phase space `{(q, p) | q ≠ 0}` by acting
-on positions and momenta alike: for instance, a rotation keeps the particle away from the centre
-of force. -/
-instance : MulAction G (puncturedPhaseSpace V) where
-  smul g x := ⟨g • (x : V × V), mem_puncturedPhaseSpace.2 <| by
-    simpa [smul_ne_zero_iff_ne] using mem_puncturedPhaseSpace.1 x.2⟩
-  one_smul x := Subtype.ext (one_smul G (x : V × V))
-  mul_smul g h x := Subtype.ext (mul_smul g h (x : V × V))
-
-@[simp]
-theorem coe_smul_puncturedPhaseSpace (g : G) (x : puncturedPhaseSpace V) :
-    ((g • x : puncturedPhaseSpace V) : V × V) = g • (x : V × V) :=
-  (rfl)
-
-variable [NormedSpace ℝ V] {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace G] [ChartedSpace H G]
-  {n : ℕ∞ω}
-
-/-- A group acting smoothly and linearly on `V` acts smoothly on the punctured phase space. -/
-instance [ContMDiffSMul I 𝓘(ℝ, V) n G V] :
-    ContMDiffSMul I 𝓘(ℝ, V × V) n G (puncturedPhaseSpace V) where
-  contMDiff_smul := by
-    have hx : ContMDiff (I.prod 𝓘(ℝ, V × V)) 𝓘(ℝ, V × V) n
-        fun p : G × puncturedPhaseSpace V ↦ (p.2 : V × V) :=
-      contMDiff_subtype_val.comp contMDiff_snd
-    have hsmul := contMDiff_smul (I := I) (I' := 𝓘(ℝ, V)) (n := n) (G := G) (M := V)
-    have hfst : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.fst := contDiff_fst.contMDiff
-    have hsnd : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.snd := contDiff_snd.contMDiff
-    exact (ContMDiff.subtypeVal_comp_iff (puncturedPhaseSpace V) _).1 <|
-      (hsmul.comp (contMDiff_fst.prodMk (hfst.comp hx))).prodMk_space
-        (hsmul.comp (contMDiff_fst.prodMk (hsnd.comp hx)))
-
-/-- Each element of a group acting smoothly and linearly on `V` acts smoothly on the punctured
-phase space. -/
-instance [ContMDiffConstSMul 𝓘(ℝ, V) n G V] :
-    ContMDiffConstSMul 𝓘(ℝ, V × V) n G (puncturedPhaseSpace V) := by
-  refine ⟨fun g ↦ (ContMDiff.subtypeVal_comp_iff (puncturedPhaseSpace V) _).1 ?_⟩
-  have hsmul := ContMDiffConstSMul.contMDiff_const_smul (I := 𝓘(ℝ, V)) (n := n) (M := V) g
-  have hfst : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.fst := contDiff_fst.contMDiff
-  have hsnd : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.snd := contDiff_snd.contMDiff
-  exact (hsmul.comp (hfst.comp contMDiff_subtype_val)).prodMk_space
-    (hsmul.comp (hsnd.comp contMDiff_subtype_val))
-
-end PuncturedPhaseSpace
 
 /-- **The rotational moment map on the punctured phase space.** On the punctured phase space
 `{(q, p) | q ≠ 0}` of a planar particle, with the standard symplectic form restricted from `ℂ × ℂ`,
