@@ -349,6 +349,79 @@ private theorem UniformlyEllipticOn.ae_mul_sq_mul_rpow_mul_norm_sq_le_energyInte
   rw [hsplit]
   linarith
 
+/-- The integration and absorption step of the Caccioppoli inequalities for powers. Let `u` be a
+weak supersolution with drift `b` and mass coefficient `c`, bounded below by `ε > 0`, let `p < 1`,
+and let `ψ` be smooth and compactly supported in `Ω`. If for every test function `v` with value
+`ψ² u^{p-1}` and gradient `(p - 1) ψ² u^{p-2} ∇u + 2 ψ u^{p-1} ∇ψ` the quantity
+`F = ψ² u^{p-2} ‖∇u‖²` satisfies, almost everywhere,
+`λ F ≤ -(1 - p)⁻¹ (energy integrand of u and v) + θ F + K ‖∇ψ‖² u^p + K' ψ² u^p`, then
+`(λ - θ) ∫_Ω F ≤ K ∫_Ω ‖∇ψ‖² u^p + K' ∫_Ω ψ² u^p`. -/
+private theorem UniformlyEllipticOn.sub_mul_setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} {beta gamma : ℝ}
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        0 ≤ energyFormH1 a b c u (v : W1p mu Omega 2))
+    {ε : ℝ} (hε : 0 < ε) (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x)
+    {p : ℝ} (hp : p < 1)
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
+    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) {θ K K' : ℝ}
+    (hpt : ∀ v : W1p mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, W1p.value v x = ψ x ^ 2 * W1p.value u x ^ (p - 1)) →
+      (∀ᵐ x ∂mu.restrict Omega, W1p.gradient v x =
+        (ψ x ^ 2 * ((p - 1) * W1p.value u x ^ (p - 1 - 1))) • W1p.gradient u x +
+          (2 * ψ x * W1p.value u x ^ (p - 1)) • ∇ ψ x) →
+      ∀ᵐ x ∂mu.restrict Omega,
+        lam * (ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2)) ≤
+          -(1 - p)⁻¹ * energyIntegrand (a x) (b x) (c x) (jetField u x) (jetField v x)
+            + θ * (ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2))
+            + K * (‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p) + K' * (ψ x ^ 2 * W1p.value u x ^ p)) :
+    (lam - θ) *
+        ∫ x in Omega, ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2) ∂mu ≤
+      K * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p ∂mu +
+        K' * ∫ x in Omega, ψ x ^ 2 * W1p.value u x ^ p ∂mu := by
+  have h1p : 0 < 1 - p := by linarith
+  -- Test the inequality against `v = ψ² u^{p-1} ≥ 0`.
+  obtain ⟨v, hvv, hvg⟩ := exists_w1p0_value_gradient_ae_eq_sq_mul_rpow hε hεu hp hψ hcpt hts
+  have hpos := hu v (by
+    filter_upwards [hvv, hεu] with x h1 h2
+    rw [h1]
+    exact mul_nonneg (sq_nonneg _) (Real.rpow_nonneg (hε.le.trans h2) _))
+  rw [energyFormH1_def] at hpos
+  -- Integrability of the four terms.
+  have hE := h.integrable_energyIntegrand_jetField ha hb hc hb_bound hc_bound u
+    (v : W1p mu Omega 2)
+  obtain ⟨M, _, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
+  have hF := integrable_sq_mul_rpow_mul_norm_gradient_sq hε hεu hp hψ.continuous hψM
+  have hY := integrable_norm_gradient_sq_mul_rpow (u := u) hε hεu hp hψ hgradM
+  have hZ : Integrable (fun x => ψ x ^ 2 * W1p.value u x ^ p) (mu.restrict Omega) :=
+    integrable_mul_rpow hε hεu hp (hψ.continuous.pow 2) (M := M ^ 2) fun x => by
+      rw [abs_of_nonneg (sq_nonneg _)]
+      exact sq_le_sq' (abs_le.1 (hψM x)).1 (abs_le.1 (hψM x)).2
+  have hE' := hE.const_mul (-(1 - p)⁻¹)
+  have hF' := hF.const_mul θ
+  have hY' := hY.const_mul K
+  have hZ' := hZ.const_mul K'
+  -- Integrate the pointwise estimate and absorb the part `θ` of the left side.
+  have hI : ∫ x in Omega, lam * (ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2))
+      ∂mu ≤ ∫ x in Omega, (-(1 - p)⁻¹ * energyIntegrand (a x) (b x) (c x) (jetField u x)
+            (jetField (v : W1p mu Omega 2) x)
+          + θ * (ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2))
+          + K * (‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p) + K' * (ψ x ^ 2 * W1p.value u x ^ p)) ∂mu :=
+    integral_mono_ae (hF.const_mul lam) (((hE'.add hF').add hY').add hZ') (hpt v hvv hvg)
+  rw [integral_const_mul, integral_add ((hE'.fun_add hF').fun_add hY') hZ',
+    integral_add (hE'.fun_add hF') hY', integral_add hE' hF', integral_const_mul,
+    integral_const_mul, integral_const_mul, integral_const_mul] at hI
+  have hneg : -(1 - p)⁻¹ * ∫ x in Omega, energyIntegrand (a x) (b x) (c x) (jetField u x)
+      (jetField (v : W1p mu Omega 2) x) ∂mu ≤ 0 :=
+    mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 (inv_nonneg.2 h1p.le)) hpos
+  linarith
+
 /-- **The Caccioppoli inequality for powers of a positive supersolution.** Let `a` be measurable
 and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak
 supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative
@@ -372,45 +445,17 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le
     ∫ x in Omega, ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2) ∂mu ≤
       (2 * Lam / ((1 - p) * lam)) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p ∂mu := by
   have hlam := h.pos
-  have h1p : 0 < 1 - p := by linarith
-  -- Test the inequality against `v = ψ² u^{p-1} ≥ 0`.
-  obtain ⟨v, hvv, hvg⟩ := exists_w1p0_value_gradient_ae_eq_sq_mul_rpow hε hεu hp hψ hcpt hts
-  have hpos := hu v (by
-    filter_upwards [hvv, hεu] with x h1 h2
-    rw [h1]
-    exact mul_nonneg (sq_nonneg _) (Real.rpow_nonneg (hε.le.trans h2) _))
-  rw [energyFormH1_def] at hpos
-  have hE := h.integrable_energyIntegrand_jetField (b := 0) (c := 0) (beta := 0) (gamma := 0)
-    ha aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
-    (fun _ _ => by simp) u (v : W1p mu Omega 2)
-  have hpt := h.ae_mul_sq_mul_rpow_mul_norm_sq_le_energyIntegrand hε hεu hp hvg
-  -- Integrability of the three terms.
-  obtain ⟨M, _, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
-  have hF := integrable_sq_mul_rpow_mul_norm_gradient_sq hε hεu hp hψ.continuous hψM
-  have hY := integrable_norm_gradient_sq_mul_rpow (u := u) hε hεu hp hψ hgradM
-  -- Integrate the pointwise estimate and absorb half of the left side.
-  have hI : ∫ x in Omega, lam * (ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2))
-      ∂mu ≤ ∫ x in Omega, (-(1 - p)⁻¹ * energyIntegrand (a x)
-            ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)
-            (jetField u x) (jetField (v : W1p mu Omega 2) x)
-          + lam / 2 * (ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2))
-          + 2 * Lam ^ 2 / lam / (1 - p) ^ 2 * (‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p)) ∂mu :=
-    integral_mono_ae (hF.const_mul lam)
-      (((hE.const_mul _).add (hF.const_mul _)).add (hY.const_mul _)) hpt
-  rw [integral_const_mul, integral_add, integral_add, integral_const_mul, integral_const_mul,
-    integral_const_mul] at hI
-  rotate_left
-  · exact hE.const_mul _
-  · exact hF.const_mul _
-  · exact (hE.const_mul _).add (hF.const_mul _)
-  · exact hY.const_mul _
+  -- Absorb half of the left side.
+  have hhalf := h.sub_mul_setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le ha (b := 0) (c := 0)
+    (beta := 0) (gamma := 0) aestronglyMeasurable_const aestronglyMeasurable_const
+    (fun _ _ => by simp) (fun _ _ => by simp) hu hε hεu hp hψ hcpt hts (θ := lam / 2)
+    (K := 2 * Lam ^ 2 / lam / (1 - p) ^ 2) (K' := 0)
+    fun v _ hvg => by
+      filter_upwards [h.ae_mul_sq_mul_rpow_mul_norm_sq_le_energyIntegrand hε hεu hp hvg] with x hx
+      linarith
+  rw [sub_half, zero_mul, add_zero] at hhalf
   set X := ∫ x in Omega, ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2) ∂mu
   set Y := ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p ∂mu
-  have hneg : -(1 - p)⁻¹ * ∫ x in Omega, energyIntegrand (a x)
-      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)
-      (jetField u x) (jetField (v : W1p mu Omega 2) x) ∂mu ≤ 0 :=
-    mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 (inv_nonneg.2 h1p.le)) hpos
-  have hhalf : lam / 2 * X ≤ 2 * Lam ^ 2 / lam / (1 - p) ^ 2 * Y := by linarith
   calc X = 2 / lam * (lam / 2 * X) := by field_simp
     _ ≤ 2 / lam * (2 * Lam ^ 2 / lam / (1 - p) ^ 2 * Y) := by gcongr
     _ = (2 * Lam / ((1 - p) * lam)) ^ 2 * Y := by field_simp
@@ -448,51 +493,17 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le_lowe
         (2 * Lam ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p ∂mu +
           (beta ^ 2 + (1 - p) * lam * gamma) * ∫ x in Omega, ψ x ^ 2 * W1p.value u x ^ p ∂mu) := by
   have hlam := h.pos
-  have h1p : 0 < 1 - p := by linarith
-  -- Test the inequality against `v = ψ² u^{p-1} ≥ 0`.
-  obtain ⟨v, hvv, hvg⟩ := exists_w1p0_value_gradient_ae_eq_sq_mul_rpow hε hεu hp hψ hcpt hts
-  have hpos := hu v (by
-    filter_upwards [hvv, hεu] with x h1 h2
-    rw [h1]
-    exact mul_nonneg (sq_nonneg _) (Real.rpow_nonneg (hε.le.trans h2) _))
-  rw [energyFormH1_def] at hpos
-  have hE := h.integrable_energyIntegrand_jetField ha hb hc hb_bound hc_bound u
-    (v : W1p mu Omega 2)
-  have hpt := h.ae_mul_sq_mul_rpow_mul_norm_sq_le_energyIntegrand_lowerOrder hb_bound hc_bound hε
-    hεu hp hvv hvg
-  -- Integrability of the four terms.
-  obtain ⟨M, _, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
-  have hF := integrable_sq_mul_rpow_mul_norm_gradient_sq hε hεu hp hψ.continuous hψM
-  have hY := integrable_norm_gradient_sq_mul_rpow (u := u) hε hεu hp hψ hgradM
-  have hZ := integrable_mul_rpow (u := u) hε hεu hp (hψ.continuous.pow 2) (M := M ^ 2) fun x => by
-    rw [abs_of_nonneg (sq_nonneg _)]
-    exact sq_le_sq' (abs_le.1 (hψM x)).1 (abs_le.1 (hψM x)).2
   set K := 2 * Lam ^ 2 / lam / (1 - p) ^ 2
   set K' := beta ^ 2 / (lam * (1 - p) ^ 2) + gamma / (1 - p)
-  -- Integrate the pointwise estimate and absorb three quarters of the left side.
-  have hI : ∫ x in Omega, lam * (ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2))
-      ∂mu ≤ ∫ x in Omega, (-(1 - p)⁻¹ * energyIntegrand (a x) (b x) (c x) (jetField u x)
-            (jetField (v : W1p mu Omega 2) x)
-          + 3 * lam / 4 * (ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2))
-          + K * (‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p) + K' * (ψ x ^ 2 * W1p.value u x ^ p)) ∂mu :=
-    integral_mono_ae (hF.const_mul lam)
-      ((((hE.const_mul _).add (hF.const_mul _)).add (hY.const_mul _)).add (hZ.const_mul _)) hpt
-  rw [integral_const_mul, integral_add, integral_add, integral_add, integral_const_mul,
-    integral_const_mul, integral_const_mul, integral_const_mul] at hI
-  rotate_left
-  · exact hE.const_mul _
-  · exact hF.const_mul _
-  · exact (hE.const_mul _).add (hF.const_mul _)
-  · exact hY.const_mul _
-  · exact ((hE.const_mul _).add (hF.const_mul _)).add (hY.const_mul _)
-  · exact hZ.const_mul _
+  -- Absorb three quarters of the left side.
+  have hquarter := h.sub_mul_setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le ha hb hc hb_bound
+    hc_bound hu hε hεu hp hψ hcpt hts (θ := 3 * lam / 4) (K := K) (K' := K') fun _ hvv hvg =>
+      h.ae_mul_sq_mul_rpow_mul_norm_sq_le_energyIntegrand_lowerOrder hb_bound hc_bound hε hεu hp
+        hvv hvg
+  rw [show lam - 3 * lam / 4 = lam / 4 by ring] at hquarter
   set X := ∫ x in Omega, ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2) ∂mu
   set Y := ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p ∂mu
   set Z := ∫ x in Omega, ψ x ^ 2 * W1p.value u x ^ p ∂mu
-  have hneg : -(1 - p)⁻¹ * ∫ x in Omega, energyIntegrand (a x) (b x) (c x) (jetField u x)
-      (jetField (v : W1p mu Omega 2) x) ∂mu ≤ 0 :=
-    mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 (inv_nonneg.2 h1p.le)) hpos
-  have hquarter : lam / 4 * X ≤ K * Y + K' * Z := by linarith
   calc X = 4 / lam * (lam / 4 * X) := by field_simp
     _ ≤ 4 / lam * (K * Y + K' * Z) := by gcongr
     _ = _ := by

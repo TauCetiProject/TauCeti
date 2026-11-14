@@ -37,11 +37,11 @@ crossover form of the John–Nirenberg inequality on Euclidean balls
 are `u^p` and `u^{-p}`.
 
 The estimate extends to supersolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≥ 0` with measurable
-`‖b‖ ≤ β` and `|c| ≤ γ`: the mean oscillation of `log u` on balls inside `B(x₀, 4√n r)` is then at
+`‖b‖ ≤ β` and `|c| ≤ γ`: the mean oscillation of `log u` on balls `B ⊆ B(x₀, 2√n r)` is then at
 most a dimensional multiple of `√((Λ/λ)² + (βr/λ)² + γr²/λ)`
 (`TauCeti.PDE.exists_setAverage_abs_log_sub_setAverage_le_lowerOrder`), and the crossover estimate
-holds for every exponent with `|p| √((Λ/λ)² + (βr/λ)² + γr²/λ) ≤ c`. The estimate without
-lower-order terms is the case `b = 0`, `c = 0`.
+holds for every exponent with `|p| √((Λ/λ)² + (βr/λ)² + γr²/λ) ≤ c₀`, for a dimensional constant
+`c₀ > 0`. The estimate without lower-order terms is the case `b = 0`, `c = 0`.
 
 ## Main declarations
 

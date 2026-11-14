@@ -55,7 +55,9 @@ supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes o
 have `L²` mass at least `2 r` and derivative energy bounded independently of `c` and `r`
 (`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a function supported in a closed
 ball with bounded gradient there has integral at most the squared bound times the volume of the ball
-(`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`).
+(`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`), and likewise a function
+bounded by `K` and supported in a closed ball has `∫ ψ² ≤ K² |B|`
+(`TauCeti.setIntegral_sq_le_of_support_subset_closedBall`).
 
 Finally, the space-time cut-offs `(t, x) ↦ χ (s • x) * φ (t, x)` of a function `φ` vanishing outside
 a time interval, for a bump `χ` and a small scale `s`, have compact support
@@ -731,6 +733,32 @@ theorem setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall
         · have hfd : fderiv ℝ ψ x = 0 := Function.notMem_support.1 fun hx' =>
             hx (hψts (support_fderiv_subset ℝ hx'))
           simp [indicator_of_notMem hx, _root_.gradient, hfd]
+    _ ≤ K ^ 2 * mu.real (closedBall x₀ R) := by
+        rw [integral_indicator_const _ hmeasB, smul_eq_mul, mul_comm]
+        gcongr
+        rw [measureReal_restrict_apply hmeasB]
+        exact measureReal_mono inter_subset_left measure_closedBall_lt_top.ne
+
+open MeasureTheory Metric in
+/-- A function bounded by `K` on a closed ball and vanishing off it has `∫_s ψ² ≤ K² |B|` over
+every set `s`, where `B` is the closed ball. -/
+theorem setIntegral_sq_le_of_support_subset_closedBall [ProperSpace E] [MeasurableSpace E]
+    [OpensMeasurableSpace E] {mu : Measure E} [IsFiniteMeasureOnCompacts mu] {s : Set E}
+    {ψ : E → ℝ} {x₀ : E} {R K : ℝ} (hψs : Function.support ψ ⊆ closedBall x₀ R)
+    (hψK : ∀ x ∈ closedBall x₀ R, ‖ψ x‖ ≤ K) :
+    ∫ x in s, ψ x ^ 2 ∂mu ≤ K ^ 2 * mu.real (closedBall x₀ R) := by
+  have hmeasB : MeasurableSet (closedBall x₀ R) := measurableSet_closedBall
+  calc ∫ x in s, ψ x ^ 2 ∂mu
+      ≤ ∫ x in s, (closedBall x₀ R).indicator (fun _ => K ^ 2) x ∂mu := by
+        refine integral_mono_of_nonneg (Filter.Eventually.of_forall fun x => by positivity)
+          ((integrableOn_const measure_closedBall_lt_top.ne).integrable_indicator
+            hmeasB).restrict
+          (Filter.Eventually.of_forall fun x => ?_)
+        by_cases hx : x ∈ closedBall x₀ R
+        · rw [indicator_of_mem hx]
+          have := pow_le_pow_left₀ (norm_nonneg _) (hψK x hx) 2
+          rwa [Real.norm_eq_abs, sq_abs] at this
+        · simp [indicator_of_notMem hx, Function.notMem_support.1 fun hx' => hx (hψs hx')]
     _ ≤ K ^ 2 * mu.real (closedBall x₀ R) := by
         rw [integral_indicator_const _ hmeasB, smul_eq_mul, mul_comm]
         gcongr

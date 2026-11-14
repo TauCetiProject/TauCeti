@@ -52,8 +52,12 @@ the supersolution inequality against `ψ² u^{p-1}`, here `ψ² u⁻¹`.
 
 All three statements extend to supersolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≥ 0` with measurable
 `‖b‖ ≤ β` and `|c| ≤ γ`, with no sign condition on `c`. The logarithmic Caccioppoli inequality
-acquires the term `(2/λ)² (β² + λγ) ∫_Ω ψ²`, and on a ball of radius `r` the coefficients enter
-only through the dimensionless quantities `βr/λ` and `γr²/λ`:
+becomes
+
+`∫_Ω ψ² ‖∇u‖² / u² ≤ (2/λ)² (2Λ² ∫_Ω ‖∇ψ‖² + (β² + λγ) ∫_Ω ψ²)`,
+
+whose principal constant `2 (2Λ/λ)²` is twice the one above, and on a ball of radius `r` the
+coefficients enter only through the dimensionless quantities `βr/λ` and `γr²/λ`:
 
 `⨍_{B(x₀, r)} |log u - (log u)_{B(x₀, r)}| ≤ C √((Λ/λ)² + (βr/λ)² + γr²/λ)`.
 
@@ -245,18 +249,11 @@ theorem exists_setIntegral_ball_norm_gradient_div_value_sq_le_lowerOrder :
       have := hψg x
       rwa [div_div_eq_mul_div, mul_comm c₀ 2] at this
   -- The cutoff itself takes values in `[0, 1]` and is supported in `closedBall x₀ (3r/2)`.
-  have hsq : ∫ x in Omega, ψ x ^ 2 ∂mu ≤ mu.real (Metric.closedBall x₀ (3 * r / 2)) := by
-    rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero Omega.isOpen.measurableSet hclosed
-      fun x hx => by rw [image_eq_zero_of_notMem_tsupport fun hx' => hx.2 (hψts hx'), sq,
-        mul_zero]]
-    calc ∫ x in Metric.closedBall x₀ (3 * r / 2), ψ x ^ 2 ∂mu
-        ≤ ‖∫ x in Metric.closedBall x₀ (3 * r / 2), ψ x ^ 2 ∂mu‖ := Real.le_norm_self _
-      _ ≤ 1 * mu.real (Metric.closedBall x₀ (3 * r / 2)) :=
-          norm_setIntegral_le_of_norm_le_const measure_closedBall_lt_top fun x _ => by
-            obtain ⟨h0, h1⟩ := hψr (mem_range_self x)
-            rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
-            exact pow_le_one₀ h0 h1
-      _ = _ := one_mul _
+  have hsq : ∫ x in Omega, ψ x ^ 2 ∂mu ≤ 1 ^ 2 * mu.real (Metric.closedBall x₀ (3 * r / 2)) :=
+    setIntegral_sq_le_of_support_subset_closedBall ((subset_tsupport ψ).trans hψts) fun x _ => by
+      obtain ⟨h0, h1⟩ := hψr (mem_range_self x)
+      rwa [Real.norm_eq_abs, abs_of_nonneg h0]
+  rw [one_pow, one_mul] at hsq
   -- On `B(x₀, r)` the cutoff is `1`, so the integral there is dominated by the weighted one.
   have hweighted : Integrable (fun x => ψ x ^ 2 * (‖W1p.gradient u x‖ / W1p.value u x) ^ 2)
       (mu.restrict Omega) :=
@@ -283,10 +280,6 @@ theorem exists_setIntegral_ball_norm_gradient_div_value_sq_le_lowerOrder :
       finrank_euclideanSpace]
   set V := mu.real (Metric.ball x₀ r)
   set Q := (Lam / lam) ^ 2 + (beta * r / lam) ^ 2 + gamma * r ^ 2 / lam
-  have hQ1 : (Lam / lam) ^ 2 ≤ Q := by
-    simp only [Q]
-    have : 0 ≤ gamma * r ^ 2 / lam := by positivity
-    nlinarith [sq_nonneg (beta * r / lam)]
   calc ∫ x in Metric.ball x₀ r, (‖W1p.gradient u x‖ / W1p.value u x) ^ 2 ∂mu
       ≤ (2 / lam) ^ 2 * (2 * Lam ^ 2 * ((2 * c₀ / r) ^ 2 *
             mu.real (Metric.closedBall x₀ (3 * r / 2))) +
@@ -298,17 +291,12 @@ theorem exists_setIntegral_ball_norm_gradient_div_value_sq_le_lowerOrder :
         field_simp
         ring
     _ ≤ 4 * (8 * c₀ ^ 2 + 1) * (3 / 2) ^ Fintype.card ι * Q * V / r ^ 2 := by
+        have hB : 0 ≤ (beta * r / lam) ^ 2 + gamma * r ^ 2 / lam := by positivity
         have hle : 8 * c₀ ^ 2 * (Lam / lam) ^ 2 + ((beta * r / lam) ^ 2 + gamma * r ^ 2 / lam) ≤
             (8 * c₀ ^ 2 + 1) * Q := by
-          simp only [Q] at hQ1 ⊢
-          nlinarith [mul_le_mul_of_nonneg_left hQ1 (by positivity : (0 : ℝ) ≤ 8 * c₀ ^ 2)]
-        calc 4 * (8 * c₀ ^ 2 * (Lam / lam) ^ 2 + ((beta * r / lam) ^ 2 + gamma * r ^ 2 / lam)) *
-              (3 / 2) ^ Fintype.card ι * V / r ^ 2
-            = 4 * (3 / 2) ^ Fintype.card ι * V / r ^ 2 *
-                (8 * c₀ ^ 2 * (Lam / lam) ^ 2 + ((beta * r / lam) ^ 2 + gamma * r ^ 2 / lam)) := by
-              ring
-          _ ≤ 4 * (3 / 2) ^ Fintype.card ι * V / r ^ 2 * ((8 * c₀ ^ 2 + 1) * Q) := by gcongr
-          _ = _ := by ring
+          nlinarith [mul_nonneg (sq_nonneg c₀) hB, sq_nonneg (Lam / lam)]
+        have hV : 0 ≤ 4 * (3 / 2) ^ Fintype.card ι * V / r ^ 2 := by positivity
+        exact (le_of_eq (by ring)).trans ((mul_le_mul_of_nonneg_left hle hV).trans_eq (by ring))
 
 /-- **The gradient of `log u` on balls.** There is a constant `C ≥ 0`, depending only on the
 dimension, with the following property. Let `a` be measurable and uniformly elliptic on `Ω` with
