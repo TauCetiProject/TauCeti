@@ -19,7 +19,8 @@ identified with the identity and with composites of base changes by `pullbackId`
 identifications are coherent: `pullbackComp x (𝟙 S)` is the base change of `pullbackId`
 (`pullbackComp_id_inv_app_comp_eqToHom`), and the two identifications of base change along a
 triple composite agree (`pullbackComp_comp_inv_app_comp_eqToHom`), up to the equalities
-`x ≫ 𝟙 S = x` and `x ≫ f ≫ g = (x ≫ f) ≫ g`.
+`x ≫ 𝟙 S = x` and `x ≫ f ≫ g = (x ≫ f) ≫ g`. In particular, base change along a scheme
+isomorphism is an equivalence of categories (`pullbackIsoEquiv`).
 
 For a geometric point `x : Spec Ω ⟶ S`, with `Ω` a separably closed field, the
 *geometric fibre functor* `FiniteEtaleScheme.fiber x` sends a finite étale `S`-scheme `X` to the
@@ -139,6 +140,98 @@ theorem pullbackComp_comp_inv_app_comp_eqToHom (x : V ⟶ T) (f : T ⟶ S) (g : 
         (pullbackComp x f).inv.app ((pullback g).obj X) ≫ (pullbackComp (x ≫ f) g).inv.app X :=
   -- As above, the identity is checked in `Over V`.
   ObjectProperty.hom_ext _ (Over.pullbackComp_comp_inv_app_comp_eqToHom x f g X.obj)
+
+private lemma eqToIso_congrArg_pullback_hom_app_hom {f g : T ⟶ S} (h : f = g)
+    (X : FiniteEtaleScheme S) :
+    ((eqToIso (congrArg pullback h)).hom.app X).hom =
+      eqToHom (congrArg (fun k ↦ (Over.pullback k).obj X.obj) h) := by
+  subst h; rfl
+
+private lemma overPullback_unit_counit (e : T ≅ S) (A : Over S) :
+    (Over.pullback e.hom).map
+        (Over.pullbackId.inv.app A ≫
+          eqToHom (congrArg (fun k ↦ (Over.pullback k).obj A) e.inv_hom_id.symm) ≫
+          (Over.pullbackComp e.inv e.hom).hom.app A) ≫
+      (Over.pullbackComp e.hom e.inv).inv.app ((Over.pullback e.hom).obj A) ≫
+        eqToHom (congrArg (fun k ↦ (Over.pullback k).obj ((Over.pullback e.hom).obj A))
+          e.hom_inv_id) ≫
+        Over.pullbackId.hom.app ((Over.pullback e.hom).obj A) =
+      𝟙 ((Over.pullback e.hom).obj A) := by
+  ext1
+  apply Limits.pullback.hom_ext
+  · simp [Over.pullbackComp, Over.pullbackId,
+      eqToHom_comp_pullback_fst_assoc (Limits.pullback.snd A.hom e.hom) e.hom_inv_id,
+      eqToHom_comp_pullback_fst A.hom e.inv_hom_id.symm]
+  · exact (Over.w _).trans (Category.id_comp _).symm
+
+/-- Base change of finite étale schemes along a scheme isomorphism is an equivalence, with unit and
+counit given directly by `pullbackId` and `pullbackComp`. -/
+noncomputable def pullbackIsoEquiv (e : T ≅ S) :
+    FiniteEtaleScheme S ≌ FiniteEtaleScheme T where
+  functor := pullback e.hom
+  inverse := pullback e.inv
+  unitIso := pullbackId.symm ≪≫ eqToIso (congrArg pullback e.inv_hom_id.symm) ≪≫
+    pullbackComp e.inv e.hom
+  counitIso := (pullbackComp e.hom e.inv).symm ≪≫ eqToIso (congrArg pullback e.hom_inv_id) ≪≫
+    pullbackId
+  functor_unitIso_comp X := by
+    apply ObjectProperty.hom_ext
+    simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
+      ObjectProperty.FullSubcategory.comp_hom, pullback_map_hom, pullbackId_inv_app_hom,
+      pullbackId_hom_app_hom, pullbackComp_hom_app_hom, pullbackComp_inv_app_hom,
+      ObjectProperty.FullSubcategory.id_hom]
+    rw [eqToIso_congrArg_pullback_hom_app_hom e.inv_hom_id.symm,
+      eqToIso_congrArg_pullback_hom_app_hom e.hom_inv_id]
+    exact overPullback_unit_counit e X.obj
+
+/-- The forward functor of `pullbackIsoEquiv e` is base change along `e.hom`. -/
+@[simp]
+theorem pullbackIsoEquiv_functor (e : T ≅ S) :
+    (pullbackIsoEquiv e).functor = pullback e.hom :=
+  (rfl)
+
+/-- The inverse functor of `pullbackIsoEquiv e` is base change along `e.inv`. -/
+@[simp]
+theorem pullbackIsoEquiv_inverse (e : T ≅ S) :
+    (pullbackIsoEquiv e).inverse = pullback e.inv :=
+  (rfl)
+
+/-- The unit of `pullbackIsoEquiv e` is built from `pullbackId` and `pullbackComp e.inv e.hom`. -/
+@[simp]
+theorem pullbackIsoEquiv_unitIso (e : T ≅ S) :
+    (pullbackIsoEquiv e).unitIso ≪≫ eqToIso (by
+      rw [pullbackIsoEquiv_functor, pullbackIsoEquiv_inverse]) =
+      pullbackId.symm ≪≫ eqToIso (congrArg pullback e.inv_hom_id.symm) ≪≫
+        pullbackComp e.inv e.hom := by
+  apply Iso.ext; apply NatTrans.ext; funext X
+  exact Category.comp_id _
+
+/-- The counit of `pullbackIsoEquiv e` is built from `pullbackComp e.hom e.inv` and `pullbackId`. -/
+@[simp]
+theorem pullbackIsoEquiv_counitIso (e : T ≅ S) :
+    eqToIso (by rw [pullbackIsoEquiv_functor, pullbackIsoEquiv_inverse]) ≪≫
+      (pullbackIsoEquiv e).counitIso =
+      (pullbackComp e.hom e.inv).symm ≪≫ eqToIso (congrArg pullback e.hom_inv_id) ≪≫
+        pullbackId := by
+  apply Iso.ext; apply NatTrans.ext; funext X
+  exact Category.id_comp _
+
+/-- Base change of finite étale schemes along an isomorphism is an equivalence of categories. -/
+instance isEquivalence_pullback (f : T ⟶ S) [IsIso f] : (pullback f).IsEquivalence := by
+  rw [← asIso_hom f, ← pullbackIsoEquiv_functor]
+  exact (pullbackIsoEquiv (asIso f)).isEquivalence_functor
+
+/-- Faithfulness of `FiniteEtaleScheme.pullback` composes along any factorization `h ≫ f = g` of
+base morphisms. -/
+theorem faithful_pullback_of_fac (h : T ⟶ S) (f : S ⟶ U) (g : T ⟶ U) (hfac : h ≫ f = g)
+    [(pullback h).Faithful] [(pullback f).Faithful] : (pullback g).Faithful :=
+  Functor.Faithful.of_iso (eqToIso (congrArg pullback hfac.symm) ≪≫ pullbackComp h f).symm
+
+/-- Fullness of `FiniteEtaleScheme.pullback` composes along any factorization `h ≫ f = g` of base
+morphisms. -/
+theorem full_pullback_of_fac (h : T ⟶ S) (f : S ⟶ U) (g : T ⟶ U) (hfac : h ≫ f = g)
+    [(pullback h).Full] [(pullback f).Full] : (pullback g).Full :=
+  Functor.Full.of_iso (eqToIso (congrArg pullback hfac.symm) ≪≫ pullbackComp h f).symm
 
 variable {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 
