@@ -19,7 +19,9 @@ for finite torsion-free algebras without passing to their domain quotients.
 The argument extends the fraction-field comparison in
 `minpoly.isIntegrallyClosed_eq_field_fractions`: Gauss's lemma descends the monic minimal
 polynomial from a fraction-field algebra, and torsion-freeness makes the localization injective.
-No irreducibility of the minimal polynomial is asserted.
+In particular, scaling an integral element by a nonzero scalar in `R` scales the roots of its
+minimal polynomial (`TauCeti.minpoly.isIntegrallyClosed_smul_of_isTorsionFree`). No irreducibility
+of the minimal polynomial is asserted.
 -/
 
 public section
@@ -80,5 +82,29 @@ theorem isIntegrallyClosed_dvd_of_isTorsionFree [IsDomain R] [Module.IsTorsionFr
     ← isIntegrallyClosed_eq_field_fractions_of_injective K φ hφ hs]
   exact minpoly.dvd K (φ s) (by
     rw [aeval_map_algebraMap, aeval_algHom_apply, hp, map_zero])
+
+/-- In a torsion-free commutative algebra over an integrally closed domain, scaling an integral
+element by a nonzero scalar `r` scales the roots of its minimal polynomial by `r`. The target
+algebra may have zero divisors or nilpotents. -/
+theorem isIntegrallyClosed_smul_of_isTorsionFree [IsDomain R] [Module.IsTorsionFree R S]
+    {r : R} (hr : r ≠ 0) {s : S} (hs : IsIntegral R s) :
+    minpoly R (r • s) = (minpoly R s).scaleRoots r := by
+  have hdvd : minpoly R (r • s) ∣ (minpoly R s).scaleRoots r :=
+    isIntegrallyClosed_dvd_of_isTorsionFree (hs.smul r)
+      (by rw [scaleRoots_aeval_smul, minpoly.aeval, smul_zero])
+  set p := (minpoly R (r • s)).comp (C r * X)
+  have hp0 : p ≠ 0 :=
+    mt (comp_C_mul_X_eq_zero_iff (mem_nonZeroDivisors_of_ne_zero hr)).mp
+      (monic (hs.smul r)).ne_zero
+  have hp : Polynomial.aeval s p = 0 := by
+    rw [aeval_comp, map_mul, aeval_C, aeval_X, ← Algebra.smul_def, minpoly.aeval]
+  have hdeg : ((minpoly R s).scaleRoots r).natDegree ≤ (minpoly R (r • s)).natDegree := by
+    rw [natDegree_scaleRoots]
+    refine (natDegree_le_of_dvd (isIntegrallyClosed_dvd_of_isTorsionFree hs hp) hp0).trans ?_
+    have hq : (C r * X).natDegree ≤ 1 := (natDegree_C_mul_le r X).trans natDegree_X_le
+    exact (natDegree_comp_le (p := minpoly R (r • s)) (q := C r * X)).trans
+      ((Nat.mul_le_mul_left _ hq).trans (Nat.mul_one _).le)
+  exact (eq_of_monic_of_dvd_of_natDegree_le (monic (hs.smul r))
+    ((monic_scaleRoots_iff r).mpr (monic hs)) hdvd hdeg).symm
 
 end TauCeti.minpoly
