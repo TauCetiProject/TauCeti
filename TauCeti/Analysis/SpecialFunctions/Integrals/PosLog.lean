@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Integrability.PosLog
 import Mathlib.MeasureTheory.Integral.IntervalAverage
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.MeasureTheory.Integral.NormRpow
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 
 /-!
@@ -19,6 +20,8 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 `Real.posLog (1 / |1 - r / a|)` on every finite interval, for arbitrary real scales `a`.
 `TauCeti.integral_posLog_one_div_abs_one_sub_div_le` bounds its integral on `[R, 2 * R]`
 by `(log 2 + 12 * sqrt 6) * R` for `R ≥ 0`.
+The square-root majorant has integral `3 * sqrt 6` on `[1 / 4, 4]`; comparison with this
+fixed interval gives the term `12 * sqrt 6` in the dyadic bound.
 
 For nonnegative weights and `R > 0`,
 `Finset.exists_mem_Ioc_notMem_sum_mul_posLog_one_div_abs_one_sub_div_le` selects a point
@@ -29,7 +32,9 @@ All expressions use totalized division and logarithms: the summand is zero at `r
 and zero or negative scales contribute zero on positive intervals. To exclude the singular
 points themselves, include the image of the scales in the excluded null set.
 
-The averaging argument is adapted from Matteo Cipollina's `CartanBound.lean` in PNT+,
+The averaging argument is adapted from Matteo Cipollina's
+`PrimeNumberTheoremAnd/Mathlib/Analysis/Complex/CartanBound.lean` in
+[PrimeNumberTheoremAnd, revision 5754873](https://github.com/AlexKontorovich/PrimeNumberTheoremAnd/blob/5754873e8dae73f3b50f8f2b7a4f0b15d4df58aa/PrimeNumberTheoremAnd/Mathlib/Analysis/Complex/CartanBound.lean),
 for the good-circle minimum-modulus argument in finite-order Hadamard factorization.
 -/
 
@@ -61,76 +66,40 @@ theorem intervalIntegrable_posLog_one_div_abs_one_sub_div (a A B : ℝ) :
 
 private lemma intervalIntegrable_majorant (A B : ℝ) :
     IntervalIntegrable (fun t : ℝ ↦ Real.sqrt (2 / |1 - t|)) volume A B := by
-  let f : ℝ → ℝ := fun u ↦ Real.sqrt (2 / |u|)
-  have hnorm (u : ℝ) : ‖f u‖ = Real.sqrt 2 * ‖u‖ ^ (-(1 / 2 : ℝ)) := by
-    change ‖Real.sqrt (2 / |u|)‖ = _
-    rw [Real.norm_of_nonneg (Real.sqrt_nonneg _),
-      Real.sqrt_div (by norm_num)]
-    simp only [Real.sqrt_eq_rpow, div_eq_mul_inv, Real.rpow_neg (abs_nonneg u),
-      Real.norm_eq_abs]
-  have hlocal : LocallyIntegrable f volume :=
-    locallyIntegrable_of_norm_le_rpow (by simp : 1 ≤ Module.finrank ℝ ℝ)
-      (α := (1 / 2 : ℝ)) (by norm_num)
-      (Filter.Eventually.of_forall fun u ↦ (hnorm u).le)
-      (by
-        apply Measurable.aestronglyMeasurable
-        dsimp [f]
-        fun_prop)
-  simpa only [f, sub_sub_cancel] using
-    ((hlocal.integrableOn_isCompact
-      (isCompact_uIcc (a := 1 - A) (b := 1 - B))).intervalIntegrable).comp_sub_left 1
+  have hi := (((TauCeti.locallyIntegrable_norm_sub_rpow (mu := volume)
+    (s := -(1 / 2 : ℝ)) (by norm_num) (1 : ℝ)).integrableOn_isCompact
+      (isCompact_uIcc (a := A) (b := B))).intervalIntegrable).const_mul (Real.sqrt 2)
+  convert hi using 1
+  funext t
+  rw [Real.norm_eq_abs, Real.sqrt_div (by norm_num)]
+  simp only [Real.sqrt_eq_rpow, div_eq_mul_inv, Real.rpow_neg (abs_nonneg _)]
 
 /-- The exact integral of the square-root majorant for the positive logarithmic singularity
 on `[1 / 4, 4]`, including its totalized value at `t = 1`. -/
-theorem integral_sqrt_two_div_abs_one_sub :
+private theorem integral_sqrt_two_div_abs_one_sub :
     (∫ t : ℝ in (1 / 4 : ℝ)..(4 : ℝ), Real.sqrt (2 / |1 - t|)) =
       3 * Real.sqrt 6 := by
-  have hpoint (u : ℝ) : Real.sqrt (2 / |u|) =
-      Real.sqrt 2 * |u| ^ (-(1 / 2 : ℝ)) := by
+  have hpoint (u : ℝ) : Real.sqrt (2 / |1 - u|) =
+      Real.sqrt 2 * |u - 1| ^ (-(1 / 2 : ℝ)) := by
     rw [Real.sqrt_div (by norm_num)]
-    simp only [Real.sqrt_eq_rpow, div_eq_mul_inv, Real.rpow_neg (abs_nonneg u)]
-  have hl := intervalIntegrable_majorant (1 / 4) 1
-  have hr := intervalIntegrable_majorant 1 4
-  have hleft : (∫ t : ℝ in (1 / 4 : ℝ)..1, Real.sqrt (2 / |1 - t|)) =
-      Real.sqrt 2 * ((1 - (1 / 4 : ℝ)) ^ (1 / 2 : ℝ) / (1 / 2 : ℝ)) := by
-    calc
-      _ = ∫ t : ℝ in (1 / 4 : ℝ)..1,
-          Real.sqrt 2 * (1 - t) ^ (-(1 / 2 : ℝ)) := by
-        apply intervalIntegral.integral_congr
-        intro t ht
-        dsimp only
-        rw [hpoint, abs_of_nonneg (by
-          rw [Set.uIcc_of_le (by norm_num)] at ht
-          linarith [ht.2])]
-      _ = _ := by
-        rw [intervalIntegral.integral_const_mul, TauCeti.integral_sub_rpow (by norm_num)]
-        norm_num
-  have hright : (∫ t : ℝ in (1 : ℝ)..4, Real.sqrt (2 / |1 - t|)) =
-      Real.sqrt 2 * ((4 - (1 : ℝ)) ^ (1 / 2 : ℝ) / (1 / 2 : ℝ)) := by
-    calc
-      _ = ∫ t : ℝ in (1 : ℝ)..4,
-          Real.sqrt 2 * (t - 1) ^ (-(1 / 2 : ℝ)) := by
-        apply intervalIntegral.integral_congr
-        intro t ht
-        dsimp only
-        rw [hpoint, abs_of_nonpos (by
-          rw [Set.uIcc_of_le (by norm_num)] at ht
-          linarith [ht.1]), neg_sub]
-      _ = _ := by
-        rw [intervalIntegral.integral_const_mul, TauCeti.integral_sub_const_rpow (by norm_num)]
-        norm_num
-  have hsqrt : Real.sqrt 2 * Real.sqrt 3 = Real.sqrt 6 := by
-    rw [← Real.sqrt_mul (by norm_num)]
-    norm_num
-  rw [← intervalIntegral.integral_add_adjacent_intervals hl hr, hleft, hright]
-  have hs4 : Real.sqrt (4 : ℝ) = 2 := by
-    convert Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 2) using 1; norm_num
-  norm_num only [show (1 - (1 / 4 : ℝ)) = 3 / 4 by norm_num,
-    show (4 - (1 : ℝ)) = 3 by norm_num]
-  rw [← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow, Real.sqrt_div (by norm_num), hs4]
+    simp only [Real.sqrt_eq_rpow, div_eq_mul_inv, Real.rpow_neg (abs_nonneg _), abs_sub_comm]
   calc
-    _ = 3 * (Real.sqrt 2 * Real.sqrt 3) := by ring
-    _ = _ := by rw [hsqrt]
+    _ = Real.sqrt 2 * ∫ t in (1 / 4 : ℝ)..4, |t - 1| ^ (-(1 / 2 : ℝ)) := by
+      rw [← intervalIntegral.integral_const_mul]
+      exact intervalIntegral.integral_congr fun t _ ↦ hpoint t
+    _ = 3 * Real.sqrt 6 := by
+      rw [TauCeti.integral_abs_sub_rpow_of_le (by norm_num) (by norm_num) (by norm_num)]
+      norm_num
+      rw [← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow, Real.sqrt_div (by norm_num)]
+      have h4 : Real.sqrt (4 : ℝ) = 2 := by
+        convert Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 2) using 1; norm_num
+      rw [h4]
+      have hs : Real.sqrt 2 * Real.sqrt 3 = Real.sqrt 6 := by
+        rw [← Real.sqrt_mul (by norm_num)]
+        norm_num
+      calc
+        _ = 3 * (Real.sqrt 2 * Real.sqrt 3) := by ring
+        _ = _ := by rw [hs]
 
 private lemma majorantIntegral_nonneg : 0 ≤ majorantIntegral :=
   intervalIntegral.integral_nonneg (by norm_num) fun _ _ ↦ Real.sqrt_nonneg _
@@ -174,13 +143,13 @@ private lemma kernel_eq_zero_of_nonpos {t : ℝ} (ht : t ≤ 0) : kernel t = 0 :
 private lemma integral_kernel_dyadic_le {A : ℝ} (hA : 0 ≤ A) :
     (∫ t in A..(2 * A), kernel t) ≤ averageBound * A := by
   have hA2A : A ≤ 2 * A := by linarith
+  have hker : IntervalIntegrable (fun t ↦ kernel t) volume A (2 * A) := by
+    simpa only [kernel, div_one] using
+      intervalIntegrable_posLog_one_div_abs_one_sub_div 1 A (2 * A)
   by_cases hsmall : A ≤ 1 / 4
   · calc
       (∫ t in A..(2 * A), kernel t) ≤ ∫ _ in A..(2 * A), Real.log 2 := by
-        apply intervalIntegral.integral_mono_on hA2A (by
-          change IntervalIntegrable (fun r ↦ Real.posLog (1 / |1 - r|)) volume A (2 * A)
-          simpa only [div_one] using intervalIntegrable_posLog_one_div_abs_one_sub_div 1 A (2 * A))
-          intervalIntegrable_const
+        apply intervalIntegral.integral_mono_on hA2A hker intervalIntegrable_const
         intro t ht
         exact kernel_le_log_two_of_le_half (by linarith [ht.2])
       _ = Real.log 2 * A := by simp [intervalIntegral.integral_const, two_mul]; ring
@@ -200,9 +169,7 @@ private lemma integral_kernel_dyadic_le {A : ℝ} (hA : 0 ≤ A) :
   calc
     (∫ t in A..(2 * A), kernel t) ≤
         ∫ t in A..(2 * A), Real.sqrt (2 / |1 - t|) := by
-      exact intervalIntegral.integral_mono_on hA2A (by
-          change IntervalIntegrable (fun r ↦ Real.posLog (1 / |1 - r|)) volume A (2 * A)
-          simpa only [div_one] using intervalIntegrable_posLog_one_div_abs_one_sub_div 1 A (2 * A))
+      exact intervalIntegral.integral_mono_on hA2A hker
         (intervalIntegrable_majorant _ _)
         (fun t _ ↦ by
           rw [kernel]
@@ -224,7 +191,7 @@ private lemma integral_kernel_dyadic_le {A : ℝ} (hA : 0 ≤ A) :
 theorem integral_posLog_one_div_abs_one_sub_div_le (a : ℝ) {R : ℝ} (hR : 0 ≤ R) :
     (∫ r in R..(2 * R), Real.posLog (1 / |1 - r / a|)) ≤
       (Real.log 2 + 12 * Real.sqrt 6) * R := by
-  change (∫ r in R..(2 * R), kernel (r / a)) ≤ averageBound * R
+  simp only [← kernel.eq_def]
   by_cases ha : 0 < a
   · have hscale : (∫ r in R..(2 * R), kernel (r / a)) =
         a * ∫ t in (R / a)..(2 * (R / a)), kernel t := by
@@ -250,12 +217,12 @@ theorem integral_posLog_one_div_abs_one_sub_div_le (a : ℝ) {R : ℝ} (hR : 0 �
 
 private lemma integral_sum_mul_kernel_le {ι : Type*} (s : Finset ι) (w a : ι → ℝ)
     (hw : ∀ i ∈ s, 0 ≤ w i) {R : ℝ} (hR : 0 ≤ R) :
-    (∫ r in R..(2 * R), ∑ i ∈ s, w i * kernel (r / a i)) ≤
+    (∫ r in R..(2 * R), ∑ i ∈ s, w i * Real.posLog (1 / |1 - r / a i|)) ≤
       averageBound * (∑ i ∈ s, w i) * R := by
   rw [intervalIntegral.integral_finsetSum]
   · calc
-      (∑ i ∈ s, ∫ r in R..(2 * R), w i * kernel (r / a i)) =
-          ∑ i ∈ s, w i * ∫ r in R..(2 * R), kernel (r / a i) := by
+      (∑ i ∈ s, ∫ r in R..(2 * R), w i * Real.posLog (1 / |1 - r / a i|)) =
+          ∑ i ∈ s, w i * ∫ r in R..(2 * R), Real.posLog (1 / |1 - r / a i|) := by
         simp only [intervalIntegral.integral_const_mul]
       _ ≤ ∑ i ∈ s, w i * (averageBound * R) :=
         Finset.sum_le_sum fun i hi ↦ mul_le_mul_of_nonneg_left
@@ -281,7 +248,7 @@ theorem exists_mem_Ioc_notMem_sum_mul_posLog_one_div_abs_one_sub_div_le {ι : Ty
     ∃ r ∈ Set.Ioc R (2 * R), r ∉ bad ∧
       (∑ i ∈ s, w i * Real.posLog (1 / |1 - r / a i|)) ≤
         (Real.log 2 + 12 * Real.sqrt 6) * ∑ i ∈ s, w i := by
-  let g : ℝ → ℝ := ∑ i ∈ s, fun r ↦ w i * TauCeti.kernel (r / a i)
+  let g : ℝ → ℝ := ∑ i ∈ s, fun r ↦ w i * Real.posLog (1 / |1 - r / a i|)
   let S : Set ℝ := Set.Ioc R (2 * R) \ bad
   have hS : S =ᵐ[volume] Set.Ioc R (2 * R) := sdiff_null_ae_eq_self hbad
   have hvolume : volume S ≠ 0 := by
@@ -290,7 +257,7 @@ theorem exists_mem_Ioc_notMem_sum_mul_posLog_one_div_abs_one_sub_div_le {ι : Ty
     exact ne_of_gt (ENNReal.ofReal_pos.mpr (by linarith))
   have hg : IntegrableOn g (Set.Ioc R (2 * R)) :=
     (intervalIntegrable_iff_integrableOn_Ioc_of_le (by linarith : R ≤ 2 * R)).mp
-      (IntervalIntegrable.sum (s := s) (f := fun i r ↦ w i * TauCeti.kernel (r / a i))
+      (IntervalIntegrable.sum (s := s) (f := fun i r ↦ w i * Real.posLog (1 / |1 - r / a i|))
         (fun i _ ↦ (TauCeti.intervalIntegrable_posLog_one_div_abs_one_sub_div
           (a i) R (2 * R)).const_mul (w i)))
   obtain ⟨r, hr, hle⟩ := exists_le_setAverage hvolume
@@ -306,6 +273,6 @@ theorem exists_mem_Ioc_notMem_sum_mul_posLog_one_div_abs_one_sub_div_le {ι : Ty
           TauCeti.integral_sum_mul_kernel_le s w a hw hR.le
       _ = _ := by ring
   refine ⟨r, hr.1, hr.2, ?_⟩
-  simpa only [g, Finset.sum_apply, TauCeti.kernel] using hle.trans havg
+  simpa only [g, Finset.sum_apply] using hle.trans havg
 
 end Finset

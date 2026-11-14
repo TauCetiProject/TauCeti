@@ -11,9 +11,13 @@ public import Mathlib.Analysis.Real.Sqrt
 /-!
 # Elementary bounds for the real logarithm
 
-The inverse-square-root majorant for the negative logarithm is integrable at zero.
-The estimate includes the totalized value at zero and is trivial above one.
-It is used to control the logarithmic singularity in the good-radius estimate.
+`Real.neg_log_le_sqrt_two_div` bounds `-log x` by `sqrt (2 / x)` for every `x ≥ 0`,
+including the totalized value at zero. `Real.posLog_le_sqrt_two_mul` bounds
+`posLog x` by `sqrt (2 * |x|)` for every real `x`.
+
+Applied to reciprocal distances, these inequalities dominate logarithmic singularities by
+inverse-square-root kernels. Their integrals control dyadic averages and the choice of circles
+in Hadamard minimum-modulus estimates.
 -/
 
 public section
