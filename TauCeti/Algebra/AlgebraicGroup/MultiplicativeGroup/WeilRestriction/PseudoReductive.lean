@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.WeilRestriction.Basic
-public import TauCeti.Algebra.AlgebraicGroup.PseudoReductive.Basic
+public import TauCeti.Algebra.AlgebraicGroup.PseudoReductive.Separable
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Basic
 public import TauCeti.FieldTheory.PurelyInseparable.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.WeilRestriction.Connected
@@ -45,6 +45,11 @@ is, to one. In particular the unipotent radical of `Res_{K/k} 𝔾ₘ` over `k` 
 smoothness and geometric connectedness are `TauCeti.Algebra.WeilRestriction.instSmooth` and
 `TauCeti.Algebra.WeilRestriction.geometricallyConnectedCommHopfAlgProperty_multiplicativeGroup`.
 
+Consequently, when `K / k` is nontrivial and purely inseparable, the geometric unipotent radical of
+`Res_{K/k} 𝔾ₘ` over `AlgebraicClosure k` does not descend to `k`, and
+`(Res_{K/k} 𝔾ₘ)_{AlgebraicClosure k}` is not pseudo-reductive, showing that separability cannot be
+dropped from `TauCeti.pseudoReductiveCommHopfAlgProperty.baseChange`.
+
 ## Main declarations
 
 * `TauCeti.Algebra.WeilRestriction.isReduced_tensorProduct_of_reductive_multiplicativeGroup`: in
@@ -55,15 +60,24 @@ smoothness and geometric connectedness are `TauCeti.Algebra.WeilRestriction.inst
 * `TauCeti.Algebra.WeilRestriction.toConv_eq_one_of_geometricallyUnipotentPoints`: in
   characteristic `p > 0`, every homomorphism from a smooth unipotent group to `Res_{K/k} 𝔾ₘ` is
   trivial.
-* `TauCeti.Algebra.WeilRestriction.pseudoReductive_multiplicativeGroup`: in
-  characteristic `p > 0`, `Res_{K/k} 𝔾ₘ` is pseudo-reductive for every finite field extension
-  `K / k`.
+* `TauCeti.Algebra.WeilRestriction.pseudoReductive_multiplicativeGroup` and
+  `TauCeti.Algebra.WeilRestriction.pseudoReductive_multiplicativeGroup_of_isPurelyInseparable`:
+  `Res_{K/k} 𝔾ₘ` is pseudo-reductive for every finite extension in characteristic `p > 0`, and in
+  particular for every nontrivial finite purely inseparable extension.
+* `TauCeti.Algebra.WeilRestriction.
+    not_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal_multiplicativeGroup`:
+  for a nontrivial finite purely inseparable extension `K / k`, the geometric unipotent radical of
+  `Res_{K/k} 𝔾ₘ` does not descend to `k`.
+* `TauCeti.Algebra.WeilRestriction.
+    not_pseudoReductive_baseChange_algebraicClosure_multiplicativeGroup`:
+  for a nontrivial finite purely inseparable extension `K / k`,
+  `(Res_{K/k} 𝔾ₘ)_{AlgebraicClosure k}` is not pseudo-reductive.
 
 ## References
 
 * B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups*, 2nd ed. (2015), Example 1.1.3 and
   Proposition 1.1.10.
-* J. S. Milne, *Algebraic Groups* (2017), §§2.i and 19.b.
+* J. S. Milne, *Algebraic Groups* (2017), §§2.i, 6.47–6.48, and 19.b.
 -/
 
 public section
@@ -199,5 +213,52 @@ theorem pseudoReductive_multiplicativeGroup (p : ℕ) [Fact p.Prime] [CharP k p]
   rw [← FiniteTypeCommHopfAlgCat.mkQuotient_eq_zero_iff]
   have := congrArg (fun f ↦ f.ofConv x) h1
   simpa [AlgHom.convOne_apply, hx] using this
+
+/-- **`Res_{K/k} 𝔾ₘ` is pseudo-reductive** for a nontrivial finite purely inseparable extension
+`K / k`, with no separate characteristic hypothesis (nontriviality of `K / k` forces positive
+characteristic). -/
+theorem pseudoReductive_multiplicativeGroup_of_isPurelyInseparable
+    {K : Type u} [Field K] [Algebra k K] [FiniteDimensional k K] [IsPurelyInseparable k K]
+    (hK : 1 < Module.finrank k K) :
+    pseudoReductiveCommHopfAlgProperty k
+      (FiniteTypeCommHopfAlgCat.of k (WeilRestriction k K K[T;T⁻¹])) := by
+  obtain ⟨p, hp⟩ := CharP.exists k
+  rcases CharP.char_is_prime_or_zero k p with hprime | rfl
+  · have : Fact p.Prime := ⟨hprime⟩
+    exact pseudoReductive_multiplicativeGroup p
+  · have : CharZero k := CharP.charP_to_charZero k
+    have := (LinearEquiv.ofBijective (Algebra.linearMap k K)
+      (IsPurelyInseparable.bijective_algebraMap_of_isSeparable k K)).finrank_eq
+    rw [Module.finrank_self] at this
+    omega
+
+/-- **The geometric unipotent radical of `Res_{K/k} 𝔾ₘ` does not descend to `k`** when `K / k` is a
+nontrivial finite purely inseparable extension (Milne, 6.47–6.48; Conrad–Gabber–Prasad, Example
+1.1.3). -/
+theorem not_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal_multiplicativeGroup
+    {K : Type u} [Field K] [Algebra k K] [FiniteDimensional k K] [IsPurelyInseparable k K]
+    (hK : 1 < Module.finrank k K) :
+    ¬ ∃ J : HopfIdeal k (FiniteTypeCommHopfAlgCat.of k (WeilRestriction k K K[T;T⁻¹])),
+      CommHopfAlgCat.baseChangeHopfIdeal (K := AlgebraicClosure k) J =
+        FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
+          (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k)
+            (FiniteTypeCommHopfAlgCat.of k (WeilRestriction k K K[T;T⁻¹]))) := by
+  rw [← (pseudoReductive_multiplicativeGroup_of_isPurelyInseparable hK
+    ).reductive_iff_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal]
+  exact not_reductive_multiplicativeGroup_of_isPurelyInseparable hK
+
+/-- **Inseparable scalar extension can destroy pseudo-reductivity.** For a nontrivial finite purely
+inseparable extension `K / k`, `Res_{K/k} 𝔾ₘ` is pseudo-reductive over `k`, yet its base change to
+`AlgebraicClosure k` is not pseudo-reductive. Thus `[Algebra.IsSeparable k K]` cannot be dropped
+from `TauCeti.pseudoReductiveCommHopfAlgProperty.baseChange`. -/
+theorem not_pseudoReductive_baseChange_algebraicClosure_multiplicativeGroup
+    {K : Type u} [Field K] [Algebra k K] [FiniteDimensional k K] [IsPurelyInseparable k K]
+    (hK : 1 < Module.finrank k K) :
+    ¬ pseudoReductiveCommHopfAlgProperty (AlgebraicClosure k)
+      (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k)
+        (FiniteTypeCommHopfAlgCat.of k (WeilRestriction k K K[T;T⁻¹]))) := by
+  rw [(pseudoReductive_multiplicativeGroup_of_isPurelyInseparable hK
+    ).baseChange_iff_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal]
+  exact not_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal_multiplicativeGroup hK
 
 end TauCeti.Algebra.WeilRestriction
