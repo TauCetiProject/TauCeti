@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Quaternion.SplittingCriterion
-public import TauCeti.FieldTheory.SquareClassGroup.Basic
+public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -213,6 +213,13 @@ theorem hilbertSymbol_units_map_ringEquiv {L : Type*} [Field L] (e : K ≃+* L) 
       exact ⟨e x, e y, by simp [h]⟩
   simp only [hilbertSymbol_def, he]
 
+/-- The Hilbert symbol is invariant under any surjective field homomorphism (which is automatically
+an isomorphism). -/
+theorem hilbertSymbol_units_map_of_surjective {L : Type*} [Field L] {f : K →+* L}
+    (hf : Function.Surjective f) (a b : Kˣ) :
+    hilbertSymbol (Units.map f.toMonoidHom a) (Units.map f.toMonoidHom b) = hilbertSymbol a b :=
+  hilbertSymbol_units_map_ringEquiv (RingEquiv.ofBijective f ⟨f.injective, hf⟩) a b
+
 -- The quotient-representative construction follows
 -- `TauCeti.BrauerGroup.quaternionClassOnSquareClasses`.
 /-- The Hilbert symbol on square classes of a field. -/
@@ -227,6 +234,27 @@ theorem hilbertSymbolOnSquareClasses_squareClass (a b : Kˣ) :
   apply hilbertSymbol_congr_sq
   · exact (squareClass_eq_iff_isSquare_mul _ _).mp (squareClass_toMul_out _)
   · exact (squareClass_eq_iff_isSquare_mul _ _).mp (squareClass_toMul_out _)
+
+/-- Pushing square classes forward along a ring isomorphism of fields leaves the square-class
+Hilbert symbol unchanged. -/
+@[simp]
+theorem hilbertSymbolOnSquareClasses_squareClassMap_ringEquiv {L : Type*} [Field L] (e : K ≃+* L)
+    (x y : SquareClassGroup K) :
+    hilbertSymbolOnSquareClasses ((e : K →+* L).squareClassMap x) ((e : K →+* L).squareClassMap y) =
+      hilbertSymbolOnSquareClasses x y := by
+  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y, RingHom.squareClassMap_apply,
+    RingHom.squareClassMap_apply, hilbertSymbolOnSquareClasses_squareClass,
+    hilbertSymbolOnSquareClasses_squareClass]
+  exact hilbertSymbol_units_map_ringEquiv e _ _
+
+/-- Pushing square classes forward along a surjective field homomorphism leaves the square-class
+Hilbert symbol unchanged. -/
+theorem hilbertSymbolOnSquareClasses_squareClassMap_of_surjective {L : Type*} [Field L]
+    {f : K →+* L} (hf : Function.Surjective f) (x y : SquareClassGroup K) :
+    hilbertSymbolOnSquareClasses (f.squareClassMap x) (f.squareClassMap y) =
+      hilbertSymbolOnSquareClasses x y :=
+  hilbertSymbolOnSquareClasses_squareClassMap_ringEquiv
+    (RingEquiv.ofBijective f ⟨f.injective, hf⟩) x y
 
 /-- The square-class Hilbert symbol is trivial on a zero second argument. -/
 @[simp] theorem hilbertSymbolOnSquareClasses_zero_right (x : SquareClassGroup K) :

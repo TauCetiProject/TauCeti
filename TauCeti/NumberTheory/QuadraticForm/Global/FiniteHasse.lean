@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Hasse
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
 public import TauCeti.NumberTheory.QuadraticForm.Global.Discriminant
 public import TauCeti.NumberTheory.QuadraticForm.Global.Operations
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
@@ -52,6 +53,16 @@ classify regular quadratic forms over a nonarchimedean local field (O'Meara, §6
   most one, and in rank two wherever the discriminant is the class of `-1`.
 * `QuadraticForm.finiteHasse_prod`, `QuadraticForm.finiteHasse_smul`,
   `QuadraticForm.finiteHasse_neg`: the orthogonal-sum, scaling and negation formulas.
+* `TauCeti.RegularFormClass.mapRingEquiv_adicCompletionCongr_baseChange`,
+  `TauCeti.RegularFormClass.discr_mapRingEquiv_adicCompletionCongr_eq_of_eq`,
+  `TauCeti.RegularFormClass.localHasse_baseChange_adicCompletion_of_ringEquiv`: transport of
+  localized regular-form classes, discriminants, and local Hasse invariants along
+  `adicCompletionCongr`.
+* `QuadraticForm.finiteHasse_of_semilinearEquiv`,
+  `QuadraticForm.finiteHasse_equivOfRingEquiv_of_semilinearEquiv`,
+  `QuadraticForm.finiteHasse_baseChange_of_surjective`: invariance of the finite Hasse sign under
+  semilinear equivalences over field isomorphisms and under scalar extension along surjective
+  homomorphisms of number fields.
 
 ## References
 
@@ -224,5 +235,205 @@ theorem finiteHasse_neg (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
   rw [hu] at h
   rw [← h]
   congr 1
+
+end QuadraticForm
+
+namespace TauCeti.RegularFormClass
+
+open IsDedekindDomain.HeightOneSpectrum
+
+section DedekindDomain
+
+variable {R R' K K' : Type*} [CommRing R] [IsDedekindDomain R] [CommRing R'] [IsDedekindDomain R']
+  [Field K] [Field K'] [Algebra R K] [IsFractionRing R K] [Algebra R' K'] [IsFractionRing R' K']
+
+/-- Transporting the `K_v`-scalar extension of a regular-form class along `adicCompletionCongr`
+agrees with extending scalars of the `e`-transported class to `K'_w`. -/
+@[simp]
+theorem mapRingEquiv_adicCompletionCongr_baseChange
+    {v : HeightOneSpectrum R} {w : HeightOneSpectrum R'}
+    [Invertible (2 : K)] [Invertible (2 : K')]
+    [Invertible (2 : v.adicCompletion K)] [Invertible (2 : w.adicCompletion K')]
+    {e : K ≃+* K'} (he : ∀ x, w.valuation K' (e x) = v.valuation K x)
+    (x : RegularFormClass K) :
+    mapRingEquiv (adicCompletionCongr v w e he) (baseChange (v.adicCompletion K) x) =
+      baseChange (w.adicCompletion K') (mapRingEquiv e x) :=
+  mapRingEquiv_baseChange e (adicCompletionCongr v w e he) (adicCompletionCongr_algebraMap he) x
+
+/-- If a regular-form class over `K_v` has discriminant equal to the localization of a square class
+`d` of `K`, transporting it along `adicCompletionCongr` gives a class over `K'_w` whose
+discriminant is the localization of `e(d)`. -/
+theorem discr_mapRingEquiv_adicCompletionCongr_eq_of_eq
+    {v : HeightOneSpectrum R} {w : HeightOneSpectrum R'}
+    [Invertible (2 : v.adicCompletion K)] [Invertible (2 : w.adicCompletion K')]
+    {e : K ≃+* K'} (he : ∀ x, w.valuation K' (e x) = v.valuation K x)
+    {x : RegularFormClass (v.adicCompletion K)} {d : SquareClassGroup K}
+    (hd : discr x = (algebraMap K (v.adicCompletion K)).squareClassMap d) :
+    discr (mapRingEquiv (adicCompletionCongr v w e he) x) =
+      (algebraMap K' (w.adicCompletion K')).squareClassMap ((e : K →+* K').squareClassMap d) := by
+  have hcomp : (adicCompletionCongr v w e he :
+        v.adicCompletion K →+* w.adicCompletion K').comp (algebraMap K (v.adicCompletion K)) =
+      (algebraMap K' (w.adicCompletion K')).comp (e : K →+* K') :=
+    RingHom.ext fun a ↦ adicCompletionCongr_algebraMap he a
+  rw [discr_mapRingEquiv, hd, ← LinearMap.comp_apply, ← RingHom.squareClassMap_comp, hcomp,
+    RingHom.squareClassMap_comp, LinearMap.comp_apply]
+
+/-- Along a valuation-preserving isomorphism `e : K ≃+* K'` of fraction fields of Dedekind domains
+with finite residue fields at `v` and `w`, the local Hasse invariant at `w` of a transported
+regular-form class equals the local Hasse invariant at `v` of the original class. -/
+theorem localHasse_baseChange_adicCompletion_of_valuation_eq
+    {v : HeightOneSpectrum R} {w : HeightOneSpectrum R'}
+    [Finite (R ⧸ v.asIdeal)] [Finite (R' ⧸ w.asIdeal)]
+    [Invertible (2 : K)] [Invertible (2 : K')]
+    [Invertible (2 : v.adicCompletion K)] [Invertible (2 : w.adicCompletion K')]
+    {e : K ≃+* K'} (he : ∀ x, w.valuation K' (e x) = v.valuation K x)
+    (x : RegularFormClass K) :
+    localHasse (baseChange (w.adicCompletion K') (mapRingEquiv e x)) =
+      localHasse (baseChange (v.adicCompletion K) x) := by
+  rw [← mapRingEquiv_adicCompletionCongr_baseChange he, localHasse_mapRingEquiv]
+
+end DedekindDomain
+
+section NumberField
+
+variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
+
+-- Not `@[simp]`: once the finite residue-field instances are in scope, `localHasse_mapRingEquiv`
+-- already simplifies the left-hand side.
+/-- Transporting a regular-form class between number-field completions along `adicCompletionCongr`
+preserves its local Hasse invariant, supplying the residue-field finiteness instances from the
+number-field assumptions. -/
+theorem localHasse_mapRingEquiv_adicCompletionCongr
+    {v : HeightOneSpectrum (𝓞 K)} {w : HeightOneSpectrum (𝓞 L)}
+    {e : K ≃+* L} (he : ∀ x, w.valuation L (e x) = v.valuation K x)
+    (x : RegularFormClass (v.adicCompletion K)) :
+    letI : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+    letI : Finite (𝓞 L ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
+    localHasse (mapRingEquiv (adicCompletionCongr v w e he) x) = localHasse x := by
+  let _ : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  let _ : Finite (𝓞 L ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
+  exact localHasse_mapRingEquiv (adicCompletionCongr v w e he) x
+
+/-- For a ring isomorphism `e : K ≃+* L` of number fields carrying a finite place `v` to `w`, the
+local Hasse invariant at `w` of a transported global regular-form class equals the local Hasse
+invariant at `v` of the original class. -/
+theorem localHasse_baseChange_adicCompletion_of_ringEquiv (e : K ≃+* L)
+    {v : HeightOneSpectrum (𝓞 K)} {w : HeightOneSpectrum (𝓞 L)}
+    (hvw : w.asIdeal = Ideal.map (RingOfIntegers.mapRingEquiv e) v.asIdeal)
+    (x : RegularFormClass K) :
+    letI : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+    letI : Finite (𝓞 L ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
+    localHasse (baseChange (w.adicCompletion L) (mapRingEquiv e x)) =
+      localHasse (baseChange (v.adicCompletion K) x) := by
+  let _ : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  let _ : Finite (𝓞 L ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
+  have he (a : K) : w.valuation L (e a) = v.valuation K a := by
+    simpa using valuation_ringEquivOfRingEquiv (K := K) (K' := L)
+      (RingOfIntegers.mapRingEquiv e) hvw a
+  exact localHasse_baseChange_adicCompletion_of_valuation_eq he x
+
+end NumberField
+
+end TauCeti.RegularFormClass
+
+namespace QuadraticForm
+
+open IsDedekindDomain.HeightOneSpectrum
+
+section SemilinearEquiv
+
+variable {K : Type*} [Field K] [NumberField K] {L : Type*} [Field L] [NumberField L]
+variable {σ : K →+* L} {σ' : L →+* K} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+variable {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+variable {W : Type*} [AddCommGroup W] [Module L W] [FiniteDimensional L W]
+
+/-- Regular quadratic forms over number fields intertwined by a semilinear equivalence
+`f : V ≃ₛₗ[σ] W` (`Q' (f u) = σ (Q u)`) have the same finite Hasse sign at finite places `v` and
+`w` whose valuations are intertwined by `σ`. -/
+theorem finiteHasse_of_semilinearEquiv_of_valuation_eq
+    {Q : _root_.QuadraticForm K V} {Q' : _root_.QuadraticForm L W}
+    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate)
+    (f : V ≃ₛₗ[σ] W) (hf : ∀ u, Q' (f u) = σ (Q u))
+    {v : HeightOneSpectrum (𝓞 K)} {w : HeightOneSpectrum (𝓞 L)}
+    (he : ∀ a, w.valuation L (σ a) = v.valuation K a) :
+    Q'.finiteHasse hQ' w = Q.finiteHasse hQ v := by
+  let _ : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  let _ : Finite (𝓞 L ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
+  rw [finiteHasse_eq_localHasse_baseChange, finiteHasse_eq_localHasse_baseChange,
+    formClass_eq_mapRingEquiv_of_semilinearEquiv hQ hQ' f hf]
+  exact RegularFormClass.localHasse_baseChange_adicCompletion_of_valuation_eq
+    (e := RingHomInvPair.toRingEquiv σ σ') he (formClass Q hQ)
+
+/-- Regular quadratic forms over number fields intertwined by a semilinear equivalence
+`f : V ≃ₛₗ[σ] W` carrying a finite place `v` to `w` have the same finite Hasse sign at `w` and
+`v`. -/
+theorem finiteHasse_of_semilinearEquiv
+    {Q : _root_.QuadraticForm K V} {Q' : _root_.QuadraticForm L W}
+    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate)
+    (f : V ≃ₛₗ[σ] W) (hf : ∀ u, Q' (f u) = σ (Q u))
+    {v : HeightOneSpectrum (𝓞 K)} {w : HeightOneSpectrum (𝓞 L)}
+    (hvw : w.asIdeal =
+      Ideal.map (RingOfIntegers.mapRingEquiv (RingHomInvPair.toRingEquiv σ σ')) v.asIdeal) :
+    Q'.finiteHasse hQ' w = Q.finiteHasse hQ v := by
+  apply finiteHasse_of_semilinearEquiv_of_valuation_eq hQ hQ' f hf
+  intro a
+  simpa using valuation_ringEquivOfRingEquiv (K := K) (K' := L)
+    (RingOfIntegers.mapRingEquiv (RingHomInvPair.toRingEquiv σ σ')) hvw a
+
+/-- Specialization of `finiteHasse_of_semilinearEquiv` when the place of `L` is the image of `v`
+under `HeightOneSpectrum.equivOfRingEquiv` along `RingHomInvPair.toRingEquiv σ σ'`. -/
+theorem finiteHasse_equivOfRingEquiv_of_semilinearEquiv
+    {Q : _root_.QuadraticForm K V} {Q' : _root_.QuadraticForm L W}
+    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate)
+    (f : V ≃ₛₗ[σ] W) (hf : ∀ u, Q' (f u) = σ (Q u))
+    (v : HeightOneSpectrum (𝓞 K)) :
+    Q'.finiteHasse hQ'
+        (HeightOneSpectrum.equivOfRingEquiv
+          (RingOfIntegers.mapRingEquiv (RingHomInvPair.toRingEquiv σ σ')) v) =
+      Q.finiteHasse hQ v :=
+  finiteHasse_of_semilinearEquiv hQ hQ' f hf
+    (asIdeal_equivOfRingEquiv (RingOfIntegers.mapRingEquiv (RingHomInvPair.toRingEquiv σ σ')) v)
+
+end SemilinearEquiv
+
+section BaseChange
+
+open scoped AdicCompletionExtension
+
+variable {K : Type*} [Field K] [NumberField K] {L : Type*} [Field L] [NumberField L] [Algebra K L]
+variable {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- If the canonical completion map `completionAlgHom v w` is surjective at a finite place `w` of
+`L` above `v` of `K`, extending scalars of a regular form `Q` from `K` to `L` preserves its finite
+Hasse sign. -/
+theorem finiteHasse_baseChange_of_completionAlgHom_surjective
+    (v : HeightOneSpectrum (𝓞 K)) (w : HeightOneSpectrum (𝓞 L))
+    [w.asIdeal.LiesOver v.asIdeal]
+    (h : Function.Surjective (completionAlgHom v w))
+    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    (Q.baseChange L).finiteHasse (Nondegenerate.baseChange hQ) w = Q.finiteHasse hQ v := by
+  let _ : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  let _ : Finite (𝓞 L ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
+  have hsurj : Function.Surjective (algebraMap (v.adicCompletion K) (w.adicCompletion L)) := by
+    rw [algebraMap_eq_completionAlgHom]
+    exact h
+  rw [finiteHasse_eq_localHasse_baseChange, finiteHasse_eq_localHasse_baseChange,
+    formClass_baseChange Q hQ, RegularFormClass.baseChange_baseChange L (w.adicCompletion L),
+    ← RegularFormClass.baseChange_baseChange (v.adicCompletion K) (w.adicCompletion L),
+    RegularFormClass.localHasse_baseChange_of_surjective hsurj]
+
+/-- Extending scalars of a regular form along a surjective homomorphism of number fields (for
+example, from `Shrink.{0} K` to `K`) preserves the finite Hasse sign at any pair of lying-over
+finite places. -/
+theorem finiteHasse_baseChange_of_surjective
+    (v : HeightOneSpectrum (𝓞 K)) (w : HeightOneSpectrum (𝓞 L))
+    [w.asIdeal.LiesOver v.asIdeal]
+    (h : Function.Surjective (algebraMap K L))
+    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    (Q.baseChange L).finiteHasse (Nondegenerate.baseChange hQ) w = Q.finiteHasse hQ v :=
+  finiteHasse_baseChange_of_completionAlgHom_surjective v w
+    (completionAlgHom_bijective_of_surjective v w h).surjective Q hQ
+
+end BaseChange
 
 end QuadraticForm
