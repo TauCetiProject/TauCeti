@@ -196,6 +196,12 @@ noncomputable def map : SymmetricFunction R →+* SymmetricFunction S where
   map_one' := ext_specialization fun d => by simp [specialization_mapAux]
   map_mul' x y := ext_specialization fun d => by simp [specialization_mapAux]
 
+/-- As a function, the change of coefficients is the direct sum of the degreewise changes of
+coefficients `TauCeti.stableSymmetricMap`. -/
+theorem coe_map :
+    ⇑(map f) = DirectSum.map fun n => (stableSymmetricMap f n).toAddMonoidHom :=
+  funext fun _ => rfl
+
 /-- The change of coefficients acts on each degree by `TauCeti.stableSymmetricMap`. -/
 @[simp]
 theorem map_apply (x : SymmetricFunction R) (n : ℕ) :
@@ -242,17 +248,16 @@ protected theorem map_smul (r : R) (x : SymmetricFunction R) :
   rw [Algebra.smul_def, map_mul, map_algebraMap, Algebra.smul_def]
 
 /-- **The change of coefficients is injective when `f` is.** -/
-theorem map_injective (hf : Function.Injective f) : Function.Injective (map f) :=
-  (DirectSum.map_injective _).2 fun _ => stableSymmetricMap_injective f hf
+theorem map_injective (hf : Function.Injective f) : Function.Injective (map f) := by
+  rw [coe_map]
+  exact (DirectSum.map_injective _).2 fun _ => stableSymmetricMap_injective f hf
 
 /-- **A symmetric function over `S` comes from `R` exactly when each of its homogeneous components
 does.** -/
 theorem mem_range_map_iff {y : SymmetricFunction S} :
     y ∈ Set.range (map f) ↔ ∀ n, y n ∈ Set.range (stableSymmetricMap f n) := by
-  have h := SetLike.ext_iff.mp
-    (DirectSum.mrange_map fun n => (stableSymmetricMap f n).toAddMonoidHom) y
-  change (∃ x, DirectSum.map (fun n => (stableSymmetricMap f n).toAddMonoidHom) x = y) ↔ _
-  simpa [AddSubmonoid.mem_pi] using h
+  rw [coe_map, ← AddMonoidHom.coe_mrange, SetLike.mem_coe, DirectSum.mrange_map]
+  simp [AddSubmonoid.mem_pi]
 
 /-- **Changing coefficients commutes with polynomial evaluation**: it changes the coefficients of
 the polynomial and the values of the variables. -/
@@ -315,8 +320,9 @@ theorem stableSymmetricMap_surjective (hf : Function.Surjective f) :
 namespace SymmetricFunction
 
 /-- **The change of coefficients is surjective when `f` is.** -/
-theorem map_surjective (hf : Function.Surjective f) : Function.Surjective (map f) :=
-  (DirectSum.map_surjective _).2 fun _ => stableSymmetricMap_surjective f hf
+theorem map_surjective (hf : Function.Surjective f) : Function.Surjective (map f) := by
+  rw [coe_map]
+  exact (DirectSum.map_surjective _).2 fun _ => stableSymmetricMap_surjective f hf
 
 /-- **Changing coefficients commutes with the inverse of the free generation by the elementary
 symmetric functions**: the polynomial in the `e_r` representing the image of `x` is the image of the
