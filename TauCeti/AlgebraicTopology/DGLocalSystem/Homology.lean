@@ -112,16 +112,6 @@ theorem cohomologyRepresentation_fundamentalGroupHom_inv_apply (γ : MooreLoopSp
   rw [cohomologyRepresentation_fundamentalGroupHom_inv,
     groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom, cohomologyAction_mk]
 
-/-- An `R`-algebra map from a monoid algebra to the opposite of the endomorphisms of `V` sends `u`
-to the linear combination, with the coefficients of `u`, of the images of the basis elements. -/
-private theorem unop_algHom_apply_eq_linearCombination {G V : Type*} [Monoid G]
-    [AddCommGroup V] [Module R V] (F : MonoidAlgebra R G →ₐ[R] (Module.End R V)ᵐᵒᵖ)
-    (u : MonoidAlgebra R G) (x : V) :
-    (F u).unop x =
-      Finsupp.linearCombination R (fun g ↦ (F (MonoidAlgebra.of R G g)).unop x) u.coeff := by
-  conv_lhs => rw [MonoidAlgebra.lift_unique' F, MonoidAlgebra.lift_apply]
-  simp [Finsupp.linearCombination_apply, Finsupp.sum]
-
 /-- **A group ring element acts through the representation of the fundamental group**: an element
 `u = ∑ u_g g` of `R[π₁(B, b)]` acts on `H(𝓕)` from the right as `∑ u_g ρ(g⁻¹)`, with `ρ` the
 representation `cohomologyRepresentation`. -/
@@ -132,8 +122,8 @@ theorem cohomologyAction_groupAlgebraToLoopChainCohomology
     (hM.cohomologyAction (groupAlgebraToLoopChainCohomology B b R u)).unop x =
       Finsupp.linearCombination R (fun g ↦ hM.cohomologyRepresentation g⁻¹ x) u.coeff := by
   simp_rw [cohomologyRepresentation_apply, inv_inv]
-  exact unop_algHom_apply_eq_linearCombination
-    (hM.cohomologyAction.comp (groupAlgebraToLoopChainCohomology B b R)) u x
+  rw [← AlgHom.comp_apply, MonoidAlgebra.lift_unique]
+  simp [Finsupp.linearCombination_apply, Finsupp.sum]
 
 /-- The fundamental group preserves the degrees of the homology of a DG local system. -/
 theorem cohomologyRepresentation_apply_mem_cohomologyGrading (g : FundamentalGroup B b) {p : ℤ}

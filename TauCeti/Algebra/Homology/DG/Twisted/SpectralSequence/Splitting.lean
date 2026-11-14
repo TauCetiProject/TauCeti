@@ -44,7 +44,8 @@ differential of the homogeneous component of that element one degree lower.
 ## Main results
 
 * `TauCeti.shiftedModuleComplexHomologyEquiv_homologyπ`: the identification sends the class of a
-  cycle to its class in `H(ℳ)`.
+  cycle to its class in `H(ℳ)`, and `TauCeti.shiftedModuleComplexHomologyEquiv_symm_mk`: its
+  inverse sends the class of a homogeneous cycle of `ℳ` to the class of the corresponding cycle.
 
 ## References
 
@@ -486,6 +487,23 @@ theorem shiftedModuleComplexHomologyEquiv_homologyπ (p n : ℤ)
           hM.cycles) := by
   rw [shiftedModuleComplexHomologyEquiv_homologyπ_apply, cyclesToCohomologyGrading_apply]
   simp only [HomologicalComplex.iCycles_moduleCatCyclesMk]
+
+/-- The inverse of the identification of `shiftedModuleComplexHomologyEquiv` sends the class in
+`H^{n + p}(ℳ)` of a cycle `z` of `ℳ` of degree `n + p` to the class of the corresponding cycle of
+`shiftedModuleComplex hM p`. -/
+theorem shiftedModuleComplexHomologyEquiv_symm_mk (p n : ℤ) (z : hM.cycles)
+    (hz : (z : M) ∈ ℳ (n + p)) :
+    (shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM p n).symm
+        ⟨Submodule.Quotient.mk z, hM.quotientMk_mem_cohomologyGrading hz⟩ =
+      ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).homologyπ n).hom
+        ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCatCyclesMk
+          ((shiftedModuleComplexXEquiv hM p n).symm ⟨z, hz⟩) (n + 1) (by simp) (by
+            rw [shiftedModuleComplexXEquiv_d_eq_zero_iff, LinearEquiv.apply_symm_apply]
+            exact hM.mem_cycles.mp z.2)) := by
+  rw [LinearEquiv.symm_apply_eq]
+  apply Subtype.ext
+  rw [shiftedModuleComplexHomologyEquiv_homologyπ]
+  exact congrArg Submodule.Quotient.mk (Subtype.ext (by simp))
 
 end Cohomology
 
