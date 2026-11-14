@@ -49,11 +49,10 @@ for any two splittings, and the rank of the `j`-th constituent is a difference o
 
 On these vectors `x`, the form `B` agrees modulo `π ^ (j + 1)` with its values on the images under
 a linear retraction of `M` onto the constituent `N j`
-(`LinearMap.BilinForm.IsJordanSplitting.exists_pow_succ_dvd_sub`; the proof takes the projection
-along the other constituents): the form `π ^ (-j) B` modulo `π` factors through the residue form of
-the unimodular rescaling of `N j`. Comparing two splittings through these retractions shows that
-their unimodular rescalings at each index have the same residue forms, which reduces the isometry
-of their constituents to that of these rescalings
+(`LinearMap.BilinForm.IsJordanSplitting.exists_pow_succ_dvd_sub`): the form `π ^ (-j) B` modulo `π`
+factors through the residue form of the unimodular rescaling of `N j`. Comparing two splittings
+through these retractions shows that their unimodular rescalings at each index have the same
+residue forms, which reduces the isometry of their constituents to that of these rescalings
 (`LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_of_forall_unimodular`).
 For symmetric forms on finite free modules over a Henselian local domain with finite residue field
 and two invertible, this decides their isometry class
@@ -690,9 +689,8 @@ private theorem IsJordanSplitting.apply_sub_apply_projectionOnto (h : B.IsJordan
 /-- **The residue form of a Jordan constituent.** Let `N` be a Jordan splitting of `B` with respect
 to a non-zero-divisor `π`. On the vectors `x` with `π ^ j ∣ B x z` for all `z`, the form `B` agrees
 modulo `π ^ (j + 1)` with its value on the images under a linear retraction `f` of `M` onto the
-constituent `N j` (the proof takes the projection along the other constituents). Thus the form
-`π ^ (-j) B` modulo `π` on these vectors is pulled back from the residue form of the unimodular
-rescaling of `N j`.
+constituent `N j`. Thus the form `π ^ (-j) B` modulo `π` on these vectors is pulled back from the
+residue form of the unimodular rescaling of `N j`.
 
 If moreover the neighbouring constituents `N (j - 1)` and `N (j + 1)` are even at their own scales
 (the first condition is vacuous for `j = 0`), then the self-pairings `B x x` of these vectors agree
