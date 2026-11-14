@@ -9,12 +9,13 @@ public import TauCeti.NumberTheory.LFunctions.GammaFactor.Order
 public import TauCeti.Analysis.Meromorphic.Continuation
 public import Mathlib.NumberTheory.LSeries.Deriv
 public import Mathlib.NumberTheory.LSeries.Injectivity
+import Mathlib.Analysis.Complex.Convex
 
 /-!
 # Canonical analytic cards from Dirichlet series
 
 `HasDirichletAgreement.analyticAt_LSeries` recovers analyticity on `Re s > 1` from Dirichlet
-agreement and meromorphic continuation, without assuming coefficient growth.
+agreement and meromorphy of the completion on that half-plane, without assuming coefficient growth.
 
 `AnalyticLFunctionData.ofSeries` constructs a card from coefficients, a conductor, gamma shifts
 and a proposed polar divisor. Its completed function is the canonical meromorphic continuation
@@ -109,10 +110,10 @@ theorem hasDirichletAgreement_ofSeries (ha : a 1 = 1) (hdeg : 0 < μ.card + 2 * 
 
 variable {d : AnalyticLFunctionData}
 
-/-- Dirichlet agreement and meromorphic continuation make the Dirichlet series analytic
-on `Re s > 1`, without an additional coefficient-growth hypothesis. -/
+/-- Dirichlet agreement and meromorphy of the completion on `Re s > 1` make the Dirichlet
+series analytic there, without an additional coefficient-growth hypothesis. -/
 theorem HasDirichletAgreement.analyticAt_LSeries (hD : d.HasDirichletAgreement)
-    (hc : d.HasMeromorphicContinuation) {s : ℂ} (hs : 1 < s.re) :
+    (hm : MeromorphicOn d.completed {z | 1 < z.re}) {s : ℂ} (hs : 1 < s.re) :
     AnalyticAt ℂ (LSeries d.coeff) s := by
   by_cases hσ : LSeries.abscissaOfAbsConv d.coeff < s.re
   · exact LSeries_analyticOnNhd d.coeff s hσ
@@ -120,7 +121,7 @@ theorem HasDirichletAgreement.analyticAt_LSeries (hD : d.HasDirichletAgreement)
   · rw [LSeries_eq_zero_of_abscissaOfAbsConv_eq_top htop]
     exact analyticAt_const
   -- A finite abscissa above this point would force the completion to vanish on a strip,
-  -- hence everywhere as a meromorphic germ, contradicting the first coefficient.
+  -- hence on the whole half-plane as a meromorphic germ, contradicting the first coefficient.
   obtain ⟨t, ht1, hts⟩ := exists_between hs
   have ht : (t : ℂ).re ∈ Ioo 1 s.re := by
     simpa only [Complex.ofReal_re, mem_Ioo] using And.intro ht1 hts
@@ -131,9 +132,9 @@ theorem HasDirichletAgreement.analyticAt_LSeries (hD : d.HasDirichletAgreement)
       LSeries.eq_zero_of_not_LSeriesSummable d.coeff z (fun hsum ↦
         (not_lt.mp hσ).not_gt (hsum.abscissaOfAbsConv_le.trans_lt
           (by exact_mod_cast hz.2))), mul_zero]
-  have hz' (z : ℂ) : d.completed =ᶠ[𝓝[≠] z] 0 :=
-    hc.meromorphic.meromorphicOn.eventuallyEq_of_isPreconnected (MeromorphicOn.const 0)
-      isPreconnected_univ (Set.mem_univ _) (Set.mem_univ _) hz
+  have hz' (z : ℂ) (hzre : 1 < z.re) : d.completed =ᶠ[𝓝[≠] z] 0 :=
+    hm.eventuallyEq_of_isPreconnected (MeromorphicOn.const 0)
+      (convex_halfSpace_re_gt 1).isPreconnected ht.1 hzre hz
   obtain ⟨r, hσr, _⟩ := EReal.exists_between_coe_real (lt_top_iff_ne_top.mpr htop)
   have hzero : (fun x : ℝ ↦ LSeries d.coeff x) =ᶠ[atTop] 0 := by
     filter_upwards [eventually_gt_atTop (max 1 r)] with x hx
@@ -144,7 +145,7 @@ theorem HasDirichletAgreement.analyticAt_LSeries (hD : d.HasDirichletAgreement)
     have hax := (LSeries_analyticOnNhd d.coeff (x : ℂ) hσx).continuousAt
     apply ((hax.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE continuousAt_const).mp
       ?_).eq_of_nhds
-    filter_upwards [hz' x, d.eventually_gammaFactor_ne_zero x,
+    filter_upwards [hz' x hx1, d.eventually_gammaFactor_ne_zero x,
       nhdsWithin_le_nhds (continuous_re.continuousAt.preimage_mem_nhds
         (Ioi_mem_nhds hx1))] with z hz hzγ hzre
     have hmul := (hD.completed_eq z hzre).symm.trans hz

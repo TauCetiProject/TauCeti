@@ -51,13 +51,20 @@ theorem uncompletedProduct_def (s : ℂ) :
 
 /-- Taking the dual card reflects the raw uncompleted product across the real axis. -/
 @[simp]
-theorem uncompletedProduct_dual (s : ℂ) :
-    d.dual.uncompletedProduct s = conj (d.uncompletedProduct (conj s)) := by
+theorem uncompletedProduct_dual :
+    d.dual.uncompletedProduct = conj ∘ d.uncompletedProduct ∘ conj := by
+  funext s
+  simp only [Function.comp_apply]
   simp only [uncompletedProduct_def, dual_conductor, dual_completed_apply,
     invGammaFactor_def, gammaFactor_dual, map_mul, map_inv₀]
   have hN := TauCeti.ofReal_cpow_conj (d.conductor : ℕ).cast_nonneg (-(conj s) / 2)
   simp only [Complex.ofReal_natCast, map_div₀, map_neg, map_ofNat, conj_conj] at hN
   rw [← hN]
+
+/-- The dual raw product evaluated at a point is the conjugate value at the reflected point. -/
+theorem uncompletedProduct_dual_apply (s : ℂ) :
+    d.dual.uncompletedProduct s = conj (d.uncompletedProduct (conj s)) :=
+  congrFun d.uncompletedProduct_dual s
 
 /-- Comparing cards preserves the raw uncompleted product. -/
 theorem EqOffZero.uncompletedProduct_eq {d e : AnalyticLFunctionData} (h : d.EqOffZero e) :
@@ -86,14 +93,16 @@ theorem EqOffZero.continuedL_eq {d e : AnalyticLFunctionData} (h : d.EqOffZero e
 
 /-- Taking the dual card reflects the continued uncompleted function across the real axis. -/
 @[simp]
-theorem continuedL_dual (s : ℂ) :
-    d.dual.continuedL s = conj (d.continuedL (conj s)) := by
-  have hr : d.dual.uncompletedProduct = conj ∘ d.uncompletedProduct ∘ conj :=
-    funext d.uncompletedProduct_dual
-  rw [continuedL_def, continuedL_def, hr]
-  simp only [meromorphicOrderAt_conj_conj]
-  exact toMeromorphicNFOn_conj_conj d.uncompletedProduct
-    {z | 0 ≤ meromorphicOrderAt d.uncompletedProduct z} s
+theorem continuedL_dual :
+    d.dual.continuedL = conj ∘ d.continuedL ∘ conj := by
+  simp only [continuedL_def, uncompletedProduct_dual, meromorphicOrderAt_conj_conj,
+    toMeromorphicNFOn_conj_conj, Set.preimage_ofPred_eq, conj_conj]
+
+/-- The dual continued function evaluated at a point is the conjugate value at the
+reflected point. -/
+theorem continuedL_dual_apply (s : ℂ) :
+    d.dual.continuedL s = conj (d.continuedL (conj s)) :=
+  congrFun d.continuedL_dual s
 
 private theorem analyticAt_conductorPower (s : ℂ) :
     AnalyticAt ℂ (fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (-z / 2)) s :=
@@ -179,6 +188,29 @@ theorem
   exact toMeromorphicNFOn_eq_self_on_compl
     h.meromorphic_uncompletedProduct.meromorphicOn (not_le.mpr hs)
 
+/-- A normal-form representative of the completion gives a normal-form continued function
+at the same point, including the canonical zero value at any remaining pole. -/
+theorem HasMeromorphicContinuation.meromorphicNFAt_continuedL {s : ℂ}
+    (hNF : MeromorphicNFAt d.completed s) : MeromorphicNFAt d.continuedL s := by
+  by_cases hs : 0 ≤ meromorphicOrderAt d.continuedL s
+  · exact (h.analyticAt_continuedL hs).meromorphicNFAt
+  have hneg := lt_of_not_ge hs
+  refine meromorphicNFAt_iff_analyticAt_or.mpr
+    (Or.inr ⟨h.meromorphic_continuedL s, hneg, ?_⟩)
+  rw [h.continuedL_eq_uncompletedProduct_of_meromorphicOrderAt_neg hneg, uncompletedProduct_def]
+  rcases meromorphicNFAt_iff_analyticAt_or.mp hNF with ha | ⟨_, _, hz⟩
+  · exfalso
+    apply hs
+    rw [meromorphicOrderAt_congr (h.continuedL_eventuallyEq s), funext d.uncompletedProduct_def]
+    exact (((analyticAt_conductorPower d s).mul ha).mul
+      (d.analyticAt_invGammaFactor s)).meromorphicOrderAt_nonneg
+  · simp only [hz, mul_zero, zero_mul]
+
+/-- Normal form of the completion on a set passes to the continued uncompleted function. -/
+theorem HasMeromorphicContinuation.meromorphicNFOn_continuedL {U : Set ℂ}
+    (hNF : MeromorphicNFOn d.completed U) : MeromorphicNFOn d.continuedL U :=
+  fun _ hs ↦ h.meromorphicNFAt_continuedL (hNF hs)
+
 /-- `continuedL` is analytic at every point where the record has no pole. -/
 theorem HasMeromorphicContinuation.analyticAt_continuedL_of_polarOrder_eq_zero {s : ℂ}
     (hs : d.polarOrder s = 0) : AnalyticAt ℂ d.continuedL s := by
@@ -233,11 +265,42 @@ factors recovers the Dirichlet series, even at a cancelled gamma pole. -/
 theorem HasDirichletAgreement.continuedL_eq_LSeries (hD : d.HasDirichletAgreement)
     (hc : d.HasMeromorphicContinuation) {s : ℂ} (hs : 1 < s.re) :
     d.continuedL s = LSeries d.coeff s := by
-  apply hc.continuedL_eq_of_eventuallyEq (hD.analyticAt_LSeries hc hs).continuousAt
+  apply hc.continuedL_eq_of_eventuallyEq
+    (hD.analyticAt_LSeries hc.meromorphic.meromorphicOn hs).continuousAt
   filter_upwards [hc.completed_eventuallyEq_mul_continuedL s, d.eventually_gammaFactor_ne_zero s,
     nhdsWithin_le_nhds (continuous_re.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hs))]
     with z hz hzγ hzre
   have hN := d.conductor_cpow_ne_zero (z / 2)
   exact mul_left_cancel₀ (mul_ne_zero hN hzγ) (hz.symm.trans (hD.completed_eq z hzre))
+
+omit h in
+/-- With Dirichlet agreement and meromorphic continuation, the continued function is analytic
+on `Re s > 1`, including at cancelled gamma poles. -/
+theorem HasDirichletAgreement.analyticAt_continuedL (hD : d.HasDirichletAgreement)
+    (hc : d.HasMeromorphicContinuation) {s : ℂ} (hs : 1 < s.re) :
+    AnalyticAt ℂ d.continuedL s := by
+  apply (hD.analyticAt_LSeries hc.meromorphic.meromorphicOn hs).congr
+  filter_upwards [continuous_re.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hs)] with z hz
+  exact (hD.continuedL_eq_LSeries hc hz).symm
+
+omit h in
+/-- Normalizing the continued function on the whole plane gives the canonical meromorphic
+continuation of its Dirichlet series, including canonical values at poles. -/
+theorem HasDirichletAgreement.toMeromorphicNFOn_continuedL (hD : d.HasDirichletAgreement)
+    (hc : d.HasMeromorphicContinuation) :
+    toMeromorphicNFOn d.continuedL Set.univ = meromorphicContinuation 1 (LSeries d.coeff) :=
+  (meromorphicContinuation_eq_toMeromorphicNFOn hc.meromorphic_continuedL
+    (fun _ hs ↦ hD.analyticAt_continuedL hc hs)
+    (fun _ hs ↦ hD.continuedL_eq_LSeries hc hs)).symm
+
+omit h in
+/-- If the completion is in normal form, the continued uncompleted function is exactly the
+canonical meromorphic continuation of its Dirichlet series, also at remaining poles. -/
+theorem HasDirichletAgreement.continuedL_eq_meromorphicContinuation
+    (hD : d.HasDirichletAgreement) (hc : d.HasMeromorphicContinuation)
+    (hNF : MeromorphicNFOn d.completed Set.univ) :
+    d.continuedL = meromorphicContinuation 1 (LSeries d.coeff) := by
+  rw [← hD.toMeromorphicNFOn_continuedL hc,
+    toMeromorphicNFOn_eq_self.mpr (hc.meromorphicNFOn_continuedL hNF)]
 
 end TauCeti.LFunctions.AnalyticLFunctionData
