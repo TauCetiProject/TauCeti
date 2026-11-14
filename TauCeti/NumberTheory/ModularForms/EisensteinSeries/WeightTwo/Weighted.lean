@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Weighted
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.E2.Defs
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.SpecialFunctions.Exp.Summable
 import TauCeti.Analysis.SpecialFunctions.Exp.LatticeSum
@@ -390,7 +391,7 @@ private lemma tendstoLocallyUniformly_weierstrassP_divisionPoint (b : Fin 2 → 
     (mul_le_mul_of_nonneg_right (r_lower_bound_on_verticalStrip z hB (HABK hz))
       (norm_nonneg _)).trans (r_mul_max_le z hy0)
   have hx : ‖divisionPoint N b z‖ < R :=
-    TauCeti.UpperHalfPlane.norm_intCast_mul_add_intCast_div_lt N b
+    Complex.norm_intCast_mul_add_intCast_div_lt N b
       ((hM z hz).trans (le_abs_self M))
   refine (weierstrassP_bound R hR _ hx _ (hy'.trans hl)).trans ?_
   rw [mul_assoc (10 * R), ← Real.mul_rpow hr₀.le (norm_nonneg _)]

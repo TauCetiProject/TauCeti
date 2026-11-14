@@ -152,4 +152,19 @@ theorem norm_conj_sub_sq_div_le {r : ℝ} (x y : ℂ)
       exact add_le_add le_rfl htail
     _ ≤ _ := by linarith
 
+/-- The division point `(b₀ z + b₁) / M` has norm less than `|b₀| |C| + |b₁| + 1` when
+`‖z‖ ≤ |C|`. -/
+theorem norm_intCast_mul_add_intCast_div_lt (M : ℕ) (b : Fin 2 → ℤ) {z : ℂ} {C : ℝ}
+    (hz : ‖z‖ ≤ |C|) :
+    ‖((b 0 : ℂ) * z + b 1) / M‖ < |(b 0 : ℝ)| * |C| + |(b 1 : ℝ)| + 1 := by
+  have hdiv : ‖((b 0 : ℂ) * z + b 1) / M‖ ≤ ‖(b 0 : ℂ) * z + b 1‖ := by
+    rcases M.eq_zero_or_pos with rfl | hM
+    · simp
+    · rw [norm_div, Complex.norm_natCast]
+      exact div_le_self (norm_nonneg _) (Nat.one_le_cast.2 hM)
+  refine hdiv.trans_lt <| (norm_add_le _ _).trans_lt ?_
+  rw [norm_mul, Complex.norm_intCast, Complex.norm_intCast]
+  have := mul_le_mul_of_nonneg_left hz (abs_nonneg (b 0 : ℝ))
+  linarith
+
 end Complex

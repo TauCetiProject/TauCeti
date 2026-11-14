@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Map
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.WeierstrassZeta
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
 
@@ -492,21 +493,6 @@ lemma intCast_sub_nsmul_mul_add_intCast {N : ℕ} [NeZero N] (b y : Fin 2 → �
     Int.cast_mul, Int.cast_natCast]
   field_simp
   ring
-
-/-- The division point `(b₀ z + b₁) / M` has norm less than `|b₀| |C| + |b₁| + 1` when
-`‖z‖ ≤ |C|`. -/
-lemma norm_intCast_mul_add_intCast_div_lt (M : ℕ) (b : Fin 2 → ℤ) {z : ℂ} {C : ℝ}
-    (hz : ‖z‖ ≤ |C|) :
-    ‖((b 0 : ℂ) * z + b 1) / M‖ < |(b 0 : ℝ)| * |C| + |(b 1 : ℝ)| + 1 := by
-  have hdiv : ‖((b 0 : ℂ) * z + b 1) / M‖ ≤ ‖(b 0 : ℂ) * z + b 1‖ := by
-    rcases M.eq_zero_or_pos with rfl | hM
-    · simp
-    · rw [norm_div, Complex.norm_natCast]
-      exact div_le_self (norm_nonneg _) (Nat.one_le_cast.2 hM)
-  refine hdiv.trans_lt <| (norm_add_le _ _).trans_lt ?_
-  rw [norm_mul, Complex.norm_intCast, Complex.norm_intCast]
-  have := mul_le_mul_of_nonneg_left hz (abs_nonneg (b 0 : ℝ))
-  linarith
 
 /-- The lattice series of `ζ` at the division point `(b₀ z + b₁) / M` converges locally uniformly
 in `z`. -/
