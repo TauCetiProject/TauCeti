@@ -511,8 +511,6 @@ theorem QuadraticMap.IsometryEquiv.orthogonalGroupBaseChange_congr
   apply TensorProduct.AlgebraTensorModule.ext
   intro a m
   simp only [LinearEquiv.coe_coe, orthogonalGroupBaseChange_apply_tmul,
-    QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
-    QuadraticMap.IsometryEquiv.coe_symm_toLinearEquiv,
     QuadraticMap.IsometryEquiv.coe_orthogonalGroupCongr_apply]
   rw [← e.baseChange_symm (A := A)]
   simp only [QuadraticMap.IsometryEquiv.baseChange_tmul,
@@ -766,8 +764,13 @@ theorem TauCeti.QuadraticMap.orthogonalGroupBaseChange_baseChange (Q : Quadratic
   apply LinearEquiv.ext
   intro x
   simp only [QuadraticMap.IsometryEquiv.coe_orthogonalGroupCongr_apply,
-    QuadraticForm.baseChangeBaseChange_toLinearEquiv,
     coe_orthogonalGroupBaseChange]
+  have hfwd (y : B ⊗[R] M) : QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q y =
+      (TensorProduct.AlgebraTensorModule.cancelBaseChange R A B B M).symm y := rfl
+  have hbwd (y : B ⊗[A] (A ⊗[R] M)) :
+      (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q).symm y =
+        TensorProduct.AlgebraTensorModule.cancelBaseChange R A B B M y := rfl
+  simp only [hfwd, hbwd]
   have h := LinearMap.baseChange_baseChange (R := R) (A := A) (B := B)
     ((g : M ≃ₗ[R] M).toLinearMap)
   have hx := congrArg (fun f => f x) h
@@ -777,8 +780,7 @@ theorem TauCeti.QuadraticMap.orthogonalGroupBaseChange_baseChange (Q : Quadratic
           (g : M ≃ₗ[R] M).toLinearMap.baseChange B y :=
       DFunLike.congr_fun (LinearEquiv.coe_baseChange R B M M (g : M ≃ₗ[R] M)) y
     rw [hB]
-    simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
-      LinearEquiv.symm_symm]
+    simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe]
   · exact congrArg (fun f => f x)
       (LinearEquiv.coe_baseChange A B (A ⊗[R] M) (A ⊗[R] M)
         (LinearEquiv.baseChange R A M M (g : M ≃ₗ[R] M)))
