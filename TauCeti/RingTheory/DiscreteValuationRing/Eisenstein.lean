@@ -30,7 +30,7 @@ The point is that `f ≡ X ^ deg f` modulo the maximal ideal `𝔪` of `A`, so `
 element of `B` is a polynomial in `x` and the constant coefficient `f(0)`, a uniformizer of `A`,
 lies in `x B`. No completeness of `A` and no separability of `f` is needed. Applied to `X ^ n - ϖ`
 for a uniformizer `ϖ`, this describes the integral closure of `A` in the field obtained by
-adjoining an `n`-th root of `ϖ` (`TauCeti.RingTheory.DiscreteValuationRing.Kummer`).
+adjoining an `n`-th root of `ϖ` (`TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic`).
 
 ## Main results
 

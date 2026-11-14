@@ -6,13 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+public import Mathlib.FieldTheory.Separable
+import TauCeti.RingTheory.Unramified.Field
 
 /-!
 # Scalar extension of a simple algebraic field extension
 
 For fields `K ⊆ L ⊆ Ω`, the inclusion `K(α) → L(α)` makes `L(α)` a field quotient of
 `K(α) ⊗[K] L` when `α` is algebraic over `L`. This is the compositum description used to
-base-change an extension while adjoining the same root to both fields.
+base-change an extension while adjoining the same root to both fields; more generally, if `E` is
+generated over `L` by the image of an element of `K₁` algebraic over `L` and `L / K` is finite and
+separable, then `E / K₁` is finite and separable.
 -/
 
 public section
@@ -80,5 +84,42 @@ theorem surjective_adjoinBaseChange_tensorProduct {α : Ω} (hα : IsIntegral L 
   have hx : x ∈ S := htop ▸ Algebra.mem_top
   -- `S` retains the carrier of `φ.range`; only its coefficient algebra was changed.
   exact (AlgHom.mem_range φ).mp hx
+
+/-- If `E` is generated over `L` by the image of an element `α₀ : K₁` algebraic over `L`, then `E`
+receives a surjective `K₁`-algebra homomorphism from `K₁ ⊗[K] L`. -/
+theorem exists_surjective_tensorProduct_of_adjoin_eq_top
+    {K K₁ L E : Type*} [Field K] [Field K₁] [Field L] [Field E]
+    [Algebra K K₁] [Algebra K L] [Algebra K E] [Algebra K₁ E] [Algebra L E]
+    [IsScalarTower K K₁ E] [IsScalarTower K L E]
+    {α₀ : K₁} (hα : IsAlgebraic L (algebraMap K₁ E α₀))
+    (hgen : L⟮algebraMap K₁ E α₀⟯ = ⊤) :
+    ∃ ψ : K₁ ⊗[K] L →ₐ[K₁] E, Function.Surjective ψ := by
+  let ψ : K₁ ⊗[K] L →ₐ[K₁] E :=
+    Algebra.TensorProduct.lift (Algebra.ofId K₁ E) (IsScalarTower.toAlgHom K L E)
+      fun _ _ ↦ .all _ _
+  refine ⟨ψ, ?_⟩
+  let S : Subalgebra L E :=
+    { ψ.range.toSubring with
+      algebraMap_mem' := fun l ↦ ⟨1 ⊗ₜ[K] l, by simp [ψ]⟩ }
+  have hmem : algebraMap K₁ E α₀ ∈ S := ⟨α₀ ⊗ₜ[K] 1, by simp [ψ]⟩
+  have hadj : Algebra.adjoin L ({algebraMap K₁ E α₀} : Set E) = ⊤ :=
+    (adjoin_simple_eq_top_iff_of_isAlgebraic hα).mp hgen
+  have htop : S = ⊤ := top_unique (hadj ▸ Algebra.adjoin_le (Set.singleton_subset_iff.mpr hmem))
+  intro x
+  have hx : x ∈ S := htop ▸ Algebra.mem_top
+  exact (AlgHom.mem_range ψ).mp hx
+
+/-- If `E` is generated over `L` by the image of an element `α₀ : K₁` algebraic over `L` and
+`L / K` is finite and separable, then `E` is a finite separable extension of `K₁`. -/
+theorem finiteDimensional_and_isSeparable_of_adjoin_eq_top
+    {K K₁ L E : Type*} [Field K] [Field K₁] [Field L] [Field E]
+    [Algebra K K₁] [Algebra K L] [Algebra K E] [Algebra K₁ E] [Algebra L E]
+    [IsScalarTower K K₁ E] [IsScalarTower K L E]
+    [FiniteDimensional K L] [Algebra.IsSeparable K L]
+    {α₀ : K₁} (hα : IsAlgebraic L (algebraMap K₁ E α₀))
+    (hgen : L⟮algebraMap K₁ E α₀⟯ = ⊤) :
+    FiniteDimensional K₁ E ∧ Algebra.IsSeparable K₁ E := by
+  obtain ⟨ψ, hψ⟩ := exists_surjective_tensorProduct_of_adjoin_eq_top (K := K) hα hgen
+  exact ψ.finiteDimensional_and_isSeparable_of_surjective_of_isSeparable hψ
 
 end TauCeti.IntermediateField

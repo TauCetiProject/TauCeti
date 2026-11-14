@@ -77,6 +77,13 @@ a ring `A`, then `L` is the fraction field of the `A`-algebra they generate.
 * `TauCeti.IntermediateField.isFractionRing_algebra_adjoin_of_adjoin_eq_top`: conversely,
   generators of `L` over the fraction field of `A` generate an `A`-algebra with fraction field
   `L`.
+* `TauCeti.IntermediateField.exists_multiple_mem_adjoin_of_adjoin_eq_top` and
+  `TauCeti.IntermediateField.exists_multiple_mem_adjoin_of_adjoin_simple_eq_top`: if algebraic
+  elements of an `A`-algebra `S` generate `E` over the fraction field of `A`, every element of `S`
+  lands in the `A`-subalgebra they generate after multiplication by a nonzero element of `A`.
+* `TauCeti.IntermediateField.map_mem_of_gen_mem_subalgebra`: if `x` is algebraic over `F` and an
+  `F`-subalgebra contains the image of the generator of `F⟮x⟯` under an `F`-algebra map, it
+  contains the entire image of `F⟮x⟯`.
 * `TauCeti.IntermediateField.finrank_le_of_adjoin_simple_eq_top_of_pow_mem`: if `β` generates `L`
   over `E` and `β ^ n` lies in `E` for some `n ≠ 0`, then `[L : E] ≤ n`.
 * `TauCeti.IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_mem_bot`: if `L = K(y)` with `y`
@@ -263,7 +270,63 @@ theorem isFractionRing_algebra_adjoin_of_adjoin_eq_top {s : Set L}
     Submonoid.smul_def, Algebra.smul_def]
   rw [mul_left_comm (algebraMap A L a), mul_div_mul_left _ _ hb0, mul_div_mul_left _ _ ha0]
 
+/-- If elements `s` of a faithfully embedded `A`-algebra `S` inside an extension `E` of the fraction
+field `K` of a domain `A` are algebraic over `K` and generate `E` over `K`, then every element of
+`S` lies in `Algebra.adjoin A s` after multiplication by a nonzero element of `A`. -/
+theorem exists_multiple_mem_adjoin_of_adjoin_eq_top
+    [IsDomain A] {S E : Type*} [CommRing S] [Algebra A S] [Field E] [Algebra K E] [Algebra A E]
+    [IsScalarTower A K E] [Algebra S E] [FaithfulSMul S E] [IsScalarTower A S E]
+    {s : Set S} (hs : ∀ x ∈ s, IsAlgebraic K (algebraMap S E x))
+    (hadj : IntermediateField.adjoin K (algebraMap S E '' s) = ⊤) (c : S) :
+    ∃ a : A, a ≠ 0 ∧ algebraMap A S a * c ∈ Algebra.adjoin A s := by
+  have hadj_alg : Algebra.adjoin K (algebraMap S E '' s) = ⊤ := by
+    have h := congrArg IntermediateField.toSubalgebra hadj
+    rwa [IntermediateField.adjoin_toSubalgebra_of_isAlgebraic
+      (by rintro _ ⟨x, hx, rfl⟩; exact hs x hx), IntermediateField.top_toSubalgebra] at h
+  have hc : algebraMap S E c ∈ Algebra.adjoin K (algebraMap S E '' s) :=
+    hadj_alg ▸ Algebra.mem_top
+  obtain ⟨t, ht⟩ := _root_.multiple_mem_adjoin_of_mem_localization_adjoin
+    (nonZeroDivisors A) K (algebraMap S E '' s) (algebraMap S E c) hc
+  rw [← IsScalarTower.coe_toAlgHom' A S E, ← AlgHom.map_adjoin] at ht
+  obtain ⟨z, hz, hzeq⟩ := ht
+  refine ⟨t, mem_nonZeroDivisors_iff_ne_zero.mp t.2, ?_⟩
+  have hzeq' : algebraMap S E z = (t : A) • algebraMap S E c := by
+    simpa [Submonoid.smul_def] using hzeq
+  have heq : algebraMap S E (algebraMap A S t * c) = algebraMap S E z := by
+    rw [hzeq', Algebra.smul_def, map_mul, ← IsScalarTower.algebraMap_apply A S E]
+  exact FaithfulSMul.algebraMap_injective S E heq ▸ hz
+
+/-- Single-generator case of
+`TauCeti.IntermediateField.exists_multiple_mem_adjoin_of_adjoin_eq_top`: if `β : S` is algebraic
+over `K` and generates `E` over `K`, every element of `S` becomes a polynomial in `β` over `A` after
+multiplication by a nonzero element of `A`. -/
+theorem exists_multiple_mem_adjoin_of_adjoin_simple_eq_top
+    [IsDomain A] {S E : Type*} [CommRing S] [Algebra A S] [Field E] [Algebra K E] [Algebra A E]
+    [IsScalarTower A K E] [Algebra S E] [FaithfulSMul S E] [IsScalarTower A S E]
+    {β : S} (hβ : IsAlgebraic K (algebraMap S E β))
+    (hadj : IntermediateField.adjoin K {algebraMap S E β} = ⊤) (c : S) :
+    ∃ a : A, a ≠ 0 ∧ algebraMap A S a * c ∈ Algebra.adjoin A {β} :=
+  exists_multiple_mem_adjoin_of_adjoin_eq_top (K := K) (E := E) (s := {β})
+    (by simpa using hβ) (by simpa using hadj) c
+
 end FractionRing
+
+open _root_.IntermediateField in
+/-- If `x` is algebraic over `F` and an `F`-subalgebra `S` of `M` contains the image of the
+distinguished generator of `F⟮x⟯` under `f : F⟮x⟯ →ₐ[F] M`, then `S` contains the entire image of
+`f`. -/
+theorem map_mem_of_gen_mem_subalgebra {F Ω M : Type*} [Field F] [Field Ω] [Algebra F Ω]
+    [Semiring M] [Algebra F M] {x : Ω} (hx : IsAlgebraic F x)
+    (f : F⟮x⟯ →ₐ[F] M) {S : Subalgebra F M} (hmem : f (AdjoinSimple.gen F x) ∈ S)
+    (z : F⟮x⟯) : f z ∈ S := by
+  have hadj : Algebra.adjoin F ({AdjoinSimple.gen F x} : Set F⟮x⟯) = ⊤ :=
+    (adjoin_simple_eq_top_iff_of_isAlgebraic
+      ((AdjoinSimple.isIntegral_gen F x).mpr hx.isIntegral).isAlgebraic).mp
+      (adjoin_adjoinSimple_gen_eq_top x)
+  have hgen : AdjoinSimple.gen F x ∈ S.comap f := (Subalgebra.mem_comap _ _ _).mpr hmem
+  have htop : S.comap f = ⊤ :=
+    top_unique (hadj ▸ Algebra.adjoin_le (Set.singleton_subset_iff.mpr hgen))
+  exact (Subalgebra.mem_comap _ _ _).mp (htop ▸ Algebra.mem_top : z ∈ S.comap f)
 
 variable {R S K L : Type*} [CommSemiring R] [CommRing S] [Field K] [Field L] [Algebra R S]
   [Algebra R K] [Algebra R L] [Algebra S L] [Algebra K L] [IsScalarTower R S L]

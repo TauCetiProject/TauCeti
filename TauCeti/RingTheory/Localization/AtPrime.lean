@@ -31,12 +31,18 @@ ring with `IsFractionRing R K`, as in Mathlib's `IsFractionRing` API), from
 * `Localization.AtPrime.isScalarTower_of_isFractionRing : IsScalarTower R (Localization.AtPrime p)
   K`, saying that lift extends `algebraMap R K`;
 * `Localization.AtPrime.isFractionRing : IsFractionRing (Localization.AtPrime p) K`.
+* `Localization.AtPrime.isScalarTower_of_isScalarTower`: compatibility of a map between two
+  localizations at primes with a common target algebra `E` (such as an extension of fraction
+  fields).
+* `Localization.AtPrime.faithfulSMul`: `FaithfulSMul (Localization.AtPrime P)
+  (Localization.AtPrime M')` for primes of a faithfully embedded ring inside a domain.
 
-They are global instances: the point of stating them once is that every consumer — first the
-global minimal models of `TauCeti/AlgebraicGeometry/EllipticCurve/GlobalMinimalModel.lean`, where
-the localisation is at a height-one prime of a Dedekind domain — finds them by instance search
-rather than installing them locally at each use site. The `Algebra` instance carries data and is
-`noncomputable`, as `IsLocalization.lift` is.
+The first three and `faithfulSMul` are global instances: the point of stating them once is that
+every consumer — first the global minimal models of
+`TauCeti/AlgebraicGeometry/EllipticCurve/GlobalMinimalModel.lean`, where the localisation is at a
+height-one prime of a Dedekind domain — finds them by instance search rather than installing them
+locally at each use site. The `Algebra` instance carries data and is `noncomputable`, as
+`IsLocalization.lift` is.
 
 The height-one-prime specialisation, where the localisation is moreover a discrete valuation ring,
 and its valuation bound are in `TauCeti/RingTheory/DedekindDomain/LocalizationAtPrime.lean`.
@@ -66,6 +72,45 @@ instance isScalarTower_of_isFractionRing : IsScalarTower R (Localization.AtPrime
 -/
 instance isFractionRing : IsFractionRing (Localization.AtPrime p) K :=
   IsFractionRing.isFractionRing_of_isDomain_of_isLocalization p.primeCompl _ K
+
+/-- If `Localization.AtPrime P → Localization.AtPrime M'`, `Localization.AtPrime P → E`, and
+`Localization.AtPrime M' → E` are compatible with a scalar tower `C → C' → E`, then
+`Localization.AtPrime P → Localization.AtPrime M' → E` is a scalar tower. -/
+theorem isScalarTower_of_isScalarTower {C C' E : Type*} [CommSemiring C] [CommSemiring C']
+    [CommSemiring E] [Algebra C C'] [Algebra C E] [Algebra C' E] [IsScalarTower C C' E]
+    (P : Ideal C) [P.IsPrime] (M' : Ideal C') [M'.IsPrime]
+    [Algebra (Localization.AtPrime P) (Localization.AtPrime M')]
+    [IsScalarTower C (Localization.AtPrime P) (Localization.AtPrime M')]
+    [Algebra (Localization.AtPrime P) E] [IsScalarTower C (Localization.AtPrime P) E]
+    [Algebra (Localization.AtPrime M') E] [IsScalarTower C' (Localization.AtPrime M') E] :
+    IsScalarTower (Localization.AtPrime P) (Localization.AtPrime M') E := by
+  refine .of_algebraMap_eq' <| IsLocalization.ringHom_ext P.primeCompl <| RingHom.ext fun c ↦ ?_
+  simp only [RingHom.comp_apply,
+    ← IsScalarTower.algebraMap_apply C (Localization.AtPrime P) (Localization.AtPrime M'),
+    ← IsScalarTower.algebraMap_apply C (Localization.AtPrime P) E]
+  rw [IsScalarTower.algebraMap_apply C C' (Localization.AtPrime M'),
+    ← IsScalarTower.algebraMap_apply C' (Localization.AtPrime M') E,
+    ← IsScalarTower.algebraMap_apply C C' E]
+
+/-- A compatible algebra map `Localization.AtPrime P → Localization.AtPrime M'` over a faithful
+embedding `C → C'` into a domain `C'` is faithful. -/
+instance faithfulSMul {C C' : Type*} [CommRing C] [CommRing C'] [IsDomain C'] [Algebra C C']
+    [FaithfulSMul C C'] (P : Ideal C) [P.IsPrime] (M' : Ideal C') [M'.IsPrime]
+    [Algebra (Localization.AtPrime P) (Localization.AtPrime M')]
+    [IsScalarTower C (Localization.AtPrime P) (Localization.AtPrime M')] :
+    FaithfulSMul (Localization.AtPrime P) (Localization.AtPrime M') := by
+  rw [faithfulSMul_iff_algebraMap_injective]
+  refine (injective_iff_map_eq_zero _).mpr fun z hz ↦ ?_
+  obtain ⟨⟨c, s⟩, hs⟩ := IsLocalization.surj P.primeCompl z
+  have hzs : z = IsLocalization.mk' _ c s := (IsLocalization.eq_mk'_iff_mul_eq.mpr hs)
+  have hc : algebraMap C (Localization.AtPrime M') c = 0 := by
+    rw [IsScalarTower.algebraMap_apply C (Localization.AtPrime P) (Localization.AtPrime M'),
+      ← hs, map_mul, hz, zero_mul]
+  rw [IsScalarTower.algebraMap_apply C C' (Localization.AtPrime M')] at hc
+  have hc0 : c = 0 := (FaithfulSMul.algebraMap_eq_zero_iff C C').mp <|
+    (injective_iff_map_eq_zero _).mp
+      (IsLocalization.injective _ M'.primeCompl_le_nonZeroDivisors) _ hc
+  simp [hzs, hc0]
 
 end Localization.AtPrime
 
