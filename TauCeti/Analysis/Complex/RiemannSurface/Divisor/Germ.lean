@@ -22,7 +22,9 @@ inclusions despite their normalization of newly permitted poles.
 The local divisor-section condition persists on a neighbourhood. Every meromorphic function
 satisfying its order bound has a normalized representative at the centre: allowed poles are
 pinned to zero, and otherwise the removable singularity is filled holomorphically. Two normalized
-representatives of the same punctured germ have the same full germ.
+representatives of the same punctured germ have the same full germ. Consequently a local section
+of `𝒪_E` satisfying the order bound of `D ≤ E` lifts locally through the divisor inclusion
+(`exists_divisorSheafMapOfLE_app_eq`).
 
 ## References
 
@@ -263,6 +265,46 @@ theorem exists_section_toChartGerm_eq (D : WeilDivisor X) (x : X)
     (tendsto_chartAt_symm_nhdsNE x)).trans
       ((hFg.symm.comp_tendsto (tendsto_chartAt_symm_nhdsNE x)).trans hchart)
 
+
+/-- A local section of `𝒪_E` whose germ at `y` satisfies the order bound of a smaller divisor `D`
+lifts near `y` through the divisor inclusion, including its normalization at allowed poles. -/
+theorem exists_divisorSheafMapOfLE_app_eq {D E : WeilDivisor X} (h : D ≤ E) (U : Opens X)
+    (f : (divisorSheaf E).obj.obj (op U)) (y : U)
+    (hb : ((-D y.1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt
+      (Subtype.val.extend (divisorSheafSectionsEquiv E U f).1 0) y.1) :
+    ∃ (V : Opens X) (_hyV : y.1 ∈ V) (hVU : V ≤ U) (t : (divisorSheaf D).obj.obj (op V)),
+      (divisorSheafMapOfLE h).hom.app (op V) t = (divisorSheaf E).obj.map (homOfLE hVU).op f := by
+  have := ChartedSpace.t1Space ℂ X
+  let F := Subtype.val.extend (divisorSheafSectionsEquiv E U f).1 (0 : X → ℂ)
+  have hf : IsDivisorSectionAt E F y.1 :=
+    isDivisorSectionAt_extend (divisorSheafSectionsEquiv E U f).2 y
+  obtain ⟨g, hg, hFg⟩ := exists_isDivisorSectionAt hf.meromorphicAt hb
+  have hk : {z | E z ≤ 0}.indicator g =ᶠ[𝓝[≠] y.1] g := by
+    filter_upwards [E.eventually_eq_zero_nhdsNE y.1] with z hz
+    exact Set.indicator_of_mem (s := {z | E z ≤ 0}) hz.le g
+  have hEq := hf.eventuallyEq_of_nhdsNE (hg.indicator h) (hFg.trans hk.symm)
+  obtain ⟨v, hv, hvo, hyv⟩ := eventually_nhds_iff.1
+    ((hg.eventually.and (U.isOpen.mem_nhds y.2)).and hEq)
+  let V : Opens X := ⟨v, hvo⟩
+  have hVU : V ≤ U := fun z hz ↦ (hv z hz).1.2
+  let s : divisorSections D V := ⟨g ∘ Subtype.val,
+    comp_val_mem_divisorSections fun z hz ↦ (hv z hz).1.1⟩
+  refine ⟨V, hyv, hVU, (divisorSheafSectionsEquiv D V).symm s, ?_⟩
+  apply (divisorSheafSectionsEquiv E V).injective
+  apply Subtype.ext
+  funext z
+  rw [divisorSheafMapOfLE_app, divisorSheafSectionsEquiv_map]
+  simp only [LinearEquiv.apply_symm_apply]
+  -- Divisor inclusion is defined by normalization with this indicator on the open carrier.
+  change {z : V | E z ≤ 0}.indicator (g ∘ Subtype.val) z =
+    (divisorSheafSectionsEquiv E U f).1 ⟨z.1, hVU z.2⟩
+  calc
+    _ = {z | E z ≤ 0}.indicator g z.1 := by
+      simp only [Set.indicator_apply, Set.mem_ofPred_eq, Function.comp_apply]
+    _ = F z.1 := (hv z.1 z.2).2.symm
+    _ = (divisorSheafSectionsEquiv E U f).1 ⟨z.1, hVU z.2⟩ :=
+      Subtype.val_injective.extend_apply (divisorSheafSectionsEquiv E U f).1
+        (0 : X → ℂ) (⟨z.1, hVU z.2⟩ : U)
 
 end Representation
 
