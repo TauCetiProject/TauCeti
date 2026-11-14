@@ -77,8 +77,7 @@ unfolding.
   splitter, separating a hyperbolic plane.
 * `TauCeti.realCliffordSignSwitchStandardIsometry`: the isometry which puts a sign-switched form
   with one positive line back into standard signature coordinates.
-* `TauCeti.realCliffordZeroOneIsometry` and `TauCeti.realCliffordZeroTwoIsometry`: the coordinate
-  isometries used in the complex and quaternion base entries.
+* `TauCeti.realCliffordZeroOneIsometry`: the coordinate isometry used in the complex base entry.
 * `TauCeti.realCliffordOneZeroEquivProd`, `TauCeti.realCliffordZeroOneEquivComplex`,
   `TauCeti.realCliffordZeroTwoEquivQuaternion`, `TauCeti.realCliffordOneOneEquivMatrix`: the four
   base entries of the Bott table, each with a `..._ι` lemma computing it on a generator.
@@ -721,14 +720,14 @@ theorem realCliffordZeroOneEquivComplex_ι (v : Fin (0 + 1) → ℝ) :
 
 /-- The signature `(0,2)` form is Mathlib's `CliffordAlgebraQuaternion.Q (-1) (-1)` read on
 `Fin (0 + 2) → ℝ` instead of on `ℝ × ℝ`. -/
-def realCliffordZeroTwoIsometry :
+private def realCliffordZeroTwoIsometry :
     (realCliffordForm 0 2).IsometryEquiv (CliffordAlgebraQuaternion.Q (-1 : ℝ) (-1)) :=
   ⟨(LinearEquiv.finTwoArrow ℝ ℝ : (Fin (0 + 2) → ℝ) ≃ₗ[ℝ] ℝ × ℝ), fun v => by
     simp [realCliffordForm_zero_two_apply]⟩
 
 /-- `realCliffordZeroTwoIsometry` reads off the two coordinates. -/
 @[simp]
-theorem realCliffordZeroTwoIsometry_apply (v : Fin (0 + 2) → ℝ) :
+private theorem realCliffordZeroTwoIsometry_apply (v : Fin (0 + 2) → ℝ) :
     realCliffordZeroTwoIsometry v = (v 0, v 1) := by
   simp [realCliffordZeroTwoIsometry, ← IsometryEquiv.coe_toLinearEquiv,
     LinearEquiv.finTwoArrow_apply]
