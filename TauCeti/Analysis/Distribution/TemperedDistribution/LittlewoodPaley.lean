@@ -15,6 +15,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
@@ -117,8 +118,10 @@ blocks `Δⱼ u`.
 * `ContDiffBump.integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ` and
   `ContDiffBump.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le`: the
   `k`-th moments of the kernels `𝓕⁻ ψⱼ` are `O(2^{-jk})`.
-* `TemperedDistribution.littlewoodPaleyBlock_delta_zero`: the blocks of the Dirac mass `δ₀` are
-  the kernels `𝓕⁻ ψⱼ`.
+* `TemperedDistribution.littlewoodPaleyBlock_delta_zero`,
+  `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta`,
+  `TemperedDistribution.littlewoodPaleyBlock_volume_toTemperedDistribution`: the blocks of the
+  Dirac mass `δ₀`, of plane waves `𝓕⁻ δ_ξ`, and of Lebesgue measure (the constant `1`).
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le`: the blocks are bounded on
   `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`.
 * `TemperedDistribution.ae_eq_convolution_of_littlewoodPaleyBlock_eq`: on `Lᵖ`, the block `Δⱼ` is
@@ -553,6 +556,47 @@ theorem littlewoodPaleyBlock_delta_zero (j : ℕ) :
   congr 1
   ext u
   simp [φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j, mul_comm]
+
+/-- The inverse Fourier transform of the Dirac mass at the origin is Lebesgue measure (the
+constant distribution `1`). -/
+theorem fourierInv_delta_zero :
+    𝓕⁻ (delta (0 : E)) =
+      (MeasureTheory.volume : MeasureTheory.Measure E).toTemperedDistribution := by
+  ext f
+  simp [SchwartzMap.fourierInv_coe, Real.fourierInv_eq]
+
+/-- The Fourier transform of Lebesgue measure (the constant distribution `1`) is the Dirac mass at
+the origin. -/
+@[simp]
+theorem fourier_volume_toTemperedDistribution :
+    𝓕 (MeasureTheory.volume : MeasureTheory.Measure E).toTemperedDistribution = delta 0 := by
+  rw [← fourierInv_delta_zero, FourierTransform.fourier_fourierInv_eq]
+
+/-- **The blocks of a plane wave.** The `j`-th Littlewood–Paley block of `𝓕⁻ δ_ξ` (the plane wave
+`x ↦ e^{2πi ⟪ξ, x⟫}`) scales it by `ψⱼ ξ`. -/
+theorem littlewoodPaleyBlock_fourierInv_delta (j : ℕ) (ξ : E) :
+    littlewoodPaleyBlock ℂ φ j (𝓕⁻ (delta ξ)) =
+      (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) • 𝓕⁻ (delta ξ) := by
+  rw [littlewoodPaleyBlock_apply, fourierMultiplierCLM_apply,
+    FourierTransform.fourier_fourierInv_eq,
+    smulLeftCLM_delta (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j),
+    FourierTransform.fourierInv_smul]
+
+/-- **The blocks of the constant `1`.** The zeroth Littlewood–Paley block of Lebesgue measure (the
+constant distribution `1`) is itself, and every higher block vanishes. -/
+@[simp]
+theorem littlewoodPaleyBlock_volume_toTemperedDistribution (j : ℕ) :
+    littlewoodPaleyBlock ℂ φ j
+        (MeasureTheory.volume : MeasureTheory.Measure E).toTemperedDistribution =
+      if j = 0 then (MeasureTheory.volume : MeasureTheory.Measure E).toTemperedDistribution
+      else 0 := by
+  rw [← fourierInv_delta_zero, littlewoodPaleyBlock_fourierInv_delta]
+  rcases j with _ | j
+  · simp [φ.inhomogeneousLittlewoodPaley_zero,
+      φ.one_of_mem_closedBall (Metric.mem_closedBall_self φ.rIn_pos.le)]
+  · have := φ.rIn_pos
+    have h0 : ‖(0 : E)‖ ≤ (2 : ℝ) ^ j * φ.rIn := by rw [norm_zero]; positivity
+    simp [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le h0]
 
 section Lp
 
