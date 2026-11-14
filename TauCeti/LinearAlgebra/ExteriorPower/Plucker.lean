@@ -129,7 +129,7 @@ theorem _root_.Matrix.exists_det_submatrix_eq_sign_mul_plucker (A : Matrix (Fin 
 
 /-- The empty family has Plücker coordinate `1`. -/
 @[simp]
-theorem plucker_of_isEmpty (x : Fin 0 → ι → R) (s : powersetCard ι 0) : plucker x s = 1 :=
+theorem plucker_fin_zero (x : Fin 0 → ι → R) (s : powersetCard ι 0) : plucker x s = 1 :=
   Matrix.det_isEmpty
 
 /-- The Plücker coordinate of a single vector at the singleton `{i}` is its `i`-th coordinate. -/
