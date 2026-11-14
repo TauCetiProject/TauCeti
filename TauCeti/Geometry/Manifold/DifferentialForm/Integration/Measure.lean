@@ -53,6 +53,7 @@ this construction gives the Liouville measure of a symplectic manifold.
   finite.
 * `TauCeti.RoughForm.isOpenPosMeasure_measure`: the measure of a continuous nowhere-vanishing form
   is positive on nonempty open sets.
+* `TauCeti.RoughForm.nullSingletonClass_measure`: in positive dimension, points have measure zero.
 * `TauCeti.RoughForm.measure_eq_withDensity_addHaar`: on the model space `E`, `|φ|` is the Haar
   measure of a basis `b` with density `|φ(b)|`.
 * `Homeomorph.measurePreserving_measure_mpullback`: a differentiable homeomorphism `Φ` carries
@@ -253,6 +254,16 @@ theorem isLocallyFiniteMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoot
   refine setLIntegral_lt_top_of_le_nnreal ?_ ⟨(g (e x) + 1).toNNReal, fun y hy ↦ ?_⟩
   · exact ((measure_mono (himage.trans inter_subset_right)).trans_lt measure_ball_lt_top).ne
   · exact ENNReal.ofReal_le_ofReal (himage hy).1.le
+
+/-- **A top form gives points measure zero** on a manifold of positive dimension: the coordinate
+image of a point is a single point, which is Lebesgue-null. -/
+instance nullSingletonClass_measure [Nontrivial E] (φ : RoughForm I M ℝ k) :
+    NullSingletonClass φ.measure :=
+  ⟨fun x ↦ by
+    have : T1Space M := I.t1Space M
+    rw [φ.measure_apply_of_subset (measurableSet_singleton x)
+      (singleton_subset_iff.2 (mem_extChartAt_source x)), image_singleton]
+    exact setLIntegral_measure_zero _ _ (measure_singleton _)⟩
 
 /-- **The measure of a continuous nowhere-vanishing top form is positive on nonempty open sets.**
 In a chart the coefficient of such a form vanishes nowhere, and a nonempty open subset of a chart

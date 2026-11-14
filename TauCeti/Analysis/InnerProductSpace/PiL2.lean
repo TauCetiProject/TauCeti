@@ -39,6 +39,8 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
+* `EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere`: the coordinates of a point of the unit sphere
+  of `ℝ³` have squares summing to `1`.
 * `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
   over the vertices weighted by its coordinates, at distance at most `√(1 - ‖x‖ ^ 2)` from them.
 * `EuclideanSpace.abs_sub_sum_mul_basisFun_le_sqrt`: consequently a `K`-Lipschitz function at a
@@ -97,6 +99,13 @@ theorem toLp_mem_sphere_zero_one_iff {v : ι → ℝ} :
     WithLp.toLp 2 v ∈ Metric.sphere (0 : EuclideanSpace ℝ ι) 1 ↔ v ⬝ᵥ v = 1 := by
   rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
     ← real_inner_self_eq_norm_sq, inner_toLp_toLp, star_trivial]
+
+/-- A point of the unit sphere of `ℝ³` has coordinates whose squares sum to `1`. -/
+theorem sq_add_sq_add_sq_of_mem_sphere {x : EuclideanSpace ℝ (Fin 3)}
+    (hx : x ∈ Metric.sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :
+    x 0 ^ 2 + x 1 ^ 2 + x 2 ^ 2 = 1 := by
+  have h := congrArg (· ^ 2) (norm_eq_of_mem_sphere ⟨x, hx⟩)
+  simpa only [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three, one_pow] using h
 
 /-- For a vector `x` whose coordinates sum to one, the `x`-weighted mean squared distance from
 `x` to the standard basis vectors is `1 - ‖x‖ ^ 2`. -/
