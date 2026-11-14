@@ -74,9 +74,6 @@ single orientation of the model, and transport preserves them.
   first chart to the sign of its Jacobian times the one selected by the second.
 * `OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign_det_smul`: changing the chart
   multiplies the selected local orientation by the sign of the Jacobian of the transition map.
-* `OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_map`: mapping the orientation of the
-  model by a linear automorphism multiplies the selected local orientation by the sign of its
-  determinant.
 * `OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart`: a continuous map which
   reads as the identity in two charts carries the local orientations they select to each other.
 * `TauCeti.Manifold.Orientation.toHomologicalOrientation`: the homological orientation of a smooth
@@ -345,60 +342,6 @@ variable {E E' : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   (ω : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1) (hE' : finrank ℝ E' = n + 1)
   (T : E ≃ₗᵢ[ℝ] E')
 
-private theorem isometry_preimage_subset (p : E) :
-    (⟨T, T.continuous⟩ : C(E, E')) ⁻¹' {T p} ⊆ {p} :=
-  fun _ hz ↦ T.injective hz
-
-/-- **Linear isometries preserve the model local orientations.** A linear isometry `T : E ≃ E'`
-commutes with the oriented local homology isomorphisms of the identity charts at `p` and `T p`,
-for an orientation `ω` and its image: it commutes with the connecting morphism, with radial
-projection, and with the sphere generators. -/
-private theorem localHomologyMap_isometry_comp_hom (p : E) :
-    localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) (⟨T, T.continuous⟩ : C(E, E'))
-        (isometry_preimage_subset T p) (n + 1) ≫
-      (singularHomologyComplSingletonIsoOfOrientation (ModuleCat.of ℤ (ULift.{w} ℤ))
-        (OpenPartialHomeomorph.refl E') (mem_refl_source (T p)) (ω.map _ T.toLinearEquiv)
-        hE').hom =
-      (singularHomologyComplSingletonIsoOfOrientation (ModuleCat.of ℤ (ULift.{w} ℤ))
-        (OpenPartialHomeomorph.refl E) (mem_refl_source p) ω hE).hom := by
-  set R := ModuleCat.of ℤ (ULift.{w} ℤ)
-  have hmaps : Set.MapsTo T ({p}ᶜ : Set E) {T p}ᶜ := fun _ hz h ↦ hz (T.injective h)
-  let g := TopPair.ofSubsetMap (X := TopCat.of E) (Y := TopCat.of E') (B := ({p}ᶜ : Set E))
-    (B' := ({T p}ᶜ : Set E')) (TopCat.ofHom (⟨T, T.continuous⟩ : C(E, E'))) hmaps
-  have hsnd : TopPair.Hom.snd g = TopCat.ofHom ⟨hmaps.restrict, T.continuous.restrict hmaps⟩ := by
-    ext z
-    exact Subtype.ext (TopPair.ofSubsetMap_snd_apply _ hmaps z)
-  -- Radial projection commutes with the isometry.
-  have hsq : TopCat.ofHom ⟨hmaps.restrict, T.continuous.restrict hmaps⟩ ≫
-        TopCat.ofHom (complSingletonHomotopyEquivSphere (T p)).toFun =
-      TopCat.ofHom (complSingletonHomotopyEquivSphere p).toFun ≫
-        TopCat.ofHom ⟨T.toLinearIsometry.unitSphereMap,
-          T.toLinearIsometry.continuous_unitSphereMap⟩ := by
-    ext z
-    simp only [TopCat.hom_comp, TopCat.hom_ofHom, ContinuousMap.comp_apply,
-      ContinuousMap.coe_mk, Set.MapsTo.val_restrict_apply,
-      coe_complSingletonHomotopyEquivSphere_apply, LinearIsometry.coe_unitSphereMap_apply]
-    simp [← map_sub]
-  have hnat : (reducedSingularHomologyFunctor R n).map (TopCat.ofHom
-      ⟨T.toLinearIsometry.unitSphereMap, T.toLinearIsometry.continuous_unitSphereMap⟩) ≫
-      (reducedSingularHomologySphereIsoOfOrientation R (ω.map _ T.toLinearEquiv) hE').hom =
-        (reducedSingularHomologySphereIsoOfOrientation R ω hE).hom :=
-    reducedSingularHomologySphereIsoOfOrientation_hom_naturality R ω _ T rfl hE
-  have hρ := congrArg (reducedSingularHomologyFunctor R n).map hsq
-  rw [Functor.map_comp, Functor.map_comp] at hρ
-  rw [localHomologyMap_def, singularHomologyComplSingletonIsoOfOrientation_refl_hom,
-    singularHomologyComplSingletonIsoOfOrientation_refl_hom]
-  rw [← TopPair.reducedSingularHomologyδ_naturality_assoc]
-  -- The second component of `g` is a morphism between the subspaces of the pairs, while `hsnd`
-  -- and `hρ` present the complements through `TopCat.of`; the two agree only after unfolding
-  -- `TopPair.ofSubset`, so `rw` would produce an ill-typed term and `erw` is needed.
-  erw [hsnd]
-  congr 1
-  rw [← Category.assoc]
-  erw [hρ, Category.assoc, hnat]
-  -- The remaining sides differ only in this presentation of the complement of `p`.
-  rfl
-
 variable {M : Type w} [TopologicalSpace M] [T1Space M] (φ : OpenPartialHomeomorph M E)
 
 /-- Following a chart by a linear isometry `T`, with the orientation transported by `T`, selects
@@ -421,7 +364,7 @@ private theorem localOrientationOfOrientedChart_trans_isometry {a : M} (ha : a �
   have hchart : (singularHomologyComplSingletonIsoOfChart R ψ ha' (n + 1)).hom =
       (singularHomologyComplSingletonIsoOfChart R φ ha (n + 1)).hom ≫
         localHomologyMap R (⟨T, T.continuous⟩ : C(E, E')) (T := {ψ a})
-          (isometry_preimage_subset T (φ a)) (n + 1) := by
+          (fun _ hz ↦ T.injective hz) (n + 1) := by
     have := isIso_localHomologyMap R (ContinuousMap.subtypeVal ψ.source)
       ψ.open_source.isOpenEmbedding_subtypeVal (S := ContinuousMap.subtypeVal ψ.source ⁻¹' {a})
       (T := {a}) rfl isClosed_singleton (by simpa using ha') (n + 1)
@@ -457,7 +400,8 @@ private theorem localOrientationOfOrientedChart_trans_isometry {a : M} (ha : a �
     Category.assoc]
   -- The goal is at the point `ψ a` of the model, the lemma at `T (φ a)`; these agree only after
   -- unfolding `ψ`, so `erw` is needed.
-  erw [localHomologyMap_isometry_comp_hom ω hE hE' T (φ a)]
+  erw [singularHomologyComplSingletonIsoOfOrientation_refl_hom_naturality R T
+    (mem_refl_source (φ a)) (mem_refl_source (T (φ a))) (fun _ hz ↦ T.injective hz) ω hE hE']
   rw [← singularHomologyComplSingletonIsoOfOrientation_hom_eq _ φ ha (mem_refl_source (φ a)),
     Iso.inv_hom_id_apply]
 
@@ -739,21 +683,6 @@ variable {M : Type w} [TopologicalSpace M] [T1Space M]
   [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E'] {n : ℕ}
   (ω : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1) (hE' : finrank ℝ E' = n + 1)
 
-/-- Mapping the orientation of the model by a linear automorphism `A` multiplies the local
-orientation selected in a chart by the sign of `det A`. -/
-theorem _root_.OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_map
-    (φ : OpenPartialHomeomorph M E) {a : M} (ha : a ∈ φ.source) (A : E ≃L[ℝ] E) :
-    (φ.localOrientationOfOrientedChart ha (ω.map _ A.toLinearEquiv) hE).val =
-      (SignType.sign (A : E →L[ℝ] E).det : ℤ) •
-        (φ.localOrientationOfOrientedChart ha ω hE).val := by
-  have hcard : Fintype.card (Fin (n + 1)) = finrank ℝ E := by simp [hE]
-  have hdet : (A : E →L[ℝ] E).det ≠ 0 := (LinearEquiv.isUnit_det' A.toLinearEquiv).ne_zero
-  rcases hdet.lt_or_gt with h | h
-  · rw [(Orientation.map_eq_neg_iff_det_neg _ _ hcard).2 h,
-      OpenPartialHomeomorph.localOrientationOfOrientedChart_neg, LocalOrientation.coe_neg,
-      sign_neg h, SignType.coe_neg_one, neg_one_zsmul]
-  · rw [(Orientation.map_eq_iff_det_pos _ _ hcard).2 h, sign_pos h, SignType.coe_one, one_smul]
-
 /-- **Linear changes of model.** Following a chart `φ` by a continuous linear equivalence
 `L : E ≃L[ℝ] E'` of inner product models, with the orientation of the model mapped by `L`, selects
 the same local orientations. -/
@@ -789,7 +718,7 @@ theorem _root_.OpenPartialHomeomorph.localOrientationOfOrientedChart_trans_conti
   -- Changing the chart from `ψ` to `χ` and mapping the orientation by `A` both contribute the sign
   -- of `det A`.
   rw [hω, OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign_det_smul _ hE' ψ χ haψ
-      ha' hfd hdet, OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_map _ hE',
+      ha' hfd hdet, OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_map (hE := hE'),
     smul_smul, coe_sign_mul_coe_sign_of_ne_zero hdet, one_smul]
 
 end LinearChange
