@@ -33,18 +33,6 @@ universe u v
 variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
 
-/-- If `x` commutes with `b` and `c` up to integer-unit signs `s` and `t`, then `x` commutes with
-`b * c` up to `s * t`. -/
-private theorem mul_comm_mul_of_smul {A : Type*} [Ring A] {x b c : A} {s t : ℤˣ}
-    (hb : x * b = s • (b * x)) (hc : x * c = t • (c * x)) :
-    x * (b * c) = (s * t) • ((b * c) * x) := by
-  simp only [Units.smul_def, Units.val_mul] at hb hc ⊢
-  calc
-    x * (b * c) = (x * b) * c := (mul_assoc _ _ _).symm
-    _ = (s : ℤ) • (b * (x * c)) := by rw [hb, smul_mul_assoc, mul_assoc]
-    _ = ((s : ℤ) * (t : ℤ)) • ((b * c) * x) := by
-      rw [hc, mul_smul_comm, smul_smul, mul_assoc]
-
 section General
 
 variable {ι : Type*} [DecidableEq ι] [CommSemiring ι] [Module ι (Additive ℤˣ)]
@@ -57,7 +45,9 @@ private theorem generator_mul_eq_uzpow_smul_mul {p q : ι} {x : V} (hx : x ∈ G
     generator G x * b = ((-1 : ℤˣ) ^ (p * q)) • (b * generator G x))
     (by simp)
     (fun _ _ hy => generator_mul_generator G hx hy)
-    (fun _ _ _ _ hb hc => by simpa only [mul_add, uzpow_add] using mul_comm_mul_of_smul hb hc)
+    (fun _ _ _ _ hb hc => by
+      rw [← mul_assoc, hb, smul_mul_assoc, mul_assoc, hc, mul_smul_comm, smul_smul,
+        ← mul_assoc, ← uzpow_add, ← mul_add])
     (by simp [Units.smul_def])
     (fun _ _ _ hb hc => by simp only [mul_add, add_mul, hb, hc, Units.smul_def, zsmul_add])
     (fun _ r _ hb => by rw [mul_smul_comm, hb, smul_mul_assoc, smul_comm r])
@@ -69,27 +59,16 @@ theorem mul_eq_uzpow_smul_mul {p q : ι} {a b : SignedSym G}
     (ha : a ∈ signedSymPiece G p) (hb : b ∈ signedSymPiece G q) :
     a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a) := by
   refine homogeneous_induction G (P := fun p a =>
-    a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a)) ?_ ?_ ?_ ?_ ?_ ?_ ha
-  · simp
-  · exact fun _ _ hx => generator_mul_eq_uzpow_smul_mul G hx hb
-  · intro p r a c ha hc
-    -- The same product rule in the opposite ring handles multiplication on the left.
-    have hc' : MulOpposite.op b * MulOpposite.op c =
-        ((-1 : ℤˣ) ^ (r * q)) • (MulOpposite.op c * MulOpposite.op b) := by
-      simpa only [MulOpposite.op_mul, Units.smul_def, MulOpposite.op_smul] using
-        congrArg MulOpposite.op hc
-    have ha' : MulOpposite.op b * MulOpposite.op a =
-        ((-1 : ℤˣ) ^ (p * q)) • (MulOpposite.op a * MulOpposite.op b) := by
-      simpa only [MulOpposite.op_mul, Units.smul_def, MulOpposite.op_smul] using
-        congrArg MulOpposite.op ha
-    rw [add_mul, uzpow_add, mul_comm ((-1 : ℤˣ) ^ (p * q))]
-    simpa only [MulOpposite.unop_mul, Units.smul_def, MulOpposite.unop_smul, MulOpposite.unop_op]
-      using congrArg MulOpposite.unop (mul_comm_mul_of_smul hc' ha')
-  · simp [Units.smul_def]
-  · intro _ _ _ ha hc
-    simp only [add_mul, mul_add, ha, hc, Units.smul_def, zsmul_add]
-  · intro _ r _ ha
-    rw [smul_mul_assoc, ha, mul_smul_comm, smul_comm r]
+    a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a))
+    (by simp)
+    (fun _ _ hx => generator_mul_eq_uzpow_smul_mul G hx hb)
+    (fun p r _ _ ha hc => by
+      rw [mul_assoc, hc, mul_smul_comm, ← mul_assoc, ha, smul_mul_assoc, smul_smul,
+        mul_comm ((-1 : ℤˣ) ^ (r * q)), ← uzpow_add, ← add_mul, mul_assoc])
+    (by simp [Units.smul_def])
+    (fun _ _ _ ha hc => by simp only [add_mul, mul_add, ha, hc, Units.smul_def, zsmul_add])
+    (fun _ r _ ha => by rw [smul_mul_assoc, ha, mul_smul_comm, smul_comm r])
+    ha
 
 /-- A homogeneous element whose degree has Koszul sign `-1` squares to its own negative, over any
 commutative ring. -/
