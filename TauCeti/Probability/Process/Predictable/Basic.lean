@@ -86,6 +86,15 @@ end Arithmetic
 
 namespace MeasureTheory.Filtration
 
+/-- Enlarging a filtration enlarges its predictable sigma-algebra. -/
+theorem predictable_mono {ι Ω : Type*} [Preorder ι] [OrderBot ι]
+    {m : MeasurableSpace Ω} {ℱ 𝒢 : Filtration ι m} (h : ℱ ≤ 𝒢) :
+    ℱ.predictable ≤ 𝒢.predictable := by
+  apply MeasurableSpace.generateFrom_mono
+  rintro s (⟨A, hA, rfl⟩ | ⟨t, A, hA, rfl⟩)
+  · exact Or.inl ⟨A, h _ _ hA, rfl⟩
+  · exact Or.inr ⟨t, A, h _ _ hA, rfl⟩
+
 variable {ι Ω : Type*} [LinearOrder ι] [OrderBot ι] {m : MeasurableSpace Ω}
     (ℱ : Filtration ι m)
 

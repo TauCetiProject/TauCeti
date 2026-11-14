@@ -437,10 +437,8 @@ differentiable coordinate expression in the preferred extended chart at `x`. -/
 theorem MDifferentiableAt.differentiableAt_comp_extChartAt_symm
     (hf : MDifferentiableAt I 𝓘(𝕜, F) f x) :
     DifferentiableAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
-  have h := ((mdifferentiableAt_iff f x).1 hf).2
-  rwa [ModelWithCorners.Boundaryless.range_eq_univ, differentiableWithinAt_univ,
-    writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-    Function.id_comp] at h
+  simpa [ModelWithCorners.Boundaryless.range_eq_univ, differentiableWithinAt_univ] using
+    hf.mdifferentiableWithinAt.differentiableWithinAt_comp_extChartAt_symm (s := Set.univ)
 
 omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
 /-- On a boundaryless source, a map between manifolds which is `C^n` at `x` has a `C^n` coordinate
