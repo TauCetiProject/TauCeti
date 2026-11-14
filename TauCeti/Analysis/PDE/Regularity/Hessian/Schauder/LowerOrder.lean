@@ -244,7 +244,7 @@ theorem
     have h := (hK.holderOnWith univ).sub hlow
     simp only [Pi.sub_def, add_sub_add_right_eq_sub, add_sub_cancel_right] at h
     exact holderOnWith_univ.1 h
-  obtain ⟨hH₀, h₁, h₂⟩ := hC₀ hEll hLa hu hN hbdd hmem hprin
+  obtain ⟨hH₀, h₁, h₂⟩ := hC₀ hEll hLa hu hN hmem hprin
   -- Absorption: `C₀ (K₀ + N) = C₀ (K + γ N) + 2 C₀ β ε^α H` and `2 C₀ β ε^α ≤ 1 / 2`.
   have hK₀ : ((K₀ : ℝ) + N) = K + γ * N + 2 * β * e * H := by
     push_cast [K₀, γ, β, hPP', P]
