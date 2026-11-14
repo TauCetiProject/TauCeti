@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
-public import Mathlib.GroupTheory.Torsion
+public import TauCeti.Algebra.Group.Primary.Decomposition
 import Mathlib.Data.Nat.Factorization.Basic
 
 /-!
@@ -14,7 +14,9 @@ import Mathlib.Data.Nat.Factorization.Basic
 
 The primary components of a finite abelian group are already defined by Mathlib as
 `AddCommGroup.primaryComponent`. This file proves the form-theoretic fact needed to decompose
-finite bilinear and quadratic modules: components belonging to distinct primes are orthogonal.
+finite bilinear and quadratic modules: components belonging to distinct primes are orthogonal. It
+also packages the restricted quadratic module `FiniteQuadraticModule.primaryComponent` together with
+its cardinality, isometry functoriality, and compatibility with orthogonal products.
 
 For a bilinear module, orthogonality follows because the value of the pairing on a `p`-primary and
 a `q`-primary element is annihilated by powers of both `p` and `q`.  Those powers are coprime when
@@ -32,6 +34,11 @@ in pairwise distinct primary components.
   pairing restricts nondegenerately to each prime-primary component.
 * `TauCeti.FiniteBilinearModule.pairing_sum_eq_sum_pairing_of_mem_primaryComponent`: a bilinear
   pairing of primary decompositions is the sum of the component pairings.
+* `TauCeti.FiniteQuadraticModule.primaryComponent`,
+  `TauCeti.FiniteQuadraticModule.natCard_primaryComponent`,
+  `TauCeti.FiniteQuadraticModule.Isometry.primaryComponentEquiv`, and
+  `TauCeti.FiniteQuadraticModule.primaryComponentProdIsometry`: the `p`-primary finite quadratic
+  module, its prime-power cardinality, transport along isometries, and compatibility with `prod`.
 * `TauCeti.FiniteQuadraticModule.quadratic_sum_of_mem_primaryComponent`: a quadratic value on a
   sum of primary components is the sum of the component values.
 
@@ -45,7 +52,7 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v
 
 private theorem eq_zero_of_coprime_nsmul_eq_zero {M : Type*} [AddMonoid M] {m n : ℕ} {x : M}
     (hmn : m.Coprime n) (hm : m • x = 0) (hn : n • x = 0) : x = 0 := by
@@ -160,6 +167,62 @@ theorem pairing_sum_eq_sum_pairing_of_mem_primaryComponent {ι : Type*}
 end FiniteBilinearModule
 
 namespace FiniteQuadraticModule
+
+/-- The `p`-primary component of a finite quadratic module: `A.restrict` to
+`AddCommGroup.primaryComponent A p`. -/
+protected abbrev primaryComponent (A : FiniteQuadraticModule.{u}) (p : ℕ) :
+    FiniteQuadraticModule.{u} :=
+  A.restrict (AddCommGroup.primaryComponent A p)
+
+/-- The cardinality of the `p`-primary component of `A` for a prime `p` is the `p`-part of
+`Nat.card A`, since `A.primaryComponent p` has carrier `AddCommGroup.primaryComponent A p`. -/
+theorem natCard_primaryComponent (A : FiniteQuadraticModule.{u}) {p : ℕ} (hp : p.Prime) :
+    Nat.card (A.primaryComponent p) = p ^ (Nat.card A).factorization p :=
+  TauCeti.AddCommGroup.natCard_primaryComponent A hp
+
+/-- A quadratic isometry induces an isometry on `p`-primary components. -/
+def Isometry.primaryComponentEquiv {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
+    (f : Isometry A B) (p : ℕ) : Isometry (A.primaryComponent p) (B.primaryComponent p) where
+  toLinearEquiv := (f.toLinearEquiv.toAddEquiv.primaryComponent p).toIntLinearEquiv
+  map_app' x :=
+    (B.restrict_quadratic _ _).trans <|
+      (congrArg B.quadratic
+        (AddEquiv.coe_primaryComponent_apply f.toLinearEquiv.toAddEquiv p x)).trans <|
+      (f.map_app x.1).trans (A.restrict_quadratic _ x).symm
+
+@[simp]
+theorem Isometry.coe_primaryComponentEquiv_apply {A : FiniteQuadraticModule.{u}}
+    {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (p : ℕ) (x : A.primaryComponent p) :
+    (f.primaryComponentEquiv p x).1 = f x.1 :=
+  AddEquiv.coe_primaryComponent_apply f.toLinearEquiv.toAddEquiv p x
+
+/-- Taking the `p`-primary component commutes with orthogonal products. -/
+def primaryComponentProdIsometry (A : FiniteQuadraticModule.{u}) (B : FiniteQuadraticModule.{v})
+    (p : ℕ) :
+    Isometry ((A.prod B).primaryComponent p)
+      ((A.primaryComponent p).prod (B.primaryComponent p)) where
+  toLinearEquiv := (TauCeti.AddCommGroup.primaryComponentProd A B p).toIntLinearEquiv
+  map_app' z :=
+    ((A.primaryComponent p).prod_quadratic (B.primaryComponent p) _ _).trans <|
+      (congrArg₂ (· + ·)
+        ((A.restrict_quadratic _ _).trans
+          (congrArg A.quadratic (TauCeti.AddCommGroup.coe_primaryComponentProd_apply_fst A B p z)))
+        ((B.restrict_quadratic _ _).trans
+          (congrArg B.quadratic
+            (TauCeti.AddCommGroup.coe_primaryComponentProd_apply_snd A B p z)))).trans <|
+      ((A.prod_quadratic B z.1.1 z.1.2).symm.trans ((A.prod B).restrict_quadratic _ z).symm)
+
+@[simp]
+theorem coe_primaryComponentProdIsometry_apply_fst (A : FiniteQuadraticModule.{u})
+    (B : FiniteQuadraticModule.{v}) (p : ℕ) (z : (A.prod B).primaryComponent p) :
+    ((primaryComponentProdIsometry A B p z).1).1 = z.1.1 :=
+  TauCeti.AddCommGroup.coe_primaryComponentProd_apply_fst A B p z
+
+@[simp]
+theorem coe_primaryComponentProdIsometry_apply_snd (A : FiniteQuadraticModule.{u})
+    (B : FiniteQuadraticModule.{v}) (p : ℕ) (z : (A.prod B).primaryComponent p) :
+    ((primaryComponentProdIsometry A B p z).2).1 = z.1.2 :=
+  TauCeti.AddCommGroup.coe_primaryComponentProd_apply_snd A B p z
 
 variable (A : FiniteQuadraticModule)
 

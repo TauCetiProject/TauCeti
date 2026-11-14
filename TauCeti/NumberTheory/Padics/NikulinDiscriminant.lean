@@ -12,17 +12,29 @@ public import TauCeti.NumberTheory.Padics.PadicIntegers
 /-!
 # The `p`-adic realization discriminant of a Nikulin decomposition
 
-Given a Nikulin generator decomposition `D` of a finite quadratic module `A` and a prime `p`, the
-minimal `p`-adic lattice realizations of the `p`-primary generators in `D` assemble into a `p`-adic
-lattice `K(q_p)` of rank `l(A_p)` whose Gram determinant is the product of their
-`realizationDet`s.
+Given a Nikulin generator decomposition `D` of a finite quadratic module `A` and a prime `p`, this
+file defines `NikulinDecomposition.padicRealizationDet D p` as the integer product of
+`NikulinGenerator.realizationDet` over the `p`-primary generators of `D`, and
+`NikulinDecomposition.padicDiscriminant D p` as its square class in `ℚ_[p]ˣ / (ℚ_[p]ˣ)²`.
 
-This file defines `NikulinDecomposition.padicDiscriminant D p` as the square class of that integer
-product in `ℚ_[p]ˣ / (ℚ_[p]ˣ)²` and establishes its structural properties:
+As motivation, this is the discriminant square class that the orthogonal sum of the minimal
+`p`-adic lattice realizations of those generators (Nikulin's `K(q_p)`) would have; the lattice
+itself is not constructed here. In general `D.padicDiscriminant p` depends on the chosen
+decomposition `D`, not on `A` alone: for example, `dyadicCyclic 1 1` and `dyadicCyclic 1 5` give the
+same finite quadratic module on `ℤ/2ℤ`, while their realization determinants `2` and `10` represent
+distinct square classes in `ℚ_[2]`. Nikulin's Theorem 1.9.1 shows that `discr K(q_p)` is independent
+of `D` when `p` is odd or when `primaryComponent A 2` has no `q_θ^{(2)}(2)` summand
+(`¬ HasCyclicTwoSummand (primaryComponent A 2)`); that uniqueness theorem is not proved in this
+file.
 
+## Main definitions and results
+
+* `NikulinDecomposition.padicRealizationDet` and `NikulinDecomposition.padicDiscriminant`: integer
+  product of the `p`-primary generator `realizationDet`s of `D` and its square class in
+  `SquareClassGroup ℚ_[p]`.
 * `NikulinDecomposition.padicRealizationDet_ne_zero` and
   `NikulinDecomposition.padicDiscriminant_eq_squareClass`: the product of `realizationDet`s is
-  nonzero for every admissible decomposition, so the totalizing `d = 0` branch is never taken.
+  nonzero for every admissible decomposition, so the totalizing `0` branch is never taken.
 * `NikulinDecomposition.padicDiscriminant_primaryComponent`: passing from `D` to the induced
   decomposition `D.primaryComponent hp` of `primaryComponent A p` leaves `padicDiscriminant`
   unchanged.
@@ -46,26 +58,35 @@ namespace TauCeti.FiniteQuadraticModule
 universe u
 
 /-- Integer product of the minimal realization determinants of the `p`-primary generators in `D`. -/
-@[expose] def NikulinDecomposition.padicRealizationDet {A : FiniteQuadraticModule.{u}}
+def NikulinDecomposition.padicRealizationDet {A : FiniteQuadraticModule.{u}}
     (D : NikulinDecomposition A) (p : ℕ) : ℤ :=
   ((D.generators.filter fun g ↦ g.prime = p).map NikulinGenerator.realizationDet).prod
 
-/-- **Nikulin's `discr K(q_p)`, read off a generator decomposition.** The orthogonal sum of the
-minimal realizations of the `p`-primary generators of `D` is a `p`-adic lattice `K(q_p)` of rank
-`l(A_p)`; its discriminant is the square class of the product of their `realizationDet`s in
-`ℚ_[p]ˣ / (ℚ_[p]ˣ)²` (the `d = 0` branch only makes the function total). -/
-@[expose] noncomputable def NikulinDecomposition.padicDiscriminant {A : FiniteQuadraticModule.{u}}
+/-- The square class in `ℚ_[p]ˣ / (ℚ_[p]ˣ)²` of the product `D.padicRealizationDet p` of the
+realization determinants of the `p`-primary generators of `D` (the `0` branch only makes the
+function total).
+
+This is the discriminant that the orthogonal sum of the minimal `p`-adic realizations of those
+generators would have; the lattice itself is not constructed here. It depends on the decomposition
+`D` in general (for instance when `HasCyclicTwoSummand` holds at `p = 2`), and agrees with Nikulin's
+invariant `discr K(q_p)` only when `p` is odd or there is no `q_θ^{(2)}(2)` summand, which is not
+proved in this file. -/
+noncomputable def NikulinDecomposition.padicDiscriminant {A : FiniteQuadraticModule.{u}}
     (D : NikulinDecomposition A) (p : ℕ) [Fact p.Prime] : TauCeti.SquareClassGroup ℚ_[p] :=
-  let d : ℤ := ((D.generators.filter fun g ↦ g.prime = p).map
-    NikulinGenerator.realizationDet).prod
-  if h : d = 0 then TauCeti.squareClass (1 : ℚ_[p]ˣ)
-  else TauCeti.squareClass (Units.mk0 (d : ℚ_[p]) (Int.cast_ne_zero.mpr h))
+  if h : D.padicRealizationDet p = 0 then TauCeti.squareClass (1 : ℚ_[p]ˣ)
+  else TauCeti.squareClass (Units.mk0 (D.padicRealizationDet p : ℚ_[p]) (Int.cast_ne_zero.mpr h))
 
 namespace NikulinDecomposition
 
 section AnyNat
 
 variable {A : FiniteQuadraticModule.{u}} (D : NikulinDecomposition A)
+
+/-- Unfolded product formula for `D.padicRealizationDet p`. -/
+theorem padicRealizationDet_def (p : ℕ) :
+    D.padicRealizationDet p =
+      ((D.generators.filter fun g ↦ g.prime = p).map NikulinGenerator.realizationDet).prod :=
+  (rfl)
 
 private theorem prod_realizationDet_ne_zero {gs : List NikulinGenerator}
     (hadm : ∀ g ∈ gs, g.IsAdmissible) :
@@ -152,18 +173,12 @@ section Padic
 
 variable {A : FiniteQuadraticModule.{u}} (D : NikulinDecomposition A) (p : ℕ) [Fact p.Prime]
 
-/-- Unfolded square-class formula for `D.padicDiscriminant p`: the `d = 0` fallback is never
-used. -/
+/-- Unfolded square-class formula for `D.padicDiscriminant p`: the `0` fallback is never used. -/
 theorem padicDiscriminant_eq_squareClass :
     D.padicDiscriminant p =
       TauCeti.squareClass (Units.mk0 (D.padicRealizationDet p : ℚ_[p])
         (Int.cast_ne_zero.mpr (D.padicRealizationDet_ne_zero p))) := by
-  have hne : D.padicRealizationDet p ≠ 0 := D.padicRealizationDet_ne_zero p
-  -- Align the `let d` binding in `padicDiscriminant` with `padicRealizationDet`.
-  change (if h : D.padicRealizationDet p = 0 then TauCeti.squareClass (1 : ℚ_[p]ˣ)
-    else TauCeti.squareClass (Units.mk0 (D.padicRealizationDet p : ℚ_[p])
-      (Int.cast_ne_zero.mpr h))) = _
-  simp only [hne, ↓reduceDIte]
+  rw [padicDiscriminant, dite_eq_right (D.padicRealizationDet_ne_zero p)]
 
 /-- Filtering `D` to the `p`-primary component preserves `padicDiscriminant p`. -/
 @[simp]
@@ -205,16 +220,14 @@ theorem exists_padicIntUnit_mul_natCard_primaryComponent :
   have hndvd : ¬ (p : ℤ) ∣ c :=
     ((Nat.prime_iff_prime_int.mp hp).coprime_iff_not_dvd).mp (D.isCoprime_prime_prod_unitCoeff p)
   obtain ⟨u, hu⟩ := (PadicInt.isUnit_intCast_iff (p := p) (z := c)).mpr hndvd
-  let w : ℚ_[p]ˣ := Units.mk0 (D.padicRealizationDet p : ℚ_[p])
-    (Int.cast_ne_zero.mpr (D.padicRealizationDet_ne_zero p))
-  refine ⟨u, w, ?_, (D.padicDiscriminant_eq_squareClass p).symm⟩
+  refine ⟨u, Units.mk0 (D.padicRealizationDet p : ℚ_[p])
+    (Int.cast_ne_zero.mpr (D.padicRealizationDet_ne_zero p)), ?_,
+    (D.padicDiscriminant_eq_squareClass p).symm⟩
   have hdet := D.padicRealizationDet_eq_prod_unitCoeff_mul_natCard_primaryComponent hp
   have hucast : ((u : ℤ_[p]) : ℚ_[p]) = (c : ℚ_[p]) := by
     rw [hu]
     exact PadicInt.coe_intCast c
-  -- Unfold `(w : ℚ_[p])` to `(D.padicRealizationDet p : ℚ_[p])`.
-  change (D.padicRealizationDet p : ℚ_[p]) = _
-  rw [hdet, Int.cast_mul, Int.cast_natCast, hucast]
+  rw [Units.val_mk0, hdet, Int.cast_mul, Int.cast_natCast, hucast]
 
 /-- **`p`-adic unit-ratio formula against the global module order**: `D.padicDiscriminant p` is the
 square class of `u * Nat.card A` for a `p`-adic integer unit `u : ℤ_[p]ˣ`, since the index

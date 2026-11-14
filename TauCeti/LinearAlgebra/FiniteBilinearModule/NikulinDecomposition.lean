@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.Primary.Rank
+public import TauCeti.GroupTheory.Rank
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Decomposition
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Decomposition
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
+import Mathlib.Algebra.Group.Pi.Hom
+import TauCeti.Algebra.Group.Primary.Generators
 
 /-!
 # Nikulin generator decompositions of finite quadratic modules
@@ -26,8 +28,8 @@ decomposition of `A` as `NikulinDecomposition A`.
 ## Main definitions and results
 
 * `TauCeti.FiniteQuadraticModule.NikulinGenerator`: label for one of Nikulin's primary generators,
-  together with `IsAdmissible`, `prime`, `exponent`, `rank`, `unitCoeff`,
-  `toFiniteQuadraticModule`, and `realizationDet`.
+  together with `IsAdmissible`, `prime`, `exponent`, `realizationRank`, `unitCoeff`,
+  `toFiniteQuadraticModule`, `carrierAddEquiv`, and `realizationDet`.
 * `TauCeti.FiniteQuadraticModule.NikulinGenerator.isAdmissible_iff`: a generator is admissible
   if and only if its finite quadratic module is nondegenerate and nontrivial.
 * `TauCeti.FiniteQuadraticModule.orthogonalSumNikulinGenerators`: orthogonal sum of a list of
@@ -35,10 +37,9 @@ decomposition of `A` as `NikulinDecomposition A`.
 * `TauCeti.FiniteQuadraticModule.NikulinDecomposition`: a list of admissible generators together
   with an isometry from `A` onto their orthogonal sum; every nondegenerate module admits one
   (`IsNondegenerate.exists_nikulinDecomposition`).
-* `TauCeti.FiniteQuadraticModule.primaryComponent` and
-  `TauCeti.FiniteQuadraticModule.NikulinDecomposition.primaryComponent`: filtering a decomposition
-  by a prime `p` produces a decomposition of the `p`-primary component, whose additive group rank
-  equals the sum of the realization ranks of its `p`-primary generators
+* `TauCeti.FiniteQuadraticModule.NikulinDecomposition.primaryComponent`: filtering a decomposition
+  by a prime `p` produces a decomposition of `FiniteQuadraticModule.primaryComponent A p`, whose
+  additive group rank equals the sum of the realization ranks of its `p`-primary generators
   (`NikulinDecomposition.rank_primaryComponent`).
 * `TauCeti.FiniteQuadraticModule.HasCyclicTwoSummand`: existence of an orthogonal summand
   `q_θ^{(2)}(2)` (`θ` odd), the dyadic exception in Nikulin's Theorems 1.9.1 and 1.10.1.
@@ -93,7 +94,7 @@ nondegenerate and nontrivial. -/
 
 /-- The rank of the minimal `p`-adic lattice realization of a generator (`1` for cyclic generators,
 `2` for `u^{(2)}(2^k)` and `v^{(2)}(2^k)`). -/
-@[expose, simp] def NikulinGenerator.rank : NikulinGenerator → ℕ
+@[expose, simp] def NikulinGenerator.realizationRank : NikulinGenerator → ℕ
   | .oddCyclic _ _ _ _ _ => 1
   | .dyadicCyclic _ _ _ => 1
   | .dyadicU _ => 2
@@ -108,7 +109,7 @@ nondegenerate and nontrivial. -/
   | .dyadicV _ => 3
 
 /-- The finite quadratic module represented by a generator label. -/
-@[expose] noncomputable def NikulinGenerator.toFiniteQuadraticModule :
+noncomputable def NikulinGenerator.toFiniteQuadraticModule :
     NikulinGenerator → FiniteQuadraticModule.{0}
   | .oddCyclic p k _ hodd θ => FiniteQuadraticModule.oddCyclic (p ^ k) hodd.pow θ
   | .dyadicCyclic k hk θ =>
@@ -128,6 +129,39 @@ nondegenerate and nontrivial. -/
 
 namespace NikulinGenerator
 
+@[simp]
+theorem toFiniteQuadraticModule_oddCyclic (p k : ℕ) (hp : p.Prime) (hodd : Odd p) (θ : ℤ) :
+    (NikulinGenerator.oddCyclic p k hp hodd θ).toFiniteQuadraticModule =
+      FiniteQuadraticModule.oddCyclic (p ^ k) hodd.pow θ :=
+  (rfl)
+
+@[simp]
+theorem toFiniteQuadraticModule_dyadicCyclic (k : ℕ) (hk : 0 < k) (θ : ℤ) :
+    (NikulinGenerator.dyadicCyclic k hk θ).toFiniteQuadraticModule =
+      @FiniteQuadraticModule.dyadicCyclic k ⟨hk.ne'⟩ θ :=
+  (rfl)
+
+@[simp]
+theorem toFiniteQuadraticModule_dyadicU (k : ℕ) :
+    (NikulinGenerator.dyadicU k).toFiniteQuadraticModule = FiniteQuadraticModule.dyadicU k :=
+  (rfl)
+
+@[simp]
+theorem toFiniteQuadraticModule_dyadicV (k : ℕ) :
+    (NikulinGenerator.dyadicV k).toFiniteQuadraticModule = FiniteQuadraticModule.dyadicV k :=
+  (rfl)
+
+/-- The underlying additive group of a generator `g` is isomorphic to
+`Fin g.realizationRank → ZMod (g.prime ^ g.exponent)`. -/
+noncomputable def carrierAddEquiv (g : NikulinGenerator) :
+    g.toFiniteQuadraticModule ≃+ (Fin g.realizationRank → ZMod (g.prime ^ g.exponent)) :=
+  match g with
+  | .oddCyclic _ _ _ _ _ => (AddEquiv.funUnique (Fin 1) _).symm
+  | .dyadicCyclic k hk _ =>
+      let _ : NeZero k := ⟨hk.ne'⟩
+      (AddEquiv.funUnique (Fin 1) _).symm
+  | .dyadicU _ | .dyadicV _ => (LinearEquiv.finTwoArrow ℤ _).symm.toAddEquiv
+
 /-- The prime attached to any generator is prime. -/
 theorem prime_prime (g : NikulinGenerator) : g.prime.Prime := by
   cases g with
@@ -138,38 +172,32 @@ theorem prime_prime (g : NikulinGenerator) : g.prime.Prime := by
 theorem realizationDet_eq_unitCoeff_mul_natCard (g : NikulinGenerator) :
     g.realizationDet = g.unitCoeff * (Nat.card g.toFiniteQuadraticModule : ℤ) := by
   cases g with
-  | oddCyclic p k _ hodd θ =>
-      simp [realizationDet, unitCoeff, toFiniteQuadraticModule]
-  | dyadicCyclic k hk θ =>
-      let _ : NeZero k := ⟨hk.ne'⟩
-      simp [realizationDet, unitCoeff, toFiniteQuadraticModule]
+  | oddCyclic p k _ hodd θ => simp
+  | dyadicCyclic k hk θ => simp
   | dyadicU k =>
       have h4 : (4 : ℤ) ^ k = (2 : ℤ) ^ k * (2 : ℤ) ^ k := by
         rw [← mul_pow]
         norm_num
-      simp only [realizationDet, unitCoeff, toFiniteQuadraticModule, natCard_dyadicU, Nat.cast_mul,
-        Nat.cast_pow, Nat.cast_ofNat, h4]
+      simp only [realizationDet, unitCoeff, toFiniteQuadraticModule_dyadicU, natCard_dyadicU,
+        Nat.cast_mul, Nat.cast_pow, Nat.cast_ofNat, h4]
       ring
   | dyadicV k =>
       have h4 : (4 : ℤ) ^ k = (2 : ℤ) ^ k * (2 : ℤ) ^ k := by
         rw [← mul_pow]
         norm_num
-      simp only [realizationDet, unitCoeff, toFiniteQuadraticModule, natCard_dyadicV, Nat.cast_mul,
-        Nat.cast_pow, Nat.cast_ofNat, h4]
+      simp only [realizationDet, unitCoeff, toFiniteQuadraticModule_dyadicV, natCard_dyadicV,
+        Nat.cast_mul, Nat.cast_pow, Nat.cast_ofNat, h4]
 
 /-- The order of a generator's finite quadratic module is a power of `g.prime`. -/
 theorem exists_pow_natCard (g : NikulinGenerator) :
     ∃ n : ℕ, Nat.card g.toFiniteQuadraticModule = g.prime ^ n := by
   cases g with
-  | oddCyclic p k _ _ _ =>
-      exact ⟨k, by simp [toFiniteQuadraticModule, prime]⟩
-  | dyadicCyclic k hk _ =>
-      let _ : NeZero k := ⟨hk.ne'⟩
-      exact ⟨k, by simp [toFiniteQuadraticModule, prime]⟩
+  | oddCyclic _ k _ _ _ => exact ⟨k, by simp⟩
+  | dyadicCyclic k _ _ => exact ⟨k, by simp⟩
   | dyadicU k =>
-      exact ⟨k + k, by rw [toFiniteQuadraticModule, natCard_dyadicU, prime, pow_add]⟩
+      exact ⟨k + k, by rw [toFiniteQuadraticModule_dyadicU, natCard_dyadicU, prime, pow_add]⟩
   | dyadicV k =>
-      exact ⟨k + k, by rw [toFiniteQuadraticModule, natCard_dyadicV, prime, pow_add]⟩
+      exact ⟨k + k, by rw [toFiniteQuadraticModule_dyadicV, natCard_dyadicV, prime, pow_add]⟩
 
 /-- Every element of `g.toFiniteQuadraticModule` lies in its `g.prime`-primary component. -/
 theorem mem_primaryComponent_prime (g : NikulinGenerator) (x : g.toFiniteQuadraticModule) :
@@ -190,13 +218,9 @@ theorem IsAdmissible.not_dvd_unitCoeff {g : NikulinGenerator} (hg : g.IsAdmissib
     ¬ (g.prime : ℤ) ∣ g.unitCoeff := by
   cases g with
   | oddCyclic _ _ _ _ _ => exact hg.2
-  | dyadicCyclic _ _ θ =>
-      obtain ⟨t, rfl⟩ := hg
-      intro hdvd
-      obtain ⟨s, hs⟩ := hdvd
-      -- Unfold `prime` and `unitCoeff` on `dyadicCyclic` to expose integer parity.
-      change 2 * t + 1 = 2 * s at hs
-      omega
+  | dyadicCyclic _ _ _ =>
+      simpa only [IsAdmissible, prime, unitCoeff, Nat.cast_ofNat, ← even_iff_two_dvd,
+        Int.not_even_iff_odd] using hg
   | dyadicU _ => simpa only [prime, unitCoeff] using (by decide : ¬ ((2 : ℕ) : ℤ) ∣ -1)
   | dyadicV _ => simpa only [prime, unitCoeff] using (by decide : ¬ ((2 : ℕ) : ℤ) ∣ 3)
 
@@ -211,8 +235,8 @@ theorem IsAdmissible.isNondegenerate {g : NikulinGenerator} (hg : g.IsAdmissible
   cases g with
   | oddCyclic p k hp hodd θ =>
       have hcop : IsCoprime (p : ℤ) θ := hg.isCoprime_prime_unitCoeff
-      simpa only [toFiniteQuadraticModule, isNondegenerate_oddCyclic_iff, Nat.cast_pow] using
-        hcop.pow_left
+      simpa only [toFiniteQuadraticModule_oddCyclic, isNondegenerate_oddCyclic_iff,
+        Nat.cast_pow] using hcop.pow_left
   | dyadicCyclic k hk θ =>
       let _ : NeZero k := ⟨hk.ne'⟩
       exact (isNondegenerate_dyadicCyclic_iff k θ).mpr hg
@@ -227,24 +251,23 @@ theorem isAdmissible_iff (g : NikulinGenerator) :
   refine ⟨fun hg ↦ ⟨hg.isNondegenerate, ?_⟩, fun ⟨hnd, hcard⟩ ↦ ?_⟩
   · cases g with
     | oddCyclic p k hp _ _ =>
-        simpa only [toFiniteQuadraticModule, natCard_oddCyclic] using
+        simpa only [toFiniteQuadraticModule_oddCyclic, natCard_oddCyclic] using
           Nat.one_lt_pow hg.1.ne' hp.one_lt
     | dyadicCyclic k hk _ =>
-        let _ : NeZero k := ⟨hk.ne'⟩
-        simpa only [toFiniteQuadraticModule, natCard_dyadicCyclic] using
+        simpa only [toFiniteQuadraticModule_dyadicCyclic, natCard_dyadicCyclic] using
           Nat.one_lt_pow hk.ne' Nat.one_lt_two
     | dyadicU k =>
         dsimp only [IsAdmissible] at hg
-        rw [toFiniteQuadraticModule, natCard_dyadicU, ← pow_add]
+        rw [toFiniteQuadraticModule_dyadicU, natCard_dyadicU, ← pow_add]
         exact Nat.one_lt_pow (by omega) Nat.one_lt_two
     | dyadicV k =>
         dsimp only [IsAdmissible] at hg
-        rw [toFiniteQuadraticModule, natCard_dyadicV, ← pow_add]
+        rw [toFiniteQuadraticModule_dyadicV, natCard_dyadicV, ← pow_add]
         exact Nat.one_lt_pow (by omega) Nat.one_lt_two
   · cases g with
     | oddCyclic p k hp hodd θ =>
-        simp only [toFiniteQuadraticModule, isNondegenerate_oddCyclic_iff, natCard_oddCyclic]
-          at hnd hcard
+        simp only [toFiniteQuadraticModule_oddCyclic, isNondegenerate_oddCyclic_iff,
+          natCard_oddCyclic] at hnd hcard
         have hk : 0 < k := Nat.pos_of_ne_zero fun hk0 ↦ by simp [hk0] at hcard
         have hcop : IsCoprime (p : ℤ) θ := by
           rw [Nat.cast_pow] at hnd
@@ -254,10 +277,10 @@ theorem isAdmissible_iff (g : NikulinGenerator) :
         let _ : NeZero k := ⟨hk.ne'⟩
         exact (isNondegenerate_dyadicCyclic_iff k θ).mp hnd
     | dyadicU k =>
-        rw [toFiniteQuadraticModule, natCard_dyadicU] at hcard
+        rw [toFiniteQuadraticModule_dyadicU, natCard_dyadicU] at hcard
         exact Nat.pos_of_ne_zero fun hk0 ↦ by simp [hk0] at hcard
     | dyadicV k =>
-        rw [toFiniteQuadraticModule, natCard_dyadicV] at hcard
+        rw [toFiniteQuadraticModule_dyadicV, natCard_dyadicV] at hcard
         exact Nat.pos_of_ne_zero fun hk0 ↦ by simp [hk0] at hcard
 
 /-- An admissible generator has nonzero realization determinant. -/
@@ -270,15 +293,9 @@ theorem IsAdmissible.realizationDet_ne_zero {g : NikulinGenerator} (hg : g.IsAdm
 /-- For an admissible generator, the additive group rank of `g.toFiniteQuadraticModule` equals its
 realization rank (`1` for cyclic generators, `2` for `u^{(2)}` and `v^{(2)}`). -/
 theorem IsAdmissible.rank_toFiniteQuadraticModule {g : NikulinGenerator} (hg : g.IsAdmissible) :
-    AddGroup.rank g.toFiniteQuadraticModule = g.rank := by
-  cases g with
-  | oddCyclic p k hp _ _ =>
-      exact AddGroup.rank_zmod_of_ne_one (Nat.one_lt_pow hg.1.ne' hp.one_lt).ne'
-  | dyadicCyclic k hk _ =>
-      let _ : NeZero k := ⟨hk.ne'⟩
-      exact AddGroup.rank_zmod_of_ne_one (Nat.one_lt_pow hk.ne' Nat.one_lt_two).ne'
-  | dyadicU k | dyadicV k =>
-      exact AddGroup.rank_prod_zmod_prime_pow Nat.prime_two hg
+    AddGroup.rank g.toFiniteQuadraticModule = g.realizationRank := by
+  rw [AddGroup.rank_congr g.carrierAddEquiv,
+    AddGroup.rank_pi_zmod_prime_pow _ g.prime_prime hg.exponent_pos, Fintype.card_fin]
 
 end NikulinGenerator
 
@@ -306,28 +323,14 @@ theorem orthogonalSumNikulinGenerators_cons (g : NikulinGenerator) (gs : List Ni
       g.toFiniteQuadraticModule.prod (orthogonalSumNikulinGenerators gs) :=
   (rfl)
 
-/-- Dropping a trivial left factor in an orthogonal product. -/
-private def subsingletonProdIsometry (A : FiniteQuadraticModule.{u})
-    (B : FiniteQuadraticModule.{v}) [Subsingleton A] : Isometry (A.prod B) B where
-  toLinearEquiv :=
-    { toFun := Prod.snd
-      invFun := fun b ↦ (0, b)
-      left_inv := fun ⟨a, _⟩ ↦ Prod.ext (Subsingleton.elim 0 a) rfl
-      right_inv := fun _ ↦ rfl
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-  map_app' := fun ⟨a, b⟩ ↦ by
-    -- The first coordinate vanishes in a subsingleton module.
-    change B.quadratic b = A.quadratic a + B.quadratic b
-    rw [Subsingleton.elim a 0, QuadraticMap.map_zero, zero_add]
-
 /-- Appending two generator lists corresponds to taking the orthogonal product of their orthogonal
 sums. -/
 noncomputable def isometryOrthogonalSumAppend :
     ∀ l₁ l₂ : List NikulinGenerator,
       Isometry (orthogonalSumNikulinGenerators (l₁ ++ l₂))
         ((orthogonalSumNikulinGenerators l₁).prod (orthogonalSumNikulinGenerators l₂))
-  | [], _ => (subsingletonProdIsometry (orthogonalSumNikulinGenerators []) _).symm
+  | [], _ =>
+      (QuadraticMap.IsometryEquiv.uniqueProd (orthogonalSumNikulinGenerators []).quadratic _).symm
   | g :: l₁, l₂ =>
       ((QuadraticMap.IsometryEquiv.refl g.toFiniteQuadraticModule.quadratic).prod
         (isometryOrthogonalSumAppend l₁ l₂)).trans
@@ -372,87 +375,38 @@ theorem exists_orthogonalSum_of_mem {g : NikulinGenerator} {gs : List NikulinGen
     ((QuadraticMap.IsometryEquiv.prodLeftComm _ _ _).trans
       ((QuadraticMap.IsometryEquiv.refl _).prod (isometryOrthogonalSumAppend l₁ l₂).symm))
 
-private theorem zmodPowToFinOneSurj {p k : ℕ} (hk : 0 < k) :
-    ∃ f : ZMod (p ^ k) →+ (Fin 1 → ZMod p), Function.Surjective f := by
-  let q : ZMod (p ^ k) →+ ZMod p :=
-    (ZMod.castHom (dvd_pow_self p hk.ne') (ZMod p)).toAddMonoidHom
-  have hq : Function.Surjective q := ZMod.castHom_surjective (dvd_pow_self p hk.ne')
-  refine ⟨AddMonoidHom.pi fun _ : Fin 1 ↦ q, fun y ↦ ⟨Function.surjInv hq (y 0), ?_⟩⟩
-  ext i
-  rw [Subsingleton.elim i 0]
-  exact Function.surjInv_eq hq (y 0)
-
-/-- Surjection from an admissible `p`-primary generator onto `(Fin g.rank → ZMod p)`, used to pin
-down the lower bound on `AddGroup.rank`. -/
-private theorem generatorModPrimeSurj {g : NikulinGenerator} {p : ℕ} (hg : g.IsAdmissible)
-    (hp : g.prime = p) :
-    ∃ f : g.toFiniteQuadraticModule →+ (Fin g.rank → ZMod p), Function.Surjective f := by
-  subst hp
-  cases g with
-  | oddCyclic p k _ _ _ => exact zmodPowToFinOneSurj hg.1
-  | dyadicCyclic k hk _ =>
-      let _ : NeZero k := ⟨hk.ne'⟩
-      exact zmodPowToFinOneSurj hk
-  | dyadicU k | dyadicV k =>
-      dsimp only [NikulinGenerator.rank, NikulinGenerator.toFiniteQuadraticModule,
-        NikulinGenerator.prime] at hg ⊢
-      let q : ZMod (2 ^ k) →+ ZMod 2 :=
-        (ZMod.castHom (dvd_pow_self 2 hg.ne') (ZMod 2)).toAddMonoidHom
-      have hq : Function.Surjective q := ZMod.castHom_surjective (dvd_pow_self 2 hg.ne')
-      let f : ZMod (2 ^ k) × ZMod (2 ^ k) →+ (Fin 2 → ZMod 2) :=
-        AddMonoidHom.pi (Fin.cases (q.comp (AddMonoidHom.fst _ _))
-          fun _ ↦ q.comp (AddMonoidHom.snd _ _))
-      refine ⟨f, fun y ↦ ⟨(Function.surjInv hq (y 0), Function.surjInv hq (y 1)), ?_⟩⟩
-      ext i
-      fin_cases i
-      · exact Function.surjInv_eq hq (y 0)
-      · exact Function.surjInv_eq hq (y 1)
-
-private def finAppendAddMonoidHom (m n p : ℕ) :
-    (Fin m → ZMod p) × (Fin n → ZMod p) →+ (Fin (m + n) → ZMod p) where
-  toFun uv := Fin.append uv.1 uv.2
-  map_zero' := by
-    ext k
-    refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k
-    · simp [Fin.append_left]
-    · simp [Fin.append_right]
-  map_add' a b := by
-    ext k
-    refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k
-    · simp [Fin.append_left]
-    · simp [Fin.append_right]
-
-private theorem surjective_finAppendAddMonoidHom (m n p : ℕ) :
-    Function.Surjective (finAppendAddMonoidHom m n p) := fun w ↦
-  ⟨(fun i ↦ w (Fin.castAdd n i), fun j ↦ w (Fin.natAdd m j)), by
-    ext k
-    refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k
-    · exact Fin.append_left _ _ i
-    · exact Fin.append_right _ _ j⟩
-
 private theorem exists_modPrime_surj_orthogonalSum :
     ∀ {gs : List NikulinGenerator} {p : ℕ},
       (∀ g ∈ gs, g.IsAdmissible) → (∀ g ∈ gs, g.prime = p) →
       ∃ f : orthogonalSumNikulinGenerators gs →+
-          (Fin (gs.map NikulinGenerator.rank).sum → ZMod p),
+          (Fin (gs.map NikulinGenerator.realizationRank).sum → ZMod p),
         Function.Surjective f
   | [], _, _, _ =>
       ⟨0, fun _ ↦ ⟨PUnit.unit, funext fun i ↦ Fin.elim0 i⟩⟩
   | g :: gs, p, hadm, hprime => by
-      obtain ⟨f₁, hf₁⟩ := generatorModPrimeSurj (hadm g List.mem_cons_self)
-        (hprime g List.mem_cons_self)
+      have hg : g.IsAdmissible := hadm g List.mem_cons_self
+      have hgp : g.prime = p := hprime g List.mem_cons_self
+      have hdvd : p ∣ g.prime ^ g.exponent := hgp ▸ dvd_pow_self g.prime hg.exponent_pos.ne'
+      let f₁ : g.toFiniteQuadraticModule →+ (Fin g.realizationRank → ZMod p) :=
+        (((ZMod.castHom hdvd (ZMod p)).toAddMonoidHom).compLeft
+          (Fin g.realizationRank)).comp g.carrierAddEquiv.toAddMonoidHom
+      have hf₁ : Function.Surjective f₁ :=
+        ((ZMod.castHom_surjective hdvd).comp_left).comp g.carrierAddEquiv.surjective
       obtain ⟨f₂, hf₂⟩ := exists_modPrime_surj_orthogonalSum
         (fun x hx ↦ hadm x (List.mem_cons_of_mem g hx))
         (fun x hx ↦ hprime x (List.mem_cons_of_mem g hx))
-      exact ⟨(finAppendAddMonoidHom g.rank _ p).comp (f₁.prodMap f₂),
-        (surjective_finAppendAddMonoidHom g.rank _ p).comp (hf₁.prodMap hf₂)⟩
+      let e := (LinearEquiv.sumArrowLequivProdArrow (Fin g.realizationRank)
+          (Fin (gs.map NikulinGenerator.realizationRank).sum) ℤ (ZMod p)).symm.trans
+        (LinearEquiv.funCongrLeft ℤ (ZMod p) finSumFinEquiv.symm)
+      exact ⟨e.toAddMonoidHom.comp (f₁.prodMap f₂), e.surjective.comp (hf₁.prodMap hf₂)⟩
 
 /-- **Rank of a `p`-primary generator sum.** When every generator in `gs` is admissible and
 `p`-primary, the additive group rank of `orthogonalSumNikulinGenerators gs` equals the sum of the
 generator realization ranks. -/
 theorem rank_orthogonalSumNikulinGenerators_eq_sum_of_prime {gs : List NikulinGenerator} {p : ℕ}
     (hp : p.Prime) (hadm : ∀ g ∈ gs, g.IsAdmissible) (hprime : ∀ g ∈ gs, g.prime = p) :
-    AddGroup.rank (orthogonalSumNikulinGenerators gs) = (gs.map NikulinGenerator.rank).sum := by
+    AddGroup.rank (orthogonalSumNikulinGenerators gs) =
+      (gs.map NikulinGenerator.realizationRank).sum := by
   apply le_antisymm
   · induction gs with
     | nil => exact (AddGroup.rank_eq_zero (orthogonalSumNikulinGenerators [])).le
@@ -464,15 +418,16 @@ theorem rank_orthogonalSumNikulinGenerators_eq_sum_of_prime {gs : List NikulinGe
             ≤ AddGroup.rank g.toFiniteQuadraticModule +
                 AddGroup.rank (orthogonalSumNikulinGenerators gs) :=
               AddGroup.rank_prod_le _ _
-          _ ≤ g.rank + (gs.map NikulinGenerator.rank).sum := by
+          _ ≤ g.realizationRank + (gs.map NikulinGenerator.realizationRank).sum := by
               rw [hg]
               exact Nat.add_le_add_left hgs _
   · have : Fact p.Prime := ⟨hp⟩
     obtain ⟨f, hf⟩ := exists_modPrime_surj_orthogonalSum hadm hprime
-    calc (gs.map NikulinGenerator.rank).sum
-        = Module.finrank (ZMod p) (Fin (gs.map NikulinGenerator.rank).sum → ZMod p) := by
+    calc (gs.map NikulinGenerator.realizationRank).sum
+        = Module.finrank (ZMod p)
+            (Fin (gs.map NikulinGenerator.realizationRank).sum → ZMod p) := by
           rw [Module.finrank_pi (ZMod p), Fintype.card_fin]
-      _ = AddGroup.rank (Fin (gs.map NikulinGenerator.rank).sum → ZMod p) :=
+      _ = AddGroup.rank (Fin (gs.map NikulinGenerator.realizationRank).sum → ZMod p) :=
           (AddGroup.rank_eq_finrank_zmod _).symm
       _ ≤ AddGroup.rank (orthogonalSumNikulinGenerators gs) :=
           AddGroup.rank_le_of_surjective f hf
@@ -495,15 +450,15 @@ private noncomputable def piToOrthogonalSumIsometry :
     ∀ {n : ℕ} (g : Fin n → NikulinGenerator),
       Isometry (pi fun i ↦ (g i).toFiniteQuadraticModule)
         (orthogonalSumNikulinGenerators (List.ofFn g))
-  | 0, g => by
-      rw [List.ofFn_zero]
-      exact Isometry.ofSubsingleton
-  | n + 1, g => by
-      rw [List.ofFn_succ, orthogonalSumNikulinGenerators_cons]
-      exact (QuadraticMap.IsometryEquiv.consPi
+  | 0, g =>
+      Isometry.ofSubsingleton.trans
+        (Isometry.ofEq (congrArg orthogonalSumNikulinGenerators (List.ofFn_zero (f := g)).symm))
+  | _ + 1, g =>
+      ((QuadraticMap.IsometryEquiv.consPi
         fun i ↦ ((g i).toFiniteQuadraticModule).quadratic).symm.trans
           ((QuadraticMap.IsometryEquiv.refl (g 0).toFiniteQuadraticModule.quadratic).prod
-            (piToOrthogonalSumIsometry fun i ↦ g i.succ))
+            (piToOrthogonalSumIsometry fun i ↦ g i.succ))).trans
+        (Isometry.ofEq (congrArg orthogonalSumNikulinGenerators (List.ofFn_succ (f := g)).symm))
 
 private theorem oddCyclic_congr {m₁ m₂ : ℕ} (h : m₁ = m₂) (hm₁ : Odd m₁) (hm₂ : Odd m₂) (θ : ℤ) :
     oddCyclic m₁ hm₁ θ = oddCyclic m₂ hm₂ θ := by
@@ -515,26 +470,22 @@ theorem IsNondegenerate.exists_nikulinDecomposition {A : FiniteQuadraticModule.{
     (hA : A.IsNondegenerate) : Nonempty (NikulinDecomposition A) := by
   obtain ⟨a, m, hm, θ, b, k, η, c, ku, d, kv, hmθ, hη, ⟨f⟩⟩ :=
     exists_isometry_prod_pi_generators A hA
+  -- 1. Package the four summand families into `NikulinGenerator` labels.
   choose p exp hp hexp hpk using fun i ↦ (isPrimePow_nat_iff (m i)).mp (hmθ i).1
-  have hp_odd (i : Fin a) : Odd (p i) := by
-    refine (hp i).odd_of_ne_two ?_
-    intro h2
-    have hm_odd := hm i
-    rw [← hpk i, h2] at hm_odd
-    obtain ⟨j, hj⟩ := Nat.exists_eq_add_one_of_ne_zero (hexp i).ne'
-    rw [hj, pow_succ'] at hm_odd
-    obtain ⟨t, ht⟩ := hm_odd
-    omega
+  have hp_odd (i : Fin a) : Odd (p i) :=
+    (hm i).of_dvd_nat (hpk i ▸ dvd_pow_self _ (hexp i).ne')
   let g₁ : Fin a → NikulinGenerator := fun i ↦ .oddCyclic (p i) (exp i) (hp i) (hp_odd i) (θ i)
   let g₂ : Fin b → NikulinGenerator := fun i ↦ .dyadicCyclic (k i + 1) (Nat.succ_pos _) (η i)
   let g₃ : Fin c → NikulinGenerator := fun i ↦ .dyadicU (ku i + 1)
   let g₄ : Fin d → NikulinGenerator := fun i ↦ .dyadicV (kv i + 1)
+  -- 2. Check admissibility of the odd-cyclic labels (the dyadic families are immediate).
   have hg₁ (i : Fin a) : (g₁ i).IsAdmissible := by
     have hcop : IsCoprime (p i : ℤ) (θ i) := by
       have hpow : IsCoprime ((p i : ℤ) ^ exp i) (θ i) := by
         simpa only [← hpk i, Nat.cast_pow] using (hmθ i).2
       exact IsCoprime.of_isCoprime_of_dvd_left hpow (dvd_pow_self (p i : ℤ) (hexp i).ne')
     exact ⟨hexp i, ((Nat.prime_iff_prime_int.mp (hp i)).coprime_iff_not_dvd).mp hcop⟩
+  -- 3. Assemble the orthogonal-sum isometry onto the concatenated generator list.
   let eOdd : Isometry (pi fun i ↦ oddCyclic (m i) (hm i) (θ i))
       (pi fun i ↦ (g₁ i).toFiniteQuadraticModule) :=
     QuadraticMap.IsometryEquiv.pi fun i ↦
@@ -580,57 +531,8 @@ theorem NikulinDecomposition.natCard_eq {A : FiniteQuadraticModule.{u}}
 
 /-! ## Primary components and Nikulin's length formula -/
 
-/-- The `p`-primary component of a finite quadratic module: `A.restrict` to
-`AddCommGroup.primaryComponent A p`. -/
-abbrev primaryComponent (A : FiniteQuadraticModule.{u}) (p : ℕ) : FiniteQuadraticModule.{u} :=
-  A.restrict (AddCommGroup.primaryComponent A p)
-
-/-- A quadratic isometry induces an isometry on `p`-primary components. -/
-def Isometry.primaryComponentEquiv {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
-    (f : Isometry A B) (p : ℕ) : Isometry (primaryComponent A p) (primaryComponent B p) where
-  toLinearEquiv :=
-    { toFun := fun x ↦ ⟨f x.1, by
-        obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.2
-        exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
-      invFun := fun y ↦ ⟨f.symm y.1, by
-        obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp y.2
-        exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
-      left_inv := fun x ↦ Subtype.ext (f.symm_apply_apply x.1)
-      right_inv := fun y ↦ Subtype.ext (f.apply_symm_apply y.1)
-      map_add' := fun x y ↦ Subtype.ext (map_add f x.1 y.1)
-      map_smul' := fun r x ↦ Subtype.ext (map_smul f r x.1) }
-  map_app' x := f.map_app x.1
-
-/-- Taking the `p`-primary component commutes with orthogonal products. -/
-def primaryComponentProdIsometry (A : FiniteQuadraticModule.{u}) (B : FiniteQuadraticModule.{v})
-    (p : ℕ) :
-    Isometry (primaryComponent (A.prod B) p)
-      ((primaryComponent A p).prod (primaryComponent B p)) where
-  toLinearEquiv :=
-    { toFun := fun z ↦
-        (⟨z.1.1, by
-            obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp z.2
-            exact AddCommGroup.mem_primaryComponent.mpr ⟨k, congrArg Prod.fst hk⟩⟩,
-          ⟨z.1.2, by
-            obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp z.2
-            exact AddCommGroup.mem_primaryComponent.mpr ⟨k, congrArg Prod.snd hk⟩⟩)
-      invFun := fun (xy : AddCommGroup.primaryComponent A p × AddCommGroup.primaryComponent B p) ↦
-        ⟨((xy.1 : A), (xy.2 : B)), by
-          obtain ⟨k₁, hk₁⟩ := AddCommGroup.mem_primaryComponent.mp xy.1.2
-          obtain ⟨k₂, hk₂⟩ := AddCommGroup.mem_primaryComponent.mp xy.2.2
-          have h1 : p ^ (k₁ + k₂) • (xy.1 : A) = 0 := by
-            rw [pow_add, mul_nsmul, hk₁, nsmul_zero]
-          have h2 : p ^ (k₁ + k₂) • (xy.2 : B) = 0 := by
-            rw [pow_add, mul_comm, mul_nsmul, hk₂, nsmul_zero]
-          exact AddCommGroup.mem_primaryComponent.mpr ⟨k₁ + k₂, Prod.ext h1 h2⟩⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-  map_app' _ := rfl
-
 private def primaryComponentGeneratorIsometry {g : NikulinGenerator} {p : ℕ} (hp : g.prime = p) :
-    Isometry (primaryComponent g.toFiniteQuadraticModule p) g.toFiniteQuadraticModule where
+    Isometry (g.toFiniteQuadraticModule.primaryComponent p) g.toFiniteQuadraticModule where
   toLinearEquiv :=
     { toFun := Subtype.val
       invFun := fun x ↦ ⟨x, hp ▸ g.mem_primaryComponent_prime x⟩
@@ -642,11 +544,9 @@ private def primaryComponentGeneratorIsometry {g : NikulinGenerator} {p : ℕ} (
 
 private theorem subsingleton_primaryComponent_of_prime_ne {g : NikulinGenerator} {p : ℕ}
     (hp : p.Prime) (hne : g.prime ≠ p) :
-    Subsingleton (primaryComponent g.toFiniteQuadraticModule p) := by
+    Subsingleton (g.toFiniteQuadraticModule.primaryComponent p) := by
   apply (Nat.card_eq_one_iff_unique.mp ?_).1
-  rw [show Nat.card (primaryComponent g.toFiniteQuadraticModule p) =
-      Nat.card (AddCommGroup.primaryComponent g.toFiniteQuadraticModule p) from rfl,
-    TauCeti.AddCommGroup.natCard_primaryComponent _ hp]
+  rw [natCard_primaryComponent _ hp]
   obtain ⟨n, hn⟩ := g.exists_pow_natCard
   have hndvd : ¬ p ∣ g.prime ^ n := fun hdvd ↦
     hne ((Nat.prime_dvd_prime_iff_eq hp g.prime_prime).mp (hp.dvd_of_dvd_pow hdvd)).symm
@@ -656,26 +556,35 @@ private theorem subsingleton_primaryComponent_of_prime_ne {g : NikulinGenerator}
 of the sublist of `p`-primary generators. -/
 noncomputable def primaryComponentOrthogonalSumIsometry :
     ∀ (gs : List NikulinGenerator) {p : ℕ}, p.Prime →
-      Isometry (primaryComponent (orthogonalSumNikulinGenerators gs) p)
+      Isometry ((orthogonalSumNikulinGenerators gs).primaryComponent p)
         (orthogonalSumNikulinGenerators (gs.filter fun g ↦ g.prime = p))
-  | [], p, _ => by
-      simp only [List.filter_nil]
-      have : Subsingleton (primaryComponent (orthogonalSumNikulinGenerators []) p) :=
+  | [], p, _ =>
+      let _ : Subsingleton ((orthogonalSumNikulinGenerators []).primaryComponent p) :=
         inferInstanceAs
           (Subsingleton (AddCommGroup.primaryComponent (orthogonalSumNikulinGenerators []) p))
-      exact Isometry.ofSubsingleton
+      (Isometry.ofSubsingleton (B := orthogonalSumNikulinGenerators [])).trans
+        (Isometry.ofEq (congrArg orthogonalSumNikulinGenerators List.filter_nil.symm))
   | g :: gs, p, hp =>
-      if h : g.prime = p then by
-        simp only [List.filter_cons, h, decide_true]
-        exact (primaryComponentProdIsometry _ _ p).trans
+      if h : g.prime = p then
+        have hpos :
+            (g :: gs).filter (fun x ↦ x.prime = p) =
+              g :: gs.filter (fun x ↦ x.prime = p) :=
+          List.filter_cons_of_pos (decide_eq_true h)
+        ((primaryComponentProdIsometry _ _ p).trans
           ((primaryComponentGeneratorIsometry h).prod
-            (primaryComponentOrthogonalSumIsometry gs hp))
-      else by
-        simp only [List.filter_cons, h, decide_false]
-        have : Subsingleton (primaryComponent g.toFiniteQuadraticModule p) :=
-          subsingleton_primaryComponent_of_prime_ne hp h
-        exact (primaryComponentProdIsometry _ _ p).trans
-          ((subsingletonProdIsometry _ _).trans (primaryComponentOrthogonalSumIsometry gs hp))
+            (primaryComponentOrthogonalSumIsometry gs hp))).trans
+          (Isometry.ofEq (congrArg orthogonalSumNikulinGenerators hpos.symm))
+      else
+        have hneg :
+            (g :: gs).filter (fun x ↦ x.prime = p) =
+              gs.filter (fun x ↦ x.prime = p) :=
+          List.filter_cons_of_neg (mt of_decide_eq_true h)
+        let _ : Unique (g.toFiniteQuadraticModule.primaryComponent p) :=
+          @uniqueOfSubsingleton _ (subsingleton_primaryComponent_of_prime_ne hp h) 0
+        ((primaryComponentProdIsometry _ _ p).trans
+          ((QuadraticMap.IsometryEquiv.uniqueProd _ _).trans
+            (primaryComponentOrthogonalSumIsometry gs hp))).trans
+          (Isometry.ofEq (congrArg orthogonalSumNikulinGenerators hneg.symm))
 
 /-- Filtering a Nikulin decomposition by `g.prime = p` yields a Nikulin decomposition of the
 `p`-primary component `primaryComponent A p`. -/
@@ -699,7 +608,7 @@ the `p`-primary generators of `D`. -/
 theorem NikulinDecomposition.rank_primaryComponent {A : FiniteQuadraticModule.{u}}
     (D : NikulinDecomposition A) {p : ℕ} (hp : p.Prime) :
     AddGroup.rank (FiniteQuadraticModule.primaryComponent A p) =
-      ((D.generators.filter fun g ↦ g.prime = p).map NikulinGenerator.rank).sum := by
+      ((D.generators.filter fun g ↦ g.prime = p).map NikulinGenerator.realizationRank).sum := by
   have heq := AddGroup.rank_congr (D.primaryComponent hp).isometry.toLinearEquiv.toAddEquiv
   rw [heq, NikulinDecomposition.primaryComponent_generators]
   exact rank_orthogonalSumNikulinGenerators_eq_sum_of_prime hp
@@ -713,27 +622,46 @@ theorem NikulinDecomposition.rank_eq_sup_filter {A : FiniteQuadraticModule.{u}}
     (D : NikulinDecomposition A) :
     AddGroup.rank A =
       (Nat.card A).primeFactors.sup fun p ↦
-        ((D.generators.filter fun g ↦ g.prime = p).map NikulinGenerator.rank).sum := by
-  rw [AddGroup.rank_eq_sup_primaryComponents A]
+        ((D.generators.filter fun g ↦ g.prime = p).map NikulinGenerator.realizationRank).sum := by
+  rw [AddGroup.rank_eq_spanFinrank_top A,
+    TauCeti.AddCommGroup.spanFinrank_eq_sup_primaryComponents A]
   apply le_antisymm
   · refine Finset.sup_le fun p _ ↦ ?_
-    -- Identify `AddCommGroup.primaryComponent A p.1` with the carrier of `primaryComponent A p.1`.
+    rw [← AddGroup.rank_eq_spanFinrank_top (AddCommGroup.primaryComponent A p.1)]
+    -- `FiniteQuadraticModule.primaryComponent A p.1` has carrier `AddCommGroup.primaryComponent`.
     change AddGroup.rank (FiniteQuadraticModule.primaryComponent A p.1) ≤ _
     rw [D.rank_primaryComponent (Nat.prime_of_mem_primeFactors p.2)]
-    exact Finset.le_sup
-      (f := fun q ↦ ((D.generators.filter fun g ↦ g.prime = q).map NikulinGenerator.rank).sum) p.2
+    exact Finset.le_sup (f := fun q ↦
+      ((D.generators.filter fun g ↦ g.prime = q).map NikulinGenerator.realizationRank).sum) p.2
   · refine Finset.sup_le fun p hp ↦ ?_
     rw [← D.rank_primaryComponent (Nat.prime_of_mem_primeFactors hp)]
-    exact Finset.le_sup (f := fun q : (Nat.card A).primeFactors ↦
-      AddGroup.rank (AddCommGroup.primaryComponent A q.1)) (Finset.mem_univ ⟨p, hp⟩)
+    have hle := Finset.le_sup (f := fun q : (Nat.card A).primeFactors ↦
+      (⊤ : Submodule ℤ (AddCommGroup.primaryComponent A q.1)).spanFinrank)
+      (Finset.mem_univ ⟨p, hp⟩)
+    rwa [← AddGroup.rank_eq_spanFinrank_top (AddCommGroup.primaryComponent A p)] at hle
 
 /-! ## Cyclic summands of order `2` -/
 
 /-- **The dyadic alternative of Nikulin's Theorems 1.9.1 and 1.10.1**: `A` splits off an orthogonal
 summand `q_θ^{(2)}(2)` with `θ` odd. -/
-@[expose] def HasCyclicTwoSummand (A : FiniteQuadraticModule.{u}) : Prop :=
+def HasCyclicTwoSummand (A : FiniteQuadraticModule.{u}) : Prop :=
   ∃ (θ : ℤ) (A' : FiniteQuadraticModule.{0}),
     Odd θ ∧ Nonempty (A.Isometry ((dyadicCyclic 1 θ).prod A'))
+
+/-- Unfolded characterization of `HasCyclicTwoSummand`. -/
+theorem hasCyclicTwoSummand_iff {A : FiniteQuadraticModule.{u}} :
+    HasCyclicTwoSummand A ↔
+      ∃ (θ : ℤ) (A' : FiniteQuadraticModule.{0}),
+        Odd θ ∧ Nonempty (A.Isometry ((dyadicCyclic 1 θ).prod A')) :=
+  Iff.rfl
+
+/-- Construct `HasCyclicTwoSummand A` from an odd parameter `θ` and an explicit orthogonal-product
+isometry onto `(dyadicCyclic 1 θ).prod A'`. -/
+theorem HasCyclicTwoSummand.of_isometry {A : FiniteQuadraticModule.{u}}
+    {A' : FiniteQuadraticModule.{0}} {θ : ℤ} (hθ : Odd θ)
+    (f : A.Isometry ((dyadicCyclic 1 θ).prod A')) :
+    HasCyclicTwoSummand A :=
+  ⟨θ, A', hθ, ⟨f⟩⟩
 
 /-- `HasCyclicTwoSummand` is invariant under quadratic isometry. -/
 theorem Isometry.hasCyclicTwoSummand_iff {A : FiniteQuadraticModule.{u}}
@@ -745,9 +673,9 @@ theorem Isometry.hasCyclicTwoSummand_iff {A : FiniteQuadraticModule.{u}}
 /-- Any generator `q_θ^{(2)}(2)` (`θ` odd) satisfies `HasCyclicTwoSummand`. -/
 theorem hasCyclicTwoSummand_dyadicCyclic_one {θ : ℤ} (hθ : Odd θ) :
     HasCyclicTwoSummand (dyadicCyclic 1 θ) :=
-  ⟨θ, orthogonalSumNikulinGenerators [], hθ,
-    ⟨(subsingletonProdIsometry (orthogonalSumNikulinGenerators []) (dyadicCyclic 1 θ)).symm.trans
-      (QuadraticMap.IsometryEquiv.prodComm _ _)⟩⟩
+  HasCyclicTwoSummand.of_isometry hθ <|
+    (QuadraticMap.IsometryEquiv.uniqueProd (orthogonalSumNikulinGenerators []).quadratic
+      (dyadicCyclic 1 θ).quadratic).symm.trans (QuadraticMap.IsometryEquiv.prodComm _ _)
 
 /-- If a Nikulin decomposition of `A` contains a generator `.dyadicCyclic 1 _ θ`, then `A` has a
 cyclic summand of order `2`. -/
@@ -755,9 +683,8 @@ theorem NikulinDecomposition.hasCyclicTwoSummand_of_mem {A : FiniteQuadraticModu
     (D : NikulinDecomposition A) {hk : 0 < 1} {θ : ℤ}
     (hmem : NikulinGenerator.dyadicCyclic 1 hk θ ∈ D.generators) :
     HasCyclicTwoSummand A := by
-  have hθ : Odd θ := D.admissible _ hmem
   obtain ⟨gs', ⟨e⟩⟩ := exists_orthogonalSum_of_mem hmem
-  exact ⟨θ, orthogonalSumNikulinGenerators gs', hθ, ⟨D.isometry.trans e⟩⟩
+  exact HasCyclicTwoSummand.of_isometry (D.admissible _ hmem) (D.isometry.trans e)
 
 /-- A module of odd order has no cyclic summand of order `2`. -/
 theorem not_hasCyclicTwoSummand_of_odd_natCard {A : FiniteQuadraticModule.{u}}
@@ -765,8 +692,6 @@ theorem not_hasCyclicTwoSummand_of_odd_natCard {A : FiniteQuadraticModule.{u}}
   rintro ⟨θ, A', -, ⟨f⟩⟩
   have hc := Nat.card_congr f.toLinearEquiv.toEquiv
   rw [Nat.card_prod, natCard_dyadicCyclic, pow_one] at hc
-  rw [hc] at hodd
-  obtain ⟨t, ht⟩ := hodd
-  omega
+  exact Nat.not_even_iff_odd.mpr hodd (hc ▸ even_two_mul _)
 
 end TauCeti.FiniteQuadraticModule

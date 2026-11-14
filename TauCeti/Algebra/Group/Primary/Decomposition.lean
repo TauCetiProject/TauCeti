@@ -26,6 +26,10 @@ cardinality of the group. The equivalence uses Mathlib's canonical
 ## Main results
 
 * `AddSubgroup.primaryPart`: the part of a subgroup in one primary component.
+* `TauCeti.AddCommGroup.map_mem_primaryComponent` and `AddEquiv.primaryComponent`: additive
+  homomorphisms preserve `n`-primary components, and additive equivalences restrict to them.
+* `TauCeti.AddCommGroup.primaryComponentProd`: the `n`-primary component of `A × B` splits as the
+  product of the `n`-primary components of `A` and `B`.
 * `TauCeti.AddCommGroup.primaryDecomposition`: a finite abelian group is additively equivalent to
   the product of its prime-primary components.
 * `TauCeti.AddCommGroup.primaryDecomposition_apply`: the equivalence is the sum of the component
@@ -54,6 +58,91 @@ theorem mem_primaryPart_iff (H : AddSubgroup G) (p : ℕ)
   Iff.rfl
 
 end AddSubgroup
+
+namespace TauCeti.AddCommGroup
+
+/-- Any additive monoid homomorphism maps the `n`-primary component into the `n`-primary
+component. -/
+theorem map_mem_primaryComponent {A : Type*} {B : Type*} {F : Type*}
+    [AddCommGroup A] [AddCommGroup B] [FunLike F A B] [AddMonoidHomClass F A B]
+    (f : F) {n : ℕ} {x : A} (hx : x ∈ _root_.AddCommGroup.primaryComponent A n) :
+    f x ∈ _root_.AddCommGroup.primaryComponent B n := by
+  obtain ⟨k, hk⟩ := _root_.AddCommGroup.mem_primaryComponent.mp hx
+  exact _root_.AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩
+
+/-- An element of `A × B` lies in the `n`-primary component if and only if both coordinates lie in
+the `n`-primary components of `A` and `B`. -/
+theorem mem_primaryComponent_prod_iff {A : Type*} {B : Type*}
+    [AddCommGroup A] [AddCommGroup B] {n : ℕ} {z : A × B} :
+    z ∈ _root_.AddCommGroup.primaryComponent (A × B) n ↔
+      z.1 ∈ _root_.AddCommGroup.primaryComponent A n ∧
+        z.2 ∈ _root_.AddCommGroup.primaryComponent B n := by
+  refine ⟨fun hz ↦ ⟨map_mem_primaryComponent (AddMonoidHom.fst A B) hz,
+    map_mem_primaryComponent (AddMonoidHom.snd A B) hz⟩, fun ⟨hz₁, hz₂⟩ ↦ ?_⟩
+  have h := add_mem (map_mem_primaryComponent (AddMonoidHom.inl A B) hz₁)
+    (map_mem_primaryComponent (AddMonoidHom.inr A B) hz₂)
+  simpa using h
+
+/-- The `n`-primary component of `A × B` is additively equivalent to the product of the
+`n`-primary components of `A` and `B`. -/
+def primaryComponentProd (A : Type*) (B : Type*) [AddCommGroup A] [AddCommGroup B] (n : ℕ) :
+    _root_.AddCommGroup.primaryComponent (A × B) n ≃+
+      _root_.AddCommGroup.primaryComponent A n × _root_.AddCommGroup.primaryComponent B n where
+  toFun z := (⟨z.1.1, (mem_primaryComponent_prod_iff.mp z.2).1⟩,
+    ⟨z.1.2, (mem_primaryComponent_prod_iff.mp z.2).2⟩)
+  invFun xy := ⟨(xy.1, xy.2), mem_primaryComponent_prod_iff.mpr ⟨xy.1.2, xy.2.2⟩⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+
+@[simp]
+theorem coe_primaryComponentProd_apply_fst (A : Type*) (B : Type*)
+    [AddCommGroup A] [AddCommGroup B] (n : ℕ)
+    (z : _root_.AddCommGroup.primaryComponent (A × B) n) :
+    ((primaryComponentProd A B n z).1 : A) = z.1.1 :=
+  (rfl)
+
+@[simp]
+theorem coe_primaryComponentProd_apply_snd (A : Type*) (B : Type*)
+    [AddCommGroup A] [AddCommGroup B] (n : ℕ)
+    (z : _root_.AddCommGroup.primaryComponent (A × B) n) :
+    ((primaryComponentProd A B n z).2 : B) = z.1.2 :=
+  (rfl)
+
+@[simp]
+theorem coe_primaryComponentProd_symm_apply (A : Type*) (B : Type*)
+    [AddCommGroup A] [AddCommGroup B] (n : ℕ)
+    (xy : _root_.AddCommGroup.primaryComponent A n × _root_.AddCommGroup.primaryComponent B n) :
+    ((primaryComponentProd A B n).symm xy : A × B) = ((xy.1 : A), (xy.2 : B)) :=
+  (rfl)
+
+end TauCeti.AddCommGroup
+
+namespace AddEquiv
+
+/-- An additive equivalence restricts to an additive equivalence between `n`-primary components. -/
+def primaryComponent {A : Type*} {B : Type*} [AddCommGroup A] [AddCommGroup B]
+    (e : A ≃+ B) (n : ℕ) :
+    AddCommGroup.primaryComponent A n ≃+ AddCommGroup.primaryComponent B n where
+  toFun x := ⟨e x, TauCeti.AddCommGroup.map_mem_primaryComponent e x.2⟩
+  invFun y := ⟨e.symm y, TauCeti.AddCommGroup.map_mem_primaryComponent e.symm y.2⟩
+  left_inv x := Subtype.ext (e.symm_apply_apply x)
+  right_inv y := Subtype.ext (e.apply_symm_apply y)
+  map_add' x y := Subtype.ext (map_add e (x : A) (y : A))
+
+@[simp]
+theorem coe_primaryComponent_apply {A : Type*} {B : Type*} [AddCommGroup A] [AddCommGroup B]
+    (e : A ≃+ B) (n : ℕ) (x : AddCommGroup.primaryComponent A n) :
+    (e.primaryComponent n x : B) = e x :=
+  (rfl)
+
+@[simp]
+theorem primaryComponent_symm {A : Type*} {B : Type*} [AddCommGroup A] [AddCommGroup B]
+    (e : A ≃+ B) (n : ℕ) :
+    (e.primaryComponent n).symm = e.symm.primaryComponent n :=
+  (rfl)
+
+end AddEquiv
 
 namespace TauCeti
 
