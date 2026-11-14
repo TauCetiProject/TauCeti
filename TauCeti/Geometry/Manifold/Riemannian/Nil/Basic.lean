@@ -163,6 +163,35 @@ def toProdDiffeomorph : Nil ≃ₘ⟮𝓘(ℝ, ℝ × ℝ × ℝ), 𝓘(ℝ, ℝ
 
 @[simp] theorem coe_toProdDiffeomorph_symm : ⇑toProdDiffeomorph.symm = toProd.symm := (rfl)
 
+/-- The differential of global coordinates reads the tangent vector in the model space. -/
+@[simp] theorem mfderiv_toProd_apply (p : Nil) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd p v =
+      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p v :=
+  congrArg (fun L => L v) (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).mfderiv_eq
+
+/-- The differential of inverse global coordinates retains the model vector. -/
+@[simp] theorem tangentSpaceCastModel_mfderiv_toProd_symm (r : ℝ × ℝ × ℝ)
+    (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) r) :
+    tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (toProd.symm r)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd.symm r v) = v :=
+  congrArg (fun L => L v) (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).mfderiv_eq
+
+/-- Global coordinates are `C^n` for every `n`. -/
+theorem contMDiff_toProd {n : WithTop ℕ∞} :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n (toProd : Nil → ℝ × ℝ × ℝ) :=
+  contDiff_id.contMDiff
+
+/-- Inverse global coordinates are `C^n` for every `n`. -/
+theorem contMDiff_toProd_symm {n : WithTop ℕ∞} :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n (toProd.symm : ℝ × ℝ × ℝ → Nil) :=
+  contDiff_id.contMDiff
+
+/-- A self-map of `Nil` is `C^n` exactly when it is `C^n` in the global coordinates. -/
+theorem contDiff_toProd_conj_iff {n : WithTop ℕ∞} {f : Nil → Nil} :
+    ContDiff ℝ n (toProd ∘ f ∘ toProd.symm) ↔
+      ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n f :=
+  contMDiff_iff_contDiff.symm
+
 /-! ### The group structure -/
 
 /-- The product `(a, b, c) * (x, y, z) = (a + x, b + y, c + z + a y)` of the real Heisenberg
@@ -301,16 +330,9 @@ theorem inner_def (p : Nil) (v w : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) 
 
 /-! ### Isometries in global coordinates -/
 
-/-- A Nil isometry is smooth when expressed in the global coordinates. -/
-theorem contDiff_toProd_isometry (Φ : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil) :
-    ContDiff ℝ ∞ (toProd ∘ Φ ∘ toProd.symm) := by
-  simpa only [Diffeomorph.coe_trans, coe_toProdDiffeomorph,
-    coe_toProdDiffeomorph_symm, RiemannianIsometry.coe_toDiffeomorph,
-    Function.comp_assoc] using
-    (toProdDiffeomorph.symm.trans (Φ.toDiffeomorph.trans toProdDiffeomorph)).contMDiff.contDiff
-
 /-- The ordinary derivative of a map of `Nil` in global coordinates is its manifold derivative,
 read through the canonical tangent-space identifications. -/
+@[simp]
 theorem fderiv_toProd_conj_apply (f : Nil → Nil) (p : Nil)
     (u : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
     fderiv ℝ (toProd ∘ f ∘ toProd.symm) (toProd p)
