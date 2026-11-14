@@ -36,7 +36,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 
 ## Main results
 
-* `PadicInt.val_toZModPow_eq_appr`: `appr` computes the `ZMod (p ^ n)`-value of `toZModPow`.
+* `PadicInt.val_toZModPow_eq_appr`, `PadicInt.toZModPow_eq_natCast_appr`: `appr` computes the
+  `ZMod (p ^ n)`-value of `toZModPow`, which is the class of the natural number `x.appr n`.
 * `PadicInt.continuous_toZModPow`, `PadicInt.continuous_toZMod`: truncation modulo `p ^ n` and
   reduction modulo `p` are continuous, `ZMod (p ^ n)` and `ZMod p` carrying the discrete
   topology.
@@ -75,9 +76,10 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.continuous_appr`: the truncation modulo `p ^ n` is locally constant.
 * `PadicInt.pow_appr_eq_pow_appr`: raising an element of `p`-power order to the truncated
   exponent is independent of the truncation level, once that level is large enough.
-* `PadicInt.quotientSpanPowEquivZMod`: `toZModPow n` identifies `ℤ_[p] ⧸ (p ^ n)` with
-  `ZMod (p ^ n)`.
+* `PadicInt.quotientSpanPowEquivZMod`, `PadicInt.quotientSpanPowEquivZMod_mk`: `toZModPow n`
+  identifies `ℤ_[p] ⧸ (p ^ n)` with `ZMod (p ^ n)`, sending the class of `x` to `toZModPow n x`.
 * `PadicInt.span_singleton_eq_span_pow_valuation`, `PadicInt.quotientSpanEquivZMod`,
+  `PadicInt.quotientSpanEquivZMod_mk`, `PadicInt.finite_quotient_span`,
   `PadicInt.natCard_quotient_span`, `PadicInt.isAddCyclic_quotient_span`: a nonzero `x` generates
   the same ideal as `p ^ v` for `v` its valuation, so `ℤ_[p] ⧸ (x)` is `ZMod (p ^ v)`, a finite
   ring of cardinality `p ^ v` whose additive group is cyclic.
@@ -87,9 +89,13 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.dvd_pow_valuation`: a nonzero `x` divides `p ^ v` for `v` its valuation.
 * `PadicInt.quotientSpanToZMod`, `PadicInt.quotientSpanToZModPow`: for `p ∣ q`, respectively
   `p ^ n ∣ q`, reduction modulo `p`, respectively truncation modulo `p ^ n`, descends to a
-  continuous ring homomorphism out of `ℤ_[p] ⧸ (q)`.
+  continuous ring homomorphism out of `ℤ_[p] ⧸ (q)` (`PadicInt.continuous_quotientSpanToZMod`,
+  `PadicInt.continuous_quotientSpanToZModPow`), sending the class of `x` to `toZMod x`,
+  respectively `toZModPow n x` (`PadicInt.quotientSpanToZMod_mk`,
+  `PadicInt.quotientSpanToZModPow_mk`).
 * `PadicInt.unitsToZModPow`: truncation modulo `p ^ n` on the units of `ℤ_[p]`, as a continuous
-  homomorphism to the units of `ZMod (p ^ n)`; it is surjective, that is, every unit of
+  homomorphism to the units of `ZMod (p ^ n)`, acting as `toZModPow n` on the underlying
+  elements (`PadicInt.coe_unitsToZModPow_apply`); it is surjective, that is, every unit of
   `ZMod (p ^ n)` lifts to a unit of `ℤ_[p]` (`PadicInt.unitsToZModPow_surjective`),
   compatible with the reductions `ZMod.unitsMap` between levels
   (`PadicInt.unitsMap_unitsToZModPow`), and trivial at level `0`
