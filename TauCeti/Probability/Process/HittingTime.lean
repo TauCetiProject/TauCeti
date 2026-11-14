@@ -17,7 +17,10 @@ For continuous paths, the first entrance into a closed set is attained whenever 
 finite. On a compact time interval, entrance is equivalent to the minimum distance to
 the target being zero. The minimum can be measured through a countable dense set of
 times, giving a stopping time on the original filtration, without right continuity or
-completion assumptions.
+completion assumptions. For ordered-valued continuous paths, first entrance into a
+singleton coincides with first entrance into the corresponding closed half-line when the
+initial state lies on the opposite side, and entrance into a union of targets is the
+minimum of the two individual entrance times.
 
 These results apply in particular to exits from open domains and to closed-level
 localization of continuous adapted processes. Path continuity here is everywhere,
@@ -84,7 +87,89 @@ theorem Continuous.le_of_le_hittingAfter_Ici [DenselyOrdered ι]
   have hhit := MeasureTheory.hittingAfter_le_of_mem (u := X) (s := Set.Ici C) hu.1 hue.ge
   exact (WithTop.coe_lt_coe.mpr hut).not_ge (ht.trans hhit)
 
+/-- A continuous ordered-valued path starting above a level stays at least at that level up to and
+including its first closed lower-level hit. -/
+theorem Continuous.ge_of_le_hittingAfter_Iic [DenselyOrdered ι]
+    {β : Type*} [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β]
+    {X : ι → Ω → β} {a t : ι} {ω : Ω} {C : β} (hX : Continuous (X · ω))
+    (hat : a ≤ t) (hstart : C ≤ X a ω)
+    (ht : (t : WithTop ι) ≤ MeasureTheory.hittingAfter X (Set.Iic C) a ω) :
+    C ≤ X t ω :=
+  hX.le_of_le_hittingAfter_Ici (β := βᵒᵈ) hat hstart ht
+
+/-- A continuous ordered-valued path starting at or below `C` hits `{C}` at the same time as it
+hits `[C, ∞)`. -/
+theorem Continuous.hittingAfter_singleton_eq_Ici [DenselyOrdered ι]
+    {β : Type*} [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β]
+    {X : ι → Ω → β} {a : ι} {ω : Ω} {C : β} (hX : Continuous (X · ω))
+    (hstart : X a ω ≤ C) :
+    MeasureTheory.hittingAfter X {C} a ω = MeasureTheory.hittingAfter X (Set.Ici C) a ω := by
+  refine le_antisymm ?_ (MeasureTheory.hittingAfter_apply_anti X a ω
+    (singleton_subset_iff.mpr (mem_Ici.mpr le_rfl)))
+  cases ht : MeasureTheory.hittingAfter X (Set.Ici C) a ω using WithTop.recTopCoe with
+  | top => exact le_top
+  | coe t =>
+    obtain ⟨u, hu, hus⟩ := isClosed_Ici.hittingAfter_le_iff hX |>.mp ht.le
+    obtain ⟨v, hv, hvC⟩ := intermediate_value_Icc hu.1 hX.continuousOn ⟨hstart, hus⟩
+    exact (MeasureTheory.hittingAfter_le_of_mem hv.1 hvC).trans
+      (WithTop.coe_le_coe.mpr (hv.2.trans hu.2))
+
+/-- A continuous ordered-valued path starting at or above `C` hits `{C}` at the same time as it
+hits `(-∞, C]`. -/
+theorem Continuous.hittingAfter_singleton_eq_Iic [DenselyOrdered ι]
+    {β : Type*} [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β]
+    {X : ι → Ω → β} {a : ι} {ω : Ω} {C : β} (hX : Continuous (X · ω))
+    (hstart : C ≤ X a ω) :
+    MeasureTheory.hittingAfter X {C} a ω = MeasureTheory.hittingAfter X (Set.Iic C) a ω :=
+  hX.hittingAfter_singleton_eq_Ici (β := βᵒᵈ) hstart
+
 namespace MeasureTheory
+
+omit [TopologicalSpace ι] [OrderTopology ι] in
+/-- First entrance into a union of two sets is the minimum of the first entrances into each set,
+pointwise on paths. -/
+theorem hittingAfter_union_apply (X : ι → Ω → E) (s₁ s₂ : Set E) (a : ι) (ω : Ω) :
+    hittingAfter X (s₁ ∪ s₂) a ω = min (hittingAfter X s₁ a ω) (hittingAfter X s₂ a ω) := by
+  classical
+  refine le_antisymm (le_min (hittingAfter_apply_anti X a ω subset_union_left)
+    (hittingAfter_apply_anti X a ω subset_union_right)) ?_
+  by_contra! hlt
+  have hne : {i | a ≤ i ∧ X i ω ∈ s₁ ∪ s₂}.Nonempty := by
+    by_contra h
+    have hnot : ¬ ∃ j, a ≤ j ∧ X j ω ∈ s₁ ∪ s₂ := fun ⟨j, hj⟩ ↦ h ⟨j, hj⟩
+    exact (ne_top_of_lt hlt) (hittingAfter_eq_top_iff.mpr (by simpa using hnot))
+  have heq : hittingAfter X (s₁ ∪ s₂) a ω = ↑(sInf {i | a ≤ i ∧ X i ω ∈ s₁ ∪ s₂}) := by
+    have hex : ∃ j, a ≤ j ∧ X j ω ∈ s₁ ∪ s₂ := ⟨hne.some, hne.some_mem⟩
+    simp only [hittingAfter_def, ite_eq_left hex]
+  cases hm : min (hittingAfter X s₁ a ω) (hittingAfter X s₂ a ω) using WithTop.recTopCoe with
+  | top =>
+    obtain ⟨j, haj, hj | hj⟩ := hne
+    · exact WithTop.coe_ne_top (top_unique ((le_min_iff.mp hm.ge).1.trans
+        (hittingAfter_le_of_mem haj hj)))
+    · exact WithTop.coe_ne_top (top_unique ((le_min_iff.mp hm.ge).2.trans
+        (hittingAfter_le_of_mem haj hj)))
+  | coe b =>
+    rw [heq, hm, WithTop.coe_lt_coe] at hlt
+    obtain ⟨j, ⟨haj, hj | hj⟩, hjb⟩ := exists_lt_of_csInf_lt hne hlt
+    · exact (WithTop.coe_lt_coe.mpr hjb).not_ge
+        ((le_min_iff.mp hm.ge).1.trans (hittingAfter_le_of_mem haj hj))
+    · exact (WithTop.coe_lt_coe.mpr hjb).not_ge
+        ((le_min_iff.mp hm.ge).2.trans (hittingAfter_le_of_mem haj hj))
+
+omit [TopologicalSpace ι] [OrderTopology ι] in
+/-- First entrance into a union of two sets is the minimum of the first entrances into each set. -/
+theorem hittingAfter_union (X : ι → Ω → E) (s₁ s₂ : Set E) (a : ι) :
+    hittingAfter X (s₁ ∪ s₂) a = min (hittingAfter X s₁ a) (hittingAfter X s₂ a) :=
+  funext fun ω ↦ hittingAfter_union_apply X s₁ s₂ a ω
+
+omit [TopologicalSpace ι] [OrderTopology ι] in
+/-- First entrance of a post-composed process `f (X t ω)` into `s` equals first entrance of `X`
+into the preimage `f ⁻¹' s`. -/
+theorem hittingAfter_comp {F : Type*} (f : E → F) (X : ι → Ω → E) (s : Set F) (a : ι) :
+    hittingAfter (fun t ω ↦ f (X t ω)) s a = hittingAfter X (f ⁻¹' s) a := by
+  classical
+  ext ω
+  simp only [hittingAfter_def, mem_preimage]
 
 section Stopping
 
@@ -147,6 +232,14 @@ theorem Adapted.isStoppingTime_hittingAfter_compl_of_isOpen (hX : Adapted ℱ X)
     (hc : ∀ ω, Continuous (X · ω)) {U : Set E} (hU : IsOpen U) (a : ι) :
     IsStoppingTime ℱ (hittingAfter X Uᶜ a) :=
   hX.isStoppingTime_hittingAfter_of_isClosed hc hU.isClosed_compl a
+
+/-- Closed-set entrance of an everywhere-continuous process with measurable evaluations is
+measurable on the ambient measurable space. -/
+theorem measurable_hittingAfter_of_isClosed (hX : ∀ t, Measurable (X t))
+    (hc : ∀ ω, Continuous (X · ω)) (hs : IsClosed s) (a : ι) :
+    Measurable (hittingAfter X s a) :=
+  (Adapted.isStoppingTime_hittingAfter_of_isClosed (ℱ := Filtration.const ι mΩ le_rfl)
+    hX hc hs a).measurable'
 
 end Stopping
 

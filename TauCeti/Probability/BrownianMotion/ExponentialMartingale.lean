@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Tilted
+public import Mathlib.Probability.CDF
 public import Mathlib.Probability.Martingale.Basic
 public import TauCeti.Probability.BrownianMotion.Filtered
 import Mathlib.Probability.ConditionalExpectation
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Moments.Basic
+import TauCeti.Probability.Distributions.Gaussian.Cdf
+import TauCeti.Probability.Distributions.Tilted
 
 /-!
 # The exponential martingale of a Brownian motion
@@ -36,6 +39,13 @@ Brownian motion relative to a filtration is
 
 * `TauCeti.Probability.exponentialMartingale`: the process `exp (θ W_t - θ² t / 2)`.
 * `ProbabilityTheory.IsPreBrownianReal.integral_exponentialMartingale`: `E[Z_t] = 1`.
+* `ProbabilityTheory.IsPreBrownianReal.setIntegral_exponentialMartingale_preimage`,
+  `ProbabilityTheory.IsPreBrownianReal.setIntegral_exponentialMartingale_lt`,
+  `ProbabilityTheory.IsPreBrownianReal.setIntegral_exponentialMartingale_ge`: truncated
+  expectations of `Z_t` over Borel sets and half-line events in terms of `N(θ t, t)` and the
+  standard Gaussian cumulative distribution function, together with the started-at-`x` versions
+  `ProbabilityTheory.IsPreBrownianReal.setIntegral_exp_mul_add_lt` and
+  `ProbabilityTheory.IsPreBrownianReal.setIntegral_exp_mul_add_ge`.
 * `ProbabilityTheory.IsPreBrownianReal.memLp_exponentialMartingale`: `Z_t` has finite moments of
   every finite order, since each real power of `Z_t` is a multiple of another exponential
   martingale (`TauCeti.Probability.rpow_exponentialMartingale`).
@@ -175,6 +185,118 @@ theorem tilted_mul_eval_eq_withDensity (hB : IsPreBrownianReal B P) (θ : ℝ) (
   congr with ω
   rw [exponentialMartingale_def, ← exp_sub]
   ring_nf
+
+/-- Integrating the exponential martingale `exp (θ B_t - θ² t / 2)` over `B_t ∈ s` gives the mass
+of `s` under the shifted Gaussian law `N(θ t, t)`, including at `t = 0`. -/
+theorem setIntegral_exponentialMartingale_preimage (hB : IsPreBrownianReal B P) (θ : ℝ)
+    (t : ℝ≥0) {s : Set ℝ} (hs : MeasurableSet s) :
+    ∫ ω in B t ⁻¹' s, exponentialMartingale θ B t ω ∂P = (gaussianReal (θ * t) t).real s := by
+  have hlaw := hB.hasLaw_eval t
+  have hf : Continuous fun y : ℝ ↦ exp (-(θ ^ 2 * t / 2)) * exp (θ * y) := by fun_prop
+  have hmap := setIntegral_map (μ := P) hs hf.aestronglyMeasurable hlaw.aemeasurable
+  rw [hlaw.map_eq, integral_const_mul, setIntegral_exp_mul_gaussianReal] at hmap
+  have heq : exponentialMartingale θ B t =
+      fun ω ↦ exp (-(θ ^ 2 * t / 2)) * exp (θ * B t ω) := exponentialMartingale_eq_mul_exp θ t
+  rw [heq, ← hmap]
+  simp only [zero_mul, zero_add]
+  rw [← mul_assoc, ← exp_add]
+  have hexp : -(θ ^ 2 * (t : ℝ) / 2) + (t : ℝ) * θ ^ 2 / 2 = 0 := by ring
+  rw [hexp, exp_zero, one_mul, mul_comm (t : ℝ) θ]
+
+/-- At positive time `t`, integrating `exp (θ B_t - θ² t / 2)` over `{B_t ≤ a}` gives the standard
+Gaussian cumulative distribution value `Φ ((a - θ t) / √t)`. -/
+theorem setIntegral_exponentialMartingale_le (hB : IsPreBrownianReal B P) (θ a : ℝ) {t : ℝ≥0}
+    (ht : t ≠ 0) :
+    ∫ ω in {ω | B t ω ≤ a}, exponentialMartingale θ B t ω ∂P =
+      cdf (gaussianReal 0 1) ((a - θ * t) / √(t : ℝ)) := by
+  have hset : {ω | B t ω ≤ a} = B t ⁻¹' Set.Iic a := rfl
+  rw [hset, hB.setIntegral_exponentialMartingale_preimage θ t measurableSet_Iic,
+    ← cdf_eq_real, cdf_gaussianReal_eq_cdf_zero_one (θ * t) ht a]
+
+/-- At positive time `t`, integrating `exp (θ B_t - θ² t / 2)` over `{B_t < a}` gives
+`Φ ((a - θ t) / √t)`. -/
+theorem setIntegral_exponentialMartingale_lt (hB : IsPreBrownianReal B P) (θ a : ℝ) {t : ℝ≥0}
+    (ht : t ≠ 0) :
+    ∫ ω in {ω | B t ω < a}, exponentialMartingale θ B t ω ∂P =
+      cdf (gaussianReal 0 1) ((a - θ * t) / √(t : ℝ)) := by
+  have := nullSingletonClass_gaussianReal (μ := θ * t) ht
+  have hset : {ω | B t ω < a} = B t ⁻¹' Set.Iio a := rfl
+  rw [hset, hB.setIntegral_exponentialMartingale_preimage θ t measurableSet_Iio,
+    measureReal_congr Iio_ae_eq_Iic, ← cdf_eq_real,
+    cdf_gaussianReal_eq_cdf_zero_one (θ * t) ht a]
+
+/-- At positive time `t`, integrating `exp (θ B_t - θ² t / 2)` over `{a < B_t}` gives
+`Φ ((θ t - a) / √t)`. -/
+theorem setIntegral_exponentialMartingale_gt (hB : IsPreBrownianReal B P) (θ a : ℝ) {t : ℝ≥0}
+    (ht : t ≠ 0) :
+    ∫ ω in {ω | a < B t ω}, exponentialMartingale θ B t ω ∂P =
+      cdf (gaussianReal 0 1) ((θ * t - a) / √(t : ℝ)) := by
+  have hset : {ω | a < B t ω} = B t ⁻¹' Set.Ioi a := rfl
+  rw [hset, hB.setIntegral_exponentialMartingale_preimage θ t measurableSet_Ioi,
+    measureReal_Ioi_gaussianReal_eq_cdf (θ * t) ht a]
+
+/-- At positive time `t`, integrating `exp (θ B_t - θ² t / 2)` over `{a ≤ B_t}` gives
+`Φ ((θ t - a) / √t)`. -/
+theorem setIntegral_exponentialMartingale_ge (hB : IsPreBrownianReal B P) (θ a : ℝ) {t : ℝ≥0}
+    (ht : t ≠ 0) :
+    ∫ ω in {ω | a ≤ B t ω}, exponentialMartingale θ B t ω ∂P =
+      cdf (gaussianReal 0 1) ((θ * t - a) / √(t : ℝ)) := by
+  have := nullSingletonClass_gaussianReal (μ := θ * t) ht
+  have hset : {ω | a ≤ B t ω} = B t ⁻¹' Set.Ici a := rfl
+  rw [hset, hB.setIntegral_exponentialMartingale_preimage θ t measurableSet_Ici,
+    ← measureReal_congr Ioi_ae_eq_Ici,
+    measureReal_Ioi_gaussianReal_eq_cdf (θ * t) ht a]
+
+private theorem exp_mul_add_eq (θ x : ℝ) (t : ℝ≥0) (ω : Ω) :
+    exp (θ * (x + B t ω) - θ ^ 2 * t / 2) = exp (θ * x) * exponentialMartingale θ B t ω := by
+  rw [exponentialMartingale_def, ← exp_add]
+  ring_nf
+
+/-- For Brownian motion started at `x`, integrating `exp (θ (x + B_t) - θ² t / 2)` over
+`{x + B_t ≤ a}` at positive time `t` gives `exp (θ x) * Φ ((a - x - θ t) / √t)`. -/
+theorem setIntegral_exp_mul_add_le (hB : IsPreBrownianReal B P) (θ x a : ℝ) {t : ℝ≥0}
+    (ht : t ≠ 0) :
+    ∫ ω in {ω | x + B t ω ≤ a}, exp (θ * (x + B t ω) - θ ^ 2 * t / 2) ∂P =
+      exp (θ * x) * cdf (gaussianReal 0 1) ((a - x - θ * t) / √(t : ℝ)) := by
+  have hset : {ω | x + B t ω ≤ a} = {ω | B t ω ≤ a - x} := by
+    ext ω; simp only [Set.mem_ofPred_eq]; constructor <;> intro h <;> linarith
+  simp_rw [hset, exp_mul_add_eq, integral_const_mul,
+    hB.setIntegral_exponentialMartingale_le θ (a - x) ht]
+
+/-- For Brownian motion started at `x`, integrating `exp (θ (x + B_t) - θ² t / 2)` over
+`{x + B_t < a}` at positive time `t` gives `exp (θ x) * Φ ((a - x - θ t) / √t)`. -/
+theorem setIntegral_exp_mul_add_lt (hB : IsPreBrownianReal B P) (θ x a : ℝ) {t : ℝ≥0}
+    (ht : t ≠ 0) :
+    ∫ ω in {ω | x + B t ω < a}, exp (θ * (x + B t ω) - θ ^ 2 * t / 2) ∂P =
+      exp (θ * x) * cdf (gaussianReal 0 1) ((a - x - θ * t) / √(t : ℝ)) := by
+  have hset : {ω | x + B t ω < a} = {ω | B t ω < a - x} := by
+    ext ω; simp only [Set.mem_ofPred_eq]; constructor <;> intro h <;> linarith
+  simp_rw [hset, exp_mul_add_eq, integral_const_mul,
+    hB.setIntegral_exponentialMartingale_lt θ (a - x) ht]
+
+/-- For Brownian motion started at `x`, integrating `exp (θ (x + B_t) - θ² t / 2)` over
+`{a < x + B_t}` at positive time `t` gives `exp (θ x) * Φ ((x + θ t - a) / √t)`. -/
+theorem setIntegral_exp_mul_add_gt (hB : IsPreBrownianReal B P) (θ x a : ℝ) {t : ℝ≥0}
+    (ht : t ≠ 0) :
+    ∫ ω in {ω | a < x + B t ω}, exp (θ * (x + B t ω) - θ ^ 2 * t / 2) ∂P =
+      exp (θ * x) * cdf (gaussianReal 0 1) ((x + θ * t - a) / √(t : ℝ)) := by
+  have hset : {ω | a < x + B t ω} = {ω | a - x < B t ω} := by
+    ext ω; simp only [Set.mem_ofPred_eq]; constructor <;> intro h <;> linarith
+  have harg : θ * (t : ℝ) - (a - x) = x + θ * t - a := by ring
+  simp_rw [hset, exp_mul_add_eq, integral_const_mul,
+    hB.setIntegral_exponentialMartingale_gt θ (a - x) ht, harg]
+
+/-- For Brownian motion started at `x`, integrating `exp (θ (x + B_t) - θ² t / 2)` over
+`{a ≤ x + B_t}` at positive time `t` gives `exp (θ x) * Φ ((x + θ t - a) / √t)`. -/
+theorem setIntegral_exp_mul_add_ge (hB : IsPreBrownianReal B P) (θ x a : ℝ) {t : ℝ≥0}
+    (ht : t ≠ 0) :
+    ∫ ω in {ω | a ≤ x + B t ω}, exp (θ * (x + B t ω) - θ ^ 2 * t / 2) ∂P =
+      exp (θ * x) * cdf (gaussianReal 0 1) ((x + θ * t - a) / √(t : ℝ)) := by
+  have hset : {ω | a ≤ x + B t ω} = {ω | a - x ≤ B t ω} := by
+    ext ω; simp only [Set.mem_ofPred_eq]; constructor <;> intro h <;> linarith
+  have harg : θ * (t : ℝ) - (a - x) = x + θ * t - a := by ring
+  simp_rw [hset, exp_mul_add_eq, integral_const_mul,
+    hB.setIntegral_exponentialMartingale_ge θ (a - x) ht, harg]
 
 end ProbabilityTheory.IsPreBrownianReal
 

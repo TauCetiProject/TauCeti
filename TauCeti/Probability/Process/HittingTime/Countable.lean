@@ -177,4 +177,20 @@ theorem aemeasurable_hittingAfter_Ici {P : Measure Ω} (hX : ∀ t, Measurable (
   obtain ⟨τ, hτ, heq⟩ := exists_measurable_eq_hittingAfter_Ici hX c
   exact hτ.aemeasurable.congr (hc.mono fun ω hω ↦ heq ω hω)
 
+/-- Open-set entrance from time zero of an everywhere-continuous process with measurable
+evaluations is measurable on the ambient measurable space. -/
+theorem measurable_hittingAfter_of_isOpen {E : Type*} [TopologicalSpace E]
+    [MeasurableSpace E] [OpensMeasurableSpace E] {Y : ℝ≥0 → Ω → E}
+    (hY : ∀ t, Measurable (Y t)) (hc : ∀ ω, Continuous (Y · ω)) {U : Set E} (hU : IsOpen U) :
+    Measurable (hittingAfter Y U 0) := by
+  classical
+  let d : ℕ → ℝ≥0 := TopologicalSpace.denseSeq ℝ≥0
+  have heq : hittingAfter Y U 0 =
+      fun ω ↦ ⨅ k, if Y (d k) ω ∈ U then (d k : WithTop ℝ≥0) else ⊤ :=
+    funext fun ω ↦ (hc ω).hittingAfter_eq_iInf_of_isOpen hU
+      (TopologicalSpace.denseRange_denseSeq ℝ≥0)
+  rw [heq]
+  exact Measurable.iInf fun k ↦ measurable_const.ite (hU.measurableSet.preimage (hY _))
+    measurable_const
+
 end TauCeti.Probability
