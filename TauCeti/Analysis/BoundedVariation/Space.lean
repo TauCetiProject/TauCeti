@@ -194,6 +194,15 @@ theorem totalVariationOn_ofFunction (u : E → ℝ) (hu : MemBV μ Ω u) :
 theorem ofFunction_coeFn (u : BV μ Ω) : ofFunction u u.memBV = u :=
   ext (coeFn_ofFunction u u.memBV)
 
+/-- Two BV classes constructed from functions are equal exactly when the functions agree almost
+everywhere on `Ω`. -/
+theorem ofFunction_eq_ofFunction_iff {u v : E → ℝ} (hu : MemBV μ Ω u) (hv : MemBV μ Ω v) :
+    ofFunction u hu = ofFunction v hv ↔ u =ᵐ[μ.restrict Ω] v :=
+  ⟨fun h => (coeFn_ofFunction u hu).symm.trans
+      ((Filter.EventuallyEq.of_eq (congrArg (fun w : BV μ Ω => (w : E → ℝ)) h)).trans
+        (coeFn_ofFunction v hv)),
+    fun h => ext ((coeFn_ofFunction u hu).trans (h.trans (coeFn_ofFunction v hv).symm))⟩
+
 instance : Zero (BV μ Ω) := ⟨BV.mk 0⟩
 instance : Add (BV μ Ω) := ⟨fun u v => BV.mk (u.toSubmodule + v.toSubmodule)⟩
 instance : Neg (BV μ Ω) := ⟨fun u => BV.mk (-u.toSubmodule)⟩
@@ -289,6 +298,11 @@ theorem norm_toL1_le (u : BV μ Ω) : ‖u.toL1‖ ≤ ‖u‖ := by
   rw [norm_def]
   exact le_add_of_nonneg_right ENNReal.toReal_nonneg
 
+/-- The total variation of a BV class is bounded by its norm. -/
+theorem toReal_totalVariationOn_le_norm (u : BV μ Ω) : (totalVariationOn μ Ω u).toReal ≤ ‖u‖ := by
+  rw [norm_def]
+  exact le_add_of_nonneg_left (norm_nonneg _)
+
 /-- Forgetting finite variation gives a continuous linear inclusion into `L¹(Ω)`. -/
 def toL1CLM : BV μ Ω →L[ℝ] (E →₁[μ.restrict Ω] ℝ) :=
   ({ toFun := toL1, map_add' := toL1_add, map_smul' := toL1_smul } :
@@ -312,7 +326,7 @@ private theorem variation_sub_limit_le {u : ℕ → BV μ Ω} {v : E →₁[μ.r
   rw [← toL1_sub]
   have hC : 0 ≤ C := (norm_nonneg _).trans (hbound N le_rfl)
   apply (ENNReal.le_ofReal_iff_toReal_le (u n - u M).totalVariationOn_lt_top.ne hC).mpr
-  exact (le_add_of_nonneg_left (norm_nonneg (u n - u M).toL1)).trans (hbound n hn)
+  exact (u n - u M).toReal_totalVariationOn_le_norm.trans (hbound n hn)
 
 /-- The BV norm is complete: every Cauchy sequence for the sum of the `L¹` norm and total
 variation converges in that norm. -/
