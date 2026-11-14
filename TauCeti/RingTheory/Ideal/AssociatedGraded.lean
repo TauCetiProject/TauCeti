@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.Ideal.Maps
 public import TauCeti.RingTheory.Ideal.Operations
+public import TauCeti.RingTheory.MvPolynomial.Homogeneous
+import Mathlib.RingTheory.MvPolynomial.Tower
 
 /-!
 # The associated graded ring of an ideal
@@ -21,6 +23,10 @@ degree `m + n`. For a maximal ideal this is the ring of the tangent cone; for th
 a regular local ring it is a polynomial ring over the residue field, which is the standard route to
 the multiplicativity of the order function.
 
+For a generating family `aᵢ` of `I`, sending `Xᵢ` to the degree-one class of `aᵢ` gives a
+surjective `R ⧸ I`-algebra map from `(R ⧸ I)[Xᵢ]` to `gr_I R`. It sends the reduction of a
+homogeneous polynomial of degree `ν` to the degree-`ν` class of its value at `a`.
+
 ## Main definitions
 
 * `Ideal.GradedPiece I n`: the degree-`n` piece `I ^ n ⧸ I ^ (n + 1)`.
@@ -31,6 +37,8 @@ the multiplicativity of the order function.
 * `Ideal.gradedPieceZeroEquiv I`: the degree-zero piece is `R ⧸ I`.
 * `Ideal.AssociatedGraded.map f h`: the ring homomorphism `gr_I R →+* gr_J S` induced by a ring
   homomorphism `f : R →+* S` with `I ≤ J.comap f`.
+* `Ideal.AssociatedGraded.mvPolynomialHom`: the map `(R ⧸ I)[Xᵢ] → gr_I R` sending `Xᵢ` to
+  the degree-one class of `aᵢ ∈ I`.
 
 ## Main results
 
@@ -40,6 +48,9 @@ the multiplicativity of the order function.
 * `Ideal.AssociatedGraded.ker_algebraMap`: the kernel of `R → gr_I R` is `I`, so
   `R ⧸ I → gr_I R` is injective (`Ideal.AssociatedGraded.algebraMap_quotient_injective`).
 * `Ideal.AssociatedGraded.map_id` and `Ideal.AssociatedGraded.map_comp`: functoriality.
+* `Ideal.AssociatedGraded.mvPolynomialHom_map_of_isHomogeneous`: the image of a homogeneous
+  polynomial of degree `ν` is the degree-`ν` class of its value.
+* `Ideal.AssociatedGraded.mvPolynomialHom_surjective`: the map is onto when the `aᵢ` generate `I`.
 
 ## References
 
@@ -372,6 +383,15 @@ theorem mk_pow {n : ℕ} (x : ↥(I ^ n)) (k : ℕ) :
     rw [pow_succ, ih, mk_mul_mk, mk_congr (Nat.succ_mul k n).symm]
     simp only [pow_succ]
 
+/-- If the associated graded ring has no zero divisors, the product of elements of exact
+`I`-adic degrees `r` and `s` has exact degree `r + s`. -/
+theorem mul_notMem_pow_succ [NoZeroDivisors I.AssociatedGraded] {x y : R} {r s : ℕ}
+    (hx : x ∈ I ^ r) (hx' : x ∉ I ^ (r + 1)) (hy : y ∈ I ^ s)
+    (hy' : y ∉ I ^ (s + 1)) : x * y ∉ I ^ (r + s + 1) := by
+  have h := mul_ne_zero ((mk_eq_zero_iff ⟨x, hx⟩).not.mpr hx')
+    ((mk_eq_zero_iff ⟨y, hy⟩).not.mpr hy')
+  rwa [mk_mul_mk, Ne, mk_eq_zero_iff] at h
+
 /-- An element of `R` maps to zero in the associated graded ring exactly when it lies in `I`. -/
 @[simp]
 theorem algebraMap_eq_zero_iff (r : R) : algebraMap R I.AssociatedGraded r = 0 ↔ r ∈ I := by
@@ -511,5 +531,142 @@ theorem map_comp {T : Type w} [CommRing T] {K : Ideal T} (g : S →+* T) (f : R 
 end AssociatedGraded
 
 end map
+
+namespace AssociatedGraded
+
+open MvPolynomial
+
+variable (I : Ideal R) {σ : Type*} {a : σ → R}
+
+/-- The `R ⧸ I`-algebra map `(R ⧸ I)[Xᵢ] → gr_I R` sending `Xᵢ` to the degree-one class of
+`aᵢ ∈ I`. -/
+noncomputable def mvPolynomialHom (ha : ∀ i, a i ∈ I) :
+    MvPolynomial σ (R ⧸ I) →ₐ[R ⧸ I] I.AssociatedGraded :=
+  aeval fun i ↦ mk I 1 ⟨a i, by rw [pow_one]; exact ha i⟩
+
+/-- The polynomial presentation evaluates variables at their degree-one classes. -/
+theorem mvPolynomialHom_def (ha : ∀ i, a i ∈ I) :
+    mvPolynomialHom I ha = aeval (fun i ↦ mk I 1 ⟨a i, by rw [pow_one]; exact ha i⟩) :=
+  (rfl)
+
+/-- `mvPolynomialHom` sends `Xᵢ` to the degree-one class of `aᵢ`. -/
+@[simp]
+theorem mvPolynomialHom_X (ha : ∀ i, a i ∈ I) (i : σ) :
+    mvPolynomialHom I ha (X i) = mk I 1 ⟨a i, by rw [pow_one]; exact ha i⟩ :=
+  aeval_X _ _
+
+variable {I}
+
+/-- Over `R`, a homogeneous polynomial of degree one is sent to the degree-one class of its
+value. -/
+private theorem aeval_mk_of_mem_homogeneousSubmodule_one (ha : ∀ i, a i ∈ I)
+    {F : MvPolynomial σ R} (hF : F ∈ homogeneousSubmodule σ R 1) (h : F.eval a ∈ I ^ 1) :
+    aeval (fun i ↦ mk I 1 ⟨a i, by rw [pow_one]; exact ha i⟩) F = mk I 1 ⟨F.eval a, h⟩ := by
+  have hmem (x : MvPolynomial σ R) (hx : x ∈ Submodule.span R (Set.range X)) : x.eval a ∈ I ^ 1 :=
+    IsHomogeneous.eval_mem_pow ha (by rwa [← homogeneousSubmodule_one_eq_span_X] at hx)
+  rw [homogeneousSubmodule_one_eq_span_X] at hF
+  induction hF using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨i, rfl⟩ := hx
+    simp
+  | zero => rw [map_zero, eq_comm, mk_eq_zero_iff]; simp
+  | add x y hx' hy' hx hy =>
+    rw [map_add, hx (hmem x hx'), hy (hmem y hy'), ← map_add]
+    congr 1
+    exact Subtype.ext (by simp)
+  | smul r x hx' hx =>
+    rw [map_smul, hx (hmem x hx'), ← map_smul]
+    congr 1
+    exact Subtype.ext (by simp)
+
+/-- `mvPolynomialHom` sends the reduction of a homogeneous polynomial `F` of degree `ν` to the
+degree-`ν` class of `F(a)`. -/
+theorem mvPolynomialHom_map_of_isHomogeneous (ha : ∀ i, a i ∈ I) {ν : ℕ}
+    {F : MvPolynomial σ R} (hF : F.IsHomogeneous ν) :
+    mvPolynomialHom I ha (F.map (Ideal.Quotient.mk I)) = mk I ν ⟨F.eval a, hF.eval_mem_pow ha⟩ := by
+  rw [mvPolynomialHom, ← Ideal.Quotient.algebraMap_eq, aeval_map_algebraMap]
+  generalize hF.eval_mem_pow ha = h
+  have hmem (x : MvPolynomial σ R) (i : ℕ) (hx : x ∈ homogeneousSubmodule σ R 1 ^ i) :
+      x.eval a ∈ I ^ i :=
+    IsHomogeneous.eval_mem_pow ha (by rwa [homogeneousSubmodule_one_pow] at hx)
+  have hF' : F ∈ homogeneousSubmodule σ R 1 ^ ν := by
+    rw [homogeneousSubmodule_one_pow]
+    exact hF
+  clear hF
+  induction hF' using Submodule.pow_induction_on_left' with
+  | algebraMap r => simp
+  | add x y i hx' hy' hx hy =>
+    rw [map_add, hx (hmem x i hx'), hy (hmem y i hy'), ← map_add]
+    congr 1
+    exact Subtype.ext (by simp)
+  | mem_mul m hm i x hx' hx =>
+    rw [map_mul, aeval_mk_of_mem_homogeneousSubmodule_one ha hm (hmem m 1 (by rwa [pow_one])),
+      hx (hmem x i hx'), mk_mul_mk, mk_congr (Nat.add_comm 1 i)]
+    congr 1
+    exact Subtype.ext (by simp)
+
+/-- The polynomial presentation preserves each homogeneous component over `R ⧸ I`. -/
+theorem mvPolynomialHom_homogeneousComponent (ha : ∀ i, a i ∈ I)
+    (ν : ℕ) (P : MvPolynomial σ (R ⧸ I)) :
+    mvPolynomialHom I ha (homogeneousComponent ν P) =
+      DirectSum.of I.GradedPiece ν (mvPolynomialHom I ha P ν) := by
+  obtain ⟨F, rfl⟩ := MvPolynomial.map_surjective _ Ideal.Quotient.mk_surjective P
+  rw [← map_homogeneousComponent,
+    mvPolynomialHom_map_of_isHomogeneous ha (homogeneousComponent_isHomogeneous _ _), mk_apply]
+  conv_rhs => rw [← sum_homogeneousComponent F]
+  rw [map_sum, map_sum, DirectSum.sum_apply]
+  congr 1
+  rw [Finset.sum_eq_single ν]
+  · rw [mvPolynomialHom_map_of_isHomogeneous ha (homogeneousComponent_isHomogeneous _ _),
+      mk_apply, DirectSum.of_eq_same]
+  · intro μ _ hμ
+    rw [mvPolynomialHom_map_of_isHomogeneous ha (homogeneousComponent_isHomogeneous _ _),
+      mk_apply, DirectSum.of_eq_of_ne _ _ _ (Ne.symm hμ)]
+  · intro hν
+    rw [homogeneousComponent_eq_zero ν F (by simp only [Finset.mem_range] at hν; omega)]
+    simp
+
+/-- A homogeneous polynomial maps into the summand of the same degree. -/
+theorem mvPolynomialHom_of_isHomogeneous (ha : ∀ i, a i ∈ I) {ν : ℕ}
+    {P : MvPolynomial σ (R ⧸ I)} (hP : P.IsHomogeneous ν) :
+    mvPolynomialHom I ha P = DirectSum.of I.GradedPiece ν (mvPolynomialHom I ha P ν) := by
+  simpa [homogeneousComponent_eq_self hP] using mvPolynomialHom_homogeneousComponent ha ν P
+
+/-- The polynomial presentation commutes with the map induced by a ring homomorphism. -/
+theorem map_mvPolynomialHom {S : Type*} [CommRing S] {J : Ideal S} (f : R →+* S)
+    (h : I ≤ J.comap f) (ha : ∀ i, a i ∈ I) (P : MvPolynomial σ (R ⧸ I)) :
+    map f h (mvPolynomialHom I ha P) =
+      mvPolynomialHom J (a := f ∘ a) (fun i ↦ Ideal.mem_comap.mp (h (ha i)))
+        (P.map (Ideal.quotientMap J f h)) := by
+  suffices (map f h).comp (mvPolynomialHom I ha).toRingHom =
+      (mvPolynomialHom J (a := f ∘ a) (fun i ↦ Ideal.mem_comap.mp (h (ha i)))).toRingHom.comp
+        (MvPolynomial.map (Ideal.quotientMap J f h)) from DFunLike.congr_fun this P
+  apply MvPolynomial.ringHom_ext
+  · intro q
+    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective q
+    simp [mvPolynomialHom_def]
+  · intro i
+    simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, map_X,
+      mvPolynomialHom_X, map_mk, Function.comp_apply]
+
+/-- If the `aᵢ` generate `I`, then `mvPolynomialHom` is surjective: `gr_I R` is generated by the
+degree-one classes of the `aᵢ` over its degree-zero part `R ⧸ I`. -/
+theorem mvPolynomialHom_surjective (ha : ∀ i, a i ∈ I) (hI : I ≤ span (Set.range a)) :
+    Function.Surjective (mvPolynomialHom I ha) := by
+  intro g
+  induction g using DirectSum.induction_on with
+  | zero => exact ⟨0, map_zero _⟩
+  | of ν q =>
+    obtain ⟨⟨y, hy⟩, rfl⟩ := Submodule.Quotient.mk_surjective _ q
+    obtain ⟨F, hF, rfl⟩ :=
+      (mem_span_pow_iff_exists_isHomogeneous a y).mp (pow_right_mono hI ν hy)
+    exact ⟨F.map (Ideal.Quotient.mk I),
+      (mvPolynomialHom_map_of_isHomogeneous ha hF).trans (mk_apply ν _)⟩
+  | add g g' hg hg' =>
+    obtain ⟨F, rfl⟩ := hg
+    obtain ⟨F', rfl⟩ := hg'
+    exact ⟨F + F', map_add _ _ _⟩
+
+end AssociatedGraded
 
 end Ideal
