@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.ReflectionBond
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.ParabolicQuotient
 
+import TauCeti.LinearAlgebra.RootSystem.Reduced
+
 /-!
 # Bonds of covers in the parabolic quotient `W / W_λ`
 
@@ -101,18 +103,17 @@ theorem reflectionBond_smul_add [IsDomain R] [P.IsReduced]
 /-! ### Bonds of covers -/
 
 variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
-
-section
-
-variable [P.flip.IsReduced] {lam : M}
+  {lam : M}
 
 /-- The two orbit weights of a cover `y ⋖ x` of `W / W_λ` are distinct: distinct minimal coset
 representatives move `λ` to distinct points. -/
 theorem smul_ne_smul_of_minimalCosetRepCovBy (hlam : lam ∈ dominantChamber P b)
     {x y : P.weylGroup}
     (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) :
-    y • lam ≠ x • lam := fun heq ↦ h.ne <|
-  eq_of_isMinimalCosetRep_of_smul_eq hlam h.isMinimalCosetRep_left h.isMinimalCosetRep_right heq
+    y • lam ≠ x • lam := by
+  have := P.flip_isReduced
+  exact fun heq ↦ h.ne <|
+    eq_of_isMinimalCosetRep_of_smul_eq hlam h.isMinimalCosetRep_left h.isMinimalCosetRep_right heq
 
 /-- **A cover of `W / W_λ` has a unique positive root label.** If `y` is covered by `x` in the
 Bruhat order of the minimal coset representatives of the stabilizer of the dominant weight `λ`,
@@ -121,6 +122,7 @@ theorem existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy
     (hlam : lam ∈ dominantChamber P b) {x y : P.weylGroup}
     (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) :
     ∃! β, b.IsPos β ∧ P.reflection β (x • lam) = y • lam := by
+  have := P.flip_isReduced
   have hne := smul_ne_smul_of_minimalCosetRepCovBy hlam h
   -- The reflection of the cover is the reflection in the root `j = w αᵢ`.
   obtain ⟨t, ⟨w, i, rfl⟩, -, hmem⟩ := h.exists_isReflection
@@ -146,6 +148,7 @@ theorem reflectionBond_pos (hlam : lam ∈ dominantChamber P b) {x y : P.weylGro
     (hyx : (weylCoxeterSystem P b).BruhatLE y x) (hne : y ≠ x) {β : ι} (hβ : b.IsPos β)
     (h : P.reflection β (x • lam) = y • lam) :
     0 < P.reflectionBond b (x • lam) (y • lam) := by
+  have := P.flip_isReduced
   have hne' : y • lam ≠ x • lam := fun heq ↦ hne (eq_of_isMinimalCosetRep_of_smul_eq hlam hy hx heq)
   rw [reflectionBond_eq_neg_coroot' hβ h hne', neg_pos]
   refine (bruhatLE_and_ne_iff_coroot'_neg_of_isMinimalCosetRep hlam hx hy ?_ hβ).mp ⟨hyx, hne⟩
@@ -178,12 +181,6 @@ theorem exists_nat_reflectionBond_eq_of_minimalCosetRepCovBy (hlam : lam ∈ dom
   rw [reflectionBond_eq_coroot' hβ hβx hne, hz] at hpos ⊢
   have hz0 : 0 < z := Int.cast_pos.mp hpos
   exact ⟨z.toNat, by omega, by rw [← Int.cast_natCast, Int.toNat_of_nonneg hz0.le]⟩
-
-end
-
-section
-
-variable {lam : M}
 
 /-- **A simple reflection off the walls through `λ` covers the identity in `W / W_λ`**: if
 `⟨λ, αᵢ^∨⟩ ≠ 0`, then `1 ⋖ sᵢ`. -/
@@ -231,10 +228,6 @@ theorem reflectionBond_simple_mul_smul_smul (i : b.support) (u : P.weylGroup) :
       P.coroot' i (u • lam) := by
   simpa only [mul_smul, one_smul] using reflectionBond_simple_smul_one_smul (lam := u • lam) i
 
-end
-
-variable [P.flip.IsReduced] {lam : M}
-
 /-- **A simple reflection preserves the bond of a cover it does not reverse.** If `y ⋖ x` in
 `W / W_λ` and `y λ ≠ (sᵢ x) λ`, then the bond of `(sᵢ x) λ` and `(sᵢ y) λ` is the bond
 `b_λ(x, y)`. -/
@@ -267,7 +260,7 @@ end
 /-! ### Covers of a root datum -/
 
 variable [AddCommGroup M] [AddCommGroup N] {P : _root_.RootPairing ι ℤ M N} {b : P.Base}
-  [Finite ι] [P.IsReduced] [P.flip.IsReduced] {lam : M} {a : ℚ}
+  [Finite ι] [P.IsReduced] {lam : M} {a : ℚ}
 
 /-- **A cover with `a`-integral bond changes integral pairings by `a`-integral amounts.** If `y ⋖ x`
 is a cover

@@ -8,6 +8,8 @@ module
 public import TauCeti.GroupTheory.Coxeter.ChainProperty
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.ChainBond
 
+import TauCeti.LinearAlgebra.RootSystem.Reduced
+
 /-!
 # Reflecting saturated chains of `W / W_λ` in a simple root
 
@@ -147,11 +149,11 @@ end _root_.CoxeterSystem.MinimalCosetRepChain
 section RootDatum
 
 variable [AddCommGroup M] [AddCommGroup N] {P : _root_.RootPairing ι ℤ M N} {b : P.Base}
-  [Finite ι] [P.IsReduced]
+  [Finite ι] [P.IsReduced] {lam : M} {a : ℚ}
 
 namespace _root_.CoxeterSystem.MinimalCosetRepChain
 
-variable [P.flip.IsReduced] {lam : M} {a : ℚ} {hlam : lam ∈ dominantChamber P b}
+variable {hlam : lam ∈ dominantChamber P b}
   {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} {i : b.support}
   {hC : (∀ k, 0 < P.coroot' i ((C k).1 • lam)) ∨ ∀ k, P.coroot' i ((C k).1 • lam) < 0}
 
@@ -188,7 +190,6 @@ theorem isAChain_simpleMul_iff :
 
 end _root_.CoxeterSystem.MinimalCosetRepChain
 
-variable {lam : M} {a : ℚ} in
 /-- **The cover `u ⋖ sᵢ u` is an `a`-chain when `a ⟨u λ, αᵢ^∨⟩` is an integer.** For a minimal coset
 representative `u` of `W / W_λ` with `⟨u λ, αᵢ^∨⟩ > 0`, the saturated chain `sᵢ u ⋗ u` has the
 single bond `⟨u λ, αᵢ^∨⟩`. -/
@@ -203,8 +204,6 @@ theorem exists_isAChain_simple_mul_of_coroot'_pos (hlam : lam ∈ dominantChambe
     (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)).snoc ⟨u, hu⟩ h,
     by simp, by simp, (isAChain_snoc_iff h).mpr ⟨isAChain_singleton _, ?_⟩⟩
   rwa [RelSeries.last_singleton, reflectionBond_simple_mul_smul_smul]
-
-variable [P.flip.IsReduced] {lam : M} {a : ℚ}
 
 /-- **Integrality where an `a`-chain enters the positive side of a simple wall.** Let
 `C : x₀ ⋗ ⋯ ⋗ x_l` be an `a`-chain of `W / W_λ` and `αᵢ` a simple root with
@@ -264,6 +263,7 @@ theorem IsAChain.exists_isAChain_simple_mul_last (hlam : lam ∈ dominantChamber
     ∃ D : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
       D.head = C.head ∧ D.last.1 = (weylCoxeterSystem P b).simple i * C.last.1 ∧
         IsAChain a lam D := by
+  have := P.flip_isReduced
   -- The least `k` from which on the chain stays on the positive side.
   have hex : ∃ k, ∀ j (hj : j ≤ C.length), k ≤ j →
       0 < P.coroot' i ((C ⟨j, Nat.lt_succ_of_le hj⟩).1 • lam) :=
@@ -315,6 +315,7 @@ theorem IsAChain.exists_isAChain_simple_mul_head (hlam : lam ∈ dominantChamber
     ∃ D : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
       D.head.1 = (weylCoxeterSystem P b).simple i * C.head.1 ∧ D.last = C.last ∧
         IsAChain a lam D := by
+  have := P.flip_isReduced
   -- The first index `k + 1` at which the pairing is nonnegative.
   have hex : ∃ k, ∃ hk : k ≤ C.length,
       0 ≤ P.coroot' i ((C ⟨k, Nat.lt_succ_of_le hk⟩).1 • lam) := ⟨C.length, le_rfl, hlast⟩

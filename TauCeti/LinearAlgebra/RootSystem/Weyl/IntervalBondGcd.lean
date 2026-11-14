@@ -79,11 +79,7 @@ namespace TauCeti
 open RootPairing
 
 variable {ι : Type u} {M : Type w} {N : Type x} [AddCommGroup M] [AddCommGroup N]
-  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced]
-
-section
-
-variable [P.flip.IsReduced] {lam : M}
+  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] {lam : M}
 
 /-! ### Chain independence of the bond gcd -/
 
@@ -307,12 +303,6 @@ theorem bondGcd_eq_intervalBondGcd (hlam : lam ∈ dominantChamber P b)
   exact bondGcd_eq_of_head_eq_of_last_eq hlam (Subtype.ext h.choose_spec.1.symm)
     (Subtype.ext h.choose_spec.2.symm)
 
-end
-
-section
-
-variable {lam : M}
-
 /-- The interval bond gcd `d_λ(x, x)` vanishes. -/
 @[simp]
 theorem intervalBondGcd_self (x : P.weylGroup) : intervalBondGcd b lam x x = 0 := by
@@ -355,10 +345,6 @@ theorem intervalBondGcd_eq_zero_of_not_isMinimalCosetRep_right {x y : P.weylGrou
   · obtain ⟨C, -, rfl⟩ := hC
     exact (hy C.last.2).elim
   · rfl
-
-end
-
-variable [P.flip.IsReduced] {lam : M}
 
 /-- For minimal coset representatives `y ≤ x`, the interval bond gcd `d_λ(x, y)` vanishes exactly
 when `x = y`: the bonds of covers are positive. -/

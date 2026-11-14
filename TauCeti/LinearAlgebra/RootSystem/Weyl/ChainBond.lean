@@ -337,7 +337,6 @@ theorem bondGcd_snoc_singleton_simple_one {i : b.support} (hi : P.coroot' i lam 
   rw [bondGcd_singleton, Nat.gcd_zero_left, RelSeries.last_singleton,
     reflectionBond_simple_smul_one_smul i]
 
-variable [P.flip.IsReduced] in
 /-- **The `a`-chain condition in Littelmann's form.** A saturated chain `x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` of
 `W / W_λ` is an `a`-chain exactly when `a ⟨x_{h-1} λ, β^∨⟩` is an integer for every cover
 `x_h ⋖ x_{h-1}` and every positive root `β` with `x_h λ = s_β (x_{h-1} λ)`. Such a root exists and
@@ -370,7 +369,6 @@ theorem bondGcd_eq_zero_of_length_eq_zero
     bondGcd lam C = 0 :=
   Finset.gcd_eq_zero_iff.mpr fun i _ ↦ (Fin.cast h i).elim0
 
-variable [P.flip.IsReduced] in
 /-- The bond gcd of a saturated chain of `W / W_λ` vanishes exactly when the chain has length `0`:
 the bonds of covers are positive. -/
 theorem bondGcd_eq_zero_iff (hlam : lam ∈ dominantChamber P b)
@@ -391,7 +389,6 @@ the weight by its bond times a root. -/
 theorem bondGcd_dvd_sub (hlam : lam ∈ dominantChamber P b)
     (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam))
     (f : Module.Dual ℤ M) : (bondGcd lam C : ℤ) ∣ f (C.head.1 • lam) - f (C.last.1 • lam) := by
-  have := P.flip_isReduced
   induction C using RelSeries.inductionOn with
   | singleton y => simp
   | cons C x hx ih =>
@@ -426,7 +423,6 @@ theorem IsAChain.exists_mem_rootSpan_smul_sub_eq
     (hC : IsAChain a lam C) {𝕜 V : Type*} [Field 𝕜] [CharZero 𝕜]
     [AddCommGroup V] [Module 𝕜 V] (f : M →+ V) :
     ∃ m ∈ P.rootSpan ℤ, (a : 𝕜) • (f (C.head.1 • lam) - f (C.last.1 • lam)) = f m := by
-  have := P.flip_isReduced
   induction C using RelSeries.inductionOn' with
   | singleton y => exact ⟨0, Submodule.zero_mem _, by simp⟩
   | snoc C y hy ih =>
@@ -460,7 +456,6 @@ theorem IsAChain.exists_mem_rootSpan_smul_sub_eq
       _ = f m + f ((-z) • P.root β) := by rw [heq, hedge]
       _ = f (m + (-z) • P.root β) := (map_add f _ _).symm
 
-variable [P.flip.IsReduced] in
 /-- **Littelmann's integrality at a simple wall.** Let `C : x₀ ⋗ ⋯ ⋗ x_l` be an `a`-chain of
 `W / W_λ` and `αᵢ` a simple root with `⟨x₀ λ, αᵢ^∨⟩ < 0 ≤ ⟨x_l λ, αᵢ^∨⟩`. Then `a ⟨x₀ λ, αᵢ^∨⟩`
 is an integer. At the first cover `x_h ⋖ x_{h-1}` crossing the wall, the root label is `αᵢ`
@@ -471,6 +466,7 @@ theorem IsAChain.exists_mul_coroot'_eq_intCast (hlam : lam ∈ dominantChamber P
     (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.1 • lam) < 0)
     (hlast : 0 ≤ P.coroot' i (C.last.1 • lam)) :
     ∃ z : ℤ, a * P.coroot' i (C.head.1 • lam) = z := by
+  have := P.flip_isReduced
   -- The first index `h` at which the pairing is nonnegative.
   have hex : ∃ k, ∃ hk : k ≤ C.length,
       0 ≤ P.coroot' i ((C ⟨k, Nat.lt_succ_of_le hk⟩).1 • lam) := ⟨C.length, le_rfl, hlast⟩
@@ -529,7 +525,6 @@ theorem exists_sum_sub_mul_eq_intCast_of_isAChain (hlam : lam ∈ dominantChambe
     push_cast
     ring
 
-variable [P.flip.IsReduced] in
 /-- **Littelmann's integrality of Lakshmibai–Seshadri paths at local minima.** With the chains of
 `TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain`, let `αᵢ` be a simple root such that the
 height `⟨-, αᵢ^∨⟩` stops decreasing at the break `t_{j+1}`: `⟨τ_j λ, αᵢ^∨⟩ < 0 ≤
@@ -565,8 +560,6 @@ theorem exists_sum_eq_intCast_of_isAChain (hlam : lam ∈ dominantChamber P b)
     exists_sum_sub_mul_eq_intCast_of_isAChain hlam ht hchain f (Nat.lt_succ_self n)
   obtain ⟨z₂, hz₂⟩ := hs
   exact ⟨z₁ + z₂ * f (τ n • lam), by rw [hz₂] at hz₁; push_cast; linear_combination hz₁⟩
-
-variable [P.flip.IsReduced]
 
 /-- **Least heights of a Lakshmibai–Seshadri path on a final piece.** With the chains of
 `TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain`, suppose the times increase strictly,
