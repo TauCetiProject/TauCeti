@@ -27,11 +27,12 @@ line `s = 0`, so that they glue smoothly. A smooth based cap has a raw cap
 `IsSmoothBasedCap.rawCap`, the class of the path `s ↦ u (s, ·)` in the loop space.
 
 * **Two smooth caps differ by the sphere they bound.** For two smooth based caps `u` and `u'` of
-  `γ`, the integral of `φ` over the sphere `u'.rawCap -ᵥ u.rawCap` is
-  `∫ u'^* φ - ∫ u^* φ`, the integrals being over the unit square
-  (`TauCeti.Floer.IsSmoothBasedCap.sphereIntegral_rawCap_vsub_rawCap`). The sphere is represented
-  by the concatenation of `u` run backwards and `u'`, which is smooth after the reparametrization
-  of `TauCeti.rectangleTrans`; its integral is computed by
+  `γ`, the sphere `u'.rawCap -ᵥ u.rawCap` is represented by the concatenation of `u` run
+  backwards and `u'` (`TauCeti.Floer.IsSmoothBasedCap.rawCap_vsub_rawCap_toMul`), which is smooth
+  after the reparametrization of `TauCeti.rectangleTrans`
+  (`TauCeti.Floer.IsSmoothBasedCap.contMDiff_rectangleTrans`). So the integral of `φ` over this
+  sphere is `∫ u'^* φ - ∫ u^* φ`, the integrals being over the unit square
+  (`TauCeti.Floer.IsSmoothBasedCap.sphereIntegral_rawCap_vsub_rawCap`), by
   `TauCeti.sphereIntegral_mk_of_contMDiff`.
 * **The area of a raw cap.** If `γ` has a smooth based cap `u₀` (witnessing `h`), the area of a
   raw cap `D` is `RawCap.area φ h D = ∫ u₀^* φ + ∫_{D -ᵥ u₀.rawCap} φ`. The area is only defined
@@ -58,6 +59,8 @@ oriented from `γ` to its centre, as for `TauCeti.capArea`; the capped action
 
 ## Main results
 
+* `TauCeti.Floer.IsSmoothBasedCap.rawCap_vsub_rawCap_toMul`: two smooth based caps differ by the
+  sphere represented by their concatenation.
 * `TauCeti.Floer.IsSmoothBasedCap.sphereIntegral_rawCap_vsub_rawCap`: two smooth based caps differ
   by a sphere whose integral is the difference of their integrals.
 * `TauCeti.Floer.RawCap.area_rawCap`: the area of the raw cap of a smooth based cap is its
@@ -242,22 +245,37 @@ private theorem trans_reparam_apply (hu : IsSmoothBasedCap I γ u)
       have hz : Real.smoothTransition (3 * (s : ℝ) - 2) = 0 := by linarith
       simp only [Path.symm_apply, Function.comp_apply, toPath_apply, unitInterval.coe_symm_eq,
         coe_concatReparamI, concatReparam_of_lt hs, hz]
-      norm_num
-      exact hu.apply_zero_eq_apply_zero hu' t
+      norm_num [hu.apply_zero_eq_apply_zero hu' t]
     · -- Second half: `u'`.
       simp only [toPath_apply, coe_concatReparamI, concatReparam_of_lt hs]
       congr 2
       ring
 
-/-- **Two smooth caps differ by the sphere they bound.** For smooth based caps `u` and `u'` of the
-same loop, the integral of a closed `C¹` two-form over the sphere by which their raw caps differ
-is the difference of their integrals over the unit square. -/
-theorem sphereIntegral_rawCap_vsub_rawCap [FiniteDimensional ℝ E] [I.Boundaryless]
-    [IsManifold I ∞ M] [CompactSpace M] [T2Space M] {φ : RoughForm I M F 2}
-    (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) (hu : IsSmoothBasedCap I γ u)
-    (hu' : IsSmoothBasedCap I γ u') :
-    sphereIntegral φ x (hu'.rawCap -ᵥ hu.rawCap).toMul =
-      rectangleIntegral φ u' (0, 0) (1, 1) - rectangleIntegral φ u (0, 0) (1, 1) := by
+/-- The generalized loop of the reparametrized double loop of two smooth based caps restricts their
+concatenation `rectangleTrans` to the unit square. -/
+private theorem fromDoubleLoop_trans_reparam_apply (hu : IsSmoothBasedCap I γ u)
+    (hu' : IsSmoothBasedCap I γ u') (y : Fin 2 → unitInterval) :
+    GenLoop.fromDoubleLoop ((hu.toPath.symm.trans hu'.toPath).reparam concatReparamI
+        continuous_concatReparamI concatReparamI_zero concatReparamI_one) y =
+      rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u' ((y 0 : ℝ), (y 1 : ℝ)) := by
+  rw [GenLoop.fromDoubleLoop_apply, trans_reparam_apply hu hu']
+
+/-- The concatenation `rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u'` of two smooth based
+caps `u` and `u'` of the same loop, `u` run backwards followed by `u'`, is smooth. -/
+theorem contMDiff_rectangleTrans (hu : IsSmoothBasedCap I γ u) (hu' : IsSmoothBasedCap I γ u') :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ (rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u') :=
+  _root_.TauCeti.contMDiff_rectangleTrans (n := ⊤)
+    (hu.contMDiff.comp ((contDiff_const.sub contDiff_id).prodMap contDiff_id).contMDiff)
+    hu'.contMDiff fun t ↦ by simpa using hu.apply_zero_eq_apply_zero hu' t
+
+/-- **The sphere bounded by two smooth caps.** For smooth based caps `u` and `u'` of the same loop,
+the sphere by which their raw caps differ is the class of any generalized loop restricting their
+concatenation `rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u'`, `u` run backwards followed
+by `u'`, to the unit square. This concatenation is smooth (`contMDiff_rectangleTrans`). -/
+theorem rawCap_vsub_rawCap_toMul (hu : IsSmoothBasedCap I γ u) (hu' : IsSmoothBasedCap I γ u')
+    {p : Ω^ (Fin 2) M x}
+    (hp : ∀ y, p y = rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u' ((y 0 : ℝ), (y 1 : ℝ))) :
+    (hu'.rawCap -ᵥ hu.rawCap).toMul = ⟦p⟧ := by
   set β := hu.toPath.symm.trans hu'.toPath
   -- The sphere is the class of the double loop `β`: `u` run backwards, then `u'`.
   have hβ : hu'.rawCap -ᵥ hu.rawCap =
@@ -272,14 +290,22 @@ theorem sphereIntegral_rawCap_vsub_rawCap [FiniteDimensional ℝ E] [I.Boundaryl
       (β.reparam concatReparamI continuous_concatReparamI concatReparamI_zero
         concatReparamI_one) :=
     Quotient.sound ⟨Path.Homotopy.reparam β _ _ _ _⟩
-  have hsmooth : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞
-      (rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u') :=
-    contMDiff_rectangleTrans (n := ⊤)
-      (hu.contMDiff.comp ((contDiff_const.sub contDiff_id).prodMap contDiff_id).contMDiff)
-      hu'.contMDiff fun t ↦ by simpa using hu.apply_zero_eq_apply_zero hu' t
-  rw [hβ, toMul_ofMul, hrep, fundamentalGroupLoopSpaceMulEquiv_fromPath_mk,
-    sphereIntegral_mk_of_contMDiff hφ hdφ hsmooth fun y ↦ by
-      rw [GenLoop.fromDoubleLoop_apply, trans_reparam_apply hu hu'],
+  rw [hβ, toMul_ofMul, hrep, fundamentalGroupLoopSpaceMulEquiv_fromPath_mk]
+  exact congrArg _ <| GenLoop.ext _ _ fun y ↦
+    (fromDoubleLoop_trans_reparam_apply hu hu' y).trans (hp y).symm
+
+/-- **Two smooth caps differ by the sphere they bound.** For smooth based caps `u` and `u'` of the
+same loop, the integral of a closed `C¹` two-form over the sphere by which their raw caps differ
+is the difference of their integrals over the unit square. -/
+theorem sphereIntegral_rawCap_vsub_rawCap [FiniteDimensional ℝ E] [I.Boundaryless]
+    [IsManifold I ∞ M] [CompactSpace M] [T2Space M] {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) (hu : IsSmoothBasedCap I γ u)
+    (hu' : IsSmoothBasedCap I γ u') :
+    sphereIntegral φ x (hu'.rawCap -ᵥ hu.rawCap).toMul =
+      rectangleIntegral φ u' (0, 0) (1, 1) - rectangleIntegral φ u (0, 0) (1, 1) := by
+  rw [hu.rawCap_vsub_rawCap_toMul hu' (fromDoubleLoop_trans_reparam_apply hu hu'),
+    sphereIntegral_mk_of_contMDiff hφ hdφ (hu.contMDiff_rectangleTrans hu')
+      (fromDoubleLoop_trans_reparam_apply hu hu'),
     rectangleIntegral_rectangleTrans_comp_prodMap_one_sub (hφ.of_le (by simp))
       (hu.contMDiff.of_le (by simp)) (hu'.contMDiff.of_le (by simp))
       (hu.apply_zero_eq_apply_zero hu')]
