@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Norm.Basic
 public import Mathlib.RingTheory.TensorProduct.Quotient
-import Mathlib.LinearAlgebra.Charpoly.BaseChange
+import TauCeti.RingTheory.NormTrace.BaseChange
 
 /-!
 # The norm modulo an ideal
@@ -37,21 +37,10 @@ norm of `x`. -/
 theorem Algebra.norm_quotient_mk (I : Ideal R) (x : S) :
     Algebra.norm (R ⧸ I) (Ideal.Quotient.mk (I.map (algebraMap R S)) x) =
       Ideal.Quotient.mk I (Algebra.norm R x) := by
-  by_cases hfin : Module.Finite R S
-  · -- `S ⧸ IS` is the base change `(R ⧸ I) ⊗[R] S`, on which multiplication by `1 ⊗ x` is the
-    -- base change of multiplication by `x`; the determinant commutes with base change.
-    rw [← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.quotIdealMapEquivQuotTensor S I),
-      Algebra.TensorProduct.quotIdealMapEquivQuotTensor_mk, Algebra.norm_apply, Algebra.norm_apply,
-      ← Ideal.Quotient.algebraMap_eq, ← LinearMap.det_baseChange, Algebra.baseChange_lmul]
-  · -- If `S` is not finite, both norms are `1`, since the base change of an infinite basis stays
-    -- infinite.
-    rw [Algebra.norm_eq_one_of_not_module_finite hfin, map_one]
-    rcases subsingleton_or_nontrivial (R ⧸ I) with h | h
-    · exact Subsingleton.elim _ _
-    rw [← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.quotIdealMapEquivQuotTensor S I)]
-    refine Algebra.norm_eq_one_of_not_module_finite (fun hf ↦ hfin ?_) _
-    have := Module.Finite.finite_basis
-      ((Module.Free.chooseBasis R S).baseChange (R ⧸ I))
-    exact Module.Finite.of_basis (Module.Free.chooseBasis R S)
+  -- `S ⧸ IS` is the base change `(R ⧸ I) ⊗[R] S`, and the norm of `1 ⊗ x` is the image of the norm
+  -- of `x`.
+  rw [← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.quotIdealMapEquivQuotTensor S I),
+    Algebra.TensorProduct.quotIdealMapEquivQuotTensor_mk, Algebra.norm_baseChange_tmul,
+    Ideal.Quotient.algebraMap_eq]
 
 end TauCeti
