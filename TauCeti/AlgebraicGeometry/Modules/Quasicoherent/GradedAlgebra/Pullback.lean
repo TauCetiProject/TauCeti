@@ -279,6 +279,17 @@ theorem pullback_obj_one (A : GradedQuasicoherentAlgebra X) :
   (one_pullbackObj f A).trans
     ((congrArg (· ≫ _) (pullbackOne_def f A)).trans (Category.assoc _ _ _))
 
+/-- If the unit `𝒪_X ⟶ A₀` of `A` is an isomorphism, so is the unit `𝒪_Y ⟶ f^* A₀` of the
+pullback `f^* A`. -/
+instance isIso_one_pullback_obj (A : GradedQuasicoherentAlgebra X) [IsIso A.obj.toMon.one] :
+    IsIso ((pullback f).obj A).obj.toMon.one := by
+  rw [pullback_obj_one]
+  have : IsIso ((Scheme.Modules.pullback f).map A.obj.toMon.one) := Functor.map_isIso _ _
+  -- The transport `eqToHom` is stated in the category of graded components, where instance
+  -- search does not find `IsIso (eqToHom _)`, so it is supplied through `eqToIso`.
+  exact IsIso.comp_isIso' inferInstance
+    (IsIso.comp_isIso' this (eqToIso (pullback_obj_obj_X f A 0).symm).isIso_hom)
+
 /-- The homogeneous multiplication of the pullback `f^* A` is the pullback of that of `A`,
 preceded by the inverse of the tensor comparison `f^* (Aᵢ ⊗ Aⱼ) ≅ f^* Aᵢ ⊗ f^* Aⱼ`, up to the
 identifications `pullback_obj_obj_X`. -/
