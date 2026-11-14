@@ -13,17 +13,17 @@ import TauCeti.RepresentationTheory.Compact.UnitaryModel
 /-!
 # The character projections
 
-The conjugate `conj χ_π` of the character of a continuous representation `π` of a compact group is
-a class function, so it acts on a finite-dimensional irreducible representation by a scalar
-(`ContRepresentation.integratedOperator_eq_smul_id`, from
-`TauCeti/RepresentationTheory/Compact/Integrated.lean`). Its Haar integral against another character
-`χ_ρ` is the `L²` inner product of the two characters, so the character orthogonality relations of
-`TauCeti/RepresentationTheory/Compact/Character/Basic.lean` evaluate that scalar. This file records
-the two resulting **character projections**, for `π` finite-dimensional:
+The conjugate `conj χ_π` of the character of a finite-dimensional continuous representation `π` of
+a compact group is a class function. This file records the two resulting **character projections**:
 
-* for `π` irreducible, the kernel `dim V_π · conj χ_π` acts as the identity on `V_π` itself;
+* for `π` irreducible over an algebraically closed `𝕜`, the kernel `dim V_π · conj χ_π` acts as
+  the identity on `V_π` itself. Here `conj χ_π` acts on `V_π` by a scalar
+  (`ContRepresentation.integratedOperator_eq_smul_id`, from
+  `TauCeti/RepresentationTheory/Compact/Integrated.lean`), and the first character orthogonality
+  relation of `TauCeti/RepresentationTheory/Compact/Character/Basic.lean` evaluates it;
 * `conj χ_π` acts as zero on a representation `ρ` admitting no nonzero continuous intertwiner
-  `ρ → π`, where `ρ` need not be finite-dimensional.
+  `ρ → π`, where `ρ` need not be finite-dimensional, irreducible, or an inner product space and
+  `𝕜` need not be algebraically closed.
 
 Neither identity asks `π` to be unitary or its carrier to be an inner product space.
 
@@ -35,8 +35,8 @@ on a reducible representation is carried out in
 
 * `ContRepresentation.integral_star_character_mul_character`: pairing a character with the
   conjugate of another one is the `L²` inner product of the two characters.
-* `ContRepresentation.integratedOperator_star_character_self`: `conj χ_π` acts on `V_π` by
-  the scalar `(dim V_π)⁻¹`, so that, by
+* `ContRepresentation.integratedOperator_star_character_self`: over an algebraically closed `𝕜`,
+  `conj χ_π` acts on an irreducible `V_π` by the scalar `(dim V_π)⁻¹`, so that, by
   `ContRepresentation.finrank_smul_integratedOperator_star_character_self`, the kernel
   `dim V_π · conj χ_π` acts as the identity on `V_π`.
 * `ContRepresentation.integratedOperator_star_character_eq_zero`: `conj χ_π` acts as zero on a
@@ -51,10 +51,10 @@ to `conj χ_π` and `ContRepresentation.integral_star_character_mul_character` i
 integral with Mathlib's sesquilinear `L²` inner product of the two characters.
 
 The self-action identity reads the scalar off the first character orthogonality relation, which
-holds for any finite-dimensional irreducible `π`. The vanishing identity passes from intertwiners
-to integrals of matrix coefficients, which needs a unitary representation on an inner product
-space; it is brought to bear on a general `π` by replacing it with a unitary conjugate on the
-standard model `EuclideanSpace 𝕜 (Fin (dim V))`
+holds for any finite-dimensional irreducible `π` over an algebraically closed `𝕜`. The vanishing
+identity passes from intertwiners to integrals of matrix coefficients, which needs a unitary
+representation on an inner product space; it is brought to bear on a general `π` by replacing it
+with a unitary conjugate on the standard model `EuclideanSpace 𝕜 (Fin (dim V))`
 (`ContRepresentation.exists_isUnitary_congr_euclideanSpace`), which has the same character
 (`ContinuousLinearEquiv.character_congr`) and, up to that conjugation, the same intertwiners from
 `ρ`. The vanishing on `ρ` is detected by continuous linear functionals on its carrier, which need
@@ -158,18 +158,13 @@ theorem integratedOperator_star_character_eq_zero
       have h := congr($(hdistinct (((π.congrEquiv f).symm.toContIntertwiningMap).comp
         (averageIntertwiner ρ hρ π' hπ' (ℓ.smulRight (b i))))) v)
       simpa using h
-    have hint : Integrable (fun g ↦ π' g⁻¹ (ℓ.smulRight (b i) (ρ g v))) (haarProb G) :=
-      integrable_continuousMap G ⟨fun g ↦ π' g⁻¹ (ℓ.smulRight (b i) (ρ g v)),
-        (hπ'.comp continuous_inv).clm_apply
-          ((ℓ.smulRight (b i)).continuous.comp (hρ.clm_apply continuous_const))⟩
     have h := congrArg (fun x ↦ ⟪b i, x⟫_𝕜) hzero
-    simp only [averageOperator_apply, inner_zero_right] at h
-    rw [← integral_inner hint] at h
+    simp only [inner_zero_right] at h
+    rw [inner_averageOperator_of_isUnitary ρ hρ π' hπ' hunitary _ v (b i)] at h
     refine Eq.trans (integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)) h
     -- `integral_congr_ae` leaves the two integrands applied but unreduced.
     beta_reduce
-    rw [ContinuousLinearMap.smulRight_apply, map_smul, inner_smul_right, matrixCoeff_apply,
-      hunitary.inner_map_left, mul_comm]
+    rw [ContinuousLinearMap.smulRight_apply, inner_smul_right, matrixCoeff_apply, mul_comm]
   have hint : Integrable (fun g ↦ (star (character π' hπ')) g • ρ g v) (haarProb G) :=
     integrable_continuousMap G ⟨fun g ↦ (star (character π' hπ')) g • ρ g v,
       (star (character π' hπ')).continuous.smul (hρ.clm_apply continuous_const)⟩
@@ -198,7 +193,8 @@ theorem integratedOperator_star_character_self
   rw [integratedOperator_eq_smul_id π hπ (star_character_conj π hπ) hirr,
     integral_star_character_mul_character π hπ π hπ, character_orthonormal_self π hπ hirr, mul_one]
 
-/-- **The block projection, normalized.** For a finite-dimensional irreducible `π`, the
+/-- **The block projection, normalized.** For a finite-dimensional irreducible `π` over an
+algebraically closed field, the
 kernel `dim V_π · conj χ_π` acts as the identity on `V_π`; together with
 `ContRepresentation.integratedOperator_star_character_eq_zero`, which makes it act as zero
 on a representation with no nonzero intertwiner into `π`, these are the two blockwise

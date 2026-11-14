@@ -45,9 +45,8 @@ finite-dimensional spaces are continuous
 (`MultilinearMap.continuous_of_finiteDimensional`), and expanding an arbitrary vector in
 the weight basis extends the conclusion from pure tensors to all of `Symᵈ(ℂ²)`.
 
-Unitarity of `Symᵈ(ℂ²)` is *not* established, and is not needed: the second orthogonality
-relation asks for unitarity only of the representation being tested, and even that hypothesis is
-discharged by Weyl's unitarian trick, so the statements below assume none. The transported model
+Unitarity of `Symᵈ(ℂ²)` is *not* established, and is not needed: the two character orthogonality
+relations assume no unitarity, so the statements below assume none. The transported model
 carries the inner product making the weight basis orthonormal, which for `d ≥ 2` is not the
 `SU(2)`-invariant one.
 
@@ -199,20 +198,23 @@ theorem isIrreducible_symPowerModel :
 
 /-! ### Exhaustion -/
 
-/-- The unitary case of `TauCeti.SU2.exists_nonempty_equiv_symPower`, which is where the argument
-runs; the general case is reduced to it by the unitarian trick. -/
-private theorem exists_nonempty_equiv_symPower_of_isUnitary {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℂ V] [FiniteDimensional ℂ V] (π : ContRepresentation ℂ SU2 V)
-    (hπ : Continuous π) (hunitary : ContRepresentation.IsUnitary π)
+/-- **The symmetric powers exhaust the irreducibles of `SU(2)`.** Every finite-dimensional
+irreducible continuous representation of `SU(2)` on a normed space, unitary or not, is equivalent
+to `Symᵈ(ℂ²)` for some `d`. -/
+theorem exists_nonempty_equiv_symPower {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+    [FiniteDimensional ℂ V] (π : ContRepresentation ℂ SU2 V) (hπ : Continuous π)
     (hirr : Representation.IsIrreducible π.toRepresentation) :
     ∃ d : ℕ, Nonempty ((symPower d).Equiv π.toRepresentation) := by
+  -- Suppose `π` is inequivalent to every `Symᵈ(ℂ²)`: by Schur's lemma there is no nonzero
+  -- intertwiner, so its character is orthogonal to every `χ_d`, hence to the whole uniform closure
+  -- of their span, which contains the character of `π` itself, of norm one.
   by_contra hcon
   have hne : ∀ d : ℕ, ¬ Nonempty ((symPower d).Equiv π.toRepresentation) := fun d h ↦ hcon ⟨d, h⟩
   -- the character of `π` is orthogonal to every character of the family
   have hzero : ∀ d : ℕ, ⟪ContRepresentation.characterLp π hπ,
       ContRepresentation.characterLp (symPowerModel d) (continuous_symPowerModel d)⟫_ℂ = 0 := by
     intro d
-    refine ContRepresentation.character_orthonormal_distinct π hπ _ _ hunitary fun f ↦ ?_
+    refine ContRepresentation.character_orthonormal_distinct π hπ _ _ fun f ↦ ?_
     have hempty : IsEmpty (_root_.ContRepresentation.Equiv (symPowerModel d) π) :=
       ⟨fun φ ↦ hne d ⟨(symPowerModelEquiv d).trans
         (ContRepresentation.nonempty_equiv_iff.1 ⟨φ⟩).some⟩⟩
@@ -239,34 +241,6 @@ private theorem exists_nonempty_equiv_symPower_of_isUnitary {V : Type*} [NormedA
   rw [hΛ, ← ContRepresentation.characterLp_def π hπ] at hker
   exact one_ne_zero
     ((ContRepresentation.character_orthonormal_self π hπ hirr).symm.trans hker)
-
-/-- **The symmetric powers exhaust the irreducibles of `SU(2)`.** Every finite-dimensional
-irreducible continuous representation of `SU(2)` is equivalent to `Symᵈ(ℂ²)` for some `d`.
-
-Suppose not. Then `π` is inequivalent to every `Symᵈ(ℂ²)`, so by Schur's lemma there is no nonzero
-intertwiner between them, and the second character orthogonality relation makes the character of
-`π` orthogonal in `L²(SU(2))` to every `χ_d`. Pairing with the character of `π` is a *continuous*
-functional on `C(SU(2), ℂ)`, so it then kills the whole uniform closure of the span of the `χ_d`,
-which by `TauCeti.SU2.mem_topologicalClosure_characterSpan_iff` is all of the continuous class
-functions. But the character of `π` is itself a class function, and pairs with itself to `1` by
-the first orthogonality relation.
-
-Neither an inner product nor unitarity is assumed of the carrier: by Weyl's unitarian trick
-(`ContRepresentation.exists_isUnitary_congr_euclideanSpace`), `π` is conjugate to a unitary
-representation on `ℂ^{dim V}`, and the conjugation is an equivalence, so it changes neither the
-hypotheses nor the conclusion. -/
-theorem exists_nonempty_equiv_symPower {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-    [FiniteDimensional ℂ V] (π : ContRepresentation ℂ SU2 V) (hπ : Continuous π)
-    (hirr : Representation.IsIrreducible π.toRepresentation) :
-    ∃ d : ℕ, Nonempty ((symPower d).Equiv π.toRepresentation) := by
-  obtain ⟨e, he⟩ := π.exists_isUnitary_congr_euclideanSpace hπ
-  obtain ⟨d, hd⟩ := exists_nonempty_equiv_symPower_of_isUnitary (ContinuousLinearEquiv.congr e π)
-    (ContinuousLinearEquiv.continuous_congr e hπ) he
-    (ContinuousLinearEquiv.isIrreducible_congr e hirr)
-  refine ⟨d, ⟨hd.some.trans (Representation.Equiv.mk
-    (e.symm : EuclideanSpace ℂ (Fin (Module.finrank ℂ V)) ≃ₗ[ℂ] V) fun g ↦ ?_)⟩⟩
-  exact LinearMap.ext fun v ↦ by
-    simp [_root_.ContRepresentation.toMonoidHom_apply]
 
 /-- **The classification of the irreducible representations of `SU(2)`.** A finite-dimensional
 irreducible continuous representation of `SU(2)` is `Symᵈ(ℂ²)` for exactly one `d`, so

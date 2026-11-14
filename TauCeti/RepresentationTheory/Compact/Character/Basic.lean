@@ -16,9 +16,10 @@ import TauCeti.RepresentationTheory.Compact.UnitaryModel
 The character of a finite-dimensional continuous representation of a compact group is a continuous
 function, hence square integrable for normalized Haar measure. This file records its image in
 `L²(G)` and proves the two orthogonality relations that make the irreducible characters an
-orthonormal system: the normalization `∫ |χ_π|² = 1` for an irreducible `π`, and the
-orthogonality `∫ conj χ_π · χ_ρ = 0` for a pair `π`, `ρ` with `π` unitary admitting no nonzero
-continuous intertwiner `ρ → π`. Schur's lemma is what supplies that hypothesis for a pair of
+orthonormal system: the normalization `∫ |χ_π|² = 1` for an irreducible `π` over an algebraically
+closed scalar field, and the orthogonality `∫ conj χ_π · χ_ρ = 0` for a pair `π`, `ρ` admitting no
+nonzero continuous intertwiner `ρ → π`. Neither statement asks `π` to be unitary or its carrier to
+be an inner product space. Schur's lemma is what supplies that hypothesis for a pair of
 inequivalent irreducibles; deriving it is not done here.
 
 Both statements are read off the Schur orthogonality relations of
@@ -37,12 +38,12 @@ here by the Haar integral.
 
 * `ContRepresentation.inner_characterLp_eq_sum`: the `L²` inner product of two characters
   is the double sum of the inner products of the diagonal matrix coefficients.
-* `ContRepresentation.character_orthonormal_self`: **first character orthogonality.** The
-  character of a finite-dimensional irreducible representation is a unit vector of `L²(G)`; neither
-  unitarity nor an inner product on the carrier is assumed.
+* `ContRepresentation.character_orthonormal_self`: **first character orthogonality.** Over an
+  algebraically closed `𝕜`, the character of a finite-dimensional irreducible representation is a
+  unit vector of `L²(G)`; neither unitarity nor an inner product on the carrier is assumed.
 * `ContRepresentation.character_orthonormal_distinct`: **second character orthogonality.**
-  The characters of two representations with no nonzero intertwiner between them are
-  `L²`-orthogonal.
+  The characters of two representations with no nonzero intertwiner `ρ → π` are `L²`-orthogonal;
+  again neither unitarity nor an inner product is assumed.
 
 ## Implementation notes
 
@@ -53,19 +54,22 @@ So a character is the conjugate, not the sum, of its diagonal matrix coefficient
 (`ContRepresentation.star_character`), and `inner_characterLp_eq_sum` carries that
 conjugation as a transposition of the two arguments of the inner product. That transposition is
 also why `character_orthonormal_distinct` asks for the vanishing of the intertwiners `ρ → π` rather
-than `π → ρ`, and asks unitarity of `π` rather than of `ρ`: those are exactly the hypotheses of
-`ContRepresentation.schur_orthogonality_distinct` at the transposed pair. The reverse
-orientation is the conjugate statement, since `⟪χ_π, χ_ρ⟫ = conj ⟪χ_ρ, χ_π⟫`.
+than `π → ρ`: those are exactly the hypotheses of `ContRepresentation.schur_orthogonality_distinct`
+at the transposed pair. The reverse orientation is the conjugate statement, since
+`⟪χ_π, χ_ρ⟫ = conj ⟪χ_ρ, χ_π⟫`.
 
 Packaging the character in `L²` asks nothing of `V` beyond the finite-dimensional normed structure
-that the character itself needs, so `characterLp` is stated there; `V` carries an inner product only
-from `inner_characterLp_eq_sum` on, where an orthonormal basis enters. The first orthogonality
-relation is again stated for a normed carrier: the character does not change under conjugation
-(`ContinuousLinearEquiv.character_congr`), so it is computed on a unitary conjugate of `π` on the
-standard model `EuclideanSpace 𝕜 (Fin (dim V))`
-(`ContRepresentation.exists_isUnitary_congr_euclideanSpace`). The scalars stay `RCLike`
-even for that packaging: `ContinuousMap.toLp` needs `SecondCountableTopologyEither G 𝕜`, which a
-general complete nontrivially normed field does not supply.
+that the character itself needs, so `characterLp` is stated there; `V` carries an inner product
+only in `inner_characterLp_eq_sum`, where an orthonormal basis enters, and in the unitary form of
+the second relation that is the private step of `character_orthonormal_distinct`. The scalars stay
+`RCLike` even for that packaging: `ContinuousMap.toLp` needs `SecondCountableTopologyEither G 𝕜`,
+which a general complete nontrivially normed field does not supply.
+
+Both orthogonality relations are stated for normed carriers. The character does not change under
+conjugation (`ContinuousLinearEquiv.character_congr`), so it is computed on a unitary conjugate of
+`π` on the standard model `EuclideanSpace 𝕜 (Fin (dim V))`
+(`ContRepresentation.exists_isUnitary_congr_euclideanSpace`), and the intertwiners are transported
+along the conjugations.
 
 Class-function completeness is proved using Peter-Weyl in
 `TauCeti/RepresentationTheory/Compact/Character/Basis.lean`. The mathematical development follows
@@ -156,13 +160,9 @@ variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 /-- **First character orthogonality.** The character of a finite-dimensional irreducible
 representation of a compact group has `L²` inner product `1` with itself.
 
-Neither unitarity of `π` nor an inner product on its carrier is assumed: `π` is conjugate to a
-unitary representation on the standard model `EuclideanSpace 𝕜 (Fin (dim V))`
-(`ContRepresentation.exists_isUnitary_congr_euclideanSpace`), which has the same character
-(`ContinuousLinearEquiv.character_congr`). For that unitary model, summing the first Schur
-orthogonality relation over the diagonal collapses the `d²` terms of `inner_characterLp_eq_sum` to
-the `d` terms `d⁻¹`, whose sum is `1`. The `[Finite G]` shadow of this statement is the diagonal
-half of Mathlib's `Representation.char_orthonormal`. -/
+Neither unitarity of `π` nor an inner product on its carrier is assumed, but `𝕜` must be
+algebraically closed. The `[Finite G]` shadow of this statement is the diagonal half of Mathlib's
+`Representation.char_orthonormal`. -/
 theorem character_orthonormal_self [IsAlgClosed 𝕜]
     (hirr : Representation.IsIrreducible π.toRepresentation) :
     ⟪characterLp π hπ, characterLp π hπ⟫_𝕜 = 1 := by
@@ -186,9 +186,10 @@ theorem character_orthonormal_self [IsAlgClosed 𝕜]
   rw [inner_characterLp_eq_sum π' hπ' π' hπ' e e, Finset.sum_congr rfl fun i _ ↦ hrow i,
     Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_inv_cancel₀ hd]
 
-/-- The character of a finite-dimensional irreducible representation is a **unit vector** of
-`L²(G)`. This is `character_orthonormal_self` in norm form; it is the normalization that makes
-the irreducible characters an orthonormal system rather than merely an orthogonal one. -/
+/-- Over an algebraically closed field, the character of a finite-dimensional irreducible
+representation is a **unit vector** of `L²(G)`. This is `character_orthonormal_self` in norm form;
+it is the normalization that makes the irreducible characters an orthonormal system rather than
+merely an orthogonal one. -/
 theorem norm_characterLp_eq_one [IsAlgClosed 𝕜]
     (hirr : Representation.IsIrreducible π.toRepresentation) :
     ‖characterLp π hπ‖ = 1 := by
@@ -216,14 +217,10 @@ local instance instCompleteSpaceCharacterCodomain : CompleteSpace W :=
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 
-/-- **Second character orthogonality.** If there is no nonzero continuous intertwiner `ρ → π`, the
-characters of `π` and `ρ` are orthogonal in `L²(G)`.
-
-Schur's lemma is not invoked here; it is what supplies the hypothesis for a pair of inequivalent
-irreducibles. Unitarity is asked of `π` alone, and the intertwiners are those `ρ → π`, because
-`inner_characterLp_eq_sum` transposes the two arguments; see the module docstring. -/
-theorem character_orthonormal_distinct (ρ : ContRepresentation 𝕜 G W) (hρ : Continuous ρ)
-    (hunitary : IsUnitary π)
+/-- The second character orthogonality relation for a unitary `π` on an inner product space; the
+general statement `ContRepresentation.character_orthonormal_distinct` reduces to it. -/
+private theorem character_orthonormal_distinct_of_isUnitary (ρ : ContRepresentation 𝕜 G W)
+    (hρ : Continuous ρ) (hunitary : IsUnitary π)
     (hdistinct : ∀ f : ContIntertwiningMap ρ π, f.toContinuousLinearMap = 0) :
     ⟪characterLp π hπ, characterLp ρ hρ⟫_𝕜 = 0 := by
   let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
@@ -231,5 +228,38 @@ theorem character_orthonormal_distinct (ρ : ContRepresentation 𝕜 G W) (hρ :
   simp [schur_orthogonality_distinct ρ hρ π hπ hunitary hdistinct]
 
 end Orthogonality
+
+section SecondOrthogonality
+
+variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [FiniteDimensional 𝕜 W]
+
+/-- **Second character orthogonality.** If there is no nonzero continuous intertwiner `ρ → π`, the
+characters of `π` and `ρ` are orthogonal in `L²(G)`.
+
+Neither unitarity of `π` nor an inner product on either carrier is assumed. Schur's lemma is not
+invoked here; it is what supplies the hypothesis for a pair of inequivalent irreducibles. The
+intertwiners are those `ρ → π` because `inner_characterLp_eq_sum` transposes the two arguments; see
+the module docstring. -/
+theorem character_orthonormal_distinct (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
+    (ρ : ContRepresentation 𝕜 G W) (hρ : Continuous ρ)
+    (hdistinct : ∀ f : ContIntertwiningMap ρ π, f.toContinuousLinearMap = 0) :
+    ⟪characterLp π hπ, characterLp ρ hρ⟫_𝕜 = 0 := by
+  obtain ⟨f, hunitary⟩ := exists_isUnitary_congr_euclideanSpace π hπ
+  let g : W ≃L[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 W)) :=
+    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  have hπ' := f.continuous_congr hπ
+  have hρ' := g.continuous_congr hρ
+  rw [characterLp_def, characterLp_def, ← f.character_congr hπ', ← g.character_congr hρ',
+    ← characterLp_def, ← characterLp_def]
+  refine character_orthonormal_distinct_of_isUnitary _ hπ' _ hρ' hunitary fun φ ↦ ?_
+  refine ContinuousLinearMap.ext fun w ↦ ?_
+  have h := congr($(hdistinct (((π.congrEquiv f).symm.toContIntertwiningMap).comp
+    (φ.comp (ρ.congrEquiv g).toContIntertwiningMap))) (g.symm w))
+  simpa using h
+
+end SecondOrthogonality
 
 end ContRepresentation

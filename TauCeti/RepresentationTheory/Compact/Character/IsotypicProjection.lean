@@ -14,7 +14,8 @@ import TauCeti.RepresentationTheory.Irreducible
 /-!
 # Isotypic projections for compact-group representations
 
-Let `sigma` be a finite-dimensional continuous representation of a compact group. The continuous
+Let `sigma` be a finite-dimensional continuous representation of a compact group over an
+algebraically closed field. The continuous
 class function
 
 `dim(sigma) · conj(character sigma)`

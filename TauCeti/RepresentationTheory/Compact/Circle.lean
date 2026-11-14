@@ -297,7 +297,7 @@ example (n : ℤ) :
 example {m n : ℤ} (h : m ≠ n) :
     ⟪ContRepresentation.characterLp (fourierRep T m) (continuous_fourierRep T m),
       ContRepresentation.characterLp (fourierRep T n) (continuous_fourierRep T n)⟫_ℂ = 0 :=
-  ContRepresentation.character_orthonormal_distinct _ _ _ _ (isUnitary_fourierRep T m)
+  ContRepresentation.character_orthonormal_distinct _ _ _ _
     (contIntertwiningMap_fourierRep_eq_zero_of_ne T hT.out.ne' h)
 
 end TauCeti

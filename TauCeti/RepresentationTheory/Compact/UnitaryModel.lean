@@ -132,12 +132,9 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopo
 /-- **A finite-dimensional continuous representation of a compact group on a normed space is
 conjugate to a unitary representation on the standard model** `EuclideanSpace 𝕜 (Fin (dim V))`.
 
-No inner product on `V` is needed: `V` is continuously linearly equivalent to the standard model by
-dimension count, and the transport of `π` there is unitarized by
-`ContRepresentation.exists_isUnitary_congr`. Since the transport is an equivalence of
-representations, this brings the theory of unitary representations to bear on any property that is
-invariant under such equivalences, the character being one
-(`ContinuousLinearEquiv.character_congr`). -/
+No inner product on `V` is needed. Since the transport is an equivalence of representations, this
+brings the theory of unitary representations to bear on any property that is invariant under such
+equivalences, the character being one (`ContinuousLinearEquiv.character_congr`). -/
 theorem exists_isUnitary_congr_euclideanSpace (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
     ∃ e : V ≃L[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 V)),
       IsUnitary (ContinuousLinearEquiv.congr e π) := by
