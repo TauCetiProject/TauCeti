@@ -159,13 +159,9 @@ theorem mem_hochschildBimoduleCoboundaries_one_iff
   rw [mem_hochschildBimoduleCoboundaries_succ_iff]
   constructor
   · rintro ⟨φ, rfl⟩
-    refine ⟨φ 0, fun a ↦ ?_⟩
-    have hφ : φ = MultilinearMap.constOfIsEmpty (RingHom.id R) (fun _ : Fin 0 ↦ A) (φ 0) := by
-      ext v
-      rw [MultilinearMap.constOfIsEmpty_apply, Subsingleton.elim v 0]
-      rfl
-    rw [hφ, hochschildBimoduleCoboundary_constOfIsEmpty, MultilinearMap.constOfIsEmpty_apply]
-    rfl
+    obtain ⟨m, rfl⟩ := (MultilinearMap.constLinearEquivOfIsEmpty R (RingHom.id R)
+      (fun _ : Fin 0 ↦ A) M).surjective φ
+    exact ⟨m, fun a ↦ hochschildBimoduleCoboundary_constOfIsEmpty m (fun _ ↦ a)⟩
   · rintro ⟨m, hm⟩
     refine ⟨MultilinearMap.constOfIsEmpty (RingHom.id R) (fun _ : Fin 0 ↦ A) m, ?_⟩
     ext a
