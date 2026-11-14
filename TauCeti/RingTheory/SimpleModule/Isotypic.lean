@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.SimpleModule.Isotypic
+import Mathlib.RingTheory.Noetherian.Basic
 
 /-!
 # Hom spaces and direct sums of isotypic components
@@ -26,7 +27,9 @@ type is zero (`IsIsotypicOfType.linearMap_eq_zero`). The isotypic components of 
 non-isomorphic simple modules are independent (`TauCeti.iSupIndep_isotypicComponent`); this is the
 indexed form of Mathlib's `sSupIndep_isotypicComponents`, allowing types that do not occur in the
 module. In particular, the isotypic components of two non-isomorphic simple modules are disjoint
-(`TauCeti.disjoint_isotypicComponent`).
+(`TauCeti.disjoint_isotypicComponent`), and a Noetherian module receives nonzero maps from only
+finitely many of a family of pairwise non-isomorphic simple modules
+(`TauCeti.finite_setOf_nontrivial_linearMap`).
 
 ## Main definitions
 
@@ -303,6 +306,19 @@ theorem iSupIndep_isotypicComponent {κ : Type*} (S : κ → Type*) [∀ j, AddC
   obtain ⟨e'⟩ := isIsotypicOfType_submodule_iff.mp
     (IsIsotypicOfType.isotypicComponent R M (S j)) N (hN.trans (congrArg Subtype.val hij).le)
   exact Subtype.ext (hS i j ⟨e.symm.trans e'⟩)
+
+/-- A Noetherian module has a nonzero space of maps from only finitely many of a family of
+pairwise non-isomorphic simple modules: the isotypic components of the `S j` are independent, and
+a nonzero map out of `S j` takes a nonzero value in the `S j`-isotypic component. -/
+theorem finite_setOf_nontrivial_linearMap [IsNoetherian R M] {κ : Type*} (S : κ → Type*)
+    [∀ j, AddCommGroup (S j)] [∀ j, Module R (S j)] [∀ j, IsSimpleModule R (S j)]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[R] S j) → i = j) :
+    {j | Nontrivial (S j →ₗ[R] M)}.Finite := by
+  refine (Submodule.finite_ne_bot_of_iSupIndep (iSupIndep_isotypicComponent R M S hS)).subset
+    fun j (_ : Nontrivial (S j →ₗ[R] M)) hbot => ?_
+  obtain ⟨φ, hφ⟩ := exists_ne (0 : S j →ₗ[R] M)
+  obtain ⟨s, hs⟩ : ∃ s, φ s ≠ 0 := not_forall.mp fun h => hφ (LinearMap.ext h)
+  exact hs (by simpa [hbot] using φ.apply_mem_isotypicComponent s)
 
 /-- The isotypic components of two non-isomorphic simple modules are disjoint. -/
 theorem disjoint_isotypicComponent (S S' : Type*) [AddCommGroup S] [Module R S]
