@@ -49,7 +49,8 @@ Iwahori–Weyl group and the Kottwitz homomorphism.
 
 ## References
 
-* X. He, *Some results on affine Deligne–Lusztig varieties*, Proc. ICM 2018, §4.3.
+* X. He, *Cocenters of p-adic groups, I: Newton decomposition*, Forum Math. Pi 6 (2018), e2,
+  §4.3.
 * R. E. Kottwitz, *Isocrystals with additional structure. II*, Compositio Math. 109 (1997), §1.1.
 -/
 
