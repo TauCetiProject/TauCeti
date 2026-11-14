@@ -209,6 +209,39 @@ theorem totalVariationOn_sup_le [OpensMeasurableSpace E]
     (by rwa [iSup_bool_eq])
   rwa [iSup_bool_eq, tsum_fintype, Fintype.sum_bool, Bool.cond_true, Bool.cond_false] at h
 
+/-- For admissible test vector fields `φ₁` on `Ω` and `φ₂` on `Ω'` (`‖φᵢ x‖ ≤ 1`) with disjoint
+supports, the positive parts of their pairings with `u` add up to at most `|Du|(Ω ∪ Ω')`. -/
+private theorem ofReal_integral_add_ofReal_integral_le_totalVariationOn_sup_of_disjoint_tsupport
+    {φ₁ : 𝓓(Ω, E)} {φ₂ : 𝓓(Ω', E)} (h : Disjoint (tsupport φ₁) (tsupport φ₂))
+    (h₁ : ∀ x, ‖φ₁ x‖ ≤ 1) (h₂ : ∀ x, ‖φ₂ x‖ ≤ 1) :
+    ENNReal.ofReal (∫ x, divergenceCLM φ₁ x * u x ∂μ) +
+      ENNReal.ofReal (∫ x, divergenceCLM φ₂ x * u x ∂μ) ≤ totalVariationOn μ (Ω ⊔ Ω') u := by
+  have h₁Ω : tsupport φ₁ ⊆ (Ω ⊔ Ω' : Opens E) := φ₁.tsupport_subset.trans (by simp)
+  have h₂Ω : tsupport φ₂ ⊆ (Ω ⊔ Ω' : Opens E) := φ₂.tsupport_subset.trans (by simp)
+  -- If one pairing is not positive, the other field alone is admissible on `Ω ∪ Ω'`.
+  rcases le_or_gt (∫ x, divergenceCLM φ₁ x * u x ∂μ) 0 with ha₁ | ha₁
+  · rw [ENNReal.ofReal_of_nonpos ha₁, zero_add]
+    exact ofReal_integral_le_totalVariationOn_of_tsupport_subset φ₂ h₂ h₂Ω
+  rcases le_or_gt (∫ x, divergenceCLM φ₂ x * u x ∂μ) 0 with ha₂ | ha₂
+  · rw [ENNReal.ofReal_of_nonpos ha₂, add_zero]
+    exact ofReal_integral_le_totalVariationOn_of_tsupport_subset φ₁ h₁ h₁Ω
+  -- Otherwise both pairings are integrals of integrable functions, and the sum of the two fields
+  -- is admissible, as their supports are disjoint.
+  let φ : 𝓓(Ω ⊔ Ω', E) := monoCLM ℝ φ₁ + monoCLM ℝ φ₂
+  have hφ (x : E) : φ x = φ₁ x + φ₂ x := by simp [φ]
+  have hdiv (x : E) : divergenceCLM φ x = divergenceCLM φ₁ x + divergenceCLM φ₂ x := by
+    simp only [φ, map_add, _root_.add_apply, divergenceCLM_monoCLM le_sup_left,
+      divergenceCLM_monoCLM le_sup_right]
+  have hφ1 (x : E) : ‖φ x‖ ≤ 1 := by
+    rw [hφ]
+    by_cases hx : x ∈ tsupport φ₁
+    · simpa [image_eq_zero_of_notMem_tsupport (Set.disjoint_left.1 h hx)] using h₁ x
+    · simpa [image_eq_zero_of_notMem_tsupport hx] using h₂ x
+  rw [← ENNReal.ofReal_add ha₁.le ha₂.le]
+  convert ofReal_integral_le_totalVariationOn (μ := μ) (u := u) φ hφ1 using 2
+  simp_rw [hdiv, add_mul]
+  exact (integral_add (.of_integral_ne_zero ha₁.ne') (.of_integral_ne_zero ha₂.ne')).symm
+
 /-- **Additivity on disjoint open sets.** For `u` locally integrable on `Ω ∪ Ω'` with `Ω` and `Ω'`
 disjoint, `|Du|(Ω ∪ Ω') = |Du|(Ω) + |Du|(Ω')`. -/
 theorem totalVariationOn_sup_of_disjoint [OpensMeasurableSpace E]
@@ -219,39 +252,9 @@ theorem totalVariationOn_sup_of_disjoint [OpensMeasurableSpace E]
   simp only [iSup_subtype']
   have : Nonempty {φ : 𝓓(Ω, E) // ∀ x, ‖φ x‖ ≤ 1} := ⟨⟨0, by simp⟩⟩
   have : Nonempty {φ : 𝓓(Ω', E) // ∀ x, ‖φ x‖ ≤ 1} := ⟨⟨0, by simp⟩⟩
-  refine ENNReal.iSup_add_iSup_le fun ⟨φ₁, h₁⟩ ⟨φ₂, h₂⟩ => ?_
-  have h₁Ω : tsupport φ₁ ⊆ (Ω ⊔ Ω' : Opens E) := φ₁.tsupport_subset.trans (by simp)
-  have h₂Ω : tsupport φ₂ ⊆ (Ω ⊔ Ω' : Opens E) := φ₂.tsupport_subset.trans (by simp)
-  -- If one pairing is negative, the other one alone is admissible on `Ω ∪ Ω'`.
-  rcases le_total (∫ x, divergenceCLM φ₁ x * u x ∂μ) 0 with ha₁ | ha₁
-  · rw [ENNReal.ofReal_of_nonpos ha₁, zero_add]
-    exact ofReal_integral_le_totalVariationOn_of_tsupport_subset φ₂ h₂ h₂Ω
-  rcases le_total (∫ x, divergenceCLM φ₂ x * u x ∂μ) 0 with ha₂ | ha₂
-  · rw [ENNReal.ofReal_of_nonpos ha₂, add_zero]
-    exact ofReal_integral_le_totalVariationOn_of_tsupport_subset φ₁ h₁ h₁Ω
-  -- Otherwise the sum of the two fields is admissible, as their supports are disjoint.
-  let φ₁' : 𝓓(Ω ⊔ Ω', E) := monoCLM ℝ φ₁
-  let φ₂' : 𝓓(Ω ⊔ Ω', E) := monoCLM ℝ φ₂
-  let φ : 𝓓(Ω ⊔ Ω', E) := φ₁' + φ₂'
-  have hφ (x : E) : φ x = φ₁ x + φ₂ x := by simp [φ, φ₁', φ₂']
-  have hdiv (x : E) : divergenceCLM φ x = divergenceCLM φ₁ x + divergenceCLM φ₂ x := by
-    simp only [φ, φ₁', φ₂', map_add, _root_.add_apply, divergenceCLM_monoCLM le_sup_left,
-      divergenceCLM_monoCLM le_sup_right]
-  have hφ1 (x : E) : ‖φ x‖ ≤ 1 := by
-    rw [hφ]
-    by_cases hx : x ∈ (Ω : Set E)
-    · have : φ₂ x = 0 := image_eq_zero_of_notMem_tsupport fun hx' =>
-        Set.disjoint_left.1 (Opens.coe_disjoint.2 h) hx (φ₂.tsupport_subset hx')
-      simpa [this] using h₁ x
-    · simpa [image_eq_zero_of_notMem_tsupport fun hx' => hx (φ₁.tsupport_subset hx')] using h₂ x
-  have hint (ψ : 𝓓(Ω ⊔ Ω', ℝ)) : Integrable (fun x => ψ x * u x) μ := by
-    simpa using ψ.integrable_smul hu
-  rw [← ENNReal.ofReal_add ha₁ ha₂]
-  convert ofReal_integral_le_totalVariationOn (μ := μ) (u := u) φ hφ1 using 2
-  simp_rw [hdiv, add_mul]
-  rw [integral_add]
-  · simpa [φ₁', divergenceCLM_monoCLM le_sup_left] using hint (divergenceCLM φ₁')
-  · simpa [φ₂', divergenceCLM_monoCLM le_sup_right] using hint (divergenceCLM φ₂')
+  exact ENNReal.iSup_add_iSup_le fun ⟨φ₁, h₁⟩ ⟨φ₂, h₂⟩ =>
+    ofReal_integral_add_ofReal_integral_le_totalVariationOn_sup_of_disjoint_tsupport
+      ((Opens.coe_disjoint.2 h).mono φ₁.tsupport_subset φ₂.tsupport_subset) h₁ h₂
 
 /-- The total variation of `-u` is that of `u`. -/
 @[simp]

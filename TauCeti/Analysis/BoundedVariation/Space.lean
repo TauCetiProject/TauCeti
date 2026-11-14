@@ -325,20 +325,11 @@ instance instCompleteSpace : CompleteSpace (BV μ Ω) :=
     have hvar : totalVariationOn μ Ω (v - (u N₀).toL1 : E →₁[μ.restrict Ω] ℝ) < ∞ :=
       (variation_sub_limit_le hv N₀ N₀ fun n hn => by
         simpa only [dist_eq_norm] using (hN₀ n hn N₀ le_rfl).le).trans_lt (by finiteness)
-    have hvBV : MemBV μ Ω v := by
-      apply memBV_iff.mpr
-      refine ⟨L1.integrable_coeFn v, ?_⟩
-      have hsum := totalVariationOn_add_le (v := u N₀)
-        (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn (v - (u N₀).toL1)))
-      have hae : ((v - (u N₀).toL1 : E →₁[μ.restrict Ω] ℝ) : E → ℝ) + u N₀
-          =ᵐ[μ.restrict Ω] v := by
-        filter_upwards [Lp.coeFn_sub v (u N₀).toL1] with x hx
-        simp only [Pi.add_apply, hx, Pi.sub_apply, sub_add_cancel]
-      rw [totalVariationOn_congr_ae hae] at hsum
-      exact hsum.trans_lt (ENNReal.add_lt_top.mpr ⟨hvar, (u N₀).totalVariationOn_lt_top⟩)
-    let f := ofFunction v hvBV
-    have hf : f.toL1 = v := by
-      exact Integrable.toL1_coeFn v (L1.integrable_coeFn v)
+    have hvmem : v ∈ bvSubmodule μ Ω := by
+      rw [← sub_add_cancel v (u N₀).toL1]
+      exact (bvSubmodule μ Ω).add_mem ((mem_bvSubmodule_iff _).2 hvar) (u N₀).toSubmodule.2
+    let f : BV μ Ω := BV.mk ⟨v, hvmem⟩
+    have hf : f.toL1 = v := rfl
     refine ⟨f, Metric.tendsto_atTop.mpr fun ε hε => ?_⟩
     obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hu (ε / 4) (by positivity)
     have hsmall (n : ℕ) (hn : N ≤ n) : ‖f - u n‖ ≤ ε / 2 := by
