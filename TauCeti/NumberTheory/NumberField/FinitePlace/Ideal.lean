@@ -90,10 +90,10 @@ theorem finprod_absNorm_pow_multiplicity {R : Type*} [CommSemiring R] {I : Ideal
       (∏ᶠ v : FinitePlace K,
         v.maximalIdeal.asIdeal.absNorm ^ multiplicity v.maximalIdeal.asIdeal I) = I.absNorm := by
     conv_rhs => rw [← finprod_finitePlace_pow_multiplicity hI]
-    rw [map_finprod _ (hasFiniteMulSupport_fun_pow_multiplicity hI (·))]
+    rw [map_finprod _ (hasFiniteMulSupport_fun_pow_multiplicity I (·))]
     simp
   rw [← hnat, ← Nat.coe_castRingHom,
-    map_finprod (Nat.castRingHom R) (hasFiniteMulSupport_fun_pow_multiplicity hI absNorm)]
+    map_finprod (Nat.castRingHom R) (hasFiniteMulSupport_fun_pow_multiplicity I absNorm)]
   simp
 
 end NumberField.FinitePlace

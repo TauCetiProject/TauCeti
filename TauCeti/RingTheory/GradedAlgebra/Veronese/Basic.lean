@@ -135,7 +135,7 @@ private theorem grade_add_eq_mul_of_card_mul_le_of_dvd_self
   | mem μ hμ => exact decompose_mem_grade_mul_of_mem_closure hdeg hh hdvd hN hμ
   | zero => simp
   | add x y _ _ hx hy =>
-    rw [decompose_add, add_apply, Submodule.coe_add]
+    rw [decompose_add, DirectSum.add_apply, Submodule.coe_add]
     exact add_mem hx hy
   | smul c x _ hx =>
     -- Multiplication by an element of degree zero preserves `𝒜 h · 𝒜 N`.

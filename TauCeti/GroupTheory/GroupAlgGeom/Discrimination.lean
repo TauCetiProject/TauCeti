@@ -8,6 +8,8 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.GroupTheory.CSA
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
+import TauCeti.Data.Matrix.DotProduct
+import TauCeti.GroupTheory.FreeGroup.CSA
 
 /-!
 # Separation and discrimination of groups with coefficients
@@ -19,6 +21,16 @@ used to recognize irreducible coordinate groups and, with trivial coefficients, 
 
 The coefficient maps need not be injective: the same definitions apply to the coefficient maps
 of quotients of free `G`-groups, even before the quotient is known to be a `G`-group.
+
+With trivial coefficients, every power `ℤ^ι` of the infinite cyclic group is discriminated by `ℤ`
+through integer linear forms in finitely many coordinates.
+
+Discrimination implies separation, but not conversely. A group discriminated by a commutative
+transitive group, such as a free group, is commutative transitive, while the product of a
+nonabelian group and a nontrivial group is not. So `F₂ × F₂` is separated by `F₂` through its two
+projections, but not discriminated by it: for basis elements `a` and `b` of `F₂`, a homomorphism
+to `F₂` keeping `(1, b)` nontrivial makes the images of `(a, 1)` and `(b, 1)` commute, so it kills
+`(⁅a, b⁆, 1)`.
 
 ## Main results
 
@@ -34,21 +46,32 @@ of quotients of free `G`-groups, even before the quotient is known to be a `G`-g
   (`TauCeti.GroupAlgGeom.not_isSeparatedBy_of_finite`); for instance `ℤ/2` is not separated by `ℤ`
   (`TauCeti.GroupAlgGeom.not_isSeparatedBy_zmod_two_int`).
 * `TauCeti.GroupAlgGeom.IsDiscriminatedBy.isCommTransitive`: a group discriminated by a
-  commutative transitive group is commutative transitive.
+  commutative transitive group is commutative transitive, so the product of a nonabelian group
+  and a nontrivial group is not discriminated by a commutative transitive group
+  (`TauCeti.GroupAlgGeom.not_isDiscriminatedBy_prod_of_nontrivial`).
+* `TauCeti.GroupAlgGeom.isSeparatedBy_freeGroup_prod_freeGroup`,
+  `TauCeti.GroupAlgGeom.not_isDiscriminatedBy_freeGroup_prod_freeGroup`: `F₂ × F₂` is separated
+  but not discriminated by `F₂`, with trivial coefficients.
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.nonempty_gHom`: a nontrivial group separated by `H` admits a
   coefficient-preserving homomorphism to `H`; with discrimination the group may be trivial
   (`TauCeti.GroupAlgGeom.IsDiscriminatedBy.nonempty_gHom`).
 * `TauCeti.GroupAlgGeom.IsDiscriminatedBy.injective_of_injective`: a group discriminated by a
   `G`-group is a `G`-group.
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.mem_range_of_pow_mem_range`: in a group with unique roots
+  separated by its coefficients `G` over `G`, the image of `G` is closed under roots.
 * `TauCeti.GroupAlgGeom.isSeparatedBy_iff_iInf_ker`: separation by `H` means the kernels of all
   coefficient-preserving homomorphisms to `H` intersect trivially.
+* `TauCeti.GroupAlgGeom.isDiscriminatedBy_multiplicative_pi_int`: every power `ℤ^ι` of the
+  infinite cyclic group, in particular the free abelian group `ℤⁿ`, is discriminated by `ℤ`.
 
 ## References
 
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
-  and ideal theory*, J. Algebra 219 (1999), §1.
+  and ideal theory*, J. Algebra 219 (1999), §1 and §2.3 (the remark after Theorem C1 that
+  `F × F` is separated but not discriminated by a nonabelian free group `F`, due to
+  B. Baumslag).
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
-  (2005), §2.5.
+  (2005), §2.5 and §2.6.
 -/
 
 public section
@@ -207,6 +230,16 @@ theorem nonempty_gHom [Nontrivial K] {ιK : G →* K} {ιH : G →* H}
   let ⟨k, hk⟩ := exists_ne (1 : K)
   ⟨((isSeparatedBy_def _ _).1 h k hk).choose⟩
 
+/-- If a group `K` with unique roots is separated by the coefficients `G` over `G`, then the image
+of `G` in `K` contains every element of `K` having a nonzero power in it. -/
+theorem mem_range_of_pow_mem_range [HasUniqueRoots K] {ιK : G →* K}
+    (h : IsSeparatedBy ιK (.id G)) {k : K} {n : ℕ} (hn : n ≠ 0) (hk : k ^ n ∈ ιK.range) :
+    k ∈ ιK.range := by
+  -- An element outside the image is nontrivial, so some `G`-homomorphism `K → G` exists.
+  by_contra hk'
+  obtain ⟨φ, -⟩ := h k fun h1 => hk' (h1 ▸ one_mem _)
+  exact hk' (φ.mem_range_of_pow_mem_range hn hk)
+
 end IsSeparatedBy
 
 /-- A nontrivial finite group is not separated by a torsion-free group, whatever the
@@ -222,6 +255,31 @@ theorem not_isSeparatedBy_of_finite [Finite K] [Nontrivial K] [IsMulTorsionFree 
 theorem not_isSeparatedBy_zmod_two_int :
     ¬IsSeparatedBy (1 : Unit →* Multiplicative (ZMod 2)) (1 : Unit →* Multiplicative ℤ) :=
   not_isSeparatedBy_of_finite _ _
+
+/-- The direct product of a nonabelian group `K` and a nontrivial group `L` is not discriminated
+by a commutative transitive group `H`, such as a free group, whatever the coefficients: `K × L`
+is not commutative transitive. -/
+theorem not_isDiscriminatedBy_prod_of_nontrivial [Nontrivial L] (hK : ¬IsMulCommutative K)
+    (hH : Group.IsCommTransitive H) (ι : G →* K × L) (ιH : G →* H) : ¬IsDiscriminatedBy ι ιH :=
+  fun h => Group.not_isCommTransitive_prod_of_nontrivial hK (h.isCommTransitive hH)
+
+/-- `F₂ × F₂` is separated by `F₂`, with trivial coefficients, through the two projections. -/
+theorem isSeparatedBy_freeGroup_prod_freeGroup :
+    IsSeparatedBy (1 : Unit →* FreeGroup (Fin 2) × FreeGroup (Fin 2))
+      (1 : Unit →* FreeGroup (Fin 2)) := by
+  have h := (IsDiscriminatedBy.self (1 : Unit →* FreeGroup (Fin 2))).isSeparatedBy
+  -- `IsSeparatedBy.prod` gives coefficients `MonoidHom.prod 1 1`, the only map out of `Unit`.
+  simpa only [Subsingleton.elim ((1 : Unit →* FreeGroup (Fin 2)).prod 1) 1] using h.prod h
+
+/-- `F₂ × F₂` is not discriminated by `F₂`, with trivial coefficients. Together with
+`isSeparatedBy_freeGroup_prod_freeGroup` this shows that separation does not imply
+discrimination. -/
+theorem not_isDiscriminatedBy_freeGroup_prod_freeGroup :
+    ¬IsDiscriminatedBy (1 : Unit →* FreeGroup (Fin 2) × FreeGroup (Fin 2))
+      (1 : Unit →* FreeGroup (Fin 2)) :=
+  not_isDiscriminatedBy_prod_of_nontrivial
+    (FreeGroup.isMulCommutative_iff_subsingleton.not.2 (not_subsingleton _))
+    IsFreeGroup.isCommTransitive _ _
 
 /-- Separation by `H` is equivalent to triviality of the intersection of kernels of all
 coefficient-preserving homomorphisms to `H`. -/
@@ -241,5 +299,28 @@ theorem isSeparatedBy_iff_iInf_ker (ιK : G →* K) (ιH : G →* H) :
       intro φ
       by_contra hne
       exact hall ⟨φ, hne⟩⟩
+
+/-- A power `ℤ^ι` of the infinite cyclic group is discriminated by `ℤ`, with trivial
+coefficients. -/
+theorem isDiscriminatedBy_multiplicative_pi_int (ι : Type*) :
+    IsDiscriminatedBy (1 : Unit →* Multiplicative (ι → ℤ)) (1 : Unit →* Multiplicative ℤ) := by
+  classical
+  rw [isDiscriminatedBy_def]
+  intro s hs
+  -- Each element of `s` is nonzero at some coordinate; collect these coordinates in `J`, so that
+  -- the restrictions to `J` stay nonzero, and take a linear form in them vanishing on none.
+  have hi (g : s) : ∃ i, (g : Multiplicative (ι → ℤ)).toAdd i ≠ 0 :=
+    Function.ne_iff.1 fun h => hs g g.2 (toAdd_eq_zero.1 h)
+  choose i hi using hi
+  let J : Finset ι := Finset.univ.image i
+  let r : Multiplicative (ι → ℤ) → J → ℤ := fun g j => g.toAdd j
+  obtain ⟨w, hw⟩ := (s.image r).exists_forall_dotProduct_ne_zero <| by
+    simp only [Finset.forall_mem_image]
+    exact fun g hg h => hi ⟨g, hg⟩ (congrFun h ⟨i ⟨g, hg⟩, by simp [J]⟩)
+  let φ : Multiplicative (ι → ℤ) →* Multiplicative ℤ :=
+    AddMonoidHom.toMultiplicative
+      (AddMonoidHom.mk' (fun v => dotProduct w fun j : J => v j) fun _ _ => dotProduct_add w _ _)
+  exact ⟨⟨φ, fun _ => by simp⟩, fun g hg h =>
+    hw _ (Finset.mem_image_of_mem r hg) (by simpa [φ, r] using h)⟩
 
 end TauCeti.GroupAlgGeom

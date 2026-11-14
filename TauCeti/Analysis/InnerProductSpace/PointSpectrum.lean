@@ -140,6 +140,7 @@ public section
 
 open Module.End
 open scoped InnerProductSpace
+open scoped Pointwise
 
 namespace Module.End
 

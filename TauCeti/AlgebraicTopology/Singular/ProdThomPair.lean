@@ -15,6 +15,7 @@ public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.SubspaceCompl
 public import TauCeti.Topology.Homotopy.HomotopyEquiv
 
+import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
@@ -66,6 +67,8 @@ The isomorphism is built from a choice of such a step for each proper subspace o
 * `TauCeti.prodThomPairSingularHomologyIso`: `Hₙ₊ᵣ(B × F, B × (F ∖ {0})) ≅ Hₙ(B)`, `r = dim F`.
 * `TauCeti.prodThomPairSingularHomologyIso_hom_naturality`,
   `TauCeti.prodThomPairSingularHomologyIso_inv_naturality`: its naturality in the base.
+* `TauCeti.singularHomology_prodThomPair_hom_ext`: morphisms out of
+  `Hᵣ(B × F, B × (F ∖ {0}))` are determined by their restrictions to the fibre pairs.
 
 ## References
 
@@ -445,5 +448,42 @@ theorem prodThomPairSingularHomologyIso_inv_naturality (g : C(B, B')) (n m : ℕ
         (prodThomPairSingularHomologyIso R B' F n m h).inv := by
   rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
   exact prodThomPairSingularHomologyIso_hom_naturality R B F g n m h
+
+variable {R B F} in
+/-- **Morphisms out of the top-degree homology are determined on the fibres**: two morphisms out
+of `Hᵣ(B × F, B × (F ∖ {0}))`, `r = dim F`, which agree after the inclusion of the fibre pair
+`(F, F ∖ {0})` over every point of `B`, are equal. Equivalently, the images of the fibre pairs
+generate this homology, which is `H₀(B)`. -/
+theorem singularHomology_prodThomPair_hom_ext {T : C}
+    {g g' : (prodThomPair B F).singularHomology R (finrank ℝ F) ⟶ T}
+    (h : ∀ b, TopPair.singularHomologyMap (prodThomPairFiberMap F b) R _ ≫ g =
+      TopPair.singularHomologyMap (prodThomPairFiberMap F b) R _ ≫ g') : g = g' := by
+  -- Read `g` and `g'` on `H₀(B)`, where they are determined by the classes of points.
+  rw [← cancel_epi (prodThomPairSingularHomologyIso R B F 0 (finrank ℝ F)).inv]
+  refine singularHomology₀_hom_ext R fun b ↦ ?_
+  -- The fibre over `b` is the Thom pair over a point, mapped in by the constant map at `b`.
+  let c : C(PUnit.{w + 1}, B) := ContinuousMap.const _ b
+  have hc : prodThomPairSnd PUnit.{w + 1} F ≫ prodThomPairFiberMap F b = prodThomPairMap F c :=
+    (congrArg (prodThomPairSnd PUnit.{w + 1} F ≫ ·)
+      (prodThomPairFiberMap_comp_prodThomPairMap F PUnit.unit c)).symm.trans (by
+        rw [← Category.assoc, prodThomPairSnd_comp_prodThomPairFiberMap, Category.id_comp])
+  have hinv : ((AlgebraicTopology.singularHomologyFunctor C 0).obj R).map (TopCat.ofHom c) ≫
+      (prodThomPairSingularHomologyIso R B F 0 (finrank ℝ F)).inv =
+        (prodThomPairSingularHomologyIso R PUnit.{w + 1} F 0 (finrank ℝ F)).inv ≫
+          TopPair.singularHomologyMap (prodThomPairMap F c) R _ :=
+    (prodThomPairSingularHomologyIso_inv_naturality R PUnit F c 0 (finrank ℝ F)).symm
+  have hpt : singularHomology₀Section R (X := TopCat.of PUnit.{w + 1}) PUnit.unit ≫
+      ((AlgebraicTopology.singularHomologyFunctor C 0).obj R).map (TopCat.ofHom c) =
+        singularHomology₀Section R (X := TopCat.of B) b :=
+    singularHomology₀Section_naturality R (TopCat.ofHom c) PUnit.unit
+  have hb : singularHomology₀Section R (X := TopCat.of B) b ≫
+      (prodThomPairSingularHomologyIso R B F 0 (finrank ℝ F)).inv =
+        (singularHomology₀Section R (X := TopCat.of PUnit.{w + 1}) PUnit.unit ≫
+          (prodThomPairSingularHomologyIso R PUnit.{w + 1} F 0 (finrank ℝ F)).inv ≫
+            TopPair.singularHomologyMap (prodThomPairSnd PUnit.{w + 1} F) R _) ≫
+          TopPair.singularHomologyMap (prodThomPairFiberMap F b) R _ := by
+    rw [← hpt, Category.assoc, hinv, ← hc, TopPair.singularHomologyMap_comp]
+    simp only [Category.assoc]
+  rw [reassoc_of% hb, reassoc_of% hb, h b]
 
 end TauCeti

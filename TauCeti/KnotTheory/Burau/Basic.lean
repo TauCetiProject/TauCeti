@@ -491,23 +491,6 @@ theorem burauMatrix_mulVec (t : R) (i : Fin (n - 1)) (v : Fin n → R) :
     burauMatrix t i *ᵥ v = v - (burauRow R i ⬝ᵥ v) • burauCol t i := by
   rw [burauMatrix_def, Matrix.sub_mulVec, Matrix.one_mulVec, vecMulVec_mulVec, op_smul_eq_smul]
 
-/-- A column vector fixed by every elementary Burau matrix is fixed by the whole representation. -/
-theorem burau_mulVec_of_forall {t : Rˣ} {v : Fin n → R}
-    (h : ∀ i : Fin (n - 1), burauMatrix (t : R) i *ᵥ v = v) (b : BraidGroup n) :
-    (burau n t b : Matrix (Fin n) (Fin n) R) *ᵥ v = v := by
-  refine BraidGroup.sigma_induction_on
-    (p := fun b => (burau n t b : Matrix (Fin n) (Fin n) R) *ᵥ v = v) b
-    (fun i => by simp only [burau_sigma, coe_burauGL]; exact h i) ?_ ?_ ?_
-  · rw [map_one, Units.val_one, Matrix.one_mulVec]
-  · intro b b' hb hb'
-    rw [map_mul, Units.val_mul, ← Matrix.mulVec_mulVec, hb', hb]
-  · intro b hb
-    have hmul : ((burau n t b⁻¹ : GL (Fin n) R) : Matrix (Fin n) (Fin n) R) *ᵥ
-        ((burau n t b : GL (Fin n) R) : Matrix (Fin n) (Fin n) R) *ᵥ v = v := by
-      rw [Matrix.mulVec_mulVec, ← Units.val_mul, ← map_mul, inv_mul_cancel, map_one,
-        Units.val_one, Matrix.one_mulVec]
-    rwa [hb] at hmul
-
 /-- A row vector fixed by every elementary Burau matrix is fixed by the whole representation. -/
 theorem vecMul_burau_of_forall {t : Rˣ} {w : Fin n → R}
     (h : ∀ i : Fin (n - 1), w ᵥ* burauMatrix (t : R) i = w) (b : BraidGroup n) :
@@ -555,6 +538,15 @@ theorem burau_mul_of_forall {β : Type*} [Fintype β] [DecidableEq β] {t : Rˣ}
             ((ρ b⁻¹ : GL β R) : Matrix β β R) := by rw [hb]
       _ = C * ((ρ b⁻¹ : GL β R) : Matrix β β R) := by
           rw [← Matrix.mul_assoc, hM, Matrix.one_mul]
+
+/-- A column vector fixed by every elementary Burau matrix is fixed by the whole representation. -/
+theorem burau_mulVec_of_forall {t : Rˣ} {v : Fin n → R}
+    (h : ∀ i : Fin (n - 1), burauMatrix (t : R) i *ᵥ v = v) (b : BraidGroup n) :
+    (burau n t b : Matrix (Fin n) (Fin n) R) *ᵥ v = v := by
+  refine Matrix.replicateCol_injective (ι := Fin 1) ?_
+  rw [Matrix.replicateCol_mulVec, burau_mul_of_forall (ρ := 1) (fun i ↦ by
+    rw [← Matrix.replicateCol_mulVec, h i, MonoidHom.one_apply, Units.val_one,
+      Matrix.mul_one]) b, MonoidHom.one_apply, Units.val_one, Matrix.mul_one]
 
 /-- **The all-ones column vector is fixed by the Burau representation.** The line it spans is
 therefore an invariant submodule; for `2 ≤ n` over a nontrivial ring it is a proper nonzero one,

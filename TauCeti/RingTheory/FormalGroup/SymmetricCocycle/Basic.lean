@@ -502,7 +502,7 @@ theorem smul_lazardCocycle_eq_zero_iff {n : ℕ} (hn : 2 ≤ n) {r : R} :
     r • lazardCocycle n R = 0 ↔ r = 0 := by
   refine ⟨fun h => ?_, fun h => by rw [h, zero_smul]⟩
   obtain ⟨c, hc⟩ :=
-    Finset.exists_sum_natCast_mul_eq_one_of_gcd_eq_one (gcd_choose_div_lazardGcd_eq_one hn)
+    Finset.gcd_eq_one_iff_exists_sum_natCast_mul_eq_one.1 (gcd_choose_div_lazardGcd_eq_one hn)
   refine eq_zero_of_smul_eq_zero_of_sum_coeff_mul_eq_one (Icc 1 (n - 1))
     (fun i => Finsupp.single 0 i + Finsupp.single 1 (n - i)) (fun i => (c i : R)) ?_ h
   rw [← Int.cast_one, ← hc, Int.cast_sum]

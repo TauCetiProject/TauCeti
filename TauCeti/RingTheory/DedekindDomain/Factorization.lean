@@ -158,7 +158,7 @@ theorem count_finprod_asIdeal_pow {e : HeightOneSpectrum R → ℕ}
       Ideal.one_eq_top, Ideal.pow_eq_top_iff, w.isPrime.ne_top, false_or] at hw ⊢
     exact hw
   rw [← Nat.cast_inj (R := ℤ),
-    ← FractionalIdeal.count_coe (FractionRing R) v
+    ← FractionalIdeal.count_coeIdeal (FractionRing R) v
       (finprod_ne_zero fun w => pow_ne_zero _ w.ne_bot),
     FractionalIdeal.coeIdeal_finprod (nonZeroDivisors R) (FractionRing R) le_rfl]
   simp_rw [FractionalIdeal.coeIdeal_pow, ← zpow_natCast]
@@ -256,7 +256,7 @@ theorem count_spanSingleton_algebraMap_eq_neg_log_intValuation (v : HeightOneSpe
   · simp [count_zero]
   have hspan : (Ideal.span {r} : Ideal A) ≠ 0 := by
     simpa [ne_eq, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot] using hr
-  rw [← coeIdeal_span_singleton (S := A⁰) (P := K) r, count_coe K v hspan,
+  rw [← coeIdeal_span_singleton (S := A⁰) (P := K) r, count_coeIdeal K v hspan,
     v.intValuation_if_neg hr, WithZero.log_exp]
   ring
 

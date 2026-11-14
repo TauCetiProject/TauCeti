@@ -8,6 +8,8 @@ module
 public import TauCeti.Probability.PointProcess.Poisson.Finite
 public import TauCeti.Probability.RandomMeasure.Superposition
 public import TauCeti.MeasureTheory.Measure.Measurability
+public import TauCeti.Probability.PointProcess.Poisson.Basic
+import TauCeti.Probability.PointProcess.Poisson.LaplaceCharacterization
 
 /-!
 # Sampling with a sigma-finite Poisson intensity
@@ -133,5 +135,11 @@ theorem laplaceFunctional_poissonLaw (Λ : Measure X) [SigmaFinite Λ]
   simp only [poissonPiece_def, Measure.restrict_zero, finitePoissonLawOf_zero,
     infinitePi_dirac, Measure.map_dirac' measurable_sum]
   simp
+
+/-- The sigma-finite sampling law realizes a Poisson random measure with its specified intensity. -/
+theorem isPoissonRandomMeasure_poissonLaw (Λ : Measure X) [SigmaFinite Λ] :
+    IsPoissonRandomMeasure Λ.poissonLaw id Λ :=
+  isPoissonRandomMeasure_of_laplaceFunctional measurable_id
+    (fun _ hf ↦ laplaceFunctional_poissonLaw Λ hf)
 
 end MeasureTheory.Measure
