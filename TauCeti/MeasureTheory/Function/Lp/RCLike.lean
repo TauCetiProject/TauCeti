@@ -13,9 +13,10 @@ import Mathlib.Analysis.RCLike.Lemmas
 
 Every `f : Lp 𝕜 p μ` over a real or complex field `𝕜` decomposes into its real and imaginary parts
 in `Lp ℝ p μ` via `RCLike.reCLM.compLp`, `RCLike.imCLM.compLp`, and `RCLike.ofRealCLM.compLp`
-(`MeasureTheory.Lp.ofRealCLM_compLp_reCLM_add_I_smul_ofRealCLM_compLp_imCLM`). Consequently, any
-`𝕜`-linear map `T : Lp 𝕜 p μ → Lp 𝕜 q ν` (`1 ≤ q`) that intertwines an operator
-`T₀ : Lp ℝ p μ → Lp ℝ q ν` of norm at most `C` along `RCLike.ofRealCLM.compLp` satisfies
+(`MeasureTheory.Lp.ofRealCLM_compLp_reCLM_add_I_smul_ofRealCLM_compLp_imCLM`), with
+`RCLike.reCLM.compLp` and `RCLike.imCLM.compLp` norm-nonincreasing and `RCLike.ofRealCLM.compLp`
+isometric. Consequently, any `𝕜`-linear map `T : Lp 𝕜 p μ → Lp 𝕜 q ν` (`1 ≤ q`) that intertwines an
+operator `T₀ : Lp ℝ p μ → Lp ℝ q ν` of norm at most `C` along `RCLike.ofRealCLM.compLp` satisfies
 `‖T f‖ ≤ 2 * C * ‖f‖` (`TauCeti.norm_apply_le_two_mul_of_compLp_ofRealCLM`).
 -/
 
@@ -49,6 +50,10 @@ theorem ofRealCLM_compLp_reCLM_add_I_smul_ofRealCLM_compLp_imCLM (f : Lp 𝕜 p 
   simp only [RCLike.ofRealCLM_apply, RCLike.reCLM_apply, RCLike.imCLM_apply]
   rw [mul_comm, RCLike.re_add_im]
 
+/-- Taking the real part in `Lp 𝕜 p μ` does not increase the norm. -/
+theorem norm_reCLM_compLp_le (f : Lp 𝕜 p μ) : ‖(RCLike.reCLM (K := 𝕜)).compLp f‖ ≤ ‖f‖ := by
+  simpa using (RCLike.reCLM (K := 𝕜)).norm_compLp_le f
+
 /-- Taking the imaginary part in `Lp 𝕜 p μ` does not increase the norm. -/
 theorem norm_imCLM_compLp_le (f : Lp 𝕜 p μ) : ‖(RCLike.imCLM (K := 𝕜)).compLp f‖ ≤ ‖f‖ := by
   have him : ‖(RCLike.imCLM : StrongDual ℝ 𝕜)‖ ≤ 1 :=
@@ -56,6 +61,15 @@ theorem norm_imCLM_compLp_le (f : Lp 𝕜 p μ) : ‖(RCLike.imCLM (K := 𝕜)).
       simpa using RCLike.abs_im_le_norm z
   have hf0 : 0 ≤ ‖f‖ := by rw [Lp.norm_def]; exact ENNReal.toReal_nonneg
   exact ((RCLike.imCLM (K := 𝕜)).norm_compLp_le f).trans (mul_le_of_le_one_left hf0 him)
+
+/-- Embedding `Lp ℝ p μ` into `Lp 𝕜 p μ` via `RCLike.ofRealCLM` preserves the norm. -/
+@[simp]
+theorem norm_ofRealCLM_compLp (g : Lp ℝ p μ) : ‖(RCLike.ofRealCLM (K := 𝕜)).compLp g‖ = ‖g‖ := by
+  rw [Lp.norm_def, Lp.norm_def]
+  refine congrArg ENNReal.toReal (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
+    (Lp.aestronglyMeasurable _) ?_)
+  filter_upwards [(RCLike.ofRealCLM (K := 𝕜)).coeFn_compLp g] with x hx
+  simp [hx]
 
 end MeasureTheory.Lp
 
@@ -76,10 +90,6 @@ theorem norm_apply_le_two_mul_of_compLp_ofRealCLM
     ‖T f‖ ≤ 2 * C * ‖f‖ := by
   let reLp := (RCLike.reCLM (K := 𝕜)).compLp f
   let imLp := (RCLike.imCLM (K := 𝕜)).compLp f
-  have hnorm_ofReal (g : Lp ℝ q ν) : ‖(RCLike.ofRealCLM (K := 𝕜)).compLp g‖ ≤ ‖g‖ := by
-    simpa using (RCLike.ofRealCLM (K := 𝕜)).norm_compLp_le g
-  have hnorm_re : ‖reLp‖ ≤ ‖f‖ := by
-    simpa [reLp] using (RCLike.reCLM (K := 𝕜)).norm_compLp_le f
   have hnorm_I : ‖(RCLike.I : 𝕜)‖ ≤ 1 := by
     rw [RCLike.norm_I]
     split_ifs <;> norm_num
@@ -90,14 +100,13 @@ theorem norm_apply_le_two_mul_of_compLp_ofRealCLM
       ≤ ‖(RCLike.ofRealCLM (K := 𝕜)).compLp (T₀ reLp)‖ +
           ‖(RCLike.I : 𝕜) • (RCLike.ofRealCLM (K := 𝕜)).compLp (T₀ imLp)‖ := norm_add_le _ _
     _ ≤ ‖T₀ reLp‖ + 1 * ‖T₀ imLp‖ := by
+        rw [Lp.norm_ofRealCLM_compLp, norm_smul, Lp.norm_ofRealCLM_compLp]
         gcongr
-        · exact hnorm_ofReal (T₀ reLp)
-        · rw [norm_smul]
-          exact mul_le_mul hnorm_I (hnorm_ofReal (T₀ imLp)) (norm_nonneg _) zero_le_one
     _ ≤ C * ‖reLp‖ + 1 * (C * ‖imLp‖) := by gcongr <;> exact hC _
     _ ≤ C * ‖f‖ + 1 * (C * ‖f‖) := by
         gcongr
-        exact Lp.norm_imCLM_compLp_le f
+        · exact Lp.norm_reCLM_compLp_le f
+        · exact Lp.norm_imCLM_compLp_le f
     _ = 2 * C * ‖f‖ := by ring
 
 end TauCeti

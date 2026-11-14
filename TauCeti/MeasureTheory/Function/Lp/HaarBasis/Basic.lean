@@ -52,6 +52,7 @@ the martingale convergence theorem. The basis is assembled from them by Mathlib'
   averaging projections.
 * `TauCeti.unitInterval.coord_smul_haarBasis`: each term of the Haar expansion is a dyadic
   martingale difference `dyadicProj 𝕜 p (n + 1) f - dyadicProj 𝕜 p n f`.
+* `TauCeti.unitInterval.haarBasis_coord_apply`: explicit integral formula for the Haar coordinates.
 
 ## References
 
@@ -420,6 +421,105 @@ theorem coord_smul_haarBasis (hp : p ≠ ∞) (n : ℕ) (f : Lp 𝕜 p (volume :
     (haarBasis 𝕜 p hp).coord n f • haarBasis 𝕜 p hp n =
       dyadicProj 𝕜 p (n + 1) f - dyadicProj 𝕜 p n f := by
   rw [← (haarBasis 𝕜 p hp).proj_succ_sub_proj, haarBasis_proj]
+
+omit [Fact (1 ≤ p)] in
+private theorem integral_haarFun_smul {n : ℕ} (hn : 0 < n) {g : I → 𝕜} (hg : Integrable g) :
+    ∫ x, haarFun n x • g x =
+      (∫ x in dyadicCell (2 * n), g x) - ∫ x in dyadicCell (2 * n + 1), g x := by
+  have hpt (x : I) : haarFun n x • g x =
+      (dyadicCell (2 * n)).indicator g x - (dyadicCell (2 * n + 1)).indicator g x := by
+    rw [haarFun_of_ne_zero hn.ne', Pi.sub_apply, sub_smul]
+    simp only [Set.indicator, Pi.one_apply]
+    split_ifs <;> simp
+  simp_rw [hpt]
+  rw [integral_sub (hg.indicator (measurableSet_dyadicCell _))
+    (hg.indicator (measurableSet_dyadicCell _)),
+    integral_indicator (measurableSet_dyadicCell _),
+    integral_indicator (measurableSet_dyadicCell _)]
+
+/-- The `n`-th Haar coordinate of `f ∈ Lᵖ(I; 𝕜)` is `2 ^ k` times the integral of `hₙ • f`, where
+`k = Nat.log 2 n` is the dyadic level of `n` (`0` for `n = 0`). -/
+theorem haarBasis_coord_apply (hp : p ≠ ∞) (n : ℕ) (f : Lp 𝕜 p (volume : Measure I)) :
+    (haarBasis 𝕜 p hp).coord n f = (2 ^ Nat.log 2 n : ℝ) • ∫ x, haarFun n x • f x := by
+  have hf : Integrable f := (Lp.memLp f).integrable Fact.out
+  set c := (haarBasis 𝕜 p hp).coord n f
+  have hdiff := coord_smul_haarBasis hp n f
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · have h1 : c • haarBasis 𝕜 p hp 0 = dyadicProj 𝕜 p 1 f := by
+      simpa [c] using hdiff
+    have hae : (fun _ : I => c) =ᵐ[volume] volume[f | dyadicFiltration 1] := by
+      filter_upwards [Lp.coeFn_smul c (haarBasis 𝕜 p hp 0), coeFn_haarBasis (𝕜 := 𝕜) hp 0,
+        dyadicProj_ae_eq one_ne_zero f] with x hsmul h0 hproj
+      rw [Pi.smul_apply, h0, haarFun_zero, Pi.one_apply, RCLike.ofReal_one, smul_eq_mul,
+        mul_one] at hsmul
+      rw [← hsmul, congrArg (fun g : Lp 𝕜 p (volume : Measure I) => g x) h1, hproj]
+    have hint := integral_congr_ae hae
+    rw [integral_const, Measure.real, measure_univ, ENNReal.toReal_one, one_smul,
+      integral_condExp (dyadicFiltration.le 1)] at hint
+    simpa [c] using hint
+  · have hae : (fun x => haarFun n x • (haarFun n x • c)) =ᵐ[volume] fun x =>
+        haarFun n x • volume[f | dyadicFiltration (n + 1)] x -
+          haarFun n x • volume[f | dyadicFiltration n] x := by
+      filter_upwards [coeFn_haarBasis (𝕜 := 𝕜) hp n, Lp.coeFn_smul c (haarBasis 𝕜 p hp n),
+        Lp.coeFn_sub (dyadicProj 𝕜 p (n + 1) f) (dyadicProj 𝕜 p n f),
+        dyadicProj_ae_eq (Nat.succ_ne_zero n) f, dyadicProj_ae_eq hn.ne' f]
+        with x hbasis hsmul hsub hp1 hp0
+      have h1 : (c • haarBasis 𝕜 p hp n) x =
+          (dyadicProj 𝕜 p (n + 1) f - dyadicProj 𝕜 p n f) x :=
+        congrArg (fun g : Lp 𝕜 p (volume : Measure I) => g x) hdiff
+      have h2 : haarFun n x • c = volume[f | dyadicFiltration (n + 1)] x -
+          volume[f | dyadicFiltration n] x := by
+        rw [RCLike.real_smul_eq_coe_mul, mul_comm, ← smul_eq_mul, ← hbasis, ← Pi.smul_apply,
+          ← hsmul, h1, hsub, Pi.sub_apply, hp1, hp0]
+      rw [h2, smul_sub]
+    have hcond_half {e : ℕ} (he : e < 2) :
+        ∫ x in dyadicCell (2 * n + e), volume[f | dyadicFiltration n] x =
+          (volume.real (dyadicCell n) / 2) • ⨍ y in dyadicCell n, f y := by
+      rw [setIntegral_congr_ae (g := fun _ => ⨍ y in dyadicCell n, f y)
+        (measurableSet_dyadicCell _)
+        ((condExp_dyadicFiltration_ae_eq n hf).mono fun x hx hmem => by
+          rw [hx]
+          dsimp only
+          rw [(dyadicAtom_eq_iff ⟨le_rfl, by omega⟩).2
+            (mem_dyadicCell_of_mem_two_mul_add hn he hmem)]),
+        setIntegral_const, volume_real_dyadicCell_two_mul_add hn he]
+    have hlhs : ∫ x, haarFun n x • (haarFun n x • c) = volume.real (dyadicCell n) • c := by
+      have hv0 : volume.real (dyadicCell (2 * n)) = volume.real (dyadicCell n) / 2 := by
+        simpa using volume_real_dyadicCell_two_mul_add hn two_pos
+      rw [integral_haarFun_smul hn (((memLp_haarFun 1 n).integrable le_rfl).smul_const c),
+        setIntegral_congr_fun (g := fun _ => c) (measurableSet_dyadicCell (2 * n))
+          (fun x hx => by simp [haarFun_eq_one hn hx]),
+        setIntegral_congr_fun (g := fun _ => -c) (measurableSet_dyadicCell (2 * n + 1))
+          (fun x hx => by simp [haarFun_eq_neg_one hn hx]),
+        setIntegral_const, setIntegral_const, hv0,
+        volume_real_dyadicCell_two_mul_add hn one_lt_two, smul_neg, sub_neg_eq_add, ← add_smul,
+        add_halves]
+    have hrhs1 : ∫ x, haarFun n x • volume[f | dyadicFiltration (n + 1)] x =
+        ∫ x, haarFun n x • f x := by
+      rw [integral_haarFun_smul hn integrable_condExp, integral_haarFun_smul hn hf,
+        setIntegral_condExp (dyadicFiltration.le _) hf
+          (measurableSet_dyadicFiltration_dyadicCell (by omega)),
+        setIntegral_condExp (dyadicFiltration.le _) hf
+          (measurableSet_dyadicFiltration_dyadicCell (by omega))]
+    have hrhs0 : ∫ x, haarFun n x • volume[f | dyadicFiltration n] x = 0 := by
+      have hc0 : ∫ x in dyadicCell (2 * n), volume[f | dyadicFiltration n] x =
+          (volume.real (dyadicCell n) / 2) • ⨍ y in dyadicCell n, f y := by
+        simpa using hcond_half two_pos
+      rw [integral_haarFun_smul hn integrable_condExp, hc0, hcond_half one_lt_two, sub_self]
+    have hsub_eq : volume.real (dyadicCell n) • c = ∫ x, haarFun n x • f x := by
+      have hint := integral_congr_ae hae
+      have hsmul_int (g : I → 𝕜) (hg : Integrable g) :
+          Integrable fun x => haarFun n x • g x :=
+        hg.bdd_smul 1 (measurable_haarFun n).aestronglyMeasurable
+          (ae_of_all _ (norm_haarFun_le n))
+      rw [hlhs, integral_sub (hsmul_int _ integrable_condExp) (hsmul_int _ integrable_condExp),
+        hrhs1, hrhs0, sub_zero] at hint
+      exact hint
+    have hvol : volume.real (dyadicCell n) = (2 ^ Nat.log 2 n : ℝ)⁻¹ := by
+      simp [Measure.real, volume_dyadicCell hn]
+    rw [hvol] at hsub_eq
+    have hmul := congrArg ((2 ^ Nat.log 2 n : ℝ) • ·) hsub_eq
+    simpa [c, smul_smul, mul_inv_cancel₀ (by positivity : (2 ^ Nat.log 2 n : ℝ) ≠ 0)] using hmul
 
 /-- The Haar basis is monotone: its basis constant is at most `1`. -/
 theorem haarBasis_nnNormProjBound_le_one (hp : p ≠ ∞) :

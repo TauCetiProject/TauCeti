@@ -148,6 +148,12 @@ namespace SchauderBasis
 variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
   (b : SchauderBasis 𝕜 X)
 
+/-- The projection of a classical Schauder basis onto `Finset.range n` is its `n`-th initial
+projection. -/
+@[simp]
+theorem proj_range (n : ℕ) : GeneralSchauderBasis.proj b (Finset.range n) = b.proj n :=
+  (rfl)
+
 /-- Each term of a classical Schauder expansion is the difference of consecutive initial
 projections. -/
 theorem proj_succ_sub_proj (n : ℕ) (x : X) :
@@ -157,7 +163,7 @@ theorem proj_succ_sub_proj (n : ℕ) (x : X) :
 /-- Precomposition with an initial projection is a finite linear combination of coordinates. -/
 theorem comp_proj_eq_sum (f : StrongDual 𝕜 X) (n : ℕ) :
     f.comp (b.proj n) = ∑ i ∈ Finset.range n, f (b i) • b.coord i := by
-  rw [proj, GeneralSchauderBasis.comp_proj_eq_sum]
+  rw [← proj_range, GeneralSchauderBasis.comp_proj_eq_sum]
 
 /-- A uniform bound on the initial projections bounds the basis constant of a classical Schauder
 basis. -/

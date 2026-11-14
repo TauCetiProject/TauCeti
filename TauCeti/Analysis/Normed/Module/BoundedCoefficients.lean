@@ -22,7 +22,11 @@ coefficients change the norm of `∑ i ∈ s, a i • v i` by a bounded factor:
 Conversely, if every `±1`-signed combination `∑ i ∈ s, ε i • v i` has norm at most `S`, then real
 coefficients of absolute value at most `t` give `t * S` without losing a factor of `2`
 (`TauCeti.norm_sum_ofReal_smul_le_of_forall_abs_eq_one`), and scalar coefficients of norm at most
-`t` give `2 * t * S` (`TauCeti.norm_sum_smul_le_two_mul_of_forall_abs_eq_one`).
+`t` give `2 * t * S` (`TauCeti.norm_sum_smul_le_two_mul_of_forall_abs_eq_one`). For a sequence
+indexed by `ℕ`, a uniform bound `S` on `±1`-signed combinations along initial segments
+`Finset.range N` gives the same bounds `t * S` and `2 * t * S` over arbitrary finite sets
+(`TauCeti.norm_sum_ofReal_smul_le_of_forall_range_abs_eq_one` and
+`TauCeti.norm_sum_smul_le_two_mul_of_forall_range_abs_eq_one`).
 
 The first estimate peels off the smallest coefficient, which multiplies the full sum; the others
 split coefficients into positive and negative parts, into signs and magnitudes, and into real and
@@ -204,5 +208,50 @@ theorem norm_sum_smul_le_two_mul_of_forall_abs_eq_one
         (norm_sum_ofReal_smul_le_of_forall_abs_eq_one hI ht fun i hi ↦
           (RCLike.abs_im_le_norm _).trans (ha i hi)))
     _ = 2 * t * S := by ring
+
+section InitialSegments
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {v : ℕ → E} {S t : ℝ}
+
+/-- If every `±1`-signed combination of `v` along an initial segment `Finset.range N` has norm at
+most `S`, then every combination of `v` over an arbitrary finite set `A` with real coefficients of
+absolute value at most `t` has norm at most `t * S`. -/
+theorem norm_sum_ofReal_smul_le_of_forall_range_abs_eq_one
+    (hS : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ n, |ε n| = 1) →
+      ‖∑ n ∈ Finset.range N, (ε n : 𝕜) • v n‖ ≤ S)
+    (A : Finset ℕ) (ht : 0 ≤ t) {a : ℕ → ℝ} (ha : ∀ n ∈ A, |a n| ≤ t) :
+    ‖∑ n ∈ A, (a n : 𝕜) • v n‖ ≤ t * S := by
+  classical
+  -- Embed `A` in `Finset.range (A.sup id).succ` and extend `a` by `0` outside `A`.
+  let N := (A.sup id).succ
+  let a' : ℕ → ℝ := fun n ↦ if n ∈ A then a n else 0
+  have heq : ∑ n ∈ A, (a n : 𝕜) • v n = ∑ n ∈ Finset.range N, (a' n : 𝕜) • v n := by
+    rw [← Finset.sum_subset (Finset.subset_range_sup_succ A)]
+    · exact Finset.sum_congr rfl fun n hn ↦ by simp [a', hn]
+    · intro n _ hn
+      simp [a', hn]
+  rw [heq]
+  refine norm_sum_ofReal_smul_le_of_forall_abs_eq_one (hS N) ht fun n _ ↦ ?_
+  dsimp only [a']
+  split_ifs with hn
+  · exact ha n hn
+  · simpa using ht
+
+/-- If every `±1`-signed combination of `v` along an initial segment `Finset.range N` has norm at
+most `S`, then every combination of `v` over an arbitrary finite set `A` with scalar coefficients
+of norm at most `t` has norm at most `2 * t * S`. -/
+theorem norm_sum_smul_le_two_mul_of_forall_range_abs_eq_one
+    (hS : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ n, |ε n| = 1) →
+      ‖∑ n ∈ Finset.range N, (ε n : 𝕜) • v n‖ ≤ S)
+    (A : Finset ℕ) (ht : 0 ≤ t) {a : ℕ → 𝕜} (ha : ∀ n ∈ A, ‖a n‖ ≤ t) :
+    ‖∑ n ∈ A, a n • v n‖ ≤ 2 * t * S :=
+  norm_sum_smul_le_two_mul_of_forall_abs_eq_one
+    (fun ε hε ↦ by
+      simpa using norm_sum_ofReal_smul_le_of_forall_range_abs_eq_one hS A zero_le_one
+        fun n _ ↦ (hε n).le)
+    ht ha
+
+end InitialSegments
 
 end TauCeti

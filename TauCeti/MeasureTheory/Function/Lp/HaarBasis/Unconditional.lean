@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Module.Bases.Unconditional
 public import TauCeti.MeasureTheory.Function.Lp.HaarBasis.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Burkholder
 import TauCeti.Basic.Real.ConjExponents
+import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.RCLike
@@ -316,24 +317,26 @@ private theorem burkholderPhi_dyadicCell_le {f : I → ℝ} (hf : Integrable f) 
 
 /-- Burkholder's inductive Bellman inequality over the dyadic atoms at step `N ≥ 1`. -/
 private theorem sum_burkholderPhi_nonneg {f : I → ℝ} (hf : Integrable f) {r : ℝ} (hr : 2 ≤ r)
-    {ε : ℕ → ℝ} (hε : ∀ n, |ε n| = 1) :
-    ∀ k : ℕ, 0 ≤ ∑ m ∈ Finset.Ico (k + 1) (2 * (k + 1)),
+    {ε : ℕ → ℝ} :
+    ∀ k : ℕ, (∀ n < k + 1, |ε n| = 1) → 0 ≤ ∑ m ∈ Finset.Ico (k + 1) (2 * (k + 1)),
       volume.real (dyadicCell m) *
         burkholderPhi r |⨍ y in dyadicCell m, f y| |transformCell f ε m|
-  | 0 => by
-    have hIco : Finset.Ico 1 (2 * (0 + 1)) = {1} := rfl
-    rw [hIco, Finset.sum_singleton, transformCell_one, abs_mul, hε 0, one_mul, burkholderPhi_def]
+  | 0, hε => by
+    have hIco : Finset.Ico 1 (2 * (0 + 1)) = {1} := Nat.Ico_succ_singleton 1
+    rw [hIco, Finset.sum_singleton, transformCell_one, abs_mul, hε 0 one_pos, one_mul,
+      burkholderPhi_def]
     set u := |⨍ y in dyadicCell 1, f y|
     have hu : 0 ≤ u := abs_nonneg _
     have hphi : 0 ≤ (u + u) ^ (r - 1) * ((r - 1) * u - u) :=
       mul_nonneg (Real.rpow_nonneg (by linarith) _) (by nlinarith)
     exact mul_nonneg measureReal_nonneg hphi
-  | k + 1 => by
+  | k + 1, hε => by
     let M := k + 1
     let Φ : ℕ → ℝ := fun m =>
       volume.real (dyadicCell m) *
         burkholderPhi r |⨍ y in dyadicCell m, f y| |transformCell f ε m|
-    have ih : 0 ≤ ∑ m ∈ Finset.Ico M (2 * M), Φ m := sum_burkholderPhi_nonneg hf hr hε k
+    have ih : 0 ≤ ∑ m ∈ Finset.Ico M (2 * M), Φ m :=
+      sum_burkholderPhi_nonneg hf hr k fun n hn => hε n (Nat.lt_succ_of_lt hn)
     have hbot : ∑ m ∈ Finset.Ico M (2 * M), Φ m = Φ M + ∑ m ∈ Finset.Ico (M + 1) (2 * M), Φ m :=
       Finset.sum_eq_sum_Ico_succ_bot (by omega) Φ
     have htop : ∑ m ∈ Finset.Ico (M + 1) (2 * (M + 1)), Φ m =
@@ -341,7 +344,7 @@ private theorem sum_burkholderPhi_nonneg {f : I → ℝ} (hf : Integrable f) {r 
       have h2M : 2 * (M + 1) = 2 * M + 1 + 1 := by omega
       rw [h2M, Finset.sum_Ico_succ_top (by omega), Finset.sum_Ico_succ_top (by omega)]
     have hstep : Φ M ≤ Φ (2 * M) + Φ (2 * M + 1) :=
-      burkholderPhi_dyadicCell_le hf hr (Nat.succ_pos k) (hε M)
+      burkholderPhi_dyadicCell_le hf hr (Nat.succ_pos k) (hε M (Nat.lt_succ_self M))
     linarith
 
 /-- For `0 < N` and `1 ≤ p < ∞`, the `p.toReal`-th power of the `Lᵖ` norm of a function almost
@@ -361,9 +364,9 @@ private theorem norm_rpow_eq_sum_dyadicAtom {p : ℝ≥0∞} [Fact (1 ≤ p)] (h
   simp only [smul_eq_mul]
 
 /-- **Burkholder's Haar martingale transform inequality for `2 ≤ p < ∞`.** For real `f ∈ Lᵖ(I)` and
-signs `|ε n| = 1`, the signed partial sum has `Lᵖ` norm at most `(p - 1) ‖f‖`. -/
+signs `|ε n| = 1` (`n < N`), the signed partial sum has `Lᵖ` norm at most `(p - 1) ‖f‖`. -/
 theorem norm_sum_smul_dyadicProj_sub_le_of_two_le {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp2 : 2 ≤ p)
-    (hp : p ≠ ∞) (N : ℕ) {ε : ℕ → ℝ} (hε : ∀ n, |ε n| = 1)
+    (hp : p ≠ ∞) (N : ℕ) {ε : ℕ → ℝ} (hε : ∀ n < N, |ε n| = 1)
     (f : Lp ℝ p (volume : Measure I)) :
     ‖∑ n ∈ Finset.range N, ε n • (dyadicProj ℝ p (n + 1) f - dyadicProj ℝ p n f)‖ ≤
       (p.toReal - 1) * ‖f‖ := by
@@ -392,7 +395,7 @@ theorem norm_sum_smul_dyadicProj_sub_le_of_two_le {p : ℝ≥0∞} [Fact (1 ≤ 
   have hbell_nonneg : 0 ≤ c * ∑ m ∈ Finset.Ico (k + 1) (2 * (k + 1)),
       volume.real (dyadicCell m) *
         burkholderPhi r |⨍ y in dyadicCell m, f y| |transformCell f ε m| :=
-    mul_nonneg hc_pos (sum_burkholderPhi_nonneg hfint hr2 hε k)
+    mul_nonneg hc_pos (sum_burkholderPhi_nonneg hfint hr2 k hε)
   have hmaj : c * (∑ m ∈ Finset.Ico (k + 1) (2 * (k + 1)),
       volume.real (dyadicCell m) *
         burkholderPhi r |⨍ y in dyadicCell m, f y| |transformCell f ε m|) ≤
@@ -415,10 +418,11 @@ theorem norm_sum_smul_dyadicProj_sub_le_of_two_le {p : ℝ≥0∞} [Fact (1 ≤ 
 /-! ### Hölder duality for `1 < p < 2` and unified bounds -/
 
 /-- **Hölder duality for Haar martingale transforms.** If `p` and `q` are Hölder conjugate with
-`2 ≤ q < ∞`, then real Haar sign transforms on `Lᵖ(I; ℝ)` have norm at most `(q - 1) ‖f‖`. -/
+`2 ≤ q < ∞`, then real Haar sign transforms on `Lᵖ(I; ℝ)` with `|ε n| = 1` (`n < N`) have norm at
+most `(q - 1) ‖f‖`. -/
 theorem norm_sum_smul_dyadicProj_sub_le_of_holderConjugate {p q : ℝ≥0∞} [Fact (1 ≤ p)]
     [p.HolderConjugate q] (hq2 : 2 ≤ q) (hq : q ≠ ∞) (N : ℕ)
-    {ε : ℕ → ℝ} (hε : ∀ n, |ε n| = 1) (f : Lp ℝ p (volume : Measure I)) :
+    {ε : ℕ → ℝ} (hε : ∀ n < N, |ε n| = 1) (f : Lp ℝ p (volume : Measure I)) :
     ‖∑ n ∈ Finset.range N, ε n • (dyadicProj ℝ p (n + 1) f - dyadicProj ℝ p n f)‖ ≤
       (q.toReal - 1) * ‖f‖ := by
   have : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le q p⟩
@@ -443,10 +447,10 @@ theorem norm_sum_smul_dyadicProj_sub_le_of_holderConjugate {p q : ℝ≥0∞} [F
     _ = (q.toReal - 1) * ‖f‖ * ‖g‖ := by ring
 
 /-- **Burkholder's bound for real Haar martingale transforms, `1 < p < ∞`.** For every
-`f ∈ Lᵖ(I; ℝ)` and signs `|ε n| = 1`, the signed partial sum has norm at most `(p* - 1) ‖f‖`,
-where `p* = max p (p / (p - 1))`. -/
+`f ∈ Lᵖ(I; ℝ)` and signs `|ε n| = 1` (`n < N`), the signed partial sum has norm at most
+`(p* - 1) ‖f‖`, where `p* = max p (p / (p - 1))`. -/
 theorem norm_sum_smul_dyadicProj_sub_real_le {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp1 : 1 < p)
-    (hp : p ≠ ∞) (N : ℕ) {ε : ℕ → ℝ} (hε : ∀ n, |ε n| = 1)
+    (hp : p ≠ ∞) (N : ℕ) {ε : ℕ → ℝ} (hε : ∀ n < N, |ε n| = 1)
     (f : Lp ℝ p (volume : Measure I)) :
     ‖∑ n ∈ Finset.range N, ε n • (dyadicProj ℝ p (n + 1) f - dyadicProj ℝ p n f)‖ ≤
       (max p.toReal (p.toReal / (p.toReal - 1)) - 1) * ‖f‖ := by
@@ -474,7 +478,7 @@ theorem norm_sum_smul_dyadicProj_sub_real_le {p : ℝ≥0∞} [Fact (1 ≤ p)] (
 
 /-- **Bound for `±1`-signed Haar martingale transforms on `Lᵖ(I; 𝕜)`, `1 < p < ∞`.** -/
 theorem norm_sum_ofReal_smul_dyadicProj_sub_le {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (hp1 : 1 < p) (hp : p ≠ ∞) (N : ℕ) {ε : ℕ → ℝ} (hε : ∀ n, |ε n| = 1)
+    (hp1 : 1 < p) (hp : p ≠ ∞) (N : ℕ) {ε : ℕ → ℝ} (hε : ∀ n < N, |ε n| = 1)
     (f : Lp 𝕜 p (volume : Measure I)) :
     ‖∑ n ∈ Finset.range N, (ε n : 𝕜) • (dyadicProj 𝕜 p (n + 1) f - dyadicProj 𝕜 p n f)‖ ≤
       2 * (max p.toReal (p.toReal / (p.toReal - 1)) - 1) * ‖f‖ := by
@@ -489,12 +493,9 @@ theorem norm_sum_ofReal_smul_dyadicProj_sub_le {𝕜 : Type*} [RCLike 𝕜] {p :
   refine TauCeti.norm_apply_le_two_mul_of_compLp_ofRealCLM T T₀ (fun g => ?_)
     (by linarith [ENNReal.two_le_max_toReal_div_toReal_sub_one hp1 hp])
     (norm_sum_smul_dyadicProj_sub_real_le hp1 hp N hε) f
-  let ofRealLp := (RCLike.ofRealCLM (K := 𝕜)).compLpL p (volume : Measure I)
-  have hcoe (u : Lp ℝ p (volume : Measure I)) :
-      (RCLike.ofRealCLM (K := 𝕜)).compLp u = ofRealLp u := rfl
-  rw [hcoe, hcoe, sum_apply]
-  dsimp only [T₀]
-  rw [map_sum]
+  rw [← (RCLike.ofRealCLM (K := 𝕜)).compLpL_apply (p := p) (μ := (volume : Measure I)),
+    ← (RCLike.ofRealCLM (K := 𝕜)).compLpL_apply (p := p) (μ := (volume : Measure I)),
+    sum_apply, map_sum]
   refine Finset.sum_congr rfl fun n _ => ?_
   rw [smul_apply, sub_apply, ← RCLike.real_smul_eq_coe_smul (K := 𝕜) (ε n), map_smul, map_sub,
     compLpL_dyadicProj, compLpL_dyadicProj]
@@ -507,11 +508,9 @@ theorem norm_proj_haarBasis_real_le {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp1 : 1 <
     (A : Finset ℕ) :
     ‖GeneralSchauderBasis.proj (haarBasis ℝ p hp) A‖ ≤
       max p.toReal (p.toReal / (p.toReal - 1)) - 1 := by
-  have hC0 : 0 ≤ max p.toReal (p.toReal / (p.toReal - 1)) - 1 := by
-    linarith [ENNReal.two_le_max_toReal_div_toReal_sub_one hp1 hp]
-  refine (haarBasis ℝ p hp).norm_proj_le_of_forall_range_abs_eq_one hC0 (fun N ε hε f => ?_) A
+  refine (haarBasis ℝ p hp).norm_proj_le_of_forall_range_abs_eq_one (fun N ε hε f => ?_) A
   simp_rw [RCLike.ofReal_real_eq_id, id_eq, coord_smul_haarBasis]
-  exact norm_sum_smul_dyadicProj_sub_real_le hp1 hp N hε f
+  exact norm_sum_smul_dyadicProj_sub_real_le hp1 hp N (fun n _ => hε n) f
 
 /-- Every finite coordinate projection of the Haar basis on `Lᵖ([0, 1]; 𝕜)`, `1 < p < ∞`, has
 operator norm at most `2 * (max p (p / (p - 1)) - 1)`. -/
@@ -519,11 +518,9 @@ theorem norm_proj_haarBasis_le {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fa
     (hp : p ≠ ∞) (A : Finset ℕ) :
     ‖GeneralSchauderBasis.proj (haarBasis 𝕜 p hp) A‖ ≤
       2 * (max p.toReal (p.toReal / (p.toReal - 1)) - 1) := by
-  have hC0 : 0 ≤ 2 * (max p.toReal (p.toReal / (p.toReal - 1)) - 1) := by
-    linarith [ENNReal.two_le_max_toReal_div_toReal_sub_one hp1 hp]
-  refine (haarBasis 𝕜 p hp).norm_proj_le_of_forall_range_abs_eq_one hC0 (fun N ε hε f => ?_) A
+  refine (haarBasis 𝕜 p hp).norm_proj_le_of_forall_range_abs_eq_one (fun N ε hε f => ?_) A
   simp_rw [coord_smul_haarBasis]
-  exact norm_sum_ofReal_smul_dyadicProj_sub_le hp1 hp N hε f
+  exact norm_sum_ofReal_smul_dyadicProj_sub_le hp1 hp N (fun n _ => hε n) f
 
 /-- **Unconditional convergence of the Haar expansion.** For `1 < p < ∞` and `f ∈ Lᵖ([0, 1]; 𝕜)`,
 the Haar series of `f` converges unconditionally to `f`. -/
@@ -583,6 +580,7 @@ theorem unconditionalHaarBasis_coord {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0�
 
 /-- The finite coordinate projections of `unconditionalHaarBasis` agree with those of
 `haarBasis`. -/
+@[simp]
 theorem unconditionalHaarBasis_proj {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp1 : 1 < p) (hp : p ≠ ∞) (A : Finset ℕ) :
     (unconditionalHaarBasis 𝕜 p hp1 hp).proj A =
@@ -590,12 +588,10 @@ theorem unconditionalHaarBasis_proj {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞
   rw [unconditionalHaarBasis_def, GeneralSchauderBasis.toUnconditionalSchauderBasis_proj]
 
 /-- Projecting `unconditionalHaarBasis` onto `Finset.range N` gives `dyadicProj 𝕜 p N`. -/
-@[simp]
 theorem unconditionalHaarBasis_proj_range {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp1 : 1 < p) (hp : p ≠ ∞) (N : ℕ) :
     (unconditionalHaarBasis 𝕜 p hp1 hp).proj (Finset.range N) = dyadicProj 𝕜 p N := by
-  rw [← (unconditionalHaarBasis 𝕜 p hp1 hp).toSchauderBasis_proj,
-    toSchauderBasis_unconditionalHaarBasis, haarBasis_proj]
+  simp
 
 /-- Each term of the unconditional Haar expansion is a dyadic martingale difference. -/
 theorem coord_smul_unconditionalHaarBasis {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -648,10 +644,9 @@ theorem norm_multiplier_unconditionalHaarBasis_real_le {p : ℝ≥0∞} [Fact (1
     ‖(unconditionalHaarBasis ℝ p hp1 hp).multiplier a‖ ≤
       (max p.toReal (p.toReal / (p.toReal - 1)) - 1) * ‖a‖ :=
   (unconditionalHaarBasis ℝ p hp1 hp).norm_multiplier_le_of_forall_range_abs_eq_one
-    (by linarith [ENNReal.two_le_max_toReal_div_toReal_sub_one hp1 hp])
     (fun N ε hε f => by
       simp_rw [coord_smul_unconditionalHaarBasis]
-      exact norm_sum_smul_dyadicProj_sub_real_le hp1 hp N hε f) a
+      exact norm_sum_smul_dyadicProj_sub_real_le hp1 hp N (fun n _ => hε n) f) a
 
 /-- **Norm bound for Haar multipliers over `𝕜`.** For `1 < p < ∞` and `a ∈ ℓ^∞(ℕ, 𝕜)`, the Haar
 multiplier `(unconditionalHaarBasis 𝕜 p hp1 hp).multiplier a` on `Lᵖ([0, 1]; 𝕜)` has operator norm
@@ -662,9 +657,9 @@ theorem norm_multiplier_unconditionalHaarBasis_le {𝕜 : Type*} [RCLike 𝕜] {
       4 * (max p.toReal (p.toReal / (p.toReal - 1)) - 1) * ‖a‖ :=
   ((unconditionalHaarBasis 𝕜 p hp1 hp).norm_multiplier_le_two_mul_of_forall_range_abs_eq_one
     (C := 2 * (max p.toReal (p.toReal / (p.toReal - 1)) - 1))
-    (by linarith [ENNReal.two_le_max_toReal_div_toReal_sub_one hp1 hp])
     (fun N ε hε f => by
       simp_rw [coord_smul_unconditionalHaarBasis]
-      exact norm_sum_ofReal_smul_dyadicProj_sub_le hp1 hp N hε f) a).trans_eq (by ring)
+      exact norm_sum_ofReal_smul_dyadicProj_sub_le hp1 hp N (fun n _ => hε n) f) a).trans_eq
+    (by ring)
 
 end TauCeti.unitInterval

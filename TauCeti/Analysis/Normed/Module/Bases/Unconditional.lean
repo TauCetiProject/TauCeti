@@ -26,8 +26,7 @@ coefficients and `4 * t * C` for scalar coefficients of norm at most `t`. In par
 bound on finite coordinate projections is equivalent to one on signed coordinate multipliers
 (`GeneralSchauderBasis.exists_forall_norm_proj_le_iff`). For an `ℕ`-indexed generalized Schauder
 basis, a uniform bound `C` on signed multipliers along initial segments `Finset.range N` transfers
-without loss of constant to bounded real multipliers and finite coordinate projections over
-arbitrary finite sets, and with a factor of `2` to bounded scalar multipliers
+without loss of constant to finite coordinate projections over arbitrary finite sets
 (`GeneralSchauderBasis.norm_proj_le_of_forall_range_abs_eq_one`). Whenever the finite projections
 of a basis with a nontrivial summation filter are uniformly bounded, its coordinate series
 converges unconditionally (`GeneralSchauderBasis.hasSum_of_norm_proj_le`), even without
@@ -175,56 +174,25 @@ section InitialSegments
 variable {𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
   {L : SummationFilter ℕ} (b : GeneralSchauderBasis ℕ 𝕜 X L)
 
-/-- If every `±1`-signed coordinate multiplier along an initial segment `Finset.range N` has norm
-at most `S` at `x`, then every real coordinate multiplier over an arbitrary finite set `A` with
-coefficients of absolute value at most `t` has norm at most `t * S` at `x`. -/
-theorem norm_sum_ofReal_smul_coord_smul_le_of_forall_range {S : ℝ} {x : X}
-    (hS : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ n, |ε n| = 1) →
-      ‖∑ n ∈ Finset.range N, (ε n : 𝕜) • b.coord n x • b n‖ ≤ S)
-    (A : Finset ℕ) {a : ℕ → ℝ} {t : ℝ} (ht : 0 ≤ t) (ha : ∀ n ∈ A, |a n| ≤ t) :
-    ‖∑ n ∈ A, (a n : 𝕜) • b.coord n x • b n‖ ≤ t * S := by
-  classical
-  -- Embed `A` in `Finset.range (A.sup id).succ` and extend `a` by `0` outside `A`.
-  let N := (A.sup id).succ
-  let a' : ℕ → ℝ := fun n ↦ if n ∈ A then a n else 0
-  have heq : ∑ n ∈ A, (a n : 𝕜) • b.coord n x • b n =
-      ∑ n ∈ Finset.range N, (a' n : 𝕜) • b.coord n x • b n := by
-    rw [← Finset.sum_subset (Finset.subset_range_sup_succ A)]
-    · exact Finset.sum_congr rfl fun n hn ↦ by simp [a', hn]
-    · intro n _ hn
-      simp [a', hn]
-  rw [heq]
-  refine TauCeti.norm_sum_ofReal_smul_le_of_forall_abs_eq_one (hS N) ht fun n _ ↦ ?_
-  dsimp only [a']
-  split_ifs with hn
-  · exact ha n hn
-  · simpa using ht
-
-/-- If every `±1`-signed coordinate multiplier along an initial segment `Finset.range N` has norm
-at most `S` at `x`, then every scalar coordinate multiplier over an arbitrary finite set `A` with
-coefficients of norm at most `t` has norm at most `2 * t * S` at `x`. -/
-theorem norm_sum_smul_coord_smul_le_of_forall_range {S : ℝ} {x : X}
-    (hS : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ n, |ε n| = 1) →
-      ‖∑ n ∈ Finset.range N, (ε n : 𝕜) • b.coord n x • b n‖ ≤ S)
-    (A : Finset ℕ) {a : ℕ → 𝕜} {t : ℝ} (ht : 0 ≤ t) (ha : ∀ n ∈ A, ‖a n‖ ≤ t) :
-    ‖∑ n ∈ A, a n • b.coord n x • b n‖ ≤ 2 * t * S :=
-  TauCeti.norm_sum_smul_le_two_mul_of_forall_abs_eq_one
-    (fun ε hε ↦ by
-      simpa using b.norm_sum_ofReal_smul_coord_smul_le_of_forall_range hS A zero_le_one
-        fun n _ ↦ (hε n).le)
-    ht ha
+private theorem nonneg_of_forall_range_abs_eq_one {C : ℝ}
+    (hC : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ n, |ε n| = 1) →
+      ∀ x, ‖∑ n ∈ Finset.range N, (ε n : 𝕜) • b.coord n x • b n‖ ≤ C * ‖x‖) :
+    0 ≤ C :=
+  nonneg_of_mul_nonneg_left (by simpa using hC 0 1 (fun _ ↦ by simp) (b 0))
+    (norm_pos_iff.2 (b.linearIndependent.ne_zero 0))
 
 /-- If every `±1`-signed coordinate multiplier along an initial segment `Finset.range N` has
 operator norm at most `C`, then every finite coordinate projection `b.proj A` also has operator
 norm at most `C`. -/
-theorem norm_proj_le_of_forall_range_abs_eq_one {C : ℝ} (hC0 : 0 ≤ C)
+theorem norm_proj_le_of_forall_range_abs_eq_one {C : ℝ}
     (hC : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ n, |ε n| = 1) →
       ∀ x, ‖∑ n ∈ Finset.range N, (ε n : 𝕜) • b.coord n x • b n‖ ≤ C * ‖x‖)
     (A : Finset ℕ) :
     ‖b.proj A‖ ≤ C := by
-  refine (b.proj A).opNorm_le_bound hC0 fun x ↦ ?_
-  have h := b.norm_sum_ofReal_smul_coord_smul_le_of_forall_range
-    (fun N ε hε ↦ hC N ε hε x) A (a := 1) zero_le_one (fun _ _ ↦ by simp)
+  refine (b.proj A).opNorm_le_bound (b.nonneg_of_forall_range_abs_eq_one hC) fun x ↦ ?_
+  have h := TauCeti.norm_sum_ofReal_smul_le_of_forall_range_abs_eq_one
+    (v := fun n ↦ b.coord n x • b n) (fun N ε hε ↦ hC N ε hε x) A (a := 1) zero_le_one
+    (fun _ _ ↦ by simp)
   simpa [proj_apply] using h
 
 end InitialSegments
@@ -355,33 +323,35 @@ end Multiplier
 section NatMultiplier
 
 /-- Over `ℝ`, if every `±1`-signed coordinate multiplier along an initial segment `Finset.range N`
-has operator norm at most `C` (`0 ≤ C`), then `b.multiplier a` has operator norm at most
-`C * ‖a‖`. -/
+has operator norm at most `C`, then `b.multiplier a` has operator norm at most `C * ‖a‖`. -/
 theorem norm_multiplier_le_of_forall_range_abs_eq_one
     {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
-    (b : UnconditionalSchauderBasis ℕ ℝ X) {C : ℝ} (hC0 : 0 ≤ C)
+    (b : UnconditionalSchauderBasis ℕ ℝ X) {C : ℝ}
     (hC : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ n, |ε n| = 1) →
       ∀ x, ‖∑ n ∈ Finset.range N, ε n • b.coord n x • b n‖ ≤ C * ‖x‖)
     (a : ℓ^∞(ℕ, ℝ)) :
-    ‖b.multiplier a‖ ≤ C * ‖a‖ :=
-  b.norm_multiplier_le_of_forall_sum_le a (mul_nonneg hC0 (norm_nonneg a)) fun A x ↦ by
-    have h := b.norm_sum_ofReal_smul_coord_smul_le_of_forall_range
-      (fun N ε hε ↦ by simpa using hC N ε hε x) A (norm_nonneg a)
-      fun n _ ↦ by simpa using lp.norm_apply_le_norm ENNReal.top_ne_zero a n
+    ‖b.multiplier a‖ ≤ C * ‖a‖ := by
+  have hC0 : 0 ≤ C :=
+    b.nonneg_of_forall_range_abs_eq_one fun N ε hε x ↦ by simpa using hC N ε hε x
+  exact b.norm_multiplier_le_of_forall_sum_le a (mul_nonneg hC0 (norm_nonneg a)) fun A x ↦ by
+    have h := TauCeti.norm_sum_ofReal_smul_le_of_forall_range_abs_eq_one (𝕜 := ℝ)
+      (v := fun n ↦ b.coord n x • b n) (fun N ε hε ↦ by simpa using hC N ε hε x) A
+      (norm_nonneg a) fun n _ ↦ by simpa using lp.norm_apply_le_norm ENNReal.top_ne_zero a n
     simpa only [RCLike.ofReal_real_eq_id, id_eq] using h.trans_eq (by ring)
 
 /-- If every `±1`-signed coordinate multiplier along an initial segment `Finset.range N` has
-operator norm at most `C` (`0 ≤ C`), then `b.multiplier a` has operator norm at most
-`2 * C * ‖a‖`. -/
+operator norm at most `C`, then `b.multiplier a` has operator norm at most `2 * C * ‖a‖`. -/
 theorem norm_multiplier_le_two_mul_of_forall_range_abs_eq_one
     {𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X] [CompleteSpace X]
-    (b : UnconditionalSchauderBasis ℕ 𝕜 X) {C : ℝ} (hC0 : 0 ≤ C)
+    (b : UnconditionalSchauderBasis ℕ 𝕜 X) {C : ℝ}
     (hC : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ n, |ε n| = 1) →
       ∀ x, ‖∑ n ∈ Finset.range N, (ε n : 𝕜) • b.coord n x • b n‖ ≤ C * ‖x‖)
     (a : ℓ^∞(ℕ, 𝕜)) :
-    ‖b.multiplier a‖ ≤ 2 * C * ‖a‖ :=
-  b.norm_multiplier_le_of_forall_sum_le a (by positivity) fun A x ↦
-    (b.norm_sum_smul_coord_smul_le_of_forall_range (fun N ε hε ↦ hC N ε hε x) A (norm_nonneg a)
+    ‖b.multiplier a‖ ≤ 2 * C * ‖a‖ := by
+  have := b.nonneg_of_forall_range_abs_eq_one hC
+  exact b.norm_multiplier_le_of_forall_sum_le a (by positivity) fun A x ↦
+    (TauCeti.norm_sum_smul_le_two_mul_of_forall_range_abs_eq_one (v := fun n ↦ b.coord n x • b n)
+      (fun N ε hε ↦ hC N ε hε x) A (norm_nonneg a)
       fun n _ ↦ lp.norm_apply_le_norm ENNReal.top_ne_zero a n).trans_eq (by ring)
 
 end NatMultiplier
