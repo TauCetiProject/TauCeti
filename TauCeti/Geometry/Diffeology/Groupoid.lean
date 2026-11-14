@@ -46,11 +46,13 @@ arrow is retained as a label of this action, including arrows acting trivially o
 diffeology does not see this ineffective part of the isotropy.
 
 Full functors with local-diffeomorphism object maps induce inductions on these coarse
-diffeologies (`CategoryTheory.Functor.isInduction_isomorphismClasses_map_of_localDiffeomorph`).
-An essentially surjective such functor also induces a subduction, hence identifies the coarse
-diffeologies and their smooth maps. This includes étale refinements and does not require
-faithfulness, properness or effective isotropy. The argument lifts plots through local object
-inverses after smooth transport along arrows; no dimension or separation assumption is needed.
+diffeologies (`CategoryTheory.Functor.isInduction_isomorphismClasses_map_of_isLocalDiffeomorph`).
+An essentially surjective such functor also induces a subduction
+(`CategoryTheory.Functor.isSubduction_isomorphismClasses_map_of_isLocalDiffeomorph`), hence
+identifies the coarse diffeologies and their smooth maps. This includes étale refinements and
+does not require faithfulness, properness or effective isotropy. The argument lifts plots through
+local object inverses after smooth transport along arrows; no dimension or separation assumption
+is needed.
 
 ## Main results
 
@@ -59,6 +61,12 @@ inverses after smooth transport along arrows; no dimension or separation assumpt
 * `TauCeti.Diffeology.isOpen_range_of_mk_eq_isomorphismClassesMk`: their images are D-open.
 * `TauCeti.Diffeology.exists_isotropy_action_isInduction_of_proper_source_target`: finite
   quotient charts of the coarse diffeology of a smooth proper étale groupoid.
+* `CategoryTheory.Functor.dSmooth_isomorphismClasses_map`: functors smooth on objects induce
+  smooth coarse maps.
+* `CategoryTheory.Functor.isInduction_isomorphismClasses_map_of_isLocalDiffeomorph`: full functors
+  with local-diffeomorphism object maps induce coarse inductions.
+* `CategoryTheory.Functor.isSubduction_isomorphismClasses_map_of_isLocalDiffeomorph`: essentially
+  surjective such functors induce coarse subductions.
 
 ## References
 
@@ -186,9 +194,7 @@ private theorem exists_transport
   have harrow (z : C) (b : Quiver.Total C) (hb : b.left = z) : Nonempty (z ⟶ b.right) := by
     obtain ⟨_, _, g⟩ := b
     exact hb ▸ ⟨g⟩
-  refine ⟨ha.localInverse.source,
-    _root_.Diffeology.isOpen_iff_preimages_plots.mpr (fun _ p hp ↦
-      ha.localInverse_open_source.preimage hp.contMDiff.continuous),
+  refine ⟨ha.localInverse.source, ha.localInverse_open_source.isOpen_dTopology,
     ha.localInverse_mem_source, fun z ↦ (ha.localInverse z).right,
     congrArg Quiver.Total.right (ha.localInverse_left_inv ha.localInverse_mem_target),
     (ht.comp_contMDiffOn ha.contMDiffOn_localInverse).dSmooth_domRestrict,
@@ -247,6 +253,22 @@ namespace CategoryTheory.Functor
 
 open TauCeti TauCeti.Diffeology
 
+section Smooth
+
+variable {C D : Type u} [Category.{v} C] [Category.{v} D]
+  [DiffeologicalSpace C] [DiffeologicalSpace D]
+
+/-- A functor smooth on objects induces a smooth map on isomorphism classes with their quotient
+diffeologies. This is the diffeological analogue of
+`CategoryTheory.Functor.continuous_isomorphismClasses_map`. -/
+theorem dSmooth_isomorphismClasses_map (F : C ⥤ D) (hF : _root_.Diffeology.DSmooth F.obj) :
+    _root_.Diffeology.DSmooth (X := _root_.Quotient (isIsomorphicSetoid C))
+      (Y := _root_.Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) :=
+  ((isSubduction_quotient_mk (isIsomorphicSetoid C)).dSmooth_iff _).mpr
+    (F.isomorphismClasses_map_comp_mk.symm ▸ (dSmooth_quotient_mk _).comp hF)
+
+end Smooth
+
 section Refinement
 
 variable {E E' A : Type*}
@@ -279,8 +301,7 @@ private theorem exists_coarse_plot_lift (F : C ⥤ D)
   have hτℓ := hℓ.comp_inter_preimage hτs
   have hlift := hτℓ.comp_inter_preimage k.contMDiffOn_localInverse.dSmooth_domRestrict
   have hW : IsOpen[_root_.Diffeology.dTopology] k.localInverse.source :=
-    _root_.Diffeology.isOpen_iff_preimages_plots.mpr fun _ q hq ↦
-      k.localInverse_open_source.preimage hq.contMDiff.continuous
+    k.localInverse_open_source.isOpen_dTopology
   -- Use the D-topology for plot continuity, retaining the original manifold topology in `k`.
   have hw : IsOpen (v ∩ ℓ ⁻¹' V) :=
     @ContinuousOn.isOpen_inter_preimage _ _ _ _root_.Diffeology.dTopology _ _ _
@@ -302,7 +323,7 @@ private theorem exists_coarse_plot_lift (F : C ⥤ D)
 an induction on coarse diffeologies. It need not be faithful or essentially surjective.
 Thus its coarse image has exactly the subspace diffeology, even when distinct isotropy
 arrows have the same image. -/
-theorem isInduction_isomorphismClasses_map_of_localDiffeomorph (F : C ⥤ D) [F.Full]
+theorem isInduction_isomorphismClasses_map_of_isLocalDiffeomorph (F : C ⥤ D) [F.Full]
     (hF : IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E') ∞ F.obj)
     (hs : IsLocalDiffeomorph 𝓘(ℝ, A) 𝓘(ℝ, E') ∞ (Quiver.Total.left : Quiver.Total D → D))
     (ht : ContMDiff 𝓘(ℝ, A) 𝓘(ℝ, E') ∞ (Quiver.Total.right : Quiver.Total D → D)) :
@@ -312,13 +333,7 @@ theorem isInduction_isomorphismClasses_map_of_localDiffeomorph (F : C ⥤ D) [F.
   let : F.ReflectsIsomorphisms := { reflects _ _ := by infer_instance }
   refine ⟨F.isomorphismClasses_map_injective, ?_⟩
   intro n p
-  have hmap : _root_.Diffeology.DSmooth (X := _root_.Quotient (isIsomorphicSetoid C))
-      (Y := _root_.Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom :
-      _root_.Quotient (isIsomorphicSetoid C) → _root_.Quotient (isIsomorphicSetoid D)) :=
-    ((isSubduction_quotient_mk (isIsomorphicSetoid C)).dSmooth_iff _).mpr
-      (F.isomorphismClasses_map_comp_mk.symm ▸
-        (dSmooth_quotient_mk _).comp hF.contMDiff.dSmooth)
-  refine ⟨fun hp ↦ hmap n p hp, fun hp ↦ ?_⟩
+  refine ⟨fun hp ↦ F.dSmooth_isomorphismClasses_map hF.contMDiff.dSmooth n p hp, fun hp ↦ ?_⟩
   refine (isPlot_quotient_iff _).mpr (locallyLifts_iff.mpr fun z _ ↦ ?_)
   obtain ⟨v, hv, hzv, -, ℓ, hℓ, hℓp⟩ :=
     locallyLifts_iff.mp ((isPlot_quotient_iff _).mp hp) z (mem_univ z)
@@ -338,7 +353,7 @@ theorem isInduction_isomorphismClasses_map_of_localDiffeomorph (F : C ⥤ D) [F.
 smooth groupoid induces a subduction on coarse diffeologies. Thus smooth maps out of the
 target coarse space descend along this map by `TauCeti.Diffeology.IsSubduction.dSmooth_iff`.
 Neither fullness nor faithfulness is required. -/
-theorem isSubduction_isomorphismClasses_map_of_localDiffeomorph (F : C ⥤ D) [F.EssSurj]
+theorem isSubduction_isomorphismClasses_map_of_isLocalDiffeomorph (F : C ⥤ D) [F.EssSurj]
     (hF : IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E') ∞ F.obj)
     (hs : IsLocalDiffeomorph 𝓘(ℝ, A) 𝓘(ℝ, E') ∞ (Quiver.Total.left : Quiver.Total D → D))
     (ht : ContMDiff 𝓘(ℝ, A) 𝓘(ℝ, E') ∞ (Quiver.Total.right : Quiver.Total D → D)) :
@@ -349,9 +364,7 @@ theorem isSubduction_isomorphismClasses_map_of_localDiffeomorph (F : C ⥤ D) [F
     induction q using _root_.Quotient.inductionOn with
     | h y =>
       exact ⟨_root_.Quotient.mk _ (F.objPreimage y), _root_.Quotient.sound ⟨F.objObjPreimageIso y⟩⟩
-  dSmooth := ((isSubduction_quotient_mk (isIsomorphicSetoid C)).dSmooth_iff _).mpr
-    (F.isomorphismClasses_map_comp_mk.symm ▸
-      (dSmooth_quotient_mk _).comp hF.contMDiff.dSmooth)
+  dSmooth := F.dSmooth_isomorphismClasses_map hF.contMDiff.dSmooth
   locallyLifts {n p} hp := by
     refine locallyLifts_iff.mpr fun z _ ↦ ?_
     obtain ⟨v, hv, hzv, -, ℓ, hℓ, hℓp⟩ :=
