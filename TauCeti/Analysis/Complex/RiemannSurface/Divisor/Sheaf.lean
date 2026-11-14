@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.Meromorphic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
 import TauCeti.Geometry.Manifold.ChartedSpace
-import TauCeti.Geometry.Manifold.ContMDiff.Analytic
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # The sheaf `𝒪_D` of a divisor on a Riemann surface
@@ -174,12 +174,9 @@ theorem isDivisorSectionAt_iff_of_eq_zero {D : WeilDivisor X} {f : X → ℂ} {x
     (hD : D x = 0) :
     IsDivisorSectionAt D f x ↔ ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω f x := by
   refine ⟨fun hf ↦ hf.contMDiffAt hD.le, fun hf ↦ ?_⟩
-  have han : AnalyticAt ℂ (f ∘ (chartAt ℂ x).symm) (chartAt ℂ x x) := by
-    simpa only [extChartAt, OpenPartialHomeomorph.extend_coe_symm, modelWithCornersSelf_coe_symm,
-      OpenPartialHomeomorph.extend_coe, modelWithCornersSelf_coe, Function.comp_id,
-      Function.id_comp] using TauCeti.contMDiffAt_omega_iff_analyticAt.1 hf
   exact
-  { meromorphicAt := (meromorphicAt_def f x).2 han.meromorphicAt
+  { meromorphicAt :=
+      (meromorphicAt_def f x).2 hf.contDiffAt_comp_chartAt_symm.analyticAt.meromorphicAt
     neg_le_meromorphicOrderAt := by
       simpa [hD] using meromorphicOrderAt_nonneg_of_continuousAt hf.continuousAt
     contMDiffAt := fun _ ↦ hf
