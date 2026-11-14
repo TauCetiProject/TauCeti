@@ -17,7 +17,9 @@ since it is neither `0` nor `∞` unless `X = 0`, in which case the conclusion i
 the last step of every norming argument for `Lᵖ` norms, where `X` is a norm and `X ^ r` is its
 pairing with the extremal function. In the same way, `m ≤ K * m ^ p` for a finite `m` and an
 exponent `p < 1` gives `m ^ (1 - p) ≤ K`, which turns an estimate `μ(A) ≤ K μ(A) ^ (1/n)` into the
-isoperimetric form `μ(A) ^ (1 - 1/n) ≤ K`.
+isoperimetric form `μ(A) ^ (1 - 1/n) ≤ K`. Two variants of this cancellation, with an extra
+factor `x` or an outer power `s`, turn the inequalities of Maz'ya's truncation method into
+Sobolev–Poincaré inequalities.
 
 The product `x ^ y * x ^ z` is at most `x ^ (y + z)` for all real exponents `y` and `z`, with no
 hypothesis on `x`; this combines the powers of a function at two exponents when one of them may be
@@ -83,6 +85,10 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
   `X`.
 * `ENNReal.rpow_one_sub_le_of_le_mul_rpow`: `m ≤ K * m ^ p` gives `m ^ (1 - p) ≤ K` for a finite
   `m` and `p < 1`.
+* `ENNReal.rpow_mul_le_rpow_of_mul_le_mul_rpow`: `x a ≤ c a ^ θ` gives
+  `x ^ (1 - θ)⁻¹ a ≤ c ^ (1 - θ)⁻¹` for a finite `a` and `θ < 1`.
+* `ENNReal.rpow_le_of_le_rpow_mul_rpow`: `X ≤ (Z X ^ a) ^ s` gives `X ^ b ≤ Z` for a finite `X`
+  when `s⁻¹ = b + a` and `b, s > 0`.
 * `ENNReal.rpow_mul_rpow_one_sub`: `x ^ p * x ^ (1 - p) = x` for `p ∈ [0, 1]`.
 * `ENNReal.le_rpow_add`: `x ^ y * x ^ z ≤ x ^ (y + z)` for all real `y` and `z`.
 * `ENNReal.inv_mul_rpow_mul_inv_mul_rpow`:
@@ -142,6 +148,36 @@ theorem rpow_one_sub_le_of_le_mul_rpow {m K : ℝ≥0∞} {p : ℝ} (hp : p < 1)
     exact zero_le
   rwa [rpow_sub _ _ h0 hm, rpow_one, ENNReal.div_le_iff
     (rpow_pos (pos_iff_ne_zero.2 h0) hm).ne' (rpow_ne_top_of_ne_zero h0 hm)]
+
+/-- From `x a ≤ c a^θ` with `a` finite and `θ < 1`, cancelling `a^θ` and raising to the power
+`(1 - θ)⁻¹` gives `x^{(1 - θ)⁻¹} a ≤ c^{(1 - θ)⁻¹}`. -/
+theorem rpow_mul_le_rpow_of_mul_le_mul_rpow {x a c : ℝ≥0∞} {θ : ℝ} (hθ1 : θ < 1)
+    (ha : a ≠ ∞) (h : x * a ≤ c * a ^ θ) :
+    x ^ (1 - θ)⁻¹ * a ≤ c ^ (1 - θ)⁻¹ := by
+  rcases eq_or_ne a 0 with ha0 | ha0
+  · simp [ha0]
+  have hr : 0 < (1 - θ)⁻¹ := inv_pos.2 (sub_pos.2 hθ1)
+  have h' : x * a ^ (1 - θ) ≤ c := by
+    refine (ENNReal.mul_le_mul_iff_left (rpow_pos (pos_iff_ne_zero.2 ha0) ha).ne'
+      (rpow_ne_top_of_ne_zero (y := θ) ha0 ha)).1 ?_
+    rwa [mul_assoc, ← rpow_add _ _ ha0 ha, sub_add_cancel, rpow_one]
+  calc x ^ (1 - θ)⁻¹ * a = (x * a ^ (1 - θ)) ^ (1 - θ)⁻¹ := by
+        rw [mul_rpow_of_nonneg _ _ hr.le, ← rpow_mul, mul_inv_cancel₀ (sub_pos.2 hθ1).ne',
+          rpow_one]
+    _ ≤ c ^ (1 - θ)⁻¹ := rpow_le_rpow h' hr.le
+
+/-- From `X ≤ (Z X^a)^s` with `X` finite and `s⁻¹ = b + a`, `b > 0`, cancelling `X^a` gives
+`X^b ≤ Z`. -/
+theorem rpow_le_of_le_rpow_mul_rpow {X Z : ℝ≥0∞} {a b s : ℝ} (hb : 0 < b) (hs : 0 < s)
+    (hsab : s⁻¹ = b + a) (hX : X ≠ ∞) (h : X ≤ (Z * X ^ a) ^ s) : X ^ b ≤ Z := by
+  rcases eq_or_ne X 0 with h0 | h0
+  · simp [h0, zero_rpow_of_pos hb]
+  have h1 : X ^ s⁻¹ ≤ Z * X ^ a :=
+    calc X ^ s⁻¹ ≤ ((Z * X ^ a) ^ s) ^ s⁻¹ := rpow_le_rpow h (inv_nonneg.2 hs.le)
+      _ = Z * X ^ a := by rw [← rpow_mul, mul_inv_cancel₀ hs.ne', rpow_one]
+  rw [hsab, rpow_add _ _ h0 hX] at h1
+  exact (ENNReal.mul_le_mul_iff_left (rpow_pos (pos_iff_ne_zero.2 h0) hX).ne'
+    (rpow_ne_top_of_ne_zero h0 hX)).1 h1
 
 /-- For `p ∈ [0, 1]`, the powers `x ^ p` and `x ^ (1 - p)` multiply back to `x`. -/
 theorem rpow_mul_rpow_one_sub (x : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :
