@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Mean
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Pullback
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.PullbackAverage
 public import TauCeti.Geometry.Manifold.VectorBundle.Complexification
 public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 
@@ -50,9 +49,7 @@ local instance : VectorBundle ℝ F V := VectorBundle.restrictScalars ℝ ℂ F 
 /-- Average a real metric with its pullback by multiplication by `i`. -/
 def hermitianAverage (g : ContMDiffRiemannianMetric IB n F V) :
     ContMDiffRiemannianMetric IB n F V :=
-  TauCeti.meanRiemannianMetric (fun b : Bool ↦ if b then
-    g.pullbackBundleEquiv (fun x ↦ Complex.smulIEquiv (V x))
-      TauCeti.contMDiff_smulIEquiv_bundle else g)
+  g.pullbackAverage (fun x ↦ Complex.smulIEquiv (V x)) TauCeti.contMDiff_smulIEquiv_bundle
 
 /-- The averaged metric is the half-sum of the original metric and its `i`-translate. -/
 @[simp]
@@ -60,35 +57,28 @@ theorem hermitianAverage_inner (g : ContMDiffRiemannianMetric IB n F V)
     (x : B) (v w : V x) :
     g.hermitianAverage.inner x v w =
       2⁻¹ * (g.inner x v w + g.inner x (Complex.I • v) (Complex.I • w)) := by
-  simp [hermitianAverage, TauCeti.meanRiemannianMetric_inner, add_comm]
+  simp [hermitianAverage]
 
 /-- Multiplication by `i` preserves the averaged real metric. -/
 theorem hermitianAverage_inner_smul_I (g : ContMDiffRiemannianMetric IB n F V)
     (x : B) (v w : V x) :
     g.hermitianAverage.inner x (Complex.I • v) (Complex.I • w) =
       g.hermitianAverage.inner x v w := by
-  simp only [hermitianAverage_inner, smul_smul, Complex.I_mul_I, neg_one_smul, map_neg,
-    neg_apply, neg_neg]
-  ring
+  simpa [hermitianAverage] using g.pullbackAverage_inner_apply_apply _
+    TauCeti.contMDiff_smulIEquiv_bundle (fun x v ↦ by simp [smul_smul]) x v w
 
 /-- A real metric is unchanged by Hermitian averaging exactly when it is already `i`-invariant. -/
 theorem hermitianAverage_eq_self_iff (g : ContMDiffRiemannianMetric IB n F V) :
     g.hermitianAverage = g ↔
       ∀ x (v w : V x), g.inner x (Complex.I • v) (Complex.I • w) = g.inner x v w := by
-  constructor
-  · intro h x v w
-    rw [← h]
-    exact g.hermitianAverage_inner_smul_I x v w
-  · intro h
-    ext x v w
-    rw [hermitianAverage_inner, h]
-    ring
+  simpa [hermitianAverage] using
+    g.pullbackAverage_eq_self_iff _ TauCeti.contMDiff_smulIEquiv_bundle
 
 /-- Hermitian averaging is idempotent. -/
 @[simp]
 theorem hermitianAverage_idempotent (g : ContMDiffRiemannianMetric IB n F V) :
     g.hermitianAverage.hermitianAverage = g.hermitianAverage :=
-  g.hermitianAverage.hermitianAverage_eq_self_iff.mpr g.hermitianAverage_inner_smul_I
+  g.pullbackAverage_pullbackAverage _ _ fun x v ↦ by simp [smul_smul]
 
 /-- The native complex inner product of an `i`-invariant real metric. Its norm and topology
 are those of the original real metric, and its complex module is the caller's given module. -/

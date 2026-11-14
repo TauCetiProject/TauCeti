@@ -16,7 +16,9 @@ the fiber norm is a continuous function on the total space.  When the model fibe
 finite-dimensional, this file proves that the vectors of norm at most `r` lying over a compact
 subset of the base form a compact subset of the total space.  The compactness statement holds more
 generally for fiber norms that are continuous on the total space and for which each
-trivialization is locally bounded, as for the operator norm on covectors.
+trivialization is locally bounded, as for the operator norm on covectors. Similarly, the pointwise
+inner product of two continuous sections for a `Bundle.ContinuousRiemannianMetric`, which need not
+be registered as a `RiemannianBundle` instance, is continuous.
 
 This is the properness statement that turns a bound on the speed of a curve in the base together
 with relative compactness of its image into relative compactness of its velocity lift.  The
@@ -43,6 +45,11 @@ continuous reference inner products on the fibres.
   bounded trivializations.
 * `Bundle.RiemannianMetric.isSymm_toBilinForm_inner`: the inner product of a Riemannian metric
   on a fiber is a symmetric bilinear form.
+* `Bundle.RiemannianMetric.inner_self_nonneg`: the diagonal values `g(v, v)` of a metric are
+  nonnegative.
+* `Bundle.ContinuousRiemannianMetric.continuous_inner`: the pointwise inner product of two
+  continuous maps into the fibers is continuous, with versions `continuousWithinAt_inner`,
+  `continuousAt_inner` and `continuousOn_inner`.
 -/
 
 public section
@@ -168,9 +175,67 @@ theorem isSymm_toBilinForm_inner (g : RiemannianMetric E) (b : B) :
     (g.inner b).toBilinForm.IsSymm :=
   LinearMap.BilinForm.isSymm_def.mpr (g.symm b)
 
+/-- The diagonal values of a Riemannian metric are nonnegative. -/
+theorem inner_self_nonneg (g : RiemannianMetric E) (b : B) (v : E b) : 0 ≤ g.inner b v v := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  · exact (g.pos b v hv).le
+
 end Bundle.RiemannianMetric
 
 namespace Bundle.ContinuousRiemannianMetric
+
+section Inner
+
+variable {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ x, TopologicalSpace (E x)]
+  [∀ x, AddCommGroup (E x)] [∀ x, Module ℝ (E x)] [FiberBundle F E] [VectorBundle ℝ F E]
+  {X : Type*} [TopologicalSpace X] {b : X → B} {v w : ∀ x, E (b x)} {s : Set X} {x₀ : X}
+
+/-- The diagonal values of a continuous Riemannian metric are nonnegative. -/
+theorem inner_self_nonneg (g : ContinuousRiemannianMetric F E) (b : B) (v : E b) :
+    0 ≤ g.inner b v v :=
+  g.toRiemannianMetric.inner_self_nonneg b v
+
+/-- The pointwise inner product, for a continuous Riemannian metric, of two maps into the same
+fibers that are continuous within `s` at `x₀` is continuous within `s` at `x₀`. -/
+theorem continuousWithinAt_inner (g : ContinuousRiemannianMetric F E)
+    (hv : ContinuousWithinAt (fun x ↦ TotalSpace.mk' F (b x) (v x)) s x₀)
+    (hw : ContinuousWithinAt (fun x ↦ TotalSpace.mk' F (b x) (w x)) s x₀) :
+    ContinuousWithinAt (fun x ↦ g.inner (b x) (v x) (w x)) s x₀ :=
+  continuous_snd.continuousAt.comp_continuousWithinAt <|
+    (Trivial.homeomorphProd B ℝ).continuous.continuousAt.comp_continuousWithinAt <|
+      ContinuousWithinAt.clm_bundle_apply₂ (F₁ := F) (F₂ := F) (E₃ := Trivial B ℝ)
+        (g.continuous.continuousAt.comp_continuousWithinAt
+          ((FiberBundle.continuous_proj F E).continuousAt.comp_continuousWithinAt hv)) hv hw
+
+/-- The pointwise inner product, for a continuous Riemannian metric, of two maps into the same
+fibers that are continuous at `x₀` is continuous at `x₀`. -/
+theorem continuousAt_inner (g : ContinuousRiemannianMetric F E)
+    (hv : ContinuousAt (fun x ↦ TotalSpace.mk' F (b x) (v x)) x₀)
+    (hw : ContinuousAt (fun x ↦ TotalSpace.mk' F (b x) (w x)) x₀) :
+    ContinuousAt (fun x ↦ g.inner (b x) (v x) (w x)) x₀ := by
+  simp only [← continuousWithinAt_univ] at hv hw ⊢
+  exact g.continuousWithinAt_inner hv hw
+
+/-- The pointwise inner product, for a continuous Riemannian metric, of two maps into the same
+fibers that are continuous on `s` is continuous on `s`. -/
+theorem continuousOn_inner (g : ContinuousRiemannianMetric F E)
+    (hv : ContinuousOn (fun x ↦ TotalSpace.mk' F (b x) (v x)) s)
+    (hw : ContinuousOn (fun x ↦ TotalSpace.mk' F (b x) (w x)) s) :
+    ContinuousOn (fun x ↦ g.inner (b x) (v x) (w x)) s :=
+  fun x hx ↦ g.continuousWithinAt_inner (hv x hx) (hw x hx)
+
+/-- The pointwise inner product, for a continuous Riemannian metric, of two continuous maps into
+the same fibers is continuous. -/
+theorem continuous_inner (g : ContinuousRiemannianMetric F E)
+    (hv : Continuous fun x ↦ TotalSpace.mk' F (b x) (v x))
+    (hw : Continuous fun x ↦ TotalSpace.mk' F (b x) (w x)) :
+    Continuous fun x ↦ g.inner (b x) (v x) (w x) :=
+  continuous_iff_continuousAt.2 fun _ ↦ g.continuousAt_inner hv.continuousAt hw.continuousAt
+
+end Inner
+
+section BilinearComp
 
 variable [∀ x, NormedSpace ℝ (E x)] [FiberBundle F E] [VectorBundle ℝ F E]
 
@@ -188,5 +253,7 @@ theorem continuous_inner_bilinearComp (h : ContinuousRiemannianMetric F E)
       TotalSpace.mk' ℝ (E := Bundle.Trivial B ℝ) (f x) (h.inner (f x) (σ x w) (σ x w')) :=
     (h.continuous.comp hf).clm_bundle_apply₂ (F₁ := F) (F₂ := F) (hσ w) (hσ w')
   exact continuous_snd.comp ((Bundle.Trivial.homeomorphProd B ℝ).continuous.comp this)
+
+end BilinearComp
 
 end Bundle.ContinuousRiemannianMetric
