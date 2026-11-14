@@ -13,7 +13,7 @@ public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Duality
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.AdditiveClosure
 
 import TauCeti.Algebra.Module.Injective.Envelope.Existence
-import TauCeti.RingTheory.Artinian.Small
+import TauCeti.RingTheory.Artinian.Subalgebra
 
 /-!
 # Generator-cogenerators of `mod A` for an Artin algebra
@@ -25,8 +25,8 @@ additive closure `add M`, and exactly when every indecomposable projective and e
 indecomposable injective object of `mod A` is a direct summand of `M`
 (`TauCeti.isGeneratorCogenerator_iff_forall_indecomposable`). The base ring `R` may live in any
 universe; the statements about `D A` ask that it be small in the universe of `A` and its modules,
-which can always be arranged by replacing `R` with its image in `A`
-(`TauCeti.exists_small_isArtinianRing_algebra`).
+which can always be arranged by replacing `R` with the centre of `A`, a commutative Artinian ring
+over which `A` is again an Artin algebra.
 
 The generator half holds over any ring (`FGModuleCat.isSeparator_iff_additiveClosure`). The
 cogenerator half is its dual: the Matlis duality `(mod A)ᵒᵖ ≌ mod Aᵐᵒᵖ`
@@ -61,8 +61,10 @@ generator-cogenerator. (This last part is a remark and is not formalized here.)
 
 * `TauCeti.IsInjectiveEnvelope.fgModuleCatMatlisDualRegular`: the Matlis dual `D A` of the right
   regular module, a finitely generated left `A`-module.
-* `TauCeti.IsInjectiveEnvelope.fgModuleCatMatlisDualRegularIso`: the Matlis dual of `D A` is the
-  right regular module.
+* `TauCeti.IsInjectiveEnvelope.fgModuleCatMatlisDualRegularEquiv`: the underlying module of `D A`
+  is the Matlis dual `Hom_R(A, E)` of the right regular module.
+* `TauCeti.IsInjectiveEnvelope.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso`: the Matlis
+  dual of `D A` is the right regular module, by evaluation.
 
 ## Main results
 
@@ -142,11 +144,39 @@ theorem IsInjectiveEnvelope.fgModuleCatMatlisDualRegular_obj (hf : IsInjectiveEn
       ModuleCat.matlisDualOpObj R E (ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ) :=
   (rfl)
 
+/-- The underlying module of `D A` is the Matlis dual `Hom_R(A, E)` of the right regular module
+`Aᵐᵒᵖ`. The two sides differ only in the `R`-action on `Aᵐᵒᵖ`: through the algebra map in `D A`, and
+the usual one in `MatlisDual R E Aᵐᵒᵖ`. -/
+def IsInjectiveEnvelope.fgModuleCatMatlisDualRegularEquiv (hf : IsInjectiveEnvelope f) :
+    (hf.fgModuleCatMatlisDualRegular (A := A)).obj ≃ₗ[A] MatlisDual R E Aᵐᵒᵖ :=
+  (ModuleCat.matlisDualOpObjEquiv R E (ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ)).trans
+    -- The `R`-action on `ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ` is passed explicitly: instance search would find
+    -- the usual action on `Aᵐᵒᵖ` instead of the action through the algebra map.
+    (@MatlisDual.congrOp R _ E _ _ A _ _ Aᵐᵒᵖ _ _ _ _ (ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ) _
+      (ModuleCat.moduleOfAlgebra R _) _ (ModuleCat.isScalarTower_moduleOfAlgebra R _)
+      (LinearEquiv.refl _ _))
+
 /-- The Matlis dual of `D A` is the regular right module, by evaluation. -/
-def IsInjectiveEnvelope.fgModuleCatMatlisDualRegularIso (hf : IsInjectiveEnvelope f) :
+def IsInjectiveEnvelope.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso
+    (hf : IsInjectiveEnvelope f) :
     hf.fgModuleCatMatlisDual.obj (op (hf.fgModuleCatMatlisDualRegular (A := A))) ≅
       FGModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ :=
   (hf.fgModuleCatMatlisDuality (A := A)).counitIso.app _
+
+attribute [local instance] ModuleCat.moduleOfAlgebra ModuleCat.isScalarTower_moduleOfAlgebra in
+/-- The inverse of `D (D A) ≅ Aᵐᵒᵖ` sends `a` to evaluation at `a`. A pre-simp lemma
+(`simp↓`): it applies before `fgModuleCatMatlisDual_obj_obj` rewrites the type of the morphism. -/
+@[simp↓]
+theorem IsInjectiveEnvelope.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso_inv_apply
+    (hf : IsInjectiveEnvelope f) (a : Aᵐᵒᵖ) (φ : (hf.fgModuleCatMatlisDualRegular (A := A)).obj) :
+    MatlisDual.equivLinearMap R E _
+      (ModuleCat.matlisDualObjEquiv R E (hf.fgModuleCatMatlisDualRegular (A := A)).obj
+        ((hf.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso (A := A)).inv.hom a)) φ =
+      MatlisDual.equivLinearMap R E Aᵐᵒᵖ (hf.fgModuleCatMatlisDualRegularEquiv φ) a := by
+  refine (hf.moduleCatEvalIsoOp_hom_apply (A := A) (ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ) _ a φ).trans ?_
+  exact (@MatlisDual.congrOp_apply R _ E _ _ A _ _ Aᵐᵒᵖ _ _ _ _ (ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ) _
+    (ModuleCat.moduleOfAlgebra R _) _ (ModuleCat.isScalarTower_moduleOfAlgebra R _)
+    (LinearEquiv.refl _ _) (ModuleCat.matlisDualOpObjEquiv R E _ φ) a).symm
 
 /-- `D A` is an injective object of `mod A`, as the dual of the projective right module `Aᵐᵒᵖ`. -/
 instance IsInjectiveEnvelope.injective_fgModuleCatMatlisDualRegular (hf : IsInjectiveEnvelope f) :
@@ -172,8 +202,9 @@ theorem IsInjectiveEnvelope.additiveClosure_fgModuleCatMatlisDualRegular_of_inje
   let Φ := hf.fgModuleCatMatlisDuality (A := A)
   have : Projective (Φ.functor.obj (op I)) := (Φ.map_projective_iff _).2 inferInstance
   rw [← Φ.additiveClosure_functor_obj_op_iff]
-  exact hf.fgModuleCatMatlisDualRegularIso.symm.retract.additiveClosure_le _
-    (FGModuleCat.additiveClosure_regular_of_projective (Φ.functor.obj (op I)))
+  exact (hf.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso (A := A)).symm.retract
+    |>.additiveClosure_le _
+      (FGModuleCat.additiveClosure_regular_of_projective (Φ.functor.obj (op I)))
 
 /-- **The coseparators of `mod A`**: `M` is a coseparator of `mod A` exactly when `D A` lies in
 `add M`. Under the Matlis duality this is `FGModuleCat.isSeparator_iff_additiveClosure` for the
@@ -186,7 +217,8 @@ theorem IsInjectiveEnvelope.isCoseparator_iff_additiveClosure (hf : IsInjectiveE
   have hN : IsSeparator (Φ.functor.obj (op M)) :=
     ((isSeparator_op_iff M).2 hM).of_equivalence Φ
   rw [← Φ.additiveClosure_functor_obj_op_iff]
-  exact (additiveClosure _).prop_of_retract hf.fgModuleCatMatlisDualRegularIso.retract
+  exact (additiveClosure _).prop_of_retract
+    (hf.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso (A := A)).retract
     ((FGModuleCat.isSeparator_iff_additiveClosure _).1 hN)
 
 /-- **The generator-cogenerators of `mod A`**: `M` is a generator-cogenerator exactly when the
@@ -218,10 +250,13 @@ theorem _root_.FGModuleCat.isCoseparator_iff_forall_indecomposable (R : Type u) 
     IsCoseparator M ↔
       ∀ I : FGModuleCat.{v} A, Injective I → Indecomposable I.obj → Nonempty (Retract I M) := by
   have := IsArtinianRing.of_finite R A
-  -- Replace `R` by a base ring that is small in the universe of `A`, to take `E` there.
-  obtain ⟨R', _, _, _, _, _⟩ := exists_small_isArtinianRing_algebra R A
-  obtain ⟨E, _, _, f, hf⟩ :=
-    exists_isInjectiveEnvelope_of_small.{u, u, v} R' (R' ⧸ Ring.jacobson R')
+  -- Replace `R` by the centre `C` of `A`, which lies in the universe of `A`, to take `E` there.
+  let C := Subalgebra.center R A
+  let _ : Algebra C A := inferInstanceAs (Algebra (Subring.center A) A)
+  have : IsScalarTower R C A := .of_algebraMap_eq fun _ ↦ rfl
+  have : Module.Finite C A := .of_restrictScalars_finite R C A
+  obtain ⟨E, _, _, f, hf⟩ := exists_isInjectiveEnvelope C (C ⧸ Ring.jacobson C)
+  have := hf.injective_fgModuleCatMatlisDualRegular (A := A)
   rw [hf.isCoseparator_iff_additiveClosure]
   refine ⟨fun hM I hI hIi ↦ ?_, fun h ↦ ?_⟩
   · have := FGModuleCat.isLocalRing_end_of_indecomposable hIi
