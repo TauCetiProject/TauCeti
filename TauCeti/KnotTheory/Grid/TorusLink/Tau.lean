@@ -31,7 +31,9 @@ here.
 
 ## Main results
 
-* `TauCeti.GridDiagram.two_mul_tau_torusLink`: `2 τ(torusLink p q) = -p q` on a torus knot grid.
+* `TauCeti.GridDiagram.two_mul_tau_torusLink`, `TauCeti.GridDiagram.tau_torusLink`,
+  `TauCeti.GridDiagram.natAbs_tau_torusLink`: `2 τ(torusLink p q) = -p q`, hence
+  `τ(torusLink p q) = -(p q / 2)` and `|τ(torusLink p q)| = p q / 2` on a torus knot grid.
 * `TauCeti.GridDiagram.tau_torusLink_one_two`, `TauCeti.GridDiagram.tau_torusLink_two_three`:
   `τ = -1` on the `5 × 5` trefoil grid and `τ = -3` on the `7 × 7` grid of the `(3, 4)` torus knot.
 * `TauCeti.GridDiagram.tau_unknot`: `τ = 0` on every unknot grid.
@@ -56,6 +58,19 @@ variable {p q : ℕ} (h : (p + 1).Coprime (q + 1)) (K : Type*) [Field K] [CharP 
 theorem two_mul_tau_torusLink :
     2 * ((isKnot_torusLink_iff p q).mpr h).tau K = -(p * q : ℤ) := by
   rw [IsKnot.tau_def, mul_neg, two_mul_supNonTorsionDegree_torusLink h K]
+
+/-- **Exact `τ` of a torus knot grid**: on the standard grid of the `(p + 1, q + 1)` torus knot,
+`τ = -(p q / 2)`. Since `2 τ = -p q` is an integer multiple of two, `p q` is even. -/
+theorem tau_torusLink :
+    ((isKnot_torusLink_iff p q).mpr h).tau K = -((p * q / 2 : ℕ) : ℤ) := by
+  have h2 := two_mul_tau_torusLink h K
+  set m := p * q
+  omega
+
+/-- On the standard grid of the `(p + 1, q + 1)` torus knot, `|τ| = p q / 2`. -/
+theorem natAbs_tau_torusLink :
+    (((isKnot_torusLink_iff p q).mpr h).tau K).natAbs = p * q / 2 := by
+  rw [tau_torusLink h K, Int.natAbs_neg, Int.natAbs_natCast]
 
 /-- On the `5 × 5` trefoil grid, `τ = -1`. -/
 @[simp]
