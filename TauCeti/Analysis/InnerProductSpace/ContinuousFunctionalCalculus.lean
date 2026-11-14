@@ -308,6 +308,41 @@ theorem inner_sqrt_apply_sqrt_apply_eq_inner {T : X →L[ℝ] X} (hT : 0 ≤ T) 
   rw [← (nonneg_iff_isPositive.mp (CFC.sqrt_nonneg T)).inner_left_eq_inner_right,
     ← mul_apply_eq_comp, CFC.sqrt_mul_sqrt_self T hT]
 
+/-- A vector on which the quadratic form of a positive operator vanishes is in its kernel. -/
+theorem _root_.LinearMap.IsPositive.apply_eq_zero_of_inner_map_self_eq_zero {𝕜 E : Type*}
+    [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {T : E →ₗ[𝕜] E}
+    (hT : T.IsPositive) {x : E} (hx : ⟪T x, x⟫_𝕜 = 0) : T x = 0 := by
+  -- `re ⟪T (x - t • T x), x - t • T x⟫` is a nonnegative quadratic in the real parameter `t`,
+  -- with constant term `re ⟪T x, x⟫ = 0` and linear coefficient `-2 ‖T x‖²`, so its
+  -- discriminant `4 ‖T x‖⁴` is nonpositive.
+  have key (t : ℝ) :
+      0 ≤ RCLike.re ⟪T (T x), T x⟫_𝕜 * (t * t) + -2 * ‖T x‖ ^ 2 * t + 0 := by
+    have := hT.re_inner_nonneg_left (x - (t : 𝕜) • T x)
+    have hs : ⟪T (T x), x⟫_𝕜 = ⟪T x, T x⟫_𝕜 := hT.isSymmetric (T x) x
+    simp only [map_sub, map_smul, inner_sub_left, inner_sub_right, inner_smul_left,
+      inner_smul_right, hx, hs, RCLike.conj_ofReal, inner_self_eq_norm_sq_to_K] at this
+    simp only [map_zero, map_sub, RCLike.re_ofReal_mul, ← RCLike.ofReal_pow,
+      RCLike.ofReal_re] at this
+    linear_combination this
+  have hd := discrim_le_zero key
+  rw [discrim, mul_zero, sub_zero] at hd
+  exact norm_eq_zero.mp ((pow_eq_zero_iff (n := 4) (by norm_num)).mp
+    (le_antisymm (by linarith) (by positivity)))
+
+open scoped ComplexOrder in
+/-- A strictly positive operator on an inner product space is positive definite. -/
+theorem _root_.IsStrictlyPositive.inner_pos_left {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] {T : E →L[𝕜] E} (hT : IsStrictlyPositive T) {x : E} (hx : x ≠ 0) :
+    0 < ⟪T x, x⟫_𝕜 := by
+  have hT' := nonneg_iff_isPositive.mp hT.nonneg
+  refine (hT'.inner_nonneg_left x).lt_of_ne fun h0 ↦ hx ?_
+  -- `T x = 0`, and `T` is invertible.
+  have hTx := LinearMap.IsPositive.apply_eq_zero_of_inner_map_self_eq_zero hT' h0.symm
+  obtain ⟨u, hu⟩ := hT.isUnit
+  rw [coe_coe, ← hu] at hTx
+  have := congr(($(u.inv_mul) : E →L[𝕜] E) x)
+  rwa [mul_apply_eq_comp, hTx, map_zero, one_apply_eq_self, eq_comm] at this
+
 /-- Negative real powers of a positive real Hilbert space operator above the identity are
 contractions in operator norm. -/
 theorem norm_rpow_le_one_of_one_le_of_nonpos (P : X →L[ℝ] X) (hP : 1 ≤ P)

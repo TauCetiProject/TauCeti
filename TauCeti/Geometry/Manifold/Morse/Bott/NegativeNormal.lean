@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Spectral.RelativeProjection
+public import TauCeti.Analysis.InnerProductSpace.Spectral.Normalization
 public import TauCeti.Geometry.Manifold.Morse.Bott.Coordinates
 public import TauCeti.Geometry.Manifold.Morse.Bott.Splitting
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
-# Local negative normal projections of a Morse–Bott submanifold
+# Local negative normal projections and normal forms of a Morse–Bott submanifold
 
 Let `i : S → M` be a nondegenerate critical submanifold of a function `f`. At each point of `S`
 the normal Hessian is a nondegenerate symmetric bilinear form on the normal space, whose negative
@@ -38,6 +38,13 @@ normal Hessian, which is a `C^k` family of nondegenerate forms in these coordina
 No eigenbasis of the normal Hessian is chosen, so no smoothly varying eigenvectors are needed, and
 `P` needs no inner product.
 
+The same coordinates also bring the normal Hessian to normal form. There is a `C^k` family of
+invertible operators on `P` preserving the negative and positive relative spectral subspaces which
+carries the normal Hessian to `-G` on the first and to `G` on the second, so to the
+positive-minus-negative fibre quadratic form `G (u⁺, u⁺) - G (u⁻, u⁻)`. It comes from the
+canonical normalizing transport `ContinuousLinearMap.normalizingTransport` through
+`TauCeti.exists_contDiffOn_apply_eq_of_mem_relativeSpectralSubspace`.
+
 ## Main results
 
 In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
@@ -46,6 +53,9 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
   projections onto the negative normal spaces of a Morse–Bott submanifold relative to a `C^k` fibre
   metric form a `C^k` family, of rank the Morse index; their ranges and kernels are the negative
   and positive relative spectral subspaces.
+* `exists_contMDiffOn_normalHessian_normalization`: in each normal-bundle trivialization, a `C^k`
+  family of invertible operators carries the normal Hessian to the positive-minus-negative fibre
+  quadratic form of a `C^k` fibre metric, and is determined by its listed properties.
 * `normalSpaceTrivialization_symm_negativeSpectralProjection_apply`: in a normal-bundle
   trivialization, the negative spectral projection of the normal Hessian relative to a fibre
   metric `g` reads the projection onto the negative normal space for `g`
@@ -58,6 +68,8 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
 * R. Bott, *Nondegenerate critical manifolds*, Annals of Mathematics 60 (1954), 248–261.
 * A. Banyaga and D. E. Hurtubise, *Lectures on Morse Homology*, Kluwer, 2004, Section 3.5.
+* R. L. Cohen, K. Iga and P. Norbury, *Topics in Morse theory: lecture notes*, 2006,
+  Theorem 15.1.
 -/
 
 public section
@@ -79,6 +91,54 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 section NormedSpace
 
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
+
+/-- The normal Hessian in the preferred normal-bundle trivialization `e` at `s₀`: a family `Q` of
+symmetric nondegenerate forms on `P` which reads the normal Hessian in the coordinates of `e`, and
+such that every real analytic function `Φ` of a symmetric nondegenerate form and a positive
+definite symmetric form, evaluated at `(Q s, G s)`, is a `C^k` family over the intersection of `U`
+with the base set of `e`. -/
+private theorem exists_normalHessian_normalSpaceTrivialization_contMDiffOn {k : ℕ∞ω}
+    [IsManifold I (k + 2) M] (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k ≤ n)
+    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') (s₀ : S)
+    {U : Set S} {G : S → P →L[ℝ] P →L[ℝ] ℝ} (hG : ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ) k G U)
+    (hGsymm : ∀ s ∈ U, ∀ u v, G s u v = G s v u) (hGpos : ∀ s ∈ U, ∀ u, u ≠ 0 → 0 < G s u u) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    ∃ Q : S → P →L[ℝ] P →L[ℝ] ℝ,
+      (∀ Φ : (P →L[ℝ] P →L[ℝ] ℝ) × (P →L[ℝ] P →L[ℝ] ℝ) → P →L[ℝ] P,
+        ContDiffOn ℝ ω Φ {x | (∀ u v, x.1 u v = x.1 v u) ∧ Function.Injective x.1 ∧
+          (∀ u v, x.2 u v = x.2 v u) ∧ ∀ u, u ≠ 0 → 0 < x.2 u u} →
+        ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P) k (fun s ↦ Φ (Q s, G s))
+          (U ∩ (i.normalSpaceTrivialization hn hdim s₀).baseSet)) ∧
+      ∀ s ∈ U ∩ (i.normalSpaceTrivialization hn hdim s₀).baseSet,
+        (∀ u v, Q s u v = Q s v u) ∧ Function.Injective (Q s) ∧
+        (∀ u v, h.normalHessian hn s ((i.normalSpaceTrivialization hn hdim s₀).symm s u)
+          ((i.normalSpaceTrivialization hn hdim s₀).symm s v) = Q s u v) ∧
+        (Q s).toBilinForm = (h.normalHessian hn s).compl₁₂
+          ((i.normalSpaceTrivialization hn hdim s₀).symmₗ ℝ s)
+          ((i.normalSpaceTrivialization hn hdim s₀).symmₗ ℝ s) := by
+  have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  set e := i.normalSpaceTrivialization hn hdim s₀
+  obtain ⟨Q, hQ, hrep⟩ :=
+    h.exists_contMDiffOn_normalHessian_normalSpaceTrivialization hn hk hf hdim s₀
+  have hmaps (s : S) (hs : s ∈ U ∩ e.baseSet) :
+      (Q s, G s) ∈ {x : (P →L[ℝ] P →L[ℝ] ℝ) × (P →L[ℝ] P →L[ℝ] ℝ) |
+        (∀ u v, x.1 u v = x.1 v u) ∧ Function.Injective x.1 ∧
+          (∀ u v, x.2 u v = x.2 v u) ∧ ∀ u, u ≠ 0 → 0 < x.2 u u} :=
+    ⟨fun u v ↦ ((hrep s hs.2).1 u v).2, (hrep s hs.2).2, hGsymm s hs.1, hGpos s hs.1⟩
+  refine ⟨Q, fun Φ hΦ s hs ↦ ?_, fun s hs ↦ ?_⟩
+  · -- Smoothness: compose the smooth dependence on the pair of forms with the pair of families.
+    have hpair := ((hQ s hs.2).mono inter_subset_right).prodMk_space
+      ((hG s hs.1).mono inter_subset_left)
+    exact ((hΦ.of_le le_top).contDiffWithinAt (hmaps s hs)).comp_contMDiffWithinAt
+      (f := fun s' ↦ (Q s', G s')) hpair fun s' hs' ↦ hmaps s' hs'
+  -- In the trivialization the normal Hessian is `Q s`.
+  have hN (u v : P) : h.normalHessian hn s (e.symm s u) (e.symm s v) = Q s u v :=
+    ((hrep s hs.2).1 u v).1
+  refine ⟨(hmaps s hs).1, (hmaps s hs).2.1, hN, ?_⟩
+  ext u v
+  rw [ContinuousLinearMap.toBilinForm_apply, LinearMap.compl₁₂_apply, e.symmₗ_apply hs.2,
+    e.symmₗ_apply hs.2, hN]
 
 /-- **The negative normal projections of a Morse–Bott submanifold are smooth.** Let `i` be a
 nondegenerate critical submanifold of `f`, with `f` of class `C^{k+2}` along it and `k ≤ n`, and
@@ -115,30 +175,12 @@ theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I
         Module.finrank ℝ (p s).range = manifoldMorseIndex I f (i s) ∧
         Module.finrank ℝ (p s).ker = manifoldMorseIndex I (-f) (i s) := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  obtain ⟨Q, hsmooth, hQ⟩ :=
+    exists_normalHessian_normalSpaceTrivialization_contMDiffOn hn h hk hf hdim s₀ hG hGsymm hGpos
   set e := i.normalSpaceTrivialization hn hdim s₀
-  obtain ⟨Q, hQ, hrep⟩ :=
-    h.exists_contMDiffOn_normalHessian_normalSpaceTrivialization hn hk hf hdim s₀
-  have hmaps (s : S) (hs : s ∈ U ∩ e.baseSet) :
-      (Q s, G s) ∈ {x : (P →L[ℝ] P →L[ℝ] ℝ) × (P →L[ℝ] P →L[ℝ] ℝ) |
-        (∀ u v, x.1 u v = x.1 v u) ∧ Function.Injective x.1 ∧
-          (∀ u v, x.2 u v = x.2 v u) ∧ ∀ u, u ≠ 0 → 0 < x.2 u u} :=
-    ⟨fun u v ↦ ((hrep s hs.2).1 u v).2, (hrep s hs.2).2, hGsymm s hs.1, hGpos s hs.1⟩
   obtain ⟨Φ, hΦ, hΦp⟩ := exists_contDiffOn_range_eq_relativeSpectralSubspace (P := P)
-  refine ⟨fun s ↦ Φ (Q s, G s), fun s hs ↦ ?_, fun s hs ↦ ?_⟩
-  · -- Smoothness: compose the smooth dependence on the pair of forms with the pair of families.
-    have hpair := ((hQ s hs.2).mono inter_subset_right).prodMk_space
-      ((hG s hs.1).mono inter_subset_left)
-    exact ((hΦ.of_le le_top).contDiffWithinAt (hmaps s hs)).comp_contMDiffWithinAt
-      (f := fun s' ↦ (Q s', G s')) hpair fun s' hs' ↦ hmaps s' hs'
-  -- In the trivialization the normal Hessian is `Q s`.
-  obtain ⟨hsymm, hinj, -, -⟩ := hmaps s hs
-  have hN (u v : P) : h.normalHessian hn s (e.symm s u) (e.symm s v) = Q s u v :=
-    ((hrep s hs.2).1 u v).1
-  have hQN : (Q s).toBilinForm =
-      (h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s) := by
-    ext u v
-    rw [ContinuousLinearMap.toBilinForm_apply, LinearMap.compl₁₂_apply, e.symmₗ_apply hs.2,
-      e.symmₗ_apply hs.2, hN]
+  refine ⟨fun s ↦ Φ (Q s, G s), hsmooth Φ hΦ, fun s hs ↦ ?_⟩
+  obtain ⟨hsymm, hinj, hN, hQN⟩ := hQ s hs
   obtain ⟨hidem, hrange, hker⟩ := hΦp (Q s) (G s) hsymm hinj (hGsymm s hs.1) (hGpos s hs.1)
   have hGs : (G s).toBilinForm.IsSymm :=
     ContinuousLinearMap.isSymm_toBilinForm_iff.mpr (hGsymm s hs.1)
@@ -157,7 +199,8 @@ theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I
     { (e.linearEquivAt ℝ s hs.2).symm with
       map_app' := fun u ↦ by
         simp only [LinearEquiv.toFun_eq_coe, Trivialization.linearEquivAt_symm_apply,
-          LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply, hN] }
+          LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply]
+        exact hN u u }
   refine ⟨hidem, hrange.trans (by rw [hQN]), hker.trans (by rw [hQN]),
     fun u v ↦ (LinearMap.BilinForm.apply_eq_zero_of_mem_relativeSpectralSubspace hGs hQs
       Iio_disjoint_Ioi_same (hmem u) (hsub v)).1, fun u v ↦ ?_, fun u hu ↦ ?_, fun u hu ↦ ?_,
@@ -175,6 +218,91 @@ theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I
       QuadraticMap.Equivalent.sigNeg_eq ⟨L⟩, h.sigNeg_normalHessian hn s]
   · rw [hker, LinearMap.BilinForm.finrank_relativeSpectralSubspace_Ioi hGs hGp hQs,
       QuadraticMap.Equivalent.sigPos_eq ⟨L⟩, h.sigPos_normalHessian hn s]
+
+/-- **The normal Hessian of a Morse–Bott submanifold in normal form.** Let `i` be a nondegenerate
+critical submanifold of `f`, with `f` of class `C^{k+2}` along it and `k ≤ n`, and let `G` be a
+`C^k` family of symmetric positive definite bilinear forms on the fibre model `P` over a set `U`,
+for instance a fibre metric on the normal bundle read in the preferred normal-bundle
+trivialization `e` at `s₀`. Write `N s u v` for the normal Hessian at `s` of the normal vectors
+with coordinates `u` and `v`. Then there is a `C^k` family `Ψ` of invertible operators on `P` over
+the intersection of `U` with the base set of `e`, each self-adjoint and positive definite for
+`G s` and self-adjoint for `N s`, which maps the negative and the positive relative spectral
+subspaces of `N s` with respect to `G s` into themselves, and carries `N s` to `-G s` on the
+negative one and to `G s` on the positive one. Since these subspaces are complementary and
+orthogonal for both `G s` and `N s`, this reads `N s (Ψ s w) (Ψ s w) = G s (w⁺, w⁺) - G s (w⁻, w⁻)`
+for `w = w⁻ + w⁺`: in the coordinates `w = (Ψ s)⁻¹ u` the normal Hessian is the
+positive-minus-negative fibre quadratic form. These properties determine each `Ψ s`: any operator
+on `P` with them, even only positive semidefinite for `G s`, is `Ψ s`. -/
+theorem exists_contMDiffOn_normalHessian_normalization {k : ℕ∞ω} [IsManifold I (k + 2) M]
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k ≤ n)
+    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') (s₀ : S)
+    {U : Set S} {G : S → P →L[ℝ] P →L[ℝ] ℝ} (hG : ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ) k G U)
+    (hGsymm : ∀ s ∈ U, ∀ u v, G s u v = G s v u) (hGpos : ∀ s ∈ U, ∀ u, u ≠ 0 → 0 < G s u u) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    ∃ Ψ : S → P →L[ℝ] P,
+      ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P) k Ψ (U ∩ (i.normalSpaceTrivialization hn hdim s₀).baseSet) ∧
+      ∀ s ∈ U ∩ (i.normalSpaceTrivialization hn hdim s₀).baseSet,
+        let e := i.normalSpaceTrivialization hn hdim s₀
+        IsUnit (Ψ s) ∧
+        (∀ u v, G s (Ψ s u) v = G s u (Ψ s v)) ∧
+        (∀ u, u ≠ 0 → 0 < G s (Ψ s u) u) ∧
+        (∀ u v, h.normalHessian hn s (e.symm s (Ψ s u)) (e.symm s v) =
+          h.normalHessian hn s (e.symm s u) (e.symm s (Ψ s v))) ∧
+        (∀ u ∈ (G s).toBilinForm.relativeSpectralSubspace
+            ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Iio 0),
+          Ψ s u ∈ (G s).toBilinForm.relativeSpectralSubspace
+            ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Iio 0) ∧
+          h.normalHessian hn s (e.symm s (Ψ s u)) (e.symm s (Ψ s u)) = -G s u u) ∧
+        (∀ u ∈ (G s).toBilinForm.relativeSpectralSubspace
+            ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Ioi 0),
+          Ψ s u ∈ (G s).toBilinForm.relativeSpectralSubspace
+            ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Ioi 0) ∧
+          h.normalHessian hn s (e.symm s (Ψ s u)) (e.symm s (Ψ s u)) = G s u u) ∧
+        ∀ L : P →L[ℝ] P, (∀ u v, G s (L u) v = G s u (L v)) → (∀ u, 0 ≤ G s (L u) u) →
+          (∀ u v, h.normalHessian hn s (e.symm s (L u)) (e.symm s v) =
+            h.normalHessian hn s (e.symm s u) (e.symm s (L v))) →
+          (∀ u ∈ (G s).toBilinForm.relativeSpectralSubspace
+              ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Iio 0),
+            L u ∈ (G s).toBilinForm.relativeSpectralSubspace
+              ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Iio 0) ∧
+            h.normalHessian hn s (e.symm s (L u)) (e.symm s (L u)) = -G s u u) →
+          (∀ u ∈ (G s).toBilinForm.relativeSpectralSubspace
+              ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Ioi 0),
+            L u ∈ (G s).toBilinForm.relativeSpectralSubspace
+              ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Ioi 0) ∧
+            h.normalHessian hn s (e.symm s (L u)) (e.symm s (L u)) = G s u u) →
+          L = Ψ s := by
+  have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  obtain ⟨Q, hsmooth, hQ⟩ :=
+    exists_normalHessian_normalSpaceTrivialization_contMDiffOn hn h hk hf hdim s₀ hG hGsymm hGpos
+  set e := i.normalSpaceTrivialization hn hdim s₀
+  obtain ⟨Ψ, hΨ, hΨp⟩ := exists_contDiffOn_apply_eq_of_mem_relativeSpectralSubspace (P := P)
+  refine ⟨fun s ↦ Ψ (Q s, G s), hsmooth Ψ hΨ, fun s hs ↦ ?_⟩
+  -- In the trivialization the normal Hessian is `Q s`.
+  obtain ⟨hsymm, hinj, hN, hQN⟩ := hQ s hs
+  obtain ⟨hunit, hGS, hGpos', hQS, hneg, hpos, huniq⟩ :=
+    hΨp (Q s) (G s) hsymm hinj (hGsymm s hs.1) (hGpos s hs.1)
+  refine ⟨hunit, hGS, hGpos', fun u v ↦ ?_, fun u hu ↦ ?_, fun u hu ↦ ?_,
+    fun L hGL hposL hNL hnegL hposL' ↦ huniq L hGL hposL (fun u v ↦ ?_) (fun u hu ↦ ?_)
+      (fun u hu ↦ ?_)⟩
+  · rw [hN, hN]
+    exact hQS u v
+  · rw [← hQN] at hu ⊢
+    rw [hN]
+    exact hneg u hu
+  · rw [← hQN] at hu ⊢
+    rw [hN]
+    exact hpos u hu
+  -- Uniqueness: read the hypotheses on `L` through the trivialization.
+  · rw [← hN, ← hN]
+    exact hNL u v
+  · rw [hQN] at hu ⊢
+    rw [← hN]
+    exact hnegL u hu
+  · rw [hQN] at hu ⊢
+    rw [← hN]
+    exact hposL' u hu
 
 end NormedSpace
 
