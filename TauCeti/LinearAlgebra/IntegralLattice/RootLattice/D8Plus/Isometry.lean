@@ -142,7 +142,7 @@ vector. -/
 private theorem e8GlueShift_mem_checkerboardLattice (i : Fin 8) :
     (fun j ↦ ((e8GlueShift i j : ℤ) : ℚ)) ∈ (checkerboardLattice 8).carrier := by
   rw [checkerboardLattice_carrier]
-  exact mem_checkerboardCarrier_of (e8GlueShift i) (fun _ ↦ rfl)
+  exact mem_checkerboardCarrier_of_even_sum (e8GlueShift i) (fun _ ↦ rfl)
     (DynkinType.e8DoubledSimpleRoot_shift_half_sum_even i)
 
 /-- The first glue root differs from the spinor vector by a checkerboard vector. -/
@@ -173,7 +173,7 @@ private theorem e8GlueRoot_of_ne_zero (i : Fin 8) (hi : i ≠ 0) :
 vector, and the other seven are checkerboard vectors. -/
 theorem e8GlueRoot_mem_d8PlusCarrier (i : Fin 8) :
     e8GlueRoot i ∈ (checkerboardPlusCarrier 8).1 := by
-  rw [mem_checkerboardPlusCarrier_iff 8 (by decide)]
+  rw [mem_checkerboardPlusCarrier_iff_of_even 8 (by decide)]
   rcases eq_or_ne i 0 with rfl | hi
   · exact Or.inr (e8GlueRoot_zero_sub_spinor ▸ e8GlueShift_mem_checkerboardLattice 0)
   · exact Or.inl (e8GlueRoot_of_ne_zero i hi ▸ e8GlueShift_mem_checkerboardLattice i)

@@ -54,14 +54,14 @@ theorem checkerboardSpinorSubgroup_def :
 
 /-- In even rank the spinor subgroup consists of zero and the spinor class. -/
 @[simp]
-theorem mem_checkerboardSpinorSubgroup_iff (hn : Even n)
+theorem mem_checkerboardSpinorSubgroup_iff_of_even (hn : Even n)
     (x : (checkerboardLattice n).DiscriminantGroup) :
     x ∈ checkerboardSpinorSubgroup n ↔ x = 0 ∨ x = checkerboardSpinorClass n := by
   rw [checkerboardSpinorSubgroup]
-  exact mem_zmultiples_checkerboardSpinorClass_iff n hn x
+  exact mem_zmultiples_checkerboardSpinorClass_iff_of_even n hn x
 
 /-- The spinor subgroup has order two in even positive rank. -/
-theorem natCard_checkerboardSpinorSubgroup [NeZero n] (hn : Even n) :
+theorem natCard_checkerboardSpinorSubgroup_of_even [NeZero n] (hn : Even n) :
     Nat.card (checkerboardSpinorSubgroup n) = 2 := by
   rw [checkerboardSpinorSubgroup, Nat.card_zmultiples,
     addOrderOf_checkerboardSpinorClass_of_even n hn]
@@ -73,7 +73,7 @@ noncomputable def checkerboardPlusCarrier : (checkerboardLattice n).Intermediate
 
 /-- In even rank, the spinor enlargement is the union of `Dₙ` and its spinor coset. -/
 @[simp]
-theorem mem_checkerboardPlusCarrier_iff (hn : Even n) (x : Fin n → ℚ) :
+theorem mem_checkerboardPlusCarrier_iff_of_even (hn : Even n) (x : Fin n → ℚ) :
     x ∈ (checkerboardPlusCarrier n).1 ↔
       x ∈ (checkerboardLattice n).carrier ∨
         x - checkerboardSpinor n ∈ (checkerboardLattice n).carrier := by
@@ -89,7 +89,7 @@ theorem mem_checkerboardPlusCarrier_iff_of_sub_mem (hn : Even n) {g : Fin n → 
     (hg : g - checkerboardSpinor n ∈ checkerboardCarrier n) (x : Fin n → ℚ) :
     x ∈ (checkerboardPlusCarrier n).1 ↔
       x ∈ checkerboardCarrier n ∨ x - g ∈ checkerboardCarrier n := by
-  rw [mem_checkerboardPlusCarrier_iff n hn, checkerboardLattice_carrier,
+  rw [mem_checkerboardPlusCarrier_iff_of_even n hn, checkerboardLattice_carrier,
     ← sub_add_sub_cancel x g (checkerboardSpinor n), Submodule.add_mem_iff_left _ hg]
 
 /-- The subgroup recovered from the spinor enlargement is the spinor subgroup. -/
@@ -152,7 +152,7 @@ theorem isLagrangian_checkerboardSpinorSubgroup (hn : 8 ∣ n) :
     · subst n
       simp
     have : NeZero n := ⟨hzero⟩
-    rw [natCard_checkerboardSpinorSubgroup n (even_iff_two_dvd.mpr
+    rw [natCard_checkerboardSpinorSubgroup_of_even n (even_iff_two_dvd.mpr
       (dvd_trans (by decide) hn)), natCard_discriminantGroup_checkerboardLattice]
     norm_num
   exact FiniteQuadraticModule.IsIsotropic.isLagrangian_of_card_sq_eq _
@@ -207,10 +207,10 @@ theorem isEven_checkerboardPlusLattice (hn : 8 ∣ n) :
   (isEven_checkerboardPlusCarrier n hn).isEven_toIntegralLattice
 
 /-- The spinor enlargement has index two in even positive rank. -/
-theorem index_checkerboardPlusCarrier [NeZero n] (hn : Even n) :
+theorem index_checkerboardPlusCarrier_of_even [NeZero n] (hn : Even n) :
     IntermediateCarrier.index (checkerboardPlusCarrier n) = 2 := by
   rw [checkerboardPlusCarrier, IntermediateCarrier.index_intermediateCarrierOfDiscriminantSubgroup,
-    natCard_checkerboardSpinorSubgroup n hn]
+    natCard_checkerboardSpinorSubgroup_of_even n hn]
 
 /-- The spinor glue lattice is positive definite. -/
 theorem isPosDef_checkerboardPlusLattice (hn : 8 ∣ n) :
@@ -242,7 +242,8 @@ theorem mem_checkerboardLattice_carrier_of_mem_vectorsOfNorm_two (hn : 8 ∣ n) 
     (x : Fin n → ℚ) ∈ (checkerboardLattice n).carrier := by
   have hmem : (x : Fin n → ℚ) ∈ (checkerboardPlusCarrier n).1 :=
     checkerboardPlusLattice_carrier n hn ▸ x.2
-  rw [mem_checkerboardPlusCarrier_iff n (even_iff_two_dvd.mpr (dvd_trans (by decide) hn))] at hmem
+  rw [mem_checkerboardPlusCarrier_iff_of_even n
+    (even_iff_two_dvd.mpr (dvd_trans (by decide) hn))] at hmem
   refine hmem.resolve_right fun hs ↦ ?_
   rw [checkerboardLattice_carrier] at hs
   have hbound := div_four_le_checkerboardLattice_form_self_of_sub_checkerboardSpinor_mem hs
@@ -258,7 +259,7 @@ theorem span_vectorsOfNorm_two_checkerboardPlusLattice_ne_top (hn : 8 ∣ n) (hn
   intro htop
   have hs : checkerboardSpinor n ∈ (checkerboardPlusLattice n hn).carrier := by
     rw [checkerboardPlusLattice_carrier,
-      mem_checkerboardPlusCarrier_iff n (even_iff_two_dvd.mpr (dvd_trans (by decide) hn)),
+      mem_checkerboardPlusCarrier_iff_of_even n (even_iff_two_dvd.mpr (dvd_trans (by decide) hn)),
       sub_self]
     exact Or.inr (zero_mem _)
   have hle : Submodule.span ℤ ((checkerboardPlusLattice n hn).vectorsOfNorm 2) ≤

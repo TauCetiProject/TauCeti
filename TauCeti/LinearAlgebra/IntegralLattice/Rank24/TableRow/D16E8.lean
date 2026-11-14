@@ -219,7 +219,7 @@ theorem mem_niemeierD16E8_carrier_iff_checkerboard
     ← (rootLatticeIsometryCheckerboard 16 (by decide) (isSimplyLaced_D 16)).apply_mem_carrier_iff,
     map_sub, Isometry.apply_symm_apply,
     checkerboardLattice_carrier, mem_rootLattice_carrier_iff,
-    mem_checkerboardPlusCarrier_iff 16 (by decide), checkerboardLattice_carrier]
+    mem_checkerboardPlusCarrier_iff_of_even 16 (by decide), checkerboardLattice_carrier]
   exact or_and_right.symm
 
 /-- The adjoined table glue vector has squared norm four. -/

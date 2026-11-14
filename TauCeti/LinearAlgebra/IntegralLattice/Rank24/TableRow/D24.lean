@@ -183,7 +183,7 @@ theorem mem_niemeierD24_carrier_iff
       d24RootIsometry x ∈ checkerboardCarrier 24 ∨
         d24RootIsometry x - checkerboardSpinor 24 ∈ checkerboardCarrier 24 := by
   rw [← d24CheckerboardIsometry.apply_mem_carrier_iff,
-    checkerboardPlusLattice_carrier, mem_checkerboardPlusCarrier_iff 24 (by decide),
+    checkerboardPlusLattice_carrier, mem_checkerboardPlusCarrier_iff_of_even 24 (by decide),
     d24CheckerboardIsometry_apply, checkerboardLattice_carrier]
 
 end TauCeti

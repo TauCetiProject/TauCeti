@@ -78,7 +78,7 @@ private theorem mem_checkerboardPlusLattice_of {x : Fin (8 * 2) → ℚ}
     (h : ∀ b i, ∃ z : ℤ, x ((e8PowIndexEquiv 2).symm (b, i)) = z) (m : ℤ)
     (hm : ∑ j, x j = 2 * m) :
     x ∈ (checkerboardPlusLattice (8 * 2) (dvd_mul_right 8 2)).carrier := by
-  rw [checkerboardPlusLattice_carrier, mem_checkerboardPlusCarrier_iff _ (by decide)]
+  rw [checkerboardPlusLattice_carrier, mem_checkerboardPlusCarrier_iff_of_even _ (by decide)]
   exact Or.inl ((mem_checkerboardLattice_carrier_iff x).mpr
     ⟨forall_exists_intCast_of_blocks h, m, hm⟩)
 
@@ -138,7 +138,7 @@ private theorem mem_checkerboardPlusLattice_of_sub {x : Fin (8 * 2) → ℚ}
     (h : ∀ b i, ∃ z : ℤ, x ((e8PowIndexEquiv 2).symm (b, i)) - 1 / 2 = z) (m : ℤ)
     (hm : ∑ j, (x j - 1 / 2) = 2 * m) :
     x ∈ (checkerboardPlusLattice (8 * 2) (dvd_mul_right 8 2)).carrier := by
-  rw [checkerboardPlusLattice_carrier, mem_checkerboardPlusCarrier_iff _ (by decide)]
+  rw [checkerboardPlusLattice_carrier, mem_checkerboardPlusCarrier_iff_of_even _ (by decide)]
   refine Or.inr ((mem_checkerboardLattice_carrier_iff _).mpr
     ⟨forall_exists_intCast_of_blocks fun b i ↦ ?_, m, ?_⟩)
   · simpa only [Pi.sub_apply, checkerboardSpinor_apply] using h b i
@@ -170,7 +170,7 @@ private theorem mem_neighborLattice_of_sub {x : Fin (8 * 2) → ℚ}
 private theorem blockVector_e8GlueRoot_mem (a : Fin 2) (i : Fin 8) :
     blockVector a (e8GlueRoot i) ∈ neighborLattice.carrier := by
   have hg := e8GlueRoot_mem_d8PlusCarrier i
-  rw [mem_checkerboardPlusCarrier_iff _ (by decide), mem_checkerboardLattice_carrier_iff,
+  rw [mem_checkerboardPlusCarrier_iff_of_even _ (by decide), mem_checkerboardLattice_carrier_iff,
     mem_checkerboardLattice_carrier_iff] at hg
   simp only [Pi.sub_apply, checkerboardSpinor_apply] at hg
   obtain rfl | rfl : a = 0 ∨ a = 1 := by fin_cases a <;> simp
