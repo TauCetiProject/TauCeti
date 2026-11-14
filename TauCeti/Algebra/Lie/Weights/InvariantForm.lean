@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import Mathlib.LinearAlgebra.RootSystem.RootPositive
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # The invariant form on the weights of a Killing Lie algebra
@@ -296,8 +297,7 @@ theorem weylGroupCorootRep_cartanEquivDual_symm (w : (rootSystem H).weylGroup)
       (cartanEquivDual H).symm (w⁻¹ • lam) := by
   refine sub_eq_zero.mp <| (Module.forall_dual_apply_eq_zero_iff K (V := H) _).mp fun nu ↦ ?_
   rw [map_sub, sub_eq_zero, ← invForm_apply_apply, ← invForm_weylGroup_smul_left,
-    invForm_apply_apply, RootPairing.weylGroupCorootRep,
-    Representation.ofDistribMulAction_apply_apply]
+    invForm_apply_apply, RootPairing.weylGroupCorootRep_equivOp_apply]
   -- the goal is `nu (w • t_λ) = (w • nu) t_λ`: Mathlib acts on weights through `weightEquiv` and
   -- on coweights, here `H`, through `coweightEquiv`, and the evaluation pairing of `rootSystem H`
   -- makes this their transposition law

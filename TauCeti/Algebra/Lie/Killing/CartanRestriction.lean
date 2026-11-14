@@ -63,6 +63,8 @@ functions on the weights `H*`, the restriction evaluates a polynomial on `L*` at
 * `TauCeti.map_dualMap_killingSymmetricEquiv`: **the restriction square.** Restricting a polynomial
   function on `L` to `H` along the inclusion commutes with the Killing identifications, the
   restriction on the `S(L)` side being `lieCartanRestriction H`.
+* `TauCeti.lift_eval_killingSymmetricEquiv`: the same square evaluated at a point `z ∈ H`, the
+  restriction being read at the weight dual to `z`.
 * `TauCeti.lift_lieCartanRestriction`: the value of `lieCartanRestriction H p` at a weight `λ` is
   the value of `p` at `TauCeti.killingExtend λ`.
 * `TauCeti.lieCartanRestriction_mem_homogeneousSubmodule`: the restriction preserves degrees.
@@ -258,6 +260,33 @@ theorem map_dualMap_killingSymmetricEquiv (p : SymmetricAlgebra K L) :
     SymmetricAlgebra.map_comp_map, SymmetricAlgebra.map_comp_map]
   congr 2
   exact LinearMap.ext fun x ↦ (cartanEquivDual_killingCartanProjection H x).symm
+
+/-- Through the Killing duality `H ≃ H*`, evaluating a polynomial function on `H*` at the weight
+`κ(z, ·)` dual to `z ∈ H` is evaluating the corresponding polynomial function on `H` at `z`. -/
+theorem lift_eval_comp_map_cartanEquivDual (z : H) :
+    (SymmetricAlgebra.lift (Dual.eval K H z)).comp
+        (SymmetricAlgebra.map K (cartanEquivDual H).toLinearMap) =
+      SymmetricAlgebra.lift (cartanEquivDual H z) :=
+  -- on generators this is the symmetry `κ(h, z) = κ(z, h)` of the Killing form
+  SymmetricAlgebra.algHom_ext (LinearMap.ext fun h ↦ by
+    simpa using LinearMap.trace_mul_comm K (toEnd K H L h) (toEnd K H L z))
+
+/-- Applied form of `TauCeti.lift_eval_comp_map_cartanEquivDual`. -/
+theorem lift_eval_map_cartanEquivDual (z : H) (p : SymmetricAlgebra K H) :
+    SymmetricAlgebra.lift (Dual.eval K H z)
+        (SymmetricAlgebra.map K (cartanEquivDual H).toLinearMap p) =
+      SymmetricAlgebra.lift (cartanEquivDual H z) p :=
+  AlgHom.congr_fun (lift_eval_comp_map_cartanEquivDual H z) p
+
+/-- **Evaluation at a point of `H`.** Evaluating the polynomial function on `L` that corresponds to
+`p ∈ S(L)` under the Killing form at a point `z ∈ H` gives the value of the restriction
+`lieCartanRestriction H p` at the weight `κ(z, ·)` dual to `z`. -/
+theorem lift_eval_killingSymmetricEquiv (z : H) (p : SymmetricAlgebra K L) :
+    SymmetricAlgebra.lift (Dual.eval K L (z : L)) (killingSymmetricEquiv K L p) =
+      SymmetricAlgebra.lift (cartanEquivDual H z) (lieCartanRestriction H p) := by
+  -- evaluating at `z ∈ L` is evaluating the restriction to `H` at `z ∈ H`
+  refine (SymmetricAlgebra.lift_eval_map_dualMap K H.incl.toLinearMap z _).symm.trans ?_
+  rw [map_dualMap_killingSymmetricEquiv, lift_eval_map_cartanEquivDual]
 
 /-- **The restriction, read on the weights.** Viewing `S(L)` as the polynomial functions on `L*`
 and `S(H)` as the polynomial functions on the weights `H*`, the value of `lieCartanRestriction H p`

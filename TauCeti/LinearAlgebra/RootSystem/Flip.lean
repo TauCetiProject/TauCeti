@@ -51,7 +51,11 @@ construction of the Langlands dual group with its Galois action.
 * `RootPairing.Equiv.toLinearMap_weightEquiv_autFlip`: `f` and `autFlip P f` preserve the
   pairing of weights with coweights.
 * `RootPairing.Equiv.autFlip_reflection`: `autFlip` sends the reflection in a root to the
-  reflection of the flipped pairing in the same index.
+  reflection of the flipped pairing in the same index, so it maps the Weyl group of `P` onto that
+  of `P.flip` (`RootPairing.Equiv.map_weylGroup_autFlip`,
+  `RootPairing.Equiv.autFlip_mem_weylGroup_iff`).
+* `RootPairing.Equiv.autFlip_smul_coweight`: `autFlip P f` acts on the weights of `P.flip`, the
+  coweights of `P`, as the inverse of the coweight map of `f`.
 * `RootPairing.Equiv.autFlip_mem_stabilizer_iff`: `autFlip P f` stabilizes a set of root indices,
   such as the support of a base and hence of its flip, exactly when `f` does.
 
@@ -284,6 +288,14 @@ theorem coweightEquiv_autFlip (f : P.Aut) : (autFlip P f).coweightEquiv = f.weig
   -- As for `RootPairing.Equiv.weightEquiv_autFlip`, with the weight-space map of `f⁻¹`.
   LinearEquiv.ext fun _ ↦ rfl
 
+/-- `autFlip P f` acts on the weights of `P.flip`, which are the coweights of `P`, as the inverse
+of the coweight map of `f`. -/
+@[simp]
+theorem autFlip_smul_coweight (f : P.Aut) (y : N) : autFlip P f • y = f.coweightEquiv.symm y := by
+  -- Mathlib's action of an automorphism on weights is `weightHom` by definition
+  change weightHom P.flip (autFlip P f) y = _
+  rw [weightHom_apply, weightEquiv_autFlip]
+
 /-- `autFlip P f` acts on root indices as `f` does. -/
 @[simp]
 theorem autFlip_smul_index (f : P.Aut) (i : ι) : autFlip P f • i = f • i :=
@@ -317,6 +329,22 @@ theorem autFlip_reflection (i : ι) :
   apply weightHom_injective
   ext x
   simp [LinearEquiv.symm_apply_eq, ← coreflection_eq_flip_reflection]
+
+/-- **`autFlip` maps the Weyl group of `P` onto the Weyl group of `P.flip`**, since it sends each
+reflection of `P` to the corresponding reflection of `P.flip`
+(`RootPairing.Equiv.autFlip_reflection`). -/
+@[simp]
+theorem map_weylGroup_autFlip :
+    P.weylGroup.map (autFlip P : P.Aut →* P.flip.Aut) = P.flip.weylGroup := by
+  rw [← MonoidHom.domRestrict_range, range_domRestrict_weylGroup autFlip_reflection, weylGroup]
+
+/-- `autFlip P f` lies in the Weyl group of `P.flip` exactly when `f` lies in the Weyl group
+of `P`. -/
+@[simp]
+theorem autFlip_mem_weylGroup_iff {f : P.Aut} :
+    autFlip P f ∈ P.flip.weylGroup ↔ f ∈ P.weylGroup := by
+  rw [← map_weylGroup_autFlip]
+  exact Subgroup.mem_map_iff_mem (autFlip P).injective
 
 end Equiv
 
