@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.MeasureTheory.Measure.Hausdorff
 public import Mathlib.Geometry.Euclidean.Volume.Measure
+import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Lipschitz images of Haar-null sets
@@ -27,6 +28,10 @@ normalized Euclidean Hausdorff measure `μHE[d]`, a constant multiple of `μH[d]
   image, from a finite-dimensional real normed space to one of at least the same dimension.
 * `LipschitzOnWith.euclideanHausdorffMeasure_image_le` — a `K`-Lipschitz map increases `μHE[d]`
   by at most the factor `K ^ d`.
+* `LipschitzWith.euclideanHausdorffMeasure_image_inter_cone_div_le` — the image under a
+  `K`-Lipschitz map of the parameters in a thin cone `{v | |ψ v| ≤ t ‖v‖}` within the ball of
+  radius `c r` has `k`-dimensional density at most `K ^ k c ^ k` times the share of the cone in the
+  unit ball.
 -/
 
 public section
@@ -69,3 +74,53 @@ theorem euclideanHausdorffMeasure_image_le {K : ℝ≥0} {f : X → Y} {s : Set 
   exact hf.hausdorffMeasure_image_le d.cast_nonneg
 
 end LipschitzOnWith
+
+namespace LipschitzWith
+
+open Metric Set
+
+variable {Y : Type*} [EMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+
+/-- The image under a `K`-Lipschitz map of the parameters `u` with `u - u₀` in the part of a
+cone `|ψ v| ≤ t ‖v‖` in the closed ball of radius `c r` has `k`-dimensional density at most
+`K ^ k c ^ k` times the share of the cone in the unit ball. -/
+theorem euclideanHausdorffMeasure_image_inter_cone_div_le
+    {k : ℕ} {f : EuclideanSpace ℝ (Fin k) → Y} {K : ℝ≥0} (hf : LipschitzWith K f)
+    (s : Set (EuclideanSpace ℝ (Fin k))) (u₀ : EuclideanSpace ℝ (Fin k))
+    (ψ : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ) (t : ℝ) {c r : ℝ} (hc : 0 < c) (hr : 0 < r) :
+    μHE[k] (f '' (s ∩ (fun u ↦ u - u₀) ⁻¹' (closedBall 0 (c * r) ∩ {v | |ψ v| ≤ t * ‖v‖}))) /
+        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r) ≤
+      (K : ℝ≥0∞) ^ k * ENNReal.ofReal (c ^ k) *
+        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) 1 ∩ {v | |ψ v| ≤ t * ‖v‖}) /
+        volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1) := by
+  have hcr : 0 < c * r := by positivity
+  have himage := (hf.lipschitzOnWith (s := s ∩ (fun u ↦ u - u₀) ⁻¹'
+    (closedBall 0 (c * r) ∩ {v | |ψ v| ≤ t * ‖v‖}))).euclideanHausdorffMeasure_image_le k
+  have hvol : μHE[k] (s ∩ (fun u ↦ u - u₀) ⁻¹' (closedBall 0 (c * r) ∩ {v | |ψ v| ≤ t * ‖v‖})) ≤
+      ENNReal.ofReal ((c * r) ^ k) *
+        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) 1 ∩ {v | |ψ v| ≤ t * ‖v‖}) := by
+    have hμ : (μHE[k] : Measure (EuclideanSpace ℝ (Fin k))) = volume :=
+      EuclideanSpace.euclideanHausdorffMeasure_eq_volume k
+    have hvolS := Measure.addHaar_closedBall_inter_setOf_abs_le_mul_norm volume ψ t hcr
+    rw [finrank_euclideanSpace_fin] at hvolS
+    rw [hμ, ← hvolS]
+    refine (measure_mono inter_subset_right).trans_eq ?_
+    simp only [sub_eq_add_neg]
+    exact measure_preimage_add_right _ _ _
+  rw [Measure.addHaar_closedBall _ _ hr.le, finrank_euclideanSpace_fin]
+  calc μHE[k] (f '' (s ∩ (fun u ↦ u - u₀) ⁻¹' (closedBall 0 (c * r) ∩ {v | |ψ v| ≤ t * ‖v‖}))) /
+        (ENNReal.ofReal (r ^ k) * volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1))
+      ≤ (K : ℝ≥0∞) ^ k * (ENNReal.ofReal ((c * r) ^ k) *
+          volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) 1 ∩ {v | |ψ v| ≤ t * ‖v‖})) /
+          (ENNReal.ofReal (r ^ k) * volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1)) := by
+        gcongr
+        exact himage.trans (by gcongr)
+    _ = ENNReal.ofReal (r ^ k) * ((K : ℝ≥0∞) ^ k * ENNReal.ofReal (c ^ k) *
+          volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) 1 ∩ {v | |ψ v| ≤ t * ‖v‖})) /
+          (ENNReal.ofReal (r ^ k) * volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1)) := by
+        rw [mul_pow, ENNReal.ofReal_mul (by positivity)]
+        ac_rfl
+    _ = _ := ENNReal.mul_div_mul_left _ _
+          (ENNReal.ofReal_pos.mpr (by positivity)).ne' ENNReal.ofReal_ne_top
+
+end LipschitzWith

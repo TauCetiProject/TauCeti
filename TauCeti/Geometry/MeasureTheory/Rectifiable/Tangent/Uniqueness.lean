@@ -11,8 +11,6 @@ public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Cone
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Geometry.Euclidean.Volume.Measure
-import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Uniqueness of approximate tangent planes of rectifiable sets
@@ -118,49 +116,6 @@ private theorem subset_union_image_of_forall_dist_lt
     _ = ‖w‖ * (ε * K + η) * ‖u - u₀‖ := by ring
     _ ≤ t * ‖u - u₀‖ := by gcongr
 
-omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The image under a `K`-Lipschitz map of the parameters `u` with `u - u₀` in the part of a
-cone `|ψ v| ≤ t ‖v‖` in the closed ball of radius `c r` has `k`-dimensional density at most
-`K ^ k c ^ k` times the share of the cone in the unit ball. -/
-private theorem euclideanHausdorffMeasure_image_inter_cone_div_le
-    {f : EuclideanSpace ℝ (Fin k) → V} {K : ℝ≥0} (hf : LipschitzWith K f)
-    (s : Set (EuclideanSpace ℝ (Fin k))) (u₀ : EuclideanSpace ℝ (Fin k))
-    (ψ : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ) (t : ℝ) {c r : ℝ} (hc : 0 < c) (hr : 0 < r) :
-    μHE[k] (f '' (s ∩ (fun u ↦ u - u₀) ⁻¹' (closedBall 0 (c * r) ∩ {v | |ψ v| ≤ t * ‖v‖}))) /
-        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r) ≤
-      (K : ℝ≥0∞) ^ k * ENNReal.ofReal (c ^ k) *
-        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) 1 ∩ {v | |ψ v| ≤ t * ‖v‖}) /
-        volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1) := by
-  have hcr : 0 < c * r := by positivity
-  have himage := (hf.lipschitzOnWith (s := s ∩ (fun u ↦ u - u₀) ⁻¹'
-    (closedBall 0 (c * r) ∩ {v | |ψ v| ≤ t * ‖v‖}))).euclideanHausdorffMeasure_image_le k
-  have hvol : μHE[k] (s ∩ (fun u ↦ u - u₀) ⁻¹' (closedBall 0 (c * r) ∩ {v | |ψ v| ≤ t * ‖v‖})) ≤
-      ENNReal.ofReal ((c * r) ^ k) *
-        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) 1 ∩ {v | |ψ v| ≤ t * ‖v‖}) := by
-    have hμ : (μHE[k] : Measure (EuclideanSpace ℝ (Fin k))) = volume :=
-      EuclideanSpace.euclideanHausdorffMeasure_eq_volume k
-    have hvolS := Measure.addHaar_closedBall_inter_setOf_abs_le_mul_norm volume ψ t hcr
-    rw [finrank_euclideanSpace_fin] at hvolS
-    rw [hμ, ← hvolS]
-    refine (measure_mono inter_subset_right).trans_eq ?_
-    simp only [sub_eq_add_neg]
-    exact measure_preimage_add_right _ _ _
-  rw [Measure.addHaar_closedBall _ _ hr.le, finrank_euclideanSpace_fin]
-  calc μHE[k] (f '' (s ∩ (fun u ↦ u - u₀) ⁻¹' (closedBall 0 (c * r) ∩ {v | |ψ v| ≤ t * ‖v‖}))) /
-        (ENNReal.ofReal (r ^ k) * volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1))
-      ≤ (K : ℝ≥0∞) ^ k * (ENNReal.ofReal ((c * r) ^ k) *
-          volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) 1 ∩ {v | |ψ v| ≤ t * ‖v‖})) /
-          (ENNReal.ofReal (r ^ k) * volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1)) := by
-        gcongr
-        exact himage.trans (by gcongr)
-    _ = ENNReal.ofReal (r ^ k) * ((K : ℝ≥0∞) ^ k * ENNReal.ofReal (c ^ k) *
-          volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) 1 ∩ {v | |ψ v| ≤ t * ‖v‖})) /
-          (ENNReal.ofReal (r ^ k) * volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1)) := by
-        rw [mul_pow, ENNReal.ofReal_mul (by positivity)]
-        ac_rfl
-    _ = _ := ENNReal.mul_div_mul_left _ _
-          (ENNReal.ofReal_pos.mpr (by positivity)).ne' ENNReal.ofReal_ne_top
-
 /-- **The approximate tangent plane on a patch.** Let `f` be Lipschitz, inverse-Lipschitz on `A`,
 and differentiable at `u₀ ∈ A` with derivative range of dimension `k`. If a set `E` has density one
 at `x = f u₀` and `E \ f '' A` has density zero there, then every approximate tangent `k`-plane of
@@ -242,8 +197,7 @@ theorem _root_.LipschitzWith.eq_range_fderiv_of_tendsto_measure_outside_cone_div
           rw [ENNReal.add_div, ENNReal.add_div]
       _ ≤ _ := by
           gcongr
-          exact euclideanHausdorffMeasure_image_inter_cone_div_le hf A u₀ ψ t
-            (by positivity) hr
+          exact hf.euclideanHausdorffMeasure_image_inter_cone_div_le A u₀ ψ t (by positivity) hr
   simp only [zero_add] at hlim
   exact absurd hm (not_lt.mpr hlim)
 
