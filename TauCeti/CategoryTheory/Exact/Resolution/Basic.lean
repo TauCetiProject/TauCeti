@@ -87,10 +87,9 @@ The recursion is on the *deep* end of the chain: `TauCeti.ExactStructure.FiniteR
 is a resolution of length zero of an object already satisfying `P`, and
 `TauCeti.ExactStructure.FiniteResolution.step` prepends one conflation `K ↪ Q ↠ X` to a
 resolution of `K`. This is the presentation in which zero padding is the operation that rewrites
-the `base` leaf, and it is the one the roadmap's `AdmitsFiniteResolutionAlong` uses. The
-conflations are stored by their two maps rather than as a `CategoryTheory.ShortComplex`, so that
-the resolved object is a genuine index of the family and `FiniteResolution E P X` never needs an
-equality of objects to be matched on.
+the `base` leaf. The conflations are stored by their two maps rather than as a
+`CategoryTheory.ShortComplex`, so that the resolved object is a genuine index of the family and
+`FiniteResolution E P X` never needs an equality of objects to be matched on.
 
 Every operation is sealed behind its `@[simp]` equations, with two exceptions.
 `TauCeti.ExactStructure.FiniteResolution.syzygy` is the type index of

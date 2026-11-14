@@ -56,7 +56,7 @@ theorem atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormsNew N k) :
     atkinLehnerOperatorGamma1Cusp hQ hQN hW k f ∈ cuspFormsNew N k := by
   rw [cuspFormsNew_def, CuspForm.mem_peterssonOrthogonal_iff] at hf ⊢
-  obtain ⟨γ, hγ, hsq⟩ := hW.exists_mem_Gamma0_mul_self hQ.ne' hQN
+  obtain ⟨γ, hγ, hsq⟩ := hW.exists_mem_Gamma0_mul_self
   let u : (ZMod N)ˣ := (Gamma0Map N).toHomUnits ⟨γ, hγ⟩
   have hu : ZMod.unitsMap hQN u = -1 := by
     simpa [u] using hW.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hγ hsq

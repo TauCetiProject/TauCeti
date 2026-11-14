@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.H1
+import Mathlib.Analysis.Convex.Continuous
 import TauCeti.Geometry.Manifold.Riemannian.Trudinger
 import TauCeti.MeasureTheory.Function.Lp.IntegralFunctional
 
@@ -18,7 +19,9 @@ Consequently, for every `w ∈ H¹(M)` and every real `t`, `exp (t w)` is integr
 These statements concern the `L²` value of `w`, so they are independent of its representative.
 
 This makes the exponential potential in the Liouville energy finite on `H¹(M)`, and supplies
-bounds on the nonlinear term on bounded sets. The extension uses density of smooth functions
+bounds on the nonlinear term on bounded sets. The integral of `exp (t w)` is convex and norm
+continuous on `H¹(M)`: Trudinger bounds it locally, and local boundedness of a convex
+function implies continuity. The extension uses density of smooth functions
 and lower semicontinuity of integral functionals on `L²`. No regularity of weak solutions is
 assumed.
 
@@ -32,7 +35,7 @@ assumed.
 public section
 
 open Bundle MeasureTheory Set
-open scoped ContDiff Manifold ENNReal NNReal
+open scoped ContDiff Manifold ENNReal NNReal Topology
 
 noncomputable section
 
@@ -77,7 +80,7 @@ private theorem exists_lintegral_exp_normalized_sq_le (hE : Module.finrank ℝ E
     rw [inv_mul_le_iff₀ (by positivity)]
     linarith [norm_nonneg (ofSmooth u)]
   have hval : eLpNorm v 2 (riemannianVolume I M) ≤ ENNReal.ofReal ‖ofSmooth v‖ := by
-    rw [← eLpNorm_congr_ae (toLp_ofSmooth_ae_eq v), ← Lp.enorm_def, ← ofReal_norm]
+    rw [← eLpNorm_congr_ae (toLp_ofSmooth_ae_eq v), ← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (norm_toLp_le _)
   have hgrad : eLpNorm (fun x ↦ ‖mgradient I v x‖) 2 (riemannianVolume I M) ≤
       ENNReal.ofReal ‖ofSmooth v‖ := by
@@ -85,7 +88,7 @@ private theorem exists_lintegral_exp_normalized_sq_le (hE : Module.finrank ℝ E
     have heq := eLpNorm_congr_ae (p := 2) (ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ)
       (riemannianVolume I M) G)
     simp only [G, ContinuousMap.coe_mk] at heq
-    rw [← heq, ← Lp.enorm_def, ← ofReal_norm]
+    rw [← heq, ← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (norm_toLp_norm_mgradient_le v)
   have hnorm : eLpNorm (fun x ↦ ‖mgradient I v x‖) 2 (riemannianVolume I M) +
       eLpNorm v 2 (riemannianVolume I M) ≤ 1 := by
@@ -176,5 +179,51 @@ theorem memLp_exp_mul (hE : Module.finrank ℝ E = 2) (w : SobolevH1 I M) (t : �
   apply (integrable_norm_rpow_iff hm hp0 hp).mp
   simpa only [Real.norm_of_nonneg (Real.exp_pos _).le, ← Real.exp_mul, mul_assoc,
     mul_comm _ p.toReal] using integrable_exp_mul hE w (p.toReal * t)
+
+/-- The exponential potential is convex on the Sobolev space of a closed surface. -/
+theorem convexOn_integral_exp_mul (hE : Module.finrank ℝ E = 2) (t : ℝ) :
+    ConvexOn ℝ univ (fun w : SobolevH1 I M ↦
+      ∫ x, Real.exp (t * toLp w x) ∂riemannianVolume I M) := by
+  refine ⟨convex_univ, fun u _ v _ a b ha hb hab ↦ ?_⟩
+  simp only [smul_eq_mul]
+  rw [← integral_const_mul, ← integral_const_mul,
+    ← integral_add ((integrable_exp_mul hE u t).const_mul a)
+      ((integrable_exp_mul hE v t).const_mul b)]
+  refine integral_mono_ae (integrable_exp_mul hE _ t)
+    (((integrable_exp_mul hE u t).const_mul a).add
+      ((integrable_exp_mul hE v t).const_mul b)) ?_
+  simp only [map_add, map_smul]
+  filter_upwards [Lp.coeFn_add (a • toLp u) (b • toLp v),
+    Lp.coeFn_smul a (toLp u), Lp.coeFn_smul b (toLp v)] with x hx hu hv
+  simp only [hx, hu, hv, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+  convert convexOn_exp.2 (mem_univ (t * toLp u x)) (mem_univ (t * toLp v x)) ha hb hab using 1
+  congr 1
+  ring
+
+/-- The exponential potential is norm continuous on the Sobolev space of a closed surface. -/
+theorem continuous_integral_exp_mul (hE : Module.finrank ℝ E = 2) (t : ℝ) :
+    Continuous (fun w : SobolevH1 I M ↦
+      ∫ x, Real.exp (t * toLp w x) ∂riemannianVolume I M) := by
+  obtain ⟨A, hA, C, hC⟩ := exists_lintegral_exp_mul_le (I := I) (M := M) hE
+  have hbound : ∀ w : SobolevH1 I M, ‖w‖ < 1 →
+      ∫ x, Real.exp (t * toLp w x) ∂riemannianVolume I M ≤
+        C * Real.exp (A * t ^ 2 * (1 + 1) ^ 2) := by
+    intro w hw
+    have h := hC w t
+    rw [← ofReal_integral_eq_lintegral_ofReal (integrable_exp_mul hE w t)
+      (Filter.Eventually.of_forall fun x ↦ (Real.exp_pos _).le)] at h
+    have h' := ENNReal.toReal_mono (by finiteness) h
+    simp only [ENNReal.toReal_mul, ENNReal.coe_toReal, ENNReal.toReal_ofReal,
+      (Real.exp_pos _).le, integral_nonneg (fun _ ↦ (Real.exp_pos _).le)] at h'
+    refine h'.trans ?_
+    gcongr
+  have hc := (convexOn_integral_exp_mul (I := I) (M := M) hE t).continuousOn_tfae
+    isOpen_univ univ_nonempty
+  apply continuousOn_univ.mp
+  apply (hc.out 4 2).mp
+  refine ⟨0, mem_univ _, C * Real.exp (A * t ^ 2 * (1 + 1) ^ 2), ?_⟩
+  simp only [Filter.eventually_map]
+  filter_upwards [Metric.ball_mem_nhds (0 : SobolevH1 I M) zero_lt_one] with w hw
+  exact hbound w (by simpa using hw)
 
 end TauCeti.Manifold.SobolevH1

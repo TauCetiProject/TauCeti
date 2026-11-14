@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Polynomial.SquarefreeBasis
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
 import TauCeti.Algebra.MvPolynomial.Equiv
+import TauCeti.RingTheory.MvPolynomial.GCDMonoid
 
 /-!
 # Reconstructing ambient orders from a squarefree basis
@@ -41,8 +42,6 @@ variable {R : Type*} [CommRing R] {n : ℕ}
 
 section Orders
 
-variable [IsDomain R]
-
 /-- The ambient order of an input is the order of its content plus the sum of the
 orders of the basis factors, weighted by their exponents in its factorization.
 The same exponents work at every point, including where the content vanishes. -/
@@ -52,6 +51,10 @@ theorem exists_orderAt_eq_content_add_sum (hB : F.IsSquarefreeBasis B)
       ((finSuccEquiv R n).symm f).orderAt a =
         f.content.orderAt (Fin.tail a) +
           ∑ b ∈ B, e b • ((finSuccEquiv R n).symm b).orderAt a := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact ⟨0, fun a ↦ by
+    simp [Subsingleton.elim ((finSuccEquiv R n).symm f) 0, Subsingleton.elim f.content 0]⟩
+  have := isDomain_of_normalizedGCDMonoid (σ := Fin n) (R := R)
   obtain ⟨u, e, hfe⟩ := hB.exists_eq_C_content_mul_unit_mul_prod hf
   refine ⟨e, fun a ↦ ?_⟩
   have hC (g : MvPolynomial (Fin n) R) :

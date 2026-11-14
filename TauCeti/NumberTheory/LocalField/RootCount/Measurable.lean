@@ -94,7 +94,7 @@ theorem isCompact_setOf_le_card_aroots (n k : ℕ) :
   set C : Set (((Fin k → 𝒪[L]) × (Fin (n - k) → 𝒪[L])) × (Fin n → 𝒪[K])) :=
     {z | (∏ j, (X - Polynomial.C (z.1.1 j))) * monicOfCoeff z.1.2 = (monicOfCoeff z.2).map φ}
   have hC : IsClosed C := by
-    simp only [C, Polynomial.ext_iff, Set.ofPred_forall]
+    simp only [C, AddMonoidAlgebra.ext_iff, DFunLike.ext_iff, Set.ofPred_forall]
     refine isClosed_iInter fun i ↦ isClosed_eq ?_ ?_
     · refine continuous_iff_continuousAt.2 fun z ↦ continuousAt_coeff_mul
         (fun j _ ↦ ((continuous_coeff_prod_X_sub_C _ j).comp
