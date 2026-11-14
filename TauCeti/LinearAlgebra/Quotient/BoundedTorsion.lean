@@ -10,10 +10,10 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 /-!
 # Bounded power torsion in quotients
 
-A power-torsion bound on the range of a map gives the same bound on its source modulo its
-kernel. For a complex, bounds on power torsion in its homology and in the last map's range
-give a bound in the preceding cokernel. These statements require no finiteness or regularity
-assumptions and are independent of completion.
+For a submodule contained in the kernel of a map, bounds on power torsion in the kernel
+quotient and in the map's range give a bound in the source quotient. Applied to a complex,
+these are bounds in its homology, last map's range, and preceding cokernel. These statements
+require no finiteness or regularity assumptions and are independent of completion.
 
 ## References
 
@@ -23,41 +23,42 @@ assumptions and are independent of completion.
 
 public section
 
-namespace LinearMap
+namespace Submodule
 
-variable {R : Type*} [Ring R] {r : R} {k l : ℕ}
-  {M N P : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  [AddCommGroup P] [Module R P]
-
-/-- A power-torsion bound on the range of a linear map gives the same bound on its source
-modulo its kernel. -/
-theorem pow_smul_eq_zero_quotient_ker_of_bounded_torsion_range (g : M →ₗ[R] N)
-    (hrange : ∀ y ∈ g.range, (∃ n : ℕ, r ^ n • y = 0) → r ^ l • y = 0)
-    (x : M ⧸ g.ker) (hx : ∃ n : ℕ, r ^ n • x = 0) : r ^ l • x = 0 := by
+/-- If `S ≤ ker h`, bounds on power torsion in `ker h / S` and in `range h` give a bound
+in the quotient by `S`. Annihilation of the whole kernel quotient is not required. -/
+theorem pow_smul_eq_zero_quotient_of_le_ker {R : Type*} [Ring R] {r : R} {k l : ℕ}
+    {N P : Type*} [AddCommGroup N] [Module R N] [AddCommMonoid P] [Module R P]
+    (S : Submodule R N) {h : N →ₗ[R] P} (hS : S ≤ h.ker)
+    (hrange : ∀ (n : ℕ) (z : h.range), r ^ n • z = 0 → r ^ l • z = 0)
+    (hH : ∀ (n : ℕ) (y : N), y ∈ h.ker → r ^ n • y ∈ S → r ^ k • y ∈ S)
+    (n : ℕ) (x : N ⧸ S) (hx : r ^ n • x = 0) : r ^ (k + l) • x = 0 := by
   obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ x
-  obtain ⟨n, hn⟩ := hx
-  rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, mem_ker,
-    map_smul] at hn ⊢
-  exact hrange (g y) (mem_range_self g y) ⟨n, hn⟩
+  rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hx ⊢
+  have hhy : r ^ l • h y = 0 := by
+    have hn : r ^ n • (⟨h y, LinearMap.mem_range_self h y⟩ : h.range) = 0 := by
+      apply Subtype.ext
+      simpa only [Submodule.coe_smul_of_tower, ZeroMemClass.coe_zero, ← map_smul]
+        using LinearMap.mem_ker.mp (hS hx)
+    exact congrArg Subtype.val (hrange n _ hn)
+  rw [pow_add, mul_smul]
+  apply hH n _ (by simpa only [LinearMap.mem_ker, map_smul] using hhy)
+  simpa only [← mul_smul, ← pow_add, Nat.add_comm] using S.smul_mem (r ^ l) hx
+
+end Submodule
+
+namespace LinearMap
 
 /-- In a complex, bounds on power torsion in the homology and in the last map's range give
 a bound in the preceding cokernel. Annihilation of the whole homology is not required. -/
-theorem pow_smul_eq_zero_coker_of_bounded_torsion_homology (g : M →ₗ[R] N)
+theorem pow_smul_eq_zero_coker_of_bounded_torsion_homology
+    {R : Type*} [Ring R] {r : R} {k l : ℕ}
+    {M N P : Type*} [AddCommMonoid M] [Module R M] [AddCommGroup N] [Module R N]
+    [AddCommMonoid P] [Module R P] (g : M →ₗ[R] N)
     {h : N →ₗ[R] P} (hgh : h ∘ₗ g = 0)
-    (hrange : ∀ z ∈ h.range, (∃ n : ℕ, r ^ n • z = 0) → r ^ l • z = 0)
-    (hH : ∀ y ∈ h.ker, (∃ n : ℕ, r ^ n • y ∈ g.range) → r ^ k • y ∈ g.range)
-    (x : N ⧸ g.range) (hx : ∃ n : ℕ, r ^ n • x = 0) : r ^ (k + l) • x = 0 := by
-  obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ x
-  obtain ⟨n, hn⟩ := hx
-  rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hn ⊢
-  have hhy : r ^ l • h y = 0 := by
-    apply hrange (h y) (mem_range_self h y) ⟨n, ?_⟩
-    obtain ⟨z, hz⟩ := hn
-    rw [← map_smul, ← hz]
-    exact LinearMap.congr_fun hgh z
-  rw [pow_add, mul_smul]
-  apply hH _ (by simpa only [mem_ker, map_smul] using hhy)
-  refine ⟨n, ?_⟩
-  simpa only [← mul_smul, ← pow_add, Nat.add_comm] using g.range.smul_mem (r ^ l) hn
+    (hrange : ∀ (n : ℕ) (z : h.range), r ^ n • z = 0 → r ^ l • z = 0)
+    (hH : ∀ (n : ℕ) (y : N), y ∈ h.ker → r ^ n • y ∈ g.range → r ^ k • y ∈ g.range)
+    (n : ℕ) (x : N ⧸ g.range) (hx : r ^ n • x = 0) : r ^ (k + l) • x = 0 :=
+  g.range.pow_smul_eq_zero_quotient_of_le_ker (range_le_ker_iff.mpr hgh) hrange hH n x hx
 
 end LinearMap

@@ -12,6 +12,9 @@ public import Mathlib.LinearAlgebra.Prod
 /-!
 # Exact sequences of linear maps
 
+An injective exact pair identifies the source with the kernel of the second map via
+`Function.Exact.linearEquivOfInjective`, with simp formulas for both directions.
+
 This file records elementary constructions and consequences for exact pairs of linear maps,
 including the exactness of `U' → V → B × A` built from two exact stages `U' → U → B` and
 `U → V → A` (`Function.Exact.comp_prod`, with `LinearMap.surjective_prod_of_comp_eq_zero`), the
@@ -136,6 +139,24 @@ theorem rangeRestrict (h : Exact f g) : Exact f g.rangeRestrict := fun x ↦ by
 inclusion of the range of `f`. -/
 theorem range_subtype (h : Exact f g) : Exact (LinearMap.range f).subtype g :=
   LinearMap.exact_iff.2 (by rw [Submodule.range_subtype, h.linearMap_ker_eq])
+
+/-- An injective first map in an exact pair identifies its source with the kernel of the
+second map. -/
+noncomputable def linearEquivOfInjective (h : Exact f g) (hf : Function.Injective f) :
+    M ≃ₗ[R] g.ker :=
+  (LinearEquiv.ofInjective _ hf).trans (LinearEquiv.ofEq _ _ h.linearMap_ker_eq.symm)
+
+/-- The kernel equivalence followed by inclusion is the first map of the exact pair. -/
+@[simp]
+theorem coe_linearEquivOfInjective_apply (h : Exact f g) (hf : Function.Injective f) (x : M) :
+    (h.linearEquivOfInjective hf x : N) = f x :=
+  (rfl)
+
+/-- The inverse kernel equivalence lifts an element through the first map. -/
+@[simp]
+theorem apply_linearEquivOfInjective_symm (h : Exact f g) (hf : Function.Injective f)
+    (x : g.ker) : f ((h.linearEquivOfInjective hf).symm x) = x := by
+  rw [← coe_linearEquivOfInjective_apply h hf, LinearEquiv.apply_symm_apply]
 
 end Semiring
 
