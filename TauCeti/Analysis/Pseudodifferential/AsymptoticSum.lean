@@ -54,6 +54,15 @@ remainders after `N` terms are then continuous in `τ`: up to the tail of the se
 uniformly small, they are finite sums of the families `aⱼ` composed with fixed symbols. Such
 families arise, for instance, from continuous homotopies of symbols.
 
+If every `aⱼ` satisfies its estimates uniformly in the position (`TauCeti.Symbol.IsUniform`), the
+radii can be chosen so that the `j`-th term is at most `2^{-j}` at every position. The Borel sum
+`b` is then uniform too, and so are all its remainders `b - ∑_{j < N} aⱼ`
+(`TauCeti.Symbol.exists_isUniformAsymptoticSum`). This is the asymptotic summation of the calculus
+of symbols with estimates uniform on all of `ℝⁿ`, used to construct the uniform left and right
+parametrix symbols of a uniformly elliptic symbol
+(`TauCeti.Symbol.IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm_left_and_right`).
+Such sums are unique modulo uniformly smoothing symbols (`TauCeti.Symbol.IsUniformlySmoothing`).
+
 Applied to the cut-off terms `χ(ξ) a_{m-j}(x, ξ)` of a sequence of homogeneous symbols, asymptotic
 summation constructs a classical symbol with these homogeneous terms. So the homogeneous terms
 identify the classical symbols of order `m` modulo smoothing symbols with all sequences of
@@ -73,6 +82,16 @@ homogeneous symbols of degrees `m - j`.
   has an asymptotic sum.
 * `TauCeti.Symbol.exists_forall_of_exists_add`: successive corrections of orders `μ - N` that
   improve a symbol step by step can be summed to one symbol with every improved property.
+* `TauCeti.Symbol.IsUniform.exists_norm_mixedDeriv_cutoff_smul_le`: the estimates of the cut-off
+  symbols `χ(ξ / t) a(x, ξ)` of a uniform symbol, uniform in `t ≥ 1` and in the position.
+* `TauCeti.Symbol.IsUniformAsymptoticSum`: `b` is an asymptotic sum of the symbols `aⱼ` with
+  remainders whose estimates are uniform in the position; such sums are unique modulo uniformly
+  smoothing symbols
+  (`TauCeti.Symbol.IsUniformAsymptoticSum.isUniformAsymptoticSum_iff_isUniformlySmoothing_sub`).
+* `TauCeti.Symbol.exists_isUniformAsymptoticSum`: every sequence of uniform symbols of orders
+  decreasing to `-∞` has an asymptotic sum with uniform remainders.
+* `TauCeti.Symbol.exists_isUniform_forall_of_exists_add`: the same summation of successive
+  corrections inside the uniform symbols.
 * `TauCeti.ClassicalSymbol.exists_term_eq`: every sequence of homogeneous terms of degrees `m - j`
   is the expansion of a classical symbol of order `m`.
 * `TauCeti.ClassicalSymbol.termsEquiv`: the classical symbols of order `m` modulo the smoothing
@@ -109,16 +128,17 @@ theorem contDiff_cutoff_smul_coefficient (χ : FrequencyCutoff (CoordinateSpace 
     ContDiff ℝ ∞ fun p : CoordinateSpace n × CoordinateSpace n => χ (t⁻¹ • p.2) • a.coefficient p :=
   ((χ.contDiff (n := ⊤)).comp (contDiff_snd.const_smul t⁻¹)).smul a.contDiff_coefficient
 
-/-- The products `χ(ξ / t) a(x, ξ)` of a symbol `a` of order `m` with the dilated frequency cutoffs,
-`t ≥ 1`, satisfy the symbol estimates of every order `m' ≥ m` with constants `C t^(m - m')`, where
-`C` depends neither on `t` nor on `m'`. This is because `χ(ξ / t)` vanishes for `‖ξ‖ ≤ t`, and
-`⟨ξ⟩^(m - m') ≤ t^(m - m')` for `‖ξ‖ ≥ t`. -/
-theorem exists_norm_mixedDeriv_cutoff_smul_le (χ : FrequencyCutoff (CoordinateSpace n))
-    (a : Symbol n V W m) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+/-- The estimates of `TauCeti.Symbol.exists_norm_mixedDeriv_cutoff_smul_le` on any set `K` of
+positions on which the derivatives `∂_x^α ∂_ξ^w a` satisfy the estimates of order `m`. -/
+private theorem exists_norm_mixedDeriv_cutoff_smul_le_of_forall
+    (χ : FrequencyCutoff (CoordinateSpace n)) (a : Symbol n V W m) {K : Set (CoordinateSpace n)}
+    (α β : List (Fin n))
+    (ha : ∀ w : List (Fin n), ∃ D, 0 ≤ D ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α w a.coefficient x ξ‖ ≤ D * (1 + ‖ξ‖ ^ 2) ^ ((m - w.length) / 2)) :
     ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 1 ≤ t → ∀ m' : ℝ, m ≤ m' → ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • a.coefficient p) x ξ‖ ≤
         C * t ^ (m - m') * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by
-  choose D hD0 hD using fun w => a.exists_bound K hK α w
+  choose D hD0 hD using ha
   choose B hB0 hB using fun i : ℕ => χ.exists_norm_iteratedFDeriv_comp_inv_smul_le i
   set k := β.length
   set C := ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * B i *
@@ -155,6 +175,29 @@ theorem exists_norm_mixedDeriv_cutoff_smul_le (χ : FrequencyCutoff (CoordinateS
     _ ≤ C * (t ^ (m - m') * (1 + ‖ξ‖ ^ 2) ^ ((m' - k) / 2)) :=
         mul_le_mul_of_nonneg_left hweight hC0
     _ = _ := by ring
+
+/-- The products `χ(ξ / t) a(x, ξ)` of a symbol `a` of order `m` with the dilated frequency cutoffs,
+`t ≥ 1`, satisfy the symbol estimates of every order `m' ≥ m` with constants `C t^(m - m')`, where
+`C` depends neither on `t` nor on `m'`. This is because `χ(ξ / t)` vanishes for `‖ξ‖ ≤ t`, and
+`⟨ξ⟩^(m - m') ≤ t^(m - m')` for `‖ξ‖ ≥ t`. -/
+theorem exists_norm_mixedDeriv_cutoff_smul_le (χ : FrequencyCutoff (CoordinateSpace n))
+    (a : Symbol n V W m) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 1 ≤ t → ∀ m' : ℝ, m ≤ m' → ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • a.coefficient p) x ξ‖ ≤
+        C * t ^ (m - m') * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) :=
+  exists_norm_mixedDeriv_cutoff_smul_le_of_forall χ a α β fun w => a.exists_bound K hK α w
+
+/-- For a symbol `a` of order `m` with estimates uniform in the position, the products
+`χ(ξ / t) a(x, ξ)`, `t ≥ 1`, satisfy the symbol estimates of every order `m' ≥ m` uniformly in the
+position, with constants `C t^(m - m')` where `C` depends neither on `t` nor on `m'`. -/
+theorem IsUniform.exists_norm_mixedDeriv_cutoff_smul_le {a : Symbol n V W m} (ha : a.IsUniform)
+    (χ : FrequencyCutoff (CoordinateSpace n)) (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 1 ≤ t → ∀ m' : ℝ, m ≤ m' → ∀ x ξ,
+      ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • a.coefficient p) x ξ‖ ≤
+        C * t ^ (m - m') * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by
+  obtain ⟨C, hC0, hC⟩ := exists_norm_mixedDeriv_cutoff_smul_le_of_forall χ a (K := univ) α β
+    fun w => (isUniform_iff.1 ha α w).imp fun D hD => ⟨hD.1, fun x _ ξ => hD.2 x ξ⟩
+  exact ⟨C, hC0, fun t ht m' hm' x ξ => hC t ht m' hm' x (mem_univ x) ξ⟩
 
 /-- The dilated cutoff `χ(ξ / t)`, `t ≥ 1`, as the scalar symbol `χ(ξ / t) id` of order `0`.
 Composing with it cuts a symbol off below the frequency radius `t`. -/
@@ -264,29 +307,26 @@ private theorem contDiff_borelSum (χ : FrequencyCutoff (CoordinateSpace n)) {t 
       ContDiff.sum fun j _ => (a j).contDiff_cutoff_smul_coefficient χ (t j)
   exact hs.contDiffAt.congr_of_eventuallyEq (borelSum_eventuallyEq χ ht a hJ)
 
-/-- Given orders `mⱼ → -∞`, an index `N`, a compact set `K` and words `α`, `β`, there is
-`j₁ ≥ N` such that for every `j ≥ j₁`, a function that is at most `2^{-j}` in the estimates of
-order `mⱼ + 1` for the derivatives of length at most `j` on the ball of radius `j` is also at most
-`2^{-j}` in the estimate of order `m_N` for `∂_x^α ∂_ξ^β` on `K`. -/
+/-- Given orders `mⱼ → -∞`, an index `N`, sets `Sⱼ` of positions which eventually contain a set
+`K`, and words `α`, `β`, there is `j₁ ≥ N` such that for every `j ≥ j₁`, a function that is at
+most `2^{-j}` in the estimates of order `mⱼ + 1` for the derivatives of length at most `j` on `Sⱼ`
+is also at most `2^{-j}` in the estimate of order `m_N` for `∂_x^α ∂_ξ^β` on `K`. -/
 private theorem exists_forall_ge_norm_mixedDeriv_le {m : ℕ → ℝ} (hm' : Tendsto m atTop atBot)
-    (N : ℕ) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    (N : ℕ) {S : ℕ → Set (CoordinateSpace n)} {K : Set (CoordinateSpace n)}
+    (hKS : ∀ᶠ j in atTop, K ⊆ S j) (α β : List (Fin n)) :
     ∃ j₁, N ≤ j₁ ∧ ∀ j, j₁ ≤ j → ∀ g : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W,
       (∀ α ∈ {l : List (Fin n) | l.length ≤ j}, ∀ β ∈ {l : List (Fin n) | l.length ≤ j},
-        ∀ x ∈ closedBall (0 : CoordinateSpace n) j, ∀ ξ,
+        ∀ x ∈ S j, ∀ ξ,
           ‖mixedDeriv α β g x ξ‖ ≤ (1 / 2) ^ j * (1 + ‖ξ‖ ^ 2) ^ ((m j + 1 - β.length) / 2)) →
       ∀ x ∈ K, ∀ ξ,
         ‖mixedDeriv α β g x ξ‖ ≤ (1 / 2) ^ j * (1 + ‖ξ‖ ^ 2) ^ ((m N - β.length) / 2) := by
-  obtain ⟨JK, hJK⟩ : ∃ JK : ℕ, K ⊆ closedBall 0 JK := by
-    obtain ⟨r, hr⟩ := hK.isBounded.subset_closedBall 0
-    obtain ⟨JK, hJK⟩ := exists_nat_ge r
-    exact ⟨JK, hr.trans (closedBall_subset_closedBall hJK)⟩
+  obtain ⟨JK, hJK⟩ := eventually_atTop.1 hKS
   obtain ⟨j₀, hj₀⟩ := eventually_atTop.1 (hm'.eventually (eventually_le_atBot (m N - 1)))
   refine ⟨max (max N j₀) (max JK (max α.length β.length)), le_max_of_le_left (le_max_left _ _),
     fun j hj g hg x hx ξ => ?_⟩
   have hαj : α.length ≤ j := by omega
   have hβj : β.length ≤ j := by omega
-  have hxj : x ∈ closedBall (0 : CoordinateSpace n) j :=
-    closedBall_subset_closedBall (by exact_mod_cast (show JK ≤ j by omega)) (hJK hx)
+  have hxj : x ∈ S j := hJK j (by omega) hx
   refine (hg α hαj β hβj x hxj ξ).trans (mul_le_mul_of_nonneg_left
     (Real.rpow_le_rpow_of_exponent_le (by nlinarith [norm_nonneg ξ]) ?_) (by positivity))
   linarith [hj₀ j (by omega)]
@@ -334,37 +374,32 @@ private theorem mixedDeriv_borelSum_sub (χ : FrequencyCutoff (CoordinateSpace n
     mixedDeriv_sum (fun j _ => hg j), mixedDeriv_sum (fun j _ => hg j)]
 
 /-- If the radii `tⱼ ≥ j + 1` make the `j`-th term of the Borel sum `b` at most `2^{-j}` in the
-estimates of order `mⱼ + 1` for the derivatives of length at most `j` on the ball of radius `j`,
-then the remainder `b - ∑_{j < N} aⱼ` satisfies the estimates of order `m_N`. -/
-private theorem exists_norm_mixedDeriv_borelSum_sub_le (χ : FrequencyCutoff (CoordinateSpace n))
-    {m : ℕ → ℝ} (hm : Antitone m) (hm' : Tendsto m atTop atBot) (a : ∀ j, Symbol n V W (m j))
-    {t : ℕ → ℝ} (ht : ∀ j : ℕ, (j : ℝ) + 1 ≤ t j)
+estimates of order `mⱼ + 1` for the derivatives of length at most `j` on sets `Sⱼ` of positions
+which eventually contain `K`, then the remainder `b - ∑_{j < N} aⱼ` satisfies the estimate of
+order `m_N` for `∂_x^α ∂_ξ^β` on `K`, provided that the removed cutoffs `(χ(ξ / tⱼ) - 1) aⱼ` and
+the cut-off terms `χ(ξ / s) aⱼ` satisfy their estimates on `K`. -/
+private theorem exists_norm_mixedDeriv_borelSum_sub_le_of_forall
+    (χ : FrequencyCutoff (CoordinateSpace n)) {m : ℕ → ℝ} (hm : Antitone m)
+    (hm' : Tendsto m atTop atBot) (a : ∀ j, Symbol n V W (m j)) {t : ℕ → ℝ}
+    (ht : ∀ j : ℕ, (j : ℝ) + 1 ≤ t j) {S : ℕ → Set (CoordinateSpace n)}
     (hsmall : ∀ j, ∀ α ∈ {l : List (Fin n) | l.length ≤ j},
-      ∀ β ∈ {l : List (Fin n) | l.length ≤ j}, ∀ x ∈ closedBall (0 : CoordinateSpace n) j, ∀ ξ,
+      ∀ β ∈ {l : List (Fin n) | l.length ≤ j}, ∀ x ∈ S j, ∀ ξ,
         ‖mixedDeriv α β (fun p => χ ((t j)⁻¹ • p.2) • (a j).coefficient p) x ξ‖ ≤
           (1 / 2) ^ j * (1 + ‖ξ‖ ^ 2) ^ ((m j + 1 - β.length) / 2))
-    (N : ℕ) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    (N : ℕ) {K : Set (CoordinateSpace n)} (hKS : ∀ᶠ j in atTop, K ⊆ S j) (α β : List (Fin n))
+    (hD1 : ∀ j, ∃ D, 0 ≤ D ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β
+      ((fun p => χ ((t j)⁻¹ • p.2) • (a j).coefficient p) - (a j).coefficient) x ξ‖ ≤
+        D * (1 + ‖ξ‖ ^ 2) ^ ((m N - β.length) / 2))
+    (hD2 : ∀ j, ∃ D, 0 ≤ D ∧ ∀ s : ℝ, 1 ≤ s → ∀ m' : ℝ, m j ≤ m' → ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (fun p => χ (s⁻¹ • p.2) • (a j).coefficient p) x ξ‖ ≤
+        D * s ^ (m j - m') * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2)) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β (borelSum χ t a - ∑ j ∈ Finset.range N, (a j).coefficient) x ξ‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((m N - β.length) / 2) := by
   have ht1 : ∀ j, 1 ≤ t j := fun j => by linarith [ht j, (Nat.cast_nonneg j : (0 : ℝ) ≤ j)]
-  obtain ⟨j₁, hNj₁, htail⟩ := exists_forall_ge_norm_mixedDeriv_le (V := V) (W := W) hm' N hK α β
-  -- The removed cutoffs `(χ(ξ / tⱼ) - 1) aⱼ` have bounded frequency support.
-  have hD1 : ∀ j, ∃ D, 0 ≤ D ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β
-      ((fun p => χ ((t j)⁻¹ • p.2) • (a j).coefficient p) - (a j).coefficient) x ξ‖ ≤
-        D * (1 + ‖ξ‖ ^ 2) ^ ((m N - β.length) / 2) := fun j => by
-    have hR : ∀ x ξ, 2 * t j ≤ ‖ξ‖ →
-        ((fun p => χ ((t j)⁻¹ • p.2) • (a j).coefficient p) - (a j).coefficient) (x, ξ) = 0 :=
-      fun x ξ hξ => by
-        simp only [Pi.sub_apply, χ.apply_inv_smul_eq_one (one_pos.trans_le (ht1 j)) hξ,
-          one_smul, sub_self]
-    simpa only [coefficient_ofBoundedFrequencySupport] using
-      (ofBoundedFrequencySupport (m := m N)
-        ((fun p => χ ((t j)⁻¹ • p.2) • (a j).coefficient p) - (a j).coefficient)
-        (((a j).contDiff_cutoff_smul_coefficient χ (t j)).sub (a j).contDiff_coefficient)
-        (2 * t j) hR).exists_bound K hK α β
+  obtain ⟨j₁, hNj₁, htail⟩ := exists_forall_ge_norm_mixedDeriv_le (V := V) (W := W) hm' N hKS α β
   choose D₁ hD₁0 hD₁ using hD1
-  choose D₂ hD₂0 hD₂ using fun j => (a j).exists_norm_mixedDeriv_cutoff_smul_le χ hK α β
+  choose D₂ hD₂0 hD₂ using hD2
   refine ⟨∑ j ∈ Finset.range N, D₁ j + ∑ j ∈ Finset.range j₁, D₂ j + 2,
     add_nonneg (add_nonneg (Finset.sum_nonneg fun j _ => hD₁0 j)
       (Finset.sum_nonneg fun j _ => hD₂0 j)) zero_le_two, fun x hx ξ => ?_⟩
@@ -401,6 +436,38 @@ private theorem exists_norm_mixedDeriv_borelSum_sub_le (χ : FrequencyCutoff (Co
     ((norm_sum_le _ _).trans h2) ((norm_sum_le _ _).trans h3)))).trans (le_of_eq ?_))
   rw [← Finset.sum_mul, ← Finset.sum_mul]
   ring
+
+/-- If the radii `tⱼ ≥ j + 1` make the `j`-th term of the Borel sum `b` at most `2^{-j}` in the
+estimates of order `mⱼ + 1` for the derivatives of length at most `j` on the ball of radius `j`,
+then the remainder `b - ∑_{j < N} aⱼ` satisfies the estimates of order `m_N`. -/
+private theorem exists_norm_mixedDeriv_borelSum_sub_le (χ : FrequencyCutoff (CoordinateSpace n))
+    {m : ℕ → ℝ} (hm : Antitone m) (hm' : Tendsto m atTop atBot) (a : ∀ j, Symbol n V W (m j))
+    {t : ℕ → ℝ} (ht : ∀ j : ℕ, (j : ℝ) + 1 ≤ t j)
+    (hsmall : ∀ j, ∀ α ∈ {l : List (Fin n) | l.length ≤ j},
+      ∀ β ∈ {l : List (Fin n) | l.length ≤ j}, ∀ x ∈ closedBall (0 : CoordinateSpace n) j, ∀ ξ,
+        ‖mixedDeriv α β (fun p => χ ((t j)⁻¹ • p.2) • (a j).coefficient p) x ξ‖ ≤
+          (1 / 2) ^ j * (1 + ‖ξ‖ ^ 2) ^ ((m j + 1 - β.length) / 2))
+    (N : ℕ) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (borelSum χ t a - ∑ j ∈ Finset.range N, (a j).coefficient) x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m N - β.length) / 2) := by
+  have ht1 : ∀ j, 1 ≤ t j := fun j => by linarith [ht j, (Nat.cast_nonneg j : (0 : ℝ) ≤ j)]
+  obtain ⟨r, hr⟩ := hK.isBounded.subset_closedBall 0
+  refine exists_norm_mixedDeriv_borelSum_sub_le_of_forall χ hm hm' a ht hsmall N
+    ((tendsto_natCast_atTop_atTop.eventually_ge_atTop r).mono fun j hj =>
+      hr.trans (closedBall_subset_closedBall hj)) α β (fun j => ?_)
+    fun j => (a j).exists_norm_mixedDeriv_cutoff_smul_le χ hK α β
+  -- The removed cutoffs `(χ(ξ / tⱼ) - 1) aⱼ` have bounded frequency support.
+  have hR : ∀ x ξ, 2 * t j ≤ ‖ξ‖ →
+      ((fun p => χ ((t j)⁻¹ • p.2) • (a j).coefficient p) - (a j).coefficient) (x, ξ) = 0 :=
+    fun x ξ hξ => by
+      simp only [Pi.sub_apply, χ.apply_inv_smul_eq_one (one_pos.trans_le (ht1 j)) hξ,
+        one_smul, sub_self]
+  simpa only [coefficient_ofBoundedFrequencySupport] using
+    (ofBoundedFrequencySupport (m := m N)
+      ((fun p => χ ((t j)⁻¹ • p.2) • (a j).coefficient p) - (a j).coefficient)
+      (((a j).contDiff_cutoff_smul_coefficient χ (t j)).sub (a j).contDiff_coefficient)
+      (2 * t j) hR).exists_bound K hK α β
 
 /-- With radii `tⱼ ≥ j + 1`, the remainders after `N` terms of the Borel sums of two sequences `a`,
 `a'` of symbols differ at `(x, ξ)` by at most the differences of their first `j₂ ≥ N` terms (the
@@ -531,8 +598,11 @@ private theorem exists_continuous_borelSum_sub (χ : FrequencyCutoff (Coordinate
   choose E hEc hE using fun j => exists_continuous_cutoff_smul_sub χ (ht1 j) (ha j) (m N)
   -- From `j₂` on, the cut-off terms are at most `2^{-j}` in the estimate of order `m_N` on `K`,
   -- and `4 ⋅ 2^{-j₂} ≤ ε / 4`.
+  obtain ⟨R, hR⟩ := K.isCompact.isBounded.subset_closedBall 0
   obtain ⟨j₁, hNj₁, htail⟩ :=
-    exists_forall_ge_norm_mixedDeriv_le (V := V) (W := W) hm' N K.isCompact α β
+    exists_forall_ge_norm_mixedDeriv_le (V := V) (W := W) hm' N
+      ((tendsto_natCast_atTop_atTop.eventually_ge_atTop R).mono fun j hj =>
+        hR.trans (closedBall_subset_closedBall hj)) α β
   obtain ⟨L, hL⟩ := exists_pow_lt_of_lt_one (by positivity : 0 < ε / 16)
     (by norm_num : (1 / 2 : ℝ) < 1)
   set j₂ := max j₁ L
@@ -641,6 +711,26 @@ theorem exists_asymptoticSum {m : ℕ → ℝ} (hm : Antitone m) (hm' : Tendsto 
   obtain ⟨r, -, hr⟩ := hb N
   exact ⟨r (), hr ()⟩
 
+/-- The successive approximations of `b₀`: if every `b` with `P N b` can be improved to
+`P (N + 1)` by a correction `d` of order `μ - N` with `Q N d`, then there are corrections `c N`
+with `Q N (c N)` such that each `b₀ + ∑_{j < N} c j` has the property `P N`. -/
+private theorem exists_corrections_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V W μ → Prop)
+    (Q : ∀ N : ℕ, Symbol n V W (μ - N) → Prop) {b₀ : Symbol n V W μ} (h₀ : P 0 b₀)
+    (hsucc : ∀ (N : ℕ) b, P N b →
+      ∃ d : Symbol n V W (μ - N), Q N d ∧ P (N + 1) (b + inclusion (by simp) d)) :
+    ∃ c : ∀ N : ℕ, Symbol n V W (μ - N), (∀ N, Q N (c N)) ∧ ∀ N, ∃ b, P N b ∧
+      b.coefficient = b₀.coefficient + ∑ j ∈ Finset.range N, (c j).coefficient := by
+  choose d hdQ hd using hsucc
+  -- The successive approximations `s N`, with `P N (s N)`, and the corrections between them.
+  let s : ∀ N, {b : Symbol n V W μ // P N b} := fun N ↦ Nat.rec ⟨b₀, h₀⟩
+    (fun N b ↦ ⟨b.1 + inclusion (by simp) (d N b.1 b.2), hd N b.1 b.2⟩) N
+  refine ⟨fun N ↦ d N (s N).1 (s N).2, fun N ↦ hdQ N _ _, fun N ↦ ⟨(s N).1, (s N).2, ?_⟩⟩
+  induction N with
+  | zero => simp [s]
+  | succ N ih =>
+    rw [Finset.sum_range_succ, ← add_assoc, ← ih]
+    simp [s]
+
 /-- **Asymptotic summation of successive corrections.** Let `P N` be properties of symbols of
 order `μ` which `b₀` has for `N = 0`, which are stable under changes by symbols of order `μ - N`,
 and which can be improved from `N` to `N + 1` by such a change. Then one symbol has all of them. -/
@@ -651,26 +741,170 @@ theorem exists_forall_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V W μ → 
     (hsucc : ∀ (N : ℕ) b, P N b →
       ∃ d : Symbol n V W (μ - N), P (N + 1) (b + inclusion (by simp) d)) :
     ∃ b, ∀ N, P N b := by
-  choose d hd using hsucc
-  -- The successive approximations `s N`, with `P N (s N)`, and the corrections `c N` between them.
-  let s : ∀ N, {b : Symbol n V W μ // P N b} := fun N ↦ Nat.rec ⟨b₀, h₀⟩
-    (fun N b ↦ ⟨b.1 + inclusion (by simp) (d N b.1 b.2), hd N b.1 b.2⟩) N
-  let c : ∀ N : ℕ, Symbol n V W (μ - N) := fun N ↦ d N (s N).1 (s N).2
-  have hs (N : ℕ) :
-      (s N).1.coefficient = b₀.coefficient + ∑ j ∈ Finset.range N, (c j).coefficient := by
-    induction N with
-    | zero => simp [s]
-    | succ N ih =>
-      rw [Finset.sum_range_succ, ← add_assoc, ← ih]
-      simp [s, c]
-  have hm : Antitone fun j : ℕ ↦ μ - j := fun _ _ hij ↦ sub_le_sub_left (Nat.cast_le.2 hij) μ
-  have hm' : Tendsto (fun j : ℕ ↦ μ - j) atTop atBot :=
+  obtain ⟨c, -, hc⟩ := exists_corrections_of_exists_add P (fun _ _ ↦ True) h₀
+    fun N b hb ↦ (hsucc N b hb).imp fun _ hd ↦ ⟨trivial, hd⟩
+  have hm : Antitone fun j : ℕ => μ - j := fun _ _ hij => sub_le_sub_left (Nat.cast_le.2 hij) μ
+  have hm' : Tendsto (fun j : ℕ => μ - j) atTop atBot :=
     tendsto_atBot_add_const_left atTop μ <| tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
   obtain ⟨B, hB⟩ := exists_asymptoticSum hm hm' c
   refine ⟨b₀ + inclusion (by simp) B, fun N ↦ ?_⟩
   obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hB N
-  refine hcongr N (s N).1 _ r (s N).2 ?_
-  rw [coefficient_add, coefficient_inclusion, ← hr, hs]
+  obtain ⟨b, hb, hbc⟩ := hc N
+  refine hcongr N b _ r hb ?_
+  rw [coefficient_add, coefficient_inclusion, ← hr, hbc]
+  abel
+
+/-! ### Asymptotic sums of uniform symbols -/
+
+/-- The dilated cutoff `χ(ξ / t) id` satisfies its estimates uniformly in the position. -/
+private theorem isUniform_dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ}
+    (ht : 1 ≤ t) : (dilatedCutoff (W := W) χ ht).IsUniform := isUniform_iff.2 fun α β => by
+  obtain ⟨C, hC0, hC⟩ :=
+    (isUniform_const (n := n) (ContinuousLinearMap.id ℂ W)).exists_norm_mixedDeriv_cutoff_smul_le
+      χ α β
+  exact ⟨C, hC0, fun x ξ => by simpa [dilatedCutoff] using hC t ht 0 le_rfl x ξ⟩
+
+/-- For `t ≥ 1`, the removed cutoff `(χ(ξ / t) - 1) a(x, ξ)` of a uniform symbol `a` is a uniform
+symbol of every order `μ'`: it vanishes for `‖ξ‖ ≥ 2t`. -/
+private theorem IsUniform.exists_isUniform_cutoff_smul_sub {μ : ℝ} {a : Symbol n V W μ}
+    (ha : a.IsUniform) (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ} (ht : 1 ≤ t) (μ' : ℝ) :
+    ∃ E : Symbol n V W μ', E.IsUniform ∧
+      E.coefficient = (fun p => χ (t⁻¹ • p.2) • a.coefficient p) - a.coefficient := by
+  obtain ⟨e, he, hec⟩ := isUniformlySmoothing_iff.1 (((isUniform_dilatedCutoff χ ht).sub
+    (isUniform_const (ContinuousLinearMap.id ℂ W))).isUniformlySmoothing_of_coefficient_eq_zero
+      (2 * t) fun x ξ hξ => by
+        simp [dilatedCutoff, χ.apply_inv_smul_eq_one (one_pos.trans_le ht) hξ]) (μ' - μ)
+  refine ⟨Symbol.inclusion (sub_add_cancel μ' μ).le (e.comp a), (he.comp ha).inclusion _, ?_⟩
+  funext p
+  simp [hec, dilatedCutoff]
+
+/-- For large `t`, the cut-off term `χ(ξ / t) a(x, ξ)` of a uniform symbol `a` of order `μ` is at
+most `2^{-j}` in the estimates of order `μ + 1` for the derivatives of length at most `j`, at
+every position. -/
+private theorem IsUniform.eventually_norm_mixedDeriv_cutoff_smul_le {μ : ℝ}
+    {a : Symbol n V W μ} (ha : a.IsUniform) (χ : FrequencyCutoff (CoordinateSpace n)) (j : ℕ) :
+    ∀ᶠ t : ℝ in atTop, ∀ α ∈ {l : List (Fin n) | l.length ≤ j},
+      ∀ β ∈ {l : List (Fin n) | l.length ≤ j}, ∀ x ∈ (univ : Set (CoordinateSpace n)), ∀ ξ,
+        ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • a.coefficient p) x ξ‖ ≤
+          (1 / 2) ^ j * (1 + ‖ξ‖ ^ 2) ^ ((μ + 1 - β.length) / 2) := by
+  rw [eventually_all_finite (List.finite_length_le _ j)]
+  intro α _
+  rw [eventually_all_finite (List.finite_length_le _ j)]
+  intro β _
+  obtain ⟨C, -, hC⟩ := ha.exists_norm_mixedDeriv_cutoff_smul_le χ α β
+  filter_upwards [eventually_ge_atTop 1, eventually_ge_atTop (C * 2 ^ j)] with t ht1 htC x _ ξ
+  refine (hC t ht1 (μ + 1) (by linarith) x ξ).trans ?_
+  gcongr
+  -- `C t⁻¹ ≤ 2^{-j}` for `t ≥ C 2^j`.
+  rw [show μ - (μ + 1) = -1 by ring, Real.rpow_neg_one, ← div_eq_mul_inv,
+    div_le_iff₀ (one_pos.trans_le ht1)]
+  calc C = (1 / 2) ^ j * (C * 2 ^ j) := by rw [mul_left_comm, ← mul_pow]; norm_num
+    _ ≤ (1 / 2) ^ j * t := by gcongr
+
+/-- A symbol `b` of order `m₀` is an *asymptotic sum with uniform remainders*, `b ∼ ∑ⱼ aⱼ`, of
+symbols `aⱼ` of orders `mⱼ` if for every `N` the remainder `b - ∑_{j < N} aⱼ` is a symbol of order
+`m_N` with estimates uniform in the position. -/
+def IsUniformAsymptoticSum {m : ℕ → ℝ} (b : Symbol n V W (m 0)) (a : ∀ j, Symbol n V W (m j)) :
+    Prop :=
+  ∀ N, ∃ r : Symbol n V W (m N), r.IsUniform ∧
+    b.coefficient - ∑ j ∈ Finset.range N, (a j).coefficient = r.coefficient
+
+theorem isUniformAsymptoticSum_iff {m : ℕ → ℝ} {b : Symbol n V W (m 0)}
+    {a : ∀ j, Symbol n V W (m j)} :
+    b.IsUniformAsymptoticSum a ↔ ∀ N, ∃ r : Symbol n V W (m N), r.IsUniform ∧
+      b.coefficient - ∑ j ∈ Finset.range N, (a j).coefficient = r.coefficient :=
+  Iff.rfl
+
+theorem IsUniformAsymptoticSum.isAsymptoticSum {m : ℕ → ℝ} {b : Symbol n V W (m 0)}
+    {a : ∀ j, Symbol n V W (m j)} (h : b.IsUniformAsymptoticSum a) : b.IsAsymptoticSum a :=
+  fun N => (h N).imp fun _ hr => hr.2
+
+/-- An asymptotic sum with uniform remainders is uniform, being its remainder after no terms. -/
+theorem IsUniformAsymptoticSum.isUniform {m : ℕ → ℝ} {b : Symbol n V W (m 0)}
+    {a : ∀ j, Symbol n V W (m j)} (h : b.IsUniformAsymptoticSum a) : b.IsUniform := by
+  obtain ⟨r, hr, hbr⟩ := h 0
+  rw [Finset.sum_range_zero, sub_zero] at hbr
+  rw [isUniform_iff, hbr]
+  exact isUniform_iff.1 hr
+
+/-- Asymptotic sums with uniform remainders are unique modulo uniformly smoothing symbols: if `b`
+is an asymptotic sum with uniform remainders of symbols `aⱼ` whose orders tend to `-∞`, then `b'`
+is one exactly when `b' - b` is uniformly smoothing. -/
+theorem IsUniformAsymptoticSum.isUniformAsymptoticSum_iff_isUniformlySmoothing_sub {m : ℕ → ℝ}
+    (hm' : Tendsto m atTop atBot) {a : ∀ j, Symbol n V W (m j)} {b b' : Symbol n V W (m 0)}
+    (hb : b.IsUniformAsymptoticSum a) :
+    b'.IsUniformAsymptoticSum a ↔ (b' - b).IsUniformlySmoothing := by
+  refine ⟨fun hb' => isUniformlySmoothing_iff.2 fun m'' => ?_, fun h N => ?_⟩
+  · obtain ⟨N, hN⟩ := (hm'.eventually (eventually_le_atBot m'')).exists
+    obtain ⟨r, hr, hbr⟩ := hb N
+    obtain ⟨r', hr', hbr'⟩ := hb' N
+    refine ⟨inclusion hN (r' - r), (hr'.sub hr).inclusion hN, ?_⟩
+    rw [coefficient_inclusion, coefficient_sub, ← hbr, ← hbr', coefficient_sub]
+    abel
+  · obtain ⟨r, hr, hbr⟩ := hb N
+    obtain ⟨s, hs, hsc⟩ := isUniformlySmoothing_iff.1 h (m N)
+    refine ⟨s + r, hs.add hr, ?_⟩
+    rw [coefficient_add, hsc, ← hbr, coefficient_sub]
+    abel
+
+/-- **Asymptotic summation of uniform symbols** (Borel). Let `m₀ ≥ m₁ ≥ ⋯` be real orders tending
+to `-∞`, and let `aⱼ` be symbols of order `mⱼ` with estimates uniform in the position. Then there
+is a symbol `b` of order `m₀` such that for every `N` the remainder `b - ∑_{j < N} aⱼ` is a symbol
+of order `m_N` with estimates uniform in the position. -/
+theorem exists_isUniformAsymptoticSum {m : ℕ → ℝ} (hm : Antitone m)
+    (hm' : Tendsto m atTop atBot) {a : ∀ j, Symbol n V W (m j)} (ha : ∀ j, (a j).IsUniform) :
+    ∃ b : Symbol n V W (m 0), b.IsUniformAsymptoticSum a := by
+  let χ : FrequencyCutoff (CoordinateSpace n) := default
+  -- Radii making the `j`-th cut-off term at most `2^{-j}` at every position.
+  choose t ht using fun j : ℕ => ((eventually_ge_atTop ((j : ℝ) + 1)).and
+    ((ha j).eventually_norm_mixedDeriv_cutoff_smul_le χ j)).exists
+  have ht1 : ∀ j, 1 ≤ t j := fun j => by linarith [(ht j).1, (Nat.cast_nonneg j : (0 : ℝ) ≤ j)]
+  -- The remainders of the Borel sum satisfy their estimates on every set of positions.
+  have hbound : ∀ N K α β, ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (borelSum χ t a - ∑ j ∈ Finset.range N, (a j).coefficient) x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m N - β.length) / 2) := fun N K α β =>
+    exists_norm_mixedDeriv_borelSum_sub_le_of_forall χ hm hm' a (fun j => (ht j).1)
+      (S := fun _ => univ) (fun j => (ht j).2) N (.of_forall fun _ => subset_univ K) α β
+      (fun j => by
+        obtain ⟨E, hE, hEc⟩ := (ha j).exists_isUniform_cutoff_smul_sub χ (ht1 j) (m N)
+        obtain ⟨D, hD0, hD⟩ := isUniform_iff.1 hE α β
+        exact ⟨D, hD0, fun x _ ξ => hEc ▸ hD x ξ⟩)
+      fun j => by
+        obtain ⟨D, hD0, hD⟩ := (ha j).exists_norm_mixedDeriv_cutoff_smul_le χ α β
+        exact ⟨D, hD0, fun s hs m' hm' x _ ξ => hD s hs m' hm' x ξ⟩
+  let r : ∀ N, Symbol n V W (m N) := fun N =>
+    ⟨borelSum χ t a - ∑ j ∈ Finset.range N, (a j).coefficient,
+      (contDiff_borelSum χ (fun j => (ht j).1) a).sub (contDiff_sum_coefficient _ a),
+      fun K _ α β => hbound N K α β⟩
+  have hr : ∀ N, (r N).IsUniform := fun N => isUniform_iff.2 fun α β => by
+    obtain ⟨C, hC0, hC⟩ := hbound N univ α β
+    exact ⟨C, hC0, fun x ξ => hC x (mem_univ x) ξ⟩
+  refine ⟨r 0, fun N => ⟨r N, hr N, ?_⟩⟩
+  simp only [r, Finset.sum_range_zero, sub_zero]
+
+/-- **Asymptotic summation of successive uniform corrections.** Let `P N` be properties of symbols
+of order `μ` which the uniform symbol `b₀` has for `N = 0`, which are stable under changes by
+uniform symbols of order `μ - N`, and which can be improved from `N` to `N + 1` by such a change
+of a uniform symbol. Then one uniform symbol has all of them. -/
+theorem exists_isUniform_forall_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V W μ → Prop)
+    {b₀ : Symbol n V W μ} (hb₀ : b₀.IsUniform) (h₀ : P 0 b₀)
+    (hcongr : ∀ (N : ℕ) b b' (d : Symbol n V W (μ - N)), d.IsUniform → P N b →
+      b'.coefficient = b.coefficient + d.coefficient → P N b')
+    (hsucc : ∀ (N : ℕ) b, b.IsUniform → P N b →
+      ∃ d : Symbol n V W (μ - N), d.IsUniform ∧ P (N + 1) (b + inclusion (by simp) d)) :
+    ∃ b, b.IsUniform ∧ ∀ N, P N b := by
+  obtain ⟨c, hcu, hc⟩ := exists_corrections_of_exists_add (fun N b ↦ b.IsUniform ∧ P N b)
+    (fun _ d ↦ d.IsUniform) ⟨hb₀, h₀⟩ fun N b hb ↦
+      (hsucc N b hb.1 hb.2).imp fun _ hd ↦ ⟨hd.1, hb.1.add (hd.1.inclusion _), hd.2⟩
+  have hm : Antitone fun j : ℕ => μ - j := fun _ _ hij => sub_le_sub_left (Nat.cast_le.2 hij) μ
+  have hm' : Tendsto (fun j : ℕ => μ - j) atTop atBot :=
+    tendsto_atBot_add_const_left atTop μ <| tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
+  obtain ⟨B, hB⟩ := exists_isUniformAsymptoticSum hm hm' hcu
+  refine ⟨b₀ + inclusion (by simp) B, hb₀.add (hB.isUniform.inclusion _), fun N ↦ ?_⟩
+  obtain ⟨r, hr, hBr⟩ := hB N
+  obtain ⟨b, hb, hbc⟩ := hc N
+  refine hcongr N b _ r hr hb.2 ?_
+  rw [coefficient_add, coefficient_inclusion, ← hBr, hbc]
   abel
 
 end Symbol
