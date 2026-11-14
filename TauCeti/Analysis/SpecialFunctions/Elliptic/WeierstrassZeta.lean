@@ -192,8 +192,7 @@ points are the poles of `ζ`, so this is a junk value (compare `PeriodPair.weier
 is the constant term of the Laurent expansion of `ζ` at `l`. -/
 @[simp]
 theorem weierstrassZeta_coe (l : L.lattice) : L.weierstrassZeta l = L.quasiPeriod l := by
-  change _ = L.weierstrassZeta (L.ω₁ / 2 + l) - L.weierstrassZeta (L.ω₁ / 2)
-  rw [L.weierstrassZeta_add_coe_eq_add, add_sub_cancel_left]
+  simp [quasiPeriod, L.weierstrassZeta_add_coe_eq_add]
 
 /-- **The quasi-periodicity of `ζ`**: `ζ(z + l) = ζ(z) + η(l)` for every `z` and `l ∈ Λ`. -/
 @[simp]
