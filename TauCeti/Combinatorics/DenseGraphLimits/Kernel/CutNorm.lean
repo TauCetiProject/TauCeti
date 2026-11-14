@@ -176,6 +176,15 @@ private theorem bddAbove_range_of_forall_le {I : Sort*} {f : I → ℝ} {C : ℝ
   ⟨C, Set.forall_mem_range.2 h⟩
 
 omit [IsFiniteMeasure μ] in
+/-- A six-fold supremum of uniformly bounded test integrals is at most the (nonnegative) bound. -/
+private theorem iSup_six_le (K : SymmKernel Ω μ) {P Q R : (Ω → ℝ) → Prop} {C : ℝ} (hC : 0 ≤ C)
+    (hf : ∀ u v, P u → Q u → P v → R v → |K.testIntegral μ u v| ≤ C) :
+    (⨆ (u) (_ : P u) (_ : Q u) (v) (_ : P v) (_ : R v), |K.testIntegral μ u v|) ≤ C :=
+  Real.iSup_le (fun u => Real.iSup_le (fun hu => Real.iSup_le (fun hu1 =>
+    Real.iSup_le (fun v => Real.iSup_le (fun hv => Real.iSup_le (fun hv1 =>
+      hf u v hu hu1 hv hv1) hC) hC) hC) hC) hC) hC
+
+omit [IsFiniteMeasure μ] in
 /-- A test integral is at most a six-fold supremum of uniformly bounded test integrals: each level
 of the iterated supremum is bounded, so each step down is a `le_ciSup`. -/
 private theorem le_iSup_six (K : SymmKernel Ω μ) {P Q R : (Ω → ℝ) → Prop} {C : ℝ}
@@ -467,9 +476,8 @@ theorem cutNorm_eq_iSup_abs_testIntegral (K : SymmKernel Ω μ) :
   have h0 : 0 ≤ cutNorm μ K := cutNorm_nonneg μ K
   have hind : ∀ (A : Set Ω) (x : Ω), A.indicator (1 : Ω → ℝ) x ∈ Icc (0 : ℝ) 1 := fun A x => by
     by_cases hx : x ∈ A <;> simp [hx]
-  refine le_antisymm (cutNorm_le μ fun S hS T hT => ?_) (Real.iSup_le (fun u => Real.iSup_le
-    (fun hu => Real.iSup_le (fun hu1 => Real.iSup_le (fun v => Real.iSup_le (fun hv =>
-      Real.iSup_le (abs_testIntegral_le_cutNorm μ K hu hv hu1) h0) h0) h0) h0) h0) h0)
+  refine le_antisymm (cutNorm_le μ fun S hS T hT => ?_) (iSup_six_le μ K h0
+    fun _ _ hu hu1 hv hv1 => abs_testIntegral_le_cutNorm μ K hu hv hu1 hv1)
   rw [← K.testIntegral_indicator_one μ hS hT]
   exact le_iSup_six μ K (fun _ _ hu hu1 hv hv1 => abs_testIntegral_le_cutNorm μ K hu hv hu1 hv1)
     (measurable_one.indicator hS) (hind S) (measurable_one.indicator hT) (hind T)
@@ -502,9 +510,7 @@ theorem cutNormSigned_le {K : SymmKernel Ω μ} {C : ℝ}
     simpa [SymmKernel.testIntegral_def] using
       h 0 0 measurable_const measurable_const hzero hzero
   rw [cutNormSigned_def]
-  exact Real.iSup_le (fun u => Real.iSup_le (fun hu => Real.iSup_le (fun hu1 =>
-    Real.iSup_le (fun v => Real.iSup_le (fun hv => Real.iSup_le (fun hv1 =>
-      h u v hu hv hu1 hv1) hC) hC) hC) hC) hC) hC
+  exact iSup_six_le μ K hC fun u v hu hu1 hv hv1 => h u v hu hv hu1 hv1
 
 /-- The signed cut norm is nonnegative. -/
 theorem cutNormSigned_nonneg (K : SymmKernel Ω μ) : 0 ≤ cutNormSigned μ K := by
