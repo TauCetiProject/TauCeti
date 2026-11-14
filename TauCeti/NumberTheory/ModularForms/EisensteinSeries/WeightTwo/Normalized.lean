@@ -231,7 +231,7 @@ def normalizedCharG2MFRaise (t : ℕ) (htuv : t * (u * v) ∣ N) :
 
 /-- The raised normalized series is the degeneracy image of the normalized series at its
 natural level. -/
-theorem normalizedCharG2MFRaise_eq_levelRaise (t : ℕ) (htuv : t * (u * v) ∣ N) :
+theorem normalizedCharG2MFRaise_eq_levelRaise {t : ℕ} (htuv : t * (u * v) ∣ N) :
     haveI : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
     haveI : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
     normalizedCharG2MFRaise ψ φ t htuv =
