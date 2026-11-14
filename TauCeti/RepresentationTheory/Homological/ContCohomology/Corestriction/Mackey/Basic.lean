@@ -344,7 +344,7 @@ theorem explicitCor1_mackey (x : H1 U M) :
       coe_cocyclesCor1]
     refine (cochainsCor1_mackeyTransversal G M U V r hr f k).trans
       (Finset.sum_congr rfl fun D _ => ?_)
-    rw [coe_cocyclesCor1, cocyclesMap1_coe, Subgroup.coe_continuousMackeyToH]
+    rw [coe_cocyclesCor1, coe_cocyclesMap1, Subgroup.coe_continuousMackeyToH]
 
 /-- **The degree-one Mackey summand depends only on the double coset** `VsU` of `s`. -/
 theorem explicitMackeyTerm1_eq_of_mk_eq {s s' : G}
@@ -457,7 +457,7 @@ theorem explicitCor2_mackey (x : H2 U M) :
       coe_cocyclesCor2]
     refine (cochainsCor2_mackeyTransversal G M U V r hr f k l).trans
       (Finset.sum_congr rfl fun D _ => ?_)
-    rw [coe_cocyclesCor2, cocyclesMap2_coe, Subgroup.coe_continuousMackeyToH]
+    rw [coe_cocyclesCor2, coe_cocyclesMap2, Subgroup.coe_continuousMackeyToH]
 
 /-- **The degree-two Mackey summand depends only on the double coset** `VsU` of `s`. -/
 theorem explicitMackeyTerm2_eq_of_mk_eq {s s' : G}

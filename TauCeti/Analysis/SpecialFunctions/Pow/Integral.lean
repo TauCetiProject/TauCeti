@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 -- `Mathlib.Analysis.SpecialFunctions.ImproperIntegrals` is imported privately: it supplies
 -- `not_integrableOn_Ioi_rpow`, used only inside the proof of
@@ -64,6 +66,11 @@ there, and the right because every superlevel set then has measure at least that
 and `∫⁻ t in (0, ∞), t ^ (p - 1)` diverges. That is where `TauCeti.lintegral_ofReal_rpow_Ioi` is
 used, and it is why the statement needs no finiteness hypothesis on `u`.
 
+Finally, for `γ > 1` and a height `K > 0`, the primitive of `γ (min (t⁺, K)) ^ (γ - 1)` is a `C¹`
+function with bounded derivative that agrees with `t ^ γ` on `[0, K]`. Composing a Sobolev
+function with it is the standard way to raise a truncated positive part to the power `γ` without
+leaving the Sobolev space.
+
 ## Main declarations
 
 * `TauCeti.lintegral_ofReal_rpow_Ioo`: `∫⁻ t in (0, a), t ^ s = a ^ (s + 1) / (s + 1)` for
@@ -93,6 +100,8 @@ used, and it is why the statement needs no finiteness hypothesis on `u`.
   against the weight `t ^ q`.
 * `TauCeti.lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul`: the layer cake formula for an
   `ℝ≥0∞`-valued function.
+* `TauCeti.exists_contDiff_deriv_eq_rpow`: a `C¹` primitive of `γ (min (t⁺, K)) ^ (γ - 1)` with
+  bounded derivative, vanishing on `(-∞, 0]` and dominating `(min (t⁺, K)) ^ γ`.
 * `TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top`: a function with finite positive
   power integral is carried by a σ-finite part of the measure.
 
@@ -599,5 +608,44 @@ theorem lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul (ν : Measure β) {u : β
             (lintegral_const_mul _ (by fun_prop)).symm
         _ ≤ _ := lintegral_mono fun t => mul_le_mul_left (measure_mono hsub) _
     rw [hL, hR, ENNReal.mul_top (ENNReal.ofReal_pos.2 hp).ne']
+
+/-! ### A `C¹` primitive of a truncated power -/
+
+/-- For `γ > 1` and `K > 0`, the primitive `F` of `γ (min (t⁺, K))^{γ - 1}` vanishing at `0` is a
+`C¹` function with bounded derivative, vanishes on `(-∞, 0]` and dominates `(min (t⁺, K))^γ`. It
+agrees with `t^γ` on `[0, K]` and continues linearly beyond `K`. -/
+theorem exists_contDiff_deriv_eq_rpow (γ : ℝ) (hγ : 1 < γ) {K : ℝ} (hK : 0 < K) :
+    ∃ F : ℝ → ℝ, ContDiff ℝ 1 F ∧ (∀ t, HasDerivAt F (γ * min (max t 0) K ^ (γ - 1)) t) ∧
+      (∀ t ≤ 0, F t = 0) ∧ ∀ t, min (max t 0) K ^ γ ≤ F t := by
+  set φ : ℝ → ℝ := fun t => γ * min (max t 0) K ^ (γ - 1)
+  have hφc : Continuous φ := continuous_const.mul
+    (((continuous_id.max continuous_const).min continuous_const).rpow_const fun _ =>
+      Or.inr (by linarith))
+  have hφ0 : ∀ t, 0 ≤ φ t := fun t =>
+    mul_nonneg (by linarith) (Real.rpow_nonneg (le_min (le_max_right _ _) hK.le) _)
+  set F : ℝ → ℝ := fun t => ∫ τ in (0 : ℝ)..t, φ τ
+  have hFd : ∀ t, HasDerivAt F (φ t) t := fun t => (hφc.integral_hasStrictDerivAt 0 t).hasDerivAt
+  have hFderiv : deriv F = φ := funext fun t => (hFd t).deriv
+  have hFdiff : Differentiable ℝ F := fun t => (hFd t).differentiableAt
+  have hF0 : ∀ t ≤ 0, F t = 0 := fun t ht => by
+    -- `φ` vanishes on `[t, 0]`, hence so does its integral from `0` to `t`.
+    have hφt : EqOn φ (fun _ => 0) (uIcc 0 t) := fun τ hτ => by
+      rw [uIcc_of_ge ht] at hτ
+      simp only [φ, max_eq_right hτ.2, min_eq_left hK.le, Real.zero_rpow (by linarith : γ - 1 ≠ 0),
+        mul_zero]
+    exact (intervalIntegral.integral_congr hφt).trans intervalIntegral.integral_zero
+  have hFpow : ∀ t, 0 ≤ t → t ≤ K → F t = t ^ γ := fun t ht0 htK => by
+    have hd : ∀ τ ∈ uIcc 0 t, HasDerivAt (fun τ => τ ^ γ) (φ τ) τ := fun τ hτ => by
+      rw [uIcc_of_le ht0] at hτ
+      convert Real.hasDerivAt_rpow_const (x := τ) (Or.inr hγ.le) using 1
+      simp only [φ, max_eq_left hτ.1, min_eq_left (hτ.2.trans htK)]
+    have hFt : F t = t ^ γ - 0 ^ γ :=
+      intervalIntegral.integral_eq_sub_of_hasDerivAt hd (hφc.intervalIntegrable _ _)
+    rw [hFt, Real.zero_rpow (by linarith), sub_zero]
+  refine ⟨F, contDiff_one_iff_deriv.2 ⟨hFdiff, hFderiv ▸ hφc⟩, hFd, hF0, fun t => ?_⟩
+  rcases le_total t 0 with ht | ht
+  · rw [max_eq_right ht, min_eq_left hK.le, Real.zero_rpow (by linarith), hF0 t ht]
+  · rw [max_eq_left ht, ← hFpow _ (le_min ht hK.le) (min_le_right _ _)]
+    exact monotone_of_deriv_nonneg hFdiff (fun t => hFderiv ▸ hφ0 t) (min_le_left _ _)
 
 end TauCeti
