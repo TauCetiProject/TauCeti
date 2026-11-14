@@ -172,13 +172,17 @@ theorem apply_sub_eq_of_homotopy (hinj : Function.Injective f) {c : N} {a : M}
   rw [apply_eq_zero_of_apply_eq he hf hinj hc, map_zero, add_zero] at hx
   rw [map_sub, hc, ← hx, sub_sub_cancel]
 
+omit hd
+
 /-- Homotopic injective chain maps have isomorphic cokernel homologies.
 The comparison factors through their mapping cones and uses the specified homotopy `h`. -/
 noncomputable def quotientHomologyEquivOfHomotopy
     (hfi : Function.Injective f) (hgi : Function.Injective g) :
     e.quotientHomology he (range f) (range_le_comap_range_of_comp_eq f hf) ≃ₗ[S]
-      e.quotientHomology he (range g) (range_le_comap_range_of_comp_eq g hg) :=
-  (mappingConeQuotientHomologyEquiv d hd e he f hf hfi).symm.trans
+      e.quotientHomology he (range g) (range_le_comap_range_of_comp_eq g hg) := by
+  have hd : d ∘ₗ d = 0 := LinearMap.ext fun x =>
+    apply_eq_zero_of_apply_eq he hf hfi (c := f x) (congr($hf x)).symm
+  exact (mappingConeQuotientHomologyEquiv d hd e he f hf hfi).symm.trans
     ((((LinearEquiv.refl S M).skewProd (LinearEquiv.refl S N) h).homologyEquiv
       (mappingCone_comp_self f hd he hf) (mappingCone_comp_self g hd he hg)
       (skewProd_comp_mappingCone d e f g h hh)).trans
@@ -188,11 +192,13 @@ noncomputable def quotientHomologyEquivOfHomotopy
 of `c - h a` modulo `range g`. -/
 theorem quotientHomologyEquivOfHomotopy_quotientHomologyClass
     (hfi : Function.Injective f) (hgi : Function.Injective g) (c : N) (a : M) (hc : e c = f a) :
-    quotientHomologyEquivOfHomotopy d hd e he f hf g h hg hh hfi hgi
+    quotientHomologyEquivOfHomotopy d e he f hf g h hg hh hfi hgi
         (quotientHomologyClass he (range_le_comap_range_of_comp_eq f hf) c
           (mem_range.mpr ⟨a, hc.symm⟩)) =
       quotientHomologyClass he (range_le_comap_range_of_comp_eq g hg) (c - h a)
         (mem_range.mpr ⟨a, (apply_sub_eq_of_homotopy d e he f hf g h hh hfi hc).symm⟩) := by
+  have hd : d ∘ₗ d = 0 := LinearMap.ext fun x =>
+    apply_eq_zero_of_apply_eq he hf hfi (c := f x) (congr($hf x)).symm
   rw [quotientHomologyEquivOfHomotopy, LinearEquiv.trans_apply,
     mappingConeQuotientHomologyEquiv_symm_quotientHomologyClass d hd e he f hf hfi c a hc,
     LinearEquiv.trans_apply,
@@ -204,8 +210,8 @@ theorem quotientHomologyEquivOfHomotopy_quotientHomologyClass
 @[simp]
 theorem quotientHomologyEquivOfHomotopy_symm
     (hfi : Function.Injective f) (hgi : Function.Injective g) :
-    (quotientHomologyEquivOfHomotopy d hd e he f hf g h hg hh hfi hgi).symm =
-      quotientHomologyEquivOfHomotopy d hd e he g hg f (-h) hf
+    (quotientHomologyEquivOfHomotopy d e he f hf g h hg hh hfi hgi).symm =
+      quotientHomologyEquivOfHomotopy d e he g hg f (-h) hf
         (by rw [comp_neg, neg_comp, ← neg_add, ← hh, neg_sub]) hgi hfi := by
   ext x
   rw [LinearEquiv.symm_apply_eq]

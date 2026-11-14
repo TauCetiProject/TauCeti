@@ -51,13 +51,13 @@ the constant terms of `∂⁻` over `ZMod 2`.
 * `TauCeti.GridDiagram.sum_unblockedCoefficient_mul_unblockedCoefficient_eq_zero`: every matrix
   entry of the square of `∂⁻` vanishes.
 * `TauCeti.GridDiagram.unblockedDifferential_comp_self_eq_zero`: `∂⁻ ∘ ∂⁻ = 0`.
-* `TauCeti.GridDiagram.unblockedDifferential_eq_zero_of_eq_X_smul`: if `∂⁻ c = V_i a`, then `a`
-  is a cycle.
 * `TauCeti.GridDiagram.simplyBlockedDifferential_comp_self_eq_zero`: the same for the
   specialization at `V_i = 0`.
 * `TauCeti.GridDiagram.fullyBlockedDecompositionCount_eq_zero`,
   `TauCeti.GridDiagram.fullyBlockedDifferential_comp_self_eq_zero`: the same for the fully blocked
   differential, the specialization at every `V_i = 0`.
+* `TauCeti.GridDiagram.unblockedDifferential_eq_zero_of_eq_X_smul`: if `∂⁻ c = V_i a`, then `a`
+  is a cycle.
 
 ## References
 

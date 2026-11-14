@@ -119,7 +119,7 @@ homologies. The comparison is induced by the chosen null-homotopy `XSmulHomotopy
 noncomputable def partiallyBlockedHomologyChangeBlockedColumnEquiv :
     G.partiallyBlockedHomology {i} ≃ₗ[F] G.partiallyBlockedHomology {j} :=
   (singletonQuotientHomologyEquiv G i).symm.trans
-    ((LinearMap.quotientHomologyEquivOfHomotopy d hd d hd
+    ((LinearMap.quotientHomologyEquivOfHomotopy d d hd
       (variableMap i) (variableMap_comp G i) (variableMap j)
       ((hG.XSmulHomotopy F i j).restrictScalars F) (variableMap_comp G j)
       (variableMap_homotopy hG i j) (variableMap_injective i) (variableMap_injective j)).trans
@@ -141,7 +141,7 @@ theorem partiallyBlockedHomologyChangeBlockedColumnEquiv_quotientHomologyClass (
             exact X_smul_mem_blockedChains (Finset.mem_singleton_self j) a) := by
   have hc' : d c = variableMap i a := by
     rw [LinearMap.restrictScalars_apply, hc, variableMap_apply]
-  have h := LinearMap.quotientHomologyEquivOfHomotopy_quotientHomologyClass d hd d hd
+  have h := LinearMap.quotientHomologyEquivOfHomotopy_quotientHomologyClass d d hd
     (variableMap i) (variableMap_comp G i) (variableMap j)
     ((hG.XSmulHomotopy F i j).restrictScalars F) (variableMap_comp G j)
     (variableMap_homotopy hG i j) (variableMap_injective i) (variableMap_injective j) c a hc'
