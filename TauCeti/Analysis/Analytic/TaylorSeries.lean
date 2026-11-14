@@ -38,6 +38,7 @@ germs of analytic and meromorphic functions are compared with the functions them
 * `TauCeti.taylorSeries_add`, `TauCeti.taylorSeries_mul`, `TauCeti.taylorSeries_const`,
   `TauCeti.taylorSeries_pow`: the Taylor series of analytic functions respects the ring
   operations.
+* `TauCeti.taylorSeries_eq_C_add_X_mul`: the constant term and divided-difference tail.
 
 ## References
 
@@ -192,5 +193,19 @@ theorem taylorSeries_sub_const : taylorSeries (fun z : 𝕜 ↦ z - a) a = Power
     rw [coeff_taylorSeries, iterate_succ_apply, show swap dslope a (fun z : 𝕜 ↦ z - a) = _ from hd,
       ← coeff_taylorSeries, taylorSeries_const, PowerSeries.coeff_C, PowerSeries.coeff_X]
     rcases n with _ | n <;> simp
+
+/-- The Taylor series is its constant term plus `X` times the Taylor series of the
+divided difference at the same centre. -/
+theorem taylorSeries_eq_C_add_X_mul {f : 𝕜 → 𝕜} {a : 𝕜} (hf : AnalyticAt 𝕜 f a) :
+    taylorSeries f a = PowerSeries.C (f a) +
+      PowerSeries.X * taylorSeries (dslope f a) a := by
+  have h : f = (fun _ ↦ f a) + (fun z ↦ z - a) * dslope f a := by
+    funext z
+    simpa only [Pi.add_apply, Pi.mul_apply, smul_eq_mul] using
+      (eq_add_of_sub_eq' (sub_smul_dslope f a z).symm)
+  have hc : AnalyticAt 𝕜 (fun z : 𝕜 ↦ z - a) a := by fun_prop
+  conv_lhs => rw [h]
+  rw [taylorSeries_add analyticAt_const (hc.mul (hf.dslope a)),
+    taylorSeries_const, taylorSeries_mul hc (hf.dslope a), taylorSeries_sub_const]
 
 end TauCeti
