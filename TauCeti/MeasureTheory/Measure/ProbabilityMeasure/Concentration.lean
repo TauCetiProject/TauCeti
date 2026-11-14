@@ -18,11 +18,12 @@ replaced, under `μ i`, by a function with the same integral as under `ν`, up t
 whose second moment tends to zero. This turns quantitative second-moment estimates into weak
 limits, without needing a common probability space for the measures.
 
-The main special case is concentration at a point: probability measures converge weakly to a
-Dirac mass if their mean squared distance from that point tends to zero.
-
-The proof uses Mathlib's bounded Lipschitz characterization of weak convergence and bounds a first
-moment by the square root of the second, which is the nonnegativity of the variance.
+This criterion uses Mathlib's bounded Lipschitz characterization of weak convergence, which needs a
+countably generated filter. Concentration at a point holds along any filter: probability measures
+converge weakly to a Dirac mass if their mean squared distance from that point tends to zero. It
+is checked directly on bounded continuous test functions `g`, using
+`|g y - g x| ≤ ε / 2 + C * dist y x`. Both arguments bound a first moment by the square root of
+the second, which is the nonnegativity of the variance.
 -/
 
 public section
