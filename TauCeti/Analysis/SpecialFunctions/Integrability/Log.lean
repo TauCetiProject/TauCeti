@@ -17,6 +17,9 @@ import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
 import Mathlib.Analysis.SpecialFunctions.Integrability.Log
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.SpecialFunctions.Log.InvLog
 
 /-!
 # Integrability of logarithms
@@ -36,6 +39,12 @@ On the half-line `[1, ∞)` the iterated logarithm `t ↦ log (log t)` is locall
 its singularity at `t = 1` is integrable, by Mathlib's `Real.integrableOn_log_log_mul_rpow`. This
 is the integrability that Abelian arguments against `log log t` need, as in Mertens' theorems.
 
+Near the origin, for `0 < R < c`, the radial profile `log log (c / r)` and its derivative
+`-(r log (c / r))⁻¹` are square integrable on `(0, R)` against the planar polar weight `r dr`: the
+first integrand is bounded, the second is the derivative of `r ↦ (log (c / r))⁻¹`, which is
+continuous on `[0, R]`. These are the radial integrals behind the unbounded `W^{1,2}` functions
+`log log (c / ‖z‖)` of the plane.
+
 ## Main declarations
 
 * `TauCeti.locallyIntegrable_log_norm_pow`: `x ↦ (log ‖x‖) ^ k` is locally integrable.
@@ -44,6 +53,13 @@ is the integrability that Abelian arguments against `log log t` need, as in Mert
 * `MeromorphicOn.intervalIntegrable_clog`: `t ↦ Log (f t)` is interval integrable for
   real-meromorphic `f : ℝ → ℂ`; `AnalyticOnNhd.intervalIntegrable_clog` is the analytic case.
 * `TauCeti.locallyIntegrableOn_log_log`: `t ↦ log (log t)` is locally integrable on `[1, ∞)`.
+* `TauCeti.integrableOn_mul_log_log_div_sq`: `r (log log (c / r))²` is integrable on `(0, R)`.
+* `TauCeti.integrableOn_mul_inv_mul_log_div_sq`: `r (r log (c / r))⁻²` is integrable on `(0, R)`.
+
+## References
+
+* L. C. Evans, *Partial Differential Equations*, §5.6.3 (the example `log log (1 / |x|)` of an
+  unbounded `W^{1,n}` function).
 -/
 
 public section
@@ -163,5 +179,78 @@ theorem locallyIntegrableOn_log_log :
   have ht0 : (0 : ℝ) < t := zero_lt_one.trans_le (hk ht)
   beta_reduce
   rw [mul_assoc, ← Real.rpow_add ht0, neg_add_cancel, Real.rpow_zero, mul_one]
+
+/-- For `R < c` the radial integrand `r (log log (c / r))²` is integrable on `(0, R)`: it is
+bounded by `4 c + R (log log (c / R))²` there. This is the radial form of square integrability of
+`log log (c / r)` on a disc of radius `R` about the singularity. -/
+theorem integrableOn_mul_log_log_div_sq {c R : ℝ} (hR : R < c) :
+    IntegrableOn (fun r : ℝ => r * Real.log (Real.log (c / r)) ^ 2) (Set.Ioo 0 R) := by
+  set M := Real.log (Real.log (c / R)) ^ 2
+  refine Measure.integrableOn_of_bounded (M := 4 * c + R * M) (by simp) ?_ ?_
+  · exact Measurable.aestronglyMeasurable (by fun_prop)
+  · refine ae_restrict_of_forall_mem measurableSet_Ioo fun r ⟨h0, hr⟩ => ?_
+    have hR0 : 0 < R := h0.trans hr
+    have hc : 0 < c := hR0.trans hR
+    set L := Real.log (c / r)
+    have hℓ : 0 < Real.log (c / R) := Real.log_div_pos hR0 hR
+    have hℓL : Real.log (c / R) ≤ L := Real.log_le_log (div_pos (hR0.trans hR) hR0)
+      (div_le_div_of_nonneg_left (hR0.trans hR).le h0 hr.le)
+    have hLpos : 0 < L := hℓ.trans_le hℓL
+    -- `(log L)² ≤ L² + M`: compare with `L` when `log L ≥ 0` and with `log log (c / R)` otherwise.
+    have hprof : Real.log L ^ 2 ≤ L ^ 2 + M := by
+      rcases le_or_gt 0 (Real.log L) with hl | hl
+      · have : Real.log L ≤ L := by linarith [Real.log_le_sub_one_of_pos hLpos]
+        nlinarith [sq_nonneg (Real.log (Real.log (c / R)))]
+      · have : Real.log (Real.log (c / R)) ≤ Real.log L := Real.log_le_log hℓ hℓL
+        nlinarith [sq_nonneg L]
+    -- `L < 2 √(c / r)`, so `r L² < 4 c`.
+    have hsq : L < 2 * √(c / r) := by
+      have hcr : 0 ≤ c / r := by positivity
+      have hs : 0 < √(c / r) := Real.sqrt_pos.2 (by positivity)
+      have : Real.log √(c / r) < √(c / r) := by
+        linarith [Real.log_le_sub_one_of_pos hs]
+      rw [Real.log_sqrt hcr] at this
+      linarith
+    have hrL : r * L ^ 2 ≤ 4 * c := by
+      have h1 : L ^ 2 ≤ (2 * √(c / r)) ^ 2 := pow_le_pow_left₀ hLpos.le hsq.le 2
+      rw [mul_pow, Real.sq_sqrt (by positivity)] at h1
+      calc r * L ^ 2 ≤ r * (2 ^ 2 * (c / r)) := by gcongr
+        _ = 4 * c := by field_simp; norm_num
+    rw [Real.norm_of_nonneg (by positivity)]
+    calc r * Real.log L ^ 2 ≤ r * (L ^ 2 + M) := by gcongr
+      _ = r * L ^ 2 + r * M := by ring
+      _ ≤ 4 * c + R * M := by gcongr
+
+/-- For `R < c` the radial integrand `r (r log (c / r))⁻²` is integrable on `(0, R)`: it is the
+derivative of `r ↦ (log (c / r))⁻¹`, which is continuous on `[0, R]` and vanishes at `0`. This is
+the radial form of square integrability of the gradient of `log log (c / r)`. -/
+theorem integrableOn_mul_inv_mul_log_div_sq {c R : ℝ} (hR : R < c) :
+    IntegrableOn (fun r : ℝ => r * ((r * Real.log (c / r))⁻¹) ^ 2) (Set.Ioo 0 R) := by
+  set G : ℝ → ℝ := fun r => (Real.log (c / r))⁻¹
+  have hcont : ContinuousOn G (Set.Icc 0 R) := by
+    intro r hr
+    rcases eq_or_lt_of_le hr.1 with rfl | h0
+    · -- `G r = -(log (r / c))⁻¹`, and `(log x)⁻¹` is continuous at `0`.
+      have hG : G = fun r => -(Real.log (r / c))⁻¹ := funext fun r => by
+        simp only [G, ← inv_div r c, Real.log_inv, inv_neg]
+      rw [hG]
+      exact ((Real.continuousAt_inv_log_zero.comp_of_eq (continuousAt_id.div_const c)
+        (zero_div c)).neg).continuousWithinAt
+    · have hL : 0 < Real.log (c / r) := Real.log_div_pos h0 (hr.2.trans_lt hR)
+      have hdiv : c / r ≠ 0 := by have := h0.trans (hr.2.trans_lt hR); positivity
+      exact (((continuousAt_const (y := c)).div continuousAt_id h0.ne').log
+        hdiv).inv₀ hL.ne' |>.continuousWithinAt
+  have hderiv : ∀ r ∈ Set.Ioo (0 : ℝ) R,
+      HasDerivAt G (r * ((r * Real.log (c / r))⁻¹) ^ 2) r := by
+    rintro r ⟨h0, hr⟩
+    have hc : 0 < c := h0.trans (hr.trans hR)
+    have hL := Real.log_div_pos h0 (hr.trans hR)
+    have h := (Real.hasDerivAt_log_div hc.ne' h0.ne').inv hL.ne'
+    convert h using 1
+    field_simp
+  have hnonneg : ∀ r ∈ Set.Ioo (0 : ℝ) R, 0 ≤ r * ((r * Real.log (c / r))⁻¹) ^ 2 :=
+    fun r hr => mul_nonneg hr.1.le (sq_nonneg _)
+  exact (intervalIntegral.integrableOn_deriv_of_nonneg hcont hderiv hnonneg).mono_set
+    Set.Ioo_subset_Ioc_self
 
 end TauCeti
