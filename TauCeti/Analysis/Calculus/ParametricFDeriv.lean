@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import TauCeti.Analysis.Calculus.SecondDerivative
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.TangentCone.Prod
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 
 /-!
 # Mixed derivatives of a parametric map
@@ -41,7 +42,7 @@ over a general nontrivially normed field, it is analyticity.
   parameter curves are the parameter-velocity field.
 * `ContDiffAt.differentiableAt_timeFDeriv`: the parameter-velocity field of a jointly `C²` map is
   differentiable, and `ContDiffAt.differentiableAt_deriv_snd` is the same statement for the
-  partial derivative in the second of two scalar variables.
+  partial derivative in a scalar second variable, differentiated in a normed first variable.
 * `TauCeti.hasFDerivAt_fderivWithin_slice`: mixed derivatives for a normed parameter space, with
   spatial derivatives within a set accumulated by its interior, such as the range of a model with
   corners.
@@ -368,15 +369,14 @@ theorem differentiableAt_timeFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     (differentiableAt_const t |>.prodMk differentiableAt_id) |>.clm_apply
       (differentiableAt_const (1, 0))
 
-/-- For a map of two scalar variables which is `C²` at `(t, x)`, the partial derivative in the
+/-- For a `C²` map at `(t, x)` with a scalar second factor, the partial derivative in the
 second variable at `x` is differentiable in the first variable at `t`. -/
-theorem differentiableAt_deriv_snd {g : 𝕜 × 𝕜 → F'} {t x : 𝕜} (hg : ContDiffAt 𝕜 2 g (t, x)) :
-    DifferentiableAt 𝕜 (fun s ↦ _root_.deriv (fun r ↦ g (s, r)) x) t := by
-  -- Exchange the variables, so that the partial derivative is a parameter-velocity field.
-  have hswap : ContDiffAt 𝕜 2 (fun z : 𝕜 × 𝕜 ↦ g (z.2, z.1)) (x, t) :=
-    hg.comp (x, t) (contDiff_snd.prodMk contDiff_fst).contDiffAt
-  exact hswap.differentiableAt_timeFDeriv.congr_of_eventuallyEq
-    (hswap.of_le (by norm_num)).deriv_parameterCurve_eventuallyEq_timeFDeriv
+theorem differentiableAt_deriv_snd {g : E × 𝕜 → F'} {t : E} {x : 𝕜}
+    (hg : ContDiffAt 𝕜 2 g (t, x)) :
+    DifferentiableAt 𝕜 (fun s ↦ _root_.deriv (fun r ↦ g (s, r)) x) t :=
+  ((hg.contDiffAt_deriv_snd (m := 1) le_rfl).differentiableAt one_ne_zero).comp
+    (f := fun s ↦ (s, x)) t
+    (differentiableAt_id.prodMk (differentiableAt_const x))
 
 end ContDiffAt
 

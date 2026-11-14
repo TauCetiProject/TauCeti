@@ -237,35 +237,7 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
   {H : Puncture → ℝ → M → ℝ}
 
-/-- The components of the perturbation in real coordinates are differentiable in the domain
-point, at points of `S`, for `C¹` Hamiltonians on a manifold. -/
-private theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {z : ℝ × ℝ}
-    (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
-    DifferentiableAt ℝ
-      (fun z' => pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z') x v) z := by
-  have hK : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 (fun w ↦ pairOfPantsPerturbation H w x)
-      (Complex.equivRealProdCLM.symm z) :=
-    (contMDiffAt_pairOfPantsPerturbation hH hHs
-      ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp (f := fun w : ℂ ↦ (w, x)) _
-      (contMDiffAt_id.prodMk contMDiffAt_const)
-  exact ((hK.contDiffAt.differentiableAt one_ne_zero).comp z
-    Complex.equivRealProdCLM.symm.differentiableAt).clm_apply (differentiableAt_const v)
-
-/-- The components of the perturbation are differentiable in the target point, at points
-of `S`, for `C¹` Hamiltonians on a manifold. -/
-private theorem mdifferentiableAt_pairOfPantsPerturbation_target (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {z : ℝ × ℝ}
-    (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
-    MDifferentiableAt I 𝓘(ℝ)
-      (fun y => pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y v) x :=
-  (((contMDiffAt_pairOfPantsPerturbation hH hHs
-    ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp
-      (f := fun y : M ↦ (Complex.equivRealProdCLM.symm z, y)) x
-      (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply contMDiffAt_const).mdifferentiableAt
-    one_ne_zero
-
-variable [IsManifold I ⊤ M]
+variable [IsManifold I (⊤ : ℕ∞) M]
 
 /-- **The curvature in the coordinates of an end.** On the end `q`, where `±s > 0`, the curvature
 of the pulled-back perturbation `β(±s) H_q(t) dt` is `±β'(±s - 1) H_q(t)`. -/
@@ -413,7 +385,7 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : Smo
 
 /-! ### The energy identity on the truncated pair of pants -/
 
-omit [IsManifold I ⊤ M] in
+omit [IsManifold I (⊤ : ℕ∞) M] in
 /-- Along a map continuous on a set `U`, the curvature of the pair-of-pants perturbation in the
 coordinates of the end `q`, multiplied by the Jacobian of the end chart, is
 `±β'(±s - 1) H_q(t, u)`, a continuous function on the preimage of `U` under the end chart. -/
@@ -891,7 +863,7 @@ private theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Per
     (x : V) (v : ℂ) :
     DifferentiableAt ℝ
       (fun z' => pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z') x v) z :=
-  SmoothTwoForm.differentiableAt_pairOfPantsPerturbation_domain hH
+  Floer.differentiableAt_pairOfPantsPerturbation_domain hH
     (contMDiff_uncurry_of_contDiff hHs) hz x v
 
 /-- The components of the perturbation are differentiable in the target point, at points
@@ -902,7 +874,7 @@ private theorem differentiableAt_pairOfPantsPerturbation_target (hH : ∀ q, Per
     DifferentiableAt ℝ (fun y => pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y v)
       x :=
   mdifferentiableAt_iff_differentiableAt.1
-    (SmoothTwoForm.mdifferentiableAt_pairOfPantsPerturbation_target hH
+    (Floer.mdifferentiableAt_pairOfPantsPerturbation_target hH
       (contMDiff_uncurry_of_contDiff hHs) hz x v)
 
 variable [FiniteDimensional ℝ V]
