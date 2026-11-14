@@ -52,12 +52,19 @@ block of the same sign to its inertia.
   points are the eigenlines of the diagonal form.
 * `TauCeti.criticalPoints_projectiveMomentFunction`: for distinct weights its critical points are
   the coordinate points `[eₖ]`.
+* `TauCeti.continuous_projectiveMomentFunction` and `TauCeti.projectiveMomentFunction_mem_Icc`:
+  it is continuous, and for increasing weights its values lie between the extreme weights.
+* `TauCeti.isPathConnected_setOf_projectiveMomentFunction_le`: a sublevel containing `[eₖ]` but
+  no other weight is path-connected.
+* `TauCeti.criticalPoints_projectiveMomentFunction_inter_preimage_singleton`: for distinct weights,
+  `[eₖ]` is the only critical point on the level `w k`.
 * `TauCeti.isMorse_projectiveMomentFunction`: for distinct weights it is a Morse function.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_projectiveMomentFunction_iff` and
   `TauCeti.isMorse_projectiveMomentFunction_iff`: `[eₖ]` is nondegenerate exactly when `w k` is a
   simple weight, and the function is Morse exactly when the weights are distinct.
 * `TauCeti.manifoldMorseIndex_projectiveMomentFunction`: the Morse index at `[eₖ]` is
-  `dim_ℝ 𝕜 * #{i | w i < w k}`.
+  `dim_ℝ 𝕜 * #{i | w i < w k}`, which is `dim_ℝ 𝕜 * k` for increasing weights
+  (`TauCeti.manifoldMorseIndex_projectiveMomentFunction_of_strictMono`).
 * `TauCeti.totalCriticalCount_projectiveMomentFunction` and
   `TauCeti.criticalCount_projectiveMomentFunction`: the critical counts.
 * `TauCeti.criticalCount_projectiveMomentFunction_mul` and
@@ -400,6 +407,99 @@ theorem contMDiff_projectiveMomentFunction (w : Fin (n + 1) → ℝ) {r : ℕ∞
     (by simpa using hk), projectiveMomentFunction_comp_extend_symm]
   exact (contDiff_model _ _).contDiffAt
 
+/-- The moment function is continuous. -/
+@[fun_prop]
+theorem continuous_projectiveMomentFunction (w : Fin (n + 1) → ℝ) :
+    Continuous (projectiveMomentFunction 𝕜 w) :=
+  (contMDiff_projectiveMomentFunction (r := 0) w).continuous
+
+private theorem sum_norm_sq_pos {v : Fin (n + 1) → 𝕜} (hv : v ≠ 0) : 0 < ∑ i, ‖v i‖ ^ 2 := by
+  obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
+  exact Finset.sum_pos' (fun _ _ ↦ by positivity)
+    ⟨i, Finset.mem_univ _, pow_pos (norm_pos_iff.2 hi) 2⟩
+
+/-- For increasing weights, the moment function takes its values between the extreme weights. -/
+theorem projectiveMomentFunction_mem_Icc {w : Fin (n + 1) → ℝ} (hw : Monotone w)
+    (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    projectiveMomentFunction 𝕜 w x ∈ Icc (w 0) (w (Fin.last n)) := by
+  induction x using Projectivization.ind with
+  | h v hv =>
+    rw [projectiveMomentFunction_mk]
+    constructor
+    · rw [le_div_iff₀ (sum_norm_sq_pos hv), Finset.mul_sum]
+      exact Finset.sum_le_sum fun i _ ↦
+        mul_le_mul_of_nonneg_right (hw (Fin.zero_le i)) (by positivity)
+    · rw [div_le_iff₀ (sum_norm_sq_pos hv), Finset.mul_sum]
+      exact Finset.sum_le_sum fun i _ ↦
+        mul_le_mul_of_nonneg_right (hw (Fin.le_last i)) (by positivity)
+
+/-- **The sublevel of the moment function below the second weight is path-connected.** If
+`w k ≤ s` and every other weight exceeds `s`, then the sublevel `{f ≤ s}` of the moment function
+lies in the affine chart at `k`, where it is star-shaped about the coordinate point `[eₖ]`. -/
+theorem isPathConnected_setOf_projectiveMomentFunction_le {w : Fin (n + 1) → ℝ} {k : Fin (n + 1)}
+    {s : ℝ} (hk : w k ≤ s) (hs : ∀ i, i ≠ k → s < w i) :
+    IsPathConnected {x : ℙ 𝕜 (Fin (n + 1) → 𝕜) | projectiveMomentFunction 𝕜 w x ≤ s} := by
+  -- In the chart at `k` the sublevel is `∑ j, (w (k.succAbove j) - s) * ‖z j‖ ^ 2 ≤ s - w k`.
+  have hmodel (z : Fin n → 𝕜) : model 𝕜 (w k) (w ∘ k.succAbove) z ≤ s ↔
+      ∑ j, (w (k.succAbove j) - s) * ‖z j‖ ^ 2 ≤ s - w k := by
+    rw [model_apply, div_le_iff₀ (by positivity)]
+    simp only [comp_apply, sub_mul, Finset.sum_sub_distrib, ← Finset.mul_sum, mul_add, mul_one]
+    constructor <;> intro h <;> linarith
+  -- Each coefficient `w (k.succAbove j) - s` is positive, so the sublevel is star-shaped about 0.
+  have hstar : StarConvex ℝ 0 {z : Fin n → 𝕜 | model 𝕜 (w k) (w ∘ k.succAbove) z ≤ s} := by
+    intro z hz a b _ hb hab
+    rw [mem_ofPred_eq, hmodel] at hz ⊢
+    have hnonneg : 0 ≤ ∑ j, (w (k.succAbove j) - s) * ‖z j‖ ^ 2 :=
+      Finset.sum_nonneg fun j _ ↦
+        mul_nonneg (sub_nonneg.2 (hs _ (Fin.succAbove_ne k j)).le) (by positivity)
+    calc ∑ j, (w (k.succAbove j) - s) * ‖(a • (0 : Fin n → 𝕜) + b • z) j‖ ^ 2
+        = b ^ 2 * ∑ j, (w (k.succAbove j) - s) * ‖z j‖ ^ 2 := by
+          rw [Finset.mul_sum]
+          refine Finset.sum_congr rfl fun j _ ↦ ?_
+          simp only [smul_zero, zero_add, Pi.smul_apply, norm_smul, Real.norm_eq_abs, mul_pow,
+            sq_abs]
+          ring
+      _ ≤ 1 * ∑ j, (w (k.succAbove j) - s) * ‖z j‖ ^ 2 :=
+          mul_le_mul_of_nonneg_right (pow_le_one₀ hb (by linarith)) hnonneg
+      _ ≤ s - w k := by rwa [one_mul]
+  -- A point whose `k`-th coordinate vanishes only sees weights above `s`, so the sublevel lies in
+  -- the affine open at `k`.
+  have hsub : {x | projectiveMomentFunction 𝕜 w x ≤ s} ⊆ affineOpen k := by
+    intro x hx
+    induction x using Projectivization.ind with
+    | h v hv =>
+      rw [mk_mem_affineOpen_iff]
+      intro hvk
+      rw [mem_ofPred_eq, projectiveMomentFunction_mk, div_le_iff₀ (sum_norm_sq_pos hv),
+        Finset.mul_sum] at hx
+      obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
+      have hik : i ≠ k := by
+        rintro rfl
+        exact hi hvk
+      refine hx.not_gt (Finset.sum_lt_sum (fun j _ ↦ ?_) ⟨i, Finset.mem_univ _,
+        mul_lt_mul_of_pos_right (hs i hik) (pow_pos (norm_pos_iff.2 hi) 2)⟩)
+      rcases eq_or_ne j k with rfl | hj
+      · simp [hvk]
+      · exact mul_le_mul_of_nonneg_right (hs j hj).le (by positivity)
+  have heq : {x | projectiveMomentFunction 𝕜 w x ≤ s} =
+      (affineChart k).symm '' {z | model 𝕜 (w k) (w ∘ k.succAbove) z ≤ s} := by
+    ext x
+    constructor
+    · intro hx
+      have hxs : x ∈ (affineChart k).source := by
+        rw [affineChart_source]
+        exact hsub hx
+      refine ⟨affineChart k x, ?_, (affineChart k).left_inv hxs⟩
+      rwa [mem_ofPred_eq, ← projectiveMomentFunction_comp_affineChart_symm, comp_apply,
+        (affineChart k).left_inv hxs]
+    · rintro ⟨z, hz, rfl⟩
+      rwa [mem_ofPred_eq, ← comp_apply (f := projectiveMomentFunction 𝕜 w),
+        projectiveMomentFunction_comp_affineChart_symm]
+  rw [heq]
+  refine (hstar.isPathConnected ?_).image (continuous_affineChart_symm k)
+  rw [mem_ofPred_eq, model_zero]
+  exact hk
+
 private theorem mk_single_mem_source (k : Fin (n + 1)) :
     mk 𝕜 (Pi.single k 1) (by simp) ∈ (affineOpenPartialHomeomorph (K := 𝕜) k).source := by
   simp
@@ -481,6 +581,22 @@ theorem criticalPoints_projectiveMomentFunction {w : Fin (n + 1) → ℝ} (hw : 
   · rintro ⟨k', rfl⟩
     rw [(mk_single_mem_affineOpen_iff k' k).mp hk]
 
+/-- For pairwise distinct weights, the coordinate point `[eₖ]` is the only critical point of the
+moment function on the level `w k`. -/
+theorem criticalPoints_projectiveMomentFunction_inter_preimage_singleton {w : Fin (n + 1) → ℝ}
+    (hw : Injective w) (k : Fin (n + 1)) :
+    criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) ∩
+        projectiveMomentFunction 𝕜 w ⁻¹' {w k} = {mk 𝕜 (Pi.single k 1) (by simp)} := by
+  ext x
+  rw [criticalPoints_projectiveMomentFunction hw]
+  constructor
+  · rintro ⟨⟨j, rfl⟩, hj⟩
+    rw [mem_preimage, projectiveMomentFunction_mk_single, mem_singleton_iff] at hj
+    rw [hw hj]
+    rfl
+  · rintro rfl
+    exact ⟨⟨k, rfl⟩, projectiveMomentFunction_mk_single w k⟩
+
 /-- At a coordinate point `[eₖ]` whose weight `w k` is simple, the moment function has a
 nondegenerate critical point. -/
 theorem isManifoldNondegenerateCriticalPoint_projectiveMomentFunction {w : Fin (n + 1) → ℝ}
@@ -525,6 +641,14 @@ theorem manifoldMorseIndex_projectiveMomentFunction (w : Fin (n + 1) → ℝ) (k
     obtain ⟨j, rfl⟩ := Fin.exists_succAbove_eq (x := i) (y := k) fun h ↦ (h ▸ hi).false
     exact ⟨j, hi, rfl⟩
   rw [← himage, Fin.succAbove_right_injective.injOn.ncard_image]
+
+/-- For increasing weights, the coordinate point `[eₖ]` has Morse index the real dimension of `𝕜`
+times `k`. -/
+theorem manifoldMorseIndex_projectiveMomentFunction_of_strictMono {w : Fin (n + 1) → ℝ}
+    (hw : StrictMono w) (k : Fin (n + 1)) :
+    manifoldMorseIndex 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w)
+      (mk 𝕜 (Pi.single k 1) (by simp)) = Module.finrank ℝ 𝕜 * k := by
+  rw [manifoldMorseIndex_projectiveMomentFunction, ncard_setOf_lt_of_strictMono hw]
 
 /-- For pairwise distinct weights the moment function is a Morse function. -/
 theorem isMorse_projectiveMomentFunction {w : Fin (n + 1) → ℝ} (hw : Injective w) :
@@ -614,12 +738,9 @@ theorem subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real
 dimension of `𝕜` times `k`. -/
 theorem manifoldMorseIndex_projectiveMomentFunction_natCast (k : Fin (n + 1)) :
     manifoldMorseIndex 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 fun i ↦ ((i : ℕ) : ℝ))
-      (mk 𝕜 (Pi.single k 1) (by simp)) = Module.finrank ℝ 𝕜 * k := by
-  rw [manifoldMorseIndex_projectiveMomentFunction]
-  have hset : {i : Fin (n + 1) | ((i : ℕ) : ℝ) < (k : ℕ)} = ↑(Finset.Iio k) := by
-    ext i
-    simp only [mem_ofPred_eq, Nat.cast_lt, Finset.coe_Iio, mem_Iio, Fin.lt_def]
-  rw [hset, ncard_coe_finset, Fin.card_Iio]
+      (mk 𝕜 (Pi.single k 1) (by simp)) = Module.finrank ℝ 𝕜 * k :=
+  manifoldMorseIndex_projectiveMomentFunction_of_strictMono
+    (Nat.strictMono_cast.comp Fin.val_strictMono) k
 
 /-- **The Morse index on complex projective space.** For the moment function
 `[z] ↦ (∑ j, j * ‖z j‖ ^ 2) / ∑ j, ‖z j‖ ^ 2` on `ℂℙⁿ`, the coordinate point `[eₖ]` has Morse

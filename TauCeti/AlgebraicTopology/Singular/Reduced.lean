@@ -43,7 +43,9 @@ constant along paths is attained by such a morphism (`TauCeti.singularHomology�
 `TauCeti.singularHomology₀Section_singularHomology₀Desc`). Points joined by a path have the same
 class (`TauCeti.singularHomology₀Section_eq_of_joined`). On a path-connected space the class of a
 point does not depend on the point, and with coefficients in a ring it spans zeroth homology
-(`TauCeti.singularHomology₀_eq_smul_singularHomology₀Section`).
+(`TauCeti.singularHomology₀_eq_smul_singularHomology₀Section`). Since its augmentation is an
+isomorphism, every map out of a path-connected space is injective on zeroth homology
+(`TauCeti.mono_singularHomologyMap_zero_of_pathConnectedSpace`).
 With coefficients in a ring with the strong rank condition, such as a field, its rank is therefore
 the number of path components other than that of the point
 (`TauCeti.rank_reducedSingularHomologyFunctor_zero`). With coefficients in any nontrivial ring, a
@@ -123,6 +125,12 @@ lemma singularHomology₀_map_eq_id_of_pathConnectedSpace {X : TopCat.{w}} [Path
     (c : X ⟶ X) : ((singularHomologyFunctor C 0).obj R).map c = 𝟙 _ := by
   rw [← cancel_mono (X.singularHomology₀ε R), singularHomologyMap_singularHomology₀ε,
     Category.id_comp]
+
+/-- A map out of a path-connected space is injective on zeroth homology: the augmentation of the
+source factors through it and is an isomorphism. -/
+theorem mono_singularHomologyMap_zero_of_pathConnectedSpace {X Y : TopCat.{w}}
+    [PathConnectedSpace X] (f : X ⟶ Y) : Mono (((singularHomologyFunctor C 0).obj R).map f) :=
+  mono_of_mono_fac (singularHomologyMap_singularHomology₀ε R f)
 
 /-- The section is natural in the chosen point under continuous maps. -/
 @[reassoc (attr := simp)]
