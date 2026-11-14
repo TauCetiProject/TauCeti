@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Derivatives of functions of temperate growth
@@ -71,7 +72,7 @@ theorem of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow {m : ℝ} (hf : ContDiff 
             have : (0 : ℝ) ≤ k := k.cast_nonneg
             linarith)
       _ ≤ (1 + ‖x‖) ^ (⌈m⌉₊ : ℝ) :=
-          TauCeti.one_add_norm_sq_rpow_half_le_one_add_norm_rpow x (Nat.cast_nonneg _)
+          TauCeti.one_add_norm_sq_rpow_le_one_add_norm_rpow x (Nat.cast_nonneg _)
       _ = (1 + ‖x‖) ^ ⌈m⌉₊ := Real.rpow_natCast _ _
   calc C * (1 + ‖x‖ ^ 2) ^ ((m - k) / 2) ≤ max C 0 * (1 + ‖x‖ ^ 2) ^ ((m - k) / 2) :=
         mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)

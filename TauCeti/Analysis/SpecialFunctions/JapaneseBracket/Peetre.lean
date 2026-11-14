@@ -57,6 +57,8 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   inhomogeneous norm, `⟨x⟩ ^ r ≤ (1 + ‖x‖) ^ r` for `r ≥ 0`.
 * `TauCeti.one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow`: the comparison
   `⟨x⟩ ^ N ≤ 2 ^ N (1 + ‖x‖ ^ N)` of a natural power of the bracket with a power of the norm.
+* `TauCeti.one_add_norm_sq_rpow_half_le`: where `a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2` with `a, R > 0`,
+  every power `⟨ξ⟩ ^ u` is at most a constant times `R ^ u`.
 
 ## References
 
@@ -270,5 +272,32 @@ theorem one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow (x : E) (N : ℕ) :
         rw [one_pow]
         gcongr
         exacts [one_le_two, N.sub_le 1]
+
+/-- For `a > 0` and `R > 0`, where `a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2`, every power
+`(1 + ‖ξ‖ ^ 2) ^ (u / 2)` of the Japanese bracket is at most
+`max (a ^ (u / 2)) (b ^ (u / 2)) R ^ u`. -/
+theorem one_add_norm_sq_rpow_half_le {a b R : ℝ} (ha : 0 < a) (hR : 0 < R) {ξ : E}
+    (hξ : a * R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ∧ 1 + ‖ξ‖ ^ 2 ≤ b * R ^ 2) (u : ℝ) :
+    (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ max (a ^ (u / 2)) (b ^ (u / 2)) * R ^ u := by
+  have hb : 0 < b := pos_of_mul_pos_left ((mul_pos ha (by positivity)).trans_le
+    (hξ.1.trans hξ.2)) (by positivity)
+  have hRu (c : ℝ) (hc : 0 < c) : (c * R ^ 2) ^ (u / 2) = c ^ (u / 2) * R ^ u := by
+    rw [Real.mul_rpow hc.le (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul hR.le]
+    congr 2
+    push_cast
+    ring
+  rcases le_total 0 u with hu | hu
+  · calc (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ (b * R ^ 2) ^ (u / 2) :=
+          Real.rpow_le_rpow (by positivity) hξ.2 (by positivity)
+      _ ≤ _ := by
+          rw [hRu b hb]
+          gcongr
+          exact le_max_right _ _
+  · calc (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ (a * R ^ 2) ^ (u / 2) :=
+          Real.rpow_le_rpow_of_nonpos (by positivity) hξ.1 (by linarith)
+      _ ≤ _ := by
+          rw [hRu a ha]
+          gcongr
+          exact le_max_left _ _
 
 end TauCeti

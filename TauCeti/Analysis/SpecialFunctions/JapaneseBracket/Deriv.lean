@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Derivatives of powers of the Japanese bracket
@@ -26,7 +28,7 @@ nonpositive order, and of first derivatives composed with the Bessel potential o
 multipliers of Mihlin type, and so bounded on `Lᵖ` for `1 < p < ∞`.
 
 The derivative of `(1 + ‖x‖ ^ 2) ^ r` is `(1 + ‖x‖ ^ 2) ^ (r - 1)` times the linear map
-`2r ⟪x, ·⟫`, and a smooth function times a continuous linear map gains half a power of
+`2r ⟪x, ·⟫`, and a `C^k` function times a continuous linear map gains half a power of
 `1 + ‖x‖ ^ 2` in its derivative bounds
 (`ContinuousLinearMap.exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow`). The bounds follow
 by induction on `k`. Rescaling the argument by `c ≠ 0` changes `1 + ‖x‖ ^ 2` by at most a constant
@@ -42,11 +44,10 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   complex Bessel weight `(1 + ‖x‖ ^ 2) ^ (s / 2)`, in the form of symbol estimates of order `s`.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le`: the derivative bounds
   for `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r`.
-* `TauCeti.exists_norm_iteratedFDeriv_cutoff_smul_le`: the derivative bounds for a symbol of order
-  `m`, such as a bracket power, times a smooth cutoff `χ` localized where `1 + ‖x‖ ^ 2 ≍ R ^ 2` and
-  adapted to the scale `R`: the product is `O(R ^ m / R ^ k)` in its `k`-th derivative.
-* `TauCeti.one_add_norm_sq_rpow_half_le_one_add_norm_rpow`: for `p ≥ 0`,
-  `(1 + ‖x‖ ^ 2) ^ (p / 2) ≤ (1 + ‖x‖) ^ p`.
+* `TauCeti.exists_norm_iteratedFDeriv_cutoff_smul_le`: the derivative bounds for a `C^N` symbol
+  of order `m`, such as a bracket power, times a `C^N` cutoff `χ` localized where
+  `1 + ‖x‖ ^ 2 ≍ R ^ 2` and adapted to the scale `R`: for `k ≤ N`, the product is
+  `O(R ^ m / R ^ k)` in its `k`-th derivative.
 * `TauCeti.exists_one_add_norm_smul_sq_rpow_le`,
   `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the bracket power of a
   rescaled argument `c x` and its derivative bounds.
@@ -60,8 +61,6 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
 -/
 
 public section
-
-open scoped ContDiff
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedAddCommGroup G] [NormedSpace ℝ G]
 
@@ -80,17 +79,11 @@ theorem norm_iteratedFDeriv_le_one_add_norm_sq_rpow (L : E →L[ℝ] G) (j : ℕ
     exact Real.le_sqrt_of_sq_le (by linarith)
   · rw [norm_iteratedFDeriv_one, L.fderiv]
     simp
-  · -- The derivative of `L` is the constant map `L`, whose derivatives of positive order vanish.
-    have hL : fderiv ℝ L = fun _ ↦ L := funext fun _ ↦ L.fderiv
-    have h : iteratedFDeriv ℝ (j + 2) L x = 0 := by
-      rw [← norm_eq_zero, ← norm_iteratedFDeriv_fderiv, hL,
-        iteratedFDeriv_const_of_ne (Nat.succ_ne_zero j)]
-      simp
-    rw [h, norm_zero]
+  · rw [L.iteratedFDeriv_add_two, norm_zero]
     positivity
 
-/-- If the first `k` derivatives of a smooth function `g` satisfy the bracket bounds
-`‖D^i g x‖ ≤ C (1 + ‖x‖ ^ 2) ^ (ρ - i / 2)`, then the `k`-th derivative of `g x • L x`, for a
+/-- If the derivatives of order `i ≤ k` of a `C^k` function `g` satisfy the bracket bounds
+`‖D^i g x‖ ≤ C_i (1 + ‖x‖ ^ 2) ^ (ρ - i / 2)`, then the `k`-th derivative of `g x • L x`, for a
 continuous linear map `L`, satisfies the bracket bound of order `ρ + 1 / 2`. -/
 theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow (L : E →L[ℝ] G) {g : E → ℝ}
     {k : ℕ} (hg : ContDiff ℝ k g) {ρ : ℝ}
@@ -122,57 +115,22 @@ theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow (L : E →L[ℝ]
         ring
 
 /-- Composing on the left with a continuous linear map `L` preserves a bracket bound
-`‖D^k g x‖ ≤ C (1 + ‖x‖ ^ 2) ^ ρ`, with the constant multiplied by `‖L‖`. -/
+`‖D^k g x‖ ≤ C (1 + ‖x‖ ^ 2) ^ ρ` on the `k`-th derivative of a `C^k` function `g`. -/
 theorem exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] (L : F →L[ℝ] G) {g : E → F} {k : ℕ}
     (hg : ContDiff ℝ k g) {ρ : ℝ}
     (hgk : ∃ C, ∀ x, ‖iteratedFDeriv ℝ k g x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ρ) :
     ∃ C, ∀ x, ‖iteratedFDeriv ℝ k (fun x ↦ L (g x)) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ρ := by
   obtain ⟨C, hC⟩ := hgk
-  refine ⟨‖L‖ * max C 0, fun x ↦ ?_⟩
+  refine ⟨‖L‖ * C, fun x ↦ ?_⟩
   calc ‖iteratedFDeriv ℝ k (fun x ↦ L (g x)) x‖ ≤ ‖L‖ * ‖iteratedFDeriv ℝ k g x‖ :=
         L.norm_iteratedFDeriv_comp_left hg.contDiffAt le_rfl
-    _ ≤ ‖L‖ * (max C 0 * (1 + ‖x‖ ^ 2) ^ ρ) :=
-        mul_le_mul_of_nonneg_left ((hC x).trans
-          (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))) (norm_nonneg L)
-    _ = ‖L‖ * max C 0 * (1 + ‖x‖ ^ 2) ^ ρ := (mul_assoc _ _ _).symm
+    _ ≤ ‖L‖ * (C * (1 + ‖x‖ ^ 2) ^ ρ) := mul_le_mul_of_nonneg_left (hC x) (norm_nonneg L)
+    _ = ‖L‖ * C * (1 + ‖x‖ ^ 2) ^ ρ := (mul_assoc _ _ _).symm
 
 end ContinuousLinearMap
 
 namespace TauCeti
-
-/-- Where `a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2`, every power `(1 + ‖ξ‖ ^ 2) ^ (u / 2)` of the Japanese
-bracket is at most `max (a ^ (u / 2)) (b ^ (u / 2)) R ^ u`. -/
-theorem one_add_norm_sq_rpow_half_le {a b R : ℝ} (ha : 0 < a) (hR : 0 < R) {ξ : E}
-    (hξ : a * R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ∧ 1 + ‖ξ‖ ^ 2 ≤ b * R ^ 2) (u : ℝ) :
-    (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ max (a ^ (u / 2)) (b ^ (u / 2)) * R ^ u := by
-  have hb : 0 < b := pos_of_mul_pos_left ((mul_pos ha (by positivity)).trans_le
-    (hξ.1.trans hξ.2)) (by positivity)
-  have hRu (c : ℝ) (hc : 0 < c) : (c * R ^ 2) ^ (u / 2) = c ^ (u / 2) * R ^ u := by
-    rw [Real.mul_rpow hc.le (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul hR.le]
-    congr 2
-    push_cast
-    ring
-  rcases le_total 0 u with hu | hu
-  · calc (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ (b * R ^ 2) ^ (u / 2) :=
-          Real.rpow_le_rpow (by positivity) hξ.2 (by positivity)
-      _ ≤ _ := by
-          rw [hRu b hb]
-          gcongr
-          exact le_max_right _ _
-  · calc (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ (a * R ^ 2) ^ (u / 2) :=
-          Real.rpow_le_rpow_of_nonpos (by positivity) hξ.1 (by linarith)
-      _ ≤ _ := by
-          rw [hRu a ha]
-          gcongr
-          exact le_max_left _ _
-
-/-- For `p ≥ 0`, the bracket power `(1 + ‖x‖ ^ 2) ^ (p / 2)` is at most `(1 + ‖x‖) ^ p`. -/
-theorem one_add_norm_sq_rpow_half_le_one_add_norm_rpow (x : E) {p : ℝ} (hp : 0 ≤ p) :
-    (1 + ‖x‖ ^ 2) ^ (p / 2) ≤ (1 + ‖x‖) ^ p := by
-  rw [show p / 2 = 1 / 2 * p by ring, Real.rpow_mul (by positivity), ← Real.sqrt_eq_rpow]
-  gcongr
-  exact Real.sqrt_le_iff.2 ⟨by positivity, by nlinarith [norm_nonneg x]⟩
 
 section NormedSpace
 
@@ -274,11 +232,12 @@ theorem contDiff_ofReal_one_add_norm_sq_rpow (r : ℝ) {n : WithTop ℕ∞} :
     ContDiff ℝ n fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ r : ℝ) : ℂ) :=
   Complex.ofRealCLM.contDiff.comp (contDiff_one_add_norm_sq_rpow r)
 
-/-- The derivative of `(1 + ‖x‖ ^ 2) ^ r` is `(1 + ‖x‖ ^ 2) ^ (r - 1)` times `2r ⟪x, ·⟫`. -/
-theorem hasFDerivAt_one_add_norm_sq_rpow (r : ℝ) (x : E) :
-    HasFDerivAt (fun x : E ↦ (1 + ‖x‖ ^ 2) ^ r)
+/-- The derivative of `(1 + ‖x‖ ^ 2) ^ r` is `(1 + ‖x‖ ^ 2) ^ (r - 1)` times `2r ⟪x, ·⟫`, in the
+strict sense. -/
+theorem hasStrictFDerivAt_one_add_norm_sq_rpow (r : ℝ) (x : E) :
+    HasStrictFDerivAt (fun x : E ↦ (1 + ‖x‖ ^ 2) ^ r)
       ((1 + ‖x‖ ^ 2) ^ (r - 1) • ((2 * r) • innerSL ℝ x)) x := by
-  have h := ((hasStrictFDerivAt_norm_sq x).hasFDerivAt.const_add 1).rpow_const (p := r)
+  have h := ((hasStrictFDerivAt_norm_sq x).const_add 1).rpow_const (p := r)
     (Or.inl (by positivity))
   convert h using 1
   ext v
@@ -300,7 +259,7 @@ theorem exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (r : ℝ) (k : ℕ) :
   · -- The derivative is a lower bracket power times a continuous linear map.
     have hderiv : fderiv ℝ (fun x : E ↦ (1 + ‖x‖ ^ 2) ^ r) =
         fun x ↦ (1 + ‖x‖ ^ 2) ^ (r - 1) • ((2 * r) • innerSL ℝ) x :=
-      funext fun x ↦ (hasFDerivAt_one_add_norm_sq_rpow r x).fderiv
+      funext fun x ↦ (hasStrictFDerivAt_one_add_norm_sq_rpow r x).hasFDerivAt.fderiv
     obtain ⟨C, hC⟩ := ((2 * r) • innerSL ℝ).exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow
         (contDiff_one_add_norm_sq_rpow (r - 1))
         (ρ := r - 1) fun i hi ↦ ih i (Nat.lt_succ_of_le hi) (r - 1)
@@ -344,28 +303,20 @@ theorem exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le {c : ℝ} (hc : 
     (k : ℕ) :
     ∃ C, ∀ x : E, ‖iteratedFDeriv ℝ k (fun x : E ↦ (1 + ‖c • x‖ ^ 2) ^ r) x‖ ≤
       C * (1 + ‖x‖ ^ 2) ^ (r - k / 2) := by
-  set g : E →L[ℝ] E := c • ContinuousLinearMap.id ℝ E
   set f : E → ℝ := fun x ↦ (1 + ‖x‖ ^ 2) ^ r
   have hf : ContDiff ℝ k f := contDiff_one_add_norm_sq_rpow r
-  have hg (x : E) : g x = c • x := by simp [g]
   obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (E := E) r k
   obtain ⟨K, hK⟩ := exists_one_add_norm_smul_sq_rpow_le (E := E) hc (r - k / 2)
-  refine ⟨max C 0 * K * ‖g‖ ^ k, fun x ↦ ?_⟩
-  have hcomp : (fun x : E ↦ (1 + ‖c • x‖ ^ 2) ^ r) = f ∘ g := by
-    funext x
-    simp only [Function.comp_apply, f, hg]
-  rw [hcomp, g.iteratedFDeriv_comp_right hf x le_rfl]
-  calc ‖(iteratedFDeriv ℝ k f (g x)).compContinuousLinearMap fun _ ↦ g‖
-        ≤ ‖iteratedFDeriv ℝ k f (g x)‖ * ∏ _ : Fin k, ‖g‖ :=
-        ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _
-    _ = ‖iteratedFDeriv ℝ k f (g x)‖ * ‖g‖ ^ k := by simp
-    _ ≤ max C 0 * (1 + ‖c • x‖ ^ 2) ^ (r - k / 2) * ‖g‖ ^ k := by
+  refine ⟨|c| ^ k * max C 0 * K, fun x ↦ ?_⟩
+  -- The `k`-th derivative of `x ↦ f (c • x)` is `c ^ k` times that of `f` at `c • x`.
+  rw [iteratedFDeriv_comp_const_smul c hf, norm_smul, norm_pow, Real.norm_eq_abs]
+  calc |c| ^ k * ‖iteratedFDeriv ℝ k f (c • x)‖
+      ≤ |c| ^ k * (max C 0 * (1 + ‖c • x‖ ^ 2) ^ (r - k / 2)) := by
         gcongr
-        rw [← hg]
-        exact (hC (g x)).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
-    _ ≤ max C 0 * (K * (1 + ‖x‖ ^ 2) ^ (r - k / 2)) * ‖g‖ ^ k := by
+        exact (hC (c • x)).trans (by gcongr; exact le_max_left _ _)
+    _ ≤ |c| ^ k * (max C 0 * (K * (1 + ‖x‖ ^ 2) ^ (r - k / 2))) := by
         gcongr
         exact hK x
-    _ = max C 0 * K * ‖g‖ ^ k * (1 + ‖x‖ ^ 2) ^ (r - k / 2) := by ring
+    _ = |c| ^ k * max C 0 * K * (1 + ‖x‖ ^ 2) ^ (r - k / 2) := by ring
 
 end TauCeti

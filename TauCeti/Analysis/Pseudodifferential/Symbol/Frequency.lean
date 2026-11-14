@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Examples of frequency-only symbols
@@ -142,7 +143,7 @@ theorem not_exists_coefficient_eq_ofInner_coefficient [Nontrivial V] {v : Coordi
           Real.rpow_le_rpow_of_exponent_le (by nlinarith) (by linarith [le_max_left m 0])
       _ ≤ (1 + S / 2) ^ m₀ := by
           simpa [abs_of_nonneg hS0.le] using
-            one_add_norm_sq_rpow_half_le_one_add_norm_rpow (S / 2) (le_max_right m 0)
+            one_add_norm_sq_rpow_le_one_add_norm_rpow (S / 2) (le_max_right m 0)
       _ ≤ S ^ m₀ := Real.rpow_le_rpow (by positivity) (by linarith) (le_max_right m 0)
   have hbound : C * (1 + (S / 2) ^ 2) ^ (m / 2) ≤ |C| * S ^ m₀ :=
     (mul_le_mul_of_nonneg_right (le_abs_self C) (by positivity)).trans
