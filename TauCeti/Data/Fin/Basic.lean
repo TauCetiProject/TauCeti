@@ -135,6 +135,8 @@ range, so the value is a `dite` rather than a plain application.
   read off the value.
 * `TauCeti.sum_ite_val_add`: a sum against the indicator of `b = k + j` picks out the summand at
   `b - j`, or vanishes when there is no such index.
+* `TauCeti.finSigmaFinEquiv_lt_finSigmaFinEquiv_iff`: listing blocks consecutively orders their
+  entries lexicographically.
 * `TauCeti.exists_foldl_eq_of_parent`: a decreasing parent table gives paths from its root.
 * `TauCeti.not_mem_Ioo_castSucc_succ`: a monotone `Fin` family has no value strictly between
   consecutive entries.
@@ -156,22 +158,22 @@ namespace Finset
 
 /-- The sum of the first `k` entries of the reversed range `N - 1, ..., 0`. -/
 theorem sum_range_const_sub_succ (N k : ℕ) (hk : k ≤ N) :
-    Finset.sum (Finset.range k) (fun x => N - (x + 1)) =
+    Finset.sum (range k) (fun x => N - (x + 1)) =
       k.choose 2 + k * (N - k) := by
   calc
-    Finset.sum (Finset.range k) (fun x => N - (x + 1)) =
-        Finset.sum (Finset.range k) (fun x => (N - k) + (k - 1 - x)) := by
-      apply Finset.sum_congr rfl
+    Finset.sum (range k) (fun x => N - (x + 1)) =
+        Finset.sum (range k) (fun x => (N - k) + (k - 1 - x)) := by
+      apply sum_congr rfl
       intro x hx
-      have hxk := Finset.mem_range.mp hx
+      have hxk := mem_range.mp hx
       omega
-    _ = k * (N - k) + Finset.sum (Finset.range k) (fun x => k - 1 - x) := by
-      rw [Finset.sum_add_distrib]
+    _ = k * (N - k) + Finset.sum (range k) (fun x => k - 1 - x) := by
+      rw [sum_add_distrib]
       simp
-    _ = k * (N - k) + Finset.sum (Finset.range k) (fun x => x) := by
-      rw [Finset.sum_range_reflect (fun x => x) k]
+    _ = k * (N - k) + Finset.sum (range k) (fun x => x) := by
+      rw [sum_range_reflect (fun x => x) k]
     _ = k.choose 2 + k * (N - k) := by
-      rw [Finset.sum_range_id, Nat.choose_two_right]
+      rw [sum_range_id, Nat.choose_two_right]
       omega
 
 /-- Counting the elements of `S` below `i.succ` adds `1` to those below `i.castSucc` when
@@ -201,15 +203,15 @@ namespace Fin
 
 /-- The last index of the initial segment ending at `i` embeds as `i`. -/
 theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
-    Fin.castLE (Nat.succ_le_iff.mpr i.isLt) (Fin.last i.val) = i := by
+    castLE (Nat.succ_le_iff.mpr i.isLt) (last i.val) = i := by
   rfl
 
 /-- The sum of the values in the first `k` positions of the reversed finite ordinal `Fin N`. -/
 theorem sum_rev_castLE (N k : ℕ) (hk : k ≤ N) :
-    (∑ i : Fin k, (Fin.rev (Fin.castLE hk i) : ℕ)) =
+    (∑ i : Fin k, (rev (castLE hk i) : ℕ)) =
       k.choose 2 + k * (N - k) := by
   rw [Finset.sum_fin_eq_sum_range]
-  simp only [Fin.rev, Fin.castLE]
+  simp only [rev, castLE]
   calc
     Finset.sum (Finset.range k)
         (fun x => if h : x < k then N - (x + 1) else 0) =
@@ -239,24 +241,24 @@ theorem sum_shift_mul_eq {K : Type*} [Field K] [NeZero (2 : K)] {N : ℕ} (b : F
 /-- The final partial product is the product of all the entries. -/
 @[to_additive /-- The final partial sum is the sum of all the entries. -/]
 theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) :
-    Fin.partialProd f (Fin.last n) = ∏ i, f i := by
-  rw [Fin.partialProd, Fin.val_last]
-  rw [(List.take_eq_self_iff _).mpr (by simp), Fin.prod_ofFn]
+    partialProd f (last n) = ∏ i, f i := by
+  rw [partialProd, val_last]
+  rw [(List.take_eq_self_iff _).mpr (by simp), prod_ofFn]
 
 /-- The last entry times the preceding partial product is the product of all entries. -/
 theorem last_mul_partialProd {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) :
-    f (Fin.last n) * Fin.partialProd (Fin.init f) (Fin.last n) = ∏ i, f i := by
-  rw [mul_comm, Fin.partialProd_last, Fin.init_def, ← Fin.prod_univ_castSucc f]
+    f (last n) * partialProd (init f) (last n) = ∏ i, f i := by
+  rw [mul_comm, partialProd_last, init_def, ← prod_univ_castSucc f]
 
 /-- Multiplying two adjacent entries of a tuple does not change the product of all its
 entries. -/
 @[to_additive (attr := simp)
   /-- Adding two adjacent entries of a tuple does not change the sum of all its entries. -/]
 theorem prod_contractNth_castSucc {M : Type*} [CommMonoid M] {n : ℕ} (j : Fin (n + 1))
-    (g : Fin (n + 2) → M) : ∏ k, Fin.contractNth j.castSucc (· * ·) g k = ∏ k, g k := by
-  have hlast : j.castSucc.succ.succAbove (Fin.last (n + 1)) = Fin.last (n + 2) :=
-    Fin.succAbove_of_le_castSucc _ _ (by simp [Fin.le_def]; omega)
-  rw [← partialProd_last, ← partialProd_last, Fin.partialProd_contractNth, Function.comp_apply,
+    (g : Fin (n + 2) → M) : ∏ k, contractNth j.castSucc (· * ·) g k = ∏ k, g k := by
+  have hlast : j.castSucc.succ.succAbove (last (n + 1)) = last (n + 2) :=
+    succAbove_of_le_castSucc _ _ (by simp [le_def]; omega)
+  rw [← partialProd_last, ← partialProd_last, partialProd_contractNth, Function.comp_apply,
     hlast]
 
 /-- The final partial product of a tuple is its first entry times the final partial product of
@@ -298,7 +300,7 @@ theorem prod_univ_eq_prod_castLE_mul {M : Type*} [CommMonoid M] {n : ℕ} (i : F
     simp [← Finset.coe_inj, Set.Iio_def]
   rw [← Finset.prod_subset (Finset.subset_univ (Finset.Iic i))
       fun j _ hj => hf j (by simpa using hj),
-    ← Finset.Iio_insert, Finset.prod_insert Finset.notMem_Iio_self, mul_comm, ← hIio,
+    ← Finset.insert_Iio, Finset.prod_insert Finset.notMem_Iio_self, mul_comm, ← hIio,
     Finset.prod_map]
   simp only [castLEEmb_apply]
 
@@ -306,12 +308,12 @@ theorem prod_univ_eq_prod_castLE_mul {M : Type*} [CommMonoid M] {n : ℕ} (i : F
 @[simp]
 theorem rev_finRotate_rev {n : ℕ} (i : Fin n) :
     haveI := i.neZero
-    Fin.rev (Fin.rev i + 1) = (finRotate n).symm i := by
+    rev (rev i + 1) = (finRotate n).symm i := by
   cases n with
-  | zero => exact Fin.elim0 i
+  | zero => exact elim0 i
   | succ n =>
-    rw [finRotate_symm_apply, ← Fin.last_sub, ← Fin.last_sub]
-    have hlast : Fin.last n = (-1 : Fin (n + 1)) := by
+    rw [finRotate_symm_apply, ← last_sub, ← last_sub]
+    have hlast : last n = (-1 : Fin (n + 1)) := by
       apply Fin.ext
       simp
     simp [sub_eq_add_neg, hlast, add_comm, add_left_comm]
@@ -320,20 +322,20 @@ theorem rev_finRotate_rev {n : ℕ} (i : Fin n) :
 @[simp]
 theorem rev_finRotate_symm {n : ℕ} (i : Fin n) :
     haveI := i.neZero
-    Fin.rev (i - 1) = finRotate n (Fin.rev i) := by
-  apply Fin.rev_injective
-  simp only [Fin.rev_rev]
+    rev (i - 1) = finRotate n (rev i) := by
+  apply rev_injective
+  simp only [rev_rev]
   simpa only [finRotate_apply, finRotate_symm_apply] using (rev_finRotate_rev i).symm
 
 /-- The map `i ↦ finRotate n i.rev`, which is negation modulo `n`, is an involution. -/
 theorem finRotate_rev_finRotate_rev {n : ℕ} (i : Fin n) :
     finRotate n (finRotate n i.rev).rev = i := by
   cases n with
-  | zero => exact Fin.elim0 i
+  | zero => exact elim0 i
   | succ n =>
     have := i.isLt
     ext
-    simp only [coe_finRotate, Fin.ext_iff, Fin.val_last, Fin.val_rev]
+    simp only [coe_finRotate, Fin.ext_iff, val_last, val_rev]
     split_ifs <;> omega
 
 /-- Negation modulo `n` reverses the cyclic rotation: `-(i + 1) + 1 = -i`. -/
@@ -348,7 +350,7 @@ theorem coe_finRotate_pow {n : ℕ} (k : ℕ) (c : Fin n) :
   | zero => simp [Nat.mod_eq_of_lt c.isLt]
   | succ k ih =>
     have : NeZero n := ⟨Nat.pos_iff_ne_zero.mp c.pos⟩
-    rw [pow_succ', Equiv.Perm.mul_apply, finRotate_apply, Fin.val_add, ih, Fin.val_one',
+    rw [pow_succ', Equiv.Perm.mul_apply, finRotate_apply, val_add, ih, val_one',
       ← Nat.add_mod, ← add_assoc]
 
 /-- Away from the last index, the cyclic permutation `finRotate n` adds one without wrapping
@@ -460,10 +462,10 @@ theorem finRotate_symm_zero {m : ℕ} : (finRotate (m + 1)).symm 0 = last m :=
 values of `i.succ.succAbove` away from `i`. -/
 theorem eq_succ_or_eq_castSucc_or_eq_succAbove {n : ℕ} (i : Fin n) (j : Fin (n + 1)) :
     j = i.succ ∨ j = i.castSucc ∨ ∃ k, k ≠ i ∧ j = i.succ.succAbove k := by
-  obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j
+  obtain rfl | ⟨k, rfl⟩ := eq_self_or_eq_succAbove i.succ j
   · exact .inl rfl
   by_cases hk : k = i
-  · exact .inr (.inl (hk ▸ Fin.succAbove_succ_self k))
+  · exact .inr (.inl (hk ▸ succAbove_succ_self k))
   · exact .inr (.inr ⟨k, hk, rfl⟩)
 
 /-- Rotating a tuple of even length alternating between two entries swaps the two entries. -/
@@ -474,7 +476,7 @@ theorem ite_even_comp_finRotate_symm {α : Type*} {n : ℕ} (hn : Even n) (x y :
   cases n with
   | zero => exact k.elim0
   | succ n =>
-    cases k using Fin.cases with
+    cases k using cases with
     | zero =>
       rw [Function.comp_apply, finRotate_symm_zero]
       simp [Nat.even_add_one.1 hn]
@@ -571,11 +573,11 @@ theorem eq_castSucc_last_or_eq_last {n : ℕ} {i : Fin (n + 2)} (hi : n ≤ i.va
 `Fin n`. -/
 theorem exists_succ_succ_eq {n : ℕ} {j : Fin (n + 2)} :
     (∃ k : Fin n, k.succ.succ = j) ↔ 1 < j := by
-  refine ⟨by rintro ⟨k, rfl⟩; simp [Fin.lt_def], fun hj => ?_⟩
-  cases j using Fin.cases with
+  refine ⟨by rintro ⟨k, rfl⟩; simp [lt_def], fun hj => ?_⟩
+  cases j using cases with
   | zero => exact absurd hj (by simp)
   | succ j =>
-    cases j using Fin.cases with
+    cases j using cases with
     | zero => exact absurd hj (by simp)
     | succ k => exact ⟨k, rfl⟩
 
@@ -619,7 +621,7 @@ theorem val_orderSucc_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
 /-- At the top element of `Fin n` the order successor is that element itself. -/
 theorem orderSucc_eq_self_of_not_lt {n : ℕ} {i : Fin n} (h : ¬(i : ℕ) + 1 < n) :
     (Order.succ i : Fin n) = i :=
-  IsMax.succ_eq fun b _ => Fin.le_def.2 (by have := b.isLt; have := i.isLt; omega)
+  IsMax.succ_eq fun b _ => le_def.2 (by have := b.isLt; have := i.isLt; omega)
 
 /-- Two insertions into a tuple commute, up to reindexing: inserting `a` at `i` after inserting
 `b` at `j` is inserting `b` at `i.succAbove j` after inserting `a` at `j.predAbove i`.  This is the
@@ -646,7 +648,7 @@ theorem insertNth_append_castAdd {n m : ℕ} {β : Sort*} (i : Fin (n + 1)) (a :
   rw [eq_insertNth_iff]
   refine ⟨by simp, ?_⟩
   funext k
-  induction k using Fin.addCases with
+  induction k using addCases with
   | left k =>
       have hk : Fin.cast (by omega : (n + m) + 1 = (n + 1) + m)
           ((Fin.cast (by omega) (i.castAdd m)).succAbove (k.castAdd m)) =
@@ -672,7 +674,7 @@ theorem insertNth_append_natAdd {n m : ℕ} {β : Sort*} (i : Fin (m + 1)) (a : 
   rw [eq_insertNth_iff]
   refine ⟨by simp, ?_⟩
   funext k
-  induction k using Fin.addCases with
+  induction k using addCases with
   | left k => simp [removeNth, natAdd_succAbove_castAdd]
   | right k => simp [removeNth, natAdd_succAbove_natAdd]
 
@@ -682,69 +684,69 @@ theorem insertNth_append_natAdd {n m : ℕ} {β : Sort*} (i : Fin (m + 1)) (a : 
 that block is inserting `x` at `i` into the restriction of `y` to its first `k` entries. -/
 theorem insertNth_castAdd_comp_castAdd {α : Type*} {k l : ℕ} (i : Fin (k + 1)) (x : α)
     (y : Fin (k + 1 + l) → α) :
-    (fun a : Fin (k + 1) => Fin.insertNth (α := fun _ => α)
-      (Fin.castAdd (l + 1) i : Fin (k + 1 + l + 1)) x y (Fin.castAdd (l + 1) a)) =
-      Fin.insertNth (α := fun _ => α) i x
+    (fun a : Fin (k + 1) => insertNth (α := fun _ => α)
+      (castAdd (l + 1) i : Fin (k + 1 + l + 1)) x y (castAdd (l + 1) a)) =
+      insertNth (α := fun _ => α) i x
         (fun b : Fin k => y (Fin.cast (show k + (l + 1) = k + 1 + l by omega)
-          (Fin.castAdd (l + 1) b))) := by
-  rw [Fin.eq_insertNth_iff]
-  refine ⟨Fin.insertNth_apply_same _ _ _, funext fun b => ?_⟩
-  have : (Fin.castAdd (l + 1) (i.succAbove b) : Fin (k + 1 + l + 1)) =
-      (Fin.castAdd (l + 1) i : Fin (k + 1 + l + 1)).succAbove
-        (Fin.cast (show k + (l + 1) = k + 1 + l by omega) (Fin.castAdd (l + 1) b)) := by
+          (castAdd (l + 1) b))) := by
+  rw [eq_insertNth_iff]
+  refine ⟨insertNth_apply_same _ _ _, funext fun b => ?_⟩
+  have : (castAdd (l + 1) (i.succAbove b) : Fin (k + 1 + l + 1)) =
+      (castAdd (l + 1) i : Fin (k + 1 + l + 1)).succAbove
+        (Fin.cast (show k + (l + 1) = k + 1 + l by omega) (castAdd (l + 1) b)) := by
     ext
-    simp only [Fin.val_castAdd, Fin.val_succAbove, Fin.val_cast]
-  simp only [Fin.removeNth, this, Fin.insertNth_apply_succAbove]
+    simp only [val_castAdd, val_succAbove, val_cast]
+  simp only [removeNth, this, insertNth_apply_succAbove]
 
 /-- Inserting `x` at a slot of the first block of `Fin ((k + 1) + (l + 1))` leaves the entries of
 the second block as the corresponding entries of `y`, shifted down by one. -/
 @[simp]
 theorem insertNth_castAdd_apply_natAdd {α : Type*} {k l : ℕ} (i : Fin (k + 1)) (x : α)
     (y : Fin (k + 1 + l) → α) (b : Fin (l + 1)) :
-    Fin.insertNth (α := fun _ => α) (Fin.castAdd (l + 1) i : Fin (k + 1 + l + 1)) x y
-      (Fin.natAdd (k + 1) b) =
-      y (Fin.cast (show k + (l + 1) = k + 1 + l by omega) (Fin.natAdd k b)) := by
-  have : (Fin.natAdd (k + 1) b : Fin (k + 1 + l + 1)) =
-      (Fin.castAdd (l + 1) i : Fin (k + 1 + l + 1)).succAbove
-        (Fin.cast (show k + (l + 1) = k + 1 + l by omega) (Fin.natAdd k b)) := by
+    insertNth (α := fun _ => α) (castAdd (l + 1) i : Fin (k + 1 + l + 1)) x y
+      (natAdd (k + 1) b) =
+      y (Fin.cast (show k + (l + 1) = k + 1 + l by omega) (natAdd k b)) := by
+  have : (natAdd (k + 1) b : Fin (k + 1 + l + 1)) =
+      (castAdd (l + 1) i : Fin (k + 1 + l + 1)).succAbove
+        (Fin.cast (show k + (l + 1) = k + 1 + l by omega) (natAdd k b)) := by
     ext
-    simp only [Fin.val_natAdd, Fin.val_castAdd, Fin.val_succAbove, Fin.val_cast]
+    simp only [val_natAdd, val_castAdd, val_succAbove, val_cast]
     split_ifs <;> omega
-  rw [this, Fin.insertNth_apply_succAbove]
+  rw [this, insertNth_apply_succAbove]
 
 /-- Inserting `x` at a slot of the second block of `Fin (k + (l + 1))` leaves the entries of the
 first block as the corresponding entries of `y`. -/
 @[simp]
 theorem insertNth_natAdd_apply_castAdd {α : Type*} {k l : ℕ} (i : Fin (l + 1)) (x : α)
     (y : Fin (k + l) → α) (a : Fin k) :
-    Fin.insertNth (α := fun _ => α) (Fin.natAdd k i : Fin (k + l + 1)) x y
-      (Fin.castAdd (l + 1) a) = y (Fin.castAdd l a) := by
-  have : (Fin.castAdd (l + 1) a : Fin (k + l + 1)) =
-      (Fin.natAdd k i : Fin (k + l + 1)).succAbove (Fin.castAdd l a) := by
+    insertNth (α := fun _ => α) (natAdd k i : Fin (k + l + 1)) x y
+      (castAdd (l + 1) a) = y (castAdd l a) := by
+  have : (castAdd (l + 1) a : Fin (k + l + 1)) =
+      (natAdd k i : Fin (k + l + 1)).succAbove (castAdd l a) := by
     ext
-    simp only [Fin.val_natAdd, Fin.val_castAdd, Fin.val_succAbove]
+    simp only [val_natAdd, val_castAdd, val_succAbove]
     split_ifs <;> omega
-  rw [this, Fin.insertNth_apply_succAbove]
+  rw [this, insertNth_apply_succAbove]
 
 /-- Inserting `x` at a slot `i` of the second block of `Fin (k + (l + 1))` and restricting to that
 block is inserting `x` at `i` into the restriction of `y` to its last `l` entries. -/
 theorem insertNth_natAdd_comp_natAdd {α : Type*} {k l : ℕ} (i : Fin (l + 1)) (x : α)
     (y : Fin (k + l) → α) :
-    (fun b : Fin (l + 1) => Fin.insertNth (α := fun _ => α)
-      (Fin.natAdd k i : Fin (k + l + 1)) x y (Fin.natAdd k b)) =
-      Fin.insertNth (α := fun _ => α) i x (fun c : Fin l => y (Fin.natAdd k c)) := by
-  rw [Fin.eq_insertNth_iff]
-  refine ⟨Fin.insertNth_apply_same _ _ _, funext fun c => ?_⟩
-  have : (Fin.natAdd k (i.succAbove c) : Fin (k + l + 1)) =
-      (Fin.natAdd k i : Fin (k + l + 1)).succAbove (Fin.natAdd k c) := by
+    (fun b : Fin (l + 1) => insertNth (α := fun _ => α)
+      (natAdd k i : Fin (k + l + 1)) x y (natAdd k b)) =
+      insertNth (α := fun _ => α) i x (fun c : Fin l => y (natAdd k c)) := by
+  rw [eq_insertNth_iff]
+  refine ⟨insertNth_apply_same _ _ _, funext fun c => ?_⟩
+  have : (natAdd k (i.succAbove c) : Fin (k + l + 1)) =
+      (natAdd k i : Fin (k + l + 1)).succAbove (natAdd k c) := by
     ext
-    simp only [Fin.val_natAdd, Fin.val_succAbove]
+    simp only [val_natAdd, val_succAbove]
     split_ifs <;> omega
-  simp only [Fin.removeNth, this, Fin.insertNth_apply_succAbove]
+  simp only [removeNth, this, insertNth_apply_succAbove]
 
 /-- An open interval in `Fin n` with `n ≤ 2` is empty. -/
 theorem Ioo_eq_empty_of_le_two {n : ℕ} (hn : n ≤ 2) (a b : Fin n) : Finset.Ioo a b = ∅ :=
-  Finset.card_eq_zero.1 (by rw [Fin.card_Ioo]; omega)
+  Finset.card_eq_zero.1 (by rw [card_Ioo]; omega)
 
 /-- A finset inside an open interval in `Fin n` with `n ≤ 2` is empty. -/
 theorem eq_empty_of_subset_Ioo_of_le_two {n : ℕ} (hn : n ≤ 2) {a b : Fin n}
@@ -755,15 +757,15 @@ theorem eq_empty_of_subset_Ioo_of_le_two {n : ℕ} (hn : n ≤ 2) {a b : Fin n}
 order homomorphism `ρ` with `l.succAbove (ρ v) = v` for every `v ≠ l`. -/
 theorem exists_orderHom_succAbove_eq {m : ℕ} (l : Fin (m + 2)) :
     ∃ ρ : Fin (m + 2) →o Fin (m + 1), ∀ v, v ≠ l → l.succAbove (ρ v) = v := by
-  by_cases hl : l = Fin.last (m + 1)
+  by_cases hl : l = last (m + 1)
   · subst hl
-    refine ⟨(Fin.last m).predAboveOrderHom, fun v hv ↦ ?_⟩
-    rw [← Fin.succ_last] at hv ⊢
-    exact Fin.succ_succAbove_predAbove hv
+    refine ⟨(last m).predAboveOrderHom, fun v hv ↦ ?_⟩
+    rw [← succ_last] at hv ⊢
+    exact succ_succAbove_predAbove hv
   · refine ⟨(l.castPred hl).predAboveOrderHom, fun v hv ↦ ?_⟩
-    have := Fin.succAbove_predAbove (p := l.castPred hl) (i := v)
-      (by rwa [Fin.castSucc_castPred])
-    rwa [Fin.castSucc_castPred] at this
+    have := succAbove_predAbove (p := l.castPred hl) (i := v)
+      (by rwa [castSucc_castPred])
+    rwa [castSucc_castPred] at this
 
 end Fin
 
@@ -911,7 +913,7 @@ namespace Fin
 below `c` at some step: there is `i` with `g i.succ < c < g i.castSucc`. -/
 theorem exists_succ_lt_lt_castSucc {α : Type*} [LinearOrder α] {k : ℕ} {g : Fin (k + 1) → α}
     {c : α} (hne : ∀ i, g i ≠ c)
-    (h0 : c < g 0) (hl : g (Fin.last k) < c) :
+    (h0 : c < g 0) (hl : g (last k) < c) :
     ∃ i : Fin k, g i.succ < c ∧ c < g i.castSucc := by
   have hk : k ≠ 0 := by
     rintro rfl
@@ -1029,6 +1031,38 @@ theorem sum_ite_val_add {M : Type*} [AddCommMonoid M] {n : ℕ} (f : Fin n → M
     intro k _
     have := k.isLt
     exact ite_eq_right (by omega)
+
+open _root_.Finset in
+/-- Listing blocks of sizes `d 0, …, d (k - 1)` consecutively, `finSigmaFinEquiv` orders the
+entries lexicographically: first by block, then by position within the block. -/
+theorem finSigmaFinEquiv_lt_finSigmaFinEquiv_iff {k : ℕ} {d : Fin k → ℕ}
+    {x y : (i : Fin k) × Fin (d i)} :
+    finSigmaFinEquiv x < finSigmaFinEquiv y ↔ x.1 < y.1 ∨ x.1 = y.1 ∧ (x.2 : ℕ) < y.2 := by
+  -- The offset of block `i` is the sum of the sizes of the blocks before it.
+  set s : Fin k → ℕ := fun i ↦ ∑ j : Fin i, d (Fin.castLE i.2.le j) with hs
+  have hoff (i j : Fin k) (h : i < j) : s i + d i ≤ s j := by
+    set F : ℕ → ℕ := fun l ↦ if h : l < k then d ⟨l, h⟩ else 0
+    have hF (i : Fin k) : s i = ∑ l ∈ range i, F l := by
+      rw [hs, ← Fin.sum_univ_eq_sum_range]
+      refine Fintype.sum_congr _ _ fun l ↦ ?_
+      simp [F, l.2.trans i.2, Fin.castLE]
+    have hFi : F i = d i := by simp [F]
+    rw [hF, hF, ← hFi, ← sum_range_succ, ← sum_range_add_sum_Ico F (Fin.lt_def.1 h)]
+    exact Nat.le_add_right _ _
+  have hval (x : (i : Fin k) × Fin (d i)) : (finSigmaFinEquiv x : ℕ) = s x.1 + x.2 :=
+    finSigmaFinEquiv_apply x
+  rw [Fin.lt_def, hval, hval]
+  rcases x with ⟨i, a⟩
+  rcases y with ⟨j, c⟩
+  dsimp only
+  rcases lt_trichotomy i j with h | rfl | h
+  · have := hoff i j h
+    simp only [h, true_or, iff_true]
+    omega
+  · simp
+  · have := hoff j i h
+    simp only [h.not_gt, h.ne', false_and, or_self, iff_false, not_lt]
+    omega
 
 /-! ### Cyclic index arithmetic in `Fin 3` -/
 

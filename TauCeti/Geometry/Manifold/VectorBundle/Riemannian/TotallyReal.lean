@@ -234,15 +234,9 @@ theorem exists_contMDiffRiemannianMetric_compatible_totallyReal_on {n : ℕ∞}
     (b ∈ S → ∀ a ∈ L b, ∀ c ∈ L b, s a (Complex.I • c) = 0)}
   have ht (b : B) : Convex ℝ (t b) := by
     rintro s ⟨hs₁, hs₂, hs₃, hs₄⟩ s' ⟨hs₁', hs₂', hs₃', hs₄'⟩ a d ha hd had
-    refine ⟨fun v w ↦ by simp [hs₁ v w, hs₁' v w], fun v hv ↦ ?_,
-      fun v w ↦ by simp [hs₃ v w, hs₃' v w],
+    obtain ⟨h₁, h₂⟩ := convex_setOfPred_symm_pos ⟨hs₁, hs₂⟩ ⟨hs₁', hs₂'⟩ ha hd had
+    exact ⟨h₁, h₂, fun v w ↦ by simp [hs₃ v w, hs₃' v w],
       fun hb x hx y hy ↦ by simp [hs₄ hb x hx y hy, hs₄' hb x hx y hy]⟩
-    have heval : (a • s + d • s') v v = a * s v v + d * s' v v := by simp
-    rw [heval]
-    rcases ha.eq_or_lt with rfl | ha
-    · have hd1 : d = 1 := by simpa using had
-      simpa [hd1] using hs₂' v hv
-    · exact add_pos_of_pos_of_nonneg (mul_pos ha (hs₂ v hv)) (mul_nonneg hd (hs₂' v hv).le)
   obtain ⟨σ, hσ⟩ := exists_contMDiffSection_forall_mem_convex_of_local (n := n) IB
     (fun b ↦ V b →L[ℝ] V b →L[ℝ] ℝ) t ht fun x₀ ↦ by
       by_cases hx₀ : x₀ ∈ S
@@ -283,7 +277,7 @@ theorem exists_contMDiffRiemannianMetric_compatible_totallyReal_on {n : ℕ∞}
           refine ⟨fun v w ↦ ?_, fun v hv ↦ ?_, fun v w ↦ ?_, fun _ a ha c hc ↦ ?_⟩
           · rw [hs y hy, hs y hy]
             exact ((hLW y hy).isSymm_compatibleForm
-              (LinearMap.BilinForm.isSymm_def.2 fun v w ↦ by simpa using g.symm y v w)).eq v w
+              fun a _ b _ ↦ by simpa using g.symm y a b).eq v w
           · rw [hs y hy]
             exact (hLW y hy).compatibleForm_pos hJ (fun a _ ha ↦ by simpa using g.pos y a ha) hv
           · rw [hs y hy, hs y hy]

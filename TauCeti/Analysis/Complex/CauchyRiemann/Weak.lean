@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Complex.RealDeriv
+import TauCeti.Analysis.Complex.RealDeriv
 import Mathlib.MeasureTheory.Measure.OpenPos
 
 /-!
@@ -33,6 +34,9 @@ them, so the linear equations with arbitrary coefficient fields are special case
 
 * `TauCeti.isWeakCauchyRiemannOn_iff_forall_hasWeakFDerivOn`: the equation does not depend on
   which weak derivative is used, since weak derivatives agree almost everywhere.
+* `TauCeti.isWeakCauchyRiemannOn_congr` and `TauCeti.isWeakCauchyRiemannOn_congr_ae`: the
+  equation only sees `u` on `U`, and `J` and `η` along the graph of `u` almost everywhere on the
+  interior.
 * `TauCeti.isWeakCauchyRiemannOn_iff_of_contDiffOn`: for `u` of class `C¹` on an open set `Ω`,
   with `J` and `η` continuous along `u`, the predicate is the pointwise equation on `Ω` for the
   classical derivative, for every exponent `p`.
@@ -135,7 +139,41 @@ theorem mono_exponent (h : IsWeakCauchyRiemannOn p U J η u) (hqp : q ≤ p) :
   obtain ⟨hc, hu, D, hD, hDp, hae⟩ := h
   exact ⟨hc, hu.mono_exponent hqp, D, hD, hDp.mono_exponent hqp, hae⟩
 
+/-- A weak solution stays a weak solution when it is replaced by a map agreeing with it on `U`.
+The predicate only sees values on `U`. -/
+theorem congr (h : IsWeakCauchyRiemannOn p U J η u) {v : ℂ → V} (huv : Set.EqOn u v U) :
+    IsWeakCauchyRiemannOn p U J η v := by
+  obtain ⟨hc, hu, D, hD, hDp, hae⟩ := isWeakCauchyRiemannOn_iff.1 h
+  have hint : u =ᵐ[volume.restrict (interior U)] v :=
+    (ae_restrict_iff' measurableSet_interior).2
+      (Filter.Eventually.of_forall fun z hz => huv (interior_subset hz))
+  refine isWeakCauchyRiemannOn_iff.2 ⟨hc.congr fun z hz => (huv hz).symm,
+    memLpLoc_iff.2 fun K hK hKc => (memLpLoc_iff.1 hu K hK hKc).ae_eq
+    ((ae_restrict_iff' hKc.measurableSet).2 (Filter.Eventually.of_forall fun z hz => huv (hK hz))),
+    D, hD.congr_ae hint, hDp, ?_⟩
+  filter_upwards [hae, hint] with z hz hzv
+  rwa [← hzv]
+
 end IsWeakCauchyRiemannOn
+
+/-- The predicate only sees the values of `u` on `U`. -/
+theorem isWeakCauchyRiemannOn_congr {v : ℂ → V} (huv : Set.EqOn u v U) :
+    IsWeakCauchyRiemannOn p U J η u ↔ IsWeakCauchyRiemannOn p U J η v :=
+  ⟨fun h => h.congr huv, fun h => h.congr huv.symm⟩
+
+/-- The predicate only sees `J` and `η` along the graph of `u`, almost everywhere on the interior
+of `U`: changing them off this graph, or on a null set of the interior, does not change the
+equation. -/
+theorem isWeakCauchyRiemannOn_congr_ae {J' : ℂ → V → V →L[ℝ] V} {η' : ℂ → V → V}
+    (hJ : ∀ᵐ z ∂volume.restrict (interior U), J z (u z) = J' z (u z))
+    (hη : ∀ᵐ z ∂volume.restrict (interior U), η z (u z) = η' z (u z)) :
+    IsWeakCauchyRiemannOn p U J η u ↔ IsWeakCauchyRiemannOn p U J' η' u := by
+  refine ⟨fun ⟨hc, hu, D, hD, hDp, hae⟩ => ⟨hc, hu, D, hD, hDp, ?_⟩,
+    fun ⟨hc, hu, D, hD, hDp, hae⟩ => ⟨hc, hu, D, hD, hDp, ?_⟩⟩
+  · filter_upwards [hae, hJ, hη] with z hz hJz hηz
+    rwa [← hJz, ← hηz]
+  · filter_upwards [hae, hJ, hη] with z hz hJz hηz
+    rwa [hJz, hηz]
 
 /-- A weak solution is a continuous map in `W^{1,p}_loc` of `U` for which the equation holds with
 every weak derivative on the interior. -/
@@ -230,6 +268,13 @@ theorem isWeakLinearCauchyRiemannOn_iff :
         ∀ᵐ z ∂volume.restrict (interior U), D z 1 + A z (D z I) + C z (ξ z) = 0 := by
   simp only [IsWeakLinearCauchyRiemannOn, isWeakCauchyRiemannOn_iff, add_eq_zero_iff_eq_neg]
 
+/-- On an open set `Ω`, the linear equation with the weak derivative taken on `Ω` itself. -/
+theorem isWeakLinearCauchyRiemannOn_iff_of_isOpen :
+    IsWeakLinearCauchyRiemannOn p (Ω : Set ℂ) A C ξ ↔ ContinuousOn ξ Ω ∧ MemLpLoc p Ω ξ ∧
+      ∃ D : ℂ → ℂ →L[ℝ] V, HasWeakFDerivOn volume Ω ξ D ∧ MemLpLoc p Ω D ∧
+        ∀ᵐ z ∂volume.restrict (Ω : Set ℂ), D z 1 + A z (D z I) + C z (ξ z) = 0 := by
+  rw [isWeakLinearCauchyRiemannOn_iff, Opens.interior_coe, Ω.isOpen.interior_eq]
+
 namespace IsWeakLinearCauchyRiemannOn
 
 /-- Weak solutions of the linear equation are closed under addition. -/
@@ -264,13 +309,6 @@ end IsWeakLinearCauchyRiemannOn
 /-! ### Checks for the standard structure on `ℂ` -/
 
 section Standard
-
-/-- Conjugation is real-linear, so its derivative applies conjugation. This is the applied form
-of `ContinuousLinearEquiv.fderiv` for `conjCLE`, with the coercion of `conjCLE` to `conj`
-bridged by `Complex.conjCLE_apply`. -/
-private theorem fderiv_conj_apply (z w : ℂ) : fderiv ℝ conj z w = conj w := by
-  have hconj : (conj : ℂ → ℂ) = conjCLE := funext fun x => (conjCLE_apply x).symm
-  rw [hconj, conjCLE.fderiv, ContinuousLinearEquiv.coe_coe, conjCLE_apply]
 
 /-- The identity solves the homogeneous equation for `J = i`: its derivative is the identity and
 `1 + i·i = 0`. -/

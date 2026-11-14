@@ -105,7 +105,6 @@ private theorem norm_transportedDuhamelL_le (hα₀ : 0 < α) (hα₁ : α < 1) 
     ‖transportedDuhamelL hα₀ hα₁ hT e‖ ≤
       (K ^ 2 * K ^ (α : ℝ)) * ‖heatDuhamelPotentialL (E := EuclideanSpace ℝ ι) (F := ℝ)
         hα₀ hα₁ hT‖ * K ^ (α : ℝ) := by
-  have hK₀ : 0 ≤ K := zero_le_one.trans hK
   have hR := norm_compSpatialL_le_of_norm_le α ℝ hT hK hei
   have hJ : ‖HolderSpace.compLipschitzL (α := α) (Y := ℝ) _
       (lipschitzWith_slabSpaceMap (a := 0) (b := T)
@@ -113,7 +112,7 @@ private theorem norm_transportedDuhamelL_le (hα₀ : 0 < α) (hα₁ : α < 1) 
     refine (HolderSpace.norm_compLipschitzL_le _).trans
       (max_le (Real.one_le_rpow hK (by positivity)) ?_)
     refine Real.rpow_le_rpow (by positivity) ?_ (by positivity)
-    rw [NNReal.coe_max, coe_nnnorm, NNReal.coe_one]
+    rw [NNReal.coe_max, coe_nnNorm, NNReal.coe_one]
     exact max_le he hK
   calc ‖transportedDuhamelL hα₀ hα₁ hT e‖
       ≤ ‖compSpatialL α ℝ hT e.symm.toContinuousLinearMap‖ *
@@ -154,7 +153,6 @@ theorem exists_solutionOperator_euclideanParabolicOperatorL_const_prod [Decidabl
     exists_norm_heatDuhamelPotentialL_le (α := α) (E := EuclideanSpace ℝ ι) (F := ℝ) hα₀ hα₁
   let K := max 1 (max (Real.sqrt Lam) (Real.sqrt lam)⁻¹)
   have hK : 1 ≤ K := le_max_left _ _
-  have hK₀ : 0 ≤ K := zero_le_one.trans hK
   -- The Duhamel constant is nonnegative, as it bounds a norm at the horizon `T = 1`.
   have hCD₀ : 0 ≤ CD := by
     have h := (norm_nonneg _).trans (hCD 1 one_pos)

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DG.Twisted.Complex
+public import TauCeti.Algebra.Homology.DG.Twisted.Homotopy
 public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Basic
 
 /-!
@@ -24,16 +24,24 @@ an isomorphism of twisted cochain complexes
 of the twist of a twisted complex by a rank-one local system, the source's
 Proposition `prop:FotimesL-mL`.
 
+The same applies to the data comparing twisting cocycles. The image under `f` of a continuation
+cocycle `ν : mP → mQ` is a continuation cocycle `f ∘ mP → f ∘ mQ`
+(`TauCeti.ContinuationCocycle.map`), and the image of a parametrized cocycle is a parametrized
+cocycle between the images (`TauCeti.ParametrizedCocycle.map`).
+
 ## Main definitions
 
 * `TauCeti.TwistingCocycle.map`: the image of a twisting cocycle under a DG algebra morphism.
+* `TauCeti.ContinuationCocycle.map`, `TauCeti.ParametrizedCocycle.map`: the images of
+  continuation cocycles and parametrized cocycles.
 * `TauCeti.TwistingCocycle.twistedCochainComplexRestrictScalarsIso`: the isomorphism between the
   twisted complex of a restricted module and the twisted complex of the image cocycle.
 
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
-  Applications to cotangent bundles*, arXiv:2404.07953, §2.3.
+  Applications to cotangent bundles*, arXiv:2404.07953, §1.4, Definitions 1.10 and 1.11, and
+  §2.3.
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Morse homology with differential graded
   coefficients*, Progress in Mathematics 360, Birkhäuser, 2025, Remark 4.6.
 -/
@@ -44,7 +52,7 @@ open MulOpposite
 
 namespace TauCeti
 
-universe uR uA uB uM uP
+universe uR uA uB uM uP uQ
 
 variable {R : Type uR} {A : Type uA} {B : Type uB}
   [CommRing R] [Ring A] [Ring B] [Algebra R A] [Algebra R B]
@@ -91,6 +99,54 @@ theorem map_map (g : DGAlgHom hB hC) (f : DGAlgHom hA hB) (m : TwistingCocycle �
   simp [DGAlgHom.comp_apply]
 
 end TwistingCocycle
+
+/-! ### Continuation and parametrized cocycles along a morphism -/
+
+namespace ContinuationCocycle
+
+variable {Q : Type uQ} {indQ : Q → ℤ} [Fintype P] [Fintype Q]
+  {mP : TwistingCocycle 𝒜 dA P ind} {mQ : TwistingCocycle 𝒜 dA Q indQ}
+
+/-- The **image of a continuation cocycle** `ν : mP → mQ` under a morphism `f` of differential
+graded algebras, a continuation cocycle `f ∘ mP → f ∘ mQ`. -/
+def map (f : DGAlgHom hA hB) (ν : ContinuationCocycle mP mQ) :
+    ContinuationCocycle (mP.map f) (mQ.map f) where
+  ν x y := f (ν.ν x y)
+  mem_graded x y := Graded.map_mem f (ν.mem_graded x y)
+  continuation x y := by
+    rw [DGAlgHom.map_d, ν.continuation x y, map_add, map_sum, map_sum]
+    simp only [map_zsmul_unit, _root_.map_mul, TwistingCocycle.map_m]
+
+@[simp]
+theorem map_ν (f : DGAlgHom hA hB) (ν : ContinuationCocycle mP mQ) (x : P) (y : Q) :
+    (ν.map f).ν x y = f (ν.ν x y) :=
+  (rfl)
+
+end ContinuationCocycle
+
+namespace ParametrizedCocycle
+
+variable {Q : Type uQ} {indQ : Q → ℤ} [Fintype P] [Fintype Q]
+  {mP : TwistingCocycle 𝒜 dA P ind} {mQ : TwistingCocycle 𝒜 dA Q indQ}
+  {ν₀ ν₁ : ContinuationCocycle mP mQ}
+
+/-- The **image of a parametrized cocycle** between `ν₀` and `ν₁` under a morphism `f` of
+differential graded algebras, a parametrized cocycle between the images of `ν₀` and `ν₁`. -/
+def map (f : DGAlgHom hA hB) (η : ParametrizedCocycle ν₀ ν₁) :
+    ParametrizedCocycle (ν₀.map f) (ν₁.map f) where
+  h x y := f (η.h x y)
+  mem_graded x y := Graded.map_mem f (η.mem_graded x y)
+  parametrized x y := by
+    rw [DGAlgHom.map_d, η.parametrized x y, map_add, map_add, map_sub, map_sum, map_sum]
+    simp only [map_zsmul_unit, _root_.map_mul, TwistingCocycle.map_m,
+      ContinuationCocycle.map_ν]
+
+@[simp]
+theorem map_h (f : DGAlgHom hA hB) (η : ParametrizedCocycle ν₀ ν₁) (x : P) (y : Q) :
+    (η.map f).h x y = f (η.h x y) :=
+  (rfl)
+
+end ParametrizedCocycle
 
 section Restrict
 

@@ -43,8 +43,8 @@ index zero at every point.
 The index depends only on the germ of the function and is invariant under a twice continuously
 differentiable change of coordinates with invertible derivative.  Finally, Sylvester's law of
 inertia puts the Hessian into a diagonal normal form with weights `±1`; the number of negative
-weights is exactly the Morse index.  This supplies the integer grading of critical points needed
-by the Morse complex in Lane M of the analytic Heegaard Floer roadmap.
+weights is exactly the Morse index.  This is the integer grading of critical points used by the
+Morse complex.
 
 ## Main declarations
 
@@ -80,8 +80,6 @@ by the Morse complex in Lane M of the analytic Heegaard Floer roadmap.
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
   Chapter 1.
 * J. Milnor, *Morse Theory*, Princeton University Press, 1963, §2.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section
@@ -380,6 +378,14 @@ theorem morseIndex_eq_zero_of_not_finiteDimensional (hE : ¬FiniteDimensional �
   have h := morseIndex_le_finrank (f := f) (x := x)
   rw [Module.finrank_of_not_finite hE] at h
   omega
+
+/-- A constant function has Morse index `0` at every point, since its Hessian vanishes. -/
+@[simp]
+theorem morseIndex_const (c : ℝ) : morseIndex (fun _ : E ↦ c) x = 0 := by
+  by_cases hE : FiniteDimensional ℝ E
+  · rw [morseIndex_def, ← QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero]
+    simp
+  · exact morseIndex_eq_zero_of_not_finiteDimensional hE
 
 /-- If the Hessian is nondegenerate, the Morse indices of a function and its negation add to the
 dimension of the ambient space. In an infinite-dimensional space both indices and the dimension

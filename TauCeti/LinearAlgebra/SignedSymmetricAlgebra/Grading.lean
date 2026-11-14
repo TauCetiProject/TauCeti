@@ -37,7 +37,7 @@ variable {V : Type v} [AddCommGroup V] [Module R V]
 
 namespace SignedSym
 
-variable (G : InternalGrading R V)
+variable (G : InternalGrading R V ℤ)
 
 /-- The Koszul relation ideal is homogeneous for tensor input degree. -/
 theorem isHomogeneous_ker_quotient :
@@ -57,11 +57,11 @@ end SignedSym
 
 /-- The degree-`p` piece of the signed symmetric algebra: the image of the input-degree-`p`
 piece of the tensor algebra. -/
-noncomputable def signedSymPiece (G : InternalGrading R V) (p : ℤ) :
+noncomputable def signedSymPiece (G : InternalGrading R V ℤ) (p : ℤ) :
     Submodule R (SignedSym G) :=
   (tensorAlgebraPiece G p).map (SignedSym.quotient G).toLinearMap
 
-variable (G : InternalGrading R V)
+variable (G : InternalGrading R V ℤ)
 
 /-- The piece is the image under the canonical tensor-algebra quotient map. -/
 theorem signedSymPiece_def (p : ℤ) :
@@ -239,7 +239,7 @@ theorem gradedLift_unique (f : V →ₗ[R] A) (hr hf) (φ : signedSymPiece G →
 
 section Map
 
-variable {W : Type*} [AddCommGroup W] [Module R W] (H : InternalGrading R W)
+variable {W : Type*} [AddCommGroup W] [Module R W] (H : InternalGrading R W ℤ)
 
 /-- Functorial maps induced by degree-preserving linear maps preserve the quotient grading. -/
 theorem isHomogeneous_map (f : V →ₗ[R] W)
