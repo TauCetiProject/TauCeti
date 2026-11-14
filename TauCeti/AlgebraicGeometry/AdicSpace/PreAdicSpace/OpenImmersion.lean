@@ -402,6 +402,15 @@ theorem isPullback {U V X Y : PreAdicSpace.{u}} (f : U ⟶ V) (iU : U ⟶ X) (iV
   refine ⟨lift iU s.snd hs, ?_, lift_fac _ _ _, fun {m} _ hm ↦ lift_uniq _ _ _ m hm⟩
   rw [← cancel_mono iV, PullbackCone.mk_fst, Category.assoc, w, lift_fac_assoc, s.condition]
 
+/-- The factorization of an open immersion through another open immersion is an open
+immersion. -/
+instance lift_isOpenImmersion (f : X ⟶ Z) [IsOpenImmersion f] (g : Y ⟶ Z) [IsOpenImmersion g]
+    (H : Set.range g.base ⊆ Set.range f.base) : IsOpenImmersion (lift f g H) := by
+  have h : IsPullback (lift f g H) (𝟙 Y) f g :=
+    isPullback _ _ _ _ (by simp) (by simp)
+  rw [← h.isoPullback_hom_fst]
+  infer_instance
+
 end IsPullback
 
 end IsOpenImmersion
@@ -567,6 +576,11 @@ theorem isPullback_restrictPreimage :
 /-- The restriction of an isomorphism over an open is an isomorphism. -/
 instance [IsIso f] : IsIso (f.restrictPreimage V) :=
   (f.isPullback_restrictPreimage V).isIso_fst_of_isIso
+
+/-- The restriction of an open immersion over an open is an open immersion. -/
+instance [IsOpenImmersion f] : IsOpenImmersion (f.restrictPreimage V) := by
+  rw [← (f.isPullback_restrictPreimage V).isoPullback_hom_fst]
+  infer_instance
 
 
 /-- **Restrictions of a morphism can be recognized through open immersions.** Let `f : X ⟶ Y` be
