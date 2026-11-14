@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.BackAndForth.Countable
 public import TauCeti.ModelTheory.BackAndForth.Presentation
 public import TauCeti.ModelTheory.Infinitary.QuantifierRank
 
+import TauCeti.ModelTheory.BackAndForth.Countable
 import TauCeti.ModelTheory.Syntax
 
 /-!
@@ -45,12 +45,16 @@ The theorem is Carol Karp's, *Finite-quantifier equivalence* (1965). Cameron Fre
   `α` satisfy the same infinitary formulas of quantifier rank at most `α`.
 * `TauCeti.BFEquiv.elementarilyEquivalent`: back-and-forth equivalence of the empty tuples at
   level `ω` gives elementary equivalence.
+* `TauCeti.InfEquivAt.elementarilyEquivalent`: agreement on the infinitary sentences at any carrier
+  gives elementary equivalence.
 * `TauCeti.PotentialIso.infEquivAt`: potentially isomorphic structures satisfy the same
   infinitary sentences at every carrier.
 * `TauCeti.exists_forall_realize_snoc_iff_of_forall_realize_iff` and
   `TauCeti.exists_forall_realize_snoc_iff_of_forall_realize_iff_right`: tuples agreeing on every
   formula with a carrier into which the second structure is coded admit matching one-element
   extensions, forth and back.
+* `TauCeti.InfEquivAt.potentialIso`: the converse direction, agreement at a carrier into which the
+  second structure is coded gives potential isomorphism.
 * `TauCeti.karp_theorem_at`: Karp's theorem at a carrier into which the second structure is
   coded.
 * `TauCeti.karp_theorem`: Karp's theorem for full infinitary equivalence.
@@ -349,13 +353,14 @@ theorem karp_theorem : PotentialIso (L := L) M N ↔ InfEquivW (L := L) M N :=
   ⟨fun h κ => h.infEquivAt κ,
     fun h => (h (M ⊕ N)).potentialIso (IndexCoding.sumInr M N)⟩
 
-/-- Agreement at one carrier into which the second structure is coded gives full infinitary
-equivalence. -/
+/-- In a relational language, agreement at one carrier into which the second structure is coded
+gives full infinitary equivalence. -/
 theorem InfEquivAt.infEquivW (cN : IndexCoding N κ)
     (h : InfEquivAt (L := L) κ M N) : InfEquivW (L := L) M N :=
   karp_theorem.1 (h.potentialIso cN)
 
-/-- Full infinitary equivalence gives agreement at a carrier in any universe. -/
+/-- In a relational language, full infinitary equivalence gives agreement at a carrier in any
+universe. -/
 theorem InfEquivW.infEquivAt (h : InfEquivW (L := L) M N) (μ : Type uμ) :
     InfEquivAt (L := L) μ M N :=
   (karp_theorem.2 h).infEquivAt μ
