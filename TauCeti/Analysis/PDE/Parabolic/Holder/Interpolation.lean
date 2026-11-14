@@ -42,10 +42,13 @@ absorb lower-order terms in parabolic Schauder estimates.
   `TauCeti.ParabolicC2HolderSpace.norm_toBoundedContinuousFunction_spatialSecondFDerivL_le` and
   `TauCeti.ParabolicC2HolderSpace.norm_toBoundedContinuousFunction_timeDerivL_le`: the three
   interpolation inequalities.
+* `TauCeti.ParabolicC2HolderSpace.spaceEHolderNorm_one_le` and
+  `TauCeti.ParabolicC2HolderSpace.timeEHolderNorm_one_le`: the spatial and temporal Lipschitz
+  seminorms are at most `‖D_x u‖_∞` and `‖∂ₜ u‖_∞`.
 * `TauCeti.ParabolicC2HolderSpace.timeEHolderNorm_le`: for `γ ≤ 1`, the temporal
   `γ`-seminorm is at most `‖∂ₜ u‖_∞ + 2 ‖u‖_∞`.
-* `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_le_add_mul`: the scale-invariant form
-  `‖u‖_{α,par} ≤ (1 + 40 r^(-α/2)) ‖u‖_∞ + 2 r ‖u‖` for every time step `r` with `2 r ≤ b - a`.
+* `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_le_add_mul`: interpolation at a prescribed
+  time step, `‖u‖_{α,par} ≤ (1 + 40 r^(-α/2)) ‖u‖_∞ + 2 r ‖u‖` for every `r` with `2 r ≤ b - a`.
 * `TauCeti.ParabolicC2HolderSpace.valueHolderL` and
   `TauCeti.ParabolicC2HolderSpace.spatialFDerivHolderL`: the value and the spatial gradient as
   continuous linear maps into the bounded parabolic Hölder space.
@@ -157,14 +160,12 @@ theorem norm_toBoundedContinuousFunction_timeDerivL_le (f : ParabolicC2HolderSpa
     have h := (timeDerivL f).memHolder.holderWith (slabMk x ⟨s, hs⟩) (slabMk x ⟨s', hs'⟩)
     rw [edist_slabMk_same_space_rpow] at h
     simpa [timeExtension_def, projIcc_of_mem hab.le hs, projIcc_of_mem hab.le hs'] using h
-  have hderiv : ∀ s ∈ Icc a b, HasDerivWithinAt (timeExtension hab.le f x)
-      (timeExtension hab.le (timeDerivL f) x s) (Icc a b) s := fun s hs ↦ by
-    simpa [timeExtension_def, projIcc_of_mem hab.le hs] using f.hasTimeDerivWithinAt x ⟨s, hs⟩
   have hM : ∀ s ∈ Icc a b, ‖timeExtension hab.le f x s‖ ≤ ‖valueL f‖ := fun s _ ↦ by
     rw [timeExtension_def]
     exact (valueL f).norm_coe_le_norm _
   -- Interpolate in time with the step `ε²`.
-  have h := hH.norm_le_of_hasDerivWithinAt_Icc hderiv hM (by positivity) hεab t.2
+  have h := hH.norm_le_of_hasDerivWithinAt_Icc (f.hasDerivWithinAt_timeExtension x) hM
+    (by positivity) hεab t.2
   have hpow : (ε ^ 2) ^ ((α / 2 : ℝ≥0) : ℝ) = ε ^ (α : ℝ) := by
     rw [← Real.rpow_natCast, ← Real.rpow_mul hε.le]
     congr 1
@@ -172,37 +173,33 @@ theorem norm_toBoundedContinuousFunction_timeDerivL_le (f : ParabolicC2HolderSpa
     ring
   rwa [hpow, timeExtension_of_mem, ← HolderSpace.toBoundedContinuousFunction_apply] at h
 
-/-- The spatial derivative of the time extension of `u` at each time of `[a, b]` is the time
-extension of `D_x u`. -/
-private theorem hasFDerivAt_timeExtension (f : ParabolicC2HolderSpace α E F hab) :
-    ∀ t ∈ Icc a b, ∀ y, HasFDerivAt (fun z ↦ timeExtension hab.le f z t)
-      (timeExtension hab.le (spatialFDerivL f) y t) y := by
-  intro t ht y
-  simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasSpatialFDerivAt ⟨t, ht⟩ y
+/-- The spatial Lipschitz seminorm of an order-two map is at most `‖D_x u‖_∞`. -/
+theorem spaceEHolderNorm_one_le (f : ParabolicC2HolderSpace α E F hab) :
+    spaceEHolderNorm 1 (f : slab (E := E) a b → F) ≤ ‖spatialFDerivL f‖₊ := by
+  have h := spaceEHolderNorm_one_le_of_hasFDerivAt f.hasFDerivAt_timeExtension
+    (C := ‖spatialFDerivL f‖₊) fun y t _ ↦ by
+      simpa only [coe_nnNorm] using norm_timeExtension_le hab.le (spatialFDerivL f) t y
+  rwa [timeExtension_space_slabTime] at h
 
-/-- The time derivative within `[a, b]` of the time extension of `u` at each position is the time
-extension of `∂ₜ u`. -/
-private theorem hasDerivWithinAt_timeExtension (f : ParabolicC2HolderSpace α E F hab) :
-    ∀ y, ∀ t ∈ Icc a b, HasDerivWithinAt (timeExtension hab.le f y)
-      (timeExtension hab.le (timeDerivL f) y t) (Icc a b) t := by
-  intro y t ht
-  simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasTimeDerivWithinAt y ⟨t, ht⟩
+/-- The temporal Lipschitz seminorm of an order-two map is at most `‖∂ₜ u‖_∞`. -/
+theorem timeEHolderNorm_one_le (f : ParabolicC2HolderSpace α E F hab) :
+    timeEHolderNorm 1 (f : slab (E := E) a b → F) ≤
+      ‖(timeDerivL f).toBoundedContinuousFunction‖₊ := by
+  have h := timeEHolderNorm_one_le_of_hasDerivWithinAt f.hasDerivWithinAt_timeExtension
+    (C := ‖(timeDerivL f).toBoundedContinuousFunction‖₊) fun x s _ ↦ by
+      simpa only [HolderSpace.coe_toBoundedContinuousFunction, coe_nnNorm] using
+        norm_timeExtension_le hab.le (timeDerivL f).toBoundedContinuousFunction s x
+  rwa [timeExtension_space_slabTime] at h
 
 /-- For `γ ≤ 1`, the temporal `γ`-seminorm of an order-two map is at most
 `‖∂ₜ u‖_∞ + 2 ‖u‖_∞`. -/
 theorem timeEHolderNorm_le {γ : ℝ≥0} (hγ : γ ≤ 1) (f : ParabolicC2HolderSpace α E F hab) :
     timeEHolderNorm γ (f : slab (E := E) a b → F) ≤
       ↑(‖(timeDerivL f).toBoundedContinuousFunction‖₊ + 2 * ‖valueL f‖₊) := by
-  have hlip := timeEHolderNorm_one_le_of_hasDerivWithinAt
-    (C := ‖(timeDerivL f).toBoundedContinuousFunction‖₊) (hasDerivWithinAt_timeExtension f)
-    fun x s _ ↦ by
-      simpa only [timeExtension_def, HolderSpace.toBoundedContinuousFunction_apply, coe_nnNorm]
-        using (timeDerivL f).toBoundedContinuousFunction.norm_coe_le_norm _
-  rw [timeExtension_space_slabTime] at hlip
   -- A bounded time derivative makes the time slices Lipschitz; at time differences larger than
   -- one, the oscillation bound wins.
   simpa only [NNReal.one_rpow, mul_one] using
-    timeEHolderNorm_le_of_timeEHolderNorm_le (D := 2 * ‖valueL f‖₊) hlip
+    timeEHolderNorm_le_of_timeEHolderNorm_le (D := 2 * ‖valueL f‖₊) f.timeEHolderNorm_one_le
       (fun p q ↦ by simpa using (valueL f).dist_le_two_norm p q) hγ one_pos
 
 /-! ### Lower-order parabolic Hölder norms -/
@@ -219,15 +216,9 @@ private theorem eHolderNorm_valueL_add_eHolderNorm_spatialFDerivL_le (hα : α �
             nnHolderNorm α ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _) +
             nnHolderNorm α ((timeDerivL f).toBoundedContinuousFunction : _ → _)) +
         14 * ε ^ (-(1 + (α : ℝ))) * ‖valueL f‖₊) := by
-  have hx := hasFDerivAt_timeExtension f
-  have hxx : ∀ t ∈ Icc a b, ∀ y,
-      HasFDerivAt (fun z ↦ timeExtension hab.le (spatialFDerivL f) z t)
-        (timeExtension hab.le (spatialSecondFDerivL f) y t) y := by
-    intro t ht y
-    simpa [timeExtension_def, projIcc_of_mem hab.le ht] using
-      f.hasSpatialSecondFDerivAt ⟨t, ht⟩ y
-  have ht := hasDerivWithinAt_timeExtension f
-  have h := ParabolicSpaceTime.eHolderNorm_add_eHolderNorm_le hα hε hε₁ hx hxx ht
+  have h := ParabolicSpaceTime.eHolderNorm_add_eHolderNorm_le hα hε hε₁
+    f.hasFDerivAt_timeExtension f.hasFDerivAt_timeExtension_spatialFDerivL
+    f.hasDerivWithinAt_timeExtension
     (M₀ := ‖valueL f‖₊) (M₂ := ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖₊)
     (Mₜ := ‖(timeDerivL f).toBoundedContinuousFunction‖₊)
     (H₂ := nnHolderNorm α ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _))
@@ -406,15 +397,17 @@ theorem norm_spatialFDerivHolderL_le_mul (hα : α ≤ 1) (f : ParabolicC2Holder
   (le_add_of_nonneg_left (norm_nonneg _)).trans
     (norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul hα f)
 
-/-- **Scale-invariant interpolation for the value.** For `α ≤ 1` and every time step `r > 0` with
-`2 r ≤ b - a`,
+/-- **Interpolation for the value at a prescribed time step.** For `α ≤ 1` and every time step
+`r > 0` with `2 r ≤ b - a`,
 
 `‖u‖_{α,par} ≤ (1 + 40 r^(-α/2)) ‖u‖_∞ + 2 r ‖u‖`,
 
-where `‖u‖` is the order-two norm. Both sides scale alike under the parabolic dilation
-`(x, t) ↦ (√r x, r t)`, unlike in `norm_valueHolderL_add_norm_spatialFDerivHolderL_le`. This is the
-form of the interpolation inequality used for estimates weighted by powers of the time elapsed
-since the initial slice. -/
+where `‖u‖` is the order-two norm. The powers `r^(-α/2)` and `r` are those of the parabolic
+scaling of the value seminorm `[u]_{α,par}` against `‖u‖_∞` and the top-order seminorms, unlike in
+`norm_valueHolderL_add_norm_spatialFDerivHolderL_le`, which uses the exponents of the gradient.
+The inequality is not dilation invariant, since the norms also contain lower-order supremum
+terms. This is the form of the interpolation inequality used for estimates weighted by powers of
+the time elapsed since the initial slice. -/
 theorem norm_valueHolderL_le_add_mul (hα : α ≤ 1) (f : ParabolicC2HolderSpace α E F hab) {r : ℝ}
     (hr : 0 < r) (hrab : 2 * r ≤ b - a) :
     ‖valueHolderL hα f‖ ≤ (1 + 40 * r ^ (-(α : ℝ) / 2)) * ‖valueL f‖ + 2 * r * ‖f‖ := by
@@ -436,24 +429,12 @@ theorem norm_valueHolderL_le_add_mul (hα : α ≤ 1) (f : ParabolicC2HolderSpac
     rw [← hεq, ← Real.rpow_add hε, add_neg_cancel, Real.rpow_zero]
   have hq₄ : r ^ (-((α : ℝ) / 2)) = q := by
     rw [hqdef, neg_div]
-  -- The spatial and temporal Lipschitz seminorms of the value are the suprema of the gradient
-  -- and of the time derivative.
-  have hx := hasFDerivAt_timeExtension f
-  have ht := hasDerivWithinAt_timeExtension f
-  have h₁ := spaceEHolderNorm_one_le_of_hasFDerivAt hx (C := ‖spatialFDerivL f‖₊)
-    fun y t _ ↦ by
-      rw [timeExtension_def, coe_nnNorm]
-      exact (spatialFDerivL f).norm_coe_le_norm _
-  have h₂ := timeEHolderNorm_one_le_of_hasDerivWithinAt ht
-    (C := ‖(timeDerivL f).toBoundedContinuousFunction‖₊) fun y t _ ↦ by
-      simpa only [timeExtension_def, HolderSpace.toBoundedContinuousFunction_apply, coe_nnNorm]
-        using (timeDerivL f).toBoundedContinuousFunction.norm_coe_le_norm _
-  rw [timeExtension_space_slabTime] at h₁ h₂
   -- Interpolate between the Lipschitz bounds and the oscillation bound, at the spatial scale `ε`
   -- and the temporal scale `r = ε²`.
   obtain ⟨ε', hε'⟩ : ∃ ε' : ℝ≥0, (ε' : ℝ) = ε := ⟨⟨ε, hε.le⟩, rfl⟩
   obtain ⟨r', hr'⟩ : ∃ r' : ℝ≥0, (r' : ℝ) = r := ⟨⟨r, hr.le⟩, rfl⟩
-  have h := eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le h₁ h₂
+  have h := eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le f.spaceEHolderNorm_one_le
+    f.timeEHolderNorm_one_le
     (D := 2 * ‖valueL f‖₊) (fun p q ↦ by simpa using (valueL f).dist_le_two_norm p q)
     hα ((NNReal.half_le_self α).trans hα) (δ₁ := ε') (δ₂ := r')
     (NNReal.coe_pos.1 (hε'.symm ▸ hε)) (NNReal.coe_pos.1 (hr'.symm ▸ hr))
@@ -490,11 +471,9 @@ theorem norm_valueHolderL_le_add_mul (hα : α ≤ 1) (f : ParabolicC2HolderSpac
       _ = 2 * q * V + r * Hₜ * (ε ^ (α : ℝ) * q) := by field_simp
       _ = _ := by rw [hq₃, mul_one]
   -- The top-order seminorms are bounded by the order-two norm.
-  have hN : H₂ + Hₜ ≤ ‖f‖ := by
-    have := f.norm_spatialSecondFDerivL_add_norm_timeDerivL_le
-    rw [HolderSpace.norm_def, HolderSpace.norm_def] at this
-    linarith [norm_nonneg (spatialSecondFDerivL f).toBoundedContinuousFunction,
-      norm_nonneg (timeDerivL f).toBoundedContinuousFunction]
+  have hN : H₂ + Hₜ ≤ ‖f‖ :=
+    (add_le_add (spatialSecondFDerivL f).nnHolderNorm_le (timeDerivL f).nnHolderNorm_le).trans
+      f.norm_spatialSecondFDerivL_add_norm_timeDerivL_le
   linarith [mul_le_mul_of_nonneg_left hN (by positivity : (0 : ℝ) ≤ 2 * r),
     mul_nonneg hr.le (NNReal.coe_nonneg _ : (0 : ℝ) ≤ Hₜ)]
 

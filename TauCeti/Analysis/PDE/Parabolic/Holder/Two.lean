@@ -10,7 +10,6 @@ public import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Calculus
 public import TauCeti.Analysis.Holder.Normed
 public import TauCeti.Analysis.Calculus.UniformLimitsDeriv
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
-import Mathlib.Analysis.Calculus.ContDiff.Deriv
 
 /-!
 # Bounded order-two parabolic Hölder maps
@@ -26,9 +25,10 @@ fields. It is equivalent to the full parabolic norm, which additionally includes
 `(1+α)/2` seminorm of the gradient. Completeness follows from closedness of the spatial and
 time derivative identities under uniform convergence.
 
-Besides the constants, the maps depending on time alone are elements: a `C¹` function `g` of time
-with `(α/2)`-Hölder derivative gives `(x, t) ↦ g t` (`TauCeti.ParabolicC2HolderSpace.ofTime`),
-with vanishing spatial derivatives and time derivative `g'`. These are the time cutoffs used to
+Besides the constants, the maps depending on time alone are elements: a function `g` of time
+whose derivative `g'` within `[a, b]` is continuous and `(α/2)`-Hölder there gives `(x, t) ↦ g t`
+(`TauCeti.ParabolicC2HolderSpace.ofTime`), with vanishing spatial derivatives and time derivative
+`g'`. These are the time cutoffs used to
 localize parabolic estimates away from the initial time.
 
 The construction follows the closed derivative graph used in `TauCeti.Analysis.Holder.Two`.
@@ -315,6 +315,27 @@ theorem hasTimeDerivWithinAt (f : ParabolicC2HolderSpace α E F hab) (x : E) (t 
     HasDerivWithinAt (timeExtension hab.le f x) (timeDerivL f (slabMk x t)) (Icc a b) t :=
   f.2.2.2 x t
 
+/-- At each time of `[a, b]`, the spatial derivative of the time extension of `u` is the time
+extension of `D_x u`. -/
+theorem hasFDerivAt_timeExtension (f : ParabolicC2HolderSpace α E F hab) :
+    ∀ t ∈ Icc a b, ∀ x, HasFDerivAt (fun y ↦ timeExtension hab.le f y t)
+      (timeExtension hab.le (spatialFDerivL f) x t) x := fun t ht x ↦ by
+  simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasSpatialFDerivAt ⟨t, ht⟩ x
+
+/-- At each time of `[a, b]`, the spatial derivative of the time extension of `D_x u` is the time
+extension of `D_x² u`. -/
+theorem hasFDerivAt_timeExtension_spatialFDerivL (f : ParabolicC2HolderSpace α E F hab) :
+    ∀ t ∈ Icc a b, ∀ x, HasFDerivAt (fun y ↦ timeExtension hab.le (spatialFDerivL f) y t)
+      (timeExtension hab.le (spatialSecondFDerivL f) x t) x := fun t ht x ↦ by
+  simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasSpatialSecondFDerivAt ⟨t, ht⟩ x
+
+/-- At each position, the time derivative within `[a, b]` of the time extension of `u` is the time
+extension of `∂ₜ u`. -/
+theorem hasDerivWithinAt_timeExtension (f : ParabolicC2HolderSpace α E F hab) :
+    ∀ x, ∀ t ∈ Icc a b, HasDerivWithinAt (timeExtension hab.le f x)
+      (timeExtension hab.le (timeDerivL f) x t) (Icc a b) t := fun x t ht ↦ by
+  simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasTimeDerivWithinAt x ⟨t, ht⟩
+
 @[simp]
 theorem fderiv_eq (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) (x : E) :
     fderiv ℝ (fun y ↦ f (slabMk y t)) x = spatialFDerivL f (slabMk x t) :=
@@ -481,31 +502,34 @@ theorem timeDerivL_const (c : F) :
   rw [const, timeDerivL_mk]
 
 omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
-/-- A continuous function of time, as a bounded continuous function on the slab `E × [a, b]`. -/
-private def timeBCF (g : ℝ → F) (hg : Continuous g) : slab (E := E) a b →ᵇ F :=
-  (BoundedContinuousFunction.mkOfCompact ⟨fun t : Icc a b ↦ g t, by fun_prop⟩).compContinuous
+/-- A function of time continuous on `[a, b]`, as a bounded continuous function on the slab
+`E × [a, b]`. -/
+private def timeBCF (g : ℝ → F) (hg : ContinuousOn g (Icc a b)) : slab (E := E) a b →ᵇ F :=
+  (BoundedContinuousFunction.mkOfCompact ⟨fun t : Icc a b ↦ g t, hg.domRestrict⟩).compContinuous
     ⟨slabTime, continuous_slabTime⟩
 
 omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
-private theorem timeBCF_apply (g : ℝ → F) (hg : Continuous g) (p : slab (E := E) a b) :
-    timeBCF g hg p = g (p : ParabolicSpaceTime E).time := by
+private theorem timeBCF_apply (g : ℝ → F) (hg : ContinuousOn g (Icc a b))
+    (p : slab (E := E) a b) : timeBCF g hg p = g (p : ParabolicSpaceTime E).time := by
   simp only [timeBCF, BoundedContinuousFunction.compContinuous_apply,
-    BoundedContinuousFunction.mkOfCompact_apply, ContinuousMap.coe_mk, coe_slabTime]
+    BoundedContinuousFunction.mkOfCompact_apply]
+  exact congrArg g (coe_slabTime p)
 
 omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
-private theorem coe_timeBCF (g : ℝ → F) (hg : Continuous g) :
-    ⇑(timeBCF (E := E) (a := a) (b := b) g hg) =
-      fun p : slab (E := E) a b ↦ g (p : ParabolicSpaceTime E).time :=
+private theorem coe_timeBCF (g : ℝ → F) (hg : ContinuousOn g (Icc a b)) :
+    ⇑(timeBCF (E := E) g hg) = fun p : slab (E := E) a b ↦ g (p : ParabolicSpaceTime E).time :=
   funext (timeBCF_apply g hg)
 
-/-- **Maps depending on time alone.** A `C¹` function `g` of time whose derivative is
-`(α/2)`-Hölder defines the order-two parabolic Hölder map `(x, t) ↦ g t` on the slab `E × [a, b]`,
-with vanishing spatial derivatives and time derivative `g'(t)`. -/
-def ofTime (g : ℝ → F) (hg : ContDiff ℝ 1 g) {K : ℝ≥0} (hg' : HolderWith K (α / 2) (deriv g)) :
+/-- **Maps depending on time alone.** A function `g` of time with derivative `g'` within `[a, b]`,
+where `g'` is continuous and `(α/2)`-Hölder on `[a, b]`, defines the order-two parabolic Hölder map
+`(x, t) ↦ g t` on the slab `E × [a, b]`, with vanishing spatial derivatives and time derivative
+`g'(t)`. -/
+def ofTime (g g' : ℝ → F) (hg : ∀ t ∈ Icc a b, HasDerivWithinAt g (g' t) (Icc a b) t)
+    (hg'c : ContinuousOn g' (Icc a b)) (hg' : ∃ K, HolderOnWith K (α / 2) g' (Icc a b)) :
     ParabolicC2HolderSpace α E F hab :=
-  mk (timeBCF g hg.continuous) 0 0
-    (HolderSpace.ofBoundedContinuousFunction (timeBCF (deriv g) (hg.continuous_deriv le_rfl))
-      (by rw [coe_timeBCF]; exact (holderWith_comp_time hg').memHolder))
+  mk (timeBCF g (show ContinuousOn g (Icc a b) from fun t ht ↦ (hg t ht).continuousWithinAt)) 0 0
+    (HolderSpace.ofBoundedContinuousFunction (timeBCF g' hg'c)
+      (by rw [coe_timeBCF]; exact (holderWith_comp_time hg'.choose_spec).memHolder))
     (fun t x ↦ by
       simpa only [timeBCF_apply, time_slabMk, FunLike.coe_zero, Pi.zero_apply] using
         hasFDerivAt_const (g t) x)
@@ -514,31 +538,43 @@ def ofTime (g : ℝ → F) (hg : ContDiff ℝ 1 g) {K : ℝ≥0} (hg' : HolderWi
         hasFDerivAt_const (0 : E →L[ℝ] F) x)
     (fun x t ↦ by
       rw [HolderSpace.ofBoundedContinuousFunction_apply, timeBCF_apply, time_slabMk]
-      refine (((hg.differentiable one_ne_zero) t).hasDerivAt.hasDerivWithinAt).congr
-        (fun s hs ↦ ?_) ?_
+      refine (hg t t.2).congr (fun s hs ↦ ?_) ?_
       · simp only [timeExtension_def, timeBCF_apply, time_slabMk, projIcc_of_mem hab.le hs]
       · simp only [timeExtension_def, timeBCF_apply, time_slabMk, projIcc_val])
 
-variable (g : ℝ → F) (hg : ContDiff ℝ 1 g) {K : ℝ≥0} (hg' : HolderWith K (α / 2) (deriv g))
+variable (g g' : ℝ → F) (hg : ∀ t ∈ Icc a b, HasDerivWithinAt g (g' t) (Icc a b) t)
+  (hg'c : ContinuousOn g' (Icc a b)) (hg' : ∃ K, HolderOnWith K (α / 2) g' (Icc a b))
 
 @[simp]
 theorem ofTime_apply (p : slab (E := E) a b) :
-    ofTime (hab := hab) g hg hg' p = g (p : ParabolicSpaceTime E).time := by
+    ofTime (hab := hab) g g' hg hg'c hg' p = g (p : ParabolicSpaceTime E).time := by
   rw [ofTime, mk_apply, timeBCF_apply]
 
 @[simp]
-theorem spatialFDerivL_ofTime : spatialFDerivL (ofTime (E := E) (hab := hab) g hg hg') = 0 := by
+theorem spatialFDerivL_ofTime :
+    spatialFDerivL (ofTime (E := E) (hab := hab) g g' hg hg'c hg') = 0 := by
   rw [ofTime, spatialFDerivL_mk]
 
 @[simp]
 theorem spatialSecondFDerivL_ofTime :
-    spatialSecondFDerivL (ofTime (E := E) (hab := hab) g hg hg') = 0 := by
+    spatialSecondFDerivL (ofTime (E := E) (hab := hab) g g' hg hg'c hg') = 0 := by
   rw [ofTime, spatialSecondFDerivL_mk]
 
 @[simp]
 theorem timeDerivL_ofTime_apply (p : slab (E := E) a b) :
-    timeDerivL (ofTime (hab := hab) g hg hg') p = deriv g (p : ParabolicSpaceTime E).time := by
+    timeDerivL (ofTime (hab := hab) g g' hg hg'c hg') p = g' (p : ParabolicSpaceTime E).time := by
   rw [ofTime, timeDerivL_mk, HolderSpace.ofBoundedContinuousFunction_apply, timeBCF_apply]
+
+/-- The time derivative of `(x, t) ↦ g t` is parabolically `α`-Hölder with every `(α/2)`-Hölder
+constant of `g'` on `[a, b]`. -/
+theorem nnHolderNorm_timeDerivL_ofTime_le {K : ℝ≥0} (hK : HolderOnWith K (α / 2) g' (Icc a b)) :
+    nnHolderNorm α (timeDerivL (ofTime (E := E) (hab := hab) g g' hg hg'c hg') :
+      slab (E := E) a b → F) ≤ K := by
+  have h : (timeDerivL (ofTime (E := E) (hab := hab) g g' hg hg'c hg') : slab (E := E) a b → F) =
+      fun p : slab (E := E) a b ↦ g' (p : ParabolicSpaceTime E).time :=
+    funext (timeDerivL_ofTime_apply g g' hg hg'c hg')
+  rw [h]
+  exact (holderWith_comp_time hK).nnholderNorm_le
 
 /-- Equality of the underlying maps determines all derivative fields, including the endpoints. -/
 @[ext]
@@ -588,6 +624,16 @@ theorem norm_def (f : ParabolicC2HolderSpace α E F hab) :
         nnHolderNorm α ((timeDerivL f).toBoundedContinuousFunction : _ → _)) := by
   rw [norm_eq, HolderSpace.norm_def, HolderSpace.norm_def]
   ring
+
+/-- The norm of a map `(x, t) ↦ g t` depending on time alone is the supremum of `g` plus the
+Hölder norm of its time derivative. -/
+theorem norm_ofTime (g g' : ℝ → F) (hg : ∀ t ∈ Icc a b, HasDerivWithinAt g (g' t) (Icc a b) t)
+    (hg'c : ContinuousOn g' (Icc a b)) (hg' : ∃ K, HolderOnWith K (α / 2) g' (Icc a b)) :
+    ‖ofTime (E := E) (hab := hab) g g' hg hg'c hg'‖ =
+      ‖valueL (ofTime (E := E) (hab := hab) g g' hg hg'c hg')‖ +
+        ‖timeDerivL (ofTime (E := E) (hab := hab) g g' hg hg'c hg')‖ := by
+  rw [norm_eq, spatialFDerivL_ofTime, spatialSecondFDerivL_ofTime, norm_zero, norm_zero, add_zero,
+    zero_add]
 
 /-- The supremum norm of the value is bounded by the reduced parabolic norm. -/
 theorem norm_valueL_le (f : ParabolicC2HolderSpace α E F hab) : ‖valueL f‖ ≤ ‖f‖ := by
@@ -640,27 +686,12 @@ theorem timeEHolderNorm_spatialFDeriv_le (f : ParabolicC2HolderSpace α E F hab)
     timeEHolderNorm ((1 + α) / 2) (spatialFDerivL f : _ → _) ≤
       eHolderNorm α ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _) +
         eHolderNorm α ((timeDerivL f).toBoundedContinuousFunction : _ → _) := by
-  have hx : ∀ t ∈ Icc a b, ∀ x,
-      HasFDerivAt (fun y ↦ timeExtension hab.le f y t)
-        (timeExtension hab.le (spatialFDerivL f) x t) x := by
-    intro t ht x
-    simpa [timeExtension, projIcc_of_mem hab.le ht] using f.hasSpatialFDerivAt ⟨t, ht⟩ x
-  have hxx : ∀ t ∈ Icc a b, ∀ x,
-      HasFDerivAt (fun y ↦ timeExtension hab.le (spatialFDerivL f) y t)
-        (timeExtension hab.le (spatialSecondFDerivL f) x t) x := by
-    intro t ht x
-    simpa [timeExtension, projIcc_of_mem hab.le ht] using
-      f.hasSpatialSecondFDerivAt ⟨t, ht⟩ x
-  have ht : ∀ x, ∀ t ∈ Icc a b,
-      HasDerivWithinAt (timeExtension hab.le f x)
-        (timeExtension hab.le (timeDerivL f) x t) (Icc a b) t := by
-    intro x t ht
-    simpa [timeExtension, projIcc_of_mem hab.le ht] using f.hasTimeDerivWithinAt x ⟨t, ht⟩
   have h := timeEHolderNorm_le_eHolderNorm_add_eHolderNorm
     (E := E) (F := F) (a := a) (b := b)
     (u := timeExtension hab.le f) (u' := timeExtension hab.le (spatialFDerivL f))
     (u'' := timeExtension hab.le (spatialSecondFDerivL f))
-    (uₜ := timeExtension hab.le (timeDerivL f)) α hx hxx ht
+    (uₜ := timeExtension hab.le (timeDerivL f)) α f.hasFDerivAt_timeExtension
+    f.hasFDerivAt_timeExtension_spatialFDerivL f.hasDerivWithinAt_timeExtension
   simpa only [timeExtension_of_mem, slabMk_space_slabTime,
     HolderSpace.coe_toBoundedContinuousFunction] using h
 

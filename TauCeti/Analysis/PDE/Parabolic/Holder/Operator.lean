@@ -55,6 +55,8 @@ trace. This is the whole-space comparison principle applied to the Hölder class
   `TauCeti.ParabolicC2HolderSpace.abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le`
   and `TauCeti.ParabolicC2HolderSpace.eq_of_euclideanParabolicOperatorL_eq`: the one-sided and
   two-sided a priori bounds and uniqueness for the Cauchy problem.
+* `TauCeti.ParabolicC2HolderSpace.norm_valueL_le_exp_mul`: the resulting bound on `sup |u|` by
+  `sup |u(·, t₀)|` and `‖P u‖_{α,par}`, uniform over horizons `t₁ - t₀ ≤ T₀`.
 
 ## References
 
@@ -526,6 +528,41 @@ theorem abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le
   rw [neg_apply] at hge
   exact abs_le.2 ⟨neg_le.1 hge, le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le hα ha hc
     hγ hM hK u (fun q ↦ (abs_le.1 (hP q)).2) (fun x ↦ (abs_le.1 (hinit x)).2) p⟩
+
+/-- **The supremum bound from the comparison principle.** Let `a` be degenerate elliptic and
+`c ≤ γ` with `0 ≤ γ`. On `ℝⁿ × [t₀, t₁]` with `t₁ - t₀ ≤ T₀`, every `u ∈ C_b^{2+α,1+α/2}` with
+`|u(·, t₀)| ≤ M` satisfies `sup |u| ≤ exp (γ T₀) (1 + T₀) (M + ‖P u‖_{α,par})`. -/
+theorem norm_valueL_le_exp_mul
+    (ha : ∀ p (ξ : EuclideanSpace ℝ ι), 0 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    {γ : ℝ} (hc : ∀ p, c p ≤ γ) (hγ : 0 ≤ γ) {T₀ M : ℝ} (hT₀ : t₁ - t₀ ≤ T₀)
+    (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht)
+    (hinit : ∀ x, |u (slabMk x ⟨t₀, left_mem_Icc.2 ht.le⟩)| ≤ M) :
+    ‖valueL u‖ ≤
+      Real.exp (γ * T₀) * (1 + T₀) * (M + ‖euclideanParabolicOperatorL hα a b c u‖) := by
+  set Pu := ‖euclideanParabolicOperatorL hα a b c u‖
+  have hM₀ : 0 ≤ M := (abs_nonneg _).trans (hinit 0)
+  have hPu : 0 ≤ Pu := norm_nonneg _
+  have hT₀₀ : 0 ≤ T₀ := by linarith
+  refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun p ↦ ?_
+  have hmax := abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le hα ha hc hγ u
+    (fun q ↦ by
+      simpa only [Real.norm_eq_abs] using HolderSpace.norm_apply_le
+        (euclideanParabolicOperatorL hα a b c u) q) hinit p
+  obtain ⟨ht₀, ht₁⟩ := (slabTime p).2
+  have hs₀ : 0 ≤ (slabTime p : ℝ) - t₀ := by linarith
+  have hsT₀ : (slabTime p : ℝ) - t₀ ≤ T₀ := by linarith
+  rw [valueL_apply, Real.norm_eq_abs]
+  refine hmax.trans ?_
+  have hexp : Real.exp (γ * ((slabTime p : ℝ) - t₀)) ≤ Real.exp (γ * T₀) :=
+    Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hsT₀ hγ)
+  have hlin : M + ((slabTime p : ℝ) - t₀) * Pu ≤ (1 + T₀) * (M + Pu) := by
+    nlinarith [mul_le_mul_of_nonneg_right hsT₀ hPu]
+  calc
+    _ ≤ Real.exp (γ * T₀) * (M + ((slabTime p : ℝ) - t₀) * Pu) :=
+      mul_le_mul_of_nonneg_right hexp (add_nonneg hM₀ (mul_nonneg hs₀ hPu))
+    _ ≤ Real.exp (γ * T₀) * ((1 + T₀) * (M + Pu)) :=
+      mul_le_mul_of_nonneg_left hlin (Real.exp_pos _).le
+    _ = _ := by ring
 
 /-- **Uniqueness for the Cauchy problem.** For degenerate elliptic `a`, an element of
 `C_b^{2+α,1+α/2}` on `ℝⁿ × [t₀, t₁]` is determined by `P u` and its initial trace `u(·, t₀)`. -/
