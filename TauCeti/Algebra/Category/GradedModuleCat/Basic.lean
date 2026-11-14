@@ -67,7 +67,7 @@ structure GradedModuleCat where
   [isModuleBase : Module k carrier]
   [isScalarTower : IsScalarTower k A carrier]
   /-- The internal grading of the module. -/
-  grading : InternalGrading k carrier
+  grading : InternalGrading k carrier ℤ
   [gradedSMul : SetLike.GradedSMul 𝒜 grading.piece]
 
 namespace GradedModuleCat

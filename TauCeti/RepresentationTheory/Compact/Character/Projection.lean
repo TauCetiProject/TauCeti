@@ -77,10 +77,10 @@ variable {𝕜 G V W : Type*} [RCLike 𝕜] [IsAlgClosed 𝕜] [Group G] [Topolo
   [FiniteDimensional 𝕜 W]
 
 local instance instCompleteSpaceProjectionSource : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  FiniteDimensional.completeSpace 𝕜 V
 
 local instance instCompleteSpaceProjectionTarget : CompleteSpace W :=
-  FiniteDimensional.complete 𝕜 W
+  FiniteDimensional.completeSpace 𝕜 W
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
   (ρ : ContRepresentation 𝕜 G W) (hρ : Continuous ρ)

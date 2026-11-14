@@ -43,6 +43,9 @@ corresponding cumulative sum. Quantile formulas and endpoint limits are in
 * `TauCeti.Probability.categoricalMeasure` is the weighted sum of Dirac measures;
 * `TauCeti.Probability.categoricalMeasure_singleton` gives its masses;
 * `TauCeti.Probability.integral_categoricalMeasure` evaluates integrals as finite weighted sums;
+* `Convexity.StdSimplex.integrable_map_categoricalMeasure` and
+  `Convexity.StdSimplex.integral_map_categoricalMeasure` give integrability and integration for
+  labelled categorical laws;
 * `TauCeti.Probability.measurable_categoricalMeasure` proves parameter measurability;
 * `TauCeti.Probability.continuous_categoricalMeasure` proves weak continuity on the full simplex,
   including zero weights;
@@ -249,6 +252,31 @@ open Set TauCeti.Probability
 
 variable {I : Type*} [Fintype I] [MeasurableSpace I] [MeasurableSingletonClass I]
   {β : Type*} [MeasurableSpace β]
+
+/-- Every function is integrable against a labelled categorical law. Neither injectivity of
+the labels nor measurability of the function on the whole target space is needed. -/
+@[simp]
+theorem integrable_map_categoricalMeasure [MeasurableSingletonClass β]
+    {E : Type*} [NormedAddGroup E]
+    (p : StdSimplex ℝ≥0 I) (label : I → β) (f : β → E) :
+    Integrable f ((categoricalMeasure p).map label) := by
+  rw [categoricalMeasure_def, Measure.map_finset_sum' (measurable_of_finite label).aemeasurable]
+  apply integrable_finsetSum_measure.2
+  intro i _
+  rw [Measure.map_smul _ (measurable_of_finite label).aemeasurable,
+    Measure.map_dirac]
+  exact (integrable_dirac (by finiteness)).smul_measure (by finiteness)
+
+/-- Integration against a labelled categorical law is the weighted sum over the categories,
+including repeated labels and zero weights. -/
+theorem integral_map_categoricalMeasure [MeasurableSingletonClass β]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    (p : StdSimplex ℝ≥0 I) (label : I → β) (f : β → E) :
+    ∫ x, f x ∂(categoricalMeasure p).map label =
+      ∑ i, (p.weights i : ℝ) • f (label i) := by
+  rw [integral_map (measurable_of_finite label).aemeasurable
+    (p.integrable_map_categoricalMeasure label f).aestronglyMeasurable,
+    integral_categoricalMeasure]
 
 open Classical in
 /-- The mass of a measurable set of labels is the sum of all category weights with a label

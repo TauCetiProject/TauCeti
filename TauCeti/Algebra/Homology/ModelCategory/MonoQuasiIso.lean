@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.GrothendieckAbelian
+public import Mathlib.CategoryTheory.MorphismProperty.IsSmall
 public import Mathlib.CategoryTheory.MorphismProperty.LiftingProperty
 public import Mathlib.CategoryTheory.MorphismProperty.TransfiniteComposition
 public import Mathlib.CategoryTheory.Subobject.Lattice
@@ -42,9 +43,12 @@ complex of injective objects exactly when its morphism to zero has the right lif
 with respect to the small monomorphic quasi-isomorphisms
 (`CochainComplex.exists_rlp_monoQuasiIsoOfCardinalLT_iff_of_isZero`).
 
-In the injective model structure on unbounded complexes these morphisms play the role of
-generating trivial cofibrations: the small object argument applied to them is the standard route
-to a monomorphic quasi-isomorphism from any complex into a K-injective complex of injectives.
+The class `monoQuasiIsoOfCardinalLT κ` need not be `w`-small. The theorem
+`CochainComplex.exists_isSmall_le_monomorphisms_inf_quasiIso_and_rlp_eq` supplies a `w`-small
+family of monomorphic quasi-isomorphisms with the same right lifting property as all monomorphic
+quasi-isomorphisms. In the injective model structure on unbounded complexes, this family serves as
+generating trivial cofibrations. Applying the small object argument to this family gives a
+monomorphic quasi-isomorphism from any complex into a K-injective complex of injectives.
 
 The key step enlarges a proper subcomplex `A` of a complex `M` with acyclic quotient `M / A`.
 A nonzero acyclic subcomplex `N` of `M / A` with terms of bounded size exists by
@@ -133,6 +137,33 @@ private lemma hasCardinalLT_subobject_free {κ : Cardinal.{w}}
     (fun S n ↦ ⟨(j n, j (n - 1)), cast (congrArg (fun Y : C ↦ Subobject Y) (free_X _ n)) (S n)⟩)
     fun _ _ h ↦ funext fun n ↦ (cast_inj _).1 (eq_of_heq (Sigma.mk.inj_iff.1 (congrFun h n)).2))
 
+variable (G B) in
+/-- The subcomplexes of the free complexes of `exists_free_lift` whose inclusions are
+quasi-isomorphisms. -/
+private abbrev FreeSubcomplexes : Type _ :=
+  Σ j : ℤ → ℕ, {A : Subobject (free (fun n ↦ gen G B (j n))) // QuasiIso A.arrow}
+
+variable (G B) in
+/-- The inclusions of the subcomplexes of the free complexes of `exists_free_lift` that are
+quasi-isomorphisms. Unlike `monoQuasiIsoOfCardinalLT κ`, this family of morphisms is `w`-small. -/
+private def freeMonoQuasiIso : MorphismProperty (CochainComplex C ℤ) :=
+  MorphismProperty.ofHoms fun S : FreeSubcomplexes G B ↦ S.2.1.arrow
+
+private instance : MorphismProperty.IsSmall.{w} (freeMonoQuasiIso G B) := by
+  dsimp only [freeMonoQuasiIso]
+  infer_instance
+
+private lemma freeMonoQuasiIso_le {κ : Cardinal.{w}}
+    (hκ : HasCardinalLT (SubobjectFamilies G B) κ) :
+    freeMonoQuasiIso G B ≤ monoQuasiIsoOfCardinalLT κ := by
+  rintro _ _ _ ⟨⟨j, A, hA⟩⟩
+  exact ⟨inferInstance, hA, hasCardinalLT_subobject_free hκ j⟩
+
+private lemma freeMonoQuasiIso_le_monomorphisms_inf_quasiIso :
+    freeMonoQuasiIso G B ≤ monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ) := by
+  rintro _ _ _ ⟨⟨j, A, hA⟩⟩
+  exact ⟨inferInstanceAs (Mono A.arrow), hA⟩
+
 omit [IsGrothendieckAbelian.{w} C] in
 /-- The cokernel of the base change `A ×_M F ⟶ F` of a monomorphism `p : A ⟶ M` along
 `ψ : F ⟶ M` is the image of `F` in the cokernel of `p`: if `ψ` followed by the projection to the
@@ -158,29 +189,36 @@ private lemma acyclic_cokernel_pullback_snd {A M F N : CochainComplex C ℤ} (p 
 
 /-- **The enlargement step.** A monomorphic quasi-isomorphism `p : A ⟶ M` that is not an
 isomorphism factors as a pushout `i : A ⟶ A'` of a monomorphic quasi-isomorphism with target
-a free complex of bounded size, which is not an isomorphism, followed by a monomorphism
-`A' ⟶ M`. -/
+a free complex of bounded size (a morphism of `freeMonoQuasiIso G B`), which is not an
+isomorphism, followed by a monomorphism `A' ⟶ M`. -/
 private lemma exists_pushouts (hG : IsSeparator G)
     (hB : ∀ (M : CochainComplex C ℤ), M.Acyclic → ¬ IsZero M →
       ∃ (N : CochainComplex C ℤ) (i : N ⟶ M) (_ : Mono i) (n : ℤ),
         ¬ IsZero N ∧ N.Acyclic ∧ N.IsStrictlyLE n ∧ ∀ m, ∃ (j : ℕ) (p : B j ⟶ N.X m), Epi p)
-    {κ : Cardinal.{w}} (hκ : HasCardinalLT (SubobjectFamilies G B) κ)
     {A M : CochainComplex C ℤ} (p : A ⟶ M) [Mono p] [QuasiIso p] (hp : ¬ IsIso p) :
     ∃ (A' : CochainComplex C ℤ) (i : A ⟶ A') (p' : A' ⟶ M),
-      (monoQuasiIsoOfCardinalLT κ).pushouts i ∧ ¬ IsIso i ∧ Mono p' ∧ i ≫ p' = p := by
+      (freeMonoQuasiIso G B).pushouts i ∧ ¬ IsIso i ∧ Mono p' ∧ i ≫ p' = p := by
   have hQ : (cokernel p).Acyclic := (TauCeti.cokernelSequence_shortExact p).quasiIso_f_iff.1 ‹_›
   have hQ' : ¬ IsZero (cokernel p) := fun h ↦ hp (by
     have : Epi p := Preadditive.epi_of_cokernel_zero (h.eq_of_tgt _ _)
     exact isIso_of_mono_of_epi p)
   obtain ⟨N, ι, _, -, hNz, hN, -, hNB⟩ := hB _ hQ hQ'
   obtain ⟨j, ψ, e, _, hψ⟩ := exists_free_lift hG (cokernel.π p) ι hNB
-  have hS : monoQuasiIsoOfCardinalLT κ (pullback.snd p ψ) :=
-    ⟨(inferInstance : Mono (pullback.snd p ψ)),
-      (TauCeti.cokernelSequence_shortExact (pullback.snd p ψ)).quasiIso_f_iff.2
-      (acyclic_cokernel_pullback_snd p ψ e ι hψ hN), hasCardinalLT_subobject_free hκ j⟩
+  have : QuasiIso (pullback.snd p ψ) :=
+    (TauCeti.cokernelSequence_shortExact (pullback.snd p ψ)).quasiIso_f_iff.2
+      (acyclic_cokernel_pullback_snd p ψ e ι hψ hN)
+  -- `pullback.snd p ψ` is isomorphic to the inclusion of a subcomplex of the free complex.
+  let u := Subobject.underlyingIso (pullback.snd p ψ)
+  have hS : freeMonoQuasiIso G B (Subobject.mk (pullback.snd p ψ)).arrow :=
+    MorphismProperty.ofHoms.mk (f := fun S : FreeSubcomplexes G B ↦ S.2.1.arrow)
+      ⟨j, Subobject.mk (pullback.snd p ψ),
+        by rw [← Subobject.underlyingIso_hom_comp_eq_mk]; infer_instance⟩
+  have hsq : IsPushout (u.hom ≫ pullback.fst p ψ) (Subobject.mk (pullback.snd p ψ)).arrow
+      (pushout.inl (pullback.fst p ψ) (pullback.snd p ψ)) (pushout.inr _ _) :=
+    (IsPushout.of_hasPushout _ _).of_iso u.symm (Iso.refl _) (Iso.refl _) (Iso.refl _)
+      (by simp) (by simp [u, Subobject.underlyingIso_arrow]) (by simp) (by simp)
   refine ⟨pushout (pullback.fst p ψ) (pullback.snd p ψ), pushout.inl _ _,
-    pushout.desc p ψ pullback.condition,
-    ⟨_, _, _, _, _, hS, IsPushout.of_hasPushout _ _⟩, fun hi ↦ hNz ?_,
+    pushout.desc p ψ pullback.condition, ⟨_, _, _, _, _, hS, hsq⟩, fun hi ↦ hNz ?_,
     (IsPushout.of_hasPushout _ _).mono_of_isPullback_of_mono (IsPullback.of_hasPullback p ψ) _
       (pushout.inl_desc _ _ _) (pushout.inr_desc _ _ _), pushout.inl_desc _ _ _⟩
   -- If the pushout of `A ×_M F ⟶ F` were an isomorphism, `ψ` would factor through `p`, so the
@@ -193,18 +231,19 @@ private lemma exists_pushouts (hG : IsSeparator G)
   rw [← hψ, hψ', Category.assoc, cokernel.condition, comp_zero, comp_zero]
 
 /-- The subcomplexes of `M` included by a quasi-isomorphism can be enlarged transfinitely, along
-pushouts of monomorphic quasi-isomorphisms with small target, until they exhaust `M`. -/
+pushouts of morphisms of `freeMonoQuasiIso G B`, until they exhaust `M`. -/
 private lemma isEnlargeable (hG : IsSeparator G)
     (hB : ∀ (M : CochainComplex C ℤ), M.Acyclic → ¬ IsZero M →
       ∃ (N : CochainComplex C ℤ) (i : N ⟶ M) (_ : Mono i) (n : ℤ),
         ¬ IsZero N ∧ N.Acyclic ∧ N.IsStrictlyLE n ∧ ∀ m, ∃ (j : ℕ) (p : B j ⟶ N.X m), Epi p)
-    {κ : Cardinal.{w}} (hκ : HasCardinalLT (SubobjectFamilies G B) κ) (M : CochainComplex C ℤ) :
-    IsGrothendieckAbelian.IsEnlargeable (monoQuasiIsoOfCardinalLT.{w} κ).pushouts
+    (M : CochainComplex C ℤ) :
+    IsGrothendieckAbelian.IsEnlargeable (freeMonoQuasiIso G B).pushouts
       (fun A : Subobject M ↦ QuasiIso A.arrow) where
   exists_lt A hA hA' := by
-    obtain ⟨A', i, p', hi, hi', _, fac⟩ := exists_pushouts hG hB hκ A.arrow
+    obtain ⟨A', i, p', hi, hi', _, fac⟩ := exists_pushouts hG hB A.arrow
       (by rwa [Subobject.isIso_arrow_iff_eq_top])
-    have : QuasiIso i := (pushouts_le_iff.2 (monoQuasiIsoOfCardinalLT_le κ) _ hi).2
+    have : QuasiIso i :=
+      (pushouts_le_iff.2 freeMonoQuasiIso_le_monomorphisms_inf_quasiIso _ hi).2
     have : QuasiIso (i ≫ p') := by rwa [fac]
     have : QuasiIso p' := quasiIso_of_comp_left i p'
     have hlt : A < Subobject.mk p' := by simpa using Subobject.mk_lt_mk_of_comm i fac hi'
@@ -216,6 +255,20 @@ private lemma isEnlargeable (hG : IsSeparator G)
     · simp [← cancel_mono (Subobject.mk p').arrow, fac]
   top := inferInstance
   iSup A hA hQ := HomologicalComplex.quasiIso_iSup_arrow A hA hQ
+
+/-- Every monomorphic quasi-isomorphism is a transfinite composition of pushouts of morphisms
+of `freeMonoQuasiIso G B`. -/
+private lemma exists_transfiniteCompositionOfShape (hG : IsSeparator G)
+    (hB : ∀ (M : CochainComplex C ℤ), M.Acyclic → ¬ IsZero M →
+      ∃ (N : CochainComplex C ℤ) (i : N ⟶ M) (_ : Mono i) (n : ℤ),
+        ¬ IsZero N ∧ N.Acyclic ∧ N.IsStrictlyLE n ∧ ∀ m, ∃ (j : ℕ) (p : B j ⟶ N.X m), Epi p)
+    {K L : CochainComplex C ℤ} (f : K ⟶ L) [Mono f] [QuasiIso f] :
+    ∃ (J : Type w) (_ : LinearOrder J) (_ : OrderBot J) (_ : SuccOrder J) (_ : WellFoundedLT J),
+      Nonempty (MorphismProperty.TransfiniteCompositionOfShape
+        (freeMonoQuasiIso G B).pushouts J f) := by
+  refine (isEnlargeable hG hB L).exists_transfiniteCompositionOfShape f ?_
+  rw [← Subobject.underlyingIso_hom_comp_eq_mk]
+  infer_instance
 
 end MonoQuasiIso
 
@@ -235,10 +288,40 @@ theorem exists_transfiniteCompositionOfShape_monoQuasiIsoOfCardinalLT :
     fun κ hκ K L f _ _ ↦ ?_⟩
   have hκ' : HasCardinalLT (SubobjectFamilies (separator C) B) κ :=
     ((hasCardinalLT_iff_cardinal_mk_lt _ _).2 hκ).of_injective _ (equivShrink _).injective
-  refine (isEnlargeable (isSeparator_separator C) hB hκ' L).exists_transfiniteCompositionOfShape
-    f ?_
-  rw [← Subobject.underlyingIso_hom_comp_eq_mk]
-  infer_instance
+  obtain ⟨J, _, _, _, _, ⟨t⟩⟩ := exists_transfiniteCompositionOfShape (isSeparator_separator C) hB f
+  exact ⟨J, _, _, _, _, ⟨t.ofLE (pushouts_monotone (freeMonoQuasiIso_le hκ'))⟩⟩
+
+omit [IsGrothendieckAbelian.{w} C] in
+/-- A morphism property `I` such that every monomorphic quasi-isomorphism is a transfinite
+composition of pushouts of morphisms in `I` has a right lifting property at least as strong as
+that of all monomorphic quasi-isomorphisms. -/
+private lemma rlp_le_rlp_monomorphisms_inf_quasiIso (I : MorphismProperty (CochainComplex C ℤ))
+    (h : ∀ {K L : CochainComplex C ℤ} (f : K ⟶ L) [Mono f] [QuasiIso f],
+      ∃ (J : Type w) (_ : LinearOrder J) (_ : OrderBot J) (_ : SuccOrder J) (_ : WellFoundedLT J),
+        Nonempty (MorphismProperty.TransfiniteCompositionOfShape I.pushouts J f)) :
+    I.rlp ≤ (monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp := by
+  intro X Y p hp K L i hi
+  have : Mono i := hi.1
+  have : QuasiIso i := hi.2
+  obtain ⟨J, _, _, _, _, ⟨t⟩⟩ := h i
+  exact transfiniteCompositionsOfShape_le_llp_rlp _ _ _ t.mem _ (by simpa)
+
+open MonoQuasiIso in
+/-- There is a `w`-small family `I` of monomorphic quasi-isomorphisms of cochain complexes over a
+Grothendieck abelian category such that a morphism has the right lifting property with respect to
+`I` if and only if it has it with respect to all monomorphic quasi-isomorphisms. Unlike the class
+of all monomorphic quasi-isomorphisms, or `monoQuasiIsoOfCardinalLT κ`, such a family can be used
+in the small object argument. -/
+theorem exists_isSmall_le_monomorphisms_inf_quasiIso_and_rlp_eq :
+    ∃ I : MorphismProperty (CochainComplex C ℤ), I.IsSmall.{w} ∧
+      I ≤ monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ) ∧
+        I.rlp = (monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp := by
+  obtain ⟨B, hB⟩ := (isSeparator_separator C).exists_bounded_nonzero_acyclic_subcomplex
+  exact ⟨freeMonoQuasiIso (separator C) B, inferInstance,
+    freeMonoQuasiIso_le_monomorphisms_inf_quasiIso,
+    le_antisymm (rlp_le_rlp_monomorphisms_inf_quasiIso _ fun f _ _ ↦
+        exists_transfiniteCompositionOfShape (isSeparator_separator C) hB f)
+      (antitone_rlp freeMonoQuasiIso_le_monomorphisms_inf_quasiIso)⟩
 
 /-- For all sufficiently large cardinals `κ`, a morphism of cochain complexes over a Grothendieck
 abelian category has the right lifting property with respect to all monomorphic
@@ -249,12 +332,8 @@ theorem exists_rlp_monoQuasiIsoOfCardinalLT_eq :
       (monoQuasiIsoOfCardinalLT (C := C) κ).rlp =
         (monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp := by
   obtain ⟨κ₀, h⟩ := exists_transfiniteCompositionOfShape_monoQuasiIsoOfCardinalLT.{w} (C := C)
-  refine ⟨κ₀, fun κ hκ ↦ le_antisymm ?_ (antitone_rlp (monoQuasiIsoOfCardinalLT_le κ))⟩
-  intro X Y p hp A B i hi
-  have : Mono i := hi.1
-  have : QuasiIso i := hi.2
-  obtain ⟨J, _, _, _, _, ⟨t⟩⟩ := h κ hκ i
-  exact transfiniteCompositionsOfShape_le_llp_rlp _ _ _ t.mem _ (by simpa)
+  exact ⟨κ₀, fun κ hκ ↦ le_antisymm (rlp_le_rlp_monomorphisms_inf_quasiIso _ (h κ hκ))
+    (antitone_rlp (monoQuasiIsoOfCardinalLT_le κ))⟩
 
 /-- For all sufficiently large cardinals `κ`, a cochain complex `I` over a Grothendieck abelian
 category is a K-injective complex of injective objects if and only if its morphism to a zero

@@ -144,7 +144,7 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isFunctionField
   -- The integral closure `R` of `k[t]` in `F` is an affine model of `F / k`, and the integral
   -- closure `S` of `R` in `F'` is one of `F' / k'`.
   let R := integralClosure (Algebra.adjoin k {t}) F
-  have : IsDedekindDomain R := isDedekindDomain_integralClosure_adjoin hF htr
+  have : IsDedekindDomain R := isDedekindDomain_integralClosure_adjoin hF t
   have : IsFractionRing R F := isFractionRing_integralClosure_adjoin hF htr
   let S := integralClosure R F'
   have : IsDedekindDomain S := integralClosure.isDedekindDomain R F F'

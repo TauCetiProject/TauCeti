@@ -552,7 +552,7 @@ theorem norm_integral_apply_apply_circleMap_le {V G : Type*} [NormedAddCommGroup
       integral_of_not_completeSpace hG, norm_zero]
     exact mul_nonneg (norm_nonneg B) (intervalIntegral.integral_nonneg
       (by linarith [Real.pi_pos]) fun _ _ => by positivity)
-  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   have hc : ContDiff ℝ 1 (fun θ ↦ u (circleMap z₀ r θ)) :=
     contDiff_iff_contDiffAt.mpr fun θ ↦
       (hu θ).comp θ (contDiff_circleMap z₀ r).contDiffAt
@@ -582,7 +582,7 @@ theorem ofReal_integral_norm_deriv_comp_circleMap_sq_le {V : Type*}
       ENNReal.ofReal ρ * circleLIntegral g ζ ρ := by
   rw [intervalIntegral.integral_of_le (by linarith [Real.pi_pos]),
     integral_Ioc_eq_integral_Ioo, circleLIntegral_def, ← mul_assoc]
-  refine (Real.ofReal_le_enorm _).trans ((enorm_integral_le_lintegral_enorm _).trans ?_)
+  refine (Real.ofReal_le_eNorm _).trans ((eNorm_integral_le_lintegral_eNorm _).trans ?_)
   rw [← lintegral_const_mul' _ _ (ENNReal.mul_ne_top
     ENNReal.ofReal_ne_top ENNReal.ofReal_ne_top)]
   refine setLIntegral_mono' measurableSet_Ioo fun θ _ => ?_
@@ -593,7 +593,7 @@ theorem ofReal_integral_norm_deriv_comp_circleMap_sq_le {V : Type*}
     rw [hd]
     simpa [norm_mul, norm_circleMap_zero, abs_of_pos hρ] using
       (fderiv ℝ u (circleMap ζ ρ θ)).le_opNorm (circleMap 0 ρ θ * Complex.I)
-  rw [Real.enorm_of_nonneg (sq_nonneg _)]
+  rw [Real.eNorm_of_nonneg (sq_nonneg _)]
   calc ENNReal.ofReal (‖deriv (fun θ ↦ u (circleMap ζ ρ θ)) θ‖ ^ 2)
       ≤ ENNReal.ofReal ((‖fderiv ℝ u (circleMap ζ ρ θ)‖ * ρ) ^ 2) := by
         gcongr

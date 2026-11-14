@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Trace.Nilpotent
 import Mathlib.Algebra.Lie.AdjointAction.Derivation
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # The filtration of a centralizer by powers of `ad e`
@@ -25,6 +26,8 @@ representation.
 ## Main results
 
 * `TauCeti.antitone_ker_inf_range_pow`: the filtration is decreasing.
+* `TauCeti.mem_ker_inf_range_pow_iff`: membership in a step of the filtration does not depend on
+  the base ring.
 * `TauCeti.lie_mem_ker_inf_range_pow_add`: the filtration is compatible with brackets.
 * `TauCeti.isNilpotent_ad_lie_of_lie_lie_eq_zero`: Jacobson's lemma for the adjoint
   representation.
@@ -48,6 +51,15 @@ namespace TauCeti
 theorem antitone_ker_inf_range_pow {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
     (e : L) : Antitone fun k : ℕ => LinearMap.ker (ad R L e) ⊓ LinearMap.range (ad R L e ^ k) :=
   fun _ _ hkl => inf_le_inf_left _ ((ad R L e).iterateRange.monotone hkl)
+
+/-- Membership in a step of the filtration of the centralizer of `e` does not depend on the base
+ring of the Lie algebra: `ad` over `R` and over `S` is the same bracket. -/
+theorem mem_ker_inf_range_pow_iff {L : Type*} [LieRing L] (R S : Type*) [CommRing R]
+    [CommRing S] [LieAlgebra R L] [LieAlgebra S L] {e x : L} {n : ℕ} :
+    x ∈ LinearMap.ker (ad R L e) ⊓ LinearMap.range (ad R L e ^ n) ↔
+      x ∈ LinearMap.ker (ad S L e) ⊓ LinearMap.range (ad S L e ^ n) := by
+  simp only [Submodule.mem_inf, LinearMap.mem_ker, LinearMap.mem_range, ad_apply,
+    ad_pow_apply_eq_ad_pow_apply R S e]
 
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
 

@@ -24,13 +24,13 @@ columns, and its first two columns read only the first row of the coefficient ma
 * at the last strict index `j = m - 1`, with `e ≤ j`, the subresultant is
   `p.coeff m ^ (n - j) • q`.
 
-When `p.natDegree ≤ m`, these two identities together with the two results above determine the
-subresultants of `p` and `q` at every strict index from the actual degree of `q`. The left
-versions follow by the block-swap sign. Taking `q` constant gives the subresultants of a
-polynomial and a constant.
+These two identities together with the two results above determine the subresultants of `p` and
+`q` at every strict index from the actual degree of `q`. The left versions follow by the
+block-swap sign. Taking `q` constant gives the subresultants of a polynomial and a constant.
 
-The two identities of this file hold over every commutative ring, with no hypothesis on `p` and
-no nonvanishing assumption on any coefficient.
+All four right degree-drop identities, the two of this file and the two results above, hold over
+every commutative ring, with no hypothesis on `p` and no nonvanishing assumption on any
+coefficient.
 
 ## Main results
 

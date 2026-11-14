@@ -31,7 +31,7 @@ to `H`.
 ## Proof
 
 The proof is the one of Artin and Tate, in the form given by Ferrand. Put `Q = G^{ab}` and
-`A = G' ⧸ G''`, a `Q`-module by conjugation (`Abelianization.of_smul_of`). Quotient
+`A = G' ⧸ G''`, a `Q`-module by conjugation (`Group.Abelianization.of_smul_of`). Quotient
 representatives `out q ∈ G` give the factor set `f(σ, τ) = out σ · out τ · out (στ)⁻¹` of the
 extension `G ⧸ G''` of `Q` by `A`, a `2`-cocycle, and the transfer of a representative is a
 column sum of it (`MonoidHom.transfer_eq_prod_mul_out`):
@@ -69,29 +69,29 @@ public section
 
 namespace TauCeti.CommutatorTransfer
 
-open Abelianization
+open Group.Abelianization
 open scoped commutatorElement
 
 variable {G : Type} [Group G]
 
 /-- The chosen representative in `G` of an element of `G^{ab}`. -/
-private noncomputable abbrev out (q : Abelianization G) : G := (q : G ⧸ commutator G).out
+private noncomputable abbrev out (q : Group.Abelianization G) : G := (q : G ⧸ commutator G).out
 
-private theorem of_out (q : Abelianization G) : of (out q) = q := QuotientGroup.out_eq' q
+private theorem of_out (q : Group.Abelianization G) : of (out q) = q := QuotientGroup.out_eq' q
 
-private theorem out_mul_out_mul_inv_mem (σ τ : Abelianization G) :
+private theorem out_mul_out_mul_inv_mem (σ τ : Group.Abelianization G) :
     out σ * out τ * (out (σ * τ))⁻¹ ∈ commutator G :=
   of_eq_one_iff.1 (by simp [of_out])
 
-private theorem smul_of (q : Abelianization G) (n : commutator G) :
+private theorem smul_of (q : Group.Abelianization G) (n : commutator G) :
     q • of n = of (MulAut.conjNormal (out q) n) := by
   conv_lhs => rw [← of_out q]
   exact of_smul_of _ n
 
 /-- The factor set of the extension `G ⧸ G''` of `G^{ab}` by `G' ⧸ G''`, read off the chosen
 representatives. -/
-private noncomputable def factorSet (p : Abelianization G × Abelianization G) :
-    Abelianization (commutator G) :=
+private noncomputable def factorSet (p : Group.Abelianization G × Group.Abelianization G) :
+    Group.Abelianization (commutator G) :=
   of ⟨out p.1 * out p.2 * (out (p.1 * p.2))⁻¹, out_mul_out_mul_inv_mem p.1 p.2⟩
 
 private theorem isMulCocycle₂_factorSet :
@@ -107,10 +107,10 @@ private theorem isMulCocycle₂_factorSet :
 /-- **`G' ⧸ G''` is generated, as a `G^{ab}`-module, by the commutators of representatives.**
 A subgroup of `G' ⧸ G''` that is stable under `G^{ab}` and contains every `q • α / α` and every
 `f(σ, τ) / f(τ, σ)` is everything. -/
-private theorem eq_top_of_forall_mem (S : Subgroup (Abelianization (commutator G)))
-    (hsmul : ∀ (q : Abelianization G) {α}, α ∈ S → q • α ∈ S)
-    (hsub : ∀ (q : Abelianization G) (α), q • α / α ∈ S)
-    (hf : ∀ σ τ : Abelianization G, factorSet (σ, τ) / factorSet (τ, σ) ∈ S) : S = ⊤ := by
+private theorem eq_top_of_forall_mem (S : Subgroup (Group.Abelianization (commutator G)))
+    (hsmul : ∀ (q : Group.Abelianization G) {α}, α ∈ S → q • α ∈ S)
+    (hsub : ∀ (q : Group.Abelianization G) (α), q • α / α ∈ S)
+    (hf : ∀ σ τ : Group.Abelianization G, factorSet (σ, τ) / factorSet (τ, σ) ∈ S) : S = ⊤ := by
   -- The class of `⁅x, y⁆` lies in `S`: with `x = s a` and `y = t b` for the representatives `s`,
   -- `t` of the classes of `x`, `y` and `a, b ∈ G'`, the commutator is
   -- `s ⁅a, y⁆ s⁻¹ · ⁅s, t⁆ · t ⁅s, b⁆ t⁻¹`, and `⁅s, t⁆` has class `f([x], [y]) / f([y], [x])`.
@@ -157,27 +157,27 @@ private theorem eq_top_of_forall_mem (S : Subgroup (Abelianization (commutator G
 
 variable (G) in
 /-- The coefficient module `G' ⧸ G''` of `G^{ab}`, as an integral representation. -/
-private noncomputable abbrev coefficients : Rep ℤ (Abelianization G) :=
-  Rep.ofMulDistribMulAction (Abelianization G) (Abelianization (commutator G))
+private noncomputable abbrev coefficients : Rep ℤ (Group.Abelianization G) :=
+  Rep.ofMulDistribMulAction (Group.Abelianization G) (Group.Abelianization (commutator G))
 
 /-- An element of `G' ⧸ G''` as an element of the coefficient module. -/
-private abbrev toCoeff (α : Abelianization (commutator G)) : coefficients G :=
-  Additive.ofMul (α := Abelianization (commutator G)) α
+private abbrev toCoeff (α : Group.Abelianization (commutator G)) : coefficients G :=
+  Additive.ofMul (α := Group.Abelianization (commutator G)) α
 
 -- `ofMul_mul`, `ofMul_one`, `ofMul_inv` and `ofMul_div`, stated in the carrier of the
 -- coefficient module so that they rewrite inside maps out of it.
-private theorem toCoeff_mul (α β : Abelianization (commutator G)) :
+private theorem toCoeff_mul (α β : Group.Abelianization (commutator G)) :
     toCoeff (α * β) = toCoeff α + toCoeff β := ofMul_mul α β
 
-private theorem toCoeff_one : toCoeff (1 : Abelianization (commutator G)) = 0 := ofMul_one
+private theorem toCoeff_one : toCoeff (1 : Group.Abelianization (commutator G)) = 0 := ofMul_one
 
-private theorem toCoeff_inv (α : Abelianization (commutator G)) :
+private theorem toCoeff_inv (α : Group.Abelianization (commutator G)) :
     toCoeff α⁻¹ = -toCoeff α := ofMul_inv α
 
-private theorem toCoeff_div (α β : Abelianization (commutator G)) :
+private theorem toCoeff_div (α β : Group.Abelianization (commutator G)) :
     toCoeff (α / β) = toCoeff α - toCoeff β := ofMul_div α β
 
-private theorem ρ_toCoeff (q : Abelianization G) (α : Abelianization (commutator G)) :
+private theorem ρ_toCoeff (q : Group.Abelianization G) (α : Group.Abelianization (commutator G)) :
     (coefficients G).ρ q (toCoeff α) = toCoeff (q • α) := (rfl)
 
 /-- The factor set as a `2`-cocycle. -/
@@ -185,11 +185,11 @@ private noncomputable abbrev cocycle : groupCohomology.cocycles₂ (coefficients
   groupCohomology.cocyclesOfIsMulCocycle₂ isMulCocycle₂_factorSet
 
 /-- The splitting module of the extension `G ⧸ G''` of `G^{ab}` by `G' ⧸ G''`. -/
-private noncomputable abbrev splitting (G : Type) [Group G] : Rep ℤ (Abelianization G) :=
+private noncomputable abbrev splitting (G : Type) [Group G] : Rep ℤ (Group.Abelianization G) :=
   Rep.splittingModule (coefficients G) (groupCohomology.H2π _ cocycle)
 
 /-- In the splitting module the factor set is the coboundary of a cochain `ψ`. -/
-private theorem exists_coboundary_eq_factorSet : ∃ ψ : Abelianization G → splitting G,
+private theorem exists_coboundary_eq_factorSet : ∃ ψ : Group.Abelianization G → splitting G,
     ∀ σ τ, (splitting G).ρ σ (ψ τ) - ψ (σ * τ) + ψ σ =
       (Rep.splittingModuleIncl (coefficients G) (groupCohomology.H2π _ cocycle)).hom
         (toCoeff (factorSet (σ, τ))) := by
@@ -212,7 +212,7 @@ private theorem incl_mem_coinvariantsKer (a : coefficients G) :
   obtain ⟨ψ, hψ⟩ := exists_coboundary_eq_factorSet (G := G)
   set j := (Rep.splittingModuleIncl (coefficients G) (groupCohomology.H2π _ cocycle)).hom
   set K := Representation.Coinvariants.ker (splitting G).ρ
-  let S : Subgroup (Abelianization (commutator G)) :=
+  let S : Subgroup (Group.Abelianization (commutator G)) :=
     { carrier := {α | j (toCoeff α) ∈ K}
       mul_mem' {α β} hα hβ := by
         simpa only [Set.mem_ofPred_eq, toCoeff_mul, map_add] using K.add_mem hα hβ
@@ -220,7 +220,7 @@ private theorem incl_mem_coinvariantsKer (a : coefficients G) :
       inv_mem' {α} hα := by
         simpa only [Set.mem_ofPred_eq, toCoeff_inv, map_neg] using K.neg_mem hα }
   have hmem (α) : α ∈ S ↔ j (toCoeff α) ∈ K := Iff.rfl
-  have hj (q : Abelianization G) (α : Abelianization (commutator G)) :
+  have hj (q : Group.Abelianization G) (α : Group.Abelianization (commutator G)) :
       j (toCoeff (q • α)) = (splitting G).ρ q (j (toCoeff α)) := by
     rw [← ρ_toCoeff, Rep.hom_comm_apply]
   have hS : S = ⊤ := by
@@ -239,7 +239,7 @@ private theorem incl_mem_coinvariantsKer (a : coefficients G) :
       exact K.sub_mem (Representation.Coinvariants.sub_mem_ker _ _)
         (Representation.Coinvariants.sub_mem_ker _ _)
   -- The underlying group of the coefficient module is `G' ⧸ G''`.
-  change j (toCoeff (show Abelianization (commutator G) from a)) ∈ K
+  change j (toCoeff (show Group.Abelianization (commutator G) from a)) ∈ K
   exact (hmem _).1 (hS ▸ Subgroup.mem_top _)
 
 variable [Group.FG (commutator G)] [(commutator G).FiniteIndex]
@@ -247,31 +247,34 @@ variable [Group.FG (commutator G)] [(commutator G).FiniteIndex]
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
 private theorem transfer_of_eq_one (g : G) :
-    (Abelianization.of : commutator G →* Abelianization (commutator G)).transfer g = 1 := by
+    (Group.Abelianization.of : commutator G →* Group.Abelianization (commutator
+        G)).transfer g = 1 := by
   classical
-  let _ : Fintype (Abelianization G) := (commutator G).fintypeQuotientOfFiniteIndex
+  let _ : Fintype (Group.Abelianization G) := (commutator G).fintypeQuotientOfFiniteIndex
   set u := groupCohomology.H2π (coefficients G) cocycle
   obtain ⟨ψ, hψ⟩ := exists_coboundary_eq_factorSet (G := G)
   set j := (Rep.splittingModuleIncl (coefficients G) u).hom
   -- The norm of the splitting module vanishes.
-  have : Group.FG (Abelianization (commutator G)) :=
-    Group.fg_of_surjective (f := Abelianization.of) QuotientGroup.mk_surjective
-  have : Module.Finite ℤ (Additive (Abelianization (commutator G))) :=
+  have : Group.FG (Group.Abelianization (commutator G)) :=
+    Group.fg_of_surjective (f := Group.Abelianization.of) QuotientGroup.mk_surjective
+  have : Module.Finite ℤ (Additive (Group.Abelianization (commutator G))) :=
     Module.Finite.iff_addGroup_fg.2 (GroupFG.iff_add_fg.1 this)
   have hnorm : (splitting G).ρ.norm = 0 := by
     refine Rep.norm_eq_zero_of_ker_le_coinvariantsKer (splitting G)
       (Rep.splittingModuleProj (coefficients G) u)
       (fun y ↦ ⟨Rep.splittingModuleMk _ u y 0, by simp⟩) ?_ ?_
     · rw [Rep.ker_splittingModuleProj_eq_range, LinearMap.range_eq_map]
-      exact (Module.Finite.fg_top (R := ℤ) (M := Additive (Abelianization (commutator G)))).map _
+      exact (Module.Finite.fg_top (R := ℤ) (M := Additive (Group.Abelianization (commutator
+          G)))).map _
     · rw [Rep.ker_splittingModuleProj_eq_range]
       rintro _ ⟨a, rfl⟩
       exact incl_mem_coinvariantsKer a
   -- The transfer of a representative `out p` is the column sum `∑_q f(q, p) = N ψ(p) = 0`.
-  have hrep (p : Abelianization G) :
-      (Abelianization.of : commutator G →* Abelianization (commutator G)).transfer (out p) = 1 := by
+  have hrep (p : Group.Abelianization G) :
+      (Group.Abelianization.of : commutator G →* Group.Abelianization (commutator G)).transfer (out
+          p) = 1 := by
     rw [MonoidHom.transfer_eq_prod_mul_out]
-    trans ∏ q : Abelianization G, factorSet (q, p)
+    trans ∏ q : Group.Abelianization G, factorSet (q, p)
     · refine Fintype.prod_congr _ _ fun q ↦ ?_
       simp only [factorSet, out]
       congr 1
@@ -281,9 +284,10 @@ private theorem transfer_of_eq_one (g : G) :
     apply Additive.ofMul.injective
     apply Rep.splittingModuleIncl_injective (coefficients G) u
     -- Read the product in the coefficient module, whose underlying group is `Additive A`.
-    change j (toCoeff (∏ q : Abelianization G, factorSet (q, p))) = j (toCoeff 1)
-    rw [show toCoeff (∏ q : Abelianization G, factorSet (q, p)) =
-      ∑ q : Abelianization G, toCoeff (factorSet (q, p)) from ofMul_prod _ _, map_sum, toCoeff_one,
+    change j (toCoeff (∏ q : Group.Abelianization G, factorSet (q, p))) = j (toCoeff 1)
+    rw [show toCoeff (∏ q : Group.Abelianization G, factorSet (q, p)) =
+      ∑ q : Group.Abelianization G, toCoeff (factorSet (q,
+          p)) from ofMul_prod _ _, map_sum, toCoeff_one,
       map_zero]
     simp only [← hψ, Finset.sum_add_distrib, Finset.sum_sub_distrib]
     rw [Fintype.sum_equiv (Equiv.mulRight p) (fun q ↦ ψ (q * p)) ψ fun _ ↦ rfl, sub_add_cancel]
@@ -292,7 +296,7 @@ private theorem transfer_of_eq_one (g : G) :
   -- Every element is a representative times an element of `G'`, which the transfer kills.
   have hmem : (out (of g))⁻¹ * g ∈ commutator G := of_eq_one_iff.1 (by simp [of_out])
   rw [← mul_inv_cancel_left (out (of g)) g, map_mul, hrep, one_mul]
-  exact Abelianization.commutator_le_ker _ hmem
+  exact Group.Abelianization.commutator_le_ker _ hmem
 
 end TauCeti.CommutatorTransfer
 
@@ -303,7 +307,7 @@ the transfer `G → A` of every homomorphism `ϕ : G' →* A` to a commutative g
 theorem MonoidHom.transfer_commutator_eq_one {G : Type} [Group G] [Group.FG (commutator G)]
     [(commutator G).FiniteIndex] {A : Type*} [CommGroup A] (ϕ : commutator G →* A) :
     ϕ.transfer = 1 := by
-  have hϕ : ϕ = (Abelianization.lift ϕ).comp Abelianization.of := by
+  have hϕ : ϕ = (Group.Abelianization.lift ϕ).comp Group.Abelianization.of := by
     ext
     simp
   ext g

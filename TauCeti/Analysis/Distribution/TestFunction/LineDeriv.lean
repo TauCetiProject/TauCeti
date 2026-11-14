@@ -27,10 +27,14 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
 * `TestFunction.lineDerivOp_apply`: `∂_{v} φ` is the classical directional derivative of `φ`.
 * `TestFunction.lineDerivOp_apply_eq_fderiv`: `∂_{v} φ x = Dφ(x) v`.
 * `TestFunction.tsupport_lineDerivOp_subset`: `∂_{v} φ` is supported in the support of `φ`.
+* `TestFunction.smul_fderiv_apply_eq_of_eqOn_one`: a first derivative of `φ` is unchanged by a
+  factor equal to `1` on `Ω`.
 * `TestFunction.lineDerivOp_one_apply_eq_deriv`: on the real line, `∂_{1} φ` is the derivative
   of `φ`.
 * `TestFunction.coe_iterate_lineDerivOp_one`: repeated derivatives on the real line agree with
   the iterates of the ordinary derivative.
+* `TestFunction.lineDeriv_eq_fderiv`: the classical directional derivative of a test function is
+  its Fréchet derivative in that direction.
 * `TestFunction.lineDerivCLM_postcompCLM`: directional derivatives commute with postcomposition
   by a continuous linear map.
 * `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
@@ -71,6 +75,15 @@ theorem tsupport_lineDerivOp_subset (φ : 𝓓(Ω, F)) (v : E) :
   rw [funext (lineDerivOp_apply_eq_fderiv φ v)]
   exact tsupport_fderiv_apply_subset ℝ v
 
+/-- Scaling a first derivative of a test function on `Ω` by a function equal to `1` on `Ω` does not
+change it, since the derivative vanishes off `Ω`. -/
+theorem smul_fderiv_apply_eq_of_eqOn_one (φ : 𝓓(Ω, F)) {χ : E → ℝ} (hχ : Set.EqOn χ 1 Ω)
+    (x v : E) : χ x • fderiv ℝ (φ : E → F) x v = fderiv ℝ (φ : E → F) x v := by
+  by_cases hx : x ∈ Ω
+  · rw [hχ hx, Pi.one_apply, one_smul]
+  · rw [fderiv_of_notMem_tsupport ℝ fun h => hx (φ.tsupport_subset h)]
+    simp
+
 /-- On the real line, the directional derivative of a test function in the direction `1` is its
 derivative. -/
 theorem lineDerivOp_one_apply_eq_deriv {Ω : Opens ℝ} (φ : 𝓓(Ω, F)) (x : ℝ) :
@@ -95,6 +108,12 @@ directional derivative. -/
 theorem coe_lineDerivCLM (φ : 𝓓(Ω, F)) (v : E) :
     ⇑(lineDerivCLM ℝ v φ : 𝓓(Ω, F)) = fun x ↦ lineDeriv ℝ (φ : E → F) x v :=
   funext fun _ ↦ lineDerivCLM_apply_of_le le_top
+
+/-- The classical directional derivative of a test function is its Fréchet derivative evaluated in
+that direction. -/
+theorem lineDeriv_eq_fderiv (φ : 𝓓(Ω, F)) (x v : E) :
+    lineDeriv ℝ (φ : E → F) x v = fderiv ℝ (φ : E → F) x v :=
+  (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv
 
 /-- Directional derivatives of test functions commute with postcomposition by a continuous linear
 map, at every pair of orders. -/
