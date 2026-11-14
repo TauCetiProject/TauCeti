@@ -111,20 +111,21 @@ theorem mem_extChartAt_source_of_mem_baseSet {i y : M}
   rw [extChartAt_source]
   exact hy.2
 
-/-- Near the image of a point `y` of the first-jet chart domains at `i` and `j` in the extended
-chart at `j`, the inverse of that chart lands in the first-jet chart domain at `i`. -/
+/-- Near the image in the extended chart at `j` of a point `y` of the first-jet chart domain at `i`
+and the chart domain at `j`, the inverse of that extended chart lands in the first-jet chart domain
+at `i`. -/
 theorem eventually_extChartAt_symm_mem_baseSet {i j y : M}
-    (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j) :
+    (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ (chartAt H j).source) :
     ∀ᶠ z in 𝓝[range I] extChartAt I j y, (extChartAt I j).symm z ∈ baseSet (H := H) F V i :=
   mem_nhdsWithin_of_mem_nhds (extChartAt_preimage_mem_nhds'
-    (mem_extChartAt_source_of_mem_baseSet I hj) ((isOpen_baseSet F V i).mem_nhds hi))
+    (by rwa [extChartAt_source]) ((isOpen_baseSet F V i).mem_nhds hi))
 
 end FirstJetBundle
 
 section
 
 variable [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  (V : M → Type*) [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  (V : M → Type*) [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommMonoid (V x)]
   [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle 𝕜 F V]
 
 namespace FirstJetBundle
@@ -245,7 +246,7 @@ theorem coordChange_self_apply {i y : M} (hy : y ∈ baseSet (H := H) F V i)
     refine ((hasFDerivWithinAt_const (ContinuousLinearMap.id 𝕜 F) _ _).congr_of_eventuallyEq
       ?_ ?_).fderivWithin (I.uniqueDiffOn _ (extChartAt_target_subset_range i
         ((extChartAt I i).map_source hy')))
-    · filter_upwards [eventually_extChartAt_symm_mem_baseSet I hy hy] with z hz
+    · filter_upwards [eventually_extChartAt_symm_mem_baseSet I hy hy.2] with z hz
       ext w
       exact (trivializationAt F V i).coordChangeL_same_apply 𝕜 hz.1 w
     · ext w
@@ -263,8 +264,9 @@ variable [ContMDiffVectorBundle 1 F V I]
 
 /-- **Product and chain rule for the coordinate changes of `V`**: the chart derivative of the
 coordinate change from `i` to `k` is assembled from those from `i` to `j` and from `j` to `k`. -/
-theorem fderivWithin_fiberCoordChange_trans {i j k y : M} (hi : y ∈ baseSet (H := H) F V i)
-    (hj : y ∈ baseSet (H := H) F V j) (hk : y ∈ baseSet (H := H) F V k) :
+theorem fderivWithin_fiberCoordChange_trans {i j k y : M}
+    (hi : y ∈ (trivializationAt F V i).baseSet) (hj : y ∈ baseSet (H := H) F V j)
+    (hk : y ∈ baseSet (H := H) F V k) :
     fderivWithin 𝕜 (fiberCoordChange I F V i k) (range I) (extChartAt I k y) =
       (ContinuousLinearMap.compL 𝕜 F F F
           ((trivializationAt F V j).coordChangeL 𝕜 (trivializationAt F V k) y)).comp
@@ -286,25 +288,26 @@ theorem fderivWithin_fiberCoordChange_trans {i j k y : M} (hi : y ∈ baseSet (H
         (fderivWithin 𝕜 (fiberCoordChange I F V i j) (range I) (extChartAt I j y)) (range I)
         ((extChartAt I j ∘ (extChartAt I k).symm) (extChartAt I k y)) := by
       rw [hy]
-      exact hasFDerivWithinAt_fiberCoordChange hi.1 hj
+      exact hasFDerivWithinAt_fiberCoordChange hi hj
     exact h.comp _ (hasFDerivWithinAt_tangentCoordChange ⟨hk', hj'⟩)
       (mapsTo_extChartAt_comp_extChartAt_symm I j k _)
   have hprod := (hasFDerivWithinAt_fiberCoordChange (I := I) hj.1 hk).clm_comp hij
   rw [fiberCoordChange_extChartAt hk.2, hy, fiberCoordChange_extChartAt hj.2] at hprod
   refine (hprod.congr_of_eventuallyEq ?_ ?_).fderivWithin
     (I.uniqueDiffOn _ (extChartAt_target_subset_range k ((extChartAt I k).map_source hk')))
-  · filter_upwards [eventually_extChartAt_symm_mem_baseSet I hi hk,
-      eventually_extChartAt_symm_mem_baseSet I hj hk,
-      eventually_extChartAt_symm_mem_baseSet I hk hk] with z hzi hzj hzk
+  · filter_upwards [mem_nhdsWithin_of_mem_nhds (extChartAt_preimage_mem_nhds' hk'
+        ((trivializationAt F V i).open_baseSet.mem_nhds hi)),
+      eventually_extChartAt_symm_mem_baseSet I hj hk.2,
+      eventually_extChartAt_symm_mem_baseSet I hk hk.2] with z hzi hzj hzk
     ext w
     simp only [fiberCoordChange_apply, Function.comp_apply, ContinuousLinearMap.coe_comp,
       (extChartAt I j).left_inv (mem_extChartAt_source_of_mem_baseSet I hzj)]
-    exact ((trivializationAt F V i).coordChangeL_coordChangeL_apply 𝕜 _ _ hzi.1 hzj.1
+    exact ((trivializationAt F V i).coordChangeL_coordChangeL_apply 𝕜 _ _ hzi hzj.1
       hzk.1 w).symm
   · ext w
     simp only [fiberCoordChange_extChartAt hk.2, ContinuousLinearMap.coe_comp,
       Function.comp_apply, (extChartAt I k).left_inv hk', fiberCoordChange_extChartAt hj.2]
-    exact ((trivializationAt F V i).coordChangeL_coordChangeL_apply 𝕜 _ _ hi.1 hj.1 hk.1
+    exact ((trivializationAt F V i).coordChangeL_coordChangeL_apply 𝕜 _ _ hi hj.1 hk.1
       w).symm
 
 /-- **Cocycle law for first-jet coordinate changes**. -/
@@ -325,7 +328,7 @@ theorem coordChange_comp_apply {i j k y : M} (hi : y ∈ baseSet (H := H) F V i)
     exact (trivializationAt F V i).coordChangeL_coordChangeL_apply 𝕜 _ _ hi.1 hj.1 hk.1 w
   rw [coordChange, coordChange, coordChange, ← ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.firstJetPullback_comp, ha, hcomp,
-    fderivWithin_fiberCoordChange_trans hi hj hk]
+    fderivWithin_fiberCoordChange_trans hi.1 hj hk]
 
 end FirstJetBundle
 
@@ -441,7 +444,7 @@ end
 section
 
 variable [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommMonoid (V x)]
   [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle 𝕜 F V]
 
 /-- The local representative in the chart and trivialization at `i` of a section that is `C^n` at
@@ -466,8 +469,8 @@ theorem localRep_eventuallyEq_fiberCoordChange (s : ∀ x, V x) {i j y : M}
     (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j) :
     localRep I F s j =ᶠ[𝓝[range I] (extChartAt I j y)] fun z ↦ fiberCoordChange I F V i j z
       (localRep I F s i ((extChartAt I i ∘ (extChartAt I j).symm) z)) := by
-  filter_upwards [eventually_extChartAt_symm_mem_baseSet I hi hj,
-    eventually_extChartAt_symm_mem_baseSet I hj hj] with z hzi hzj
+  filter_upwards [eventually_extChartAt_symm_mem_baseSet I hi hj.2,
+    eventually_extChartAt_symm_mem_baseSet I hj hj.2] with z hzi hzj
   rw [Function.comp_apply, localRep_extChartAt I F s hzi.2, fiberCoordChange_apply,
     ContinuousLinearEquiv.coe_coe,
     Trivialization.coordChangeL_apply_snd 𝕜 _ _ (p := ⟨_, s _⟩) hzi.1 hzj.1, localRep_apply]
@@ -646,9 +649,15 @@ theorem value_mk_zero (x : M) (A : E →L[𝕜] F) :
     value I F x (((0 : F), A) : FirstJetBundle I F V x) = (0 : V x) :=
   (value_eq_zero_iff I F x _).2 rfl
 
+end
+
 section Kernel
 
-variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
+variable [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
 
 /-- The inclusion of the continuous linear maps `Hom(TₓM, Vₓ)` into the first jets at `x`: a
 homomorphism `L` gives the jet with value `0` whose chart derivative is `L` read in the
@@ -724,8 +733,6 @@ theorem coordChange_ofDeriv {y i : M} (hi : y ∈ baseSet (H := H) F V i)
   exact congrArg (fun w ↦ (trivializationAt F V i ⟨y, w⟩).2) hL
 
 end Kernel
-
-end
 
 section Trivial
 
