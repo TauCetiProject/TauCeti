@@ -503,14 +503,14 @@ private theorem setIntegral_ball_max_sub_sq_succ_le {q : ℝ≥0∞} (hq : 2 ≤
   -- The left-hand side is below the cutoff integral, since `ψ = 1` on the smaller ball.
   have hlhs : ∫ x in Metric.ball x₀ r₁, max (W1p.value u x - l) 0 ^ 2 ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * max (W1p.value u x - l) 0 ^ 2 ∂mu :=
-    MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_ae_sq_eq_one (hint l (hk0.trans hkl.le))
+    MeasureTheory.setIntegral_le_setIntegral_mul (hint l (hk0.trans hkl.le))
       (ae_of_all _ fun x => hnn l x) (hψ.continuous.pow 2).aestronglyMeasurable
-      (ae_of_all _ fun x => abs_le.2 ⟨by linarith [(hψ01 (mem_range_self x)).1],
-        (hψ01 (mem_range_self x)).2⟩)
+      (ae_of_all _ fun x => sq_nonneg _)
+      (ae_of_all _ fun x => pow_le_one₀ (hψ01 (mem_range_self x)).1 (hψ01 (mem_range_self x)).2)
       (ae_restrict_of_forall_mem measurableSet_ball fun x hx => by
         simp [hψ1 (Metric.ball_subset_closedBall hx)])
       ((Metric.ball_subset_ball (hr₁ρ.trans hρr₀).le).trans
-        ((Metric.ball_subset_ball hr₀R).trans hball))
+        ((Metric.ball_subset_ball hr₀R).trans hball)).eventuallySubset
   -- The integral over `Ω ∩ supp ψ` is below `Y`.
   have hI : ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ tsupport ψ,
       max (W1p.value u x - k) 0 ^ 2 ∂mu ≤ Y :=

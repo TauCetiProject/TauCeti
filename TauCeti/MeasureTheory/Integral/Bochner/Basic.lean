@@ -81,8 +81,8 @@ for set and probability integrals.
 
 ## Set and probability integrals
 
-* `nonpos_nonneg_of_mem_Icc_of_integral_eq_zero`: a mean zero random variable with values in
-  `[a, b]` has `a ≤ 0 ≤ b`.
+* `nonpos_nonneg_of_mem_Icc_of_integral_eq_zero`: an integrable function on a nonzero measure space
+  with integral zero and values almost everywhere in `[a, b]` has `a ≤ 0 ≤ b`.
 * `setIntegral_norm_add_sq_le` integrates the pointwise bound
   `‖g + h‖² ≤ 2 ‖g‖² + 2 ‖h‖²` over a set.
 * `setIntegral_norm_sub_sq_le_add_of_le` transfers a square-mean decay estimate from `K` on a
@@ -102,9 +102,10 @@ for set and probability integrals.
 * `setIntegral_rpow_le_rpow_mul_setIntegral_rpow` interpolates `L^q` between `L^∞` and `Lᵖ`:
   `∫_s w^q ≤ F^{q-p} ∫_t wᵖ` for `0 ≤ F`, `p ≤ q`, `q ≠ 0`, `wᵖ` integrable on `t`, `0 ≤ w`
   almost everywhere on `t` and `w ≤ F` almost everywhere on `s ⊆ t`.
-* `setIntegral_le_setIntegral_sq_mul_of_ae_sq_eq_one` compares an integral over a set with a
-  weighted integral over a larger set, for a weight with `|ψ| ≤ 1` almost everywhere on the larger
-  set whose square is one almost everywhere on the smaller set.
+* `setIntegral_le_setIntegral_mul` compares the integral over a set of a function integrable and
+  nonnegative on a larger set with its weighted integral over the larger set, for a weight `g`
+  with `0 ≤ g ≤ C` almost everywhere on the larger set and `1 ≤ g` almost everywhere on the
+  smaller one.
 * `integral_max_sub_sq_le_mul_measureReal` bounds the integral of the squared truncation
   `((f - l)⁺)²` of a function `f ≤ M` by `(M - l)²` times the measure of `{l ≤ f}`, which is
   assumed to be finite.
@@ -424,26 +425,27 @@ theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [Measurabl
     field_simp at hkey
     exact hkey
 
-/-- A weight `ψ` with `|ψ| ≤ 1` almost everywhere on `s` whose square equals one almost everywhere
-on a subset `t ⊆ s` bounds the integral over `t` of a function nonnegative almost everywhere on `s`
-by its `ψ²`-weighted integral over `s`. Only `ψ ^ 2` enters, so it need only be a.e. strongly
-measurable. -/
-theorem setIntegral_le_setIntegral_sq_mul_of_ae_sq_eq_one {X : Type*} [MeasurableSpace X]
-    {μ : Measure X} {s t : Set X} {f ψ : X → ℝ} (hf : IntegrableOn f s μ)
-    (hf0 : 0 ≤ᵐ[μ.restrict s] f) (hψ : AEStronglyMeasurable (fun x => ψ x ^ 2) (μ.restrict s))
-    (hψ01 : ∀ᵐ x ∂μ.restrict s, |ψ x| ≤ 1)
-    (hψ1 : ∀ᵐ x ∂μ.restrict t, ψ x ^ 2 = 1) (hts : t ⊆ s) :
-    ∫ x in t, f x ∂μ ≤ ∫ x in s, ψ x ^ 2 * f x ∂μ := by
-  have hint : IntegrableOn (fun x => ψ x ^ 2 * f x) s μ :=
-    hf.bdd_mul hψ (c := 1) (by
-      filter_upwards [hψ01] with x hx
-      rw [Real.norm_eq_abs, abs_pow]
-      exact pow_le_one₀ (abs_nonneg _) hx)
-  calc ∫ x in t, f x ∂μ = ∫ x in t, ψ x ^ 2 * f x ∂μ :=
-        integral_congr_ae (hψ1.mono fun x hx => by simp [hx])
-    _ ≤ ∫ x in s, ψ x ^ 2 * f x ∂μ :=
-      setIntegral_mono_set hint
-        (hf0.mono fun x hx => mul_nonneg (sq_nonneg _) hx) hts.eventuallySubset
+/-- A weight `g` with `0 ≤ g ≤ C` almost everywhere on `s` and `1 ≤ g` almost everywhere on a set
+`t` contained in `s` up to a null set bounds the integral over `t` of a function integrable and
+nonnegative almost everywhere on `s` by its `g`-weighted integral over `s`. -/
+theorem setIntegral_le_setIntegral_mul {X : Type*} [MeasurableSpace X] {μ : Measure X}
+    {s t : Set X} {f g : X → ℝ} {C : ℝ} (hf : IntegrableOn f s μ) (hf0 : 0 ≤ᵐ[μ.restrict s] f)
+    (hg : AEStronglyMeasurable g (μ.restrict s)) (hg0 : 0 ≤ᵐ[μ.restrict s] g)
+    (hgC : ∀ᵐ x ∂μ.restrict s, g x ≤ C) (hgt : ∀ᵐ x ∂μ.restrict t, 1 ≤ g x)
+    (hts : t ≤ᵐ[μ] s) :
+    ∫ x in t, f x ∂μ ≤ ∫ x in s, g x * f x ∂μ := by
+  have hint : IntegrableOn (fun x => g x * f x) s μ :=
+    hf.bdd_mul hg (c := C) (by
+      filter_upwards [hg0, hgC] with x h0 hC
+      rwa [Real.norm_eq_abs, abs_of_nonneg h0])
+  calc ∫ x in t, f x ∂μ ≤ ∫ x in t, g x * f x ∂μ :=
+        integral_mono_ae (hf.mono_set_ae hts) (hint.mono_set_ae hts) (by
+          filter_upwards [hgt, ae_mono (Measure.restrict_mono_ae hts) hf0] with x h1 h0
+          exact le_mul_of_one_le_left h0 h1)
+    _ ≤ ∫ x in s, g x * f x ∂μ :=
+      setIntegral_mono_set hint (by
+        filter_upwards [hg0, hf0] with x hg0 hf0
+        exact mul_nonneg hg0 hf0) hts
 
 /-- Where `f ≤ M` almost everywhere and the upper level set `{l ≤ f}` has finite measure, the
 integral of the squared truncation `((f - l)⁺)²` is at most `(M - l)²` times the measure of
@@ -452,23 +454,13 @@ estimate for truncations. No measurability of `f` is needed. -/
 theorem integral_max_sub_sq_le_mul_measureReal {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
     {f : Ω → ℝ} {l M : ℝ} (hfin : μ {x | l ≤ f x} ≠ ∞) (hM : ∀ᵐ x ∂μ, f x ≤ M) :
     ∫ x, max (f x - l) 0 ^ 2 ∂μ ≤ (M - l) ^ 2 * μ.real {x | l ≤ f x} := by
-  have hT : MeasurableSet (toMeasurable μ {x | l ≤ f x}) := measurableSet_toMeasurable _ _
-  have hTfin : μ (toMeasurable μ {x | l ≤ f x}) ≠ ∞ := by rwa [measure_toMeasurable]
-  have hST : μ.real {x | l ≤ f x} = μ.real (toMeasurable μ {x | l ≤ f x}) := by
-    simp only [measureReal_def, measure_toMeasurable]
-  rw [hST]
-  calc ∫ x, max (f x - l) 0 ^ 2 ∂μ
-      ≤ ∫ x, (toMeasurable μ {x | l ≤ f x}).indicator (fun _ => (M - l) ^ 2) x ∂μ := by
-        refine integral_mono_of_nonneg (Eventually.of_forall fun x => by positivity)
-          ((integrable_indicator_iff hT).2 (integrableOn_const hTfin)) ?_
-        filter_upwards [hM] with x hx
-        by_cases hlx : l ≤ f x
-        · rw [Set.indicator_of_mem (subset_toMeasurable μ _ hlx)]
-          exact pow_le_pow_left₀ (le_max_right _ _) (max_le (by linarith) (by linarith)) 2
-        · rw [max_eq_right (by linarith)]
-          simpa using Set.indicator_nonneg (fun _ _ => sq_nonneg (M - l)) x
-    _ = (M - l) ^ 2 * μ.real (toMeasurable μ {x | l ≤ f x}) := by
-        rw [integral_indicator_const _ hT, smul_eq_mul, mul_comm]
+  -- the truncation vanishes off `{l ≤ f}`, where it is at most `(M - l)²`
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := {x | l ≤ f x}) fun x hx => by
+    rw [max_eq_right (sub_nonpos.2 (le_of_not_ge hx)), zero_pow two_ne_zero]]
+  refine (Real.le_norm_self _).trans (norm_setIntegral_le_of_norm_le_const_ae' hfin.lt_top ?_)
+  filter_upwards [hM] with x hx (hlx : l ≤ f x)
+  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+  exact pow_le_pow_left₀ (le_max_right _ _) (max_le (by linarith) (by linarith)) 2
 
 /-- On a probability space, let `f ≤ M` almost everywhere have integral within `δ` of `M`. Then on
 every set `B` of positive mass, `f` comes within `δ / μ B` of `M` somewhere. -/
@@ -476,36 +468,19 @@ theorem exists_mem_sub_div_lt_of_sub_lt_integral {Ω : Type*} [MeasurableSpace �
     {μ : Measure Ω} [IsProbabilityMeasure μ] {f : Ω → ℝ} {M δ : ℝ} (hf : Integrable f μ)
     (hfM : ∀ᵐ x ∂μ, f x ≤ M) (hδ : M - δ < ∫ x, f x ∂μ) {B : Set Ω}
     (hpB : 0 < μ.real B) : ∃ x ∈ B, M - δ / μ.real B < f x := by
-  -- the case of a measurable set
-  have key : ∀ {B : Set Ω}, MeasurableSet B → 0 < μ.real B → ∃ x ∈ B, M - δ / μ.real B < f x := by
-    intro B hB hpB
-    by_contra! hcon
-    have hle : ∫ x, f x ∂μ ≤ ∫ x, (M - B.indicator (fun _ ↦ δ / μ.real B) x) ∂μ := by
-      refine integral_mono_ae hf ((integrable_const M).sub
-        ((integrable_const _).indicator hB)) ?_
-      filter_upwards [hfM] with x hx
-      by_cases hxB : x ∈ B
-      · simpa [hxB, sub_div' hpB.ne'] using hcon x hxB
-      · simpa [hxB] using hx
-    rw [integral_sub (integrable_const M) ((integrable_const _).indicator hB), integral_const,
-      integral_indicator_const _ hB, smul_eq_mul, smul_eq_mul, probReal_univ, one_mul,
-      mul_div_cancel₀ _ hpB.ne'] at hle
+  -- first moment method for `M - f` on `B`
+  have hg : Integrable (fun x => M - f x) μ := (integrable_const M).sub hf
+  obtain ⟨x, hxB, hx⟩ := exists_le_setAverage
+    ((measureReal_ne_zero_iff (measure_ne_top μ B)).1 hpB.ne') (measure_ne_top μ B) hg.integrableOn
+  refine ⟨x, hxB, ?_⟩
+  -- `μ B` times the average of `M - f` over `B` is at most `∫ (M - f) = M - ∫ f < δ`
+  have hle : μ.real B * ⨍ y in B, (M - f y) ∂μ ≤ M - ∫ y, f y ∂μ := by
+    rw [← smul_eq_mul, measure_smul_setAverage _ (measure_ne_top μ B)]
+    refine (setIntegral_le_integral hg (hfM.mono fun _ => sub_nonneg.2)).trans_eq ?_
+    rw [integral_sub (integrable_const M) hf, integral_const, probReal_univ, one_smul]
+  have hlt : ⨍ y in B, (M - f y) ∂μ < δ / μ.real B := by
+    rw [lt_div_iff₀ hpB, mul_comm]
     linarith
-  -- a non-measurable `B` is handled through a measurable subset of `{f ≤ M - δ / μ B}`
-  by_contra! hcon
-  have hδ0 : 0 ≤ δ := by
-    have := integral_mono_ae hf (integrable_const M) hfM
-    simp only [integral_const, smul_eq_mul, probReal_univ, one_mul] at this
-    linarith
-  have hL : NullMeasurableSet {x | f x ≤ M - δ / μ.real B} μ :=
-    hf.aemeasurable.nullMeasurable measurableSet_Iic
-  obtain ⟨L, hLsub, hLmeas, hLae⟩ := hL.exists_measurable_subset_ae_eq
-  have hBL : B ⊆ {x | f x ≤ M - δ / μ.real B} := fun x hx => hcon x hx
-  have hLB : μ.real B ≤ μ.real L :=
-    (measureReal_mono hBL (measure_ne_top _ _)).trans_eq (measureReal_congr hLae.symm)
-  obtain ⟨x, hxL, hx⟩ := key hLmeas (hpB.trans_le hLB)
-  have hxf : f x ≤ M - δ / μ.real B := hLsub hxL
-  have hdiv : δ / μ.real L ≤ δ / μ.real B := div_le_div_of_nonneg_left hδ0 hpB hLB
   linarith
 
 /-- The positive part of the integral of a real-valued function is at most the integral of its
@@ -953,8 +928,8 @@ theorem measure_eq_zero_of_integral_eq_zero_of_ae_pos {α : Type*} [MeasurableSp
   rw [← ae_eq_bot]
   exact Filter.eventually_false_iff_eq_bot.1 ((h1.and hg).mono fun x hx => hx.2.ne' hx.1)
 
-/-- A mean zero random variable with values in `[a, b]` on a nonzero measure space has
-`a ≤ 0 ≤ b`. -/
+/-- An integrable function on a nonzero measure space with integral zero and values almost
+everywhere in `[a, b]` has `a ≤ 0 ≤ b`. -/
 theorem nonpos_nonneg_of_mem_Icc_of_integral_eq_zero {Ω : Type*} [mΩ : MeasurableSpace Ω]
     {μ : Measure Ω} [NeZero μ] {X : Ω → ℝ}
     {a b : ℝ} (hX : Integrable X μ) (hbound : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc a b)
