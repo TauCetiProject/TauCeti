@@ -85,12 +85,14 @@ orthonormal pair `u, v`), the last two sums in `Q` cancel term by term and
   `TauCeti.FourTensor.reactionTensor_compContinuousLinearMap_linearIsometryEquiv`, and
   `TauCeti.FourTensor.reactionTensor_compContinuousLinearMap_fstL`: coisometry pullback, orthogonal
   equivariance, and commutation with zero extension.
-* `TauCeti.FourTensor.norm_reactionBilinear_le`, `TauCeti.FourTensor.contDiff_reactionTensor`,
+* `TauCeti.FourTensor.norm_reactionBilinear_le`, `TauCeti.FourTensor.norm_reactionTensor_sub_le`,
+  `TauCeti.FourTensor.contDiff_reactionTensor`,
   `TauCeti.FourTensor.hasStrictFDerivAt_reactionTensor`,
   `TauCeti.FourTensor.fderiv_reactionTensor`,
   `TauCeti.FourTensor.lipschitzOnWith_reactionTensor_closedBall`, and
   `TauCeti.FourTensor.locallyLipschitz_reactionTensor`: norm and regularity estimates.
-* `TauCeti.FourTensor.ricci_reactionTensor`, `TauCeti.FourTensor.scalar_reactionTensor`,
+* `TauCeti.FourTensor.ricci_reactionTensor`, `TauCeti.FourTensor.ricci_reactionBilinear`,
+  `TauCeti.FourTensor.scalar_reactionTensor`, `TauCeti.FourTensor.scalar_reactionBilinear`,
   `TauCeti.FourTensor.reactionBilinear_constantCurvature_right`,
   `TauCeti.FourTensor.reactionTensor_constantCurvature`, and
   `TauCeti.FourTensor.reactionTensor_planeCurvature`: contractions and model eigenspaces of `Q`.
@@ -211,7 +213,7 @@ private theorem abs_sum_mul_last_le {ι : Type*} [Fintype ι] (b : OrthonormalBa
     simpa only [lastSlice_apply, Fin.prod_univ_four, Fin.isValue, Matrix.cons_val_zero,
       Matrix.cons_val_one, Matrix.cons_val, mul_assoc] using t.le_opNorm ![a, c, x, y]
   have h := b.orthonormal.norm_sum_mul_bilinForm_le Finset.univ Finset.univ
-    (by positivity) (by positivity) (hslice r u v) (hslice s z w)
+    (hslice r u v) (hslice s z w)
   simp only [lastSlice_apply, Real.norm_eq_abs, Finset.card_univ] at h
   exact h.trans_eq (by ring)
 
@@ -227,7 +229,7 @@ private theorem abs_sum_mul_even_le {ι : Type*} [Fintype ι] (b : OrthonormalBa
     rw [evenSlice_apply]
     exact h.trans_eq (by ring)
   have h := b.orthonormal.norm_sum_mul_bilinForm_le Finset.univ Finset.univ
-    (by positivity) (by positivity) (hslice r u z) (hslice s v w)
+    (hslice r u z) (hslice s v w)
   simp only [evenSlice_apply, Real.norm_eq_abs, Finset.card_univ] at h
   exact h.trans_eq (by ring)
 
@@ -338,13 +340,21 @@ theorem reactionBilinear_apply_orthonormalBasis {ι : Type*} [Fintype ι]
     pairFirstFourTensor_apply, pairMixedFourTensor_apply, pairCrossFourTensor_apply,
     Finset.sum_add_distrib]
   -- Transfer each of the six double contractions from `e` to `b`.
-  have b1 := e.sum_mul_bilinForm_orthonormalBasis b (lastSlice r u v) (lastSlice s z w)
-  have b2 := e.sum_mul_bilinForm_orthonormalBasis b (lastSlice s u v) (lastSlice r z w)
-  have b3 := e.sum_mul_bilinForm_orthonormalBasis b (evenSlice r u z) (evenSlice s v w)
-  have b4 := e.sum_mul_bilinForm_orthonormalBasis b (evenSlice s u z) (evenSlice r v w)
-  have b5 := e.sum_mul_bilinForm_orthonormalBasis b (evenSlice r u w) (evenSlice s v z)
-  have b6 := e.sum_mul_bilinForm_orthonormalBasis b (evenSlice s u w) (evenSlice r v z)
-  simp only [lastSlice_apply, evenSlice_apply] at b1 b2 b3 b4 b5 b6
+  have hid : ContinuousLinearMap.id ℝ V ∘L (ContinuousLinearMap.id ℝ V).adjoint = .id ℝ V := by
+    simp [ContinuousLinearMap.adjoint_id]
+  have b1 := e.sum_mul_bilinForm_comp_of_comp_adjoint_eq_id b hid
+    (lastSlice r u v) (lastSlice s z w)
+  have b2 := e.sum_mul_bilinForm_comp_of_comp_adjoint_eq_id b hid
+    (lastSlice s u v) (lastSlice r z w)
+  have b3 := e.sum_mul_bilinForm_comp_of_comp_adjoint_eq_id b hid
+    (evenSlice r u z) (evenSlice s v w)
+  have b4 := e.sum_mul_bilinForm_comp_of_comp_adjoint_eq_id b hid
+    (evenSlice s u z) (evenSlice r v w)
+  have b5 := e.sum_mul_bilinForm_comp_of_comp_adjoint_eq_id b hid
+    (evenSlice r u w) (evenSlice s v z)
+  have b6 := e.sum_mul_bilinForm_comp_of_comp_adjoint_eq_id b hid
+    (evenSlice s u w) (evenSlice r v z)
+  simp only [ContinuousLinearMap.id_apply, lastSlice_apply, evenSlice_apply] at b1 b2 b3 b4 b5 b6
   rw [b1, b2, b3, b4, b5, b6]
 
 /-- On the diagonal `(r, r)`, `reactionBilinear V` recovers `reactionTensor`. -/
@@ -694,12 +704,16 @@ theorem norm_reactionTensor_le (r : FourTensor V) :
   rw [← reactionBilinear_self, sq]
   exact (norm_reactionBilinear_apply_le r r).trans_eq (by ring)
 
-/-- Difference estimate `‖Q(r) - Q(s)‖ ≤ ‖reactionBilinear V‖ * (‖r‖ + ‖s‖) * ‖r - s‖`. -/
-theorem norm_reactionTensor_sub_le (r s : FourTensor V) : withEndOperatorNorms V in
+/-- Difference estimate `‖Q(r) - Q(s)‖ ≤ 5 * dim V * (‖r‖ + ‖s‖) * ‖r - s‖`. -/
+theorem norm_reactionTensor_sub_le (r s : FourTensor V) :
     ‖reactionTensor r - reactionTensor s‖ ≤
-      ‖reactionBilinear V‖ * (‖r‖ + ‖s‖) * ‖r - s‖ := by
-  rw [← reactionBilinear_self r, ← reactionBilinear_self s]
-  exact (reactionBilinear V).norm_apply_apply_sub_apply_apply_le r s
+      5 * (Module.finrank ℝ V : ℝ) * (‖r‖ + ‖s‖) * ‖r - s‖ := by
+  calc ‖reactionTensor r - reactionTensor s‖
+      = ‖reactionBilinear V (r + s) (r - s)‖ := by rw [reactionTensor_sub_reactionTensor]
+    _ ≤ 5 * (Module.finrank ℝ V : ℝ) * ‖r + s‖ * ‖r - s‖ :=
+        norm_reactionBilinear_apply_le (r + s) (r - s)
+    _ ≤ 5 * (Module.finrank ℝ V : ℝ) * (‖r‖ + ‖s‖) * ‖r - s‖ := by
+        gcongr; exact norm_add_le r s
 
 /-- `reactionTensor` is `C^n` for every smoothness order `n` (including `∞` and `ω`). -/
 @[fun_prop]
@@ -734,19 +748,19 @@ theorem fderiv_reactionTensor (r : FourTensor V) :
   (hasFDerivAt_reactionTensor r).fderiv
 
 /-- On the closed ball of radius `R` around `0`, `reactionTensor` is Lipschitz with constant
-`2 * R.toNNReal * ‖reactionBilinear V‖₊`. -/
-theorem lipschitzOnWith_reactionTensor_closedBall (R : ℝ) : withEndOperatorNorms V in
-    LipschitzOnWith (2 * R.toNNReal * ‖reactionBilinear V‖₊)
+`10 * dim V * R.toNNReal`. -/
+theorem lipschitzOnWith_reactionTensor_closedBall (R : ℝ) :
+    LipschitzOnWith (10 * (Module.finrank ℝ V : ℝ≥0) * R.toNNReal)
       (reactionTensor (V := V)) (Metric.closedBall 0 R) := by
   refine LipschitzOnWith.of_dist_le_mul fun r hr s hs ↦ ?_
   rw [Metric.mem_closedBall, dist_zero_right] at hr hs
   have hR : 0 ≤ R := (norm_nonneg r).trans hr
   rw [dist_eq_norm, dist_eq_norm]
   calc ‖reactionTensor r - reactionTensor s‖
-      ≤ ‖reactionBilinear V‖ * (‖r‖ + ‖s‖) * ‖r - s‖ := norm_reactionTensor_sub_le r s
-    _ ≤ ‖reactionBilinear V‖ * (R + R) * ‖r - s‖ := by gcongr
-    _ = ↑(2 * R.toNNReal * ‖reactionBilinear V‖₊) * ‖r - s‖ := by
-        simp only [NNReal.coe_mul, NNReal.coe_ofNat, Real.coe_toNNReal R hR, coe_nnNorm]
+      ≤ 5 * (Module.finrank ℝ V : ℝ) * (‖r‖ + ‖s‖) * ‖r - s‖ := norm_reactionTensor_sub_le r s
+    _ ≤ 5 * (Module.finrank ℝ V : ℝ) * (R + R) * ‖r - s‖ := by gcongr
+    _ = ↑(10 * (Module.finrank ℝ V : ℝ≥0) * R.toNNReal) * ‖r - s‖ := by
+        simp only [NNReal.coe_mul, NNReal.coe_ofNat, NNReal.coe_natCast, Real.coe_toNNReal R hR]
         ring
 
 /-- `reactionTensor` is locally Lipschitz on `FourTensor V`. -/
@@ -805,6 +819,33 @@ theorem ricci_reactionTensor {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι 
   rw [hcancel, hmid]
   ring
 
+/-- In any orthonormal basis `b`, the Ricci contraction of `reactionBilinear V r s` for algebraic
+curvature tensors `r` and `s` is
+`Ric(B(r, s))(u, v) = ∑ p, ∑ q, (Ric(r)(b p, b q) s(u, b p, v, b q) +
+  Ric(s)(b p, b q) r(u, b p, v, b q))`. -/
+theorem ricci_reactionBilinear {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    {r s : FourTensor V} (hr : IsAlgebraicCurvature r) (hs : IsAlgebraicCurvature s) (u v : V) :
+    ricci (reactionBilinear V r s) u v =
+      ∑ p, ∑ q, (ricci r (b p) (b q) * s ![u, b p, v, b q] +
+        ricci s (b p) (b q) * r ![u, b p, v, b q]) := by
+  have hrs : IsAlgebraicCurvature (r + s) := by
+    rw [← mem_algebraicCurvatureSubmodule] at hr hs ⊢
+    exact Submodule.add_mem _ hr hs
+  rw [reactionBilinear_eq_half_sub, map_smul, map_sub, map_sub]
+  simp only [LinearMap.smul_apply, LinearMap.sub_apply, smul_eq_mul,
+    ricci_reactionTensor b hrs, ricci_reactionTensor b hr, ricci_reactionTensor b hs,
+    map_add, LinearMap.add_apply, add_apply]
+  have hsum :
+      (∑ p, ∑ q, (ricci r (b p) (b q) + ricci s (b p) (b q)) *
+          (r ![u, b p, v, b q] + s ![u, b p, v, b q])) -
+        (∑ p, ∑ q, ricci r (b p) (b q) * r ![u, b p, v, b q]) -
+        (∑ p, ∑ q, ricci s (b p) (b q) * s ![u, b p, v, b q]) =
+      ∑ p, ∑ q, (ricci r (b p) (b q) * s ![u, b p, v, b q] +
+        ricci s (b p) (b q) * r ![u, b p, v, b q]) := by
+    simp_rw [← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
+  linarith
+
 /-- For an algebraic curvature tensor `r`, the scalar contraction of `reactionTensor r` is twice
 the squared Hilbert–Schmidt norm of its Ricci tensor:
 `Scal(Q(r)) = 2 ∑ p, ∑ q, Ric(r)(b p, b q)²`. -/
@@ -819,6 +860,30 @@ theorem scalar_reactionTensor {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun q _ ↦ ?_
   rw [← Finset.mul_sum, ← ricci_apply_orthonormalBasis b, sq]
+
+/-- For algebraic curvature tensors `r` and `s`, the scalar contraction of
+`reactionBilinear V r s` in any orthonormal basis `b` is twice the Hilbert–Schmidt inner product
+of their Ricci tensors:
+`Scal(B(r, s)) = 2 * ∑ p, ∑ q, Ric(r)(b p, b q) * Ric(s)(b p, b q)`. -/
+theorem scalar_reactionBilinear {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    {r s : FourTensor V} (hr : IsAlgebraicCurvature r) (hs : IsAlgebraicCurvature s) :
+    scalar (reactionBilinear V r s) =
+      2 * ∑ p, ∑ q, ricci r (b p) (b q) * ricci s (b p) (b q) := by
+  have hrs : IsAlgebraicCurvature (r + s) := by
+    rw [← mem_algebraicCurvatureSubmodule] at hr hs ⊢
+    exact Submodule.add_mem _ hr hs
+  rw [reactionBilinear_eq_half_sub, map_smul, map_sub, map_sub, smul_eq_mul,
+    scalar_reactionTensor b hrs, scalar_reactionTensor b hr, scalar_reactionTensor b hs]
+  simp only [map_add, LinearMap.add_apply]
+  have hsum :
+      (∑ p, ∑ q, (ricci r (b p) (b q) + ricci s (b p) (b q)) ^ 2) -
+        (∑ p, ∑ q, (ricci r (b p) (b q)) ^ 2) -
+        (∑ p, ∑ q, (ricci s (b p) (b q)) ^ 2) =
+      2 * ∑ p, ∑ q, ricci r (b p) (b q) * ricci s (b p) (b q) := by
+    rw [Finset.mul_sum]
+    simp_rw [Finset.mul_sum, ← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
+  linarith
 
 /-- The scalar contraction of `reactionTensor r` is nonnegative for every algebraic curvature
 tensor `r`. -/

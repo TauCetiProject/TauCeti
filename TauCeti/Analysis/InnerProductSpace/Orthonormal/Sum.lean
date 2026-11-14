@@ -25,11 +25,9 @@ curvature:
 * `OrthonormalBasis.inner_sum_inner_smul`: expanding two vectors in `b` and reassembling along an
   orthonormal family `e` preserves their inner product,
   `⟪∑ i, ⟪b i, x⟫ • e i, ∑ i, ⟪b i, y⟫ • e i⟫ = ⟪x, y⟫`.
-* `OrthonormalBasis.sum_mul_linearMap_orthonormalBasis` and
-  `OrthonormalBasis.sum_mul_bilinForm_orthonormalBasis`: single and double contractions of real
-  linear functionals and bilinear forms are independent of the orthonormal basis.
-* `Orthonormal.norm_sum_apply_smul_le`, `Orthonormal.norm_sum_apply_mul_apply_le`, and
-  `Orthonormal.norm_sum_mul_bilinForm_le`: Riesz-vector and Cauchy–Schwarz norm bounds for
+* `Orthonormal.norm_sum_conj_smul`, `Orthonormal.norm_sum_apply_smul_le`,
+  `Orthonormal.norm_sum_apply_mul_apply_le`, and `Orthonormal.norm_sum_mul_bilinForm_le`:
+  conjugate-coefficient norm invariance and Riesz-vector and Cauchy–Schwarz norm bounds for
   contractions of bounded linear functionals and bilinear forms along orthonormal families.
 * `OrthonormalBasis.sum_inner_self`: `∑ i, ⟪b i, b i⟫ = card ι`, the trace of the identity.
 * `OrthonormalBasis.inner_eq_sum_repr`: the inner product in coordinates,
@@ -122,44 +120,6 @@ theorem inner_sum_inner_smul (b : OrthonormalBasis ι 𝕜 E) {e : ι → F} (he
     ⟪∑ i, ⟪b i, x⟫_𝕜 • e i, ∑ i, ⟪b i, y⟫_𝕜 • e i⟫_𝕜 = ⟪x, y⟫_𝕜 := by
   simp_rw [he.inner_sum, inner_conj_symm, b.sum_inner_mul_inner]
 
-/-- The contraction `∑ a, φ (b₁ a) * ψ (b₁ a)` of two real linear functionals is independent of
-the finite orthonormal basis. -/
-theorem sum_mul_linearMap_orthonormalBasis {V α β : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] [Fintype α] [Fintype β]
-    (b₁ : OrthonormalBasis α ℝ V) (b₂ : OrthonormalBasis β ℝ V) (φ ψ : V →ₗ[ℝ] ℝ) :
-    ∑ a, φ (b₁ a) * ψ (b₁ a) = ∑ p, φ (b₂ p) * ψ (b₂ p) := by
-  calc ∑ a, φ (b₁ a) * ψ (b₁ a)
-      = ∑ a, (∑ p, φ (b₂ p) * ⟪b₂ p, b₁ a⟫_ℝ) * ψ (b₁ a) := by
-        simp_rw [b₂.sum_apply_mul_inner φ]
-    _ = ∑ p, φ (b₂ p) * ∑ a, ψ (b₁ a) * ⟪b₁ a, b₂ p⟫_ℝ := by
-        simp_rw [Finset.sum_mul]
-        rw [Finset.sum_comm]
-        refine Finset.sum_congr rfl fun p _ ↦ ?_
-        rw [Finset.mul_sum]
-        exact Finset.sum_congr rfl fun a _ ↦ by rw [real_inner_comm (b₂ p)]; ring
-    _ = ∑ p, φ (b₂ p) * ψ (b₂ p) := by
-        simp_rw [b₁.sum_apply_mul_inner ψ]
-
-/-- The double contraction `∑ a, ∑ b, F (b₁ a) (b₁ b) * G (b₁ a) (b₁ b)` of two real bilinear
-forms is independent of the finite orthonormal basis. -/
-theorem sum_mul_bilinForm_orthonormalBasis {V α β : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] [Fintype α] [Fintype β]
-    (b₁ : OrthonormalBasis α ℝ V) (b₂ : OrthonormalBasis β ℝ V)
-    (F G : LinearMap.BilinForm ℝ V) :
-    ∑ a, ∑ b, F (b₁ a) (b₁ b) * G (b₁ a) (b₁ b) =
-      ∑ p, ∑ q, F (b₂ p) (b₂ q) * G (b₂ p) (b₂ q) := by
-  calc ∑ a, ∑ b, F (b₁ a) (b₁ b) * G (b₁ a) (b₁ b)
-      = ∑ a, ∑ q, F (b₁ a) (b₂ q) * G (b₁ a) (b₂ q) :=
-        Finset.sum_congr rfl fun a _ ↦
-          b₁.sum_mul_linearMap_orthonormalBasis b₂ (F (b₁ a)) (G (b₁ a))
-    _ = ∑ q, ∑ a, F.flip (b₂ q) (b₁ a) * G.flip (b₂ q) (b₁ a) := by
-        simp only [LinearMap.BilinForm.flip_apply]; exact Finset.sum_comm
-    _ = ∑ q, ∑ p, F.flip (b₂ q) (b₂ p) * G.flip (b₂ q) (b₂ p) :=
-        Finset.sum_congr rfl fun q _ ↦
-          b₁.sum_mul_linearMap_orthonormalBasis b₂ (F.flip (b₂ q)) (G.flip (b₂ q))
-    _ = ∑ p, ∑ q, F (b₂ p) (b₂ q) * G (b₂ p) (b₂ q) := by
-        simp only [LinearMap.BilinForm.flip_apply]; exact Finset.sum_comm
-
 end OrthonormalBasis
 
 namespace Orthonormal
@@ -168,7 +128,9 @@ open scoped InnerProductSpace ComplexConjugate
 
 variable {𝕜 E ι : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
-private theorem norm_sum_conj_smul {b : ι → E} (hb : Orthonormal 𝕜 b) (s : Finset ι)
+/-- Conjugating the scalar coefficients in a linear combination of an orthonormal family `b`
+preserves its norm: `‖∑ q ∈ s, conj (c q) • b q‖ = ‖∑ q ∈ s, c q • b q‖`. -/
+theorem norm_sum_conj_smul {b : ι → E} (hb : Orthonormal 𝕜 b) (s : Finset ι)
     (c : ι → 𝕜) : ‖∑ q ∈ s, conj (c q) • b q‖ = ‖∑ q ∈ s, c q • b q‖ := by
   have hsq : ‖∑ q ∈ s, conj (c q) • b q‖ ^ 2 = ‖∑ q ∈ s, c q • b q‖ ^ 2 := by
     rw [norm_sq_eq_re_inner (𝕜 := 𝕜), norm_sq_eq_re_inner (𝕜 := 𝕜), hb.inner_sum, hb.inner_sum]
@@ -218,13 +180,17 @@ theorem norm_sum_apply_mul_apply_le {G₁ G₂ : Type*}
 /-- Cauchy–Schwarz bound on the double contraction `∑ i ∈ s, ∑ j ∈ t, Φ (b i) (b j) * Ψ (b i) (b j)`
 of two bounded bilinear forms along an orthonormal family `b`. -/
 theorem norm_sum_mul_bilinForm_le {b : ι → E} (hb : Orthonormal 𝕜 b) (s t : Finset ι)
-    {Φ Ψ : LinearMap.BilinForm 𝕜 E} {A B : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B)
+    {Φ Ψ : LinearMap.BilinForm 𝕜 E} {A B : ℝ}
     (hΦ : ∀ x y, ‖Φ x y‖ ≤ A * ‖x‖ * ‖y‖) (hΨ : ∀ x y, ‖Ψ x y‖ ≤ B * ‖x‖ * ‖y‖) :
     ‖∑ i ∈ s, ∑ j ∈ t, Φ (b i) (b j) * Ψ (b i) (b j)‖ ≤ s.card * (A * B) := by
   calc ‖∑ i ∈ s, ∑ j ∈ t, Φ (b i) (b j) * Ψ (b i) (b j)‖
       ≤ ∑ i ∈ s, ‖∑ j ∈ t, Φ (b i) (b j) * Ψ (b i) (b j)‖ := norm_sum_le _ _
-    _ ≤ ∑ _i ∈ s, A * B := Finset.sum_le_sum fun i _ ↦
-        hb.norm_sum_apply_mul_apply_le t hA hB
+    _ ≤ ∑ _i ∈ s, A * B := Finset.sum_le_sum fun i _ ↦ by
+        have hA : 0 ≤ A :=
+          (norm_nonneg _).trans ((hΦ (b i) (b i)).trans_eq (by simp [hb.1 i]))
+        have hB : 0 ≤ B :=
+          (norm_nonneg _).trans ((hΨ (b i) (b i)).trans_eq (by simp [hb.1 i]))
+        exact hb.norm_sum_apply_mul_apply_le t hA hB
           (fun z ↦ by simpa only [hb.1 i, mul_one] using hΦ (b i) z)
           (fun z ↦ by simpa only [hb.1 i, mul_one] using hΨ (b i) z)
     _ = s.card * (A * B) := by simp
