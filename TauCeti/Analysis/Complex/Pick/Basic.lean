@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Herglotz
+public import TauCeti.Analysis.Complex.Herglotz.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 
 /-!
