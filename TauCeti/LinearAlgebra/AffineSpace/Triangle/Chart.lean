@@ -39,8 +39,6 @@ its vertices `b`, `d`, `c = b + (d - a)` are affinely independent
 * `TauCeti.triangleChart_injective`: the chart of an affinely independent triple is injective.
 * `TauCeti.affineIndependent_iff_det_ne_zero`: three points of `k × k` are affinely independent iff
   `det (y - x, z - x) ≠ 0`.
-* `TauCeti.affineIndependent_iff_linearIndependent_sub_sub`: three points are affinely independent
-  iff the two vectors from the middle point to the outer points are linearly independent.
 * `LinearIndependent.affineIndependent_vsub_vadd`: if `b - a`, `d - a` are linearly independent,
   then `b`, `d`, `b + (d - a)` (three vertices of the parallelogram `abcd`) are affinely
   independent.
@@ -157,22 +155,6 @@ theorem affineIndependent_iff_det_ne_zero {x y z : k × k} :
       linear_combination (y.1 - x.1) * h₂ - (y.2 - x.2) * h₁
 
 end Independent
-
-section Triple
-
-variable {k V : Type*} [Ring k] [AddCommGroup V] [Module k V]
-
-/-- Three points are affinely independent exactly when the two vectors from the middle point to
-the outer points are linearly independent. -/
-theorem affineIndependent_iff_linearIndependent_sub_sub {x y z : V} :
-    AffineIndependent k ![x, y, z] ↔ LinearIndependent k ![x - y, z - y] := by
-  rw [affineIndependent_iff_linearIndependent_vsub k _ (1 : Fin 3),
-    ← linearIndependent_equiv (finSuccAboveEquiv (1 : Fin 3))]
-  convert Iff.rfl using 2
-  funext j
-  fin_cases j <;> rfl
-
-end Triple
 
 end TauCeti
 

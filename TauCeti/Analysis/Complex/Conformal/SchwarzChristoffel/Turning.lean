@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.Convex.Between
-import TauCeti.LinearAlgebra.AffineSpace.Triangle.Chart
+import TauCeti.LinearAlgebra.AffineSpace.Independent
 
 /-!
 # Turning at Schwarz--Christoffel vertices
@@ -129,7 +129,7 @@ theorem affineIndependent_schwarzChristoffelBoundary_of_adjacent (a e : ι → �
   have hqrne : ‖B r - B q‖ ≠ 0 := norm_ne_zero_iff.mpr <| sub_ne_zero.mpr fun h ↦
     hqr.ne <| schwarzChristoffelBoundary_injOn_Icc a e z₀ hqrFree hq hr
       ⟨le_rfl, hqr.le⟩ ⟨hqr.le, le_rfl⟩ h.symm
-  rw [affineIndependent_iff_linearIndependent_sub_sub]
+  rw [affineIndependent_iff_linearIndependent_vsub_vsub]
   convert (LinearIndependent.pair_smul_smul_iff (isUnit_iff_ne_zero.mpr (neg_ne_zero.mpr hpqne))
     (isUnit_iff_ne_zero.mpr hqrne)).2 hdir using 1
   simp [Complex.real_smul, ← hpqEq, ← hqrEq, B]
@@ -201,8 +201,9 @@ theorem schwarzChristoffelVertex_adjacent_segments_inter_eq
     a e z₀ ha hjk hkl hj hk hk0 hl
   rw [segment_symm ℝ (schwarzChristoffelVertex a e z₀ j)
     (schwarzChristoffelVertex a e z₀ k)]
-  exact segment_inter_eq_endpoint_of_linearIndependent_sub ℝ
-    (affineIndependent_iff_linearIndependent_sub_sub.1 hcorner)
+  have hlin := affineIndependent_iff_linearIndependent_vsub_vsub.1 hcorner
+  simp only [vsub_eq_sub] at hlin
+  exact segment_inter_eq_endpoint_of_linearIndependent_sub ℝ hlin
 
 
 /-! ### Corners beside the vertex at infinity -/
