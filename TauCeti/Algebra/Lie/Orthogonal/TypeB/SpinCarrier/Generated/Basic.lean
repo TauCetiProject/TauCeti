@@ -205,8 +205,8 @@ theorem generatorCoordinateMap_baseChange (j : (Fin (n + 1) ⊕ Fin (n + 1)) ⊕
   rcases j with j | _
   · rw [Category.assoc, generatorCoordinateMap_inl, generatorCoordinateMap_inl]
     exact
-      UniversalEnvelopingAlgebra.kostantRootSubgroupBaseChangePresentationCoordinateMap_baseChange
-        _ _ _ _ _ _ _ k K j
+      UniversalEnvelopingAlgebra.kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_baseChange
+        _ _ _ _ _ j _ _ k K
   · rw [Category.assoc, generatorCoordinateMap_inr, generatorCoordinateMap_inr]
     exact GeneralLinear.weightTorusBaseChangeCoordinateMap_baseChange ℤ k K _
 
