@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 public import TauCeti.RingTheory.Valuation.AdicSeparated
 
 import TauCeti.RingTheory.Huber.Restricted.Adic
-import TauCeti.RingTheory.Huber.Restricted.Reduction
+import TauCeti.RingTheory.Huber.Restricted.Reduction.Basic
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 
 /-!
