@@ -18,7 +18,8 @@ places. For a number field, its restriction agrees with the normalization in
 idele norm.
 
 `NumberField.InfinitePlace.Completion.norm_algebraMap` compares the completion norm with the place
-absolute value on the dense base field, and
+absolute value on the dense base field, `NumberField.InfinitePlace.Completion.denseRange_algebraMap`
+says that the base field is dense in the completion, and
 `NumberField.InfinitePlace.Completion.funext_of_continuous` says that continuous maps out of the
 completion are determined by their values on it. The normalized value is continuous.
 
@@ -79,6 +80,14 @@ theorem Completion.norm_algebraMap (w : InfinitePlace K) (x : K) :
     ‖algebraMap K w.Completion x‖ = w x := by
   rw [Completion.algebraMap_apply_eq_coe]
   exact AbsoluteValue.Completion.norm_coe (WithAbs.toAbs w.1 x)
+
+/-- The number field is dense in each of its completions at an infinite place. -/
+theorem Completion.denseRange_algebraMap (v : InfinitePlace K) :
+    DenseRange (fun x : K => algebraMap K v.Completion x) := by
+  simp only [Completion.algebraMap_apply_eq_coe]
+  exact (AbsoluteValue.Completion.denseRange_coe (v := v.1)).comp
+    (WithAbs.toAbs_surjective v.1).denseRange
+    (AbsoluteValue.Completion.continuous_coe (v := v.1))
 
 /-- Two continuous maps out of an archimedean completion `K_w` into a Hausdorff space agree once
 they agree on `K`. -/
