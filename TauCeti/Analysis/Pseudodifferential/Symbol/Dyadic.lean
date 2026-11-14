@@ -36,6 +36,8 @@ the pieces with constants independent of `j`.
 * `TauCeti.Symbol.exists_norm_mixedDeriv_littlewoodPaleyPiece_le` and
   `TauCeti.Symbol.IsUniform.exists_norm_mixedDeriv_littlewoodPaleyPiece_le`: the pieces form a
   bounded family of symbols of order `m`, uniform in the position when `a` is.
+* `TauCeti.Symbol.IsUniform.ofBoundedFrequencySupport`: a uniform symbol with bounded frequency
+  support, such as a piece of a uniform symbol, is a uniform symbol of every order.
 * `TauCeti.Symbol.IsUniform.exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow`: the dyadic
   estimates `‖∂ₓ^α ∂_ξ^β aⱼ(x, ξ)‖ ≤ C (2^j) ^ (m - |β|)` for a uniform symbol.
 * `TauCeti.Symbol.IsUniform.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le`: the
@@ -172,6 +174,39 @@ theorem IsUniform.littlewoodPaleyPiece {a : Symbol n V W m} (ha : a.IsUniform) (
   isUniform_iff.2 fun α β => by
     obtain ⟨C, hC0, hC⟩ := ha.exists_norm_mixedDeriv_littlewoodPaleyPiece_le φ α β
     exact ⟨C, hC0, hC j⟩
+
+/-- A uniform symbol vanishing at every frequency of norm at least `R` is a uniform symbol of every
+order `m'`: its mixed derivatives vanish for `‖ξ‖ > R`, and on the ball `‖ξ‖ ≤ R` the weights of any
+two orders are comparable. -/
+theorem IsUniform.ofBoundedFrequencySupport {m' : ℝ} {a : Symbol n V W m} (ha : a.IsUniform)
+    (R : ℝ) (hR : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) :
+    (ofBoundedFrequencySupport a.coefficient a.contDiff_coefficient R hR :
+      Symbol n V W m').IsUniform := by
+  refine isUniform_iff.2 fun α β => ?_
+  obtain ⟨C, hC, hCa⟩ := isUniform_iff.1 ha α β
+  refine ⟨C * (1 + R ^ 2) ^ (|m - m'| / 2), by positivity, fun x ξ => ?_⟩
+  rw [coefficient_ofBoundedFrequencySupport]
+  rcases le_or_gt ‖ξ‖ R with hξ | hξ
+  · have h1 : 1 ≤ 1 + ‖ξ‖ ^ 2 := by nlinarith [sq_nonneg ‖ξ‖]
+    have hw : (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) ≤
+        (1 + R ^ 2) ^ (|m - m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by
+      have hexp : (m - β.length) / 2 = (m - m') / 2 + (m' - β.length) / 2 := by ring
+      rw [hexp, Real.rpow_add (by positivity)]
+      refine mul_le_mul_of_nonneg_right ?_ (by positivity)
+      calc (1 + ‖ξ‖ ^ 2) ^ ((m - m') / 2)
+          ≤ (1 + ‖ξ‖ ^ 2) ^ (|m - m'| / 2) :=
+            Real.rpow_le_rpow_of_exponent_le h1 (by linarith [le_abs_self (m - m')])
+        _ ≤ (1 + R ^ 2) ^ (|m - m'| / 2) := by gcongr
+    calc ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
+          hCa x ξ
+      _ ≤ C * ((1 + R ^ 2) ^ (|m - m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2)) := by
+          gcongr
+      _ = _ := by ring
+  · have hzero : a.coefficient =ᶠ[nhds (x, ξ)] 0 :=
+      Filter.eventually_of_mem ((isOpen_lt continuous_const
+        (continuous_norm.comp continuous_snd)).mem_nhds hξ) fun p hp => hR p.1 p.2 hp.le
+    rw [hzero.mixedDeriv_eq, mixedDeriv_zero, norm_zero]
+    positivity
 
 /-! ### Dyadic estimates -/
 
