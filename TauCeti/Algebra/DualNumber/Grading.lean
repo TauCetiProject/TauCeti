@@ -330,4 +330,147 @@ noncomputable def dualNumberIntegerGradedAlgebra : GradedAlgebra (dualNumberInte
   let _ := dualNumberGradedAlgebra R
   Graded.gradedAlgebraExtendByZero (dualNumberGrade R)
 
+/-! ### The degree-one grading -/
+
+/-- The **degree-one grading** on `DualNumber R` (`R[ε]/(ε²)` with `deg ε = 1`), obtained by
+rescaling `dualNumberGrade R` by `n ↦ 2 * n`. -/
+noncomputable def dualNumberDegOneGrade (n : ℕ) : Submodule R (DualNumber R) :=
+  dualNumberGrade R (2 * n)
+
+/-- Membership in degree zero of the degree-one grading is vanishing of `snd`. -/
+@[simp]
+theorem mem_dualNumberDegOneGrade_zero {x : DualNumber R} :
+    x ∈ dualNumberDegOneGrade R 0 ↔ x.snd = 0 := by
+  simp [dualNumberDegOneGrade]
+
+/-- Membership in degree one of the degree-one grading is vanishing of `fst`. -/
+@[simp]
+theorem mem_dualNumberDegOneGrade_one {x : DualNumber R} :
+    x ∈ dualNumberDegOneGrade R 1 ↔ x.fst = 0 := by
+  simp [dualNumberDegOneGrade]
+
+/-- Every piece of `dualNumberDegOneGrade R` in degree `≥ 2` vanishes. -/
+theorem dualNumberDegOneGrade_eq_bot {n : ℕ} (h0 : n ≠ 0) (h1 : n ≠ 1) :
+    dualNumberDegOneGrade R n = ⊥ :=
+  dualNumberGrade_eq_bot R (by omega) (by omega)
+
+/-- The degree-one grading makes `DualNumber R` a graded monoid. -/
+theorem dualNumberDegOneGradedMonoid : SetLike.GradedMonoid (dualNumberDegOneGrade R) where
+  one_mem := by simp
+  mul_mem m n _ _ hx hy := by
+    simpa only [dualNumberDegOneGrade, Nat.mul_add] using mul_mem_dualNumberGrade R hx hy
+
+namespace DualNumberDegOneGrading
+
+private noncomputable def degreeZeroPart : DualNumber R →ₗ[R] dualNumberDegOneGrade R 0 :=
+  ((TrivSqZeroExt.inlAlgHom R R R).toLinearMap.comp
+    (TrivSqZeroExt.fstHom R R R).toLinearMap).codRestrict
+      (dualNumberDegOneGrade R 0) fun _ => by simp
+
+private noncomputable def degreeOnePart : DualNumber R →ₗ[R] dualNumberDegOneGrade R 1 :=
+  ((TrivSqZeroExt.inrHom R R).comp (TrivSqZeroExt.sndHom R R)).codRestrict
+    (dualNumberDegOneGrade R 1) fun _ => by simp
+
+@[simp]
+private theorem coe_degreeZeroPart_apply (x : DualNumber R) :
+    (degreeZeroPart R x : DualNumber R) = TrivSqZeroExt.inl x.fst :=
+  rfl
+
+@[simp]
+private theorem coe_degreeOnePart_apply (x : DualNumber R) :
+    (degreeOnePart R x : DualNumber R) = TrivSqZeroExt.inr x.snd :=
+  rfl
+
+private noncomputable def decompose :
+    DualNumber R →ₗ[R] DirectSum ℕ (fun n => dualNumberDegOneGrade R n) :=
+  (DirectSum.lof R ℕ (fun n => dualNumberDegOneGrade R n) 0).comp (degreeZeroPart R) +
+    (DirectSum.lof R ℕ (fun n => dualNumberDegOneGrade R n) 1).comp (degreeOnePart R)
+
+private theorem coeAddMonoidHom_decompose (x : DualNumber R) :
+    DirectSum.coeAddMonoidHom (dualNumberDegOneGrade R) (decompose R x) = x := by
+  simpa [decompose, DirectSum.lof_eq_of] using TrivSqZeroExt.inl_fst_add_inr_snd_eq x
+
+private theorem decompose_coeAddMonoidHom
+    (x : DirectSum ℕ (fun n => dualNumberDegOneGrade R n)) :
+    decompose R (DirectSum.coeAddMonoidHom (dualNumberDegOneGrade R) x) = x := by
+  induction x using DirectSum.induction_on with
+  | zero => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | of n x =>
+      rcases eq_or_ne n 0 with rfl | hn0
+      · have hx := (mem_dualNumberDegOneGrade_zero R).1 x.property
+        have hzero : degreeZeroPart R x = x :=
+          Subtype.ext (TrivSqZeroExt.ext rfl (by simp [hx]))
+        have hone : degreeOnePart R x = 0 := Subtype.ext (by simp [hx])
+        simp [decompose, hzero, hone, DirectSum.lof_eq_of]
+      · rcases eq_or_ne n 1 with rfl | hn1
+        · have hx := (mem_dualNumberDegOneGrade_one R).1 x.property
+          have hzero : degreeZeroPart R x = 0 := Subtype.ext (by simp [hx])
+          have hone : degreeOnePart R x = x :=
+            Subtype.ext (TrivSqZeroExt.ext (by simp [hx]) rfl)
+          simp [decompose, hzero, hone, DirectSum.lof_eq_of]
+        · obtain rfl : x = 0 :=
+            Subtype.ext (by simpa [dualNumberDegOneGrade_eq_bot R hn0 hn1] using x.2)
+          simp
+
+@[instance_reducible]
+private noncomputable def decomposition :
+    DirectSum.Decomposition (dualNumberDegOneGrade R) where
+  decompose' := decompose R
+  left_inv := coeAddMonoidHom_decompose R
+  right_inv := decompose_coeAddMonoidHom R
+
+end DualNumberDegOneGrading
+
+/-- `DualNumber R` is the internal direct sum of scalars in degree `0` and `R · ε` in degree `1`. -/
+theorem isInternal_dualNumberDegOneGrade : DirectSum.IsInternal (dualNumberDegOneGrade R) :=
+  letI := DualNumberDegOneGrading.decomposition R
+  DirectSum.Decomposition.isInternal _
+
+/-- The degree-one grading makes `DualNumber R` a graded algebra. -/
+@[instance_reducible]
+noncomputable def dualNumberDegOneGradedAlgebra : GradedAlgebra (dualNumberDegOneGrade R) :=
+  letI := dualNumberDegOneGradedMonoid R
+  DirectSum.IsInternal.gradedAlgebra (isInternal_dualNumberDegOneGrade R)
+
+/-- The degree-one grading on `DualNumber R`, extended by zero to integer degrees. -/
+noncomputable def dualNumberDegOneIntegerGrade (d : ℤ) : Submodule R (DualNumber R) :=
+  Graded.extendByZero (dualNumberDegOneGrade R) d
+
+@[simp]
+theorem dualNumberDegOneIntegerGrade_ofNat (n : ℕ) :
+    dualNumberDegOneIntegerGrade R n = dualNumberDegOneGrade R n :=
+  Graded.extendByZero_natCast _ n
+
+@[simp]
+theorem dualNumberDegOneIntegerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) :
+    dualNumberDegOneIntegerGrade R d = ⊥ :=
+  Graded.extendByZero_of_neg _ hd
+
+/-- The unit `1 : DualNumber R` lies in degree zero of `dualNumberDegOneIntegerGrade R`. -/
+theorem one_mem_dualNumberDegOneIntegerGrade_zero :
+    (1 : DualNumber R) ∈ dualNumberDegOneIntegerGrade R 0 := by
+  rw [← Nat.cast_zero, dualNumberDegOneIntegerGrade_ofNat, mem_dualNumberDegOneGrade_zero,
+    TrivSqZeroExt.snd_one]
+
+/-- The generator `DualNumber.eps` lies in degree one of `dualNumberDegOneIntegerGrade R`. -/
+theorem eps_mem_dualNumberDegOneIntegerGrade_one :
+    DualNumber.eps ∈ dualNumberDegOneIntegerGrade R 1 := by
+  rw [← Nat.cast_one, dualNumberDegOneIntegerGrade_ofNat, mem_dualNumberDegOneGrade_one]
+  rfl
+
+/-- Degree zero of `dualNumberDegOneIntegerGrade R` is the `R`-line through `1`. -/
+theorem dualNumberDegOneIntegerGrade_zero_eq_span_one :
+    dualNumberDegOneIntegerGrade R 0 = R ∙ (1 : DualNumber R) := by
+  rw [← Nat.cast_zero, dualNumberDegOneIntegerGrade_ofNat]
+  exact (Nat.cast_zero (R := ℤ) ▸ dualNumberIntegerGrade_ofNat R 0).symm.trans
+    (dualNumberIntegerGrade_zero_eq_span_one R)
+
+/-- `DualNumber R` is `ℤ`-graded with `deg ε = 1` and zero pieces in negative degrees. -/
+@[instance_reducible]
+noncomputable def dualNumberDegOneIntegerGradedAlgebra :
+    GradedAlgebra (dualNumberDegOneIntegerGrade R) :=
+  let _ := dualNumberDegOneGradedAlgebra R
+  Graded.gradedAlgebraExtendByZero (dualNumberDegOneGrade R)
+
 end TauCeti

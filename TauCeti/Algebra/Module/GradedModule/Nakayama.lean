@@ -186,7 +186,146 @@ theorem smul_mem_positive_smul_top [SetLike.GradedMul 𝒜] {a : A} (ha : a ∈ 
     exact Submodule.smul_mem_smul (hmul b hb) Submodule.mem_top
   · simpa only [smul_add] using Submodule.add_mem _ hx hy
 
+/-- Any `A`-linear map sends `A₊ M` into `A₊ N`. -/
+theorem map_mem_positive_smul_top {N : Type*} [AddCommMonoid N] [Module k N]
+    [Module A N] [IsScalarTower k A N] (f : M →ₗ[A] N) {x : M}
+    (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) :
+    f x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N) :=
+  Submodule.smul_induction_on hx
+    (fun a ha _ _ => by
+      rw [map_smul]
+      exact Submodule.smul_mem_smul ha Submodule.mem_top)
+    (fun _ _ hx hy => by
+      rw [map_add]
+      exact add_mem hx hy)
+
+section Endomorphism
+
+variable {R : Type uk} [CommRing R] {B : Type uA} [Ring B] [Algebra R B]
+  {N : Type uM} [AddCommGroup N] [Module R N] [Module B N] [IsScalarTower R B N]
+  (ℬ : ℤ → Submodule R B) {H : InternalGrading R N ℤ} [SetLike.GradedSMul ℬ H.piece]
+
+private theorem decompose_pow_eq_zero_of_forall_mem_positive_smul_top
+    (b : ℤ) (hbelow : ∀ p < b, H.piece p = ⊥) (g : Module.End B N)
+    (hg : ∀ y : N, g y ∈ (⨆ (i : ℤ) (_ : 0 < i), ℬ i) • (⊤ : Submodule R N)) :
+    ∀ (m : ℕ) (y : N) {p : ℤ}, p < b + m → (decompose H.piece ((g ^ m) y) p : N) = 0
+  | 0, y, p, hp => by
+      have hp' : p < b := by omega
+      exact (Submodule.eq_bot_iff _).mp (hbelow p hp') _ (decompose H.piece y p).2
+  | m + 1, y, p, hp => by
+      rw [pow_succ, mul_apply_eq_comp]
+      refine Submodule.smul_induction_on (hg y) (fun a ha z _ => ?_) (fun u v hu hv => ?_)
+      · refine Submodule.iSup_induction _
+          (motive := fun a => (decompose H.piece ((g ^ m) (a • z)) p : N) = 0)
+          ha (fun i a ha => ?_) (by simp)
+          (fun a₁ a₂ h₁ h₂ => by
+            simp only [add_smul, map_add, decompose_add, DirectSum.add_apply, Submodule.coe_add,
+              h₁, h₂, add_zero])
+        refine Submodule.iSup_induction _
+          (motive := fun a => (decompose H.piece ((g ^ m) (a • z)) p : N) = 0)
+          ha (fun hi a ha => ?_) (by simp)
+          (fun a₁ a₂ h₁ h₂ => by
+            simp only [add_smul, map_add, decompose_add, DirectSum.add_apply, Submodule.coe_add,
+              h₁, h₂, add_zero])
+        rw [map_smul]
+        let la : N →ₗ[R] N := Algebra.lsmul R R N a
+        have hla : TauCeti.LinearMap.IsHomogeneous la H.piece H.piece i :=
+          TauCeti.LinearMap.isHomogeneous_def.mpr fun q w hw => by
+            simpa [la, add_comm] using SetLike.GradedSMul.smul_mem ha hw
+        have hmap := hla.map_decompose (p - i) ((g ^ m) z)
+        rw [sub_add_cancel] at hmap
+        have hrec := decompose_pow_eq_zero_of_forall_mem_positive_smul_top b hbelow g hg m z
+          (p := p - i) (by omega)
+        exact Subtype.ext_iff.mp (by simpa [la, hrec] using hmap.symm) ▸ rfl
+      · simp only [map_add, decompose_add, DirectSum.add_apply, Submodule.coe_add, hu, hv,
+          add_zero]
+
+/-- **Injectivity from Graded Nakayama.** On a bounded-below graded module, an `A`-linear
+endomorphism congruent to the identity modulo `A₊ M` is injective. -/
+theorem injective_of_sub_mem_positive_smul_top (b : ℤ) (hbelow : ∀ p < b, H.piece p = ⊥)
+    (f : N →ₗ[B] N)
+    (hf : ∀ y : N, f y - y ∈ (⨆ (i : ℤ) (_ : 0 < i), ℬ i) • (⊤ : Submodule R N)) :
+    Function.Injective f := by
+  classical
+  rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
+  intro x hx
+  rw [LinearMap.mem_ker] at hx
+  let g : Module.End B N := 1 - f
+  have hg : ∀ y : N, g y ∈ (⨆ (i : ℤ) (_ : 0 < i), ℬ i) • (⊤ : Submodule R N) := fun y => by
+    have : g y = -(f y - y) := by simp [g]
+    exact this ▸ neg_mem (hf y)
+  have hgx : ∀ m : ℕ, (g ^ m) x = x := fun m => by
+    induction m with
+    | zero => rfl
+    | succ m ih => simp [pow_succ', ih, g, hx]
+  rw [← sum_support_decompose H.piece x]
+  refine Finset.sum_eq_zero fun p _ => ?_
+  let m : ℕ := (p - b + 1).toNat
+  rw [← hgx m]
+  exact decompose_pow_eq_zero_of_forall_mem_positive_smul_top ℬ b hbelow g hg m x (by omega)
+
+/-- **Surjectivity from Graded Nakayama.** On a bounded-below graded module, a degree-zero
+homogeneous `A`-linear endomorphism congruent to the identity modulo `A₊ M` is surjective. -/
+theorem surjective_of_sub_mem_positive_smul_top (b : ℤ) (hbelow : ∀ p < b, H.piece p = ⊥)
+    (f : N →ₗ[B] N) (hf_hom : TauCeti.LinearMap.IsHomogeneous f H.piece H.piece 0)
+    (hf : ∀ y : N, f y - y ∈ (⨆ (i : ℤ) (_ : 0 < i), ℬ i) • (⊤ : Submodule R N)) :
+    Function.Surjective f := by
+  rw [← LinearMap.range_eq_top]
+  refine eq_top_of_piece_le_sup_positive_smul_top ℬ (LinearMap.range f)
+    (fun p y hy => ?_) b hbelow fun p x _ => ?_
+  · obtain ⟨x, rfl⟩ := hy
+    have hmap := hf_hom.map_decompose p x
+    rw [add_zero] at hmap
+    exact hmap ▸ ⟨_, rfl⟩
+  · exact Submodule.mem_sup.mpr ⟨f x, ⟨x, rfl⟩, -(f x - x), neg_mem (hf x), by abel⟩
+
+/-- **Invertibility from Graded Nakayama.** On a bounded-below graded module, a degree-zero
+homogeneous `A`-linear endomorphism congruent to the identity modulo `A₊ M` is bijective. -/
+theorem bijective_of_sub_mem_positive_smul_top (b : ℤ) (hbelow : ∀ p < b, H.piece p = ⊥)
+    (f : N →ₗ[B] N) (hf_hom : TauCeti.LinearMap.IsHomogeneous f H.piece H.piece 0)
+    (hf : ∀ y : N, f y - y ∈ (⨆ (i : ℤ) (_ : 0 < i), ℬ i) • (⊤ : Submodule R N)) :
+    Function.Bijective f :=
+  ⟨injective_of_sub_mem_positive_smul_top ℬ b hbelow f hf,
+    surjective_of_sub_mem_positive_smul_top ℬ b hbelow f hf_hom hf⟩
+
+end Endomorphism
+
 variable [GradedAlgebra 𝒜]
+
+omit [IsScalarTower k A M] in
+/-- Over a nonnegatively graded algebra, any finitely generated graded `A`-module is bounded
+below in internal degree. -/
+theorem exists_piece_eq_bot_of_lt [Module.Finite A M] (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) :
+    ∃ b : ℤ, ∀ p < b, G.piece p = ⊥ := by
+  classical
+  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := A) (M := M)
+  let D : Finset ℤ := insert 0 (s.biUnion fun x => (decompose G.piece x).support)
+  let b : ℤ := D.min' (Finset.insert_nonempty 0 _)
+  have hgen : ∀ x ∈ (s : Set M), ∀ p < b, (decompose G.piece x p : M) = 0 := by
+    intro x hx p hp
+    have hpD : p ∉ D := fun hmem => not_le_of_gt hp (Finset.min'_le D p hmem)
+    have hps : p ∉ (decompose G.piece x).support := fun hmem =>
+      hpD (Finset.mem_insert_of_mem (Finset.mem_biUnion.mpr ⟨x, hx, hmem⟩))
+    simpa [DFinsupp.mem_support_toFun] using hps
+  have hall : ∀ m : M, ∀ p < b, (decompose G.piece m p : M) = 0 := by
+    intro m
+    have hm : m ∈ Submodule.span A (s : Set M) := hs.symm ▸ Submodule.mem_top
+    refine Submodule.span_induction hgen (fun _ _ => by simp)
+      (fun x y _ _ hx hy p hp => by simp [hx p hp, hy p hp]) (fun a x _ hx p hp => ?_) hm
+    rw [← sum_support_decompose 𝒜 a, ← sum_support_decompose G.piece x, Finset.sum_smul]
+    simp only [Finset.smul_sum, decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
+    refine Finset.sum_eq_zero fun i _ => Finset.sum_eq_zero fun q _ => ?_
+    by_cases hi0 : i < 0
+    · have ha0 : (decompose 𝒜 a i : A) = 0 :=
+        (Submodule.eq_bot_iff _).mp (h𝒜 i hi0) _ (decompose 𝒜 a i).2
+      simp [ha0]
+    · by_cases hqb : q < b
+      · simp [hx q hqb]
+      · have hmem : (decompose 𝒜 a i : A) • (decompose G.piece x q : M) ∈ G.piece (i + q) := by
+          simpa using SetLike.GradedSMul.smul_mem (decompose 𝒜 a i).2 (decompose G.piece x q).2
+        exact decompose_of_mem_ne G.piece hmem (by omega)
+  refine ⟨b, fun p hp => (Submodule.eq_bot_iff _).mpr fun x hx => ?_⟩
+  simpa [decompose_of_mem_same G.piece hx] using hall x p hp
 
 /-- A bounded-below module over a nonnegatively graded algebra is generated in degree `d`
 exactly when its homogeneous pieces outside degree `d` lie in `A₊ M`. Equivalently, its quotient
@@ -210,6 +349,16 @@ theorem isGeneratedInDegree_iff_piece_le_positive_smul_top (h𝒜 : ∀ i < 0, �
           exact le_sup_of_le_left fun x hx => Submodule.subset_span hx
         · exact le_sup_of_le_right (hG p hp)
     exact (G.isGeneratedInDegree_iff d).mpr fun x => hspan.symm ▸ Submodule.mem_top
+
+/-- The generating-degree criterion for a finitely generated graded `A`-module over a
+nonnegatively graded algebra. -/
+theorem isGeneratedInDegree_iff_piece_le_positive_smul_top_of_finite_module [Module.Finite A M]
+    (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) (d : ℤ) :
+    G.IsGeneratedInDegree A d ↔
+      ∀ p, p ≠ d → G.piece p ≤
+        (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by
+  obtain ⟨b, hb⟩ := G.exists_piece_eq_bot_of_lt 𝒜 h𝒜
+  exact isGeneratedInDegree_iff_piece_le_positive_smul_top 𝒜 h𝒜 b hb d
 
 /-- The generating-degree criterion for a module finite over the grading's scalar semiring.
 Its internal grading has finite support, which supplies the lower bound automatically. -/
