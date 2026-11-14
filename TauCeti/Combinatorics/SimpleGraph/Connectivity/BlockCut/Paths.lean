@@ -11,7 +11,7 @@ public import TauCeti.Combinatorics.SimpleGraph.Paths
 /-!
 # Paths through the block--cut forest
 
-For a finite simple graph, the block--cut forest records exactly how its cut vertices separate
+For a simple graph, the block--cut forest records exactly how its cut vertices separate
 its blocks. Given vertices `a` and `b` in blocks `B` and `C`, respectively, and a cut vertex `c`
 different from both endpoints, there is a walk from `a` to `b` avoiding `c` precisely when there
 is a walk in the block--cut forest from `B` to `C` avoiding the block--cut vertex represented by
@@ -39,7 +39,7 @@ variable {V : Type u} {G : SimpleGraph V}
 /-- **Block--cut path correspondence.** For vertices `a` and `b` in blocks `B` and `C`, neither
 equal to a cut vertex `c`, the original graph has an `a`--`b` walk avoiding `c` exactly when the
 block--cut forest has a `B`--`C` walk avoiding its vertex corresponding to `c`. -/
-theorem reachableAvoiding_blockCutGraph_iff [Finite V] (B C : G.BlockVertex)
+theorem reachableAvoiding_blockCutGraph_iff (B C : G.BlockVertex)
     (c : G.CutVertex) {a b : V} (haB : a ∈ (B : Set V)) (hbC : b ∈ (C : Set V))
     (hac : a ≠ c) (hbc : b ≠ c) :
     ReachableAvoiding G.blockCutGraph.AdjHom {(.inr c : G.BlockCutVertex)} (.inl B) (.inl C) ↔
@@ -57,7 +57,7 @@ theorem reachableAvoiding_blockCutGraph_iff [Finite V] (B C : G.BlockVertex)
 /-- Deleting a cut vertex disconnects two chosen original vertices exactly when deleting its
 block--cut vertex disconnects blocks containing them. This is the induced-subgraph form of
 `reachableAvoiding_blockCutGraph_iff`. -/
-theorem reachable_induce_compl_blockCutGraph_iff [Finite V] (B C : G.BlockVertex)
+theorem reachable_induce_compl_blockCutGraph_iff (B C : G.BlockVertex)
     (c : G.CutVertex) {a b : V} (haB : a ∈ (B : Set V)) (hbC : b ∈ (C : Set V))
     (hac : a ≠ c) (hbc : b ≠ c) :
     (G.blockCutGraph.induce {(.inr c : G.BlockCutVertex)}ᶜ).Reachable
@@ -67,7 +67,7 @@ theorem reachable_induce_compl_blockCutGraph_iff [Finite V] (B C : G.BlockVertex
   exact reachableAvoiding_blockCutGraph_iff B C c haB hbC hac hbc
 
 /-- The block--cut path correspondence can be witnessed by simple paths on both sides. -/
-theorem exists_isPath_notMem_support_blockCutGraph_iff [Finite V] (B C : G.BlockVertex)
+theorem exists_isPath_notMem_support_blockCutGraph_iff (B C : G.BlockVertex)
     (c : G.CutVertex) {a b : V} (haB : a ∈ (B : Set V)) (hbC : b ∈ (C : Set V))
     (hac : a ≠ c) (hbc : b ≠ c) :
     (∃ q : G.blockCutGraph.Walk (.inl B) (.inl C),
@@ -81,7 +81,7 @@ theorem exists_isPath_notMem_support_blockCutGraph_iff [Finite V] (B C : G.Block
 /-- A cut vertex lies on every walk between vertices in two blocks exactly when its block--cut
 vertex lies on every walk between the corresponding block vertices. Thus separation in the
 original graph is detected by the unique path in the block--cut forest. -/
-theorem CutVertex.forall_mem_support_iff_blockCutGraph [Finite V] (c : G.CutVertex)
+theorem CutVertex.forall_mem_support_iff_blockCutGraph (c : G.CutVertex)
     (B C : G.BlockVertex) {a b : V} (haB : a ∈ (B : Set V)) (hbC : b ∈ (C : Set V))
     (hac : a ≠ c) (hbc : b ≠ c) :
     (∀ p : G.Walk a b, (c : V) ∈ p.support) ↔

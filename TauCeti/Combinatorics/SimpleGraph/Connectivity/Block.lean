@@ -10,7 +10,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.CutVertex
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.VertexConnectivity
 
-import Mathlib.Order.Preorder.Finite
+import Mathlib.Order.Zorn
 import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
 
 /-!
@@ -22,14 +22,14 @@ this convention makes blocks cover every vertex and every edge, and is the one u
 block--cut incidence graph.
 
 This file introduces the block predicate and its basic maximality API. It proves that every
-vertex, and both ends of every edge, lie in some block when the vertex type is finite. Distinct
+vertex, and both ends of every edge, lie in some block, without finiteness assumptions. Distinct
 blocks meet in at most one vertex, so the block containing the endpoints of an edge is unique.
 
 Combining maximality of blocks with the ear lemma
 `SimpleGraph.Walk.IsPath.not_isCutVertex_induce_union_support` shows that a common vertex of two
 distinct blocks lies on every walk from one block to the other
 (`SimpleGraph.IsBlock.mem_support_of_ne`), so it is a cut vertex.
-Conversely, in a finite graph a cut vertex lies in two distinct blocks, giving
+Conversely, a cut vertex lies in two distinct blocks, giving
 `SimpleGraph.isCutVertex_iff_exists_isBlock_ne`; a vertex that is not a cut vertex lies in exactly
 one block. These are the incidences of the block--cut forest.
 
@@ -105,19 +105,32 @@ theorem IsBlock.exists_adj_of_mem_of_ne (hB : G.IsBlock B) (huB : u ∈ B) (hvB 
 
 /-! ### Existence -/
 
-/-- In a finite graph, every connected induced subgraph without cut vertices is contained in a
-block. -/
-theorem exists_isBlock_superset [Finite V] (hconn : (G.induce B).Connected)
+/-- Every connected induced subgraph without cut vertices is contained in a block. -/
+theorem exists_isBlock_superset (hconn : (G.induce B).Connected)
     (hcut : ∀ v, ¬(G.induce B).IsCutVertex v) :
     ∃ C, G.IsBlock C ∧ B ⊆ C := by
   let P : Set (Set V) :=
     {C | (G.induce C).Connected ∧ ∀ v, ¬(G.induce C).IsCutVertex v}
   have hBP : B ∈ P := ⟨hconn, hcut⟩
-  obtain ⟨C, hBC, hC⟩ := P.toFinite.exists_le_maximal hBP
+  have hchain : ∀ S ⊆ P, IsChain (· ⊆ ·) S → S.Nonempty →
+      ∃ U ∈ P, ∀ C ∈ S, C ⊆ U := by
+    intro S hSP hS hSne
+    -- A nonempty chain has a connected union; directed unions have no cut vertices.
+    refine ⟨⋃₀ S, ⟨G.induce_sUnion_connected_of_pairwise_not_disjoint hSne ?_
+      (fun h ↦ (hSP h).1), fun x ↦ not_isCutVertex_induce_sUnion_of_directedOn hS.directedOn
+        (fun C hC ↦ (hSP hC).1) (fun C hC ↦ (hSP hC).2) x⟩,
+      fun C hC ↦ Set.subset_sUnion_of_mem hC⟩
+    intro C D hC hD
+    rcases hS.total hC hD with hCD | hDC
+    · obtain ⟨x⟩ := (hSP hC).1.nonempty
+      exact ⟨x, x.property, hCD x.property⟩
+    · obtain ⟨x⟩ := (hSP hD).1.nonempty
+      exact ⟨x, hDC x.property, x.property⟩
+  obtain ⟨C, hBC, hC⟩ := zorn_subset_nonempty P hchain B hBP
   exact ⟨C, by simpa only [IsBlock, P, Set.mem_ofPred_eq] using hC, hBC⟩
 
-/-- Every vertex of a finite simple graph belongs to a block. -/
-theorem exists_isBlock_mem [Finite V] (G : SimpleGraph V) (v : V) :
+/-- Every vertex of a simple graph belongs to a block. -/
+theorem exists_isBlock_mem (G : SimpleGraph V) (v : V) :
     ∃ B, G.IsBlock B ∧ v ∈ B := by
   have hconn : (G.induce {v}).Connected := by
     rw [G.induce_singleton_eq_top]
@@ -164,8 +177,8 @@ theorem IsBlock.nontrivial_of_not_isIsolated (hB : G.IsBlock B) (hvB : v ∈ B)
   have hBv : B = {v} := Set.not_nontrivial_iff.mp hB' |>.eq_singleton_of_mem hvB
   exact hv ((G.isBlock_singleton_iff_isIsolated v).mp (hBv ▸ hB))
 
-/-- Every edge of a finite simple graph has both endpoints in some block. -/
-theorem Adj.exists_isBlock_superset_pair [Finite V] (h : G.Adj u v) :
+/-- Every edge of a simple graph has both endpoints in some block. -/
+theorem Adj.exists_isBlock_superset_pair (h : G.Adj u v) :
     ∃ B, G.IsBlock B ∧ {u, v} ⊆ B :=
   exists_isBlock_superset (G.induce_pair_connected_of_adj h) (G.not_isCutVertex_induce_pair u v)
 
@@ -287,8 +300,8 @@ theorem IsBlock.eq_of_adj_mem (hB : G.IsBlock B) (hC : G.IsBlock C) (h : G.Adj u
   by_contra hBC
   exact h.ne (hB.inter_subsingleton hC hBC ⟨huB, huC⟩ ⟨hvB, hvC⟩)
 
-/-- Every edge of a finite simple graph has both endpoints in a unique block. -/
-theorem Adj.existsUnique_isBlock_superset_pair [Finite V] (h : G.Adj u v) :
+/-- Every edge of a simple graph has both endpoints in a unique block. -/
+theorem Adj.existsUnique_isBlock_superset_pair (h : G.Adj u v) :
     ∃! B, G.IsBlock B ∧ {u, v} ⊆ B := by
   obtain ⟨B, hB, huvB⟩ := h.exists_isBlock_superset_pair
   refine ⟨B, ⟨hB, huvB⟩, ?_⟩
@@ -354,8 +367,8 @@ theorem IsBlock.isCutVertex_of_ne (hB : G.IsBlock B) (hC : G.IsBlock C) (hBC : B
   exact ⟨u, w, hvu.ne', hvw.ne', hvu.symm.reachable.trans hvw.reachable,
     hB.mem_support_of_ne hC hBC hvB hvC huB hwC⟩
 
-/-- In a finite graph, a cut vertex lies in two distinct blocks. -/
-theorem IsCutVertex.exists_isBlock_ne [Finite V] (h : G.IsCutVertex v) :
+/-- A cut vertex lies in two distinct blocks. -/
+theorem IsCutVertex.exists_isBlock_ne (h : G.IsCutVertex v) :
     ∃ B C, G.IsBlock B ∧ G.IsBlock C ∧ B ≠ C ∧ v ∈ B ∧ v ∈ C := by
   classical
   rw [isCutVertex_iff_exists_forall_walk_mem_support] at h
@@ -402,15 +415,15 @@ theorem IsBlock.exists_adj_of_not_isIsolated_mem (hB : G.IsBlock B)
   have hp : ¬p.Nil := Walk.not_nil_of_ne fun h ↦ hdv (congrArg Subtype.val h).symm
   exact ⟨p.snd, p.snd.property, induce_adj.1 (Walk.adj_snd hp)⟩
 
-/-- **Cut vertices and blocks.** In a finite graph, a vertex is a cut vertex exactly when it lies
-in two distinct blocks. -/
-theorem isCutVertex_iff_exists_isBlock_ne [Finite V] :
+/-- **Cut vertices and blocks.** A vertex is a cut vertex exactly when it lies in two distinct
+blocks. -/
+theorem isCutVertex_iff_exists_isBlock_ne :
     G.IsCutVertex v ↔ ∃ B C, G.IsBlock B ∧ G.IsBlock C ∧ B ≠ C ∧ v ∈ B ∧ v ∈ C :=
   ⟨IsCutVertex.exists_isBlock_ne, fun ⟨_, _, hB, hC, hBC, hvB, hvC⟩ ↦
     hB.isCutVertex_of_ne hC hBC hvB hvC⟩
 
-/-- In a finite graph, a vertex is not a cut vertex exactly when it lies in a unique block. -/
-theorem not_isCutVertex_iff_existsUnique_isBlock_mem [Finite V] :
+/-- A vertex is not a cut vertex exactly when it lies in a unique block. -/
+theorem not_isCutVertex_iff_existsUnique_isBlock_mem :
     ¬G.IsCutVertex v ↔ ∃! B, G.IsBlock B ∧ v ∈ B := by
   rw [isCutVertex_iff_exists_isBlock_ne]
   constructor
