@@ -32,23 +32,9 @@ namespace TauCeti.TwistedMonoidAlgebra
 variable {k G : Type*} [CommSemiring k] [Monoid G]
   {α : G → G → kˣ} [IsFactorSet α]
 
-/-- The coefficients of a product are the twisted convolution of the two coefficient families. -/
-theorem repr_mul (f g : twistedMonoidAlgebra k G α) :
-    (basis k G α).repr (f * g) =
-      ((basis k G α).repr f).sum fun a r ↦
-        ((basis k G α).repr g).sum fun b s ↦
-          Finsupp.single (a * b) (r * s * (α a b : k)) := by
-  classical
-  conv_lhs =>
-    rw [← (basis k G α).linearCombination_repr f, ← (basis k G α).linearCombination_repr g]
-  simp only [Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_mul, Finset.mul_sum,
-    smul_mul_assoc, mul_smul_comm, map_sum, map_smul, basis_apply, of_mul_of]
-  simp only [← basis_apply k G α, Module.Basis.repr_self, Finset.smul_sum, Finsupp.smul_single,
-    smul_eq_mul]
-  rw [Finset.sum_comm]
-  simp only [mul_one, mul_assoc, mul_left_comm]
-
-/-- At a uniquely represented product of support elements, twisted convolution has one term. -/
+/-- If `a * b` can be written in at most one way as a product of elements in the supports of `f`
+and `g`, its coefficient in `f * g` is
+`(basis k G α).repr f a * (basis k G α).repr g b * α a b`. -/
 theorem repr_mul_apply_of_uniqueMul {f g : twistedMonoidAlgebra k G α} {a b : G}
     (h : UniqueMul ((basis k G α).repr f).support ((basis k G α).repr g).support a b) :
     (basis k G α).repr (f * g) (a * b) =

@@ -378,6 +378,22 @@ theorem finrank_eq_natCard [StrongRankCondition k] :
 
 variable {k G α}
 
+/-- The coefficients of a product are the twisted convolution of the two coefficient families. -/
+theorem repr_mul (f g : twistedMonoidAlgebra k G α) :
+    (basis k G α).repr (f * g) =
+      ((basis k G α).repr f).sum fun a r ↦
+        ((basis k G α).repr g).sum fun b s ↦
+          Finsupp.single (a * b) (r * s * (α a b : k)) := by
+  classical
+  conv_lhs =>
+    rw [← (basis k G α).linearCombination_repr f, ← (basis k G α).linearCombination_repr g]
+  simp only [Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_mul, Finset.mul_sum,
+    smul_mul_assoc, mul_smul_comm, map_sum, map_smul, basis_apply, of_mul_of]
+  simp only [← basis_apply k G α, Module.Basis.repr_self, Finset.smul_sum, Finsupp.smul_single,
+    smul_eq_mul]
+  rw [Finset.sum_comm]
+  simp only [mul_one, mul_assoc, mul_left_comm]
+
 /-- An algebra map out of `k_α[G]` is determined by its values on the basis elements. -/
 @[ext]
 theorem algHom_ext {A : Type*} [Semiring A] [Algebra k A]
