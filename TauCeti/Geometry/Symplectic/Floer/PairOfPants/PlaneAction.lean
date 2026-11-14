@@ -135,10 +135,8 @@ private theorem hamiltonianCurvature_negativePlanePerturbation_eq_zero (ω : Sym
     linarith
   -- The point lies on the part `-s > 2` of the end.
   have hs : 2 < inf.endSign * (inf.endCoord w).re := by
-    rw [endSign_inf, re_endCoord, endCenter_inf, endScale_inf, sub_zero, neg_one_mul, neg_div,
-      neg_neg, lt_div_iff₀ (by positivity), norm_div, Complex.norm_ofNat,
-      Real.lt_log_iff_exp_lt (by positivity), lt_div_iff₀ (by norm_num)]
-    have : Real.exp (2 * (2 * π)) ≤ Real.exp (2 * π * R) :=
+    rw [endSign_inf, neg_one_mul, lt_neg_re_endCoord_inf_iff hw₀]
+    have : Real.exp (2 * π * 2) ≤ Real.exp (2 * π * R) :=
       Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])
     linarith
   have hH' (q : Puncture) : Periodic ((Pi.single inf H : Puncture → ℝ → V → ℝ) q) 1 := by

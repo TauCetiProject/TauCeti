@@ -311,6 +311,15 @@ theorem neg_re_endCoord_inf_le {R : ℝ} (hR : 0 ≤ R) {w : ℂ}
   · rw [Real.log_le_iff_le_exp (by simpa using hw₀), norm_div, Complex.norm_ofNat, mul_comm R]
     linarith
 
+/-- Away from `0`, the signed longitudinal coordinate `-s` of the end at `∞` exceeds `r` exactly
+off the closed disc `‖w‖ ≤ 2 exp (2πr)` bounded by the circle `s = -r` of that end. -/
+theorem lt_neg_re_endCoord_inf_iff {r : ℝ} {w : ℂ} (hw : w ≠ 0) :
+    r < -(inf.endCoord w).re ↔ 2 * Real.exp (2 * π * r) < ‖w‖ := by
+  rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero, neg_div, neg_neg,
+    lt_div_iff₀ (by positivity), norm_div, Complex.norm_ofNat,
+    Real.lt_log_iff_exp_lt (by positivity), lt_div_iff₀ (by norm_num), mul_comm r]
+  constructor <;> intro h <;> linarith
+
 /-- On the punctured disc `0 < ‖w - c_q‖ ≤ exp (-2πr) / 2` about the center of a positive end `q`,
 the longitudinal coordinate of that end is at least `r`: the disc is bounded by the circle `s = r`
 of the end. -/

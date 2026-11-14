@@ -38,6 +38,19 @@ ends removed. It is a compact subset of `S`
 `R` and exhaust `S` (`TauCeti.ThricePuncturedSphere.exchangeTruncation_mono`,
 `TauCeti.ThricePuncturedSphere.iUnion_exchangeTruncation`).
 
+Capping the input at `0` by a plane fills in the puncture at `0`, and the domain `ℂ ∖ {1}` of the
+capped family is truncated by `TauCeti.ThricePuncturedSphere.cappedExchangeTruncation c R`: the same
+closed disc with only the part `s > R` of the input end at `1` removed. It is a compact subset of
+`ℂ ∖ {1}` (`TauCeti.ThricePuncturedSphere.isCompact_cappedExchangeTruncation`,
+`TauCeti.ThricePuncturedSphere.cappedExchangeTruncation_subset`). These capped truncations
+increase with `R` and exhaust `ℂ ∖ {1}`
+(`TauCeti.ThricePuncturedSphere.cappedExchangeTruncation_mono`,
+`TauCeti.ThricePuncturedSphere.iUnion_cappedExchangeTruncation`). For `|c| ≤ 1` and `R ≥ 0` it is
+the disjoint union of the truncation with recentred output end and the open disc of radius
+`exp (-2πR) / 2` about `0` that the latter leaves out
+(`TauCeti.ThricePuncturedSphere.cappedExchangeTruncation_eq_union`,
+`TauCeti.ThricePuncturedSphere.disjoint_exchangeTruncation_ball`).
+
 ## References
 
 * M. Schwarz, *Cohomology operations from S¹-cobordisms in Floer homology*, PhD thesis,
@@ -180,6 +193,97 @@ theorem exchangeTruncation_subset (c R : ℝ) : exchangeTruncation c R ⊆ {w | 
   obtain ⟨h₀, h₁, -⟩ := mem_exchangeTruncation.1 hw
   have hr : 0 < Real.exp (-(2 * π * R)) / 2 := by positivity
   exact ⟨fun h ↦ by simp [h] at h₀; linarith, fun h ↦ by simp [h] at h₁; linarith⟩
+
+/-- The truncation of the sphere `ℂ ∖ {1}` obtained by capping the input at `0`, with its output
+end recentred at `c`: the closed disc `‖w - c‖ ≤ 2 exp (2πR)`, bounded by the circle `s = -R` of
+the end at `∞` translated by `c`, with the open disc of radius `exp (-2πR) / 2` about `1`, the part
+`s > R` of the input end at `1`, removed. -/
+noncomputable def cappedExchangeTruncation (c R : ℝ) : Set ℂ :=
+  {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖} ∩
+    Metric.closedBall (c : ℂ) (2 * Real.exp (2 * π * R))
+
+@[simp]
+theorem mem_cappedExchangeTruncation {c R : ℝ} {w : ℂ} :
+    w ∈ cappedExchangeTruncation c R ↔ Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖ ∧
+      ‖w - c‖ ≤ 2 * Real.exp (2 * π * R) := by
+  simp [cappedExchangeTruncation, dist_eq_norm]
+
+/-- The capped truncation is closed. -/
+theorem isClosed_cappedExchangeTruncation (c R : ℝ) : IsClosed (cappedExchangeTruncation c R) :=
+  (isClosed_le continuous_const
+    (continuous_norm.comp (continuous_id.sub continuous_const))).inter Metric.isClosed_closedBall
+
+/-- The capped truncation is compact. -/
+theorem isCompact_cappedExchangeTruncation (c R : ℝ) :
+    IsCompact (cappedExchangeTruncation c R) :=
+  Metric.isCompact_of_isClosed_isBounded (isClosed_cappedExchangeTruncation c R)
+    (Metric.isBounded_closedBall.subset Set.inter_subset_right)
+
+/-- The capped truncation lies in the capped sphere `ℂ ∖ {1}`. -/
+theorem cappedExchangeTruncation_subset (c R : ℝ) : cappedExchangeTruncation c R ⊆ {w | w ≠ 1} :=
+  fun w hw h ↦ by
+    have h₁ := (mem_cappedExchangeTruncation.1 hw).1
+    have hr : 0 < Real.exp (-(2 * π * R)) / 2 := by positivity
+    simp [h] at h₁
+    linarith
+
+/-- The capped truncations increase with the cutoff. -/
+theorem cappedExchangeTruncation_mono (c : ℝ) : Monotone (cappedExchangeTruncation c) := by
+  intro R R' hRR' w hw
+  obtain ⟨h₁, hc⟩ := mem_cappedExchangeTruncation.1 hw
+  have hπ : 2 * π * R ≤ 2 * π * R' := by gcongr
+  have hin : Real.exp (-(2 * π * R')) ≤ Real.exp (-(2 * π * R)) := Real.exp_le_exp.2 (by linarith)
+  have hout : Real.exp (2 * π * R) ≤ Real.exp (2 * π * R') := Real.exp_le_exp.2 hπ
+  exact mem_cappedExchangeTruncation.2 ⟨by linarith, by linarith⟩
+
+/-- The capped truncations exhaust the capped sphere `ℂ ∖ {1}`. -/
+theorem iUnion_cappedExchangeTruncation (c : ℝ) :
+    ⋃ R, cappedExchangeTruncation c R = {w : ℂ | w ≠ 1} := by
+  refine Set.Subset.antisymm (Set.iUnion_subset (cappedExchangeTruncation_subset c)) ?_
+  intro w (h₁ : w ≠ 1)
+  have hR : Filter.Tendsto (fun R : ℝ ↦ 2 * π * R) Filter.atTop Filter.atTop :=
+    Filter.tendsto_id.const_mul_atTop (by positivity)
+  have hin : Filter.Tendsto (fun R : ℝ ↦ Real.exp (-(2 * π * R)) / 2) Filter.atTop
+      (nhds 0) := by
+    simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp hR).div_const 2
+  have hout := ((Real.tendsto_exp_atTop.comp hR).const_mul_atTop two_pos).eventually_ge_atTop
+    ‖w - c‖
+  obtain ⟨R, hR₁, hRc⟩ :=
+    ((hin.eventually (ge_mem_nhds (norm_pos_iff.2 (sub_ne_zero.2 h₁)))).and hout).exists
+  exact Set.mem_iUnion.2 ⟨R, mem_cappedExchangeTruncation.2 ⟨hR₁, hRc⟩⟩
+
+/-- For `|c| ≤ 1` and `R ≥ 0`, the capped truncation is the truncation with recentred output end
+together with the disc of radius `exp (-2πR) / 2` about the capped puncture `0`. -/
+theorem cappedExchangeTruncation_eq_union {c R : ℝ} (hc : |c| ≤ 1) (hR : 0 ≤ R) :
+    cappedExchangeTruncation c R =
+      exchangeTruncation c R ∪ Metric.ball 0 (Real.exp (-(2 * π * R)) / 2) := by
+  have hρ : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
+  have h₁ : 1 ≤ Real.exp (2 * π * R) := Real.one_le_exp (by positivity)
+  ext w
+  simp only [mem_cappedExchangeTruncation, Set.mem_union, mem_exchangeTruncation,
+    Metric.mem_ball, dist_zero_right]
+  constructor
+  · rintro ⟨hw₁, hwc⟩
+    by_cases hw₀ : Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖
+    · exact Or.inl ⟨hw₀, hw₁, hwc⟩
+    · exact Or.inr (not_le.1 hw₀)
+  · rintro (⟨-, hw₁, hwc⟩ | hw)
+    · exact ⟨hw₁, hwc⟩
+    -- A point of the small disc about `0` is far from `1` and close to `c`.
+    · have hc' : ‖(c : ℂ)‖ ≤ 1 := by rwa [Complex.norm_real, Real.norm_eq_abs]
+      have hw₁ : 1 - ‖w‖ ≤ ‖w - 1‖ := by
+        simpa [norm_sub_rev] using norm_sub_norm_le (1 : ℂ) w
+      have hwc : ‖w - c‖ ≤ ‖w‖ + ‖(c : ℂ)‖ := norm_sub_le _ _
+      constructor <;> linarith
+
+/-- The truncation with recentred output end does not meet the disc of radius `exp (-2πR) / 2`
+about `0`. -/
+theorem disjoint_exchangeTruncation_ball (c R : ℝ) :
+    Disjoint (exchangeTruncation c R) (Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)) :=
+  Set.disjoint_left.2 fun w hw hw' ↦ by
+    have h₀ := (mem_exchangeTruncation.1 hw).1
+    rw [Metric.mem_ball, dist_zero_right] at hw'
+    linarith
 
 /-- The truncations with recentred output end increase with the cutoff. -/
 theorem exchangeTruncation_mono (c : ℝ) : Monotone (exchangeTruncation c) := by

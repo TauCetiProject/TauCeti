@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Area.HoledDisc
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Symplectic area on truncated punctured spheres
@@ -42,6 +44,13 @@ extension of `u` across the punctures is needed. In the energy identities of the
 product and of its associativity family, adding the Hamiltonian terms turns these loop areas into
 the Hamiltonian actions of the end loops; see
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action`.
+
+For an end `q` and a map `u : ℝ × ℝ → V` which is `C²` on the preimage under `ℝ × ℝ ≃ ℂ` of the
+closed disc about the center of `q` bounded by the circle `s = x` of that end, the symplectic area
+of `u` over the preimage of the open disc is minus the loop area of the loop of `u` along that
+circle (`SymplecticForm.integral_fderiv_apply_preimage_ball_eq_neg_loopArea_cylindricalEndLift`);
+this is the Stokes formula on the disc
+`TauCeti.SymplecticForm.integral_fderiv_apply_preimage_closedBall` in the end coordinate.
 
 ## References
 
@@ -207,5 +216,37 @@ theorem integral_fderiv_apply_closedBall_sdiff_iUnion_ball_eq_sum_loopArea_sub
   simp only [Finset.mem_univ, iUnion_true] at hD
   rw [hD, hinf, Finset.sum_congr rfl fun i _ ↦ hin i, Finset.sum_neg_distrib]
   ring
+
+/-- **Stokes' formula on the disc cut out by a circle of an end.** Let `q` be an end with center
+`c_q` and scale `a_q`, and let `u : ℝ × ℝ → V` be `C²` at every point of the preimage under
+`ℝ × ℝ ≃ ℂ` of the closed disc `‖w - c_q‖ ≤ ‖a_q‖ exp (-2πx)`, bounded by the circle `s = x` of
+that end. Then the symplectic area of `u` over the preimage of the open disc
+`‖w - c_q‖ < ‖a_q‖ exp (-2πx)` is minus the loop area of the loop `t ↦ u(φ_q(x + i t))`: the end
+coordinate `t` runs clockwise around the circle. -/
+theorem integral_fderiv_apply_preimage_ball_eq_neg_loopArea_cylindricalEndLift
+    (ω : SymplecticForm V) {u : ℝ × ℝ → V} (q : Puncture) (x : ℝ)
+    (hu : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹'
+      Metric.closedBall q.endCenter (‖q.endScale‖ * Real.exp (-(2 * π * x))),
+      ContDiffAt ℝ 2 u z) :
+    ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+        Metric.ball q.endCenter (‖q.endScale‖ * Real.exp (-(2 * π * x))),
+        ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) =
+      -ω.loopArea
+        (fun t ↦ u (Complex.equivRealProdCLM (q.cylindricalEndLift (x + t * Complex.I)))) := by
+  set e := Complex.equivRealProdCLM
+  set ρ := ‖q.endScale‖ * Real.exp (-(2 * π * x))
+  have hρ : 0 < ρ := mul_pos (norm_pos_iff.2 q.endScale_ne_zero) (Real.exp_pos _)
+  -- The open and the closed disc agree up to a null set, so they have the same integrals.
+  have hae : e.symm ⁻¹' Metric.ball q.endCenter ρ =ᵐ[volume]
+      e.symm ⁻¹' Metric.closedBall q.endCenter ρ :=
+    (Complex.measurePreserving_equivRealProdCLM_symm.quasiMeasurePreserving.preimage_ae_eq
+      (volume.addHaar_closedBall_ae_eq_ball q.endCenter ρ)).symm
+  -- Stokes' formula on the closed disc, whose boundary loop runs clockwise around the circle.
+  rw [setIntegral_congr_set hae, integral_fderiv_apply_preimage_closedBall ω q.endCenter hρ hu,
+    loopArea_cylindricalEndLift ω (fun w ↦ u (e w)) q x, neg_neg]
+  have h := ω.loopArea_comp_add_mul (g := fun θ ↦ u (e (circleMap q.endCenter ρ θ)))
+    ((periodic_circleMap q.endCenter ρ).comp fun w ↦ u (e w)) 0
+  simp only [zero_add] at h
+  exact h.symm
 
 end TauCeti.SymplecticForm

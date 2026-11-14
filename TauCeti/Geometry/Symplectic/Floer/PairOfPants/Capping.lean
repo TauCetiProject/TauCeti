@@ -940,17 +940,17 @@ theorem lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le (ω : 
     (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) hB u
 
 omit [FiniteDimensional ℝ V] in
-/-- The components of the negative plane perturbation in real coordinates are `C¹` jointly in the
-domain point and the target point, on the whole plane. -/
-theorem contDiff_negativePlanePerturbation_apply (hH : Periodic H 1)
-    (hHs : ContDiff ℝ 1 (uncurry H)) (v : ℂ) :
-    ContDiff ℝ 1
+/-- The components of the negative plane perturbation in real coordinates are `C^n` jointly in the
+domain point and the target point, on the whole plane, for a `C^n` Hamiltonian. -/
+theorem contDiff_negativePlanePerturbation_apply {n : ℕ∞} (hH : Periodic H 1)
+    (hHs : ContDiff ℝ n (uncurry H)) (v : ℂ) :
+    ContDiff ℝ n
       (uncurry fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v) := by
-  have hHs' : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) 1 (uncurry H) := by
+  have hHs' : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) n (uncurry H) := by
     have h := hHs.contMDiff
     rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
     exact h
-  have h : ContMDiff 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+  have h : ContMDiff 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
       (fun p : ℂ × V => negativePlanePerturbation H p.1 p.2) := by
     rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
     exact contMDiff_negativePlanePerturbation hH hHs'
