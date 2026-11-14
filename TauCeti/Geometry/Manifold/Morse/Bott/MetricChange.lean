@@ -25,10 +25,10 @@ defines a linear automorphism of the normal space (`normalMetricChange`, built f
 is the identity when `g' = g`.
 
 This automorphism is as smooth as the metrics and the function allow. In the preferred
-normal-bundle trivialization at any point, with Euclidean fibre model `P`, write the two fibre
-metrics as `C^k` families `G` and `G'` of forms on `P`, with `f` of class `C^{k+2}` along the
-submanifold. If `p` and `p'` are the negative spectral projections of the normal Hessian relative
-to `G` and to `G'` (`ContinuousLinearMap.negativeSpectralProjection`), the automorphism reads
+normal-bundle trivialization at any point, with fibre model `P`, write the two fibre metrics as
+`C^k` families `G` and `G'` of forms on `P`, with `f` of class `C^{k+2}` along the submanifold. If
+`p` and `p'` read the projections onto the negative normal spaces for `g` and for `g'` along the
+positive ones, the automorphism reads
 `p' ∘ p + (1 - p') ∘ (1 - p)` in the trivialization, a `C^k` family of invertible operators whose
 inverses form a `C^k` family as well (`exists_contMDiffOn_normalMetricChange`). The projections
 `p` and `p'` come from `exists_contMDiffOn_projection_negativeNormalSpace`. Hence a change of
@@ -177,12 +177,12 @@ end Pointwise
 section Smooth
 
 variable [FiniteDimensional ℝ E'] [IsManifold J 1 S]
-  {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P] [FiniteDimensional ℝ P]
+  {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
 
 /-- **A change of fibre metric is a `C^k` automorphism of the normal bundle.** Let `i` be a
 nondegenerate critical submanifold of `f`, with `f` of class `C^{k+2}` along it and `k ≤ n`, and
 let `g` and `g'` be fibre metrics on its normal spaces. In the preferred normal-bundle
-trivialization `e` at `s₀`, with Euclidean fibre model `P`, suppose `g` and `g'` are read as `C^k`
+trivialization `e` at `s₀`, with fibre model `P`, suppose `g` and `g'` are read as `C^k`
 families `G` and `G'` of bilinear forms on `P` over a set `U`. Then over the intersection of `U`
 with the base set of `e`, the change of fibre metric `normalMetricChange g g'` and its inverse are
 given by `C^k` families `A` and `B` of operators on `P`. The automorphism carries the negative and
@@ -217,9 +217,9 @@ theorem exists_contMDiffOn_normalMetricChange {k : ℕ∞ω} [IsManifold I (k + 
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   set e := i.normalSpaceTrivialization hn hdim s₀
   set V := U ∩ e.baseSet
-  obtain ⟨p, hp, hpe⟩ :=
+  obtain ⟨p, hp, hps⟩ :=
     h.exists_contMDiffOn_projection_negativeNormalSpace hn g hk hf hdim s₀ hG hGg
-  obtain ⟨p', hp', hpe'⟩ :=
+  obtain ⟨p', hp', hps'⟩ :=
     h.exists_contMDiffOn_projection_negativeNormalSpace hn g' hk hf hdim s₀ hG' hGg'
   -- In the trivialization, the change of metric is `p' ∘ p + (1 - p') ∘ (1 - p)`.
   set A : S → P →L[ℝ] P := fun s ↦ (p' s).comp (p s) + (1 - p' s).comp (1 - p s)
@@ -239,10 +239,12 @@ theorem exists_contMDiffOn_normalMetricChange {k : ℕ∞ω} [IsManifold I (k + 
   have hAC (s : S) (hs : s ∈ V) : A s = C s hs (h.normalMetricChange hn g g' s) := by
     set L := e.linearEquivAt ℝ s hs.2
     have hL (w : P) : L.symm w = e.symm s w := Trivialization.linearEquivAt_symm_apply ..
+    obtain ⟨-, -, -, -, -, hpe⟩ := hps s hs
+    obtain ⟨-, -, -, -, -, hpe'⟩ := hps' s hs
     have hpL (w : P) : L.symm (p s w) = h.negativeNormalProjection hn g s (L.symm w) := by
-      rw [hL, hL, hpe s hs]
+      rw [hL, hL, hpe]
     have hpL' (w : P) : L.symm (p' s w) = h.negativeNormalProjection hn g' s (L.symm w) := by
-      rw [hL, hL, hpe' s hs]
+      rw [hL, hL, hpe']
     ext u
     apply L.symm.injective
     rw [hL (C s hs _ u), hC s hs, ← hL, LinearEquiv.coe_coe]

@@ -107,7 +107,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 /-- In the preferred normal-bundle trivialization at `s₀`, the negative and positive normal
 spaces relative to a `C^k` fibre metric are the images of the range and of the kernel of a `C^k`
 family of projections of the fibre model, which reads the projection onto the negative normal
-space along the positive one. -/
+space along the positive one. This is `exists_contMDiffOn_projection_negativeNormalSpace` for the
+metric read in the bundle chart at `s₀`. -/
 theorem exists_contMDiffOn_negativeNormalSpace_eq_map
     (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
@@ -144,41 +145,16 @@ theorem exists_contMDiffOn_negativeNormalSpace_eq_map
     ((g.inner s).toLinearMap₁₂.compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)).toContinuousBilinearMap
   have hG : ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ) k G e.baseSet :=
     e.contMDiffOn_compl₁₂_symmₗ g.contMDiff.contMDiffOn
-  obtain ⟨p, hp, hps⟩ := h.exists_contMDiffOn_negativeNormalProjection hn (le_self_add.trans hk)
-    hf hdim s₀ hG (fun s _ u v ↦ by simpa [G] using g.symm s _ _) fun s hs u hu ↦ by
-      simpa [G] using g.pos s _ ((map_ne_zero_iff _ (e.symmₗ_injective ℝ hs)).mpr hu)
+  obtain ⟨p, hp, hps⟩ := h.exists_contMDiffOn_projection_negativeNormalSpace hn
+    g.toRiemannianMetric (le_self_add.trans hk) hf hdim s₀ hG fun s hs u v ↦ by
+      simp only [← normalSpaceFiberBundle_trivializationAt] at hs ⊢
+      simp only [G, LinearMap.toContinuousBilinearMap_apply, LinearMap.compl₁₂_apply,
+        ContinuousLinearMap.toLinearMap₁₂_apply, e.symmₗ_apply hs.2]
+      -- The underlying metric of `g` has the inner products of `g`, by definition.
+      rfl
   -- The normal-bundle trivialization at `s₀` is the bundle chart `e` at `s₀`.
   simp only [← normalSpaceFiberBundle_trivializationAt] at hp hps
-  refine ⟨p, hp.mono fun s hs ↦ ⟨hs, hs⟩, fun s hs ↦ ?_⟩
-  obtain ⟨hidem, hrange, hker, -, -, -, -, hrank, hnull⟩ := hps s ⟨hs, hs⟩
-  -- Pulled back along the inverse trivialization, the metric is `G s`.
-  set L := (e.linearEquivAt ℝ s hs).symm
-  have hgL : (g.toRiemannianMetric.inner s).toBilinForm.compl₁₂ (L : P →ₗ[ℝ] i.NormalSpace s hn)
-      (L : P →ₗ[ℝ] i.NormalSpace s hn) = (G s).toBilinForm := by
-    ext u v
-    simp only [LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, L,
-      Trivialization.linearEquivAt_symm_apply, ContinuousLinearMap.toBilinForm_apply, G,
-      LinearMap.toContinuousBilinearMap_apply, ContinuousLinearMap.toLinearMap₁₂_apply,
-      e.symmₗ_apply hs]
-    -- The underlying metric of `g` has the inner products of `g`, by definition.
-    rfl
-  have hL : (L : P →ₗ[ℝ] i.NormalSpace s hn) = e.symmₗ ℝ s := e.coe_linearEquivAt_symm ℝ hs
-  have hneg : h.negativeNormalSpace hn g.toRiemannianMetric s = (p s).range.map (e.symmₗ ℝ s) := by
-    rw [IsCriticalSubmanifold.negativeNormalSpace_def, ← hL,
-      ← LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ L, hgL, hL, hrange]
-  have hpos : h.positiveNormalSpace hn g.toRiemannianMetric s = (p s).ker.map (e.symmₗ ℝ s) := by
-    rw [IsCriticalSubmanifold.positiveNormalSpace_def, ← hL,
-      ← LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ L, hgL, hL, hker]
-  refine ⟨hidem, hneg, hpos, hrank, hnull, fun u ↦ ?_⟩
-  -- Split `u` along the range and the kernel of `p s`.
-  have h₁ : e.symmₗ ℝ s (p s u) ∈ h.negativeNormalSpace hn g.toRiemannianMetric s :=
-    hneg ▸ Submodule.mem_map_of_mem (LinearMap.mem_range_self _ u)
-  have h₂ : e.symmₗ ℝ s (u - p s u) ∈ h.positiveNormalSpace hn g.toRiemannianMetric s := by
-    refine hpos ▸ Submodule.mem_map_of_mem ?_
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, ← mul_apply_eq_comp,
-      hidem.eq, sub_self]
-  rw [← e.symmₗ_apply (R := ℝ) hs, ← e.symmₗ_apply (R := ℝ) hs]
-  exact (h.negativeNormalProjection_apply_eq_of_mem hn _ h₁ (by rwa [← map_sub])).symm
+  exact ⟨p, hp.mono fun s hs ↦ ⟨hs, hs⟩, fun s hs ↦ hps s ⟨hs, hs⟩⟩
 
 /-- **The negative normal bundle of a Morse–Bott submanifold.** Let `i` be a nondegenerate
 critical submanifold of `f`, with `f` of class `C^{k+2}` along it and `i` of class `C^{k+1}`, and

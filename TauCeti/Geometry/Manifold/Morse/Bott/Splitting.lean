@@ -57,9 +57,8 @@ In the namespace `TauCeti.SmoothEmbedding`:
   Morse–Bott submanifold the normal space is the direct sum of the negative normal space for one
   fibre metric and the positive normal space for any other.
 * `IsNondegenerateCriticalSubmanifold.negativeNormalProjection`: the projection onto the negative
-  normal space along the positive one, and
-  `IsNondegenerateCriticalSubmanifold.normalHessian_apply_eq_add`: the normal Hessian splits along
-  it.
+  normal space along the positive one, along which the normal Hessian splits
+  (`normalHessian_apply_eq_normalHessian_negativeNormalProjection_add`, in the same namespace).
 * `IsNondegenerateCriticalSubmanifold.finrank_negativeNormalSpace` and
   `IsNondegenerateCriticalSubmanifold.finrank_positiveNormalSpace`: their dimensions are the
   Morse indices of `f` and of `-f`.
@@ -280,7 +279,8 @@ theorem negativeNormalProjection_apply_eq_of_mem {s : S} {v x : i.NormalSpace s 
 /-- **The normal Hessian splits along the negative and positive normal spaces**: it is the sum of
 its values on the negative components and on the positive components, the cross terms vanishing
 by `IsCriticalSubmanifold.normalHessian_eq_zero_of_mem_negativeNormalSpace`. -/
-theorem normalHessian_apply_eq_add {s : S} (v w : i.NormalSpace s hn) :
+theorem normalHessian_apply_eq_normalHessian_negativeNormalProjection_add {s : S}
+    (v w : i.NormalSpace s hn) :
     h.normalHessian hn s v w =
       h.normalHessian hn s (h.negativeNormalProjection hn g s v)
           (h.negativeNormalProjection hn g s w) +
