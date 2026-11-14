@@ -79,8 +79,7 @@ namespace Topology.IsGeneratedBy
 theorem toContinuousMap_homeomorph {ι : Type*} {G : ι → Type*} [∀ i, TopologicalSpace (G i)]
     {X : Type*} [TopologicalSpace X] [IsGeneratedBy G X] :
     (homeomorph (X := G) (Y := X) : C(WithGeneratedByTopology G X, X)) =
-      WithGeneratedByTopology.counit G X :=
-  (rfl)
+      WithGeneratedByTopology.counit G X := (rfl)
 
 end Topology.IsGeneratedBy
 
@@ -97,9 +96,9 @@ theorem adjCounit_app_hom {ι : Type*} (G : ι → Type*) [∀ i, TopologicalSpa
 `G`. -/
 theorem isIso_adjCounit_app_iff {ι : Type*} (G : ι → Type*) [∀ i, TopologicalSpace (G i)]
     (X : TopCat) :
-    CategoryTheory.IsIso ((adjCounit (X := G)).app X) ↔ Topology.IsGeneratedBy G X := by
-  rw [TopCat.isIso_iff_isHomeomorph]
-  exact Topology.WithGeneratedByTopology.isHomeomorph_counit_iff G X
+    CategoryTheory.IsIso ((adjCounit (X := G)).app X) ↔ Topology.IsGeneratedBy G X :=
+  (TopCat.isIso_iff_isHomeomorph _).trans
+    (Topology.WithGeneratedByTopology.isHomeomorph_counit_iff G X)
 
 end GeneratedByTopCat
 
@@ -145,31 +144,23 @@ variable {ι : Type*} {G : ι → Type*} [∀ i, TopologicalSpace (G i)]
 `G`-generated, then `X × Y` is `G`-generated whenever `X` is. -/
 theorem prod_right {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     [IsGeneratedBy G X] [IsGeneratedBy G Y] [LocallyCompactSpace Y]
-    [∀ i, IsGeneratedBy G (G i × Y)] :
-    IsGeneratedBy G (X × Y) where
+    [∀ i, IsGeneratedBy G (G i × Y)] : IsGeneratedBy G (X × Y) where
   continuous_equiv_symm := by
     let e := (WithGeneratedByTopology.equiv (X := G) (Y := X × Y)).symm
-    have he_slice (x : X) : Continuous fun y : Y ↦ e (x, y) := by
-      rw [continuous_iff G]
-      intro i q
-      exact (equiv_symm_comp_continuous_iff (X := G) (fun s ↦ (x, q s))).2 (by fun_prop)
-    let H : X → C(Y, WithGeneratedByTopology G (X × Y)) := fun x ↦ ⟨fun y ↦ e (x, y), he_slice x⟩
-    have hH : Continuous H := by
-      rw [continuous_iff G]
-      intro i f
-      have hfY : Continuous fun p : G i × Y ↦ e (f p.1, p.2) :=
-        (equiv_symm_comp_continuous_iff (X := G) (fun p : G i × Y ↦ (f p.1, p.2))).2 (by fun_prop)
-      exact (ContinuousMap.curry ⟨_, hfY⟩).continuous
-    exact ContinuousMap.continuous_uncurry_of_continuous ⟨H, hH⟩
+    have he (x : X) : Continuous fun y : Y ↦ e (x, y) := (continuous_iff G _).2 fun _ q ↦
+      (equiv_symm_comp_continuous_iff (X := G) fun s ↦ (x, q s)).2 (by fun_prop)
+    refine ContinuousMap.continuous_uncurry_of_continuous ⟨fun x ↦ ⟨_, he x⟩, ?_⟩
+    exact (continuous_iff G _).2 fun i f ↦ (ContinuousMap.curry ⟨_,
+      (equiv_symm_comp_continuous_iff (X := G) fun p : G i × Y ↦ (f p.1, p.2)).2
+        (by fun_prop)⟩).continuous
 
 /-- If `X` is locally compact, `G`-generated, and `G i × X` is `G`-generated for every generator
 `G i`, then `X × Y` is `G`-generated whenever `Y` is. -/
 theorem prod_left {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     [IsGeneratedBy G X] [IsGeneratedBy G Y] [LocallyCompactSpace X]
-    [∀ i, IsGeneratedBy G (G i × X)] :
-    IsGeneratedBy G (X × Y) := by
+    [∀ i, IsGeneratedBy G (G i × X)] : IsGeneratedBy G (X × Y) :=
   have : IsGeneratedBy G (Y × X) := prod_right
-  exact (Homeomorph.prodComm Y X).isQuotientMap.isGeneratedBy
+  (Homeomorph.prodComm Y X).isQuotientMap.isGeneratedBy
 
 end Topology.IsGeneratedBy
 
@@ -189,12 +180,8 @@ def prodRightHomeomorph (X Y : Type*) [TopologicalSpace X] [TopologicalSpace Y]
   left_inv p := by simp
   right_inv p := by simp
   continuous_toFun := by
-    have h1 : Continuous fun p : WithGeneratedByTopology G (X × Y) ↦
-        (equiv (X := G) (Y := X)).symm (equiv p).1 :=
-      ((ContinuousMap.fst.comp (counit G (X × Y))).toGeneratedBy G).continuous
-    have h2 : Continuous fun p : WithGeneratedByTopology G (X × Y) ↦ (equiv p).2 :=
+    exact (((ContinuousMap.fst.comp (counit G (X × Y))).toGeneratedBy G).continuous).prodMk
       (ContinuousMap.snd.comp (counit G (X × Y))).continuous
-    exact h1.prodMk h2
   continuous_invFun := by
     have : IsGeneratedBy G (WithGeneratedByTopology G X × Y) := IsGeneratedBy.prod_right
     exact (((counit G X).prodMap (.id Y)).toGeneratedBy G).continuous
@@ -203,15 +190,13 @@ def prodRightHomeomorph (X Y : Type*) [TopologicalSpace X] [TopologicalSpace Y]
 theorem prodRightHomeomorph_apply {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     [IsGeneratedBy G Y] [LocallyCompactSpace Y] [∀ i, IsGeneratedBy G (G i × Y)]
     (p : WithGeneratedByTopology G (X × Y)) :
-    prodRightHomeomorph G X Y p = (equiv.symm (equiv p).1, (equiv p).2) :=
-  (rfl)
+    prodRightHomeomorph G X Y p = (equiv.symm (equiv p).1, (equiv p).2) := (rfl)
 
 @[simp]
 theorem prodRightHomeomorph_symm_apply {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     [IsGeneratedBy G Y] [LocallyCompactSpace Y] [∀ i, IsGeneratedBy G (G i × Y)]
     (p : WithGeneratedByTopology G X × Y) :
-    (prodRightHomeomorph G X Y).symm p = equiv.symm (equiv p.1, p.2) :=
-  (rfl)
+    (prodRightHomeomorph G X Y).symm p = equiv.symm (equiv p.1, p.2) := (rfl)
 
 /-- Refining a product `X × Y` with a locally compact `G`-generated left factor `X` (whose products
 `G i × X` with all generators are `G`-generated) agrees up to homeomorphism with taking the
@@ -225,12 +210,8 @@ def prodLeftHomeomorph (X Y : Type*) [TopologicalSpace X] [TopologicalSpace Y]
   left_inv p := by simp
   right_inv p := by simp
   continuous_toFun := by
-    have h1 : Continuous fun p : WithGeneratedByTopology G (X × Y) ↦ (equiv p).1 :=
-      (ContinuousMap.fst.comp (counit G (X × Y))).continuous
-    have h2 : Continuous fun p : WithGeneratedByTopology G (X × Y) ↦
-        (equiv (X := G) (Y := Y)).symm (equiv p).2 :=
+    exact ((ContinuousMap.fst.comp (counit G (X × Y))).continuous).prodMk
       ((ContinuousMap.snd.comp (counit G (X × Y))).toGeneratedBy G).continuous
-    exact h1.prodMk h2
   continuous_invFun := by
     have : IsGeneratedBy G (X × WithGeneratedByTopology G Y) := IsGeneratedBy.prod_left
     exact (((ContinuousMap.id X).prodMap (counit G Y)).toGeneratedBy G).continuous
@@ -239,14 +220,12 @@ def prodLeftHomeomorph (X Y : Type*) [TopologicalSpace X] [TopologicalSpace Y]
 theorem prodLeftHomeomorph_apply {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     [IsGeneratedBy G X] [LocallyCompactSpace X] [∀ i, IsGeneratedBy G (G i × X)]
     (p : WithGeneratedByTopology G (X × Y)) :
-    prodLeftHomeomorph G X Y p = ((equiv p).1, equiv.symm (equiv p).2) :=
-  (rfl)
+    prodLeftHomeomorph G X Y p = ((equiv p).1, equiv.symm (equiv p).2) := (rfl)
 
 @[simp]
 theorem prodLeftHomeomorph_symm_apply {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     [IsGeneratedBy G X] [LocallyCompactSpace X] [∀ i, IsGeneratedBy G (G i × X)]
     (p : X × WithGeneratedByTopology G Y) :
-    (prodLeftHomeomorph G X Y).symm p = equiv.symm (p.1, equiv p.2) :=
-  (rfl)
+    (prodLeftHomeomorph G X Y).symm p = equiv.symm (p.1, equiv p.2) := (rfl)
 
 end Topology.WithGeneratedByTopology

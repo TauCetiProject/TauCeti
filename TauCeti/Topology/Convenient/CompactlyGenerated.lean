@@ -15,29 +15,17 @@ public import TauCeti.Topology.Convenient.CartesianClosed
 # Compact Hausdorff generators, products, and mapping spaces
 
 Mathlib provides both compact generation (`TopologicalSpace.compactlyGenerated`,
-`UCompactlyGeneratedSpace`) and generation by an arbitrary family of spaces
-(`TopologicalSpace.generatedBy`, `Topology.IsGeneratedBy`). Here we identify these constructions
-for the family of compact Hausdorff spaces in an explicit test universe `u` independent of the
-ambient space's universe, and establish the point-set topological inputs for the coreflection and
-Cartesian closed structure on `CompactlyGenerated.{u, w}`:
+`UCompactlyGeneratedSpace`) and generation by a family (`TopologicalSpace.generatedBy`,
+`Topology.IsGeneratedBy`). Here we identify them for `CompHaus.{u}` in an explicit test universe `u`
+and establish the point-set inputs for `CompactlyGenerated.{u, w}`:
 
-* `TopologicalSpace.generatedBy_compHaus` and `Topology.isGeneratedBy_compHaus_iff` identify the
-  two refinements and predicates, from which
-  `TopologicalSpace.compactlyGenerated_compactlyGenerated` gives idempotence of
-  `compactlyGenerated.{u}`.
-* Every compact subset of a `u`-small Hausdorff space is the range of a continuous map from a
-  `CompHaus.{u}` space (`TauCeti.exists_compHaus_range_eq_of_isCompact`). Consequently every
-  `u`-small Hausdorff compactly coherent space—in particular every `u`-small Hausdorff weakly
-  locally compact space—is `u`-compactly generated
-  (`TauCeti.instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceOfT2`), and for any `u`-small
-  Hausdorff `u`-compactly generated space `Y` the Escardó–Lawson–Simpson mapping space
-  `ContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) Y Z` is homeomorphic to `C(Y, Z)` with the
-  compact-open topology (`Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapCompHaus`).
-* Taking a product with a `u`-small locally compact Hausdorff space (in particular `unitInterval`)
-  preserves `u`-compact generation (`UCompactlyGeneratedSpace.prod_right`,
-  `UCompactlyGeneratedSpace.prod_left`).
-* Compact generation imposes no separation axiom: Sierpiński space (`Prop`) is `u`-compactly
-  generated for every universe `u` while failing `T1Space` and `T2Space`
+* `TopologicalSpace.generatedBy_compHaus`, `Topology.isGeneratedBy_compHaus_iff`, and idempotence
+  `TopologicalSpace.compactlyGenerated_compactlyGenerated`.
+* Compact subsets as `CompHaus.{u}` images (`TauCeti.exists_compHaus_range_eq_of_isCompact`), giving
+  `TauCeti.instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceOfT2` and the compact-open comparison
+  `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapCompHaus`.
+* Locally compact Hausdorff product preservation (`UCompactlyGeneratedSpace.prod_right`,
+  `UCompactlyGeneratedSpace.prod_left`), and Sierpiński separation counterexamples
   (`TauCeti.not_t1Space_sierpinski`, `TauCeti.not_t2Space_sierpinski`).
 
 ## References
@@ -64,6 +52,15 @@ theorem generatedBy_compHaus (Y : Type v) [TopologicalSpace Y] :
     generatedBy (fun K : CompHaus.{u} ↦ K) (Y := Y) = compactlyGenerated.{u} Y := by
   rw [generatedBy_eq_coinduced]
   rfl
+
+/-- Every continuous map from a `CompHaus.{u}` test space is continuous into
+`compactlyGenerated.{u} Y`. -/
+theorem continuous_to_compactlyGenerated {Y : Type v} [TopologicalSpace Y] {S : CompHaus.{u}}
+    (g : C(S, Y)) : Continuous[inferInstance, compactlyGenerated.{u} Y] g := by
+  let p : (Σ (i : (T : CompHaus.{u}) × C(T, Y)), i.fst) → Y := fun ⟨⟨_, i⟩, s⟩ ↦ i s
+  suffices ∀ i, Continuous[inferInstance, compactlyGenerated.{u} Y] fun a : i.fst ↦ p ⟨i, a⟩ from
+    this ⟨S, g⟩
+  rw [← @continuous_sigma_iff]; exact continuous_coinduced_rng
 
 /-- The compactly generated topology refines (is finer than or equal to, in Mathlib's order `≤`)
 the original topology. -/
@@ -143,17 +140,13 @@ instance (priority := 100) instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceO
   have : T2Space (Shrink.{u} ↑K) := e.symm.isEmbedding.t2Space
   let f : C(CompHaus.of (Shrink.{u} ↑K), Y) :=
     ⟨Subtype.val ∘ e.symm, continuous_subtype_val.comp e.symm.continuous⟩
-  have hpre : (K ↓∩ s) = e ⁻¹' (f ⁻¹' s) := by
-    ext x
-    simp [f]
-  rw [hpre]
+  rw [show (K ↓∩ s) = e ⁻¹' (f ⁻¹' s) by ext; simp [f]]
   exact (hs _ f).preimage e.continuous
 
 /-- Every `u`-small Hausdorff weakly locally compact space is `u`-compactly generated. -/
 theorem uCompactlyGeneratedSpace_of_weaklyLocallyCompactSpace
     (Y : Type v) [TopologicalSpace Y] [T2Space Y] [WeaklyLocallyCompactSpace Y] [Small.{u} Y] :
-    UCompactlyGeneratedSpace.{u} Y :=
-  inferInstance
+    UCompactlyGeneratedSpace.{u} Y := inferInstance
 
 /-- Sierpiński space (`Prop` with `{True}` open) is not `T₁`. -/
 theorem not_t1Space_sierpinski : ¬ T1Space Prop := fun _ ↦
@@ -161,12 +154,10 @@ theorem not_t1Space_sierpinski : ¬ T1Space Prop := fun _ ↦
 
 /-- Sierpiński space (`Prop` with `{True}` open) is not Hausdorff, even though as a finite space it
 is `u`-compactly generated for every universe `u`. -/
-theorem not_t2Space_sierpinski : ¬ T2Space Prop := fun _ ↦
-  not_t1Space_sierpinski inferInstance
+theorem not_t2Space_sierpinski : ¬ T2Space Prop := fun _ ↦ not_t1Space_sierpinski inferInstance
 
 /-- Sierpiński space (`Prop`) is `u`-compactly generated for every universe `u`. -/
-theorem uCompactlyGeneratedSpace_sierpinski : UCompactlyGeneratedSpace.{u} Prop :=
-  inferInstance
+theorem uCompactlyGeneratedSpace_sierpinski : UCompactlyGeneratedSpace.{u} Prop := inferInstance
 
 end TauCeti
 
@@ -189,14 +180,10 @@ theorem prod_left {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSpa
     (Topology.IsGeneratedBy.prod_left (G := fun K : CompHaus.{u} ↦ K))
 
 instance instProdUnitIntervalRight (X : Type v) [TopologicalSpace X]
-    [UCompactlyGeneratedSpace.{u} X] :
-    UCompactlyGeneratedSpace.{u} (X × unitInterval) :=
-  prod_right
+    [UCompactlyGeneratedSpace.{u} X] : UCompactlyGeneratedSpace.{u} (X × unitInterval) := prod_right
 
 instance instProdUnitIntervalLeft (X : Type v) [TopologicalSpace X]
-    [UCompactlyGeneratedSpace.{u} X] :
-    UCompactlyGeneratedSpace.{u} (unitInterval × X) :=
-  prod_left
+    [UCompactlyGeneratedSpace.{u} X] : UCompactlyGeneratedSpace.{u} (unitInterval × X) := prod_left
 
 end UCompactlyGeneratedSpace
 
@@ -219,15 +206,13 @@ theorem homeomorphContinuousMapCompHaus_apply
     {Y : Type v} {Z : Type w} [TopologicalSpace Y] [TopologicalSpace Z]
     [UCompactlyGeneratedSpace.{u} Y] [T2Space Y] [Small.{u} Y]
     (f : ContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) Y Z) :
-    homeomorphContinuousMapCompHaus.{u} Y Z f = f.toContinuousMap := by
-  simp [homeomorphContinuousMapCompHaus]
+    homeomorphContinuousMapCompHaus.{u} Y Z f = f.toContinuousMap := (rfl)
 
 @[simp]
 theorem homeomorphContinuousMapCompHaus_symm_apply
     {Y : Type v} {Z : Type w} [TopologicalSpace Y] [TopologicalSpace Z]
     [UCompactlyGeneratedSpace.{u} Y] [T2Space Y] [Small.{u} Y] (f : C(Y, Z)) :
     (homeomorphContinuousMapCompHaus.{u} Y Z).symm f =
-      f.toContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) := by
-  simp [homeomorphContinuousMapCompHaus]
+      f.toContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) := (rfl)
 
 end Topology.ContinuousMapGeneratedBy
