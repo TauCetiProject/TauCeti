@@ -93,8 +93,9 @@ theorem mutuallySingular_stableMeasure_zero_scale (m : ℝ) :
 
 /-! ### Reduction to the standardized law -/
 
-/-- A positive-scale non-Gaussian stable law is the affine image of the standardized law, so its
-support is the affine image of the standardized support. -/
+/-- Every stable measure is the affine image of the scale-one, location-zero measure of the same
+shape and skewness, including at zero scale, for the Gaussian shape `α = 2` and for invalid
+parameters. Its support is therefore the affine image of the standardized support. -/
 private theorem support_stableMeasure_eq_image (m : ℝ) :
     (stableMeasure α β s m).support =
       (fun x ↦ m + (s : ℝ) * x) '' (stableMeasure α β 1 0).support := by

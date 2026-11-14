@@ -124,25 +124,8 @@ the original support. For the slope `0` the pushforward is a multiple of a Dirac
 sides are `{a}` (or empty for the zero measure). -/
 theorem support_map_affine :
     (μ.map fun x ↦ a + b * x).support = (fun x ↦ a + b * x) '' μ.support := by
-  rcases eq_or_ne b 0 with rfl | hb
-  · rcases eq_or_ne μ 0 with rfl | hμ
-    · simp
-    · simp only [zero_mul, add_zero, Measure.map_const]
-      rw [Measure.support_smul_measure _ _ (by simpa using hμ),
-        (Measure.nonempty_support hμ).image_const]
-      ext x
-      simp only [Measure.mem_support_iff_forall, mem_singleton_iff]
-      refine ⟨fun h => ?_, fun h U hU => ?_⟩
-      · by_contra hxa
-        have := h {a}ᶜ (isOpen_compl_singleton.mem_nhds hxa)
-        simp at this
-      · subst h; simp [mem_of_mem_nhds hU]
-  · let e : ℝ ≃ₜ ℝ := (Homeomorph.smulOfNeZero b hb).trans (Homeomorph.addLeft a)
-    have he : (e : ℝ → ℝ) = fun x ↦ a + b * x := by
-      funext x
-      simp [e, smul_eq_mul]
-    rw [← he]
-    exact μ.support_map_homeomorph e
+  rw [μ.support_map_eq_closure_image Measure.support_mem_ae (by fun_prop)]
+  exact ((isClosedMap_add_left a).comp (isClosedMap_smul₀ b) _ Measure.isClosed_support).closure_eq
 
 /-- Affine pushforward is jointly measurable in the probability law, intercept, and slope. -/
 @[fun_prop]
