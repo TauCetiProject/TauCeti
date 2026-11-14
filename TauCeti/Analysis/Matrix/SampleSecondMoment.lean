@@ -36,6 +36,8 @@ entry by entry.
   `Matrix.posSemidef_sampleCovariance` give Hermitian and positive semidefinite.
 * `Matrix.re_trace_sampleCovariance`: its real trace is the column-normalized sum of squared
   entry norms.
+* `Matrix.sampleCovariance_updateCol_zero_add`: zeroing the `k`-th column removes exactly the
+  rank-one term `n⁻¹ xₖ xₖᴴ`, so the leave-one-out matrix depends only on the other columns.
 
 ## References
 
@@ -128,5 +130,19 @@ theorem posSemidef_sampleCovariance [Finite p] (X : Matrix p n 𝕜) :
     (sampleCovariance X).PosSemidef := by
   rw [sampleCovariance_eq_sampleSecondMoment]
   exact TauCeti.posSemidef_sampleSecondMoment _
+
+/-- Zeroing the `k`-th column of `X` removes exactly the rank-one term `n⁻¹ xₖ xₖᴴ` of the column
+`xₖ = X.col k` from the sample covariance, keeping the normalization by `n = card n`. -/
+theorem sampleCovariance_updateCol_zero_add [DecidableEq n] (X : Matrix p n 𝕜) (k : n) :
+    sampleCovariance (X.updateCol k 0) +
+        (1 / (Fintype.card n : ℝ)) • vecMulVec (X.col k) (star (X.col k)) =
+      sampleCovariance X := by
+  have h : X.updateCol k 0 * (X.updateCol k 0)ᴴ + vecMulVec (X.col k) (star (X.col k)) =
+      X * Xᴴ := by
+    ext i j
+    simp only [Matrix.add_apply, Matrix.mul_apply, conjTranspose_apply, vecMulVec_apply,
+      col_apply, Pi.star_apply]
+    simp [updateCol_apply, apply_ite, Finset.sum_ite, Finset.filter_ne']
+  rw [sampleCovariance_def, sampleCovariance_def, ← h, smul_add]
 
 end Matrix
