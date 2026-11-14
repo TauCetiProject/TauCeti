@@ -59,84 +59,9 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Com
   {M : Type u} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
     [DistribMulAction G M]
 
--- These adapters identify the coefficient-sequence maps with cup naturality before the
--- representative proof; inlining all four computations exceeds the default heartbeat limit.
-omit [CompactSpace G] in
-/-- The cup product of homogeneous cochains with discrete coefficients is natural in an
-equivariant additive map of the first and the third coefficient module. -/
-private theorem cochainsMap_cupCochain_left {X X' Z Z' : Type u}
-    [AddCommGroup X] [TopologicalSpace X] [DiscreteTopology X] [DistribMulAction G X]
-    [AddCommGroup X'] [TopologicalSpace X'] [DiscreteTopology X'] [DistribMulAction G X']
-    [AddCommGroup Z] [TopologicalSpace Z] [DiscreteTopology Z] [DistribMulAction G Z]
-    [AddCommGroup Z'] [TopologicalSpace Z'] [DiscreteTopology Z'] [DistribMulAction G Z']
-    (fX : X →+ X') (hfX : ∀ (g : G) (x : X), fX (g • x) = g • fX x)
-    (fZ : Z →+ Z') (hfZ : ∀ (g : G) (z : Z), fZ (g • z) = g • fZ z)
-    (P : TopPairing (ofDiscreteModule ℤ G X) (ofDiscreteModule ℤ G M) (ofDiscreteModule ℤ G Z))
-    (P' : TopPairing (ofDiscreteModule ℤ G X') (ofDiscreteModule ℤ G M)
-      (ofDiscreteModule ℤ G Z'))
-    (hP : ∀ (x : X) (b : M), fZ (P.bil x b) = P'.bil (fX x) b)
-    (m n : ℕ) (a : (TopRep.homogeneousCochains (ofDiscreteModule ℤ G X)).X m)
-    (b : (TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).X n) :
-    (cochainsMap (ContinuousMonoidHom.id G)
-        (ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G) fZ.toIntLinearMap hfZ)).f
-        (m + n) (P.cupCochain m n a b) =
-      P'.cupCochain m n ((cochainsMap (ContinuousMonoidHom.id G)
-        (ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G) fX.toIntLinearMap hfX)).f m a)
-        b := by
-  have h := P.cupCochain_cochainsMap P' (ContinuousMonoidHom.id G)
-    (ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G) fX.toIntLinearMap hfX)
-    (𝟙 (ofDiscreteModule ℤ G M))
-    (ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G) fZ.toIntLinearMap hfZ)
-    (fun x b ↦
-      (ofDiscreteModulePair_hom_apply (ContinuousMonoidHom.id G : G →* G)
-          fZ.toIntLinearMap hfZ _).trans
-        ((hP x b).trans (congrArg₂ (fun a b ↦ P'.bil a b)
-          (ofDiscreteModulePair_hom_apply (ContinuousMonoidHom.id G : G →* G)
-          fX.toIntLinearMap hfX x).symm
-          (TopRep.id_apply (ofDiscreteModule ℤ G M) b).symm)))
-    m n a b
-  rw [cochainsMap_id] at h
-  simp only [HomologicalComplex.id_f, ConcreteCategory.id_apply] at h
-  exact h
-
-omit [CompactSpace G] in
-/-- The cup product of homogeneous cochains with discrete coefficients is natural in an
-equivariant additive map of the second and the third coefficient module. -/
-private theorem cochainsMap_cupCochain_right {Y Y' Z Z' : Type u}
-    [AddCommGroup Y] [TopologicalSpace Y] [DiscreteTopology Y] [DistribMulAction G Y]
-    [AddCommGroup Y'] [TopologicalSpace Y'] [DiscreteTopology Y'] [DistribMulAction G Y']
-    [AddCommGroup Z] [TopologicalSpace Z] [DiscreteTopology Z] [DistribMulAction G Z]
-    [AddCommGroup Z'] [TopologicalSpace Z'] [DiscreteTopology Z'] [DistribMulAction G Z']
-    (fY : Y →+ Y') (hfY : ∀ (g : G) (y : Y), fY (g • y) = g • fY y)
-    (fZ : Z →+ Z') (hfZ : ∀ (g : G) (z : Z), fZ (g • z) = g • fZ z)
-    (P : TopPairing (ofDiscreteModule ℤ G M) (ofDiscreteModule ℤ G Y) (ofDiscreteModule ℤ G Z))
-    (P' : TopPairing (ofDiscreteModule ℤ G M) (ofDiscreteModule ℤ G Y')
-      (ofDiscreteModule ℤ G Z'))
-    (hP : ∀ (a : M) (y : Y), fZ (P.bil a y) = P'.bil a (fY y))
-    (m n : ℕ) (a : (TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).X m)
-    (b : (TopRep.homogeneousCochains (ofDiscreteModule ℤ G Y)).X n) :
-    (cochainsMap (ContinuousMonoidHom.id G)
-        (ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G) fZ.toIntLinearMap hfZ)).f
-        (m + n) (P.cupCochain m n a b) =
-      P'.cupCochain m n a ((cochainsMap (ContinuousMonoidHom.id G)
-        (ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G) fY.toIntLinearMap hfY)).f n
-        b) := by
-  have h := P.cupCochain_cochainsMap P' (ContinuousMonoidHom.id G)
-    (𝟙 (ofDiscreteModule ℤ G M))
-    (ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G) fY.toIntLinearMap hfY)
-    (ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G) fZ.toIntLinearMap hfZ)
-    (fun a y ↦
-      (ofDiscreteModulePair_hom_apply (ContinuousMonoidHom.id G : G →* G)
-          fZ.toIntLinearMap hfZ _).trans
-        ((hP a y).trans (congrArg₂ (fun a b ↦ P'.bil a b)
-          (TopRep.id_apply (ofDiscreteModule ℤ G M) a).symm
-          (ofDiscreteModulePair_hom_apply (ContinuousMonoidHom.id G : G →* G)
-          fY.toIntLinearMap hfY y).symm)))
-    m n a b
-  rw [cochainsMap_id] at h
-  simp only [HomologicalComplex.id_f, ConcreteCategory.id_apply] at h
-  exact h
-
+-- These four adapters rewrite the maps of the two coefficient sequences as cochain maps of
+-- compatible pairs and then specialise the one-sided cup naturality lemmas
+-- `TopPairing.cupCochain_cochainsMap_right_id` and `TopPairing.cupCochain_cochainsMap_left_id`.
 omit [CompactSpace G] [ContinuousSMul G A] [ContinuousSMul G C] in
 private theorem proj_cupCochain_left
     (P : TopPairing (ofDiscreteModule ℤ G A) (ofDiscreteModule ℤ G M) (ofDiscreteModule ℤ G C))
@@ -147,8 +72,11 @@ private theorem proj_cupCochain_left
     (SC.continuousCochainsShortExact.g.f (m + n)).hom (P.cupCochain m n a b) =
       P₂.cupCochain m n ((SA.continuousCochainsShortExact.g.f m).hom a) b := by
   rw [SC.continuousCochainsShortExact_g_f_apply, SA.continuousCochainsShortExact_g_f_apply]
-  exact cochainsMap_cupCochain_left SA.proj SA.proj_equivariant SC.proj SC.proj_equivariant P P₂
-    hproj m n a b
+  exact P.cupCochain_cochainsMap_right_id P₂ _ _ (fun x y ↦ by
+    exact (ofDiscreteModulePair_hom_apply _ _ _ _).trans ((hproj x y).trans
+      (congrArg (P₂.bil · y) (ofDiscreteModulePair_hom_apply
+        (ContinuousMonoidHom.id G : G →* G) SA.proj.toIntLinearMap SA.proj_equivariant x).symm)))
+    m n a b
 
 omit [CompactSpace G] [ContinuousSMul G A] [ContinuousSMul G C] in
 private theorem incl_cupCochain_left
@@ -160,8 +88,11 @@ private theorem incl_cupCochain_left
     (SC.continuousCochainsShortExact.f.f (m + n)).hom (P₁.cupCochain m n a b) =
       P.cupCochain m n ((SA.continuousCochainsShortExact.f.f m).hom a) b := by
   rw [SC.continuousCochainsShortExact_f_f_apply, SA.continuousCochainsShortExact_f_f_apply]
-  exact cochainsMap_cupCochain_left SA.incl SA.incl_equivariant SC.incl SC.incl_equivariant P₁ P
-    hincl m n a b
+  exact P₁.cupCochain_cochainsMap_right_id P _ _ (fun x y ↦ by
+    exact (ofDiscreteModulePair_hom_apply _ _ _ _).trans ((hincl x y).trans
+      (congrArg (P.bil · y) (ofDiscreteModulePair_hom_apply
+        (ContinuousMonoidHom.id G : G →* G) SA.incl.toIntLinearMap SA.incl_equivariant x).symm)))
+    m n a b
 
 omit [CompactSpace G] [ContinuousSMul G A] [ContinuousSMul G C] in
 private theorem proj_cupCochain_right
@@ -173,8 +104,11 @@ private theorem proj_cupCochain_right
     (SC.continuousCochainsShortExact.g.f (m + n)).hom (P.cupCochain m n a b) =
       P₂.cupCochain m n a ((SA.continuousCochainsShortExact.g.f n).hom b) := by
   rw [SC.continuousCochainsShortExact_g_f_apply, SA.continuousCochainsShortExact_g_f_apply]
-  exact cochainsMap_cupCochain_right SA.proj SA.proj_equivariant SC.proj SC.proj_equivariant P P₂
-    hproj m n a b
+  exact P.cupCochain_cochainsMap_left_id P₂ _ _ (fun x y ↦ by
+    exact (ofDiscreteModulePair_hom_apply _ _ _ _).trans ((hproj x y).trans
+      (congrArg (P₂.bil x) (ofDiscreteModulePair_hom_apply
+        (ContinuousMonoidHom.id G : G →* G) SA.proj.toIntLinearMap SA.proj_equivariant y).symm)))
+    m n a b
 
 omit [CompactSpace G] [ContinuousSMul G A] [ContinuousSMul G C] in
 private theorem incl_cupCochain_right
@@ -186,8 +120,11 @@ private theorem incl_cupCochain_right
     (SC.continuousCochainsShortExact.f.f (m + n)).hom (P₁.cupCochain m n a b) =
       P.cupCochain m n a ((SA.continuousCochainsShortExact.f.f n).hom b) := by
   rw [SC.continuousCochainsShortExact_f_f_apply, SA.continuousCochainsShortExact_f_f_apply]
-  exact cochainsMap_cupCochain_right SA.incl SA.incl_equivariant SC.incl SC.incl_equivariant P₁ P
-    hincl m n a b
+  exact P₁.cupCochain_cochainsMap_left_id P _ _ (fun x y ↦ by
+    exact (ofDiscreteModulePair_hom_apply _ _ _ _).trans ((hincl x y).trans
+      (congrArg (P.bil x) (ofDiscreteModulePair_hom_apply
+        (ContinuousMonoidHom.id G : G →* G) SA.incl.toIntLinearMap SA.incl_equivariant y).symm)))
+    m n a b
 
 /-- **A connecting map passes through a cup product in the first variable.** The three pairings
 intertwine two short exact coefficient sequences in that variable. The fixed second factor is

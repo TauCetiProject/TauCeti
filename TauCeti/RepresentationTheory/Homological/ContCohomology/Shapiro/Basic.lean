@@ -60,9 +60,9 @@ required to be
 **normalized**, `w 1 = 1`, which `TauCeti.exists_continuous_rightCosetFactorization` supplies: the
 Shapiro image of the rebuilt cochain is then `c` on the nose
 (`TauCeti.ContCohomology.shapiroCocycles2_coindCocycle2`), where a factorization with `w 1 = s`
-would return the conjugate of `c` by `s` instead. Local constancy of both cochains in their group
-arguments is uniform local constancy of the underlying function on the compact groups `G × G` and
-`G × G × G` (`IsLocallyConstant.exists_isOpen_forall_mul_right_eq`).
+would return the conjugate of `c` by `s` instead. Local constancy of both cochains, and of the
+primitives of the coboundaries, in their group arguments follows from joint local constancy in the
+group arguments and the point of `G`, because `G` is compact (`IsLocallyConstant.of_uncurry`).
 
 ## Main definitions
 
@@ -319,23 +319,15 @@ theorem sub_coindCochain1_mem_B1 (f : Z1 G (DiscreteCoind G U A))
 
 variable [CompactSpace G]
 
-/-- The inverse Shapiro cochain is a continuous `1`-cocycle. It is locally constant because the
-lift is *uniformly* locally constant on the compact group `G`
-(`TauCeti.isOpen_rightTranslationStabilizer`), and the cocycle identity is the telescoping of its
-right-translation differences. -/
+/-- The inverse Shapiro cochain is a continuous `1`-cocycle. It is locally constant because
+`(g, x) ↦ c (w (x * g)) - c (w x)` is locally constant jointly and `G` is compact, and the cocycle
+identity is the telescoping of its right-translation differences. -/
 theorem coindCochain1_mem_Z1 :
     coindCochain1 w c hw hwmul hccont hccoc ∈ Z1 G (DiscreteCoind G U A) := by
-  have hlc : IsLocallyConstant (coindCochain1 w c hw hwmul hccont hccoc) := by
-    have hS : IsOpen (rightTranslationStabilizer (shapiroLift w c) : Set G) :=
-      isOpen_rightTranslationStabilizer
-        ((IsLocallyConstant.iff_continuous _).2 (continuous_shapiroLift w c hw hccont))
-    refine (IsLocallyConstant.iff_exists_open _).2 fun g₀ =>
-      ⟨(fun g => g₀⁻¹ * g) ⁻¹' (rightTranslationStabilizer (shapiroLift w c) : Set G),
-        hS.preimage (continuous_const.mul continuous_id), by simp, fun g hg => ?_⟩
-    refine DiscreteCoind.ext fun x => ?_
-    have hx := (mem_rightTranslationStabilizer.1 hg) (x * g₀)
-    rw [show x * g₀ * (g₀⁻¹ * g) = x * g by group] at hx
-    simp only [coindCochain1_apply, ← shapiroLift_apply w c, hx]
+  have hL := continuous_shapiroLift w c hw hccont
+  have hlc : IsLocallyConstant (coindCochain1 w c hw hwmul hccont hccoc) :=
+    .of_uncurry <| (IsLocallyConstant.iff_continuous _).2 <|
+      (hL.comp (continuous_snd.mul continuous_fst)).sub (hL.comp continuous_snd)
   refine mem_Z1_iff.2 ⟨(IsLocallyConstant.iff_continuous _).1 hlc, fun g h => ?_⟩
   refine DiscreteCoind.ext fun x => ?_
   simp only [DiscreteCoind.coe_add, Pi.add_apply, DiscreteCoind.coe_smul, coindCochain1_apply,
@@ -596,21 +588,18 @@ private theorem continuous_shapiroPrimitive2 (hw : Continuous w) (f : G × G →
 
 variable [CompactSpace G]
 
-/-- The inverse Shapiro cochain is a continuous `2`-cocycle: local constancy in `(g, h)` is
-uniform local constancy of the homogeneous form of `c` read through `w`, on the compact group
-`G × G × G`. -/
+/-- The inverse Shapiro cochain is a continuous `2`-cocycle: it is locally constant in `(g, h)`
+because `((g, h), y) ↦ homogeneous2 c (w y) (w (y * g)) (w (y * g * h))` is locally constant
+jointly and `G` is compact. -/
 theorem coindCochain2_mem_Z2 (hccoc : groupCohomology.IsCocycle₂ c) :
     coindCochain2 w c hw hwmul hccont ∈ Z2 G (DiscreteCoind G U A) := by
-  refine mem_Z2_iff.2 ⟨(IsLocallyConstant.iff_continuous _).1 ?_,
+  have hg : Continuous fun p : (G × G) × G => p.2 * p.1.1 :=
+    continuous_snd.mul (continuous_fst.comp continuous_fst)
+  refine mem_Z2_iff.2 ⟨(IsLocallyConstant.iff_continuous _).1 <| .of_uncurry <|
+    (IsLocallyConstant.iff_continuous _).2 <| continuous_homogeneous2 hccont
+      (hw.comp continuous_snd) (hw.comp hg)
+      (hw.comp (hg.mul (continuous_snd.comp continuous_fst))),
     isCocycle₂_coindCochain2 w c hw hwmul hccont hccoc⟩
-  have hQ : IsLocallyConstant fun p : G × G × G =>
-      homogeneous2 c (w p.1) (w p.2.1) (w p.2.2) :=
-    (IsLocallyConstant.iff_continuous _).2 (continuous_homogeneous2 hccont
-      (hw.comp continuous_fst) (hw.comp (continuous_fst.comp continuous_snd))
-      (hw.comp (continuous_snd.comp continuous_snd)))
-  refine (IsLocallyConstant.iff_exists_open _).2 fun q₀ => ?_
-  obtain ⟨V, hVopen, hq₀, hV⟩ := hQ.exists_isOpen_translate₃ q₀
-  exact ⟨V, hVopen, hq₀, fun q hq => DiscreteCoind.ext fun y => hV q hq y⟩
 
 /-- **The inverse Shapiro cochain, as a continuous `2`-cocycle.** -/
 noncomputable def coindCocycle2 (hccoc : groupCohomology.IsCocycle₂ c) :
@@ -638,17 +627,6 @@ theorem shapiroCocycles2_coindCocycle2 (hccoc : groupCohomology.IsCocycle₂ c) 
     hwu (u₁ * u₂), homogeneous2_one_left]
   simp
 
-omit [TopologicalSpace A] [DiscreteTopology A] [ContinuousSMul U A] in
-/-- A family of coinduced elements whose value at `y` is a locally constant function `N` along
-`(y, y * g)` is locally constant in `g`, since `N` is uniformly locally constant on a compact
-group. -/
-theorem isLocallyConstant_of_translate₂ {N : G × G → A} (hN : IsLocallyConstant N)
-    (F : G → DiscreteCoind G U A) (hF : ∀ g y, F g y = N (y, y * g)) : IsLocallyConstant F := by
-  refine (IsLocallyConstant.iff_exists_open _).2 fun g₀ => ?_
-  obtain ⟨V, hVopen, hg₀, hV⟩ := hN.exists_isOpen_translate₂ g₀
-  exact ⟨V, hVopen, hg₀, fun g hg => DiscreteCoind.ext fun y => by
-    rw [hF, hF]; exact hV g hg y⟩
-
 /-- The inverse Shapiro cochain of a `2`-coboundary of `U` is a `2`-coboundary of `G`, with the
 primitive `y ↦ homogeneous1 α (w y) (w (y * g))` built from a primitive `α` of `c`. This is what
 makes the inverse construction descend to cohomology. -/
@@ -666,8 +644,8 @@ theorem coindCochain2_mem_B2_of_mem_B2 (hcB : c ∈ B2 U A) :
       have h1 : (u : G) * y * g = (u : G) * (y * g) := by group
       rw [h1, hwmul u y, hwmul u (y * g)]
       exact homogeneous1_smul α u (w y) (w (y * g))), ?_, ?_⟩
-  · rw [← IsLocallyConstant.iff_continuous]
-    exact isLocallyConstant_of_translate₂ hN _ fun _ _ => rfl
+  · exact (IsLocallyConstant.iff_continuous _).1 <| .of_uncurry <| hN.comp_continuous <|
+      continuous_snd.prodMk (continuous_snd.mul continuous_fst)
   · refine funext fun q => ?_
     obtain ⟨g, h⟩ := q
     refine DiscreteCoind.ext fun y => ?_
@@ -700,8 +678,8 @@ theorem sub_coindCochain2_mem_B2 (f : Z2 G (DiscreteCoind G U A))
       rw [hu]
       exact shapiroPrimitive2_smul w hwmul (f : G × G → DiscreteCoind G U A) u y (y * g)),
     ?_, ?_⟩
-  · rw [← IsLocallyConstant.iff_continuous]
-    exact isLocallyConstant_of_translate₂ hN _ fun _ _ => rfl
+  · exact (IsLocallyConstant.iff_continuous _).1 <| .of_uncurry <| hN.comp_continuous <|
+      continuous_snd.prodMk (continuous_snd.mul continuous_fst)
   · refine funext fun q => ?_
     obtain ⟨g, h⟩ := q
     refine DiscreteCoind.ext fun y => ?_
