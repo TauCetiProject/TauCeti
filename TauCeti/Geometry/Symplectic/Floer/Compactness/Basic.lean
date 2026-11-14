@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Convergence
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Geometry.Symplectic.Floer.Graph
@@ -76,8 +77,11 @@ bubbling point is also Floer energy.
 More generally, any energy density `f ≥ 0` with `‖∂ₛu‖² ≤ A f + B` can replace `‖∂ₛu‖²` for
 solutions of the coordinate equation on `ℝ × ℝ`
 (`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm_sq_le`).
-The Floer theorem above is the case of the Floer energy density, and the same theorem gives
-compactness for solutions in a chart of a manifold target
+The Floer theorem above is the case of the Floer energy density. Moving the solutions to a
+Euclidean space along `toEuclidean` gives the same statement for a finite-dimensional normed target
+without an inner product (in the namespace `TauCeti.Floer`,
+`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm_sq_le_of_finiteDimensional`),
+which gives compactness for solutions in a chart of a manifold target
 (`TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`).
 
 The same holds uniformly over a compact parameter window
@@ -741,6 +745,105 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm_sq
   exact ⟨φ, Z, v, hφ, h⟩
 
 end RealCoordinates
+
+section FiniteDimensional
+
+open Function
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- **Solutions with energy-controlled derivatives in a finite-dimensional normed space converge
+off finitely many bubbling points.** This is
+`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm_sq_le` for a
+target `F` without an inner product, by moving the solutions to a Euclidean space along
+`toEuclidean`. Let `J(z, x)` and `X(z, x)` be `C²` on an open set `W ⊆ (ℝ × ℝ) × F` containing
+`D × K` for compact `D ⊆ ℝ × ℝ` and `K ⊆ F`, with `J(z, x)² = -1` on `D × K`, and let `A, B ≥ 0`.
+There is a threshold `δ > 0` with the following property. Let `uₖ` be `C³` solutions of the
+coordinate Floer equation `∂ₜu - X(z, u)(0, 1) = J(z, u)(∂ₛu - X(z, u)(1, 0))` on an open set
+`Ω ⊆ D`, with image in `K`, and let `fₖ ≥ 0` be integrable energy densities on `Ω` with
+`‖∂ₛuₖ‖² ≤ A fₖ + B` and `∫_Ω fₖ ≤ E`. Then there are a subsequence `φ`, a finite set `Z ⊆ Ω` with
+`#Z * δ ≤ E`, and a continuous `v : Ω \ Z → K` such that along `φ` every disc about a point of `Z`
+eventually carries energy `∫ f_{φ n}` at least `δ`, the differentials are uniformly bounded on
+every compact subset of `Ω \ Z`, and `u_{φ n} → v` locally uniformly on `Ω \ Z`.
+
+For solutions in a chart of a manifold, `fₖ` is the intrinsic Floer energy density (in the
+namespace `TauCeti.SmoothTwoForm`,
+`IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_extChartAt_subseq_off_finset`). -/
+theorem
+    exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm_sq_le_of_finiteDimensional
+    {J : (ℝ × ℝ) × F → F →L[ℝ] F} {X : (ℝ × ℝ) × F → ℝ × ℝ →L[ℝ] F}
+    {W : Set ((ℝ × ℝ) × F)} {D : Set (ℝ × ℝ)} {K : Set F}
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W)
+    (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W)
+    (hJsq : ∀ z ∈ D, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v) {A B : ℝ} (hA0 : 0 ≤ A)
+    (hB0 : 0 ≤ B) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → F⦄ ⦃f : ℕ → ℝ × ℝ → ℝ⦄ ⦃E : ℝ⦄,
+      IsOpen Ω → Ω ⊆ D → (∀ k, ContDiffOn ℝ 3 (u k) Ω) →
+      (∀ k, ∀ z ∈ Ω, fderiv ℝ (u k) z stdComplexLineImag - X (z, u k z) stdComplexLineImag =
+        J (z, u k z) (fderiv ℝ (u k) z stdComplexLineReal - X (z, u k z) stdComplexLineReal)) →
+      (∀ k, MapsTo (u k) Ω K) →
+      (∀ k, ∀ z ∈ Ω, 0 ≤ f k z) →
+      (∀ k, ∀ z ∈ Ω, ‖fderiv ℝ (u k) z stdComplexLineReal‖ ^ 2 ≤ A * f k z + B) →
+      (∀ k, IntegrableOn (f k) Ω) → (∀ k, ∫ z in Ω, f k z ≤ E) →
+      ∃ (φ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → F), StrictMono φ ∧
+        ↑Z ⊆ Ω ∧ Z.card * δ ≤ E ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, f (φ n) y) ∧
+        (∀ C, IsCompact C → C ⊆ Ω \ ↑Z →
+          ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
+        ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
+        TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
+  -- Conjugate the data by `L = toEuclidean` and apply the theorem for an inner product space.
+  let L : F ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) := toEuclidean
+  let g : (ℝ × ℝ) × EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) → (ℝ × ℝ) × F :=
+    fun p ↦ (p.1, L.symm p.2)
+  have hgc : ContDiff ℝ 2 g := contDiff_fst.prodMk (L.symm.contDiff.comp contDiff_snd)
+  have hDKW' : D ×ˢ (L '' K) ⊆ g ⁻¹' W := by
+    rintro ⟨z, _⟩ ⟨hz, y, hy, rfl⟩
+    simpa [g] using hDKW ⟨hz, hy⟩
+  have hJsq' : ∀ z ∈ D, ∀ x ∈ L '' K, ∀ v,
+      (L.toContinuousLinearMap ∘L J (g (z, x)) ∘L L.symm.toContinuousLinearMap)
+        ((L.toContinuousLinearMap ∘L J (g (z, x)) ∘L L.symm.toContinuousLinearMap) v) = -v := by
+    rintro z hz _ ⟨y, hy, rfl⟩ v
+    simp [g, hJsq z hz y hy]
+  obtain ⟨δ, hδ, hconv⟩ :=
+    exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm_sq_le
+      (J := fun p ↦ L.toContinuousLinearMap ∘L J (g p) ∘L L.symm.toContinuousLinearMap)
+      (X := fun p ↦ L.toContinuousLinearMap ∘L X (g p)) (hW.preimage hgc.continuous)
+      (contDiffOn_const.clm_comp ((hJ.comp hgc.contDiffOn (mapsTo_preimage g W)).clm_comp
+        contDiffOn_const))
+      (contDiffOn_const.clm_comp (hX.comp hgc.contDiffOn (mapsTo_preimage g W))) hD
+      (hK.image L.continuous) hDKW' hJsq' (mul_nonneg (sq_nonneg ‖L.toContinuousLinearMap‖) hA0)
+      (mul_nonneg (sq_nonneg ‖L.toContinuousLinearMap‖) hB0)
+  refine ⟨δ, hδ, fun Ω u f E hΩ hΩD hu hfl huK hf0 hgle hint hE ↦ ?_⟩
+  have hderiv (k : ℕ) (z w : ℝ × ℝ) : fderiv ℝ (L ∘ u k) z w = L (fderiv ℝ (u k) z w) := by
+    simp only [L.comp_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+  have hback (k : ℕ) : L.symm ∘ (L ∘ u k) = u k := funext fun z ↦ by simp
+  obtain ⟨φ, Z, v, hφ, hZΩ, hcard, hconc, hbd, hvc, hvK, hlim⟩ :=
+    hconv (u := fun k ↦ L ∘ u k) hΩ hΩD (fun k ↦ L.contDiff.comp_contDiffOn (hu k))
+      (fun k z hz ↦ by
+        simp only [hderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, g,
+          Function.comp_apply, ContinuousLinearEquiv.symm_apply_apply]
+        rw [← map_sub, ← map_sub, L.symm_apply_apply, hfl k z hz])
+      (fun k z hz ↦ ⟨u k z, huK k hz, rfl⟩) hf0
+      (fun k z hz ↦ by
+        have h := pow_le_pow_left₀ (norm_nonneg _)
+          (L.toContinuousLinearMap.le_opNorm (fderiv ℝ (u k) z stdComplexLineReal)) 2
+        rw [mul_pow, ContinuousLinearEquiv.coe_coe] at h
+        rw [hderiv]
+        nlinarith [hgle k z hz, sq_nonneg ‖L.toContinuousLinearMap‖])
+      hint hE
+  -- Move the limit, the derivative bounds and the values back along `L.symm`.
+  refine ⟨φ, Z, L.symm ∘ v, hφ, hZΩ, hcard, hconc, fun C hC hCZ ↦ ?_,
+    L.symm.continuous.comp_continuousOn hvc,
+    (L.symm_image_image K ▸ mapsTo_image L.symm (L '' K)).comp hvK, ?_⟩
+  · obtain ⟨M, hM⟩ := hbd C hC hCZ
+    refine ⟨‖L.symm.toContinuousLinearMap‖ * M, fun n y hy ↦ ?_⟩
+    rw [← hback (φ n), L.symm.comp_fderiv]
+    exact (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left (hM n y hy) (norm_nonneg _))
+  · simpa only [ContinuousLinearEquiv.coe_coe, hback] using
+      L.symm.toContinuousLinearMap.uniformContinuous.comp_tendstoLocallyUniformlyOn hlim
+
+end FiniteDimensional
 
 end TauCeti.Floer
 
