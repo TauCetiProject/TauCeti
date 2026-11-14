@@ -529,7 +529,7 @@ theorem mem_jonesLoopParameters_of_starPositiveFunctional (htr : IsMarkovTrace �
   refine htr.mem_jonesLoopParameters_of_forall_nonneg hδ fun n x ↦ ?_
   have hsq : 0 ≤ (c n : ℂ) * tr n (star x * x) := by
     rw [← hρ, map_mul, StarHomClass.map_star]
-    exact (σ n).apply_star_mul_self_nonneg (ρ n x)
+    exact (σ n).square_nonneg (ρ n x)
   rw [Complex.nonneg_iff, Complex.re_ofReal_mul, Complex.im_ofReal_mul] at hsq
   exact Complex.nonneg_iff.2 ⟨nonneg_of_mul_nonneg_right hsq.1 (hc n),
     (mul_eq_zero.1 hsq.2.symm).resolve_left (hc n).ne' |>.symm⟩

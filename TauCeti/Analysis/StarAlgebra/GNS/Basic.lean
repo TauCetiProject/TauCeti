@@ -128,13 +128,7 @@ theorem toLinearMap_ofPositiveLinearMap {C : Type*} [NonUnitalRing C] [PartialOr
     (ofPositiveLinearMap ω).toLinearMap = ω.toLinearMap :=
   (rfl)
 
-variable (φ : StarPositiveFunctional A)
-
-/-- A `StarPositiveFunctional` is nonnegative on every square `star a * a`. -/
-theorem apply_star_mul_self_nonneg (a : A) : 0 ≤ φ (star a * a) :=
-  φ.square_nonneg a
-
-variable [StarModule ℂ A] [IsScalarTower ℂ A A]
+variable (φ : StarPositiveFunctional A) [StarModule ℂ A] [IsScalarTower ℂ A A]
 
 /-- Positivity implies conjugate symmetry of the associated sesquilinear form. -/
 theorem star_apply_star_mul (a b : A) : star (φ (star a * b)) = φ (star b * a) := by
@@ -313,14 +307,14 @@ theorem norm_classMap_sq (a : A) : ‖φ.classMap a‖ ^ 2 = (φ (star a * a)).r
 
 /-- Cast to `ℂ`, the squared GNS norm of a class equals `φ (star a * a)`. -/
 theorem ofReal_norm_classMap_sq (a : A) : (‖φ.classMap a‖ ^ 2 : ℂ) = φ (star a * a) := by
-  have ha := φ.apply_star_mul_self_nonneg a
+  have ha := φ.square_nonneg a
   rw [← Complex.ofReal_pow, φ.norm_classMap_sq]
   exact Complex.ext (Complex.ofReal_re _) ha.2
 
 /-- The squared GNS norm of a class equals the norm of `φ (star a * a)`. -/
 theorem norm_classMap_sq_eq_norm (a : A) : ‖φ.classMap a‖ ^ 2 = ‖φ (star a * a)‖ := by
-  have hre := congrArg Complex.re
-    (Complex.eq_coe_norm_of_nonneg (φ.apply_star_mul_self_nonneg a))
+  have ha : 0 ≤ φ (star a * a) := φ.square_nonneg a
+  have hre := congrArg Complex.re (Complex.eq_coe_norm_of_nonneg ha)
   rw [Complex.ofReal_re] at hre
   rw [φ.norm_classMap_sq, hre]
 
@@ -347,8 +341,9 @@ theorem norm_map_star_mul_sq_le (a b : A) :
 /-- Squared **Cauchy–Schwarz inequality** in the `ComplexOrder` on `ℂ`. -/
 theorem ofReal_norm_map_star_mul_sq_le (a b : A) :
     ((‖φ (star a * b)‖ ^ 2 : ℝ) : ℂ) ≤ φ (star a * a) * φ (star b * b) := by
-  rw [Complex.eq_coe_norm_of_nonneg (φ.apply_star_mul_self_nonneg a),
-    Complex.eq_coe_norm_of_nonneg (φ.apply_star_mul_self_nonneg b), ← Complex.ofReal_mul]
+  have ha : 0 ≤ φ (star a * a) := φ.square_nonneg a
+  have hb : 0 ≤ φ (star b * b) := φ.square_nonneg b
+  rw [Complex.eq_coe_norm_of_nonneg ha, Complex.eq_coe_norm_of_nonneg hb, ← Complex.ofReal_mul]
   exact Complex.real_le_real.2 (φ.norm_map_star_mul_sq_le a b)
 
 /-- Left multiplication on the algebraic GNS space, without a continuity assertion. -/
