@@ -67,6 +67,25 @@ theorem mutationWord_reverse_mutationWord (s : YSeed K P) (w : List K) :
     (s.mutationWord w.reverse).mutationWord w = s :=
   foldl_foldl_reverse_of_involutive mutation mutation_involutive w s
 
+/-- A single mutation is injective on Y-seeds. -/
+@[simp]
+theorem mutation_eq_mutation_iff (s t : YSeed K P) (k : K) :
+    s.mutation k = t.mutation k ↔ s = t :=
+  (mutation_involutive k).injective.eq_iff
+
+/-- Applying the same mutation word to two Y-seeds preserves equality exactly. -/
+@[simp]
+theorem mutationWord_eq_mutationWord_iff (s t : YSeed K P) (w : List K) :
+    s.mutationWord w = t.mutationWord w ↔ s = t := by
+  simpa only [mutationWord_eq_foldl] using
+    foldl_eq_foldl_iff_of_involutive mutation mutation_involutive w s t
+
+/-- Move a mutation word to the other side of an equality by reversing its directions. -/
+theorem mutationWord_eq_iff (s t : YSeed K P) (w : List K) :
+    s.mutationWord w = t ↔ s = t.mutationWord w.reverse := by
+  simpa only [mutationWord_eq_foldl] using
+    foldl_eq_iff_of_involutive mutation mutation_involutive w s t
+
 /-- Each word acts by a bijection, with inverse given by the reversed word. -/
 def mutationWordEquiv (w : List K) : YSeed K P ≃ YSeed K P :=
   foldlEquiv mutation mutation_involutive w
@@ -119,6 +138,19 @@ def Reachable (s t : YSeed K P) : Prop := FoldReachable mutation s t
 theorem reachable_def {s t : YSeed K P} :
     Reachable s t ↔ ∃ w : List K, s.mutationWord w = t := foldReachable_def
 
+/-- Y-seed reachability is the reflexive-transitive closure of single mutations. -/
+theorem reachable_iff_reflTransGen {s t : YSeed K P} :
+    Reachable s t ↔
+      Relation.ReflTransGen (fun x y : YSeed K P ↦ ∃ k : K, x.mutation k = y) s t :=
+  foldReachable_iff_reflTransGen
+
+/-- Prove a property along a reachable orbit using only steps starting in that orbit. -/
+@[elab_as_elim]
+theorem Reachable.induction {s t : YSeed K P} {motive : YSeed K P → Prop}
+    (h : Reachable s t) (hs : motive s)
+    (hstep : ∀ x k, Reachable s x → motive x → motive (x.mutation k)) : motive t :=
+  FoldReachable.induction h hs hstep
+
 /-- Applying a word always gives a reachable seed. -/
 theorem reachable_mutationWord (s : YSeed K P) (w : List K) :
     Reachable s (s.mutationWord w) := foldReachable_foldl mutation s w
@@ -150,12 +182,12 @@ theorem reachable_equivalence : Equivalence (Reachable (K := K) (P := P)) :=
   FoldReachable.equivalence mutation_involutive
 
 /-- Replacing the initial seed by any reachable seed leaves its reachable class unchanged. -/
-theorem Reachable.reachable_iff {s t u : YSeed K P} (h : Reachable s t) :
-    Reachable t u ↔ Reachable s u := FoldReachable.reachable_iff mutation_involutive h
+theorem Reachable.congr_left {s t u : YSeed K P} (h : Reachable s t) :
+    Reachable t u ↔ Reachable s u := FoldReachable.congr_left mutation_involutive h
 
 /-- Replacing the target seed by any reachable seed preserves reachability. -/
-theorem Reachable.reachable_right_iff {s t u : YSeed K P} (h : Reachable s t) :
-    Reachable u t ↔ Reachable u s := FoldReachable.reachable_right_iff mutation_involutive h
+theorem Reachable.congr_right {s t u : YSeed K P} (h : Reachable s t) :
+    Reachable u t ↔ Reachable u s := FoldReachable.congr_right mutation_involutive h
 
 /-- Mutation words on the initial seed do not alter its mutation class. -/
 @[simp]
@@ -185,6 +217,12 @@ theorem reachable_mutation_right_iff (s t : YSeed K P) (k : K) :
 theorem Reachable.map {s t : YSeed K P} (h : Reachable s t)
     (f : CoefficientSemifieldHom P Q) : Reachable (s.map f) (t.map f) :=
   FoldReachable.map h (fun s ↦ s.map f) id (fun s k ↦ s.map_mutation f k)
+
+/-- Forgetting the coefficients takes reachable Y-seeds to reachable exchange matrices. -/
+theorem Reachable.exchangeMatrix {s t : YSeed K P} (h : Reachable s t) :
+    ExchangeMatrix.Reachable s.exchangeMatrix t.exchangeMatrix := by
+  obtain ⟨w, rfl⟩ := reachable_def.mp h
+  exact ExchangeMatrix.reachable_def.mpr ⟨w, (mutationWord_exchangeMatrix s w).symm⟩
 
 /-- Relabelling preserves and reflects reachability. -/
 @[simp]

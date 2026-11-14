@@ -29,6 +29,12 @@ namespace TauCeti
 
 variable {I K I' K' : Type*} [DecidableEq I] [DecidableEq K]
 
+/-- Mutation in a fixed direction cancels from an equality of raw matrices. -/
+@[simp]
+theorem matrixMutation_eq_matrixMutation_iff (row : K ↪ I) (B C : Matrix I K ℤ) (k : K) :
+    matrixMutation row B k = matrixMutation row C k ↔ B = C :=
+  (matrixMutation_involutive row k).injective.eq_iff
+
 /-- Mutate an arbitrary rectangular integer matrix along a finite word in reading order. -/
 def matrixMutationWord (row : K ↪ I) (B : Matrix I K ℤ) (w : List K) : Matrix I K ℤ :=
   w.foldl (matrixMutation row) B
@@ -50,6 +56,18 @@ theorem matrixMutationWord_cons (row : K ↪ I) (B : Matrix I K ℤ) (k : K) (w 
 theorem matrixMutationWord_append (row : K ↪ I) (B : Matrix I K ℤ) (u v : List K) :
     matrixMutationWord row B (u ++ v) = matrixMutationWord row (matrixMutationWord row B u) v :=
   List.foldl_append
+
+/-- Applying the same raw matrix word cancels from an equality. -/
+@[simp]
+theorem matrixMutationWord_eq_matrixMutationWord_iff (row : K ↪ I)
+    (B C : Matrix I K ℤ) (w : List K) :
+    matrixMutationWord row B w = matrixMutationWord row C w ↔ B = C :=
+  foldl_eq_foldl_iff_of_involutive _ (matrixMutation_involutive row) w B C
+
+/-- Moving a raw matrix word across an equality reverses it. -/
+theorem matrixMutationWord_eq_iff (row : K ↪ I) (B C : Matrix I K ℤ) (w : List K) :
+    matrixMutationWord row B w = C ↔ B = matrixMutationWord row C w.reverse :=
+  foldl_eq_iff_of_involutive _ (matrixMutation_involutive row) w B C
 
 /-- Equal adjacent directions cancel inside an arbitrary matrix mutation word. -/
 theorem matrixMutationWord_append_cons_cons_self (row : K ↪ I) (B : Matrix I K ℤ)
@@ -171,6 +189,12 @@ namespace ExchangeMatrix
 
 variable {I K I' K' : Type*} [DecidableEq I] [DecidableEq K] {row : K ↪ I}
 
+/-- A single bundled mutation cancels from an equality. -/
+@[simp]
+theorem mutation_eq_mutation_iff (B C : ExchangeMatrix row) (k : K) :
+    B.mutation k = C.mutation k ↔ B = C :=
+  (mutation_involutive k).injective.eq_iff
+
 /-- Apply a finite sequence of mutations, with the first letter acting first. -/
 def mutationWord (B : ExchangeMatrix row) (w : List K) : ExchangeMatrix row :=
   w.foldl mutation B
@@ -191,6 +215,17 @@ theorem mutationWord_cons (B : ExchangeMatrix row) (k : K) (w : List K) :
 theorem mutationWord_append (B : ExchangeMatrix row) (u v : List K) :
     B.mutationWord (u ++ v) = (B.mutationWord u).mutationWord v :=
   List.foldl_append
+
+/-- Applying the same bundled mutation word cancels from an equality. -/
+@[simp]
+theorem mutationWord_eq_mutationWord_iff (B C : ExchangeMatrix row) (w : List K) :
+    B.mutationWord w = C.mutationWord w ↔ B = C :=
+  foldl_eq_foldl_iff_of_involutive mutation mutation_involutive w B C
+
+/-- Moving a bundled mutation word across an equality reverses it. -/
+theorem mutationWord_eq_iff (B C : ExchangeMatrix row) (w : List K) :
+    B.mutationWord w = C ↔ B = C.mutationWord w.reverse :=
+  foldl_eq_iff_of_involutive mutation mutation_involutive w B C
 
 /-- Forgetting the symmetrizer commutes with a mutation word. -/
 @[simp]
@@ -271,6 +306,119 @@ theorem reindex_mutationWord [DecidableEq I'] [DecidableEq K'] {row' : K' ↪ I'
   simp only [mutationWord, List.foldl_map]
   exact (List.foldl_hom (reindex eI eK h)
     (fun B k ↦ B.mutation_reindex eI eK h k)).symm
+
+/-! ### Mutation classes -/
+
+/-- Two bundled exchange matrices are reachable when a finite mutation word joins them. -/
+def Reachable (B C : ExchangeMatrix row) : Prop := FoldReachable mutation B C
+
+/-- Matrix reachability is characterized by a finite mutation word. -/
+theorem reachable_def {B C : ExchangeMatrix row} :
+    Reachable B C ↔ ∃ w : List K, B.mutationWord w = C := foldReachable_def
+
+/-- Matrix reachability is the reflexive transitive closure of single mutations. -/
+theorem reachable_iff_reflTransGen {B C : ExchangeMatrix row} :
+    Reachable B C ↔ Relation.ReflTransGen
+      (fun B C : ExchangeMatrix row ↦ ∃ k, B.mutation k = C) B C :=
+  foldReachable_iff_reflTransGen
+
+/-- Every mutation word gives a reachable exchange matrix. -/
+theorem reachable_mutationWord (B : ExchangeMatrix row) (w : List K) :
+    Reachable B (B.mutationWord w) := foldReachable_foldl mutation B w
+
+/-- A single mutation gives a reachable exchange matrix. -/
+theorem reachable_mutation (B : ExchangeMatrix row) (k : K) : Reachable B (B.mutation k) :=
+  foldReachable_apply mutation B k
+
+/-- Every exchange matrix belongs to its own mutation class. -/
+@[refl, simp]
+theorem Reachable.refl (B : ExchangeMatrix row) : Reachable B B := FoldReachable.refl B
+
+/-- A mutation path can be reversed. -/
+@[symm]
+theorem Reachable.symm {B C : ExchangeMatrix row} (h : Reachable B C) : Reachable C B :=
+  FoldReachable.symm mutation_involutive h
+
+/-- Mutation paths concatenate. -/
+@[trans]
+theorem Reachable.trans {B C D : ExchangeMatrix row} (h : Reachable B C)
+    (h' : Reachable C D) : Reachable B D := FoldReachable.trans h h'
+
+/-- The endpoints of matrix reachability can be interchanged. -/
+theorem reachable_comm (B C : ExchangeMatrix row) : Reachable B C ↔ Reachable C B :=
+  FoldReachable.comm mutation_involutive B C
+
+/-- Mutation classes define an equivalence relation. -/
+theorem reachable_equivalence : Equivalence (Reachable (row := row)) :=
+  FoldReachable.equivalence mutation_involutive
+
+/-- A reachable initial matrix can replace the initial endpoint. -/
+theorem Reachable.congr_left {B C D : ExchangeMatrix row} (h : Reachable B C) :
+    Reachable C D ↔ Reachable B D := FoldReachable.congr_left mutation_involutive h
+
+/-- A reachable target matrix can replace the target endpoint. -/
+theorem Reachable.congr_right {B C D : ExchangeMatrix row} (h : Reachable B C) :
+    Reachable D C ↔ Reachable D B := FoldReachable.congr_right mutation_involutive h
+
+/-- Induct along a mutation path, allowing the step to use membership in the initial orbit. -/
+@[elab_as_elim]
+theorem Reachable.induction {B C : ExchangeMatrix row} {motive : ExchangeMatrix row → Prop}
+    (h : Reachable B C) (hB : motive B)
+    (hstep : ∀ D k, Reachable B D → motive D → motive (D.mutation k)) : motive C :=
+  FoldReachable.induction h hB hstep
+
+/-- A word on the initial matrix leaves its mutation class unchanged. -/
+@[simp]
+theorem reachable_mutationWord_left_iff (B C : ExchangeMatrix row) (w : List K) :
+    Reachable (B.mutationWord w) C ↔ Reachable B C :=
+  foldReachable_foldl_left_iff mutation mutation_involutive B C w
+
+/-- A word on the target matrix leaves reachability unchanged. -/
+@[simp]
+theorem reachable_mutationWord_right_iff (B C : ExchangeMatrix row) (w : List K) :
+    Reachable B (C.mutationWord w) ↔ Reachable B C :=
+  foldReachable_foldl_right_iff mutation mutation_involutive B C w
+
+/-- A single mutation of the initial matrix leaves its mutation class unchanged. -/
+@[simp]
+theorem reachable_mutation_left_iff (B C : ExchangeMatrix row) (k : K) :
+    Reachable (B.mutation k) C ↔ Reachable B C :=
+  foldReachable_apply_left_iff mutation (mutation_involutive k) B C
+
+/-- A single mutation of the target matrix leaves reachability unchanged. -/
+@[simp]
+theorem reachable_mutation_right_iff (B C : ExchangeMatrix row) (k : K) :
+    Reachable B (C.mutation k) ↔ Reachable B C :=
+  foldReachable_apply_right_iff mutation (mutation_involutive k) B C
+
+/-- The chosen positive symmetrizer is constant on each matrix mutation class. -/
+theorem Reachable.symmetrizer_eq {B C : ExchangeMatrix row} (h : Reachable B C) :
+    B.symmetrizer = C.symmetrizer := by
+  obtain ⟨w, rfl⟩ := reachable_def.mp h
+  exact (B.mutationWord_symmetrizer w).symm
+
+/-- Taking principal blocks transports matrix mutation classes. -/
+theorem Reachable.principal {B C : ExchangeMatrix row} (h : Reachable B C) :
+    Reachable B.principal C.principal :=
+  FoldReachable.map h (fun B ↦ B.principal) id (fun B k ↦ B.principal_mutation k)
+
+/-- Restricting rows transports mutation classes if every original direction is retained.
+The surjectivity condition lifts the mutation path to the restricted direction type. -/
+theorem Reachable.submatrix [DecidableEq I'] [DecidableEq K'] {row' : K' ↪ I'}
+    {f : I' → I} {g : K' → K} (hf : Function.Injective f) (hg : Function.Surjective g)
+    (h : ∀ k, f (row' k) = row (g k)) {B C : ExchangeMatrix row} (hBC : Reachable B C) :
+    Reachable (B.submatrix f g h) (C.submatrix f g h) := by
+  obtain ⟨w, rfl⟩ := reachable_def.mp hBC
+  obtain ⟨w', rfl⟩ := hg.list_map w
+  exact reachable_def.mpr ⟨w', (B.submatrix_mutationWord hf h w').symm⟩
+
+/-- Compatible simultaneous relabelling preserves and reflects matrix reachability. -/
+@[simp]
+theorem reachable_reindex_iff [DecidableEq I'] [DecidableEq K'] {row' : K' ↪ I'}
+    (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
+    (B C : ExchangeMatrix row) :
+    Reachable (reindex eI eK h B) (reindex eI eK h C) ↔ Reachable B C :=
+  FoldReachable.equiv_iff (reindex eI eK h) eK (fun B k ↦ (B.mutation_reindex eI eK h k).symm) B C
 
 section sum
 

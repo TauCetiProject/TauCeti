@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.List.Basic
 public import Mathlib.Logic.Equiv.Basic
+public import Mathlib.Logic.Relation
 
 /-!
 # Lists of involutions
@@ -86,6 +87,20 @@ theorem foldlEquiv_append {I J : Type*} (f : I → J → I)
   ext a
   exact List.foldl_append
 
+/-- Move an action by a list of involutions across an equality using the reversed list. -/
+theorem foldl_eq_iff_of_involutive {I J : Type*} (f : I → J → I)
+    (hf : ∀ j, Function.Involutive (fun a ↦ f a j)) (l : List J) (a b : I) :
+    l.foldl f a = b ↔ a = l.reverse.foldl f b := by
+  simpa only [foldlEquiv_symm, foldlEquiv_apply] using
+    ((foldlEquiv f hf l).eq_symm_apply (x := b) (y := a)).symm
+
+/-- A left fold of involutions cancels from both sides of an equality. -/
+@[simp]
+theorem foldl_eq_foldl_iff_of_involutive {I J : Type*} (f : I → J → I)
+    (hf : ∀ j, Function.Involutive (fun a ↦ f a j)) (l : List J) (a b : I) :
+    l.foldl f a = l.foldl f b ↔ a = b := by
+  simpa only [foldlEquiv_apply] using (foldlEquiv f hf l).apply_eq_iff_eq (x := a) (y := b)
+
 /-- `FoldReachable f a b` means that a finite list of steps of `f` takes `a` to `b`. -/
 def FoldReachable {I J : Type*} (f : I → J → I) (a b : I) : Prop :=
   ∃ w : List J, w.foldl f a = b
@@ -133,12 +148,12 @@ theorem equivalence (hf : ∀ j, Function.Involutive (fun a ↦ f a j)) :
     Equivalence (FoldReachable f) := ⟨refl, symm hf, trans⟩
 
 /-- Reachable initial values have the same reachable class. -/
-theorem reachable_iff (hf : ∀ j, Function.Involutive (fun a ↦ f a j)) {a b c : I}
+theorem congr_left (hf : ∀ j, Function.Involutive (fun a ↦ f a j)) {a b c : I}
     (h : FoldReachable f a b) : FoldReachable f b c ↔ FoldReachable f a c :=
   ⟨h.trans, (h.symm hf).trans⟩
 
 /-- Reachable target values can replace one another in a reachability statement. -/
-theorem reachable_right_iff (hf : ∀ j, Function.Involutive (fun a ↦ f a j)) {a b c : I}
+theorem congr_right (hf : ∀ j, Function.Involutive (fun a ↦ f a j)) {a b c : I}
     (h : FoldReachable f a b) : FoldReachable f c b ↔ FoldReachable f c a :=
   ⟨fun h' ↦ h'.trans (h.symm hf), fun h' ↦ h'.trans h⟩
 
@@ -150,16 +165,63 @@ theorem map {a b : I} (h : FoldReachable f a b) (g : I → I') (m : J → J')
   rw [List.foldl_map]
   exact List.foldl_hom g (fun a j ↦ (hgm a j).symm)
 
+/-- An injective state map and a surjective step map preserve and reflect reachability
+when they intertwine every step. No reversibility or surjectivity of the state map is needed. -/
+theorem map_iff {g : I → I'} {m : J → J'} (hg : Function.Injective g)
+    (hm : Function.Surjective m) (hgm : ∀ a j, g (f a j) = f' (g a) (m j)) (a b : I) :
+    FoldReachable f' (g a) (g b) ↔ FoldReachable f a b := by
+  constructor
+  · rintro ⟨w', hw'⟩
+    obtain ⟨w, rfl⟩ := hm.list_map w'
+    refine ⟨w, hg ?_⟩
+    have hfold : (w.map m).foldl f' (g a) = g (w.foldl f a) := by
+      rw [List.foldl_map]
+      exact List.foldl_hom g (fun a j ↦ (hgm a j).symm)
+    rwa [← hfold]
+  · intro h
+    exact h.map g m hgm
+
 /-- Equivariant bijections preserve and reflect fold reachability. -/
 theorem equiv_iff (g : I ≃ I') (m : J ≃ J')
     (hgm : ∀ a j, g (f a j) = f' (g a) (m j)) (a b : I) :
-    FoldReachable f' (g a) (g b) ↔ FoldReachable f a b := by
-  have hinv : ∀ a j, g.symm (f' a j) = f (g.symm a) (m.symm j) := by
-    intro a j
-    apply g.injective
-    simp only [Equiv.apply_symm_apply, hgm]
-  exact ⟨fun h ↦ by simpa only [Equiv.symm_apply_apply] using h.map g.symm m.symm hinv,
-    fun h ↦ h.map g m hgm⟩
+    FoldReachable f' (g a) (g b) ↔ FoldReachable f a b :=
+  map_iff g.injective m.surjective hgm a b
+
+end FoldReachable
+
+/-- Fold reachability is the reflexive transitive closure of the relation of taking one step.
+This characterization does not require the steps to be involutions. -/
+theorem foldReachable_iff_reflTransGen {I J : Type*} {f : I → J → I} {a b : I} :
+    FoldReachable f a b ↔ Relation.ReflTransGen (fun x y ↦ ∃ j, f x j = y) a b := by
+  constructor
+  · rintro ⟨w, rfl⟩
+    induction w generalizing a with
+    | nil => exact .refl
+    | cons j w ih =>
+      exact (Relation.ReflTransGen.single ⟨j, rfl⟩).trans (ih (a := f a j))
+  · intro h
+    induction h with
+    | refl => exact FoldReachable.refl a
+    | @tail x y _hax hxy ih =>
+      obtain ⟨j, rfl⟩ := hxy
+      exact ih.trans (foldReachable_apply f x j)
+
+namespace FoldReachable
+
+/-- Prove a property on the set of states reachable from an initial state, using preservation
+only at states already in that set. No reversibility of the steps is needed. -/
+@[elab_as_elim]
+theorem induction {I J : Type*} {f : I → J → I} {a b : I} {motive : I → Prop}
+    (h : FoldReachable f a b) (ha : motive a)
+    (hstep : ∀ x j, FoldReachable f a x → motive x → motive (f x j)) : motive b := by
+  have hind {c : I}
+      (hpath : Relation.ReflTransGen (fun x y ↦ ∃ j, f x j = y) a c) : motive c := by
+    induction hpath with
+    | refl => exact ha
+    | @tail x y hax hxy ih =>
+      obtain ⟨j, rfl⟩ := hxy
+      exact hstep x j (foldReachable_iff_reflTransGen.mpr hax) ih
+  exact hind (foldReachable_iff_reflTransGen.mp h)
 
 end FoldReachable
 
@@ -168,14 +230,14 @@ end FoldReachable
 theorem foldReachable_foldl_left_iff {I J : Type*} (f : I → J → I)
     (hf : ∀ j, Function.Involutive (fun a ↦ f a j)) (a b : I) (w : List J) :
     FoldReachable f (w.foldl f a) b ↔ FoldReachable f a b :=
-  (foldReachable_foldl f a w).reachable_iff hf
+  (foldReachable_foldl f a w).congr_left hf
 
 /-- A word of involutive steps on the target value preserves reachability. -/
 @[simp]
 theorem foldReachable_foldl_right_iff {I J : Type*} (f : I → J → I)
     (hf : ∀ j, Function.Involutive (fun a ↦ f a j)) (a b : I) (w : List J) :
     FoldReachable f a (w.foldl f b) ↔ FoldReachable f a b :=
-  (foldReachable_foldl f b w).reachable_right_iff hf
+  (foldReachable_foldl f b w).congr_right hf
 
 /-- An involutive step on the initial value preserves its reachable class, even when other
 steps are not involutions. -/
