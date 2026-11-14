@@ -18,6 +18,8 @@ injective; torsion may be killed by it.
 
 ## Main declarations
 
+* `Module.Dual.injective_eval_iff`: `Module.Dual.eval R M` is injective if and only if every nonzero
+  element of `M` is not killed by some `R`-linear functional.
 * `TauCeti.Module.Dual.evalHomEquiv`: precomposition with evaluation is a linear equivalence on maps
 to a reflexive target, provided the dual of the source is reflexive.
 -/
@@ -25,6 +27,20 @@ to a reflexive target, provided the dual of the source is reflexive.
 public section
 
 open Module Module.Dual
+
+/-- The canonical evaluation map `Module.Dual.eval R M` into the double dual is injective if and
+only if `Module.Dual R M` separates nonzero points of `M`. -/
+theorem Module.Dual.injective_eval_iff {R : Type*} {M : Type*} [CommSemiring R] [AddCommGroup M]
+    [Module R M] :
+    Function.Injective (Module.Dual.eval R M) ↔
+      ∀ x : M, x ≠ 0 → ∃ φ : Module.Dual R M, φ x ≠ 0 := by
+  rw [injective_iff_map_eq_zero]
+  refine ⟨fun h x hx ↦ ?_, fun h x hx ↦ ?_⟩
+  · by_contra! hall
+    exact hx (h x (LinearMap.ext hall))
+  · by_contra hx0
+    obtain ⟨φ, hφ⟩ := h x hx0
+    exact hφ (by simpa using LinearMap.congr_fun hx φ)
 
 namespace TauCeti.Module.Dual
 

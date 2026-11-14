@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
-public import TauCeti.RingTheory.MvPowerSeries.Convolution
-public import Mathlib.LinearAlgebra.Finsupp.Pi
 public import Mathlib.Data.Finsupp.Option
+public import Mathlib.LinearAlgebra.Dual.Defs
+public import Mathlib.LinearAlgebra.Finsupp.Pi
+public import TauCeti.RingTheory.MvPowerSeries.Convolution
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 import Mathlib.Algebra.Order.Antidiag.Tendsto
 import TauCeti.Data.Finsupp.Sum
 import TauCeti.Data.Finsupp.Weight
@@ -41,7 +42,9 @@ ultrametric, restricted series over `R` act on restricted families by convolutio
 (f • a) t = ∑_{p + q = t} f_p • a_q,
 ```
 
-making the restricted families a module over the ring of restricted series. The convolution
+making the restricted families a module over the ring of restricted series, so a bounded `R`-linear
+functional `φ : E →ₗ[R] R` induces a restricted-series-linear functional on restricted families
+(`TauCeti.MvPowerSeries.IsRestrictedFamily.toSubringDualOfBound`). The convolution
 `MvPowerSeries.convSMul` and its module laws, which need no norm, are in
 `TauCeti.RingTheory.MvPowerSeries.Convolution`.
 
@@ -494,6 +497,27 @@ theorem mapLinearMap_isRestrictedSubring_smul {F : Type*} [SeminormedAddCommGrou
     (a : IsRestrictedFamily.addSubgroup E c) :
     mapLinearMap φ hφ (f • a) = f • mapLinearMap φ hφ a :=
   Subtype.ext (convSMul_comp φ (f : MvPowerSeries σ R) a).symm
+
+/-- Applying a bounded `R`-linear functional `φ : E →ₗ[R] R` (`‖φ e‖ ≤ C * ‖e‖`) coefficientwise
+to an `E`-valued restricted family produces a restricted-series-linear functional on
+`IsRestrictedFamily.addSubgroup E c`. -/
+noncomputable def toSubringDualOfBound (φ : E →ₗ[R] R) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖) :
+    Module.Dual (IsRestricted.subring (R := R) c) (IsRestrictedFamily.addSubgroup E c) :=
+  subringLinearEquiv.symm.toLinearMap.comp
+    { toFun := mapLinearMap φ hφ
+      map_add' := map_add _
+      map_smul' t v := by
+        rw [RingHom.id_apply]
+        exact mapLinearMap_isRestrictedSubring_smul φ hφ t v }
+
+@[simp]
+theorem coeff_coe_toSubringDualOfBound (φ : E →ₗ[R] R) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+    (v : IsRestrictedFamily.addSubgroup E c) (α : σ →₀ ℕ) :
+    MvPowerSeries.coeff α (toSubringDualOfBound φ hφ v : MvPowerSeries σ R) =
+      φ ((v : (σ →₀ ℕ) → E) α) := by
+  rw [toSubringDualOfBound, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    coeff_coe_subringLinearEquiv_symm_apply, LinearMap.coe_mk, AddHom.coe_mk, coe_mapLinearMap,
+    Function.comp_apply]
 
 end IsRestrictedFamily
 
