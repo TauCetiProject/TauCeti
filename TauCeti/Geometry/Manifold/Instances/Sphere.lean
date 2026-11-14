@@ -92,7 +92,6 @@ allowing the entire path or loop to be read in one stereographic chart.
   unit spheres is a smooth embedding, at every differentiability order.
 * `TauCeti.contMDiff_unitSphereEquiv_apply`: a smooth family of linear isometries acts smoothly
   on the unit sphere.
-* `Circle.contMDiff_coe`: the inclusion `Circle → ℂ` is smooth.
 * `Circle.instContMDiffSMul`, `Circle.instContMDiffConstSMul`: the circle acts smoothly on every
   complex normed space by scalar multiplication.
 * `TauCeti.injective_mfderiv_circleExp`, `TauCeti.surjective_mfderiv_circleExp`: the derivative of
@@ -478,21 +477,15 @@ namespace Circle
 
 attribute [local instance] finrank_real_complex_fact'
 
-/-- The inclusion of the circle in `ℂ` is smooth: `contMDiff_coe_sphere`, stated for the coercion
-`Circle → ℂ`. -/
-theorem contMDiff_coe {n : ℕ∞ω} : ContMDiff (𝓡 1) 𝓘(ℝ, ℂ) n fun z : Circle ↦ (z : ℂ) :=
-  contMDiff_coe_sphere
-
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedSpace ℂ V]
   [IsScalarTower ℝ ℂ V]
 
 /-- The circle acts smoothly on every complex normed space by scalar multiplication. -/
 instance instContMDiffSMul {n : ℕ∞ω} : ContMDiffSMul (𝓡 1) 𝓘(ℝ, V) n Circle V where
   contMDiff_smul := by
-    have hsmul : ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) n fun p : ℂ × V ↦ p.1 • p.2 := by
-      rw [contMDiff_iff]
-      exact ⟨continuous_smul, fun _ _ ↦ (contDiff_fst.smul contDiff_snd).contDiffOn⟩
-    exact hsmul.comp (contMDiff_coe.prodMap contMDiff_id)
+    have hsmul : ContDiff ℝ n fun p : ℂ × V ↦ p.1 • p.2 := contDiff_fst.smul contDiff_snd
+    exact (hsmul.comp_contMDiff ((contMDiff_coe_sphere.comp contMDiff_fst).prodMk_space
+      contMDiff_snd)).congr fun p ↦ Circle.smul_def p.1 p.2
 
 /-- Each element of the circle acts smoothly on every complex normed space. -/
 instance instContMDiffConstSMul {n : ℕ∞ω} : ContMDiffConstSMul 𝓘(ℝ, V) n Circle V :=
@@ -517,16 +510,12 @@ theorem injective_mfderiv_circleExp (t : ℝ) :
     have hcomp := mfderiv_comp t hcoe
       ((contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero)
     rw [h0, ContinuousLinearMap.comp_zero, mfderiv_eq_fderiv] at hcomp
-    have hd : HasDerivAt (fun s : ℝ => ((Circle.exp s : Circle) : ℂ))
-        (Complex.exp (t * Complex.I) * Complex.I) t := by
-      simp only [Circle.coe_exp]
-      simpa using ((Complex.ofRealCLM.hasDerivAt (x := t)).mul_const Complex.I).cexp
     have h1 := congrArg (fun L => L (1 : ℝ)) hcomp
     -- `fromTangentSpace` identifies the tangent spaces of `ℝ` and `ℂ` with `ℝ` and `ℂ` by the
     -- identity map, and has no simp lemmas, so `change` unfolds it.
     change fderiv ℝ (fun s : ℝ => ((Circle.exp s : Circle) : ℂ)) t 1 = 0 at h1
-    rw [hd.hasFDerivAt.fderiv] at h1
-    simp [Complex.exp_ne_zero] at h1
+    rw [(hasDerivAt_coe_circleExp t).hasFDerivAt.fderiv] at h1
+    simp at h1
   set e : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t
   have hne : e 1 ≠ 0 := fun h0 => he0 (ContinuousLinearMap.ext_ring (by rw [h0]; rfl))
   refine (injective_iff_map_eq_zero e).mpr fun s hs => ?_
@@ -545,9 +534,10 @@ the generator of the rotations `t ↦ exp (t i)`, is `i`. -/
 theorem mvfderiv_coe_mfderiv_circleExp :
     mvfderiv (𝓡 1) (fun z : Circle ↦ (z : ℂ)) 1 (mfderiv 𝓘(ℝ) (𝓡 1) Circle.exp 0 (1 : ℝ)) =
       Complex.I := by
+  have hcoe : MDifferentiableAt (𝓡 1) 𝓘(ℝ, ℂ) (fun z : Circle ↦ (z : ℂ)) 1 :=
+    (contMDiff_coe_sphere (m := 1)).mdifferentiableAt one_ne_zero
   have hcomp := mvfderiv_comp_apply_of_eq (g := fun z : Circle ↦ (z : ℂ))
-    (f := Circle.exp) 0
-    ((Circle.contMDiff_coe (n := 1)).mdifferentiableAt one_ne_zero)
+    (f := Circle.exp) 0 hcoe
     ((contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero) Circle.exp_zero (1 : ℝ)
   -- The coercion `Circle → ℂ` is `Subtype.val` through the definition `Circle`, which blocks
   -- rewriting inside `hcomp`; the composite is read off by transitivity instead.

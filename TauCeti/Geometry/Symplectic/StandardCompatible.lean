@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
+import TauCeti.Analysis.InnerProductSpace.Isometry
 
 /-!
 # The standard compatible triple on `V × V`
@@ -30,8 +30,8 @@ the standard conventions require.
 * `TauCeti.stdSymplecticForm_compatible_product`: `ω₀` is compatible with `J`.
 * `TauCeti.stdSymplecticForm_associatedBilinForm_product`: the metric `g = ω₀(·, J ·)` is the
   sum of the inner products pulled back from the two factors.
-* `TauCeti.stdSymplecticForm_circle_smul`: when `V` is moreover a complex normed space, rotating
-  both factors by the same element of the circle preserves `ω₀`.
+* `TauCeti.stdSymplecticForm_smul`: acting on both factors by the same isometry of `V` fixing
+  the origin, such as a rotation of a complex inner product space, preserves `ω₀`.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1, where `(ℝ^{2n}, ω₀, J₀)` is the standard compatible model.
@@ -124,17 +124,14 @@ lemma stdSymplecticForm_associatedBilinForm_product :
   intro u w
   simp
 
-/-- **Rotations are symplectic.** Let `V` be a complex normed space whose norm comes from a real
-inner product, so that every element of the circle acts on `V` by a linear isometry. Rotating both
-factors of `V × V` by the same element of the circle preserves the standard symplectic form. -/
-theorem stdSymplecticForm_circle_smul [NormedSpace ℂ V] (z : Circle) (x y : V × V) :
-    stdSymplecticForm (z • x) (z • y) = stdSymplecticForm x y := by
-  -- The action of `z` is additive and preserves norms, so it preserves inner products by
-  -- polarization.
-  have h (a b : V) : ⟪(z : ℂ) • a, (z : ℂ) • b⟫_ℝ = ⟪a, b⟫_ℝ := by
-    rw [real_inner_eq_norm_mul_self_add_norm_mul_self_sub_norm_sub_mul_self_div_two,
-      real_inner_eq_norm_mul_self_add_norm_mul_self_sub_norm_sub_mul_self_div_two, ← smul_sub]
-    simp only [norm_smul, Circle.norm_coe, one_mul]
-  simp only [stdSymplecticForm_apply, Circle.smul_def, Prod.smul_fst, Prod.smul_snd, h]
+/-- **Isometries are symplectic.** Acting on both factors of `V × V` by the same isometry of `V`
+fixing the origin preserves the standard symplectic form. For instance, when `V` is a complex
+inner product space, the circle acts on `V` by such isometries. -/
+theorem stdSymplecticForm_smul {M : Type*} [SMulZeroClass M V] [IsIsometricSMul M V] (g : M)
+    (x y : V × V) : stdSymplecticForm (g • x) (g • y) = stdSymplecticForm x y := by
+  have h (a b : V) : ⟪g • a, g • b⟫_ℝ = ⟪a, b⟫_ℝ :=
+    real_inner_map_map_of_dist_map_eq (s := Set.univ) (g := (g • ·)) trivial (smul_zero g)
+      (fun z _ w _ ↦ dist_smul g z w) trivial trivial
+  simp only [stdSymplecticForm_apply, Prod.smul_fst, Prod.smul_snd, h]
 
 end TauCeti

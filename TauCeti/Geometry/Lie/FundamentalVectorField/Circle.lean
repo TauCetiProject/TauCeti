@@ -54,9 +54,10 @@ theorem fundamentalLinearMap_circle_apply (ξ : GroupLieAlgebra (𝓡 1) Circle)
   have horbit : (fun g : Circle ↦ g • v) = L ∘ (fun z : Circle ↦ (z : ℂ)) := by
     ext g
     simp [L, Circle.smul_def]
+  have hcoe : MDifferentiableAt (𝓡 1) 𝓘(ℝ, ℂ) (fun z : Circle ↦ (z : ℂ)) 1 :=
+    (contMDiff_coe_sphere (m := 1)).mdifferentiableAt one_ne_zero
   rw [fundamentalLinearMap_apply, horbit,
-    mvfderiv_comp_apply_of_differentiableAt L.differentiableAt
-      ((Circle.contMDiff_coe (n := 1)).mdifferentiableAt one_ne_zero), L.fderiv,
+    mvfderiv_comp_apply_of_differentiableAt L.differentiableAt hcoe, L.fderiv,
     ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply]
 
 end TauCeti

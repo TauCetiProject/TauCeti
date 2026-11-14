@@ -24,11 +24,10 @@ and angular momentum `L(q, p) = q₁ p₂ - q₂ p₁` (`TauCeti.angularMomentum
 
 This action is the symmetry behind the conservation of angular momentum:
 
-* every rotation is a linear symplectomorphism of `(ℂ × ℂ, ω₀)`, and more generally of the
-  phase space `V × V` of any complex normed space `V` whose norm comes from a real inner product
-  (`TauCeti.stdSymplecticForm_circle_smul`), and preserves the angular momentum
-  (`TauCeti.angularMomentum_circle_smul`) and every central-force Hamiltonian
-  `‖p‖² / (2m) + U(‖q‖)` (`TauCeti.centralForceHamiltonian_circle_smul`);
+* every rotation is a linear symplectomorphism of `(ℂ × ℂ, ω₀)`, as is every isometry of a real
+  inner product space `V` fixing the origin, acting on `V × V` (`TauCeti.stdSymplecticForm_smul`).
+  It preserves the angular momentum (`TauCeti.angularMomentum_circle_smul`) and every
+  central-force Hamiltonian `‖p‖² / (2m) + U(‖q‖)` (`TauCeti.centralForceHamiltonian_smul`);
 * the Hamiltonian vector field of `L` at `(q, p)` is `(i q, i p)`
   (`TauCeti.stdSymplecticForm_hamiltonianVectorField_angularMomentum_one_I`), so
   the rotation `t ↦ exp (t i) • x` by the angle `t` is the integral curve of the Hamiltonian
@@ -114,9 +113,10 @@ theorem hasDerivAt_circleExp_smul_hamiltonianVectorField_angularMomentum (x : �
         (Circle.exp t • x)) t := by
   rw [stdSymplecticForm_hamiltonianVectorField_angularMomentum_one_I]
   -- The scalar action of the circle is the action of the complex number `exp (t i)`.
+  simp only [Circle.smul_def]
   refine ((hasDerivAt_coe_circleExp t).smul_const x).congr_deriv ?_
   obtain ⟨q, p⟩ := x
-  simp only [Circle.smul_def, Prod.smul_mk, smul_eq_mul, mul_assoc]
+  simp only [Prod.smul_mk, smul_eq_mul, mul_assoc]
 
 /-- **The quadratic moment map of the rotations.** For an element `ξ` of the Lie algebra of the
 circle, the quadratic moment map of the rotation action on `ℂ × ℂ` is the angular momentum
@@ -158,38 +158,56 @@ theorem hamiltonianTorusData_angularMomentum :
       mul_comm, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply, imCLM_apply]
   rw [h]
   exact SymplecticForm.hamiltonianTorusData_linearActionMomentMap (I := 𝓡 1) (T := Circle)
-    stdSymplecticForm fun g u w ↦ stdSymplecticForm_circle_smul (V := ℂ) g u w
+    stdSymplecticForm fun g u w ↦ stdSymplecticForm_smul (V := ℂ) g u w
 
 /-! ### The rotations of the punctured phase space -/
 
 section PuncturedPhaseSpace
 
-variable {V : Type*} [NormedAddCommGroup V]
+variable {V G : Type*} [NormedAddCommGroup V] [Group G] [DistribMulAction G V]
 
-/-- The circle acts on the punctured phase space `{(q, p) | q ≠ 0}` by rotating positions and
-momenta alike: a rotation keeps the particle away from the centre of force. -/
-instance [NormedSpace ℂ V] : MulAction Circle (puncturedPhaseSpace V) where
-  smul z x := ⟨z • (x : V × V), mem_puncturedPhaseSpace.2 <| by
-    simpa [Circle.smul_def] using mem_puncturedPhaseSpace.1 x.2⟩
-  one_smul x := Subtype.ext (one_smul Circle (x : V × V))
-  mul_smul z w x := Subtype.ext (mul_smul z w (x : V × V))
+/-- A group acting linearly on `V` acts on the punctured phase space `{(q, p) | q ≠ 0}` by acting
+on positions and momenta alike: for instance, a rotation keeps the particle away from the centre
+of force. -/
+instance : MulAction G (puncturedPhaseSpace V) where
+  smul g x := ⟨g • (x : V × V), mem_puncturedPhaseSpace.2 <| by
+    simpa [smul_ne_zero_iff_ne] using mem_puncturedPhaseSpace.1 x.2⟩
+  one_smul x := Subtype.ext (one_smul G (x : V × V))
+  mul_smul g h x := Subtype.ext (mul_smul g h (x : V × V))
 
 @[simp]
-theorem coe_circle_smul_puncturedPhaseSpace [NormedSpace ℂ V] (z : Circle)
-    (x : puncturedPhaseSpace V) : ((z • x : puncturedPhaseSpace V) : V × V) = z • (x : V × V) :=
+theorem coe_smul_puncturedPhaseSpace (g : G) (x : puncturedPhaseSpace V) :
+    ((g • x : puncturedPhaseSpace V) : V × V) = g • (x : V × V) :=
   (rfl)
 
-variable [NormedSpace ℝ V] [NormedSpace ℂ V] [IsScalarTower ℝ ℂ V] {n : ℕ∞ω}
+variable [NormedSpace ℝ V] {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace G] [ChartedSpace H G]
+  {n : ℕ∞ω}
 
-/-- The circle acts smoothly on the punctured phase space. -/
-instance : ContMDiffSMul (𝓡 1) 𝓘(ℝ, V × V) n Circle (puncturedPhaseSpace V) where
-  contMDiff_smul := (ContMDiff.subtypeVal_comp_iff (puncturedPhaseSpace V) _).1 <|
-    (contMDiff_smul (I := 𝓡 1) (I' := 𝓘(ℝ, V × V)) (G := Circle) (M := V × V)).comp
-      (contMDiff_fst.prodMk (contMDiff_subtype_val.comp contMDiff_snd))
+/-- A group acting smoothly and linearly on `V` acts smoothly on the punctured phase space. -/
+instance [ContMDiffSMul I 𝓘(ℝ, V) n G V] :
+    ContMDiffSMul I 𝓘(ℝ, V × V) n G (puncturedPhaseSpace V) where
+  contMDiff_smul := by
+    have hx : ContMDiff (I.prod 𝓘(ℝ, V × V)) 𝓘(ℝ, V × V) n
+        fun p : G × puncturedPhaseSpace V ↦ (p.2 : V × V) :=
+      contMDiff_subtype_val.comp contMDiff_snd
+    have hsmul := contMDiff_smul (I := I) (I' := 𝓘(ℝ, V)) (n := n) (G := G) (M := V)
+    have hfst : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.fst := contDiff_fst.contMDiff
+    have hsnd : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.snd := contDiff_snd.contMDiff
+    exact (ContMDiff.subtypeVal_comp_iff (puncturedPhaseSpace V) _).1 <|
+      (hsmul.comp (contMDiff_fst.prodMk (hfst.comp hx))).prodMk_space
+        (hsmul.comp (contMDiff_fst.prodMk (hsnd.comp hx)))
 
-/-- Each rotation acts smoothly on the punctured phase space. -/
-instance : ContMDiffConstSMul 𝓘(ℝ, V × V) n Circle (puncturedPhaseSpace V) :=
-  ⟨fun z ↦ ContMDiffSMul.contMDiff_const_smul (I := 𝓡 1) z⟩
+/-- Each element of a group acting smoothly and linearly on `V` acts smoothly on the punctured
+phase space. -/
+instance [ContMDiffConstSMul 𝓘(ℝ, V) n G V] :
+    ContMDiffConstSMul 𝓘(ℝ, V × V) n G (puncturedPhaseSpace V) := by
+  refine ⟨fun g ↦ (ContMDiff.subtypeVal_comp_iff (puncturedPhaseSpace V) _).1 ?_⟩
+  have hsmul := ContMDiffConstSMul.contMDiff_const_smul (I := 𝓘(ℝ, V)) (n := n) (M := V) g
+  have hfst : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.fst := contDiff_fst.contMDiff
+  have hsnd : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.snd := contDiff_snd.contMDiff
+  exact (hsmul.comp (hfst.comp contMDiff_subtype_val)).prodMk_space
+    (hsmul.comp (hsnd.comp contMDiff_subtype_val))
 
 end PuncturedPhaseSpace
 
@@ -205,6 +223,6 @@ theorem hamiltonianTorusData_angularMomentum_puncturedPhaseSpace :
       angularMomentum 1 I (x : ℂ × ℂ) •
         (imCLM ∘L mvfderiv (𝓡 1) (fun z : Circle ↦ (z : ℂ)) 1).toLinearMap :=
   hamiltonianTorusData_angularMomentum.mpullback contMDiff_subtype_val
-    coe_circle_smul_puncturedPhaseSpace
+    coe_smul_puncturedPhaseSpace
 
 end TauCeti
