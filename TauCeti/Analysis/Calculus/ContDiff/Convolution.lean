@@ -71,6 +71,8 @@ a smooth one. And a bounded `u` has a mollification with bounded derivative, hen
   the bound `∂_d (ρ ⋆ u) ≤ c` on the directional derivative.
 * `HasCompactSupport.norm_fderiv_convolution_left_le`: the mollification of a function bounded by
   `M` has derivative bounded by `M * ∫ ‖Dρ‖`.
+* `HasCompactSupport.norm_iteratedFDeriv_convolution_left_le`: more generally, its `n`-th
+  derivative is bounded by `M * ∫ ‖Dⁿρ‖`.
 * `HasCompactSupport.lipschitzWith_convolution_left`: so it is Lipschitz with constant
   `M * ∫ ‖Dρ‖`.
 -/
@@ -373,6 +375,31 @@ theorem _root_.HasCompactSupport.norm_fderiv_convolution_left_le [IsFiniteMeasur
       _ = ‖fderiv ℝ ρ (x - y)‖ * (M * ‖d‖) := by ring
   · rw [integral_mul_const, integral_sub_left_eq_self (fun y ↦ ‖fderiv ℝ ρ y‖) μ x]
     ring
+
+/-- The mollification `ρ ⋆ u` of a function bounded by `M`, by a `Cⁿ` compactly supported kernel
+`ρ`, has `n`-th derivative bounded by `M * ∫ ‖Dⁿρ‖`, uniformly in the point. For `n = 0` this is
+the bound `‖ρ ⋆ u‖ ≤ M * ∫ |ρ|`. -/
+theorem _root_.HasCompactSupport.norm_iteratedFDeriv_convolution_left_le
+    [IsFiniteMeasureOnCompacts μ] (hρc : HasCompactSupport ρ) {n : ℕ} (hρ : ContDiff ℝ n ρ)
+    {u : G → E'} (hu : LocallyIntegrable u μ) (huM : ∀ y, ‖u y‖ ≤ M) (x : G) :
+    ‖iteratedFDeriv ℝ n (ρ ⋆[lsmul ℝ ℝ, μ] u) x‖ ≤ M * ∫ y, ‖iteratedFDeriv ℝ n ρ y‖ ∂μ := by
+  have hgi : Integrable (fun y ↦ ‖iteratedFDeriv ℝ n ρ y‖) μ :=
+    (hρ.continuous_iteratedFDeriv le_rfl).norm.integrable_of_hasCompactSupport
+      (hρc.iteratedFDeriv n).norm
+  rw [← convolution_flip, hρc.iteratedFDeriv_convolution_right _ hu hρ le_rfl, convolution_def]
+  refine (norm_integral_le_of_norm_le ((hgi.comp_sub_left x).const_mul M)
+    (Eventually.of_forall fun y ↦ ?_)).trans_eq ?_
+  · -- The integrand is `m ↦ Dⁿρ (x - y) m • u y`, of norm at most `‖Dⁿρ (x - y)‖ ‖u y‖`.
+    have hL : ‖(lsmul ℝ ℝ).flip (u y)‖ ≤ ‖u y‖ :=
+      opNorm_le_bound _ (norm_nonneg _) fun r ↦ by
+        rw [flip_apply, lsmul_apply, norm_smul, mul_comm]
+    calc ‖((compContinuousMultilinearMapL ℝ (fun _ : Fin n ↦ G) ℝ E').comp (lsmul ℝ ℝ).flip)
+          (u y) (iteratedFDeriv ℝ n ρ (x - y))‖
+        ≤ ‖(lsmul ℝ ℝ).flip (u y)‖ * ‖iteratedFDeriv ℝ n ρ (x - y)‖ :=
+          norm_compContinuousMultilinearMap_le _ _
+      _ ≤ M * ‖iteratedFDeriv ℝ n ρ (x - y)‖ :=
+          mul_le_mul_of_nonneg_right (hL.trans (huM y)) (norm_nonneg _)
+  · rw [integral_const_mul, integral_sub_left_eq_self (fun y ↦ ‖iteratedFDeriv ℝ n ρ y‖) μ x]
 
 omit [SFinite μ] in
 /-- The mollification `ρ ⋆ u` of a function bounded by `M`, by a `C¹` compactly supported kernel
