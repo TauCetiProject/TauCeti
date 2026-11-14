@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Field.Basic
 public import Mathlib.Algebra.Polynomial.Inductions
 public import Mathlib.Algebra.Ring.Action.ConjAct
 public import Mathlib.Algebra.Ring.Subring.Pointwise
+public import Mathlib.Tactic.LinearCombination
 public import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -39,17 +40,18 @@ right of the powers of `x` and `x*`, while the defects lie in `z · C[z]` with `
 
 ## Main results
 
-* `TauCeti.eq_sub_sum_mul_inv_of_mul_eq_add_sum`: the explicit formula for `z**`.
-* `TauCeti.mem_of_mul_eq_add_sum`: `z**` lies in every subring containing `C`, `x*`, `z*`
-  and `z`.
-* `TauCeti.eq_pow_mul_mul_of_mul_eq_pow_mul`: the case with no interacting term.
-* `TauCeti.eq_sub_mul_inv_of_mul_eq_add` and `TauCeti.mem_of_mul_eq_add`: the case of exactly one
-  interacting term, of full degree `N`.
-* `TauCeti.sum_div_eq_sub_sum_of_mul_eq_eval₂` and `TauCeti.sum_div_mem_of_mul_eq_eval₂`: the
-  commutative instance. If `x z = P(y)` and `y w = Q(x)` for polynomials `P, Q` and
-  `e ≥ deg Q`, then `(∑ₐ Q_a P(0) ^ a z ^ (e - a)) / y` equals
-  `z ^ e w - ∑ₐ Q_a z ^ (e - a) D_{P,a}(y)` with `D_{P,a} = Polynomial.divX (P ^ a)`, and lies in
-  every subring containing the coefficients, `y`, `z` and `w`.
+All results live in the namespace `TauCeti.ClusterReplacement`.
+
+* `eq_sub_sum_mul_inv_of_mul_eq_add_sum`: the explicit formula for `z**`.
+* `mem_of_mul_eq_add_sum`: `z**` lies in every subring containing `C`, `x*`, `z*` and `z`.
+* `eq_pow_mul_mul_of_mul_eq_pow_mul`: the case with no interacting term.
+* `eq_sub_mul_inv_of_mul_eq_add` and `mem_of_mul_eq_add`: the case of exactly one interacting
+  term, of full degree `N`.
+* `sum_div_eq_sub_sum_of_mul_eq_eval₂` and `sum_div_mem_of_mul_eq_eval₂`: the commutative
+  instance. If `y ≠ 0`, `x z = P(y)` and `y w = Q(x)` for polynomials `P, Q` and `e ≥ deg Q`,
+  then `(∑ₐ Q_a P(0) ^ a z ^ (e - a)) / y` equals `z ^ e w - ∑ₐ Q_a z ^ (e - a) D_{P,a}(y)` with
+  `D_{P,a} = Polynomial.divX (P ^ a)`, and lies in every subring containing the coefficients,
+  `y`, `z` and `w`.
 
 ## References
 
@@ -63,7 +65,7 @@ public section
 open Polynomial
 open scoped Pointwise
 
-namespace TauCeti
+namespace TauCeti.ClusterReplacement
 
 section DivisionRing
 
@@ -98,14 +100,15 @@ theorem eq_sub_sum_mul_inv_of_mul_eq_add_sum {x z xs zs zss φ n₀ m₀ : D} {N
     (hd : ∀ a ∈ s, d a = g a * ((x ^ n a)⁻¹ * φ * x ^ n a) * c a) :
     zss = xs ^ N * φ * zs - (∑ a ∈ s, xs ^ (N - n a) * (xs ^ n a * x ^ n a - g a) *
       ((x ^ n a)⁻¹ * φ * x ^ n a) * c a) * z⁻¹ := by
-  have key : zss * z = xs ^ N * φ * zs * z - ∑ a ∈ s, xs ^ (N - n a) *
+  have key : zss * z = xs ^ N * φ * (zs * z) - ∑ a ∈ s, xs ^ (N - n a) *
       (xs ^ n a * x ^ n a - g a) * ((x ^ n a)⁻¹ * φ * x ^ n a) * c a := by
-    rw [hzss, mul_assoc (xs ^ N * φ), hzs, mul_add, ← hm₀, Finset.mul_sum, add_sub_assoc,
-      ← Finset.sum_sub_distrib, mul_assoc]
+    rw [hzss, hzs, ← hm₀]
+    simp only [mul_add, Finset.mul_sum, add_sub_assoc, ← Finset.sum_sub_distrib]
     congr 1
-    refine Finset.sum_congr rfl fun a ha ↦ ?_
-    rw [hd a ha, replacement_term (hN a ha)]
-  rw [← mul_inv_cancel_right₀ hz zss, key, sub_mul, mul_inv_cancel_right₀ hz]
+    · noncomm_ring
+    · refine Finset.sum_congr rfl fun a ha ↦ ?_
+      rw [hd a ha, replacement_term (hN a ha)]
+  rw [← mul_inv_cancel_right₀ hz zss, key, ← mul_assoc, sub_mul, mul_inv_cancel_right₀ hz]
 
 /-- **Finite polynomial replacement, membership.** Under the hypotheses of
 `eq_sub_sum_mul_inv_of_mul_eq_add_sum`, if `x` and `z` normalize a subring `C` containing `φ` and
@@ -206,11 +209,11 @@ end DivisionRing
 private theorem pow_mul_pow_sub_eq_mul_eval₂_divX {R F : Type*} [Ring R] [Field F] (f : R →+* F)
     (P : R[X]) {x y z : F} (hxz : x * z = P.eval₂ f y) (a : ℕ) :
     z ^ a * x ^ a - f (P.coeff 0) ^ a = y * (divX (P ^ a)).eval₂ f y := by
+  have hP : (P ^ a).coeff 0 = P.coeff 0 ^ a := by
+    simpa only [constantCoeff_apply] using map_pow constantCoeff P a
   have h := congrArg (eval₂ f y) (X_mul_divX_add (P ^ a))
-  rw [eval₂_add, eval₂_mul, eval₂_X, eval₂_C, eval₂_pow, ← hxz, ← constantCoeff_apply,
-    map_pow, constantCoeff_apply, map_pow] at h
-  rw [← mul_pow, mul_comm z x, ← h]
-  ring
+  simp only [eval₂_add, eval₂_mul, eval₂_X, eval₂_C, eval₂_pow, hP, map_pow, ← hxz] at h
+  linear_combination -h
 
 /-- **Polynomial replacement.** Let `f : R →+* F` be a ring map into a field and let `y ≠ 0`
 with `x z = P_f(y)` and `y w = Q_f(x)` for polynomials `P, Q` over `R`. For every `e ≥ deg Q`,
@@ -221,14 +224,16 @@ theorem sum_div_eq_sub_sum_of_mul_eq_eval₂ {R F : Type*} [Ring R] [Field F] (f
     (hxz : x * z = P.eval₂ f y) (hyw : y * w = Q.eval₂ f x) :
     (∑ a ∈ Q.support, f (Q.coeff a) * f (P.coeff 0) ^ a * z ^ (e - a)) / y =
       z ^ e * w - ∑ a ∈ Q.support, f (Q.coeff a) * z ^ (e - a) * (divX (P ^ a)).eval₂ f y := by
-  rw [div_eq_iff hy, sub_mul, mul_assoc, mul_comm w y, hyw, eval₂_eq_sum, Polynomial.sum_def,
-    Finset.mul_sum, Finset.sum_mul, ← Finset.sum_sub_distrib]
-  refine Finset.sum_congr rfl fun a ha ↦ ?_
-  have h := pow_mul_pow_sub_eq_mul_eval₂_divX f P hxz a
-  rw [← pow_sub_mul_pow z (le_trans (le_natDegree_of_mem_supp a ha) he)]
-  calc _ = f (Q.coeff a) * z ^ (e - a) * (z ^ a * x ^ a - (z ^ a * x ^ a - f (P.coeff 0) ^ a)) := by
-        ring
-    _ = _ := by rw [h]; ring
+  have hsum : ∑ a ∈ Q.support, f (Q.coeff a) * f (P.coeff 0) ^ a * z ^ (e - a) =
+      z ^ e * Q.eval₂ f x -
+        (∑ a ∈ Q.support, f (Q.coeff a) * z ^ (e - a) * (divX (P ^ a)).eval₂ f y) * y := by
+    rw [eval₂_eq_sum, Polynomial.sum_def, Finset.mul_sum, Finset.sum_mul,
+      ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun a ha ↦ ?_
+    rw [← pow_sub_mul_pow z (le_trans (le_natDegree_of_mem_supp a ha) he)]
+    linear_combination -(f (Q.coeff a) * z ^ (e - a)) * pow_mul_pow_sub_eq_mul_eval₂_divX f P hxz a
+  rw [div_eq_iff hy, hsum, ← hyw]
+  ring
 
 /-- **Polynomial replacement, membership.** Under the hypotheses of
 `sum_div_eq_sub_sum_of_mul_eq_eval₂`, the element
@@ -245,4 +250,4 @@ theorem sum_div_mem_of_mul_eq_eval₂ {R F : Type*} [Ring R] [Field F] (f : R �
   rw [eval₂_eq_sum, Polynomial.sum_def]
   exact H.sum_mem fun i _ ↦ H.mul_mem (hfH ⟨_, rfl⟩) (H.pow_mem hyH _)
 
-end TauCeti
+end TauCeti.ClusterReplacement
