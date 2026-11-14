@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.CanonicalDecomposition
 public import TauCeti.Analysis.Complex.Conformal.Moebius
+import TauCeti.Analysis.Meromorphic.Order
 
 /-!
 # Boundary-compatible Blaschke factors and finite Blaschke products
@@ -40,15 +41,19 @@ Mathlib's canonical factor `Complex.canonicalFactor 1 a`.
 
 * `TauCeti.blaschkeFactor_eq_div`: for `‖a‖ ≤ 1`, the factor agrees with the rational
   expression wherever its denominator is nonzero.
-* `TauCeti.coe_unitDiscMoebius_eq_blaschkeFactor` and
-  `TauCeti.blaschkeFactor_eq_inv_canonicalFactor`: comparison with the native disc automorphism
-  and with Mathlib's canonical factor.
+* `TauCeti.coe_unitDiscMoebius_eq_blaschkeFactor`,
+  `TauCeti.blaschkeFactor_eq_inv_canonicalFactor`, and
+  `TauCeti.blaschkeFactor_div_eq_inv_canonicalFactor`: comparison with the native disc automorphism
+  and with Mathlib's canonical factor (at radius `1` and general radius `r > 0`).
 * `TauCeti.norm_blaschkeProduct_eq_one`: finite Blaschke products are unimodular on the unit
   circle.
 * `TauCeti.norm_blaschkeProduct_lt_one_iff`: on the open disc, a finite Blaschke product has
   modulus less than one exactly when some interior parameter has positive multiplicity.
 * `TauCeti.blaschkeProduct_eq_zero_iff`: the zeros of a finite Blaschke product in the closed
   disc are its interior parameters of positive multiplicity.
+* `TauCeti.analyticOnNhd_blaschkeProduct_div` and
+  `AnalyticOnNhd.exists_blaschkeProduct_div_mul_eq`: analyticity of rescaled Blaschke products and
+  Blaschke factorization on `closedBall 0 r` when `g` has no zeros on `sphere 0 r`.
 
 ## References
 
@@ -262,4 +267,96 @@ lemma blaschkeProduct_eq_zero_iff (hz : ‖z‖ ≤ 1) :
   simp [blaschkeProduct_apply, Finset.prod_eq_zero_iff, pow_eq_zero_iff',
     blaschkeFactor_eq_zero_iff hz, and_comm]
 
+/-- For an interior parameter `u ∈ ball 0 r` (`0 < r`), the rescaled Blaschke factor
+`z ↦ blaschkeFactor (u / r) (z / r)` is the reciprocal of Mathlib's canonical factor
+`Complex.canonicalFactor r u`. -/
+lemma blaschkeFactor_div_eq_inv_canonicalFactor {u : ℂ} {r : ℝ} (hu : u ∈ ball 0 r) (z : ℂ) :
+    blaschkeFactor (u / r) (z / r) = (canonicalFactor r u z)⁻¹ := by
+  have hr : 0 < r := pos_of_mem_ball hu
+  have hr0 : (r : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hr.ne'
+  have hur : ‖u / r‖ < 1 := by
+    rw [norm_div, Complex.norm_real, Real.norm_of_nonneg hr.le, div_lt_one hr]
+    exact mem_ball_zero_iff.mp hu
+  have hnum : (r : ℂ) ^ 2 * (z / r - u / r) = r * (z - u) := by field_simp
+  have hden : (r : ℂ) ^ 2 * (1 - conj (u / r) * (z / r)) = r ^ 2 - conj u * z := by
+    rw [map_div₀, conj_ofReal]
+    field_simp
+  rw [blaschkeFactor_of_norm_lt_one hur, canonicalFactor_apply, inv_div,
+    ← mul_div_mul_left _ _ (pow_ne_zero 2 hr0), hnum, hden]
+
+/-- For `0 < r`, the rescaled Blaschke product `z ↦ blaschkeProduct a n (z / r)` is analytic on a
+neighbourhood of `closedBall 0 r`. -/
+lemma analyticOnNhd_blaschkeProduct_div (a : ι → ℂ) (n : ι → ℕ) {r : ℝ} (hr : 0 < r) :
+    AnalyticOnNhd ℂ (fun z ↦ blaschkeProduct a n (z / r)) (closedBall 0 r) := by
+  intro z hz
+  have hzr : z / r ∈ closedBall 0 1 := by
+    rw [mem_closedBall_zero_iff, norm_div, Complex.norm_real, Real.norm_of_nonneg hr.le,
+      div_le_one hr]
+    exact mem_closedBall_zero_iff.mp hz
+  have hdiv_an : AnalyticAt ℂ (fun w : ℂ ↦ w / r) z := by
+    fun_prop (disch := exact Complex.ofReal_ne_zero.mpr hr.ne')
+  exact (analyticOnNhd_blaschkeProduct a n (z / r) hzr).fun_comp
+    (f := fun w : ℂ ↦ w / r) hdiv_an
+
 end TauCeti
+
+open Complex Filter Metric Set Topology
+
+/-- **Blaschke factorization on a disc of radius `r`.** If `g` is analytic on a neighbourhood of
+`closedBall 0 r` (`0 < r`) and has no zeros on `sphere 0 r`, then `g` factors on `closedBall 0 r`
+as `g z = blaschkeProduct a n (z / r) * G z`, where `a` is a finite family of interior parameters
+(`‖a i‖ < 1`) and `G` is analytic and zero-free on `closedBall 0 r`. -/
+theorem AnalyticOnNhd.exists_blaschkeProduct_div_mul_eq {g : ℂ → ℂ} {r : ℝ}
+    (hg : AnalyticOnNhd ℂ g (closedBall 0 r)) (hr : 0 < r) (hs : ∀ w ∈ sphere 0 r, g w ≠ 0) :
+    ∃ (ι : Type) (_ : Fintype ι) (a : ι → ℂ) (n : ι → ℕ) (G : ℂ → ℂ),
+      (∀ i, ‖a i‖ < 1) ∧ AnalyticOnNhd ℂ G (closedBall 0 r) ∧
+      (∀ z ∈ closedBall 0 r, G z ≠ 0) ∧
+      ∀ z ∈ closedBall 0 r, g z = TauCeti.blaschkeProduct a n (z / r) * G z := by
+  classical
+  have hord : ∀ u : closedBall (0 : ℂ) r, meromorphicOrderAt g u ≠ ⊤ := fun u ↦
+    hg.meromorphicOrderAt_ne_top_of_forall_mem_sphere_ne_zero hs u.2
+  obtain ⟨G, D⟩ := hg.meromorphicOn.exists_ecanonicalDecomp hord
+  have hdiv_sphere : ∀ v : ℂ, MeromorphicOn.divisor g (sphere 0 r) v = 0 := fun v ↦ by
+    by_cases hv : v ∈ sphere 0 r
+    · simp [MeromorphicOn.divisor_apply (hg.meromorphicOn.mono_set sphere_subset_closedBall) hv,
+        (hg v (sphere_subset_closedBall hv)).meromorphicOrderAt_eq,
+        (hg v (sphere_subset_closedBall hv)).analyticOrderAt_eq_zero.mpr (hs v hv)]
+    · exact Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hv
+  set d := MeromorphicOn.divisor g (ball 0 r) with hd_def
+  have hd_fin : d.support.Finite := hg.meromorphicOn.divisor_ball_support_finite
+  let s : Finset ℂ := hd_fin.toFinset
+  have hs_ball : ∀ i : s, (i : ℂ) ∈ ball 0 r := fun i ↦
+    d.supportWithinDomain (hd_fin.mem_toFinset.mp i.2)
+  have hd_nonneg : ∀ u : ℂ, 0 ≤ d u :=
+    MeromorphicOn.AnalyticOnNhd.divisor_nonneg (hg.mono ball_subset_closedBall)
+  let a : s → ℂ := fun i ↦ (i : ℂ) / r
+  let n : s → ℕ := fun i ↦ (d i).toNat
+  have ha : ∀ i : s, ‖a i‖ < 1 := fun i ↦ by
+    rw [norm_div, Complex.norm_real, Real.norm_of_nonneg hr.le, div_lt_one hr]
+    exact mem_ball_zero_iff.mp (hs_ball i)
+  -- Identify the product of reciprocal canonical factors with the rescaled Blaschke product.
+  have hprod : ∀ z : ℂ, (∏ᶠ u, canonicalFactor r u ^ (-d u)) z =
+      TauCeti.blaschkeProduct a n (z / r) := by
+    have hmul_sub : (fun u ↦ canonicalFactor r u ^ (-d u)).mulSupport ⊆ (s : Set ℂ) := by
+      intro u hu
+      rw [Finset.mem_coe, hd_fin.mem_toFinset, Function.mem_support]
+      exact fun hdu ↦ hu (by simp [hdu])
+    intro z
+    rw [finprod_eq_prod_of_mulSupport_subset _ hmul_sub, Finset.prod_apply,
+      TauCeti.blaschkeProduct_apply, ← Finset.prod_coe_sort s]
+    refine Finset.prod_congr rfl fun i _ ↦ ?_
+    have hdi : (n i : ℤ) = d i := Int.toNat_of_nonneg (hd_nonneg i)
+    simp only [a, ← hdi, zpow_neg, zpow_natCast, ← inv_pow, Pi.pow_apply,
+      TauCeti.blaschkeFactor_div_eq_inv_canonicalFactor (hs_ball i) z]
+  refine ⟨s, inferInstance, a, n, G, ha, D.analyticOnNhd, D.ne_zero, ?_⟩
+  have hB_an := (TauCeti.analyticOnNhd_blaschkeProduct_div a n hr).mul D.analyticOnNhd
+  have h0_mem : (0 : ℂ) ∈ closedBall 0 r := mem_closedBall_self hr.le
+  have hfreq : ∃ᶠ x in 𝓝[≠] (0 : ℂ), g x = TauCeti.blaschkeProduct a n (x / r) * G x := by
+    refine Eventually.frequently ?_
+    filter_upwards [eventuallyEq_codiscreteWithin_iff_forall_eventually_nhdsNE.mp D.eventuallyEq 0
+      h0_mem, nhdsWithin_le_nhds (closedBall_mem_nhds 0 hr)] with x hx hxU
+    simpa only [hdiv_sphere, zpow_zero, finprod_one, mul_one, smul_eq_mul, Pi.mul_apply,
+      ← hd_def, hprod x] using hx hxU
+  exact fun z hz ↦ hg.eqOn_of_preconnected_of_frequently_eq hB_an
+    (convex_closedBall 0 r).isPreconnected h0_mem hfreq hz
+

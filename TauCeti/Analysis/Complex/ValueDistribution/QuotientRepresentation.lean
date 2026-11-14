@@ -7,14 +7,16 @@ module
 
 public import Mathlib.Analysis.Complex.Poisson
 public import Mathlib.Analysis.Complex.ValueDistribution.Proximity.Basic
-public import TauCeti.Analysis.Complex.Conformal.BlaschkeProduct
 import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import Mathlib.Order.Interval.Set.Infinite
 import TauCeti.Analysis.Analytic.IsolatedZeros
-import TauCeti.Analysis.Complex.Poisson.Basic
+import TauCeti.Analysis.Complex.Conformal.BlaschkeProduct
+import TauCeti.Analysis.Complex.JensenFormula
+import TauCeti.Analysis.Complex.Poisson.Integral
 import TauCeti.Analysis.Complex.Poisson.Logarithm
-import TauCeti.Analysis.Complex.RadialUniqueness
-import TauCeti.Analysis.Meromorphic.Order
+import TauCeti.Analysis.Complex.ValueDistribution.Proximity.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrability.PosLog
+import TauCeti.Analysis.SpecialFunctions.Log.PosLog
 
 /-!
 # Nevanlinna's quotient representation and its optimality
@@ -28,11 +30,10 @@ functions near `closedBall 0 R` normalized by `h 0 = 1`, controlling both `Real.
 The construction proceeds in three steps:
 
 1. **Blaschke factorization on a zero-free circle**
-   (`AnalyticOnNhd.exists_blaschkeProduct_div_mul_eq`).
-   When `g` is analytic on `closedBall 0 r` (`0 < r`) and has no zeros on `sphere 0 r`, Mathlib's
-   extended canonical decomposition `MeromorphicOn.exists_ecanonicalDecomp` and the reciprocal
-   identity `TauCeti.blaschkeFactor_div_eq_inv_canonicalFactor` write
-   `g z = blaschkeProduct a n (z / r) * G z` throughout `closedBall 0 r`, with interior parameters
+   (`AnalyticOnNhd.exists_blaschkeProduct_div_mul_eq` in
+   `TauCeti.Analysis.Complex.Conformal.BlaschkeProduct`).
+   When `g` is analytic on `closedBall 0 r` (`0 < r`) and has no zeros on `sphere 0 r`, `g` factors
+   throughout `closedBall 0 r` as `g z = blaschkeProduct a n (z / r) * G z` with interior parameters
    `‖a i‖ < 1` and `G` analytic and zero-free on `closedBall 0 r`.
 2. **The radius-`r` quotient multiplier (`TauCeti.quotientMultiplier`).**
    Setting
@@ -47,16 +48,17 @@ The construction proceeds in three steps:
 3. **Radial smoothing across boundary zeros (`AnalyticOnNhd.exists_log_norm_le_proximity_add`).**
    When `g` has zeros on `sphere 0 R` (for instance `g z = z - 1` at `R = 1`), the zero-free
    Herglotz formula does not apply on `closedBall 0 R` directly. Extending `g` to a slightly larger
-   open disc, choosing `r > R` avoiding the finitely many zeros of `g` there, and using continuity
-   of `r ↦ m(r, g)` (`AnalyticOnNhd.continuousAt_proximity_top`) yields `h` analytic near
+   open disc, choosing `r > R` avoiding the finitely many zeros of `g` there, and using local radial
+   continuity of `r ↦ m(r, g)` (`ContinuousOn.continuousAt_proximity_top`) yields `h` analytic near
    `closedBall 0 R` with `h 0 = 1` and both `Real.log ‖h z‖` and `Real.log ‖h z * g z‖` bounded by
    `m(R, g) + ε` on `closedBall 0 R`.
 
-Conversely, Jensen's inequality at `h 0 = 1` together with the almost-everywhere identity
-`log ‖h z‖ + log⁺ ‖g z‖ = max (log ‖h z‖) (log ‖h z * g z‖)` off the isolated zeros of `h` and `g`
-on `sphere 0 R` shows that no multiplier `h` with `h 0 = 1` can improve upon `m(R, g)`
-(`AnalyticOnNhd.proximity_top_le_max_sSup_log_norm`), identifying `m(R, g)` as the infimum over
-all normalized multipliers (`AnalyticOnNhd.sInf_max_sSup_log_norm_eq_proximity_top`).
+Conversely, Jensen's inequality at `h 0 = 1` (`AnalyticOnNhd.log_norm_le_circleAverage_log_norm`)
+together with the pointwise bound `log ‖h z‖ + log⁺ ‖g z‖ ≤ max (log ‖h z‖) (log ‖h z * g z‖)` off
+the isolated zeros of `h` on `sphere 0 R` shows that no multiplier `h` with `1 ≤ ‖h 0‖` can improve
+upon `m(R, g)` (`AnalyticOnNhd.proximity_top_le_of_forall_mem_sphere_log_norm_le` and
+`AnalyticOnNhd.proximity_top_le_max_sSup_log_norm`), identifying `m(R, g)` as the infimum over all
+normalized multipliers (`AnalyticOnNhd.sInf_max_sSup_log_norm_eq_proximity_top`).
 
 ## Main definitions
 
@@ -65,26 +67,20 @@ all normalized multipliers (`AnalyticOnNhd.sInf_max_sSup_log_norm_eq_proximity_t
 
 ## Main results
 
-* `TauCeti.blaschkeFactor_div_eq_inv_canonicalFactor` and
-  `TauCeti.analyticOnNhd_blaschkeProduct_div`: for `u ∈ ball 0 r`,
-  `blaschkeFactor (u / r) (z / r) = (canonicalFactor r u z)⁻¹`, and rescaled Blaschke products are
-  analytic near `closedBall 0 r`.
-* `AnalyticOnNhd.exists_blaschkeProduct_div_mul_eq`: Blaschke factorization on `closedBall 0 r`
-  when `g` has no zeros on `sphere 0 r`.
-* `AnalyticOnNhd.quotientMultiplier_mul_of_norm_eq` and
+* `TauCeti.log_norm_quotientMultiplier_le_proximity`,
+  `AnalyticOnNhd.quotientMultiplier_mul_of_norm_eq`, and
   `AnalyticOnNhd.log_norm_quotientMultiplier_mul_le_proximity`: the complex product identity (with
-  centre phase `G 0 / ‖G 0‖`) and interior logarithmic bound for `quotientMultiplier g r * g`.
-* `AnalyticOnNhd.continuousAt_proximity_top` and
-  `AnalyticOnNhd.exists_gt_log_norm_quotientMultiplier_le_proximity_add`: continuity of
-  `ValueDistribution.proximity g ⊤` at `R ≥ 0` and radial smoothing of `quotientMultiplier` across
-  boundary zeros.
-* `AnalyticOnNhd.exists_log_norm_le_proximity_add` and
-  `AnalyticOnNhd.exists_max_sSup_log_norm_le_proximity_add`: Nevanlinna's quotient representation.
-* `AnalyticOnNhd.log_norm_le_circleAverage_log_norm`,
+  centre phase `G 0 / ‖G 0‖`) and interior logarithmic bounds for `quotientMultiplier g r` and
+  `quotientMultiplier g r * g`.
+* `AnalyticOnNhd.exists_gt_log_norm_quotientMultiplier_le_proximity_add`,
+  `AnalyticOnNhd.exists_log_norm_le_proximity_add`, and
+  `AnalyticOnNhd.exists_max_sSup_log_norm_le_proximity_add`: radial smoothing of
+  `quotientMultiplier` across boundary zeros and Nevanlinna's quotient representation.
+* `MeromorphicOn.eventuallyEq_codiscreteWithin_log_norm_add_posLog`,
   `AnalyticOnNhd.proximity_top_le_of_forall_mem_sphere_log_norm_le`,
   `AnalyticOnNhd.proximity_top_le_max_sSup_log_norm`, and
-  `AnalyticOnNhd.sInf_max_sSup_log_norm_eq_proximity_top`: optimality of the quotient bound and
-  variational characterization of `m(R, g)`.
+  `AnalyticOnNhd.sInf_max_sSup_log_norm_eq_proximity_top`: codiscrete log-norm splitting, optimality
+  of the quotient bound, and variational characterization of `m(R, g)`.
 
 ## References
 
@@ -97,43 +93,10 @@ all normalized multipliers (`AnalyticOnNhd.sInf_max_sSup_log_norm_eq_proximity_t
 public section
 
 open Complex Filter MeasureTheory Metric Real Set Topology
-open scoped ComplexConjugate
 
 namespace TauCeti
 
-/-! ### Rescaled Blaschke factors and Nevanlinna's quotient multiplier -/
-
-/-- For an interior parameter `u ∈ ball 0 r` (`0 < r`), the rescaled Blaschke factor
-`z ↦ blaschkeFactor (u / r) (z / r)` is the reciprocal of Mathlib's canonical factor
-`Complex.canonicalFactor r u`. -/
-lemma blaschkeFactor_div_eq_inv_canonicalFactor {u : ℂ} {r : ℝ} (hu : u ∈ ball 0 r) (z : ℂ) :
-    blaschkeFactor (u / r) (z / r) = (canonicalFactor r u z)⁻¹ := by
-  have hr : 0 < r := pos_of_mem_ball hu
-  have hr0 : (r : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hr.ne'
-  have hur : ‖u / r‖ < 1 := by
-    rw [norm_div, Complex.norm_real, Real.norm_of_nonneg hr.le, div_lt_one hr]
-    exact mem_ball_zero_iff.mp hu
-  have hnum : (r : ℂ) ^ 2 * (z / r - u / r) = r * (z - u) := by field_simp
-  have hden : (r : ℂ) ^ 2 * (1 - conj (u / r) * (z / r)) = r ^ 2 - conj u * z := by
-    rw [map_div₀, conj_ofReal]
-    field_simp
-  rw [blaschkeFactor_of_norm_lt_one hur, canonicalFactor_apply, inv_div,
-    ← mul_div_mul_left _ _ (pow_ne_zero 2 hr0), hnum, hden]
-
-/-- For `0 < r`, the rescaled Blaschke product `z ↦ blaschkeProduct a n (z / r)` is analytic on a
-neighbourhood of `closedBall 0 r`. -/
-lemma analyticOnNhd_blaschkeProduct_div {ι : Type*} [Fintype ι] (a : ι → ℂ) (n : ι → ℕ)
-    {r : ℝ} (hr : 0 < r) :
-    AnalyticOnNhd ℂ (fun z ↦ blaschkeProduct a n (z / r)) (closedBall 0 r) := by
-  intro z hz
-  have hzr : z / r ∈ closedBall 0 1 := by
-    rw [mem_closedBall_zero_iff, norm_div, Complex.norm_real, Real.norm_of_nonneg hr.le,
-      div_le_one hr]
-    exact mem_closedBall_zero_iff.mp hz
-  have hdiv_an : AnalyticAt ℂ (fun w : ℂ ↦ w / r) z := by
-    fun_prop (disch := exact Complex.ofReal_ne_zero.mpr hr.ne')
-  exact (analyticOnNhd_blaschkeProduct a n (z / r) hzr).fun_comp
-    (f := fun w : ℂ ↦ w / r) hdiv_an
+/-! ### Nevanlinna's quotient multiplier -/
 
 /-- **Nevanlinna's quotient multiplier** on the disc of radius `r`:
 `quotientMultiplier g r z =`
@@ -204,91 +167,48 @@ lemma analyticOnNhd_quotientMultiplier {g : ℂ → ℂ} {r : ℝ}
   exact (analyticAt_const.sub
     (analyticOnNhd_circleAverage_herglotzRieszKernel_smul hg' z hz)).cexp'
 
-/-- When `log⁺ ‖g‖` is circle-integrable on `sphere 0 |r|`, nonnegativity of the Poisson kernel and
-of `log⁺ ‖g‖` bounds `Real.log ‖quotientMultiplier g r z‖` by `ValueDistribution.proximity g ⊤ r`
-for every `z ∈ ball 0 r`. -/
+/-- Nonnegative circle-integrable boundary data have nonnegative Herglotz–Riesz real part on the
+open disc `ball 0 r`. -/
+private lemma re_circleAverage_herglotzRieszKernel_smul_nonneg {φ : ℂ → ℝ} {r : ℝ} {z : ℂ}
+    (hφ : CircleIntegrable φ 0 r) (hnonneg : ∀ w ∈ sphere (0 : ℂ) |r|, 0 ≤ φ w)
+    (hz : z ∈ ball 0 r) :
+    0 ≤ (circleAverage (fun w ↦ herglotzRieszKernel 0 z w • (φ w : ℂ)) 0 r).re := by
+  have hr : 0 < r := pos_of_mem_ball hz
+  have hz_abs : z ∈ ball (0 : ℂ) |r| := by rwa [abs_of_pos hr]
+  have hz_not : z ∉ sphere (0 : ℂ) |r| := Set.disjoint_right.mp sphere_disjoint_ball hz_abs
+  rw [re_circleAverage_herglotzRieszKernel_smul hφ hz_not,
+    ← poissonKernel_eq_re_herglotzRieszKernel, ← planarPoissonIntegral_def]
+  exact planarPoissonIntegral_nonneg hz_abs hnonneg
+
+/-- When `log⁺ ‖g‖` is circle-integrable on `sphere 0 |r|`, nonnegativity of the Poisson average of
+`log⁺ ‖g‖` bounds `Real.log ‖quotientMultiplier g r z‖` by `ValueDistribution.proximity g ⊤ r` for
+every `z ∈ ball 0 r`. -/
 lemma log_norm_quotientMultiplier_le_proximity {g : ℂ → ℂ} {r : ℝ} {z : ℂ}
     (hg : CircleIntegrable (fun w ↦ Real.posLog ‖g w‖) 0 r) (hz : z ∈ ball 0 r) :
     Real.log ‖quotientMultiplier g r z‖ ≤ ValueDistribution.proximity g ⊤ r := by
-  have hr : 0 < r := pos_of_mem_ball hz
-  have hz_not : z ∉ sphere (0 : ℂ) |r| := by
-    rw [abs_of_pos hr, mem_sphere_zero_iff_norm]
-    exact (mem_ball_zero_iff.mp hz).ne
-  rw [quotientMultiplier_apply, Complex.norm_exp, Real.log_exp, Complex.sub_re, Complex.ofReal_re,
-    re_circleAverage_herglotzRieszKernel_smul hg hz_not, ← poissonKernel_eq_re_herglotzRieszKernel]
-  have hnonneg : 0 ≤ circleAverage (poissonKernel 0 z • fun w ↦ Real.posLog ‖g w‖) 0 r := by
-    refine Real.circleAverage_nonneg_of_nonneg fun w hw ↦ ?_
-    rw [abs_of_pos hr, mem_sphere_zero_iff_norm] at hw
-    have hzw : ‖z - 0‖ ≤ ‖w - 0‖ := by
-      simpa [hw] using (mem_ball_zero_iff.mp hz).le
-    exact mul_nonneg (poissonKernel_nonneg hzw) Real.posLog_nonneg
-  linarith
+  rw [quotientMultiplier_apply, Complex.norm_exp, Real.log_exp, Complex.sub_re, Complex.ofReal_re]
+  linarith [re_circleAverage_herglotzRieszKernel_smul_nonneg hg (fun _ _ ↦ Real.posLog_nonneg) hz]
 
 end TauCeti
 
+/-- For meromorphic functions `f, g : 𝕜 → 𝕜` of finite meromorphic order on `U`, off a discrete
+subset of `U` (where neither vanishes nor has a pole), `log ‖f z‖ + log⁺ ‖g z‖` agrees with
+`max (log ‖f z‖) (log ‖f z * g z‖)`. -/
+theorem MeromorphicOn.eventuallyEq_codiscreteWithin_log_norm_add_posLog
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] {U : Set 𝕜} {f g : 𝕜 → 𝕜}
+    (hf : MeromorphicOn f U) (hg : MeromorphicOn g U)
+    (hord_f : ∀ u ∈ U, meromorphicOrderAt f u ≠ ⊤)
+    (hord_g : ∀ u ∈ U, meromorphicOrderAt g u ≠ ⊤) :
+    ((fun z ↦ Real.log ‖f z‖) + fun z ↦ Real.posLog ‖g z‖) =ᶠ[codiscreteWithin U]
+      fun z ↦ max (Real.log ‖f z‖) (Real.log ‖f z * g z‖) := by
+  filter_upwards [hf.codiscreteWithin_setOfPred_ne_zero hord_f,
+    hg.codiscreteWithin_setOfPred_ne_zero hord_g] with z hzf hzg
+  simp [Pi.add_apply, Real.posLog_apply, add_max, norm_mul,
+    Real.log_mul (norm_ne_zero_iff.mpr hzf) (norm_ne_zero_iff.mpr hzg)]
+
 namespace AnalyticOnNhd
 
-/-! ### Blaschke factorization on a disc and complex product identity -/
-
-/-- **Blaschke factorization on a disc of radius `r`.** If `g` is analytic on a neighbourhood of
-`closedBall 0 r` (`0 < r`) and has no zeros on `sphere 0 r`, then `g` factors on `closedBall 0 r`
-as `g z = blaschkeProduct a n (z / r) * G z`, where `a` is a finite family of interior parameters
-(`‖a i‖ < 1`) and `G` is analytic and zero-free on `closedBall 0 r`. -/
-theorem exists_blaschkeProduct_div_mul_eq {g : ℂ → ℂ} {r : ℝ}
-    (hg : AnalyticOnNhd ℂ g (closedBall 0 r)) (hr : 0 < r) (hs : ∀ w ∈ sphere 0 r, g w ≠ 0) :
-    ∃ (ι : Type) (_ : Fintype ι) (a : ι → ℂ) (n : ι → ℕ) (G : ℂ → ℂ),
-      (∀ i, ‖a i‖ < 1) ∧ AnalyticOnNhd ℂ G (closedBall 0 r) ∧
-      (∀ z ∈ closedBall 0 r, G z ≠ 0) ∧
-      ∀ z ∈ closedBall 0 r, g z = TauCeti.blaschkeProduct a n (z / r) * G z := by
-  classical
-  have hord : ∀ u : closedBall (0 : ℂ) r, meromorphicOrderAt g u ≠ ⊤ := fun u ↦
-    hg.meromorphicOrderAt_ne_top_of_forall_mem_sphere_ne_zero hs u.2
-  obtain ⟨G, D⟩ := hg.meromorphicOn.exists_ecanonicalDecomp hord
-  have hdiv_sphere : ∀ v : ℂ, MeromorphicOn.divisor g (sphere 0 r) v = 0 := fun v ↦ by
-    by_cases hv : v ∈ sphere 0 r
-    · simp [MeromorphicOn.divisor_apply (hg.meromorphicOn.mono_set sphere_subset_closedBall) hv,
-        (hg v (sphere_subset_closedBall hv)).meromorphicOrderAt_eq,
-        (hg v (sphere_subset_closedBall hv)).analyticOrderAt_eq_zero.mpr (hs v hv)]
-    · exact Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hv
-  set d := MeromorphicOn.divisor g (ball 0 r) with hd_def
-  have hd_fin : d.support.Finite := hg.meromorphicOn.divisor_ball_support_finite
-  let s : Finset ℂ := hd_fin.toFinset
-  have hs_ball : ∀ i : s, (i : ℂ) ∈ ball 0 r := fun i ↦
-    d.supportWithinDomain (hd_fin.mem_toFinset.mp i.2)
-  have hd_nonneg : ∀ u : ℂ, 0 ≤ d u :=
-    MeromorphicOn.AnalyticOnNhd.divisor_nonneg (hg.mono ball_subset_closedBall)
-  let a : s → ℂ := fun i ↦ (i : ℂ) / r
-  let n : s → ℕ := fun i ↦ (d i).toNat
-  have ha : ∀ i : s, ‖a i‖ < 1 := fun i ↦ by
-    rw [norm_div, Complex.norm_real, Real.norm_of_nonneg hr.le, div_lt_one hr]
-    exact mem_ball_zero_iff.mp (hs_ball i)
-  -- Identify the product of reciprocal canonical factors with the rescaled Blaschke product.
-  have hprod : ∀ z : ℂ, (∏ᶠ u, canonicalFactor r u ^ (-d u)) z =
-      TauCeti.blaschkeProduct a n (z / r) := by
-    have hmul_sub : (fun u ↦ canonicalFactor r u ^ (-d u)).mulSupport ⊆ (s : Set ℂ) := by
-      intro u hu
-      rw [Finset.mem_coe, hd_fin.mem_toFinset, Function.mem_support]
-      exact fun hdu ↦ hu (by simp [hdu])
-    intro z
-    rw [finprod_eq_prod_of_mulSupport_subset _ hmul_sub, Finset.prod_apply,
-      TauCeti.blaschkeProduct_apply, ← Finset.prod_coe_sort s]
-    refine Finset.prod_congr rfl fun i _ ↦ ?_
-    have hdi : (n i : ℤ) = d i := Int.toNat_of_nonneg (hd_nonneg i)
-    simp only [a, ← hdi, zpow_neg, zpow_natCast, ← inv_pow, Pi.pow_apply,
-      TauCeti.blaschkeFactor_div_eq_inv_canonicalFactor (hs_ball i) z]
-  refine ⟨s, inferInstance, a, n, G, ha, D.analyticOnNhd, D.ne_zero, ?_⟩
-  have hB_an := (TauCeti.analyticOnNhd_blaschkeProduct_div a n hr).mul D.analyticOnNhd
-  have h0_mem : (0 : ℂ) ∈ closedBall 0 r := mem_closedBall_self hr.le
-  have hfreq : ∃ᶠ x in 𝓝[≠] (0 : ℂ), g x = TauCeti.blaschkeProduct a n (x / r) * G x := by
-    refine Eventually.frequently ?_
-    filter_upwards [mem_codiscreteWithin_iff_forall_mem_nhdsNE.mp D.eventuallyEq 0 h0_mem,
-      nhdsWithin_le_nhds (closedBall_mem_nhds 0 hr)] with x hx hxU
-    have hx' := hx.resolve_right (not_not_intro hxU)
-    rw [Set.mem_ofPred_eq] at hx'
-    simpa only [hdiv_sphere, zpow_zero, finprod_one, mul_one, smul_eq_mul, Pi.mul_apply,
-      ← hd_def, hprod x] using hx'
-  exact fun z hz ↦ hg.eqOn_of_preconnected_of_frequently_eq hB_an
-    (convex_closedBall 0 r).isPreconnected h0_mem hfreq hz
+/-! ### Complex product identity and Nevanlinna's quotient representation -/
 
 /-- **Complex product identity for the quotient multiplier.** If `G` is analytic and zero-free near
 `closedBall 0 r` and `‖g‖ = ‖G‖` on `sphere 0 r`, then for every `z ∈ ball 0 r`
@@ -310,31 +230,27 @@ theorem quotientMultiplier_mul_of_norm_eq {g G : ℂ → ℂ} {r : ℝ} {z : ℂ
   have hGz : G z = (G 0 / ‖G 0‖) *
       Complex.exp (circleAverage (fun w ↦ herglotzRieszKernel 0 z w • (Real.log ‖G w‖ : ℂ)) 0 r) :=
     by rw [hexpG]; field_simp
-  -- Split `log ‖G‖ = log⁺ ‖g‖ - log⁺ ‖g‖⁻¹` on `sphere 0 |r|`.
-  have hcont_norm : ContinuousOn (fun w ↦ ‖G w‖) (sphere 0 |r|) := by
+  -- Transfer continuity of the norm from `G` to `g` on `sphere 0 |r|` and split
+  -- `log ‖G‖ = log⁺ ‖g‖ - log⁺ ‖g‖⁻¹`.
+  have hcont_G : ContinuousOn (fun w ↦ ‖G w‖) (sphere 0 |r|) := by
     rw [abs_of_pos hr]
-    exact continuous_norm.comp_continuousOn (hG.continuousOn.mono sphere_subset_closedBall)
+    exact (hG.continuousOn.mono sphere_subset_closedBall).norm
+  have hcont_g : ContinuousOn (fun w ↦ ‖g w‖) (sphere 0 |r|) :=
+    hcont_G.congr fun w hw ↦ hgnorm (by rwa [abs_of_pos hr] at hw)
+  have hcont_ker : ContinuousOn (herglotzRieszKernel 0 z) (sphere 0 |r|) :=
+    continuousOn_herglotzRieszKernel_sphere hz_not
   have hint_pos : CircleIntegrable
-      (fun w ↦ herglotzRieszKernel 0 z w • (Real.posLog ‖g w‖ : ℂ)) 0 r := by
-    have hcont : ContinuousOn (fun w ↦ (Real.posLog ‖G w‖ : ℂ)) (sphere 0 |r|) :=
-      continuous_ofReal.comp_continuousOn (continuous_posLog.comp_continuousOn hcont_norm)
-    refine (hcont.circleIntegrable'.continuousOn_smul
-      (continuousOn_herglotzRieszKernel_sphere hz_not)).congr ?_
-    intro θ _
-    have hmem : circleMap 0 r θ ∈ sphere 0 r := circleMap_mem_sphere 0 hr.le θ
-    simp [hgnorm hmem]
+      (fun w ↦ herglotzRieszKernel 0 z w • (Real.posLog ‖g w‖ : ℂ)) 0 r :=
+    (continuous_ofReal.comp_continuousOn
+      (continuous_posLog.comp_continuousOn hcont_g)).circleIntegrable'.continuousOn_smul hcont_ker
   have hint_inv : CircleIntegrable
       (fun w ↦ herglotzRieszKernel 0 z w • (Real.posLog ‖g w‖⁻¹ : ℂ)) 0 r := by
-    have hcont_inv : ContinuousOn (fun w ↦ ‖G w‖⁻¹) (sphere 0 |r|) :=
-      hcont_norm.inv₀ fun w hw ↦
-        norm_ne_zero_iff.mpr (hG0 w (sphere_subset_closedBall (abs_of_pos hr ▸ hw)))
-    have hcont : ContinuousOn (fun w ↦ (Real.posLog ‖G w‖⁻¹ : ℂ)) (sphere 0 |r|) :=
-      continuous_ofReal.comp_continuousOn (continuous_posLog.comp_continuousOn hcont_inv)
-    refine (hcont.circleIntegrable'.continuousOn_smul
-      (continuousOn_herglotzRieszKernel_sphere hz_not)).congr ?_
-    intro θ _
-    have hmem : circleMap 0 r θ ∈ sphere 0 r := circleMap_mem_sphere 0 hr.le θ
-    simp [hgnorm hmem]
+    have hcont_inv : ContinuousOn (fun w ↦ ‖g w‖⁻¹) (sphere 0 |r|) :=
+      hcont_g.inv₀ fun w hw ↦ by
+        rw [abs_of_pos hr] at hw
+        exact (hgnorm hw).trans_ne (norm_ne_zero_iff.mpr (hG0 w (sphere_subset_closedBall hw)))
+    exact (continuous_ofReal.comp_continuousOn
+      (continuous_posLog.comp_continuousOn hcont_inv)).circleIntegrable'.continuousOn_smul hcont_ker
   have hsplit : circleAverage (fun w ↦ herglotzRieszKernel 0 z w • (Real.log ‖G w‖ : ℂ)) 0 r =
       circleAverage (fun w ↦ herglotzRieszKernel 0 z w • (Real.posLog ‖g w‖ : ℂ)) 0 r -
         circleAverage (fun w ↦ herglotzRieszKernel 0 z w • (Real.posLog ‖g w‖⁻¹ : ℂ)) 0 r := by
@@ -378,17 +294,10 @@ theorem log_norm_quotientMultiplier_mul_le_proximity {g : ℂ → ℂ} {r : ℝ}
   have hg_abs : AnalyticOnNhd ℂ g (closedBall 0 |r|) := by rwa [abs_of_pos hr]
   have hint_inv : CircleIntegrable (fun w ↦ Real.posLog ‖g w‖⁻¹) 0 r :=
     (hg_abs.mono sphere_subset_closedBall).meromorphicOn.circleIntegrable_posLog_inv_norm
-  have hz_not : z ∉ sphere (0 : ℂ) |r| := by
-    rw [abs_of_pos hr, mem_sphere_zero_iff_norm]
-    exact (mem_ball_zero_iff.mp hz).ne
   have hnonneg : 0 ≤ (circleAverage
-      (fun w ↦ herglotzRieszKernel 0 z w • (Real.posLog ‖g w‖⁻¹ : ℂ)) 0 r).re := by
-    rw [re_circleAverage_herglotzRieszKernel_smul hint_inv hz_not,
-      ← poissonKernel_eq_re_herglotzRieszKernel]
-    refine Real.circleAverage_nonneg_of_nonneg fun w hw ↦ ?_
-    rw [abs_of_pos hr, mem_sphere_zero_iff_norm] at hw
-    have hzw : ‖z - 0‖ ≤ ‖w - 0‖ := by simpa [hw] using (mem_ball_zero_iff.mp hz).le
-    exact mul_nonneg (TauCeti.poissonKernel_nonneg hzw) Real.posLog_nonneg
+      (fun w ↦ herglotzRieszKernel 0 z w • (Real.posLog ‖g w‖⁻¹ : ℂ)) 0 r).re :=
+    TauCeti.re_circleAverage_herglotzRieszKernel_smul_nonneg hint_inv
+      (fun _ _ ↦ Real.posLog_nonneg) hz
   have hexp_le : ‖TauCeti.quotientMultiplier g r z * g z‖ ≤
       Real.exp (ValueDistribution.proximity g ⊤ r) := by
     rw [hprod, hG.quotientMultiplier_mul_of_norm_eq hG0 hgnorm hz, norm_mul, norm_mul,
@@ -400,40 +309,7 @@ theorem log_norm_quotientMultiplier_mul_le_proximity {g : ℂ → ℂ} {r : ℝ}
     exact ValueDistribution.proximity_nonneg r
   · exact (Real.log_le_log hpos hexp_le).trans_eq (Real.log_exp _)
 
-/-! ### Radial continuity of proximity and Nevanlinna's quotient representation -/
-
-/-- If `g` is analytic on a neighbourhood of `closedBall 0 R` (`0 ≤ R`), its Nevanlinna proximity
-function `ValueDistribution.proximity g ⊤` is continuous at `R` (including across boundary zeros of
-`g`, since `Real.posLog ‖g ·‖` is continuous everywhere where `g` is continuous). -/
-theorem continuousAt_proximity_top {g : ℂ → ℂ} {R : ℝ}
-    (hg : AnalyticOnNhd ℂ g (closedBall 0 R)) (hR : 0 ≤ R) :
-    ContinuousAt (ValueDistribution.proximity g ⊤) R := by
-  obtain ⟨δ, hδ, hsub⟩ := (isCompact_closedBall (0 : ℂ) R).exists_thickening_subset_open
-    (isOpen_analyticAt ℂ g) hg
-  have hg_ball : AnalyticOnNhd ℂ g (ball 0 (R + δ)) := by
-    rwa [thickening_closedBall hδ hR, add_comm] at hsub
-  have hcont_Ico : ContinuousOn (ValueDistribution.proximity g ⊤) (Ico 0 (R + δ)) := by
-    rw [ValueDistribution.proximity_top]
-    refine ContinuousOn.circleAverage ?_ fun _ hr ↦ hr.1
-    have hset : {z : ℂ | ‖z - 0‖ ∈ Ico 0 (R + δ)} = ball 0 (R + δ) := by
-      ext z
-      simp
-    rw [hset]
-    exact continuous_posLog.comp_continuousOn
-      (continuous_norm.comp_continuousOn hg_ball.continuousOn)
-  have heven :
-      ∀ r : ℝ, ValueDistribution.proximity g ⊤ |r| = ValueDistribution.proximity g ⊤ r := by
-    intro r
-    rcases le_or_gt 0 r with hr | hr
-    · rw [abs_of_nonneg hr]
-    · rw [abs_of_neg hr, ValueDistribution.proximity_even r]
-  have hcont_ball : ContinuousOn (ValueDistribution.proximity g ⊤) (ball (0 : ℝ) (R + δ)) := by
-    refine (hcont_Ico.comp continuous_abs.continuousOn ?_).congr fun r _ ↦ (heven r).symm
-    intro r hr
-    exact ⟨abs_nonneg r, by simpa [Real.norm_eq_abs] using mem_ball_zero_iff.mp hr⟩
-  refine hcont_ball.continuousAt (isOpen_ball.mem_nhds ?_)
-  rw [mem_ball_zero_iff, Real.norm_of_nonneg hR]
-  linarith
+/-! ### Radial smoothing across boundary zeros -/
 
 /-- **Radial smoothing of the quotient multiplier across boundary zeros.** If `g` is analytic on a
 neighbourhood of `closedBall 0 R` (`0 < R`), does not vanish identically on `closedBall 0 R`, and
@@ -455,8 +331,12 @@ theorem exists_gt_log_norm_quotientMultiplier_le_proximity_add {g : ℂ → ℂ}
     (isOpen_analyticAt ℂ g) hg
   have hg_ball : AnalyticOnNhd ℂ g (ball 0 (R + δ)) := by
     rwa [thickening_closedBall hδ hR.le, add_comm] at hsub
+  have hs_nhds : ball (0 : ℂ) (R + δ) ∈ 𝓝ˢ (sphere (0 : ℂ) |R|) :=
+    isOpen_ball.mem_nhdsSet.mpr (by
+      rw [abs_of_pos hR]
+      exact sphere_subset_closedBall.trans (closedBall_subset_ball (by linarith)))
   obtain ⟨δ₁, hδ₁, hprox⟩ :=
-    Metric.continuousAt_iff.mp (hg.continuousAt_proximity_top hR.le) ε hε
+    Metric.continuousAt_iff.mp (hg_ball.continuousOn.continuousAt_proximity_top hs_nhds) ε hε
   set r_max := R + min (δ / 2) δ₁
   have hR_lt : R < r_max := lt_add_of_pos_right R (lt_min (half_pos hδ) hδ₁)
   -- Finitely many zeros of `g` lie in `closedBall 0 (R + δ / 2)`; pick `r ∈ (R, r_max)` avoiding
@@ -538,50 +418,12 @@ theorem exists_max_sSup_log_norm_le_proximity_add {g : ℂ → ℂ} {R : ℝ}
 
 /-! ### Optimality of the quotient bound -/
 
-/-- **Sub-mean-value inequality for `log ‖f‖`** (Jensen's inequality at a non-vanishing centre).
-If `f` is analytic on a neighbourhood of `closedBall c |r|` and `f c ≠ 0`, then
-`Real.log ‖f c‖ ≤ circleAverage (fun z ↦ Real.log ‖f z‖) c r`. -/
-theorem log_norm_le_circleAverage_log_norm {f : ℂ → ℂ} {c : ℂ} {r : ℝ}
-    (hf : AnalyticOnNhd ℂ f (closedBall c |r|)) (hfc : f c ≠ 0) :
-    Real.log ‖f c‖ ≤ circleAverage (fun z ↦ Real.log ‖f z‖) c r := by
-  rcases eq_or_ne r 0 with rfl | hr
-  · simp
-  · have hord : analyticOrderNatAt f c = 0 := by
-      by_contra hne
-      exact hfc (apply_eq_zero_of_analyticOrderNatAt_ne_zero hne)
-    have htrail : meromorphicTrailingCoeffAt f c = f c :=
-      (hf c (mem_closedBall_self (abs_nonneg r))).meromorphicTrailingCoeffAt_of_ne_zero hfc
-    simpa [hord, htrail] using hf.le_circleAverage_log_norm hr
-
-/-- If `f` and `g` are analytic on a neighbourhood of `closedBall c R` and neither vanishes
-identically on `closedBall c R`, then off a discrete subset of `closedBall c R`
-`log ‖f z‖ + log⁺ ‖g z‖` agrees with `max (log ‖f z‖) (log ‖f z * g z‖)`. -/
-theorem eventuallyEq_codiscreteWithin_log_norm_add_posLog {f g : ℂ → ℂ} {c : ℂ} {R : ℝ}
-    (hf : AnalyticOnNhd ℂ f (closedBall c R)) (hg : AnalyticOnNhd ℂ g (closedBall c R))
-    (hf0 : ∃ z ∈ closedBall c R, f z ≠ 0) (hg0 : ∃ z ∈ closedBall c R, g z ≠ 0) :
-    ((fun z ↦ Real.log ‖f z‖) + fun z ↦ Real.posLog ‖g z‖) =ᶠ[
-      codiscreteWithin (closedBall c R)]
-      fun z ↦ max (Real.log ‖f z‖) (Real.log ‖f z * g z‖) := by
-  obtain ⟨z₁, hz₁, hfz₁⟩ := hf0
-  have hR : 0 ≤ R := dist_nonneg.trans (mem_closedBall.mp hz₁)
-  have hconn : IsConnected (closedBall c R) :=
-    ⟨nonempty_closedBall.mpr hR, (convex_closedBall c R).isPreconnected⟩
-  have hord_f : ∀ u ∈ closedBall c R, meromorphicOrderAt f u ≠ ⊤ := fun _ hu ↦
-    hf.meromorphicOrderAt_ne_top_of_exists_ne_zero hconn ⟨z₁, hz₁, hfz₁⟩ hu
-  have hord_g : ∀ u ∈ closedBall c R, meromorphicOrderAt g u ≠ ⊤ := fun _ hu ↦
-    hg.meromorphicOrderAt_ne_top_of_exists_ne_zero hconn hg0 hu
-  filter_upwards [hf.meromorphicOn.codiscreteWithin_setOfPred_ne_zero hord_f,
-    hg.meromorphicOn.codiscreteWithin_setOfPred_ne_zero hord_g] with z hzf hzg
-  simp [Pi.add_apply, Real.posLog_apply, add_max,
-    Real.log_mul (norm_ne_zero_iff.mpr hzf) (norm_ne_zero_iff.mpr hzg)]
-
 /-- **Optimality of Nevanlinna's quotient bound, bound form** (Calegari–Dimitrov–Tang,
-Remark 2.3.3). If `g` and `h` are analytic on a neighbourhood of `closedBall 0 R` (`0 ≤ R`) with
-`1 ≤ ‖h 0‖` (in particular when `h 0 = 1`), and both `Real.log ‖h z‖ ≤ M` and
+Remark 2.3.3). For any `g : ℂ → ℂ` and any `h` analytic on a neighbourhood of `closedBall 0 R`
+(`0 ≤ R`) with `1 ≤ ‖h 0‖` (in particular when `h 0 = 1`), if both `Real.log ‖h z‖ ≤ M` and
 `Real.log ‖h z * g z‖ ≤ M` hold on `sphere 0 R`, then `ValueDistribution.proximity g ⊤ R ≤ M`. -/
 theorem proximity_top_le_of_forall_mem_sphere_log_norm_le {g h : ℂ → ℂ} {R M : ℝ}
-    (hg : AnalyticOnNhd ℂ g (closedBall 0 R)) (hh : AnalyticOnNhd ℂ h (closedBall 0 R))
-    (hR : 0 ≤ R) (hh0 : 1 ≤ ‖h 0‖)
+    (hh : AnalyticOnNhd ℂ h (closedBall 0 R)) (hR : 0 ≤ R) (hh0 : 1 ≤ ‖h 0‖)
     (hM : ∀ z ∈ sphere (0 : ℂ) R, Real.log ‖h z‖ ≤ M ∧ Real.log ‖h z * g z‖ ≤ M) :
     ValueDistribution.proximity g ⊤ R ≤ M := by
   have hh0_pos : 0 < ‖h 0‖ := zero_lt_one.trans_le hh0
@@ -599,57 +441,66 @@ theorem proximity_top_le_of_forall_mem_sphere_log_norm_le {g h : ℂ → ℂ} {R
       hlog_h0.trans (hh_abs.log_norm_le_circleAverage_log_norm (norm_pos_iff.mp hh0_pos))
     have hint_h : CircleIntegrable (fun z ↦ Real.log ‖h z‖) 0 R :=
       (hh_abs.mono sphere_subset_closedBall).meromorphicOn.circleIntegrable_log_norm
-    by_cases hall : ∀ z ∈ closedBall (0 : ℂ) R, g z = 0
-    · have hM0 : 0 ≤ M :=
-        hjensen.trans (circleAverage_mono_on_of_le_circle hint_h fun z hz ↦
-          (hM z (abs_of_pos hRpos ▸ hz)).1)
-      have hprox0 : ValueDistribution.proximity g ⊤ R = 0 := by
-        rw [ValueDistribution.proximity_top, circleAverage_congr_sphere (f₂ := fun _ ↦ (0 : ℝ))]
-        · simp [circleAverage_const]
-        · exact fun z hz ↦ by simp [hall z (sphere_subset_closedBall (abs_of_pos hRpos ▸ hz))]
-      linarith
-    · push Not at hall
-      obtain ⟨z₀, hz₀, hgz₀⟩ := hall
-      have hg_abs : AnalyticOnNhd ℂ g (closedBall 0 |R|) := by rwa [abs_of_pos hRpos]
-      have hz₀' : z₀ ∈ closedBall (0 : ℂ) |R| := by rwa [abs_of_pos hRpos]
-      have hcod := (hh_abs.eventuallyEq_codiscreteWithin_log_norm_add_posLog hg_abs
-        ⟨0, mem_closedBall_self (abs_nonneg R), norm_pos_iff.mp hh0_pos⟩
-        ⟨z₀, hz₀', hgz₀⟩).filter_mono (codiscreteWithin_mono sphere_subset_closedBall)
-      have hint_g : CircleIntegrable (fun z ↦ Real.posLog ‖g z‖) 0 R :=
-        (hg_abs.continuousOn.mono sphere_subset_closedBall).circleIntegrable_posLog_norm
+    by_cases hint_g : CircleIntegrable (fun z ↦ Real.posLog ‖g z‖) 0 R
+    · have h0_mem : (0 : ℂ) ∈ closedBall 0 |R| := mem_closedBall_self (abs_nonneg R)
+      have hord_0 : meromorphicOrderAt h 0 ≠ ⊤ := by
+        rw [(hh_abs 0 h0_mem).meromorphicOrderAt_eq,
+          (hh_abs 0 h0_mem).analyticOrderAt_eq_zero.mpr (norm_pos_iff.mp hh0_pos)]
+        simp
+      have hord_h : ∀ u ∈ closedBall (0 : ℂ) |R|, meromorphicOrderAt h u ≠ ⊤ := fun _ hu ↦
+        hh_abs.meromorphicOn.meromorphicOrderAt_ne_top_of_isPreconnected
+          (convex_closedBall 0 |R|).isPreconnected h0_mem hu hord_0
+      have hne_cod : ∀ᶠ z in codiscreteWithin (sphere (0 : ℂ) |R|), h z ≠ 0 :=
+        (hh_abs.meromorphicOn.codiscreteWithin_setOfPred_ne_zero hord_h).filter_mono
+          (codiscreteWithin_mono sphere_subset_closedBall)
+      let φ : ℂ → ℝ := fun z ↦ if h z = 0 then M else Real.log ‖h z‖ + Real.posLog ‖g z‖
+      have hcod : ((fun z ↦ Real.log ‖h z‖) + fun z ↦ Real.posLog ‖g z‖) =ᶠ[
+          codiscreteWithin (sphere (0 : ℂ) |R|)] φ := by
+        filter_upwards [hne_cod] with z hz
+        simp [φ, hz]
+      have hφ_le : ∀ z ∈ sphere (0 : ℂ) |R|, φ z ≤ M := by
+        intro z hz
+        by_cases hzh : h z = 0
+        · simp [φ, hzh]
+        · have hMz := hM z (abs_of_pos hRpos ▸ hz)
+          simp only [φ, hzh, ↓reduceIte, Real.posLog_apply, add_max, add_zero]
+          rcases eq_or_ne (g z) 0 with hzg | hzg
+          · simpa [hzg] using hMz.1
+          · rw [← Real.log_mul (norm_ne_zero_iff.mpr hzh) (norm_ne_zero_iff.mpr hzg), ← norm_mul]
+            exact max_le hMz.1 hMz.2
       have hsum_le :
           circleAverage (fun z ↦ Real.log ‖h z‖) 0 R + ValueDistribution.proximity g ⊤ R ≤ M := by
         rw [ValueDistribution.proximity_top, ← circleAverage_add hint_h hint_g,
           circleAverage_congr_codiscreteWithin hcod hRpos.ne']
         exact circleAverage_mono_on_of_le_circle
-          (CircleIntegrable.congr_codiscreteWithin hcod (hint_h.add hint_g)) fun z hz ↦
-          max_le (hM z (abs_of_pos hRpos ▸ hz)).1 (hM z (abs_of_pos hRpos ▸ hz)).2
+          (CircleIntegrable.congr_codiscreteWithin hcod (hint_h.add hint_g)) hφ_le
       linarith
+    · have hM0 : 0 ≤ M :=
+        hjensen.trans (circleAverage_mono_on_of_le_circle hint_h fun z hz ↦
+          (hM z (abs_of_pos hRpos ▸ hz)).1)
+      rw [ValueDistribution.proximity_top, circleAverage.integral_undef hint_g]
+      exact hM0
 
 /-- **Optimality of Nevanlinna's quotient bound** (Calegari–Dimitrov–Tang, Remark 2.3.3).
-For `g` and `h` analytic near `closedBall 0 R` (`0 ≤ R`) with `1 ≤ ‖h 0‖` (in particular when
-`h 0 = 1`), `m(R, g) ≤ max (sup_{|z|=R} log ‖h z‖) (sup_{|z|=R} log ‖h z * g z‖)`.
+For `h` analytic near `closedBall 0 R` (`0 ≤ R`) with `1 ≤ ‖h 0‖` (in particular when `h 0 = 1`)
+and `g` continuous on `sphere 0 R`,
+`m(R, g) ≤ max (sup_{|z|=R} log ‖h z‖) (sup_{|z|=R} log ‖h z * g z‖)`.
 
 Because `1 ≤ ‖h 0‖` forces `sup_{|z|=R} log ‖h z‖ ≥ 0` by the maximum modulus principle, Lean's
 totalized value `Real.log 0 = 0` at any boundary zero of `h` or `h * g` never alters the maximum
 of the two suprema. -/
 theorem proximity_top_le_max_sSup_log_norm {g h : ℂ → ℂ} {R : ℝ}
-    (hg : AnalyticOnNhd ℂ g (closedBall 0 R)) (hh : AnalyticOnNhd ℂ h (closedBall 0 R))
+    (hh : AnalyticOnNhd ℂ h (closedBall 0 R)) (hg : ContinuousOn g (sphere 0 R))
     (hR : 0 ≤ R) (hh0 : 1 ≤ ‖h 0‖) :
     ValueDistribution.proximity g ⊤ R ≤
       max (sSup ((fun z ↦ Real.log ‖h z‖) '' sphere (0 : ℂ) R))
         (sSup ((fun z ↦ Real.log ‖h z * g z‖) '' sphere (0 : ℂ) R)) := by
-  have hbdd_h : BddAbove ((fun z ↦ Real.log ‖h z‖) '' sphere (0 : ℂ) R) := by
-    obtain ⟨B, hB⟩ := ((isCompact_sphere (0 : ℂ) R).image_of_continuousOn
-      (continuous_posLog.comp_continuousOn (continuous_norm.comp_continuousOn
-        (hh.continuousOn.mono sphere_subset_closedBall)))).bddAbove
-    exact ⟨B, fun _ ⟨z, hz, hzv⟩ ↦ hzv ▸ (le_max_right 0 _).trans (hB ⟨z, hz, rfl⟩)⟩
-  have hbdd_hg : BddAbove ((fun z ↦ Real.log ‖h z * g z‖) '' sphere (0 : ℂ) R) := by
-    obtain ⟨B, hB⟩ := ((isCompact_sphere (0 : ℂ) R).image_of_continuousOn
-      (continuous_posLog.comp_continuousOn (continuous_norm.comp_continuousOn
-        ((hh.mul hg).continuousOn.mono sphere_subset_closedBall)))).bddAbove
-    exact ⟨B, fun _ ⟨z, hz, hzv⟩ ↦ hzv ▸ (le_max_right 0 _).trans (hB ⟨z, hz, rfl⟩)⟩
-  refine hg.proximity_top_le_of_forall_mem_sphere_log_norm_le hh hR hh0 fun z hz ↦ ⟨?_, ?_⟩
+  have hh_cont : ContinuousOn h (sphere 0 R) := hh.continuousOn.mono sphere_subset_closedBall
+  have hbdd_h : BddAbove ((fun z ↦ Real.log ‖h z‖) '' sphere (0 : ℂ) R) :=
+    (isCompact_sphere 0 R).bddAbove_image_log_norm hh_cont
+  have hbdd_hg : BddAbove ((fun z ↦ Real.log ‖h z * g z‖) '' sphere (0 : ℂ) R) :=
+    (isCompact_sphere 0 R).bddAbove_image_log_norm (hh_cont.mul hg)
+  refine hh.proximity_top_le_of_forall_mem_sphere_log_norm_le hR hh0 fun z hz ↦ ⟨?_, ?_⟩
   · exact (le_csSup hbdd_h ⟨z, hz, rfl⟩).trans (le_max_left _ _)
   · exact (le_csSup hbdd_hg ⟨z, hz, rfl⟩).trans (le_max_right _ _)
 
@@ -667,13 +518,14 @@ theorem sInf_max_sSup_log_norm_eq_proximity_top {g : ℂ → ℂ} {R : ℝ}
     max (sSup ((fun z ↦ Real.log ‖h z‖) '' sphere (0 : ℂ) R))
       (sSup ((fun z ↦ Real.log ‖h z * g z‖) '' sphere (0 : ℂ) R))
   set S : Set (ℂ → ℂ) := {h : ℂ → ℂ | AnalyticOnNhd ℂ h (closedBall 0 R) ∧ h 0 = 1}
+  have hg_cont : ContinuousOn g (sphere 0 R) := hg.continuousOn.mono sphere_subset_closedBall
   have hne : (F '' S).Nonempty := ⟨F 1, ⟨1, ⟨analyticOnNhd_const, rfl⟩, rfl⟩⟩
   have hbdd : BddBelow (F '' S) := by
     refine ⟨ValueDistribution.proximity g ⊤ R, ?_⟩
     rintro _ ⟨h, ⟨hh, hh0⟩, rfl⟩
-    exact hg.proximity_top_le_max_sSup_log_norm hh hR (by simp [hh0])
+    exact hh.proximity_top_le_max_sSup_log_norm hg_cont hR (by simp [hh0])
   refine le_antisymm ?_ (le_csInf hne fun _ ⟨h, ⟨hh, hh0⟩, hv⟩ ↦
-    hv ▸ hg.proximity_top_le_max_sSup_log_norm hh hR (by simp [hh0]))
+    hv ▸ hh.proximity_top_le_max_sSup_log_norm hg_cont hR (by simp [hh0]))
   refine le_of_forall_pos_le_add fun ε hε ↦ ?_
   obtain ⟨h, hh, hh0, hle⟩ := hg.exists_max_sSup_log_norm_le_proximity_add hR hε
   exact (csInf_le hbdd ⟨h, ⟨hh, hh0⟩, rfl⟩).trans hle
