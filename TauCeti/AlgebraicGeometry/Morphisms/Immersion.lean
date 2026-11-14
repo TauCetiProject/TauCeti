@@ -19,6 +19,11 @@ part. No flatness or reducedness is required.
 This allows equivariant morphisms to restrict to locally closed scheme-theoretic images,
 including images with nonreduced scheme structure.
 
+The file also records that immersions are stable under composition with open immersions
+on either side (`AlgebraicGeometry.IsImmersion.respectsLeft_isOpenImmersion`,
+`AlgebraicGeometry.IsImmersion.respectsRight_isOpenImmersion`), as needed to check that a
+morphism is an immersion locally on its target.
+
 The construction uses Mathlib's `Scheme.Hom.liftCoborder`, `IsOpenImmersion.lift`,
 `IsClosedImmersion.lift`, and the ideal-sheaf formula `Scheme.Hom.ker_comp`, through
 `Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant`.
@@ -66,3 +71,17 @@ theorem existsUnique_lift_of_surjective_of_isSchemeTheoreticallyDominant
   exact ⟨l, hl, fun l' hl' ↦ (cancel_mono i).mp (hl'.trans hl.symm)⟩
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry
+
+/-- Immersions are stable under precomposition with open immersions. -/
+instance IsImmersion.respectsLeft_isOpenImmersion :
+    MorphismProperty.RespectsLeft @IsImmersion @IsOpenImmersion where
+  precomp _ hi _ hf := by have := hi; have := hf; infer_instance
+
+/-- Immersions are stable under postcomposition with open immersions. -/
+instance IsImmersion.respectsRight_isOpenImmersion :
+    MorphismProperty.RespectsRight @IsImmersion @IsOpenImmersion where
+  postcomp _ hi _ hf := by have := hi; have := hf; infer_instance
+
+end AlgebraicGeometry
