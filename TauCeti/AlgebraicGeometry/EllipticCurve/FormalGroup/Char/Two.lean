@@ -10,11 +10,11 @@ import Mathlib.Algebra.CharP.Two
 import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 
 /-!
-# Height two for supersingular elliptic curves in characteristic two
+# Height two in characteristic two
 
-An elliptic Weierstrass curve in characteristic two has formal-group height one or two.
-Its height is two exactly when `a₁ = 0`, equivalently when it is supersingular. The ellipticity
-hypothesis matters: the formal group of a singular cubic can have infinite height.
+An elliptic Weierstrass curve over a field of characteristic two has formal-group height two
+exactly when `a₁ = 0` (`WeierstrassCurve.height_formalGroup_eq_two_iff_a₁_eq_zero_of_char_two`).
+The ellipticity hypothesis matters: the formal group of a singular cubic can have infinite height.
 
 Over any commutative ring of characteristic two, when `a₁ = 0`, the doubling series begins
 `[2](T) = a₃ T⁴ + ⋯`. Indeed, the inverse parameter is `T / (1 - a₃ w(T))` with
@@ -85,20 +85,6 @@ theorem height_formalGroup_eq_two_iff_a₁_eq_zero_of_char_two :
     · intro i hi
       simpa [ne_of_lt hi] using
         W.coeff_nsmulSeries_two_formalGroup_of_char_two h₁ hi.le
-
-/-- In characteristic two, an elliptic curve has formal-group height one or two. -/
-theorem height_formalGroup_eq_one_or_eq_two_of_char_two :
-    (formalGroup W).height 2 = 1 ∨ (formalGroup W).height 2 = 2 := by
-  by_cases h₁ : W.a₁ = 0
-  · exact Or.inr (W.height_formalGroup_eq_two_iff_a₁_eq_zero_of_char_two.mpr h₁)
-  · exact Or.inl (W.height_formalGroup_eq_one_iff_a₁_ne_zero_of_char_two.mpr h₁)
-
-/-- In characteristic two, an elliptic curve is supersingular exactly when its formal group has
-height two. -/
-theorem isSupersingular_iff_height_formalGroup_eq_two_of_char_two :
-    W.IsSupersingular 2 ↔ (formalGroup W).height 2 = 2 := by
-  rw [isSupersingular_iff_j_eq_zero_of_char_two, j_eq_zero_iff_of_char_two,
-    height_formalGroup_eq_two_iff_a₁_eq_zero_of_char_two]
 
 end Field
 

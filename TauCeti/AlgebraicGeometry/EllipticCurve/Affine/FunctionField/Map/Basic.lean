@@ -146,6 +146,11 @@ theorem map_genericY : map W f W.genericY = (W.map f).genericY := by
   rw [genericY_def, genericY_def, map_algebraMap_coordinateRing]
   exact congr_arg _ (CoordinateRing.map_root W f)
 
+/-- `FunctionField.map` sends the local parameter `-x / y` at infinity to `-x / y`. -/
+theorem map_neg_genericX_div_genericY :
+    map W f (-W.genericX / W.genericY) = -(W.map f).genericX / (W.map f).genericY := by
+  rw [map_div₀, map_neg, map_genericX, map_genericY]
+
 /-- `FunctionField.map` sends `x`, as the image of the polynomial variable, to `x`. -/
 @[simp]
 theorem map_algebraMap_X :
