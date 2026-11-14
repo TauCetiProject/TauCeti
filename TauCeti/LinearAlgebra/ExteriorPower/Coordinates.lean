@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Data.Set.PowersetCard
 public import TauCeti.LinearAlgebra.ExteriorPower.Basis
+public import TauCeti.LinearAlgebra.ExteriorPower.Prod
+public import TauCeti.LinearAlgebra.Pi
+public import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Exterior powers of coordinate spaces in coordinates
@@ -26,12 +29,21 @@ In degree zero it is the identity after identifying the coordinate space with th
 (`exteriorPower.piOneEquiv_exteriorPowerCoords`), and for an endomorphism of `Fin m → R` in the top
 degree `m` it is multiplication by the determinant (`LinearMap.exteriorPowerCoords_self`).
 
+For concatenated coordinates `Fin (a + d) → R`, transporting `TauCeti.exteriorPower.wedgeTensor`
+and `TauCeti.exteriorPower.prodProj` across `exteriorPower.piEquiv`, `TauCeti.piTensorEquiv` and
+`LinearEquiv.piFinAppend` gives the coordinate Künneth inclusions `TauCeti.exteriorPower.piProdInl`
+and projections `TauCeti.exteriorPower.piProdProj`. They are mutually orthogonal, resolve the
+identity of `Fin ((a + d).choose n) → R`, reduce to an isomorphism in the top degree `a + d`, and
+intertwine the compound matrix of a block-diagonal map with the tensor products of the summand
+compound matrices.
+
 These coordinates express exterior powers of vector bundles given by transition matrices,
 where the transitions of `⋀^j E` are the compound matrices of those of `E`.
 
 ## References
 
 * M. F. Atiyah, *K-Theory*, §1.2.
+* N. Bourbaki, *Algebra I*, Chapter III, §7.7.
 * The coordinates use Mathlib's exterior-power basis from
   `Mathlib.LinearAlgebra.ExteriorPower.Basis`, by Sophie Morel and Daniel Morrison.
 -/
@@ -178,3 +190,211 @@ through `exteriorPower.oneEquiv`. -/
     (oneEquiv_naturality f)
 
 end exteriorPower
+
+namespace TauCeti.exteriorPower
+
+open scoped TensorProduct
+
+variable {R : Type*} [CommRing R]
+
+variable (R) in
+/-- The bidegree-`(p, q)` Künneth inclusion `(Fin (a.choose p * d.choose q) → R) →ₗ[R]
+(Fin ((a + d).choose n) → R)` in exterior-power coordinates, transporting `wedgeTensor` across
+`_root_.exteriorPower.piEquiv`, `TauCeti.piTensorEquiv` and `LinearEquiv.piFinAppend`. -/
+noncomputable def piProdInl (a d p q n : ℕ) (h : p + q = n) :
+    (Fin (a.choose p * d.choose q) → R) →ₗ[R] (Fin ((a + d).choose n) → R) :=
+  (_root_.exteriorPower.piEquiv R (a + d) n).toLinearMap ∘ₗ
+    _root_.exteriorPower.map n (LinearEquiv.piFinAppend R R a d).symm.toLinearMap ∘ₗ
+    wedgeTensor R (Fin a → R) (Fin d → R) p q n h ∘ₗ
+    TensorProduct.map (_root_.exteriorPower.piEquiv R a p).symm.toLinearMap
+      (_root_.exteriorPower.piEquiv R d q).symm.toLinearMap ∘ₗ
+    (piTensorEquiv R (a.choose p) (d.choose q)).symm.toLinearMap
+
+variable (R) in
+/-- The bidegree-`(p, q)` Künneth projection `(Fin ((a + d).choose n) → R) →ₗ[R]
+(Fin (a.choose p * d.choose q) → R)` in exterior-power coordinates, transporting `prodProj` across
+`_root_.exteriorPower.piEquiv`, `TauCeti.piTensorEquiv` and `LinearEquiv.piFinAppend`. -/
+noncomputable def piProdProj (a d p q n : ℕ) :
+    (Fin ((a + d).choose n) → R) →ₗ[R] (Fin (a.choose p * d.choose q) → R) :=
+  (piTensorEquiv R (a.choose p) (d.choose q)).toLinearMap ∘ₗ
+    TensorProduct.map (_root_.exteriorPower.piEquiv R a p).toLinearMap
+      (_root_.exteriorPower.piEquiv R d q).toLinearMap ∘ₗ
+    prodProj R (Fin a → R) (Fin d → R) p q n ∘ₗ
+    _root_.exteriorPower.map n (LinearEquiv.piFinAppend R R a d).toLinearMap ∘ₗ
+    (_root_.exteriorPower.piEquiv R (a + d) n).symm.toLinearMap
+
+private theorem map_piFinAppend_comp_symm (a d n : ℕ)
+    (x : ⋀[R]^n ((Fin a → R) × (Fin d → R))) :
+    _root_.exteriorPower.map n (LinearEquiv.piFinAppend R R a d).toLinearMap
+      (_root_.exteriorPower.map n (LinearEquiv.piFinAppend R R a d).symm.toLinearMap x) = x := by
+  rw [← LinearMap.comp_apply, ← _root_.exteriorPower.map_comp, LinearEquiv.comp_coe,
+    LinearEquiv.symm_trans_self, LinearEquiv.refl_toLinearMap, _root_.exteriorPower.map_id,
+    LinearMap.id_apply]
+
+private theorem map_piFinAppend_symm_comp (a d n : ℕ)
+    (x : ⋀[R]^n (Fin (a + d) → R)) :
+    _root_.exteriorPower.map n (LinearEquiv.piFinAppend R R a d).symm.toLinearMap
+      (_root_.exteriorPower.map n (LinearEquiv.piFinAppend R R a d).toLinearMap x) = x := by
+  rw [← LinearMap.comp_apply, ← _root_.exteriorPower.map_comp, LinearEquiv.comp_coe,
+    LinearEquiv.self_trans_symm, LinearEquiv.refl_toLinearMap, _root_.exteriorPower.map_id,
+    LinearMap.id_apply]
+
+private theorem tensorMap_piEquiv_comp_symm (a d p q : ℕ)
+    (z : (Fin (a.choose p) → R) ⊗[R] (Fin (d.choose q) → R)) :
+    TensorProduct.map (_root_.exteriorPower.piEquiv R a p).toLinearMap
+      (_root_.exteriorPower.piEquiv R d q).toLinearMap
+      (TensorProduct.map (_root_.exteriorPower.piEquiv R a p).symm.toLinearMap
+        (_root_.exteriorPower.piEquiv R d q).symm.toLinearMap z) = z := by
+  rw [← LinearMap.comp_apply, ← TensorProduct.map_comp, LinearEquiv.comp_coe,
+    LinearEquiv.comp_coe, LinearEquiv.symm_trans_self, LinearEquiv.symm_trans_self,
+    LinearEquiv.refl_toLinearMap, LinearEquiv.refl_toLinearMap, TensorProduct.map_id,
+    LinearMap.id_apply]
+
+private theorem tensorMap_piEquiv_symm_comp (a d p q : ℕ)
+    (z : ⋀[R]^p (Fin a → R) ⊗[R] ⋀[R]^q (Fin d → R)) :
+    TensorProduct.map (_root_.exteriorPower.piEquiv R a p).symm.toLinearMap
+      (_root_.exteriorPower.piEquiv R d q).symm.toLinearMap
+      (TensorProduct.map (_root_.exteriorPower.piEquiv R a p).toLinearMap
+        (_root_.exteriorPower.piEquiv R d q).toLinearMap z) = z := by
+  rw [← LinearMap.comp_apply, ← TensorProduct.map_comp, LinearEquiv.comp_coe,
+    LinearEquiv.comp_coe, LinearEquiv.self_trans_symm, LinearEquiv.self_trans_symm,
+    LinearEquiv.refl_toLinearMap, LinearEquiv.refl_toLinearMap, TensorProduct.map_id,
+    LinearMap.id_apply]
+
+/-- `piProdProj` is left inverse to `piProdInl` in matching bidegree. -/
+@[simp]
+theorem piProdProj_comp_piProdInl_self (a d p q n : ℕ) (h : p + q = n) :
+    piProdProj R a d p q n ∘ₗ piProdInl R a d p q n h = LinearMap.id := by
+  refine LinearMap.ext fun v ↦ ?_
+  simp only [piProdProj, piProdInl, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    LinearEquiv.symm_apply_apply, map_piFinAppend_comp_symm, prodProj_wedgeTensor_self,
+    tensorMap_piEquiv_comp_symm, LinearEquiv.apply_symm_apply, LinearMap.id_apply]
+
+/-- `piProdProj` vanishes on the image of `piProdInl` in any differing bidegree. -/
+theorem piProdProj_comp_piProdInl_of_ne {a d p' q' p q n : ℕ} (h : p + q = n)
+    (hne : p ≠ p' ∨ q ≠ q') :
+    piProdProj R a d p' q' n ∘ₗ piProdInl R a d p q n h = 0 := by
+  refine LinearMap.ext fun v ↦ ?_
+  simp only [piProdProj, piProdInl, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    LinearEquiv.symm_apply_apply, map_piFinAppend_comp_symm,
+    prodProj_wedgeTensor_of_ne h hne, map_zero, LinearMap.zero_apply]
+
+/-- The coordinate Künneth projections and inclusions resolve the identity of
+`Fin ((a + d).choose n) → R`. -/
+theorem sum_piProdInl_comp_piProdProj (a d n : ℕ) :
+    ∑ i : Fin (n + 1),
+      piProdInl R a d i (n - i) n (by omega) ∘ₗ piProdProj R a d i (n - i) n = LinearMap.id := by
+  refine LinearMap.ext fun v ↦ ?_
+  simp only [LinearMap.sum_apply, piProdInl, piProdProj, LinearMap.comp_apply,
+    LinearEquiv.coe_toLinearMap, LinearEquiv.symm_apply_apply, tensorMap_piEquiv_symm_comp,
+    LinearMap.id_apply]
+  rw [← map_sum, ← map_sum, sum_wedgeTensor_prodProj, map_piFinAppend_symm_comp,
+    LinearEquiv.apply_symm_apply]
+
+/-- `piProdProj` vanishes outside total degree `n`. -/
+theorem piProdProj_eq_zero_of_add_ne {a d p q n : ℕ} (h : p + q ≠ n) :
+    piProdProj R a d p q n = 0 := by
+  simp [piProdProj, prodProj_eq_zero_of_add_ne h]
+
+/-- In the top degree `a + d`, the single bidegree `(a, d)` Künneth projection and inclusion are
+two-sided inverses: every other summand has degree exceeding the rank of one of the two factors. -/
+@[simp]
+theorem piProdInl_comp_piProdProj_top (a d : ℕ) :
+    piProdInl R a d a d (a + d) rfl ∘ₗ piProdProj R a d a d (a + d) = LinearMap.id := by
+  refine LinearMap.ext fun v ↦ ?_
+  have hv := DFunLike.congr_fun (sum_piProdInl_comp_piProdProj (R := R) a d (a + d)) v
+  simp only [LinearMap.sum_apply, LinearMap.id_apply] at hv
+  rw [Finset.sum_eq_single ⟨a, by omega⟩] at hv
+  · have hcast : ∀ (q : ℕ) (_ : q = d) (h : a + q = a + d),
+        (piProdInl R a d a q (a + d) h ∘ₗ piProdProj R a d a q (a + d)) v =
+          (piProdInl R a d a d (a + d) rfl ∘ₗ piProdProj R a d a d (a + d)) v := by
+      rintro _ rfl _
+      rfl
+    exact (hcast (a + d - a) (Nat.add_sub_cancel_left a d) (by omega)).symm.trans hv
+  · rintro i - hi
+    have hne : (i : ℕ) ≠ a := fun h ↦ hi (Fin.ext h)
+    have hzero : a.choose i * d.choose (a + d - i) = 0 := by
+      rcases lt_or_gt_of_ne hne with hlt | hgt
+      · rw [Nat.choose_eq_zero_of_lt (by omega : d < a + d - i), mul_zero]
+      · rw [Nat.choose_eq_zero_of_lt hgt, zero_mul]
+    have hsub : Subsingleton (Fin (a.choose i * d.choose (a + d - i)) → R) := by
+      rw [hzero]
+      infer_instance
+    simp only [LinearMap.comp_apply]
+    rw [Subsingleton.elim (piProdProj R a d i (a + d - i) (a + d) v) 0, map_zero]
+  · simp
+
+/-- `piProdInl` intertwines the tensor product of compound matrices with the compound matrix of a
+block-diagonal map on concatenated coordinates. -/
+theorem exteriorPowerCoords_piFinAppend_comp_piProdInl {a a' d d' : ℕ}
+    (f : (Fin a → R) →ₗ[R] (Fin a' → R)) (g : (Fin d → R) →ₗ[R] (Fin d' → R))
+    (p q n : ℕ) (h : p + q = n) :
+    ((LinearEquiv.piFinAppend R R a' d').symm.toLinearMap ∘ₗ f.prodMap g ∘ₗ
+        (LinearEquiv.piFinAppend R R a d).toLinearMap).exteriorPowerCoords n ∘ₗ
+      piProdInl R a d p q n h =
+    piProdInl R a' d' p q n h ∘ₗ
+      (piTensorEquiv R (a'.choose p) (d'.choose q)).toLinearMap ∘ₗ
+      TensorProduct.map (f.exteriorPowerCoords p) (g.exteriorPowerCoords q) ∘ₗ
+      (piTensorEquiv R (a.choose p) (d.choose q)).symm.toLinearMap := by
+  refine LinearMap.ext fun v ↦ ?_
+  have hfg : ((LinearEquiv.piFinAppend R R a' d').symm.toLinearMap ∘ₗ f.prodMap g ∘ₗ
+        (LinearEquiv.piFinAppend R R a d).toLinearMap) ∘ₗ
+      (LinearEquiv.piFinAppend R R a d).symm.toLinearMap =
+    (LinearEquiv.piFinAppend R R a' d').symm.toLinearMap ∘ₗ f.prodMap g :=
+    LinearMap.ext fun _ ↦ by simp
+  have htp : ∀ z,
+      TensorProduct.map (_root_.exteriorPower.piEquiv R a' p).symm.toLinearMap
+        (_root_.exteriorPower.piEquiv R d' q).symm.toLinearMap
+        (TensorProduct.map (f.exteriorPowerCoords p) (g.exteriorPowerCoords q) z) =
+      TensorProduct.map (_root_.exteriorPower.map p f) (_root_.exteriorPower.map q g)
+        (TensorProduct.map (_root_.exteriorPower.piEquiv R a p).symm.toLinearMap
+          (_root_.exteriorPower.piEquiv R d q).symm.toLinearMap z) := by
+    intro z
+    rw [← LinearMap.comp_apply, ← TensorProduct.map_comp, ← LinearMap.comp_apply,
+      ← TensorProduct.map_comp]
+    congr 2 <;> refine LinearMap.ext fun w ↦ ?_ <;>
+      simp [LinearMap.piEquiv_symm_exteriorPowerCoords]
+  simp only [piProdInl, LinearMap.comp_apply,
+    LinearEquiv.coe_toLinearMap, LinearEquiv.symm_apply_apply]
+  rw [LinearMap.exteriorPowerCoords]
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, LinearEquiv.symm_apply_apply]
+  rw [← LinearMap.comp_apply (_root_.exteriorPower.map n _), ← _root_.exteriorPower.map_comp, hfg,
+    _root_.exteriorPower.map_comp, LinearMap.comp_apply, map_prodMap_wedgeTensor_apply, ← htp]
+
+/-- `piProdProj` intertwines the compound matrix of a block-diagonal map on concatenated
+coordinates with the tensor product of compound matrices. -/
+theorem piProdProj_comp_exteriorPowerCoords_piFinAppend {a a' d d' : ℕ}
+    (f : (Fin a → R) →ₗ[R] (Fin a' → R)) (g : (Fin d → R) →ₗ[R] (Fin d' → R))
+    (p q n : ℕ) :
+    piProdProj R a' d' p q n ∘ₗ
+      ((LinearEquiv.piFinAppend R R a' d').symm.toLinearMap ∘ₗ f.prodMap g ∘ₗ
+        (LinearEquiv.piFinAppend R R a d).toLinearMap).exteriorPowerCoords n =
+    (piTensorEquiv R (a'.choose p) (d'.choose q)).toLinearMap ∘ₗ
+      TensorProduct.map (f.exteriorPowerCoords p) (g.exteriorPowerCoords q) ∘ₗ
+      (piTensorEquiv R (a.choose p) (d.choose q)).symm.toLinearMap ∘ₗ
+      piProdProj R a d p q n := by
+  refine LinearMap.ext fun v ↦ ?_
+  have hfg : (LinearEquiv.piFinAppend R R a' d').toLinearMap ∘ₗ
+      ((LinearEquiv.piFinAppend R R a' d').symm.toLinearMap ∘ₗ f.prodMap g ∘ₗ
+        (LinearEquiv.piFinAppend R R a d).toLinearMap) =
+    f.prodMap g ∘ₗ (LinearEquiv.piFinAppend R R a d).toLinearMap :=
+    LinearMap.ext fun _ ↦ by simp
+  have htp : ∀ z,
+      TensorProduct.map (_root_.exteriorPower.piEquiv R a' p).toLinearMap
+        (_root_.exteriorPower.piEquiv R d' q).toLinearMap
+        (TensorProduct.map (_root_.exteriorPower.map p f) (_root_.exteriorPower.map q g) z) =
+      TensorProduct.map (f.exteriorPowerCoords p) (g.exteriorPowerCoords q)
+        (TensorProduct.map (_root_.exteriorPower.piEquiv R a p).toLinearMap
+          (_root_.exteriorPower.piEquiv R d q).toLinearMap z) := by
+    intro z
+    rw [← LinearMap.comp_apply, ← TensorProduct.map_comp, ← LinearMap.comp_apply,
+      ← TensorProduct.map_comp]
+    congr 2 <;> refine LinearMap.ext fun w ↦ ?_ <;> simp [LinearMap.exteriorPowerCoords_piEquiv]
+  simp only [piProdProj, LinearMap.comp_apply,
+    LinearEquiv.coe_toLinearMap, LinearEquiv.symm_apply_apply]
+  rw [LinearMap.exteriorPowerCoords]
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, LinearEquiv.symm_apply_apply]
+  rw [← LinearMap.comp_apply (_root_.exteriorPower.map n _), ← _root_.exteriorPower.map_comp, hfg,
+    _root_.exteriorPower.map_comp, LinearMap.comp_apply, prodProj_map_prodMap, htp]
+
+end TauCeti.exteriorPower

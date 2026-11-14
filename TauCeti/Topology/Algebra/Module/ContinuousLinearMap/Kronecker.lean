@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.Logic.Equiv.Fin.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Kronecker products of operators on finite coordinates
@@ -20,7 +21,8 @@ For continuous linear maps `f : (Fin m → R) →L[R] (Fin m' → R)` and
 the coordinate pair `(i, j)` is the index `finProdFinEquiv (i, j)`. Viewing a vector as an
 `m × n` array, it applies `g` to every row and then `f` to every column. Its matrix is the
 reindexed Kronecker product of the matrices of `f` and `g`
-(`ContinuousLinearMap.toMatrix'_kronecker`).
+(`ContinuousLinearMap.toMatrix'_kronecker`), and as a linear map it is `TensorProduct.map f g`
+conjugated by `TauCeti.piTensorEquiv` (`ContinuousLinearMap.toLinearMap_kronecker_eq`).
 
 The product is functorial (`ContinuousLinearMap.kronecker_comp_kronecker`,
 `ContinuousLinearMap.id_kronecker_id`) and additive and homogeneous in each factor. These are
@@ -375,5 +377,37 @@ theorem kroneckerComm_hexagon_reverse (m n p : ℕ) :
   obtain ⟨⟨k, j⟩, rfl⟩ := finProdFinEquiv.surjective k
   obtain ⟨⟨l, i⟩, rfl⟩ := finProdFinEquiv.surjective k
   simp
+
+open scoped TensorProduct in
+/-- As linear maps, `ContinuousLinearMap.kronecker` intertwines `TensorProduct.map` through
+`TauCeti.piTensorEquiv`. -/
+theorem toLinearMap_kronecker_comp_piTensorEquiv
+    (f : (Fin m → R) →L[R] (Fin m' → R)) (g : (Fin n → R) →L[R] (Fin n' → R)) :
+    (f.kronecker g : (Fin (m * n) → R) →ₗ[R] (Fin (m' * n') → R)) ∘ₗ
+      (TauCeti.piTensorEquiv R m n).toLinearMap =
+    (TauCeti.piTensorEquiv R m' n').toLinearMap ∘ₗ
+      TensorProduct.map (f : (Fin m → R) →ₗ[R] (Fin m' → R))
+        (g : (Fin n → R) →ₗ[R] (Fin n' → R)) := by
+  refine LinearMap.ext fun z ↦ funext fun k ↦ ?_
+  obtain ⟨⟨i, j⟩, rfl⟩ := finProdFinEquiv.surjective k
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, coe_coe, kronecker_apply,
+    TauCeti.piTensorEquiv_map_apply]
+
+open scoped TensorProduct in
+/-- `ContinuousLinearMap.kronecker` is `TensorProduct.map` conjugated by
+`TauCeti.piTensorEquiv`. -/
+theorem toLinearMap_kronecker_eq
+    (f : (Fin m → R) →L[R] (Fin m' → R)) (g : (Fin n → R) →L[R] (Fin n' → R)) :
+    (f.kronecker g : (Fin (m * n) → R) →ₗ[R] (Fin (m' * n') → R)) =
+      (TauCeti.piTensorEquiv R m' n').toLinearMap ∘ₗ
+        TensorProduct.map (f : (Fin m → R) →ₗ[R] (Fin m' → R))
+          (g : (Fin n → R) →ₗ[R] (Fin n' → R)) ∘ₗ
+        (TauCeti.piTensorEquiv R m n).symm.toLinearMap := by
+  refine LinearMap.ext fun v ↦ ?_
+  have h := DFunLike.congr_fun (toLinearMap_kronecker_comp_piTensorEquiv f g)
+    ((TauCeti.piTensorEquiv R m n).symm v)
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    LinearEquiv.apply_symm_apply] at h ⊢
+  exact h
 
 end ContinuousLinearMap

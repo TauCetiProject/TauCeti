@@ -44,6 +44,8 @@ consists of pure tensors.
   scalar maps when the represented endomorphisms are intertwined by tensor-product base change.
 * `Module.Basis.toMatrix_baseChange_baseChange`: matrices of scalar-extended linear maps
   are obtained by mapping entries.
+* `TauCeti.piTensorEquiv`: coordinates of `(Fin m → R) ⊗[R] (Fin n → R)` in the reindexed tensor
+  product of standard bases, storing the `(i, j)` coefficient at `finProdFinEquiv (i, j)`.
 -/
 
 public section
@@ -237,3 +239,64 @@ theorem map_toMatrixAlgEquiv_baseChange (b : Basis ι R M) (φ : S →ₐ[R] T)
 end Matrix
 
 end Module.Basis
+
+namespace TauCeti
+
+section PiTensorEquiv
+
+variable {R : Type*} [CommSemiring R]
+
+variable (R) in
+/-- Coordinates of `(Fin m → R) ⊗[R] (Fin n → R)` in the tensor product of the standard bases,
+reindexed by `finProdFinEquiv` so that the `(i, j)` coefficient sits at `finProdFinEquiv (i, j)`. -/
+noncomputable def piTensorEquiv (m n : ℕ) :
+    (Fin m → R) ⊗[R] (Fin n → R) ≃ₗ[R] (Fin (m * n) → R) :=
+  (((Pi.basisFun R (Fin m)).tensorProduct (Pi.basisFun R (Fin n))).reindex
+    finProdFinEquiv).equivFun
+
+/-- On a pure tensor `u ⊗ₜ v`, the coordinate at `finProdFinEquiv (i, j)` is `u i * v j`. -/
+@[simp] theorem piTensorEquiv_tmul_apply {m n : ℕ} (u : Fin m → R) (v : Fin n → R)
+    (i : Fin m) (j : Fin n) :
+    piTensorEquiv R m n (u ⊗ₜ v) (finProdFinEquiv (i, j)) = u i * v j := by
+  rw [piTensorEquiv, Module.Basis.equivFun_apply, Module.Basis.repr_reindex_apply,
+    Equiv.symm_apply_apply, Module.Basis.tensorProduct_repr_tmul_apply, Pi.basisFun_repr,
+    Pi.basisFun_repr, smul_eq_mul, mul_comm]
+
+/-- A single coordinate at `finProdFinEquiv (i, j)` corresponds to the pure tensor of single
+coordinates `Pi.single i r ⊗ₜ Pi.single j 1`. -/
+@[simp] theorem piTensorEquiv_symm_single {m n : ℕ} (i : Fin m) (j : Fin n) (r : R) :
+    (piTensorEquiv R m n).symm (Pi.single (finProdFinEquiv (i, j)) r) =
+      Pi.single i r ⊗ₜ Pi.single j 1 := by
+  apply (piTensorEquiv R m n).injective
+  rw [LinearEquiv.apply_symm_apply]
+  ext k
+  obtain ⟨⟨i', j'⟩, rfl⟩ := finProdFinEquiv.surjective k
+  rw [piTensorEquiv_tmul_apply]
+  by_cases hi : i' = i <;> by_cases hj : j' = j <;> simp [hi, hj]
+
+/-- In `piTensorEquiv` coordinates, `TensorProduct.map f g` acts on rows by `g` and then on
+columns by `f`, matching the Kronecker-product formula on `Fin (m * n) → R`. -/
+theorem piTensorEquiv_map_apply {m n m' n' : ℕ} (f : (Fin m → R) →ₗ[R] (Fin m' → R))
+    (g : (Fin n → R) →ₗ[R] (Fin n' → R)) (z : (Fin m → R) ⊗[R] (Fin n → R))
+    (i : Fin m') (j : Fin n') :
+    piTensorEquiv R m' n' (TensorProduct.map f g z) (finProdFinEquiv (i, j)) =
+      f (fun i' ↦ g (fun j' ↦ piTensorEquiv R m n z (finProdFinEquiv (i', j'))) j) i := by
+  induction z using TensorProduct.inductionOn with
+  | tmul u v =>
+    simp only [TensorProduct.map_tmul, piTensorEquiv_tmul_apply]
+    have hrow : ∀ i', (fun j' ↦ u i' * v j') = u i' • v := fun _ ↦ rfl
+    simp_rw [hrow, map_smul, Pi.smul_apply, smul_eq_mul]
+    have hcol : (fun i' ↦ u i' * g v j) = g v j • u := funext fun _ ↦ mul_comm _ _
+    rw [hcol, map_smul, Pi.smul_apply, smul_eq_mul, mul_comm]
+  | add x y hx hy =>
+    simp only [map_add, Pi.add_apply, hx, hy]
+    have hrow : ∀ i', (fun j' ↦ piTensorEquiv R m n x (finProdFinEquiv (i', j')) +
+        piTensorEquiv R m n y (finProdFinEquiv (i', j'))) =
+      (fun j' ↦ piTensorEquiv R m n x (finProdFinEquiv (i', j'))) +
+        (fun j' ↦ piTensorEquiv R m n y (finProdFinEquiv (i', j'))) := fun _ ↦ rfl
+    simp_rw [hrow, map_add, Pi.add_apply]
+    rw [← Pi.add_def, map_add, Pi.add_apply]
+
+end PiTensorEquiv
+
+end TauCeti
