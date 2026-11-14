@@ -26,8 +26,11 @@ point either preserves or reverses orientations there
 The inverse of a diffeomorphism preserves orientation wherever the diffeomorphism does
 (`IsOrientationPreservingAt.diffeomorph_symm`), so a diffeomorphism of `M` preserving an
 orientation everywhere has all its integer powers orientation preserving
-(`isOrientationPreservingAt_zpow`). The same holds for the inverse of a partial diffeomorphism, such
-as a chart, at the points of its target (`IsOrientationPreservingAt.partialDiffeomorph_symm`).
+(`isOrientationPreservingAt_zpow`). These diffeomorphisms form the subgroup
+`Diffeomorph.orientationPreservingSubgroup hn o` of the group of `Cⁿ` diffeomorphisms, for any
+`n ≠ 0`. Likewise,
+the inverse of a partial diffeomorphism, such as a chart, preserves orientation at the points of its
+target where the partial diffeomorphism does (`IsOrientationPreservingAt.partialDiffeomorph_symm`).
 
 For orientation lifts whose model orientations correspond under a linear equivalence of the model
 spaces, the chart signs of the lifts compensate the sign of the coordinate Jacobian of an
@@ -786,3 +789,36 @@ theorem signAt_mul_signAt_mul_det_pos
       (tangentCoordChange I β x x).det) * ((c : ℝ) * c * ha' + hc')
 
 end TauCeti.Manifold.OrientationLift
+
+namespace Diffeomorph
+
+open scoped ContDiff
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+
+variable {ι : Type*} [Fintype ι] {n : ℕ∞ω}
+
+/-- The subgroup of `Cⁿ` self-diffeomorphisms of `M`, for `n ≠ 0`, preserving the orientation `o`
+at every point. -/
+def orientationPreservingSubgroup (hn : n ≠ 0) (o : TauCeti.Manifold.Orientation I M ι) :
+    Subgroup (TauCeti.Diff I M n) where
+  carrier := {f | ∀ x, TauCeti.Manifold.Orientation.IsOrientationPreservingAt o o f x}
+  mul_mem' {f g} hf hg x := by
+    rw [coe_mul]
+    exact (hf (g x)).comp (hg x)
+  one_mem' x := TauCeti.Manifold.Orientation.isOrientationPreservingAt_id o x
+  inv_mem' {f} hf y := by
+    rw [coe_inv]
+    exact (hf (f.symm y)).diffeomorph_symm hn
+
+/-- Membership in the orientation-preserving subgroup is preservation of `o` at every point. -/
+@[simp]
+theorem mem_orientationPreservingSubgroup_iff {hn : n ≠ 0}
+    {o : TauCeti.Manifold.Orientation I M ι} {f : TauCeti.Diff I M n} :
+    f ∈ orientationPreservingSubgroup hn o ↔
+      ∀ x, TauCeti.Manifold.Orientation.IsOrientationPreservingAt o o f x :=
+  Iff.rfl
+
+end Diffeomorph
