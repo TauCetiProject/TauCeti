@@ -44,7 +44,7 @@ cutoff `χ` which is `1` on `[-1, 1]` and vanishes off `(-2, 2)`, the spliced ma
   derivative of the cutoff is small, and on a fixed strip the derivative of every spliced map stays
   close to `A`, uniformly in `δ`. A left inverse `P` of `A` then makes `P` of the spliced map
   approximate the identity on the convex strip, so the spliced map is injective there, with
-  injective derivative (`Convex.injOn_and_injective_of_norm_hasFDerivAt_sub_le`, via Mathlib's
+  injective derivative (`Convex.injOn_and_injective_of_norm_hasFDerivWithin_sub_le`, via Mathlib's
   `ApproximatesLinearOn.injOn`).
 * The image under `F` of the complement of the arc is closed, since `F` is a closed embedding, and
   misses the compact segment `F ({z₀} × [0, 1])`; for small `δ` the modified stretch stays in a
@@ -264,7 +264,6 @@ private theorem isSmoothEmbedding_spliceTrack {f g : Circle → M}
     IsSmoothEmbedding ((𝓡 1).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)) ∞ (spliceTrack F φ z₀ ρ h) ∧
       IsCollaredTrack f g (spliceTrack F φ z₀ ρ h) := by
   set G := spliceTrack F φ z₀ ρ h
-  have hFc' : Continuous F := hF.contMDiff.continuous
   have hFinj : Injective F := hF.isEmbedding.injective
   have hS : IsOpen {u : ℝ × ℝ | |u.1| < ρ} := isOpen_lt (continuous_abs.comp continuous_fst)
     continuous_const
@@ -374,7 +373,7 @@ private theorem exists_hasFDerivAt_prodMap_comp {F : Circle × ℝ → M × ℝ}
     ∃ D : ℝ × ℝ →L[ℝ] E × ℝ, Injective D ∧
       HasFDerivAt (fun u => Prod.map φ id (F (toCyl z₀ u))) D (0, t) ∧
       HasFDerivAt (fun u => Prod.map φ id (Prod.map L id (toCyl z₀ u))) D (0, t) := by
-  set x := toCyl z₀ (0, t) with hx
+  set x := toCyl z₀ (0, t)
   have hxz : x = (z₀, t) := toCyl_zero z₀ t
   have h₀' : F x = Prod.map L id x := by rw [hxz]; exact h₀
   have h₁' : mfderiv ((𝓡 1).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)) F x =
@@ -618,7 +617,6 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
   set ε : ℝ := 1 / (2 * ((‖P‖ + 1) * (3 + 4 * B)))
   have hε : 0 < ε := by positivity
   have hPε : ‖P‖ * ((3 + 4 * B) * ε) ≤ 1 / 2 := by
-    have h34 : 0 < 3 + 4 * B := by positivity
     have hscale : ‖P‖ * ((3 + 4 * B) * ε) = ‖P‖ / (2 * (‖P‖ + 1)) := by
       simp only [ε]
       field_simp
@@ -652,7 +650,6 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
   -- Step 5: the splice at a small scale `δ`.
   set δ := min ρ ρ₂ / 4
   have hδ : 0 < δ := by positivity
-  have hm : 0 < min ρ ρ₂ := lt_min hρ hρ₂
   have hδρ : 2 * δ < ρ := by simp only [δ]; linarith [min_le_left ρ ρ₂]
   have hδρ₂ : 2 * δ < ρ₂ := by simp only [δ]; linarith [min_le_right ρ ρ₂]
   set h := spliceAlong (ContinuousLinearMap.fst ℝ ℝ ℝ) k l δ
@@ -684,7 +681,7 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
       · rw [hne]; exact φ.map_source (hFφ u (hρ₁r (hstrip hu)))
       · exact (hhO' u (hρ₁r (hstrip hu)) hne).1.1)
     (fun u hu hne => (hhO' u (hρ₁r (hstrip hu)) hne).2)
-    (fun u hu ht => by
+    (fun u _ ht => by
       have hS : Convex ℝ {y : E × ℝ | y.2 ∈ Ioo (0 : ℝ) 1} :=
         (convex_Ioo (0 : ℝ) 1).linear_preimage (LinearMap.snd ℝ E ℝ)
       exact spliceAlong_mem hS (hFc.snd_apply_mem_Ioo _ _ ht) ht)

@@ -16,7 +16,9 @@ import Mathlib.Topology.Algebra.Ring.Real
 # Geometric stars and radial coordinates
 
 Open vertex stars cover the realization, and closed stars consist of points whose carriers
-lie in the corresponding combinatorial closed star. Finite closed stars are compact.
+lie in the corresponding combinatorial closed star. Finite closed stars are compact. A closed
+star is a neighbourhood of every point whose carrier contains its face, both in the realization
+and relative to the polyhedron of any precomplex in it.
 
 The closed star of a vertex is a cone on its link. Removing the apex gives a product of
 that link with `[0, 1)`: the interval coordinate is the barycentric coordinate at the apex,
@@ -39,7 +41,7 @@ public section
 
 noncomputable section
 
-open Set TauCeti.SetLike
+open Set Topology TauCeti.SetLike
 
 namespace AbstractSimplicialComplex
 
@@ -111,6 +113,19 @@ theorem isCompact_closedStarRealization {σ : Finset ι}
 theorem mem_closedStarRealization_iff {σ : Finset ι} {x : Realization K} :
     x ∈ K.closedStarRealization σ ↔ x.1.support ∪ σ ∈ K := by
   simp [mem_closedStarRealization, PreAbstractSimplicialComplex.mem_closedStar, support_mem]
+
+/-- A realized closed star is a neighbourhood of every point whose carrier contains the
+finite vertex set. In particular this applies to the face barycentre. -/
+theorem closedStarRealization_mem_nhds {σ : Finset ι} {x : Realization K}
+    (hx : σ ⊆ x.1.support) : K.closedStarRealization σ ∈ 𝓝 x := by
+  have hopen := isOpen_biInter_finset fun i (_ : i ∈ σ) => K.isOpen_openStarRealization i
+  have hmem : x ∈ ⋂ i ∈ σ, K.openStarRealization i :=
+    mem_iInter₂.mpr fun i hi => K.mem_openStarRealization_iff_mem_support.mpr (hx hi)
+  refine Filter.mem_of_superset (hopen.mem_nhds hmem) fun y hy => ?_
+  have hsub : σ ⊆ y.1.support := fun i hi =>
+    K.mem_openStarRealization_iff_mem_support.mp (mem_iInter₂.mp hy i hi)
+  rw [mem_closedStarRealization_iff, Finset.union_eq_left.mpr hsub]
+  exact support_mem K y
 
 variable (v : ι)
 
@@ -471,3 +486,28 @@ theorem puncturedClosedStarHomeomorph_symm_apply
     (puncturedClosedStarHomeomorph K v hK).symm p = starRay K v p.1 p.2 := (rfl)
 
 end AbstractSimplicialComplex
+
+namespace PreAbstractSimplicialComplex
+
+open AbstractSimplicialComplex
+
+variable {ι : Type*} [DecidableEq ι] {A : AbstractSimplicialComplex ι} {σ : Finset ι}
+
+/-- A closed face star is a neighbourhood of every point whose carrier contains that face,
+relative to the original polyhedron in a containing weak realization. In particular this
+applies to the face barycentre. -/
+theorem setOf_support_mem_closedStar_mem_nhds (K : PreAbstractSimplicialComplex ι)
+    {x : {x : Realization A // x.1.support ∈ K}} (hx : σ ⊆ x.1.1.support) :
+    {y : {x : Realization A // x.1.support ∈ K} |
+      y.1.1.support ∈ closedStar K σ} ∈ 𝓝 x := by
+  have hopen := (isOpen_biInter_finset fun i (_ : i ∈ σ) =>
+    A.isOpen_openStarRealization i).preimage
+      (continuous_subtype_val (p := fun x : Realization A => x.1.support ∈ K))
+  have hmem : x.1 ∈ ⋂ i ∈ σ, A.openStarRealization i :=
+    mem_iInter₂.mpr fun i hi => A.mem_openStarRealization_iff_mem_support.mpr (hx hi)
+  refine Filter.mem_of_superset (hopen.mem_nhds hmem) fun y hy => ?_
+  have hsub : σ ⊆ y.1.1.support := fun i hi =>
+    A.mem_openStarRealization_iff_mem_support.mp (mem_iInter₂.mp hy i hi)
+  exact mem_closedStar.mpr ⟨y.2, by simpa only [Finset.union_eq_left.mpr hsub] using y.2⟩
+
+end PreAbstractSimplicialComplex

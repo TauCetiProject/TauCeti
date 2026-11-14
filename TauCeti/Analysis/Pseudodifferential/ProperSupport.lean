@@ -109,7 +109,8 @@ theorem quantizeCutoffValue_def (a : Symbol n V W m) (χ : CoordinateSpace n →
 theorem quantizeCutoffValue_of_not_hasTemperateGrowth (a : Symbol n V W m)
     {χ : CoordinateSpace n → ℝ} (hχ : ¬χ.HasTemperateGrowth) (u : 𝓢(CoordinateSpace n, V))
     (x : CoordinateSpace n) : quantizeCutoffValue a χ u x = 0 := by
-  simp [quantizeCutoffValue_def, hasTemperateGrowth_comp_sub_left_iff, hχ]
+  simp [quantizeCutoffValue_def, SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth,
+    hasTemperateGrowth_comp_sub_left_iff, hχ]
 
 /-- The truncation by the cutoff `0` vanishes. -/
 @[simp]

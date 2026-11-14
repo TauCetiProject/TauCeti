@@ -8,9 +8,10 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Rank
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Harmonic
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.TensorPower
-public import TauCeti.RepresentationTheory.Subrepresentation
+public import TauCeti.RepresentationTheory.Subrepresentation.Quotient
 -- The entrywise identity `Matrix.sum_sum_J_mul_J` for the loop value.
 import TauCeti.LinearAlgebra.SymplecticGroup
+import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # The trace splitting of the symplectic tensor powers
@@ -23,7 +24,9 @@ generators `TauCeti.symplecticCupCapAt k n d i j`: the tensors obtained by inser
 invariant bivector of `-J` into some pair of slots of a tensor of degree `d - 2`. This file proves
 that over a star-ordered field, such as `ℚ`, `ℝ` or `ℂ`, the two are complementary
 subrepresentations of `V^{⊗d}`
-(`TauCeti.isCompl_symplecticHarmonicTensorsSubrep_symplecticTraceTensors`). This is the first
+(`TauCeti.isCompl_symplecticHarmonicTensorsSubrep_symplecticTraceTensors`), so that the quotient
+of `V^{⊗d}` by the trace tensors is a copy of the harmonic tensors
+(`TauCeti.quotientSymplecticTraceTensorsEquivHarmonicTensors`). This is the first
 step of the trace filtration of the symplectic tensor powers, the symplectic counterpart of
 `TauCeti.isCompl_harmonicTensorsSubrep_orthogonalTraceTensors`.
 
@@ -64,6 +67,9 @@ the kernel of the cap is the symmetric square of `k²` and the trace line is spa
   subrepresentation of `V^{⊗d}`.
 * `TauCeti.symplecticTraceLine`: the image of the cup in `V ⊗ V`, a subrepresentation on which
   the symplectic group acts trivially.
+* `TauCeti.quotientSymplecticTraceTensorsEquivHarmonicTensors`: over a star-ordered field the
+  quotient of `V^{⊗d}` by the trace tensors is equivalent to the harmonic tensors, as a
+  representation of the symplectic group.
 
 ## Main results
 
@@ -74,6 +80,8 @@ the kernel of the cap is the symmetric square of `k²` and the trace line is spa
   of its slots have the same kernel, so the harmonic tensors are the common kernel of the arcs.
 * `TauCeti.isCompl_symplecticHarmonicTensorsSubrep_symplecticTraceTensors`: **the trace
   splitting** of `V^{⊗d}` over a star-ordered field.
+* `TauCeti.finrank_symplecticHarmonicTensors_add_finrank_symplecticTraceTensors`: over every
+  field the dimensions of the harmonic tensors and of the trace tensors add up to `(2n)^d`.
 * `TauCeti.isCompl_ker_symplecticCap_range_symplecticCup` and
   `TauCeti.isCompl_symplecticHarmonicTensorsSubrep_symplecticTraceLine`: on two strands the same
   splitting holds over every commutative ring in which the loop value `-2n` is invertible.
@@ -112,7 +120,7 @@ theorem symplecticCupCapAt_eq_comp_contractTensorPair {i j : Fin d} (hij : i ≠
   refine PiTensorProduct.ext <| MultilinearMap.ext fun v => ?_
   -- inserting into the two slots of the restricted input overwrites those slots of the input
   have hfun (x y : Fin n ⊕ Fin n) :
-      (fun a => if h : a ≠ i ∧ a ≠ j then v a else if a = i then Pi.single x (1 : k) else
+      (fun a => if _ : a ≠ i ∧ a ≠ j then v a else if a = i then Pi.single x (1 : k) else
         Pi.single y (1 : k)) =
         Function.update (Function.update v i (Pi.single x 1)) j (Pi.single y 1) := by
     funext a
@@ -285,7 +293,101 @@ theorem isCompl_symplecticHarmonicTensorsSubrep_symplecticTraceTensors :
     rw [symplecticHarmonicTensorsSubrep_toSubmodule, symplecticTraceTensors_toSubmodule]
     exact isCompl_symplecticHarmonicTensors_iSup_range_symplecticCupCapAt k n d
 
+/-- **The quotient by the trace tensors is the space of harmonic tensors.** Over a star-ordered
+field, such as `ℚ`, `ℝ` or `ℂ` (with `ComplexOrder`), the quotient of `V^{⊗d}` by the trace
+tensors is equivalent, as a representation of the symplectic group, to the harmonic tensors, which
+complement them (`TauCeti.isCompl_symplecticHarmonicTensorsSubrep_symplecticTraceTensors`). The
+equivalence sends the class of a tensor to its harmonic component
+(`Subrepresentation.quotientEquivOfIsCompl`). -/
+noncomputable def quotientSymplecticTraceTensorsEquivHarmonicTensors :
+    (symplecticTraceTensors k n d).quotient.Equiv
+      (symplecticHarmonicTensorsSubrep k n d).toRepresentation :=
+  Subrepresentation.quotientEquivOfIsCompl
+    (isCompl_symplecticHarmonicTensorsSubrep_symplecticTraceTensors k n d).symm
+
+variable {k n d}
+
+/-- The inverse of the equivalence sends a harmonic tensor to its class modulo the trace
+tensors. -/
+@[simp]
+theorem quotientSymplecticTraceTensorsEquivHarmonicTensors_symm_apply
+    (v : (symplecticHarmonicTensorsSubrep k n d).toSubmodule) :
+    (quotientSymplecticTraceTensorsEquivHarmonicTensors k n d).symm v =
+      Submodule.Quotient.mk (v : ⨂[k]^d ((Fin n ⊕ Fin n) → k)) :=
+  Subrepresentation.quotientEquivOfIsCompl_symm_apply _ v
+
+/-- The class of a harmonic tensor goes back to that tensor. -/
+theorem quotientSymplecticTraceTensorsEquivHarmonicTensors_apply_mk_of_mem
+    {x : ⨂[k]^d ((Fin n ⊕ Fin n) → k)} (hx : x ∈ symplecticHarmonicTensors k n d) :
+    (quotientSymplecticTraceTensorsEquivHarmonicTensors k n d
+      (Submodule.Quotient.mk x) : ⨂[k]^d ((Fin n ⊕ Fin n) → k)) = x := by
+  have h := (quotientSymplecticTraceTensorsEquivHarmonicTensors k n d).apply_symm_apply
+    ⟨x, by rwa [symplecticHarmonicTensorsSubrep_toSubmodule]⟩
+  rw [quotientSymplecticTraceTensorsEquivHarmonicTensors_symm_apply] at h
+  exact congrArg Subtype.val h
+
+/-- A tensor differs from the harmonic tensor its class corresponds to by a trace tensor. -/
+theorem sub_quotientSymplecticTraceTensorsEquivHarmonicTensors_apply_mk_mem
+    (x : ⨂[k]^d ((Fin n ⊕ Fin n) → k)) :
+    x - (quotientSymplecticTraceTensorsEquivHarmonicTensors k n d
+      (Submodule.Quotient.mk x) : ⨂[k]^d ((Fin n ⊕ Fin n) → k)) ∈
+        symplecticTraceTensors k n d :=
+  Subrepresentation.sub_quotientEquivOfIsCompl_apply_mk_mem _ x
+
 end StarOrderedField
+
+/-! ### The dimension count over an arbitrary field -/
+
+section Field
+
+variable (k n d)
+variable [Field k]
+
+/-- **The harmonic tensors and the trace tensors have complementary dimensions** over every
+field, including fields of characteristic two, over which the two subspaces can intersect: the
+dimensions of `TauCeti.symplecticHarmonicTensors k n d` and of
+`TauCeti.symplecticTraceTensors k n d` add up to `(2 * n) ^ d`, the dimension of `V^{⊗d}`. -/
+theorem finrank_symplecticHarmonicTensors_add_finrank_symplecticTraceTensors :
+    Module.finrank k (symplecticHarmonicTensors k n d) +
+      Module.finrank k (symplecticTraceTensors k n d).toSubmodule = (2 * n) ^ d := by
+  -- The harmonic tensors are the orthogonal complement of the trace tensors for the dot product
+  -- of the monomial basis, for which every arc is self-adjoint.
+  let b := Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n)
+  let B := Matrix.toBilin b (1 : Matrix (Fin d → Fin n ⊕ Fin n) (Fin d → Fin n ⊕ Fin n) k)
+  have hB : B.Nondegenerate := (Matrix.nondegenerate_of_det_ne_zero (by simp)).toBilin b
+  have hBapply (x y) : B x y = ⇑(b.repr x) ⬝ᵥ ⇑(b.repr y) := by
+    simp [B, Matrix.toBilin_apply, dotProduct, Matrix.one_apply]
+  have hadj (i j : Fin d) (x y) :
+      B (symplecticCupCapAt k n d i j x) y = B (symplecticCupCapAt k n d i j y) x := by
+    let : StarRing k := starRingOfComm
+    have : TrivialStar k := ⟨fun _ => rfl⟩
+    have hT := (isHermitian_toMatrix_symplecticCupCapAt (k := k) (n := n) (d := d) (i := i)
+      (j := j)).isSymm.eq
+    rw [hBapply, hBapply, ← LinearMap.toMatrix_mulVec_repr b b _ x,
+      ← LinearMap.toMatrix_mulVec_repr b b _ y, dotProduct_comm, Matrix.dotProduct_mulVec,
+      ← Matrix.mulVec_transpose, hT]
+  have horth : B.orthogonal (symplecticTraceTensors k n d).toSubmodule =
+      symplecticHarmonicTensors k n d := by
+    rw [symplecticHarmonicTensors_eq_iInf_ker_symplecticCupCapAt]
+    ext x
+    simp only [LinearMap.BilinForm.mem_orthogonal_iff, Submodule.mem_iInf, LinearMap.mem_ker]
+    constructor
+    · intro h i j hij
+      refine hB.1 _ fun y => ?_
+      rw [hadj]
+      exact h _ (range_symplecticCupCapAt_le_symplecticTraceTensors hij ⟨y, rfl⟩)
+    · intro h t ht
+      refine (symplecticTraceTensors_toSubmodule_le_iff (p := LinearMap.ker (B.flip x))).2
+        (fun i j hij => ?_) ht
+      rintro _ ⟨y, rfl⟩
+      simp [hadj, h i j hij]
+  have hdim : Module.finrank k (⨂[k]^d ((Fin n ⊕ Fin n) → k)) = (2 * n) ^ d := by
+    rw [Module.finrank_eq_card_basis b]
+    simp [two_mul]
+  rw [← horth, LinearMap.BilinForm.finrank_orthogonal hB, ← hdim,
+    Nat.sub_add_cancel (Submodule.finrank_le _)]
+
+end Field
 
 /-! ### Two strands -/
 

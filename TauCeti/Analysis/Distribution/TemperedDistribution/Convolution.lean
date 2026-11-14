@@ -7,8 +7,11 @@ module
 
 public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.Distribution.FourierMultiplier
+public import Mathlib.Analysis.Distribution.Support
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 
 /-!
 # Fourier multipliers with Schwartz symbols on `Lᵖ` functions
@@ -34,8 +37,9 @@ functions are not dense and the multiplier cannot be obtained by extension from 
 
 This is the form in which frequency-localized functions are handled: a function whose Fourier
 transform is supported in a ball is reproduced by a multiplier whose symbol is a bump function
-equal to one on that ball, so that it is a convolution with a fixed Schwartz kernel. Bernstein's
-inequalities are derived this way.
+equal to one on that ball, so that it is a convolution with a fixed Schwartz kernel
+(`TemperedDistribution.ae_eq_fourierInv_convolution_of_isVanishingOn`). Bernstein's inequalities
+are derived this way.
 
 ## Main declarations
 
@@ -45,6 +49,10 @@ inequalities are derived this way.
   `Lᵠ` function `𝓕⁻ σ ⋆ f`, with `‖T_σ f‖_q ≤ ‖𝓕⁻ σ‖_r ‖f‖_p`.
 * `TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le`: the case `q = p`, `r = 1`,
   `‖T_σ f‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p`.
+* `TemperedDistribution.ae_eq_fourierInv_convolution_of_fourierMultiplierCLM_eq`: an `Lᵠ`
+  function representing `T_σ f` is almost everywhere the convolution `𝓕⁻ σ ⋆ f`.
+* `TemperedDistribution.ae_eq_fourierInv_convolution_of_isVanishingOn`: the reproducing formula
+  `f = 𝓕⁻ σ ⋆ f` when `σ` equals one near the spectrum of `f`.
 
 ## References
 
@@ -82,11 +90,11 @@ private theorem integrable_fourier_sub_mul_smul (σ φ : 𝓢(E, ℂ)) (f : Lp F
   set H : E → ℝ≥0∞ := (fun x ↦ ‖φ x‖ₑ) ⋆ₗ[volume] fun x ↦ ‖𝓕 σ x‖ₑ
   have hinner : ∀ y, ∫⁻ x, ‖(𝓕 σ (y - x) * φ x) • f y‖ₑ = ‖f y‖ₑ * H y := fun y ↦ by
     simp only [H, lconvolution_def]
-    rw [← lintegral_const_mul' _ _ enorm_ne_top]
+    rw [← lintegral_const_mul' _ _ eNorm_ne_top]
     refine lintegral_congr fun x ↦ ?_
-    rw [enorm_smul, enorm_mul, neg_add_eq_sub]
+    rw [eNorm_smul, eNorm_mul, neg_add_eq_sub]
     ring
-  rw [HasFiniteIntegral, lintegral_prod _ hmeas.enorm]
+  rw [HasFiniteIntegral, lintegral_prod _ hmeas.eNorm]
   simp only [Function.uncurry_apply_pair, hinner]
   -- Hölder's inequality with the conjugate exponent `p'` of `p`, then Young's inequality
   -- `‖H‖_{p'} ≤ ‖φ‖_{p'} ‖𝓕 σ‖_1`.
@@ -94,27 +102,27 @@ private theorem integrable_fourier_sub_mul_smul (σ φ : 𝓢(E, ℂ)) (f : Lp F
   have hpp' : p.HolderConjugate p' := ENNReal.HolderConjugate.inv_one_sub_inv' hp.out
   have hp' : 1 ≤ p' := ENNReal.one_le_inv.2 tsub_le_self
   have hHm : AEMeasurable H volume :=
-    aemeasurable_lconvolution φ.continuous.enorm.aemeasurable
-      (𝓕 σ).continuous.enorm.aemeasurable
+    aemeasurable_lconvolution φ.continuous.eNorm.aemeasurable
+      (𝓕 σ).continuous.eNorm.aemeasurable
   have hfH : AEStronglyMeasurable (fun y ↦ ‖f y‖ₑ * H y) volume :=
-    ((Lp.aestronglyMeasurable f).enorm.mul hHm).aestronglyMeasurable
+    ((Lp.aestronglyMeasurable f).eNorm.mul hHm).aestronglyMeasurable
   calc ∫⁻ y, ‖f y‖ₑ * H y
       = eLpNorm (fun y ↦ ‖f y‖ₑ * H y) 1 volume := by
-        rw [eLpNorm_one_eq_lintegral_enorm hfH]
+        rw [eLpNorm_one_eq_lintegral_eNorm hfH]
         simp
     _ ≤ 1 * eLpNorm f p volume * eLpNorm H p' volume :=
-        eLpNorm_le_eLpNorm_mul_eLpNorm_of_enorm (fun v h ↦ ‖v‖ₑ * h) 1
-          (fun hf hH ↦ (hf.enorm.mul hH.aemeasurable).aestronglyMeasurable)
+        eLpNorm_le_eLpNorm_mul_eLpNorm_of_eNorm (fun v h ↦ ‖v‖ₑ * h) 1
+          (fun hf hH ↦ (hf.eNorm.mul hH.aemeasurable).aestronglyMeasurable)
           (Lp.aestronglyMeasurable f) hHm.aestronglyMeasurable
           (Filter.Eventually.of_forall fun _ ↦ by simp)
     _ ≤ 1 * eLpNorm f p volume *
           (eLpNorm (fun x ↦ ‖φ x‖ₑ) p' volume * eLpNorm (fun x ↦ ‖𝓕 σ x‖ₑ) 1 volume) := by
         gcongr
         exact eLpNorm_lconvolution_le hp' le_rfl (by rw [inv_one, add_comm])
-          φ.continuous.enorm.aemeasurable (𝓕 σ).continuous.enorm.aemeasurable
+          φ.continuous.eNorm.aemeasurable (𝓕 σ).continuous.eNorm.aemeasurable
     _ < ∞ := by
-        rw [eLpNorm_enorm _ φ.continuous.aestronglyMeasurable,
-          eLpNorm_enorm _ (𝓕 σ).continuous.aestronglyMeasurable, one_mul]
+        rw [eLpNorm_eNorm _ φ.continuous.aestronglyMeasurable,
+          eLpNorm_eNorm _ (𝓕 σ).continuous.aestronglyMeasurable, one_mul]
         exact ENNReal.mul_lt_top (Lp.eLpNorm_lt_top f)
           (ENNReal.mul_lt_top (φ.eLpNorm_lt_top p' volume) ((𝓕 σ).eLpNorm_lt_top 1 volume))
 
@@ -200,7 +208,33 @@ theorem exists_fourierMultiplierCLM_eq_and_norm_le (σ : 𝓢(E, ℂ))
   have hK : AEStronglyMeasurable (𝓕⁻ (σ : E → ℂ)) volume := by
     rw [← SchwartzMap.fourierInv_coe]
     exact (𝓕⁻ σ).continuous.aestronglyMeasurable
-  rw [eLpNorm_one_eq_lintegral_enorm hK, ← integral_norm_eq_lintegral_enorm hK] at hgf
+  rw [eLpNorm_one_eq_lintegral_eNorm hK, ← integral_norm_eq_lintegral_eNorm hK] at hgf
   exact ⟨g, hg, hgf⟩
+
+/-- **A Fourier multiplier of an `Lᵖ` function that is an `Lᵠ` function is a convolution.** For a
+Schwartz symbol `σ` and `f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, if the tempered distribution `T_σ f` is the
+`Lᵠ` function `g`, `1 ≤ q ≤ ∞`, then `g` agrees almost everywhere with the convolution
+`𝓕⁻ σ ⋆ f`. -/
+theorem ae_eq_fourierInv_convolution_of_fourierMultiplierCLM_eq {σ : 𝓢(E, ℂ)}
+    {f : Lp F p (volume : Measure E)} {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    {g : Lp F q (volume : Measure E)} (h : fourierMultiplierCLM F σ (f : 𝓢'(E, F)) = g) :
+    g =ᵐ[volume] 𝓕⁻ (σ : E → ℂ) ⋆[lsmul ℂ ℂ] (f : E → F) := by
+  obtain ⟨g', hg', hg'c, -⟩ :=
+    exists_fourierMultiplierCLM_toTemperedDistribution_eq σ f (q := p) le_rfl
+      (by rw [inv_one, add_comm])
+  refine (Lp.ae_eq_of_toTemperedDistribution_apply_eq g
+    ((Lp.memLp g').locallyIntegrable hp.out) fun φ ↦ ?_).trans hg'c
+  rw [← h, hg', Lp.toTemperedDistribution_apply]
+
+/-- **The reproducing formula for frequency-localized functions.** If the Fourier transform of
+`f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, vanishes on `s`, and the Schwartz symbol `σ` equals one outside a closed
+subset of `s` (that is, `tsupport (σ - 1) ⊆ s`), then `f` agrees almost everywhere with its
+convolution with the kernel `𝓕⁻ σ`. -/
+theorem ae_eq_fourierInv_convolution_of_isVanishingOn {f : Lp F p (volume : Measure E)}
+    {s : Set E} (hf : Distribution.IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) s)
+    {σ : 𝓢(E, ℂ)} (hσ : tsupport (⇑σ - 1) ⊆ s) :
+    f =ᵐ[volume] 𝓕⁻ (σ : E → ℂ) ⋆[lsmul ℂ ℂ] (f : E → F) :=
+  ae_eq_fourierInv_convolution_of_fourierMultiplierCLM_eq
+    (fourierMultiplierCLM_eq_self_of_isVanishingOn hf σ.hasTemperateGrowth hσ)
 
 end TemperedDistribution
