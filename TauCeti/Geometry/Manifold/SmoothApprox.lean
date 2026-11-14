@@ -8,7 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Existence
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Euclidean
 public import Mathlib.Geometry.Manifold.SmoothApprox
-public import Mathlib.Topology.Homotopy.Basic
+public import Mathlib.Topology.Homotopy.Path
+import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 /-!
 # Whitney approximation for maps into manifolds
@@ -56,6 +57,8 @@ smooth partitions of unity. The target `M` is boundaryless.
   and homotopies whose image has compact closure in a Hausdorff target.
 * `ContinuousMap.exists_contMDiff_homotopicRel`, `ContinuousMap.exists_contMDiff_homotopic`,
   `ContinuousMap.Homotopic.exists_contMDiff_homotopy`: the same for a compact target.
+* `Path.exists_homotopic_contMDiff_extend`: every path in a Hausdorff boundaryless manifold is
+  homotopic, relative to its endpoints, to a path whose extension to `ℝ` is `C^n`.
 
 ## References
 
@@ -271,3 +274,75 @@ theorem Homotopic.exists_contMDiff_homotopy [CompactSpace M] {f₀ f₁ : C(N, M
   H.exists_contMDiff_homotopy_of_isCompact_closure_range isClosed_closure.isCompact n hf₀ hf₁
 
 end ContinuousMap
+
+namespace Path
+
+variable {F G M : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [TopologicalSpace G] {J : ModelWithCorners ℝ F G} [J.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace G M] [IsManifold J ∞ M] [T2Space M] {x y : M}
+
+/-- **Smooth representatives of path classes.** Every path in a Hausdorff boundaryless manifold
+is homotopic, relative to its endpoints, to a path whose extension to `ℝ`, constant before `0`
+and after `1`, is `C^n`. -/
+theorem exists_homotopic_contMDiff_extend (n : ℕ∞) (γ : Path x y) :
+    ∃ γ' : Path x y, γ.Homotopic γ' ∧ ContMDiff 𝓘(ℝ, ℝ) J n γ'.extend := by
+  -- Run through `γ` on `[1/3, 2/3]`, so that the map is constant near `(-∞, 0] ∪ [1, ∞)`, and
+  -- smooth it relative to that set.
+  let f : C(ℝ, M) := ⟨fun t ↦ γ.extend (3 * t - 1), by fun_prop⟩
+  have hf₀ {t : ℝ} (ht : t < 1 / 3) : f t = x := γ.extend_of_le_zero (by linarith)
+  have hf₁ {t : ℝ} (ht : 2 / 3 < t) : f t = y := γ.extend_of_one_le (by linarith)
+  set S : Set ℝ := Iic 0 ∪ Ici 1
+  set U : Set ℝ := Iio (1 / 3) ∪ Ioi (2 / 3)
+  have hSU : S ⊆ U := by
+    rintro t (ht | ht)
+    · exact Or.inl (lt_of_le_of_lt (mem_Iic.1 ht) (by norm_num))
+    · exact Or.inr (lt_of_lt_of_le (by norm_num) (mem_Ici.1 ht))
+  have hU : U ∈ 𝓝ˢ S := ((isOpen_Iio.union isOpen_Ioi).mem_nhdsSet).2 hSU
+  have hfU : ContMDiffOn 𝓘(ℝ, ℝ) J n f U := by
+    rintro t (ht | ht)
+    · refine (contMDiffAt_const (c := x)).congr_of_eventuallyEq ?_ |>.contMDiffWithinAt
+      filter_upwards [Iio_mem_nhds ht] with s hs using hf₀ hs
+    · refine (contMDiffAt_const (c := y)).congr_of_eventuallyEq ?_ |>.contMDiffWithinAt
+      filter_upwards [Ioi_mem_nhds ht] with s hs using hf₁ hs
+  have hrange : range f ⊆ range γ := by
+    rintro _ ⟨t, rfl⟩
+    exact γ.extend_range ▸ mem_range_self _
+  obtain ⟨g, hg, hfg⟩ := f.exists_contMDiff_homotopicRel_of_isCompact_closure_range
+    (I := 𝓘(ℝ, ℝ)) n ((isCompact_range γ.continuous).closure_of_subset hrange)
+    (isClosed_Iic.union isClosed_Ici) hU hfU
+  have hg₀ {t : ℝ} (ht : t ≤ 0) : g t = x :=
+    (hfg.fst_eq_snd (Or.inl ht)).symm.trans (hf₀ (by linarith))
+  have hg₁ {t : ℝ} (ht : 1 ≤ t) : g t = y :=
+    (hfg.fst_eq_snd (Or.inr ht)).symm.trans (hf₁ (by linarith))
+  let ι : C(unitInterval, ℝ) := ⟨Subtype.val, continuous_subtype_val⟩
+  let γ' : Path x y := ⟨g.comp ι, hg₀ le_rfl, hg₁ le_rfl⟩
+  have hext : γ'.extend = g := by
+    ext t
+    rcases le_or_gt t 0 with h₀ | h₀
+    · rw [γ'.extend_of_le_zero h₀, hg₀ h₀]
+    rcases le_or_gt 1 t with h₁ | h₁
+    · rw [γ'.extend_of_one_le h₁, hg₁ h₁]
+    exact γ'.extend_apply ⟨h₀.le, h₁.le⟩
+  refine ⟨γ', ?_, hext ▸ hg⟩
+  -- `f` on the unit interval is a reparametrization of `γ`, and it is homotopic to `γ'`.
+  let ρ : C(unitInterval, unitInterval) :=
+    ⟨fun t ↦ projIcc 0 1 zero_le_one (3 * t - 1), by fun_prop⟩
+  have hρ₀ : ρ 0 = 0 := Subtype.ext (by simp [ρ, projIcc_of_le_left])
+  have hρ₁ : ρ 1 = 1 := Subtype.ext (by norm_num [ρ, projIcc_of_right_le])
+  have hfx : f 0 = x := hf₀ (by norm_num)
+  have hfy : f 1 = y := hf₁ (by norm_num)
+  let γ₀ : Path x y := ⟨f.comp ι, hfx, hfy⟩
+  have hfγ : γ.reparam ρ ρ.continuous hρ₀ hρ₁ = γ₀ :=
+    -- `Path.extend` is defined as `IccExtend zero_le_one γ`, which `IccExtend_apply` rewrites as
+    -- `γ ∘ projIcc 0 1 zero_le_one`; Mathlib proves `Path.extend_apply` in the same way.
+    Path.ext (funext fun t ↦ by
+      change γ (ρ t) = γ.extend (3 * t - 1)
+      exact (IccExtend_apply zero_le_one γ _).symm)
+  -- A homotopy of paths is by definition a homotopy relative to the endpoints `{0, 1}`.
+  have hpath : γ₀.Homotopic γ' :=
+    (hfg.precomp ι).mono fun t ht ↦ by
+      rcases ht with rfl | rfl
+      exacts [Or.inl le_rfl, Or.inr le_rfl]
+  exact (hfγ ▸ ⟨Path.Homotopy.reparam γ ρ ρ.continuous hρ₀ hρ₁⟩ : γ.Homotopic γ₀).trans hpath
+
+end Path

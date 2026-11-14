@@ -40,7 +40,7 @@ variable {n p : ℕ} [Fact p.Prime] {A B : ZMod p}
 /-- **Batched stage-2 detection.** A batch containing a giant-step/baby-step pair for an
 annihilating scalar detects `p` in the gcd of the product of its cross differences.
 No nonzero-representative hypothesis is needed, and nothing is required of other entries. -/
-theorem prime_dvd_gcd_prod_cross_of_addOrderOf_dvd_mul (hpn : p ∣ n) (hB : B ≠ 0)
+theorem prime_dvd_gcd_prod_cross_of_addOrderOf_dvd_mul (hpn : p ∣ n)
     (P : (model A B).toAffine.Point) (L : List (Pair (ZMod n) × Pair (ZMod n)))
     {R S : Pair (ZMod n)} (hmem : (R, S) ∈ L) {M q : ℕ} {i w j : ℤ}
     (horder : addOrderOf P ∣ M * q) (h : (q : ℤ) = i * w + j ∨ (q : ℤ) = i * w - j)
@@ -51,13 +51,13 @@ theorem prime_dvd_gcd_prod_cross_of_addOrderOf_dvd_mul (hpn : p ∣ n) (hB : B �
     p ∣ Nat.gcd (L.map (Function.uncurry Pair.cross)).prod.val n := by
   apply (List.prime_dvd_gcd_val_prod_iff _ (Fact.out : p.Prime)).mpr
   refine ⟨R.cross S, List.mem_map.mpr ⟨(R, S), hmem, rfl⟩, ?_⟩
-  exact prime_dvd_gcd_cross_of_addOrderOf_dvd_mul hpn hB P R S horder h hR hS
+  exact prime_dvd_gcd_cross_of_addOrderOf_dvd_mul hpn P R S horder h hR hS
 
 /-- **A proper factor from a stage-2 batch.** If an annihilating scalar detects `p` at one
 entry, and every cross difference avoids another prime divisor `r` of the positive modulus,
 then the batch gcd is strictly between one and `n`. It need not itself be prime. -/
 theorem one_lt_gcd_prod_cross_and_lt_of_addOrderOf_dvd_mul [NeZero n]
-    (hpn : p ∣ n) (hB : B ≠ 0) (P : (model A B).toAffine.Point)
+    (hpn : p ∣ n) (P : (model A B).toAffine.Point)
     (L : List (Pair (ZMod n) × Pair (ZMod n))) {R S : Pair (ZMod n)} (hmem : (R, S) ∈ L)
     {M q : ℕ} {i w j : ℤ} (horder : addOrderOf P ∣ M * q)
     (h : (q : ℤ) = i * w + j ∨ (q : ℤ) = i * w - j)
@@ -70,7 +70,7 @@ theorem one_lt_gcd_prod_cross_and_lt_of_addOrderOf_dvd_mul [NeZero n]
       (T.2.map (ZMod.castHom hrn (ZMod r))) ≠ 0) :
     1 < Nat.gcd (L.map (Function.uncurry Pair.cross)).prod.val n ∧
       Nat.gcd (L.map (Function.uncurry Pair.cross)).prod.val n < n := by
-  have hpG := prime_dvd_gcd_prod_cross_of_addOrderOf_dvd_mul hpn hB P L hmem horder h hR hS
+  have hpG := prime_dvd_gcd_prod_cross_of_addOrderOf_dvd_mul hpn P L hmem horder h hR hS
   apply List.one_lt_gcd_val_prod_and_lt _ (Fact.out : p.Prime) hr hrn
   · exact (List.prime_dvd_gcd_val_prod_iff _ (Fact.out : p.Prime)).mp hpG
   · intro t ht
