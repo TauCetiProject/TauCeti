@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Probability.Process.Filtration.NullAugmentation
 public import Mathlib.Probability.Process.Adapted
+import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
+import Mathlib.Topology.Order.IsLUB
 
 /-!
 # Null augmentation without completing the ambient space
@@ -21,7 +23,9 @@ Unlike `Filtration.nullAugment`, this construction does not adjoin nonmeasurable
 of null sets. Completing its sigma-algebras afterwards recovers `Filtration.nullAugment`.
 Equivalent measures give the same augmentation. Ambient-measurable versions of adapted
 processes become adapted after this augmentation; no path regularity is needed for that
-fixed-time assertion. Right-continuation is a separate operation.
+fixed-time assertion. On a first-countable linearly ordered time axis with the order topology,
+original-space null augmentation commutes with right-continuation
+(`MeasureTheory.Filtration.rightCont_ambientNullAugmentation`).
 
 ## References
 
@@ -145,6 +149,61 @@ theorem nullAugment_ambientNullAugmentation_apply (ℱ : Filtration ι m) (P : M
     obtain ⟨t, ht, hst⟩ := (ℱ.measurableSet_nullAugment_iff P i s).mp hs
     exact ((ℱ.ambientNullAugmentation P).measurableSet_nullAugment_iff P i s).mpr
       ⟨t, ℱ.le_ambientNullAugmentation P i t ht, hst⟩
+
+end MeasureTheory.Filtration
+
+namespace MeasureTheory.Filtration
+
+/-- On a first-countable linearly ordered time axis with the order topology, original-space null
+augmentation commutes with right-continuation. Neither density nor absence of a maximum time is
+required. -/
+theorem rightCont_ambientNullAugmentation {Ω ι : Type*} {m : MeasurableSpace Ω}
+    [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι] [FirstCountableTopology ι]
+    (ℱ : Filtration ι m) (P : Measure Ω) :
+    (ℱ.ambientNullAugmentation P).rightCont = ℱ.rightCont.ambientNullAugmentation P := by
+  classical
+  apply Filtration.ext
+  funext i
+  by_cases hne : (nhdsWithin i (Set.Ioi i)).NeBot
+  · apply le_antisymm
+    · intro A hA
+      have hmA : MeasurableSet A := (ℱ.ambientNullAugmentation P).rightCont.le i A hA
+      have hglb : IsGLB (Set.Ioi i) i := ⟨fun _ hx ↦ hx.le, fun b hb ↦ le_of_not_gt fun hib ↦ by
+        obtain ⟨c, hc⟩ := hne.nonempty_of_mem (Ioo_mem_nhdsGT hib)
+        exact hc.2.not_ge (hb hc.1)⟩
+      obtain ⟨u, -, hu, hlim, -⟩ := hglb.exists_seq_strictAnti_tendsto_of_notMem
+        (Set.notMem_Ioi.mpr le_rfl) (hne.nonempty_of_mem self_mem_nhdsWithin)
+      have hAn (n : ℕ) : ∃ B, MeasurableSet[ℱ (u n)] B ∧ A =ᵐ[P] B :=
+        ((ℱ.measurableSet_ambientNullAugmentation_iff P (u n) A).mp
+          ((ℱ.ambientNullAugmentation P).rightCont_le_of_lt (hu n) A hA)).2
+      choose B hB hAB using hAn
+      refine (ℱ.rightCont.measurableSet_ambientNullAugmentation_iff P i A).mpr
+        ⟨hmA, Filter.limsup B Filter.atTop, ?_,
+          (MeasureTheory.limsup_ae_eq_of_forall_ae_eq B fun n ↦ (hAB n).symm).symm⟩
+      rw [ℱ.rightCont_eq_of_neBot_nhdsGT i]
+      simp only [MeasurableSpace.measurableSet_iInf]
+      intro j hij
+      obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp (hlim.eventually (gt_mem_nhds hij))
+      have htail : Filter.limsup B Filter.atTop =
+          Filter.limsup (fun n ↦ if N ≤ n then B n else ∅) Filter.atTop :=
+        Filter.limsup_congr ((Filter.eventually_ge_atTop N).mono fun n hn ↦ by simp [hn])
+      rw [htail]
+      let : MeasurableSpace Ω := ℱ j
+      exact MeasurableSet.measurableSet_limsup fun n ↦ by
+        split_ifs with hn
+        · exact ℱ.mono (hN n hn).le _ (hB n)
+        · exact MeasurableSet.empty
+    · intro A hA
+      obtain ⟨hmA, B, hB, hAB⟩ :=
+        (ℱ.rightCont.measurableSet_ambientNullAugmentation_iff P i A).mp hA
+      rw [(ℱ.ambientNullAugmentation P).rightCont_eq_of_neBot_nhdsGT i]
+      simp only [MeasurableSpace.measurableSet_iInf]
+      intro j hij
+      exact (ℱ.measurableSet_ambientNullAugmentation_iff P j A).mpr
+        ⟨hmA, B, ℱ.rightCont_le_of_lt hij B hB, hAB⟩
+  · have hbot : nhdsWithin i (Set.Ioi i) = ⊥ := Filter.not_neBot.mp hne
+    simp [(ℱ.ambientNullAugmentation P).rightCont_eq_of_nhdsGT_eq_bot hbot,
+      ℱ.rightCont_eq_of_nhdsGT_eq_bot hbot]
 
 end MeasureTheory.Filtration
 
