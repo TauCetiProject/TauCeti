@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Homology.Invariance
+public import TauCeti.KnotTheory.Grid.Move.Transpose
 public import TauCeti.KnotTheory.Grid.Move.Unknot
 public import TauCeti.KnotTheory.Grid.TorusLink.Tau
 
@@ -15,12 +16,15 @@ public import TauCeti.KnotTheory.Grid.TorusLink.Tau
 For a grid link with one component, `GridLink.IsKnot.tau` is the integer `τ` of any presenting
 knot grid diagram. Independence of the representative follows from invariance under all grid
 moves. The computation rule `GridLink.IsKnot.tau_toGridLink` lets callers evaluate it on a
-chosen diagram without using the representative selected in the definition.
+chosen diagram without using the representative selected in the definition, and diagonal
+reflection preserves `τ` on both knot diagrams and grid knots (`GridDiagram.IsKnot.tau_transpose`,
+`GridLink.IsKnot.tau_transpose`).
 
 Over a field of characteristic two the unknot has `τ = 0`. The standard grid of the
 `(p + 1, q + 1)` torus knot, for coprime `p + 1` and `q + 1`, represents a grid knot with
-`2τ = -pq`. The negative sign follows the definition of `τ` as minus the maximal non-torsion
-Alexander degree, as in `TorusLink/Tau.lean`.
+`2τ = -pq` and hence `τ = -(p * q / 2)` (`GridLink.tau_toGridLink_torusLink`). The negative sign
+follows the definition of `τ` as minus the maximal non-torsion Alexander degree, as in
+`TorusLink/Tau.lean`.
 
 This is an invariant of grid knots, defined as grid links with one component. No identification
 with embedded knots or claim of concordance invariance is used here.
@@ -32,6 +36,17 @@ The definition uses `GridDiagram.IsKnot.tau` and its grid-move invariance.
 -/
 
 public section
+
+namespace TauCeti.GridDiagram.IsKnot
+
+/-- Diagonal reflection preserves the invariant `τ` of a knot grid diagram. -/
+@[simp]
+theorem tau_transpose {n : ℕ} {G : GridDiagram n} (hG : G.transpose.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    hG.tau K = ((G.isKnot_transpose).mp hG).tau K :=
+  (((G.isKnot_transpose).mp hG).unblockedHomologyIsomorphic_transpose K).tau_eq.symm
+
+end TauCeti.GridDiagram.IsKnot
 
 namespace TauCeti.GridLink.IsKnot
 
@@ -59,6 +74,15 @@ theorem tau_toGridLink {n : ℕ} {G : GridDiagram n} (hG : G.toGridLink.IsKnot) 
     hG.tau K = ((isKnot_toGridLink G).mp hG).tau K :=
   tau_eq_of_toGridLink_eq hG K ((isKnot_toGridLink G).mp hG) rfl
 
+/-- Diagonal reflection preserves the invariant `τ` of a grid knot. -/
+@[simp]
+theorem tau_transpose {L : GridLink} (hL : L.transpose.IsKnot) :
+    hL.tau K = (isKnot_transpose.mp hL).tau K := by
+  obtain ⟨⟨n, G⟩, rfl⟩ := L.exists_gridDiagram
+  have hG : G.IsKnot := (isKnot_toGridLink G).mp (isKnot_transpose.mp hL)
+  rw [tau_eq_of_toGridLink_eq hL K ((G.isKnot_transpose).mpr hG) (transpose_toGridLink G).symm,
+    tau_toGridLink, GridDiagram.IsKnot.tau_transpose]
+
 end TauCeti.GridLink.IsKnot
 
 namespace TauCeti.GridLink
@@ -79,5 +103,12 @@ theorem two_mul_tau_toGridLink_torusLink {p q : ℕ} (h : (p + 1).Coprime (q + 1
       -(p * q : ℤ) := by
   rw [IsKnot.tau_toGridLink]
   exact GridDiagram.two_mul_tau_torusLink h K
+
+/-- The knot presented by the standard `(p + 1, q + 1)` torus grid has `τ = -(p * q / 2)`. -/
+theorem tau_toGridLink_torusLink {p q : ℕ} (h : (p + 1).Coprime (q + 1)) :
+    ((isKnot_toGridLink _).mpr ((GridDiagram.isKnot_torusLink_iff p q).mpr h)).tau K =
+      -((p * q / 2 : ℕ) : ℤ) := by
+  rw [IsKnot.tau_toGridLink]
+  exact GridDiagram.tau_torusLink h K
 
 end TauCeti.GridLink
