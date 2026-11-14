@@ -13,6 +13,7 @@ import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 -- `IsPrimitiveRoot.sum_zpow_pow_eq`, the orthogonality of the characters of `ℤ ⧸ n`.
 import TauCeti.RingTheory.RootsOfUnity.Basic
+import TauCeti.Algebra.MvPolynomial.Equiv
 import TauCeti.RingTheory.MvPolynomial.Initial.Weight
 
 /-!
@@ -464,21 +465,11 @@ theorem MvPolynomial.IsHomogeneous.exists_eq_rename_castSucc_add_mul_X_last {R :
     [CommSemiring R] {n ν : ℕ} {F : MvPolynomial (Fin (n + 1)) R} (hF : F.IsHomogeneous (ν + 1)) :
     ∃ G : MvPolynomial (Fin n) R, G.IsHomogeneous (ν + 1) ∧ ∃ H, H.IsHomogeneous ν ∧
       F = rename Fin.castSucc G + H * X (Fin.last n) := by
-  -- First split `F` without homogeneity, then take homogeneous components.
-  have hsplit (P : MvPolynomial (Fin (n + 1)) R) :
-      ∃ G H, P = rename Fin.castSucc G + H * X (Fin.last n) := by
-    induction P using MvPolynomial.induction_on with
-    | C r => exact ⟨C r, 0, by simp⟩
-    | add p q hp hq =>
-      obtain ⟨G, H, rfl⟩ := hp
-      obtain ⟨G', H', rfl⟩ := hq
-      exact ⟨G + G', H + H', by simp only [map_add]; ring⟩
-    | mul_X p i hp =>
-      obtain ⟨G, H, rfl⟩ := hp
-      induction i using Fin.lastCases with
-      | last => exact ⟨0, rename Fin.castSucc G + H * X (Fin.last n), by simp⟩
-      | cast j => exact ⟨G * X j, H * X j.castSucc, by simp only [map_mul, rename_X]; ring⟩
-  obtain ⟨G, H, hGH⟩ := hsplit F
+  -- Split off the last variable through `finSuccEquiv'`, then take homogeneous components.
+  let e := finSuccEquiv' R (Fin.last n)
+  obtain ⟨G, H, hGH⟩ : ∃ G H, F = rename Fin.castSucc G + H * X (Fin.last n) :=
+    ⟨_, _, by
+      simpa [e] using congrArg e.symm ((add_comm _ _).trans (Polynomial.divX_mul_X_add (e F))).symm⟩
   refine ⟨homogeneousComponent (ν + 1) G, homogeneousComponent_isHomogeneous _ _,
     homogeneousComponent ν H, homogeneousComponent_isHomogeneous _ _, ?_⟩
   rw [← homogeneousComponent_eq_self hF, hGH, map_add, ← rename_homogeneousComponent,

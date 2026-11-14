@@ -31,6 +31,8 @@ noncomputable instance : Algebra (ResidueField R) (maximalIdeal R).AssociatedGra
 instance : IsScalarTower R (ResidueField R) (maximalIdeal R).AssociatedGraded :=
   inferInstanceAs (IsScalarTower R (R ⧸ maximalIdeal R) (maximalIdeal R).AssociatedGraded)
 
+variable {R}
+
 /-- The degree-zero class of a residue is the scalar class of its representative. -/
 @[simp]
 theorem algebraMap_associatedGraded_residue (r : R) :

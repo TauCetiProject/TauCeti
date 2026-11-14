@@ -424,6 +424,10 @@ theorem algebraMap_quotient_injective :
     Function.Injective (algebraMap (R ⧸ I) I.AssociatedGraded) :=
   RingHom.lift_injective_of_ker_le_ideal I _ ker_algebraMap.le
 
+/-- The associated graded ring of a proper ideal is nontrivial. -/
+instance [Nontrivial (R ⧸ I)] : Nontrivial I.AssociatedGraded :=
+  algebraMap_quotient_injective.nontrivial
+
 end AssociatedGraded
 
 private noncomputable def powZeroEquiv (I : Ideal R) : ↥(I ^ 0) ≃ₗ[R] R :=
@@ -536,8 +540,9 @@ namespace AssociatedGraded
 
 open MvPolynomial
 
-variable (I : Ideal R) {σ : Type*} {a : σ → R}
+variable {σ : Type*} {a : σ → R}
 
+variable (I) in
 /-- The `R ⧸ I`-algebra map `(R ⧸ I)[Xᵢ] → gr_I R` sending `Xᵢ` to the degree-one class of
 `aᵢ ∈ I`. -/
 noncomputable def mvPolynomialHom (ha : ∀ i, a i ∈ I) :
@@ -554,8 +559,6 @@ theorem mvPolynomialHom_def (ha : ∀ i, a i ∈ I) :
 theorem mvPolynomialHom_X (ha : ∀ i, a i ∈ I) (i : σ) :
     mvPolynomialHom I ha (X i) = mk I 1 ⟨a i, by rw [pow_one]; exact ha i⟩ :=
   aeval_X _ _
-
-variable {I}
 
 /-- Over `R`, a homogeneous polynomial of degree one is sent to the degree-one class of its
 value. -/
