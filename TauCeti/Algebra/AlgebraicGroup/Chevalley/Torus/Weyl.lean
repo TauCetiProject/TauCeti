@@ -103,7 +103,9 @@ private theorem torusPoints_conj_simpleWeylElement (s : Fin t.rank → Aˣ) :
   simp only [MulAut.conj_apply, D.torusPoints_conj_rootSubgroupPoints,
     D.coordinateRoot_reflectionPerm_self, torusCharacter_neg, mul_one, mul_neg]
 
-private theorem simpleWeylElement_eq_coroot_mul (s : Aˣ) :
+/-- A simple Weyl element `n_{αᵢ}(s)` factors as the simple-coroot torus point `αᵢ^∨(s)` times the
+pinned Weyl representative `n_{αᵢ}(1)`. -/
+theorem weylElement_simpleIndex_eq_torusPoints_simpleCorootParameter_mul (s : Aˣ) :
     D.weylElement (t.simpleIndex ht i) A s =
       D.torusPoints A (D.simpleCorootParameter i A s) *
         D.weylElement (t.simpleIndex ht i) A 1 := by
@@ -121,7 +123,7 @@ theorem weylElement_conj_torusPoints (s : Fin t.rank → Aˣ) :
         (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ =
       D.torusPoints A (D.simpleReflectionTorusParameter i A s) := by
   have h := D.torusPoints_conj_simpleWeylElement i A s
-  rw [D.simpleWeylElement_eq_coroot_mul i A
+  rw [D.weylElement_simpleIndex_eq_torusPoints_simpleCorootParameter_mul i A
       (torusCharacter s (D.coordinateRoot (t.simpleIndex ht i))),
     mul_inv_eq_iff_eq_mul] at h
   rw [simpleReflectionTorusParameter_def, map_div]

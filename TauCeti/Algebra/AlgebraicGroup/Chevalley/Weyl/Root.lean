@@ -98,12 +98,12 @@ theorem exists_unit_conj_rootSubgroupPoints (g : D.weylSubgroup K) (γ : Fin t.n
       refine ⟨torusCharacter s (D.coordinateRoot δ), fun u => ?_⟩
       simp only [D.weylProjection_torusPoints, map_one, Equiv.Perm.one_apply]
       exact D.torusPoints_conj_rootSubgroupPoints δ K s u
-    · refine ⟨⟨_, D.weylElement_mem_weylSubgroup K i⟩, ?_, rfl⟩
+    · refine ⟨⟨_, D.weylElement_simpleIndex_one_mem_weylSubgroup K i⟩, ?_, rfl⟩
       intro δ
       refine ⟨Units.map (Int.castRingHom K).toMonoidHom
         (t.chevalleyWeylSign ht (t.simpleIndex ht i) δ), fun u => ?_⟩
-      simp only [D.weylProjection_weylElement, RootPairing.weylGroupToPerm_ofIdx_apply,
-        Units.coe_map]
+      simp only [D.weylProjection_weylElement_simpleIndex_one,
+        RootPairing.weylGroupToPerm_ofIdx_apply, Units.coe_map]
       exact D.weylElement_conj_rootSubgroupPoints i δ K u
   obtain ⟨h, hh, heq⟩ := hle g.property
   have heq' : h = g := Subtype.ext heq
