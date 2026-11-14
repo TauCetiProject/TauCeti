@@ -97,7 +97,7 @@ theorem exact_scalarδ_smul (i : ℕ) :
 variable {f} {g c : Γ(X, ⊤)} [Mono (M.globalSectionsSmul g)]
 
 /-- Under reduction from `M/gM` to `M/fM` for `g = f * c`, the boundary is multiplied by `c`. -/
-theorem scalarδ_transition (h : g = f * c) (i : ℕ)
+theorem scalarδ_scalarQuotientTransition (h : g = f * c) (i : ℕ)
     (x : Cohomology (M.scalarQuotient g) i) :
     M.scalarδ f i (cohomologyMapLinear (M.scalarQuotientTransition ⟨c, h⟩) i x) =
       c • M.scalarδ g i x := by
@@ -109,6 +109,7 @@ theorem scalarδ_transition (h : g = f * c) (i : ℕ)
   simp only [scalarQuotientSequenceMap_τ₁, scalarQuotientSequenceMap_τ₃] at hδ
   exact hδ.symm.trans (cohomologyMap_globalSectionsSmul_apply M (i + 1) c _)
 
+omit [Mono (M.globalSectionsSmul f)] in
 /-- A class on `M/gM` lifts after reduction to `M/fM` if the factor `c` kills the
 `g`-torsion in the next cohomology group. -/
 theorem exists_cohomologyMapLinear_eq_of_smul_eq_zero (h : g = f * c)
@@ -117,8 +118,11 @@ theorem exists_cohomologyMapLinear_eq_of_smul_eq_zero (h : g = f * c)
     ∃ y : Cohomology M i,
       cohomologyMapLinear (cokernel.π (M.globalSectionsSmul f)) i y =
         cohomologyMapLinear (M.scalarQuotientTransition ⟨c, h⟩) i x := by
+  have hw : M.globalSectionsSmul f ≫ M.globalSectionsSmul c = M.globalSectionsSmul g := by
+    rw [← globalSectionsSmul_mul, mul_comm, ← h]
+  have : Mono (M.globalSectionsSmul f) := mono_of_mono_fac hw
   apply (M.exact_cohomologyMapLinear_scalarδ f i _).mp
-  rw [M.scalarδ_transition h i x]
+  rw [M.scalarδ_scalarQuotientTransition h i x]
   apply hk
   exact (M.exact_scalarδ_smul g i _).mpr ⟨x, rfl⟩
 
@@ -130,7 +134,7 @@ theorem scalarδ_scalarPowerQuotientTransition {m n : ℕ} (h : m ≤ n) (i : �
     M.scalarδ (f ^ m) i
         (cohomologyMapLinear (M.scalarPowerQuotientTransition f h) i x) =
       f ^ (n - m) • M.scalarδ (f ^ n) i x :=
-  M.scalarδ_transition (by rw [← pow_add, Nat.add_sub_of_le h]) i x
+  M.scalarδ_scalarQuotientTransition (by rw [← pow_add, Nat.add_sub_of_le h]) i x
 
 /-- A class at level `n` lifts after reduction to level `m` if `f ^ (n - m)` kills the
 `fⁿ`-torsion in the next cohomology group. -/
