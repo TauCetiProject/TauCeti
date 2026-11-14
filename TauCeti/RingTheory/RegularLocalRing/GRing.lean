@@ -142,9 +142,10 @@ example (k : Type u) [Field k] : IsGRing (k ⧸ (⊤ : Ideal k)) := inferInstanc
 example (k : Type u) [Field k] : IsGRing (TrivSqZeroExt k k) :=
   have : Module.Finite k (TrivSqZeroExt k k) := inferInstanceAs (Module.Finite k (k × k))
   -- The `k`-module structure of `TrivSqZeroExt k k` is the product one, which is not reducibly
-  -- the one induced by the `k`-algebra structure, so the scalar tower is checked by hand.
+  -- the one induced by the `k`-algebra structure, so instance synthesis does not find the scalar
+  -- tower and `IsScalarTower.right` is applied explicitly.
   have : IsScalarTower k (TrivSqZeroExt k k) (TrivSqZeroExt k k) :=
-    ⟨fun a b c ↦ by ext <;> simp <;> ring⟩
+    IsScalarTower.right (R := k) (A := TrivSqZeroExt k k)
   have : IsArtinianRing (TrivSqZeroExt k k) := .of_finite k _
   inferInstance
 
