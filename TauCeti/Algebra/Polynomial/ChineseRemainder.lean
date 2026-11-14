@@ -50,8 +50,6 @@ theorem exists_monic_int_polynomial_map_zmod_eq {ι : Type*} [Finite ι]
   refine ⟨Polynomial.monicOfCoeff (fun k : Fin n ↦ a k),
     Polynomial.monic_monicOfCoeff _, Polynomial.natDegree_monicOfCoeff _, ?_⟩
   intro i
-  rcases subsingleton_or_nontrivial (ZMod (m i)) with h | h
-  · exact Subsingleton.elim _ _
   rw [Polynomial.map_monicOfCoeff]
   simp only [eq_intCast, ha]
   exact Polynomial.monicOfCoeff_coeff (hmonic i) (hdegree i)
