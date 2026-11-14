@@ -6,15 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.InvariantDifferential
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.WExpansion
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.VariableChange
-public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
-public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
-public import TauCeti.RingTheory.MvPowerSeries.Inverse
-import Mathlib.Algebra.CharP.Algebra
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
+import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Representable
 import TauCeti.RingTheory.Derivation.Localization
@@ -38,10 +33,11 @@ These are the coordinate transitions used to descend the formal neighbourhood of
 the marked identity in families of Weierstrass equations.
 
 The transition also respects the invariant differential and the group law. The curve
-morphism `(x,y) ↦ (u²x+r, u³y+su²x+t)` pulls back `ω = dx / (2y + a₁x + a₃)` on `W` to
-`u⁻¹` times the invariant differential of `C • W`. In the formal parameter, with `ψ` the
-transition, this reads `P_W(ψ(z)) ψ'(z) = u⁻¹ P_{C • W}(z)` for the normalised invariant
-differentials `P` of the formal groups. Over a field, the corresponding statement on function
+morphism `(x,y) ↦ (u²x+r, u³y+su²x+t)` pulls back `ω = dx / (2y + a₁x + a₃)` on `W` (where the
+denominator is nonzero; the formal statements below do not need this) to `u⁻¹` times the
+invariant differential of `C • W`. In the formal parameter, with `ψ` the transition, this reads
+`P_W(ψ(z)) ψ'(z) = u⁻¹ P_{C • W}(z)` for the normalised invariant differentials `P` of the formal
+groups. Over a field, the corresponding statement on function
 fields, for the inverse morphism, is
 `TauCeti.Isogeny.pullbackDifferential_variableChangeIsogeny_invariantDifferential`;
 here it is read in the formal neighbourhood of the identity, over every ring. Consequently
@@ -311,8 +307,8 @@ open PowerSeries TauCeti.WeierstrassChange
 variable {R : Type*} [CommRing R]
 
 /-- The field identity behind the transformation of the invariant differential. If `δ` is the
-derivative of `x'`, the curve morphism scales `x` by `U²` and `2y + a₁x + a₃` by `U³`, and `G₁⁻¹Ψ`,
-`G₂⁻¹` are the two expressions of the invariant differential, then `G₁ = UΨG₂`. -/
+derivative of `x'`, the curve morphism scales `dx` by `U²` and `2y + a₁x + a₃` by `U³`, and
+`G₁⁻¹Ψ`, `G₂⁻¹` are the two expressions of the invariant differential, then `G₁ = UΨG₂`. -/
 private theorem eq_mul_mul_of_inv_mul_eq {F : Type*} [Field F] {δ P G₁ G₂ Ψ U : F} (hU : U ≠ 0)
     (hG₂ : G₂ ≠ 0) (e₁ : (U ^ 3 * P)⁻¹ * (U ^ 2 * δ) = G₁⁻¹ * Ψ)
     (e₂ : P⁻¹ * δ = G₂⁻¹) :
