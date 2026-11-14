@@ -23,11 +23,19 @@ and a directed family is what a descending filtration supplies.
 
 ## Main results
 
+* `Set.Ici.instIsDirectedOrder` (and dual `Set.Iic.instIsCodirectedOrder`): upper rays in an
+  upward-directed preorder are upward-directed.
 * `Directed.exists_eq_iInf`: a nonempty downward-directed family in a partial order with
   `WellFoundedLT` and an `OrderInfSet` structure attains its infimum.
 -/
 
 public section
+
+/-- An upper ray `Set.Ici a` in an upward-directed preorder is upward-directed. -/
+@[to_dual /-- A lower ray `Set.Iic a` in a downward-directed preorder is downward-directed. -/]
+instance Set.Ici.instIsDirectedOrder {α : Type*} [Preorder α] [IsDirectedOrder α] {a : α} :
+    IsDirectedOrder (Set.Ici a) :=
+  ⟨fun x y ↦ let ⟨c, hxc, hyc⟩ := exists_ge_ge x.1 y.1; ⟨⟨c, x.2.trans hxc⟩, hxc, hyc⟩⟩
 
 /-- **A nonempty downward-directed family in a well-founded partial order attains its infimum.**
 

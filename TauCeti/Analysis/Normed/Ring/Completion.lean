@@ -32,6 +32,8 @@ of norm at most one (`TauCeti.Huber.IsPseudoUniformizer.isPowerBounded_iff_norm_
   has norm `1` has the same property.
 * `UniformSpace.Completion.instNonUnitalNormedRing`: the completion of a nonunital seminormed
   ring is a nonunital normed ring.
+* `UniformSpace.Completion.normedAlgebra`: the completion of a possibly noncommutative
+  seminormed algebra is a normed algebra.
 -/
 
 public section
@@ -75,3 +77,16 @@ noncomputable instance UniformSpace.Completion.instNonUnitalNormedRing {R : Type
     induction x, y using Completion.induction_on₂ with
     | hp => exact isClosed_le (by fun_prop) (by fun_prop)
     | ih a b => simpa only [← Completion.coe_mul', Completion.norm_coe] using norm_mul_le a b
+
+/-- **The completion of a seminormed `𝕜`-algebra is a normed `𝕜`-algebra.** Mathlib's instance in
+`Mathlib.Analysis.Normed.Module.Completion` assumes commutativity of the ring; this removes that
+assumption. -/
+noncomputable instance UniformSpace.Completion.normedAlgebra {𝕜 A : Type*} [NormedField 𝕜]
+    [SeminormedRing A] [NormedAlgebra 𝕜 A] : NormedAlgebra 𝕜 (Completion A) where
+  norm_smul_le := norm_smul_le
+
+-- Verify definitional agreement with Mathlib's commutative `NormedAlgebra` completion instance.
+example {𝕜 A : Type*} [NormedField 𝕜] [SeminormedCommRing A] [NormedAlgebra 𝕜 A] :
+    (UniformSpace.Completion.normedAlgebra : NormedAlgebra 𝕜 (Completion A)) =
+      UniformSpace.Completion.instNormedAlgebra 𝕜 A :=
+  rfl

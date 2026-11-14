@@ -6,38 +6,45 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Colimit.DirectLimit
+public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.Data.Set.Finite.Lattice
 
 /-!
-# Directed colimits of monoids and algebras
+# Directed colimits of monoids, algebras, and `⋆`-algebras
 
 Basic API for Mathlib's generic `DirectLimit G f` of a directed system of monoids or groups `G i`
-with monoid homomorphisms as transition maps, and of a directed system of `A`-algebras with
-`A`-algebra transition maps.
+with monoid homomorphisms as transition maps, of a directed system of (unital or nonunital)
+`A`-algebras with `A`-algebra transition maps, and of a directed system of (unital or nonunital)
+`R`-`⋆`-algebras with `⋆`-algebra transition maps.
 
-Mathlib equips `DirectLimit G f` with its monoid and group structures and bundles the canonical
-maps from the components as linear maps and ring homomorphisms. Here they are bundled as monoid
-homomorphisms `TauCeti.DirectLimit.Monoid.of G f i : G i →* DirectLimit G f`, with the universal
-property `TauCeti.DirectLimit.Monoid.lift`. The canonical map, its universal property, their
-compatibility lemmas and `TauCeti.DirectLimit.Monoid.hom_ext` follow Mathlib's
-`DirectLimit.Ring.of`, `DirectLimit.Ring.lift` and `DirectLimit.Ring.hom_ext` in
-`Mathlib/Algebra/Colimit/DirectLimit.lean`, with monoid homomorphisms in place of ring
-homomorphisms. Every element of the direct limit comes from some component, and the index set is
-directed, so every finite subset of the direct limit lies in the image of a single component
-(`TauCeti.DirectLimit.Monoid.exists_subset_range_of`). This is how properties defined by finitely
-many elements at a time pass to direct limits.
+Mathlib equips `DirectLimit G f` with its monoid, group, algebra, and `⋆`-ring structures and
+bundles the canonical maps from the components as linear maps, ring homomorphisms, `⋆`-ring
+homomorphisms, and algebra homomorphisms. Here they are also bundled as monoid homomorphisms
+`TauCeti.DirectLimit.Monoid.of G f i : G i →* DirectLimit G f` and as nonunital and unital
+`⋆`-algebra homomorphisms `TauCeti.DirectLimit.NonUnitalStarAlgebra.of` and
+`TauCeti.DirectLimit.StarAlgebra.of`, with universal properties `lift`, extensionality `hom_ext`,
+and finite-subset stage lifting `exists_subset_range_of`. Every element of the direct limit comes
+from some component, and the index set is directed, so every finite subset of the direct limit lies
+in the image of a single component. This is how properties defined by finitely many elements at a
+time pass to direct limits.
 
 ## Main declarations
 
-* `TauCeti.DirectLimit.Monoid.of`: the canonical map from a component, as a monoid homomorphism.
-* `TauCeti.DirectLimit.Monoid.lift`: the universal property of the direct limit of monoids.
-* `TauCeti.DirectLimit.Monoid.hom_ext`: monoid homomorphisms out of the direct limit agree when
-  they agree on every component.
-* `TauCeti.DirectLimit.Monoid.exists_subset_range_of`: every finite subset of the direct limit lies
-  in the image of a single component.
-* `TauCeti.DirectLimit.Algebra.of_comp_f`: the canonical maps into a direct limit of algebras are
-  compatible with the transition maps. This is the algebra version of
-  `Ring.DirectLimit.of_comp_f` in `TauCeti/Algebra/Colimit/Ring.lean`.
+* `TauCeti.DirectLimit.Monoid.of`, `TauCeti.DirectLimit.Monoid.lift`,
+  `TauCeti.DirectLimit.Monoid.hom_ext`, `TauCeti.DirectLimit.Monoid.exists_subset_range_of`:
+  canonical maps, universal property, extensionality, and finite-subset stage lifting for direct
+  limits of monoids.
+* `TauCeti.DirectLimit.Algebra.of_comp_f` and `TauCeti.DirectLimit.NonUnitalAlgebra.of_comp_f`:
+  compatibility of the canonical maps into a direct limit of unital or nonunital algebras with the
+  transition maps.
+* `TauCeti.DirectLimit.NonUnitalStarAlgebra.of`, `TauCeti.DirectLimit.NonUnitalStarAlgebra.lift`,
+  `TauCeti.DirectLimit.NonUnitalStarAlgebra.hom_ext`,
+  `TauCeti.DirectLimit.NonUnitalStarAlgebra.exists_subset_range_of`: canonical maps, universal
+  property, extensionality, and finite-subset stage lifting for direct limits of nonunital
+  `⋆`-algebras.
+* `TauCeti.DirectLimit.StarAlgebra.of`, `TauCeti.DirectLimit.StarAlgebra.lift`,
+  `TauCeti.DirectLimit.StarAlgebra.hom_ext`,
+  `TauCeti.DirectLimit.StarAlgebra.exists_subset_range_of`: unital `⋆`-algebra counterparts.
 -/
 
 public section
@@ -127,5 +134,195 @@ theorem of_comp_f {i j : ι} (hij : i ≤ j) : (of B f j).comp (f i j hij) = of 
   AlgHom.ext fun _ ↦ of_f _ _
 
 end DirectLimit.Algebra
+
+namespace DirectLimit.NonUnitalAlgebra
+
+variable {A ι : Type*} [CommSemiring A] [Preorder ι] {B : ι → Type*}
+  [∀ i, NonUnitalNonAssocSemiring (B i)] [∀ i, DistribMulAction A (B i)]
+  {f : ∀ i j, i ≤ j → B i →ₙₐ[A] B j} [DirectedSystem B (f · · ·)]
+  [IsDirectedOrder ι] [Nonempty ι]
+
+open _root_.DirectLimit.NonUnitalAlgebra
+
+/-- The canonical maps into a direct limit of nonunital algebras are compatible with the transition
+maps. -/
+@[simp]
+theorem of_comp_f {i j : ι} (hij : i ≤ j) : (of B f j).comp (f i j hij) = of B f i :=
+  NonUnitalAlgHom.ext fun _ ↦ of_f _ _
+
+end DirectLimit.NonUnitalAlgebra
+
+namespace DirectLimit.NonUnitalStarAlgebra
+
+open _root_.DirectLimit
+
+variable {R ι : Type*} [Monoid R] [Preorder ι] {G : ι → Type*} {T : ∀ ⦃i j : ι⦄, i ≤ j → Type*}
+  {f : ∀ _ _ h, T h} [∀ i j (h : i ≤ j), FunLike (T h) (G i) (G j)] [DirectedSystem G (f · · ·)]
+  [IsDirectedOrder ι] [Nonempty ι] [∀ i, NonUnitalNonAssocSemiring (G i)]
+  [∀ i, DistribMulAction R (G i)] [∀ i, Star (G i)]
+  [∀ i j h, NonUnitalAlgHomClass (T h) R (G i) (G j)] [∀ i j h, StarHomClass (T h) (G i) (G j)]
+
+variable (R G f) in
+/-- The canonical map from a component to the direct limit, as a nonunital `⋆`-algebra
+homomorphism. -/
+noncomputable def of (i : ι) : G i →⋆ₙₐ[R] DirectLimit G f where
+  __ := _root_.DirectLimit.NonUnitalRing.of G f i
+  toFun x := ⟦⟨i, x⟩⟧
+  map_smul' m x := by rw [smul_def, MonoidHom.id_apply]
+  map_star' _ := (star_def ..).symm
+
+@[simp]
+theorem of_apply (i : ι) (x : G i) : of R G f i x = ⟦⟨i, x⟩⟧ := (rfl)
+
+theorem of_f {i j : ι} (hij : i ≤ j) (x : G i) :
+    of R G f j (f i j hij x) = of R G f i x :=
+  .symm <| eq_of_le ..
+
+@[simp]
+theorem of_comp_ofClass {i j : ι} (hij : i ≤ j) :
+    (of R G f j).comp (NonUnitalStarAlgHom.ofClass (f i j hij)) = of R G f i :=
+  NonUnitalStarAlgHom.ext (of_f hij)
+
+@[simp]
+theorem of_comp_f {G : ι → Type*} [∀ i, NonUnitalNonAssocSemiring (G i)]
+    [∀ i, DistribMulAction R (G i)] [∀ i, Star (G i)]
+    {f : ∀ i j, i ≤ j → G i →⋆ₙₐ[R] G j} [DirectedSystem G (f · · ·)] {i j : ι} (hij : i ≤ j) :
+    (of R G f j).comp (f i j hij) = of R G f i :=
+  NonUnitalStarAlgHom.ext (of_f hij)
+
+variable {P : Type*} [NonUnitalNonAssocSemiring P] [DistribMulAction R P] [Star P]
+
+variable (R G f) in
+/-- The universal property of the direct limit of nonunital `⋆`-algebras: compatible nonunital
+`⋆`-algebra homomorphisms from the components induce a nonunital `⋆`-algebra homomorphism out of
+the direct limit. -/
+-- `NonUnitalStarAlgHom` is spelled out because the source dot-notation lint reads a `→⋆ₙₐ[R]`
+-- result as a function arrow taking an explicit `DirectLimit` argument, which `lift` does not have.
+noncomputable def lift (g : ∀ i, G i →⋆ₙₐ[R] P)
+    (Hg : ∀ i j hij x, g j (f i j hij x) = g i x) :
+    NonUnitalStarAlgHom R (DirectLimit G f) P where
+  __ := _root_.DirectLimit.NonUnitalRing.lift G f P (fun i ↦ (g i : G i →ₙ+* P)) Hg
+  toFun := _root_.DirectLimit.lift _ (g · ·) fun i j h x ↦ (Hg i j h x).symm
+  map_smul' _ := lift_smul _ _ _
+  map_star' := lift_star _ _
+
+variable (g : ∀ i, G i →⋆ₙₐ[R] P) (Hg : ∀ i j hij x, g j (f i j hij x) = g i x)
+
+@[simp]
+theorem lift_mk (i : ι) (x : G i) : lift R G f g Hg ⟦⟨i, x⟩⟧ = g i x := (rfl)
+
+theorem lift_of (i : ι) (x : G i) : lift R G f g Hg (of R G f i x) = g i x := (rfl)
+
+@[simp]
+theorem lift_comp_of (i : ι) : (lift R G f g Hg).comp (of R G f i) = g i :=
+  NonUnitalStarAlgHom.ext (lift_of g Hg i)
+
+@[ext]
+theorem hom_ext {g₁ g₂ : DirectLimit G f →⋆ₙₐ[R] P}
+    (h : ∀ i, g₁.comp (of R G f i) = g₂.comp (of R G f i)) : g₁ = g₂ := by
+  ext x
+  induction x using DirectLimit.induction with | _ i x
+  exact DFunLike.congr_fun (h i) x
+
+/-- Every finite subset of the direct limit of nonunital `⋆`-algebras lies in the image of a single
+component. -/
+theorem exists_subset_range_of (s : Finset (DirectLimit G f)) :
+    ∃ i, (s : Set (DirectLimit G f)) ⊆ Set.range (of R G f i) := by
+  refine Directed.exists_mem_subset_of_finset_subset_biUnion
+    (directed_of_isDirected_le fun i j hij ↦ ?_) fun z _ ↦ ?_
+  · rintro _ ⟨x, rfl⟩
+    exact ⟨f i j hij x, of_f hij x⟩
+  · obtain ⟨i, x, rfl⟩ := exists_eq_mk f z
+    exact Set.mem_iUnion.2 ⟨i, x, rfl⟩
+
+end DirectLimit.NonUnitalStarAlgebra
+
+namespace DirectLimit.StarAlgebra
+
+open _root_.DirectLimit
+
+variable {R ι : Type*} [CommSemiring R] [Preorder ι] {G : ι → Type*}
+  {T : ∀ ⦃i j : ι⦄, i ≤ j → Type*} {f : ∀ _ _ h, T h}
+  [∀ i j (h : i ≤ j), FunLike (T h) (G i) (G j)] [DirectedSystem G (f · · ·)]
+  [IsDirectedOrder ι] [Nonempty ι] [∀ i, Semiring (G i)] [∀ i, Algebra R (G i)] [∀ i, Star (G i)]
+  [∀ i j h, AlgHomClass (T h) R (G i) (G j)] [∀ i j h, StarHomClass (T h) (G i) (G j)]
+
+variable (R G f) in
+/-- The canonical map from a component to the direct limit, as a unital `⋆`-algebra
+homomorphism. -/
+noncomputable def of (i : ι) : G i →⋆ₐ[R] DirectLimit G f where
+  __ := _root_.DirectLimit.Algebra.of G f i
+  toFun x := ⟦⟨i, x⟩⟧
+  map_star' _ := (star_def ..).symm
+
+@[simp]
+theorem of_apply (i : ι) (x : G i) : of R G f i x = ⟦⟨i, x⟩⟧ := (rfl)
+
+theorem of_f {i j : ι} (hij : i ≤ j) (x : G i) :
+    of R G f j (f i j hij x) = of R G f i x :=
+  .symm <| eq_of_le ..
+
+@[simp]
+theorem toNonUnitalStarAlgHom_of (i : ι) :
+    (of R G f i).toNonUnitalStarAlgHom = DirectLimit.NonUnitalStarAlgebra.of R G f i :=
+  NonUnitalStarAlgHom.ext fun _ ↦ rfl
+
+@[simp]
+theorem of_comp_ofClass {i j : ι} (hij : i ≤ j) :
+    (of R G f j).comp (StarAlgHom.ofClass (f i j hij)) = of R G f i :=
+  StarAlgHom.ext (of_f hij)
+
+@[simp]
+theorem of_comp_f {G : ι → Type*} [∀ i, Semiring (G i)] [∀ i, Algebra R (G i)] [∀ i, Star (G i)]
+    {f : ∀ i j, i ≤ j → G i →⋆ₐ[R] G j} [DirectedSystem G (f · · ·)] {i j : ι} (hij : i ≤ j) :
+    (of R G f j).comp (f i j hij) = of R G f i :=
+  StarAlgHom.ext (of_f hij)
+
+variable {P : Type*} [Semiring P] [Algebra R P] [Star P]
+
+variable (R G f) in
+/-- The universal property of the direct limit of unital `⋆`-algebras: compatible unital
+`⋆`-algebra homomorphisms from the components induce a unital `⋆`-algebra homomorphism out of the
+direct limit. -/
+-- `StarAlgHom` is spelled out because the source dot-notation lint reads a `→⋆ₐ[R]`
+-- result as a function arrow taking an explicit `DirectLimit` argument, which `lift` does not have.
+noncomputable def lift (g : ∀ i, G i →⋆ₐ[R] P)
+    (Hg : ∀ i j hij x, g j (f i j hij x) = g i x) :
+    StarAlgHom R (DirectLimit G f) P where
+  __ := _root_.DirectLimit.Algebra.lift G f P (fun i ↦ (g i).toAlgHom) Hg
+  toFun := _root_.DirectLimit.lift _ (g · ·) fun i j h x ↦ (Hg i j h x).symm
+  map_star' := lift_star _ _
+
+variable (g : ∀ i, G i →⋆ₐ[R] P) (Hg : ∀ i j hij x, g j (f i j hij x) = g i x)
+
+@[simp]
+theorem lift_mk (i : ι) (x : G i) : lift R G f g Hg ⟦⟨i, x⟩⟧ = g i x := (rfl)
+
+theorem lift_of (i : ι) (x : G i) : lift R G f g Hg (of R G f i x) = g i x := (rfl)
+
+@[simp]
+theorem lift_comp_of (i : ι) : (lift R G f g Hg).comp (of R G f i) = g i :=
+  StarAlgHom.ext (lift_of g Hg i)
+
+@[simp]
+theorem toNonUnitalStarAlgHom_lift :
+    (lift R G f g Hg).toNonUnitalStarAlgHom =
+      DirectLimit.NonUnitalStarAlgebra.lift R G f (fun i ↦ (g i).toNonUnitalStarAlgHom) Hg :=
+  NonUnitalStarAlgHom.ext fun _ ↦ rfl
+
+@[ext]
+theorem hom_ext {g₁ g₂ : DirectLimit G f →⋆ₐ[R] P}
+    (h : ∀ i, g₁.comp (of R G f i) = g₂.comp (of R G f i)) : g₁ = g₂ := by
+  ext x
+  induction x using DirectLimit.induction with | _ i x
+  exact DFunLike.congr_fun (h i) x
+
+/-- Every finite subset of the direct limit of unital `⋆`-algebras lies in the image of a single
+component. -/
+theorem exists_subset_range_of (s : Finset (DirectLimit G f)) :
+    ∃ i, (s : Set (DirectLimit G f)) ⊆ Set.range (of R G f i) :=
+  DirectLimit.NonUnitalStarAlgebra.exists_subset_range_of s
+
+end DirectLimit.StarAlgebra
 
 end TauCeti
