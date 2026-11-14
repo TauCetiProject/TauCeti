@@ -47,6 +47,12 @@ differential, so its scalar curvature at `(x, t)` is that of the metric at `(x, 
   near a point have the same scalar curvature at `x`.
 * `Bundle.ContMDiffRiemannianMetric.eqOn_scalarCurvature`: metrics that agree on an open set have
   the same scalar curvature on it.
+* `curvatureTensor_leviCivitaConnection_restrictOpenTangentSpace_eq_zero_iff` (in
+  `Bundle.ContMDiffRiemannianMetric`): vanishing of the curvature tensor is preserved and reflected
+  on an open submanifold.
+* `curvatureTensor_leviCivitaConnection_eq_zero_iff_of_eventually_inner_eq` (in
+  `Bundle.ContMDiffRiemannianMetric`): metrics that agree near a point have the same flatness
+  there.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_restrictIcc`: restriction to `M × [a, b]`
   preserves scalar curvature.
 
@@ -217,6 +223,51 @@ theorem eqOn_scalarCurvature
     (hU : IsOpen U) (h : ∀ x ∈ U, g₁.inner x = g₂.inner x) :
     Set.EqOn g₁.scalarCurvature g₂.scalarCurvature U := fun _ hx ↦
   scalarCurvature_eq_of_eventually_inner_eq (eventually_of_mem (hU.mem_nhds hx) h)
+
+/-- **Flatness of the restriction to an open submanifold.** The restriction of a smooth metric `g`
+to an open submanifold `U` has vanishing curvature tensor at `x : U` if and only if `g` has
+vanishing curvature tensor at `(x : M)`. -/
+@[simp]
+theorem curvatureTensor_leviCivitaConnection_restrictOpenTangentSpace_eq_zero_iff
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (U : Opens M) (x : U) :
+    (letI : RiemannianBundle (fun y : U ↦ TangentSpace I y) :=
+        ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I U).curvatureTensor x) = 0 ↔
+    (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor (x : M)) = 0 := by
+  let _ : RiemannianBundle (fun y : U ↦ TangentSpace I y) :=
+    ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩
+  let _ : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
+  have hι := g.isLocalRiemannianIsometry_restrictOpenTangentSpace U
+  constructor
+  · intro h
+    ext u v w
+    simp only [LinearMap.zero_apply]
+    obtain ⟨u', rfl⟩ := hι.mfderiv_surjective x u
+    obtain ⟨v', rfl⟩ := hι.mfderiv_surjective x v
+    obtain ⟨w', rfl⟩ := hι.mfderiv_surjective x w
+    rw [← hι.mfderiv_curvatureTensor, h]
+    simp only [LinearMap.zero_apply, map_zero]
+  · intro h
+    ext u v w
+    simp only [LinearMap.zero_apply]
+    apply hι.mfderiv_injective x
+    rw [hι.mfderiv_curvatureTensor, h]
+    simp only [LinearMap.zero_apply, map_zero]
+
+/-- **Locality of flat curvature.** Two smooth metrics that agree on a neighbourhood of `x` have the
+same flatness at `x`: one has vanishing curvature tensor at `x` if and only if the other does. -/
+theorem curvatureTensor_leviCivitaConnection_eq_zero_iff_of_eventually_inner_eq
+    {g₁ g₂ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {x : M}
+    (h : ∀ᶠ y in 𝓝 x, g₁.inner y = g₂.inner y) :
+    (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g₁.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x) = 0 ↔
+    (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g₂.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x) = 0 := by
+  obtain ⟨U, hU, hUo, hxU⟩ := eventually_nhds_iff.1 h
+  have hres := restrictOpenTangentSpace_eq_of_inner_eq ⟨U, hUo⟩ hU
+  rw [← g₁.curvatureTensor_leviCivitaConnection_restrictOpenTangentSpace_eq_zero_iff ⟨U, hUo⟩
+    ⟨x, hxU⟩, hres, g₂.curvatureTensor_leviCivitaConnection_restrictOpenTangentSpace_eq_zero_iff]
 
 /-- The scalar curvature of the restriction of a metric `G` on `M × ℝ` to `M × [a, b]` at
 `(x, t)` is that of `G` at `(x, t)`. -/
