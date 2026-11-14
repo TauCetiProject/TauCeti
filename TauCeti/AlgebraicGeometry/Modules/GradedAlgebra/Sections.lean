@@ -43,6 +43,8 @@ arguments here follow the proofs there.
   `CategoryTheory.CommMon.gAlgebraSections`: the graded
   commutative `Γ(X, U)`-algebra structure on `n ↦ Γ(Aₙ, U)`, characterized by
   `sections_gMul_def`, `sections_gOne_def` and `gAlgebraSections_toFun`;
+* `CategoryTheory.CommMon.finite_sections_zero_of_isIso_one`: when the unit `𝒪_X ⟶ A₀` is an
+  isomorphism, the degree-zero sections are a finite module over the sections of `X`;
 * `CategoryTheory.CommMon.gradedSectionsGrading`: the grading of `⨁ n, Γ(Aₙ, U)` by its
   summands, as an internally graded algebra in the sense of `GradedAlgebra`;
 * `CategoryTheory.CommMon.map_gMul_sections`: restriction of sections preserves the homogeneous
@@ -170,6 +172,18 @@ lemma gAlgebraSections_toFun (r : Γ(X, U)) :
     GAlgebra.toFun (R := Γ(X, U)) (A := fun n ↦ Γ(A.X n, U)) r =
       A.toMon.one.app U (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) r) :=
   (rfl)
+
+/-- If the unit `𝒪_X ⟶ A₀` of a graded algebra is an isomorphism, then over every open `U` the
+sections `Γ(A₀, U)` form a finite `Γ(X, U)`-module. -/
+theorem finite_sections_zero_of_isIso_one [IsIso A.toMon.one] :
+    Module.Finite Γ(X, U) Γ(A.X 0, U) := by
+  -- the unit induces an isomorphism `Γ(X, U) ≅ Γ(A₀, U)`
+  refine Module.Finite.of_surjective (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) ≫
+    (Scheme.Modules.sectionsFunctor U).map A.toMon.one).hom ?_
+  have : IsIso (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U)) := by
+    rw [Scheme.Modules.sectionsFunctor_ε]
+    exact IsIso.id _
+  exact (ConcreteCategory.bijective_of_isIso _).2
 
 end CategoryTheory.CommMon
 

@@ -320,14 +320,8 @@ theorem isGeneratedInDegreeOne_gradedSymmetricAlgebra :
 
 /-- Over every open `U`, the sections of `Sym⁰ F` form a finite `Γ(X, U)`-module. -/
 instance finite_sections_gradedSymmetricAlgebra_zero (U : X.Opens) :
-    Module.Finite Γ(X, U) Γ(((gradedSymmetricAlgebra X).obj F).obj.X 0, U) := by
-  have : IsIso (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U)) := by
-    rw [Scheme.Modules.sectionsFunctor_ε]
-    exact (Iso.refl (ModuleCat.of Γ(X, U) Γ(X, U))).isIso_hom
-  exact Module.Finite.equiv
-    (asIso (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U)) ≪≫
-      (Scheme.Modules.sectionsFunctor U).mapIso
-        (asIso ((gradedSymmetricAlgebra X).obj F).obj.toMon.one)).toLinearEquiv
+    Module.Finite Γ(X, U) Γ(((gradedSymmetricAlgebra X).obj F).obj.X 0, U) :=
+  CommMon.finite_sections_zero_of_isIso_one _ U
 
 /-- Over an affine open `U`, the graded ring of sections `⨁ n, Γ(Symⁿ F, U)` of the graded
 symmetric algebra of a quasicoherent sheaf of finite type is a `Γ(X, U)`-algebra of finite type. -/

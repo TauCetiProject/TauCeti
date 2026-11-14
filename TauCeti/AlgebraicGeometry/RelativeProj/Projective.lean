@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.RelativeProj.Proper
 public import TauCeti.AlgebraicGeometry.RelativeProj.TwistingSheaf.Pullback
 
 /-!
-# The relative `Proj` of an algebra generated in degree one is projective
+# The relative `Proj` of an algebra generated in degree one is proper
 
 Let `A` be a graded quasicoherent algebra on a scheme `X` which is generated in degree one
 (`CategoryTheory.CommMon.IsGeneratedInDegreeOne`): over every affine open `U` of `X`, the graded
