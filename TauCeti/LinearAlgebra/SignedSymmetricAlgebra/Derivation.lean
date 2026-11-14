@@ -63,6 +63,38 @@ variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
 variable {G : InternalGrading R V ℤ}
 
+/-- A graded algebra map out of `A(V)` intertwines signed Leibniz maps if it does so on
+all generators. Neither degree-shift nor square-zero hypotheses are needed. -/
+theorem apply_map_eq_map_apply_of_leibniz {A : Type*} [Ring A] [Algebra R A]
+    {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜]
+    {dV : SignedSym G →ₗ[R] SignedSym G}
+    (hV : ∀ {p : ℤ} {a : SignedSym G}, a ∈ signedSymPiece G p →
+      ∀ b, dV (a * b) = dV a * b + p.negOnePow • (a * dV b))
+    {d : A →ₗ[R] A}
+    (hd : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p →
+      ∀ b, d (a * b) = d a * b + p.negOnePow • (a * d b))
+    (f : signedSymPiece G →ₐᵍ[R] 𝒜)
+    (hgen : ∀ x, d (f (generator G x)) = f (dV (generator G x)))
+    (a : SignedSym G) : d (f a) = f (dV a) := by
+  have hVone := map_one_eq_zero_of_leibniz hV
+  have hdone := map_one_eq_zero_of_leibniz hd
+  have hhom {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiece G p) :
+      d (f a) = f (dV a) := by
+    exact (homogeneous_induction G
+      (P := fun p a => a ∈ signedSymPiece G p ∧ d (f a) = f (dV a))
+      ⟨SetLike.one_mem_graded _, by simp [hVone, hdone]⟩
+      (fun p x hx => ⟨generator_mem_signedSymPiece G hx, hgen x⟩)
+      (fun p q a b ha hb => ⟨SetLike.mul_mem_graded ha.1 hb.1, by
+        rw [map_mul, hd (Graded.map_mem f ha.1), hV ha.1, ha.2, hb.2]
+        simp only [map_add, map_zsmul_unit, map_mul]⟩)
+      (fun p => ⟨zero_mem _, by simp⟩)
+      (fun p a b ha hb => ⟨add_mem ha.1 hb.1, by simp [ha.2, hb.2]⟩)
+      (fun p r a ha => ⟨Submodule.smul_mem _ r ha.1, by simp [ha.2]⟩) ha).2
+  induction a using DirectSum.Decomposition.inductionOn (signedSymPiece G) with
+  | zero => simp
+  | homogeneous a => exact hhom a.2
+  | add a b ha hb => simp_all
+
 /-- A linear endomorphism of `A(V)` satisfying a Leibniz rule with an arbitrary sign `s p` for a
 left factor of degree `p`, and vanishing on generators, is zero. This covers both the difference
 of two odd derivations and the square of an odd derivation. -/
