@@ -69,7 +69,7 @@ variable {α : ℝ≥0} {t₀ t₁ : ℝ} {ht : t₀ < t₁}
 `v ↦ (P v, v(·, t₁))` of the weighted log-spot pricing operator `P` is an isomorphism of Banach
 spaces from `C_b^{2+α,1+α/2}` onto `C_b^{α,α/2} × C_b^{2,α}`. -/
 theorem isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL (hα₀ : 0 < α)
-    (hα₁ : α < 1) {a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ}
+    (hα₁ : α < 1) (ht : t₀ < t₁) {a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ}
     (r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) {lam : ℝ} (hlam : 0 < lam)
     (ha : ∀ p, lam ≤ a p) :
     ((weightedLogSpotPricingOperatorL (ht := ht) hα₁.le a r).prod
@@ -80,11 +80,11 @@ theorem isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL (hα₀ 
 
 section Residual
 
-variable {hα : α ≤ 1} {a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ}
+variable (hα : α ≤ 1) (a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ)
 
 /-- The spot pricing residual of the price represented by `v` is `1 + s` times the weighted
 log-spot operator applied to `v`. -/
-private theorem pde_weightedLogSpotPrice_eq_mul (v : ParabolicC2HolderSpace α ℝ ℝ ht) {s : ℝ}
+theorem pde_weightedLogSpotPrice_eq_mul (v : ParabolicC2HolderSpace α ℝ ℝ ht) {s : ℝ}
     (hs : 0 < s) (t : Icc t₀ t₁) :
     derivWithin (weightedLogSpotPrice v s) (Icc t₀ t₁) t +
         a (slabMk (log s) t) * s ^ 2 * deriv (deriv fun x ↦ weightedLogSpotPrice v x t) s +
@@ -120,8 +120,9 @@ end Residual
 `C_t + a(log s, t) s² C_ss + r(log s, t) (s C_s - C) = 0` for all `s > 0` and `t ∈ [t₀, t₁]` and
 satisfies `C(s, t₁) = h(s)` for all `s > 0`. -/
 theorem existsUnique_pde_weightedLogSpotPrice_eq_zero (hα₀ : 0 < α) (hα₁ : α < 1)
-    {a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ} (r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ)
-    {lam : ℝ} (hlam : 0 < lam) (ha : ∀ p, lam ≤ a p) {h : ℝ → ℝ} (g : CkHolderSpace 2 α ℝ ℝ)
+    (ht : t₀ < t₁) {a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ}
+    (r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) {lam : ℝ} (hlam : 0 < lam)
+    (ha : ∀ p, lam ≤ a p) (h : ℝ → ℝ) (g : CkHolderSpace 2 α ℝ ℝ)
     (hg : ∀ y, g y = h (exp y) / (1 + exp y)) :
     ∃! v : ParabolicC2HolderSpace α ℝ ℝ ht,
       (∀ s, 0 < s → ∀ t : Icc t₀ t₁,
@@ -132,7 +133,7 @@ theorem existsUnique_pde_weightedLogSpotPrice_eq_zero (hα₀ : 0 < α) (hα₁ 
       ∀ s, 0 < s → weightedLogSpotPrice v s t₁ = h s := by
   -- The two conditions say exactly that the terminal-data map sends `v` to `(0, g)`.
   refine (existsUnique_congr fun v ↦ ?_).2
-    ((isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL (ht := ht) hα₀ hα₁ r hlam
+    ((isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL hα₀ hα₁ ht r hlam
       ha).bijective.existsUnique (0, g))
   rw [ContinuousLinearMap.prod_apply, Prod.mk.injEq, spatialTraceL_apply]
   refine and_congr ⟨fun hv ↦ ?_, fun hv s hs t ↦ ?_⟩ ⟨fun hv ↦ ?_, fun hv s hs ↦ ?_⟩
@@ -140,9 +141,10 @@ theorem existsUnique_pde_weightedLogSpotPrice_eq_zero (hα₀ : 0 < α) (hα₁ 
     refine HolderSpace.ext fun p ↦ ?_
     obtain ⟨y, t, rfl⟩ : ∃ y t, slabMk y t = p := ⟨_, _, slabMk_space_slabTime p⟩
     have hp := hv (exp y) (exp_pos y) t
-    rw [pde_weightedLogSpotPrice_eq_mul (hα := hα₁.le) v (exp_pos y) t, log_exp] at hp
+    rw [pde_weightedLogSpotPrice_eq_mul hα₁.le a r v (exp_pos y) t, log_exp] at hp
+    rw [HolderSpace.zero_apply]
     exact (mul_eq_zero.1 hp).resolve_left (by positivity)
-  · rw [pde_weightedLogSpotPrice_eq_mul (hα := hα₁.le) v hs t, hv, HolderSpace.zero_apply,
+  · rw [pde_weightedLogSpotPrice_eq_mul hα₁.le a r v hs t, hv, HolderSpace.zero_apply,
       mul_zero]
   · ext y
     have hy := (weightedLogSpotPrice_of_mem v (exp y) ⟨t₁, right_mem_Icc.2 ht.le⟩).symm.trans

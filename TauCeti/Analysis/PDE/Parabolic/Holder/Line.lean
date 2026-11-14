@@ -20,8 +20,9 @@ times the identity, and a value `y` is `y` times `1`. Hence `P` is the one-dimen
 Euclidean operator with these coefficients, which transfers the well-posedness of the Cauchy
 problem with variable Hölder coefficients from `ℝ¹` to the line:
 
-* if `lam ≤ a` with `0 < lam`, the initial-data map `u ↦ (P u, u(·, 0))` on `ℝ × [0, T]` is an
-  isomorphism of Banach spaces from `C_b^{2+α,1+α/2}` onto `C_b^{α,α/2} × C_b^{2,α}`
+* if `lam ≤ a` with `0 < lam`, the initial-data map `u ↦ (P u, u(·, t₀))` on any slab
+  `ℝ × [t₀, t₁]` is an isomorphism of Banach spaces from `C_b^{2+α,1+α/2}` onto
+  `C_b^{α,α/2} × C_b^{2,α}`
   (`ParabolicC2HolderSpace.isInvertible_parabolicOperatorL_prod_spatialTraceL_real`);
 * by time reversal, so is the terminal-data map `u ↦ (P_back u, u(·, t₁))` of the backward
   operator `P_back u = ∂ₜu + A·D_x²u + B·D_xu + C·u` on every slab `ℝ × [t₀, t₁]`
@@ -131,7 +132,8 @@ coefficient fields `A`, `B`, `C` in `C_b^{α,α/2}(ℝ × [0, T])` whose second-
 parabolic, `lam ≤ A p (h, k ↦ h k)` with `0 < lam`, the initial-data map
 `u ↦ (∂ₜu - A·D_x²u - B·D_xu - C·u, u(·, 0))` is an isomorphism of Banach spaces from
 `C_b^{2+α,1+α/2}` onto `C_b^{α,α/2} × C_b^{2,α}`. -/
-theorem isInvertible_parabolicOperatorL_prod_spatialTraceL_real (hα₀ : 0 < α) (hα₁ : α < 1)
+private theorem isInvertible_parabolicOperatorL_prod_spatialTraceL_real_zero (hα₀ : 0 < α)
+    (hα₁ : α < 1)
     {T : ℝ≥0} (hT : (0 : ℝ) < T)
     {A : HolderSpace α (slab (E := ℝ) 0 T) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ)}
     (B : HolderSpace α (slab (E := ℝ) 0 T) ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
@@ -197,7 +199,42 @@ theorem isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real (hα₀ 
     bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff (hab := ht) (T := t₁) (ha := h₀)
       (hb := h₁)]
   have hT : (0 : ℝ) < T := h₁ ▸ sub_pos.2 ht
-  exact (isInvertible_parabolicOperatorL_prod_spatialTraceL_real hα₀ hα₁ hT _ _ hlam
+  exact (isInvertible_parabolicOperatorL_prod_spatialTraceL_real_zero hα₀ hα₁ hT _ _ hlam
     fun p ↦ by simpa only [HolderSpace.compLipschitzL_apply] using hA _).bijective
+
+/-- **The Cauchy problem on the line is well posed.** For `0 < α < 1`, a slab
+`ℝ × [t₀, t₁]` and coefficient fields `A`, `B`, `C` in `C_b^{α,α/2}` whose second-order part is
+uniformly parabolic, `lam ≤ A p (h, k ↦ h k)` with `0 < lam`, the initial-data map
+`u ↦ (∂ₜu - A·D_x²u - B·D_xu - C·u, u(·, t₀))` is an isomorphism of Banach spaces from
+`C_b^{2+α,1+α/2}` onto `C_b^{α,α/2} × C_b^{2,α}`. -/
+theorem isInvertible_parabolicOperatorL_prod_spatialTraceL_real (hα₀ : 0 < α) (hα₁ : α < 1)
+    {t₀ t₁ : ℝ} (ht : t₀ < t₁)
+    {A : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ)}
+    (B : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
+    (C : HolderSpace α (slab (E := ℝ) t₀ t₁) (ℝ →L[ℝ] ℝ)) {lam : ℝ} (hlam : 0 < lam)
+    (hA : ∀ p, lam ≤ A p (ContinuousLinearMap.mul ℝ ℝ)) :
+    ((parabolicOperatorL hα₁.le A B C).prod
+      (spatialTraceL (F := ℝ) (hab := ht) ⟨t₀, left_mem_Icc.2 ht.le⟩)).IsInvertible := by
+  -- Reverse the terminal problem on the same slab; reversing its coefficients again recovers
+  -- the original coefficients of the initial-value problem.
+  have h₀ : t₀ = t₀ + t₁ - t₁ := by ring
+  have h₁ : t₁ = t₀ + t₁ - t₀ := by ring
+  let R := slabTimeReverse (E := ℝ) (t₀ + t₁) h₀ h₁
+  have hcomp {G : Type} [NormedAddCommGroup G] [NormedSpace ℝ G]
+      (f : HolderSpace α (slab (E := ℝ) t₀ t₁) G) :
+      HolderSpace.compLipschitzL _ R.isometry.lipschitzWith
+        (HolderSpace.compLipschitzL _ R.symm.isometry.lipschitzWith f) = f := by
+    ext p
+    simp only [HolderSpace.compLipschitzL_apply, IsometryEquiv.symm_apply_apply]
+  dsimp only [R] at hcomp
+  have hback := isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real hα₀ hα₁ ht
+    (A := HolderSpace.compLipschitzL _ R.symm.isometry.lipschitzWith A)
+    (HolderSpace.compLipschitzL _ R.symm.isometry.lipschitzWith B)
+    (HolderSpace.compLipschitzL _ R.symm.isometry.lipschitzWith C) hlam
+    (fun p ↦ by simpa only [HolderSpace.compLipschitzL_apply] using hA (R.symm p))
+  rw [ContinuousLinearMap.isInvertible_iff_bijective]
+  simpa only [R, hcomp] using
+    (bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff hα₁.le (hab := ht)
+      (T := t₀ + t₁) (ha := h₀) (hb := h₁)).1 hback.bijective
 
 end TauCeti.ParabolicC2HolderSpace
