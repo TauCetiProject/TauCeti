@@ -43,6 +43,16 @@ def IsIncompressibleVector (k : ℕ) (ρ : ℝ) (x : EuclideanSpace 𝕜 ι) : P
 
 variable {k l : ℕ} {ρ σ : ℝ} {x : EuclideanSpace 𝕜 ι}
 
+/-- Compressibility is equivalent to unit norm and approximation within radius `ρ` by a vector
+supported on at most `k` coordinates. -/
+theorem isCompressibleVector_iff :
+    IsCompressibleVector k ρ x ↔ ‖x‖ = 1 ∧ ∃ s : Finset ι, s.card ≤ k ∧
+      ∃ y : EuclideanSpace 𝕜 ι, (∀ i ∉ s, y i = 0) ∧ ‖x - y‖ ≤ ρ := (Iff.rfl)
+
+/-- Incompressibility is equivalent to unit norm and failure of compressibility. -/
+theorem isIncompressibleVector_iff :
+    IsIncompressibleVector k ρ x ↔ ‖x‖ = 1 ∧ ¬IsCompressibleVector k ρ x := (Iff.rfl)
+
 /-- Compressible and incompressible vectors partition the unit sphere. -/
 @[simp] theorem isCompressibleVector_or_isIncompressibleVector_iff :
     IsCompressibleVector k ρ x ∨ IsIncompressibleVector k ρ x ↔ ‖x‖ = 1 := by
