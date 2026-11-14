@@ -44,14 +44,15 @@ induces a homomorphism of algebraic `K₁`, functorially.
 
 ## Main results
 
-* `TauCeti.coe_stabilizeGL_apply`: the entries of a stabilized matrix.
+* `TauCeti.stabilizeGL_apply`, `TauCeti.coe_stabilizeGL_apply`: block and entry formulas for a
+  stabilized matrix.
 * `TauCeti.StableGeneralLinearGroup.mem_elementarySubgroup_iff`: an element of `GL_∞(A)` is
   stably elementary exactly when it is represented by an elementary matrix of some size.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_normal`: `E_∞(A)` is normal.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_eq_commutator`: `E_∞(A)` is the
   commutator subgroup of `GL_∞(A)`.
-* `TauCeti.AlgebraicK1.mk_eq_one_iff`: an invertible matrix has trivial class in `K₁(A)` exactly
-  when some stabilization of it is elementary.
+* `TauCeti.AlgebraicK1.mk_eq_one_iff`, `TauCeti.AlgebraicK1.ker_mk`,
+  `TauCeti.AlgebraicK1.ker_mk_eq_iSup`: kernel of `AlgebraicK1.mk` at finite size.
 * `TauCeti.AlgebraicK1.map_id`, `TauCeti.AlgebraicK1.map_comp`, `TauCeti.AlgebraicK1.map_map`:
   functoriality of algebraic `K₁`.
 
@@ -85,6 +86,14 @@ def stabilizeGL {m n : ℕ} (h : m ≤ n) : GL (Fin m) A →* GL (Fin n) A :=
     (fromBlocksGL.comp (MonoidHom.inl (GL (Fin m) A) (GL (Fin (n - m)) A)))
 
 variable {A}
+
+/-- Stabilizing `u : GL (Fin m) A` to `GL (Fin n) A` for `h : m ≤ n` is the block-diagonal matrix
+`u ⊕ 1`, reindexed along `Fin m ⊕ Fin (n - m) ≃ Fin n`. -/
+theorem stabilizeGL_apply {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) A) :
+    stabilizeGL A h u =
+      (finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' h))).reindexGL A
+        (fromBlocksGL (u, (1 : GL (Fin (n - m)) A))) :=
+  (rfl)
 
 /-- The entries of a stabilized matrix: those of `u` in the first `m` rows and columns, and
 those of the identity matrix elsewhere. -/
@@ -357,6 +366,42 @@ theorem mk_eq_mk_iff {n : ℕ} {u v : GL (Fin n) A} :
     mk A n u = mk A n v ↔
       ∃ k, ∃ h : n ≤ k, stabilizeGL A h (u⁻¹ * v) ∈ TauCeti.elementarySubgroup (Fin k) A := by
   rw [← mk_eq_one_iff, map_mul, map_inv, inv_mul_eq_one]
+
+/-- Elementary matrices of size `n` lie in the kernel of `AlgebraicK1.mk A n`. -/
+theorem elementarySubgroup_le_ker_mk (n : ℕ) :
+    TauCeti.elementarySubgroup (Fin n) A ≤ (mk A n).ker := by
+  intro u hu
+  rw [MonoidHom.mem_ker, mk_eq_one_iff]
+  exact ⟨n, le_rfl, by simpa using hu⟩
+
+/-- The kernel of `AlgebraicK1.mk A n` is the preimage of the stable elementary subgroup `E_∞(A)`
+along `StableGeneralLinearGroup.of A n`. -/
+theorem ker_mk (n : ℕ) :
+    (mk A n).ker =
+      (StableGeneralLinearGroup.elementarySubgroup A).comap (StableGeneralLinearGroup.of A n) := by
+  ext u
+  rw [MonoidHom.mem_ker, mk_eq_one_iff, Subgroup.mem_comap,
+    StableGeneralLinearGroup.of_mem_elementarySubgroup_iff]
+
+/-- The kernel of `AlgebraicK1.mk A n` is the directed supremum of the preimages of the
+finite-rank elementary subgroups under stabilization. -/
+theorem ker_mk_eq_iSup (n : ℕ) :
+    (mk A n).ker =
+      ⨆ (k : ℕ) (h : n ≤ k), (TauCeti.elementarySubgroup (Fin k) A).comap (stabilizeGL A h) := by
+  let f : {k : ℕ // n ≤ k} → Subgroup (GL (Fin n) A) :=
+    fun p ↦ (TauCeti.elementarySubgroup (Fin p.1) A).comap (stabilizeGL A p.2)
+  have hmono : Monotone f := by
+    rintro ⟨k₁, hk₁⟩ ⟨k₂, hk₂⟩ (h₁₂ : k₁ ≤ k₂) u hu
+    rw [Subgroup.mem_comap] at hu ⊢
+    rw [← stabilizeGL_stabilizeGL hk₁ h₁₂]
+    exact map_stabilizeGL_elementarySubgroup_le h₁₂ ⟨_, hu, rfl⟩
+  have : Nonempty {k : ℕ // n ≤ k} := ⟨⟨n, le_rfl⟩⟩
+  ext u
+  have hsup : (⨆ (k : ℕ) (h : n ≤ k),
+      (TauCeti.elementarySubgroup (Fin k) A).comap (stabilizeGL A h)) =
+      ⨆ p : {k : ℕ // n ≤ k}, f p := iSup_subtype'
+  rw [MonoidHom.mem_ker, mk_eq_one_iff, hsup, Subgroup.mem_iSup_of_directed hmono.directed_le]
+  simp [f]
 
 variable (A) in
 /-- Algebraic `K₁` is the quotient of `GL_∞(A)` by the stable elementary subgroup. -/

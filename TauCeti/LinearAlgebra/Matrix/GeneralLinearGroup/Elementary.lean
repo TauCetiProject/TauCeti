@@ -36,6 +36,8 @@ pairing with cyclic cohomology, descend to `K₁`.
 * `TauCeti.fromBlocksGL`: the block diagonal homomorphism `GL m A × GL k A →* GL (m ⊕ k) A`.
 * `Matrix.upperBlockGL`, `Matrix.lowerBlockGL`: the block unipotent matrices
   `fromBlocks 1 X 0 1` and `fromBlocks 1 0 Y 1`.
+* `Matrix.GeneralLinearGroup.toBlocks₁₁GL`: the invertible upper-left block of a block matrix in
+  `GL (m ⊕ k) A` whose lower-left block is `0` and lower-right block is `1`.
 
 ## Main results
 
@@ -45,6 +47,8 @@ pairing with cyclic cohomology, descend to `K₁`.
   subgroup.
 * `Matrix.upperBlockGL_mem_elementarySubgroup`, `Matrix.lowerBlockGL_mem_elementarySubgroup`:
   block unipotent matrices are elementary.
+* `TauCeti.eq_fromBlocksGL_mul_upperBlockGL`: block upper-triangular factorization of a matrix in
+  `GL (m ⊕ k) A` with bottom row `(0, 1)`.
 * `TauCeti.fromBlocksGL_inv_mem_elementarySubgroup`: Whitehead's lemma, `u ⊕ u⁻¹ ∈ E`.
 * `TauCeti.map_commutator_le_elementarySubgroup`: the stabilized commutator subgroup is elementary.
 * `TauCeti.fromBlocksGL_conj_mem_elementarySubgroup`: the stabilization of a conjugate of an
@@ -233,10 +237,79 @@ theorem lowerBlockGL_mem_elementarySubgroup (Y : Matrix k m A) :
 
 end Matrix
 
+namespace Matrix.GeneralLinearGroup
+
+variable {A m k : Type*} [Semiring A] [DecidableEq m] [Fintype m] [DecidableEq k] [Fintype k]
+
+/-- The invertible upper-left `m × m` block of `g : GL (m ⊕ k) A` when its lower-left block is `0`
+and its lower-right block is `1`. -/
+def toBlocks₁₁GL (g : GL (m ⊕ k) A)
+    (h₂₁ : (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₁ = 0)
+    (h₂₂ : (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₂ = 1) : GL m A where
+  val := (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₁
+  inv := (↑g⁻¹ : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₁
+  val_inv := by
+    have hmul : (g : Matrix (m ⊕ k) (m ⊕ k) A) * (↑g⁻¹ : Matrix (m ⊕ k) (m ⊕ k) A) = 1 := g.val_inv
+    rw [← fromBlocks_toBlocks (g : Matrix (m ⊕ k) (m ⊕ k) A),
+      ← fromBlocks_toBlocks (↑g⁻¹ : Matrix (m ⊕ k) (m ⊕ k) A), h₂₁, h₂₂, fromBlocks_multiply,
+      ← fromBlocks_one] at hmul
+    obtain ⟨h₁₁, -, hinv₂₁, -⟩ := fromBlocks_inj.mp hmul
+    have hinv₂₁' : (↑g⁻¹ : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₁ = 0 := by simpa using hinv₂₁
+    simpa [hinv₂₁'] using h₁₁
+  inv_val := by
+    have hmul : (↑g⁻¹ : Matrix (m ⊕ k) (m ⊕ k) A) * (g : Matrix (m ⊕ k) (m ⊕ k) A) = 1 := g.inv_val
+    rw [← fromBlocks_toBlocks (↑g⁻¹ : Matrix (m ⊕ k) (m ⊕ k) A),
+      ← fromBlocks_toBlocks (g : Matrix (m ⊕ k) (m ⊕ k) A), h₂₁, h₂₂, fromBlocks_multiply,
+      ← fromBlocks_one] at hmul
+    simpa using (fromBlocks_inj.mp hmul).1
+
+/-- The underlying matrix of `Matrix.GeneralLinearGroup.toBlocks₁₁GL`. -/
+@[simp]
+theorem coe_toBlocks₁₁GL (g : GL (m ⊕ k) A)
+    (h₂₁ : (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₁ = 0)
+    (h₂₂ : (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₂ = 1) :
+    (g.toBlocks₁₁GL h₂₁ h₂₂ : Matrix m m A) = (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₁ :=
+  (rfl)
+
+/-- The underlying matrix of the inverse of `Matrix.GeneralLinearGroup.toBlocks₁₁GL`. -/
+@[simp]
+theorem coe_toBlocks₁₁GL_inv (g : GL (m ⊕ k) A)
+    (h₂₁ : (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₁ = 0)
+    (h₂₂ : (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₂ = 1) :
+    (↑(g.toBlocks₁₁GL h₂₁ h₂₂)⁻¹ : Matrix m m A) = (↑g⁻¹ : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₁ :=
+  (rfl)
+
+end Matrix.GeneralLinearGroup
+
 namespace TauCeti
 
 variable {A : Type*} [Ring A] {m k : Type*} [DecidableEq m] [Fintype m] [DecidableEq k]
   [Fintype k]
+
+/-- An invertible block matrix whose lower-left block is `0` and lower-right block is `1` factors
+as `fromBlocksGL (g.toBlocks₁₁GL h₂₁ h₂₂, 1)` times an upper block unipotent matrix. -/
+theorem eq_fromBlocksGL_mul_upperBlockGL (g : GL (m ⊕ k) A)
+    (h₂₁ : (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₁ = 0)
+    (h₂₂ : (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₂ = 1) :
+    g = fromBlocksGL (g.toBlocks₁₁GL h₂₁ h₂₂, 1) *
+      upperBlockGL ((↑(g.toBlocks₁₁GL h₂₁ h₂₂)⁻¹ : Matrix m m A) *
+        (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₂) := by
+  refine Units.ext ?_
+  have hcancel : (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₁ *
+      ((↑g⁻¹ : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₁ *
+        (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₂) =
+      (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₂ := by
+    rw [← Matrix.mul_assoc, ← GeneralLinearGroup.coe_toBlocks₁₁GL g h₂₁ h₂₂,
+      ← GeneralLinearGroup.coe_toBlocks₁₁GL_inv g h₂₁ h₂₂, Units.mul_inv, Matrix.one_mul]
+  calc (g : Matrix (m ⊕ k) (m ⊕ k) A)
+      = fromBlocks (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₁
+          (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₂ 0 1 := by
+        rw [← h₂₁, ← h₂₂, fromBlocks_toBlocks]
+    _ = ((fromBlocksGL (g.toBlocks₁₁GL h₂₁ h₂₂, 1) *
+          upperBlockGL ((↑(g.toBlocks₁₁GL h₂₁ h₂₂)⁻¹ : Matrix m m A) *
+            (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₂) : GL (m ⊕ k) A) :
+          Matrix (m ⊕ k) (m ⊕ k) A) := by
+        simp [fromBlocks_multiply, hcancel]
 
 /-- Placing an elementary matrix in the upper left block gives an elementary matrix: the
 stabilization `e ↦ e ⊕ 1` maps the elementary subgroup into the elementary subgroup. -/
