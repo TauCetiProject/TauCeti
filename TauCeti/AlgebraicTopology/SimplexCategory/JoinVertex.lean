@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplexCategory.Augmented.Monoidal
+public import Mathlib.AlgebraicTopology.SimplexCategory.Rev
 public import Mathlib.AlgebraicTopology.SimplicialObject.Basic
 
 /-!
@@ -16,7 +17,10 @@ This file defines the endofunctor `SimplexCategory.joinVertex : ⦋n⦌ ↦ ⦋n
 extends a monotone map by sending the final vertex to the final vertex, so it sends the coface
 and codegeneracy maps `δ i` and `σ i` to `δ i.castSucc` and `σ i.castSucc`. The inclusion
 `joinVertexInl m : m ⟶ m ⋆ ⦋0⦌` and the final vertex `joinVertexInr m : ⦋0⦌ ⟶ m ⋆ ⦋0⦌` are
-natural in `m`.
+natural in `m`. Its conjugate `SimplexCategory.vertexJoin : ⦋n⦌ ↦ ⦋0⦌ ⋆ ⦋n⦌ = ⦋n + 1⦌` by the
+reversal `SimplexCategory.rev` joins an initial vertex instead, sending `δ i` and `σ i` to
+`δ i.succ` and `σ i.succ`; the faces and degeneracies of `vertexJoin.op ⋙ X` are computed by
+`SimplicialObject.vertexJoin_op_comp_δ` and `SimplicialObject.vertexJoin_op_comp_σ`.
 
 For a simplicial object `X`, the simplicial object `joinVertex.op ⋙ X` has as `n`-simplices the
 `(n + 1)`-simplices of `X`, with simplicial operators acting on the first `n + 1` vertices and
@@ -29,6 +33,7 @@ simplicial object containing right mapping spaces and slices of simplicial sets.
 * `SimplexCategory.joinVertex`: the endofunctor `⦋n⦌ ↦ ⦋n⦌ ⋆ ⦋0⦌ = ⦋n + 1⦌` of `SimplexCategory`.
 * `SimplexCategory.joinVertexInl`, `SimplexCategory.joinVertexInr`: the inclusion of `m` and of
   the final vertex into `m ⋆ ⦋0⦌`.
+* `SimplexCategory.vertexJoin`: the endofunctor `⦋n⦌ ↦ ⦋0⦌ ⋆ ⦋n⦌ = ⦋n + 1⦌` of `SimplexCategory`.
 
 ## References
 
@@ -169,6 +174,68 @@ theorem mkOfSucc_castSucc_comp_joinVertex_map {n : ℕ} (j : Fin n) :
   · exact (joinVertex_map_castSucc (m := ⦋n⦌) (n := ⦋n⦌) _ j.castSucc :).trans (by simp [δ]; rfl)
   · exact (joinVertex_map_castSucc (m := ⦋n⦌) (n := ⦋n⦌) _ j.succ :).trans (by simp [δ]; rfl)
 
+/-- The join `⦋0⦌ ⋆ m` with an initial vertex, as an endofunctor of `SimplexCategory`: the
+conjugate of `joinVertex` by the reversal `rev`. It sends `⦋n⦌` to `⦋n + 1⦌` and extends a
+monotone map by sending the initial vertex to the initial vertex. -/
+-- The body is exposed so that `vertexJoin.obj ⦋n⦌` is definitionally `⦋n + 1⦌` downstream.
+@[expose]
+def vertexJoin : SimplexCategory ⥤ SimplexCategory :=
+  rev ⋙ joinVertex ⋙ rev
+
+@[simp]
+theorem vertexJoin_obj (m : SimplexCategory) : vertexJoin.obj m = ⦋m.len + 1⦌ :=
+  (rfl)
+
+/-- The extension of `f` by an initial vertex fixes the initial vertex. -/
+@[simp]
+theorem vertexJoin_map_zero {m n : SimplexCategory} (f : m ⟶ n) :
+    (vertexJoin.map f).toOrderHom 0 = 0 :=
+  -- Reversal exchanges the initial vertex with the final vertex fixed by `joinVertex`.
+  (congrArg Fin.rev (joinVertex_map_last (rev.map f))).trans (Fin.rev_last _)
+
+/-- The extension of `f` by an initial vertex sends `i + 1` to `f i + 1`. -/
+@[simp]
+theorem vertexJoin_map_succ {m n : SimplexCategory} (f : m ⟶ n) (i : Fin (m.len + 1)) :
+    (vertexJoin.map f).toOrderHom i.succ = (f.toOrderHom i).succ := by
+  -- Reversal exchanges the shifts `succ` and `castSucc` handled by `joinVertex`.
+  refine (congrArg (fun j ↦ ((joinVertex.map (rev.map f)).toOrderHom j).rev)
+    (Fin.rev_succ i)).trans
+      ((congrArg Fin.rev (joinVertex_map_castSucc (rev.map f) i.rev)).trans ?_)
+  rw [rev_map_apply, Fin.rev_rev]
+  exact (Fin.rev_castSucc _).trans (congrArg Fin.succ (Fin.rev_rev _))
+
+/-- The join with an initial vertex preserves the initial vertex. -/
+@[reassoc]
+theorem const_zero_comp_vertexJoin_map {x : SimplexCategory} {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) :
+    const x ⦋m + 1⦌ 0 ≫ vertexJoin.map f = const x ⦋n + 1⦌ 0 :=
+  (const_comp x (vertexJoin.map f) 0).trans (congrArg (const x ⦋n + 1⦌) (vertexJoin_map_zero f))
+
+/-- The inclusion `δ 0 : m ⟶ ⦋0⦌ ⋆ m` of the face opposite to the initial vertex is natural. -/
+@[reassoc]
+theorem δ_zero_comp_vertexJoin_map {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) :
+    δ 0 ≫ vertexJoin.map f = f ≫ δ 0 := by
+  ext i : 3
+  exact vertexJoin_map_succ f i
+
+/-- The join with an initial vertex sends the `i`-th coface map to the `(i + 1)`-th coface map. -/
+@[simp]
+theorem vertexJoin_map_δ {n : ℕ} (i : Fin (n + 2)) :
+    vertexJoin.map (δ i) = δ i.succ := by
+  ext j : 3
+  cases j using Fin.cases with
+  | zero => exact (vertexJoin_map_zero (δ i)).trans (Fin.succ_succAbove_zero i).symm
+  | succ j => exact (vertexJoin_map_succ (δ i) j).trans (Fin.succ_succAbove_succ i j).symm
+
+/-- The join with an initial vertex sends the `i`-th codegeneracy map to the `(i + 1)`-th
+codegeneracy map. -/
+@[simp]
+theorem vertexJoin_map_σ {n : ℕ} (i : Fin (n + 1)) :
+    vertexJoin.map (σ i) = σ i.succ := by
+  ext j : 3
+  cases j using Fin.cases with
+  | zero => exact (vertexJoin_map_zero (σ i)).trans (Fin.predAbove_right_zero (i := i.succ)).symm
+  | succ j => exact (vertexJoin_map_succ (σ i) j).trans (Fin.succ_predAbove_succ i j).symm
+
 end SimplexCategory
 
 namespace CategoryTheory.SimplicialObject
@@ -177,15 +244,28 @@ open SimplexCategory
 
 variable {C : Type*} [Category* C] (X : SimplicialObject C)
 
-/-- The faces of `joinVertex.op ⋙ X` are the faces of `X` avoiding the last vertex. -/
+/-- The faces of `joinVertex.op ⋙ X` are the faces of `X` omitting a vertex other than the last
+one, so containing the last vertex. -/
 theorem joinVertex_op_comp_δ {n : ℕ} (i : Fin (n + 2)) :
     δ (joinVertex.op ⋙ X) i = X.δ i.castSucc :=
   congrArg (fun f ↦ X.map (Quiver.Hom.op f)) (joinVertex_map_δ i)
 
-/-- The degeneracies of `joinVertex.op ⋙ X` are the degeneracies of `X` fixing the last
-vertex. -/
+/-- The degeneracies of `joinVertex.op ⋙ X` are the degeneracies of `X` repeating a vertex other
+than the last one. -/
 theorem joinVertex_op_comp_σ {n : ℕ} (i : Fin (n + 1)) :
     σ (joinVertex.op ⋙ X) i = X.σ i.castSucc :=
   congrArg (fun f ↦ X.map (Quiver.Hom.op f)) (joinVertex_map_σ i)
+
+/-- The faces of `vertexJoin.op ⋙ X` are the faces of `X` omitting a vertex after the first one,
+so containing the first vertex. -/
+theorem vertexJoin_op_comp_δ {n : ℕ} (i : Fin (n + 2)) :
+    δ (vertexJoin.op ⋙ X) i = X.δ i.succ :=
+  congrArg (fun f ↦ X.map (Quiver.Hom.op f)) (vertexJoin_map_δ i)
+
+/-- The degeneracies of `vertexJoin.op ⋙ X` are the degeneracies of `X` repeating a vertex after
+the first one. -/
+theorem vertexJoin_op_comp_σ {n : ℕ} (i : Fin (n + 1)) :
+    σ (vertexJoin.op ⋙ X) i = X.σ i.succ :=
+  congrArg (fun f ↦ X.map (Quiver.Hom.op f)) (vertexJoin_map_σ i)
 
 end CategoryTheory.SimplicialObject
