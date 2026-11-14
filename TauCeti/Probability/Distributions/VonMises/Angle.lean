@@ -138,8 +138,7 @@ theorem cdf_vonMisesAngleMeasure_eq_integral (hκ : 0 ≤ κ) (hx : x ∈ Icc (-
     Measure.restrict_congr_set Ico_ae_eq_Ioc,
     measureReal_withDensity_ofReal
       (ae_of_all _ fun t ↦ (div_pos (vonMisesPDFReal_pos _ _ _) two_pi_pos).le)
-      measurableSet_Iic
-      ((hf.integrableOn_Icc.mono_set Ioc_subset_Icc_self).integrableOn.aemeasurable),
+      measurableSet_Iic hf.aemeasurable,
     Measure.restrict_restrict measurableSet_Iic, Iic_inter_Ioc_of_le hx.2,
     ← intervalIntegral.integral_of_le hx.1, intervalIntegral.integral_div]
 

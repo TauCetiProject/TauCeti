@@ -186,7 +186,7 @@ theorem cdf_cauchyMeasure_of_scale_ne_zero (x₀ : ℝ) {γ : ℝ≥0} (hγ : γ
       1 / 2 + Real.arctan ((x - x₀) / (γ : ℝ)) / Real.pi := by
   rw [cdf_eq_real, cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ)]
   rw [measureReal_withDensity_ofReal (ae_of_all _ fun y ↦ (cauchyPDF_pos x₀ hγ y).le)
-    measurableSet_Iic (integrable_cauchyPDFReal x₀).integrableOn.aemeasurable]
+    measurableSet_Iic (measurable_cauchyPDFReal x₀ γ).aemeasurable]
   exact integral_Iic_cauchyPDFReal x₀ hγ x
 
 /-- **The cumulative distribution function at zero scale.** Mathlib totalizes the Cauchy family

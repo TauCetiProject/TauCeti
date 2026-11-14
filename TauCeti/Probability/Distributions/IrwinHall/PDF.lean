@@ -216,10 +216,9 @@ theorem integrable_irwinHallPDFReal (n : ℕ) : Integrable (irwinHallPDFReal n) 
 theorem integral_irwinHallPDFReal {n : ℕ} (hn : 0 < n) :
     ∫ x, irwinHallPDFReal n x = 1 := by
   have hμ := irwinHallMeasure_eq_withDensity hn
-  have hfi := integrable_irwinHallPDFReal n
-  have hmass := measureReal_withDensity_ofReal
+  have hmass := measureReal_withDensity_ofReal (μ := volume)
     (s := univ) (ae_of_all _ (irwinHallPDFReal_nonneg n)) MeasurableSet.univ
-    hfi.integrableOn.aemeasurable
+    (measurable_irwinHallPDFReal n).aemeasurable
   simpa [← irwinHallPDF_eq_ofReal, ← hμ] using hmass.symm
 
 /-- A variable with positive-order Irwin–Hall law has a density. -/

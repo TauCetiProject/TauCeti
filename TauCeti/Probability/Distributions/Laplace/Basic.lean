@@ -333,24 +333,23 @@ theorem rnDeriv_laplaceMeasure (μ b : ℝ) :
 
 /-! ### The cumulative distribution function -/
 
-/-- The mass a Laplace law assigns to a measurable set on which its density is integrable. -/
-private lemma measureReal_laplaceMeasure {s : Set ℝ} (hs : MeasurableSet s)
-    (hint : IntegrableOn (laplacePDFReal μ b) s) :
+/-- The mass a Laplace law assigns to a measurable set is the integral of its density there. -/
+private lemma measureReal_laplaceMeasure {s : Set ℝ} (hs : MeasurableSet s) :
     (laplaceMeasure μ b).real s = ∫ y in s, laplacePDFReal μ b y := by
   rw [laplaceMeasure_eq_withDensity, funext (laplacePDF_eq_ofReal μ b)]
   exact measureReal_withDensity_ofReal (ae_of_all _ (laplacePDFReal_nonneg μ b)) hs
-    hint.aemeasurable
+    (measurable_laplacePDFReal μ b).aemeasurable
 
 /-- The upper tail of a Laplace law above its location. -/
 theorem measureReal_Ioi_laplaceMeasure (hb : 0 < b) (hx : μ ≤ x) :
     (laplaceMeasure μ b).real (Ioi x) = Real.exp (-(x - μ) / b) / 2 := by
-  rw [measureReal_laplaceMeasure measurableSet_Ioi integrableOn_laplacePDFReal_Ioi,
+  rw [measureReal_laplaceMeasure measurableSet_Ioi,
     integral_laplacePDFReal_Ioi hb hx]
 
 /-- The lower tail of a Laplace law below its location. -/
 theorem measureReal_Iic_laplaceMeasure_of_le (hb : 0 < b) (hx : x ≤ μ) :
     (laplaceMeasure μ b).real (Iic x) = Real.exp ((x - μ) / b) / 2 := by
-  rw [measureReal_laplaceMeasure measurableSet_Iic integrableOn_laplacePDFReal_Iic,
+  rw [measureReal_laplaceMeasure measurableSet_Iic,
     integral_laplacePDFReal_Iic hb hx]
 
 /-- **The cumulative distribution function of the Laplace law.** -/
