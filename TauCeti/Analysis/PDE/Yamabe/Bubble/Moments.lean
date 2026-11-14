@@ -103,6 +103,8 @@ private lemma energyMoment_eq (hn : finrank ℝ E ≠ 2) {p : ℝ} (hp : 0 ≤ p
     Real.rpow_add' (norm_nonneg _) (by linarith : 0 < p + 2).ne', Real.rpow_two]
   ring
 
+section CriticalMoments
+
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- In dimension `n ≠ 2`, the moment of order `0 ≤ p < n` about the centre of the critical bubble
@@ -175,7 +177,12 @@ theorem tendsto_integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent
   filter_upwards [self_mem_nhdsWithin] with t ht
   rw [integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent μ hn hp.le hpn ht b]
 
-omit [FiniteDimensional ℝ E] in
+end CriticalMoments
+
+section EnergyIntegrable
+
+variable [MeasurableSpace E] [BorelSpace E]
+
 /-- In dimension `n > 2`, the moment of order `0 ≤ p < n - 2` about the centre of the
 Dirichlet-energy density of a bubble is integrable for every additive Haar measure. -/
 theorem integrable_norm_sub_rpow_mul_norm_fderiv_bubble_sq
@@ -188,6 +195,12 @@ theorem integrable_norm_sub_rpow_mul_norm_fderiv_bubble_sq
   have h := (integrable_norm_sub_rpow_mul_bubble_rpow_criticalExponent μ hn.ne' (p := p + 2)
     (by linarith) (by linarith) ht b).const_mul ((((finrank ℝ E : ℝ) - 2) / (2 * t)) ^ 2)
   exact h.congr (.of_forall fun x ↦ (energyMoment_eq hn.ne' hp ht b x).symm)
+
+end EnergyIntegrable
+
+section EnergyIntegral
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- The moment of order `0 ≤ p < n - 2` about the centre of the Dirichlet-energy density of a
 bubble, for an additive Haar measure `μ`.  It scales as `t ^ p`; the excluded endpoint
@@ -214,7 +227,12 @@ theorem integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq
     beta (((finrank ℝ E : ℝ) + p + 2) / 2) (((finrank ℝ E : ℝ) - p - 2) / 2)) *
       (2 ^ (finrank ℝ E - 3) * hC + (((finrank ℝ E : ℝ) - 2) / (2 * t)) ^ 2 * t ^ 2 * htwo_pow)
 
-omit [FiniteDimensional ℝ E] in
+end EnergyIntegral
+
+section EnergyTendsto
+
+variable [MeasurableSpace E] [BorelSpace E]
+
 /-- Every positive Dirichlet-energy moment of order less than `n - 2` tends to zero as the
 bubble scale tends to zero from above, for any additive Haar measure. -/
 theorem tendsto_integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq
@@ -236,7 +254,13 @@ theorem tendsto_integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq
   filter_upwards [self_mem_nhdsWithin] with t ht
   rw [integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq μ hp.le hpn ht b]
 
+end EnergyTendsto
+
 /-! ### Finite moments of the square -/
+
+section SquareRescale
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- The square moment against an arbitrary real weight rescales by `t ^ (p + 2)`, with the
 weight pulled back along `z ↦ b + t • z`. No integrability or restriction on the moment order or
@@ -270,7 +294,8 @@ theorem integral_mul_norm_sub_rpow_mul_bubble_sq_eq_mul (μ : Measure E) [μ.IsA
   rw [htrans, hscale, integral_congr_ae (.of_forall hpoint), integral_const_mul,
     ← mul_assoc, hpower]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+end SquareRescale
+
 private lemma squareMoment_profile {p : ℝ} {t : ℝ} (ht : 0 < t)
     (hn : 2 ≤ finrank ℝ E) (b x : E) :
     ‖x - b‖ ^ p * bubble t b x ^ 2 =
@@ -304,7 +329,10 @@ private lemma squareMoment_profile {p : ℝ} {t : ℝ} (ht : 0 < t)
   simp only [hnorm, hbubble, hprofile, div_eq_mul_inv]
   ring
 
-omit [FiniteDimensional ℝ E] in
+section SquareMoments
+
+variable [MeasurableSpace E] [BorelSpace E]
+
 /-- The moment of order `0 ≤ p < n - 4` of the square of a bubble is integrable for every
 additive Haar measure. -/
 theorem integrable_norm_sub_rpow_mul_bubble_sq
@@ -322,7 +350,6 @@ theorem integrable_norm_sub_rpow_mul_bubble_sq
   exact (hscaled.comp_sub_right b).congr
     (.of_forall fun x ↦ (squareMoment_profile ht hn b x).symm)
 
-omit [FiniteDimensional ℝ E] in
 /-- The moment of order `0 ≤ p < n - 4` of `U²` equals
 `n μ(B(0,1)) 2^(n-3) Β((n+p)/2, (n-p-4)/2) t^(p+2)`.
 The excluded endpoint `p = n - 4` is the logarithmic case. -/
@@ -358,6 +385,8 @@ theorem integral_norm_sub_rpow_mul_bubble_sq
   rw [htwo]
   ring
 
+end SquareMoments
+
 /-! ### Truncated moments at the logarithmic endpoint
 
 The moments of order `n` of `U ^ pₙ` (in dimension `n ≠ 2` with `n > 0`), of order `n - 2` of
@@ -366,7 +395,14 @@ moments truncated to a ball are computed instead.  Each density is a power of th
 `2 t / (t² + ‖x - b‖²)`, so these are specializations of
 `TauCeti.setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow`. -/
 
-omit [FiniteDimensional ℝ E] in
+section TruncatedCritical
+
+variable [MeasurableSpace E]
+
+section Borel
+
+variable [BorelSpace E]
+
 /-- The truncated moment of order `n` of the critical bubble density, in dimension `n ≠ 2`, over
 the ball `B(b, R)`. It grows like `n |B(0, 1)| 2 ^ (n - 1) t ^ n log (1 + (R / t)²)`, and the
 correction is the partial logarithmic series in `w = R² / (t² + R²)`. -/
@@ -382,7 +418,6 @@ theorem setIntegral_ball_norm_sub_rpow_mul_bubble_rpow_criticalExponent
   simp_rw [bubble_rpow_criticalExponent hn ht b]
   exact setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow μ hn₀.ne' (by ring) hR b
 
-omit [FiniteDimensional ℝ E] in
 /-- The truncated moment of order `n` of the critical bubble density, in dimension `n ≠ 2`,
 differs from `n |B(0, 1)| 2 ^ (n - 1) t ^ n log (1 + (R / t)²)` by at most
 `n |B(0, 1)| 2 ^ (n - 1) t ^ n H_{n - 1}`. -/
@@ -400,7 +435,8 @@ theorem abs_setIntegral_ball_norm_sub_rpow_mul_bubble_rpow_criticalExponent_sub_
   exact abs_setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow_sub_mul_log_le μ hn₀.ne'
     (by ring) ht hR b
 
-omit [FiniteDimensional ℝ E] [BorelSpace E] in
+end Borel
+
 /-- In dimension `n > 2`, the truncated energy moment of order `n - 2` is `((n - 2) / (2 t))²`
 times the truncated critical moment of order `n`. -/
 private lemma setIntegral_ball_energyMoment_eq (μ : Measure E) (hn : 2 < finrank ℝ E) {t : ℝ}
@@ -414,7 +450,8 @@ private lemma setIntegral_ball_energyMoment_eq (μ : Measure E) (hn : 2 < finran
   simp_rw [energyMoment_eq hn.ne' hp ht b, sub_add_cancel]
   exact integral_const_mul _ _
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+end TruncatedCritical
+
 /-- The constant of the truncated energy moment: in dimension `n > 2`,
 `((n - 2) / (2 t))² 2 ^ (n - 1) t ^ n = (n - 2)² 2 ^ (n - 3) t ^ (n - 2)`. -/
 private lemma energyMoment_const (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) (a y : ℝ) :
@@ -430,7 +467,10 @@ private lemma energyMoment_const (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t)
   field_simp
   ring
 
-omit [FiniteDimensional ℝ E] in
+section TruncatedEnergyAndSquare
+
+variable [MeasurableSpace E] [BorelSpace E]
+
 /-- The truncated moment of order `n - 2` of the Dirichlet-energy density of a bubble, in
 dimension `n > 2`, over the ball `B(b, R)`. It grows like
 `(n - 2)² n |B(0, 1)| 2 ^ (n - 3) t ^ (n - 2) log (1 + (R / t)²)`; in dimension `6` this is the
@@ -447,7 +487,6 @@ theorem setIntegral_ball_norm_sub_rpow_mul_norm_fderiv_bubble_sq
     setIntegral_ball_norm_sub_rpow_mul_bubble_rpow_criticalExponent μ (by omega) hn.ne' ht hR b,
     energyMoment_const hn ht]
 
-omit [FiniteDimensional ℝ E] in
 /-- The truncated moment of order `n - 2` of the Dirichlet-energy density of a bubble, in
 dimension `n > 2`, differs from `(n - 2)² n |B(0, 1)| 2 ^ (n - 3) t ^ (n - 2) log (1 + (R / t)²)`
 by at most `(n - 2)² n |B(0, 1)| 2 ^ (n - 3) t ^ (n - 2) H_{n - 1}`. -/
@@ -466,7 +505,6 @@ theorem abs_setIntegral_ball_norm_sub_rpow_mul_norm_fderiv_bubble_sq_sub_mul_log
     ← energyMoment_const hn ht, ← mul_sub, abs_mul, abs_of_nonneg (by positivity)]
   exact mul_le_mul_of_nonneg_left h (by positivity)
 
-omit [FiniteDimensional ℝ E] in
 /-- The truncated moment of order `n - 4` of the square of a bubble, in dimension `n > 2`, over
 the ball `B(b, R)`. It grows like `n |B(0, 1)| 2 ^ (n - 3) t ^ (n - 2) log (1 + (R / t)²)`; in
 dimension `6` this is the second moment of `U²`. -/
@@ -483,7 +521,6 @@ theorem setIntegral_ball_norm_sub_rpow_mul_bubble_sq
   rw [setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow μ (by omega)
     (by push_cast [Nat.cast_sub hn.le]; ring) hR b, Nat.sub_sub]
 
-omit [FiniteDimensional ℝ E] in
 /-- The truncated moment of order `n - 4` of the square of a bubble, in dimension `n > 2`,
 differs from `n |B(0, 1)| 2 ^ (n - 3) t ^ (n - 2) log (1 + (R / t)²)` by at most
 `n |B(0, 1)| 2 ^ (n - 3) t ^ (n - 2) H_{n - 3}`. -/
@@ -502,7 +539,6 @@ theorem abs_setIntegral_ball_norm_sub_rpow_mul_bubble_sq_sub_mul_log_le
     (by push_cast [Nat.cast_sub hn.le]; ring) ht hR b
   simpa only [Nat.sub_sub, Nat.reduceAdd] using h
 
-omit [FiniteDimensional ℝ E] in
 /-- In dimension six, the truncated scalar second moment of a bubble square is an explicit
 logarithmic term minus a partial logarithmic series. -/
 theorem setIntegral_ball_norm_sub_sq_mul_bubble_sq_of_finrank_eq_six
@@ -517,7 +553,6 @@ theorem setIntegral_ball_norm_sub_sq_mul_bubble_sq_of_finrank_eq_six
   norm_num only [hn, Nat.cast_ofNat, Nat.reduceSub, Real.rpow_two, Nat.reducePow] at h
   linear_combination h
 
-omit [FiniteDimensional ℝ E] in
 /-- In dimension six, the scalar second moment differs from its logarithmic leading term
 by at most `48 |B(0,1)| t⁴ H₃`. -/
 theorem abs_setIntegral_ball_norm_sub_sq_mul_bubble_sq_sub_mul_log_le_of_finrank_eq_six
@@ -534,5 +569,7 @@ theorem abs_setIntegral_ball_norm_sub_sq_mul_bubble_sq_sub_mul_log_le_of_finrank
       6 * μ.real (ball (0 : E) 1) * (8 * t ^ 4 * y) =
         48 * μ.real (ball (0 : E) 1) * t ^ 4 * y := by ring
   simpa only [hcoeff] using h
+
+end TruncatedEnergyAndSquare
 
 end TauCeti.Yamabe
