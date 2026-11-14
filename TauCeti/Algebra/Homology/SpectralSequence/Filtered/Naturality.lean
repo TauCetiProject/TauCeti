@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
+public import TauCeti.Algebra.Homology.SpectralObject.Map
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
 
 /-!
@@ -24,6 +26,11 @@ into the piece `G n` of an increasing filtration of `L` induces a morphism of th
 compatibly with identities and composition, and hence, through `spectralObjectMap`, a morphism of
 their spectral sequences.
 
+A natural transformation whose components are quasi-isomorphisms induces an isomorphism of
+spectral objects (`CochainComplex.isIso_spectralObjectMap`): on each `H^n(f)` it is the map in
+cohomology of a morphism of mapping cones, which is a quasi-isomorphism by the five lemma
+(`CochainComplex.mappingCone.quasiIso_map`).
+
 ## Main definitions
 
 * `CochainComplex.filtrationFunctorMap`: the morphism of filtration functors induced by a
@@ -31,6 +38,8 @@ their spectral sequences.
 
 ## Main results
 
+* `CochainComplex.isIso_spectralObjectMap`: a natural transformation by quasi-isomorphisms induces
+  an isomorphism of spectral objects.
 * `CochainComplex.spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom`: on graded pieces,
   the morphism of spectral objects is the map in cohomology of the morphism of cokernels.
 * `CochainComplex.filtrationFunctorMap_id`, `CochainComplex.filtrationFunctorMap_comp`:
@@ -70,6 +79,18 @@ lemma spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom (α : F ⟶ G) {i
     (congrArg (· ≫ _) (spectralObjectMap_hom_app_hIso α f n)).trans <|
     (Category.assoc _ _ _).trans <|
     (congrArg ((spectralObjectHIso F f n).hom ≫ ·) key).trans (Category.assoc _ _ _).symm
+
+/-- **A quasi-isomorphism of functors to cochain complexes induces an isomorphism of spectral
+objects.** If every component of `α : F ⟶ G` is a quasi-isomorphism, then `spectralObjectMap α`
+is an isomorphism. -/
+lemma isIso_spectralObjectMap (α : F ⟶ G) [∀ i, QuasiIso (α.app i)] :
+    IsIso (spectralObjectMap α) := by
+  refine Abelian.SpectralObject.isIso_of_isIso_hom_app _ fun n i j f ↦ ?_
+  have := mappingCone.quasiIso_map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)
+  have h := spectralObjectMap_hom_app_hIso α f n
+  rw [← Iso.eq_comp_inv] at h
+  rw [h]
+  infer_instance
 
 section FiltrationMap
 

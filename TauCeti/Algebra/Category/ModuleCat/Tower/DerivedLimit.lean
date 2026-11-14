@@ -198,17 +198,7 @@ instance quasiIso_homotopyLimitFunctor_map {K L : CochainComplex (ModuleTower.{v
     (f : K ⟶ L) [QuasiIso f] : QuasiIso ((homotopyLimitFunctor R).map f) := by
   let _ := HasDerivedCategory.standard (ModuleCat.{v} R)
   have comm := ((complexShift R).naturality f).symm
-  -- The cone map is the third component of a morphism of distinguished mapping cone triangles
-  -- whose first two components are quasi-isomorphisms.
-  have : QuasiIso (mappingCone.map _ _ _ _ comm) := by
-    rw [← DerivedCategory.isIso_Q_map_iff_quasiIso]
-    exact Pretriangulated.isIso₃_of_isIso₁₂
-      (DerivedCategory.Q.mapTriangle.map (mappingCone.triangleMap _ _ _ _ comm))
-      (DerivedCategory.mappingCone_triangle_distinguished _)
-      (DerivedCategory.mappingCone_triangle_distinguished _)
-      (inferInstanceAs (IsIso (DerivedCategory.Q.map ((productComplexFunctor R).map f))))
-      (inferInstanceAs (IsIso (DerivedCategory.Q.map ((productComplexFunctor R).map f))))
-  exact (quasiIso_shift_iff _ (-1)).2 this
+  exact (quasiIso_shift_iff _ (-1)).2 (mappingCone.quasiIso_map _ _ _ _ comm)
 
 variable (R)
 

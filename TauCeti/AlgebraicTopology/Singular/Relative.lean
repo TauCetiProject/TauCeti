@@ -304,6 +304,11 @@ lemma shortExact_singularChainComplexShortComplex :
     (P.singularChainComplexShortComplex R).ShortExact :=
   (toSSetPair.obj P).shortExact_chainComplexShortComplex R
 
+/-- The inclusion of the subspace of a pair induces a monomorphism of singular chains. -/
+instance mono_singularChainComplexFunctor_map :
+    Mono (((AlgebraicTopology.singularChainComplexFunctor A).obj R).map P.map) :=
+  (P.shortExact_singularChainComplexShortComplex R).mono_f
+
 end
 
 section Homology
