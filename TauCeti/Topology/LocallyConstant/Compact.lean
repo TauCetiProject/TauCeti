@@ -18,7 +18,9 @@ constancy of translations on compact groups.
 Applied to `K` the whole of a compact space `X`, it shows that a family `f : P → X → A` of
 functions on `X` is locally constant as soon as `Function.uncurry f` is
 (`IsLocallyConstant.of_uncurry`); `IsLocallyConstant.of_uncurry_coe` is the same statement for a
-family of bundled functions, valued in any `FunLike` type.
+family of bundled functions, valued in any `FunLike` type. For functions with values in a discrete
+space, local constancy is continuity, so such a family `F : P → C` is continuous, for any topology
+on `C`, as soon as `(p, x) ↦ F p x` is continuous (`TauCeti.continuous_of_continuous_uncurry`).
 -/
 
 public section
@@ -56,3 +58,16 @@ theorem of_uncurry_coe [CompactSpace X] {C : Type*} [FunLike C X A] {F : P → C
   desc F DFunLike.coe (of_uncurry hF) DFunLike.coe_injective
 
 end IsLocallyConstant
+
+namespace TauCeti
+
+variable {X P A C : Type*} [TopologicalSpace X] [TopologicalSpace P] [TopologicalSpace A]
+  [DiscreteTopology A] [TopologicalSpace C] [FunLike C X A]
+
+/-- A family `F : P → C` of bundled functions on a compact space `X`, with values in a discrete
+space `A`, is continuous for any topology on `C` if `(p, x) ↦ F p x` is continuous on `P × X`. -/
+theorem continuous_of_continuous_uncurry [CompactSpace X] {F : P → C}
+    (hF : Continuous (Function.uncurry fun p x ↦ F p x)) : Continuous F :=
+  (IsLocallyConstant.of_uncurry_coe ((IsLocallyConstant.iff_continuous _).2 hF)).continuous
+
+end TauCeti
