@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Graph
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.HigherIntegrability
 public import TauCeti.Geometry.Symplectic.JHolomorphic.WeakDerivative
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.Geometry.Symplectic.Complex.Line
 import TauCeti.Geometry.Symplectic.Prod.WithLp
@@ -31,8 +32,8 @@ three forms already known for pseudoholomorphic curves in
 `TauCeti.Geometry.Symplectic.JHolomorphic.WeakDerivative` and
 `TauCeti.Geometry.Symplectic.JHolomorphic.Energy.HigherIntegrability`. Let `u` be a `C³`
 solution on the punctured disc `B(z₀, R) \ {z₀}`, with image in a compact set `K`, where `J` and
-`X` are `C²` near `closedBall z₀ R ×ˢ K`, `J` is uniformly tamed by a symplectic form `ω`
-along `u`, and `∫ ‖∂ₛu‖²` is finite. Then:
+`X` are `C²` on an open set containing `B(z₀, R) ×ˢ K`, `J` is uniformly tamed by a symplectic
+form `ω` along `u`, and `∫ ‖∂ₛu‖²` is finite. Then:
 
 * `u` has a limit `q ∈ K` at `z₀`, and setting `u(z₀) = q` gives a continuous map on the disc
   (`TauCeti.Floer.exists_continuousOn_update_of_finite_energy`);
@@ -58,7 +59,9 @@ We therefore rescale the domain factor of the graph: for `λ > 0` the map
 `ℂ` and `ω` tames `J'` with a uniform constant once `λ` is large: on `(ξ, v)` it equals
 `‖ξ‖² + ω(v, J v)` up to cross terms of size `λ⁻¹ ‖ξ‖ ‖v‖`. The graph has finite energy
 `∫ (λ² + ‖∂ₛu‖²)` on the bounded disc and compact image, so the pseudoholomorphic theorems
-apply to it, and `u` is its second component.
+apply to it, and `u` is its second component. The bounds on `J` and `X` come from a compact set,
+so the graph is used on the smaller disc `B(z₀, R / 2)`; off `z₀` the solution is smooth, which
+extends the conclusions back to `B(z₀, R)`.
 
 ## References
 
@@ -121,13 +124,14 @@ variable {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V} {u 
 
 /-- **The rescaled graph of a Floer solution is a pseudoholomorphic curve.** Under the
 hypotheses of the removal theorems below, for a suitable `λ > 0` the map `G(z) = (λ z, u(z))`
-into `WithLp 2 (ℂ × V)` satisfies all hypotheses of the removal theorems for pseudoholomorphic
-curves in `TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity`, for Gromov's structure
-`J'` of the rescaled data and the direct sum `Ω` of the area form of `ℂ` and `ω`. -/
-private theorem exists_graph (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c)
+into `WithLp 2 (ℂ × V)` satisfies, on the smaller disc `B(z₀, R / 2)`, all hypotheses of the
+removal theorems for pseudoholomorphic curves in
+`TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity`, for Gromov's structure `J'` of
+the rescaled data and the direct sum `Ω` of the area form of `ℂ` and `ω`. -/
+private theorem exists_graph (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c) (hR : 0 < R)
     (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W) (hK : IsCompact K)
-    (hKW : closedBall z₀ R ×ˢ K ⊆ W)
-    (hJsq : ∀ z ∈ closedBall z₀ R, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v)
+    (hKW : ball z₀ R ×ˢ K ⊆ W)
+    (hJsq : ∀ z ∈ ball z₀ R, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v)
     (hu : ContDiffOn ℝ 3 u (ball z₀ R \ {z₀}))
     (hF : ∀ z ∈ ball z₀ R \ {z₀},
       fderiv ℝ u z I - X (z, u z) I = J (z, u z) (fderiv ℝ u z 1 - X (z, u z) 1))
@@ -139,27 +143,36 @@ private theorem exists_graph (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc :
       (W' K' : Set (WithLp 2 (ℂ × V))) (G : ℂ → WithLp 2 (ℂ × V)),
       (∀ p q, Ω p (J₁ q) = inner ℝ p q) ∧ 0 < c' ∧ IsOpen W' ∧ ContDiffOn ℝ 2 J' W' ∧
       IsCompact K' ∧ K' ⊆ W' ∧ (∀ p ∈ K', ∀ ζ, J' p (J' p ζ) = -ζ) ∧
-      ContDiffOn ℝ 3 G (ball z₀ R \ {z₀}) ∧
-      (∀ z ∈ ball z₀ R \ {z₀}, fderiv ℝ G z I = J' (G z) (fderiv ℝ G z 1)) ∧
-      MapsTo G (ball z₀ R \ {z₀}) K' ∧
-      (∀ z ∈ ball z₀ R \ {z₀}, ∀ ζ, c' * ‖ζ‖ ^ 2 ≤ Ω ζ (J' (G z) ζ)) ∧
-      IntegrableOn (fun z ↦ ‖fderiv ℝ G z 1‖ ^ 2) (ball z₀ R) ∧
+      ContDiffOn ℝ 3 G (ball z₀ (R / 2) \ {z₀}) ∧
+      (∀ z ∈ ball z₀ (R / 2) \ {z₀}, fderiv ℝ G z I = J' (G z) (fderiv ℝ G z 1)) ∧
+      MapsTo G (ball z₀ (R / 2) \ {z₀}) K' ∧
+      (∀ z ∈ ball z₀ (R / 2) \ {z₀}, ∀ ζ, c' * ‖ζ‖ ^ 2 ≤ Ω ζ (J' (G z) ζ)) ∧
+      IntegrableOn (fun z ↦ ‖fderiv ℝ G z 1‖ ^ 2) (ball z₀ (R / 2)) ∧
       (∀ z, (G z).snd = u z) ∧ ∀ p ∈ K', p.snd ∈ K := by
-  -- Structure of the proof: build the compatible form `Ω`; bound `J` and `X` on the compact set
-  -- `closedBall z₀ R ×ˢ K` and choose the scale `l`; define the rescaled data, Gromov's structure
-  -- `J'` and the graph `G z = (l z, u z)`; then check the hypotheses one bullet at a time.
+  -- Structure of the proof: restrict to the disc `B(z₀, R / 2)`, whose closure lies in
+  -- `B(z₀, R)`; build the compatible form `Ω`; bound `J` and `X` on the compact set
+  -- `closedBall z₀ (R / 2) ×ˢ K` and choose the scale `l`; define the rescaled data, Gromov's
+  -- structure `J'` and the graph `G z = (l z, u z)`; then check the hypotheses one bullet at a
+  -- time.
+  have hr : closedBall z₀ (R / 2) ⊆ ball z₀ R := closedBall_subset_ball (half_lt_self hR)
+  have hs : ball z₀ (R / 2) \ {z₀} ⊆ ball z₀ R \ {z₀} :=
+    sdiff_subset_sdiff_left (ball_subset_ball (half_le_self hR.le))
+  replace hKW : closedBall z₀ (R / 2) ×ˢ K ⊆ W := (prod_mono hr subset_rfl).trans hKW
+  replace hu := hu.mono hs
+  replace huK := huK.mono_left hs
+  replace henergy := henergy.mono_set (ball_subset_ball (half_le_self hR.le))
   -- The direct sum `Ω` of the area form of `ℂ` and `ω` on `WithLp 2 (ℂ × V)`, compatible with
   -- its inner product through the direct sum `J₁` of `i` and `J₀`.
   set e : (ℂ × V) ≃ₗ[ℝ] WithLp 2 (ℂ × V) := (WithLp.linearEquiv 2 ℝ (ℂ × V)).symm
   set Ω := (stdComplexSymplecticForm.prod ω).transport e
   set J₁ := ((AlmostComplexStructure.ofComplexModule ℂ).prod J₀).transport e
   have hΩ (p q : WithLp 2 (ℂ × V)) :
-      Ω p q = stdComplexSymplecticForm p.fst q.fst + ω p.snd q.snd :=
-    SymplecticForm.prod_transport_withLp_apply _ _ p q
+      Ω p q = stdComplexSymplecticForm p.fst q.fst + ω p.snd q.snd := by
+    simp [Ω, e]
   have hΩJ (p q : WithLp 2 (ℂ × V)) : Ω p (J₁ q) = inner ℝ p q :=
-    SymplecticForm.prod_transport_withLp_apply_transport
+    SymplecticForm.prod_transport_withLpLinearEquiv_symm_apply_prod_transport_eq_inner
       stdComplexSymplecticForm_apply_ofComplexModule_eq_inner hg p q
-  have hD : IsCompact (closedBall z₀ R ×ˢ K) := (isCompact_closedBall z₀ R).prod hK
+  have hD : IsCompact (closedBall z₀ (R / 2) ×ˢ K) := (isCompact_closedBall z₀ (R / 2)).prod hK
   obtain ⟨M, hM⟩ := hD.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
   obtain ⟨B, hB⟩ := hD.exists_bound_of_continuousOn (hX.continuousOn.mono hKW)
   have hm : 0 < min 1 c := lt_min one_pos hc
@@ -183,19 +196,19 @@ private theorem exists_graph (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc :
   set J' := graphStructure (fun q ↦ J (S q)) (fun q ↦ l⁻¹ • X (S q))
   set G : ℂ → WithLp 2 (ℂ × V) := fun z ↦ T (z, u z)
   have hGS (z : ℂ) : S (G z).ofLp = (z, u z) := hST (z, u z)
-  have hdiff (z : ℂ) (hz : z ∈ ball z₀ R \ {z₀}) : DifferentiableAt ℝ u z :=
+  have hdiff (z : ℂ) (hz : z ∈ ball z₀ (R / 2) \ {z₀}) : DifferentiableAt ℝ u z :=
     (hu.differentiableOn (by norm_num) z hz).differentiableAt
       ((isOpen_ball.sdiff isClosed_singleton).mem_nhds hz)
   have hsmul (z : ℂ) : DifferentiableAt ℝ (fun w : ℂ ↦ l • w) z :=
     differentiableAt_id.const_smul l
   have hsmul' (z : ℂ) : fderiv ℝ (fun w : ℂ ↦ l • w) z = l • ContinuousLinearMap.id ℝ ℂ :=
     ((hasFDerivAt_id z).const_smul l).fderiv
-  have hGd (z : ℂ) (hz : z ∈ ball z₀ R \ {z₀}) (v : ℂ) :
+  have hGd (z : ℂ) (hz : z ∈ ball z₀ (R / 2) \ {z₀}) (v : ℂ) :
       fderiv ℝ G z v = WithLp.toLp 2 (l • v, fderiv ℝ u z v) := by
     rw [show G = fun w ↦ WithLp.toLp 2 (l • w, u w) from rfl,
       fderiv_toLp_prodMk_apply (hsmul z) (hdiff z hz), hsmul']
     simp
-  refine ⟨Ω, J₁, min 1 c / 2, J', WithLp.ofLp ⁻¹' (S ⁻¹' W), T '' (closedBall z₀ R ×ˢ K), G,
+  refine ⟨Ω, J₁, min 1 c / 2, J', WithLp.ofLp ⁻¹' (S ⁻¹' W), T '' (closedBall z₀ (R / 2) ×ˢ K), G,
     hΩJ, half_pos hm,
     (hW.preimage (hS (n := 0)).continuous).preimage (WithLp.prod_continuous_ofLp 2 ℂ V),
     contDiffOn_graphStructure (hJ.comp hS.contDiffOn (mapsTo_preimage _ _))
@@ -205,7 +218,7 @@ private theorem exists_graph (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc :
   · rintro _ ⟨q, hq, rfl⟩
     simpa [hST] using hKW hq
   · rintro _ ⟨q, hq, rfl⟩ ζ
-    exact graphStructure_graphStructure (fun v ↦ by simpa [hST] using hJsq _ hq.1 _ hq.2 v) ζ
+    exact graphStructure_graphStructure (fun v ↦ by simpa [hST] using hJsq _ (hr hq.1) _ hq.2 v) ζ
   · exact (WithLp.prodContinuousLinearEquiv 2 ℝ ℂ V).symm.contDiff.comp_contDiffOn
       ((contDiffOn_id.const_smul l).prodMk hu)
   · -- The graph equation is the Floer equation, after the rescaling cancels.
@@ -217,15 +230,15 @@ private theorem exists_graph (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc :
         map_smul, inv_smul_smul₀ hl0.ne']
     simp only [WithLp.toLp_fst, WithLp.toLp_snd, hGS, hX1, hXI]
     refine ⟨by simp [mul_comm], ?_⟩
-    exact sub_eq_iff_eq_add.1 (hF z hz)
-  · have hp : (z, u z) ∈ closedBall z₀ R ×ˢ K := ⟨ball_subset_closedBall hz.1, huK hz⟩
+    exact sub_eq_iff_eq_add.1 (hF z (hs hz))
+  · have hp : (z, u z) ∈ closedBall z₀ (R / 2) ×ˢ K := ⟨ball_subset_closedBall hz.1, huK hz⟩
     have h := mul_norm_sq_le_graph hg hΩ (A := J (z, u z)) (Y := l⁻¹ • X (z, u z)) (M := M₀)
-      (ε := l⁻¹ * B₀) (htame z hz) ((hM _ hp).trans (le_max_left _ _)) ?_ hlε ζ
+      (ε := l⁻¹ * B₀) (htame z (hs hz)) ((hM _ hp).trans (le_max_left _ _)) ?_ hlε ζ
     · simpa [J', graphStructure_apply, hGS] using h
     · rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hl0.le)]
       exact mul_le_mul_of_nonneg_left ((hB _ hp).trans (le_max_left _ _)) (inv_nonneg.2 hl0.le)
   · -- The graph has energy density `l² + ‖∂ₛu‖²`, integrable on the bounded disc.
-    have hi : IntegrableOn (fun z ↦ l ^ 2 + ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R \ {z₀}) :=
+    have hi : IntegrableOn (fun z ↦ l ^ 2 + ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ (R / 2) \ {z₀}) :=
       ((integrableOn_const (C := l ^ 2) measure_ball_lt_top.ne).add henergy).mono_set
         sdiff_subset
     refine (hi.congr_fun (fun z hz ↦ ?_)
@@ -245,9 +258,7 @@ private theorem fderiv_eq_sndL_comp {G : ℂ → WithLp 2 (ℂ × V)}
     fderiv ℝ u z = (WithLp.sndL 2 ℝ ℂ V).comp (fderiv ℝ G z) := by
   have hGd := (hG.differentiableOn (by norm_num) z hz).differentiableAt
     ((isOpen_ball.sdiff isClosed_singleton).mem_nhds hz)
-  have hu_eq : u = fun w ↦ WithLp.sndL 2 ℝ ℂ V (G w) := funext fun w ↦ by simp [hGu]
-  rw [hu_eq]
-  exact ((WithLp.sndL 2 ℝ ℂ V).hasFDerivAt.comp z hGd.hasFDerivAt).fderiv
+  simpa only [hGu] using hGd.fderiv_withLp_snd
 
 variable [FiniteDimensional ℝ V]
 
@@ -255,14 +266,14 @@ open Classical in
 /-- **Continuous removal of an isolated singularity of a Floer solution.** Let `u` be a `C³`
 solution of `∂ₜu - X(z, u) i = J(z, u) (∂ₛu - X(z, u) 1)` on the punctured disc
 `B(z₀, R) \ {z₀}`, with image in a compact set `K`, where `J` and `X` are `C²` on an open set
-containing `closedBall z₀ R ×ˢ K` and `J² = -1` there. Suppose that `ω` tames `J(z, u(z))`
+containing `B(z₀, R) ×ˢ K` and `J² = -1` there. Suppose that `ω` tames `J(z, u(z))`
 with a uniform constant `c > 0`, that `ω` is compatible with the inner product through a fixed
 complex structure `J₀`, and that `∫ ‖∂ₛu‖²` is finite. Then `u` has a limit `q ∈ K` at `z₀`, and
 setting `u(z₀) = q` gives a continuous map on the disc with image in `K`. -/
 theorem exists_continuousOn_update_of_finite_energy (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w)
     (hc : 0 < c) (hR : 0 < R) (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W)
-    (hX : ContDiffOn ℝ 2 X W) (hK : IsCompact K) (hKW : closedBall z₀ R ×ˢ K ⊆ W)
-    (hJsq : ∀ z ∈ closedBall z₀ R, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v)
+    (hX : ContDiffOn ℝ 2 X W) (hK : IsCompact K) (hKW : ball z₀ R ×ˢ K ⊆ W)
+    (hJsq : ∀ z ∈ ball z₀ R, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v)
     (hu : ContDiffOn ℝ 3 u (ball z₀ R \ {z₀}))
     (hF : ∀ z ∈ ball z₀ R \ {z₀},
       fderiv ℝ u z I - X (z, u z) I = J (z, u z) (fderiv ℝ u z 1 - X (z, u z) 1))
@@ -273,10 +284,11 @@ theorem exists_continuousOn_update_of_finite_energy (hg : ∀ v w, ω v (J₀ w)
       ContinuousOn (Function.update u z₀ q) (ball z₀ R) ∧
       MapsTo (Function.update u z₀ q) (ball z₀ R) K := by
   obtain ⟨Ω, J₁, c', J', W', K', G, hΩJ, hc', hW', hJ', hK', hK'W, hJsq', hG, hCR, hGK, htame',
-    henergy', hGu, hK'K⟩ := exists_graph hg hc hW hJ hX hK hKW hJsq hu hF huK htame henergy
-  obtain ⟨q', hq', hlim, -, -⟩ := Ω.exists_continuousOn_update_of_finite_energy hΩJ hc' hR hW'
-    hJ' hK' hK'W hJsq' hG hCR hGK htame' henergy'
-  -- `u` is the second component of its graph.
+    henergy', hGu, hK'K⟩ := exists_graph hg hc hR hW hJ hX hK hKW hJsq hu hF huK htame henergy
+  obtain ⟨q', hq', hlim, -, -⟩ := Ω.exists_continuousOn_update_of_finite_energy hΩJ hc'
+    (half_pos hR) hW' hJ' hK' hK'W hJsq' hG hCR hGK htame' henergy'
+  -- `u` is the second component of its graph. The graph only lives on `B(z₀, R / 2)`, so
+  -- continuity on `B(z₀, R)` comes from the limit at `z₀` and the smoothness of `u` off `z₀`.
   have hlim_u : Tendsto u (𝓝[≠] z₀) (𝓝 q'.snd) := by
     have h := ((WithLp.sndL 2 ℝ ℂ V).continuous.tendsto q').comp hlim
     simpa [Function.comp_def, hGu] using h
@@ -296,8 +308,8 @@ the whole disc: no distribution concentrates at `z₀`. No differentiability at 
 -/
 theorem exists_hasWeakFDerivOn_update_of_finite_energy (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w)
     (hc : 0 < c) (hR : 0 < R) (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W)
-    (hX : ContDiffOn ℝ 2 X W) (hK : IsCompact K) (hKW : closedBall z₀ R ×ˢ K ⊆ W)
-    (hJsq : ∀ z ∈ closedBall z₀ R, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v)
+    (hX : ContDiffOn ℝ 2 X W) (hK : IsCompact K) (hKW : ball z₀ R ×ˢ K ⊆ W)
+    (hJsq : ∀ z ∈ ball z₀ R, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v)
     (hu : ContDiffOn ℝ 3 u (ball z₀ R \ {z₀}))
     (hF : ∀ z ∈ ball z₀ R \ {z₀},
       fderiv ℝ u z I - X (z, u z) I = J (z, u z) (fderiv ℝ u z 1 - X (z, u z) 1))
@@ -311,21 +323,37 @@ theorem exists_hasWeakFDerivOn_update_of_finite_energy (hg : ∀ v w, ω v (J₀
   obtain ⟨q, hq, -, hcont, hmaps⟩ := exists_continuousOn_update_of_finite_energy hg hc hR hW hJ
     hX hK hKW hJsq hu hF huK htame henergy
   obtain ⟨Ω, J₁, c', J', W', K', G, hΩJ, hc', hW', hJ', hK', hK'W, hJsq', hG, hCR, hGK, htame',
-    henergy', hGu, -⟩ := exists_graph hg hc hW hJ hX hK hKW hJsq hu hF huK htame henergy
-  obtain ⟨q', -, -, -, hweak⟩ := Ω.exists_hasWeakFDerivOn_update_of_finite_energy hΩJ hc' hR hW'
-    hJ' hK' hK'W hJsq' hG hCR hGK htame' henergy'
+    henergy', hGu, -⟩ := exists_graph hg hc hR hW hJ hX hK hKW hJsq hu hF huK htame henergy
+  obtain ⟨q', -, -, -, hweak⟩ := Ω.exists_hasWeakFDerivOn_update_of_finite_energy hΩJ hc'
+    (half_pos hR) hW' hJ' hK' hK'W hJsq' hG hCR hGK htame' henergy'
   refine ⟨q, hq, hcont, hmaps, ?_⟩
-  -- `u` is the second component of its graph, so the two fillings and the two differentials
-  -- agree off `z₀`.
-  have hne : ∀ᵐ z ∂volume.restrict (ball z₀ R), z ∈ ball z₀ R \ {z₀} := by
+  -- On `B(z₀, R / 2)`, `u` is the second component of its graph, so the two fillings and the two
+  -- differentials agree off `z₀`.
+  have hne : ∀ᵐ z ∂volume.restrict (ball z₀ (R / 2)), z ∈ ball z₀ (R / 2) \ {z₀} := by
     filter_upwards [ae_restrict_mem measurableSet_ball,
       ae_restrict_of_ae (volume.ae_ne z₀)] with z hz hzne
     exact ⟨hz, hzne⟩
-  refine ((hweak.clm_comp (WithLp.sndL 2 ℝ ℂ V)).congr_ae ?_).congr_ae_deriv ?_
-  · filter_upwards [hne] with z hz
-    simp [Function.update_of_ne hz.2, hGu]
-  · filter_upwards [hne] with z hz
-    exact (fderiv_eq_sndL_comp hG hGu hz).symm
+  have h₁ : HasWeakFDerivOn volume ⟨ball z₀ (R / 2), isOpen_ball⟩ (Function.update u z₀ q)
+      (fderiv ℝ u) := by
+    refine ((hweak.clm_comp (WithLp.sndL 2 ℝ ℂ V)).congr_ae ?_).congr_ae_deriv ?_
+    · filter_upwards [hne] with z hz
+      simp [Function.update_of_ne hz.2, hGu]
+    · filter_upwards [hne] with z hz
+      exact (fderiv_eq_sndL_comp hG hGu hz).symm
+  -- Off `z₀`, `u` is `C¹`, so its classical differential is a weak one; the two pieces glue.
+  have hB : IsOpen (ball z₀ R \ {z₀}) := isOpen_ball.sdiff isClosed_singleton
+  have h₂ : HasWeakFDerivOn volume ⟨ball z₀ R \ {z₀}, hB⟩ (Function.update u z₀ q)
+      (fderiv ℝ u) := by
+    refine (hasWeakFDerivOn_of_differentiableOn ?_ fun z hz ↦ ?_).congr_ae ?_
+    · exact (hu.continuousOn_fderiv_of_isOpen hB (by norm_num)).locallyIntegrableOn
+        hB.measurableSet
+    · exact (hu.differentiableOn (by norm_num) z hz).differentiableAt (hB.mem_nhds hz)
+    · filter_upwards [ae_restrict_mem hB.measurableSet] with z hz
+      exact (Function.update_of_ne hz.2 _ _).symm
+  refine (h₁.sup h₂).mono fun z hz ↦ ?_
+  by_cases hzz : z = z₀
+  · exact Or.inl (hzz ▸ mem_ball_self (half_pos hR))
+  · exact Or.inr ⟨hz, hzz⟩
 
 open Classical in
 /-- **Higher integrability across the singularity of a Floer solution.** Under the hypotheses of
@@ -335,8 +363,8 @@ No differentiability at `z₀` is asserted. -/
 theorem exists_continuousOn_update_memLp_fderiv_of_finite_energy
     (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c) (hR : 0 < R) (hW : IsOpen W)
     (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W) (hK : IsCompact K)
-    (hKW : closedBall z₀ R ×ˢ K ⊆ W)
-    (hJsq : ∀ z ∈ closedBall z₀ R, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v)
+    (hKW : ball z₀ R ×ˢ K ⊆ W)
+    (hJsq : ∀ z ∈ ball z₀ R, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v)
     (hu : ContDiffOn ℝ 3 u (ball z₀ R \ {z₀}))
     (hF : ∀ z ∈ ball z₀ R \ {z₀},
       fderiv ℝ u z I - X (z, u z) I = J (z, u z) (fderiv ℝ u z 1 - X (z, u z) 1))
@@ -351,17 +379,17 @@ theorem exists_continuousOn_update_memLp_fderiv_of_finite_energy
   obtain ⟨q, hq, -, hcont, hmaps⟩ := exists_continuousOn_update_of_finite_energy hg hc hR hW hJ
     hX hK hKW hJsq hu hF huK htame henergy
   obtain ⟨Ω, J₁, c', J', W', K', G, hΩJ, hc', hW', hJ', hK', hK'W, hJsq', hG, hCR, hGK, htame',
-    henergy', hGu, -⟩ := exists_graph hg hc hW hJ hX hK hKW hJsq hu hF huK htame henergy
+    henergy', hGu, -⟩ := exists_graph hg hc hR hW hJ hX hK hKW hJsq hu hF huK htame henergy
   obtain ⟨q', -, -, -, ε, hε, hεR, p, hp, hmem⟩ :=
-    Ω.exists_continuousOn_update_memLp_fderiv_of_finite_energy hΩJ hc' hR hW' hJ' hK' hK'W
-      hJsq' hG hCR hGK htame' henergy'
-  refine ⟨q, hq, hcont, hmaps, ε, hε, hεR, p, hp, ?_⟩
+    Ω.exists_continuousOn_update_memLp_fderiv_of_finite_energy hΩJ hc' (half_pos hR) hW' hJ'
+      hK' hK'W hJsq' hG hCR hGK htame' henergy'
+  refine ⟨q, hq, hcont, hmaps, ε, hε, hεR.trans (half_lt_self hR), p, hp, ?_⟩
   -- Off `z₀`, the differential of `u` is the second component of the differential of its graph.
   refine (((ContinuousLinearMap.compL ℝ ℂ (WithLp 2 (ℂ × V)) V)
     (WithLp.sndL 2 ℝ ℂ V)).comp_memLp' hmem).ae_eq ?_
   filter_upwards [ae_restrict_mem measurableSet_ball,
     ae_restrict_of_ae (volume.ae_ne z₀)] with z hzε hzne
-  have hz : z ∈ ball z₀ R \ {z₀} := ⟨ball_subset_ball hεR.le hzε, hzne⟩
+  have hz : z ∈ ball z₀ (R / 2) \ {z₀} := ⟨ball_subset_ball hεR.le hzε, hzne⟩
   have hupd : ∀ᶠ w in 𝓝 z, w ≠ z₀ := isOpen_compl_singleton.mem_nhds hzne
   have hG' : fderiv ℝ (Function.update G z₀ q') z = fderiv ℝ G z :=
     Filter.EventuallyEq.fderiv_eq (hupd.mono fun w hw ↦ Function.update_of_ne hw _ _)
