@@ -31,6 +31,9 @@ The same correspondence is stated for Mathlib's bundled spectrum functor
 
 ## Main declarations
 
+* `AlgebraicGeometry.Spec.map_algHom_comp_map_algebraMap`: `Spec f` of an `R`-algebra map is a
+  morphism over `Spec R`.
+
 * `TauCeti.AlgebraicGeometry.specOverHomEquivAlgHom`: morphisms `Spec B ⟶ Spec A` over `Spec R`
   are the `R`-algebra homomorphisms `A →ₐ[R] B`.
 * `TauCeti.AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset`: a morphism over
@@ -57,6 +60,17 @@ theorem homEquivAlgHom_symm_apply_val {R A B : Type u}
     (homEquivAlgHom.symm φ).val = Spec.map (CommRingCat.ofHom φ.toRingHom) :=
   -- The inverse equivalence forgets the algebra structure and applies `Spec.map` definitionally.
   (rfl)
+
+/-- An `R`-algebra map `f : A → B` gives a morphism `Spec f : Spec B ⟶ Spec A` over `Spec R`. In
+particular, every `σ ∈ Gal(Ω/K)` gives an automorphism `Spec σ` of the geometric point
+`Spec Ω ⟶ Spec K` over `Spec K`. -/
+@[reassoc (attr := simp)]
+theorem map_algHom_comp_map_algebraMap {R A B : Type u} [CommRing R] [CommRing A] [CommRing B]
+    [Algebra R A] [Algebra R B] {F : Type*} [FunLike F A B] [AlgHomClass F R A B] (f : F) :
+    Spec.map (CommRingCat.ofHom (f : A →+* B)) ≫ Spec.map (CommRingCat.ofHom (algebraMap R A)) =
+      Spec.map (CommRingCat.ofHom (algebraMap R B)) := by
+  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  exact congrArg _ (congrArg _ (RingHom.ext (AlgHomClass.commutes f)))
 
 end AlgebraicGeometry.Spec
 
