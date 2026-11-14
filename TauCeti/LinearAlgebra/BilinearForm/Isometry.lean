@@ -744,65 +744,6 @@ theorem coe_specialIsometryGroupBaseChange (B : BilinForm R M)
 
 end BaseChange
 
-section GramDeterminant
-
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
-
-/-- Pulling back a bilinear form along a linear map multiplies its Gram determinant by the
-square of the coordinate-map determinant. The source and target bases use the same arbitrary
-finite index type; no symmetry or nondegeneracy is required. -/
-theorem det_toMatrix_comp {N ι : Type*} [AddCommGroup N] [Module R N]
-    [Fintype ι] [DecidableEq ι] (b : Basis ι R M) (c : Basis ι R N)
-    (C : BilinForm R N) (f : M →ₗ[R] N) :
-    ((C.comp f f).toMatrix b).det =
-      (LinearMap.toMatrix b c f).det ^ 2 * (C.toMatrix c).det := by
-  rw [toMatrix_comp c b, Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose]
-  ring
-
-/-- A change of basis multiplies the Gram determinant by the square of the basis-change
-matrix determinant. -/
-theorem det_toMatrix_eq_det_sq_mul_det {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b c : Basis ι R M) (B : BilinForm R M) :
-    (B.toMatrix c).det = (b.toMatrix c).det ^ 2 * (B.toMatrix b).det := by
-  simpa only [comp_id_id, LinearMap.toMatrix_id_eq_basis_toMatrix] using
-    det_toMatrix_comp c b B LinearMap.id
-
-/-- Reindexing a basis does not change the Gram determinant. -/
-theorem det_toMatrix_reindex {ι ι' : Type*} [Fintype ι] [DecidableEq ι] [Fintype ι']
-    [DecidableEq ι'] (b : Basis ι R M) (e : ι ≃ ι') (B : BilinForm R M) :
-    (B.toMatrix (b.reindex e)).det = (B.toMatrix b).det := by
-  rw [← Matrix.det_reindex_self e]
-  congr 1
-  ext
-  simp [toMatrix_apply]
-
-/-- The Gram determinants of equivalent bilinear forms differ by the square of a unit. This
-holds over any commutative ring, including for singular and nonsymmetric forms, in any
-caller-provided finite bases with the same index type. -/
-theorem Equivalent.exists_det_eq_unit_sq_mul_det {N ι : Type*} [AddCommGroup N] [Module R N]
-    [Fintype ι] [DecidableEq ι] {C : BilinForm R N} (h : B.Equivalent C)
-    (b : Basis ι R M) (c : Basis ι R N) :
-    ∃ u : Rˣ, (B.toMatrix b).det = (u : R) ^ 2 * (C.toMatrix c).det := by
-  obtain ⟨e⟩ := h
-  have hform : B = C.comp e.toLinearEquiv.toLinearMap e.toLinearEquiv.toLinearMap := by
-    ext x y
-    exact (e.map_app y x).symm
-  refine ⟨(e.toLinearEquiv.isUnit_det b c).unit, ?_⟩
-  conv_lhs => rw [hform]
-  rw [det_toMatrix_comp b c, IsUnit.unit_spec]
-
-/-- The product of Gram determinants of equivalent bilinear forms is a square. This holds over
-any commutative ring, including for singular and nonsymmetric forms, in any caller-provided
-finite bases with the same index type. -/
-theorem Equivalent.isSquare_det_mul_det {N ι : Type*} [AddCommGroup N] [Module R N]
-    [Fintype ι] [DecidableEq ι] {C : BilinForm R N} (h : B.Equivalent C)
-    (b : Basis ι R M) (c : Basis ι R N) :
-    IsSquare ((B.toMatrix b).det * (C.toMatrix c).det) := by
-  obtain ⟨u, hu⟩ := h.exists_det_eq_unit_sq_mul_det b c
-  exact ⟨u * (C.toMatrix c).det, by rw [hu]; ring⟩
-
-end GramDeterminant
-
 end CommRing
 
 end LinearMap.BilinForm

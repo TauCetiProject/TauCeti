@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Even.Henselian
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.Padics.BilinearForm.OddUnimodular
 import TauCeti.NumberTheory.Padics.PadicIntegers
