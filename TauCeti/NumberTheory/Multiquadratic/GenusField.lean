@@ -127,7 +127,7 @@ theorem isGenusField_candidateGenusField {d : ℤ} (hd : Squarefree d) (hneg : d
   · rw [← candidateGenusFieldBase_def hd]
     exact finrank_candidateGenusFieldBase hd hnsq
   · rw [← candidateGenusFieldBase_def hd]
-    exact fun q hq _ ↦ isUnramifiedIn_candidateGenusField hd hnsq q
+    exact fun q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq q
   · rw [← candidateGenusFieldBase_def hd]
     exact isUnramifiedAtInfinitePlaces_candidateGenusField hd hneg
   · intro M _ _ _ z hz hfinite _

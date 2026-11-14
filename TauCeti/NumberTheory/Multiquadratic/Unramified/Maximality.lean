@@ -258,6 +258,6 @@ theorem exists_isUnramifiedIn_and_finrank_eq_two_pow_card {d : ℤ} (hd : Square
   · rw [← candidateGenusFieldBase_def hd]
     exact finrank_candidateGenusFieldBase hd hnsq
   · rw [← candidateGenusFieldBase_def hd]
-    exact fun q hq _ => isUnramifiedIn_candidateGenusField hd hnsq q
+    exact fun q _ _ => isUnramifiedIn_candidateGenusField hd hnsq q
 
 end TauCeti.Multiquadratic
