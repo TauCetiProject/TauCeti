@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Serre.Tree
 public import TauCeti.Combinatorics.Quiver.Prefunctor
 public import TauCeti.Combinatorics.Quiver.Symmetric
-public import Mathlib.Combinatorics.Quiver.Path.Vertices
+public import TauCeti.Combinatorics.Quiver.Vertices
 public import Mathlib.Order.Lattice.Nat
 
 /-!
@@ -267,6 +267,19 @@ theorem IsAcyclic.src_notMem_of_forall_dist_le (h : Γ.IsAcyclic) {C : Set Γ.V}
     (hmin : ∀ b ∈ C, Γ.dist v a ≤ Γ.dist v b) {q : Γ.Path v a} (hq : Path.IsReduced Γ q)
     {e : Γ.E} (he : e ∈ Path.darts Γ q) : Γ.src e ∉ C :=
   Path.src_notMem_of_forall_dist_le hmin (h.dist_eq_length hq).ge he
+
+/-- The source of any dart traversed by a path lies in its vertex list. -/
+theorem Path.src_mem_vertices_of_mem_darts {a b : Γ.V} {p : Γ.Path a b} {e : Γ.E}
+    (he : e ∈ Path.darts Γ p) : Γ.src e ∈ p.vertices := by
+  obtain ⟨q, r, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p he
+  exact (Quiver.Path.mem_vertices_comp _ _).mpr
+    (.inl ((Quiver.Path.mem_vertices_cons _ _).mpr (.inl q.end_mem_vertices)))
+
+/-- The target of any dart traversed by a path lies in its vertex list. -/
+theorem Path.tgt_mem_vertices_of_mem_darts {a b : Γ.V} {p : Γ.Path a b} {e : Γ.E}
+    (he : e ∈ Path.darts Γ p) : Γ.tgt e ∈ p.vertices := by
+  obtain ⟨q, r, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p he
+  exact (Quiver.Path.mem_vertices_comp _ _).mpr (.inl (q.cons (Γ.dart e)).end_mem_vertices)
 
 end SerreGraph
 end TauCeti

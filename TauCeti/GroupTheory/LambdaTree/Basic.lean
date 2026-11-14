@@ -157,6 +157,10 @@ theorem self_apply (a b : Λ) : (self Λ) a b = |a - b| :=
 def IsIsometricAction (G : Type*) [SMul G X] : Prop :=
   ∀ (g : G) (x y : X), d (g • x) (g • y) = d x y
 
+theorem isIsometricAction_iff {G : Type*} [SMul G X] :
+    d.IsIsometricAction G ↔ ∀ (g : G) (x y : X), d (g • x) (g • y) = d x y :=
+  Iff.rfl
+
 namespace IsIsometricAction
 
 variable {d} {G : Type*}
