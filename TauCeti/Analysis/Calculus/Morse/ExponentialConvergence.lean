@@ -7,10 +7,8 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.GradientFlow
 public import TauCeti.Analysis.Calculus.Morse.Linearization
--- Private: Grönwall's inequality, the fundamental theorem of calculus, reparametrization of an
--- integral curve, and scalar multiplication of the gradient are used only inside proofs; no
--- declaration below exposes their APIs.
-import TauCeti.Analysis.Calculus.Gradient
+-- Private: Grönwall's inequality and the fundamental theorem of calculus are used only inside
+-- proofs; no declaration below exposes their APIs.
 import TauCeti.Analysis.ODE.Gronwall
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
@@ -322,7 +320,8 @@ exponentially.** -/
 theorem exists_sub_le_mul_exp_atBot (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a))
     (hp : IsNondegenerateCriticalPoint f p) (hconv : Tendsto γ atBot (𝓝 p)) :
     ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atBot, f p - f (γ t) ≤ C * Real.exp (μ * t) := by
-  have hrev := hγ.comp_neg_neg_gradient
+  have hrev : IsIntegralCurveOn (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) (Ici (-a)) := by
+    simpa using hγ.comp_neg_neg_gradient
   have hconv' : Tendsto (fun t ↦ γ (-t)) atTop (𝓝 p) := hconv.comp tendsto_neg_atTop_atBot
   obtain ⟨μ, hμ, C, hC, hbound⟩ := exists_sub_le_mul_exp_atTop hrev hp.neg hconv'
   refine ⟨μ, hμ, C, hC, ?_⟩
@@ -335,7 +334,8 @@ into a negative gradient trajectory of `-f`, whose critical point at `p` is agai
 theorem exists_norm_sub_le_mul_exp_atBot (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a))
     (hp : IsNondegenerateCriticalPoint f p) (hconv : Tendsto γ atBot (𝓝 p)) :
     ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atBot, ‖γ t - p‖ ≤ C * Real.exp (μ * t) := by
-  have hrev := hγ.comp_neg_neg_gradient
+  have hrev : IsIntegralCurveOn (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) (Ici (-a)) := by
+    simpa using hγ.comp_neg_neg_gradient
   have hconv' : Tendsto (fun t ↦ γ (-t)) atTop (𝓝 p) := hconv.comp tendsto_neg_atTop_atBot
   obtain ⟨μ, hμ, C, hC, hbound⟩ := exists_norm_sub_le_mul_exp_atTop hrev hp.neg hconv'
   refine ⟨μ, hμ, C, hC, ?_⟩
