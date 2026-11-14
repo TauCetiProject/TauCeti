@@ -8,6 +8,7 @@ module
 public import TauCeti.KnotTheory.Grid.CrossingChange.Transpose
 public import TauCeti.KnotTheory.Grid.TorusLink.FullTwist
 public import TauCeti.KnotTheory.Grid.TorusLink.Move
+import TauCeti.Data.Nat.Choose.Basic
 
 /-!
 # Unknotting numbers of torus link grids
@@ -329,8 +330,7 @@ theorem unknottingNumber_toGridLink_torusLink_mul_le (p k : ℕ) :
     (GridDiagram.torusLink p (k * (p + 1))).toGridLink.unknottingNumber ≤ k * (p + 1).choose 2 := by
   refine (unknottingNumber_toGridLink_torusLink_le p (k * (p + 1))
     ((Nat.coprime_mul_right_add_right _ _ _).mpr (Nat.coprime_one_right _))).trans_eq ?_
-  rw [← Nat.cast_mul, Nat.choose_two_right, Nat.add_sub_cancel, Nat.mul_comm (p + 1) p,
-    Nat.mul_left_comm, Nat.mul_div_assoc _ (Nat.even_mul_succ_self p).two_dvd]
+  rw [Nat.mul_mul_succ_div_two_eq_mul_choose_two, Nat.cast_mul]
 
 /-- The `(2, 2k + 1)` torus knot, presented by its standard grid, has unknotting number at most
 `k`: this is the upper bound `u(T_{2, 2k+1}) ≤ (2 - 1) (2k + 1 - 1) / 2` of the Milnor

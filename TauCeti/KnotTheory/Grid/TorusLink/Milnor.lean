@@ -8,6 +8,7 @@ module
 public import TauCeti.KnotTheory.Grid.CrossingChange.Tau
 public import TauCeti.KnotTheory.Grid.TorusLink.UnknottingNumber
 import Mathlib.Algebra.Field.ZMod
+import TauCeti.Data.Nat.Choose.Basic
 
 /-!
 # The Milnor conjecture for grid torus knots
@@ -112,8 +113,7 @@ theorem unknottingNumber_toGridLink_torusLink_mul (p k : ℕ) :
     (torusLink p (k * (p + 1))).toGridLink.unknottingNumber = k * (p + 1).choose 2 := by
   rw [unknottingNumber_toGridLink_torusLink p (k * (p + 1))
       ((Nat.coprime_mul_right_add_right _ _ _).mpr (Nat.coprime_one_right _)),
-    ← Nat.cast_mul, Nat.choose_two_right, Nat.add_sub_cancel, Nat.mul_comm (p + 1) p,
-    Nat.mul_left_comm, Nat.mul_div_assoc _ (Nat.even_mul_succ_self p).two_dvd]
+    Nat.mul_mul_succ_div_two_eq_mul_choose_two, Nat.cast_mul]
 
 /-- The `(2, 2 k + 1)` torus knot grid has unknotting number `k`. -/
 theorem unknottingNumber_toGridLink_torusLink_one_two_mul (k : ℕ) :

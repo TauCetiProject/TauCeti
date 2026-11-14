@@ -94,20 +94,16 @@ turning at `C` followed by a counted pentagon of `G.swapColumns a b` turning at
 `C.withTurnRow t`. -/
 noncomputable def crossingChangePentagonPairs (x z : GridState n) :
     Finset (GridPentagonPairDecomposition a C.turnRow a t x z) :=
-  GridTwoStepDecomposition.decompositionsOf
-    (fun x y => (G.pentagons C x y).disjSum (G.initialPentagons C x y))
-    (fun y z => ((G.swapColumns a b).pentagons (C.withTurnRow t) y z).disjSum
-      ((G.swapColumns a b).initialPentagons (C.withTurnRow t) y z))
-    x z
+  GridTwoStepDecomposition.decompositionsOf (G.commutationPentagons C)
+    ((G.swapColumns a b).commutationPentagons (C.withTurnRow t)) x z
 
 /-- A pentagon pair is counted in `Ψ ∘ Φ` exactly when both of its pentagons are counted. -/
 @[simp]
 theorem mem_crossingChangePentagonPairs {x z : GridState n}
     (D : GridPentagonPairDecomposition a C.turnRow a t x z) :
     D ∈ G.crossingChangePentagonPairs C t x z ↔
-      D.first ∈ (G.pentagons C x D.middle).disjSum (G.initialPentagons C x D.middle) ∧
-        D.second ∈ ((G.swapColumns a b).pentagons (C.withTurnRow t) D.middle z).disjSum
-          ((G.swapColumns a b).initialPentagons (C.withTurnRow t) D.middle z) := by
+      D.first ∈ G.commutationPentagons C x D.middle ∧
+        D.second ∈ (G.swapColumns a b).commutationPentagons (C.withTurnRow t) D.middle z := by
   rw [crossingChangePentagonPairs, GridTwoStepDecomposition.mem_decompositionsOf]
 
 /-- Both underlying rectangles of a counted crossing-change pentagon pair are empty. -/
@@ -120,20 +116,20 @@ theorem isEmpty_of_mem_crossingChangePentagonPairs {x z : GridState n}
     rcases D with ⟨m, P | P, Q⟩
     · simpa only [GridPentagonPairDecomposition.toRectangleDecomposition,
         GridCommutationPentagonBetween.toGridRectangleBetween_inl] using
-        ((G.mem_pentagons P).mp (Finset.inl_mem_disjSum.mp hP)).1
+        ((G.mem_pentagons P).mp ((G.inl_mem_commutationPentagons C P).mp hP)).1
     · simpa only [GridPentagonPairDecomposition.toRectangleDecomposition,
         GridCommutationPentagonBetween.toGridRectangleBetween_inr] using
-        ((G.mem_initialPentagons P).mp (Finset.inr_mem_disjSum.mp hP)).1
+        ((G.mem_initialPentagons P).mp ((G.inr_mem_commutationPentagons C P).mp hP)).1
   have hq : D.toRectangleDecomposition.second.IsEmpty := by
     rcases D with ⟨m, P, Q | Q⟩
     · simpa only [GridPentagonPairDecomposition.toRectangleDecomposition,
         GridCommutationPentagonBetween.toGridRectangleBetween_inl] using
         (((G.swapColumns a b).mem_pentagons (C := C.withTurnRow t) Q).mp
-          (Finset.inl_mem_disjSum.mp hQ)).1
+          (((G.swapColumns a b).inl_mem_commutationPentagons (C.withTurnRow t) Q).mp hQ)).1
     · simpa only [GridPentagonPairDecomposition.toRectangleDecomposition,
         GridCommutationPentagonBetween.toGridRectangleBetween_inr] using
         (((G.swapColumns a b).mem_initialPentagons (C := C.withTurnRow t) Q).mp
-          (Finset.inr_mem_disjSum.mp hQ)).1
+          (((G.swapColumns a b).inr_mem_commutationPentagons (C.withTurnRow t) Q).mp hQ)).1
   exact ⟨hp, hq⟩
 
 /-- The polynomial weight of a crossing-change pentagon pair: the forward pentagon weight renamed
@@ -141,19 +137,15 @@ along the column swap, multiplied by the second pentagon weight on `G.swapColumn
 noncomputable def crossingChangePentagonPairWeight (R : Type*) [CommSemiring R]
     {x z : GridState n} (D : GridPentagonPairDecomposition a C.turnRow a t x z) :
     MvPolynomial (Fin n) R :=
-  rename (Equiv.swap a b)
-      (D.first.elim (G.pentagonWeight R C) (G.initialPentagonWeight R C)) *
-    D.second.elim ((G.swapColumns a b).pentagonWeight R (C.withTurnRow t))
-      ((G.swapColumns a b).initialPentagonWeight R (C.withTurnRow t))
+  rename (Equiv.swap a b) (G.commutationPentagonWeight C R D.first) *
+    (G.swapColumns a b).commutationPentagonWeight (C.withTurnRow t) R D.second
 
 /-- Explicit formula for the weight of a crossing-change pentagon pair. -/
 theorem crossingChangePentagonPairWeight_def (R : Type*) [CommSemiring R]
     {x z : GridState n} (D : GridPentagonPairDecomposition a C.turnRow a t x z) :
     G.crossingChangePentagonPairWeight C t R D =
-      rename (Equiv.swap a b)
-          (D.first.elim (G.pentagonWeight R C) (G.initialPentagonWeight R C)) *
-        D.second.elim ((G.swapColumns a b).pentagonWeight R (C.withTurnRow t))
-          ((G.swapColumns a b).initialPentagonWeight R (C.withTurnRow t)) :=
+      rename (Equiv.swap a b) (G.commutationPentagonWeight C R D.first) *
+        (G.swapColumns a b).commutationPentagonWeight (C.withTurnRow t) R D.second :=
   (rfl)
 
 /-- The matrix product of the pentagon coefficients of `Φ` (renamed by the column swap) and `Ψ` is
@@ -165,21 +157,13 @@ theorem sum_rename_commutationPentagonCoefficient_mul_withTurnRow
           (G.swapColumns a b).commutationPentagonCoefficient R (C.withTurnRow t) y z =
       ∑ D ∈ G.crossingChangePentagonPairs C t x z,
         G.crossingChangePentagonPairWeight C t R D := by
-  have hcoeff (G' : GridDiagram n) (T : ColumnTurn n) (u v : GridState n) :
-      G'.commutationPentagonCoefficient R T u v =
-        ∑ P ∈ (G'.pentagons T u v).disjSum (G'.initialPentagons T u v),
-          P.elim (G'.pentagonWeight R T) (G'.initialPentagonWeight R T) := by
-    rw [G'.commutationPentagonCoefficient_def R T, G'.pentagonCoefficient_def R T u v,
-      G'.initialPentagonCoefficient_def R T u v, Finset.sum_disjSum]
-    simp only [Sum.elim_inl, Sum.elim_inr]
-  simp_rw [hcoeff G C, hcoeff (G.swapColumns a b) (C.withTurnRow t), map_sum, Finset.sum_mul_sum]
-  exact (GridTwoStepDecomposition.sum_decompositionsOf
-    (fun x y => (G.pentagons C x y).disjSum (G.initialPentagons C x y))
-    (fun y z => ((G.swapColumns a b).pentagons (C.withTurnRow t) y z).disjSum
-      ((G.swapColumns a b).initialPentagons (C.withTurnRow t) y z))
-    (fun _ P Q => rename (Equiv.swap a b) (P.elim (G.pentagonWeight R C)
-      (G.initialPentagonWeight R C)) * Q.elim ((G.swapColumns a b).pentagonWeight R
-        (C.withTurnRow t)) ((G.swapColumns a b).initialPentagonWeight R (C.withTurnRow t)))).symm
+  simp_rw [G.commutationPentagonCoefficient_eq_sum_weight C R,
+    (G.swapColumns a b).commutationPentagonCoefficient_eq_sum_weight (C.withTurnRow t) R,
+    map_sum, Finset.sum_mul_sum]
+  exact (GridTwoStepDecomposition.sum_decompositionsOf (G.commutationPentagons C)
+    ((G.swapColumns a b).commutationPentagons (C.withTurnRow t))
+    (fun _ P Q => rename (Equiv.swap a b) (G.commutationPentagonWeight C R P) *
+      (G.swapColumns a b).commutationPentagonWeight (C.withTurnRow t) R Q)).symm
 
 /-! ### Same-side and mixed-side partner matchings -/
 
@@ -291,26 +275,34 @@ private theorem exists_sameSidePartner (R : Type*) [CommSemiring R]
   rcases D with ⟨m, P | P, Q | Q⟩
   · obtain ⟨⟨F, ⟨hF, hrecut⟩, -⟩, hw⟩ :=
       existsUnique_crossingChangeUnpairedHexagonComposite_of_terminalPentagonPair R hX P Q
-        (Finset.inl_mem_disjSum.mp hP) (Finset.inl_mem_disjSum.mp hQ) hzx
+        ((G.inl_mem_commutationPentagons C P).mp hP)
+        (((G.swapColumns a b).inl_mem_commutationPentagons (C.withTurnRow t) Q).mp hQ) hzx
     have hrecut' : (GridPentagonPairDecomposition.toRectangleDecomposition
         (⟨m, .inl P, .inl Q⟩ : GridPentagonPairDecomposition a C.turnRow a t x z)).IsRecut
         F.toRectangleDecomposition := by
       simpa only [GridPentagonPairDecomposition.toRectangleDecomposition,
         GridCommutationPentagonBetween.toGridRectangleBetween_inl] using hrecut
     exact ⟨F, (G.mem_crossingChangeSameSidePentagonPartners C t F).mpr ⟨hF, _, hD, hrecut'⟩,
-      hrecut', by simpa [crossingChangePentagonPairWeight_def] using (hw F hF hrecut).symm⟩
+      hrecut', by
+        rw [G.crossingChangePentagonPairWeight_def, G.commutationPentagonWeight_inl,
+          (G.swapColumns a b).commutationPentagonWeight_inl (C.withTurnRow t)]
+        exact (hw F hF hrecut).symm⟩
   · simp at hside
   · simp at hside
   · obtain ⟨⟨F, ⟨hF, hrecut⟩, -⟩, hw⟩ :=
       existsUnique_crossingChangeUnpairedHexagonComposite_of_initialPentagonPair R hX P Q
-        (Finset.inr_mem_disjSum.mp hP) (Finset.inr_mem_disjSum.mp hQ) hzx
+        ((G.inr_mem_commutationPentagons C P).mp hP)
+        (((G.swapColumns a b).inr_mem_commutationPentagons (C.withTurnRow t) Q).mp hQ) hzx
     have hrecut' : (GridPentagonPairDecomposition.toRectangleDecomposition
         (⟨m, .inr P, .inr Q⟩ : GridPentagonPairDecomposition a C.turnRow a t x z)).IsRecut
         F.toRectangleDecomposition := by
       simpa only [GridPentagonPairDecomposition.toRectangleDecomposition,
         GridCommutationPentagonBetween.toGridRectangleBetween_inr] using hrecut
     exact ⟨F, (G.mem_crossingChangeSameSidePentagonPartners C t F).mpr ⟨hF, _, hD, hrecut'⟩,
-      hrecut', by simpa [crossingChangePentagonPairWeight_def] using (hw F hF hrecut).symm⟩
+      hrecut', by
+        rw [G.crossingChangePentagonPairWeight_def, G.commutationPentagonWeight_inr,
+          (G.swapColumns a b).commutationPentagonWeight_inr (C.withTurnRow t)]
+        exact (hw F hF hrecut).symm⟩
 
 private theorem exists_mixedSidePartner (R : Type*) [CommSemiring R]
     (hst : C.turnRow ≠ t) (hX : Disjoint (crossingChangeAnnulusSquares C t) G.XSet)
@@ -327,7 +319,8 @@ private theorem exists_mixedSidePartner (R : Type*) [CommSemiring R]
   · simp at hside
   · obtain ⟨F, ⟨hF, hFD, hw⟩, -⟩ :=
       existsUnique_crossingChangeUnpairedHexagonComposite_of_terminalInitialPentagonPair R hst hX
-        P Q (Finset.inl_mem_disjSum.mp hP) (Finset.inr_mem_disjSum.mp hQ) hzx
+        P Q ((G.inl_mem_commutationPentagons C P).mp hP)
+        (((G.swapColumns a b).inr_mem_commutationPentagons (C.withTurnRow t) Q).mp hQ) hzx
     have hFD' : GridPentagonPairDecomposition.toRectangleDecomposition
         (⟨m, .inl P, .inr Q⟩ : GridPentagonPairDecomposition a C.turnRow a t x z) =
         F.toRectangleDecomposition := by
@@ -335,10 +328,14 @@ private theorem exists_mixedSidePartner (R : Type*) [CommSemiring R]
         GridCommutationPentagonBetween.toGridRectangleBetween_inl,
         GridCommutationPentagonBetween.toGridRectangleBetween_inr] using hFD.symm
     exact ⟨F, (G.mem_crossingChangeMixedSidePentagonPartners C t F).mpr ⟨hF, _, hD, hFD'⟩,
-      hFD', by simpa [crossingChangePentagonPairWeight_def] using hw.symm⟩
+      hFD', by
+        rw [G.crossingChangePentagonPairWeight_def, G.commutationPentagonWeight_inl,
+          (G.swapColumns a b).commutationPentagonWeight_inr (C.withTurnRow t)]
+        exact hw.symm⟩
   · obtain ⟨F, ⟨hF, hFD, hw⟩, -⟩ :=
       existsUnique_crossingChangeUnpairedHexagonComposite_of_initialTerminalPentagonPair R hst hX
-        P Q (Finset.inr_mem_disjSum.mp hP) (Finset.inl_mem_disjSum.mp hQ) hzx
+        P Q ((G.inr_mem_commutationPentagons C P).mp hP)
+        (((G.swapColumns a b).inl_mem_commutationPentagons (C.withTurnRow t) Q).mp hQ) hzx
     have hFD' : GridPentagonPairDecomposition.toRectangleDecomposition
         (⟨m, .inr P, .inl Q⟩ : GridPentagonPairDecomposition a C.turnRow a t x z) =
         F.toRectangleDecomposition := by
@@ -346,7 +343,10 @@ private theorem exists_mixedSidePartner (R : Type*) [CommSemiring R]
         GridCommutationPentagonBetween.toGridRectangleBetween_inl,
         GridCommutationPentagonBetween.toGridRectangleBetween_inr] using hFD.symm
     exact ⟨F, (G.mem_crossingChangeMixedSidePentagonPartners C t F).mpr ⟨hF, _, hD, hFD'⟩,
-      hFD', by simpa [crossingChangePentagonPairWeight_def] using hw.symm⟩
+      hFD', by
+        rw [G.crossingChangePentagonPairWeight_def, G.commutationPentagonWeight_inr,
+          (G.swapColumns a b).commutationPentagonWeight_inl (C.withTurnRow t)]
+        exact hw.symm⟩
   · simp at hside
 
 /-- Off the diagonal, if the annulus squares carry no `X`-marking, the counted same-side pentagon
@@ -459,8 +459,12 @@ theorem crossingChangeUnpairedHexagonComposites_eq_union
       (G.crossingChangeMixedSidePentagonPartners_subset C t x z))
   obtain ⟨D, hD, hmatch⟩ := exists_pentagonPair_of_mem_crossingChangeUnpairedHexagonComposites
     hX hzx hF
-  have hD' : D ∈ G.crossingChangePentagonPairs C t x z :=
-    (G.mem_crossingChangePentagonPairs C t D).mpr hD
+  have hD' : D ∈ G.crossingChangePentagonPairs C t x z := by
+    rcases D with ⟨m, P, Q⟩
+    refine (G.mem_crossingChangePentagonPairs C t _).mpr ⟨by cases P <;> simpa using hD.1, ?_⟩
+    cases Q
+    · rw [(G.swapColumns a b).inl_mem_commutationPentagons (C.withTurnRow t)]; simpa using hD.2
+    · rw [(G.swapColumns a b).inr_mem_commutationPentagons (C.withTurnRow t)]; simpa using hD.2
   rw [Finset.mem_union]
   rcases hmatch with ⟨hside, hrecut⟩ | ⟨hside, hrect⟩
   · exact Or.inl ((G.mem_crossingChangeSameSidePentagonPartners C t F).mpr

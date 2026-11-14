@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Homology.Tau
 public import TauCeti.KnotTheory.Grid.TorusLink.Homology
+import TauCeti.Data.Nat.GCD
 
 /-!
 # The invariant `τ` of the torus knot grids
@@ -50,16 +51,6 @@ namespace TauCeti
 
 namespace GridDiagram
 
-private theorem two_dvd_mul_of_coprime_succ {p q : ℕ} (h : (p + 1).Coprime (q + 1)) :
-    2 ∣ p * q := by
-  rcases Nat.even_or_odd p with ⟨k, rfl⟩ | ⟨k, rfl⟩
-  · exact ⟨k * q, by ring⟩
-  · rcases Nat.even_or_odd q with ⟨m, rfl⟩ | ⟨m, rfl⟩
-    · exact ⟨(2 * k + 1) * m, by ring⟩
-    · exfalso
-      have h1 : 2 ∣ 1 := h.gcd_eq_one ▸ Nat.dvd_gcd ⟨k + 1, by omega⟩ ⟨m + 1, by omega⟩
-      omega
-
 variable {p q : ℕ} (h : (p + 1).Coprime (q + 1)) (K : Type*) [Field K] [CharP K 2]
 
 /-- **`τ` of a torus knot grid**: on the standard grid of the `(p + 1, q + 1)` torus knot,
@@ -72,7 +63,7 @@ theorem two_mul_tau_torusLink :
 `τ(torusLink p q) = -(p q / 2)`. -/
 theorem tau_torusLink :
     ((isKnot_torusLink_iff p q).mpr h).tau K = -((p * q / 2 : ℕ) : ℤ) := by
-  obtain ⟨m, hm⟩ := two_dvd_mul_of_coprime_succ h
+  obtain ⟨m, hm⟩ := Nat.two_dvd_mul_of_coprime_succ h
   have htau := two_mul_tau_torusLink h K
   rw [← Nat.cast_mul, hm] at htau
   rw [hm]

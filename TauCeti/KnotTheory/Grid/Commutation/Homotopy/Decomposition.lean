@@ -448,6 +448,60 @@ end GridPentagonPairDecomposition
 
 namespace GridDiagram
 
+section ColumnTurn
+
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
+
+/-- The counted commutation pentagons of either turn-side kind. -/
+noncomputable def commutationPentagons (x y : GridState n) :
+    Finset (GridCommutationPentagonBetween C.column C.turnRow x y) :=
+  (G.pentagons C x y).disjSum (G.initialPentagons C x y)
+
+/-- A terminal-side commutation pentagon is counted exactly when it is a counted pentagon. -/
+@[simp]
+theorem inl_mem_commutationPentagons {x y : GridState n}
+    (P : GridPentagonBetween C.column C.turnRow x y) :
+    Sum.inl P ∈ G.commutationPentagons C x y ↔ P ∈ G.pentagons C x y :=
+  Finset.inl_mem_disjSum
+
+/-- An initial-side commutation pentagon is counted exactly when it is a counted initial-side
+pentagon. -/
+@[simp]
+theorem inr_mem_commutationPentagons {x y : GridState n}
+    (P : GridInitialPentagonBetween C.column C.turnRow x y) :
+    Sum.inr P ∈ G.commutationPentagons C x y ↔ P ∈ G.initialPentagons C x y :=
+  Finset.inr_mem_disjSum
+
+variable (R : Type*) [CommSemiring R]
+
+/-- The weight of a commutation pentagon of either kind. -/
+noncomputable def commutationPentagonWeight {x y : GridState n}
+    (P : GridCommutationPentagonBetween C.column C.turnRow x y) :
+    MvPolynomial (Fin n) R :=
+  P.elim (G.pentagonWeight R C) (G.initialPentagonWeight R C)
+
+/-- The weight of a terminal-side commutation pentagon. -/
+@[simp]
+theorem commutationPentagonWeight_inl {x y : GridState n}
+    (P : GridPentagonBetween C.column C.turnRow x y) :
+    G.commutationPentagonWeight C R (Sum.inl P) = G.pentagonWeight R C P := (rfl)
+
+/-- The weight of an initial-side commutation pentagon. -/
+@[simp]
+theorem commutationPentagonWeight_inr {x y : GridState n}
+    (P : GridInitialPentagonBetween C.column C.turnRow x y) :
+    G.commutationPentagonWeight C R (Sum.inr P) = G.initialPentagonWeight R C P := (rfl)
+
+/-- The sum of the two kinds of pentagon coefficients is the sum of their combined weights. -/
+theorem commutationPentagonCoefficient_eq_sum_weight (x y : GridState n) :
+    G.commutationPentagonCoefficient R C x y =
+      ∑ P ∈ G.commutationPentagons C x y, G.commutationPentagonWeight C R P := by
+  rw [G.commutationPentagonCoefficient_def R C, G.pentagonCoefficient_def R C x y,
+    G.initialPentagonCoefficient_def R C x y, commutationPentagons, Finset.sum_disjSum]
+  simp only [commutationPentagonWeight_inl, commutationPentagonWeight_inr]
+
+end ColumnTurn
+
 variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
 
 local notation "b" => finRotate n C.column
@@ -518,26 +572,6 @@ theorem mem_commutationHexagons_iff_XSet_inter_eq {x y : GridState n}
   | inl P => exact hda (by rwa [GridCommutationHexagonBetween.cutColumn_inl] at hcol)
   | inr P => exact hdb (by rwa [GridCommutationHexagonBetween.cutColumn_inr] at hcol)
 
-/-- The counted commutation pentagons of either turn-side kind. -/
-noncomputable def commutationPentagons (x y : GridState n) :
-    Finset (GridCommutationPentagonBetween C.column C.turnRow x y) :=
-  (G.pentagons C x y).disjSum (G.initialPentagons C x y)
-
-/-- A terminal-side commutation pentagon is counted exactly when it is a counted pentagon. -/
-@[simp]
-theorem inl_mem_commutationPentagons {x y : GridState n}
-    (P : GridPentagonBetween C.column C.turnRow x y) :
-    Sum.inl P ∈ G.commutationPentagons C x y ↔ P ∈ G.pentagons C x y :=
-  Finset.inl_mem_disjSum
-
-/-- An initial-side commutation pentagon is counted exactly when it is a counted initial-side
-pentagon. -/
-@[simp]
-theorem inr_mem_commutationPentagons {x y : GridState n}
-    (P : GridInitialPentagonBetween C.column C.turnRow x y) :
-    Sum.inr P ∈ G.commutationPentagons C x y ↔ P ∈ G.initialPentagons C x y :=
-  Finset.inr_mem_disjSum
-
 variable (R : Type*) [CommSemiring R]
 
 /-- The weight of a commutation hexagon of either kind. -/
@@ -582,24 +616,6 @@ theorem X_cutColumn_mul_commutationHexagonWeight {x y : GridState n}
     rw [GridCommutationHexagonBetween.cutColumn_inr, commutationHexagonWeight_inr,
       GridCommutationHexagonBetween.toGridRectangleBetween_inr]
     exact G.X_mul_initialHexagonWeight R P
-
-/-- The weight of a commutation pentagon of either kind. -/
-noncomputable def commutationPentagonWeight {x y : GridState n}
-    (P : GridCommutationPentagonBetween C.column C.turnRow x y) :
-    MvPolynomial (Fin n) R :=
-  P.elim (G.pentagonWeight R C) (G.initialPentagonWeight R C)
-
-/-- The weight of a terminal-side commutation pentagon. -/
-@[simp]
-theorem commutationPentagonWeight_inl {x y : GridState n}
-    (P : GridPentagonBetween C.column C.turnRow x y) :
-    G.commutationPentagonWeight C R (Sum.inl P) = G.pentagonWeight R C P := (rfl)
-
-/-- The weight of an initial-side commutation pentagon. -/
-@[simp]
-theorem commutationPentagonWeight_inr {x y : GridState n}
-    (P : GridInitialPentagonBetween C.column C.turnRow x y) :
-    G.commutationPentagonWeight C R (Sum.inr P) = G.initialPentagonWeight R C P := (rfl)
 
 /-- The hexagon--rectangle decompositions counted in the coefficient of the differential after
 the commutation homotopy. -/
@@ -858,14 +874,6 @@ theorem commutationHexagonCoefficient_eq_sum_weight (x y : GridState n) :
   rw [G.commutationHexagonCoefficient_def R C, G.hexagonCoefficient_def R C x y,
     G.initialHexagonCoefficient_def R C x y, commutationHexagons, Finset.sum_disjSum]
   simp only [commutationHexagonWeight_inl, commutationHexagonWeight_inr]
-
-/-- The sum of the two kinds of pentagon coefficients is the sum of their combined weights. -/
-theorem commutationPentagonCoefficient_eq_sum_weight (x y : GridState n) :
-    G.commutationPentagonCoefficient R C x y =
-      ∑ P ∈ G.commutationPentagons C x y, G.commutationPentagonWeight C R P := by
-  rw [G.commutationPentagonCoefficient_def R C, G.pentagonCoefficient_def R C x y,
-    G.initialPentagonCoefficient_def R C x y, commutationPentagons, Finset.sum_disjSum]
-  simp only [commutationPentagonWeight_inl, commutationPentagonWeight_inr]
 
 /-- The hexagon--rectangle matrix product is the sum of the weights of the counted composite
 domains. -/

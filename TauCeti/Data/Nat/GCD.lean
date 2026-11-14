@@ -23,12 +23,16 @@ If the products of two finite families of naturals are coprime and one entry of 
 zero, the second family is constantly `1`: a zero entry makes the first product `0`, and `0` is
 coprime only to `1`.
 
+If `p + 1` and `q + 1` are coprime, then `2 ∣ p * q`: at least one of `p + 1` and `q + 1` is odd,
+so at least one of `p` and `q` is even.
+
 ## Main results
 
 * `Nat.coprime_pow_sub_one`: `q` is coprime to `q ^ N - 1`.
 * `Nat.neZero_lcm`: `NeZero (lcm m n)` for nonzero `m` and `n`.
 * `Nat.Coprime.eq_one_of_exists_eq_zero`: coprime products and a zero entry in one family force the
   other family to be `1`.
+* `Nat.two_dvd_mul_of_coprime_succ`: `(p + 1).Coprime (q + 1) → 2 ∣ p * q`.
 -/
 
 public section
@@ -53,5 +57,15 @@ theorem Coprime.eq_one_of_exists_eq_zero {ι : Type*} [Fintype ι] {x y : ι →
   have hx0 : (∏ i, x i) = 0 := Finset.prod_eq_zero (Finset.mem_univ i) hi
   have hy1 : (∏ i, y i) = 1 := (Nat.coprime_zero_left _).mp (hx0 ▸ hc)
   exact funext fun j ↦ Nat.dvd_one.mp (hy1 ▸ Finset.dvd_prod_of_mem y (Finset.mem_univ j))
+
+/-- If `p + 1` and `q + 1` are coprime, then `2 ∣ p * q`: `p + 1` and `q + 1` cannot both be even,
+so `p` and `q` cannot both be odd. -/
+theorem two_dvd_mul_of_coprime_succ {p q : ℕ} (h : (p + 1).Coprime (q + 1)) : 2 ∣ p * q := by
+  by_cases hp : 2 ∣ p
+  · exact dvd_mul_of_dvd_left hp q
+  · refine dvd_mul_of_dvd_right ?_ p
+    by_contra hq
+    have h1 : 2 ∣ 1 := h.gcd_eq_one ▸ dvd_gcd (by omega) (by omega)
+    omega
 
 end Nat

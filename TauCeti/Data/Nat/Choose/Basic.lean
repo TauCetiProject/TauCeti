@@ -20,7 +20,7 @@ import Mathlib.Tactic.Ring
 
 This file records arithmetic identities involving natural-number binomial coefficients.
 
-Besides three identities and a parity formula for the second binomial coefficient and the sum
+Besides four identities and a parity formula for the second binomial coefficient and the sum
 `2ⁿ - 2` of the inner binomial coefficients `C(n, i)`, `0 < i < n`, it develops Vandermonde's
 convolution `∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` in the shape taken by factorial moments of a
 law supported on such a convolution: each summand is weighted by the falling factorial `(i)ₘ` of
@@ -33,6 +33,7 @@ the summation index. The weighted sum is again a single binomial coefficient,
   the triangular number is the corresponding square.
 * `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
+* `Nat.mul_mul_succ_div_two_eq_mul_choose_two`: `p * (k * (p + 1)) / 2 = k * C(p + 1, 2)`.
 * `Nat.even_choose_two_iff`, `Nat.neg_one_pow_choose_two`: `C(m, 2)` and `⌊m / 2⌋` have the same
   parity, so `(-1) ^ C(m, 2) = (-1) ^ ⌊m / 2⌋`.
 * `Nat.neg_one_pow_succ_choose_two_mul_neg_one_pow`: the step
@@ -101,6 +102,13 @@ theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :
       ring
     rw [h]
     exact Nat.sub_eq_of_eq_add (by ring)
+
+/-- Half the product of `p` and `k * (p + 1)` is `k` times `C(p + 1, 2)`, since `p * (p + 1)` is
+even. -/
+theorem mul_mul_succ_div_two_eq_mul_choose_two (p k : ℕ) :
+    p * (k * (p + 1)) / 2 = k * (p + 1).choose 2 := by
+  rw [choose_two_right, Nat.add_sub_cancel, mul_comm (p + 1) p, mul_left_comm,
+    Nat.mul_div_assoc _ (even_mul_succ_self p).two_dvd]
 
 /-- `C(m, 2)` and `⌊m / 2⌋` have the same parity: going from `m` to `m + 2` adds `2m + 1` to the
 first and `1` to the second. -/
