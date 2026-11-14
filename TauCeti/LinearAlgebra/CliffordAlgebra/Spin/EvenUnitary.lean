@@ -638,12 +638,7 @@ quadratic isometry. -/
 theorem evenUnitaryGroupMap_spinGroupToEvenUnitary (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
     f.evenUnitaryGroupMap (CliffordAlgebra.spinGroupToEvenUnitary Q₁ x) =
       CliffordAlgebra.spinGroupToEvenUnitary Q₂ (f.spinGroupMap x) :=
-  Subtype.ext <| Units.ext <| by
-    rw [coe_evenUnitaryGroupMap_apply, CliffordAlgebra.coe_spinGroupToEvenUnitary_apply,
-      CliffordAlgebra.coe_spinGroupToEvenUnitary_apply, spinGroup.val_toUnits_apply,
-      coe_spinGroupMap_apply]
-    -- The algebra-hom and ring-hom coercions of `CliffordAlgebra.map f` agree definitionally.
-    rfl
+  Subtype.ext <| Units.ext <| by simp
 
 end QuadraticMap.Isometry
 
