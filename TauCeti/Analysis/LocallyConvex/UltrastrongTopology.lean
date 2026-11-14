@@ -7,8 +7,12 @@ module
 
 public import Mathlib.Algebra.Algebra.TransferInstance
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import TauCeti.Analysis.Normed.Lp.MapCLM
+import Mathlib.Analysis.LocallyConvex.HahnBanach
+import Mathlib.Analysis.Normed.Operator.Extend
+import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
 # The ultrastrong operator topology
@@ -24,7 +28,14 @@ coordinates `tendsto_iff_forall_tsum_norm_sub_sq_tendsto_zero`).
 As for Mathlib's weak operator topology `E →WOT[𝕜] F`, the topology lives on a type copy,
 `TauCeti.ContinuousLinearMapUltrastrong 𝕜 E F`, so that it cannot be confused with the norm
 topology. The copy is a Hausdorff locally convex topological vector space, with the seminorms
-`‖(⊕ T) ξ‖` (`withSeminorms`); multiplication of operators on it is separately continuous.
+`‖(⊕ T) ξ‖` (`withSeminorms`); multiplication of operators on it is separately continuous, so
+commutants of sets of operators are ultrastrongly closed (`isClosed_image_ofCLM_centralizer`).
+
+Interleaving square-summable sequences dominates any finite supremum of ultrastrong seminorms by a
+single seminorm (`exists_seminorm_ge_finset_sup`), giving a neighborhood basis of single-sequence
+balls (`hasBasis_ball`). Over `ℝ` or `ℂ`, Hahn–Banach therefore factors every ultrastrongly
+continuous linear functional through evaluation of the ampliation at a single `ξ ∈ ℓ²(ℕ, E)`
+(`exists_strongDual_ampliation_apply_eq`).
 
 The ultrastrong topology is coarser than the norm topology and finer than the strong operator
 topology on Mathlib's pointwise-convergence copy `E →Lₚₜ[𝕜] F`. On norm-bounded sets the latter
@@ -32,7 +43,8 @@ comparison is an equality (`isInducing_restrict_toPointwiseConvergenceCLM`): for
 bounded net, strong and ultrastrong convergence agree. This is the bounded-set agreement used to
 pass between the two topologies in von Neumann algebra theory.
 
-The definition needs no inner product: `E` and `F` are arbitrary normed spaces.
+The definition and seminorm dominance need no inner product: `E` and `F` are arbitrary normed
+spaces.
 
 ## Implementation notes
 
@@ -44,7 +56,7 @@ definition for downstream files. The seminorms are not exposed; they are used th
 
 ## References
 
-* J. Dixmier, *Von Neumann Algebras*, North-Holland, 1981, Part I, Chapter 3, §1.
+* J. Dixmier, *Von Neumann Algebras*, North-Holland, 1981, Part I, Chapter 3, §§1, 3.
 * M. Takesaki, *Theory of Operator Algebras I*, Springer, 1979, Chapter II, §2.
 -/
 
@@ -85,6 +97,14 @@ def equiv : ContinuousLinearMapUltrastrong 𝕜 E F ≃ (E →L[𝕜] F) where
 theorem toCLM_injective :
     Function.Injective (toCLM : ContinuousLinearMapUltrastrong 𝕜 E F → E →L[𝕜] F) :=
   equiv.injective
+
+theorem ofCLM_injective :
+    Function.Injective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltrastrong 𝕜 E F) :=
+  equiv.symm.injective
+
+theorem ofCLM_surjective :
+    Function.Surjective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltrastrong 𝕜 E F) :=
+  equiv.symm.surjective
 
 instance instAddCommGroup : AddCommGroup (ContinuousLinearMapUltrastrong 𝕜 E F) :=
   equiv.addCommGroup
@@ -130,6 +150,9 @@ instance instRing : Ring (ContinuousLinearMapUltrastrong 𝕜 E E) :=
 
 @[simp] theorem toCLM_mul (A B : ContinuousLinearMapUltrastrong 𝕜 E E) :
     (A * B).toCLM = A.toCLM * B.toCLM := rfl
+
+@[simp] theorem ofCLM_mul (A B : E →L[𝕜] E) :
+    ofCLM (A * B) = (ofCLM A : ContinuousLinearMapUltrastrong 𝕜 E E) * ofCLM B := rfl
 
 /-- The linear equivalence between the ultrastrong copy and `E →L[𝕜] F`. -/
 @[simps!]
@@ -261,6 +284,68 @@ theorem withSeminorms : WithSeminorms (seminormFamily 𝕜 E F) :=
   isInducing_inducingFn.withSeminorms
     (withSeminorms_pi fun _ ↦ norm_withSeminorms 𝕜 ℓ²(ℕ, F)) |>.congr_equiv e
 
+/-- Interleaving two square-summable sequences dominates the supremum of their ultrastrong
+seminorms by a single ultrastrong seminorm. -/
+theorem exists_seminorm_ge_sup (ξ₁ ξ₂ : ℓ²(ℕ, E)) :
+    ∃ ξ : ℓ²(ℕ, E), seminorm (𝕜 := 𝕜) (F := F) ξ₁ ⊔ seminorm ξ₂ ≤ seminorm ξ := by
+  classical
+  let u : ℕ → E := fun n ↦ if Even n then ξ₁ (n / 2) else ξ₂ (n / 2)
+  have hu_even (k : ℕ) : u (2 * k) = ξ₁ k := by
+    simp [u, Nat.mul_div_right _ zero_lt_two]
+  have hu_odd (k : ℕ) : u (2 * k + 1) = ξ₂ k := by
+    have hnot : ¬Even (2 * k + 1) := Nat.not_even_two_mul_add_one k
+    have hdiv : (2 * k + 1) / 2 = k := by omega
+    simp [u, hnot, hdiv]
+  have hp : (0 : ℝ) < (2 : ℝ≥0∞).toReal := by simp
+  have hu : Memℓp u 2 := memℓp_gen <| Summable.even_add_odd
+    (by simpa [hu_even] using ξ₁.2.summable hp) (by simpa [hu_odd] using ξ₂.2.summable hp)
+  let ξ : ℓ²(ℕ, E) := ⟨u, hu⟩
+  have hsq (v : ℓ²(ℕ, F)) : ‖v‖ ^ 2 = ∑' n, ‖v n‖ ^ 2 := by
+    simpa using lp.norm_rpow_eq_tsum (p := 2) (by simp) v
+  -- The squared seminorm at `ξ` is the sum of the squared seminorms at `ξ₁` and `ξ₂`.
+  have hsum (A : ContinuousLinearMapUltrastrong 𝕜 E F) :
+      (seminorm ξ₁ A) ^ 2 + (seminorm ξ₂ A) ^ 2 = (seminorm ξ A) ^ 2 := by
+    simp only [seminorm_apply, hsq, lp.ampliation_apply_apply]
+    let f : ℕ → ℝ := fun n ↦ ‖A.toCLM (u n)‖ ^ 2
+    have he : Summable fun k ↦ f (2 * k) := by
+      simpa only [f, hu_even, ENNReal.toReal_ofNat, Real.rpow_two, lp.ampliation_apply_apply] using
+        (lp.ampliation ℕ 2 A.toCLM ξ₁).2.summable hp
+    have ho : Summable fun k ↦ f (2 * k + 1) := by
+      simpa only [f, hu_odd, ENNReal.toReal_ofNat, Real.rpow_two, lp.ampliation_apply_apply] using
+        (lp.ampliation ℕ 2 A.toCLM ξ₂).2.summable hp
+    simpa only [f, ξ, hu_even, hu_odd] using tsum_even_add_odd he ho
+  refine ⟨ξ, sup_le (fun A ↦ ?_) (fun A ↦ ?_)⟩
+  · have hA := hsum A
+    have h2 := sq_nonneg (seminorm ξ₂ A)
+    simp only [seminorm_apply] at hA h2 ⊢
+    exact (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 (by linarith)
+  · have hA := hsum A
+    have h1 := sq_nonneg (seminorm ξ₁ A)
+    simp only [seminorm_apply] at hA h1 ⊢
+    exact (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 (by linarith)
+
+/-- Every finite supremum of ultrastrong seminorms is bounded by a single ultrastrong seminorm. -/
+theorem exists_seminorm_ge_finset_sup (s : Finset ℓ²(ℕ, E)) :
+    ∃ ξ : ℓ²(ℕ, E), s.sup (seminormFamily 𝕜 E F) ≤ seminorm ξ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => exact ⟨0, bot_le⟩
+  | insert ξ₁ s _ ih =>
+    obtain ⟨ξ₂, hξ₂⟩ := ih
+    obtain ⟨ξ, hξ⟩ := exists_seminorm_ge_sup (𝕜 := 𝕜) (F := F) ξ₁ ξ₂
+    exact ⟨ξ, by simpa only [Finset.sup_insert, seminormFamily_apply] using
+      (sup_le_sup_left hξ₂ _).trans hξ⟩
+
+/-- The single-sequence seminorm balls form a neighborhood basis in the ultrastrong topology. -/
+theorem hasBasis_ball (A : ContinuousLinearMapUltrastrong 𝕜 E F) :
+    (𝓝 A).HasBasis (fun p : ℓ²(ℕ, E) × ℝ ↦ 0 < p.2) fun p ↦ (seminorm p.1).ball A p.2 := by
+  refine (withSeminorms (𝕜 := 𝕜) (E := E) (F := F)).hasBasis_ball.to_hasBasis ?_ ?_
+  · rintro ⟨s, r⟩ hr
+    obtain ⟨ξ, hξ⟩ := exists_seminorm_ge_finset_sup (𝕜 := 𝕜) (F := F) s
+    exact ⟨⟨ξ, r⟩, hr, Seminorm.ball_antitone hξ⟩
+  · rintro ⟨ξ, r⟩ hr
+    exact ⟨⟨{ξ}, r⟩, hr, by simp⟩
+
 instance instLocallyConvexSpace [NormedSpace ℝ 𝕜] [Module ℝ (ContinuousLinearMapUltrastrong 𝕜 E F)]
     [IsScalarTower ℝ 𝕜 (ContinuousLinearMapUltrastrong 𝕜 E F)] :
     LocallyConvexSpace ℝ (ContinuousLinearMapUltrastrong 𝕜 E F) :=
@@ -277,6 +362,18 @@ instance instIsSemitopologicalRing : IsSemitopologicalRing (ContinuousLinearMapU
       (lp.ampliation ℕ 2 A.toCLM).continuous.comp (continuous_ampliation_apply ξ)
   continuous_mul_const {A} := continuous_of_continuous_ampliation_apply fun ξ ↦ by
     simpa using continuous_ampliation_apply (lp.ampliation ℕ 2 A.toCLM ξ)
+
+/-- The commutant of any set of operators is closed in the ultrastrong operator topology. -/
+theorem isClosed_image_ofCLM_centralizer (s : Set (E →L[𝕜] E)) :
+    IsClosed (ofCLM '' s.centralizer : Set (ContinuousLinearMapUltrastrong 𝕜 E E)) := by
+  have h : (ofCLM '' s.centralizer : Set (ContinuousLinearMapUltrastrong 𝕜 E E)) =
+      (ofCLM '' s).centralizer := by
+    ext T
+    obtain ⟨T, rfl⟩ := ofCLM_surjective T
+    rw [ofCLM_injective.mem_set_image]
+    simp only [Set.mem_centralizer_iff, Set.forall_mem_image, ← ofCLM_mul, ofCLM_injective.eq_iff]
+  rw [h]
+  exact Set.isClosed_centralizer _
 
 /-! ### Comparison with the norm and strong operator topologies -/
 
@@ -335,6 +432,47 @@ theorem isInducing_restrict_toPointwiseConvergenceCLM
     (Eventually.of_forall fun B : s ↦ hs B B.2)).2 tendsto_comap
 
 end Comparison
+
+end ContinuousLinearMapUltrastrong
+
+namespace ContinuousLinearMapUltrastrong
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-! ### Continuous linear functionals -/
+
+/-- **Continuous functionals in the ultrastrong operator topology.** Every ultrastrongly continuous
+linear functional on `E →L[𝕜] F` factors through evaluation of the ampliation at a single
+square-summable sequence `ξ ∈ ℓ²(ℕ, E)`. -/
+theorem exists_strongDual_ampliation_apply_eq
+    (φ : StrongDual 𝕜 (ContinuousLinearMapUltrastrong 𝕜 E F)) :
+    ∃ (ξ : ℓ²(ℕ, E)) (G : StrongDual 𝕜 ℓ²(ℕ, F)),
+      ∀ A : ContinuousLinearMapUltrastrong 𝕜 E F, φ A = G (lp.ampliation ℕ 2 A.toCLM ξ) := by
+  classical
+  obtain ⟨s, C, -, hC⟩ := Seminorm.bound_of_continuous withSeminorms
+    ((normSeminorm 𝕜 𝕜).comp (φ : ContinuousLinearMapUltrastrong 𝕜 E F →ₗ[𝕜] 𝕜))
+    (continuous_norm.comp φ.continuous)
+  obtain ⟨ξ, hξ⟩ := exists_seminorm_ge_finset_sup (𝕜 := 𝕜) (F := F) s
+  let Φ : ContinuousLinearMapUltrastrong 𝕜 E F →ₗ[𝕜] ℓ²(ℕ, F) :=
+    (LinearMap.proj ξ).comp (inducingFn 𝕜 E F)
+  have hbound (A : ContinuousLinearMapUltrastrong 𝕜 E F) : ‖φ A‖ ≤ C * ‖Φ A‖ := by
+    refine (hC A).trans ?_
+    rw [smul_apply, NNReal.smul_def, smul_eq_mul]
+    gcongr
+    exact hξ A
+  -- `φ` is bounded by `C * ‖Φ ·‖`, so it factors through `Φ` and extends by Hahn–Banach.
+  let f : Module.Dual 𝕜 (LinearMap.range Φ) :=
+    (φ : ContinuousLinearMapUltrastrong 𝕜 E F →ₗ[𝕜] 𝕜).compLeftInverse Φ
+  have hf (A : ContinuousLinearMapUltrastrong 𝕜 E F) :
+      f ⟨Φ A, LinearMap.mem_range_self Φ A⟩ = φ A :=
+    LinearMap.compLeftInverse_apply_of_bdd _ _ ⟨C, hbound⟩ A (Φ A) rfl
+  obtain ⟨G, hG, -⟩ := Module.Dual.exists_continuous_extension_of_le_seminorm
+    (LinearMap.range Φ) f (p := C • normSeminorm 𝕜 ℓ²(ℕ, F))
+    (continuous_norm.const_smul (C : ℝ)) (by
+      rintro ⟨-, A, rfl⟩
+      simpa [hf, NNReal.smul_def] using hbound A)
+  exact ⟨ξ, G, fun A ↦ by rw [← hf, ← hG]; rfl⟩
 
 end ContinuousLinearMapUltrastrong
 
