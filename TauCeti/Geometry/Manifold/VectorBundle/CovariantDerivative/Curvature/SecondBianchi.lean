@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
@@ -66,34 +65,6 @@ variable
   (cov : _root_.CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
   {X Y Z : Π x : M, TangentSpace I x} {σ : Π x : M, V x}
 
-/-- The derivative of a curvature section expands into its three third-order terms. -/
-theorem covariantDerivative_curvatureOperator_apply
-    {A B C : Π y : M, TangentSpace I y}
-    (hB : CMDiff ∞ (T% B)) (hC : CMDiff ∞ (T% C)) (hσ : CMDiff ∞ (T% σ)) (x : M) :
-    cov (curvatureOperator cov B C σ) x (A x) =
-      cov (fun y ↦ cov (fun y ↦ cov σ y (C y)) y (B y)) x (A x) -
-        cov (fun y ↦ cov (fun y ↦ cov σ y (B y)) y (C y)) x (A x) -
-          cov (fun y ↦ cov σ y (mlieBracket I B C y)) x (A x) := by
-  let _ : IsManifold I (minSmoothness ℝ 3) M :=
-    IsManifold.of_le (m := minSmoothness ℝ 3) (n := ∞) (by simp)
-  have hsub {τ τ' : Π y : M, V y} (hτ : CMDiff ∞ (T% τ)) (hτ' : CMDiff ∞ (T% τ')) :
-      cov (τ - τ') x = cov τ x - cov τ' x :=
-    cov.isCovariantDerivativeOnUniv.sub (hτ.mdifferentiable (by simp) x)
-      (hτ'.mdifferentiable (by simp) x)
-  have hCσ := cov.contMDiff_apply hC hσ
-  have hBσ := cov.contMDiff_apply hB hσ
-  have hBC := cov.contMDiff_apply hB hCσ
-  have hCB := cov.contMDiff_apply hC hBσ
-  have hbrσ := cov.contMDiff_apply (contMDiff_mlieBracket hB hC) hσ
-  have hR : curvatureOperator cov B C σ =
-      (fun y ↦ cov (fun y ↦ cov σ y (C y)) y (B y)) -
-        (fun y ↦ cov (fun y ↦ cov σ y (B y)) y (C y)) -
-          fun y ↦ cov σ y (mlieBracket I B C y) := by
-    funext y
-    rw [curvatureOperator_apply, Pi.sub_apply, Pi.sub_apply]
-  rw [hR, hsub (hBC.sub_section hCB) hbrσ, hsub hBC hCB]
-  simp only [sub_apply]
-
 /-- The cyclic sum of `[∇_X, R(Y, Z)] σ + R(X, [Y, Z]) σ` vanishes for every smooth connection.
 This is the torsion-independent core of the second Bianchi identity
 `covariantDerivative_curvatureOperator_cyclic_eq_zero`. -/
@@ -118,9 +89,9 @@ theorem curvatureOperator_commutator_cyclic_eq_zero
     rw [← map_add, ← map_add, jacobi_identity_mlieBracket_apply
       (hX.of_le (by simp)).contMDiffAt (hY.of_le (by simp)).contMDiffAt
       (hZ.of_le (by simp)).contMDiffAt, map_zero]
-  rw [covariantDerivative_curvatureOperator_apply cov (A := X) hY hZ hσ x,
-    covariantDerivative_curvatureOperator_apply cov (A := Y) hZ hX hσ x,
-    covariantDerivative_curvatureOperator_apply cov (A := Z) hX hY hσ x]
+  rw [covariantDerivative_curvatureOperator_apply cov hY hZ hσ x (X x),
+    covariantDerivative_curvatureOperator_apply cov hZ hX hσ x (Y x),
+    covariantDerivative_curvatureOperator_apply cov hX hY hσ x (Z x)]
   simp only [curvatureOperator_apply]
   rw [← neg_eq_zero]
   convert hjac using 1
