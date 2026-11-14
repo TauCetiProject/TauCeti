@@ -464,9 +464,7 @@ theorem mem_commutationHexagons {x y : GridState n}
     (P : GridCommutationHexagonBetween C.column C.turnRow C.oppositeTurnRow x y) :
     P ∈ G.commutationHexagons C x y ↔
       P.toGridRectangleBetween.IsEmpty ∧ Disjoint P.coveredSquares G.XSet := by
-  cases P <;> simp [commutationHexagons,
-    GridCommutationHexagonBetween.toGridRectangleBetween,
-    GridCommutationHexagonBetween.coveredSquares]
+  cases P <;> simp [commutationHexagons]
 
 /-- The rectangle under a counted commutation hexagon carries exactly one `X`-marking, that of the
 column the hexagon cuts away. -/

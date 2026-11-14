@@ -34,6 +34,14 @@ namespace GridRectanglePentagonDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
+/-- The two rectangles share their terminal side when the rectangle and the pentagon do. -/
+private theorem first_right_eq_second_right_of_right_eq_right
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right) :
+    D.toRectangleDecomposition.first.right = D.toRectangleDecomposition.second.right := by
+  simpa only [toRectangleDecomposition_first_right, toRectangleDecomposition_second_right]
+    using hcommon
+
 /-- The two rectangles have different initial sides when they share their terminal side
 and have exactly one common side. -/
 private theorem left_ne_left_of_right_eq_right
@@ -41,10 +49,7 @@ private theorem left_ne_left_of_right_eq_right
     (hcommon : D.rectangle.right = D.pentagon.right)
     (hone : D.toRectangleDecomposition.HasOneCommonSide) :
     D.toRectangleDecomposition.first.left ≠ D.toRectangleDecomposition.second.left := by
-  have hcommon' : D.toRectangleDecomposition.first.right =
-      D.toRectangleDecomposition.second.right := by
-    simpa only [toRectangleDecomposition_first_right,
-      toRectangleDecomposition_second_right] using hcommon
+  have hcommon' := D.first_right_eq_second_right_of_right_eq_right hcommon
   rcases D.toRectangleDecomposition.side_eq_cases_of_hasOneCommonSide hone with
     ⟨_, hne⟩ | ⟨h, _⟩ | ⟨h, _⟩ | ⟨_, h⟩
   · -- first.right ≠ second.right: contradicts hcommon'.
@@ -64,10 +69,7 @@ private theorem toRectangleDecomposition_second_bottom
     (hcommon : D.rectangle.right = D.pentagon.right)
     (hone : D.toRectangleDecomposition.HasOneCommonSide) :
     D.toRectangleDecomposition.second.bottom = x D.toRectangleDecomposition.second.left := by
-  have hcommon' : D.toRectangleDecomposition.first.right =
-      D.toRectangleDecomposition.second.right := by
-    simpa only [toRectangleDecomposition_first_right,
-      toRectangleDecomposition_second_right] using hcommon
+  have hcommon' := D.first_right_eq_second_right_of_right_eq_right hcommon
   have hleft := D.left_ne_left_of_right_eq_right hcommon hone
   have hne1 : D.toRectangleDecomposition.second.left ≠
       D.toRectangleDecomposition.first.left := hleft.symm
@@ -89,10 +91,7 @@ private theorem toRectangleDecomposition_second_top
     (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.right = D.pentagon.right) :
     D.toRectangleDecomposition.second.top = x D.toRectangleDecomposition.first.left := by
-  have hcommon' : D.toRectangleDecomposition.first.right =
-      D.toRectangleDecomposition.second.right := by
-    simpa only [toRectangleDecomposition_first_right,
-      toRectangleDecomposition_second_right] using hcommon
+  have hcommon' := D.first_right_eq_second_right_of_right_eq_right hcommon
   -- D.second.top = D.middle D.second.right = D.middle D.first.right
   -- = x D.first.left via D.first.map_right.
   have htop : D.toRectangleDecomposition.middle D.toRectangleDecomposition.second.right =
@@ -133,10 +132,7 @@ private theorem turn_mem_row_span_of_terminal_side
   have hrow' : x D.toRectangleDecomposition.first.left ∈
       Grid.cIoo (x D.toRectangleDecomposition.second.left)
         (x D.toRectangleDecomposition.first.right) := by
-    have hcommon' : D.toRectangleDecomposition.first.right =
-        D.toRectangleDecomposition.second.right := by
-      simpa only [toRectangleDecomposition_first_right,
-        toRectangleDecomposition_second_right] using hcommon
+    have hcommon' := D.first_right_eq_second_right_of_right_eq_right hcommon
     have hleft := D.left_ne_left_of_right_eq_right hcommon hone
     have hempty : D.toRectangleDecomposition.first.IsEmpty ∧
         D.toRectangleDecomposition.second.IsEmpty :=
@@ -227,10 +223,7 @@ private theorem recutOfIsEmpty_second_top
         D.toRectangleDecomposition.first.left) :
     (D.recutOfIsEmpty hone hrectangle hpentagon).second.top =
       x D.toRectangleDecomposition.first.right := by
-  have hcommon' : D.toRectangleDecomposition.first.right =
-      D.toRectangleDecomposition.second.right := by
-    simpa only [toRectangleDecomposition_first_right,
-      toRectangleDecomposition_second_right] using hcommon
+  have hcommon' := D.first_right_eq_second_right_of_right_eq_right hcommon
   have hne1 : D.toRectangleDecomposition.first.right ≠
       D.toRectangleDecomposition.second.left := by
     intro h
