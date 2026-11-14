@@ -14,7 +14,6 @@ public import TauCeti.Analysis.Normed.Ring.Units
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.Data.Finset.Max
 import Mathlib.Data.Int.Associated
 import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Topology.Algebra.Ring.Compact
@@ -37,7 +36,7 @@ topological monoid, recorded here as a shortcut instance; the instance
 `TotallyDisconnectedSpace ℤ_[p]ˣ` is proved here.
 
 Two consequences of the ultrametric divisibility in `ℤ_p` are recorded as well: an element
-divides every element of no larger norm, so that a finite family of `p`-adic integers is a common
+divides every element of no larger norm, so that a nonempty family of `p`-adic integers is a common
 multiple `q • w` of a family `w` with a coordinate equal to `1`, namely at an index of maximal norm.
 This is the shape in which the exponent vector of a relator of a free pro-`p` group is read.
 
@@ -62,7 +61,7 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `PadicInt.pow_p_dvd_natCast_iff`: `p ^ n` divides a natural number in `ℤ_[p]` exactly when it
   does in `ℕ`.
 * `PadicInt.dvd_of_norm_le`: in `ℤ_[p]`, `y ∣ x` whenever `‖x‖ ≤ ‖y‖`.
-* `PadicInt.exists_apply_eq_one_and_eq_smul`: a finite family in `ℤ_[p]` is `q • w` with
+* `PadicInt.exists_apply_eq_one_and_eq_smul`: a nonempty family in `ℤ_[p]` is `q • w` with
   `w i₀ = 1` at some index `i₀`.
 * `PadicInt.units_neg_one_ne_one`: `-1 ≠ 1` in `ℤ_[p]ˣ`.
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
@@ -88,7 +87,7 @@ calculation for first continuous cohomology with trivial integer coefficients.
   valuation.
 * `Padic.valuation_p_pow_mul_intCast`: the valuation of `p ^ n m`, for an integer `m` prime to
   `p`, is `n`.
-* `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a positive integer `m` is at least
+* `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a natural number `m` is at least
   `1 / m`.
 * `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
@@ -290,18 +289,14 @@ theorem dvd_of_norm_le {x y : ℤ_[p]} (h : ‖x‖ ≤ ‖y‖) : y ∣ x := by
   have := (Units.mul_left_dvd (u := unitCoeff hy)).2 hx
   rwa [← unitCoeff_spec hy] at this
 
-/-- **A finite family of `p`-adic integers is a multiple of a family with a coordinate `1`**: for
-`v : ι → ℤ_p` with `ι` finite and nonempty there are an index `i₀`, a scalar `q` and a family `w`
-with `w i₀ = 1` and `v = q • w`. One may take `i₀` of maximal norm and `q = v i₀`, which then
-divides every coordinate. -/
-theorem exists_apply_eq_one_and_eq_smul {ι : Type*} [Finite ι] [Nonempty ι] (v : ι → ℤ_[p]) :
+/-- **A nonempty family of `p`-adic integers is a multiple of a family with a coordinate `1`**: for
+`v : ι → ℤ_p` with `ι` nonempty there are an index `i₀`, a scalar `q` and a family `w`
+with `w i₀ = 1` and `v = q • w`. -/
+theorem exists_apply_eq_one_and_eq_smul {ι : Type*} [Nonempty ι] (v : ι → ℤ_[p]) :
     ∃ (i₀ : ι) (q : ℤ_[p]) (w : ι → ℤ_[p]), w i₀ = 1 ∧ v = q • w := by
-  classical
-  cases nonempty_fintype ι
-  obtain ⟨i₀, -, hi₀⟩ :=
-    Finset.exists_max_image Finset.univ (fun i ↦ ‖v i‖) Finset.univ_nonempty
-  obtain ⟨w, hw, hv⟩ :=
-    TauCeti.exists_eq_smul_of_forall_dvd fun i ↦ dvd_of_norm_le (hi₀ i (Finset.mem_univ i))
+  obtain ⟨i₀, hi₀⟩ := ENat.exists_eq_iInf fun i : ι ↦ IsDiscreteValuationRing.addVal ℤ_[p] (v i)
+  obtain ⟨w, hw, hv⟩ := TauCeti.exists_eq_smul_of_forall_dvd (v := v) (x₀ := i₀) fun i ↦
+    IsDiscreteValuationRing.addVal_le_iff_dvd.mp (hi₀.trans_le (iInf_le _ i))
   exact ⟨i₀, v i₀, w, hw, hv⟩
 
 end PadicInt
@@ -366,13 +361,16 @@ theorem valuation_p_pow_mul_intCast (n : ℕ) {m : ℤ} (hm : ¬(p : ℤ) ∣ m)
   rwa [Padic.valuation_intCast, padicValInt.eq_zero_of_not_dvd hm, Nat.cast_zero, add_zero,
     zpow_natCast] at h
 
-/-- The `p`-adic norm of a positive integer `m` is at least `1 / m`. -/
-theorem inv_natCast_le_norm_natCast (m : ℕ) [NeZero m] : (m : ℝ)⁻¹ ≤ ‖(m : ℚ_[p])‖ := by
-  rw [Padic.norm_eq_zpow_neg_valuation (Nat.cast_ne_zero.mpr (NeZero.ne m)),
+/-- The `p`-adic norm of a natural number `m` is at least `1 / m`. For `m = 0` both sides are `0`
+by the convention `0⁻¹ = 0`. -/
+theorem inv_natCast_le_norm_natCast (m : ℕ) : (m : ℝ)⁻¹ ≤ ‖(m : ℚ_[p])‖ := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp
+  rw [Padic.norm_eq_zpow_neg_valuation (Nat.cast_ne_zero.mpr hm),
     Padic.valuation_natCast, _root_.zpow_neg, zpow_natCast]
   gcongr
   · exact pow_pos (by exact_mod_cast (Fact.out : p.Prime).pos) _
-  · exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero (NeZero.ne m)) (pow_multiplicity_dvd p m)
+  · exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero hm) (pow_multiplicity_dvd p m)
 
 /-- The `p`-adic norm of a nonzero natural number `m` is `p ^ (-v_p(m))`. -/
 theorem norm_natCast_eq_zpow {m : ℕ} (hm : m ≠ 0) :
