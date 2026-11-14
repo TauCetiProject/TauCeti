@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.RepresentationTheory.Intertwining
+import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # Intertwining maps between direct sums of representations
@@ -14,8 +15,10 @@ public import Mathlib.RepresentationTheory.Intertwining
 For families of representations `ρ i` and `σ i` of a monoid `G`, Mathlib forms the direct-sum
 representations `Representation.directSum ρ` and `Representation.directSum σ`. This file makes
 the direct sum functorial in intertwining maps, and reindexes a direct sum of representations
-along an equivalence of index types. Neither construction involves the group algebra, so the
-scalars only need to form a semiring.
+along an equivalence of index types. It also includes each summand into the direct sum, and
+transports a direct-sum decomposition along an equivalence to an internal decomposition into
+subrepresentations. None of these constructions involves the group algebra, so the scalars only
+need to form a semiring.
 
 ## Main definitions
 
@@ -23,6 +26,13 @@ scalars only need to form a semiring.
   compatible with identities and composition.
 * `Representation.directSumEquivCongrLeft`: reindexing a direct sum of representations along an
   equivalence of index types; its underlying linear equivalence is `DirectSum.lequivCongrLeft`.
+* `Representation.IntertwiningMap.lof`: the inclusion of a summand into a direct sum of
+  representations; its underlying linear map is `DirectSum.lof`.
+
+## Main results
+
+* `Representation.Equiv.exists_isInternal`: a representation equivalent to a direct sum of
+  representations `σ i` is the internal direct sum of subrepresentations equivalent to the `σ i`.
 -/
 
 public section
@@ -126,5 +136,48 @@ theorem directSumEquivCongrLeft_symm_lof [DecidableEq ι] [DecidableEq κ] (j : 
   DirectSum.lequivCongrLeft_symm_lof k
 
 end Reindex
+
+section Internal
+
+variable [DecidableEq ι]
+
+variable (ρ : ∀ i, Representation k G (V i)) in
+/-- **The inclusion of a summand** into a direct sum of representations. The underlying linear
+map is `DirectSum.lof`. -/
+noncomputable def IntertwiningMap.lof (i : ι) : IntertwiningMap (ρ i) (directSum ρ) where
+  toLinearMap := DirectSum.lof k ι V i
+  isIntertwining' g := by
+    ext v
+    simp [directSum_apply]
+
+variable (ρ : ∀ i, Representation k G (V i)) in
+@[simp]
+theorem IntertwiningMap.lof_apply (i : ι) (v : V i) :
+    IntertwiningMap.lof ρ i v = DirectSum.lof k ι V i v :=
+  (rfl)
+
+/-- **An internal direct-sum decomposition from an equivalence.** If `ρ` is equivalent to the
+direct sum of a family of representations `σ i`, then the carrier of `ρ` is the internal direct
+sum of a family of subrepresentations, the one of index `i` being equivalent to `σ i`. They are
+the images of the summands under the inverse equivalence. -/
+theorem Equiv.exists_isInternal {U : Type*} [AddCommMonoid U] [Module k U]
+    {ρ : Representation k G U} {σ : ∀ i, Representation k G (V i)} (φ : ρ.Equiv (directSum σ)) :
+    ∃ W : ι → Subrepresentation ρ, IsInternal (fun i ↦ (W i).toSubmodule) ∧
+      ∀ i, Nonempty ((W i).toRepresentation.Equiv (σ i)) := by
+  -- The summand of index `i`, included into `ρ` through `φ.symm`.
+  let f i : IntertwiningMap (σ i) ρ := φ.symm.toIntertwiningMap.comp (IntertwiningMap.lof σ i)
+  -- `lof` has the left inverse `component`.
+  have hf i : Function.Injective (f i) :=
+    φ.symm.toLinearEquiv.injective.comp fun x y h ↦ by
+      simpa using congrArg (component k ι V i) h
+  let e i : (σ i).Equiv (f i).range.toRepresentation :=
+    .mk (LinearEquiv.ofInjective (f i).toLinearMap (hf i)) fun g ↦
+      LinearMap.ext fun x ↦ Subtype.ext congr($((f i).isIntertwining' g) x)
+  exact ⟨fun i ↦ (f i).range,
+    TauCeti.DirectSum.isInternal_of_lof (fun i ↦ (e i).toLinearEquiv) φ.symm.toLinearEquiv
+      fun _ _ ↦ rfl,
+    fun i ↦ ⟨(e i).symm⟩⟩
+
+end Internal
 
 end Representation

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Multiplicity
-import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.RepresentationTheory.Rep.DirectSum.AsModule
 
 /-!
@@ -29,7 +28,8 @@ in three forms:
 * as an isomorphism in `FDRep k G`, the categorical mirror;
 * internally, as a decomposition of the carrier of `ρ` into an internal direct sum of
   subrepresentations, `m_ρ(i)` of them equivalent to `Zᵢ`. They are the images of the summands of
-  the direct sum under the equivalence of the first form.
+  the direct sum under the equivalence of the first form, by the general
+  `Representation.Equiv.exists_isInternal`.
 
 Only the existence of these decompositions is intrinsic: choosing one amounts to choosing bases of
 the multiplicity spaces.
@@ -89,24 +89,8 @@ particular `m_ρ(i)` of the summands are equivalent to `Zᵢ`. -/
 theorem exists_isInternal_equiv_irreducibleRepresentation [FiniteDimensional k V] :
     ∃ W : (Σ i, Fin (ρ.intrinsicMultiplicity i)) → Subrepresentation ρ,
       IsInternal (fun p ↦ (W p).toSubmodule) ∧
-        ∀ p, Nonempty ((W p).toRepresentation.Equiv (irreducibleRepresentation k p.1)) := by
-  classical
-  obtain ⟨φ⟩ := ρ.nonempty_equiv_directSum_irreducibleRepresentation
-  let σ := fun p : Σ i, Fin (ρ.intrinsicMultiplicity i) ↦ irreducibleRepresentation k p.1
-  -- The summand at `p`, included into `ρ` through the regrouping.
-  let f p : IntertwiningMap (σ p) ρ :=
-    φ.symm.toIntertwiningMap.comp
-      ⟨lof k _ (fun q : Σ i, Fin (ρ.intrinsicMultiplicity i) ↦ Fin (characterDegree k q.1) → k) p,
-        fun g ↦ LinearMap.ext fun x ↦ by simp [σ]⟩
-  -- `lof` has the left inverse `component`.
-  have hf p : Function.Injective (f p) :=
-    φ.symm.toLinearEquiv.injective.comp fun x y h ↦ by
-      simpa using congrArg (component k _ _ p) h
-  let e p := (f p).equivOfRange (hf p) (P := (f p).range) rfl
-  exact ⟨fun p ↦ (f p).range,
-    TauCeti.DirectSum.isInternal_of_lof (fun p ↦ (e p).toLinearEquiv) φ.symm.toLinearEquiv
-      fun p x ↦ ((f p).equivOfRange_apply_coe (hf p) rfl x).symm,
-    fun p ↦ ⟨(e p).symm⟩⟩
+        ∀ p, Nonempty ((W p).toRepresentation.Equiv (irreducibleRepresentation k p.1)) :=
+  ρ.nonempty_equiv_directSum_irreducibleRepresentation.elim Equiv.exists_isInternal
 
 end Representation
 
