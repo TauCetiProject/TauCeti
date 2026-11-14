@@ -60,6 +60,10 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
 * `TauCeti.pow_eq_sum_stirlingSecond_mul_descPochhammer_eval`: in any ring, `x ^ m` is
   the sum of the falling factorials of degree `j` at `x` weighted by the Stirling numbers of the
   second kind `S(m, j)`.
+* `TauCeti.neg_one_pow_mul_ascPochhammer_eval_neg_natCast` and
+  `TauCeti.neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial`: at a nonpositive integer
+  `-n`, `(-1) ^ m * (ascPochhammer R m).eval (-n)` equals `n.descFactorial m` in any ring, and
+  dividing by `m!` over a characteristic-zero division ring gives `n.choose m`.
 -/
 
 public section
@@ -312,5 +316,23 @@ theorem pow_eq_sum_stirlingSecond_mul_descPochhammer_eval {R : Type*} [Ring R] (
   have hD (j : ℕ) : aeval x (descPochhammer ℤ j) = (descPochhammer R j).eval x := by
     rw [aeval_def, algebraMap_int_eq, eval₂_eq_eval_map, descPochhammer_map]
   simpa [hD] using congrArg (aeval x) hP
+
+/-! ### Ascending Pochhammer polynomials at nonpositive integers -/
+
+/-- At a nonpositive integer `-n`, multiplying `(ascPochhammer R m).eval (-n)` by `(-1) ^ m` gives
+the descending factorial `n.descFactorial m` in any ring (and `0` for `m > n`). -/
+theorem neg_one_pow_mul_ascPochhammer_eval_neg_natCast {R : Type*} [Ring R] (n m : ℕ) :
+    (-1 : R) ^ m * (ascPochhammer R m).eval (-(n : R)) = (n.descFactorial m : R) := by
+  rw [ascPochhammer_eval_neg_eq_descPochhammer, ← mul_assoc, ← pow_add, ← two_mul, pow_mul,
+    neg_one_sq, one_pow, one_mul, descPochhammer_eval_eq_descFactorial]
+
+/-- Over a division ring of characteristic zero, the normalized ascending Pochhammer coefficient
+`(-1) ^ m * (-n)_m / m!` at a nonpositive integer `-n` equals the binomial coefficient `n.choose m`
+(including `0` for `m > n`). -/
+theorem neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial
+    {K : Type*} [DivisionRing K] [CharZero K] (n m : ℕ) :
+    (-1 : K) ^ m * (ascPochhammer K m).eval (-(n : K)) / (m.factorial : K) = (n.choose m : K) := by
+  rw [neg_one_pow_mul_ascPochhammer_eval_neg_natCast, ← descPochhammer_eval_eq_descFactorial,
+    ← Nat.cast_choose_eq_descPochhammer_div]
 
 end TauCeti

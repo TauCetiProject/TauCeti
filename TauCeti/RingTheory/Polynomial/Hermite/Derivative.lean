@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.RingTheory.Polynomial.Hermite.Basic
 
 /-!
@@ -18,11 +19,14 @@ form. This file fills that gap with the classical lowering identity
 
   `derivative (hermite (n + 1)) = (n + 1) • hermite n`,
 
-its `n`-indexed restatement `derivative (hermite n) = n • hermite (n - 1)`, the iterated form
-`derivative^[k] (hermite n) = n.descFactorial k • hermite (n - k)`, and the three-term recurrence
+its `n`-indexed restatement `derivative (hermite n) = n • hermite (n - 1)`, the iterated and Hasse
+derivative forms `derivative^[k] (hermite n) = n.descFactorial k • hermite (n - k)` and
+`hasseDeriv k (hermite n) = n.choose k • hermite (n - k)`, and the three-term recurrence
 
   `hermite (n + 2) = X * hermite (n + 1) - (n + 1) • hermite n`
 
+(together with its evaluated multiplication form
+`x * aeval x (hermite n) = aeval x (hermite (n + 1)) + n * aeval x (hermite (n - 1))`)
 obtained by eliminating the derivative from Mathlib's defining recursion. The lowering identity
 is the algebraic content behind the weighted-pairing integration-by-parts recursion
 `∫ p · H_{n+1} · w = ∫ p' · Hₙ · w` and behind the Hermite generating function, and the three-term
@@ -77,12 +81,30 @@ theorem iterate_derivative_hermite (n k : ℕ) :
     rw [Function.iterate_succ_apply', ih, derivative_smul, derivative_hermite, smul_smul,
       Nat.descFactorial_succ, Nat.sub_sub, mul_comm]
 
+/-- The `k`-th Hasse derivative of the probabilists' Hermite polynomial `hermite n` in `ℤ[X]` is
+`n.choose k • hermite (n - k)`. For `k > n` both sides vanish. -/
+@[simp]
+theorem hasseDeriv_hermite (n k : ℕ) :
+    hasseDeriv k (hermite n) = n.choose k • hermite (n - k) := by
+  apply smul_right_injective ℤ[X] k.factorial_ne_zero
+  dsimp only
+  have h1 : k.factorial • hasseDeriv k (hermite n) = derivative^[k] (hermite n) :=
+    congr_fun (factorial_smul_hasseDeriv (R := ℤ) (k := k)) (hermite n)
+  rw [h1, iterate_derivative_hermite, Nat.descFactorial_eq_factorial_mul_choose, mul_smul]
+
 /-- **Three-term recurrence for the Hermite polynomials.** Eliminating the derivative from Mathlib's
 defining recursion `hermite_succ` gives the classical relation `H_{n+2} = X·H_{n+1} - (n+1)·Hₙ`,
 i.e. `H_{m+1} = X·H_m - m·H_{m-1}`. -/
 theorem hermite_add_two (n : ℕ) :
     hermite (n + 2) = X * hermite (n + 1) - (n + 1) • hermite n := by
   rw [hermite_succ (n + 1), derivative_hermite_succ]
+
+/-- Evaluated multiplication-recurrence for the Hermite polynomials in any ring:
+`x · Hₙ(x) = H_{n+1}(x) + n · H_{n-1}(x)`, including at `n = 0`. -/
+theorem mul_hermite_aeval {R : Type*} [Ring R] (n : ℕ) (x : R) :
+    x * aeval x (hermite n) = aeval x (hermite (n + 1)) + n * aeval x (hermite (n - 1)) := by
+  rw [hermite_succ, derivative_hermite, map_sub, map_mul, aeval_X, map_nsmul, nsmul_eq_mul,
+    sub_add_cancel]
 
 /-! ## Parity -/
 

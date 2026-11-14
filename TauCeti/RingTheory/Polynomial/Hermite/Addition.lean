@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Taylor
+public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 public import Mathlib.RingTheory.Polynomial.Hermite.Basic
 
+import TauCeti.Algebra.LinearRecurrence.Connection
 import TauCeti.RingTheory.Polynomial.Hermite.Derivative
 
 /-!
@@ -19,8 +21,6 @@ without any characteristic-zero or invertibility assumptions.
 
 ## Main results
 
-* `TauCeti.hasseDeriv_hermite`: the `m`-th Hasse derivative of `hermite n` in `ℤ[X]` is
-  `n.choose m • hermite (n - m)`.
 * `TauCeti.taylor_map_hermite` and `TauCeti.comp_X_add_C_map_hermite`: polynomial Taylor and
   translation-shift expansions of `hermite n` over any commutative ring.
 * `TauCeti.hermite_aeval_add` and `TauCeti.hermite_aeval_sub`: the Appell translation addition
@@ -40,12 +40,10 @@ without any characteristic-zero or invertibility assumptions.
 
 ## Proof outline
 
-The Hasse derivative identity follows from `Polynomial.iterate_derivative_hermite` and
-`Polynomial.factorial_smul_hasseDeriv` using torsion-freeness of `ℤ[X]`, and immediately yields the
-Taylor and translation formulas. For linear combinations and scaling, we prove a general connection
-identity between any two sequences satisfying three-term recurrences
-`z P_m = P_{m+1} + m c₁ P_{m-1}` and `z Q_m = Q_{m+1} + m c₂ Q_{m-1}` at variances `c₁` and `c₂`,
-together with the three-term recurrence at variance `a^2 + b^2` for the binomial Hermite sum.
+The Taylor and Appell translation formulas follow directly from `Polynomial.hasseDeriv_hermite`.
+For linear combinations and scaling, we establish the three-term recurrence at variance `a^2 + b^2`
+for the binomial Hermite sum using `Polynomial.mul_hermite_aeval`, and combine it with the general
+variance-connection identity `TauCeti.eq_sum_choose_mul_doubleFactorial_smul_of_mul_eq_add`.
 Specializing `(c₁, c₂)` yields Feldheim–Carlitz, Runge's rotational addition theorem, the scaling
 theorem, and monomial inversion uniformly over every commutative ring.
 
@@ -67,19 +65,7 @@ namespace TauCeti
 open Polynomial
 open scoped Nat
 
-/-! ### Hasse derivatives and Appell translation -/
-
-/-- The `m`-th Hasse derivative of the probabilists' Hermite polynomial `hermite n` in `ℤ[X]` is
-`n.choose m • hermite (n - m)`. For `m > n` both sides vanish. -/
-@[simp]
-theorem hasseDeriv_hermite (n m : ℕ) :
-    hasseDeriv m (hermite n) = n.choose m • hermite (n - m) := by
-  apply smul_right_injective ℤ[X] (Nat.factorial_ne_zero m)
-  dsimp only
-  have h1 : m ! • hasseDeriv m (hermite n) = derivative^[m] (hermite n) :=
-    congr_fun (factorial_smul_hasseDeriv (R := ℤ) (k := m)) (hermite n)
-  rw [h1, Polynomial.iterate_derivative_hermite, Nat.descFactorial_eq_factorial_mul_choose,
-    mul_smul]
+/-! ### Taylor shift and Appell translation -/
 
 /-- Polynomial Taylor expansion of `hermite n` at `r` over any commutative ring `R`. -/
 theorem taylor_map_hermite {R : Type*} [CommRing R] (n : ℕ) (r : R) :
@@ -133,14 +119,7 @@ theorem comp_X_add_C_map_hermite {R : Type*} [CommRing R] (n : ℕ) (y : R) :
       congr 1
     rw [hmap, ← C_pow, mul_comm]
 
-/-! ### Variance-connection recurrence and binomial Hermite sums -/
-
-/-- Multiplication by `z` on `aeval z (hermite k)` splits into raising and lowering terms:
-`z He_k(z) = He_{k+1}(z) + k He_{k-1}(z)`, including at `k = 0`. -/
-private lemma mul_hermite_aeval {R : Type*} [CommRing R] (k : ℕ) (z : R) :
-    z * aeval z (hermite k) = aeval z (hermite (k + 1)) + k * aeval z (hermite (k - 1)) := by
-  rw [hermite_succ, derivative_hermite, map_sub, map_mul, aeval_X, map_nsmul, nsmul_eq_mul]
-  ring
+/-! ### Binomial Hermite sums -/
 
 /-- The bivariate binomial sum `∑_{m=0}^n C(n, m) a^{n-m} b^m He_{n-m}(x) He_m(y)`. -/
 private noncomputable def binomHermiteSum {R : Type*} [CommRing R] (a b x y : R) (n : ℕ) : R :=
@@ -312,146 +291,6 @@ private lemma mul_binomHermiteSum {R : Type*} [CommRing R] (a b x y : R) (n : �
     binomHermiteSum_lower_right]
   ring
 
-/-- Auxiliary connection sum indexed up to `n`; terms with `2 * k > n` vanish. -/
-private def connectionSum {R : Type*} [CommRing R] (d : R) (Q : ℕ → R) (n : ℕ) : R :=
-  ∑ k ∈ Finset.range (n + 1),
-    (n.choose (2 * k) * (2 * k - 1)‼) • (d ^ k * Q (n - 2 * k))
-
-private lemma connectionSum_eq_sum_div_two {R : Type*} [CommRing R] (d : R) (Q : ℕ → R) (n : ℕ) :
-    connectionSum d Q n =
-      ∑ k ∈ Finset.range (n / 2 + 1),
-        (n.choose (2 * k) * (2 * k - 1)‼) • (d ^ k * Q (n - 2 * k)) := by
-  unfold connectionSum
-  refine (Finset.sum_subset (Finset.range_mono (by lia)) fun k _ hk => ?_).symm
-  have hlt : n < 2 * k := by simp only [Finset.mem_range, not_lt] at hk; lia
-  simp [Nat.choose_eq_zero_of_lt hlt]
-
-private lemma connectionSum_mul_expand {R : Type*} [CommRing R] {z c₂ : R} (d : R) {Q : ℕ → R}
-    (hQ : ∀ m, z * Q m = Q (m + 1) + m * c₂ * Q (m - 1)) (n : ℕ) :
-    z * connectionSum d Q (n + 1) =
-      (∑ k ∈ Finset.range (n + 2),
-          (((n + 1).choose (2 * k) * (2 * k - 1)‼ : ℕ) : R) *
-            (d ^ k * Q (n + 2 - 2 * k))) +
-        (∑ k ∈ Finset.range (n + 2),
-          (((n + 1).choose (2 * k) * (n + 1 - 2 * k) * (2 * k - 1)‼ : ℕ) : R) *
-            (c₂ * d ^ k * Q (n - 2 * k))) := by
-  unfold connectionSum
-  simp_rw [nsmul_eq_mul]
-  rw [Finset.mul_sum, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  rcases le_or_gt (2 * k) (n + 1) with hle | hgt
-  · have hsub1 : n + 1 - 2 * k + 1 = n + 2 - 2 * k := by lia
-    have hsub2 : n + 1 - 2 * k - 1 = n - 2 * k := by lia
-    have hQm := hQ (n + 1 - 2 * k)
-    rw [hsub1, hsub2] at hQm
-    calc
-      z * ((((n + 1).choose (2 * k) * (2 * k - 1)‼ : ℕ) : R) * (d ^ k * Q (n + 1 - 2 * k))) =
-          (((n + 1).choose (2 * k) * (2 * k - 1)‼ : ℕ) : R) * d ^ k *
-            (z * Q (n + 1 - 2 * k)) := by ring
-      _ = _ := by
-        rw [hQm]
-        push_cast
-        ring
-  · simp [Nat.choose_eq_zero_of_lt hgt]
-
-private lemma connectionSum_lower_c₁ {R : Type*} [CommRing R] (c₁ d : R) (Q : ℕ → R) (n : ℕ) :
-    (∑ k ∈ Finset.range (n + 2),
-        (((n + 1).choose (2 * k) * (n + 1 - 2 * k) * (2 * k - 1)‼ : ℕ) : R) *
-          (c₁ * d ^ k * Q (n - 2 * k))) =
-      (n + 1 : ℕ) * c₁ * connectionSum d Q n := by
-  unfold connectionSum
-  simp_rw [nsmul_eq_mul]
-  rw [Finset.sum_range_succ _ (n + 1)]
-  have htop : (n + 1).choose (2 * (n + 1)) = 0 := Nat.choose_eq_zero_of_lt (by lia)
-  rw [htop, zero_mul, zero_mul, Nat.cast_zero, zero_mul, add_zero, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  have hbinom : (n + 1).choose (2 * k) * (n + 1 - 2 * k) = n.choose (2 * k) * (n + 1) :=
-    (Nat.choose_mul_succ_eq n (2 * k)).symm
-  rw [hbinom]
-  push_cast
-  ring
-
-private lemma connectionSum_raise_add_diff {R : Type*} [CommRing R] (d : R) (Q : ℕ → R) (n : ℕ) :
-    (∑ k ∈ Finset.range (n + 2),
-        (((n + 1).choose (2 * k) * (2 * k - 1)‼ : ℕ) : R) *
-          (d ^ k * Q (n + 2 - 2 * k))) +
-      (∑ k ∈ Finset.range (n + 2),
-        (((n + 1).choose (2 * k) * (n + 1 - 2 * k) * (2 * k - 1)‼ : ℕ) : R) *
-          (d * d ^ k * Q (n - 2 * k))) =
-      connectionSum d Q (n + 2) := by
-  unfold connectionSum
-  simp_rw [nsmul_eq_mul]
-  rw [Finset.sum_range_succ' _ (n + 1), Finset.sum_range_succ' _ (n + 2)]
-  simp only [Nat.mul_zero, Nat.sub_zero, Nat.choose_zero_right, pow_zero, one_mul]
-  rw [Finset.sum_range_succ _ (n + 1), Finset.sum_range_succ _ (n + 1)]
-  have htop1 : (n + 1).choose (2 * (n + 1)) = 0 := Nat.choose_eq_zero_of_lt (by lia)
-  have htop2 : (n + 2).choose (2 * (n + 1 + 1)) = 0 := Nat.choose_eq_zero_of_lt (by lia)
-  rw [htop1, htop2]
-  simp only [zero_mul, Nat.cast_zero, add_zero]
-  have hcomb :
-      (∑ k ∈ Finset.range (n + 1),
-          (((n + 1).choose (2 * (k + 1)) * (2 * (k + 1) - 1)‼ : ℕ) : R) *
-            (d ^ (k + 1) * Q (n + 2 - 2 * (k + 1)))) +
-        (∑ k ∈ Finset.range (n + 1),
-          (((n + 1).choose (2 * k) * (n + 1 - 2 * k) * (2 * k - 1)‼ : ℕ) : R) *
-            (d * d ^ k * Q (n - 2 * k))) =
-        ∑ k ∈ Finset.range (n + 1),
-          (((n + 2).choose (2 * (k + 1)) * (2 * (k + 1) - 1)‼ : ℕ) : R) *
-            (d ^ (k + 1) * Q (n + 2 - 2 * (k + 1))) := by
-    rw [← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun k _ => ?_
-    have hodd : 2 * (k + 1) - 1 = 2 * k + 1 := by lia
-    have hsub : n + 2 - 2 * (k + 1) = n - 2 * k := by lia
-    have hnat :
-        (n + 1).choose (2 * (k + 1)) * (2 * (k + 1) - 1)‼ +
-            (n + 1).choose (2 * k) * (n + 1 - 2 * k) * (2 * k - 1)‼ =
-          (n + 2).choose (2 * (k + 1)) * (2 * (k + 1) - 1)‼ := by
-      rw [hodd, ← Nat.choose_succ_right_eq (n + 1) (2 * k), mul_assoc,
-        Nat.doubleFactorial_add_one (2 * k), mul_add 2 k 1,
-        ← add_mul, add_comm ((n + 1).choose (2 * k + 2)),
-        ← Nat.choose_succ_succ' (n + 1) (2 * k + 1)]
-    rw [hsub, pow_succ', ← add_mul, ← Nat.cast_add, hnat]
-  rw [add_right_comm, hcomb]
-
-/-- One-step recurrence for `connectionSum`: if `z Q_m = Q_{m+1} + m c₂ Q_{m-1}`, then
-`S_n = connectionSum (c₂ - c₁) Q n` satisfies `z S_{n+1} = S_{n+2} + (n + 1) c₁ S_n`. -/
-private lemma mul_connectionSum_succ {R : Type*} [CommRing R] {z c₁ c₂ : R} {Q : ℕ → R}
-    (hQ : ∀ m, z * Q m = Q (m + 1) + m * c₂ * Q (m - 1)) (n : ℕ) :
-    z * connectionSum (c₂ - c₁) Q (n + 1) =
-      connectionSum (c₂ - c₁) Q (n + 2) + (n + 1 : ℕ) * c₁ * connectionSum (c₂ - c₁) Q n := by
-  set d : R := c₂ - c₁
-  have hstep1 := connectionSum_mul_expand d hQ n
-  have hstep2 := connectionSum_lower_c₁ c₁ d Q n
-  have hstep3 := connectionSum_raise_add_diff d Q n
-  have hc₂ : ∀ k, c₂ * d ^ k * Q (n - 2 * k) =
-      c₁ * d ^ k * Q (n - 2 * k) + d * d ^ k * Q (n - 2 * k) := fun k => by
-    dsimp [d]; ring
-  simp_rw [hc₂, mul_add, Finset.sum_add_distrib] at hstep1
-  rw [hstep1, hstep2, ← add_assoc, add_right_comm _ ((n + 1 : ℕ) * c₁ * _), hstep3, add_comm]
-
-/-- **Variance-connection master identity.** Any two sequences `P, Q : ℕ → R` starting at `1` and
-satisfying `z P_m = P_{m+1} + m c₁ P_{m-1}` and `z Q_m = Q_{m+1} + m c₂ Q_{m-1}` are related by
-`P_n = ∑_{k=0}^{⌊n/2⌋} C(n, 2k) (2k - 1)‼ (c₂ - c₁)^k Q_{n - 2k}`. -/
-private lemma eq_connectionSum_of_recurrence {R : Type*} [CommRing R] {z c₁ c₂ : R}
-    {P Q : ℕ → R} (hP0 : P 0 = 1) (hQ0 : Q 0 = 1)
-    (hP : ∀ m, z * P m = P (m + 1) + m * c₁ * P (m - 1))
-    (hQ : ∀ m, z * Q m = Q (m + 1) + m * c₂ * Q (m - 1)) (n : ℕ) :
-    P n = ∑ k ∈ Finset.range (n / 2 + 1),
-      (n.choose (2 * k) * (2 * k - 1)‼) • ((c₂ - c₁) ^ k * Q (n - 2 * k)) := by
-  rw [← connectionSum_eq_sum_div_two]
-  induction n using Nat.twoStepInduction with
-  | zero =>
-    simp [connectionSum, hP0, hQ0]
-  | one =>
-    have hP1 : P 1 = z := by simpa [hP0] using (hP 0).symm
-    have hQ1 : Q 1 = z := by simpa [hQ0] using (hQ 0).symm
-    simp [connectionSum, Finset.sum_range_succ, hP1, hQ1]
-  | more n ih0 ih1 =>
-    have hP_step := hP (n + 1)
-    have hS_step := mul_connectionSum_succ (c₁ := c₁) hQ n
-    rw [Nat.add_sub_cancel, ih0, ih1] at hP_step
-    exact add_right_cancel (hP_step.symm.trans hS_step)
-
 /-! ### Linear-combination, rotational addition, scaling, and inversion theorems -/
 
 /-- **Feldheim–Carlitz linear-combination theorem** (DLMF 18.18.13) for the probabilists' Hermite
@@ -466,11 +305,11 @@ theorem hermite_aeval_mul_add_mul {R : Type*} [CommRing R] (n : ℕ) (a b x y : 
               (n - 2 * k).choose m •
                 (a ^ (n - 2 * k - m) * b ^ m *
                   aeval x (hermite (n - 2 * k - m)) * aeval y (hermite m))) := by
-  refine eq_connectionSum_of_recurrence
+  refine eq_sum_choose_mul_doubleFactorial_smul_of_mul_eq_add
     (z := a * x + b * y) (c₁ := 1) (c₂ := a ^ 2 + b ^ 2)
     (P := fun m => aeval (a * x + b * y) (hermite m))
     (Q := binomHermiteSum a b x y)
-    (by simp) (binomHermiteSum_zero a b x y)
+    (by simp [binomHermiteSum_zero])
     (fun m => by simpa only [mul_one] using mul_hermite_aeval m (a * x + b * y))
     (mul_binomHermiteSum a b x y) n
 
@@ -483,11 +322,11 @@ theorem sum_choose_smul_hermite_aeval_mul {R : Type*} [CommRing R] (n : ℕ) (a 
       ∑ k ∈ Finset.range (n / 2 + 1),
         (n.choose (2 * k) * (2 * k - 1)‼) •
           ((1 - a ^ 2 - b ^ 2) ^ k * aeval (a * x + b * y) (hermite (n - 2 * k))) := by
-  have h := eq_connectionSum_of_recurrence
+  have h := eq_sum_choose_mul_doubleFactorial_smul_of_mul_eq_add
     (z := a * x + b * y) (c₁ := a ^ 2 + b ^ 2) (c₂ := 1)
     (P := binomHermiteSum a b x y)
     (Q := fun m => aeval (a * x + b * y) (hermite m))
-    (binomHermiteSum_zero a b x y) (by simp)
+    (by simp [binomHermiteSum_zero])
     (mul_binomHermiteSum a b x y)
     (fun m => by simpa only [mul_one] using mul_hermite_aeval m (a * x + b * y)) n
   simpa [binomHermiteSum, sub_sub] using h
@@ -541,11 +380,11 @@ theorem hermite_aeval_mul {R : Type*} [CommRing R] (n : ℕ) (c x : R) :
         (c * x) * (c ^ (m + 1) * aeval x (hermite (m + 1))) =
             c ^ (m + 2) * (x * aeval x (hermite (m + 1))) := by ring
         _ = _ := by rw [hm]; ring
-  have h := eq_connectionSum_of_recurrence
+  have h := eq_sum_choose_mul_doubleFactorial_smul_of_mul_eq_add
     (z := c * x) (c₁ := 1) (c₂ := c ^ 2)
     (P := fun m => aeval (c * x) (hermite m))
     (Q := fun m => c ^ m * aeval x (hermite m))
-    (by simp) (by simp)
+    (by simp)
     (fun m => by simpa only [mul_one] using mul_hermite_aeval m (c * x))
     hQ n
   rw [h]
@@ -564,11 +403,11 @@ theorem X_pow_eq_sum_hermite (n : ℕ) :
     intro m
     rw [hermite_succ, derivative_hermite, nsmul_eq_mul]
     ring
-  have h := eq_connectionSum_of_recurrence
+  have h := eq_sum_choose_mul_doubleFactorial_smul_of_mul_eq_add
     (R := ℤ[X]) (z := X) (c₁ := 0) (c₂ := 1)
     (P := fun m => (X : ℤ[X]) ^ m)
     (Q := hermite)
-    (by simp) (by simp)
+    (by simp)
     (fun m => by simp [pow_succ'])
     hstep n
   simpa using h

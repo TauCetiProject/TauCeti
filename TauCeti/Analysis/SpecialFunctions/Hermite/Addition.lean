@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.RingTheory.Polynomial.Hermite.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 
+import TauCeti.Analysis.SpecialFunctions.Pochhammer
 import TauCeti.RingTheory.Polynomial.Hermite.Addition
 import TauCeti.RingTheory.Polynomial.Hermite.Derivative
 
@@ -228,64 +229,6 @@ theorem exp_neg_sq_div_four_mul_hermite_aeval_mul_cos_add_mul_sin (n : ℕ) (t x
 
 /-! ### Pochhammer–`tan t` rotational series (`HasSum` and absolute convergence) -/
 
-private lemma neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial
-    {K : Type*} [DivisionRing K] [CharZero K] (n m : ℕ) :
-    (-1 : K) ^ m * (ascPochhammer K m).eval (-(n : K)) / (m ! : K) = (n.choose m : K) := by
-  rw [ascPochhammer_eval_neg_eq_descPochhammer, ← mul_assoc, ← pow_add, ← two_mul, pow_mul,
-    neg_one_sq, one_pow, one_mul, ← Nat.cast_choose_eq_descPochhammer_div]
-
-private lemma summable_norm_pochhammer_div_factorial_mul {K : Type*} [NormedField K]
-    (n : ℕ) (c E t : K) (u w : ℕ → K) :
-    Summable fun m : ℕ =>
-      ‖c ^ n * E * (-1 : K) ^ m * (ascPochhammer K m).eval (-(n : K)) / (m ! : K) *
-        t ^ m * u m * w m‖ := by
-  refine summable_of_ne_finset_zero (s := Finset.range (n + 1)) fun m hm => ?_
-  have hlt : n < m := Nat.lt_of_not_ge fun hle => hm (Finset.mem_range.mpr (Nat.lt_succ_of_le hle))
-  rw [ascPochhammer_eval_neg_natCast_of_lt hlt]
-  simp
-
-private lemma hasSum_pochhammer_div_factorial_mul {K : Type*} [Field K] [CharZero K]
-    [TopologicalSpace K] (n : ℕ) {c s t : K} (hc : c ≠ 0) (ht : t = s / c) (E : K)
-    {u v : ℕ → K} (hu : ∀ m ≤ n, u m = v m) (w : ℕ → K) :
-    HasSum (fun m : ℕ =>
-      c ^ n * E * (-1 : K) ^ m * (ascPochhammer K m).eval (-(n : K)) / (m ! : K) *
-        t ^ m * u m * w m)
-      (E * ∑ m ∈ Finset.range (n + 1),
-        (n.choose m : K) * c ^ (n - m) * s ^ m * v m * w m) := by
-  have hfin : HasSum (fun m : ℕ =>
-      c ^ n * E * (-1 : K) ^ m * (ascPochhammer K m).eval (-(n : K)) / (m ! : K) *
-        t ^ m * u m * w m)
-      (∑ m ∈ Finset.range (n + 1),
-        c ^ n * E * (-1 : K) ^ m * (ascPochhammer K m).eval (-(n : K)) / (m ! : K) *
-          t ^ m * u m * w m) := by
-    refine hasSum_sum_of_ne_finset_zero fun m hm => ?_
-    have hlt : n < m :=
-      Nat.lt_of_not_ge fun hle => hm (Finset.mem_range.mpr (Nat.lt_succ_of_le hle))
-    rw [ascPochhammer_eval_neg_natCast_of_lt hlt]
-    simp
-  suffices hsum :
-      (∑ m ∈ Finset.range (n + 1),
-        c ^ n * E * (-1 : K) ^ m * (ascPochhammer K m).eval (-(n : K)) / (m ! : K) *
-          t ^ m * u m * w m) =
-      E * ∑ m ∈ Finset.range (n + 1),
-        (n.choose m : K) * c ^ (n - m) * s ^ m * v m * w m by
-    rwa [← hsum]
-  rw [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun m hm => ?_
-  have hle : m ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hm)
-  have hpow : c ^ n = c ^ (n - m) * c ^ m := by rw [← pow_add, Nat.sub_add_cancel hle]
-  have hratio : c ^ n * t ^ m = c ^ (n - m) * s ^ m := by
-    rw [hpow, ht, div_pow, mul_assoc, mul_div_cancel₀ _ (pow_ne_zero m hc)]
-  have hpoch := neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial (K := K) n m
-  calc
-    c ^ n * E * (-1 : K) ^ m * (ascPochhammer K m).eval (-(n : K)) / (m ! : K) *
-        t ^ m * u m * w m =
-        E * ((-1 : K) ^ m * (ascPochhammer K m).eval (-(n : K)) / (m ! : K)) *
-          (c ^ n * t ^ m) * u m * w m := by ring
-    _ = _ := by
-      rw [hpoch, hratio, hu m hle]
-      ring
-
 /-- Absolute convergence over `ℂ` of the Pochhammer–`tan t` rotational series at terminating
 parameter `a = -n - 1/2`: because `(ascPochhammer ℂ m).eval (-n) = 0` for `m > n`, the series of
 norms is summable unconditionally for all `t, x, y : ℂ` and every sequence `u : ℕ → ℂ`. -/
@@ -295,8 +238,12 @@ theorem summable_norm_cexp_neg_sq_div_four_hermite_rotational
       ‖Complex.cos t ^ n * Complex.exp ((x * Complex.sin t - y * Complex.cos t) ^ 2 / 4) *
         (-1 : ℂ) ^ m * (ascPochhammer ℂ m).eval (-(n : ℂ)) / (m ! : ℂ) *
         Complex.tan t ^ m * u m *
-        (Complex.exp (-y ^ 2 / 4) * aeval y (hermite m))‖ :=
-  summable_norm_pochhammer_div_factorial_mul n _ _ _ u _
+        (Complex.exp (-y ^ 2 / 4) * aeval y (hermite m))‖ := by
+  refine (summable_norm_neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial_mul n
+    fun m => Complex.cos t ^ n * Complex.exp ((x * Complex.sin t - y * Complex.cos t) ^ 2 / 4) *
+      Complex.tan t ^ m * u m * (Complex.exp (-y ^ 2 / 4) * aeval y (hermite m))).congr
+    fun m => congr_arg norm ?_
+  ring
 
 /-- Absolute convergence over `ℝ` of the Pochhammer–`tan t` rotational series at terminating
 parameter `a = -n - 1/2`. -/
@@ -306,8 +253,12 @@ theorem summable_norm_exp_neg_sq_div_four_hermite_rotational
       ‖Real.cos t ^ n * Real.exp ((x * Real.sin t - y * Real.cos t) ^ 2 / 4) *
         (-1 : ℝ) ^ m * (ascPochhammer ℝ m).eval (-(n : ℝ)) / (m ! : ℝ) *
         Real.tan t ^ m * u m *
-        (Real.exp (-y ^ 2 / 4) * aeval y (hermite m))‖ :=
-  summable_norm_pochhammer_div_factorial_mul n _ _ _ u _
+        (Real.exp (-y ^ 2 / 4) * aeval y (hermite m))‖ := by
+  refine (summable_norm_neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial_mul n
+    fun m => Real.cos t ^ n * Real.exp ((x * Real.sin t - y * Real.cos t) ^ 2 / 4) *
+      Real.tan t ^ m * u m * (Real.exp (-y ^ 2 / 4) * aeval y (hermite m))).congr
+    fun m => congr_arg norm ?_
+  ring
 
 /-- **Rotational addition series** over `ℂ` (DLMF 12.13.5 at `a = -n - 1/2`): for any `t : ℂ` with
 `Complex.cos t ≠ 0`, any `x, y : ℂ`, and any sequence `u : ℕ → ℂ` agreeing with
@@ -323,8 +274,22 @@ theorem hasSum_cexp_neg_sq_div_four_hermite_rotational_of_eq_on_le
         (Complex.exp (-y ^ 2 / 4) * aeval y (hermite m)))
       (Complex.exp (-(x * Complex.cos t + y * Complex.sin t) ^ 2 / 4) *
         aeval (x * Complex.cos t + y * Complex.sin t) (hermite n)) := by
-  rw [cexp_neg_sq_div_four_mul_hermite_aeval_mul_cos_add_mul_sin]
-  exact hasSum_pochhammer_div_factorial_mul n ht (Complex.tan_eq_sin_div_cos t) _ hu _
+  rw [cexp_neg_sq_div_four_mul_hermite_aeval_mul_cos_add_mul_sin, Finset.mul_sum]
+  have h :=
+    hasSum_neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial_div_pow_of_eq_on_le n
+      ht (Complex.sin t)
+      (f := fun m => Complex.exp ((x * Complex.sin t - y * Complex.cos t) ^ 2 / 4) *
+        u m * (Complex.exp (-y ^ 2 / 4) * aeval y (hermite m)))
+      (g := fun m => Complex.exp ((x * Complex.sin t - y * Complex.cos t) ^ 2 / 4) *
+        (Complex.exp (-x ^ 2 / 4) * aeval x (hermite (n - m))) *
+        (Complex.exp (-y ^ 2 / 4) * aeval y (hermite m)))
+      fun m hm => by rw [hu m hm]
+  refine Eq.mp ?_ h
+  congr 1
+  · ext m
+    rw [← Complex.tan_eq_sin_div_cos]
+    ring
+  · exact Finset.sum_congr rfl fun m _ => by ring
 
 /-- Pure Gaussian-Hermite specialization of
 `TauCeti.hasSum_cexp_neg_sq_div_four_hermite_rotational_of_eq_on_le` over `ℂ`. -/
@@ -354,8 +319,22 @@ theorem hasSum_exp_neg_sq_div_four_hermite_rotational_of_eq_on_le
         (Real.exp (-y ^ 2 / 4) * aeval y (hermite m)))
       (Real.exp (-(x * Real.cos t + y * Real.sin t) ^ 2 / 4) *
         aeval (x * Real.cos t + y * Real.sin t) (hermite n)) := by
-  rw [exp_neg_sq_div_four_mul_hermite_aeval_mul_cos_add_mul_sin]
-  exact hasSum_pochhammer_div_factorial_mul n ht (Real.tan_eq_sin_div_cos t) _ hu _
+  rw [exp_neg_sq_div_four_mul_hermite_aeval_mul_cos_add_mul_sin, Finset.mul_sum]
+  have h :=
+    hasSum_neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial_div_pow_of_eq_on_le n
+      ht (Real.sin t)
+      (f := fun m => Real.exp ((x * Real.sin t - y * Real.cos t) ^ 2 / 4) *
+        u m * (Real.exp (-y ^ 2 / 4) * aeval y (hermite m)))
+      (g := fun m => Real.exp ((x * Real.sin t - y * Real.cos t) ^ 2 / 4) *
+        (Real.exp (-x ^ 2 / 4) * aeval x (hermite (n - m))) *
+        (Real.exp (-y ^ 2 / 4) * aeval y (hermite m)))
+      fun m hm => by rw [hu m hm]
+  refine Eq.mp ?_ h
+  congr 1
+  · ext m
+    rw [← Real.tan_eq_sin_div_cos]
+    ring
+  · exact Finset.sum_congr rfl fun m _ => by ring
 
 /-- Pure Gaussian-Hermite specialization of
 `TauCeti.hasSum_exp_neg_sq_div_four_hermite_rotational_of_eq_on_le` over `ℝ`. -/
