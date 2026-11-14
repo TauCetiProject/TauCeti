@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.Matrix.Cartan.ColumnReflection
+public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 
 /-!
@@ -19,9 +20,9 @@ reflection at `i` becomes the explicit update of `Matrix.columnReflection` on th
 `b`, which can be run without any knowledge of the root pairing, and the set of root columns is
 recovered from the simple ones by iterating that update.
 
-The roots are not assumed to span, and only the orbit theorems use finiteness or reducedness. In a
-nonreduced system such as `BC₁` the root `2α` is not in the Weyl orbit of the simple root `α`, so
-reducedness cannot be dropped from them.
+The roots are not assumed to span. Only the orbit theorems use reducedness, and only they and the
+highest-root criterion use finiteness. In a nonreduced system such as `BC₁` the root `2α` is not in
+the Weyl orbit of the simple root `α`, so reducedness cannot be dropped from the orbit theorems.
 
 ## Main definitions
 
@@ -34,10 +35,16 @@ reducedness cannot be dropped from them.
 * `RootPairing.Base.coe_toWeightBasisInt_equivFun_symm_coefficientReflection`: evaluation in the
   root lattice intertwines the reflection on columns with the actual reflection.
 * `RootPairing.Base.rootCoefficients_eq_iff`: the characterization of the column of a root.
+* `RootPairing.Base.rootCoefficients_apply_of_bijOn` and `RootPairing.Base.height_eq_sum_of_bijOn`:
+  the column and the height of a root, read from an expansion in a relabelling of the simple roots.
 * `RootPairing.Base.coefficientReflection_rootCoefficients`: the reflection on columns computes the
   column of the reflected root.
 * `RootPairing.Base.zero_le_rootCoefficients_iff`: a root is positive exactly when its column is
   nonnegative.
+* `RootPairing.Base.root_sub_root_mem_posRootCone_iff`: one root lies above another in the positive
+  root cone exactly when its column dominates the other column.
+* `RootPairing.Base.eq_highestRoot_of_forall_rootCoefficients_le`: a root whose column dominates
+  every root column is the highest root.
 * `RootPairing.Base.coefficientReflection_map` and `RootPairing.Base.rootCoefficients_map`:
   compatibility with transporting a base along an equivalence of root pairings.
 * `RootPairing.Base.orbit_rootCoefficients_eq_image`: the orbit of a root column is the image of the
@@ -106,6 +113,19 @@ theorem rootCoefficients_apply_of_root_eq_sum {i : ι} {f : ι → ℤ}
       rw [h, ← Finset.sum_coe_sort b.support fun j ↦ f j • P.root j]
   exact congrFun hc k
 
+/-- The entries of the column of a root, from an expansion in coordinates indexed by a finite type
+`κ` whose map `e` to the root indices is a bijection onto the simple roots. -/
+theorem rootCoefficients_apply_of_bijOn {κ : Type*} [Fintype κ] {e : κ → ι}
+    (he : BijOn e univ b.support) {i : ι} {c : κ → ℤ} (h : P.root i = ∑ k, c k • P.root (e k))
+    (k : κ) : b.rootCoefficients i ⟨e k, he.mapsTo trivial⟩ = c k := by
+  have hinj : Injective e := fun k l hkl ↦ he.injOn trivial trivial hkl
+  have hf : P.root i = ∑ j ∈ b.support, extend e c 0 j • P.root j := by
+    rw [h]
+    exact Finset.sum_nbij e (fun k _ ↦ he.mapsTo trivial)
+      (by simpa only [Finset.coe_univ] using he.injOn)
+      (by simpa only [Finset.coe_univ] using he.surjOn) fun k _ ↦ by rw [hinj.extend_apply]
+  rw [b.rootCoefficients_apply_of_root_eq_sum hf, hinj.extend_apply]
+
 /-- Distinct roots have distinct columns. -/
 theorem rootCoefficients_injective : Injective b.rootCoefficients := fun i j hij ↦
   P.root.injective <| by
@@ -135,6 +155,18 @@ theorem sum_rootCoefficients_eq_height (i : ι) : ∑ k, b.rootCoefficients i k 
   simp_rw [b.rootCoefficients_apply_of_root_eq_sum hf, height_eq_sum hf]
   exact Finset.sum_coe_sort b.support f
 
+/-- The height of a root is the sum of its coefficients in an expansion indexed by a finite type
+`κ` whose map `e` to the root indices is a bijection onto the simple roots. -/
+theorem height_eq_sum_of_bijOn {κ : Type*} [Fintype κ] {e : κ → ι}
+    (he : BijOn e univ b.support) {i : ι} {c : κ → ℤ} (h : P.root i = ∑ k, c k • P.root (e k)) :
+    b.height i = ∑ k, c k := by
+  rw [← sum_rootCoefficients_eq_height]
+  refine (Fintype.sum_bijective (fun k ↦ (⟨e k, he.mapsTo trivial⟩ : b.support))
+    ⟨fun k l hkl ↦ he.injOn trivial trivial (congrArg Subtype.val hkl), fun j ↦ ?_⟩ c _
+    fun k ↦ (b.rootCoefficients_apply_of_bijOn he h k).symm).symm
+  obtain ⟨k, -, hk⟩ := he.surjOn j.2
+  exact ⟨k, Subtype.ext hk⟩
+
 /-- A root is positive exactly when its column is nonnegative. -/
 theorem zero_le_rootCoefficients_iff {i : ι} : 0 ≤ b.rootCoefficients i ↔ b.IsPos i := by
   refine ⟨fun h ↦ (b.isPos_iff').mpr ?_, fun hi k ↦ ?_⟩
@@ -148,6 +180,36 @@ theorem zero_le_rootCoefficients_iff {i : ι} : 0 ≤ b.rootCoefficients i ↔ b
         rw [height_eq_sum hf]
         exact Finset.sum_nonpos fun j _ ↦ hf₁.le j
       exact absurd ((b.isPos_iff).mp hi) hneg.not_gt
+
+/-- **One root lies above another in the positive root cone exactly when its column dominates the
+column of the other.** -/
+theorem root_sub_root_mem_posRootCone_iff {i j : ι} :
+    P.root i - P.root j ∈ TauCeti.posRootCone P b ↔
+      b.rootCoefficients j ≤ b.rootCoefficients i := by
+  refine ⟨fun h k ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨f, hf⟩ := (TauCeti.mem_posRootCone P b).mp h
+    have hi : b.rootCoefficients i = fun k ↦ b.rootCoefficients j k + f k := by
+      rw [rootCoefficients_eq_iff]
+      simp only [add_smul, Finset.sum_add_distrib, sum_rootCoefficients_smul_root, natCast_zsmul,
+        Finset.sum_coe_sort b.support fun l ↦ f l • P.root l, ← hf, add_sub_cancel]
+    simp [hi]
+  · rw [← b.sum_rootCoefficients_smul_root i, ← b.sum_rootCoefficients_smul_root j,
+      ← Finset.sum_sub_distrib]
+    refine AddSubmonoid.sum_mem _ fun k _ ↦ ?_
+    rw [← sub_smul, ← Int.toNat_of_nonneg (sub_nonneg.mpr (h k)), natCast_zsmul]
+    exact (TauCeti.posRootCone P b).nsmul_mem (TauCeti.root_mem_posRootCone_of_mem_posRoots P b
+      ((TauCeti.mem_posRoots P b _).mpr (isPos_of_mem_support k.2))) _
+
+/-- **A root whose column dominates the column of every root is the highest root.** Neither
+reducedness nor irreducibility is assumed. -/
+theorem eq_highestRoot_of_forall_rootCoefficients_le [Finite ι] [Nonempty ι] {i : ι}
+    (h : ∀ j, b.rootCoefficients j ≤ b.rootCoefficients i) : i = b.highestRoot := by
+  by_contra hne
+  obtain ⟨hle, k, hk⟩ := Pi.lt_def.mp <| (h b.highestRoot).lt_of_ne fun heq ↦
+    hne (b.rootCoefficients_injective heq).symm
+  have hheight := b.height_le_height_highestRoot i
+  rw [← sum_rootCoefficients_eq_height, ← sum_rootCoefficients_eq_height] at hheight
+  exact hheight.not_gt (Finset.sum_lt_sum (fun l _ ↦ hle l) ⟨k, Finset.mem_univ k, hk⟩)
 
 /-! ### Transport of a base -/
 
