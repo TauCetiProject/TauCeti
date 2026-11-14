@@ -13,6 +13,9 @@ public import TauCeti.RepresentationTheory.Symmetric.Specht.Character
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Character
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Orthogonality
 
+-- Non-public: `TauCeti.tmul_ne_zero` is used only inside the proof of injectivity below.
+import TauCeti.LinearAlgebra.TensorProduct.Separation
+
 /-!
 # The Young-symmetrizer decomposition of a representation of the symmetric group
 
@@ -52,11 +55,30 @@ splitting field.
 * **Injectivity.** The source has dimension `∑_μ f^μ dim (c_μ M) = dim M`, so the surjective
   evaluation map is bijective.
 
+## Representations with a Specht character
+
+When the character of `M` is a single Specht character `χ^μ`, row orthogonality
+(`TauCeti.sum_perm_spechtChar_mul_spechtChar`) makes `c_μ M` a line and kills `c_ν M` for every
+other partition `ν`. For any nonzero `w ∈ c_μ M`, the intertwining map `k[S_d] c_μ → M`,
+`r c_μ ↦ r w`, is injective: `c_μ` acts on `w` as the unit `d! / f^μ`, so `r w` is a unit
+multiple of `(r c_μ) · w`, the image of the summand `r c_μ ⊗ w` under the injective evaluation
+map of the finite-dimensional image of `k[S_d] c_μ`, so `M` itself need not be finite-dimensional.
+It is bijective as soon as `M` has dimension `f^μ`, as it does when its character is `χ^μ`.
+Over `ℂ` this identifies the ideal
+`ℂ[S_d] c_μ` with the complex Specht module `TauCeti.spechtModuleℂ μ`, the form in which the
+Schur-Weyl decomposition is stated in
+`TauCeti/RepresentationTheory/ClassicalGroups/WeylModule/Decomposition.lean`.
+
 ## Main definitions
 
 * `Representation.youngSymmetrizerEval`: the evaluation map `⨁_μ k[S_d] c_μ ⊗ c_μ M → M`.
 * `Representation.youngSymmetrizerEquiv`: the evaluation map as an equivalence of representations
   of `S_d`.
+* `Representation.spanYoungSymmetrizerEquivOfFinrankEq`: a representation `M` of dimension `f^μ`
+  on which `c_μ` is nonzero is `k[S_d] c_μ`, via a given nonzero vector of `c_μ M`.
+* `Nat.Partition.spechtModuleℂYoungSymmetrizerVector`: a chosen nonzero vector of `c_μ S^μ_ℂ`.
+* `Nat.Partition.spanYoungSymmetrizerEquivSpechtModuleℂ`: the complex Specht module is
+  `ℂ[S_d] c_μ`, via that vector.
 
 ## Main results
 
@@ -67,6 +89,15 @@ splitting field.
 * `Representation.youngSymmetrizerEval_surjective` and
   `Representation.youngSymmetrizerEval_bijective`: the Young-symmetrizer images generate `M`, and
   the evaluation map is an isomorphism.
+* `Representation.finrank_range_asAlgebraHom_youngSymmetrizer_of_character_eq`: if `M` has the
+  character `χ^μ`, then `dim (c_ν M)` is `1` for `ν = μ` and `0` otherwise.
+* `Representation.exists_ne_zero_range_asAlgebraHom_youngSymmetrizer_of_character_eq` and
+  `Representation.finrank_eq_finrank_spechtModule_of_character_eq`: such an `M` has a nonzero vector
+  in `c_μ M` and dimension `f^μ`.
+* `Representation.spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_injective` and
+  `Representation.spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_bijective_of_finrank_eq`:
+  the intertwining map `k[S_d] c_μ → M` attached to a nonzero vector of `c_μ M` is injective, and
+  bijective when `M` has dimension `f^μ`.
 
 ## References
 
@@ -154,10 +185,7 @@ theorem youngSymmetrizerEval_lof_tmul (μ : d.Partition)
 private theorem asAlgebraHom_youngSymmetrizer_mem_range_youngSymmetrizerEval (μ : d.Partition)
     (m : M) :
     ρ.asAlgebraHom (μ.youngSymmetrizer k) m ∈ LinearMap.range ρ.youngSymmetrizerEval := by
-  have hκ : algebraMap ℚ k ((d.factorial : ℚ) / finrank ℚ (spechtModule (R := ℚ) μ)) ≠ 0 := by
-    rw [map_ne_zero]
-    exact div_ne_zero (Nat.cast_ne_zero.mpr d.factorial_ne_zero)
-      (Nat.cast_ne_zero.mpr (finrank_spechtModule_pos μ).ne')
+  have hκ := (μ.isUnit_algebraMap_factorial_div_finrank_spechtModule k).ne_zero
   set κ := algebraMap ℚ k ((d.factorial : ℚ) / finrank ℚ (spechtModule (R := ℚ) μ))
   set c := ρ.asAlgebraHom (μ.youngSymmetrizer k)
   refine ⟨DirectSum.lof k d.Partition _ μ
@@ -247,4 +275,238 @@ theorem youngSymmetrizerEquiv_apply [FiniteDimensional k M]
     ρ.youngSymmetrizerEquiv x = ρ.youngSymmetrizerEval x :=
   (rfl)
 
+/-! ### Representations with the character of a Specht module -/
+
+/-- **The images of the Young symmetrizers on a representation with a Specht character.** If `M`
+has the character `χ^μ` of the Specht module `S^μ`, then `c_ν M` is a line for `ν = μ` and is zero
+for every other partition `ν`. -/
+theorem finrank_range_asAlgebraHom_youngSymmetrizer_of_character_eq [FiniteDimensional k M]
+    {μ : d.Partition} (h : ∀ σ, ρ.character σ = spechtChar μ σ) (ν : d.Partition) :
+    finrank k (LinearMap.range (ρ.asAlgebraHom (ν.youngSymmetrizer k))) =
+      if ν = μ then 1 else 0 := by
+  apply Nat.cast_injective (R := k)
+  refine mul_left_cancel₀ (Nat.cast_ne_zero.mpr d.factorial_ne_zero : (d.factorial : k) ≠ 0) ?_
+  have horth := congrArg (Int.cast : ℤ → k) (sum_perm_spechtChar_mul_spechtChar ν μ)
+  push_cast at horth
+  simp_rw [ρ.factorial_mul_finrank_range_asAlgebraHom_youngSymmetrizer ν, h, horth]
+  split_ifs <;> simp
+
+/-- **A representation with a Specht character has a nonzero Young-symmetrizer vector.** If `M` has
+the character `χ^μ`, then the line `c_μ M` has a nonzero vector. -/
+theorem exists_ne_zero_range_asAlgebraHom_youngSymmetrizer_of_character_eq [FiniteDimensional k M]
+    {μ : d.Partition} (h : ∀ σ, ρ.character σ = spechtChar μ σ) :
+    ∃ w : LinearMap.range (ρ.asAlgebraHom (μ.youngSymmetrizer k)), w ≠ 0 := by
+  have hμ := ρ.finrank_range_asAlgebraHom_youngSymmetrizer_of_character_eq h μ
+  simp only [ite_true] at hμ
+  exact Module.finrank_pos_iff_exists_ne_zero.mp (by rw [hμ]; exact Nat.one_pos)
+
+/-- A representation with the character `χ^μ` has the dimension `f^μ` of the Specht module. -/
+theorem finrank_eq_finrank_spechtModule_of_character_eq [FiniteDimensional k M] {μ : d.Partition}
+    (h : ∀ σ, ρ.character σ = spechtChar μ σ) :
+    finrank k M = finrank ℚ (spechtModule (R := ℚ) μ) := by
+  have h1 := h 1
+  rw [char_one, spechtChar_one] at h1
+  exact_mod_cast h1
+
+/-- The finite-dimensional case of
+`Representation.spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_injective`. Since `c_μ`
+acts on `w` as the unit `κ`, the image `r w` of `r c_μ` is a unit multiple of `(r c_μ) · w`, the
+image of the summand `r c_μ ⊗ w` under the injective evaluation map
+`Representation.youngSymmetrizerEval`. -/
+private theorem
+    spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_injective_of_finiteDimensional
+    [FiniteDimensional k M] {μ : d.Partition} {κ : k} (hκ : IsUnit κ)
+    (ha : μ.youngSymmetrizer k * μ.youngSymmetrizer k = κ • μ.youngSymmetrizer k)
+    {w : LinearMap.range (ρ.asAlgebraHom (μ.youngSymmetrizer k))} (hw : w ≠ 0) :
+    Function.Injective ((spanSingletonHomEquivRange ρ hκ ha).symm w) := by
+  refine (injective_iff_map_eq_zero _).mpr fun x hx => ?_
+  obtain ⟨r, rfl⟩ := exists_smul_spanSingletonGenerator x
+  -- `(r c_μ) · w = κ • (r · w)`, and `r · w = 0` is the image of `r c_μ`
+  have hfx : ρ.asAlgebraHom r w = 0 := by
+    rw [← spanSingletonHomEquivRange_symm_apply_smul_generator]
+    exact hx
+  have hcw : ρ.asAlgebraHom (μ.youngSymmetrizer k) w = κ • (w : M) := by
+    obtain ⟨m, hm⟩ := w.2
+    rw [← hm, ← mul_apply_eq_comp, ← map_mul, ha, map_smul, LinearMap.smul_apply]
+  -- so the evaluation of `r c_μ ⊗ w` vanishes, and evaluation is injective
+  have heval : ρ.youngSymmetrizerEval (DirectSum.lof k d.Partition _ μ
+      ((r • spanSingletonGenerator (μ.youngSymmetrizer k)) ⊗ₜ w)) = 0 := by
+    rw [youngSymmetrizerEval_lof_tmul, Submodule.coe_smul, smul_eq_mul,
+      coe_spanSingletonGenerator, map_mul, mul_apply_eq_comp, hcw, map_smul, hfx, smul_zero]
+  rw [← map_zero ρ.youngSymmetrizerEval, DirectSum.lof_eq_of, ← map_zero (DirectSum.of _ μ)]
+    at heval
+  by_contra hr
+  exact tmul_ne_zero hr hw (DirectSum.of_injective μ (ρ.youngSymmetrizerEval_bijective.1 heval))
+
+/-- **The intertwining map `k[S_d] c_μ → M` attached to a nonzero vector of `c_μ M` is
+injective.** It sends `r c_μ` to `r w` (`Representation.spanSingletonHomEquivRange`). Its image is
+finite-dimensional, being the image of `k[S_d] c_μ`, and contains `w`; on that image the injectivity
+of the Young-symmetrizer evaluation map `Representation.youngSymmetrizerEval` applies. -/
+theorem spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_injective {μ : d.Partition} {κ : k}
+    (hκ : IsUnit κ) (ha : μ.youngSymmetrizer k * μ.youngSymmetrizer k = κ • μ.youngSymmetrizer k)
+    {w : LinearMap.range (ρ.asAlgebraHom (μ.youngSymmetrizer k))} (hw : w ≠ 0) :
+    Function.Injective ((spanSingletonHomEquivRange ρ hκ ha).symm w) := by
+  set f := (spanSingletonHomEquivRange ρ hκ ha).symm w
+  have : FiniteDimensional k f.range.toSubmodule := LinearMap.finiteDimensional_range _
+  -- corestrict `f` to its image, where it is the intertwining map attached to `w`
+  have hf (x) : f x ∈ f.range.toSubmodule := ⟨x, rfl⟩
+  set g := f.codRestrict f.range hf
+  have hg : spanSingletonHomEquivRange f.range.toRepresentation hκ ha g ≠ 0 := by
+    refine fun h => hw (Subtype.ext ?_)
+    have h' := congrArg Subtype.val (congrArg Subtype.val h)
+    rwa [coe_spanSingletonHomEquivRange_apply, IntertwiningMap.codRestrict_apply_coe,
+      spanSingletonHomEquivRange_symm_apply_generator] at h'
+  have hinj :=
+    spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_injective_of_finiteDimensional
+      f.range.toRepresentation hκ ha hg
+  rw [LinearEquiv.symm_apply_apply] at hinj
+  refine fun x y hxy => hinj (Subtype.ext ?_)
+  rwa [IntertwiningMap.codRestrict_apply_coe, IntertwiningMap.codRestrict_apply_coe]
+
+/-- **The intertwining map `k[S_d] c_μ → M` attached to a nonzero vector of `c_μ M` is bijective
+when `M` has dimension `f^μ`.** If `M` has the dimension `f^μ` of the Specht module, then for
+every nonzero vector `w` of `c_μ M` the injective intertwining map `k[S_d] c_μ → M` attached to
+`w` (`Representation.spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_injective`) is
+bijective, both sides having dimension `f^μ`. -/
+theorem spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_bijective_of_finrank_eq
+    {μ : d.Partition}
+    (hM : finrank k M = finrank ℚ (spechtModule (R := ℚ) μ)) {κ : k} (hκ : IsUnit κ)
+    (ha : μ.youngSymmetrizer k * μ.youngSymmetrizer k = κ • μ.youngSymmetrizer k)
+    {w : LinearMap.range (ρ.asAlgebraHom (μ.youngSymmetrizer k))} (hw : w ≠ 0) :
+    Function.Bijective ((spanSingletonHomEquivRange ρ hκ ha).symm w) := by
+  have : FiniteDimensional k M := .of_finrank_pos (hM ▸ finrank_spechtModule_pos μ)
+  have hinj := ρ.spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_injective hκ ha hw
+  have hdim : finrank k (Ideal.span {μ.youngSymmetrizer k} :
+      Ideal (MonoidAlgebra k (Equiv.Perm (Fin d)))) = finrank k M := by
+    rw [Nat.Partition.finrank_span_youngSymmetrizer, hM]
+  exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).mp hinj⟩
+
+/-- **A representation of dimension `f^μ` on which `c_μ` is nonzero is the left ideal
+`k[S_d] c_μ`**, as an equivalence of representations of `S_d`, attached to a nonzero vector `w` of
+`c_μ M`. It sends `r c_μ` to `r w`
+(`Representation.spanYoungSymmetrizerEquivOfFinrankEq_apply_smul_generator`). A representation with
+the character `χ^μ` has the dimension `f^μ`
+(`Representation.finrank_eq_finrank_spechtModule_of_character_eq`) and a nonzero vector in `c_μ M`
+(`Representation.exists_ne_zero_range_asAlgebraHom_youngSymmetrizer_of_character_eq`). -/
+noncomputable def spanYoungSymmetrizerEquivOfFinrankEq
+    {μ : d.Partition} (hM : finrank k M = finrank ℚ (spechtModule (R := ℚ) μ))
+    (w : LinearMap.range (ρ.asAlgebraHom (μ.youngSymmetrizer k))) (hw : w ≠ 0) :
+    (ofModule' (k := k) (G := Equiv.Perm (Fin d))
+      (Ideal.span {μ.youngSymmetrizer k} : Ideal (MonoidAlgebra k (Equiv.Perm (Fin d))))).Equiv ρ :=
+  ((spanSingletonHomEquivRange ρ (μ.isUnit_algebraMap_factorial_div_finrank_spechtModule k)
+    (μ.youngSymmetrizer_mul_self k)).symm w).ofBijective
+    (ρ.spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_bijective_of_finrank_eq hM _ _ hw)
+
+/-- The equivalence `Representation.spanYoungSymmetrizerEquivOfFinrankEq` sends `r c_μ` to
+`r w`. -/
+@[simp]
+theorem spanYoungSymmetrizerEquivOfFinrankEq_apply_smul_generator
+    {μ : d.Partition} (hM : finrank k M = finrank ℚ (spechtModule (R := ℚ) μ))
+    (w : LinearMap.range (ρ.asAlgebraHom (μ.youngSymmetrizer k))) (hw : w ≠ 0)
+    (r : MonoidAlgebra k (Equiv.Perm (Fin d))) :
+    ρ.spanYoungSymmetrizerEquivOfFinrankEq hM w hw
+        (r • spanSingletonGenerator (μ.youngSymmetrizer k)) = ρ.asAlgebraHom r w :=
+  spanSingletonHomEquivRange_symm_apply_smul_generator ρ _ _ w r
+
+/-- The equivalence `Representation.spanYoungSymmetrizerEquivOfFinrankEq` sends `c_μ` to `w`. -/
+@[simp]
+theorem spanYoungSymmetrizerEquivOfFinrankEq_apply_generator
+    {μ : d.Partition} (hM : finrank k M = finrank ℚ (spechtModule (R := ℚ) μ))
+    (w : LinearMap.range (ρ.asAlgebraHom (μ.youngSymmetrizer k))) (hw : w ≠ 0) :
+    ρ.spanYoungSymmetrizerEquivOfFinrankEq hM w hw (spanSingletonGenerator (μ.youngSymmetrizer k)) =
+      w :=
+  spanSingletonHomEquivRange_symm_apply_generator ρ _ _ w
+
+/-- The inverse of `Representation.spanYoungSymmetrizerEquivOfFinrankEq` sends `r w` to `r c_μ`. -/
+@[simp]
+theorem spanYoungSymmetrizerEquivOfFinrankEq_symm_apply_asAlgebraHom
+    {μ : d.Partition} (hM : finrank k M = finrank ℚ (spechtModule (R := ℚ) μ))
+    (w : LinearMap.range (ρ.asAlgebraHom (μ.youngSymmetrizer k))) (hw : w ≠ 0)
+    (r : MonoidAlgebra k (Equiv.Perm (Fin d))) :
+    (ρ.spanYoungSymmetrizerEquivOfFinrankEq hM w hw).symm (ρ.asAlgebraHom r w) =
+      r • spanSingletonGenerator (μ.youngSymmetrizer k) := by
+  rw [← spanYoungSymmetrizerEquivOfFinrankEq_apply_smul_generator ρ hM w hw r,
+    Equiv.symm_apply_apply]
+
+/-- The inverse of `Representation.spanYoungSymmetrizerEquivOfFinrankEq` sends `w` to `c_μ`. -/
+@[simp]
+theorem spanYoungSymmetrizerEquivOfFinrankEq_symm_apply_self
+    {μ : d.Partition} (hM : finrank k M = finrank ℚ (spechtModule (R := ℚ) μ))
+    (w : LinearMap.range (ρ.asAlgebraHom (μ.youngSymmetrizer k))) (hw : w ≠ 0) :
+    (ρ.spanYoungSymmetrizerEquivOfFinrankEq hM w hw).symm w =
+      spanSingletonGenerator (μ.youngSymmetrizer k) := by
+  rw [← spanYoungSymmetrizerEquivOfFinrankEq_apply_generator ρ hM w hw, Equiv.symm_apply_apply]
+
 end Representation
+
+namespace Nat.Partition
+
+open TauCeti
+
+variable {d : ℕ}
+
+/-- A nonzero vector of the line `c_μ S^μ_ℂ`, chosen once and for all. It is the image of `c_μ`
+under `Nat.Partition.spanYoungSymmetrizerEquivSpechtModuleℂ`; any two choices differ by a nonzero
+scalar. -/
+noncomputable def spechtModuleℂYoungSymmetrizerVector (μ : d.Partition) :
+    LinearMap.range (Representation.asAlgebraHom (spechtModuleℂ μ).ρ (μ.youngSymmetrizer ℂ)) :=
+  (Representation.exists_ne_zero_range_asAlgebraHom_youngSymmetrizer_of_character_eq
+    (spechtModuleℂ μ).ρ (character_spechtModuleℂ_intCast μ)).choose
+
+/-- The chosen vector `Nat.Partition.spechtModuleℂYoungSymmetrizerVector` of `c_μ S^μ_ℂ` is
+nonzero. -/
+@[simp]
+theorem spechtModuleℂYoungSymmetrizerVector_ne_zero (μ : d.Partition) :
+    μ.spechtModuleℂYoungSymmetrizerVector ≠ 0 :=
+  (Representation.exists_ne_zero_range_asAlgebraHom_youngSymmetrizer_of_character_eq
+    (spechtModuleℂ μ).ρ (character_spechtModuleℂ_intCast μ)).choose_spec
+
+/-- **The complex Specht module is the left ideal `ℂ[S_d] c_μ`**, as an equivalence of
+representations of `S_d`. It sends `r c_μ` to `r w`, for the chosen nonzero vector
+`w = Nat.Partition.spechtModuleℂYoungSymmetrizerVector μ` of the line `c_μ S^μ_ℂ`
+(`Nat.Partition.spanYoungSymmetrizerEquivSpechtModuleℂ_apply_smul_generator`); any other choice
+rescales the equivalence. -/
+noncomputable def spanYoungSymmetrizerEquivSpechtModuleℂ (μ : d.Partition) :
+    (Representation.ofModule' (k := ℂ) (G := Equiv.Perm (Fin d))
+      (Ideal.span {μ.youngSymmetrizer ℂ} : Ideal (MonoidAlgebra ℂ (Equiv.Perm (Fin d))))).Equiv
+      (spechtModuleℂ μ).ρ :=
+  Representation.spanYoungSymmetrizerEquivOfFinrankEq (spechtModuleℂ μ).ρ
+    (finrank_spechtModuleℂ μ) _ μ.spechtModuleℂYoungSymmetrizerVector_ne_zero
+
+/-- The equivalence `Nat.Partition.spanYoungSymmetrizerEquivSpechtModuleℂ` sends `r c_μ` to `r w`,
+for the chosen vector `w` of `c_μ S^μ_ℂ`. -/
+@[simp]
+theorem spanYoungSymmetrizerEquivSpechtModuleℂ_apply_smul_generator (μ : d.Partition)
+    (r : MonoidAlgebra ℂ (Equiv.Perm (Fin d))) :
+    μ.spanYoungSymmetrizerEquivSpechtModuleℂ (r • spanSingletonGenerator (μ.youngSymmetrizer ℂ)) =
+      Representation.asAlgebraHom (spechtModuleℂ μ).ρ r μ.spechtModuleℂYoungSymmetrizerVector :=
+  Representation.spanYoungSymmetrizerEquivOfFinrankEq_apply_smul_generator _ _ _ _ r
+
+/-- The equivalence `Nat.Partition.spanYoungSymmetrizerEquivSpechtModuleℂ` sends `c_μ` to the
+chosen vector `Nat.Partition.spechtModuleℂYoungSymmetrizerVector μ` of `c_μ S^μ_ℂ`. -/
+@[simp]
+theorem spanYoungSymmetrizerEquivSpechtModuleℂ_apply_generator (μ : d.Partition) :
+    μ.spanYoungSymmetrizerEquivSpechtModuleℂ (spanSingletonGenerator (μ.youngSymmetrizer ℂ)) =
+      μ.spechtModuleℂYoungSymmetrizerVector :=
+  Representation.spanYoungSymmetrizerEquivOfFinrankEq_apply_generator _ _ _ _
+
+/-- The inverse of `Nat.Partition.spanYoungSymmetrizerEquivSpechtModuleℂ` sends `r w` to `r c_μ`,
+for the chosen vector `w` of `c_μ S^μ_ℂ`. -/
+@[simp]
+theorem spanYoungSymmetrizerEquivSpechtModuleℂ_symm_apply_asAlgebraHom (μ : d.Partition)
+    (r : MonoidAlgebra ℂ (Equiv.Perm (Fin d))) :
+    μ.spanYoungSymmetrizerEquivSpechtModuleℂ.symm
+        (Representation.asAlgebraHom (spechtModuleℂ μ).ρ r μ.spechtModuleℂYoungSymmetrizerVector) =
+      r • spanSingletonGenerator (μ.youngSymmetrizer ℂ) :=
+  Representation.spanYoungSymmetrizerEquivOfFinrankEq_symm_apply_asAlgebraHom _ _ _ _ r
+
+/-- The inverse of `Nat.Partition.spanYoungSymmetrizerEquivSpechtModuleℂ` sends the chosen vector
+`Nat.Partition.spechtModuleℂYoungSymmetrizerVector μ` of `c_μ S^μ_ℂ` to `c_μ`. -/
+@[simp]
+theorem spanYoungSymmetrizerEquivSpechtModuleℂ_symm_apply_spechtModuleℂYoungSymmetrizerVector
+    (μ : d.Partition) :
+    μ.spanYoungSymmetrizerEquivSpechtModuleℂ.symm μ.spechtModuleℂYoungSymmetrizerVector =
+      spanSingletonGenerator (μ.youngSymmetrizer ℂ) :=
+  Representation.spanYoungSymmetrizerEquivOfFinrankEq_symm_apply_self _ _ _ _
+
+end Nat.Partition

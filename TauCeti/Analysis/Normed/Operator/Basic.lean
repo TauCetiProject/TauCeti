@@ -27,7 +27,11 @@ spaces. It lets an evaluation `T i (g i)` pass to the limit when the operators `
 uniformly bounded, their values at the limiting argument converge, and the arguments `g i` converge.
 In particular, it supplies the common continuity step for
 `StronglyContinuousSemigroup.tendsto_realOperator_apply` and
-`StronglyContinuousGroup.tendsto_apply`.
+`StronglyContinuousGroup.tendsto_apply`. It holds more generally for additive maps with a
+uniform pointwise bound `‖T i x‖ ≤ C * ‖x‖` (`AddMonoidHomClass.tendsto_apply_of_eventually_bound`).
+Consequently a strongly continuous family of such maps `T a` sends a continuous function `f` to
+the continuous function `a ↦ T a (f a)` (`AddMonoidHomClass.continuousOn_apply_of_bound`,
+`AddMonoidHomClass.continuous_apply_of_bound`).
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
@@ -107,6 +111,45 @@ theorem eq_zero_of_forall_norm_apply_le {f : E →ₛₗ[σ] F} {C : ℝ} (h : �
 
 end LinearMap
 
+namespace AddMonoidHomClass
+
+variable {G X Y : Type*} [SeminormedAddCommGroup X] [SeminormedAddCommGroup Y] [FunLike G X Y]
+  [AddMonoidHomClass G X Y]
+
+/-- If the additive maps `T i` are eventually bounded by `‖T i x‖ ≤ C * ‖x‖`, `T i z` tends to
+`w`, and `g i` tends to `z`, then the moving evaluations `T i (g i)` tend to `w`. -/
+theorem tendsto_apply_of_eventually_bound {ι : Type*} {l : Filter ι} {T : ι → G} {C : ℝ}
+    {g : ι → X} {z : X} {w : Y} (hT : ∀ᶠ i in l, ∀ x, ‖T i x‖ ≤ C * ‖x‖)
+    (hz : Tendsto (fun i => T i z) l (𝓝 w)) (hg : Tendsto g l (𝓝 z)) :
+    Tendsto (fun i => T i (g i)) l (𝓝 w) := by
+  have hmove : Tendsto (fun i => T i (g i - z)) l (𝓝 0) := by
+    refine squeeze_zero_norm' (a := fun i => C * ‖g i - z‖) ?_ ?_
+    · filter_upwards [hT] with i hi
+      exact hi _
+    · simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hg).const_mul C
+  simpa only [map_sub, sub_add_cancel, zero_add] using hmove.add hz
+
+/-- A family of additive maps `T a` that is strongly continuous on `s` and bounded there by
+`‖T a x‖ ≤ C * ‖x‖` sends a function continuous on `s` to a function continuous on `s`:
+`a ↦ T a (f a)`. -/
+theorem continuousOn_apply_of_bound {α : Type*} [TopologicalSpace α] {T : α → G} {f : α → X}
+    {s : Set α} {C : ℝ} (hT : ∀ x, ContinuousOn (fun a => T a x) s)
+    (hC : ∀ a ∈ s, ∀ x, ‖T a x‖ ≤ C * ‖x‖) (hf : ContinuousOn f s) :
+    ContinuousOn (fun a => T a (f a)) s :=
+  fun a ha => tendsto_apply_of_eventually_bound (eventually_mem_nhdsWithin.mono hC)
+    (hT (f a) a ha) (hf a ha)
+
+/-- A strongly continuous family of additive maps `T a` with a uniform bound
+`‖T a x‖ ≤ C * ‖x‖` sends a continuous function `f` to the continuous function
+`a ↦ T a (f a)`. -/
+theorem continuous_apply_of_bound {α : Type*} [TopologicalSpace α] {T : α → G} {f : α → X}
+    {C : ℝ} (hT : ∀ x, Continuous fun a => T a x) (hC : ∀ a x, ‖T a x‖ ≤ C * ‖x‖)
+    (hf : Continuous f) : Continuous fun a => T a (f a) :=
+  continuousOn_univ.1 <| continuousOn_apply_of_bound (fun x => (hT x).continuousOn)
+    (fun a _ => hC a) hf.continuousOn
+
+end AddMonoidHomClass
+
 namespace ContinuousLinearMap
 
 section Semilinear
@@ -152,13 +195,9 @@ the moving evaluations `T i (g i)` tend to `w`. -/
 theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
     {T : ι → X →L[𝕜] Y} {C : ℝ} {g : ι → X} {z : X} {w : Y}
     (hT : ∀ᶠ i in l, ‖T i‖ ≤ C) (hz : Tendsto (fun i => T i z) l (𝓝 w))
-    (hg : Tendsto g l (𝓝 z)) : Tendsto (fun i => T i (g i)) l (𝓝 w) := by
-  have hmove : Tendsto (fun i => T i (g i - z)) l (𝓝 0) := by
-    refine squeeze_zero_norm' (a := fun i => C * ‖g i - z‖) ?_ ?_
-    · filter_upwards [hT] with i hi
-      exact (T i).le_of_opNorm_le hi _
-    · simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hg).const_mul C
-  simpa only [map_sub, sub_add_cancel, zero_add] using hmove.add hz
+    (hg : Tendsto g l (𝓝 z)) : Tendsto (fun i => T i (g i)) l (𝓝 w) :=
+  AddMonoidHomClass.tendsto_apply_of_eventually_bound
+    (hT.mono fun i hi => (T i).le_of_opNorm_le hi) hz hg
 
 /-- The a priori estimate attached to a left inverse modulo an error term: since
 `x = S (T x) - (S ∘ T - 1) x`, the norm of `x` is controlled by `‖T x‖` and the error
