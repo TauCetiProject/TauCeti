@@ -37,7 +37,8 @@ orientable if and only if its orientation double cover is disconnected
 trivializes the cover over the base as `B × Fin 2`
 (`TauCeti.VectorBundleOrientation.coverHomeomorph`), with the two sheets given by the chosen
 orientation and its opposite. Applied to the tangent bundle this gives the orientation double
-cover of a manifold.
+cover of a manifold. Conversely, any homeomorphism over the base from `B × Fin 2` to the cover
+gives an orientation (`TauCeti.VectorBundleOrientation.nonempty_iff_exists_homeomorph`).
 
 A family of bases of fibres whose vectors vary continuously in the total space orients those
 fibres continuously: the induced map to the cover is continuous
@@ -61,6 +62,8 @@ in a trivialization have locally constant determinant sign.
   nonempty proper clopen subset of the cover is the image of a continuous section.
 * `TauCeti.VectorBundleOrientation.nonempty_iff_exists_section`: a bundle is orientable if and
   only if its orientation double cover has a continuous section.
+* `TauCeti.VectorBundleOrientation.nonempty_iff_exists_homeomorph`: a bundle is orientable if
+  and only if its orientation double cover is a product with `Fin 2` over the base.
 * `TauCeti.VectorBundleOrientation.nonempty_iff_not_connectedSpace`: over a connected base, a
   bundle is orientable if and only if its orientation double cover is disconnected.
 
@@ -561,7 +564,8 @@ def coverHomeomorph (o : VectorBundleOrientation F E ι)
             (p := ⟨b, o b⟩) (q := ⟨b, u⟩) rfl with h | h
         · obtain rfl := VectorBundleOrientationCover.mk_eq_mk_iff.mp h
           simp
-        · obtain rfl := VectorBundleOrientationCover.mk_eq_mk_iff.mp h
+        · rw [VectorBundleOrientationCover.deck_apply] at h
+          obtain rfl := VectorBundleOrientationCover.mk_eq_mk_iff.mp h
           simp [Ne.symm (Module.Ray.ne_neg_self (o b))]
       continuous_toFun := continuous_prod_of_discrete_right.mpr fun i ↦ by
         by_cases hi : i = 0
@@ -571,6 +575,14 @@ def coverHomeomorph (o : VectorBundleOrientation F E ι)
         (continuous_const.if (by
           rw [(o.isClopen_setOf_orientation_eq hι).frontier_eq]
           simp) continuous_const) }
+
+/-- The trivialization sends each sheet to the chosen orientation or its opposite. -/
+theorem coverHomeomorph_apply (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) (p : B × Fin 2) :
+    o.coverHomeomorph hι p =
+      if p.2 = 0 then ⟨p.1, o p.1⟩ else ⟨p.1, -o p.1⟩ := by
+  classical
+  rfl
 
 /-- Sheet `0` of the trivialization induced by an orientation is its continuous section. -/
 @[simp]
@@ -599,13 +611,68 @@ theorem proj_coverHomeomorph (o : VectorBundleOrientation F E ι)
 open Classical in
 /-- The inverse trivialization records the base point and whether its orientation is the
 chosen one or its opposite. -/
-@[simp]
 theorem coverHomeomorph_symm_apply (o : VectorBundleOrientation F E ι)
     (hι : Fintype.card ι = finrank ℝ F) (p : VectorBundleOrientationCover F E ι) :
     (o.coverHomeomorph hι).symm p =
       (p.proj, if p.orientation = o p.proj then 0 else 1) := by
   classical
   rfl
+
+/-- The inverse trivialization preserves the base point. -/
+@[simp]
+theorem coverHomeomorph_symm_apply_fst (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) (p : VectorBundleOrientationCover F E ι) :
+    ((o.coverHomeomorph hι).symm p).1 = p.proj := by
+  rw [coverHomeomorph_symm_apply]
+
+/-- The chosen orientation belongs to sheet `0` of the inverse trivialization. -/
+@[simp]
+theorem coverHomeomorph_symm_apply_mk (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) (b : B) :
+    (o.coverHomeomorph hι).symm ⟨b, o b⟩ = (b, 0) := by
+  rw [← coverHomeomorph_apply_zero o hι, Homeomorph.symm_apply_apply]
+
+/-- The opposite orientation belongs to sheet `1` of the inverse trivialization. -/
+@[simp]
+theorem coverHomeomorph_symm_apply_mk_neg (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) (b : B) :
+    (o.coverHomeomorph hι).symm ⟨b, -o b⟩ = (b, 1) := by
+  rw [← coverHomeomorph_apply_one o hι, Homeomorph.symm_apply_apply]
+
+/-- Reversing the chosen orientation composes the trivialization with the deck involution. -/
+theorem coverHomeomorph_neg (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) :
+    (-o).coverHomeomorph hι = (o.coverHomeomorph hι).trans VectorBundleOrientationCover.deck := by
+  apply Homeomorph.ext
+  rintro ⟨b, i⟩
+  fin_cases i <;> simp [VectorBundleOrientationCover.deck_apply]
+
+/-- The deck involution exchanges the two sheets of the trivialization. -/
+theorem deck_coverHomeomorph (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) (p : B × Fin 2) :
+    VectorBundleOrientationCover.deck (o.coverHomeomorph hι p) =
+      o.coverHomeomorph hι (p.1, p.2 + 1) := by
+  obtain ⟨b, i⟩ := p
+  fin_cases i
+  · simp [VectorBundleOrientationCover.deck_apply]
+  · simp only [Fin.mk_one, Fin.isValue, coverHomeomorph_apply_one, Fin.reduceAdd,
+      coverHomeomorph_apply_zero, VectorBundleOrientationCover.deck_apply,
+      VectorBundleOrientationCover.mk_eq_mk_iff]
+    -- The inherited negation on `Orientation` does not syntactically match the simp lemma.
+    exact neg_neg (o b)
+
+/-- A bundle is orientable exactly when its orientation double cover is a product with
+`Fin 2` over the base, without connectedness or separation assumptions on the base. -/
+theorem nonempty_iff_exists_homeomorph (hι : Fintype.card ι = finrank ℝ F) :
+    Nonempty (VectorBundleOrientation F E ι) ↔
+      ∃ e : B × Fin 2 ≃ₜ VectorBundleOrientationCover F E ι, ∀ p, (e p).proj = p.1 := by
+  constructor
+  · rintro ⟨o⟩
+    exact ⟨o.coverHomeomorph hι, o.proj_coverHomeomorph hι⟩
+  · rintro ⟨e, he⟩
+    exact (nonempty_iff_exists_section hι).mpr
+      ⟨fun b ↦ e (b, 0), e.continuous.comp (continuous_id.prodMk continuous_const),
+        fun b ↦ he (b, 0)⟩
 
 /-- Over a connected base, a bundle of rank `card ι` is orientable if and only if its orientation
 double cover is disconnected. -/
