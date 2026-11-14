@@ -751,9 +751,8 @@ theorem finite_setOf_eq_zero (hf : f ≠ 0) : {x | f x = ((0 : ℂ) : OnePoint �
 Riemann surface is constant. -/
 theorem exists_algebraMap_eq_of_forall_ne_infty (h : ∀ x, f x ≠ ∞) :
     ∃ c : ℂ, algebraMap ℂ (MeromorphicFunction X) c = f := by
-  have hmd : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f.finitePart := fun x ↦
-    (mdifferentiableAt_atlas (Or.inl rfl) (by simpa using h x)).comp x (f.mdifferentiable x)
-  obtain ⟨c, hc⟩ := MDifferentiable.exists_eq_const_of_compactSpace hmd
+  obtain ⟨c, hc⟩ := MDifferentiable.exists_eq_const_of_compactSpace
+    fun x ↦ mdifferentiableAt_finitePart (h x)
   refine ⟨c, ext fun x ↦ ?_⟩
   rw [coe_algebraMap, ← coe_finitePart (h x), hc, Function.const_apply]
 
