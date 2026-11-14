@@ -14,11 +14,12 @@ import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.PDE.Vortex.Potential
+import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 import TauCeti.MeasureTheory.Function.Lp.IntegralFunctional
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
-# A minimizer of Taubes's functional on `H¹(ℂ)`
+# The minimizer of Taubes's functional on `H¹(ℂ)`
 
 Let `P` be a complex polynomial of degree `m ≥ 1`. A plane vortex with zero divisor `P` is
 obtained from a solution `w` of the reduced equation `Δw = (exp (2w) h - 1) / 8 + g`, with
@@ -36,6 +37,20 @@ This file carries out the direct method of the calculus of variations:
   (`TauCeti.Vortex.exists_norm_le_of_sobolevReducedFunctional_le`), and closed balls of the
   Hilbert space `H¹(ℂ)` are weakly compact.
 
+The minimizer is unique. The Dirichlet energy `‖∇u‖₂² / 2` is a quadratic form, the potential is
+the integral of the convex function `h (exp (2t) - 1 - 2t)` and the linear term is linear, so at
+the midpoint `m` of `u` and `v` the parallelogram law gives
+
+`2 I(m) + ‖∇(u - v)‖₂² / 4 ≤ I(u) + I(v)`
+
+(`TauCeti.Vortex.sobolevReducedFunctional_midpoint_add_add_le`). At a minimizer `u` this becomes
+the quadratic growth bound `I(u) + ‖∇(v - u)‖₂² / 4 ≤ I(v)` for every `v`
+(`TauCeti.Vortex.sobolevReducedFunctional_add_le_of_forall_le`). Two minimizers therefore have
+the same weak gradient, so they differ by a constant, which vanishes because both are square
+integrable on the plane (`TauCeti.Vortex.eq_of_forall_sobolevReducedFunctional_le`,
+`TauCeti.Vortex.existsUnique_forall_sobolevReducedFunctional_le`). The solution of the reduced
+equation obtained by minimization is thus determined by `P` alone.
+
 Since `I(0) = 0`, the minimum is at most `0`; in particular the potential of a minimizer is
 integrable. The weak Euler–Lagrange equation of the minimizer is in
 `TauCeti.Analysis.PDE.Vortex.EulerLagrange`; its regularity is not treated here.
@@ -45,7 +60,7 @@ integrable. The weak Euler–Lagrange equation of the minimizer is in
 * C. H. Taubes, *Arbitrary N-vortex solutions to the first order Ginzburg–Landau equations*,
   Comm. Math. Phys. 72 (1980), 277–292.
 * A. Jaffe and C. H. Taubes, *Vortices and Monopoles*, Progress in Physics 2, Birkhäuser, 1980,
-  Chapter III, Section 4.
+  Chapter III, Section 4. The functional is strictly convex there, which gives uniqueness.
 -/
 
 public section
@@ -164,5 +179,81 @@ theorem exists_forall_sobolevReducedFunctional_le {P : Polynomial ℂ} (hm : 0 <
       exact h
     refine h0.trans (le_of_lt (not_le.mp fun hv' ↦ hv (hR v ?_)))
     exact_mod_cast hv'
+
+/-! ### Uniqueness of the minimizer -/
+
+/-- The minimum of Taubes's functional is a real number: it lies between `⊥` and `I(0) = 0`. -/
+private theorem exists_coe_eq_of_forall_le {P : Polynomial ℂ} {u : W1p (volume : Measure ℂ) ⊤ 2}
+    (hu : ∀ w, sobolevReducedFunctional P u ≤ sobolevReducedFunctional P w) :
+    ∃ a : ℝ, sobolevReducedFunctional P u = a :=
+  ⟨(sobolevReducedFunctional P u).toReal, (EReal.coe_toReal
+    (((hu 0).trans_eq sobolevReducedFunctional_zero).trans_lt EReal.zero_lt_top).ne
+    (sobolevReducedFunctional_ne_bot P u)).symm⟩
+
+/-- **Quadratic growth of Taubes's functional at its minimizer.** If `u` minimizes Taubes's
+functional on `H¹(ℂ)`, then `I(u) + ‖∇(v - u)‖₂² / 4 ≤ I(v)` for every `v ∈ H¹(ℂ)`. -/
+theorem sobolevReducedFunctional_add_le_of_forall_le {P : Polynomial ℂ} (hm : 0 < P.natDegree)
+    {u : W1p (volume : Measure ℂ) ⊤ 2} (hu : ∀ w, sobolevReducedFunctional P u ≤
+      sobolevReducedFunctional P w) (v : W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevReducedFunctional P u + ((‖W1p.gradient (v - u)‖ ^ 2 / 4 : ℝ) : EReal) ≤
+      sobolevReducedFunctional P v := by
+  obtain ⟨a, ha⟩ := exists_coe_eq_of_forall_le hu
+  have hmid := sobolevReducedFunctional_midpoint_add_add_le hm u v
+  have hle := hu (midpoint ℝ u v)
+  rw [← norm_neg, ← W1p.gradient_neg, neg_sub] at hmid
+  induction hv : sobolevReducedFunctional P v using EReal.rec with
+  | bot => exact absurd hv (sobolevReducedFunctional_ne_bot P v)
+  | top => exact le_top
+  | coe b =>
+    rw [ha] at hle hmid ⊢
+    rw [hv] at hmid
+    induction hm' : sobolevReducedFunctional P (midpoint ℝ u v) using EReal.rec with
+    | bot => exact absurd hm' (sobolevReducedFunctional_ne_bot P _)
+    | top =>
+      rw [hm', EReal.top_add_top, EReal.top_add_of_ne_bot (EReal.coe_ne_bot _)] at hmid
+      exact absurd (top_le_iff.mp hmid) (EReal.coe_ne_top _)
+    | coe c =>
+      rw [hm'] at hle hmid
+      norm_cast at hle hmid ⊢
+      linarith
+
+/-- **Uniqueness of the minimizer of Taubes's functional.** Two minimizers of Taubes's functional
+on `H¹(ℂ)` are equal. -/
+theorem eq_of_forall_sobolevReducedFunctional_le {P : Polynomial ℂ} (hm : 0 < P.natDegree)
+    {u v : W1p (volume : Measure ℂ) ⊤ 2}
+    (hu : ∀ w, sobolevReducedFunctional P u ≤ sobolevReducedFunctional P w)
+    (hv : ∀ w, sobolevReducedFunctional P v ≤ sobolevReducedFunctional P w) : u = v := by
+  -- The weak gradient of `v - u` vanishes.
+  have hgrad : W1p.gradient (v - u) = 0 := by
+    have h := (sobolevReducedFunctional_add_le_of_forall_le hm hu v).trans (hv u)
+    obtain ⟨a, ha⟩ := exists_coe_eq_of_forall_le hu
+    rw [ha, ← EReal.coe_add, EReal.coe_le_coe_iff] at h
+    exact norm_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp (by
+      nlinarith [sq_nonneg ‖W1p.gradient (v - u)‖]))
+  -- So `v - u` is almost everywhere constant, and a square integrable constant on `ℂ` is `0`.
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero
+    (by simpa using isPreconnected_univ) hgrad
+  simp only [Opens.coe_top, Measure.restrict_univ] at hc
+  have hconst : MemLp (fun _ : ℂ ↦ c) 2 := (W1p.memLp_value (v - u)).ae_eq hc
+  have hc0 : c = 0 := by
+    rcases (memLp_const_iff two_ne_zero ENNReal.ofNat_ne_top).mp hconst with h | h
+    · exact h
+    · exact absurd h (by simp [measure_univ_of_isAddLeftInvariant])
+  have hsub := W1p.value_sub_ae v u
+  simp only [Opens.coe_top, Measure.restrict_univ] at hsub
+  refine (W1p.ext_value (Lp.ext ?_)).symm
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  filter_upwards [hsub, hc] with z hs hz
+  rw [hz, hc0, Pi.sub_apply] at hs
+  linarith
+
+/-- **Existence and uniqueness of the minimizer of Taubes's functional.** For a complex polynomial
+`P` of degree at least one, Taubes's functional has exactly one minimizer on `H¹(ℂ)`. -/
+theorem existsUnique_forall_sobolevReducedFunctional_le {P : Polynomial ℂ}
+    (hm : 0 < P.natDegree) :
+    ∃! u : W1p (volume : Measure ℂ) ⊤ 2,
+      ∀ v, sobolevReducedFunctional P u ≤ sobolevReducedFunctional P v := by
+  obtain ⟨u, hu⟩ := exists_forall_sobolevReducedFunctional_le hm
+  exact ⟨u, hu, fun v hv ↦ eq_of_forall_sobolevReducedFunctional_le hm hv hu⟩
 
 end TauCeti.Vortex

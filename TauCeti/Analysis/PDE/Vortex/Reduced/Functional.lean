@@ -67,8 +67,15 @@ the energy. This gives, on `H¹(ℂ)`:
 For compactly supported `C¹` functions these specialize to
 `TauCeti.Vortex.exists_le_two_mul_reducedFunctional_add`,
 `TauCeti.Vortex.exists_le_reducedFunctional` and
-`TauCeti.Vortex.exists_integral_le_of_reducedFunctional_le`. The weak lower semicontinuity of `I`
-and the existence of a minimizer are in `TauCeti.Analysis.PDE.Vortex.Minimizer`.
+`TauCeti.Vortex.exists_integral_le_of_reducedFunctional_le`.
+
+The functional is also convex, uniformly in the weak gradient: at the midpoint `m` of `u` and `v`,
+`2 I(m) + ‖∇(u - v)‖₂² / 4 ≤ I(u) + I(v)`
+(`TauCeti.Vortex.sobolevReducedFunctional_midpoint_add_add_le`), by the parallelogram law for the
+Dirichlet energy, the convexity of `exp (2t) - 1 - 2t` and the linearity of the linear term.
+
+The weak lower semicontinuity of `I` and the existence and uniqueness of a minimizer are in
+`TauCeti.Analysis.PDE.Vortex.Minimizer`.
 
 ## References
 
@@ -233,6 +240,16 @@ theorem sobolevReducedFunctional_ne_top_iff {u : W1p (volume : Measure ℂ) ⊤ 
       (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) :=
   ⟨fun hu ↦ by_contra fun h ↦ hu (sobolevReducedFunctional_eq_top h),
     fun hu ↦ by rw [sobolevReducedFunctional_eq_coe hu]; exact EReal.coe_ne_top _⟩
+
+/-- Taubes's functional on `H¹(ℂ)` never takes the value `⊥`. -/
+theorem sobolevReducedFunctional_ne_bot (P : Polynomial ℂ) (u : W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevReducedFunctional P u ≠ ⊥ := by
+  by_cases hu : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+      (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)
+  · rw [sobolevReducedFunctional_eq_coe hu]
+    exact EReal.coe_ne_bot _
+  · rw [sobolevReducedFunctional_eq_top hu]
+    exact top_ne_bot
 
 /-- Taubes's functional vanishes at `0`. -/
 @[simp]
@@ -552,5 +569,114 @@ theorem exists_integral_le_of_reducedFunctional_le (hm : 0 < P.natDegree) (t : �
   have hu2 : ‖u‖ ^ 2 ≤ C ^ 2 := pow_le_pow_left₀ (norm_nonneg u) hu 2
   rw [← hW, ← hG]
   constructor <;> nlinarith [sq_nonneg ‖W1p.value u‖, sq_nonneg ‖W1p.gradient u‖]
+
+/-! ### Convexity -/
+
+/-- The potential of the midpoint of `u` and `v` is almost everywhere at most the average of the
+potentials of `u` and `v`, by the convexity of `exp (2t) - 1 - 2t`. -/
+private theorem potential_midpoint_le_ae (u v : W1p (volume : Measure ℂ) ⊤ 2) :
+    ∀ᵐ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+        (Real.exp (2 * W1p.value (midpoint ℝ u v) z) - 1 - 2 * W1p.value (midpoint ℝ u v) z) ≤
+      (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+          (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) +
+        ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+          (Real.exp (2 * W1p.value v z) - 1 - 2 * W1p.value v z)) / 2 := by
+  have hval : (W1p.value (midpoint ℝ u v) : ℂ → ℝ) =ᵐ[volume]
+      fun z ↦ (W1p.value u z + W1p.value v z) / 2 := by
+    simpa using W1p.value_midpoint_ae u v
+  filter_upwards [hval] with z hz
+  have hconv := Real.convexOn_exp_two_mul_sub_one_sub_two_mul.2 (mem_univ (W1p.value u z))
+    (mem_univ (W1p.value v z)) (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num : (0 : ℝ) ≤ 1 / 2)
+    (by norm_num)
+  simp only [smul_eq_mul] at hconv
+  -- Write the average of the values as the convex combination with weights `1 / 2`, the form in
+  -- which `hconv` is stated.
+  have hmid : (W1p.value u z + W1p.value v z) / 2 =
+      1 / 2 * W1p.value u z + 1 / 2 * W1p.value v z := by ring
+  rw [hz, ← mul_add, mul_div_assoc, hmid]
+  exact mul_le_mul_of_nonneg_left (by linarith) (by positivity)
+
+/-- If the potentials of `u` and `v` are integrable, so is the potential of their midpoint. -/
+private theorem integrable_potential_midpoint {u v : W1p (volume : Measure ℂ) ⊤ 2}
+    (hu : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+      (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z))
+    (hv : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+      (Real.exp (2 * W1p.value v z) - 1 - 2 * W1p.value v z)) :
+    Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+      (Real.exp (2 * W1p.value (midpoint ℝ u v) z) - 1 - 2 * W1p.value (midpoint ℝ u v) z) := by
+  refine Integrable.mono' ((hu.add hv).div_const 2) (aestronglyMeasurable_potential _) ?_
+  filter_upwards [potential_midpoint_le_ae (P := P) u v] with z hz
+  rw [Real.norm_of_nonneg (potential_nonneg _ z)]
+  exact hz
+
+/-- If the potentials of `u` and `v` are integrable, twice the integral of the potential of their
+midpoint is at most the sum of the integrals of their potentials. -/
+private theorem two_mul_integral_potential_midpoint_le {u v : W1p (volume : Measure ℂ) ⊤ 2}
+    (hu : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+      (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z))
+    (hv : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+      (Real.exp (2 * W1p.value v z) - 1 - 2 * W1p.value v z)) :
+    2 * ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+        (Real.exp (2 * W1p.value (midpoint ℝ u v) z) - 1 - 2 * W1p.value (midpoint ℝ u v) z) ≤
+      (∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+          (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)) +
+        ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+          (Real.exp (2 * W1p.value v z) - 1 - 2 * W1p.value v z) := by
+  rw [← integral_add hu hv, ← integral_const_mul]
+  refine integral_mono_ae ((integrable_potential_midpoint hu hv).const_mul 2) (hu.add hv) ?_
+  filter_upwards [potential_midpoint_le_ae (P := P) u v] with z hz
+  linarith
+
+/-- **Midpoint convexity of Taubes's functional.** For `u, v ∈ H¹(ℂ)` with midpoint `m`,
+`2 I(m) + ‖∇(u - v)‖₂² / 4 ≤ I(u) + I(v)`: the Dirichlet energy is uniformly convex in the weak
+gradient, the potential is convex and the linear term is linear. -/
+theorem sobolevReducedFunctional_midpoint_add_add_le (hm : 0 < P.natDegree)
+    (u v : W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevReducedFunctional P (midpoint ℝ u v) + sobolevReducedFunctional P (midpoint ℝ u v) +
+        ((‖W1p.gradient (u - v)‖ ^ 2 / 4 : ℝ) : EReal) ≤
+      sobolevReducedFunctional P u + sobolevReducedFunctional P v := by
+  set c : ℂ → ℝ := fun z ↦ 2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
+    (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8
+  -- If one of the two potentials is not integrable, the right-hand side is `⊤`.
+  by_cases hu : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+      (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)
+  swap
+  · rw [sobolevReducedFunctional_eq_top hu, EReal.top_add_of_ne_bot
+      (sobolevReducedFunctional_ne_bot P v)]
+    exact le_top
+  by_cases hv : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+      (Real.exp (2 * W1p.value v z) - 1 - 2 * W1p.value v z)
+  swap
+  · rw [sobolevReducedFunctional_eq_top hv, EReal.add_top_of_ne_bot
+      (sobolevReducedFunctional_ne_bot P u)]
+    exact le_top
+  -- The potential is convex.
+  have hmid := integrable_potential_midpoint hu hv
+  have hpot := two_mul_integral_potential_midpoint_le hu hv
+  -- The linear term is linear in the value.
+  have hval : (W1p.value (midpoint ℝ u v) : ℂ → ℝ) =ᵐ[volume]
+      fun z ↦ (W1p.value u z + W1p.value v z) / 2 := by
+    simpa using W1p.value_midpoint_ae u v
+  have hc := memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm
+  have hcu : Integrable fun z ↦ c z * W1p.value u z := hc.integrable_mul (W1p.memLp_value u)
+  have hcv : Integrable fun z ↦ c z * W1p.value v z := hc.integrable_mul (W1p.memLp_value v)
+  have hlin : 2 * ∫ z, c z * W1p.value (midpoint ℝ u v) z =
+      (∫ z, c z * W1p.value u z) + ∫ z, c z * W1p.value v z := by
+    rw [← integral_add hcu hcv, ← integral_const_mul]
+    refine integral_congr_ae ?_
+    filter_upwards [hval] with z hz
+    rw [hz]
+    ring
+  -- The Dirichlet energy satisfies the parallelogram law.
+  have hgrad : ‖W1p.gradient (midpoint ℝ u v)‖ ^ 2 + ‖W1p.gradient (u - v)‖ ^ 2 / 4 =
+      (‖W1p.gradient u‖ ^ 2 + ‖W1p.gradient v‖ ^ 2) / 2 := by
+    have hpar := parallelogram_law_with_norm ℝ (W1p.gradient u) (W1p.gradient v)
+    rw [W1p.gradient_midpoint, midpoint_eq_smul_add, norm_smul, W1p.gradient_sub, invOf_eq_inv,
+      Real.norm_of_nonneg (by norm_num)]
+    nlinarith [hpar]
+  rw [sobolevReducedFunctional_eq_coe hu, sobolevReducedFunctional_eq_coe hv,
+    sobolevReducedFunctional_eq_coe hmid, ← EReal.coe_add, ← EReal.coe_add, ← EReal.coe_add,
+    EReal.coe_le_coe_iff]
+  linarith
 
 end TauCeti.Vortex
