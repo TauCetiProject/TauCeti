@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Module.Injective.Envelope.Basic
 import TauCeti.Algebra.Module.Injective.Basic
 import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 import Mathlib.Algebra.Category.ModuleCat.Injective
+import Mathlib.Algebra.Module.Shrink
 
 /-!
 # Existence of injective envelopes
@@ -17,9 +18,11 @@ Every module has an injective envelope (Eckmann–Schopf). More precisely, every
 `i : M →ₗ[R] Q` into an injective module restricts to an injective envelope of `M` inside `Q`
 (`LinearMap.exists_isInjectiveEnvelope_submodule`), and since every module embeds into an injective
 module, every module has an injective envelope in its own universe
-(`TauCeti.exists_isInjectiveEnvelope`). By `TauCeti.IsInjectiveEnvelope.exists_linearEquiv` this
-envelope is unique up to isomorphism. In particular this provides the injective hull `E(k)` of the
-residue field of a local ring, the dualizing module of Matlis duality.
+(`TauCeti.exists_isInjectiveEnvelope`), and in every universe in which the ring and the module are
+small (`TauCeti.exists_isInjectiveEnvelope_of_small`). By
+`TauCeti.IsInjectiveEnvelope.exists_linearEquiv` this envelope is unique up to isomorphism. In
+particular this provides the injective hull `E(k)` of the residue field of a local ring, the
+dualizing module of Matlis duality.
 
 The envelope is a maximal essential extension `E` of the image of `M` inside `Q`, which exists by
 Zorn's lemma: a union of a chain of essential extensions is an essential extension
@@ -36,6 +39,8 @@ onto `E` and `E` is injective as a retract of an injective module.
 * `LinearMap.exists_isInjectiveEnvelope_submodule`: an embedding into an injective module restricts
   to an injective envelope inside that module.
 * `TauCeti.exists_isInjectiveEnvelope`: every module has an injective envelope.
+* `TauCeti.exists_isInjectiveEnvelope_of_small`: every module has an injective envelope in every
+  universe in which the ring and the module are small.
 
 ## References
 
@@ -116,5 +121,17 @@ theorem exists_isInjectiveEnvelope [Small.{v} R] :
   obtain ⟨P, _, hP⟩ := ι.hom.exists_isInjectiveEnvelope_submodule
     ((ModuleCat.mono_iff_injective ι).mp inferInstance)
   exact ⟨P, _, _, _, hP⟩
+
+variable (R M) in
+/-- **Existence of injective envelopes in another universe.** A module has an injective envelope
+in every universe in which both the ring and the module are small. -/
+theorem exists_isInjectiveEnvelope_of_small [Small.{w} R] [Small.{w} M] :
+    ∃ (Q : Type w) (_ : AddCommGroup Q) (_ : Module R Q) (i : M →ₗ[R] Q),
+      IsInjectiveEnvelope i := by
+  obtain ⟨Q, _, _, i, hi⟩ := exists_isInjectiveEnvelope R (Shrink.{w} M)
+  refine ⟨Q, _, _, i ∘ₗ (Shrink.linearEquiv R M).symm.toLinearMap,
+    hi.comp (LinearEquiv.injective _) ?_⟩
+  rw [LinearMap.range_eq_top.2 (LinearEquiv.surjective _)]
+  exact isEssential_top
 
 end TauCeti

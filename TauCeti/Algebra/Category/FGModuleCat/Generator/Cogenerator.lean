@@ -13,6 +13,7 @@ public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Duality
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.AdditiveClosure
 
 import TauCeti.Algebra.Module.Injective.Envelope.Existence
+import TauCeti.RingTheory.Artinian.Small
 
 /-!
 # Generator-cogenerators of `mod A` for an Artin algebra
@@ -24,7 +25,8 @@ additive closure `add M`, and exactly when every indecomposable projective and e
 indecomposable injective object of `mod A` is a direct summand of `M`
 (`TauCeti.isGeneratorCogenerator_iff_forall_indecomposable`). The base ring `R` may live in any
 universe; the statements about `D A` ask that it be small in the universe of `A` and its modules,
-which can always be arranged by replacing `R` with its image in `A`.
+which can always be arranged by replacing `R` with its image in `A`
+(`TauCeti.exists_small_isArtinianRing_algebra`).
 
 The generator half holds over any ring (`FGModuleCat.isSeparator_iff_additiveClosure`). The
 cogenerator half is its dual: the Matlis duality `(mod A)ᵒᵖ ≌ mod Aᵐᵒᵖ`
@@ -112,33 +114,6 @@ theorem _root_.FGModuleCat.isSeparator_iff_forall_indecomposable {A : Type u} [R
       (additiveClosure_le_iff.2 hM _ (FGModuleCat.additiveClosure_regular_of_projective P))
   · refine additiveClosure_iff_forall_indecomposable.2 fun Y hY ⟨r⟩ ↦ ?_
     exact h Y r.projective ((FGModuleCat.indecomposable_obj_iff Y).2 hY)
-
-/-- An injective hull of `R ⧸ J(R)` in any universe in which `R` is small. -/
-private theorem exists_isInjectiveEnvelope_quotient_jacobson_of_small (R : Type u) [CommRing R]
-    [Small.{v} R] :
-    ∃ (E : Type v) (_ : AddCommGroup E) (_ : Module R E) (f : R ⧸ Ring.jacobson R →ₗ[R] E),
-      IsInjectiveEnvelope f := by
-  have : Small.{v} (R ⧸ Ring.jacobson R) := small_of_surjective Ideal.Quotient.mk_surjective
-  obtain ⟨E, _, _, i, hi⟩ := exists_isInjectiveEnvelope R (Shrink.{v} (R ⧸ Ring.jacobson R))
-  refine ⟨E, _, _, i ∘ₗ (Shrink.linearEquiv R _).symm.toLinearMap,
-    hi.comp (LinearEquiv.injective _) ?_⟩
-  rw [LinearMap.range_eq_top.2 (LinearEquiv.surjective _)]
-  exact isEssential_top
-
-/-- An Artin algebra is an Artin algebra over a base ring that is small in its universe: the
-quotient of `R` by the kernel of `R → A`, which embeds in `A`. -/
-private theorem exists_small_isArtinianRing_algebra (R : Type u) [CommRing R] [IsArtinianRing R]
-    (A : Type v) [Ring A] [Algebra R A] [Module.Finite R A] :
-    ∃ (R' : Type u) (_ : CommRing R') (_ : IsArtinianRing R') (_ : Algebra R' A)
-      (_ : Module.Finite R' A), Small.{v} R' := by
-  let g := RingHom.kerLift (algebraMap R A)
-  let _ : Algebra (R ⧸ RingHom.ker (algebraMap R A)) A := g.toAlgebra' fun c x ↦ by
-    obtain ⟨c, rfl⟩ := Ideal.Quotient.mk_surjective c
-    simpa [g] using Algebra.commutes c x
-  have : IsScalarTower R (R ⧸ RingHom.ker (algebraMap R A)) A :=
-    IsScalarTower.of_algebraMap_eq fun r ↦ by simp [g, RingHom.algebraMap_toAlgebra']
-  exact ⟨R ⧸ RingHom.ker (algebraMap R A), inferInstance, inferInstance, inferInstance,
-    Module.Finite.of_restrictScalars_finite R _ A, small_of_injective (RingHom.kerLift_injective _)⟩
 
 section Artin
 
@@ -245,7 +220,8 @@ theorem _root_.FGModuleCat.isCoseparator_iff_forall_indecomposable (R : Type u) 
   have := IsArtinianRing.of_finite R A
   -- Replace `R` by a base ring that is small in the universe of `A`, to take `E` there.
   obtain ⟨R', _, _, _, _, _⟩ := exists_small_isArtinianRing_algebra R A
-  obtain ⟨E, _, _, f, hf⟩ := exists_isInjectiveEnvelope_quotient_jacobson_of_small.{u, v} R'
+  obtain ⟨E, _, _, f, hf⟩ :=
+    exists_isInjectiveEnvelope_of_small.{u, u, v} R' (R' ⧸ Ring.jacobson R')
   rw [hf.isCoseparator_iff_additiveClosure]
   refine ⟨fun hM I hI hIi ↦ ?_, fun h ↦ ?_⟩
   · have := FGModuleCat.isLocalRing_end_of_indecomposable hIi
