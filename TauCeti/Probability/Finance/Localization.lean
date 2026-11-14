@@ -183,7 +183,7 @@ theorem tendsto_eLpNorm_polynomialGrowth_geometricBrownianMotion
 
 /-- A strongly adapted, almost surely right-continuous local martingale with a uniform
 polynomial bound in a positive geometric Brownian stock stopped at maturity is a true
-martingale. Together with `memLp_two_of_geometricBrownianMotion_bound_randomTime`, this verifies the
+martingale. Together with `memLp_two_randomTime_of_geometricBrownianMotion_bound`, this verifies the
 square-integrable true-martingale condition for a discounted candidate price once its local
 Itô identity and terminal extension have been established. -/
 theorem martingale_of_locally_martingale_of_geometricBrownianMotion_bound

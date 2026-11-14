@@ -50,7 +50,10 @@ open TauCeti.Probability
 
 /-- At a deterministic time, a measurable random variable bounded by a polynomial in a
 geometric Brownian stock belongs to every finite `Lᵖ` space. No positivity of the initial
-stock, path regularity, or filtration is required; the growth exponent may be any real. -/
+stock, path regularity, or filtration is required; the growth exponent may be any real.
+For nonpositive initial stock `s ≤ 0`, `hbound` uses Mathlib's signed/zero `Real.rpow`
+conventions, not `|S_t| ^ p`, so it can degenerate rather than express polynomial growth
+in the absolute spot. -/
 theorem memLp_of_geometricBrownianMotion_bound
     {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
     (hB : IsPreBrownianReal B P) {s μ σ p A : ℝ} {t : ℝ≥0} {f : Ω → ℝ}
@@ -202,7 +205,7 @@ theorem lintegral_iSup_sq_lt_top_of_geometricBrownianMotion_bound
 stopped at the finite horizon `T` belongs to `L²` at every random time whose sampled value
 is a.e. strongly measurable. No stopping-time or path-regularity assumption on the process
 is needed. In particular, this covers measurable values at deterministic times. -/
-theorem memLp_two_of_geometricBrownianMotion_bound_randomTime
+theorem memLp_two_randomTime_of_geometricBrownianMotion_bound
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
     (hs : 0 < s)
