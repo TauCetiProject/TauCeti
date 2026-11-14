@@ -24,7 +24,10 @@ with `|u| ≤ M` there and `f ∈ Lⁿ(B(x₀, 2 r))`. Then `u` is `α`-Hölder 
 (`TauCeti.PDE.exists_holderOnWith_of_sum_mul_fderiv_fderiv_eq`), where `0 < α ≤ 1` and `C`
 depend only on the dimension and on `κ`. The coefficients need no regularity, not even
 measurability, and need not be symmetric. This is the interior Hölder estimate of Krylov and
-Safonov (Gilbarg–Trudinger, Corollary 9.24) for classical solutions.
+Safonov (Gilbarg–Trudinger, Corollary 9.24) for classical solutions. More generally, the same
+bound holds when only `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f`
+(`TauCeti.PDE.exists_holderOnWith_of_abs_sum_mul_fderiv_fderiv_le`; Caffarelli–Cabré,
+Proposition 4.10).
 
 ## The argument
 
@@ -34,10 +37,10 @@ weak Harnack inequality.
 
 * **Oscillation decay.** Let `m ≤ u ≤ m + L` on `closedBall c ρ`. Translate a dyadic cube `Q` of
   side `2ᵏ ≈ ρ / (4 √n)` to be centred at `c`. The functions `v₁ = (u - m) / s` and
-  `v₂ = (m + L - u) / s` are nonnegative supersolutions of equations with right-hand sides
-  `± f / s`, and `v₁ + v₂ = L / s`. With `s = L / (2 T)`, one of them is at least `T` at every
-  point, so the two superlevel sets `{vᵢ ≥ T}` cover `Q`. For `T` large the power decay forbids
-  this when both `vᵢ` are at most `1` somewhere near `c`. So one of them exceeds `1` on
+  `v₂ = (m + L - u) / s` are nonnegative supersolutions with right-hand side `f / s`, and
+  `v₁ + v₂ = L / s`. With `s = L / (2 T)`, one of them is at least `T` at every point, so the
+  two superlevel sets `{vᵢ ≥ T}` cover `Q`. For `T` large the power decay forbids this when
+  both `vᵢ` are at most `1` somewhere near `c`. So one of them exceeds `1` on
   `closedBall c (ρ / 4)`, and there the oscillation of `u` is at most `(1 - δ) L`, with
   `δ = 1 / (2 T)`. The power decay needs `ρ ‖f / s‖_{Lⁿ} ≤ ε₀ λ`; when this fails, `L` is already
   at most a multiple of `ρ ‖f‖_{Lⁿ} / λ`. In both cases the oscillation on `closedBall c (ρ / 4)`
@@ -51,8 +54,10 @@ weak Harnack inequality.
 
 ## Main declarations
 
-* `TauCeti.PDE.exists_holderOnWith_of_sum_mul_fderiv_fderiv_eq`: **the interior Hölder estimate
-  of Krylov and Safonov** for classical solutions.
+* `TauCeti.PDE.exists_holderOnWith_of_abs_sum_mul_fderiv_fderiv_le`: **the interior Hölder
+  estimate of Krylov and Safonov** for `C²` functions with `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f`.
+* `TauCeti.PDE.exists_holderOnWith_of_sum_mul_fderiv_fderiv_eq`: the same estimate for classical
+  solutions of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f`.
 
 ## References
 
@@ -218,17 +223,17 @@ private theorem exists_forall_one_lt_or_forall_one_lt_of_add_eq {κ : ℝ} (hκ 
   exact (hle.trans_lt h2).false
 
 omit [Nonempty ι] in
-/-- **Rescaled solutions are supersolutions.** If `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = y` at `x`, then
-`∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ (t (u - b)) ≤ |t| ‖y‖` at `x`, for all constants `t` and `b`. -/
+/-- **Rescaled solutions are supersolutions.** If `|∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu| ≤ y` at `x`, then
+`∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ (t (u - b)) ≤ |t| y` at `x`, for all constants `t` and `b`. -/
 private theorem sum_mul_fderiv_fderiv_const_mul_sub_const_le {A : Matrix ι ι ℝ}
     {u : EuclideanSpace ℝ ι → ℝ} {x : EuclideanSpace ℝ ι} {y : ℝ} (t b : ℝ)
-    (h : ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ u) x
-      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = y) :
+    (h : |∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ u) x
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ y) :
     ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun z ↦ t * (u z - b)) x
-      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ |t| * ‖y‖ := by
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ |t| * y := by
   have h' : fderiv ℝ (fun z ↦ u z - b) = fderiv ℝ u := funext fun z ↦ fderiv_sub_const b
-  rw [sum_mul_fderiv_fderiv_const_mul, h', h, Real.norm_eq_abs, ← abs_mul]
-  exact le_abs_self _
+  rw [sum_mul_fderiv_fderiv_const_mul, h']
+  exact (le_abs_self _).trans (abs_mul t _ ▸ mul_le_mul_of_nonneg_left h (abs_nonneg t))
 
 /-- **Smallness of the rescaled right-hand side.** If `‖f‖_{Lᵖ} ≤ F` and `ρ F ≤ b s` with
 `ρ ≥ 0` and `s > 0`, then `ρ ‖(s⁻¹ ‖f‖)⁺‖_{Lᵖ} ≤ b`. -/
@@ -263,7 +268,7 @@ private theorem exists_four_mul_two_zpow_mul_le_and_lt {ρ n : ℝ} (hρ : 0 < �
 /-- **One step of oscillation decay.** There are `0 < δ < 1` and `K ≥ 0`, depending only on the
 dimension and on `κ`, with the following property. Let `a` be uniformly elliptic on `B(c, ρ)`
 with `λ ≤ Λ ≤ κ λ`, and let `u` be continuous on `closedBall c ρ` and `C²` in `B(c, ρ)` with
-`∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f` there and `‖f‖_{Lⁿ(B(c, ρ))} ≤ F`. If `m ≤ u ≤ m + L` on `closedBall c ρ`,
+`|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` there and `‖f‖_{Lⁿ(B(c, ρ))} ≤ F`. If `m ≤ u ≤ m + L` on `closedBall c ρ`,
 then on `closedBall c (ρ / 4)` the function `u` takes values in an interval of length
 `(1 - δ) L + K ρ F / λ`. -/
 private theorem exists_mem_Icc_closedBall_div_four {κ : ℝ} (hκ : 0 < κ) :
@@ -272,8 +277,8 @@ private theorem exists_mem_Icc_closedBall_div_four {κ : ℝ} (hκ : 0 < κ) :
         ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃u f : EuclideanSpace ℝ ι → ℝ⦄, 0 < ρ → 0 ≤ F →
         UniformlyEllipticOn (ball c ρ) a lam Lam → Lam ≤ κ * lam →
         ContinuousOn u (closedBall c ρ) → ContDiffOn ℝ 2 u (ball c ρ) →
-        (∀ x ∈ ball c ρ, ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
-          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = f x) →
+        (∀ x ∈ ball c ρ, |∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ f x) →
         eLpNorm f (Fintype.card ι) (volume.restrict (ball c ρ)) ≤ ENNReal.ofReal F →
         (∀ x ∈ closedBall c ρ, u x ∈ Icc m (m + L)) →
         ∃ m', ∀ x ∈ closedBall c (ρ / 4),
@@ -319,15 +324,15 @@ private theorem exists_mem_Icc_closedBall_div_four {κ : ℝ} (hκ : 0 < κ) :
     (continuousOn_const.mul (hcont.sub continuousOn_const))
     (contDiffOn_const.mul (hu.sub contDiffOn_const))
     (fun x hx ↦ mul_nonneg (by positivity) (by linarith [(hmem x hx).1]))
-    (fun x hx ↦ (sum_mul_fderiv_fderiv_const_mul_sub_const_le s⁻¹ m (heq x hx)).trans_eq
-      (by rw [hs']))
+    (fun x hx ↦ (sum_mul_fderiv_fderiv_const_mul_sub_const_le s⁻¹ m (heq x hx)).trans
+      (by rw [hs']; gcongr; exact Real.le_norm_self _))
     (continuousOn_const.mul (continuousOn_const.sub hcont))
     (contDiffOn_const.mul (contDiffOn_const.sub hu))
     (fun x hx ↦ mul_nonneg (by positivity) (by linarith [(hmem x hx).2]))
     (fun x hx ↦ by
       rw [hv₂]
-      exact (sum_mul_fderiv_fderiv_const_mul_sub_const_le (-s⁻¹) (m + L) (heq x hx)).trans_eq
-        (by rw [abs_neg, hs'])) hg hsum
+      exact (sum_mul_fderiv_fderiv_const_mul_sub_const_le (-s⁻¹) (m + L) (heq x hx)).trans
+        (by rw [abs_neg, hs']; gcongr; exact Real.le_norm_self _)) hg hsum
   have hδL : (1 - (2 * T)⁻¹) * L = L - s := by
     simp only [s]
     ring
@@ -354,8 +359,8 @@ private theorem exists_mem_Icc_closedBall_div_four_pow {κ : ℝ} (hκ : 0 < κ)
         ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃u f : EuclideanSpace ℝ ι → ℝ⦄, 0 < ρ → 0 ≤ F →
         UniformlyEllipticOn (ball c ρ) a lam Lam → Lam ≤ κ * lam →
         ContinuousOn u (closedBall c ρ) → ContDiffOn ℝ 2 u (ball c ρ) →
-        (∀ x ∈ ball c ρ, ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
-          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = f x) →
+        (∀ x ∈ ball c ρ, |∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ f x) →
         eLpNorm f (Fintype.card ι) (volume.restrict (ball c ρ)) ≤ ENNReal.ofReal F →
         (∀ x ∈ closedBall c ρ, u x ∈ Icc m (m + L)) →
         ∀ j : ℕ, ∃ m', ∀ x ∈ closedBall c (ρ / 4 ^ j),
@@ -475,22 +480,22 @@ private theorem dist_le_four_mul_dist_div_rpow_mul {X : Type*} [MetricSpace X]
         gcongr
         linarith
 
-/-- **The interior Hölder estimate of Krylov and Safonov** (Gilbarg–Trudinger, Corollary 9.24,
-for classical solutions). Let `κ > 0`. There are `0 < α ≤ 1` and `C > 0`, depending only on the
+/-- **The interior Hölder estimate of Krylov and Safonov** (Caffarelli–Cabré, Proposition 4.10,
+for classical functions). Let `κ > 0`. There are `0 < α ≤ 1` and `C > 0`, depending only on the
 dimension and on `κ`, with the following property. Let `a` be uniformly elliptic on
 `B(x₀, 2 r)` with constants `λ ≤ Λ ≤ κ λ`, and let `u` be `C²` in `B(x₀, 2 r)` with `|u| ≤ M`
-and `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f` there, where `f ∈ Lⁿ(B(x₀, 2 r))`. Then `u` is `α`-Hölder on `B(x₀, r)`
-with constant `C r^(-α) (M + r ‖f‖_{Lⁿ(B(x₀, 2 r))} / λ)`.
+and `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` there, where `f ∈ Lⁿ(B(x₀, 2 r))`. Then `u` is `α`-Hölder on
+`B(x₀, r)` with constant `C r^(-α) (M + r ‖f‖_{Lⁿ(B(x₀, 2 r))} / λ)`.
 
 The coefficients need no regularity, not even measurability, and need not be symmetric. -/
-theorem exists_holderOnWith_of_sum_mul_fderiv_fderiv_eq {κ : ℝ} (hκ : 0 < κ) :
+theorem exists_holderOnWith_of_abs_sum_mul_fderiv_fderiv_le {κ : ℝ} (hκ : 0 < κ) :
     ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧
       ∀ ⦃lam Lam r M : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
         ⦃u f : EuclideanSpace ℝ ι → ℝ⦄, 0 < r →
         UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam → Lam ≤ κ * lam →
         ContDiffOn ℝ 2 u (ball x₀ (2 * r)) → (∀ x ∈ ball x₀ (2 * r), |u x| ≤ M) →
-        (∀ x ∈ ball x₀ (2 * r), ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
-          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = f x) →
+        (∀ x ∈ ball x₀ (2 * r), |∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ f x) →
         MemLp f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r))) →
         HolderOnWith (C * r ^ (-(α : ℝ)) * (M + r * (eLpNorm f (Fintype.card ι)
           (volume.restrict (ball x₀ (2 * r)))).toReal / lam)).toNNReal α u (ball x₀ r) := by
@@ -545,6 +550,30 @@ theorem exists_holderOnWith_of_sum_mul_fderiv_fderiv_eq {κ : ℝ} (hκ : 0 < κ
           hdec
     _ ≤ 4 * (dist x y / r) ^ α * (max 2 K * (M + r * F / lam)) := by gcongr
     _ = 4 * max 2 K * r ^ (-α) * (M + r * F / lam) * dist x y ^ α := by rw [← hrd]; ring
+
+/-- **The interior Hölder estimate of Krylov and Safonov** (Gilbarg–Trudinger, Corollary 9.24,
+for classical solutions). Let `κ > 0`. There are `0 < α ≤ 1` and `C > 0`, depending only on the
+dimension and on `κ`, with the following property. Let `a` be uniformly elliptic on
+`B(x₀, 2 r)` with constants `λ ≤ Λ ≤ κ λ`, and let `u` be `C²` in `B(x₀, 2 r)` with `|u| ≤ M`
+and `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f` there, where `f ∈ Lⁿ(B(x₀, 2 r))`. Then `u` is `α`-Hölder on `B(x₀, r)`
+with constant `C r^(-α) (M + r ‖f‖_{Lⁿ(B(x₀, 2 r))} / λ)`.
+
+The coefficients need no regularity, not even measurability, and need not be symmetric. -/
+theorem exists_holderOnWith_of_sum_mul_fderiv_fderiv_eq {κ : ℝ} (hκ : 0 < κ) :
+    ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧
+      ∀ ⦃lam Lam r M : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
+        ⦃u f : EuclideanSpace ℝ ι → ℝ⦄, 0 < r →
+        UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam → Lam ≤ κ * lam →
+        ContDiffOn ℝ 2 u (ball x₀ (2 * r)) → (∀ x ∈ ball x₀ (2 * r), |u x| ≤ M) →
+        (∀ x ∈ ball x₀ (2 * r), ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = f x) →
+        MemLp f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r))) →
+        HolderOnWith (C * r ^ (-(α : ℝ)) * (M + r * (eLpNorm f (Fintype.card ι)
+          (volume.restrict (ball x₀ (2 * r)))).toReal / lam)).toNNReal α u (ball x₀ r) := by
+  obtain ⟨α, C, hα0, hα1, hC, H⟩ := exists_holderOnWith_of_abs_sum_mul_fderiv_fderiv_le (ι := ι) hκ
+  refine ⟨α, C, hα0, hα1, hC, fun lam Lam r M x₀ a u f hr ha hLam hu hM heq hf ↦ ?_⟩
+  rw [← eLpNorm_norm f hf.aestronglyMeasurable]
+  exact H hr ha hLam hu hM (fun x hx ↦ (heq x hx).symm ▸ (Real.norm_eq_abs _).ge) hf.norm
 
 end PDE
 
