@@ -512,7 +512,7 @@ end Member
 variable (φ lt) in
 /-- **Marker's consistency property**: its members are the sets `base φ lt ∪ σ` for the pairs
 `(Q, σ)` of `Member`. -/
-private noncomputable def chainProperty : ConsistencyProperty L where
+private def chainProperty : ConsistencyProperty L where
   sets := chainSets.{u, v, w} φ lt
   no_falsum := by
     rintro _ ⟨Q, σ, hm, rfl⟩ hbot
