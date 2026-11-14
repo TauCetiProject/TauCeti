@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
+-- `TauCeti.Analysis.Normed.Module.Ball` is imported privately: it supplies
+-- `TauCeti.preimage_smul_ball_smul_norm` inside the proof of the dilation invariance.
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Functions of bounded and of vanishing mean oscillation
@@ -570,13 +573,13 @@ theorem bmoSeminorm_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] {μ : Measure E}
     [μ.IsAddHaarMeasure] (f : E → F) {t : ℝ} (ht : t ≠ 0) :
     bmoSeminorm (fun x => f (t • x)) μ = bmoSeminorm f μ := by
-  have hpre (c : E) (r : ℝ) : (fun x => t • x) ⁻¹' ball c r = ball (t⁻¹ • c) (‖t⁻¹‖ * r) := by
-    rw [Set.preimage_smul₀ ht, smul_ball (inv_ne_zero ht)]
   refine bmoSeminorm_comp_of_map_eq_smul (e := MeasurableEquiv.smul₀ t ht)
     (Measure.map_addHaar_smul μ ht) (by simp [ht]) ENNReal.ofReal_ne_top
-    (fun c r => ⟨t • c, ‖t‖ * r, ?_⟩) (fun c' r' => ⟨t⁻¹ • c', ‖t⁻¹‖ * r', (hpre c' r').symm⟩) f
-  simp only [MeasurableEquiv.coe_smul₀, hpre, inv_smul_smul₀ ht, ← mul_assoc, norm_inv,
-    inv_mul_cancel₀ (norm_ne_zero_iff.2 ht), one_mul]
+    (fun c r => ⟨t • c, ‖t‖ * r, by
+      rw [MeasurableEquiv.coe_smul₀]
+      exact (preimage_smul_ball_smul_norm c (norm_pos_iff.2 ht) r).symm⟩)
+    (fun c' r' => ⟨t⁻¹ • c', ‖t⁻¹‖ * r', ?_⟩) f
+  rw [MeasurableEquiv.coe_smul₀, Set.preimage_smul₀ ht, smul_ball (inv_ne_zero ht)]
 
 end Invariance
 

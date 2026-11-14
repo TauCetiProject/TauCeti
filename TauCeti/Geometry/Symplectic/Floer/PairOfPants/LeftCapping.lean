@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Capping the input at `0` along the input-exchange family
@@ -46,11 +47,13 @@ the output datum translated by `c`. For `0 ≤ c ≤ 1`:
   (`TauCeti.Floer.contMDiffAt_cappedExchangePerturbation`); for `C^n` Hamiltonians on a normed
   space, each member is `C^n` jointly in the point of `ℂ ∖ {1}`, in real coordinates, and the
   target point (`TauCeti.Floer.contDiffAt_uncurry_cappedExchangePerturbation`);
-* for a symplectic vector space target and `|H_q| ≤ B_q`, its integrated curvature along any map
-  is at most `B_0 + (B_0 + B_1 + B_∞)`, uniformly in `c` and in the neck length
-  (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le`),
-  and for `R ≥ max (L - 1) 2` its curvature vanishes on `ℂ ∖ {1}` outside the truncation
-  `TauCeti.ThricePuncturedSphere.exchangeTruncation c R`
+* for a manifold target with a two-form `ω` and `|H_q| ≤ B_q`, its integrated curvature along any
+  map is at most `B_0 + (B_0 + B_1 + B_∞)`, uniformly in `c` and in the neck length
+  (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le`);
+  the symplectic vector space case is
+  `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le`;
+* for a symplectic vector space target and `R ≥ max (L - 1) 2`, its curvature vanishes on
+  `ℂ ∖ {1}` outside the truncation `TauCeti.ThricePuncturedSphere.exchangeTruncation c R`
   (`TauCeti.SymplecticForm.hamiltonianCurvature_cappedExchangePerturbation_eq_zero`).
 
 At `c = 0` it is the capping family at `0`
@@ -364,23 +367,26 @@ end VectorSpace
 
 end TauCeti.Floer
 
-namespace TauCeti.SymplecticForm
+namespace TauCeti.SmoothTwoForm
 
-open Floer Topology
+open Floer
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {H : Puncture → ℝ → V → ℝ} {L : ℝ}
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
+  {H : Puncture → ℝ → M → ℝ} {L : ℝ}
 
-/-- **The integrated curvature of the capped input-exchange family is bounded uniformly.** Let `K`
-be the member `c ∈ [0, 1]` of the input-exchange family capped at `0` along a neck of length
-`L > 4`, for period-one `C¹` Hamiltonians `H_q` with `|H_q| ≤ B_q`, with components
-`K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` in the global coordinate `z = s + i t` of `ℂ`. Then for
-every map `u` into the target, the integral of `|R_K(z, u(z))|` over the plane is at most
-`B_0 + ∑ q, B_q`, which depends neither on `c` nor on `L`. -/
-theorem lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hL : 4 < L)
+/-- **The integrated curvature of the capped input-exchange family is bounded uniformly**, for a
+manifold target. Let `K` be the member `c ∈ [0, 1]` of the input-exchange family capped at `0`
+along a neck of length `L > 4`, for period-one `C¹` Hamiltonians `H_q` on a manifold `M` with a
+two-form `ω`, with `|H_q| ≤ B_q`, and write its components in the global coordinate `z = s + i t`
+of `ℂ` as `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)`. Then for every map `u` into `M`, the integral
+of `|R_K(z, u(z))|` over the plane is at most `B_0 + ∑ q, B_q`, which depends neither on `c` nor
+on `L`. -/
+theorem lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le (ω : SmoothTwoForm I M)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (hL : 4 < L)
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
-    (u : ℝ × ℝ → V) :
+    (u : ℝ × ℝ → M) :
     ∫⁻ z, ‖ω.hamiltonianCurvature
         (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x
@@ -390,13 +396,13 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le (ω :
   have hBin := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le
     (q := zero) (Hb := update H inf 0) (by decide)
     ((forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩)
-    ((forall_update_iff H fun _ f => ContDiff ℝ 1 (uncurry f)).2
-      ⟨contDiff_const, fun q _ => hHs q⟩) hL
+    ((forall_update_iff H fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f)).2
+      ⟨contMDiff_const, fun q _ => hHs q⟩) hL
     (Bb := update B inf 0) (fun q t x => by
       rcases eq_or_ne q inf with rfl | hq
       · simp
       · simpa [update_of_ne hq] using hB q t x) u
-  have hK (w : ℂ) (hw : 3 ≤ ‖w - c‖) (x : V) :
+  have hK (w : ℂ) (hw : 3 ≤ ‖w - c‖) (x : M) :
       plumbedPerturbation (Pi.single inf (H zero)) (update H inf 0) zero L w x = 0 := by
     have h := cappedExchangePerturbation_of_le_norm_sub (H := H) (L := L) (by linarith) hc₀ hc₁
       (by linarith : 3 / 2 ≤ ‖w - c‖) x
@@ -410,6 +416,33 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le (ω :
         simpa only [update_inf_zero, update_of_ne (show zero ≠ inf by decide)] using hBin
     _ = ENNReal.ofReal (B zero) + ∑ q, ENNReal.ofReal (B q) := by
         simp [Puncture.sum_univ, add_assoc]
+
+end TauCeti.SmoothTwoForm
+
+namespace TauCeti.SymplecticForm
+
+open Floer Topology
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {H : Puncture → ℝ → V → ℝ} {L : ℝ}
+
+/-- **The integrated curvature of the capped input-exchange family is bounded uniformly.** This is
+the vector-space case of
+`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le`: for
+the member `c ∈ [0, 1]` of the input-exchange family capped at `0` along a neck of length `L > 4`,
+for period-one `C¹` Hamiltonians `H_q` on a symplectic vector space with `|H_q| ≤ B_q`, and every
+map `u` into it, the integral of `|R_K(z, u(z))|` over the plane is at most `B_0 + ∑ q, B_q`. -/
+theorem lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hL : 4 < L)
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    (u : ℝ × ℝ → V) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature
+        (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x
+          Complex.I)
+        z (u z)‖ₑ ≤ ENNReal.ofReal (B zero) + ∑ q, ENNReal.ofReal (B q) := by
+  simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le hH
+    (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) hL hB hc₀ hc₁ u
 
 /-- For `L > 2`, `0 ≤ c ≤ 1` and `R ≥ max (L - 1) 2`, the curvature of the member `c` of the
 capped family vanishes on the capped domain `ℂ ∖ {1}` outside the truncation with recentred output
