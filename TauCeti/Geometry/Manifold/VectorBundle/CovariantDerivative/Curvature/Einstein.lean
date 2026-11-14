@@ -39,8 +39,6 @@ trace identity `CovariantDerivative.sum_inner_derivCurvatureTensor_eq_derivRicci
 
 ## Main results
 
-* `CovariantDerivative.contMDiffAt_of_eventually_ricciTensor_eq_smul_inner`: if `Ric = a g` near a
-  point `x`, then `a` is smooth at `x`, in every dimension.
 * `CovariantDerivative.hasMFDerivAt_zero_of_ricciTensor_eq_smul_inner`: if `Ric = a g` near a
   point `x` and `n ≠ 2`, then `a` is differentiable at `x` with `da = 0`.
 * `CovariantDerivative.eq_of_ricciTensor_eq_smul_inner`: **Einstein's constancy theorem**; on a
@@ -70,24 +68,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
   [ContMDiffCovariantDerivative cov ∞]
 
-/-- **`Ric = a g` forces `a` to be smooth.** If the Ricci tensor is `a g` near `x`, then `a` is
-smooth at `x`, in every dimension: it is the scalar curvature divided by the dimension `n` when
-`n ≠ 0`, and any function on a zero-dimensional, hence discrete, manifold is smooth. -/
-theorem contMDiffAt_of_eventually_ricciTensor_eq_smul_inner {a : M → ℝ} {x : M}
-    (ha : ∀ᶠ y in 𝓝 x, cov.ricciTensor y = a y • innerₗ (TangentSpace I y)) :
-    ContMDiffAt I 𝓘(ℝ) ∞ a x := by
-  by_cases hpos : Module.finrank ℝ E = 0
-  · have : Subsingleton E := Module.finrank_zero_iff.mp hpos
-    have : Subsingleton H := I.injective.subsingleton
-    have : DiscreteTopology M := ChartedSpace.discreteTopology H M
-    exact contMDiff_of_discreteTopology.contMDiffAt
-  have hn : (Module.finrank ℝ E : ℝ) ≠ 0 := by exact_mod_cast hpos
-  refine (cov.contMDiff_scalarCurvature.div_const
-    (Module.finrank ℝ E : ℝ)).contMDiffAt.congr_of_eventuallyEq ?_
-  filter_upwards [ha] with y hy
-  rw [cov.scalarCurvature_eq_of_ricciTensor_eq_smul_inner y (a y) hy, eq_div_iff hn]
-  exact mul_comm _ _
-
 /-- For a metric-compatible connection whose Ricci tensor is `a g` near `x`, the covariant
 derivative of the Ricci tensor at `x` is `(∇_X Ric)(B, C) = da(X) ⟪B, C⟫`. -/
 private theorem IsMetricCompatible.covariantDerivative_ricciTensor_eq
@@ -99,7 +79,7 @@ private theorem IsMetricCompatible.covariantDerivative_ricciTensor_eq
         cov.ricciTensor x (cov B x (X x)) (C x) - cov.ricciTensor x (B x) (cov C x (X x)) =
       mvfderiv I a x (X x) * ⟪B x, C x⟫_ℝ := by
   have hax : MDifferentiableAt I 𝓘(ℝ) a x :=
-    (contMDiffAt_of_eventually_ricciTensor_eq_smul_inner ha).mdifferentiableAt (by simp)
+    (cov.contMDiffAt_of_eventually_ricciTensor_eq_smul_inner ha).mdifferentiableAt (by simp)
   have hfun : (fun y ↦ cov.ricciTensor y (B y) (C y)) =ᶠ[𝓝 x] a * fun y ↦ ⟪B y, C y⟫_ℝ := by
     filter_upwards [ha] with y hy
     simp [hy]
@@ -168,7 +148,7 @@ theorem hasMFDerivAt_zero_of_ricciTensor_eq_smul_inner
     (ha : ∀ᶠ y in 𝓝 x, cov.ricciTensor y = a y • innerₗ (TangentSpace I y)) :
     HasMFDerivAt I 𝓘(ℝ) a x 0 := by
   have hax : MDifferentiableAt I 𝓘(ℝ) a x :=
-    (contMDiffAt_of_eventually_ricciTensor_eq_smul_inner ha).mdifferentiableAt (by simp)
+    (cov.contMDiffAt_of_eventually_ricciTensor_eq_smul_inner ha).mdifferentiableAt (by simp)
   have h2 : ((Module.finrank ℝ E : ℝ) - 2) ≠ 0 := by
     rw [sub_ne_zero]
     exact_mod_cast hdim
@@ -188,7 +168,7 @@ theorem eq_of_ricciTensor_eq_smul_inner [PreconnectedSpace M]
     {a : M → ℝ} (ha : ∀ y, cov.ricciTensor y = a y • innerₗ (TangentSpace I y)) (x y : M) :
     a x = a y := by
   have had : MDifferentiable I 𝓘(ℝ) a := fun z ↦
-    (contMDiffAt_of_eventually_ricciTensor_eq_smul_inner (.of_forall ha)).mdifferentiableAt
+    (cov.contMDiffAt_of_eventually_ricciTensor_eq_smul_inner (.of_forall ha)).mdifferentiableAt
       (by simp)
   exact had.apply_eq_of_mfderiv_eq_zero (fun z ↦
     (hasMFDerivAt_zero_of_ricciTensor_eq_smul_inner hcov ht hdim (.of_forall ha)).mfderiv) x y
