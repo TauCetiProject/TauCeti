@@ -228,9 +228,7 @@ instance [HasZeroObject C] [HasBinaryBiproducts C] :
     have h₂' : CochainComplex.bounded C T.obj₂.as := by
       rwa [← HomotopyCategory.bounded_quotient_obj_iff]
     have quotient_obj_of_as (K : HomotopyCategory C (.up ℤ)) :
-        (HomotopyCategory.quotient C (.up ℤ)).obj K.as = K := by
-      cases K
-      rfl
+        (HomotopyCategory.quotient C (.up ℤ)).obj K.as = K := rfl
     let e₁ : (HomotopyCategory.quotient C (.up ℤ)).obj T.obj₁.as ≅ T.obj₁ :=
       eqToIso (quotient_obj_of_as T.obj₁)
     let e₂ : (HomotopyCategory.quotient C (.up ℤ)).obj T.obj₂.as ≅ T.obj₂ :=
