@@ -20,8 +20,10 @@ A strongly progressive martingale with almost surely right-continuous paths rema
 martingale after stopping at any stopping time. No completeness or right continuity of the
 filtration is needed. Strong progressivity ensures literal adaptation of the stopped process;
 almost sure path regularity alone would not supply that on a raw filtration. In particular, an
-adapted martingale with everywhere-continuous paths is automatically strongly progressive, so its
-stopped process remains a martingale with constant expectation.
+adapted martingale with everywhere right-continuous (or everywhere continuous) paths is
+automatically strongly progressive, so its stopped process remains a martingale; moreover,
+constant expectation of the stopped process holds under almost-sure right continuity alone without
+any progressivity assumption.
 
 For a martingale with almost surely right-continuous paths, upward dyadic stopping-time
 approximations give Lᵖ convergence of the stopped processes at each deterministic observation
@@ -176,30 +178,61 @@ theorem Martingale.stoppedValue_ae_eq_condExp_of_le_of_ae_isRightContinuous
       ((condExp_condExp_of_le (hσ.measurableSpace_mono hτ hle)
         hτ.measurableSpace_le).symm.trans (condExp_congr_ae heq).symm)
 
+/-- Stopping an everywhere right-continuous martingale preserves the martingale property on its
+original filtration, without a separate progressivity assumption. -/
+theorem Martingale.stoppedProcess_of_isRightContinuous (hM : Martingale M ℱ μ)
+    (hMc : ∀ ω, IsRightContinuous (M · ω)) (hτ : IsStoppingTime ℱ τ) :
+    Martingale (stoppedProcess M τ) ℱ μ :=
+  hM.stoppedProcess_of_ae_isRightContinuous
+    (hM.stronglyAdapted.isStronglyProgressive_of_isRightContinuous hMc) (.of_forall hMc) hτ
+
 /-- Stopping an everywhere-continuous martingale preserves the martingale property on its original
 filtration, without a separate progressivity assumption. -/
 theorem Martingale.stoppedProcess_of_continuous (hM : Martingale M ℱ μ)
     (hMc : ∀ ω, Continuous (M · ω)) (hτ : IsStoppingTime ℱ τ) :
     Martingale (stoppedProcess M τ) ℱ μ :=
-  hM.stoppedProcess_of_ae_isRightContinuous
-    (hM.stronglyAdapted.isStronglyProgressive_of_isRightContinuous fun ω ↦
-      (hMc ω).isRightContinuous) (.of_forall fun ω ↦ (hMc ω).isRightContinuous) hτ
+  hM.stoppedProcess_of_isRightContinuous (fun ω ↦ (hMc ω).isRightContinuous) hτ
 
-/-- Stopping an everywhere-continuous martingale at any stopping time preserves its expectation at
-every deterministic horizon. -/
-theorem Martingale.integral_stoppedProcess_eq_of_continuous (hM : Martingale M ℱ μ)
-    (hMc : ∀ ω, Continuous (M · ω)) (hτ : IsStoppingTime ℱ τ) (T : ℝ≥0) :
+/-- Stopping an almost surely right-continuous martingale preserves its expectation at every
+deterministic horizon, without a progressivity assumption. -/
+theorem Martingale.integral_stoppedProcess_eq_of_ae_isRightContinuous (hM : Martingale M ℱ μ)
+    (hcont : ∀ᵐ ω ∂μ, IsRightContinuous (M · ω)) (hτ : IsStoppingTime ℱ τ) (T : ℝ≥0) :
     ∫ ω, stoppedProcess M τ T ω ∂μ = ∫ ω, M 0 ω ∂μ := by
-  have heq := (hM.stoppedProcess_of_continuous hMc hτ).setIntegral_eq
-    (zero_le : (0 : ℝ≥0) ≤ T) (@MeasurableSet.univ Ω (ℱ 0))
-  have hbot : stoppedProcess M τ 0 = M 0 := stoppedProcess_bot M τ
-  simpa only [Measure.restrict_univ, hbot] using heq.symm
+  have hlim := tendsto_integral_of_L1' (stoppedProcess M τ T) (.of_forall fun n ↦
+    (hM.stoppedProcess_of_countable_range (hτ.dyadicCeilTime n)
+      (TauCeti.countable_range_dyadicCeilTime τ n)).integrable T)
+    (hM.tendsto_eLpNorm_stoppedProcess_dyadicCeilTime hcont hτ T le_rfl ENNReal.one_ne_top
+      (memLp_one_iff_integrable.2 (hM.integrable T)))
+  refine tendsto_nhds_unique hlim ((tendsto_const_nhds (x := ∫ ω, M 0 ω ∂μ)).congr fun n ↦ ?_)
+  have heq := (hM.stoppedProcess_of_countable_range (hτ.dyadicCeilTime n)
+    (TauCeti.countable_range_dyadicCeilTime τ n)).setIntegral_eq (zero_le : (0 : ℝ≥0) ≤ T)
+    (@MeasurableSet.univ Ω (ℱ 0))
+  have h0 (ω : Ω) : stoppedProcess M (fun ω ↦ TauCeti.dyadicCeilTime n (τ ω)) 0 ω = M 0 ω :=
+    stoppedProcess_eq_of_le (by simp)
+  simpa only [Measure.restrict_univ, h0] using heq
 
-/-- Stopping an everywhere-continuous martingale starting at zero preserves zero expectation at
-every deterministic horizon. -/
-theorem Martingale.integral_stoppedProcess_eq_zero_of_continuous (hM : Martingale M ℱ μ)
-    (hMc : ∀ ω, Continuous (M · ω)) (hM0 : ∀ ω, M 0 ω = 0) (hτ : IsStoppingTime ℱ τ) (T : ℝ≥0) :
-    ∫ ω, stoppedProcess M τ T ω ∂μ = 0 := by
-  simp [hM.integral_stoppedProcess_eq_of_continuous hMc hτ T, hM0]
+/-- Stopping an almost surely right-continuous martingale with `M 0 =ᵐ[μ] 0` preserves zero
+expectation at every deterministic horizon. -/
+theorem Martingale.integral_stoppedProcess_eq_zero_of_ae_isRightContinuous (hM : Martingale M ℱ μ)
+    (hcont : ∀ᵐ ω ∂μ, IsRightContinuous (M · ω)) (hM0 : M 0 =ᵐ[μ] 0) (hτ : IsStoppingTime ℱ τ)
+    (T : ℝ≥0) : ∫ ω, stoppedProcess M τ T ω ∂μ = 0 := by
+  rw [hM.integral_stoppedProcess_eq_of_ae_isRightContinuous hcont hτ T, integral_congr_ae hM0,
+    Pi.zero_def, integral_zero]
+
+/-- Stopping an almost surely continuous martingale preserves its expectation at every
+deterministic horizon, without a progressivity assumption. -/
+theorem Martingale.integral_stoppedProcess_eq_of_ae_continuous (hM : Martingale M ℱ μ)
+    (hcont : ∀ᵐ ω ∂μ, Continuous (M · ω)) (hτ : IsStoppingTime ℱ τ) (T : ℝ≥0) :
+    ∫ ω, stoppedProcess M τ T ω ∂μ = ∫ ω, M 0 ω ∂μ :=
+  hM.integral_stoppedProcess_eq_of_ae_isRightContinuous
+    (hcont.mono fun _ ↦ Continuous.isRightContinuous) hτ T
+
+/-- Stopping an almost surely continuous martingale with `M 0 =ᵐ[μ] 0` preserves zero expectation
+at every deterministic horizon. -/
+theorem Martingale.integral_stoppedProcess_eq_zero_of_ae_continuous (hM : Martingale M ℱ μ)
+    (hcont : ∀ᵐ ω ∂μ, Continuous (M · ω)) (hM0 : M 0 =ᵐ[μ] 0) (hτ : IsStoppingTime ℱ τ)
+    (T : ℝ≥0) : ∫ ω, stoppedProcess M τ T ω ∂μ = 0 :=
+  hM.integral_stoppedProcess_eq_zero_of_ae_isRightContinuous
+    (hcont.mono fun _ ↦ Continuous.isRightContinuous) hM0 hτ T
 
 end MeasureTheory

@@ -119,6 +119,14 @@ noncomputable def nnrealDyadicPoint (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)
 @[simp] theorem coe_nnrealDyadicPoint (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) :
     (nnrealDyadicPoint t n k : ℝ) = k * ((t : ℝ) / (2 : ℝ) ^ n) := by simp [nnrealDyadicPoint]
 
+/-- Explicit `ℝ≥0` formula for the `k`th point of the level-`n` dyadic grid on `[0, t]`. -/
+theorem nnrealDyadicPoint_def (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) :
+    nnrealDyadicPoint t n k = k * (t / 2 ^ n) := by ext; simp
+
+/-- Every dyadic grid point on the degenerate interval `[0, 0]` is `0`. -/
+@[simp] theorem nnrealDyadicPoint_zero_left (n : ℕ) (k : Fin (2 ^ n + 1)) :
+    nnrealDyadicPoint 0 n k = 0 := by ext; simp
+
 /-- The initial point of the `ℝ≥0` dyadic grid on `[0, t]` is `0`. -/
 @[simp] theorem nnrealDyadicPoint_zero (t : ℝ≥0) (n : ℕ) : nnrealDyadicPoint t n 0 = 0 := by
   ext; simp
@@ -131,8 +139,15 @@ noncomputable def nnrealDyadicPoint (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)
 /-- Each level-`n` dyadic grid on `[0, t]` is monotone in the grid index. -/
 theorem monotone_nnrealDyadicPoint (t : ℝ≥0) (n : ℕ) : Monotone (nnrealDyadicPoint t n) :=
   fun _ _ hij ↦ NNReal.coe_le_coe.mp (by
-    simp only [coe_nnrealDyadicPoint]
-    exact mul_le_mul_of_nonneg_right (Nat.cast_le.mpr hij) (by positivity))
+    simp only [coe_nnrealDyadicPoint]; exact mul_le_mul_of_nonneg_right (by exact_mod_cast hij)
+      (by positivity))
+
+/-- For positive horizon `t ≠ 0`, each level-`n` dyadic grid on `[0, t]` is strictly monotone. -/
+theorem strictMono_nnrealDyadicPoint {t : ℝ≥0} (ht : t ≠ 0) (n : ℕ) :
+    StrictMono (nnrealDyadicPoint t n) := fun _ _ hij ↦ NNReal.coe_lt_coe.mp (by
+  have : (0 : ℝ) < t := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr ht)
+  simp only [coe_nnrealDyadicPoint]; exact mul_lt_mul_of_pos_right (by exact_mod_cast hij)
+    (by positivity))
 
 /-- Every point of the `ℝ≥0` dyadic grid on `[0, t]` is at most `t`. -/
 theorem nnrealDyadicPoint_le (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) :
@@ -140,25 +155,29 @@ theorem nnrealDyadicPoint_le (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) :
 
 /-- Every point of the level-`m` dyadic grid on `[0, t]` belongs to every finer grid `n ≥ m`. -/
 theorem exists_nnrealDyadicPoint_eq_of_le (t : ℝ≥0) {m n : ℕ} (k : Fin (2 ^ m + 1))
-    (hmn : m ≤ n) : ∃ j, nnrealDyadicPoint t m k = nnrealDyadicPoint t n j := by
-  obtain ⟨j, hj⟩ := exists_dyadicPoint_eq_of_le t.coe_nonneg k hmn
-  exact ⟨j, by simp only [nnrealDyadicPoint, hj]⟩
+    (hmn : m ≤ n) : ∃ j, nnrealDyadicPoint t m k = nnrealDyadicPoint t n j :=
+  let ⟨j, hj⟩ := exists_dyadicPoint_eq_of_le t.coe_nonneg k hmn
+  ⟨j, by simp only [nnrealDyadicPoint, hj]⟩
+
+/-- Consecutive points of the level-`n` dyadic grid on `[0, t]` differ by `t / 2 ^ n` in `ℝ≥0`. -/
+theorem nnrealDyadicPoint_succ_sub_castSucc (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n)) :
+    nnrealDyadicPoint t n k.succ - nnrealDyadicPoint t n k.castSucc = t / 2 ^ n := by
+  ext; rw [NNReal.coe_sub (monotone_nnrealDyadicPoint t n k.castSucc_le_succ)]
+  simp only [coe_nnrealDyadicPoint, Fin.val_succ, Fin.val_castSucc, NNReal.coe_div,
+    NNReal.coe_pow, NNReal.coe_ofNat]; push_cast; ring
 
 /-- Consecutive points of the level-`n` dyadic grid on `[0, t]` are at distance `t / 2 ^ n`. -/
 theorem dist_nnrealDyadicPoint_succ (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n)) :
     dist (nnrealDyadicPoint t n k.succ) (nnrealDyadicPoint t n k.castSucc) = (t : ℝ) / 2 ^ n := by
-  rw [NNReal.dist_eq, abs_of_nonneg (sub_nonneg.mpr
-    (NNReal.coe_le_coe.mpr (monotone_nnrealDyadicPoint t n k.castSucc_le_succ)))]
-  simp only [coe_nnrealDyadicPoint, Fin.val_succ, Fin.val_castSucc]; push_cast; ring
+  rw [NNReal.dist_eq, ← NNReal.coe_sub (monotone_nnrealDyadicPoint t n k.castSucc_le_succ),
+    nnrealDyadicPoint_succ_sub_castSucc, abs_of_nonneg (NNReal.coe_nonneg _)]; simp
 
 /-- Any open set of `ℝ≥0` meeting `[0, t]` contains a dyadic grid point on `[0, t]`. -/
 theorem exists_nnrealDyadicPoint_mem_open {t s : ℝ≥0} (hst : s ≤ t) {U : Set ℝ≥0} (hU : IsOpen U)
     (hs : s ∈ U) : ∃ n : ℕ, ∃ k : Fin (2 ^ n + 1), nnrealDyadicPoint t n k ∈ U := by
-  let f : Icc (0 : ℝ) t → ℝ≥0 := fun x ↦ NNReal.mk x.1 x.2.1
   obtain ⟨x, hx_grid, hxU⟩ := (dense_iUnion_range_dyadicPoint t.coe_nonneg).exists_mem_open
-    (hU.preimage (Continuous.subtype_mk continuous_subtype_val _ : Continuous f))
-    ⟨⟨s, s.coe_nonneg, hst⟩, hs⟩
-  obtain ⟨n, k, rfl⟩ := by simpa only [mem_iUnion, mem_range] using hx_grid
-  exact ⟨n, k, hxU⟩
+    (hU.preimage (Continuous.subtype_mk continuous_subtype_val _ :
+      Continuous fun x : Icc (0 : ℝ) t ↦ NNReal.mk x.1 x.2.1)) ⟨⟨s, s.coe_nonneg, hst⟩, hs⟩
+  rcases mem_iUnion.mp hx_grid with ⟨n, k, rfl⟩; exact ⟨n, k, hxU⟩
 
 end TauCeti

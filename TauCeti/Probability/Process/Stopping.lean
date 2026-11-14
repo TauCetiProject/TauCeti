@@ -21,9 +21,9 @@ arguments retain the right continuity of their native stopped stages.
 Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
 processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
 Pathwise set membership up to the random time also passes to the stopped process. Neither
-fact requires a stopping-time or measurability assumption. Truncating an extended nonnegative
-stopping time at `n : ℕ` or a deterministic bound `c : ℝ≥0` yields monotone, integrable finite
-approximations that eventually stabilize whenever the stopping time is finite.
+fact requires a stopping-time or measurability assumption. Truncating an almost-everywhere
+measurable `WithTop ℝ≥0`-valued time at a deterministic bound `T : ℝ≥0` yields an integrable finite
+approximation (`MeasureTheory.integrable_untopA_const_min`).
 -/
 
 public section
@@ -121,39 +121,17 @@ theorem ae_nonneg_stoppedProcess_indicator
   · rw [stoppedProcess_eq_of_ge (le_of_not_ge ht)]
     exact Set.indicator_apply_nonneg (fun _ ↦ hω _)
 
-end MeasureTheory
-
-namespace WithTop
-
-/-- Truncating a finite extended time at `(n : ι)` eventually leaves it unchanged. -/
-theorem eventually_min_nat_eq {ι : Type*} [Semiring ι] [LinearOrder ι] [IsStrictOrderedRing ι]
-    [FloorSemiring ι] {τ : WithTop ι} (hfin : τ ≠ ⊤) :
-    ∀ᶠ n : ℕ in atTop, min ((n : ι) : WithTop ι) τ = τ := by
-  cases τ with
-  | top => exact absurd rfl hfin
-  | coe s =>
-    filter_upwards [eventually_ge_atTop ⌈s⌉₊] with n hn
-    exact min_eq_right (WithTop.coe_le_coe.mpr ((Nat.le_ceil s).trans (Nat.cast_le.mpr hn)))
-
-/-- Unwrapping the truncation `min (n : ι) τ` via `WithTop.untopA` is monotone in `n`. -/
-theorem monotone_untopA_min_nat {ι : Type*} [Semiring ι] [LinearOrder ι] [IsStrictOrderedRing ι]
-    (τ : WithTop ι) : Monotone fun n : ℕ ↦ (min ((n : ι) : WithTop ι) τ).untopA :=
-  fun _ _ hmn ↦ WithTop.untopA_mono (ne_top_of_le_ne_top WithTop.coe_ne_top (min_le_left _ _))
-    (min_le_min_right τ (WithTop.coe_le_coe.mpr (Nat.cast_le.mpr hmn)))
-
-end WithTop
-
-namespace MeasureTheory
-
 open scoped NNReal
 
-/-- For any measurable `WithTop ℝ≥0`-valued function and deterministic horizon `T`, the truncated
-value `(min T (τ ω)).untopA` is integrable under any finite measure. -/
-theorem integrable_untopA_min_const {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω}
-    [IsFiniteMeasure P] {τ : Ω → WithTop ℝ≥0} (hτ : Measurable τ) (T : ℝ≥0) :
+/-- For any almost everywhere measurable `WithTop ℝ≥0`-valued function and deterministic horizon
+`T`, the truncated value `(min T (τ ω)).untopA` is integrable under any finite measure. -/
+theorem integrable_untopA_const_min {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω}
+    [IsFiniteMeasure P] {τ : Ω → WithTop ℝ≥0} (hτ : AEMeasurable τ P) (T : ℝ≥0) :
     Integrable (fun ω ↦ ((min (T : WithTop ℝ≥0) (τ ω)).untopA : ℝ)) P :=
   Integrable.of_bound
-    (measurable_subtype_coe.comp (measurable_const.min hτ).untopA).aestronglyMeasurable T
+    ((measurable_subtype_coe.comp
+      (measurable_const.min hτ.measurable_mk).untopA).aestronglyMeasurable.congr
+      (hτ.ae_eq_mk.symm.fun_comp fun x : WithTop ℝ≥0 ↦ ((min (T : WithTop ℝ≥0) x).untopA : ℝ))) T
     (.of_forall fun ω ↦ by
       rw [Real.norm_eq_abs, abs_of_nonneg (NNReal.coe_nonneg _), NNReal.coe_le_coe]
       exact WithTop.untopA_le (min_le_left _ _))

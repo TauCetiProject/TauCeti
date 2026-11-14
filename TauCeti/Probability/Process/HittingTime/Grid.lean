@@ -224,50 +224,47 @@ theorem exists_gridLevelHit_summable_misses {m : MeasurableSpace Ω} {P : Measur
   rw [ENNReal.tsum_geometric_two]
   norm_num
 
-/-- On a finite measure space, the measure of outcomes where an everywhere-continuous process with
-measurable fixed-time evaluations oscillates by at least `δ > 0` across consecutive points of the
-level-`n` dyadic grid on `[0, t]` tends to `0` as `n → ∞`. -/
+/-- On a finite measure space, the measure of outcomes where an almost-surely continuous process
+with almost everywhere measurable fixed-time evaluations oscillates by at least `δ > 0` across
+consecutive points of the level-`n` dyadic grid on `[0, t]` tends to `0` as `n → ∞`. -/
 theorem tendsto_measure_nnrealDyadicPoint_osc {m : MeasurableSpace Ω} (P : Measure Ω)
-    [IsFiniteMeasure P] (hX : ∀ s, Measurable (X s)) (hc : ∀ ω, Continuous (X · ω))
+    [IsFiniteMeasure P] (hX : ∀ s, AEMeasurable (X s) P) (hc : ∀ᵐ ω ∂P, Continuous (X · ω))
     (t : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) :
     Tendsto (fun n : ℕ ↦ P {ω | ∃ k : Fin (2 ^ n), δ ≤
       |X (nnrealDyadicPoint t n k.succ) ω - X (nnrealDyadicPoint t n k.castSucc) ω|}) atTop
       (𝓝 0) := by
-  let Osc (n : ℕ) : Set Ω := {ω | ∃ k : Fin (2 ^ n),
-    δ ≤ |X (nnrealDyadicPoint t n k.succ) ω - X (nnrealDyadicPoint t n k.castSucc) ω|}
-  let Tail (m : ℕ) : Set Ω := ⋃ n ≥ m, Osc n
-  have hOsc_meas (n : ℕ) : MeasurableSet (Osc n) := by
-    simpa only [Osc, ofPred_exists, Function.comp_apply, Pi.sub_apply] using MeasurableSet.iUnion
-      fun k ↦ measurableSet_le measurable_const (continuous_abs.measurable.comp ((hX _).sub (hX _)))
-  have hTail_meas (m : ℕ) : NullMeasurableSet (Tail m) P :=
-    (MeasurableSet.biUnion (to_countable _) fun n _ ↦ hOsc_meas n).nullMeasurableSet
-  have hTail_anti : Antitone Tail :=
-    fun _ _ hm _ hω ↦ let ⟨n, hn, h⟩ := mem_iUnion₂.mp hω; mem_iUnion₂.mpr ⟨n, hm.trans hn, h⟩
-  have hTail_inter : (⋂ m, Tail m) = ∅ := by
-    ext ω; simp only [mem_iInter, mem_iUnion, mem_empty_iff_false, iff_false, not_forall,
-      not_exists, Tail]
+  let Y (s : ℝ≥0) : Ω → ℝ := (hX s).mk (X s)
+  let OscY (n : ℕ) : Set Ω := {ω | ∃ k : Fin (2 ^ n),
+    δ ≤ |Y (nnrealDyadicPoint t n k.succ) ω - Y (nnrealDyadicPoint t n k.castSucc) ω|}
+  have hm (n : ℕ) : MeasurableSet (OscY n) := by
+    simpa only [OscY, Y, ofPred_exists, Function.comp_apply, Pi.sub_apply] using
+      MeasurableSet.iUnion fun _ ↦ measurableSet_le measurable_const
+        (continuous_abs.measurable.comp ((hX _).measurable_mk.sub (hX _).measurable_mk))
+  have hXY (n : ℕ) : ∀ᵐ ω ∂P, ∀ j : Fin (2 ^ n + 1),
+      X (nnrealDyadicPoint t n j) ω = Y (nnrealDyadicPoint t n j) ω :=
+    ae_all_iff.mpr fun j ↦ (hX (nnrealDyadicPoint t n j)).ae_eq_mk
+  have he : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ω ∈ OscY n ↔ ω ∈ (∅ : Set Ω) := by
+    filter_upwards [hc, ae_all_iff.mpr hXY] with ω hcont hω
     obtain ⟨η, hη, hmod⟩ := Metric.uniformContinuousOn_iff.mp
-      (isCompact_Icc.uniformContinuousOn_of_continuous (hc ω).continuousOn) δ hδ
-    obtain ⟨M, hM⟩ := ((tendsto_const_nhds.div_atTop (tendsto_pow_atTop_atTop_of_one_lt one_lt_two)
-      : Tendsto (fun n : ℕ ↦ (t : ℝ) / 2 ^ n) atTop (𝓝 0)).eventually
-        (gt_mem_nhds hη)).exists_forall_of_atTop
-    refine ⟨M, fun n hn ⟨k, hk⟩ ↦ hk.not_gt ?_⟩
-    simpa only [Real.dist_eq] using hmod _ ⟨bot_le, nnrealDyadicPoint_le t n _⟩ _
-      ⟨bot_le, nnrealDyadicPoint_le t n _⟩
-      ((dist_nnrealDyadicPoint_succ t n k).trans_lt (hM n hn))
-  have hTail_lim : Tendsto (P ∘ Tail) atTop (𝓝 0) := by
-    simpa only [hTail_inter, measure_empty] using
-      tendsto_measure_iInter_atTop hTail_meas hTail_anti ⟨0, measure_ne_top P _⟩
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hTail_lim (fun _ ↦ bot_le)
-    fun m ↦ measure_mono fun _ hω ↦ mem_iUnion₂.mpr ⟨m, le_rfl, hω⟩
+      (isCompact_Icc.uniformContinuousOn_of_continuous hcont.continuousOn) δ hδ
+    filter_upwards [(tendsto_const_nhds.div_atTop (tendsto_pow_atTop_atTop_of_one_lt one_lt_two)
+      : Tendsto (fun n : ℕ ↦ (t : ℝ) / 2 ^ n) atTop (𝓝 0)).eventually (gt_mem_nhds hη)] with n hn
+    simp only [OscY, mem_ofPred_eq, mem_empty_iff_false, iff_false, not_exists]
+    intro k hk; rw [← hω n k.succ, ← hω n k.castSucc] at hk
+    exact hk.not_gt <| by
+      simpa only [Real.dist_eq] using hmod _ ⟨bot_le, nnrealDyadicPoint_le t n _⟩
+        _ ⟨bot_le, nnrealDyadicPoint_le t n _⟩ ((dist_nnrealDyadicPoint_succ t n k).trans_lt hn)
+  rw [← measure_empty (μ := P)]
+  refine (tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure
+    atTop MeasurableSet.empty hm he).congr fun n ↦ measure_congr (eventuallyEqSet_iff.mpr
+      ((hXY n).mono fun _ hω ↦ exists_congr fun k ↦ by rw [← hω k.succ, ← hω k.castSucc]))
 
 /-- For an everywhere-continuous real process, exceeding `b` somewhere on `[0, t]` is equivalent
 to exceeding `b` at a point of some level-`n` dyadic grid on `[0, t]`. -/
 theorem setOf_exists_le_gt_eq_iUnion_nnrealDyadicPoint (hc : ∀ ω, Continuous (X · ω)) (t : ℝ≥0)
     (b : ℝ) : {ω | ∃ s ≤ t, b < X s ω} =
       ⋃ n : ℕ, {ω | ∃ k : Fin (2 ^ n + 1), b < X (nnrealDyadicPoint t n k) ω} := by
-  ext ω; simp only [mem_iUnion, mem_ofPred_eq]
-  exact ⟨fun ⟨s, hst, hs⟩ ↦
+  ext ω; simp only [mem_iUnion, mem_ofPred_eq]; exact ⟨fun ⟨s, hst, hs⟩ ↦
       exists_nnrealDyadicPoint_mem_open hst (isOpen_lt continuous_const (hc ω)) hs,
     fun ⟨n, k, hk⟩ ↦ ⟨nnrealDyadicPoint t n k, nnrealDyadicPoint_le t n k, hk⟩⟩
 
@@ -276,8 +273,7 @@ exceeding `b` somewhere on `[0, t]` is measurable. -/
 theorem measurableSet_exists_le_gt {m : MeasurableSpace Ω} (hX : ∀ s, Measurable (X s))
     (hc : ∀ ω, Continuous (X · ω)) (t : ℝ≥0) (b : ℝ) : MeasurableSet {ω | ∃ s ≤ t, b < X s ω} := by
   rw [setOf_exists_le_gt_eq_iUnion_nnrealDyadicPoint hc t b]
-  exact MeasurableSet.iUnion fun n ↦ by
-    simpa only [ofPred_exists] using MeasurableSet.iUnion fun _ ↦
-      measurableSet_lt measurable_const (hX _)
+  refine .iUnion fun _ ↦ ?_
+  rw [ofPred_exists]; exact .iUnion fun _ ↦ measurableSet_lt measurable_const (hX _)
 
 end TauCeti

@@ -51,31 +51,26 @@ namespace ProbabilityTheory.Indistinguishable
 
 /-- Indistinguishable processes have almost everywhere equal first hitting times of any set after
 any starting time. -/
-theorem hittingAfter_ae_eq {ι Ω E : Type*} [Preorder ι] [InfSet ι]
-    {_ : MeasurableSpace Ω} {P : Measure Ω} {X Y : ι → Ω → E}
-    (h : X ≡ᵐ[P] Y) (s : Set E) (a : ι) :
+theorem hittingAfter_ae_eq {ι Ω E : Type*} [Preorder ι] [InfSet ι] {_ : MeasurableSpace Ω}
+    {P : Measure Ω} {X Y : ι → Ω → E} (h : X ≡ᵐ[P] Y) (s : Set E) (a : ι) :
     hittingAfter X s a =ᵐ[P] hittingAfter Y s a := by
-  classical
-  exact h.mono fun _ hω ↦ by simp only [hittingAfter_def, hω]
+  classical exact h.mono fun _ hω ↦ by simp only [hittingAfter_def, hω]
 
 end ProbabilityTheory.Indistinguishable
 
 namespace MeasureTheory
 
-/-- First entrance of a post-composed process `f (X t ω)` into `s` equals first entrance of `X`
-into the preimage `f ⁻¹' s`. -/
+/-- First entrance of `f (X t ω)` into `s` equals first entrance of `X` into `f ⁻¹' s`. -/
 theorem hittingAfter_comp {Ω ι E F : Type*} [Preorder ι] [InfSet ι]
     (f : E → F) (X : ι → Ω → E) (s : Set F) (a : ι) :
     hittingAfter (fun t ω ↦ f (X t ω)) s a = hittingAfter X (f ⁻¹' s) a := by
   classical ext ω; simp only [hittingAfter_def, mem_preimage]
 
-/-- First entrance of the negated process `-X` into `s` equals first entrance of `X` into the
-preimage `Neg.neg ⁻¹' s`. -/
+/-- First entrance of `-X` into `s` equals first entrance of `X` into `Neg.neg ⁻¹' s`. -/
 theorem hittingAfter_neg {Ω ι E : Type*} [Preorder ι] [InfSet ι] [Neg E]
     (X : ι → Ω → E) (s : Set E) (a : ι) :
-    hittingAfter (-X) s a = hittingAfter X (Neg.neg ⁻¹' s) a := by
-  simp_rw [Pi.neg_def]
-  exact hittingAfter_comp Neg.neg X s a
+    hittingAfter (-X) s a = hittingAfter X (Neg.neg ⁻¹' s) a :=
+  Pi.neg_def (f := X) ▸ hittingAfter_comp Neg.neg X s a
 
 end MeasureTheory
 
@@ -130,38 +125,35 @@ theorem Continuous.le_of_le_hittingAfter_Ici [DenselyOrdered ι]
   have hhit := MeasureTheory.hittingAfter_le_of_mem (u := X) (s := Set.Ici C) hu.1 hue.ge
   exact (WithTop.coe_lt_coe.mpr hut).not_ge (ht.trans hhit)
 
-/-- A continuous ordered-valued path starting above a level stays at least at that level up to and
-including its first closed lower-level hit. -/
-theorem Continuous.ge_of_le_hittingAfter_Iic [DenselyOrdered ι]
-    {β : Type*} [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β]
-    {X : ι → Ω → β} {a t : ι} {ω : Ω} {C : β} (hX : Continuous (X · ω))
-    (hat : a ≤ t) (hstart : C ≤ X a ω)
-    (ht : (t : WithTop ι) ≤ MeasureTheory.hittingAfter X (Set.Iic C) a ω) :
-    C ≤ X t ω :=
-  hX.le_of_le_hittingAfter_Ici (β := βᵒᵈ) hat hstart ht
-
 section OrderedPath
 
 variable [DenselyOrdered ι] {β : Type*} [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β]
   {X : ι → Ω → β} {ω : Ω}
+
+/-- A continuous ordered-valued path starting above a level stays at least at that level up to and
+including its first closed lower-level hit. -/
+theorem Continuous.ge_of_le_hittingAfter_Iic {a t : ι} {C : β} (hX : Continuous (X · ω))
+    (hat : a ≤ t) (hstart : C ≤ X a ω)
+    (ht : (t : WithTop ι) ≤ MeasureTheory.hittingAfter X (Set.Iic C) a ω) : C ≤ X t ω :=
+  hX.le_of_le_hittingAfter_Ici (β := βᵒᵈ) hat hstart ht
 
 /-- A continuous ordered-valued path starting at or below `C` hits `{C}` at the same time as it
 hits `[C, ∞)`. -/
 theorem Continuous.hittingAfter_singleton_eq_Ici {a : ι} {C : β} (hX : Continuous (X · ω))
     (hstart : X a ω ≤ C) :
     MeasureTheory.hittingAfter X {C} a ω = MeasureTheory.hittingAfter X (Set.Ici C) a ω := by
-  refine le_antisymm ?_ (MeasureTheory.hittingAfter_apply_anti X a ω
-    (singleton_subset_iff.mpr (mem_Ici.mpr le_rfl)))
+  refine le_antisymm ?_ (MeasureTheory.hittingAfter_apply_anti X a ω (singleton_subset_iff.mpr
+    (mem_Ici.mpr le_rfl)))
   cases ht : MeasureTheory.hittingAfter X (Set.Ici C) a ω using WithTop.recTopCoe with
   | top => exact le_top
   | coe t =>
-    obtain ⟨u, hu, hus⟩ := isClosed_Ici.hittingAfter_le_iff hX |>.mp ht.le
+    obtain ⟨u, hu, hus⟩ := (isClosed_Ici.hittingAfter_le_iff hX).mp ht.le
     obtain ⟨v, hv, hvC⟩ := intermediate_value_Icc hu.1 hX.continuousOn ⟨hstart, hus⟩
     exact (MeasureTheory.hittingAfter_le_of_mem hv.1 hvC).trans
       (WithTop.coe_le_coe.mpr (hv.2.trans hu.2))
 
-/-- A continuous ordered-valued path starting at or above `C` hits `{C}` at the same time as it
-hits `(-∞, C]`. -/
+/-- A continuous ordered-valued path starting at or above `C` hits `{C}` at the same time as
+`(-∞, C]`. -/
 theorem Continuous.hittingAfter_singleton_eq_Iic {a : ι} {C : β} (hX : Continuous (X · ω))
     (hstart : C ≤ X a ω) :
     MeasureTheory.hittingAfter X {C} a ω = MeasureTheory.hittingAfter X (Set.Iic C) a ω :=
@@ -171,8 +163,7 @@ theorem Continuous.hittingAfter_singleton_eq_Iic {a : ι} {C : β} (hX : Continu
 its first exit from `(a, b)`. -/
 theorem Continuous.mem_Icc_of_le_hittingAfter_compl_Ioo {u t : ι} {a b : β}
     (hX : Continuous (X · ω)) (hut : u ≤ t) (hstart : X u ω ∈ Icc a b)
-    (ht : (t : WithTop ι) ≤ MeasureTheory.hittingAfter X (Ioo a b)ᶜ u ω) :
-    X t ω ∈ Icc a b :=
+    (ht : (t : WithTop ι) ≤ MeasureTheory.hittingAfter X (Ioo a b)ᶜ u ω) : X t ω ∈ Icc a b :=
   ⟨hX.ge_of_le_hittingAfter_Iic hut hstart.1
       (ht.trans (MeasureTheory.hittingAfter_apply_anti X u ω fun _ hy h ↦ hy.not_gt h.1)),
     hX.le_of_le_hittingAfter_Ici hut hstart.2
@@ -207,14 +198,13 @@ theorem hittingAfter_union_apply (X : ι → Ω → E) (s₁ s₂ : Set E) (a : 
     rw [min_eq_top, hittingAfter_eq_top_iff, hittingAfter_eq_top_iff] at htop
     exact hb.ne_top (hittingAfter_eq_top_iff.mpr fun j hj h ↦ h.elim (htop.1 j hj) (htop.2 j hj))
   | coe d =>
-    obtain ⟨j, hj, hj₁ | hj₂⟩ := hittingAfter_lt_iff.mp hb
-    · exact min_lt_iff.mpr (.inl (hittingAfter_lt_iff.mpr ⟨j, hj, hj₁⟩))
-    · exact min_lt_iff.mpr (.inr (hittingAfter_lt_iff.mpr ⟨j, hj, hj₂⟩))
+    obtain ⟨j, hj, h | h⟩ := hittingAfter_lt_iff.mp hb
+    · exact min_lt_iff.mpr (.inl (hittingAfter_lt_iff.mpr ⟨j, hj, h⟩))
+    · exact min_lt_iff.mpr (.inr (hittingAfter_lt_iff.mpr ⟨j, hj, h⟩))
 
 omit [TopologicalSpace ι] [OrderTopology ι] in
 /-- First entrance into a union of two sets is the minimum of the first entrances into each set. -/
-@[simp]
-theorem hittingAfter_union (X : ι → Ω → E) (s₁ s₂ : Set E) (a : ι) :
+@[simp] theorem hittingAfter_union (X : ι → Ω → E) (s₁ s₂ : Set E) (a : ι) :
     hittingAfter X (s₁ ∪ s₂) a = min (hittingAfter X s₁ a) (hittingAfter X s₂ a) :=
   funext fun ω ↦ hittingAfter_union_apply X s₁ s₂ a ω
 
@@ -280,15 +270,19 @@ theorem Adapted.isStoppingTime_hittingAfter_compl_of_isOpen (hX : Adapted ℱ X)
     IsStoppingTime ℱ (hittingAfter X Uᶜ a) :=
   hX.isStoppingTime_hittingAfter_of_isClosed hc hU.isClosed_compl a
 
+end Stopping
+
 /-- Closed-set entrance of an everywhere-continuous process with measurable evaluations is
 measurable on the ambient measurable space. -/
-theorem measurable_hittingAfter_of_isClosed (hX : ∀ t, Measurable (X t))
+theorem measurable_hittingAfter_of_isClosed {E : Type*} [TopologicalSpace E]
+    [TopologicalSpace.PseudoMetrizableSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    [SecondCountableTopology ι] [CompactIccSpace ι] {mΩ : MeasurableSpace Ω}
+    {X : ι → Ω → E} {s : Set E} (hX : ∀ t, Measurable (X t))
     (hc : ∀ ω, Continuous (X · ω)) (hs : IsClosed s) (a : ι) :
     Measurable (hittingAfter X s a) :=
+  let : PseudoMetricSpace E := TopologicalSpace.pseudoMetrizableSpacePseudoMetric E
   (Adapted.isStoppingTime_hittingAfter_of_isClosed (ℱ := Filtration.const ι mΩ le_rfl)
     hX hc hs a).measurable'
-
-end Stopping
 
 /-- Closed-set entrance of an almost-surely continuous process with almost everywhere strongly
 measurable evaluations is almost everywhere measurable. -/
@@ -298,7 +292,6 @@ theorem aemeasurable_hittingAfter_of_isClosed {E : Type*} [TopologicalSpace E]
     (hX : ∀ t, AEStronglyMeasurable (X t) P) (hc : ∀ᵐ ω ∂P, Continuous (X · ω))
     (hs : IsClosed s) (a : ι) :
     AEMeasurable (hittingAfter X s a) P := by
-  let : PseudoMetricSpace E := TopologicalSpace.pseudoMetrizableSpacePseudoMetric E
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
   obtain ⟨Y, hYm, hYc, hYX⟩ := TauCeti.Probability.exists_stronglyMeasurable_continuous_indist hX hc

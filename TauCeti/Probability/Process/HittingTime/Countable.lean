@@ -185,37 +185,32 @@ end TauCeti.Probability
 
 open scoped Classical in
 /-- Hits of an open set from starting time `a` by a continuous path can be computed from any
-nonempty dense family of sampling times in `Set.Ici a`. -/
-theorem Continuous.hittingAfter_eq_iInf_Ici_of_isOpen {ι Ω E κ : Type*} [Nonempty κ]
+dense family of sampling times in `Set.Ici a`. -/
+theorem Continuous.hittingAfter_eq_iInf_Ici_of_isOpen {ι Ω E κ : Type*}
     [ConditionallyCompleteLinearOrder ι] [TopologicalSpace ι] [OrderTopology ι]
     [TopologicalSpace E] {Y : ι → Ω → E} {ω : Ω} (hf : Continuous (Y · ω)) {U : Set E}
     (hU : IsOpen U) {a : ι} {d : κ → Ici a} (hd : DenseRange d) :
-    hittingAfter Y U a ω =
-      ⨅ k, if Y (d k) ω ∈ U then ((d k : ι) : WithTop ι) else ⊤ := by
+    hittingAfter Y U a ω = ⨅ k, if Y (d k) ω ∈ U then ((d k : ι) : WithTop ι) else ⊤ := by
   classical
-  have hbdd : BddBelow (range fun k ↦ if Y (d k) ω ∈ U then ((d k : ι) : WithTop ι) else ⊤) := by
-    refine ⟨(a : WithTop ι), ?_⟩
-    rintro _ ⟨k, rfl⟩; dsimp only; split_ifs
-    · exact WithTop.coe_le_coe.mpr (d k).2
-    · exact le_top
+  obtain ⟨k₀, _⟩ := hd.exists_mem_open isOpen_univ ⟨⟨a, le_rfl⟩, trivial⟩
+  have : Nonempty κ := ⟨k₀⟩
+  have hbdd : BddBelow (range fun k ↦ if Y (d k) ω ∈ U then ((d k : ι) : WithTop ι) else ⊤) :=
+    ⟨(a : WithTop ι), by rintro _ ⟨k, rfl⟩; dsimp only; split_ifs <;>
+      [exact WithTop.coe_le_coe.mpr (d k).2; exact le_top]⟩
   refine le_antisymm (le_ciInf fun k ↦ ?_) (le_of_forall_gt fun b hb ↦ ?_)
-  · split_ifs with hk
-    · exact hittingAfter_le_of_mem (d k).2 hk
-    · exact le_top
+  · split_ifs with hk <;> [exact hittingAfter_le_of_mem (d k).2 hk; exact le_top]
   · cases b with
     | top =>
-      have hex : ∃ t ≥ a, Y t ω ∈ U := by
+      obtain ⟨t, hta, htU⟩ : ∃ t ≥ a, Y t ω ∈ U := by
         by_contra! hno; exact hb.ne_top (hittingAfter_eq_top_iff.mpr hno)
-      obtain ⟨t, hta, htU⟩ := hex
-      obtain ⟨k, hk⟩ := hd.exists_mem_open (hU.preimage (hf.comp continuous_subtype_val))
-        ⟨⟨t, hta⟩, htU⟩
-      have hkU : Y (d k) ω ∈ U := hk
-      exact (ciInf_le hbdd k).trans_lt (by simp only [ite_eq_left hkU, WithTop.coe_lt_top])
+      obtain ⟨k, hk : Y (d k) ω ∈ U⟩ :=
+        hd.exists_mem_open (hU.preimage (hf.comp continuous_subtype_val)) ⟨⟨t, hta⟩, htU⟩
+      exact (ciInf_le hbdd k).trans_lt (by simp only [ite_eq_left hk, WithTop.coe_lt_top])
     | coe c =>
       obtain ⟨t, ⟨hta, htc⟩, htU⟩ := hittingAfter_lt_iff.mp hb
-      obtain ⟨k, hk⟩ := hd.exists_mem_open ((isOpen_Iio.preimage continuous_subtype_val).inter
-        (hU.preimage (hf.comp continuous_subtype_val))) ⟨⟨t, hta⟩, htc, htU⟩
-      have hkc : (d k : ι) < c := hk.1; have hkU : Y (d k) ω ∈ U := hk.2
+      obtain ⟨k, hkc : (d k : ι) < c, hkU : Y (d k) ω ∈ U⟩ := hd.exists_mem_open
+        ((isOpen_Iio.preimage continuous_subtype_val).inter
+          (hU.preimage (hf.comp continuous_subtype_val))) ⟨⟨t, hta⟩, htc, htU⟩
       exact (ciInf_le hbdd k).trans_lt (by simp only [ite_eq_left hkU, WithTop.coe_lt_coe, hkc])
 
 namespace MeasureTheory
@@ -235,13 +230,10 @@ theorem measurable_hittingAfter_of_isOpen (hY : ∀ t, Measurable (Y t))
   classical
   have : Nonempty (Ici a) := ⟨⟨a, le_rfl⟩⟩
   let d : ℕ → Ici a := TopologicalSpace.denseSeq (Ici a)
-  have heq : hittingAfter Y U a =
-      fun ω ↦ ⨅ k, if Y (d k) ω ∈ U then ((d k : ι) : WithTop ι) else ⊤ :=
-    funext fun ω ↦ (hc ω).hittingAfter_eq_iInf_Ici_of_isOpen hU
-      (TopologicalSpace.denseRange_denseSeq (Ici a))
-  rw [heq]
-  exact Measurable.iInf fun k ↦ measurable_const.ite (hU.measurableSet.preimage (hY _))
-    measurable_const
+  rw [show hittingAfter Y U a = fun ω ↦ ⨅ k, if Y (d k) ω ∈ U then ((d k : ι) : WithTop ι) else ⊤
+    from funext fun ω ↦ (hc ω).hittingAfter_eq_iInf_Ici_of_isOpen hU
+      (TopologicalSpace.denseRange_denseSeq (Ici a))]
+  exact .iInf fun _ ↦ measurable_const.ite (hU.measurableSet.preimage (hY _)) measurable_const
 
 /-- Open-set entrance from any starting time of an almost-surely continuous process with almost
 everywhere measurable evaluations is almost everywhere measurable. -/

@@ -12,16 +12,10 @@ import TauCeti.Probability.Process.Version
 /-!
 # Everywhere-continuous measurable versions of Brownian motion
 
-Mathlib's `ProbabilityTheory.IsBrownianReal` requires only almost-everywhere measurable fixed-time
-evaluations and almost-surely continuous sample paths, with `B 0 =ᵐ[P] 0`. Hitting-time and
-optional-sampling arguments on raw measurable spaces need a process whose fixed-time evaluations
-are strongly measurable everywhere, whose sample paths are continuous on every outcome, and which
-starts at `0` on every outcome.
-
-`ProbabilityTheory.IsBrownianReal.exists_stronglyMeasurable_continuous_indist` produces such an
-indistinguishable Brownian version from
-`TauCeti.Probability.exists_stronglyMeasurable_continuous_eval_eq_indist`, without completeness of
-the ambient measurable space.
+`ProbabilityTheory.IsBrownianReal.exists_stronglyMeasurable_continuous_indist` constructs an
+indistinguishable Brownian version of any `IsBrownianReal` process whose fixed-time evaluations are
+strongly measurable everywhere, whose sample paths are continuous on every outcome, and which
+vanishes at time `0` on every outcome, without completeness of the ambient measurable space.
 -/
 
 public section
@@ -36,9 +30,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B W : ℝ≥0
 /-- Indistinguishability preserves the Brownian property. -/
 theorem congr_indist (hB : IsBrownianReal B P) (h : B ≡ᵐ[P] W) : IsBrownianReal W P where
   toIsPreBrownianReal := hB.toIsPreBrownianReal.congr h.ae_eq_eval
-  cont := by
-    filter_upwards [hB.cont, h] with ω hc hω
-    exact hc.congr hω
+  cont := hB.cont.mp (h.mono fun _ hω hc ↦ hc.congr hω)
 
 /-- Every real Brownian motion has an indistinguishable Brownian version whose fixed-time
 evaluations are strongly measurable everywhere, whose sample paths are continuous everywhere, and
