@@ -309,7 +309,7 @@ theorem coe_orthogonalGroupCongr_symm_apply (e : Q₁.IsometryEquiv Q₂) (g : o
     (m : M₁) : ((e.orthogonalGroupCongr).symm g : M₁ ≃ₗ[R] M₁) m
       = e.symm ((g : M₂ ≃ₗ[R] M₂) (e m)) := by
   simp only [orthogonalGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply,
-    LinearEquiv.autCongr_symm_apply_apply]; rfl
+    LinearEquiv.autCongr_symm_apply_apply, coe_toLinearEquiv, coe_symm_toLinearEquiv]
 
 /-- Transporting the orthogonal group along the identity isometry is the identity equivalence. -/
 @[simp]
