@@ -24,6 +24,7 @@ open Module
 namespace Submodule
 
 /-- The tensor product of two subspaces has dimension the product of their dimensions. -/
+@[simp]
 theorem finrank_map₂_mk {K M N : Type*} [Field K] [AddCommGroup M] [Module K M]
     [AddCommGroup N] [Module K N] (P : Submodule K M) (Q : Submodule K N) :
     finrank K (Submodule.map₂ (TensorProduct.mk K M N) P Q) = finrank K P * finrank K Q := by
