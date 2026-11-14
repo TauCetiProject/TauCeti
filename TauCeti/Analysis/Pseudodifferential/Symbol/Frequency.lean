@@ -52,6 +52,26 @@ private theorem exists_norm_iteratedFDeriv_besselWeight_le (s : ℝ) (k : ℕ) :
   rw [sub_div]
   exact exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le (by positivity) (s / 2) k
 
+/-- The operator-valued Bessel weight `ξ ↦ ⟨ξ / 2π⟩ ^ s • id`, the coefficient of
+`TauCeti.Symbol.besselPotential`, is smooth. -/
+theorem contDiff_besselWeight_smul_id (s : ℝ) :
+    ContDiff ℝ ∞ (fun ξ : CoordinateSpace n ↦
+      (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V) :=
+  (Complex.ofRealCLM.contDiff.comp
+    (Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow _ _).1).smul contDiff_const
+
+/-- The operator-valued Bessel weight `ξ ↦ ⟨ξ / 2π⟩ ^ s • id`, the coefficient of
+`TauCeti.Symbol.besselPotential`, satisfies the symbol estimates of order `s`. -/
+theorem exists_norm_iteratedFDeriv_besselWeight_smul_id_le (s : ℝ) (k : ℕ) :
+    ∃ C, ∀ ξ : CoordinateSpace n, ‖iteratedFDeriv ℝ k (fun ξ : CoordinateSpace n ↦
+      (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V) ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((s - k) / 2) := by
+  simpa only [ContinuousLinearMap.smulRight_apply, Complex.ofRealCLM_apply] using
+    ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow
+      (Complex.ofRealCLM.smulRight (ContinuousLinearMap.id ℂ V))
+      ((Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow _ _).1.of_le (mod_cast le_top))
+      (exists_norm_iteratedFDeriv_besselWeight_le s k)
+
 /-- The Bessel weight `⟨ξ / 2π⟩ ^ s = (1 + ‖ξ / 2π‖²) ^ (s / 2)` in the angular frequency, a
 uniform symbol of order `s` (`TauCeti.Symbol.isUniform_besselPotential`). Its quantization is
 Mathlib's Fourier multiplier `(1 + ‖ζ‖²) ^ (s / 2)` in the frequency `ζ = ξ / 2π`
@@ -59,15 +79,16 @@ Mathlib's Fourier multiplier `(1 + ‖ζ‖²) ^ (s / 2)` in the frequency `ζ =
 Mathlib's Bessel potential `TemperedDistribution.besselPotential`
 (`TauCeti.toTemperedDistribution_quantizeFrequencyCLM_besselPotential`). -/
 def besselPotential (s : ℝ) : Symbol n V V s :=
-  ofFrequency (fun ξ ↦ (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V)
-    ((Complex.ofRealCLM.contDiff.comp
-      (Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow _ _).1).smul contDiff_const)
-    fun k ↦ by
-      simpa only [ContinuousLinearMap.smulRight_apply, Complex.ofRealCLM_apply] using
-        ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow
-          (Complex.ofRealCLM.smulRight (ContinuousLinearMap.id ℂ V))
-          ((Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow _ _).1.of_le (mod_cast le_top))
-          (exists_norm_iteratedFDeriv_besselWeight_le s k)
+  ofFrequency _ (contDiff_besselWeight_smul_id s)
+    (exists_norm_iteratedFDeriv_besselWeight_smul_id_le s)
+
+/-- `TauCeti.Symbol.besselPotential` is the frequency-only symbol of the Bessel weight, so results
+about `TauCeti.Symbol.ofFrequency` apply to it. -/
+theorem besselPotential_eq_ofFrequency (s : ℝ) :
+    (besselPotential s : Symbol n V V s) =
+      ofFrequency _ (contDiff_besselWeight_smul_id s)
+        (exists_norm_iteratedFDeriv_besselWeight_smul_id_le s) :=
+  (rfl)
 
 @[simp]
 theorem coefficient_besselPotential (s : ℝ) (p : CoordinateSpace n × CoordinateSpace n) :
