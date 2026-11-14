@@ -34,6 +34,9 @@ This file proves it in the following forms.
   (`MeasureTheory.Measure.markovChainLaw_map_shift_iterate`). On an event `{(X 0, …, X n) ∈ A}` of
   the history, the future path has the law of the chain started from the law of `X n` restricted
   to that event (`MeasureTheory.Measure.markovChainLaw_restrict_map_shift_iterate`).
+* At a single future time, the transition law over a gap of `k` steps is `κ ^ k` on any
+  event of the history (`MeasureTheory.Measure.markovChainLaw_inter_preimage_eval_add`),
+  without a countability assumption on the state space.
 * One step ahead, as an identity of probabilities: for an event `B` of the history up to time `n`,
   `ℙ(B ∩ {X (n + 1) ∈ C}) = ∫_B κ (X n) C`
   (`MeasureTheory.Measure.markovChainLaw_inter_preimage_eval_succ`).
@@ -122,6 +125,30 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_restrict_map_shift_iterate [
   simp only [Function.comp_def]
   rw [hL, hR, markovChainLaw_map_prefix_succ_eq_compProd, ← Measure.compProd_restrict_left _ _ hπA,
     hκ, Measure.map_prodMap_compProd_comap]
+
+/-- On an event of the history through time `n`, the state at time `n + k` has the
+`k`-step transition law from the current state. -/
+theorem _root_.MeasureTheory.Measure.markovChainLaw_inter_preimage_eval_add [IsFiniteMeasure ν]
+    (n k : ℕ) {A : Set (ℕ → α)}
+    (hA : MeasurableSet[Filtration.piLE n] A) {B : Set α} (hB : MeasurableSet B) :
+    markovChainLaw ν κ (A ∩ (fun ω => ω (n + k)) ⁻¹' B) =
+      ∫⁻ ω in A, (κ ^ k) (ω n) B ∂markovChainLaw ν κ := by
+  rw [Filtration.piLE_eq_comap_prefix, MeasurableSpace.measurableSet_comap] at hA
+  obtain ⟨C, hC, rfl⟩ := hA
+  have hmap := congrArg (fun μ : Measure (ℕ → α) => μ.map (fun ω => ω k))
+    (Measure.markovChainLaw_restrict_map_shift_iterate ν κ n hC)
+  rw [Measure.map_map (measurable_pi_apply k) (measurable_shift_iterate n),
+    Measure.markovChainLaw_map_eval] at hmap
+  have heval : (fun ω : ℕ → α => ω k) ∘ (shift α)^[n] = fun ω => ω (n + k) := by
+    funext ω
+    simp [Nat.add_comm]
+  rw [heval] at hmap
+  have h := congrArg (fun μ : Measure α => μ B) hmap
+  rw [Measure.map_apply (measurable_pi_apply _) hB,
+    Measure.restrict_apply (hB.preimage (measurable_pi_apply _)),
+    Measure.bind_apply hB (Kernel.aemeasurable _), lintegral_map (Kernel.measurable_coe _ hB)
+      (measurable_pi_apply n)] at h
+  simpa only [Set.inter_comm] using h
 
 /-- **The future path is a chain started from the time-`n` law.** For a finite initial measure,
 the path `(X (n + k))ₖ` seen from time `n` has law `markovChainLaw ((κ ^ n) ∘ₘ ν) κ`. -/
