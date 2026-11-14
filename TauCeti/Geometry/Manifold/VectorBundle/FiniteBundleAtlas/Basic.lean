@@ -55,7 +55,8 @@ closed upper half-plane are read in `ℂ` in
   `TauCeti.FiniteBundleAtlas.exists_closure_dom_subset_baseSet`: existence of atlases subordinate
   to given neighbourhoods, and of joint atlases.
 * `TauCeti.FiniteBundleAtlas.coord_eq_coordChange`: coordinates in two charts differ by the
-  coordinate change of the bundle.
+  coordinate change of the bundle; `TauCeti.FiniteBundleAtlas.coord_eq_coordChangeL_coord` is the
+  same for charts of two different atlases.
 * `TauCeti.FiniteBundleAtlas.exists_continuous_coord_eqOn`: functions continuous on the chart
   images and related by these coordinate changes are the chart expressions of a continuous section.
 * `TauCeti.FiniteBundleAtlas.differentiableOn_transition`: chart transitions are differentiable.
@@ -403,6 +404,20 @@ theorem coord_eq_coordChange {i i' : Fin A.n} (s : ∀ x, V x) {y : E} (hy : y �
     Trivialization.coordChangeL_apply _ _
       ⟨A.dom_subset_baseSet i hx.1, A.dom_subset_baseSet i' hx.2⟩,
     (A.triv i).symm_apply_apply_mk (A.dom_subset_baseSet i hx.1)]
+
+/-- On the overlap of the domains of chart `i` of `A` and chart `i'` of another atlas `A'`, the
+reading of a section in chart `i'` of `A'` is the coordinate change of the bundle applied to its
+reading in chart `i` of `A`. -/
+theorem coord_eq_coordChangeL_coord (A' : FiniteBundleAtlas E M F V) {i : Fin A.n}
+    {i' : Fin A'.n} (s : ∀ x, V x) {y : E} (hy : y ∈ A'.image i')
+    (hi : (A'.chart i').symm y ∈ A.dom i) :
+    A'.coord i' s y = (A.triv i).coordChangeL ℝ (A'.triv i') ((A'.chart i').symm y)
+      (A.coord i s (A.chart i ((A'.chart i').symm y))) := by
+  have hb : (A'.chart i').symm y ∈ (A.triv i).baseSet ∩ (A'.triv i').baseSet :=
+    ⟨A.dom_subset_baseSet i hi, A'.dom_subset_baseSet i' (A'.symm_mem_dom hy)⟩
+  rw [A.coord_chart s hi, Trivialization.coordChangeL_apply _ _ hb,
+    (A.triv i).symm_apply_apply_mk hb.1]
+  exact A'.coord_def i' s y
 
 /-- **Gluing chart expressions.** Functions `g i`, continuous on the chart images `A.image i` and
 related on every overlap by the coordinate changes of the bundle, are the chart expressions of a

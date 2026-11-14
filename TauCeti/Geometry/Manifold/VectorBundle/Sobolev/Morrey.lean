@@ -196,11 +196,8 @@ theorem toSection_add (hp : 2 < p) (w v : SobolevSection A volume p 1) :
   · exact contMDiff_zero_iff.1 (ContMDiff.add_section (I := 𝓘(ℝ, ℂ))
       (contMDiff_zero_iff.2 (continuous_toSection hp w))
       (contMDiff_zero_iff.2 (continuous_toSection hp v)))
-  · filter_upwards [Lp.coeFn_add (A.sectionChartData.chartValueL volume p 1 i w)
-        (A.sectionChartData.chartValueL volume p 1 i v),
-      chartValueL_ae_eq_coord_toSection hp w i, chartValueL_ae_eq_coord_toSection hp v i,
-      ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy hw hv hyU
-    rw [AddMemClass.coe_add, map_add, hy, Pi.add_apply, hw, hv, A.coord_add i _ _ hyU]
+  · exact chartValueL_add_ae (chartValueL_ae_eq_coord_toSection hp w)
+      (chartValueL_ae_eq_coord_toSection hp v) i
 
 /-- Taking continuous representatives commutes with real scalar multiplication. -/
 @[simp]
@@ -209,10 +206,7 @@ theorem toSection_smul (hp : 2 < p) (c : ℝ) (w : SobolevSection A volume p 1) 
   refine (eq_toSection hp ?_ fun i ↦ ?_).symm
   · exact contMDiff_zero_iff.1 (ContMDiff.const_smul_section (I := 𝓘(ℝ, ℂ)) (a := c)
       (contMDiff_zero_iff.2 (continuous_toSection hp w)))
-  · filter_upwards [Lp.coeFn_smul c (A.sectionChartData.chartValueL volume p 1 i w),
-      chartValueL_ae_eq_coord_toSection hp w i,
-      ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy hw hyU
-    rw [SetLike.val_smul, map_smul, hy, Pi.smul_apply, hw, A.coord_smul i _ _ hyU]
+  · exact chartValueL_smul_ae c (chartValueL_ae_eq_coord_toSection hp w) i
 
 /-- Taking continuous representatives, as a real-linear map from `W^{1,p}(V)` to sections. -/
 def toSectionₗ (hp : 2 < p) : SobolevSection A volume p 1 →ₗ[ℝ] ∀ x, V x where
