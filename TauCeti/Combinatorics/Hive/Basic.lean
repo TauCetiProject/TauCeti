@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.LinearMap.Defs
 public import Mathlib.Algebra.Order.Group.Defs
 public import Mathlib.Algebra.Order.Hom.Monoid
 public import Mathlib.Geometry.Convex.Cone.Pointed
+public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.Combinatorics.Hive.Lattice
 public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
 import Mathlib.Algebra.Order.Ring.Int
@@ -56,11 +57,15 @@ weakly along each side (`Hive.boundary_antitone`), making each side of an intege
 
 ## Main results
 
-* `TauCeti.Hive.rhombusSlack_add_barycentricLinear`, `TauCeti.Hive.ofRhombusConcave_eq_iff`.
+* `TauCeti.Hive.isRhombusConcave_iff_ofChart`, `TauCeti.Hive.rhombusSlack_add_barycentricLinear`,
+  `TauCeti.Hive.ofRhombusConcave_eq_iff`.
 * `TauCeti.Hive.mixedDiff_nonpos_of_isUnitStep`,
   `TauCeti.Hive.counterexampleSeven_nonunit_mixedDiff_pos`.
-* `TauCeti.Hive.sum_boundary`, `TauCeti.Hive.boundary_antitone`.
-* `TauCeti.Hive.boundary_rotate`, `TauCeti.Hive.boundaryWeight_reflect`,
+* `TauCeti.Hive.sum_boundary`, `TauCeti.Hive.boundary_antitone`,
+  `TauCeti.Hive.apply_ofChart_zero_left`, `TauCeti.Hive.apply_ofChart_right`,
+  `TauCeti.Hive.apply_ofChart_self`.
+* `TauCeti.Hive.rotate_rotate_apply`, `TauCeti.Hive.rotate_rotate_apply_ofChart`,
+  `TauCeti.Hive.boundary_rotate`, `TauCeti.Hive.boundaryWeight_reflect`,
   `TauCeti.Hive.boundary_injective_two`.
 
 ## References
@@ -173,6 +178,34 @@ theorem isRhombusConcave_def [Preorder R] (f : Vertex n → R) :
 instance [Preorder R] [DecidableRel (· ≤ · : R → R → Prop)] (f : Vertex n → R) :
     Decidable (IsRhombusConcave f) :=
   decidable_of_iff _ (isRhombusConcave_def f).symm
+
+/-- **Product-chart characterization of rhombus concavity**: a lattice function `f : Vertex n → R`
+is rhombus-concave if and only if it satisfies the three product-chart unit-rhombus families
+(`isRhombus_ofChart_diag_y`, `isRhombus_ofChart_diag_z`, and `isRhombus_ofChart_diag_x`). -/
+theorem isRhombusConcave_iff_ofChart [Preorder R] (f : Vertex n → R) :
+    IsRhombusConcave f ↔
+      (∀ i j (hij : i < j) (hj : j < n),
+        f (Vertex.ofChart n (i + 1) j hij hj.le) +
+          f (Vertex.ofChart n i (j + 1) (by omega) hj) ≤
+          f (Vertex.ofChart n i j hij.le hj.le) +
+            f (Vertex.ofChart n (i + 1) (j + 1) (Nat.succ_le_succ hij.le) hj)) ∧
+      (∀ i j (hij : i < j) (hj : j < n),
+        f (Vertex.ofChart n i j hij.le hj.le) +
+          f (Vertex.ofChart n (i + 2) (j + 1) (Nat.succ_le_succ hij) hj) ≤
+          f (Vertex.ofChart n (i + 1) j hij hj.le) +
+            f (Vertex.ofChart n (i + 1) (j + 1) (Nat.succ_le_succ hij.le) hj)) ∧
+      (∀ i j (hij : i ≤ j) (hj : j + 2 ≤ n),
+        f (Vertex.ofChart n i j hij (by omega)) +
+          f (Vertex.ofChart n (i + 1) (j + 2) (by omega) hj) ≤
+          f (Vertex.ofChart n i (j + 1) (by omega) (by omega)) +
+            f (Vertex.ofChart n (i + 1) (j + 1) (Nat.succ_le_succ hij) (by omega))) :=
+  ⟨fun hf => ⟨fun i j hij hj => hf (isRhombus_ofChart_diag_y hij hj),
+    fun i j hij hj => hf (isRhombus_ofChart_diag_z hij hj),
+    fun i j hij hj => hf (isRhombus_ofChart_diag_x hij hj)⟩,
+   fun ⟨hy, hz, hx⟩ _ _ _ _ hr => hr.elim_ofChart
+    (P := fun a b c d => f b + f d ≤ f a + f c)
+    (fun {_ _ c _} h => by rwa [add_comm (f c)])
+    (fun {_ _ _ d} h => by rwa [add_comm (f d)]) hy hz hx⟩
 
 /-- A barycentric-affine function `p ↦ c₀ + p.x • α + p.y • β + p.z • γ` on `Vertex n`. -/
 def barycentricLinear (c₀ α β γ : R) (p : Vertex n) : R := c₀ + p.x • α + p.y • β + p.z • γ
@@ -617,6 +650,24 @@ theorem apply_edgePoint_two (h : Hive n R) (k : Fin (n + 1)) :
       _ = -h (Vertex.edgePoint n 2 0) + h (Vertex.edgePoint n 2 0) := by rw [hcompl]
       _ = 0 := neg_add_cancel _)
 
+/-- Along `A → B` (`i = 0`), `h(0, j)` equals `TauCeti.prefixSum j (h.boundary 0)`. -/
+theorem apply_ofChart_zero_left (h : Hive n R) {j : ℕ} (hj : j ≤ n) :
+    h (Vertex.ofChart n 0 j (Nat.zero_le j) hj) = TauCeti.prefixSum j (h.boundary 0) := by
+  rw [Vertex.ofChart_zero_left, h.apply_edgePoint_zero, TauCeti.prefixSum_def]
+
+/-- Along `B → C` (`j = n`), `h(i, n)` equals
+`(∑ r, h.boundary 0 r) + TauCeti.prefixSum i (h.boundary 1)`. -/
+theorem apply_ofChart_right (h : Hive n R) {i : ℕ} (hi : i ≤ n) :
+    h (Vertex.ofChart n i n hi le_rfl) =
+      (∑ r : Fin n, h.boundary 0 r) + TauCeti.prefixSum i (h.boundary 1) := by
+  rw [Vertex.ofChart_right, h.apply_edgePoint_one, TauCeti.prefixSum_def]
+
+/-- Along `C → A` (`i = j`), `h(j, j) = TauCeti.prefixSum j (fun r => -h.boundary 2 r.rev)`. -/
+theorem apply_ofChart_self (h : Hive n R) {j : ℕ} (hj : j ≤ n) :
+    h (Vertex.ofChart n j j le_rfl hj) = TauCeti.prefixSum j (fun r => -h.boundary 2 r.rev) := by
+  rw [Vertex.ofChart_self, h.apply_edgePoint_two, Fin.val_mk,
+    TauCeti.prefixSum_comp_rev hj (fun r => -h.boundary 2 r), Finset.sum_neg_distrib]
+
 /-- Side `0` edge differences of any rhombus-concave function are antitone. -/
 theorem antitone_boundaryLinear_zero_of_isRhombusConcave [IsOrderedAddMonoid R]
     {f : Vertex n → R} (hf : IsRhombusConcave f) : Antitone (boundaryLinear ℤ n R f 0) := by
@@ -696,6 +747,21 @@ theorem sum_productBoundary_eq_zero_iff (lam μ γ : DominantWeight n) :
   simp only [Fin.sum_univ_three, productBoundary_zero, productBoundary_one, productBoundary_two,
     DominantWeight.sum_dual]; omega
 
+theorem apply_ofChart_zero_left_of_productBoundary {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {j : ℕ} (hj : j ≤ n) :
+    h (Vertex.ofChart n 0 j (Nat.zero_le j) hj) = TauCeti.prefixSum j lam.1 := by
+  rw [h.apply_ofChart_zero_left hj, hb, productBoundary_zero]
+
+theorem apply_ofChart_right_of_productBoundary {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {i : ℕ} (hi : i ≤ n) :
+    h (Vertex.ofChart n i n hi le_rfl) = (∑ r : Fin n, lam.1 r) + TauCeti.prefixSum i μ.1 := by
+  rw [h.apply_ofChart_right hi, hb, productBoundary_zero, productBoundary_one]
+
+theorem apply_ofChart_self_of_productBoundary {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {j : ℕ} (hj : j ≤ n) :
+    h (Vertex.ofChart n j j le_rfl hj) = TauCeti.prefixSum j γ.1 := by
+  rw [h.apply_ofChart_self hj]; exact congrArg (TauCeti.prefixSum j) (funext fun r => by simp [hb])
+
 end Boundary
 
 /-! ### Dihedral action on normalized hives and boundaries -/
@@ -710,6 +776,44 @@ def rotate [IsOrderedAddMonoid R] (h : Hive n R) : Hive n R :=
 
 @[simp] theorem rotate_apply [IsOrderedAddMonoid R] (h : Hive n R) (p : Vertex n) :
     h.rotate p = h p.rotate - h (Vertex.cornerA n).rotate := (rfl)
+
+@[simp] theorem rotate_zero [IsOrderedAddMonoid R] : (0 : Hive n R).rotate = 0 := by
+  ext p; simp
+
+@[simp] theorem rotate_add [IsOrderedAddMonoid R] (h₁ h₂ : Hive n R) :
+    (h₁ + h₂).rotate = h₁.rotate + h₂.rotate := by
+  ext p; simp only [rotate_apply, add_apply]; abel
+
+@[simp] theorem rotate_nsmul [IsOrderedAddMonoid R] (k : ℕ) (h : Hive n R) :
+    (k • h).rotate = k • h.rotate := by
+  ext p; simp [rotate_apply, smul_sub]
+
+@[simp] theorem rotate_affine [IsOrderedAddMonoid R] (β γ : R) :
+    (affine n β γ).rotate = affine n (γ - β) (-β) := by
+  ext p
+  have hsum : n • β = p.x • β + p.y • β + p.z • β := by
+    rw [← add_nsmul, ← add_nsmul, p.sum_eq]
+  simp only [rotate_apply, affine_apply, Vertex.rotate_y, Vertex.rotate_z, Vertex.cornerA_x,
+    Vertex.cornerA_y, zero_smul, add_zero, hsum, smul_sub, smul_neg]
+  abel
+
+/-- Two clockwise rotations evaluate `h` at `p.rotate.rotate`, re-normalized by subtracting the
+value at `C = (0, 0, n) = (cornerA n).rotate.rotate`. -/
+theorem rotate_rotate_apply [IsOrderedAddMonoid R] (h : Hive n R) (p : Vertex n) :
+    h.rotate.rotate p = h p.rotate.rotate - h (Vertex.cornerA n).rotate.rotate := by
+  simp only [rotate_apply]
+  abel
+
+/-- In the product chart, `h.rotate.rotate` evaluates `h` at `⟨j - i, i, n - j, _⟩` shifted by the
+constant gauge offset `∑ r : Fin n, h.boundary 2 r`. -/
+theorem rotate_rotate_apply_ofChart [IsOrderedAddMonoid R] (h : Hive n R) {i j : ℕ}
+    (hij : i ≤ j) (hj : j ≤ n) :
+    h.rotate.rotate (Vertex.ofChart n i j hij hj) =
+      h ⟨j - i, i, n - j, by omega⟩ + ∑ r : Fin n, h.boundary 2 r := by
+  have hC : (Vertex.cornerA n).rotate.rotate = Vertex.edgePoint n 2 0 := by ext <;> simp
+  have hall : ({r : Fin n | 0 ≤ r.val} : Finset (Fin n)) = Finset.univ := by ext r; simp
+  rw [h.rotate_rotate_apply, Vertex.rotate_rotate_ofChart, hC, h.apply_edgePoint_two 0,
+    Fin.val_zero, hall, sub_neg_eq_add]
 
 @[simp] theorem rotate_rotate_rotate [IsOrderedAddMonoid R] (h : Hive n R) :
     h.rotate.rotate.rotate = h := by
@@ -734,6 +838,18 @@ def reflect (h : Hive n R) : Hive n R :=
 
 @[simp] theorem reflect_apply (h : Hive n R) (p : Vertex n) : h.reflect p = h p.reflect := (rfl)
 @[simp] theorem reflect_reflect (h : Hive n R) : h.reflect.reflect = h := by ext p; simp
+
+@[simp] theorem reflect_zero : (0 : Hive n R).reflect = 0 := by ext p; simp
+
+@[simp] theorem reflect_add [IsOrderedAddMonoid R] (h₁ h₂ : Hive n R) :
+    (h₁ + h₂).reflect = h₁.reflect + h₂.reflect := by ext p; simp
+
+@[simp] theorem reflect_nsmul [IsOrderedAddMonoid R] (k : ℕ) (h : Hive n R) :
+    (k • h).reflect = k • h.reflect := by ext p; simp
+
+@[simp] theorem reflect_affine [IsOrderedAddMonoid R] (β γ : R) :
+    (affine n β γ).reflect = affine n γ β := by
+  ext p; simp [add_comm]
 
 theorem reflect_involutive : Function.Involutive (reflect (n := n) (R := R)) := reflect_reflect
 theorem reflect_injective : Function.Injective (reflect (n := n) (R := R)) :=
