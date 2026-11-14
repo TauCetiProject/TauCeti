@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Irreducible
 public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
+public import TauCeti.RepresentationTheory.Dual
 public import TauCeti.RepresentationTheory.Irreducible
 
 /-!
@@ -34,16 +35,21 @@ Away from characteristic two the second alternative is exactly alternation, whic
 orthogonal/symplectic dichotomy: an irreducible representation carries at most a line of invariant
 forms, and any nonzero one on it is either symmetric or alternating (in characteristic two it is
 symmetric).  For an irreducible representation of a finite group over an algebraically closed
-field of characteristic zero, the values `+1` and `-1` of the Frobenius-Schur indicator
+field in which `|G|` is invertible, the values `+1` and `-1` of the Frobenius-Schur indicator
 `TauCeti.Representation.frobeniusSchurIndicator` are characterized by these invariant symmetric
-and alternating forms; this file supplies the forms, not the count.
+and alternating forms (for `-1`, also when `2 ≠ 0`); this file supplies the forms, not their
+character-theoretic count.
 
-Nothing here needs a finite group, and almost nothing needs finite dimensions: invariance, and the
+Apart from averaging over `G` and the counts that rest on it, which need `|G|` to be invertible,
+nothing here needs a finite group, and few results need finite dimensions: invariance, and the
 symmetric and alternating invariant forms with it, are defined for a representation of a monoid on
-a module over a commutative semiring, and only the results that invoke Schur's lemma ask for an
-algebraically closed field and a finite-dimensional space.  The `g⁻¹` in
+a module over a commutative semiring.  Finite dimensions are asked for by the results that invoke
+Schur's lemma (which also want an algebraically closed field), by
+`TauCeti.Representation.IsInvariantForm.equivDual`, and by the two
+`finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms` counts.  The `g⁻¹` in
 `TauCeti.Representation.IsInvariantForm.apply_left`, and with it the comparison with the dual
-representation, is what makes `G` a group.
+representation, makes `G` a group, as does averaging over `G`
+(`Representation.exists_mem_invariantForms_sub_flip_eq`), which reindexes the sum by `g ↦ g * h`.
 
 ## Main definitions
 
@@ -68,6 +74,24 @@ representation, is what makes `G` a group.
   invariants of `linHom ρ ρ.dual`.
 * `TauCeti.Representation.symmetricInvariantForms_inf_alternatingInvariantForms`: away from
   characteristic two the symmetric and the alternating invariant forms meet only in `0`.
+* `Representation.sub_flip_mem_alternatingInvariantForms`: for an invariant form `B`, the form
+  `B - B.flip` is an invariant alternating form.
+* `Representation.symmetricInvariantForms_sup_alternatingInvariantForms`: when `2` is invertible,
+  every invariant form is the sum of a symmetric and an alternating one.
+* `Representation.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms`: so
+  away from characteristic two, in finite dimensions, the two counts add to the number of invariant
+  forms.
+* `Representation.exists_mem_invariantForms_sub_flip_eq`: when `|G|` is invertible, an invariant
+  form of the shape `B₀ - B₀.flip` is `B - B.flip` for an invariant form `B`, by averaging.
+* When `|G|` is invertible in the field `k`, the two counts add to the number of invariant forms in
+  finite dimensions, in every characteristic, by
+`Representation.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms_of_invertible`
+  (the map `B ↦ B - B.flip` carries the invariant forms onto the invariant alternating forms, with
+  the invariant symmetric forms as kernel).
+* `Representation.map_lcurry_eq_invariantForms`: currying maps the invariant functionals on the
+  tensor square `V ⊗ V` onto the invariant forms, over any commutative ring.
+* `Representation.finrank_invariantForms_eq_finrank_invariants_tprod_self`: over a field in which
+  `|G|` is invertible, the invariant forms and the invariants of `V ⊗ V` have the same `finrank`.
 * `TauCeti.Representation.IsInvariantForm.nondegenerate` and
   `TauCeti.Representation.IsInvariantForm.nondegenerate_iff_ne_zero`: an invariant form on an
   irreducible representation is nondegenerate exactly when it is nonzero.
@@ -523,3 +547,186 @@ end Irreducible
 end Representation
 
 end TauCeti
+
+/-! ### Splitting an invariant form into its symmetric and alternating parts -/
+
+namespace Representation
+
+open LinearMap (BilinForm)
+open Module (finrank)
+open TauCeti.Representation
+
+section SubFlip
+
+variable {k G V : Type*} [CommRing k] [Monoid G] [AddCommMonoid V] [Module k V]
+
+/-- **For an invariant form `B`, the form `B - B.flip` is an invariant alternating form.** -/
+theorem sub_flip_mem_alternatingInvariantForms (ρ : Representation k G V) {B : BilinForm k V}
+    (hB : B ∈ invariantForms ρ) : B - B.flip ∈ alternatingInvariantForms ρ := by
+  refine mem_alternatingInvariantForms.mpr ⟨?_, fun x ↦ by simp⟩
+  have e : B - B.flip = B + (-1 : k) • B.flip := by
+    ext x y
+    simp [sub_eq_add_neg]
+  rw [e]
+  exact (mem_invariantForms.mp hB).add ((mem_invariantForms.mp hB).flip.smul _)
+
+end SubFlip
+
+section SymmetricAlternatingSup
+
+variable {k G V : Type*} [CommRing k] [Invertible (2 : k)] [Monoid G] [AddCommMonoid V]
+  [Module k V]
+
+/-- **Every invariant form is the sum of a symmetric and an alternating invariant form** when `2` is
+invertible. -/
+theorem symmetricInvariantForms_sup_alternatingInvariantForms (ρ : Representation k G V) :
+    symmetricInvariantForms ρ ⊔ alternatingInvariantForms ρ = invariantForms ρ := by
+  refine le_antisymm (sup_le (symmetricInvariantForms_le ρ) (alternatingInvariantForms_le ρ))
+    fun B hB ↦ Submodule.mem_sup.mpr ⟨⅟(2 : k) • (B + B.flip), ?_, ⅟(2 : k) • (B - B.flip), ?_, ?_⟩
+  · exact Submodule.smul_mem _ _ (mem_symmetricInvariantForms.mpr
+      ⟨(mem_invariantForms.mp hB).add (mem_invariantForms.mp hB).flip,
+        ⟨fun x y ↦ by simp [add_comm]⟩⟩)
+  · exact Submodule.smul_mem _ _ (sub_flip_mem_alternatingInvariantForms ρ hB)
+  · ext x y
+    simp only [LinearMap.add_apply, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]
+    linear_combination B x y * invOf_mul_self (2 : k)
+
+end SymmetricAlternatingSup
+
+section SymmetricAlternatingFinrank
+
+variable {k G V : Type*} [Field k] [NeZero (2 : k)] [Monoid G] [AddCommGroup V] [Module k V]
+  [FiniteDimensional k V]
+
+/-- **The two invariant form counts add to the number of invariant forms**, away from
+characteristic two and in finite dimensions. -/
+theorem finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms
+    (ρ : Representation k G V) :
+    finrank k (symmetricInvariantForms ρ) + finrank k (alternatingInvariantForms ρ) =
+      finrank k (invariantForms ρ) := by
+  have : Invertible (2 : k) := invertibleOfNonzero two_ne_zero
+  have h := Submodule.finrank_sup_add_finrank_inf_eq (K := k) (V := BilinForm k V)
+    (symmetricInvariantForms ρ) (alternatingInvariantForms ρ)
+  rwa [symmetricInvariantForms_sup_alternatingInvariantForms,
+    symmetricInvariantForms_inf_alternatingInvariantForms
+      (IsRegular.of_ne_zero (two_ne_zero (α := k))).left ρ, finrank_bot, add_zero, eq_comm] at h
+
+end SymmetricAlternatingFinrank
+
+section SymmetricAlternatingInvertible
+
+/-- **An invariant form of the shape `B₀ - B₀.flip` is `B - B.flip` for an invariant form `B`**
+when `|G|` is invertible in the commutative ring `k`: average `B₀` over `G`. -/
+theorem exists_mem_invariantForms_sub_flip_eq {k G V : Type*} [CommRing k] [Group G]
+    [AddCommMonoid V] [Module k V] [Invertible (Nat.card G : k)] (ρ : Representation k G V)
+    {A B₀ : BilinForm k V} (hA : IsInvariantForm ρ A) (hB₀ : B₀ - B₀.flip = A) :
+    ∃ B ∈ invariantForms ρ, B - B.flip = A := by
+  rcases subsingleton_or_nontrivial k with hk | hk
+  · have := Module.subsingleton k (BilinForm k V)
+    exact ⟨A, hA, Subsingleton.elim _ _⟩
+  have : Finite G := Nat.finite_of_card_ne_zero fun h => by
+    simpa [h] using Invertible.ne_zero (Nat.card G : k)
+  have := Fintype.ofFinite G
+  have hB₀' (x y : V) : B₀ x y - B₀ y x = A x y := by
+    simpa using LinearMap.congr_fun₂ hB₀ x y
+  refine ⟨⅟(Nat.card G : k) • ∑ g : G, B₀.compl₁₂ (ρ g) (ρ g),
+    mem_invariantForms.mpr (isInvariantForm_iff.mpr fun h x y => ?_), ?_⟩
+  · have hmul (g : G) (v : V) : ρ g (ρ h v) = ρ (g * h) v := by rw [map_mul]; rfl
+    simp only [LinearMap.smul_apply, LinearMap.sum_apply, LinearMap.compl₁₂_apply, hmul]
+    exact congrArg _ (Equiv.sum_comp (Equiv.mulRight h) fun g => B₀ (ρ g x) (ρ g y))
+  · ext x y
+    simp only [LinearMap.sub_apply, LinearMap.BilinForm.flip_apply, LinearMap.smul_apply,
+      LinearMap.sum_apply, LinearMap.compl₁₂_apply, smul_eq_mul, ← mul_sub,
+      ← Finset.sum_sub_distrib, hB₀', hA.apply, Finset.sum_const, Finset.card_univ,
+      Fintype.card_eq_nat_card, nsmul_eq_mul, invOf_mul_cancel_left]
+
+/-- **The invariant symmetric and alternating forms together are as many as the invariant forms**,
+for a finite-dimensional `V` over a field in which `|G|` is invertible, in every characteristic.
+In characteristic two the two kinds of form overlap and need not span the invariant forms, but
+the map `B ↦ B - B.flip` still carries the invariant forms onto the invariant alternating forms,
+by averaging, with the invariant symmetric forms as kernel. -/
+theorem finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms_of_invertible
+    {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+    [Invertible (Nat.card G : k)] (ρ : Representation k G V) :
+    finrank k (symmetricInvariantForms ρ) + finrank k (alternatingInvariantForms ρ) =
+      finrank k (invariantForms ρ) := by
+  -- `LinearMap.id - flipHom.toLinearMap` does not elaborate: instance search finds no
+  -- `AddCommGroup` on the endomorphisms of the forms, so the difference is written with `-1 •`.
+  let φ : BilinForm k V →ₗ[k] BilinForm k V :=
+    LinearMap.id + (-1 : k) • LinearMap.BilinForm.flipHom.toLinearMap
+  have hφ (B : BilinForm k V) : φ B = B - B.flip := by
+    ext x y
+    simp [φ, sub_eq_add_neg]
+  have hrange : (invariantForms ρ).map φ = alternatingInvariantForms ρ := by
+    refine le_antisymm (Submodule.map_le_iff_le_comap.mpr fun B hB => ?_) fun A hA => ?_
+    · simpa only [Submodule.mem_comap, hφ] using sub_flip_mem_alternatingInvariantForms ρ hB
+    · obtain ⟨hAinv, hAalt⟩ := mem_alternatingInvariantForms.mp hA
+      obtain ⟨B₀, hB₀⟩ := hAalt.exists_sub_flip_eq
+      simpa only [Submodule.mem_map, hφ] using exists_mem_invariantForms_sub_flip_eq ρ hAinv hB₀
+  have hker : LinearMap.ker (φ.domRestrict (invariantForms ρ)) =
+      (symmetricInvariantForms ρ).comap (invariantForms ρ).subtype := by
+    ext ⟨B, hB⟩
+    simp only [LinearMap.mem_ker, LinearMap.domRestrict_apply, Submodule.mem_comap,
+      Submodule.subtype_apply, mem_symmetricInvariantForms, mem_invariantForms.mp hB, true_and,
+      LinearMap.BilinForm.isSymm_iff_flip, hφ]
+    exact (sub_eq_zero (a := B) (b := B.flip)).trans eq_comm
+  have hrange' : finrank k (LinearMap.range (φ.domRestrict (invariantForms ρ))) =
+      finrank k (alternatingInvariantForms ρ) := by
+    rw [LinearMap.range_domRestrict, hrange]
+  have hker' : finrank k (LinearMap.ker (φ.domRestrict (invariantForms ρ))) =
+      finrank k (symmetricInvariantForms ρ) := by
+    rw [hker]
+    exact (Submodule.comapSubtypeEquivOfLe (symmetricInvariantForms_le ρ)).finrank_eq
+  -- Instance search does not see `invariantForms ρ` as a subgroup of the additive group of forms,
+  -- whose `AddCommMonoid` structure it carries from the semiring setting, so both are supplied.
+  let : AddCommGroup (invariantForms ρ) :=
+    Submodule.addCommGroup (M := BilinForm k V) (invariantForms ρ)
+  have : FiniteDimensional k (invariantForms ρ) :=
+    FiniteDimensional.finiteDimensional_submodule (V := BilinForm k V) (invariantForms ρ)
+  have h := LinearMap.finrank_range_add_finrank_ker (K := k) (V₂ := BilinForm k V)
+    (φ.domRestrict (invariantForms ρ))
+  omega
+
+end SymmetricAlternatingInvertible
+
+/-! ### Invariant forms from invariant functionals on the tensor square -/
+
+section TensorSquare
+
+variable {k G V : Type*} [CommRing k] [Group G] [AddCommMonoid V] [Module k V]
+
+/-- Over any commutative ring, currying (`TensorProduct.lcurry`) maps the invariant functionals on
+the tensor square onto the invariant forms: a functional `ψ` on `V ⊗ V` is invariant exactly when
+the form `(x, y) ↦ ψ (x ⊗ y)` is. -/
+theorem map_lcurry_eq_invariantForms (ρ : Representation k G V) :
+    Submodule.map (TensorProduct.lcurry (RingHom.id k) V V k) (ρ.tprod ρ).dual.invariants =
+      invariantForms ρ := by
+  refine le_antisymm (Submodule.map_le_iff_le_comap.mpr fun ψ hψ => ?_) fun B hB => ?_
+  · refine mem_invariantForms.mpr (isInvariantForm_iff.mpr fun g x y => ?_)
+    simp only [TensorProduct.lcurry_apply]
+    rw [← TensorProduct.map_tmul, ← tprod_apply, apply_of_mem_invariants_dual hψ]
+  · refine ⟨TensorProduct.lift.equiv (RingHom.id k) V V k B,
+      mem_invariants_dual_iff.mpr fun g u => ?_, ?_⟩
+    · have hext : TensorProduct.lift.equiv (RingHom.id k) V V k B ∘ₗ (ρ.tprod ρ) g =
+          TensorProduct.lift.equiv (RingHom.id k) V V k B :=
+        TensorProduct.ext' fun x y => by
+          simpa using (mem_invariantForms.mp hB).apply g x y
+      exact LinearMap.congr_fun hext u
+    · exact (TensorProduct.lift.equiv (RingHom.id k) V V k).symm_apply_apply B
+
+end TensorSquare
+
+/-- **The invariant forms and the invariants of the tensor square have the same `finrank`**,
+whenever `|G|` is invertible in the field `k`: currying identifies the invariant forms with the
+invariant functionals on `V ⊗ V` (`Representation.map_lcurry_eq_invariantForms`), and a
+representation and its dual have equally many invariants
+(`TauCeti.Representation.finrank_invariants_dual`).  They have the same dimension when
+finite-dimensional, and both `finrank`s are `0`, by convention, when infinite-dimensional. -/
+theorem finrank_invariantForms_eq_finrank_invariants_tprod_self {k G V : Type*} [Field k] [Group G]
+    [AddCommGroup V] [Module k V] [Invertible (Nat.card G : k)] (ρ : Representation k G V) :
+    finrank k (invariantForms ρ) = finrank k (ρ.tprod ρ).invariants := by
+  rw [← map_lcurry_eq_invariantForms ρ]
+  exact (LinearEquiv.finrank_map_eq (TensorProduct.lift.equiv (RingHom.id k) V V k).symm _).trans
+    (finrank_invariants_dual _)
+
+end Representation
