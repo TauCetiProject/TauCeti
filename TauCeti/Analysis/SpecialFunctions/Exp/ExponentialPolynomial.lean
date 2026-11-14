@@ -56,12 +56,19 @@ auxiliary function `∑ₐ,ᵦ ηₐᵦ exp((a + bβ) λ z)` in his proof of the
   at every point.
 * `TauCeti.analyticOrderAt_sum_mul_cexp_lt_card`: under the same hypotheses, the order of
   vanishing of `∑ᵢ cᵢ exp(ρᵢ z)` at every point is less than the number `N` of terms.
+* `Finset.iteratedDeriv_sum_eval_mul_cexp`: the `n`-th derivative of a complex exponential
+  polynomial `∑ₖ pₖ(z) exp(γₖ z)` applies `r ↦ r' + γₖ r` `n` times to each `pₖ`.
+* `TauCeti.eq_zero_of_sum_eval_mul_cexp_eq_zero_of_injOn`,
+  `TauCeti.eq_zero_of_sum_eval_mul_cexp_eq_zero`: complex exponential polynomials with pairwise
+  distinct frequencies are linearly independent over `ℂ[X]`.
 
 ## References
 
 * J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 4, §4.4, Lemma 4.23.
 * M. Karatarakis and F. Wiedijk, *A formalization of the Gelfond–Schneider theorem*,
   arXiv:2603.24823 (2026), §3.
+* M. Karatarakis, formalization of Baker's theorem (`mkaratarakis/mathlib4`, branch `baker`,
+  commit `1d51891b5b`, `Mathlib/NumberTheory/Transcendental/Baker/ExpIndep.lean`, Apache 2.0).
 -/
 
 public section
@@ -203,5 +210,126 @@ theorem analyticOrderAt_sum_mul_cexp_lt_card {ι : Type*} {s : Finset ι} {ρ : 
   by_contra! h
   have hE : AnalyticAt ℂ (fun z ↦ ∑ i ∈ s, c i * Complex.exp (ρ i * z)) z₀ := by fun_prop
   exact hne ((natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero hE).1 h k hk)
+
+end TauCeti
+
+/-! ### Complex exponential polynomials -/
+
+namespace Finset
+
+/-- The derivative of `∑ₖ pₖ(z) exp(γₖ z)` is `∑ₖ (pₖ' + γₖ pₖ)(z) exp(γₖ z)`. -/
+theorem hasDerivAt_sum_eval_mul_cexp {ι : Type*} (s : Finset ι) (γ : ι → ℂ)
+    (p : ι → ℂ[X]) (z : ℂ) :
+    HasDerivAt (fun z ↦ ∑ i ∈ s, (p i).eval z * Complex.exp (γ i * z))
+      (∑ i ∈ s, (derivative (p i) + C (γ i) * p i).eval z * Complex.exp (γ i * z)) z := by
+  refine HasDerivAt.fun_sum fun i _ ↦ ?_
+  refine (((p i).hasDerivAt z).fun_mul ((hasDerivAt_id' z).const_mul (γ i)).cexp).congr_deriv ?_
+  simp only [eval_add, eval_mul, eval_C, mul_one]
+  ring
+
+/-- Iterated differentiation of `∑ₖ pₖ(z) exp(γₖ z)` applies `r ↦ r' + γₖ r` to each coefficient
+polynomial `pₖ`. -/
+@[simp]
+theorem iteratedDeriv_sum_eval_mul_cexp {ι : Type*} (s : Finset ι) (γ : ι → ℂ)
+    (p : ι → ℂ[X]) (n : ℕ) :
+    iteratedDeriv n (fun z ↦ ∑ i ∈ s, (p i).eval z * Complex.exp (γ i * z)) =
+      fun z ↦ ∑ i ∈ s,
+        ((fun r ↦ derivative r + C (γ i) * r)^[n] (p i)).eval z * Complex.exp (γ i * z) := by
+  induction n with
+  | zero => ext z; simp
+  | succ n ih =>
+    funext z
+    rw [iteratedDeriv_succ, ih, (s.hasDerivAt_sum_eval_mul_cexp γ _ z).deriv]
+    simp only [Function.iterate_succ_apply']
+
+end Finset
+
+namespace TauCeti
+
+/-- **Linear independence of univariate complex exponential polynomials** for frequencies
+injective on `s`: if `∑ i ∈ s, (p i)(z) exp(γ i * z) = 0` for every `z : ℂ`, then every
+coefficient polynomial `p i` on `s` is zero. -/
+theorem eq_zero_of_sum_eval_mul_cexp_eq_zero_of_injOn {ι : Type*} {s : Finset ι}
+    {γ : ι → ℂ} (hγ : Set.InjOn γ s) {p : ι → ℂ[X]}
+    (h : ∀ z : ℂ, ∑ i ∈ s, (p i).eval z * Complex.exp (γ i * z) = 0) :
+    ∀ i ∈ s, p i = 0 := by
+  -- Shift the exponents by `-γ a` and differentiate `deg(p a) + 1` times to annihilate the `a`
+  -- term while keeping the `q ↦ q' + (γ i - γ a) q` operator injective on the remaining terms.
+  induction s using Finset.cons_induction generalizing γ p with
+  | empty => simp
+  | cons a t hat ih =>
+    set δ : ι → ℂ := fun i ↦ γ i - γ a
+    set D : ℂ → ℂ[X] → ℂ[X] := fun d r ↦ derivative r + C d * r
+    set N := (p a).natDegree + 1
+    have hshift :
+        (fun z ↦ ∑ i ∈ cons a t hat, (p i).eval z * Complex.exp (δ i * z)) = fun _ ↦ 0 := by
+      funext z
+      have hz : ∑ i ∈ cons a t hat, (p i).eval z * Complex.exp (δ i * z) =
+          Complex.exp (-(γ a * z)) *
+            ∑ i ∈ cons a t hat, (p i).eval z * Complex.exp (γ i * z) := by
+        rw [mul_sum]
+        refine sum_congr rfl fun i _ ↦ ?_
+        rw [mul_left_comm, ← Complex.exp_add]
+        congr 2
+        simp only [δ]
+        ring
+      rw [hz, h z, mul_zero]
+    have hN : ∀ z : ℂ, ∑ i ∈ t, ((D (δ i))^[N] (p i)).eval z * Complex.exp (δ i * z) = 0 := by
+      intro z
+      have hderiv := congrFun ((cons a t hat).iteratedDeriv_sum_eval_mul_cexp δ p N) z
+      rw [hshift, iteratedDeriv_const, sum_cons] at hderiv
+      have hDa : (D (δ a))^[N] (p a) = 0 := by
+        simp only [D, δ, sub_self, map_zero, zero_mul, add_zero]
+        exact iterate_derivative_eq_zero (Nat.lt_succ_self _)
+      simpa only [D, hDa, eval_zero, zero_mul, zero_add, ite_self] using hderiv.symm
+    have hγ' : Set.InjOn δ t := fun i hi j hj hij ↦
+      hγ (mem_cons_of_mem hi) (mem_cons_of_mem hj) (sub_left_inj.1 hij)
+    have ht : ∀ i ∈ t, p i = 0 := fun i hi ↦ by
+      have hδ : δ i ≠ 0 := fun h0 ↦
+        hat (hγ (mem_cons_of_mem hi) (mem_cons_self a t) (sub_eq_zero.1 h0) ▸ hi)
+      exact (iterate_derivative_add_C_mul_eq_zero_iff hδ N).1 (ih hγ' hN i hi)
+    have hpa : p a = 0 := by
+      apply (p a).eq_zero_of_infinite_isRoot
+      refine Set.infinite_univ.mono fun z _ ↦ ?_
+      have hz := h z
+      rw [sum_cons, sum_eq_zero fun i hi ↦ by simp [ht i hi], add_zero,
+        mul_eq_zero, or_iff_left (Complex.exp_ne_zero _)] at hz
+      exact hz
+    exact (forall_mem_cons _ _).2 ⟨hpa, ht⟩
+
+/-- **Linear independence of univariate complex exponential polynomials**: if
+`∑ c ∈ s, (p c)(z) exp(c z) = 0` for every `z : ℂ`, then `p c = 0` for all `c ∈ s`. -/
+theorem eq_zero_of_sum_eval_mul_cexp_eq_zero {s : Finset ℂ} {p : ℂ → ℂ[X]}
+    (h : ∀ z : ℂ, ∑ c ∈ s, (p c).eval z * Complex.exp (c * z) = 0) :
+    ∀ c ∈ s, p c = 0 :=
+  eq_zero_of_sum_eval_mul_cexp_eq_zero_of_injOn (fun _ _ _ _ ↦ id) h
+
+/-- A complex exponential polynomial with pairwise distinct frequencies on `s` vanishes everywhere
+if and only if all of its coefficient polynomials on `s` vanish. -/
+theorem sum_eval_mul_cexp_eq_zero_iff_of_injOn {ι : Type*} {s : Finset ι} {γ : ι → ℂ}
+    (hγ : Set.InjOn γ s) {p : ι → ℂ[X]} :
+    (∀ z : ℂ, ∑ i ∈ s, (p i).eval z * Complex.exp (γ i * z) = 0) ↔
+      ∀ i ∈ s, p i = 0 :=
+  ⟨eq_zero_of_sum_eval_mul_cexp_eq_zero_of_injOn hγ, fun hp z ↦
+    sum_eq_zero fun i hi ↦ by simp [hp i hi]⟩
+
+/-- A complex exponential polynomial indexed by a finite set of frequencies vanishes everywhere
+if and only if all of its coefficient polynomials vanish. -/
+theorem sum_eval_mul_cexp_eq_zero_iff {s : Finset ℂ} {p : ℂ → ℂ[X]} :
+    (∀ z : ℂ, ∑ c ∈ s, (p c).eval z * Complex.exp (c * z) = 0) ↔
+      ∀ c ∈ s, p c = 0 :=
+  sum_eval_mul_cexp_eq_zero_iff_of_injOn (fun _ _ _ _ ↦ id)
+
+/-- Uniqueness of polynomial coefficients in a univariate complex exponential polynomial
+expansion. -/
+theorem sum_eval_mul_cexp_eq_iff {s : Finset ℂ} {p q : ℂ → ℂ[X]} :
+    (∀ z : ℂ, ∑ c ∈ s, (p c).eval z * Complex.exp (c * z) =
+      ∑ c ∈ s, (q c).eval z * Complex.exp (c * z)) ↔ ∀ c ∈ s, p c = q c := by
+  constructor
+  · intro h
+    have hz : ∀ z : ℂ, ∑ c ∈ s, (p c - q c).eval z * Complex.exp (c * z) = 0 := fun z ↦ by
+      simp only [eval_sub, sub_mul, sum_sub_distrib, h z, sub_self]
+    exact fun c hc ↦ sub_eq_zero.1 (eq_zero_of_sum_eval_mul_cexp_eq_zero hz c hc)
+  · exact fun h z ↦ sum_congr rfl fun c hc ↦ by rw [h c hc]
 
 end TauCeti

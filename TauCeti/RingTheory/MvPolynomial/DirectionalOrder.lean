@@ -22,6 +22,10 @@ the product of their first nonzero homogeneous Taylor components remains nonzero
 
 These coefficient formulas supply the algebraic input for choosing uniform directions in
 families of constant ambient order, and hence for analytic preparation of discriminants.
+Applying simultaneous order detection at the origin to both a finite family of polynomials and the
+pairwise differences of distinct linear forms yields a single direction along which every nonzero
+polynomial stays nonzero and the linear forms take pairwise distinct values
+(`MvPolynomial.exists_injOn_sum_mul_and_aeval_C_mul_X_ne_zero`).
 Restricting to lines through the origin also detects homogeneity over an infinite domain:
 `MvPolynomial.isHomogeneous_iff_forall_eval_smul` says that `p` is homogeneous of degree `n`
 exactly when `eval (a • x) p = a ^ n • eval x p` for all `a` and `x`.
@@ -194,7 +198,44 @@ theorem isHomogeneous_iff_forall_eval_smul {p : MvPolynomial σ R} {n : ℕ} :
   rw [hp]
   exact homogeneousComponent_isHomogeneous n p
 
-end InfiniteDomain
+/-- Over an infinite domain, a single direction simultaneously keeps a finite family of nonzero
+multivariate polynomials nonzero along the line through the origin and separates a finite family of
+distinct linear forms. Zero polynomials in the family are ignored. -/
+theorem exists_injOn_sum_mul_and_aeval_C_mul_X_ne_zero [Fintype σ] {κ : Type*}
+    {s : Finset κ} {w : κ → σ → R} (hw : Set.InjOn w s) (p : κ → MvPolynomial σ R) :
+    ∃ v : σ → R, Set.InjOn (fun k ↦ ∑ j, w k j * v j) s ∧
+      ∀ k ∈ s, p k ≠ 0 → aeval (fun j ↦ Polynomial.C (v j) * Polynomial.X) (p k) ≠ 0 := by
+  classical
+  let q : κ ⊕ (κ × κ) → MvPolynomial σ R :=
+    Sum.elim p fun m ↦ ∑ j, C (w m.1 j - w m.2 j) * X j
+  obtain ⟨v, hv⟩ := exists_forall_trailingDegree_aeval_C_add_C_mul_X_eq
+    (s.disjSum (s ×ˢ s)) q 0
+  have hne {i : κ ⊕ (κ × κ)} (hi : i ∈ s.disjSum (s ×ˢ s)) (hqi : q i ≠ 0) :
+      aeval (fun j ↦ Polynomial.C (v j) * Polynomial.X) (q i) ≠ 0 := by
+    have hdeg := hv i hi
+    simp only [Pi.zero_apply, map_zero, zero_add] at hdeg
+    exact Polynomial.trailingDegree_eq_top.not.1
+      (hdeg ▸ orderAt_eq_top_iff.not.2 hqi)
+  refine ⟨v, fun k₁ hk₁ k₂ hk₂ hsum ↦ ?_,
+    fun k hk hpk ↦ hne (Finset.mem_disjSum.2 (Or.inl ⟨k, hk, rfl⟩)) hpk⟩
+  by_contra hne_k
+  obtain ⟨j₀, hj₀⟩ := Function.ne_iff.1 (hw.ne hk₁ hk₂ hne_k)
+  have hq_ne : q (Sum.inr (k₁, k₂)) ≠ 0 := fun hzero ↦
+    sub_ne_zero.2 hj₀ <| by
+      simpa [q, Pi.single_apply] using congrArg (eval (Pi.single j₀ (1 : R))) hzero
+  refine hne (Finset.mem_disjSum.2 (Or.inr ⟨(k₁, k₂), Finset.mem_product.2 ⟨hk₁, hk₂⟩, rfl⟩))
+    hq_ne (Polynomial.funext fun t ↦ ?_)
+  have hline := eval_aeval_C_add_C_mul_X (q (Sum.inr (k₁, k₂))) 0 v t
+  simp only [Pi.zero_apply, map_zero, zero_add] at hline
+  have hsum' : ∑ j, w k₁ j * v j = ∑ j, w k₂ j * v j := hsum
+  rw [hline, Polynomial.eval_zero]
+  simp only [q, Sum.elim_inr, map_sum, map_mul, eval_C, eval_X, Pi.smul_apply, smul_eq_mul]
+  calc ∑ j, (w k₁ j - w k₂ j) * (t * v j)
+      = t * (∑ j, w k₁ j * v j - ∑ j, w k₂ j * v j) := by
+          rw [mul_sub, Finset.mul_sum, Finset.mul_sum, ← Finset.sum_sub_distrib]
+          exact Finset.sum_congr rfl fun j _ ↦ by ring
+    _ = 0 := by rw [hsum', sub_self, mul_zero]
 
+end InfiniteDomain
 
 end MvPolynomial
