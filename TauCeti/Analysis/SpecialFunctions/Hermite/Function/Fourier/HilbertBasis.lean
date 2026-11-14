@@ -397,13 +397,7 @@ theorem repr_fourier_twoPiHermiteHilbertBasis (f : Lp ℂ 2 (volume : Measure �
 @[simp]
 theorem fourier_fourier_fourier_fourier (f : Lp ℂ 2 (volume : Measure ℝ)) :
     𝓕 (𝓕 (𝓕 (𝓕 f))) = f := by
-  have hI : (-Complex.I) ^ 4 = 1 := by
-    have h2 : (-Complex.I) ^ 2 = -1 := by
-      rw [neg_pow]
-      simp [Complex.I_sq]
-    have hfour : (4 : ℕ) = 2 * 2 := by norm_num
-    rw [hfour, pow_mul, h2]
-    norm_num
+  have hI : (-Complex.I) ^ 4 = 1 := by rw [neg_pow, Complex.I_pow_four]; norm_num
   -- Compare the coefficients in the Hermite basis: each is multiplied by `((-i)ⁿ)⁴ = 1`.
   refine (twoPiHermiteHilbertBasis ℂ).repr.injective ?_
   ext n
