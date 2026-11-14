@@ -17,12 +17,13 @@ import Mathlib.Tactic.Ring
 /-!
 # The triangular lattice and its unit rhombi
 
-The vertices of the size-`n` triangle are nonnegative barycentric triples of sum `n`.
-`Vertex.rotate` and `Vertex.reflect` give its dihedral symmetries, `Vertex.edgePoint`
-parameterizes the three sides along the clockwise perimeter `A → B → C → A`, and `Vertex.ofYZ`
-gives the two-variable chart `(y, z) ↦ (n - y - z, y, z)`. The planar embedding sends `(x,y,z)`
-to `(z + y/2, √3*y/2)`, so the corners `(n,0,0)`, `(0,n,0)`, `(0,0,n)` occur clockwise.
+The `(n + 1) * (n + 2) / 2` vertices (`Vertex.card`) of the size-`n` triangle are nonnegative
+barycentric triples of sum `n`. `Vertex.rotate` and `Vertex.reflect` give its dihedral symmetries,
+`Vertex.edgePoint` parameterizes the three sides along the clockwise perimeter `A → B → C → A`, and
+`Vertex.ofYZ` gives the two-variable chart `(y, z) ↦ (n - y - z, y, z)`. The planar embedding sends
+`(x,y,z)` to `(z + y/2, √3*y/2)`, so the corners `(n,0,0)`, `(0,n,0)`, `(0,0,n)` occur clockwise.
 
+`IsUnitEdge` and `UnitEdge` record unit lattice edges (`sqDist = 2`, planar length `1`), and
 `IsRhombus a b c d` records a unit rhombus in perimeter order, with **obtuse** corners
 `a,c`. Its short diagonal has barycentric squared length 2 and its long diagonal has
 squared length 6; the planar squared lengths are respectively 1 and 3. `IsUnitStep` and `HasStep`
@@ -63,6 +64,9 @@ def coord (p : Vertex n) : Fin 3 → ℕ := ![p.x, p.y, p.z]
 @[simp] theorem coord_zero (p : Vertex n) : p.coord 0 = p.x := (rfl)
 @[simp] theorem coord_one (p : Vertex n) : p.coord 1 = p.y := (rfl)
 @[simp] theorem coord_two (p : Vertex n) : p.coord 2 = p.z := (rfl)
+
+theorem ext_coord {p q : Vertex n} (h : ∀ i : Fin 3, p.coord i = q.coord i) : p = q :=
+  Vertex.ext (by simpa using h 0) (by simpa using h 1) (by simpa using h 2)
 
 /-- Identify vertices with the computably enumerated triples of sum `n`. -/
 def equivAntidiagonalTuple : Vertex n ≃ ↥(Finset.Nat.antidiagonalTuple 3 n) where
@@ -136,6 +140,18 @@ def add {m : ℕ} (p : Vertex n) (q : Vertex m) : Vertex (n + m) :=
 @[simp] theorem add_x {m : ℕ} (p : Vertex n) (q : Vertex m) : (p.add q).x = p.x + q.x := (rfl)
 @[simp] theorem add_y {m : ℕ} (p : Vertex n) (q : Vertex m) : (p.add q).y = p.y + q.y := (rfl)
 @[simp] theorem add_z {m : ℕ} (p : Vertex n) (q : Vertex m) : (p.add q).z = p.z + q.z := (rfl)
+
+@[simp] theorem coord_add {m : ℕ} (p : Vertex n) (q : Vertex m) (i : Fin 3) :
+    (p.add q).coord i = p.coord i + q.coord i := by fin_cases i <;> simp
+theorem coord_rotate (p : Vertex n) (i : Fin 3) : p.rotate.coord (i + 1) = p.coord i := by
+  fin_cases i <;> simp
+theorem coord_reflect (p : Vertex n) (i : Fin 3) : p.reflect.coord (-i) = p.coord i := by
+  fin_cases i <;> rfl
+@[simp] theorem rotate_add {m : ℕ} (p : Vertex n) (q : Vertex m) :
+    (p.add q).rotate = p.rotate.add q.rotate := by ext <;> simp
+@[simp] theorem reflect_add {m : ℕ} (p : Vertex n) (q : Vertex m) :
+    (p.add q).reflect = p.reflect.add q.reflect := by ext <;> simp
+@[simp] theorem add_cornerA_zero (p : Vertex n) : p.add (cornerA 0) = p := by ext <;> simp
 
 /-- Squared length in the ambient barycentric integer coordinates. -/
 def sqDist (p q : Vertex n) : ℤ :=
@@ -259,6 +275,34 @@ theorem edgePoint_injective (n : ℕ) (s : Fin 3) : Function.Injective (edgePoin
   · exact Fin.ext (congrArg Vertex.z h)
   · exact Fin.ext (congrArg Vertex.x h)
 
+/-- At size `0`, the unique lattice vertex is `cornerA 0 = (0, 0, 0)`. -/
+instance uniqueZero : Unique (Vertex 0) where
+  default := cornerA 0
+  uniq p := by have := p.sum_eq; ext <;> simp <;> omega
+
+-- Splitting `Vertex (n + 1)` into side `B → C` (`x = 0`) and `(1, 0, 0) + Vertex n` (`x > 0`).
+private def equivFinSumSucc (n : ℕ) : Vertex (n + 1) ≃ Fin (n + 2) ⊕ Vertex n where
+  toFun p := if hx : p.x = 0 then Sum.inl ⟨p.z, by have := p.sum_eq; omega⟩
+    else Sum.inr ⟨p.x - 1, p.y, p.z, by have := p.sum_eq; omega⟩
+  invFun | Sum.inl k => edgePoint (n + 1) 1 k
+         | Sum.inr q => ⟨q.x + 1, q.y, q.z, by have := q.sum_eq; omega⟩
+  left_inv p := by
+    by_cases hx : p.x = 0 <;> simp only [hx, ↓reduceDIte] <;>
+      ext <;> simp <;> have := p.sum_eq <;> omega
+  right_inv | Sum.inl _ => by simp | Sum.inr _ => by simp
+
+/-- Twice the number of vertices of `Vertex n` is `(n + 1) * (n + 2)`. -/
+theorem two_mul_card (n : ℕ) : 2 * Fintype.card (Vertex n) = (n + 1) * (n + 2) := by
+  induction n with
+  | zero => simp
+  | succ m ih =>
+    rw [Fintype.card_congr (equivFinSumSucc m), Fintype.card_sum, Fintype.card_fin]
+    linarith
+
+/-- The triangular lattice `Vertex n` has `(n + 1) * (n + 2) / 2` vertices. -/
+theorem card (n : ℕ) : Fintype.card (Vertex n) = (n + 1) * (n + 2) / 2 := by
+  rw [← two_mul_card n]; omega
+
 /-- Construct a lattice vertex `(n - y - z, y, z)` from nonnegative `(y, z)` with `y + z ≤ n`. -/
 def ofYZ (n : ℕ) (y z : ℕ) (h : y + z ≤ n) : Vertex n := ⟨n - y - z, y, z, by omega⟩
 
@@ -288,6 +332,55 @@ theorem ofYZ_sub_left (n z : ℕ) (hz : z ≤ n) :
     ofYZ n (n - z) z (by omega) = edgePoint n 1 ⟨z, by omega⟩ := by ext <;> simp; omega
 
 end Vertex
+
+/-- Two vertices `p, q : Vertex n` form a **unit lattice edge** if `p.sqDist q = 2`
+(equivalently, Euclidean planar distance `1`). -/
+def IsUnitEdge {n : ℕ} (p q : Vertex n) : Prop := p.sqDist q = 2
+
+theorem isUnitEdge_def {n : ℕ} (p q : Vertex n) : IsUnitEdge p q ↔ p.sqDist q = 2 := Iff.rfl
+instance {n : ℕ} (p q : Vertex n) : Decidable (IsUnitEdge p q) :=
+  decidable_of_iff (p.sqDist q = 2) (isUnitEdge_def p q).symm
+
+/-- The finite type of ordered unit edges in `Vertex n`. -/
+abbrev UnitEdge (n : ℕ) := {e : Vertex n × Vertex n // IsUnitEdge e.1 e.2}
+
+namespace IsUnitEdge
+
+variable {n : ℕ} {p q : Vertex n}
+
+theorem symm (h : IsUnitEdge p q) : IsUnitEdge q p := by rwa [isUnitEdge_def, Vertex.sqDist_comm]
+theorem ne (h : IsUnitEdge p q) : p ≠ q := by
+  rintro rfl; rw [isUnitEdge_def, Vertex.sqDist_self] at h; omega
+theorem one_le (h : IsUnitEdge p q) : 1 ≤ n := by
+  by_contra hn; obtain rfl : n = 0 := by omega
+  exact h.ne (Subsingleton.elim p q)
+theorem dist_plane_sq (h : IsUnitEdge p q) : dist p.plane q.plane ^ 2 = 1 := by
+  have hsq : p.sqDist q = 2 := h; rw [Vertex.dist_plane_sq, hsq]; norm_num
+theorem dist_plane (h : IsUnitEdge p q) : dist p.plane q.plane = 1 := by
+  nlinarith [h.dist_plane_sq, dist_nonneg (x := p.plane) (y := q.plane)]
+theorem rotate (h : IsUnitEdge p q) : IsUnitEdge p.rotate q.rotate := by simpa [IsUnitEdge] using h
+theorem reflect (h : IsUnitEdge p q) : IsUnitEdge p.reflect q.reflect := by
+  simpa [IsUnitEdge] using h
+theorem add {m : ℕ} (h : IsUnitEdge p q) (r : Vertex m) : IsUnitEdge (r.add p) (r.add q) := by
+  simpa [IsUnitEdge] using h
+
+end IsUnitEdge
+
+theorem isUnitEdge_comm {n : ℕ} {p q : Vertex n} :
+    IsUnitEdge p q ↔ IsUnitEdge q p := ⟨IsUnitEdge.symm, IsUnitEdge.symm⟩
+@[simp] theorem isUnitEdge_rotate_iff {n : ℕ} {p q : Vertex n} :
+    IsUnitEdge p.rotate q.rotate ↔ IsUnitEdge p q := by simp [IsUnitEdge]
+@[simp] theorem isUnitEdge_reflect_iff {n : ℕ} {p q : Vertex n} :
+    IsUnitEdge p.reflect q.reflect ↔ IsUnitEdge p q := by simp [IsUnitEdge]
+@[simp] theorem isUnitEdge_add_left_iff {m n : ℕ} (r : Vertex m) {p q : Vertex n} :
+    IsUnitEdge (r.add p) (r.add q) ↔ IsUnitEdge p q := by simp [IsUnitEdge]
+
+/-- Consecutive perimeter vertices along any side `s` form a unit edge. -/
+theorem isUnitEdge_edgePoint_succ (n : ℕ) (s : Fin 3) (k : Fin n) :
+    IsUnitEdge (Vertex.edgePoint n s k.castSucc) (Vertex.edgePoint n s k.succ) := by
+  have hk1 : ((n - (k.val + 1) : ℕ) : ℤ) = (n : ℤ) - k.val - 1 := by have := k.isLt; omega
+  have hk0 : ((n - k.val : ℕ) : ℤ) = (n : ℤ) - k.val := by have := k.isLt; omega
+  fin_cases s <;> rw [isUnitEdge_def, Vertex.sqDist_def] <;> simp [hk1, hk0]
 
 /-- A unit rhombus in perimeter order, with `a,c` the obtuse (short-diagonal) corners.
 All squared distances here use barycentric coordinates. -/
@@ -407,6 +500,12 @@ theorem add {m : ℕ} (h : IsRhombus a b c d) (p : Vertex m) :
   side_bc := by simpa using h.side_bc
   side_cd := by simpa using h.side_cd
   side_da := by simpa using h.side_da
+
+theorem isUnitEdge_short (h : IsRhombus a b c d) : IsUnitEdge a c := h.short
+theorem isUnitEdge_ab (h : IsRhombus a b c d) : IsUnitEdge a b := h.side_ab
+theorem isUnitEdge_bc (h : IsRhombus a b c d) : IsUnitEdge b c := h.side_bc
+theorem isUnitEdge_cd (h : IsRhombus a b c d) : IsUnitEdge c d := h.side_cd
+theorem isUnitEdge_da (h : IsRhombus a b c d) : IsUnitEdge d a := h.side_da
 
 end IsRhombus
 
