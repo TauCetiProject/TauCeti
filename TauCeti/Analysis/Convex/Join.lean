@@ -16,7 +16,9 @@ no nonemptiness hypothesis: a point of the convex hull of `insert a s` is either
 lies on a segment from `a` to a point of the convex hull of `s` (`TauCeti.mem_convexHull_insert`).
 
 The convex join of a point `x` with any set is star-convex about `x`
-(`TauCeti.starConvex_convexJoin_singleton_left`).
+(`TauCeti.starConvex_convexJoin_singleton_left`). Consequently, if `s` is convex, `x ∈ t`, and `t`
+is star-convex about every point of `s`, then `convexHull 𝕜 (insert x s) ⊆ t`
+(`Convex.convexHull_insert_subset_of_forall_starConvex`).
 -/
 
 public section
@@ -60,3 +62,17 @@ theorem starConvex_convexJoin_singleton_left (x : E) (t : Set E) :
 end OrderedSemiring
 
 end TauCeti
+
+/-- If `s` is convex, `x ∈ t`, and `t` is star-convex about every point of `s`, then the convex
+hull of `insert x s` lies in `t`. -/
+theorem Convex.convexHull_insert_subset_of_forall_starConvex {𝕜 E : Type*} [Field 𝕜]
+    [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup E] [Module 𝕜 E] {s t : Set E} {x : E}
+    (hs : Convex 𝕜 s) (hx : x ∈ t) (h : ∀ y ∈ s, StarConvex 𝕜 y t) :
+    convexHull 𝕜 (insert x s) ⊆ t := by
+  intro z hz
+  rcases TauCeti.mem_convexHull_insert.1 hz with rfl | ⟨y, hy, hzy⟩
+  · exact hx
+  · rw [hs.convexHull_eq] at hy
+    rw [segment_symm] at hzy
+    exact (h y hy).segment_subset hx hzy
+

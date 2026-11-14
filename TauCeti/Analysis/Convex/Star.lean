@@ -23,6 +23,9 @@ star-convex about any `v ∈ W` with `0 < φ v`
 leaves `W` at once, and one that ends in `W` stays where `φ` is positive. This is the
 subspace analogue of Mathlib's `starConvex_compl_Iic`.
 
+If a nonempty set `t` is star-convex about every point of `s`, then `s ⊆ t`
+(`Set.Nonempty.subset_of_forall_starConvex`).
+
 ## References
 
 `Convex.smul_mono_of_zero_mem` follows the lemma of the same name in the successive-minima
@@ -81,3 +84,11 @@ theorem Convex.smul_mono_of_zero_mem (hs : Convex 𝕜 s) (h₀ : (0 : E) ∈ s)
   (hs.starConvex h₀).smul_mono hp hpq
 
 end Dilate
+
+/-- If `t` is nonempty and star-convex about every point of `s`, then `s ⊆ t`. Nonemptiness is
+needed because the empty set is star-convex about every point. -/
+theorem Set.Nonempty.subset_of_forall_starConvex {𝕜 E : Type*} [Semiring 𝕜] [PartialOrder 𝕜]
+    [ZeroLEOneClass 𝕜] [AddCommMonoid E] [Module 𝕜 E] {s t : Set E} (ht : t.Nonempty)
+    (h : ∀ y ∈ s, StarConvex 𝕜 y t) : s ⊆ t :=
+  fun _ hy ↦ (h _ hy).mem ht
+

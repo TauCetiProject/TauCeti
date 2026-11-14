@@ -23,7 +23,10 @@ also when the coordinate type is empty.
 
 Evaluating a real multilinear map on the diagonal gives a polynomial function of degree at most
 the number of its arguments (`MultilinearMap.apply_const_mem_polynomialsDegLE`); this covers
-the homogeneous terms of a power series.
+the homogeneous terms of a power series. Polynomial functions of bounded degree are closed under
+pointwise products (`TauCeti.mul_mem_polynomialsDegLE`, `TauCeti.finset_prod_mem_polynomialsDegLE`),
+translations (`TauCeti.comp_add_mem_polynomialsDegLE`, `TauCeti.comp_sub_mem_polynomialsDegLE`), and
+precomposition with affine maps (`TauCeti.comp_affineMap_mem_polynomialsDegLE`).
 
 The construction uses Mathlib's `MvPolynomial.evalₗ` and `MvPolynomial.funext`, and the formal
 dimension formula `TauCeti.finrank_restrictTotalDegree`.
@@ -165,6 +168,113 @@ theorem _root_.MultilinearMap.apply_const_mem_polynomialsDegLE [Finite ι] {κ :
     conv_rhs => rw [← b.sum_repr x, m.map_sum]
     simp [m.map_smul_univ, b, mul_comm]
 
+section Operations
+
+variable {ι}
+
+/-- The product of two polynomial functions has degree at most the sum of their degree bounds. -/
+theorem mul_mem_polynomialsDegLE {m k : ℕ} {f g : EuclideanSpace ℝ ι → ℝ}
+    (hf : f ∈ polynomialsDegLE ι m) (hg : g ∈ polynomialsDegLE ι k) :
+    f * g ∈ polynomialsDegLE ι (m + k) := by
+  obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hf
+  obtain ⟨q, hq, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hg
+  refine (mem_polynomialsDegLE_iff ι).2
+    ⟨p * q, (totalDegree_mul p q).trans (add_le_add hp hq), ?_⟩
+  ext x
+  simp
+
+/-- A finite product of polynomial functions has degree at most the sum of their degree bounds. -/
+theorem finset_prod_mem_polynomialsDegLE {α : Type*} (s : Finset α)
+    {d : α → ℕ} {f : α → EuclideanSpace ℝ ι → ℝ}
+    (hf : ∀ a ∈ s, f a ∈ polynomialsDegLE ι (d a)) :
+    (∏ a ∈ s, f a) ∈ polynomialsDegLE ι (∑ a ∈ s, d a) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => exact const_mem_polynomialsDegLE ι 0 1
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha, Finset.sum_insert ha]
+    exact mul_mem_polynomialsDegLE (hf a (Finset.mem_insert_self a s))
+      (ih fun b hb ↦ hf b (Finset.mem_insert_of_mem hb))
+
+/-- A product of coordinate projections over a subset of `Fin j` has total degree at most `m`
+whenever `j ≤ m`. -/
+theorem prod_coord_mem_polynomialsDegLE {m j : ℕ} (hj : j ≤ m)
+    (I : Fin j → ι) (S : Finset (Fin j)) :
+    (fun x : EuclideanSpace ℝ ι ↦ ∏ l ∈ S, x (I l)) ∈ polynomialsDegLE ι m := by
+  have hprod : (∏ l ∈ S, fun x : EuclideanSpace ℝ ι ↦ x (I l)) ∈
+      polynomialsDegLE ι (∑ _ ∈ S, 1) :=
+    finset_prod_mem_polynomialsDegLE S fun l _ ↦
+      (coordinate_mem_polynomialsDegLE_iff ι 1 (I l)).2 le_rfl
+  have hcard : (∑ _ ∈ S, 1) ≤ m := by
+    have hS : S.card ≤ j := (Finset.card_le_univ S).trans (by simp)
+    simpa using hS.trans hj
+  have hfn : (∏ l ∈ S, fun x : EuclideanSpace ℝ ι ↦ x (I l)) = fun x ↦ ∏ l ∈ S, x (I l) := by
+    ext x
+    simp
+  exact polynomialsDegLE_mono ι hcard (hfn ▸ hprod)
+
+/-- Translating the input by adding a fixed vector preserves the total-degree bound. -/
+theorem comp_add_mem_polynomialsDegLE {m : ℕ} {f : EuclideanSpace ℝ ι → ℝ}
+    (a : EuclideanSpace ℝ ι) (hf : f ∈ polynomialsDegLE ι m) :
+    (fun x ↦ f (x + a)) ∈ polynomialsDegLE ι m := by
+  obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hf
+  have hdeg (i : ι) : (X i + C (a i) : MvPolynomial ι ℝ).totalDegree ≤ 1 :=
+    (totalDegree_add _ _).trans (max_le (by simp [totalDegree_X]) (by simp))
+  refine (mem_polynomialsDegLE_iff ι).2
+    ⟨aeval (fun i ↦ X i + C (a i)) p,
+      (mem_restrictTotalDegree ι m _).1
+        (aeval_mem_restrictTotalDegree hdeg ((mem_restrictTotalDegree ι m p).2 hp)), ?_⟩
+  ext x
+  simp only [polynomialEvalₗ_apply, ← aeval_eq_eval, comp_aeval_apply, map_add, aeval_X, aeval_C,
+    Algebra.algebraMap_self, RingHom.id_apply, PiLp.add_apply]
+
+/-- Translating the input by subtracting a fixed vector preserves the total-degree bound. -/
+theorem comp_sub_mem_polynomialsDegLE {m : ℕ} {f : EuclideanSpace ℝ ι → ℝ}
+    (a : EuclideanSpace ℝ ι) (hf : f ∈ polynomialsDegLE ι m) :
+    (fun x ↦ f (x - a)) ∈ polynomialsDegLE ι m := by
+  simpa only [sub_eq_add_neg] using comp_add_mem_polynomialsDegLE (-a) hf
+
+/-- Precomposing a polynomial function of degree at most `m` with an affine map preserves the
+total-degree bound. -/
+theorem comp_affineMap_mem_polynomialsDegLE {κ : Type*} [Finite κ] {m : ℕ}
+    {f : EuclideanSpace ℝ ι → ℝ} (F : EuclideanSpace ℝ κ →ᵃ[ℝ] EuclideanSpace ℝ ι)
+    (hf : f ∈ polynomialsDegLE ι m) :
+    f ∘ F ∈ polynomialsDegLE κ m := by
+  classical
+  have := Fintype.ofFinite κ
+  set b := EuclideanSpace.basisFun κ ℝ
+  obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hf
+  let g : ι → MvPolynomial κ ℝ :=
+    fun i ↦ C (F 0 i) + ∑ j : κ, C (F.linear (b j) i) * X j
+  have hdeg (i : ι) : (g i).totalDegree ≤ 1 := by
+    refine (totalDegree_add _ _).trans (max_le (by simp) ?_)
+    refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun j _ ↦ ?_)
+    exact (totalDegree_mul _ _).trans (by simp [totalDegree_X])
+  refine (mem_polynomialsDegLE_iff κ).2
+    ⟨aeval g p,
+      (mem_restrictTotalDegree κ m _).1
+        (aeval_mem_restrictTotalDegree hdeg ((mem_restrictTotalDegree ι m p).2 hp)), ?_⟩
+  ext x
+  simp only [Function.comp_apply, polynomialEvalₗ_apply, ← aeval_eq_eval, comp_aeval_apply]
+  congr 1
+  ext i
+  have hx : F x = F 0 + ∑ j : κ, x j • F.linear (b j) := by
+    conv_lhs => rw [← add_zero x, ← vadd_eq_add, AffineMap.map_vadd, vadd_eq_add, add_comm]
+    congr 1
+    conv_lhs => rw [← b.sum_repr x, map_sum]
+    simp [b]
+  simp [g, hx, mul_comm]
+
+/-- Precomposing a polynomial function of degree at most `m` with a linear map preserves the
+total-degree bound. -/
+theorem comp_linearMap_mem_polynomialsDegLE {κ : Type*} [Finite κ] {m : ℕ}
+    {f : EuclideanSpace ℝ ι → ℝ} (L : EuclideanSpace ℝ κ →ₗ[ℝ] EuclideanSpace ℝ ι)
+    (hf : f ∈ polynomialsDegLE ι m) :
+    f ∘ L ∈ polynomialsDegLE κ m :=
+  comp_affineMap_mem_polynomialsDegLE L.toAffineMap hf
+
+end Operations
+
 /-- Bounded-degree polynomial functions form a finite-dimensional space. -/
 instance [Finite ι] (m : ℕ) : FiniteDimensional ℝ (polynomialsDegLE ι m) :=
   inferInstanceAs (Module.Finite ℝ ((restrictTotalDegree ι ℝ m).map (polynomialEvalₗ ι)))
@@ -179,3 +289,4 @@ theorem finrank_polynomialsDegLE [Fintype ι] (m : ℕ) :
     finrank_restrictTotalDegree]
 
 end TauCeti
+

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import Mathlib.Data.List.FinRange
 
 /-!
 # Iterated directional derivatives along a list of directions
@@ -35,9 +36,12 @@ evaluated on the directions.
   same smoothness, and additivity, for maps which are only `C^n` on an open set.
 * `TauCeti.iteratedFDerivAlong_comp_of_hasFDerivAt`: the chain rule for an affine change of
   variables.
-* `List.Perm.iteratedFDerivAlong_eq`: over `ℝ` or `ℂ`, reordering the directions does not change
-  the iterated directional derivative.
-* `TauCeti.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv`: the comparison with `iteratedFDeriv`.
+* `List.Perm.iteratedFDerivAlong_eq`, `List.Perm.iteratedFDerivAlong_eq_apply`: over `ℝ` or `ℂ`,
+  reordering the directions does not change the iterated directional derivative.
+* `TauCeti.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv`,
+  `ContDiffAt.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv`: the comparison with `iteratedFDeriv`,
+  and `TauCeti.iteratedFDeriv_comp_perm_of_contDiffAt` for permutation invariance of
+  `iteratedFDeriv` of a `C^k` germ.
 -/
 
 public section
@@ -170,6 +174,27 @@ theorem iteratedFDerivAlong_add {f g : E → F} (hf : ContDiff 𝕜 n f) (hg : C
     iteratedFDerivAlong 𝕜 vs (f + g) = iteratedFDerivAlong 𝕜 vs f + iteratedFDerivAlong 𝕜 vs g :=
   funext fun _ => iteratedFDerivAlong_add_apply_of_isOpen hf.contDiffOn hg.contDiffOn isOpen_univ
     vs hvs (Set.mem_univ _)
+
+/-- Iterated directional derivatives commute with finite sums of `C^n` maps when `vs.length ≤ n`. -/
+theorem iteratedFDerivAlong_sum {α : Type*} (s : Finset α) {f : α → E → F}
+    (hf : ∀ a ∈ s, ContDiff 𝕜 n (f a)) (vs : List E) (hvs : vs.length ≤ n) :
+    iteratedFDerivAlong 𝕜 vs (fun x => ∑ a ∈ s, f a x) =
+      fun x => ∑ a ∈ s, iteratedFDerivAlong 𝕜 vs (f a) x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    simp only [Finset.sum_empty]
+    exact iteratedFDerivAlong_zero vs
+  | insert a s ha ih =>
+    have hsum : (fun x => ∑ b ∈ insert a s, f b x) = f a + fun x => ∑ b ∈ s, f b x := by
+      ext x
+      exact Finset.sum_insert ha
+    have hcont_s : ContDiff 𝕜 n (fun x => ∑ b ∈ s, f b x) :=
+      ContDiff.sum fun b hb => hf b (Finset.mem_insert_of_mem hb)
+    rw [hsum, iteratedFDerivAlong_add (hf a (Finset.mem_insert_self a s)) hcont_s vs hvs,
+      ih fun b hb => hf b (Finset.mem_insert_of_mem hb)]
+    ext x
+    simp [Finset.sum_insert ha]
 
 theorem iteratedFDerivAlong_neg (f : E → F) (vs : List E) :
     iteratedFDerivAlong 𝕜 vs (-f) = -iteratedFDerivAlong 𝕜 vs f := by
@@ -315,5 +340,72 @@ theorem iteratedFDerivAlong_ofFn_eq_iteratedFDeriv {f : E → F} {k : ℕ} (hf :
         ((hf.differentiable_iteratedFDeriv (m := k) (by exact_mod_cast Nat.lt_succ_self k)) x),
       iteratedFDeriv_succ_apply_left]
     rfl
+
+/-- At a point where `f` is `C^k`, the iterated directional derivative along `m 0, …, m (k - 1)` is
+the `k`-th iterated Fréchet derivative evaluated on `m`. -/
+theorem _root_.ContDiffAt.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv {f : E → F} {k : ℕ} {x : E}
+    (hf : ContDiffAt 𝕜 k f x) (m : Fin k → E) :
+    iteratedFDerivAlong 𝕜 (List.ofFn m) f x = iteratedFDeriv 𝕜 k f x m := by
+  induction k generalizing x with
+  | zero => simp [Subsingleton.elim m Fin.elim0]
+  | succ k ih =>
+    have hev : iteratedFDerivAlong 𝕜 (List.ofFn fun i => m i.succ) f =ᶠ[𝓝 x]
+        fun y => iteratedFDeriv 𝕜 k f y fun i => m i.succ := by
+      filter_upwards [(hf.of_le (m := (k : ℕ∞ω)) (by exact_mod_cast Nat.le_succ k)).eventually
+        (by simp)] with y hy
+      exact ih hy fun i => m i.succ
+    rw [List.ofFn_succ, iteratedFDerivAlong_cons_apply, hev.fderiv_eq,
+      fderiv_continuousMultilinear_apply_const_apply
+        (hf.differentiableAt_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_self k)),
+      iteratedFDeriv_succ_apply_left]
+    rfl
+
+/-- Over `ℝ` or `ℂ`, the first two directions of an iterated directional derivative of length `k`
+can be exchanged at any point where `f` is `C^k`. -/
+theorem _root_.ContDiffAt.iteratedFDerivAlong_swap [IsRCLikeNormedField 𝕜] {f : E → F} {x : E}
+    (v w : E) (vs : List E) (hf : ContDiffAt 𝕜 (v :: w :: vs).length f x) :
+    iteratedFDerivAlong 𝕜 (v :: w :: vs) f x = iteratedFDerivAlong 𝕜 (w :: v :: vs) f x := by
+  rcases hf.contDiffOn' le_rfl (by simp) with ⟨u, hu, hxu, hfu⟩
+  rw [Set.insert_eq_of_mem (Set.mem_univ x), Set.univ_inter] at hfu
+  have h2 : ContDiffOn 𝕜 2 (iteratedFDerivAlong 𝕜 vs f) u :=
+    hfu.iteratedFDerivAlong hu vs
+      (by simp only [List.length_cons]; push_cast; ring_nf; exact le_rfl)
+  have h2x : ContDiffAt 𝕜 2 (iteratedFDerivAlong 𝕜 vs f) x :=
+    (h2 x hxu).contDiffAt (hu.mem_nhds hxu)
+  have hd : DifferentiableAt 𝕜 (fderiv 𝕜 (iteratedFDerivAlong 𝕜 vs f)) x :=
+    (h2x.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  have hswap (a b : E) : iteratedFDerivAlong 𝕜 (a :: b :: vs) f x =
+      fderiv 𝕜 (fderiv 𝕜 (iteratedFDerivAlong 𝕜 vs f)) x a b := by
+    rw [iteratedFDerivAlong_cons_apply, iteratedFDerivAlong_cons,
+      fderiv_clm_apply hd (differentiableAt_const b)]
+    simp
+  rw [hswap v w, hswap w v]
+  exact (h2x.isSymmSndFDerivAt (by simp)) v w
+
+/-- Over `ℝ` or `ℂ`, reordering a list of `k` directions does not change the iterated directional
+derivative at a point where `f` is `C^k`. -/
+theorem _root_.List.Perm.iteratedFDerivAlong_eq_apply [IsRCLikeNormedField 𝕜] {vs ws : List E}
+    (h : vs.Perm ws) {f : E → F} {x : E} (hf : ContDiffAt 𝕜 vs.length f x) :
+    iteratedFDerivAlong 𝕜 vs f x = iteratedFDerivAlong 𝕜 ws f x := by
+  induction h generalizing x with
+  | nil => rfl
+  | @cons v l₁ l₂ _ ih =>
+    have hev : iteratedFDerivAlong 𝕜 l₁ f =ᶠ[𝓝 x] iteratedFDerivAlong 𝕜 l₂ f := by
+      filter_upwards [(hf.of_le (m := (l₁.length : ℕ∞ω))
+        (by exact_mod_cast Nat.le_succ _)).eventually (by simp)] with y hy
+      exact ih hy
+    rw [iteratedFDerivAlong_cons_apply, iteratedFDerivAlong_cons_apply, hev.fderiv_eq]
+  | swap v w vs => exact hf.iteratedFDerivAlong_swap w v vs
+  | trans h₁₂ _ ih₁ ih₂ => exact (ih₁ hf).trans (ih₂ (h₁₂.length_eq ▸ hf))
+
+/-- Over `ℝ` or `ℂ`, the `k`-th iterated Fréchet derivative of a `C^k` germ is symmetric under
+permutations of its arguments. -/
+theorem iteratedFDeriv_comp_perm_of_contDiffAt [IsRCLikeNormedField 𝕜] {f : E → F}
+    {k : ℕ} {x : E} (hf : ContDiffAt 𝕜 k f x) (v : Fin k → E) (σ : Equiv.Perm (Fin k)) :
+    iteratedFDeriv 𝕜 k f x (v ∘ σ) = iteratedFDeriv 𝕜 k f x v := by
+  rw [← hf.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv (v ∘ σ),
+    ← hf.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv v]
+  exact (Equiv.Perm.ofFn_comp_perm σ v).iteratedFDerivAlong_eq_apply
+    (by simpa [List.length_ofFn] using hf)
 
 end TauCeti
