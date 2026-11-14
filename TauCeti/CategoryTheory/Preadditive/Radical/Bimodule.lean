@@ -65,6 +65,10 @@ again a division ring because the opposite of a local ring is local
 * `TauCeti.irreducibleMorphismSpace_residue_smul_eq` and
   `TauCeti.irreducibleMorphismSpace_residueOp_smul_eq`: the two residue actions are postcomposition
   and precomposition by a representative, on every element of the space.
+* `TauCeti.residue_smul_irreducibleMorphismMk_eq_irreducibleMorphismMk_iff` and
+  `TauCeti.residueOp_smul_irreducibleMorphismMk_eq_irreducibleMorphismMk_iff`: a residue class
+  sends the class of `f` to the class of `u` exactly when the corresponding composite with `f`
+  differs from `u` by an element of the square of the radical.
 * `TauCeti.instIsScalarTowerResiduePostcomp` and `TauCeti.instIsScalarTowerResiduePrecomp`: over
   a commutative base ring `k`, both residue actions are compatible with the scalars of `k`, so
   `k → End Y / rad(End Y) → Irr(X, Y)` and its mirror image are scalar towers. This is what
@@ -324,6 +328,26 @@ theorem irreducibleMorphismSpace_residueOp_smul_eq (a : (End X)ᵐᵒᵖ)
     (Ideal.Quotient.mk (Ring.jacobson (End X)ᵐᵒᵖ) a) • m =
       irreducibleMorphismPrecomp k X Y a.unop m :=
   (rfl)
+
+/-- **The residue action of the target on a class**: the class of `g` sends the class of `f` to
+the class of `u` exactly when `f ≫ g - u` lies in the square of the radical. -/
+theorem residue_smul_irreducibleMorphismMk_eq_irreducibleMorphismMk_iff (g : End Y)
+    (f u : jacobsonRadicalSubmodule k X Y) :
+    (Ideal.Quotient.mk (Ring.jacobson (End Y)) g) • irreducibleMorphismMk k X Y f =
+        irreducibleMorphismMk k X Y u ↔
+      (f : X ⟶ Y) ≫ g.asHom - u ∈ jacobsonRadicalSq X Y := by
+  rw [irreducibleMorphismSpace_residue_smul_eq, irreducibleMorphismPostcomp_irreducibleMorphismMk,
+    irreducibleMorphismMk_eq_iff, coe_jacobsonRadicalPostcomp]
+
+/-- **The residue action of the source on a class**: the class of `a` sends the class of `f` to
+the class of `u` exactly when `a ≫ f - u` lies in the square of the radical. -/
+theorem residueOp_smul_irreducibleMorphismMk_eq_irreducibleMorphismMk_iff (a : (End X)ᵐᵒᵖ)
+    (f u : jacobsonRadicalSubmodule k X Y) :
+    (Ideal.Quotient.mk (Ring.jacobson (End X)ᵐᵒᵖ) a) • irreducibleMorphismMk k X Y f =
+        irreducibleMorphismMk k X Y u ↔
+      a.unop.asHom ≫ (f : X ⟶ Y) - u ∈ jacobsonRadicalSq X Y := by
+  rw [irreducibleMorphismSpace_residueOp_smul_eq, irreducibleMorphismPrecomp_irreducibleMorphismMk,
+    irreducibleMorphismMk_eq_iff, coe_jacobsonRadicalPrecomp]
 
 variable (k X Y)
 
