@@ -44,6 +44,8 @@ permutations.
 
 * `Equiv.Perm.fin_three_cases`: every permutation of three points is the identity, one of the
   three transpositions, or one of the two rotations.
+* `Equiv.Perm.isSwap_fin_three_iff`: a permutation of three points is a transposition exactly when
+  it is `(0 1)`, `(0 2)`, or `(1 2)`.
 * `TauCeti.mem_stabilizer_perm_fin_three_iff`: a permutation of three points fixes `a` exactly
   when it is the identity or the transposition of the other two points.
 * `TauCeti.coe_stabilizer_perm_fin_three`: the same, as an equality of sets.
@@ -85,6 +87,14 @@ theorem fin_three_cases (ρ : Equiv.Perm (Fin 3)) :
     ρ = 1 ∨ ρ = Equiv.swap 0 1 ∨ ρ = Equiv.swap 1 2 ∨ ρ = Equiv.swap 0 2 ∨
       ρ = finRotate 3 ∨ ρ = (finRotate 3)⁻¹ := by
   revert ρ
+  decide
+
+/-- A permutation of `Fin 3` is a transposition if and only if it is `(0 1)`, `(0 2)`, or
+`(1 2)`. -/
+theorem isSwap_fin_three_iff (σ : Equiv.Perm (Fin 3)) :
+    σ.IsSwap ↔ σ = Equiv.swap 0 1 ∨ σ = Equiv.swap 0 2 ∨ σ = Equiv.swap 1 2 := by
+  rw [← card_support_eq_two]
+  revert σ
   decide
 
 end Equiv.Perm

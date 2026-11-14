@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Order.Prod.Lex.Basic
 
 /-!
 # Sums over finite types
@@ -34,7 +35,9 @@ use this to discard every term containing a coordinate that occurs only once.
 Selecting, among all maps, those that agree with a fixed map `f` away from a coordinate `i` and
 summing over them is summing over the value at `i` (`Fintype.sum_ite_eq_update`). A sum over maps
 on `Fin (n + 1)` splits as a sum over their first `n` values and their last value
-(`Fintype.sum_fin_snoc`).
+(`Fintype.sum_fin_snoc`). On a lexicographic product `V ×ₗ ι`, a sum over pairs whose first
+coordinates satisfy `(ofLex p.1).1 < (ofLex p.2).1` splits over strictly increasing pairs in
+`V × V` and both fiber coordinates in `ι` (`Fintype.sum_filter_fst_lt_lex`).
 -/
 
 public section
@@ -198,5 +201,33 @@ theorem prod_fin_snoc {n : ℕ} {α : Fin (n + 1) → Type*} [∀ i, Fintype (α
     ∏ s, f s = ∏ t : ∀ i : Fin n, α i.castSucc, ∏ y : α (Fin.last n), f (Fin.snoc t y) := by
   rw [← (Fin.snocEquiv α).prod_comp, Fintype.prod_prod_type, prod_comm]
   simp only [Fin.snocEquiv_apply]
+
+/-- A product over pairs in `V ×ₗ ι` whose first coordinates satisfy `(ofLex p.1).1 < (ofLex p.2).1`
+splits over strictly increasing pairs in `V × V` and both fiber coordinates in `ι`. -/
+@[to_additive /-- A sum over pairs in `V ×ₗ ι` whose first coordinates satisfy
+`(ofLex p.1).1 < (ofLex p.2).1` splits over strictly increasing pairs in `V × V` and both fiber
+coordinates in `ι`. -/]
+theorem prod_filter_fst_lt_lex {V ι M : Type*} [Fintype V] [LT V] [DecidableLT V] [Fintype ι]
+    [CommMonoid M] (f : (V ×ₗ ι) × (V ×ₗ ι) → M) :
+    (∏ p ∈ ({p : (V ×ₗ ι) × (V ×ₗ ι) | (ofLex p.1).1 < (ofLex p.2).1} :
+        Finset ((V ×ₗ ι) × (V ×ₗ ι))), f p) =
+      ∏ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
+        ∏ a : ι, ∏ b : ι, f (toLex (e.1, a), toLex (e.2, b)) := by
+  set EV : Finset (V × V) := {p : V × V | p.1 < p.2}
+  have hbij : (∏ p ∈ ({p : (V ×ₗ ι) × (V ×ₗ ι) | (ofLex p.1).1 < (ofLex p.2).1} :
+        Finset ((V ×ₗ ι) × (V ×ₗ ι))), f p) =
+      ∏ q ∈ (EV ×ˢ (univ : Finset ι)) ×ˢ (univ : Finset ι),
+        f (toLex (q.1.1.1, q.1.2), toLex (q.1.1.2, q.2)) := by
+    refine (prod_bij (fun q _ => (toLex (q.1.1.1, q.1.2), toLex (q.1.1.2, q.2)))
+      (fun q hq => ?_) (fun q₁ _ q₂ _ h => ?_) (fun p hp => ?_) (fun _ _ => rfl)).symm
+    · simp only [mem_product, mem_filter, mem_univ, true_and, and_true, ofLex_toLex, EV] at hq ⊢
+      exact hq
+    · simp only [Prod.ext_iff, EmbeddingLike.apply_eq_iff_eq] at h
+      ext <;> simp [h]
+    · simp only [mem_filter, mem_univ, true_and] at hp
+      refine ⟨((((ofLex p.1).1, (ofLex p.2).1), (ofLex p.1).2), (ofLex p.2).2), ?_, ?_⟩
+      · simp [EV, hp]
+      · simp [toLex_ofLex]
+  rw [hbij, prod_product, prod_product]
 
 end Fintype
