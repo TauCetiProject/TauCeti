@@ -68,8 +68,8 @@ polynomial ring `R[X]/(X ^ n)`.
 
 * `Polynomial.quotientSpanEquivAdjoinRoot`: the cyclic polynomial quotient as an `R`-module
   is `AdjoinRoot f`; polynomial scalar multiplication becomes multiplication by its image.
-  This connects cyclic module structure theorems with `AdjoinRoot.mkₐ` through
-  `LinearMap.quotKerEquivOfSurjective`.
+  The two modules agree definitionally, so this connects cyclic module structure theorems with
+  `AdjoinRoot` directly.
 
 Stated over arbitrary commutative rings.
 
@@ -356,19 +356,11 @@ namespace Polynomial
 variable {R : Type*} [CommRing R]
 
 /-- The cyclic polynomial quotient, as an `R`-module, is `AdjoinRoot f`. -/
--- Use the kernel of mkₐ to identify the quotients explicitly, including their module structures.
+-- `AdjoinRoot f` is defined as `R[X] ⧸ Ideal.span {f}`, and `R[X] ∙ f` is that ideal, so the two
+-- `R`-modules agree definitionally.
 noncomputable def quotientSpanEquivAdjoinRoot (f : R[X]) :
     (R[X] ⧸ R[X] ∙ f) ≃ₗ[R] AdjoinRoot f :=
-  (Submodule.Quotient.restrictScalarsEquiv R (R[X] ∙ f)).symm.trans
-    ((Submodule.quotEquivOfEq _ _ (by
-        ext g
-        simp only [Submodule.restrictScalars_mem, Submodule.mem_span_singleton, smul_eq_mul,
-          LinearMap.mem_ker, AlgHom.toLinearMap_apply, AdjoinRoot.coe_mkₐ,
-          AdjoinRoot.mk_eq_zero, dvd_iff_exists_eq_mul_left]
-        exact exists_congr fun _ => eq_comm)).trans
-      ((AdjoinRoot.mkₐ f).toLinearMap.quotKerEquivOfSurjective (by
-        rw [AlgHom.coe_toLinearMap, AdjoinRoot.coe_mkₐ]
-        exact AdjoinRoot.mk_surjective)))
+  LinearEquiv.refl R _
 
 /-- The equivalence sends the class of a polynomial to its image in `AdjoinRoot`. -/
 @[simp]
@@ -383,9 +375,8 @@ theorem quotientSpanEquivAdjoinRoot_smul (f g : R[X]) (y : R[X] ⧸ R[X] ∙ f) 
       AdjoinRoot.mk f g * quotientSpanEquivAdjoinRoot f y := by
   induction y using Submodule.Quotient.induction_on with
   | H h =>
-    rw [← Submodule.Quotient.mk_smul]
-    simp only [smul_eq_mul, Ideal.Quotient.mk_eq_mk, quotientSpanEquivAdjoinRoot_mk]
-    exact map_mul _ _ _
+    rw [← Submodule.Quotient.mk_smul, smul_eq_mul, Ideal.Quotient.mk_eq_mk, Ideal.Quotient.mk_eq_mk,
+      quotientSpanEquivAdjoinRoot_mk, quotientSpanEquivAdjoinRoot_mk, map_mul]
 
 end Polynomial
 
