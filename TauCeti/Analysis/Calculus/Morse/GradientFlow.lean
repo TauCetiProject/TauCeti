@@ -9,12 +9,14 @@ public import Mathlib.Dynamics.Flow
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
--- Private: monotonicity, constant-curve recognition, and the fundamental theorem of calculus are
--- used only in proofs; no declaration below exposes their APIs.
+-- Private: monotonicity, constant-curve recognition, time reparametrization, the fundamental
+-- theorem of calculus and the gradient of `-f` are used only in proofs; no declaration below
+-- exposes their APIs.
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.ODE.Transform
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.Gradient
 
 /-!
 # Negative gradient trajectories
@@ -58,6 +60,8 @@ route to Morse homology.
   intervals.
 * `IsIntegralCurveOn.mul_sq_le_sub_of_le_norm_gradient`: a lower bound `κ` on the speed during a
   time interval of length `ℓ` makes `f` drop by at least `ℓ κ²`.
+* `IsIntegralCurveOn.comp_neg_neg_gradient`: reversing time turns a negative gradient
+  trajectory of `f` into one of `-f`.
 * `IsIntegralCurve.gradient_eq_zero_of_eventually_const_value`: a trajectory on which
   `f` is eventually constant passes through critical points.
 * `IsIntegralCurve.gradient_eq_zero_of_periodic` and
@@ -210,6 +214,12 @@ theorem mul_sq_le_sub_of_le_norm_gradient {κ : ℝ} (hab : a ≤ b)
   exact intervalIntegral.integral_mono_on hab intervalIntegrable_const
     (intervalIntegrable_norm_gradient_sq a b (hγ.mono hsub) hf) fun t ht ↦
       pow_le_pow_left₀ hκ (hle t (by rwa [uIcc_of_le hab])) 2
+
+/-- **Time reversal.** Reversing time turns a negative gradient trajectory of `f` on `(-∞, a]` into
+a negative gradient trajectory of `-f` on `[-a, ∞)`. -/
+theorem comp_neg_neg_gradient (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a)) :
+    IsIntegralCurveOn (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) (Ici (-a)) := by
+  convert hγ.comp_mul (-1) using 1 <;> ext <;> simp [neg_le]
 
 end IsIntegralCurveOn
 
