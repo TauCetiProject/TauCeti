@@ -314,13 +314,17 @@ theorem ker_coprod_eq_map_prod_top {f : M₁ →ₗ[R] M} {g : M →ₗ[R] M₂}
 
 /-- **The horseshoe step.** Given a short exact sequence `0 → M₁ → M → M₂ → 0`, a surjection
 `π₁ : P₁ → M₁` and a surjection `π₂ : P₂ → M₂` from a projective module, there is a surjection
-`π : P₁ × P₂ → M` whose kernel is an extension of `ker π₂` by `ker π₁`. -/
+`π : P₁ × P₂ → M` with `π ∘ inl = f ∘ π₁` and `g ∘ π = π₂ ∘ snd`, so that `inl`, `π` and `snd`
+form a map from the split sequence `0 → P₁ → P₁ × P₂ → P₂ → 0` to the given one. Restricting
+`inl` and `snd` to the kernels makes `ker π` an extension of `ker π₂` by `ker π₁`. -/
 theorem exists_surjective_ker_exact [Module.Projective R P₂] {f : M₁ →ₗ[R] M} {g : M →ₗ[R] M₂}
     (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.Surjective g)
     {π₁ : P₁ →ₗ[R] M₁} (hπ₁ : Function.Surjective π₁)
     {π₂ : P₂ →ₗ[R] M₂} (hπ₂ : Function.Surjective π₂) :
     ∃ π : (P₁ × P₂) →ₗ[R] M, Function.Surjective π ∧
+      π ∘ₗ inl R P₁ P₂ = f ∘ₗ π₁ ∧ g ∘ₗ π = π₂ ∘ₗ snd R P₁ P₂ ∧
       ∃ (i : ker π₁ →ₗ[R] ker π) (p : ker π →ₗ[R] ker π₂),
+        (∀ x, (i x : P₁ × P₂) = ((x : P₁), 0)) ∧ (∀ z, (p z : P₂) = (z : P₁ × P₂).2) ∧
         Function.Injective i ∧ Function.Exact i p ∧ Function.Surjective p := by
   -- Lift `π₂` along `g` to `σ : P₂ → M`, and send `(x, y)` to `f (π₁ x) + σ y`.
   obtain ⟨σ, hσ⟩ := Module.projective_lifting_property g π₂ hg
@@ -332,8 +336,10 @@ theorem exists_surjective_ker_exact [Module.Projective R P₂] {f : M₁ →ₗ[
     exact ⟨x, rfl⟩
   let π := (f ∘ₗ π₁).coprod σ
   have hπ (z : P₁ × P₂) : π z = f (π₁ z.1) + σ z.2 := rfl
-  refine ⟨π, hfg.surjective_coprod hπ₁ hπ₂ hσ, (inl R _ _).restrict fun x hx ↦ ?_,
-    (snd R _ _).restrict fun z hz ↦ ?_, fun x y hxy ↦ ?_, fun z ↦ ?_, fun y ↦ ?_⟩
+  refine ⟨π, hfg.surjective_coprod hπ₁ hπ₂ hσ, coprod_inl _ _, LinearMap.ext fun z ↦ ?_,
+    (inl R _ _).restrict fun x hx ↦ ?_, (snd R _ _).restrict fun z hz ↦ ?_, fun _ ↦ rfl,
+    fun _ ↦ rfl, fun x y hxy ↦ ?_, fun z ↦ ?_, fun y ↦ ?_⟩
+  · simp [hπ, hgσ, hfg.apply_apply_eq_zero]
   · simp_all
   · rw [mem_ker] at hz ⊢
     simpa [hπ, hgσ, hfg.apply_apply_eq_zero] using congrArg g hz
