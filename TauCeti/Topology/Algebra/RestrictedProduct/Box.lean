@@ -13,11 +13,24 @@ public import Mathlib.Topology.Bases
 
 For a restricted product `Πʳ i, [R i, A i]_[𝓕]` and a family of subsets `C : ∀ i, Set (R i)`, the
 coordinate box `RestrictedProduct.box C` is `{x | ∀ i, x i ∈ C i}`, the preimage of `Set.univ.pi C`
-under the coercion to the full product. This file develops the set-theoretic and algebraic API of
-coordinate boxes, characterizes openness of principal-stage inclusions when only the constrained
-reference sets `A i` are open, and proves that over the cofinite filter the open boxes that agree
-with `A i` at cofinitely many indices form a neighbourhood basis and a topological basis whenever
-`A i` is open at cofinitely many indices.
+under the coercion to the full product. Coordinate boxes supply the canonical neighbourhood basis
+and explicit π-systems needed to establish second countability, Borel σ-algebra generation, and
+restricted Haar measure constructions on adelic and local-global restricted products.
+
+This file develops the set-theoretic, algebraic, closedness, compactness, and openness API of
+coordinate boxes without extraneous openness assumptions on `A i`. In particular, it proves a
+sufficient condition (`isOpenEmbedding_inclusion_principal_of_forall_mem`) for a cofinite
+principal-stage inclusion to be an open embedding that requires openness of `A i` only on the
+constrained index set `S` (allowing restricted products with cofinitely open reference sets to be
+covered by open stages), and shows that over the cofinite filter the open cofinitely-`A i` boxes
+form a neighbourhood basis and a topological basis whenever `A i` is open for cofinitely many `i`.
+
+The eventual openness and compactness arguments for coordinate boxes generalize those in
+`TauCeti/Topology/Algebra/RestrictedProduct/Basic.lean`, which adapts them from the FLT project
+(`ImperialCollegeLondon/FLT`, file `TopologicalSpace.lean`, source commit
+`bc2fe8ff7396469a16c2a6d51d6117f5825d93a0`, FLT PR #1088, Apache 2.0), whose source file credits
+Matthew Jasper, Kevin Buzzard, Bhavik Mehta, Ruben Van de Velde, Bryan Wang Peng Jun, and Pietro
+Monticone.
 
 ## Main definitions
 
@@ -30,9 +43,10 @@ with `A i` at cofinitely many indices form a neighbourhood basis and a topologic
 * `RestrictedProduct.isOpenEmbedding_inclusion_principal_of_forall_mem`: for cofinite `S`, the
   inclusion of `Πʳ i, [R i, A i]_[𝓟 S]` into `Πʳ i, [R i, A i]` is an open embedding as soon as
   `A i` is open for every `i ∈ S`.
-* `RestrictedProduct.isOpen_box` and `RestrictedProduct.isCompact_box`: a box `box C` in
-  `Πʳ i, [R i, A i]` is open when every `C i` is open and `A i ⊆ C i` cofinitely, and compact when
-  every `C i` is compact and `C i ⊆ A i` cofinitely, with no openness assumption on `A i`.
+* `RestrictedProduct.isOpen_box` and `RestrictedProduct.isCompact_box`: `box C` is open in
+  `Πʳ i, [R i, A i]` when every `C i` is open and `A i ⊆ C i` cofinitely, and compact in
+  `Πʳ i, [R i, A i]_[𝓕]` when every `C i` is compact and `C i ⊆ A i` `𝓕`-eventually, with no
+  openness assumption on `A i`.
 * `RestrictedProduct.hasBasis_nhds_open_box` and `RestrictedProduct.isTopologicalBasis_openBoxes`:
   when `A i` is open for cofinitely many `i`, the open cofinitely-`A i` boxes form a neighbourhood
   basis at every point and a topological basis of `Πʳ i, [R i, A i]`.
@@ -61,13 +75,19 @@ cut out by a family of subsets `C : ∀ i, Set (R i)`. -/
 def box (C : ∀ i, Set (R i)) : Set (Πʳ i, [R i, A i]_[𝓕]) :=
   {x | ∀ i, x i ∈ C i}
 
+/-- Unfolding `box C` as `{x | ∀ i, x i ∈ C i}`. -/
+theorem box_def (C : ∀ i, Set (R i)) :
+    (box C : Set (Πʳ i, [R i, A i]_[𝓕])) = {x | ∀ i, x i ∈ C i} :=
+  (rfl)
+
 /-- Membership in `box C` means every coordinate lies in the corresponding factor `C i`. -/
-@[simp]
+@[simp, grind =]
 theorem mem_box {C : ∀ i, Set (R i)} {x : Πʳ i, [R i, A i]_[𝓕]} :
     x ∈ box C ↔ ∀ i, x i ∈ C i :=
   Iff.rfl
 
 /-- `box C` is the preimage of `Set.univ.pi C` under coercion to the full product. -/
+@[simp]
 theorem preimage_coe_univ_pi (C : ∀ i, Set (R i)) :
     ((↑) : Πʳ i, [R i, A i]_[𝓕] → Π i, R i) ⁻¹' univ.pi C = box C := by
   ext x
@@ -109,8 +129,8 @@ theorem nonempty_box_iff {C : ∀ i, Set (R i)} :
     have hxA : ∀ᶠ i in 𝓕, x i ∈ A i := hCA.mono fun i hi ↦ by
       simp only [x, hi, ↓reduceDIte]
       exact hgA i hi
-    refine ⟨⟨x, hxA⟩, fun i ↦ ?_⟩
-    change x i ∈ C i
+    refine ⟨RestrictedProduct.mk x hxA, mem_box.mpr fun i ↦ ?_⟩
+    rw [mk_apply]
     by_cases hi : (C i ∩ A i).Nonempty <;> simp [x, hi, hgC, hf]
 
 /-- When `C i ⊆ A i` for `𝓕`-eventually all `i`, `box C` is nonempty if and only if every factor
@@ -150,10 +170,20 @@ theorem box_iInter {κ : Sort*} (C : κ → ∀ i, Set (R i)) :
   simp only [mem_box, mem_iInter]
   exact forall_comm
 
-/-- Pulling `box C` back along a filter-inclusion map gives `box C` at the finer filter. -/
+/-- Pulling `box C` back along `inclusion R A h` (`h : 𝓕 ≤ 𝓖`) gives `box C` at the coarser
+filter `𝓖`. -/
 @[simp]
 theorem preimage_inclusion_box {𝓖 : Filter ι} (h : 𝓕 ≤ 𝓖) (C : ∀ i, Set (R i)) :
     inclusion R A h ⁻¹' box C = box C := by
+  ext x
+  simp
+
+/-- Pulling `box E` back along `RestrictedProduct.map φ hφ` gives the box of coordinatewise
+preimages `φ i ⁻¹' E i`. -/
+@[simp]
+theorem preimage_map_box {S : ι → Type*} {B : ∀ i, Set (S i)} (φ : ∀ i, R i → S i)
+    (hφ : ∀ᶠ i in 𝓕, MapsTo (φ i) (A i) (B i)) (E : ∀ i, Set (S i)) :
+    RestrictedProduct.map φ hφ ⁻¹' box E = box (fun i ↦ φ i ⁻¹' E i) := by
   ext x
   simp
 
@@ -251,23 +281,26 @@ theorem isClosed_box {𝓕 : Filter ι} {C : ∀ i, Set (R i)} (hC : ∀ i, IsCl
   rw [box_eq_iInter]
   exact isClosed_iInter fun i ↦ (hC i).preimage (continuous_eval i)
 
-/-- A coordinate box `box C` in `Πʳ i, [R i, A i]` with compact factors `C i` satisfying
-`C i ⊆ A i` cofinitely is compact, with no openness assumption on `A i`. -/
-theorem isCompact_box {C : ∀ i, Set (R i)} (hC : ∀ i, IsCompact (C i))
-    (hCA : ∀ᶠ i in cofinite, C i ⊆ A i) :
-    IsCompact (box C : Set (Πʳ i, [R i, A i])) := by
+/-- A coordinate box `box C` in `Πʳ i, [R i, A i]_[𝓕]` with compact factors `C i` satisfying
+`C i ⊆ A i` `𝓕`-eventually is compact, with no openness assumption on `A i`. -/
+theorem isCompact_box {𝓕 : Filter ι} {C : ∀ i, Set (R i)} (hC : ∀ i, IsCompact (C i))
+    (hCA : ∀ᶠ i in 𝓕, C i ⊆ A i) :
+    IsCompact (box C : Set (Πʳ i, [R i, A i]_[𝓕])) := by
   let S : Set ι := {i | C i ⊆ A i}
-  have hS : cofinite ≤ 𝓟 S := le_principal_iff.mpr hCA
+  have hS : 𝓕 ≤ 𝓟 S := le_principal_iff.mpr hCA
   have hK : IsCompact (((↑) : Πʳ i, [R i, A i]_[𝓟 S] → Π i, R i) ⁻¹' univ.pi C) := by
     refine isEmbedding_coe_of_principal.isCompact_preimage' (isCompact_univ_pi hC) ?_
     rw [range_coe_principal]
     exact fun x hx i hi ↦ hi (hx i trivial)
   convert hK.image (continuous_inclusion hS) using 1
   ext x
-  simp only [mem_box, mem_image, mem_preimage, mem_univ_pi]
-  refine ⟨fun hx ↦ ⟨⟨x, fun i hi ↦ hi (hx i)⟩, hx, rfl⟩, ?_⟩
-  rintro ⟨y, hy, rfl⟩
-  exact hy
+  simp only [mem_box, mem_image, preimage_coe_univ_pi]
+  refine ⟨fun hx ↦ ?_, ?_⟩
+  · obtain ⟨x', rfl⟩ := exists_inclusion_eq_of_eventually R A hS
+      (eventually_principal.mpr fun i hi ↦ hi (hx i))
+    exact ⟨x', fun i ↦ by simpa [inclusion_apply] using hx i, rfl⟩
+  · rintro ⟨y, hy, rfl⟩ i
+    simpa [inclusion_apply] using hy i
 
 /-- On a cofinite principal stage `Πʳ i, [R i, A i]_[𝓟 S]`, a box `box C` with open factors `C i`
 satisfying `A i ⊆ C i` cofinitely is open, with no openness assumption on `A i`. -/
@@ -319,12 +352,27 @@ and satisfy `C i = A i` for cofinitely many `i`. -/
 def openBoxes : Set (Set (Πʳ i, [R i, A i])) :=
   {s | ∃ C : ∀ i, Set (R i), (∀ i, IsOpen (C i)) ∧ (∀ᶠ i in cofinite, C i = A i) ∧ s = box C}
 
+variable (R A) in
+/-- Unfolding `openBoxes R A` as the set of coordinate boxes with open factors cofinitely equal to
+`A i`. -/
+theorem openBoxes_def :
+    openBoxes R A =
+      {s | ∃ C : ∀ i, Set (R i), (∀ i, IsOpen (C i)) ∧ (∀ᶠ i in cofinite, C i = A i) ∧ s = box C} :=
+  (rfl)
+
 /-- Membership in `openBoxes R A` means being `box C` for open `C i` cofinitely equal to `A i`. -/
-@[simp]
+@[simp, grind =]
 theorem mem_openBoxes_iff {s : Set (Πʳ i, [R i, A i])} :
     s ∈ openBoxes R A ↔
       ∃ C : ∀ i, Set (R i), (∀ i, IsOpen (C i)) ∧ (∀ᶠ i in cofinite, C i = A i) ∧ s = box C :=
   Iff.rfl
+
+/-- A coordinate box `box C` with open factors cofinitely equal to `A i` belongs to
+`openBoxes R A`. -/
+theorem box_mem_openBoxes {C : ∀ i, Set (R i)} (hC : ∀ i, IsOpen (C i))
+    (hCA : ∀ᶠ i in cofinite, C i = A i) :
+    (box C : Set (Πʳ i, [R i, A i])) ∈ openBoxes R A :=
+  ⟨C, hC, hCA, rfl⟩
 
 /-- Every set in `openBoxes R A` is open in `Πʳ i, [R i, A i]`. -/
 theorem isOpen_of_mem_openBoxes {s : Set (Πʳ i, [R i, A i])} (hs : s ∈ openBoxes R A) :
@@ -348,28 +396,28 @@ theorem exists_open_box_subset_of_isOpen (hA : ∀ᶠ i in cofinite, IsOpen (A i
     ∃ C : ∀ i, Set (R i), (∀ i, x i ∈ C i) ∧ (∀ i, IsOpen (C i)) ∧
       (∀ᶠ i in cofinite, C i = A i) ∧ box C ⊆ U := by
   classical
-  let S : Set ι := {i | x i ∈ A i ∧ IsOpen (A i)}
-  have hS : cofinite ≤ 𝓟 S := le_principal_iff.mpr (x.2.and hA)
-  obtain ⟨x', hx'⟩ := exists_inclusion_eq_of_eventually R A hS (fun i hi ↦ hi.1)
-  have hx'i : ∀ i, x' i = x i := fun i ↦ congr_arg (· i) hx'
+  obtain ⟨S, hS, hxS, hAS⟩ :
+      ∃ S : Set ι, cofinite ≤ 𝓟 S ∧ (∀ i ∈ S, x i ∈ A i) ∧ ∀ i ∈ S, IsOpen (A i) :=
+    ⟨{i | x i ∈ A i ∧ IsOpen (A i)}, le_principal_iff.mpr (x.2.and hA),
+      fun _ hi ↦ hi.1, fun _ hi ↦ hi.2⟩
+  obtain ⟨x', rfl⟩ := exists_inclusion_eq_of_eventually R A hS (eventually_principal.mpr hxS)
   have hV : IsOpen (inclusion R A hS ⁻¹' U) := hU.preimage (continuous_inclusion hS)
   obtain ⟨W, hWopen, hWx⟩ := isEmbedding_coe_of_principal.isOpen_iff.mp hV
-  obtain ⟨I, u, hu, hIu⟩ :=
-    isOpen_pi_iff.mp hWopen x' (by rw [← mem_preimage, hWx, mem_preimage, hx']; exact hx)
+  obtain ⟨I, u, hu, hIu⟩ := isOpen_pi_iff.mp hWopen x' (by rw [← mem_preimage, hWx]; exact hx)
   let C : ∀ i, Set (R i) := fun i ↦
     (if i ∈ I then u i else univ) ∩ (if i ∈ S then A i else univ)
   refine ⟨C, fun i ↦ ⟨?_, ?_⟩, fun i ↦ IsOpen.inter ?_ ?_, ?_, fun y hy ↦ ?_⟩
   · split_ifs with hiI
-    · exact hx'i i ▸ (hu i hiI).2
+    · simpa [inclusion_apply] using (hu i hiI).2
     · exact mem_univ _
   · split_ifs with hiS
-    · exact hiS.1
+    · exact hxS i hiS
     · exact mem_univ _
   · split_ifs with hiI
     · exact (hu i hiI).1
     · exact isOpen_univ
   · split_ifs with hiS
-    · exact hiS.2
+    · exact hAS i hiS
     · exact isOpen_univ
   · have hfin : (S \ (I : Set ι))ᶜ.Finite := by
       rw [compl_sdiff]
@@ -378,9 +426,9 @@ theorem exists_open_box_subset_of_isOpen (hA : ∀ᶠ i in cofinite, IsOpen (A i
     rw [Finset.mem_coe] at hiI
     simp [C, hiI, hiS]
   · obtain ⟨y', rfl⟩ := exists_inclusion_eq_of_eventually R A hS
-      (fun i hiS ↦ by simpa [C, hiS] using (hy i).2)
+      (eventually_principal.mpr fun i hiS ↦ by simpa [C, hiS] using (hy i).2)
     have hyW : (y' : Π i, R i) ∈ W := hIu fun i hiI ↦ by
-      simpa [C, Finset.mem_coe.mp hiI] using (hy i).1
+      simpa [C, Finset.mem_coe.mp hiI, inclusion_apply] using (hy i).1
     have hyV : y' ∈ inclusion R A hS ⁻¹' U := by rw [← hWx]; exact hyW
     exact hyV
 
@@ -405,7 +453,7 @@ theorem isTopologicalBasis_openBoxes (hA : ∀ᶠ i in cofinite, IsOpen (A i)) :
   refine TopologicalSpace.isTopologicalBasis_of_isOpen_of_nhds
     (fun _ hs ↦ isOpen_of_mem_openBoxes hs) fun x U hxU hU ↦ ?_
   obtain ⟨C, hxC, hC, hCA, hCU⟩ := exists_open_box_subset_of_isOpen hA hxU hU
-  exact ⟨box C, ⟨C, hC, hCA, rfl⟩, hxC, hCU⟩
+  exact ⟨box C, box_mem_openBoxes hC hCA, hxC, hCU⟩
 
 end Topology
 
