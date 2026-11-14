@@ -108,9 +108,8 @@ private theorem isBlock_of_notMem {x : G} (hx : x ∉ centralizer {u}) :
 block. -/
 private theorem isBlock_zpowersPiHom {v : Fin n → Multiplicative ℤ} (hv : v ≠ 1) :
     IsBlock true true (zpowersPiHom t commute_t_t v : CentralizerExt u n) := by
-  have h := pushoutI_of_true (u := u) 1 v
-  rw [OneMemClass.coe_one, map_one, one_mul] at h
-  refine h ▸ isBlock_of fun ⟨c, hc⟩ => hv ?_
+  rw [← ofProd_inr, ofProd_def]
+  refine isBlock_of fun ⟨c, hc⟩ => hv ?_
   rw [centralizerExtMap_true] at hc
   exact (congrArg Prod.snd hc).symm
 
