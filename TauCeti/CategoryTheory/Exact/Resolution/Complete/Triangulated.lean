@@ -204,12 +204,8 @@ noncomputable def completeResolutionSuspensionCompIso :
       ((HomotopyCategory.quotient C _).commShiftIso (1 : ℤ)).app _ ≪≫
       (shiftFunctor _ (1 : ℤ)).mapIso (eqToIso (hE.completeResolutionFunctor_obj X).symm))
     (fun {X Y} f ↦ by
-      have hc : hE.stableToHomotopyCategory.map (E.projectiveStableFunctor.map
-          ((hE.completeResolutionPresentation X).cokernelMap
-            (hE.completeResolutionPresentation Y) f)) =
-          hE.completeResolutionFunctor.map ((hE.completeResolutionPresentation X).cokernelMap
-            (hE.completeResolutionPresentation Y) f) := rfl
-      simp only [Functor.comp_map, suspensionToStableOfPresentations_map, Functor.map_comp, hc]
+      simp only [Functor.comp_map, suspensionToStableOfPresentations_map, Functor.map_comp,
+        stableToHomotopyCategory_map_projectiveStableFunctor_map]
       simp only [completeResolutionFunctor_map, eqToHom_map, Iso.trans_hom, eqToIso.hom,
         Functor.mapIso_hom, HomotopyCategory.isoOfHomotopyEquiv, Iso.app_hom, Category.assoc,
         eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Functor.map_comp]
