@@ -327,6 +327,14 @@ theorem relativeMaslovIndex_self (Λ : TotallyRealPath E) :
   rw [relativeMaslovIndex_eq_degree Λ Λ rfl rfl (Path.refl 1) fun t => by simp]
   exact Circle.degree_refl _
 
+/-- Replacing the second path by an equal one does not change the relative Maslov index; the
+proofs that the endpoints agree are transported along the equality. -/
+theorem relativeMaslovIndex_congr_right {Λ Γ Γ' : TotallyRealPath E} (h : Γ = Γ')
+    (h₀ : Λ 0 = Γ 0) (h₁ : Λ 1 = Γ 1) :
+    relativeMaslovIndex Λ Γ h₀ h₁ = relativeMaslovIndex Λ Γ' (h ▸ h₀) (h ▸ h₁) := by
+  subst h
+  rfl
+
 /-- In an infinite-dimensional space every relative Maslov index is `0`. -/
 @[simp]
 theorem relativeMaslovIndex_of_not_finite (h : ¬ Module.Finite ℂ E) (Λ Γ : TotallyRealPath E)
