@@ -115,12 +115,4 @@ theorem map_fst_restrict_compProd_eq_withDensity (μ : Measure W) [SFinite μ]
   refine lintegral_congr fun x ↦ ?_
   by_cases hx : x ∈ s <;> simp [Set.preimage_preimage, hx]
 
-/-- Restricting `μ ⊗ₘ κ` to `univ ×ˢ B` and projecting onto the first coordinate weights `μ`
-by the kernel mass `κ · B`. -/
-@[simp]
-theorem map_fst_restrict_univ_prod_compProd_eq_withDensity (μ : Measure W) [SFinite μ]
-    (κ : Kernel W Z) [IsSFiniteKernel κ] {B : Set Z} (hB : MeasurableSet B) :
-    ((μ ⊗ₘ κ).restrict (Set.univ ×ˢ B)).map Prod.fst = μ.withDensity (fun x ↦ κ x B) := by
-  simpa using map_fst_restrict_compProd_eq_withDensity μ κ (MeasurableSet.univ.prod hB)
-
 end MeasureTheory.Measure

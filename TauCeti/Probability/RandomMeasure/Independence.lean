@@ -22,11 +22,9 @@ sigma-algebra. In particular, they allow independent restrictions and color clas
 point processes to be identified as independent random measures, not merely as processes
 with independent single counts. Conversely, independent random measures induce independent
 natural-valued set-count processes `t ↦ ⌊(M ω (A t)).toNNReal⌋₊` along any measurable families of
-test sets, and in particular interval-count processes `t ↦ ⌊(M ω (Ioc a t)).toNNReal⌋₊` on an
-ordered space.
-No local finiteness, integrality, or finiteness of the masses is required for the Giry
-characterizations; almost-everywhere measurability suffices, and different random measures
-may have different state spaces.
+test sets. No topology, local finiteness, integrality, or finiteness of the masses is required.
+Almost-everywhere measurability suffices, and different random measures may have different state
+spaces.
 
 The proofs use Mathlib's finite-dimensional independence criteria for stochastic
 processes and the Giry evaluation measurable space on measures.
@@ -111,22 +109,5 @@ theorem IndepFun.natFloor_toNNReal {I₁ I₂ : Type*} {A : I₁ → Set S} {B :
     IndepFun (fun ω t ↦ ⌊(M ω (A t)).toNNReal⌋₊) (fun ω t ↦ ⌊(L ω (B t)).toNNReal⌋₊) P :=
   h.comp (Measurable.of_eval fun t ↦ (Measure.measurable_coe (hA t)).ennreal_toNNReal.nat_floor)
     (Measurable.of_eval fun t ↦ (Measure.measurable_coe (hB t)).ennreal_toNNReal.nat_floor)
-
-/-- Mutually independent random measures induce mutually independent natural-valued
-interval-count processes `t ↦ ⌊(M i ω (Ioc a t)).toNNReal⌋₊` on `(a, t]`. -/
-theorem iIndepFun.natFloor_toNNReal_Ioc {U : Type*} [TopologicalSpace U] [LinearOrder U]
-    [ClosedIicTopology U] [MeasurableSpace U] [OpensMeasurableSpace U]
-    {M : ι → Ω → Measure U} (h : iIndepFun M P) (a : U) :
-    iIndepFun (fun i ω t ↦ ⌊(M i ω (Set.Ioc a t)).toNNReal⌋₊) P :=
-  h.natFloor_toNNReal fun _ _ ↦ measurableSet_Ioc
-
-/-- Independent random measures induce independent natural-valued interval-count processes
-`t ↦ ⌊(M ω (Ioc a t)).toNNReal⌋₊` on `(a, t]`. -/
-theorem IndepFun.natFloor_toNNReal_Ioc {U : Type*} [TopologicalSpace U] [LinearOrder U]
-    [ClosedIicTopology U] [MeasurableSpace U] [OpensMeasurableSpace U]
-    {M₁ M₂ : Ω → Measure U} (h : IndepFun M₁ M₂ P) (a : U) :
-    IndepFun (fun ω t ↦ ⌊(M₁ ω (Set.Ioc a t)).toNNReal⌋₊)
-      (fun ω t ↦ ⌊(M₂ ω (Set.Ioc a t)).toNNReal⌋₊) P :=
-  h.natFloor_toNNReal (fun _ ↦ measurableSet_Ioc) (fun _ ↦ measurableSet_Ioc)
 
 end ProbabilityTheory

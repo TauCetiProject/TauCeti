@@ -28,8 +28,7 @@ of the first coordinate commutes with taking the first marginal (`fst_withDensit
 Projecting a measurable restriction of a product weights the first factor by the masses of
 its vertical sections (`map_fst_restrict_prod_eq_withDensity`). Partitioning an arbitrary measure
 on `X × ι` into countable singleton slices `univ ×ˢ {i}` and projecting onto `X` sums back to
-`μ.map Prod.fst` (`sum_map_fst_restrict_univ_prod_singleton`,
-`map_fst_restrict_univ_prod_true_add_false`).
+`μ.map Prod.fst` (`sum_map_fst_restrict_univ_prod_singleton`).
 
 If the pushforward of a product `(μ.map Z).prod ρ` along `(z, t) ↦ (z, f z t)` is the joint law of
 `(Z, X)` for a nonzero finite `μ`, then `ρ` is a probability measure
@@ -75,15 +74,6 @@ theorem sum_map_fst_restrict_univ_prod_singleton {X ι : Type*} [MeasurableSpace
   rw [← Measure.map_sum measurable_fst.aemeasurable,
     ← Measure.restrict_iUnion hd (fun i ↦ MeasurableSet.univ.prod (measurableSet_singleton i)),
     hunion, Measure.restrict_univ]
-
-/-- Partitioning a measure on `X × Bool` into `true` and `false` vertical slices and projecting
-onto `X` recovers `μ.map Prod.fst` for every measure `μ`. -/
-@[simp]
-theorem map_fst_restrict_univ_prod_true_add_false {X : Type*} [MeasurableSpace X]
-    (μ : Measure (X × Bool)) :
-    (μ.restrict (Set.univ ×ˢ {true})).map Prod.fst +
-      (μ.restrict (Set.univ ×ˢ {false})).map Prod.fst = μ.map Prod.fst := by
-  simpa only [Measure.sum_bool] using μ.sum_map_fst_restrict_univ_prod_singleton
 
 /-- Projecting the part of a product measure in a measurable set gives the first measure
 weighted by the masses of the vertical sections. Only the second factor must be s-finite. -/

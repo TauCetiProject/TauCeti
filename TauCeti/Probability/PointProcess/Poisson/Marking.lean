@@ -129,9 +129,7 @@ theorem IsPoissonRandomMeasure.ae_map_fst_compProd_optionalTupleMarking
     (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ (e ω i).elim 0 Measure.dirac)) :
     ∀ᵐ z ∂(P ⊗ₘ (κ.optionalTupleMarking ι).comap e he), z.2.map Prod.fst = N z.1 :=
   κ.ae_map_fst_compProd_optionalTupleMarking he hae (measurableSet_spanningSets Λ)
-    (iUnion_spanningSets Λ) fun n ↦
-      (hN.ae_lt_top (measurableSet_spanningSets Λ n)
-        (measure_spanningSets_lt_top Λ n)).mono fun _ ↦ ne_of_lt
+    (iUnion_spanningSets Λ) hN.ae_ne_top_spanningSets
 
 end Enumeration
 
@@ -158,8 +156,7 @@ theorem IsPoissonRandomMeasure.exists_isMarkovKernel_marking
       ⟨hN.measurable.aemeasurable, measurable_id.aemeasurable, Measure.map_id.symm⟩
   obtain ⟨e, he, hae⟩ := measurable_id.aemeasurable.exists_ae_occurrence_enumeration_of_cover
     hN'.ae_isIntegerValued (spanningSets Λ) (measurableSet_spanningSets Λ) (iUnion_spanningSets Λ)
-    (fun n ↦ (hN'.ae_lt_top (measurableSet_spanningSets Λ n)
-      (measure_spanningSets_lt_top Λ n)).mono fun _ ↦ ne_of_lt)
+    hN'.ae_ne_top_spanningSets
   have haeN : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ (e (N ω) i).elim 0 Measure.dirac) :=
     ae_of_ae_map hN.measurable.aemeasurable hae
   refine ⟨(κ.optionalTupleMarking ℕ).comap e he, inferInstance, ?_, ?_⟩

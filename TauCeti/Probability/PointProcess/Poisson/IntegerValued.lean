@@ -53,6 +53,15 @@ theorem IsPoissonRandomMeasure.ae_sigmaFinite (h : IsPoissonRandomMeasure P N Λ
   filter_upwards [ae_all_iff.2 hfinite] with ω hω
   exact ⟨⟨⟨spanningSets Λ, fun _ => mem_univ _, hω, iUnion_spanningSets Λ⟩⟩⟩
 
+/-- A Poisson random measure with sigma-finite intensity is almost surely finite on each spanning
+set of its intensity. No topology or countable-generation assumption on the location space is
+required. -/
+theorem IsPoissonRandomMeasure.ae_ne_top_spanningSets [SigmaFinite Λ]
+    (h : IsPoissonRandomMeasure P N Λ) (n : ℕ) :
+    ∀ᵐ ω ∂P, N ω (spanningSets Λ n) ≠ ∞ :=
+  (h.ae_lt_top (measurableSet_spanningSets Λ n) (measure_spanningSets_lt_top Λ n)).mono
+    fun _ ↦ ne_of_lt
+
 /-- On a countably generated measurable space, restricting a Poisson random measure to a
 finite-intensity measurable set gives almost surely integer-valued realizations, without any
 global σ-finiteness assumption on the intensity. -/
@@ -90,9 +99,7 @@ theorem IsPoissonRandomMeasure.ae_eq_of_forall_ae_eq [MeasurableSpace.CountablyG
     [SigmaFinite Λ] (h : IsPoissonRandomMeasure P N Λ) {M : Ω → Measure X}
     (heq : ∀ A, MeasurableSet A → ∀ᵐ ω ∂P, M ω A = N ω A) : M =ᵐ[P] N :=
   (Measure.ae_eq_of_forall_ae_eq_of_cover (measurableSet_spanningSets Λ) (iUnion_spanningSets Λ)
-    (fun n ↦ (h.ae_lt_top (measurableSet_spanningSets Λ n)
-      (measure_spanningSets_lt_top Λ n)).mono fun _ ↦ ne_of_lt)
-    fun A hA ↦ (heq A hA).mono fun _ h ↦ h.symm).symm
+    h.ae_ne_top_spanningSets fun A hA ↦ (heq A hA).mono fun _ h ↦ h.symm).symm
 
 /-- If the intensity is finite on compact sets, almost every realization of a Poisson
 random measure is locally finite. The assertion holds simultaneously at every location. -/

@@ -94,16 +94,6 @@ theorem IsPoissonRandomMeasure.iIndepFun_map_fst_restrict {Γ : Measure (X × E)
   (hM.iIndepFun_restrict hA hd).comp
     (fun _ μ ↦ μ.map Prod.fst) (fun _ ↦ Measure.measurable_map _ measurable_fst)
 
-/-- Binary specialization of `IsPoissonRandomMeasure.iIndepFun_map_fst_restrict`: ground projections
-of restrictions to two disjoint measurable subsets of `X × E` are independent random measures. -/
-theorem IsPoissonRandomMeasure.indepFun_map_fst_restrict {Γ : Measure (X × E)}
-    (hM : IsPoissonRandomMeasure P M Γ) {A₁ A₂ : Set (X × E)} (hA₁ : MeasurableSet A₁)
-    (hA₂ : MeasurableSet A₂) (hd : Disjoint A₁ A₂) :
-    IndepFun (fun ω ↦ ((M ω).restrict A₁).map Prod.fst)
-      (fun ω ↦ ((M ω).restrict A₂).map Prod.fst) P :=
-  (hM.indepFun_restrict hA₁ hA₂ hd).comp
-    (Measure.measurable_map _ measurable_fst) (Measure.measurable_map _ measurable_fst)
-
 /-- For any Poisson random measure on `X × E` (with arbitrary intensity `Γ`), projecting the
 restrictions to pairwise-disjoint measurable mark sets `B i` yields mutually independent random
 measures on `X`. -/
@@ -113,16 +103,6 @@ theorem IsPoissonRandomMeasure.iIndepFun_map_fst_restrict_univ_prod {Γ : Measur
     ProbabilityTheory.iIndepFun (fun i ω ↦ ((M ω).restrict (univ ×ˢ B i)).map Prod.fst) P :=
   hM.iIndepFun_map_fst_restrict (fun i ↦ MeasurableSet.univ.prod (hB i))
     (fun _ _ hij ↦ (hd hij).set_prod_right _ _)
-
-/-- Binary specialization of `IsPoissonRandomMeasure.iIndepFun_map_fst_restrict_univ_prod`:
-ground projections of two disjoint measurable mark sets are independent random measures. -/
-theorem IsPoissonRandomMeasure.indepFun_map_fst_restrict_univ_prod {Γ : Measure (X × E)}
-    (hM : IsPoissonRandomMeasure P M Γ) {B₁ B₂ : Set E} (hB₁ : MeasurableSet B₁)
-    (hB₂ : MeasurableSet B₂) (hd : Disjoint B₁ B₂) :
-    IndepFun (fun ω ↦ ((M ω).restrict (univ ×ˢ B₁)).map Prod.fst)
-      (fun ω ↦ ((M ω).restrict (univ ×ˢ B₂)).map Prod.fst) P :=
-  hM.indepFun_map_fst_restrict (MeasurableSet.univ.prod hB₁) (MeasurableSet.univ.prod hB₂)
-    (hd.set_prod_right _ _)
 
 end MarkedProjection
 
@@ -312,7 +292,7 @@ success probability `p` produces a realization-level Markov kernel
 `η : Kernel (Measure ℝ≥0) (Measure ℝ≥0 × Measure ℝ≥0)` whose two outputs under
 `P ⊗ₘ η.comap N hN.measurable` are independent homogeneous Poisson random measures of rates
 `p * r` and `(1 - p) * r` that sum to `N` almost surely; combined with
-`ProbabilityTheory.IndepFun.natFloor_toNNReal_Ioc` and
+`ProbabilityTheory.IndepFun.natFloor_toNNReal` and
 `IsPoissonRandomMeasure.ae_forall_nat_count_add_eq`, their cumulative-count paths are independent
 and add to the original count path simultaneously for all `t : ℝ≥0`. -/
 theorem IsPoissonRandomMeasure.exists_bernoulli_thinning_smul_nnvolume {Ω : Type*}
