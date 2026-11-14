@@ -1041,6 +1041,7 @@ theorem toGraph_earAt_le (d : G.EarDecomposition H) (i : Fin d.length) :
   (d.toGraph_earAt_le_graphAfter_succ i).trans (d.graphAfter_le_final i.succ)
 
 /-- The decomposition formed by the first `i` ears. -/
+@[expose]
 def «prefix» (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
     G.EarDecomposition (d.graphAfter i) where
   length := i.val
