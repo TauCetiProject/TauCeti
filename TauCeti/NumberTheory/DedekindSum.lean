@@ -57,6 +57,7 @@ sum for `(h, c)` to the sums of `⌊c s / h⌋` and `⌊c s / h⌋²`, and the r
   `d mod c`.
 * `TauCeti.dedekindSum_neg`: `s(-d, c) = -s(d, c)`.
 * `TauCeti.dedekindSum_eq_zero_of_dvd`: `s(d, c) = 0` when `c ∣ d`.
+* `TauCeti.dedekindSum_eq_of_mul_modEq_one`: `s(d, c) = s(d', c)` when `d * d' ≡ 1 [ZMOD c]`.
 * `TauCeti.dedekindSum_add_dedekindSum`: the reciprocity law of Dedekind sums.
 * `TauCeti.dedekindSum_one_left`: `s(1, c) = (c - 1)(c - 2) / (12 c)` for `c ≥ 0`.
 
@@ -286,6 +287,43 @@ private theorem dedekindSum_natCast {h c : ℕ} (hhc : h.Coprime c) :
     rw [← Int.fract_div_natCast_eq_div_natCast_mod]
     push_cast
     rfl
+
+/-- **Modular-inverse symmetry of Dedekind sums** (Apostol, Theorem 3.6(c)): if
+`d * d' ≡ 1 [ZMOD c]`, then `s(d, c) = s(d', c)`. -/
+theorem dedekindSum_eq_of_mul_modEq_one {d d' c : ℤ} (h : d * d' ≡ 1 [ZMOD c]) :
+    dedekindSum d c = dedekindSum d' c := by
+  rcases le_or_gt c 2 with hc | hc
+  · rw [dedekindSum_eq_zero_of_le_two d hc, dedekindSum_eq_zero_of_le_two d' hc]
+  · rw [← dedekindSum_emod d c, ← dedekindSum_emod d' c]
+    have hc0 : 0 < c := by omega
+    have habZ : (d % c) * (d' % c) ≡ 1 [ZMOD c] :=
+      ((Int.mod_modEq d c).mul (Int.mod_modEq d' c)).trans h
+    obtain ⟨a, ha⟩ := Int.eq_ofNat_of_zero_le (Int.emod_nonneg d hc0.ne')
+    obtain ⟨b, hb⟩ := Int.eq_ofNat_of_zero_le (Int.emod_nonneg d' hc0.ne')
+    lift c to ℕ using hc0.le
+    rw [ha, hb] at habZ ⊢
+    have hab : a * b ≡ 1 [MOD c] := by exact_mod_cast habZ
+    have hac : a.Coprime c := Nat.coprime_of_mul_modEq_one b hab
+    have hbc : b.Coprime c := Nat.coprime_of_mul_modEq_one a (mul_comm a b ▸ hab)
+    rw [dedekindSum_natCast hac, dedekindSum_natCast hbc]
+    have hsplit (m r : ℕ) :
+        ((r : ℚ) / c) * (((m * r % c : ℕ) : ℚ) / c - 1 / 2) =
+          (r : ℚ) * (m * r % c : ℕ) / (c : ℚ) ^ 2 - (r : ℚ) / (2 * c) := by
+      ring
+    simp_rw [hsplit, sum_sub_distrib, ← sum_div]
+    suffices hsum : ∑ r ∈ range c, (r : ℚ) * (a * r % c : ℕ) =
+        ∑ s ∈ range c, (s : ℚ) * (b * s % c : ℕ) by
+      rw [hsum]
+    rw [← hac.sum_range_mul_mod fun s ↦ (s : ℚ) * (b * s % c : ℕ)]
+    refine sum_congr rfl fun r hr ↦ ?_
+    have hinv : b * (a * r % c) % c = r := by
+      have hmod : b * (a * r % c) ≡ r [MOD c] := calc
+        b * (a * r % c) ≡ b * (a * r) [MOD c] := (Nat.mod_modEq _ _).mul_left b
+        _ = a * b * r := by ring
+        _ ≡ 1 * r [MOD c] := hab.mul_right r
+        _ = r := one_mul r
+      exact Eq.trans hmod (Nat.mod_eq_of_lt (mem_range.mp hr))
+    rw [hinv, mul_comm]
 
 /-- The Dedekind sum through the floor sum `∑_{r < c} r ⌊h r / c⌋`:
 `s(h, c) = h (c - 1)(2c - 1) / (6c) - (∑_{r < c} r ⌊h r / c⌋) / c - (c - 1) / 4`. -/
