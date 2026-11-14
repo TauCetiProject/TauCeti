@@ -401,6 +401,20 @@ theorem euclideanHausdorffMeasure_sphere (c : E) {r : ℝ} (hr : 0 < r) :
     _root_.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
     restrict_apply_univ, euclideanHausdorffMeasure_sphere_zero_one, smul_eq_mul, mul_comm]
 
+/-- A positive-radius sphere has finite codimension-one Euclidean Hausdorff measure. -/
+theorem euclideanHausdorffMeasure_sphere_lt_top (c : E) {r : ℝ} (hr : 0 < r) :
+    μHE[finrank ℝ E - 1] (sphere c r) < ∞ := by
+  rw [euclideanHausdorffMeasure_sphere c hr]
+  finiteness
+
+/-- A continuous function on a positive-radius sphere is integrable for its
+codimension-one Euclidean Hausdorff measure. -/
+theorem _root_.ContinuousOn.integrableOn_sphere {F : Type*} [NormedAddCommGroup F]
+    {f : E → F} {c : E} {r : ℝ} (hf : ContinuousOn f (sphere c r)) (hr : 0 < r) :
+    IntegrableOn f (sphere c r) μHE[finrank ℝ E - 1] :=
+  hf.integrableOn_of_subset_isCompact (isCompact_sphere c r) isClosed_sphere.measurableSet
+    Subset.rfl (euclideanHausdorffMeasure_sphere_lt_top c hr).ne
+
 /-- The area `|Sⁿ|` of the unit round sphere `Sⁿ ⊆ ℝⁿ⁺¹`: the normalized `n`-dimensional Hausdorff
 measure of the unit sphere of `EuclideanSpace ℝ (Fin (n + 1))`. -/
 def roundSphereVolume (n : ℕ) : ℝ :=
