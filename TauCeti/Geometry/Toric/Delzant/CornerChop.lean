@@ -68,9 +68,8 @@ dimension hypothesis is needed.
   `TauCeti.Toric.none_mem_activeSet_cornerChop_iff`: its old and new facets.
 * `TauCeti.Toric.notMem_facetPolyhedron_cornerChop`: the chopped corner is removed.
 * `TauCeti.Toric.IsSmoothVertex.exists_coord`: coordinates relative to a smooth vertex.
-* `TauCeti.Toric.lt_apply_of_sum_le`, `TauCeti.Toric.eventually_forall_notMem_mul_sum_abs_lt`:
-  for small depths, the constraints inactive at the corner stay inactive on the small simplex
-  at the corner.
+* `TauCeti.Toric.IsSmoothVertex.eventually_facetPolyhedron_eq_cornerChop_union`: for small
+  depths, the polyhedron is the chopped polyhedron together with the small simplex at the corner.
 * `TauCeti.Toric.IsDelzant.eventually_isDelzant_cornerChop`: small corner chops of a Delzant
   polytope at a vertex are Delzant polytopes.
 
@@ -225,6 +224,55 @@ theorem IsSmoothVertex.exists_coord [DecidableEq ι] (hi : IsIntegralLattice i)
   rw [sum_mul_apply_eq hw _ hk, hvs k hk]
   ring
 
+/-- At a smooth vertex `v`, with active facets `s`, each normal `u k` is an integral combination
+of the active normals `u j`, `j ∈ s`. So the value of a point `x` on `u k` is its value at `v` plus
+a combination, with coefficients `a j k` not depending on `x`, of the coordinates `⟨x, u j⟩ - c j`
+relative to `v`. Unlike `TauCeti.Toric.IsSmoothVertex.exists_coord`, this needs no integral
+lattice. -/
+private theorem IsSmoothVertex.exists_apply_eq_add_sum (hv : IsSmoothVertex i u c v)
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) :
+    ∃ a : ι → ι → ℝ, ∀ (x : StrongDual ℝ V) (k : ι),
+      x (i (u k)) = v (i (u k)) + ∑ j ∈ s, (x (i (u j)) - c j) * a j k := by
+  classical
+  obtain ⟨b, hb⟩ := isSmoothVertex_def.1 hv
+  let bv : Module.Basis s ℤ N := b.reindex (Equiv.subtypeEquivRight fun j ↦ by
+    rw [← hs, Finset.mem_coe])
+  have hbv (j : s) : bv j = u j := by simp [bv, hb]
+  refine ⟨fun j k ↦ if h : j ∈ s then (bv.repr (u k) ⟨j, h⟩ : ℝ) else 0, fun x k ↦ ?_⟩
+  have hvs (j) (hj : j ∈ s) : c j = v (i (u j)) := by
+    rw [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply] at hj
+    exact hj.symm
+  -- `x - v` is additive on the lattice, so it respects the expansion of `u k` in the basis.
+  have h := congrArg (fun n ↦ (x - v) (i n)) (bv.sum_repr (u k))
+  simp only [map_sum, map_zsmul, hbv, sub_apply, zsmul_eq_mul] at h
+  rw [← sub_eq_iff_eq_add', ← h, ← Finset.sum_coe_sort s]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp only [dite_eq_left j.2, hvs j j.2, mul_comm]
+
+/-- **Slack on the small simplex at the corner.** Suppose that the value of `x` on each normal
+`u k` is its value at the corner `v` plus the combination with coefficients `a j k` of its
+coordinates `y j = ⟨x, u j⟩ - c j`, `j ∈ s`, relative to the corner. If `ε` is small compared
+with the slack of every constraint inactive at the corner, and `x` lies in the simplex
+`{y j ≥ 0, ∑ j, y j ≤ ε}`, then every constraint inactive at the corner stays inactive at `x`. -/
+private theorem lt_apply_of_sum_le {a : ι → ι → ℝ}
+    (hx : ∀ k, x (i (u k)) = v (i (u k)) + ∑ j ∈ s, (x (i (u j)) - c j) * a j k)
+    (hε : ∀ k ∉ s, ε * ∑ j ∈ s, |a j k| < v (i (u k)) - c k)
+    (hxs : ∀ j ∈ s, c j ≤ x (i (u j))) (hxε : ∑ j ∈ s, (x (i (u j)) - c j) ≤ ε) {k : ι}
+    (hk : k ∉ s) : c k < x (i (u k)) := by
+  set S := ∑ j ∈ s, |a j k|
+  have hS : 0 ≤ S := Finset.sum_nonneg fun j _ ↦ abs_nonneg _
+  have hlow : -(S * ∑ j ∈ s, (x (i (u j)) - c j)) ≤
+      ∑ j ∈ s, (x (i (u j)) - c j) * a j k := by
+    rw [Finset.mul_sum, ← Finset.sum_neg_distrib]
+    refine Finset.sum_le_sum fun j hj ↦ ?_
+    have hy : 0 ≤ x (i (u j)) - c j := sub_nonneg.2 (hxs j hj)
+    have hj' : |a j k| ≤ S :=
+      Finset.single_le_sum (f := fun j ↦ |a j k|) (fun _ _ ↦ abs_nonneg _) hj
+    nlinarith [neg_abs_le (a j k)]
+  have := mul_le_mul_of_nonneg_left hxε hS
+  rw [hx k]
+  linarith [hε k hk]
+
 variable (hx : ∀ x : StrongDual ℝ V, x = v + ∑ j ∈ s, (x (i (u j)) - c j) • w j)
 include hx
 
@@ -246,28 +294,6 @@ private theorem sum_sub_pos (hxs : ∀ j ∈ s, c j ≤ x (i (u j))) (hxv : x �
   have hnn (j) (hj : j ∈ s) : 0 ≤ x (i (u j)) - c j := sub_nonneg.2 (hxs j hj)
   refine (Finset.sum_nonneg hnn).lt_of_ne fun h ↦ hxv (eq_of_forall_apply_eq hx fun j hj ↦ ?_)
   exact sub_eq_zero.1 ((Finset.sum_eq_zero_iff_of_nonneg hnn).1 h.symm j hj)
-
-/-- **Slack on the small simplex at the corner.** If `ε` is small compared with the slack of every
-constraint inactive at the corner, then every constraint inactive at the corner stays inactive at
-the points of the simplex `{y j ≥ 0, ∑ j, y j ≤ ε}`, in the coordinates `y j = ⟨x, u j⟩ - c j`,
-`j ∈ s`, relative to the corner. -/
-theorem lt_apply_of_sum_le
-    (hε : ∀ k ∉ s, ε * ∑ j ∈ s, |w j (i (u k))| < v (i (u k)) - c k)
-    (hxs : ∀ j ∈ s, c j ≤ x (i (u j))) (hxε : ∑ j ∈ s, (x (i (u j)) - c j) ≤ ε) {k : ι}
-    (hk : k ∉ s) : c k < x (i (u k)) := by
-  set S := ∑ j ∈ s, |w j (i (u k))|
-  have hS : 0 ≤ S := Finset.sum_nonneg fun j _ ↦ abs_nonneg _
-  have hlow : -(S * ∑ j ∈ s, (x (i (u j)) - c j)) ≤
-      ∑ j ∈ s, (x (i (u j)) - c j) * w j (i (u k)) := by
-    rw [Finset.mul_sum, ← Finset.sum_neg_distrib]
-    refine Finset.sum_le_sum fun j hj ↦ ?_
-    have hy : 0 ≤ x (i (u j)) - c j := sub_nonneg.2 (hxs j hj)
-    have hj' : |w j (i (u k))| ≤ S :=
-      Finset.single_le_sum (f := fun j ↦ |w j (i (u k))|) (fun _ _ ↦ abs_nonneg _) hj
-    nlinarith [neg_abs_le (w j (i (u k)))]
-  have := mul_le_mul_of_nonneg_left hxε hS
-  rw [apply_eq_add_sum hx]
-  linarith [hε k hk]
 
 end Coordinates
 
@@ -321,7 +347,7 @@ private theorem exists_activeSet_cornerChop_eq_image
   have hxΔ := mem_facetPolyhedron.1 (facetPolyhedron_cornerChop_subset hxP)
   -- Off `s`, the constraints are inactive near the corner.
   have hslack {k} (hk : k ∉ s) : c k < x (i (u k)) :=
-    lt_apply_of_sum_le hx hε (fun j _ ↦ hxΔ j) hnone.le hk
+    lt_apply_of_sum_le (fun k ↦ apply_eq_add_sum hx x _) hε (fun j _ ↦ hxΔ j) hnone.le hk
   -- Some coordinate is nonzero, since they sum to `ε > 0`.
   obtain ⟨j₀, hj₀, hj₀ne⟩ : ∃ j₀ ∈ s, x (i (u j₀)) ≠ c j₀ := by
     by_contra! h
@@ -405,14 +431,41 @@ end Vertices
 
 /-- Every sufficiently small depth `ε > 0` is small compared with the slack at the corner `v` of
 each constraint outside `s`, as `TauCeti.Toric.lt_apply_of_sum_le` requires. -/
-theorem eventually_forall_notMem_mul_sum_abs_lt [Finite ι] {v : StrongDual ℝ V}
-    (w : ι → StrongDual ℝ V) (hslack : ∀ k ∉ s, 0 < v (i (u k)) - c k) :
-    ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ k ∉ s, ε * ∑ j ∈ s, |w j (i (u k))| < v (i (u k)) - c k := by
+private theorem eventually_forall_notMem_mul_sum_abs_lt [Finite ι] {v : StrongDual ℝ V}
+    (a : ι → ι → ℝ) (hslack : ∀ k ∉ s, 0 < v (i (u k)) - c k) :
+    ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ k ∉ s, ε * ∑ j ∈ s, |a j k| < v (i (u k)) - c k := by
   refine eventually_all.2 fun k ↦ ?_
   by_cases hk : k ∈ s
   · exact Eventually.of_forall fun _ h ↦ absurd hk h
   refine (((continuous_id.mul continuous_const).tendsto' 0 0 (by simp)).eventually_lt_const
     (hslack k hk)).filter_mono nhdsWithin_le_nhds |>.mono fun ε hε _ ↦ hε
+
+/-- **The polyhedron splits at a small corner chop.** Let `v` be a smooth vertex of the facet
+polyhedron `Δ`, at which the facets indexed by `s` meet. For every sufficiently small `ε > 0`,
+`Δ` is the union of the polyhedron chopped at depth `ε` and the corner `{y j ≥ 0, ∑ j, y j < ε}`
+in the coordinates `y j = ⟨x, u j⟩ - c j`, `j ∈ s`, relative to `v`: the facets not through `v`
+do not meet this corner. -/
+theorem IsSmoothVertex.eventually_facetPolyhedron_eq_cornerChop_union [Finite ι]
+    {v : StrongDual ℝ V} (hvΔ : v ∈ facetPolyhedron i u c)
+    (hv : IsSmoothVertex i u c v) (hs : (s : Set ι) = activeSet (facetPairing i u) c v) :
+    ∀ᶠ ε in 𝓝[>] (0 : ℝ), facetPolyhedron i u c =
+      facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε) ∪
+        {x | (∀ j ∈ s, c j ≤ x (i (u j))) ∧ ∑ j ∈ s, (x (i (u j)) - c j) < ε} := by
+  obtain ⟨a, ha⟩ := hv.exists_apply_eq_add_sum hs
+  -- The constraints inactive at the corner have positive slack there.
+  have hslack (k) (hk : k ∉ s) : 0 < v (i (u k)) - c k := by
+    refine sub_pos.2 ((mem_facetPolyhedron.1 hvΔ k).lt_of_ne fun h ↦ hk ?_)
+    rw [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply, h]
+  filter_upwards [eventually_forall_notMem_mul_sum_abs_lt a hslack] with ε hε
+  refine Subset.antisymm (fun x hxΔ ↦ ?_) (union_subset facetPolyhedron_cornerChop_subset ?_)
+  · by_cases hxε : ε ≤ ∑ j ∈ s, (x (i (u j)) - c j)
+    · exact Or.inl (mem_facetPolyhedron_cornerChop_iff.2 ⟨hxΔ, hxε⟩)
+    · exact Or.inr ⟨fun j _ ↦ mem_facetPolyhedron.1 hxΔ j, not_le.1 hxε⟩
+  · rintro x ⟨hxs, hxε⟩
+    refine mem_facetPolyhedron.2 fun k ↦ ?_
+    by_cases hk : k ∈ s
+    · exact hxs k hk
+    · exact (lt_apply_of_sum_le (ha x) hε hxs hxε.le hk).le
 
 /-! ### Small corner chops are Delzant -/
 
@@ -436,7 +489,8 @@ private theorem exists_activeSet_cornerChop_eq_none [DecidableEq ι] {v : Strong
       nsmul_eq_mul, mul_div_cancel₀ _ hn.ne']
   have hpos : 0 < ε / s.card := div_pos hε0 hn
   have hslack {k} (hk : k ∉ s) : c k < z (i (u k)) :=
-    lt_apply_of_sum_le hx hε (fun j hj ↦ by rw [hz j hj]; linarith) hzsum.le hk
+    lt_apply_of_sum_le (fun k ↦ apply_eq_add_sum hx z _) hε (fun j hj ↦ by rw [hz j hj]; linarith)
+      hzsum.le hk
   refine ⟨z, mem_facetPolyhedron_cornerChop_iff.2 ⟨mem_facetPolyhedron.2 fun k ↦ ?_, hzsum.ge⟩,
     Set.ext fun o ↦ ?_⟩
   · by_cases hk : k ∈ s
@@ -486,7 +540,8 @@ theorem IsDelzant.eventually_isDelzant_cornerChop [Finite ι] (hi : IsIntegralLa
     sub_pos.2 ((hvP k).lt_of_ne fun h ↦ hk ((hsA k).2 h.symm))
   have h₁ : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ j, ε < ∑ k ∈ s, (y j (i (u k)) - c k) :=
     eventually_all.2 fun j ↦ (eventually_lt_nhds (hdepth j)).filter_mono nhdsWithin_le_nhds
-  filter_upwards [self_mem_nhdsWithin, h₁, eventually_forall_notMem_mul_sum_abs_lt w hslack]
+  filter_upwards [self_mem_nhdsWithin, h₁,
+    eventually_forall_notMem_mul_sum_abs_lt (fun j k ↦ w j (i (u k))) hslack]
     with ε (hε0 : 0 < ε) hεy hε
   refine ⟨hΔ.isBounded.subset facetPolyhedron_cornerChop_subset, fun x hx' ↦ ?_, fun o ↦ ?_⟩
   · by_cases hnone : ∑ j ∈ s, (x (i (u j)) - c j) = ε

@@ -149,33 +149,16 @@ theorem IsSmoothVertex.eventually_volume_image_latticeCoord_cornerChop [Finite �
         facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε)) +
         ENNReal.ofReal (ε ^ Fintype.card κ / (Fintype.card κ).factorial) := by
   classical
-  obtain ⟨w, -, hx⟩ := hv.exists_coord hi hs
-  have hsA (j) : j ∈ s ↔ v (i (u j)) = c j := by
-    rw [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply]
-  -- The constraints inactive at the corner have positive slack there.
-  have hslack (k) (hk : k ∉ s) : 0 < v (i (u k)) - c k :=
-    sub_pos.2 ((mem_facetPolyhedron.1 hvΔ k).lt_of_ne fun h ↦ hk ((hsA k).2 h.symm))
-  filter_upwards [self_mem_nhdsWithin, eventually_forall_notMem_mul_sum_abs_lt w hslack]
-    with ε (hε0 : 0 < ε) hε
+  filter_upwards [self_mem_nhdsWithin,
+    hv.eventually_facetPolyhedron_eq_cornerChop_union hvΔ hs] with ε (hε0 : 0 < ε) hsplit
   -- The vertex basis `u j`, `j ∈ s`, of the lattice.
   obtain ⟨b₀, hb₀⟩ := isSmoothVertex_def.1 hv
   let bv : Module.Basis s ℤ N := b₀.reindex (Equiv.subtypeEquivRight fun j ↦ by
     rw [← hs, Finset.mem_coe])
   have hbv (j : s) : bv j = u j := by simp [bv, hb₀]
   -- The corner removed by the chop: the points with nonnegative coordinates `⟨x, u j⟩ - c j`,
-  -- `j ∈ s`, of sum less than `ε`. The facets not through `v` do not meet it.
+  -- `j ∈ s`, of sum less than `ε`.
   set C := {x : StrongDual ℝ V | (∀ j ∈ s, c j ≤ x (i (u j))) ∧ ∑ j ∈ s, (x (i (u j)) - c j) < ε}
-  have hsplit : facetPolyhedron i u c =
-      facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε) ∪ C := by
-    refine Subset.antisymm (fun x hxΔ ↦ ?_) (union_subset facetPolyhedron_cornerChop_subset ?_)
-    · by_cases hxε : ε ≤ ∑ j ∈ s, (x (i (u j)) - c j)
-      · exact Or.inl (mem_facetPolyhedron_cornerChop_iff.2 ⟨hxΔ, hxε⟩)
-      · exact Or.inr ⟨fun j _ ↦ mem_facetPolyhedron.1 hxΔ j, not_le.1 hxε⟩
-    · rintro x ⟨hxs, hxε⟩
-      refine mem_facetPolyhedron.2 fun k ↦ ?_
-      by_cases hk : k ∈ s
-      · exact hxs k hk
-      · exact (lt_apply_of_sum_le hx hε hxs hxε.le hk).le
   have hdisj : Disjoint (facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε)) C :=
     disjoint_left.2 fun x hx' hxC ↦
       (mem_facetPolyhedron_cornerChop_iff.1 hx').2.not_gt hxC.2
