@@ -107,6 +107,8 @@ range, so the value is a `dite` rather than a plain application.
   embeddings of `Fin n` skipping either of them.
 * `Fin.card_filter_prod_succAbove`: a count of pairs in `Fin (n + 1)` split at a point in each
   coordinate.
+* `Fin.card_filter_insertNth`: counting the indices of `Fin (n + 1)` at which `p.insertNth x f`
+  satisfies a predicate splits into the count on `f` and the indicator at `p`.
 * `Fin.val_orderSucc_of_lt` and `Fin.orderSucc_eq_self_of_not_lt`: the order successor of `Fin n`
   read off the value, below and at the top element.  Mathlib's `Fin.orderSucc_castSucc` and
   `Fin.orderSucc_last` state the same thing in the `castSucc`/`last` normal form; these are the
@@ -527,6 +529,15 @@ theorem card_filter_prod_succAbove {n : ℕ} (P : Fin (n + 1) × Fin (n + 1) →
   rw [sum_univ_succAbove _ a]
   simp_rw [sum_univ_succAbove _ b]
   rw [Finset.sum_add_distrib, ← add_assoc]
+
+/-- Counting the indices of `Fin (n + 1)` at which `p.insertNth x f` satisfies a predicate splits
+into the count on `f` and the indicator at `p`. -/
+theorem card_filter_insertNth {n : ℕ} {α : Fin (n + 1) → Sort*} (P : ∀ i, α i → Prop)
+    [∀ i, DecidablePred (P i)] (p : Fin (n + 1)) (x : α p) (f : ∀ i, α (p.succAbove i)) :
+    (Finset.univ.filter fun i ↦ P i (p.insertNth x f i)).card =
+      (Finset.univ.filter fun j ↦ P (p.succAbove j) (f j)).card + if P p x then 1 else 0 := by
+  rw [Finset.card_filter, Finset.card_filter, sum_univ_succAbove _ p, add_comm]
+  simp
 
 /-- Adding one commutes with `Fin.castSucc` away from the last index. -/
 theorem castSucc_add_one_of_ne_last {n : ℕ} {i : Fin (n + 1)} (hi : i ≠ last n) :

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.Embedding.Restriction.Shift
 public import TauCeti.KnotTheory.Khovanov.Resolution.Support
+import TauCeti.KnotTheory.Khovanov.Parity
 
 /-!
 # The normalized Khovanov complex
@@ -19,7 +20,8 @@ sign `(-1)^(#{b ∈ S | b < a})` on the saddle adding `a`.
 
 `khovanovComplexXIso` identifies its terms with the finite biproduct of these quantum pieces.
 The inclusions and projections characterize the terms, and `ι_khovanovComplex_d` gives the
-signed saddle differential. The complex is supported in `[-n₋, n₊]`.
+signed saddle differential. The complex is supported in `[-n₋, n₊]` in cochain degree and in
+quantum degrees congruent to `D.componentCount` modulo two.
 
 `khovanovComplexShiftIso` compares this explicit state convention to the native cochain shift
 of the bracket. Its degree-`i` component is `(-1)^(i * n₋)`, since native shifts change the
@@ -383,6 +385,17 @@ theorem isZero_khovanovComplex_X_of_quantum_notMem_Icc {j : ℤ}
   intro h
   rcases h with ⟨hl, hu⟩
   exact hj ⟨by omega, by omega⟩
+
+/-- Every chain group of the normalized Khovanov complex vanishes in quantum degrees whose parity
+differs from `D.componentCount`, over any commutative coefficient ring. -/
+theorem isZero_khovanovComplex_X_of_mod_two_ne {j : ℤ}
+    (hj : j % 2 ≠ (D.componentCount : ℤ) % 2) (i : ℤ) :
+    IsZero ((D.khovanovComplex hD R j).X i) := by
+  rw [khovanovComplex_X, Functor.isZero_cubeComplex_X_iff]
+  intro S
+  rw [D.resolutionCube_obj_normalized hD R j S.1, ModuleCat.isZero_of_iff_subsingleton,
+    Submodule.subsingleton_iff_eq_bot]
+  exact D.circleQuantumGrading_piece_eq_bot_of_mod_two_ne hD R (PDCode.cubeState S.1) hj
 
 /-- The normalized chain groups are supported in a finite rectangle in the two gradings
 jointly. -/

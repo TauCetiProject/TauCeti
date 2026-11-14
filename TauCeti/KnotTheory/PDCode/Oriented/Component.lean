@@ -137,7 +137,48 @@ def crossingComponentOfHalfEdge (h : Fin (4 * n)) : D.CrossingComponent :=
       D.crossingComponentOfHalfEdge (D.crossingTurn h) =
         ⟦⟨D.edgePair.val (D.crossingTurn h), he⟩⟧).trans (Quotient.sound ht.symm)
 
+-- Not `@[simp]`: `TauCeti.PDCode.crossing_apply` rewrites the left-hand side.
+/-- Opposite slots `k` and `k + 2` at a crossing belong to the same crossing-bearing component. -/
+theorem crossingComponentOfHalfEdge_crossing_add_two (i : Fin n) (k : Fin 4) :
+    D.crossingComponentOfHalfEdge (D.crossing i (k + 2)) =
+      D.crossingComponentOfHalfEdge (D.crossing i k) := by
+  rw [← PDCode.oppositeCrossingSlot_apply, ← D.crossingTurn_crossing, ← PDCode.crossing_apply,
+    crossingComponentOfHalfEdge_crossingTurn]
+
 end HalfEdge
+
+private theorem componentPermOutgoing_eq_subtypePerm (D : OrientedPDCode n) :
+    D.componentPermOutgoing =
+      D.toPDCode.componentPerm.subtypePerm (fun _ ↦ by simp only [orientation_componentPerm]) := by
+  ext h
+  simp
+
+/-- Pairing both endpoints of an arc preserves whether they share a `componentPerm`-cycle. -/
+private theorem sameCycle_componentPerm_edgePair_iff (D : OrientedPDCode n) {x y : Fin (4 * n)} :
+    D.toPDCode.componentPerm.SameCycle (D.edgePair.val x) (D.edgePair.val y) ↔
+      D.toPDCode.componentPerm.SameCycle x y := by
+  rw [PDCode.componentPerm_def]
+  exact D.toPDCode.isPerfectMatching_crossingTurn.involutive.sameCycle_apply_apply_iff
+    D.edgePair.prop.involutive
+
+/-- Two half-edges of the same orientation lie in one `componentPerm`-cycle if and only if they
+belong to the same crossing-bearing component of `D`. -/
+theorem sameCycle_componentPerm_iff_crossingComponentOfHalfEdge_eq (D : OrientedPDCode n)
+    {x y : Fin (4 * n)} (hxy : D.orientation x = D.orientation y) :
+    D.toPDCode.componentPerm.SameCycle x y ↔
+      D.crossingComponentOfHalfEdge x = D.crossingComponentOfHalfEdge y := by
+  cases hx : D.orientation x with
+  | false =>
+    have hy : D.orientation y = false := hxy.symm.trans hx
+    simp only [crossingComponentOfHalfEdge_of_incoming D x hx,
+      crossingComponentOfHalfEdge_of_incoming D y hy, Quotient.eq, SameCycle.setoid,
+      componentPermOutgoing_eq_subtypePerm, sameCycle_subtypePerm,
+      sameCycle_componentPerm_edgePair_iff]
+  | true =>
+    have hy : D.orientation y = true := hxy.symm.trans hx
+    simp only [crossingComponentOfHalfEdge_of_outgoing D x hx,
+      crossingComponentOfHalfEdge_of_outgoing D y hy, Quotient.eq, SameCycle.setoid,
+      componentPermOutgoing_eq_subtypePerm, sameCycle_subtypePerm]
 
 /-- The number of crossing-bearing component classes is the native crossing-component count. -/
 @[simp] theorem card_crossingComponent (D : OrientedPDCode n) :
@@ -149,6 +190,21 @@ end HalfEdge
 theorem card_component (D : OrientedPDCode n) :
     Nat.card D.Component = D.toPDCode.componentCount := by
   simp [Component, PDCode.componentCount_eq]
+
+/-- If two half-edges belong to distinct crossing-bearing components, `D` has at least two
+components. -/
+theorem two_le_componentCount_of_crossingComponentOfHalfEdge_ne (D : OrientedPDCode n)
+    {x y : Fin (4 * n)}
+    (hc : D.crossingComponentOfHalfEdge x ≠ D.crossingComponentOfHalfEdge y) :
+    2 ≤ D.componentCount := by
+  have : Nontrivial D.CrossingComponent := ⟨_, _, hc⟩
+  let _ := Fintype.ofFinite D.CrossingComponent
+  have hcard : 1 < Nat.card D.CrossingComponent := by
+    rw [Nat.card_eq_fintype_card]
+    exact Fintype.one_lt_card
+  rw [card_crossingComponent] at hcard
+  rw [PDCode.componentCount_eq]
+  omega
 
 /-- Every component either contains an outgoing half-edge or is a crossing-free label. -/
 theorem component_cases (D : OrientedPDCode n) (c : D.Component) :
@@ -311,3 +367,25 @@ theorem exists_reindex_eq {D : OrientedPDCode n} (o p : D.CrossinglessLabeling) 
 end CrossinglessLabeling
 
 end TauCeti.OrientedPDCode
+
+namespace TauCeti.PDCode
+
+open Equiv
+
+variable {n : ℕ}
+
+/-- The explicit crossing-free circle labelling retained by `D.orient choice`. -/
+def orientCrossinglessLabeling (D : PDCode n)
+    (choice : D.UnorientedComponent → Bool) : (D.orient choice).CrossinglessLabeling :=
+  ⟨choice ∘ Sum.inr ∘ finCongr (by simp), by
+    rw [← Function.comp_assoc, ← Multiset.map_map, Multiset.map_univ_val_equiv]
+    exact (D.crossinglessComponents_orient choice).symm⟩
+
+/-- Applying `orientCrossinglessLabeling` reads the supplied Boolean choice on `.inr i`. -/
+@[simp] theorem orientCrossinglessLabeling_apply (D : PDCode n)
+    (choice : D.UnorientedComponent → Bool)
+    (i : Fin (D.orient choice).crossinglessComponentCount) :
+    (D.orientCrossinglessLabeling choice).val i = choice (.inr (finCongr (by simp) i)) :=
+  (rfl)
+
+end TauCeti.PDCode
