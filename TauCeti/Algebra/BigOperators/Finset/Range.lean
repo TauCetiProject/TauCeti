@@ -250,7 +250,7 @@ theorem sum_range_min_diag_flip {B : Type*} [AddCommMonoid B]
 /-- The reindexing `(m, n, k) ↦ (n - k, k, m - k)` of the triangle `k ≤ min m n` identifies the
 expanded product of two scalar-weighted sums with the part of the cube where the reordered terms
 `Dy p * Dz k * Dx q` lie below the truncation `N`. -/
-private theorem sum_sigma_min_smul_eq_sum_filter_product {R : Type*} [CommMonoid R]
+theorem sum_sigma_min_smul_eq_sum_filter_product {R : Type*} [CommMonoid R]
     {B : Type*} [NonUnitalSemiring B] [DistribSMul R B] (Dx Dy Dz : ℕ → B) (N : ℕ) (t u : R) :
     ∑ w ∈ (range N ×ˢ range N).sigma (fun mn => range (min mn.1 mn.2 + 1)),
         (t ^ w.1.1 * u ^ w.1.2) • (Dy (w.1.2 - w.2) * Dz w.2 * Dx (w.1.1 - w.2)) =
