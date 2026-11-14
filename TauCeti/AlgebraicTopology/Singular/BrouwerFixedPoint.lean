@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Sphere
-public import TauCeti.Analysis.Convex.Intrinsic
-public import TauCeti.Analysis.InnerProductSpace.Sphere.Ray
-import TauCeti.CategoryTheory.ObjectProperty.Retract
+import TauCeti.Analysis.Convex.Intrinsic
+import TauCeti.Analysis.InnerProductSpace.Sphere.Ray
 import TauCeti.Topology.Homeomorph.FixedPoint
 
 /-!
@@ -80,8 +79,7 @@ theorem noRetraction_diskBoundary (n : ℕ) :
     have hD : IsZero (F.obj (TopCat.disk.{w} (m + 1))) :=
       isZero_reducedSingularHomologyFunctor_of_contractibleSpace R _ m
     -- The identity of `H~ₘ(Sᵐ)` factors through `H~ₘ(Dᵐ⁺¹) = 0`.
-    have hS : IsZero (F.obj (TopCat.diskBoundary.{w} (m + 1))) :=
-      ObjectProperty.prop_of_retract IsZero (ρ.map F) hD
+    have hS : IsZero (F.obj (TopCat.diskBoundary.{w} (m + 1))) := .of_epi (ρ.map F).r hD
     have : Subsingleton (ULift.{w} ℤ) := ModuleCat.isZero_iff_subsingleton.mp
       (hS.of_iso (reducedSingularHomologyTopCatSphereIso R m).symm)
     exact zero_ne_one (Subsingleton.elim (0 : ULift.{w} ℤ) 1)
@@ -97,7 +95,7 @@ theorem brouwerFixedPoint_topCatDisk (n : ℕ) (f : TopCat.disk.{w} n ⟶ TopCat
     Homeomorph.ulift
   let g : C(closedBall (0 : EuclideanSpace ℝ (Fin n)) 1,
       closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) :=
-    ContinuousMap.comp ⟨e, e.continuous⟩ (f.hom.comp ⟨e.symm, e.symm.continuous⟩)
+    (e : C(_, _)).comp (f.hom.comp e.symm)
   have hg (x) : g x ≠ x := fun h ↦ hf (e.symm x) (e.injective (by simpa [g] using h))
   let r : C(TopCat.disk.{w} n, TopCat.diskBoundary.{w} n) :=
     (eS.symm : C(sphere (0 : EuclideanSpace ℝ (Fin n)) 1, TopCat.diskBoundary.{w} n)).comp
@@ -111,7 +109,8 @@ theorem brouwerFixedPoint_topCatDisk (n : ℕ) (f : TopCat.disk.{w} n ⟶ TopCat
   change eS.symm (g.closedBallRayRetraction hg (e (TopCat.diskBoundaryInclusion n s))) = s
   rw [eS.symm_apply_eq]
   -- The boundary inclusion keeps the underlying point of the sphere.
-  have hs : (e (TopCat.diskBoundaryInclusion n s) : EuclideanSpace ℝ (Fin n)) = eS s := (rfl)
+  have hs : (e (TopCat.diskBoundaryInclusion n s) : EuclideanSpace ℝ (Fin n)) = eS s :=
+    TopCat.coe_diskBoundaryInclusion_apply_down n s
   exact Subtype.ext ((g.closedBallRayRetraction_apply_of_mem_sphere hg (hs ▸ (eS s).2)).trans hs)
 
 section CompactConvex
@@ -154,10 +153,9 @@ theorem brouwerFixedPoint_compactConvex_finiteSpan {E : Type*} [NormedAddCommGro
   have hCV' : C ⊆ range V.subtype := by simpa using hCV
   let e : (V.subtype ⁻¹' C : Set V) ≃ₜ C :=
     Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange hCV'
-  obtain ⟨x, hx⟩ := hne
   exact e.forall_exists_isFixedPt_iff.1 (brouwerFixedPoint_compactConvex
     ((Topology.IsInducing.subtypeVal.isCompact_preimage_iff hCV').2 hC)
-    (hconv.linear_preimage V.subtype) ⟨⟨x, hCV hx⟩, hx⟩) f
+    (hconv.linear_preimage V.subtype) (hne.preimage' hCV')) f
 
 /-- **Brouwer's fixed-point theorem for compact convex sets**, for a function on the ambient
 space: a function continuous on a nonempty compact convex subset `C` of a real normed space, whose

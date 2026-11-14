@@ -267,23 +267,15 @@ omit [FiniteDimensional ℝ E] in
 interior points. -/
 private theorem coe_apply_mem_interior (e : A ≃ₜ B) (hEF : finrank ℝ E = finrank ℝ F) {x : A}
     (hx : (x : M) ∈ interior A) : (e x : N) ∈ interior B := by
-  classical
-  -- Extend `e` arbitrarily off `A`; on the interior of `A` it is continuous and injective.
-  let g : M → N := fun y ↦ if hy : y ∈ A then e ⟨y, hy⟩ else e x
-  have hgA (y : A) : g y = e y := by simp [g]
-  have hg : ContinuousOn g (interior A) := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    convert (continuous_subtype_val.comp e.continuous).comp
-      (continuous_inclusion (interior_subset (s := A))) using 1
-    ext y
-    exact hgA ⟨y, interior_subset y.2⟩
-  have hginj : InjOn g (interior A) := fun y hy z hz hyz ↦ by
-    have := hgA ⟨y, interior_subset hy⟩ ▸ hgA ⟨z, interior_subset hz⟩ ▸ hyz
-    exact congrArg Subtype.val (e.injective (Subtype.ext this))
-  refine interior_maximal ?_ (isOpen_interior.image_of_continuousOn_of_injOn hg hginj hEF)
-    ⟨x, hx, hgA x⟩
-  rintro _ ⟨y, hy, rfl⟩
-  exact hgA ⟨y, interior_subset hy⟩ ▸ (e _).2
+  -- On the open submanifold `interior A`, `e` is a continuous injection into `N`.
+  let U : TopologicalSpace.Opens M := ⟨interior A, isOpen_interior⟩
+  let g : U → N := fun y ↦ e ⟨y, interior_subset y.2⟩
+  have hg : Continuous g :=
+    continuous_subtype_val.comp (e.continuous.comp (continuous_inclusion interior_subset))
+  have hginj : Injective g := fun y z hyz ↦
+    Subtype.ext (Subtype.mk.inj (e.injective (Subtype.ext hyz)))
+  exact interior_maximal (by rintro _ ⟨y, rfl⟩; exact (e _).2)
+    (hg.isOpenEmbedding_of_injective hginj hEF).isOpen_range ⟨⟨x, hx⟩, rfl⟩
 
 /-- **Invariance of interior points.** Let `A` and `B` be homeomorphic subsets of topological
 manifolds without boundary, charted on finite-dimensional real normed spaces of the same
