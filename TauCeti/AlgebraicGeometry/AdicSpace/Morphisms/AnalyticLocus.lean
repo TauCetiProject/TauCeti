@@ -74,23 +74,9 @@ theorem IsAdic.analyticLocusMap_comp {f : X ⟶ Y} {g : Y ⟶ Z}
 /-- The analytic-locus restriction square of an adic morphism is a pullback. In particular,
 this pullback exists without any finite-type or sheafiness hypotheses on charts. -/
 theorem IsAdic.isPullback_analyticLocusMap {f : X ⟶ Y} (hf : IsAdic f) :
-    IsPullback hf.analyticLocusMap (analyticLocus.ι X) (analyticLocus.ι Y) f := by
-  refine IsPullback.of_isLimit (c := PullbackCone.mk _ _ hf.analyticLocusMap_ι) ?_
-  refine PullbackCone.isLimitAux'
-    (PullbackCone.mk _ _ hf.analyticLocusMap_ι) fun s ↦ ?_
-  have hs : Set.range s.snd.hom.base ⊆ X.obj.analyticPoints := by
-    rintro _ ⟨t, rfl⟩
-    rw [← hf.preimage_analyticPoints]
-    have ht : (s.snd ≫ f).hom.base t ∈ Y.obj.analyticPoints := by
-      rw [← s.condition]
-      exact analyticLocus.range_ι Y ▸ Set.mem_range_self (s.fst.hom.base t)
-    exact ht
-  refine ⟨analyticLocus.lift s.snd hs, ?_, analyticLocus.lift_ι _ _, ?_⟩
-  · rw [← cancel_mono (analyticLocus.ι Y)]
-    simp only [PullbackCone.mk_fst, Category.assoc, IsAdic.analyticLocusMap_ι,
-      analyticLocus.lift_ι_assoc, s.condition]
-  · intro m _ hm
-    exact analyticLocus.lift_uniq _ _ m hm
+    IsPullback hf.analyticLocusMap (analyticLocus.ι X) (analyticLocus.ι Y) f :=
+  isPullback_of_isOpenImmersion _ _ _ _ hf.analyticLocusMap_ι <| by
+    rw [analyticLocus.range_ι, analyticLocus.range_ι, hf.preimage_analyticPoints]
 
 /-- A map from an analytic source factors through the analytic locus of the target exactly
 when it is adic. Uniqueness is `analyticLocus.lift_uniq`. -/

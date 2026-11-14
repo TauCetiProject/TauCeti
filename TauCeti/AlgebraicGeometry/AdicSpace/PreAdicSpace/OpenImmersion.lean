@@ -63,6 +63,11 @@ presheafed spaces (`CategoryTheory.GlueData.mapGlueData`).
   immersion `f` along `g` has image `g⁻¹(f(X))`.
 * `TauCeti.PreAdicSpace.IsOpenImmersion.forgetToPresheafedSpace_preservesPullback_of_left`: the
   forgetful functor to presheafed spaces preserves pullbacks of open immersions.
+* `TauCeti.PreAdicSpace.IsOpenImmersion.isPullback`: a commutative square with an open immersion
+  opposite a monomorphism is a pullback once the preimage of the image of the monomorphism lies in
+  the image of the open immersion.
+* `TauCeti.PreAdicSpace.Hom.isPullback_restrictPreimage`: for any `f : X ⟶ Y` and open `V ⊆ Y`,
+  the open subspace `f⁻¹(V)` is the pullback of `V ⟶ Y` along `f`.
 * `TauCeti.PreAdicSpace.Hom.prop_restrictPreimage_iff_of_isOpenImmersion`: a morphism that
   becomes the restriction of `f` over `V` after composing with open immersions onto `V` and onto
   `f⁻¹(V)` has the same isomorphism-invariant properties as that restriction.
@@ -379,6 +384,35 @@ instance forgetToPresheafedSpace_preservesPullback_of_right :
 
 end Pullback
 
+section IsPullback
+
+open Limits
+
+/-- **Pullback criterion along an open immersion.** A commutative square whose left side `iU` is
+an open immersion and whose right side `iV` is a monomorphism is a pullback square as soon as
+every point of `X` mapped by `g` into the image of `iV` lies in the image of `iU`. -/
+theorem isPullback {U V X Y : PreAdicSpace.{u}} (f : U ⟶ V) (iU : U ⟶ X) (iV : V ⟶ Y)
+    (g : X ⟶ Y) [IsOpenImmersion iU] [Mono iV] (w : f ≫ iV = iU ≫ g)
+    (hrange : g.base ⁻¹' Set.range iV.base ⊆ Set.range iU.base) : IsPullback f iU iV g := by
+  refine IsPullback.of_isLimit (c := PullbackCone.mk _ _ w) ?_
+  refine PullbackCone.isLimitAux' _ fun s ↦ ?_
+  have hs : Set.range s.snd.base ⊆ Set.range iU.base := by
+    rintro _ ⟨t, rfl⟩
+    exact hrange ⟨s.fst.base t, congrArg (fun φ : s.pt ⟶ Y ↦ φ.base t) s.condition⟩
+  refine ⟨lift iU s.snd hs, ?_, lift_fac _ _ _, fun {m} _ hm ↦ lift_uniq _ _ _ m hm⟩
+  rw [← cancel_mono iV, PullbackCone.mk_fst, Category.assoc, w, lift_fac_assoc, s.condition]
+
+/-- The factorization of an open immersion through another open immersion is an open
+immersion. -/
+instance lift_isOpenImmersion (f : X ⟶ Z) [IsOpenImmersion f] (g : Y ⟶ Z) [IsOpenImmersion g]
+    (H : Set.range g.base ⊆ Set.range f.base) : IsOpenImmersion (lift f g H) := by
+  have h : IsPullback (lift f g H) (𝟙 Y) f g :=
+    isPullback _ _ _ _ (by simp) (by simp)
+  rw [← h.isoPullback_hom_fst]
+  infer_instance
+
+end IsPullback
+
 end IsOpenImmersion
 
 section Restrict
@@ -514,6 +548,39 @@ theorem restrictPreimage_base_apply
     (f.restrictPreimage V).base x = ⟨f.base x.1, Opens.mem_map.mp x.2⟩ := by
   apply Subtype.ext
   exact congrArg (fun g ↦ g.base x) (f.restrictPreimage_ofRestrict V)
+
+/-- Restricting the identity over an open gives the identity. -/
+@[simp]
+theorem restrictPreimage_id (U : Opens X) : (𝟙 X : X ⟶ X).restrictPreimage U = 𝟙 _ :=
+  (restrictPreimage_uniq _ _ _ ((Category.id_comp _).trans (Category.comp_id _).symm)).symm
+
+/-- Restricting a composite over an open is composing the restrictions. -/
+theorem restrictPreimage_comp (g : Y ⟶ Z) (W : Opens Z) :
+    (f ≫ g).restrictPreimage W =
+      f.restrictPreimage ((Opens.map g.base).obj W) ≫ g.restrictPreimage W :=
+  (restrictPreimage_uniq _ _ _ (by simp)).symm
+
+/-- **Pullback along an open subspace.** For a morphism `f : X ⟶ Y` of pre-adic spaces and an open
+`V ⊆ Y`, the open subspace `f⁻¹(V)` with the restriction `f⁻¹(V) ⟶ V` and its inclusion into `X` is
+the pullback of `V ⟶ Y` along `f`, with no hypothesis on `f`. -/
+theorem isPullback_restrictPreimage :
+    IsPullback (f.restrictPreimage V) (X.ofRestrict ((Opens.map f.base).obj V).isOpenEmbedding)
+      (Y.ofRestrict V.isOpenEmbedding) f :=
+  IsOpenImmersion.isPullback _ _ _ _ (f.restrictPreimage_ofRestrict V) <| by
+    rintro x ⟨y, hy⟩
+    refine ⟨⟨x, ?_⟩, rfl⟩
+    rw [ofRestrict_base] at hy
+    rw [Opens.mem_map, ← hy]
+    exact y.2
+
+/-- The restriction of an isomorphism over an open is an isomorphism. -/
+instance [IsIso f] : IsIso (f.restrictPreimage V) :=
+  (f.isPullback_restrictPreimage V).isIso_fst_of_isIso
+
+/-- The restriction of an open immersion over an open is an open immersion. -/
+instance [IsOpenImmersion f] : IsOpenImmersion (f.restrictPreimage V) := by
+  rw [← (f.isPullback_restrictPreimage V).isoPullback_hom_fst]
+  infer_instance
 
 
 /-- **Restrictions of a morphism can be recognized through open immersions.** Let `f : X ⟶ Y` be
