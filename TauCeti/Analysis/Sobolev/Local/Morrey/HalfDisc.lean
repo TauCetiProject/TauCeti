@@ -22,10 +22,10 @@ of `U`, with the local Morrey inequality across the axis.
 The representative is `TauCeti.halfPlanePreciseRepresentative u`, the precise representative of
 the even reflection `TauCeti.planarReflection (higherReflectionCoeff 1) u` of `u` across the real
 axis. In the open upper half-plane it is the precise representative of `u` itself
-(`TauCeti.halfPlanePreciseRepresentative_of_im_pos`). The proof reflects: near a real point
-`x ∈ Ω` the reflection is in `W^{k,p}_loc` of a disc centred at `x`, and off the axis it agrees
-with `u`, so by locality it is in `W^{k,p}_loc` of an open neighbourhood of `U` in `Ω`
-(`TauCeti.MemWkpLoc.exists_opens_memWkpLoc_planarReflection`, in
+(`TauCeti.halfPlanePreciseRepresentative_of_im_pos`). The proof reflects: the reflection is in
+`W^{k,p}_loc` of the reflection core of `Ω`, an open neighbourhood of `U` in `Ω` that is stable
+under the reflection
+(`TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore`, in
 `TauCeti.Analysis.Sobolev.Local.Reflection`). The interior Morrey theorems of
 `TauCeti.Analysis.Sobolev.Local.Morrey` then apply to the reflection.
 
@@ -98,10 +98,11 @@ everywhere on `Ω ∩ {0 ≤ im}`. -/
 theorem MemWkpLoc.ae_eq_halfPlanePreciseRepresentative [CompleteSpace F] (hp : 1 ≤ p)
     (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 u) :
     u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] halfPlanePreciseRepresentative u := by
-  obtain ⟨V, hUV, -, hV⟩ := hu.exists_opens_memWkpLoc_planarReflection hp
+  have hV := hu.planarReflection_higherReflectionCoeff_reflectionCore hp
   have hU : MeasurableSet ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :=
     Ω.isOpen.measurableSet.inter (measurableSet_le measurable_const measurable_im)
-  filter_upwards [ae_restrict_of_ae_restrict_of_subset hUV
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset
+    Ω.inter_setOf_im_nonneg_subset_reflectionCore
     (hV.memLpLoc.ae_eq_preciseRepresentative hp), ae_restrict_mem hU] with z hz hzU
   rw [halfPlanePreciseRepresentative_def, ← hz, planarReflection_of_nonneg _ _ hzU.2]
 
@@ -112,9 +113,9 @@ variable [FiniteDimensional ℝ F]
 `Ω ∩ {0 ≤ im}`. -/
 theorem MemWkpLoc.continuousOn_halfPlanePreciseRepresentative (hp : 2 < p)
     (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 u) :
-    ContinuousOn (halfPlanePreciseRepresentative u) ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := by
-  obtain ⟨V, hUV, -, hV⟩ := hu.exists_opens_memWkpLoc_planarReflection (one_le_two.trans hp.le)
-  exact (hV.continuousOn_preciseRepresentative hp).mono hUV
+    ContinuousOn (halfPlanePreciseRepresentative u) ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :=
+  ((hu.planarReflection_higherReflectionCoeff_reflectionCore (one_le_two.trans hp.le))
+    |>.continuousOn_preciseRepresentative hp).mono Ω.inter_setOf_im_nonneg_subset_reflectionCore
 
 /-- **Morrey's embedding up to the real axis.** For `2 < p ≤ ∞`, the representative
 `TauCeti.halfPlanePreciseRepresentative u` of `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) 1` is Hölder
@@ -124,9 +125,10 @@ theorem MemWkpLoc.exists_holderOnWith_halfPlanePreciseRepresentative_of_isCompac
     (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 u) {K : Set ℂ} (hK : IsCompact K)
     (hKU : K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :
     ∃ C : ℝ≥0, HolderOnWith C ((1 : ℝ≥0∞) - 2 / p).toNNReal
-      (halfPlanePreciseRepresentative u) K := by
-  obtain ⟨V, hUV, -, hV⟩ := hu.exists_opens_memWkpLoc_planarReflection (one_le_two.trans hp.le)
-  exact hV.exists_holderOnWith_preciseRepresentative_of_isCompact hp hK (hKU.trans hUV)
+      (halfPlanePreciseRepresentative u) K :=
+  (hu.planarReflection_higherReflectionCoeff_reflectionCore (one_le_two.trans hp.le))
+    |>.exists_holderOnWith_preciseRepresentative_of_isCompact hp hK
+      (hKU.trans Ω.inter_setOf_im_nonneg_subset_reflectionCore)
 
 /-- **`W^{1,∞}` maps on half-discs are Lipschitz up to the real axis.** At `p = ∞` the
 representative `TauCeti.halfPlanePreciseRepresentative u` is Lipschitz on every compact subset of
@@ -134,9 +136,10 @@ representative `TauCeti.halfPlanePreciseRepresentative u` is Lipschitz on every 
 theorem MemWkpLoc.exists_lipschitzOnWith_halfPlanePreciseRepresentative_of_isCompact
     (hu : MemWkpLoc ∞ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 u) {K : Set ℂ} (hK : IsCompact K)
     (hKU : K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :
-    ∃ C : ℝ≥0, LipschitzOnWith C (halfPlanePreciseRepresentative u) K := by
-  obtain ⟨V, hUV, -, hV⟩ := hu.exists_opens_memWkpLoc_planarReflection le_top
-  exact hV.exists_lipschitzOnWith_preciseRepresentative_of_isCompact hK (hKU.trans hUV)
+    ∃ C : ℝ≥0, LipschitzOnWith C (halfPlanePreciseRepresentative u) K :=
+  (hu.planarReflection_higherReflectionCoeff_reflectionCore le_top)
+    |>.exists_lipschitzOnWith_preciseRepresentative_of_isCompact hK
+      (hKU.trans Ω.inter_setOf_im_nonneg_subset_reflectionCore)
 
 /-! ### The local Morrey inequality across the real axis -/
 

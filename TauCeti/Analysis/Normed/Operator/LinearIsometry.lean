@@ -36,6 +36,12 @@ variable {𝕜 𝕜₂ 𝕜₃ D E F : Type*}
     (i : E →ₛₗᵢ[σ₂₃] F) (f : D →SL[σ₁₂] E) (x : D) :
     postcomp (σ₁₂ := σ₁₂) (σ₁₃ := σ₁₃) i f x = i (f x) := rfl
 
+/-- Postcomposition by a linear isometry is composition with its underlying continuous linear
+map. -/
+theorem postcomp_eq_comp [SeminormedAddCommGroup E] [NormedSpace 𝕜₂ E]
+    (i : E →ₛₗᵢ[σ₂₃] F) (f : D →SL[σ₁₂] E) :
+    postcomp (σ₁₂ := σ₁₂) (σ₁₃ := σ₁₃) i f = i.toContinuousLinearMap.comp f := rfl
+
 variable [NormedAddCommGroup E] [NormedSpace 𝕜₂ E]
 
 /-- The range of postcomposition by a linear isometry consists exactly of the continuous linear

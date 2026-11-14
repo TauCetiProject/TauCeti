@@ -61,6 +61,17 @@ theorem imDilation_imDilation (c c' : ℝ) (z : ℂ) :
     imDilation c (imDilation c' z) = imDilation (c * c') z :=
   Complex.ext rfl (by simp [mul_assoc])
 
+/-- The normal dilation depends continuously on the factor, in the operator norm: it is
+`x + y i ↦ x + c y i = re + c • (im • I)`. -/
+@[continuity, fun_prop]
+theorem continuous_imDilation : Continuous imDilation := by
+  have h : imDilation =
+      fun c : ℝ => Complex.reCLM.smulRight (1 : ℂ) + c • Complex.imCLM.smulRight I := by
+    funext c
+    refine ContinuousLinearMap.ext fun z => Complex.ext ?_ ?_ <;> simp
+  rw [h]
+  fun_prop
+
 /-- The dilation by one is the identity. -/
 @[simp]
 theorem imDilation_one_apply (z : ℂ) : imDilation 1 z = z :=
