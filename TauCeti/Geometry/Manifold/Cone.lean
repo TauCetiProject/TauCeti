@@ -120,6 +120,12 @@ theorem mdifferentiableAt_parametrization {f : M → F} {p : radiusDomain × M}
   exact ((contMDiff_subtype_val.comp contMDiff_fst).mdifferentiableAt one_ne_zero).smul
     (hf.comp p mdifferentiableAt_snd)
 
+/-- Differentiability of a cone parametrization follows from differentiability of its link. -/
+theorem mdifferentiable_parametrization {f : M → F}
+    (hf : MDifferentiable I 𝓘(ℝ, F) f) :
+    MDifferentiable ((𝓘(ℝ)).prod I) 𝓘(ℝ, F) (parametrization f) := by
+  exact fun p ↦ mdifferentiableAt_parametrization (hf p.2)
+
 /-- The differential of the cone parametrization is the sum of its radial and link parts. -/
 theorem mvfderiv_parametrization_apply {f : M → F} {p : radiusDomain × M}
     (hf : MDifferentiableAt I 𝓘(ℝ, F) f p.2)
@@ -148,5 +154,13 @@ theorem mvfderiv_parametrization_radial {f : M → F} {p : radiusDomain × M}
       ((tangentSpaceProdEquiv p).symm (radialVector p.1, 0)) = f p.2 := by
   rw [mvfderiv_parametrization_apply hf, ContinuousLinearEquiv.apply_symm_apply]
   simp only [map_zero, smul_zero, zero_add, mvfderiv_subtype_val_radialVector, one_smul]
+
+/-- The differential in a link direction is the link differential scaled by the radius. -/
+theorem mvfderiv_parametrization_link {f : M → F} {p : radiusDomain × M}
+    (hf : MDifferentiableAt I 𝓘(ℝ, F) f p.2) (w : TangentSpace I p.2) :
+    mvfderiv ((𝓘(ℝ)).prod I) (parametrization f) p
+      ((tangentSpaceProdEquiv p).symm (0, w)) = (p.1 : ℝ) • mvfderiv I f p.2 w := by
+  rw [mvfderiv_parametrization_apply hf, ContinuousLinearEquiv.apply_symm_apply]
+  simp only [map_zero, zero_smul, add_zero]
 
 end TauCeti.Manifold.Cone

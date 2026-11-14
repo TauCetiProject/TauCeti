@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Cone
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.WarpedProd
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 
 /-!
 # The Riemannian cone metric
@@ -61,23 +62,67 @@ def cone (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) 
     ContMDiffRiemannianMetric ((𝓘(ℝ)).prod I) n (ℝ × E)
       (fun p : radiusDomain × M ↦ TangentSpace ((𝓘(ℝ)).prod I) p) :=
   ContMDiffRiemannianMetric.warpedProdTangentSpace
-    (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle :
-      ContMDiffRiemannianMetric 𝓘(ℝ) n ℝ (fun r : radiusDomain ↦ TangentSpace 𝓘(ℝ) r))
+    (((riemannianMetricVectorSpace ℝ).ofLE le_top).restrictOpenTangentSpace radiusDomain)
     (fun r : radiusDomain ↦ (r : ℝ)) contMDiff_subtype_val
     (fun r ↦ (coe_radiusDomain_pos r).ne') g
 
+/-- The cone metric is the warped product of the restricted real metric and the link metric. -/
+theorem cone_eq_warpedProdTangentSpace
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) :
+    cone g =
+      warpedProdTangentSpace
+        (((riemannianMetricVectorSpace ℝ).ofLE le_top).restrictOpenTangentSpace radiusDomain)
+        (fun r : radiusDomain ↦ (r : ℝ)) contMDiff_subtype_val
+        (fun r ↦ (coe_radiusDomain_pos r).ne') g :=
+  (rfl)
+
+/-- Forgetting smoothness gives the warped product of the underlying radial and link metrics. -/
+@[simp]
+theorem cone_toRiemannianMetric
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) :
+    (cone g).toRiemannianMetric =
+      RiemannianMetric.warpedProdTangentSpace
+        ((riemannianMetricVectorSpace ℝ).toRiemannianMetric.restrictOpenTangentSpace radiusDomain)
+        (fun r : radiusDomain ↦ (r : ℝ))
+        (fun r ↦ (coe_radiusDomain_pos r).ne') g.toRiemannianMetric := by
+  rw [cone, warpedProdTangentSpace_toRiemannianMetric,
+    restrictOpenTangentSpace_toRiemannianMetric, toRiemannianMetric_ofLE]
+
+/-- Lowering regularity commutes with constructing the cone metric. -/
+@[simp]
+theorem ofLE_cone (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    {m : ℕ∞ω} (h : m ≤ n) :
+    (cone g).ofLE h = cone (g.ofLE h) := by
+  ext p v w
+  simp only [cone, ofLE_inner, warpedProdTangentSpace_inner, restrictOpenTangentSpace_inner]
+
 /-- The cone metric is the orthogonal sum of the radial metric and the link metric
 multiplied by radius squared. -/
-@[simp]
 theorem cone_inner (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
     (p : radiusDomain × M) (v w : TangentSpace ((𝓘(ℝ)).prod I) p) :
+    letI := instRiemannianBundleOpen (I := 𝓘(ℝ)) radiusDomain
     (cone g).inner p v w =
       Inner.inner ℝ (tangentSpaceProdEquiv p v).1 (tangentSpaceProdEquiv p w).1 +
         (p.1 : ℝ) ^ 2 * g.inner p.2
           (tangentSpaceProdEquiv p v).2 (tangentSpaceProdEquiv p w).2 := by
+  rw [inner_tangentSpace_open]
   rw [cone, ContMDiffRiemannianMetric.warpedProdTangentSpace_inner,
-    ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
+    ContMDiffRiemannianMetric.restrictOpenTangentSpace_inner, ofLE_inner]
   rfl
+
+/-- The cone metric pairs radial coordinate velocities and adds the radius-scaled link metric. -/
+@[simp]
+theorem cone_inner_eq_mvfderiv
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    (p : radiusDomain × M) (v w : TangentSpace ((𝓘(ℝ)).prod I) p) :
+    (cone g).inner p v w =
+      mvfderiv 𝓘(ℝ) (Subtype.val : radiusDomain → ℝ) p.1
+          (tangentSpaceProdEquiv p v).1 *
+        mvfderiv 𝓘(ℝ) (Subtype.val : radiusDomain → ℝ) p.1
+          (tangentSpaceProdEquiv p w).1 +
+        (p.1 : ℝ) ^ 2 * g.inner p.2
+          (tangentSpaceProdEquiv p v).2 (tangentSpaceProdEquiv p w).2 := by
+  rw [cone_inner, inner_tangentSpace_open_vectorSpace, Real.inner_apply]
 
 /-- Installing the constructed metric gives the native warped-product structure of the
 regular cone. -/
