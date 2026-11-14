@@ -36,6 +36,14 @@ public section
 
 open scoped ComplexOrder Matrix
 
+/-- Every finite preorder with decidable `≤` is a `LocallyFiniteOrderBot`, with `Finset.Iic a` the
+elements below `a`. This is useful for applying results stated for a `LocallyFiniteOrderBot` index
+type, such as Mathlib's `LDL` decomposition, to any finite linear order. It is not an instance, so
+it never competes with a `LocallyFiniteOrderBot` that the index type already carries. -/
+abbrev Fintype.toLocallyFiniteOrderBot (n : Type*) [Preorder n] [Fintype n] [DecidableLE n] :
+    LocallyFiniteOrderBot n :=
+  LocallyFiniteOrderBot.ofIic' n (fun a => Finset.univ.filter (· ≤ a)) (by simp)
+
 namespace TauCeti
 
 variable {𝕜 n : Type*} [RCLike 𝕜] [LinearOrder n]
@@ -70,6 +78,7 @@ theorem _root_.LDL.lower_apply_diag (i : n) : LDL.lower hS i i = 1 := by
     (LDL.lowerInv_apply_diag hS i)
   simpa [LDL.lower, ← Matrix.transpose_nonsing_inv] using hinv
 
+omit [LocallyFiniteOrderBot n] in
 include hS in
 open Matrix in
 /-- **Cholesky factorization**: a positive-definite matrix over `ℝ` or `ℂ` is `Bᴴ B` for an upper
@@ -77,6 +86,7 @@ triangular `B` with positive diagonal. Writing the LDL decomposition as `S = L D
 lower unitriangular and `D` diagonal with positive real entries, take `B = √D Lᴴ`. -/
 theorem _root_.Matrix.PosDef.exists_isUpperTriangular_conjTranspose_mul_self_eq :
     ∃ B : Matrix n n 𝕜, B.IsUpperTriangular ∧ (∀ i, 0 < B i i) ∧ Bᴴ * B = S := by
+  let := Fintype.toLocallyFiniteOrderBot n
   have hd := LDL.diagEntries_pos hS
   -- the diagonal entries of `D` are the positive reals `re (d i)`
   have hre (i : n) : ((RCLike.re (LDL.diagEntries hS i) : ℝ) : 𝕜) = LDL.diagEntries hS i := by
@@ -113,10 +123,7 @@ there is an upper triangular `P` with `Pᴴ * S * P = 1`. If `L * S * Lᴴ = D` 
 decomposition, then `P = Lᴴ * D^{-1/2}`. -/
 theorem exists_isUpperTriangular_conjTranspose_mul_mul_eq_one (hS : S.PosDef) :
     ∃ P : Matrix n n 𝕜, P.IsUpperTriangular ∧ Pᴴ * S * P = 1 := by
-  -- Mathlib's `LDL` decomposition is stated for a `LocallyFiniteOrderBot` index type. Every finite
-  -- linear order is one, and the conclusion does not depend on the choice of instance.
-  let : LocallyFiniteOrderBot n :=
-    LocallyFiniteOrderBot.ofIic n (fun a => Finset.univ.filter (· ≤ a)) (by simp)
+  let := Fintype.toLocallyFiniteOrderBot n
   have hd : ∀ i, ∃ x : ℝ, 0 < x ∧ (x : 𝕜) = LDL.diagEntries hS i := fun i =>
     RCLike.pos_iff_exists_ofReal.1 (LDL.diagEntries_pos hS i)
   choose x hx hxd using hd

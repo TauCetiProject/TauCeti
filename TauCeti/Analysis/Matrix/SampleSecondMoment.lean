@@ -9,6 +9,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.Analysis.Convex.FiniteMean
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # The empirical second-moment matrix
@@ -29,7 +30,7 @@ entry by entry.
 * `TauCeti.sampleSecondMoment`: the empirical second-moment matrix of a finite sample.
 * `TauCeti.sampleSecondMoment_apply`: its entries are sample means of coordinate products.
 * `TauCeti.isHermitian_sampleSecondMoment`, `TauCeti.posSemidef_sampleSecondMoment`: it is
-  Hermitian, and positive semidefinite in finite dimension.
+  Hermitian and positive semidefinite.
 * `Matrix.sampleCovariance`: the sample covariance matrix `X Xᴴ / n` of a `p × n` data matrix, whose
   columns are the samples; `Matrix.sampleCovariance_eq_sampleSecondMoment` identifies it with the
   empirical second-moment matrix of the columns, and `Matrix.isHermitian_sampleCovariance` and
@@ -74,11 +75,17 @@ theorem isHermitian_sampleSecondMoment (v : ι → n → 𝕜) : (sampleSecondMo
     simp [finiteMean_eq_inv_smul_sum, star_sum, mul_comm]
 
 /-- The empirical second-moment matrix is positive semidefinite. -/
-theorem posSemidef_sampleSecondMoment [Finite n] (v : ι → n → 𝕜) :
+theorem posSemidef_sampleSecondMoment (v : ι → n → 𝕜) :
     (sampleSecondMoment v).PosSemidef := by
-  have := Fintype.ofFinite n
   rw [sampleSecondMoment_def, finiteMean_eq_inv_smul_sum]
-  exact (posSemidef_sum _ fun i _ ↦ posSemidef_vecMulVec_self_star (v i)).smul (by positivity)
+  refine (posSemidef_sum _ fun i _ ↦ ?_).smul (by positivity)
+  -- Mathlib proves positive semidefiniteness of `vecMulVec a (star a)` only for finite `n`;
+  -- `posSemidef_rankOne` holds for every index type.
+  have h : vecMulVec (v i) (star (v i)) = fun k l ↦ star (star (v i) k) * star (v i) l := by
+    ext k l
+    simp [vecMulVec_apply]
+  rw [h]
+  exact posSemidef_rankOne (star (v i))
 
 end TauCeti
 
@@ -124,7 +131,7 @@ theorem isHermitian_sampleCovariance (X : Matrix p n 𝕜) : (sampleCovariance X
   exact TauCeti.isHermitian_sampleSecondMoment _
 
 /-- The sample covariance matrix is positive semidefinite. -/
-theorem posSemidef_sampleCovariance [Finite p] (X : Matrix p n 𝕜) :
+theorem posSemidef_sampleCovariance (X : Matrix p n 𝕜) :
     (sampleCovariance X).PosSemidef := by
   rw [sampleCovariance_eq_sampleSecondMoment]
   exact TauCeti.posSemidef_sampleSecondMoment _
