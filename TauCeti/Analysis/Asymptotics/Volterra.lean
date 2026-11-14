@@ -44,7 +44,8 @@ the scalar multiplications are products of complex numbers.
 * `TauCeti.exists_volterra_solution`: existence of a continuous solution with the bound
   `‖h x‖ ≤ P x * Φ x * exp (Ψ x)`.
 
-The solution is the sum of the Picard iterates. The `k`-th increment is bounded by
+A solution is constructed as the sum of the Picard increments (the Liouville–Neumann series).
+The `k`-th increment is bounded by
 `P x * Φ x * Ψ x ^ k / k!`, by the identity `∫ v in Ioi x, g v * Ψ v ^ k = Ψ x ^ (k + 1) / (k + 1)`
 for `Ψ` the tail integral of `g` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_pow_integral_Ioi`).
 The discrete analogue is `TauCeti.exists_discrete_volterra_solution`.
@@ -79,25 +80,21 @@ private lemma integral_Ioi_nonneg {f : ℝ → ℝ} (hf0 : ∀ v ∈ Ioi a, 0 �
     (hx : a < x) : 0 ≤ ∫ v in Ioi x, f v :=
   setIntegral_nonneg measurableSet_Ioi fun v hv ↦ hf0 v (hx.trans hv)
 
-/-- The bound `p * s' * (t' ^ k / k!)` of a Picard increment at a point `v ≥ x`, whose tail
-integrals `s' ≤ s` and `t' ≤ t` are those at `x`, is at most `s * (t ^ k / k!) * p`. -/
-private lemma mul_pow_div_factorial_le {p s s' t t' : ℝ} (k : ℕ) (hp : 0 ≤ p) (hs' : 0 ≤ s')
-    (ht' : 0 ≤ t') (hs : s' ≤ s) (ht : t' ≤ t) :
-    p * s' * (t' ^ k / k !) ≤ s * (t ^ k / k !) * p :=
-  calc p * s' * (t' ^ k / k !) ≤ p * s * (t ^ k / k !) :=
-        mul_le_mul (mul_le_mul_of_nonneg_left hs hp)
-          (div_le_div_of_nonneg_right (pow_le_pow_left₀ ht' ht k) (by positivity))
-          (by positivity) (mul_nonneg hp (hs'.trans hs))
-    _ = s * (t ^ k / k !) * p := by ring
+omit [NormedSpace 𝕜 E] [NormedSpace ℝ E] in
+/-- The forcing weights `Q v * ‖J v‖` are nonnegative on `(a, ∞)`. -/
+private lemma forcing_weight_nonneg (hQ0 : ∀ v ∈ Ioi a, 0 ≤ Q v) :
+    ∀ v ∈ Ioi a, 0 ≤ Q v * ‖J v‖ :=
+  fun v hv ↦ mul_nonneg (hQ0 v hv) (norm_nonneg _)
 
-/-- The bound `p * s' * exp t'` of a solution at a point `v ≥ x`, whose tail integrals
-`s' ≤ s` and `t' ≤ t` are those at `x`, is at most `s * exp t * p`. -/
-private lemma mul_exp_le {p s s' t t' : ℝ} (hp : 0 ≤ p) (hs' : 0 ≤ s') (hs : s' ≤ s)
-    (ht : t' ≤ t) : p * s' * Real.exp t' ≤ s * Real.exp t * p :=
-  calc p * s' * Real.exp t' ≤ p * s * Real.exp t :=
-        mul_le_mul (mul_le_mul_of_nonneg_left hs hp) (Real.exp_le_exp.2 ht) (by positivity)
-          (mul_nonneg hp (hs'.trans hs))
-    _ = s * Real.exp t * p := by ring
+/-- The coefficient weights `P v * Q v * ‖ψ v‖` are nonnegative on `(a, ∞)`. -/
+private lemma coeff_weight_nonneg (hP0 : ∀ v ∈ Ioi a, 0 ≤ P v) (hQ0 : ∀ v ∈ Ioi a, 0 ≤ Q v) :
+    ∀ v ∈ Ioi a, 0 ≤ P v * Q v * ‖ψ v‖ :=
+  fun v hv ↦ mul_nonneg (mul_nonneg (hP0 v hv) (hQ0 v hv)) (norm_nonneg _)
+
+/-- The Picard bound factors `t ↦ t ^ k / k!` are monotone on `[0, ∞)`. -/
+private lemma monotoneOn_pow_div_factorial (k : ℕ) :
+    MonotoneOn (fun t : ℝ ↦ t ^ k / k !) (Ici 0) :=
+  fun _ hs _ _ hst ↦ div_le_div_of_nonneg_right (pow_le_pow_left₀ hs hst k) (by positivity)
 
 omit [NormedSpace ℝ E] in
 /-- The separable bound for `v ↦ K x v • y` on `[x, ∞)`. -/
@@ -179,10 +176,9 @@ private lemma continuousOn_integral_kernel_smul
           fun p hp ↦ ⟨hp.1, hp.2.le⟩
       have hKv : ContinuousAt (fun x ↦ K x v) x₀ :=
         (hK.continuousAt hmem).comp (f := fun x ↦ (x, v)) (by fun_prop)
-      refine (show ContinuousAt (fun x ↦ K x v • F v) x₀ from
-        hKv.smul continuousAt_const).congr ?_
-      filter_upwards [Iio_mem_nhds hgt] with x hx
-      rw [indicator_of_mem (show v ∈ Ioi x from hx)]
+      refine (hKv.fun_smul (continuousAt_const (y := F v))).congr ?_
+      filter_upwards [gt_mem_nhds hgt] with x hx
+      rw [indicator_of_mem (mem_Ioi.2 hx)]
 
 /-- The increments of the Picard iteration for the Volterra equation: the `0`-th is
 `x ↦ ∫ v in Ioi x, K x v • J v`, and each further one applies
@@ -220,6 +216,27 @@ private lemma integrableOn_weight_smul {F : ℝ → E} (hF : ContinuousOn F (Ioi
         mul_le_mul_of_nonneg_left (hFle v hv) hQψ
     _ = C * (P v * Q v * ‖ψ v‖) := by ring
 
+omit [NormedSpace 𝕜 E] [NormedSpace ℝ E] in
+include hP0 hQ0 hΦ hΨ in
+/-- For `a < x ≤ v` and `f` monotone and nonnegative on `[0, ∞)`, the bound
+`P v * Φ v * f (Ψ v)` at `v` is at most `Φ x * f (Ψ x) * P v`, where `Φ` and `Ψ` are the forcing
+and coefficient tail integrals. -/
+private lemma mul_tail_le_of_le {f : ℝ → ℝ} (hf : MonotoneOn f (Ici 0))
+    (hf0 : ∀ t, 0 ≤ t → 0 ≤ f t) {x v : ℝ} (hx : a < x) (hv : x ≤ v) :
+    P v * (∫ u in Ioi v, Q u * ‖J u‖) * f (∫ u in Ioi v, P u * Q u * ‖ψ u‖) ≤
+      (∫ u in Ioi x, Q u * ‖J u‖) * f (∫ u in Ioi x, P u * Q u * ‖ψ u‖) * P v := by
+  have hva : a < v := hx.trans_le hv
+  have hPv := hP0 v hva
+  have hΦx := integral_Ioi_nonneg (forcing_weight_nonneg (J := J) hQ0) hx
+  have hΨv := integral_Ioi_nonneg (coeff_weight_nonneg (ψ := ψ) hP0 hQ0) hva
+  have hΨle := integral_Ioi_le_integral_Ioi (coeff_weight_nonneg hP0 hQ0) hx hv (hΨ x hx)
+  have hfv := hf0 _ hΨv
+  calc _ ≤ P v * (∫ u in Ioi x, Q u * ‖J u‖) * f (∫ u in Ioi x, P u * Q u * ‖ψ u‖) := by
+        gcongr P v * ?_ * ?_
+        · exact integral_Ioi_le_integral_Ioi (forcing_weight_nonneg hQ0) hx hv (hΦ x hx)
+        · exact hf hΨv (hΨv.trans hΨle) hΨle
+    _ = _ := by ring
+
 include hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ
 
 /-- The Picard increments are continuous on `(a, ∞)`, and the `k`-th is bounded by
@@ -228,9 +245,6 @@ private lemma picardTerm_spec (k : ℕ) :
     ContinuousOn (picardTerm K J ψ k) (Ioi a) ∧ ∀ x ∈ Ioi a, ‖picardTerm K J ψ k x‖ ≤
       P x * (∫ v in Ioi x, Q v * ‖J v‖) *
         ((∫ v in Ioi x, P v * Q v * ‖ψ v‖) ^ k / k !) := by
-  have hg0 : ∀ v ∈ Ioi a, 0 ≤ P v * Q v * ‖ψ v‖ := fun v hv ↦
-    mul_nonneg (mul_nonneg (hP0 v hv) (hQ0 v hv)) (norm_nonneg _)
-  have hJ0 : ∀ v ∈ Ioi a, 0 ≤ Q v * ‖J v‖ := fun v hv ↦ mul_nonneg (hQ0 v hv) (norm_nonneg _)
   induction k with
   | zero =>
     refine ⟨continuousOn_integral_kernel_smul hK hKle hP hQ0 hJ hΦ, fun x hx ↦ ?_⟩
@@ -241,37 +255,32 @@ private lemma picardTerm_spec (k : ℕ) :
     have hFint : ∀ x ∈ Ioi a,
         IntegrableOn (fun v ↦ Q v * ‖ψ v • picardTerm K J ψ k v‖) (Ioi x) := fun x hx ↦
       integrableOn_weight_smul hψ hQ hQ0 hΨ hcont hx (C := (∫ v in Ioi x, Q v * ‖J v‖) *
-        ((∫ v in Ioi x, P v * Q v * ‖ψ v‖) ^ k / k !)) fun v (hv : x < v) ↦ by
-          have hva : a < v := hx.trans hv
-          exact (hle v hva).trans (mul_pow_div_factorial_le k (hP0 v hva)
-            (integral_Ioi_nonneg hJ0 hva) (integral_Ioi_nonneg hg0 hva)
-            (integral_Ioi_le_integral_Ioi hJ0 hx hv.le (hΦ x hx))
-            (integral_Ioi_le_integral_Ioi hg0 hx hv.le (hΨ x hx)))
+        ((∫ v in Ioi x, P v * Q v * ‖ψ v‖) ^ k / k !)) fun v (hv : x < v) ↦
+        (hle v (hx.trans hv)).trans (mul_tail_le_of_le hP0 hQ0 hΦ hΨ
+          (monotoneOn_pow_div_factorial k) (fun _ _ ↦ by positivity) hx hv.le)
     refine ⟨continuousOn_integral_kernel_smul hK hKle hP hQ0 (hψ.smul hcont) hFint,
       fun x hx ↦ ?_⟩
     set Φx := ∫ v in Ioi x, Q v * ‖J v‖
     set g : ℝ → ℝ := fun v ↦ P v * Q v * ‖ψ v‖ with hg
-    have hgc : ContinuousOn g (Ioi x) :=
-      ((hP.mul hQ).mul hψ.norm).mono (Ioi_subset_Ioi hx.le)
     refine (norm_integral_kernel_smul_le hKle hx (hFint x hx)).trans ?_
     -- bound the weighted integral through `∫ g * Ψ ^ k = Ψ x ^ (k + 1) / (k + 1)`
     have hint : ∫ v in Ioi x, Q v * ‖ψ v • picardTerm K J ψ k v‖ ≤
         Φx / k ! * ∫ v in Ioi x, g v * (∫ u in Ioi v, g u) ^ k := by
       rw [← integral_const_mul]
       refine setIntegral_mono_on (hFint x hx)
-        (((hΨ x hx).integrableOn_mul_pow_integral_Ioi hgc k).const_mul _) measurableSet_Ioi
+        (((hΨ x hx).mul_pow_integral_Ioi k).const_mul _) measurableSet_Ioi
         fun v (hv : x < v) ↦ ?_
       have hva : a < v := hx.trans hv
+      have := hP0 v hva
+      have := hQ0 v hva
+      have := integral_Ioi_nonneg (coeff_weight_nonneg (ψ := ψ) hP0 hQ0) hva
       rw [norm_smul, ← mul_assoc]
       calc Q v * ‖ψ v‖ * ‖picardTerm K J ψ k v‖
           ≤ Q v * ‖ψ v‖ * (P v * Φx * ((∫ u in Ioi v, g u) ^ k / k !)) := by
-            refine mul_le_mul_of_nonneg_left ((hle v hva).trans ?_)
-              (mul_nonneg (hQ0 v hva) (norm_nonneg _))
-            exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left
-              (integral_Ioi_le_integral_Ioi hJ0 hx hv.le (hΦ x hx)) (hP0 v hva))
-              (by have := integral_Ioi_nonneg hg0 hva; positivity)
+            grw [hle v hva, integral_Ioi_le_integral_Ioi (forcing_weight_nonneg hQ0) hx hv.le
+              (hΦ x hx)]
         _ = Φx / k ! * (g v * (∫ u in Ioi v, g u) ^ k) := by simp only [hg]; ring
-    rw [(hΨ x hx).integral_Ioi_mul_pow_integral_Ioi hgc k] at hint
+    rw [(hΨ x hx).integral_Ioi_mul_pow_integral_Ioi k] at hint
     calc P x * ∫ v in Ioi x, Q v * ‖ψ v • picardTerm K J ψ k v‖
         ≤ P x * (Φx / k ! * ((∫ u in Ioi x, g u) ^ (k + 1) / (k + 1))) :=
           mul_le_mul_of_nonneg_left hint (hP0 x hx)
@@ -284,18 +293,10 @@ private lemma picardTerm_spec (k : ℕ) :
 `Φ x * (Ψ x ^ k / k!) * P v`, with the tail integrals `Φ` and `Ψ` taken at `x`. -/
 private lemma norm_picardTerm_le_of_le (k : ℕ) {x v : ℝ} (hx : a < x) (hv : x ≤ v) :
     ‖picardTerm K J ψ k v‖ ≤ (∫ u in Ioi x, Q u * ‖J u‖) *
-      ((∫ u in Ioi x, P u * Q u * ‖ψ u‖) ^ k / k !) * P v := by
-  have hva : a < v := hx.trans_le hv
-  have hg0 : ∀ u ∈ Ioi a, 0 ≤ P u * Q u * ‖ψ u‖ := fun u hu ↦
-    mul_nonneg (mul_nonneg (hP0 u hu) (hQ0 u hu)) (norm_nonneg _)
-  have hJ0 : ∀ u ∈ Ioi a, 0 ≤ Q u * ‖J u‖ := fun u hu ↦ mul_nonneg (hQ0 u hu) (norm_nonneg _)
-  have hΦv : ∫ u in Ioi v, Q u * ‖J u‖ ≤ ∫ u in Ioi x, Q u * ‖J u‖ :=
-    integral_Ioi_le_integral_Ioi hJ0 hx hv (hΦ x hx)
-  have hΨv : ∫ u in Ioi v, P u * Q u * ‖ψ u‖ ≤ ∫ u in Ioi x, P u * Q u * ‖ψ u‖ :=
-    integral_Ioi_le_integral_Ioi hg0 hx hv (hΨ x hx)
-  exact ((picardTerm_spec hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ k).2 v hva).trans
-    (mul_pow_div_factorial_le k (hP0 v hva) (integral_Ioi_nonneg hJ0 hva)
-      (integral_Ioi_nonneg hg0 hva) hΦv hΨv)
+      ((∫ u in Ioi x, P u * Q u * ‖ψ u‖) ^ k / k !) * P v :=
+  ((picardTerm_spec hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ k).2 v (hx.trans_le hv)).trans
+    (mul_tail_le_of_le hP0 hQ0 hΦ hΨ (monotoneOn_pow_div_factorial k)
+      (fun _ _ ↦ by positivity) hx hv)
 
 /-- The sum of the Picard increments is bounded by `P x * Φ x * exp (Ψ x)`. -/
 private lemma norm_tsum_picardTerm_le {x : ℝ} (hx : a < x) :
@@ -333,10 +334,8 @@ private lemma continuousOn_tsum_picardTerm :
     ((Real.summable_pow_div_factorial (∫ v in Ioi c, P v * Q v * ‖ψ v‖)).mul_left
       ((∫ v in Ioi c, Q v * ‖J v‖) * M))
     fun k x (hx : x ∈ Icc c (x₀ + 1)) ↦ ?_).continuousAt (Icc_mem_nhds hcx (lt_add_one x₀))
-  have hΦc : 0 ≤ ∫ u in Ioi c, Q u * ‖J u‖ :=
-    integral_Ioi_nonneg (fun u hu ↦ mul_nonneg (hQ0 u hu) (norm_nonneg _)) hac
-  have hΨc : 0 ≤ ∫ u in Ioi c, P u * Q u * ‖ψ u‖ := integral_Ioi_nonneg
-    (fun u hu ↦ mul_nonneg (mul_nonneg (hP0 u hu) (hQ0 u hu)) (norm_nonneg _)) hac
+  have := integral_Ioi_nonneg (forcing_weight_nonneg (J := J) hQ0) hac
+  have := integral_Ioi_nonneg (coeff_weight_nonneg (ψ := ψ) hP0 hQ0) hac
   refine (norm_picardTerm_le_of_le hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ k hac hx.1).trans ?_
   calc _ ≤ (∫ u in Ioi c, Q u * ‖J u‖) * ((∫ u in Ioi c, P u * Q u * ‖ψ u‖) ^ k / k !) * M :=
         mul_le_mul_of_nonneg_left ((le_abs_self _).trans (hM x hx)) (by positivity)
@@ -355,15 +354,10 @@ private lemma tsum_picardTerm_eq {x : ℝ} (hx : a < x) :
   have hψh : IntegrableOn (fun v ↦ Q v * ‖ψ v • h v‖) (Ioi x) :=
     integrableOn_weight_smul hψ hQ hQ0 hΨ hcont hx
       (C := (∫ u in Ioi x, Q u * ‖J u‖) * Real.exp (∫ u in Ioi x, P u * Q u * ‖ψ u‖))
-      fun v (hv : x < v) ↦ by
-        have hva : a < v := hx.trans hv
-        exact (norm_tsum_picardTerm_le hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ hva).trans
-          (mul_exp_le (hP0 v hva)
-            (integral_Ioi_nonneg (fun u hu ↦ mul_nonneg (hQ0 u hu) (norm_nonneg _)) hva)
-            (integral_Ioi_le_integral_Ioi (fun u hu ↦ mul_nonneg (hQ0 u hu) (norm_nonneg _))
-              hx hv.le (hΦ x hx))
-            (integral_Ioi_le_integral_Ioi (fun u hu ↦
-              mul_nonneg (mul_nonneg (hP0 u hu) (hQ0 u hu)) (norm_nonneg _)) hx hv.le (hΨ x hx)))
+      fun v (hv : x < v) ↦
+        (norm_tsum_picardTerm_le hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ (hx.trans hv)).trans
+          (mul_tail_le_of_le hP0 hQ0 hΦ hΨ (Real.exp_monotone.monotoneOn _)
+            (fun _ _ ↦ (Real.exp_pos _).le) hx hv.le)
   have hKJ : IntegrableOn (fun v ↦ K x v • J v) (Ioi x) :=
     integrableOn_kernel_smul hK hKle hJ hx (hΦ x hx)
   have hKψh : IntegrableOn (fun v ↦ K x v • ψ v • h v) (Ioi x) :=
@@ -386,10 +380,10 @@ private lemma tsum_picardTerm_eq {x : ℝ} (hx : a < x) :
       fun v (hv : x < v) ↦ ?_).trans_eq (by rw [integral_const_mul]; ring)
     refine (norm_kernel_smul_le hKle hx hv.le _).trans ?_
     rw [norm_smul]
+    have := hP0 x hx
+    have := hQ0 v (hx.trans hv)
     calc P x * (Q v * (‖ψ v‖ * ‖T k v‖))
-        ≤ P x * (Q v * (‖ψ v‖ * (Φx * (Ψx ^ k / k !) * P v))) :=
-          mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left
-            (hTle k v hv.le) (norm_nonneg _)) (hQ0 v (hx.trans hv))) (hP0 x hx)
+        ≤ P x * (Q v * (‖ψ v‖ * (Φx * (Ψx ^ k / k !) * P v))) := by grw [hTle k v hv.le]
       _ = P x * Φx * (Ψx ^ k / k !) * (P v * Q v * ‖ψ v‖) := by ring
   have hser := hasSum_integral_of_summable_integral_norm hFk hsum
   have hinner : ∀ v, ∑' k, K x v • ψ v • T k v = K x v • ψ v • h v := fun v ↦ by
