@@ -172,4 +172,56 @@ theorem adjoin_range_reesGenerator :
   rw [adjoin_reesParameter_union_range_reesGenerator] at hle
   exact top_unique hle
 
+section Extensionality
+
+variable {R L} {A : Type*}
+
+/-- Two `R`-algebra homomorphisms out of `reesAlgebra R L` are equal as soon as they agree on
+`reesParameter R L` and on every `reesGenerator R L x`. -/
+theorem reesAlgebra_algHom_ext [Semiring A] [Algebra R A]
+    {φ ψ : reesAlgebra R L →ₐ[R] A}
+    (hX : φ (reesParameter R L) = ψ (reesParameter R L))
+    (hj : ∀ x : L, φ (reesGenerator R L x) = ψ (reesGenerator R L x)) :
+    φ = ψ := by
+  refine AlgHom.ext_of_adjoin_eq_top (adjoin_reesParameter_union_range_reesGenerator R L) ?_
+  rintro p (hp | ⟨x, rfl⟩)
+  · obtain rfl := Set.mem_singleton_iff.mp hp
+    exact hX
+  · exact hj x
+
+/-- Two `R[X]`-algebra homomorphisms out of `reesAlgebra R L` are equal as soon as they agree on
+every `reesGenerator R L x`. -/
+@[ext]
+theorem reesAlgebra_paramAlgHom_ext [Semiring A] [Algebra R[X] A]
+    {φ ψ : reesAlgebra R L →ₐ[R[X]] A}
+    (hj : ∀ x : L, φ (reesGenerator R L x) = ψ (reesGenerator R L x)) :
+    φ = ψ := by
+  refine AlgHom.ext_of_adjoin_eq_top (adjoin_range_reesGenerator R L) ?_
+  rintro _ ⟨x, rfl⟩
+  exact hj x
+
+/-- An element of `reesAlgebra R L` is central if and only if it commutes with every linear Rees
+generator `reesGenerator R L x`. -/
+theorem mem_center_reesAlgebra_iff {z : reesAlgebra R L} :
+    z ∈ Subalgebra.center R (reesAlgebra R L) ↔ ∀ x : L, Commute z (reesGenerator R L x) := by
+  refine ⟨fun hz x ↦ (Subalgebra.mem_center_iff.mp hz (reesGenerator R L x)).symm, fun h ↦ ?_⟩
+  let S : Subalgebra R (reesAlgebra R L) :=
+    { carrier := {b | Commute z b}
+      mul_mem' := fun ha hb ↦ ha.mul_right hb
+      add_mem' := fun ha hb ↦ ha.add_right hb
+      algebraMap_mem' := fun r ↦ (Algebra.commutes r z).symm }
+  have htop : S = ⊤ := by
+    apply top_unique
+    rw [← adjoin_reesParameter_union_range_reesGenerator R L]
+    refine Algebra.adjoin_le ?_
+    rintro p (hp | ⟨x, rfl⟩)
+    · obtain rfl := Set.mem_singleton_iff.mp hp
+      exact (coeffSubalgebra.commute_X _ _ z).symm
+    · exact h x
+  refine Subalgebra.mem_center_iff.mpr fun b ↦ ?_
+  have hb : b ∈ S := htop ▸ Algebra.mem_top
+  exact hb.symm.eq
+
+end Extensionality
+
 end TauCeti.UniversalEnvelopingAlgebra

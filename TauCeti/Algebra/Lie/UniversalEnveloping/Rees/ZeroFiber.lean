@@ -118,6 +118,14 @@ theorem ker_reesSpecializationZero :
     refine ⟨wordReesEquiv R L q, ?_⟩
     simp [wordReesEquiv_reesParameter, (coeffSubalgebra.commute_X _ _ _).eq]
 
+/-- An element of `reesAlgebra R L` specializes to `0` in `SymmetricAlgebra R L` if and only if it
+is divisible by `reesParameter R L`. -/
+theorem reesSpecializationZero_eq_zero_iff_exists_reesParameter_mul (p : reesAlgebra R L) :
+    reesSpecializationZero R L p = 0 ↔ ∃ q : reesAlgebra R L, reesParameter R L * q = p := by
+  rw [← AlgHom.coe_toRingHom, ← RingHom.mem_ker, ker_reesSpecializationZero,
+    Ideal.mem_span_singleton']
+  exact exists_congr fun q ↦ by rw [(coeffSubalgebra.commute_X _ _ q).eq]
+
 /-- The PBW zero fibre is canonically the symmetric algebra, without a choice of basis. -/
 noncomputable def reesZeroFiberEquiv :
     (reesAlgebra R L ⧸ Ideal.span {reesParameter R L}) ≃ₐ[R] SymmetricAlgebra R L :=
