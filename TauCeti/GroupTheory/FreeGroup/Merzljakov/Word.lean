@@ -42,6 +42,11 @@ of signed letters `α × Bool` and a subword is an infix, `List.IsInfix`.
 * `FreeGroup.exists_merzljakovBlock_isInfix_of_isInfix_flatten`: if a Merzljakov word with `n`
   exponents occurs in a concatenation of at most `n` words, then one of these words contains a
   whole block.
+* `FreeGroup.subsingleton_not_isUnsplit_merzljakovBlock_or_invRev_pair`,
+  `FreeGroup.exists_mem_forall_isUnsplit_merzljakovBlock`: over distinct letters `a ≠ b`, a single
+  cut point between two words splits `b a^m b` or `b⁻¹ a^{-m} b⁻¹` for at most one exponent `m`,
+  so a duplicate-free list with more exponents than the total number of cuts across a family of
+  factorisations contains an exponent whose block and inverse block are unsplit in every member.
 * `FreeGroup.exists_sortedLT_forall_not_merzljakovBlock_isInfix`: for finitely many given words
   and every `n` there are `n` strictly increasing exponents none of whose blocks occurs in a
   given word.
@@ -115,6 +120,30 @@ theorem length_merzljakovBlock (a b : α) (m : ℕ) : (merzljakovBlock a b m).le
 theorem invRev_merzljakovBlock (a b : α) (m : ℕ) :
     invRev (merzljakovBlock a b m) = (b, false) :: (replicate m (a, false) ++ [(b, false)]) := by
   simp [invRev, merzljakovBlock_eq]
+
+/-- Mapping the generators of the block `b a^m b` gives the block of the mapped generators. -/
+@[simp]
+theorem map_prodMap_merzljakovBlock {β : Type*} (f : α → β) (a b : α) (m : ℕ) :
+    (merzljakovBlock a b m).map (Prod.map f id) = merzljakovBlock (f a) (f b) m := by
+  simp [merzljakovBlock]
+
+/-- Mapping the generators of a Merzljakov word gives the Merzljakov word of the mapped
+generators. -/
+@[simp]
+theorem map_prodMap_merzljakovWord {β : Type*} (f : α → β) (a b : α) (ms : List ℕ) :
+    (merzljakovWord a b ms).map (Prod.map f id) = merzljakovWord (f a) (f b) ms := by
+  induction ms with
+  | nil => rfl
+  | cons m ms ih => simp [merzljakovWord_cons, ih]
+
+/-- Every letter of the block `b a^m b` has generator `a` or `b`. -/
+theorem fst_eq_or_eq_of_mem_merzljakovBlock {c : α × Bool} (hc : c ∈ merzljakovBlock a b m) :
+    c.1 = a ∨ c.1 = b := by
+  rcases mem_cons.1 hc with rfl | hc
+  · exact .inr rfl
+  · rcases mem_append.1 hc with hc | hc
+    · exact .inl (congrArg Prod.fst (eq_of_mem_replicate hc))
+    · exact .inr (congrArg Prod.fst (mem_singleton.1 hc))
 
 /-- The Merzljakov word with exponents `m₁, …, m_n` has `m₁ + ⋯ + m_n + n + 1` letters. -/
 @[simp]
@@ -316,6 +345,138 @@ theorem exists_merzljakovBlock_isInfix_of_isInfix_flatten {L : List (List (α ×
     ∃ m ∈ ms, ∃ u ∈ L, merzljakovBlock a b m <:+: u := by
   obtain ⟨p, s, h⟩ := h
   exact exists_merzljakovBlock_isInfix_of_append_eq_flatten L h hL
+
+/-- If `[u, v]` splits an occurrence of the block `b a^m b`, then `u` ends with `b a^d` and `v`
+begins with `a^{d'} b` for some `d + d' = m`. -/
+private theorem exists_eq_of_not_isUnsplit_merzljakovBlock_pair {u v : List (α × Bool)}
+    (h : ¬ (merzljakovBlock a b m).IsUnsplit [u, v]) :
+    ∃ s t d d', d + d' = m ∧ u = s ++ (b, true) :: replicate d (a, true) ∧
+      v = replicate d' (a, true) ++ (b, true) :: t := by
+  rw [isUnsplit_pair_iff] at h
+  push Not at h
+  obtain ⟨s, t, hst, hlt₁, hlt₂⟩ := h
+  rw [length_merzljakovBlock] at hlt₂
+  set d := u.length - (s.length + 1)
+  set d' := m - d
+  have hdd' : d + d' = m := by omega
+  have heq : (s ++ (b, true) :: replicate d (a, true)) ++
+      (replicate d' (a, true) ++ (b, true) :: t) = u ++ v := by
+    rw [merzljakovBlock_eq, ← hdd', replicate_add] at hst
+    simpa only [cons_append, append_assoc, singleton_append, nil_append] using hst
+  obtain ⟨hu, hv⟩ := append_inj heq (by simp; omega)
+  exact ⟨s, t, d, d', hdd', hu.symm, hv.symm⟩
+
+private theorem getLast?_snd_of_not_isUnsplit_merzljakovBlock_pair {u v : List (α × Bool)}
+    (h : ¬ (merzljakovBlock a b m).IsUnsplit [u, v]) :
+    ∃ c, u.getLast? = some (c, true) := by
+  obtain ⟨s, -, _ | d, -, -, rfl, -⟩ := exists_eq_of_not_isUnsplit_merzljakovBlock_pair h
+  · exact ⟨b, by simp⟩
+  · refine ⟨a, ?_⟩
+    rw [replicate_succ', ← cons_append, ← append_assoc, getLast?_concat]
+
+private theorem eq_of_not_isUnsplit_merzljakovBlock_pair (hab : a ≠ b) {u v : List (α × Bool)}
+    {m₁ m₂ : ℕ} (h₁ : ¬ (merzljakovBlock a b m₁).IsUnsplit [u, v])
+    (h₂ : ¬ (merzljakovBlock a b m₂).IsUnsplit [u, v]) : m₁ = m₂ := by
+  have hab' : (a, true) ≠ (b, true) := by simpa using hab
+  obtain ⟨s₁, t₁, d₁, d₁', rfl, hu₁, hv₁⟩ := exists_eq_of_not_isUnsplit_merzljakovBlock_pair h₁
+  obtain ⟨s₂, t₂, d₂, d₂', rfl, hu₂, hv₂⟩ := exists_eq_of_not_isUnsplit_merzljakovBlock_pair h₂
+  have hv : replicate d₁' (a, true) ++ (b, true) :: t₁ =
+      replicate d₂' (a, true) ++ (b, true) :: t₂ := hv₁.symm.trans hv₂
+  have hle₁' := (replicate_prefix_of_append_cons_eq hab' hv).length_le
+  have hle₂' := (replicate_prefix_of_append_cons_eq hab' hv.symm).length_le
+  have hu : replicate d₁ (a, true) ++ (b, true) :: s₁.reverse =
+      replicate d₂ (a, true) ++ (b, true) :: s₂.reverse := by
+    simpa using (congrArg reverse hu₁).symm.trans (congrArg reverse hu₂)
+  have hle₁ := (replicate_prefix_of_append_cons_eq hab' hu).length_le
+  have hle₂ := (replicate_prefix_of_append_cons_eq hab' hu.symm).length_le
+  simp only [length_replicate] at hle₁ hle₂ hle₁' hle₂'
+  omega
+
+/-- Over distinct letters `a ≠ b`, at most one exponent `m` has its block `b a^m b` or its formal
+inverse `b⁻¹ a^{-m} b⁻¹` split by a two-word factorisation `[u, v]`: `u` ends with a positive
+letter in the first case and a negative letter in the second, and the runs of `a^{±1}` adjacent to
+the cut determine `m`. -/
+theorem subsingleton_not_isUnsplit_merzljakovBlock_or_invRev_pair (hab : a ≠ b)
+    (u v : List (α × Bool)) :
+    {m : ℕ | ¬ (merzljakovBlock a b m).IsUnsplit [u, v] ∨
+      ¬ (invRev (merzljakovBlock a b m)).IsUnsplit [u, v]}.Subsingleton := by
+  have hinv (m : ℕ) : (invRev (merzljakovBlock a b m)).IsUnsplit [u, v] ↔
+      (merzljakovBlock a b m).IsUnsplit [invRev v, invRev u] := by
+    simpa using invRev_isUnsplit (l := merzljakovBlock a b m) (L := [invRev v, invRev u])
+  have incompatible {m₁ m₂ : ℕ} (h₁ : ¬ (merzljakovBlock a b m₁).IsUnsplit [u, v])
+      (h₂ : ¬ (invRev (merzljakovBlock a b m₂)).IsUnsplit [u, v]) : False := by
+    obtain ⟨c, hc⟩ := getLast?_snd_of_not_isUnsplit_merzljakovBlock_pair h₁
+    obtain ⟨u₀, rfl⟩ := getLast?_eq_some_iff.1 hc
+    obtain ⟨-, t, -, _ | d', -, -, hv⟩ :=
+      exists_eq_of_not_isUnsplit_merzljakovBlock_pair (mt (hinv m₂).2 h₂) <;>
+    · have hhead := congrArg head? hv
+      simp [invRev, replicate_succ] at hhead
+  rintro m₁ (h₁ | h₁) m₂ (h₂ | h₂)
+  · exact eq_of_not_isUnsplit_merzljakovBlock_pair hab h₁ h₂
+  · exact (incompatible h₁ h₂).elim
+  · exact (incompatible h₂ h₁).elim
+  · exact eq_of_not_isUnsplit_merzljakovBlock_pair hab (mt (hinv m₁).2 h₁) (mt (hinv m₂).2 h₂)
+
+private theorem exists_list_length_le_one_of_subsingleton {S : Set ℕ} (hS : S.Subsingleton) :
+    ∃ l : List ℕ, l.length ≤ 1 ∧ ∀ m ∈ S, m ∈ l := by
+  by_cases h : S.Nonempty
+  · obtain ⟨m₀, hm₀⟩ := h
+    exact ⟨[m₀], le_rfl, fun m hm ↦ mem_singleton.2 (hS hm hm₀)⟩
+  · exact ⟨[], Nat.zero_le _, fun m hm ↦ (h ⟨m, hm⟩).elim⟩
+
+private theorem exists_list_not_isUnsplit (hab : a ≠ b) (L : List (List (α × Bool))) :
+    ∃ l : List ℕ, l.length ≤ L.length - 1 ∧
+      ∀ m, (¬ (merzljakovBlock a b m).IsUnsplit L ∨
+        ¬ (invRev (merzljakovBlock a b m)).IsUnsplit L) → m ∈ l := by
+  induction L with
+  | nil => exact ⟨[], le_rfl, by simp⟩
+  | cons u L ih =>
+    rcases L with _ | ⟨v, L⟩
+    · exact ⟨[], le_rfl, by simp⟩
+    · obtain ⟨l₁, hl₁, h₁⟩ := exists_list_length_le_one_of_subsingleton
+        (subsingleton_not_isUnsplit_merzljakovBlock_or_invRev_pair hab u (v :: L).flatten)
+      obtain ⟨l₂, hl₂, h₂⟩ := ih
+      refine ⟨l₁ ++ l₂, by simp only [length_append, length_cons] at hl₁ hl₂ ⊢; omega,
+        fun m hm ↦ mem_append.2 ?_⟩
+      rcases hm with hm | hm <;> rw [isUnsplit_cons, not_and_or] at hm
+      · exact hm.imp (fun h ↦ h₁ m (.inl h)) (fun h ↦ h₂ m (.inl h))
+      · exact hm.imp (fun h ↦ h₁ m (.inr h)) (fun h ↦ h₂ m (.inr h))
+
+private theorem exists_list_not_isUnsplit_list (hab : a ≠ b)
+    (Ls : List (List (List (α × Bool)))) :
+    ∃ l : List ℕ, l.length ≤ (Ls.map fun L ↦ L.length - 1).sum ∧
+      ∀ m, (∃ L ∈ Ls, ¬ (merzljakovBlock a b m).IsUnsplit L ∨
+        ¬ (invRev (merzljakovBlock a b m)).IsUnsplit L) → m ∈ l := by
+  induction Ls with
+  | nil => exact ⟨[], le_rfl, by simp⟩
+  | cons L Ls ih =>
+    obtain ⟨l₁, hl₁, h₁⟩ := exists_list_not_isUnsplit hab L
+    obtain ⟨l₂, hl₂, h₂⟩ := ih
+    refine ⟨l₁ ++ l₂, by simp only [length_append, map_cons, sum_cons]; omega,
+      fun m ⟨M, hM, hm⟩ ↦ mem_append.2 ?_⟩
+    rcases mem_cons.1 hM with rfl | hM
+    exacts [.inl (h₁ m hm), .inr (h₂ m ⟨M, hM, hm⟩)]
+
+/-- Over distinct letters `a ≠ b`, a duplicate-free list `ms` with strictly more exponents than the
+total number of cut points across a family `Ls` of factorisations contains an exponent `m` whose
+block `b a^m b` and formal inverse `b⁻¹ a^{-m} b⁻¹` are unsplit in every factorisation of `Ls`. -/
+theorem exists_mem_forall_isUnsplit_merzljakovBlock (hab : a ≠ b)
+    {Ls : List (List (List (α × Bool)))} {ms : List ℕ} (hms : ms.Nodup)
+    (hlen : (Ls.map fun L ↦ L.length - 1).sum < ms.length) :
+    ∃ m ∈ ms, ∀ L ∈ Ls, (merzljakovBlock a b m).IsUnsplit L ∧
+      (invRev (merzljakovBlock a b m)).IsUnsplit L := by
+  obtain ⟨l, hl, hbad⟩ := exists_list_not_isUnsplit_list hab Ls
+  by_contra! hall
+  have hsub : ms ⊆ l := fun m hm ↦ by
+    obtain ⟨L, hL, hsplit⟩ := hall m hm
+    exact hbad m ⟨L, hL, by tauto⟩
+  have := (subperm_of_subset hms hsub).length_le
+  omega
+
+/-- The strict inequality in `exists_mem_forall_isUnsplit_merzljakovBlock` is sharp: the
+two-piece factorisation `[b, b]` has `1` cut point and splits the single block `b b` of `[0]`. -/
+example : ¬ (merzljakovBlock a b 0).IsUnsplit [[(b, true)], [(b, true)]] := fun h ↦ by
+  simpa [merzljakovBlock_eq] using isUnsplit_pair_iff.1 h [] [] rfl
 
 end Factorisations
 

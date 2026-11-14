@@ -5,14 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Commutator.Basic
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
+public import TauCeti.GroupTheory.GroupAlgGeom.EquationallyNoetherian
+public import TauCeti.GroupTheory.GroupAlgGeom.FreeGGroup
 public import TauCeti.GroupTheory.GroupAlgGeom.VarSubgroup
 public import TauCeti.Logic.ForallExistsAlt
-import Mathlib.GroupTheory.Commutator.Basic
+import TauCeti.GroupTheory.FreeGroup.Basis
+import TauCeti.GroupTheory.FreeGroup.CSA
+import TauCeti.GroupTheory.FreeGroup.Merzljakov.FormalSolution
 import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
+import TauCeti.GroupTheory.FreeGroup.Vaught
+import TauCeti.GroupTheory.GroupAlgGeom.Linear
+import TauCeti.GroupTheory.GroupAlgGeom.SingleEquation
 
 /-!
-# Formal solutions of positive sentences
+# Formal solutions of positive sentences and Merzljakov's theorem
 
 Let `S(x, y) = 1` be a system of equations over a group `G` in the variables `x₀, …, x_{k-1}` and
 `y₀, …, y_{k-1}`. A *formal solution* of the positive sentence
@@ -25,8 +33,20 @@ system has a solution in `G[x₀, …, x_{k-1}]` whose `x`-coordinates are the v
 A formal solution makes the sentence true in every group `H` receiving the coefficients through a
 homomorphism `G →* H`: given values of the `x i` in `H`, the values of the words `q i` are
 witnesses for the `y i`, and the value of `q i` depends only on `x₀, …, x_i`.
-Merzljakov's theorem is the converse for a nonabelian free group `G = H` of finite rank; it is not
-proved here.
+
+**Merzljakov's theorem** proves the converse when `G` is a nonabelian free group:
+* for any finite system `S` over an arbitrary nonabelian free group `G` (of finite or infinite
+  rank), if `∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1} (S(x, y) = 1)` holds in `G`, then `S` has a formal
+  solution (`exists_isFormalSolution_of_finite`);
+* when `G[x₀, …, x_{k-1}]` is equationally Noetherian over `G`—in particular whenever `G` is a
+  countable nonabelian free group—the same equivalence holds for *every* (possibly infinite) system
+  `S` (`exists_isFormalSolution_iff_forallExistsAlt`, Kharlampovich–Myasnikov §4.4, Theorem 4).
+
+Consequently, any positive sentence of this form that holds in a nonabelian free group `G` transfers
+along every homomorphism `G →* H` (`forallExistsAlt_of_forallExistsAlt_id_of_finite`,
+`forallExistsAlt_of_forallExistsAlt_id`). Both rank `0` and rank `1` fail the converse
+(`not_isFormalSolution_var`, `not_isFormalSolution_commutator_inl`), so `¬IsMulCommutative G` is
+sharp.
 
 ## Main definitions
 
@@ -39,6 +59,20 @@ proved here.
   formal solution solve the system, for any values of the universally quantified variables.
 * `TauCeti.GroupAlgGeom.IsFormalSolution.forallExistsAlt`: a formal solution makes the sentence
   true in every group receiving the coefficients.
+* `TauCeti.GroupAlgGeom.exists_isFormalSolution_singleton`,
+  `TauCeti.GroupAlgGeom.exists_isFormalSolution_of_finite`,
+  `TauCeti.GroupAlgGeom.exists_isFormalSolution_iff_forallExistsAlt_of_finite`: Merzljakov's
+  theorem for single equations and finite systems over any nonabelian free group.
+* `TauCeti.GroupAlgGeom.exists_isFormalSolution_of_isEquationallyNoetherian`,
+  `TauCeti.GroupAlgGeom.exists_isFormalSolution`,
+  `TauCeti.GroupAlgGeom.exists_isFormalSolution_iff_forallExistsAlt`: Merzljakov's theorem for
+  arbitrary systems over countable (or equationally Noetherian) nonabelian free groups.
+* `TauCeti.GroupAlgGeom.forallExistsAlt_of_forallExistsAlt_id_of_finite`,
+  `TauCeti.GroupAlgGeom.forallExistsAlt_of_forallExistsAlt_id`: transfer of positive sentences from
+  a nonabelian free group along any homomorphism.
+* `TauCeti.GroupAlgGeom.not_isFormalSolution_var`,
+  `TauCeti.GroupAlgGeom.not_isFormalSolution_commutator_inl`: failure of the converse in
+  ranks `0` and `1`.
 * `TauCeti.GroupAlgGeom.not_forallExistsAlt_sq_freeGroup`,
   `TauCeti.GroupAlgGeom.not_isFormalSolution_sq`: the sentence `∀ x ∃ y (y² = x)` fails in a free
   group on a nonempty alphabet, and has no formal solution.
@@ -48,10 +82,11 @@ proved here.
 
 ## References
 
-* O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
-  (2005), §4.4, Merzljakov's theorem, Corollary 9 and Definition 13.
+* Yu. I. Merzljakov, *Positive formulae on free groups*, Algebra i Logika 5 (1966), 25–42.
 * G. S. Makanin, *Decidability of the universal and positive theories of a free group*,
   Math. USSR Izv. 25 (1985), §4, Lemma 5.
+* O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
+  (2005), §4.4, Merzljakov's Theorem, Corollary 9, Definition 13, and Theorem 4.
 -/
 
 public section
@@ -143,6 +178,172 @@ theorem isFormalSolution_normalClosure :
       IsFormalSolution S q := by
   simp [isFormalSolution_iff]
 
+/-! ### Merzljakov's theorem -/
+
+section Merzljakov
+
+/-- For a free basis `b : FreeGroupBasis A G`, the free `G`-group `G[X]` is naturally isomorphic
+to `FreeGroup (X ⊕ A)`. -/
+private noncomputable def gxFreeGroupEquiv {A : Type*} (b : FreeGroupBasis A G) (X : Type*) :
+    GX G X ≃* FreeGroup (X ⊕ A) :=
+  MonoidHom.toMulEquiv
+    (Monoid.Coprod.lift (b.lift (of ∘ Sum.inr)) (FreeGroup.map Sum.inl))
+    (FreeGroup.lift (Sum.elim (inr ∘ of) (inl ∘ b)))
+    (hom_ext (b.ext_hom _ _ fun _ => by simp) (FreeGroup.ext_hom _ _ fun _ => by simp))
+    (FreeGroup.ext_hom _ _ fun z => by cases z <;> simp)
+
+@[simp]
+private theorem gxFreeGroupEquiv_inl_coe {A : Type*} (b : FreeGroupBasis A G) (X : Type*)
+    (c : A) : gxFreeGroupEquiv b X (inl (b c)) = of (Sum.inr c) := by
+  simp [gxFreeGroupEquiv]
+
+@[simp]
+private theorem gxFreeGroupEquiv_inr_of {A : Type*} (b : FreeGroupBasis A G) (X : Type*)
+    (x : X) : gxFreeGroupEquiv b X (inr (of x)) = of (Sum.inl x) := by
+  simp [gxFreeGroupEquiv]
+
+@[simp]
+private theorem gxFreeGroupEquiv_symm_of_inl {A : Type*} (b : FreeGroupBasis A G) (X : Type*)
+    (x : X) : (gxFreeGroupEquiv b X).symm (of (Sum.inl x)) = inr (of x) := by
+  simp [gxFreeGroupEquiv]
+
+@[simp]
+private theorem gxFreeGroupEquiv_symm_of_inr {A : Type*} (b : FreeGroupBasis A G) (X : Type*)
+    (c : A) : (gxFreeGroupEquiv b X).symm (of (Sum.inr c)) = inl (b c) := by
+  simp [gxFreeGroupEquiv]
+
+/-- **Merzljakov's theorem** (single equation): over a nonabelian free group `G`, if the positive
+sentence `∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1} (s(x, y) = 1)` holds in `G`, then `{s}` has a formal
+solution in `G[x₀, …, x_{k-1}]`. -/
+theorem exists_isFormalSolution_singleton [IsFreeGroup G] (hG : ¬IsMulCommutative G)
+    {s : GX G (Fin k ⊕ Fin k)}
+    (h : ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) {s}) :
+    ∃ q, IsFormalSolution {s} q := by
+  let b := IsFreeGroup.basis G
+  obtain ⟨g₁, g₂, hg⟩ : ∃ g₁ g₂ : G, ¬Commute g₁ g₂ := by
+    simpa [isMulCommutative_iff, ← commute_iff_eq] using hG
+  have : Nontrivial (IsFreeGroup.Generators G) := b.nontrivial_of_not_commute hg
+  obtain ⟨a₀, b₀, hab₀⟩ := exists_pair_ne (IsFreeGroup.Generators G)
+  obtain ⟨f, hf, hs⟩ := h.exists_skolem
+  let eX := gxFreeGroupEquiv b (Fin k)
+  let eXY := gxFreeGroupEquiv b (Fin k ⊕ Fin k)
+  let f' : (Fin k → FreeGroup (IsFreeGroup.Generators G)) →
+      Fin k → FreeGroup (IsFreeGroup.Generators G) :=
+    fun x' i => b.repr (f (b.repr.symm ∘ x') i)
+  have hf' : ∀ i x₁ x₂, (∀ j ≤ i, x₁ j = x₂ j) → f' x₁ i = f' x₂ i := fun i x₁ x₂ hx =>
+    congrArg b.repr (hf i _ _ fun j hj => congrArg b.repr.symm (hx j hj))
+  have hs' : ∀ x',
+      FreeGroup.lift (Sum.elim (Sum.elim x' (f' x')) of) (eXY s) = 1 := fun x' => by
+    have hhom : (FreeGroup.lift (Sum.elim (Sum.elim x' (f' x')) of)).comp eXY.toMonoidHom =
+        b.repr.toMonoidHom.comp (eval (.id G) (Sum.elim (b.repr.symm ∘ x')
+          (f (b.repr.symm ∘ x')))) :=
+      hom_ext (b.ext_hom _ _ fun c => by simp [eXY])
+        (FreeGroup.ext_hom _ _ fun z => by cases z <;> simp [eXY, f'])
+    have hval : eval (.id G) (Sum.elim (b.repr.symm ∘ x') (f (b.repr.symm ∘ x'))) s = 1 :=
+      mem_V.1 (hs (b.repr.symm ∘ x')) s rfl
+    simpa [hval] using DFunLike.congr_fun hhom s
+  obtain ⟨y', hy', hw'⟩ := FreeGroup.exists_formalSolution_of_skolem hab₀ (eXY s) f' hf' hs'
+  refine ⟨fun i => eX.symm (y' i), fun i => ?_, mem_V.2 ?_⟩
+  · refine Subgroup.closure_induction (p := fun u _ => eX.symm u ∈ GX.varSubgroup G (Set.Iic i))
+      ?_ (by simp) (fun _ _ _ _ h₁ h₂ => by simpa using mul_mem h₁ h₂)
+      (fun _ _ h₁ => by simpa using inv_mem h₁) (hy' i)
+    rintro _ (⟨c, rfl⟩ | ⟨j, hj, rfl⟩)
+    · simp [eX]
+    · simpa [eX] using GX.inr_of_mem_varSubgroup (G := G) hj
+  · intro t ht
+    rw [Set.mem_singleton_iff.1 ht]
+    have hhom : eval (inl : G →* GX G (Fin k))
+        (Sum.elim (fun i => inr (of i)) fun i => eX.symm (y' i)) =
+        eX.symm.toMonoidHom.comp ((FreeGroup.lift
+          (Sum.elim (Sum.elim (of ∘ Sum.inl) y') (of ∘ Sum.inr))).comp eXY.toMonoidHom) :=
+      hom_ext (b.ext_hom _ _ fun c => by simp [eX, eXY])
+        (FreeGroup.ext_hom _ _ fun z => by cases z <;> simp [eX, eXY])
+    simpa [hw'] using DFunLike.congr_fun hhom s
+
+/-- **Merzljakov's theorem** (finite systems): over any nonabelian free group `G` (of finite or
+infinite rank), if the positive sentence `∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1} (S(x, y) = 1)` holds in
+`G` for a finite system `S`, then `S` has a formal solution in `G[x₀, …, x_{k-1}]`. -/
+theorem exists_isFormalSolution_of_finite [IsFreeGroup G] (hG : ¬IsMulCommutative G)
+    {S : Set (GX G (Fin k ⊕ Fin k))} (hS : S.Finite)
+    (h : ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) S) :
+    ∃ q, IsFormalSolution S q := by
+  have : IsFreeGroup (GX G (Fin k)) := (isFreeGGroup_inl (Fin k) (G := G)).isFreeGroup
+  obtain ⟨a, b, hab⟩ : ∃ a b : G, ¬Commute a b := by
+    simpa [isMulCommutative_iff, ← commute_iff_eq] using hG
+  obtain ⟨s, hs⟩ := exists_forall_V_singleton_eq_of_finite a b hS
+  have hVG : V (.id G) {s} = V (.id G) S :=
+    hs (.id G) IsFreeGroup.isVaught IsFreeGroup.isCSA hab
+  have hVGX : V (inl : G →* GX G (Fin k)) {s} = V inl S :=
+    hs (inl : G →* GX G (Fin k)) IsFreeGroup.isVaught IsFreeGroup.isCSA
+      fun hc => hab (by simpa using hc.map (eval (.id G) (1 : Fin k → G)))
+  obtain ⟨q, hq⟩ := exists_isFormalSolution_singleton (s := s) hG (by simpa only [← hVG] using h)
+  exact ⟨q, hq.mem_varSubgroup, hVGX ▸ hq.sumElim_mem_V⟩
+
+/-- **Merzljakov's theorem** for finite systems (equivalence): over any nonabelian free group `G`,
+a finite system `S` has a formal solution if and only if the positive sentence
+`∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1} (S(x, y) = 1)` holds in `G`. -/
+theorem exists_isFormalSolution_iff_forallExistsAlt_of_finite [IsFreeGroup G]
+    (hG : ¬IsMulCommutative G) {S : Set (GX G (Fin k ⊕ Fin k))} (hS : S.Finite) :
+    (∃ q, IsFormalSolution S q) ↔
+      ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) S :=
+  ⟨fun ⟨_, hq⟩ => hq.forallExistsAlt (.id G), exists_isFormalSolution_of_finite hG hS⟩
+
+/-- Over any nonabelian free group `G`, a positive sentence for a finite system `S` that holds in
+`G` transfers along every homomorphism `ι : G →* H` (Kharlampovich–Myasnikov §4.4, Corollary 9). -/
+theorem forallExistsAlt_of_forallExistsAlt_id_of_finite [IsFreeGroup G]
+    (hG : ¬IsMulCommutative G) {S : Set (GX G (Fin k ⊕ Fin k))} (hS : S.Finite) (ι : G →* H)
+    (h : ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) S) :
+    ForallExistsAlt k fun x y : Fin k → H => Sum.elim x y ∈ V ι S :=
+  let ⟨_, hq⟩ := exists_isFormalSolution_of_finite hG hS h
+  hq.forallExistsAlt ι
+
+/-- **Merzljakov's theorem** for arbitrary systems under equational Noetherianity: if `G` is a
+nonabelian free group and `G[x₀, …, x_{k-1}]` is equationally Noetherian over `G`, then any system
+`S` (finite or infinite) whose positive sentence holds in `G` admits a formal solution. -/
+theorem exists_isFormalSolution_of_isEquationallyNoetherian [IsFreeGroup G]
+    (hG : ¬IsMulCommutative G) (hnoeth : IsEquationallyNoetherian (inl : G →* GX G (Fin k)))
+    {S : Set (GX G (Fin k ⊕ Fin k))}
+    (h : ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) S) :
+    ∃ q, IsFormalSolution S q := by
+  obtain ⟨S₀, hS₀, hfin, hV⟩ := hnoeth.exists_finite S
+  obtain ⟨q, hq⟩ := exists_isFormalSolution_of_finite hG hfin
+    (h.mono fun _ _ hx => V_antitone _ hS₀ hx)
+  exact ⟨q, hq.mem_varSubgroup, hV ▸ hq.sumElim_mem_V⟩
+
+/-- **Merzljakov's theorem** for arbitrary systems over a countable nonabelian free group
+(Kharlampovich–Myasnikov §4.4, Theorem 4): if `G` is a countable nonabelian free group, then any
+system `S` (finite or infinite) whose positive sentence holds in `G` admits a formal solution in
+`G[x₀, …, x_{k-1}]`. -/
+theorem exists_isFormalSolution [IsFreeGroup G] [Countable G] (hG : ¬IsMulCommutative G)
+    {S : Set (GX G (Fin k ⊕ Fin k))}
+    (h : ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) S) :
+    ∃ q, IsFormalSolution S q := by
+  let b := IsFreeGroup.basis G
+  have : Countable (IsFreeGroup.Generators G) := b.injective.countable
+  exact exists_isFormalSolution_of_isEquationallyNoetherian hG
+    (isEquationallyNoetherian_of_freeGroupBasis inl (.ofRepr (gxFreeGroupEquiv b (Fin k)))) h
+
+/-- **Merzljakov's theorem** for arbitrary systems over a countable nonabelian free group
+(equivalence, Kharlampovich–Myasnikov §4.4, Theorem 4): over a countable nonabelian free group `G`,
+a system `S` has a formal solution if and only if the positive sentence
+`∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1} (S(x, y) = 1)` holds in `G`. -/
+theorem exists_isFormalSolution_iff_forallExistsAlt [IsFreeGroup G] [Countable G]
+    (hG : ¬IsMulCommutative G) (S : Set (GX G (Fin k ⊕ Fin k))) :
+    (∃ q, IsFormalSolution S q) ↔
+      ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) S :=
+  ⟨fun ⟨_, hq⟩ => hq.forallExistsAlt (.id G), exists_isFormalSolution hG⟩
+
+/-- Over a countable nonabelian free group `G`, any positive sentence (for a possibly infinite
+system `S`) that holds in `G` transfers along every homomorphism `ι : G →* H`. -/
+theorem forallExistsAlt_of_forallExistsAlt_id [IsFreeGroup G] [Countable G]
+    (hG : ¬IsMulCommutative G) {S : Set (GX G (Fin k ⊕ Fin k))} (ι : G →* H)
+    (h : ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) S) :
+    ForallExistsAlt k fun x y : Fin k → H => Sum.elim x y ∈ V ι S :=
+  let ⟨_, hq⟩ := exists_isFormalSolution hG h
+  hq.forallExistsAlt ι
+
+end Merzljakov
+
 /-! ### Examples -/
 
 section Examples
@@ -225,6 +426,45 @@ theorem not_isFormalSolution_eq_later (q : Fin 2 → GX G (Fin 2)) :
       h.forallExistsAlt (1 : G →* Multiplicative ℤ)
   have := ha (a + 1)
   omega
+
+/-- The sentence `∀ x₀ ∃ y₀ (x₀ = 1)` has no formal solution over any group `G`. When `G` is
+trivial (the free group of rank `0`), the sentence holds in `G`, so Merzljakov's theorem fails in
+rank `0`. -/
+theorem not_isFormalSolution_var (q : Fin 1 → GX G (Fin 1)) :
+    ¬IsFormalSolution {inr (of (Sum.inl 0))} q := fun h => by
+  have h1 : Multiplicative.ofAdd (1 : ℤ) = 1 := by
+    simpa using congrArg (eval (1 : G →* Multiplicative ℤ) ![Multiplicative.ofAdd 1])
+      (h.eval_eq_one rfl)
+  exact one_ne_zero (Multiplicative.ofAdd.injective h1)
+
+/-- In a trivial group (for instance `FreeGroup Empty`), `∀ x₀ ∃ y₀ (x₀ = 1)` holds even though it
+has no formal solution (`not_isFormalSolution_var`). -/
+example [Subsingleton G] :
+    ForallExistsAlt 1 fun x y : Fin 1 → G =>
+      Sum.elim x y ∈ V (.id G) {inr (of (Sum.inl 0))} :=
+  forallExistsAlt_one.2 fun _ => ⟨1, mem_V.2 fun _ _ => Subsingleton.elim _ _⟩
+
+/-- For a nontrivial coefficient `a ≠ 1`, the sentence `∀ x₀ ∃ y₀ (⁅x₀, a⁆ = 1)` has no formal
+solution over `G`. When `G` is commutative and nontrivial (for instance the free group of rank
+`1`), the sentence holds in `G`, so Merzljakov's theorem fails in rank `1`. -/
+theorem not_isFormalSolution_commutator_inl {a : G} (ha : a ≠ 1) (q : Fin 1 → GX G (Fin 1)) :
+    ¬IsFormalSolution {⁅(inr (of (Sum.inl 0)) : GX G (Fin 1 ⊕ Fin 1)),
+      (inl a : GX G (Fin 1 ⊕ Fin 1))⁆} q := fun h => by
+  have hcomm : ⁅(inr (of 0) : GX G (Fin 1)), (inl a : GX G (Fin 1))⁆ = 1 := by
+    simpa [map_commutatorElement] using h.eval_eq_one rfl
+  exact GX.not_commute_inl_inr_of ha 0 (commutatorElement_eq_one_iff_commute.1 hcomm).symm
+
+/-- In a commutative group (for instance `FreeGroup Unit` of rank `1` with generator `a ≠ 1`),
+`∀ x₀ ∃ y₀ (⁅x₀, a⁆ = 1)` holds even though it has no formal solution when `a ≠ 1`
+(`not_isFormalSolution_commutator_inl`). -/
+example [IsMulCommutative G] (a : G) :
+    ForallExistsAlt 1 fun x y : Fin 1 → G =>
+      Sum.elim x y ∈ V (.id G)
+        {⁅(inr (of (Sum.inl 0)) : GX G (Fin 1 ⊕ Fin 1)), (inl a : GX G (Fin 1 ⊕ Fin 1))⁆} :=
+  forallExistsAlt_one.2 fun _ => ⟨1, mem_V.2 (by
+    rintro _ rfl
+    simp [map_commutatorElement, commutatorElement_eq_one_iff_mul_comm,
+      isMulCommutative_iff.1 ‹_›])⟩
 
 end Examples
 
