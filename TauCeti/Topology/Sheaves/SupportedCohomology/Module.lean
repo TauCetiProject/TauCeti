@@ -45,7 +45,10 @@ exact sequence of supports
 
 `⋯ ⟶ H_Zⁿ(W, F) ⟶ H_Sⁿ(W, F) ⟶ H_Sⁿ(W ∖ Z, F) ⟶ H_Zⁿ⁺¹(W, F) ⟶ ⋯`,
 
-whose first map enlarges the support and whose second map is restriction to `W ∖ Z`.
+whose first map enlarges the support and whose second map is restriction to `W ∖ Z`. Its
+connecting maps commute with restriction to smaller opens. In degree zero, with `S` the whole
+space, it begins `0 ⟶ Γ_Z(W, F) ⟶ F(W) ⟶ F(W ∖ Z) ⟶ H_Z¹(W, F) ⟶ H¹(W, F)`, where `H¹(W, F)` is
+cohomology with supports in the whole space.
 
 ## Main declarations
 
@@ -73,7 +76,12 @@ whose first map enlarges the support and whose second map is restriction to `W �
   `H_Sⁿ(W ∖ Z, F) ⟶ H_Zⁿ⁺¹(W, F)` of the long exact sequence of supports, whose exactness is
   `CategoryTheory.Sheaf.exact_supportedModuleHPresheafMap_app_supportedModuleHPresheaf_map`,
   `CategoryTheory.Sheaf.exact_supportedModuleHPresheaf_map_supportedModuleHδ` and
-  `CategoryTheory.Sheaf.exact_supportedModuleHδ_supportedModuleHPresheafMap_app`.
+  `CategoryTheory.Sheaf.exact_supportedModuleHδ_supportedModuleHPresheafMap_app`;
+* `CategoryTheory.Sheaf.supportedModuleHTopZeroEquiv`: `H⁰(W, F) ≃ₗ[R] F(W)` for supports in the
+  whole space, and `CategoryTheory.Sheaf.supportedModuleHSectionsδ`, the degree-zero connecting
+  map `F(W ∖ Z) ⟶ H_Z¹(W, F)`, whose exactness is
+  `CategoryTheory.Sheaf.exact_map_supportedModuleHSectionsδ` and
+  `CategoryTheory.Sheaf.exact_supportedModuleHSectionsδ_supportedModuleHPresheafMap_app`.
 
 ## References
 
@@ -566,5 +574,118 @@ theorem exact_supportedModuleHδ_supportedModuleHPresheafMap_app (hZS : Z ≤ S)
     Function.Exact (F.supportedModuleHδ hZS W h)
       ((F.supportedModuleHPresheafMap hZS n₁).app (op W)) :=
   TauCeti.exact_precomp₃ (Closeds.supportedFreeModuleSheafSequence_shortExact R hZS W) F n₀ n₁ h
+
+/-- The connecting maps `H_Sⁿ(W ∖ Z, F) ⟶ H_Zⁿ⁺¹(W, F)` of the long exact sequence of supports
+commute with restriction to a smaller open `W' ≤ W`. -/
+lemma supportedModuleHPresheaf_map_supportedModuleHδ (hZS : Z ≤ S) {W' W : Opens X} (h : W' ≤ W)
+    {n₀ n₁ : ℕ} (hn : 1 + n₀ = n₁) (x : F.supportedModuleH S (W ⊓ Z.compl) n₀) :
+    (F.supportedModuleHPresheaf Z n₁).map (homOfLE h).op (F.supportedModuleHδ hZS W hn x) =
+      F.supportedModuleHδ hZS W' hn
+        ((F.supportedModuleHPresheaf S n₀).map (homOfLE (inf_le_inf_right Z.compl h)).op x) := by
+  -- restriction is a morphism of the short exact sequences `0 ⟶ Q_S(- ∖ Z) ⟶ Q_S(-) ⟶ Q_Z(-) ⟶ 0`
+  let φ : Closeds.supportedFreeModuleSheafSequence R hZS W' ⟶
+      Closeds.supportedFreeModuleSheafSequence R hZS W :=
+    { τ₁ := (S.supportedFreeModuleSheafFunctor R).map (homOfLE (inf_le_inf_right Z.compl h))
+      τ₂ := (S.supportedFreeModuleSheafFunctor R).map (homOfLE h)
+      τ₃ := (Z.supportedFreeModuleSheafFunctor R).map (homOfLE h)
+      comm₁₂ := by
+        -- both composites are induced by the inclusion `W' ∖ Z ⟶ W` in the thin category `Opens X`
+        simp only [← Functor.map_comp]
+        rfl
+      comm₂₃ := (Closeds.supportedFreeModuleSheafFunctorMap R hZS).naturality (homOfLE h) }
+  simp only [supportedModuleHPresheaf_map_apply, supportedModuleHδ_apply, Quiver.Hom.unop_op]
+  rw [← Ext.comp_assoc _ _ _ (zero_add 1) hn (by omega),
+    ← (Closeds.supportedFreeModuleSheafSequence_shortExact R hZS W').extClass_naturality
+      (Closeds.supportedFreeModuleSheafSequence_shortExact R hZS W) φ,
+    Ext.comp_assoc_of_second_deg_zero]
+
+/-! ### The long exact sequence of supports in degree zero -/
+
+/-- Every section is supported in the whole space, since a sheaf has no nonzero sections over the
+empty set. -/
+@[simp]
+lemma supportedSubmodule_top (W : Opens X) : F.supportedSubmodule ⊤ W = ⊤ := by
+  refine eq_top_iff.2 fun s _ ↦ ?_
+  rw [mem_supportedSubmodule_iff]
+  have hW : W ⊓ (⊤ : Closeds X).compl = ⊥ := by
+    ext x
+    simp [Closeds.compl]
+  exact congr($(((TopCat.Sheaf.isTerminalOfEqEmpty F hW).isZero.eq_of_tgt
+    (F.obj.map ((⊤ : Closeds X).complInclusion W).op) 0)) s)
+
+/-- Degree-zero cohomology with supports in the whole space is the module `F(W)` of all
+sections. -/
+def supportedModuleHTopZeroEquiv (W : Opens X) :
+    F.supportedModuleH ⊤ W 0 ≃ₗ[R] F.obj.obj (op W) :=
+  (F.supportedModuleHZeroEquiv ⊤ W).trans
+    ((LinearEquiv.ofEq _ _ (F.supportedSubmodule_top W)).trans Submodule.topEquiv)
+
+@[simp]
+lemma supportedModuleHTopZeroEquiv_apply (W : Opens X) (x : F.supportedModuleH ⊤ W 0) :
+    F.supportedModuleHTopZeroEquiv W x = F.supportedModuleHZeroEquiv ⊤ W x :=
+  (rfl)
+
+/-- The identification of degree-zero cohomology with supports in the whole space with the
+sections commutes with restriction. -/
+lemma supportedModuleHTopZeroEquiv_map {W W' : (Opens X)ᵒᵖ} (h : W ⟶ W')
+    (x : F.supportedModuleH ⊤ W.unop 0) :
+    F.supportedModuleHTopZeroEquiv W'.unop ((F.supportedModuleHPresheaf ⊤ 0).map h x) =
+      F.obj.map h (F.supportedModuleHTopZeroEquiv W.unop x) :=
+  F.coe_supportedModuleHZeroEquiv_map ⊤ h x
+
+/-- The connecting map `F(W ∖ Z) ⟶ H_Z¹(W, F)` of the long exact sequence of supports
+`0 ⟶ Γ_Z(W, F) ⟶ F(W) ⟶ F(W ∖ Z) ⟶ H_Z¹(W, F) ⟶ H¹(W, F) ⟶ ⋯`: the connecting map
+`CategoryTheory.Sheaf.supportedModuleHδ` for the supports `Z ≤ ⊤`, read through the
+identification of `H⁰(W ∖ Z, F)` with the sections. Here `H¹(W, F)` is cohomology with supports in
+the whole space `⊤`. -/
+def supportedModuleHSectionsδ (Z : Closeds X) (W : Opens X) :
+    F.obj.obj (op (W ⊓ Z.compl)) →ₗ[R] F.supportedModuleH Z W 1 :=
+  F.supportedModuleHδ le_top W (add_zero 1) ∘ₗ
+    (F.supportedModuleHTopZeroEquiv (W ⊓ Z.compl)).symm.toLinearMap
+
+lemma supportedModuleHSectionsδ_apply (Z : Closeds X) (W : Opens X)
+    (s : F.obj.obj (op (W ⊓ Z.compl))) :
+    F.supportedModuleHSectionsδ Z W s =
+      F.supportedModuleHδ le_top W (add_zero 1) ((F.supportedModuleHTopZeroEquiv _).symm s) :=
+  (rfl)
+
+/-- The long exact sequence of supports is exact at `F(W ∖ Z)`: a section on `W ∖ Z` has zero
+connecting image in `H_Z¹(W, F)` exactly when it extends to `W`. -/
+theorem exact_map_supportedModuleHSectionsδ (Z : Closeds X) (W : Opens X) :
+    Function.Exact (F.obj.map (Z.complInclusion W).op) (F.supportedModuleHSectionsδ Z W) :=
+  Function.Exact.of_ladder_linearEquiv_of_exact (e₁ := F.supportedModuleHTopZeroEquiv W)
+    (e₂ := F.supportedModuleHTopZeroEquiv (W ⊓ Z.compl)) (e₃ := LinearEquiv.refl R _)
+    (f₁₂ := ((F.supportedModuleHPresheaf ⊤ 0).map (Z.complInclusion W).op).hom)
+    (f₂₃ := F.supportedModuleHδ le_top W (add_zero 1))
+    (g₁₂ := (F.obj.map (Z.complInclusion W).op).hom)
+    (LinearMap.ext fun x ↦ (F.supportedModuleHTopZeroEquiv_map _ x).symm)
+    (LinearMap.ext fun x ↦
+      congrArg (F.supportedModuleHδ le_top W (add_zero 1))
+        ((F.supportedModuleHTopZeroEquiv _).symm_apply_apply x))
+    (F.exact_supportedModuleHPresheaf_map_supportedModuleHδ le_top W (add_zero 1))
+
+/-- The long exact sequence of supports is exact at `H_Z¹(W, F)`: a class with supports in `Z`
+vanishes in `H¹(W, F)` exactly when it is the connecting image of a section on `W ∖ Z`. -/
+theorem exact_supportedModuleHSectionsδ_supportedModuleHPresheafMap_app (Z : Closeds X)
+    (W : Opens X) :
+    Function.Exact (F.supportedModuleHSectionsδ Z W)
+      ((F.supportedModuleHPresheafMap (le_top : Z ≤ ⊤) 1).app (op W)) := by
+  intro x
+  rw [F.exact_supportedModuleHδ_supportedModuleHPresheafMap_app le_top W (add_zero 1) x]
+  refine ⟨fun ⟨y, hy⟩ ↦ ⟨F.supportedModuleHTopZeroEquiv _ y, ?_⟩, fun ⟨s, hs⟩ ↦ ⟨_, hs⟩⟩
+  rw [supportedModuleHSectionsδ_apply, LinearEquiv.symm_apply_apply, hy]
+
+/-- The degree-zero connecting maps commute with restriction to a smaller open `W' ≤ W`. -/
+lemma supportedModuleHPresheaf_map_supportedModuleHSectionsδ (Z : Closeds X) {W' W : Opens X}
+    (h : W' ≤ W) (s : F.obj.obj (op (W ⊓ Z.compl))) :
+    (F.supportedModuleHPresheaf Z 1).map (homOfLE h).op (F.supportedModuleHSectionsδ Z W s) =
+      F.supportedModuleHSectionsδ Z W'
+        (F.obj.map (homOfLE (inf_le_inf_right Z.compl h)).op s) := by
+  rw [supportedModuleHSectionsδ_apply, supportedModuleHSectionsδ_apply,
+    supportedModuleHPresheaf_map_supportedModuleHδ]
+  -- restriction of `H⁰` with supports in the whole space is restriction of sections
+  refine congrArg _ ((LinearEquiv.eq_symm_apply _).2 ?_)
+  exact (F.supportedModuleHTopZeroEquiv_map _ _).trans
+    (congrArg _ (LinearEquiv.apply_symm_apply _ s))
 
 end CategoryTheory.Sheaf
