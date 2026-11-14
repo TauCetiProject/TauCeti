@@ -10,6 +10,7 @@ public import Mathlib.Data.Finset.Sort
 public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.GroupTheory.Perm.List
 public import Mathlib.Logic.Equiv.Fin.Basic
+import Mathlib.Data.Fintype.Fin
 
 /-!
 # Permutations of `Fin n`
@@ -30,6 +31,7 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
   `decide +kernel` certificate small.
 * `Equiv.Perm.sum_comp_symm_apply_zero`: summing a function of `σ⁻¹ 0` over all permutations of
   `Fin (n + 1)` counts each value `n!` times.
+* `Equiv.Perm.card_filter_val_lt`: a permutation of `Fin n` maps `min n m` indices below `m`.
 -/
 
 public section
@@ -104,5 +106,16 @@ theorem prod_comp_symm_apply_zero {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin 
     ← Fintype.prod_equiv (decomposeFin.symm : Fin (n + 1) × Perm (Fin n) ≃ _)
       (fun pe ↦ f pe.1) (fun σ ↦ f (σ 0)) fun pe ↦ by rw [decomposeFin_symm_apply_zero]]
   simp [Fintype.prod_prod_type, Finset.prod_const, Fintype.card_perm, Finset.prod_pow]
+
+section
+
+open _root_.Finset
+
+/-- A permutation of `Fin n` maps `min n m` indices below `m`. -/
+theorem card_filter_val_lt {n m : ℕ} (σ : Perm (Fin n)) :
+    #{i : Fin n | (σ i : ℕ) < m} = min n m :=
+  (card_equiv σ fun _ => by simp).trans Fin.card_filter_val_lt
+
+end
 
 end Equiv.Perm
