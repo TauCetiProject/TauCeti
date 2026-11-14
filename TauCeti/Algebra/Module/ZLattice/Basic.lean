@@ -23,7 +23,8 @@ the ambient space, and membership in the pull-back `ZLattice.comap` of a lattice
 the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is again discrete, and
 so is the pull-back of a discrete subgroup or of a full lattice along a linear isometry
 equivalence; precomposing a linear map with a linear equivalence likewise preserves discreteness
-and fullness of its range. A discrete subgroup containing a full lattice is a full lattice.
+and fullness of its range. A discrete subgroup containing a full lattice is a full lattice, and so
+is a discrete subgroup of finite index in one (`IsZLattice.of_relIndex_ne_zero`).
 
 ## Main results
 
@@ -241,6 +242,21 @@ theorem _root_.IsZLattice.of_le {K : Type*} [NormedField K] {E : Type*} [NormedA
     [NormedSpace K E] {L₁ L₂ : Submodule ℤ E} [DiscreteTopology L₁] [IsZLattice K L₁]
     [DiscreteTopology L₂] (h : L₁ ≤ L₂) : IsZLattice K L₂ :=
   ⟨eq_top_iff.2 (IsZLattice.span_top (K := K) (L := L₁) ▸ Submodule.span_mono h)⟩
+
+/-- A discrete subgroup of finite index in a full lattice is a full lattice: a positive multiple
+of every lattice vector lies in it, so it spans the same subspace. -/
+theorem _root_.IsZLattice.of_relIndex_ne_zero {K : Type*} [NormedField K] [CharZero K]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace K E] {L₁ L₂ : Submodule ℤ E}
+    [DiscreteTopology L₁] [DiscreteTopology L₂] [IsZLattice K L₂]
+    (h : L₁.toAddSubgroup.relIndex L₂.toAddSubgroup ≠ 0) : IsZLattice K L₁ := by
+  refine ⟨eq_top_iff.2 ?_⟩
+  rw [← IsZLattice.span_top (K := K) (L := L₂), Submodule.span_le]
+  intro x hx
+  obtain ⟨n, hn, -, hmem⟩ := AddSubgroup.exists_nsmul_mem_of_relIndex_ne_zero h hx
+  have hx' : x = (n : K)⁻¹ • (n • x) := by
+    rw [← Nat.cast_smul_eq_nsmul K, inv_smul_smul₀ (Nat.cast_ne_zero.2 hn.ne')]
+  rw [hx']
+  exact Submodule.smul_mem _ _ (Submodule.subset_span hmem.1)
 
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]
