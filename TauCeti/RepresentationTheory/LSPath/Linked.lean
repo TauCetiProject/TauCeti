@@ -38,6 +38,8 @@ concatenated, and it does not change the piecewise-linear path that the list pre
 * `TauCeti.LSPath.linked_iff_getElem`: a list is linked exactly when each of its breaks carries an
   `a`-chain at the total duration before it.
 * `TauCeti.LSPath.Linked.split`: subdividing an entry keeps a list linked.
+* `TauCeti.LSPath.Linked.subdivide`: subdividing an entry at a fraction of its duration keeps a
+  list linked and its directions minimal coset representatives.
 * `TauCeti.LSPath.Linked.exists_sum_take_sub_mul_eq_intCast`: along a linked list, the height at a
   break `a` before the direction `τ` differs from `a ⟨τ λ, -⟩` by an integer.
 * `TauCeti.LSPath.linked_dirDurations` and `TauCeti.LSPath.map_snd_timed`: the directions and
@@ -297,6 +299,30 @@ theorem Linked.split {t : ℚ} {l₁ l₂ : List (P.weylGroup × ℚ)} {w : P.we
     rw [List.cons_append, linked_cons_iff] at h ⊢
     refine ⟨?_, ih h.2⟩
     cases l₁ <;> simpa using h.1
+
+/-- Subdividing an entry `(τ, d)` of a linked list of minimal coset representatives at the fraction
+`θ` of its duration keeps the list linked, and its directions are minimal coset representatives. -/
+theorem Linked.subdivide {lam : M} {t : ℚ} {l : List (P.weylGroup × ℚ)} (hl : Linked P b lam t l)
+    (hlmin : ∀ p ∈ l, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1)
+    {j₁ : ℕ} (hj₁ : j₁ < l.length) {τ : P.weylGroup} {d : ℚ} (hτd : l[j₁] = (τ, d)) (θ : ℚ) :
+    Linked P b lam t (l.take j₁ ++ (τ, θ * d) :: (τ, (1 - θ) * d) :: l.drop (j₁ + 1)) ∧
+      ∀ p ∈ l.take j₁ ++ (τ, θ * d) :: (τ, (1 - θ) * d) :: l.drop (j₁ + 1),
+        (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1 := by
+  have hτmin : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) τ := by
+    have := hlmin _ (List.getElem_mem hj₁)
+    rwa [hτd] at this
+  refine ⟨?_, fun p hp ↦ ?_⟩
+  · have hsplit : l = l.take j₁ ++ (τ, θ * d + (1 - θ) * d) :: l.drop (j₁ + 1) := by
+      rw [show θ * d + (1 - θ) * d = d by ring, ← hτd, ← List.drop_eq_getElem_cons hj₁,
+        List.take_append_drop]
+    rw [hsplit] at hl
+    exact Linked.split hτmin hl
+  · simp only [List.mem_append, List.mem_cons] at hp
+    rcases hp with hp | rfl | rfl | hp
+    · exact hlmin p (List.mem_of_mem_take hp)
+    · exact hτmin
+    · exact hτmin
+    · exact hlmin p (List.mem_of_mem_drop hp)
 
 /-- **Heights at breaks, up to integers.** Along a linked list starting at time `0`, the height
 `∑_{m < j} d_m g(τ_m λ)` at the `j`-th break differs by an integer from `a_j g(τ_j λ)`, where

@@ -15,7 +15,8 @@ Let `K` be a division ring of characteristic zero and let `β ∈ K` be irration
 image of a rational number. Then the rational combinations `a + b β` are pairwise distinct
 (`TauCeti.ratCast_add_ratCast_mul_injective`): the map `(a, b) ↦ a + b β` from `ℚ × ℚ` to `K` is
 injective. For example, the integer grid points `u + v β` used in transcendence proofs are
-distinct.
+distinct. Likewise a relation `x + θ y = r` with `x`, `y`, `r` rational and `y` nonzero determines
+`θ ∈ K` as the rational number `(r - x) / y` (`TauCeti.eq_ratCast_div_of_add_mul_eq`).
 -/
 
 public section
@@ -37,5 +38,12 @@ theorem ratCast_add_ratCast_mul_injective {K : Type*} [DivisionRing K] [CharZero
   rw [Rat.cast_mul, Rat.cast_inv, inv_mul_eq_iff_eq_mul₀ hb']
   push_cast
   rw [sub_mul, sub_eq_sub_iff_add_eq_add, add_comm (_ * β), h, add_comm]
+
+/-- If `x + θ y = r` in a division ring `K` of characteristic zero, with `x`, `y`, `r` rational
+and `y` nonzero, then `θ` is the rational number `(r - x) / y`. -/
+theorem eq_ratCast_div_of_add_mul_eq {K : Type*} [DivisionRing K] [CharZero K] {x y r : ℚ} {θ : K}
+    (hy : y ≠ 0) (h : (x : K) + θ * y = r) : θ = (((r - x) / y : ℚ) : K) := by
+  push_cast
+  rwa [eq_div_iff (by exact_mod_cast hy), eq_sub_iff_add_eq']
 
 end TauCeti
