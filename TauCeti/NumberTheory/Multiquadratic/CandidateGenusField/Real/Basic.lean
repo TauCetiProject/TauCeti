@@ -199,8 +199,7 @@ private theorem candidateGenusFieldRealBaseEquiv_commutes (hd : Squarefree d)
 /-- **The real genus-field candidate is unramified over its quadratic base at every finite
 place.** This descends from finite-place unramifiedness of the full prime-discriminant compositum;
 the canonical equivalence between the two copies of `ℚ(√d)` then identifies the base rings. -/
-theorem isUnramifiedIn_candidateGenusFieldReal (hd : Squarefree d)
-    (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d)
+theorem isUnramifiedIn_candidateGenusFieldReal (hd : Squarefree d) (hpos : 0 < d)
     (q : Ideal (𝓞 (adjoin ℚ {candidateGenusFieldRealBaseRoot hd hpos} :
       IntermediateField ℚ (candidateGenusFieldReal hd)))) :
     Algebra.IsUnramifiedIn (𝓞 (candidateGenusFieldReal hd)) q := by
@@ -220,7 +219,7 @@ theorem isUnramifiedIn_candidateGenusFieldReal (hd : Squarefree d)
   let qA : Ideal (𝓞 A) := Q.under (𝓞 A)
   have : qA.IsPrime := inferInstance
   have hurF : Algebra.IsUnramifiedIn (𝓞 F) qA :=
-    isUnramifiedIn_candidateGenusField hd hnsq qA
+    isUnramifiedIn_candidateGenusField hd qA
   have : Q.LiesOver qA := inferInstance
   have hA : Algebra.IsUnramifiedAt (𝓞 A) Q :=
     TauCeti.RamificationInertia.isUnramifiedAt_of_isUnramifiedIn
