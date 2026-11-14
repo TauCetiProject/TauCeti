@@ -27,7 +27,7 @@ For a representation `ρ : Representation R G V` of a monoid `G` whose elements 
 `1`, `b.det_comp` shows that `b.detBilinForm` is `G`-invariant. When `G` is a group, this unimodular
 invariant form intertwines `ρ` with its contragredient `ρ.dual`, yielding an explicit self-duality
 `Module.Basis.equivDualOfDetEqOne` over any commutative ring, and hence
-`TauCeti.Representation.equivDualOfFinrankEqTwo` for any two-dimensional representation of
+`Representation.equivDualOfFinrankEqTwo` for any two-dimensional representation of
 determinant `1` over a field.
 
 In `FDRep k G`, `FDRep.leftDualIso` identifies the categorical left dual `ᘁV` with
@@ -49,7 +49,7 @@ dual `g ↦ diag(g⁻¹, 1)`.
   `Fin 2`-basis `b`.
 * `Module.Basis.detBilinFormEquivDual`: the `R`-linear equivalence `V ≃ₗ[R] Module.Dual R V` induced
   by `b.detBilinForm`.
-* `Module.Basis.equivDualOfDetEqOne` and `TauCeti.Representation.equivDualOfFinrankEqTwo`:
+* `Module.Basis.equivDualOfDetEqOne` and `Representation.equivDualOfFinrankEqTwo`:
   self-duality `ρ.Equiv ρ.dual` of a rank-two representation of determinant `1`.
 * `FDRep.leftDualIso`: the canonical isomorphism `ᘁV ≅ FDRep.of (Representation.dual V.ρ)` in
   `FDRep k G`.
@@ -187,17 +187,17 @@ end CommRing
 
 end Module.Basis
 
-namespace TauCeti.Representation
+namespace Representation
 
 /-- **Every two-dimensional representation of determinant `1` over a field is self-dual.** -/
 noncomputable def equivDualOfFinrankEqTwo {k : Type u} {G : Type v} {V : Type w}
-    [Field k] [Group G] [AddCommGroup V] [Module k V] (ρ : _root_.Representation k G V)
+    [Field k] [Group G] [AddCommGroup V] [Module k V] (ρ : Representation k G V)
     (hdim : Module.finrank k V = 2) (hdet : ∀ g : G, LinearMap.det (ρ g) = 1) :
     ρ.Equiv ρ.dual :=
   have : FiniteDimensional k V := Module.finite_of_finrank_pos (by omega)
   (Module.finBasisOfFinrankEq k V hdim).equivDualOfDetEqOne ρ hdet
 
-end TauCeti.Representation
+end Representation
 
 namespace FDRep
 
@@ -249,7 +249,7 @@ theorem finrank_hom_tensor_comm_of_finrank_eq_two [Invertible (Nat.card G : k)] 
     (X Y : FDRep k G) :
     Module.finrank k (X ⟶ V ⊗ Y) = Module.finrank k (Y ⟶ V ⊗ X) :=
   finrank_hom_tensor_comm_of_equiv_dual
-    ⟨TauCeti.Representation.equivDualOfFinrankEqTwo V.ρ hdim hdet⟩ X Y
+    ⟨Representation.equivDualOfFinrankEqTwo V.ρ hdim hdet⟩ X Y
 
 end Field
 
