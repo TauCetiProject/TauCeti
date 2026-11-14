@@ -72,14 +72,13 @@ theorem dist_eq_of_forall_norm_sub_bounds
       norm_smul, norm_smul, Real.norm_of_nonneg ht0.le] at h
     exact ⟨le_of_mul_le_mul_left (by linarith [h.1]) ht0,
       le_of_mul_le_mul_left (by linarith [h.2]) ht0⟩
-  -- Letting `c` tend to `1` gives both inequalities without a factor.
-  have hlim {a b : ℝ} (h : ∀ c : ℝ, 1 < c → a ≤ c * b) : a ≤ b := by
-    have hb : Tendsto (fun c : ℝ ↦ c * b) (𝓝[>] 1) (𝓝 b) := by
-      simpa using ((tendsto_id (x := 𝓝 (1 : ℝ))).mul_const b).mono_left
-        (nhdsWithin_le_nhds (s := Ioi (1 : ℝ)))
-    exact ge_of_tendsto hb (eventually_nhdsWithin_of_forall fun c hc ↦ h c hc)
+  -- Since the bounds hold for every factor `c > 1`, they hold without a factor.
   rw [dist_eq_norm, dist_eq_norm]
-  exact le_antisymm (hlim fun c hc ↦ (key c hc).1) (hlim fun c hc ↦ (key c hc).2)
+  exact le_antisymm
+    ((le_iff_forall_one_lt_le_mul₀ (norm_nonneg _)).2 fun c hc ↦ by
+      simpa only [mul_comm] using (key c hc).1)
+    ((le_iff_forall_one_lt_le_mul₀ (norm_nonneg _)).2 fun c hc ↦ by
+      simpa only [mul_comm] using (key c hc).2)
 
 variable [StrictConvexSpace ℝ W]
 
