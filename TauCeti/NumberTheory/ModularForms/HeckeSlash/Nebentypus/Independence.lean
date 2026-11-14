@@ -53,7 +53,7 @@ The uniformly repeating-family theorem corresponds to the role of
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup DoubleCoset
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup DoubleCoset TauCeti
   HeckeRing.GLn
 
 open scoped MatrixGroups ModularForm Pointwise
