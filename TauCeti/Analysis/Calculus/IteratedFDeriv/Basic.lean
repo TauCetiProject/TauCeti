@@ -21,8 +21,9 @@ two-variable currying isometry used to identify continuous multilinear second de
 curried bilinear maps, and the corresponding exact comparison for differences of second
 derivatives, which transfers Hölder bounds between the two forms of the second derivative.
 Where a function `ζ` equals one on a neighbourhood of a point, every iterated derivative of
-`ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`). Bounded derivatives up
-to a finite order have a common bound
+`ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`), and maps agreeing on
+an open set have the same iterated derivatives there (`Set.EqOn.iteratedFDeriv_of_isOpen`).
+Bounded derivatives up to a finite order have a common bound
 (`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`), and such a
 common bound is nonnegative and bounds the function itself
 (`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`). Adding a constant to a function does not
@@ -161,5 +162,11 @@ theorem _root_.Filter.EventuallyEq.iteratedFDeriv_mul_eq {𝕜 F A : Type*} [Non
     filter_upwards [hζ] with y hy
     simp only [Pi.mul_apply, hy, Pi.one_apply, one_mul]
   exact (hev.iteratedFDeriv 𝕜 k).eq_of_nhds
+
+/-- Maps agreeing on an open set have the same iterated derivatives there. This is the Fréchet
+counterpart of Mathlib's `Set.EqOn.iteratedDeriv_of_isOpen`. -/
+theorem _root_.Set.EqOn.iteratedFDeriv_of_isOpen {s : Set E} {f g : E → F} (hfg : Set.EqOn f g s)
+    (hs : IsOpen s) (n : ℕ) : Set.EqOn (iteratedFDeriv 𝕜 n f) (iteratedFDeriv 𝕜 n g) s :=
+  fun _ hx ↦ ((Filter.eventuallyEq_of_mem (hs.mem_nhds hx) hfg).iteratedFDeriv 𝕜 n).eq_of_nhds
 
 end TauCeti
