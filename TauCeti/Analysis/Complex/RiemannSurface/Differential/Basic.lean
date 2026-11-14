@@ -151,25 +151,32 @@ theorem coeff_eq_iff (ω : OneForm X) (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) {y
   rw [← h]
   exact ⟨fun hc ↦ hc ▸ rfl, fun hc ↦ smul_left_injective ℂ (mvfderiv_ne_zero he hy) hc.symm⟩
 
+/-- **The coefficient of `df`** in a chart is the derivative of the chart representative of `f`. -/
+theorem coeff_mvfderiv {f : X → ℂ} (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) {z : ℂ} (hz : z ∈ e.target) :
+    coeff (mvfderiv 𝓘(ℂ) f) e z = deriv (f ∘ e.symm) z := by
+  by_cases hf : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (e.symm z)
+  · rw [coeff, ← mvfderiv_comp_apply z hf (mdifferentiableAt_symm_of_mem_maximalAtlas he hz),
+      mvfderiv_eq_fderiv]
+    simp [fderiv_eq_smul_deriv]
+  -- Otherwise both sides vanish.
+  have hd : ¬DifferentiableAt ℂ (f ∘ e.symm) z := fun hd ↦
+    hf (TauCeti.mdifferentiableAt_of_differentiableAt_comp_symm he hz hd)
+  rw [deriv_zero_of_not_differentiableAt hd, coeff,
+    TauCeti.mvfderiv_eq_zero_iff.2 (mfderiv_zero_of_not_mdifferentiableAt hf)]
+  simp
+
 /-- The differentials of two charts differ by the derivative of the transition map. -/
-theorem mvfderiv_eq_deriv_smul (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X)
-    (he' : e' ∈ maximalAtlas 𝓘(ℂ) 1 X) {y : X} (hy : y ∈ e.source) (hy' : y ∈ e'.source) :
-    mvfderiv 𝓘(ℂ) e y = deriv (e ∘ e'.symm) (e' y) • mvfderiv 𝓘(ℂ) e' y := by
-  have hev : (e : X → ℂ) =ᶠ[𝓝 y] (e ∘ e'.symm) ∘ e' := by
-    filter_upwards [e'.open_source.mem_nhds hy'] with w hw
-    simp [e'.left_inv hw]
-  have hψ := TauCeti.analyticAt_symm_trans he' he hy' hy
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  rw [hev.mvfderiv_eq, mvfderiv_comp_apply_of_differentiableAt hψ.differentiableAt
-    (mdifferentiableAt_of_mem_maximalAtlas he' hy'), fderiv_eq_smul_deriv, smul_apply,
-    smul_eq_mul, smul_eq_mul, mul_comm]
+theorem mvfderiv_eq_deriv_smul
+    (he' : e' ∈ maximalAtlas 𝓘(ℂ) 1 X) {y : X} (hy' : y ∈ e'.source) :
+    mvfderiv 𝓘(ℂ) e y = deriv (e ∘ e'.symm) (e' y) • mvfderiv 𝓘(ℂ) e' y :=
+  ((coeff_eq_iff (mvfderiv 𝓘(ℂ) e) he' hy').1 (coeff_mvfderiv he' (e'.map_source hy'))).symm
 
 /-- **The transformation law of a `1`-form.** If `ω = f dz` in the chart `z = e` and
 `ω = g dw` in the chart `w = e'`, then `g(w) = f(z(w)) · dz/dw`. -/
 theorem coeff_eq_coeff_mul_deriv (ω : OneForm X) (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X)
     (he' : e' ∈ maximalAtlas 𝓘(ℂ) 1 X) {y : X} (hy : y ∈ e.source) (hy' : y ∈ e'.source) :
     ω.coeff e' (e' y) = ω.coeff e (e y) * deriv (e ∘ e'.symm) (e' y) := by
-  rw [coeff_eq_iff ω he' hy', mul_smul, ← mvfderiv_eq_deriv_smul he he' hy hy',
+  rw [coeff_eq_iff ω he' hy', mul_smul, ← mvfderiv_eq_deriv_smul he' hy',
     ← coeff_eq_iff ω he hy]
 
 /-- Near a common point of two charts, the coefficients in the two charts are related by the
@@ -530,62 +537,34 @@ section Differential
 
 variable {f : X → ℂ} {x : X}
 
-/-- **The coefficient of `df`** in a chart is the derivative of the chart representative of `f`. -/
-theorem coeff_mvfderiv (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) {z : ℂ} (hz : z ∈ e.target)
-    (hf : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (e.symm z)) :
-    coeff (mvfderiv 𝓘(ℂ) f) e z = deriv (f ∘ e.symm) z := by
-  rw [coeff, ← mvfderiv_comp_apply z hf (mdifferentiableAt_symm_of_mem_maximalAtlas he hz),
-    mvfderiv_eq_fderiv]
-  simp [fderiv_eq_smul_deriv]
-
 variable [IsManifold 𝓘(ℂ) 1 X]
 
-/-- Near a point where `f` is meromorphic, the coefficient of `df` in the chart at that point is
-the derivative of the chart representative of `f`, away from the point itself. -/
-theorem coeff_mvfderiv_eventuallyEq (hf : RiemannSurface.MeromorphicAt f x) :
-    coeff (mvfderiv 𝓘(ℂ) f) (chartAt ℂ x) =ᶠ[𝓝[≠] (chartAt ℂ x x)]
-      deriv (f ∘ (chartAt ℂ x).symm) := by
-  rw [RiemannSurface.meromorphicAt_def] at hf
-  filter_upwards [hf.eventually_analyticAt, nhdsWithin_le_nhds ((chartAt ℂ x).open_target.mem_nhds
-    ((chartAt ℂ x).map_source (mem_chart_source ℂ x)))] with z hz hzt
-  exact coeff_mvfderiv (chart_mem_maximalAtlas x) hzt
-    (TauCeti.mdifferentiableAt_of_differentiableAt_comp_symm (chart_mem_maximalAtlas x) hzt
-      hz.differentiableAt)
-
-/-- Near a point where `f` is holomorphic, the coefficient of `df` in the chart at that point is
-the derivative of the chart representative of `f`. -/
-private theorem coeff_mvfderiv_eventuallyEq_nhds
-    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) :
+/-- Near a point, the coefficient of `df` in the chart at that point is the derivative of the chart
+representative of `f`. -/
+theorem coeff_mvfderiv_eventuallyEq :
     coeff (mvfderiv 𝓘(ℂ) f) (chartAt ℂ x) =ᶠ[𝓝 (chartAt ℂ x x)]
       deriv (f ∘ (chartAt ℂ x).symm) := by
-  have hcx := mem_chart_source ℂ x
-  filter_upwards [(chartAt ℂ x).open_target.mem_nhds ((chartAt ℂ x).map_source hcx),
-    ((chartAt ℂ x).continuousAt_symm ((chartAt ℂ x).map_source hcx)).eventually
-      (by rwa [(chartAt ℂ x).left_inv hcx])] with z hzt hz
-  exact coeff_mvfderiv (chart_mem_maximalAtlas x) hzt hz
+  filter_upwards [(chartAt ℂ x).open_target.mem_nhds
+    ((chartAt ℂ x).map_source (mem_chart_source ℂ x))] with z hzt
+  exact coeff_mvfderiv (chart_mem_maximalAtlas x) hzt
 
 /-- The differential of a meromorphic function is a meromorphic `1`-form. -/
 theorem meromorphicAt_mvfderiv (hf : RiemannSurface.MeromorphicAt f x) :
     MeromorphicAt (mvfderiv 𝓘(ℂ) f) x :=
   ((RiemannSurface.meromorphicAt_def f x).1 hf).deriv.congr
-    (coeff_mvfderiv_eventuallyEq hf).symm
+    (coeff_mvfderiv_eventuallyEq.filter_mono nhdsWithin_le_nhds).symm
 
 /-- The differential of a holomorphic function is a holomorphic `1`-form. -/
 theorem holomorphicAt_mvfderiv (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) :
     HolomorphicAt (mvfderiv 𝓘(ℂ) f) x :=
-  (TauCeti.analyticAt_comp_chartAt_symm hf).deriv.congr
-    (coeff_mvfderiv_eventuallyEq_nhds hf).symm
+  (TauCeti.analyticAt_comp_chartAt_symm hf).deriv.congr coeff_mvfderiv_eventuallyEq.symm
 
 /-- **`ord_x df = ord_x f - 1`** at a point where `f` has nonzero finite order, that is, at a zero
 or a pole of `f`. -/
 theorem order_mvfderiv {n : ℤ} (hn : n ≠ 0) (hf : RiemannSurface.meromorphicOrderAt f x = n) :
     order (mvfderiv 𝓘(ℂ) f) x = ↑(n - 1) := by
-  have hm : RiemannSurface.MeromorphicAt f x := by
-    rw [RiemannSurface.meromorphicAt_def]
-    refine _root_.meromorphicAt_of_meromorphicOrderAt_ne_zero ?_
-    rw [← RiemannSurface.meromorphicOrderAt_def, hf]
-    exact_mod_cast hn
-  rw [order_def, _root_.meromorphicOrderAt_congr (coeff_mvfderiv_eventuallyEq hm)]
+  rw [order_def, _root_.meromorphicOrderAt_congr
+    (coeff_mvfderiv_eventuallyEq.filter_mono nhdsWithin_le_nhds)]
   exact _root_.meromorphicOrderAt_deriv_eq_sub_one (by exact_mod_cast hn)
     ((RiemannSurface.meromorphicOrderAt_def f x).symm.trans hf)
 
@@ -609,7 +588,7 @@ theorem order_mvfderiv_eq_localMultiplicity_sub_one
     funext z
     exact deriv_sub_const (f x)
   rw [order_def, _root_.meromorphicOrderAt_congr
-    ((coeff_mvfderiv_eventuallyEq_nhds hf).filter_mono nhdsWithin_le_nhds), ← hderiv]
+    (coeff_mvfderiv_eventuallyEq.filter_mono nhdsWithin_le_nhds), ← hderiv]
   exact _root_.meromorphicOrderAt_deriv_eq_sub_one (by exact_mod_cast hpos) hord
 
 end Differential
