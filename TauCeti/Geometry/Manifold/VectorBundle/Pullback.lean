@@ -53,7 +53,9 @@ makes `f *ᵖ E` when `E` is one.
 
 The native Hom section between two pullbacks by the same map is `Cⁿ` exactly when its original
 Hom field along that map is `Cⁿ` (`Bundle.Pullback.contMDiff_hom_section_iff`). This dictionary
-requires neither finite rank nor a smooth bundle structure on the fibres.
+requires neither finite rank nor a smooth bundle structure on the fibres. Restriction to an open
+subset `U` also inherits `ContMDiffVectorBundle` on the native open-inclusion pullback
+(`ContMDiffVectorBundle.restrictOpen`).
 
 -/
 
@@ -273,3 +275,35 @@ theorem Bundle.Pullback.contMDiff_hom_section_iff (f : K) (hf : ContMDiff IX IB 
     exact ⟨contMDiffAt_id, hx.2.congr_of_eventuallyEq (heq x)⟩
 
 end HomSection
+
+section RestrictOpen
+
+open Bundle TopologicalSpace
+
+variable {𝕜 B F EB HB : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB]
+  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {E : B → Type*} [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
+  [TopologicalSpace (TotalSpace F E)] [∀ x, TopologicalSpace (E x)]
+  [FiberBundle F E] [VectorBundle 𝕜 F E] {n : WithTop ℕ∞}
+  [ContMDiffVectorBundle n F E IB]
+
+/-- Restricting a `C^n` vector bundle to an open subset `U` via the native continuous inclusion
+`U → B` produces a `C^n` vector bundle. -/
+instance ContMDiffVectorBundle.restrictOpen (U : Opens B) :
+    ContMDiffVectorBundle n F ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, B)) *ᵖ E) IB where
+  contMDiffOn_coordChangeL := by
+    let ι : C(U, B) := ⟨Subtype.val, continuous_subtype_val⟩
+    rintro _ _ ⟨e, he, rfl⟩ ⟨e', he', rfl⟩
+    refine ((contMDiffOn_coordChangeL e e').comp contMDiff_subtype_val.contMDiffOn
+      fun b hb ↦ hb).congr ?_
+    rintro b (hb : (b : B) ∈ e.baseSet ∩ e'.baseSet)
+    ext v
+    -- `coordChangeL` on pulled-back trivializations evaluates `e.coordChangeL 𝕜 e'` at `ι b`.
+    change ((e.pullback ι).coordChangeL 𝕜 (e'.pullback ι) b) v = (e.coordChangeL 𝕜 e' (b : B)) v
+    rw [e.coordChangeL_apply e' hb, (e.pullback ι).coordChangeL_apply' _]
+    exacts [rfl, hb]
+
+end RestrictOpen
+
