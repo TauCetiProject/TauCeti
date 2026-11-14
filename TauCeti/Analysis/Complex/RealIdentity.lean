@@ -20,8 +20,10 @@ On the complex slit plane, agreement on the positive real axis likewise determin
 holomorphic function uniquely.
 
 At a real point, the order of vanishing of a holomorphic function equals the order of vanishing
-of its restriction to the real line (`AnalyticAt.analyticOrderAt_comp_ofReal`). This lets the
-order of a real analytic function be read off any holomorphic extension of it.
+of its restriction to the real line (`AnalyticAt.analyticOrderAt_comp_ofReal`), and when the
+codomain is complete all iterated derivatives along the real line agree with the complex iterated
+derivatives (`AnalyticAt.iteratedDeriv_comp_ofReal`). This lets the order and jet of a real
+analytic function be read off any holomorphic extension of it.
 -/
 
 public section
@@ -77,3 +79,21 @@ theorem AnalyticAt.analyticOrderAt_comp_ofReal {f : ℂ → E} {t : ℝ} (hf : A
     hg0, ?_⟩
   filter_upwards [hT.eventually hfg] with s hs
   rw [hs, ← Complex.ofReal_sub, ← Complex.ofReal_pow, Complex.coe_smul]
+
+/-- At a real point `t`, every iterated derivative of the restriction `s ↦ f s` to the real line of
+a holomorphic function `f` into a complete space equals the complex iterated derivative of `f`. -/
+theorem AnalyticAt.iteratedDeriv_comp_ofReal [CompleteSpace E] {f : ℂ → E} {t : ℝ}
+    (hf : AnalyticAt ℂ f t) (n : ℕ) :
+    iteratedDeriv n (fun s : ℝ ↦ f s) t = iteratedDeriv n f t := by
+  induction n generalizing f t with
+  | zero => simp
+  | succ n ih =>
+    have hderiv : deriv (fun s : ℝ ↦ f s) =ᶠ[𝓝 t] fun s : ℝ ↦ deriv f s := by
+      filter_upwards [(Complex.continuous_ofReal.tendsto t).eventually hf.eventually_analyticAt]
+        with s hs
+      have hd : HasDerivAt (fun r : ℝ ↦ f r) (deriv f s) s := by
+        simpa [Function.comp_def] using
+          (hs.differentiableAt.hasDerivAt.hasFDerivAt.restrictScalars ℝ).comp_hasDerivAt
+            s Complex.ofRealCLM.hasDerivAt
+      exact hd.deriv
+    rw [iteratedDeriv_succ', hderiv.iteratedDeriv_eq n, ih hf.deriv, ← iteratedDeriv_succ']

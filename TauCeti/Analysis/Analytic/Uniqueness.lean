@@ -44,6 +44,9 @@ lives.
   vanishes near `p` exactly when all its restrictions to lines through `p` vanish near `0`.
 * `AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`: after a linear change of
   coordinates, a function on `E × 𝕜` not vanishing near `p` has finite order in the last variable.
+* `AnalyticAt.smul_eventuallyEq_zero_iff`, `AnalyticAt.mul_eventuallyEq_zero_iff`: a scalar multiple
+  or product of functions analytic at `p` vanishes near `p` if and only if one of the factors
+  vanishes near `p`.
 
 ## References
 
@@ -134,5 +137,43 @@ theorem AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top {f : E ×
     rw [← hL, ← L.map_smul, ← L.map_add]
     simp
   simpa [hLt] using ht
+
+/-- **Zero-divisor-freeness of analytic germs.** If `f : E → 𝕜` and `g : E → F` are analytic at `p`,
+then `f • g` vanishes near `p` if and only if either `f` or `g` vanishes near `p`. -/
+theorem AnalyticAt.smul_eventuallyEq_zero_iff {f : E → 𝕜} {g : E → F} {p : E}
+    (hf : AnalyticAt 𝕜 f p) (hg : AnalyticAt 𝕜 g p) :
+    f • g =ᶠ[𝓝 p] 0 ↔ f =ᶠ[𝓝 p] 0 ∨ g =ᶠ[𝓝 p] 0 := by
+  refine ⟨fun hfg ↦ ?_, ?_⟩
+  · by_cases hf0 : f =ᶠ[𝓝 p] 0
+    · exact Or.inl hf0
+    right
+    -- Pass to the completion of `F` so that `eventually_analyticAt` gives an open ball.
+    let e : F →L[𝕜] UniformSpace.Completion F := UniformSpace.Completion.toComplL
+    obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1 <|
+      hf.eventually_analyticAt.and <| (((e.analyticAt _).comp hg).eventually_analyticAt).and hfg
+    obtain ⟨y, hy, hfy⟩ : ∃ y ∈ ball p r, f y ≠ 0 := by
+      by_contra! hall
+      exact hf0 (eventually_of_mem (ball_mem_nhds p hr) hall)
+    have hgy : e ∘ g =ᶠ[𝓝 y] 0 := by
+      filter_upwards [isOpen_ball.mem_nhds hy, (hball hy).1.continuousAt.eventually_ne hfy]
+        with z hz hfz
+      have hz0 : f z • g z = 0 := (hball hz).2.2
+      simp [(smul_eq_zero.1 hz0).resolve_left hfz]
+    let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+    have hg0 : Set.EqOn (e ∘ g) 0 (ball p r) :=
+      AnalyticOnNhd.eqOn_zero_of_preconnected_of_eventuallyEq_zero
+        (fun z hz ↦ (hball hz).2.1) (convex_ball p r).isPreconnected hy hgy
+    filter_upwards [ball_mem_nhds p hr] with z hz
+    exact UniformSpace.Completion.coe_injective F (by simpa [e] using hg0 hz)
+  · rintro (hf0 | hg0)
+    · exact hf0.mono fun x hx ↦ by simp [hx]
+    · exact hg0.mono fun x hx ↦ by simp [hx]
+
+/-- If `f g : E → 𝕜` are analytic at `p`, then `f * g` vanishes near `p` if and only if either `f`
+or `g` vanishes near `p`. -/
+theorem AnalyticAt.mul_eventuallyEq_zero_iff {f g : E → 𝕜} {p : E}
+    (hf : AnalyticAt 𝕜 f p) (hg : AnalyticAt 𝕜 g p) :
+    f * g =ᶠ[𝓝 p] 0 ↔ f =ᶠ[𝓝 p] 0 ∨ g =ᶠ[𝓝 p] 0 :=
+  hf.smul_eventuallyEq_zero_iff hg
 
 end
