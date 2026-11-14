@@ -174,14 +174,20 @@ lemma ofPoint_nonneg (x : X) : 0 ≤ ofPoint x :=
 
 /-- Push forward a formal divisor along a map of point sets by summing coefficients over
 fibres. -/
-@[expose] noncomputable def pushforward (f : X → Y) : WeilDivisor X →+ WeilDivisor Y :=
+noncomputable def pushforward (f : X → Y) : WeilDivisor X →+ WeilDivisor Y :=
   Finsupp.mapDomain.addMonoidHom f
+
+/-- The pushforward is Mathlib's `Finsupp.mapDomain.addMonoidHom`: rewrite with this lemma to use
+the `Finsupp.mapDomain` API. -/
+lemma pushforward_eq_mapDomainAddMonoidHom (f : X → Y) :
+    pushforward f = Finsupp.mapDomain.addMonoidHom f :=
+  (rfl)
 
 /-- The explicit unfolding equation for formal pushforward: `pushforward f D` is `D.mapDomain f`.
 Use this for manual rewriting rather than as a simp normal form. -/
 lemma pushforward_apply (f : X → Y) (D : WeilDivisor X) :
     pushforward f D = D.mapDomain f :=
-  rfl
+  (rfl)
 
 /-- The coefficient of the pushed-forward divisor at `y` is the sum of the coefficients over
 the fibre of `f` above `y`. -/
@@ -344,6 +350,7 @@ lemma weightedDegree_ofPoint (w : X → ℤ) (x : X) :
     weightedDegree w (ofPoint x) = w x := by
   simp [weightedDegree, ofPoint, Finsupp.weight_single]
 
+@[simp]
 lemma weightedDegree_pushforward (wY : Y → ℤ) (f : X → Y) (D : WeilDivisor X) :
     weightedDegree wY (pushforward f D) = weightedDegree (wY ∘ f) D := by
   simp [weightedDegree, Finsupp.weight, pushforward_apply]
