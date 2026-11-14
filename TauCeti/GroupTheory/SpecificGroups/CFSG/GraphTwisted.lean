@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Index
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Index
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeE7.Index
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 
 /-!
 # Diagram permutations of the graph-twisted families
@@ -20,9 +20,10 @@ file attaches that permutation to every index it can occur for, namely to every
 `TauCeti.GraphTwistedIndex`.
 
 The permutations themselves are pinned as `Fin` data by
-`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations.lean`. What is new here is the assignment of
-one of them to each family: the identity on the nine untwisted families, the chain reversal on
-`²Aₙ`, the fork exchange on `²Dₙ`, the order-two symmetry on `²E₆`, and triality on `³D₄`. The
+`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations/Basic.lean`.
+What is new here is the assignment of one of them to each family: the identity on the nine
+untwisted families, the chain reversal on `²Aₙ`, the fork exchange on `²Dₙ`, the order-two symmetry
+on `²E₆`, and triality on `³D₄`. The
 assignment is total on `TauCeti.GraphTwistedIndex` and defined nowhere else: the Suzuki--Ree and
 Tits indices are excluded by that subtype, whose defining hypothesis discharges their branches, so
 no diagram permutation is invented for a family whose Steinberg map is an odd power of a

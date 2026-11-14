@@ -85,6 +85,38 @@ end TauCeti
 
 namespace Equiv.Perm
 
+/-- A permutation preserving consecutive adjacency and fixing the last point of a finite
+chain is the identity. Only forward preservation of adjacency is needed. -/
+theorem eq_one_of_adjacent_of_apply_last {n : ℕ} {σ : Perm (Fin (n + 1))}
+    (hadj : ∀ i j, i.val + 1 = j.val →
+      (σ i).val + 1 = (σ j).val ∨ (σ j).val + 1 = (σ i).val)
+    (hlast : σ (Fin.last n) = Fin.last n) : σ = 1 := by
+  have hfix : ∀ k : ℕ, ∀ j : Fin (n + 1), n - j.val ≤ k → σ j = j := by
+    intro k
+    induction k with
+    | zero =>
+        intro j hj
+        have hjlast : j = Fin.last n := by apply Fin.ext; simp only [Fin.val_last]; omega
+        simpa [hjlast] using hlast
+    | succ k ih =>
+        intro j hj
+        by_cases hj' : n - j.val ≤ k
+        · exact ih j hj'
+        let s : Fin (n + 1) := ⟨j.val + 1, by omega⟩
+        have hs : σ s = s := ih s (by dsimp only [s, Fin.val_mk]; omega)
+        have hstep := hadj j s rfl
+        rw [hs] at hstep
+        have hne : (σ j).val ≠ j.val + 2 := by
+          intro he
+          have hfixed := ih (σ j) (by omega)
+          have hjfix : σ j = j := σ.injective hfixed
+          have := congrArg Fin.val hjfix
+          omega
+        apply Fin.ext
+        dsimp only [s, Fin.val_mk] at hstep
+        omega
+  exact Equiv.ext fun j ↦ hfix (n - j.val) j le_rfl
+
 /-- A permutation of `Fin (m * n)` is the identity once it fixes every point of each row
 `finProdFinEquiv (i, ·)`. Splitting a kernel decision over the rows keeps each certificate small. -/
 theorem eq_one_of_rows {m n : ℕ} (p : Equiv.Perm (Fin (m * n)))
