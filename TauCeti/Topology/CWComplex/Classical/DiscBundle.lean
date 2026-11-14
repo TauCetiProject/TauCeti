@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
 public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 import Mathlib.Analysis.Convex.Contractible
+import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 import TauCeti.Topology.FiberBundle.Separation
 import TauCeti.Topology.MetricSpace.Isometry.Basic
 import TauCeti.Topology.Separation.InvFunOn
@@ -98,10 +99,6 @@ unit ball, the open unit ball and the unit sphere onto the corresponding Euclide
 private abbrev ballCoord (r : ℕ) : (Fin r → ℝ) ≃ₜ EuclideanSpace ℝ (Fin r) :=
   (EuclideanSpace.equiv (Fin r) ℝ).symm.unitBallHomeomorph
 
-/-- The characteristic map of an `n`-cell of `B`, as a continuous map on the closed unit ball. -/
-private def cellBaseMap {n : ℕ} (j : cell (univ : Set B) n) : C(closedBall (0 : Fin n → ℝ) 1, B) :=
-  ⟨(closedBall 0 1).domRestrict (map n j), (RelCWComplex.continuousOn n j).domRestrict⟩
-
 private theorem exists_cellFrame {n : ℕ} (j : cell (univ : Set B) n) :
     ∃ L : ∀ y : closedBall (0 : Fin n → ℝ) 1,
         EuclideanSpace ℝ (Fin (finrank ℝ F)) ≃ₗᵢ[ℝ] E (map n j y),
@@ -109,7 +106,7 @@ private theorem exists_cellFrame {n : ℕ} (j : cell (univ : Set B) n) :
         TotalSpace.mk' F (map n j p.1) (L p.1 p.2) := by
   let : ContractibleSpace (closedBall (0 : Fin n → ℝ) 1) :=
     (convex_closedBall 0 1).contractibleSpace ⟨0, mem_closedBall_self zero_le_one⟩
-  exact exists_continuous_linearIsometryEquiv_of_contractibleSpace F E (cellBaseMap j)
+  exact exists_continuous_linearIsometryEquiv_of_contractibleSpace F E (ambientCellMap j)
 
 /-- An orthonormal frame of `E` along the characteristic map of a cell of `B`. -/
 private def cellFrame {n : ℕ} (j : cell (univ : Set B) n) (y : closedBall (0 : Fin n → ℝ) 1) :

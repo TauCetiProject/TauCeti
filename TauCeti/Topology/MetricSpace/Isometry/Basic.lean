@@ -73,6 +73,12 @@ theorem initLastIsometry_symm_apply {n : ℕ} (p : (Fin n → α) × α) :
 theorem initLastIsometry_zero [Zero α] (n : ℕ) : initLastIsometry α n 0 = 0 := by
   ext <;> simp [Fin.init]
 
+/-- Splitting the coordinates of a tuple with `Fin.appendIsometryOfEq` sends the origin to the
+origin. -/
+theorem appendIsometryOfEq_symm_zero [Zero α] {m l n : ℕ} (h : m + l = n) :
+    (appendIsometryOfEq (α := α) h).symm 0 = 0 := by
+  ext <;> simp
+
 end PseudoEMetricSpace
 
 section PseudoMetricSpace
@@ -104,12 +110,6 @@ theorem preimage_ball_prod_initLastIsometry (n : ℕ) (r : ℝ) :
     initLastIsometry α n ⁻¹' (ball 0 r ×ˢ ball 0 r) = ball 0 r :=
   ((initLastIsometry α n).toEquiv.preimage_eq_iff_eq_image _ _).2
     (image_ball_initLastIsometry n r).symm
-
-/-- Splitting the coordinates of a tuple with `Fin.appendIsometryOfEq` sends the origin to the
-origin. -/
-theorem appendIsometryOfEq_symm_zero {m l n : ℕ} (h : m + l = n) :
-    (appendIsometryOfEq (α := α) h).symm 0 = 0 := by
-  ext <;> simp
 
 /-- A tuple lies in the ball of radius `r` around the origin exactly when both parts of its
 splitting by `Fin.appendIsometryOfEq` do. -/

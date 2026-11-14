@@ -13,18 +13,18 @@ public import Mathlib.Topology.Category.TopCat.Basic
 
 The stages of a relative CW complex's skeletal filtration, bundled as topological spaces.
 Characteristic-map lemmas describe their continuity on the closed unit ball (bundled as
-`TauCeti.cellMap`), how open cells sit outside the lower skeleton, how their coordinates are
-unique, and how cells account for points in consecutive skeleta, so that a map sends
-`skeletonLT C (n + 1)` into a set exactly when it does so on `skeletonLT C n` and on the closed
-`n`-cells (`TauCeti.mapsTo_skeletonLT_succ_iff`).  Every point of the complex lies in some
-skeleton above any given level, which gives induction principles over the skeleta
-(`TauCeti.forall_mem_skeletonLT_of_map`, `TauCeti.forall_mem_complex_of_map`).  With a single
-`0`-cell, the `0`-skeleton is the base together with that point
-(`TauCeti.skeletonLT_one_eq_insert`).  A subset of the `0`-skeleton is closed as
-soon as its trace on the base is (`TauCeti.isClosed_of_subset_skeletonLT_one`), so a map from a
-preconnected space into the `0`-skeleton cannot leave such a subset whose complement there is
-also closed (`TauCeti.forall_mem_of_subset_skeletonLT_one`).  The preimages of the skeleta under
-a map into the ambient space form an increasing filtration (`TauCeti.preimageSkeleton`).
+`TauCeti.ambientCellMap` into the ambient space and `TauCeti.cellMap` into the complex), how open
+cells sit outside the lower skeleton, how their coordinates are unique, and how cells account for
+points in consecutive skeleta, so that a map sends `skeletonLT C (n + 1)` into a set exactly when it
+does so on `skeletonLT C n` and on the closed `n`-cells (`TauCeti.mapsTo_skeletonLT_succ_iff`).
+Every point of the complex lies in some skeleton above any given level, which gives induction
+principles over the skeleta (`TauCeti.forall_mem_skeletonLT_of_map`,
+`TauCeti.forall_mem_complex_of_map`). With a single `0`-cell, the `0`-skeleton is the base together
+with that point (`TauCeti.skeletonLT_one_eq_insert`). A subset of the `0`-skeleton is closed as soon
+as its trace on the base is (`TauCeti.isClosed_of_subset_skeletonLT_one`), so a map from a
+preconnected space into the `0`-skeleton cannot leave such a subset whose complement there is also
+closed (`TauCeti.forall_mem_of_subset_skeletonLT_one`). The preimages of the skeleta under a map
+into the ambient space form an increasing filtration (`TauCeti.preimageSkeleton`).
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
@@ -45,6 +45,12 @@ the subtype. -/
 lemma continuous_map_closedBall {n : ℕ} (j : cell C n) :
     Continuous fun y : closedBall (0 : Fin n → ℝ) 1 ↦ map n j y :=
   (continuousOn n j).comp_continuous continuous_subtype_val fun y ↦ y.2
+
+/-- The characteristic map of an `n`-cell, as a continuous map from the closed unit ball of
+`Fin n → ℝ` into the ambient space; `TauCeti.cellMap` is the same map into the complex. The body
+is exposed so that its values are the characteristic map by definition. -/
+@[expose] def ambientCellMap {n : ℕ} (j : cell C n) : C(closedBall (0 : Fin n → ℝ) 1, X) :=
+  ⟨(closedBall 0 1).domRestrict (map n j), continuous_map_closedBall j⟩
 
 /-- The characteristic map of an `n`-cell, as a continuous map from the closed unit ball of
 `Fin n → ℝ` into the complex. -/

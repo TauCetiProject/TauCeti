@@ -109,10 +109,6 @@ private theorem eventually_isEmpty_coverCell [RelCWComplex.FiniteDimensional C] 
   (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := ∅)).mono
     fun _ h ↦ ⟨fun c ↦ h.false c.1⟩
 
-/-- The characteristic map of a cell, as a continuous map on the closed unit ball. -/
-private def cellBallMap {n : ℕ} (i : cell C n) : C(closedBall (0 : Fin n → ℝ) 1, B) :=
-  ⟨(closedBall 0 1).domRestrict (map n i), (continuousOn n i).domRestrict⟩
-
 /-- The centre of the closed unit ball. -/
 private def ballCentre (n : ℕ) : closedBall (0 : Fin n → ℝ) 1 :=
   ⟨0, mem_closedBall_self zero_le_one⟩
@@ -122,17 +118,17 @@ variable [TopologicalSpace E] (hp : IsCoveringMap p)
 /-- The lift of the characteristic map of `c.1` through `p` sending the centre to `c.2`. -/
 private def coverLift {n : ℕ} (c : CoverCell p C n) : C(closedBall (0 : Fin n → ℝ) 1, E) :=
   (hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1)
-      (cellBallMap c.1) (ballCentre n) c.2 c.2.2).exists.choose
+      (ambientCellMap c.1) (ballCentre n) c.2 c.2.2).exists.choose
 
 private theorem coverLift_ballCentre {n : ℕ} (c : CoverCell p C n) :
     coverLift hp c (ballCentre n) = c.2 :=
   (hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1)
-      (cellBallMap c.1) (ballCentre n) c.2 c.2.2).exists.choose_spec.1
+      (ambientCellMap c.1) (ballCentre n) c.2 c.2.2).exists.choose_spec.1
 
 private theorem comp_coverLift {n : ℕ} (c : CoverCell p C n) :
-    p ∘ coverLift hp c = cellBallMap c.1 :=
+    p ∘ coverLift hp c = ambientCellMap c.1 :=
   (hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1)
-      (cellBallMap c.1) (ballCentre n) c.2 c.2.2).exists.choose_spec.2
+      (ambientCellMap c.1) (ballCentre n) c.2 c.2.2).exists.choose_spec.2
 
 private theorem coverLift_apply {n : ℕ} (c : CoverCell p C n) (x : closedBall (0 : Fin n → ℝ) 1) :
     p (coverLift hp c x) = map n c.1 x :=
@@ -144,11 +140,12 @@ private theorem exists_coverLift_eq {n : ℕ} (i : cell C n) (x : closedBall (0 
     {e : E} (he : p e = map n i x) :
     ∃ e₀ : p ⁻¹' {map n i 0}, coverLift hp ⟨i, e₀⟩ x = e := by
   obtain ⟨F, ⟨hFx, hF⟩, -⟩ :=
-    hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1) (cellBallMap i) x e he
+    hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1) (ambientCellMap i) x e
+      he
   have hF₀ : F (ballCentre n) ∈ p ⁻¹' {map n i 0} := congr_fun hF (ballCentre n)
   refine ⟨⟨_, hF₀⟩, ?_⟩
   obtain ⟨G, -, hG⟩ := hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1)
-      (cellBallMap i) (ballCentre n) _ hF₀
+      (ambientCellMap i) (ballCentre n) _ hF₀
   rw [hG (coverLift hp ⟨i, ⟨_, hF₀⟩⟩) ⟨coverLift_ballCentre hp _, comp_coverLift hp _⟩,
     ← hG F ⟨rfl, hF⟩, hFx]
 
@@ -157,7 +154,7 @@ private theorem eq_of_coverLift_eq {n : ℕ} {i : cell C n} {e₀ e₁ : p ⁻¹
     (x : closedBall (0 : Fin n → ℝ) 1) (h : coverLift hp ⟨i, e₀⟩ x = coverLift hp ⟨i, e₁⟩ x) :
     e₀ = e₁ := by
   obtain ⟨G, -, hG⟩ := hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1)
-      (cellBallMap i) x _ (coverLift_apply hp ⟨i, e₀⟩ x)
+      (ambientCellMap i) x _ (coverLift_apply hp ⟨i, e₀⟩ x)
   have := (hG _ ⟨rfl, comp_coverLift hp _⟩).trans (hG _ ⟨h.symm, comp_coverLift hp _⟩).symm
   exact Subtype.ext (by
     rw [← coverLift_ballCentre hp ⟨i, e₀⟩, ← coverLift_ballCentre hp ⟨i, e₁⟩, this])
@@ -281,9 +278,11 @@ private theorem finite_setOf_coverLift_mem [T2Space B] {m : ℕ} (k : cell C m) 
     (hK : IsCompact K) :
     {e₀ : p ⁻¹' {map m k 0} | ∃ y, coverLift hp ⟨k, e₀⟩ y ∈ K}.Finite := by
   have := isCompact_iff_compactSpace.1 (isCompact_closedBall (0 : Fin m → ℝ) 1)
-  set S : Set (E × closedBall (0 : Fin m → ℝ) 1) := K ×ˢ univ ∩ {q | p q.1 = cellBallMap k q.2}
+  set S : Set (E × closedBall (0 : Fin m → ℝ) 1) :=
+    K ×ˢ univ ∩ {q | p q.1 = ambientCellMap k q.2}
   have hS : IsCompact S := (hK.prod isCompact_univ).inter_right <|
-    isClosed_eq (hp.continuous.comp continuous_fst) ((cellBallMap k).continuous.comp continuous_snd)
+    isClosed_eq (hp.continuous.comp continuous_fst)
+      ((ambientCellMap k).continuous.comp continuous_snd)
   have hlift (q : S) : ∃ e₀ : p ⁻¹' {map m k 0}, coverLift hp ⟨k, e₀⟩ q.1.2 = q.1.1 :=
     exists_coverLift_eq hp k q.1.2 q.2.2
   choose e he using hlift
@@ -335,12 +334,12 @@ private theorem isClosed_of_isClosed_inter_coverCellMap [T2Space B] {A : Set E}
   have hpinj : InjOn p h.source := by rw [hph]; exact h.injOn
   have hpmap : MapsTo p h.source h.target := by rw [hph]; exact h.mapsTo
   set T : Set B := p '' (A ∩ h.source) ∪ h.targetᶜ
-  have hT {n : ℕ} (j : cell C n) : IsClosed (cellBallMap j ⁻¹' T) := by
+  have hT {n : ℕ} (j : cell C n) : IsClosed (ambientCellMap j ⁻¹' T) := by
     rw [← isOpen_compl_iff, isOpen_iff_mem_nhds]
     intro y hy
     simp only [T, mem_compl_iff, mem_preimage, mem_union, not_or, not_not] at hy
     obtain ⟨hyA, hyt⟩ := hy
-    have hsy : p (h.symm (cellBallMap j y)) = cellBallMap j y := by
+    have hsy : p (h.symm (ambientCellMap j y)) = ambientCellMap j y := by
       rw [hph]; exact h.right_inv hyt
     obtain ⟨e₀, he₀⟩ := exists_coverLift_eq hp j y hsy
     have hs : coverLift hp ⟨j, e₀⟩ y ∈ h.source := he₀ ▸ h.map_target hyt
@@ -351,16 +350,16 @@ private theorem isClosed_of_isClosed_inter_coverCellMap [T2Space B] {A : Set E}
     filter_upwards [(coverLift hp ⟨j, e₀⟩).continuous.continuousAt.preimage_mem_nhds
       (h.open_source.mem_nhds hs), hcl.isOpen_compl.mem_nhds hnA] with y' hy's hy'A
     simp only [mem_preimage, mem_compl_iff] at hy's hy'A
-    have hpy' : p (coverLift hp ⟨j, e₀⟩ y') = cellBallMap j y' := coverLift_apply hp _ y'
+    have hpy' : p (coverLift hp ⟨j, e₀⟩ y') = ambientCellMap j y' := coverLift_apply hp _ y'
     rintro (⟨a, ⟨haA, has⟩, hay⟩ | hy't)
     · exact hy'A (hpinj has hy's (hay.trans hpy'.symm) ▸ haA)
     · exact hy't (hpy' ▸ hpmap hy's)
   have hF : IsClosed (C ∩ T) := by
     refine (CWComplex.closed C _ inter_subset_left).2 fun n j ↦ ?_
-    have hr : closedCell n j = range (cellBallMap j) := (range_domRestrict _ _).symm
+    have hr : closedCell n j = range (ambientCellMap j) := (range_domRestrict _ _).symm
     rw [inter_assoc, inter_comm T, ← inter_assoc,
       inter_eq_right.2 (closedCell_subset_complex n j), hr, ← image_preimage_eq_range_inter]
-    exact ((hT j).isCompact.image (cellBallMap j).continuous).isClosed
+    exact ((hT j).isCompact.image (ambientCellMap j).continuous).isClosed
   refine ⟨h.source ∩ p ⁻¹' (C ∩ T)ᶜ, ?_, h.open_source.inter
     (hF.isOpen_compl.preimage hp.continuous), hxh, ?_⟩
   · rintro a ⟨has, haT⟩ haA
