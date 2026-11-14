@@ -154,20 +154,16 @@ theorem norm_apply_le_cbNorm_mul {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBound
 
 section Zero
 
-omit [PartialOrder A] [StarOrderedRing A] [PartialOrder B] [StarOrderedRing B] in
-private theorem map_zero_eq {n : ℕ} (x : CStarMatrix (Fin n) (Fin n) A) :
-    x.map ⇑(0 : A →ₗ[ℂ] B) = 0 := by
-  ext; simp [CStarMatrix.zero_apply]
-
 @[simp, grind .]
 theorem isCompletelyBounded_zero : IsCompletelyBounded (0 : A →ₗ[ℂ] B) :=
-  ⟨0, le_rfl, fun n x => by simp [map_zero_eq]⟩
+  ⟨0, le_rfl, fun n x => by simp⟩
 
 @[simp, grind =]
 theorem cbNorm_zero : cbNorm (0 : A →ₗ[ℂ] B) = 0 :=
-  le_antisymm (cbNorm_le_of_bound le_rfl fun n x => by simp [map_zero_eq]) (cbNorm_nonneg _)
+  le_antisymm (cbNorm_le_of_bound le_rfl fun n x => by simp) (cbNorm_nonneg _)
 
 /-- A completely bounded map has cb norm `0` exactly when it is zero. -/
+@[simp, grind =]
 theorem cbNorm_eq_zero_iff {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ) :
     cbNorm φ = 0 ↔ φ = 0 := by
   refine ⟨fun h => LinearMap.ext fun a => norm_le_zero_iff.mp ?_, fun h => h ▸ cbNorm_zero⟩
@@ -180,8 +176,7 @@ section Add
 private theorem norm_map_add_le {φ ψ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ)
     (hψ : IsCompletelyBounded ψ) {n : ℕ} (x : CStarMatrix (Fin n) (Fin n) A) :
     ‖x.map ⇑(φ + ψ)‖ ≤ (cbNorm φ + cbNorm ψ) * ‖x‖ := by
-  have : x.map ⇑(φ + ψ) = x.map φ + x.map ψ := by ext; simp
-  rw [this, add_mul]
+  rw [CStarMatrix.map_add_linearMap, add_mul]
   exact (norm_add_le _ _).trans
     (add_le_add (norm_map_le_cbNorm_mul hφ x) (norm_map_le_cbNorm_mul hψ x))
 
@@ -200,26 +195,21 @@ end Add
 
 section SMul
 
-omit [PartialOrder A] [StarOrderedRing A] in
-private theorem norm_map_smul (c : ℂ) (φ : A →ₗ[ℂ] B) {n : ℕ}
-    (x : CStarMatrix (Fin n) (Fin n) A) : ‖x.map ⇑(c • φ)‖ = ‖c‖ * ‖x.map φ‖ := by
-  have : x.map ⇑(c • φ) = c • x.map φ := by ext; simp
-  rw [this, norm_smul]
-
 @[grind ←]
 theorem IsCompletelyBounded.smul {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ) (c : ℂ) :
     IsCompletelyBounded (c • φ) :=
   ⟨‖c‖ * cbNorm φ, mul_nonneg (norm_nonneg c) (cbNorm_nonneg φ), fun n x => by
-    rw [norm_map_smul, mul_assoc]
+    rw [CStarMatrix.map_smul_linearMap, norm_smul, mul_assoc]
     exact mul_le_mul_of_nonneg_left (norm_map_le_cbNorm_mul hφ x) (norm_nonneg c)⟩
 
 private theorem cbNorm_smul_le {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ) (c : ℂ) :
     cbNorm (c • φ) ≤ ‖c‖ * cbNorm φ :=
   cbNorm_le_of_bound (mul_nonneg (norm_nonneg c) (cbNorm_nonneg φ)) fun n x => by
-    rw [norm_map_smul, mul_assoc]
+    rw [CStarMatrix.map_smul_linearMap, norm_smul, mul_assoc]
     exact mul_le_mul_of_nonneg_left (norm_map_le_cbNorm_mul hφ x) (norm_nonneg c)
 
 /-- The cb norm is absolutely homogeneous. -/
+@[simp, grind =]
 theorem cbNorm_smul (c : ℂ) (φ : A →ₗ[ℂ] B) : cbNorm (c • φ) = ‖c‖ * cbNorm φ := by
   rcases eq_or_ne c 0 with rfl | hc
   · simp

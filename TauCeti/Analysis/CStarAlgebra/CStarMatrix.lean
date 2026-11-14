@@ -29,7 +29,8 @@ to recognise positive matrices over a C⋆-algebra, for instance Gram matrices o
 Hilbert C⋆-module.
 
 The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
-sums and of `1 × 1` matrices, and the transpose as a linear map.
+sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear maps,
+and the transpose as a linear map.
 
 ## Main declarations
 
@@ -40,6 +41,8 @@ sums and of `1 × 1` matrices, and the transpose as a linear map.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
   `1 × 1` C⋆-matrices.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
+* `CStarMatrix.map_zero_linearMap`, `CStarMatrix.map_add_linearMap`,
+  `CStarMatrix.map_smul_linearMap`: applying `0`, `f + g` or `c • f` to every entry.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
   are self-adjoint is self-adjoint. This is purely algebraic, and holds over any complex
   star-algebra whose star is proper.
@@ -105,6 +108,28 @@ def transposeₗ {m : Type*} [Semiring R] [AddCommMonoid A] [Module R A] :
 theorem transposeₗ_apply {m : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
     (M : CStarMatrix m n A) : transposeₗ R M = M.transpose :=
   (rfl)
+
+/-- Applying the zero linear map to every entry gives the zero matrix. -/
+@[simp]
+theorem map_zero_linearMap {m B : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
+    [AddCommMonoid B] [Module R B] (M : CStarMatrix m n A) : M.map ⇑(0 : A →ₗ[R] B) = 0 := by
+  ext
+  simp [zero_apply]
+
+/-- Applying a sum of linear maps to every entry gives the sum of the entrywise images. -/
+theorem map_add_linearMap {m B : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
+    [AddCommMonoid B] [Module R B] (M : CStarMatrix m n A) (f g : A →ₗ[R] B) :
+    M.map ⇑(f + g) = M.map f + M.map g := by
+  ext
+  simp [add_apply]
+
+/-- Applying a scalar multiple of a linear map to every entry gives the scalar multiple of the
+entrywise image. -/
+theorem map_smul_linearMap {m B : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A]
+    [AddCommMonoid B] [Module R B] (M : CStarMatrix m n A) (c : R) (f : A →ₗ[R] B) :
+    M.map ⇑(c • f) = c • M.map f := by
+  ext
+  simp [smul_apply]
 
 /-- A matrix over a complex star-algebra with proper star all of whose quadratic forms are
 self-adjoint is self-adjoint. -/
