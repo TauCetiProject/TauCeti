@@ -7,34 +7,100 @@ module
 
 public import Mathlib.Algebra.Symmetrized
 public import Mathlib.LinearAlgebra.Complex.Module
-import Mathlib.Tactic.Module
 
 /-!
 # Jordan star maps
 
 Jordan star maps are complex linear maps preserving adjoints and self-adjoint squares.
-Polarization identifies their product law with multiplication in Mathlib's `SymAlg`.
-Unitality is separate, but follows from surjectivity. Open `scoped TauCeti` to obtain
-the scalar-induced inverse of two for `SymAlg` multiplication.
+`JordanStarEquiv` bundles the bijective maps. These maps unify star homomorphisms and
+star anti-homomorphisms for projection and order reconstruction on star algebras.
+For a complex star module (`StarModule ℂ A`), polarization identifies the square law
+with multiplication in Mathlib's `SymAlg`. Unitality is separate and follows from
+surjectivity even without `StarModule ℂ A`. Open `scoped TauCeti.JordanStarMap` to
+obtain the scalar-induced inverse of two for `SymAlg` multiplication.
 -/
 
 public section
 
-namespace TauCeti
-variable (A B : Type*) [Ring A] [StarRing A] [Algebra ℂ A]
-  [Ring B] [StarRing B] [Algebra ℂ B]
+namespace TauCeti.JordanStarMap
 
 /-- The inverse of two in a complex algebra, transported from the scalar inverse. -/
-noncomputable scoped instance invertibleTwo : Invertible (2 : A) :=
-  letI : Invertible (2 : ℂ) := invertibleOfNonzero two_ne_zero
+noncomputable scoped instance invertibleTwoOfAlgebraComplex
+    (A : Type*) [Semiring A] [Algebra ℂ A] : Invertible (2 : A) :=
   (Invertible.map (algebraMap ℂ A) (2 : ℂ)).copy 2 ((map_ofNat (algebraMap ℂ A) 2).symm)
+
+/-- The inverse of two in a complex algebra is induced by the scalar inverse. -/
+theorem invOf_two_eq {A : Type*} [Semiring A] [Algebra ℂ A] [Invertible (2 : A)] :
+    ⅟(2 : A) = algebraMap ℂ A (2⁻¹ : ℂ) := by
+  cases Subsingleton.elim ‹Invertible (2 : A)› (invertibleTwoOfAlgebraComplex A)
+  rfl
+
+end TauCeti.JordanStarMap
+
+namespace LinearMap
+
+/-- A complex linear map preserving self-adjoint squares preserves anticommutators
+of self-adjoint elements. -/
+theorem map_mul_add_mul_of_isSelfAdjoint
+    {A B : Type*} [NonUnitalNonAssocSemiring A] [StarAddMonoid A] [Module ℂ A]
+    [NonUnitalNonAssocRing B] [Module ℂ B]
+    (f : A →ₗ[ℂ] B)
+    (hf : ∀ x, IsSelfAdjoint x → f (x * x) = f x * f x)
+    {x y : A} (hx : IsSelfAdjoint x) (hy : IsSelfAdjoint y) :
+    f (x * y + y * x) = f x * f y + f y * f x := by
+  have h := hf (x + y) (hx.add hy)
+  simp only [add_mul, mul_add, map_add, hf x hx, hf y hy] at h
+  simp only [map_add]
+  grind
+
+/-- A complex linear map on a complex star module that preserves self-adjoint squares
+preserves anticommutators. No involution on the codomain is required. -/
+theorem map_mul_add_mul_of_map_mul_self_of_isSelfAdjoint
+    {A B : Type*} [NonUnitalNonAssocRing A] [StarAddMonoid A] [Module ℂ A]
+    [StarModule ℂ A] [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
+    [NonUnitalNonAssocRing B] [Module ℂ B] [IsScalarTower ℂ B B] [SMulCommClass ℂ B B]
+    (f : A →ₗ[ℂ] B)
+    (hf : ∀ x, IsSelfAdjoint x → f (x * x) = f x * f x) (x y : A) :
+    f (x * y + y * x) = f x * f y + f y * f x := by
+  let symMulA := LinearMap.mul ℂ A + (LinearMap.mul ℂ A).flip
+  let symMulB := LinearMap.mul ℂ B + (LinearMap.mul ℂ B).flip
+  exact LinearMap.congr_fun₂
+    (f := symMulA.compr₂ f) (g := (symMulB ∘ₗ f).compl₂ f)
+    (LinearMap.ext_on span_selfAdjoint fun a ha ↦
+      LinearMap.ext_on span_selfAdjoint fun b hb ↦
+        f.map_mul_add_mul_of_isSelfAdjoint hf ha hb) x y
+
+/-- For a complex linear map on a complex star module, preserving self-adjoint squares
+is equivalent to preserving multiplication in the symmetrized algebra.
+The codomain does not need an involution. -/
+theorem map_mul_self_of_isSelfAdjoint_iff_sym_map_unsym_sym_mul_sym
+    {A B : Type*} [Ring A] [StarAddMonoid A] [Algebra ℂ A] [StarModule ℂ A]
+    [Ring B] [Algebra ℂ B] [Invertible (2 : A)] [Invertible (2 : B)]
+    (f : A →ₗ[ℂ] B) :
+    (∀ x, IsSelfAdjoint x → f (x * x) = f x * f x) ↔
+      (∀ x y, SymAlg.sym (f (SymAlg.unsym (SymAlg.sym x * SymAlg.sym y))) =
+        SymAlg.sym (f x) * SymAlg.sym (f y)) := by
+  constructor
+  · intro hf x y
+    simp only [SymAlg.sym_mul_sym, SymAlg.unsym_sym, TauCeti.JordanStarMap.invOf_two_eq,
+      ← Algebra.smul_def, map_smul, f.map_mul_add_mul_of_map_mul_self_of_isSelfAdjoint hf]
+  · intro h x _
+    simpa only [← SymAlg.sym_mul_self, SymAlg.unsym_sym, SymAlg.sym_inj] using h x x
+
+end LinearMap
+
+namespace TauCeti
+
+variable (A B : Type*) [NonUnitalNonAssocSemiring A] [Star A] [Module ℂ A]
+  [NonUnitalNonAssocSemiring B] [Star B] [Module ℂ B]
 
 /-- A complex linear, adjoint-preserving map preserving squares of self-adjoint elements. -/
 structure JordanStarMap extends A →ₗ[ℂ] B where
   map_star' (x : A) : toLinearMap (star x) = star (toLinearMap x)
-  map_sq' (x : A) : IsSelfAdjoint x → toLinearMap (x * x) = toLinearMap x * toLinearMap x
+  map_mul_self_of_isSelfAdjoint' (x : A) :
+    IsSelfAdjoint x → toLinearMap (x * x) = toLinearMap x * toLinearMap x
 
-open scoped TauCeti
+open scoped JordanStarMap
 variable {A B}
 
 namespace JordanStarMap
@@ -55,102 +121,143 @@ theorem ext {f g : JordanStarMap A B} (h : ∀ x, f x = g x) : f = g :=
   DFunLike.ext _ _ h
 
 @[simp]
-theorem toLinearMap_apply (f : JordanStarMap A B) (x : A) : f.toLinearMap x = f x := rfl
+theorem toLinearMap_apply (f : JordanStarMap A B) (x : A) : f.toLinearMap x = f x := (rfl)
+
+@[simp] theorem coe_mk (f : A →ₗ[ℂ] B) (hstar hmul) :
+    ⇑(mk f hstar hmul : JordanStarMap A B) = f := (rfl)
+
+@[simp] theorem coe_toLinearMap (f : JordanStarMap A B) : ⇑f.toLinearMap = f := (rfl)
+
+@[simp] theorem toLinearMap_mk (f : A →ₗ[ℂ] B) (hstar hmul) :
+    (mk f hstar hmul : JordanStarMap A B).toLinearMap = f := (rfl)
 
 /-- A Jordan star map preserves squares on the self-adjoint part. -/
-theorem map_sq (f : JordanStarMap A B) {x : A} (hx : IsSelfAdjoint x) :
-    f (x * x) = f x * f x := f.map_sq' x hx
+theorem map_mul_self_of_isSelfAdjoint (f : JordanStarMap A B) {x : A} (hx : IsSelfAdjoint x) :
+    f (x * x) = f x * f x := f.map_mul_self_of_isSelfAdjoint' x hx
 
-private theorem map_mul_add_mul_selfAdjoint (f : JordanStarMap A B) {x y : A}
-    (hx : IsSelfAdjoint x) (hy : IsSelfAdjoint y) :
-    f (x * y + y * x) = f x * f y + f y * f x := by
-  have h := f.map_sq (hx.add hy)
-  simp only [add_mul, mul_add, map_add, f.map_sq hx, f.map_sq hy] at h
-  simp only [map_add]
-  grind
+section Polarization
 
-/-- Polarization extends square preservation to the symmetrized product of arbitrary elements. -/
-theorem map_mul_add_mul [StarModule ℂ A] (f : JordanStarMap A B) (x y : A) :
-    f (x * y + y * x) = f x * f y + f y * f x := by
-  have hy (a : A) (ha : IsSelfAdjoint a) (b : A) :
-      f (a * b + b * a) = f a * f b + f b * f a := by
-    rw [← realPart_add_I_smul_imaginaryPart b]
-    simp only [mul_add, add_mul, mul_smul_comm, smul_mul_assoc, map_add, map_smul]
-    have hr := f.map_mul_add_mul_selfAdjoint ha (realPart b).property
-    have hi := f.map_mul_add_mul_selfAdjoint ha (imaginaryPart b).property
-    simp only [map_add] at hr hi
-    calc
-      _ = (f (a * ↑(realPart b)) + f (↑(realPart b) * a)) +
-          Complex.I • (f (a * ↑(imaginaryPart b)) + f (↑(imaginaryPart b) * a)) := by module
-      _ = _ := by rw [hr, hi]; module
-  rw [← realPart_add_I_smul_imaginaryPart x]
-  simp only [mul_add, add_mul, mul_smul_comm, smul_mul_assoc, map_add, map_smul]
-  have hr := hy _ (realPart x).property y
-  have hi := hy _ (imaginaryPart x).property y
-  simp only [map_add] at hr hi
-  calc
-    _ = (f (↑(realPart x) * y) + f (y * ↑(realPart x))) +
-        Complex.I • (f (↑(imaginaryPart x) * y) + f (y * ↑(imaginaryPart x))) := by module
-    _ = _ := by rw [hr, hi]; module
+variable {A B : Type*} [NonUnitalNonAssocRing A] [StarAddMonoid A] [Module ℂ A]
+  [StarModule ℂ A] [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
+  [NonUnitalNonAssocRing B] [Star B] [Module ℂ B]
+  [IsScalarTower ℂ B B] [SMulCommClass ℂ B B]
 
-/-- A Jordan star map preserves squares of every element. -/
+/-- A Jordan star map on a complex star module preserves anticommutators. -/
+theorem map_mul_add_mul (f : JordanStarMap A B) (x y : A) :
+    f (x * y + y * x) = f x * f y + f y * f x :=
+  f.toLinearMap.map_mul_add_mul_of_map_mul_self_of_isSelfAdjoint
+    f.map_mul_self_of_isSelfAdjoint' x y
+
+/-- A Jordan star map on a complex star module preserves squares of every element. -/
 @[simp]
-theorem map_mul_self [StarModule ℂ A] (f : JordanStarMap A B) (x : A) : f (x * x) = f x * f x := by
+theorem map_mul_self (f : JordanStarMap A B) (x : A) : f (x * x) = f x * f x := by
   have h := f.map_mul_add_mul x x
   simp only [← two_smul ℂ, map_smul] at h
   exact (smul_right_injective B (two_ne_zero : (2 : ℂ) ≠ 0)) h
 
-/-- Jordan star maps preserve multiplication in the symmetrized algebra. -/
-theorem map_sym_mul [StarModule ℂ A] [Invertible (2 : A)] [Invertible (2 : B)]
+end Polarization
+
+/-- A Jordan star map on a complex star module preserves multiplication in `SymAlg`. -/
+theorem sym_map_unsym_sym_mul_sym
+    {A B : Type*} [Ring A] [StarAddMonoid A] [Algebra ℂ A] [StarModule ℂ A]
+    [Ring B] [Star B] [Algebra ℂ B] [Invertible (2 : A)] [Invertible (2 : B)]
     (f : JordanStarMap A B) (x y : A) :
     SymAlg.sym (f (SymAlg.unsym (SymAlg.sym x * SymAlg.sym y))) =
-      SymAlg.sym (f x) * SymAlg.sym (f y) := by
-  have ha : ⅟(2 : A) = algebraMap ℂ A ((2 : ℂ)⁻¹) := by
-    cases Subsingleton.elim ‹Invertible (2 : A)› (invertibleTwo A); rfl
-  have hb : ⅟(2 : B) = algebraMap ℂ B ((2 : ℂ)⁻¹) := by
-    cases Subsingleton.elim ‹Invertible (2 : B)› (invertibleTwo B); rfl
-  simp only [SymAlg.sym_mul_sym, SymAlg.unsym_sym, ha, hb, ← Algebra.smul_def,
-    map_smul, f.map_mul_add_mul]
+      SymAlg.sym (f x) * SymAlg.sym (f y) :=
+  f.toLinearMap.map_mul_self_of_isSelfAdjoint_iff_sym_map_unsym_sym_mul_sym.mp
+    f.map_mul_self_of_isSelfAdjoint' x y
 
 /-- The identity Jordan star map. -/
 def id : JordanStarMap A A where
   toLinearMap := LinearMap.id
   map_star' _ := rfl
-  map_sq' _ _ := rfl
+  map_mul_self_of_isSelfAdjoint' _ _ := rfl
 
 @[simp] theorem id_apply (x : A) : id x = x := (rfl)
 
 /-- Composition of Jordan star maps. -/
-def comp {C : Type*} [Ring C] [StarRing C] [Algebra ℂ C]
+def comp {C : Type*} [NonUnitalNonAssocSemiring C] [Star C] [Module ℂ C]
     (g : JordanStarMap B C) (f : JordanStarMap A B) : JordanStarMap A C where
   toLinearMap := g.toLinearMap.comp f.toLinearMap
   map_star' x := by simp only [LinearMap.comp_apply, toLinearMap_apply, map_star]
-  map_sq' x hx := by
-    simp only [LinearMap.comp_apply, toLinearMap_apply, f.map_sq hx]
-    exact g.map_sq (by simpa only [IsSelfAdjoint, map_star] using congrArg f hx.star_eq)
+  map_mul_self_of_isSelfAdjoint' x hx := by
+    simp only [LinearMap.comp_apply, toLinearMap_apply, f.map_mul_self_of_isSelfAdjoint hx]
+    exact g.map_mul_self_of_isSelfAdjoint (hx.map f)
 
-@[simp] theorem comp_apply {C : Type*} [Ring C] [StarRing C] [Algebra ℂ C]
+@[simp] theorem comp_apply {C : Type*} [NonUnitalNonAssocSemiring C] [Star C] [Module ℂ C]
     (g : JordanStarMap B C) (f : JordanStarMap A B) (x : A) : g.comp f x = g (f x) := (rfl)
 
 /-- The zero Jordan star map. -/
-def zero : JordanStarMap A B where
-  toLinearMap := 0
-  map_star' _ := by simp
-  map_sq' _ _ := by simp
+instance {A B : Type*} [NonUnitalNonAssocSemiring A] [Star A] [Module ℂ A]
+    [NonUnitalNonAssocSemiring B] [StarAddMonoid B] [Module ℂ B] :
+    Zero (JordanStarMap A B) where
+  zero := {
+    toLinearMap := 0
+    map_star' _ := by simp
+    map_mul_self_of_isSelfAdjoint' _ _ := by simp }
 
-@[simp] theorem zero_apply (x : A) : (zero : JordanStarMap A B) x = 0 := (rfl)
+@[simp] theorem zero_apply {A B : Type*}
+    [NonUnitalNonAssocSemiring A] [Star A] [Module ℂ A]
+    [NonUnitalNonAssocSemiring B] [StarAddMonoid B] [Module ℂ B] (x : A) :
+    (0 : JordanStarMap A B) x = 0 := (rfl)
 
-/-- A surjective Jordan star map between unital algebras preserves the unit. -/
-theorem map_one_of_surjective [StarModule ℂ A] (f : JordanStarMap A B)
-    (hf : Function.Surjective f) : f 1 = 1 := by
+@[simp] theorem toLinearMap_id : (id : JordanStarMap A A).toLinearMap = LinearMap.id := (rfl)
+
+variable {C D : Type*} [NonUnitalNonAssocSemiring C] [Star C] [Module ℂ C]
+  [NonUnitalNonAssocSemiring D] [Star D] [Module ℂ D]
+
+@[simp] theorem toLinearMap_comp (g : JordanStarMap B C) (f : JordanStarMap A B) :
+    (g.comp f).toLinearMap = g.toLinearMap.comp f.toLinearMap := (rfl)
+
+@[simp] theorem id_comp (f : JordanStarMap A B) : id.comp f = f := by ext; rfl
+
+@[simp] theorem comp_id (f : JordanStarMap A B) : f.comp id = f := by ext; rfl
+
+@[simp] theorem comp_assoc (h : JordanStarMap C D) (g : JordanStarMap B C)
+    (f : JordanStarMap A B) : (h.comp g).comp f = h.comp (g.comp f) := by ext; rfl
+
+@[simp] theorem toLinearMap_zero {A B : Type*}
+    [NonUnitalNonAssocSemiring A] [Star A] [Module ℂ A]
+    [NonUnitalNonAssocSemiring B] [StarAddMonoid B] [Module ℂ B] :
+    (0 : JordanStarMap A B).toLinearMap = 0 := (rfl)
+
+@[simp] theorem zero_comp {A B C : Type*}
+    [NonUnitalNonAssocSemiring A] [Star A] [Module ℂ A]
+    [NonUnitalNonAssocSemiring B] [Star B] [Module ℂ B]
+    [NonUnitalNonAssocSemiring C] [StarAddMonoid C] [Module ℂ C]
+    (f : JordanStarMap A B) :
+    (0 : JordanStarMap B C).comp f = 0 := by ext; simp
+
+@[simp] theorem comp_zero {A B C : Type*}
+    [NonUnitalNonAssocSemiring A] [Star A] [Module ℂ A]
+    [NonUnitalNonAssocSemiring B] [StarAddMonoid B] [Module ℂ B]
+    [NonUnitalNonAssocSemiring C] [StarAddMonoid C] [Module ℂ C]
+    (g : JordanStarMap B C) :
+    g.comp (0 : JordanStarMap A B) = 0 := by ext; simp
+
+/-- A surjective Jordan star map between unital star algebras preserves the unit,
+without requiring a complex star-module structure. -/
+theorem map_one_of_surjective
+    {A B : Type*} [NonAssocSemiring A] [StarRing A] [Module ℂ A]
+    [NonAssocRing B] [StarRing B] [Module ℂ B]
+    (f : JordanStarMap A B) (hf : Function.Surjective f) : f 1 = 1 := by
   obtain ⟨x, hx⟩ := hf 1
-  have h := f.map_mul_add_mul x 1
-  simp only [mul_one, one_mul, map_add, hx] at h
-  have : (2 : ℂ) • (1 : B) = (2 : ℂ) • f 1 := by simpa [two_smul] using h
-  exact ((smul_right_injective B (two_ne_zero : (2 : ℂ) ≠ 0)) this).symm
+  have hy : f (x + star x) = (2 : ℂ) • (1 : B) := by
+    simp [map_star, hx, two_smul]
+  have h := f.toLinearMap.map_mul_add_mul_of_isSelfAdjoint
+    f.map_mul_self_of_isSelfAdjoint' (IsSelfAdjoint.add_star_self x) (.one A)
+  simp only [mul_one, one_mul, toLinearMap_apply] at h
+  rw [map_add, hy] at h
+  have h' : (2 : ℂ) • (2 : ℂ) • (1 : B) = (2 : ℂ) • (2 : ℂ) • f 1 := by
+    simpa [two_smul, add_mul, mul_add] using h
+  exact ((smul_right_injective B (two_ne_zero : (2 : ℂ) ≠ 0))
+    ((smul_right_injective B (two_ne_zero : (2 : ℂ) ≠ 0)) h')).symm
 
-/-- The zero map into a nonzero algebra is not unital. -/
-theorem zero_not_unital [Nontrivial B] : (zero : JordanStarMap A B) 1 ≠ 1 := by simp
+/-- The zero Jordan star map into a nonzero unital algebra does not preserve the unit. -/
+theorem zero_apply_one_ne_one
+    {A B : Type*} [NonAssocSemiring A] [Star A] [Module ℂ A]
+    [NonAssocSemiring B] [StarAddMonoid B] [Module ℂ B] [Nontrivial B] :
+    (0 : JordanStarMap A B) 1 ≠ 1 := by simp
 
 end JordanStarMap
 
@@ -158,7 +265,7 @@ variable (A B) in
 /-- A bijective Jordan star map, carried by a native complex linear equivalence. -/
 structure JordanStarEquiv extends A ≃ₗ[ℂ] B where
   map_star' (x : A) : toLinearEquiv (star x) = star (toLinearEquiv x)
-  map_sq' (x : A) : IsSelfAdjoint x → toLinearEquiv (x * x) =
+  map_mul_self_of_isSelfAdjoint' (x : A) : IsSelfAdjoint x → toLinearEquiv (x * x) =
     toLinearEquiv x * toLinearEquiv x
 
 namespace JordanStarEquiv
@@ -167,13 +274,16 @@ namespace JordanStarEquiv
 def toJordanStarMap (e : JordanStarEquiv A B) : JordanStarMap A B where
   toLinearMap := e.toLinearEquiv.toLinearMap
   map_star' := e.map_star'
-  map_sq' := e.map_sq'
+  map_mul_self_of_isSelfAdjoint' := e.map_mul_self_of_isSelfAdjoint'
 
-instance : FunLike (JordanStarEquiv A B) A B where
+instance : EquivLike (JordanStarEquiv A B) A B where
   coe e := e.toLinearEquiv
-  coe_injective e f h := by cases e; cases f; congr; exact DFunLike.coe_injective h
+  inv e := e.toLinearEquiv.symm
+  left_inv e := e.toLinearEquiv.left_inv
+  right_inv e := e.toLinearEquiv.right_inv
+  coe_injective' e f h _ := by cases e; cases f; congr; exact DFunLike.coe_injective h
 
-instance : LinearMapClass (JordanStarEquiv A B) ℂ A B where
+instance : LinearEquivClass (JordanStarEquiv A B) ℂ A B where
   map_add e := e.toLinearEquiv.map_add
   map_smulₛₗ e := e.toLinearEquiv.map_smul
 
@@ -188,35 +298,85 @@ theorem ext {e f : JordanStarEquiv A B} (h : ∀ x, e x = f x) : e = f :=
 theorem toJordanStarMap_apply (e : JordanStarEquiv A B) (x : A) :
     e.toJordanStarMap x = e x := (rfl)
 
+@[simp] theorem coe_mk (e : A ≃ₗ[ℂ] B) (hstar hmul) :
+    ⇑(mk e hstar hmul : JordanStarEquiv A B) = e := (rfl)
+
+@[simp] theorem coe_toLinearEquiv (e : JordanStarEquiv A B) : ⇑e.toLinearEquiv = e := (rfl)
+
+@[simp] theorem toLinearEquiv_mk (e : A ≃ₗ[ℂ] B) (hstar hmul) :
+    (mk e hstar hmul : JordanStarEquiv A B).toLinearEquiv = e := (rfl)
+
+@[simp] theorem coe_toJordanStarMap (e : JordanStarEquiv A B) : ⇑e.toJordanStarMap = e := (rfl)
+
+@[simp] theorem toLinearMap_toJordanStarMap (e : JordanStarEquiv A B) :
+    e.toJordanStarMap.toLinearMap = e.toLinearEquiv.toLinearMap := (rfl)
+
+/-- A Jordan star equivalence preserves squares on the self-adjoint part. -/
+theorem map_mul_self_of_isSelfAdjoint (e : JordanStarEquiv A B) {x : A}
+    (hx : IsSelfAdjoint x) : e (x * x) = e x * e x :=
+  e.toJordanStarMap.map_mul_self_of_isSelfAdjoint hx
+
+section Polarization
+
+variable {A B : Type*} [NonUnitalNonAssocRing A] [StarAddMonoid A] [Module ℂ A]
+  [StarModule ℂ A] [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
+  [NonUnitalNonAssocRing B] [Star B] [Module ℂ B]
+  [IsScalarTower ℂ B B] [SMulCommClass ℂ B B]
+
+/-- A Jordan star equivalence on a complex star module preserves anticommutators. -/
+theorem map_mul_add_mul (e : JordanStarEquiv A B) (x y : A) :
+    e (x * y + y * x) = e x * e y + e y * e x :=
+  e.toJordanStarMap.map_mul_add_mul x y
+
+/-- A Jordan star equivalence on a complex star module preserves every square. -/
+@[simp] theorem map_mul_self (e : JordanStarEquiv A B) (x : A) :
+    e (x * x) = e x * e x := e.toJordanStarMap.map_mul_self x
+
+end Polarization
+
+/-- A Jordan star equivalence on a complex star module preserves `SymAlg` multiplication. -/
+theorem sym_map_unsym_sym_mul_sym
+    {A B : Type*} [Ring A] [StarAddMonoid A] [Algebra ℂ A] [StarModule ℂ A]
+    [Ring B] [Star B] [Algebra ℂ B] [Invertible (2 : A)] [Invertible (2 : B)]
+    (e : JordanStarEquiv A B) (x y : A) :
+    SymAlg.sym (e (SymAlg.unsym (SymAlg.sym x * SymAlg.sym y))) =
+      SymAlg.sym (e x) * SymAlg.sym (e y) := e.toJordanStarMap.sym_map_unsym_sym_mul_sym x y
+
 /-- The inverse of a Jordan star equivalence. -/
+@[symm]
 def symm (e : JordanStarEquiv A B) : JordanStarEquiv B A where
   toLinearEquiv := e.toLinearEquiv.symm
   map_star' x := by
-    apply e.toLinearEquiv.injective
-    simp [e.map_star']
-  map_sq' x hx := by
-    have hsa : IsSelfAdjoint (e.toLinearEquiv.symm x) := by
-      apply e.toLinearEquiv.injective
-      simp [e.map_star', hx.star_eq]
-    apply e.toLinearEquiv.injective
-    simp [e.map_sq' _ hsa]
+    apply EquivLike.injective e
+    have hinv (y : B) : e (e.toLinearEquiv.symm y) = y :=
+      e.toLinearEquiv.apply_symm_apply y
+    simp only [map_star, hinv]
+  map_mul_self_of_isSelfAdjoint' x hx := by
+    have hsa := IsSelfAdjoint.of_map e (EquivLike.injective e)
+      ((e.toLinearEquiv.apply_symm_apply x).symm ▸ hx)
+    apply EquivLike.injective e
+    have hinv (y : B) : e (e.toLinearEquiv.symm y) = y :=
+      e.toLinearEquiv.apply_symm_apply y
+    rw [map_mul_self_of_isSelfAdjoint e hsa, hinv, hinv]
 
 /-- The identity Jordan star equivalence. -/
 def refl : JordanStarEquiv A A where
   toLinearEquiv := LinearEquiv.refl ℂ A
   map_star' _ := rfl
-  map_sq' _ _ := rfl
+  map_mul_self_of_isSelfAdjoint' _ _ := rfl
 
 /-- Compose Jordan star equivalences in application order. -/
-def trans {C : Type*} [Ring C] [StarRing C] [Algebra ℂ C]
+@[trans]
+def trans {C : Type*} [NonUnitalNonAssocSemiring C] [Star C] [Module ℂ C]
     (e : JordanStarEquiv A B) (f : JordanStarEquiv B C) : JordanStarEquiv A C where
   toLinearEquiv := e.toLinearEquiv.trans f.toLinearEquiv
   map_star' x := by simp [e.map_star', f.map_star']
-  map_sq' x hx := (f.toJordanStarMap.comp e.toJordanStarMap).map_sq hx
+  map_mul_self_of_isSelfAdjoint' x hx :=
+    (f.toJordanStarMap.comp e.toJordanStarMap).map_mul_self_of_isSelfAdjoint hx
 
 @[simp] theorem refl_apply (x : A) : refl x = x := (rfl)
 
-@[simp] theorem trans_apply {C : Type*} [Ring C] [StarRing C] [Algebra ℂ C]
+@[simp] theorem trans_apply {C : Type*} [NonUnitalNonAssocSemiring C] [Star C] [Module ℂ C]
     (e : JordanStarEquiv A B) (f : JordanStarEquiv B C) (x : A) :
     e.trans f x = f (e x) := (rfl)
 
@@ -230,25 +390,58 @@ def trans {C : Type*} [Ring C] [StarRing C] [Algebra ℂ C]
 
 @[simp] theorem symm_symm (e : JordanStarEquiv A B) : e.symm.symm = e := by ext; rfl
 
-/-- Every Jordan star equivalence is unital. -/
+@[simp] theorem coe_symm_toLinearEquiv (e : JordanStarEquiv A B) :
+    ⇑e.toLinearEquiv.symm = e.symm := (rfl)
+
+@[simp] theorem toLinearEquiv_refl :
+    (refl : JordanStarEquiv A A).toLinearEquiv = LinearEquiv.refl ℂ A := (rfl)
+
+@[simp] theorem toLinearEquiv_symm (e : JordanStarEquiv A B) :
+    e.symm.toLinearEquiv = e.toLinearEquiv.symm := (rfl)
+
+@[simp] theorem symm_apply_eq (e : JordanStarEquiv A B) {x : B} {y : A} :
+    e.symm x = y ↔ x = e y := e.toLinearEquiv.symm_apply_eq
+
+@[simp] theorem eq_symm_apply (e : JordanStarEquiv A B) {x : B} {y : A} :
+    y = e.symm x ↔ e y = x := e.toLinearEquiv.eq_symm_apply
+
+@[simp] theorem symm_refl : (refl : JordanStarEquiv A A).symm = refl := by ext; rfl
+
+@[simp] theorem toJordanStarMap_refl :
+    (refl : JordanStarEquiv A A).toJordanStarMap = JordanStarMap.id := by ext; rfl
+
+variable {C D : Type*} [NonUnitalNonAssocSemiring C] [Star C] [Module ℂ C]
+  [NonUnitalNonAssocSemiring D] [Star D] [Module ℂ D]
+
+@[simp] theorem toLinearEquiv_trans (e : JordanStarEquiv A B) (f : JordanStarEquiv B C) :
+    (e.trans f).toLinearEquiv = e.toLinearEquiv.trans f.toLinearEquiv := (rfl)
+
+@[simp] theorem toJordanStarMap_trans (e : JordanStarEquiv A B) (f : JordanStarEquiv B C) :
+    (e.trans f).toJordanStarMap = f.toJordanStarMap.comp e.toJordanStarMap := by ext; rfl
+
+@[simp] theorem symm_trans (e : JordanStarEquiv A B) (f : JordanStarEquiv B C) :
+    (e.trans f).symm = f.symm.trans e.symm := by ext; rfl
+
+@[simp] theorem self_trans_symm (e : JordanStarEquiv A B) : e.trans e.symm = refl := by
+  ext; simp
+
+@[simp] theorem symm_trans_self (e : JordanStarEquiv A B) : e.symm.trans e = refl := by
+  ext; simp
+
+@[simp] theorem refl_trans (e : JordanStarEquiv A B) : refl.trans e = e := by ext; rfl
+
+@[simp] theorem trans_refl (e : JordanStarEquiv A B) : e.trans refl = e := by ext; rfl
+
+@[simp] theorem trans_assoc (e : JordanStarEquiv A B) (f : JordanStarEquiv B C)
+    (g : JordanStarEquiv C D) : (e.trans f).trans g = e.trans (f.trans g) := by ext; rfl
+
+/-- A Jordan star equivalence between unital star algebras preserves the unit,
+without requiring a complex star-module structure. -/
 @[simp]
-theorem map_one [StarModule ℂ A] (e : JordanStarEquiv A B) : e 1 = 1 :=
-  e.toJordanStarMap.map_one_of_surjective e.toLinearEquiv.surjective
+theorem map_one
+    {A B : Type*} [NonAssocSemiring A] [StarRing A] [Module ℂ A]
+    [NonAssocRing B] [StarRing B] [Module ℂ B] (e : JordanStarEquiv A B) : e 1 = 1 :=
+  e.toJordanStarMap.map_one_of_surjective (EquivLike.surjective e)
 
 end JordanStarEquiv
 end TauCeti
-
-/-- For an adjoint-preserving complex linear map, preserving self-adjoint squares is
- equivalent to preserving multiplication in the symmetrized algebra. -/
-theorem LinearMap.map_selfAdjoint_sq_iff_map_sym_mul
-    {A B : Type*} [Ring A] [StarRing A] [Algebra ℂ A] [StarModule ℂ A]
-    [Ring B] [StarRing B] [Algebra ℂ B] [Invertible (2 : A)] [Invertible (2 : B)]
-    (f : A →ₗ[ℂ] B) (hstar : ∀ x, f (star x) = star (f x)) :
-    (∀ x, IsSelfAdjoint x → f (x * x) = f x * f x) ↔
-      (∀ x y, SymAlg.sym (f (SymAlg.unsym (SymAlg.sym x * SymAlg.sym y))) =
-        SymAlg.sym (f x) * SymAlg.sym (f y)) := by
-  constructor
-  · intro h
-    exact (TauCeti.JordanStarMap.mk f hstar h).map_sym_mul
-  · intro h x _
-    simpa only [← SymAlg.sym_mul_self, SymAlg.unsym_sym, SymAlg.sym_inj] using h x x
