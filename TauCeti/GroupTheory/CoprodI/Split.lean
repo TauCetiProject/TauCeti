@@ -12,18 +12,24 @@ public import Mathlib.GroupTheory.CoprodI
 # Splitting off one factor of a free product
 
 For a family of monoids `M : ι → Type*` and an index `i`, the indexed free product `∗ⱼ Mⱼ` is the
-free product of `Mᵢ` and of the indexed free product of the other factors.
+free product of `Mᵢ` and of the indexed free product of the other factors. Splitting off a chosen
+factor in this way reduces a question about an indexed free product, asked at that factor, to one
+about a free product of two monoids, where the results on `M ∗ N` apply.
+
+The isomorphism `∗ⱼ Mⱼ ≃* Mᵢ ∗ (∗_{j ≠ i} Mⱼ)` sends each factor `Mⱼ` to the left or to the right
+according to whether `j = i`, so it is defined when equality on `ι` is decidable. Its inverse, and
+the fact that this inverse is bijective, need no such assumption.
 
 ## Main definitions
 
 * `Monoid.CoprodI.ofCoprodNe`: the homomorphism `Mᵢ ∗ (∗_{j ≠ i} Mⱼ) →* ∗ⱼ Mⱼ` induced by the
-  inclusions of the factors.
+  inclusions of the factors, for any index type `ι`.
 * `Monoid.CoprodI.equivCoprodNe`: the isomorphism `∗ⱼ Mⱼ ≃* Mᵢ ∗ (∗_{j ≠ i} Mⱼ)`, whose inverse is
-  `ofCoprodNe`.
+  `ofCoprodNe`, for `ι` with decidable equality.
 
 ## Main results
 
-* `Monoid.CoprodI.ofCoprodNe_bijective`: `ofCoprodNe` is bijective.
+* `Monoid.CoprodI.ofCoprodNe_bijective`: `ofCoprodNe` is bijective, for any index type `ι`.
 -/
 
 public section
@@ -86,13 +92,40 @@ theorem equivCoprodNe_of_self (m : M i) : equivCoprodNe M i (of m) = Coprod.inl 
   simp [equivCoprodNe]
 
 @[simp]
-theorem equivCoprodNe_of_ne {j : ι} (hj : j ≠ i) (m : M j) :
+theorem equivCoprodNe_of_of_ne {j : ι} (hj : j ≠ i) (m : M j) :
     equivCoprodNe M i (of m) = Coprod.inr (of (i := ⟨j, hj⟩) m) := by
   simp [equivCoprodNe, hj]
 
 @[simp]
 theorem coe_equivCoprodNe_symm : ⇑(equivCoprodNe M i).symm = ofCoprodNe M i :=
   (rfl)
+
+@[simp]
+theorem toMonoidHom_equivCoprodNe_symm :
+    ((equivCoprodNe M i).symm : M i ∗ (CoprodI fun j : {j // j ≠ i} ↦ M j) →* CoprodI M) =
+      ofCoprodNe M i :=
+  (rfl)
+
+@[simp]
+theorem equivCoprodNe_ofCoprodNe (x : M i ∗ (CoprodI fun j : {j // j ≠ i} ↦ M j)) :
+    equivCoprodNe M i (ofCoprodNe M i x) = x :=
+  (equivCoprodNe M i).apply_symm_apply x
+
+@[simp]
+theorem ofCoprodNe_equivCoprodNe (x : CoprodI M) : ofCoprodNe M i (equivCoprodNe M i x) = x :=
+  (equivCoprodNe M i).symm_apply_apply x
+
+@[simp]
+theorem toMonoidHom_equivCoprodNe_comp_ofCoprodNe :
+    (equivCoprodNe M i : CoprodI M →* M i ∗ (CoprodI fun j : {j // j ≠ i} ↦ M j)).comp
+      (ofCoprodNe M i) = .id _ :=
+  MonoidHom.ext <| equivCoprodNe_ofCoprodNe M i
+
+@[simp]
+theorem ofCoprodNe_comp_toMonoidHom_equivCoprodNe :
+    (ofCoprodNe M i).comp
+      (equivCoprodNe M i : CoprodI M →* M i ∗ (CoprodI fun j : {j // j ≠ i} ↦ M j)) = .id _ :=
+  MonoidHom.ext <| ofCoprodNe_equivCoprodNe M i
 
 end DecidableEq
 

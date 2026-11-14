@@ -14,12 +14,12 @@ public import TauCeti.GroupTheory.CoprodI.Split
 # Freely indecomposable groups as free products of many factors
 
 A freely indecomposable group which is a free product `∗ᵢ Mᵢ` of a family of groups is one of the
-`Mᵢ`, provided the family is nonempty or the group is nontrivial. The free group on `X` is freely
+`Mᵢ`, provided the family is nonempty or that group is nontrivial. The free group on `X` is freely
 indecomposable exactly when `X` has at most one element, so a freely indecomposable free group
 which is not infinite cyclic is trivial. Hence a freely indecomposable group which is not infinite
 cyclic has no free part in a free product decomposition `P ∗ F` with `F` free, and if it is a free
 product `(∗ᵢ Mᵢ) ∗ F` with `F` free, it is one of the `Mᵢ`, again provided the family is nonempty
-or the group is nontrivial. This is the form in which free indecomposability meets the Kurosh
+or that group is nontrivial. This is the form in which free indecomposability meets the Kurosh
 decomposition of a group acting on a tree with trivial edge stabilizers, whose factors are vertex
 stabilizers and a free group.
 
@@ -27,8 +27,8 @@ stabilizers and a free group.
 
 * `TauCeti.IsFreelyIndecomposable.exists_surjective_of_coprodI`,
   `TauCeti.IsFreelyIndecomposable.exists_surjective_of_coprodI_of_nontrivial`: a freely
-  indecomposable free product of a family which is nonempty, respectively of a nontrivial group,
-  is the image of one of its factors.
+  indecomposable group `G` which is a free product `∗ᵢ Mᵢ` is the image of one of the `Mᵢ`, when
+  the index type is nonempty, respectively when `G` is nontrivial.
 * `TauCeti.isFreelyIndecomposable_freeGroup_iff`: the free group on `X` is freely indecomposable
   if and only if `X` has at most one element.
 * `TauCeti.IsFreelyIndecomposable.subsingleton_of_isFreeGroup`: a freely indecomposable free group
@@ -39,9 +39,9 @@ stabilizers and a free group.
   free, respectively `P ∗ F(X)`.
 * `TauCeti.IsFreelyIndecomposable.exists_surjective_of_coprodI_coprod_of_isFreeGroup`,
   `TauCeti.IsFreelyIndecomposable.exists_surjective_of_coprodI_coprod_of_isFreeGroup_of_nontrivial`:
-  a freely indecomposable group, not infinite cyclic, which is a free product `(∗ᵢ Mᵢ) ∗ F` with
-  `F` free, of a family which is nonempty, respectively of a nontrivial group, is the image of one
-  of the `Mᵢ`.
+  a freely indecomposable group `G`, not infinite cyclic, which is a free product `(∗ᵢ Mᵢ) ∗ F`
+  with `F` free is the image of one of the `Mᵢ`, when the index type is nonempty, respectively
+  when `G` is nontrivial.
 
 ## References
 
