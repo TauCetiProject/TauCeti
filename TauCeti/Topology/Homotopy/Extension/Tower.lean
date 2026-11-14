@@ -37,8 +37,9 @@ part of the data.
   as above. Homotopy equivalences `h n : F n ≃ₕ A n` commuting strictly with the inclusions glue
   to a homotopy equivalence from any colimit of `F` to `Y`
   (`TauCeti.exists_homotopyEquiv_of_isColimit`). As `Y` carries the topology coherent with the
-  `A n`, it is the colimit of the sequence of the `A n`, so the second form applies. If the bonding
-  maps are closed embeddings, the stages are also a tower of closed cofibrations inside the colimit
+  `A n`, it is the colimit of the sequence of the `A n`
+  (`TauCeti.TopCat.isColimitOfIsCoherentWith`), so the second form applies. If the bonding maps
+  are closed embeddings, the stages are also a tower of closed cofibrations inside the colimit
   (`TauCeti.hasHomotopyExtensionProperty_preimage_range_ι_of_isColimit`).
 
 The proofs have three steps.
@@ -372,41 +373,18 @@ theorem exists_homotopyEquiv_of_isColimit
     (h : ∀ k, F.obj k ≃ₕ A k)
     (hh : ∀ k w, (h (k + 1) (F.map (homOfLE k.le_succ) w) : Y) = h k w) :
     ∃ H : c.pt ≃ₕ Y, ∀ k w, H (c.ι.app k w) = (h k w : Y) := by
-  -- The sequence of the subsets `A k` and their inclusions, with `Y` as a cocone over it.
-  let G : ℕ ⥤ TopCat.{u} :=
-    { obj k := TopCat.of (A k)
-      map u := TopCat.ofHom ⟨Set.inclusion (hA (leOfHom u)), continuous_inclusion _⟩ }
-  let cY : Cocone G :=
-    { pt := TopCat.of Y
-      ι := { app k := TopCat.ofHom (ContinuousMap.subtypeVal _) } }
-  -- `Y` is the colimit of the `A k`, as maps on the `A k` agreeing on overlaps glue continuously.
-  have hφ (s : Cocone G) (i j : ℕ) (y : Y) (hi : y ∈ A i) (hj : y ∈ A j) :
-      s.ι.app i ⟨y, hi⟩ = s.ι.app j ⟨y, hj⟩ := by
-    wlog hij : i ≤ j generalizing i j
-    · exact (this j i hj hi (le_of_not_ge hij)).symm
-    exact (ConcreteCategory.congr_hom (s.w (homOfLE hij)) ⟨y, hi⟩).symm
-  let desc (s : Cocone G) : C(Y, s.pt) :=
-    ContinuousMap.liftCoherent A (fun k ↦ (s.ι.app k).hom) (hφ s) hAc hAY
-  have hdesc (s : Cocone G) (k : ℕ) (y : A k) : desc s y = s.ι.app k y :=
-    ContinuousMap.liftCoherent_coe y
-  have hcY : IsColimit cY :=
-    { desc s := TopCat.ofHom (desc s)
-      fac s k := by
-        ext y
-        exact hdesc s k y
-      uniq s m hm := by
-        ext y
-        obtain ⟨k, hk⟩ := mem_iUnion.1 (hAY ▸ mem_univ y)
-        exact (ConcreteCategory.congr_hom (hm k) ⟨y, hk⟩).trans (hdesc s k ⟨y, hk⟩).symm }
-  -- The `h k` form a levelwise homotopy equivalence `F ⟶ G`, and the induced map of colimits is
-  -- a homotopy equivalence.
-  let f : F ⟶ G := NatTrans.ofSequence (fun k ↦ TopCat.ofHom (h k).toFun) fun k ↦ by
-    ext w
-    exact hh k w
+  -- `Y` is the colimit of the `A k`, the `h k` form a levelwise homotopy equivalence from `F` to
+  -- the sequence of the `A k`, and the induced map of colimits is a homotopy equivalence.
+  let hcY := TopCat.isColimitOfIsCoherentWith hA hAY hAc
+  let f : F ⟶ TopCat.subspaceDiagram hA :=
+    NatTrans.ofSequence (fun k ↦ TopCat.ofHom (h k).toFun) fun k ↦ by
+      ext w
+      exact Subtype.ext (hh k w)
   refine ⟨cofibrationTowerHomotopyEquiv hF hFh (fun k ↦ .inclusion (hA k.le_succ)) (fun k ↦ by
-      simp only [G, TopCat.hom_ofHom, ContinuousMap.coe_mk, range_inclusion]
-      exact hAH k) f (fun k ↦ ⟨h k, by simp [f]⟩) hc hcY, fun k w ↦ ?_⟩
-  exact ConcreteCategory.congr_hom (hc.ι_map cY f k) w
+      change HasHomotopyExtensionProperty (range (Set.inclusion (hA k.le_succ)))
+      rw [range_inclusion]
+      exact hAH k) f (fun k ↦ ⟨h k, rfl⟩) hc hcY, fun k w ↦ ?_⟩
+  exact ConcreteCategory.congr_hom (hc.ι_map _ f k) w
 
 end ColimitUnion
 

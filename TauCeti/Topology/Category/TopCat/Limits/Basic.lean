@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Limits.Types.Filtered
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
 public import Mathlib.Topology.Coherent
+public import TauCeti.Topology.Coherent
 
 /-!
 # Basic facts about colimits in `TopCat`
@@ -26,6 +27,13 @@ The ranges of the maps to the vertex of a cocone over a preorder increase
 (`TauCeti.TopCat.isCoherentWith_range_ι_of_isColimit`): a set is closed as soon as it meets each
 range in a relatively closed set. These are the hypotheses under which the colimit of a sequence is
 treated as the increasing union of its stages.
+
+Conversely, an increasing family of subsets `A j` of a space `Y`, indexed by a directed order,
+forms a diagram in `TopCat` along the inclusions (`TauCeti.TopCat.subspaceDiagram`), with `Y` as
+a cocone over it (`TauCeti.TopCat.subspaceCocone`). If the `A j` cover `Y` and `Y` carries the
+topology coherent with them, then `Y` is the colimit of this diagram
+(`TauCeti.TopCat.isColimitOfIsCoherentWith`): maps out of the `A j` agreeing along the inclusions
+glue by `ContinuousMap.liftCoherent`.
 -/
 
 public section
@@ -76,5 +84,50 @@ theorem isCoherentWith_range_ι_of_isColimit {J : Type w} [Category J] {F : J �
   -- The preimage of `t` in `F.obj j` is its preimage in the range, pulled back along `c.ι.app j`.
   exact (ht _ ⟨j, rfl⟩).preimage
     ((c.ι.app j).hom.continuous.subtype_mk fun x ↦ Set.mem_range_self x)
+
+section Subspace
+
+variable {J : Type w} [Preorder J] {Y : Type u} [TopologicalSpace Y] {A : J → Set Y}
+  (hA : Monotone A)
+
+/-- The diagram in `TopCat` of an increasing family of subsets of a space and their inclusions. -/
+@[expose, simps map]
+def subspaceDiagram : J ⥤ TopCat.{u} where
+  obj j := TopCat.of (A j)
+  map u := TopCat.ofHom ⟨Set.inclusion (hA (leOfHom u)), continuous_inclusion _⟩
+
+/-- A space is a cocone over the diagram of an increasing family of its subsets, by the
+inclusions. -/
+@[expose, simps ι_app]
+def subspaceCocone : Cocone (subspaceDiagram hA) where
+  pt := TopCat.of Y
+  ι := { app j := TopCat.ofHom (ContinuousMap.subtypeVal _) }
+
+/-- **A coherent increasing union is a colimit.** If an increasing family of subsets `A j` of `Y`,
+indexed by a directed order, covers `Y`, and `Y` carries the topology coherent with the `A j`, then
+`Y` is the colimit in `TopCat` of the `A j` along the inclusions. -/
+noncomputable def isColimitOfIsCoherentWith [IsDirectedOrder J] (hAY : ⋃ j, A j = Set.univ)
+    (hAc : Topology.IsCoherentWith (Set.range A)) : IsColimit (subspaceCocone hA) :=
+  -- Maps out of the `A j` forming a cocone agree on overlaps, as both factor through a larger
+  -- `A k`, so they glue to a continuous map on `Y`.
+  have hφ (s : Cocone (subspaceDiagram hA)) (i j : J) (y : Y) (hi : y ∈ A i) (hj : y ∈ A j) :
+      s.ι.app i ⟨y, hi⟩ = s.ι.app j ⟨y, hj⟩ := by
+    obtain ⟨k, hik, hjk⟩ := directed_of (· ≤ ·) i j
+    exact (ConcreteCategory.congr_hom (s.w (homOfLE hik)) ⟨y, hi⟩).symm.trans
+      (ConcreteCategory.congr_hom (s.w (homOfLE hjk)) ⟨y, hj⟩)
+  let desc (s : Cocone (subspaceDiagram hA)) : C(Y, s.pt) :=
+    ContinuousMap.liftCoherent A (fun j ↦ (s.ι.app j).hom) (hφ s) hAc hAY
+  have hdesc (s : Cocone (subspaceDiagram hA)) (j : J) (y : A j) : desc s y = s.ι.app j y :=
+    ContinuousMap.liftCoherent_coe y
+  { desc s := TopCat.ofHom (desc s)
+    fac s j := by
+      ext y
+      exact hdesc s j y
+    uniq s m hm := by
+      ext y
+      obtain ⟨j, hj⟩ := Set.mem_iUnion.1 (hAY ▸ Set.mem_univ y)
+      exact (ConcreteCategory.congr_hom (hm j) ⟨y, hj⟩).trans (hdesc s j ⟨y, hj⟩).symm }
+
+end Subspace
 
 end TauCeti.TopCat
