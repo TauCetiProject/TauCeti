@@ -272,21 +272,8 @@ def twistedChainComplexCoefficientMap (η : L ⟶ K) :
   P.twistedChainComplexDesc L
     (LocalCoefficientSystem.twistedChainComplexCoefficientMap η ≫
       P.twistedChainComplexπ K)
-    (by
-      calc
-        _ = (LocalCoefficientSystem.twistedChainComplexMap P.map L ≫
-              LocalCoefficientSystem.twistedChainComplexCoefficientMap η) ≫
-            P.twistedChainComplexπ K := Category.assoc _ _ _ |>.symm
-        _ = (LocalCoefficientSystem.twistedChainComplexCoefficientMap
-                ((LocalCoefficientSystem.pullback P.map.hom).map η) ≫
-              LocalCoefficientSystem.twistedChainComplexMap P.map K) ≫
-            P.twistedChainComplexπ K := by
-              rw [LocalCoefficientSystem.twistedChainComplexMap_naturality]
-        _ = LocalCoefficientSystem.twistedChainComplexCoefficientMap
-              ((LocalCoefficientSystem.pullback P.map.hom).map η) ≫
-            (LocalCoefficientSystem.twistedChainComplexMap P.map K ≫
-              P.twistedChainComplexπ K) := Category.assoc _ _ _
-        _ = 0 := by rw [P.twistedChainComplexMap_comp_twistedChainComplexπ, comp_zero])
+    (by rw [LocalCoefficientSystem.twistedChainComplexMap_naturality_assoc,
+      P.twistedChainComplexMap_comp_twistedChainComplexπ, comp_zero])
 
 /-- The relative coefficient map commutes with the quotient maps from ambient twisted chains. -/
 @[reassoc (attr := simp)]
