@@ -35,7 +35,6 @@ this identification as a linear equivalence over a commutative semiring.
   comodules.
 * `TauCeti.FGComoduleCat.isoOfLinearEquiv`: build an isomorphism from a coaction-compatible
   linear equivalence.
-* `TauCeti.FGComoduleCat.isZero_zero`: `FGComoduleCat.zero` is a zero object.
 * `HasZeroObject (FGComoduleCat R C)`.
 
 ## References
@@ -323,53 +322,6 @@ theorem isoOfLinearEquiv_inv_apply {M N : FGComoduleCat.{u, v, w} R C} (e : M �
       Comodule.coact (R := R) (C := C) (M := N) ∘ₗ e.toLinearMap) (n : N) :
     (isoOfLinearEquiv e h).inv n = e.symm n :=
   rfl
-
-variable (R C)
-
-/-- The bundled finitely generated zero right comodule. -/
-def zero : FGComoduleCat.{u, v, w} R C :=
-  ⟨ComoduleCat.zero R C, ComoduleCat.finite_zero R C⟩
-
-/-- The ambient comodule underlying the finitely generated zero comodule is the zero comodule. -/
-@[simp]
-theorem zero_obj : (zero R C : FGComoduleCat.{u, v, w} R C).obj = ComoduleCat.zero R C :=
-  rfl
-
-/-- The named finitely generated zero comodule is a zero object. -/
-theorem isZero_zero : IsZero (zero R C : FGComoduleCat.{u, v, w} R C) :=
-  IsZero.of_full_of_faithful_of_isZero (ComoduleCat.isFG (R := R) (C := C)).ι (zero R C)
-    (ComoduleCat.isZero_zero R C)
-
-/-- Any morphism from the named finitely generated zero comodule is zero. -/
-theorem zero_hom_eq_zero (M : FGComoduleCat.{u, v, w} R C) (f : zero R C ⟶ M) : f = 0 :=
-  (isZero_zero (R := R) (C := C)).eq_of_src f 0
-
-/-- Any morphism to the named finitely generated zero comodule is zero. -/
-theorem hom_zero_eq_zero (M : FGComoduleCat.{u, v, w} R C) (f : M ⟶ zero R C) : f = 0 :=
-  (isZero_zero (R := R) (C := C)).eq_of_tgt f 0
-
-/-- The canonical morphism out of the named finitely generated zero comodule is the zero
-morphism. -/
-@[simp]
-theorem isZero_zero_to (M : FGComoduleCat.{u, v, w} R C) :
-    (isZero_zero (R := R) (C := C)).to_ M = 0 :=
-  zero_hom_eq_zero (R := R) (C := C) M _
-
-/-- The canonical morphism into the named finitely generated zero comodule is the zero morphism. -/
-@[simp]
-theorem isZero_zero_from (M : FGComoduleCat.{u, v, w} R C) :
-    (isZero_zero (R := R) (C := C)).from_ M = 0 :=
-  hom_zero_eq_zero (R := R) (C := C) M _
-
-/-- Morphisms from the named finitely generated zero comodule are unique. -/
-@[ext]
-theorem zero_hom_ext {M : FGComoduleCat.{u, v, w} R C} (f g : zero R C ⟶ M) : f = g :=
-  (isZero_zero (R := R) (C := C)).eq_of_src f g
-
-/-- Morphisms to the named finitely generated zero comodule are unique. -/
-@[ext]
-theorem hom_zero_ext {M : FGComoduleCat.{u, v, w} R C} (f g : M ⟶ zero R C) : f = g :=
-  (isZero_zero (R := R) (C := C)).eq_of_tgt f g
 
 end FGComoduleCat
 
