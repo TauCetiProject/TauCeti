@@ -205,50 +205,21 @@ theorem MemWkpLoc.exists_two_lt_le_memLpLoc_of_one_lt {p s : ℝ≥0∞} (hu : M
   have hp' : 2 < p' := by
     rw [← ENNReal.coe_lt_coe, hp'_coe]
     exact lt_min hp (by exact_mod_cast (by norm_num : 2 < 3))
-  have hp'p : (p' : ℝ≥0∞) ≤ p := hp'_coe.le.trans (min_le_left p 3)
-  let s' : ℝ≥0 := (min s (p' : ℝ≥0∞)).toNNReal
-  have hs'_coe : (s' : ℝ≥0∞) = min s p' :=
-    ENNReal.coe_toNNReal (ne_top_of_le_ne_top ENNReal.coe_ne_top (min_le_right s p'))
-  have hs' : 1 < s' := by
+  let s' : ℝ≥0 := (min s 2).toNNReal
+  have hs'_coe : (s' : ℝ≥0∞) = min s 2 :=
+    ENNReal.coe_toNNReal (ne_top_of_le_ne_top ENNReal.ofNat_ne_top (min_le_right s 2))
+  have hs'1 : 1 < s' := by
     rw [← ENNReal.coe_lt_coe, hs'_coe]
-    exact lt_min hs (ENNReal.coe_lt_coe.2 (one_lt_two.trans hp'))
-  have hs'p' : s' ≤ p' := ENNReal.coe_le_coe.1 (hs'_coe.le.trans (min_le_right s p'))
-  have hu' : MemWkpLoc s' Ω 1 u := hu.mono_exponent (hs'_coe.le.trans (min_le_left s p'))
-  have hp'R : (2 : ℝ) < p' := by exact_mod_cast hp'
-  have hs'R : (1 : ℝ) < s' := by exact_mod_cast hs'
-  have hs'0 : (0 : ℝ) < s' := zero_lt_one.trans hs'R
-  have hp'0 : (0 : ℝ) < p' := by linarith
-  rcases le_or_gt ((s' : ℝ)⁻¹ - (p' : ℝ)⁻¹) 2⁻¹ with hgap | hgap
-  · exact ⟨p', hp', hp'p,
-      hu'.memLpLoc_of_inv_sub_inv_le (by exact_mod_cast hs'R.le) hs'p' hgap⟩
-  · set b : ℝ := (s' : ℝ)⁻¹ - 2⁻¹
-    have hp'_inv_pos : 0 < (p' : ℝ)⁻¹ := inv_pos.2 hp'0
-    have hb_gt_p' : (p' : ℝ)⁻¹ < b := by dsimp only [b]; linarith
-    have hb_pos : 0 < b := hp'_inv_pos.trans hb_gt_p'
-    have hs'_inv_lt : (s' : ℝ)⁻¹ < 1 := inv_lt_one_of_one_lt₀ hs'R
-    have hb_lt_half : b < 2⁻¹ := by dsimp only [b]; linarith
-    let r : ℝ≥0 := ⟨b⁻¹, by positivity⟩
-    have hr_coe : (r : ℝ) = b⁻¹ := NNReal.coe_mk b⁻¹ (by positivity)
-    have hr_inv : (r : ℝ)⁻¹ = b := by rw [hr_coe, inv_inv]
-    have hr_gt2 : 2 < r := by
-      rw [← NNReal.coe_lt_coe, hr_coe]
-      have h := (inv_lt_inv₀ (by positivity : (0 : ℝ) < 2⁻¹) hb_pos).2 hb_lt_half
-      norm_num at h
-      exact_mod_cast h
-    have hr_le_p' : r ≤ p' := by
-      rw [← NNReal.coe_le_coe, hr_coe]
-      have h := (inv_lt_inv₀ hb_pos hp'_inv_pos).2 hb_gt_p'
-      rw [inv_inv] at h
-      exact h.le
-    have hs'_le_r : s' ≤ r := by
-      rw [← NNReal.coe_le_coe, hr_coe]
-      have hb_lt_s' : b < (s' : ℝ)⁻¹ := by dsimp only [b]; linarith
-      have h := (inv_lt_inv₀ (inv_pos.2 hs'0) hb_pos).2 hb_lt_s'
-      rw [inv_inv] at h
-      exact h.le
-    exact ⟨r, hr_gt2, (ENNReal.coe_le_coe.2 hr_le_p').trans hp'p,
-      hu'.memLpLoc_of_inv_sub_inv_le (by exact_mod_cast hs'R.le) hs'_le_r
-        (by rw [hr_inv]; dsimp only [b]; linarith)⟩
+    exact lt_min hs ENNReal.one_lt_two
+  have hs'2 : s' ≤ 2 := ENNReal.coe_le_coe.1 (hs'_coe.le.trans (min_le_right s 2))
+  have hu' : MemWkpLoc s' Ω 1 u := hu.mono_exponent (hs'_coe.le.trans (min_le_left s 2))
+  obtain ⟨t, hs't, hgap, ht2⟩ :=
+    exists_le_and_inv_sub_inv_le_and_lt_mul (k := 1) (p := s') (n := 2) hs'2
+      (by rw [← NNReal.coe_lt_coe]; push_cast; linarith [(by exact_mod_cast hs'1 : (1 : ℝ) < s')])
+  have hut : MemLpLoc t Ω u := hu'.memLpLoc_of_inv_sub_inv_le hs'1.le hs't (by simpa using hgap)
+  exact ⟨min t p', lt_min (by simpa using ht2) hp',
+    (ENNReal.coe_le_coe.2 (min_le_right t p')).trans (hp'_coe.le.trans (min_le_left p 3)),
+    hut.mono_exponent (ENNReal.coe_le_coe.2 (min_le_left t p'))⟩
 
 /-- **Order lowering.** If `1 ≤ q ≤ s < ∞` and `1/q - 1/s ≤ 1/2`, then
 `W^{k+1,q}_loc(Ω, F) ⊂ W^{k,s}_loc(Ω, F)`: the function and its weak derivatives through order `k`

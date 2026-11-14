@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Basic
-public import TauCeti.Analysis.Sobolev.Local.Multiplication
+public import TauCeti.Analysis.Sobolev.Local.Multiplication.Higher
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 
 /-!
@@ -32,8 +32,9 @@ order `k ≥ 2` of the induction.
 
 The coefficients of the new system inherit the regularity the induction needs: `J₂` has the
 regularity of `J`, and `S₂` is in `W^{k,p}_loc` as soon as `S ∈ W^{k,p}_loc` and
-`J ∈ W^{k+1,p}_loc`. The right side is locally `L^q`. Its higher regularity is a question about
-mixed-exponent products of higher order and is not addressed here.
+`J ∈ W^{k+1,p}_loc`. The right side is locally `L^q` for `1 ≤ q ≤ p`, and for `1 < q ≤ p` it lies
+in `W^{k,q}_loc` whenever `DS ∈ W^{k,p}_loc`, `Dη ∈ W^{k,q}_loc`, and `ξ ∈ W^{k+1,q}_loc` by the
+higher-order mixed-exponent product rule (`TauCeti.MemWkpLoc.clm_apply_succ`).
 
 ## Main declarations
 
@@ -41,7 +42,8 @@ mixed-exponent products of higher order and is not addressed here.
   for `ξ ∈ W^{k+1,q}_loc`.
 * `TauCeti.ae_differentiated_cauchyRiemann`: the differentiated system, almost everywhere.
 * `TauCeti.MemWkpLoc.differentiatedCRCoefficient`: the regularity of `S₂`.
-* `TauCeti.memLpLoc_differentiatedCR_rightSide`: the right side is locally `L^q`.
+* `TauCeti.memLpLoc_differentiatedCR_rightSide`, `TauCeti.memWkpLoc_differentiatedCR_rightSide`:
+  local `L^q` and higher-order `W^{k,q}_loc` regularity of the right side.
 * `TauCeti.ae_differentiated_cauchyRiemann_const`: for a constant coefficient `J` and `S = 0`,
   the system is the original operator applied to each component of `Ξ`.
 
@@ -175,6 +177,33 @@ theorem memLpLoc_differentiatedCR_rightSide [FiniteDimensional ℝ V] {p q : ℝ
         (hDSp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) v)) hξ)
   exact memWkpLoc_zero_iff.1
     ((memWkpLoc_zero_iff.2 (hcomp 1)).prodMk (memWkpLoc_zero_iff.2 (hcomp I)))
+
+/-- **Higher-order regularity of the right side of the differentiated system.** For `p > 2`,
+`1 < q ≤ p`, `DS ∈ W^{k,p}_loc(Ω)`, `Dη ∈ W^{k,q}_loc(Ω)`, and `ξ ∈ W^{k+1,q}_loc(Ω)`, the map
+`(∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ) = (Dη(·) 1 - DS(·) 1 ξ, Dη(·) I - DS(·) I ξ)` is in
+`W^{k,q}_loc(Ω)`. -/
+theorem memWkpLoc_differentiatedCR_rightSide [FiniteDimensional ℝ V] {p q : ℝ≥0} (hp : 2 < p)
+    (hq : 1 < q) (hqp : q ≤ p)
+    {DS : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {ξ : ℂ → V} {Dη : ℂ → ℂ →L[ℝ] V}
+    (hDS : MemWkpLoc p Ω k DS) (hDη : MemWkpLoc q Ω k Dη) (hξ : MemWkpLoc q Ω (k + 1) ξ) :
+    MemWkpLoc q Ω k (fun z => (Dη z 1 - DS z 1 (ξ z), Dη z I - DS z I (ξ z))) := by
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
+  have hcomp (v : ℂ) : MemWkpLoc q Ω k (fun z => Dη z v - DS z v (ξ z)) := by
+    have h1 : MemWkpLoc q Ω k (fun z => Dη z v) :=
+      hDη.clm_comp (ContinuousLinearMap.apply ℝ V v)
+    have hDSv : MemWkpLoc p Ω k (fun z => DS z v) :=
+      hDS.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) v)
+    have h2 : MemWkpLoc q Ω k (fun z => DS z v (ξ z)) := by
+      cases k with
+      | zero =>
+        have : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨by exact_mod_cast hq.le⟩
+        exact memWkpLoc_zero_iff.2
+          (MemLpLoc.bilin_of_memWkpLoc (ContinuousLinearMap.id ℝ (V →L[ℝ] V)) hp hqp
+            hDSv.memLpLoc hξ)
+      | succ _ =>
+        exact hDSv.clm_apply_succ hp hq hqp hξ.of_succ
+    exact h1.sub h2
+  exact (hcomp 1).prodMk (hcomp I)
 
 /-- **Check: the constant case.** For a constant structure `J = A` and `S = 0`, the differentiated
 system is the original operator `∂_s + A ∂_t` applied to each component of `Ξ = (∂_s ξ, ∂_t ξ)`:

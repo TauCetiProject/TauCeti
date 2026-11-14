@@ -29,8 +29,7 @@ of the two factors.
 Finally, it bundles the componentwise action of two continuous linear maps `f` and `g` on
 `WithLp p (α × β)` as a continuous linear map `f.withLpProdMap p g`, the continuous counterpart of
 Mathlib's `LinearIsometry.withLpProdMap`, together with its continuous linear lift
-`ContinuousLinearMap.withLpProdMapL` and the arrow-conjugation equivalence
-`WithLp.prodArrowContinuousLinearEquiv`. For `p = 2` and inner product spaces this is the
+`ContinuousLinearMap.withLpProdMapL`. For `p = 2` and inner product spaces this is the
 orthogonal block sum `f ⊕ g`. It is additive in the pair `(f, g)`, its rank is the sum of the
 ranks of `f` and `g`, and its operator norm is the larger of the two operator norms. The
 projections onto the factors and the inclusions of the factors are contractions, and fixing one
@@ -54,8 +53,6 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
 * `TauCeti.toLp_prodMk_eq_add` — `x ↦ (f x, u x)` is `x ↦ ι₁ (f x) + ι₂ (u x)`.
 * `ContinuousLinearMap.withLpProdMap`, `ContinuousLinearMap.withLpProdMapL` — the block sum `f ⊕ g`
   on `WithLp p (α × β)`, and as a continuous linear map in `(f, g)`.
-* `WithLp.prodArrowContinuousLinearEquiv` — arrow conjugation identifying continuous linear maps on
-  `WithLp p` products with continuous linear maps on bare products.
 * `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
 * `ContinuousLinearMap.norm_withLpProdMap` — `‖f ⊕ g‖ = max ‖f‖ ‖g‖`.
@@ -406,36 +403,6 @@ end Normed
 end ContinuousLinearMap
 
 namespace WithLp
-
-section ArrowCongr
-
-variable (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α β α' β' : Type*) [NormedField 𝕜]
-  [TopologicalSpace α] [AddCommGroup α] [Module 𝕜 α]
-  [TopologicalSpace β] [AddCommGroup β] [Module 𝕜 β]
-  [SeminormedAddCommGroup α'] [NormedSpace 𝕜 α']
-  [SeminormedAddCommGroup β'] [NormedSpace 𝕜 β']
-
-/-- Conjugating continuous linear maps by `WithLp.prodContinuousLinearEquiv` identifies
-`WithLp p (α × β) →L[𝕜] WithLp p (α' × β')` with `(α × β) →L[𝕜] (α' × β')`. -/
-def prodArrowContinuousLinearEquiv :
-    (WithLp p (α × β) →L[𝕜] WithLp p (α' × β')) ≃L[𝕜] (α × β →L[𝕜] α' × β') :=
-  (prodContinuousLinearEquiv p 𝕜 α β).arrowCongr (prodContinuousLinearEquiv p 𝕜 α' β')
-
-variable {𝕜 α β α' β'}
-
-@[simp]
-theorem prodArrowContinuousLinearEquiv_apply
-    (f : WithLp p (α × β) →L[𝕜] WithLp p (α' × β')) (x : α × β) :
-    prodArrowContinuousLinearEquiv p 𝕜 α β α' β' f x = ofLp (f (toLp p x)) :=
-  (rfl)
-
-@[simp]
-theorem prodArrowContinuousLinearEquiv_symm_apply
-    (f : α × β →L[𝕜] α' × β') (x : WithLp p (α × β)) :
-    (prodArrowContinuousLinearEquiv p 𝕜 α β α' β').symm f x = toLp p (f (ofLp x)) :=
-  (rfl)
-
-end ArrowCongr
 
 section Contraction
 

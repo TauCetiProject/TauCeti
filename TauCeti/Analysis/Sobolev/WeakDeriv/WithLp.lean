@@ -9,7 +9,11 @@ public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 
 /-!
-# Weak derivatives of graphs in an `Lᵖ` product
+# Weak derivatives of graphs and block sums in an `Lᵖ` product
+
+Two weakly differentiable fields of continuous linear maps pair through
+`ContinuousLinearMap.withLpProdMapL` to a weakly differentiable field of `Lᵖ` block sums
+(`TauCeti.HasWeakFDerivOn.withLpProdMap`).
 
 For `u : E → V`, the graph map `x ↦ (x, u x)` into the `Lᵖ` product `WithLp p (E × V)` is the sum
 of the inclusion of `E` in the first factor and of `u` followed by the inclusion of `V` in the
@@ -29,6 +33,27 @@ public noncomputable section
 open MeasureTheory TopologicalSpace
 
 namespace TauCeti
+
+section BlockSum
+
+variable {E E₁ E₂ E₃ E₄ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [MeasurableSpace E] [OpensMeasurableSpace E]
+  [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [NormedAddCommGroup E₂] [NormedSpace ℝ E₂]
+  [CompleteSpace E₂] [NormedAddCommGroup E₃] [NormedSpace ℝ E₃]
+  [NormedAddCommGroup E₄] [NormedSpace ℝ E₄] [CompleteSpace E₄]
+  {μ : Measure E} {Ω : Opens E}
+
+/-- **Weak derivatives of `Lᵖ` block sums.** If two fields of continuous linear maps are weakly
+differentiable on `Ω`, so is their pointwise `Lᵖ` block sum `(A x).withLpProdMap p (B x)`. -/
+theorem HasWeakFDerivOn.withLpProdMap {A : E → E₁ →L[ℝ] E₂} {B : E → E₃ →L[ℝ] E₄}
+    {DA : E → E →L[ℝ] E₁ →L[ℝ] E₂} {DB : E → E →L[ℝ] E₃ →L[ℝ] E₄}
+    (hA : HasWeakFDerivOn μ Ω A DA) (p : ENNReal) [Fact (1 ≤ p)] (hB : HasWeakFDerivOn μ Ω B DB) :
+    HasWeakFDerivOn μ Ω (fun x => (A x).withLpProdMap p (B x))
+      (fun x => (ContinuousLinearMap.withLpProdMapL p ℝ E₁ E₃ E₂ E₄).comp
+        ((DA x).prod (DB x))) := by
+  simpa using (hA.prodMk hB).clm_comp (ContinuousLinearMap.withLpProdMapL p ℝ E₁ E₃ E₂ E₄)
+
+end BlockSum
 
 variable {p : ENNReal} [Fact (1 ≤ p)] {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup V]
