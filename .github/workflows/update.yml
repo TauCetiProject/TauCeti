@@ -24,7 +24,7 @@ permissions:
 jobs:
   recover-maintenance:
     if: ${{ !inputs.dry-run }}
-    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -47,7 +47,7 @@ jobs:
         run: python3 scripts/maintenance_builds.py
 
   select:
-    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     outputs:
       target: ${{ steps.target.outputs.target }}
@@ -88,7 +88,7 @@ jobs:
   publish:
     needs: select
     if: needs.select.outputs.reconcile == 'true' && !inputs.dry-run
-    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ubuntu-24.04
     steps:
       # No upstream code executes in this job, and the selection job has no App secret.
       - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf

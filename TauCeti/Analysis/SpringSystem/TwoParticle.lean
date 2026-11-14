@@ -41,11 +41,12 @@ exchanges the particles) are commuting involutions, so `C₂ × C₂` acts on di
 (`TauCeti.TwoParticleSpring.symmetryRep`) and `H` commutes with this action. The four eigenvectors
 above have the `(r, s)`-signs `(+, +)`, `(+, -)`, `(-, +)` and `(-, -)` respectively, so each of
 the four real characters of `C₂ × C₂` occurs exactly once: the displacement representation is the
-regular representation (`TauCeti.TwoParticleSpring.leftRegularEquiv`). The character idempotent
-`¼ ∑_g χ(g) g` of each character `χ` acts as the orthogonal projection onto the corresponding
-eigenvector line (`TauCeti.TwoParticleSpring.isotypicProjector`); the four projectors are
-idempotent, annihilate each other pairwise and sum to the identity, and `H` is `-2` times the
-projector of the trivial character.
+regular representation (`TauCeti.TwoParticleSpring.leftRegularEquiv`), and the joint eigenspace of
+each character is exactly the line through its eigenvector. Each symmetry preserves the dot
+product. The character idempotent `¼ ∑_g χ(g) g` of each character `χ` acts as the orthogonal
+projection onto the corresponding eigenvector line (`TauCeti.TwoParticleSpring.isotypicProjector`);
+the four projectors are idempotent, symmetric for the dot product, annihilate each other pairwise
+and sum to the identity, and `H` is `-2` times the projector of the trivial character.
 
 **The transverse zero mode, made exact.** Along the transverse displacement `u₁ = (0, ε)`,
 `u₂ = (0, -ε)` the relative vector is `(1, -2ε)`, of length
@@ -92,15 +93,21 @@ not solutions of the spring equation.
   `TauCeti.TwoParticleSpring.hasFDerivAt_inv_smul_exactForce_zero`: the exact force linearizes to
   `κ H` at the rest configuration, and the acceleration of particles of mass `m` to `(κ / m) H`.
 * `TauCeti.TwoParticleSpring.forceMatrix_mulVec_symmetryRep`: `H` is equivariant, and
-  `TauCeti.TwoParticleSpring.dotProduct_symmetryRep`: the action is orthogonal.
+  `TauCeti.TwoParticleSpring.dotProduct_symmetryRep`: the action is orthogonal, so
+  `TauCeti.TwoParticleSpring.symmetryRep_dotProduct`: each symmetry is symmetric for the dot
+  product.
 * `TauCeti.TwoParticleSpring.symmetryRep_stretch` and its three companions: the symmetry type of
   each eigenvector of `H`.
 * `TauCeti.TwoParticleSpring.isotypicProjector_one_apply` and its three companions: the
   projectors are the orthogonal projections onto the eigenvector lines, and
   `TauCeti.TwoParticleSpring.isotypicProjector_add_add_add_eq_one`: they sum to the identity.
+* `TauCeti.TwoParticleSpring.isotypicProjector_dotProduct`: the projectors are symmetric for the
+  dot product.
 * `TauCeti.TwoParticleSpring.isotypicProjector_mul_self`,
   `TauCeti.TwoParticleSpring.isotypicProjector_mul_isotypicProjector_of_ne`: the projectors are
   idempotent and those of distinct characters annihilate each other.
+* `TauCeti.TwoParticleSpring.mem_iInf_eigenspace_symmetryRep_iff`: a displacement lies in the
+  isotypic component of `χ` exactly when the two reflections act on it by the values of `χ`.
 * `TauCeti.TwoParticleSpring.range_isotypicProjector`: the image of each projector is its isotypic
   component, and `TauCeti.TwoParticleSpring.iInf_eigenspace_symmetryRep_one` and its three
   companions: the four isotypic components are exactly the eigenvector lines.
@@ -659,6 +666,15 @@ theorem dotProduct_symmetryRep (g : Multiplicative (ZMod 2) × Multiplicative (Z
     rcases b.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
     simp [dotProduct, Fin.sum_univ_four, Prod.mk_one_one] <;> ring
 
+/-- **Each symmetry is symmetric for the dot product**: an involution preserving the dot product,
+it is its own adjoint. -/
+theorem symmetryRep_dotProduct (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2))
+    (u w : Fin 4 → ℝ) : symmetryRep g u ⬝ᵥ w = u ⬝ᵥ symmetryRep g w := by
+  obtain ⟨a, b⟩ := g
+  rcases a.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
+    rcases b.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
+    simp [Prod.mk_one_one, dotProduct, Fin.sum_univ_four] <;> ring
+
 /-! ### The four symmetry types of displacement -/
 
 /-- The stretching mode `(1, 0, -1, 0)` is fixed by both reflections: it spans a copy of the
@@ -762,6 +778,18 @@ theorem isotypicProjector_apply (χ : Multiplicative (ZMod 2) × Multiplicative 
     symmetryRep_ofAdd_one_ofAdd_one_apply]
   abel_nf
 
+/-- **The isotypic projectors are symmetric for the dot product**, since each symmetry is
+(`TauCeti.TwoParticleSpring.symmetryRep_dotProduct`); being idempotent, they are orthogonal
+projectors. -/
+theorem isotypicProjector_dotProduct
+    (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) (u w : Fin 4 → ℝ) :
+    isotypicProjector χ u ⬝ᵥ w = u ⬝ᵥ isotypicProjector χ w := by
+  have hsr : axisReflection (bisectorReflection w) = bisectorReflection (axisReflection w) :=
+    congrArg (fun f ↦ f w) commute_axisReflection_bisectorReflection.eq
+  rw [isotypicProjector_apply, isotypicProjector_apply, hsr]
+  simp only [smul_dotProduct, dotProduct_smul, add_dotProduct, dotProduct_add,
+    ← symmetryRep_ofAdd_one_one_apply, ← symmetryRep_one_ofAdd_one_apply, symmetryRep_dotProduct]
+
 /-- A symmetry applied after the isotypic projector of `χ` acts by the scalar `χ g`: the image of
 the projector is contained in the `χ`-isotypic component. -/
 theorem symmetryRep_mul_isotypicProjector
@@ -836,6 +864,27 @@ theorem isotypicProjector_add_add_add_eq_one :
   fin_cases i <;> simp [dotProduct, Fin.sum_univ_four, vecHead, vecTail] <;> ring
 
 /-! ### The isotypic components -/
+
+/-- A displacement lies in the joint eigenspace of a real character `χ` of `C₂ × C₂` exactly when
+the two reflections multiply it by the values of `χ` at the two generators. -/
+@[grind ←]
+theorem mem_iInf_eigenspace_symmetryRep_iff
+    (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) (u : Fin 4 → ℝ) :
+    u ∈ ⨅ g, Module.End.eigenspace (symmetryRep g) (χ g) ↔
+      axisReflection u = χ (.ofAdd 1, 1) • u ∧ bisectorReflection u = χ (1, .ofAdd 1) • u := by
+  rw [Submodule.mem_iInf]
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨hr, hs⟩ g ↦ Module.End.mem_eigenspace_iff.2 ?_⟩
+  · simpa using Module.End.mem_eigenspace_iff.1 (h (.ofAdd 1, 1))
+  · simpa using Module.End.mem_eigenspace_iff.1 (h (1, .ofAdd 1))
+  have hχ : χ (.ofAdd 1, .ofAdd 1) = χ (1, .ofAdd 1) * χ (.ofAdd 1, 1) := by
+    rw [← map_mul, Prod.mk_mul_mk, one_mul, mul_one]
+  obtain ⟨a, b⟩ := g
+  rcases a.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
+    rcases b.eq_one_or_eq_ofAdd_one with rfl | rfl
+  · simp [Prod.mk_one_one]
+  · simpa using hs
+  · simpa using hr
+  · rw [symmetryRep_ofAdd_one_ofAdd_one_apply, hs, map_smul, hr, smul_smul, hχ]
 
 /-- The image of the isotypic projector of `χ` is the `χ`-isotypic component, the joint eigenspace
 on which every symmetry `g` acts by the scalar `χ g`. -/

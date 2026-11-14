@@ -188,8 +188,8 @@ theorem coe_weierstrassDefectIdeal_smul_mul_toPrincipalIdeal
     rw [Units.val_mul, FractionalIdeal.count_mul K v I.ne_zero
       (toPrincipalIdeal O K C.u).ne_zero,
       FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation, hI, hJ,
-      FractionalIdeal.count_coe K v (weierstrassDefectIdeal_ne_bot O (C • W)),
-      FractionalIdeal.count_coe K v (weierstrassDefectIdeal_ne_bot O W),
+      FractionalIdeal.count_coeIdeal K v (weierstrassDefectIdeal_ne_bot O (C • W)),
+      FractionalIdeal.count_coeIdeal K v (weierstrassDefectIdeal_ne_bot O W),
       count_weierstrassDefectIdeal_eq_obstructionExponentAt,
       count_weierstrassDefectIdeal_eq_obstructionExponentAt,
       obstructionExponentAt_smul, Valuation.ord_def]

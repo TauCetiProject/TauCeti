@@ -43,6 +43,8 @@ reduces questions about conductors of (quadratic) characters to prime-power leve
   product of the conductors of its local factors.
 * `DirichletCharacter.conductor_localFactor`: the conductor of the local factor at `p` is
   `p ^ v_p(cond χ)`.
+* `DirichletCharacter.isPrimitive_iff_forall_isPrimitive_localFactor`: `χ` is primitive exactly
+  when all its local factors are.
 * `DirichletCharacter.isQuadratic_iff_forall_isQuadratic_localFactor`: `χ` is quadratic exactly
   when all its local factors are.
 
@@ -169,6 +171,19 @@ theorem conductor_localFactor (p : ℕ) (χ : DirichletCharacter R N) :
       exact conductor_eq_zero_iff_level_eq_zero.not.1 ((Nat.mem_primeFactors.1 h).2.2)
     rw [hc, pow_zero]
     simpa [hN] using conductor_dvd_level (localFactor p χ)
+
+/-- The local factors of a primitive character are primitive. -/
+theorem isPrimitive_localFactor {χ : DirichletCharacter R N} (hχ : χ.IsPrimitive) (p : ℕ) :
+    (localFactor p χ).IsPrimitive := by
+  rw [isPrimitive_def, conductor_localFactor, (isPrimitive_def χ).mp hχ]
+
+/-- For `N ≠ 0`, a Dirichlet character is primitive exactly when all its local factors are. -/
+theorem isPrimitive_iff_forall_isPrimitive_localFactor [NeZero N] {χ : DirichletCharacter R N} :
+    χ.IsPrimitive ↔ ∀ p, (localFactor p χ).IsPrimitive := by
+  refine ⟨fun hχ p ↦ isPrimitive_localFactor hχ p, fun h ↦ ?_⟩
+  rw [isPrimitive_def, conductor_eq_prod_conductor_localFactor,
+    Finset.prod_congr rfl fun p _ ↦ (isPrimitive_def _).mp (h p),
+    ← Nat.prod_primeFactors_pow_factorization (NeZero.ne N)]
 
 /-- The local factors of a quadratic character are quadratic. -/
 theorem _root_.MulChar.IsQuadratic.localFactor {R : Type*} [CommRing R]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Classical.Subcomplex
+public import TauCeti.Topology.CWComplex.Classical.Subcomplex
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Induction
 public import TauCeti.Topology.Homotopy.Extension.Ball
 
@@ -13,7 +14,7 @@ public import TauCeti.Topology.Homotopy.Extension.Ball
 # Relative CW inclusions are closed cofibrations
 
 The base `D` of a relative CW complex `C` has the homotopy extension property inside `C`, and so
-does every skeleton of `C`.  As `X` is Hausdorff, these subsets are closed
+do every skeleton and every subcomplex of `C`.  As `X` is Hausdorff, these subsets are closed
 (`TauCeti.HasHomotopyExtensionProperty.isClosed`), so their inclusions are closed cofibrations.
 This is what makes skeletal induction and homotopy-invariance arguments for CW pairs work: maps
 and homotopies can be modified on the base or on a skeleton and extended over the whole complex.
@@ -26,6 +27,11 @@ and homotopies can be modified on the base or on a skeleton and extended over th
   property inside the complex.
 * `TauCeti.hasHomotopyExtensionProperty_base`: **the base of a relative CW complex has the
   homotopy extension property inside the complex.**
+* `Topology.RelCWComplex.Subcomplex.hasHomotopyExtensionProperty`: a subcomplex has the homotopy
+  extension property inside the complex, since the complex is a CW complex relative to it.
+* `TauCeti.hasHomotopyExtensionProperty_range_of_coe_map_eq`: the range of a map between CW
+  complexes carrying every cell onto a cell, characteristic maps included, has the homotopy
+  extension property, being a subcomplex.
 
 ## Related results
 
@@ -143,5 +149,47 @@ theorem hasHomotopyExtensionProperty_base :
     HasHomotopyExtensionProperty (Subtype.val ⁻¹' D : Set C) := by
   simpa only [Nat.cast_zero, skeletonLT_zero_eq_base] using
     hasHomotopyExtensionProperty_skeletonLT (C := C) 0
+
+/-- **CW pairs are cofibrations: a subcomplex has the homotopy extension property inside the
+complex.** The complex is a CW complex relative to the subcomplex
+(`Topology.RelCWComplex.Subcomplex.relCWComplex`), whose base has the homotopy extension property.
+-/
+theorem _root_.Topology.RelCWComplex.Subcomplex.hasHomotopyExtensionProperty
+    (E : Subcomplex C) : HasHomotopyExtensionProperty (Subtype.val ⁻¹' (E : Set X) : Set C) :=
+  @hasHomotopyExtensionProperty_base X _ _ C E E.relCWComplex
+
+/-- **The range of a map carrying cells onto cells has the homotopy extension property.** Let `W`
+and `Y` carry CW structures on `univ`, and let `g : W → Y` carry every `n`-cell `i` of `W` onto an
+`n`-cell `ι n i` of `Y`, in the sense that `map n (ι n i) = g ∘ map n i`. Then the range of `g`
+is the subcomplex of `Y` made of these cells, so it has the homotopy extension property. -/
+theorem hasHomotopyExtensionProperty_range_of_coe_map_eq {W Y : Type*} [TopologicalSpace W]
+    [CWComplex (univ : Set W)] [TopologicalSpace Y] [T2Space Y] [CWComplex (univ : Set Y)]
+    {g : W → Y} (ι : ∀ n, cell (univ : Set W) n → cell (univ : Set Y) n)
+    (hι : ∀ n i, ⇑(map n (ι n i)) = g ∘ map n i) :
+    HasHomotopyExtensionProperty (range g) := by
+  have himage (n : ℕ) (i : cell (univ : Set W) n) (s : Set (Fin n → ℝ)) :
+      map n (ι n i) '' s = g '' (map n i '' s) := by
+    rw [hι, image_comp]
+  -- The range of `g` is the subcomplex of `Y` whose cells are those in the range of `ι`.
+  let E : Subcomplex (univ : Set Y) :=
+    CWComplex.Subcomplex.mk' _ (range g) (fun n ↦ range (ι n))
+    (fun n j ↦ by
+      obtain ⟨_, i, rfl⟩ := j
+      rw [closedCell, himage]
+      exact image_subset_range _ _)
+    (by
+      refine Subset.antisymm (iUnion₂_subset fun n j ↦ ?_) ?_
+      · obtain ⟨_, i, rfl⟩ := j
+        rw [openCell, himage]
+        exact image_subset_range _ _
+      · rintro _ ⟨w, rfl⟩
+        obtain ⟨n, i, hw⟩ := mem_iUnion₂.1 <|
+          (CWComplex.iUnion_openCell_eq_complex (C := (univ : Set W))).symm ▸ mem_univ w
+        refine mem_iUnion₂.2 ⟨n, ⟨ι n i, i, rfl⟩, ?_⟩
+        rw [openCell, himage]
+        exact mem_image_of_mem g hw)
+  have h := E.hasHomotopyExtensionProperty.image (Homeomorph.Set.univ Y)
+  rwa [Homeomorph.Set.univ_apply, image_preimage_eq_range_inter, Subtype.range_coe, univ_inter]
+    at h
 
 end TauCeti

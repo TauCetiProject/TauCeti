@@ -130,7 +130,7 @@ theorem lintegral_lintegral_mul_right (hf : AEMeasurable f μ) {α : Type*} [Mea
   simp_rw [hcongr]
   have hqmp : QuasiMeasurePreserving (fun q : G × α ↦ q.1 * hg.mk g q.2) (μ.prod ν) μ :=
     QuasiMeasurePreserving.prod_of_left
-      (measurable_fst.mul (hg.measurable_mk.comp measurable_snd))
+      (measurable_fst.mul (hg.measurable_mk.comp measurable_snd)).aemeasurable
       (Filter.Eventually.of_forall fun z ↦
         (measurePreserving_mul_right μ (hg.mk g z)).quasiMeasurePreserving)
   have hm : AEMeasurable (Function.uncurry fun x z ↦ f (x * hg.mk g z)) (μ.prod ν) :=

@@ -15,7 +15,8 @@ For Mathlib's `WeakFEPair`, the entire part `Λ₀` is the sum of two Mellin tai
 `(1, ∞)`, with the dual argument `k-s` and the root number `ε`.
 If both kernel tails have exponential bounds, these integrals give
 `‖Λ₀(s)‖ ≤ exp (C (1+‖s‖) log (2+‖s‖))` for a fixed positive `C`.
-Thus a complex-valued `Λ₀` has order at most one.
+Thus a complex-valued `Λ₀` has order at most one. The same split shows that `Λ₀` is bounded on
+every closed vertical strip, with a bound depending only on the range of `Re s`.
 
 The split identity and norm bound also apply to vector-valued pairs. They use
 Mathlib's Mellin inversion substitution and the upper-tail indicator identities of
@@ -155,5 +156,30 @@ theorem _root_.WeakFEPair.orderLE_Λ₀_of_norm_sub_le_exp_neg_mul_rpow (P : Wea
     OrderLE P.Λ₀ 1 := by
   obtain ⟨C, _, hC⟩ := P.exists_norm_Λ₀_le_exp_mul_log hC₁ hc₁ hα₁ hC₂ hc₂ hα₂ hf hg
   exact orderLE_one_of_norm_le_exp_mul_log hC
+
+/-- If both kernel tails decay exponentially, the entire part of a weak functional-equation pair
+is bounded on each closed vertical strip `a ≤ Re s ≤ b`. -/
+theorem _root_.WeakFEPair.exists_norm_Λ₀_le_of_re_mem_Icc (P : WeakFEPair E)
+    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
+    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
+    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) (a b : ℝ) :
+    ∃ M, ∀ s : ℂ, s.re ∈ Icc a b → ‖P.Λ₀ s‖ ≤ M := by
+  refine ⟨C₁ * (∫ u in Ioi 1, u ^ b * exp (-c₁ * u ^ α₁) / u) +
+    ‖P.ε‖ * (C₂ * ∫ u in Ioi 1, u ^ (P.k - a) * exp (-c₂ * u ^ α₂) / u), fun s hs ↦ ?_⟩
+  have hfmeas := ((P.hf_int.sub (locallyIntegrableOn_const P.f₀)).mono_set
+    (Ioi_subset_Ioi zero_le_one)).aestronglyMeasurable
+  have hgmeas := ((P.hg_int.sub (locallyIntegrableOn_const P.g₀)).mono_set
+    (Ioi_subset_Ioi zero_le_one)).aestronglyMeasurable
+  rw [WeakFEPair.Λ₀_eq_integral_add_smul_integral P s
+    (integrableOn_cpow_smul_of_norm_le_exp_neg_mul_rpow hc₁ hα₁ hfmeas hf s)
+    (integrableOn_cpow_smul_of_norm_le_exp_neg_mul_rpow hc₂ hα₂ hgmeas hg (P.k - s))]
+  have hdual : ((P.k : ℂ) - s).re ≤ P.k - a := by
+    simp only [Complex.sub_re, Complex.ofReal_re]
+    linarith [hs.1]
+  refine (norm_add_le _ _).trans (add_le_add
+    (norm_integral_cpow_smul_le_of_re_le hc₁ hα₁ hf hs.2) ?_)
+  rw [norm_smul]
+  exact mul_le_mul_of_nonneg_left (norm_integral_cpow_smul_le_of_re_le hc₂ hα₂ hg hdual)
+    (norm_nonneg _)
 
 end TauCeti

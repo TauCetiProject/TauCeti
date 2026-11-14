@@ -1,0 +1,6 @@
+self-hosted-runner:
+  labels:
+    - tauceti-fleet-pr
+    - tauceti-fleet-staging
+    - tauceti-fleet-queue-control
+    - fleet-*
