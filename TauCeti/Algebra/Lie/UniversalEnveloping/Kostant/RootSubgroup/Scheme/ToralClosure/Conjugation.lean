@@ -307,7 +307,7 @@ end UniversalProperty
 section TwoCarriers
 
 variable {L' : Type u'} [LieRing L'] [LieAlgebra ℚ L']
-variable {I' : Type w'} {κ' : Type} [Finite κ']
+variable {I' : Type w'} {κ' : Type}
 variable {V' : Type} [AddCommGroup V'] [Module ℚ V']
 
 variable (e' : I' → L') (h' : κ' → L')
@@ -322,7 +322,7 @@ variable (P : Matrix.GeneralLinearGroup (Fin n) ℤ)
 
 /-- **Conjugation by `P` maps the points of one toral closure into those of a second** as soon as
 it maps the generating root subgroup and weight-torus points of the first into the second. -/
-theorem map_conj_kostantToralPointsSubgroup_le
+theorem map_conj_kostantToralPointsSubgroup_le [Finite κ']
     (hroot : ∀ (A : Type) [CommRing A] (i : I)
       (q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ] A)),
       Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P *
