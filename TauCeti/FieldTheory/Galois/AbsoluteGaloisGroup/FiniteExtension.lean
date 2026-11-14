@@ -9,10 +9,6 @@ public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.Galois.Quotient
-public import TauCeti.FieldTheory.Galois.Restriction
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
--- Proof-only: a `K`-algebra of dimension two has no subalgebras but `⊥` and `⊤`.
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 /-!
@@ -67,6 +63,8 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
 * `TauCeti.galoisOpenNormalSubgroup K L σ`: for a finite normal `L/K`, the subgroup fixing
   `σ(L)` as an open normal subgroup of `G_K`; for such `L/K`, `galoisSubgroup K L σ` is normal
   (`TauCeti.normal_galoisSubgroup`).
+* `TauCeti.quotientGaloisSubgroupEquiv K L σ`: for a finite normal `L/K`, the isomorphism of
+  topological groups `G_K ⧸ galoisSubgroup K L σ ≃ₜ* Gal(L/K)`.
 * `TauCeti.fixingOpenNormalSubgroup K L`: for a finite `L/K`, the open normal subgroup of `G_K`
   fixing the normal closure of `L` in `Kˢ`, with no embedding chosen.
 * `TauCeti.absoluteGaloisGroupExtend K L σ`: the injective continuous homomorphism
@@ -101,7 +99,8 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
   open subgroup `galoisSubgroup K L σ`, of index `[L : K]`; its image under the restriction
   isomorphism is the subgroup fixing `σ(L)` (`TauCeti.map_range_absoluteGaloisGroupExtend`).
 * `TauCeti.quotientFixingSubgroupFieldRangeEquiv_mk`,
-  `TauCeti.absoluteGaloisGroupExtendQuotientEquiv_mk`: the two quotient isomorphisms send the
+  `TauCeti.quotientGaloisSubgroupEquiv_mk`,
+  `TauCeti.absoluteGaloisGroupExtendQuotientEquiv_mk`: the three quotient isomorphisms send the
   class of `g` to its restriction along `σ`.
 * `TauCeti.toSubgroup_eq_fixingSubgroup_of_fixedField_eq`: an open subgroup of `G_K` is the
   subgroup fixing its fixed field, which is finite over `K`
