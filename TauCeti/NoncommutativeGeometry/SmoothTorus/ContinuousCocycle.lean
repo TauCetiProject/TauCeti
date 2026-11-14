@@ -85,7 +85,7 @@ theorem continuous_derivation₂ :
 @[fun_prop]
 theorem continuous_oddCocycle₁ :
     Continuous ((oddCocycle₁ θ).1 :
-      MultilinearMap ℂ (fun _ : Fin 2 ↦ SmoothNoncommutativeTorus θ) ℂ) := by
+      MultilinearMap (RingHom.id ℂ) (fun _ : Fin 2 ↦ SmoothNoncommutativeTorus θ) ℂ) := by
   simpa only [coe_oddCocycle₁] using
     continuous_traceDerivationCochain continuous_trace continuous_derivation₁
 
@@ -93,7 +93,7 @@ theorem continuous_oddCocycle₁ :
 @[fun_prop]
 theorem continuous_oddCocycle₂ :
     Continuous ((oddCocycle₂ θ).1 :
-      MultilinearMap ℂ (fun _ : Fin 2 ↦ SmoothNoncommutativeTorus θ) ℂ) := by
+      MultilinearMap (RingHom.id ℂ) (fun _ : Fin 2 ↦ SmoothNoncommutativeTorus θ) ℂ) := by
   simpa only [coe_oddCocycle₂] using
     continuous_traceDerivationCochain continuous_trace continuous_derivation₂
 
@@ -101,7 +101,7 @@ theorem continuous_oddCocycle₂ :
 @[fun_prop]
 theorem continuous_fundamentalCocycle :
     Continuous ((fundamentalCocycle θ).1 :
-      MultilinearMap ℂ (fun _ : Fin 3 ↦ SmoothNoncommutativeTorus θ) ℂ) := by
+      MultilinearMap (RingHom.id ℂ) (fun _ : Fin 3 ↦ SmoothNoncommutativeTorus θ) ℂ) := by
   apply (continuous_congr fun a ↦ fundamentalCocycle_apply a).2
   simpa only [traceDerivationPairCochain_apply] using
     (continuous_traceDerivationPairCochain continuous_trace

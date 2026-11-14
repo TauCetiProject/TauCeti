@@ -16,6 +16,10 @@ coefficients. If the linear term of the inner series admits a continuous right i
 gives a recursive formula for the outer coefficients from the composite. It also proves their
 continuous dependence, the algebraic input to continuity of inversion in differentiable map spaces.
 
+For a partial homeomorphism `e`, the composite of the Taylor series of `e⁻¹` with that of `e` is
+the Taylor series of the identity (`OpenPartialHomeomorph.taylorComp_ftaylorSeries_symm`), so the
+recursion recovers the Taylor coefficients of `e⁻¹` from those of `e`.
+
 We use Mathlib's ordered-partition formulation of the Faà di Bruno formula, rather than
 power-series composition: the coefficients here represent derivatives without factorials.
 -/
@@ -187,3 +191,23 @@ theorem Filter.Tendsto.of_taylorComp
   apply h.congr'
   filter_upwards [hAp] with a ha
   exact ((q a).eq_taylorComp_sub_sum_comp (p a) m (A a) ha).symm
+
+/-- Composing the Taylor series of the inverse of a partial homeomorphism with that of the map
+gives, at order `k`, the `k`-th iterated derivative of the identity, at every point of the target
+where the inverse and, at the corresponding source point, the map are `C^k`. -/
+theorem OpenPartialHomeomorph.taylorComp_ftaylorSeries_symm
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (e : OpenPartialHomeomorph E F) {y : F} (hy : y ∈ e.target) {k : ℕ}
+    (hd : ContDiffAt 𝕜 k e (e.symm y)) (hds : ContDiffAt 𝕜 k e.symm y) :
+    (ftaylorSeries 𝕜 e.symm y).taylorComp (ftaylorSeries 𝕜 e (e.symm y)) k =
+      iteratedFDeriv 𝕜 k id (e.symm y) := by
+  have hds' : ContDiffAt 𝕜 k e.symm (e (e.symm y)) := by rwa [e.right_inv hy]
+  have h := iteratedFDeriv_comp hds' hd le_rfl
+  rw [e.right_inv hy] at h
+  have heq : e.symm ∘ e =ᶠ[𝓝 (e.symm y)] id := by
+    filter_upwards [e.eventually_left_inverse (e.map_target hy)] with x hx
+    exact hx
+  rw [← h]
+  exact (heq.iteratedFDeriv 𝕜 k).eq_of_nhds

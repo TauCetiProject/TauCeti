@@ -66,7 +66,7 @@ def cstarAlgebra (hφ : φ.nullSubmodule = ⊥) : CStarAlgebra A := by
   letI := NormedRing.induced A (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) π
     (φ.boundedRepresentation_injective_of_nullSubmodule_eq_bot _ hφ)
   letI := NormedAlgebra.induced ℂ A (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) π
-  letI : CompleteSpace A := FiniteDimensional.complete ℂ A
+  letI : CompleteSpace A := FiniteDimensional.completeSpace ℂ A
   -- The induced norm is the operator norm, so the C*-identity pulls back along π.
   have hnorm (a : A) : ‖π a‖ * ‖π a‖ ≤ ‖π (star a * a)‖ := by
     rw [map_mul, StarHomClass.map_star]

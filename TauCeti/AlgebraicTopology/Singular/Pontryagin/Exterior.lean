@@ -230,13 +230,13 @@ variable (k G) in
 /-- The iterated Pontryagin product `a₀ · (a₁ · (⋯ · aₙ₋₁))` of `n` classes of degree one, a
 multilinear map `H₁(G; k)ⁿ → Hₙ(G; k)`; the empty product is the class of the identity point
 of `G`, and the product of a single class `a₀` is `a₀`. -/
-def pontryaginMultilinear (n : ℕ) : MultilinearMap k
+def pontryaginMultilinear (n : ℕ) : MultilinearMap (RingHom.id k)
     (fun _ : Fin n ↦ ((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).obj G)
     (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (𝟙_ _)).obj G) :=
   match n with
-  | 0 => MultilinearMap.constOfIsEmpty k _
+  | 0 => MultilinearMap.constOfIsEmpty (RingHom.id k) _
       (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{u} k)) (η[G] PUnit.unit) (1 : k))
-  | 1 => MultilinearMap.ofSubsingleton k _ _ 0 LinearMap.id
+  | 1 => MultilinearMap.ofSubsingleton (RingHom.id k) _ _ 0 LinearMap.id
   | n + 2 => LinearMap.uncurryLeft
       { toFun := fun x ↦
           (pontryaginMul k G 1 (n + 1) (n + 2) (by omega) x).compMultilinearMap

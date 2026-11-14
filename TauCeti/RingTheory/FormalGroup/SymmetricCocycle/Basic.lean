@@ -435,7 +435,7 @@ theorem sum_aeval_natCast_mul_lazardCocycle {p : ℕ} (hp : p.Prime) {A : Type*}
     have hy : ![(j : A), 1] = algebraMap ℤ A ∘ ![(j : ℤ), 1] := by
       ext i
       fin_cases i <;> simp
-    rw [hx, (isHomogeneous_lazardCocycle (R := R) n).aeval_smul,
+    rw [hx, (isHomogeneous_lazardCocycle (R := R) n).aeval_smul_of_algebra,
       ← map_lazardCocycle (Int.castRingHom R), ← algebraMap_int_eq, aeval_map_algebraMap, hy,
       aeval_algebraMap_apply, smul_eq_mul, mul_comm, eq_intCast]
   -- `p ∑_{j < p} C_n(j, 1) = pⁿ - p`
@@ -502,7 +502,7 @@ theorem smul_lazardCocycle_eq_zero_iff {n : ℕ} (hn : 2 ≤ n) {r : R} :
     r • lazardCocycle n R = 0 ↔ r = 0 := by
   refine ⟨fun h => ?_, fun h => by rw [h, zero_smul]⟩
   obtain ⟨c, hc⟩ :=
-    Finset.exists_sum_natCast_mul_eq_one_of_gcd_eq_one (gcd_choose_div_lazardGcd_eq_one hn)
+    Finset.gcd_eq_one_iff_exists_sum_natCast_mul_eq_one.1 (gcd_choose_div_lazardGcd_eq_one hn)
   refine eq_zero_of_smul_eq_zero_of_sum_coeff_mul_eq_one (Icc 1 (n - 1))
     (fun i => Finsupp.single 0 i + Finsupp.single 1 (n - i)) (fun i => (c i : R)) ?_ h
   rw [← Int.cast_one, ← hc, Int.cast_sum]
