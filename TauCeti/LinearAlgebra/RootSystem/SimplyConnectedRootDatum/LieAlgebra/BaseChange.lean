@@ -313,33 +313,11 @@ private noncomputable def lieAlgebraBaseChangeIncl :
       induction y with
       | tmul b y => simp [LieAlgebra.ExtendScalars.bracket_tmul]
       | add y z hy hz =>
-        simp only [lie_add]
-        calc
-          _ = (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) ⁅a ⊗ₜ[ℚ] x, y⁆ +
-              (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) ⁅a ⊗ₜ[ℚ] x, z⁆ :=
-            (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap).map_add _ _
-          _ = ⁅(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) (a ⊗ₜ[ℚ] x),
-                (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) y⁆ +
-              ⁅(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) (a ⊗ₜ[ℚ] x),
-                (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) z⁆ :=
-            congrArg₂ (fun p q ↦ p + q) hy hz
-          _ = ⁅(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) (a ⊗ₜ[ℚ] x),
-                (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) (y + z)⁆ := by
-            rw [(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap).map_add, lie_add]
+        simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, lie_add, map_add] at hy hz ⊢
+        rw [hy, hz]
     | add x z hx hz =>
-      simp only [add_lie]
-      calc
-        _ = (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) ⁅x, y⁆ +
-            (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) ⁅z, y⁆ :=
-          (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap).map_add _ _
-        _ = ⁅(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) x,
-              (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) y⁆ +
-            ⁅(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) z,
-              (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) y⁆ :=
-          congrArg₂ (fun p q ↦ p + q) hx hz
-        _ = ⁅(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) (x + z),
-              (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) y⁆ := by
-          rw [(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap).map_add, add_lie]
+      simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, add_lie, map_add] at hx hz ⊢
+      rw [hx, hz]
 
 /-- The ambient scalar-extension map restricted to tensors of the pinned rational Lie algebra. -/
 private noncomputable def lieAlgebraBaseChangeHom :
