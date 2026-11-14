@@ -29,9 +29,10 @@ recovers the prime series with the exponent shifted by `η`:
 
 The proof is partial summation at a finite cutoff `N`, followed by the limit `N → ∞`: the
 boundary term `N^(-η) • weightedPrimeSum a N` tends to zero and the truncated integrals converge,
-both by the elementary bound `‖weightedPrimeSum a t‖ ≤ (1 + log t)²`. Combining the Mellin
-identity with Mertens' first theorem sharpens the growth bound to `log t + (log 4 + 4)` for
-`t ≥ 1` and bounds the smoothed prime series by `η⁻¹ + (log 4 + 4)`.
+both by the elementary bound `‖weightedPrimeSum a t‖ ≤ (1 + log t)²`. Mertens' first theorem
+sharpens the growth bound on `weightedPrimeSum a t` to `log t + (log 4 + 4)` for `t ≥ 1`, and
+integrating this bound against the Mellin weight (and applying the Mellin identity) bounds the
+smoothed integral and shifted prime series by `η⁻¹ + (log 4 + 4)` for `η > 0`.
 
 ## Main results
 
@@ -47,9 +48,10 @@ identity with Mertens' first theorem sharpens the growth bound to `log t + (log 
   formula;
 * `TauCeti.integrableOn_rpow_smul_weightedPrimeSum`: Bochner integrability of `t^(-1-η) • A(t)`
   on `(1, ∞)`;
-* `TauCeti.summable_weightedPrimeSeries`, `TauCeti.hasSum_weightedPrimeSeries`,
-  `TauCeti.tsum_weightedPrimeSeries`: summability of `Σ_p (log p / p^(1+η)) • a p` over
-  `Nat.Primes` and the Mellin identity;
+* `TauCeti.summable_weightedPrimeSeries`, `TauCeti.summable_primes_log_div_rpow`,
+  `TauCeti.hasSum_weightedPrimeSeries`, `TauCeti.tsum_weightedPrimeSeries`: summability of
+  `Σ_p (log p / p^(1+η)) • a p` and `Σ_p log p / p^(1+η)` over `Nat.Primes` and the Mellin
+  identity;
 * `TauCeti.norm_mellinWeightIntegral_weightedPrimeSum_le`,
   `TauCeti.tsum_primes_log_div_rpow_le`, `TauCeti.norm_tsum_weightedPrimeSeries_le`: the linear
   Mertens bound `η⁻¹ + (log 4 + 4)` on the Mellin-smoothed prime sum and shifted prime series.
@@ -376,6 +378,12 @@ theorem summable_weightedPrimeSeries [CompleteSpace E] {a : ℕ → E}
     Summable (fun p : Nat.Primes ↦ (log p / (p : ℝ) ^ (1 + η)) • a p) :=
   summable_subtype_iff_indicator.2 (summable_indicator_weightedPrimeSeries ha hη)
 
+/-- For `η > 0`, the shifted logarithmic prime series `∑' p : Nat.Primes, log p / p ^ (1 + η)` is
+summable. -/
+theorem summable_primes_log_div_rpow {η : ℝ} (hη : 0 < η) :
+    Summable fun p : Nat.Primes ↦ log p / (p : ℝ) ^ (1 + η) := by
+  simpa using summable_weightedPrimeSeries (a := fun _ ↦ (1 : ℝ)) (fun _ _ ↦ by norm_num) hη
+
 /-- The Mellin identity in `tsum` form. -/
 theorem tsum_weightedPrimeSeries [CompleteSpace E] {a : ℕ → E}
     (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1) {η : ℝ} (hη : 0 < η) :
@@ -385,15 +393,11 @@ theorem tsum_weightedPrimeSeries [CompleteSpace E] {a : ℕ → E}
 
 /-! ### Smoothed linear Mertens bounds -/
 
-/-- Smoothed Mertens bound: for weights bounded by `1` on primes and `η ≥ 0`,
+/-- Smoothed Mertens bound: for weights bounded by `1` on primes and `η > 0`,
 `‖η ∫_{t > 1} t^(-1-η) • weightedPrimeSum a t dt‖ ≤ η⁻¹ + (log 4 + 4)`. -/
 theorem norm_mellinWeightIntegral_weightedPrimeSum_le {a : ℕ → E}
-    (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1) {η : ℝ} (hη : 0 ≤ η) :
+    (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1) {η : ℝ} (hη : 0 < η) :
     ‖mellinWeightIntegral η (weightedPrimeSum a)‖ ≤ η⁻¹ + (log 4 + 4) := by
-  rcases eq_or_lt_of_le hη with rfl | hη
-  · have : 0 ≤ log 4 := log_nonneg (by norm_num)
-    simp only [mellinWeightIntegral_def, zero_smul, norm_zero, inv_zero, zero_add]
-    linarith
   have hlog : IntegrableOn (fun t ↦ t ^ (-1 - η) • log t) (Ioi 1) :=
     integrableOn_rpow_mul_log hη
   have hconst : IntegrableOn (fun t : ℝ ↦ t ^ (-1 - η) • (log 4 + 4)) (Ioi 1) :=
@@ -408,36 +412,24 @@ theorem norm_mellinWeightIntegral_weightedPrimeSum_le {a : ℕ → E}
         rw [mellinWeightIntegral_add hlog hconst, mellinWeightIntegral_log hη,
           mellinWeightIntegral_const hη]
 
-/-- Explicit upper bound on the shifted logarithmic prime series `Σ_p log p / p^(1+η)` for `η ≥ 0`:
-`Σ_p log p / p^(1+η) ≤ η⁻¹ + (log 4 + 4)`. -/
-theorem tsum_primes_log_div_rpow_le {η : ℝ} (hη : 0 ≤ η) :
+/-- Explicit upper bound on the shifted logarithmic prime series for `η > 0`:
+`∑' p : Nat.Primes, log p / p ^ (1 + η) ≤ η⁻¹ + (log 4 + 4)`. -/
+theorem tsum_primes_log_div_rpow_le {η : ℝ} (hη : 0 < η) :
     (∑' p : Nat.Primes, log p / (p : ℝ) ^ (1 + η)) ≤ η⁻¹ + (log 4 + 4) := by
-  rcases eq_or_lt_of_le hη with rfl | hη
-  · have hns : ¬Summable (fun p : Nat.Primes ↦ log p / (p : ℝ) ^ (1 + (0 : ℝ))) := by
-      intro hs
-      refine Chebyshev.not_summable_prime_log_div_ge 0 ?_
-      refine ((summable_subtype_iff_indicator (s := {p : ℕ | p.Prime})
-        (f := fun n : ℕ ↦ log n / (n : ℝ) ^ (1 + (0 : ℝ)))).mp hs).congr fun n ↦ ?_
-      by_cases hn : n.Prime <;> simp [hn]
-    have : 0 ≤ log 4 := log_nonneg (by norm_num)
-    rw [tsum_eq_zero_of_not_summable hns, inv_zero, zero_add]
-    linarith
   have h1 : ∀ p : ℕ, p.Prime → ‖(1 : ℝ)‖ ≤ 1 := fun _ _ ↦ by norm_num
   have heq : (∑' p : Nat.Primes, log p / (p : ℝ) ^ (1 + η)) =
       mellinWeightIntegral η (weightedPrimeSum fun _ ↦ (1 : ℝ)) := by
     simpa using tsum_weightedPrimeSeries (a := fun _ ↦ (1 : ℝ)) h1 hη
   rw [heq]
   exact (le_abs_self _).trans
-    (by simpa using norm_mellinWeightIntegral_weightedPrimeSum_le (a := fun _ ↦ (1 : ℝ)) h1 hη.le)
+    (by simpa using norm_mellinWeightIntegral_weightedPrimeSum_le (a := fun _ ↦ (1 : ℝ)) h1 hη)
 
 /-- Norm bound on the shifted weighted prime series: for weights bounded by `1` on primes and
-`η > 0`, `‖Σ_p (log p / p^(1+η)) • a p‖ ≤ η⁻¹ + (log 4 + 4)`. -/
+`η > 0`, `‖∑' p : Nat.Primes, (log p / p ^ (1 + η)) • a p‖ ≤ η⁻¹ + (log 4 + 4)`. -/
 theorem norm_tsum_weightedPrimeSeries_le {a : ℕ → E} (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1)
     {η : ℝ} (hη : 0 < η) :
     ‖∑' p : Nat.Primes, (log p / (p : ℝ) ^ (1 + η)) • a p‖ ≤ η⁻¹ + (log 4 + 4) := by
-  have h1 : ∀ p : ℕ, p.Prime → ‖(1 : ℝ)‖ ≤ 1 := fun _ _ ↦ by norm_num
-  have hsum1 : Summable (fun p : Nat.Primes ↦ log p / (p : ℝ) ^ (1 + η)) := by
-    simpa using summable_weightedPrimeSeries (a := fun _ ↦ (1 : ℝ)) h1 hη
+  have hsum1 := summable_primes_log_div_rpow hη
   have hle (p : Nat.Primes) :
       ‖(log p / (p : ℝ) ^ (1 + η)) • a p‖ ≤ log p / (p : ℝ) ^ (1 + η) := by
     have hp0 : (0 : ℝ) < p := mod_cast p.prop.pos
@@ -448,6 +440,6 @@ theorem norm_tsum_weightedPrimeSeries_le {a : ℕ → E} (ha : ∀ p, p.Prime �
   have hnorm : Summable (fun p : Nat.Primes ↦ ‖(log p / (p : ℝ) ^ (1 + η)) • a p‖) :=
     Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hle hsum1
   exact (norm_tsum_le_tsum_norm hnorm).trans
-    ((hnorm.tsum_le_tsum hle hsum1).trans (tsum_primes_log_div_rpow_le hη.le))
+    ((hnorm.tsum_le_tsum hle hsum1).trans (tsum_primes_log_div_rpow_le hη))
 
 end TauCeti

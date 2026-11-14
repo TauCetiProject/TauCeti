@@ -51,35 +51,6 @@ theorem summable_nonprime_div :
     Set.indicator_of_mem (Subsingleton.elim (n : ZMod 1) 1) _
   simpa only [h] using summable_residueClass_non_primes_div (1 : ZMod 1)
 
-/-- For `p ≠ 1`, the higher-power reciprocals `p ^ (-k)` on `2 ≤ k ≤ M` sum to at most
-`1 / (p * (p - 1))`. -/
-private theorem sum_Icc_inv_pow_le {p : ℕ} (hp : p ≠ 1) (M : ℕ) :
-    ∑ k ∈ Icc 2 M, ((p : ℝ) ^ k)⁻¹ ≤ 1 / ((p : ℝ) * ((p : ℝ) - 1)) := by
-  rcases eq_or_ne p 0 with rfl | hp0
-  · refine (sum_eq_zero fun k hk ↦ ?_).trans_le (by norm_num)
-    have hk0 : k ≠ 0 := by linarith [(mem_Icc.mp hk).1]
-    simp [zero_pow hk0]
-  have hp2 : 2 ≤ p := by omega
-  have hcast2 : ((p - 2 : ℕ) : ℝ) + 2 = p := by exact_mod_cast Nat.sub_add_cancel hp2
-  have hcast1 : ((p - 2 : ℕ) : ℝ) + 1 = (p : ℝ) - 1 := by linarith
-  have hhas := TauCeti.hasSum_inv_add_two_pow_add_two (p - 2)
-  rw [hcast2, hcast1] at hhas
-  have himg : Icc 2 M = (range (M - 1)).image (· + 2) := by
-    ext k
-    simp only [mem_Icc, mem_image, mem_range]
-    exact ⟨fun _ ↦ ⟨k - 2, by omega, by omega⟩, by rintro ⟨_, _, rfl⟩; omega⟩
-  rw [himg, sum_image (fun _ _ _ _ h ↦ by omega)]
-  simp_rw [← inv_pow]
-  refine (hhas.summable.sum_le_tsum (range (M - 1)) fun _ _ ↦ by positivity).trans ?_
-  rw [hhas.tsum_eq]
-  have hp_pos : (p : ℝ) ≠ 0 := by exact_mod_cast hp0
-  have hp1 : (p : ℝ) - 1 ≠ 0 := by
-    have : (2 : ℝ) ≤ p := mod_cast hp2
-    linarith
-  field_simp
-  ring_nf
-  exact le_rfl
-
 /-- Regrouping by the prime base bounds the non-prime von Mangoldt sum up to `N` by the
 prime-indexed geometric majorant `∑_{p ≤ N} log p / (p (p - 1))`. -/
 theorem sum_Icc_nonprime_div_le (N : ℕ) :
@@ -106,7 +77,7 @@ theorem sum_Icc_nonprime_div_le (N : ℕ) :
             vonMangoldt_apply_prime hp_prime, div_eq_mul_inv]
     _ = Real.log p * ∑ k ∈ Icc 2 (p.log N), ((p : ℝ) ^ k)⁻¹ := (mul_sum _ _ _).symm
     _ ≤ Real.log p * (1 / ((p : ℝ) * ((p : ℝ) - 1))) :=
-        mul_le_mul_of_nonneg_left (sum_Icc_inv_pow_le hp_prime.ne_one (p.log N)) hlog
+        mul_le_mul_of_nonneg_left (TauCeti.sum_Icc_inv_pow_le hp_prime.ne_one (p.log N)) hlog
     _ = Real.log p / ((p : ℝ) * ((p : ℝ) - 1)) := mul_one_div _ _
 
 /-- For every `N`, the finite sum of `Λ(n) / n` over non-prime `1 ≤ n ≤ N` is at most `2 log 4`. -/
@@ -135,13 +106,7 @@ theorem sum_Icc_nonprime_div_le_two_mul_log_four (N : ℕ) :
 theorem tsum_nonprime_div_le :
     (∑' n : ℕ, (if n.Prime then 0 else vonMangoldt n) / n) ≤ 2 * Real.log 4 := by
   refine summable_nonprime_div.tsum_le_of_sum_le fun s ↦ ?_
-  have hs0 : ∑ n ∈ s, (if n.Prime then 0 else vonMangoldt n) / n =
-      ∑ n ∈ s.erase 0, (if n.Prime then 0 else vonMangoldt n) / n := by
-    by_cases h0 : 0 ∈ s
-    · rw [← sum_erase_add _ _ h0]
-      simp
-    · rw [erase_eq_of_notMem h0]
-  rw [hs0]
+  rw [← s.sum_erase (a := 0) (by simp)]
   refine (sum_le_sum_of_subset_of_nonneg (fun n hn ↦ ?_) fun _ _ _ ↦
     div_nonneg (by split_ifs <;> simp [vonMangoldt_nonneg]) (Nat.cast_nonneg _)).trans
       (sum_Icc_nonprime_div_le_two_mul_log_four (s.sup id))

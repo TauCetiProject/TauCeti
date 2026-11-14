@@ -19,12 +19,13 @@ finite Euler corrections whose local factors are uniformly bounded.
 
 On the logarithmic side, since `∏_{p ∣ n} p ≤ n` for `n ≠ 0`, the unweighted prime-divisor sum
 satisfies `∑_{p ∣ n} log p ≤ log n`. Splitting the primes dividing `n` at the threshold `log n`
-and bounding the primes below `log n` by Mertens' first theorem yields the sharp explicit bound
+and bounding the primes below `log n` by Mertens' first theorem yields the explicit bound
 
 `∑_{p ∣ n} log p / p ≤ log (log n) + (log 4 + 5)`
 
-for all `n : ℕ`, controlling the deleted-prime contribution to logarithmic derivatives `-L'/L(s, χ)`
-of imprimitive Dirichlet `L`-functions.
+for all `n : ℕ` (with `n = 0, 1` holding via `n.primeFactors = ∅` and `Real.log 0 = 0`), where
+only the `log (log n)` order of growth is asymptotically sharp. This controls the deleted-prime
+contribution to logarithmic derivatives `-L'/L(s, χ)` of imprimitive Dirichlet `L`-functions.
 
 ## Main results
 
@@ -111,19 +112,6 @@ theorem sum_primeFactors_log_le (n : ℕ) :
     rw [← Real.log_prod fun p hp ↦ mod_cast (prime_of_mem_primeFactors hp).ne_zero]
     exact Real.log_le_log hpos hprod
 
-/-- Elementary bound `∑_{p ∣ n} log p / p ≤ log n / 2` for every `n : ℕ`, using `p ≥ 2` on prime
-divisors. -/
-theorem sum_primeFactors_log_div_le (n : ℕ) :
-    ∑ p ∈ n.primeFactors, Real.log p / p ≤ Real.log n / 2 := by
-  calc ∑ p ∈ n.primeFactors, Real.log p / p
-      ≤ ∑ p ∈ n.primeFactors, Real.log p / 2 := by
-        refine sum_le_sum fun p hp ↦ ?_
-        have hp_prime := prime_of_mem_primeFactors hp
-        exact div_le_div_of_nonneg_left (Real.log_nonneg (mod_cast hp_prime.one_lt.le)) zero_lt_two
-          (mod_cast hp_prime.two_le)
-    _ = (∑ p ∈ n.primeFactors, Real.log p) / 2 := (sum_div _ _ _).symm
-    _ ≤ Real.log n / 2 := div_le_div_of_nonneg_right (sum_primeFactors_log_le n) zero_le_two
-
 /-- Prime divisors `p ≥ X` of `n` contribute at most `log n / X` to `∑_{p ∣ n} log p / p` for
 `X > 0`. -/
 theorem sum_primeFactors_filter_ge_log_div_le (n : ℕ) {X : ℝ} (hX : 0 < X) :
@@ -139,6 +127,14 @@ theorem sum_primeFactors_filter_ge_log_div_le (n : ℕ) {X : ℝ} (hX : 0 < X) :
           div_nonneg (Real.log_nonneg (mod_cast (prime_of_mem_primeFactors hp).one_lt.le)) hX.le
     _ = (∑ p ∈ n.primeFactors, Real.log p) / X := (sum_div _ _ _).symm
     _ ≤ Real.log n / X := div_le_div_of_nonneg_right (sum_primeFactors_log_le n) hX.le
+
+/-- Elementary bound `∑_{p ∣ n} log p / p ≤ log n / 2` for every `n : ℕ`, using `p ≥ 2` on prime
+divisors. -/
+theorem sum_primeFactors_log_div_le (n : ℕ) :
+    ∑ p ∈ n.primeFactors, Real.log p / p ≤ Real.log n / 2 := by
+  have hfilt : n.primeFactors.filter (fun p : ℕ ↦ (2 : ℝ) ≤ (p : ℝ)) = n.primeFactors :=
+    filter_eq_self.mpr fun p hp ↦ mod_cast (prime_of_mem_primeFactors hp).two_le
+  simpa only [hfilt] using sum_primeFactors_filter_ge_log_div_le n zero_lt_two
 
 /-- Prime divisors `p < X` of `n` contribute at most `log X + (log 4 + 4)` to `∑_{p ∣ n} log p / p`
 for `X ≥ 1`, by Mertens' first theorem. -/
@@ -158,12 +154,10 @@ theorem sum_primeFactors_filter_lt_log_div_le (n : ℕ) {X : ℝ} (hX : 1 ≤ X)
     (prime_of_mem_primesLE (mem_filter.mp hp).1).one_lt.le)) (cast_nonneg p)
 
 /-- **Logarithmic prime-divisor bound.** For every `n : ℕ`,
-`∑_{p ∣ n} log p / p ≤ log (log n) + (log 4 + 5)`. -/
+`∑_{p ∣ n} log p / p ≤ log (log n) + (log 4 + 5)` (holding for `n = 0, 1` via `n.primeFactors = ∅`
+and `Real.log 0 = 0`). -/
 theorem sum_primeFactors_log_div_le_log_log_add (n : ℕ) :
     ∑ p ∈ n.primeFactors, Real.log p / p ≤ Real.log (Real.log n) + (Real.log 4 + 5) := by
-  have hlog4 : Real.log 4 = 2 * Real.log 2 := by
-    have h4 : (4 : ℝ) = 2 ^ 2 := by norm_num
-    rw [h4, Real.log_pow, cast_ofNat]
   rcases lt_or_ge n 3 with hn | hn
   · interval_cases n
     · have : 0 ≤ Real.log 4 := Real.log_nonneg (by norm_num)
@@ -172,17 +166,15 @@ theorem sum_primeFactors_log_div_le_log_log_add (n : ℕ) :
     · have : 0 ≤ Real.log 4 := Real.log_nonneg (by norm_num)
       simp only [primeFactors_one, sum_empty, cast_one, Real.log_one, Real.log_zero]
       linarith
-    · have hexp : Real.exp 1 < 4 := Real.exp_one_lt_d9.trans (by norm_num)
-      have h1 : 1 < Real.log 4 := (Real.lt_log_iff_exp_lt (by norm_num)).mpr hexp
-      have hlog2 : 1 / 2 < Real.log 2 := by linarith
+    · have hlog2 : 1 / 2 < Real.log 2 := by linarith [Real.log_two_gt_d9]
       have hll2 : -Real.log 2 < Real.log (Real.log 2) := by
         simpa [one_div, Real.log_inv] using Real.log_lt_log (by norm_num) hlog2
       have h2 := sum_primeFactors_log_div_le 2
       push_cast at h2 ⊢
-      linarith
+      linarith [Real.log_four_eq]
   · have hn3 : (3 : ℝ) ≤ n := mod_cast hn
     have hlog1 : 1 < Real.log n := (Real.lt_log_iff_exp_lt (by linarith)).mpr
-      (Real.exp_one_lt_d9.trans_le (by linarith))
+      (Real.exp_one_lt_three.trans_le hn3)
     have hlog0 : 0 < Real.log n := zero_lt_one.trans hlog1
     rw [sum_primeFactors_eq_filter_lt_add_filter_ge n (Real.log n)]
     have hlt := sum_primeFactors_filter_lt_log_div_le n hlog1.le

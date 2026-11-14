@@ -7,11 +7,10 @@ module
 
 public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.NumberTheory.Chebyshev
-import Mathlib.Analysis.Asymptotics.Lemmas
-import Mathlib.Topology.Algebra.InfiniteSum.Real
 import TauCeti.Analysis.SpecialFunctions.Log.Factorial
 import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
 import TauCeti.NumberTheory.Chebyshev.LogFactorial
+import TauCeti.NumberTheory.PrimeCounting
 
 /-!
 # Mertens' first theorem for rational primes
@@ -33,16 +32,14 @@ to Mathlib's finite set of primes `Nat.primesLE ⌊x⌋₊`:
 Changing from the inclusive cutoff `p ≤ x` to the strict cutoff `p < x` drops at most one prime at
 `x`, costing at most `log x / x ≤ 1 / 2` for `x ≥ 1`, so the same uniform bound `log 4 + 4` holds
 for the strict cutoff and for `Nat.primesBelow n`. Splitting `Nat.primesLE ⌊x⌋₊` at an intermediate
-real cutoff `y ≤ x` gives the interval form
+real cutoff `y ≤ x` (`Nat.sum_primesLE_floor_eq_add_filter_gt`) gives the interval form
 `|∑_{y < p ≤ x} log p / p - log (x / y)| ≤ 2 (log 4 + 4)` for `1 ≤ y ≤ x`. As a consequence,
-`∑_{p ≤ x} log p / p` diverges to `+∞` and the tail series `∑_{p ≥ y} log p / p` is not summable
-for any `y`, contrasting with the `O(1 / y)` tail of `∑_{p ≥ y} log p / p ^ 2`.
+`∑_{p ≤ x} log p / p` diverges to `+∞` and neither `∑_p log p / p` nor any tail
+`∑_{p ≥ y} log p / p` or `∑_{p > y} log p / p` is summable, contrasting with the `O(1 / y)` tail
+of `∑_{p ≥ y} log p / p ^ 2`.
 
 ## Main results
 
-* `Nat.primesLE_filter_lt`: filtering `Nat.primesLE n` by `· < n` recovers `Nat.primesBelow n`.
-* `Nat.prod_primesLE_floor_eq_mul_filter_gt`, `Nat.sum_primesLE_floor_eq_add_filter_gt`: splitting
-  products and sums over `Nat.primesLE ⌊x⌋₊` at a real cutoff `y ≤ x`.
 * `Chebyshev.log_floor_factorial_le_mul_sum_vonMangoldt_div`,
   `Chebyshev.mul_sum_vonMangoldt_div_sub_psi_le_log_floor_factorial`: the floor-replacement
   sandwich for `log ⌊x⌋₊!`.
@@ -51,7 +48,7 @@ for any `y`, contrasting with the `O(1 / y)` tail of `∑_{p ≥ y} log p / p ^ 
   Mertens' first theorem in von Mangoldt form.
 * `Chebyshev.sum_primesLE_log_div_le`, `Chebyshev.log_sub_le_sum_primesLE_log_div`,
   `Chebyshev.abs_sum_primesLE_log_div_sub_log_le`,
-  `Chebyshev.abs_sum_primesLE_nat_log_div_sub_log_le`,
+  `Chebyshev.abs_sum_primesLE_log_div_sub_log_natCast_le`,
   `Chebyshev.isBigO_sum_primesLE_log_div_sub_log`: Mertens' first theorem on `Nat.primesLE`.
 * `Chebyshev.sum_primesLE_log_div_sub_filter_lt_le`,
   `Chebyshev.abs_sum_primesLE_filter_lt_log_div_sub_log_le`,
@@ -60,8 +57,10 @@ for any `y`, contrasting with the `O(1 / y)` tail of `∑_{p ≥ y} log p / p ^ 
   first theorem for `p < x` and `Nat.primesBelow n`.
 * `Chebyshev.abs_sum_primesLE_filter_gt_log_div_sub_log_div_le`: interval Mertens estimate on
   `(y, x]`.
-* `Chebyshev.tendsto_sum_primesLE_log_div_atTop`, `Chebyshev.not_summable_prime_log_div_ge`:
-  divergence of the logarithmic prime sum and non-summability of its tails.
+* `Chebyshev.tendsto_sum_primesLE_log_div_atTop`, `Chebyshev.not_summable_prime_log_div`,
+  `Chebyshev.not_summable_prime_log_div_ge`, `Chebyshev.not_summable_prime_log_div_gt`,
+  `Nat.Primes.not_summable_log_div`: divergence of the logarithmic prime sum and non-summability of
+  the full series and its tails.
 
 ## References
 
@@ -73,38 +72,6 @@ public section
 
 open Asymptotics Filter Finset ArithmeticFunction
 open scoped Chebyshev Nat Topology
-
-namespace Nat
-
-/-- Filtering `Nat.primesLE n` by strict inequality `· < n` gives `Nat.primesBelow n`. -/
-@[simp]
-theorem primesLE_filter_lt (n : ℕ) :
-    (primesLE n).filter (· < n) = primesBelow n := by
-  ext p
-  simp only [mem_filter, mem_primesLE, mem_primesBelow]
-  exact ⟨fun ⟨⟨_, hp⟩, hlt⟩ ↦ ⟨hlt, hp⟩, fun ⟨hlt, hp⟩ ↦ ⟨⟨hlt.le, hp⟩, hlt⟩⟩
-
-/-- For `y ≤ x`, the product over the primes `p ≤ x` splits into the product over `p ≤ y` and the
-product over `y < p ≤ x`, with any prime at `y` retained in the lower part. -/
-@[to_additive /-- For `y ≤ x`, the sum over the primes `p ≤ x` splits into the sum over `p ≤ y` and
-the sum over `y < p ≤ x`, with any prime at `y` retained in the lower part. -/]
-theorem prod_primesLE_floor_eq_mul_filter_gt {M : Type*} [CommMonoid M] (f : ℕ → M)
-    {y x : ℝ} (hyx : y ≤ x) :
-    ∏ p ∈ primesLE ⌊x⌋₊, f p =
-      (∏ p ∈ primesLE ⌊y⌋₊, f p) *
-        ∏ p ∈ (primesLE ⌊x⌋₊).filter (fun p : ℕ ↦ y < (p : ℝ)), f p := by
-  rcases lt_or_ge y 0 with hy | hy
-  · have hfy : ⌊y⌋₊ = 0 := floor_of_nonpos hy.le
-    have hfilt : (primesLE ⌊x⌋₊).filter (fun p : ℕ ↦ y < (p : ℝ)) = primesLE ⌊x⌋₊ :=
-      filter_eq_self.mpr fun p _ ↦ hy.trans_le (cast_nonneg p)
-    rw [hfy, primesLE_zero, prod_empty, one_mul, hfilt]
-  · have hle : primesLE ⌊y⌋₊ = (primesLE ⌊x⌋₊).filter (fun p : ℕ ↦ ¬y < (p : ℝ)) := by
-      ext p
-      simp only [mem_primesLE, mem_filter, not_lt, le_floor_iff hy, le_floor_iff (hy.trans hyx)]
-      exact ⟨fun ⟨hpy, hp⟩ ↦ ⟨⟨hpy.trans hyx, hp⟩, hpy⟩, fun ⟨⟨_, hp⟩, hpy⟩ ↦ ⟨hpy, hp⟩⟩
-    rw [hle, mul_comm, prod_filter_mul_prod_filter_not]
-
-end Nat
 
 namespace Chebyshev
 
@@ -205,30 +172,25 @@ theorem sum_Ioc_vonMangoldt_div_eq_sum_primesLE_add (N : ℕ) :
         ∑ n ∈ Ioc 0 N, (if n.Prime then 0 else Λ n) / n := by
   rw [← sum_filter_add_sum_filter_not (Ioc 0 N) Nat.Prime]
   congr 1
-  · have hset : (Ioc 0 N).filter Nat.Prime = Nat.primesLE N := by
-      ext p
-      simp only [mem_filter, mem_Ioc, Nat.mem_primesLE]
-      exact ⟨fun ⟨⟨_, hN⟩, hp⟩ ↦ ⟨hN, hp⟩, fun ⟨hN, hp⟩ ↦ ⟨⟨hp.pos, hN⟩, hp⟩⟩
-    rw [hset]
+  · rw [← Nat.primesLE_eq_filter_Ioc_zero]
     exact sum_congr rfl fun p hp ↦ by rw [vonMangoldt_apply_prime (Nat.prime_of_mem_primesLE hp)]
   · rw [sum_filter]
     refine sum_congr rfl fun n _ ↦ ?_
     split_ifs <;> simp
 
-/-- The prime sum `∑_{p ≤ x} log p / p` is at most the von Mangoldt sum `∑_{1 ≤ n ≤ x} Λ(n) / n`. -/
-theorem sum_primesLE_log_div_le_sum_vonMangoldt_div (x : ℝ) :
-    ∑ p ∈ Nat.primesLE ⌊x⌋₊, Real.log p / p ≤ ∑ n ∈ Ioc 0 ⌊x⌋₊, Λ n / n := by
+/-- The prime sum `∑_{p ≤ N} log p / p` is at most the von Mangoldt sum `∑_{1 ≤ n ≤ N} Λ(n) / n`. -/
+theorem sum_primesLE_log_div_le_sum_vonMangoldt_div (N : ℕ) :
+    ∑ p ∈ Nat.primesLE N, Real.log p / p ≤ ∑ n ∈ Ioc 0 N, Λ n / n := by
   rw [sum_Ioc_vonMangoldt_div_eq_sum_primesLE_add]
   refine le_add_of_nonneg_right (sum_nonneg fun n _ ↦ ?_)
   exact div_nonneg (by split_ifs <;> simp [vonMangoldt_nonneg]) (Nat.cast_nonneg n)
 
-/-- The difference between the von Mangoldt sum and the prime sum up to `x` is at most `2 log 4`. -/
-theorem sum_vonMangoldt_div_sub_sum_primesLE_log_div_le (x : ℝ) :
-    (∑ n ∈ Ioc 0 ⌊x⌋₊, Λ n / n) - ∑ p ∈ Nat.primesLE ⌊x⌋₊, Real.log p / p ≤ 2 * Real.log 4 := by
-  rw [sum_Ioc_vonMangoldt_div_eq_sum_primesLE_add, add_sub_cancel_left]
-  have hIoc : Ioc 0 ⌊x⌋₊ = Icc 1 ⌊x⌋₊ := rfl
-  rw [hIoc]
-  exact vonMangoldt.sum_Icc_nonprime_div_le_two_mul_log_four ⌊x⌋₊
+/-- The difference between the von Mangoldt sum and the prime sum up to `N` is at most `2 log 4`. -/
+theorem sum_vonMangoldt_div_sub_sum_primesLE_log_div_le (N : ℕ) :
+    (∑ n ∈ Ioc 0 N, Λ n / n) - ∑ p ∈ Nat.primesLE N, Real.log p / p ≤ 2 * Real.log 4 := by
+  rw [sum_Ioc_vonMangoldt_div_eq_sum_primesLE_add, add_sub_cancel_left,
+    ← Icc_add_one_left_eq_Ioc, zero_add]
+  exact vonMangoldt.sum_Icc_nonprime_div_le_two_mul_log_four N
 
 /-! ### Mertens' first theorem on `Nat.primesLE` -/
 
@@ -236,13 +198,13 @@ theorem sum_vonMangoldt_div_sub_sum_primesLE_log_div_le (x : ℝ) :
 `∑_{p ≤ x} log p / p ≤ log x + log 4 + 4`. -/
 theorem sum_primesLE_log_div_le {x : ℝ} (hx : 1 ≤ x) :
     ∑ p ∈ Nat.primesLE ⌊x⌋₊, Real.log p / p ≤ Real.log x + (Real.log 4 + 4) :=
-  (sum_primesLE_log_div_le_sum_vonMangoldt_div x).trans (sum_vonMangoldt_div_le hx)
+  (sum_primesLE_log_div_le_sum_vonMangoldt_div ⌊x⌋₊).trans (sum_vonMangoldt_div_le hx)
 
 /-- Explicit lower bound in Mertens' first theorem: for `x ≥ 0`,
 `log x - (2 log 4 + 3 / 2) ≤ ∑_{p ≤ x} log p / p`. -/
 theorem log_sub_le_sum_primesLE_log_div {x : ℝ} (hx : 0 ≤ x) :
     Real.log x - (2 * Real.log 4 + 3 / 2) ≤ ∑ p ∈ Nat.primesLE ⌊x⌋₊, Real.log p / p := by
-  linarith [log_sub_le_sum_vonMangoldt_div hx, sum_vonMangoldt_div_sub_sum_primesLE_log_div_le x]
+  linarith [log_sub_le_sum_vonMangoldt_div hx, sum_vonMangoldt_div_sub_sum_primesLE_log_div_le ⌊x⌋₊]
 
 /-- **Mertens' first theorem.** For every real `x ≥ 1`,
 `|∑_{p ≤ x} log p / p - log x| ≤ log 4 + 4`. -/
@@ -254,7 +216,7 @@ theorem abs_sum_primesLE_log_div_sub_log_le {x : ℝ} (hx : 1 ≤ x) :
 
 /-- Natural-cutoff form of Mertens' first theorem: for every `n : ℕ`,
 `|∑_{p ≤ n} log p / p - log n| ≤ log 4 + 4`. -/
-theorem abs_sum_primesLE_nat_log_div_sub_log_le (n : ℕ) :
+theorem abs_sum_primesLE_log_div_sub_log_natCast_le (n : ℕ) :
     |(∑ p ∈ Nat.primesLE n, Real.log p / p) - Real.log n| ≤ Real.log 4 + 4 := by
   rcases eq_or_ne n 0 with rfl | hn
   · have hlog4 : 0 ≤ Real.log 4 := Real.log_nonneg (by norm_num)
@@ -412,4 +374,30 @@ theorem not_summable_prime_log_div_ge (y : ℝ) :
   obtain ⟨x, hgt, hx⟩ := hdiv.exists
   linarith [hub x hx]
 
+/-- For every real `y`, the strict prime tail `∑_{p > y} log p / p` is not summable. -/
+theorem not_summable_prime_log_div_gt (y : ℝ) :
+    ¬Summable (fun n : ℕ ↦ if n.Prime ∧ y < (n : ℝ) then Real.log n / n else 0) := by
+  refine fun h ↦ not_summable_prime_log_div_ge (y + 1)
+    (h.of_nonneg_of_le (fun n ↦ by split_ifs <;> positivity) fun n ↦ ?_)
+  split_ifs with h1 h2
+  · exact le_rfl
+  · exact False.elim (h2 ⟨h1.1, by linarith [h1.2]⟩)
+  · positivity
+  · exact le_rfl
+
+/-- The prime-supported logarithmic series `∑_p log p / p` on `ℕ` is not summable. -/
+theorem not_summable_prime_log_div :
+    ¬Summable (fun n : ℕ ↦ if n.Prime then Real.log n / n else 0) := by
+  refine fun h ↦ not_summable_prime_log_div_ge 0 (h.congr fun n ↦ ?_)
+  simp [Nat.cast_nonneg]
+
 end Chebyshev
+
+/-- The logarithmic prime series `∑' p : Nat.Primes, log p / p` is not summable. -/
+theorem Nat.Primes.not_summable_log_div :
+    ¬Summable (fun p : Nat.Primes ↦ Real.log p / p) := by
+  intro hs
+  refine Chebyshev.not_summable_prime_log_div ?_
+  refine ((summable_subtype_iff_indicator (s := {p : ℕ | p.Prime})
+    (f := fun n : ℕ ↦ Real.log n / n)).mp hs).congr fun n ↦ ?_
+  by_cases hn : n.Prime <;> simp [hn]
