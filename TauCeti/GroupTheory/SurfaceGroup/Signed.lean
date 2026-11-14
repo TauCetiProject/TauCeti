@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Fintype.Perm
 import Mathlib.GroupTheory.Perm.Basic
+import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.GroupTheory.SurfaceGroup.Boundary
 
 /-!
 # Surface groups of either orientability and their peripheral subgroups
@@ -39,10 +41,9 @@ on the disc.
   Euler characteristic are not abelian.
 * `TauCeti.SurfaceGroup.Signed.not_isPeripheral_top`: the whole group of a surface of negative
   Euler characteristic is not peripheral.
-* `TauCeti.SurfaceGroup.Orientable.peripheral_ne_one`,
-  `TauCeti.SurfaceGroup.Nonorientable.peripheral_ne_one` and
-  `TauCeti.SurfaceGroup.Signed.peripheral_ne_one`: the peripheral elements are nontrivial unless
-  the surface is a disc.
+* `TauCeti.SurfaceGroup.Signed.peripheral_ne_one`: the peripheral elements are nontrivial unless
+  the surface is a disc, in particular when the Euler characteristic is negative
+  (`TauCeti.SurfaceGroup.Signed.peripheral_ne_one_of_eulerChar_neg`).
 
 ## References
 
@@ -58,10 +59,10 @@ namespace TauCeti
 
 namespace SurfaceGroup
 
-/-! ### Non-commutativity and nontrivial peripheral elements
+/-! ### Non-commutativity
 
-Each statement is proved by a homomorphism to the symmetric group `Perm (Fin 3)` or to `ℤ`, given by
-the universal property of the presentation.
+Each statement is proved by a homomorphism to the symmetric group `Perm (Fin 3)`, given by the
+universal property of the presentation.
 -/
 
 section Maps
@@ -103,27 +104,6 @@ theorem not_isMulCommutative_of_eulerChar_neg (h : eulerChar g m < 0) :
     have := congrArg (lift _ _ _ hw) (mul_comm' (a (g + 2) m 0) (a (g + 2) m 1))
     exact hne (by simpa using this)
 
-/-- The peripheral elements of `S⁺(g, m)` are nontrivial unless the surface is the disc. -/
-theorem peripheral_ne_one (h : g ≠ 0 ∨ m ≠ 1) (j : Fin m) : peripheral g m j ≠ 1 := by
-  intro hj
-  obtain hm | rfl : 2 ≤ m ∨ m = 1 := by have := j.pos; lia
-  · -- `pⱼ ↦ 1`, `pₖ ↦ -1` in `ℤ`, for some `k ≠ j`
-    have : Nontrivial (Fin m) := Fin.nontrivial_iff_two_le.mpr hm
-    obtain ⟨k, hk⟩ := exists_ne j
-    have hw : orientableWord (G := Multiplicative ℤ) (g := g) 1 1
-        (Pi.mulSingle j (.ofAdd 1) * Pi.mulSingle k (.ofAdd (-1))) = 1 := by
-      simp [orientableWord_def, List.prod_ofFn, Finset.prod_mul_distrib]
-    simpa [hk.symm] using congrArg (lift _ _ _ hw) hj
-  · -- `a₁ ↦ (01)`, `b₁ ↦ (12)`, `p₁ ↦ [(01), (12)]⁻¹`
-    obtain ⟨g, rfl⟩ : ∃ k, g = k + 1 := ⟨g - 1, by lia⟩
-    have hw : orientableWord (g := g + 1) (Fin.cons (swap 0 1) 1) (Fin.cons (swap 1 2) 1)
-        (fun _ : Fin 1 => (swap 0 1 * swap 1 2 * swap 0 1 * swap 1 2 : Perm (Fin 3))⁻¹) = 1 := by
-      simp [orientableWord_def, List.ofFn_succ, Pi.one_def, mul_assoc]
-    have := congrArg (lift _ _ _ hw) hj
-    revert this
-    simp only [lift_peripheral, map_one]
-    decide
-
 end Orientable
 
 namespace Nonorientable
@@ -160,32 +140,15 @@ theorem not_isMulCommutative (h : 2 ≤ g ∨ eulerChar g m < 0) :
     have := congrArg (lift _ _ hw) (mul_comm' (c (g + 2) m 0) (c (g + 2) m 1))
     exact hne (by simpa using this)
 
-/-- The peripheral elements of `S⁻(g, m)` are nontrivial unless the surface is the disc. -/
-theorem peripheral_ne_one (h : g ≠ 0 ∨ m ≠ 1) (j : Fin m) : peripheral g m j ≠ 1 := by
-  intro hj
-  obtain hm | rfl : 2 ≤ m ∨ m = 1 := by have := j.pos; lia
-  · -- `pⱼ ↦ 1`, `pₖ ↦ -1` in `ℤ`, for some `k ≠ j`
-    have : Nontrivial (Fin m) := Fin.nontrivial_iff_two_le.mpr hm
-    obtain ⟨k, hk⟩ := exists_ne j
-    have hw : nonorientableWord (M := Multiplicative ℤ) (g := g) 1
-        (Pi.mulSingle j (.ofAdd 1) * Pi.mulSingle k (.ofAdd (-1))) = 1 := by
-      simp [nonorientableWord_def, List.prod_ofFn, Finset.prod_mul_distrib]
-    simpa [hk.symm] using congrArg (lift _ _ hw) hj
-  · -- `c₁ ↦ 1`, `p₁ ↦ -2` in `ℤ`
-    obtain ⟨g, rfl⟩ : ∃ k, g = k + 1 := ⟨g - 1, by lia⟩
-    have hw : nonorientableWord (M := Multiplicative ℤ) (g := g + 1) (Pi.mulSingle 0 (.ofAdd 1))
-        (fun _ : Fin 1 => .ofAdd (-2)) = 1 := by
-      simp [nonorientableWord_def, ← ofAdd_nsmul]
-    simpa using congrArg (lift _ _ hw) hj
-
 end Nonorientable
 
 end Maps
 
 /-! ### The family of surface groups -/
 
-/-- The surface group `S⁺(g, m)` when `o = true` and `S⁻(g, m)` when `o = false`. For `g = 0`
-both are the group of the sphere with `m` holes. The body is exposed so that `Signed true g m` and
+/-- The surface group `S⁺(g, m)` when `o = true` and `S⁻(g, m)` when `o = false`. A
+nonorientable surface has genus at least one; for `g = 0` both presentations give the group of
+the sphere with `m` holes. The body is exposed so that `Signed true g m` and
 `Signed false g m` are the groups `Orientable g m` and `Nonorientable g m` themselves. -/
 @[expose] def Signed : Bool → ℕ → ℕ → Type
   | true, g, m => Orientable g m
@@ -218,14 +181,17 @@ def eulerChar : Bool → ℕ → ℕ → ℤ
   | false, g, m => Nonorientable.eulerChar g m
 
 @[simp]
-theorem eulerChar_true (g m : ℕ) : eulerChar true g m = 2 - 2 * g - m :=
-  Orientable.eulerChar_def g m
+theorem eulerChar_true (g m : ℕ) : eulerChar true g m = Orientable.eulerChar g m := (rfl)
 
 @[simp]
-theorem eulerChar_false (g m : ℕ) : eulerChar false g m = 2 - g - m :=
-  Nonorientable.eulerChar_def g m
+theorem eulerChar_false (g m : ℕ) : eulerChar false g m = Nonorientable.eulerChar g m := (rfl)
 
 variable {o : Bool} {g m : ℕ}
+
+/-- The Euler characteristic of `S±(g, m)` is `2 - 2g - m` or `2 - g - m`, according as the
+surface is orientable or not. -/
+theorem eulerChar_def : eulerChar o g m = 2 - (if o then 2 else 1) * g - m := by
+  cases o <;> simp [Orientable.eulerChar_def, Nonorientable.eulerChar_def]
 
 /-- The fundamental group of a compact surface of negative Euler characteristic is not
 abelian. -/
@@ -237,9 +203,18 @@ theorem not_isMulCommutative_of_eulerChar_neg (h : eulerChar o g m < 0) :
 
 /-- The peripheral elements of `S±(g, m)` are nontrivial unless the surface is the disc. -/
 theorem peripheral_ne_one (h : g ≠ 0 ∨ m ≠ 1) (j : Fin m) : peripheral o g m j ≠ 1 := by
+  intro hj
   cases o
-  · exact Nonorientable.peripheral_ne_one h j
-  · exact Orientable.peripheral_ne_one h j
+  · rw [peripheral_false] at hj
+    exact Nonorientable.not_isOfFinOrder_peripheral h j (hj ▸ IsOfFinOrder.one)
+  · rw [peripheral_true] at hj
+    exact Orientable.not_isOfFinOrder_peripheral h j (hj ▸ IsOfFinOrder.one)
+
+/-- The peripheral elements of a surface group of negative Euler characteristic are
+nontrivial. -/
+theorem peripheral_ne_one_of_eulerChar_neg (h : eulerChar o g m < 0) (j : Fin m) :
+    peripheral o g m j ≠ 1 :=
+  peripheral_ne_one (by rw [eulerChar_def] at h; split_ifs at h <;> lia) j
 
 /-! ### Peripheral subgroups -/
 
@@ -257,8 +232,26 @@ theorem isPeripheral_iff {K : Subgroup (Signed o g m)} :
 theorem isPeripheral_bot : IsPeripheral (⊥ : Subgroup (Signed o g m)) := .inl rfl
 
 /-- The boundary subgroup `⟨pⱼ⟩` is peripheral. -/
+@[simp]
 theorem isPeripheral_zpowers_peripheral (j : Fin m) :
     IsPeripheral (zpowers (peripheral o g m j)) := .inr ⟨j, 1, by simp⟩
+
+/-- The boundary subgroup `⟨pⱼ⟩` of `S⁺(g, m)` is peripheral. -/
+@[simp]
+theorem isPeripheral_zpowers_orientable_peripheral (j : Fin m) :
+    IsPeripheral (o := true) (zpowers (Orientable.peripheral g m j)) :=
+  isPeripheral_zpowers_peripheral j
+
+/-- The boundary subgroup `⟨pⱼ⟩` of `S⁻(g, m)` is peripheral. -/
+@[simp]
+theorem isPeripheral_zpowers_nonorientable_peripheral (j : Fin m) :
+    IsPeripheral (o := false) (zpowers (Nonorientable.peripheral g m j)) :=
+  isPeripheral_zpowers_peripheral j
+
+/-- Without boundary, only the trivial subgroup is peripheral. -/
+@[simp]
+theorem isPeripheral_zero_iff {K : Subgroup (Signed o g 0)} : IsPeripheral K ↔ K = ⊥ := by
+  simp [isPeripheral_iff]
 
 /-- Subgroups of peripheral subgroups are peripheral. -/
 theorem IsPeripheral.mono {K L : Subgroup (Signed o g m)} (hK : IsPeripheral K) (hLK : L ≤ K) :
@@ -272,8 +265,17 @@ theorem IsPeripheral.map_conj {K : Subgroup (Signed o g m)} (hK : IsPeripheral K
     (s : Signed o g m) : IsPeripheral (K.map (MulAut.conj s).toMonoidHom) := by
   rcases hK with rfl | ⟨j, t, hK⟩
   · exact .inl (map_bot _)
-  · refine .inr ⟨j, s * t, ?_⟩
-    simpa [MonoidHom.map_zpowers, mul_assoc] using map_mono (f := (MulAut.conj s).toMonoidHom) hK
+  · exact .inr ⟨j, s * t, map_conj_map_conj _ t s ▸ map_mono hK⟩
+
+/-- A conjugate of a subgroup is peripheral exactly when the subgroup is. -/
+@[simp]
+theorem isPeripheral_map_conj_iff {K : Subgroup (Signed o g m)} {s : Signed o g m} :
+    IsPeripheral (K.map (MulAut.conj s : Signed o g m →* Signed o g m)) ↔ IsPeripheral K := by
+  refine ⟨fun hK => ?_, fun hK => hK.map_conj s⟩
+  rw [← MulEquiv.toMonoidHom_eq_coe] at hK
+  have := hK.map_conj s⁻¹
+  rw [map_conj_map_conj, inv_mul_cancel] at this
+  simpa [MulAut.one_def] using this
 
 /-- Peripheral subgroups are abelian. -/
 theorem IsPeripheral.isMulCommutative {K : Subgroup (Signed o g m)} (hK : IsPeripheral K) :

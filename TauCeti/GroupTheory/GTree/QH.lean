@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GTree.Basic
 public import TauCeti.GroupTheory.SurfaceGroup.Signed
-import Mathlib.Tactic.Group
+import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
 # Quadratically hanging vertices
@@ -27,19 +27,39 @@ stabilizers and the intersections `Q ∩ g H g⁻¹`, as subgroups of `Q`.
 
 * `TauCeti.GTree.QH T ℋ v`: a QH structure at `v`, with `QH.boundarySubgroup` and `QH.IsUsed`.
 * `TauCeti.GTree.IsQH T ℋ v`: the vertex `v` carries a QH structure.
-* `TauCeti.GTree.QH.point`: the QH structure at the vertex of the one-vertex tree of a surface
-  group, relative to a family of peripheral subgroups.
+* `TauCeti.GTree.QH.smul` and `TauCeti.GTree.QH.ofSubset`: the QH structure at a translate of `v`,
+  and relative to a smaller family.
+* `TauCeti.GTree.QH.ofSubsingleton`: the QH structure at the vertex of a one-vertex tree of a
+  surface group, relative to a family of peripheral subgroups.
 
 ## Main results
 
-* `TauCeti.GTree.QH.ne_top_of_mem_incidentSubgroups`: incident subgroups are proper subgroups of
+* `TauCeti.GTree.IsQH.ne_top_of_mem_incidentSubgroups`: incident subgroups are proper subgroups of
   the stabilizer of a QH vertex; hence a QH vertex is the only vertex fixed by its stabilizer
-  (`TauCeti.GTree.QH.eq_of_stabilizer_le`).
+  (`TauCeti.GTree.IsQH.eq_of_stabilizer_le`).
+* `TauCeti.GTree.isQH_smul_iff`: being QH is invariant under the action of `G`.
 * `TauCeti.GTree.not_isQH_of_isMulCommutative`: a vertex with abelian stabilizer is not QH.
-* `TauCeti.GTree.isQH_point`: the vertex of the one-vertex tree of `S±(g, m)`, relative to a
-  family of peripheral subgroups such as the boundary subgroups, is QH; a boundary component is
-  used exactly when the family contains a nontrivial subgroup of a conjugate of its boundary
-  subgroup (`TauCeti.GTree.QH.isUsed_point_iff`).
+* `TauCeti.GTree.QH.eq_bot_or_exists_le_map_conj_boundarySubgroup` and
+  `TauCeti.GTree.QH.isUsed_iff_exists_le_map_conj_boundarySubgroup`: the peripheral condition and
+  the used boundary components, read in `G`; a boundary component whose boundary subgroup
+  belongs to `ℋ` is used (`TauCeti.GTree.QH.isUsed_of_boundarySubgroup_mem`).
+* `TauCeti.GTree.isQH_of_subsingleton`: the vertex of a one-vertex tree of `S±(g, m)`, relative
+  to a family of peripheral subgroups such as the boundary subgroups, is QH; a boundary component
+  is used exactly when the family contains a nontrivial subgroup of a conjugate of its boundary
+  subgroup (`TauCeti.GTree.QH.isUsed_ofSubsingleton_iff`).
+
+## Implementation notes
+
+The surface is recorded by its orientability, its genus and its number of boundary components,
+a nonorientable surface having positive genus. By the classification of compact surfaces these
+determine the surface, and `S±(g, m)`, with the conjugates of the cyclic subgroups `⟨pⱼ⟩`, is its
+fundamental group with its boundary subgroups.
+
+## TODO
+
+Record a polygonal model of the surface (`TauCeti.SurfaceModel`) together with an isomorphism of
+its fundamental group with `S±(g, m)` carrying its boundary components to the conjugacy classes
+of the `pⱼ`: curves on the surface, and the splittings dual to them, are defined on the model.
 
 ## References
 
@@ -66,12 +86,15 @@ subgroups: an isomorphism of the stabilizer of `v` with the fundamental group `S
 compact surface of negative Euler characteristic, carrying every incident subgroup to a
 peripheral subgroup. -/
 structure QH (ℋ : Set (Subgroup G)) (v : T.V) where
-  /-- Whether the surface is orientable; in genus `0` both values give the planar surface. -/
+  /-- Whether the surface is orientable. -/
   orientable : Bool
-  /-- The genus of the surface. -/
+  /-- The genus of the surface: its number of handles, or of cross-caps when it is
+  nonorientable. -/
   genus : ℕ
   /-- The number of boundary components of the surface. -/
   boundary : ℕ
+  /-- A nonorientable surface has at least one cross-cap. -/
+  orientable_or_genus_pos : orientable = true ∨ 0 < genus
   /-- The surface has negative Euler characteristic. -/
   eulerChar_neg : Signed.eulerChar orientable genus boundary < 0
   /-- The isomorphism of the vertex stabilizer with the surface group. -/
@@ -84,11 +107,18 @@ structure QH (ℋ : Set (Subgroup G)) (v : T.V) where
 def IsQH (ℋ : Set (Subgroup G)) (v : T.V) : Prop :=
   Nonempty (T.QH ℋ v)
 
+variable {T} in
 theorem isQH_iff {ℋ : Set (Subgroup G)} {v : T.V} : T.IsQH ℋ v ↔ Nonempty (T.QH ℋ v) := Iff.rfl
 
 namespace QH
 
 variable {T} {ℋ : Set (Subgroup G)} {v : T.V} (q : T.QH ℋ v)
+
+include q in
+/-- A vertex carrying a QH structure is QH. -/
+theorem isQH : T.IsQH ℋ v := isQH_iff.mpr ⟨q⟩
+
+/-! ### Boundary subgroups and used boundary components -/
 
 /-- The boundary subgroup of `G` corresponding to the boundary element `pⱼ` of the surface. -/
 def boundarySubgroup (j : Fin q.boundary) : Subgroup G :=
@@ -103,6 +133,54 @@ theorem mem_boundarySubgroup_iff {j : Fin q.boundary} {g : G} :
 
 theorem boundarySubgroup_le_stabilizer (j : Fin q.boundary) :
     q.boundarySubgroup j ≤ stabilizer G v := map_subtype_le _
+
+/-- The boundary subgroup `⟨pⱼ⟩`, in `G`, is generated by the element corresponding to `pⱼ`. -/
+theorem boundarySubgroup_eq_zpowers (j : Fin q.boundary) :
+    q.boundarySubgroup j =
+      zpowers (q.surfaceEquiv.symm (Signed.peripheral q.orientable q.genus q.boundary j) : G) := by
+  simp [boundarySubgroup, comap_equiv_eq_map_symm, MonoidHom.map_zpowers]
+
+/-- The surface isomorphism carries the boundary subgroup to `⟨pⱼ⟩`. -/
+@[simp]
+theorem map_surfaceEquiv_boundarySubgroup (j : Fin q.boundary) :
+    ((q.boundarySubgroup j).subgroupOf (stabilizer G v)).map
+        (q.surfaceEquiv : stabilizer G v →* Signed q.orientable q.genus q.boundary) =
+      zpowers (Signed.peripheral q.orientable q.genus q.boundary j) := by
+  rw [boundarySubgroup, MulEquiv.toMonoidHom_eq_coe, subgroupOf,
+    comap_map_eq_self_of_injective (subtype_injective _),
+    map_comap_eq_self_of_surjective q.surfaceEquiv.surjective]
+
+/-- The boundary subgroups of a QH vertex are nontrivial. -/
+theorem boundarySubgroup_ne_bot (j : Fin q.boundary) : q.boundarySubgroup j ≠ ⊥ := by
+  rw [boundarySubgroup_eq_zpowers, Ne, zpowers_eq_bot]
+  simpa using Signed.peripheral_ne_one_of_eulerChar_neg q.eulerChar_neg j
+
+/-- Containment in a conjugate of `⟨pⱼ⟩`, read in `G`: an incident subgroup is carried into the
+conjugate of `⟨pⱼ⟩` by `s` exactly when it lies in the conjugate of the boundary subgroup by the
+element corresponding to `s`. -/
+theorem map_surfaceEquiv_le_map_conj_iff {K : Subgroup (stabilizer G v)} {j : Fin q.boundary}
+    {s : Signed q.orientable q.genus q.boundary} :
+    K.map q.surfaceEquiv.toMonoidHom ≤
+        (zpowers (Signed.peripheral q.orientable q.genus q.boundary j)).map
+          (MulAut.conj s).toMonoidHom ↔
+      K.map (stabilizer G v).subtype ≤
+        (q.boundarySubgroup j).map (MulAut.conj (q.surfaceEquiv.symm s : G)).toMonoidHom := by
+  have h := map_map_conj ((zpowers (Signed.peripheral q.orientable q.genus q.boundary j)).comap
+    q.surfaceEquiv.toMonoidHom) q.surfaceEquiv.toMonoidHom (q.surfaceEquiv.symm s)
+  rw [map_comap_eq_self_of_surjective q.surfaceEquiv.surjective, MulEquiv.coe_toMonoidHom,
+    MulEquiv.apply_symm_apply] at h
+  rw [← h, map_le_map_iff_of_injective q.surfaceEquiv.injective, boundarySubgroup,
+    ← map_le_map_iff_of_injective (subtype_injective (stabilizer G v)), map_map_conj, coe_subtype]
+
+/-- Every incident subgroup is trivial or lies, in `G`, in a conjugate of a boundary subgroup by
+an element of the vertex stabilizer. -/
+theorem eq_bot_or_exists_le_map_conj_boundarySubgroup {K : Subgroup (stabilizer G v)}
+    (hK : K ∈ T.incidentSubgroups ℋ v) :
+    K = ⊥ ∨ ∃ j, ∃ s ∈ stabilizer G v,
+      K.map (stabilizer G v).subtype ≤ (q.boundarySubgroup j).map (MulAut.conj s).toMonoidHom := by
+  rcases Signed.isPeripheral_iff.mp (q.isPeripheral_map K hK) with h | ⟨j, s, h⟩
+  · exact .inl ((map_eq_bot_iff_of_injective _ q.surfaceEquiv.injective).mp h)
+  · exact .inr ⟨j, _, (q.surfaceEquiv.symm s).2, q.map_surfaceEquiv_le_map_conj_iff.mp h⟩
 
 /-- A boundary component is used when some nontrivial incident subgroup is carried into a
 conjugate of its boundary subgroup. The incident subgroups are the incident edge stabilizers and
@@ -122,128 +200,220 @@ theorem isUsed_iff {j : Fin q.boundary} :
         (zpowers (Signed.peripheral q.orientable q.genus q.boundary j)).map
           (MulAut.conj s).toMonoidHom := Iff.rfl
 
-include q in
+/-- A boundary component is used exactly when some nontrivial incident subgroup lies, in `G`, in a
+conjugate of its boundary subgroup by an element of the vertex stabilizer. -/
+theorem isUsed_iff_exists_le_map_conj_boundarySubgroup {j : Fin q.boundary} :
+    q.IsUsed j ↔ ∃ K ∈ T.incidentSubgroups ℋ v, K ≠ ⊥ ∧ ∃ s ∈ stabilizer G v,
+      K.map (stabilizer G v).subtype ≤ (q.boundarySubgroup j).map (MulAut.conj s).toMonoidHom := by
+  rw [isUsed_iff]
+  refine exists_congr fun K => and_congr_right fun _ => and_congr_right fun _ => ⟨?_, ?_⟩
+  · rintro ⟨s, hs⟩
+    exact ⟨_, (q.surfaceEquiv.symm s).2, q.map_surfaceEquiv_le_map_conj_iff.mp hs⟩
+  · rintro ⟨s, hs, hle⟩
+    refine ⟨q.surfaceEquiv ⟨s, hs⟩, q.map_surfaceEquiv_le_map_conj_iff.mpr ?_⟩
+    rwa [MulEquiv.symm_apply_apply]
+
+/-- A boundary component whose boundary subgroup belongs to `ℋ` is used. -/
+theorem isUsed_of_boundarySubgroup_mem {j : Fin q.boundary} (hj : q.boundarySubgroup j ∈ ℋ) :
+    q.IsUsed j := by
+  refine ⟨_, T.subgroupOf_mem_incidentSubgroups hj v, fun h => q.boundarySubgroup_ne_bot j ?_, 1,
+    by simp⟩
+  rwa [subgroupOf_eq_bot, disjoint_of_le_iff_left_eq_bot (q.boundarySubgroup_le_stabilizer j)] at h
+
+/-! ### Translates and smaller families -/
+
+/-- The QH structure at `g • v` obtained by translating a QH structure at `v` by `g`. -/
+@[expose, simps]
+def smul (g : G) : T.QH ℋ (g • v) where
+  orientable := q.orientable
+  genus := q.genus
+  boundary := q.boundary
+  orientable_or_genus_pos := q.orientable_or_genus_pos
+  eulerChar_neg := q.eulerChar_neg
+  surfaceEquiv := (stabilizerEquivStabilizer (rfl : g • v = g • v)).symm.trans q.surfaceEquiv
+  isPeripheral_map := by
+    rw [incidentSubgroups_smul]
+    rintro _ ⟨K, hK, rfl⟩
+    rw [map_map]
+    convert q.isPeripheral_map K hK using 3
+    ext
+    simp
+
+/-- The boundary subgroups at `g • v` are the conjugates by `g` of those at `v`. -/
+@[simp]
+theorem boundarySubgroup_smul (g : G) (j : Fin q.boundary) :
+    (q.smul g).boundarySubgroup j = (q.boundarySubgroup j).map (MulAut.conj g).toMonoidHom := by
+  rw [boundarySubgroup_eq_zpowers (q.smul g) j, boundarySubgroup_eq_zpowers, MonoidHom.map_zpowers]
+  -- The surface isomorphism at `g • v` is conjugation by `g⁻¹` followed by that at `v`.
+  exact congrArg zpowers (stabilizerEquivStabilizer_apply rfl _)
+
+/-- A QH structure relative to `ℋ` is a QH structure relative to every smaller family. -/
+@[expose, simps]
+def ofSubset {ℋ' : Set (Subgroup G)} (h : ℋ' ⊆ ℋ) : T.QH ℋ' v where
+  __ := q
+  isPeripheral_map K hK := q.isPeripheral_map K (T.incidentSubgroups_mono h v hK)
+
+end QH
+
+/-! ### Consequences for the vertex stabilizer -/
+
+namespace IsQH
+
+variable {T} {ℋ : Set (Subgroup G)} {v : T.V}
+
 /-- Incident subgroups are proper subgroups of the stabilizer of a QH vertex. -/
-theorem ne_top_of_mem_incidentSubgroups {K : Subgroup (stabilizer G v)}
+theorem ne_top_of_mem_incidentSubgroups (hv : T.IsQH ℋ v) {K : Subgroup (stabilizer G v)}
     (hK : K ∈ T.incidentSubgroups ℋ v) : K ≠ ⊤ := by
+  obtain ⟨q⟩ := isQH_iff.mp hv
   rintro rfl
   have := q.isPeripheral_map ⊤ hK
   rw [map_top_of_surjective _ q.surfaceEquiv.surjective] at this
   exact Signed.not_isPeripheral_top q.eulerChar_neg this
 
-include q in
-/-- A QH vertex is the only vertex fixed by its stabilizer. -/
-theorem eq_of_stabilizer_le {w : T.V} (h : stabilizer G v ≤ stabilizer G w) : w = v := by
-  by_contra hwv
-  -- The stabilizer of `v` fixes the reduced path from `v` to `w`, hence its first dart.
-  obtain ⟨p, hp, -⟩ := T.isTree.existsUnique_isReduced v w
-  obtain ⟨e, he⟩ : ∃ e, e ∈ (SerreGraph.Path.darts T.toSerreGraph p).head? := by
-    cases hd : SerreGraph.Path.darts T.toSerreGraph p with
-    | nil => exact absurd (p.eq_of_darts_eq_nil _ hd).symm hwv
-    | cons e _ => exact ⟨e, rfl⟩
-  have hQ : stabilizer G v ≤ stabilizer G e := fun g hg =>
-    SerreGraph.Aut.smul_eq_of_mem_darts T.isTree.isAcyclic (T.action g) hg (h hg) hp
-      (List.mem_of_mem_head? he)
-  exact q.ne_top_of_mem_incidentSubgroups (mem_incidentSubgroups_iff.mpr
-    (.inl ⟨e, SerreGraph.Path.src_eq_of_mem_head?_darts _ p he, rfl⟩)) (subgroupOf_eq_top.mpr hQ)
+/-- Incident subgroups at a QH vertex are abelian. -/
+theorem isMulCommutative_of_mem_incidentSubgroups (hv : T.IsQH ℋ v)
+    {K : Subgroup (stabilizer G v)} (hK : K ∈ T.incidentSubgroups ℋ v) : IsMulCommutative K := by
+  obtain ⟨q⟩ := isQH_iff.mp hv
+  have := (q.isPeripheral_map K hK).isMulCommutative
+  exact (K.equivMapOfInjective q.surfaceEquiv.toMonoidHom
+    q.surfaceEquiv.injective).symm.surjective.isMulCommutative
 
-end QH
+/-- A QH vertex is the only vertex fixed by its stabilizer. -/
+theorem eq_of_stabilizer_le (hv : T.IsQH ℋ v) {w : T.V} (h : stabilizer G v ≤ stabilizer G w) :
+    w = v := by
+  by_contra hwv
+  obtain ⟨e, he, hle⟩ := exists_src_eq_and_stabilizer_inf_le (Ne.symm hwv)
+  exact hv.ne_top_of_mem_incidentSubgroups (T.stabilizer_subgroupOf_mem_incidentSubgroups ℋ he)
+    (subgroupOf_eq_top.mpr ((le_inf le_rfl h).trans hle))
+
+/-- A QH vertex relative to `ℋ` is QH relative to every smaller family. -/
+theorem mono (hv : T.IsQH ℋ v) {ℋ' : Set (Subgroup G)} (h : ℋ' ⊆ ℋ) : T.IsQH ℋ' v :=
+  ((isQH_iff.mp hv).some.ofSubset h).isQH
+
+end IsQH
+
+/-- Being quadratically hanging is invariant under the action of `G`. -/
+@[simp]
+theorem isQH_smul_iff {ℋ : Set (Subgroup G)} {g : G} {v : T.V} :
+    T.IsQH ℋ (g • v) ↔ T.IsQH ℋ v := by
+  refine ⟨fun hv => ?_, fun hv => ((isQH_iff.mp hv).some.smul g).isQH⟩
+  simpa using ((isQH_iff.mp hv).some.smul g⁻¹).isQH
 
 /-- A vertex with abelian stabilizer is not quadratically hanging. -/
 theorem not_isQH_of_isMulCommutative {ℋ : Set (Subgroup G)} {v : T.V}
-    [IsMulCommutative (stabilizer G v)] : ¬T.IsQH ℋ v := fun ⟨q⟩ =>
+    [IsMulCommutative (stabilizer G v)] : ¬T.IsQH ℋ v := fun hv =>
+  let ⟨q⟩ := isQH_iff.mp hv
   Signed.not_isMulCommutative_of_eulerChar_neg q.eulerChar_neg
     q.surfaceEquiv.surjective.isMulCommutative
 
 /-- A vertex whose stabilizer is contained in a conjugate of a member of `ℋ` is not quadratically
 hanging. -/
 theorem not_isQH_of_stabilizer_le {ℋ : Set (Subgroup G)} {v : T.V} {H : Subgroup G} (hH : H ∈ ℋ)
-    (g : G) (h : stabilizer G v ≤ H.map (MulAut.conj g).toMonoidHom) : ¬T.IsQH ℋ v := fun ⟨q⟩ =>
-  q.ne_top_of_mem_incidentSubgroups (mem_incidentSubgroups_iff.mpr (.inr ⟨H, hH, g, rfl⟩))
+    (g : G) (h : stabilizer G v ≤ H.map (MulAut.conj g).toMonoidHom) : ¬T.IsQH ℋ v := fun hv =>
+  hv.ne_top_of_mem_incidentSubgroups (T.map_subgroupOf_mem_incidentSubgroups hH g v)
     (subgroupOf_eq_top.mpr h)
 
-/-! ### The one-vertex tree of a surface group -/
+/-! ### One-vertex trees of surface groups -/
+
+section Subsingleton
+
+variable {o : Bool} {g m : ℕ} {T : GTree.{u, v} (Signed o g m)} [Subsingleton T.V]
+  {ℋ : Set (Subgroup (Signed o g m))}
 
 namespace QH
 
-variable {o : Bool} {g m : ℕ} {ℋ : Set (Subgroup (Signed o g m))}
-
-/-- The quadratically hanging structure at the vertex of the one-vertex tree of the fundamental
+/-- The quadratically hanging structure at the vertex of a one-vertex tree of the fundamental
 group `S±(g, m)` of a compact surface of negative Euler characteristic, relative to a family of
-peripheral subgroups: the surface group itself, with the identity of the stabilizer. It is
-reducible, so that the surface data of this structure are `o`, `g` and `m` themselves: its
-boundary components are indexed by `Fin m` and its surface group is `Signed o g m`. -/
-abbrev point (h : Signed.eulerChar o g m < 0) (hℋ : ∀ H ∈ ℋ, Signed.IsPeripheral H)
-    (x : (point.{u, v} (Signed o g m)).V) : (point.{u, v} (Signed o g m)).QH ℋ x where
+peripheral subgroups: the stabilizer is the whole group, identified with `S±(g, m)` by the
+inclusion. -/
+@[expose]
+def ofSubsingleton (ho : o = true ∨ 0 < g) (h : Signed.eulerChar o g m < 0)
+    (hℋ : ∀ H ∈ ℋ, Signed.IsPeripheral H) (x : T.V) : T.QH ℋ x where
   orientable := o
   genus := g
   boundary := m
+  orientable_or_genus_pos := ho
   eulerChar_neg := h
   surfaceEquiv :=
     (MulEquiv.subgroupCongr (stabilizer_eq_top_of_subsingleton x)).trans Subgroup.topEquiv
   isPeripheral_map := by
+    -- The surface isomorphism is the inclusion of the stabilizer, which is the whole group.
+    have hφ : ((MulEquiv.subgroupCongr (stabilizer_eq_top_of_subsingleton x)).trans
+        Subgroup.topEquiv).toMonoidHom = (stabilizer _ x).subtype := by
+      ext
+      simp
     rw [incidentSubgroups_of_subsingleton]
     rintro K ⟨H, hH, s, rfl⟩
-    convert (hℋ H hH).map_conj s using 1
-    exact map_subgroupOf_eq_of_le (le_top.trans_eq (stabilizer_eq_top_of_subsingleton x).symm)
+    rw [hφ, subgroupOf_map_subtype, stabilizer_eq_top_of_subsingleton, inf_top_eq]
+    exact (hℋ H hH).map_conj s
 
-variable (h : Signed.eulerChar o g m < 0) (hℋ : ∀ H ∈ ℋ, Signed.IsPeripheral H)
-  (x : (GTree.point.{u, v} (Signed o g m)).V)
+variable (ho : o = true ∨ 0 < g) (h : Signed.eulerChar o g m < 0)
+  (hℋ : ∀ H ∈ ℋ, Signed.IsPeripheral H) (x : T.V)
 
-/-- The boundary subgroups of the one-vertex tree of a surface group are the cyclic subgroups
+@[simp] theorem ofSubsingleton_orientable : (ofSubsingleton ho h hℋ x).orientable = o := (rfl)
+
+@[simp] theorem ofSubsingleton_genus : (ofSubsingleton ho h hℋ x).genus = g := (rfl)
+
+@[simp] theorem ofSubsingleton_boundary : (ofSubsingleton ho h hℋ x).boundary = m := (rfl)
+
+/-- The surface isomorphism at the vertex of a one-vertex tree is the inclusion of the
+stabilizer. -/
+@[simp]
+theorem ofSubsingleton_surfaceEquiv_apply (y : stabilizer (Signed o g m) x) :
+    ((ofSubsingleton ho h hℋ x).surfaceEquiv y : Signed o g m) = (y : Signed o g m) := (rfl)
+
+@[simp]
+theorem ofSubsingleton_surfaceEquiv_symm_apply (y : Signed o g m) :
+    (((ofSubsingleton ho h hℋ x).surfaceEquiv.symm y : stabilizer (Signed o g m) x) :
+      Signed o g m) = y := (rfl)
+
+theorem ofSubsingleton_surfaceEquiv_toMonoidHom :
+    (ofSubsingleton ho h hℋ x).surfaceEquiv.toMonoidHom = (stabilizer _ x).subtype :=
+  MonoidHom.ext (ofSubsingleton_surfaceEquiv_apply ho h hℋ x)
+
+/-- The boundary subgroups of a one-vertex tree of a surface group are the cyclic subgroups
 generated by the peripheral elements. -/
 @[simp]
-theorem boundarySubgroup_point (j : Fin m) :
-    (QH.point h hℋ x).boundarySubgroup j = zpowers (Signed.peripheral o g m j) := by
-  ext y
-  simp [mem_boundarySubgroup_iff]
+theorem boundarySubgroup_ofSubsingleton (j : Fin m) :
+    (ofSubsingleton ho h hℋ x).boundarySubgroup j = zpowers (Signed.peripheral o g m j) :=
+  (boundarySubgroup_eq_zpowers (ofSubsingleton ho h hℋ x) j).trans
+    (congrArg zpowers
+      (ofSubsingleton_surfaceEquiv_symm_apply ho h hℋ x (Signed.peripheral o g m j)))
 
-/-- On the one-vertex tree, the surface isomorphism carries `L ∩ Q` back to `L`. -/
-private theorem map_subgroupOf_point (L : Subgroup (Signed o g m)) :
-    (L.subgroupOf (stabilizer (Signed o g m) x)).map (QH.point h hℋ x).surfaceEquiv.toMonoidHom =
-      L :=
-  map_subgroupOf_eq_of_le (le_top.trans_eq (stabilizer_eq_top_of_subsingleton x).symm)
-
-/-- At the vertex of the one-vertex tree of a surface group, a boundary component is used
-exactly when the family `ℋ` contains a nontrivial subgroup of a conjugate of its boundary
-subgroup. -/
-theorem isUsed_point_iff {j : Fin m} :
-    (QH.point h hℋ x).IsUsed j ↔ ∃ H ∈ ℋ, H ≠ ⊥ ∧ ∃ s : Signed o g m,
+/-- At the vertex of a one-vertex tree of a surface group, a boundary component is used exactly
+when the family `ℋ` contains a nontrivial subgroup of a conjugate of its boundary subgroup. -/
+theorem isUsed_ofSubsingleton_iff {j : Fin m} :
+    (ofSubsingleton ho h hℋ x).IsUsed j ↔ ∃ H ∈ ℋ, H ≠ ⊥ ∧ ∃ s : Signed o g m,
       H ≤ (zpowers (Signed.peripheral o g m j)).map (MulAut.conj s).toMonoidHom := by
-  have h1 : (MulAut.conj (1 : Signed o g m)).toMonoidHom = MonoidHom.id _ := by ext; simp
-  rw [isUsed_iff, incidentSubgroups_of_subsingleton]
+  -- The stabilizer is the whole group, so `L ∩ Q = L` for every subgroup `L`.
+  have hQ (L : Subgroup (Signed o g m)) : (L.subgroupOf (stabilizer _ x)).map
+      (stabilizer _ x).subtype = L := by
+    rw [subgroupOf_map_subtype, stabilizer_eq_top_of_subsingleton, inf_top_eq]
+  have h1 (L : Subgroup (Signed o g m)) :
+      L.map (MulAut.conj (1 : Signed o g m)).toMonoidHom = L := by
+    simp [MulAut.one_def]
+  refine (isUsed_iff_exists_le_map_conj_boundarySubgroup _).trans ?_
+  rw [boundarySubgroup_ofSubsingleton ho h hℋ x j, incidentSubgroups_of_subsingleton]
   constructor
-  · rintro ⟨K, ⟨H, hH, t, rfl⟩, hK, s, hs⟩
-    rw [map_subgroupOf_point] at hs
-    refine ⟨H, hH, fun hH0 => hK (by simp [hH0]), t⁻¹ * s, fun y hy => ?_⟩
-    obtain ⟨z, hz, hzy⟩ := mem_map.mp (hs (mem_map_of_mem _ hy))
-    refine mem_map.mpr ⟨z, hz, ?_⟩
-    simp only [MulEquiv.coe_toMonoidHom] at hzy ⊢
-    rw [map_mul, MulAut.mul_apply, hzy, map_inv, MulAut.inv_apply_self]
+  · rintro ⟨K, ⟨H, hH, t, rfl⟩, hK, s, -, hs⟩
+    rw [hQ] at hs
+    refine ⟨H, hH, fun hH0 => hK (by simp [hH0]), t⁻¹ * s, ?_⟩
+    have := map_mono (f := (MulAut.conj t⁻¹).toMonoidHom) hs
+    rwa [map_conj_map_conj, map_conj_map_conj, inv_mul_cancel, h1] at this
   · rintro ⟨H, hH, hH0, s, hs⟩
-    refine ⟨(H.map (MulAut.conj 1).toMonoidHom).subgroupOf _, ⟨H, hH, 1, rfl⟩,
-      fun hK => hH0 ?_, s, ?_⟩
-    · have := congrArg (map (QH.point h hℋ x).surfaceEquiv.toMonoidHom) hK
-      rwa [map_subgroupOf_point, h1, map_id, Subgroup.map_bot] at this
-    · rwa [map_subgroupOf_point, h1, map_id]
-
-/-- At the vertex of the one-vertex tree of a surface group, relative to a family containing the
-boundary subgroup `⟨pⱼ⟩`, the boundary component `j` is used. -/
-theorem isUsed_point_of_mem {j : Fin m} (hj : zpowers (Signed.peripheral o g m j) ∈ ℋ) :
-    (QH.point h hℋ x).IsUsed j :=
-  (isUsed_point_iff h hℋ x).mpr ⟨_, hj, by
-    simpa using Signed.peripheral_ne_one (by cases o <;> simp at h <;> lia) j,
-    1, by simp⟩
+    refine ⟨_, ⟨H, hH, 1, rfl⟩, fun hK => hH0 ?_, s, by simp, by rwa [hQ, h1]⟩
+    rw [← h1 H, ← hQ (H.map _), hK, Subgroup.map_bot]
 
 end QH
 
-/-- The vertex of the one-vertex tree of the fundamental group of a compact surface of negative
-Euler characteristic is quadratically hanging relative to every family of peripheral
-subgroups, in particular relative to the boundary subgroups. -/
-theorem isQH_point {o : Bool} {g m : ℕ} (h : Signed.eulerChar o g m < 0)
-    {ℋ : Set (Subgroup (Signed o g m))} (hℋ : ∀ H ∈ ℋ, Signed.IsPeripheral H)
-    (x : (point.{u, v} (Signed o g m)).V) : (point.{u, v} (Signed o g m)).IsQH ℋ x :=
-  ⟨QH.point h hℋ x⟩
+/-- The vertex of a one-vertex tree of the fundamental group of a compact surface of negative
+Euler characteristic is quadratically hanging relative to every family of peripheral subgroups,
+in particular relative to the boundary subgroups. -/
+theorem isQH_of_subsingleton (ho : o = true ∨ 0 < g) (h : Signed.eulerChar o g m < 0)
+    (hℋ : ∀ H ∈ ℋ, Signed.IsPeripheral H) (x : T.V) : T.IsQH ℋ x :=
+  (QH.ofSubsingleton ho h hℋ x).isQH
+
+end Subsingleton
 
 /-! ### Checks -/
 
@@ -253,22 +423,32 @@ example (ℋ : Set (Subgroup (Multiplicative (Fin 2 → ℤ))))
     ¬(point.{0, 0} (Multiplicative (Fin 2 → ℤ))).IsQH ℋ x :=
   not_isQH_of_isMulCommutative _
 
+/- No QH structure records a nonorientable surface of genus `0`: the tuple `(false, 0, 3)` that
+would describe a pair of pants as nonorientable is rejected. -/
+example {T : GTree.{u, v} G} {ℋ : Set (Subgroup G)} {v : T.V} (q : T.QH ℋ v) :
+    ¬(q.orientable = false ∧ q.genus = 0) := by
+  rintro ⟨ho, hg⟩
+  simpa [ho, hg] using q.orientable_or_genus_pos
+
 /- The pair of pants `S⁺(0, 3)`, relative to its three boundary subgroups, is a QH vertex of its
 one-vertex tree, and each of its boundary components is used. -/
 example (x : (point.{0, 0} (Signed true 0 3)).V) :
     (point.{0, 0} (Signed true 0 3)).IsQH
       (Set.range fun j => zpowers (Signed.peripheral true 0 3 j)) x :=
-  isQH_point (by simp) (by rintro _ ⟨j, rfl⟩; exact Signed.isPeripheral_zpowers_peripheral j) x
+  isQH_of_subsingleton (.inl rfl) (by simp [Orientable.eulerChar_def])
+    (by rintro _ ⟨j, rfl⟩; exact Signed.isPeripheral_zpowers_peripheral j) x
 
 example (x : (point.{0, 0} (Signed true 0 3)).V) (j : Fin 3) :
-    (QH.point (ℋ := Set.range fun j => zpowers (Signed.peripheral true 0 3 j)) (by simp)
+    (QH.ofSubsingleton (ℋ := Set.range fun j => zpowers (Signed.peripheral true 0 3 j)) (.inl rfl)
+      (by simp [Orientable.eulerChar_def])
       (by rintro _ ⟨j, rfl⟩; exact Signed.isPeripheral_zpowers_peripheral j) x).IsUsed j :=
-  QH.isUsed_point_of_mem _ _ _ ⟨j, rfl⟩
+  QH.isUsed_of_boundarySubgroup_mem _ (by simp)
 
 /- Relative to the empty family, no boundary component of the pair of pants is used. -/
 example (x : (point.{0, 0} (Signed true 0 3)).V) (j : Fin 3) :
-    ¬(QH.point (ℋ := ∅) (by simp) (by simp) x).IsUsed j := by
-  simp [QH.isUsed_point_iff]
+    ¬(QH.ofSubsingleton (ℋ := ∅) (.inl rfl) (by simp [Orientable.eulerChar_def]) (by simp)
+      x).IsUsed j := by
+  simp [QH.isUsed_ofSubsingleton_iff]
 
 end GTree
 
