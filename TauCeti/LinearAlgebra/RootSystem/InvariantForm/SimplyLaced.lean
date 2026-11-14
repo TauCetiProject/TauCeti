@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 import TauCeti.LinearAlgebra.RootSystem.Component.InvariantForm
+import TauCeti.LinearAlgebra.RootSystem.Flip
 import TauCeti.LinearAlgebra.RootSystem.Height
 import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Basic
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
@@ -17,15 +18,14 @@ import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 # Invariant forms on simply laced root systems
 
 In a simply laced root pairing, the Cartan matrix of a base is symmetric, every root and its coroot
-expand with the same integer coefficients in the simple roots and simple coroots, and the Cartan
-pairing is symmetric on all roots. When the roots span, sending each simple root `αᵢ` to its coroot
-functional `αᵢ^∨` defines a canonical Weyl- and automorphism-invariant symmetric bilinear form
-`RootPairing.Base.simplyLacedForm` in which every root has squared length `2` and pairing with any
-root `αᵣ` equals evaluation against `αᵣ^∨`; over a linearly ordered field this form is positive
-definite.
+expand with the same integer coefficients in the simple roots and simple coroots, the Cartan pairing
+is symmetric on all roots, and two roots whose sum is again a root have Cartan integer `-1`. When
+the roots span, sending each simple root `αᵢ` to its coroot functional `αᵢ^∨` defines a canonical
+Weyl- and automorphism-invariant symmetric bilinear form `RootPairing.Base.simplyLacedForm` in
+which every root has squared length `2` and pairing with any root `αᵣ` equals evaluation against
+`αᵣ^∨`; over a linearly ordered field this form is positive definite.
 
-In a simply laced irreducible root system all roots have the same length for every invariant form,
-and two roots whose sum is again a root have Cartan integer `-1`.
+In a simply laced irreducible root system all roots have the same length for every invariant form.
 
 ## Main definitions
 
@@ -36,14 +36,14 @@ and two roots whose sum is again a root have Cartan integer `-1`.
 
 * `RootPairing.InvariantForm.apply_root_root_eq_of_isSimplyLaced`: in a simply laced irreducible
   root system all roots have the same length.
-* `RootPairing.Base.pairingIn_eq_neg_one_of_isSimplyLaced`: two roots whose sum is a root have
-  Cartan integer `-1`.
+* `RootPairing.Base.pairingIn_eq_neg_one_of_isSimplyLaced`: in a simply laced root pairing, two
+  roots whose sum is a root have Cartan integer `-1`.
 * `RootPairing.Base.cartanMatrix_isSymm_of_isSimplyLaced`: a simply laced Cartan matrix of a base
   is symmetric.
 * `RootPairing.Base.exists_root_and_coroot_eq_sum_int_of_isSimplyLaced`: in a simply laced root
   pairing, each root and its coroot share the same integer coordinates in the base.
-* `RootPairing.Base.pairingIn_symm_of_isSimplyLaced` and
-  `RootPairing.Base.pairing_symm_of_isSimplyLaced`: the Cartan pairing of a simply laced root
+* `RootPairing.Base.pairingIn_comm_of_isSimplyLaced` and
+  `RootPairing.Base.pairing_comm_of_isSimplyLaced`: the Cartan pairing of a simply laced root
   pairing is symmetric on all roots.
 * `RootPairing.Base.simplyLacedForm_apply_root`,
   `RootPairing.Base.simplyLacedForm_apply_root_left`, and
@@ -107,8 +107,7 @@ section Symmetry
 
 variable [CharZero R] [IsDomain R] [P.IsCrystallographic]
 
-/-- **A simply laced Cartan matrix of a root-pairing base is symmetric**, since off-diagonal entries
-lie in `{0, -1}` and `0` entries occur symmetrically. -/
+/-- **A simply laced Cartan matrix of a root-pairing base is symmetric.** -/
 theorem cartanMatrix_isSymm_of_isSimplyLaced (b : P.Base) (hsl : b.cartanMatrix.IsSimplyLaced) :
     b.cartanMatrix.IsSymm := by
   ext i j
@@ -147,37 +146,30 @@ theorem exists_root_and_coroot_eq_sum_int_of_isSimplyLaced
   · intro r hr
     refine ⟨fun k ↦ if k = r then 1 else 0, ?_, ?_⟩ <;> simp [hr]
   · rintro r j ⟨f, hrf, hcf⟩ hj
-    have hflip (x y : ι) : P.flip.pairingIn ℤ x y = P.pairingIn ℤ y x :=
-      FaithfulSMul.algebraMap_injective ℤ R <| by
-        rw [algebraMap_pairingIn, algebraMap_pairingIn]; rfl
     have hp : P.pairingIn ℤ j r = P.pairingIn ℤ r j := by
-      rw [← hflip r j, pairingIn_eq_sum_of_root_eq_sum (P := P.flip) hcf j,
+      rw [← P.pairingIn_flip ℤ r j, pairingIn_eq_sum_of_root_eq_sum (P := P.flip) hcf j,
         pairingIn_eq_sum_of_root_eq_sum hrf j]
-      exact Finset.sum_congr rfl fun k hk ↦ by rw [hflip, hcsym hj hk]
+      exact Finset.sum_congr rfl fun k hk ↦ by rw [pairingIn_flip, hcsym hj hk]
     refine ⟨fun k ↦ f k - if k = j then P.pairingIn ℤ r j else 0, ?_, ?_⟩
     · simp_rw [sub_smul, Finset.sum_sub_distrib, ite_smul, zero_smul, Finset.sum_ite_eq', hj,
         ite_true, ← hrf, root_reflectionPerm, P.reflection_apply_root' ℤ]
-    · rw [coroot_reflectionPerm]
-      change P.flip.reflection j (P.flip.root r) = _
-      rw [P.flip.reflection_apply_root' ℤ, hflip, hp]
-      simp only [flip_root, hcf]
+    · rw [coroot_reflectionPerm, coreflection_eq_flip_reflection, ← flip_root,
+        P.flip.reflection_apply_root' ℤ, pairingIn_flip, hp, flip_root, hcf]
       simp_rw [sub_smul, Finset.sum_sub_distrib, ite_smul, zero_smul, Finset.sum_ite_eq', hj,
         ite_true]
 
 /-- **The integer Cartan pairing of a simply laced root pairing is symmetric on all roots.** -/
-theorem pairingIn_symm_of_isSimplyLaced (hsl : b.cartanMatrix.IsSimplyLaced) (i j : ι) :
+theorem pairingIn_comm_of_isSimplyLaced (hsl : b.cartanMatrix.IsSimplyLaced) (i j : ι) :
     P.pairingIn ℤ i j = P.pairingIn ℤ j i := by
-  have hflip (x y : ι) : P.flip.pairingIn ℤ x y = P.pairingIn ℤ y x :=
-    FaithfulSMul.algebraMap_injective ℤ R <| by
-      rw [algebraMap_pairingIn, algebraMap_pairingIn]; rfl
   have hexp (r s : ι) {u v : ι → ℤ} (hu : P.root r = ∑ k ∈ b.support, u k • P.root k)
       (hv : P.coroot s = ∑ l ∈ b.support, v l • P.coroot l) :
       P.pairingIn ℤ r s =
         ∑ k ∈ b.support, ∑ l ∈ b.support, u k * v l * P.pairingIn ℤ k l := by
     rw [pairingIn_eq_sum_of_root_eq_sum hu s]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [← hflip s k, pairingIn_eq_sum_of_root_eq_sum (P := P.flip) hv k, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun l _ ↦ by rw [hflip]; ring
+    rw [← P.pairingIn_flip ℤ s k, pairingIn_eq_sum_of_root_eq_sum (P := P.flip) hv k,
+      Finset.mul_sum]
+    exact Finset.sum_congr rfl fun l _ ↦ by rw [pairingIn_flip]; ring
   obtain ⟨f, hrf, hcf⟩ := b.exists_root_and_coroot_eq_sum_int_of_isSimplyLaced hsl i
   obtain ⟨g, hrg, hcg⟩ := b.exists_root_and_coroot_eq_sum_int_of_isSimplyLaced hsl j
   have hsym := b.cartanMatrix_isSymm_of_isSimplyLaced hsl
@@ -189,28 +181,25 @@ theorem pairingIn_symm_of_isSimplyLaced (hsl : b.cartanMatrix.IsSimplyLaced) (i 
   ring
 
 /-- **The Cartan pairing of a simply laced root pairing is symmetric on all roots.** -/
-theorem pairing_symm_of_isSimplyLaced (hsl : b.cartanMatrix.IsSimplyLaced) (i j : ι) :
+theorem pairing_comm_of_isSimplyLaced (hsl : b.cartanMatrix.IsSimplyLaced) (i j : ι) :
     P.pairing i j = P.pairing j i := by
   rw [← P.algebraMap_pairingIn ℤ, ← P.algebraMap_pairingIn ℤ j i,
-    b.pairingIn_symm_of_isSimplyLaced hsl]
+    b.pairingIn_comm_of_isSimplyLaced hsl]
 
-/-- **In a simply laced irreducible root system, two roots whose sum is a root have Cartan integer
-`-1`.** -/
-theorem pairingIn_eq_neg_one_of_isSimplyLaced [P.IsIrreducible]
-    (hsl : b.cartanMatrix.IsSimplyLaced) {i k m : ι}
+/-- **In a simply laced root pairing, two roots whose sum is a root have Cartan integer `-1`.** -/
+theorem pairingIn_eq_neg_one_of_isSimplyLaced (hsl : b.cartanMatrix.IsSimplyLaced) {i k m : ι}
     (hm : P.root m = P.root i + P.root k) : P.pairingIn ℤ i k = -1 := by
-  have := Fintype.ofFinite ι
-  let B := P.toInvariantForm
-  have hlen (x y : ι) := B.apply_root_root_eq_of_isSimplyLaced b hsl x y
-  have hexp := B.form_root_add_root_self k i
-  rw [add_comm (P.root k), ← hm, hlen m k, hlen i k] at hexp
-  have hz : (P.pairing i k + 1) * B.form (P.root k) (P.root k) = 0 := by
-    linear_combination -hexp
-  have hp : P.pairing i k = -1 := by
-    have := (mul_eq_zero.mp hz).resolve_right (B.ne_zero k)
-    linear_combination this
-  apply FaithfulSMul.algebraMap_injective ℤ R
-  rw [algebraMap_pairingIn, hp, map_neg, map_one]
+  have happ (r : ι) : P.pairingIn ℤ m r = P.pairingIn ℤ i r + P.pairingIn ℤ k r :=
+    FaithfulSMul.algebraMap_injective ℤ R <| by
+      simp only [map_add, algebraMap_pairingIn, ← root_coroot'_eq_pairing, hm]
+  have hm_self := happ m
+  have hi_self := happ i
+  have hk_self := happ k
+  rw [pairingIn_same, b.pairingIn_comm_of_isSimplyLaced hsl i m,
+    b.pairingIn_comm_of_isSimplyLaced hsl k m] at hm_self
+  rw [pairingIn_same, b.pairingIn_comm_of_isSimplyLaced hsl k i] at hi_self
+  rw [pairingIn_same] at hk_self
+  omega
 
 end Symmetry
 
@@ -223,9 +212,7 @@ private theorem constr_coroot'_apply_root (hsl : b.cartanMatrix.IsSimplyLaced) (
     (b.toWeightBasis.constr R fun k : b.support ↦ P.coroot' k) (P.root r) y = P.coroot' r y := by
   obtain ⟨f, hrf, hcf⟩ := b.exists_root_and_coroot_eq_sum_int_of_isSimplyLaced hsl r
   have hc : P.coroot' r y = ∑ k ∈ b.support, f k • P.coroot' k y := by
-    change P.toLinearMap y (P.coroot r) = ∑ k ∈ b.support, f k • P.toLinearMap y (P.coroot k)
-    rw [hcf, map_sum]
-    exact Finset.sum_congr rfl fun k _ ↦ map_zsmul _ _ _
+    simp only [coroot', hcf, map_sum, map_zsmul, LinearMap.sum_apply, LinearMap.smul_apply]
   rw [hrf, hc, map_sum, LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun k hk ↦ ?_
   have hbk : P.root k = b.toWeightBasis ⟨k, hk⟩ := (b.toWeightBasis_apply ⟨k, hk⟩).symm
@@ -240,10 +227,9 @@ noncomputable def simplyLacedForm (hsl : b.cartanMatrix.IsSimplyLaced) : P.Invar
     b.constr_coroot'_apply_root hsl r y
   have hflip : form = form.flip :=
     b.toWeightBasis.ext fun i ↦ b.toWeightBasis.ext fun j ↦ by
-      change form (b.toWeightBasis i) (b.toWeightBasis j) =
-        form (b.toWeightBasis j) (b.toWeightBasis i)
-      simp only [Base.toWeightBasis_apply, hleft, root_coroot'_eq_pairing]
-      exact b.pairing_symm_of_isSimplyLaced hsl j i
+      rw [LinearMap.BilinForm.flip_apply, Base.toWeightBasis_apply, Base.toWeightBasis_apply,
+        hleft, hleft, root_coroot'_eq_pairing, root_coroot'_eq_pairing]
+      exact b.pairing_comm_of_isSimplyLaced hsl j i
   have hsymm : LinearMap.IsSymm form := ⟨fun x y ↦ LinearMap.congr_fun₂ hflip x y⟩
   have hright (x : M) (r : ι) : form x (P.root r) = P.coroot' r x :=
     (hsymm.eq x (P.root r)).trans (hleft r x)
@@ -299,9 +285,7 @@ variable {ι K M N : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
   {P : RootPairing ι K M N} [Finite ι] [P.IsCrystallographic] [P.IsReduced] [P.IsRootSystem]
 
-/-- **Over a linearly ordered field, `simplyLacedForm` is positive definite.** On each irreducible
-component it is a positive multiple (`2 / P.RootForm (α, α) > 0`) of the positive-definite canonical
-root form. -/
+/-- **Over a linearly ordered field, `simplyLacedForm` is positive definite.** -/
 theorem posDef_simplyLacedForm (b : P.Base) (hsl : b.cartanMatrix.IsSimplyLaced) :
     (b.simplyLacedForm hsl).form.toQuadraticMap.PosDef := by
   have := Fintype.ofFinite ι
