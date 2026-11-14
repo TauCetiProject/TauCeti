@@ -96,7 +96,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   formula as a relation between `Β(1/2, a)` and `Β(a, a)`;
 * `ProbabilityTheory.beta_one_right`, `ProbabilityTheory.beta_one_left` — the values
   `Β(a, 1) = Β(1, a) = 1 / a`;
-* `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`;
+* `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`,
+  and `ProbabilityTheory.beta_add_one_right`, the same step in the second parameter;
 * `ProbabilityTheory.beta_add_one_sub_one_div` and `ProbabilityTheory.beta_add_two_sub_two_div` —
   the ratios `Β(a + 1, b - 1) / Β(a, b) = a / (b - 1)` and
   `Β(a + 2, b - 2) / Β(a, b) = a (a + 1) / ((b - 1) (b - 2))`;
@@ -1121,6 +1122,11 @@ theorem beta_add_one_left (ha : a ≠ 0) (hab : a + b ≠ 0) :
     Real.Gamma_add_one hab]
   field_simp
 
+/-- The unit step of Euler's beta function in its second parameter. -/
+theorem beta_add_one_right (hb : b ≠ 0) (hab : a + b ≠ 0) :
+    beta a (b + 1) = b / (a + b) * beta a b := by
+  rw [beta_comm, beta_add_one_left hb (by rwa [add_comm]), beta_comm, add_comm b a]
+
 /-- Shifting one unit from the second beta parameter to the first gives a rational ratio. -/
 theorem beta_add_one_sub_one_div (ha : 0 < a) (hb : 1 < b) :
     beta (a + 1) (b - 1) / beta a b = a / (b - 1) := by
@@ -1132,13 +1138,7 @@ theorem beta_add_one_sub_one_div (ha : 0 < a) (hb : 1 < b) :
     beta_add_one_left ha.ne' hab
   have hright : beta a b =
       (b - 1) / (a + (b - 1)) * beta a (b - 1) := by
-    calc
-      beta a b = beta b a := beta_comm a b
-      _ = beta ((b - 1) + 1) a := by ring_nf
-      _ = (b - 1) / ((b - 1) + a) * beta (b - 1) a :=
-        beta_add_one_left hb1 (by linarith)
-      _ = (b - 1) / (a + (b - 1)) * beta a (b - 1) := by
-        rw [beta_comm (b - 1) a, add_comm (b - 1) a]
+    simpa using beta_add_one_right (a := a) hb1 hab
   rw [hleft, hright]
   field_simp
 
