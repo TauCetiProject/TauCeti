@@ -22,7 +22,9 @@ uses monotonicity of the (outer) measure; the index runs along an arbitrary
 filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
 
 Convergence in mean square also implies convergence in measure, with integrability of the
-squared deviations required only eventually along the filter.
+squared deviations required only eventually along the filter. On finite measure spaces,
+continuous maps preserve convergence in measure of almost-everywhere strongly measurable
+sequences; the continuous map need not be uniformly continuous.
 
 ## Main results
 
@@ -135,5 +137,17 @@ theorem tendstoInMeasure_of_tendsto_integral_norm_sq {Ω E ι : Type*}
     (Eventually.of_forall fun _ ↦ zero_le) ?_
   filter_upwards [hint] with k hk
   exact TauCeti.meas_ge_le_integral_norm_sq_div_sq hk hε
+
+/-- Continuous maps preserve convergence in measure of sequences on a finite measure space.
+The target spaces need no measurable structures. -/
+theorem TendstoInMeasure.continuous_comp {Ω E F : Type*} {mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsFiniteMeasure μ] [PseudoEMetricSpace E] [PseudoEMetricSpace F]
+    {f : ℕ → Ω → E} {g : Ω → E} (h : TendstoInMeasure μ f atTop g)
+    (hf : ∀ n, AEStronglyMeasurable (f n) μ) {φ : E → F} (hφ : Continuous φ) :
+    TendstoInMeasure μ (fun n ω ↦ φ (f n ω)) atTop (fun ω ↦ φ (g ω)) := by
+  refine (exists_seq_tendstoInMeasure_atTop_iff
+    (fun n ↦ hφ.comp_aestronglyMeasurable (hf n))).2 fun ns hns ↦ ?_
+  obtain ⟨ms, hms, hm⟩ := (h.comp hns.tendsto_atTop).exists_seq_tendsto_ae
+  exact ⟨ms, hms, hm.mono fun ω hω ↦ (hφ.tendsto (g ω)).comp hω⟩
 
 end MeasureTheory
