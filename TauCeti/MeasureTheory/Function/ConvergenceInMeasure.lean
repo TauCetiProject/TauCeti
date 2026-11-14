@@ -26,6 +26,8 @@ squared deviations required only eventually along the filter.
 
 ## Main results
 
+* `MeasureTheory.TendstoInMeasure.add`: pointwise sums of functions converging in measure converge
+  in measure to the sum of the limits.
 * `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
   implies convergence in measure for any measure and filter.
 * `TauCeti.tendstoInMeasure_of_tendsto_measure_rate_lt_edist`: the `edist`
@@ -117,7 +119,29 @@ end TauCeti
 
 namespace MeasureTheory
 
-open Filter Topology
+open Filter ENNReal Topology
+
+/-- Pointwise sums of functions converging in measure converge in measure to the sum of the
+limits, for any measure and filter and without measurability hypotheses. -/
+theorem TendstoInMeasure.add {Ω E ι : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [SeminormedAddCommGroup E] {l : Filter ι} {f₁ f₂ : ι → Ω → E} {g₁ g₂ : Ω → E}
+    (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂) :
+    TendstoInMeasure μ (fun i ω ↦ f₁ i ω + f₂ i ω) l (fun ω ↦ g₁ ω + g₂ ω) := by
+  refine tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_
+  have hhalf : 0 < ε / 2 := half_pos hε
+  have hsum : Tendsto (fun i ↦ μ {ω | ε / 2 ≤ ‖f₁ i ω - g₁ ω‖} +
+      μ {ω | ε / 2 ≤ ‖f₂ i ω - g₂ ω‖}) l (𝓝 0) := by
+    simpa using ((tendstoInMeasure_iff_norm.1 h₁) _ hhalf).add
+      ((tendstoInMeasure_iff_norm.1 h₂) _ hhalf)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
+    (fun _ ↦ zero_le) fun i ↦ ?_
+  refine (measure_mono fun ω hω ↦ ?_).trans (measure_union_le _ _)
+  simp only [Set.mem_union, Set.mem_ofPred_eq] at hω ⊢
+  by_contra hnot
+  push Not at hnot
+  have htri : ‖f₁ i ω + f₂ i ω - (g₁ ω + g₂ ω)‖ ≤ ‖f₁ i ω - g₁ ω‖ + ‖f₂ i ω - g₂ ω‖ := by
+    simpa only [add_sub_add_comm] using norm_add_le (f₁ i ω - g₁ ω) (f₂ i ω - g₂ ω)
+  linarith
 
 /-- Convergence in mean square implies convergence in measure, for any measure and filter.
 Integrability of the squared deviations is needed only eventually. -/
