@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
-public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
+public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
+public import TauCeti.Combinatorics.Graph.OfSimpleGraph
 
 /-!
 # Walks in graphs constructed from simple graphs
@@ -75,6 +77,20 @@ theorem toGraph_reverse (p : H.Walk x y) : p.reverse.toGraph = p.toGraph.reverse
   induction p with
   | nil => simp
   | cons h p ih => simp [ih, Graph.IsLink.toWalk_eq_cons, Sym2.eq_swap]
+
+/-- The graph traced by the edge-labelled walk corresponding to a walk is the multigraph of the
+subgraph traced by that walk. -/
+@[simp]
+theorem walkGraph_toGraph (p : H.Walk x y) :
+    (Graph.ofSimpleGraph H).walkGraph p.toGraph = p.toSubgraph.toGraph :=
+  Graph.ext (by simp) fun e a b ↦ by
+    simp only [Graph.Walk.walkGraph_isLink, Graph.ofSimpleGraph_isLink, edges_toGraph,
+      SimpleGraph.Subgraph.toGraph_isLink, adj_toSubgraph_iff_mem_edges]
+    constructor
+    · rintro ⟨⟨rfl, -⟩, h⟩
+      exact ⟨rfl, h⟩
+    · rintro ⟨rfl, h⟩
+      exact ⟨⟨rfl, p.edges_subset_edgeSet h⟩, h⟩
 
 end Walk
 
@@ -153,6 +169,11 @@ theorem toGraph_toSimpleGraph (p : (Graph.ofSimpleGraph H).Walk x y) :
       rw [Graph.ofSimpleGraph_isLink] at h
       rcases h with ⟨rfl, _⟩
       simp [ih]
+
+@[simp]
+theorem toGraph_toSubgraph_toSimpleGraph (p : (Graph.ofSimpleGraph H).Walk x y) :
+    p.toSimpleGraph.toSubgraph.toGraph = (Graph.ofSimpleGraph H).walkGraph p := by
+  rw [← SimpleGraph.Walk.walkGraph_toGraph, toGraph_toSimpleGraph]
 
 @[simp]
 theorem toSimpleGraph_reverse (p : (Graph.ofSimpleGraph H).Walk x y) :
