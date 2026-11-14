@@ -54,7 +54,8 @@ self-pairings modulo `2 π ^ (j + 1)` when `N (j + 1)` is of type II
 symmetric `E`, with even diagonal when `N (j + 1)` is of type II. The Gram matrix `G'` has a
 symmetric partner `H` with `G' * H = π ^ j • 1`, with even diagonal when `N j` is of type II
 (`LinearMap.BilinForm.IsJordanSplitting.exists_basis_restrict_biSup_Iic`), and
-`LinearMap.BilinForm.IsSymm.exists_sq_mul_det_toMatrix_eq_of_dvd_sub` compares the determinants.
+`LinearMap.BilinForm.IsSymm.exists_sq_mul_det_toMatrix_eq_of_dvd_sub`, with `a = π ^ j` and
+`r = π`, compares the determinants.
 
 ## References
 
@@ -100,16 +101,18 @@ theorem IsJordanSplitting.exists_sq_mul_det_toMatrix_eq_of_equivalent [Module.Fr
   have : Module.Free R M' := .of_equiv ε.toLinearEquiv
   have : Module.Finite R M' := .equiv ε.toLinearEquiv
   have hB' : B'.IsSymm := ⟨fun x y ↦ by rw [← ε.symm.map_app, ← ε.symm.map_app, hB.eq]⟩
-  obtain ⟨ι₀, _, _, b₀, H, hGH, hHs, hHd⟩ := h'.exists_basis_restrict_biSup_Iic hB' hπ j
+  obtain ⟨ι₀, _, _, b₀, H, hGH, -, hHd⟩ := h'.exists_basis_restrict_biSup_Iic hB' hπ j
   -- Project along the constituents of index above `j`, after pulling back by the isometry.
-  refine (hB.restrict _).exists_sq_mul_det_toMatrix_eq_of_dvd_sub (hB'.restrict _) hπ' h2 b₀ hGH
-    hHs ((⨆ i ∈ Set.Iic j, N i).projectionOnto _ (h.isCompl_biSup_Iic_biSup_Ici j) ∘ₗ
-      ε.symm.toLinearMap ∘ₗ Submodule.subtype _) (fun x y ↦ ?_) ?_ b b'
-  · simpa [ε.symm.map_app] using h.pow_succ_dvd_sub_apply_projectionOnto j (ε.symm x) (ε.symm y)
+  refine (hB.restrict _).exists_sq_mul_det_toMatrix_eq_of_dvd_sub (hB'.restrict _)
+    (pow_mem hπ' j) h2 b₀ hGH ((⨆ i ∈ Set.Iic j, N i).projectionOnto _
+      (h.isCompl_biSup_Iic_biSup_Ici j) ∘ₗ ε.symm.toLinearMap ∘ₗ Submodule.subtype _)
+    (fun x y ↦ ?_) ?_ b b'
+  · simpa [ε.symm.map_app, ← pow_succ] using
+      h.pow_succ_dvd_sub_apply_projectionOnto j (ε.symm x) (ε.symm y)
   · rcases htype with heven | hnext
     · exact .inl (hHd h2 (h.forall_two_mul_pow_dvd_of_equivalent h' hBB' hπ' h2 heven))
     · refine .inr fun x ↦ ?_
-      simpa [ε.symm.map_app] using
+      simpa [ε.symm.map_app, ← pow_succ] using
         h.two_mul_pow_succ_dvd_sub_apply_projectionOnto h2 hnext (ε.symm x)
 
 end LinearMap.BilinForm

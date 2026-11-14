@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
-import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Even.Henselian
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
