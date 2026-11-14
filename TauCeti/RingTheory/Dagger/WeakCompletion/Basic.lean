@@ -325,12 +325,8 @@ theorem weakCompletion_eq_top_of_finite [Module.Finite O S] : weakCompletion π 
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := O) (M := S)
   let x : s → S := (↑)
   have hgen : Algebra.adjoin O (Set.range x) = ⊤ := by
-    rw [eq_top_iff]
-    intro y _
-    have hy : y ∈ Submodule.span O (Set.range x) := by
-      simp [x, Subtype.range_coe_subtype, hs]
-    exact (Submodule.span_le (p := (Algebra.adjoin O (Set.range x)).toSubmodule)).mpr
-      Algebra.subset_adjoin hy
+    rw [← Algebra.adjoin_span]
+    simp [x, hs]
   rw [mem_weakCompletion_iff π hgen]
   let I : Ideal S := Ideal.span {algebraMap O S π}
   obtain ⟨f, rfl⟩ := AdicCompletion.mk_surjective I S z

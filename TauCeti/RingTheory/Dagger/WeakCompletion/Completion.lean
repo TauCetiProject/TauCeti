@@ -65,14 +65,18 @@ private theorem evalₐ_adicCompletionEquivAux (n : ℕ)
   apply (quotientPowEquiv π (S := S) n).symm.injective
   simpa only [AlgEquiv.symm_apply_apply] using (h (adicCompletionEquivAux π S z)).symm
 
+private theorem adicCompletionEquivAux_of (z : weakCompletion π S) :
+    adicCompletionEquivAux π S (AdicCompletion.of _ _ z) = (z : piAdicCompletion π S) := by
+  apply AdicCompletion.ext_evalₐ
+  intro n
+  rw [evalₐ_adicCompletionEquivAux, AdicCompletion.evalₐ_of, quotientPowEquiv_mk, eval_eq]
+
 private theorem adicCompletionEquivAux_algebraMap (z : weakCompletion π S) :
     adicCompletionEquivAux π S
       (algebraMap (weakCompletion π S) (piAdicCompletion π (weakCompletion π S)) z) =
       (z : piAdicCompletion π S) := by
   rw [AdicCompletion.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply]
-  apply AdicCompletion.ext_evalₐ
-  intro n
-  rw [evalₐ_adicCompletionEquivAux, AdicCompletion.evalₐ_of, quotientPowEquiv_mk, eval_eq]
+  exact adicCompletionEquivAux_of π z
 
 variable (S) in
 /-- The parameter-adic completion of the weak completion `S†` is canonically the original
@@ -94,10 +98,8 @@ theorem evalₐ_adicCompletionEquiv (n : ℕ)
 /-- The comparison fixes every weakly completed element in the ambient completion. -/
 @[simp]
 theorem adicCompletionEquiv_of (z : weakCompletion π S) :
-    adicCompletionEquiv π S (AdicCompletion.of _ _ z) = (z : piAdicCompletion π S) := by
-  apply AdicCompletion.ext_evalₐ
-  intro n
-  rw [evalₐ_adicCompletionEquiv, AdicCompletion.evalₐ_of, quotientPowEquiv_mk, eval_eq]
+    adicCompletionEquiv π S (AdicCompletion.of _ _ z) = (z : piAdicCompletion π S) :=
+  adicCompletionEquivAux_of π z
 
 /-- The comparison extends the weak-completion inclusion along the algebra map. -/
 theorem adicCompletionEquiv_algebraMap (z : weakCompletion π S) :
