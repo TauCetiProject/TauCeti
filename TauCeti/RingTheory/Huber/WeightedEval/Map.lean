@@ -200,10 +200,9 @@ section Closed
 variable {k : ℕ} {A B S : Type*} [CommSemiring A] [CommSemiring B] [TopologicalSpace B]
   [SetLike S B] [SubsemiringClass S B]
 
-/-- **Evaluation stays in a closed subsemiring.** If the coefficients of `F`, mapped along `φ`,
-and the entries of `b` lie in a closed subsemiring `s`, then so does `F(b)`: every term of the
-evaluation lies in `s`, and `s` is closed under the sum. When the term family is not summable the
-evaluation is the junk value `0`, which also lies in `s`. -/
+/-- **Evaluation stays in a closed subsemiring.** If the coefficients of `f`, mapped along `φ`,
+and the entries of `b` lie in a closed subsemiring `s`, then so does `weightedEval φ b f`. When the
+term family is not summable the evaluation is the junk value `0`, which also lies in `s`. -/
 theorem weightedEval_mem {s : S} (hs : IsClosed (s : Set B)) {φ : A →+* B} {b : Fin k → B}
     {f : MvPowerSeries (Fin k) A} (hf : ∀ ν, φ (MvPowerSeries.coeff ν f) ∈ s)
     (hb : ∀ i, b i ∈ s) : weightedEval φ b f ∈ s := by
