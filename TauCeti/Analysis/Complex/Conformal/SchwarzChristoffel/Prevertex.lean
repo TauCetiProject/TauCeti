@@ -173,13 +173,8 @@ theorem tendsto_sub_mul_nhdsNE_of_sector {φ f : ℂ → ℂ} {x r β : ℝ} {Ω
       (by simp [g]) ((hcont.sub continuousOn_const).div_const b)
       ((hholo.sub_const (f x)).div_const b) hginj hsector
       (fun z hz hzim hgz => hrays z hz hzim (fun heq => hgz (by simp [g, heq])))
-  have hderiv : deriv g = fun z => deriv f z / b := by
-    ext z
-    simp only [g, deriv_div_const, deriv_sub_const]
-  have hφg : EqOn φ (logDeriv (deriv g)) (upperHalfPlaneSet ∩ Ω) := by
-    intro z hz
-    rw [hderiv, hφf hz]
-    simp only [div_eq_mul_inv, logDeriv_mul_const z b⁻¹ (inv_ne_zero hb)]
+  have hφg : EqOn φ (logDeriv (deriv g)) (upperHalfPlaneSet ∩ Ω) := fun z hz =>
+    (hφf hz).trans (logDeriv_deriv_sub_div_const f (f x) hb z).symm
   apply tendsto_sub_mul_nhdsNE_of_eqOn_add_cpow (f := g) (h := h) (w := 0)
     hr hφ hφconj hφg hΩopen hx hh hhx hdh
   · intro z hz
@@ -249,13 +244,8 @@ theorem tendsto_sub_mul_nhdsNE_of_eqOn_div {φ f g : ℂ → ℂ} {x r β : ℝ}
     simp only [zero_add, cpow_neg]
     rw [hgz, hgf ⟨hz.2, hz.1⟩, inv_div]
   -- ... and its pre-Schwarzian derivative is that of `f`.
-  have hderiv : deriv (fun z => (f z - c) / b) = fun z => deriv f z / b := by
-    ext z
-    simp only [deriv_div_const, deriv_sub_const]
-  have hφF : EqOn φ (logDeriv (deriv fun z => (f z - c) / b)) (upperHalfPlaneSet ∩ Ω) := by
-    intro z hz
-    rw [hderiv, hφf hz]
-    simp only [div_eq_mul_inv, logDeriv_mul_const z b⁻¹ (inv_ne_zero hb)]
+  have hφF : EqOn φ (logDeriv (deriv fun z => (f z - c) / b)) (upperHalfPlaneSet ∩ Ω) :=
+    fun z hz => (hφf hz).trans (logDeriv_deriv_sub_div_const f c hb z).symm
   exact tendsto_sub_mul_nhdsNE_of_eqOn_add_cpow hr hφ hφconj hφF hΩopen hx hh hhx hdh
     (fun z hz => mem_slitPlane_iff.mpr (Or.inl (hright z hz.2 hz.1)))
     (neg_ne_zero.mpr (ofReal_ne_zero.mpr hβ.1.ne')) hpowF
@@ -319,14 +309,10 @@ theorem tendsto_sub_mul_nhdsNE_of_eqOn_exp {φ f g : ℂ → ℂ} {x r : ℝ} {�
   have hlog := tendsto_sub_mul_logDeriv_deriv_of_eqOn_exp (hG.analyticAt (hΩopen.mem_nhds hx))
     hGx hdG hs (hF.mono fun z hz => ⟨hz.2, hz.1⟩) hexp
   -- ... and its pre-Schwarzian derivative is that of `f`.
-  have hderiv : deriv (fun z => (f z - c) / b) = fun z => deriv f z / b := by
-    ext z
-    simp only [deriv_div_const, deriv_sub_const]
   have hlim : Tendsto (fun z => (z - (x : ℂ)) * φ z) (𝓝[upperHalfPlaneSet ∩ Ω] (x : ℂ))
       (𝓝 (-1)) := hlog.congr' (by
     filter_upwards [self_mem_nhdsWithin] with z hz
-    rw [hderiv, hφf hz]
-    simp only [div_eq_mul_inv, logDeriv_mul_const z b⁻¹ (inv_ne_zero hb)])
+    rw [logDeriv_deriv_sub_div_const f c hb z, hφf hz])
   rw [inter_comm, nhdsWithin_inter_of_mem (mem_nhdsWithin_of_mem_nhds (hΩopen.mem_nhds hx))]
     at hlim
   exact tendsto_sub_mul_nhdsNE_of_tendsto_nhdsWithin_im_pos hr hφ hφconj hlim
