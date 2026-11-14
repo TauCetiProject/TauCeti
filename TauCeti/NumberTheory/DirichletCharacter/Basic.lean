@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 import TauCeti.Data.ZMod.Units
+import TauCeti.NumberTheory.MulChar.Basic
 
 /-!
 # Basic facts about Dirichlet characters
@@ -40,6 +41,13 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   `χ` factors through `N / p` exactly when `v_p(cond χ) < v_p(N)`.
 * `DirichletCharacter.exists_eq_comp_unitsMap_of_factorsThrough`: a factorisation of
   `MulChar.ofUnitHom χ` through `d`, read back on unit homomorphisms as `χ = χ₀ ∘ unitsMap`.
+* `DirichletCharacter.changeLevel_primitiveCharacter_toUnitHom_comp_unitsMap`,
+  `DirichletCharacter.eq_changeLevel_primitiveCharacter_toUnitHom_of_comp_unitsMap_eq`,
+  `DirichletCharacter.conductor_dvd_and_eq_changeLevel_primitiveCharacter`: a unit homomorphism
+  modulo `M ∣ N` pulling back to `χ` modulo `N` is uniquely the raise of the primitive character of
+  `χ` to level `M`, together with the trivial-character specialisations
+  `DirichletCharacter.conductor_ofUnitHom_one` and
+  `DirichletCharacter.changeLevel_primitiveCharacter_ofUnitHom_one_toUnitHom`.
 * `DirichletCharacter.factorsThroughEquiv`: the characters at level `N` factoring through
   `d ∣ N` correspond to the characters modulo `d`.
 * `DirichletCharacter.changeLevel_natCast_of_coprime`: changing the level preserves the values
@@ -237,6 +245,59 @@ theorem exists_eq_comp_unitsMap_of_factorsThrough {R : Type*} [CommMonoidWithZer
   have h := congrArg MulChar.toUnitHom hfac.eq_changeLevel
   rw [changeLevel_toUnitHom] at h
   simpa using h
+
+/-- Raising the primitive character of `MulChar.ofUnitHom χ` to an intermediate divisor `M ∣ N`
+divisible by its conductor and pulling back along `ZMod.unitsMap` recovers `χ`. -/
+theorem changeLevel_primitiveCharacter_toUnitHom_comp_unitsMap {R : Type*}
+    [CommMonoidWithZero R] {N M : ℕ} (hMN : M ∣ N) {χ : (ZMod N)ˣ →* Rˣ}
+    (hc : conductor (MulChar.ofUnitHom χ) ∣ M) :
+    ((changeLevel hc (primitiveCharacter (MulChar.ofUnitHom χ))).toUnitHom).comp
+        (ZMod.unitsMap hMN) = χ := by
+  rw [← changeLevel_toUnitHom, ← changeLevel_trans, changeLevel_primitiveCharacter,
+    MulChar.toUnitHom_eq, MulChar.ofUnitHom_eq, Equiv.apply_symm_apply]
+
+/-- At an intermediate divisor `M ∣ N` of a nonzero level `N`, a unit homomorphism `ψ` modulo `M`
+that pulls back to `χ` modulo `N` equals the raise of the primitive character of `χ` to level
+`M`. -/
+theorem eq_changeLevel_primitiveCharacter_toUnitHom_of_comp_unitsMap_eq {R : Type*}
+    [CommMonoidWithZero R] {N M : ℕ} [NeZero N] (hMN : M ∣ N) {χ : (ZMod N)ˣ →* Rˣ}
+    {ψ : (ZMod M)ˣ →* Rˣ} (hψ : ψ.comp (ZMod.unitsMap hMN) = χ)
+    (hc : conductor (MulChar.ofUnitHom χ) ∣ M) :
+    ψ = (changeLevel hc (primitiveCharacter (MulChar.ofUnitHom χ))).toUnitHom :=
+  (MonoidHom.cancel_right (ZMod.unitsMap_surjective hMN)).mp <| by
+    rw [hψ, changeLevel_primitiveCharacter_toUnitHom_comp_unitsMap hMN hc]
+
+/-- If a unit homomorphism `ψ` modulo `M ∣ N` (`N ≠ 0`) pulls back to `χ` modulo `N`, then the
+conductor of `MulChar.ofUnitHom χ` divides `M` and `ψ` is the raise of the primitive character of
+`χ` to level `M`. -/
+theorem conductor_dvd_and_eq_changeLevel_primitiveCharacter {R : Type*}
+    [CommMonoidWithZero R] {N M : ℕ} [NeZero N] (hMN : M ∣ N) {χ : (ZMod N)ˣ →* Rˣ}
+    {ψ : (ZMod M)ˣ →* Rˣ} (hψ : ψ.comp (ZMod.unitsMap hMN) = χ) :
+    ∃ hc : conductor (MulChar.ofUnitHom χ) ∣ M,
+      ψ = (changeLevel hc (primitiveCharacter (MulChar.ofUnitHom χ))).toUnitHom := by
+  have hc : conductor (MulChar.ofUnitHom χ) ∣ M :=
+    conductor_dvd_of_mem_conductorSet _ <| by
+      simpa only [mem_conductorSet_iff, changeLevel_def, MulChar.toUnitHom_eq,
+        MulChar.ofUnitHom_eq, Equiv.apply_symm_apply, ← hψ] using
+        changeLevel_factorsThrough (MulChar.ofUnitHom ψ) hMN
+  exact ⟨hc, eq_changeLevel_primitiveCharacter_toUnitHom_of_comp_unitsMap_eq hMN hψ hc⟩
+
+/-- The Dirichlet character attached to the trivial unit homomorphism `1` has conductor `1`. -/
+theorem conductor_ofUnitHom_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N] :
+    conductor (MulChar.ofUnitHom (1 : (ZMod N)ˣ →* Rˣ)) = 1 := by
+  rw [MulChar.ofUnitHom_one, conductor_one]
+
+/-- Raising the primitive character of the trivial unit homomorphism `1` to any level `M` gives
+the trivial unit homomorphism `1`. -/
+theorem changeLevel_primitiveCharacter_ofUnitHom_one_toUnitHom {R : Type*}
+    [CommMonoidWithZero R] {N M : ℕ} [NeZero N]
+    (hdvd : conductor (MulChar.ofUnitHom (1 : (ZMod N)ˣ →* Rˣ)) ∣ M) :
+    (changeLevel hdvd (primitiveCharacter (MulChar.ofUnitHom (1 : (ZMod N)ˣ →* Rˣ)))).toUnitHom =
+      1 := by
+  revert hdvd
+  rw [MulChar.ofUnitHom_one]
+  intro hdvd
+  rw [primitiveCharacter_one, changeLevel_one, MulChar.toUnitHom_one]
 
 /-- **Characters factoring through a divisor.** For `d ∣ N`, the Dirichlet characters at level
 `N` which factor through `d` are exactly the raises of the characters modulo `d`:

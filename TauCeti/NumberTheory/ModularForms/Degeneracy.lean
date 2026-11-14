@@ -110,9 +110,10 @@ the lower level. The `q`-expansion results go up only.
   `CuspForm.isSupportedOnDvd_qExpansion_levelRaise`: the same fact as a support statement — the
   `q`-expansion of `V_d f` is supported on the multiples of `d`. This is the forward half of the
   Atkin–Lehner description of the old subspace.
-* `ModularForm.linearIndependent_levelRaise`, `CuspForm.linearIndependent_levelRaise`: the
-  level-raises `V_{d i} f` at pairwise distinct positive indices `d i` of a modular form with a
-  nonzero positive-degree `q`-expansion coefficient (in particular, of any nonzero cusp form) are
+* `ModularForm.linearIndependent_levelRaise`, `CuspForm.linearIndependent_levelRaise`: when
+  `[𝒢'.HasDetOne]` and `(1 : ℝ) ∈ 𝒢.strictPeriods`, the level-raises `V_{d i} f` in `M_k(𝒢')`
+  (or `S_k(𝒢')`) at pairwise distinct positive indices `d i` of a modular form with a nonzero
+  positive-degree `q`-expansion coefficient (in particular, of any nonzero cusp form) are
   `ℂ`-linearly independent.
 
 The old subspace is spanned by the images of the `V_d`.
@@ -1345,31 +1346,59 @@ theorem _root_.CuspForm.isSupportedOnDvd_qExpansion_levelRaise [𝒢'.HasDetOne]
   exact PowerSeries.isSupportedOnDvd_expand (NeZero.ne d) _
 
 /-- **Level-raises of a nonconstant modular form at distinct indices are linearly independent.**
-If `f` has a nonzero `q`-expansion coefficient of positive degree and `d : ι → ℕ` is an injective
-family of positive integers, then the level-raises `V_{d i} f` in `M_k(𝒢')` are `ℂ`-linearly
-independent. -/
+Assuming `[𝒢'.HasDetOne]` and `(1 : ℝ) ∈ 𝒢.strictPeriods`, if `f` has a nonzero `q`-expansion
+coefficient of positive degree and `d : ι → ℕ` is an injective family of positive integers with
+`𝒢' ≤ ConjAct.toConjAct (scaleGL (d i))⁻¹ • 𝒢` for every `i`, then the level-raises `V_{d i} f` in
+`M_k(𝒢')` are `ℂ`-linearly independent. -/
 theorem _root_.ModularForm.linearIndependent_levelRaise [𝒢'.HasDetOne]
-    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (h𝒢' : (1 : ℝ) ∈ 𝒢'.strictPeriods)
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
     {ι : Type*} {d : ι → ℕ} [∀ i, NeZero (d i)] (hd : Function.Injective d)
     (hle : ∀ i, 𝒢' ≤ ConjAct.toConjAct (scaleGL (d i))⁻¹ • 𝒢)
     {f : ModularForm 𝒢 k} (hf : ∃ n ≠ 0, (qExpansion 1 f).coeff n ≠ 0) :
     LinearIndependent ℂ (fun i ↦ ModularForm.levelRaise (d i) (hle i) f) := by
-  refine LinearIndependent.of_comp (ModularForm.qExpansionLinearMap one_pos h𝒢' k) ?_
-  have hcomp : (ModularForm.qExpansionLinearMap one_pos h𝒢' k ∘
-      fun i ↦ ModularForm.levelRaise (d i) (hle i) f) =
-      fun i ↦ (qExpansion 1 f).expand (d i) (NeZero.ne (d i)) :=
-    funext fun i ↦ (ModularForm.qExpansionLinearMap_apply one_pos h𝒢' _).trans
-      (ModularForm.qExpansion_levelRaise h𝒢 (hle i) f)
-  rw [hcomp]
-  exact (PowerSeries.linearIndependent_expand_of_exists_coeff_ne_zero hf).comp
-    (fun i ↦ (⟨d i, NeZero.pos (d i)⟩ : ℕ+)) fun _ _ h ↦ hd (congrArg Subtype.val h)
+  -- Evaluate on `ℋ := (zpowers T).map (mapGL ℝ)`, which has strict period `1` and lies in every
+  -- conjugate `diag(d i, 1)⁻¹ 𝒢 diag(d i, 1)` because `(d i : ℝ) ∈ 𝒢.strictPeriods`.
+  let ℋ : Subgroup (GL (Fin 2) ℝ) := (Subgroup.zpowers ModularGroup.T).map (mapGL ℝ)
+  have hT : mapGL ℝ ModularGroup.T = GeneralLinearGroup.upperRightHom (1 : ℝ) := by
+    apply Units.ext
+    ext a b
+    fin_cases a <;> fin_cases b <;> simp [ModularGroup.coe_T, GeneralLinearGroup.upperRightHom]
+  have hℋ : (1 : ℝ) ∈ ℋ.strictPeriods :=
+    Subgroup.mem_strictPeriods_iff.mpr ⟨ModularGroup.T, Subgroup.mem_zpowers _, hT⟩
+  have hleℋ (i : ι) : ℋ ≤ ConjAct.toConjAct (scaleGL (d i))⁻¹ • 𝒢 := by
+    rw [Subgroup.map_le_iff_le_comap, Subgroup.zpowers_le, Subgroup.mem_comap, hT,
+      ← Subgroup.mem_strictPeriods_iff,
+      Subgroup.mem_strictPeriods_conj_of_upperTriangular (by simp)]
+    simpa using nsmul_mem h𝒢 (d i)
+  have hliℋ : LinearIndependent ℂ (fun i ↦ ModularForm.levelRaise (d i) (hleℋ i) f) := by
+    refine LinearIndependent.of_comp (ModularForm.qExpansionLinearMap one_pos hℋ k) ?_
+    have hcomp : (ModularForm.qExpansionLinearMap one_pos hℋ k ∘
+        fun i ↦ ModularForm.levelRaise (d i) (hleℋ i) f) =
+        fun i ↦ (qExpansion 1 f).expand (d i) (NeZero.ne (d i)) :=
+      funext fun i ↦ (ModularForm.qExpansionLinearMap_apply one_pos hℋ _).trans
+        (ModularForm.qExpansion_levelRaise h𝒢 (hleℋ i) f)
+    rw [hcomp]
+    exact (PowerSeries.linearIndependent_expand_of_exists_coeff_ne_zero hf).comp
+      (fun i ↦ (⟨d i, NeZero.pos (d i)⟩ : ℕ+)) fun _ _ h ↦ hd (congrArg Subtype.val h)
+  let evalℋ : ModularForm ℋ k →ₗ[ℂ] (ℍ → ℂ) :=
+    { toFun := DFunLike.coe, map_add' := fun _ _ ↦ rfl, map_smul' := fun _ _ ↦ rfl }
+  let eval𝒢' : ModularForm 𝒢' k →ₗ[ℂ] (ℍ → ℂ) :=
+    { toFun := DFunLike.coe, map_add' := fun _ _ ↦ rfl, map_smul' := fun _ _ ↦ rfl }
+  have hli_fn := hliℋ.map' evalℋ (LinearMap.ker_eq_bot.mpr DFunLike.coe_injective)
+  refine LinearIndependent.of_comp eval𝒢' ?_
+  have heq : (eval𝒢' ∘ fun i ↦ ModularForm.levelRaise (d i) (hle i) f) =
+      evalℋ ∘ fun i ↦ ModularForm.levelRaise (d i) (hleℋ i) f := by
+    ext i τ
+    simp [eval𝒢', evalℋ]
+  rwa [heq]
 
-/-- **Level-raises of a nonzero cusp form at distinct indices are linearly independent.** A nonzero
-cusp form vanishes at `∞`, so its `q`-expansion has a nonzero coefficient of positive degree, and
-its level-raises `V_{d i} f` at pairwise distinct positive indices `d i` are `ℂ`-linearly
-independent. -/
+/-- **Level-raises of a nonzero cusp form at distinct indices are linearly independent.**
+Assuming `[𝒢'.HasDetOne]` and `(1 : ℝ) ∈ 𝒢.strictPeriods`, if `f : CuspForm 𝒢 k` is nonzero and
+`d : ι → ℕ` is an injective family of positive integers with
+`𝒢' ≤ ConjAct.toConjAct (scaleGL (d i))⁻¹ • 𝒢` for every `i`, then the level-raises `V_{d i} f` in
+`S_k(𝒢')` are `ℂ`-linearly independent. -/
 theorem _root_.CuspForm.linearIndependent_levelRaise [𝒢'.HasDetOne]
-    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (h𝒢' : (1 : ℝ) ∈ 𝒢'.strictPeriods)
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
     {ι : Type*} {d : ι → ℕ} [∀ i, NeZero (d i)] (hd : Function.Injective d)
     (hle : ∀ i, 𝒢' ≤ ConjAct.toConjAct (scaleGL (d i))⁻¹ • 𝒢)
     {f : CuspForm 𝒢 k} (hf : f ≠ 0) :
@@ -1384,13 +1413,9 @@ theorem _root_.CuspForm.linearIndependent_levelRaise [𝒢'.HasDetOne]
   refine LinearIndependent.of_comp CuspForm.toModularFormₗ ?_
   have hcomp : (CuspForm.toModularFormₗ ∘ fun i ↦ CuspForm.levelRaise (d i) (hle i) f) =
       fun i ↦ ModularForm.levelRaise (d i) (hle i) (f : ModularForm 𝒢 k) :=
-    funext fun i ↦ DFunLike.ext _ _ fun τ ↦ by
-      rw [Function.comp_apply, CuspForm.toModularFormₗ_apply,
-        congrFun (CuspForm.coe_levelRaise (hle i) f) τ,
-        congrFun (ModularForm.coe_levelRaise (hle i) (f : ModularForm 𝒢 k)) τ]
-      rfl
+    funext fun i ↦ DFunLike.ext _ _ fun τ ↦ by simp
   rw [hcomp]
-  exact _root_.ModularForm.linearIndependent_levelRaise h𝒢 h𝒢' hd hle hpos
+  exact _root_.ModularForm.linearIndependent_levelRaise h𝒢 hd hle hpos
 
 end QExpansion
 

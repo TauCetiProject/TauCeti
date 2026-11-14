@@ -39,9 +39,9 @@ field with `q` elements, the iterates of `expand q` are the `q ^ j`-th power map
 * `PowerSeries.X_pow_dvd_expand_sub_C_constantCoeff`: an expanded series agrees with its
   constant coefficient modulo the corresponding power of `X`.
 * `PowerSeries.linearIndependent_expand_of_exists_coeff_ne_zero`,
-  `PowerSeries.linearIndependent_expand_iff`: the expansions `f (X ^ d)` over `d : ℕ+` are
-  linearly independent when `f` has a nonzero coefficient of positive degree (and conversely over a
-  domain).
+  `PowerSeries.linearIndependent_expand_iff`: over a commutative ring without zero divisors, the
+  expansions `f (X ^ d)` over `d : ℕ+` are linearly independent when `f` has a nonzero coefficient
+  of positive degree, and conversely over an integral domain.
 * `PowerSeries.hasProd_expand`, `PowerSeries.multipliable_expand`,
   `PowerSeries.coeff_tprod_expand`: the infinite product of the expanded series and its
   coefficients, when `{c | m c ≤ n}` is finite for every `n`.
@@ -221,11 +221,12 @@ theorem X_pow_dvd_expand_sub_C_constantCoeff (p : ℕ) (hp : p ≠ 0) (f : R⟦X
 
 /-- **Linear independence of expanded power series.** Over a commutative ring without zero divisors,
 if `f` has a nonzero coefficient of positive degree, then the expanded series `f (X ^ d)` for
-`d : ℕ+` are `R`-linearly independent: at the product `d₀ * n₀` of the least index in a nontrivial
-relation and the least positive degree of `f`, only `f (X ^ d₀)` contributes. -/
+`d : ℕ+` are `R`-linearly independent. -/
 theorem linearIndependent_expand_of_exists_coeff_ne_zero [NoZeroDivisors R] {f : R⟦X⟧}
     (hf : ∃ n ≠ 0, coeff n f ≠ 0) :
     LinearIndependent R (fun d : ℕ+ ↦ expand d d.ne_zero f) := by
+  -- At the product `d₀ * n₀` of the least index in a nontrivial relation and the least positive
+  -- degree of `f`, only `f (X ^ d₀)` contributes.
   classical
   let n₀ := Nat.find hf
   obtain ⟨hn₀, hfn₀⟩ := Nat.find_spec hf

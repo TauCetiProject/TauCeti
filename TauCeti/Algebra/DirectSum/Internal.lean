@@ -9,6 +9,7 @@ public import Mathlib.Algebra.DirectSum.Decomposition
 public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.LinearAlgebra.Pi
+import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
 # Internal direct sums from explicit equivalences
@@ -48,7 +49,9 @@ they agree on the homogeneous single-coordinate functions `Pi.single x α`,
 and `DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types.
 
 `DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition to any
-submodule that contains the canonical components of each of its elements.
+submodule that contains the canonical components of each of its elements, and over a ring
+`DirectSum.isInternal_submodule_comap_subtype` turns a supremum-independent family with supremum
+`S` into an internal direct sum of `S` via `(A i).comap S.subtype`.
 
 `DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of a scalar
 action on a homogeneous element when the scalar and module decompositions are compatible.
@@ -655,3 +658,13 @@ theorem Module.Basis.isInternal_span_image_fiber {R ι κ M : Type*} [Semiring R
   · rw [← LinearMap.range_eq_top, eq_top_iff, ← b.span_eq, Submodule.span_le]
     rintro _ ⟨i, rfl⟩
     exact ⟨DirectSum.of (fun c => A c) (w i) ⟨b i, Submodule.subset_span ⟨i, rfl, rfl⟩⟩, by simp⟩
+
+/-- If a supremum-independent family of submodules `A` over a ring has supremum `S`, then its
+traces `(A i).comap S.subtype` on `S` form an internal direct sum of `S` (the ring hypothesis is
+required by `DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top`). -/
+theorem DirectSum.isInternal_submodule_comap_subtype {R ι M : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [DecidableEq ι] {A : ι → Submodule R M} {S : Submodule R M}
+    (hind : iSupIndep A) (hsup : ⨆ i, A i = S) :
+    DirectSum.IsInternal fun i ↦ (A i).comap S.subtype :=
+  DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top hind.comap_subtype
+    (Submodule.iSup_comap_subtype_eq_top_of_iSup_eq hsup)

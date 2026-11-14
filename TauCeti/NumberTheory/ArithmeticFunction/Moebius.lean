@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
+import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
 
 /-!
 # The square of the Möbius function and divisor-count Möbius inversion
@@ -15,14 +16,26 @@ In the Dirichlet ring of arithmetic functions, `ζ * ζ = σ 0` is the divisor-c
 function: `(μ * μ) * σ 0 = 1`. At a prime power `p ^ k`, `(μ * μ) (p ^ k)` takes the values
 `1`, `-2`, `1`, and `0` for `k = 0`, `1`, `2`, and `k ≥ 3` respectively.
 
-Consequently, a divisor-count convolution `g(n) = ∑_{d ∣ n} #(n / d).divisors • f(d)` in any
-additive commutative group (or ring) inverts to `f(n) = ∑_{d ∣ n} (μ * μ)(n / d) • g(d)`, both
-globally on positive integers and on any divisor-closed set `s ⊆ ℕ` — in particular on the
-divisors of a single nonzero integer `N`.
+Convolutions weighted by `#(N / M).divisors` arise whenever an ambient invariant at level `N`
+decomposes over pairs `(M, d)` with `d * M ∣ N` whose contribution depends only on `M` — most
+notably in the Atkin–Lehner–Li decomposition of spaces of cusp forms by level-raising operators,
+where each divisor level `M ∣ N` contributes `#(N / M).divisors` isomorphic copies of its new
+subspace. Inverting `g(n) = ∑_{d ∣ n} #(n / d).divisors • f(d)` yields
+`f(n) = ∑_{d ∣ n} (μ * μ)(n / d) • g(d)`, turning ambient dimension formulas into newspace
+dimension formulas. Because `μ * μ` takes negative values (such as `-2` at primes), the target must
+admit subtraction (`AddCommGroup` or `NonAssocRing`), and natural-valued dimensions are cast to `ℤ`
+before inverting. The `_on` and `_of_dvd` variants handle quantities (such as fixed-nebentypus
+dimensions along raised characters) defined or obeying the convolution identity only on the
+divisors of a fixed nonzero level `N`.
+
+The four Dirichlet-inverse lemmas for `μ * μ` and `σ 0` and the four global / divisor-closed
+divisor-count inversion equivalences closely adapt the statement pattern and proof plan of
+`ArithmeticFunction.moebius_mul_coe_zeta`..`ArithmeticFunction.coe_zeta_mul_coe_moebius` and
+`ArithmeticFunction.sum_eq_iff_sum_smul_moebius_eq`..`sum_eq_iff_sum_mul_moebius_eq_on` in
+`Mathlib.NumberTheory.ArithmeticFunction.Moebius`.
 
 ## Main results
 
-* `ArithmeticFunction.zeta_mul_zeta`, `ArithmeticFunction.coe_zeta_mul_coe_zeta`: `ζ * ζ = σ 0`.
 * `ArithmeticFunction.moebius_mul_moebius_mul_coe_sigma_zero`,
   `ArithmeticFunction.coe_sigma_zero_mul_moebius_mul_moebius`,
   `ArithmeticFunction.coe_moebius_mul_coe_moebius_mul_coe_sigma_zero`,
@@ -56,15 +69,7 @@ open scoped Moebius zeta ArithmeticFunction.sigma
 
 variable {G R : Type*}
 
-/-! ### `ζ * ζ = σ 0` and its Dirichlet inverse `μ * μ` -/
-
-/-- The Dirichlet square of `ζ` is the divisor-count function `σ 0`. -/
-theorem zeta_mul_zeta : (ζ * ζ : ArithmeticFunction ℕ) = σ 0 :=
-  pow_zero_eq_zeta ▸ zeta_mul_pow_eq_sigma
-
-/-- The Dirichlet square of `ζ` in `ArithmeticFunction R` is `σ 0`. -/
-theorem coe_zeta_mul_coe_zeta [Semiring R] : (ζ * ζ : ArithmeticFunction R) = σ 0 := by
-  rw [← natCoe_mul, zeta_mul_zeta]
+/-! ### Dirichlet inverse `μ * μ` of `σ 0` -/
 
 /-- `μ * μ` is the left Dirichlet inverse of `σ 0` over `ℤ`. -/
 @[simp]
