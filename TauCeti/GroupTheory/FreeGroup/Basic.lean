@@ -28,7 +28,7 @@ free group.
 * `FreeGroup.lift_sumElim_image_map_inl`: substituting words for the generators of the second
   summand of `α ⊕ β` recovers every set of words in `α`.
 * `FreeGroup.natCard_monoidHom`: a homomorphism out of `FreeGroup α` is its family of values on
-  the generators, so there are `|G| ^ |α|` of them into `G` when `α` is finite.
+  the generators, so there are `|G| ^ |α|` of them into a finite group `G` when `α` is finite.
 -/
 
 public section
@@ -94,7 +94,8 @@ theorem lift_sumElim_image_map_inl {α β : Type*} (w : β → FreeGroup α) (R 
   simp [Set.image_image]
 
 /-- A homomorphism out of the free group on a finite set `α` is its family of values on the
-generators, so there are `Nat.card G ^ Nat.card α` homomorphisms into `G`. -/
+generators, so there are `Nat.card G ^ Nat.card α` homomorphisms into a finite group `G`. For
+infinite `G` the equation still holds in `Nat.card`, both sides being `0` when `α` is nonempty. -/
 theorem natCard_monoidHom (α G : Type*) [Group G] [Finite α] :
     Nat.card (FreeGroup α →* G) = Nat.card G ^ Nat.card α := by
   rw [← Nat.card_congr lift, Nat.card_fun]

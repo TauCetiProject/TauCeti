@@ -14,24 +14,25 @@ import TauCeti.GroupTheory.FreeGroup.Basic
 # Counting connected triples and marked classes
 
 A permutation triple of degree `m` is a pair of permutations of `Fin m`, that is, a
-representation of the free group of rank two on `Fin m`, and it is connected exactly when
-that representation is transitive. Splitting a pair of permutations of `Fin (n + 1)` along the
-monodromy orbit of `0` therefore gives the recursion
+representation of the free group of rank two on `Fin m`, and for positive `m` it is connected
+exactly when that representation is transitive. Splitting a pair of permutations of
+`Fin (n + 1)` along the monodromy orbit of `0` therefore gives the recursion
 
 ```text
 ((n + 1)!)² = ∑_{k=0}^{n} C(n, k) · #ConnectedTriple (k + 1) · ((n - k)!)²
 ```
 
-which determines the number of connected triples in every degree. Relabeling acts freely on
-connected triples with a marked sheet (`TauCeti.MarkedIsoClass.natCard_mul_factorial`), so
-the number `a_m` of marked classes of degree `m` satisfies Hall's recursion
+which determines the number of connected triples in every positive degree. Relabeling acts
+freely on connected triples with a marked sheet
+(`TauCeti.MarkedIsoClass.natCard_mul_factorial`), so the number `a_m` of marked classes of
+degree `m > 0` satisfies Hall's recursion
 
 ```text
 (n + 1) · (n + 1)! = ∑_{k=0}^{n} a_{k+1} · (n - k)!
 ```
 
-and the first values are `1, 3, 13, 71, 461`. Marked classes of degree `m` are the
-combinatorial invariant of pointed connected `m`-sheeted covers of the thrice-punctured
+and the first values are `1, 3, 13, 71, 461`. For `m > 0`, marked classes of degree `m` are
+the combinatorial invariant of pointed connected `m`-sheeted covers of the thrice-punctured
 sphere, and so correspond to the subgroups of index `m` of its fundamental group, a free group
 of rank two; these are Hall's numbers of such subgroups.
 
@@ -94,9 +95,10 @@ end ConnectedTriple
 namespace MarkedIsoClass
 
 /-- **Hall's recursion** for the number of marked classes of connected triples: with `a_m` the
-number of marked classes of degree `m`, `∑_{k=0}^{n} a_{k+1} · (n - k)! = (n + 1) · (n + 1)!`.
-Through `TauCeti.MarkedIsoClass.subgroupEquiv`, `a_m` is also the number of subgroups of index
-`m` of the fundamental group of the thrice-punctured sphere. -/
+number of marked classes of degree `m > 0`,
+`∑_{k=0}^{n} a_{k+1} · (n - k)! = (n + 1) · (n + 1)!`. Through
+`TauCeti.MarkedIsoClass.subgroupEquiv`, `a_m` is also the number of subgroups of index `m` of the
+fundamental group of the thrice-punctured sphere. -/
 theorem sum_natCard_mul_factorial (n : ℕ) :
     ∑ k ∈ range (n + 1), Nat.card (MarkedIsoClass (k + 1)) * (n - k).factorial =
       (n + 1) * (n + 1).factorial := by
@@ -106,7 +108,8 @@ theorem sum_natCard_mul_factorial (n : ℕ) :
         n.factorial * (Nat.card (MarkedIsoClass (k + 1)) * (n - k).factorial) := by
     have hk : k ≤ n := Nat.lt_succ_iff.1 (mem_range.1 hk)
     have hfree := natCard_mul_factorial (n := k + 1)
-    rw [Nat.factorial_succ, mul_left_comm, mul_comm (Nat.card _)] at hfree
+    rw [Nat.card_eq_fintype_card (α := ConnectedTriple (k + 1)), Nat.factorial_succ,
+      mul_left_comm, mul_comm (Nat.card _)] at hfree
     rw [← Nat.choose_mul_factorial_mul_factorial hk,
       ← Nat.eq_of_mul_eq_mul_left (Nat.succ_pos k) hfree]
     ring
@@ -117,32 +120,36 @@ theorem sum_natCard_mul_factorial (n : ℕ) :
   ring
 
 /-- There is one marked class of degree one. -/
+@[simp]
 theorem natCard_one : Nat.card (MarkedIsoClass 1) = 1 := by
   simpa using sum_natCard_mul_factorial 0
 
 /-- There are three marked classes of degree two. -/
+@[simp]
 theorem natCard_two : Nat.card (MarkedIsoClass 2) = 3 := by
   have h := sum_natCard_mul_factorial 1
-  simp [sum_range_succ, Nat.factorial, natCard_one] at h
+  simp [sum_range_succ, Nat.factorial] at h
   omega
 
 /-- There are thirteen marked classes of degree three. -/
+@[simp]
 theorem natCard_three : Nat.card (MarkedIsoClass 3) = 13 := by
   have h := sum_natCard_mul_factorial 2
-  simp [sum_range_succ, Nat.factorial, natCard_one, natCard_two] at h
+  simp [sum_range_succ, Nat.factorial] at h
   omega
 
 /-- There are seventy-one marked classes of degree four. -/
+@[simp]
 theorem natCard_four : Nat.card (MarkedIsoClass 4) = 71 := by
   have h := sum_natCard_mul_factorial 3
-  simp [sum_range_succ, Nat.factorial, natCard_one, natCard_two, natCard_three] at h
+  simp [sum_range_succ, Nat.factorial] at h
   omega
 
 /-- There are four hundred sixty-one marked classes of degree five. -/
+@[simp]
 theorem natCard_five : Nat.card (MarkedIsoClass 5) = 461 := by
   have h := sum_natCard_mul_factorial 4
-  simp [sum_range_succ, Nat.factorial, natCard_one, natCard_two, natCard_three,
-    natCard_four] at h
+  simp [sum_range_succ, Nat.factorial] at h
   omega
 
 end MarkedIsoClass

@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.Choose.Sum
-public import Mathlib.GroupTheory.GroupAction.Transitive
 public import Mathlib.SetTheory.Cardinal.Finite
+public import TauCeti.Algebra.Group.End
+public import TauCeti.GroupTheory.GroupAction.Transitive
 public import TauCeti.GroupTheory.Perm.PermCongr
 
 /-!
@@ -30,8 +31,6 @@ index.
 
 ## Main definitions
 
-* `MonoidHom.subtypePerm`: the restriction of a permutation representation to an invariant
-  subset.
 * `TauCeti.orbitSplitEquiv`: representations in which the orbit of `a` is `s`, as pairs of a
   transitive representation on `s` and a representation on its complement.
 
@@ -50,38 +49,9 @@ public section
 
 open Equiv Finset MulAction
 
-namespace MonoidHom
-
-variable {Γ α : Type*} [Group Γ]
-
-/-- The restriction of a permutation representation to a subset that every `ρ g` preserves. -/
-def subtypePerm (ρ : Γ →* Perm α) (p : α → Prop) (h : ∀ g x, p (ρ g x) ↔ p x) :
-    Γ →* Perm {x // p x} where
-  toFun g := (ρ g).subtypePerm (h g)
-  map_one' := by ext; simp
-  map_mul' g g' := by ext x; exact DFunLike.congr_fun (map_mul ρ g g') (x : α)
-
-@[simp]
-theorem subtypePerm_apply_coe (ρ : Γ →* Perm α) (p : α → Prop) (h : ∀ g x, p (ρ g x) ↔ p x)
-    (g : Γ) (x : {x // p x}) : (ρ.subtypePerm p h g x : α) = ρ g x :=
-  (rfl)
-
-/-- The image of a permutation representation is transitive exactly when every point is
-reached from a fixed base point. -/
-theorem isPretransitive_range_iff (ρ : Γ →* Perm α) (a : α) :
-    IsPretransitive ρ.range α ↔ ∀ x, ∃ g, ρ g a = x := by
-  rw [isPretransitive_iff_base a]
-  refine forall_congr' fun x => ⟨?_, ?_⟩
-  · rintro ⟨⟨_, g, rfl⟩, hg⟩
-    exact ⟨g, hg⟩
-  · rintro ⟨g, hg⟩
-    exact ⟨⟨ρ g, g, rfl⟩, hg⟩
-
-end MonoidHom
-
 namespace TauCeti
 
-variable {Γ α : Type*} [Group Γ] [DecidableEq α] {a : α} {s : Finset α}
+variable {Γ α : Type*} [Group Γ] {a : α} {s : Set α} [DecidablePred (· ∈ s)]
 
 /-- **Splitting a permutation representation along an orbit.** A representation in which the
 orbit of `a` is `s` is the same thing as a transitive representation on `s` together with an
@@ -95,7 +65,7 @@ def orbitSplitEquiv (ha : a ∈ s) :
       obtain ⟨ρ, hρ⟩ := ρ
       intro g x
       dsimp only
-      rw [← Finset.mem_coe, ← Finset.mem_coe, ← hρ]
+      rw [← hρ]
       constructor
       · rintro ⟨h, hh⟩
         exact ⟨g⁻¹ * h, by simp [hh]⟩
@@ -112,7 +82,7 @@ def orbitSplitEquiv (ha : a ∈ s) :
     ⟨(Perm.subtypeCongrHom (· ∈ s)).comp (στ.1.1.prod στ.2), by
       ext x
       simp only [Set.mem_range, MonoidHom.comp_apply, MonoidHom.prod_apply,
-        Perm.subtypeCongrHom_apply, Finset.mem_coe]
+        Perm.subtypeCongrHom_apply]
       constructor
       · rintro ⟨g, rfl⟩
         rw [Perm.subtypeCongr.left_apply _ _ ha]
@@ -151,7 +121,7 @@ theorem orbitSplitEquiv_symm_apply_coe (ha : a ∈ s)
     ((orbitSplitEquiv ha).symm στ).1 = (Perm.subtypeCongrHom (· ∈ s)).comp (στ.1.1.prod στ.2) :=
   (rfl)
 
-variable [Fintype α]
+variable [Fintype α] [DecidableEq α]
 
 /-- **The orbit decomposition of the number of permutation representations.** A representation
 of `Γ` on a finite set is determined by the orbit `s` of a point `a`, a transitive representation
@@ -170,15 +140,17 @@ theorem natCard_monoidHom_perm_eq_sum [Finite (Γ →* Perm α)] (a : α) :
   rw [← Nat.card_congr (Equiv.sigmaFiberEquiv orbit), Nat.card_sigma,
     Finset.sum_subtype (univ.filter (a ∈ ·)) (p := (a ∈ ·)) (by simp)]
   refine Fintype.sum_congr _ _ fun s => ?_
-  rw [Nat.card_congr ((Equiv.subtypeEquivRight (horbit · s)).trans (orbitSplitEquiv s.2)),
+  rw [Nat.card_congr ((Equiv.subtypeEquivRight (horbit · s)).trans
+      (orbitSplitEquiv (s := (s.1 : Set α)) (Finset.mem_coe.2 s.2))),
     Nat.card_prod, Nat.card_congr ((MulEquiv.monoidHomCongrRightEquiv
-      s.1.equivFin.permCongrHom).subtypeEquiv
+      (Fintype.equivFinOfCardEq (α := (s.1 : Set α)) (n := s.1.card)
+        (by simp)).permCongrHom).subtypeEquiv
         (q := fun σ => IsPretransitive σ.range (Fin s.1.card)) fun σ => by
         rw [MulEquiv.monoidHomCongrRightEquiv_apply, MonoidHom.range_comp,
           isPretransitive_map_permCongrHom_iff]),
     Nat.card_congr (MulEquiv.monoidHomCongrRightEquiv
-      (Fintype.equivFinOfCardEq (α := {x // x ∉ s.1}) (n := Fintype.card α - s.1.card)
-        (by rw [Fintype.card_subtype_compl, Fintype.card_coe])).permCongrHom)]
+      (Fintype.equivFinOfCardEq (α := {x // x ∉ (s.1 : Set α)})
+        (n := Fintype.card α - s.1.card) (by simp [Fintype.card_subtype_compl])).permCongrHom)]
 
 /-- **The orbit recursion for permutation representations.** Splitting a representation of `Γ`
 on `Fin (n + 1)` along the orbit of `0`: the orbit has some size `k + 1`, there are
