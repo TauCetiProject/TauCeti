@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Algebra.Equiv
+public import TauCeti.RingTheory.Huber.Pair
 public import TauCeti.RingTheory.Huber.WeightedEval.Continuous
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
@@ -54,7 +55,9 @@ are a ring of definition `A₀` and a ring of integral elements `A⁺`.
   `θ_ε⁻¹(Xᵢ) - Xᵢ`.
 * `TauCeti.Huber.perturbXEquiv_mem_weightedSubring_iff`: `θ_ε` and its inverse preserve `S⟨X⟩`
   for open subrings `S` containing `I`, in particular `A₀⟨X⟩`
-  (`TauCeti.Huber.perturbXEquiv_mem_weightedRingOfDefinition_iff`).
+  (`TauCeti.Huber.perturbXEquiv_mem_weightedRingOfDefinition_iff`) and `A⁺⟨X⟩` for every ring of
+  integral elements `A⁺`
+  (`TauCeti.Huber.perturbXEquiv_mem_weightedSubring_iff_of_isRingOfIntegralElements`).
 
 ## References
 
@@ -191,13 +194,9 @@ theorem perturbX_mem_weightedSubring {S : Subring A} (hS : IsOpen (S : Set A))
     (hεS : ∀ i, ε i ∈ weightedSubring _ isWeightFamily_one_weight S) {f : A⟨X⟩}
     (hf : f ∈ weightedSubring _ isWeightFamily_one_weight S) :
     perturbX ε hε f ∈ weightedSubring _ isWeightFamily_one_weight S := by
-  have hclosed : IsClosed (weightedSubring (fun _ : Fin k ↦ ({1} : Set A))
-      isWeightFamily_one_weight S : Set A⟨X⟩) := by
-    simpa using AddSubgroup.isClosed_of_isOpen
-      (weightedSubring _ isWeightFamily_one_weight S).toAddSubgroup
-      (by simpa using isOpen_weightedSubring isWeightFamily_one_weight hS)
-  refine (hasSum_perturbX ε hε f).mem hclosed fun ν ↦
-    mul_mem ?_ (prod_mem fun i _ ↦ pow_mem (add_mem ?_ (hεS i)) _)
+  refine mem_weightedSubring.mpr <| (hasSum_perturbX ε hε f).mem
+    (isClosed_weightedNhd isWeightFamily_one_weight (U := S.toAddSubgroup) hS) fun ν ↦
+      mem_weightedSubring.mp <| mul_mem ?_ (prod_mem fun i _ ↦ pow_mem (add_mem ?_ (hεS i)) _)
   · refine (weightedC_mem_weightedSubring _).mpr ?_
     simpa [weightMul_one_weight] using mem_weightedNhd.mp (mem_weightedSubring.mp hf) ν
   · simpa using weightedC_mul_weightedX_mem_weightedSubring (T := fun _ : Fin k ↦ ({1} : Set A))
@@ -216,8 +215,8 @@ theorem perturbX_sub_mem_weightedNhd {n : ℕ} (hεI : ∀ i, ε i ∈ 𝓘 n) {
     (hf : f ∈ 𝓘 m) : perturbX ε hε f - f ∈ 𝓘 (m + n) := by
   have h₀ := hasSum_perturbX (0 : Fin k → A⟨X⟩) (fun _ ↦ isPowerBounded_zero) f
   simp only [Pi.zero_apply, add_zero, perturbX_zero, AlgHom.id_apply] at h₀
-  refine ((hasSum_perturbX ε hε f).sub h₀).mem (P.isClosed_weightedNhd_idealImage _ (m + n))
-    fun ν ↦ ?_
+  refine ((hasSum_perturbX ε hε f).sub h₀).mem
+    (isClosed_weightedNhd _ (P.isOpen_idealImage (m + n))) fun ν ↦ ?_
   rw [← mul_sub]
   refine P.mul_mem_weightedNhd_idealImage_add ?_ (prod_pow_sub_prod_pow_mem P hεI ν)
   refine (weightedC_mem_weightedNhd _).mpr ?_
@@ -249,7 +248,7 @@ private theorem exists_perturbX_comp_eq_id (hεI : ∀ i, ε i ∈ 𝓘 1) :
     NonarchimedeanAddGroup.tsum_iterate_sub_apply_tsum_iterate hNc
       (P.tendsto_zero_of_mem_weightedNhd_idealImage (hiter i))
   have hy₀ (i : Fin k) : y i ∈ 𝓘 0 :=
-    tsum_mem (P.isClosed_weightedNhd_idealImage _ 0) fun n ↦
+    tsum_mem (isClosed_weightedNhd _ (P.isOpen_idealImage 0)) fun n ↦
       weightedNhd_mono (P.idealImage_anti (Nat.zero_le n)) (hiter i n)
   have hε' (i : Fin k) : N (y i) ∈ 𝓘 1 := by simpa using hN (hy₀ i)
   refine ⟨fun i ↦ N (y i), hε', ?_⟩
@@ -288,13 +287,29 @@ theorem perturbX_bijective (hεI : ∀ i, ε i ∈ 𝓘 1) : Function.Bijective 
   exact ⟨Function.LeftInverse.injective (AlgHom.congr_fun h₂),
     Function.RightInverse.surjective (AlgHom.congr_fun h₁)⟩
 
+variable {ε} in
+/-- The shifts `ε'` of the inverse `θ_ε'` of `θ_ε`, chosen once by
+`TauCeti.Huber.exists_perturbX_inverse`; `perturbXEquiv` is built from them. -/
+private noncomputable def perturbXInv (hεI : ∀ i, ε i ∈ 𝓘 1) : Fin k → A⟨X⟩ :=
+  (exists_perturbX_inverse ε
+    (fun i ↦ P.isPowerBounded_of_mem_weightedNhd_idealImage (hεI i)) P hεI).choose
+
+variable {ε} in
+private theorem perturbXInv_mem (hεI : ∀ i, ε i ∈ 𝓘 1) (i : Fin k) :
+    perturbXInv P hεI i ∈ 𝓘 1 :=
+  (exists_perturbX_inverse ε
+    (fun i ↦ P.isPowerBounded_of_mem_weightedNhd_idealImage (hεI i)) P hεI).choose_spec.choose i
+
 /-- **The perturbation `Xᵢ ↦ Xᵢ + εᵢ` as a continuous automorphism** of `A⟨X⟩`, for `εᵢ ∈ I⟨X⟩`.
 Its inverse is the perturbation by `θ_ε⁻¹(Xᵢ) - Xᵢ` (`TauCeti.Huber.coe_perturbXEquiv_symm`). -/
 noncomputable def perturbXEquiv {ε : Fin k → A⟨X⟩} (hεI : ∀ i, ε i ∈ 𝓘 1) :
     A⟨X⟩ ≃A[A] A⟨X⟩ :=
-  have h := exists_perturbX_inverse ε
-    (fun i ↦ P.isPowerBounded_of_mem_weightedNhd_idealImage (hεI i)) P hεI
-  { AlgEquiv.ofAlgHom _ _ h.choose_spec.choose_spec.1 h.choose_spec.choose_spec.2 with
+  -- the inverse is `θ_ε'` with `ε' = perturbXInv P hεI`, which unfolds to the chosen witness
+  have h := (exists_perturbX_inverse ε
+    (fun i ↦ P.isPowerBounded_of_mem_weightedNhd_idealImage (hεI i)) P hεI).choose_spec.choose_spec
+  { AlgEquiv.ofAlgHom (perturbX ε _)
+      (perturbX (perturbXInv P hεI) fun i ↦
+        P.isPowerBounded_of_mem_weightedNhd_idealImage (perturbXInv_mem P hεI i)) h.1 h.2 with
     continuous_toFun := continuous_perturbX _ _
     continuous_invFun := continuous_perturbX _ _ }
 
@@ -312,15 +327,18 @@ theorem perturbXEquiv_zero (h0 : ∀ i, (0 : Fin k → A⟨X⟩) i ∈ 𝓘 1) :
   ContinuousAlgEquiv.ext (by simp)
 
 variable {ε} in
+private theorem coe_perturbXEquiv_symm_eq_perturbXInv (hεI : ∀ i, ε i ∈ 𝓘 1) :
+    ⇑(perturbXEquiv P hεI).symm = perturbX (perturbXInv P hεI) fun i ↦
+      P.isPowerBounded_of_mem_weightedNhd_idealImage (perturbXInv_mem P hεI i) :=
+  rfl
+
+variable {ε} in
 /-- The inverse of `θ_ε` moves each variable by an element of `I⟨X⟩`. -/
 theorem perturbXEquiv_symm_weightedX_sub_mem (hεI : ∀ i, ε i ∈ 𝓘 1) (i : Fin k) :
     (perturbXEquiv P hεI).symm (weightedX _ isWeightFamily_one_weight i) -
       weightedX _ isWeightFamily_one_weight i ∈ 𝓘 1 := by
-  have h := exists_perturbX_inverse ε
-    (fun i ↦ P.isPowerBounded_of_mem_weightedNhd_idealImage (hεI i)) P hεI
-  change perturbX h.choose _ _ - _ ∈ _
-  rw [perturbX_weightedX, add_sub_cancel_left]
-  exact h.choose_spec.choose i
+  rw [coe_perturbXEquiv_symm_eq_perturbXInv, perturbX_weightedX, add_sub_cancel_left]
+  exact perturbXInv_mem P hεI i
 
 variable {ε} in
 /-- **The inverse of `θ_ε` is a perturbation**: it is `θ_ε'` with `ε'ᵢ = θ_ε⁻¹(Xᵢ) - Xᵢ`. -/
@@ -356,6 +374,17 @@ theorem perturbXEquiv_mem_weightedRingOfDefinition_iff (hεI : ∀ i, ε i ∈ �
   rw [PairOfDefinition.weightedRingOfDefinition_def]
   exact perturbXEquiv_mem_weightedSubring_iff P P.isOpen_ringOfDefinition
     (P.idealImage_le_ringOfDefinition 1) hεI
+
+variable {ε} in
+/-- **`θ_ε` preserves `A⁺⟨X⟩` in both directions**, for every ring of integral elements `A⁺`: it
+contains the image of `I`, whose elements are topologically nilpotent. -/
+theorem perturbXEquiv_mem_weightedSubring_iff_of_isRingOfIntegralElements {Aplus : Subring A}
+    (hA : IsRingOfIntegralElements Aplus) (hεI : ∀ i, ε i ∈ 𝓘 1) {f : A⟨X⟩} :
+    perturbXEquiv P hεI f ∈ weightedSubring _ isWeightFamily_one_weight Aplus ↔
+      f ∈ weightedSubring _ isWeightFamily_one_weight Aplus :=
+  perturbXEquiv_mem_weightedSubring_iff P hA.isOpen
+    (fun _ ha ↦ hA.mem_of_isTopologicallyNilpotent
+      (P.isTopologicallyNilpotent_of_mem_idealImage one_ne_zero ha)) hεI
 
 end Perturbation
 

@@ -600,11 +600,6 @@ theorem isPowerBounded_of_mem_weightedNhd_idealImage (P : PairOfDefinition A)
   (P.weighted hT).isBounded_ringOfDefinition.isPowerBounded_of_mem
     (by simpa using P.mem_weightedRingOfDefinition_of_mem_weightedNhd_idealImage hf)
 
-/-- Each `Iⁿ⟨X⟩_T` is closed in `A⟨X⟩_T`, being an open subgroup. -/
-theorem isClosed_weightedNhd_idealImage (P : PairOfDefinition A) (hT : IsWeightFamily T)
-    (n : ℕ) : IsClosed (weightedNhd T hT (P.idealImage n) : Set (weightedRestrictedSubring T hT)) :=
-  AddSubgroup.isClosed_of_isOpen _ (isOpen_weightedNhd hT (P.isOpen_idealImage n))
-
 /-- `Iᵃ⟨X⟩_T · Iᵇ⟨X⟩_T ⊆ Iᵃ⁺ᵇ⟨X⟩_T`, as subsets of `A⟨X⟩_T`. -/
 theorem mul_mem_weightedNhd_idealImage_add (P : PairOfDefinition A) {hT : IsWeightFamily T}
     {a b : ℕ} {f g : weightedRestrictedSubring T hT} (hf : f ∈ weightedNhd T hT (P.idealImage a))

@@ -11,7 +11,7 @@ public import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
 /-!
-# The geometric series in a complete nonarchimedean ring
+# The geometric series in a complete nonarchimedean ring, and its operator form
 
 **Wedhorn, *Adic Spaces*, Proposition 5.38.** In a complete nonarchimedean topological ring,
 `1 - a` is a unit for every topologically nilpotent `a`.
@@ -24,8 +24,10 @@ consumed) — and for the powers of `a` that is precisely topological nilpotence
 `Summable.one_sub_mul_tsum_pow` and `Summable.tsum_pow_mul_one_sub` then exhibit `∑ aⁿ` as a
 two-sided inverse.
 
-What is exported is unit-hood alone; a consumer wanting the inverse should use
-`ha.summable_pow.one_sub_mul_tsum_pow` directly.
+For a ring element what is exported is unit-hood alone; a consumer wanting the inverse should use
+`ha.summable_pow.one_sub_mul_tsum_pow` directly. The file also exports the operator form, the
+Neumann series: for a continuous additive endomorphism `N` of an additive group, `y = ∑ Nⁿ x`
+solves `y - N y = x`. It inverts `1 - N` for maps that are not multiplication by an element.
 
 Mathlib has the analytic counterpart, `isUnit_one_sub_of_norm_lt_one`, which needs a norm; the
 nonarchimedean-topological statement is what the Huber theory uses, since a Huber ring carries no
@@ -47,13 +49,15 @@ canonical norm.
 ## Provenance
 
 Ported from AINTLIB's `projects/AdicSpaces/Adic spaces/GeometricSeries.lean`, branch
-`dev/adic-spaces`, commit `37bbdaeb`, Apache-2.0, Chris Birkbeck. The proofs are AINTLIB's and rest
-entirely on Mathlib primitives. Two deliberate differences from the source: the ring here is only a
-`Ring`, the unit being built from both one-sided geometric identities instead of from
-commutativity; and the negation-stability lemma the `1 + a` form needs lives in
+`dev/adic-spaces`, commit `37bbdaeb`, Apache-2.0, Chris Birkbeck. The proofs of the ring results are
+AINTLIB's and rest entirely on Mathlib primitives. Two deliberate differences from the source: the
+ring here is only a `Ring`, the unit being built from both one-sided geometric identities instead of
+from commutativity; and the negation-stability lemma the `1 + a` form needs lives in
 `TauCeti/Topology/Algebra/TopologicallyNilpotent/Basic.lean`, stated at the hypotheses it actually
 requires rather than under this file's uniform nonarchimedean block. The `omit` annotations record
-which hypotheses each proof uses.
+which hypotheses each proof uses. The `NeumannSeries` section (the two
+`tsum_iterate_sub_apply_tsum_iterate` lemmas) is not from AINTLIB: it was written for Tau Ceti, as
+the operator form of the ported geometric-series identity.
 
 ## References
 

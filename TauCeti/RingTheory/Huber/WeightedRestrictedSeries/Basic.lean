@@ -59,7 +59,7 @@ The subring, `weightedNhd`, topology and maps into them take this hypothesis; `w
   `nonarchimedeanRing_weightedTopology` and `continuous_weightedC`.
 * `TauCeti.Huber.weightedC_mem_weightedNhd` tests constants;
   `weightedC_mul_weightedX_pow_mem_weightedNhd` bounds monomials; `isOpen_weightedNhd`
-  gives openness.
+  and `isClosed_weightedNhd` give openness and closedness.
 * `TauCeti.Huber.weightedRestrictedSubring_one_weight` recovers ordinary restricted series
   (Wedhorn Example 5.54); the `subringCongr_one_weight_weightedX` and `_weightedC` lemmas identify
   the variables and constants.
@@ -977,6 +977,12 @@ theorem isOpen_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A} (hT : Is
     {U : AddSubgroup A} (hU : IsOpen (U : Set A)) :
     IsOpen (weightedNhd T hT U : Set (weightedRestrictedSubring T hT)) :=
   ((weightedNhd_subgroups_basis hT).openAddSubgroup ⟨U, hU⟩).isOpen'
+
+/-- `U⟨X⟩_T` is closed in `A⟨X⟩_T` when `U` is open in `A`, being an open subgroup. -/
+theorem isClosed_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A} (hT : IsWeightFamily T)
+    {U : AddSubgroup A} (hU : IsOpen (U : Set A)) :
+    IsClosed (weightedNhd T hT U : Set (weightedRestrictedSubring T hT)) :=
+  AddSubgroup.isClosed_of_isOpen _ (isOpen_weightedNhd hT hU)
 
 /-- `R⟨X⟩_T` is open in `A⟨X⟩_T` when `R` is open in `A`. -/
 theorem isOpen_weightedSubring [NonarchimedeanRing A] {T : Fin k → Set A} (hT : IsWeightFamily T)
