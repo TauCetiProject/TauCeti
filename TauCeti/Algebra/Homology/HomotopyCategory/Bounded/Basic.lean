@@ -216,14 +216,9 @@ instance : (HomotopyCategory.bounded C).IsStableUnderShift ℤ where
       rintro K hK
       obtain ⟨K : CochainComplex C ℤ, rfl⟩ := K.quotient_obj_surjective
       rw [HomotopyCategory.bounded_quotient_obj_iff] at hK
-      rw [CochainComplex.bounded_iff] at hK
-      obtain ⟨a, b, ha, hb⟩ := hK
       rw [ObjectProperty.prop_shift_iff, HomotopyCategory.shift_quotient_obj,
-        HomotopyCategory.bounded_quotient_obj_iff, CochainComplex.bounded_iff]
-      let _ := ha
-      let _ := hb
-      exact ⟨a - n, b - n, K.isStrictlyGE_shift a n (a - n) (by omega),
-        K.isStrictlyLE_shift b n (b - n) (by omega)⟩⟩
+        HomotopyCategory.bounded_quotient_obj_iff]
+      exact (CochainComplex.bounded C).le_shift n K hK⟩
 
 instance [HasZeroObject C] [HasBinaryBiproducts C] :
     (HomotopyCategory.bounded C).IsTriangulatedClosed₃ where
