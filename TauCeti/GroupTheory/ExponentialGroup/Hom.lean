@@ -21,13 +21,14 @@ group is defined.
 * `TauCeti.ExponentialHom A G H`: the monoid homomorphisms `G →* H` commuting with exponentiation
   by `A`.
 * `TauCeti.ExponentialHom.id`, `TauCeti.ExponentialHom.comp`: identity and composition.
-* `TauCeti.IsExponentialGroup.powHom g`: the `A`-homomorphism `Multiplicative A → G`,
-  `ofAdd a ↦ g ^ a`, for an element `g` of an `A`-group over a commutative semiring `A`.
+* `TauCeti.IsExponentialGroup.powHom A g`: the homomorphism `Multiplicative A → G`,
+  `ofAdd a ↦ g ^ a`, commuting with exponentiation, for an element `g` of an `A`-group over a
+  commutative semiring `A`.
 
 ## Main results
 
-* `TauCeti.IsExponentialGroup.powHom_unique`: every `A`-homomorphism `ψ : Multiplicative A → G`
-  is `powHom A (ψ (ofAdd 1))`.
+* `TauCeti.IsExponentialGroup.powHom_unique`: every homomorphism `ψ : Multiplicative A → G`
+  commuting with exponentiation is `powHom A (ψ (ofAdd 1))`.
 
 ## Implementation notes
 
@@ -91,7 +92,7 @@ theorem coe_mk (f : G →* H) (hf : ∀ (g : G) (a : A), f (g ^ a) = f g ^ a) :
 theorem toMonoidHom_injective : Function.Injective (toMonoidHom : ExponentialHom A G H → G →* H) :=
   fun _ _ h => ext fun g => DFunLike.congr_fun h g
 
-/-- An `A`-homomorphism commutes with exponentiation. -/
+/-- A homomorphism `f` commuting with exponentiation satisfies `f (g ^ a) = f g ^ a`. -/
 @[simp]
 protected theorem map_pow (f : ExponentialHom A G H) (g : G) (a : A) : f (g ^ a) = f g ^ a :=
   f.map_pow' g a
@@ -104,6 +105,9 @@ protected def id : ExponentialHom A G G where
 
 @[simp]
 theorem coe_id : ⇑(ExponentialHom.id A G) = id := by
+  rfl
+
+theorem id_apply (g : G) : ExponentialHom.id A G g = g := by
   rfl
 
 @[simp]
@@ -163,9 +167,29 @@ def powHom (g : G) : ExponentialHom A (Multiplicative A) G where
 theorem powHom_apply (g : G) (x : Multiplicative A) : powHom A g x = g ^ x.toAdd := by
   rfl
 
+section Comp
+
+variable {A} {H : Type*} [Group H] [Pow H A] [IsExponentialGroup A H]
+
+/-- Composing `powHom A g` with a homomorphism `f` commuting with exponentiation gives
+`powHom A (f g)`. -/
+@[simp]
+theorem comp_powHom (f : ExponentialHom A G H) (g : G) : f.comp (powHom A g) = powHom A (f g) := by
+  ext
+  simp
+
+/-- Composing `powHom A g` with a homomorphism `f` commuting with exponentiation gives
+`powHom A (f g)`, as monoid homomorphisms. -/
+@[simp]
+theorem toMonoidHom_comp_powHom (f : ExponentialHom A G H) (g : G) :
+    (f : G →* H).comp (powHom A g : Multiplicative A →* G) = powHom A (f g) := by
+  rw [← ExponentialHom.toMonoidHom_comp, comp_powHom]
+
+end Comp
+
 variable {A} in
-/-- An `A`-homomorphism `ψ : Multiplicative A → G` is determined by its value at `ofAdd 1`: it is
-`powHom A (ψ (ofAdd 1))`. -/
+/-- A homomorphism `ψ : Multiplicative A → G` commuting with exponentiation is determined by its
+value at `ofAdd 1`: it is `powHom A (ψ (ofAdd 1))`. -/
 theorem powHom_unique (ψ : ExponentialHom A (Multiplicative A) G) :
     powHom A (ψ (.ofAdd 1)) = ψ := by
   ext x

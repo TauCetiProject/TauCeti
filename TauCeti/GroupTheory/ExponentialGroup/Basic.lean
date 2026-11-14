@@ -46,8 +46,9 @@ generated fully residually free group. In a `ℤ[t]`-group the laws give, for in
   commuting with `h` commutes with every `h ^ a`, so centralizers are closed under
   exponentiation.
 * Every group is a `ℤ`-group and an `ℕ`-group, with the usual powers.
-* `TauCeti.IsExponentialGroup.MultiplicativePow.instIsExponentialGroup`: a module `M` over a
-  commutative semiring `A` is an `A`-group, written multiplicatively.
+* `TauCeti.IsExponentialGroup.MultiplicativePow.instIsExponentialGroup`: an additive commutative
+  group `M` that is a module over a commutative semiring `A` is an `A`-group, written
+  multiplicatively.
 
 ## Implementation notes
 
@@ -275,8 +276,8 @@ theorem ofAdd_multiplicativePow [SMul A M] (m : M) (a : A) :
     Multiplicative.ofAdd m ^ a = .ofAdd (a • m) := by
   rfl
 
-/-- A module over a commutative semiring `A` is an `A`-group, written multiplicatively, with
-exponentiation `ofAdd m ^ a = ofAdd (a • m)`. -/
+/-- An additive commutative group `M` that is a module over a commutative semiring `A` is an
+`A`-group, written multiplicatively, with exponentiation `ofAdd m ^ a = ofAdd (a • m)`. -/
 scoped instance instIsExponentialGroup [CommSemiring A] [AddCommGroup M] [Module A M] :
     IsExponentialGroup A (Multiplicative M) where
   pow_one x := by simp [multiplicativePow_def]

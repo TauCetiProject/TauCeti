@@ -52,7 +52,7 @@ argument: the universal property itself mentions only the exponentiation of `K`.
 
 `isCompletion_intCast` uses the exponentiation of `Multiplicative A` by `A`, a scoped instance
 activated by `open scoped TauCeti.IsExponentialGroup.MultiplicativePow`, and the `A`-homomorphisms
-`TauCeti.IsExponentialGroup.powHom g : Multiplicative A → H`, `ofAdd a ↦ g ^ a`.
+`TauCeti.IsExponentialGroup.powHom A g : Multiplicative A → H`, `ofAdd a ↦ g ^ a`.
 
 ## References
 
@@ -135,6 +135,14 @@ theorem comp_lift (h : IsCompletion.{w} A μ) {H' : Type w} [Group H'] [Pow H' A
     f.comp (h.lift φ) = h.lift ((f : H →* H').comp φ) :=
   h.eq_lift <| by rw [ExponentialHom.toMonoidHom_comp, MonoidHom.comp_assoc, lift_comp]
 
+/-- Composing the extension of `φ` with a homomorphism `f` commuting with exponentiation gives the
+extension of `f ∘ φ`, as monoid homomorphisms. -/
+@[simp]
+theorem toMonoidHom_comp_lift (h : IsCompletion.{w} A μ) {H' : Type w} [Group H'] [Pow H' A]
+    [IsExponentialGroup A H'] (f : ExponentialHom A H H') (φ : G →* H) :
+    (f : H →* H').comp (h.lift φ : K →* H) = h.lift ((f : H →* H').comp φ) := by
+  rw [← ExponentialHom.toMonoidHom_comp, comp_lift]
+
 end Lift
 
 section Unique
@@ -175,13 +183,42 @@ theorem mulEquiv_symm (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w}
 theorem mulEquiv_self (h₁ : IsCompletion.{w} A μ₁) : h₁.mulEquiv h₁ = MulEquiv.refl K₁ :=
   MulEquiv.ext fun k => by simp [coe_mulEquiv]
 
+section Trans
+
+variable {K₃ : Type w} [Group K₃] [Pow K₃ A] [IsExponentialGroup A K₃] {μ₃ : G →* K₃}
+
+/-- The comparison isomorphisms of three `A`-completions of one group are compatible. -/
 @[simp]
-theorem mulEquiv_trans {K₃ : Type w} [Group K₃] [Pow K₃ A] [IsExponentialGroup A K₃]
-    {μ₃ : G →* K₃} (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂)
+theorem mulEquiv_trans (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂)
     (h₃ : IsCompletion.{w} A μ₃) : (h₁.mulEquiv h₂).trans (h₂.mulEquiv h₃) = h₁.mulEquiv h₃ :=
   MulEquiv.ext fun k => by
     rw [MulEquiv.trans_apply, coe_mulEquiv, coe_mulEquiv, coe_mulEquiv,
       ← ExponentialHom.comp_apply, comp_lift, lift_comp]
+
+/-- The comparison isomorphisms of three `A`-completions of one group are compatible, applied to
+an element. -/
+@[simp]
+theorem mulEquiv_mulEquiv_apply (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂)
+    (h₃ : IsCompletion.{w} A μ₃) (k : K₁) :
+    h₂.mulEquiv h₃ (h₁.mulEquiv h₂ k) = h₁.mulEquiv h₃ k := by
+  rw [← MulEquiv.trans_apply, mulEquiv_trans]
+
+/-- The comparison isomorphisms of three `A`-completions of one group are compatible, as
+functions. -/
+@[simp]
+theorem mulEquiv_comp_mulEquiv (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂)
+    (h₃ : IsCompletion.{w} A μ₃) : ⇑(h₂.mulEquiv h₃) ∘ ⇑(h₁.mulEquiv h₂) = ⇑(h₁.mulEquiv h₃) := by
+  rw [← MulEquiv.coe_trans, mulEquiv_trans]
+
+/-- The comparison isomorphisms of three `A`-completions of one group are compatible, as monoid
+homomorphisms. -/
+@[simp]
+theorem toMonoidHom_mulEquiv_comp_mulEquiv (h₁ : IsCompletion.{w} A μ₁)
+    (h₂ : IsCompletion.{w} A μ₂) (h₃ : IsCompletion.{w} A μ₃) :
+    (h₂.mulEquiv h₃ : K₂ →* K₃).comp (h₁.mulEquiv h₂ : K₁ →* K₂) = h₁.mulEquiv h₃ := by
+  rw [← MulEquiv.toMonoidHom_trans, mulEquiv_trans]
+
+end Trans
 
 /-- The comparison isomorphism of two `A`-completions is the only isomorphism commuting with the
 completion maps and with exponentiation. -/
