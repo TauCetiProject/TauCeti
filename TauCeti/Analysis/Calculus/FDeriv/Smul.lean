@@ -59,10 +59,16 @@ variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 bounded by the energy of the scalar multiple and the scalar derivative error. No compact support
 or normalization of the directions is needed. -/
 theorem cutoff_sq_mul_norm_fderiv_sq_le {u : E → V} {χ : E → ℝ} {z : E}
-    (hu : DifferentiableAt ℝ u z) (hχ : DifferentiableAt ℝ χ z) (e₁ e₂ : E) :
+    (hχ : DifferentiableAt ℝ χ z) (e₁ e₂ : E) :
     χ z ^ 2 * (‖fderiv ℝ u z e₁‖ ^ 2 + ‖fderiv ℝ u z e₂‖ ^ 2) ≤
       2 * (‖fderiv ℝ (χ • u) z e₁‖ ^ 2 + ‖fderiv ℝ (χ • u) z e₂‖ ^ 2) +
       2 * (fderiv ℝ χ z e₁ ^ 2 + fderiv ℝ χ z e₂ ^ 2) * ‖u z‖ ^ 2 := by
+  by_cases hu : DifferentiableAt ℝ u z
+  swap
+  · rw [fderiv_zero_of_not_differentiableAt hu]
+    simp only [zero_apply, norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow,
+      add_zero, mul_zero]
+    positivity
   have hdir (e : E) :
       χ z ^ 2 * ‖fderiv ℝ u z e‖ ^ 2 ≤
         2 * ‖fderiv ℝ (χ • u) z e‖ ^ 2 + 2 * fderiv ℝ χ z e ^ 2 * ‖u z‖ ^ 2 := by

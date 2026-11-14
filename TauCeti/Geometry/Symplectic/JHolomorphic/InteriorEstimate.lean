@@ -244,8 +244,7 @@ theorem integral_cutoff_sq_mul_norm_partialDeriv_sq_le
         simp [Function.mem_support, fderiv_of_notMem_tsupport ℝ hzv])
   have henergy (z : ℝ × ℝ) : E z ≤ 2 * Ev z + 2 * G z := by
     simpa only [mul_assoc] using cutoff_sq_mul_norm_fderiv_sq_le
-      (hu.differentiable (by norm_num) z) (hχ.differentiable (by norm_num) z)
-      stdComplexLineReal stdComplexLineImag
+      (hχ.differentiable (by norm_num) z) stdComplexLineReal stdComplexLineImag
   have hdefect (z : ℝ × ℝ) : Dv z ≤ 2 * W z + 16 * G z :=
     cutoff_defect_le_of_close hg hclose (hu.differentiable (by norm_num) z)
       (hχ.differentiable (by norm_num) z)
