@@ -7,12 +7,15 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
+public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Data.PNat.Basic
+public import Mathlib.Data.Set.Card
 public import Mathlib.Dynamics.Flow
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 public import Mathlib.Topology.Separation.Basic
 public import TauCeti.Dynamics.Flow.Basic
+public import TauCeti.Topology.Instances.AddCircle.Cover
 import Mathlib.GroupTheory.Archimedean
 import Mathlib.Topology.Algebra.Order.Archimedean
 
@@ -27,12 +30,29 @@ positive return time when `x` returns at all, and `0`, generating `⊥`, otherwi
 period is `0` exactly at rest points and at points that never return.
 
 A *periodic trajectory* (`Flow.PeriodicTrajectory`) is a point which is not a rest point together
-with a positive return time `τ`; it is the parametrized loop `t ↦ ϕ t x` on `[0, τ]`. Flowing the
-base point rotates the loop, and a **closed orbit** (`Flow.ClosedOrbit`) is a periodic trajectory
-up to rotation. A closed orbit is determined by its image and its period (`Flow.ClosedOrbit.ext`).
+with a positive return time `τ`; it is the parametrized loop `t ↦ ϕ t x` on `[0, τ]`, descending to
+a continuous circle parametrization `Flow.PeriodicTrajectory.circleMap` on `AddCircle τ`. Flowing
+the base point rotates the loop, and a **closed orbit** (`Flow.ClosedOrbit`) is a periodic
+trajectory up to rotation. A closed orbit is determined by its image and its period
+(`Flow.ClosedOrbit.ext`), so any predicate whose orbits have periods and sample points in a fixed
+finite set holds for only finitely many closed orbits (`Flow.ClosedOrbit.finite_of_exists_finset`).
 Its period is a positive integer multiple of the minimal period of its points; this integer is its
 **multiplicity** `Flow.ClosedOrbit.multiplicity`, the covering degree of the closed orbit over the
 underlying simple loop. The multiplicity is not the return time.
+
+For a closed orbit `γ`, the class of `γ.minimalPeriod` in `AddCircle γ.period` generates the finite
+cyclic **reparametrization subgroup** `Flow.ClosedOrbit.reparamSubgroup`, canonically isomorphic to
+`ZMod γ.multiplicity` (`Flow.ClosedOrbit.zmodEquivReparamSubgroup`). This subgroup is the kernel of
+the covering map `AddCircle γ.period → AddCircle γ.minimalPeriod` through which `circleMap` factors,
+and equals the rotation stabilizer of `circleMap`. Over each point `p` of the image of `γ`, the
+preimage `Flow.PeriodicTrajectory.markersOver` of `{p}` under `circleMap` is the set of
+**asymptotic markers** over `p`; it has cardinality `γ.multiplicity`
+(`Flow.PeriodicTrajectory.ncard_markersOver`) and is permuted simply transitively by the
+reparametrization subgroup (`Flow.PeriodicTrajectory.equivMarkersOver`). Adding half the period in
+`AddCircle γ.period` always moves a marker to a distinct point of the circle, and lands back in the
+markers over `p` (equivalently, fixes the base point when rotating the trajectory) exactly when the
+multiplicity is even (`Flow.PeriodicTrajectory.add_period_div_two_mem_markersOver_iff`,
+`Flow.PeriodicTrajectory.point_half_period_vadd_eq_iff`).
 
 The `k`-fold iterate `Flow.ClosedOrbit.iterate` runs `k` times around the same loop: it has the
 same image and minimal period, `k` times the period and `k` times the multiplicity. A closed orbit
@@ -51,10 +71,15 @@ iterates.
 * `Flow.minimalPeriod ϕ x`: the infimum of the positive periods of `x`.
 * `Flow.PeriodicTrajectory ϕ`: a point which is not a rest point with a positive return time; the
   flow acts on these by rotation.
+* `Flow.PeriodicTrajectory.circleMap`, `Flow.PeriodicTrajectory.markersOver`: the continuous
+  parametrization `AddCircle γ.period → α` and the set of asymptotic markers over a point.
 * `Flow.ClosedOrbit ϕ`: periodic trajectories up to rotation.
 * `Flow.ClosedOrbit.period`, `Flow.ClosedOrbit.minimalPeriod`, `Flow.ClosedOrbit.support`: the
   return time, the minimal period and the image of a closed orbit.
 * `Flow.ClosedOrbit.multiplicity`: the positive integer `period / minimalPeriod`.
+* `Flow.ClosedOrbit.reparamSubgroup`, `Flow.ClosedOrbit.zmodEquivReparamSubgroup`: the cyclic
+  deck/reparametrization subgroup of `AddCircle γ.period` and its canonical isomorphism with
+  `ZMod γ.multiplicity`.
 * `Flow.ClosedOrbit.iterate γ k`: the `k`-fold iterate of `γ`.
 * `Flow.ClosedOrbit.primitive γ`: the primitive closed orbit underlying `γ`.
 
@@ -66,9 +91,13 @@ iterates.
   not rest points.
 * `Flow.exists_periods_eq_zmultiples_inv`: if `1` is a period of a point which is not a rest
   point, its periods are the multiples of `1 / n` for some `n ≥ 1`.
-* `Flow.ClosedOrbit.ext`: a closed orbit is determined by its image and its period.
+* `Flow.ClosedOrbit.ext`, `Flow.ClosedOrbit.finite_of_exists_finset`: a closed orbit is determined
+  by its image and its period, yielding finiteness from a finite set of `(period, point)` witnesses.
 * `Flow.ClosedOrbit.multiplicity_mul_minimalPeriod`: the period is the multiplicity times the
   minimal period.
+* `Flow.PeriodicTrajectory.circleMap_eq_circleMap_iff`,
+  `Flow.PeriodicTrajectory.ncard_markersOver`: fibers of `circleMap` are cosets of
+  `reparamSubgroup`, so every point on the orbit has `multiplicity` asymptotic markers.
 * `Flow.ClosedOrbit.primitive_iterate_multiplicity`: every closed orbit is the iterate of its
   primitive closed orbit by its multiplicity.
 * `Flow.ClosedOrbit.equivPrimitiveProdPNat`: closed orbits correspond to primitive closed orbits
@@ -79,6 +108,8 @@ iterates.
 * M. Hutchings and Y.-J. Lee, *Circle-valued Morse theory and Reidemeister torsion*,
   Geom. Topol. 3 (1999), 369–396, Section 2.
 * D. Fried, *Lefschetz formulas for flows*, Contemp. Math. 58, Part III (1987), 19–69.
+* F. Bourgeois, Y. Eliashberg, H. Hofer, K. Wysocki and E. Zehnder,
+  *Compactness results in Symplectic Field Theory*, Geom. Topol. 7 (2003), 799–888, Section 2.3.
 -/
 
 public section
@@ -305,6 +336,76 @@ theorem vadd_iterate (s : ℝ) (γ : PeriodicTrajectory ϕ) (k : ℕ+) :
     s +ᵥ γ.iterate k = (s +ᵥ γ).iterate k :=
   (rfl)
 
+/-- The trajectory `t ↦ ϕ t γ.point` of `γ` is periodic with period `γ.period`. -/
+theorem periodic (γ : PeriodicTrajectory ϕ) :
+    Function.Periodic (fun t ↦ ϕ t γ.point) γ.period := fun t ↦ by
+  dsimp only
+  rw [ϕ.map_add, γ.apply_period]
+
+/-- The circle parametrization of a periodic trajectory: the continuous map
+`AddCircle γ.period → α` induced by `t ↦ ϕ t γ.point`. -/
+def circleMap (γ : PeriodicTrajectory ϕ) : AddCircle γ.period → α :=
+  γ.periodic.lift
+
+@[simp]
+theorem circleMap_coe (γ : PeriodicTrajectory ϕ) (t : ℝ) :
+    γ.circleMap t = ϕ t γ.point :=
+  γ.periodic.lift_coe t
+
+@[simp]
+theorem circleMap_zero (γ : PeriodicTrajectory ϕ) : γ.circleMap 0 = γ.point := by
+  rw [← QuotientAddGroup.mk_zero, circleMap_coe, ϕ.map_zero_apply]
+
+@[continuity, fun_prop]
+theorem continuous_circleMap (γ : PeriodicTrajectory ϕ) : Continuous γ.circleMap := by
+  rw [(QuotientAddGroup.isQuotientMap_mk _).continuous_iff]
+  exact ϕ.continuous continuous_id continuous_const
+
+theorem circleMap_add_coe (γ : PeriodicTrajectory ϕ) (θ : AddCircle γ.period) (t : ℝ) :
+    γ.circleMap (θ + t) = ϕ t (γ.circleMap θ) :=
+  Quotient.inductionOn' θ fun s ↦ by
+    rw [← QuotientAddGroup.mk_add, circleMap_coe, circleMap_coe, add_comm, ϕ.map_add]
+
+@[simp]
+theorem circleMap_vadd (s : ℝ) (γ : PeriodicTrajectory ϕ) (θ : AddCircle γ.period) :
+    (s +ᵥ γ).circleMap θ = γ.circleMap (θ + s) :=
+  Quotient.inductionOn' θ fun t ↦ by
+    rw [← QuotientAddGroup.mk_add, circleMap_coe, point_vadd, ← ϕ.map_add, circleMap_coe]
+
+@[simp]
+theorem range_circleMap (γ : PeriodicTrajectory ϕ) : range γ.circleMap = orbit ϕ γ.point := by
+  ext y
+  simp only [mem_range, (QuotientAddGroup.mk_surjective).exists, circleMap_coe, mem_orbit_iff]
+
+/-- The **asymptotic markers** of a periodic trajectory `γ` over a point `p`: the parameters
+`θ : AddCircle γ.period` at which `γ.circleMap` passes through `p`. On a `T₁` space, for each
+point `p` of the image of `γ` there are `(ClosedOrbit.mk γ).multiplicity` such markers, permuted
+simply transitively by the cyclic reparametrization subgroup
+(`PeriodicTrajectory.ncard_markersOver`, `PeriodicTrajectory.equivMarkersOver`). -/
+def markersOver (γ : PeriodicTrajectory ϕ) (p : α) : Set (AddCircle γ.period) :=
+  γ.circleMap ⁻¹' {p}
+
+@[simp]
+theorem mem_markersOver {γ : PeriodicTrajectory ϕ} {p : α} {θ : AddCircle γ.period} :
+    θ ∈ γ.markersOver p ↔ γ.circleMap θ = p :=
+  Iff.rfl
+
+/-- Zero is an asymptotic marker of `γ` over its base point `γ.point`. -/
+theorem zero_mem_markersOver_point (γ : PeriodicTrajectory ϕ) :
+    (0 : AddCircle γ.period) ∈ γ.markersOver γ.point :=
+  γ.circleMap_zero
+
+/-- Half the period of a periodic trajectory is nonzero in `AddCircle γ.period`. -/
+theorem period_div_two_coe_ne_zero (γ : PeriodicTrajectory ϕ) :
+    ((γ.period / 2 : ℝ) : AddCircle γ.period) ≠ 0 :=
+  @AddCircle.period_div_two_coe_ne_zero _ ⟨γ.period_pos⟩
+
+/-- Shifting a parameter on `AddCircle γ.period` by half the period gives a distinct point of the
+circle. -/
+theorem add_period_div_two_ne (γ : PeriodicTrajectory ϕ) (θ : AddCircle γ.period) :
+    θ + ((γ.period / 2 : ℝ) : AddCircle γ.period) ≠ θ := by
+  simp [γ.period_div_two_coe_ne_zero]
+
 theorem minimalPeriod_pos [T1Space α] (γ : PeriodicTrajectory ϕ) : 0 < ϕ.minimalPeriod γ.point :=
   ϕ.minimalPeriod_pos_iff.2 ⟨γ.exists_apply_ne, _, γ.period_pos.ne', γ.apply_period⟩
 
@@ -407,6 +508,44 @@ theorem ext {γ γ' : ClosedOrbit ϕ} (hs : γ.support = γ'.support) (hp : γ.p
   simp only [support_mk, period_mk] at hs hp
   obtain ⟨s, hs⟩ := (mem_orbit_iff ϕ).1 (hs ▸ mem_orbit_self ϕ γ.point)
   exact mk_eq_mk_iff.2 ⟨s, PeriodicTrajectory.ext hs hp.symm⟩
+
+/-- The base point of `γ` belongs to the support of its closed orbit. -/
+theorem point_mem_support (γ : PeriodicTrajectory ϕ) : γ.point ∈ (mk γ).support :=
+  mem_orbit_self ϕ γ.point
+
+/-- The image of a closed orbit is the flow orbit of any point it contains. -/
+theorem support_eq_orbit {γ : ClosedOrbit ϕ} {p : α} (hp : p ∈ γ.support) :
+    γ.support = orbit ϕ p := by
+  induction γ using ind with | h γ => ?_
+  obtain ⟨s, rfl⟩ := (mem_orbit_iff ϕ).1 hp
+  exact (ϕ.orbit_apply s γ.point).symm
+
+theorem markersOver_nonempty_iff {γ : PeriodicTrajectory ϕ} {p : α} :
+    (γ.markersOver p).Nonempty ↔ p ∈ (mk γ).support := by
+  simp [PeriodicTrajectory.markersOver, nonempty_def, ← mem_range]
+
+theorem markersOver_eq_empty_of_notMem_support {γ : PeriodicTrajectory ϕ} {p : α}
+    (hp : p ∉ (mk γ).support) : γ.markersOver p = ∅ :=
+  not_nonempty_iff_eq_empty.1 (mt markersOver_nonempty_iff.1 hp)
+
+/-- Half the period of a closed orbit is nonzero in `AddCircle γ.period`. -/
+theorem period_div_two_coe_ne_zero (γ : ClosedOrbit ϕ) :
+    ((γ.period / 2 : ℝ) : AddCircle γ.period) ≠ 0 :=
+  γ.ind PeriodicTrajectory.period_div_two_coe_ne_zero
+
+/-- **Finiteness transfer to closed orbits.** If every closed orbit satisfying `P` has its period
+and a point of its image recorded in a fixed finite set `F` of pairs `(T, y)`, then only finitely
+many closed orbits satisfy `P`. -/
+theorem finite_of_exists_finset {P : ClosedOrbit ϕ → Prop} {F : Finset (ℝ × α)}
+    (hF : ∀ γ, P γ → ∃ y ∈ F, γ.period = y.1 ∧ y.2 ∈ γ.support) :
+    {γ : ClosedOrbit ϕ | P γ}.Finite := by
+  have hinj : Function.Injective (fun γ : ClosedOrbit ϕ ↦ (γ.period, γ.support)) :=
+    fun _ _ h ↦ ext (Prod.ext_iff.1 h).2 (Prod.ext_iff.1 h).1
+  refine Finite.of_finite_image
+    ((F.finite_toSet.image fun y : ℝ × α ↦ (y.1, orbit ϕ y.2)).subset ?_) hinj.injOn
+  rintro _ ⟨γ, hγ, rfl⟩
+  obtain ⟨y, hyF, hp, hs⟩ := hF γ hγ
+  exact ⟨y, hyF, Prod.ext hp.symm (support_eq_orbit hs).symm⟩
 
 /-- The `k`-fold iterate of a closed orbit, running `k` times around it. -/
 def iterate (γ : ClosedOrbit ϕ) (k : ℕ+) : ClosedOrbit ϕ :=
@@ -559,8 +698,285 @@ theorem equivPrimitiveProdPNat_symm_apply (p : {γ : ClosedOrbit ϕ // γ.IsPrim
     equivPrimitiveProdPNat.symm p = p.1.1.iterate p.2 :=
   (rfl)
 
+/-- The period of a closed orbit is an integer multiple of its minimal period. -/
+theorem period_mem_zmultiples_minimalPeriod (γ : ClosedOrbit ϕ) :
+    γ.period ∈ AddSubgroup.zmultiples γ.minimalPeriod :=
+  AddSubgroup.mem_zmultiples_iff.2
+    ⟨γ.multiplicity, by rw [zsmul_eq_mul, Int.cast_natCast, γ.multiplicity_mul_minimalPeriod]⟩
+
+/-- The finite cyclic **reparametrization subgroup** (deck group) of `AddCircle γ.period` for a
+closed orbit `γ`, generated by the class of `γ.minimalPeriod` modulo `γ.period`. It has
+cardinality `γ.multiplicity` (`ClosedOrbit.natCard_reparamSubgroup`) and is canonically isomorphic
+to `ZMod γ.multiplicity` (`ClosedOrbit.zmodEquivReparamSubgroup`). -/
+def reparamSubgroup (γ : ClosedOrbit ϕ) : AddSubgroup (AddCircle γ.period) :=
+  AddSubgroup.zmultiples (γ.minimalPeriod : AddCircle γ.period)
+
+/-- The reparametrization subgroup is the kernel of the covering map
+`AddCircle γ.period →+ AddCircle γ.minimalPeriod`. -/
+theorem reparamSubgroup_eq_ker_coverMap (γ : ClosedOrbit ϕ) :
+    γ.reparamSubgroup = (AddCircle.coverMap γ.period_mem_zmultiples_minimalPeriod).ker :=
+  (AddCircle.ker_coverMap _).symm
+
+/-- The reparametrization subgroup of `γ` has cardinality `γ.multiplicity`. -/
+@[simp]
+theorem natCard_reparamSubgroup (γ : ClosedOrbit ϕ) :
+    Nat.card γ.reparamSubgroup = γ.multiplicity := by
+  rw [reparamSubgroup_eq_ker_coverMap]
+  exact @AddCircle.natCard_ker_coverMap _ _ γ.period_mem_zmultiples_minimalPeriod
+    ⟨γ.period_pos⟩ _ γ.multiplicity_mul_minimalPeriod.symm
+
+/-- The class of `γ.minimalPeriod` in `AddCircle γ.period` has additive order
+`γ.multiplicity`. -/
+@[simp]
+theorem addOrderOf_minimalPeriod_coe (γ : ClosedOrbit ϕ) :
+    addOrderOf (γ.minimalPeriod : AddCircle γ.period) = γ.multiplicity :=
+  @AddCircle.addOrderOf_coe_of_eq_mul _ _ ⟨γ.period_pos⟩ _
+    γ.multiplicity_mul_minimalPeriod.symm
+
+instance finite_reparamSubgroup (γ : ClosedOrbit ϕ) : Finite γ.reparamSubgroup :=
+  Nat.finite_of_card_ne_zero (by rw [γ.natCard_reparamSubgroup]; exact γ.multiplicity.ne_zero)
+
+/-- The canonical additive isomorphism `ZMod γ.multiplicity ≃+ γ.reparamSubgroup` sending `1` to
+the generator `(γ.minimalPeriod : AddCircle γ.period)`. -/
+def zmodEquivReparamSubgroup (γ : ClosedOrbit ϕ) :
+    ZMod γ.multiplicity ≃+ γ.reparamSubgroup :=
+  @AddCircle.zmodEquivZMultiples _ _ ⟨γ.period_pos⟩ _ γ.multiplicity_mul_minimalPeriod.symm
+
+@[simp]
+theorem coe_zmodEquivReparamSubgroup_intCast (γ : ClosedOrbit ϕ) (k : ℤ) :
+    (γ.zmodEquivReparamSubgroup k : AddCircle γ.period) =
+      k • (γ.minimalPeriod : AddCircle γ.period) :=
+  @AddCircle.coe_zmodEquivZMultiples_intCast _ _ ⟨γ.period_pos⟩ _
+    γ.multiplicity_mul_minimalPeriod.symm k
+
+@[simp]
+theorem coe_zmodEquivReparamSubgroup_natCast (γ : ClosedOrbit ϕ) (k : ℕ) :
+    (γ.zmodEquivReparamSubgroup k : AddCircle γ.period) =
+      k • (γ.minimalPeriod : AddCircle γ.period) :=
+  @AddCircle.coe_zmodEquivZMultiples_natCast _ _ ⟨γ.period_pos⟩ _
+    γ.multiplicity_mul_minimalPeriod.symm k
+
+@[simp]
+theorem coe_zmodEquivReparamSubgroup_one (γ : ClosedOrbit ϕ) :
+    (γ.zmodEquivReparamSubgroup 1 : AddCircle γ.period) =
+      (γ.minimalPeriod : AddCircle γ.period) :=
+  @AddCircle.coe_zmodEquivZMultiples_one _ _ ⟨γ.period_pos⟩ _
+    γ.multiplicity_mul_minimalPeriod.symm
+
+/-- Half the period lies in the reparametrization subgroup exactly when the multiplicity is
+even. -/
+theorem period_div_two_mem_reparamSubgroup_iff (γ : ClosedOrbit ϕ) :
+    ((γ.period / 2 : ℝ) : AddCircle γ.period) ∈ γ.reparamSubgroup ↔
+      Even (γ.multiplicity : ℕ) :=
+  @AddCircle.period_div_two_mem_zmultiples_iff _ _ ⟨γ.period_pos⟩ _
+    γ.multiplicity_mul_minimalPeriod.symm
+
 end T1Space
 
 end ClosedOrbit
+
+namespace PeriodicTrajectory
+
+variable {ϕ} [T1Space α]
+
+/-- The period of `γ` is the multiplicity of its closed orbit times its minimal period. -/
+theorem multiplicity_mul_minimalPeriod (γ : PeriodicTrajectory ϕ) :
+    ((ClosedOrbit.mk γ).multiplicity : ℝ) * ϕ.minimalPeriod γ.point = γ.period := by
+  simpa using (ClosedOrbit.mk γ).multiplicity_mul_minimalPeriod
+
+/-- The period of `γ` is an integer multiple of the period of its underlying primitive periodic
+trajectory. -/
+theorem period_mem_zmultiples_period_primitive (γ : PeriodicTrajectory ϕ) :
+    γ.period ∈ AddSubgroup.zmultiples γ.primitive.period :=
+  AddSubgroup.mem_zmultiples_iff.2
+    ⟨(ClosedOrbit.mk γ).multiplicity,
+      by rw [zsmul_eq_mul, Int.cast_natCast, period_primitive, γ.multiplicity_mul_minimalPeriod]⟩
+
+/-- The finite cyclic reparametrization subgroup of `AddCircle γ.period` for a periodic trajectory
+`γ`, generated by `(ϕ.minimalPeriod γ.point : AddCircle γ.period)`. -/
+def reparamSubgroup (γ : PeriodicTrajectory ϕ) : AddSubgroup (AddCircle γ.period) :=
+  AddSubgroup.zmultiples (ϕ.minimalPeriod γ.point : AddCircle γ.period)
+
+/-- The reparametrization subgroup of `γ` is the kernel of the covering map onto
+`AddCircle γ.primitive.period`. -/
+theorem reparamSubgroup_eq_ker_coverMap (γ : PeriodicTrajectory ϕ) :
+    γ.reparamSubgroup = (AddCircle.coverMap γ.period_mem_zmultiples_period_primitive).ker :=
+  (AddCircle.ker_coverMap _).symm
+
+/-- The canonical additive isomorphism
+`ZMod (ClosedOrbit.mk γ).multiplicity ≃+ γ.reparamSubgroup` sending `1` to
+`(ϕ.minimalPeriod γ.point : AddCircle γ.period)`. -/
+def zmodEquivReparamSubgroup (γ : PeriodicTrajectory ϕ) :
+    ZMod (ClosedOrbit.mk γ).multiplicity ≃+ γ.reparamSubgroup :=
+  @AddCircle.zmodEquivZMultiples _ _ ⟨γ.period_pos⟩ _ γ.multiplicity_mul_minimalPeriod.symm
+
+@[simp]
+theorem coe_zmodEquivReparamSubgroup_intCast (γ : PeriodicTrajectory ϕ) (k : ℤ) :
+    (γ.zmodEquivReparamSubgroup k : AddCircle γ.period) =
+      k • (ϕ.minimalPeriod γ.point : AddCircle γ.period) :=
+  @AddCircle.coe_zmodEquivZMultiples_intCast _ _ ⟨γ.period_pos⟩ _
+    γ.multiplicity_mul_minimalPeriod.symm k
+
+@[simp]
+theorem coe_zmodEquivReparamSubgroup_natCast (γ : PeriodicTrajectory ϕ) (k : ℕ) :
+    (γ.zmodEquivReparamSubgroup k : AddCircle γ.period) =
+      k • (ϕ.minimalPeriod γ.point : AddCircle γ.period) :=
+  @AddCircle.coe_zmodEquivZMultiples_natCast _ _ ⟨γ.period_pos⟩ _
+    γ.multiplicity_mul_minimalPeriod.symm k
+
+@[simp]
+theorem coe_zmodEquivReparamSubgroup_one (γ : PeriodicTrajectory ϕ) :
+    (γ.zmodEquivReparamSubgroup 1 : AddCircle γ.period) =
+      (ϕ.minimalPeriod γ.point : AddCircle γ.period) :=
+  @AddCircle.coe_zmodEquivZMultiples_one _ _ ⟨γ.period_pos⟩ _
+    γ.multiplicity_mul_minimalPeriod.symm
+
+/-- The circle parametrization of a periodic trajectory factors through the covering map onto the
+circle of minimal period. -/
+theorem circleMap_eq_comp_coverMap (γ : PeriodicTrajectory ϕ) :
+    γ.circleMap =
+      γ.primitive.circleMap ∘ AddCircle.coverMap γ.period_mem_zmultiples_period_primitive := by
+  funext θ
+  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+  simp
+
+/-- The circle parametrization of a primitive periodic trajectory is injective. -/
+theorem circleMap_primitive_injective (γ : PeriodicTrajectory ϕ) :
+    Function.Injective γ.primitive.circleMap := by
+  intro θ₁ θ₂ h
+  obtain ⟨t₁, rfl⟩ := QuotientAddGroup.mk_surjective θ₁
+  obtain ⟨t₂, rfl⟩ := QuotientAddGroup.mk_surjective θ₂
+  simp only [circleMap_coe, point_primitive] at h
+  have hsub : ϕ (t₁ - t₂) γ.point = γ.point := by
+    rw [sub_eq_add_neg, add_comm, ϕ.map_add, h, ϕ.map_neg_apply_map]
+  obtain ⟨n, hn⟩ := (ϕ.apply_eq_self_iff_exists_zsmul γ.exists_apply_ne).1 hsub
+  exact sub_eq_zero.1 (by
+    rw [← QuotientAddGroup.mk_sub]
+    exact (AddCircle.coe_eq_zero_iff _).2 ⟨n, hn⟩)
+
+/-- Two circle parameters map to the same point on the orbit if and only if they differ by an
+element of the reparametrization subgroup. -/
+theorem circleMap_eq_circleMap_iff {γ : PeriodicTrajectory ϕ}
+    {θ₁ θ₂ : AddCircle γ.period} :
+    γ.circleMap θ₁ = γ.circleMap θ₂ ↔ θ₁ - θ₂ ∈ γ.reparamSubgroup := by
+  rw [γ.circleMap_eq_comp_coverMap, Function.comp_apply, Function.comp_apply,
+    γ.circleMap_primitive_injective.eq_iff, ← sub_eq_zero, ← map_sub, ← AddMonoidHom.mem_ker,
+    ← γ.reparamSubgroup_eq_ker_coverMap]
+
+/-- The circle parametrization of a periodic trajectory is injective if and only if its closed
+orbit is primitive. -/
+theorem injective_circleMap_iff {γ : PeriodicTrajectory ϕ} :
+    Function.Injective γ.circleMap ↔ (ClosedOrbit.mk γ).IsPrimitive := by
+  constructor
+  · intro hinj
+    have hmem : (ϕ.minimalPeriod γ.point : AddCircle γ.period) - 0 ∈ γ.reparamSubgroup := by
+      rw [sub_zero]
+      exact AddSubgroup.mem_zmultiples _
+    have h0 := hinj (circleMap_eq_circleMap_iff.2 hmem)
+    have hord : addOrderOf (ϕ.minimalPeriod γ.point : AddCircle γ.period) =
+        (ClosedOrbit.mk γ).multiplicity :=
+      @AddCircle.addOrderOf_coe_of_eq_mul _ _ ⟨γ.period_pos⟩ _
+        γ.multiplicity_mul_minimalPeriod.symm
+    rw [h0, addOrderOf_zero] at hord
+    exact ClosedOrbit.isPrimitive_iff_multiplicity_eq_one.2 (PNat.coe_inj.1 hord.symm)
+  · intro hprim θ₁ θ₂ h
+    have hmem :
+        θ₁ - θ₂ ∈ AddSubgroup.zmultiples (ϕ.minimalPeriod γ.point : AddCircle γ.period) :=
+      circleMap_eq_circleMap_iff.1 h
+    have hp : ϕ.minimalPeriod γ.point = γ.period := by
+      simpa using (ClosedOrbit.isPrimitive_iff.1 hprim).symm
+    rw [hp, (AddCircle.coe_eq_zero_iff γ.period).2 ⟨1, one_smul _ _⟩,
+      AddSubgroup.zmultiples_zero_eq_bot, AddSubgroup.mem_bot, sub_eq_zero] at hmem
+    exact hmem
+
+/-- The reparametrization subgroup is the rotation stabilizer of `γ.circleMap`. -/
+theorem mem_reparamSubgroup_iff_forall_circleMap_add {γ : PeriodicTrajectory ϕ}
+    {τ : AddCircle γ.period} :
+    τ ∈ γ.reparamSubgroup ↔ ∀ θ, γ.circleMap (θ + τ) = γ.circleMap θ := by
+  refine ⟨fun hτ θ ↦ circleMap_eq_circleMap_iff.2 (by simpa using hτ), fun h ↦ ?_⟩
+  simpa using circleMap_eq_circleMap_iff.1 (h 0)
+
+/-- Given one asymptotic marker `θ₀` over `p`, the asymptotic markers over `p` are the coset
+`θ₀ + γ.reparamSubgroup`. -/
+theorem mem_markersOver_iff_sub_mem_reparamSubgroup {γ : PeriodicTrajectory ϕ} {p : α}
+    {θ₀ θ : AddCircle γ.period} (hθ₀ : θ₀ ∈ γ.markersOver p) :
+    θ ∈ γ.markersOver p ↔ θ - θ₀ ∈ γ.reparamSubgroup := by
+  rw [mem_markersOver, ← mem_markersOver.1 hθ₀, circleMap_eq_circleMap_iff]
+
+/-- Choosing a base asymptotic marker `θ₀` over `p` identifies
+`ZMod (ClosedOrbit.mk γ).multiplicity` with `γ.markersOver p`, intertwining `+ 1` with rotation by
+the minimal period. -/
+def equivMarkersOver (γ : PeriodicTrajectory ϕ) {p : α} {θ₀ : AddCircle γ.period}
+    (hθ₀ : θ₀ ∈ γ.markersOver p) :
+    ZMod (ClosedOrbit.mk γ).multiplicity ≃ γ.markersOver p where
+  toFun k := ⟨θ₀ + (γ.zmodEquivReparamSubgroup k : AddCircle γ.period),
+    (γ.mem_markersOver_iff_sub_mem_reparamSubgroup hθ₀).2 <| by simp⟩
+  invFun θ := γ.zmodEquivReparamSubgroup.symm
+    ⟨θ.1 - θ₀, (γ.mem_markersOver_iff_sub_mem_reparamSubgroup hθ₀).1 θ.2⟩
+  left_inv k := by
+    apply γ.zmodEquivReparamSubgroup.injective
+    rw [AddEquiv.apply_symm_apply]
+    ext
+    exact add_sub_cancel_left θ₀ _
+  right_inv θ := by
+    ext
+    change θ₀ + (γ.zmodEquivReparamSubgroup (γ.zmodEquivReparamSubgroup.symm _) :
+      AddCircle γ.period) = θ.1
+    rw [AddEquiv.apply_symm_apply]
+    exact add_sub_cancel θ₀ θ.1
+
+@[simp]
+theorem coe_equivMarkersOver_apply (γ : PeriodicTrajectory ϕ) {p : α}
+    {θ₀ : AddCircle γ.period} (hθ₀ : θ₀ ∈ γ.markersOver p)
+    (k : ZMod (ClosedOrbit.mk γ).multiplicity) :
+    (γ.equivMarkersOver hθ₀ k : AddCircle γ.period) =
+      θ₀ + (γ.zmodEquivReparamSubgroup k : AddCircle γ.period) :=
+  (rfl)
+
+/-- Advancing the cyclic index by `1` rotates the asymptotic marker by the minimal period. -/
+theorem coe_equivMarkersOver_add_one (γ : PeriodicTrajectory ϕ) {p : α}
+    {θ₀ : AddCircle γ.period} (hθ₀ : θ₀ ∈ γ.markersOver p)
+    (k : ZMod (ClosedOrbit.mk γ).multiplicity) :
+    (γ.equivMarkersOver hθ₀ (k + 1) : AddCircle γ.period) =
+      (γ.equivMarkersOver hθ₀ k : AddCircle γ.period) +
+        (ϕ.minimalPeriod γ.point : AddCircle γ.period) := by
+  rw [coe_equivMarkersOver_apply, coe_equivMarkersOver_apply, _root_.map_add, AddSubgroup.coe_add,
+    add_assoc, γ.coe_zmodEquivReparamSubgroup_one]
+
+/-- The set of asymptotic markers of `γ` over any point `p` is finite. -/
+theorem finite_markersOver (γ : PeriodicTrajectory ϕ) (p : α) : (γ.markersOver p).Finite := by
+  rcases (γ.markersOver p).eq_empty_or_nonempty with h | ⟨θ₀, hθ₀⟩
+  · exact h ▸ finite_empty
+  · exact Finite.of_equiv _ (γ.equivMarkersOver hθ₀)
+
+/-- Over every point `p` of the image of `γ`, there are `(ClosedOrbit.mk γ).multiplicity`
+asymptotic markers. -/
+theorem ncard_markersOver {γ : PeriodicTrajectory ϕ} {p : α}
+    (hp : p ∈ (ClosedOrbit.mk γ).support) :
+    (γ.markersOver p).ncard = (ClosedOrbit.mk γ).multiplicity := by
+  obtain ⟨θ₀, hθ₀⟩ := ClosedOrbit.markersOver_nonempty_iff.2 hp
+  rw [← Nat.card_coe_set_eq, Nat.card_congr (γ.equivMarkersOver hθ₀).symm, Nat.card_zmod]
+
+/-- Shifting an asymptotic marker over `p` by half the period gives another marker over `p` if and
+only if `(ClosedOrbit.mk γ).multiplicity` is even. -/
+theorem add_period_div_two_mem_markersOver_iff {γ : PeriodicTrajectory ϕ} {p : α}
+    {θ : AddCircle γ.period} (hθ : θ ∈ γ.markersOver p) :
+    θ + ((γ.period / 2 : ℝ) : AddCircle γ.period) ∈ γ.markersOver p ↔
+      Even ((ClosedOrbit.mk γ).multiplicity : ℕ) := by
+  rw [γ.mem_markersOver_iff_sub_mem_reparamSubgroup hθ, add_sub_cancel_left]
+  exact @AddCircle.period_div_two_mem_zmultiples_iff _ _ ⟨γ.period_pos⟩ _
+    γ.multiplicity_mul_minimalPeriod.symm
+
+/-- Rotating a periodic trajectory by half its period fixes the base point if and only if the
+multiplicity of the closed orbit is even (while always representing the same closed orbit by
+`ClosedOrbit.mk_vadd`). -/
+theorem point_half_period_vadd_eq_iff (γ : PeriodicTrajectory ϕ) :
+    ((γ.period / 2) +ᵥ γ).point = γ.point ↔
+      Even ((ClosedOrbit.mk γ).multiplicity : ℕ) := by
+  rw [point_vadd, ← circleMap_coe, ← mem_markersOver,
+    ← zero_add ((γ.period / 2 : ℝ) : AddCircle γ.period),
+    add_period_div_two_mem_markersOver_iff γ.zero_mem_markersOver_point]
+
+end PeriodicTrajectory
 
 end Flow

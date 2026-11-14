@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.LocallyConvex.SeparatingDual
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.RegularValue.Level
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 
@@ -18,6 +20,13 @@ hypersurface, so that this range has codimension one, this is transversality of 
 hypersurface in the usual sense: `Z (ι s)` and the tangent space of the hypersurface at `s` span
 the tangent space of `M` at `ι s`. A transverse vector field does not vanish along `ι`
 (`TauCeti.IsTransverseAlong.ne_zero`).
+
+Conversely, at any point `x` where a tangent vector `v` is nonzero (and the model space has
+separating dual, as every real or complex normed space does), composing a continuous linear
+functional sending `v` to `1` with the preferred extended chart produces a scalar function of
+arbitrary regularity `C^n` at `x` with `dg_x(v) = 1`
+(`TauCeti.exists_contMDiffAt_mvfderiv_eq_one`, `TauCeti.exists_contMDiffAt_mvfderiv_ne_zero`),
+supplying a local transverse level without choosing coordinates by hand.
 
 For a regular level `f⁻¹(c)` of a scalar function, with its preferred atlas
 `TauCeti.regularLevelChartedSpace`, the tangent space at `x` is the kernel of `df_x`
@@ -41,6 +50,8 @@ boundary is crossed outwards by a vector field, as for Liouville domains.
 
 ## Main results
 
+* `TauCeti.exists_contMDiffAt_mvfderiv_eq_one`, `TauCeti.exists_contMDiffAt_mvfderiv_ne_zero`: any
+  nonzero tangent vector admits a locally `C^n` scalar function whose differential sends it to `1`.
 * `TauCeti.isTransverseAlong_coe_scalarRegularLevel_iff`: transversality along a regular level is
   the nonvanishing of `df(Z)` on the level.
 * `TauCeti.frontier_setOf_le_eq_of_mvfderiv_pos`: the frontier of a sublevel set whose level is
@@ -55,9 +66,41 @@ boundary is crossed outwards by a vector field, as for Liouville domains.
 public section
 
 open Filter Module Set
-open scoped Manifold Topology
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
+
+section SeparatingScalar
+
+variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [SeparatingDual 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  [TopologicalSpace M] [ChartedSpace H M]
+
+/-- **Existence of a local transverse scalar function.** For any nonzero tangent vector `v` at `x`
+and any regularity `n : ℕ∞ω` (including smooth and analytic), there exists a scalar function
+`g : M → 𝕜` which is `C^n` at `x` with `dg_x(v) = 1`. No manifold smoothness, finite dimension,
+or boundaryless assumption is required: `g` is a continuous linear functional composed with the
+preferred extended chart at `x`. -/
+theorem exists_contMDiffAt_mvfderiv_eq_one {x : M} {v : TangentSpace I x} (hv : v ≠ 0)
+    (n : ℕ∞ω) :
+    ∃ g : M → 𝕜, ContMDiffAt I 𝓘(𝕜) n g x ∧ mvfderiv I g x v = 1 := by
+  have hv' : @Ne E v 0 := hv
+  obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_eq_one (R := 𝕜) hv'
+  refine ⟨ℓ ∘ extChartAt I x,
+    (ℓ.contDiff.contMDiff (n := n)).contMDiffAt.comp x contMDiffAt_extChartAt, ?_⟩
+  rw [ℓ.mvfderiv_comp_apply ((contMDiffAt_extChartAt (I := I) (n := 1)).mdifferentiableAt
+    one_ne_zero), mvfderiv_apply_of_eventuallyEq_extChartAt Filter.EventuallyEq.rfl]
+  exact hℓ
+
+/-- Any nonzero tangent vector `v` at `x` admits a scalar function `g : M → 𝕜` that is `C^n` at
+`x` with `dg_x(v) ≠ 0`. -/
+theorem exists_contMDiffAt_mvfderiv_ne_zero {x : M} {v : TangentSpace I x} (hv : v ≠ 0)
+    (n : ℕ∞ω) :
+    ∃ g : M → 𝕜, ContMDiffAt I 𝓘(𝕜) n g x ∧ mvfderiv I g x v ≠ 0 := by
+  obtain ⟨g, hg, hgv⟩ := exists_contMDiffAt_mvfderiv_eq_one (I := I) hv n
+  exact ⟨g, hg, hgv.symm ▸ one_ne_zero⟩
+
+end SeparatingScalar
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
