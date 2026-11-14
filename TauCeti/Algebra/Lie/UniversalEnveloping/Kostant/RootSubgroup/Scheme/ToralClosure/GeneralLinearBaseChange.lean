@@ -50,12 +50,9 @@ torus maps lies in the base change of the integral toral carrier; equality is no
   defining ideal in `O(GLₙ/A)`.
 * `kostantToralBaseChangePresentationIso`: its quotient is the base change of the integral toral
   coordinate ring.
-* `kostantRootSubgroupBaseChangePresentationCoordinateMap` and
-  `kostantRootSubgroupToralBaseChangePresentationCoordinateMap`: the transported base change of a
-  root subgroup and its factorization through the transported toral carrier.
-* `kostantRootSubgroupBaseChangePresentationCoordinateMap_baseChange`: base change of the
-  transported root subgroup along a further extension `A → B` is the transported root subgroup
-  over `B`.
+* `kostantRootSubgroupToralBaseChangePresentationCoordinateMap`: the factorization of the
+  base-changed root subgroup `kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap` through the
+  transported toral carrier.
 * `kostantWeightTorusToralBaseChangePresentationCoordinateMap`: the factorization of the
   transported weight-torus coordinate map through the transported carrier.
 * `kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal`: the generated-over-`A`
@@ -101,7 +98,7 @@ open CategoryTheory
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-universe u w x y z
+universe u w x
 
 -- Match tensor products to the `ℤ`-algebra structure used by scalar extension.
 attribute [local instance high] Algebra.toModule
@@ -201,44 +198,6 @@ theorem mkQuotient_comp_kostantToralBaseChangePresentationIso_hom :
     mkQuotient_comp_kostantToralBaseChangePresentationQuotientIso_hom, Category.assoc,
     mkQuotient_comp_kostantToralBaseChangeIso_hom]
 
-/-- The base change of the `i`th integral root-subgroup coordinate map, transported into the
-coordinate Hopf algebras built directly over `A`. -/
-noncomputable def kostantRootSubgroupBaseChangePresentationCoordinateMap (i : I) :
-    GeneralLinear.coordinateHopfAlgebra A n ⟶ AdditiveGroup.coordinateHopfAlgebra A :=
-  (GeneralLinear.coordinateHopfAlgebraBaseChangeIso ℤ A n).inv ≫
-    CommHopfAlgCat.baseChangeMap
-      (kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b) ≫
-    (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A).hom
-
-omit [Finite κ] in
-/-- The transported base-changed root-subgroup map is the stated composite of the two coordinate
-base-change isomorphisms with the scalar extension of the map over `ℤ`. -/
-theorem kostantRootSubgroupBaseChangePresentationCoordinateMap_def (i : I) :
-    kostantRootSubgroupBaseChangePresentationCoordinateMap e h ρ M hM hnil b A i =
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso ℤ A n).inv ≫
-        CommHopfAlgCat.baseChangeMap
-          (kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b) ≫
-        (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A).hom := by
-  unfold kostantRootSubgroupBaseChangePresentationCoordinateMap
-  rfl
-
-omit [Finite κ] in
-/-- **The transported root subgroups are compatible with towers.** For a ring map `A → B`, scalar
-extension of the root subgroup transported to `A` is the root subgroup transported to `B`, once
-the scalar extensions to `B` of the coordinate Hopf algebras of `GLₙ` and `𝔾ₐ` over `A` are
-identified with those over `B`. -/
-theorem kostantRootSubgroupBaseChangePresentationCoordinateMap_baseChange
-    (A : Type y) (B : Type max y z) [CommRing A] [CommRing B] [Algebra A B] (i : I) :
-    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso A B n).inv ≫
-        CommHopfAlgCat.baseChangeMap
-          (kostantRootSubgroupBaseChangePresentationCoordinateMap e h ρ M hM hnil b A i) ≫
-        (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso A B).hom =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap e h ρ M hM hnil b B i := by
-  rw [kostantRootSubgroupBaseChangePresentationCoordinateMap_def,
-    kostantRootSubgroupBaseChangePresentationCoordinateMap_def]
-  exact GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_comp_baseChangeMap_tower ℤ A B n
-    _ _ _ _ AdditiveGroup.gaScalarTensorBialgEquiv_one_tmul_gaScalarTensorBialgEquiv_one_tmul
-
 /-- The transported base change of the `i`th root-subgroup coordinate map, factored through the
 transported toral carrier. -/
 noncomputable def kostantRootSubgroupToralBaseChangePresentationCoordinateMap (i : I) :
@@ -257,12 +216,12 @@ theorem mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinate
           (kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A) ≫
         kostantRootSubgroupToralBaseChangePresentationCoordinateMap
           e h ρ M hM hnil b wt A i =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap e h ρ M hM hnil b A i := by
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap e h ρ M hM i (hnil i) b A := by
   rw [kostantRootSubgroupToralBaseChangePresentationCoordinateMap, ← Category.assoc,
     mkQuotient_comp_kostantToralBaseChangePresentationQuotientIso_hom, Category.assoc,
     ← Category.assoc (CommHopfAlgCat.mkQuotient _ _),
     mkQuotient_comp_kostantRootSubgroupToralBaseChangeCoordinateMap,
-    kostantRootSubgroupBaseChangePresentationCoordinateMap]
+    kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_def]
 
 /-- The transported base change of the weight-torus coordinate map, factored through the
 transported toral carrier. -/
@@ -292,8 +251,8 @@ theorem mkQuotient_comp_kostantWeightTorusToralBaseChangePresentationCoordinateM
 theorem kostantToralBaseChangePresentationIdeal_toIdeal_le_root_ker (i : I) :
     (kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A).toIdeal ≤
       RingHom.ker
-        (kostantRootSubgroupBaseChangePresentationCoordinateMap
-          e h ρ M hM hnil b A i).hom.toAlgHom.toRingHom :=
+        (kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
+          e h ρ M hM i (hnil i) b A).hom.toAlgHom.toRingHom :=
   CommHopfAlgCat.toIdeal_le_ker_of_mkQuotient_comp
     (mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
       e h ρ M hM hnil b wt A i)
@@ -320,8 +279,8 @@ theorem kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal :
     kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A ≤
       CommHopfAlgCat.commonKernelHopfIdeal (K := K)
         (fun j => match j with
-          | Sum.inl i => kostantRootSubgroupBaseChangePresentationCoordinateMap
-              e h ρ M hM hnil b A i
+          | Sum.inl i => kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
+              e h ρ M hM i (hnil i) b A
           | Sum.inr _ => GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A wt) := by
   dsimp only
   rw [CommHopfAlgCat.le_commonKernelHopfIdeal_iff]
@@ -575,7 +534,7 @@ theorem kostantToralBaseChangePresentationIsoOfEq_hom_comp_rootSubgroupBaseChang
     CommHopfAlgCat.baseChangeFunctor_map,
     mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap]
   simpa only [_root_.CommHopfAlgCat.isoMk_hom] using
-    (kostantRootSubgroupBaseChangePresentationCoordinateMap_def e h ρ M hM hnil b A i).symm
+    (kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_def e h ρ M hM i (hnil i) b A).symm
 
 /-- On points, the transported factored root-subgroup map has the same divided-power exponential
 matrix as its integral source. -/
