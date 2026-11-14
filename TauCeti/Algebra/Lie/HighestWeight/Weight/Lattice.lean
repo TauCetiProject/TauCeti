@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CharP.Invertible
 public import TauCeti.Algebra.Lie.HighestWeight.Basic
 public import TauCeti.Algebra.Lie.Weights.WeightLattice
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
+import TauCeti.LinearAlgebra.RootSystem.Weyl.CorootSum
 
 /-!
 # The Weyl vector and dominance through the coroot pairings
@@ -38,6 +39,8 @@ with no order none of this can be said about the values in `K` at all.
 * `TauCeti.isDominantIntegral_iff_isIntegralWeight_and_forall_coweightPairing_nonneg`: a weight
   is dominant exactly when it is integral and its simple coroot pairings are nonnegative
   integers.
+* `TauCeti.IsDominantIntegral.exists_nat_apply_twoWeylVector_flip`: a dominant integral weight
+  takes on the sum `2ρ^∨` of the positive coroots the natural number `∑_{α > 0} ⟨lam, α^∨⟩`.
 * `TauCeti.IsDominantIntegral.coweightPairing_add_weylVector_pos`: the `ρ`-shift of a dominant
   integral weight has *strictly* positive simple coroot pairings.
 
@@ -117,6 +120,20 @@ theorem IsDominantIntegral.coweightPairing_nonneg_of_mem_posRoots {lam : Dual K 
   obtain ⟨n, hn⟩ := hlam.exists_nat_apply_coroot hi
   rw [coweightPairing_eq_of_apply_coroot_eq_intCast (n := (n : ℤ)) (by rw [hn, Int.cast_natCast])]
   exact Int.natCast_nonneg n
+
+/-- **A dominant integral weight takes a natural number value on the sum of the positive
+coroots**: its value on `2ρ^∨` is the sum of its integer pairings with the positive coroots, a
+natural number since each of them is nonnegative. -/
+theorem IsDominantIntegral.exists_nat_apply_twoWeylVector_flip {lam : Dual K H}
+    (hlam : IsDominantIntegral b lam) :
+    ∃ m : ℕ, lam (twoWeylVector (IsKilling.rootSystem H).flip b.flip) = m ∧
+      ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) b, coweightPairing lam i = m := by
+  set n := ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) b, coweightPairing lam i
+  have hn : 0 ≤ n := Finset.sum_nonneg fun i hi ↦
+    hlam.coweightPairing_nonneg_of_mem_posRoots ((mem_posRootsFinset _ b i).mp hi)
+  refine ⟨n.toNat, ?_, Int.toNat_of_nonneg hn |>.symm⟩
+  rw [twoWeylVector_flip_eq_sum_coroot, map_sum, ← Int.cast_natCast, Int.toNat_of_nonneg hn]
+  simp only [n, Int.cast_sum, intCast_coweightPairing hlam.isIntegralWeight]
 
 /-- **A dominant integral weight has nonnegative simple coroot pairings**, a simple root being
 positive. -/
