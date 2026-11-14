@@ -53,18 +53,12 @@ instance Sigma.normalSpace {ι : Type*} {X : ι → Type*} [∀ i, TopologicalSp
     [∀ i, NormalSpace (X i)] : NormalSpace (Σ i, X i) := by
   refine ⟨fun s t hs ht hst ↦ ?_⟩
   rw [isClosed_sigma_iff] at hs ht
-  have hsep (i : ι) : ∃ u v : Set (X i), IsOpen u ∧ IsOpen v ∧
-      Sigma.mk i ⁻¹' s ⊆ u ∧ Sigma.mk i ⁻¹' t ⊆ v ∧ Disjoint u v :=
+  choose u v hu hv hsu htv huv using fun i ↦
     normal_separation (hs i) (ht i) (hst.preimage (Sigma.mk i))
-  choose u v hu hv hsu htv huv using hsep
   refine ⟨⋃ i, Sigma.mk i '' u i, ⋃ i, Sigma.mk i '' v i,
     isOpen_iUnion fun i ↦ IsOpenEmbedding.sigmaMk.isOpenMap _ (hu i),
     isOpen_iUnion fun i ↦ IsOpenEmbedding.sigmaMk.isOpenMap _ (hv i),
     fun ⟨i, x⟩ hx ↦ mem_iUnion.2 ⟨i, x, hsu i hx, rfl⟩,
     fun ⟨i, x⟩ hx ↦ mem_iUnion.2 ⟨i, x, htv i hx, rfl⟩,
-    disjoint_left.2 ?_⟩
-  rintro _ hxu hxv
-  obtain ⟨i, x, hx, rfl⟩ := mem_iUnion.1 hxu
-  obtain ⟨j, y, hy, heq⟩ := mem_iUnion.1 hxv
-  cases heq
-  exact (huv i).le_bot ⟨hx, hy⟩
+    disjoint_iUnion_left.2 fun i ↦ disjoint_iUnion_right.2 fun j ↦ disjoint_left.2 ?_⟩
+  rintro _ ⟨x, hx, rfl⟩ ⟨y, hy, heq⟩; cases heq; exact (huv i).le_bot ⟨hx, hy⟩

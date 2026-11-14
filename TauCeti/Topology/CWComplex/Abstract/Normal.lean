@@ -13,26 +13,20 @@ public import TauCeti.Topology.Separation.Sigma
 /-!
 # Relative CW complexes on normal spaces are normal
 
-Mathlib's categorical relative CW complex `c : TopCat.RelativeCWComplex f`, for a morphism
-`f : X ⟶ Y` of `TopCat`, presents `Y` as the sequential colimit of stages starting at `X`, each
-obtained from the previous one by attaching disks along their boundary spheres. This file proves
-that `Y` is a normal space when `X` is (`TopCat.RelativeCWComplex.normalSpace`); in particular
-every categorical CW complex is normal (`TopCat.CWComplex.normalSpace`).
-
-At each attachment step, the coproduct of attached disks is homeomorphic to a disjoint union of
-Euclidean disks (`TopCat.sigmaCofanIsColimit`), which is normal by `Sigma.normalSpace`, and the
-coproduct of boundary inclusions is a closed embedding, so `TauCeti.TopCat.normalSpace_of_isPushout`
-propagates normality from stage `n` to stage `n + 1` (`HomotopicalAlgebra.AttachCells.normalSpace`).
-Passing to the sequential colimit along the closed stage inclusions then yields normality of `Y` by
-`TauCeti.TopCat.normalSpace_of_isColimit`
-(`HomotopicalAlgebra.RelativeCellComplex.normalSpace`).
+For a morphism `f : X ⟶ Y` of `TopCat`, `c : TopCat.RelativeCWComplex f` presents `Y` as the
+sequential colimit of stages starting at `X`, each obtained by attaching disks along boundary
+spheres. This file proves that `Y` is normal when `X` is (`TopCat.RelativeCWComplex.normalSpace`),
+and hence every categorical CW complex is normal (`TopCat.CWComplex.normalSpace`). At each step,
+the coproduct of attached disks is normal via `TopCat.sigmaCofanIsColimit` and `Sigma.normalSpace`,
+so `TauCeti.TopCat.normalSpace_of_isPushout` (`HomotopicalAlgebra.AttachCells.normalSpace`) and
+`TauCeti.TopCat.normalSpace_of_isColimit` (`HomotopicalAlgebra.RelativeCellComplex.normalSpace`)
+propagate normality along the closed stage inclusions.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Appendix, Proposition A.3.
-* R. Fritsch and R. Piccinini, *Cellular Structures in Topology*, Cambridge University Press,
-  1990.
+* R. Fritsch and R. Piccinini, *Cellular Structures in Topology*, Cambridge University Press, 1990.
 -/
 
 public section

@@ -72,12 +72,10 @@ lemma ofHom_restrictPreimage_univ_eq {X Y : Type w} [TopologicalSpace X] [Topolo
       TopCat.of (Set.univ : Set X) ⟶ TopCat.of (Set.univ : Set Y)) =
       TopCat.ofHom ⟨fun x ↦ ⟨f x.1, Set.mem_univ _⟩,
         (f.continuous.comp continuous_subtype_val).subtype_mk _⟩ := by
-  ext x
-  exact Set.restrictPreimage_coe Set.univ f x
+  ext x; exact Set.restrictPreimage_coe Set.univ f x
 
-/-- For CW structures on `Set.univ`, a continuous map `f : C(X, Y)` is cellular via
-`f.restrictPreimage Set.univ` if and only if `f` maps each skeleton of `X` into the corresponding
-skeleton of `Y`. -/
+/-- For CW structures on `Set.univ`, `f : C(X, Y)` is cellular via `f.restrictPreimage Set.univ`
+iff `f` maps each skeleton of `X` into the corresponding skeleton of `Y`. -/
 theorem isCellular_univ_iff [CWComplex (Set.univ : Set X)] [CWComplex (Set.univ : Set Y)]
     {f : C(X, Y)} :
     IsCellular (Set.univ : Set X) (Set.univ : Set Y)
@@ -85,23 +83,20 @@ theorem isCellular_univ_iff [CWComplex (Set.univ : Set X)] [CWComplex (Set.univ 
       ∀ n : ℕ, Set.MapsTo f (skeletonLT (Set.univ : Set X) (n : ℕ∞))
         (skeletonLT (Set.univ : Set Y) (n : ℕ∞)) := by
   rw [ofHom_restrictPreimage_univ_eq]
-  refine forall_congr' fun n ↦ ⟨fun hf x hx ↦ ?_, fun hf x hx ↦ ?_⟩
-  · simpa [TopCat.ofHom_apply] using hf (x := ⟨x, Set.mem_univ x⟩) hx
-  · simpa [TopCat.ofHom_apply] using hf hx
+  exact forall_congr' fun _ ↦ ⟨fun hf x hx ↦ @hf ⟨x, trivial⟩ hx, fun hf x hx ↦ @hf x.1 hx⟩
 
-/-- A continuous map between spaces carrying CW structures on `Set.univ` that sends the
-characteristic map of every cell onto the characteristic map of a cell of the same dimension on the
-closed unit ball is cellular. -/
+/-- A continuous map between CW structures on `Set.univ` sending each characteristic map onto a
+characteristic map of the same dimension on the closed unit ball is cellular. -/
 theorem isCellular_univ_of_map_eq [CWComplex (Set.univ : Set X)] [CWComplex (Set.univ : Set Y)]
-    {f : C(X, Y)}
-    (hf : ∀ (n : ℕ) (i : cell (Set.univ : Set X) n), ∃ i' : cell (Set.univ : Set Y) n,
-      ∀ x ∈ closedBall (0 : Fin n → ℝ) 1, f (map n i x) = map n i' x) :
+    {f : C(X, Y)} (hf : ∀ (n : ℕ) (i : cell (Set.univ : Set X) n),
+      ∃ i' : cell (Set.univ : Set Y) n,
+        ∀ x ∈ closedBall (0 : Fin n → ℝ) 1, f (map n i x) = map n i' x) :
     IsCellular (Set.univ : Set X) (Set.univ : Set Y)
       (TopCat.ofHom (f.restrictPreimage Set.univ)) := by
   rw [ofHom_restrictPreimage_univ_eq]
-  exact isCellular_of_map_eq _ _ (fun _ h ↦ h.elim) fun n i ↦ by
-    obtain ⟨i', hi'⟩ := hf n i
-    exact ⟨i', fun x hx _ ↦ by simpa [TopCat.ofHom_apply] using hi' x hx⟩
+  refine isCellular_of_map_eq _ _ (fun _ h ↦ h.elim) fun n i ↦ ?_
+  obtain ⟨i', hi'⟩ := hf n i
+  exact ⟨i', fun x hx _ ↦ by simpa [TopCat.ofHom_apply] using hi' x hx⟩
 
 variable {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f)
 
@@ -109,6 +104,11 @@ variable {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f)
 def skeletonMap (n : ℕ) : skeletonObj C n ⟶ skeletonObj C' n :=
   TopCat.ofHom ⟨fun x ↦ ⟨(f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1,
     hf n x.2⟩, by fun_prop⟩
+
+/-- Skeletal restrictions of equal cellular maps are equal. -/
+lemma skeletonMap_congr {f₁ f₂ : TopCat.of C ⟶ TopCat.of C'} (h : f₁ = f₂)
+    (hf₁ : IsCellular C C' f₁) (hf₂ : IsCellular C C' f₂) (n : ℕ) :
+    skeletonMap C C' hf₁ n = skeletonMap C C' hf₂ n := by subst h; rfl
 
 /-- On points, the restriction to a skeleton agrees with the original cellular map. -/
 @[simp]

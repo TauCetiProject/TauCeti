@@ -15,7 +15,8 @@ For a sequential tower `T : TauCeti.CWSubcomplexTower W newCell`, every stage ma
 colimit inclusion `c.ι.app k` / `T.incl k` is cellular (`isCellular_step`, `isCellular_ι`,
 `isCellular_incl`). Stagewise cellular morphisms between towers (`TauCeti.CWSubcomplexTower.Hom`)
 induce cellular maps on colimits (`Hom.isCellular_mapOfIsColimit`, `Hom.isCellular_unionMap`) whose
-skeletal restrictions commute with stage inclusions (`Hom.skeletonMap_incl_comp`).
+skeletal restrictions commute with stage inclusions (`Hom.skeletonMap_ι_comp`,
+`Hom.skeletonMap_incl_comp`).
 -/
 
 public section
@@ -28,10 +29,6 @@ universe u
 
 namespace TauCeti.CWSubcomplexTower
 
-/-! ### Cellularity of stage maps and cellular naturality -/
-
-section CellularNaturality
-
 section SingleTower
 
 variable {W : ℕ → Type u}
@@ -42,8 +39,7 @@ variable {W : ℕ → Type u}
 theorem isCellular_step (k : ℕ) :
     IsCellular (univ : Set (W k)) (univ : Set (W (k + 1)))
       (TopCat.ofHom ((T.step k).restrictPreimage univ)) :=
-  isCellular_univ_of_map_eq fun n i ↦
-    ⟨T.oldCellEquiv k n i, fun _ hx ↦ T.map_oldCell k n i hx⟩
+  isCellular_univ_of_map_eq fun n i ↦ ⟨T.oldCellEquiv k n i, fun _ hx ↦ T.map_oldCell k n i hx⟩
 
 /-- For any colimit cocone `c` of `T.diagram`, each stage inclusion `c.ι.app k : W k → c.pt` is
 cellular. -/
@@ -60,8 +56,7 @@ theorem isCellular_ι {c : Cocone T.diagram} (hc : IsColimit c) (k : ℕ) :
 theorem isCellular_incl (k : ℕ) :
     IsCellular (univ : Set (W k)) (univ : Set T.Union)
       (TopCat.ofHom ((T.incl k).hom.restrictPreimage univ)) := by
-  rw [T.instCWComplexUnion_eq]
-  exact T.isCellular_ι (colimit.isColimit T.diagram) k
+  rw [T.instCWComplexUnion_eq]; exact T.isCellular_ι (colimit.isColimit T.diagram) k
 
 end SingleTower
 
@@ -83,19 +78,21 @@ structure Hom {W₁ W₂ : ℕ → Type u}
 
 namespace Hom
 
-section Basic
-
-variable {W₁ W₂ W₃ : ℕ → Type u}
+variable {W₁ W₂ W₃ W₄ : ℕ → Type u}
   [∀ k, TopologicalSpace (W₁ k)] [∀ k, T2Space (W₁ k)] [∀ k, CWComplex (univ : Set (W₁ k))]
   [∀ k, TopologicalSpace (W₂ k)] [∀ k, T2Space (W₂ k)] [∀ k, CWComplex (univ : Set (W₂ k))]
   [∀ k, TopologicalSpace (W₃ k)] [∀ k, T2Space (W₃ k)] [∀ k, CWComplex (univ : Set (W₃ k))]
-  {newCell₁ newCell₂ newCell₃ : ℕ → ℕ → Type u}
+  [∀ k, TopologicalSpace (W₄ k)] [∀ k, T2Space (W₄ k)] [∀ k, CWComplex (univ : Set (W₄ k))]
+  {newCell₁ newCell₂ newCell₃ newCell₄ : ℕ → ℕ → Type u}
   {T₁ : CWSubcomplexTower W₁ newCell₁} {T₂ : CWSubcomplexTower W₂ newCell₂}
-  {T₃ : CWSubcomplexTower W₃ newCell₃}
+  {T₃ : CWSubcomplexTower W₃ newCell₃} {T₄ : CWSubcomplexTower W₄ newCell₄}
 
-@[ext]
-theorem ext {φ ψ : T₁.Hom T₂} (h : ∀ k, φ.app k = ψ.app k) : φ = ψ := by
+@[ext] theorem ext {φ ψ : T₁.Hom T₂} (h : ∀ k, φ.app k = ψ.app k) : φ = ψ := by
   cases φ; cases ψ; congr; exact funext h
+
+@[simp] lemma comm_apply (φ : T₁.Hom T₂) (k : ℕ) (x : W₁ k) :
+    φ.app (k + 1) (T₁.step k x) = T₂.step k (φ.app k x) :=
+  ContinuousMap.congr_fun (φ.comm k) x
 
 /-- The identity cellular morphism on a `CWSubcomplexTower`. -/
 def id (T₁ : CWSubcomplexTower W₁ newCell₁) : T₁.Hom T₁ where
@@ -103,88 +100,60 @@ def id (T₁ : CWSubcomplexTower W₁ newCell₁) : T₁.Hom T₁ where
   comm _ := rfl
   isCellular_app _ := isCellular_univ_iff.2 fun _ ↦ mapsTo_id _
 
-@[simp]
-lemma id_app (T₁ : CWSubcomplexTower W₁ newCell₁) (k : ℕ) :
+@[simp] lemma id_app (T₁ : CWSubcomplexTower W₁ newCell₁) (k : ℕ) :
     (Hom.id T₁).app k = ContinuousMap.id (W₁ k) := (rfl)
 
 /-- Composition of cellular morphisms of `CWSubcomplexTower`s. -/
 def comp (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂) : T₁.Hom T₃ where
   app k := (ψ.app k).comp (φ.app k)
-  comm k := by
-    ext x
-    exact (congrArg (ψ.app (k + 1)) (ContinuousMap.congr_fun (φ.comm k) x)).trans
-      (ContinuousMap.congr_fun (ψ.comm k) (φ.app k x))
+  comm k := by ext x; simp
   isCellular_app k := isCellular_univ_iff.2 fun n ↦
     (isCellular_univ_iff.1 (ψ.isCellular_app k) n).comp
       (isCellular_univ_iff.1 (φ.isCellular_app k) n)
 
-@[simp]
-lemma comp_app (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂) (k : ℕ) :
+@[simp] lemma comp_app (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂) (k : ℕ) :
     (ψ.comp φ).app k = (ψ.app k).comp (φ.app k) := (rfl)
 
-@[simp]
-lemma id_comp (φ : T₁.Hom T₂) : (Hom.id T₂).comp φ = φ := by
-  ext
-  rfl
+@[simp] lemma id_comp (φ : T₁.Hom T₂) : (Hom.id T₂).comp φ = φ := by ext; rfl
 
-@[simp]
-lemma comp_id (φ : T₁.Hom T₂) : φ.comp (Hom.id T₁) = φ := by
-  ext
-  rfl
+@[simp] lemma comp_id (φ : T₁.Hom T₂) : φ.comp (Hom.id T₁) = φ := by ext; rfl
 
-@[simp]
-lemma comp_assoc {W₄ : ℕ → Type u}
-    [∀ k, TopologicalSpace (W₄ k)] [∀ k, T2Space (W₄ k)] [∀ k, CWComplex (univ : Set (W₄ k))]
-    {newCell₄ : ℕ → ℕ → Type u} {T₄ : CWSubcomplexTower W₄ newCell₄}
-    (χ : T₃.Hom T₄) (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂) :
-    (χ.comp ψ).comp φ = χ.comp (ψ.comp φ) := by
-  ext
-  rfl
+@[simp] lemma comp_assoc (χ : T₃.Hom T₄) (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂) :
+    (χ.comp ψ).comp φ = χ.comp (ψ.comp φ) := by ext; rfl
 
 /-- The natural transformation `T₁.diagram ⟶ T₂.diagram` induced by `φ : T₁.Hom T₂`. -/
 def natTrans (φ : T₁.Hom T₂) : T₁.diagram ⟶ T₂.diagram :=
   NatTrans.ofSequence (fun k ↦ TopCat.ofHom (φ.app k)) fun k ↦ by
-    rw [T₁.diagram_map_succ, T₂.diagram_map_succ]
-    ext x
-    exact ContinuousMap.congr_fun (φ.comm k) x
+    rw [T₁.diagram_map_succ, T₂.diagram_map_succ]; ext x; exact φ.comm_apply k x
 
-@[simp]
-lemma natTrans_app (φ : T₁.Hom T₂) (k : ℕ) : φ.natTrans.app k = TopCat.ofHom (φ.app k) := (rfl)
+@[simp] lemma natTrans_app (φ : T₁.Hom T₂) (k : ℕ) : φ.natTrans.app k = TopCat.ofHom (φ.app k) :=
+  (rfl)
 
-@[simp]
-lemma natTrans_id : (Hom.id T₁).natTrans = 𝟙 T₁.diagram :=
+@[simp] lemma natTrans_id : (Hom.id T₁).natTrans = 𝟙 T₁.diagram :=
   NatTrans.ext <| funext fun _ ↦ TopCat.ofHom_id
 
-@[simp]
-lemma natTrans_comp (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂) :
+@[simp] lemma natTrans_comp (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂) :
     (ψ.comp φ).natTrans = φ.natTrans ≫ ψ.natTrans :=
   NatTrans.ext <| funext fun k ↦ TopCat.ofHom_comp (φ.app k) (ψ.app k)
 
-/-- The induced morphism `c₁.pt ⟶ c₂.pt` from a colimit cocone `c₁` of `T₁.diagram` to a cocone
-`c₂` of `T₂.diagram`. -/
+/-- The induced morphism `c₁.pt ⟶ c₂.pt` from a colimit cocone `c₁` of `T₁.diagram` to `c₂`. -/
 def mapOfIsColimit (φ : T₁.Hom T₂) {c₁ : Cocone T₁.diagram} {c₂ : Cocone T₂.diagram}
-    (hc₁ : IsColimit c₁) : c₁.pt ⟶ c₂.pt :=
-  hc₁.map c₂ φ.natTrans
+    (hc₁ : IsColimit c₁) : c₁.pt ⟶ c₂.pt := hc₁.map c₂ φ.natTrans
 
-@[simp, reassoc]
-lemma ι_comp_mapOfIsColimit (φ : T₁.Hom T₂) {c₁ : Cocone T₁.diagram} {c₂ : Cocone T₂.diagram}
-    (hc₁ : IsColimit c₁) (k : ℕ) :
+@[simp, reassoc] lemma ι_comp_mapOfIsColimit (φ : T₁.Hom T₂) {c₁ : Cocone T₁.diagram}
+    {c₂ : Cocone T₂.diagram} (hc₁ : IsColimit c₁) (k : ℕ) :
     c₁.ι.app k ≫ φ.mapOfIsColimit hc₁ = TopCat.ofHom (φ.app k) ≫ c₂.ι.app k :=
   hc₁.ι_map c₂ φ.natTrans k
 
-@[simp]
-lemma mapOfIsColimit_ι_apply (φ : T₁.Hom T₂) {c₁ : Cocone T₁.diagram} {c₂ : Cocone T₂.diagram}
-    (hc₁ : IsColimit c₁) (k : ℕ) (x : W₁ k) :
+@[simp] lemma mapOfIsColimit_ι_apply (φ : T₁.Hom T₂) {c₁ : Cocone T₁.diagram}
+    {c₂ : Cocone T₂.diagram} (hc₁ : IsColimit c₁) (k : ℕ) (x : W₁ k) :
     dsimp% φ.mapOfIsColimit (c₂ := c₂) hc₁ (c₁.ι.app k x) = c₂.ι.app k (φ.app k x) :=
   ConcreteCategory.congr_hom (φ.ι_comp_mapOfIsColimit hc₁ k) x
 
-@[simp]
-lemma mapOfIsColimit_id {c₁ : Cocone T₁.diagram} (hc₁ : IsColimit c₁) :
-    (Hom.id T₁).mapOfIsColimit (c₂ := c₁) hc₁ = 𝟙 c₁.pt :=
-  hc₁.hom_ext fun k ↦ by simp
+@[simp] lemma mapOfIsColimit_id {c₁ : Cocone T₁.diagram} (hc₁ : IsColimit c₁) :
+    (Hom.id T₁).mapOfIsColimit (c₂ := c₁) hc₁ = 𝟙 c₁.pt := hc₁.hom_ext fun k ↦ by simp
 
-@[simp, reassoc]
-lemma mapOfIsColimit_comp (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂)
+@[simp, reassoc] lemma mapOfIsColimit_comp (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂)
     {c₁ : Cocone T₁.diagram} {c₂ : Cocone T₂.diagram} {c₃ : Cocone T₃.diagram}
     (hc₁ : IsColimit c₁) (hc₂ : IsColimit c₂) :
     φ.mapOfIsColimit (c₂ := c₂) hc₁ ≫ ψ.mapOfIsColimit (c₂ := c₃) hc₂ =
@@ -194,8 +163,7 @@ lemma mapOfIsColimit_comp (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂)
 /-- **Cellular naturality:** the map induced on colimits by a cellular tower morphism is
 cellular. -/
 theorem isCellular_mapOfIsColimit (φ : T₁.Hom T₂)
-    {c₁ : Cocone T₁.diagram} {c₂ : Cocone T₂.diagram}
-    (hc₁ : IsColimit c₁) (hc₂ : IsColimit c₂) :
+    {c₁ : Cocone T₁.diagram} {c₂ : Cocone T₂.diagram} (hc₁ : IsColimit c₁) (hc₂ : IsColimit c₂) :
     letI := T₁.cwComplexOfIsColimit hc₁; letI := T₁.t2Space_of_isColimit hc₁
     letI := T₂.cwComplexOfIsColimit hc₂; letI := T₂.t2Space_of_isColimit hc₂
     IsCellular (univ : Set c₁.pt) (univ : Set c₂.pt)
@@ -210,22 +178,51 @@ theorem isCellular_mapOfIsColimit (φ : T₁.Hom T₂)
     obtain ⟨y, hy, rfl⟩ := hzi
     have hy_skel : y ∈ skeletonLT (univ : Set (W₁ p.1)) (n : ℕ∞) :=
       RelCWComplex.mem_skeletonLT_iff.2 (Or.inr ⟨m, hmn, T₁.birthCell p.1 m p.2, hy⟩)
-    have hι_skel : c₂.ι.app p.1 (φ.app p.1 y) ∈ skeletonLT (univ : Set c₂.pt) (n : ℕ∞) :=
-      isCellular_univ_iff.1 (T₂.isCellular_ι hc₂ p.1) n
-        (isCellular_univ_iff.1 (φ.isCellular_app p.1) n hy_skel)
-    rwa [φ.mapOfIsColimit_ι_apply hc₁]
+    rw [φ.mapOfIsColimit_ι_apply hc₁]
+    exact isCellular_univ_iff.1 (T₂.isCellular_ι hc₂ p.1) n
+      (isCellular_univ_iff.1 (φ.isCellular_app p.1) n hy_skel)
+
+private lemma skeletonMap_univ_comm {X₁ X₂ Y₁ Y₂ : Type u}
+    [TopologicalSpace X₁] [T2Space X₁] [CWComplex (univ : Set X₁)]
+    [TopologicalSpace X₂] [T2Space X₂] [CWComplex (univ : Set X₂)]
+    [TopologicalSpace Y₁] [T2Space Y₁] [CWComplex (univ : Set Y₁)]
+    [TopologicalSpace Y₂] [T2Space Y₂] [CWComplex (univ : Set Y₂)]
+    {i₁ : C(X₁, Y₁)} {i₂ : C(X₂, Y₂)} {f : C(X₁, X₂)} {g : C(Y₁, Y₂)}
+    (hi₁ : IsCellular (univ : Set X₁) (univ : Set Y₁) (TopCat.ofHom (i₁.restrictPreimage univ)))
+    (hi₂ : IsCellular (univ : Set X₂) (univ : Set Y₂) (TopCat.ofHom (i₂.restrictPreimage univ)))
+    (hf : IsCellular (univ : Set X₁) (univ : Set X₂) (TopCat.ofHom (f.restrictPreimage univ)))
+    (hg : IsCellular (univ : Set Y₁) (univ : Set Y₂) (TopCat.ofHom (g.restrictPreimage univ)))
+    (hcomm : ∀ x, g (i₁ x) = i₂ (f x)) (n : ℕ) :
+    skeletonMap _ _ hi₁ n ≫ skeletonMap _ _ hg n =
+      skeletonMap _ _ hf n ≫ skeletonMap _ _ hi₂ n := by
+  rw [← skeletonMap_comp, ← skeletonMap_comp]
+  refine skeletonMap_congr _ _ ?_ _ _ n
+  rw [ofHom_restrictPreimage_univ_eq, ofHom_restrictPreimage_univ_eq,
+    ofHom_restrictPreimage_univ_eq, ofHom_restrictPreimage_univ_eq]
+  refine ConcreteCategory.hom_ext _ _ fun x ↦ Subtype.ext ?_
+  simpa [TopCat.ofHom_apply] using hcomm x.1
+
+/-- On every skeleton, `φ.mapOfIsColimit hc₁` commutes with stage skeletal restrictions. -/
+@[reassoc] theorem skeletonMap_ι_comp (φ : T₁.Hom T₂) {c₁ : Cocone T₁.diagram}
+    {c₂ : Cocone T₂.diagram} (hc₁ : IsColimit c₁) (hc₂ : IsColimit c₂) (k n : ℕ) :
+    letI := T₁.cwComplexOfIsColimit hc₁; letI := T₁.t2Space_of_isColimit hc₁
+    letI := T₂.cwComplexOfIsColimit hc₂; letI := T₂.t2Space_of_isColimit hc₂
+    skeletonMap _ _ (T₁.isCellular_ι hc₁ k) n ≫
+      skeletonMap _ _ (φ.isCellular_mapOfIsColimit hc₁ hc₂) n =
+      skeletonMap _ _ (φ.isCellular_app k) n ≫ skeletonMap _ _ (T₂.isCellular_ι hc₂ k) n :=
+  letI := T₁.cwComplexOfIsColimit hc₁; letI := T₁.t2Space_of_isColimit hc₁
+  letI := T₂.cwComplexOfIsColimit hc₂; letI := T₂.t2Space_of_isColimit hc₂
+  skeletonMap_univ_comm _ _ _ _ (φ.mapOfIsColimit_ι_apply hc₁ k) n
 
 /-- The induced continuous map `T₁.Union ⟶ T₂.Union` between canonical tower unions. -/
-def unionMap (φ : T₁.Hom T₂) : T₁.Union ⟶ T₂.Union :=
-  Limits.colimMap φ.natTrans
+def unionMap (φ : T₁.Hom T₂) : T₁.Union ⟶ T₂.Union := Limits.colimMap φ.natTrans
 
 @[simp, reassoc]
 lemma incl_comp_unionMap (φ : T₁.Hom T₂) (k : ℕ) :
     T₁.incl k ≫ φ.unionMap = TopCat.ofHom (φ.app k) ≫ T₂.incl k :=
   Limits.ι_colimMap φ.natTrans k
 
-@[simp]
-lemma unionMap_incl_apply (φ : T₁.Hom T₂) (k : ℕ) (x : W₁ k) :
+@[simp] lemma unionMap_incl_apply (φ : T₁.Hom T₂) (k : ℕ) (x : W₁ k) :
     φ.unionMap (T₁.incl k x) = T₂.incl k (φ.app k x) :=
   ConcreteCategory.congr_hom (φ.incl_comp_unionMap k) x
 
@@ -236,12 +233,9 @@ lemma unionMap_eq_mapOfIsColimit (φ : T₁.Hom T₂) :
     (φ.ι_comp_mapOfIsColimit (c₂ := colimit.cocone T₂.diagram)
       (colimit.isColimit T₁.diagram) k).symm
 
-@[simp]
-lemma unionMap_id : (Hom.id T₁).unionMap = 𝟙 T₁.Union :=
-  colimit.hom_ext fun k ↦ by simp
+@[simp] lemma unionMap_id : (Hom.id T₁).unionMap = 𝟙 T₁.Union := colimit.hom_ext fun k ↦ by simp
 
-@[simp, reassoc]
-lemma unionMap_comp (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂) :
+@[simp, reassoc] lemma unionMap_comp (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂) :
     (ψ.comp φ).unionMap = φ.unionMap ≫ ψ.unionMap :=
   colimit.hom_ext fun k ↦ by simp [TopCat.ofHom_comp, incl_comp_unionMap_assoc]
 
@@ -252,28 +246,12 @@ theorem isCellular_unionMap (φ : T₁.Hom T₂) :
   rw [T₁.instCWComplexUnion_eq, T₂.instCWComplexUnion_eq, φ.unionMap_eq_mapOfIsColimit]
   exact φ.isCellular_mapOfIsColimit (colimit.isColimit T₁.diagram) (colimit.isColimit T₂.diagram)
 
-/-- On every dimension skeleton, the induced map `φ.unionMap` restricts to a map commuting with
-stage skeletal restrictions. -/
-@[reassoc]
-theorem skeletonMap_incl_comp (φ : T₁.Hom T₂) (k n : ℕ) :
+/-- On every skeleton, `φ.unionMap` commutes with stage skeletal restrictions. -/
+@[reassoc] theorem skeletonMap_incl_comp (φ : T₁.Hom T₂) (k n : ℕ) :
     skeletonMap _ _ (T₁.isCellular_incl k) n ≫ skeletonMap _ _ φ.isCellular_unionMap n =
-      skeletonMap _ _ (φ.isCellular_app k) n ≫ skeletonMap _ _ (T₂.isCellular_incl k) n := by
-  have hcongr {f₁ f₂ : TopCat.of (univ : Set (W₁ k)) ⟶ TopCat.of (univ : Set T₂.Union)}
-      (h : f₁ = f₂) (hf₁ : IsCellular _ _ f₁) (hf₂ : IsCellular _ _ f₂) :
-      skeletonMap _ _ hf₁ n = skeletonMap _ _ hf₂ n := by subst h; rfl
-  rw [← skeletonMap_comp, ← skeletonMap_comp]
-  refine hcongr ?_ _ _
-  rw [ofHom_restrictPreimage_univ_eq, ofHom_restrictPreimage_univ_eq,
-    ofHom_restrictPreimage_univ_eq, ofHom_restrictPreimage_univ_eq]
-  refine ConcreteCategory.hom_ext _ _ fun x ↦ ?_
-  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
-    TopCat.ofHom_apply, TopCat.ofHom_apply, TopCat.ofHom_apply, TopCat.ofHom_apply]
-  exact Subtype.ext (φ.unionMap_incl_apply k x.1)
-
-end Basic
+      skeletonMap _ _ (φ.isCellular_app k) n ≫ skeletonMap _ _ (T₂.isCellular_incl k) n :=
+  skeletonMap_univ_comm _ _ _ _ (φ.unionMap_incl_apply k) n
 
 end Hom
-
-end CellularNaturality
 
 end TauCeti.CWSubcomplexTower

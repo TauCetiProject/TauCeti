@@ -73,29 +73,26 @@ theorem isQuotientMap_sumElim_base_map :
   · rw [inter_comm, ← Subtype.image_preimage_coe]
     exact (isClosedBase C).isClosedMap_subtype_val _ (hs.preimage continuous_inl)
 
+/-- The closed-ball characteristic map of every cell of a Hausdorff relative CW complex is a closed
+map. -/
+theorem isClosedMap_map_closedBall (n : ℕ) (i : cell C n) :
+    IsClosedMap (fun x : closedBall (0 : Fin n → ℝ) 1 ↦ map (C := C) n i x) :=
+  (continuousOn n i).domRestrict.isClosedMap
+
 /-- **The topology of a Hausdorff classical CW complex on `Set.univ` is coinduced by its
 characteristic maps.** -/
 theorem topologicalSpace_eq_iSup_coinduced_map_closedBall {Y : Type*} [tY : TopologicalSpace Y]
     [T2Space Y] [CWComplex (univ : Set Y)] :
-    tY =
-      ⨆ (n : ℕ) (i : cell (univ : Set Y) n),
-        TopologicalSpace.coinduced
-          (fun x : closedBall (0 : Fin n → ℝ) 1 ↦ map (C := (univ : Set Y)) n i x)
-          inferInstance := by
+    tY = ⨆ (n : ℕ) (i : cell (univ : Set Y) n),
+      TopologicalSpace.coinduced
+        (fun x : closedBall (0 : Fin n → ℝ) 1 ↦ map (C := (univ : Set Y)) n i x) inferInstance := by
   refine TopologicalSpace.ext_iff.2 fun U ↦ ?_
   simp only [isOpen_iSup_iff, isOpen_coinduced, ← isClosed_compl_iff, ← preimage_compl,
     CWComplex.closed (univ : Set Y) Uᶜ (subset_univ Uᶜ)]
   refine forall₂_congr fun n i ↦ ?_
-  have hrange :
-      range (fun x : closedBall (0 : Fin n → ℝ) 1 ↦ map (C := (univ : Set Y)) n i x) =
-        closedCell (C := (univ : Set Y)) n i := by
-    ext; simp [closedCell]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · convert h.preimage (continuousOn (C := (univ : Set Y)) n i).domRestrict using 1
-    ext x
-    exact ⟨fun hx ↦ ⟨hx, hrange ▸ mem_range_self x⟩, And.left⟩
-  · rw [← hrange, ← image_preimage_eq_inter_range]
-    exact (continuousOn (C := (univ : Set Y)) n i).domRestrict.isClosedMap _ h
+  rw [closedCell, ← range_domRestrict]
+  exact ⟨fun h ↦ preimage_inter_range (s := Uᶜ) ▸ h.preimage (continuousOn n i).domRestrict,
+    fun h ↦ image_preimage_eq_inter_range (t := Uᶜ) ▸ isClosedMap_map_closedBall n i _ h⟩
 
 /-- A map out of a relative CW complex is continuous exactly when it is continuous on the base
 and along the characteristic map of every cell. -/

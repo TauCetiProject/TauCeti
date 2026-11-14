@@ -14,27 +14,23 @@ public import Mathlib.Topology.CWComplex.Classical.Subcomplex
 /-!
 # Sequential towers of CW subcomplex inclusions
 
-While `TauCeti.Topology.CWComplex.Classical.Tower` and
-`TauCeti.Topology.CWComplex.Classical.TowerUnion` equip the union `⋃ k, W k` of a tower of CW
-subspaces inside an already-given ambient space `X` with a classical CW structure, sequential
-exhaustions (such as sublevel models of proper below-bounded Morse functions) present an abstract
-sequence `W₀ → W₁ → W₂ → ⋯` of Hausdorff classical CW spaces (`CWComplex (univ : Set (W k))`) in
-which each `step k : W k → W (k + 1)` is a closed embedding onto a specified CW subcomplex
-`subcomplex k` of `W (k + 1)`, equipped with compatible cell labels and characteristic maps on the
-closed unit ball. Crucially, the new cells added from `W k` to `W (k + 1)` may have **arbitrary
-dimensions in any stage order**: stage `k + 1` is allowed to attach lower-dimensional cells after
-stage `k` has already attached higher-dimensional ones.
+While `TauCeti.cwSubcomplexTowerUnion` equips the union `⋃ k, W k` of a tower of CW subspaces inside
+an already-given ambient space `X` with a classical CW structure, sequential exhaustions (such as
+sublevel models of proper below-bounded Morse functions) present an abstract sequence
+`W₀ → W₁ → W₂ → ⋯` of Hausdorff classical CW spaces (`CWComplex (univ : Set (W k))`) in which each
+`step k : W k → W (k + 1)` is a closed embedding onto a specified CW subcomplex `subcomplex k` of
+`W (k + 1)`, equipped with compatible cell labels and characteristic maps on the closed unit ball.
+Crucially, the new cells added from `W k` to `W (k + 1)` may have **arbitrary dimensions in any
+stage order**: stage `k + 1` may attach lower-dimensional cells after stage `k` has attached
+higher-dimensional ones.
 
-This file defines `TauCeti.CWSubcomplexTower W newCell`, gives constructors from subcomplex families
-(`ofSubcomplex`), sum decompositions of cell index sets (`ofCellSum`), constant CW complexes
-(`const`), and stabilizing two-stage subcomplex embeddings (`pair`), builds cumulative stagewise
-cell equivalences (`birthCell`, `stepCellEquiv`, `stageCellEquiv`), and constructs the sequential
-diagram `T.diagram : ℕ ⥤ TopCat` whose transition and colimit maps are closed embeddings
-(`isClosedEmbedding_diagram_map`, `isClosedEmbedding_ι`, `t1Space_of_isColimit`).
-
-The classical CW structure, normality, Hausdorff separation, stage subcomplexes, and categorical
-comparison on colimits of `T.diagram` are developed in
-`TauCeti.Topology.CWComplex.Classical.SubcomplexTower.Colimit`, and cellular morphisms of towers in
+This file defines `TauCeti.CWSubcomplexTower W newCell`, builds cumulative stagewise cell
+equivalences (`birthCell`, `stepCellEquiv`, `stageCellEquiv`) and the sequential diagram
+`T.diagram : ℕ ⥤ TopCat` (`isClosedEmbedding_diagram_map`, `isClosedEmbedding_ι`,
+`t1Space_of_isColimit`), and gives constructors from subcomplex families (`ofSubcomplex`), cell-sum
+decompositions (`ofCellSum`), constant CW complexes (`const`), and stabilizing two-stage subcomplex
+embeddings (`pair`). Colimits and morphisms are developed in
+`TauCeti.Topology.CWComplex.Classical.SubcomplexTower.Colimit` and
 `TauCeti.Topology.CWComplex.Classical.SubcomplexTower.Hom`.
 
 ## References
@@ -54,13 +50,11 @@ universe u
 
 namespace TauCeti
 
-/-! ### Sequential towers of CW subcomplex inclusions -/
-
 /-- A sequential tower `W 0 → W 1 → W 2 → ⋯` of Hausdorff classical CW complexes on `Set.univ`
 along closed embeddings onto specified CW subcomplexes, with compatible cell labels and
 characteristic maps on the closed unit ball. Here `newCell k n` indexes the `n`-cells born at stage
 `k` (including `k = 0` for all `n`-cells of `W 0`); new cells at stage `k + 1` may have arbitrary
-dimensions regardless of the dimensions already present in `W k`. -/
+dimensions regardless of dimensions already present in `W k`. -/
 structure CWSubcomplexTower (W : ℕ → Type u)
     [∀ k, TopologicalSpace (W k)] [∀ k, T2Space (W k)] [∀ k, CWComplex (univ : Set (W k))]
     (newCell : ℕ → ℕ → Type u) where
@@ -95,38 +89,36 @@ section StageNewCell
 
 variable {W : ℕ → Type u} [∀ k, TopologicalSpace (W k)] [∀ k, CWComplex (univ : Set (W k))]
 
-/-- A cell of `W k` is new at stage `k` relative to the subcomplexes `E` if `k = 0` or if
-`k = k' + 1` and the cell lies outside `(E k').I n`. -/
+/-- A cell of `W k` is new at stage `k` relative to `E` if `k = 0` or `i ∉ (E k').I n`. -/
 def IsStageNewCell (E : ∀ k, CWComplex.Subcomplex (univ : Set (W (k + 1)))) :
     ∀ (k : ℕ) {n : ℕ}, cell (univ : Set (W k)) n → Prop
   | 0, _, _ => True
   | k + 1, n, i => i ∈ ((E k).I n)ᶜ
 
-@[simp]
-lemma isStageNewCell_zero (E : ∀ k, CWComplex.Subcomplex (univ : Set (W (k + 1)))) {n : ℕ}
-    (i : cell (univ : Set (W 0)) n) : IsStageNewCell E 0 i :=
-  trivial
+@[simp] lemma isStageNewCell_zero (E : ∀ k, CWComplex.Subcomplex (univ : Set (W (k + 1)))) {n : ℕ}
+    (i : cell (univ : Set (W 0)) n) : IsStageNewCell E 0 i := trivial
 
-@[simp]
-lemma isStageNewCell_succ_iff (E : ∀ k, CWComplex.Subcomplex (univ : Set (W (k + 1)))) {k n : ℕ}
-    (i : cell (univ : Set (W (k + 1))) n) :
-    IsStageNewCell E (k + 1) i ↔ i ∉ (E k).I n :=
-  Iff.rfl
+@[simp] lemma isStageNewCell_succ_iff (E : ∀ k, CWComplex.Subcomplex (univ : Set (W (k + 1))))
+    {k n : ℕ} (i : cell (univ : Set (W (k + 1))) n) :
+    IsStageNewCell E (k + 1) i ↔ i ∉ (E k).I n := Iff.rfl
 
-/-- Canonical new-cell indexing determined directly by a sequence of CW subcomplexes `E k` of
-`W (k + 1)`: cells of `W k` satisfying `IsStageNewCell E k`. -/
-abbrev StageNewCell (W : ℕ → Type u)
-    [∀ k, TopologicalSpace (W k)] [∀ k, CWComplex (univ : Set (W k))]
+/-- Canonical new-cell indexing determined by CW subcomplexes `E k` of `W (k + 1)`. -/
+abbrev StageNewCell (W : ℕ → Type u) [∀ k, TopologicalSpace (W k)]
+    [∀ k, CWComplex (univ : Set (W k))]
     (E : ∀ k, CWComplex.Subcomplex (univ : Set (W (k + 1)))) (k n : ℕ) : Type u :=
   {i : cell (univ : Set (W k)) n // IsStageNewCell E k i}
 
 end StageNewCell
 
-section ExtAndConstructors
+section StageMachinery
 
 variable {W : ℕ → Type u}
   [∀ k, TopologicalSpace (W k)] [∀ k, T2Space (W k)] [∀ k, CWComplex (univ : Set (W k))]
   {newCell : ℕ → ℕ → Type u}
+
+@[simp] lemma mem_subcomplex_iff (T : CWSubcomplexTower W newCell) {k : ℕ} {x : W (k + 1)} :
+    x ∈ T.subcomplex k ↔ x ∈ range (T.step k) := by
+  rw [← SetLike.mem_coe, T.coe_subcomplex]
 
 /-- Two `CWSubcomplexTower`s sharing the `k`-th stage map have equal `k`-th stage subcomplexes. -/
 theorem subcomplex_eq_of_step_eq {newCell₁ newCell₂ : ℕ → ℕ → Type u}
@@ -135,10 +127,8 @@ theorem subcomplex_eq_of_step_eq {newCell₁ newCell₂ : ℕ → ℕ → Type u
   SetLike.coe_injective ((T₁.coe_subcomplex k).trans (by rw [hstep, ← T₂.coe_subcomplex k]))
 
 /-- Two `CWSubcomplexTower`s are equal if they have the same stage maps, initial cell labels, and
-new-cell labels; the stage subcomplexes and old-cell equivalences are uniquely determined by these
-fields. -/
-@[ext]
-theorem ext {T₁ T₂ : CWSubcomplexTower W newCell}
+new-cell labels; the stage subcomplexes and old-cell equivalences are uniquely determined. -/
+@[ext] theorem ext {T₁ T₂ : CWSubcomplexTower W newCell}
     (hstep : ∀ k, T₁.step k = T₂.step k)
     (hzero : ∀ n, T₁.cellZeroEquiv n = T₂.cellZeroEquiv n)
     (hnew : ∀ k n (j : newCell (k + 1) n),
@@ -148,203 +138,16 @@ theorem ext {T₁ T₂ : CWSubcomplexTower W newCell}
   have hstep' : T₁.step = T₂.step := funext hstep
   have hsub : T₁.subcomplex = T₂.subcomplex := funext fun k ↦ subcomplex_eq_of_step_eq (hstep k)
   cases T₁ with
-  | mk step₁ _ sub₁ _ zero₁ old₁ new₁ map₁ =>
+  | mk _ _ _ _ zero₁ old₁ new₁ map₁ =>
     cases T₂ with
-    | mk step₂ _ sub₂ _ zero₂ old₂ new₂ map₂ =>
-      dsimp at hstep' hsub hzero hnew
-      subst hstep' hsub
+    | mk _ _ _ _ zero₂ old₂ new₂ map₂ =>
+      dsimp at hstep' hsub hzero hnew; subst hstep' hsub
       congr
       · exact funext hzero
-      · funext k n
-        ext i
-        have hz : (0 : Fin n → ℝ) ∈ closedBall 0 1 := mem_closedBall_self zero_le_one
-        have h0 : map (C := (univ : Set (W (k + 1)))) n (old₁ k n i : cell _ n) 0 =
-            map (C := (univ : Set (W (k + 1)))) n (old₂ k n i : cell _ n) 0 :=
-          (map₁ k n i hz).symm.trans (map₂ k n i hz)
-        have hmem₁ := map_zero_mem_openCell (C := (univ : Set (W (k + 1)))) n (old₁ k n i)
-        have hmem₂ : map (C := (univ : Set (W (k + 1)))) n (old₁ k n i : cell _ n) 0 ∈
-            openCell (C := (univ : Set (W (k + 1)))) n (old₂ k n i : cell _ n) := by
-          rw [h0]
-          exact map_zero_mem_openCell (C := (univ : Set (W (k + 1)))) n (old₂ k n i)
-        have heq := RelCWComplex.eq_of_not_disjoint_openCell (not_disjoint_iff.2 ⟨_, hmem₁, hmem₂⟩)
-        exact eq_of_heq (Sigma.mk.inj heq).2
-      · funext k n
-        ext j
-        exact hnew k n j
-
-/-- Construct a `CWSubcomplexTower` directly from stage subcomplexes `E k` and old-cell
-equivalences, using `StageNewCell W E` as the new-cell indexing. -/
-def ofSubcomplex
-    (step : ∀ k, C(W k, W (k + 1)))
-    (isClosedEmbedding_step : ∀ k, IsClosedEmbedding (step k))
-    (E : ∀ k, CWComplex.Subcomplex (univ : Set (W (k + 1))))
-    (coe_E : ∀ k, (E k : Set (W (k + 1))) = range (step k))
-    (oldCellEquiv : ∀ k n, cell (univ : Set (W k)) n ≃ ↥((E k).I n))
-    (map_oldCell : ∀ k n (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ},
-      x ∈ closedBall 0 1 →
-      step k (map (C := (univ : Set (W k))) n i x) =
-        map (C := (univ : Set (W (k + 1)))) n (oldCellEquiv k n i : cell _ n) x) :
-    CWSubcomplexTower W (StageNewCell W E) where
-  step := step
-  isClosedEmbedding_step := isClosedEmbedding_step
-  subcomplex := E
-  coe_subcomplex := coe_E
-  cellZeroEquiv _ := Equiv.subtypeUnivEquiv (isStageNewCell_zero E)
-  oldCellEquiv := oldCellEquiv
-  newCellEquiv _ _ := Equiv.refl _
-  map_oldCell := map_oldCell
-
-/-- Construct a `CWSubcomplexTower` from sum decompositions
-`cellSumEquiv k n : cell (univ : Set (W k)) n ⊕ newCell (k + 1) n ≃ cell (univ : Set (W (k + 1))) n`
-compatible with `step k` on old cells; the stage subcomplexes `subcomplex k` with carrier
-`range (step k)` are synthesized automatically. -/
-def ofCellSum
-    (step : ∀ k, C(W k, W (k + 1)))
-    (isClosedEmbedding_step : ∀ k, IsClosedEmbedding (step k))
-    (cellZeroEquiv : ∀ n, newCell 0 n ≃ cell (univ : Set (W 0)) n)
-    (cellSumEquiv : ∀ k n,
-      cell (univ : Set (W k)) n ⊕ newCell (k + 1) n ≃ cell (univ : Set (W (k + 1))) n)
-    (map_inl : ∀ k n (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ},
-      x ∈ closedBall 0 1 →
-      step k (map (C := (univ : Set (W k))) n i x) =
-        map (C := (univ : Set (W (k + 1)))) n (cellSumEquiv k n (Sum.inl i)) x) :
-    CWSubcomplexTower W newCell :=
-  let I (k n : ℕ) : Set (cell (univ : Set (W (k + 1))) n) :=
-    range fun i ↦ cellSumEquiv k n (Sum.inl i)
-  have hunion (k : ℕ) :
-      (∅ : Set (W (k + 1))) ∪ ⋃ (n : ℕ) (j : I k n),
-        openCell (C := (univ : Set (W (k + 1)))) n j.1 = range (step k) := by
-    rw [empty_union]
-    ext y
-    simp only [mem_iUnion, mem_range]
-    refine ⟨?_, ?_⟩
-    · rintro ⟨n, ⟨_, ⟨i, rfl⟩⟩, z, hz, rfl⟩
-      exact ⟨map (C := (univ : Set (W k))) n i z, map_inl k n i (ball_subset_closedBall hz)⟩
-    · rintro ⟨x, rfl⟩
-      have hx : x ∈ ⋃ (n : ℕ) (i : cell (univ : Set (W k)) n),
-          openCell (C := (univ : Set (W k))) n i := by
-        rw [CWComplex.iUnion_openCell_eq_complex]
-        exact mem_univ x
-      obtain ⟨n, i, z, hz, rfl⟩ := by simpa only [mem_iUnion, mem_image] using hx
-      exact ⟨n, ⟨_, i, rfl⟩, z, hz, (map_inl k n i (ball_subset_closedBall hz)).symm⟩
-  let sub (k : ℕ) : CWComplex.Subcomplex (univ : Set (W (k + 1))) :=
-    { carrier := range (step k)
-      I := I k
-      closed' := (isClosedEmbedding_step k).isClosed_range
-      union' := hunion k }
-  have hinl_inj (k n : ℕ) : Function.Injective (fun i ↦ cellSumEquiv k n (Sum.inl i)) :=
-    (cellSumEquiv k n).injective.comp Sum.inl_injective
-  have hinr_notMem (k n : ℕ) (j : newCell (k + 1) n) :
-      cellSumEquiv k n (Sum.inr j) ∉ I k n := by
-    rintro ⟨i, hi⟩
-    exact Sum.inl_ne_inr ((cellSumEquiv k n).injective hi)
-  { step := step
-    isClosedEmbedding_step := isClosedEmbedding_step
-    subcomplex := sub
-    coe_subcomplex _ := rfl
-    cellZeroEquiv := cellZeroEquiv
-    oldCellEquiv k n := Equiv.ofInjective (fun i ↦ cellSumEquiv k n (Sum.inl i)) (hinl_inj k n)
-    newCellEquiv k n := Equiv.ofBijective
-      (fun j ↦ ⟨cellSumEquiv k n (Sum.inr j), hinr_notMem k n j⟩)
-      ⟨fun _ _ h ↦ Sum.inr.inj ((cellSumEquiv k n).injective (congrArg Subtype.val h)),
-        fun ⟨c, hc⟩ ↦ by
-          rcases h : (cellSumEquiv k n).symm c with i | j
-          · exact False.elim (hc ⟨i, ((cellSumEquiv k n).symm_apply_eq.1 h).symm⟩)
-          · exact ⟨j, Subtype.ext ((cellSumEquiv k n).symm_apply_eq.1 h).symm⟩⟩
-    map_oldCell := map_inl }
-
-section OfSubcomplexLemmas
-
-variable
-    (step : ∀ k, C(W k, W (k + 1))) (isClosedEmbedding_step : ∀ k, IsClosedEmbedding (step k))
-    (E : ∀ k, CWComplex.Subcomplex (univ : Set (W (k + 1))))
-    (coe_E : ∀ k, (E k : Set (W (k + 1))) = range (step k))
-    (oldCellEquiv : ∀ k n, cell (univ : Set (W k)) n ≃ ↥((E k).I n))
-    (map_oldCell : ∀ k n (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ}, x ∈ closedBall 0 1 →
-      step k (map (C := (univ : Set (W k))) n i x) =
-        map (C := (univ : Set (W (k + 1)))) n (oldCellEquiv k n i : cell _ n) x)
-
-@[simp]
-lemma ofSubcomplex_step (k : ℕ) :
-    (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv map_oldCell).step k =
-      step k := (rfl)
-
-@[simp]
-lemma ofSubcomplex_subcomplex (k : ℕ) :
-    (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv map_oldCell).subcomplex k =
-      E k := (rfl)
-
-lemma ofSubcomplex_cellZeroEquiv (n : ℕ) :
-    (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv map_oldCell).cellZeroEquiv n =
-      Equiv.subtypeUnivEquiv (isStageNewCell_zero E) := (rfl)
-
-@[simp]
-lemma ofSubcomplex_cellZeroEquiv_apply (n : ℕ) (j : StageNewCell W E 0 n) :
-    (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv map_oldCell).cellZeroEquiv
-      n j = j.1 := (rfl)
-
-@[simp]
-lemma coe_ofSubcomplex_oldCellEquiv_apply (k n : ℕ) (i : cell (univ : Set (W k)) n) :
-    ((ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv map_oldCell).oldCellEquiv
-      k n i : cell (univ : Set (W (k + 1))) n) =
-      (oldCellEquiv k n i : cell (univ : Set (W (k + 1))) n) := (rfl)
-
-@[simp]
-lemma coe_ofSubcomplex_newCellEquiv_apply (k n : ℕ) (j : StageNewCell W E (k + 1) n) :
-    ((ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv map_oldCell).newCellEquiv
-      k n j : cell (univ : Set (W (k + 1))) n) = j.1 := (rfl)
-
-end OfSubcomplexLemmas
-
-section OfCellSumLemmas
-
-variable
-    (step : ∀ k, C(W k, W (k + 1))) (isClosedEmbedding_step : ∀ k, IsClosedEmbedding (step k))
-    (cellZeroEquiv : ∀ n, newCell 0 n ≃ cell (univ : Set (W 0)) n)
-    (cellSumEquiv : ∀ k n,
-      cell (univ : Set (W k)) n ⊕ newCell (k + 1) n ≃ cell (univ : Set (W (k + 1))) n)
-    (map_inl : ∀ k n (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ}, x ∈ closedBall 0 1 →
-      step k (map (C := (univ : Set (W k))) n i x) =
-        map (C := (univ : Set (W (k + 1)))) n (cellSumEquiv k n (Sum.inl i)) x)
-
-@[simp]
-lemma ofCellSum_step (k : ℕ) :
-    (ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).step k =
-      step k := (rfl)
-
-@[simp]
-lemma ofCellSum_subcomplex_I (k n : ℕ) :
-    ((ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).subcomplex k).I n =
-      range (fun i ↦ cellSumEquiv k n (Sum.inl i)) := (rfl)
-
-@[simp]
-lemma ofCellSum_cellZeroEquiv (n : ℕ) :
-    (ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).cellZeroEquiv n =
-      cellZeroEquiv n := (rfl)
-
-@[simp]
-lemma coe_ofCellSum_oldCellEquiv_apply (k n : ℕ) (i : cell (univ : Set (W k)) n) :
-    ((ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).oldCellEquiv
-      k n i : cell (univ : Set (W (k + 1))) n) =
-      cellSumEquiv k n (Sum.inl i) := (rfl)
-
-@[simp]
-lemma coe_ofCellSum_newCellEquiv_apply (k n : ℕ) (j : newCell (k + 1) n) :
-    ((ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).newCellEquiv
-      k n j : cell (univ : Set (W (k + 1))) n) =
-      cellSumEquiv k n (Sum.inr j) := (rfl)
-
-end OfCellSumLemmas
-
-end ExtAndConstructors
-
-/-! ### Stagewise cell equivalences and sequential diagram -/
-
-section StageMachinery
-
-variable {W : ℕ → Type u}
-  [∀ k, TopologicalSpace (W k)] [∀ k, T2Space (W k)] [∀ k, CWComplex (univ : Set (W k))]
-  {newCell : ℕ → ℕ → Type u}
+      · exact funext₂ fun k n ↦ Equiv.ext fun i ↦ Subtype.ext <| openCell_congr n
+          (image_congr fun x hx ↦ (map₁ k n i (ball_subset_closedBall hx)).symm.trans
+            (map₂ k n i (ball_subset_closedBall hx)))
+      · exact funext₂ fun k n ↦ Equiv.ext fun j ↦ Subtype.ext (hnew k n j)
 
 /-- The `n`-cell in its birth stage `W k` corresponding to `j : newCell k n`. -/
 def birthCell (T : CWSubcomplexTower W newCell) :
@@ -352,12 +155,10 @@ def birthCell (T : CWSubcomplexTower W newCell) :
   | 0, n, j => T.cellZeroEquiv n j
   | k + 1, n, j => (T.newCellEquiv k n j : cell (univ : Set (W (k + 1))) n)
 
-@[simp]
-lemma birthCell_zero (T : CWSubcomplexTower W newCell) (n : ℕ) (j : newCell 0 n) :
+@[simp] lemma birthCell_zero (T : CWSubcomplexTower W newCell) (n : ℕ) (j : newCell 0 n) :
     T.birthCell 0 n j = T.cellZeroEquiv n j := (rfl)
 
-@[simp]
-lemma birthCell_succ (T : CWSubcomplexTower W newCell) (k n : ℕ) (j : newCell (k + 1) n) :
+@[simp] lemma birthCell_succ (T : CWSubcomplexTower W newCell) (k n : ℕ) (j : newCell (k + 1) n) :
     T.birthCell (k + 1) n j = (T.newCellEquiv k n j : cell (univ : Set (W (k + 1))) n) := (rfl)
 
 lemma birthCell_injective (T : CWSubcomplexTower W newCell) :
@@ -373,68 +174,26 @@ def stepCellEquiv (T : CWSubcomplexTower W newCell) (k n : ℕ) :
   (Equiv.sumCongr (T.oldCellEquiv k n) (T.newCellEquiv k n)).trans
     (Equiv.Set.sumCompl ((T.subcomplex k).I n))
 
-@[simp]
-lemma stepCellEquiv_inl (T : CWSubcomplexTower W newCell) (k n : ℕ)
+@[simp] lemma stepCellEquiv_inl (T : CWSubcomplexTower W newCell) (k n : ℕ)
     (i : cell (univ : Set (W k)) n) :
     T.stepCellEquiv k n (Sum.inl i) = (T.oldCellEquiv k n i : cell (univ : Set (W (k + 1))) n) := by
   simp [stepCellEquiv]
 
-@[simp]
-lemma stepCellEquiv_inr (T : CWSubcomplexTower W newCell) (k n : ℕ) (j : newCell (k + 1) n) :
-    T.stepCellEquiv k n (Sum.inr j) = T.birthCell (k + 1) n j := by
+@[simp] lemma stepCellEquiv_inr (T : CWSubcomplexTower W newCell) (k n : ℕ)
+    (j : newCell (k + 1) n) :
+    T.stepCellEquiv k n (Sum.inr j) =
+      (T.newCellEquiv k n j : cell (univ : Set (W (k + 1))) n) := by
   simp [stepCellEquiv]
 
-@[simp]
-lemma ofSubcomplex_birthCell
-    (step : ∀ k, C(W k, W (k + 1))) (isClosedEmbedding_step : ∀ k, IsClosedEmbedding (step k))
-    (E : ∀ k, CWComplex.Subcomplex (univ : Set (W (k + 1))))
-    (coe_E : ∀ k, (E k : Set (W (k + 1))) = range (step k))
-    (oldCellEquiv : ∀ k n, cell (univ : Set (W k)) n ≃ ↥((E k).I n))
-    (map_oldCell : ∀ k n (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ}, x ∈ closedBall 0 1 →
-      step k (map (C := (univ : Set (W k))) n i x) =
-        map (C := (univ : Set (W (k + 1)))) n (oldCellEquiv k n i : cell _ n) x)
-    (k n : ℕ) (j : StageNewCell W E k n) :
-    (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv map_oldCell).birthCell k n j =
-      j.1 := by
-  cases k <;> simp
+@[simp] lemma stepCellEquiv_symm_oldCellEquiv (T : CWSubcomplexTower W newCell) (k n : ℕ)
+    (i : cell (univ : Set (W k)) n) :
+    (T.stepCellEquiv k n).symm (T.oldCellEquiv k n i) = Sum.inl i :=
+  (T.stepCellEquiv k n).symm_apply_eq.2 (T.stepCellEquiv_inl k n i).symm
 
-lemma ofCellSum_birthCell_zero
-    (step : ∀ k, C(W k, W (k + 1))) (isClosedEmbedding_step : ∀ k, IsClosedEmbedding (step k))
-    (cellZeroEquiv : ∀ n, newCell 0 n ≃ cell (univ : Set (W 0)) n)
-    (cellSumEquiv : ∀ k n,
-      cell (univ : Set (W k)) n ⊕ newCell (k + 1) n ≃ cell (univ : Set (W (k + 1))) n)
-    (map_inl : ∀ k n (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ}, x ∈ closedBall 0 1 →
-      step k (map (C := (univ : Set (W k))) n i x) =
-        map (C := (univ : Set (W (k + 1)))) n (cellSumEquiv k n (Sum.inl i)) x)
-    (n : ℕ) (j : newCell 0 n) :
-    (ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).birthCell 0 n j =
-      cellZeroEquiv n j := (rfl)
-
-lemma ofCellSum_birthCell_succ
-    (step : ∀ k, C(W k, W (k + 1))) (isClosedEmbedding_step : ∀ k, IsClosedEmbedding (step k))
-    (cellZeroEquiv : ∀ n, newCell 0 n ≃ cell (univ : Set (W 0)) n)
-    (cellSumEquiv : ∀ k n,
-      cell (univ : Set (W k)) n ⊕ newCell (k + 1) n ≃ cell (univ : Set (W (k + 1))) n)
-    (map_inl : ∀ k n (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ}, x ∈ closedBall 0 1 →
-      step k (map (C := (univ : Set (W k))) n i x) =
-        map (C := (univ : Set (W (k + 1)))) n (cellSumEquiv k n (Sum.inl i)) x)
-    (k n : ℕ) (j : newCell (k + 1) n) :
-    (ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).birthCell
-      (k + 1) n j = cellSumEquiv k n (Sum.inr j) := (rfl)
-
-@[simp]
-lemma ofCellSum_stepCellEquiv
-    (step : ∀ k, C(W k, W (k + 1))) (isClosedEmbedding_step : ∀ k, IsClosedEmbedding (step k))
-    (cellZeroEquiv : ∀ n, newCell 0 n ≃ cell (univ : Set (W 0)) n)
-    (cellSumEquiv : ∀ k n,
-      cell (univ : Set (W k)) n ⊕ newCell (k + 1) n ≃ cell (univ : Set (W (k + 1))) n)
-    (map_inl : ∀ k n (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ}, x ∈ closedBall 0 1 →
-      step k (map (C := (univ : Set (W k))) n i x) =
-        map (C := (univ : Set (W (k + 1)))) n (cellSumEquiv k n (Sum.inl i)) x)
-    (k n : ℕ) :
-    (ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).stepCellEquiv k n =
-      cellSumEquiv k n := by
-  ext (i | j) <;> simp
+@[simp] lemma stepCellEquiv_symm_newCellEquiv (T : CWSubcomplexTower W newCell) (k n : ℕ)
+    (j : newCell (k + 1) n) :
+    (T.stepCellEquiv k n).symm (T.newCellEquiv k n j) = Sum.inr j :=
+  (T.stepCellEquiv k n).symm_apply_eq.2 (T.stepCellEquiv_inr k n j).symm
 
 /-- Equivalence between all `n`-cells born at stages `≤ k` and the `n`-cells of `W k`. -/
 def stageCellEquiv (T : CWSubcomplexTower W newCell) :
@@ -444,23 +203,35 @@ def stageCellEquiv (T : CWSubcomplexTower W newCell) :
       (Equiv.sigmaFstLeSuccEquiv (newCell · n) k).trans
         (((stageCellEquiv T k n).sumCongr (Equiv.refl _)).trans (T.stepCellEquiv k n))
 
-@[simp]
-lemma stageCellEquiv_birth (T : CWSubcomplexTower W newCell) (k n : ℕ) (j : newCell k n) :
+@[simp] lemma stageCellEquiv_birth (T : CWSubcomplexTower W newCell) (k n : ℕ) (j : newCell k n) :
     T.stageCellEquiv k n ⟨⟨k, j⟩, le_rfl⟩ = T.birthCell k n j := by
   cases k <;> simp [stageCellEquiv]
 
-@[simp]
-lemma stageCellEquiv_succ_of_le (T : CWSubcomplexTower W newCell) (k n : ℕ)
+@[simp] lemma stageCellEquiv_succ_of_le (T : CWSubcomplexTower W newCell) (k n : ℕ)
     (p : Σ m : ℕ, newCell m n) (hp : p.1 ≤ k) :
     T.stageCellEquiv (k + 1) n ⟨p, Nat.le_succ_of_le hp⟩ =
       (T.oldCellEquiv k n (T.stageCellEquiv k n ⟨p, hp⟩) : cell (univ : Set (W (k + 1))) n) := by
   simp [stageCellEquiv, hp]
 
-@[simp]
-lemma stageCellEquiv_symm_birthCell (T : CWSubcomplexTower W newCell) (k n : ℕ)
-    (j : newCell k n) :
+lemma stageCellEquiv_symm_birthCell (T : CWSubcomplexTower W newCell) (k n : ℕ) (j : newCell k n) :
     (T.stageCellEquiv k n).symm (T.birthCell k n j) = ⟨⟨k, j⟩, le_rfl⟩ :=
   (T.stageCellEquiv k n).symm_apply_eq.2 (T.stageCellEquiv_birth k n j).symm
+
+@[simp] lemma stageCellEquiv_zero_symm_cellZeroEquiv (T : CWSubcomplexTower W newCell) (n : ℕ)
+    (j : newCell 0 n) :
+    (T.stageCellEquiv 0 n).symm (T.cellZeroEquiv n j) = ⟨⟨0, j⟩, le_rfl⟩ :=
+  T.stageCellEquiv_symm_birthCell 0 n j
+
+@[simp] lemma stageCellEquiv_succ_symm_newCellEquiv (T : CWSubcomplexTower W newCell) (k n : ℕ)
+    (j : newCell (k + 1) n) :
+    (T.stageCellEquiv (k + 1) n).symm (T.newCellEquiv k n j) = ⟨⟨k + 1, j⟩, le_rfl⟩ :=
+  T.stageCellEquiv_symm_birthCell (k + 1) n j
+
+@[simp] lemma stageCellEquiv_succ_symm_oldCellEquiv (T : CWSubcomplexTower W newCell) (k n : ℕ)
+    (i : cell (univ : Set (W k)) n) :
+    (T.stageCellEquiv (k + 1) n).symm (T.oldCellEquiv k n i) =
+      ⟨((T.stageCellEquiv k n).symm i).1, Nat.le_succ_of_le ((T.stageCellEquiv k n).symm i).2⟩ := by
+  simp [stageCellEquiv]
 
 /-- The sequential diagram `ℕ ⥤ TopCat.{u}` of stages `W 0 → W 1 → W 2 → ⋯`. -/
 @[expose, simps obj, instance_reducible]
@@ -473,8 +244,7 @@ def diagram (T : CWSubcomplexTower W newCell) : ℕ ⥤ TopCat.{u} where
 lemma diagram_eq_ofSequence (T : CWSubcomplexTower W newCell) :
     T.diagram = Functor.ofSequence (fun k ↦ TopCat.ofHom (T.step k)) := (rfl)
 
-@[simp]
-lemma diagram_map_succ (T : CWSubcomplexTower W newCell) (k : ℕ) :
+@[simp] lemma diagram_map_succ (T : CWSubcomplexTower W newCell) (k : ℕ) :
     T.diagram.map (homOfLE (Nat.le_add_right k 1)) = TopCat.ofHom (T.step k) :=
   Functor.OfSequence.map_le_succ _ k
 
@@ -503,8 +273,7 @@ theorem isClosedEmbedding_diagram_map (T : CWSubcomplexTower W newCell) {i j : �
         diagram_map_succ, ConcreteCategory.hom_ofHom]
       exact T.isClosedEmbedding_step k) hij
 
-/-- For any colimit cocone `c` of `T.diagram`, every stage map `c.ι.app k : W k → c.pt` is a
-closed embedding. -/
+/-- For any colimit cocone `c` of `T.diagram`, every stage map `c.ι.app k` is a closed embedding. -/
 theorem isClosedEmbedding_ι (T : CWSubcomplexTower W newCell) {c : Cocone T.diagram}
     (hc : IsColimit c) (k : ℕ) : IsClosedEmbedding (c.ι.app k) :=
   TauCeti.TopCat.isClosedEmbedding_ι_of_isColimit
@@ -518,67 +287,191 @@ theorem t1Space_of_isColimit (T : CWSubcomplexTower W newCell) {c : Cocone T.dia
 
 end StageMachinery
 
+/-! ### Constructors from subcomplexes and cell-sum decompositions -/
+
+section Constructors
+
+variable {W : ℕ → Type u}
+  [∀ k, TopologicalSpace (W k)] [∀ k, T2Space (W k)] [∀ k, CWComplex (univ : Set (W k))]
+  {newCell : ℕ → ℕ → Type u}
+
+section OfSubcomplex
+
+variable (step : ∀ k, C(W k, W (k + 1))) (isClosedEmbedding_step : ∀ k, IsClosedEmbedding (step k))
+  (E : ∀ k, CWComplex.Subcomplex (univ : Set (W (k + 1))))
+  (coe_E : ∀ k, (E k : Set (W (k + 1))) = range (step k))
+  (oldCellEquiv : ∀ k n, cell (univ : Set (W k)) n ≃ ↥((E k).I n))
+  (map_oldCell : ∀ k n (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ}, x ∈ closedBall 0 1 →
+    step k (map (C := (univ : Set (W k))) n i x) =
+      map (C := (univ : Set (W (k + 1)))) n (oldCellEquiv k n i : cell _ n) x)
+
+/-- Construct a `CWSubcomplexTower` directly from stage subcomplexes `E k` and old-cell
+equivalences, using `StageNewCell W E` as the new-cell indexing. -/
+def ofSubcomplex : CWSubcomplexTower W (StageNewCell W E) where
+  step := step
+  isClosedEmbedding_step := isClosedEmbedding_step
+  subcomplex := E
+  coe_subcomplex := coe_E
+  cellZeroEquiv _ := Equiv.subtypeUnivEquiv (isStageNewCell_zero E)
+  oldCellEquiv := oldCellEquiv
+  newCellEquiv _ _ := Equiv.refl _
+  map_oldCell := map_oldCell
+
+@[simp] lemma ofSubcomplex_step (k : ℕ) :
+    (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv map_oldCell).step k = step k :=
+  (rfl)
+
+@[simp] lemma ofSubcomplex_subcomplex (k : ℕ) :
+    (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv map_oldCell).subcomplex k =
+      E k := (rfl)
+
+lemma ofSubcomplex_cellZeroEquiv (n : ℕ) :
+    (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv map_oldCell).cellZeroEquiv n =
+      Equiv.subtypeUnivEquiv (isStageNewCell_zero E) := (rfl)
+
+@[simp] lemma ofSubcomplex_cellZeroEquiv_apply (n : ℕ) (j : StageNewCell W E 0 n) :
+    (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv map_oldCell).cellZeroEquiv n j =
+      j.1 := (rfl)
+
+@[simp] lemma coe_ofSubcomplex_oldCellEquiv_apply (k n : ℕ) (i : cell (univ : Set (W k)) n) :
+    ((ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv map_oldCell).oldCellEquiv
+      k n i : cell (univ : Set (W (k + 1))) n) = (oldCellEquiv k n i : cell _ n) := (rfl)
+
+@[simp] lemma coe_ofSubcomplex_newCellEquiv_apply (k n : ℕ) (j : StageNewCell W E (k + 1) n) :
+    ((ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv map_oldCell).newCellEquiv
+      k n j : cell (univ : Set (W (k + 1))) n) = j.1 := (rfl)
+
+@[simp] lemma ofSubcomplex_birthCell (k n : ℕ) (j : StageNewCell W E k n) :
+    (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv map_oldCell).birthCell k n j =
+      j.1 := by cases k <;> simp
+
+end OfSubcomplex
+
+section OfCellSum
+
+variable (step : ∀ k, C(W k, W (k + 1))) (isClosedEmbedding_step : ∀ k, IsClosedEmbedding (step k))
+  (cellZeroEquiv : ∀ n, newCell 0 n ≃ cell (univ : Set (W 0)) n)
+  (cellSumEquiv : ∀ k n,
+    cell (univ : Set (W k)) n ⊕ newCell (k + 1) n ≃ cell (univ : Set (W (k + 1))) n)
+  (map_inl : ∀ k n (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ}, x ∈ closedBall 0 1 →
+    step k (map (C := (univ : Set (W k))) n i x) =
+      map (C := (univ : Set (W (k + 1)))) n (cellSumEquiv k n (Sum.inl i)) x)
+
+/-- Construct a `CWSubcomplexTower` from sum decompositions
+`cellSumEquiv k n : cell (univ : Set (W k)) n ⊕ newCell (k + 1) n ≃ cell (univ : Set (W (k + 1))) n`
+compatible with `step k` on old cells; the stage subcomplexes are synthesized automatically. -/
+def ofCellSum : CWSubcomplexTower W newCell :=
+  let I (k n : ℕ) : Set (cell (univ : Set (W (k + 1))) n) :=
+    range fun i ↦ cellSumEquiv k n (Sum.inl i)
+  have hinr_notMem (k n : ℕ) (j : newCell (k + 1) n) : cellSumEquiv k n (Sum.inr j) ∉ I k n := by
+    rintro ⟨i, hi⟩; exact Sum.inl_ne_inr ((cellSumEquiv k n).injective hi)
+  { step := step
+    isClosedEmbedding_step := isClosedEmbedding_step
+    subcomplex k :=
+      { carrier := range (step k)
+        I := I k
+        closed' := (isClosedEmbedding_step k).isClosed_range
+        union' := by
+          rw [empty_union]; ext y; simp only [mem_iUnion, mem_range]; constructor
+          · rintro ⟨n, ⟨_, ⟨i, rfl⟩⟩, z, hz, rfl⟩
+            exact ⟨map n i z, map_inl k n i (ball_subset_closedBall hz)⟩
+          · rintro ⟨x, rfl⟩
+            obtain ⟨n, i, z, hz, rfl⟩ := mem_iUnion₂.1
+              (CWComplex.iUnion_openCell_eq_complex (C := (univ : Set (W k))).symm ▸ mem_univ x)
+            exact ⟨n, ⟨_, i, rfl⟩, z, hz, (map_inl k n i (ball_subset_closedBall hz)).symm⟩ }
+    coe_subcomplex _ := rfl
+    cellZeroEquiv := cellZeroEquiv
+    oldCellEquiv k n := Equiv.ofInjective (fun i ↦ cellSumEquiv k n (Sum.inl i))
+      ((cellSumEquiv k n).injective.comp Sum.inl_injective)
+    newCellEquiv k n := Equiv.ofBijective
+      (fun j ↦ ⟨cellSumEquiv k n (Sum.inr j), hinr_notMem k n j⟩)
+      ⟨fun _ _ h ↦ Sum.inr.inj ((cellSumEquiv k n).injective (congrArg Subtype.val h)),
+        fun ⟨c, hc⟩ ↦ by
+          rcases h : (cellSumEquiv k n).symm c with i | j
+          · exact False.elim (hc ⟨i, ((cellSumEquiv k n).symm_apply_eq.1 h).symm⟩)
+          · exact ⟨j, Subtype.ext ((cellSumEquiv k n).symm_apply_eq.1 h).symm⟩⟩
+    map_oldCell := map_inl }
+
+@[simp] lemma ofCellSum_step (k : ℕ) :
+    (ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).step k = step k :=
+  (rfl)
+
+@[simp] lemma ofCellSum_subcomplex_I (k n : ℕ) :
+    ((ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).subcomplex k).I n =
+      range (fun i ↦ cellSumEquiv k n (Sum.inl i)) := (rfl)
+
+@[simp] lemma ofCellSum_cellZeroEquiv (n : ℕ) :
+    (ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).cellZeroEquiv n =
+      cellZeroEquiv n := (rfl)
+
+@[simp] lemma coe_ofCellSum_oldCellEquiv_apply (k n : ℕ) (i : cell (univ : Set (W k)) n) :
+    ((ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).oldCellEquiv
+      k n i : cell (univ : Set (W (k + 1))) n) = cellSumEquiv k n (Sum.inl i) := (rfl)
+
+@[simp] lemma coe_ofCellSum_newCellEquiv_apply (k n : ℕ) (j : newCell (k + 1) n) :
+    ((ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).newCellEquiv
+      k n j : cell (univ : Set (W (k + 1))) n) = cellSumEquiv k n (Sum.inr j) := (rfl)
+
+lemma ofCellSum_birthCell_zero (n : ℕ) (j : newCell 0 n) :
+    (ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).birthCell 0 n j =
+      cellZeroEquiv n j := (rfl)
+
+lemma ofCellSum_birthCell_succ (k n : ℕ) (j : newCell (k + 1) n) :
+    (ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).birthCell
+      (k + 1) n j = cellSumEquiv k n (Sum.inr j) := (rfl)
+
+@[simp] lemma ofCellSum_stepCellEquiv (k n : ℕ) :
+    (ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).stepCellEquiv k n =
+      cellSumEquiv k n := by ext (_ | _) <;> simp
+
+end OfCellSum
+
+end Constructors
+
 /-! ### Constant and stabilizing two-stage examples -/
 
 section Examples
 
+section Const
+
+variable (X : Type u) [TopologicalSpace X] [T2Space X] [CWComplex (univ : Set X)]
+
 /-- New-cell indexing of `CWSubcomplexTower.const X`: stage `0` has all cells of `X` and stages
 `k + 1` attach no new cells (`PEmpty`). -/
-abbrev ConstNewCell (X : Type u) [TopologicalSpace X] [CWComplex (univ : Set X)] :
-    ℕ → ℕ → Type u
+abbrev ConstNewCell : ℕ → ℕ → Type u
   | 0, n => cell (univ : Set X) n
   | _ + 1, _ => PEmpty
 
-/-- The constant `CWSubcomplexTower` on a Hausdorff classical CW complex `X`, where stage `0` has
-all cells of `X` and stages `k + 1` attach no new cells (`PEmpty`). -/
-def const (X : Type u) [TopologicalSpace X] [T2Space X] [CWComplex (univ : Set X)] :
-    CWSubcomplexTower (fun _ ↦ X) (ConstNewCell X) :=
+/-- The constant `CWSubcomplexTower` on a Hausdorff classical CW complex `X`. -/
+def const : CWSubcomplexTower (fun _ ↦ X) (ConstNewCell X) :=
   ofCellSum (fun _ ↦ ContinuousMap.id X) (fun _ ↦ .id) (fun _ ↦ Equiv.refl _)
     (fun _ _ ↦ Equiv.sumEmpty _ _) (fun _ _ _ {_} _ ↦ rfl)
 
-@[simp]
-lemma const_step (X : Type u) [TopologicalSpace X] [T2Space X] [CWComplex (univ : Set X)]
-    (k : ℕ) : (const X).step k = ContinuousMap.id X :=
+@[simp] lemma const_step (k : ℕ) : (const X).step k = ContinuousMap.id X :=
   ofCellSum_step _ _ _ _ _ k
 
-@[simp]
-lemma const_subcomplex_I (X : Type u) [TopologicalSpace X] [T2Space X] [CWComplex (univ : Set X)]
-    (k n : ℕ) : ((const X).subcomplex k).I n = univ := by
-  rw [const]
-  generalize_proofs
-  rw [ofCellSum_subcomplex_I]
-  ext i
-  simp
+@[simp] lemma const_subcomplex_I (k n : ℕ) : ((const X).subcomplex k).I n = univ := by
+  rw [const]; generalize_proofs; rw [ofCellSum_subcomplex_I]; ext; simp
 
-@[simp]
-lemma const_cellZeroEquiv (X : Type u) [TopologicalSpace X] [T2Space X] [CWComplex (univ : Set X)]
-    (n : ℕ) : (const X).cellZeroEquiv n = Equiv.refl _ :=
+@[simp] lemma const_cellZeroEquiv (n : ℕ) : (const X).cellZeroEquiv n = Equiv.refl _ :=
   ofCellSum_cellZeroEquiv _ _ _ _ _ n
 
-@[simp]
-lemma coe_const_oldCellEquiv_apply (X : Type u) [TopologicalSpace X] [T2Space X]
-    [CWComplex (univ : Set X)] (k n : ℕ) (i : cell (univ : Set X) n) :
+@[simp] lemma coe_const_oldCellEquiv_apply (k n : ℕ) (i : cell (univ : Set X) n) :
     ((const X).oldCellEquiv k n i : cell (univ : Set X) n) = i := by
-  rw [const]
-  generalize_proofs
-  rw [coe_ofCellSum_oldCellEquiv_apply]
-  rfl
+  rw [const]; generalize_proofs; rw [coe_ofCellSum_oldCellEquiv_apply]; rfl
 
-@[simp]
-lemma const_stepCellEquiv (X : Type u) [TopologicalSpace X] [T2Space X] [CWComplex (univ : Set X)]
-    (k n : ℕ) : (const X).stepCellEquiv k n = Equiv.sumEmpty _ _ :=
+@[simp] lemma const_stepCellEquiv (k n : ℕ) : (const X).stepCellEquiv k n = Equiv.sumEmpty _ _ :=
   ofCellSum_stepCellEquiv _ _ _ _ _ k n
 
-lemma const_birthCell_zero (X : Type u) [TopologicalSpace X] [T2Space X] [CWComplex (univ : Set X)]
-    (n : ℕ) (i : cell (univ : Set X) n) : (const X).birthCell 0 n i = i := by
+lemma const_birthCell_zero (n : ℕ) (i : cell (univ : Set X) n) : (const X).birthCell 0 n i = i := by
   simp
 
-/-- Stage spaces `W₀, W₁, W₁, ⋯` of a two-stage stabilizing tower. -/
-abbrev PairStage (W₀ W₁ : Type u) (k : ℕ) : Type u :=
-  Nat.casesOn k W₀ (fun _ ↦ W₁)
+end Const
 
-@[reducible]
-instance instTopologicalSpacePairStage {W₀ W₁ : Type u} [TopologicalSpace W₀]
+/-- Stage spaces `W₀, W₁, W₁, ⋯` of a two-stage stabilizing tower. -/
+abbrev PairStage (W₀ W₁ : Type u) (k : ℕ) : Type u := Nat.casesOn k W₀ (fun _ ↦ W₁)
+
+@[reducible] instance instTopologicalSpacePairStage {W₀ W₁ : Type u} [TopologicalSpace W₀]
     [TopologicalSpace W₁] (k : ℕ) : TopologicalSpace (PairStage W₀ W₁ k) :=
   Nat.casesOn k inferInstance (fun _ ↦ inferInstance)
 
@@ -586,9 +479,8 @@ instance instT2SpacePairStage {W₀ W₁ : Type u} [TopologicalSpace W₀] [T2Sp
     [TopologicalSpace W₁] [T2Space W₁] (k : ℕ) : T2Space (PairStage W₀ W₁ k) :=
   Nat.casesOn k inferInstance (fun _ ↦ inferInstance)
 
-@[reducible]
-instance instCWComplexPairStage {W₀ W₁ : Type u} [TopologicalSpace W₀] [CWComplex (univ : Set W₀)]
-    [TopologicalSpace W₁] [CWComplex (univ : Set W₁)] (k : ℕ) :
+@[reducible] instance instCWComplexPairStage {W₀ W₁ : Type u} [TopologicalSpace W₀]
+    [CWComplex (univ : Set W₀)] [TopologicalSpace W₁] [CWComplex (univ : Set W₁)] (k : ℕ) :
     CWComplex (univ : Set (PairStage W₀ W₁ k)) :=
   Nat.casesOn k inferInstance (fun _ ↦ inferInstance)
 
@@ -598,108 +490,74 @@ abbrev PairNewCell (W₀ : Type u) [TopologicalSpace W₀] [CWComplex (univ : Se
     (new₁ : ℕ → Type u) (k n : ℕ) : Type u :=
   Nat.casesOn k (cell (univ : Set W₀) n) (fun k' ↦ Nat.casesOn k' (new₁ n) (fun _ ↦ PEmpty))
 
-/-- A two-stage-then-stabilizing `CWSubcomplexTower` built from a single closed CW subcomplex
-embedding `f : C(W₀, W₁)`: stage `0` has the cells of `W₀`, stage `1` attaches the complementary
-cells `new₁` of `W₁` (which may have **strictly smaller** dimensions than cells of `W₀`), and all
-higher stages `k + 2` stabilize at `W₁` with no further cells. -/
-def pair {W₀ W₁ : Type u}
-    [TopologicalSpace W₀] [T2Space W₀] [CWComplex (univ : Set W₀)]
-    [TopologicalSpace W₁] [T2Space W₁] [CWComplex (univ : Set W₁)]
-    {new₁ : ℕ → Type u}
-    (f : C(W₀, W₁)) (hf : IsClosedEmbedding f)
-    (cellSum : ∀ n, cell (univ : Set W₀) n ⊕ new₁ n ≃ cell (univ : Set W₁) n)
-    (hmap : ∀ n (i : cell (univ : Set W₀) n) {x : Fin n → ℝ}, x ∈ closedBall 0 1 →
-      f (map (C := (univ : Set W₀)) n i x) =
-        map (C := (univ : Set W₁)) n (cellSum n (Sum.inl i)) x) :
-    CWSubcomplexTower (PairStage W₀ W₁) (PairNewCell W₀ new₁) :=
-  ofCellSum (W := PairStage W₀ W₁)
-    (fun | 0 => f | _ + 1 => ContinuousMap.id W₁)
-    (fun | 0 => hf | _ + 1 => .id)
-    (fun _ ↦ Equiv.refl _)
-    (fun | 0, n => cellSum n | _ + 1, _ => Equiv.sumEmpty _ _)
-    (fun k n i {_} hx ↦ by cases k with | zero => exact hmap n i hx | succ _ => rfl)
-
-section PairLemmas
+section Pair
 
 variable {W₀ W₁ : Type u}
-    [TopologicalSpace W₀] [T2Space W₀] [CWComplex (univ : Set W₀)]
-    [TopologicalSpace W₁] [T2Space W₁] [CWComplex (univ : Set W₁)]
-    {new₁ : ℕ → Type u}
-    (f : C(W₀, W₁)) (hf : IsClosedEmbedding f)
-    (cellSum : ∀ n, cell (univ : Set W₀) n ⊕ new₁ n ≃ cell (univ : Set W₁) n)
-    (hmap : ∀ n (i : cell (univ : Set W₀) n) {x : Fin n → ℝ}, x ∈ closedBall 0 1 →
-      f (map (C := (univ : Set W₀)) n i x) =
-        map (C := (univ : Set W₁)) n (cellSum n (Sum.inl i)) x)
+  [TopologicalSpace W₀] [T2Space W₀] [CWComplex (univ : Set W₀)]
+  [TopologicalSpace W₁] [T2Space W₁] [CWComplex (univ : Set W₁)]
+  {new₁ : ℕ → Type u}
+  (f : C(W₀, W₁)) (hf : IsClosedEmbedding f)
+  (cellSum : ∀ n, cell (univ : Set W₀) n ⊕ new₁ n ≃ cell (univ : Set W₁) n)
+  (hmap : ∀ n (i : cell (univ : Set W₀) n) {x : Fin n → ℝ}, x ∈ closedBall 0 1 →
+    f (map (C := (univ : Set W₀)) n i x) =
+      map (C := (univ : Set W₁)) n (cellSum n (Sum.inl i)) x)
 
-@[simp]
-lemma pair_step_zero : (pair f hf cellSum hmap).step 0 = f :=
+/-- A two-stage-then-stabilizing `CWSubcomplexTower` built from a single closed CW subcomplex
+embedding `f : C(W₀, W₁)`: stage `1` attaches `new₁` (which may have strictly smaller dimensions
+than cells of `W₀`) and stages `k + 2` stabilize at `W₁`. -/
+def pair : CWSubcomplexTower (PairStage W₀ W₁) (PairNewCell W₀ new₁) :=
+  ofCellSum (W := PairStage W₀ W₁)
+    (fun | 0 => f | _ + 1 => ContinuousMap.id W₁) (fun | 0 => hf | _ + 1 => .id)
+    (fun _ ↦ Equiv.refl _) (fun | 0, n => cellSum n | _ + 1, _ => Equiv.sumEmpty _ _)
+    (fun k n i {_} hx ↦ by cases k with | zero => exact hmap n i hx | succ _ => rfl)
+
+@[simp] lemma pair_step_zero : (pair f hf cellSum hmap).step 0 = f :=
   ofCellSum_step _ _ _ _ _ 0
 
-@[simp]
-lemma pair_step_succ (k : ℕ) : (pair f hf cellSum hmap).step (k + 1) = ContinuousMap.id W₁ :=
+@[simp] lemma pair_step_succ (k : ℕ) : (pair f hf cellSum hmap).step (k + 1) = .id W₁ :=
   ofCellSum_step _ _ _ _ _ (k + 1)
 
-@[simp]
-lemma pair_subcomplex_zero_I (n : ℕ) :
+@[simp] lemma pair_subcomplex_zero_I (n : ℕ) :
     ((pair f hf cellSum hmap).subcomplex 0).I n = range (fun i ↦ cellSum n (Sum.inl i)) :=
   ofCellSum_subcomplex_I _ _ _ _ _ 0 n
 
-@[simp]
-lemma pair_subcomplex_succ_I (k n : ℕ) :
+@[simp] lemma pair_subcomplex_succ_I (k n : ℕ) :
     ((pair f hf cellSum hmap).subcomplex (k + 1)).I n = univ := by
-  rw [pair]
-  generalize_proofs
-  rw [ofCellSum_subcomplex_I]
-  ext i
-  simp
+  rw [pair]; generalize_proofs; rw [ofCellSum_subcomplex_I]; ext; simp
 
-@[simp]
-lemma pair_cellZeroEquiv (n : ℕ) :
-    (pair f hf cellSum hmap).cellZeroEquiv n = Equiv.refl _ :=
+@[simp] lemma pair_cellZeroEquiv (n : ℕ) : (pair f hf cellSum hmap).cellZeroEquiv n = .refl _ :=
   ofCellSum_cellZeroEquiv _ _ _ _ _ n
 
-@[simp]
-lemma coe_pair_oldCellEquiv_zero_apply (n : ℕ) (i : cell (univ : Set W₀) n) :
+@[simp] lemma coe_pair_oldCellEquiv_zero_apply (n : ℕ) (i : cell (univ : Set W₀) n) :
     dsimp% ((pair f hf cellSum hmap).oldCellEquiv 0 n i : cell (univ : Set W₁) n) =
       cellSum n (Sum.inl i) := by
-  rw [pair]
-  generalize_proofs
-  rw [coe_ofCellSum_oldCellEquiv_apply]
+  rw [pair]; generalize_proofs; rw [coe_ofCellSum_oldCellEquiv_apply]
 
 lemma coe_pair_oldCellEquiv_succ_apply (k n : ℕ) (i : cell (univ : Set W₁) n) :
     ((pair f hf cellSum hmap).oldCellEquiv (k + 1) n i : cell (univ : Set W₁) n) = i := by
-  rw [pair]
-  generalize_proofs
-  rw [coe_ofCellSum_oldCellEquiv_apply]
-  rfl
+  rw [pair]; generalize_proofs; rw [coe_ofCellSum_oldCellEquiv_apply]; rfl
 
-@[simp]
-lemma coe_pair_newCellEquiv_zero_apply (n : ℕ) (j : new₁ n) :
+@[simp] lemma coe_pair_newCellEquiv_zero_apply (n : ℕ) (j : new₁ n) :
     dsimp% ((pair f hf cellSum hmap).newCellEquiv 0 n j : cell (univ : Set W₁) n) =
       cellSum n (Sum.inr j) := by
-  rw [pair]
-  generalize_proofs
-  rw [coe_ofCellSum_newCellEquiv_apply]
+  rw [pair]; generalize_proofs; rw [coe_ofCellSum_newCellEquiv_apply]
 
-@[simp]
-lemma pair_stepCellEquiv_zero (n : ℕ) :
+@[simp] lemma pair_stepCellEquiv_zero (n : ℕ) :
     (pair f hf cellSum hmap).stepCellEquiv 0 n = cellSum n :=
   ofCellSum_stepCellEquiv _ _ _ _ _ 0 n
 
-@[simp]
-lemma pair_stepCellEquiv_succ (k n : ℕ) :
+@[simp] lemma pair_stepCellEquiv_succ (k n : ℕ) :
     (pair f hf cellSum hmap).stepCellEquiv (k + 1) n = Equiv.sumEmpty _ _ :=
   ofCellSum_stepCellEquiv _ _ _ _ _ (k + 1) n
 
 lemma pair_birthCell_zero (n : ℕ) (i : cell (univ : Set W₀) n) :
-    (pair f hf cellSum hmap).birthCell 0 n i = i := by
-  simp
+    (pair f hf cellSum hmap).birthCell 0 n i = i := by simp
 
 lemma pair_birthCell_one (n : ℕ) (j : new₁ n) :
     (pair f hf cellSum hmap).birthCell 1 n j = cellSum n (Sum.inr j) :=
   coe_pair_newCellEquiv_zero_apply f hf cellSum hmap n j
 
-end PairLemmas
+end Pair
 
 end Examples
 

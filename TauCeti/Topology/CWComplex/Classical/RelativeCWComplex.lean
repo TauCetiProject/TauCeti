@@ -263,111 +263,90 @@ namespace TopCat
 
 open TauCeti
 
+section ToTopCatCWComplex
+
+variable (Y : TopCat.{w}) [T2Space Y] [Topology.CWComplex (univ : Set Y)]
+
 /-- **A Hausdorff space carrying a classical `CWComplex` structure on `Set.univ` is a categorical
-`TopCat.CWComplex`.** Its `n`-th stage is `skeletonObj (univ : Set Y) n`
-(`toTopCatCWComplex_obj`), its stage inclusions have range `skeletonLT (univ : Set Y) n`
-(`range_toTopCatCWComplex_incl_app`), and its cells correspond to `Σ n, cell (univ : Set Y) n`
-(`toTopCatCWComplexCellsEquiv`). -/
-def toTopCatCWComplex (Y : TopCat.{w}) [T2Space Y] [Topology.CWComplex (univ : Set Y)] :
-    TopCat.CWComplex Y where
+`TopCat.CWComplex`.** -/
+def toTopCatCWComplex : TopCat.CWComplex Y where
   __ := (toRelativeCWComplex (univ : Set Y)).toTransfiniteCompositionOfShape.ofArrowIso
     (Arrow.isoMk
       { hom := TopCat.ofHom ⟨fun x ↦ x.2.elim, continuous_of_discreteTopology⟩
         inv := Limits.initial.to _
         hom_inv_id := by ext x; exact x.2.elim
         inv_hom_id := Limits.initial.hom_ext _ _ }
-      (TopCat.isoOfHomeo (Homeomorph.Set.univ Y))
-      (by ext x; exact x.2.elim))
+      (TopCat.isoOfHomeo (Homeomorph.Set.univ Y)) (by ext x; exact x.2.elim))
   attachCells := (toRelativeCWComplex (univ : Set Y)).attachCells
 
-@[simp]
-lemma toTopCatCWComplex_obj (Y : TopCat.{w}) [T2Space Y] [Topology.CWComplex (univ : Set Y)]
-    (n : ℕ) : (Y.toTopCatCWComplex).F.obj n = skeletonObj (univ : Set Y) n := (rfl)
+@[simp] lemma toTopCatCWComplex_F : (Y.toTopCatCWComplex).F = skeletonFunctor (univ : Set Y) := by
+  simp [toTopCatCWComplex, toRelativeCWComplex]
 
-lemma toTopCatCWComplex_map (Y : TopCat.{w}) [T2Space Y] [Topology.CWComplex (univ : Set Y)]
-    {m n : ℕ} (f : m ⟶ n) :
+lemma toTopCatCWComplex_obj (n : ℕ) :
+    (Y.toTopCatCWComplex).F.obj n = skeletonObj (univ : Set Y) n := (rfl)
+
+lemma toTopCatCWComplex_map {m n : ℕ} (f : m ⟶ n) :
     (Y.toTopCatCWComplex).F.map f =
       eqToHom (Y.toTopCatCWComplex_obj m) ≫ (skeletonFunctor (univ : Set Y)).map f ≫
         eqToHom (Y.toTopCatCWComplex_obj n).symm :=
-  CategoryTheory.Functor.congr_hom (by simp [toTopCatCWComplex, toRelativeCWComplex]) f
+  CategoryTheory.Functor.congr_hom Y.toTopCatCWComplex_F f
 
-lemma toTopCatCWComplex_incl_app (Y : TopCat.{w}) [T2Space Y]
-    [Topology.CWComplex (univ : Set Y)] (n : ℕ) :
-    (Y.toTopCatCWComplex).incl.app n =
-      eqToHom (Y.toTopCatCWComplex_obj n) ≫
-        TopCat.ofHom (ContinuousMap.subtypeVal (skeletonLT (univ : Set Y) n : Set Y)) := by
+lemma toTopCatCWComplex_incl_app (n : ℕ) :
+    (Y.toTopCatCWComplex).incl.app n = eqToHom (Y.toTopCatCWComplex_obj n) ≫
+      TopCat.ofHom (ContinuousMap.subtypeVal (skeletonLT (univ : Set Y) n : Set Y)) := by
   dsimp only [toTopCatCWComplex, MorphismProperty.TransfiniteCompositionOfShape.ofArrowIso,
     TransfiniteCompositionOfShape.ofArrowIso]
-  rw [NatTrans.comp_app, Functor.const_map_app]
-  dsimp only [toRelativeCWComplex]
-  generalize_proofs
-  rw [eqToHom_refl, Category.id_comp]
-  refine ConcreteCategory.hom_ext _ _ fun x ↦ ?_
+  rw [NatTrans.comp_app, Functor.const_map_app]; dsimp only [toRelativeCWComplex]; generalize_proofs
+  rw [eqToHom_refl, Category.id_comp]; refine ConcreteCategory.hom_ext _ _ fun x ↦ ?_
   simp only [ConcreteCategory.comp_apply, CategoryTheory.Arrow.isoMk_hom_right,
     TopCat.isoOfHomeo_hom, Homeomorph.Set.univ, Equiv.Set.univ, ContinuousMap.subtypeVal]
   exact coe_skeletonCocone_ι_app_apply (univ : Set Y) n x
 
-lemma range_toTopCatCWComplex_incl_app (Y : TopCat.{w}) [T2Space Y]
-    [Topology.CWComplex (univ : Set Y)] (n : ℕ) :
+lemma range_toTopCatCWComplex_incl_app (n : ℕ) :
     (range ((Y.toTopCatCWComplex).incl.app n) : Set Y) = skeletonLT (univ : Set Y) n := by
-  rw [Y.toTopCatCWComplex_incl_app n, TopCat.coe_comp]
   have hsurj : Function.Surjective (eqToHom (Y.toTopCatCWComplex_obj n)) :=
     (TopCat.homeoOfIso (eqToIso (Y.toTopCatCWComplex_obj n))).surjective
-  rw [hsurj.range_comp]
+  rw [Y.toTopCatCWComplex_incl_app n, TopCat.coe_comp, hsurj.range_comp]
   simp [ContinuousMap.subtypeVal]
 
-/-- The `n`-cells attached at step `n` of `TopCat.toTopCatCWComplex Y` are the classical `n`-cells
-`cell (univ : Set Y) n`. -/
-def toTopCatCWComplexAttachCellsEquiv (Y : TopCat.{w}) [T2Space Y]
-    [Topology.CWComplex (univ : Set Y)] (n : ℕ) (hn : ¬ IsMax n) :
+/-- The `n`-cells attached at step `n` of `Y.toTopCatCWComplex` are `cell (univ : Set Y) n`. -/
+def toTopCatCWComplexAttachCellsEquiv (n : ℕ) (hn : ¬ IsMax n) :
     ((Y.toTopCatCWComplex).attachCells n hn).ι ≃ cell (univ : Set Y) n := Equiv.refl _
 
-/-- The cells of `TopCat.toTopCatCWComplex Y` are the classical cells
-`Σ n, cell (univ : Set Y) n`. -/
-def toTopCatCWComplexCellsEquiv (Y : TopCat.{w}) [T2Space Y] [Topology.CWComplex (univ : Set Y)] :
-    (Y.toTopCatCWComplex).Cells ≃ Σ n : ℕ, cell (univ : Set Y) n where
+/-- The cells of `Y.toTopCatCWComplex` are `Σ n, cell (univ : Set Y) n`. -/
+def toTopCatCWComplexCellsEquiv : (Y.toTopCatCWComplex).Cells ≃ Σ n : ℕ, cell (univ : Set Y) n where
   toFun γ := ⟨γ.j, Y.toTopCatCWComplexAttachCellsEquiv γ.j γ.hj γ.k⟩
   invFun γ :=
     ⟨γ.1, not_isMax γ.1, (Y.toTopCatCWComplexAttachCellsEquiv γ.1 (not_isMax γ.1)).symm γ.2⟩
   left_inv γ := by cases γ; rfl
   right_inv _ := rfl
 
-@[simp]
-lemma toTopCatCWComplexCellsEquiv_apply (Y : TopCat.{w}) [T2Space Y]
-    [Topology.CWComplex (univ : Set Y)] (γ : (Y.toTopCatCWComplex).Cells) :
-    Y.toTopCatCWComplexCellsEquiv γ =
-      ⟨γ.j, Y.toTopCatCWComplexAttachCellsEquiv γ.j γ.hj γ.k⟩ := (rfl)
+@[simp] lemma toTopCatCWComplexCellsEquiv_apply (γ : (Y.toTopCatCWComplex).Cells) :
+    Y.toTopCatCWComplexCellsEquiv γ = ⟨γ.j, Y.toTopCatCWComplexAttachCellsEquiv γ.j γ.hj γ.k⟩ :=
+  (rfl)
 
-@[simp]
-lemma toTopCatCWComplexCellsEquiv_symm_apply (Y : TopCat.{w}) [T2Space Y]
-    [Topology.CWComplex (univ : Set Y)] (n : ℕ) (i : cell (univ : Set Y) n) :
+@[simp] lemma toTopCatCWComplexCellsEquiv_symm_apply (n : ℕ) (i : cell (univ : Set Y) n) :
     (Y.toTopCatCWComplexCellsEquiv).symm ⟨n, i⟩ =
       ⟨n, not_isMax n, (Y.toTopCatCWComplexAttachCellsEquiv n (not_isMax n)).symm i⟩ := (rfl)
 
-/-- The inclusion of a cell of `TopCat.toTopCatCWComplex Y` is the characteristic map of the
-corresponding classical cell, read on the Euclidean disk through
-`TauCeti.diskHomeomorphClosedBall`. -/
-@[simp]
-lemma toTopCatCWComplex_cells_ι_apply (Y : TopCat.{w}) [T2Space Y]
-    [Topology.CWComplex (univ : Set Y)] (γ : (Y.toTopCatCWComplex).Cells)
+/-- The inclusion of a cell of `Y.toTopCatCWComplex` is the characteristic map of the corresponding
+classical cell, read on the Euclidean disk through `TauCeti.diskHomeomorphClosedBall`. -/
+@[simp] lemma toTopCatCWComplex_cells_ι_apply (γ : (Y.toTopCatCWComplex).Cells)
     (z : TopCat.disk.{w} γ.j) :
-    γ.ι z =
-      map (C := (univ : Set Y)) γ.j (Y.toTopCatCWComplexAttachCellsEquiv γ.j γ.hj γ.k)
-        (diskHomeomorphClosedBall γ.j z) := by
+    γ.ι z = map (C := (univ : Set Y)) γ.j (Y.toTopCatCWComplexAttachCellsEquiv γ.j γ.hj γ.k)
+      (diskHomeomorphClosedBall γ.j z) := by
   let γ' : (toRelativeCWComplex (univ : Set Y)).Cells := ⟨γ.j, γ.hj, γ.k⟩
   have hincl : eqToHom (Y.toTopCatCWComplex_obj (Order.succ γ.j))
       ((Y.toTopCatCWComplex.attachCells γ.j γ.hj).cell γ.k z) =
       ((toRelativeCWComplex (univ : Set Y)).attachCells γ'.j γ'.hj).cell γ'.k z := by
     dsimp only [toTopCatCWComplex, MorphismProperty.TransfiniteCompositionOfShape.ofArrowIso,
       TransfiniteCompositionOfShape.ofArrowIso, toRelativeCWComplex, γ']
-    generalize_proofs
-    rw [eqToHom_refl]
-    exact ConcreteCategory.id_apply _
-  have hι : γ.ι z = (γ'.ι z : Y) := by
-    rw [RelativeCellComplex.Cells.ι, Y.toTopCatCWComplex_incl_app, ConcreteCategory.comp_apply,
-      ConcreteCategory.comp_apply, TopCat.ofHom_apply, hincl]
-    simp only [ContinuousMap.subtypeVal, ContinuousMap.coe_mk]
-    exact (coe_toRelativeCWComplex_incl_app_apply (Order.succ γ'.j) _).symm
-  exact hι.trans (coe_toRelativeCWComplex_cells_ι_apply γ' z)
+    generalize_proofs; rw [eqToHom_refl]; exact ConcreteCategory.id_apply _
+  refine (?_ : γ.ι z = (γ'.ι z : Y)).trans (coe_toRelativeCWComplex_cells_ι_apply γ' z)
+  rw [RelativeCellComplex.Cells.ι, Y.toTopCatCWComplex_incl_app, ConcreteCategory.comp_apply,
+    ConcreteCategory.comp_apply, TopCat.ofHom_apply, hincl]
+  exact (coe_toRelativeCWComplex_incl_app_apply (Order.succ γ'.j) _).symm
+
+end ToTopCatCWComplex
 
 end TopCat

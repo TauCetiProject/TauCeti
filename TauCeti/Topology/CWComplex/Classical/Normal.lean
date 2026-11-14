@@ -13,15 +13,10 @@ import TauCeti.Topology.CWComplex.Classical.RelativeCWComplex
 /-!
 # Classical CW complexes are normal
 
-Every classical relative CW complex `C` in a Hausdorff space over a normal base `D` is a normal
-topological space (`TauCeti.normalSpace_of_relCWComplex`); in particular every classical CW complex
-in a Hausdorff space is normal (`TauCeti.instNormalSpaceCWComplex` and
-`TauCeti.instNormalSpaceOfCWComplexUniv`).
-
-Passing to the categorical presentation `TauCeti.toRelativeCWComplex C` expresses `C` as the
-sequential colimit of its skeleta `skeletonLT C n`, each obtained from the previous one by
-attaching Euclidean disks along their boundary spheres, so `TopCat.RelativeCWComplex.normalSpace`
-applies directly.
+Every classical relative CW complex `C` in a Hausdorff space over a normal base `D` is normal
+(`TauCeti.normalSpace_of_relCWComplex`), via `TauCeti.toRelativeCWComplex C` and
+`TopCat.RelativeCWComplex.normalSpace`; in particular every classical CW complex in a Hausdorff
+space is normal (`TauCeti.instNormalSpaceCWComplex`, `TauCeti.instNormalSpaceOfCWComplexUniv`).
 
 ## References
 
