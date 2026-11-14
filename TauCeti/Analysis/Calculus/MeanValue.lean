@@ -98,6 +98,16 @@ projection and the derivative of a map kills `ker π` on a ball about `0`, then 
 only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`), and a
 compactly supported differentiable map whose derivative kills a nonzero `v` everywhere is zero
 (`HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero`).
+
+## Signs from monotonicity on the real line
+
+A real function on `[x, ∞)` with nonpositive (negative) derivative beyond `x` that tends to `0`
+at `+∞` is nonnegative (positive) at `x` (`TauCeti.nonneg_of_tendsto_atTop_of_deriv_nonpos`,
+`TauCeti.pos_of_tendsto_atTop_of_deriv_neg`). If such a function also vanishes at `a` and its
+derivative, once nonpositive at a point of `(a, ∞)`, stays nonpositive (negative) afterwards, then
+it is nonnegative on `[a, ∞)` (positive on `(a, ∞)`)
+(`TauCeti.nonneg_of_tendsto_atTop_of_deriv_nonpos_stable`,
+`TauCeti.pos_of_tendsto_atTop_of_deriv_nonpos_stable`).
 -/
 
 public section
@@ -541,3 +551,79 @@ theorem eq_of_hasDerivWithinAt_zero (hs : IsPreconnected s)
   simpa [sub_eq_zero, eq_comm] using h
 
 end IsPreconnected
+
+namespace TauCeti
+
+open Filter Set
+open scoped Topology
+
+/-- A real function that has a nonpositive derivative beyond `x` and tends to `0` at `+∞` is
+nonnegative at `x`. -/
+theorem nonneg_of_tendsto_atTop_of_deriv_nonpos {f f' : ℝ → ℝ} {x : ℝ}
+    (hf : ∀ y, x ≤ y → HasDerivAt f (f' y) y) (hlim : Tendsto f atTop (𝓝 0))
+    (hf' : ∀ y, x < y → f' y ≤ 0) : 0 ≤ f x := by
+  have hanti : AntitoneOn f (Ici x) :=
+    antitoneOn_of_hasDerivWithinAt_nonpos (convex_Ici x)
+      (fun y hy => (hf y hy).continuousAt.continuousWithinAt)
+      (fun y hy => (hf y (interior_subset hy)).hasDerivWithinAt)
+      (fun y hy => hf' y (by simpa using hy))
+  refine le_of_tendsto hlim ?_
+  filter_upwards [eventually_ge_atTop x] with t ht
+  exact hanti (mem_Ici.mpr le_rfl) (mem_Ici.mpr ht) ht
+
+/-- A real function that has a negative derivative beyond `x` and tends to `0` at `+∞` is
+positive at `x`. -/
+theorem pos_of_tendsto_atTop_of_deriv_neg {f f' : ℝ → ℝ} {x : ℝ}
+    (hf : ∀ y, x ≤ y → HasDerivAt f (f' y) y) (hlim : Tendsto f atTop (𝓝 0))
+    (hf' : ∀ y, x < y → f' y < 0) : 0 < f x := by
+  have hanti : StrictAntiOn f (Ici x) :=
+    strictAntiOn_of_hasDerivWithinAt_neg (convex_Ici x)
+      (fun y hy => (hf y hy).continuousAt.continuousWithinAt)
+      (fun y hy => (hf y (interior_subset hy)).hasDerivWithinAt)
+      (fun y hy => hf' y (by simpa using hy))
+  have h1 : 0 ≤ f (x + 1) := nonneg_of_tendsto_atTop_of_deriv_nonpos
+    (fun y hy => hf y (by linarith)) hlim (fun y hy => (hf' y (by linarith)).le)
+  have := hanti (mem_Ici.mpr le_rfl) (mem_Ici.mpr (by linarith : x ≤ x + 1)) (by linarith)
+  linarith
+
+/-- **Sign change of the derivative, nonstrict form.** Let `f` vanish at `a` and tend to `0` at
+`+∞`, and let its derivative stay nonpositive beyond any point of `(a, ∞)` where it is
+nonpositive (so `f` first increases, then decreases). Then `f` is nonnegative on `[a, ∞)`. -/
+theorem nonneg_of_tendsto_atTop_of_deriv_nonpos_stable {f f' : ℝ → ℝ} {a x : ℝ} (hax : a ≤ x)
+    (hf : ∀ y, a ≤ y → HasDerivAt f (f' y) y) (ha : f a = 0) (hlim : Tendsto f atTop (𝓝 0))
+    (hf' : ∀ y z, a < y → y ≤ z → f' y ≤ 0 → f' z ≤ 0) : 0 ≤ f x := by
+  rcases hax.eq_or_lt with rfl | hax
+  · exact ha.ge
+  rcases le_or_gt (f' x) 0 with hx | hx
+  · exact nonneg_of_tendsto_atTop_of_deriv_nonpos (fun y hy => hf y (hax.le.trans hy)) hlim
+      fun y hy => hf' x y hax hy.le hx
+  · have hmono : MonotoneOn f (Icc a x) :=
+      monotoneOn_of_hasDerivWithinAt_nonneg (convex_Icc a x)
+        (fun y hy => (hf y hy.1).continuousAt.continuousWithinAt)
+        (fun y hy => (hf y (interior_subset hy).1).hasDerivWithinAt)
+        (fun y hy => by
+          rw [interior_Icc] at hy
+          by_contra! h
+          exact (hf' y x hy.1 hy.2.le h.le).not_gt hx)
+    simpa [ha] using hmono ⟨le_rfl, hax.le⟩ ⟨hax.le, le_rfl⟩ hax.le
+
+/-- **Sign change of the derivative, strict form.** Let `f` vanish at `a` and tend to `0` at
+`+∞`, and let its derivative be negative beyond any point of `(a, ∞)` where it is nonpositive.
+Then `f` is positive on `(a, ∞)`. -/
+theorem pos_of_tendsto_atTop_of_deriv_nonpos_stable {f f' : ℝ → ℝ} {a x : ℝ} (hax : a < x)
+    (hf : ∀ y, a ≤ y → HasDerivAt f (f' y) y) (ha : f a = 0) (hlim : Tendsto f atTop (𝓝 0))
+    (hf' : ∀ y z, a < y → y < z → f' y ≤ 0 → f' z < 0) : 0 < f x := by
+  rcases le_or_gt (f' x) 0 with hx | hx
+  · exact pos_of_tendsto_atTop_of_deriv_neg (fun y hy => hf y (hax.le.trans hy)) hlim
+      fun y hy => hf' x y hax hy hx
+  · have hmono : StrictMonoOn f (Icc a x) :=
+      strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc a x)
+        (fun y hy => (hf y hy.1).continuousAt.continuousWithinAt)
+        (fun y hy => (hf y (interior_subset hy).1).hasDerivWithinAt)
+        (fun y hy => by
+          rw [interior_Icc] at hy
+          by_contra! h
+          exact (hf' y x hy.1 hy.2 h).not_gt hx)
+    simpa [ha] using hmono ⟨le_rfl, hax.le⟩ ⟨hax.le, le_rfl⟩ hax
+
+end TauCeti

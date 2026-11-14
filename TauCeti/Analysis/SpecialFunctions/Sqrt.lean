@@ -6,6 +6,8 @@ Authors: Claude Fable 5, Claude Opus 4.8, Claude Opus 5
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Tactic.FieldSimp
 
@@ -47,6 +49,11 @@ to `0` as
 * `Real.add_sqrt_sq_add_pos`, `Real.hasDerivAt_add_sqrt_sq_add`,
   `Real.image_add_sqrt_sq_add_eq_Ioi`: the substitution `t ↦ t + √(t² + p)`
   is positive, has an explicit derivative, and maps `ℝ` onto `(0, ∞)` for `p > 0`.
+* `Real.hasDerivAt_div_mul_add_sqrt_sq_add`, `Real.tendsto_div_mul_add_sqrt_sq_add_atTop`: the
+  function `y ↦ α / (β y + √(y² + c))` has an explicit derivative and, for `β, c ≥ 0`, tends to
+  `0` at `+∞`.
+* `Real.monotoneOn_mul_sqrt_sq_add_sub`: for `c > 0`, `y ↦ y (√(y² + c) − y)` is monotone on
+  `[0, ∞)`.
 * `Real.contDiff_div_sqrt_pow`: if `ψ` is `C^k` with support in `(0, ∞)`, then
   `t ↦ ψ (√t) / (√t) ^ n` is `C^k`.
 
@@ -262,6 +269,59 @@ theorem image_add_sqrt_sq_add_eq_Ioi {p : ℝ} (hp : 0 < p) :
   rw [hsqrt]
   field_simp
   ring
+
+/-- The derivative of `y ↦ α / (β y + √(y² + c))` for `c > 0`, where the denominator does not
+vanish. -/
+theorem hasDerivAt_div_mul_add_sqrt_sq_add (α β : ℝ) {c : ℝ} (hc : 0 < c) {y : ℝ}
+    (hy : β * y + √(y ^ 2 + c) ≠ 0) :
+    HasDerivAt (fun y => α / (β * y + √(y ^ 2 + c)))
+      (-α * (β + y / √(y ^ 2 + c)) / (β * y + √(y ^ 2 + c)) ^ 2) y := by
+  have hpos : 0 < y ^ 2 + c := by positivity
+  have hs0 : √(y ^ 2 + c) ≠ 0 := (sqrt_pos.mpr hpos).ne'
+  have hs : HasDerivAt (fun y => √(y ^ 2 + c)) (y / √(y ^ 2 + c)) y := by
+    have := ((hasDerivAt_pow 2 y).add_const c).sqrt hpos.ne'
+    refine this.congr_deriv ?_
+    field_simp
+    norm_num
+  have hD : HasDerivAt (fun y => β * y + √(y ^ 2 + c)) (β + y / √(y ^ 2 + c)) y := by
+    have := ((hasDerivAt_id y).const_mul β).add hs
+    exact this.congr_deriv (by simp)
+  have := (hasDerivAt_const y α).div hD hy
+  refine this.congr_deriv ?_
+  ring
+
+/-- For `β ≥ 0` and `c ≥ 0`, `α / (β y + √(y² + c))` tends to `0` as `y → +∞`. -/
+theorem tendsto_div_mul_add_sqrt_sq_add_atTop (α : ℝ) {β c : ℝ} (hβ : 0 ≤ β) (hc : 0 ≤ c) :
+    Tendsto (fun y => α / (β * y + √(y ^ 2 + c))) atTop (𝓝 0) := by
+  refine tendsto_const_nhds.div_atTop (tendsto_atTop_mono' atTop ?_ tendsto_id)
+  filter_upwards [eventually_ge_atTop 0] with y hy
+  have h1 : y ≤ √(y ^ 2 + c) := by
+    calc y = √(y ^ 2) := (sqrt_sq hy).symm
+      _ ≤ _ := sqrt_le_sqrt (by linarith)
+  have h2 : 0 ≤ β * y := mul_nonneg hβ hy
+  simp only [id]
+  linarith
+
+/-- For `c > 0`, `y ↦ y (√(y² + c) − y)` is monotone on `[0, ∞)`. -/
+theorem monotoneOn_mul_sqrt_sq_add_sub {c : ℝ} (hc : 0 < c) :
+    MonotoneOn (fun y => y * (√(y ^ 2 + c) - y)) (Set.Ici 0) := by
+  intro y₁ h0 y₂ h2 h12
+  simp only [Set.mem_Ici] at h0 h2
+  have hs : ∀ y : ℝ, √(y ^ 2 + c) ^ 2 = y ^ 2 + c := fun y => sq_sqrt (by positivity)
+  have hp : ∀ y : ℝ, 0 < √(y ^ 2 + c) := fun y => sqrt_pos.mpr (by positivity)
+  -- `√(y² + c) − y = c / (√(y² + c) + y)`
+  have hrw : ∀ y : ℝ, 0 ≤ y → √(y ^ 2 + c) - y = c / (√(y ^ 2 + c) + y) := by
+    intro y hy
+    rw [eq_div_iff (by linarith [hp y])]; nlinarith [hs y]
+  dsimp only
+  rw [hrw y₁ h0, hrw y₂ h2, mul_div_assoc', mul_div_assoc',
+    div_le_div_iff₀ (by linarith [hp y₁]) (by linarith [hp y₂])]
+  have hkey : y₁ * √(y₂ ^ 2 + c) ≤ y₂ * √(y₁ ^ 2 + c) := by
+    refine le_of_not_gt fun hcon => ?_
+    have hnn : 0 ≤ y₂ * √(y₁ ^ 2 + c) := mul_nonneg h2 (hp _).le
+    have := mul_self_lt_mul_self hnn hcon
+    nlinarith [hs y₁, hs y₂, mul_le_mul h12 h12 h0 h2]
+  nlinarith
 
 /-- Subadditivity of the square root: `√(a + b) ≤ √a + √b`. -/
 theorem sqrt_add_le_add_sqrt (a b : ℝ) : √(a + b) ≤ √a + √b := by
