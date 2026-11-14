@@ -96,6 +96,10 @@ theorem mem_halfImage {i : Fin A.n} {z : ℂ} :
 def halfClosedImage (i : Fin A.n) : Set ℂ :=
   closedUpperHalfPlaneModel.symm ⁻¹' (A.image i : Set ClosedUpperHalfPlane) ∩ {z : ℂ | 0 ≤ z.im}
 
+theorem mem_halfClosedImage {i : Fin A.n} {z : ℂ} :
+    z ∈ A.halfClosedImage i ↔ closedUpperHalfPlaneModel.symm z ∈ A.image i ∧ 0 ≤ z.im :=
+  Iff.rfl
+
 theorem halfClosedImage_eq_image_val (i : Fin A.n) :
     A.halfClosedImage i = Subtype.val '' (A.image i : Set ClosedUpperHalfPlane) := by
   ext z
@@ -148,6 +152,10 @@ theorem halfOverlap_subset_halfImage (i i' : Fin A.n) :
 def halfTransition (i i' : Fin A.n) (z : ℂ) : ℂ :=
   A.transition i i' (closedUpperHalfPlaneModel.symm z)
 
+theorem halfTransition_def (i i' : Fin A.n) (z : ℂ) :
+    A.halfTransition i i' z = A.transition i i' (closedUpperHalfPlaneModel.symm z) :=
+  (rfl)
+
 theorem symm_halfTransition (i i' : Fin A.n) (z : ℂ) :
     closedUpperHalfPlaneModel.symm (A.halfTransition i i' z) =
       A.transition i i' (closedUpperHalfPlaneModel.symm z) :=
@@ -158,6 +166,22 @@ is the chart transition of the point. -/
 theorem halfTransition_coe_chart {i i' : Fin A.n} {x : M} (hx : x ∈ A.dom i') :
     A.halfTransition i i' (A.chart i' x : ℂ) = A.chart i x := by
   rw [halfTransition, closedUpperHalfPlaneModel_symm_coe, A.transition_chart hx]
+
+/-- Chart transitions are continuous on the overlaps, read in `ℂ`, including their points on the
+real axis. -/
+theorem continuousOn_halfTransition (i i' : Fin A.n) :
+    ContinuousOn (A.halfTransition i i') (closedUpperHalfPlaneModel.symm ⁻¹' A.overlap i i') := by
+  have h : ContinuousOn (fun y ↦ A.chart i ((A.chart i').symm y)) (A.overlap i i') :=
+    (A.chart i).continuousOn.comp ((A.continuousOn_chart_symm i').mono
+      (A.overlap_subset_image i i')) fun y hy ↦ by
+        obtain ⟨x, hx, rfl⟩ := A.mem_overlap.1 hy
+        rw [(A.chart i').left_inv (A.dom_subset_chart_source i' hx.2)]
+        exact A.dom_subset_chart_source i hx.1
+  refine (continuous_subtype_val.comp_continuousOn (h.comp
+    closedUpperHalfPlaneModel.continuous_symm.continuousOn fun _ hz ↦ hz)).congr fun z hz ↦ ?_
+  obtain ⟨x, hx, hxz⟩ := A.mem_overlap.1 hz
+  simp only [Function.comp_apply, halfTransition, ← hxz, A.transition_chart hx.2,
+    (A.chart i').left_inv (A.dom_subset_chart_source i' hx.2)]
 
 /-- A section read in chart `i`, as a function on `ℂ`. -/
 def halfCoord (i : Fin A.n) (s : ∀ x, V x) (z : ℂ) : F :=
@@ -170,6 +194,13 @@ theorem halfCoord_def (i : Fin A.n) (s : ∀ x, V x) (z : ℂ) :
 theorem halfCoord_coe_chart {i : Fin A.n} (s : ∀ x, V x) {x : M} (hx : x ∈ A.dom i) :
     A.halfCoord i s (A.chart i x : ℂ) = (A.triv i ⟨x, s x⟩).2 := by
   rw [halfCoord, closedUpperHalfPlaneModel_symm_coe, A.coord_chart s hx]
+
+/-- The chart expression in chart `i` of a continuous section is continuous on the image of the
+chart in `ℂ`, including its points on the real axis. -/
+theorem continuousOn_halfCoord {s : ∀ x, V x} (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x))
+    (i : Fin A.n) : ContinuousOn (A.halfCoord i s) (A.halfClosedImage i) :=
+  ((A.continuousOn_coord hs i).comp closedUpperHalfPlaneModel.continuous_symm.continuousOn
+    fun _ hz ↦ (A.mem_halfClosedImage.1 hz).1).congr fun z _ ↦ A.halfCoord_def i s z
 
 /-- The extended chart `i` sends a point to its image under the manifold chart, read in `ℂ`. -/
 theorem extChartAt_center_apply (i : Fin A.n) (x : M) :
