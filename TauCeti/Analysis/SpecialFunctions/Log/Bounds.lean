@@ -1,0 +1,52 @@
+/-
+Copyright (c) 2026 Matteo Cipollina. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Matteo Cipollina, The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
+public import Mathlib.Analysis.Real.Sqrt
+
+/-!
+# Elementary bounds for the real logarithm
+
+`Real.neg_log_le_sqrt_two_div` bounds `-log x` by `sqrt (2 / x)` for every `x ≥ 0`,
+including the totalized value at zero. `Real.posLog_le_sqrt_two_mul` bounds
+`posLog x` by `sqrt (2 * |x|)` for every real `x`.
+
+Applied to reciprocal distances, these inequalities dominate logarithmic singularities by
+inverse-square-root kernels. Their integrals control dyadic averages and the choice of circles
+in Hadamard minimum-modulus estimates.
+-/
+
+public section
+
+namespace Real
+
+/-- The negative logarithm is bounded by an inverse-square-root majorant on the nonnegative
+half-line, including its totalized value at zero. -/
+theorem neg_log_le_sqrt_two_div {x : ℝ} (hx : 0 ≤ x) :
+    -Real.log x ≤ Real.sqrt (2 / x) := by
+  rcases hx.eq_or_lt with rfl | hx
+  · simp
+  by_cases ht : 0 ≤ -Real.log x
+  · have hmain : (-Real.log x) ^ 2 / 2 ≤ Real.exp (-Real.log x) := by
+      simpa using Real.pow_div_factorial_le_exp (-Real.log x) ht 2
+    have hexp : Real.exp (-Real.log x) = x⁻¹ := by
+      simp [Real.exp_neg, Real.exp_log hx]
+    have hsq : (-Real.log x) ^ 2 ≤ 2 / x := by
+      rw [hexp] at hmain
+      rw [div_eq_mul_inv]
+      nlinarith [hmain]
+    exact (Real.le_sqrt ht (div_nonneg (by norm_num) hx.le)).2 hsq
+  · exact (lt_of_not_ge ht).le.trans (Real.sqrt_nonneg _)
+
+/-- The positive logarithm is bounded by a square-root majorant, including zero. -/
+theorem posLog_le_sqrt_two_mul (x : ℝ) : Real.posLog x ≤ Real.sqrt (2 * |x|) := by
+  rw [Real.posLog_apply]
+  refine max_le (Real.sqrt_nonneg _) ?_
+  simpa only [Real.log_inv, neg_neg, div_inv_eq_mul, Real.log_abs] using
+    (neg_log_le_sqrt_two_div (inv_nonneg.mpr (abs_nonneg x)))
+
+end Real
