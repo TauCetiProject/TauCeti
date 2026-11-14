@@ -38,11 +38,15 @@ union. For small `δ` the union lies in `G`.
 
 ## Main results
 
-* `TauCeti.Contour.exists_cycle_trace_subset_gridCover`: for `δ > 0` and bounded `K`, there is a
-  cycle in `gridCover δ K \ K`, null-homologous in `gridCover δ K`, winding once around every
-  point of `K`.
-* `IsCompact.exists_cycle_windingNumber_eq_one`: for a compact subset `K` of an open set `G`,
-  there is a cycle in `G \ K`, null-homologous in `G`, winding once around every point of `K`.
+* `TauCeti.Contour.exists_segments_cycle_trace_subset_gridCover` and
+  `TauCeti.Contour.exists_cycle_trace_subset_gridCover`: for `δ > 0` and bounded `K`, there is a
+  cycle carried on a finite segment family in `gridCover δ K \ K`, null-homologous in
+  `gridCover δ K`, winding once around every point of `K`, and integrating continuous functions as
+  the sum of their segment integrals.
+* `IsCompact.exists_segments_cycle_windingNumber_eq_one` and
+  `IsCompact.exists_cycle_windingNumber_eq_one`: for a compact subset `K` of an open set `G`,
+  there is such a polygonal segment cycle in `G \ K`, null-homologous in `G`, winding once around
+  every point of `K`.
 * `IsCompact.exists_nested_cycles_windingNumber_eq_one`: disjoint nested cycles in `G \ K`,
   each null-homologous in `G` and winding once around every point of `K`.
 
@@ -368,10 +372,17 @@ private def boundaryEdgeSet (δ : ℝ) (S : Finset (ℤ × ℤ)) : Set ℂ :=
   ⋃ t ∈ boundaryEdges S, segment ℝ (gridEdge δ t).1 (gridEdge δ t).2
 
 /-- **The boundary edges of a finite set of grid squares form a cycle.** Its trace lies on those
-edges, and off the grid lines its winding number is `1` on the squares of `S` and `0` elsewhere. -/
-private theorem exists_cycle_boundaryEdges (hδ : 0 < δ) (S : Finset (ℤ × ℤ)) :
-    ∃ Γ : Cycle, Cycle.trace Γ ⊆ boundaryEdgeSet δ S ∧ ∀ w, OffGrid δ w →
-      Cycle.windingNumber w Γ = if (⌊w.re / δ⌋, ⌊w.im / δ⌋) ∈ S then 1 else 0 := by
+edges, off the grid lines its winding number is `1` on the squares of `S` and `0` elsewhere, and
+its integral is the sum of the segment integrals along the boundary edges. -/
+private theorem exists_cycle_boundaryEdges.{u} (hδ : 0 < δ) (S : Finset (ℤ × ℤ)) :
+    ∃ (E : Finset (ℂ × ℂ)) (Γ : Cycle),
+      (⋃ e ∈ E, segment ℝ e.1 e.2) = boundaryEdgeSet δ S ∧
+      Cycle.trace Γ ⊆ boundaryEdgeSet δ S ∧
+      (∀ w, OffGrid δ w →
+        Cycle.windingNumber w Γ = if (⌊w.re / δ⌋, ⌊w.im / δ⌋) ∈ S then 1 else 0) ∧
+      ∀ {F : Type u} [NormedAddCommGroup F] [NormedSpace ℂ F] {f : ℂ → F},
+        ContinuousOn f (⋃ e ∈ E, segment ℝ e.1 e.2) → Cycle.integral f Γ =
+          ∑ e ∈ E, (e.2 - e.1) • ∫ t in (0 : ℝ)..1, f (AffineMap.lineMap e.1 e.2 t) := by
   classical
   set E := (boundaryEdges S).image (gridEdge δ)
   have hinj : InjOn (gridEdge δ) (boundaryEdges S) := (injective_gridEdge hδ.ne').injOn
@@ -384,24 +395,31 @@ private theorem exists_cycle_boundaryEdges (hδ : 0 < δ) (S : Finset (ℤ × �
     exact sum_boundaryEdges_corner_succ S fun q ↦ if gridPoint δ q = x then 1 else 0
   have hE : ⋃ e ∈ E, segment ℝ e.1 e.2 = boundaryEdgeSet δ S := by
     simp only [E, boundaryEdgeSet, Finset.set_biUnion_finset_image]
-  obtain ⟨Γ, htrace, hwind, -⟩ := Cycle.exists_windingNumber_integral_eq_sum_segments.{0} hbal
-  refine ⟨Γ, hE ▸ htrace, fun w hw ↦ ?_⟩
+  obtain ⟨Γ, htrace, hwind, hint⟩ := Cycle.exists_windingNumber_integral_eq_sum_segments.{u} hbal
+  refine ⟨E, Γ, hE, hE ▸ htrace, fun w hw ↦ ?_, hint⟩
   have hwU : w ∉ boundaryEdgeSet δ S := by
     simp only [boundaryEdgeSet, mem_iUnion, not_exists]
     exact fun t _ ↦ hw.notMem_segment t
   rw [hwind w (hE ▸ hwU), Finset.sum_image hinj]
   exact hw.sum_boundaryEdges_edgeWinding hδ S
 
-/-- **A grid cycle around a bounded set.** For `δ > 0` and a bounded set `K`, there is a contour
-cycle in `gridCover δ K \ K`, where `gridCover δ K` is the union of the grid squares of side `δ`
-meeting `K`, which is null-homologous in `gridCover δ K` and winds once around every point of
-`K`. -/
-theorem exists_cycle_trace_subset_gridCover (hδ : 0 < δ) (hK : Bornology.IsBounded K) :
-    ∃ Γ : Cycle, Γ.IsIn (gridCover δ K \ K) ∧ Γ.IsNullHomologous (gridCover δ K) ∧
-      ∀ z ∈ K, Cycle.windingNumber z Γ = 1 := by
+/-- **A grid-segment cycle around a bounded set.** For `δ > 0` and a bounded set `K`, the boundary
+segments of `gridCover δ K` form a finite family `E` in `gridCover δ K \ K` and a cycle `Γ` whose
+trace lies in those segments, which is null-homologous in `gridCover δ K`, winds once around `K`,
+and integrates continuous functions as the sum over `E` of their segment integrals. -/
+theorem exists_segments_cycle_trace_subset_gridCover.{u} (hδ : 0 < δ)
+    (hK : Bornology.IsBounded K) :
+    ∃ (E : Finset (ℂ × ℂ)) (Γ : Cycle),
+      (⋃ e ∈ E, segment ℝ e.1 e.2) ⊆ gridCover δ K \ K ∧
+      Γ.IsIn (⋃ e ∈ E, segment ℝ e.1 e.2) ∧
+      Γ.IsNullHomologous (gridCover δ K) ∧
+      (∀ z ∈ K, Cycle.windingNumber z Γ = 1) ∧
+      ∀ {F : Type u} [NormedAddCommGroup F] [NormedSpace ℂ F] {f : ℂ → F},
+        ContinuousOn f (⋃ e ∈ E, segment ℝ e.1 e.2) → Cycle.integral f Γ =
+          ∑ e ∈ E, (e.2 - e.1) • ∫ t in (0 : ℝ)..1, f (AffineMap.lineMap e.1 e.2 t) := by
   classical
   set S := (finite_gridIndices hδ hK).toFinset
-  obtain ⟨Γ, htrace, hoff⟩ := exists_cycle_boundaryEdges hδ S
+  obtain ⟨E, Γ, hE, htrace, hoff, hint⟩ := exists_cycle_boundaryEdges.{u} hδ S
   set U := boundaryEdgeSet δ S
   -- The boundary edges lie in a square of `S` and in a square outside `S`, which misses `K`.
   have hU {x : ℂ} (hx : x ∈ U) : x ∈ gridCover δ K ∧ x ∉ K := by
@@ -433,8 +451,8 @@ theorem exists_cycle_trace_subset_gridCover (hδ : 0 < δ) (hK : Bornology.IsBou
     rw [← hind hwoff, Cycle.windingNumber_eq_of_mem_connectedComponentIn
       ((convex_ball z r).isPreconnected.subset_connectedComponentIn (mem_ball_self hr)
         hballΓ hw)]
-  refine ⟨Γ, Cycle.isIn_iff.2 fun x hx ↦ hU (htrace hx), Cycle.isNullHomologous_iff.2 fun z hz ↦ ?_,
-    fun z hz ↦ ?_⟩
+  refine ⟨E, Γ, fun x hx ↦ hU (hE ▸ hx), Cycle.isIn_iff.2 (hE.symm ▸ htrace),
+    Cycle.isNullHomologous_iff.2 fun z hz ↦ ?_, fun z hz ↦ ?_, hint⟩
   · obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1
       (isCompact_gridCover hδ hK).isClosed.isOpen_compl z hz
     obtain ⟨w, hw, hzw⟩ := hnear hr fun x hx hxU ↦ hball hx (hU hxU).1
@@ -445,7 +463,39 @@ theorem exists_cycle_trace_subset_gridCover (hδ : 0 < δ) (hK : Bornology.IsBou
     obtain ⟨w, hw, hzw⟩ := hnear hr fun x hx ↦ (hball hx).2
     simp [hzw, interior_subset (hball hw).1]
 
+/-- **A grid cycle around a bounded set.** For `δ > 0` and a bounded set `K`, there is a contour
+cycle in `gridCover δ K \ K`, where `gridCover δ K` is the union of the grid squares of side `δ`
+meeting `K`, which is null-homologous in `gridCover δ K` and winds once around every point of
+`K`. -/
+theorem exists_cycle_trace_subset_gridCover (hδ : 0 < δ) (hK : Bornology.IsBounded K) :
+    ∃ Γ : Cycle, Γ.IsIn (gridCover δ K \ K) ∧ Γ.IsNullHomologous (gridCover δ K) ∧
+      ∀ z ∈ K, Cycle.windingNumber z Γ = 1 := by
+  obtain ⟨E, Γ, hsub, hin, hnull, hK1, -⟩ :=
+    exists_segments_cycle_trace_subset_gridCover.{0} hδ hK
+  exact ⟨Γ, Cycle.isIn_iff.2 ((Cycle.isIn_iff.1 hin).trans hsub), hnull, hK1⟩
+
 end TauCeti.Contour
+
+open TauCeti.Contour in
+/-- **A polygonal segment cycle around a compact set.** If `K` is a compact subset of an open set
+`G ⊆ ℂ`, there are a finite family `E` of segments in `G \ K` and a contour cycle `Γ` carried on
+those segments that is null-homologous in `G`, winds once around every point of `K`, and integrates
+every continuous Banach-space-valued function as the sum of its segment integrals over `E`. -/
+theorem IsCompact.exists_segments_cycle_windingNumber_eq_one.{u} {K G : Set ℂ} (hK : IsCompact K)
+    (hG : IsOpen G) (hKG : K ⊆ G) :
+    ∃ (E : Finset (ℂ × ℂ)) (Γ : Cycle),
+      (⋃ e ∈ E, segment ℝ e.1 e.2) ⊆ G \ K ∧
+      Γ.IsIn (⋃ e ∈ E, segment ℝ e.1 e.2) ∧
+      Γ.IsNullHomologous G ∧
+      (∀ z ∈ K, Cycle.windingNumber z Γ = 1) ∧
+      ∀ {F : Type u} [NormedAddCommGroup F] [NormedSpace ℂ F] {f : ℂ → F},
+        ContinuousOn f (⋃ e ∈ E, segment ℝ e.1 e.2) → Cycle.integral f Γ =
+          ∑ e ∈ E, (e.2 - e.1) • ∫ t in (0 : ℝ)..1, f (AffineMap.lineMap e.1 e.2 t) := by
+  obtain ⟨δ, hcover, hδ⟩ :=
+    ((hK.eventually_gridCover_subset hG hKG).and self_mem_nhdsWithin).exists
+  obtain ⟨E, Γ, hsub, hin, hnull, hK1, hint⟩ :=
+    exists_segments_cycle_trace_subset_gridCover.{u} hδ hK.isBounded
+  exact ⟨E, Γ, hsub.trans (sdiff_subset_sdiff_left hcover), hin, hnull.mono hcover, hK1, hint⟩
 
 open TauCeti.Contour in
 /-- **A cycle around a compact set.** If `K` is a compact subset of an open set `G ⊆ ℂ`, there is
@@ -454,11 +504,9 @@ a contour cycle in `G \ K` that is null-homologous in `G` and winds once around 
 theorem IsCompact.exists_cycle_windingNumber_eq_one {K G : Set ℂ} (hK : IsCompact K)
     (hG : IsOpen G) (hKG : K ⊆ G) :
     ∃ Γ : Cycle, Γ.IsIn (G \ K) ∧ Γ.IsNullHomologous G ∧ ∀ z ∈ K, Cycle.windingNumber z Γ = 1 := by
-  obtain ⟨δ, hcover, hδ⟩ :=
-    ((hK.eventually_gridCover_subset hG hKG).and self_mem_nhdsWithin).exists
-  obtain ⟨Γ, hin, hnull, hK1⟩ := exists_cycle_trace_subset_gridCover hδ hK.isBounded
-  exact ⟨Γ, Cycle.isIn_iff.2 ((Cycle.isIn_iff.1 hin).trans (sdiff_subset_sdiff_left hcover)),
-    hnull.mono hcover, hK1⟩
+  obtain ⟨E, Γ, hsub, hin, hnull, hK1, -⟩ :=
+    hK.exists_segments_cycle_windingNumber_eq_one.{0} hG hKG
+  exact ⟨Γ, Cycle.isIn_iff.2 ((Cycle.isIn_iff.1 hin).trans hsub), hnull, hK1⟩
 
 open TauCeti.Contour in
 /-- Two nested cycles around a compact subset `K` of an open set `G` can be chosen with

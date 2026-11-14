@@ -18,7 +18,7 @@ by functions holomorphic on an open neighbourhood of `s`. Its elements remember 
 function near the whole set, not just its values on that set. This is the domain for
 a holomorphic functional calculus near a spectrum, including disconnected spectra.
 
-We construct evaluation and restriction homomorphisms and characterize units by
+We construct evaluation, restriction, and composition homomorphisms and characterize units by
 nonvanishing on `s`. Consequently the spectrum of a represented germ is exactly the
 image of `s`, and the coordinate germ has spectrum `s`. No compactness or nonemptiness
 is needed; at the empty set the germ algebra is the zero algebra.
@@ -208,6 +208,72 @@ theorem spectrum_ofFun (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s) :
 theorem spectrum_ofFun_id :
     spectrum ℂ (ofFun id (analyticOnNhd_id : AnalyticOnNhd ℂ id s)) = s := by
   rw [spectrum_ofFun, image_id]
+
+/-- A holomorphic germ near `s` whose spectrum lies in `t` tends to `𝓝ˢ t` along `𝓝ˢ s`. -/
+theorem tendsto_nhdsSet (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t) :
+    f.val.Tendsto (𝓝ˢ t) := by
+  obtain ⟨f₀, hf₀, rfl⟩ := exists_ofFun_eq f
+  have hst : MapsTo f₀ s t := mapsTo_iff_image_subset.mpr (spectrum_ofFun f₀ hf₀ ▸ hf)
+  exact Filter.Tendsto.germ_tendsto fun V hV ↦ mem_nhdsSet_iff_forall.mpr fun x hx ↦
+    (hf₀ x hx).continuousAt (mem_nhdsSet_iff_forall.mp hV _ (hst hx))
+
+/-- Pullback of holomorphic germs near `t` along a holomorphic germ `f` near `s` whose spectrum
+lies in `t`. -/
+def comp (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t) :
+    holomorphicGerms t →ₐ[ℂ] holomorphicGerms s :=
+  ((Germ.compTendsto'AlgHom f.val (tendsto_nhdsSet f hf)).comp
+    (holomorphicGerms t).val).codRestrict (holomorphicGerms s) fun g ↦ by
+      obtain ⟨f₀, hf₀, rfl⟩ := exists_ofFun_eq f
+      obtain ⟨g₀, hg₀, rfl⟩ := exists_ofFun_eq g
+      have hst : MapsTo f₀ s t := mapsTo_iff_image_subset.mpr (spectrum_ofFun f₀ hf₀ ▸ hf)
+      have htf : Tendsto f₀ (𝓝ˢ s) (𝓝ˢ t) := fun V hV ↦ mem_nhdsSet_iff_forall.mpr fun x hx ↦
+        (hf₀ x hx).continuousAt (mem_nhdsSet_iff_forall.mp hV _ (hst hx))
+      simpa only [AlgHom.comp_apply, Subalgebra.coe_val, Germ.compTendsto'AlgHom_apply, coe_ofFun,
+        Germ.compTendsto'_coe _ htf, Germ.coe_compTendsto _ htf, coe_mem_holomorphicGerms_iff]
+        using hg₀.comp hf₀ hst
+
+@[simp]
+theorem coe_comp (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t) (g : holomorphicGerms t) :
+    (comp f hf g : Germ (𝓝ˢ s) ℂ) = g.val.compTendsto' f.val (tendsto_nhdsSet f hf) := by
+  simp [comp]
+
+/-- Composition of represented holomorphic germs is represented by function composition. -/
+@[simp]
+theorem comp_ofFun (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s)
+    (hst : spectrum ℂ (ofFun f hf) ⊆ t) (g : ℂ → ℂ) (hg : AnalyticOnNhd ℂ g t) :
+    comp (ofFun f hf) hst (ofFun g hg) =
+      ofFun (g ∘ f) (hg.comp hf (mapsTo_iff_image_subset.mpr (spectrum_ofFun f hf ▸ hst))) := by
+  have hmaps : MapsTo f s t := mapsTo_iff_image_subset.mpr (spectrum_ofFun f hf ▸ hst)
+  have htf : Tendsto f (𝓝ˢ s) (𝓝ˢ t) := fun V hV ↦ mem_nhdsSet_iff_forall.mpr fun x hx ↦
+    (hf x hx).continuousAt (mem_nhdsSet_iff_forall.mp hV _ (hmaps hx))
+  apply Subtype.ext
+  simpa only [coe_comp, coe_ofFun, Germ.compTendsto'_coe _ htf] using Germ.coe_compTendsto g htf
+
+/-- Pulling back the coordinate germ along `f` recovers `f`. -/
+@[simp]
+theorem comp_id (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t) :
+    comp f hf (ofFun id analyticOnNhd_id) = f := by
+  obtain ⟨f₀, hf₀, rfl⟩ := exists_ofFun_eq f
+  exact comp_ofFun f₀ hf₀ hf id analyticOnNhd_id
+
+/-- Evaluating a composite germ evaluates the outer germ at the value of the inner germ. -/
+@[simp]
+theorem eval_comp (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t) (g : holomorphicGerms t)
+    (x : ℂ) (hx : x ∈ s) :
+    eval x hx (comp f hf g) =
+      eval (eval x hx f) (hf (by rw [spectrum_eq]; exact ⟨x, hx, rfl⟩)) g := by
+  obtain ⟨f₀, hf₀, rfl⟩ := exists_ofFun_eq f
+  obtain ⟨g₀, hg₀, rfl⟩ := exists_ofFun_eq g
+  simp
+
+/-- Restricting the outer germ's base set before composing does not change the composite germ. -/
+@[simp]
+theorem comp_restrict {u : Set ℂ} (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t)
+    (htu : t ⊆ u) (g : holomorphicGerms u) :
+    comp f hf (restrict htu g) = comp f (hf.trans htu) g := by
+  obtain ⟨f₀, hf₀, rfl⟩ := exists_ofFun_eq f
+  obtain ⟨g₀, hg₀, rfl⟩ := exists_ofFun_eq g
+  simp
 
 end holomorphicGerms
 
