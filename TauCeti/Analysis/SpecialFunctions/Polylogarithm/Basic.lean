@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.Analysis.Calculus.Deriv.ZPow
 
 /-!
 # Principal polylogarithms of integer weight
@@ -19,9 +20,10 @@ The logarithm in the integral uses Mathlib's principal argument, so values on th
 select the lower boundary convention.
 
 This file gives the defining identities, vanishing at zero, the nonpositive-weight Euler
-recursion, and analyticity of nonpositive weights away from their pole. The explicit
-weight-minus-one formula and the value of weight one at 3 check the Euler operator and
-logarithm conventions. No regularity at a pole is asserted for the totalised values.
+recursion, the action of the Euler differential operator `z ↦ z * deriv · z` on nonpositive
+weights composed with monomials `w ↦ c * w ^ k`, and analyticity of nonpositive weights away from
+their pole. The explicit weight-minus-one formula and the value of weight one at 3 check the Euler
+operator and logarithm conventions. No regularity at a pole is asserted for the totalised values.
 
 ## References
 
@@ -115,6 +117,65 @@ theorem analyticOnNhd_polylog_neg_nat (r : ℕ) :
     AnalyticOnNhd ℂ (polylog (-(r : ℤ))) {z | z ≠ 1} := by
   intro z hz
   exact analyticAt_polylog_neg_nat r hz
+
+/-- Under composition with an integer-exponent monomial `w ↦ c * w ^ k` away from the pole
+`c * z ^ k = 1`, the Euler differential operator `z ↦ z * deriv · z` multiplies nonpositive-weight
+polylogarithms by `k` and shifts the weight from `-r` to `-(r + 1)`. This holds at `z = 0` as well,
+where both sides vanish. -/
+theorem mul_deriv_polylog_neg_nat_comp_const_mul_zpow (r : ℕ) (k : ℤ) (c : ℂ) {z : ℂ}
+    (hcz : c * z ^ k ≠ 1) :
+    z * deriv (fun w => polylog (-(r : ℤ)) (c * w ^ k)) z =
+      (k : ℂ) * polylog (-((r + 1 : ℕ) : ℤ)) (c * z ^ k) := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · rcases eq_or_ne k 0 with rfl | hk
+    · simp
+    · simp [zero_zpow k hk]
+  · have hpoly : HasDerivAt (polylog (-(r : ℤ))) (deriv (polylog (-(r : ℤ))) (c * z ^ k))
+        (c * z ^ k) :=
+      (analyticAt_polylog_neg_nat r hcz).differentiableAt.hasDerivAt
+    have hmon : HasDerivAt (fun w : ℂ => c * w ^ k) (c * ((k : ℂ) * z ^ (k - 1))) z :=
+      (hasDerivAt_zpow k z (Or.inl hz)).const_mul c
+    have hcomp : deriv (fun w => polylog (-(r : ℤ)) (c * w ^ k)) z =
+        deriv (polylog (-(r : ℤ))) (c * z ^ k) * (c * ((k : ℂ) * z ^ (k - 1))) := by
+      simpa only [Function.comp_def] using (hpoly.comp z hmon).deriv
+    have hzpow : z * z ^ (k - 1) = z ^ k := by
+      simpa using (zpow_one_add₀ hz (k - 1)).symm
+    rw [hcomp, polylog_neg_nat_succ]
+    calc
+      z * (deriv (polylog (-(r : ℤ))) (c * z ^ k) * (c * ((k : ℂ) * z ^ (k - 1))))
+          = (k : ℂ) * ((c * (z * z ^ (k - 1))) * deriv (polylog (-(r : ℤ))) (c * z ^ k)) := by
+        ring
+      _ = (k : ℂ) * (c * z ^ k * deriv (polylog (-(r : ℤ))) (c * z ^ k)) := by
+        rw [hzpow]
+
+/-- Natural-exponent specialization of `mul_deriv_polylog_neg_nat_comp_const_mul_zpow`. -/
+theorem mul_deriv_polylog_neg_nat_comp_const_mul_pow (r m : ℕ) (c : ℂ) {z : ℂ}
+    (hcz : c * z ^ m ≠ 1) :
+    z * deriv (fun w => polylog (-(r : ℤ)) (c * w ^ m)) z =
+      (m : ℂ) * polylog (-((r + 1 : ℕ) : ℤ)) (c * z ^ m) := by
+  simpa using mul_deriv_polylog_neg_nat_comp_const_mul_zpow r m c (by simpa using hcz)
+
+/-- The Euler differential operator commutes with linear rescaling `w ↦ c * w` away from the pole
+`c * z = 1`. -/
+theorem mul_deriv_polylog_neg_nat_comp_const_mul (r : ℕ) (c : ℂ) {z : ℂ} (hcz : c * z ≠ 1) :
+    z * deriv (fun w => polylog (-(r : ℤ)) (c * w)) z =
+      polylog (-((r + 1 : ℕ) : ℤ)) (c * z) := by
+  simpa using mul_deriv_polylog_neg_nat_comp_const_mul_pow r 1 c (by simpa using hcz)
+
+/-- The Euler differential operator scales by `m` under `w ↦ w ^ m` away from `z ^ m = 1`. -/
+theorem mul_deriv_polylog_neg_nat_comp_pow (r m : ℕ) {z : ℂ} (hz : z ^ m ≠ 1) :
+    z * deriv (fun w => polylog (-(r : ℤ)) (w ^ m)) z =
+      (m : ℂ) * polylog (-((r + 1 : ℕ) : ℤ)) (z ^ m) := by
+  simpa using mul_deriv_polylog_neg_nat_comp_const_mul_pow r m 1 (by simpa using hz)
+
+/-- The Euler differential operator anticommutes with `w ↦ w⁻¹` away from the pole `z = 1`
+(including at `z = 0`, where both sides vanish). -/
+theorem mul_deriv_polylog_neg_nat_comp_inv (r : ℕ) {z : ℂ} (hz : z ≠ 1) :
+    z * deriv (fun w => polylog (-(r : ℤ)) w⁻¹) z =
+      -polylog (-((r + 1 : ℕ) : ℤ)) z⁻¹ := by
+  have hinv : (1 : ℂ) * z ^ (-1 : ℤ) ≠ 1 := by
+    simpa [inv_ne_one] using hz
+  simpa using mul_deriv_polylog_neg_nat_comp_const_mul_zpow r (-1) 1 hinv
 
 /-- The derivative of weight zero away from its pole. -/
 theorem hasDerivAt_polylog_zero_weight {z : ℂ} (hz : z ≠ 1) :
