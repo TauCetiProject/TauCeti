@@ -169,7 +169,7 @@ private theorem memLp_gaugeFixedZerothOrder {x y : ℂ → EuclideanSpace ℝ (F
     rw [vacuumField_apply z, ← vacuumField_apply 0]
     exact (norm_sub_le _ _).trans (by gcongr)
   refine memLp_piLp_iff.2 fun i ↦ ?_
-  simp only [gaugeFixedZerothOrder]
+  simp only [gaugeFixedZerothOrder_apply]
   refine memLp_finsetSum _ fun j _ ↦ ?_
   refine (memLp_piLp_iff.1 hy j).of_le_mul (c := C + ‖vacuumField 0‖)
     (((continuous_gaugeFixedZerothOrderMatrix_apply i j).comp_aestronglyMeasurable hw).mul
@@ -280,6 +280,7 @@ private theorem mem_sobolevFields_natCast_add_one_of_mem_sobolevFields {k : ℕ}
     y ∈ sobolevFields (k + 1) := by
   have hA := contDiff_gaugeFixedZerothOrderMatrix_and_bounded hx hbound
   have hzo : (fun z ↦ gaugeFixedZerothOrder (x z - vacuumField z) (y z)) ∈ sobolevFields k := by
+    simp only [gaugeFixedZerothOrder_apply]
     exact mulVec_mem_sobolevFields_natCast k
       (A := fun i j z ↦ gaugeFixedZerothOrderMatrix (x z - vacuumField z) i j)
       (fun i j ↦ (hA i j).1) (fun i j ↦ (hA i j).2) hy

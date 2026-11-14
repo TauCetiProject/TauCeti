@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Function.LpOrder
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+public import Mathlib.MeasureTheory.Measure.OpenPos
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Data.ENNReal.Inv
@@ -47,6 +48,9 @@ bounds.
 * `MeasureTheory.Lp.ae_norm_le_norm_top` and `MeasureTheory.Lp.norm_top_le_of_ae_bound`: an `L∞`
   function is bounded almost everywhere by its norm, and an almost everywhere bound bounds the
   norm, for any measure.
+* `MeasureTheory.Lp.norm_le_norm_top_of_ae_eq_of_continuousAt`: when the measure is positive on
+  open sets, a representative of an `L∞` class is bounded by its norm at every point where it is
+  continuous.
 * `MeasureTheory.Lp.ae_eq_max_min_norm_top`: a representative of a real `L∞` class agrees almost
   everywhere with its truncation to `[-‖f‖, ‖f‖]`.
 * `MeasureTheory.Lp.measure_lt_norm_ne_zero`: every level strictly below the `L∞` norm is
@@ -194,6 +198,20 @@ theorem lpNorm_le_norm_of_ae_eq_of_le {alpha F : Type*} [MeasurableSpace alpha]
 theorem Lp.ae_norm_le_norm_top {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
     {m : Measure alpha} (f : Lp F ∞ m) : ∀ᵐ x ∂m, ‖f x‖ ≤ ‖f‖ := by
   simpa [Lp.norm_def, toReal_eLpNorm] using ae_le_lpNorm_exponent_top (Lp.memLp f)
+
+/-- If the measure is positive on nonempty open sets, a representative of an `L∞` class is
+bounded by its norm at every point where it is continuous. -/
+theorem Lp.norm_le_norm_top_of_ae_eq_of_continuousAt {alpha F : Type*} [TopologicalSpace alpha]
+    [MeasurableSpace alpha] [NormedAddCommGroup F] {m : Measure alpha} [m.IsOpenPosMeasure]
+    {f : Lp F ∞ m} {g : alpha → F} (hfg : f =ᵐ[m] g) {x : alpha} (hg : ContinuousAt g x) :
+    ‖g x‖ ≤ ‖f‖ := by
+  by_contra! h
+  -- The points near `x` where `‖g‖` exceeds `‖f‖` form a set of positive but null measure.
+  have hae : ∀ᵐ y ∂m, ¬‖f‖ < ‖g y‖ := by
+    filter_upwards [hfg, Lp.ae_norm_le_norm_top f] with y hy h
+    exact not_lt_of_ge (hy ▸ h)
+  exact (m.measure_pos_of_mem_nhds (hg.norm.eventually (lt_mem_nhds h))).ne'
+    (measure_eq_zero_iff_ae_notMem.2 hae)
 
 /-- An almost everywhere bound on an `L∞` function bounds its norm, whatever the measure. Compare
 `MeasureTheory.Lp.norm_le_of_ae_bound`, which needs a finite measure. -/
