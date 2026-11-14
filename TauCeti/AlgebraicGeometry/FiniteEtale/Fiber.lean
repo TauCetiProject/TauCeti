@@ -24,8 +24,24 @@ triple composite agree (`pullbackComp_comp_inv_app_comp_eqToHom`), up to the equ
 For a geometric point `x : Spec Ω ⟶ S`, with `Ω` a separably closed field, the
 *geometric fibre functor* `FiniteEtaleScheme.fiber x` sends a finite étale `S`-scheme `X` to the
 finite set attached to `X ×_S Spec Ω` by the classification of finite étale schemes over a
-separably closed field. This is the functor on finite étale covers whose automorphisms define
-the étale fundamental group based at `x`.
+separably closed field. Its automorphism group is the étale fundamental group `π₁(S, x)`
+(`FiniteEtaleScheme.EtaleFundamentalGroup x`), and an étale path from `x` to a geometric point
+`y : Spec Ω' ⟶ S` (`FiniteEtaleScheme.EtalePath x y`) is a natural isomorphism
+`fiber x ≅ fiber y`. Paths are not required to stay in a connected component and no base points
+are chosen, so the paths between all geometric points of `S` form a groupoid whose identity,
+inverse and composition are `Iso.refl`, `Iso.symm` and `Iso.trans`.
+
+Further structure on these is developed elsewhere. `TauCeti.CategoryTheory.Aut.Torsor` makes
+`π₁(S, y)` act simply transitively on the paths from `x` to `y` by postcomposition, and
+`π₁(S, x)ᵐᵒᵖ` by precomposition; a path `γ` from `x` to `y` identifies `π₁(S, x)` with
+`π₁(S, y)` by conjugation, `Iso.conjAut γ`, which is a homeomorphism for the profinite topologies
+(`CategoryTheory.Iso.continuousConjAut`, in `TauCeti.CategoryTheory.Galois.Topology`). Over a
+connected base any two geometric points are joined by a path
+(`TauCeti.FiniteEtaleScheme.nonempty_fiber_iso`, in
+`TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category`), so the paths from `x` to `y` form a
+torsor under `π₁(S, y)`; over a disconnected base,
+`TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Component` describes which geometric points are
+joined by paths.
 
 The fibre functor is corepresented by the geometric point itself:
 `FiniteEtaleScheme.fiberCompInclIso` identifies `fiber x` with the set of lifts of `x` to
@@ -36,11 +52,19 @@ Changing the geometric point along a morphism of bases is `pullbackCompFiberIso`
 identities and composites (`pullbackCompFiberIso_id_hom_app`, `pullbackCompFiberIso_comp_hom_app`).
 These compatibilities make the étale fundamental group functorial in the scheme.
 
+## Main definitions
+
+* `TauCeti.FiniteEtaleScheme.pullback`: base change of finite étale schemes.
+* `TauCeti.FiniteEtaleScheme.fiber`: the geometric fibre functor at a geometric point.
+* `TauCeti.FiniteEtaleScheme.EtaleFundamentalGroup x`: the étale fundamental group `π₁(S, x)`.
+* `TauCeti.FiniteEtaleScheme.EtalePath x y`: étale paths from `x` to `y`.
+
 ## References
 
 * A. Grothendieck, *SGA 1*, Exposé V, §§4–7.
-* H. W. Lenstra, *Galois theory for schemes*.
-* The Stacks Project, Section 58.5 (*Finite étale covers of schemes*).
+* H. W. Lenstra, *Galois theory for schemes*, Section 5.
+* The Stacks Project, Section 58.5 (*Finite étale covers of schemes*) and Section 58.6
+  (tag 0BND, *Fundamental groups of schemes*).
 -/
 
 public section
@@ -152,6 +176,19 @@ classification of finite étale schemes over a separably closed field. -/
 theorem fiber_def (x : Spec (.of Ω) ⟶ S) :
     fiber x = pullback x ⋙ (equivOfIsSepClosed Ω).functor :=
   (rfl)
+
+/-- The **étale fundamental group** `π₁(S, x)` of a scheme `S` at a geometric point
+`x : Spec Ω ⟶ S`: the group of automorphisms of the geometric fibre functor at `x` on finite
+étale `S`-schemes. Its profinite topology is Mathlib's topology on automorphism groups of
+functors to finite sets, available by importing `Mathlib.CategoryTheory.Galois.Topology`. -/
+abbrev EtaleFundamentalGroup (x : Spec (.of Ω) ⟶ S) :=
+  Aut (fiber x)
+
+/-- The **étale paths** from a geometric point `x` to a geometric point `y` of a scheme `S`: the
+natural isomorphisms between their geometric fibre functors on finite étale `S`-schemes. -/
+abbrev EtalePath (x : Spec (.of Ω) ⟶ S) {Ω' : Type u} [Field Ω'] [IsSepClosed Ω']
+    (y : Spec (.of Ω') ⟶ S) :=
+  fiber x ≅ fiber y
 
 /-- The geometric fibre functor at `x` is corepresented by `x`: the fibre of `X` is naturally
 the set of lifts of `x` to `X`, that is, of morphisms `Over.mk x ⟶ X` over `S`. -/
