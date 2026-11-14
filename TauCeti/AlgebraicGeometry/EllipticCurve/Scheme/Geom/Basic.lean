@@ -68,6 +68,8 @@ affine opens `U` of `S` with Weierstrass curves over `Γ(S, U)` and the chosen p
   dimension one and proper, and the zero section is a section of it.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isLocallyWeierstrass`: an elliptic curve over `S`
   satisfies the local-model condition.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isClosed_setOf_left_apply_eq_zero`: for any
+  over-morphism into an elliptic curve, meeting its zero section is a closed condition.
 
 ## Implementation notes
 
@@ -91,8 +93,6 @@ a ring isomorphism `φ` with `WeierstrassCurve.map`, and identifies `projModel (
 is `WeierstrassCurve.projModel`, and the local model of `EllipticCurveGeom` is a nonempty pointed
 Weierstrass atlas, which is equivalent to `IsLocallyWeierstrass` by
 `nonempty_pointedWeierstrassAtlas_iff`.
-* `EllipticCurveGeom.isClosed_setOf_left_apply_eq_zero`: for any over-morphism into an elliptic
-  curve, meeting its zero section is a closed condition.
 -/
 
 public section
