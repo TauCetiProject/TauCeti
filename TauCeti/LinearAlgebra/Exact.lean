@@ -312,11 +312,12 @@ theorem ker_coprod_eq_map_prod_top {f : M₁ →ₗ[R] M} {g : M →ₗ[R] M₂}
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj (hT x' z ▸ hxy)
     rw [map_sub, map_sub, mem_ker.1 hx', hX', map_zero, zero_sub, neg_add_cancel]
 
-/-- **The horseshoe step.** Given a short exact sequence `0 → M₁ → M → M₂ → 0`, a surjection
-`π₁ : P₁ → M₁` and a surjection `π₂ : P₂ → M₂` from a projective module, there is a surjection
-`π : P₁ × P₂ → M` with `π ∘ inl = f ∘ π₁` and `g ∘ π = π₂ ∘ snd`, so that `inl`, `π` and `snd`
-form a map from the split sequence `0 → P₁ → P₁ × P₂ → P₂ → 0` to the given one. Restricting
-`inl` and `snd` to the kernels makes `ker π` an extension of `ker π₂` by `ker π₁`. -/
+/-- **The horseshoe step.** Given a short exact sequence `0 → M₁ --f--> M --g--> M₂ → 0`, a
+surjection `π₁ : P₁ → M₁` and a surjection `π₂ : P₂ → M₂` from a projective module, there is a
+surjection `π : P₁ × P₂ → M` with `π ∘ inl = f ∘ π₁` and `g ∘ π = π₂ ∘ snd`, so that `π₁`, `π`
+and `π₂` form a map to the given sequence from the split sequence
+`0 → P₁ --inl--> P₁ × P₂ --snd--> P₂ → 0`. Restricting `inl` and `snd` to the kernels makes
+`ker π` an extension of `ker π₂` by `ker π₁`. -/
 theorem exists_surjective_ker_exact [Module.Projective R P₂] {f : M₁ →ₗ[R] M} {g : M →ₗ[R] M₂}
     (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.Surjective g)
     {π₁ : P₁ →ₗ[R] M₁} (hπ₁ : Function.Surjective π₁)
