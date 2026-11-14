@@ -396,6 +396,10 @@ noncomputable def finiteReduction : FGModuleCat.{v} A ⥤ FiniteAdicSystem.{v} I
       ⟨isAdicSystem_reduction I M,
         .of_surjective _ (quotientsπ_surjective _ (I.pow_succ_smul_top_antitone M) 0)⟩
 
+/-- Reduction of finite modules preserves addition of morphisms. -/
+instance : (finiteReduction.{v} I).Additive :=
+  inferInstanceAs ((isFiniteAdicSystem I).lift _ _).Additive
+
 instance [IsNoetherianRing A] [IsAdicComplete I A] : (finiteReduction I).Faithful where
   map_injective {M N} u v huv := by
     have := IsAdicComplete.of_finite I N
