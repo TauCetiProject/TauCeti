@@ -62,6 +62,8 @@ coefficients of its minimal polynomial over `k(t)` are fixed by `U(X, P)`.
 * `TauCeti.AlgebraicBelyiPair.relIndex_pointedStabilizer_le_finrank` and
   `TauCeti.AlgebraicBelyiPair.relIndex_pointedStabilizer_ne_zero`: over a rational point the
   index of `U(X, P)` in `U(X)` is finite, at most the degree of `X`.
+* `TauCeti.AlgebraicBelyiPair.pointedStabilizer_eq_stabilizer_of_normal`: when `X / k(t)` is
+  normal, `U(X, P) = U(X)` at every place `P` over a rational point `t = q`.
 * `TauCeti.AlgebraicBelyiPair.eq_of_smul_eq_self_of_snd_eq`: a semilinear automorphism fixing an
   unramified place of relative degree one is determined by its action on `k`.
 
@@ -311,6 +313,29 @@ theorem relIndex_pointedStabilizer_ne_zero {P : Place k X} {q : ℚ}
     (pointedStabilizer X P).relIndex (MulAction.stabilizer (k ≃ₐ[ℚ] k) (IsoClass.mk X)) ≠ 0 :=
   ne_zero_of_dvd_ne_zero (index_stabilizer_pos_and_le_finrank hP).1.ne'
     (relIndex_pointedStabilizer_dvd_index P)
+
+/-- **For a Galois Belyi covering, the pointed stabilizer over any rational point equals the full
+stabilizer of the class**: any semilinear automorphism of `X` moves `P` to another place over the
+same rational point `t = q`, and `Gal(X / k(t))` acts transitively on the fibre to carry it back to
+`P`. -/
+theorem pointedStabilizer_eq_stabilizer_of_normal [Normal (RatFunc k) X] {P : Place k X} {q : ℚ}
+    (hP : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
+    pointedStabilizer X P = MulAction.stabilizer (k ≃ₐ[ℚ] k) (IsoClass.mk X) := by
+  refine le_antisymm (pointedStabilizer_le_stabilizer P) fun g hg ↦ ?_
+  rw [← map_snd_semilinearAut, Subgroup.mem_map] at hg
+  obtain ⟨⟨φ, g'⟩, hφ, rfl⟩ := hg
+  let p : semilinearAut X := ⟨(φ, g'), hφ⟩
+  have hres : (p • P).restrict k (RatFunc k) = P.restrict k (RatFunc k) := by
+    rw [restrict_smul, hP, Place.equivOfRingEquiv_mapRingEquiv_adicOfIrreducible_X_sub_C,
+      map_ratCast]
+  have : IsGalois (RatFunc k) X := {}
+  obtain ⟨σ, hσ⟩ := Place.exists_smul_eq_of_restrict_eq hres
+  refine mem_pointedStabilizer_iff.mpr ⟨σ.toRingEquiv * φ, fun r ↦ ?_, fun z ↦ ?_⟩
+  · rw [RingAut.mul_apply, mem_semilinearAut_iff.mp hφ, AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes]
+    rfl
+  · conv_lhs => rw [← hσ]
+    rw [RingAut.mul_apply, AlgEquiv.coe_toRingEquiv, Place.valuation_smul_apply,
+      valuation_smul_apply p P]
 
 /-! ### Uniqueness at an unramified place -/
 
