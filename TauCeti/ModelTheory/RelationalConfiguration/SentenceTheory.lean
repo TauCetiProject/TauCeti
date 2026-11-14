@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
+import TauCeti.MeasureTheory.Measure.BooleanPartition
 
 /-!
 # Truth sequences of countable lists of sentences
@@ -33,7 +34,7 @@ configurations.
   exactly when the configuration is a model of `θ n`.
 * `TauCeti.RelationalConfiguration.measurable_sentenceTheory`: on a countable carrier the truth
   sequence is measurable.
-* `TauCeti.RelationalConfiguration.sentenceTheory_eq_of_equiv` and
+* `FirstOrder.Language.Equiv.sentenceTheory_eq` and
   `TauCeti.RelationalConfiguration.sentenceTheory_eq_of_isoSetoid`: configurations with isomorphic
   decoded structures have the same truth sequence.
 -/
@@ -46,7 +47,7 @@ open FirstOrder FirstOrder.Language
 
 namespace TauCeti.RelationalConfiguration
 
-variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {W : Type w'} {ι : Type uι}
+variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {ι : Type uι}
 
 open Classical in
 /-- The **truth sequence** of a countable list of sentences at a configuration: its `n`-th
@@ -66,25 +67,35 @@ theorem sentenceTheory_eq_true_iff {θ : ℕ → L.SentenceInf ι} {c : Relation
 a measurable map into Cantor space: each coordinate reads off a measurable model class. -/
 theorem measurable_sentenceTheory [Countable ι] [Countable V] (θ : ℕ → L.SentenceInf ι) :
     Measurable (sentenceTheory (V := V) θ) :=
-  measurable_pi_iff.2 fun n => measurable_to_bool <| by
-    have h : (fun c => sentenceTheory θ c n) ⁻¹' {true} = modelsOf (V := V) (θ n) :=
-      Set.ext fun _ => sentenceTheory_eq_true_iff
-    rw [h]
-    exact measurableSet_modelsOf (θ n)
+  TauCeti.measurable_pi_decide_mem fun n => measurableSet_modelsOf (V := V) (θ n)
+
+end TauCeti.RelationalConfiguration
+
+namespace FirstOrder.Language.Equiv
+
+open TauCeti RelationalConfiguration
+
+variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {W : Type w'} {ι : Type uι}
 
 /-- **Isomorphism invariance.** Configurations, on possibly different carriers, with isomorphic
 decoded structures have the same truth sequence. -/
-theorem sentenceTheory_eq_of_equiv {c : RelationalConfiguration L V}
-    {d : RelationalConfiguration L W} (e : @Language.Equiv L V W c.toStructure d.toStructure)
-    (θ : ℕ → L.SentenceInf ι) : sentenceTheory θ c = sentenceTheory θ d :=
+theorem sentenceTheory_eq {c : RelationalConfiguration L V} {d : RelationalConfiguration L W}
+    (e : @Language.Equiv L V W c.toStructure d.toStructure) (θ : ℕ → L.SentenceInf ι) :
+    sentenceTheory θ c = sentenceTheory θ d :=
   funext fun n => Bool.eq_iff_iff.2 <| by
     rw [sentenceTheory_eq_true_iff, sentenceTheory_eq_true_iff]
     exact e.mem_modelsOf_iff (θ n)
+
+end FirstOrder.Language.Equiv
+
+namespace TauCeti.RelationalConfiguration
+
+variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {ι : Type uι}
 
 /-- Isomorphic configurations on one carrier have the same truth sequence. -/
 theorem sentenceTheory_eq_of_isoSetoid {c d : RelationalConfiguration L V}
     (h : isoSetoid L V c d) (θ : ℕ → L.SentenceInf ι) : sentenceTheory θ c = sentenceTheory θ d :=
   let ⟨e⟩ := isoSetoid_apply.1 h
-  sentenceTheory_eq_of_equiv e θ
+  e.sentenceTheory_eq θ
 
 end TauCeti.RelationalConfiguration
