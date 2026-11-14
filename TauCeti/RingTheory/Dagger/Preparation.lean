@@ -13,20 +13,20 @@ public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
 /-!
 # Multivariable overconvergent Weierstrass preparation
 
-Over a complete ultrametric normed field `K`, an overconvergent series in `Option σ`
-which is distinguished in `Y = X none` of degree `s`, with unit distinguished coefficient,
-has a unique factorization as an overconvergent unit times a monic polynomial of degree `s`
-over the overconvergent algebra in `σ`. The polynomial has unit Gauss norm.
+Over a complete ultrametric normed field `K`, an overconvergent series `g ∈ K⟨X, Y⟩†`, with
+`Y = X none`, which is distinguished in `Y` of degree `s` at unit radius, with unit distinguished
+coefficient, factors uniquely as `g = e * ω(Y)` with `e` a unit of `K⟨X, Y⟩†` and `ω` a monic
+polynomial of degree `s` over `K⟨X⟩†`, evaluated at `Y` by `washnitzerAlgebra.polynomialToOption`.
+The polynomial `ω(Y)` has unit Gauss norm.
 
-The factorization is stated through the injective inclusions into the Tate algebras and
-`MvPowerSeries.restrictedOptionEquiv`. Thus both factors belong to the overconvergent algebras,
-not merely to their completions. Existence uses unequal radii: the radii in the coefficient
-variables can be smaller than the radius in `Y`, as is necessary for `Y + X²`.
-Uniqueness is detected at unit radius and needs no completeness hypothesis.
-`washnitzerAlgebra.exists_isUnit_isMonicOfDegree_mul_polynomialToOption_eq` restates existence
-in the overconvergent algebra itself, evaluating the monic polynomial at `Y` by
-`washnitzerAlgebra.polynomialToOption`. After a triangular change of variables, every nonzero
-series is associated to such an evaluation
+Distinguishedness is tested through the injective inclusion into the Tate algebra and
+`MvPowerSeries.restrictedOptionEquiv`, while the factorization holds in `K⟨X, Y⟩†` itself, so both
+factors are overconvergent, not merely elements of the completions. Existence uses unequal radii:
+the radii in the coefficient variables can be smaller than the radius in `Y`, as is necessary for
+`Y + X²`. Uniqueness is detected at unit radius and needs no completeness hypothesis.
+`washnitzerAlgebra.existsUnique_isUnit_isMonicOfDegree_mul_eq` bundles existence and uniqueness,
+with the factorization tested in the Tate algebra. After a triangular change of variables, every
+nonzero series is associated to the evaluation at `Y` of such a polynomial
 (`washnitzerAlgebra.exists_associated_polynomialToOption`).
 
 ## References
@@ -56,57 +56,63 @@ section NormedCommRing
 
 variable [NormedCommRing K] [IsUltrametricDist K] [NormMulClass K]
 
-/-- Two overconvergent unit-times-monic factorizations of a distinguished series agree.
-The equation is tested in the iterated Tate algebra, whose inclusions are injective. -/
+omit [NormMulClass K] in
+/-- The image of `e * ω(Y)` in the iterated Tate algebra. -/
+private theorem restrictedOptionEquiv_toTate_mul_polynomialToOption (e : W)
+    (ω : Polynomial W₀) :
+    (restrictedOptionEquiv (toTate _ K (e * polynomialToOption ω)) : PowerSeries Tate) =
+      restrictedOptionEquiv (toTate _ K e) * (ω.map (toTate σ K).toRingHom : PowerSeries Tate) := by
+  rw [map_mul, map_mul, Subring.coe_mul, restrictedOptionEquiv_toTate_polynomialToOption]
+
+/-- Two overconvergent unit-times-monic factorizations `e * ω(Y) = g` of a distinguished series
+agree. The equation is tested in the iterated Tate algebra, whose inclusions are injective. -/
 theorem eq_and_eq_of_isUnit_isMonicOfDegree_mul_eq {g e e' : W} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
       (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     {ω ω' : Polynomial W₀} (he : IsUnit e) (he' : IsUnit e')
     (hω : ω.IsMonicOfDegree s) (hω' : ω'.IsMonicOfDegree s)
-    (h : (restrictedOptionEquiv (toTate _ K e) : PowerSeries Tate) *
-      (ω.map (toTate σ K).toRingHom : PowerSeries Tate) =
-        restrictedOptionEquiv (toTate _ K g))
-    (h' : (restrictedOptionEquiv (toTate _ K e') : PowerSeries Tate) *
-      (ω'.map (toTate σ K).toRingHom : PowerSeries Tate) =
-        restrictedOptionEquiv (toTate _ K g)) : e = e' ∧ ω = ω' := by
+    (h : e * polynomialToOption ω = g) (h' : e' * polynomialToOption ω' = g) :
+    e = e' ∧ ω = ω' := by
   have : Nontrivial Tate := nontrivial_of_ne _ _ hg.coeff_ne_zero
+  have hT {e : W} {ω : Polynomial W₀} (h : e * polynomialToOption ω = g) :
+      (restrictedOptionEquiv (toTate _ K e) : PowerSeries Tate) *
+        (ω.map (toTate σ K).toRingHom : PowerSeries Tate) =
+          restrictedOptionEquiv (toTate _ K g) := by
+    rw [← h, restrictedOptionEquiv_toTate_mul_polynomialToOption]
   obtain ⟨heq, hωeq⟩ := hg.eq_and_eq_of_mul_eq_mul one_pos
     ((he.map (toTate _ K)).map restrictedOptionEquiv.toRingHom)
-    ((he'.map (toTate _ K)).map restrictedOptionEquiv.toRingHom) (hω.map _) (hω'.map _) h h'
+    ((he'.map (toTate _ K)).map restrictedOptionEquiv.toRingHom) (hω.map _) (hω'.map _)
+    (hT h) (hT h')
   exact ⟨toTate_injective (restrictedOptionEquiv.injective heq),
     Polynomial.map_injective _ toTate_injective hωeq⟩
 
-/-- In an overconvergent Weierstrass preparation `e * ω(Y) = g` with `e` a unit, the monic
-polynomial `ω`, mapped to the Tate algebra, is distinguished of the same degree as `g` at unit
-radius. -/
+/-- If `e * ω(Y) = g` in `K⟨X, Y⟩†` with `e` a unit and `g` distinguished of degree `s` at unit
+radius, then the polynomial `ω ∈ K⟨X⟩†[Y]`, mapped to the Tate algebra, is distinguished of
+degree `s` at unit radius. -/
 theorem isDistinguished_of_isUnit_mul_polynomialToOption_eq {g e : W} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
       (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     {ω : Polynomial W₀} (he : IsUnit e) (h : e * polynomialToOption ω = g) :
     PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate) := by
-  rw [← h, map_mul, map_mul, Subring.coe_mul,
-    restrictedOptionEquiv_toTate_polynomialToOption] at hg
+  rw [← h, restrictedOptionEquiv_toTate_mul_polynomialToOption] at hg
   exact hg.of_isUnit_mul one_pos ((he.map (toTate _ K)).map restrictedOptionEquiv.toRingHom)
 
-/-- The monic polynomial in an overconvergent Weierstrass preparation is a Weierstrass
-polynomial: its unit-radius Gauss norm is `1`. -/
-theorem gaussNorm_eq_one_of_isUnit_isMonicOfDegree_mul_eq {g e : W} {s : ℕ}
+/-- The monic polynomial `ω` in an overconvergent Weierstrass preparation `e * ω(Y) = g` is a
+Weierstrass polynomial: `ω(Y)` has Gauss norm `1` in `K⟨X, Y⟩†`. -/
+theorem norm_polynomialToOption_eq_one_of_isUnit_isMonicOfDegree_mul_eq {g e : W} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
       (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     {ω : Polynomial W₀} (he : IsUnit e) (hm : ω.IsMonicOfDegree s)
-    (heq : (restrictedOptionEquiv (toTate _ K e) : PowerSeries Tate) *
-      (ω.map (toTate σ K).toRingHom : PowerSeries Tate) =
-        restrictedOptionEquiv (toTate _ K g)) :
-    (ω.map (toTate σ K).toRingHom : PowerSeries Tate).gaussNorm norm 1 = 1 := by
+    (heq : e * polynomialToOption ω = g) : ‖polynomialToOption ω‖ = 1 := by
   have hcoeff : ((PowerSeries.coeff s
       (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate) : Tate) :
         MvPowerSeries σ K) ≠ 0 := fun h ↦ hg.coeff_ne_zero (Subtype.ext h)
   obtain ⟨d, hd⟩ := (ne_zero_iff_exists_coeff_ne_zero _).mp hcoeff
   have : Nontrivial K := nontrivial_of_ne _ _ hd
   have : NormOneClass K := NormMulClass.toNormOneClass
-  have hd := PowerSeries.IsDistinguished.of_isUnit_mul (heq ▸ hg) one_pos
-    ((he.map (toTate _ K)).map restrictedOptionEquiv.toRingHom)
-  rw [← hd.norm_coeff_mul_pow_eq]
+  rw [norm_eq_gaussNorm_map_optionSeries, map_toTate_optionSeries,
+    restrictedOptionEquiv_toTate_polynomialToOption,
+    ← (isDistinguished_of_isUnit_mul_polynomialToOption_eq hg he heq).norm_coeff_mul_pow_eq]
   simp [Polynomial.coeff_coe, ← hm.natDegree_eq, hm.monic.coeff_natDegree]
 
 end NormedCommRing
@@ -127,9 +133,7 @@ private theorem lift_preparation {g : W} {s : ℕ} {ρ r : ℝ} [Fact (0 < ρ)]
       PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype
         (ω : PowerSeries _) = optionEquivLeft σ K (g : MvPowerSeries (Option σ) K)) :
     ∃ (e : W) (ω : Polynomial W₀), IsUnit e ∧ ω.IsMonicOfDegree s ∧
-      (restrictedOptionEquiv (toTate _ K e) : PowerSeries Tate) *
-        (ω.map (toTate σ K).toRingHom : PowerSeries Tate) =
-          restrictedOptionEquiv (toTate _ K g) := by
+      e * polynomialToOption ω = g := by
   let c : Option σ → ℝ := splitRadius r ρ
   let : ∀ i, Fact (0 < c i) := fun i ↦ ⟨splitRadius_pos Fact.out hρr i⟩
   let Inner := IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)
@@ -142,6 +146,8 @@ private theorem lift_preparation {g : W} {s : ℕ} {ρ r : ℝ} [Fact (0 < ρ)]
   refine ⟨E, Ω, ?_, ?_, ?_⟩
   · exact (he.map (restrictedOptionEquiv (c := c)).symm.toRingHom).map a
   · exact ⟨(hm.monic.natDegree_map b).trans hm.natDegree_eq, hm.monic.map b⟩
+  refine toTate_injective (restrictedOptionEquiv.injective (Subtype.ext ?_))
+  rw [restrictedOptionEquiv_toTate_mul_polynomialToOption]
   -- Compare in formal series, where coefficient inclusions do not involve norms.
   apply PowerSeries.map_injective (Tate).subtype Subtype.val_injective
   have hE : PowerSeries.map (Tate).subtype
@@ -164,19 +170,18 @@ section Field
 
 variable [NormedField K] [IsUltrametricDist K]
 
-/-- An overconvergent series distinguished of degree `s` at unit radius in the separated
-variable, with unit coefficient in degree `s`, is an overconvergent unit times a monic
-polynomial of degree `s` over the smaller overconvergent algebra. No characteristic,
-finiteness of the variable type, or nontriviality of the norm is required. -/
+/-- **Overconvergent Weierstrass preparation.** An overconvergent series `g` distinguished of
+degree `s` at unit radius in the separated variable, with unit coefficient in degree `s`, is
+`e * ω(Y)` for a unit `e` of `K⟨X, Y⟩†` and a monic polynomial `ω` of degree `s` over the
+smaller overconvergent algebra. No characteristic, finiteness of the variable type, or
+nontriviality of the norm is required. -/
 theorem exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
       (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
       (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) :
     ∃ (e : W) (ω : Polynomial W₀), IsUnit e ∧ ω.IsMonicOfDegree s ∧
-      (restrictedOptionEquiv (toTate _ K e) : PowerSeries Tate) *
-        (ω.map (toTate σ K).toRingHom : PowerSeries Tate) =
-          restrictedOptionEquiv (toTate _ K g) := by
+      e * polynomialToOption ω = g := by
   obtain ⟨ρ, hρpos, r, hρ, hρr, -, hgr, G, hG, hd, hunit⟩ :=
     exists_isDistinguished_isUnit_of_isDistinguished_one hg hu (ρ₀ := 2) one_lt_two
   let : Fact (0 < ρ) := hρpos
@@ -191,26 +196,13 @@ theorem exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s : ℕ}
   simpa only [map_mul, hgG] using congrArg
     (PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype) heq
 
-/-- Overconvergent Weierstrass preparation stated in `K⟨X, Y⟩†` itself: a series distinguished
-of degree `s` at unit radius in the separated variable, with unit coefficient in degree `s`, is
-an overconvergent unit times the evaluation at `Y` of a monic polynomial of degree `s` over the
-smaller overconvergent algebra. -/
-theorem exists_isUnit_isMonicOfDegree_mul_polynomialToOption_eq [CompleteSpace K] {g : W} {s : ℕ}
-    (hg : PowerSeries.IsDistinguished 1 s
-      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
-    (hu : IsUnit (PowerSeries.coeff s
-      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) :
-    ∃ (e : W) (ω : Polynomial W₀), IsUnit e ∧ ω.IsMonicOfDegree s ∧
-      e * polynomialToOption ω = g := by
-  obtain ⟨e, ω, he, hm, heq⟩ := exists_isUnit_isMonicOfDegree_mul_eq hg hu
-  refine ⟨e, ω, he, hm, toTate_injective (restrictedOptionEquiv.injective ?_)⟩
-  apply Subtype.ext
-  rw [map_mul, map_mul, Subring.coe_mul, restrictedOptionEquiv_toTate_polynomialToOption, heq]
-
 /-- Unique multivariable Weierstrass preparation in the Monsky–Washnitzer algebra.
 The series is distinguished of degree `s` at unit radius in the separated variable,
 with unit coefficient in degree `s`.
-Both the unit and every coefficient of the monic polynomial are overconvergent. -/
+Both the unit and every coefficient of the monic polynomial are overconvergent. Here the
+factorization is tested in the iterated Tate algebra; in `K⟨X, Y⟩†` itself, as `e * ω(Y) = g`,
+existence is `exists_isUnit_isMonicOfDegree_mul_eq` and uniqueness is
+`eq_and_eq_of_isUnit_isMonicOfDegree_mul_eq`. -/
 theorem existsUnique_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
       (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
@@ -220,41 +212,25 @@ theorem existsUnique_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s 
       (restrictedOptionEquiv (toTate _ K p.1) : PowerSeries Tate) *
         (p.2.map (toTate σ K).toRingHom : PowerSeries Tate) =
           restrictedOptionEquiv (toTate _ K g) := by
+  simp only [← restrictedOptionEquiv_toTate_mul_polynomialToOption, Subtype.coe_inj,
+    restrictedOptionEquiv.injective.eq_iff, toTate_injective.eq_iff]
   obtain ⟨e, ω, he, hm, heq⟩ := exists_isUnit_isMonicOfDegree_mul_eq hg hu
   refine ⟨(e, ω), ⟨he, hm, heq⟩, fun p ⟨he', hm', heq'⟩ ↦ ?_⟩
   obtain ⟨h1, h2⟩ := eq_and_eq_of_isUnit_isMonicOfDegree_mul_eq hg he' he hm' hm heq' heq
   exact Prod.ext h1 h2
 
-/-- Unique Weierstrass preparation in `K⟨X, Y⟩†` itself: the unit and the monic polynomial of
-`existsUnique_isUnit_isMonicOfDegree_mul_eq`, with the factorization stated as
-`e * ω(Y) = g`. -/
-theorem existsUnique_isUnit_isMonicOfDegree_mul_polynomialToOption_eq [CompleteSpace K] {g : W}
-    {s : ℕ}
-    (hg : PowerSeries.IsDistinguished 1 s
-      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
-    (hu : IsUnit (PowerSeries.coeff s
-      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) :
-    ∃! p : W × Polynomial W₀, IsUnit p.1 ∧ p.2.IsMonicOfDegree s ∧
-      p.1 * polynomialToOption p.2 = g := by
-  simpa only [← restrictedOptionEquiv_toTate_polynomialToOption, ← Subring.coe_mul, ← map_mul,
-    Subtype.coe_inj, restrictedOptionEquiv.injective.eq_iff, toTate_injective.eq_iff] using
-    existsUnique_isUnit_isMonicOfDegree_mul_eq hg hu
-
-/-- After a change of variables, every nonzero series `f` of `K⟨X, Y⟩†` is associated to the
-evaluation at `Y` of a monic polynomial `ω ∈ K⟨X⟩†[Y]` which is distinguished at unit radius.
-The change of variables is the inverse of a triangular automorphism making `f` distinguished in
-`Y` (`exists_triangularEquiv_isDistinguished_isUnit`), followed by Weierstrass preparation. -/
+/-- Up to a `K`-algebra automorphism `E` of `K⟨X, Y⟩†`, every nonzero series `f` is associated
+to `E (ω(Y))` for a monic polynomial `ω ∈ K⟨X⟩†[Y]` of some degree `s` which, mapped to the Tate
+algebra, is distinguished of degree `s` at unit radius. -/
 theorem exists_associated_polynomialToOption [CompleteSpace K] [Finite σ] (f : W) (hf : f ≠ 0) :
     ∃ (E : W ≃ₐ[K] W) (s : ℕ) (ω : Polynomial W₀),
       PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate) ∧
         ω.IsMonicOfDegree s ∧ Associated f (E (polynomialToOption ω)) := by
   obtain ⟨α, hα, s, hd, hu⟩ := exists_triangularEquiv_isDistinguished_isUnit f hf
   let e := triangularEquiv (R := K) α hα
-  obtain ⟨u, ω, hu', hm, hfac⟩ := exists_isUnit_isMonicOfDegree_mul_polynomialToOption_eq hd hu
-  refine ⟨e.symm, s, ω, isDistinguished_of_isUnit_mul_polynomialToOption_eq hd hu' hfac, hm,
-    .symm ⟨Units.map (e.symm : W →* W) hu'.unit, ?_⟩⟩
-  rw [Units.coe_map, IsUnit.unit_spec, MonoidHom.coe_ofClass, ← map_mul, mul_comm, hfac,
-    e.symm_apply_apply]
+  obtain ⟨u, ω, hu', hm, hfac⟩ := exists_isUnit_isMonicOfDegree_mul_eq hd hu
+  refine ⟨e.symm, s, ω, isDistinguished_of_isUnit_mul_polynomialToOption_eq hd hu' hfac, hm, ?_⟩
+  simpa [e, hfac] using (associated_unit_mul_left (polynomialToOption ω) u hu').map e.symm
 
 end Field
 
