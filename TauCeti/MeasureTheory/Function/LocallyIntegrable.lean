@@ -49,6 +49,9 @@ locally integrable on it.
 Local integrability on the trace `U ∩ s` of a closed set on an open set is local integrability on
 `U` for the measure restricted to `s`.
 
+A function locally integrable on `s` up to the closure of a null-measurable set `t`, cut off to
+`t`, is locally integrable on `s` (`MeasureTheory.LocallyIntegrableOn.indicator_of_closure`).
+
 Pairing a locally integrable function with a fixed vector in an inner product space gives a
 locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`.
 
@@ -439,6 +442,28 @@ theorem indicator_of_isClosed (hf : LocallyIntegrableOn f s μ) (hs : NullMeasur
     · simp [hxC, hxK, hxs]
 
 end RelativeExtension
+
+section ClosureCutoff
+
+variable {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε] {f : X → ε} {s t : Set X}
+
+/-- A function locally integrable on `s` up to the closure of a null-measurable set `t`, cut off
+to `t`, is locally integrable on `s`. -/
+theorem indicator_of_closure (hf : LocallyIntegrableOn f (s ∩ closure t) μ)
+    (ht : NullMeasurableSet t μ) : LocallyIntegrableOn (t.indicator f) s μ := by
+  intro x hx
+  by_cases h : x ∈ closure t
+  · obtain ⟨u, hu, hfu⟩ := hf x ⟨hx, h⟩
+    rw [nhdsWithin_inter', Filter.mem_inf_principal] at hu
+    refine ⟨_, hu, (integrableOn_indicator_iff ht).2 (hfu.mono_set ?_)⟩
+    rintro z ⟨hz, hzu⟩
+    exact hzu (subset_closure hz)
+  · refine ⟨(closure t)ᶜ, mem_nhdsWithin_of_mem_nhds (isClosed_closure.isOpen_compl.mem_nhds h),
+      (integrableOn_indicator_iff ht).2 (integrableOn_empty.mono_set ?_)⟩
+    rintro z ⟨hz, hz'⟩
+    exact hz' (subset_closure hz)
+
+end ClosureCutoff
 
 end MeasureTheory.LocallyIntegrableOn
 
