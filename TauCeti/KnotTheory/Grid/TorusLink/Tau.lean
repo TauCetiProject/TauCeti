@@ -15,7 +15,8 @@ On the standard grid `torusLink p q` of the `(p + 1, q + 1)` torus link, the `X`
 a cycle of maximal Alexander grading `p q / 2` that generates a tower of the unblocked grid
 homology `GH⁻` (`TorusLink/Homology.lean`). When `p + 1` and `q + 1` are coprime the grid is a
 knot grid, and the invariant `τ` of the diagram is minus that grading
-(`GridDiagram.two_mul_tau_torusLink`): `2 τ = -p q`. The sign records that the tower of this
+(`GridDiagram.two_mul_tau_torusLink`, `GridDiagram.tau_torusLink`): `2 τ = -p q`, so
+`τ = -(p q / 2)`. The sign records that the tower of this
 grid sits in the *top* Alexander degree; the book's value `τ(T_{p,q}) = (p - 1)(q - 1) / 2` is
 for the positive torus knot, and `τ` changes sign under taking the mirror image; the knot this
 grid presents is the mirror image of that one.
@@ -31,7 +32,8 @@ here.
 
 ## Main results
 
-* `TauCeti.GridDiagram.two_mul_tau_torusLink`: `2 τ(torusLink p q) = -p q` on a torus knot grid.
+* `TauCeti.GridDiagram.two_mul_tau_torusLink` and `TauCeti.GridDiagram.tau_torusLink`:
+  `2 τ(torusLink p q) = -p q` and `τ(torusLink p q) = -(p q / 2)` on a torus knot grid.
 * `TauCeti.GridDiagram.tau_torusLink_one_two`, `TauCeti.GridDiagram.tau_torusLink_two_three`:
   `τ = -1` on the `5 × 5` trefoil grid and `τ = -3` on the `7 × 7` grid of the `(3, 4)` torus knot.
 * `TauCeti.GridDiagram.tau_unknot`: `τ = 0` on every unknot grid.
@@ -49,25 +51,30 @@ namespace TauCeti
 
 namespace GridDiagram
 
-variable {p q : ℕ} (h : (p + 1).Coprime (q + 1)) (K : Type*) [Field K] [CharP K 2]
+variable {p q : ℕ} (hG : (torusLink p q).IsKnot) (K : Type*) [Field K] [CharP K 2]
 
 /-- **`τ` of a torus knot grid**: on the standard grid of the `(p + 1, q + 1)` torus knot,
 `2 τ = -p q`. -/
 theorem two_mul_tau_torusLink :
-    2 * ((isKnot_torusLink_iff p q).mpr h).tau K = -(p * q : ℤ) := by
-  rw [IsKnot.tau_def, mul_neg, two_mul_supNonTorsionDegree_torusLink h K]
+    2 * hG.tau K = -(p * q : ℤ) := by
+  rw [IsKnot.tau_def, mul_neg,
+    two_mul_supNonTorsionDegree_torusLink ((isKnot_torusLink_iff p q).mp hG) K]
+
+/-- **`τ` of a torus knot grid**: on the standard grid of the `(p + 1, q + 1)` torus knot,
+`τ = -(p q / 2)`. -/
+@[simp]
+theorem tau_torusLink :
+    hG.tau K = -((p * q / 2 : ℕ) : ℤ) := by
+  have h₂ := two_mul_tau_torusLink hG K
+  omega
 
 /-- On the `5 × 5` trefoil grid, `τ = -1`. -/
-@[simp]
 theorem tau_torusLink_one_two : ((isKnot_torusLink_iff 1 2).mpr (by decide)).tau K = -1 := by
-  have h := two_mul_tau_torusLink (p := 1) (q := 2) (by decide) K
-  omega
+  simp
 
 /-- On the `7 × 7` grid of the `(3, 4)` torus knot, `τ = -3`. -/
-@[simp]
 theorem tau_torusLink_two_three : ((isKnot_torusLink_iff 2 3).mpr (by decide)).tau K = -3 := by
-  have h := two_mul_tau_torusLink (p := 2) (q := 3) (by decide) K
-  omega
+  simp
 
 /-- **`τ` of an unknot grid is zero**: the unknot grids are the torus link grids with `q = 0`. -/
 @[simp]
@@ -76,8 +83,7 @@ theorem tau_unknot (hU : (unknot p).IsKnot) : hU.tau K = 0 := by
   revert hU
   rw [← torusLink_zero_right]
   intro hU
-  have h := two_mul_tau_torusLink (p := p) (q := 0) (Nat.coprime_one_right _) K
-  omega
+  simp
 
 end GridDiagram
 

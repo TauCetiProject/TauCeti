@@ -442,7 +442,7 @@ private theorem terminalInitial_oppositeTurnRow_mem_cIco :
 /-- The weight of a terminal--initial pentagon pair is the product of the `O`-weights of the
 squares of the forward pentagon and of the reverse pentagon read in `G`. -/
 private theorem pentagonPairWeight_terminalInitial :
-    G.pentagonPairWeight C R ⟨y, .inl P, .inr Q⟩ =
+    G.pentagonPairWeight C C.reverse R ⟨y, .inl P, .inr Q⟩ =
       (∏ p ∈ P.coveredSquares,
           if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R)) *
         ∏ p ∈ Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding,
@@ -461,7 +461,8 @@ private theorem terminalInitial_rectangleHexagon
     ∃ F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z,
       F ∈ G.hexagonCompositeDecompositions C x z ∧
         F.toRectangleDecomposition = ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ ∧
-          G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inl P, .inr Q⟩ := by
+          G.hexagonCompositeWeight C R F =
+            G.pentagonPairWeight C C.reverse R ⟨y, .inl P, .inr Q⟩ := by
   obtain ⟨hp, hpX⟩ := (G.mem_pentagons P).mp hP
   obtain ⟨hq, hqX⟩ := ((G.swapColumns a b).mem_initialPentagons Q).mp hQ
   let H : GridCommutationHexagonBetween a C.turnRow C.oppositeTurnRow y z :=
@@ -510,7 +511,8 @@ private theorem terminalInitial_hexagonRectangle
     ∃ F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z,
       F ∈ G.hexagonCompositeDecompositions C x z ∧
         F.toRectangleDecomposition = ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ ∧
-          G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inl P, .inr Q⟩ := by
+          G.hexagonCompositeWeight C R F =
+            G.pentagonPairWeight C C.reverse R ⟨y, .inl P, .inr Q⟩ := by
   obtain ⟨hp, hpX⟩ := (G.mem_pentagons P).mp hP
   obtain ⟨hq, hqX⟩ := ((G.swapColumns a b).mem_initialPentagons Q).mp hQ
   let H : GridCommutationHexagonBetween a C.turnRow C.oppositeTurnRow x y :=
@@ -571,7 +573,7 @@ private theorem initialTerminal_oppositeTurnRow_mem_cIco :
 /-- The weight of an initial--terminal pentagon pair is the product of the `O`-weights of the
 squares of the forward pentagon and of the reverse pentagon read in `G`. -/
 private theorem pentagonPairWeight_initialTerminal :
-    G.pentagonPairWeight C R ⟨y, .inr P, .inl Q⟩ =
+    G.pentagonPairWeight C C.reverse R ⟨y, .inr P, .inl Q⟩ =
       (∏ p ∈ P.coveredSquares,
           if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R)) *
         ∏ p ∈ Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding,
@@ -590,7 +592,8 @@ private theorem initialTerminal_hexagonRectangle
     ∃ F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z,
       F ∈ G.hexagonCompositeDecompositions C x z ∧
         F.toRectangleDecomposition = ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ ∧
-          G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inr P, .inl Q⟩ := by
+          G.hexagonCompositeWeight C R F =
+            G.pentagonPairWeight C C.reverse R ⟨y, .inr P, .inl Q⟩ := by
   obtain ⟨hp, hpX⟩ := (G.mem_initialPentagons P).mp hP
   obtain ⟨hq, hqX⟩ := ((G.swapColumns a b).mem_pentagons Q).mp hQ
   have hs := P.turn_mem_cIco_bottom_top
@@ -641,7 +644,8 @@ private theorem initialTerminal_rectangleHexagon
     ∃ F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z,
       F ∈ G.hexagonCompositeDecompositions C x z ∧
         F.toRectangleDecomposition = ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ ∧
-          G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inr P, .inl Q⟩ := by
+          G.hexagonCompositeWeight C R F =
+            G.pentagonPairWeight C C.reverse R ⟨y, .inr P, .inl Q⟩ := by
   obtain ⟨hp, hpX⟩ := (G.mem_initialPentagons P).mp hP
   obtain ⟨hq, hqX⟩ := ((G.swapColumns a b).mem_pentagons Q).mp hQ
   have hs := P.turn_mem_cIco_bottom_top
@@ -698,14 +702,16 @@ theorem existsUnique_unpairedHexagonComposite_of_terminalInitialPentagonPair
     ∃! F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z,
       F ∈ G.unpairedHexagonComposites C x z ∧
         F.toRectangleDecomposition = ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ ∧
-        G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inl P, .inr Q⟩ := by
+        G.hexagonCompositeWeight C R F =
+          G.pentagonPairWeight C C.reverse R ⟨y, .inl P, .inr Q⟩ := by
   have hp := ((G.mem_pentagons P).mp hP).1
   have hq := (((G.swapColumns a b).mem_initialPentagons Q).mp hQ).1
   obtain ⟨F, hF, hFD, hFw⟩ :
       ∃ F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z,
         F ∈ G.hexagonCompositeDecompositions C x z ∧
           F.toRectangleDecomposition = ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ ∧
-          G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inl P, .inr Q⟩ := by
+          G.hexagonCompositeWeight C R F =
+            G.pentagonPairWeight C C.reverse R ⟨y, .inl P, .inr Q⟩ := by
     rcases Grid.mem_cIco_and_mem_cIoo_or_mem_cIco_and_mem_cIoo_of_ne P.turn_mem_cIco_bottom_top
         (G.terminalInitial_oppositeTurnRow_mem_cIco C P Q) C.turnRow_ne_oppositeTurnRow with
       hturn | hturn
@@ -734,14 +740,16 @@ theorem existsUnique_unpairedHexagonComposite_of_initialTerminalPentagonPair
     ∃! F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z,
       F ∈ G.unpairedHexagonComposites C x z ∧
         F.toRectangleDecomposition = ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ ∧
-        G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inr P, .inl Q⟩ := by
+        G.hexagonCompositeWeight C R F =
+          G.pentagonPairWeight C C.reverse R ⟨y, .inr P, .inl Q⟩ := by
   have hp := ((G.mem_initialPentagons P).mp hP).1
   have hq := (((G.swapColumns a b).mem_pentagons Q).mp hQ).1
   obtain ⟨F, hF, hFD, hFw⟩ :
       ∃ F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z,
         F ∈ G.hexagonCompositeDecompositions C x z ∧
           F.toRectangleDecomposition = ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ ∧
-          G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inr P, .inl Q⟩ := by
+          G.hexagonCompositeWeight C R F =
+            G.pentagonPairWeight C C.reverse R ⟨y, .inr P, .inl Q⟩ := by
     rcases Grid.mem_cIoo_or_mem_cIoo_of_ne P.turn_mem_cIco_bottom_top
         (G.initialTerminal_oppositeTurnRow_mem_cIco C P Q) C.turnRow_ne_oppositeTurnRow with
       hturn | hturn

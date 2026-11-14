@@ -285,7 +285,7 @@ private theorem pentagonPairWeight_terminal_pair (R : Type*) [CommSemiring R]
     (P : GridPentagonBetween a C.turnRow x y)
     (Q : GridPentagonBetween C.reverse.column C.reverse.turnRow y z)
     (hrow : P.bottom ∈ Grid.cIoo Q.bottom P.top) (htop : Q.top = P.bottom) :
-    G.pentagonPairWeight C R ⟨y, .inl P, .inl Q⟩ =
+    G.pentagonPairWeight C C.reverse R ⟨y, .inl P, .inl Q⟩ =
       (∏ p ∈ P.toGridRectangle.coveredSquares, G.terminalPairSquareWeight C R p) *
         ∏ p ∈ Q.toGridRectangle.coveredSquares, G.terminalPairSquareWeight C R p := by
   classical
@@ -411,7 +411,7 @@ theorem rectangleHexagonWeight_recutTerminalPentagonPair
     (Q : GridPentagonBetween C.reverse.column C.reverse.turnRow y z)
     (hcol : P.left ∈ Grid.cIoo Q.left b) (hp : P.IsEmpty) (hq : Q.IsEmpty) :
     G.rectangleHexagonWeight C R (G.recutTerminalPentagonPair C P Q hcol hp hq) =
-      G.pentagonPairWeight C R ⟨y, .inl P, .inl Q⟩ := by
+      G.pentagonPairWeight C C.reverse R ⟨y, .inl P, .inl Q⟩ := by
   have hrecut := G.isRecut_recutTerminalPentagonPair C P Q hcol hp hq
   obtain ⟨hrow, htop⟩ := P.bottom_mem_cIoo_and_top_eq_of_right_eq_right Q.toGridRectangleBetween
     (G.terminal_pair_right_eq C P Q) (Grid.ne_left_of_mem_cIoo hcol) hp hq
@@ -674,7 +674,7 @@ theorem hexagonRectangleWeight_recutTerminalPentagonPairHexagonRectangle
     (Q : GridPentagonBetween C.reverse.column C.reverse.turnRow y z)
     (hcol : Q.left ∈ Grid.cIoo P.left b) (hp : P.IsEmpty) (hq : Q.IsEmpty) :
     G.hexagonRectangleWeight C R (G.recutTerminalPentagonPairHexagonRectangle C P Q hcol hp hq) =
-      G.pentagonPairWeight C R ⟨y, .inl P, .inl Q⟩ := by
+      G.pentagonPairWeight C C.reverse R ⟨y, .inl P, .inl Q⟩ := by
   have hrecut := G.isRecut_recutTerminalPentagonPairHexagonRectangle C P Q hcol hp hq
   obtain ⟨hrow, htop⟩ := P.bottom_mem_cIoo_and_top_eq_of_right_eq_right Q.toGridRectangleBetween
     (G.terminal_pair_right_eq C P Q) (Grid.ne_left_of_mem_cIoo hcol).symm hp hq
@@ -743,7 +743,8 @@ theorem existsUnique_unpairedHexagonComposite_of_terminalPentagonPair
         GridRectangleDecomposition.IsRecut
           (⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ :
             GridRectangleDecomposition x z) F.toRectangleDecomposition ∧
-        G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inl P, .inl Q⟩ := by
+        G.hexagonCompositeWeight C R F =
+          G.pentagonPairWeight C C.reverse R ⟨y, .inl P, .inl Q⟩ := by
   obtain ⟨hp, -⟩ := (G.mem_pentagons P).mp hP
   obtain ⟨hq, -⟩ := ((G.swapColumns a b).mem_pentagons Q).mp hQ
   let D : GridRectangleDecomposition x z :=
@@ -752,7 +753,8 @@ theorem existsUnique_unpairedHexagonComposite_of_terminalPentagonPair
   -- Emptiness of both pentagons leaves exactly the two orders of the initial sides.
   have hexists : ∃ F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z,
       F ∈ G.unpairedHexagonComposites C x z ∧ D.IsRecut F.toRectangleDecomposition ∧
-        G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inl P, .inl Q⟩ := by
+        G.hexagonCompositeWeight C R F =
+          G.pentagonPairWeight C C.reverse R ⟨y, .inl P, .inl Q⟩ := by
     rcases (D.cyclicOrder_of_isEmpty_of_right_eq_right (G.terminal_pair_right_eq C P Q)
         hne hp hq).1 with hcol | hcol
     · have hcol' : P.left ∈ Grid.cIoo Q.left b := by

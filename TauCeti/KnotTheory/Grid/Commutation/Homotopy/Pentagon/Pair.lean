@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Decomposition
-public import TauCeti.KnotTheory.Grid.Differential.Square.SideOverlap
 import TauCeti.KnotTheory.Grid.Rectangle.Annulus.Empty
 import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Diagonal
 import Mathlib.Algebra.CharP.Two
@@ -27,9 +26,6 @@ these empty returning pairs. Their weights are consequently one over any commuta
 semiring. Counting the two possible annuli gives an explicit diagonal coefficient formula
 for the round-trip commutation map. Combining this count with the four hexagon--rectangle
 indicators proves the diagonal coefficient of the homotopy equation in characteristic two.
-
-Off the diagonal as well, the replaced grid line is a common side of the two rectangles of
-every pentagon pair.
 
 ## References
 
@@ -330,12 +326,12 @@ private theorem returning_pentagon_pair_iff
 or two initial-side turns and occupies its successor. Mixed turn sides cannot return. -/
 theorem mem_pentagonPairDecompositions_diagonal_iff {x : GridState n}
     (D : GridPentagonPairDecomposition a C.turnRow C.reverse.column C.reverse.turnRow x x) :
-    D ∈ G.pentagonPairDecompositions C x x ↔
+    D ∈ G.pentagonPairDecompositions C C.reverse x x ↔
       match D.first, D.second with
       | .inl P, .inl _ => P.left = a
       | .inr P, .inr _ => P.right = c
       | _, _ => False := by
-  rw [G.mem_pentagonPairDecompositions C]
+  rw [G.mem_pentagonPairDecompositions C C.reverse]
   rcases D with ⟨m, P, Q⟩
   cases P <;> cases Q <;>
     exact G.returning_pentagon_pair_iff C C.reverse C.reverse_column C.reverse_turnRow
@@ -400,24 +396,25 @@ private theorem returning_pentagon_pair_weight_eq_one
 theorem pentagonPairWeight_eq_one_of_diagonal (R : Type*) [CommSemiring R]
     {x : GridState n}
     (D : GridPentagonPairDecomposition a C.turnRow C.reverse.column C.reverse.turnRow x x)
-    (hD : D ∈ G.pentagonPairDecompositions C x x) : G.pentagonPairWeight C R D = 1 := by
-  rw [G.pentagonPairWeight_def C R D]
+    (hD : D ∈ G.pentagonPairDecompositions C C.reverse x x) :
+    G.pentagonPairWeight C C.reverse R D = 1 := by
+  rw [G.pentagonPairWeight_def C C.reverse R D]
   exact G.returning_pentagon_pair_weight_eq_one C C.reverse C.reverse_column C.reverse_turnRow
-    C.reverse_oppositeTurnRow R D ((G.mem_pentagonPairDecompositions C D).mp hD)
+    C.reverse_oppositeTurnRow R D ((G.mem_pentagonPairDecompositions C C.reverse D).mp hD)
 
 /-- The diagonal pentagon-pair weighted sum is the cardinality of its counted annuli. -/
 theorem sum_pentagonPairWeight_diagonal (R : Type*) [CommSemiring R] (x : GridState n) :
-    ∑ D ∈ G.pentagonPairDecompositions C x x, G.pentagonPairWeight C R D =
-      ((G.pentagonPairDecompositions C x x).card : MvPolynomial (Fin n) R) := by
+    ∑ D ∈ G.pentagonPairDecompositions C C.reverse x x, G.pentagonPairWeight C C.reverse R D =
+      ((G.pentagonPairDecompositions C C.reverse x x).card : MvPolynomial (Fin n) R) := by
   classical
   calc
-    _ = ∑ _D ∈ G.pentagonPairDecompositions C x x, (1 : MvPolynomial (Fin n) R) :=
+    _ = ∑ _D ∈ G.pentagonPairDecompositions C C.reverse x x, (1 : MvPolynomial (Fin n) R) :=
       Finset.sum_congr rfl fun D hD => G.pentagonPairWeight_eq_one_of_diagonal C R D hD
     _ = _ := by simp
 
 private theorem pentagonPair_side_inj (x : GridState n) :
     Set.InjOn (fun D : GridPentagonPairDecomposition a C.turnRow C.reverse.column
-      C.reverse.turnRow x x => D.first.isLeft) (G.pentagonPairDecompositions C x x) := by
+      C.reverse.turnRow x x => D.first.isLeft) (G.pentagonPairDecompositions C C.reverse x x) := by
   rintro ⟨m, P, Q⟩ hD ⟨m', P', Q'⟩ hE hside
   have hD := (G.mem_pentagonPairDecompositions_diagonal_iff C _).mp hD
   have hE := (G.mem_pentagonPairDecompositions_diagonal_iff C _).mp hE
@@ -438,7 +435,7 @@ private theorem pentagonPair_side_inj (x : GridState n) :
       rfl
 
 private theorem exists_pentagonPair_side_iff (x : GridState n) (i : Bool) :
-    (∃ D ∈ G.pentagonPairDecompositions C x x, D.first.isLeft = i) ↔
+    (∃ D ∈ G.pentagonPairDecompositions C C.reverse x x, D.first.isLeft = i) ↔
       if i then
         C.turnRow ∈ Grid.cIco (x a) (x b) ∧ C.oppositeTurnRow ∈ Grid.cIco (x b) (x a)
       else
@@ -484,13 +481,13 @@ private theorem exists_pentagonPair_side_iff (x : GridState n) (i : Bool) :
 /-- The number of returning pentagon pairs is the sum of the two complementary-turn
 indicators, one for each column adjacent to the replaced line. -/
 theorem card_pentagonPairDecompositions_diagonal (x : GridState n) :
-    (G.pentagonPairDecompositions C x x).card =
+    (G.pentagonPairDecompositions C C.reverse x x).card =
       (if C.turnRow ∈ Grid.cIco (x a) (x b) ∧
         C.oppositeTurnRow ∈ Grid.cIco (x b) (x a) then 1 else 0) +
       (if C.turnRow ∈ Grid.cIco (x b) (x c) ∧
         C.oppositeTurnRow ∈ Grid.cIco (x c) (x b) then 1 else 0) := by
   classical
-  have himage : (G.pentagonPairDecompositions C x x).image (fun D => D.first.isLeft) =
+  have himage : (G.pentagonPairDecompositions C C.reverse x x).image (fun D => D.first.isLeft) =
       Finset.univ.filter (fun i : Bool => if i then
         C.turnRow ∈ Grid.cIco (x a) (x b) ∧ C.oppositeTurnRow ∈ Grid.cIco (x b) (x a)
       else C.turnRow ∈ Grid.cIco (x b) (x c) ∧
@@ -513,7 +510,7 @@ theorem reverse_commutationMap_commutationMap_single_apply_self
       (if C.turnRow ∈ Grid.cIco (x b) (x c) ∧
         C.oppositeTurnRow ∈ Grid.cIco (x c) (x b) then 1 else 0) := by
   rw [G.reverse_commutationMap_commutationMap_single_apply C R,
-    G.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient C R,
+    G.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient C C.reverse R,
     G.sum_pentagonPairWeight_diagonal C R, G.card_pentagonPairDecompositions_diagonal C]
   simp only [Nat.cast_add, Nat.cast_ite, Nat.cast_one, Nat.cast_zero]
 
@@ -555,28 +552,16 @@ theorem sum_hexagonRectangleWeight_add_sum_rectangleHexagonWeight_self_eq_one_ad
     (R : Type*) [CommSemiring R] [CharP R 2] (x : GridState n) :
     (∑ D ∈ G.hexagonRectangleDecompositions C x x, G.hexagonRectangleWeight C R D) +
         ∑ D ∈ G.rectangleHexagonDecompositions C x x, G.rectangleHexagonWeight C R D =
-      1 + ∑ D ∈ G.pentagonPairDecompositions C x x, G.pentagonPairWeight C R D := by
+      1 + ∑ D ∈ G.pentagonPairDecompositions C C.reverse x x,
+        G.pentagonPairWeight C C.reverse R D := by
   simpa only [Finsupp.add_apply,
     G.unblockedDifferential_commutationHomotopy_single_apply C R,
     G.commutationHomotopy_unblockedDifferential_single_apply C R,
     G.reverse_commutationMap_commutationMap_single_apply C R,
     G.sum_commutationHexagonCoefficient_mul_unblockedCoefficient C R,
     G.sum_unblockedCoefficient_mul_commutationHexagonCoefficient C R,
-    G.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient C R] using
-    G.unblockedDifferential_commutationHomotopy_add_single_apply_self_eq_one_add C R x
-
-/-! ### The replaced grid line as a common side -/
-
-/-- The replaced grid line is a common side of the two rectangles of a pentagon pair: the
-terminal side of a terminal-side pentagon and the initial side of an initial-side one. -/
-theorem finRotate_mem_commonSideColumns_of_pentagonPair {x z : GridState n}
-    (D : GridPentagonPairDecomposition a C.turnRow C.reverse.column C.reverse.turnRow x z) :
-    b ∈ D.toRectangleDecomposition.commonSideColumns := by
-  rcases D with ⟨m, P | P, Q | Q⟩
-  · simp [P.right_eq, Q.right_eq]
-  · simp [P.right_eq, Q.left_eq]
-  · simp [P.left_eq, Q.right_eq]
-  · simp [P.left_eq, Q.left_eq]
+    G.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient C C.reverse R]
+    using G.unblockedDifferential_commutationHomotopy_add_single_apply_self_eq_one_add C R x
 
 end GridDiagram
 end TauCeti
