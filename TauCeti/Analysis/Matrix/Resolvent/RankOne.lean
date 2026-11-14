@@ -120,16 +120,18 @@ theorem dotProduct_inv_add_smul_vecMulVec_sub_smul_one_mulVec (c : ℝ) (u : n �
   ring
 
 /-- The imaginary part of `z uᴴ R u`, for the resolvent `R = (A - z • 1)⁻¹`, is `Im z` times the
-real quadratic form `wᴴ A w` of the vector `w = R u`. -/
-theorem im_mul_dotProduct_inv_sub_smul_one_mulVec (u : n → 𝕜) {z : 𝕜}
-    (hz : RCLike.im z ≠ 0) :
+real quadratic form `wᴴ A w` of the vector `w = R u`. If `A - z • 1` is singular, then `R = 0` by
+the convention for `⁻¹` and both sides vanish. -/
+theorem im_mul_dotProduct_inv_sub_smul_one_mulVec (u : n → 𝕜) (z : 𝕜) :
     RCLike.im (z * (star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ u))) =
       RCLike.im z *
         RCLike.re (star ((A - z • 1)⁻¹ *ᵥ u) ⬝ᵥ (A *ᵥ ((A - z • 1)⁻¹ *ᵥ u))) := by
+  by_cases hdet : IsUnit (A - z • 1).det
+  swap
+  · simp [nonsing_inv_apply_not_isUnit _ hdet]
   set w := (A - z • 1)⁻¹ *ᵥ u
   have hu : u = (A - z • 1) *ᵥ w := by
-    rw [mulVec_mulVec, mul_nonsing_inv _ ((hA.isUnit_sub_smul_one_of_im_ne_zero hz).map
-      Matrix.detMonoidHom), one_mulVec]
+    rw [mulVec_mulVec, mul_nonsing_inv _ hdet, one_mulVec]
   -- Writing `u = (A - z • 1) w` turns `uᴴ w` into `wᴴ A w - conj z * wᴴ w`.
   have hq : star u ⬝ᵥ w = star w ⬝ᵥ (A *ᵥ w) - star z * (star w ⬝ᵥ w) := by
     conv_lhs => rw [hu]
@@ -153,7 +155,7 @@ theorem norm_inv_one_add_mul_dotProduct_inv_sub_smul_one_mulVec_le (hA : A.PosSe
     {c : ℝ} (hc : 0 ≤ c) (u : n → 𝕜) {z : 𝕜} (hz : RCLike.im z ≠ 0) :
     ‖(1 + (c : 𝕜) * (star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ u)))⁻¹‖ ≤ ‖z‖ / |RCLike.im z| := by
   have hden := hA.isHermitian.one_add_mul_dotProduct_inv_sub_smul_one_ne_zero c u hz
-  have him := hA.isHermitian.im_mul_dotProduct_inv_sub_smul_one_mulVec u hz
+  have him := hA.isHermitian.im_mul_dotProduct_inv_sub_smul_one_mulVec u z
   have hr := (RCLike.nonneg_iff.mp (hA.dotProduct_mulVec_nonneg ((A - z • 1)⁻¹ *ᵥ u))).1
   generalize star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ u) = q at hden him
   generalize RCLike.re (star ((A - z • 1)⁻¹ *ᵥ u) ⬝ᵥ (A *ᵥ ((A - z • 1)⁻¹ *ᵥ u))) = r at hr him
