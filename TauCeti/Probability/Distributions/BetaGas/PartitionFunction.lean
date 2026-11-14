@@ -9,7 +9,6 @@ public import TauCeti.MeasureTheory.Integral.Gamma
 
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.MeasureTheory.Group.Prod
-import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # A two-particle Gaussian beta gas
@@ -24,9 +23,13 @@ It separates the weight into a two-sided Gamma integrand in `d` and a Gaussian i
 
 * `twoParticleGaussianBetaGasPartitionFunction_def` identifies the partition function with
   the integral of the unnormalized density.
+* `twoParticleGaussianBetaGasPartitionFunction_eq_integral_weight` identifies it with the
+  integral of `twoParticleGaussianBetaGasWeight`.
 * `integrable_twoParticleGaussianBetaGasWeight` proves finiteness of the density integral.
 * `integral_twoParticleGaussianBetaGasWeight` evaluates it for every positive `β`.
 * `integral_twoParticleGaussianBetaGasWeight_pos` proves that integral is positive.
+* `integral_twoParticleGaussianBetaGasPartitionFunction` evaluates the partition function.
+* `twoParticleGaussianBetaGasPartitionFunction_pos` proves that it is positive.
 -/
 
 public section
@@ -58,6 +61,12 @@ theorem twoParticleGaussianBetaGasPartitionFunction_def (β : ℝ) :
       ∫ p : ℝ × ℝ, exp (-β / 2 * (p.1 ^ 2 + p.2 ^ 2)) * |p.1 - p.2| ^ β
         ∂(volume.prod volume) := by
   simp [twoParticleGaussianBetaGasPartitionFunction]
+
+/-- The partition function is the integral of the two-particle beta-gas weight. -/
+theorem twoParticleGaussianBetaGasPartitionFunction_eq_integral_weight (β : ℝ) :
+    twoParticleGaussianBetaGasPartitionFunction β =
+      ∫ p : ℝ × ℝ, twoParticleGaussianBetaGasWeight β p ∂(volume.prod volume) := by
+  simp [twoParticleGaussianBetaGasPartitionFunction, twoParticleGaussianBetaGasWeight]
 
 private def betaGasCenter (p : ℝ × ℝ) : ℝ × ℝ :=
   (p.1 - p.2, p.2 + (p.1 - p.2) / 2)
@@ -208,5 +217,18 @@ theorem integral_twoParticleGaussianBetaGasWeight_pos {β : ℝ} (hβ : 0 < β) 
   rw [integral_twoParticleGaussianBetaGasWeight hβ]
   have hGamma : 0 < Gamma ((β + 1) / 2) := Gamma_pos_of_pos (by linarith)
   exact mul_pos (by positivity) hGamma
+
+/-- The two-particle Gaussian beta-gas partition function has this closed form. -/
+theorem integral_twoParticleGaussianBetaGasPartitionFunction {β : ℝ} (hβ : 0 < β) :
+    twoParticleGaussianBetaGasPartitionFunction β =
+      2 ^ (β + 1) * sqrt π * β ^ (-(β + 2) / 2) * Gamma ((β + 1) / 2) := by
+  rw [twoParticleGaussianBetaGasPartitionFunction_eq_integral_weight,
+    integral_twoParticleGaussianBetaGasWeight hβ]
+
+/-- The two-particle Gaussian beta-gas partition function is positive. -/
+theorem twoParticleGaussianBetaGasPartitionFunction_pos {β : ℝ} (hβ : 0 < β) :
+    0 < twoParticleGaussianBetaGasPartitionFunction β := by
+  rw [twoParticleGaussianBetaGasPartitionFunction_eq_integral_weight]
+  exact integral_twoParticleGaussianBetaGasWeight_pos hβ
 
 end TauCeti.Probability
