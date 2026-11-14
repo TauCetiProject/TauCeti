@@ -469,13 +469,12 @@ instance normal_galoisSubgroup : (galoisSubgroup K L σ).toSubgroup.Normal :=
 /-- The quotient by the open subgroup fixing a finite normal extension, identified
 topologically with its finite Galois group. -/
 noncomputable def quotientGaloisSubgroupEquiv :
-    AbsoluteGaloisGroup K ⧸ (galoisSubgroup K L σ).toSubgroup ≃ₜ* Gal(L/K) := by
-  let e := (QuotientGroup.quotientMulEquivOfEq (galoisSubgroup_toSubgroup K L σ)).trans
-    (quotientFixingSubgroupFieldRangeEquiv K L σ)
-  letI := QuotientGroup.discreteTopology (galoisSubgroup K L σ).isOpen
-  exact { e with
-    continuous_toFun := continuous_of_discreteTopology
-    continuous_invFun := continuous_of_discreteTopology }
+    AbsoluteGaloisGroup K ⧸ (galoisSubgroup K L σ).toSubgroup ≃ₜ* Gal(L/K) :=
+  .mk ((QuotientGroup.quotientMulEquivOfEq (galoisSubgroup_toSubgroup K L σ)).trans
+      (quotientFixingSubgroupFieldRangeEquiv K L σ))
+    (have := QuotientGroup.discreteTopology (galoisSubgroup K L σ).isOpen
+     continuous_of_discreteTopology)
+    continuous_of_discreteTopology
 
 /-- The quotient identification sends the class of an absolute Galois automorphism to its
 restriction along the chosen embedding of the finite extension. -/
