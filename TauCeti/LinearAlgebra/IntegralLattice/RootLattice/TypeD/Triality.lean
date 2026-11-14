@@ -186,14 +186,8 @@ theorem checkerboardTriality_pow_three : checkerboardTriality ^ 3 = 1 :=
 /-- Triality on the checkerboard lattice `D₄` has determinant one. -/
 @[simp]
 theorem det_checkerboardTriality :
-    Isometry.det (checkerboardLattice 4) checkerboardTriality = 1 := by
-  rcases Int.units_eq_one_or (Isometry.det (checkerboardLattice 4) checkerboardTriality) with h | h
-  · exact h
-  · exfalso
-    have h3 : (Isometry.det (checkerboardLattice 4) checkerboardTriality) ^ 3 = 1 := by
-      rw [← map_pow, checkerboardTriality_pow_three, map_one]
-    rw [h] at h3
-    exact absurd h3 (by decide)
+    Isometry.det (checkerboardLattice 4) checkerboardTriality = 1 :=
+  Isometry.det_eq_one_of_pow_eq_one (by decide : Odd 3) checkerboardTriality_pow_three
 
 /-! ## The action on the discriminant group -/
 
@@ -391,7 +385,7 @@ theorem det_typeD4Triality : Isometry.det ((D 4).rootLattice ht) (typeD4Triality
 
 /-- **The Conway--Sloane label permutation of `D₄` triality**: fixes `0` and cycles
 `1 ↦ 2 ↦ 3 ↦ 1` (`s ↦ v ↦ c ↦ s`). -/
-@[expose] def typeD4TrialityLabelPerm : Equiv.Perm (Fin 4) :=
+def typeD4TrialityLabelPerm : Equiv.Perm (Fin 4) :=
   Equiv.swap 1 3 * Equiv.swap 1 2
 
 @[simp]
@@ -405,6 +399,18 @@ theorem typeD4TrialityLabelPerm_two : typeD4TrialityLabelPerm 2 = 3 := by decide
 
 @[simp]
 theorem typeD4TrialityLabelPerm_three : typeD4TrialityLabelPerm 3 = 1 := by decide
+
+@[simp]
+theorem typeD4TrialityLabelPerm_symm_zero : typeD4TrialityLabelPerm.symm 0 = 0 := by decide
+
+@[simp]
+theorem typeD4TrialityLabelPerm_symm_one : typeD4TrialityLabelPerm.symm 1 = 3 := by decide
+
+@[simp]
+theorem typeD4TrialityLabelPerm_symm_two : typeD4TrialityLabelPerm.symm 2 = 1 := by decide
+
+@[simp]
+theorem typeD4TrialityLabelPerm_symm_three : typeD4TrialityLabelPerm.symm 3 = 2 := by decide
 
 @[simp]
 theorem typeD4TrialityLabelPerm_pow_three : typeD4TrialityLabelPerm ^ 3 = 1 := by decide
@@ -467,7 +473,7 @@ theorem glueLabelEquiv_symm_typeD4GlueAlphabetTriality (x : (D 4).glueAlphabet h
   obtain ⟨i, rfl⟩ := ((D 4).glueLabelEquiv ht).surjective x
   rw [typeD4GlueAlphabetTriality_glueLabelEquiv, Equiv.symm_apply_apply, Equiv.symm_apply_apply]
 
-/-- `typeD4GlueAlphabetTriality` has order three on the `D₄` glue alphabet. -/
+/-- Applying `typeD4GlueAlphabetTriality` three times returns its input. -/
 @[simp]
 theorem typeD4GlueAlphabetTriality_apply_apply_apply (x : (D 4).glueAlphabet ht) :
     typeD4GlueAlphabetTriality ht

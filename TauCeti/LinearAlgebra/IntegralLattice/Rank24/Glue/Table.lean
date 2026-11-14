@@ -337,6 +337,23 @@ theorem glueSubgroup_eq_zmultiples (r : RootfulNiemeierType) {l : List ℕ}
   rw [glueSubgroup_def, r.glueGenerators_eq_singleton hl hw,
     AddSubgroup.zmultiples_eq_closure]
 
+/-- An additive equivalence between the glue modules of two rows that identifies their glue
+generator sets also identifies their glue subgroups. -/
+theorem apply_mem_glueSubgroup_iff_of_mem_glueGenerators_iff {r s : RootfulNiemeierType}
+    {F : Type*} [EquivLike F r.glueModule s.glueModule]
+    [AddEquivClass F r.glueModule s.glueModule] (φ : F)
+    (hφ : ∀ v, φ v ∈ s.glueGenerators ↔ v ∈ r.glueGenerators) (w : r.glueModule) :
+    φ w ∈ s.glueSubgroup ↔ w ∈ r.glueSubgroup := by
+  have hgen : φ ⁻¹' s.glueGenerators = r.glueGenerators := Set.ext hφ
+  have hmap : r.glueSubgroup.map (φ : r.glueModule →+ s.glueModule) = s.glueSubgroup := by
+    rw [r.glueSubgroup_def, s.glueSubgroup_def, AddMonoidHom.map_closure, AddMonoidHom.coe_ofClass]
+    exact congrArg AddSubgroup.closure
+      ((congrArg _ hgen.symm).trans (Set.image_preimage_eq _ (EquivLike.surjective φ)))
+  have h := AddSubgroup.mem_map_iff_mem (f := (φ : r.glueModule →+ s.glueModule))
+    (by rw [AddMonoidHom.coe_ofClass]; exact EquivLike.injective φ)
+    (K := r.glueSubgroup) (x := w)
+  rwa [hmap, AddMonoidHom.coe_ofClass] at h
+
 /-! ### Glue words of a row in the coordinates of an explicit family -/
 
 section glueModuleIsometry

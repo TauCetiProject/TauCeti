@@ -362,6 +362,22 @@ theorem piCongr_refl :
   exact (piCongr_apply_apply (Equiv.refl ι) _ x i).trans
     ((refl_apply (L i) (x i)).trans (congrFun (refl_apply (IntegralLattice.pi L) x) i).symm)
 
+/-- Composing two `Isometry.piCongr` maps composes the index equivalences and summand
+isometries. -/
+@[simp]
+theorem piCongr_trans {μ : Type*} [Fintype μ] {X : μ → Type*} [∀ m, AddCommGroup (X m)]
+    [∀ m, Module ℚ (X m)] {N : ∀ m, IntegralLattice (X m)} (σ : ι ≃ κ)
+    (f : ∀ i, Isometry (L i) (M' (σ i))) (τ : κ ≃ μ)
+    (g : ∀ k, Isometry (M' k) (N (τ k))) :
+    (piCongr σ f).trans (piCongr τ g) =
+      piCongr (σ.trans τ) fun i ↦ (f i).trans (g (σ i)) := by
+  ext x m
+  obtain ⟨k, rfl⟩ := τ.surjective m
+  obtain ⟨i, rfl⟩ := σ.surjective k
+  rw [trans_apply, piCongr_apply_apply, piCongr_apply_apply]
+  exact (trans_apply (f i) (g (σ i)) (x i)).symm.trans
+    (piCongr_apply_apply (σ.trans τ) (fun j ↦ (f j).trans (g (σ j))) x i).symm
+
 /-- **Transporting an orthogonal sum with summandwise isometries indexed by the target.**  Given
 `σ : ι ≃ κ` and isometries `f k : L (σ.symm k) ≅ M' k`, this is the isometry
 `⊥ i, L i ≅ ⊥ k, M' k` whose `k`-th coordinate is `f k (x (σ.symm k))`, the lattice counterpart of
@@ -385,6 +401,20 @@ theorem piCongr'_symm_apply_symm_apply (σ : ι ≃ κ) (f : ∀ k, Isometry (L 
     (piCongr' σ f).symm y (σ.symm k) = (f k).symm (y k) := by
   rw [piCongr', symm_symm, piCongr_apply_apply]
 
+/-- The inverse of `Isometry.piCongr` is `Isometry.piCongr'` along `σ.symm` with inverted summand
+isometries. -/
+theorem piCongr_symm (σ : ι ≃ κ) (f : ∀ i, Isometry (L i) (M' (σ i))) :
+    (piCongr σ f).symm = piCongr' σ.symm fun i ↦ (f i).symm := by
+  ext y i
+  exact (piCongr_symm_apply σ f y i).trans
+    (piCongr'_apply σ.symm (fun j ↦ (f j).symm) y i).symm
+
+/-- The inverse of `Isometry.piCongr'` is `Isometry.piCongr` along `σ.symm` with inverted summand
+isometries. -/
+theorem piCongr'_symm (σ : ι ≃ κ) (f : ∀ k, Isometry (L (σ.symm k)) (M' k)) :
+    (piCongr' σ f).symm = piCongr σ.symm fun k ↦ (f k).symm :=
+  symm_symm _
+
 /-- `Isometry.piCongr'` along the identity equivalence and identity summand isometries is the
 identity. -/
 @[simp]
@@ -397,6 +427,7 @@ theorem piCongr'_refl :
 
 /-- Composing two `Isometry.piCongr'` maps composes the index equivalences and the pulled-back
 summand isometries. -/
+@[simp]
 theorem piCongr'_trans {μ : Type*} [Fintype μ] {X : μ → Type*} [∀ m, AddCommGroup (X m)]
     [∀ m, Module ℚ (X m)] {N : ∀ m, IntegralLattice (X m)} (σ : ι ≃ κ)
     (f : ∀ k, Isometry (L (σ.symm k)) (M' k)) (τ : κ ≃ μ)

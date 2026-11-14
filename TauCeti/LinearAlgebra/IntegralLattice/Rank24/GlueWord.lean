@@ -262,7 +262,9 @@ theorem glueWordMinimum_def (l : List ℕ) :
     glueWordMinimum t l = ∑ i : Fin n, (t i).glueLabelMinimum (l.getD i 0) :=
   (rfl)
 
-private theorem getD_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) (i : Fin n) :
+/-- Reading the `i`-th Conway--Sloane digit of `encodeGlueWord t ht w` with `List.getD` recovers
+the glue label of `w i`. -/
+theorem getD_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) (i : Fin n) :
     (encodeGlueWord t ht w).getD i 0 = (((t i).glueLabelEquiv (ht i)).symm (w i)).val := by
   rw [List.getD_eq_getElem _ _ (by simp), getElem_encodeGlueWord]
 
