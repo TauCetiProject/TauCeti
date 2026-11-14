@@ -101,6 +101,46 @@ theorem sectionMul_apply (g : ℂ → ℂ) (y : ℂ → EuclideanSpace ℝ (Fin 
     sectionMul g y z = !₂[y z 0, y z 1, (g z).re * y z 2 - (g z).im * y z 3,
       (g z).im * y z 2 + (g z).re * y z 3] := (rfl)
 
+/-- The section multiplier fixes the first connection coordinate. -/
+@[simp]
+theorem sectionMul_apply_zero (g : ℂ → ℂ) (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionMul g y z 0 = y z 0 := (rfl)
+
+/-- The section multiplier fixes the second connection coordinate. -/
+@[simp]
+theorem sectionMul_apply_one (g : ℂ → ℂ) (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionMul g y z 1 = y z 1 := (rfl)
+
+/-- The section multiplier multiplies the section by the coefficient. -/
+@[simp]
+theorem sectionValue_sectionMul (g : ℂ → ℂ) (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionValue (sectionMul g y) z = g z * sectionValue y z := by
+  apply Complex.ext <;> simp [sectionValue_apply, sectionMul_apply] <;> ring
+
+/-- Multiplying the section by `1` is the identity. -/
+@[simp]
+theorem sectionMul_one (y : ℂ → EuclideanSpace ℝ (Fin 4)) : sectionMul 1 y = y := by
+  ext z i
+  fin_cases i <;> simp [sectionMul_apply]
+
+/-- Successive section multipliers multiply their coefficients. -/
+theorem sectionMul_mul (g h : ℂ → ℂ) (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    sectionMul (g * h) y = sectionMul g (sectionMul h y) := by
+  ext z i
+  fin_cases i <;> simp [sectionMul_apply, Complex.mul_re, Complex.mul_im] <;> ring
+
+/-- The section multiplier is additive in the field. -/
+theorem sectionMul_add (g : ℂ → ℂ) (y v : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    sectionMul g (y + v) = sectionMul g y + sectionMul g v := by
+  ext z i
+  fin_cases i <;> simp [sectionMul_apply] <;> ring
+
+/-- The section multiplier commutes with real scalars. -/
+theorem sectionMul_smul (g : ℂ → ℂ) (t : ℝ) (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    sectionMul g (t • y) = t • sectionMul g y := by
+  ext z i
+  fin_cases i <;> simp [sectionMul_apply] <;> ring
+
 /-- The linear gauge action multiplies the section by the gauge. -/
 theorem gaugeLinearAction_eq_sectionMul (u : ℂ → Circle) (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
     gaugeLinearAction u y = sectionMul (fun z ↦ (u z : ℂ)) y :=

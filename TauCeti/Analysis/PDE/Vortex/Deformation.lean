@@ -649,9 +649,8 @@ theorem vacuumField_apply (z : ℂ) : vacuumField z = !₂[0, 0, 1 / 2, 0] := by
   rfl
 
 /-- The vacuum field is smooth. -/
-theorem contDiff_vacuumField {n : WithTop ℕ∞} : ContDiff ℝ n vacuumField := by
-  rw [show vacuumField = fun _ ↦ !₂[0, 0, 1 / 2, 0] from funext vacuumField_apply]
-  exact contDiff_const
+theorem contDiff_vacuumField {n : WithTop ℕ∞} : ContDiff ℝ n vacuumField :=
+  contDiff_const
 
 /-- The zero phase acts as the identity. -/
 @[simp]

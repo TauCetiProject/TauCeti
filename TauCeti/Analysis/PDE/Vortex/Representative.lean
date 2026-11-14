@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Regularity
 import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
 # Smooth framed vortices have representatives in the affine Sobolev field space
@@ -68,50 +67,6 @@ namespace TauCeti.Vortex
 open Complex Filter MeasureTheory Metric
 open scoped Topology ContDiff
 
-/-- **The gauge-fixing row vanishes in the end trivialization.** On an open set where a `C²`
-vortex has real positive section, `q = 0` and `p > 0`, the holomorphicity rows give
-`b₁ = -∂₂ log p` and `b₂ = ∂₁ log p`, so the connection is divergence free: the gauge-fixing row
-`d₀*` of its deformation from the vacuum vanishes. -/
-theorem gaugeAdjoint_vacuumField_sub_eq_zero {Y : ℂ → EuclideanSpace ℝ (Fin 4)} {U : Set ℂ}
-    (hU : IsOpen U) (hY : ∀ w ∈ U, ContDiffAt ℝ 2 Y w) (hsol : ∀ w ∈ U, equation Y w = 0)
-    (h₃ : ∀ w ∈ U, Y w 3 = 0) (h₂ : ∀ w ∈ U, 0 < Y w 2) {z : ℂ} (hz : z ∈ U) :
-    gaugeAdjoint vacuumField (Y - vacuumField) z = 0 := by
-  have hYi (i : Fin 4) {w : ℂ} (hw : w ∈ U) : ContDiffAt ℝ 2 (fun t ↦ Y t i) w :=
-    contDiffAt_euclidean.1 (hY w hw) i
-  have hd (i : Fin 4) {w : ℂ} (hw : w ∈ U) : DifferentiableAt ℝ (fun t ↦ Y t i) w :=
-    (hYi i hw).differentiableAt two_ne_zero
-  -- On `U` the derivative of `q` vanishes, so the holomorphicity rows read `∂₁ p = b₂ p` and
-  -- `∂₂ p = -b₁ p`.
-  have hq (w : ℂ) (hw : w ∈ U) : fderiv ℝ (fun t ↦ Y t 3) w = 0 := by
-    have : (fun t ↦ Y t 3) =ᶠ[𝓝 w] fun _ ↦ 0 :=
-      Filter.eventually_of_mem (hU.mem_nhds hw) fun t ht ↦ h₃ t ht
-    rw [this.fderiv_eq, fderiv_const_apply]
-  have hrow (w : ℂ) (hw : w ∈ U) : fderiv ℝ (fun t ↦ Y t 2) w 1 = Y w 1 * Y w 2 ∧
-      fderiv ℝ (fun t ↦ Y t 2) w I = -(Y w 0 * Y w 2) := by
-    have h₁ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 1) (hsol w hw)
-    have h₂' := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 2) (hsol w hw)
-    simp only [equation_apply_one, equation_apply_two, hq w hw, h₃ w hw,
-      zero_apply, PiLp.zero_apply] at h₁ h₂'
-    constructor <;> linarith
-  have e₁ : (fun w ↦ Y w 1 * Y w 2) =ᶠ[𝓝 z] fun w ↦ fderiv ℝ (fun t ↦ Y t 2) w 1 :=
-    Filter.eventually_of_mem (hU.mem_nhds hz) fun w hw ↦ (hrow w hw).1.symm
-  have e₂ : (fun w ↦ Y w 0 * Y w 2) =ᶠ[𝓝 z] fun w ↦ -fderiv ℝ (fun t ↦ Y t 2) w I :=
-    Filter.eventually_of_mem (hU.mem_nhds hz) fun w hw ↦
-      (by rw [(hrow w hw).2, neg_neg] : Y w 0 * Y w 2 = -fderiv ℝ (fun t ↦ Y t 2) w I)
-  have d₁ := congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L I) e₁.fderiv_eq
-  have d₂ := congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L 1) e₂.fderiv_eq
-  simp only [fderiv_fun_mul (hd 1 hz) (hd 2 hz), fderiv_fun_mul (hd 0 hz) (hd 2 hz),
-    fderiv_fun_neg, add_apply, smul_apply,
-    neg_apply, smul_eq_mul] at d₁ d₂
-  have hcomm := fderiv_fderiv_apply_comm (hYi 2 hz) (by simp) I 1
-  obtain ⟨r₁, rI⟩ := hrow z hz
-  have hsum : Y z 2 * (fderiv ℝ (fun t ↦ Y t 0) z 1 + fderiv ℝ (fun t ↦ Y t 1) z I) = 0 := by
-    rw [r₁] at d₂
-    rw [rI] at d₁
-    linear_combination d₁ + d₂ - hcomm
-  have hsum' := (mul_eq_zero.1 hsum).resolve_left (h₂ z hz).ne'
-  simp only [gaugeAdjoint_def, vacuumField_apply, Pi.sub_apply, PiLp.sub_apply, h₃ z hz]
-  simpa using hsum'
 
 /-- If near every point outside a compact set a smooth field `ψ` agrees with a deformation `y` of
 the vacuum whose gauge-fixing row and vortex defects vanish there, then the gauge-fixing row and
