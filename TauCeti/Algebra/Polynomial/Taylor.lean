@@ -42,7 +42,11 @@ shift, which removes the subleading coefficient whenever `p.natDegree` is invert
   order less than `n` vanish at `r`.
 * `Polynomial.pow_sub_dvd_hasseDeriv_of_pow_dvd`: if `(X - r) ^ n` divides `p`, then
   `(X - r) ^ (n - k)` divides the Hasse derivative of `p` of order `k`.
-* `Polynomial.eval_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - r) ^ m` at `r`.
+* `Polynomial.eval_hasseDeriv_X_sub_C_pow`,
+  `Polynomial.eval_hasseDeriv_sum_fin_C_mul_X_sub_C_pow`,
+  `Polynomial.dvd_sub_sum_eval_hasseDeriv_mul_X_sub_C_pow`: the Hasse derivatives of `(X - r) ^ m`
+  and of a truncated `(X - r)`-expansion at `r`, and divisibility of `f` minus its order-`n`
+  Taylor polynomial by `(X - r) ^ n`.
 * `Polynomial.nextCoeff_taylor`: the subleading coefficient of the Taylor expansion of `p` at `r`
   is `p.nextCoeff + p.natDegree * r * p.leadingCoeff`.
 -/
@@ -136,5 +140,22 @@ theorem eval_hasseDeriv_X_sub_C_pow (r : R) (i m : ℕ) :
     (hasseDeriv i ((X - C r) ^ m)).eval r = if i = m then 1 else 0 := by
   rw [← taylor_coeff]
   simp [taylor_pow, coeff_X_pow]
+
+/-- Evaluating the `k`-th Hasse derivative at `r` recovers the `k`-th coefficient of a polynomial
+written in powers `(X - C r) ^ j` (`j < n`). -/
+theorem eval_hasseDeriv_sum_fin_C_mul_X_sub_C_pow {n : ℕ} (r : R) (c : Fin n → R) (k : Fin n) :
+    (hasseDeriv (k : ℕ) (∑ j : Fin n, C (c j) * (X - C r) ^ (j : ℕ))).eval r = c k := by
+  rw [← taylor_coeff]
+  simp [taylor_mul, taylor_pow, coeff_X_pow, Fin.ext_iff.symm]
+
+/-- Every polynomial `f` is congruent modulo `(X - C r) ^ n` to its truncated Taylor expansion at
+`r` of order `n`. -/
+theorem dvd_sub_sum_eval_hasseDeriv_mul_X_sub_C_pow (r : R) (n : ℕ) (f : R[X]) :
+    (X - C r) ^ n ∣ f - ∑ k : Fin n, C ((hasseDeriv (k : ℕ) f).eval r) * (X - C r) ^ (k : ℕ) := by
+  rw [X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero]
+  intro k hk
+  rw [map_sub, eval_sub, sub_eq_zero]
+  exact (eval_hasseDeriv_sum_fin_C_mul_X_sub_C_pow r
+    (fun j : Fin n => (hasseDeriv (j : ℕ) f).eval r) ⟨k, hk⟩).symm
 
 end Polynomial
