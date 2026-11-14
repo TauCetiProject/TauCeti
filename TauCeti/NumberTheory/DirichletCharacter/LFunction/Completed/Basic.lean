@@ -10,13 +10,18 @@ public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.Analysis.Meromorphic.Conj
 public import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
+import TauCeti.Analysis.Meromorphic.Order
 
 /-!
 # Completed Dirichlet L-functions
 
-These results supplement Mathlib's continued Dirichlet functions with meromorphy and conjugation.
-For a nonprincipal character the two polar terms of Mathlib's Hurwitz decomposition cancel, so the
-completed function is Mathlib's entire periodic completion `ZMod.completedLFunction₀`.
+These results supplement Mathlib's continued Dirichlet functions with meromorphy, pole order, and
+conjugation. For a nonprincipal character the two polar terms of Mathlib's Hurwitz decomposition
+cancel, so the completed function is Mathlib's entire periodic completion
+`ZMod.completedLFunction₀`. The continued uncompleted function `χ.LFunction` is analytic away from
+the simple pole `s = 1` of the principal character (`analyticAt_LFunction`,
+`meromorphicOrderAt_LFunctionTrivChar_one`), so positive meromorphic order characterizes its zeros
+away from that pole (`meromorphicOrderAt_LFunction_pos_iff`).
 The functions themselves are Mathlib's, without any change of representative. The conjugation
 comparison is asserted only away from the possible poles at zero and one.
 
@@ -82,6 +87,46 @@ theorem meromorphic_completedLFunction : Meromorphic χ.completedLFunction := by
   unfold completedLFunction
   rw [funext (ZMod.completedLFunction_eq (χ ·))]
   fun_prop
+
+/-- The continued Dirichlet `L`-function is analytic except at the simple pole `s = 1` of the
+principal character. -/
+theorem analyticAt_LFunction {s : ℂ} (hs : s ≠ 1 ∨ χ ≠ 1) :
+    AnalyticAt ℂ χ.LFunction s := by
+  rcases hs with hs | hχ
+  · refine Complex.analyticAt_iff_eventually_differentiableAt.mpr ?_
+    filter_upwards [eventually_ne_nhds hs] with z hz
+    exact χ.differentiableAt_LFunction z (.inl hz)
+  · exact (differentiable_LFunction hχ).analyticAt s
+
+/-- Every Dirichlet character has a meromorphic continued L-function on the whole plane. -/
+theorem meromorphic_LFunction : Meromorphic χ.LFunction := by
+  intro z
+  rcases eq_or_ne z 1 with rfl | hz
+  · refine ((χ.meromorphic_completedLFunction 1).mul
+      (χ.differentiable_inv_gammaFactor.analyticAt 1).meromorphicAt).congr ?_
+    filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds one_ne_zero)] with s hs
+    rw [χ.LFunction_eq_completed_div_gammaFactor s (.inl hs), div_eq_mul_inv, Pi.mul_apply]
+  · exact (χ.analyticAt_LFunction (.inl hz)).meromorphicAt
+
+omit χ in
+/-- The principal Dirichlet `L`-function modulo `N` has a simple pole (meromorphic order `-1`) at
+`s = 1`. -/
+theorem meromorphicOrderAt_LFunctionTrivChar_one :
+    meromorphicOrderAt (LFunctionTrivChar N) 1 = (-1 : ℤ) :=
+  ((1 : DirichletCharacter ℂ N).meromorphic_LFunction 1)
+    |>.meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul (LFunctionTrivChar₁_apply_one_ne_zero N)
+    (by simpa using LFunctionTrivChar_residue_one (N := N))
+
+/-- The continued Dirichlet `L`-function `χ.LFunction` has positive meromorphic order at `s` if and
+only if `χ.LFunction s = 0` and `(s ≠ 1 ∨ χ ≠ 1)`. -/
+theorem meromorphicOrderAt_LFunction_pos_iff {s : ℂ} :
+    0 < meromorphicOrderAt χ.LFunction s ↔ χ.LFunction s = 0 ∧ (s ≠ 1 ∨ χ ≠ 1) := by
+  by_cases hs : s = 1 ∧ χ = 1
+  · obtain ⟨rfl, rfl⟩ := hs
+    simp [show meromorphicOrderAt (1 : DirichletCharacter ℂ N).LFunction 1 = (-1 : ℤ) from
+      meromorphicOrderAt_LFunctionTrivChar_one]
+  · have hs' := not_and_or.mp hs
+    simp [(χ.analyticAt_LFunction hs').meromorphicOrderAt_pos_iff_eq_zero, hs']
 
 /-- For a nonprincipal character the completed L-function is the entire periodic completion
 `ZMod.completedLFunction₀` of the character values. -/

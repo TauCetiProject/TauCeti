@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
+import TauCeti.Analysis.Meromorphic.Order
 
 /-!
 # Divisors and orders of meromorphic functions
@@ -35,6 +36,9 @@ of support finite and bounds sums over their subsets by the corresponding closed
   meromorphic orders.
 * `MeromorphicOn.zero_lt_divisor_iff_of_analyticAt` — at a point of analyticity and finite order,
   the divisor is positive exactly at a zero.
+* `AnalyticOnNhd.coe_divisor_eq_meromorphicOrderAt` and `AnalyticOnNhd.zero_lt_divisor_iff` — on a
+  preconnected set where `f` is analytic and nonzero somewhere, the divisor agrees with
+  `meromorphicOrderAt` and is positive exactly at zeros of `f`.
 * `MeromorphicOn.divisor_finite_inter_support_of_isCompact` — finite divisor support on a
   subset of a compact set in the meromorphic domain.
 * `MeromorphicOn.divisor_finite_inter_support` — finite divisor support on a bounded region
@@ -148,6 +152,27 @@ theorem MeromorphicOn.zero_lt_divisor_iff_of_analyticAt {𝕜 E : Type*} [Nontri
   have h : analyticOrderAt f z ≠ ⊤ := fun h ↦ htop (by simp [h])
   rw [hm.divisor_eq_analyticOrderNatAt hf hz, Nat.cast_pos, Nat.pos_iff_ne_zero,
     ← hf.analyticOrderAt_ne_zero, ← Nat.cast_analyticOrderNatAt h, Nat.cast_ne_zero]
+
+/-- On a preconnected set `U` where `f` is analytic and nonzero at some point, the divisor of `f`
+agrees with `meromorphicOrderAt f` at every point of `U` (in particular, the meromorphic order is
+finite everywhere on `U`). -/
+theorem AnalyticOnNhd.coe_divisor_eq_meromorphicOrderAt
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {U : Set 𝕜} {f : 𝕜 → E} (hf : AnalyticOnNhd 𝕜 f U) (hU : IsPreconnected U)
+    (h0 : ∃ z₀ ∈ U, f z₀ ≠ 0) {z : 𝕜} (hz : z ∈ U) :
+    (MeromorphicOn.divisor f U z : WithTop ℤ) = meromorphicOrderAt f z := by
+  rw [hf.meromorphicOn.divisor_apply hz, WithTop.coe_untop₀_of_ne_top
+    (hf.meromorphicOrderAt_ne_top_of_exists_ne_zero ⟨⟨z, hz⟩, hU⟩ h0 hz)]
+
+/-- On a preconnected set `U` where `f` is analytic and nonzero at some point, the divisor of `f`
+at `z ∈ U` is positive if and only if `f z = 0`. -/
+theorem AnalyticOnNhd.zero_lt_divisor_iff
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {U : Set 𝕜} {f : 𝕜 → E} (hf : AnalyticOnNhd 𝕜 f U) (hU : IsPreconnected U)
+    (h0 : ∃ z₀ ∈ U, f z₀ ≠ 0) {z : 𝕜} (hz : z ∈ U) :
+    0 < MeromorphicOn.divisor f U z ↔ f z = 0 :=
+  hf.meromorphicOn.zero_lt_divisor_iff_of_analyticAt (hf z hz) hz
+    (hf.meromorphicOrderAt_ne_top_of_exists_ne_zero ⟨⟨z, hz⟩, hU⟩ h0 hz)
 
 open Set
 

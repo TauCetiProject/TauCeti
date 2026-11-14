@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 import Mathlib.NumberTheory.LSeries.Deriv
 import TauCeti.Analysis.Complex.BranchLogRoot
+import TauCeti.NumberTheory.LSeries.RiemannZeta
 
 /-!
 # The logarithm of a Dirichlet `L`-function near the line `re s = 1`
@@ -18,6 +19,9 @@ For a Dirichlet character `χ`, the coefficients
 are those of the logarithm of the Euler product of `L(χ, s)`: they vanish off prime powers, equal
 `χ p ^ k / k` at `p ^ k`, and are bounded by `1`. For `1 < re s` their `L`-series converges
 absolutely and its exponential is `L(χ, s)` (Mathlib's `DirichletCharacter.LSeries_eq_exp_LSeries`).
+Comparing termwise with the real `p`-series gives `‖LSeries χ.eulerLogCoeff s‖ ≤ Re ζ(re s)` and
+therefore the level- and character-independent lower bound `exp (-Re ζ(re s)) ≤ ‖L(χ, s)‖` on
+`1 < re s`.
 
 When `χ` is nontrivial, `L(χ, s)` is entire and has no zero on the closed half-plane `1 ≤ re s`.
 The main result, `DirichletCharacter.exists_differentiableOn_exp_eq_LFunction`, uses this to
@@ -41,6 +45,9 @@ The nonvanishing input is Mathlib's `DirichletCharacter.LFunction_ne_zero_of_one
   `DirichletCharacter.norm_eulerLogCoeff_le_one`: the values and bound of the coefficients.
 * `DirichletCharacter.exp_LSeries_eulerLogCoeff`: `exp` of their `L`-series is `L(χ, s)` for
   `1 < re s`.
+* `DirichletCharacter.norm_LSeries_eulerLogCoeff_le`,
+  `DirichletCharacter.exp_neg_re_riemannZeta_le_norm_LFunction`: uniform norm bound on the Euler
+  logarithm and uniform lower bound on `‖L(χ, s)‖` for `1 < re s`.
 * `DirichletCharacter.exists_differentiableOn_exp_eq_LFunction`: the holomorphic continuation of
   that logarithm to a neighbourhood of `1 ≤ re s`, for nontrivial `χ`.
 -/
@@ -122,6 +129,28 @@ theorem differentiableOn_LSeries_eulerLogCoeff :
 theorem exp_LSeries_eulerLogCoeff [NeZero N] {s : ℂ} (hs : 1 < s.re) :
     exp (LSeries χ.eulerLogCoeff s) = LFunction χ s := by
   rw [LFunction_eq_LSeries χ hs, ← LSeries_eq_exp_LSeries χ hs, funext χ.eulerLogCoeff_apply]
+
+/-- For `1 < re s`, the `L`-series of `DirichletCharacter.eulerLogCoeff` has norm at most
+`Re ζ(re s)`, uniformly in the level and the character. -/
+theorem norm_LSeries_eulerLogCoeff_le {s : ℂ} (hs : 1 < s.re) :
+    ‖LSeries χ.eulerLogCoeff s‖ ≤ (riemannZeta s.re).re := by
+  refine tsum_of_norm_bounded (TauCeti.hasSum_nat_rpow_neg_riemannZeta_re hs) fun n ↦ ?_
+  rw [norm_term_eq]
+  split_ifs with h0
+  · simp [h0, Real.zero_rpow (by linarith : -s.re ≠ 0)]
+  · calc
+      ‖χ.eulerLogCoeff n‖ / (n : ℝ) ^ s.re ≤ 1 / (n : ℝ) ^ s.re :=
+        div_le_div_of_nonneg_right (χ.norm_eulerLogCoeff_le_one n)
+          (Real.rpow_nonneg n.cast_nonneg _)
+      _ = (n : ℝ) ^ (-s.re) := by rw [one_div, Real.rpow_neg n.cast_nonneg]
+
+/-- For `1 < re s`, `‖L(χ, s)‖` is bounded below by `exp (-Re ζ(re s))`, uniformly in the positive
+level `N` and the character `χ`. -/
+theorem exp_neg_re_riemannZeta_le_norm_LFunction [NeZero N] {s : ℂ} (hs : 1 < s.re) :
+    Real.exp (-(riemannZeta s.re).re) ≤ ‖LFunction χ s‖ := by
+  rw [← χ.exp_LSeries_eulerLogCoeff hs, norm_exp]
+  exact Real.exp_le_exp.mpr
+    (abs_le.mp ((abs_re_le_norm _).trans (χ.norm_LSeries_eulerLogCoeff_le hs))).1
 
 /-- **The logarithm of a Dirichlet `L`-function continues across `re s = 1`.** For a nontrivial
 Dirichlet character `χ`, some open neighbourhood `Ω` of the closed half-plane `1 ≤ re s` carries a
