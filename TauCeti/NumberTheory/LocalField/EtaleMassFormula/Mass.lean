@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.Galois.GaloisSet.Basic
+public import TauCeti.FieldTheory.Galois.GaloisSet.Sum
 public import TauCeti.NumberTheory.LocalField.EtaleMassFormula.OrbitWeight
 
 /-!
@@ -32,6 +32,7 @@ mass is valued in `ℝ≥0∞`.
 
 * `TauCeti.GaloisSet.discriminantExponent`: the discriminant exponent of a labelled Galois set.
 * `TauCeti.GaloisSet.discriminantExponent_eq_of_equiv`: invariance under equivariant relabelling.
+* `TauCeti.GaloisSet.discriminantExponent_ofSum`: additivity on disjoint unions.
 * `TauCeti.etaleMass`: the étale mass `M_n(K)`.
 * `TauCeti.GaloisSet.discriminantExponent_of_isTransitive`: the transitive case.
 * `TauCeti.tsum_isTransitive_one_div_natCard_residueField_pow_discriminantExponent`: the
@@ -81,6 +82,21 @@ theorem discriminantExponent_eq_of_equiv {m : ℕ} (ρ : GaloisSet K n) (τ : Ga
   let := ρ.mulAction
   let := τ.mulAction
   exact orbitDiscriminantExponent_eq_of_equiv K e he
+
+/-- Gluing two Galois sets along a sum bijection adds their discriminant exponents. -/
+@[simp]
+theorem discriminantExponent_ofSum {a b : ℕ} (e : Fin a ⊕ Fin b ≃ Fin n)
+    (ρ₁ : GaloisSet K a) (ρ₂ : GaloisSet K b) :
+    (ofSum e ρ₁ ρ₂).discriminantExponent = ρ₁.discriminantExponent + ρ₂.discriminantExponent := by
+  let := ρ₁.mulAction
+  let := ρ₂.mulAction
+  let := (ofSum e ρ₁ ρ₂).mulAction
+  rw [discriminantExponent_def, discriminantExponent_def, discriminantExponent_def,
+    ← orbitDiscriminantExponent_sum,
+    orbitDiscriminantExponent_eq_of_equiv K e]
+  rintro σ (i | j)
+  · exact (ofSum_val_apply_inl e ρ₁ ρ₂ σ i).symm
+  · exact (ofSum_val_apply_inr e ρ₁ ρ₂ σ j).symm
 
 /-- A transitive labelled Galois set has the discriminant exponent of the fixed field of the
 stabilizer of any of its labels. -/

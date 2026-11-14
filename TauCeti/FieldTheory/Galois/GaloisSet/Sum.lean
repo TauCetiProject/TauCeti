@@ -13,17 +13,23 @@ import Mathlib.GroupTheory.Perm.Finite
 /-!
 # Disjoint unions and orbit decompositions of labelled Galois sets
 
-Two labelled Galois sets `ρ₁ : GaloisSet K a` and `ρ₂ : GaloisSet K b` glue along any bijection
-`e : Fin a ⊕ Fin b ≃ Fin n` to form a labelled Galois set `GaloisSet.ofSum e ρ₁ ρ₂ : GaloisSet K n`
-in which `e ∘ Sum.inl` and `e ∘ Sum.inr` are equivariant embeddings of the two summands. Conversely,
-by `Equiv.Perm.mem_sumCongrHom_range_of_perm_mapsTo_inl`, every labelled Galois set leaving
-`Set.range (e ∘ Sum.inl)` invariant arises uniquely in this way (`GaloisSet.ofSumEquiv`).
+Sums over `TauCeti.GaloisSet K n` of orbit-additive invariants — such as discriminant weights and
+splitting symbols in Bhargava's mass formulas — reduce to the transitive case by induction on `n`
+once one peels off the orbit of a fixed label `i₀ : Fin n` and splits the action into that
+transitive orbit and its complement. This file constructs that bijection.
 
-Specialised to the canonical order-preserving bijection `finSumEquivOfFinset` of a subset
-`S : Finset (Fin n)` and its complement, peeling off the orbit of a chosen point `i₀ : Fin n`
-decomposes `GaloisSet K n` into the choice of an orbit size `m ∈ [1, n]`, an `m`-element subset
-`S ⊆ Fin n` containing `i₀`, a transitive Galois set on `Fin m`, and an arbitrary Galois set on
-`Fin (n - m)` (`GaloisSet.orbitDecompositionEquiv`).
+Two labelled Galois sets `ρ₁ : TauCeti.GaloisSet K a` and `ρ₂ : TauCeti.GaloisSet K b` glue along
+any bijection `e : Fin a ⊕ Fin b ≃ Fin n` to form `TauCeti.GaloisSet.ofSum` on `Fin n`, in which
+`e ∘ Sum.inl` and `e ∘ Sum.inr` are equivariant embeddings of the two summands. Conversely, by
+`Equiv.Perm.mem_sumCongrHom_range_of_perm_mapsTo_inl`, every labelled Galois set leaving
+`Set.range (e ∘ Sum.inl)` invariant arises uniquely in this way (`TauCeti.GaloisSet.ofSumEquiv`).
+
+Specialised to `finSumEquivOfFinset`, which enumerates a subset `S : Finset (Fin n)` and its
+complement `Sᶜ` in increasing order on each summand separately, peeling off the orbit finset
+`TauCeti.GaloisSet.orbitFinset` of a chosen point `i₀ : Fin n` decomposes `TauCeti.GaloisSet K n`
+into the choice of an orbit size `m ∈ [1, n]`, an `m`-element subset `S ⊆ Fin n` containing `i₀`,
+a transitive Galois set on `Fin m`, and an arbitrary Galois set on `Fin (n - m)`
+(`TauCeti.GaloisSet.orbitDecompositionEquiv`).
 
 ## References
 
@@ -108,21 +114,14 @@ theorem exists_eq_ofSum_of_mapsTo (e : Fin a ⊕ Fin b ≃ Fin n) {ρ : GaloisSe
     obtain ⟨j, hj⟩ := hρ σ ⟨i, rfl⟩
     have hj' : ρ.val σ (e (.inl i)) = e (.inl j) := hj.symm
     exact ⟨j, by simp [ψ, hj']⟩
-  let E : Equiv.Perm (Fin a) × Equiv.Perm (Fin b) ≃*
-      (Equiv.Perm.sumCongrHom (Fin a) (Fin b)).range :=
-    MulEquiv.ofBijective (Equiv.Perm.sumCongrHom (Fin a) (Fin b)).rangeRestrict
-      ⟨fun _ _ h ↦ Equiv.Perm.sumCongrHom_injective (congrArg Subtype.val h),
-        (Equiv.Perm.sumCongrHom (Fin a) (Fin b)).rangeRestrict_surjective⟩
   let φ : Gal(SeparableClosure K/K) →* Equiv.Perm (Fin a) × Equiv.Perm (Fin b) :=
-    E.symm.toMonoidHom.comp (ψ.codRestrict _ hψ)
+    (MonoidHom.ofInjective Equiv.Perm.sumCongrHom_injective).symm.toMonoidHom.comp
+      (ψ.codRestrict _ hψ)
   let φ₁ := (MonoidHom.fst (Equiv.Perm (Fin a)) (Equiv.Perm (Fin b))).comp φ
   let φ₂ := (MonoidHom.snd (Equiv.Perm (Fin a)) (Equiv.Perm (Fin b))).comp φ
   have hsum : (Equiv.Perm.sumCongrHom (Fin a) (Fin b)).comp (φ₁.prod φ₂) = ψ := by
     ext σ x
-    have hprod : (φ₁.prod φ₂) σ = φ σ := rfl
-    rw [MonoidHom.comp_apply, hprod]
-    exact congrArg (fun p : (Equiv.Perm.sumCongrHom (Fin a) (Fin b)).range ↦ p.1 x)
-      (E.apply_symm_apply ⟨ψ σ, hψ σ⟩)
+    simp [φ₁, φ₂, φ]
   have hker : ρ.val.ker ≤ φ₁.ker ⊓ φ₂.ker := by
     have : ψ.ker = (φ₁.prod φ₂).ker := by
       rw [← hsum, MonoidHom.ker_comp_of_injective _ _ Equiv.Perm.sumCongrHom_injective]
@@ -149,6 +148,15 @@ def ofSumEquiv (e : Fin a ⊕ Fin b ≃ Fin n) :
 theorem coe_ofSumEquiv_apply (e : Fin a ⊕ Fin b ≃ Fin n) (p : GaloisSet K a × GaloisSet K b) :
     (ofSumEquiv (K := K) e p : GaloisSet K n) = ofSum e p.1 p.2 :=
   (rfl)
+
+/-- The inverse of `ofSumEquiv e` recovers `(ρ₁, ρ₂)` from `ofSum e ρ₁ ρ₂`. -/
+@[simp]
+theorem ofSumEquiv_symm_apply (e : Fin a ⊕ Fin b ≃ Fin n) (ρ₁ : GaloisSet K a)
+    (ρ₂ : GaloisSet K b)
+    (h : ∀ σ, Set.MapsTo ((ofSum e ρ₁ ρ₂).val σ)
+      (Set.range (e ∘ Sum.inl)) (Set.range (e ∘ Sum.inl))) :
+    (ofSumEquiv e).symm ⟨ofSum e ρ₁ ρ₂, h⟩ = (ρ₁, ρ₂) :=
+  (ofSumEquiv e).symm_apply_eq.2 (Subtype.ext rfl)
 
 /-- For a point `i : Fin a` in the left summand, its orbit in `ofSum e ρ₁ ρ₂` fills the entire left
 summand `Set.range (e ∘ Sum.inl)` precisely when `ρ₁` is transitive. -/
@@ -193,6 +201,7 @@ def orbitFinset (ρ : GaloisSet K n) (i : Fin n) : Finset (Fin n) :=
   (MulAction.orbit Gal(SeparableClosure K/K) i).toFinset
 
 /-- A label `j` lies in `ρ.orbitFinset i` precisely when some group element sends `i` to `j`. -/
+@[grind =]
 theorem mem_orbitFinset_iff (ρ : GaloisSet K n) (i j : Fin n) :
     j ∈ ρ.orbitFinset i ↔ ∃ σ : Gal(SeparableClosure K/K), ρ.val σ i = j := by
   let := ρ.mulAction
@@ -210,6 +219,46 @@ theorem coe_orbitFinset (ρ : GaloisSet K n) (i : Fin n) :
 @[simp]
 theorem mem_orbitFinset_self (ρ : GaloisSet K n) (i : Fin n) : i ∈ ρ.orbitFinset i :=
   (ρ.mem_orbitFinset_iff i i).2 ⟨1, by simp⟩
+
+/-- Every group element sends `i` into `ρ.orbitFinset i`. -/
+@[simp]
+theorem val_apply_mem_orbitFinset (ρ : GaloisSet K n) (σ : Gal(SeparableClosure K/K))
+    (i : Fin n) : ρ.val σ i ∈ ρ.orbitFinset i :=
+  (ρ.mem_orbitFinset_iff i _).2 ⟨σ, rfl⟩
+
+/-- In the trivial Galois set, the orbit finset of every label is a singleton. -/
+@[simp]
+theorem orbitFinset_trivial (i : Fin n) : (trivial K n).orbitFinset i = {i} := by
+  ext j
+  simp [mem_orbitFinset_iff, eq_comm]
+
+/-- In `ofSum e ρ₁ ρ₂`, the orbit finset of a left-summand label `e (.inl i)` is the embedded
+orbit finset of `i` in `ρ₁`. -/
+@[simp]
+theorem orbitFinset_ofSum_inl {a b : ℕ} (e : Fin a ⊕ Fin b ≃ Fin n) (ρ₁ : GaloisSet K a)
+    (ρ₂ : GaloisSet K b) (i : Fin a) :
+    (ofSum e ρ₁ ρ₂).orbitFinset (e (.inl i)) =
+      (ρ₁.orbitFinset i).map (Function.Embedding.inl.trans e.toEmbedding) := by
+  ext x
+  simp only [mem_orbitFinset_iff, Finset.mem_map, Function.Embedding.trans_apply,
+    Function.Embedding.inl_apply, Equiv.coe_toEmbedding]
+  exact ⟨fun ⟨σ, hσ⟩ ↦ ⟨ρ₁.val σ i, ⟨σ, rfl⟩, (ofSum_val_apply_inl e ρ₁ ρ₂ σ i).symm.trans hσ⟩,
+    fun ⟨_, ⟨σ, hj⟩, hx⟩ ↦ ⟨σ, (ofSum_val_apply_inl e ρ₁ ρ₂ σ i).trans
+      ((congrArg (fun y ↦ e (.inl y)) hj).trans hx)⟩⟩
+
+/-- In `ofSum e ρ₁ ρ₂`, the orbit finset of a right-summand label `e (.inr j)` is the embedded
+orbit finset of `j` in `ρ₂`. -/
+@[simp]
+theorem orbitFinset_ofSum_inr {a b : ℕ} (e : Fin a ⊕ Fin b ≃ Fin n) (ρ₁ : GaloisSet K a)
+    (ρ₂ : GaloisSet K b) (j : Fin b) :
+    (ofSum e ρ₁ ρ₂).orbitFinset (e (.inr j)) =
+      (ρ₂.orbitFinset j).map (Function.Embedding.inr.trans e.toEmbedding) := by
+  ext x
+  simp only [mem_orbitFinset_iff, Finset.mem_map, Function.Embedding.trans_apply,
+    Function.Embedding.inr_apply, Equiv.coe_toEmbedding]
+  exact ⟨fun ⟨σ, hσ⟩ ↦ ⟨ρ₂.val σ j, ⟨σ, rfl⟩, (ofSum_val_apply_inr e ρ₁ ρ₂ σ j).symm.trans hσ⟩,
+    fun ⟨_, ⟨σ, hk⟩, hx⟩ ↦ ⟨σ, (ofSum_val_apply_inr e ρ₁ ρ₂ σ j).trans
+      ((congrArg (fun y ↦ e (.inr y)) hk).trans hx)⟩⟩
 
 /-- The orbit finset of any label is nonempty, hence has positive cardinality. -/
 theorem card_orbitFinset_pos (ρ : GaloisSet K n) (i : Fin n) : 0 < (ρ.orbitFinset i).card :=
@@ -309,6 +358,28 @@ theorem orbitDecompositionEquiv_symm_apply (i₀ : Fin n)
       (have hm : S.1.card = m.1 := (Finset.mem_powersetCard.1 (Finset.mem_filter.1 S.2).1).2
       ofSum (finSumEquivOfFinset hm (by rw [Finset.card_compl, Fintype.card_fin, hm])) ρ₁.1 ρ₂) :=
   (rfl)
+
+/-- The subset component of `orbitDecompositionEquiv i₀ ρ` is the orbit finset of `i₀`. -/
+@[simp]
+theorem coe_orbitDecompositionEquiv_apply_snd_fst (i₀ : Fin n) (ρ : GaloisSet K n) :
+    ((orbitDecompositionEquiv i₀ ρ).2.1 : Finset (Fin n)) = ρ.orbitFinset i₀ := by
+  set q := orbitDecompositionEquiv i₀ ρ
+  have hsymm : (orbitDecompositionEquiv i₀).symm q = ρ :=
+    (orbitDecompositionEquiv i₀).symm_apply_apply ρ
+  have horb := congrArg (·.orbitFinset i₀) hsymm
+  rw [orbitDecompositionEquiv_symm_apply,
+    (orbitFinset_ofSum_finSumEquivOfFinset_eq_iff _ _
+      (Finset.mem_filter.1 q.2.1.2).2 _ _).2 q.2.2.1.2] at horb
+  exact horb
+
+/-- The size component of `orbitDecompositionEquiv i₀ ρ` is the cardinality of the orbit finset of
+`i₀`. -/
+@[simp]
+theorem coe_orbitDecompositionEquiv_apply_fst (i₀ : Fin n) (ρ : GaloisSet K n) :
+    ((orbitDecompositionEquiv i₀ ρ).1 : ℕ) = (ρ.orbitFinset i₀).card := by
+  rw [← coe_orbitDecompositionEquiv_apply_snd_fst i₀ ρ]
+  exact (Finset.mem_powersetCard.1
+    (Finset.mem_filter.1 (orbitDecompositionEquiv i₀ ρ).2.1.2).1).2.symm
 
 end OrbitDecomposition
 

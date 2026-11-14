@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LocalField.EtaleMassFormula.EtaleAlgebra
 public import TauCeti.NumberTheory.LocalField.EtaleMassFormula.SplittingSymbol
 public import TauCeti.NumberTheory.LocalField.EtaleMassFormula.Transitive
 import Mathlib.Data.Nat.Choose.Basic
+import TauCeti.Topology.Algebra.InfiniteSum.Basic
 
 /-!
 # Bhargava's mass formulas for étale algebras over a local field
@@ -98,26 +99,6 @@ private theorem ite_add_splittingSymbol_eq_sum {m b : ℕ} (hm : 0 < m)
       · simp [hx₁]
     · simp [hxm]
 
-private theorem tsum_galoisSet_subtype {m : ℕ} (P : GaloisSet K m → Prop) [DecidablePred P] :
-    ∑' ρ : {ρ : GaloisSet K m // P ρ},
-        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent =
-      ∑' ρ : GaloisSet K m,
-        if P ρ then 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.discriminantExponent else 0 := by
-  let S : Set (GaloisSet K m) := {ρ | P ρ}
-  let E : {ρ : GaloisSet K m // P ρ} ≃ S :=
-    ⟨fun ρ ↦ ⟨ρ.1, ρ.2⟩, fun ρ ↦ ⟨ρ.1, ρ.2⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
-  have hE : ∑' ρ : {ρ : GaloisSet K m // P ρ},
-        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent =
-      ∑' ρ : S, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent :=
-    E.tsum_eq fun ρ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent
-  rw [hE, tsum_subtype S fun ρ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.discriminantExponent]
-  exact tsum_congr fun ρ ↦ by
-    by_cases h : P ρ
-    · have hm : ρ ∈ S := h
-      simp [Set.indicator_of_mem hm, h]
-    · have hm : ρ ∉ S := h
-      simp [Set.indicator_of_notMem hm, h]
-
 private theorem tsum_orbit_slice_splittingSymbol {n : ℕ} (i₀ : Fin n) (m : Finset.Icc 1 n)
     (σ : Multiset (ℕ × ℕ)) :
     ∑' (S : (Finset.univ.powersetCard m.1).filter (i₀ ∈ ·))
@@ -164,27 +145,69 @@ private theorem tsum_orbit_slice_splittingSymbol {n : ℕ} (i₀ : Fin n) (m : F
   · simp only [hxm, ↓reduceIte]
     simp_rw [ENNReal.tsum_mul_left, ENNReal.tsum_mul_right]
     congr 1
-    · symm
-      let E : {ρ₁ : GaloisSet K m.1 // ρ₁.splittingSymbol = {x}} ≃
-          {ρ₁ : {ρ₁ : GaloisSet K m.1 // ρ₁.IsTransitive} | ρ₁.1.splittingSymbol = {x}} :=
-        { toFun := fun ρ₁ ↦
-            ⟨⟨ρ₁.1, (ρ₁.1.isTransitive_iff_card_splittingSymbol_eq_one hm1).2 (by simp [ρ₁.2])⟩,
-              ρ₁.2⟩
-          invFun := fun ρ₁ ↦ ⟨ρ₁.1.1, ρ₁.2⟩
-          left_inv := fun _ ↦ rfl
-          right_inv := fun _ ↦ rfl }
-      have hE : ∑' ρ₁ : {ρ₁ : GaloisSet K m.1 // ρ₁.splittingSymbol = {x}},
-            1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ₁.1.discriminantExponent =
-          ∑' ρ₁ : {ρ₁ : {ρ₁ : GaloisSet K m.1 // ρ₁.IsTransitive} | ρ₁.1.splittingSymbol = {x}},
-            1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ₁.1.1.discriminantExponent :=
-        E.tsum_eq fun ρ₁ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ₁.1.1.discriminantExponent
-      rw [hE, tsum_subtype
-        {ρ₁ : {ρ₁ : GaloisSet K m.1 // ρ₁.IsTransitive} | ρ₁.1.splittingSymbol = {x}}
-        fun ρ₁ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ₁.1.discriminantExponent]
-      exact tsum_congr fun ρ₁ ↦ by
-        by_cases h : ρ₁.1.splittingSymbol = {x} <;> simp [h]
-    · exact (tsum_galoisSet_subtype (fun ρ₂ ↦ ρ₂.splittingSymbol = σ.erase x)).symm
+    · rw [← tsum_subtype_eq_tsum_ite
+        (fun ρ₁ : {ρ₁ : GaloisSet K m.1 // ρ₁.IsTransitive} ↦ ρ₁.1.splittingSymbol = {x})
+        (fun ρ₁ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ₁.1.discriminantExponent)]
+      exact (Equiv.subtypeSubtypeEquivSubtype (p := GaloisSet.IsTransitive)
+        (q := fun ρ₁ ↦ ρ₁.splittingSymbol = {x}) fun h ↦
+        (GaloisSet.isTransitive_iff_card_splittingSymbol_eq_one _ hm1).2 (by simp [h])).tsum_eq
+        fun ρ₁ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ₁.1.discriminantExponent
+    · exact (tsum_subtype_eq_tsum_ite
+        (fun ρ₂ : GaloisSet K (n - m.1) ↦ ρ₂.splittingSymbol = σ.erase x)
+        (fun ρ₂ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ₂.discriminantExponent)).symm
   · simp [hxm]
+
+/-- Peeling off the orbit of `0 : Fin n` decomposes the splitting-symbol sum for any nonempty `σ`
+into single-factor and erased-symbol sums over `x ∈ σ.toFinset`. -/
+private theorem tsum_splittingSymbol_eq_sum_erase {n : ℕ} {σ : Multiset (ℕ × ℕ)}
+    (hσ : ∀ x ∈ σ, 0 < x.1 ∧ 0 < x.2) (hn : (σ.map fun x ↦ x.1 * x.2).sum = n) (hσ0 : σ ≠ 0) :
+    ∑' ρ : {ρ : GaloisSet K n // ρ.splittingSymbol = σ},
+        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent =
+      ∑ x ∈ σ.toFinset,
+        (Nat.choose (n - 1) (x.1 * x.2 - 1) : ℝ≥0∞) *
+          ((∑' ρ₁ : {ρ₁ : GaloisSet K (x.1 * x.2) // ρ₁.splittingSymbol = {x}},
+              1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ₁.1.discriminantExponent) *
+            (∑' ρ₂ : {ρ₂ : GaloisSet K (n - x.1 * x.2) // ρ₂.splittingSymbol = σ.erase x},
+              1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ₂.1.discriminantExponent)) := by
+  classical
+  obtain ⟨x₀, hx₀⟩ := Multiset.exists_mem_of_ne_zero hσ0
+  have hn_pos : 0 < n := (Nat.mul_pos (hσ x₀ hx₀).1 (hσ x₀ hx₀).2).trans_le
+    (hn ▸ Multiset.le_sum_of_mem (Multiset.mem_map_of_mem (fun x : ℕ × ℕ ↦ x.1 * x.2) hx₀))
+  let i₀ : Fin n := ⟨0, hn_pos⟩
+  rw [tsum_subtype_eq_tsum_ite (fun ρ : GaloisSet K n ↦ ρ.splittingSymbol = σ)
+      (fun ρ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.discriminantExponent),
+    ← (GaloisSet.orbitDecompositionEquiv (K := K) i₀).symm.tsum_eq,
+    tsum_sigma', tsum_fintype]
+  have hslice : ∀ m ∈ (Finset.univ : Finset (Finset.Icc 1 n)),
+      (∑' p : ((Finset.univ.powersetCard m.1).filter (i₀ ∈ ·)) ×
+          {ρ₁ : GaloisSet K m.1 // ρ₁.IsTransitive} × GaloisSet K (n - m.1),
+        if ((GaloisSet.orbitDecompositionEquiv (K := K) i₀).symm ⟨m, p⟩).splittingSymbol = σ then
+          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^
+            ((GaloisSet.orbitDecompositionEquiv (K := K) i₀).symm ⟨m, p⟩).discriminantExponent
+        else 0) =
+      ∑ x ∈ σ.toFinset,
+        (Nat.choose (n - 1) (m.1 - 1) : ℝ≥0∞) *
+          (if x.1 * x.2 = m.1 then
+            (∑' ρ₁ : {ρ₁ : GaloisSet K m.1 // ρ₁.splittingSymbol = {x}},
+              1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ₁.1.discriminantExponent) *
+            (∑' ρ₂ : {ρ₂ : GaloisSet K (n - m.1) // ρ₂.splittingSymbol = σ.erase x},
+              1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ₂.1.discriminantExponent)
+          else 0) := fun m _ ↦ by
+    rw [tsum_prod', tsum_congr fun _ ↦ tsum_prod',
+      tsum_orbit_slice_splittingSymbol i₀ m σ, Finset.mul_sum]
+  rw [Finset.sum_congr rfl hslice, Finset.sum_comm]
+  refine Finset.sum_congr rfl fun x hx_fin ↦ ?_
+  have hx : x ∈ σ := Multiset.mem_toFinset.1 hx_fin
+  have ⟨hf, he⟩ := hσ x hx
+  have hfe_le : x.1 * x.2 ≤ n :=
+    hn ▸ Multiset.le_sum_of_mem (Multiset.mem_map_of_mem (fun y : ℕ × ℕ ↦ y.1 * y.2) hx)
+  let m₀ : Finset.Icc 1 n := ⟨x.1 * x.2, Finset.mem_Icc.2 ⟨Nat.mul_pos hf he, hfe_le⟩⟩
+  rw [Finset.sum_eq_single m₀
+      (fun m _ hm ↦ by
+        have hne : x.1 * x.2 ≠ m.1 := fun h ↦ hm (Subtype.ext h.symm)
+        simp [hne])
+      (fun hm₀ ↦ (hm₀ (Finset.mem_univ m₀)).elim)]
+  simp [m₀]
 
 private theorem splittingSymbol_coeff_eq {n : ℕ} {σ : Multiset (ℕ × ℕ)} {x : ℕ × ℕ}
     (hσ : ∀ y ∈ σ, 0 < y.1 ∧ 0 < y.2) (hx : x ∈ σ) (hfe_le : x.1 * x.2 ≤ n) :
@@ -312,44 +335,20 @@ theorem etaleMass_splittingSymbol (n : ℕ) (σ : Multiset (ℕ × ℕ))
     rw [tsum_eq_single ρ₀ fun ρ hρ ↦ (hρ (Subtype.ext (Subsingleton.elim _ _))).elim]
     simp [ρ₀]
   | succ c ih =>
-    -- Peel off the orbit of `0 : Fin n` using `GaloisSet.orbitDecompositionEquiv`.
-    obtain ⟨x₀, hx₀⟩ := (Multiset.card_pos_iff_exists_mem (s := σ)).1 (by omega)
+    have hσ0 : σ ≠ 0 := Multiset.card_pos.1 (hc_def ▸ Nat.succ_pos c)
+    obtain ⟨x₀, hx₀⟩ := Multiset.exists_mem_of_ne_zero hσ0
     have hn_pos : 0 < n := (Nat.mul_pos (hσ x₀ hx₀).1 (hσ x₀ hx₀).2).trans_le
       (hn ▸ Multiset.le_sum_of_mem (Multiset.mem_map_of_mem (fun x : ℕ × ℕ ↦ x.1 * x.2) hx₀))
-    let i₀ : Fin n := ⟨0, hn_pos⟩
-    rw [tsum_galoisSet_subtype (fun ρ ↦ ρ.splittingSymbol = σ),
-      ← (GaloisSet.orbitDecompositionEquiv (K := K) i₀).symm.tsum_eq,
-      tsum_sigma', tsum_fintype]
-    have hslice : ∀ m ∈ (Finset.univ : Finset (Finset.Icc 1 n)),
-        (∑' p : ((Finset.univ.powersetCard m.1).filter (i₀ ∈ ·)) ×
-            {ρ₁ : GaloisSet K m.1 // ρ₁.IsTransitive} × GaloisSet K (n - m.1),
-          if ((GaloisSet.orbitDecompositionEquiv (K := K) i₀).symm ⟨m, p⟩).splittingSymbol = σ then
-            1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^
-              ((GaloisSet.orbitDecompositionEquiv (K := K) i₀).symm ⟨m, p⟩).discriminantExponent
-          else 0) =
-        ∑ x ∈ σ.toFinset,
-          (Nat.choose (n - 1) (m.1 - 1) : ℝ≥0∞) *
-            (if x.1 * x.2 = m.1 then
-              (∑' ρ₁ : {ρ₁ : GaloisSet K m.1 // ρ₁.splittingSymbol = {x}},
-                1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ₁.1.discriminantExponent) *
-              (∑' ρ₂ : {ρ₂ : GaloisSet K (n - m.1) // ρ₂.splittingSymbol = σ.erase x},
-                1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ₂.1.discriminantExponent)
-            else 0) := fun m _ ↦ by
-      rw [tsum_prod', tsum_congr fun _ ↦ tsum_prod',
-        tsum_orbit_slice_splittingSymbol i₀ m σ, Finset.mul_sum]
-    rw [Finset.sum_congr rfl hslice, Finset.sum_comm, Finset.mul_sum]
+    rw [tsum_splittingSymbol_eq_sum_erase hσ hn hσ0, Finset.mul_sum]
     set q : ℝ≥0∞ := (Nat.card 𝓀[K] : ℝ≥0∞)
-    -- For each distinct factor `x ∈ σ`, only `m = x.1 * x.2` contributes; apply the transitive
-    -- mass formula to `ρ₁` and the induction hypothesis to `ρ₂`.
+    -- Apply the transitive mass formula to `ρ₁` and the induction hypothesis to `ρ₂`.
     have hterm : ∀ x ∈ σ.toFinset,
-        (n ! : ℝ≥0∞)⁻¹ * ∑ m : Finset.Icc 1 n,
-            (Nat.choose (n - 1) (m.1 - 1) : ℝ≥0∞) *
-              (if x.1 * x.2 = m.1 then
-                (∑' ρ₁ : {ρ₁ : GaloisSet K m.1 // ρ₁.splittingSymbol = {x}},
+        (n ! : ℝ≥0∞)⁻¹ *
+            ((Nat.choose (n - 1) (x.1 * x.2 - 1) : ℝ≥0∞) *
+              ((∑' ρ₁ : {ρ₁ : GaloisSet K (x.1 * x.2) // ρ₁.splittingSymbol = {x}},
                   1 / q ^ ρ₁.1.discriminantExponent) *
-                (∑' ρ₂ : {ρ₂ : GaloisSet K (n - m.1) // ρ₂.splittingSymbol = σ.erase x},
-                  1 / q ^ ρ₂.1.discriminantExponent)
-              else 0) =
+                (∑' ρ₂ : {ρ₂ : GaloisSet K (n - x.1 * x.2) // ρ₂.splittingSymbol = σ.erase x},
+                  1 / q ^ ρ₂.1.discriminantExponent))) =
           ((σ.count x * (x.1 * x.2) : ℕ) : ℝ≥0∞) *
             ((n : ℝ≥0∞)⁻¹ *
               (1 / ((splittingSymbolAut σ : ℝ≥0∞) * q ^ splittingSymbolExponent σ))) := by
@@ -358,22 +357,13 @@ theorem etaleMass_splittingSymbol (n : ℕ) (σ : Multiset (ℕ × ℕ))
       have ⟨hf, he⟩ := hσ x hx
       have hfe_le : x.1 * x.2 ≤ n :=
         hn ▸ Multiset.le_sum_of_mem (Multiset.mem_map_of_mem (fun y : ℕ × ℕ ↦ y.1 * y.2) hx)
-      let m₀ : Finset.Icc 1 n := ⟨x.1 * x.2, Finset.mem_Icc.2 ⟨Nat.mul_pos hf he, hfe_le⟩⟩
-      rw [Finset.sum_eq_single m₀
-          (fun m _ hm ↦ by
-            have hne : x.1 * x.2 ≠ m.1 := fun h ↦ hm (Subtype.ext h.symm)
-            simp [hne])
-          (fun hm₀ ↦ (hm₀ (Finset.mem_univ m₀)).elim)]
-      simp only [m₀, ↓reduceIte]
       have h₁ : ∑' ρ₁ : {ρ₁ : GaloisSet K (x.1 * x.2) // ρ₁.splittingSymbol = {x}},
             1 / q ^ ρ₁.1.discriminantExponent =
-          ((x.1 * x.2)! : ℝ≥0∞) * (1 / ((x.1 : ℝ≥0∞) * q ^ (x.1 * (x.2 - 1)))) := by
-        calc
-          _ = (((x.1 * x.2)! : ℝ≥0∞) * ((x.1 * x.2)! : ℝ≥0∞)⁻¹) * _ := by
-            rw [ENNReal.mul_inv_cancel (Nat.cast_ne_zero.2 (x.1 * x.2).factorial_ne_zero)
-              (ENNReal.natCast_ne_top _), one_mul]
-          _ = ((x.1 * x.2)! : ℝ≥0∞) * (1 / ((x.1 : ℝ≥0∞) * q ^ (x.1 * (x.2 - 1)))) := by
-            rw [mul_assoc, etaleMass_isTransitive_splittingSymbol x.1 x.2 hf he]
+          ((x.1 * x.2)! : ℝ≥0∞) * (1 / ((x.1 : ℝ≥0∞) * q ^ (x.1 * (x.2 - 1)))) :=
+        (ENNReal.mul_inv_cancel_left (Nat.cast_ne_zero.2 (x.1 * x.2).factorial_ne_zero)
+          (ENNReal.natCast_ne_top _)).symm.trans
+          (congrArg (((x.1 * x.2)! : ℝ≥0∞) * ·)
+            (etaleMass_isTransitive_splittingSymbol x.1 x.2 hf he))
       have h₂ : ∑' ρ₂ : {ρ₂ : GaloisSet K (n - x.1 * x.2) // ρ₂.splittingSymbol = σ.erase x},
             1 / q ^ ρ₂.1.discriminantExponent =
           ((n - x.1 * x.2)! : ℝ≥0∞) *
@@ -385,16 +375,12 @@ theorem etaleMass_splittingSymbol (n : ℕ) (σ : Multiset (ℕ × ℕ))
           have hcons := hn
           rw [← Multiset.cons_erase hx, Multiset.map_cons, Multiset.sum_cons] at hcons
           omega
-        have hih := ih (n - x.1 * x.2) (σ.erase x)
-          (fun y hy ↦ hσ y (Multiset.mem_of_mem_erase hy)) hn_er hc_er
-        calc
-          _ = (((n - x.1 * x.2)! : ℝ≥0∞) * ((n - x.1 * x.2)! : ℝ≥0∞)⁻¹) * _ := by
-            rw [ENNReal.mul_inv_cancel (Nat.cast_ne_zero.2 (n - x.1 * x.2).factorial_ne_zero)
-              (ENNReal.natCast_ne_top _), one_mul]
-          _ = ((n - x.1 * x.2)! : ℝ≥0∞) *
-              (1 / ((splittingSymbolAut (σ.erase x) : ℝ≥0∞) *
-                q ^ splittingSymbolExponent (σ.erase x))) := by
-            rw [mul_assoc, hih]
+        exact (ENNReal.mul_inv_cancel_left
+            (Nat.cast_ne_zero.2 (n - x.1 * x.2).factorial_ne_zero)
+            (ENNReal.natCast_ne_top _)).symm.trans
+          (congrArg (((n - x.1 * x.2)! : ℝ≥0∞) * ·)
+            (ih (n - x.1 * x.2) (σ.erase x)
+              (fun y hy ↦ hσ y (Multiset.mem_of_mem_erase hy)) hn_er hc_er))
       rw [h₁, h₂]
       exact splittingSymbol_term_eq hσ hx hfe_le q (ENNReal.natCast_ne_top _)
     -- Sum `σ.count x * (x.1 * x.2)` over `x ∈ σ.toFinset` to cancel `n`.
@@ -423,28 +409,25 @@ theorem etaleMass_ramificationPartition (n k : ℕ) (π : k.Partition)
   let proj : {ρ : GaloisSet K n // ramificationPartition ρ.splittingSymbol = π.parts} → Sym :=
     fun ρ ↦ ⟨ρ.1.splittingSymbol, fun _ hx ↦ ρ.1.pos_of_mem_splittingSymbol hx,
       ρ.1.sum_map_mul_splittingSymbol, ρ.2⟩
-  rw [← (Equiv.sigmaFiberEquiv proj).tsum_eq, tsum_sigma', ← ENNReal.tsum_mul_left]
+  rw [← tsum_fiberwise _ proj, ← ENNReal.tsum_mul_left]
   have hfib : ∀ σ : Sym,
       (n ! : ℝ≥0∞)⁻¹ *
-          ∑' ρ : {ρ : {ρ : GaloisSet K n // ramificationPartition ρ.splittingSymbol = π.parts} //
-              proj ρ = σ},
-            1 / q ^ (Equiv.sigmaFiberEquiv proj ⟨σ, ρ⟩).1.discriminantExponent =
+          ∑' ρ : proj ⁻¹' {σ}, 1 / q ^ ρ.1.1.discriminantExponent =
         (1 / (splittingSymbolAut σ.1 : ℝ≥0∞)) * (1 / q ^ k) := by
     intro σ
-    let E : {ρ : {ρ : GaloisSet K n // ramificationPartition ρ.splittingSymbol = π.parts} //
-          proj ρ = σ} ≃ {ρ : GaloisSet K n // ρ.splittingSymbol = σ.1} :=
-      { toFun := fun ρ ↦ ⟨ρ.1.1, congrArg Subtype.val ρ.2⟩
-        invFun := fun ρ ↦ ⟨⟨ρ.1, ρ.2.symm ▸ σ.2.2.2⟩, Subtype.ext ρ.2⟩
-        left_inv := fun _ ↦ rfl
-        right_inv := fun _ ↦ rfl }
-    have hE : ∑' ρ : {ρ : {ρ : GaloisSet K n //
-            ramificationPartition ρ.splittingSymbol = π.parts} // proj ρ = σ},
-          1 / q ^ (Equiv.sigmaFiberEquiv proj ⟨σ, ρ⟩).1.discriminantExponent =
+    let E : proj ⁻¹' {σ} ≃ {ρ : GaloisSet K n // ρ.splittingSymbol = σ.1} :=
+      (Equiv.subtypeEquivRight fun _ ↦
+        Set.mem_preimage.trans (Set.mem_singleton_iff.trans Subtype.ext_iff)).trans
+        (Equiv.subtypeSubtypeEquivSubtype
+          (p := fun ρ : GaloisSet K n ↦ ramificationPartition ρ.splittingSymbol = π.parts)
+          (q := fun ρ ↦ ρ.splittingSymbol = σ.1)
+          fun h ↦ h.symm ▸ σ.2.2.2)
+    have hE : ∑' ρ : proj ⁻¹' {σ}, 1 / q ^ ρ.1.1.discriminantExponent =
         ∑' ρ : {ρ : GaloisSet K n // ρ.splittingSymbol = σ.1},
           1 / q ^ ρ.1.discriminantExponent :=
       E.tsum_eq fun ρ ↦ 1 / q ^ ρ.1.discriminantExponent
     have hexp : splittingSymbolExponent σ.1 = k := by
-      rw [splittingSymbolExponent_eq_sum_ramificationPartition, σ.2.2.2, π.parts_sum]
+      rw [← sum_ramificationPartition, σ.2.2.2, π.parts_sum]
     rw [hE, etaleMass_splittingSymbol n σ.1 σ.2.1 σ.2.2.1, hexp, one_div, one_div, one_div,
       ENNReal.mul_inv (.inr (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)))
         (.inl (ENNReal.natCast_ne_top _))]
@@ -504,7 +487,9 @@ theorem etaleMass_eq (n : ℕ) :
           (if ramificationPartition ρ.splittingSymbol = π.parts then
             1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.discriminantExponent else 0) =
         1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ k := fun π hπ ↦ by
-    rw [← tsum_galoisSet_subtype (fun ρ ↦ ramificationPartition ρ.splittingSymbol = π.parts),
+    rw [← tsum_subtype_eq_tsum_ite
+        (fun ρ : GaloisSet K n ↦ ramificationPartition ρ.splittingSymbol = π.parts)
+        (fun ρ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.discriminantExponent),
       etaleMass_ramificationPartition n k π (Finset.mem_filter.1 hπ).2]
   rw [Finset.sum_congr rfl hπ_sum, Finset.sum_const, nsmul_eq_mul, mul_one_div]
 
@@ -530,6 +515,7 @@ theorem etaleMass_eq_of_pos {n : ℕ} (hn : 0 < n) :
 variable (K) in
 /-- For every `n`, the étale mass `etaleMass K n` is finite (even in equal characteristic `p > 0`,
 where infinitely many Galois sets of size `n ≥ p` exist). -/
+@[simp, aesop (rule_sets := [finiteness]) safe apply]
 theorem etaleMass_ne_top (n : ℕ) : etaleMass K n ≠ ⊤ := by
   rw [etaleMass_eq]
   exact ENNReal.sum_ne_top.2 fun k _ ↦ ENNReal.div_ne_top (ENNReal.natCast_ne_top _)
