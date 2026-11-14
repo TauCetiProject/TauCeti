@@ -15,7 +15,9 @@ public import TauCeti.NumberTheory.IntegralLattice.Binary.Examples
 Every orientation of a binary lattice with primitive discriminant one gives the principal
 proper class of the split product order. In particular the existing hyperbolic plane has
 this class. The primitive norm form also defines a class in the primitive split quotient,
-whose forgetful image is the existing oriented proper class. For the hyperbolic plane this
+whose forgetful image is the existing oriented proper class; it is the class of the triangular
+form `sxy + ay²` exactly when some basis of the given orientation has norm form a multiple of
+`sxy + ay²`. For the hyperbolic plane this
 is the triangular principal class with coefficients `1, 1`, the composition identity, and its module
 is the unit module over the actual product order. No number-field order is used.
 
@@ -62,6 +64,28 @@ def binarySplitProperClass (L : IntegralLattice V) (hV : Module.finrank ℚ V = 
   simpa only [binarySplitProperClass, b,
     BinaryQuadraticForm.splitProperClassToProperClass_mk] using
     (L.binaryProperClass_eq_mk b hV o (Basis.orientation_adjustToOrientation _ _)).symm
+
+/-- **Triangular bases.** The oriented split class of a binary lattice is the class of the
+triangular form `sxy + ay²` exactly when some carrier basis of that orientation has norm form
+`c (sxy + ay²)`, where `c` is the content. -/
+theorem binarySplitProperClass_eq_splitProperClassMk_iff (L : IntegralLattice V)
+    (hV : Module.finrank ℚ V = 2) (s : ℕ) [NeZero s] (hD : L.binaryDiscriminant hV = (s : ℤ) ^ 2)
+    (o : Orientation ℤ L (Fin 2)) {a : ℤ} (ha : IsCoprime (s : ℤ) a) :
+    L.binarySplitProperClass hV s hD o = BinaryQuadraticForm.splitProperClassMk s a ha ↔
+      ∃ b : Basis (Fin 2) ℤ L, b.orientation = o ∧
+        L.binaryNormForm b =
+          (L.binaryContent hV : ℤ) • BinaryQuadraticForm.splitTriangularForm s a := by
+  rw [← (BinaryQuadraticForm.splitProperClassToProperClass_injective s).eq_iff,
+    binarySplitProperClass_toProperClass,
+    BinaryQuadraticForm.splitProperClassToProperClass_splitProperClassMk]
+  refine ⟨L.exists_binaryNormForm_eq_smul_of_binaryProperClass_eq hV o, ?_⟩
+  rintro ⟨b, hbo, hb⟩
+  have hc : 0 < L.binaryContent hV := L.binaryContent_pos hV
+    (L.form_ne_zero_of_binaryDiscriminant_ne_zero hV (by simp [hD, NeZero.ne s]))
+  rw [L.binaryProperClass_eq_mk b hV o hbo, hb,
+    BinaryQuadraticForm.primPart_smul_of_isPrimitive _ _
+      ((BinaryQuadraticForm.isPrimitive_splitTriangularForm s a).mpr ha),
+    Int.sign_eq_one_of_pos (Nat.cast_pos.mpr hc), one_smul]
 
 /-- A binary lattice of primitive discriminant one has the principal split proper class
 in every orientation. -/

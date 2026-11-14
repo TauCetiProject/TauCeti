@@ -20,9 +20,11 @@ discriminant `s²`. Its oriented proper class lies in the group of split proper 
 `(ℤ/sℤ)ˣ` through the triangular representatives `sxy + ay²`. This file proves that the genus of
 `L` is a coset of the subgroup of squares: two such lattices lie in one genus exactly when they
 have the same content and their classes differ by a square
-(`IntegralLattice.sameGenus_iff_binaryContent_eq_and_isSquare_inv_mul_binarySplitProperClass`).
+(`sameGenus_iff_binaryContent_eq_and_isSquare_inv_mul_binarySplitProperClass`, in the
+`TauCeti.IntegralLattice` namespace like every lattice declaration of this file).
 
-Both directions are local computations in a triangular basis, whose Gram matrix is
+Both directions are local computations in a triangular basis
+(`TauCeti.IntegralLattice.binarySplitProperClass_eq_splitProperClassMk_iff`), whose Gram matrix is
 `!![0, cs/2; cs/2, ca]`.
 
 * If `a' ≡ a z² (mod s)`, lift `z` to an integer `u` coprime to `s`. Over `ℤ_p` with `p ∣ s`, the
@@ -39,13 +41,9 @@ The general step, isometry of two binary forms with an isotropic first basis vec
 
 ## Main results
 
-* `LinearMap.BilinForm.equivalent_of_toMatrix_eq_isotropic`: forms with Gram matrices
-  `!![0, β; β, γ]` and `!![0, β; β, 2tμβ + μ²γ]`, for a unit `μ`, are isometric.
-* `IntegralLattice.exists_binaryNormForm_eq_smul_splitTriangularForm`: a lattice whose
-  split class is that of `sxy + ay²` has a basis with norm form `c (sxy + ay²)`.
-* `IntegralLattice.sameGenus_iff_binaryContent_eq_and_isSquare_inv_mul_binarySplitProperClass`:
-  lattices of primitive discriminant `s²` lie in one genus exactly when their contents agree and
-  their split classes differ by a square.
+* `sameGenus_iff_binaryContent_eq_and_isSquare_inv_mul_binarySplitProperClass` (in
+  `TauCeti.IntegralLattice`): lattices of primitive discriminant `s²` lie in one genus exactly when
+  their contents agree and their split classes differ by a square.
 
 ## References
 
@@ -57,62 +55,11 @@ public section
 
 open Module
 
-namespace LinearMap.BilinForm
-
-open LinearMap (BilinForm)
-
-variable {R M M' : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup M']
-  [Module R M']
-
-/-- **Binary forms with an isotropic first basis vector.** Suppose that `B` and `B'` have Gram
-matrices `!![0, β; β, γ]` and `!![0, β; β, γ']` in bases `v` and `w`. If `γ' = 2tμβ + μ²γ` for a
-unit `μ`, then `B` and `B'` are isometric: in the basis `μ⁻¹ v₀, t v₀ + μ v₁` the form `B` has the
-Gram matrix of `B'`. -/
-theorem equivalent_of_toMatrix_eq_isotropic {B : BilinForm R M} {B' : BilinForm R M'}
-    (v : Basis (Fin 2) R M) (w : Basis (Fin 2) R M') {β γ γ' t : R} (μ : Rˣ)
-    (hB : toMatrix v B = !![0, β; β, γ]) (hB' : toMatrix w B' = !![0, β; β, γ'])
-    (h : γ' = 2 * t * μ * β + μ ^ 2 * γ) : B.Equivalent B' := by
-  let P : Matrix (Fin 2) (Fin 2) R := !![((μ⁻¹ : Rˣ) : R), t; 0, μ]
-  have hP : IsUnit P.det := by simp [P, Matrix.det_fin_two_of]
-  let E := v.map (Matrix.toLinearEquiv v P hP)
-  have hE0 : E 0 = ((μ⁻¹ : Rˣ) : R) • v 0 := by
-    simp [E, P, Matrix.toLinearEquiv_apply, Matrix.toLin_self, Fin.sum_univ_two]
-  have hE1 : E 1 = t • v 0 + (μ : R) • v 1 := by
-    simp [E, P, Matrix.toLinearEquiv_apply, Matrix.toLin_self, Fin.sum_univ_two]
-  have hv (i j : Fin 2) : B (v i) (v j) = !![0, β; β, γ] i j := by
-    rw [← hB, toMatrix_apply]
-  refine ⟨E.isometryEquivOfToMatrixEq w ?_⟩
-  rw [hB', h]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [toMatrix_apply, hE0, hE1, hv]
-  ring
-
-end LinearMap.BilinForm
-
 namespace TauCeti.IntegralLattice
 
 open BinaryQuadraticForm
 
 variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
-
-/-- **Triangular bases.** If the oriented split class of a binary lattice is the class of the
-triangular form `sxy + ay²`, then some carrier basis has norm form `c (sxy + ay²)`, where `c` is the
-content. -/
-theorem exists_binaryNormForm_eq_smul_splitTriangularForm (L : IntegralLattice V)
-    (hV : finrank ℚ V = 2) (s : ℕ) [NeZero s] (hD : L.binaryDiscriminant hV = (s : ℤ) ^ 2)
-    (o : Orientation ℤ L (Fin 2)) {a : ℤ} (ha : IsCoprime (s : ℤ) a)
-    (h : L.binarySplitProperClass hV s hD o = splitProperClassMk s a ha) :
-    ∃ b : Basis (Fin 2) ℤ L,
-      L.binaryNormForm b = (L.binaryContent hV : ℤ) • splitTriangularForm s a := by
-  let b₀ := (Module.finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV)).adjustToOrientation o
-  have hcls := congrArg (splitProperClassToProperClass s) h
-  rw [binarySplitProperClass_toProperClass, splitProperClassToProperClass_splitProperClassMk,
-    L.binaryProperClass_eq_mk b₀ hV o (Basis.orientation_adjustToOrientation _ _)] at hcls
-  obtain ⟨γ, hγ⟩ := MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp (Quotient.exact hcls))
-  obtain ⟨b, hb⟩ := L.exists_binaryNormForm_eq_smul b₀ γ⁻¹
-  refine ⟨b, ?_⟩
-  rw [hb, ← (L.binaryNormForm b₀).content_smul_primPart, ← hγ, smul_comm, inv_smul_smul,
-    L.binaryContent_eq_content_binaryNormForm b₀ hV, Nat.cast_smul_eq_nsmul]
 
 section Triangular
 
@@ -159,20 +106,17 @@ private theorem equivalent_of_toMatrix_eq_map_gramMatrix {R N N' : Type*} [CommR
     fin_cases i <;> fin_cases j <;> simp [-gramMatrix_apply, h00', h10', h11', hβ]
   · linear_combination (c : R) * h - t * μ * hβR
 
-/-- **Triangular lattices whose coefficients differ by a square modulo `s` share a genus.** If
-`L` and `M` have norm forms `c (sxy + ay²)` and `c (sxy + a'y²)` and `a' ≡ a z² (mod s)`, then `L`
-and `M` lie in one genus. -/
+/-- **Triangular lattices whose coefficients differ by a square modulo `s` share a genus.** Let
+`s ≠ 0` and let `a'` be coprime to `s`. If `L` and `M` have norm forms `c (sxy + ay²)` and
+`c (sxy + a'y²)` and `a' ≡ a z² (mod s)`, then `L` and `M` lie in one genus. -/
 private theorem sameGenus_of_intCast_eq_mul_sq {s : ℕ} [NeZero s]
     (hb : L.binaryNormForm b = c • splitTriangularForm s a)
     (hb' : M.binaryNormForm b' = c • splitTriangularForm s a') (ha' : IsCoprime (s : ℤ) a')
     {z : ZMod s} (hz : (a' : ZMod s) = a * z ^ 2) : L.SameGenus M := by
-  -- The residue `z` is a unit, since `a'` is; lift it to an integer `u` coprime to `s`.
+  -- The residue `z` is a unit, since `a'` is; lift it to a natural number `u` coprime to `s`.
   have ha'u : IsUnit (a' : ZMod s) := (ZMod.unitOfIsCoprime a' ha'.symm).isUnit
-  have hzu : IsUnit z := (isUnit_pow_iff two_ne_zero).mp (isUnit_of_mul_isUnit_right (hz ▸ ha'u))
-  set u : ℤ := (z.val : ℤ)
-  have hu : IsCoprime (s : ℤ) u :=
-    (Nat.isCoprime_iff_coprime.mpr ((ZMod.isUnit_iff_coprime z.val s).mp
-      (by rwa [ZMod.natCast_zmod_val]))).symm
+  obtain ⟨w, rfl⟩ := (isUnit_pow_iff two_ne_zero).mp (isUnit_of_mul_isUnit_right (hz ▸ ha'u))
+  set u : ℕ := (w : ZMod s).val
   obtain ⟨r, hr⟩ : (s : ℤ) ∣ a' - a * u ^ 2 := by
     rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
     push_cast [u, ZMod.natCast_zmod_val]
@@ -190,9 +134,8 @@ private theorem sameGenus_of_intCast_eq_mul_sq {s : ℕ} [NeZero s]
   refine (sameGenus_iff_localIntegralForm_equivalent hform).mpr fun p _ ↦ ?_
   by_cases hp : (p : ℤ) ∣ s
   · -- At a prime dividing `s`, take `μ = u`, a unit since `u` is coprime to `s`.
-    have hup : IsUnit (u : ℤ_[p]) := PadicInt.isUnit_intCast_iff.mpr fun hpu ↦
-      (Fact.out : p.Prime).ne_one
-        (by simpa using Int.isUnit_iff_natAbs_eq.mp (hu.isUnit_of_dvd' hp hpu))
+    have hup : IsUnit (u : ℤ_[p]) := PadicInt.isUnit_natCast_of_coprime
+      ((ZMod.val_coe_unit_coprime w).coprime_dvd_right (Int.natCast_dvd_natCast.mp hp)).symm
     exact equivalent_of_toMatrix_eq_map_gramMatrix hb hb' _ _ (toMatrix_localIntegralForm L p b)
       (toMatrix_localIntegralForm M p b') hup.unit (r * ↑hup.unit⁻¹) (by
         rw [mul_assoc, mul_assoc, Units.inv_mul, mul_one, IsUnit.unit_spec]
@@ -261,13 +204,14 @@ theorem sameGenus_iff_binaryContent_eq_and_isSquare_inv_mul_binarySplitProperCla
       IsSquare ((L.binarySplitProperClass hV s hL oL)⁻¹ * M.binarySplitProperClass hW s hM oM) := by
   obtain ⟨a, ha, hqL⟩ := exists_eq_splitProperClassMk s (L.binarySplitProperClass hV s hL oL)
   obtain ⟨a', ha', hqM⟩ := exists_eq_splitProperClassMk s (M.binarySplitProperClass hW s hM oM)
-  obtain ⟨b, hb⟩ := L.exists_binaryNormForm_eq_smul_splitTriangularForm hV s hL oL ha hqL
-  obtain ⟨b', hb'⟩ := M.exists_binaryNormForm_eq_smul_splitTriangularForm hW s hM oM ha' hqM
+  obtain ⟨b, -, hb⟩ := (L.binarySplitProperClass_eq_splitProperClassMk_iff hV s hL oL ha).mp hqL
+  obtain ⟨b', -, hb'⟩ :=
+    (M.binarySplitProperClass_eq_splitProperClassMk_iff hW s hM oM ha').mp hqM
   rw [hqL, hqM, isSquare_inv_mul_splitProperClassMk_iff]
   constructor
   · intro h
     have hc := h.binaryContent_eq hV hW
-    refine ⟨hc, (ZMod.exists_intCast_eq_mul_sq_iff (NeZero.ne s) a' a).mpr fun p k hp hk ↦ ?_⟩
+    refine ⟨hc, (ZMod.exists_intCast_eq_mul_sq_iff (NeZero.ne s) a' a).mpr fun p k hp _ hk ↦ ?_⟩
     have : Fact p.Prime := ⟨hp⟩
     have hc0 : (L.binaryContent hV : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr (L.binaryContent_pos hV
       (L.form_ne_zero_of_binaryDiscriminant_ne_zero hV (by simp [hL, NeZero.ne s]))).ne'
