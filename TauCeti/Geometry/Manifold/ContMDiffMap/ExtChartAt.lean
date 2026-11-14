@@ -7,9 +7,12 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Smooth functions as functions of a localized chart
@@ -19,12 +22,18 @@ function gives a globally smooth map with the chart's germ at `x`. On any finite
 manifold, near every interior point of a chart target the chart expression of a smooth real
 function agrees with a smooth function on the model space, hence every smooth real function agrees
 near an interior point `x` with a smooth function on the model space composed with such a localized
-chart. These steps reduce local statements about smooth functions to the model space.
+chart. These steps reduce local statements about smooth functions to the model space. Read in the
+coordinates of a basis of the model space, the localized chart gives smooth coordinates
+`M → ℝⁿ` near `x`.
 
 ## Main results
 
 * `TauCeti.exists_contMDiffMap_eventuallyEq_extChartAt`: a globally smooth map with the germ of
   the extended chart at `x`.
+* `TauCeti.chartCoord`: smooth coordinates `M → ℝⁿ` with the germ at `x` of the extended chart
+  read in the basis `Module.finBasis`; they are injective near `x`
+  (`TauCeti.exists_isOpen_injOn_chartCoord`) and their derivative at `x` is the coordinate map of
+  that basis (`TauCeti.mvfderiv_chartCoord_apply`).
 * `TauCeti.exists_contMDiffMap_comp_eventuallyEq`: near an interior point, every smooth function
   agrees with a smooth function of that localized chart.
 * `TauCeti.exists_contDiff_comp_extChartAt_symm_eventuallyEq`: near every interior point of the
@@ -54,6 +63,51 @@ theorem exists_contMDiffMap_eventuallyEq_extChartAt
   refine ⟨⟨fun y ↦ b y • extChartAt I x y, b.contMDiff_smul contMDiffOn_extChartAt⟩, ?_⟩
   filter_upwards [b.eventuallyEq_one] with y hy
   simp [hy]
+
+section chartCoord
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+
+/-- **Smooth coordinates near a point.** A globally smooth map `M → ℝⁿ`, `n = dim E`, which near
+`x` is the extended chart at `x` read in the coordinates of the basis `Module.finBasis ℝ E`. -/
+def chartCoord (x : M) : M → Fin (Module.finrank ℝ E) → ℝ :=
+  (Module.finBasis ℝ E).equivFunL ∘ (exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x).choose
+
+/-- Near `x`, `chartCoord I x` is the extended chart at `x` read in the basis `Module.finBasis`. -/
+theorem chartCoord_eventuallyEq (x : M) :
+    chartCoord I x =ᶠ[nhds x] (Module.finBasis ℝ E).equivFunL ∘ extChartAt I x :=
+  (exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x).choose_spec.fun_comp _
+
+/-- The coordinates `chartCoord I x` are smooth on all of `M`. -/
+theorem contMDiff_chartCoord (x : M) :
+    ContMDiff I 𝓘(ℝ, Fin (Module.finrank ℝ E) → ℝ) ∞ (chartCoord I x) :=
+  (Module.finBasis ℝ E).equivFunL.contDiff.comp_contMDiff
+    (exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x).choose.contMDiff
+
+/-- The derivative of `chartCoord I x` at `x` is the coordinate map of the basis
+`Module.finBasis`. -/
+theorem mvfderiv_chartCoord_apply (x : M) (v : TangentSpace I x) :
+    mvfderiv I (chartCoord I x) x v = (Module.finBasis ℝ E).equivFunL (v : E) := by
+  set F := (exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x).choose
+  have h := mvfderiv_comp_apply_of_differentiableAt (I := I) (g := (F : M → E))
+    (Module.finBasis ℝ E).equivFunL.differentiableAt (F.contMDiff.mdifferentiableAt (by simp)) v
+  rw [ContinuousLinearEquiv.fderiv, mvfderiv_apply_of_eventuallyEq_extChartAt
+    (exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x).choose_spec] at h
+  exact h
+
+/-- `chartCoord I x` is injective near `x`, where it agrees with the extended chart. -/
+theorem exists_isOpen_injOn_chartCoord (x : M) :
+    ∃ W : Set M, IsOpen W ∧ x ∈ W ∧ Set.InjOn (chartCoord I x) W := by
+  obtain ⟨W, hWsub, hWo, hxW⟩ := mem_nhds_iff.1
+    ((chartCoord_eventuallyEq I x).and (extChartAt_source_mem_nhds (I := I) x))
+  refine ⟨W, hWo, hxW, fun c hc d hd hcd ↦ ?_⟩
+  refine (extChartAt I x).injOn (hWsub hc).2 (hWsub hd).2 ?_
+  rw [(hWsub hc).1, (hWsub hd).1] at hcd
+  exact (Module.finBasis ℝ E).equivFunL.injective hcd
+
+end chartCoord
 
 /-- **Smooth chart expressions.** Near a point `z` of the interior of the target of the extended
 chart at `x`, the chart expression `f ∘ (extChartAt I x).symm` of a smooth function agrees with a

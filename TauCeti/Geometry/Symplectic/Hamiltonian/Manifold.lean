@@ -46,7 +46,8 @@ Hamiltonian vector field by `c⁻¹`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`), and post-composing the
 Hamiltonian with a real function `φ` rescales it pointwise by `φ'`, `X_{φ ∘ f} = φ'(f) X_f`
 (`TauCeti.SmoothTwoForm.hamiltonianVectorField_comp`). The value of `X_f` at `x` only depends on the
-germ of `f` at `x` (`Filter.EventuallyEq.hamiltonianVectorField_eq`).
+differential of `f` at `x` (`TauCeti.SmoothTwoForm.hamiltonianVectorField_eq_of_mvfderiv_eq`), so
+only on its germ (`Filter.EventuallyEq.hamiltonianVectorField_eq`).
 
 Since `σ` is alternating, `df(X) = σ(X, X) = 0` for a Hamiltonian vector field `X` of `f`: the
 Hamiltonian is constant along the integral curves of `X`, which is conservation of energy
@@ -232,11 +233,18 @@ theorem hamiltonianVectorField_def (σ : SmoothTwoForm I M) (f : M → ℝ) (x :
     σ.hamiltonianVectorField f x = (σ.flat x).inverse (mvfderiv I f x) :=
   (rfl)
 
+/-- The Hamiltonian vector field at `x` depends only on the differential of the Hamiltonian at
+`x`. -/
+theorem hamiltonianVectorField_eq_of_mvfderiv_eq (σ : SmoothTwoForm I M) {x : M}
+    (hfg : mvfderiv I f x = mvfderiv I g x) :
+    σ.hamiltonianVectorField f x = σ.hamiltonianVectorField g x := by
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hfg]
+
 /-- **The Hamiltonian vector field is local**: at `x` it depends only on the germ of the
 Hamiltonian at `x`. -/
 theorem _root_.Filter.EventuallyEq.hamiltonianVectorField_eq (σ : SmoothTwoForm I M) {x : M}
-    (hfg : f =ᶠ[𝓝 x] g) : σ.hamiltonianVectorField f x = σ.hamiltonianVectorField g x := by
-  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hfg.mvfderiv_eq]
+    (hfg : f =ᶠ[𝓝 x] g) : σ.hamiltonianVectorField f x = σ.hamiltonianVectorField g x :=
+  σ.hamiltonianVectorField_eq_of_mvfderiv_eq hfg.mvfderiv_eq
 
 /-- The Hamiltonian vector field of a constant function vanishes. -/
 @[simp]
