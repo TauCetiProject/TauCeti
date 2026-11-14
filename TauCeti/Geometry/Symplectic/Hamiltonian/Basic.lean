@@ -192,6 +192,21 @@ theorem apply_fderiv_hamiltonianVectorField_add (ω : SymplecticForm V) {H : V �
   rw [hH.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) u v]
   exact add_neg_cancel _
 
+/-- For a `J`-invariant symplectic form and a `C²` Hamiltonian, `J dX_H(x)` is symmetric for the
+bilinear form `g = ω(·, J ·)`: `g(J dX_H(x) u, v) = g(u, J dX_H(x) v)`. It is the Hessian of `H`
+at `x`, since `J X_H` is the gradient of `H` for `g`. -/
+theorem Invariant.associatedBilinForm_apply_fderiv_hamiltonianVectorField_comm
+    {ω : SymplecticForm V} {J : AlmostComplexStructure V} (hJ : ω.Invariant J) {H : V → ℝ}
+    {x : V} (hH : ContDiffAt ℝ 2 H x) (u v : V) :
+    ω.associatedBilinForm J (J (fderiv ℝ (ω.hamiltonianVectorField H) x u)) v =
+      ω.associatedBilinForm J u (J (fderiv ℝ (ω.hamiltonianVectorField H) x v)) := by
+  have h := ω.apply_fderiv_hamiltonianVectorField_add hH u v
+  have hneg : ω u (-fderiv ℝ (ω.hamiltonianVectorField H) x v) =
+      -ω u (fderiv ℝ (ω.hamiltonianVectorField H) x v) := map_neg (ω.toBilinForm u) _
+  rw [associatedBilinForm_apply, associatedBilinForm_apply, (ω.invariant_iff J).mp hJ,
+    J.apply_apply, hneg]
+  linarith
+
 /-- A constant Hamiltonian has zero Hamiltonian vector field. -/
 @[simp]
 theorem hamiltonianVectorField_const (ω : SymplecticForm V) (c : ℝ) :
