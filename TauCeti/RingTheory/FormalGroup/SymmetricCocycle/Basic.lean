@@ -90,7 +90,8 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`
 * `TauCeti.isHomogeneous_lazardCocycle`, `TauCeti.isSymmetric_lazardCocycle`,
   `TauCeti.isAddCocycle₂_lazardCocycle`: `C_n` is a homogeneous symmetric additive 2-cocycle
   of degree `n`.
-* `TauCeti.smul_lazardCocycle_eq_zero_iff`: for `n ≥ 2`, `r • C_n = 0 ↔ r = 0`.
+* `TauCeti.smul_lazardCocycle_injective`, `TauCeti.smul_lazardCocycle_eq_zero_iff`: for `n ≥ 2`,
+  `r ↦ r • C_n` is injective, so `r • C_n = 0 ↔ r = 0`.
 
 ## References
 
@@ -495,14 +496,13 @@ theorem isAddCocycle₂_lazardCocycle (n : ℕ) : (lazardCocycle n R).IsAddCocyc
   rw [← map_lazardCocycle (Int.castRingHom R)]
   exact (isAddCocycle₂_lazardCocycle_int n).map _
 
-/-- For `n ≥ 2`, `r • C_n = 0 ↔ r = 0` in every commutative ring `R`, including rings with
-torsion. -/
-@[simp]
-theorem smul_lazardCocycle_eq_zero_iff {n : ℕ} (hn : 2 ≤ n) {r : R} :
-    r • lazardCocycle n R = 0 ↔ r = 0 := by
+/-- For `n ≥ 2`, `r ↦ r • C_n` is injective in every commutative ring `R`, including rings with
+torsion: an integer combination of the coefficients of `C_n` is `1`. -/
+theorem smul_lazardCocycle_injective {n : ℕ} (hn : 2 ≤ n) :
+    Function.Injective fun r : R => r • lazardCocycle n R := by
   obtain ⟨c, hc⟩ :=
     Finset.gcd_eq_one_iff_exists_sum_natCast_mul_eq_one.1 (gcd_choose_div_lazardGcd_eq_one hn)
-  refine smul_eq_zero_iff_left_of_sum_coeff_mul_eq_one (Icc 1 (n - 1))
+  refine smul_left_injective_of_sum_coeff_mul_eq_one (Icc 1 (n - 1))
     (fun i => Finsupp.single 0 i + Finsupp.single 1 (n - i)) (fun i => (c i : R)) ?_
   rw [← Int.cast_one, ← hc, Int.cast_sum]
   refine Finset.sum_congr rfl fun i hi => ?_
@@ -510,11 +510,12 @@ theorem smul_lazardCocycle_eq_zero_iff {n : ℕ} (hn : 2 ≤ n) {r : R} :
   rw [Int.cast_mul, Int.cast_natCast, coeff_single_add_single_lazardCocycle (by omega) (by omega),
     mul_comm]
 
-/-- For `n ≥ 2`, `r ↦ r • C_n` is injective. -/
-theorem smul_lazardCocycle_injective {n : ℕ} (hn : 2 ≤ n) :
-    Function.Injective fun r : R => r • lazardCocycle n R := fun r s h => by
-  rw [← sub_eq_zero, ← smul_lazardCocycle_eq_zero_iff hn, sub_smul]
-  exact sub_eq_zero.2 h
+/-- For `n ≥ 2`, `r • C_n = 0 ↔ r = 0` in every commutative ring `R`, including rings with
+torsion. -/
+@[simp]
+theorem smul_lazardCocycle_eq_zero_iff {n : ℕ} (hn : 2 ≤ n) {r : R} :
+    r • lazardCocycle n R = 0 ↔ r = 0 :=
+  (smul_lazardCocycle_injective hn).eq_iff' (zero_smul R _)
 
 end lazardCocycle
 
