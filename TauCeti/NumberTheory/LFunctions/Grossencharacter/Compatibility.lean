@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Basic
+public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Ideal
 import TauCeti.NumberTheory.LocalField.Uniformizer
-import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Ideal
 
 /-!
 # Hecke's unit relation for a presentation
@@ -31,6 +31,8 @@ Over `ℚ(i)` the angular character `(α) ↦ (α / conj α) ^ (2k)` has finite 
 
 * `TauCeti.LFunctions.Grossencharacter.compatibility`: Hecke's unit relation, and
   `TauCeti.LFunctions.Grossencharacter.compatibility_inv` its form solved for the finite value.
+* `TauCeti.LFunctions.Grossencharacter.coe_idealCharacter_integralIdealsAwayHom`: on the integral
+  ideals prime to `𝔪`, the ideal character of the presented Hecke character is `χ_u N ^ σ`.
 
 ## Implementation notes
 
@@ -66,10 +68,10 @@ namespace Grossencharacter
 
 /-! ### The unit relation -/
 
-/-- On the integral ideals prime to `𝔪`, the ideal character of the presented Hecke character is
-the unitary weight times the norm to the ideal-side shift: both are multiplicative, and at a prime
+/-- **On the integral ideals prime to `𝔪`, the ideal character of the presented Hecke character is
+the unitary weight times the norm to the ideal-side shift**: both are multiplicative, and at a prime
 both are the local component at a uniformizer (`toHeckeCharacter_primeIdele`). -/
-private theorem coe_idealCharacter_integralIdealsAwayHom (χ : Grossencharacter K 𝔪)
+theorem coe_idealCharacter_integralIdealsAwayHom (χ : Grossencharacter K 𝔪)
     (h𝔣 : (⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩ :
       Modulus K) ∣ 𝔪) (J : integralIdealsPrimeTo 𝔪) :
     (χ.toHeckeCharacter.idealCharacter
