@@ -23,16 +23,18 @@ symmetric functions of degree `n`, `TauCeti.stableSymmetricSubmodule ℂ n`, sen
 `χ^μ` of the complex Specht module `S^μ` to the Schur function `s_μ`.
 
 Projecting `ch_n` to an alphabet of `d ≥ n` letters gives back the finite-variable characteristic.
-In every alphabet, including those with fewer than `n` letters, the projection of `ch_n(f)` is
-given by the **cycle-type formula** `(1 / n!) ∑_{π ∈ Sₙ} f(π) p_{ρ(π)}`; grouping the
-permutations by cycle type, this is Macdonald's `∑_ρ z_ρ⁻¹ f(ρ) p_ρ` read in `d` variables. The
-trivial character goes to the complete homogeneous symmetric function `h_n` and the sign
+The **cycle-type formula** `ch_n(f) = ∑_ρ (f(ρ) / z_ρ) p_ρ` expands `ch_n(f)` in the power-sum
+products `p_ρ = TauCeti.stablePsumPart ℂ ρ`; in every alphabet, including those with fewer than
+`n` letters, the projection of `ch_n(f)` is the ungrouped average
+`(1 / n!) ∑_{π ∈ Sₙ} f(π) p_{ρ(π)}`.
+The trivial character goes to the complete homogeneous symmetric function `h_n` and the sign
 character to the elementary symmetric function `e_n`.
 
-The Schur coordinates of `ch_n(f)` are the multiplicities `⟨χ^μ, f⟩`. Hence `f` is a virtual
+The Schur coordinates of `ch_n(f)` are the character pairings `⟨χ^μ, f⟩`, which are the
+multiplicities of the irreducible characters when `f` is a character. Hence `f` is a virtual
 character, an integer combination of characters, exactly when all Schur coordinates of `ch_n(f)`
-are integers: `ch_n` identifies the virtual characters of `Sₙ` with the integral symmetric
-functions of degree `n` written in the Schur basis.
+are integers: `ch_n` identifies the virtual characters of `Sₙ` with the complex symmetric
+functions of degree `n` having integer Schur coordinates, the `ℤ`-span of the Schur basis.
 
 ## Main definitions
 
@@ -47,18 +49,22 @@ functions of degree `n` written in the Schur basis.
   are the character pairings `⟨χ^μ, f⟩`.
 * `TauCeti.stableSymmetricProj_stableFrobeniusCharacteristic`: in `d ≥ n` variables, `ch_n` is the
   finite-variable Frobenius characteristic.
-* `TauCeti.coe_stableSymmetricProj_stableFrobeniusCharacteristic`: the cycle-type formula, in
-  every alphabet.
+* `TauCeti.stableFrobeniusCharacteristic_eq_sum_stablePsumPart`: the cycle-type formula
+  `ch_n(f) = ∑_ρ (f(ρ) / z_ρ) p_ρ`.
+* `TauCeti.coe_stableSymmetricProj_stableFrobeniusCharacteristic_eq_sum_psumPart`: the ungrouped
+  cycle-type formula, in every alphabet.
 * `TauCeti.stableFrobeniusCharacteristic_trivial`, `TauCeti.stableFrobeniusCharacteristic_sign`:
-  `ch_n(1) = h_n` and `ch_n(sgn) = e_n`.
+  `ch_n(1) = h_n` and `ch_n(sgn) = e_n`, with inverse forms
+  `TauCeti.stableFrobeniusCharacteristic_symm_stableHsymm` and
+  `TauCeti.stableFrobeniusCharacteristic_symm_stableEsymm`.
 * `TauCeti.mem_virtualCharacters_iff_forall_exists_stableSchurBasis_repr_eq_intCast`: a class
   function is a virtual character exactly when its characteristic has integral Schur coordinates.
 
 ## References
 
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,
-  Section 7: the characteristic map `ch : R → Λ`, (7.2) for `ch(f) = ∑_ρ z_ρ⁻¹ f(ρ) p_ρ` and
-  (7.3) for `ch(χ^λ) = s_λ`, with `ch(1) = h_n` and `ch(ε) = e_n`.
+  Section 7: the characteristic map `ch : R → Λ`, (7.2) for `ch(f) = ∑_ρ z_ρ⁻¹ f(ρ) p_ρ`, and
+  `ch(χ^λ) = s_λ`, `ch(1) = h_n` and `ch(ε) = e_n`.
 -/
 
 public section
@@ -94,8 +100,8 @@ theorem stableFrobeniusCharacteristic_symm_stableSchur (μ : n.Partition) :
       ClassFunction.ofCharacter (spechtModuleℂ μ).ρ := by
   rw [LinearEquiv.symm_apply_eq, stableFrobeniusCharacteristic_spechtCharacter]
 
-/-- **The Schur coordinates of a Frobenius characteristic are multiplicities**: the coefficient of
-`s_μ` in `ch_n(f)` is the character pairing `⟨χ^μ, f⟩`. -/
+/-- **The Schur coordinates of a Frobenius characteristic are character pairings**: the coefficient
+of `s_μ` in `ch_n(f)` is `⟨χ^μ, f⟩`, the multiplicity of `χ^μ` when `f` is a character. -/
 @[simp]
 theorem stableSchurBasis_repr_stableFrobeniusCharacteristic (f : ClassFunction ℂ (Perm (Fin n)))
     (μ : n.Partition) :
@@ -132,31 +138,61 @@ theorem stableSymmetricProj_stableFrobeniusCharacteristic {d : ℕ} (h : n ≤ d
         frobeniusCharacteristic_spechtCharacter]
   exact congr($key f)
 
-/-- **The cycle-type formula for the Frobenius characteristic**: in every alphabet `Fin d`, the
-projection of `ch_n(f)` is `(1 / n!) ∑_{π ∈ Sₙ} f(π) p_{ρ(π)}`. Unlike
+/-- **The ungrouped cycle-type formula for the Frobenius characteristic**: in every alphabet
+`Fin d`, the projection of `ch_n(f)` is `(1 / n!) ∑_{π ∈ Sₙ} f(π) p_{ρ(π)}`. Unlike
 `TauCeti.frobeniusCharacteristic_eq_sum_psumPart`, there is no condition on the number of letters:
 in fewer than `n` variables both sides are projections of the same symmetric function. -/
-theorem coe_stableSymmetricProj_stableFrobeniusCharacteristic (d : ℕ)
+theorem coe_stableSymmetricProj_stableFrobeniusCharacteristic_eq_sum_psumPart (d : ℕ)
     (f : ClassFunction ℂ (Perm (Fin n))) :
     (stableSymmetricProj ℂ n d (stableFrobeniusCharacteristic n f) : MvPolynomial (Fin d) ℂ) =
       (n.factorial : ℂ)⁻¹ •
         ∑ π : Perm (Fin n), (f : Perm (Fin n) → ℂ) π • psumPart (Fin d) ℂ π.partition := by
-  -- both sides are linear in `f`, and they agree on the basis of Specht characters by the inverse
-  -- of Frobenius's formula, which holds in every alphabet
-  let L : ClassFunction ℂ (Perm (Fin n)) →ₗ[ℂ] MvPolynomial (Fin d) ℂ :=
-    (n.factorial : ℂ)⁻¹ • (Fintype.linearCombination ℂ fun π : Perm (Fin n) =>
-      psumPart (Fin d) ℂ π.partition) ∘ₗ (ClassFunction ℂ (Perm (Fin n))).subtype
-  have hL : (symmetricHomogeneousSubmodule (Fin d) ℂ n).subtype ∘ₗ stableSymmetricProj ℂ n d ∘ₗ
-      (stableFrobeniusCharacteristic n).toLinearMap = L := by
-    refine (spechtCharacterBasis n).ext fun μ => ?_
-    have hfac : (n.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr n.factorial_ne_zero
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Submodule.subtype_apply,
-      spechtCharacterBasis_apply, stableFrobeniusCharacteristic_spechtCharacter,
-      coe_stableSymmetricProj_stableSchur, L, LinearMap.smul_apply,
-      Fintype.linearCombination_apply, ClassFunction.ofCharacter_apply, FDRep.character_ρ,
-      character_spechtModuleℂ_intCast, Int.cast_smul_eq_zsmul, sum_spechtChar_smul_psumPart,
-      ← Nat.cast_smul_eq_nsmul ℂ, smul_smul, inv_mul_cancel₀ hfac, one_smul]
-  exact congr($hL f)
+  simp only [stableFrobeniusCharacteristic_apply, map_sum, map_smul, Submodule.coe_sum,
+    Submodule.coe_smul, coe_stableSymmetricProj_stableSchur, sum_characterPairing_smul_schurPoly]
+
+/-- **The cycle-type formula for the Frobenius characteristic**, `ch_n(f) = ∑_ρ (f(ρ) / z_ρ) p_ρ`:
+the coefficient of the power-sum product `p_ρ` is the value of `f` on the permutations of cycle
+type `ρ` divided by the order `z_ρ` of their centralizer. -/
+theorem stableFrobeniusCharacteristic_eq_sum_stablePsumPart (f : ClassFunction ℂ (Perm (Fin n))) :
+    stableFrobeniusCharacteristic n f =
+      ∑ ρ : n.Partition,
+        (ClassFunction.toConjClasses f (partitionEquivConjClasses n ρ) / (zPart ρ : ℂ)) •
+          stablePsumPart ℂ ρ := by
+  refine stableSymmetricSubmodule_ext fun d => Subtype.ext ?_
+  classical
+  rw [coe_stableSymmetricProj_stableFrobeniusCharacteristic_eq_sum_psumPart]
+  simp only [map_sum, map_smul, Submodule.coe_sum, Submodule.coe_smul,
+    coe_stableSymmetricProj_stablePsumPart]
+  -- group the permutations by cycle type: the class of type `ρ` has `n! / z_ρ` elements
+  rw [← Finset.sum_fiberwise Finset.univ (fun π => (partitionEquivConjClasses n).symm
+    (ConjClasses.mk π)), Finset.smul_sum]
+  refine Finset.sum_congr rfl fun ρ _ => ?_
+  have hmem (π : Perm (Fin n)) : (partitionEquivConjClasses n).symm (ConjClasses.mk π) = ρ ↔
+      π ∈ (partitionEquivConjClasses n ρ).carrier := by
+    rw [Equiv.symm_apply_eq, ConjClasses.mem_carrier_iff_mk_eq]
+  have hterm : ∀ π ∈ Finset.univ.filter
+      fun π => (partitionEquivConjClasses n).symm (ConjClasses.mk π) = ρ,
+      (f : Perm (Fin n) → ℂ) π • psumPart (Fin d) ℂ π.partition =
+        ClassFunction.toConjClasses f (partitionEquivConjClasses n ρ) • psumPart (Fin d) ℂ ρ := by
+    intro π hπ
+    have hπ : ConjClasses.mk π = partitionEquivConjClasses n ρ :=
+      (Equiv.symm_apply_eq _).mp (Finset.mem_filter.mp hπ).2
+    rw [← hπ, ClassFunction.toConjClasses_mk, psumPart_eq_psumPart_partition ℂ hπ]
+  have hcard : ((Finset.univ.filter fun π : Perm (Fin n) =>
+      (partitionEquivConjClasses n).symm (ConjClasses.mk π) = ρ).card : ℂ) * zPart ρ =
+      n.factorial := by
+    rw [← Nat.card_eq_finsetCard, Nat.card_congr (β := (partitionEquivConjClasses n ρ).carrier)
+      (Equiv.subtypeEquivRight fun π => by
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and, hmem])]
+    exact_mod_cast card_carrier_partitionEquivConjClasses_mul_zPart ρ
+  have hz : (zPart ρ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (zPart_pos ρ).ne'
+  have hc : ((Finset.univ.filter fun π : Perm (Fin n) =>
+      (partitionEquivConjClasses n).symm (ConjClasses.mk π) = ρ).card : ℂ) ≠ 0 :=
+    left_ne_zero_of_mul (hcard ▸ Nat.cast_ne_zero.mpr n.factorial_ne_zero)
+  rw [Finset.sum_congr rfl hterm, Finset.sum_const, ← Nat.cast_smul_eq_nsmul ℂ, smul_smul,
+    smul_smul, ← hcard]
+  congr 1
+  field_simp
 
 /-- **The Frobenius characteristic of the trivial character is the complete homogeneous symmetric
 function**, `ch_n(1) = h_n`. -/
@@ -189,6 +225,31 @@ theorem stableFrobeniusCharacteristic_sign :
         coe_signLinearCharacter_apply, FDRep.character_ρ, character_spechtModuleℂ_intCast,
         spechtChar_ones]
   rw [h, stableFrobeniusCharacteristic_spechtCharacter, stableSchur_ones]
+
+/-- The inverse of the Frobenius characteristic takes the complete homogeneous symmetric function
+`h_n` to the trivial character. -/
+@[simp]
+theorem stableFrobeniusCharacteristic_symm_stableHsymm :
+    (stableFrobeniusCharacteristic n).symm (stableHsymm ℂ n) =
+      ClassFunction.ofCharacter (Representation.trivial ℂ (Perm (Fin n)) ℂ) := by
+  rw [LinearEquiv.symm_apply_eq, stableFrobeniusCharacteristic_trivial]
+
+/-- The inverse of the Frobenius characteristic takes the elementary symmetric function `e_n` to
+the sign character. -/
+@[simp]
+theorem stableFrobeniusCharacteristic_symm_stableEsymm :
+    (stableFrobeniusCharacteristic n).symm (stableEsymm ℂ n) =
+      ClassFunction.ofCharacter
+        (Representation.ofLinearCharacter (signLinearCharacter ℂ (Fin n))) := by
+  rw [LinearEquiv.symm_apply_eq, stableFrobeniusCharacteristic_sign]
+
+/-- The inverse of the Frobenius characteristic in degree `0` takes the unit of the symmetric
+functions to the trivial character of `S₀`. -/
+@[simp]
+theorem stableFrobeniusCharacteristic_zero_symm_stableSymmetricOne :
+    (stableFrobeniusCharacteristic 0).symm (stableSymmetricOne ℂ) =
+      ClassFunction.ofCharacter (Representation.trivial ℂ (Perm (Fin 0)) ℂ) := by
+  rw [← stableHsymm_zero, stableFrobeniusCharacteristic_symm_stableHsymm]
 
 /-- **The virtual characters are the class functions with integral Schur coordinates**: a class
 function `f` of `Sₙ` is an integer combination of characters exactly when every Schur coordinate

@@ -28,6 +28,7 @@ functions over a commutative ring. In finitely many variables this is Mathlib's
 
 * `TauCeti.stableEsymm R n`, `TauCeti.stableHsymm R n`: the symmetric functions `e_n` and `h_n`.
 * `TauCeti.stablePsum R hn`: the power sum symmetric function `p_n`, for `hn : n ≠ 0`.
+* `TauCeti.stablePsumPart R μ`: the power-sum product `p_μ = p_{μ₁} p_{μ₂} ⋯` of a partition `μ`.
 * `TauCeti.SymmetricFunction.esymmAlgHom R`: the algebra homomorphism `R[X₀, X₁, …] → Λ_R` sending
   `X r` to `e_(r + 1)`.
 * `TauCeti.SymmetricFunction.esymmAlgEquiv R`: this homomorphism as an algebra equivalence.
@@ -117,6 +118,32 @@ noncomputable def stablePsum {n : ℕ} (hn : n ≠ 0) : stableSymmetricSubmodule
 theorem coe_stableSymmetricProj_stablePsum {n : ℕ} (hn : n ≠ 0) (d : ℕ) :
     (stableSymmetricProj R n d (stablePsum R hn) : MvPolynomial (Fin d) R) = psum (Fin d) R n := by
   rw [stablePsum, stableSymmetricProj_mk]
+
+/-- **The power-sum product** `p_μ = p_{μ₁} p_{μ₂} ⋯` of a partition `μ` of `n`, a symmetric
+function of degree `n`. Unlike the single power sums, it needs no positivity hypothesis: every part
+of a partition is positive. -/
+noncomputable def stablePsumPart {n : ℕ} (μ : n.Partition) : stableSymmetricSubmodule R n :=
+  ⟨fun d => ⟨psumPart (Fin d) R μ, psumPart_mem_symmetricHomogeneousSubmodule R μ⟩,
+    mem_stableSymmetricSubmodule.mpr fun d => aeval_snoc_zero_psumPart d μ⟩
+
+/-- The power-sum product `p_μ`, read in `d` variables, is the power-sum product polynomial. -/
+@[simp]
+theorem coe_stableSymmetricProj_stablePsumPart {n : ℕ} (μ : n.Partition) (d : ℕ) :
+    (stableSymmetricProj R n d (stablePsumPart R μ) : MvPolynomial (Fin d) R) =
+      psumPart (Fin d) R μ := by
+  rw [stablePsumPart, stableSymmetricProj_mk]
+
+/-- The power-sum product of the empty partition is the unit of the symmetric functions. -/
+@[simp]
+theorem stablePsumPart_zero :
+    stablePsumPart R (Nat.Partition.indiscrete 0) = stableSymmetricOne R :=
+  stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp
+
+/-- The power-sum product of the one-row partition `(n)` is the power sum `p_n`. -/
+@[simp]
+theorem stablePsumPart_indiscrete {n : ℕ} (hn : n ≠ 0) :
+    stablePsumPart R (Nat.Partition.indiscrete n) = stablePsum R hn :=
+  stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp [hn]
 
 namespace SymmetricFunction
 

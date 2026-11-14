@@ -82,6 +82,18 @@ theorem aeval_snoc_zero_psum (d : ℕ) {n : ℕ} (hn : n ≠ 0) :
       psum (Fin d) R n := by
   simp [psum, map_sum, Fin.sum_univ_castSucc, hn]
 
+variable {R} in
+/-- **Stability of the power-sum products**: setting the last of `d + 1` variables to zero turns
+`p_μ` in `d + 1` variables into `p_μ` in `d` variables, every part of `μ` being positive.
+
+Not a `simp` lemma, for the same reason as `TauCeti.aeval_snoc_zero_psum`. -/
+theorem aeval_snoc_zero_psumPart (d : ℕ) {n : ℕ} (μ : n.Partition) :
+    aeval (Fin.snoc (X : Fin d → MvPolynomial (Fin d) R) 0) (psumPart (Fin (d + 1)) R μ) =
+      psumPart (Fin d) R μ := by
+  rw [psumPart, psumPart, map_multiset_prod, Multiset.map_map]
+  exact congrArg Multiset.prod <| Multiset.map_congr rfl fun k hk =>
+    aeval_snoc_zero_psum d (μ.parts_pos hk).ne'
+
 /-- **A product of power sums is homogeneous**, of degree the number its partition partitions. -/
 theorem isHomogeneous_psumPart [Fintype σ] {n : ℕ} (μ : n.Partition) :
     (psumPart σ R μ).IsHomogeneous n := by
