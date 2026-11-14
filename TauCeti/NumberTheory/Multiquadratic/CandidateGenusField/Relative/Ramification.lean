@@ -15,11 +15,10 @@ import TauCeti.NumberTheory.Multiquadratic.Quadratic.Ramification
 For a squarefree integer `d`, `candidateGenusField hd` is the compositum of the quadratic fields
 attached to the prime discriminants dividing `fundamentalDiscriminant d`, and
 `candidateGenusFieldBase hd` is the copy of `K = ℚ(√d)` inside it. This file proves that, for such
-a `d` that is moreover not a rational square, every prime of `𝓞 K` is unramified in the candidate
-genus field: it is an unramified extension of `ℚ(√d)` at all finite places. This is the defining
-property of the genus field at the finite places, and the delicate half of the genus-field
-identification, since it is exactly where ramification at `2` and at the primes dividing `d` has to
-be controlled.
+a `d`, every prime of `𝓞 K` is unramified in the candidate genus field: it is an unramified
+extension of `ℚ(√d)` at all finite places. This is the defining property of the genus field at the
+finite places, and the delicate half of the genus-field identification, since it is exactly where
+ramification at `2` and at the primes dividing `d` has to be controlled.
 
 The work is done by the general criterion
 `TauCeti.Multiquadratic.isUnramifiedIn_of_forall_ramificationIdx_eq_two`: a subfield of a
@@ -41,8 +40,8 @@ D. A. Cox, *Primes of the Form x² + ny²*, and F. Lemmermeyer, *Reciprocity Law
 
 ## Main result
 
-* `TauCeti.Multiquadratic.isUnramifiedIn_candidateGenusField`: for squarefree `d` that is not a
-  rational square, every prime of `𝓞 ℚ(√d)` is unramified in the candidate genus field.
+* `TauCeti.Multiquadratic.isUnramifiedIn_candidateGenusField`: for squarefree `d`, every prime of
+  `𝓞 ℚ(√d)` is unramified in the candidate genus field.
 -/
 
 public section
@@ -56,11 +55,11 @@ namespace TauCeti.Multiquadratic
 variable {d : ℤ}
 
 /-- **The candidate genus field is unramified over `ℚ(√d)` at every finite place.** For squarefree
-`d` that is not a rational square, every prime of the ring of integers of the embedded base
+`d`, every prime of the ring of integers of the embedded base
 `ℚ(√d)` is unramified in the ring of integers of `candidateGenusField hd`.
 
 This is the finite-place half of the genus-field property of `candidateGenusField hd`. -/
-theorem isUnramifiedIn_candidateGenusField (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
+theorem isUnramifiedIn_candidateGenusField (hd : Squarefree d)
     (𝔭 : Ideal (𝓞 (candidateGenusFieldBase hd))) :
     Algebra.IsUnramifiedIn (𝓞 (candidateGenusField hd)) 𝔭 := by
   classical
@@ -78,6 +77,9 @@ theorem isUnramifiedIn_candidateGenusField (hd : Squarefree d) (hnsq : ¬ IsSqua
   -- the quadratic base is totally ramified there.
   intro P hlies
   have := hlies
+  -- a rational square has no prime-discriminant factors, so there is nothing to check
+  by_cases hnsq : IsSquare ((d : ℤ) : ℚ)
+  · exact absurd P.property (by simp [genusPrimeDiscriminants_eq_empty_of_isSquare hd hnsq])
   have hdvd : ((primeDiscriminantPrime P.val : ℕ) : ℤ) ∣ fundamentalDiscriminant d :=
     (primeDiscriminantPrime_dvd P.val).trans
       (hprod ▸ Finset.dvd_prod_of_mem _ P.property)

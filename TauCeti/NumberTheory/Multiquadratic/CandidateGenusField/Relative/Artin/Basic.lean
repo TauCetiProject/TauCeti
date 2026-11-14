@@ -241,7 +241,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinElement
         (NumberFieldArithmetic.artinElement
           IsMulCommutative.is_comm.comm qIdeal
           (fun Q hQ hQl =>
-            (isUnramifiedIn_candidateGenusField hd hnsq qIdeal) Q hQ hQl)) =
+            (isUnramifiedIn_candidateGenusField hd qIdeal) Q hQ hQl)) =
       Multiplicative.ofAdd
         (TauCeti.elementaryTwoQuotientMk
           (NarrowClassGroup.mk0
@@ -269,7 +269,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinElement
   exact NumberFieldArithmetic.isArithFrobAt_artinElement
     IsMulCommutative.is_comm.comm qIdeal
       (fun Q hQ hQl =>
-        (isUnramifiedIn_candidateGenusField hd hnsq qIdeal) Q hQ hQl) Q
+        (isUnramifiedIn_candidateGenusField hd qIdeal) Q hQ hQl) Q
 
 /-! ### The Frobenius at an arbitrary unramified prime -/
 
@@ -315,7 +315,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_at_prim
     have : Q.LiesOver (Ideal.span {(TauCeti.rationalPrimeBelow v : ℤ)}) :=
       Ideal.LiesOver.trans Q v.asIdeal (Ideal.span {(TauCeti.rationalPrimeBelow v : ℤ)})
     have : Algebra.IsUnramifiedAt (𝓞 (candidateGenusFieldBase hd)) Q :=
-      isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q inferInstance inferInstance
+      isUnramifiedIn_candidateGenusField hd v.asIdeal Q inferInstance inferInstance
     obtain ⟨ρ, hρ⟩ := NumberField.exists_isArithFrobAt_int_of_liesOver
       (K := candidateGenusField hd) (p := TauCeti.rationalPrimeBelow v) Q
     have hcard : Nat.card (𝓞 (candidateGenusFieldBase hd) ⧸
@@ -371,7 +371,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway
     (I : NumberFieldArithmetic.idealsAway (candidateGenusFieldBase hd) S) :
     autCandidateGenusFieldEquivNarrowElementaryTwoQuotient hd hnsq
         (NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm S
-          (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
+          (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd v.asIdeal Q
             inferInstance inferInstance) I) =
       Multiplicative.ofAdd
         (TauCeti.elementaryTwoQuotientMk
@@ -394,7 +394,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway
   have key : ((autCandidateGenusFieldEquivNarrowElementaryTwoQuotient hd
       hnsq).symm.toMonoidHom).comp cls =
       NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm S
-        (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
+        (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd v.asIdeal Q
           inferInstance inferInstance) := by
     refine NumberFieldArithmetic.artinHomAway_eq_of_apply_prime _ S _ _ ?_
     intro J v _ hJ Q hQp hQl σ hσ
@@ -423,7 +423,7 @@ theorem artinHomAway_candidateGenusField_eq_one_iff
     (S : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))))
     (I : NumberFieldArithmetic.idealsAway (candidateGenusFieldBase hd) S) :
     NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm S
-        (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
+        (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd v.asIdeal Q
           inferInstance inferInstance) I = 1 ↔
       TauCeti.elementaryTwoQuotientMk
         (NarrowClassGroup.mk (I : (FractionalIdeal (𝓞 (candidateGenusFieldBase hd))⁰
@@ -463,7 +463,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway_excl
     autCandidateGenusFieldEquivNarrowElementaryTwoQuotient hd hnsq
         (NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm
           (genusFieldArtinExcludedPrimes hd)
-          (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
+          (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd v.asIdeal Q
             inferInstance inferInstance) I) =
       Multiplicative.ofAdd
         (TauCeti.elementaryTwoQuotientMk
@@ -482,7 +482,7 @@ theorem artinHomAwayIntegral_candidateGenusField_surjective
       (NumberFieldArithmetic.artinHomAwayIntegral (L := candidateGenusField hd)
         (fun σ τ ↦ (commute_iff_eq σ τ).2 (IsMulCommutative.is_comm.comm σ τ))
         (genusFieldArtinExcludedPrimes hd)
-        (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
+        (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd v.asIdeal Q
           inferInstance inferInstance)) := by
   intro σ
   obtain ⟨C, hC⟩ := TauCeti.elementaryTwoQuotientMk_surjective
@@ -534,7 +534,7 @@ theorem artinHomAway_candidateGenusField_surjective
     Function.Surjective
       (NumberFieldArithmetic.artinHomAway (L := candidateGenusField hd)
         IsMulCommutative.is_comm.comm (genusFieldArtinExcludedPrimes hd)
-        (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
+        (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd v.asIdeal Q
           inferInstance inferInstance)) := by
   intro σ
   obtain ⟨I, hI⟩ := artinHomAwayIntegral_candidateGenusField_surjective hd hnsq σ
