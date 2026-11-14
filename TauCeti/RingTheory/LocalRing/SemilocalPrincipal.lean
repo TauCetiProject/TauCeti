@@ -5,41 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Spectrum.Maximal.Defs
+public import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
-public import Mathlib.RingTheory.Finiteness.Defs
-import Mathlib.RingTheory.Artinian.Module
-import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.QuasiFinite.Basic
+public import Mathlib.RingTheory.Spectrum.Maximal.Defs
 import Mathlib.RingTheory.LocalProperties.Basic
-import Mathlib.RingTheory.LocalRing.ResidueField.Defs
-import TauCeti.RingTheory.LocalRing.Etale
 import TauCeti.RingTheory.Localization.Annihilator
+import TauCeti.RingTheory.Localization.Ideal
 
 /-!
-# Locally principal ideals in finite algebras over local rings
+# Locally principal ideals over semilocal rings
 
-Let `B` be a commutative ring with finitely many maximal ideals, such as a finite algebra over a
-local ring `R` (`TauCeti.IsLocalRing.finite_maximalSpectrum_of_module_finite`). Every ideal `I` of
-`B` whose localization at each maximal ideal is principal is globally principal
-(`Ideal.exists_eq_span_singleton_of_finite_maximalSpectrum`), without any domain or Noetherianity
-hypothesis: clearing unit denominators gives local generators `a_M ∈ I` of `I_M`, and Chinese
-remainder coefficients `c_M` congruent to `1` modulo `M` and `0` modulo other maximal ideals
-combine into `u = ∑_M c_M a_M`, which is an associate of `a_M` in each `B_M`. If an ideal `J` is
-locally the annihilator of `I` at every maximal ideal, then `J = Ann(u)` globally since
-annihilators of principal ideals commute with localization.
+On an affine scheme `Z = V(I * J)` finite over `Spec R` with `R` local, an effective Cartier
+divisor `I` and a residual ideal sheaf `J` satisfy stalkwise equations `I_z = (a_z)` and
+`J_z = Ann(a_z)` inside a coordinate ring `B = Γ(Z, ⊤)` that may contain zero-divisors and need not
+be Noetherian. Because `B` is finite over the local ring `R`, `B` is semilocal, and semilocality
+promotes these stalkwise equations to a single global element `u ∈ B` with `I = (u)` and
+`J = Ann(u)` — the algebraic input for splitting off one section at a time in Katz–Mazur 1.8.3.
 
 ## Main results
 
-* `TauCeti.IsLocalRing.finite_maximalSpectrum_of_module_finite`: a commutative algebra which is
-  module-finite over a local ring has only finitely many maximal ideals.
+* `TauCeti.finite_maximalSpectrum_of_isIntegral_of_quasiFinite`: an integral quasi-finite algebra
+  over a ring with finitely many maximal ideals has finitely many maximal ideals.
 * `Ideal.exists_eq_span_singleton_of_finite_maximalSpectrum`: over a commutative ring with finitely
   many maximal ideals, an ideal that is principal at every maximal ideal is principal.
 * `Ideal.exists_eq_span_singleton_and_annihilator_of_finite_maximalSpectrum`: if in addition `J` is
   locally the annihilator of `I` at every maximal ideal, the generator `u` of `I` has annihilator
   `J`.
-* `Ideal.exists_eq_span_singleton_of_isLocalRing` and
-  `Ideal.exists_eq_span_singleton_and_annihilator_of_isLocalRing`: specializations to a finite
-  algebra over a local ring.
 
 ## References
 
@@ -50,50 +42,27 @@ public section
 
 open Function
 
-namespace TauCeti.IsLocalRing
+namespace TauCeti
 
-/-- **A finite algebra over a local ring is semilocal.** Every maximal ideal of `B` contains the
-extended maximal ideal `𝔪_R B`, and `B ⧸ 𝔪_R B` is finite over the residue field `R ⧸ 𝔪_R`, hence
-Artinian with finitely many prime ideals. -/
-theorem finite_maximalSpectrum_of_module_finite (R : Type*) {B : Type*} [CommRing R]
-    [IsLocalRing R] [CommRing B] [Algebra R B] [Module.Finite R B] :
-    Finite (MaximalSpectrum B) := by
-  let p := IsLocalRing.maximalIdeal R
-  let pB := p.map (algebraMap R B)
-  let _ : Field (R ⧸ p) := Ideal.Quotient.field p
-  have : Module.Finite (R ⧸ p) (B ⧸ pB) := .of_restrictScalars_finite R _ _
-  have : IsArtinianRing (B ⧸ pB) := IsArtinianRing.of_finite (R ⧸ p) (B ⧸ pB)
-  refine Finite.of_injective (β := PrimeSpectrum (B ⧸ pB))
-    (fun M ↦ ⟨M.asIdeal.map (Ideal.Quotient.mk pB),
-      Ideal.map_isPrime_of_surjective Ideal.Quotient.mk_surjective
-        (by simpa [Ideal.mk_ker] using map_maximalIdeal_le_of_isMaximal M.isMaximal)⟩)
-    fun M₁ M₂ h ↦ MaximalSpectrum.ext ?_
-  have hcomap := congrArg (fun q : PrimeSpectrum (B ⧸ pB) ↦ q.asIdeal.comap (Ideal.Quotient.mk pB))
-    h
-  rwa [Ideal.comap_map_of_surjective' _ Ideal.Quotient.mk_surjective,
-    Ideal.comap_map_of_surjective' _ Ideal.Quotient.mk_surjective, Ideal.mk_ker,
-    sup_eq_left.mpr (map_maximalIdeal_le_of_isMaximal (R := R) M₁.isMaximal),
-    sup_eq_left.mpr (map_maximalIdeal_le_of_isMaximal (R := R) M₂.isMaximal)] at hcomap
+/-- **An integral quasi-finite algebra over a semilocal ring is semilocal**: if `R` has finitely
+many maximal ideals and `B` is an integral quasi-finite `R`-algebra (in particular, a module-finite
+`R`-algebra), then `B` has finitely many maximal ideals. -/
+theorem finite_maximalSpectrum_of_isIntegral_of_quasiFinite (R : Type*) {B : Type*} [CommRing R]
+    [Finite (MaximalSpectrum R)] [CommRing B] [Algebra R B] [Algebra.IsIntegral R B]
+    [Algebra.QuasiFinite R B] : Finite (MaximalSpectrum B) := by
+  -- Every maximal ideal `M` of `B` contracts to a maximal ideal of `R` by integrality, and each
+  -- maximal ideal of `R` has only finitely many primes of `B` lying over it by quasi-finiteness.
+  have : ∀ m : MaximalSpectrum R, Finite (m.asIdeal.primesOver B) :=
+    fun m ↦ (Algebra.QuasiFinite.finite_primesOver m.asIdeal (S := B)).to_subtype
+  refine Finite.of_injective (β := (m : MaximalSpectrum R) × m.asIdeal.primesOver B)
+    (fun M ↦
+      have := M.isMaximal
+      ⟨⟨M.asIdeal.under R, inferInstance⟩, ⟨M.asIdeal, M.isMaximal.isPrime, ⟨rfl⟩⟩⟩)
+    fun M₁ M₂ h ↦ MaximalSpectrum.ext (congrArg (fun x ↦ x.2.1) h)
 
-end TauCeti.IsLocalRing
+end TauCeti
 
 namespace Ideal
-
-private lemma exists_mem_map_atPrime_eq_span_singleton {B : Type*} [CommRing B] (I M : Ideal B)
-    [M.IsPrime] {x : Localization.AtPrime M}
-    (hx : I.map (algebraMap B (Localization.AtPrime M)) = Ideal.span {x}) :
-    ∃ a ∈ I, I.map (algebraMap B (Localization.AtPrime M)) =
-      Ideal.span {algebraMap B (Localization.AtPrime M) a} := by
-  obtain ⟨b, s, rfl⟩ := IsLocalization.exists_mk'_eq M.primeCompl x
-  obtain ⟨t, ht, htb⟩ := (IsLocalization.mk'_mem_map_algebraMap_iff M.primeCompl _ _ _ _).mp
-    (hx ▸ Ideal.subset_span rfl)
-  refine ⟨t * b, htb, hx.trans ?_⟩
-  have hu := (IsLocalization.map_units (Localization.AtPrime M) ⟨t, ht⟩).mul
-    (IsLocalization.map_units (Localization.AtPrime M) s)
-  have hmul : algebraMap B (Localization.AtPrime M) (t * b) =
-      (algebraMap B _ t * algebraMap B _ s) * IsLocalization.mk' (Localization.AtPrime M) b s := by
-    rw [map_mul, mul_assoc, mul_comm (algebraMap B _ s), IsLocalization.mk'_spec]
-  rw [hmul, Ideal.span_singleton_mul_left_unit hu]
 
 private lemma span_singleton_sum_eq_atPrime {B : Type*} [CommRing B] [Fintype (MaximalSpectrum B)]
     (a c : MaximalSpectrum B → B) (m : MaximalSpectrum B)
@@ -135,7 +104,7 @@ theorem exists_eq_span_singleton_of_finite_maximalSpectrum {B : Type*} [CommRing
   choose a haI ha using fun m : MaximalSpectrum B ↦
     have := m.isMaximal
     let ⟨x, hx⟩ := hI m.asIdeal
-    exists_mem_map_atPrime_eq_span_singleton I m.asIdeal hx
+    I.exists_mem_map_eq_span_singleton m.asIdeal.primeCompl hx
   have hcop : Pairwise (IsCoprime on fun m : MaximalSpectrum B ↦ m.asIdeal) := fun m₁ m₂ hm ↦
     have := m₁.isMaximal; have := m₂.isMaximal
     Ideal.isCoprime_of_isMaximal fun heq ↦ hm (MaximalSpectrum.ext heq)
@@ -167,24 +136,5 @@ theorem exists_eq_span_singleton_and_annihilator_of_finite_maximalSpectrum {B : 
   obtain ⟨x, hx, hJ⟩ := hIJ M
   rw [Ideal.map_span, Set.image_singleton] at hx
   rw [hJ, ← hx, IsLocalization.map_annihilator_span_singleton M.primeCompl]
-
-/-- **Locally principal ideals in a finite algebra over a local ring are principal.** -/
-theorem exists_eq_span_singleton_of_isLocalRing (R : Type*) {B : Type*} [CommRing R]
-    [IsLocalRing R] [CommRing B] [Algebra R B] [Module.Finite R B] (I : Ideal B)
-    (hI : ∀ (M : Ideal B) [M.IsMaximal], ∃ x : Localization.AtPrime M,
-      I.map (algebraMap B (Localization.AtPrime M)) = Ideal.span {x}) :
-    ∃ u : B, I = Ideal.span {u} :=
-  have := TauCeti.IsLocalRing.finite_maximalSpectrum_of_module_finite R (B := B)
-  I.exists_eq_span_singleton_of_finite_maximalSpectrum hI
-
-/-- **Locally principal ideals and their annihilators in a finite algebra over a local ring.** -/
-theorem exists_eq_span_singleton_and_annihilator_of_isLocalRing (R : Type*) {B : Type*}
-    [CommRing R] [IsLocalRing R] [CommRing B] [Algebra R B] [Module.Finite R B] (I J : Ideal B)
-    (hIJ : ∀ (M : Ideal B) [M.IsMaximal], ∃ x : Localization.AtPrime M,
-      I.map (algebraMap B (Localization.AtPrime M)) = Ideal.span {x} ∧
-        J.map (algebraMap B (Localization.AtPrime M)) = (Ideal.span {x}).annihilator) :
-    ∃ u : B, I = Ideal.span {u} ∧ J = (Ideal.span {u}).annihilator :=
-  have := TauCeti.IsLocalRing.finite_maximalSpectrum_of_module_finite R (B := B)
-  I.exists_eq_span_singleton_and_annihilator_of_finite_maximalSpectrum J hIJ
 
 end Ideal

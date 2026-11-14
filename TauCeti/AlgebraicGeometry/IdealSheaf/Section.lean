@@ -137,3 +137,39 @@ theorem isIso_subschemeι_comp_iff [IsSeparated f] (I : X.IdealSheafData) :
 end Scheme.IdealSheafData
 
 end AlgebraicGeometry
+
+namespace TauCeti
+
+open AlgebraicGeometry Scheme.IdealSheafData
+
+variable {X S : Scheme.{u}} {f : X ⟶ S}
+
+/-- Each morphism in a finite family factors through the closed subscheme cut out by the product of
+their kernels. -/
+theorem prod_ker_le_ker {ι : Type*} [Fintype ι] (x : ι → (S ⟶ X)) (i : ι) :
+    ∏ k, (x k).ker ≤ (x i).ker := by
+  classical
+  rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i)]
+  exact mul_le_of_le_one_right bot_le le_top
+
+/-- The canonical lift of `x i : S ⟶ X` in a finite family to the closed subscheme cut out by
+`∏ k, (x k).ker`. -/
+noncomputable def prodKerSection {ι : Type*} [Fintype ι] (x : ι → (S ⟶ X)) (i : ι) :
+    S ⟶ (∏ k, (x k).ker).subscheme :=
+  IsClosedImmersion.lift (∏ k, (x k).ker).subschemeι (x i)
+    ((ker_subschemeι _).trans_le (prod_ker_le_ker x i))
+
+/-- Composing `prodKerSection x i` with the closed immersion into `X` recovers `x i`. -/
+@[reassoc (attr := simp)]
+theorem prodKerSection_subschemeι {ι : Type*} [Fintype ι] (x : ι → (S ⟶ X)) (i : ι) :
+    prodKerSection x i ≫ (∏ k, (x k).ker).subschemeι = x i :=
+  IsClosedImmersion.lift_fac _ _ _
+
+/-- When each `x i` is a section of `f : X ⟶ S`, `prodKerSection x i` is a section of
+`V(∏ k, (x k).ker) ⟶ S`. -/
+@[reassoc]
+theorem prodKerSection_comp {ι : Type*} [Fintype ι] {x : ι → (S ⟶ X)} (hx : ∀ i, x i ≫ f = 𝟙 S)
+    (i : ι) : prodKerSection x i ≫ ((∏ k, (x k).ker).subschemeι ≫ f) = 𝟙 S := by
+  rw [← Category.assoc, prodKerSection_subschemeι, hx]
+
+end TauCeti
