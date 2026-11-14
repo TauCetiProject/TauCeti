@@ -145,9 +145,15 @@ private theorem linearIndependent_vertex_sum_arrow (he : OrthogonalIdempotents e
       ⟨n, by simpa [hn] using Ideal.pow_mem_pow hmem n⟩)
   -- The vertex classes are independent in `A ⧸ J`, hence in `A ⧸ J ^ 2`, and their span meets the
   -- span of the arrow classes, which lies in the kernel of `ψ`, trivially.
-  have hvert : LinearIndependent k (ψ ∘ fun i => Ideal.Quotient.mk (J ^ 2) (e i)) :=
+  have hvert' : LinearIndependent k (Ideal.Quotient.mk J ∘ e) :=
     (he.map (Ideal.Quotient.mk J)).linearIndependent fun i h =>
       hnotMem i (Ideal.Quotient.eq_zero_iff_mem.mp h)
+  have hvert : LinearIndependent k (ψ ∘ fun i => Ideal.Quotient.mk (J ^ 2) (e i)) := by
+    have hcomp : (ψ ∘ fun i => Ideal.Quotient.mk (J ^ 2) (e i)) = Ideal.Quotient.mk J ∘ e := by
+      ext i
+      simp [ψ]
+    rw [hcomp]
+    exact hvert'
   have harrowIndependent : LinearIndependent k fun a : (Σ i j : Q, i ⟶ j) =>
       Ideal.Quotient.mk (J ^ 2) (f a.2.2) :=
     (he.map (Ideal.Quotient.mk (J ^ 2))).linearIndependent_sigma
