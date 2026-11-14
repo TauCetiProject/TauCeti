@@ -61,8 +61,6 @@ route to Morse homology.
   consists entirely of critical points and is constant.
 * `IsIntegralCurve.exists_gradient_ne_zero`: a trajectory between distinct limits is
   not stationary.
-* `IsIntegralCurve.eq_of_tendsto_value_atBot_of_tendsto_value_atTop`: a trajectory along which
-  the value has the same limit at both ends is constant.
 * `IsIntegralCurve.eq_const_of_tendsto`: a trajectory with the same limit at both ends is
   constant.
 * `Flow.IsNegativeGradient`: every orbit of a flow solves the negative gradient equation.
@@ -265,29 +263,23 @@ theorem exists_gradient_ne_zero (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)
   exact hpq ((tendsto_nhds_unique tendsto_const_nhds hbot).symm.trans
     (tendsto_nhds_unique tendsto_const_nhds htop))
 
-/-- **A negative gradient trajectory whose value has the same limit at both ends is constant.** The
-value of `f` decreases along the trajectory and has the same limit `c` at both ends, so it is
-constant; hence the gradient vanishes along the trajectory. -/
-theorem eq_of_tendsto_value_atBot_of_tendsto_value_atTop
-    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t)) {c : ℝ}
-    (hbot : Tendsto (f ∘ γ) atBot (𝓝 c)) (htop : Tendsto (f ∘ γ) atTop (𝓝 c)) (t u : ℝ) :
-    γ t = γ u := by
-  have hanti := antitone_comp_neg_gradient hγ hf
-  have hval : ∀ v, f (γ v) = c := fun v ↦
-    le_antisymm (hanti.ge_of_tendsto hbot v) (hanti.le_of_tendsto htop v)
-  exact is_const_of_deriv_eq_zero (fun v ↦ (hγ v).differentiableAt) (fun v ↦ by
-    simp only [(hγ v).deriv,
-      gradient_eq_zero_of_eventually_const_value hγ (Eventually.of_forall hval), neg_zero]) t u
-
 /-- **A negative gradient trajectory with the same limit at both ends is constant.** If `f` is
-differentiable along the trajectory and continuous at the common limit `p`, then the value of `f`
-has the same limit `f p` at both ends, so the trajectory is constant and stays at `p`. -/
+differentiable along the trajectory and continuous at the common limit `p`, then `f` takes the
+value `f p` all along it, so its gradient vanishes there and the trajectory stays at `p`. -/
 theorem eq_const_of_tendsto (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
     (hf : ∀ t, DifferentiableAt ℝ f (γ t)) {p : E} (hfp : ContinuousAt f p)
-    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 p)) : γ = fun _ ↦ p :=
-  funext fun t ↦ tendsto_nhds_unique (tendsto_const_nhds.congr fun u ↦
-    hγ.eq_of_tendsto_value_atBot_of_tendsto_value_atTop hf (hfp.tendsto.comp hbot)
-      (hfp.tendsto.comp htop) t u) htop
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 p)) : γ = fun _ ↦ p := by
+  have hanti := antitone_comp_neg_gradient hγ hf
+  have hval : ∀ t, f (γ t) = f p := fun t ↦
+    le_antisymm (hanti.ge_of_tendsto (hfp.tendsto.comp hbot) t)
+      (hanti.le_of_tendsto (hfp.tendsto.comp htop) t)
+  have hconst : ∀ t, γ t = γ 0 := fun t ↦
+    is_const_of_deriv_eq_zero (fun t ↦ (hγ t).differentiableAt) (fun u ↦ by
+      simp only [(hγ u).deriv, gradient_eq_zero_of_eventually_const_value hγ
+        (Eventually.of_forall fun r ↦ hval r), neg_zero]) t 0
+  funext t
+  rw [hconst t]
+  exact tendsto_nhds_unique tendsto_const_nhds (htop.congr hconst)
 
 end IsIntegralCurve
 
