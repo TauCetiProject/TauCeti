@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Laplacian.LocalExtr
+public import TauCeti.Analysis.InnerProductSpace.Laplacian.DriftMaximumPrinciple
 
 /-!
 # The minimum principle for lower envelopes and least eigenvalues
@@ -22,7 +22,7 @@ function is `C²` at `x₀`, its first derivative vanishes and its Laplacian is 
 convenient section through them, for instance a moving frame.
 
 This gives a strict minimum principle for lower envelopes
-(`TauCeti.le_of_laplacian_add_fderiv_neg_of_isMinOn`): if `q ≥ m` on `frontier K` and, at each
+(`TauCeti.ge_of_laplacian_add_fderiv_neg_of_isMinOn`): if `q ≥ m` on `frontier K` and, at each
 interior point `x` and each parameter `s` minimizing `q x` with `q x s < m`, some section `γ`
 through `s` and some drift vector `b` satisfy `Δ (q · γ) x + D (q · γ) x b < 0`, then `q ≥ m` on
 `K × S`. Its quantitative form (`TauCeti.min_le_of_laplacian_le_mul_add_of_isMinOn`) assumes, at
@@ -49,7 +49,7 @@ large-parameter Seiberg–Witten solutions from below.
 * `TauCeti.isLocalMin_of_isMinOn_prod`, `TauCeti.laplacian_nonneg_of_isMinOn_prod`: an interior
   minimizer `(x₀, s₀)` of `q` over `K × S` is a local minimum of `q · γ` for every local section
   `γ` of `S` through `s₀`, so the Laplacian of `q · γ` is nonnegative at `x₀`.
-* `TauCeti.le_of_laplacian_add_fderiv_neg_of_isMinOn`: the strict minimum principle for lower
+* `TauCeti.ge_of_laplacian_add_fderiv_neg_of_isMinOn`: the strict minimum principle for lower
   envelopes.
 * `TauCeti.min_le_of_laplacian_le_mul_add_of_isMinOn`: the quantitative minimum principle for
   lower envelopes.
@@ -101,7 +101,7 @@ jointly continuous on `K × S`. Suppose that `q ≥ m` on `frontier K × S`, and
 point `x` and each parameter `s` minimizing `q x` over `S` with `q x s < m`, there are a local
 section `γ` of `S` through `s`, with `y ↦ q y (γ y)` `C²` at `x`, and a drift vector `b` such that
 `Δ (q · γ) x + D (q · γ) x b < 0`. Then `q ≥ m` on `K × S`. -/
-theorem le_of_laplacian_add_fderiv_neg_of_isMinOn {K : Set E} (hK : IsCompact K) {S : Set ι}
+theorem ge_of_laplacian_add_fderiv_neg_of_isMinOn {K : Set E} (hK : IsCompact K) {S : Set ι}
     (hS : IsCompact S) {q : E → ι → ℝ} {m : ℝ}
     (hcont : ContinuousOn (fun p : E × ι ↦ q p.1 p.2) (K ×ˢ S))
     (hsub : ∀ ⦃x⦄, x ∈ interior K → ∀ ⦃s⦄, s ∈ S → IsMinOn (q x) S s → q x s < m →
@@ -116,17 +116,13 @@ theorem le_of_laplacian_add_fderiv_neg_of_isMinOn {K : Set E} (hK : IsCompact K)
   dsimp only
   by_cases hfr : x₀ ∈ frontier K
   · exact hbdry hfr hs₀
-  have hint : x₀ ∈ interior K := by
-    by_contra h
-    exact hfr ⟨subset_closure hx₀, h⟩
+  have hint := (mem_interior_iff_notMem_frontier hx₀).2 hfr
   by_contra! hm
   obtain ⟨γ, hγx, hγ, hcd, b, hlt⟩ :=
     hsub hint hs₀ (fun t ht ↦ isMinOn_iff.1 hmin (x₀, t) ⟨hx₀, ht⟩) hm
-  -- At the interior minimizer the derivative vanishes and the Laplacian is nonnegative.
-  have hloc := isLocalMin_of_isMinOn_prod hint hmin hγx hγ
-  have hlap := laplacian_nonneg_of_isLocalMin hcd hloc
-  rw [hloc.fderiv_eq_zero, zero_apply, add_zero] at hlt
-  exact hlt.not_ge hlap
+  -- The interior minimizer is a local minimum along `γ`, which the strict inequality forbids.
+  exact not_isLocalMin_of_laplacian_add_fderiv_neg hcd hlt
+    (isLocalMin_of_isMinOn_prod hint hmin hγx hγ)
 
 /-- **The minimum principle for lower envelopes.** Let `K` and `S` be compact and let `q` be
 jointly continuous on `K × S`. Suppose that `q ≥ m` on `frontier K × S`, and that at each interior
@@ -145,7 +141,7 @@ theorem min_le_of_laplacian_le_mul_add_of_isMinOn {K : Set E} (hK : IsCompact K)
         ∃ b : E, Δ (fun y ↦ q y (γ y)) x + fderiv ℝ (fun y ↦ q y (γ y)) x b ≤ c x * q x s + k)
     (hbdry : ∀ ⦃x⦄, x ∈ frontier K → ∀ ⦃s⦄, s ∈ S → m ≤ q x s) :
     ∀ ⦃x⦄, x ∈ K → ∀ ⦃s⦄, s ∈ S → min m (-(k / c₀)) ≤ q x s := by
-  refine le_of_laplacian_add_fderiv_neg_of_isMinOn hK hS hcont (fun x hx s hs hmin hlt ↦ ?_)
+  refine ge_of_laplacian_add_fderiv_neg_of_isMinOn hK hS hcont (fun x hx s hs hmin hlt ↦ ?_)
     (fun x hx s hs ↦ min_le_of_left_le (hbdry hx hs))
   obtain ⟨γ, hγx, hγ, hcd, b, hle⟩ := hsuper hx hs hmin hlt
   refine ⟨γ, hγx, hγ, hcd, b, hle.trans_lt ?_⟩
@@ -188,9 +184,7 @@ theorem min_mul_norm_sq_le_of_laplacian_le_mul_add_of_isMinOn {K : Set E} (hK : 
   rcases eq_or_ne v 0 with rfl | hv
   · simp
   -- Rescale `v` to the unit vector `u = ‖v‖⁻¹ v`, for which `B x v v = ‖v‖² B x u u`.
-  have hv' : ‖v‖ ≠ 0 := norm_ne_zero_iff.2 hv
-  have hu : ‖v‖⁻¹ • v ∈ sphere (0 : V) 1 := by
-    rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hv']
+  have hu : ‖v‖⁻¹ • v ∈ sphere (0 : V) 1 := mem_sphere_zero_iff_norm.2 (norm_smul_inv_norm hv)
   have hBv : B x v v = ‖v‖ ^ 2 * B x (‖v‖⁻¹ • v) (‖v‖⁻¹ • v) := by
     rw [LinearMap.map_smul₂, LinearMap.map_smul, smul_eq_mul, smul_eq_mul]
     field_simp
