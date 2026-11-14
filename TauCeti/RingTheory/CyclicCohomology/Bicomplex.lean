@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.CyclicCohomology.Cohomology
-public import TauCeti.RingTheory.CyclicCohomology.RowExactness
+public import TauCeti.RingTheory.CyclicCohomology.ConnesOperator
 public import Mathlib.Algebra.Homology.QuasiIso
 import TauCeti.Algebra.Homology.ModuleCat.Basic
+import TauCeti.RingTheory.CyclicCohomology.RowExactness
 
 /-!
 # The total complex of the cyclic bicomplex
