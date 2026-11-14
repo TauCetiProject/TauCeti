@@ -46,6 +46,9 @@ two zigzags made of a cup, a cap and a strand straighten out to the identity str
 * `TauCeti.TLDiagram.matching_tensor_assoc`, `TauCeti.TLDiagram.matching_zero_tensor`,
   `TauCeti.TLDiagram.matching_tensor_zero`, `TauCeti.TLDiagram.tensor_id_zero`: associativity and
   unitality of juxtaposition.
+* `TauCeti.TLDiagram.matching_tensor_eq_iff`, `TauCeti.TLDiagram.tensor_left_inj`,
+  `TauCeti.TLDiagram.tensor_right_inj`: juxtaposition determines the matchings of both factors
+  and is injective in each factor.
 * `TauCeti.TLDiagram.cup_tensor_id_comp_id_tensor_cap`,
   `TauCeti.TLDiagram.id_tensor_cup_comp_cap_tensor_id`: the zigzag identities.
 
@@ -266,67 +269,6 @@ private theorem glueFn_add (a i : ℕ) :
 
 end Glue
 
-/-! ### Nesting, juxtaposition and nesting again -/
-
-/-- Juxtaposing on the right does not move a block nested into the left factor. -/
-private theorem appendFn_nestFn_left {K K' c L : ℕ} (φ ψ χ : ℕ → ℕ) (hc : c ≤ K) :
-    appendFn (K + L) K' (nestFn c L φ ψ) χ = nestFn c L (appendFn K K' φ χ) ψ := by
-  funext q
-  rcases exists_shiftFrom_or_add c L q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
-  · rw [nestFn_shiftFrom]
-    by_cases h₁ : v < K
-    · have : shiftFrom c L v < K + L := by unfold shiftFrom; split_ifs <;> omega
-      rw [appendFn_of_lt _ _ this, nestFn_shiftFrom, appendFn_of_lt _ _ h₁]
-    rw [shiftFrom_of_le (by omega)]
-    by_cases h₂ : v < K + K'
-    · rw [appendFn_of_le_of_lt _ _ (by omega) (by omega), appendFn_of_le_of_lt _ _ (by omega) h₂,
-        shiftFrom_of_le (by omega), Nat.add_sub_add_right]
-      omega
-    · rw [appendFn_of_le _ _ (by omega), appendFn_of_le _ _ (by omega), shiftFrom_of_le (by omega)]
-  · rw [appendFn_of_lt _ _ (by omega), nestFn_add _ _ _ hj, nestFn_add _ _ _ hj]
-
-/-- Juxtaposing on the left moves a block nested into the right factor past the left factor. -/
-private theorem appendFn_nestFn_right {K K' c L : ℕ} (φ ψ χ : ℕ → ℕ) (hc : c ≤ K')
-    (hφ : ∀ q < K, φ q < K) :
-    appendFn K (K' + L) φ (nestFn c L χ ψ) = nestFn (K + c) L (appendFn K K' φ χ) ψ := by
-  funext q
-  rcases exists_shiftFrom_or_add (K + c) L q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
-  · rw [nestFn_shiftFrom]
-    by_cases h₁ : v < K
-    · have := hφ v h₁
-      rw [shiftFrom_of_lt (by omega), appendFn_of_lt _ _ h₁, appendFn_of_lt _ _ h₁,
-        shiftFrom_of_lt (by omega)]
-    obtain ⟨u, rfl⟩ := Nat.exists_eq_add_of_le (Nat.not_lt.mp h₁)
-    rw [shiftFrom_add_add]
-    by_cases h₂ : u < K'
-    · have : shiftFrom c L u < K' + L := by unfold shiftFrom; split_ifs <;> omega
-      rw [appendFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_sub_cancel_left,
-        nestFn_shiftFrom, appendFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_sub_cancel_left,
-        shiftFrom_add_add]
-    · have : K' + L ≤ shiftFrom c L u := by unfold shiftFrom; split_ifs <;> omega
-      rw [appendFn_of_le _ _ (by omega), appendFn_of_le _ _ (by omega), shiftFrom_add_add]
-  · rw [nestFn_add _ _ _ hj, appendFn_of_le_of_lt _ _ (by omega) (by omega),
-      show K + c + j - K = c + j by omega, nestFn_add _ _ _ hj, Nat.add_assoc]
-
-private theorem shiftFrom_shiftFrom (c L L' v : ℕ) :
-    shiftFrom c L (shiftFrom c L' v) = shiftFrom c (L + L') v := by
-  unfold shiftFrom
-  split_ifs <;> omega
-
-/-- Nesting two blocks at the same position is nesting their juxtaposition. -/
-private theorem nestFn_nestFn_eq_nestFn_appendFn {c L L' : ℕ} (φ ψ χ : ℕ → ℕ) :
-    nestFn c L (nestFn c L' φ χ) ψ = nestFn c (L + L') φ (appendFn L L' ψ χ) := by
-  funext q
-  rcases exists_shiftFrom_or_add c L q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
-  · rw [nestFn_shiftFrom]
-    rcases exists_shiftFrom_or_add c L' v with ⟨w, rfl⟩ | ⟨i, hi, rfl⟩
-    · rw [nestFn_shiftFrom, shiftFrom_shiftFrom, shiftFrom_shiftFrom, nestFn_shiftFrom]
-    · rw [nestFn_add _ _ _ hi, shiftFrom_of_le (by omega), shiftFrom_of_le (by omega),
-        show c + i + L = c + (L + i) by omega, nestFn_add _ _ _ (by omega),
-        appendFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_sub_cancel_left]
-      omega
-  · rw [nestFn_add _ _ _ hj, nestFn_add _ _ _ (by omega), appendFn_of_lt _ _ hj]
-
 end PlanarMatching
 
 namespace TLDiagram
@@ -417,10 +359,7 @@ theorem id_tensor_id (n n' : ℕ) : (id n).tensor (id n') = id (n + n') := by
 theorem matching_tensor_assoc (f : TLDiagram n m) (g : TLDiagram n' m') (h : TLDiagram n'' m'') :
     ((f.tensor g).tensor h).matching =
       PlanarMatching.cast (by omega) (f.tensor (g.tensor h)).matching := by
-  apply eq_of_pv_eq
-  simp only [matching_tensor, pv_cast_eq, pv_nest]
-  rw [nestFn_nestFn_assoc _ _ _ (by omega : n' ≤ n' + m'),
-    show n' + m' + (n'' + m'') = n' + n'' + (m' + m'') by omega]
+  simp only [matching_tensor, cast_nest_nest, nest_cast, PlanarMatching.cast_cast]
 
 /-- Juxtaposing with a diagram `0 → 0` on the left keeps the matching, up to the relabelling of
 the sizes. -/
@@ -433,6 +372,28 @@ theorem matching_tensor_zero (f : TLDiagram n m) (g : TLDiagram 0 0) :
     (f.tensor g).matching = f.matching := by
   apply eq_of_pv_eq
   rw [matching_tensor, pv_cast_eq, nest_zero]
+
+/-- Juxtaposition determines the matchings of both factors. -/
+theorem matching_tensor_eq_iff {f₁ f₂ : TLDiagram n m} {g₁ g₂ : TLDiagram n' m'} :
+    (f₁.tensor g₁).matching = (f₂.tensor g₂).matching ↔
+      f₁.matching = f₂.matching ∧ g₁.matching = g₂.matching := by
+  rw [matching_tensor, matching_tensor, EmbeddingLike.apply_eq_iff_eq, nest_eq_nest_iff]
+
+/-- Juxtaposing with a fixed diagram on the right is injective. -/
+theorem tensor_left_inj (g : TLDiagram n' m') {f₁ f₂ : TLDiagram n m} :
+    f₁.tensor g = f₂.tensor g ↔ f₁ = f₂ := by
+  refine ⟨fun h => ?_, by rintro rfl; rfl⟩
+  have hc := congrArg circles h
+  rw [circles_tensor, circles_tensor] at hc
+  exact TLDiagram.ext (matching_tensor_eq_iff.mp (congrArg matching h)).1 (by omega)
+
+/-- Juxtaposing with a fixed diagram on the left is injective. -/
+theorem tensor_right_inj (f : TLDiagram n m) {g₁ g₂ : TLDiagram n' m'} :
+    f.tensor g₁ = f.tensor g₂ ↔ g₁ = g₂ := by
+  refine ⟨fun h => ?_, by rintro rfl; rfl⟩
+  have hc := congrArg circles h
+  rw [circles_tensor, circles_tensor] at hc
+  exact TLDiagram.ext (matching_tensor_eq_iff.mp (congrArg matching h)).2 (by omega)
 
 /-- Juxtaposing with the empty diagram on the right changes nothing. -/
 @[simp]

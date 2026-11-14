@@ -83,10 +83,6 @@ private def glueCircles (n : ℕ) : ℕ → (ℕ → ℕ) → ℕ
   | 0, _ => 0
   | j + 1, φ => glueCircles n j (contractFn (n + j) φ) + circleInd (n + j) φ
 
-/-- Juxtaposition of partner functions on `k` and on `l` points. -/
-private def appendFn (k l : ℕ) (φ ψ : ℕ → ℕ) (q : ℕ) : ℕ :=
-  if q < k then φ q else if q < k + l then k + ψ (q - k) else q
-
 /-! ### Evaluation lemmas -/
 
 private theorem rejoin_of_eq_left (φ : ℕ → ℕ) {a v : ℕ} (h : v = a) : rejoin φ a v = φ (a + 1) := by
@@ -123,19 +119,6 @@ private theorem skipN_of_le {a q : ℕ} (h : a ≤ q) : skipN a q = q + 2 := by
 
 private theorem erasePair_apply (a : ℕ) (ψ : ℕ → ℕ) (q : ℕ) :
     erasePair a ψ q = unskipN a (ψ (skipN a q)) := (rfl)
-
-private theorem appendFn_of_lt {k l q : ℕ} (φ ψ : ℕ → ℕ) (h : q < k) :
-    appendFn k l φ ψ q = φ q := by
-  simp [appendFn, h]
-
-private theorem appendFn_of_le_of_lt {k l q : ℕ} (φ ψ : ℕ → ℕ) (h : k ≤ q) (h' : q < k + l) :
-    appendFn k l φ ψ q = k + ψ (q - k) := by
-  simp [appendFn, Nat.not_lt.mpr h, h']
-
-private theorem appendFn_of_le {k l q : ℕ} (φ ψ : ℕ → ℕ) (h : k + l ≤ q) :
-    appendFn k l φ ψ q = q := by
-  have hk : ¬q < k := by omega
-  simp [appendFn, Nat.not_lt.mpr h, hk]
 
 /-! ### Splicing and erasing commute -/
 
@@ -344,10 +327,6 @@ private theorem circleInd_splice {φ : ℕ → ℕ} (hφ : ∀ z, φ (φ z) = z)
 
 /-! ### Partner functions of planar matchings -/
 
-private theorem pv_cast_eq {K K' : ℕ} (h : K = K') (x : PlanarMatching K) :
-    pv (cast h x) = pv x :=
-  funext (pv_cast h x)
-
 private theorem eq_of_pv_eq {K : ℕ} {x y : PlanarMatching K} (h : pv x = pv y) : x = y :=
   ext_pv fun q _ => congrFun h q
 
@@ -367,15 +346,6 @@ private theorem exists_pv_eq_contractFn {K : ℕ} (x : PlanarMatching K) {a : �
     ∃ y : PlanarMatching (K - 2), pv y = contractFn a (pv x) := by
   obtain ⟨k, rfl⟩ : ∃ k, K = k + 2 := ⟨K - 2, by omega⟩
   exact ⟨cast (by omega) (x.contract ⟨a, by omega⟩), by rw [pv_cast_eq, pv_contract_eq]⟩
-
-private theorem pv_append_eq {k l : ℕ} (x : PlanarMatching k) (y : PlanarMatching l) :
-    pv (x.append y) = appendFn k l (pv x) (pv y) := by
-  funext q
-  by_cases h₁ : q < k
-  · rw [pv_append_left x y h₁, appendFn_of_lt _ _ h₁]
-  by_cases h₂ : q < k + l
-  · rw [pv_append_right x y (by omega) h₂, appendFn_of_le_of_lt _ _ (by omega) h₂]
-  · rw [pv_of_le _ (by omega), appendFn_of_le _ _ (by omega)]
 
 private theorem pv_glueMiddle {n p : ℕ} :
     ∀ (m : ℕ) (x : PlanarMatching (n + m + (m + p))), pv (glueMiddle m x) = glueFn n m (pv x)
