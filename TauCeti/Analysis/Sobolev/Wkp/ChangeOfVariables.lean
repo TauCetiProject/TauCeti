@@ -418,32 +418,26 @@ theorem add_const (a : E) (hA : MapsTo (· + a) U V) :
       pos := one_pos
       le_abs_det := fun x _ ↦ by simp [ContinuousLinearMap.det] }
 
-/-- **Changes of variables on relatively compact sets.** Let `Φ` be `Cᵏ` with `k ≥ 1` on an open
-set `Ω`. If the closure of an open `U` is compact and contained in `Ω`, `Φ` is injective on `U`
-with invertible derivative on `closure U`, and `Φ` maps `U` into `V`, then `Φ` is a change of
-variables of order `k` from `U` into `V`. The constant `L` is a bound for the derivatives of
-orders `1` through `k` on `closure U`, and `c` is a positive lower bound for the absolute value
-of the Jacobian determinant there; both exist by compactness. -/
-theorem exists_of_isCompact_closure {Ω : Set E} (hΩ : IsOpen Ω)
-    (hk : 1 ≤ k) (hΦ : ContDiffOn ℝ k Φ Ω) (hinj : InjOn Φ U)
+/-- **Changes of variables on relatively compact sets.** A map that is `Cⁿ` on an open set `Ω`,
+with `k ≤ n` and `1 ≤ n`, injective on `U` and mapping `U` into `V`, whose Jacobian determinant
+does not vanish on the compact set `closure U ⊆ Ω`, is a change of variables of order `k` from
+`U` into `V`. -/
+theorem exists_of_isCompact_closure {n : WithTop ℕ∞} {Ω : Set E}
+    (hΩ : IsOpen Ω) (hΦ : ContDiffOn ℝ n Φ Ω) (hk : k ≤ n) (hn : 1 ≤ n) (hinj : InjOn Φ U)
     (hdet : ∀ x ∈ closure (U : Set E), (fderiv ℝ Φ x).det ≠ 0)
     (hUc : IsCompact (closure (U : Set E))) (hUΩ : closure (U : Set E) ⊆ Ω)
     (hUV : MapsTo Φ U V) : ∃ L c, IsChangeOfVariables k U V Φ L c := by
-  have hk' : (1 : ℕ∞ω) ≤ k := by exact_mod_cast hk
-  obtain ⟨L, -, hL⟩ := hΦ.exists_nonneg_bound_iteratedFDeriv_of_isOpen hΩ hUc hUΩ
-  have hdetc : ContinuousOn (fun x => |(fderiv ℝ Φ x).det|) (closure (U : Set E)) :=
-    (ContinuousLinearMap.continuous_det.comp_continuousOn
-      ((hΦ.continuousOn_fderiv_of_isOpen hΩ hk').mono hUΩ)).abs
-  obtain ⟨c, hc, hcdet⟩ := hUc.exists_forall_le' hdetc fun x hx => abs_pos.2 (hdet x hx)
-  refine ⟨L, c,
-    { contDiffOn := hΦ.mono (subset_closure.trans hUΩ)
-      differentiableOn :=
-        (hΦ.mono (subset_closure.trans hUΩ)).differentiableOn (by positivity)
+  obtain ⟨L, -, hL⟩ := (hΦ.of_le hk).exists_nonneg_bound_iteratedFDeriv_of_isOpen hΩ hUc hUΩ
+  obtain ⟨c, -, hc, hcdet, -⟩ := exists_det_bounds_of_isCompact hΩ (hΦ.of_le hn) hUc hUΩ hdet
+  have hUΩ' := subset_closure.trans hUΩ
+  exact ⟨L, c,
+    { contDiffOn := (hΦ.of_le hk).mono hUΩ'
+      differentiableOn := ((hΦ.of_le hn).differentiableOn one_ne_zero).mono hUΩ'
       injOn := hinj
       mapsTo := hUV
-      norm_iteratedFDeriv_le := fun i _ hik x hx => hL i hik x (subset_closure hx)
+      norm_iteratedFDeriv_le := fun i _ hik x hx ↦ hL i hik x (subset_closure hx)
       pos := hc
-      le_abs_det := fun x hx => hcdet x (subset_closure hx) }⟩
+      le_abs_det := fun x hx ↦ hcdet x (subset_closure hx) }⟩
 
 variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E}
 
@@ -469,27 +463,6 @@ theorem ae_comp [mu.IsAddHaarMeasure] (h : IsChangeOfVariables k U V Φ L c) {P 
     (Measure.absolutelyContinuous_of_le_smul (h.map_restrict_le mu)) hP
 
 end IsChangeOfVariables
-
-/-- **Changes of variables on relatively compact sets.** A map that is `Cⁿ` on an open set `Ω`,
-with `k ≤ n` and `1 ≤ n`, injective on `U` and mapping `U` into `V`, whose Jacobian determinant
-does not vanish on the compact set `closure U ⊆ Ω`, is a change of variables of order `k` from
-`U` into `V`. -/
-theorem exists_isChangeOfVariables_of_isCompact_closure {n : WithTop ℕ∞} {Ω : Set E}
-    (hΩ : IsOpen Ω) (hΦ : ContDiffOn ℝ n Φ Ω) (hk : k ≤ n) (hn : 1 ≤ n) (hinj : InjOn Φ U)
-    (hdet : ∀ x ∈ closure (U : Set E), (fderiv ℝ Φ x).det ≠ 0)
-    (hUc : IsCompact (closure (U : Set E))) (hUΩ : closure (U : Set E) ⊆ Ω)
-    (hUV : MapsTo Φ U V) : ∃ L c, IsChangeOfVariables k U V Φ L c := by
-  obtain ⟨L, -, hL⟩ := (hΦ.of_le hk).exists_nonneg_bound_iteratedFDeriv_of_isOpen hΩ hUc hUΩ
-  obtain ⟨c, -, hc, hcdet, -⟩ := exists_det_bounds_of_isCompact hΩ (hΦ.of_le hn) hUc hUΩ hdet
-  have hUΩ' := subset_closure.trans hUΩ
-  exact ⟨L, c,
-    { contDiffOn := (hΦ.of_le hk).mono hUΩ'
-      differentiableOn := ((hΦ.of_le hn).differentiableOn one_ne_zero).mono hUΩ'
-      injOn := hinj
-      mapsTo := hUV
-      norm_iteratedFDeriv_le := fun i _ hik x hx ↦ hL i hik x (subset_closure hx)
-      pos := hc
-      le_abs_det := fun x hx ↦ hcdet x (subset_closure hx) }⟩
 
 end Hypotheses
 

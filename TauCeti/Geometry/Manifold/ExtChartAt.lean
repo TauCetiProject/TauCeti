@@ -43,15 +43,11 @@ Coordinate changes transport images of subsets of chart overlaps and are injecti
 without differentiability assumptions, and they take values in the range of the model; for a
 boundaryless model, their domains are open. A compact coordinate set of a chart is covered by
 finitely many compact pieces, each in the overlap with one of a given family of charts at points of
-the manifold. For a manifold modelled on a normed space itself, without boundary, the extended
-coordinate change between two charts is their coordinate change
-(`TauCeti.extendCoordChange_modelWithCornersSelf`); on a `C^n` manifold the coordinate change
-between preferred charts is `C^n` on its source, and for `n ≥ 1` it is differentiable there with
-nonvanishing Jacobian determinant. On an open subset, extended chart targets lie in the ambient
-chart targets, and inverse charts agree through inclusion on the smaller target. Near a chart point
-the inverse charts of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every
-chart point has a convex neighbourhood within the model range, inside the chart target, on which
-flat calculus applies even when the manifold has boundary.
+the manifold. On an open subset, extended chart targets lie in the ambient chart targets, and
+inverse charts agree through inclusion on the smaller target. Near a chart point the inverse charts
+of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every chart point has a
+convex neighbourhood within the model range, inside the chart target, on which flat calculus
+applies even when the manifold has boundary.
 
 For a boundaryless model `I`, a chart `c` read in the model vector space and then moved by a
 homeomorphism `Ψ` is again a chart, `OpenPartialHomeomorph.extendTrans`. When the charts lie in the
@@ -77,10 +73,6 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   manifold.
 * `TauCeti.IsChartMeasurable.measurableSet_inter_preimage`: measurable parameter pieces for maps
   continuous only on their measurable domain.
-* `TauCeti.contDiffOn_chartAt_coordChange`, `TauCeti.differentiableAt_chartAt_coordChange` and
-  `TauCeti.det_fderiv_chartAt_coordChange_ne_zero`: chart coordinate changes of a manifold
-  modelled on a normed space without boundary are as regular as the manifold, with nonvanishing
-  Jacobian determinant.
 * `TauCeti.exists_finite_precompact_chart_cover`: finite open chart covers with compact
   coordinate bounds for compact subsets of manifolds modelled on a locally compact space.
 * `TauCeti.exists_finite_compact_chart_cover`: a compact manifold modelled on a locally compact
@@ -330,51 +322,6 @@ theorem exists_finite_cover_extendCoordChange_source
   rw [hKQ] at hz
   obtain ⟨y, hy, hzy⟩ := mem_iUnion₂.mp hz
   exact mem_iUnion.mpr ⟨t.equivFin ⟨y, hy⟩, by simpa using hzy⟩
-
-section ChartCoordChange
-
-variable {E M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace M]
-  [ChartedSpace E M]
-
-omit [ChartedSpace E M] in
-/-- For a manifold modelled on a normed space without boundary, the extended coordinate change
-between two charts is their coordinate change. -/
-theorem extendCoordChange_modelWithCornersSelf (e e' : OpenPartialHomeomorph M E) :
-    𝓘(𝕜, E).extendCoordChange e e' = (e.symm ≫ₕ e').toPartialEquiv := by
-  ext z <;> simp [ModelWithCorners.extendCoordChange, mfld_simps]
-
-/-- On a `C^n` manifold modelled on a normed space without boundary, the coordinate change from
-the chart at `x` to the chart at `y` is `C^n` on its source. -/
-theorem contDiffOn_chartAt_coordChange {n : WithTop ℕ∞} [IsManifold 𝓘(𝕜, E) n M] (x y : M) :
-    ContDiffOn 𝕜 n ((chartAt E x).symm ≫ₕ chartAt E y)
-      ((chartAt E x).symm ≫ₕ chartAt E y).source := by
-  have h := 𝓘(𝕜, E).contDiffOn_extendCoordChange (n := n)
-    (IsManifold.chart_mem_maximalAtlas x) (IsManifold.chart_mem_maximalAtlas y)
-  rwa [extendCoordChange_modelWithCornersSelf, OpenPartialHomeomorph.coe_toPartialEquiv] at h
-
-/-- On a `C¹` manifold modelled on a normed space without boundary, chart coordinate changes are
-differentiable at every point of their source. -/
-theorem differentiableAt_chartAt_coordChange [IsManifold 𝓘(𝕜, E) 1 M] {x y : M} {z : E}
-    (hz : z ∈ ((chartAt E x).symm ≫ₕ chartAt E y).source) :
-    DifferentiableAt 𝕜 ((chartAt E x).symm ≫ₕ chartAt E y) z :=
-  ((contDiffOn_chartAt_coordChange (n := 1) x y).differentiableOn one_ne_zero).differentiableAt
-    (((chartAt E x).symm ≫ₕ chartAt E y).open_source.mem_nhds hz)
-
-/-- On a `C¹` manifold modelled on a normed space without boundary, the Jacobian determinant of a
-chart coordinate change does not vanish on its source. -/
-theorem det_fderiv_chartAt_coordChange_ne_zero [IsManifold 𝓘(𝕜, E) 1 M] {x y : M} {z : E}
-    (hz : z ∈ ((chartAt E x).symm ≫ₕ chartAt E y).source) :
-    (fderiv 𝕜 ((chartAt E x).symm ≫ₕ chartAt E y) z).det ≠ 0 := by
-  have h := 𝓘(𝕜, E).isInvertible_fderivWithin_extendCoordChange (n := 1) one_ne_zero
-    (IsManifold.chart_mem_maximalAtlas x) (IsManifold.chart_mem_maximalAtlas y) (x := z)
-    (by rwa [extendCoordChange_modelWithCornersSelf])
-  rw [extendCoordChange_modelWithCornersSelf, OpenPartialHomeomorph.coe_toPartialEquiv,
-    fderivWithin_of_isOpen ((chartAt E x).symm ≫ₕ chartAt E y).open_source hz] at h
-  obtain ⟨B, hB⟩ := h
-  rw [← hB]
-  exact B.toLinearEquiv.isUnit_det'.ne_zero
-
-end ChartCoordChange
 
 /-- The extended chart of an open subset at a point sends that point to the same coordinates as
 the extended chart of a larger open subset at its image under the inclusion. -/

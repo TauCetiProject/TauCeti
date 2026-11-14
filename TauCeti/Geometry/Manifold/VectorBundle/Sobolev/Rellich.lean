@@ -21,20 +21,24 @@ compact operator (`TauCeti.SobolevSection.isCompactOperator_lowerOrderL`).
 
 The local input is Rellich compactness on relatively compact subdomains,
 `TauCeti.Wkp.isCompactOperator_restrictL_lowerOrderL`. It does not apply directly to the chart
-images `A.image i`, whose closures need not lie inside an open set on which the chart data are
-controlled. Instead the chart data in chart `i` are transferred from the other charts with
+images `A.image j`, whose closures need not lie inside an open set on which the chart data are
+controlled. Instead the chart data in chart `j` are transferred from the other charts with
 `TauCeti.FiniteBundleAtlas.transferL` (`TauCeti.FiniteBundleAtlas.restrictL_eq_transferL`).
 
-Shrink the chart domains to open sets `D j` with `closure (D j) ⊆ A.dom j` that still cover `M`.
-The chart image `A.image i` is covered by the finitely many pieces `A.chart i '' (A.dom i ∩ D j)`
-(`TauCeti.FiniteBundleAtlas.exists_transfer_cover`). On each piece the chart-`i` data are
-transferred from the chart-`j` data restricted to `A.chart j '' D j`, which has compact closure
-inside `A.image j`, so the piece data depend compactly on the section from order `k + 1` to order
-`k`. Gluing the pieces with `TauCeti.Wkp.restrictCompatibleEquiv` gives compactness on `A.image i`,
-and the space of Sobolev sections is closed in the product of the chartwise Sobolev spaces.
+Shrink the chart domains to open sets `D i` with `closure (D i) ⊆ A.dom i` that still cover `M`.
+The chart image `A.image j` is covered by the finitely many pieces `A.chart j '' (A.dom j ∩ D i)`
+(`TauCeti.FiniteBundleAtlas.exists_transfer_cover`). On each piece the chart-`j` data are
+transferred from the chart-`i` data restricted to `A.chart i '' D i`, which has compact closure
+inside `A.image i`, so the piece data depend compactly on the section from order `k + 1` to order
+`k`. Compactness on the pieces gives compactness on `A.image j`
+(`TauCeti.Wkp.isCompactOperator_of_restrictL`), and compactness of every chart component gives
+compactness into the Sobolev sections, which are closed in the product of the chartwise Sobolev
+spaces (`TauCeti.SectionChartData.isCompactOperator_of_forall_apply`).
 
 ## Main results
 
+* `TauCeti.SectionChartData.isCompactOperator_of_forall_apply`: a map into the Sobolev sections is
+  a compact operator as soon as all its chart components are.
 * `TauCeti.SobolevSection.isCompactOperator_lowerOrderL`: **Rellich's theorem** for Sobolev
   sections, `W^{k+1,p}(V) → W^{k,p}(V)` is compact.
 
@@ -54,6 +58,25 @@ open scoped Manifold ContDiff ENNReal Topology
 universe u
 
 namespace TauCeti
+
+section Components
+
+variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] {S : Type*} [AddCommGroup S] [Module ℝ S] {C : SectionChartData E F S}
+  {μ : Measure E} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)] {k : ℕ}
+
+/-- **Compactness into Sobolev sections is componentwise.** If the chart transitions carry null
+sets to null sets, a map into the Sobolev sections is a compact operator as soon as all its chart
+components are. -/
+theorem SectionChartData.isCompactOperator_of_forall_apply (hC : C.AETransition μ) {X : Type*}
+    [TopologicalSpace X] [AddCommMonoid X] {f : X → C.sobolevSections μ p k}
+    (hf : ∀ i m, IsCompactOperator fun x ↦ (f x : C.SobolevData μ p k) i m) :
+    IsCompactOperator f :=
+  (IsCompactOperator.pi fun i ↦ IsCompactOperator.pi fun m ↦ hf i m).codRestrict
+    (fun x ↦ (f x).2) (isClosed_sobolevSections hC)
+
+end Components
 
 section Sobolev
 
@@ -80,88 +103,36 @@ operator for every order `k` and every `1 ≤ p < ∞`. -/
 theorem isCompactOperator_lowerOrderL [T2Space M] (hp : p ≠ ⊤) :
     IsCompactOperator (A.sectionChartData.lowerOrderL μ p k) := by
   obtain ⟨P, Q, hP, hPc, hPD, hQc, hQ, hPQ, hcov⟩ := A.exists_transfer_cover
-  have hPi (i j : Fin A.n) : P i j ≤ A.image i :=
-    SetLike.coe_subset_coe.1 ((hP i j).trans (A.overlap_subset_image j i))
-  have hQi (j : Fin A.n) : Q j ≤ A.image j :=
-    SetLike.coe_subset_coe.1 (subset_closure.trans (hQ j))
-  -- On each piece, the chart-`i` data are transferred from the chart-`j` data on `Q j`, which
-  -- depend compactly on the section by local Rellich compactness.
-  have hpiece (i j : Fin A.n) (m : Fin (finrank ℝ F)) :
-      IsCompactOperator fun w : SobolevSection A μ p (k + 1) ↦
-        Wkp.restrictL (hPi i j) k
-          (Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m)) := by
-    have hrel : IsCompactOperator fun w : SobolevSection A μ p (k + 1) ↦ fun l ↦
-        Wkp.restrictL (hQi j) k
-          (Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) j l)) :=
-      IsCompactOperator.pi fun l ↦ by
-        convert (Wkp.isCompactOperator_restrictL_lowerOrderL (hQc j) (hQ j) k).comp_clm
-          ((ContinuousLinearMap.proj l).comp
-            ((ContinuousLinearMap.proj j).comp
-              (A.sectionChartData.sobolevSections μ p (k + 1)).subtypeL))
-          using 1
-        funext w
-        simp only [Function.comp_apply, ContinuousLinearMap.coe_comp]
-        -- The inclusion followed by the two projections evaluates `w` at `j` and `l`. This holds
-        -- by definition only, as the index type `Fin A.sectionChartData.n` unfolds to `Fin A.n`.
-        exact congrArg _ (Wkp.lowerOrderL_apply k _).symm
-    convert hrel.clm_comp ((ContinuousLinearMap.proj m).comp
-      (A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j))) using 1
-    funext w
-    have e (i' : Fin A.n) (m' : Fin (finrank ℝ F)) :
-        (A.sectionChartData.lowerOrderL μ p k w : A.sectionChartData.SobolevData μ p k) i' m' =
-          Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i' m') :=
-      SectionChartData.lowerOrderL_apply _ _ _ _ w i' m'
-    -- The index types `Fin A.sectionChartData.n` and `Fin A.n` agree only by definition, so the
-    -- steps are congruences rather than rewrites.
-    calc Wkp.restrictL (hPi i j) k
-          (Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m))
-      _ = Wkp.restrictL (hPi i j) k
-          ((A.sectionChartData.lowerOrderL μ p k w : A.sectionChartData.SobolevData μ p k) i m) :=
-        congrArg _ (e i m).symm
-      _ = A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j) (fun l ↦ Wkp.restrictL (hQi j) k
-          ((A.sectionChartData.lowerOrderL μ p k w : A.sectionChartData.SobolevData μ p k) j l))
-          m :=
-        congrFun (A.restrictL_eq_transferL μ p k hp (A.sectionChartData.lowerOrderL μ p k w).2
-          (hP i j) (hPc i j) (hPD i j) (hQi j) (hPQ i j)) m
-      _ = A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j) (fun l ↦ Wkp.restrictL (hQi j) k
-          (Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) j l))) m :=
-        congrArg (fun u ↦ A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j) u m)
-          (funext fun l ↦ congrArg _ (e j l))
-  -- Gluing the pieces gives compactness of the chart-`i` components.
-  have hchart (i : Fin A.n) (m : Fin (finrank ℝ F)) :
-      IsCompactOperator fun w : SobolevSection A μ p (k + 1) ↦
-        Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m) := by
-    let R := Wkp.restrictCompatibleEquiv (mu := μ) (p := p) (Omega := A.sectionChartData.image i)
-      (hPi i) (hcov i) k
-    have hfam : IsCompactOperator fun w : SobolevSection A μ p (k + 1) ↦
-        R (Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m)) := by
-      convert (IsCompactOperator.pi fun j ↦ hpiece i j m).codRestrict
-        (fun w ↦ Wkp.restrictL_mem_compatibleFamilies (hPi i) k
-          (Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m)))
-        (Wkp.isClosed_compatibleFamilies _ k) using 1
+  have hPj (i j : Fin A.n) : P i j ≤ A.image j :=
+    SetLike.coe_subset_coe.1 ((hP i j).trans (A.overlap_subset_image i j))
+  have hQi (i : Fin A.n) : Q i ≤ A.image i :=
+    SetLike.coe_subset_coe.1 (subset_closure.trans (hQ i))
+  -- By local Rellich compactness, the chart-`i` data on `Q i` depend compactly on the section.
+  have hrel (i : Fin A.n) : IsCompactOperator fun w : SobolevSection A μ p (k + 1) ↦ fun l ↦
+      Wkp.restrictL (hQi i) k
+        ((A.sectionChartData.lowerOrderL μ p k w : A.sectionChartData.SobolevData μ p k) i l) :=
+    IsCompactOperator.pi fun l ↦ by
+      convert (Wkp.isCompactOperator_restrictL_lowerOrderL (hQc i) (hQ i) k).comp_clm
+        ((ContinuousLinearMap.proj l).comp
+          ((ContinuousLinearMap.proj i).comp
+            (A.sectionChartData.sobolevSections μ p (k + 1)).subtypeL))
+        using 1
       funext w
-      exact Subtype.ext (funext fun j ↦ by
-        rw [Set.val_codRestrict_apply]
-        exact Wkp.restrictCompatibleEquiv_apply_coe _ _ _ _ j)
-    convert hfam.clm_comp R.symm.toContinuousLinearMap using 1
-    funext w
-    simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.symm_apply_apply]
-  have hmem (w : SobolevSection A μ p (k + 1)) :
-      (fun i m ↦ Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m)) ∈
-        A.sectionChartData.sobolevSections μ p k := by
-    convert (A.sectionChartData.lowerOrderL μ p k w).2 using 1
-    funext i m
-    rw [SectionChartData.lowerOrderL_apply]
-  have key : ⇑(A.sectionChartData.lowerOrderL μ p k) = fun w : SobolevSection A μ p (k + 1) ↦
-      (⟨fun i m ↦ Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m),
-        hmem w⟩ : A.sectionChartData.sobolevSections μ p k) :=
-    funext fun w ↦ Subtype.ext <| funext fun i ↦ funext fun m ↦
-      SectionChartData.lowerOrderL_apply A.sectionChartData μ p k w i m
-  rw [key]
-  exact (IsCompactOperator.pi fun (i : Fin A.sectionChartData.n) ↦
-    IsCompactOperator.pi fun m ↦ hchart i m).codRestrict hmem
-    (SectionChartData.isClosed_sobolevSections (A.aeTransition_sectionChartData μ))
+      simp only [Function.comp_apply, ContinuousLinearMap.coe_comp]
+      -- The inclusion followed by the two projections evaluates `w` at `i` and `l`. This holds
+      -- by definition only, as the index type `Fin A.sectionChartData.n` unfolds to `Fin A.n`.
+      exact congrArg _ ((SectionChartData.lowerOrderL_apply _ _ _ _ w i l).trans
+        (Wkp.lowerOrderL_apply k _).symm)
+  refine SectionChartData.isCompactOperator_of_forall_apply (A.aeTransition_sectionChartData μ)
+    fun j m ↦ ?_
+  -- The pieces `P i j` cover the image of chart `j`, and on `P i j` the chart-`j` data are
+  -- transferred from the chart-`i` data on `Q i`.
+  refine Wkp.isCompactOperator_of_restrictL (fun i ↦ hPj i j) (hcov j) fun i ↦ ?_
+  convert (hrel i).clm_comp ((ContinuousLinearMap.proj m).comp
+    (A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j))) using 1
+  funext w
+  exact A.restrictL_eq_transferL μ p k hp (A.sectionChartData.lowerOrderL μ p k w).2 (hP i j)
+    (hPc i j) (hPD i j) (hQi i) (hPQ i j) m
 
 end SobolevSection
 
