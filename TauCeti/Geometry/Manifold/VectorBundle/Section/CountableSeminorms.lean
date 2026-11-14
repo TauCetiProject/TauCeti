@@ -130,7 +130,7 @@ theorem exists_countable_frameExhaustion [LocallyCompactSpace E] [∀ i, SigmaCo
         let _ := frameTopology (I := I) (n := n) e U hU
         WithSeminorms (frameExhaustionSeminormFamily (n := n) e U hU
           (fun i (j : s i) ↦ (j : U i)) A) := by
-  choose s hs hc hA using fun i ↦ ContMDiffMap.exists_countable_chartExhaustion (I := I) (M := U i)
+  choose s hs hc hA using fun i ↦ TauCeti.exists_countable_chartExhaustion (I := I) (M := U i)
   let A (i : ι) := (hA i).some
   exact ⟨s, hs, hc, A, withSeminorms_frameExhaustion (n := n) e U hU
     (fun i (j : s i) ↦ (j : U i)) A hc⟩

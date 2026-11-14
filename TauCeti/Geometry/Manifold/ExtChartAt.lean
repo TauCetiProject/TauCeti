@@ -76,6 +76,8 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   space is.
 * `TauCeti.locallyCompactSpace_extChartAt_target`: over a locally compact model, every extended
   chart target is locally compact.
+* `TauCeti.exists_countable_chartExhaustion`: a sigma-compact manifold with locally compact model
+  is covered by the sources of countably many charts, whose targets have compact exhaustions.
 * `TauCeti.IsChartMeasurable`: chartwise measurability without a measurable structure on the
   manifold.
 * `TauCeti.IsChartMeasurable.measurableSet_inter_preimage`: measurable parameter pieces for maps
@@ -398,6 +400,22 @@ instance locallyCompactSpace_extChartAt_target [LocallyCompactSpace E] (x : M) :
   rw [extChartAt_target]
   exact ((chartAt H x).open_target.preimage I.continuous_symm).isLocallyClosed.inter
     I.isClosed_range.isLocallyClosed |>.locallyCompactSpace
+
+/-- On a sigma-compact manifold with locally compact model, select a countable set of chart
+centres whose chart sources cover the manifold, together with compact exhaustions of their chart
+targets. The empty manifold uses the empty set of centres. -/
+theorem exists_countable_chartExhaustion [LocallyCompactSpace E] [SigmaCompactSpace M] :
+    ∃ s : Set M, s.Countable ∧ (∀ x : M, ∃ i : s, x ∈ (extChartAt I (i : M)).source) ∧
+      Nonempty (∀ i : s, CompactExhaustion (extChartAt I (i : M)).target) := by
+  have := ProperSpace.of_locallyCompactSpace 𝕜 (E := E)
+  obtain ⟨s, hs, hcover⟩ := countable_cover_nhds_of_sigmaCompact
+    (fun x : M ↦ extChartAt_source_mem_nhds (I := I) x)
+  have hc : ∀ x : M, ∃ i : s, x ∈ (extChartAt I (i : M)).source := by
+    intro x
+    have hx : x ∈ ⋃ y ∈ s, (extChartAt I y).source := by rw [hcover]; trivial
+    obtain ⟨y, hy, hx⟩ := Set.mem_iUnion₂.mp hx
+    exact ⟨⟨y, hy⟩, hx⟩
+  exact ⟨s, hs, hc, ⟨fun i ↦ CompactExhaustion.choice (extChartAt I (i : M)).target⟩⟩
 
 /-- The coordinate image of an open subset of a chart source is measurable, without a
 measurable structure on the manifold. -/
