@@ -16,6 +16,7 @@ import Mathlib.Order.Filter.AtTopBot.Basic
 import Mathlib.Order.Filter.Finite
 import Mathlib.Order.Filter.Ultrafilter.Defs
 import Mathlib.Order.Minimal
+import TauCeti.Data.Finsupp.Weight
 import TauCeti.Order.PiLex
 
 /-!
@@ -60,12 +61,8 @@ private noncomputable def diagramHilbert {σ : Type*} (D : Set (σ →₀ ℕ)) 
 
 private theorem diagramHilbert_anti {σ : Type*} [Finite σ] {D₁ D₂ : Set (σ →₀ ℕ)}
     (h : D₁ ⊆ D₂) (n : ℕ) :
-    diagramHilbert D₂ n ≤ diagramHilbert D₁ n := by
-  have hsub : {α : σ →₀ ℕ | α.degree ≤ n ∧ α ∉ D₁} ⊆ {α : σ →₀ ℕ | α.degree ≤ n} :=
-    fun _ hα ↦ hα.1
-  have : Finite {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D₁} :=
-    ((Finsupp.finite_of_degree_le n).subset hsub).to_subtype
-  exact Nat.card_le_card_of_injective
+    diagramHilbert D₂ n ≤ diagramHilbert D₁ n :=
+  Nat.card_le_card_of_injective
     (fun α ↦ (⟨α.1, α.2.1, fun h₁ ↦ α.2.2 (h h₁)⟩ : {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D₁}))
     (fun _ _ hEq ↦ Subtype.ext (Subtype.mk.inj hEq))
 

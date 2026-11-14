@@ -64,8 +64,9 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.natCast_weight_eq_of_support_subset`: on monomials supported in a finite set `s`, the
   weight `weight w` agrees with any additive functional on `s → ℤ` taking the value `w i` on the
   `i`-th coordinate vector.
-* `Finsupp.finite_degree_eq`, `Finsupp.finite_degree_le`: in finitely many variables there are
-  finitely many exponent vectors of each degree, and of degree at most `n`.
+* `Finsupp.finite_degree_eq`, `Finsupp.finite_degree_le`, `Finsupp.finite_degree_le_and`: in
+  finitely many variables there are finitely many exponent vectors of each degree and of degree at
+  most `n` (and hence in any further subtype `{s // s.degree ≤ n ∧ p s}`).
 * `Finsupp.fintypeDegreeEq`, `Finsupp.fintypeDegreeLe`, `Finsupp.card_degree_eq`,
   `Finsupp.natCard_degree_eq`, `Finsupp.card_degree_le`, `Finsupp.natCard_degree_le`: fintype
   enumeration and multichoose/binomial cardinalities of exponent vectors of degree `n` and at most
@@ -273,6 +274,13 @@ instance finite_degree_le {σ : Type*} [Finite σ] (n : ℕ) :
     Finite {s : σ →₀ ℕ // s.degree ≤ n} :=
   (finite_of_degree_le n).to_subtype
 
+/-- In finitely many variables, any subtype of exponent vectors of degree at most `n` cut out by
+an additional predicate is finite. -/
+instance finite_degree_le_and {σ : Type*} [Finite σ] (n : ℕ) (p : (σ →₀ ℕ) → Prop) :
+    Finite {s : σ →₀ ℕ // s.degree ≤ n ∧ p s} :=
+  .of_injective (fun s ↦ (⟨s.1, s.2.1⟩ : {s : σ →₀ ℕ // s.degree ≤ n}))
+    fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h)
+
 /-- For a fintype of variables with decidable equality, the exponent vectors of degree `n` form a
 fintype, enumerated by `Finset.finsuppAntidiag`. -/
 instance fintypeDegreeEq {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
@@ -306,7 +314,8 @@ theorem natCard_degree_eq (σ : Type*) (n : ℕ) :
     Nat.card {s : σ →₀ ℕ // s.degree = n} = (Nat.card σ).multichoose n := by
   classical
   have e : {s : σ →₀ ℕ // s.degree = n} ≃ Sym σ n :=
-    (Equiv.subtypeEquivRight fun s ↦ by rw [degree_apply]; rfl).trans (Sym.equivNatSum σ n).symm
+    (Equiv.subtypeEquivRight fun s ↦ by simp [degree_apply, Finsupp.sum]).trans
+      (Sym.equivNatSum σ n).symm
   rw [Nat.card_congr e, Sym.natCard_sym_eq_multichoose]
 
 /-- The number of exponent vectors of degree at most `n` in `Fintype.card σ` variables is

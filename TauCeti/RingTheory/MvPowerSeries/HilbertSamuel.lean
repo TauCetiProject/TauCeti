@@ -94,10 +94,6 @@ theorem localQuotientHilbertSamuel_mvPowerSeries {σ K : Type*} [Field K] [Finit
   let idxEquiv : {α : σ →₀ ℕ // α ∉ MonomialOrder.degLex.initialDiagram J} ≃
       {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ MonomialOrder.degLex.initialDiagram I} :=
     Equiv.subtypeEquivRight hmem
-  have hsub : {α : σ →₀ ℕ | α.degree ≤ n ∧ α ∉ MonomialOrder.degLex.initialDiagram I} ⊆
-      {α : σ →₀ ℕ | α.degree ≤ n} := fun _ hα ↦ hα.1
-  have hfin : Finite {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ MonomialOrder.degLex.initialDiagram I} :=
-    ((Finsupp.finite_of_degree_le n).subset hsub).to_subtype
   set d := Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ MonomialOrder.degLex.initialDiagram I}
   let finEquiv : {α : σ →₀ ℕ // α ∉ MonomialOrder.degLex.initialDiagram J} ≃ Fin d :=
     idxEquiv.trans (Finite.equivFin _)
@@ -281,7 +277,7 @@ example (K : Type*) [Field K] :
   refine ⟨by simp [localQuotientHilbertSamuel_mvPowerSeries_span_X_pow_of_subsingleton],
     fun ℓ hℓ ↦ ?_⟩
   rw [localQuotientHilbertSamuel_mvPowerSeries_span_X_pow_of_subsingleton, min_eq_right (by omega)]
-  rfl
+  norm_num
 
 /-- For `I_j = (X ^ max (N - j) 1) ⊆ K⟦X⟧`, the Hilbert–Samuel functions decrease in both orders
 and stabilize at the constant function `1` of `K⟦X⟧ ⧸ (X)` for `j ≥ N`. -/
@@ -315,7 +311,7 @@ example (K : Type*) [Field K] :
     dsimp only [H₁, I₁]
     rw [localQuotientHilbertSamuel_maximalIdeal_pow_succ (A := MvPowerSeries (Fin 2) K) 1 n,
       min_eq_left hn, localQuotientHilbertSamuel_mvPowerSeries_bot, Nat.card_fin]
-    decide
+    norm_num
   have hH₂ : ∀ n, H₂ n = (n + 1 : ℕ∞) := fun n ↦ by
     simp [H₂, I₂, Nat.add_comm 1 n]
   have hH₁_0 : H₁ 0 = 1 :=

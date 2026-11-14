@@ -56,7 +56,7 @@ Hilbert–Samuel function without any Noetherian hypothesis
   `TauCeti.localQuotientHilbertSamuel_zero_of_ne_top`,
   `TauCeti.localQuotientHilbertSamuel_maximalIdeal`: vanishing characterizes `I = ⊤`, every proper
   ideal satisfies `H_{A/I}(0) = 1`, and `H_{A/𝔪}(n) = 1` for all `n`.
-* `TauCeti.localQuotientHilbertSamuel_mono`, `TauCeti.localQuotientHilbertSamuel_anti`,
+* `TauCeti.localQuotientHilbertSamuel_monotone`, `TauCeti.localQuotientHilbertSamuel_anti`,
   `TauCeti.localQuotientHilbertSamuel_sup_maximalIdeal_pow_succ`,
   `TauCeti.localQuotientHilbertSamuel_maximalIdeal_pow_succ`,
   `TauCeti.localQuotientHilbertSamuel_succ`: monotonicity in `n`, antitonicity in `I`, truncation by
@@ -68,8 +68,7 @@ Hilbert–Samuel function without any Noetherian hypothesis
   `TauCeti.localQuotientHilbertSamuel_comap_equiv`,
   `TauCeti.localQuotientHilbertSamuel_bot_of_equiv`: compatibility with surjective local ring
   homomorphisms, local quotients `A ⧸ I`, and ring/algebra equivalences.
-* `TauCeti.length_quotient_sup_maximalIdeal_pow_restrictScalars`,
-  `TauCeti.length_quotient_sup_maximalIdeal_pow_eq_mul_length_residueField`: comparison between
+* `TauCeti.length_quotient_sup_maximalIdeal_pow_eq_mul_length_residueField`: comparison between
   `A`-length and local base-ring length via the residue-field length.
 * `TauCeti.localQuotientHilbertSamuel_ne_top`,
   `TauCeti.localQuotientHilbertSamuel_lt_top`,
@@ -152,7 +151,7 @@ theorem localQuotientHilbertSamuel_maximalIdeal (n : ℕ) :
     Ideal.length_quotient_eq_one]
 
 /-- `localQuotientHilbertSamuel A I` is monotone in the jet degree `n`. -/
-theorem localQuotientHilbertSamuel_mono (I : Ideal A) :
+theorem localQuotientHilbertSamuel_monotone (I : Ideal A) :
     Monotone (localQuotientHilbertSamuel A I) := fun _ _ hmn ↦
   length_quotient_anti (sup_le_sup_left (Ideal.pow_le_pow_right (Nat.add_le_add_right hmn 1)) I)
 
@@ -282,16 +281,6 @@ end Basic
 
 section RestrictScalars
 
-/-- Over a local extension `K → A`, the `K`-length of `A ⧸ (I + 𝔪_A ^ (n + 1))` multiplies
-`localQuotientHilbertSamuel A I n` by `[κ(A) : κ(K)]`. -/
-theorem length_quotient_sup_maximalIdeal_pow_restrictScalars
-    (K A : Type*) [CommRing K] [IsLocalRing K] [CommRing A] [IsLocalRing A]
-    [Algebra K A] [IsLocalHom (algebraMap K A)] (I : Ideal A) (n : ℕ) :
-    Module.length K (A ⧸ (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 1))) =
-      localQuotientHilbertSamuel A I n *
-        Module.length (IsLocalRing.ResidueField K) (IsLocalRing.ResidueField A) :=
-  IsLocalRing.length_restrictScalars K A (A ⧸ (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 1)))
-
 /-- Over a local extension `K → A`, the `K`-length of `A ⧸ (I + 𝔪_A ^ (n + 1))` equals
 `localQuotientHilbertSamuel A I n * Module.length K (ResidueField A)`. In particular, this applies
 whenever `K` is a ground field. -/
@@ -300,7 +289,7 @@ theorem length_quotient_sup_maximalIdeal_pow_eq_mul_length_residueField
     [Algebra K A] [IsLocalHom (algebraMap K A)] (I : Ideal A) (n : ℕ) :
     Module.length K (A ⧸ (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 1))) =
       localQuotientHilbertSamuel A I n * Module.length K (IsLocalRing.ResidueField A) := by
-  rw [length_quotient_sup_maximalIdeal_pow_restrictScalars K A I n,
+  rw [localQuotientHilbertSamuel_def, IsLocalRing.length_restrictScalars K A,
     Module.length_eq_of_surjective (IsLocalRing.residue_surjective (R := K))]
 
 end RestrictScalars
