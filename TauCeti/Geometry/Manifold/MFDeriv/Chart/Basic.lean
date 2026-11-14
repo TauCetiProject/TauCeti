@@ -94,6 +94,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   manifolds read in arbitrary preferred charts of the source and the target.
 * `ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm`: a `C^n` map between manifolds, read in
   arbitrary preferred charts, is `C^n` at interior points of the source chart target.
+* `TauCeti.isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt`: for a `C^n` map out of a
+  boundaryless manifold, the open coordinate domain on which it reads as a `C^n` map between the
+  extended charts at a point and at its image.
 * `HasMFDerivAt.hasFDerivAt_extChartAt_comp`: read the coordinate derivative of a map from
   a normed source by composing its manifold derivative with the tangent chart.
 * `MDifferentiableAt.fderiv_extChartAt_comp_apply`: the same, with the manifold derivative of the
@@ -773,6 +776,41 @@ theorem _root_.ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm {f : M →
     (interior_subset.trans (extChartAt_target_subset_range β)))
 
 end InteriorCharts
+
+section CoordinateDomain
+
+open Set
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : WithTop ℕ∞}
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I n M]
+  {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [I'.Boundaryless]
+  [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' n N]
+
+/-- **The coordinate domain of a map read in charts.** For a `C^n` map `ι` out of a boundaryless
+manifold and the extended charts `φ` at `x₀` and `χ` at `ι x₀`, the chart points `z` with
+`φ⁻¹ z ∈ ι⁻¹ (χ.source)` form an open neighbourhood of `φ x₀` on which `χ ∘ ι ∘ φ⁻¹` is `C^n`
+with values in the target of `χ`. -/
+theorem isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt {ι : N → M}
+    (hι : ContMDiff I' I n ι) (x₀ : N) :
+    IsOpen ((extChartAt I' x₀).target ∩
+        (extChartAt I' x₀).symm ⁻¹' (ι ⁻¹' (extChartAt I (ι x₀)).source)) ∧
+      extChartAt I' x₀ x₀ ∈ (extChartAt I' x₀).target ∩
+        (extChartAt I' x₀).symm ⁻¹' (ι ⁻¹' (extChartAt I (ι x₀)).source) ∧
+      ContDiffOn 𝕜 n (writtenInExtChartAt I' I x₀ ι) ((extChartAt I' x₀).target ∩
+        (extChartAt I' x₀).symm ⁻¹' (ι ⁻¹' (extChartAt I (ι x₀)).source)) ∧
+      MapsTo (writtenInExtChartAt I' I x₀ ι) ((extChartAt I' x₀).target ∩
+        (extChartAt I' x₀).symm ⁻¹' (ι ⁻¹' (extChartAt I (ι x₀)).source))
+        (extChartAt I (ι x₀)).target := by
+  refine ⟨(continuousOn_extChartAt_symm x₀).isOpen_inter_preimage (isOpen_extChartAt_target x₀)
+      ((isOpen_extChartAt_source (ι x₀)).preimage hι.continuous),
+    ⟨mem_extChartAt_target x₀, ?_⟩, (contMDiff_iff.1 hι).2 x₀ (ι x₀), writtenInExtChartAt_mapsTo⟩
+  rw [mem_preimage, mem_preimage, (extChartAt I' x₀).left_inv (mem_extChartAt_source x₀)]
+  exact mem_extChartAt_source (ι x₀)
+
+end CoordinateDomain
 
 section RCLikeCharts
 

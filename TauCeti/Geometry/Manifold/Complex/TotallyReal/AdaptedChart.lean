@@ -38,12 +38,8 @@ set to the manifold chart is stated separately, so that the converging families 
 
 * `TauCeti.IsAdaptedChart`: the properties of an adapted chart listed above, for the image
   `ι (N)` or any other subset of `M`.
-* `TauCeti.IsMaximalTotallyRealMap.fderiv_writtenInExtChartAt_injective`,
-  `TauCeti.IsMaximalTotallyRealMap.isMaximalTotallyReal_range_fderiv_writtenInExtChartAt`: the
-  hypotheses of the model construction, read in the extended charts.
-* `TauCeti.isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt` and
-  `Topology.IsInducing.exists_isOpen_extChartAt_zero_mem`: the coordinate domain of `ι` read in
-  charts, and the open set cutting the source of a chart down along an embedding.
+* `TauCeti.IsMaximalTotallyRealMap.isMaximalTotallyReal_range_fderiv_writtenInExtChartAt`: the
+  total reality hypothesis of the model construction, read in the extended charts.
 * `TauCeti.exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension`: the adapted chart built
   from a model adapted extension.
 * `TauCeti.IsTotallyRealEmbedding.exists_adaptedChart`: the adapted chart.
@@ -102,17 +98,6 @@ structure IsAdaptedChart (s : Set M) (ψ : OpenPartialHomeomorph M (F × F)) : P
   chartPushforward_of_snd_eq_zero : ∀ p ∈ ψ.target, p.2 = 0 →
     J.chartPushforward ψ p = (-ContinuousLinearMap.snd ℝ F F).prod (ContinuousLinearMap.fst ℝ F F)
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] in
-/-- Read in the extended charts at `x₀` and `ι x₀`, the derivative at `x₀` of a maximal totally
-real map of half the ambient dimension, differentiable at `x₀`, is injective. -/
-theorem IsMaximalTotallyRealMap.fderiv_writtenInExtChartAt_injective
-    {A : ∀ y : M, AlmostComplexStructure (TangentSpace I y)}
-    (h : IsMaximalTotallyRealMap I' I A ι) (hdim : 2 * Module.finrank ℝ F = Module.finrank ℝ E)
-    {x₀ : N} (hι : MDifferentiableAt I' I ι x₀) :
-    Function.Injective (fderiv ℝ (writtenInExtChartAt I' I x₀ ι) (extChartAt I' x₀ x₀)) := by
-  rw [writtenInExtChartAt, ← hι.mfderiv_eq_fderiv_extChartAt_conj rfl]
-  exact h.mfderiv_injective hdim x₀
-
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [FiniteDimensional ℝ F] in
 /-- Read in the extended charts at `x₀` and `ι x₀`, the tangent image at `x₀` of a maximal totally
 real map for `J`, differentiable at `x₀`, is maximal totally real for `J` read in the chart at
@@ -127,46 +112,6 @@ theorem IsMaximalTotallyRealMap.isMaximalTotallyReal_range_fderiv_writtenInExtCh
     writtenInExtChartAt, ← hι.mfderiv_eq_fderiv_extChartAt_conj rfl]
   have := isMaximalTotallyRealMap_iff.1 h x₀
   rwa [ContMDiffAlmostComplexStructure.almostComplexStructureAt_toLinearMap] at this
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [FiniteDimensional ℝ F] in
-/-- **The coordinate domain of a map read in charts.** For a `C^n` map `ι` and the extended charts
-`φ` at `x₀` and `χ` at `ι x₀`, the chart points `z` with `φ⁻¹ z ∈ ι⁻¹ (χ.source)` form an open
-neighbourhood of `φ x₀` on which `χ ∘ ι ∘ φ⁻¹` is `C^n` with values in the target of `χ`. -/
-theorem isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt {n : ℕ∞ω} [IsManifold I n M]
-    [IsManifold I' n N] (hι : ContMDiff I' I n ι) (x₀ : N) :
-    IsOpen ((extChartAt I' x₀).target ∩
-        (extChartAt I' x₀).symm ⁻¹' (ι ⁻¹' (extChartAt I (ι x₀)).source)) ∧
-      extChartAt I' x₀ x₀ ∈ (extChartAt I' x₀).target ∩
-        (extChartAt I' x₀).symm ⁻¹' (ι ⁻¹' (extChartAt I (ι x₀)).source) ∧
-      ContDiffOn ℝ n (writtenInExtChartAt I' I x₀ ι) ((extChartAt I' x₀).target ∩
-        (extChartAt I' x₀).symm ⁻¹' (ι ⁻¹' (extChartAt I (ι x₀)).source)) ∧
-      MapsTo (writtenInExtChartAt I' I x₀ ι) ((extChartAt I' x₀).target ∩
-        (extChartAt I' x₀).symm ⁻¹' (ι ⁻¹' (extChartAt I (ι x₀)).source))
-        (extChartAt I (ι x₀)).target := by
-  refine ⟨(continuousOn_extChartAt_symm x₀).isOpen_inter_preimage (isOpen_extChartAt_target x₀)
-      ((isOpen_extChartAt_source (ι x₀)).preimage hι.continuous),
-    ⟨mem_extChartAt_target x₀, ?_⟩, (contMDiff_iff.1 hι).2 x₀ (ι x₀), writtenInExtChartAt_mapsTo⟩
-  rw [mem_preimage, mem_preimage, (extChartAt I' x₀).left_inv (mem_extChartAt_source x₀)]
-  exact mem_extChartAt_source (ι x₀)
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [FiniteDimensional ℝ F]
-  [I'.Boundaryless] in
-/-- **Shrinking along an embedding.** For an inducing map `ι` and an open set `V ⊆ F × F`
-containing `(φ x₀, 0)`, with `φ` the extended chart at `x₀`, there is an open `O ∋ ι x₀` such
-that a point `z` with `ι z ∈ O` lies in the source of `φ` with `(φ z, 0) ∈ V`. -/
-theorem _root_.Topology.IsInducing.exists_isOpen_extChartAt_zero_mem (hι : Topology.IsInducing ι)
-    {V : Set (F × F)} (hV : IsOpen V) {x₀ : N} (hx₀ : (extChartAt I' x₀ x₀, (0 : F)) ∈ V) :
-    ∃ O : Set M, IsOpen O ∧ ι x₀ ∈ O ∧
-      ∀ z, ι z ∈ O → z ∈ (extChartAt I' x₀).source ∧ (extChartAt I' x₀ z, (0 : F)) ∈ V := by
-  have hS : IsOpen ((extChartAt I' x₀).source ∩ (fun z ↦ (extChartAt I' x₀ z, (0 : F))) ⁻¹' V) :=
-    ((continuousOn_extChartAt x₀).prodMk continuousOn_const).isOpen_inter_preimage
-      (isOpen_extChartAt_source x₀) hV
-  obtain ⟨O, hO, hOS⟩ := hι.isOpen_iff.mp hS
-  refine ⟨O, hO, ?_, fun z hz ↦ ?_⟩
-  · rw [← mem_preimage, hOS]
-    exact ⟨mem_extChartAt_source x₀, hx₀⟩
-  · rw [← mem_preimage, hOS] at hz
-    exact hz
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- **Adapted charts from adapted extensions.** Let `ι` be a `C^k` map, `J` a `C^ℓ` almost
