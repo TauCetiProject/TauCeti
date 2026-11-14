@@ -222,22 +222,18 @@ lemma map_equivalenceOfIsEquivalence_inv_naturality_hom_app_comp
       (η.naturality f).hom.toNatTrans.app ((η.app a).toFunctor.inv.obj X) ≫
         (G.map f).toFunctor.map ((η.app a).toFunctor.asEquivalence.counit.app X) =
       (η.app b).toFunctor.asEquivalence.counit.app ((G.map f).toFunctor.obj X) := by
-  have h (c : B) : leftZigzagIso
-      (Cat.Hom.isoMk (η.app c).toFunctor.asEquivalence.unitIso)
-      (Cat.Hom.isoMk (η.app c).toFunctor.asEquivalence.counitIso) =
-      λ_ (η.app c) ≪≫ (ρ_ (η.app c)).symm := by
-    apply Iso.ext
-    ext Y
-    simpa [leftZigzagIso, leftZigzag, bicategoricalComp] using
-      (η.app c).toFunctor.asEquivalence.functor_unit_comp Y
   have hc := congrArg (fun m => m.toNatTrans.app X)
-    ((Bicategory.Equivalence.mk (η.app a) (η.app a).toFunctor.inv.toCatHom
-        (Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.unitIso)
-        (Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.counitIso) (h a)).mateIsoEquiv_inv_counit
-      (Bicategory.Equivalence.mk (η.app b) (η.app b).toFunctor.inv.toCatHom
-        (Cat.Hom.isoMk (η.app b).toFunctor.asEquivalence.unitIso)
-        (Cat.Hom.isoMk (η.app b).toFunctor.asEquivalence.counitIso) (h b))
-      (η.naturality f))
-  simpa [equivalenceOfIsEquivalence] using! hc
+    (η.equivalenceOfIsEquivalence.counit.hom.as.naturality f).symm
+  simp only [Cat.Hom₂.comp_app, comp_naturality_hom_app, Cat.whiskerRight_app,
+    Cat.whiskerLeft_app] at hc
+  simp only [categoryStruct_id_naturality_hom, Cat.Hom₂.comp_app,
+    equivalenceOfIsEquivalence_counit_hom_as_app, Cat.Hom.isoMk_hom,
+    NatTrans.toCatHom₂_toNatTrans, Cat.rightUnitor_hom_toNatTrans,
+    Cat.leftUnitor_inv_toNatTrans] at hc
+  dsimp only [comp_app, categoryStruct_id_app, Cat.Hom.comp_toFunctor,
+    Cat.Hom.id_toFunctor, Functor.comp_obj, Functor.id_obj,
+    Functor.rightUnitor_hom_app, Functor.leftUnitor_inv_app] at hc
+  rw [Category.comp_id, Category.assoc] at hc
+  exact hc.trans (Category.comp_id _)
 
 end CategoryTheory.Pseudofunctor.StrongTrans
