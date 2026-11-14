@@ -131,4 +131,25 @@ theorem signlessPreprojectiveAlgebraEquiv_trans {X : Type*} [Finite X] {K : Simp
     signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
     signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
 
+/-- The graph-isomorphism comparison preserves each path-length graded piece. -/
+theorem signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade
+    (e : G ≃g H) {n : ℕ} {x : signlessPreprojectiveAlgebra k (DoubledQuiver G)}
+    (hx : x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) n) :
+    signlessPreprojectiveAlgebraEquiv k e x ∈
+      signlessPreprojectiveGrade k (DoubledQuiver H) n := by
+  obtain ⟨y, hy, rfl⟩ := (mem_signlessPreprojectiveGrade_iff k _).1 hx
+  rw [signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
+  exact signlessPreprojectiveMk_mem_grade k _ ((pathAlgebraEquiv_mem_grade_iff k e).2 hy)
+
+/-- **The graph-isomorphism comparison preserves path degree**: an element of the signless
+preprojective algebra has degree `n` if and only if its relabelled image does. -/
+theorem signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade_iff
+    (e : G ≃g H) {n : ℕ} {x : signlessPreprojectiveAlgebra k (DoubledQuiver G)} :
+    signlessPreprojectiveAlgebraEquiv k e x ∈
+      signlessPreprojectiveGrade k (DoubledQuiver H) n ↔
+      x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) n := by
+  refine ⟨fun h => ?_, signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade k e⟩
+  simpa [← signlessPreprojectiveAlgebraEquiv_symm] using
+    signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade k e.symm h
+
 end TauCeti
