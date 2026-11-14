@@ -6,15 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Affinoid.QuotientNorm
-public import TauCeti.RingTheory.Affinoid.Restricted
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra.Completion
 public import TauCeti.RingTheory.Dagger.SupSeminorm
 
-import TauCeti.RingTheory.Affinoid.PowerBounded
 import TauCeti.RingTheory.Dagger.DaggerAlgebra.FaithfullyFlat
-import TauCeti.RingTheory.Dagger.NoetherNormalization
-import TauCeti.RingTheory.Dagger.Weierstrass
-import TauCeti.RingTheory.Ideal.KrullIntersection
+import TauCeti.RingTheory.Dagger.TateLift
 
 /-!
 # Universal property and functoriality of the completion of a dagger algebra
@@ -26,22 +22,10 @@ under `A` by a purely algebraic universal property: `τ : A → Â` is initial a
 homomorphisms from `A` into `K`-affinoid algebras, with no continuity or norm assumed on the
 target.
 
-The extension of a `K`-algebra homomorphism `φ : A → S` into an affinoid algebra `S` reduces along
-the presentation `W_n ↠ A` to extending a homomorphism `ψ : W_n → S` along `W_n ⊆ T_n`:
-
-* Every classical point of `S` contracts to a classical point of `W_n`, where each coordinate
-  variable `Xᵢ` has absolute value at most `‖Xᵢ‖ = 1`. Thus `|ψ Xᵢ|sup ≤ 1` in `S`, so `ψ Xᵢ` is
-  power-bounded (`TauCeti.IsAffinoidAlgebra.isPowerBounded_iff_supSeminorm_le_one`) when `S` is
-  equipped with a complete ultrametric algebra norm
-  (`TauCeti.IsAffinoidAlgebra.residueNormedCommRing`).
-* Restricted evaluation (`TauCeti.IsAffinoidAlgebra.restrictedLift`) produces a `K`-algebra
-  homomorphism `Ψ : T_n → S` sending each `Xᵢ` to `ψ Xᵢ`. Because `S` is noetherian and its
-  quotients `S ⧸ m ^ k` by powers of maximal ideals are finite over `K`, `Ψ ∘ toTate` and `ψ`
-  agree modulo every `m ^ k` (`TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isIntegral`), hence
-  globally by Krull's intersection theorem (`Ideal.iInf_isMaximal_pow_eq_bot`).
-* Uniqueness of `Φ : Â → S` with `Φ ∘ τ = φ` needs no continuity hypothesis: any such `Φ` is
-  automatically continuous for `S`'s residue norm (`TauCeti.IsAffinoidAlgebra.continuous_algHom`),
-  and `τ(A)` is dense in `Â` (`TauCeti.Dagger.denseRange_toCompletion`).
+Both existence and uniqueness specialize the Monsky–Washnitzer quotient extension
+`TauCeti.Dagger.washnitzerAlgebra.liftToTateQuotient` and extensionality theorem
+`TauCeti.Dagger.washnitzerAlgebra.tateQuotient_algHom_ext_of_isAffinoidAlgebra` (established in
+`TauCeti.RingTheory.Dagger.TateLift`) to the minimal presentation `presentation K A : W_n ↠ A`.
 
 Specializing `S` to the completion `B̂` of a second dagger algebra `B` makes `A ↦ Â` a functor
 (`TauCeti.Dagger.completionMap`) sending `K`-algebra isomorphisms to topological `K`-algebra
@@ -53,14 +37,13 @@ identifies the completion of `W_σ` with `T_σ`
 
 ## Main definitions
 
-* `TauCeti.Dagger.washnitzerAlgebra.liftToTate`: the unique `K`-algebra extension `T_σ →ₐ[K] S` of
-  a homomorphism `W_σ →ₐ[K] S` into an affinoid algebra.
 * `TauCeti.Dagger.completionLift`, `TauCeti.Dagger.completionLiftEquiv`: the universal extension
   `(completion K A →ₐ[K] S) ≃ (A →ₐ[K] S)` for an affinoid algebra `S`.
 * `TauCeti.Dagger.completionMap`: the completion `completion K A →ₐ[K] completion K B` of a
-  morphism `A →ₐ[K] B` of dagger algebras, and
-  `TauCeti.Dagger.completionContinuousAlgEquivOfAlgEquiv`: the induced topological isomorphism for
-  `A ≃ₐ[K] B`.
+  morphism `A →ₐ[K] B` of dagger algebras, together with
+  `TauCeti.Dagger.completionAlgEquivOfAlgEquiv` and
+  `TauCeti.Dagger.completionContinuousAlgEquivOfAlgEquiv`: the induced algebraic and topological
+  isomorphisms for `A ≃ₐ[K] B`.
 * `TauCeti.Dagger.presentationCompletionContinuousAlgEquiv`: comparison of `completion K A` with
   `T_σ ⧸ (ker π) T_σ` for an arbitrary presentation `π : W_σ ↠ A`.
 * `TauCeti.Dagger.washnitzerAlgebra.completionContinuousAlgEquiv`: the topological `K`-algebra
@@ -68,15 +51,20 @@ identifies the completion of `W_σ` with `T_σ`
 
 ## Main results
 
-* `TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isAffinoidAlgebra` and
-  `TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isDaggerAlgebra`: `K`-algebra maps out of `W_σ`
-  into an affinoid or dagger algebra are determined by the coordinate variables.
-* `TauCeti.Dagger.existsUnique_algHom_completion`: every `K`-algebra map `A →ₐ[K] S` into an
+* `TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isDaggerAlgebra`: `K`-algebra maps out of `W_σ`
+  into a dagger algebra are determined by the coordinate variables.
+* `TauCeti.Dagger.completion_algHom_ext_of_isAffinoidAlgebra` and
+  `TauCeti.Dagger.existsUnique_algHom_completion`: every `K`-algebra map `A →ₐ[K] S` into an
   affinoid algebra factors uniquely through `toCompletion K A`.
-* `TauCeti.Dagger.completionMap_id`, `TauCeti.Dagger.completionMap_comp`,
-  `TauCeti.Dagger.continuous_completionMap`: functoriality and continuity of `completionMap`.
-* `TauCeti.Dagger.supSeminorm_toCompletion`, `TauCeti.Dagger.IsDaggerAlgebra.supSeminorm_map_le`:
-  the completion map preserves `supSeminorm`, and morphisms of dagger algebras contract it.
+* `TauCeti.Dagger.completion_algHom_ext`, `TauCeti.Dagger.completionMap_unique`,
+  `TauCeti.Dagger.completionMap_id`, `TauCeti.Dagger.completionMap_comp`,
+  `TauCeti.Dagger.continuous_completionMap`: uniqueness, functoriality, and continuity of
+  `completionMap`.
+* `TauCeti.Dagger.supSeminorm_toCompletion`, `TauCeti.Dagger.IsDaggerAlgebra.supSeminorm_map_le`,
+  `TauCeti.Dagger.IsDaggerAlgebra.supSeminorm_algEquiv`,
+  `TauCeti.Dagger.IsDaggerAlgebra.supSeminorm_eq_zero_iff`,
+  `TauCeti.Dagger.IsDaggerAlgebra.isReduced_iff_supSeminorm_eq_zero`: the completion map preserves
+  `supSeminorm`, morphisms of dagger algebras contract it, and its kernel is the nilradical.
 
 ## References
 
@@ -86,7 +74,8 @@ identifies the completion of `W_σ` with `T_σ`
 
 The extension and uniqueness arguments adapt the restricted-series universal property in
 `TauCeti.RingTheory.Affinoid.Restricted` and automatic continuity in
-`TauCeti.RingTheory.Affinoid.Continuity` from Tate algebras to Monsky–Washnitzer presentations.
+`TauCeti.RingTheory.Affinoid.Continuity` and `TauCeti.RingTheory.Affinoid.QuotientNorm` to
+Monsky–Washnitzer presentations via `TauCeti.RingTheory.Dagger.TateLift`.
 -/
 
 public section
@@ -100,35 +89,6 @@ section AlgHomExt
 namespace washnitzerAlgebra
 
 variable {K σ : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] [Finite σ]
-
-/-- **Homomorphisms from `W_σ` separated by finite maximal-power quotients are determined by the
-variables.** If `R` is a noetherian `K`-algebra whose quotients `R ⧸ m ^ k` by all powers of
-maximal ideals are finite over `K`, then two `K`-algebra homomorphisms `W_σ →ₐ[K] R` agreeing on
-every coordinate variable are equal. No continuity or norm on `R` is assumed. -/
-theorem algHom_ext_of_isNoetherianRing {R : Type*} [CommRing R] [Algebra K R]
-    [IsNoetherianRing R]
-    (hfin : ∀ (m : Ideal R) [m.IsMaximal] (k : ℕ), Module.Finite K (R ⧸ m ^ k))
-    {φ ψ : washnitzerAlgebra σ K →ₐ[K] R} (h : ∀ i, φ (X σ K i) = ψ (X σ K i)) : φ = ψ := by
-  ext f
-  suffices φ f - ψ f ∈ (⊥ : Ideal R) from sub_eq_zero.mp this
-  rw [← Ideal.iInf_isMaximal_pow_eq_bot]
-  simp only [Ideal.mem_iInf]
-  intro m hm k _
-  let := hm
-  have := hfin m k
-  have : Algebra.IsIntegral K (R ⧸ m ^ k) := Algebra.IsIntegral.of_finite K _
-  let q := Ideal.Quotient.mkₐ K (m ^ k)
-  have hq : q.comp φ = q.comp ψ := algHom_ext_of_isIntegral fun i ↦ by simp [h i]
-  exact Ideal.Quotient.eq_zero_iff_mem.mp
-    (by simpa [q, map_sub] using sub_eq_zero.mpr (AlgHom.congr_fun hq f))
-
-/-- **`K`-algebra homomorphisms from `W_σ` into an affinoid algebra are determined by the
-variables**, with no continuity assumed. -/
-theorem algHom_ext_of_isAffinoidAlgebra {R : Type*} [CommRing R] [Algebra K R]
-    (hR : IsAffinoidAlgebra K R) {φ ψ : washnitzerAlgebra σ K →ₐ[K] R}
-    (h : ∀ i, φ (X σ K i) = ψ (X σ K i)) : φ = ψ :=
-  have := hR.isNoetherianRing
-  algHom_ext_of_isNoetherianRing (fun m _ k ↦ hR.finite_quotient_pow m k) h
 
 /-- **`K`-algebra homomorphisms from `W_σ` into a dagger algebra are determined by the
 variables**, with no continuity assumed. -/
@@ -144,136 +104,34 @@ end washnitzerAlgebra
 
 end AlgHomExt
 
-section UniversalProperty
-
-variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-
-local notation "T " σ:max => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
-
-namespace washnitzerAlgebra
-
-variable {σ : Type*} [Finite σ]
-
-/-- Every `K`-algebra homomorphism from `W_σ` into a completely normed affinoid algebra maps each
-coordinate variable to a power-bounded element. -/
-theorem isPowerBounded_map_X {S : Type*} [NormedCommRing S] [NormedAlgebra K S]
-    [IsUltrametricDist S] [CompleteSpace S] (hS : IsAffinoidAlgebra K S)
-    (ψ : washnitzerAlgebra σ K →ₐ[K] S) (i : σ) : Huber.IsPowerBounded (ψ (X σ K i)) := by
-  rw [hS.isPowerBounded_iff_supSeminorm_le_one]
-  refine supSeminorm_le zero_le_one fun x ↦ ?_
-  rw [← hS.pointNorm_maximalSpectrumComap ψ x]
-  exact (pointNorm_le_norm _ (X σ K i)).trans_eq (norm_X i)
-
-/-- Two `K`-algebra homomorphisms from the Tate algebra `T_σ` into an affinoid algebra that agree on
-`W_σ` are equal. No norm or continuity on the target is required. -/
-theorem tate_algHom_ext_of_isAffinoidAlgebra {S : Type*} [CommRing S] [Algebra K S]
-    (hS : IsAffinoidAlgebra K S) {Φ₁ Φ₂ : T σ →ₐ[K] S}
-    (h : ∀ f, Φ₁ (toTate σ K f) = Φ₂ (toTate σ K f)) : Φ₁ = Φ₂ := by
-  let := hS.residueNormedCommRing
-  let := hS.residueNormedAlgebra
-  have := hS.isUltrametricDist_residueNormedCommRing
-  have := hS.completeSpace_residueNormedCommRing
-  have := (isAffinoidAlgebra_tate (K := K) (σ := σ)).isNoetherianRing
-  exact AlgHom.coe_fn_injective <|
-    denseRange_toTate.equalizer (hS.continuous_algHom (B := T σ) Φ₁)
-      (hS.continuous_algHom (B := T σ) Φ₂) (funext h)
-
-/-- **Extension of homomorphisms along `W_σ ⊆ T_σ`.** Every `K`-algebra homomorphism
-`ψ : W_σ →ₐ[K] S` into an affinoid algebra extends to a `K`-algebra homomorphism `T_σ →ₐ[K] S`. -/
-noncomputable def liftToTate {S : Type*} [CommRing S] [Algebra K S] (hS : IsAffinoidAlgebra K S)
-    (ψ : washnitzerAlgebra σ K →ₐ[K] S) : T σ →ₐ[K] S :=
-  letI := Fintype.ofFinite σ
-  letI := hS.residueNormedCommRing
-  letI := hS.residueNormedAlgebra
-  haveI := hS.isUltrametricDist_residueNormedCommRing
-  haveI := hS.completeSpace_residueNormedCommRing
-  let e := Fintype.equivFin σ
-  (isAffinoidAlgebra_self.restrictedLift hS (Algebra.ofId K S)
-    (b := fun j ↦ ψ (X σ K (e.symm j)))
-    (fun j ↦ isPowerBounded_map_X hS ψ (e.symm j))).comp
-    (IsRestricted.renameAlgEquiv e (fun _ ↦ (1 : ℝ))).toAlgHom
-
-/-- `liftToTate` sends each variable `Xᵢ` of `T_σ` to `ψ (Xᵢ)`. -/
-@[simp]
-theorem liftToTate_X {S : Type*} [CommRing S] [Algebra K S] (hS : IsAffinoidAlgebra K S)
-    (ψ : washnitzerAlgebra σ K →ₐ[K] S) (i : σ) :
-    liftToTate hS ψ ⟨_root_.MvPowerSeries.X i, isRestricted_X _ i⟩ = ψ (X σ K i) := by
-  let := Fintype.ofFinite σ
-  let := hS.residueNormedCommRing
-  let := hS.residueNormedAlgebra
-  have := hS.isUltrametricDist_residueNormedCommRing
-  have := hS.completeSpace_residueNormedCommRing
-  let e := Fintype.equivFin σ
-  have hren := IsRestricted.renameAlgEquiv_X (R := K) e (fun _ ↦ (1 : ℝ)) i
-  simp [liftToTate, e, hren]
-
-/-- `liftToTate` restricts to `ψ` along `toTate`. -/
-@[simp]
-theorem liftToTate_comp_toTate {S : Type*} [CommRing S] [Algebra K S] (hS : IsAffinoidAlgebra K S)
-    (ψ : washnitzerAlgebra σ K →ₐ[K] S) : (liftToTate hS ψ).comp (toTate σ K) = ψ := by
-  refine algHom_ext_of_isAffinoidAlgebra hS fun i ↦ ?_
-  have hX : toTate σ K (X σ K i) = ⟨_root_.MvPowerSeries.X i, isRestricted_X _ i⟩ :=
-    Subtype.ext (by simp)
-  simp [hX]
-
-/-- `liftToTate` agrees with `ψ` on every overconvergent series. -/
-@[simp]
-theorem liftToTate_toTate {S : Type*} [CommRing S] [Algebra K S] (hS : IsAffinoidAlgebra K S)
-    (ψ : washnitzerAlgebra σ K →ₐ[K] S) (f : washnitzerAlgebra σ K) :
-    liftToTate hS ψ (toTate σ K f) = ψ f :=
-  AlgHom.congr_fun (liftToTate_comp_toTate hS ψ) f
-
-/-- **Universal property of `toTate`.** Every `K`-algebra homomorphism from `W_σ` into an affinoid
-algebra extends uniquely along `W_σ → T_σ`. -/
-theorem existsUnique_algHom_toTate {S : Type*} [CommRing S] [Algebra K S]
-    (hS : IsAffinoidAlgebra K S) (ψ : washnitzerAlgebra σ K →ₐ[K] S) :
-    ∃! Φ : T σ →ₐ[K] S, Φ.comp (toTate σ K) = ψ :=
-  ⟨liftToTate hS ψ, liftToTate_comp_toTate hS ψ, fun _ hΦ ↦
-    tate_algHom_ext_of_isAffinoidAlgebra hS fun f ↦ by
-      rw [← AlgHom.comp_apply, hΦ, liftToTate_toTate]⟩
-
-end washnitzerAlgebra
-
 section CompletionLift
 
-variable {A S : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A S : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
   [CommRing S] [Algebra K S]
 
 /-- Two `K`-algebra homomorphisms out of `completion K A` into an affinoid algebra that agree on
 `toCompletion K A` are equal. No continuity or norm on `S` is assumed. -/
 theorem completion_algHom_ext_of_isAffinoidAlgebra (hS : IsAffinoidAlgebra K S)
     {Φ₁ Φ₂ : completion K A →ₐ[K] S}
-    (h : ∀ a, Φ₁ (toCompletion K A a) = Φ₂ (toCompletion K A a)) : Φ₁ = Φ₂ := by
-  let := hS.residueNormedCommRing
-  let := hS.residueNormedAlgebra
-  have := hS.isUltrametricDist_residueNormedCommRing
-  have := hS.completeSpace_residueNormedCommRing
-  have := (isAffinoidAlgebra_completion (K := K) (A := A)).isNoetherianRing
-  exact AlgHom.coe_fn_injective <|
-    denseRange_toCompletion.equalizer (hS.continuous_algHom (B := completion K A) Φ₁)
-      (hS.continuous_algHom (B := completion K A) Φ₂) (funext h)
+    (h : ∀ a, Φ₁ (toCompletion K A a) = Φ₂ (toCompletion K A a)) : Φ₁ = Φ₂ :=
+  washnitzerAlgebra.tateQuotient_algHom_ext_of_isAffinoidAlgebra hS fun f ↦ by
+    simpa only [← toCompletion_presentation] using h (presentation K A f)
 
 /-- **Universal extension to the completion.** Every `K`-algebra homomorphism `φ : A →ₐ[K] S` from
 a dagger algebra into an affinoid algebra extends across `toCompletion K A : A →ₐ[K] completion K A`
 to a `K`-algebra homomorphism `completion K A →ₐ[K] S`. -/
 noncomputable def completionLift (hS : IsAffinoidAlgebra K S) (φ : A →ₐ[K] S) :
     completion K A →ₐ[K] S :=
-  let liftT := washnitzerAlgebra.liftToTate hS (φ.comp (presentation K A))
-  have hker : (RingHom.ker (presentation K A)).map (washnitzerAlgebra.toTate _ K) ≤
-      RingHom.ker liftT :=
-    Ideal.map_le_iff_le_comap.mpr fun f hf ↦ by
-      rw [Ideal.mem_comap, RingHom.mem_ker, washnitzerAlgebra.liftToTate_toTate,
-        AlgHom.comp_apply, RingHom.mem_ker.mp hf, map_zero]
-  Ideal.Quotient.liftₐ _ liftT fun _ hx ↦ RingHom.mem_ker.mp (hker hx)
+  washnitzerAlgebra.liftToTateQuotient hS (RingHom.ker (presentation K A))
+    (φ.comp (presentation K A)) fun _ hf ↦ by simp [RingHom.mem_ker.mp hf]
 
 /-- `completionLift` extends `φ` on every element of `A`. -/
 @[simp]
 theorem completionLift_toCompletion (hS : IsAffinoidAlgebra K S) (φ : A →ₐ[K] S) (a : A) :
     completionLift hS φ (toCompletion K A a) = φ a := by
   obtain ⟨f, rfl⟩ := presentation_surjective K A a
-  rw [toCompletion_presentation]
-  exact (Ideal.Quotient.lift_mk _ _ _).trans
-    (washnitzerAlgebra.liftToTate_toTate hS (φ.comp (presentation K A)) f)
+  simp [completionLift]
 
 /-- Precomposing `completionLift` with `toCompletion` recovers `φ`. -/
 @[simp]
@@ -311,8 +169,6 @@ theorem completionLiftEquiv_symm_apply (hS : IsAffinoidAlgebra K S) (φ : A →�
     (completionLiftEquiv hS).symm φ = completionLift hS φ := (rfl)
 
 end CompletionLift
-
-end UniversalProperty
 
 section Functoriality
 
@@ -456,7 +312,7 @@ section ArbitraryPresentation
 variable {K σ : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [Finite σ] {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
 
-local notation "T " σ:max => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
+local notation "T " α:max => IsRestricted.subring (R := K) (fun _ : α ↦ (1 : ℝ))
 
 /-- The canonical `K`-algebra map `A → T_σ ⧸ (ker π) T_σ` attached to an arbitrary surjective
 presentation `π : W_σ ↠ A`. -/
@@ -474,51 +330,45 @@ private theorem toPresentationCompletion_apply (π : washnitzerAlgebra σ K →�
       Ideal.Quotient.mk _ (washnitzerAlgebra.toTate σ K f) := by
   simp [toPresentationCompletion]
 
+/-- The forward map `completion K A →ₐ[K] T_σ ⧸ (ker π) T_σ` induced by `completionLift`. -/
+private noncomputable def presentationCompletionFwd
+    (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π) :
+    completion K A →ₐ[K] T σ ⧸ (RingHom.ker π).map (washnitzerAlgebra.toTate σ K) :=
+  completionLift (isAffinoidAlgebra_tate.quotient _) (toPresentationCompletion π hπ)
+
+/-- The backward map `(T_σ ⧸ (ker π) T_σ) →ₐ[K] completion K A` induced by `liftToTateQuotient`. -/
+private noncomputable def presentationCompletionBwd
+    (π : washnitzerAlgebra σ K →ₐ[K] A) :
+    (T σ ⧸ (RingHom.ker π).map (washnitzerAlgebra.toTate σ K)) →ₐ[K] completion K A :=
+  washnitzerAlgebra.liftToTateQuotient isAffinoidAlgebra_completion (RingHom.ker π)
+    ((toCompletion K A).comp π) fun _ hf ↦ by simp [RingHom.mem_ker.mp hf]
+
+private theorem presentationCompletionBwd_comp_fwd
+    (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π) :
+    (presentationCompletionBwd π).comp (presentationCompletionFwd π hπ) =
+      AlgHom.id K (completion K A) :=
+  completion_algHom_ext fun a ↦ by
+    obtain ⟨f, rfl⟩ := hπ a
+    simp [presentationCompletionFwd, presentationCompletionBwd]
+
+private theorem presentationCompletionFwd_comp_bwd
+    (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π) :
+    (presentationCompletionFwd π hπ).comp (presentationCompletionBwd π) = AlgHom.id K _ :=
+  washnitzerAlgebra.tateQuotient_algHom_ext_of_isAffinoidAlgebra
+    (isAffinoidAlgebra_tate.quotient _) fun f ↦ by
+      simp [presentationCompletionFwd, presentationCompletionBwd]
+
 /-- **Presentation independence of the completion.** For any surjective presentation
 `π : W_σ →ₐ[K] A` of a dagger algebra, `completion K A` is canonically topologically isomorphic as
 a `K`-algebra to `T_σ ⧸ (ker π) T_σ` under `A`. -/
 noncomputable def presentationCompletionContinuousAlgEquiv
     (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π) :
     completion K A ≃A[K] T σ ⧸ (RingHom.ker π).map (washnitzerAlgebra.toTate σ K) :=
-  have hQ : IsAffinoidAlgebra K (T σ ⧸ (RingHom.ker π).map (washnitzerAlgebra.toTate σ K)) :=
-    isAffinoidAlgebra_tate.quotient _
-  have := hQ.isNoetherianRing
-  let fwd : completion K A →ₐ[K] T σ ⧸ (RingHom.ker π).map (washnitzerAlgebra.toTate σ K) :=
-    completionLift hQ (toPresentationCompletion π hπ)
-  let liftT : T σ →ₐ[K] completion K A :=
-    washnitzerAlgebra.liftToTate isAffinoidAlgebra_completion ((toCompletion K A).comp π)
-  have hker : (RingHom.ker π).map (washnitzerAlgebra.toTate σ K) ≤ RingHom.ker liftT :=
-    Ideal.map_le_iff_le_comap.mpr fun f hf ↦ by
-      rw [Ideal.mem_comap, RingHom.mem_ker, washnitzerAlgebra.liftToTate_toTate,
-        AlgHom.comp_apply, RingHom.mem_ker.mp hf, map_zero]
-  let bwd : (T σ ⧸ (RingHom.ker π).map (washnitzerAlgebra.toTate σ K)) →ₐ[K] completion K A :=
-    Ideal.Quotient.liftₐ _ liftT fun _ hx ↦ RingHom.mem_ker.mp (hker hx)
-  have hbwd_mk (f : washnitzerAlgebra σ K) :
-      bwd (Ideal.Quotient.mk _ (washnitzerAlgebra.toTate σ K f)) = toCompletion K A (π f) :=
-    (Ideal.Quotient.lift_mk _ _ _).trans
-      (washnitzerAlgebra.liftToTate_toTate isAffinoidAlgebra_completion
-        ((toCompletion K A).comp π) f)
-  have hbf : bwd.comp fwd = AlgHom.id K (completion K A) :=
-    completion_algHom_ext fun a ↦ by
-      obtain ⟨f, rfl⟩ := hπ a
-      simp [fwd, hbwd_mk]
-  have hdense : DenseRange
-      (Ideal.Quotient.mk ((RingHom.ker π).map (washnitzerAlgebra.toTate σ K)) ∘
-        washnitzerAlgebra.toTate σ K) :=
-    Ideal.Quotient.mk_surjective.denseRange.comp washnitzerAlgebra.denseRange_toTate
-      continuous_quot_mk
-  have hfb : fwd.comp bwd = AlgHom.id K _ :=
-    AlgHom.coe_fn_injective <|
-      hdense.equalizer
-        (IsAffinoidAlgebra.continuous_algHom (K := K)
-          (A := T σ ⧸ (RingHom.ker π).map (washnitzerAlgebra.toTate σ K))
-          (B := T σ ⧸ (RingHom.ker π).map (washnitzerAlgebra.toTate σ K))
-          hQ (fwd.comp bwd))
-        continuous_id <|
-        funext fun f ↦ by simp [fwd, hbwd_mk]
   IsAffinoidAlgebra.toContinuousAlgEquiv (K := K) (A := completion K A)
-    (B := T σ ⧸ (RingHom.ker π).map (washnitzerAlgebra.toTate σ K)) hQ
-    (AlgEquiv.ofAlgHom fwd bwd hfb hbf)
+    (B := T σ ⧸ (RingHom.ker π).map (washnitzerAlgebra.toTate σ K))
+    (isAffinoidAlgebra_tate.quotient _)
+    (AlgEquiv.ofAlgHom (presentationCompletionFwd π hπ) (presentationCompletionBwd π)
+      (presentationCompletionFwd_comp_bwd π hπ) (presentationCompletionBwd_comp_fwd π hπ))
 
 /-- `presentationCompletionContinuousAlgEquiv` sends `toCompletion K A (π f)` to the class of
 `toTate σ K f`. -/
@@ -528,7 +378,9 @@ theorem presentationCompletionContinuousAlgEquiv_toCompletion
     (f : washnitzerAlgebra σ K) :
     presentationCompletionContinuousAlgEquiv π hπ (toCompletion K A (π f)) =
       Ideal.Quotient.mk _ (washnitzerAlgebra.toTate σ K f) := by
-  simp [presentationCompletionContinuousAlgEquiv]
+  change (IsAffinoidAlgebra.toContinuousAlgEquiv _ _) (toCompletion K A (π f)) = _
+  rw [IsAffinoidAlgebra.coe_toContinuousAlgEquiv, AlgEquiv.ofAlgHom_apply]
+  exact (completionLift_toCompletion _ _ (π f)).trans (toPresentationCompletion_apply π hπ f)
 
 /-- The inverse of `presentationCompletionContinuousAlgEquiv` sends the class of `toTate σ K f` to
 `toCompletion K A (π f)`. -/
@@ -551,30 +403,50 @@ variable {σ K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Compl
 
 local notation "T" => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
 
+section Helpers
+
+variable (σ K)
+
+/-- The forward map `completion K (washnitzerAlgebra σ K) →ₐ[K] T_σ` induced by `completionLift`. -/
+private noncomputable def completionFwd :
+    completion K (washnitzerAlgebra σ K) →ₐ[K] T :=
+  completionLift isAffinoidAlgebra_tate (toTate σ K)
+
+/-- The backward map `T_σ →ₐ[K] completion K (washnitzerAlgebra σ K)` induced by `liftToTate`. -/
+private noncomputable def completionBwd :
+    T →ₐ[K] completion K (washnitzerAlgebra σ K) :=
+  liftToTate isAffinoidAlgebra_completion (toCompletion K (washnitzerAlgebra σ K))
+
+private theorem completionBwd_comp_fwd :
+    (completionBwd σ K).comp (completionFwd σ K) = AlgHom.id K _ :=
+  completion_algHom_ext fun f ↦ by simp [completionFwd, completionBwd]
+
+private theorem completionFwd_comp_bwd :
+    (completionFwd σ K).comp (completionBwd σ K) = AlgHom.id K _ :=
+  tate_algHom_ext_of_isAffinoidAlgebra isAffinoidAlgebra_tate fun f ↦ by
+    simp [completionFwd, completionBwd]
+
+end Helpers
+
 variable (σ K) in
 /-- **The completion of the Monsky–Washnitzer algebra is the Tate algebra.** The completion
 `completion K (washnitzerAlgebra σ K)` is canonically topologically isomorphic as a `K`-algebra to
 `T_σ = K⟨X⟩`, compatibly with `toCompletion` and `toTate`. -/
 noncomputable def completionContinuousAlgEquiv :
     completion K (washnitzerAlgebra σ K) ≃A[K] T :=
-  have := (isAffinoidAlgebra_tate (K := K) (σ := σ)).isNoetherianRing
-  let fwd : completion K (washnitzerAlgebra σ K) →ₐ[K] T :=
-    completionLift isAffinoidAlgebra_tate (toTate σ K)
-  let bwd : T →ₐ[K] completion K (washnitzerAlgebra σ K) :=
-    liftToTate isAffinoidAlgebra_completion (toCompletion K (washnitzerAlgebra σ K))
-  have hbf : bwd.comp fwd = AlgHom.id K _ := completion_algHom_ext fun f ↦ by simp [fwd, bwd]
-  have hfb : fwd.comp bwd = AlgHom.id K _ :=
-    tate_algHom_ext_of_isAffinoidAlgebra isAffinoidAlgebra_tate fun f ↦ by simp [fwd, bwd]
   IsAffinoidAlgebra.toContinuousAlgEquiv (K := K)
     (A := completion K (washnitzerAlgebra σ K)) (B := T) isAffinoidAlgebra_tate
-    (AlgEquiv.ofAlgHom fwd bwd hfb hbf)
+    (AlgEquiv.ofAlgHom (completionFwd σ K) (completionBwd σ K)
+      (completionFwd_comp_bwd σ K) (completionBwd_comp_fwd σ K))
 
 /-- The completion comparison on `W_σ` intertwines `toCompletion` with `toTate`. -/
 @[simp]
 theorem completionContinuousAlgEquiv_toCompletion (f : washnitzerAlgebra σ K) :
     completionContinuousAlgEquiv σ K (toCompletion K (washnitzerAlgebra σ K) f) =
       toTate σ K f := by
-  simp [completionContinuousAlgEquiv]
+  change (IsAffinoidAlgebra.toContinuousAlgEquiv _ _) _ = _
+  rw [IsAffinoidAlgebra.coe_toContinuousAlgEquiv, AlgEquiv.ofAlgHom_apply]
+  exact completionLift_toCompletion isAffinoidAlgebra_tate (toTate σ K) f
 
 /-- The inverse completion comparison on `W_σ` sends `toTate σ K f` to `toCompletion K W_σ f`. -/
 @[simp]
