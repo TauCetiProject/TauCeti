@@ -53,6 +53,9 @@ injectivity.
   with a variable, so the inclusions of `G` and `F(X)` do not commute in `G[X]`.
 * `TauCeti.GroupAlgGeom.GHom.mem_range_of_pow_mem_range`: if a group with unique roots admits a
   `G`-homomorphism back to `G`, the image of `G` in it is closed under roots.
+* `TauCeti.GroupAlgGeom.mapsTo_wordMap_id`, `TauCeti.GroupAlgGeom.mapsTo_wordMap_comp`: the tuple
+  of variables maps every set of points to itself, and word maps between sets of points compose
+  by substitution of the defining words.
 
 ## References
 
@@ -438,6 +441,22 @@ theorem eval_wordMap (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (v 
     wordMap ι (fun x => inr (FreeGroup.of x)) v = v := by
   funext x
   simp
+
+variable (ι) in
+/-- The tuple of variables maps every set of points to itself. -/
+theorem mapsTo_wordMap_id (s : Set (X → H)) :
+    Set.MapsTo (wordMap ι fun x => inr (FreeGroup.of x)) s s :=
+  fun v hv => by rwa [wordMap_id]
+
+/-- Substituting one tuple of words into another composes the corresponding word maps between
+sets of points. -/
+theorem mapsTo_wordMap_comp {Y Z : Type*} {s : Set (X → H)} {t : Set (Y → H)}
+    {r : Set (Z → H)} {w : Y → GX G X} {u : Z → GX G Y} (hu : Set.MapsTo (wordMap ι u) t r)
+    (hw : Set.MapsTo (wordMap ι w) s t) :
+    Set.MapsTo (wordMap ι fun z => eval (inl : G →* GX G X) w (u z)) s r := by
+  intro v hv
+  rw [← wordMap_wordMap]
+  exact hu (hw hv)
 
 /-- Changing one of the words of a tuple changes the corresponding coordinate of its word
 map. -/
