@@ -124,7 +124,6 @@ private def upperTriangularClass (a d : ℤ) (b : Fin (d - a).natAbs) :
 
 private theorem upperTriangularClass_bijective (h : a ≠ d) :
     Function.Bijective (upperTriangularClass a d) := by
-  have hs : (d - a).natAbs ≠ 0 := Int.natAbs_ne_zero.2 (sub_ne_zero.2 h.symm)
   refine ⟨fun i j hij ↦ ?_, fun X ↦ ?_⟩
   · obtain ⟨g, hg⟩ := Quotient.exact' hij
     -- `d - a` divides `j - i`, and `|j - i| < |d - a|`

@@ -102,6 +102,8 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.injOn_insert_erase` keeps a map injective on a finset when one point is replaced by
   another point with the same image, and `Finset.injOn_insert_erase_iff` shows that such a
   replacement by a point outside the finset does not change injectivity.
+* `Finset.sdiff_coe_filter_mem_eq`: removing from a set `U` the points of a finset `S` lying in
+  `U` is removing all of `S`.
 -/
 
 public section
@@ -847,6 +849,13 @@ theorem injOn_insert_erase_iff {α β : Type*} [DecidableEq α] {f : α → β} 
   refine ⟨fun h ↦ ?_, fun h ↦ injOn_insert_erase h ha hab⟩
   have h' := injOn_insert_erase h (mem_insert_self b _) hab.symm
   rwa [erase_insert fun h ↦ hb (mem_of_mem_erase h), insert_erase ha] at h'
+
+/-- Removing from `U` the points of the finite set `S` that lie in `U` is removing all of `S`. -/
+theorem sdiff_coe_filter_mem_eq {α : Type*} (S : Finset α) (U : Set α) [DecidablePred (· ∈ U)] :
+    U \ ↑(S.filter (· ∈ U)) = U \ ↑S := by
+  ext z
+  simp only [Set.mem_sdiff, coe_filter, Set.mem_ofPred_eq, mem_coe]
+  tauto
 
 end Finset
 

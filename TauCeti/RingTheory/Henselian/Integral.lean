@@ -166,7 +166,7 @@ instance henselianRing_map_of_isIntegral :
   TauCeti.henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot
     (by
       rw [← jacobson_bot]
-      exact map_le_jacobson_bot_of_isIntegral (by rw [jacobson_bot]; exact HenselianRing.jac))
+      exact map_le_jacobson_of_isIntegral bot_le (by rw [jacobson_bot]; exact HenselianRing.jac))
     fun f hf s hs ↦ by
       have : Module.Finite S (AdjoinRoot f) := hf.finite_adjoinRoot
       have : Algebra.IsIntegral R (AdjoinRoot f) := Algebra.IsIntegral.trans S

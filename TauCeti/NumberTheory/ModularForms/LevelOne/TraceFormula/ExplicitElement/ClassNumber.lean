@@ -466,7 +466,7 @@ private theorem sum_reducedForms_chainWeight₄ (D : ℕ) [NeZero D] :
     ∑ f ∈ reducedForms D, chainWeight₄ 0 f.b f.a f.c = ∑ f ∈ reducedForms D, sixWeight f := by
   rw [← sub_eq_zero, ← Finset.sum_sub_distrib]
   refine Finset.sum_involution (fun f _ ↦ negMiddle f) (fun f hf ↦ ?_) (fun f hf hne ↦ ?_)
-    (fun f hf ↦ ?_) (fun f hf ↦ ?_)
+    (fun f hf ↦ ?_) (fun f _ ↦ ?_)
   · unfold negMiddle
     split_ifs with hs
     · rw [chainWeight₄_sub_sixWeight hf,

@@ -116,7 +116,6 @@ private theorem gelfond_value_bound_le {c H : ℝ} {m n q r : ℕ} (hm : 1 ≤ m
             c' ^ r * (r : ℝ) ^ (((r : ℝ) + 1) / 2) :=
           (mul_le_mul_of_nonneg_right h₂ (by positivity)).trans
             (mul_le_mul_of_nonneg_left h₃ (by positivity))
-        have hq' : (0 : ℝ) ≤ ((q * q : ℕ) : ℝ) := by positivity
         calc ((q * q : ℕ) : ℝ) * (c ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2)) *
               ((q : ℝ) ^ r * H ^ (r + 2 * q * m))
             ≤ ((q * q : ℕ) : ℝ) * (c' ^ r * (r : ℝ) ^ (((r : ℝ) + 1) / 2)) *

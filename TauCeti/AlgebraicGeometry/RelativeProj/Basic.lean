@@ -237,6 +237,12 @@ instance isOpenImmersion_relativeProjCover_f
     (U : X.AffineZariskiSite) : IsOpenImmersion (A.relativeProjCover.f U) :=
   A.relativeProjCover.map_prop U
 
+/-- The charts of the relative `Proj`, written as the coprojections of the gluing diagram, are open
+immersions. -/
+instance _root_.CategoryTheory.CommMon.isOpenImmersion_colimit_ι_relativeProjGluingData
+    (U : X.AffineZariskiSite) : IsOpenImmersion (colimit.ι A.relativeProjGluingData.functor U) :=
+  A.isOpenImmersion_relativeProjCover_f U
+
 /-- The chart of the relative `Proj` over an affine open `U` is `Proj (⨁ n, Γ(Aₙ, U))`. -/
 theorem relativeProjCover_X (U : X.AffineZariskiSite) :
     A.relativeProjCover.X U = Proj (A.gradedSectionsGrading U.toOpens) :=

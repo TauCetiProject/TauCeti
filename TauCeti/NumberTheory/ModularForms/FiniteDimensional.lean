@@ -24,6 +24,10 @@ These are the cases the weight induction in the dimension formulas bottoms out a
 
 * `ModularForm.subsingleton_of_neg_weight`, `ModularForm.finiteDimensional_of_neg_weight`:
   `M_k(𝒢) = 0` for `k < 0`.
+* `ModularForm.coe_eq_zero_of_neg_weight`, `ModularForm.qExpansion_eq_zero_of_neg_weight`: a
+  modular form of negative weight and its `q`-expansion are zero.
+* `CuspForm.coe_eq_zero_of_weight_nonpos`, `CuspForm.qExpansion_eq_zero_of_weight_nonpos`: a cusp
+  form of nonpositive weight and its `q`-expansion are zero.
 * `ModularForm.eq_iff_apply_eq_of_weight_zero`: a form in `M_0(𝒢)` is determined by its value
   at any single point.
 * `ModularForm.evalEquiv`: evaluation at a point, as a linear equivalence `M_0(𝒢) ≃ₗ[ℂ] ℂ`.
@@ -51,6 +55,17 @@ variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsArithmetic]
 /-- There are no nonzero modular forms of negative weight. -/
 theorem subsingleton_of_neg_weight {k : ℤ} (hk : k < 0) : Subsingleton (ModularForm 𝒢 k) :=
   ⟨fun f g ↦ by rw [isZero_of_neg_weight hk f, isZero_of_neg_weight hk g]⟩
+
+/-- A modular form of negative weight is zero. -/
+theorem coe_eq_zero_of_neg_weight {F : Type*} [FunLike F ℍ ℂ] {k : ℤ} [ModularFormClass F 𝒢 k]
+    (hk : k < 0) (f : F) : (f : ℍ → ℂ) = 0 := by
+  simpa using congrArg DFunLike.coe
+    (isZero_of_neg_weight hk (ModularFormClass.modularForm f))
+
+/-- The `q`-expansion of a modular form of negative weight is zero, for any width `h`. -/
+theorem qExpansion_eq_zero_of_neg_weight {F : Type*} [FunLike F ℍ ℂ] {k : ℤ}
+    [ModularFormClass F 𝒢 k] (hk : k < 0) {h : ℝ} (f : F) : qExpansion h f = 0 := by
+  rw [coe_eq_zero_of_neg_weight hk f, qExpansion_zero]
 
 /-- Modular forms of negative weight form a finite-dimensional space — the zero space. -/
 theorem finiteDimensional_of_neg_weight [𝒢.HasDetOne] {k : ℤ} (hk : k < 0) :
@@ -99,3 +114,28 @@ theorem finrank_weight_zero [𝒢.HasDetOne] : Module.finrank ℂ (ModularForm �
   rw [(evalEquiv (𝒢 := 𝒢) I).finrank_eq, Module.finrank_self]
 
 end ModularForm
+
+namespace CuspForm
+
+/-- A cusp form of nonpositive weight is zero: in weight zero it is constant by
+`ModularForm.eq_const_of_weight_zero`, and the constant vanishes at infinity. -/
+theorem coe_eq_zero_of_weight_nonpos {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsArithmetic] {F : Type*}
+    [FunLike F ℍ ℂ] {k : ℤ} [CuspFormClass F 𝒢 k] (hk : k ≤ 0) (f : F) : (f : ℍ → ℂ) = 0 := by
+  rcases hk.lt_or_eq with hk | rfl
+  · exact ModularForm.coe_eq_zero_of_neg_weight hk f
+  · obtain ⟨c, hc⟩ := ModularForm.eq_const_of_weight_zero (ModularFormClass.modularForm f)
+    have : Fact (IsCusp OnePoint.infty 𝒢) :=
+      ⟨𝒢.isCusp_of_mem_strictPeriods 𝒢.strictWidthInfty_pos 𝒢.strictWidthInfty_mem_strictPeriods⟩
+    have hc' : (f : ℍ → ℂ) = Function.const ℍ c := by
+      simpa only [ModularFormClass.coe_modularForm] using hc
+    have h0 : c = 0 := tendsto_nhds_unique tendsto_const_nhds
+      (hc' ▸ CuspFormClass.zero_at_infty f)
+    rw [hc', h0, Function.const_zero]
+
+/-- The `q`-expansion of a cusp form of nonpositive weight is zero, for any width `h`. -/
+theorem qExpansion_eq_zero_of_weight_nonpos {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsArithmetic]
+    {F : Type*} [FunLike F ℍ ℂ] {k : ℤ} [CuspFormClass F 𝒢 k] (hk : k ≤ 0) {h : ℝ} (f : F) :
+    qExpansion h f = 0 := by
+  rw [coe_eq_zero_of_weight_nonpos hk f, qExpansion_zero]
+
+end CuspForm

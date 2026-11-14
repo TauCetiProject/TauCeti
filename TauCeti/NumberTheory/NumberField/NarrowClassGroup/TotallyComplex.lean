@@ -12,9 +12,8 @@ public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.Basic
 
 For a **totally complex** number field `K` (no real infinite places) the positivity condition is
 vacuous: every unit is totally positive (`totallyPositiveUnits_eq_top`), so the forgetful surjection
-`Cl⁺(K) → Cl(K)` is also injective. Hence the narrow and ordinary class groups **coincide** — as the
-multiquadratic roadmap notes, for imaginary fields narrow = ordinary. (The `t - 1` genus-theory rank
-formula concerns the *real* case, where the two can differ.)
+`Cl⁺(K) → Cl(K)` is also injective. Hence the narrow and ordinary class groups **coincide**. (The
+`t - 1` genus-theory rank formula concerns the *real* case, where the two can differ.)
 
 ## Main results
 

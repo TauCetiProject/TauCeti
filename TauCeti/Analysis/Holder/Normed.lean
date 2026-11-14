@@ -37,6 +37,8 @@ parallel notion of Hölder continuity.
   evaluation, and inclusion, with operator-norm bounds.
 * `TauCeti.HolderSpace.compLipschitzL`: precomposition with a `K`-Lipschitz map, of operator norm
   at most `max 1 (K ^ α)`.
+* `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
+  norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry.
 
 ## References
 
@@ -574,6 +576,65 @@ theorem norm_compLipschitzL_le_one (hg : LipschitzWith 1 g) :
   simpa using norm_compLipschitzL_le (α := α) (Y := Y) hg
 
 end compLipschitz
+
+section compLeft
+
+variable {Y' : Type*} [NormedAddCommGroup Y'] [NormedSpace ℝ Y']
+
+/-- Postcomposition with a continuous linear map `g`, as a continuous linear map between bounded
+Hölder spaces of the same exponent. -/
+def compLeftL (g : Y →L[ℝ] Y') : HolderSpace α X Y →L[ℝ] HolderSpace α X Y' :=
+  LinearMap.mkContinuous
+    { toFun f := ofBoundedContinuousFunction
+        (g.compLeftContinuousBounded X f.toBoundedContinuousFunction) (by
+          have h := (holderWith_one.2 g.lipschitzWith).comp f.memHolder.holderWith
+          rw [NNReal.coe_one, one_mul] at h
+          have e : ⇑(g.compLeftContinuousBounded X f.toBoundedContinuousFunction) =
+              ⇑g ∘ ⇑f.toBoundedContinuousFunction :=
+            funext fun x ↦ g.compLeftContinuousBounded_apply _ x
+          rw [e]
+          exact h.memHolder)
+      map_add' f₁ f₂ := by ext; simp [ofBoundedContinuousFunction_apply]
+      map_smul' c f := by ext; simp [ofBoundedContinuousFunction_apply] }
+    ‖g‖ fun f ↦ by
+      have hH : HolderWith (‖g‖₊ * nnHolderNorm α (f : X → Y)) α (fun x ↦ g (f x)) := by
+        have h := (holderWith_one.2 g.lipschitzWith).comp f.holderWith
+        rwa [NNReal.coe_one, NNReal.rpow_one, one_mul] at h
+      rw [LinearMap.coe_mk, AddHom.coe_mk]
+      refine (norm_le_of_norm_le_of_holderWith (M := ‖g‖ * ‖f.toBoundedContinuousFunction‖)
+        (K := ‖g‖₊ * nnHolderNorm α (f : X → Y)) (by positivity) (fun x ↦ ?_) ?_).trans ?_
+      · rw [ofBoundedContinuousFunction_apply, g.compLeftContinuousBounded_apply]
+        exact g.le_of_opNorm_le_of_le le_rfl (f.toBoundedContinuousFunction.norm_coe_le_norm x)
+      · convert hH using 1
+        exact funext fun x ↦ g.compLeftContinuousBounded_apply _ x
+      · rw [norm_def f, mul_add, coe_toBoundedContinuousFunction]
+        push_cast
+        exact le_rfl
+
+@[simp]
+theorem compLeftL_apply (g : Y →L[ℝ] Y') (f : HolderSpace α X Y) (x : X) :
+    compLeftL g f x = g (f x) := by
+  simp [compLeftL, ofBoundedContinuousFunction_apply]
+
+/-- Postcomposition with a continuous linear map `g` has operator norm at most `‖g‖`. -/
+theorem norm_compLeftL_le (g : Y →L[ℝ] Y') : ‖compLeftL (α := α) (X := X) g‖ ≤ ‖g‖ :=
+  LinearMap.mkContinuous_norm_le _ (norm_nonneg g) _
+
+/-- Postcomposition with a linear isometry preserves the Hölder-space norm. -/
+theorem norm_compLeftL_linearIsometry (e : Y →ₗᵢ[ℝ] Y') (f : HolderSpace α X Y) :
+    ‖compLeftL e.toContinuousLinearMap f‖ = ‖f‖ := by
+  have hcoe : ((compLeftL e.toContinuousLinearMap f).toBoundedContinuousFunction : X → Y') =
+      e ∘ f.toBoundedContinuousFunction := by
+    ext x
+    simp
+  have hsup : ‖(compLeftL e.toContinuousLinearMap f).toBoundedContinuousFunction‖ =
+      ‖f.toBoundedContinuousFunction‖ := by
+    simp only [BoundedContinuousFunction.norm_eq_iSup_norm, hcoe, Function.comp_apply,
+      LinearIsometry.norm_map]
+  rw [norm_def, norm_def, hsup, hcoe, nnHolderNorm, nnHolderNorm, eHolderNorm, eHolderNorm]
+  simp only [HolderWith, Function.comp_apply, LinearIsometry.edist_map]
+
+end compLeft
 
 end HolderSpace
 

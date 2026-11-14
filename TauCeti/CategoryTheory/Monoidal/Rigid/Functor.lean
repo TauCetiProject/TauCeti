@@ -191,7 +191,7 @@ variable (F)
 /-- The canonical isomorphism `F.obj Xᘁ ≅ (F.obj X)ᘁ` between the image of the right dual of `X`
 under a strong monoidal functor and the right dual of `F.obj X`: both are right duals of
 `F.obj X`, the first through the image pairing `F.mapExactPairing X Xᘁ`. -/
-noncomputable def mapRightDualIso (X : C) [HasRightDual X] [hFX : HasRightDual (F.obj X)] :
+noncomputable def mapRightDualIso (X : C) [HasRightDual X] [_hFX : HasRightDual (F.obj X)] :
     F.obj Xᘁ ≅ (F.obj X)ᘁ :=
   rightDualIso (F.mapExactPairing X Xᘁ) HasRightDual.exact
 
@@ -202,7 +202,7 @@ evaluation of `(X, Xᘁ)`. This characterizes `F.mapRightDualIso X`, by
 `CategoryTheory.ExactPairing.rightHom_ext`. -/
 @[reassoc]
 theorem mapRightDualIso_hom_whiskerRight_evaluation (X : C) [HasRightDual X]
-    [hFX : HasRightDual (F.obj X)] :
+    [_hFX : HasRightDual (F.obj X)] :
     (F.mapRightDualIso X).hom ▷ F.obj X ≫ ε_ (F.obj X) (F.obj X)ᘁ =
       μ F Xᘁ X ≫ F.map (ε_ X Xᘁ) ≫ η F :=
   ExactPairing.rightDualIso_hom_whiskerRight_evaluation _ _
@@ -243,10 +243,10 @@ is the identity. Only `X` needs a right dual; it is passed explicitly as the rig
 `(𝟭 C).obj X`, which instance search does not unfold to `X`. -/
 @[simp]
 theorem mapRightDualIso_id (X : C) [hX : HasRightDual X] :
-    (𝟭 C).mapRightDualIso X (hFX := hX) = Iso.refl _ := by
+    (𝟭 C).mapRightDualIso X (_hFX := hX) = Iso.refl _ := by
   ext
   refine ExactPairing.rightHom_ext (X := X) (Y := Xᘁ) ?_
-  refine (mapRightDualIso_hom_whiskerRight_evaluation (F := 𝟭 C) X (hFX := hX)).trans ?_
+  refine (mapRightDualIso_hom_whiskerRight_evaluation (F := 𝟭 C) X (_hFX := hX)).trans ?_
   simp
 
 /-- For a composite `F ⋙ G`, the comparison between the image of a dual and the dual of an image
@@ -257,11 +257,11 @@ dual of `(F ⋙ G).obj X`, which instance search does not unfold. -/
 theorem mapRightDualIso_comp {E : Type*} [Category* E] [MonoidalCategory E]
     (G : D ⥤ E) [G.Monoidal] (X : C) [HasRightDual X] [HasRightDual (F.obj X)]
     [hGFX : HasRightDual (G.obj (F.obj X))] :
-    (F ⋙ G).mapRightDualIso X (hFX := hGFX) =
+    (F ⋙ G).mapRightDualIso X (_hFX := hGFX) =
       G.mapIso (F.mapRightDualIso X) ≪≫ G.mapRightDualIso (F.obj X) := by
   ext
   refine ExactPairing.rightHom_ext (X := G.obj (F.obj X)) (Y := (G.obj (F.obj X))ᘁ) ?_
-  refine (mapRightDualIso_hom_whiskerRight_evaluation (F := F ⋙ G) X (hFX := hGFX)).trans ?_
+  refine (mapRightDualIso_hom_whiskerRight_evaluation (F := F ⋙ G) X (_hFX := hGFX)).trans ?_
   -- Unfold the objects of the composite, so that the evaluation identities of `F` and `G` apply.
   dsimp only [Functor.comp_obj, Iso.trans_hom, Functor.mapIso_hom]
   rw [comp_whiskerRight_assoc, mapRightDualIso_hom_whiskerRight_evaluation, μ_natural_left_assoc,

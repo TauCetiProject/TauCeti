@@ -31,20 +31,11 @@ variable {R L M : Type*} [CommRing R] [LieRing L]
 contained in it. -/
 def mapIic (N : LieSubmodule R L M) :
     LieSubmodule R L N ≃o Set.Iic N where
-  toFun P := ⟨P.map N.incl, by rintro _ ⟨x, _, rfl⟩; exact x.property⟩
+  toFun P := ⟨P.map N.incl, map_incl_le⟩
   invFun P := P.val.comap N.incl
-  left_inv P := by
-    ext x
-    simp only [mem_comap, mem_map, incl_apply, Subtype.coe_inj, exists_eq_right]
-  right_inv P := by
-    apply Subtype.ext
-    ext x
-    constructor
-    · rintro ⟨y, hy, rfl⟩
-      exact hy
-    · intro hx
-      exact ⟨⟨x, P.property hx⟩, hx, rfl⟩
-  map_rel_iff' := map_le_map_iff Subtype.val_injective
+  left_inv P := by ext; simp
+  right_inv P := Subtype.ext <| by ext; simpa using fun hx ↦ P.property hx
+  map_rel_iff' := map_le_map_iff N.injective_incl
 
 /-- The ambient submodule corresponding to a submodule of `N` is its image under inclusion. -/
 @[simp]

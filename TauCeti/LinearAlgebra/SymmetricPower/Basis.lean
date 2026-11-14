@@ -118,7 +118,7 @@ private theorem toFinsuppAux_reindex (e : Equiv.Perm (Fin n)) :
 
 /-- The multilinear form of the coordinate map, before descending to the symmetric power. -/
 private noncomputable def toFinsuppMultilinear :
-    MultilinearMap R (fun _ : Fin n ↦ M) (Sym κ n →₀ R) :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ M) (Sym κ n →₀ R) :=
   (toFinsuppAux b).compMultilinearMap (PiTensorProduct.tprod R)
 
 private theorem toFinsuppMultilinear_domDomCongr (e : Equiv.Perm (Fin n)) :

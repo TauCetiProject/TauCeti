@@ -64,10 +64,7 @@ because the finiteness that makes it honest is proved from `transcendental_pullb
 with the degree of the function field over the rational function field.
 
 The construction is the coordinate-ring form of D. Angdinata's function-field definition of an
-isogeny and follows the nonconstancy argument described in the elliptic-curves roadmap. The
-composition definition follows the seed in `TauCetiRoadmap/EllipticCurves/Suggested.lean`,
-discharging the `mapsInfinity` obligation the seed leaves open. The geometric interpretation is
-Silverman, *The Arithmetic of Elliptic Curves*, II.2.4.
+isogeny. The geometric interpretation is Silverman, *The Arithmetic of Elliptic Curves*, II.2.4.
 -/
 
 public section
