@@ -22,8 +22,6 @@ manifold-derivative API.
 * `HasMFDerivAt.iterate`: the chain rule for iterates at a fixed point, `d(f^[n])_x = (df_x) ^ n`.
 * `TauCeti.mfderiv_injective_of_leftInverse`: a map with a left inverse differentiable along its
   image has injective derivative.
-* `TauCeti.mdifferentiableAt_of_surjective_mfderiv`: a map continuous at a point with surjective
-  derivative there is differentiable there.
 * `TauCeti.mfderiv_comp_const_add_smul_apply`: the chain rule for the affine reparametrization
   `w ↦ c + ε • w` of a map from a normed space, `d(u(c + ε •))_w = ε • du_(c + ε • w)`, with no
   differentiability hypothesis.
@@ -76,24 +74,6 @@ theorem mfderiv_injective_of_leftInverse {f : M → N} {g : N → M}
   rw [hgf.comp_eq_id, mfderiv_id] at h
   exact Function.LeftInverse.injective (g := mfderiv J I g (f x)) fun v ↦
     (DFunLike.congr_fun h v).symm
-
-variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
-  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] in
-/-- A map that is continuous at `x` and has surjective derivative there is differentiable at `x`.
-Without differentiability the derivative vanishes, so its surjectivity forces the target model
-space to be trivial, where continuity suffices. -/
-theorem mdifferentiableAt_of_surjective_mfderiv {f : M → N} (hf : ContinuousAt f x)
-    (hsurj : Function.Surjective (mfderiv I J f x)) : MDifferentiableAt I J f x := by
-  by_contra hf'
-  have ht : Subsingleton (TangentSpace J (f x)) := ⟨fun a b ↦ by
-    obtain ⟨a, rfl⟩ := hsurj a
-    obtain ⟨b, rfl⟩ := hsurj b
-    simp only [mfderiv_zero_of_not_mdifferentiableAt hf', zero_apply]⟩
-  -- The tangent space is a type synonym for the target model space.
-  have : Subsingleton E' := ht
-  refine hf' ((mdifferentiableAt_iff f x).mpr ⟨hf, ?_⟩)
-  rw [Subsingleton.elim (writtenInExtChartAt I J x f) fun _ ↦ 0]
-  exact differentiableWithinAt_const _
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] in
 /-- **The derivative of an affine reparametrization.** For a map `u` from a normed space, the

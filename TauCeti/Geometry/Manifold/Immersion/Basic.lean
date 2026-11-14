@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Manifold.Immersion
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 import TauCeti.Geometry.Manifold.PullbackGroupoid
+import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 
 /-!
 # Composing immersions with diffeomorphisms, and immersions into finite dimensions
@@ -62,6 +63,9 @@ both sides, in order to apply the rule to `e.symm` as well.
 * `Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend_eq`: in the charts of
   immersion data, a point `b` of the source chart is sent by `f` to the point read as
   `h.equiv (b, 0)` in the target chart.
+* `MDifferentiableAt.iff_comp_isDiffImmersionAt`: a map is differentiable at `x` exactly when it
+  is continuous at `x` and its composite with a map whose differential at the image point has a
+  continuous left inverse, such as an immersion of positive order, is differentiable at `x`.
 
 `Manifold.IsImmersion` asks for one complement serving every point, so it is not obviously a
 local property; Mathlib's docstring of `Manifold.IsImmersion.isImmersionAt` explains that the
@@ -430,5 +434,57 @@ theorem _root_.Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend
     h.writtenInCharts hb
   refine ⟨hy, hw, ?_, h.target_subset_preimage_target hb⟩
   rw [← hw, (h.codChart.extend J).left_inv (by simpa using hy)]
+
+/-! ### Lifting differentiability through a split differential -/
+
+section Lift
+
+open Filter Set Topology
+
+variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] {G' : Type*}
+  [TopologicalSpace G'] {J' : ModelWithCorners 𝕜 E'' G'} {N' : Type*} [TopologicalSpace N']
+  [ChartedSpace G' N'] {φ : N → N'} {x : M}
+
+/-- **Differentiability lifts through an immersion.** If the differential of `φ` at `f x` has a
+continuous left inverse, then `f` is differentiable at `x` exactly when it is continuous at `x`
+and `φ ∘ f` is differentiable at `x`. This is the differentiable counterpart of Mathlib's
+`ContMDiffAt.iff_comp_isImmersionAt`; only the differential of `φ` at the single point `f x` is
+used, so it applies to any immersion of positive order (`Manifold.IsImmersion.isDiffImmersionAt`).
+Continuity cannot be dropped: without it `f` could jump between points with the same image. -/
+theorem _root_.MDifferentiableAt.iff_comp_isDiffImmersionAt
+    (hφ : IsDiffImmersionAt J J' φ (f x)) :
+    MDifferentiableAt I J f x ↔ ContinuousAt f x ∧ MDifferentiableAt I J' (φ ∘ f) x := by
+  refine ⟨fun h ↦ ⟨h.continuousAt, hφ.mdifferentiableAt.comp x h⟩, fun ⟨hf, h⟩ ↦ ?_⟩
+  have hφd := hφ.mdifferentiableAt
+  obtain ⟨L, hL⟩ := isDiffImmersionAt_iff.1 hφ
+  -- In the extended charts at `x`, `f x` and `φ (f x)`, the map `φ ∘ f` read in charts is `φ` read
+  -- in charts after `f` read in charts, near the base point within the range of `I`; Mathlib's
+  -- easy half of the inverse function theorem then differentiates `f` read in charts.
+  set a := extChartAt I x x
+  have hfa : Tendsto (f ∘ (extChartAt I x).symm) (𝓝[range I] a) (𝓝 (f x)) :=
+    hf.tendsto.comp (map_extChartAt_symm_nhdsWithin_range x).le
+  have ha : writtenInExtChartAt I J x f a = extChartAt J (f x) (f x) :=
+    writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)
+  have hst : Tendsto (writtenInExtChartAt I J x f) (𝓝[range I] a)
+      (𝓝[range J] (writtenInExtChartAt I J x f a)) := by
+    rw [ha]
+    refine tendsto_nhdsWithin_iff.2 ⟨(continuousAt_extChartAt (f x)).tendsto.comp hfa,
+      Eventually.of_forall fun y ↦ ?_⟩
+    rw [writtenInExtChartAt, Function.comp_apply, extChartAt_coe]
+    exact mem_range_self _
+  have hcomp : writtenInExtChartAt J J' (f x) φ ∘ writtenInExtChartAt I J x f =ᶠ[𝓝[range I] a]
+      writtenInExtChartAt I J' x (φ ∘ f) := by
+    filter_upwards [hfa (extChartAt_source_mem_nhds (I := J) (f x))] with y hy
+    have hy : f ((extChartAt I x).symm y) ∈ (extChartAt J (f x)).source := hy
+    simp only [writtenInExtChartAt, Function.comp_apply, (extChartAt J (f x)).left_inv hy]
+  have hΦ : HasFDerivWithinAt (writtenInExtChartAt J J' (f x) φ) (mfderiv J J' φ (f x)) (range J)
+      (writtenInExtChartAt I J x f a) := by
+    rw [ha, hφd.mfderiv_abuse]
+    exact hφd.differentiableWithinAt_writtenInExtChartAt.hasFDerivWithinAt
+  exact (mdifferentiableAt_iff _ _).2 ⟨hf, (hΦ.of_comp_of_leftInverse hst
+    h.differentiableWithinAt_writtenInExtChartAt.hasFDerivWithinAt hcomp hL
+    (mem_range_self _)).differentiableWithinAt⟩
+
+end Lift
 
 end TauCeti
