@@ -65,7 +65,7 @@ variable {G : InternalGrading R V ℤ}
 
 /-- A graded algebra map out of `A(V)` intertwines signed Leibniz maps if it does so on
 all generators. Neither degree-shift nor square-zero hypotheses are needed. -/
-theorem map_leibniz_of_generator {A : Type*} [Ring A] [Algebra R A]
+theorem apply_map_eq_map_apply_of_leibniz {A : Type*} [Ring A] [Algebra R A]
     {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜]
     {dV : SignedSym G →ₗ[R] SignedSym G}
     (hV : ∀ {p : ℤ} {a : SignedSym G}, a ∈ signedSymPiece G p →

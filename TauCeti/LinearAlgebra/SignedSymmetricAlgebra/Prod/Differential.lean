@@ -152,9 +152,9 @@ theorem eq_prodDifferential
     (hgen : ∀ z : V × W, d (generator (G.prod H) z) =
       inl G H (dV (generator G z.1)) + inr G H (dW (generator H z.2))) :
     d = prodDifferential G H dV dW := by
-  have hinl := map_leibniz_of_generator hV hleibniz (inl G H)
+  have hinl := apply_map_eq_map_apply_of_leibniz hV hleibniz (inl G H)
     (fun x => by simpa using hgen (x, 0))
-  have hinr := map_leibniz_of_generator hW hleibniz (inr G H)
+  have hinr := apply_map_eq_map_apply_of_leibniz hW hleibniz (inr G H)
     (fun y => by simpa using hgen (0, y))
   have hcomp : d ∘ₗ (toProd G H).toAlgHom.toLinearMap =
       prodDifferential G H dV dW ∘ₗ (toProd G H).toAlgHom.toLinearMap := by
