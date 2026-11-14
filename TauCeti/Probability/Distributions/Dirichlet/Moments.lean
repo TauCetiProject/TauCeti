@@ -65,11 +65,10 @@ namespace TauCeti
 
 namespace Probability
 
-variable {ι : Type*} [Fintype ι] [Nonempty ι] {a : ι → ℝ}
+variable {ι : Type*} [Fintype ι] {a : ι → ℝ}
 
 /-! ### Moments of every order -/
 
-omit [Nonempty ι] in
 /-- A Dirichlet vector almost surely lies in the closed unit ball. For concentration vectors
 outside the valid range `dirichletMeasure a = 0`, so the conclusion is vacuous. -/
 theorem ae_norm_le_one_dirichletMeasure :
@@ -86,7 +85,6 @@ theorem ae_norm_le_one_dirichletMeasure :
   rw [EuclideanSpace.norm_eq]
   simpa using Real.sqrt_le_sqrt hsq
 
-omit [Nonempty ι] in
 /-- With positive parameters on a nonempty coordinate type, the simplex-supported Dirichlet law has
 moments of every order. Otherwise `dirichletMeasure a = 0`, so the `MemLp` conclusion is vacuous. -/
 theorem memLp_id_dirichletMeasure (p : ℝ≥0∞) :
@@ -98,14 +96,12 @@ theorem memLp_id_dirichletMeasure (p : ℝ≥0∞) :
   · rw [dirichletMeasure_eq_zero_of_invalid h]
     simp
 
-omit [Nonempty ι] in
 /-- Every coordinate of the valid Dirichlet law has moments of every order. For invalid parameters,
 `dirichletMeasure a = 0`, so the `MemLp` conclusion is vacuous. -/
 theorem memLp_eval_dirichletMeasure (i : ι) (p : ℝ≥0∞) :
     MemLp (fun x : EuclideanSpace ℝ ι ↦ x i) p (dirichletMeasure a) :=
   (memLp_id_dirichletMeasure p).eval_piLp i
 
-omit [Nonempty ι] in
 /-- The identity is integrable for the simplex-supported Dirichlet law. For invalid parameters or
 an empty coordinate type, `dirichletMeasure a = 0`, so the conclusion is vacuous. -/
 theorem integrable_id_dirichletMeasure :
@@ -114,7 +110,6 @@ theorem integrable_id_dirichletMeasure :
 
 /-! ### The mean -/
 
-omit [Nonempty ι] in
 /-- The mean of a Dirichlet coordinate is its share of the total concentration. -/
 @[simp]
 theorem integral_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i : ι) :
@@ -132,7 +127,6 @@ theorem integral_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i : ι) :
       Finset.filter_ne',
       Finset.add_sum_erase _ a (Finset.mem_univ i)]
 
-omit [Nonempty ι] in
 /-- The Bochner mean of a Dirichlet law is the normalized concentration vector. -/
 @[simp]
 theorem integral_id_dirichletMeasure (ha : ∀ i, 0 < a i) :
@@ -144,7 +138,6 @@ theorem integral_id_dirichletMeasure (ha : ∀ i, 0 < a i) :
   simp only [EuclideanSpace.coe_proj, id_eq] at h
   simpa [← h] using integral_eval_dirichletMeasure ha i
 
-omit [Nonempty ι] in
 /-- The product moment of two Dirichlet coordinates is their covariance plus the product
 of their means. -/
 theorem integral_mul_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i j : ι) :
@@ -160,7 +153,6 @@ theorem integral_mul_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i j : ι) :
 
 /-! ### Variances and covariances -/
 
-omit [Nonempty ι] in
 /-- The total of a block of Dirichlet coordinates has the variance of the Beta law of the block
 and complementary concentrations.
 
@@ -195,7 +187,6 @@ theorem variance_sum_dirichletMeasure [DecidableEq ι] (ha : ∀ i, 0 < a i) (s 
     rw [← hvar, map_sum_dirichletMeasure ha hs hsc, variance_id_betaMeasure hα hβ,
       Finset.sum_add_sum_compl]
 
-omit [Nonempty ι] in
 /-- The variance of a Dirichlet coordinate. -/
 @[simp]
 theorem variance_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i : ι) :
@@ -207,7 +198,6 @@ theorem variance_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i : ι) :
     rw [eq_sub_iff_add_eq, ← Finset.sum_singleton (f := a) (a := i), Finset.sum_compl_add_sum]
   simpa only [Finset.sum_singleton, hcompl] using variance_sum_dirichletMeasure ha {i}
 
-omit [Nonempty ι] in
 /-- The covariance of two distinct Dirichlet coordinates.  It is negative: the coordinates
 compete for a fixed total. -/
 @[simp]
@@ -228,7 +218,6 @@ theorem covariance_eval_dirichletMeasure_of_ne (ha : ∀ i, 0 < a i) {i j : ι}
   field_simp at hpair ⊢
   linarith
 
-omit [Nonempty ι] in
 open scoped Classical in
 /-- The covariance matrix of a Dirichlet law: the concentration-weighted diagonal minus the outer
 square of the concentration vector, normalized by `a₀ ^ 2 * (a₀ + 1)`. -/
@@ -253,7 +242,6 @@ theorem covMatrix_dirichletMeasure (ha : ∀ i, 0 < a i) :
     field_simp
     ring
 
-omit [Nonempty ι] in
 open scoped Classical in
 /-- The covariance bilinear form of a Dirichlet law, read off its covariance matrix. -/
 @[simp]
@@ -270,7 +258,6 @@ theorem covarianceBilin_dirichletMeasure (ha : ∀ i, 0 < a i)
 
 /-! ### Exponential moments -/
 
-omit [Nonempty ι] in
 /-- With positive parameters on a nonempty coordinate type, every directional exponential moment
 of the Dirichlet law is finite because the law is carried by the bounded standard simplex.
 Otherwise `dirichletMeasure a = 0`, so the conclusion is vacuous. -/
@@ -288,7 +275,6 @@ theorem integrableExpSet_inner_dirichletMeasure (θ : EuclideanSpace ℝ ι) :
   · rw [dirichletMeasure_eq_zero_of_invalid h]
     simp [integrableExpSet]
 
-omit [Nonempty ι] in
 /-- The expected squared norm of a Dirichlet vector with concentration vector `c p`, where `p` is
 a probability vector. As `c` tends to zero this tends to one, forcing the law towards the
 vertices of the simplex. -/
@@ -317,7 +303,6 @@ theorem integral_norm_sq_dirichletMeasure_smul (p : Convexity.StdSimplex ℝ≥0
   simp only [hcoord]
   rw [← Finset.sum_div, Finset.sum_add_distrib, p.sum_coe_weights, ← Finset.mul_sum, add_comm]
 
-omit [Nonempty ι] in
 /-- The expectation of `1 - ‖x‖ ^ 2` under a Dirichlet law with concentration vector `c p`, where
 `p` is a probability vector. It tends to zero with `c`. -/
 theorem integral_one_sub_norm_sq_dirichletMeasure_smul (p : Convexity.StdSimplex ℝ≥0 ι)

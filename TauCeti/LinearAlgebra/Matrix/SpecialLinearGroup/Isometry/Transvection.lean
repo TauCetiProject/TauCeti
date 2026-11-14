@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
-public import TauCeti.LinearAlgebra.Matrix.UnitaryTransvection
+public import TauCeti.LinearAlgebra.Matrix.SiegelTransvection
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
+import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
 # Unitary transvection groups of isotropic points
@@ -19,7 +20,10 @@ Let `h(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)` be the `σ`-sesquilinear form of a 
 has determinant one, and if `σ` is an involution and `Q` is `ε`-Hermitian, `(Q ^ σ)ᵀ = ε • Q`, it
 lies in the special isometry group when `a + ε σ(a) = 0`. Over a field, for a nondegenerate `Q` and
 `v ≠ 0`, only then. For a Hermitian form (`ε = 1`) the admissible parameters are the elements of
-trace zero. An isometry `g` conjugates `τ_{v,a}` to `τ_{g v,a}`.
+trace zero. An isometry `g` conjugates `τ_{v,a}` to `τ_{g v,a}`. More generally, the Siegel
+transformation `S(u, w, c)` (`Matrix.siegelTransvection`) along an isotropic `u` with
+`h(u, w) = 0` lies in the special isometry group when `c + ε σ(c) + ε h(w, w) = 0`, and
+is conjugated by `g` to `S(g u, g w, c)`.
 
 To an isotropic point `p` of projective space this attaches the group
 `Matrix.unitaryTransvectionSubgroup Q σ p` of isometries that are unitary transvections along a
@@ -40,12 +44,15 @@ as the model for this file.
 
 ## Main results
 
-* `Matrix.exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection`: for `a + ε σ(a) = 0` the
-  transvection `τ_{v,a}` along an isotropic vector is a special isometry.
+* `Matrix.exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection` and
+  `Matrix.exists_mem_specialIsometryGroup_coe_eq_siegelTransvection`: admissible unitary
+  transvections `τ_{v,a}` and Siegel transformations `S(u, w, c)` lie in the special isometry
+  group.
 * `Matrix.exists_coe_eq_unitaryTransvection_iff`: for a nondegenerate `ε`-Hermitian `Q`, the
   transvection `τ_{v,a}` along an isotropic point is an isometry exactly when `a + ε σ(a) = 0`.
-* `Matrix.coe_mul_unitaryTransvection_mul_coe_inv`: an isometry `g` conjugates `τ_{v,a}` to
-  `τ_{g v,a}`.
+* `Matrix.coe_mul_unitaryTransvection_mul_coe_inv` and
+  `Matrix.coe_mul_siegelTransvection_mul_coe_inv`: an isometry `g` conjugates `τ_{v,a}` to
+  `τ_{g v,a}` and `S(u, w, c)` to `S(g u, g w, c)`.
 * `Matrix.unitaryTransvectionSubgroup_smul`: `T(g • p) = g T(p) g⁻¹`.
 
 ## References
@@ -85,6 +92,27 @@ theorem exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection (hσ : Functi
   refine ⟨t, ?_, rfl⟩
   rw [mem_specialIsometryGroup_iff, SpecialLinearGroup.coe_mk]
   exact transpose_map_unitaryTransvection_mul_mul_self hσ hQ hv ha
+
+/-- **An isometry conjugates `S(u, w, c)` to `S(g u, g w, c)`.** -/
+theorem coe_mul_siegelTransvection_mul_coe_inv {g : SpecialLinearGroup n K}
+    (hg : g ∈ Q.specialIsometryGroup σ) (ε : K) (u w : n → K) (c : K) :
+    (g : Matrix n n K) * Q.siegelTransvection σ ε u w c *
+      ((g⁻¹ : SpecialLinearGroup n K) : Matrix n n K) =
+      Q.siegelTransvection σ ε ((g : Matrix n n K) *ᵥ u) ((g : Matrix n n K) *ᵥ w) c := by
+  rw [mul_siegelTransvection (mem_specialIsometryGroup_iff.mp hg), Matrix.mul_assoc,
+    ← SpecialLinearGroup.coe_mul, mul_inv_cancel, SpecialLinearGroup.coe_one, Matrix.mul_one]
+
+/-- **Admissible Siegel transformations belong to the special isometry group.** -/
+theorem exists_mem_specialIsometryGroup_coe_eq_siegelTransvection (hσ : Function.Involutive σ)
+    {ε : K} (hQ : (Q.map σ)ᵀ = ε • Q) {u w : n → K} (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0)
+    (huw : (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0) {c : K}
+    (hc : c + ε * σ c + ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w)) = 0) :
+    ∃ g ∈ Q.specialIsometryGroup σ,
+      (g : Matrix n n K) = Q.siegelTransvection σ ε u w c :=
+  ⟨⟨_, det_siegelTransvection hu huw ((comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp huw) c⟩,
+    mem_specialIsometryGroup_iff.mpr
+      (transpose_map_siegelTransvection_mul_mul_self hσ hQ hu huw hc),
+    rfl⟩
 
 end CommRing
 
