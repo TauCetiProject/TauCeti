@@ -9,8 +9,8 @@ public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.NumberTheory.ModularForms.LevelOne.Eigenbasis
 public import TauCeti.NumberTheory.ModularForms.LFunction.Basic
 
-import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.LSeries
+import TauCeti.NumberTheory.LSeries.Linearity
 import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
 import TauCeti.NumberTheory.ModularForms.LFunction.Abscissa
 import TauCeti.NumberTheory.ModularForms.LFunction.EulerProduct
@@ -77,41 +77,26 @@ theorem L_levelOneNewformBasis_ne_zero {k : ℤ} (hk : 0 < k) (f : Newform 1 k) 
   rw [← hL]
   exact f.LSeries_ne_zero_of_lt_re (by linarith)
 
-/-- At level one, `ModularGroup.S ∈ 𝒮ℒ` fixes `f` under the slash action, so
-`valueAtInfty (ModularForm.translate f ModularGroup.S)` is the constant `q`-expansion coefficient
-`(qExpansion 1 f).coeff 0`. -/
-private lemma valueAtInfty_translate_S_levelOne {k : ℤ} {F : Type*} [FunLike F ℍ ℂ]
-    [ModularFormClass F 𝒮ℒ k] (f : F) :
-    valueAtInfty (ModularForm.translate f ModularGroup.S) = (qExpansion 1 f).coeff 0 := by
-  have hS : (ModularGroup.S : GL (Fin 2) ℝ) ∈ 𝒮ℒ := ⟨ModularGroup.S, rfl⟩
-  have hcoe : (ModularForm.translate f ModularGroup.S : ℍ → ℂ) = f :=
-    (ModularForm.coe_translate f ModularGroup.S).trans
-      (SlashInvariantForm.slash_action_eqn f _ hS)
-  rw [hcoe]
-  exact (qExpansion_coeff_zero one_pos
-    (ModularFormClass.analyticAt_cuspFunction_zero f one_pos one_mem_strictPeriods_SL)
-    (SlashInvariantFormClass.periodic_comp_ofComplex f one_mem_strictPeriods_SL)).symm
-
 /-- A positive-weight level-one modular form with nonzero constant `q`-expansion coefficient has a
 simple pole of `ModularForm.L hk f` at `s = k`. -/
 theorem meromorphicOrderAt_L_levelOne_k {k : ℤ} (hk : 0 < k) {F : Type*} [FunLike F ℍ ℂ]
     [ModularFormClass F 𝒮ℒ k] (f : F) (h0 : (qExpansion 1 f).coeff 0 ≠ 0) :
     meromorphicOrderAt (ModularForm.L hk f) k = (-1 : ℤ) := by
   refine ModularForm.meromorphicOrderAt_L_k hk f ?_
-  rwa [valueAtInfty_translate_S_levelOne]
+  rwa [ModularForm.valueAtInfty_translate_levelOne]
 
 /-- At level one, `ModularForm.L hk f` is analytic at `s` if and only if `s ≠ k` or the constant
 `q`-expansion coefficient `(qExpansion 1 f).coeff 0` vanishes. -/
 theorem analyticAt_L_levelOne_iff {k : ℤ} (hk : 0 < k) {F : Type*} [FunLike F ℍ ℂ]
     [ModularFormClass F 𝒮ℒ k] (f : F) (s : ℂ) :
     AnalyticAt ℂ (ModularForm.L hk f) s ↔ s ≠ k ∨ (qExpansion 1 f).coeff 0 = 0 := by
-  rw [ModularForm.analyticAt_L_iff, valueAtInfty_translate_S_levelOne]
+  rw [ModularForm.analyticAt_L_iff, ModularForm.valueAtInfty_translate_levelOne]
 
 /-- At level one, `ModularForm.L hk f` is entire if and only if `(qExpansion 1 f).coeff 0 = 0`. -/
 theorem differentiable_L_levelOne_iff {k : ℤ} (hk : 0 < k) {F : Type*} [FunLike F ℍ ℂ]
     [ModularFormClass F 𝒮ℒ k] (f : F) :
     Differentiable ℂ (ModularForm.L hk f) ↔ (qExpansion 1 f).coeff 0 = 0 := by
-  rw [ModularForm.differentiable_L_iff, valueAtInfty_translate_S_levelOne]
+  rw [ModularForm.differentiable_L_iff, ModularForm.valueAtInfty_translate_levelOne]
 
 /-- **The `q`-expansion L-series of `E₄`**: on `Re s > 4`,
 `L(E₄, s) = 240 ζ(s) ζ(s - 3)`. -/
@@ -143,11 +128,9 @@ theorem abscissaOfAbsConv_qExpansion_coeff_E₄ :
         LSeries.abscissaOfAbsConv ((240 : ℂ) • (↗(σ 3) : ℕ → ℂ)) :=
     LSeries.abscissaOfAbsConv_congr fun {n} hn ↦ by
       simpa [Pi.smul_apply, smul_eq_mul] using ModularForm.E₄_qExpansion_coeff_of_ne_zero hn
-  have hsmul : LSeries.abscissaOfAbsConv ((240 : ℂ) • (↗(σ 3) : ℕ → ℂ)) =
-      LSeries.abscissaOfAbsConv (↗(σ 3) : ℕ → ℂ) :=
-    congrArg sInf (congrArg _ (Set.ext fun _ ↦ LSeriesSummable.smul_iff (by norm_num)))
   have h3 : (((3 : ℕ) : ℝ) + 1 : ℝ) = 4 := by norm_num
-  rw [hcongr, hsmul, ArithmeticFunction.abscissaOfAbsConv_sigma, h3]
+  rw [hcongr, LSeries.abscissaOfAbsConv_smul_of_ne_zero (by norm_num),
+    ArithmeticFunction.abscissaOfAbsConv_sigma, h3]
   rfl
 
 /-- `ModularForm.L` of `E₄` has a simple pole at `s = 4`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.LevelOne.GradedRing
+public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
@@ -28,10 +29,15 @@ the coefficients the `q`-expansion of the modular invariant `j = E₄³ / Δ` is
 
 The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
 `EisensteinSeries.E_qExpansion_coeff`).  The coefficients of `Δ` are read off the identity
-`1728 Δ = E₄³ - E₆²` in the graded ring, transported to `q`-expansions.
+`1728 Δ = E₄³ - E₆²` in the graded ring, transported to `q`-expansions.  At level one every
+`γ ∈ SL(2, ℤ)` fixes a modular form under the slash action, so the value at `i∞` of its translate
+by `γ` is its constant `q`-coefficient `(qExpansion 1 f).coeff 0`.
 
 ## Main results
 
+* `TauCeti.ModularForm.valueAtInfty_translate_levelOne`: at level one, every `γ ∈ SL(2, ℤ)`
+  fixes `f` under the slash action, so `valueAtInfty (ModularForm.translate f γ)` equals
+  `(qExpansion 1 f).coeff 0`.
 * `TauCeti.ModularForm.E_twelve_qExpansion_coeff`: `E₁₂ = 1 + (65520/691) ∑ σ₁₁(m) qᵐ`.
 * `ModularForm.qExpansion_add_smul_discriminant`: the `q`-expansion of `f + c Δ` in
   weight `12`.
@@ -66,6 +72,21 @@ open UpperHalfPlane ModularForm EisensteinSeries Filter Topology
 open scoped ArithmeticFunction.sigma MatrixGroups
 
 namespace TauCeti.ModularForm
+
+/-- At level one, every `γ ∈ SL(2, ℤ)` lies in `𝒮ℒ` and fixes `f` under the slash action, so
+`valueAtInfty (ModularForm.translate f γ)` is the constant `q`-expansion coefficient
+`(qExpansion 1 f).coeff 0`. -/
+theorem valueAtInfty_translate_levelOne {k : ℤ} {F : Type*} [FunLike F ℍ ℂ]
+    [ModularFormClass F 𝒮ℒ k] (f : F) (γ : SL(2, ℤ)) :
+    valueAtInfty (_root_.ModularForm.translate f γ) = (qExpansion 1 f).coeff 0 := by
+  have hγ : (γ : GL (Fin 2) ℝ) ∈ 𝒮ℒ := ⟨γ, rfl⟩
+  have hcoe : (_root_.ModularForm.translate f γ : ℍ → ℂ) = f :=
+    (_root_.ModularForm.coe_translate f γ).trans
+      (SlashInvariantForm.slash_action_eqn f _ hγ)
+  rw [hcoe]
+  exact (qExpansion_coeff_zero one_pos
+    (ModularFormClass.analyticAt_cuspFunction_zero f one_pos one_mem_strictPeriods_SL)
+    (SlashInvariantFormClass.periodic_comp_ofComplex f one_mem_strictPeriods_SL)).symm
 
 /- `bernoulli` is computed through `bernoulli'`, which is defined by well-founded recursion, so
 neither `norm_num` nor elaborator-side `decide` can evaluate it; the kernel can. -/

@@ -114,22 +114,6 @@ private lemma LSeries_eq_of_hasSum {a : ℕ → ℂ} {v : ℂ} (hs0 : s ≠ 0)
 
 namespace ModularForm
 
-/-- In nonpositive weight `k ≤ 0`, every positive `q`-expansion coefficient of a modular form
-vanishes (for negative weight the form is zero; in weight zero it is constant). -/
-theorem qExpansion_coeff_eq_zero_of_weight_nonpos (hk : k ≤ 0) {h : ℝ}
-    [ModularFormClass F Γ k] (f : F) {n : ℕ} (hn : n ≠ 0) :
-    (qExpansion h f).coeff n = 0 := by
-  rcases hk.lt_or_eq with hk | rfl
-  · simp [qExpansion_eq_zero_of_neg_weight hk f]
-  · obtain ⟨c, hc⟩ := eq_const_of_weight_zero (ModularFormClass.modularForm f)
-    have hf : (f : ℍ → ℂ) = c • (1 : ℍ → ℂ) := by
-      ext z
-      simpa [ModularFormClass.coe_modularForm] using congrFun hc z
-    have han : AnalyticAt ℂ (cuspFunction h (1 : ℍ → ℂ)) 0 :=
-      (TauCeti.UpperHalfPlane.cuspFunction_one h).symm ▸ analyticAt_const
-    rw [hf, UpperHalfPlane.qExpansion_smul han, UpperHalfPlane.qExpansion_one,
-      PowerSeries.coeff_smul, PowerSeries.coeff_one, ite_eq_right hn, smul_zero]
-
 /-- In nonpositive weight `k ≤ 0`, the `q`-expansion coefficient L-series has abscissa of
 absolute convergence `⊥`, for any width `h`. -/
 theorem abscissaOfAbsConv_qExpansion_coeff_eq_bot_of_weight_nonpos (hk : k ≤ 0) {h : ℝ}
