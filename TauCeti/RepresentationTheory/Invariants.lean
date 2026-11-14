@@ -16,9 +16,8 @@ import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 import Mathlib.RepresentationTheory.Rep.Iso
 import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.RepresentationTheory.AsModule
+import TauCeti.RepresentationTheory.Finsupp
 import TauCeti.RepresentationTheory.Intertwining
-import TauCeti.RepresentationTheory.OfModule
-import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 
 /-!
 # Invariants of group representations
@@ -287,24 +286,21 @@ private theorem norm_leftRegular_single_coeff_one {x : MonoidAlgebra k G}
     simpa using h.symm
   simp [norm, hcoeff]
 
-/-- The norm maps onto the invariants of a direct sum of left regular representations. -/
+/-- The norm maps onto the invariants of a free representation, a direct sum of left regular
+representations. -/
 private theorem range_norm_free_eq_invariants (ι : Type*) :
-    LinearMap.range (ofModule' (k := k) (G := G) (ι →₀ MonoidAlgebra k G)).norm =
-      (ofModule' (k := k) (G := G) (ι →₀ MonoidAlgebra k G)).invariants := by
+    LinearMap.range (free k G ι).norm = (free k G ι).invariants := by
   apply le_antisymm
   · rintro _ ⟨x, rfl⟩
     exact fun g => self_norm_apply _ g x
   · rintro x hx
     have hxi (i : ι) : x i ∈ (leftRegular k G).invariants := fun g => by
-      have h := DFunLike.congr_fun (hx g) i
-      rwa [TauCeti.Representation.ofModule'_apply, Finsupp.smul_apply, smul_eq_mul,
-        ← asAlgebraHom_ofMulAction_smul_eq_mul, asAlgebraHom_single_one] at h
+      simpa only [finsupp_apply_apply] using DFunLike.congr_fun (hx g) i
     refine ⟨Finsupp.mapRange (fun a => MonoidAlgebra.single 1 (a.coeff 1)) (by simp) x, ?_⟩
     ext i : 1
     rw [← norm_leftRegular_single_coeff_one (hxi i)]
-    simp only [norm, LinearMap.sum_apply, Finsupp.finsetSum_apply,
-      TauCeti.Representation.ofModule'_apply, Finsupp.smul_apply, Finsupp.mapRange_apply,
-      smul_eq_mul, ← asAlgebraHom_ofMulAction_smul_eq_mul, asAlgebraHom_single_one]
+    simp only [norm, LinearMap.sum_apply, Finsupp.finsetSum_apply, finsupp_apply_apply,
+      Finsupp.mapRange_apply]
 
 /-- **The norm maps onto the invariants of a projective representation.** Let `G` be finite over
 an arbitrary commutative ring `k`. If the `k[G]`-module underlying `ρ` is projective, then every
@@ -321,22 +317,13 @@ theorem range_norm_eq_invariants_of_projective (ρ : Representation k G V)
     exact fun g => self_norm_apply _ g x
   · rintro x hx
     obtain ⟨F, S, hFS⟩ := exists_intertwiningMap_section_of_projective ρ
-    have hSx : S x ∈ (ofModule' (k := k) (G := G)
-        (ρ.asModule →₀ MonoidAlgebra k G)).invariants := fun g => by
+    have hSx : S x ∈ (free k G V).invariants := fun g => by
       rw [← IntertwiningMap.isIntertwining ρ _ S g x, hx g]
-    obtain ⟨y, hy⟩ : S x ∈ LinearMap.range
-        (ofModule' (k := k) (G := G) (ρ.asModule →₀ MonoidAlgebra k G)).norm := by
+    obtain ⟨y, hy⟩ : S x ∈ LinearMap.range (free k G V).norm := by
       rw [range_norm_free_eq_invariants]
       exact hSx
-    -- `comp_norm` is stated along a group isomorphism (so that the two carriers may live in
-    -- different universes); here it is used along the identity of `G`.
-    have hF : (ofModule' (k := k) (G := G)
-        (ρ.asModule →₀ MonoidAlgebra k G)).IsIntertwiningMap
-        (ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G)) F.toLinearMap :=
-      ⟨IntertwiningMap.isIntertwining _ ρ F⟩
-    have hN : F ((ofModule' (k := k) (G := G)
-        (ρ.asModule →₀ MonoidAlgebra k G)).norm y) = ρ.norm (F y) :=
-      LinearMap.congr_fun hF.comp_norm y
+    have hN : F ((free k G V).norm y) = ρ.norm (F y) := by
+      simp only [norm, LinearMap.sum_apply, map_sum, IntertwiningMap.isIntertwining]
     exact ⟨F y, by rw [← hN, hy, hFS]⟩
 
 end Finite
