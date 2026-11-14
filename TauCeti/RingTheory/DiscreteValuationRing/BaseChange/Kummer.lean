@@ -9,7 +9,7 @@ public import TauCeti.FieldTheory.IntermediateField.Adjoin.BaseChange
 public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 import Mathlib.FieldTheory.IsAlgClosed.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
-import TauCeti.RingTheory.DiscreteValuationRing.Kummer
+import TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.BaseChange.Unramified
 
 /-!

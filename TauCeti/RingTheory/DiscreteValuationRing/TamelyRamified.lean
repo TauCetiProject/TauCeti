@@ -69,6 +69,9 @@ extensions of nonarchimedean local fields, the valuation-theoretic counterparts 
 * `TauCeti.Algebra.isTotallyRamifiedWRT_iff_exists_ramificationIdx_eq_finrank`: `L` is totally
   ramified with respect to `A` iff some maximal ideal of the integral closure has ramification
   index `[L : K]`.
+* `TauCeti.Algebra.IsTamelyRamifiedWRT.exists_ramificationIdx_dvd`: a tamely ramified extension
+  admits a positive exponent `e₀` invertible in `κ_A` divisible by all ramification indices over
+  `A`.
 
 ## References
 
@@ -350,6 +353,30 @@ theorem isTotallyRamifiedWRT_iff_exists_ramificationIdx_eq_finrank :
       have := hf ⟨Q, hliesOver Q⟩
       nlinarith
     exact ⟨⟨P, hP, fun Q _ ↦ huniq Q⟩, fun Q _ ↦ huniq Q ▸ hPf⟩
+
+variable {A K L} in
+/-- **Common tame exponent.** For a finite separable extension `L` of the fraction field `K` of a
+discrete valuation ring `A` that is tamely ramified with respect to `A`, there exists a positive
+integer `e₀`, invertible in the residue field of `A`, that is a multiple of the ramification index
+of every maximal ideal of the integral closure of `A` in `L`. -/
+theorem IsTamelyRamifiedWRT.exists_ramificationIdx_dvd (h : IsTamelyRamifiedWRT A L) :
+    ∃ e₀ : ℕ, 1 ≤ e₀ ∧ IsUnit (e₀ : A ⧸ maximalIdeal A) ∧
+      ∀ (P : Ideal (integralClosure A L)) [P.IsMaximal] [P.LiesOver (maximalIdeal A)],
+        P.ramificationIdx A ∣ e₀ := by
+  let C := integralClosure A L
+  have : IsDedekindDomain C := integralClosure.isDedekindDomain A K L
+  have : Module.Finite A C := IsIntegralClosure.finite A K L _
+  have : Module.IsTorsionFree A L := .trans_faithfulSMul A K L
+  let e₀ : ℕ := ∏ Q : (maximalIdeal A).primesOver C, Q.1.ramificationIdx A
+  have hpos : 0 < e₀ := Finset.prod_pos fun Q _ ↦ Ideal.ramificationIdx_pos A Q.1
+  have hunit : IsUnit (e₀ : A ⧸ maximalIdeal A) := by
+    rw [Nat.cast_prod]
+    exact Finset.prod_induction _ IsUnit (fun _ _ ↦ IsUnit.mul) isUnit_one
+      fun Q _ ↦ (isTamelyRamifiedWRT_def.mp h Q.1).2
+  refine ⟨e₀, hpos, hunit, fun P _ _ ↦ ?_⟩
+  simpa [e₀] using Finset.dvd_prod_of_mem
+    (fun Q : (maximalIdeal A).primesOver C ↦ Q.1.ramificationIdx A)
+    (Finset.mem_univ ⟨P, inferInstance, inferInstance⟩)
 
 end DiscreteValuationRing
 
