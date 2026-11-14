@@ -17,7 +17,8 @@ none of these interfaces imposes norm, completeness, or positivity assumptions.
 
 Unitary arrows have their dagger as a two-sided inverse. They compose, and define native
 categorical isomorphisms. Endomorphisms inherit the usual algebraic star structures, with
-Mathlib's operator-order multiplication on `CategoryTheory.End`.
+Mathlib's operator-order multiplication on `CategoryTheory.End`, and induced and full
+subcategories inherit the dagger and its additive and scalar compatibilities.
 -/
 
 public section
@@ -179,6 +180,30 @@ class DaggerLinear (R : Type w) [Semiring R] [Star R]
 export DaggerLinear (dagger_smul)
 attribute [simp, grind =] dagger_smul
 
+section Semilinear
+
+variable (R : Type w) [CommSemiring R] [StarRing R] [Preadditive C] [Linear R C]
+  [DaggerPreadditive C] [DaggerLinear R C]
+
+/-- The dagger as a conjugate-linear equivalence between opposite Hom modules. -/
+def daggerLinearEquiv (A B : C) : (A ⟶ B) ≃ₛₗ[starRingEnd R] (B ⟶ A) where
+  __ := daggerAddEquiv A B
+  map_smul' := dagger_smul
+
+/-- Evaluation of the conjugate-linear dagger equivalence. -/
+@[simp] theorem daggerLinearEquiv_apply (f : X ⟶ Y) :
+    daggerLinearEquiv R X Y f = dagger f := (rfl)
+
+/-- The inverse conjugate-linear dagger equivalence reverses its endpoints. -/
+@[simp] theorem daggerLinearEquiv_symm :
+    (daggerLinearEquiv R X Y).symm = daggerLinearEquiv R Y X := (rfl)
+
+/-- Forgetting scalar linearity recovers the additive dagger equivalence. -/
+@[simp] theorem daggerLinearEquiv_toAddEquiv :
+    (daggerLinearEquiv R X Y).toAddEquiv = daggerAddEquiv X Y := (rfl)
+
+end Semilinear
+
 /-- An arrow is unitary when its dagger is its two-sided inverse. -/
 def IsUnitary (f : X ⟶ Y) : Prop :=
   f ≫ dagger f = 𝟙 X ∧ dagger f ≫ f = 𝟙 Y
@@ -287,6 +312,9 @@ instance daggerStar : Star (End X) where
 /-- The endomorphism star acts by the dagger on its underlying arrow. -/
 @[simp, grind =] theorem star_asHom (f : End X) : (star f).asHom = dagger f.asHom := (rfl)
 
+/-- Bundling the dagger of an endomorphism arrow gives the star of the bundled endomorphism. -/
+@[simp, grind =] theorem of_dagger (f : X ⟶ X) : End.of (dagger f) = star (End.of f) := (rfl)
+
 /-- The endomorphism dagger is involutive. -/
 instance daggerInvolutiveStar : InvolutiveStar (End X) where
   star_involutive f := by ext; simp
@@ -305,3 +333,73 @@ instance {R : Type w} [Semiring R] [Star R] [Preadditive C] [Linear R C]
   star_smul r f := by ext; simp
 
 end CategoryTheory.End
+
+namespace CategoryTheory.InducedCategory
+
+open TauCeti
+
+variable {C : Type u} [Category.{v} C] [DaggerCategory C] {D : Type w}
+
+/-- A category induced along a map on objects inherits the ambient dagger. -/
+instance instDaggerCategory (F : D → C) : DaggerCategory (InducedCategory C F) where
+  dagger f := homMk (dagger f.hom)
+  dagger_id _ := by ext; simp
+  dagger_comp _ _ := by ext; simp
+  dagger_dagger _ := by ext; simp
+
+/-- The underlying arrow of a dagger in an induced category is the dagger of the underlying
+arrow. -/
+@[simp, grind =] theorem dagger_hom {F : D → C} {X Y : InducedCategory C F} (f : X ⟶ Y) :
+    (dagger f).hom = dagger f.hom := (rfl)
+
+/-- Bundling an arrow in an induced category commutes with taking daggers. -/
+@[simp, grind =] theorem homMk_dagger {F : D → C} {X Y : InducedCategory C F} (f : F X ⟶ F Y) :
+    homMk (F := F) (dagger f) = dagger (homMk (F := F) f) := (rfl)
+
+/-- An induced category inherits additive compatibility of the ambient dagger. -/
+instance instDaggerPreadditive (F : D → C) [Preadditive C] [DaggerPreadditive C] :
+    DaggerPreadditive (InducedCategory C F) where
+  dagger_add f g := hom_ext (dagger_add f.hom g.hom)
+
+/-- An induced category inherits conjugate-linear compatibility of the ambient dagger. -/
+instance instDaggerLinear {R : Type*} [Semiring R] [Star R] (F : D → C)
+    [Preadditive C] [Linear R C] [DaggerLinear R C] :
+    DaggerLinear R (InducedCategory C F) where
+  dagger_smul r f := hom_ext (dagger_smul r f.hom)
+
+end CategoryTheory.InducedCategory
+
+namespace CategoryTheory.ObjectProperty
+
+open TauCeti
+
+variable {C : Type u} [Category.{v} C] [DaggerCategory C]
+
+/-- A full subcategory inherits the ambient dagger. -/
+instance instDaggerCategoryFullSubcategory (P : ObjectProperty C) :
+    DaggerCategory P.FullSubcategory :=
+  InducedCategory.instDaggerCategory FullSubcategory.obj
+
+/-- The underlying arrow of a dagger in a full subcategory is the dagger of the underlying
+arrow. -/
+@[simp, grind =] theorem dagger_hom {P : ObjectProperty C} {X Y : P.FullSubcategory} (f : X ⟶ Y) :
+    (dagger f).hom = dagger f.hom := (rfl)
+
+/-- Bundling an arrow in a full subcategory commutes with taking daggers. -/
+@[simp, grind =] theorem homMk_dagger {P : ObjectProperty C} {X Y : P.FullSubcategory}
+    (f : X.obj ⟶ Y.obj) :
+    homMk (dagger f) = dagger (homMk f : X ⟶ Y) := (rfl)
+
+/-- A full subcategory inherits additive compatibility of the ambient dagger. -/
+instance instDaggerPreadditiveFullSubcategory (P : ObjectProperty C)
+    [Preadditive C] [DaggerPreadditive C] :
+    DaggerPreadditive P.FullSubcategory :=
+  InducedCategory.instDaggerPreadditive FullSubcategory.obj
+
+/-- A full subcategory inherits conjugate-linear compatibility of the ambient dagger. -/
+instance instDaggerLinearFullSubcategory {R : Type w} [Semiring R] [Star R] (P : ObjectProperty C)
+    [Preadditive C] [Linear R C] [DaggerLinear R C] :
+    DaggerLinear R P.FullSubcategory :=
+  InducedCategory.instDaggerLinear FullSubcategory.obj
+
+end CategoryTheory.ObjectProperty
