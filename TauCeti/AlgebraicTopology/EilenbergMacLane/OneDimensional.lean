@@ -7,13 +7,13 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Singular
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Covering
-public import TauCeti.AlgebraicTopology.FundamentalGroup.WedgeSum
-public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.WedgeSum
-public import TauCeti.AlgebraicTopology.UniversalCover.Action
-public import TauCeti.Topology.CWComplex.Classical.Covering
-public import TauCeti.Topology.CWComplex.Classical.DeltaGenerated
 public import TauCeti.Topology.CWComplex.Classical.WedgeCircles
+import TauCeti.AlgebraicTopology.FundamentalGroup.WedgeSum
+import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
+import TauCeti.AlgebraicTopology.UniversalCover.Action
+import TauCeti.Topology.CWComplex.Classical.Covering
+import TauCeti.Topology.CWComplex.Classical.DeltaGenerated
 
 /-!
 # One-dimensional CW complexes are aspherical
