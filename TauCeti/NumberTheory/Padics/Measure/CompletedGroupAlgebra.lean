@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.Measure.FiniteAlgebra
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Map
 import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.NumberTheory.Padics.ProperSpace
@@ -51,6 +52,8 @@ the integral measures on a profinite group are weakly compact because `ℤ_p[[Γ
 ## Main results
 
 * `AbstractMeasure.toCompletedGroupAlgebra_dirac`: the Dirac measure at `γ` goes to `γ`.
+* `AbstractMeasure.toCompletedGroupAlgebra_mapAlgHom`: naturality of `toCompletedGroupAlgebra`
+  under pushforward along a continuous group homomorphism.
 * `AbstractMeasure.apply_eq_sum_coeff_proj_toCompletedGroupAlgebra`: integration of a function
   factoring through `Γ ⧸ U` is the finite sum of its values against the coefficients at level `U`.
 * `AbstractMeasure.toCompletedGroupAlgebra_injective`: for profinite `Γ` and Hausdorff `R`, a
@@ -134,6 +137,44 @@ theorem toCompletedGroupAlgebra_dirac (γ : Γ) :
     toCompletedGroupAlgebra (dirac R γ) = completedGroupAlgebra.of R Γ γ := by
   ext U
   simp
+
+/-- Pushing a measure forward along a continuous group homomorphism commutes with passing to the
+completed group algebra. -/
+theorem toCompletedGroupAlgebra_mapAlgHom {Δ : Type*} [Group Δ] [TopologicalSpace Δ]
+    [CompactSpace Δ] [ContinuousMul Δ] [LocallyCompactSpace Δ]
+    (f : Γ →ₜ* Δ) (μ : D(Γ, R)) :
+    toCompletedGroupAlgebra (f.mapAlgHom μ) =
+      completedGroupAlgebra.map R f.toMonoidHom f.continuous (toCompletedGroupAlgebra μ) := by
+  apply completedGroupAlgebra.ext
+  intro V
+  let U : OpenNormalSubgroup Γ := V.comap f.toMonoidHom f.continuous
+  let q : Γ ⧸ U.toSubgroup →* Δ ⧸ V.toSubgroup :=
+    QuotientGroup.map U.toSubgroup V.toSubgroup f.toMonoidHom
+      (V.toSubgroup_comap f.toMonoidHom f.continuous).le
+  have hq : (V.toSubgroup.quotientMkContinuousMonoidHom : C(Δ, Δ ⧸ V.toSubgroup)).comp
+        (f : C(Γ, Δ)) =
+      (⟨q, continuous_of_discreteTopology⟩ :
+        C(Γ ⧸ U.toSubgroup, Δ ⧸ V.toSubgroup)).comp
+        U.toSubgroup.quotientMkContinuousMonoidHom := by
+    ext
+    simp [q]
+  rw [proj_toCompletedGroupAlgebra, completedGroupAlgebra.proj_map, proj_toCompletedGroupAlgebra]
+  apply MonoidAlgebra.coeff_injective
+  rw [MonoidAlgebra.coeff_mapDomain, ContinuousMonoidHom.finiteProjectionAlgHom_apply,
+    ContinuousMonoidHom.finiteProjectionAlgHom_apply, MonoidAlgebra.coeff_ofCoeff,
+    MonoidAlgebra.coeff_ofCoeff, ContinuousMonoidHom.mapAlgHom_apply,
+    finiteProjection_map, hq, finiteProjection_comp]
+  rfl
+
+/-- Pushing a measure forward along a topological group isomorphism corresponds to
+`completedGroupAlgebra.domCongr`. -/
+theorem toCompletedGroupAlgebra_continuousMulEquiv {Δ : Type*} [Group Δ] [TopologicalSpace Δ]
+    [CompactSpace Δ] [ContinuousMul Δ] [LocallyCompactSpace Δ]
+    (e : Γ ≃ₜ* Δ) (μ : D(Γ, R)) :
+    toCompletedGroupAlgebra ((⟨(e : Γ →* Δ), map_continuous e⟩ : Γ →ₜ* Δ).mapAlgHom μ) =
+      completedGroupAlgebra.domCongr R e (toCompletedGroupAlgebra μ) := by
+  rw [completedGroupAlgebra.coe_domCongr]
+  exact toCompletedGroupAlgebra_mapAlgHom ⟨(e : Γ →* Δ), map_continuous e⟩ μ
 
 /-- Integrating a function that factors through `Γ ⧸ U` as `g` is the finite sum of the values
 of `g` against the coefficients of the projection of `toCompletedGroupAlgebra μ` at level `U`,
