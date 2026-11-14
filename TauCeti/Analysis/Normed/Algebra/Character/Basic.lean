@@ -33,8 +33,13 @@ Banach algebras are automatically continuous.
 
 ## Main results
 
-* `NonUnitalAlgHom.norm_apply_le_self`, `NonUnitalAlgHom.instContinuousLinearMapClass`: nonunital
-  characters of Banach algebras are contractive, hence continuous.
+* `NonUnitalAlgHom.norm_apply_le_self`, `NonUnitalAlgHom.instContinuousLinearMapClass`,
+  `NonUnitalAlgHom.toContinuousLinearMap`: nonunital characters of Banach algebras are contractive,
+  hence continuous linear functionals of operator norm at most one.
+* `NonUnitalAlgHom.tendsto_one_of_tendsto_mul_right`,
+  `NonUnitalAlgHom.norm_toContinuousLinearMap_eq_one_of_tendsto_mul_right`: a nonzero character
+  tends to `1` along any one-sided approximate identity, and has operator norm `1` when that
+  approximate identity is eventually bounded by `1`.
 * `TauCeti.Ring.mem_jacobson_iff_forall_algHom_apply_eq_zero`,
   `TauCeti.ker_gelfandTransform`: in a commutative unital complex Banach algebra the radical is
   the common kernel of the characters, which is the kernel of the Gelfand transform.
@@ -50,10 +55,16 @@ Banach algebras are automatically continuous.
 
 public section
 
+open Filter Topology
+
 namespace NonUnitalAlgHom
 
 variable {𝕜 A F : Type*} [NormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
-  [CompleteSpace A] [FunLike F A 𝕜] [NonUnitalAlgHomClass F 𝕜 A 𝕜]
+  [CompleteSpace A]
+
+section Class
+
+variable [FunLike F A 𝕜] [NonUnitalAlgHomClass F 𝕜 A 𝕜]
 
 /-- A nonunital character of a Banach algebra is contractive. No continuity is assumed, and the
 scalar field need not be complete. -/
@@ -74,6 +85,83 @@ instance (priority := 100) instContinuousLinearMapClass : ContinuousLinearMapCla
   { NonUnitalAlgHomClass.instLinearMapClass with
     map_continuous := fun φ =>
       AddMonoidHomClass.continuous_of_bound φ 1 fun a => by simpa using norm_apply_le_self φ a }
+
+/-- If `e * a → a` along `l` for an element `a` not in the kernel of a character `φ`, then
+`φ e → 1` along `l`. -/
+theorem tendsto_one_of_tendsto_mul_right {l : Filter A} {φ : F} {a : A} (ha : φ a ≠ 0)
+    (he : Tendsto (· * a) l (𝓝 a)) : Tendsto φ l (𝓝 1) := by
+  have hmul : Tendsto (fun e ↦ φ e * φ a) l (𝓝 (φ a)) := by
+    simpa only [Function.comp_def, map_mul] using ((map_continuous φ).tendsto a).comp he
+  simpa only [Function.comp_def, mul_inv_cancel_right₀ ha, mul_inv_cancel₀ ha] using
+    ((continuous_mul_const (φ a)⁻¹).tendsto (φ a)).comp hmul
+
+/-- If `a * e → a` along `l` for an element `a` not in the kernel of a character `φ`, then
+`φ e → 1` along `l`. -/
+theorem tendsto_one_of_tendsto_mul_left {l : Filter A} {φ : F} {a : A} (ha : φ a ≠ 0)
+    (he : Tendsto (a * ·) l (𝓝 a)) : Tendsto φ l (𝓝 1) := by
+  have hmul : Tendsto (fun e ↦ φ a * φ e) l (𝓝 (φ a)) := by
+    simpa only [Function.comp_def, map_mul] using ((map_continuous φ).tendsto a).comp he
+  simpa only [Function.comp_def, inv_mul_cancel_left₀ ha, inv_mul_cancel₀ ha] using
+    ((continuous_const_mul (φ a)⁻¹).tendsto (φ a)).comp hmul
+
+end Class
+
+/-- A nonunital algebra homomorphism from a Banach algebra into the base field, bundled as a
+continuous linear functional via its automatic contractivity. This is the nonunital counterpart of
+`AlgHom.toContinuousLinearMap`. -/
+def toContinuousLinearMap (φ : A →ₙₐ[𝕜] 𝕜) : A →L[𝕜] 𝕜 :=
+  ⟨(φ : A →ₗ[𝕜] 𝕜), map_continuous φ⟩
+
+@[simp]
+theorem coe_toContinuousLinearMap (φ : A →ₙₐ[𝕜] 𝕜) : ⇑φ.toContinuousLinearMap = φ :=
+  (rfl)
+
+theorem toContinuousLinearMap_apply (φ : A →ₙₐ[𝕜] 𝕜) (a : A) :
+    φ.toContinuousLinearMap a = φ a :=
+  (rfl)
+
+end NonUnitalAlgHom
+
+namespace NonUnitalAlgHom
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+  [CompleteSpace A]
+
+/-- Every nonunital character of a Banach algebra has operator norm at most one. -/
+theorem norm_toContinuousLinearMap_le (φ : A →ₙₐ[𝕜] 𝕜) : ‖φ.toContinuousLinearMap‖ ≤ 1 :=
+  φ.toContinuousLinearMap.opNorm_le_bound zero_le_one fun a ↦ by
+    simpa using norm_apply_le_self φ a
+
+/-- If a character `φ` tends to `1` along a proper filter `l` eventually contained in the closed
+unit ball, then `φ` has operator norm `1`. -/
+theorem norm_toContinuousLinearMap_eq_one_of_tendsto_one {l : Filter A} [l.NeBot]
+    {φ : A →ₙₐ[𝕜] 𝕜} (ht : Tendsto φ l (𝓝 1)) (hb : ∀ᶠ e in l, ‖e‖ ≤ 1) :
+    ‖φ.toContinuousLinearMap‖ = 1 := by
+  refine le_antisymm (norm_toContinuousLinearMap_le φ) ?_
+  have h1 : Tendsto (fun e ↦ ‖φ e‖) l (𝓝 1) := by simpa only [norm_one] using ht.norm
+  refine le_of_tendsto h1 ?_
+  filter_upwards [hb] with e he
+  rw [← toContinuousLinearMap_apply]
+  exact (φ.toContinuousLinearMap.le_opNorm e).trans <|
+    (mul_le_mul_of_nonneg_left he (norm_nonneg _)).trans_eq (mul_one _)
+
+/-- Every nonzero character of a Banach algebra admitting a left approximate identity bounded by
+`1` has operator norm `1`. -/
+theorem norm_toContinuousLinearMap_eq_one_of_tendsto_mul_right {l : Filter A} [l.NeBot]
+    {φ : A →ₙₐ[𝕜] 𝕜} (hφ : φ ≠ 0) (hb : ∀ᶠ e in l, ‖e‖ ≤ 1)
+    (he : ∀ a, Tendsto (· * a) l (𝓝 a)) : ‖φ.toContinuousLinearMap‖ = 1 := by
+  obtain ⟨a, ha⟩ : ∃ a, φ a ≠ 0 := by simpa [DFunLike.ext_iff] using hφ
+  exact norm_toContinuousLinearMap_eq_one_of_tendsto_one
+    (tendsto_one_of_tendsto_mul_right ha (he a)) hb
+
+/-- Every nonzero character of a Banach algebra admitting a right approximate identity bounded by
+`1` has operator norm `1`. -/
+theorem norm_toContinuousLinearMap_eq_one_of_tendsto_mul_left {l : Filter A} [l.NeBot]
+    {φ : A →ₙₐ[𝕜] 𝕜} (hφ : φ ≠ 0) (hb : ∀ᶠ e in l, ‖e‖ ≤ 1)
+    (he : ∀ a, Tendsto (a * ·) l (𝓝 a)) : ‖φ.toContinuousLinearMap‖ = 1 := by
+  obtain ⟨a, ha⟩ : ∃ a, φ a ≠ 0 := by simpa [DFunLike.ext_iff] using hφ
+  exact norm_toContinuousLinearMap_eq_one_of_tendsto_one
+    (tendsto_one_of_tendsto_mul_left ha (he a)) hb
 
 end NonUnitalAlgHom
 
