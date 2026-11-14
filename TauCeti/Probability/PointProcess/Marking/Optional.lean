@@ -14,6 +14,7 @@ public import TauCeti.Probability.RandomMeasure.Superposition
 public import TauCeti.MeasureTheory.MeasurableSpace.Option
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 import Mathlib.Probability.Kernel.MeasurableLIntegral
+import TauCeti.Probability.Kernel.Composition.MeasureCompProd
 import TauCeti.Probability.RandomMeasure.AeEq
 
 /-!
@@ -264,11 +265,8 @@ theorem lintegral_expNeg_optionalTupleMarking_eq_expNeg_lintegral {ι : Type*} [
   let g : X → ℝ≥0∞ := fun a =>
     (-ENNReal.log (∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a)).toENNReal
   have hg : Measurable g := by fun_prop
-  have hle (a : X) : ∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a ≤ 1 := by
-    calc ∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a
-        ≤ ∫⁻ _, (1 : ℝ≥0∞) ∂κ a :=
-          lintegral_mono fun e => ENNReal.coe_le_one_iff.mpr (ENNReal.expNeg_le_one _)
-      _ = 1 := by simp
+  have hle (a : X) : ∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a ≤ 1 :=
+    lintegral_le_const (ae_of_all _ fun _ => ENNReal.coe_le_one_iff.mpr (ENNReal.expNeg_le_one _))
   rw [lintegral_expNeg_optionalTupleMarking κ x hf, lintegral_sum_measure, ENNReal.coe_expNeg_tsum]
   refine tprod_congr fun i => ?_
   cases x i with
@@ -298,9 +296,6 @@ theorem ae_map_fst_apply_compProd_optionalTupleMarking {Ω ι : Type*} [Measurab
     (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i => (e ω i).elim 0 Measure.dirac))
     {A : Set X} (hA : MeasurableSet A) :
     ∀ᵐ z ∂(P ⊗ₘ (κ.optionalTupleMarking ι).comap e he), z.2.map Prod.fst A = N z.1 A := by
-  by_cases hP : SFinite P
-  swap
-  · simp [Measure.compProd_of_not_sfinite _ _ hP]
   let η := (κ.optionalTupleMarking ι).comap e he
   let S : Ω → Measure X := fun ω => Measure.sum fun i => (e ω i).elim 0 Measure.dirac
   have hS : Measurable S :=
@@ -314,9 +309,7 @@ theorem ae_map_fst_apply_compProd_optionalTupleMarking {Ω ι : Type*} [Measurab
           ((Measure.measurable_map _ measurable_fst).comp measurable_snd))
         ((Measure.measurable_coe hA).comp (hS.comp measurable_fst))
     · simpa only [η, Kernel.comap_apply] using κ.ae_map_fst_apply_optionalTupleMarking (e ω) hA
-  have h₂ : ∀ᵐ z ∂(P ⊗ₘ η), N z.1 = S z.1 :=
-    ae_of_ae_map measurable_fst.aemeasurable ((Measure.fst_compProd P η).symm ▸ hae)
-  filter_upwards [h₁, h₂] with z hz₁ hz₂
+  filter_upwards [h₁, (Measure.quasiMeasurePreserving_fst_compProd P η).ae hae] with z hz₁ hz₂
   rw [hz₁, hz₂]
 
 /-- Measure-level ground-projection recovery for optional tuple marking on a countably generated
@@ -329,14 +322,8 @@ theorem ae_map_fst_compProd_optionalTupleMarking [MeasurableSpace.CountablyGener
     (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i => (e ω i).elim 0 Measure.dirac))
     {s : ι' → Set X} (hs : ∀ j, MeasurableSet (s j)) (hcover : ⋃ j, s j = Set.univ)
     (hfin : ∀ j, ∀ᵐ ω ∂P, N ω (s j) ≠ ∞) :
-    ∀ᵐ z ∂(P ⊗ₘ (κ.optionalTupleMarking ι).comap e he), z.2.map Prod.fst = N z.1 := by
-  by_cases hP : SFinite P
-  swap
-  · simp [Measure.compProd_of_not_sfinite _ _ hP]
-  let η := (κ.optionalTupleMarking ι).comap e he
-  have hfin' (j : ι') : ∀ᵐ z ∂(P ⊗ₘ η), N z.1 (s j) ≠ ∞ :=
-    ae_of_ae_map measurable_fst.aemeasurable ((Measure.fst_compProd P η).symm ▸ hfin j)
-  exact (Measure.ae_eq_of_forall_ae_eq_of_cover hs hcover hfin' fun A hA =>
-    (κ.ae_map_fst_apply_compProd_optionalTupleMarking he hae hA).mono fun _ h => h.symm).symm
+    ∀ᵐ z ∂(P ⊗ₘ (κ.optionalTupleMarking ι).comap e he), z.2.map Prod.fst = N z.1 :=
+  Measure.ae_eq_compProd_of_forall_ae_eq_of_cover hs hcover hfin fun _ hA =>
+    κ.ae_map_fst_apply_compProd_optionalTupleMarking he hae hA
 
 end ProbabilityTheory.Kernel

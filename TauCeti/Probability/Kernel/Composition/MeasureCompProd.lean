@@ -30,6 +30,8 @@ kernel masses of the vertical sections.
   composition-product to `s ×ˢ univ`.
 * `MeasureTheory.Measure.map_fst_restrict_compProd_eq_withDensity` — restricting `μ ⊗ₘ κ` to `A`
   and projecting onto the first coordinate gives `μ.withDensity (fun x ↦ κ x (Prod.mk x ⁻¹' A))`.
+* `MeasureTheory.Measure.quasiMeasurePreserving_fst_compProd` — `Prod.fst` is quasi-measure
+  preserving from `μ ⊗ₘ κ` to `μ` without finiteness or Markov hypotheses.
 -/
 
 public section
@@ -41,6 +43,22 @@ open ProbabilityTheory
 namespace MeasureTheory.Measure
 
 variable {W Y Z : Type*} [MeasurableSpace W] [MeasurableSpace Y] [MeasurableSpace Z]
+
+/-- Projecting a composition-product onto its first coordinate is quasi-measure preserving for any
+measure `μ` and kernel `κ`, with no s-finiteness or Markov hypothesis. -/
+@[fun_prop]
+theorem quasiMeasurePreserving_fst_compProd (μ : Measure W) (κ : Kernel W Z) :
+    QuasiMeasurePreserving Prod.fst (μ ⊗ₘ κ) μ := by
+  refine ⟨measurable_fst.aemeasurable, AbsolutelyContinuous.mk fun s hs hμs ↦ ?_⟩
+  by_cases hμ : SFinite μ
+  swap
+  · simp [compProd_of_not_sfinite _ _ hμ]
+  by_cases hκ : IsSFiniteKernel κ
+  swap
+  · simp [compProd_of_not_isSFiniteKernel _ _ hκ]
+  rw [map_apply measurable_fst hs, compProd_apply (measurable_fst hs)]
+  exact (lintegral_eq_zero_iff (Kernel.measurable_kernel_prodMk_left (measurable_fst hs))).2
+    ((measure_eq_zero_iff_ae_notMem.1 hμs).mono fun a ha ↦ by simp [Set.preimage, ha])
 
 /-- If a kernel factors through a measurable map `f : W → Y`, then pushing the base of the
 composition-product forward along `f` gives back the composition-product over the pushed-forward

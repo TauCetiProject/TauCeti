@@ -16,7 +16,6 @@ import TauCeti.MeasureTheory.Measure.IntegerValued.Enumeration.LocallyFinite
 import TauCeti.Probability.PointProcess.Poisson.IntegerValued
 import TauCeti.Probability.PointProcess.Poisson.Laplace
 import TauCeti.Probability.PointProcess.Poisson.LaplaceCharacterization
-import TauCeti.Probability.RandomMeasure.AeEq
 
 /-!
 # The Poisson Marking Theorem
@@ -60,6 +59,17 @@ section Enumeration
 variable {Ω X E ι : Type*} [MeasurableSpace Ω] [MeasurableSpace X] [MeasurableSpace E]
   [Countable ι] {P : Measure Ω} {N : Ω → Measure X} {Λ : Measure X}
 
+/-- Extending the sample space along a Markov kernel `η : Kernel Ω β` preserves the Poisson
+random-measure property of the ground realization `z ↦ N z.1` with the same intensity `Λ`. -/
+theorem IsPoissonRandomMeasure.compProd_fst {β : Type*} [MeasurableSpace β]
+    (hN : IsPoissonRandomMeasure P N Λ) (η : Kernel Ω β) [IsMarkovKernel η] :
+    IsPoissonRandomMeasure (P ⊗ₘ η) (fun z ↦ N z.1) Λ := by
+  let := hN.isProbabilityMeasure
+  refine hN.of_identDistrib (hN.measurable.comp measurable_fst)
+    ⟨hN.measurable.aemeasurable, (hN.measurable.comp measurable_fst).aemeasurable, ?_⟩
+  rw [← Function.comp_def N Prod.fst, ← Measure.map_map hN.measurable measurable_fst,
+    ← Measure.fst, Measure.fst_compProd]
+
 /-- **Enumeration-relative Poisson Marking Theorem.** Independently marking an almost-everywhere
 optional occurrence enumeration of a Poisson random measure with s-finite intensity `Λ` by a
 Markov kernel `κ` produces a Poisson random measure with intensity `Λ ⊗ₘ κ`. Neither standard
@@ -74,11 +84,8 @@ theorem IsPoissonRandomMeasure.compProd_optionalTupleMarking [SFinite Λ]
   let g : X → ℝ≥0∞ := fun a ↦
     (-ENNReal.log (∫⁻ b, (ENNReal.expNeg (f (a, b)) : ℝ≥0∞) ∂κ a)).toENNReal
   have hg : Measurable g := by fun_prop
-  have hle (a : X) : ∫⁻ b, (ENNReal.expNeg (f (a, b)) : ℝ≥0∞) ∂κ a ≤ 1 := by
-    calc ∫⁻ b, (ENNReal.expNeg (f (a, b)) : ℝ≥0∞) ∂κ a
-        ≤ ∫⁻ _, (1 : ℝ≥0∞) ∂κ a :=
-          lintegral_mono fun _ ↦ ENNReal.coe_le_one_iff.mpr (ENNReal.expNeg_le_one _)
-      _ = 1 := by simp
+  have hle (a : X) : ∫⁻ b, (ENNReal.expNeg (f (a, b)) : ℝ≥0∞) ∂κ a ≤ 1 :=
+    lintegral_le_const (ae_of_all _ fun _ ↦ ENNReal.coe_le_one_iff.mpr (ENNReal.expNeg_le_one _))
   rw [Measure.laplaceFunctional_def, Measure.lintegral_compProd (by fun_prop)]
   simp_rw [Kernel.comap_apply,
     Kernel.lintegral_expNeg_optionalTupleMarking_eq_expNeg_lintegral κ _ hf]
@@ -104,51 +111,41 @@ theorem IsPoissonRandomMeasure.compProd_tupleMarking [SFinite Λ]
     (by simpa only [Function.comp_apply, Option.elim_some] using hae)
 
 /-- Marginal form of `IsPoissonRandomMeasure.compProd_optionalTupleMarking`: the mixture of
-marked laws over `P` is a canonical Poisson random measure on `Measure (X × E)` with intensity
-`Λ ⊗ₘ κ`. -/
+marked laws over `P` along an almost-everywhere measurable optional enumeration is a canonical
+Poisson random measure on `Measure (X × E)` with intensity `Λ ⊗ₘ κ`. -/
 theorem IsPoissonRandomMeasure.bind_optionalTupleMarking [SFinite Λ]
     (hN : IsPoissonRandomMeasure P N Λ) (κ : Kernel X E) [IsMarkovKernel κ]
-    {e : Ω → ι → Option X} (he : Measurable e)
+    {e : Ω → ι → Option X} (he : AEMeasurable e P)
     (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ (e ω i).elim 0 Measure.dirac)) :
     IsPoissonRandomMeasure (P.bind fun ω ↦ κ.optionalTupleMarking ι (e ω)) id (Λ ⊗ₘ κ) := by
   let := hN.isProbabilityMeasure
-  let η := (κ.optionalTupleMarking ι).comap e he
-  have hmap : (P ⊗ₘ η).map Prod.snd = P.bind (fun ω ↦ κ.optionalTupleMarking ι (e ω)) := by
+  have hbind : (P.bind fun ω ↦ κ.optionalTupleMarking ι (e ω)) =
+      P.bind fun ω ↦ κ.optionalTupleMarking ι (he.mk e ω) :=
+    Measure.bind_congr_right (he.ae_eq_mk.mono fun _ hω ↦ congrArg (κ.optionalTupleMarking ι) hω)
+  rw [hbind]
+  let η := (κ.optionalTupleMarking ι).comap (he.mk e) he.measurable_mk
+  have hmap : (P ⊗ₘ η).map Prod.snd = P.bind (fun ω ↦ κ.optionalTupleMarking ι (he.mk e ω)) := by
     rw [← Measure.snd, Measure.snd_compProd]
     simp only [η, Kernel.coe_comap, Function.comp_def]
-  exact (hN.compProd_optionalTupleMarking κ he hae).of_identDistrib measurable_id
+  have hae' : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ (he.mk e ω i).elim 0 Measure.dirac) := by
+    filter_upwards [hae, he.ae_eq_mk] with ω hω hmk
+    simpa only [← hmk] using hω
+  exact (hN.compProd_optionalTupleMarking κ he.measurable_mk hae').of_identDistrib measurable_id
     ⟨measurable_snd.aemeasurable, measurable_id.aemeasurable, by rw [Measure.map_id, hmap]⟩
 
 /-- Marginal form of `IsPoissonRandomMeasure.compProd_tupleMarking`: the mixture of marked tuple
-laws over `P` is a canonical Poisson random measure on `Measure (X × E)` with intensity
-`Λ ⊗ₘ κ`. -/
+laws over `P` along an almost-everywhere measurable enumeration is a canonical Poisson random
+measure on `Measure (X × E)` with intensity `Λ ⊗ₘ κ`. -/
 theorem IsPoissonRandomMeasure.bind_tupleMarking [SFinite Λ]
     (hN : IsPoissonRandomMeasure P N Λ) (κ : Kernel X E) [IsMarkovKernel κ]
-    {e : Ω → ι → X} (he : Measurable e)
+    {e : Ω → ι → X} (he : AEMeasurable e P)
     (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ Measure.dirac (e ω i))) :
     IsPoissonRandomMeasure (P.bind fun ω ↦ κ.tupleMarking ι (e ω)) id (Λ ⊗ₘ κ) := by
-  simpa only [Kernel.optionalTupleMarking_some] using
-    hN.bind_optionalTupleMarking κ (e := fun ω i ↦ some (e ω i))
-      (Measurable.of_eval fun i ↦ Option.measurable_some.comp ((measurable_pi_apply i).comp he))
-      (by simpa only [Option.elim_some] using hae)
-
-/-- On a countably generated ground space with σ-finite intensity `Λ`, setwise almost-everywhere
-equality of a random measure `M` on `P ⊗ₘ η` with the ground realization `N z.1` upgrades to
-almost-everywhere equality of measures. -/
-theorem IsPoissonRandomMeasure.ae_eq_compProd_of_forall_ae_eq {β : Type*} [MeasurableSpace β]
-    [MeasurableSpace.CountablyGenerated X] [SigmaFinite Λ]
-    (hN : IsPoissonRandomMeasure P N Λ) {η : Kernel Ω β} [IsMarkovKernel η]
-    {M : Ω × β → Measure X}
-    (heq : ∀ A, MeasurableSet A → ∀ᵐ z ∂(P ⊗ₘ η), M z A = N z.1 A) :
-    ∀ᵐ z ∂(P ⊗ₘ η), M z = N z.1 := by
-  let := hN.isProbabilityMeasure
-  have hfin (n : ℕ) : ∀ᵐ z ∂(P ⊗ₘ η), N z.1 (spanningSets Λ n) ≠ ∞ :=
-    ae_of_ae_map measurable_fst.aemeasurable
-      ((Measure.fst_compProd P η).symm ▸
-        (hN.ae_lt_top (measurableSet_spanningSets Λ n)
-          (measure_spanningSets_lt_top Λ n)).mono fun _ ↦ ne_of_lt)
-  exact (Measure.ae_eq_of_forall_ae_eq_of_cover (measurableSet_spanningSets Λ)
-    (iUnion_spanningSets Λ) hfin fun A hA ↦ (heq A hA).mono fun _ h ↦ h.symm).symm
+  have hsome : Measurable (fun (x : ι → X) i ↦ some (x i)) :=
+    Measurable.of_eval fun i ↦ Option.measurable_some.comp (measurable_pi_apply i)
+  simpa only [Function.comp_apply, Kernel.optionalTupleMarking_some] using
+    hN.bind_optionalTupleMarking κ (hsome.comp_aemeasurable he)
+      (by simpa only [Function.comp_apply, Option.elim_some] using hae)
 
 /-- On a countably generated ground space with σ-finite intensity `Λ`, projecting an optional-tuple
 marked realization onto the first coordinate recovers the entire ground realization `N z.1` almost
@@ -159,8 +156,10 @@ theorem IsPoissonRandomMeasure.ae_map_fst_compProd_optionalTupleMarking
     {e : Ω → ι → Option X} (he : Measurable e)
     (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ (e ω i).elim 0 Measure.dirac)) :
     ∀ᵐ z ∂(P ⊗ₘ (κ.optionalTupleMarking ι).comap e he), z.2.map Prod.fst = N z.1 :=
-  hN.ae_eq_compProd_of_forall_ae_eq fun _ hA ↦
-    κ.ae_map_fst_apply_compProd_optionalTupleMarking he hae hA
+  κ.ae_map_fst_compProd_optionalTupleMarking he hae (measurableSet_spanningSets Λ)
+    (iUnion_spanningSets Λ) fun n ↦
+      (hN.ae_lt_top (measurableSet_spanningSets Λ n)
+        (measure_spanningSets_lt_top Λ n)).mono fun _ ↦ ne_of_lt
 
 /-- On a countably generated ground space with σ-finite intensity `Λ`, projecting a total-tuple
 marked realization onto the first coordinate recovers the entire ground realization `N z.1` almost
@@ -171,8 +170,10 @@ theorem IsPoissonRandomMeasure.ae_map_fst_compProd_tupleMarking
     {e : Ω → ι → X} (he : Measurable e)
     (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ Measure.dirac (e ω i))) :
     ∀ᵐ z ∂(P ⊗ₘ (κ.tupleMarking ι).comap e he), z.2.map Prod.fst = N z.1 :=
-  hN.ae_eq_compProd_of_forall_ae_eq fun _ hA ↦
-    κ.ae_map_fst_apply_compProd_tupleMarking he hae hA
+  κ.ae_map_fst_compProd_tupleMarking he hae (measurableSet_spanningSets Λ)
+    (iUnion_spanningSets Λ) fun n ↦
+      (hN.ae_lt_top (measurableSet_spanningSets Λ n)
+        (measure_spanningSets_lt_top Λ n)).mono fun _ ↦ ne_of_lt
 
 end Enumeration
 

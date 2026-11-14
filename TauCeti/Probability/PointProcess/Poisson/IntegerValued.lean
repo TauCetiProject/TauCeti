@@ -9,15 +9,18 @@ public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.MeasureTheory.Measure.IntegerValued.Basic
 public import TauCeti.MeasureTheory.MeasurableSpace.CountablyGenerated
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
+import TauCeti.Probability.RandomMeasure.AeEq
 
 /-!
 # Poisson random measures have integer-valued realizations
 
 A Poisson count on any fixed finite-intensity set is almost surely a natural number.
 On a countably generated measurable space, these individual assertions imply that the
-whole random measure is almost surely integer-valued. The exceptional event is independent
+whole random measure is almost surely integer-valued, and allow setwise almost-everywhere
+equality with a sigma-finite-intensity Poisson random measure to be upgraded to
+almost-everywhere equality of measures. The exceptional event is independent
 of the tested measurable set. A countable generating π-system and a finite-intensity cover
-allow the finite-measure integrality criterion to be applied on each piece.
+allow the finite-measure integrality and extensionality criteria to be applied on each piece.
 
 Sigma-finite intensity also implies sigma-finiteness of almost every realization, without
 any countable-generation assumption. On a locally compact sigma-compact Hausdorff space,
@@ -75,6 +78,17 @@ theorem IsPoissonRandomMeasure.ae_isIntegerValued (h : IsPoissonRandomMeasure P 
     · simpa only [Measure.restrict_apply MeasurableSet.univ, univ_inter] using hω univ huniv
   filter_upwards [ae_all_iff.2 hpiece] with ω hω
   exact Measure.isIntegerValued_of_restrict (iUnion_spanningSets Λ) hω
+
+/-- On a countably generated measurable space, setwise almost-everywhere equality of a random
+measure `M` with a sigma-finite-intensity Poisson random measure `N` upgrades to almost-everywhere
+equality of measures. Neither measurability of `M` nor finite total intensity is required. -/
+theorem IsPoissonRandomMeasure.ae_eq_of_forall_ae_eq [MeasurableSpace.CountablyGenerated X]
+    [SigmaFinite Λ] (h : IsPoissonRandomMeasure P N Λ) {M : Ω → Measure X}
+    (heq : ∀ A, MeasurableSet A → ∀ᵐ ω ∂P, M ω A = N ω A) : M =ᵐ[P] N :=
+  (Measure.ae_eq_of_forall_ae_eq_of_cover (measurableSet_spanningSets Λ) (iUnion_spanningSets Λ)
+    (fun n ↦ (h.ae_lt_top (measurableSet_spanningSets Λ n)
+      (measure_spanningSets_lt_top Λ n)).mono fun _ ↦ ne_of_lt)
+    fun A hA ↦ (heq A hA).mono fun _ h ↦ h.symm).symm
 
 /-- If the intensity is finite on compact sets, almost every realization of a Poisson
 random measure is locally finite. The assertion holds simultaneously at every location. -/

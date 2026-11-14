@@ -125,9 +125,4 @@ including at `∞` (`log 0 = ⊥ = -(∞ : EReal)`). -/
 @[simp] theorem log_coe_expNeg (x : ℝ≥0∞) : log (expNeg x : ℝ≥0∞) = -(x : EReal) := by
   rw [coe_expNeg, EReal.log_exp]
 
-/-- Negating the logarithm inverts the extended negative exponential on `ℝ≥0∞`, including at `∞`. -/
-theorem toENNReal_neg_log_coe_expNeg (x : ℝ≥0∞) :
-    (-log (expNeg x : ℝ≥0∞)).toENNReal = x := by
-  simp
-
 end ENNReal

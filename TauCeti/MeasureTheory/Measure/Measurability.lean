@@ -24,10 +24,8 @@ of measures.
 
 * `MeasureTheory.Measure.measurable_sum` — countable superposition is measurable for the
   evaluation sigma-algebra on measures.
-* `MeasureTheory.Measure.measurable_restrict` and
-  `MeasureTheory.Measure.measurable_map_fst_restrict_univ_prod_singleton` — restricting to a
-  measurable set and projecting vertical singleton slices onto the first coordinate are
-  measurable.
+* `MeasureTheory.Measure.measurable_restrict` — restricting a measure to a fixed measurable set is
+  measurable for the evaluation sigma-algebra.
 * `Measurable.measure_of_isPiSystem_of_iUnion` — measurability on a generating π-system
   suffices for measures finite on each set of a fixed countable cover by π-system sets,
   without finite total mass.
@@ -72,20 +70,12 @@ namespace MeasureTheory.Measure
 
 /-- Restricting a measure to a fixed measurable set is measurable for the evaluation
 sigma-algebra on measures. -/
+@[fun_prop]
 theorem measurable_restrict {X : Type*} [MeasurableSpace X] {s : Set X}
     (hs : MeasurableSet s) :
     Measurable (fun μ : Measure X ↦ μ.restrict s) := by
   refine measurable_of_measurable_coe _ fun A hA ↦ ?_
   simpa only [restrict_apply hA] using measurable_coe (hA.inter hs)
-
-/-- Projecting the vertical singleton slice `univ ×ˢ {i}` of a product-space measure onto the first
-coordinate is measurable. -/
-@[fun_prop]
-theorem measurable_map_fst_restrict_univ_prod_singleton {X ι : Type*} [MeasurableSpace X]
-    [MeasurableSpace ι] [MeasurableSingletonClass ι] (i : ι) :
-    Measurable (fun μ : Measure (X × ι) ↦ (μ.restrict (Set.univ ×ˢ {i})).map Prod.fst) :=
-  (measurable_map _ measurable_fst).comp
-    (measurable_restrict (MeasurableSet.univ.prod (measurableSet_singleton i)))
 
 end MeasureTheory.Measure
 

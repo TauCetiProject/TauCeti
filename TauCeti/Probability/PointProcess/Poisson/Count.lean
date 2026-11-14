@@ -162,11 +162,40 @@ theorem ae_forall_nat_count_eq_zero (h : IsPoissonRandomMeasure P M Λ) (hΛ : �
   filter_upwards [h.ae_eq_zero hΛ] with ω hω t
   simp [measure_mono_null Ioc_subset_Ioi_self hω]
 
+end IsPoissonRandomMeasure
+
+variable {ι : Type*} {I : Finset ι} {N : ι → Ω → Measure ℝ≥0}
+  {Λs : ι → Measure ℝ≥0}
+
+/-- If a finite family of temporal Poisson random measures with finite intensities on bounded
+`(0, n]` windows sums almost surely to `M₀`, then their natural cumulative counts sum to those of
+`M₀` simultaneously at all times `t` on a single event of full probability. Neither local
+finiteness at `0`, typeclass synthesis of `IsLocallyFiniteMeasure`, nor independence is
+required. -/
+theorem ae_forall_nat_count_finsetSum_eq (I : Finset ι) {M₀ : Ω → Measure ℝ≥0}
+    (h : ∀ i ∈ I, IsPoissonRandomMeasure P (N i) (Λs i))
+    (hΛ : ∀ i ∈ I, ∀ n : ℕ, Λs i (Ioc 0 (n : ℝ≥0)) < ∞)
+    (hsum : ∀ᵐ ω ∂P, ∑ i ∈ I, N i ω = M₀ ω) :
+    ∀ᵐ ω ∂P, ∀ t : ℝ≥0,
+      ∑ i ∈ I, ⌊(N i ω (Ioc 0 t)).toNNReal⌋₊ = ⌊(M₀ ω (Ioc 0 t)).toNNReal⌋₊ := by
+  classical
+  refine ae_forall_natFloor_toNNReal_Ioc_finsetSum_eq I
+    (fun i hi n ↦ by
+      have : IsFiniteMeasure ((Λs i).restrict (Ioc 0 (n : ℝ≥0))) := ⟨by simpa using hΛ i hi n⟩
+      exact ((h i hi).restrict measurableSet_Ioc).ae_isIntegerValued)
+    (fun n ↦ ?_) hsum
+  have hfin : ∀ᵐ ω ∂P, ∀ i : I, N i.1 ω (Ioc 0 (n : ℝ≥0)) < ∞ :=
+    ae_all_iff.2 fun i ↦ (h i.1 i.2).ae_lt_top measurableSet_Ioc (hΛ i.1 i.2 n)
+  filter_upwards [hfin, hsum] with ω hωfin hωsum
+  rw [← hωsum, sum_apply]
+  exact ENNReal.sum_lt_top.2 fun i hi ↦ hωfin ⟨i, hi⟩
+
 /-- If two temporal Poisson random measures with finite intensities on bounded `(0, n]` windows
 sum almost surely to `M₀`, then their natural cumulative counts add to those of `M₀`
 simultaneously at all times `t` on a single event of full probability. Neither local finiteness at
 `0` nor typeclass synthesis of `IsLocallyFiniteMeasure` is required. -/
-theorem ae_forall_nat_count_add_eq {M₁ M₂ M₀ : Ω → Measure ℝ≥0} {Λ₁ Λ₂ : Measure ℝ≥0}
+theorem IsPoissonRandomMeasure.ae_forall_nat_count_add_eq
+    {M₁ M₂ M₀ : Ω → Measure ℝ≥0} {Λ₁ Λ₂ : Measure ℝ≥0}
     (h₁ : IsPoissonRandomMeasure P M₁ Λ₁) (h₂ : IsPoissonRandomMeasure P M₂ Λ₂)
     (hΛ₁ : ∀ n : ℕ, Λ₁ (Ioc 0 (n : ℝ≥0)) < ∞)
     (hΛ₂ : ∀ n : ℕ, Λ₂ (Ioc 0 (n : ℝ≥0)) < ∞)
@@ -174,23 +203,14 @@ theorem ae_forall_nat_count_add_eq {M₁ M₂ M₀ : Ω → Measure ℝ≥0} {Λ
     ∀ᵐ ω ∂P, ∀ t : ℝ≥0,
       ⌊(M₁ ω (Ioc 0 t)).toNNReal⌋₊ + ⌊(M₂ ω (Ioc 0 t)).toNNReal⌋₊ =
         ⌊(M₀ ω (Ioc 0 t)).toNNReal⌋₊ := by
-  refine ae_forall_natFloor_toNNReal_Ioc_add_eq
-    (fun n ↦ by
-      have : IsFiniteMeasure (Λ₁.restrict (Ioc 0 (n : ℝ≥0))) := ⟨by simpa using hΛ₁ n⟩
-      exact (h₁.restrict measurableSet_Ioc).ae_isIntegerValued)
-    (fun n ↦ by
-      have : IsFiniteMeasure (Λ₂.restrict (Ioc 0 (n : ℝ≥0))) := ⟨by simpa using hΛ₂ n⟩
-      exact (h₂.restrict measurableSet_Ioc).ae_isIntegerValued)
-    (fun n ↦ ?_) hadd
-  filter_upwards [h₁.ae_lt_top measurableSet_Ioc (hΛ₁ n),
-    h₂.ae_lt_top measurableSet_Ioc (hΛ₂ n), hadd] with ω hω₁ hω₂ hωadd
-  rw [← hωadd, add_apply]
-  exact ENNReal.add_lt_top.2 ⟨hω₁, hω₂⟩
-
-end IsPoissonRandomMeasure
-
-variable {ι : Type*} {I : Finset ι} {N : ι → Ω → Measure ℝ≥0}
-  {Λs : ι → Measure ℝ≥0}
+  let N : Bool → Ω → Measure ℝ≥0 := fun b ↦ cond b M₁ M₂
+  let Λs : Bool → Measure ℝ≥0 := fun b ↦ cond b Λ₁ Λ₂
+  have h := ae_forall_nat_count_finsetSum_eq (Finset.univ : Finset Bool)
+    (N := N) (M₀ := M₀) (Λs := Λs)
+    (fun b _ ↦ by cases b <;> assumption)
+    (fun b _ ↦ by cases b <;> assumption)
+    (by simpa only [N, Fintype.sum_bool, Bool.cond_true, Bool.cond_false] using hadd)
+  simpa only [N, Fintype.sum_bool, Bool.cond_true, Bool.cond_false] using h
 
 /-- Natural counts commute with finite superposition simultaneously at every time, almost
 surely. Only the selected intensities need be locally finite; independence is unnecessary. -/
@@ -199,21 +219,10 @@ theorem ae_nat_count_finsetSum [∀ i : I, IsLocallyFiniteMeasure (Λs i)]
     ∀ᵐ ω ∂P, ∀ t : ℝ≥0,
       ⌊((∑ i ∈ I, N i ω) (Ioc 0 t)).toNNReal⌋₊ =
         ∑ i ∈ I, ⌊(N i ω (Ioc 0 t)).toNNReal⌋₊ := by
-  classical
-  filter_upwards [ae_all_iff.2 (fun i : I => (h i i.property).ae_isIntegerValued),
-    ae_all_iff.2 (fun i : I => (h i i.property).ae_isLocallyFiniteMeasure)] with ω hint hfin
-  let (i : I) : IsLocallyFiniteMeasure (N i ω) := hfin i
-  intro t
-  have he (i : I) : N i ω (Ioc 0 t) =
-      (⌊(N i ω (Ioc 0 t)).toNNReal⌋₊ : ℝ≥0∞) := by
-    obtain ⟨n, hn⟩ := (hint i).exists_eq_natCast (A := Ioc 0 t)
-      measurableSet_Ioc measure_Ioc_lt_top
-    simp [hn]
-  have hsum : (∑ i ∈ I, N i ω (Ioc 0 t)) =
-      ((∑ i ∈ I, ⌊(N i ω (Ioc 0 t)).toNNReal⌋₊ : ℕ) : ℝ≥0∞) := by
-    rw [Nat.cast_sum]
-    exact Finset.sum_congr rfl fun i hi => he ⟨i, hi⟩
-  rw [sum_apply, hsum, ENNReal.toNNReal_natCast, Nat.floor_natCast]
+  refine (ae_forall_nat_count_finsetSum_eq I h (fun i hi _ ↦ ?_) (.of_forall fun _ ↦ rfl)).mono
+    fun _ hω t ↦ (hω t).symm
+  let : IsLocallyFiniteMeasure (Λs i) := ‹∀ i : I, IsLocallyFiniteMeasure (Λs i)› ⟨i, hi⟩
+  exact measure_Ioc_lt_top
 
 /-- A finite sum of independent Poisson count processes with locally finite intensities
 has independent increments. Independence concerns the selected random measures, hence their
