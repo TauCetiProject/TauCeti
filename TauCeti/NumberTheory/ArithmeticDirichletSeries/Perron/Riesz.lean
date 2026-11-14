@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.MellinInversion
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 
 /-!
 # The first-order Perron integral
 
-The kernel `x^s / (s(s+1))` is absolutely integrable on each vertical line avoiding the two
-poles. On a line `Re s = c > 0` its normalized integral is `max (1 - 1/x) 0`, for `x > 0`.
+For `x ≥ 0`, the kernel `x^s / (s(s+1))` is absolutely integrable on every vertical line
+avoiding the two poles. For `x > 0` and `Re s = c > 0` its normalized integral is
+`max (1 - 1/x) 0`.
 Unlike the sharp Perron kernel `x^s/s`, the first-order weight is continuous at the cutoff
 `x = 1`, where its value is zero.
 
@@ -68,34 +69,25 @@ private lemma verticalIntegrable_riesz {c : ℝ} (hc : c ≠ 0) (hc1 : c ≠ -1)
   have h1 : c + 1 ≠ 0 := by simpa using sub_ne_zero.mpr hc1
   have hd : 0 < d := lt_min (abs_pos.mpr hc) (abs_pos.mpr h1)
   have hmajor : Integrable (fun t : ℝ ↦ (d ^ 2 + t ^ 2)⁻¹) := by
-    have h := (integrable_inv_one_add_sq.comp_mul_left' (inv_ne_zero hd.ne')).const_mul (d^2)⁻¹
-    convert h using 1
-    ext t
-    field_simp
+    simpa only [add_comm] using (integrable_inv_sq_add_sq hd.ne')
   refine hmajor.mono' (by fun_prop) (Filter.Eventually.of_forall fun t ↦ ?_)
   rw [norm_inv, norm_mul]
-  have hsq0 : ‖(c : ℂ) + t * I‖ ^ 2 = c ^ 2 + t ^ 2 := by
-    rw [← Complex.normSq_eq_norm_sq]
-    simp [Complex.normSq_apply]
+  have hnorm (a : ℝ) (ha : d ≤ |a|) :
+      Real.sqrt (d ^ 2 + t ^ 2) ≤ ‖(a : ℂ) + t * I‖ := by
+    apply (Real.sqrt_le_left (norm_nonneg _)).mpr
+    rw [Complex.sq_norm, Complex.normSq_add_mul_I]
+    nlinarith only [ha, hd.le, sq_abs a]
+  have hshift : (c : ℂ) + t * I + 1 = ((c + 1 : ℝ) : ℂ) + t * I := by
+    push_cast
     ring
-  have hsq1 : ‖(c : ℂ) + t * I + 1‖ ^ 2 = (c + 1) ^ 2 + t ^ 2 := by
-    rw [← Complex.normSq_eq_norm_sq]
-    simp [Complex.normSq_apply]
-    ring
-  have hdc : d ^ 2 ≤ c ^ 2 := by
-    have h := min_le_left |c| |c + 1|
-    nlinarith [sq_abs c]
-  have hdc1 : d ^ 2 ≤ (c + 1) ^ 2 := by
-    have h := min_le_right |c| |c + 1|
-    nlinarith [sq_abs (c + 1)]
   apply inv_anti₀ (by positivity)
-  by_cases hle : ‖(c : ℂ) + t * I‖ ≤ ‖(c : ℂ) + t * I + 1‖
-  · calc d ^ 2 + t ^ 2 ≤ ‖(c : ℂ) + t * I‖ ^ 2 := by linarith
-         _ ≤ ‖(c : ℂ) + t * I‖ * ‖(c : ℂ) + t * I + 1‖ := by
-           simpa only [sq] using mul_le_mul_of_nonneg_left hle (norm_nonneg _)
-  · calc d ^ 2 + t ^ 2 ≤ ‖(c : ℂ) + t * I + 1‖ ^ 2 := by linarith
-         _ ≤ ‖(c : ℂ) + t * I‖ * ‖(c : ℂ) + t * I + 1‖ := by
-           simpa only [sq] using mul_le_mul_of_nonneg_right (not_le.mp hle).le (norm_nonneg _)
+  calc
+    d ^ 2 + t ^ 2 = (Real.sqrt (d ^ 2 + t ^ 2)) ^ 2 :=
+      (Real.sq_sqrt (by positivity)).symm
+    _ ≤ ‖(c : ℂ) + t * I‖ * ‖(c : ℂ) + t * I + 1‖ := by
+      rw [sq, hshift]
+      exact mul_le_mul (hnorm c (min_le_left _ _)) (hnorm (c + 1) (min_le_right _ _))
+        (Real.sqrt_nonneg _) (norm_nonneg _)
 
 /-- The inverse Mellin transform of `1 / (s(s+1))` is the continuous first-order Perron weight. -/
 private theorem mellinInv_inv_mul_add_one {c x : ℝ} (hc : 0 < c) (hx : 0 < x) :
@@ -113,18 +105,26 @@ private theorem mellinInv_inv_mul_add_one {c x : ℝ} (hc : 0 < c) (hx : 0 < x) 
   rw [mellinInv] at h ⊢
   simpa only [hm, weight_eq hx] using h
 
-private lemma riesz_integrand_eq {x : ℝ} (hx : 0 < x) (s : ℂ) :
+private lemma riesz_integrand_eq {x : ℝ} (hx : 0 ≤ x) (s : ℂ) :
     ((x⁻¹ : ℝ) : ℂ) ^ (-s) • (s * (s + 1))⁻¹ = (x : ℂ) ^ s / (s * (s + 1)) := by
-  rw [Complex.ofReal_inv, Complex.inv_cpow_ofReal_nonneg hx.le, Complex.cpow_neg, inv_inv]
-  rfl
+  rw [Complex.ofReal_inv, Complex.inv_cpow_ofReal_nonneg hx, Complex.cpow_neg, inv_inv,
+    smul_eq_mul, ← div_eq_mul_inv]
 
-/-- The first-order Perron kernel is absolutely integrable on every line away from
-`Re s = 0, -1`. -/
-theorem integrable_cpow_div_mul_add_one {c x : ℝ} (hc : c ≠ 0) (hc1 : c ≠ -1) (hx : 0 < x) :
+/-- The first-order Perron kernel is absolutely integrable for `x ≥ 0` on every line away from
+`Re s = 0, -1`. At `x = 0` the integrand vanishes. -/
+theorem integrable_cpow_div_mul_add_one {c x : ℝ} (hc : c ≠ 0) (hc1 : c ≠ -1) (hx : 0 ≤ x) :
     Integrable (fun t : ℝ ↦ (x : ℂ) ^ ((c : ℂ) + t * I) /
       (((c : ℂ) + t * I) * ((c : ℂ) + t * I + 1))) := by
-  simpa only [riesz_integrand_eq hx] using
-    (verticalIntegrable_riesz hc hc1).integrable_cpow_smul (inv_pos.mpr hx)
+  rcases hx.eq_or_lt with rfl | hx
+  · have hz (t : ℝ) : (c : ℂ) + t * I ≠ 0 := by
+      intro h
+      apply hc
+      simpa using congrArg Complex.re h
+    apply (integrable_zero ℝ ℂ volume).congr
+    exact Filter.Eventually.of_forall fun t ↦ by
+      simp only [Pi.zero_apply, Complex.ofReal_zero, Complex.zero_cpow (hz t), zero_div]
+  · simpa only [riesz_integrand_eq hx.le] using
+      (verticalIntegrable_riesz hc hc1).integrable_cpow_smul (inv_pos.mpr hx)
 
 /-- The first-order Perron integral has the continuous cutoff weight, including value zero
 at `x = 1`. The integration variable is real, so the prefactor is `(2π)⁻¹`. -/
@@ -134,7 +134,7 @@ theorem integral_cpow_div_mul_add_one {c x : ℝ} (hc : 0 < c) (hx : 0 < x) :
         (((c : ℂ) + t * I) * ((c : ℂ) + t * I + 1))) =
       (max (1 - x⁻¹) 0 : ℝ) := by
   have h := mellinInv_inv_mul_add_one hc (inv_pos.mpr hx)
-  simp only [mellinInv, riesz_integrand_eq hx] at h
+  simp only [mellinInv, riesz_integrand_eq hx.le] at h
   simpa only [Complex.real_smul, one_div, Complex.ofReal_inv] using h
 
 end TauCeti
