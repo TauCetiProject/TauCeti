@@ -239,29 +239,27 @@ private theorem rawTraversal_orbitCount (side : Bool) (u : Fin n → Bool) :
       heq]
     exact hc
 
-private noncomputable def localStatesEquiv {n : ℕ} (c : Fin 3 ↪ Fin n) :
-    (Fin n → Bool) ≃ (Fin 3 → Bool) × ({i : Fin n // i ∉ Set.range c} → Bool) := by
-  classical
-  exact (Equiv.piEquivPiSubtypeProd (fun i ↦ i ∈ Set.range c) (fun _ ↦ Bool)).trans
+private def localStatesEquiv :
+    (Fin n → Bool) ≃ (Fin 3 → Bool) × ({i : Fin n // i ∉ Set.range c} → Bool) :=
+  (Equiv.piEquivPiSubtypeProd (fun i ↦ i ∈ Set.range c) (fun _ ↦ Bool)).trans
     (Equiv.prodCongr (Equiv.arrowCongr c.toEquivRange.symm (Equiv.refl Bool)) (Equiv.refl _))
 
-private noncomputable def assembleState {n : ℕ} (c : Fin 3 ↪ Fin n) (q : Fin 3 → Bool)
+private def assembleState (q : Fin 3 → Bool)
     (r : {i : Fin n // i ∉ Set.range c} → Bool) : Fin n → Bool :=
   (localStatesEquiv c).symm (q, r)
 
-private theorem assembleState_local {n : ℕ} (c : Fin 3 ↪ Fin n) (q : Fin 3 → Bool)
+private theorem assembleState_local (q : Fin 3 → Bool)
     (r : {i : Fin n // i ∉ Set.range c} → Bool) (j : Fin 3) :
     assembleState c q r (c j) = q j := by
   simp [assembleState, localStatesEquiv, Equiv.arrowCongr]
 
-private theorem assembleState_outside {n : ℕ} (c : Fin 3 ↪ Fin n) (q : Fin 3 → Bool)
+private theorem assembleState_outside (q : Fin 3 → Bool)
     (r : {i : Fin n // i ∉ Set.range c} → Bool) (i : {i : Fin n // i ∉ Set.range c}) :
     assembleState c q r i = r i := by
   simp [assembleState, localStatesEquiv, Equiv.arrowCongr, i.property]
 
-private theorem assembleState_prod {n : ℕ} {M : Type*} [CommMonoid M]
-    (c : Fin 3 ↪ Fin n) (q : Fin 3 → Bool) (r : {i : Fin n // i ∉ Set.range c} → Bool)
-    (f : Fin n → Bool → M) :
+private theorem assembleState_prod {M : Type*} [CommMonoid M] (q : Fin 3 → Bool)
+    (r : {i : Fin n // i ∉ Set.range c} → Bool) (f : Fin n → Bool → M) :
     (∏ i, f i (assembleState c q r i)) =
       (∏ j, f (c j) (q j)) * ∏ i : {i : Fin n // i ∉ Set.range c}, f i (r i) := by
   let : Fintype (Set.range c) := Subtype.fintype (fun i ↦ i ∈ Set.range c)
@@ -274,12 +272,12 @@ private theorem assembleState_prod {n : ℕ} {M : Type*} [CommMonoid M]
     simp [assembleState_local]
   · exact Finset.prod_congr rfl (fun i _ ↦ congrArg (f i) (assembleState_outside c q r i))
 
-private noncomputable def rawLoopCount (D : PDCode n) (u : Fin n → Bool) : ℕ :=
+private noncomputable def rawLoopCount (u : Fin n → Bool) : ℕ :=
   orbitCount (D.smoothingTurn u * D.edgePair.val) / 2 + D.crossinglessComponentCount
 
 /-- The state whose smoothing choice is `u` is `D.smoothingChoice u`, as `smoothingChoice` is an
 involution; its loop count is `rawLoopCount D u`. -/
-private theorem rawLoopCount_eq (D : PDCode n) (u : Fin n → Bool) :
+private theorem rawLoopCount_eq (u : Fin n → Bool) :
     rawLoopCount D u = D.stateLoopCount (D.smoothingChoice u) := by
   rw [stateLoopCount_def, statePerm_def, smoothingChoice_smoothingChoice]
   rfl
@@ -439,15 +437,14 @@ private theorem localSumFin3 {R : Type*} [CommRing R] (a : Rˣ) (ba bb bc : Bool
     Matrix.cons_val_two]
   exact localSum a ba bb bc height P Q Rv S I
 
-private theorem stateWeight_smoothingChoice {R : Type*} [CommRing R] (D : PDCode n)
-    (a : Rˣ) (u : Fin n → Bool) :
+private theorem stateWeight_smoothingChoice {R : Type*} [CommRing R] (a : Rˣ) (u : Fin n → Bool) :
     (stateWeight (D.smoothingChoice u) a : R) = ∏ i, smoothingWeight a (D.overPair i) (u i) := by
   rw [stateWeight_def, Units.coe_prod]
   apply Finset.prod_congr rfl
   intro i _
   cases hu : u i <;> cases ho : D.overPair i <;> simp [smoothingWeight, overWeight, hu, ho]
 
-private theorem kauffmanBracket_raw {R : Type*} [CommRing R] (D : PDCode n) (a : Rˣ) :
+private theorem kauffmanBracket_raw {R : Type*} [CommRing R] (a : Rˣ) :
     D.kauffmanBracket a = ∑ u : Fin n → Bool,
       (∏ i, smoothingWeight a (D.overPair i) (u i)) * jonesDelta a ^ (rawLoopCount D u - 1) := by
   rw [kauffmanBracket_def]
