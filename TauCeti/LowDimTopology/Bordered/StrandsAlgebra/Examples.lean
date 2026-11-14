@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Data.ZMod.Defs
-import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading
+import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading.Basic
 import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Matched
 
 /-!
