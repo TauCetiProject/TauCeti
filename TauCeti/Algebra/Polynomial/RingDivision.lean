@@ -6,14 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.RingDivision
+-- Non-public: `IsCoprime.wronskian_eq_zero_iff` in the proof of
+-- `Polynomial.coeff_det_ne_zero_of_isCoprime` only.
+import Mathlib.RingTheory.Polynomial.Wronskian
 
 /-!
-# Coprimality of translates of a polynomial
+# Coprime polynomials
 
 Mathlib's `Polynomial.isCoprime_X_sub_C_of_isUnit_sub` says that `X - C a` and `X - C b` are
 coprime when `a - b` is a unit. Substituting any polynomial `p` for `X` shows that `p - C a` and
 `p - C b` are coprime as well (`Polynomial.isCoprime_sub_C_of_isUnit_sub`), for example the
 binomials `X ^ n - C a` and `X ^ n - C b`.
+
+Over a ring without zero divisors, two coprime polynomials `a X + b` and `c X + d` that are not both
+constant have nonzero determinant `a d - b c` (`Polynomial.coeff_det_ne_zero_of_isCoprime`): this
+determinant is their Wronskian, and the Wronskian of two coprime polynomials vanishes only when
+both derivatives do.
 -/
 
 public section
@@ -26,5 +34,25 @@ variable {R : Type*} [CommRing R]
 theorem isCoprime_sub_C_of_isUnit_sub (p : R[X]) {a b : R} (h : IsUnit (a - b)) :
     IsCoprime (p - C a) (p - C b) := by
   simpa using (isCoprime_X_sub_C_of_isUnit_sub h).map (aeval p).toRingHom
+
+/-- Two coprime polynomials `p = a X + b` and `q = c X + d`, not both constant, have nonzero
+determinant of coefficients `a d - b c`. -/
+theorem coeff_det_ne_zero_of_isCoprime [NoZeroDivisors R] {p q : R[X]} (hpq : IsCoprime p q)
+    (hmax : max p.natDegree q.natDegree = 1) :
+    p.coeff 1 * q.coeff 0 - p.coeff 0 * q.coeff 1 ≠ 0 := by
+  obtain ⟨a, b, rfl⟩ := exists_eq_X_add_C_of_natDegree_le_one (le_of_max_le_left hmax.le)
+  obtain ⟨c, d, rfl⟩ := exists_eq_X_add_C_of_natDegree_le_one (le_of_max_le_right hmax.le)
+  -- the Wronskian `W(q, p) = q p' - q' p` is the constant `a d - b c`, and coprimality makes it
+  -- vanish only when both derivatives `a` and `c` do
+  have hw : wronskian (C c * X + C d) (C a * X + C b) = C (a * d - b * c) := by
+    simp only [wronskian, derivative_add, derivative_C_mul_X, derivative_C, add_zero, map_sub,
+      map_mul]
+    ring
+  intro hdet
+  simp only [coeff_add, coeff_mul_X, coeff_C_zero, coeff_C_succ, add_zero, mul_coeff_zero,
+    coeff_X_zero, mul_zero, zero_add] at hdet
+  obtain ⟨hc, ha⟩ := hpq.symm.wronskian_eq_zero_iff.mp (by rw [hw, hdet, map_zero])
+  simp only [derivative_add, derivative_C_mul_X, derivative_C, add_zero, C_eq_zero] at hc ha
+  simp [ha, hc] at hmax
 
 end Polynomial
