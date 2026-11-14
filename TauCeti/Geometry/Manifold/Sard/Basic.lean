@@ -28,7 +28,8 @@ depends on the dimensions.
 
 Each statement only asks for the regularity at the points of a given set `s` of critical points,
 so it applies to maps that are only defined, or only regular, on an open subset of `M`. Except in
-the first case, `M` is boundaryless, in the sense that its model fills `E`.
+the first case, the points of `s` must be interior points of `M`. This is automatic when `M` has
+empty intrinsic boundary, even if its model has corners.
 
 The proofs read `f` in pairs of extended charts and apply the corresponding theorem for maps
 between normed spaces (`TauCeti.addHaar_image_criticalPoints_eq_zero` and
@@ -42,6 +43,8 @@ case, which needs only first derivatives and allows boundary in the source, is
 
 * `TauCeti.isNullSet_image_of_finrank_lt_finrank`: the image of a differentiable map from a
   manifold of smaller dimension is null.
+* `TauCeti.isNullSet_image_of_not_isRegularPoint_of_isInteriorPoint`: Sard's theorem on a set
+  of interior critical points, for an arbitrary model with corners.
 * `TauCeti.isNullSet_image_of_not_isRegularPoint_of_contMDiffAt`: Sard's theorem at the sharp
   regularity `k > m - n`, `k ≥ 1`, for arbitrary dimensions.
 * `ContMDiff.isNullSet_image_criticalPoints` and `ContMDiff.dense_isRegularValue`: the critical
@@ -100,49 +103,71 @@ theorem _root_.MDifferentiable.isNullSet_range_of_finrank_lt_finrank
 
 end LowDimension
 
-section Boundaryless
+section Interior
 
-variable [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N]
+variable {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N]
 
 omit [FiniteDimensional ℝ E] [LindelofSpace M] [FiniteDimensional ℝ E'] [MeasurableSpace E']
   [BorelSpace E'] in
 /-- At a non-regular point where `f` is `C^n`, `n ≠ 0`, the coordinate expression of `f` in charts
-containing the point and its image is `C^n` and has nonsurjective derivative. -/
+containing the interior point and its image is `C^n` and has nonsurjective derivative. -/
 private theorem contDiffAt_and_not_surjective_fderiv_extChartAt (hn : n ≠ 0) {x₀ x : M} {y₀ : N}
     (hf : ContMDiffAt I J n f x) (hreg : ¬ IsRegularPoint I J f x)
+    (hxi : I.IsInteriorPoint x)
     (hx : x ∈ (chartAt H x₀).source) (hfx : f x ∈ (chartAt H' y₀).source) :
     ContDiffAt ℝ n (extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm) (extChartAt I x₀ x) ∧
       ¬ Surjective (fderiv ℝ (extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm)
         (extChartAt I x₀ x)) := by
   have : IsManifold I 1 M := .of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)
   have : IsManifold J 1 N := .of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)
-  refine ⟨((contMDiffAt_iff_of_mem_source hx hfx).1 hf).2.contDiffAt
-    (by simp [I.range_eq_univ]), ?_⟩
+  have hcoord : extChartAt I x₀ x ∈ interior (range I) :=
+    (chartAt H x₀).interior_extend_target_subset_interior_range
+      ((I.isInteriorPoint_iff_of_mem_atlas hn (chart_mem_atlas H x₀) hx).1 hxi)
+  have hnhds := mem_interior_iff_mem_nhds.1 hcoord
+  refine ⟨((contMDiffAt_iff_of_mem_source hx hfx).1 hf).2.contDiffAt hnhds, ?_⟩
   have h := isRegularPoint_iff_surjective_fderivWithin (hf.mdifferentiableAt hn) hx hfx
-  simpa only [I.range_eq_univ, fderivWithin_univ] using h.not.mp hreg
+  simpa only [fderivWithin_of_mem_nhds hnhds] using h.not.mp hreg
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
 /-- Transfer of a Sard theorem for maps between normed spaces to manifolds. If every map `E → E'`
 that is `C^n` at the points of a set `U` sends the points of `U` where its derivative is not
-surjective to a Haar-null set, then the same holds for maps between manifolds modelled on `E` and
-`E'`. -/
+surjective to a Haar-null set, then the same holds for sets of interior critical points of maps
+between manifolds modelled on `E` and `E'`. -/
 private theorem isNullSet_image_of_forall_addHaar_image_criticalPoints (hn : n ≠ 0)
     (hflat : ∀ (g : E → E') (U : Set E) (μ : Measure E') [μ.IsAddHaarMeasure],
       (∀ z ∈ U, ContDiffAt ℝ n g z) → μ (g '' (U ∩ {z | ¬ Surjective (fderiv ℝ g z)})) = 0)
-    (hf : ∀ x ∈ s, ContMDiffAt I J n f x) (hs : ∀ x ∈ s, ¬ IsRegularPoint I J f x) :
+    (hf : ∀ x ∈ s, ContMDiffAt I J n f x) (hs : ∀ x ∈ s, ¬ IsRegularPoint I J f x)
+    (hsi : ∀ x ∈ s, I.IsInteriorPoint x) :
     IsNullSet J (f '' s) := by
   refine isNullSet_image_of_forall_addHaar_image_extChartAt (I := I) fun x₀ y₀ μ _ ↦ ?_
   have key : ∀ z ∈ extChartAt I x₀ '' (s ∩ (chartAt H x₀).source ∩ f ⁻¹' (chartAt H' y₀).source),
       ContDiffAt ℝ n (extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm) z ∧
         ¬ Surjective (fderiv ℝ (extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm) z) := by
     rintro _ ⟨x, hx, rfl⟩
-    exact contDiffAt_and_not_surjective_fderiv_extChartAt hn (hf x hx.1.1) (hs x hx.1.1)
-      hx.1.2 hx.2
+    exact contDiffAt_and_not_surjective_fderiv_extChartAt hn
+      (hf x hx.1.1) (hs x hx.1.1) (hsi x hx.1.1) hx.1.2 hx.2
   refine measure_mono_null (image_mono fun z hz ↦ ?_) (hflat
     (extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm)
     (extChartAt I x₀ '' (s ∩ (chartAt H x₀).source ∩ f ⁻¹' (chartAt H' y₀).source)) μ
     fun z hz ↦ (key z hz).1)
   exact ⟨hz, (key z hz).2⟩
+
+/-- **Sard's theorem on the interior.** For a Lindelöf manifold with any model with corners,
+a set of interior critical points where `f` is `C^k` has null image if
+`k > dim M - dim N` and `k ≥ 1`. No boundarylessness assumption is made on either model. -/
+theorem isNullSet_image_of_not_isRegularPoint_of_isInteriorPoint
+    (hk : ((finrank ℝ E - finrank ℝ E' + 1 : ℕ) : ℕ∞ω) ≤ n)
+    (hf : ∀ x ∈ s, ContMDiffAt I J n f x) (hs : ∀ x ∈ s, ¬ IsRegularPoint I J f x)
+    (hsi : ∀ x ∈ s, I.IsInteriorPoint x) : IsNullSet J (f '' s) :=
+  isNullSet_image_of_forall_addHaar_image_criticalPoints
+    (fun h ↦ by simp [h] at hk)
+    (fun _ _ μ _ hg ↦ addHaar_image_criticalPoints_eq_zero μ hg hk) hf hs hsi
+
+end Interior
+
+section Boundaryless
+
+variable [BoundarylessManifold I M] {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N]
 
 /-- **Sard's theorem.** Let `M` be a boundaryless Lindelöf manifold modelled on a space of
 dimension `m` and `N` a manifold modelled on a space of dimension `n`. If `f` is `C^k` at every
@@ -152,9 +177,8 @@ theorem isNullSet_image_of_not_isRegularPoint_of_contMDiffAt
     (hk : ((finrank ℝ E - finrank ℝ E' + 1 : ℕ) : ℕ∞ω) ≤ n)
     (hf : ∀ x ∈ s, ContMDiffAt I J n f x) (hs : ∀ x ∈ s, ¬ IsRegularPoint I J f x) :
     IsNullSet J (f '' s) :=
-  isNullSet_image_of_forall_addHaar_image_criticalPoints
-    (fun h ↦ by simp [h] at hk)
-    (fun _ _ μ _ hg ↦ addHaar_image_criticalPoints_eq_zero μ hg hk) hf hs
+  isNullSet_image_of_not_isRegularPoint_of_isInteriorPoint hk hf hs
+    fun _ _ ↦ BoundarylessManifold.isInteriorPoint
 
 /-- **Sard's theorem.** The critical values of a `C^k` map from a boundaryless Lindelöf manifold
 of dimension `m` to a manifold of dimension `n` form a null set when `k > m - n` and `k ≥ 1`, in
