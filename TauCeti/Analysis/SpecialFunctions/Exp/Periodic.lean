@@ -27,6 +27,10 @@ Two logarithms of the same number differ by `2 π i k` for an integer `k`, so di
   even integer.
 * `Complex.exp_two_pi_mul_I_mul_add_intCast`: `exp (2 π i (z + k)) = exp (2 π i z)` for an
   integer `k`.
+* `Complex.exp_two_pi_mul_I_mul_intCast_div_eq_of_dvd_sub`:
+  `exp (2 π i m / d) = exp (2 π i n / d)` whenever `d ∣ m - n`.
+* `Complex.exp_two_pi_mul_I_mul_intCast_div_two_mul_eq_neg_of_dvd`:
+  `exp (2 π i m / (2 d)) = -exp (2 π i n / (2 d))` whenever `d ≠ 0` and `2 d ∣ m - n + d`.
 * `Complex.norm_exp_two_pi_mul_I_mul_ofReal`: `‖exp (2 π i x)‖ = 1` for real `x`.
 * `Complex.exists_div_two_pi_I_smul_eq_add_zsmul`: if `exp a = exp b`, then
   `(a / 2πi) • v = (b / 2πi) • v + k • v` for an integer `k`.
@@ -51,7 +55,42 @@ theorem exp_two_pi_mul_I_mul_add_intCast (z : ℂ) (k : ℤ) :
     cexp (2 * π * I * (z + k)) = cexp (2 * π * I * z) := by
   rw [mul_add, exp_add, mul_comm (2 * π * I) (k : ℂ), exp_int_mul_two_pi_mul_I, mul_one]
 
-/-- `‖e(x)‖ = 1` for `e(x) = exp (2 π i x)` and real `x`. -/
+/-- `e(m / d) = e(n / d)` for `e(z) = exp (2 π i z)` whenever `d ∣ m - n`. -/
+theorem exp_two_pi_mul_I_mul_intCast_div_eq_of_dvd_sub {d m n : ℤ} (h : d ∣ m - n) :
+    cexp (2 * π * I * m / d) = cexp (2 * π * I * n / d) := by
+  rcases eq_or_ne d 0 with rfl | hd
+  · obtain rfl : m = n := by simpa [sub_eq_zero] using h
+    rfl
+  · obtain ⟨k, hk⟩ := h
+    have hd' : (d : ℂ) ≠ 0 := Int.cast_ne_zero.mpr hd
+    have hm : (m : ℂ) = n + d * k := by
+      exact_mod_cast sub_eq_iff_eq_add'.mp hk
+    have hexp : 2 * π * I * ((n : ℂ) + d * k) / d = 2 * π * I * (n / d + k) := by
+      field_simp
+    rw [hm, hexp, exp_two_pi_mul_I_mul_add_intCast, mul_div_assoc]
+
+/-- `e(m / (2 d)) = -e(n / (2 d))` for `e(z) = exp (2 π i z)` whenever `d ≠ 0` and
+`2 d ∣ m - n + d`. -/
+theorem exp_two_pi_mul_I_mul_intCast_div_two_mul_eq_neg_of_dvd {d m n : ℤ} (hd : d ≠ 0)
+    (h : 2 * d ∣ m - n + d) :
+    cexp (2 * π * I * m / (2 * d)) = -cexp (2 * π * I * n / (2 * d)) := by
+  have h' : 2 * d ∣ m - (n - d) := by
+    obtain ⟨k, hk⟩ := h
+    exact ⟨k, by linear_combination hk⟩
+  have hd' : (d : ℂ) ≠ 0 := Int.cast_ne_zero.mpr hd
+  have hcast : cexp (2 * π * I * (m : ℂ) / (2 * d)) =
+      cexp (2 * π * I * ((n - d : ℤ) : ℂ) / (2 * d)) := by
+    simpa [Int.cast_mul, Int.cast_ofNat] using
+      exp_two_pi_mul_I_mul_intCast_div_eq_of_dvd_sub h'
+  have hexp : 2 * π * I * ((n - d : ℤ) : ℂ) / (2 * d) =
+      2 * π * I * n / (2 * d) + (-(π * I)) := by
+    push_cast
+    field_simp
+    ring
+  rw [hcast, hexp, exp_add, exp_neg, exp_pi_mul_I]
+  ring
+
+/-- `‖e(x)‖ = 1` for `e(z) = exp (2 π i z)` and real `x`. -/
 @[simp]
 theorem norm_exp_two_pi_mul_I_mul_ofReal (x : ℝ) : ‖cexp (2 * π * I * x)‖ = 1 := by
   simp [norm_exp]

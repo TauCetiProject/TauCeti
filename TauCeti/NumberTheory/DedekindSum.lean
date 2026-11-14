@@ -16,6 +16,8 @@ import TauCeti.Algebra.BigOperators.Field
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.NumberTheory.FloorSum
 import TauCeti.Data.Nat.Cast.Basic
+import Mathlib.Data.Nat.ModEq
+import Mathlib.Data.Rat.BigOperators
 import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
@@ -59,13 +61,16 @@ sum for `(h, c)` to the sums of `⌊c s / h⌋` and `⌊c s / h⌋²`, and the r
 * `TauCeti.dedekindSum_eq_zero_of_dvd`: `s(d, c) = 0` when `c ∣ d`.
 * `TauCeti.dedekindSum_add_dedekindSum`: the reciprocity law of Dedekind sums.
 * `TauCeti.dedekindSum_one_left`: `s(1, c) = (c - 1)(c - 2) / (12 c)` for `c ≥ 0`.
+* `TauCeti.dedekindSum_eq_of_mul_modEq_one`: `s(a, c) = s(d, c)` when `a d ≡ 1 (mod c)`.
+* `TauCeti.exists_int_twelve_mul_intCast_mul_dedekindSum`: `12 c s(d, c)` is an integer congruent
+  to `a + d` modulo `c` whenever `a d ≡ 1 (mod c)` and `c > 0`.
 
 ## References
 
 * T. M. Apostol, *Modular Functions and Dirichlet Series in Number Theory*, 2nd ed., GTM 41,
   §§3.4–3.7 (the eta transformation and Theorem 3.7, the reciprocity law).
 * H. Rademacher and E. Grosswald, *Dedekind Sums*, Carus Mathematical Monographs 16, Chapter 2
-  (the elementary lattice-point proof of the reciprocity law).
+  (the elementary lattice-point proof of the reciprocity law, Theorem 2, and equation (26)).
 -/
 
 public section
@@ -210,6 +215,16 @@ theorem IsCoprime.dedekindSum_eq {d c : ℤ} (hdc : IsCoprime d c) :
     exact (Int.le_of_dvd hr0 hdvd).not_gt hrc
   rw [ite_eq_right hfract]
 
+/-- For coprime arguments, casting `TauCeti.dedekindSum d c` into an ordered field with a floor
+ring pushes the cast inside the finite sum and `Int.fract`. -/
+theorem IsCoprime.ratCast_dedekindSum {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    [FloorRing α] {d c : ℤ} (hdc : IsCoprime d c) :
+    (TauCeti.dedekindSum d c : α) =
+      ∑ r ∈ Ioo 0 c, ((r : α) / c) * (Int.fract (((d * r : ℤ) : α) / c) - 1 / 2) := by
+  rw [hdc.dedekindSum_eq]
+  push_cast
+  rfl
+
 namespace TauCeti
 
 /-- The Dedekind sum is odd in its first argument: `s(-d, c) = -s(d, c)`. -/
@@ -350,4 +365,116 @@ theorem dedekindSum_one_left {c : ℤ} (hc : 0 ≤ c) :
   rw [h]
   field_simp
   ring
+
+/-- Symmetric sawtooth form of `s(h, c)` for coprime natural arguments (`c > 0`), including the
+`r = 0` term `(-1/2) * (-1/2) = 1/4`. -/
+private theorem dedekindSum_natCast_add_one_div_four {h c : ℕ} (hc : 0 < c) (hhc : h.Coprime c) :
+    dedekindSum h c + 1 / 4 =
+      ∑ r ∈ range c, ((r : ℚ) / c - 1 / 2) * (((h * r % c : ℕ) : ℚ) / c - 1 / 2) := by
+  have hc' : (c : ℚ) ≠ 0 := by positivity
+  have hsum : ∑ r ∈ range c, (((h * r % c : ℕ) : ℚ) / c - 1 / 2) = -1 / 2 := by
+    rw [hhc.sum_range_mul_mod (fun r ↦ ((r : ℚ) / c - 1 / 2)), sum_sub_distrib, ← sum_div,
+      sum_range_natCast, sum_const, card_range, nsmul_eq_mul]
+    field_simp
+    ring
+  have hterm (r : ℕ) : ((r : ℚ) / c - 1 / 2) * (((h * r % c : ℕ) : ℚ) / c - 1 / 2) =
+      ((r : ℚ) / c) * (((h * r % c : ℕ) : ℚ) / c - 1 / 2) -
+        1 / 2 * (((h * r % c : ℕ) : ℚ) / c - 1 / 2) := by ring
+  rw [dedekindSum_natCast hhc, sum_congr rfl fun r _ ↦ hterm r, sum_sub_distrib, ← mul_sum, hsum]
+  ring
+
+/-- Modular-inverse symmetry of Dedekind sums (Rademacher–Grosswald, Chapter 2, equation (26)):
+if `a d ≡ 1 (mod c)`, then `s(a, c) = s(d, c)`. -/
+theorem dedekindSum_eq_of_mul_modEq_one {a d c : ℤ} (h : a * d ≡ 1 [ZMOD c]) :
+    dedekindSum a c = dedekindSum d c := by
+  by_cases hc2 : c ≤ 2
+  · rw [dedekindSum_eq_zero_of_le_two a hc2, dedekindSum_eq_zero_of_le_two d hc2]
+  lift c to ℕ using (by omega : 0 ≤ c)
+  have hc : 2 < c := by omega
+  have hc0 : (0 : ℤ) < c := by positivity
+  set a' : ℕ := (a % c).toNat
+  set d' : ℕ := (d % c).toNat
+  have ha'z : (a' : ℤ) = a % c := Int.toNat_of_nonneg (Int.emod_nonneg a hc0.ne')
+  have hd'z : (d' : ℤ) = d % c := Int.toNat_of_nonneg (Int.emod_nonneg d hc0.ne')
+  have had' : a' * d' ≡ 1 [MOD c] := by
+    rw [← Int.natCast_modEq_iff]
+    push_cast
+    rw [ha'z, hd'z]
+    exact ((Int.mod_modEq a c).mul (Int.mod_modEq d c)).trans h
+  have ha'c : a'.Coprime c := Nat.coprime_of_mul_modEq_one d' had'
+  have hd'c : d'.Coprime c := Nat.coprime_of_mul_modEq_one a' (mul_comm a' d' ▸ had')
+  rw [← dedekindSum_emod a c, ← dedekindSum_emod d c, ← ha'z, ← hd'z]
+  suffices dedekindSum a' c + 1 / 4 = dedekindSum d' c + 1 / 4 by linarith
+  rw [dedekindSum_natCast_add_one_div_four (by omega) ha'c,
+    dedekindSum_natCast_add_one_div_four (by omega) hd'c,
+    ← hd'c.sum_range_mul_mod (fun r ↦ ((r : ℚ) / c - 1 / 2) * (((a' * r % c : ℕ) : ℚ) / c - 1 / 2))]
+  refine sum_congr rfl fun r hr ↦ ?_
+  have hinv : a' * (d' * r % c) % c = r := by
+    calc a' * (d' * r % c) % c
+      _ = a' * d' * r % c := by rw [Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, mul_assoc]
+      _ = 1 * r % c := had'.mul_right r
+      _ = r := by rw [one_mul]; exact Nat.mod_eq_of_lt (mem_range.1 hr)
+  rw [hinv, mul_comm]
+
+private theorem emod_pos_and_isCoprime_of_gt_one {d c : ℤ} (hc : 1 < c) (hdc : IsCoprime d c) :
+    0 < d % c ∧ IsCoprime (d % c) c := by
+  have hc0 : c ≠ 0 := by omega
+  have hcop : IsCoprime (d % c) c := by
+    obtain ⟨x, y, hxy⟩ := hdc
+    refine ⟨x, y + x * (d / c), ?_⟩
+    linear_combination hxy + x * Int.emod_add_ediv_mul d c
+  refine ⟨lt_of_le_of_ne (Int.emod_nonneg d hc0) fun hr0 ↦ ?_, hcop⟩
+  obtain ⟨x, y, hxy⟩ := hcop
+  have h1 : c ∣ 1 := ⟨y, by rw [← hr0] at hxy; linear_combination -hxy⟩
+  exact (Int.le_of_dvd one_pos h1).not_gt hc
+
+/-- **Rademacher's integrality and congruence theorem for Dedekind sums**
+(Rademacher–Grosswald, Chapter 2, Theorem 2): for coprime integers `d` and `c > 0`,
+`12 c s(d, c)` is an integer, and for every `a` with `a d ≡ 1 (mod c)` that integer is congruent
+to `a + d` modulo `c`. -/
+theorem exists_int_twelve_mul_intCast_mul_dedekindSum {d c : ℤ} (hc : 0 < c)
+    (hdc : IsCoprime d c) :
+    ∃ m : ℤ, 12 * (c : ℚ) * dedekindSum d c = m ∧
+      ∀ a : ℤ, a * d ≡ 1 [ZMOD c] → m ≡ a + d [ZMOD c] := by
+  lift c to ℕ using hc.le
+  induction c using Nat.strong_induction_on generalizing d with
+  | _ c ih =>
+    by_cases hc1 : c = 1
+    · subst hc1
+      exact ⟨0, by simp, fun _ _ ↦ Int.modEq_one⟩
+    obtain ⟨hr_pos', hcop'⟩ := emod_pos_and_isCoprime_of_gt_one (c := c) (by omega) hdc
+    obtain ⟨r, hr⟩ := Int.eq_ofNat_of_zero_le hr_pos'.le
+    have hr_pos : 0 < (r : ℤ) := hr ▸ hr_pos'
+    have hcop_rc : IsCoprime (r : ℤ) c := hr ▸ hcop'
+    have hr_lt : r < c := by
+      have hlt : d % c < c := Int.emod_lt_of_pos d hc
+      omega
+    obtain ⟨m', hm', hm'_mod⟩ := ih r hr_lt hr_pos hcop_rc.symm
+    obtain ⟨u, b', hub⟩ := id hcop_rc
+    obtain ⟨v, hv⟩ := Int.modEq_iff_dvd.mp
+      (hm'_mod b' (Int.modEq_iff_dvd.mpr ⟨u, by linear_combination -hub⟩))
+    refine ⟨(r : ℤ) + u - 3 * c + c * v, ?_, fun a ha ↦ ?_⟩
+    · have hrec := dedekindSum_add_dedekindSum hr_pos hc hcop_rc
+      have hr_q : (r : ℚ) ≠ 0 := by exact_mod_cast hr_pos.ne'
+      have hc_q : (c : ℚ) ≠ 0 := by exact_mod_cast hc.ne'
+      have h12 : (12 * (r : ℚ) * c) *
+          (((r : ℚ) ^ 2 + (c : ℚ) ^ 2 + 1) / (12 * r * c) - 1 / 4) =
+          (r : ℚ) ^ 2 + (c : ℚ) ^ 2 + 1 - 3 * r * c := by
+        field_simp
+        ring
+      have hrm : (r : ℚ) * (((r : ℤ) + u - 3 * c + c * v : ℤ) : ℚ) =
+          (r : ℚ) ^ 2 + (c : ℚ) ^ 2 + 1 - 3 * r * c - c * m' := by
+        exact_mod_cast (by linear_combination hub - (c : ℤ) * hv :
+          (r : ℤ) * ((r : ℤ) + u - 3 * c + c * v) =
+            (r : ℤ) ^ 2 + (c : ℤ) ^ 2 + 1 - 3 * r * c - c * m')
+      rw [← dedekindSum_emod d c, hr]
+      refine mul_left_cancel₀ hr_q ?_
+      linear_combination (12 * (r : ℚ) * c) * hrec + h12 - (c : ℚ) * hm' - hrm
+    · have hr_mod : (r : ℤ) ≡ d [ZMOD c] := hr ▸ Int.mod_modEq d c
+      obtain ⟨q₁, hq₁⟩ := Int.modEq_iff_dvd.mp (((Int.ModEq.refl a).mul hr_mod).trans ha)
+      have hdvd_prod : (c : ℤ) ∣ (a - u) * r := ⟨b' - q₁, by linear_combination -hq₁ - hub⟩
+      have hu_mod : u ≡ a [ZMOD c] :=
+        Int.modEq_iff_dvd.mpr (hcop_rc.symm.dvd_of_dvd_mul_right hdvd_prod)
+      exact (Int.modEq_iff_dvd.mpr ⟨3 - v, by ring⟩).trans (hu_mod.add hr_mod)
+
 end TauCeti
