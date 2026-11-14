@@ -25,6 +25,8 @@ characteristic, over a complete discrete valuation ring.
 
 ## Main results
 
+* `TauCeti.AdicCompletion.residueFieldAlgEquiv`: the canonical `R`-algebra isomorphism
+  `ResidueField R ≃ₐ[R] ResidueField R̂`.
 * `TauCeti.AdicCompletion.ringKrullDim_eq`: `R̂` and `R` have the same Krull dimension.
 * `TauCeti.AdicCompletion.isRegularLocalRing_iff`: `R̂` is regular if and only if `R` is.
 
@@ -46,24 +48,58 @@ section
 
 variable {R : Type*} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
 
+variable (R) in
+/-- The canonical `R`-algebra isomorphism between the residue field of a Noetherian local ring and
+the residue field of its maximal-ideal completion, induced by `algebraMap`. -/
+noncomputable def residueFieldAlgEquiv :
+    ResidueField R ≃ₐ[R] ResidueField (_root_.AdicCompletion (maximalIdeal R) R) :=
+  { RingEquiv.ofBijective
+      (ResidueField.map (algebraMap R (_root_.AdicCompletion (maximalIdeal R) R)))
+      (_root_.AdicCompletion.residueField_map_bijective R) with
+    commutes' r := by
+      simp [IsScalarTower.algebraMap_apply R (_root_.AdicCompletion (maximalIdeal R) R)
+        (ResidueField (_root_.AdicCompletion (maximalIdeal R) R)),
+        ResidueField.algebraMap_eq] }
+
+theorem residueFieldAlgEquiv_apply (x : ResidueField R) :
+    residueFieldAlgEquiv R x =
+      ResidueField.map (algebraMap R (_root_.AdicCompletion (maximalIdeal R) R)) x :=
+  (rfl)
+
+@[simp]
+theorem residueFieldAlgEquiv_residue (r : R) :
+    residueFieldAlgEquiv R (residue R r) =
+      residue (_root_.AdicCompletion (maximalIdeal R) R) (algebraMap R _ r) :=
+  (rfl)
+
+@[simp]
+theorem residueFieldAlgEquiv_symm_residue (r : R) :
+    (residueFieldAlgEquiv R).symm
+      (residue (_root_.AdicCompletion (maximalIdeal R) R) (algebraMap R _ r)) =
+      residue R r :=
+  (residueFieldAlgEquiv R).symm_apply_eq.mpr (residueFieldAlgEquiv_residue r).symm
+
 /-- The completion of a Noetherian local ring at its maximal ideal has the same Krull dimension as
 the ring. -/
 @[stacks 07NV]
-theorem ringKrullDim_eq : ringKrullDim (AdicCompletion (maximalIdeal R) R) = ringKrullDim R :=
-  ringKrullDim_eq_of_hasGoingDown_of_map_maximalIdeal_eq AdicCompletion.maximalIdeal_eq_map.symm
+theorem ringKrullDim_eq :
+    ringKrullDim (_root_.AdicCompletion (maximalIdeal R) R) = ringKrullDim R :=
+  ringKrullDim_eq_of_hasGoingDown_of_map_maximalIdeal_eq
+    _root_.AdicCompletion.maximalIdeal_eq_map.symm
 
 /-- The completion of a Noetherian local ring at its maximal ideal is regular if and only if the
 ring is. -/
 @[stacks 07NY]
 theorem isRegularLocalRing_iff :
-    IsRegularLocalRing (AdicCompletion (maximalIdeal R) R) ↔ IsRegularLocalRing R :=
-  isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq AdicCompletion.maximalIdeal_eq_map.symm
+    IsRegularLocalRing (_root_.AdicCompletion (maximalIdeal R) R) ↔ IsRegularLocalRing R :=
+  isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq
+    _root_.AdicCompletion.maximalIdeal_eq_map.symm
 
 end
 
 /-- The completion of a regular local ring at its maximal ideal is regular. -/
 instance {R : Type*} [CommRing R] [IsRegularLocalRing R] :
-    IsRegularLocalRing (AdicCompletion (maximalIdeal R) R) :=
+    IsRegularLocalRing (_root_.AdicCompletion (maximalIdeal R) R) :=
   isRegularLocalRing_iff.mpr ‹_›
 
 end TauCeti.AdicCompletion

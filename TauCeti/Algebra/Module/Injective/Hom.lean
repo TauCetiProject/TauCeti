@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Injective
 public import Mathlib.LinearAlgebra.Isomorphisms
 
@@ -13,9 +14,11 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 
 A map into an injective module factors through `f` exactly when it vanishes on
 `ker f`. In particular, precomposition with `f` has image the kernel of restriction
-to `ker f`. This applies to presenting maps that are not monomorphisms, as occur in
-projective presentations over non-hereditary algebras. As a further consequence, an
-annihilator inclusion characterizes the existence of a linear map with one prescribed value.
+to `ker f`, so `Hom_R(-, I)` sends every exact pair `P → Q → M` to an exact pair
+without requiring `Q → M` to be surjective. This applies to presenting maps that are
+not monomorphisms, as occur in projective presentations over non-hereditary algebras.
+As a further consequence, an annihilator inclusion characterizes the existence of a
+linear map with one prescribed value.
 -/
 
 public section
@@ -69,6 +72,28 @@ theorem comap_range_lcomp_compRight (f : P →ₗ[R] Q) (j : N →ₗ[R] I)
     (cancel_left (f := j) (g := F.comp (ker f).subtype) (g' := 0) hj)
 
 end LinearMap
+
+namespace Function.Exact
+
+universe u v w z t s
+
+/-- Precomposition into an injective module is an exact contravariant functor: it sends an exact
+pair `P → Q → M` over a ring `R` to an exact pair
+`(M →ₗ[R] I) →ₗ[k] (Q →ₗ[R] I) →ₗ[k] (P →ₗ[R] I)` for any commuting scalar semiring `k`, without
+requiring `Q → M` to be surjective. -/
+theorem lcomp_of_moduleInjective {R : Type u} [Ring R] {P : Type v} {Q : Type w} {M : Type z}
+    [AddCommGroup P] [Module R P] [AddCommGroup Q] [Module R Q] [AddCommGroup M] [Module R M]
+    {f : P →ₗ[R] Q} {g : Q →ₗ[R] M} (hfg : Function.Exact f g)
+    (k : Type s) (I : Type t) [Semiring k] [AddCommGroup I] [Module R I] [Small.{t} R]
+    [Module.Injective R I] [Module k I] [SMulCommClass R k I] :
+    Function.Exact (g.lcomp k I) (f.lcomp k I) := by
+  rw [LinearMap.exact_iff, LinearMap.range_lcomp_eq_ker_lcomp_ker_subtype]
+  ext φ
+  simp only [LinearMap.mem_ker, LinearMap.lcomp_apply',
+    ← LinearMap.le_ker_iff_comp_subtype_eq_zero]
+  rw [hfg.linearMap_ker_eq, LinearMap.range_le_ker_iff]
+
+end Function.Exact
 
 namespace TauCeti
 
