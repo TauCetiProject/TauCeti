@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.ExteriorPower.Invertible
 public import TauCeti.LinearAlgebra.LinearMap.Ker
 public import TauCeti.LinearAlgebra.LinearMap.Range
 import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.LinearAlgebra.Orientation.RankOne
 
 /-!
 # Determinant lines of modules and of linear maps
@@ -35,7 +36,8 @@ carried out here. This file sets up the pointwise object:
 * the isomorphism `f.detLine ≃ g.detLine` induced by isomorphisms of kernels and of cokernels
   (`LinearMap.detLineCongrKerCoker`);
 * the transport of determinant lines along a commuting square whose horizontal sides are linear
-  isomorphisms (`LinearMap.detLineCongr`), which is how a change of trivialization acts.
+  isomorphisms (`LinearMap.detLineCongr`), which is how a change of trivialization acts, and its
+  specialization to equal maps (`LinearMap.detLineOfEq`).
 
 An automorphism of a free module acts on its determinant line by its determinant
 (`LinearEquiv.detLineCongr_apply_eq_det_smul`). Consequently, automorphisms `e₁` of the source and
@@ -61,6 +63,7 @@ the linear algebra itself is standard.
 * `LinearMap.detLineCongrKerCoker`: the isomorphism of determinant lines induced by isomorphisms
   of kernels and of cokernels.
 * `LinearMap.detLineCongr`: transport of determinant lines along a commuting square.
+* `LinearMap.detLineOfEq`: canonical isomorphism `f.detLine ≃ₗ[R] g.detLine` induced by `f = g`.
 * `LinearMap.instNegRayDetLine`, `LinearMap.instInvolutiveNegRayDetLine`: the opposite orientation
   of the determinant line of `f`, as `Module.Ray`'s negation, found by instance search.
 
@@ -83,6 +86,8 @@ the linear algebra itself is standard.
   determinant line by the determinant on the kernel times the inverse determinant on the cokernel.
 * `LinearMap.detLineCongr_apply_of_forall_eq_smul`: multiplication by a unit `c` on source and
   target acts on the determinant line by `c ^ ind f`.
+* `Module.Ray.eq_or_eq_neg_detLine`, `Module.Ray.ne_iff_eq_neg_detLine`: any two rays in the
+  determinant line of a linear map over a linearly ordered field are equal or opposite.
 * `LinearMap.detLineCongr_neg_apply`: negation of source and target acts on the determinant line
   by `(-1) ^ (dim (ker f) + dim (coker f))`.
 * `LinearMap.detLineCongrKerCoker_refl`, `LinearMap.detLineCongrKerCoker_trans` and
@@ -433,6 +438,40 @@ theorem detLineCongr_symm (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M �
   rw [LinearEquiv.symm_apply_eq, ← LinearEquiv.trans_apply, ← detLineCongr_trans]
   simp
 
+/-- The canonical linear equivalence `f.detLine ≃ₗ[R] g.detLine` induced by an equality `f = g` of
+linear maps, defined as `LinearMap.detLineCongr` along the identity equivalences of `M` and `N`. -/
+def detLineOfEq {f g : M →ₗ[R] N} (h : f = g) : f.detLine ≃ₗ[R] g.detLine :=
+  f.detLineCongr (.refl R M) (.refl R N) (by simp [h])
+
+theorem detLineOfEq_def {f g : M →ₗ[R] N} (h : f = g) :
+    detLineOfEq h = f.detLineCongr (.refl R M) (.refl R N) (by simp [h]) :=
+  (rfl)
+
+@[simp]
+theorem detLineOfEq_rfl (f : M →ₗ[R] N) :
+    detLineOfEq (rfl : f = f) = LinearEquiv.refl R f.detLine :=
+  detLineCongr_refl
+
+@[simp]
+theorem detLineOfEq_symm {f g : M →ₗ[R] N} (h : f = g) :
+    (detLineOfEq h).symm = detLineOfEq h.symm := by
+  subst h
+  simp
+
+/-- Composing `LinearMap.detLineOfEq` along two chained equalities equals `LinearMap.detLineOfEq`
+of their transitivity. -/
+@[simp]
+theorem detLineOfEq_trans {f g k : M →ₗ[R] N} (h₁ : f = g) (h₂ : g = k) :
+    (detLineOfEq h₁).trans (detLineOfEq h₂) = detLineOfEq (h₁.trans h₂) := by
+  subst h₁
+  subst h₂
+  simp
+
+@[simp]
+theorem detLineOfEq_detLineOfEq {f g k : M →ₗ[R] N} (h₁ : f = g) (h₂ : g = k) (v : f.detLine) :
+    detLineOfEq h₂ (detLineOfEq h₁ v) = detLineOfEq (h₁.trans h₂) v := by
+  rw [← LinearEquiv.trans_apply, detLineOfEq_trans]
+
 /-- Transport along a commuting square of automorphisms `e₁` of `M` and `e₂` of `N` multiplies the
 determinant line of `f` by `det k₁ * (det k₂)⁻¹`, where `k₁` and `k₂` are the automorphisms that
 `e₁` and `e₂` induce on the kernel and on the cokernel of `f`. -/
@@ -503,6 +542,10 @@ theorem finrank_detLine (f : M →ₗ[K] N) :
   rw [finrank_tensorProduct, Subspace.dual_finrank_eq, TauCeti.finrank_detLine,
     TauCeti.finrank_detLine]
 
+/-- The determinant line of a linear map between vector spaces is nontrivial. -/
+instance instNontrivialDetLine (f : M →ₗ[K] N) : Nontrivial f.detLine :=
+  Module.nontrivial_of_finrank_eq_succ (finrank_detLine f)
+
 end Field
 
 section Orientation
@@ -527,6 +570,65 @@ instance instInvolutiveNegRayDetLine (f : M →ₗ[R] N) :
 end Orientation
 
 end LinearMap
+
+namespace Module.Ray
+
+section OrderedRing
+
+variable {R M N M' N' : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [AddCommGroup M'] [Module R M'] [AddCommGroup N'] [Module R N']
+
+/-- `Module.Ray.map` commutes with negation of rays between determinant lines of linear maps. -/
+@[simp]
+theorem map_detLine_neg {f : M →ₗ[R] N} {g : M' →ₗ[R] N'} (e : f.detLine ≃ₗ[R] g.detLine)
+    (r : Module.Ray R f.detLine) :
+    Module.Ray.map e (-r) = -Module.Ray.map e r :=
+  @Module.Ray.map_neg R _ _ _ f.detLine g.detLine TensorProduct.addCommGroup
+    TensorProduct.addCommGroup _ _ e r
+
+theorem map_detLineOfEq_neg {f g : M →ₗ[R] N} (h : f = g) (r : Module.Ray R f.detLine) :
+    Module.Ray.map (LinearMap.detLineOfEq h) (-r) = -Module.Ray.map (LinearMap.detLineOfEq h) r :=
+  map_detLine_neg (LinearMap.detLineOfEq h) r
+
+@[simp]
+theorem map_detLineOfEq_map_detLineOfEq {f g k : M →ₗ[R] N} (h₁ : f = g) (h₂ : g = k)
+    (r : Module.Ray R f.detLine) :
+    Module.Ray.map (LinearMap.detLineOfEq h₂) (Module.Ray.map (LinearMap.detLineOfEq h₁) r) =
+      Module.Ray.map (LinearMap.detLineOfEq (h₁.trans h₂)) r := by
+  subst h₁
+  subst h₂
+  simp
+
+/-- A ray in the determinant line of a linear map does not equal its own negation. -/
+theorem ne_neg_self_detLine {f : M →ₗ[R] N} [IsDomain R] [IsTorsionFree R f.detLine]
+    (r : Module.Ray R f.detLine) : r ≠ -r :=
+  @Module.Ray.ne_neg_self R _ _ _ f.detLine TensorProduct.addCommGroup _ _ _ r
+
+end OrderedRing
+
+section OrderedField
+
+variable {K M N : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+  [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
+
+/-- Any two rays in the determinant line of a linear map over a linearly ordered field are equal or
+negations of each other. -/
+theorem eq_or_eq_neg_detLine {f : M →ₗ[K] N} (r₁ r₂ : Module.Ray K f.detLine) :
+    r₁ = r₂ ∨ r₁ = -r₂ :=
+  @Module.Ray.eq_or_eq_neg_of_finrank_eq_one K f.detLine _ _ _ TensorProduct.addCommGroup _
+    (LinearMap.finrank_detLine f) r₁ r₂
+
+/-- A ray in the determinant line of a linear map over a linearly ordered field differs from another
+if and only if it is the opposite ray. -/
+theorem ne_iff_eq_neg_detLine {f : M →ₗ[K] N} (r₁ r₂ : Module.Ray K f.detLine) :
+    r₁ ≠ r₂ ↔ r₁ = -r₂ :=
+  @Module.Ray.ne_iff_eq_neg_of_finrank_eq_one K f.detLine _ _ _ TensorProduct.addCommGroup _
+    (LinearMap.finrank_detLine f) r₁ r₂
+
+end OrderedField
+
+end Module.Ray
 
 end
 

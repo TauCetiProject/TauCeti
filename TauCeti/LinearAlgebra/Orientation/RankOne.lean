@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Alternating.Basic
 public import TauCeti.LinearAlgebra.Orientation.Basic
 import TauCeti.LinearAlgebra.Ray
 
@@ -30,8 +31,6 @@ one-dimensional space are equal or opposite (`Module.Ray.eq_or_eq_neg_of_finrank
 
 ## Main definitions
 
-* `AlternatingMap.ofSubsingletonₗ`: linear equivalence `(M →ₗ[R] N) ≃ₗ[R] (M [⋀^ι]→ₗ[R] N)` for a
-  subsingleton index type `ι` and element `i : ι`.
 * `Orientation.ringRayEquiv`: canonical equivalence `Module.Ray R R ≃ Orientation R R ι` for
   `[Unique ι]`.
 * `Orientation.equivRay`: canonical equivalence `Orientation R M ι ≃ Module.Ray R M` for
@@ -54,29 +53,6 @@ noncomputable section
 
 open Module
 
-section Alternating
-
-variable (R M N : Type*) {ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-  [AddCommMonoid N] [Module R N] [Subsingleton ι]
-
-/-- `AlternatingMap.ofSubsingleton` upgraded to a linear equivalence. -/
-def AlternatingMap.ofSubsingletonₗ (i : ι) : (M →ₗ[R] N) ≃ₗ[R] (M [⋀^ι]→ₗ[R] N) :=
-  { AlternatingMap.ofSubsingleton R M N i with
-    map_add' := fun _ _ ↦ rfl
-    map_smul' := fun _ _ ↦ rfl }
-
-@[simp]
-theorem AlternatingMap.ofSubsingletonₗ_apply (i : ι) (f : M →ₗ[R] N) (v : ι → M) :
-    AlternatingMap.ofSubsingletonₗ R M N i f v = f (v i) :=
-  (rfl)
-
-@[simp]
-theorem AlternatingMap.ofSubsingletonₗ_symm_apply (i : ι) (ω : M [⋀^ι]→ₗ[R] N) (x : M) :
-    (AlternatingMap.ofSubsingletonₗ R M N i).symm ω x = ω (fun _ ↦ x) :=
-  (rfl)
-
-end Alternating
-
 namespace Orientation
 
 section Semiring
@@ -88,35 +64,44 @@ variable {R : Type*} [CommSemiring R] [PartialOrder R] [IsStrictOrderedRing R]
 of `R` when `ι` has a unique element, by sending a scalar `c` to `w ↦ w default * c`. -/
 def ringRayEquiv : Module.Ray R R ≃ Orientation R R ι :=
   Module.Ray.map <|
-    (LinearMap.ringLmapEquivSelf R R R).symm.trans (AlternatingMap.ofSubsingletonₗ R R R default)
+    (LinearMap.ringLmapEquivSelf R R R).symm.trans (AlternatingMap.ofSubsingletonₗ R R R R default)
 
-omit [PartialOrder R] [IsStrictOrderedRing R] in
-/-- A nonzero alternating form of degree one on `R` is nonzero on the constant tuple `1`. -/
-theorem eval_const_one_ne_zero {ι : Type*} [Unique ι] {ω : R [⋀^ι]→ₗ[R] R} (hω : ω ≠ 0) :
-    ω (fun _ ↦ 1) ≠ 0 := by
-  have hsymm : ((LinearMap.ringLmapEquivSelf R R R).symm.trans
-      (AlternatingMap.ofSubsingletonₗ R R R (default : ι))).symm ω = ω (fun _ ↦ 1) := by
-    simp
-  rw [← hsymm]
-  exact (((LinearMap.ringLmapEquivSelf R R R).symm.trans
-    (AlternatingMap.ofSubsingletonₗ R R R (default : ι))).symm.map_ne_zero_iff).2 hω
+theorem ringRayEquiv_def :
+    ringRayEquiv (R := R) ι = Module.Ray.map
+      ((LinearMap.ringLmapEquivSelf R R R).symm.trans
+        (AlternatingMap.ofSubsingletonₗ R R R R default)) :=
+  (rfl)
+
+-- Keep this lemma for explicit rewriting: a simp attribute unfolds the left-hand side of
+-- `ringRayEquiv_rayOfNeZero_one`, making that simp lemma fail the `simpNF` linter.
+theorem ringRayEquiv_apply {ι : Type*} [Unique ι] (c : R) (hc : c ≠ 0) :
+    ringRayEquiv ι (rayOfNeZero R c hc) =
+      rayOfNeZero R
+        (AlternatingMap.ofSubsingleton R R R (default : ι)
+          (LinearMap.smulRight (1 : R →ₗ[R] R) c))
+        (by
+          rw [Ne, ← AlternatingMap.apply_const_one_eq_zero]
+          simpa using hc) := by
+  rw [ringRayEquiv_def, Module.Ray.map_apply]
+  simp
 
 @[simp]
 theorem ringRayEquiv_symm_apply {ι : Type*} [Unique ι] (ω : R [⋀^ι]→ₗ[R] R) (hω : ω ≠ 0) :
     (ringRayEquiv (R := R) ι).symm (rayOfNeZero R ω hω) =
-      rayOfNeZero R (ω fun _ ↦ 1) (eval_const_one_ne_zero hω) := by
-  rw [ringRayEquiv, Module.Ray.map_symm, Module.Ray.map_apply]
+      rayOfNeZero R (ω fun _ ↦ 1) (AlternatingMap.apply_const_one_ne_zero hω) := by
+  rw [ringRayEquiv_def, Module.Ray.map_symm, Module.Ray.map_apply]
   congr 1
+  simp
 
 @[simp]
 theorem ringRayEquiv_units_smul {ι : Type*} [Unique ι] (u : Rˣ) (r : Module.Ray R R) :
     ringRayEquiv ι (u • r) = u • ringRayEquiv ι r := by
-  rw [ringRayEquiv, Module.Ray.map_units_smul]
+  rw [ringRayEquiv_def, Module.Ray.map_units_smul]
 
 @[simp]
 theorem ringRayEquiv_symm_units_smul {ι : Type*} [Unique ι] (u : Rˣ) (o : Orientation R R ι) :
     (ringRayEquiv ι).symm (u • o) = u • (ringRayEquiv ι).symm o := by
-  rw [ringRayEquiv, Module.Ray.map_symm, Module.Ray.map_units_smul]
+  rw [ringRayEquiv_def, Module.Ray.map_symm, Module.Ray.map_units_smul]
 
 end Semiring
 
@@ -127,12 +112,12 @@ variable {R ι : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R] [U
 @[simp]
 theorem ringRayEquiv_neg (r : Module.Ray R R) :
     ringRayEquiv ι (-r) = -ringRayEquiv ι r := by
-  rw [ringRayEquiv, Module.Ray.map_neg]
+  rw [ringRayEquiv_def, Module.Ray.map_neg]
 
 @[simp]
 theorem ringRayEquiv_symm_neg (o : Orientation R R ι) :
     (ringRayEquiv ι).symm (-o) = -(ringRayEquiv ι).symm o := by
-  rw [ringRayEquiv, Module.Ray.map_symm, Module.Ray.map_neg]
+  rw [ringRayEquiv_def, Module.Ray.map_symm, Module.Ray.map_neg]
 
 /-- The ray of `1 : R` corresponds under `Orientation.ringRayEquiv` to the orientation of the
 singleton basis of `R`. -/
@@ -168,29 +153,36 @@ theorem equivRay_rayOfNeZero_eq_iff (hM : finrank R M = 1) {ω : M [⋀^ι]→�
     {v : M} (hv : v ≠ 0) :
     equivRay hM (rayOfNeZero R ω hω) = rayOfNeZero R v hv ↔ 0 < ω (fun _ ↦ v) := by
   have : FiniteDimensional R M := Module.finite_of_finrank_eq_succ hM
-  let e : M ≃ₗ[R] R := LinearEquiv.ofFinrankEq M R (hM.trans (Module.finrank_self R).symm)
-  let φ : M →ₗ[R] R := (AlternatingMap.ofSubsingletonₗ R M R (default : ι)).symm ω
-  let a : R := ω (fun _ ↦ e.symm 1)
+  set e : M ≃ₗ[R] R := LinearEquiv.ofFinrankEq M R (hM.trans (Module.finrank_self R).symm)
+  let φ : M →ₗ[R] R := (AlternatingMap.ofSubsingletonₗ R M R R (default : ι)).symm ω
+  set a : R := ω (fun _ ↦ e.symm 1)
+  have hφa : φ (e.symm 1) = a :=
+    AlternatingMap.ofSubsingletonₗ_symm_apply_apply R M R R default ω (e.symm 1)
   have ha : a ≠ 0 := by
     intro ha0
-    refine hω ((AlternatingMap.ofSubsingletonₗ R M R (default : ι)).symm.injective ?_)
+    refine hω ((AlternatingMap.ofSubsingletonₗ R M R R (default : ι)).symm.injective ?_)
     rw [map_zero]
     refine LinearMap.ext (e.symm.surjective.forall.2 fun r ↦ ?_)
     calc φ (e.symm r) = φ (r • e.symm 1) := by rw [← map_smul, smul_eq_mul, mul_one]
-    _ = r • a := map_smul φ r (e.symm 1)
+    _ = r • a := by rw [map_smul, hφa]
     _ = 0 := by rw [ha0, smul_zero]
   have hb : e v ≠ 0 := e.map_ne_zero_iff.2 hv
   have hφv : ω (fun _ ↦ v) = a * e v := by
     have hv' : v = e v • e.symm 1 := by
       conv_lhs => rw [← e.symm_apply_apply v, ← mul_one (e v), ← smul_eq_mul, map_smul]
-    calc ω (fun _ ↦ v) = φ v := (AlternatingMap.ofSubsingletonₗ_symm_apply R M R default ω v).symm
+    calc ω (fun _ ↦ v) = φ v :=
+        (AlternatingMap.ofSubsingletonₗ_symm_apply_apply R M R R default ω v).symm
     _ = φ (e v • e.symm 1) := congrArg φ hv'
-    _ = a * e v := by rw [map_smul, smul_eq_mul, mul_comm]; rfl
-  simp only [equivRay, Equiv.trans_apply, Orientation.map_apply, ringRayEquiv_symm_apply,
-    Module.Ray.map_apply, ray_eq_iff, AlternatingMap.compLinearMap_apply]
-  rw [← SameRay.sameRay_map_iff e, LinearEquiv.apply_symm_apply, hφv]
+    _ = a * e v := by rw [map_smul, hφa, smul_eq_mul, mul_comm]
+  have hray : equivRay hM (rayOfNeZero R ω hω) =
+      Module.Ray.map e.symm ((ringRayEquiv ι).symm (Orientation.map ι e (rayOfNeZero R ω hω))) :=
+    rfl
+  have hωe : (ω.compLinearMap e.symm.toLinearMap) (fun _ ↦ (1 : R)) = a :=
+    AlternatingMap.compLinearMap_apply ω e.symm.toLinearMap (fun _ ↦ (1 : R))
+  rw [hray, Orientation.map_apply, ringRayEquiv_symm_apply, Module.Ray.map_apply, ray_eq_iff,
+    ← SameRay.sameRay_map_iff e, LinearEquiv.apply_symm_apply, hωe, hφv]
   have ha_eq : (a / e v) • e v = a := by rw [smul_eq_mul, div_mul_cancel₀ a hb]
-  calc SameRay R (ω fun _ ↦ (LinearEquiv.ofFinrankEq M R _).symm 1) (e v)
+  calc SameRay R a (e v)
       ↔ SameRay R ((a / e v) • e v) (e v) := by rw [ha_eq]
   _ ↔ 0 < a / e v := sameRay_smul_left_iff_of_ne hb (div_ne_zero ha hb)
   _ ↔ 0 < a * e v := div_pos_iff.trans mul_pos_iff.symm
@@ -277,19 +269,20 @@ theorem equivRay_basis_orientation [Fintype ι] [DecidableEq ι] (b : Basis ι R
 
 /-- On the ground field `R`, `Orientation.equivRay` agrees with `(Orientation.ringRayEquiv ι).symm`.
 -/
-@[simp]
 theorem equivRay_self :
     equivRay (ι := ι) (Module.finrank_self R) = (ringRayEquiv ι).symm := by
   ext o
   induction o using Module.Ray.ind with | h ω hω =>
   rw [ringRayEquiv_symm_apply, equivRay_rayOfNeZero_eq_iff]
-  have hω1 : ω (fun _ ↦ (1 : R)) ≠ 0 := eval_const_one_ne_zero hω
+  have hω1 : ω (fun _ ↦ (1 : R)) ≠ 0 := AlternatingMap.apply_const_one_ne_zero hω
   have hmul : ω (fun _ ↦ ω (fun _ ↦ 1)) = ω (fun _ ↦ 1) * ω (fun _ ↦ 1) := by
-    let φ : R →ₗ[R] R := (AlternatingMap.ofSubsingletonₗ R R R (default : ι)).symm ω
+    let φ : R →ₗ[R] R := (AlternatingMap.ofSubsingletonₗ R R R R (default : ι)).symm ω
+    have hφ1 : φ 1 = ω (fun _ ↦ 1) :=
+      AlternatingMap.ofSubsingletonₗ_symm_apply_apply R R R R default ω 1
     calc ω (fun _ ↦ ω (fun _ ↦ 1)) = φ (ω (fun _ ↦ 1)) :=
-        (AlternatingMap.ofSubsingletonₗ_symm_apply R R R default ω _).symm
+        (AlternatingMap.ofSubsingletonₗ_symm_apply_apply R R R R default ω _).symm
     _ = φ (ω (fun _ ↦ 1) • 1) := by rw [smul_eq_mul, mul_one]
-    _ = ω (fun _ ↦ 1) * ω (fun _ ↦ 1) := by rw [map_smul, smul_eq_mul]; rfl
+    _ = ω (fun _ ↦ 1) * ω (fun _ ↦ 1) := by rw [map_smul, hφ1, smul_eq_mul]
   rw [hmul]
   exact mul_self_pos.2 hω1
 
