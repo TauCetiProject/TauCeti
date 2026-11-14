@@ -14,6 +14,7 @@ import TauCeti.Algebra.AlgebraicGroup.Reductive.Solvable
 import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.CharP
 import TauCeti.Algebra.AlgebraicGroup.Torus.Recognition
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Construction
+import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Semisimple
 import TauCeti.RingTheory.FiniteType.PointSeparation
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
@@ -58,6 +59,11 @@ smoothness and geometric connectedness are `TauCeti.Algebra.WeilRestriction.inst
 * `TauCeti.Algebra.WeilRestriction.pseudoReductive_multiplicativeGroup`: in
   characteristic `p > 0`, `Res_{K/k} 𝔾ₘ` is pseudo-reductive for every finite field extension
   `K / k`.
+* `TauCeti.Algebra.WeilRestriction.
+    not_pseudoReductive_baseChange_algebraicClosure_of_isPurelyInseparable`: for a nontrivial
+  finite purely inseparable extension `K / k`, the geometric fibre of `Res_{K/k} 𝔾ₘ` over
+  `AlgebraicClosure k` is not pseudo-reductive, showing that pseudo-reductivity need not survive
+  inseparable field extensions.
 
 ## References
 
@@ -199,5 +205,23 @@ theorem pseudoReductive_multiplicativeGroup (p : ℕ) [Fact p.Prime] [CharP k p]
   rw [← FiniteTypeCommHopfAlgCat.mkQuotient_eq_zero_iff]
   have := congrArg (fun f ↦ f.ofConv x) h1
   simpa [AlgHom.convOne_apply, hx] using this
+
+/-- **`Res_{K/k} 𝔾ₘ` ceases to be pseudo-reductive over `AlgebraicClosure k`** when `K / k` is a
+nontrivial finite purely inseparable extension: although `Res_{K/k} 𝔾ₘ` is pseudo-reductive over `k`
+in positive characteristic (`pseudoReductive_multiplicativeGroup`), its geometric fibre has
+nontrivial unipotent radical. Thus pseudo-reductivity is not preserved by arbitrary inseparable
+field extensions. -/
+theorem not_pseudoReductive_baseChange_algebraicClosure_of_isPurelyInseparable {K : Type u}
+    [Field K] [Algebra k K] [FiniteDimensional k K] [IsPurelyInseparable k K]
+    (hK : 1 < Module.finrank k K) :
+    ¬ pseudoReductiveCommHopfAlgProperty (AlgebraicClosure k)
+      (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k)
+        (FiniteTypeCommHopfAlgCat.of k (WeilRestriction k K K[T;T⁻¹]))) := by
+  intro hpr
+  apply not_reductive_multiplicativeGroup_of_isPurelyInseparable hK
+  let H := FiniteTypeCommHopfAlgCat.of k (WeilRestriction k K K[T;T⁻¹])
+  exact (reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation
+    k H).mpr ⟨inferInstance, geometricallyConnectedCommHopfAlgProperty_multiplicativeGroup,
+      hpr.unipotentRadicalDefiningIdeal_eq_augmentation⟩
 
 end TauCeti.Algebra.WeilRestriction
