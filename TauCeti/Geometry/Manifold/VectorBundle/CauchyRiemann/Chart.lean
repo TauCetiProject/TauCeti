@@ -84,8 +84,7 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The section of `V` which reads as the constant `v` in the trivialization of chart `i` is
 differentiable on the base set of that trivialization. -/
-theorem mdifferentiableAt_triv_symm [IsManifold 𝓘(ℝ, E) 1 M]
-    [ContMDiffVectorBundle 1 F V 𝓘(ℝ, E)] (i : Fin A.n) (v : F)
+theorem mdifferentiableAt_triv_symm [ContMDiffVectorBundle 1 F V 𝓘(ℝ, E)] (i : Fin A.n) (v : F)
     {x : M} (hx : x ∈ (A.triv i).baseSet) :
     MDifferentiableAt 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F))
       (fun x ↦ TotalSpace.mk' F x ((A.triv i).symm x v)) x := by
