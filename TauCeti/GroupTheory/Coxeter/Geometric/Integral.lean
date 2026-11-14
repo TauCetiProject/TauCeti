@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import TauCeti.GroupTheory.Coxeter.Geometric.Sign
 public import TauCeti.LinearAlgebra.Matrix.FinsuppBilinForm
 public import TauCeti.RepresentationTheory.BaseChange
+import TauCeti.Data.Finsupp.Order
 
 /-!
 # Integral forms of the geometric representation
@@ -100,36 +101,6 @@ section Subring
 
 variable {I R : Type*} [CommRing R] [Algebra R ℝ] {M : CoxeterMatrix I} {A : Matrix I I R}
 
-/-- Two matrices over `R` mapping entrywise to `2 * M.geometricForm` along an injective algebra map
-`R → ℝ` are equal. -/
-theorem eq_of_algebraMap_eq_two_mul_geometricForm {A' : Matrix I I R}
-    (hR : Function.Injective (algebraMap R ℝ))
-    (hA : ∀ i j, algebraMap R ℝ (A i j) =
-      2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1))
-    (hA' : ∀ i j, algebraMap R ℝ (A' i j) =
-      2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1)) :
-    A = A' := by
-  ext i j
-  exact hR ((hA i j).trans (hA' i j).symm)
-
-/-- A matrix over `R` mapping entrywise to `2 * M.geometricForm` along an injective algebra map
-`R → ℝ` is symmetric. -/
-theorem isSymm_of_algebraMap_eq_two_mul_geometricForm
-    (hR : Function.Injective (algebraMap R ℝ))
-    (hA : ∀ i j, algebraMap R ℝ (A i j) =
-      2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1)) :
-    A.IsSymm := by
-  refine Matrix.IsSymm.ext fun i j ↦ hR ?_
-  rw [hA j i, hA i j, M.geometricForm_comm]
-
-/-- Cosine formula for a single entry mapping to `2 * M.geometricForm (eᵢ, eⱼ)`. -/
-theorem algebraMap_apply_eq_neg_two_mul_cos {i j : I}
-    (hA : algebraMap R ℝ (A i j) =
-      2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1)) :
-    algebraMap R ℝ (A i j) = -2 * Real.cos (Real.pi / M i j) := by
-  rw [hA, M.geometricForm_single_single]
-  ring
-
 /-- **The coefficient map carries the form of `A` to twice the canonical form**, when `A` maps
 entrywise to the doubled Gram matrix `2 B(αᵢ, αⱼ)` of the canonical form. -/
 theorem algebraMap_finsuppBilinForm
@@ -167,42 +138,6 @@ theorem mapRange_preReflection
     Finsupp.mapRange_sub (map_sub _), Finsupp.smul_single_one, Finsupp.smul_single_one,
     Finsupp.mapRange_single]
 
-/-- **The entry `M i j` is the exact order of the product of two simple reflections of `A`** when
-`R → ℝ` is injective. -/
-theorem pow_preReflection_mul_eq_one_iff (hR : Function.Injective (algebraMap R ℝ))
-    (hA : ∀ i j, algebraMap R ℝ (A i j) =
-      2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1))
-    (i j : I) (n : ℕ) :
-    (Module.preReflection (Finsupp.single i 1) (Finsupp.linearCombination R (A i)) *
-        Module.preReflection (Finsupp.single j 1) (Finsupp.linearCombination R (A j))) ^ n = 1 ↔
-      M i j ∣ n := by
-  let c : (I →₀ R) →ₛₗ[algebraMap R ℝ] I →₀ ℝ :=
-    Finsupp.mapRange.linearMap (algebraMap R ℝ).toSemilinearMap
-  have hc (x : I →₀ R) : c x = x.mapRange (algebraMap R ℝ) (map_zero _) := by
-    simp [c]
-  have hcomm : (M.geometricReflection i * M.geometricReflection j).comp c =
-      c.comp (Module.preReflection (Finsupp.single i 1) (Finsupp.linearCombination R (A i)) *
-        Module.preReflection (Finsupp.single j 1) (Finsupp.linearCombination R (A j))) :=
-    LinearMap.ext fun x ↦ by
-      simp only [LinearMap.comp_apply, mul_apply_eq_comp, hc, mapRange_preReflection hA]
-  have hpow := Module.End.commute_pow_left_of_commute hcomm n
-  have hreal : (M.geometricReflection i * M.geometricReflection j) ^ n = 1 ↔ M i j ∣ n := by
-    rw [← M.toCoxeterSystem.geometricRepresentation_simple i,
-      ← M.toCoxeterSystem.geometricRepresentation_simple j, ← map_mul, ← map_pow,
-      ← map_one M.toCoxeterSystem.geometricRepresentation,
-      M.toCoxeterSystem.geometricRepresentation_injective.eq_iff,
-      M.toCoxeterSystem.simple_mul_simple_pow_eq_one_iff]
-  rw [← hreal]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · refine Finsupp.lhom_ext' fun k ↦ LinearMap.ext_ring ?_
-    have hk := LinearMap.congr_fun hpow (Finsupp.single k 1)
-    rw [h, Module.End.one_eq_id, LinearMap.comp_id, LinearMap.comp_apply] at hk
-    simpa [hc, Finsupp.mapRange_single] using hk
-  · refine LinearMap.ext fun x ↦ Finsupp.mapRange_injective _ (map_zero _) hR ?_
-    have hx := LinearMap.congr_fun hpow x
-    rw [h, Module.End.one_eq_id, LinearMap.id_comp, LinearMap.comp_apply] at hx
-    simpa [hc] using hx.symm
-
 /-- **The reflections of `A` satisfy the Coxeter relations**, when `A` maps entrywise to the
 doubled Gram matrix of the canonical form along an injective algebra map `R → ℝ`: the
 coefficient map is injective and carries them to the geometric reflections, which satisfy them. -/
@@ -210,8 +145,21 @@ theorem isLiftable_preReflection (hR : Function.Injective (algebraMap R ℝ))
     (hA : ∀ i j, algebraMap R ℝ (A i j) =
       2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1)) :
     M.IsLiftable fun i ↦ Module.preReflection (Finsupp.single i 1)
-      (Finsupp.linearCombination R (A i)) := fun i i' ↦
-  (pow_preReflection_mul_eq_one_iff hR hA i i' (M i i')).2 dvd_rfl
+      (Finsupp.linearCombination R (A i)) := by
+  intro i i'
+  let c : (I →₀ R) →ₛₗ[algebraMap R ℝ] I →₀ ℝ :=
+    Finsupp.mapRange.linearMap (algebraMap R ℝ).toSemilinearMap
+  have hc (x : I →₀ R) : c x = x.mapRange (algebraMap R ℝ) (map_zero _) := by
+    simp [c]
+  have hcomm : (M.geometricReflection i * M.geometricReflection i').comp c =
+      c.comp (Module.preReflection (Finsupp.single i 1) (Finsupp.linearCombination R (A i)) *
+        Module.preReflection (Finsupp.single i' 1) (Finsupp.linearCombination R (A i'))) :=
+    LinearMap.ext fun x ↦ by
+      simp only [LinearMap.comp_apply, mul_apply_eq_comp, hc, mapRange_preReflection hA]
+  have hpow := Module.End.commute_pow_left_of_commute hcomm (M i i')
+  rw [M.isLiftable_geometricReflection i i', Module.End.one_eq_id, LinearMap.id_comp] at hpow
+  refine LinearMap.ext fun x ↦ Finsupp.mapRange_injective _ (map_zero _) hR ?_
+  rw [one_apply_eq_self, ← hc, ← hc, ← LinearMap.comp_apply, ← hpow]
 
 end Subring
 
@@ -242,6 +190,67 @@ theorem isLiftable_preReflection_map {I R S : Type*} [CommRing R] [CommRing S]
   refine Finsupp.lhom_ext' fun k ↦ LinearMap.ext_ring ?_
   have hk := LinearMap.congr_fun hpow (Finsupp.single k 1)
   simpa [hc, Finsupp.mapRange_single] using hk
+
+end CoxeterMatrix
+
+namespace TauCeti
+
+variable {I R : Type*} [CommRing R] [Algebra R ℝ] {M : CoxeterMatrix I} {A : Matrix I I R}
+
+/-- Two matrices over `R` mapping entrywise to `2 * M.geometricForm` along an injective algebra map
+`R → ℝ` are equal. -/
+theorem eq_of_algebraMap_eq_two_mul_geometricForm {A' : Matrix I I R}
+    (hR : Function.Injective (algebraMap R ℝ))
+    (hA : ∀ i j, algebraMap R ℝ (A i j) =
+      2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1))
+    (hA' : ∀ i j, algebraMap R ℝ (A' i j) =
+      2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1)) :
+    A = A' := by
+  ext i j
+  exact hR ((hA i j).trans (hA' i j).symm)
+
+/-- A matrix over `R` mapping entrywise to `2 * M.geometricForm` along an injective algebra map
+`R → ℝ` is symmetric. -/
+theorem isSymm_of_algebraMap_eq_two_mul_geometricForm
+    (hR : Function.Injective (algebraMap R ℝ))
+    (hA : ∀ i j, algebraMap R ℝ (A i j) =
+      2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1)) :
+    A.IsSymm := by
+  refine Matrix.IsSymm.ext fun i j ↦ hR ?_
+  rw [hA j i, hA i j, M.geometricForm_comm]
+
+/-- Cosine formula for a single matrix entry mapping to `2 * M.geometricForm (eᵢ, eⱼ)`. -/
+theorem algebraMap_apply_eq_neg_two_mul_cos_of_algebraMap_eq_two_mul_geometricForm {i j : I}
+    (hA : algebraMap R ℝ (A i j) =
+      2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1)) :
+    algebraMap R ℝ (A i j) = -2 * Real.cos (Real.pi / M i j) := by
+  rw [hA, M.geometricForm_single_single]
+  ring
+
+/-- **The diagonal entries of `A` are `2`**, when `A` maps entrywise to the doubled Gram matrix
+`2 B(αᵢ, αⱼ)` of the canonical form along an injective algebra map `R → ℝ`. -/
+theorem apply_same_eq_two_of_algebraMap_eq_two_mul_geometricForm
+    (hR : Function.Injective (algebraMap R ℝ))
+    (hA : ∀ i j, algebraMap R ℝ (A i j) =
+      2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1))
+    (i : I) : A i i = 2 := by
+  refine hR ?_
+  rw [hA, CoxeterMatrix.geometricForm_single_self, map_ofNat, mul_one]
+
+/-- The functional `x ↦ ∑ⱼ xⱼ A i j` takes the value `2` on `eᵢ`, when `A` maps entrywise to the
+doubled Gram matrix `2 B(αᵢ, αⱼ)` of the canonical form along an injective algebra map `R → ℝ`, so
+that the reflection of `A` along it is a reflection in the sense of `Module.reflection`. -/
+theorem linearCombination_single_eq_two_of_algebraMap_eq_two_mul_geometricForm
+    (hR : Function.Injective (algebraMap R ℝ))
+    (hA : ∀ i j, algebraMap R ℝ (A i j) =
+      2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1))
+    (i : I) : Finsupp.linearCombination R (A i) (Finsupp.single i 1) = 2 := by
+  rw [Finsupp.linearCombination_single, one_smul,
+    apply_same_eq_two_of_algebraMap_eq_two_mul_geometricForm hR hA]
+
+end TauCeti
+
+namespace CoxeterMatrix
 
 /-! ### Characterization of integrally realizable Coxeter matrices -/
 
@@ -292,9 +301,9 @@ theorem integralGramMatrix_of_eq_three {i j : I} (h : M i j = 3) :
     M.integralGramMatrix i j = -1 := by
   simp [integralGramMatrix_apply, h]
 
-/-- Entries `M i j ≥ 4` (for which `-2 cos(π / M i j)` is non-integral) default to `0` in
+/-- Entries `4 ≤ M i j` (for which `-2 cos(π / M i j)` is non-integral) default to `0` in
 `M.integralGramMatrix`. -/
-theorem integralGramMatrix_of_ge_four {i j : I} (h : 4 ≤ M i j) :
+theorem integralGramMatrix_of_four_le {i j : I} (h : 4 ≤ M i j) :
     M.integralGramMatrix i j = 0 := by
   rw [integralGramMatrix_apply]
   rcases hM : M i j with _ | _ | _ | _ | n <;> first | omega | simp
@@ -311,7 +320,8 @@ theorem isSymm_integralGramMatrix : M.integralGramMatrix.IsSymm :=
 
 /-- At any pair `(i, j)` with `M i j ≤ 3`, `M.integralGramMatrix i j` maps in `ℝ` to
 `2 * M.geometricForm (eᵢ, eⱼ)`. -/
-theorem algebraMap_integralGramMatrix_eq_two_mul_geometricForm {i j : I} (hM : M i j ≤ 3) :
+theorem algebraMap_integralGramMatrix_eq_two_mul_geometricForm_of_le_three {i j : I}
+    (hM : M i j ≤ 3) :
     algebraMap ℤ ℝ (M.integralGramMatrix i j) =
       2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1) := by
   rw [integralGramMatrix_apply, M.geometricForm_single_single, eq_intCast]
@@ -332,7 +342,7 @@ theorem exists_algebraMap_int_eq_two_mul_geometricForm_iff :
         2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1)) ↔
       ∀ i j, M i j ≤ 3 := by
   refine ⟨fun ⟨A, hA⟩ i j ↦ ?_, fun hM ↦ ⟨M.integralGramMatrix,
-    fun i j ↦ M.algebraMap_integralGramMatrix_eq_two_mul_geometricForm (hM i j)⟩⟩
+    fun i j ↦ M.algebraMap_integralGramMatrix_eq_two_mul_geometricForm_of_le_three (hM i j)⟩⟩
   by_contra hlt
   push Not at hlt
   have hm_pos : (0 : ℝ) < M i j := Nat.cast_pos.mpr (by omega)
@@ -348,7 +358,8 @@ theorem exists_algebraMap_int_eq_two_mul_geometricForm_iff :
     simpa using Real.strictAntiOn_cos hmem₁ hmem₂ hpi_div_pos
   have hhalf_lt_cos : (1 / 2 : ℝ) < Real.cos (Real.pi / M i j) := by
     simpa [Real.cos_pi_div_three] using Real.strictAntiOn_cos hmem₂ hmem₃ hpi_div_lt
-  have hentry := M.algebraMap_apply_eq_neg_two_mul_cos (hA i j)
+  have hentry :=
+    TauCeti.algebraMap_apply_eq_neg_two_mul_cos_of_algebraMap_eq_two_mul_geometricForm (hA i j)
   rw [eq_intCast] at hentry
   have hgt : ((-2 : ℤ) : ℝ) < (A i j : ℝ) := by
     push_cast
@@ -363,33 +374,6 @@ theorem exists_algebraMap_int_eq_two_mul_geometricForm_iff :
 end IntegralGramMatrix
 
 end CoxeterMatrix
-
-namespace TauCeti
-
-variable {I R : Type*} [CommRing R] [Algebra R ℝ] {M : CoxeterMatrix I} {A : Matrix I I R}
-
-/-- **The diagonal entries of `A` are `2`**, when `A` maps entrywise to the doubled Gram matrix
-`2 B(αᵢ, αⱼ)` of the canonical form along an injective algebra map `R → ℝ`. -/
-theorem apply_same_eq_two_of_algebraMap_eq_two_mul_geometricForm
-    (hR : Function.Injective (algebraMap R ℝ))
-    (hA : ∀ i j, algebraMap R ℝ (A i j) =
-      2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1))
-    (i : I) : A i i = 2 := by
-  refine hR ?_
-  rw [hA, CoxeterMatrix.geometricForm_single_self, map_ofNat, mul_one]
-
-/-- The functional `x ↦ ∑ⱼ xⱼ A i j` takes the value `2` on `eᵢ`, when `A` maps entrywise to the
-doubled Gram matrix `2 B(αᵢ, αⱼ)` of the canonical form along an injective algebra map `R → ℝ`, so
-that the reflection of `A` along it is a reflection in the sense of `Module.reflection`. -/
-theorem linearCombination_single_eq_two_of_algebraMap_eq_two_mul_geometricForm
-    (hR : Function.Injective (algebraMap R ℝ))
-    (hA : ∀ i j, algebraMap R ℝ (A i j) =
-      2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1))
-    (i : I) : Finsupp.linearCombination R (A i) (Finsupp.single i 1) = 2 := by
-  rw [Finsupp.linearCombination_single, one_smul,
-    apply_same_eq_two_of_algebraMap_eq_two_mul_geometricForm hR hA]
-
-end TauCeti
 
 namespace CoxeterSystem
 
@@ -614,15 +598,8 @@ variable [LinearOrder R]
 theorem reflectionRepresentation_single_pos_iff (hmono : StrictMono (algebraMap R ℝ))
     (w : W) (i : I) :
     0 < cs.reflectionRepresentation hR hA w (Finsupp.single i 1) ↔ ¬cs.IsRightDescent w i := by
-  have hle (x : I →₀ R) : 0 ≤ x.mapRange (algebraMap R ℝ) (map_zero _) ↔ 0 ≤ x := by
-    simp only [Finsupp.le_def, Finsupp.coe_zero, Pi.zero_apply, Finsupp.mapRange_apply]
-    exact forall_congr' fun k ↦ by rw [← map_zero (algebraMap R ℝ), hmono.le_iff_le]
-  have hle' (x : I →₀ R) : x.mapRange (algebraMap R ℝ) (map_zero _) ≤ 0 ↔ x ≤ 0 := by
-    simp only [Finsupp.le_def, Finsupp.coe_zero, Pi.zero_apply, Finsupp.mapRange_apply]
-    exact forall_congr' fun k ↦ by rw [← map_zero (algebraMap R ℝ), hmono.le_iff_le]
-  have hpos (x : I →₀ R) : 0 < x.mapRange (algebraMap R ℝ) (map_zero _) ↔ 0 < x := by
-    rw [lt_iff_le_not_ge, lt_iff_le_not_ge, hle, hle']
-  rw [← hpos, cs.mapRange_reflectionRepresentation hR hA, Finsupp.mapRange_single, map_one,
+  rw [← Finsupp.mapRange_lt_mapRange_iff hmono (map_zero _), Finsupp.mapRange_zero,
+    cs.mapRange_reflectionRepresentation hR hA, Finsupp.mapRange_single, map_one,
     cs.geometricRepresentation_single_pos_iff]
 
 /-- **The sign criterion over an ordered subring of `ℝ`, negative case**: `ρ_R(w) eᵢ < 0` if and
@@ -630,15 +607,8 @@ only if `i` is a right descent of `w`. -/
 theorem reflectionRepresentation_single_neg_iff (hmono : StrictMono (algebraMap R ℝ))
     (w : W) (i : I) :
     cs.reflectionRepresentation hR hA w (Finsupp.single i 1) < 0 ↔ cs.IsRightDescent w i := by
-  have hle (x : I →₀ R) : 0 ≤ x.mapRange (algebraMap R ℝ) (map_zero _) ↔ 0 ≤ x := by
-    simp only [Finsupp.le_def, Finsupp.coe_zero, Pi.zero_apply, Finsupp.mapRange_apply]
-    exact forall_congr' fun k ↦ by rw [← map_zero (algebraMap R ℝ), hmono.le_iff_le]
-  have hle' (x : I →₀ R) : x.mapRange (algebraMap R ℝ) (map_zero _) ≤ 0 ↔ x ≤ 0 := by
-    simp only [Finsupp.le_def, Finsupp.coe_zero, Pi.zero_apply, Finsupp.mapRange_apply]
-    exact forall_congr' fun k ↦ by rw [← map_zero (algebraMap R ℝ), hmono.le_iff_le]
-  have hneg (x : I →₀ R) : x.mapRange (algebraMap R ℝ) (map_zero _) < 0 ↔ x < 0 := by
-    rw [lt_iff_le_not_ge, lt_iff_le_not_ge, hle, hle']
-  rw [← hneg, cs.mapRange_reflectionRepresentation hR hA, Finsupp.mapRange_single, map_one,
+  rw [← Finsupp.mapRange_lt_mapRange_iff hmono (map_zero _), Finsupp.mapRange_zero,
+    cs.mapRange_reflectionRepresentation hR hA, Finsupp.mapRange_single, map_one,
     cs.geometricRepresentation_single_neg_iff]
 
 /-- **Every root over an ordered subring of `ℝ` is strictly positive or strictly negative.** -/
@@ -657,10 +627,13 @@ section ScalarChange
 
 variable {S T : Type*} [CommRing S] [CommRing T]
 
-/-- **The reflection representation on `I →₀ S` induced along a ring homomorphism `f : R →+* S`**,
-in which `s i` acts by `x ↦ x - (∑ⱼ xⱼ f (A i j)) eᵢ`. Taking `R = ℤ` and `f = Int.castRingHom S`
-gives the reduced action on `I →₀ (ZMod n)` or `I →₀ (ℤ ⧸ Ideal.span {m})`, which need not be
-faithful (for instance in rank one modulo `2` the generator acts trivially). -/
+/-- **The reflection representation on `I →₀ S` pushed forward from
+`cs.reflectionRepresentation hR hA` along a ring homomorphism `f : R →+* S`** (for `A` mapping
+entrywise to the doubled Gram matrix `2 * M.geometricForm` along an injective algebra map
+`R → ℝ`), in which `s i` acts by `x ↦ x - (∑ⱼ xⱼ f (A i j)) eᵢ`. Taking `R = ℤ` and
+`f = Int.castRingHom S` gives the reduced action on `I →₀ (ZMod n)` or
+`I →₀ (ℤ ⧸ Ideal.span {m})`, which need not be faithful (for instance in rank one modulo `2`
+the generator acts trivially). -/
 noncomputable def mapReflectionRepresentation (f : R →+* S) : Representation S W (I →₀ S) :=
   cs.lift ⟨_, CoxeterMatrix.isLiftable_preReflection_map
     (CoxeterMatrix.isLiftable_preReflection hR hA) f⟩
@@ -723,7 +696,7 @@ theorem finsuppBilinForm_mapReflectionRepresentation (f : R →+* S) (w : W) (x 
         (cs.mapReflectionRepresentation hR hA f w y) =
       (A.map f).finsuppBilinForm x y := by
   have hsym : (A.map f).IsSymm :=
-    (CoxeterMatrix.isSymm_of_algebraMap_eq_two_mul_geometricForm hR hA).map f
+    (TauCeti.isSymm_of_algebraMap_eq_two_mul_geometricForm hR hA).map f
   have hdiag (i : I) : A.map f i i = 2 := by
     rw [Matrix.map_apply,
       TauCeti.apply_same_eq_two_of_algebraMap_eq_two_mul_geometricForm hR hA i, map_ofNat]
@@ -847,11 +820,6 @@ theorem repr_baseChange_reflectionRepresentationOfBasis (S : Type*) [CommRing S]
     (b.baseChange S).repr
         (Representation.baseChange S (cs.reflectionRepresentationOfBasis hR hA b) w z) =
       cs.mapReflectionRepresentation hR hA (algebraMap R S) w ((b.baseChange S).repr z) := by
-  have hPure (y : L') :
-      (b.baseChange S).repr ((1 : S) ⊗ₜ[R] y) =
-        (b.repr y).mapRange (algebraMap R S) (map_zero _) := by
-    ext k
-    simp [Algebra.smul_def]
   have hMap :
       (b.baseChange S).repr.toLinearMap ∘ₗ
           Representation.baseChange S (cs.reflectionRepresentationOfBasis hR hA b) w =
@@ -860,7 +828,7 @@ theorem repr_baseChange_reflectionRepresentationOfBasis (S : Type*) [CommRing S]
     refine (b.baseChange S).ext fun j ↦ ?_
     simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
       Module.Basis.baseChange_apply, Representation.baseChange_apply, LinearMap.baseChange_tmul,
-      hPure, cs.repr_reflectionRepresentationOfBasis, b.repr_self,
+      b.baseChange_repr_one_tmul, cs.repr_reflectionRepresentationOfBasis, b.repr_self,
       cs.mapRange_ringHom_reflectionRepresentation hR hA (algebraMap R S) w]
   exact LinearMap.congr_fun hMap z
 
@@ -883,6 +851,7 @@ theorem toLinearEquiv_baseChangeReflectionRepresentationOfBasisEquiv
 
 /-- Forward evaluation of `baseChangeReflectionRepresentationOfBasisEquiv` is
 `(b.baseChange S).repr`. -/
+@[simp]
 theorem baseChangeReflectionRepresentationOfBasisEquiv_apply
     (S : Type*) [CommRing S] [Algebra R S] (z : S ⊗[R] L') :
     cs.baseChangeReflectionRepresentationOfBasisEquiv hR hA b S z = (b.baseChange S).repr z :=
@@ -890,43 +859,12 @@ theorem baseChangeReflectionRepresentationOfBasisEquiv_apply
 
 /-- Inverse evaluation of `baseChangeReflectionRepresentationOfBasisEquiv` is
 `(b.baseChange S).repr.symm`. -/
+@[simp]
 theorem baseChangeReflectionRepresentationOfBasisEquiv_symm_apply
     (S : Type*) [CommRing S] [Algebra R S] (y : I →₀ S) :
     (cs.baseChangeReflectionRepresentationOfBasisEquiv hR hA b S).symm y =
       (b.baseChange S).repr.symm y := by
   simp [baseChangeReflectionRepresentationOfBasisEquiv]
-
-/-- Coordinate evaluation of `baseChangeReflectionRepresentationOfBasisEquiv` on pure tensors. -/
-@[simp]
-theorem baseChangeReflectionRepresentationOfBasisEquiv_tmul_apply
-    (S : Type*) [CommRing S] [Algebra R S] (s : S) (x : L') (i : I) :
-    cs.baseChangeReflectionRepresentationOfBasisEquiv hR hA b S (s ⊗ₜ[R] x) i =
-      b.repr x i • s := by
-  simp [baseChangeReflectionRepresentationOfBasisEquiv_apply]
-
-/-- `baseChangeReflectionRepresentationOfBasisEquiv` sends `1 ⊗ₜ x` to the scalar extension of
-`b.repr x` in `I →₀ S`. -/
-@[simp]
-theorem baseChangeReflectionRepresentationOfBasisEquiv_one_tmul
-    (S : Type*) [CommRing S] [Algebra R S] (x : L') :
-    cs.baseChangeReflectionRepresentationOfBasisEquiv hR hA b S ((1 : S) ⊗ₜ[R] x) =
-      (b.repr x).mapRange (algebraMap R S) (map_zero _) := by
-  ext i
-  simp [Algebra.smul_def]
-
-/-- Inverse of `baseChangeReflectionRepresentationOfBasisEquiv` on single-coordinate vectors. -/
-@[simp]
-theorem baseChangeReflectionRepresentationOfBasisEquiv_symm_single
-    (S : Type*) [CommRing S] [Algebra R S] (i : I) (s : S) :
-    (cs.baseChangeReflectionRepresentationOfBasisEquiv hR hA b S).symm (Finsupp.single i s) =
-      s ⊗ₜ[R] b i := by
-  have h : cs.baseChangeReflectionRepresentationOfBasisEquiv hR hA b S (s ⊗ₜ[R] b i) =
-      Finsupp.single i s := by
-    have hsmul : s ⊗ₜ[R] b i = s • ((1 : S) ⊗ₜ[R] b i) := by
-      rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-    rw [hsmul, map_smul, baseChangeReflectionRepresentationOfBasisEquiv_one_tmul, b.repr_self,
-      Finsupp.mapRange_single, map_one, Finsupp.smul_single_one]
-  rw [← h, Representation.Equiv.symm_apply_apply]
 
 /-- **Equivariant isomorphism `(ℝ ⊗[R] L') ≃ (I →₀ ℝ)`** identifying the real scalar extension of
 the transported representation along `b` with `cs.geometricRepresentation`, sending `1 ⊗ₜ b i` to
@@ -947,46 +885,18 @@ theorem toLinearEquiv_baseChangeRealReflectionRepresentationOfBasisEquiv :
 
 /-- Forward evaluation of `baseChangeRealReflectionRepresentationOfBasisEquiv` is
 `(b.baseChange ℝ).repr`. -/
+@[simp]
 theorem baseChangeRealReflectionRepresentationOfBasisEquiv_apply (z : ℝ ⊗[R] L') :
     cs.baseChangeRealReflectionRepresentationOfBasisEquiv hR hA b z = (b.baseChange ℝ).repr z :=
   (rfl)
 
 /-- Inverse evaluation of `baseChangeRealReflectionRepresentationOfBasisEquiv` is
 `(b.baseChange ℝ).repr.symm`. -/
+@[simp]
 theorem baseChangeRealReflectionRepresentationOfBasisEquiv_symm_apply (y : I →₀ ℝ) :
     (cs.baseChangeRealReflectionRepresentationOfBasisEquiv hR hA b).symm y =
       (b.baseChange ℝ).repr.symm y := by
   simp [baseChangeRealReflectionRepresentationOfBasisEquiv]
-
-/-- Coordinate evaluation of `baseChangeRealReflectionRepresentationOfBasisEquiv` on pure
-tensors. -/
-@[simp]
-theorem baseChangeRealReflectionRepresentationOfBasisEquiv_tmul_apply
-    (r : ℝ) (x : L') (i : I) :
-    cs.baseChangeRealReflectionRepresentationOfBasisEquiv hR hA b (r ⊗ₜ[R] x) i =
-      algebraMap R ℝ (b.repr x i) * r := by
-  rw [baseChangeRealReflectionRepresentationOfBasisEquiv_apply,
-    ← cs.baseChangeReflectionRepresentationOfBasisEquiv_apply hR hA b ℝ,
-    baseChangeReflectionRepresentationOfBasisEquiv_tmul_apply, Algebra.smul_def]
-
-/-- `baseChangeRealReflectionRepresentationOfBasisEquiv` sends `1 ⊗ₜ x` to the real coefficientwise
-extension of `b.repr x`. -/
-@[simp]
-theorem baseChangeRealReflectionRepresentationOfBasisEquiv_one_tmul (x : L') :
-    cs.baseChangeRealReflectionRepresentationOfBasisEquiv hR hA b ((1 : ℝ) ⊗ₜ[R] x) =
-      (b.repr x).mapRange (algebraMap R ℝ) (map_zero _) := by
-  rw [baseChangeRealReflectionRepresentationOfBasisEquiv_apply,
-    ← cs.baseChangeReflectionRepresentationOfBasisEquiv_apply hR hA b ℝ,
-    baseChangeReflectionRepresentationOfBasisEquiv_one_tmul]
-
-/-- Inverse of `baseChangeRealReflectionRepresentationOfBasisEquiv` on scaled simple roots. -/
-@[simp]
-theorem baseChangeRealReflectionRepresentationOfBasisEquiv_symm_single (i : I) (r : ℝ) :
-    (cs.baseChangeRealReflectionRepresentationOfBasisEquiv hR hA b).symm (Finsupp.single i r) =
-      r ⊗ₜ[R] b i := by
-  rw [baseChangeRealReflectionRepresentationOfBasisEquiv_symm_apply,
-    ← cs.baseChangeReflectionRepresentationOfBasisEquiv_symm_apply hR hA b ℝ,
-    baseChangeReflectionRepresentationOfBasisEquiv_symm_single]
 
 end BasisTransport
 
@@ -999,142 +909,25 @@ theorem reflectionRepresentationOfBasis_basisSingleOne :
   refine MonoidHom.ext fun w ↦ LinearMap.ext fun x ↦ ?_
   simp [reflectionRepresentationOfBasis_apply]
 
-/-- Coordinate intertwining on `S ⊗[R] (I →₀ R)` for the standard basis `Finsupp.basisSingleOne`. -/
-theorem repr_baseChange_reflectionRepresentation (S : Type*) [CommRing S] [Algebra R S]
-    (w : W) (z : S ⊗[R] (I →₀ R)) :
-    ((Finsupp.basisSingleOne (ι := I) (R := R)).baseChange S).repr
-        (Representation.baseChange S (cs.reflectionRepresentation hR hA) w z) =
-      cs.mapReflectionRepresentation hR hA (algebraMap R S) w
-        (((Finsupp.basisSingleOne (ι := I) (R := R)).baseChange S).repr z) := by
-  simpa using cs.repr_baseChange_reflectionRepresentationOfBasis hR hA
-    (Finsupp.basisSingleOne (ι := I) (R := R)) S w z
-
-/-- **Equivariant isomorphism `(S ⊗[R] (I →₀ R)) ≃ (I →₀ S)`** between the scalar extension of
-`cs.reflectionRepresentation hR hA` and `cs.mapReflectionRepresentation hR hA (algebraMap R S)`. -/
-noncomputable def baseChangeReflectionRepresentationEquiv (S : Type*) [CommRing S] [Algebra R S] :
-    (Representation.baseChange S (cs.reflectionRepresentation hR hA)).Equiv
-      (cs.mapReflectionRepresentation hR hA (algebraMap R S)) :=
-  Representation.Equiv.mk ((Finsupp.basisSingleOne (ι := I) (R := R)).baseChange S).repr fun w ↦
-    LinearMap.ext fun z ↦ cs.repr_baseChange_reflectionRepresentation hR hA S w z
-
-/-- Underlying linear equivalence of `baseChangeReflectionRepresentationEquiv`. -/
-@[simp]
-theorem toLinearEquiv_baseChangeReflectionRepresentationEquiv
-    (S : Type*) [CommRing S] [Algebra R S] :
-    (cs.baseChangeReflectionRepresentationEquiv hR hA S).toLinearEquiv =
-      ((Finsupp.basisSingleOne (ι := I) (R := R)).baseChange S).repr :=
-  (rfl)
-
-/-- Forward evaluation of `baseChangeReflectionRepresentationEquiv`. -/
-theorem baseChangeReflectionRepresentationEquiv_apply
-    (S : Type*) [CommRing S] [Algebra R S] (z : S ⊗[R] (I →₀ R)) :
-    cs.baseChangeReflectionRepresentationEquiv hR hA S z =
-      ((Finsupp.basisSingleOne (ι := I) (R := R)).baseChange S).repr z :=
-  (rfl)
-
-/-- Inverse evaluation of `baseChangeReflectionRepresentationEquiv`. -/
-theorem baseChangeReflectionRepresentationEquiv_symm_apply
-    (S : Type*) [CommRing S] [Algebra R S] (y : I →₀ S) :
-    (cs.baseChangeReflectionRepresentationEquiv hR hA S).symm y =
-      ((Finsupp.basisSingleOne (ι := I) (R := R)).baseChange S).repr.symm y := by
-  simp [baseChangeReflectionRepresentationEquiv]
-
-/-- Coordinate evaluation of `baseChangeReflectionRepresentationEquiv` on pure tensors. -/
-@[simp]
-theorem baseChangeReflectionRepresentationEquiv_tmul_apply
-    (S : Type*) [CommRing S] [Algebra R S] (s : S) (x : I →₀ R) (i : I) :
-    cs.baseChangeReflectionRepresentationEquiv hR hA S (s ⊗ₜ[R] x) i = x i • s := by
-  rw [baseChangeReflectionRepresentationEquiv_apply,
-    ← cs.baseChangeReflectionRepresentationOfBasisEquiv_apply hR hA
-      (Finsupp.basisSingleOne (ι := I) (R := R)) S,
-    baseChangeReflectionRepresentationOfBasisEquiv_tmul_apply, Finsupp.basisSingleOne_repr,
-    LinearEquiv.refl_apply]
-
-/-- `baseChangeReflectionRepresentationEquiv` maps `1 ⊗ₜ x` to the coefficientwise image of `x` in
-`I →₀ S`. -/
-@[simp]
-theorem baseChangeReflectionRepresentationEquiv_one_tmul
-    (S : Type*) [CommRing S] [Algebra R S] (x : I →₀ R) :
-    cs.baseChangeReflectionRepresentationEquiv hR hA S ((1 : S) ⊗ₜ[R] x) =
-      x.mapRange (algebraMap R S) (map_zero _) := by
-  rw [baseChangeReflectionRepresentationEquiv_apply,
-    ← cs.baseChangeReflectionRepresentationOfBasisEquiv_apply hR hA
-      (Finsupp.basisSingleOne (ι := I) (R := R)) S,
-    baseChangeReflectionRepresentationOfBasisEquiv_one_tmul, Finsupp.basisSingleOne_repr,
-    LinearEquiv.refl_apply]
-
-/-- Inverse of `baseChangeReflectionRepresentationEquiv` on single-coordinate vectors. -/
-@[simp]
-theorem baseChangeReflectionRepresentationEquiv_symm_single
-    (S : Type*) [CommRing S] [Algebra R S] (i : I) (s : S) :
-    (cs.baseChangeReflectionRepresentationEquiv hR hA S).symm (Finsupp.single i s) =
-      s ⊗ₜ[R] Finsupp.single i 1 := by
-  rw [baseChangeReflectionRepresentationEquiv_symm_apply,
-    ← cs.baseChangeReflectionRepresentationOfBasisEquiv_symm_apply hR hA
-      (Finsupp.basisSingleOne (ι := I) (R := R)) S,
-    baseChangeReflectionRepresentationOfBasisEquiv_symm_single]
-  simp
-
-/-- **Equivariant isomorphism `(ℝ ⊗[R] (I →₀ R)) ≃ (I →₀ ℝ)`** between the real scalar extension of
-`cs.reflectionRepresentation hR hA` and `cs.geometricRepresentation`. -/
-noncomputable def baseChangeRealReflectionRepresentationEquiv :
-    (Representation.baseChange ℝ (cs.reflectionRepresentation hR hA)).Equiv
-      cs.geometricRepresentation :=
-  Representation.Equiv.mk ((Finsupp.basisSingleOne (ι := I) (R := R)).baseChange ℝ).repr fun w ↦
-    LinearMap.ext fun z ↦ by
-      simpa using cs.repr_baseChange_reflectionRepresentation hR hA ℝ w z
-
-/-- Underlying linear equivalence of `baseChangeRealReflectionRepresentationEquiv`. -/
-@[simp]
-theorem toLinearEquiv_baseChangeRealReflectionRepresentationEquiv :
-    (cs.baseChangeRealReflectionRepresentationEquiv hR hA).toLinearEquiv =
-      ((Finsupp.basisSingleOne (ι := I) (R := R)).baseChange ℝ).repr :=
-  (rfl)
-
-/-- Forward evaluation of `baseChangeRealReflectionRepresentationEquiv`. -/
-theorem baseChangeRealReflectionRepresentationEquiv_apply (z : ℝ ⊗[R] (I →₀ R)) :
-    cs.baseChangeRealReflectionRepresentationEquiv hR hA z =
-      ((Finsupp.basisSingleOne (ι := I) (R := R)).baseChange ℝ).repr z :=
-  (rfl)
-
-/-- Inverse evaluation of `baseChangeRealReflectionRepresentationEquiv`. -/
-theorem baseChangeRealReflectionRepresentationEquiv_symm_apply (y : I →₀ ℝ) :
-    (cs.baseChangeRealReflectionRepresentationEquiv hR hA).symm y =
-      ((Finsupp.basisSingleOne (ι := I) (R := R)).baseChange ℝ).repr.symm y := by
-  simp [baseChangeRealReflectionRepresentationEquiv]
-
-/-- Coordinate evaluation of `baseChangeRealReflectionRepresentationEquiv` on pure tensors. -/
-@[simp]
-theorem baseChangeRealReflectionRepresentationEquiv_tmul_apply (r : ℝ) (x : I →₀ R) (i : I) :
-    cs.baseChangeRealReflectionRepresentationEquiv hR hA (r ⊗ₜ[R] x) i =
-      algebraMap R ℝ (x i) * r := by
-  rw [baseChangeRealReflectionRepresentationEquiv_apply,
-    ← cs.baseChangeRealReflectionRepresentationOfBasisEquiv_apply hR hA
-      (Finsupp.basisSingleOne (ι := I) (R := R)),
-    baseChangeRealReflectionRepresentationOfBasisEquiv_tmul_apply, Finsupp.basisSingleOne_repr,
-    LinearEquiv.refl_apply]
-
-/-- `baseChangeRealReflectionRepresentationEquiv` maps `1 ⊗ₜ x` to the coefficientwise real
-inclusion of `x`. -/
-@[simp]
-theorem baseChangeRealReflectionRepresentationEquiv_one_tmul (x : I →₀ R) :
-    cs.baseChangeRealReflectionRepresentationEquiv hR hA ((1 : ℝ) ⊗ₜ[R] x) =
-      x.mapRange (algebraMap R ℝ) (map_zero _) := by
-  rw [baseChangeRealReflectionRepresentationEquiv_apply,
-    ← cs.baseChangeRealReflectionRepresentationOfBasisEquiv_apply hR hA
-      (Finsupp.basisSingleOne (ι := I) (R := R)),
-    baseChangeRealReflectionRepresentationOfBasisEquiv_one_tmul, Finsupp.basisSingleOne_repr,
-    LinearEquiv.refl_apply]
-
-/-- Inverse of `baseChangeRealReflectionRepresentationEquiv` on scaled real simple roots. -/
-@[simp]
-theorem baseChangeRealReflectionRepresentationEquiv_symm_single (i : I) (r : ℝ) :
-    (cs.baseChangeRealReflectionRepresentationEquiv hR hA).symm (Finsupp.single i r) =
-      r ⊗ₜ[R] Finsupp.single i 1 := by
-  rw [baseChangeRealReflectionRepresentationEquiv_symm_apply,
-    ← cs.baseChangeRealReflectionRepresentationOfBasisEquiv_symm_apply hR hA
-      (Finsupp.basisSingleOne (ι := I) (R := R)),
-    baseChangeRealReflectionRepresentationOfBasisEquiv_symm_single]
-  simp
-
 end CoxeterSystem
+
+namespace CoxeterMatrix
+
+/-- **The entry `M i j` is the exact order of the product of two simple reflections of `A`**, when
+`A` maps entrywise to the doubled Gram matrix `2 * M.geometricForm` along an injective algebra map
+`R → ℝ`. -/
+theorem pow_preReflection_mul_eq_one_iff {I R : Type*} [CommRing R] [Algebra R ℝ]
+    {M : CoxeterMatrix I} {A : Matrix I I R} (hR : Function.Injective (algebraMap R ℝ))
+    (hA : ∀ i j, algebraMap R ℝ (A i j) =
+      2 * M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1))
+    (i j : I) (n : ℕ) :
+    (Module.preReflection (Finsupp.single i 1) (Finsupp.linearCombination R (A i)) *
+        Module.preReflection (Finsupp.single j 1) (Finsupp.linearCombination R (A j))) ^ n = 1 ↔
+      M i j ∣ n := by
+  rw [← M.toCoxeterSystem.reflectionRepresentation_simple hR hA i,
+    ← M.toCoxeterSystem.reflectionRepresentation_simple hR hA j, ← map_mul, ← map_pow,
+    ← map_one (M.toCoxeterSystem.reflectionRepresentation hR hA),
+    (M.toCoxeterSystem.reflectionRepresentation_injective hR hA).eq_iff,
+    M.toCoxeterSystem.simple_mul_simple_pow_eq_one_iff]
+
+end CoxeterMatrix

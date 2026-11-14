@@ -104,18 +104,11 @@ example (hA : ∀ i j : Fin 1, algebraMap ℤ ℝ (!![2] i j) =
     (CoxeterMatrix.A 1).toCoxeterSystem.mapReflectionRepresentation
         (algebraMap ℤ ℝ).injective_int hA (Int.castRingHom (ZMod 2))
         ((CoxeterMatrix.A 1).toCoxeterSystem.simple 0) = 1 := by
-  refine Finsupp.lhom_ext fun i a ↦ ?_
-  rw [CoxeterSystem.mapReflectionRepresentation_simple_apply, one_apply_eq_self]
-  clear hA
-  refine Finsupp.ext fun j ↦ ?_
+  refine Finsupp.lhom_ext' fun i ↦ LinearMap.ext_ring ?_
+  rw [LinearMap.comp_apply, CoxeterSystem.mapReflectionRepresentation_simple_apply]
   fin_cases i
-  fin_cases j
-  simp only [Fin.zero_eta, Fin.isValue, Int.coe_castRingHom, Finsupp.linearCombination_single,
-    Matrix.map_apply, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_fin_one, Int.cast_ofNat,
-    smul_eq_mul, Finsupp.smul_single, mul_one, Finsupp.coe_sub, Pi.sub_apply,
-    Finsupp.single_eq_same, sub_eq_self]
-  revert a
-  decide
+  simp
+  rfl
 
 open TensorProduct in
 /-- Transporting `A₂` to `Fin 2 → ℤ` along `Pi.basisFun ℤ (Fin 2)` and extending scalars to `ℝ`
@@ -127,6 +120,6 @@ example (hA : ∀ i j : Fin 2, algebraMap ℤ ℝ (!![2, -1; -1, 2] i j) =
         (algebraMap ℤ ℝ).injective_int hA (Pi.basisFun ℤ (Fin 2))
         ((1 : ℝ) ⊗ₜ[ℤ] Pi.basisFun ℤ (Fin 2) i) =
       Finsupp.single i 1 := by
-  rw [CoxeterSystem.baseChangeRealReflectionRepresentationOfBasisEquiv_one_tmul,
-    Module.Basis.repr_self, Finsupp.mapRange_single, map_one]
+  rw [CoxeterSystem.baseChangeRealReflectionRepresentationOfBasisEquiv_apply,
+    Module.Basis.baseChange_repr_tmul_basis]
 

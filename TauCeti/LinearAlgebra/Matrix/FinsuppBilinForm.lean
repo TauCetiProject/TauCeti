@@ -115,17 +115,26 @@ theorem toMatrixAux_single_finsuppBilinForm :
 basis `i ↦ Finsupp.single i 1`. -/
 @[simp]
 theorem finsuppBilinForm_toMatrixAux_single (Φ : LinearMap.BilinForm R (I →₀ R)) :
-    (Φ.toMatrixAux (fun i : I ↦ Finsupp.single i (1 : R))).finsuppBilinForm = Φ :=
-  Finsupp.lhom_ext fun i a ↦ Finsupp.lhom_ext fun j b ↦ by
-    conv_rhs =>
-      rw [← Finsupp.smul_single_one i a, ← Finsupp.smul_single_one j b, map_smul, map_smul,
-        LinearMap.smul_apply, smul_eq_mul, smul_eq_mul, mul_left_comm]
-    simp
+    (Φ.toMatrixAux (fun i : I ↦ Finsupp.single i (1 : R))).finsuppBilinForm = Φ := by
+  ext i j
+  simp
 
 /-- `Matrix.finsuppBilinForm` is injective on `Matrix I I R`. -/
 theorem finsuppBilinForm_injective :
     Function.Injective (Matrix.finsuppBilinForm (I := I) (R := R)) :=
   Function.LeftInverse.injective toMatrixAux_single_finsuppBilinForm
+
+/-- Two matrices define the same bilinear form on `I →₀ R` if and only if they are equal. -/
+@[simp]
+theorem finsuppBilinForm_inj {A B : Matrix I I R} :
+    A.finsuppBilinForm = B.finsuppBilinForm ↔ A = B :=
+  finsuppBilinForm_injective.eq_iff
+
+/-- `Matrix.finsuppBilinForm A` vanishes if and only if `A = 0`. -/
+@[simp]
+theorem finsuppBilinForm_eq_zero {A : Matrix I I R} :
+    A.finsuppBilinForm = 0 ↔ A = 0 := by
+  rw [← finsuppBilinForm_zero, finsuppBilinForm_inj]
 
 /-- **The `R`-linear isomorphism between `I × I` matrices and bilinear forms on `I →₀ R`**, valid
 without finiteness or decidable equality on `I`. -/
@@ -231,6 +240,18 @@ end CommSemiring
 section CommRing
 
 variable {I R S : Type*} [CommRing R] [CommRing S]
+
+/-- `Matrix.finsuppBilinForm` commutes with matrix negation. -/
+@[simp]
+theorem finsuppBilinForm_neg (A : Matrix I I R) :
+    (-A).finsuppBilinForm = -A.finsuppBilinForm :=
+  map_neg finsuppBilinFormLinearEquiv A
+
+/-- `Matrix.finsuppBilinForm` preserves matrix subtraction. -/
+@[simp]
+theorem finsuppBilinForm_sub (A B : Matrix I I R) :
+    (A - B).finsuppBilinForm = A.finsuppBilinForm - B.finsuppBilinForm :=
+  map_sub finsuppBilinFormLinearEquiv A B
 
 /-- **Ring homomorphisms intertwine the standard-basis pre-reflections of a matrix with entrywise
 matrix maps.** -/
