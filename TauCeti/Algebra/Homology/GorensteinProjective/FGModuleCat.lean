@@ -141,10 +141,30 @@ theorem toFGModuleCat_obj_obj (X : GorensteinProjectiveModuleCat.{v} A) :
   (rfl)
 
 variable {A} in
+/-- The underlying morphism in `FGModuleCat A` of `(toFGModuleCat A).map f`. -/
+@[simp]
+theorem toFGModuleCat_map_hom {X Y : GorensteinProjectiveModuleCat.{v} A} (f : X ⟶ Y) :
+    ((toFGModuleCat.{v} A).map f).hom =
+      eqToHom (toFGModuleCat_obj_obj X) ≫
+        ObjectProperty.homMk f.hom ≫
+          eqToHom (toFGModuleCat_obj_obj Y).symm :=
+  (rfl)
+
+variable {A} in
 /-- The underlying module of `(ofFGModuleCat A).obj X`. -/
 @[simp]
 theorem ofFGModuleCat_obj_obj (X : CategoryTheory.GorensteinProjective (FGModuleCat.{v} A)) :
     ((ofFGModuleCat.{v} A).obj X).obj = X.obj.obj :=
+  (rfl)
+
+variable {A} in
+/-- The underlying module morphism of `(ofFGModuleCat A).map f`. -/
+@[simp]
+theorem ofFGModuleCat_map_hom
+    {X Y : CategoryTheory.GorensteinProjective (FGModuleCat.{v} A)} (f : X ⟶ Y) :
+    ((ofFGModuleCat.{v} A).map f).hom =
+      eqToHom (ofFGModuleCat_obj_obj X) ≫ f.hom.hom ≫
+        eqToHom (ofFGModuleCat_obj_obj Y).symm :=
   (rfl)
 
 /-- **Equivalence between Gorenstein-projective modules and Gorenstein-projective objects of
@@ -196,12 +216,10 @@ theorem isConflationExact_toFGModuleCat :
     rw [exactStructure_conflation_iff] at hS
     rw [CategoryTheory.GorensteinProjective.exactStructure_conflation_iff]
     let F := forget₂ (FGModuleCat.{v} A) (ModuleCat.{v} A)
-    have hmap : ((S.map (toFGModuleCat.{v} A)).map
-        (isGorensteinProjective (FGModuleCat.{v} A)).ι).map F =
-          S.map (IsGorensteinProjective.{v} A).ι := rfl
     have hSF : (((S.map (toFGModuleCat.{v} A)).map
         (isGorensteinProjective (FGModuleCat.{v} A)).ι).map F).ShortExact := by
-      rwa [hmap]
+      simpa only [F, ← ShortComplex.map_comp, Functor.assoc, toFGModuleCat_comp_ι_comp_forget₂]
+        using hS
     refine
       { exact := (ShortComplex.exact_map_iff_of_faithful _ F).1 hSF.exact
         mono_f := F.mono_of_mono_map hSF.mono_f
@@ -213,12 +231,8 @@ theorem isConflationExact_ofFGModuleCat :
       (exactStructure.{v} A) (ofFGModuleCat.{v} A) where
   map_conflation {S} hS := by
     rw [CategoryTheory.GorensteinProjective.exactStructure_conflation_iff] at hS
-    rw [exactStructure_conflation_iff]
-    have hmap : (S.map (ofFGModuleCat.{v} A)).map (IsGorensteinProjective.{v} A).ι =
-        (S.map (isGorensteinProjective (FGModuleCat.{v} A)).ι).map
-          (forget₂ (FGModuleCat.{v} A) (ModuleCat.{v} A)) := rfl
-    rw [hmap]
-    exact hS.map_of_exact (forget₂ (FGModuleCat.{v} A) (ModuleCat.{v} A))
+    simpa only [exactStructure_conflation_iff, ← ShortComplex.map_comp, ofFGModuleCat_comp_ι] using
+      hS.map_of_exact (forget₂ (FGModuleCat.{v} A) (ModuleCat.{v} A))
 
 /-- `toFGModuleCat` preserves conflations and projective-injective objects. -/
 theorem stableConflationExact_toFGModuleCat :
@@ -273,6 +287,30 @@ theorem projectiveStableFunctor_comp_stableEquivalenceFGModuleCat_functor :
         (CategoryTheory.GorensteinProjective.exactStructure
           (FGModuleCat.{v} A)).projectiveStableFunctor := by
   rw [stableEquivalenceFGModuleCat_functor, StableConflationExact.stableFunctor_eq_map,
+    MorphismIdeal.quotientFunctor_comp_map]
+
+/-- The inverse functor of `stableEquivalenceFGModuleCat` is the stable descent of
+`ofFGModuleCat`. -/
+theorem stableEquivalenceFGModuleCat_inverse :
+    (stableEquivalenceFGModuleCat.{v} A).inverse =
+      stableConflationExact_ofFGModuleCat.stableFunctor
+        CategoryTheory.GorensteinProjective.exactStructure_isFrobenius :=
+  StableConflationExact.stableEquivalence_inverse (equivalenceFGModuleCat.{v} A)
+    stableConflationExact_toFGModuleCat stableConflationExact_ofFGModuleCat
+    exactStructure_isFrobenius CategoryTheory.GorensteinProjective.exactStructure_isFrobenius
+
+instance : (stableEquivalenceFGModuleCat.{v} A).inverse.Additive := by
+  rw [stableEquivalenceFGModuleCat_inverse, StableConflationExact.stableFunctor_eq_map]
+  infer_instance
+
+/-- Along the stable quotient functors, the inverse of `stableEquivalenceFGModuleCat` is induced
+by `ofFGModuleCat`. -/
+theorem projectiveStableFunctor_comp_stableEquivalenceFGModuleCat_inverse :
+    (CategoryTheory.GorensteinProjective.exactStructure
+        (FGModuleCat.{v} A)).projectiveStableFunctor ⋙
+        (stableEquivalenceFGModuleCat.{v} A).inverse =
+      ofFGModuleCat.{v} A ⋙ (exactStructure.{v} A).projectiveStableFunctor := by
+  rw [stableEquivalenceFGModuleCat_inverse, StableConflationExact.stableFunctor_eq_map,
     MorphismIdeal.quotientFunctor_comp_map]
 
 /-- Compatibility of the forward functor of `stableEquivalenceFGModuleCat` with the integral
@@ -371,8 +409,35 @@ theorem projectiveStableFunctor_comp_toSingularityCategory :
         SingularityCategory.Q (FGModuleCat.{v} A) := by
   rw [toSingularityCategory_def, ← Functor.assoc,
     projectiveStableFunctor_comp_stableEquivalenceFGModuleCat_functor, Functor.assoc,
-    CategoryTheory.GorensteinProjective.projectiveStableFunctor_comp_toSingularityCategory]
-  rfl
+    CategoryTheory.GorensteinProjective.projectiveStableFunctor_comp_toSingularityCategory,
+    CategoryTheory.GorensteinProjective.toSingularityCategoryFunctor, ← Functor.assoc,
+    toFGModuleCat_comp_ι]
+
+variable {A} in
+/-- On a representative object, Chen's functor places the underlying finitely generated module in
+degree zero in the singularity category. -/
+@[simp]
+theorem toSingularityCategory_obj_projectiveStableFunctor_obj
+    (X : GorensteinProjectiveModuleCat.{v} A) :
+    (toSingularityCategory.{w, v} A).obj ((exactStructure.{v} A).projectiveStableFunctor.obj X) =
+      (SingularityCategory.Q (FGModuleCat.{v} A)).obj
+        ((DerivedCategory.Bounded.singleFunctor (FGModuleCat.{v} A) 0).obj
+          ⟨X.obj, (ModuleCat.isFG_iff X.obj).2 X.property.finite⟩) :=
+  Functor.congr_obj (projectiveStableFunctor_comp_toSingularityCategory.{w, v} A) X
+
+variable {A} in
+/-- On a representative morphism, Chen's functor places the underlying morphism of finitely
+generated modules in degree zero in the singularity category. -/
+@[simp]
+theorem toSingularityCategory_map_projectiveStableFunctor_map
+    {X Y : GorensteinProjectiveModuleCat.{v} A} (f : X ⟶ Y) :
+    (toSingularityCategory.{w, v} A).map ((exactStructure.{v} A).projectiveStableFunctor.map f) =
+      eqToHom (toSingularityCategory_obj_projectiveStableFunctor_obj X) ≫
+        (SingularityCategory.Q (FGModuleCat.{v} A)).map
+          ((DerivedCategory.Bounded.singleFunctor (FGModuleCat.{v} A) 0).map
+            (ObjectProperty.homMk f.hom)) ≫
+        eqToHom (toSingularityCategory_obj_projectiveStableFunctor_obj Y).symm :=
+  Functor.congr_hom (projectiveStableFunctor_comp_toSingularityCategory.{w, v} A) f
 
 /-- Compatibility of `toSingularityCategory` with the integral shifts, obtained by composing the
 shift compatibilities of `stableEquivalenceFGModuleCat` and Chen's functor on `FGModuleCat A`. -/

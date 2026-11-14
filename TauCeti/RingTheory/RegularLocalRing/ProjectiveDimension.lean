@@ -37,8 +37,10 @@ ring is a regular ring in Mathlib's sense.
 
 ## Main results
 
-* `TauCeti.IsRegularLocalRing.hasProjectiveDimensionLE`: over a regular local ring of dimension
-  at most `n`, every module has projective dimension at most `n`.
+* `TauCeti.IsRegularLocalRing.hasProjectiveDimensionLE` and
+  `TauCeti.IsRegularLocalRing.hasProjectiveDimensionLE_spanFinrank_maximalIdeal`: over a regular
+  local ring of dimension at most `n` (in particular for `n = (maximalIdeal R).spanFinrank`), every
+  module has projective dimension at most `n`.
 * `TauCeti.IsRegularLocalRing.projectiveDimension_quotient_maximalIdeal_eq_ringKrullDim`: the
   residue field of a regular local ring has projective dimension exactly the dimension of the
   ring.
@@ -202,6 +204,12 @@ theorem hasProjectiveDimensionLE {n : ℕ} (hn : ringKrullDim R ≤ n) (M : Modu
       Module.Finite.equiv (Shrink.linearEquiv R (R ⧸ I)).symm
     hasProjectiveDimensionLE_of_finite hn _) M
 
+/-- Over a regular local ring `R`, every `R`-module has projective dimension at most the minimal
+number of generators `(maximalIdeal R).spanFinrank` of the maximal ideal. -/
+theorem hasProjectiveDimensionLE_spanFinrank_maximalIdeal (M : ModuleCat.{v} R) :
+    HasProjectiveDimensionLE M (maximalIdeal R).spanFinrank :=
+  hasProjectiveDimensionLE (spanFinrank_maximalIdeal (R := R)).ge M
+
 /-- **The residue field of a regular local ring has projective dimension equal to the dimension
 of the ring.** A minimal generating family of the maximal ideal is a regular sequence, whose
 quotient has projective dimension its length. Together with
@@ -226,7 +234,7 @@ theorem globalDimension_eq_ringKrullDim : globalDimension.{v} R = ringKrullDim R
   refine le_antisymm ?_ ?_
   · rw [← spanFinrank_maximalIdeal (R := R)]
     exact (globalDimension_le_iff_hasProjectiveDimensionLE R _).mpr
-      (hasProjectiveDimensionLE (spanFinrank_maximalIdeal (R := R)).ge)
+      hasProjectiveDimensionLE_spanFinrank_maximalIdeal
   · rw [← projectiveDimension_quotient_maximalIdeal_eq_ringKrullDim.{v}]
     exact ModuleCat.projectiveDimension_le_globalDimension _
 

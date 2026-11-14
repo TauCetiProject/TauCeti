@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
-public import TauCeti.Algebra.Homology.DerivedCategory.Singularity.Syzygy
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Equivalence
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Singularity
 public import TauCeti.RingTheory.Flat.NonZeroDivisors
@@ -25,9 +24,9 @@ even-to-odd differential in degree zero defines a fully faithful triangle functo
 When `S` has finite global dimension `≤ d`, every `d`-th projective syzygy in `FGModuleCat R`
 restricts to an `S`-module of projective dimension at most `1`
 (`ModuleCat.hasProjectiveDimensionLE_one_restrictScalars_of_isSyzygy`), hence is
-Gorenstein-projective over `R` (`FGModuleCat.isGorensteinProjective_quotient_of_isSyzygy`). Since
-every object of `D_sg(mod-R)` is isomorphic to a shifted `d`-th syzygy
-(`TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_obj_isSyzygy`), Chen's functor
+Gorenstein-projective over `R` (`FGModuleCat.isGorensteinProjective_quotient_of_isSyzygy`). By the
+Buchweitz–Chen density criterion
+(`CategoryTheory.GorensteinProjective.essSurj_toSingularityCategory_of_isSyzygy`), Chen's functor
 `stable(Gproj-R) ⥤ D_sg(mod-R)` is a triangulated equivalence
 (`TauCeti.GorensteinProjectiveModuleCat.singularityEquivalenceQuotient_isTriangulated`), and so is
 the composite `quotientSingularityCokernel : HMF(S,w) ⥤ D_sg(mod-R)`
@@ -40,8 +39,8 @@ ring-theoretic regimes without conflating their hypotheses:
    `w ∈ nonZeroDivisors S`
    (`quotientSingularityCokernel_isEquivalence_of_isRegularLocalRing` and
    `quotientSingularityCokernelEquivalenceOfIsRegularLocalRing`).
-2. **Regular rings of finite Krull dimension:** `[IsRegularRing S]`, `ringKrullDim S < ⊤` (or
-   `[FiniteRingKrullDim S]`), and `w ∈ nonZeroDivisors S`
+2. **Regular rings of finite Krull dimension:** `[IsRegularRing S]`, `ringKrullDim S < ⊤`, and
+   `w ∈ nonZeroDivisors S`
    (`quotientSingularityCokernel_isEquivalence_of_isRegularRing` and
    `quotientSingularityCokernelEquivalenceOfIsRegularRing`).
 3. **Orlov's affine Landau–Ginzburg theorem over a field** (Proposition 3.3 and Theorem 3.9 of
@@ -120,17 +119,9 @@ Gorenstein-projective. -/
 theorem essSurj_fgModuleCat_toSingularityCategory_quotient (hw : w ∈ nonZeroDivisors S) (d : ℕ)
     (hd : ∀ N : ModuleCat.{u} S, HasProjectiveDimensionLE N d) :
     (CategoryTheory.GorensteinProjective.toSingularityCategory
-      (FGModuleCat.{u} (S ⧸ Ideal.span {w}))).EssSurj where
-  mem_essImage Y := by
-    let C := FGModuleCat.{u} (S ⧸ Ideal.span {w})
-    have := Localization.essSurj (SingularityCategory.Q C) (DerivedCategory.Bounded.perfect C).trW
-    obtain ⟨M, n, hM, ⟨e⟩⟩ :=
-      SingularityCategory.exists_iso_Q_obj_singleFunctor_obj_isSyzygy
-        ((SingularityCategory.Q C).objPreimage Y) d
-    have hGP : isGorensteinProjective C M :=
-      FGModuleCat.isGorensteinProjective_quotient_of_isSyzygy hw (Nat.le_succ d) hd hM
-    exact (CategoryTheory.GorensteinProjective.mem_essImage_toSingularityCategory hGP n).ofIso
-      (e.symm ≪≫ (SingularityCategory.Q C).objObjPreimageIso Y)
+      (FGModuleCat.{u} (S ⧸ Ideal.span {w}))).EssSurj :=
+  CategoryTheory.GorensteinProjective.essSurj_toSingularityCategory_of_isSyzygy d
+    fun _ hM ↦ FGModuleCat.isGorensteinProjective_quotient_of_isSyzygy hw (Nat.le_succ d) hd hM
 
 /-- **Buchweitz–Chen essential surjectivity** over a hypersurface in a Noetherian ring of finite
 global dimension: Chen's functor `stable(Gproj-S/(w)) ⥤ D_sg(mod-S/(w))` is essentially
@@ -287,18 +278,16 @@ categories. -/
 theorem quotientSingularityCokernel_isEquivalence_of_isRegularLocalRing
     (hw : w ∈ nonZeroDivisors S) :
     (quotientSingularityCokernel (S := S) (w := w)).IsEquivalence :=
-  quotientSingularityCokernel_isEquivalence hw (IsLocalRing.maximalIdeal S).spanFinrank
-    (IsRegularLocalRing.hasProjectiveDimensionLE
-      (IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)).ge)
+  quotientSingularityCokernel_isEquivalence hw _
+    IsRegularLocalRing.hasProjectiveDimensionLE_spanFinrank_maximalIdeal
 
 /-- **Eisenbud–Buchweitz equivalence** `HMF(S,w) ≌ D_sg(mod-S/(w))` for a non-zero-divisor `w` of
 a regular local ring `S`. -/
 def quotientSingularityCokernelEquivalenceOfIsRegularLocalRing (hw : w ∈ nonZeroDivisors S) :
     HomotopyCategory (S := S) (w := w) ≌
       SingularityCategory (FGModuleCat.{u} (S ⧸ Ideal.span {w})) :=
-  quotientSingularityCokernelEquivalence hw (IsLocalRing.maximalIdeal S).spanFinrank
-    (IsRegularLocalRing.hasProjectiveDimensionLE
-      (IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)).ge)
+  quotientSingularityCokernelEquivalence hw _
+    IsRegularLocalRing.hasProjectiveDimensionLE_spanFinrank_maximalIdeal
 
 /-- The forward functor of `quotientSingularityCokernelEquivalenceOfIsRegularLocalRing` is
 `quotientSingularityCokernel`. -/
@@ -322,10 +311,8 @@ theorem quotientSingularityCokernelEquivalenceOfIsRegularLocalRing_isTriangulate
     letI :=
       (quotientSingularityCokernelEquivalenceOfIsRegularLocalRing.{v, u} hw).commShift_of_functor ℤ
     (quotientSingularityCokernelEquivalenceOfIsRegularLocalRing.{v, u} hw).IsTriangulated :=
-  quotientSingularityCokernelEquivalence_isTriangulated hw
-    (IsLocalRing.maximalIdeal S).spanFinrank
-    (IsRegularLocalRing.hasProjectiveDimensionLE
-      (IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)).ge)
+  quotientSingularityCokernelEquivalence_isTriangulated hw _
+    IsRegularLocalRing.hasProjectiveDimensionLE_spanFinrank_maximalIdeal
 
 end RegularLocalRing
 
@@ -342,13 +329,6 @@ theorem quotientSingularityCokernel_isEquivalence_of_isRegularRing
     (quotientSingularityCokernel (S := S) (w := w)).IsEquivalence :=
   let ⟨d, hd⟩ := IsRegularRing.exists_hasProjectiveDimensionLE.{u} hdim
   quotientSingularityCokernel_isEquivalence hw d hd
-
-/-- For a non-zero-divisor `w` of a regular ring `S` satisfying `[FiniteRingKrullDim S]`,
-the reduced-cokernel functor `HMF(S,w) ⥤ D_sg(mod-S/(w))` is an equivalence of categories. -/
-theorem quotientSingularityCokernel_isEquivalence_of_finiteRingKrullDim
-    [FiniteRingKrullDim S] (hw : w ∈ nonZeroDivisors S) :
-    (quotientSingularityCokernel (S := S) (w := w)).IsEquivalence :=
-  quotientSingularityCokernel_isEquivalence_of_isRegularRing ringKrullDim_lt_top hw
 
 /-- Equivalence `HMF(S,w) ≌ D_sg(mod-S/(w))` for a non-zero-divisor `w` of a regular ring `S` of
 finite Krull dimension (`ringKrullDim S < ⊤`). -/
@@ -403,8 +383,7 @@ theorem quotientSingularityCokernel_isEquivalence_of_flat_aeval
     [HasDerivedCategory.{v} (FGModuleCat.{u} (S ⧸ Ideal.span {w}))] :
     (quotientSingularityCokernel (S := S) (w := w)).IsEquivalence :=
   quotientSingularityCokernel_isEquivalence_of_isRegularRing
-    (TauCeti.ringKrullDim_lt_top_of_finiteType k S)
-    (Polynomial.aeval_X (R := k) w ▸ hw.map_mem_nonZeroDivisors Polynomial.X_mem_nonZeroDivisors)
+    (TauCeti.ringKrullDim_lt_top_of_finiteType k S) hw.mem_nonZeroDivisors_of_aeval
 
 /-- **Orlov's equivalence** `HMF(S,w) ≌ D_sg(mod-S/(w))` for a regular finite-type `k`-algebra `S`
 and a flat potential `w : S` (`(Polynomial.aeval (R := k) w).toRingHom.Flat`). -/
@@ -416,8 +395,7 @@ def quotientSingularityCokernelEquivalenceOfFlatAeval
     HomotopyCategory (S := S) (w := w) ≌
       SingularityCategory (FGModuleCat.{u} (S ⧸ Ideal.span {w})) :=
   quotientSingularityCokernelEquivalenceOfIsRegularRing
-    (TauCeti.ringKrullDim_lt_top_of_finiteType k S)
-    (Polynomial.aeval_X (R := k) w ▸ hw.map_mem_nonZeroDivisors Polynomial.X_mem_nonZeroDivisors)
+    (TauCeti.ringKrullDim_lt_top_of_finiteType k S) hw.mem_nonZeroDivisors_of_aeval
 
 /-- The forward functor of `quotientSingularityCokernelEquivalenceOfFlatAeval` is
 `quotientSingularityCokernel`. -/
@@ -439,7 +417,7 @@ theorem quotientSingularityCokernelEquivalenceOfFlatAeval_isTriangulated
     (hw : (Polynomial.aeval (R := k) w).toRingHom.Flat)
     [HasDerivedCategory.{v} (FGModuleCat.{u} (S ⧸ Ideal.span {w}))] :
     letI := quotientSingularityCokernelCommShift.{v, u} (S := S) (w := w)
-      (Polynomial.aeval_X (R := k) w ▸ hw.map_mem_nonZeroDivisors Polynomial.X_mem_nonZeroDivisors)
+      hw.mem_nonZeroDivisors_of_aeval
     letI :
       (quotientSingularityCokernelEquivalenceOfFlatAeval.{u₀, v, u} hw).functor.CommShift ℤ :=
         Functor.CommShift.ofIso (eqToIso
@@ -450,8 +428,7 @@ theorem quotientSingularityCokernelEquivalenceOfFlatAeval_isTriangulated
       (quotientSingularityCokernelEquivalenceOfFlatAeval.{u₀, v, u} hw).commShift_of_functor ℤ
     (quotientSingularityCokernelEquivalenceOfFlatAeval.{u₀, v, u} hw).IsTriangulated :=
   quotientSingularityCokernelEquivalenceOfIsRegularRing_isTriangulated
-    (TauCeti.ringKrullDim_lt_top_of_finiteType k S)
-    (Polynomial.aeval_X (R := k) w ▸ hw.map_mem_nonZeroDivisors Polynomial.X_mem_nonZeroDivisors)
+    (TauCeti.ringKrullDim_lt_top_of_finiteType k S) hw.mem_nonZeroDivisors_of_aeval
 
 /-- Companion form of **Orlov's affine Landau–Ginzburg theorem** phrased directly over a flat
 finite-type `k[X]`-algebra `S` with `IsRegularRing S` and `algebraMap (Polynomial k) S X = w`. -/

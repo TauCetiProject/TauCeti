@@ -161,9 +161,8 @@ theorem hasProjectiveDimensionLE_restrictScalars_quotient_of_isRegularLocalRing
     (hM : IsGorensteinProjective (S ⧸ Ideal.span {w}) M) (hw : w ∈ nonZeroDivisors S) :
     HasProjectiveDimensionLE
       ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) 1 :=
-  hM.hasProjectiveDimensionLE_restrictScalars_quotient hw (IsLocalRing.maximalIdeal S).spanFinrank
-    (IsRegularLocalRing.hasProjectiveDimensionLE
-      (IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)).ge)
+  hM.hasProjectiveDimensionLE_restrictScalars_quotient hw _
+    IsRegularLocalRing.hasProjectiveDimensionLE_spanFinrank_maximalIdeal
 
 /-- A finitely generated Gorenstein-projective module over a hypersurface in a regular ring of
 finite Krull dimension has projective dimension at most one over that regular ring. -/

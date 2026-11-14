@@ -159,10 +159,8 @@ cokernel of its reduction modulo `w` is an equivalence of categories. -/
 theorem quotientGorensteinProjectiveStableCokernel_isEquivalence_of_isRegularLocalRing
     [IsRegularLocalRing S] (hw : w ∈ nonZeroDivisors S) :
     (quotientGorensteinProjectiveStableCokernel hw).IsEquivalence :=
-  quotientGorensteinProjectiveStableCokernel_isEquivalence hw
-    (IsLocalRing.maximalIdeal S).spanFinrank
-    (IsRegularLocalRing.hasProjectiveDimensionLE
-      (IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)).ge)
+  quotientGorensteinProjectiveStableCokernel_isEquivalence hw _
+    IsRegularLocalRing.hasProjectiveDimensionLE_spanFinrank_maximalIdeal
 
 /-- For a non-zero-divisor `w` of a regular ring `S` of finite Krull dimension, the functor
 `HMF(S,w) ⥤ stable(Gproj-S/(w))` sending a finite-projective matrix factorization to the cokernel
