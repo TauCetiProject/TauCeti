@@ -116,14 +116,7 @@ private def presentationCoefficientToCoordinate :
 /-- Evaluate the polynomial coordinate at the tautological upper-right matrix entry. -/
 private def presentationToCoordinate :
     presentationRing R →ₐ[R] coordinateHopfAlgebra R :=
-  Polynomial.eval₂AlgHom (presentationCoefficientToCoordinate R)
-    (upperRightCoordinate R)
-    fun _ ↦ mul_comm _ _
-
-@[simp]
-private theorem presentationToCoordinate_X :
-    presentationToCoordinate R Polynomial.X = upperRightCoordinate R :=
-  Polynomial.eval₂_X _ _
+  Polynomial.aevalTower (presentationCoefficientToCoordinate R) (upperRightCoordinate R)
 
 private theorem map_tautologicalPoint :
     SL2Borel.map (coordinateToPresentation R).toRingHom (tautologicalPoint R) =
@@ -143,9 +136,7 @@ private theorem map_presentationPoint :
   fin_cases i <;> fin_cases j
   · simp [presentationPoint, presentationToCoordinate, presentationCoefficientToCoordinate,
       presentationUnit_val, laurentEval_T, diagonalUnit_val]
-  · rw [SL2Borel.map_apply, presentationPoint, SL2Borel.coe_mk]
-    simpa [AlgHom.coe_toRingHom, upperRightCoordinate_def] using
-      presentationToCoordinate_X R
+  · simp [presentationPoint, presentationToCoordinate, upperRightCoordinate_def]
   · simp [presentationPoint, SL2Borel.apply_one_zero]
   · have hdet := (tautologicalPoint R).1.2
     rw [Matrix.det_fin_two, SL2Borel.apply_one_zero, mul_zero, sub_zero] at hdet
@@ -191,13 +182,8 @@ private theorem coordinateToPresentation_comp_presentationToCoordinate :
     have hcoeff :
         (presentationToCoordinate R).comp Polynomial.CAlgHom =
           presentationCoefficientToCoordinate R := by
-      apply DFunLike.ext _ _
-      intro x
-      -- There is no application lemma for `Polynomial.eval₂AlgHom`; it is definitionally
-      -- `eval₂` on applications, so expose that equality to use `Polynomial.eval₂_C`.
-      change Polynomial.eval₂ (presentationCoefficientToCoordinate R).toRingHom
-        (upperRightCoordinate R) (Polynomial.C x) = _
-      simp
+      ext x
+      simp [presentationToCoordinate, Polynomial.aevalTower_C]
     rw [hcoeff]
     apply (laurentEvalEquiv (R := R) (A := presentationRing R)).symm.injective
     rw [laurentEvalEquiv_symm_comp]
@@ -216,7 +202,7 @@ private theorem coordinateToPresentation_comp_presentationToCoordinate :
       (map_tautologicalPoint R)
     have hX : presentationToCoordinate R Polynomial.X =
         (tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 0 1 := by
-      rw [presentationToCoordinate_X, upperRightCoordinate_def]
+      rw [presentationToCoordinate, Polynomial.aevalTower_X, upperRightCoordinate_def]
     rw [AlgHom.comp_apply, hX, AlgHom.id_apply]
     rw [SL2Borel.map_apply, presentationPoint, SL2Borel.coe_mk] at h
     exact h
