@@ -36,9 +36,10 @@ glued at their endpoints `±1`.
   `Multiplicative ℝ →ₜ* Circle`.
 * `Circle.coordinate`: the coordinate function `z ↦ z` in `C(S¹, ℂ)`, and
   `Circle.coordinate_mem_unitary`.
-* `Circle.re_sq_add_im_sq` and `Circle.coe_add_inv_coe`: `Re z ^ 2 + Im z ^ 2 = 1` and
-  `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
-  identity for a point of `sphere (0 : ℂ) 1`.
+* `Circle.re_sq_add_im_sq`, `Circle.coe_mul_conj` and `Circle.coe_add_inv_coe`:
+  `Re z ^ 2 + Im z ^ 2 = 1`, `z * conj z = 1` and `z + z⁻¹ = 2 Re z` on the circle,
+  and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first identity for a point of
+  `sphere (0 : ℂ) 1`.
 * `Complex.zpow_mul_conj_zpow_of_mem_sphere`: `z ^ k * conj (z ^ m) = z ^ (k - m)` for a point
   of `sphere (0 : ℂ) 1`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
@@ -82,6 +83,11 @@ theorem coe_homeomorphSphere_symm_apply (z : sphere (0 : ℂ) 1) :
 /-- The real and imaginary parts of a point of the circle satisfy `Re z ^ 2 + Im z ^ 2 = 1`. -/
 theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
   simpa [Complex.normSq_apply, sq] using normSq_coe z
+
+/-- A point of the circle times its conjugate is `1`. -/
+@[simp]
+theorem coe_mul_conj (z : Circle) : (z : ℂ) * conj (z : ℂ) = 1 := by
+  rw [Complex.mul_conj, normSq_coe, Complex.ofReal_one]
 
 /-- The real and imaginary parts of a point of the unit sphere of `ℂ` satisfy
 `Re z ^ 2 + Im z ^ 2 = 1`. -/

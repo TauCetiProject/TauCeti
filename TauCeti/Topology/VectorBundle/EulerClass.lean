@@ -514,6 +514,16 @@ def zeroSectionHom : TopCat.of B ⟶ (thomPair F E).fst :=
 theorem zeroSectionHom_apply (b : B) : zeroSectionHom F E b = zeroSection F E b :=
   (rfl)
 
+/-- The projection of a real vector bundle induces isomorphisms on singular homology, since it is
+a homotopy equivalence (`TauCeti.VectorBundle.totalSpaceHomotopyEquiv`). -/
+instance isIso_homologyMap_thomPairProj {C : Type u} [Category.{v} C] [HasCoproducts.{w} C]
+    [Preadditive C] [CategoryWithHomology C] {R : C} (n : ℕ) :
+    IsIso (SSet.homologyMap (TopCat.toSSet.map (thomPairProj F E)) R n) := by
+  have h : thomPairProj F E = TopCat.ofHom (VectorBundle.totalSpaceHomotopyEquiv F E).toFun :=
+    TopCat.ext fun v ↦ (VectorBundle.totalSpaceHomotopyEquiv_apply v).symm
+  rw [h]
+  exact (VectorBundle.totalSpaceHomotopyEquiv F E).isIso_homologyMap R n
+
 /-- Fibrewise negation `v ↦ -v` of a real vector bundle, written `v ↦ (-1) • v`, as a self-map of
 its total space. -/
 def negTotalSpace : C(TotalSpace F E, TotalSpace F E) where
