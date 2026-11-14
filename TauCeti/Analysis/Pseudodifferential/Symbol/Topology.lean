@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import Mathlib.Topology.Algebra.UniformFilterBasis
 public import Mathlib.Topology.Sets.Compacts
+public import TauCeti.Analysis.Normed.Module.Seminorm.WeightedSup
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 
 /-!
@@ -54,8 +55,8 @@ On a nonempty compact set, the constant symbol `T` has seminorm `‖T‖` withou
 any derivative its seminorms vanish (`TauCeti.Symbol.seminorm_const_nil_nil`,
 `TauCeti.Symbol.seminorm_const_eq_zero`).
 
-The seminorms are set up following Mathlib's seminorms of the Schwartz space
-(`SchwartzMap.seminorm`).
+The seminorms are the best constants `Seminorm.weightedSup` of these weighted estimates, as for
+Mathlib's seminorms of the Schwartz space (`SchwartzMap.seminorm`).
 
 ## References
 
@@ -81,80 +82,29 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [Nor
 
 section Seminorm
 
-/-- The admissible constants in the estimate of `∂_x^α ∂_ξ^β a` on `K`. -/
-private def bounds (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a : Symbol n V W m) : Set ℝ :=
-  {c | 0 ≤ c ∧ ∀ x ∈ K, ∀ ξ,
-    ‖mixedDeriv α β a.coefficient x ξ‖ ≤ c * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)}
-
-private theorem bounds_nonempty (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a : Symbol n V W m) : (bounds K α β a).Nonempty :=
-  let ⟨C, hC, h⟩ := a.exists_bound K K.isCompact α β
-  ⟨C, hC, h⟩
-
-private theorem bounds_bddBelow (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a : Symbol n V W m) : BddBelow (bounds K α β a) :=
-  ⟨0, fun _ hc => hc.1⟩
-
-/-- The best constant in the estimate of `∂_x^α ∂_ξ^β a` on `K`. -/
-private def seminormAux (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a : Symbol n V W m) : ℝ :=
-  sInf (bounds K α β a)
-
-private theorem seminormAux_nonneg (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a : Symbol n V W m) : 0 ≤ seminormAux K α β a :=
-  le_csInf (bounds_nonempty K α β a) fun _ hc => hc.1
-
-private theorem le_seminormAux (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a : Symbol n V W m) {x : CoordinateSpace n} (hx : x ∈ K) (ξ : CoordinateSpace n) :
-    ‖mixedDeriv α β a.coefficient x ξ‖ ≤
-      seminormAux K α β a * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  have hw := rpow_weight_pos ξ (m - β.length)
-  rw [← div_le_iff₀ hw]
-  exact le_csInf (bounds_nonempty K α β a) fun c hc => (div_le_iff₀ hw).2 (hc.2 x hx ξ)
-
-private theorem seminormAux_le_bound (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a : Symbol n V W m) {C : ℝ} (hC : 0 ≤ C)
-    (h : ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) :
-    seminormAux K α β a ≤ C :=
-  csInf_le (bounds_bddBelow K α β a) ⟨hC, h⟩
-
-private theorem seminormAux_zero (K : Compacts (CoordinateSpace n)) (α β : List (Fin n)) :
-    seminormAux K α β (0 : Symbol n V W m) = 0 :=
-  le_antisymm (seminormAux_le_bound K α β 0 le_rfl fun _ _ _ => by simp)
-    (seminormAux_nonneg K α β 0)
-
-private theorem seminormAux_add_le (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a b : Symbol n V W m) :
-    seminormAux K α β (a + b) ≤ seminormAux K α β a + seminormAux K α β b :=
-  seminormAux_le_bound K α β _ (add_nonneg (seminormAux_nonneg K α β a)
-    (seminormAux_nonneg K α β b)) fun x hx ξ => by
-      rw [coefficient_add]
-      exact norm_mixedDeriv_add_le a.contDiff_coefficient b.contDiff_coefficient
-        (le_seminormAux K α β a hx ξ) (le_seminormAux K α β b hx ξ)
-
-private theorem seminormAux_smul_le (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (c : ℂ) (a : Symbol n V W m) : seminormAux K α β (c • a) ≤ ‖c‖ * seminormAux K α β a :=
-  seminormAux_le_bound K α β _ (mul_nonneg (norm_nonneg c) (seminormAux_nonneg K α β a))
-    fun x hx ξ => by
-      rw [coefficient_smul]
-      exact norm_mixedDeriv_smul_le c (le_seminormAux K α β a hx ξ)
+/-- The mixed derivative `a ↦ ∂_x^α ∂_ξ^β a(x, ξ)` at a fixed point, as a linear map. -/
+private def mixedDerivLinearMap (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    Symbol n V W m →ₗ[ℂ] V →L[ℂ] W where
+  toFun a := mixedDeriv α β a.coefficient x ξ
+  map_add' a b := mixedDeriv_add a.contDiff_coefficient b.contDiff_coefficient α β x ξ
+  map_smul' c _ := mixedDeriv_const_smul c α β x ξ
 
 /-- The seminorm `p_{K,α,β}` on the symbols of order `m`: the best constant `C` in the estimate
 `‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C ⟨ξ⟩^(m - |β|)` for all positions `x ∈ K` and all frequencies `ξ`,
 where `⟨ξ⟩^t = (1 + ‖ξ‖²)^(t/2)`. -/
 protected def seminorm (K : Compacts (CoordinateSpace n)) (α β : List (Fin n)) :
     Seminorm ℂ (Symbol n V W m) :=
-  Seminorm.ofSMulLE (seminormAux K α β) (seminormAux_zero K α β) (seminormAux_add_le K α β)
-    (seminormAux_smul_le K α β)
+  Seminorm.weightedSup (fun i : K × CoordinateSpace n => mixedDerivLinearMap α β i.1 i.2)
+    (fun i => (1 + ‖i.2‖ ^ 2) ^ ((m - β.length) / 2)) (fun i => rpow_weight_pos i.2 _)
+    fun a => let ⟨C, _, h⟩ := a.exists_bound K K.isCompact α β; ⟨C, fun i => h i.1 i.1.2 i.2⟩
 
 /-- The seminorm `p_{K,α,β}(a)` bounds `‖∂_x^α ∂_ξ^β a(x, ξ)‖ / ⟨ξ⟩^(m - |β|)` for `x ∈ K`. -/
 theorem le_seminorm (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
     (a : Symbol n V W m) {x : CoordinateSpace n} (hx : x ∈ K) (ξ : CoordinateSpace n) :
     ‖mixedDeriv α β a.coefficient x ξ‖ ≤
       Symbol.seminorm K α β a * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
-  le_seminormAux K α β a hx ξ
+  Seminorm.norm_le_weightedSup (fun i : K × CoordinateSpace n => mixedDerivLinearMap α β i.1 i.2)
+    _ _ _ a (⟨x, hx⟩, ξ)
 
 /-- A constant in the estimate of `∂_x^α ∂_ξ^β a` on `K` bounds the seminorm `p_{K,α,β}(a)`. -/
 theorem seminorm_le_bound (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
@@ -162,7 +112,7 @@ theorem seminorm_le_bound (K : Compacts (CoordinateSpace n)) (α β : List (Fin 
     (h : ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) :
     Symbol.seminorm K α β a ≤ C :=
-  seminormAux_le_bound K α β a hC h
+  Seminorm.weightedSup_le _ _ _ _ hC fun i => h i.1 i.1.2 i.2
 
 /-- The seminorm `p_{K,α,β}(a)` is at most `C ≥ 0` exactly when `C` is a constant in the estimate
 of `∂_x^α ∂_ξ^β a` on `K`. -/
@@ -378,15 +328,11 @@ variable (n V W m) in
 on the symbols of order `m`; in particular the value `a ↦ a(x, ξ)` for `α = β = []`. -/
 def mixedDerivCLM (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     Symbol n V W m →L[ℂ] V →L[ℂ] W :=
-  let L : Symbol n V W m →ₗ[ℂ] V →L[ℂ] W :=
-    { toFun a := mixedDeriv α β a.coefficient x ξ
-      map_add' a b := mixedDeriv_add a.contDiff_coefficient b.contDiff_coefficient α β x ξ
-      map_smul' c a := mixedDeriv_const_smul c α β x ξ }
-  { toLinearMap := L
-    cont := WithSeminorms.continuous_of_isBounded withSeminorms (norm_withSeminorms ℂ _) L
+  { toLinearMap := mixedDerivLinearMap α β x ξ
+    cont := WithSeminorms.continuous_of_isBounded withSeminorms (norm_withSeminorms ℂ _) _
       (Seminorm.IsBounded.of_real fun _ => ⟨{({x}, α, β)},
         (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2), fun a => by
-          simpa [L, mul_comm] using le_seminorm {x} α β a rfl ξ⟩) }
+          simpa [mixedDerivLinearMap, mul_comm] using le_seminorm {x} α β a rfl ξ⟩) }
 
 @[simp]
 theorem mixedDerivCLM_apply (α β : List (Fin n)) (x ξ : CoordinateSpace n) (a : Symbol n V W m) :
