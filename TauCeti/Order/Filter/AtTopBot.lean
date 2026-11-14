@@ -25,9 +25,12 @@ recovery sequence built from a countable neighbourhood basis. It complements Mat
 instead.
 
 The second statement is the diagonal extraction of a subsequence along which countably many
-sequences converge at once (`TauCeti.extraction_forall_exists_tendsto`): if every subsequence of
-each of the sequences `x j` has a convergent further subsequence, a single subsequence makes all of
-them converge. It is the compactness step of the Arzelà–Ascoli theorem.
+properties hold at once (`TauCeti.extraction_forall_of_antitone`): if each property is inherited by
+finer filters of indices, and every subsequence has a further subsequence along which it holds,
+then a single subsequence carries all of them. In particular, if every subsequence of each of the
+sequences `x j` has a convergent further subsequence, a single subsequence makes all of them
+converge (`TauCeti.extraction_forall_exists_tendsto`). It is the compactness step of the
+Arzelà–Ascoli theorem.
 
 Finally, a sequence converges along `atTop` exactly when it does so along real (or other floor
 semiring) cutoffs `x ↦ u ⌊x⌋₊` (`TauCeti.tendsto_comp_natFloor_iff`). This compares limits of
@@ -66,25 +69,26 @@ theorem exists_tendsto_atTop_of_forall_eventually {P : ℕ → ℕ → Prop}
       (fun j hj ↦ ?_) _ le_rfl)
     rwa [Nat.le_zero.1 hj]
 
-/-- **Diagonal extraction.** Let `x j : ℕ → X` be countably many sequences and `l y` the filter of
-a convergence to `y` on `X`. If every subsequence of every `x j` has a further subsequence
-converging to some point, then one subsequence makes every `x j` converge. -/
-theorem extraction_forall_exists_tendsto {X : Type*} {l : X → Filter X} {x : ℕ → ℕ → X}
-    (h : ∀ j (ψ : ℕ → ℕ), StrictMono ψ →
-      ∃ y, ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ Tendsto (fun n ↦ x j (ψ (ψ' n))) atTop (l y)) :
-    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∀ j, ∃ y, Tendsto (fun n ↦ x j (ψ n)) atTop (l y) := by
-  choose y ψ' hψ' hy using h
-  -- `θ j` is the subsequence along which `x 0, …, x j` converge, each refining the previous one.
+/-- **Diagonal extraction.** Let `P j` be countably many properties of filters on `ℕ`, each
+inherited by finer filters. If every subsequence `ψ` has, for every `j`, a further subsequence
+`ψ ∘ ψ'` with `P j (map (ψ ∘ ψ') atTop)`, then one subsequence `ψ` has `P j (map ψ atTop)` for
+every `j`. Typically `P j l` says that the `j`-th of countably many sequences of objects indexed by
+`ℕ` converges, in some sense, along the filter `l` of indices. -/
+theorem extraction_forall_of_antitone {P : ℕ → Filter ℕ → Prop}
+    (hP : ∀ j ⦃l l' : Filter ℕ⦄, l' ≤ l → P j l → P j l')
+    (h : ∀ j (ψ : ℕ → ℕ), StrictMono ψ → ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ P j (map (ψ ∘ ψ') atTop)) :
+    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∀ j, P j (map ψ atTop) := by
+  choose ψ' hψ' hP' using h
+  -- `θ j` is the subsequence along which `P 0, …, P j` hold, each refining the previous one.
   let θ : ℕ → {ψ : ℕ → ℕ // StrictMono ψ} := fun j ↦ Nat.rec
     ⟨ψ' 0 id strictMono_id, hψ' 0 id strictMono_id⟩
     (fun j θj ↦ ⟨θj.1 ∘ ψ' (j + 1) θj.1 θj.2, θj.2.comp (hψ' (j + 1) θj.1 θj.2)⟩) j
   have hθ0 : (θ 0).1 = ψ' 0 id strictMono_id := rfl
   have hθsucc j : (θ (j + 1)).1 = (θ j).1 ∘ ψ' (j + 1) (θ j).1 (θ j).2 := rfl
-  have hθ j : ∃ z, Tendsto (fun n ↦ x j ((θ j).1 n)) atTop (l z) := by
+  have hθ j : P j (map (θ j).1 atTop) := by
     cases j with
-    | zero => exact ⟨_, by simpa only [hθ0, id] using hy 0 id strictMono_id⟩
-    | succ j =>
-      exact ⟨_, by simpa only [hθsucc, Function.comp_apply] using hy (j + 1) (θ j).1 (θ j).2⟩
+    | zero => simpa only [hθ0, Function.id_comp] using hP' 0 id strictMono_id
+    | succ j => simpa only [hθsucc] using hP' (j + 1) (θ j).1 (θ j).2
   -- Every later `θ n` is a subsequence of `θ j`.
   have hsub j n (hjn : j ≤ n) a : ∃ b, a ≤ b ∧ (θ n).1 a = (θ j).1 b := by
     induction n, hjn using Nat.le_induction generalizing a with
@@ -92,16 +96,29 @@ theorem extraction_forall_exists_tendsto {X : Type*} {l : X → Filter X} {x : �
     | succ n _ ih =>
       obtain ⟨b, hab, hb⟩ := ih (ψ' (n + 1) (θ n).1 (θ n).2 a)
       exact ⟨b, ((hψ' _ _ _).id_le a).trans hab, by rw [hθsucc]; exact hb⟩
-  -- The diagonal subsequence `n ↦ θ n n`.
-  refine ⟨fun n ↦ (θ n).1 n, strictMono_nat_of_lt_succ fun n ↦ ?_, fun j ↦ ?_⟩
+  -- The diagonal subsequence `n ↦ θ n n` is eventually a subsequence of every `θ j`.
+  refine ⟨fun n ↦ (θ n).1 n, strictMono_nat_of_lt_succ fun n ↦ ?_, fun j ↦ hP j ?_ (hθ j)⟩
   · rw [hθsucc]
     exact (θ n).2.monotone ((hψ' _ _ _).id_le _) |>.trans_lt' ((θ n).2 n.lt_succ_self)
-  · obtain ⟨z, hz⟩ := hθ j
-    choose m hm using fun n ↦ hsub j (max j n) (le_max_left _ _) (max j n)
-    refine ⟨z, (hz.comp (tendsto_atTop_mono (fun n ↦ (le_max_right j n).trans (hm n).1)
-      tendsto_id)).congr' ?_⟩
-    filter_upwards [eventually_ge_atTop j] with n hn
-    simp only [Function.comp_apply, ← (hm n).2, max_eq_right hn]
+  · intro s hs
+    obtain ⟨N, hN⟩ := eventually_atTop.1 (mem_map.1 hs)
+    refine mem_map.2 (eventually_atTop.2 ⟨max j N, fun n hn ↦ ?_⟩)
+    obtain ⟨b, hnb, hb⟩ := hsub j n (le_of_max_le_left hn) n
+    simpa only [Set.mem_preimage, hb] using hN b ((le_of_max_le_right hn).trans hnb)
+
+/-- **Diagonal extraction of convergent subsequences.** Let `x j : ℕ → X` be countably many
+sequences and `l y` the filter of a convergence to `y` on `X`. If every subsequence of every `x j`
+has a further subsequence converging to some point, then one subsequence makes every `x j`
+converge. -/
+theorem extraction_forall_exists_tendsto {X : Type*} {l : X → Filter X} {x : ℕ → ℕ → X}
+    (h : ∀ j (ψ : ℕ → ℕ), StrictMono ψ →
+      ∃ y, ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ Tendsto (fun n ↦ x j (ψ (ψ' n))) atTop (l y)) :
+    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∀ j, ∃ y, Tendsto (fun n ↦ x j (ψ n)) atTop (l y) :=
+  extraction_forall_of_antitone (P := fun j l' ↦ ∃ y, Tendsto (x j) l' (l y))
+    (fun _ _ _ hl ⟨y, hy⟩ ↦ ⟨y, hy.mono_left hl⟩)
+    (fun j ψ hψ ↦ by
+      obtain ⟨y, ψ', hψ', hy⟩ := h j ψ hψ
+      exact ⟨ψ', hψ', y, tendsto_map'_iff.2 hy⟩)
 
 /-- A sequence `u` converges along `atTop` if and only if its values `u ⌊x⌋₊` at the natural
 floors of `x` converge as `x → ∞` in a floor semiring such as `ℝ`. -/
