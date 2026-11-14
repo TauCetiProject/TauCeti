@@ -164,57 +164,23 @@ private theorem orientationSignlessPreprojectiveIdeal_map_eq :
         (Symmetrify (OrientedQuiver G o))).asIdeal =
       (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal.map
         (orientationPathAlgebraEquiv o k : _ →+* _) := by
-  have hforward : signlessPreprojectiveIdeal k (DoubledQuiver G) ≤
-      (signlessPreprojectiveIdeal k
-        (Symmetrify (OrientedQuiver G o))).comap
-          (orientationPathAlgebraEquiv o k).toRingHom := by
-    rw [signlessPreprojectiveIdeal_eq_span, TwoSidedIdeal.span_le]
-    rintro _ ⟨i, rfl⟩
-    apply (TwoSidedIdeal.mem_comap
-      (orientationPathAlgebraEquiv o k).toRingHom).mpr
-    -- Expose the algebra equivalence hidden by the underlying ring-hom coercion.
-    change orientationPathAlgebraEquiv o k
-      (signlessPreprojectiveRelator k i) ∈ _
-    rw [orientationPathAlgebraEquiv_signlessPreprojectiveRelator]
-    exact signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal k _
-  have hbackward :
-      signlessPreprojectiveIdeal k
-          (Symmetrify (OrientedQuiver G o)) ≤
-        (signlessPreprojectiveIdeal k (DoubledQuiver G)).comap
-          (orientationPathAlgebraEquiv o k).symm.toRingHom := by
-    rw [signlessPreprojectiveIdeal_eq_span, TwoSidedIdeal.span_le]
-    rintro _ ⟨i, rfl⟩
-    apply (TwoSidedIdeal.mem_comap
-      (orientationPathAlgebraEquiv o k).symm.toRingHom).mpr
-    -- Expose the algebra equivalence hidden by the underlying ring-hom coercion.
-    change (orientationPathAlgebraEquiv o k).symm
-      (signlessPreprojectiveRelator k i) ∈ _
-    rw [orientationPathAlgebraEquiv_symm_signlessPreprojectiveRelator]
-    exact signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal k _
-  have hforward' : (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal ≤
-      (signlessPreprojectiveIdeal k
-        (Symmetrify (OrientedQuiver G o))).asIdeal.comap
-          (orientationPathAlgebraEquiv o k).toRingHom :=
-    fun _ hx => by
-      simpa only [Ideal.mem_comap, TwoSidedIdeal.mem_asIdeal,
-        TwoSidedIdeal.mem_comap] using hforward hx
-  have hbackward' :
-      (signlessPreprojectiveIdeal k
-        (Symmetrify (OrientedQuiver G o))).asIdeal ≤
-      (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal.comap
-        (orientationPathAlgebraEquiv o k).symm.toRingHom :=
-    fun _ hx => by
-      simpa only [Ideal.mem_comap, TwoSidedIdeal.mem_asIdeal,
-        TwoSidedIdeal.mem_comap] using hbackward hx
   apply le_antisymm
   · calc
       _ ≤ (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal.comap
-          (orientationPathAlgebraEquiv o k).symm.toRingHom := hbackward'
+          (orientationPathAlgebraEquiv o k).symm :=
+        signlessPreprojectiveIdeal_asIdeal_le_comap k (orientationPathAlgebraEquiv o k).symm _
+          fun i => by
+            rw [orientationPathAlgebraEquiv_symm_signlessPreprojectiveRelator]
+            exact signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal k _
       _ = (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal.map
-          (orientationPathAlgebraEquiv o k).toRingHom :=
+          (orientationPathAlgebraEquiv o k : _ →+* _) :=
         (Ideal.map_comap_of_equiv
           (orientationPathAlgebraEquiv o k).toRingEquiv).symm
-  · exact Ideal.map_le_iff_le_comap.mpr hforward'
+  · refine Ideal.map_le_iff_le_comap.mpr ?_
+    exact signlessPreprojectiveIdeal_asIdeal_le_comap k (orientationPathAlgebraEquiv o k) _
+      fun i => by
+        rw [orientationPathAlgebraEquiv_signlessPreprojectiveRelator]
+        exact signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal k _
 
 /-- Restoring an orientation identifies the signless algebra of the doubled graph with the
 signless algebra of the symmetrified oriented quiver. -/
@@ -419,6 +385,21 @@ theorem sourceSinkSignlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk
   rw [AlgEquiv.apply_symm_apply,
     sourceSinkSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
     AlgEquiv.apply_symm_apply]
+
+include C in
+/-- **Path vanishing transfers from the signless algebra of a two-coloured graph to every
+orientation.** If every path of length at least `N` vanishes in the signless algebra, then every
+path of length at least `N` vanishes in the preprojective algebra of every orientation. -/
+theorem preprojectiveMk_ofPath_eq_zero_of_le
+    [inst : ∀ x : DoubledQuiver G, Fintype (Quiver.Star x)] {N : ℕ}
+    (hN : ∀ x : Quiver.TotalPath (DoubledQuiver G), N ≤ x.2.2.length →
+      signlessPreprojectiveMk k _ (ofPath x) = 0)
+    (o : Orientation G) (x : Quiver.TotalPath (Symmetrify (OrientedQuiver G o)))
+    (hx : N ≤ x.2.2.length) :
+    preprojectiveMk k (OrientedQuiver G o) (ofPath x) = 0 := by
+  obtain rfl : inst = instFintypeStar G := Subsingleton.elim _ _
+  exact preprojectiveMk_ofPath_eq_zero_of_signless o k (fun {_ _} a => C.orientedColor_ne o a) x
+    (hN _ (by rwa [Prefunctor.length_mapTotalPath]))
 
 end SimpleGraph.Coloring
 

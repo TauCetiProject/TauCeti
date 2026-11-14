@@ -220,15 +220,9 @@ every orientation of the `D₄` graph. -/
 theorem preprojectiveMk_D4_ofPath_eq_zero_of_five_le
     (x : Quiver.TotalPath (Symmetrify (OrientedQuiver zigzagD4Graph o)))
     (hx : 5 ≤ x.2.2.length) :
-    preprojectiveMk k (OrientedQuiver zigzagD4Graph o) (ofPath x) = 0 := by
-  -- Every orientation of the bipartite `D₄` graph is compared with the signless algebra.
-  have hc : ∀ ⦃i j : OrientedQuiver zigzagD4Graph o⦄, (i ⟶ j) →
-      zigzagD4Coloring ((OrientedQuiver.vertexEquiv _ o).symm i) ≠
-        zigzagD4Coloring ((OrientedQuiver.vertexEquiv _ o).symm j) :=
-    fun _ _ a => zigzagD4Coloring.valid a.1
-  apply preprojectiveMk_ofPath_eq_zero_of_signless o k hc x
-  exact signlessPreprojectiveMk_D4_ofPath_eq_zero_of_five_le k _
-    (by rwa [Prefunctor.length_mapTotalPath])
+    preprojectiveMk k (OrientedQuiver zigzagD4Graph o) (ofPath x) = 0 :=
+  zigzagD4Coloring.preprojectiveMk_ofPath_eq_zero_of_le k
+    (signlessPreprojectiveMk_D4_ofPath_eq_zero_of_five_le k) o x hx
 
 /-- **The preprojective relation ideal of every orientation of `D₄` is admissible.** It lies in
 the square of the arrow ideal, and it contains every path of length at least five. -/
