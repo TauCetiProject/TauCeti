@@ -312,14 +312,11 @@ private lemma integral_sq_le (p : M) {R t η : ℝ} (ht0 : 0 < t) (hη0 : 0 < η
 
 omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- The critical mass of the transplant `u` is at least `(1 - η) t ^ n` times that of `v`. -/
-private lemma le_integral_abs_rpow {R t η : ℝ} (p : M) (hn : 2 < finrank ℝ E) (ht0 : 0 < t)
-    (hη1 : η < 1) (hρp : 0 < chartVolumeDensity (I := I) p p)
+private lemma le_integral_abs_rpow {R t η : ℝ} (p : M) (hn : 2 < finrank ℝ E)
     (hballt : ball (extChartAt I p p) R ⊆ (extChartAt I p).target)
     {v : EuclideanSpace ℝ (Fin (finrank ℝ E)) → ℝ} (hv : ContDiff ℝ ∞ v)
     {Ψ : E → EuclideanSpace ℝ (Fin (finrank ℝ E))} {u : M → ℝ}
     (hu : ContMDiff I 𝓘(ℝ) ∞ u) (huc : HasCompactSupport u)
-    (hsup : ∀ x ∈ tsupport u, x ∈ (extChartAt I p).source ∧
-      extChartAt I p x ∈ ball (extChartAt I p p) R)
     (hu_symm : ∀ y ∈ ball (extChartAt I p p) R, u ((extChartAt I p).symm y) = v (Ψ y))
     (hρ : ∀ y ∈ ball (extChartAt I p p) R, (1 - η) * chartVolumeDensity (I := I) p p ≤
       chartVolumeDensity (I := I) p ((extChartAt I p).symm y))
@@ -330,6 +327,8 @@ private lemma le_integral_abs_rpow {R t η : ℝ} (p : M) (hn : 2 < finrank ℝ 
       (chartVolumeDensity (I := I) p p)⁻¹ * (t ^ finrank ℝ E * ∫ z, k z)) :
     (1 - η) * t ^ finrank ℝ E * ∫ z, |v z| ^ criticalExponent (finrank ℝ E) ≤
       ∫ x, |u x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M := by
+  have hρp : 0 < chartVolumeDensity (I := I) p p :=
+    chartVolumeDensity_pos p (FiberBundle.mem_baseSet_trivializationAt' p)
   have hP := criticalExponent_pos hn
   have hPz (z : ℝ) (hz : z = 0) : |z| ^ criticalExponent (finrank ℝ E) = 0 := by
     rw [hz, abs_zero, Real.zero_rpow hP.ne']
@@ -342,8 +341,7 @@ private lemma le_integral_abs_rpow {R t η : ℝ} (p : M) (hn : 2 < finrank ℝ 
     (fun x ↦ Real.rpow_nonneg (abs_nonneg (u x)) _)
     ((hcontP.comp hu.continuous).integrable_of_hasCompactSupport (huc.mono' fun x hx ↦
       by_contra fun h ↦ hx (hPz _ (image_eq_zero_of_notMem_tsupport h))))
-    (fun x hx ↦ hsup x (by_contra fun h ↦ hx (hPz _ (image_eq_zero_of_notMem_tsupport h))))
-    (fun y ↦ Real.rpow_nonneg (abs_nonneg _) _)
+    (k := fun y ↦ |v (Ψ y)| ^ criticalExponent (finrank ℝ E))
     (hsb _ (hcontP.comp hv.continuous) hvz)
     (c := (1 - η) * chartVolumeDensity (I := I) p p) fun y hy ↦ by
       rw [hu_symm y hy]
@@ -481,7 +479,7 @@ and squared `L²` norm at most `(1 + η) ³ t ^ (n - 2)` and `(1 + η) t ^ n` ti
 critical mass at least `(1 - η) t ^ n` times that of `v`, where the density and the metric are
 `η`-close to their values at `p` on the chart ball of radius `R`. -/
 private lemma exists_transplant_bounds (p : M) {R t η : ℝ} {U : Set M} (hn : 2 < finrank ℝ E)
-    (hη0 : 0 < η) (hη1 : η < 1) (ht0 : 0 < t) (hρp : 0 < chartVolumeDensity (I := I) p p)
+    (hη0 : 0 < η) (ht0 : 0 < t) (hρp : 0 < chartVolumeDensity (I := I) p p)
     (hballt : ball (extChartAt I p p) R ⊆ (extChartAt I p).target)
     (L : E ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ E)))
     (htR : t * ‖(L.symm : EuclideanSpace ℝ (Fin (finrank ℝ E)) →L[ℝ] E)‖ < R)
@@ -541,7 +539,7 @@ private lemma exists_transplant_bounds (p : M) {R t η : ℝ} {U : Set M} (hn : 
       (fun y hy ↦ norm_mgradient_transplant_le p ht0 (by linarith) L O hLO hv hΨ hu_symm hy
         (hg y hy)) hint hcv,
     integral_sq_le p ht0 hη0 hρp hballt hv hu huc hsup hu_symm (fun y hy ↦ (hρ y hy).2) hint hcv,
-    le_integral_abs_rpow p hn ht0 hη1 hρp hballt hv hu huc hsup hu_symm (fun y hy ↦ (hρ y hy).1)
+    le_integral_abs_rpow p hn hballt hv hu huc hu_symm (fun y hy ↦ (hρ y hy).1)
       hsb hcv⟩
 
 /-- **Test functions with Yamabe quotient below the sphere constant.** On a Riemannian manifold
@@ -572,7 +570,7 @@ theorem exists_contMDiff_hasCompactSupport_yamabeQuotient_lt [I.Boundaryless]
     have h1 : t ≤ R / (C + 1) := min_le_right _ _
     rw [le_div_iff₀ (by positivity)] at h1
     nlinarith [norm_nonneg (L.symm : EuclideanSpace ℝ (Fin (finrank ℝ E)) →L[ℝ] E)]
-  obtain ⟨u, hu, huc, huU, hu0, hsup, hIg, hI2, hIP⟩ := exists_transplant_bounds p hn hη0 hη1 ht0
+  obtain ⟨u, hu, huc, huU, hu0, hsup, hIg, hI2, hIP⟩ := exists_transplant_bounds p hn hη0 ht0
     hρp hballt L htR O hLO hmap hv hvc hvsupp hv0 (fun y hy ↦ (hball y hy).1)
     (fun y hy ↦ (hball y hy).2.1) (fun y hy ↦ (hball y hy).2.2.2)
   have hnum := integral_numerator_le p hn (conformalCoefficient_pos hn).le (by positivity) hu huc
