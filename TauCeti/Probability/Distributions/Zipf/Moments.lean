@@ -11,7 +11,7 @@ public import TauCeti.Probability.Distributions.Zipf.Basic
 import Mathlib.Analysis.PSeries
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import Mathlib.NumberTheory.LSeries.Dirichlet
-import TauCeti.NumberTheory.LSeries.RiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.Probability.Moments.IntegrableExpMul
 
 /-!

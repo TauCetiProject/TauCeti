@@ -68,6 +68,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 * `DirichletCharacter.sum_mul_eq_zero_of_forall_units`: coefficient extraction by orthogonality; a
   combination of symmetrised character sums that vanishes on every pair of units has vanishing
   coefficients against every pair of character multiplicities.
+* `DirichletCharacter.ne_one_of_mul_eq_one_right`: if `χ ≠ 1` and `χ.mul ψ = 1` for `ψ` of nonzero
+  level, then `ψ ≠ 1`.
 
 ## Provenance
 
@@ -440,5 +442,19 @@ theorem sum_mul_eq_zero_of_forall_units {R : Type*} [CommRing R] [IsDomain R] [C
       ring
     exact (mul_eq_zero.mp key').resolve_left (pow_ne_zero 2 hc)
   exact hcoeff χ χ'
+
+/-- If `χ` is nonprincipal and `χ.mul ψ = 1` for `ψ` of nonzero level `N`, then `ψ` is
+nonprincipal. -/
+theorem ne_one_of_mul_eq_one_right {R : Type*} [CommMonoidWithZero R] {M N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R M} {ψ : DirichletCharacter R N}
+    (hχ : χ ≠ 1) (hχψ : χ.mul ψ = 1) : ψ ≠ 1 := by
+  rintro rfl
+  rcases eq_or_ne M 0 with rfl | hM
+  · have h := congrArg (changeLevel (dvd_zero _)) hχψ
+    simp only [DirichletCharacter.mul, map_one, mul_one, ← changeLevel_trans, changeLevel_self] at h
+    exact hχ h
+  · have : NeZero (M.lcm N) := ⟨Nat.lcm_ne_zero hM (NeZero.ne N)⟩
+    rw [DirichletCharacter.mul, map_one, mul_one, changeLevel_eq_one_iff] at hχψ
+    exact hχ hχψ
 
 end DirichletCharacter
