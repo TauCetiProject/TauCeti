@@ -97,7 +97,7 @@ theorem isShrinking_of_surjective_inclusionInDoubleDual
   -- Fix the normed structure on the dual before synthesizing the quotient's instances.
   let : NormedAddCommGroup (StrongDual 𝕜 E) := inferInstance
   let S := (Submodule.span 𝕜 (range b.coord)).topologicalClosure
-  let : IsClosed (S : Set (StrongDual 𝕜 E)) := Submodule.isClosed_topologicalClosure _
+  have : IsClosed (S : Set (StrongDual 𝕜 E)) := Submodule.isClosed_topologicalClosure _
   rw [b.isShrinking_iff]
   apply top_unique
   intro f _
