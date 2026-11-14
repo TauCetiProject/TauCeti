@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
-public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import TauCeti.Algebra.Homology.LinearYoneda
 
 /-!
@@ -16,9 +15,10 @@ For a ring `k` and a `k`-module `M`, evaluation on the unit chain of each simple
 `Hom_k(C_n(K; k), M)` with functions from the `n`-simplices of `K` to `M`. This identification
 is integral-linear, including for noncommutative rings. The cochain differential becomes the
 alternating sum of values on faces, and pullback becomes precomposition on simplices.
-The simplicial set may live in a different universe from `k`: only the coproducts of
-`k`-modules indexed by its simplices, which Mathlib's `SSet.chainComplex` requires, are assumed.
-They exist, for example, when the simplicial set lives in a universe no larger than that of `k`.
+The simplicial set `K : SSet.{u}` may live in a different universe from `k`. The file assumes
+`HasCoproducts.{u} (ModuleCat k)`, that is, coproducts of `k`-modules indexed by every type in
+the universe `u` of `K`, as Mathlib's `SSet.chainComplex` requires. They exist, for example, when
+`u` is no larger than the universe of `k`.
 
 The construction uses Mathlib's `SSet.isColimitChainComplexXCofan` and
 `Cofan.IsColimit.desc`, the coproduct universal property also used by `TauCeti.chainsDesc`.
