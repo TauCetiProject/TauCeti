@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Sort
+public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.Algebra.Order.BigOperators.Dominance
 public import TauCeti.Combinatorics.Young.OfRowLens
 
@@ -145,6 +146,9 @@ instance : AddCommMonoid (DominantWeight n) :=
   Subtype.coe_injective.addCommMonoid Subtype.val rfl (fun _ _ => rfl) fun _ _ => rfl
 
 @[simp] theorem zero_apply (i : Fin n) : (0 : DominantWeight n).1 i = 0 := (rfl)
+@[simp] theorem prefixSum_coe_zero (k : ℕ) :
+    TauCeti.prefixSum k (0 : DominantWeight n).1 = 0 := by
+  simp [TauCeti.prefixSum_def]
 @[simp] theorem add_apply (l₁ l₂ : DominantWeight n) (i : Fin n) :
     (l₁ + l₂).1 i = l₁.1 i + l₂.1 i := (rfl)
 @[simp] theorem nsmul_apply (k : ℕ) (l : DominantWeight n) (i : Fin n) :

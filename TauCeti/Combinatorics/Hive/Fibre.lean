@@ -550,6 +550,12 @@ def rotateRotateEquiv {n : ℕ} (lam μ ν : DominantWeight n) :
     (k : FixedIntegerHive (productBoundary ν lam μ.dual)) :
     ((rotateRotateEquiv lam μ ν).symm k).1 = k.1.rotate := (rfl)
 
+/-- Rotating twice identifies `hiveCount ![lam.1, μ.1, ν.1]` with
+`hiveCount (productBoundary ν lam μ.dual)`. -/
+theorem hiveCount_cyclic_eq_hiveCount_productBoundary {n : ℕ} (lam μ ν : DominantWeight n) :
+    hiveCount ![lam.1, μ.1, ν.1] = hiveCount (productBoundary ν lam μ.dual) :=
+  Fintype.card_congr (rotateRotateEquiv lam μ ν)
+
 /-- Reflection of the boundary preserves `hiveCount`. -/
 @[simp] theorem hiveCount_reflect {n : ℕ} (B : Fin 3 → Fin n → ℤ) :
     hiveCount (fun s i => -B s.rev i.rev) = hiveCount B :=

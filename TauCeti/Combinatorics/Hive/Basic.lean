@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Module.LinearMap.Defs
 public import Mathlib.Algebra.Order.Group.Defs
 public import Mathlib.Algebra.Order.Hom.Monoid
 public import Mathlib.Geometry.Convex.Cone.Pointed
-public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.Combinatorics.Hive.Lattice
 public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
 import Mathlib.Algebra.Order.Ring.Int
@@ -845,6 +844,18 @@ def reflect (h : Hive n R) : Hive n R :=
 
 @[simp] theorem reflect_apply (h : Hive n R) (p : Vertex n) : h.reflect p = h p.reflect := (rfl)
 @[simp] theorem reflect_reflect (h : Hive n R) : h.reflect.reflect = h := by ext p; simp
+
+@[simp] theorem reflect_zero : (0 : Hive n R).reflect = 0 := by ext p; simp
+
+@[simp] theorem reflect_add [IsOrderedAddMonoid R] (h₁ h₂ : Hive n R) :
+    (h₁ + h₂).reflect = h₁.reflect + h₂.reflect := by ext p; simp
+
+@[simp] theorem reflect_nsmul [IsOrderedAddMonoid R] (k : ℕ) (h : Hive n R) :
+    (k • h).reflect = k • h.reflect := by ext p; simp
+
+@[simp] theorem reflect_affine [IsOrderedAddMonoid R] (β γ : R) :
+    (affine n β γ).reflect = affine n γ β := by
+  ext p; simp [add_comm]
 
 theorem reflect_involutive : Function.Involutive (reflect (n := n) (R := R)) := reflect_reflect
 theorem reflect_injective : Function.Injective (reflect (n := n) (R := R)) :=

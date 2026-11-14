@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Shift
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Tactic.Abel
@@ -37,8 +36,6 @@ semistandard Young tableaux, `P.weight` agrees with Tau Ceti's `SemistandardYoun
 * `TauCeti.GTPattern.weight`: the torus weight `fun r => P.rowSum (r + 1) - P.rowSum r`.
 * `TauCeti.GTPattern.weightAddMonoidHom`: `GTPattern.weight` bundled as an additive monoid
   homomorphism `GTPattern n →+ (Fin n → ℤ)`.
-* `TauCeti.GTPattern.threeAdjointZeroEquivBool`: explicit bijection between the weight-`0`
-  Gelfand–Tsetlin fibre over the `SL 3` adjoint top row `(1, 0, -1)` and `Bool`.
 
 ## Main results
 
@@ -372,7 +369,7 @@ private theorem adjointZeroPattern_weight (b : Bool) :
 /-- Explicit bijection between the weight-`0` Gelfand–Tsetlin fibre over the rational `SL 3`
 adjoint top row `(1, 0, -1)` and `Bool`, corresponding to the two middle rows `(0, 0)` and
 `(1, -1)`. -/
-def threeAdjointZeroEquivBool :
+private def threeAdjointZeroEquivBool :
     {P : GTPattern 3 // P.topRow = ![1, 0, -1] ∧ P.weight = 0} ≃ Bool where
   toFun P := decide (P.1 0 2 = 1)
   invFun b := ⟨adjointZeroPattern b, adjointZeroPattern_topRow b, adjointZeroPattern_weight b⟩
@@ -404,11 +401,11 @@ def threeAdjointZeroEquivBool :
     · rw [(adjointZeroPattern b).entry_eq_zero (by omega), P.entry_eq_zero (by omega)]
   right_inv b := by cases b <;> simp
 
-@[simp] theorem threeAdjointZeroEquivBool_apply
+@[simp] private theorem threeAdjointZeroEquivBool_apply
     (P : {P : GTPattern 3 // P.topRow = ![1, 0, -1] ∧ P.weight = 0}) :
     threeAdjointZeroEquivBool P = decide (P.1 0 2 = 1) := (rfl)
 
-@[simp] theorem threeAdjointZeroEquivBool_symm_apply (b : Bool) (i j : ℕ) :
+@[simp] private theorem threeAdjointZeroEquivBool_symm_apply (b : Bool) (i j : ℕ) :
     (threeAdjointZeroEquivBool.symm b).1 i j =
       match i, j with
       | 0, 3 => 1
@@ -448,8 +445,9 @@ theorem rowSum_toGTPattern (T : SemistandardYoungTableau μ) (n : ℕ) {j : ℕ}
 /-- The weight of the Gelfand–Tsetlin pattern read off a semistandard Young tableau `T` agrees on
 `Fin n` with `T.content`. -/
 @[simp]
-theorem weight_toGTPattern (T : SemistandardYoungTableau μ) (n : ℕ) (r : Fin n) :
-    (T.toGTPattern n).weight r = (T.content r.val : ℤ) := by
+theorem weight_toGTPattern (T : SemistandardYoungTableau μ) (n : ℕ) :
+    (T.toGTPattern n).weight = fun r => (T.content r.val : ℤ) := by
+  ext r
   rw [TauCeti.GTPattern.weight_apply, T.rowSum_toGTPattern n r.isLt,
     T.rowSum_toGTPattern n r.isLt.le, Finset.sum_range_succ, add_sub_cancel_left]
 
@@ -466,7 +464,7 @@ theorem natCast_content_toTableau {n : ℕ} (P : GTPattern n) {μ : YoungDiagram
   have hinv : (P.toTableau hμ hP).toGTPattern n = P := by
     have h := congrArg Subtype.val ((gtPatternEquivSSYT n μ hμ).symm_apply_apply ⟨P, hP⟩)
     rwa [gtPatternEquivSSYT_symm_apply_coe, gtPatternEquivSSYT_apply_coe] at h
-  rw [← SemistandardYoungTableau.weight_toGTPattern (P.toTableau hμ hP) n r, hinv]
+  rw [← congrFun (SemistandardYoungTableau.weight_toGTPattern (P.toTableau hμ hP) n) r, hinv]
 
 /-- Under `TauCeti.GTPattern.toTableau`, the `ℕ`-valued content of the semistandard Young tableau
 attached to a pattern `P` of shape `μ` equals `(P.weight r).toNat` on `r : Fin n`. -/

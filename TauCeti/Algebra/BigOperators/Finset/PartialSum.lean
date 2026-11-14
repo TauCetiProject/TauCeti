@@ -63,6 +63,10 @@ theorem prefixSum_def (k : ℕ) (x : Fin n → M) :
 theorem prefixSum_zero (x : Fin n → M) : prefixSum 0 x = 0 := by
   simp [prefixSum]
 
+@[simp]
+theorem prefixSum_zero_right (k : ℕ) : prefixSum k (0 : Fin n → M) = 0 := by
+  simp [prefixSum]
+
 /-- Each further coordinate adds its value to the prefix sum. -/
 theorem prefixSum_succ {k : ℕ} (hk : k < n) (x : Fin n → M) :
     prefixSum (k + 1) x = prefixSum k x + x ⟨k, hk⟩ := by

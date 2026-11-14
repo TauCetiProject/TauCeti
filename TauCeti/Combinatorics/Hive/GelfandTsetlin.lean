@@ -62,8 +62,9 @@ onto the full weight-`(γ - λ)` fibre over `μ` (`fixedIntegerHiveEquivGTPatter
 ## Main results
 
 * `TauCeti.Hive.topRow_toGTPattern`, `TauCeti.Hive.weight_toGTPattern`,
-  `TauCeti.Hive.apply_eq_gtCompletion`, `TauCeti.Hive.apply_eq_gtCompletion_toCyclicGTPattern`: top
-  row, weight, and chart inversion for `toGTPattern` and `toCyclicGTPattern`.
+  `TauCeti.Hive.apply_eq_gtCompletion`,
+  `TauCeti.Hive.apply_eq_gtCompletion_toCyclicGTPattern_sub_sum`: top row, weight, and chart
+  inversion for `toGTPattern` and `toCyclicGTPattern`.
 * `TauCeti.Hive.isGTCompletable_iff_sum_sub_le`, `TauCeti.Hive.gt_reconstruction_iff`: explicit
   difference-sum form of `IsGTCompletable` and fixed-boundary reconstruction criterion.
 * `TauCeti.Hive.isGTCompletable_of_uniform_input_gap`,
@@ -230,10 +231,9 @@ theorem gtCompletion_def (lam : DominantWeight n) (P : GTPattern n) (i j : ℕ) 
     gtCompletion lam 0 i j = TauCeti.prefixSum j lam.1 := by
   simp [gtCompletion_def, GTPattern.zero_apply]
 
-theorem gtCompletion_zero_dominantWeight (P : GTPattern n) (i j : ℕ) :
+@[simp] theorem gtCompletion_zero_dominantWeight (P : GTPattern n) (i j : ℕ) :
     gtCompletion 0 P i j = ∑ k ∈ Finset.range i, P k j := by
-  have h0 : (0 : DominantWeight n).1 = 0 := funext DominantWeight.zero_apply
-  simp [gtCompletion_def, h0, TauCeti.prefixSum_def]
+  simp [gtCompletion_def]
 
 theorem gtCompletion_succ_left (lam : DominantWeight n) (P : GTPattern n) (i j : ℕ) :
     gtCompletion lam P (i + 1) j = gtCompletion lam P i j + P i j := by
@@ -391,11 +391,11 @@ theorem IsGTCompletable.nsmul {lam : DominantWeight n} {P : GTPattern n}
     (h : IsGTCompletable lam P) (k : ℕ) : IsGTCompletable (k • lam) (k • P) := fun i j hij hj => by
   simp only [gtCompletion_nsmul, ← smul_add]; exact nsmul_le_nsmul_right (h i j hij hj) k
 
-@[simp] theorem isGTCompletable_shift_left (lam : DominantWeight n) (m : ℤ) (P : GTPattern n) :
+@[simp] theorem isGTCompletable_shift_left_iff (lam : DominantWeight n) (m : ℤ) (P : GTPattern n) :
     IsGTCompletable (lam.shift m) P ↔ IsGTCompletable lam P := by
   simp only [isGTCompletable_iff_sum_sub_le, DominantWeight.shift_apply, add_sub_add_right_eq_sub]
 
-@[simp] theorem isGTCompletable_shift_right (lam : DominantWeight n) (P : GTPattern n) (m : ℤ) :
+@[simp] theorem isGTCompletable_shift_right_iff (lam : DominantWeight n) (P : GTPattern n) (m : ℤ) :
     IsGTCompletable lam (P.shift m) ↔ IsGTCompletable lam P := by
   simp only [isGTCompletable_iff_sum_sub_le]
   refine forall₄_congr fun i j _ hj => ?_
@@ -417,9 +417,9 @@ theorem IsGTCompletable.nsmul {lam : DominantWeight n} {P : GTPattern n}
     IsGTCompletable lam (GTPattern.const n m) := by
   have hc : GTPattern.const n m = (0 : GTPattern n).shift m := by
     rw [GTPattern.shift_eq_add_const, zero_add]
-  rw [hc, isGTCompletable_shift_right]; exact isGTCompletable_zero_right lam
+  rw [hc, isGTCompletable_shift_right_iff]; exact isGTCompletable_zero_right lam
 
-theorem isGTCompletable_toGTPattern (h : IntegerHive n) :
+@[simp] theorem isGTCompletable_toGTPattern (h : IntegerHive n) :
     IsGTCompletable (h.boundaryWeight 0) h.toGTPattern := by
   intro i j hij hj
   simp only [← h.apply_ofChart_eq_gtCompletion hij (by omega),
@@ -467,7 +467,7 @@ theorem ofGTPattern_ofChart (lam : DominantWeight n) (P : GTPattern n)
   simp [Nat.sub_sub_self hj]
 
 @[simp] theorem ofGTPattern_zero (h : IsGTCompletable (0 : DominantWeight n) 0) :
-    ofGTPattern 0 0 h = 0 := by ext p; simp [TauCeti.prefixSum_def]
+    ofGTPattern 0 0 h = 0 := by ext p; simp
 
 theorem ofGTPattern_add {lam₁ lam₂ : DominantWeight n} {P₁ P₂ : GTPattern n}
     (h₁ : IsGTCompletable lam₁ P₁) (h₂ : IsGTCompletable lam₂ P₂)
@@ -507,7 +507,7 @@ theorem ofGTPattern_shift {lam : DominantWeight n} {P : GTPattern n} (a b : ℤ)
        gtCompletion_succ_left, add_sub_cancel_left]
   · exact GTPattern.entry_eq_zero _ (by omega) |>.trans (P.entry_eq_zero (by omega)).symm
 
-@[simp] theorem boundary_zero_ofGTPattern (lam : DominantWeight n) (P : GTPattern n)
+@[simp] theorem boundary_ofGTPattern_zero (lam : DominantWeight n) (P : GTPattern n)
     (hP : IsGTCompletable lam P) : (ofGTPattern lam P hP).boundary 0 = lam.1 := by
   ext r
   have hs : Vertex.edgePoint n 0 r.succ =
@@ -518,45 +518,45 @@ theorem ofGTPattern_shift {lam : DominantWeight n} {P : GTPattern n} (a b : ℤ)
     gtCompletion_zero_left, gtCompletion_zero_left, TauCeti.prefixSum_succ r.isLt,
     add_sub_cancel_left]
 
-@[simp] theorem boundaryWeight_zero_ofGTPattern (lam : DominantWeight n) (P : GTPattern n)
+@[simp] theorem boundaryWeight_ofGTPattern_zero (lam : DominantWeight n) (P : GTPattern n)
     (hP : IsGTCompletable lam P) :
     (ofGTPattern lam P hP).boundaryWeight 0 = lam := Subtype.ext (by simp)
 
-@[simp] theorem boundary_one_ofGTPattern (lam : DominantWeight n) (P : GTPattern n)
+@[simp] theorem boundary_ofGTPattern_one (lam : DominantWeight n) (P : GTPattern n)
     (hP : IsGTCompletable lam P) : (ofGTPattern lam P hP).boundary 1 = P.topRow := by
   rw [← topRow_toGTPattern, toGTPattern_ofGTPattern]
 
-@[simp] theorem boundaryWeight_one_ofGTPattern (lam : DominantWeight n) (P : GTPattern n)
+@[simp] theorem boundaryWeight_ofGTPattern_one (lam : DominantWeight n) (P : GTPattern n)
     (hP : IsGTCompletable lam P) :
     (ofGTPattern lam P hP).boundaryWeight 1 = P.topWeight := Subtype.ext (by simp)
 
-theorem coe_dual_boundaryWeight_two_ofGTPattern (lam : DominantWeight n) (P : GTPattern n)
+theorem coe_dual_boundaryWeight_ofGTPattern_two (lam : DominantWeight n) (P : GTPattern n)
     (hP : IsGTCompletable lam P) :
     ((ofGTPattern lam P hP).boundaryWeight 2).dual.1 = lam.1 + P.weight := by
   have hw := weight_toGTPattern (ofGTPattern lam P hP)
-  rw [toGTPattern_ofGTPattern, boundary_zero_ofGTPattern] at hw
+  rw [toGTPattern_ofGTPattern, boundary_ofGTPattern_zero] at hw
   ext r; have hr := congrFun hw r; simp only [Pi.sub_apply, Pi.add_apply] at hr ⊢; linarith
 
 /-- Whenever `P` is hive-completable over `lam`, `lam.1 + P.weight` is automatically antitone
 (dominant), as the dual of side `2` of `ofGTPattern lam P hP`. -/
 theorem antitone_add_weight_of_isGTCompletable {lam : DominantWeight n} {P : GTPattern n}
     (hP : IsGTCompletable lam P) : Antitone (lam.1 + P.weight) :=
-  coe_dual_boundaryWeight_two_ofGTPattern lam P hP ▸
+  coe_dual_boundaryWeight_ofGTPattern_two lam P hP ▸
     ((ofGTPattern lam P hP).boundaryWeight 2).dual.2
 
-@[simp] theorem boundaryWeight_two_ofGTPattern (lam : DominantWeight n) (P : GTPattern n)
+@[simp] theorem boundaryWeight_ofGTPattern_two (lam : DominantWeight n) (P : GTPattern n)
     (hP : IsGTCompletable lam P) :
     (ofGTPattern lam P hP).boundaryWeight 2 =
       DominantWeight.dual ⟨lam.1 + P.weight, antitone_add_weight_of_isGTCompletable hP⟩ := by
   rw [← DominantWeight.dual_dual ((ofGTPattern lam P hP).boundaryWeight 2)]
   exact congrArg DominantWeight.dual
-    (Subtype.ext (coe_dual_boundaryWeight_two_ofGTPattern lam P hP))
+    (Subtype.ext (coe_dual_boundaryWeight_ofGTPattern_two lam P hP))
 
-@[simp] theorem boundary_two_ofGTPattern (lam : DominantWeight n) (P : GTPattern n)
+@[simp] theorem boundary_ofGTPattern_two (lam : DominantWeight n) (P : GTPattern n)
     (hP : IsGTCompletable lam P) :
     (ofGTPattern lam P hP).boundary 2 = fun r => -(lam.1 r.rev + P.weight r.rev) := by
   ext r
-  have hd := congrFun (coe_dual_boundaryWeight_two_ofGTPattern lam P hP) r.rev
+  have hd := congrFun (coe_dual_boundaryWeight_ofGTPattern_two lam P hP) r.rev
   simp only [DominantWeight.dual_apply, coe_boundaryWeight, Fin.rev_rev, Pi.add_apply] at hd
   linarith
 
@@ -565,7 +565,7 @@ theorem boundary_ofGTPattern_eq_productBoundary {lam μ γ : DominantWeight n} {
     (ofGTPattern lam P hP).boundary = productBoundary lam μ γ := by
   ext s r; fin_cases s
   · simp
-  · rw [Fin.mk_one, boundary_one_ofGTPattern, hTop, productBoundary_one]
+  · rw [Fin.mk_one, boundary_ofGTPattern_one, hTop, productBoundary_one]
   · simp [hWeight]
 
 @[simp] theorem ofGTPattern_toGTPattern (h : IntegerHive n) :
@@ -579,7 +579,7 @@ def integerHiveEquivGTPattern (n : ℕ) :
   toFun h := ⟨(h.boundaryWeight 0, h.toGTPattern), h.isGTCompletable_toGTPattern⟩
   invFun lp := ofGTPattern lp.1.1 lp.1.2 lp.2
   left_inv h := h.ofGTPattern_toGTPattern
-  right_inv lp := Subtype.ext <| Prod.ext (boundaryWeight_zero_ofGTPattern lp.1.1 lp.1.2 lp.2)
+  right_inv lp := Subtype.ext <| Prod.ext (boundaryWeight_ofGTPattern_zero lp.1.1 lp.1.2 lp.2)
     (toGTPattern_ofGTPattern lp.1.1 lp.1.2 lp.2)
 
 @[simp] theorem integerHiveEquivGTPattern_apply_coe (h : IntegerHive n) :
@@ -723,7 +723,7 @@ theorem rowSum_toCyclicGTPattern (h : IntegerHive n) {j : ℕ} (hj : j ≤ n) :
     h.toCyclicGTPattern.weight = (h.boundaryWeight 1).dual.1 - h.boundary 2 := by
   simp [toCyclicGTPattern_def, boundary_rotate, boundaryWeight_rotate]
 
-theorem isGTCompletable_toCyclicGTPattern (h : IntegerHive n) :
+@[simp] theorem isGTCompletable_toCyclicGTPattern (h : IntegerHive n) :
     IsGTCompletable (h.boundaryWeight 2) h.toCyclicGTPattern := by
   have hb : h.rotate.rotate.boundaryWeight 0 = h.boundaryWeight 2 := by
     rw [boundaryWeight_rotate, boundaryWeight_rotate]; rfl
@@ -749,7 +749,7 @@ theorem rotate_ofGTPattern_apply (lam : DominantWeight n) (P : GTPattern n)
 /-- **Cyclic chart inversion formula**: every integer hive `h` is recovered at `p : Vertex n` from
 `h.boundaryWeight 2` and `h.toCyclicGTPattern` as
 `gtCompletion (h.boundaryWeight 2) h.toCyclicGTPattern p.y (n - p.z) - ∑ r, h.boundary 2 r`. -/
-theorem apply_eq_gtCompletion_toCyclicGTPattern (h : IntegerHive n) (p : Vertex n) :
+theorem apply_eq_gtCompletion_toCyclicGTPattern_sub_sum (h : IntegerHive n) (p : Vertex n) :
     h p =
       gtCompletion (h.boundaryWeight 2) h.toCyclicGTPattern p.y (n - p.z) -
         ∑ r : Fin n, h.boundary 2 r := by
@@ -780,6 +780,12 @@ theorem cyclicFixedIntegerHiveEquivGTPattern_symm_apply (lam μ ν : DominantWei
     ((cyclicFixedIntegerHiveEquivGTPattern lam μ ν).symm P).1 p =
       gtCompletion ν P.1 p.y (n - p.z) - ∑ r : Fin n, ν.1 r := by
   rw [cyclicFixedIntegerHiveEquivGTPattern_symm_apply_coe, rotate_ofGTPattern_apply]
+
+theorem hiveCount_cyclic_eq_card_gtPattern (lam μ ν : DominantWeight n) :
+    hiveCount ![lam.1, μ.1, ν.1] =
+      Nat.card {P : GTPattern n //
+        P.topRow = lam.1 ∧ P.weight = μ.dual.1 - ν.1 ∧ IsGTCompletable ν P} := by
+  rw [hiveCount_cyclic_eq_hiveCount_productBoundary, hiveCount_productBoundary_eq_card_gtPattern]
 
 end CyclicOrientation
 
