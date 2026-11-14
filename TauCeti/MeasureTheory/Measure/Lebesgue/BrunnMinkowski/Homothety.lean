@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Equality
--- Proof-only: a convex set has positive volume exactly when its interior is nonempty,
--- containment in an open convex set from directional images, and rescaling to volume one.
+-- Proof-only: a convex set has positive volume exactly when its interior is nonempty, and
+-- containment in an open convex set from directional images.
 import TauCeti.Analysis.Convex.Measure
 import TauCeti.Analysis.Convex.Separation
+-- Proof-only: rescaling a set to volume one.
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!

@@ -278,17 +278,18 @@ theorem _root_.Convex.hasDerivAt_volume_real_sep_inner_le {s : Set E} (hs : Conv
     HasDerivAt (fun c ↦ volume.real {x ∈ s | ⟪e, x⟫ ≤ c})
       (volume.real {y : (ℝ ∙ e)ᗮ | (y : E) + c • e ∈ s}) c := by
   set φ : ℝ → ℝ := fun t ↦ volume.real {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s}
-  have hfin (t : ℝ) := (hsb.volume_hyperplaneSection_lt_top e t).ne
   have hm := measurable_volume_hyperplaneSection e he hsm
   -- `φ` is integrable since its integral is the volume of `s`.
   have hφi : Integrable φ := integrable_toReal_of_lintegral_ne_top hm.aemeasurable (by
     rw [← volume_eq_lintegral_volume_hyperplaneSection e he hsm.nullMeasurableSet]
     exact hsb.measure_lt_top.ne)
-  -- From a height `m - 1` below `s`, the volume below `c'` is the integral of `φ` up to `c'`.
+  -- From a lower bound `m` of the heights in `s`, the volume below `c'` is the integral of `φ`
+  -- up to `c'`.
   obtain ⟨m, hmin⟩ := ((innerSL ℝ e).lipschitzWith.isBounded_image hsb).bddBelow
-  have hvol : (fun c' ↦ volume.real {x ∈ s | ⟪e, x⟫ ≤ c'}) = fun c' ↦ ∫ t in (m - 1)..c', φ t :=
-    funext <| volume_real_sep_inner_le_eq_intervalIntegral e he hsm.nullMeasurableSet
-      (fun x hx ↦ (sub_one_lt m).trans_le (hmin ⟨x, hx, rfl⟩)) hfin
+  have hvol : (fun c' ↦ volume.real {x ∈ s | ⟪e, x⟫ ≤ c'}) = fun c' ↦ ∫ t in m..c', φ t :=
+    funext fun c' ↦ volume_real_sep_inner_le_eq_intervalIntegral e he hsm.nullMeasurableSet
+      (fun x hx ↦ hmin ⟨x, hx, rfl⟩) c'
+      (ae_of_all _ fun t ↦ hsb.volume_hyperplaneSection_lt_top e t)
   -- By Brunn's concavity principle `φ` is continuous at the interior height `c`.
   have hcont : ContinuousAt φ c :=
     (hs.continuousOn_volume_real_hyperplaneSection he).continuousAt
