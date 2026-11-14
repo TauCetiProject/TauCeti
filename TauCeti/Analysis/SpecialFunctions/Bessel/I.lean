@@ -283,35 +283,12 @@ open Complex (I)
 
 private theorem integral_exp_mul_cos_mul_cexp_natCast (κ : ℝ) (n : ℕ) :
     ∫ θ in -π..π, (exp (κ * cos θ) : ℂ) * Complex.exp (n * θ * I) = 2 * π * besselI n κ := by
-  -- Integrate `e^{κ cos θ} = ∑ₖ κᵏ cosᵏ θ / k!` termwise and expand
-  -- `cosᵏ θ = 2⁻ᵏ ∑ₘ (k choose m) e^{i (2m - k) θ}`; orthogonality of the characters on `[-π, π]`
-  -- leaves only the terms `k = 2 l + n`, `m = l`, which are those of the series of `I_n(κ)`.
-  have h := hasSum_integral_exp_mul_cos_mul_cexp κ n
-  simp only [TauCeti.integral_cos_pow_mul_cexp] at h
-  rw [Int.cast_natCast] at h
-  -- Only the exponents `k = 2 l + n` contribute.
-  have hz : ∀ k ∉ Set.range (fun l : ℕ => 2 * l + n),
-      ((κ ^ k / k ! : ℝ) : ℂ) * (∑ m ∈ Finset.range (k + 1), (1 / 2 : ℂ) ^ k * k.choose m *
-        if 2 * (m : ℤ) - k + n = 0 then 2 * (π : ℂ) else 0) = 0 := by
-    intro k hk
-    refine mul_eq_zero_of_right _ (Finset.sum_eq_zero fun m _ => ?_)
-    rw [ite_eq_right fun hm => hk ⟨m, by dsimp only; omega⟩, mul_zero]
-  have hinj : Function.Injective fun l : ℕ => 2 * l + n := fun a b hab => by simpa using hab
-  rw [← hinj.hasSum_iff hz] at h
+  have h := Complex.hasSum_pow_div_factorial_integral_exp_mul_cos_mul_exp (κ : ℂ) n
+  simp only [← Complex.ofReal_mul, ← Complex.ofReal_exp] at h
   refine h.unique ?_
-  -- At `k = 2 l + n` only `m = l` contributes, and the term is that of the series of `I_n(κ)`.
   convert (Complex.hasSum_ofReal.mpr (hasSum_besselI_natCast n κ)).mul_left (2 * (π : ℂ))
     using 2 with l
-  dsimp only [Function.comp_apply]
-  rw [Finset.sum_eq_single l (fun m _ hm => by rw [ite_eq_right (by omega), mul_zero])
-    (fun hl => absurd (Finset.mem_range.mpr (by omega)) hl), ite_eq_left (by push_cast; ring)]
-  have hfac := Nat.choose_mul_factorial_mul_factorial (by omega : l ≤ 2 * l + n)
-  have hsub : 2 * l + n - l = l + n := by omega
-  rw [hsub] at hfac
-  have hc : ((2 * l + n).choose l : ℂ) ≠ 0 := by exact_mod_cast (Nat.choose_pos (by omega)).ne'
-  rw [← hfac]
   push_cast
-  field_simp
   ring
 
 /-- **The circle integral of `I_n`, complex form.** For an integer `n` and real `κ`,

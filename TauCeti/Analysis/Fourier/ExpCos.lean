@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.AddCircle
-public import TauCeti.Analysis.SpecialFunctions.BesselI
+public import TauCeti.Analysis.SpecialFunctions.Bessel.I
 
 /-!
 # The Fourier coefficients of `e^{κ cos θ}` on the circle
 
-`TauCeti/Analysis/SpecialFunctions/BesselI.lean` evaluates the interval integrals
+`TauCeti/Analysis/SpecialFunctions/Bessel/I.lean` evaluates the interval integrals
 `∫_{-π}^{π} e^{κ cos θ} e^{i n θ} dθ = 2π I_{|n|}(κ)`. This file restates them on the circle
 `AddCircle (2 * π)` against its Haar probability measure `AddCircle.haarAddCircle`, with the
 cosine centred at a location `m` on the circle. Integrating against `haarAddCircle` is integrating
