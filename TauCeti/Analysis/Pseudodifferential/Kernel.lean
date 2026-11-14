@@ -690,17 +690,18 @@ open ContinuousLinearMap
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
-  {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
-  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+  {V W U : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
+  [NormedAddCommGroup U] [InnerProductSpace ℂ U] [CompleteSpace U]
 
 /-- The adjoint of the kernel `K_b(z, y)` is the inverse Fourier transform, evaluated at `y`, of
 `ζ ↦ 𝐞 (-⟪ζ, z⟫) • b(z, 2πζ)†`. -/
-theorem adjoint_quantizationKernel_eq_fourierInv {b : E × E → V →L[ℂ] W} {z : E}
+theorem adjoint_quantizationKernel_eq_fourierInv {b : E × E → V →L[ℂ] U} {z : E}
     (hb : Integrable (fun ξ ↦ b (z, ξ))) (y : E) :
     adjoint (quantizationKernel b z y) =
       𝓕⁻ (fun ζ ↦ 𝐞 (-⟪ζ, z⟫) • adjoint (b (z, (2 * π) • ζ))) y := by
   rw [quantizationKernel_def, ← adjointRealCLM_apply,
-    ← (adjointRealCLM (V := V) (W := W)).integral_comp_comm
+    ← (adjointRealCLM (V := V) (W := U)).integral_comp_comm
       (integrable_quantizationKernel_integrand hb y), Real.fourierInv_eq]
   refine congrArg (integral volume) (funext fun ζ ↦ ?_)
   rw [adjointRealCLM_apply, smul_smul, Circle.smul_def, Circle.smul_def,
@@ -715,7 +716,8 @@ integrable, the second one is continuous and `y ↦ K_b(z, y)` is integrable, th
 `∫ K_a(x, y) K_b(z, y)† dy = ∫ exp(2πi ⟪ζ, x - z⟫) a(x, 2πζ) b(z, 2πζ)† dζ`,
 
 the kernel at `(x, z)` of the coefficient `(x', ξ) ↦ a(x', ξ) b(z, ξ)†`. -/
-theorem integral_quantizationKernel_comp_adjoint {a b : E × E → V →L[ℂ] W} {x z : E}
+theorem integral_quantizationKernel_comp_adjoint {a : E × E → V →L[ℂ] W}
+    {b : E × E → V →L[ℂ] U} {x z : E}
     (ha : Integrable (fun ξ ↦ a (x, ξ))) (hb : Integrable (fun ξ ↦ b (z, ξ)))
     (hbc : Continuous (fun ξ ↦ b (z, ξ))) (hK : Integrable (quantizationKernel b z)) :
     ∫ y, quantizationKernel a x y ∘L adjoint (quantizationKernel b z y) =
@@ -724,19 +726,19 @@ theorem integral_quantizationKernel_comp_adjoint {a b : E × E → V →L[ℂ] W
   -- of `G`. Self-adjointness of the Fourier transform moves the transform from the first factor
   -- to the second, where it inverts the inverse transform.
   set g : E → V →L[ℂ] W := fun ζ ↦ 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ)
-  set G : E → W →L[ℂ] V := fun ζ ↦ 𝐞 (-⟪ζ, z⟫) • adjoint (b (z, (2 * π) • ζ))
+  set G : E → U →L[ℂ] V := fun ζ ↦ 𝐞 (-⟪ζ, z⟫) • adjoint (b (z, (2 * π) • ζ))
   have hg : Integrable g := by
     simpa only [sub_zero] using integrable_quantizationKernel_integrand ha 0
   have hGc : Continuous G := by
     have : Continuous fun ζ : E ↦ adjoint (b (z, (2 * π) • ζ)) :=
-      (adjoint (𝕜 := ℂ) (E := V) (F := W)).continuous.comp (hbc.comp (continuous_const_smul _))
+      (adjoint (𝕜 := ℂ) (E := V) (F := U)).continuous.comp (hbc.comp (continuous_const_smul _))
     exact (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const).neg).smul this
   have hG : Integrable G := by
     refine (hb.comp_smul two_pi_pos.ne').norm.mono' hGc.aestronglyMeasurable
       (ae_of_all _ fun ζ ↦ ?_)
-    rw [Circle.norm_smul (E := W →L[ℂ] V), LinearIsometryEquiv.norm_map]
+    rw [Circle.norm_smul (E := U →L[ℂ] V), LinearIsometryEquiv.norm_map]
   have hK' : Integrable (fun y ↦ adjoint (quantizationKernel b z y)) := by
-    simpa only [adjointRealCLM_apply] using (adjointRealCLM (V := V) (W := W)).integrable_comp hK
+    simpa only [adjointRealCLM_apply] using (adjointRealCLM (V := V) (W := U)).integrable_comp hK
   have hKG : (fun y ↦ adjoint (quantizationKernel b z y)) = 𝓕⁻ G :=
     funext (adjoint_quantizationKernel_eq_fourierInv hb)
   have hFG : Integrable (𝓕 G) := by
@@ -745,7 +747,7 @@ theorem integral_quantizationKernel_comp_adjoint {a b : E × E → V →L[ℂ] W
     simpa [fourierInv_eq_fourier_neg] using this.comp_neg
   have hL : Continuous fun p : E × E ↦ (innerₗ E).flip p.1 p.2 :=
     continuous_snd.inner continuous_fst
-  have h := VectorFourier.integral_bilin_fourierIntegral_eq_flip (compL ℂ W V W)
+  have h := VectorFourier.integral_bilin_fourierIntegral_eq_flip (compL ℂ U V W)
     Real.continuous_fourierChar hL hg hK'
   simp only [g, fourierIntegral_flip_eq_quantizationKernel, compL_apply, LinearMap.flip_flip] at h
   have hFKG : VectorFourier.fourierIntegral 𝐞 volume (innerₗ E)

@@ -70,12 +70,13 @@ namespace Symbol
 section Orthogonality
 
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
-  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W] {m₁ m₂ : ℝ}
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+  {U : Type*} [NormedAddCommGroup U] [InnerProductSpace ℂ U] [CompleteSpace U] {m₁ m₂ : ℝ}
 
 /-- **Orthogonality of quantizations.** Let `a` and `b` be uniform symbols of orders below `-n`.
 If `a(x, ξ) b(z, ξ)† = 0` for all positions `x`, `z` and every frequency `ξ`, for instance if the
 frequency supports of `a` and `b` are disjoint, then `Op(a) Op(b)† = 0` on `L²`. -/
-theorem quantizeLp_comp_adjoint_eq_zero (a : Symbol n V W m₁) (b : Symbol n V W m₂)
+theorem quantizeLp_comp_adjoint_eq_zero (a : Symbol n V W m₁) (b : Symbol n V U m₂)
     (hm₁ : m₁ < -n) (hm₂ : m₂ < -n) (ha : a.IsUniform) (hb : b.IsUniform)
     (h : ∀ x z ξ, a.coefficient (x, ξ) ∘L adjoint (b.coefficient (z, ξ)) = 0) :
     a.quantizeLp 2 hm₁ ha ∘L adjoint (b.quantizeLp 2 hm₂ hb) = 0 := by
@@ -198,8 +199,10 @@ theorem IsUniform.exists_norm_quantizeLittlewoodPaleyPiece_le (ha : a.IsUniform)
     rw [List.length_replicate]
     push_cast
     exact mul_le_mul (hD i) (le_of_eq (by ring_nf)) (by positivity) (hC₀.trans hD₀)
-  · rw [hpow, show ((2 : ℝ) ^ j) ^ m = ((2 : ℝ) ^ j) ^ (m + n) * ((2 : ℝ) ^ j) ^ (-(n : ℝ)) by
-      rw [← Real.rpow_add ht]; ring_nf]
+  · have hsplit : ((2 : ℝ) ^ j) ^ m = ((2 : ℝ) ^ j) ^ (m + n) * ((2 : ℝ) ^ j) ^ (-(n : ℝ)) := by
+      rw [← Real.rpow_add ht]
+      ring_nf
+    rw [hpow, hsplit]
     simp only [K]
     ring
 
@@ -210,14 +213,15 @@ end Pieces
 section PiecesOrthogonality
 
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
-  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W] {m m' : ℝ}
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+  {U : Type*} [NormedAddCommGroup U] [InnerProductSpace ℂ U] [CompleteSpace U] {m m' : ℝ}
   (φ : ContDiffBump (0 : CoordinateSpace n))
 
 /-- **Frequency orthogonality of the Littlewood–Paley pieces.** If `2^j φ.rOut ≤ 2^k φ.rIn`, the
 `j`-th piece of `a` and the `(k + 1)`-st piece of `b` have disjoint frequency supports, so
 `Op(ψⱼ a) Op(ψₖ₊₁ b)† = 0` on `L²`. -/
 theorem quantizeLittlewoodPaleyPiece_comp_adjoint_succ_eq_zero (a : Symbol n V W m)
-    (b : Symbol n V W m') (ha : a.IsUniform) (hb : b.IsUniform) {j k : ℕ}
+    (b : Symbol n V U m') (ha : a.IsUniform) (hb : b.IsUniform) {j k : ℕ}
     (hjk : 2 ^ j * φ.rOut ≤ 2 ^ k * φ.rIn) :
     quantizeLittlewoodPaleyPiece 2 φ a ha j ∘L
       adjoint (quantizeLittlewoodPaleyPiece 2 φ b hb (k + 1)) = 0 := by
@@ -232,7 +236,7 @@ theorem quantizeLittlewoodPaleyPiece_comp_adjoint_succ_eq_zero (a : Symbol n V W
 /-- **Frequency orthogonality of the Littlewood–Paley pieces**, in the other order: if
 `2^j φ.rOut ≤ 2^k φ.rIn`, then `Op(ψₖ₊₁ a) Op(ψⱼ b)† = 0` on `L²`. -/
 theorem quantizeLittlewoodPaleyPiece_succ_comp_adjoint_eq_zero (a : Symbol n V W m)
-    (b : Symbol n V W m') (ha : a.IsUniform) (hb : b.IsUniform) {j k : ℕ}
+    (b : Symbol n V U m') (ha : a.IsUniform) (hb : b.IsUniform) {j k : ℕ}
     (hjk : 2 ^ j * φ.rOut ≤ 2 ^ k * φ.rIn) :
     quantizeLittlewoodPaleyPiece 2 φ a ha (k + 1) ∘L
       adjoint (quantizeLittlewoodPaleyPiece 2 φ b hb j) = 0 := by
@@ -249,7 +253,7 @@ depending only on the bump function `φ`, such that `Op(ψⱼ a) Op(ψₖ b)† 
 `Op(ψₖ a) Op(ψⱼ b)† = 0` on `L²` whenever `j + N ≤ k`. In the Cotlar–Stein lemma only the
 finitely many terms with `|j - k| < N` remain in the sums of `√‖Tⱼ Tₖ†‖`. -/
 theorem exists_quantizeLittlewoodPaleyPiece_comp_adjoint_eq_zero :
-    ∃ N : ℕ, ∀ {m m' : ℝ} (a : Symbol n V W m) (b : Symbol n V W m') (ha : a.IsUniform)
+    ∃ N : ℕ, ∀ {m m' : ℝ} (a : Symbol n V W m) (b : Symbol n V U m') (ha : a.IsUniform)
       (hb : b.IsUniform) (j k : ℕ), j + N ≤ k →
       quantizeLittlewoodPaleyPiece 2 φ a ha j ∘L
           adjoint (quantizeLittlewoodPaleyPiece 2 φ b hb k) = 0 ∧
