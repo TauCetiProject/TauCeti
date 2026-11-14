@@ -158,8 +158,9 @@ the quotient by the nilradical. -/
 @[simp]
 theorem quotientNilradicalHomeomorph_symm_apply_mk (x : A →ₐ[k] R) (a : A) :
     (quotientNilradicalHomeomorph k A R).symm x (Ideal.Quotient.mk (nilradical A) a) = x a := by
-  conv_rhs => rw [← (quotientNilradicalHomeomorph k A R).apply_symm_apply x,
-    quotientNilradicalHomeomorph_apply, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
+  rw [quotientNilradicalHomeomorph, Homeomorph.homeomorph_mk_coe_symm, Equiv.coe_fn_symm_mk,
+    Ideal.Quotient.liftₐ_apply]
+  exact Ideal.Quotient.lift_mk _ _ _
 end Nilradical
 
 /-- For a family of algebra maps out of a tensor product, continuity of evaluation on pure

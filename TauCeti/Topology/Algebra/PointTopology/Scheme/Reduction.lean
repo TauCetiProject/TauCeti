@@ -58,45 +58,6 @@ noncomputable abbrev reductionMap :
 theorem reductionMap_injective : Function.Injective (reductionMap (R := R) f) :=
   map_injective _ _
 
-/-- Over an affine open chart `i : Spec A → X`, a lift of `Spec (A ⧸ nilradical A) → Spec A → X`
-to the reduction is an open immersion: it identifies `Spec (A ⧸ nilradical A)` with the pullback
-of `i` along `X.nilradical.subschemeι`. -/
-private theorem isOpenImmersion_of_comp_subschemeι (A : CommAlgCat.{u} k)
-    (i : Spec (.of A) ⟶ X) [IsOpenImmersion i]
-    (j : Spec (.of (A ⧸ nilradical A)) ⟶ X.nilradical.subscheme)
-    (hj : j ≫ X.nilradical.subschemeι =
-      Spec.map (CommRingCat.ofHom (Ideal.Quotient.mkₐ k (nilradical A)).toRingHom) ≫ i) :
-    IsOpenImmersion j := by
-  let q := Spec.map (CommRingCat.ofHom (Ideal.Quotient.mkₐ k (nilradical A)).toRingHom)
-  have hsurj := Ideal.Quotient.mkₐ_surjective k (nilradical A)
-  let l := Limits.pullback.lift q j hj.symm
-  have hl : l ≫ Limits.pullback.fst i X.nilradical.subschemeι = q :=
-    Limits.pullback.lift_fst _ _ _
-  have : IsClosedImmersion (l ≫ Limits.pullback.fst i X.nilradical.subschemeι) := by
-    rw [hl]
-    exact IsClosedImmersion.spec_of_surjective _ hsurj
-  have := IsClosedImmersion.of_comp_isClosedImmersion l
-    (Limits.pullback.fst i X.nilradical.subschemeι)
-  have : Surjective l := by
-    -- Every prime of `A` contains the nilradical, so `q` is surjective.
-    have hq : Function.Surjective q := by
-      intro z
-      have : z ∈ Set.range
-          (PrimeSpectrum.comap (Ideal.Quotient.mkₐ k (nilradical A)).toRingHom) := by
-        rw [range_comap_of_surjective _ _ hsurj, Ideal.Quotient.mkₐ_toRingHom, Ideal.mk_ker,
-          PrimeSpectrum.zeroLocus_nilradical]
-        trivial
-      exact this
-    refine ⟨fun p ↦ ?_⟩
-    obtain ⟨y, hy⟩ := hq (Limits.pullback.fst i X.nilradical.subschemeι p)
-    refine ⟨y, (Limits.pullback.fst i X.nilradical.subschemeι).isClosedEmbedding.injective ?_⟩
-    rw [← Scheme.Hom.comp_apply, hl, hy]
-  have : IsReduced (Limits.pullback i X.nilradical.subschemeι) :=
-    isReduced_of_isOpenImmersion (Limits.pullback.snd i X.nilradical.subschemeι)
-  have := isIso_of_isClosedImmersion_of_surjective l
-  rw [← Limits.pullback.lift_snd q j hj.symm]
-  infer_instance
-
 variable [IsReduced R]
 
 /-- The `R`-point of the reduction through which an `R`-point of `X` factors, for `R` reduced. -/
@@ -167,7 +128,9 @@ private theorem reductionLift_comp_chartPoint (A : CommAlgCat.{u} k) (i : Spec (
   have hy : y.val ≫ X.nilradical.subschemeι =
       Spec.map (CommRingCat.ofHom (Ideal.Quotient.mkₐ k (nilradical A)).toRingHom) ≫ i := by
     rw [reductionLift_val_subschemeι, chartPoint_val]
-  refine ⟨y.val, y.property, isOpenImmersion_of_comp_subschemeι A i y.val hy,
+  refine ⟨y.val, y.property,
+    Scheme.isOpenImmersion_of_comp_nilradical_subschemeι (A := .of A) i y.val
+      (by rw [hy, Ideal.Quotient.mkₐ_toRingHom]),
     funext fun x ↦ reductionMap_injective f ?_⟩
   rw [Function.comp_apply, reductionMap_reductionLift, Function.comp_apply, reductionMap,
     map_chartPoint]
@@ -175,7 +138,7 @@ private theorem reductionLift_comp_chartPoint (A : CommAlgCat.{u} k) (i : Spec (
   conv_lhs => rw [← (PointTopology.quotientNilradicalHomeomorph k A R).apply_symm_apply x]
   rw [chartPoint_val, chartPoint_val, hy, PointTopology.quotientNilradicalHomeomorph_apply,
     AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom, CommRingCat.ofHom_comp, Spec.map_comp_assoc]
-  rfl
+  simp only [AlgHom.toRingHom_eq_coe]
 
 /-- Over a reduced topological ring, lifting points to the reduction is continuous. -/
 @[continuity, fun_prop]
