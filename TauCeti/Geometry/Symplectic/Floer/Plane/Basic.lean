@@ -60,7 +60,9 @@ Given a period-one Hamiltonian `H`, the perturbation `TauCeti.Floer.PSSPlane.per
 * `TauCeti.Floer.PSSPlane.perturbation_negative`: the perturbation of the negative plane given
   by `H` is that of the positive plane given by the reversed Hamiltonian `-H(-t)`; correspondingly
   the end lift of the negative plane is that of the positive plane composed with `z ↦ -z`
-  (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative`).
+  (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative`), so the loops of the negative plane are
+  those of the positive plane traversed backwards
+  (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative_endSign_mul`).
 
 The angular coordinate is defined only modulo `1`, which is why `H` is required to have period
 one. Smoothness across the ray where it jumps reuses the corresponding statement for the end at
@@ -162,6 +164,18 @@ theorem cylindricalEndLift_negative (z : ℂ) :
     negative.cylindricalEndLift z = positive.cylindricalEndLift (-z) := by
   simp only [cylindricalEndLift_def, endSign_negative, endSign_positive]
   congr 1
+  push_cast
+  ring
+
+/-- The loops of the negative plane along its end are those of the positive plane traversed
+backwards: the point at angle `t` on the circle `s = -R` of the negative plane is the point at
+angle `-t` on the circle `s = R` of the positive plane. -/
+theorem cylindricalEndLift_negative_endSign_mul (R t : ℝ) :
+    negative.cylindricalEndLift (↑(negative.endSign * R) + ↑t * Complex.I) =
+      positive.cylindricalEndLift (↑(positive.endSign * R) + ↑(-t) * Complex.I) := by
+  rw [cylindricalEndLift_negative]
+  congr 1
+  simp only [endSign_negative, endSign_positive]
   push_cast
   ring
 

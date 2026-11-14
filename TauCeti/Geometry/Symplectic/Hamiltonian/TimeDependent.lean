@@ -52,6 +52,9 @@ the autonomous Hamiltonian vector field.
   particular (`..._self`) the energy changes at the rate `∂_t H`.
 * `TauCeti.SymplecticForm.forall_apply_timeDependentHamiltonianFlow_eq_iff`: a differentiable
   `F` is conserved by the evolution exactly when `∂_t F + {F_t, H_t} = 0`.
+* `TauCeti.SymplecticForm.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg`: reversing
+  time turns a solution of `y' = X_{-G}(y)` into a solution of `x' = X_G(x)`; for instance a
+  solution for the reversed Hamiltonian `-H_{-t}` into a solution for `H_t`.
 
 See McDuff--Salamon, *Introduction to Symplectic Topology*, the discussion of time-dependent
 Hamiltonian vector fields and flows.
@@ -318,6 +321,18 @@ theorem hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField_self (omega : Symp
     (hx : HasDerivAt x (omega.hamiltonianVectorField (H t) (x t)) t) :
     HasDerivAt (fun s ↦ H s (x s)) (timeFDeriv (uncurry H) t (x t)) t := by
   simpa using omega.hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField hH hx
+
+/-- **Time reversal of Hamiltonian trajectories.** If `y` solves `y' = X_{-G}(y)` at `-t`, then
+`t ↦ y(-t)` solves `x' = X_G(x)` at `t`: both the time and the Hamiltonian vector field change
+sign. Taking `G = H_t` at each time, reversing time turns a solution for the reversed Hamiltonian
+`-H_{-t}` into a solution for `H_t`. -/
+theorem hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg (omega : SymplecticForm V)
+    {G : V → ℝ} {y : ℝ → V} {t : ℝ}
+    (hy : HasDerivAt y (omega.hamiltonianVectorField (-G) (y (-t))) (-t)) :
+    HasDerivAt (fun s ↦ y (-s)) (omega.hamiltonianVectorField G (y (-t))) t := by
+  have h := hy.scomp t (hasDerivAt_neg t)
+  rw [hamiltonianVectorField_neg, neg_one_smul, neg_neg] at h
+  exact h
 
 /-- **Conserved quantities of a time-dependent Hamiltonian.** For a time-dependent Hamiltonian
 whose suspended vector field is Lipschitz, a differentiable time-dependent function `F` is constant

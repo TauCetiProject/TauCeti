@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Action
+import TauCeti.Algebra.Ring.Periodic
 
 /-!
 # The asymptotic orbit at the end of a finite-energy PSS plane
@@ -48,9 +49,11 @@ results on finite-energy half-cylinders of
 `TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` then apply. The negative plane is the
 positive plane for the reversed Hamiltonian `-H(-t)`
 (`TauCeti.Floer.PSSPlane.perturbation_negative`), and its loops are the loops of the positive plane
-traversed backwards. Reversing time turns an orbit `y` of `-H(-t)` into the orbit `t ↦ y(-t)` of
-`H`, since both the time and the derivative change sign
-(`TauCeti.SymplecticForm.hamiltonianVectorField_neg`). It also negates the action of a loop
+traversed backwards (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative_endSign_mul`). Reversing
+time turns an orbit `y` of `-H(-t)` into the orbit `t ↦ y(-t)` of `H`, since both the time and the
+derivative change sign
+(`TauCeti.SymplecticForm.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg`). It also
+negates the action of a loop
 relative to `-H(-t)` (`TauCeti.SymplecticForm.hamiltonianAction_comp_neg`), which transfers the
 convergence of the end actions.
 
@@ -94,17 +97,11 @@ private theorem exp_lt_norm_realChart_positive {a : ℝ} {z : ℝ × ℝ} (hz : 
     endSign_positive, one_mul, Complex.equivRealProdCLM_symm_apply_re, Real.exp_lt_exp]
   nlinarith [Real.pi_pos]
 
-/-- The part `‖w‖ > r` of the plane, in real coordinates, is open. -/
-private theorem isOpen_lt_norm (r : ℝ) :
-    IsOpen {z : ℝ × ℝ | r < ‖Complex.equivRealProdCLM.symm z‖} :=
-  isOpen_lt continuous_const (continuous_norm.comp Complex.equivRealProdCLM.symm.continuous)
-
 /-- Every part `‖w‖ > r` of the plane contains a part `‖w‖ > exp (2πa)` with `a ≥ 2`. -/
 private theorem exists_two_le_exp_lt_norm_subset (r : ℝ) :
     ∃ a : ℝ, 2 ≤ a ∧ {z : ℝ × ℝ | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖} ⊆
       {z | r < ‖Complex.equivRealProdCLM.symm z‖} := by
-  refine ⟨max 2 r, le_max_left _ _, fun z (hz : Real.exp _ < _) ↦ show r < _ from
-    lt_of_le_of_lt ?_ hz⟩
+  refine ⟨max 2 r, le_max_left _ _, fun z (hz : Real.exp _ < _) ↦ lt_of_le_of_lt ?_ hz⟩
   have h₁ := Real.add_one_le_exp (2 * π * max 2 r)
   have h₂ : 0 ≤ (2 * π - 1) * max 2 r :=
     mul_nonneg (by linarith [Real.two_le_pi]) (by linarith [le_max_left 2 r])
@@ -143,20 +140,18 @@ private theorem perturbedFDeriv_comp_realChart_positive (ω : SymplecticForm V)
     smoothTransition.one_of_one_le (by linarith : (1 : ℝ) ≤ z.1 - 1)]
 
 /-- **The Floer equation on the end of the positive plane.** From `s = 2` on, if `u` solves the
-Floer equation for the datum of the positive plane and the structures `J` at the image of `(s, t)`
-under the end lift `φ`, then `u ∘ φ` solves the Floer equation at `(s, t)` for the cylindrical
-datum `H(t) dt` and the structures `J ∘ φ`. -/
+Floer equation for the datum of the positive plane and an almost complex structure `J` at the image
+of `(s, t)` under the end lift `φ`, then `u ∘ φ` solves the Floer equation at `(s, t)` for the
+cylindrical datum `H(t) dt` and the same structure `J`. -/
 theorem isComplexLinearMap_perturbedFDeriv_comp_realChart_positive (ω : SymplecticForm V)
-    (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {z : ℝ × ℝ} (hz : 2 ≤ z.1)
-    (hu : DifferentiableAt ℝ u (realChart positive.cylindricalEndLift z))
-    (hfloer : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J (realChart positive.cylindricalEndLift z))
+    (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {J : AlmostComplexStructure V}
+    {z : ℝ × ℝ} (hz : 2 ≤ z.1) (hu : DifferentiableAt ℝ u (realChart positive.cylindricalEndLift z))
+    (hfloer : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
       (ω.perturbedFDeriv
         (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         u (realChart positive.cylindricalEndLift z) : ℝ × ℝ →ₗ[ℝ] V)) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J (realChart positive.cylindricalEndLift z))
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
       (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2)
         (u ∘ realChart positive.cylindricalEndLift) z : ℝ × ℝ →ₗ[ℝ] V) := by
   rw [perturbedFDeriv_comp_realChart_positive ω hH _ hz]
@@ -209,7 +204,8 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_le (ω : Symplec
     exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ico_ae_eq_Icc.symm
   have hud {z : ℝ × ℝ} (hz : a < z.1) :
       DifferentiableAt ℝ u (realChart positive.cylindricalEndLift z) :=
-    hu.differentiableAt ((isOpen_lt_norm _).mem_nhds (exp_lt_norm_realChart_positive hz))
+    hu.differentiableAt <| (isOpen_lt continuous_const (by fun_prop)).mem_nhds
+      (exp_lt_norm_realChart_positive hz)
   rw [setLIntegral_congr hae, ← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hS
     (injOn_realChart_positive a)
     (fun z _ ↦ (contDiff_realChart positive.contDiff_cylindricalEndLift).differentiable
@@ -269,7 +265,8 @@ private theorem exists_periodic_hasDerivAt_tendstoUniformly_positive
       (fun z hz ↦ hJM _ (exp_lt_norm_realChart_positive hz.1))
       (fun z hz ↦ ω.isComplexLinearMap_perturbedFDeriv_comp_realChart_positive hH hHs
         (ha.trans hz.1.le)
-        (hud.differentiableAt ((isOpen_lt_norm _).mem_nhds (exp_lt_norm_realChart_positive hz.1)))
+        (hud.differentiableAt <| (isOpen_lt continuous_const (by fun_prop)).mem_nhds
+          (exp_lt_norm_realChart_positive hz.1))
         (hfloer _ (exp_lt_norm_realChart_positive hz.1)))
       ((ω.setLIntegral_floerEnergyDensity_comp_realChart_positive_le hH hHs ha hud).trans_lt
         hE.lt_top).ne
@@ -321,51 +318,13 @@ private theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_positive
       (fun z hz ↦ hJM _ (exp_lt_norm_realChart_positive hz.1))
       (fun z hz ↦ ω.isComplexLinearMap_perturbedFDeriv_comp_realChart_positive hH hHs
         (ha.trans hz.1.le)
-        (hud.differentiableAt ((isOpen_lt_norm _).mem_nhds (exp_lt_norm_realChart_positive hz.1)))
+        (hud.differentiableAt <| (isOpen_lt continuous_const (by fun_prop)).mem_nhds
+          (exp_lt_norm_realChart_positive hz.1))
         (hfloer _ (exp_lt_norm_realChart_positive hz.1)))
       ((ω.setLIntegral_floerEnergyDensity_comp_realChart_positive_le hH hHs ha hud).trans_lt
         hE.lt_top).ne
   simp only [comp_apply, ψ, realChart_positive_mk] at hux hA
   exact ⟨x, hxper, hx, ⟨φ, hφ, hux⟩, hA⟩
-
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The reversed Hamiltonian `-H(-t)` of a period-one Hamiltonian has period one. -/
-private theorem periodic_neg_comp_neg (hH : Periodic H 1) :
-    Periodic (fun t y ↦ -H (-t) y) 1 := fun t ↦ by
-  simp only [show -(t + 1) = -t - 1 by ring, hH.sub_eq]
-
-omit [FiniteDimensional ℝ V] in
-/-- The reversed Hamiltonian `-H(-t)` of a `C¹` Hamiltonian is `C¹`. -/
-private theorem contDiff_uncurry_neg_comp_neg (hHs : ContDiff ℝ 1 (uncurry H)) :
-    ContDiff ℝ 1 (uncurry fun t y ↦ -H (-t) y) :=
-  (hHs.comp (contDiff_fst.neg.prodMk contDiff_snd)).neg
-
-/-- Reversing time turns a one-periodic orbit `y` of the reversed Hamiltonian `-H(-t)` into the
-one-periodic orbit `t ↦ y(-t)` of `H`. -/
-private theorem periodic_hasDerivAt_comp_neg {y : ℝ → V} (hyper : Periodic y 1)
-    (hy : ∀ t, HasDerivAt y (ω.hamiltonianVectorField (fun x ↦ -H (-t) x) (y t)) t) :
-    Periodic (fun t ↦ y (-t)) 1 ∧
-      ∀ t, HasDerivAt (fun t ↦ y (-t)) (ω.hamiltonianVectorField (H t) (y (-t))) t := by
-  refine ⟨fun t ↦ ?_, fun t ↦ ?_⟩
-  · simp only [show -(t + 1) = -t - 1 by ring, hyper.sub_eq]
-  · have h := (hy (-t)).scomp t (hasDerivAt_neg t)
-    have hX : ω.hamiltonianVectorField (fun y ↦ -H (-(-t)) y) (y (-t)) =
-        -ω.hamiltonianVectorField (H t) (y (-t)) := by
-      rw [← hamiltonianVectorField_neg]
-      simp only [neg_neg]
-      rfl
-    rw [hX, neg_one_smul, neg_neg] at h
-    exact h
-
-/-- The loops of the negative plane are those of the positive plane traversed backwards. -/
-private theorem cylindricalEndLift_negative_endSign_mul (R t : ℝ) :
-    negative.cylindricalEndLift (↑(negative.endSign * R) + ↑t * Complex.I) =
-      positive.cylindricalEndLift (↑(positive.endSign * R) + ↑(-t) * Complex.I) := by
-  rw [cylindricalEndLift_negative]
-  congr 1
-  simp only [endSign_negative, endSign_positive]
-  push_cast
-  ring
 
 /-- **The asymptotic orbit at the end of a finite-energy PSS plane.** Let `𝔎` be the perturbation of
 a PSS plane `p` given by a period-one `C¹` Hamiltonian `H`. Let `u` be `C¹` on a part `‖w‖ > r` of
@@ -404,13 +363,15 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_pssPlanePerturbation (p : PS
       (fun z hz ↦ hfloer z (hsub hz)) hE'
   -- The negative plane is the positive plane for the reversed Hamiltonian `-H(-t)`.
   rw [perturbation_negative] at hfloer hE'
+  have hH' : Periodic (fun t y ↦ -H (-t) y) 1 := hH.comp_neg.comp Neg.neg
   obtain ⟨y, hyper, hy, R, hR, huy⟩ :=
-    exists_periodic_hasDerivAt_tendstoUniformly_positive (periodic_neg_comp_neg hH)
-      (contDiff_uncurry_neg_comp_neg hHs) ha (hu.mono hsub) hK (fun z hz ↦ huK z (hsub hz)) hc
-      (fun z hz ↦ hJc z (hsub hz)) (fun z hz ↦ hJM z (hsub hz)) (fun z hz ↦ hfloer z (hsub hz))
-      hE'
-  obtain ⟨hxper, hx⟩ := periodic_hasDerivAt_comp_neg hyper hy
-  refine ⟨fun t ↦ y (-t), hxper, hx, R, hR, ?_⟩
+    exists_periodic_hasDerivAt_tendstoUniformly_positive hH'
+      ((hHs.comp (contDiff_fst.neg.prodMk contDiff_snd)).neg) ha (hu.mono hsub) hK
+      (fun z hz ↦ huK z (hsub hz)) hc (fun z hz ↦ hJc z (hsub hz)) (fun z hz ↦ hJM z (hsub hz))
+      (fun z hz ↦ hfloer z (hsub hz)) hE'
+  refine ⟨fun t ↦ y (-t), hyper.comp_neg, fun t ↦ ?_, R, hR, ?_⟩
+  · exact ω.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg
+      (by simpa only [neg_neg, Pi.neg_def] using hy (-t))
   simp only [cylindricalEndLift_negative_endSign_mul]
   exact huy.comp fun t ↦ -t
 
@@ -455,14 +416,15 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlanePerturbatio
       (fun z hz ↦ hJM z (hsub hz)) (fun z hz ↦ hfloer z (hsub hz)) hE'
   -- The negative plane is the positive plane for the reversed Hamiltonian `-H(-t)`.
   rw [perturbation_negative] at hfloer hE'
-  have hH' := periodic_neg_comp_neg hH
+  have hH' : Periodic (fun t y ↦ -H (-t) y) 1 := hH.comp_neg.comp Neg.neg
   obtain ⟨y, hyper, hy, ⟨R, hR, huy⟩, hA⟩ :=
     exists_periodic_hasDerivAt_tendsto_hamiltonianAction_positive hH'
-      (contDiff_uncurry_neg_comp_neg hHs) ha (hu.mono hsub) hK (fun z hz ↦ huK z (hsub hz)) hc
-      (fun z hz ↦ hJc z (hsub hz)) (fun z hz ↦ hJM z (hsub hz)) (fun z hz ↦ hfloer z (hsub hz))
-      hE'
-  obtain ⟨hxper, hx⟩ := periodic_hasDerivAt_comp_neg hyper hy
-  refine ⟨fun t ↦ y (-t), hxper, hx, ⟨R, hR, ?_⟩, ?_⟩
+      ((hHs.comp (contDiff_fst.neg.prodMk contDiff_snd)).neg) ha (hu.mono hsub) hK
+      (fun z hz ↦ huK z (hsub hz)) hc (fun z hz ↦ hJc z (hsub hz)) (fun z hz ↦ hJM z (hsub hz))
+      (fun z hz ↦ hfloer z (hsub hz)) hE'
+  refine ⟨fun t ↦ y (-t), hyper.comp_neg, fun t ↦ ?_, ⟨R, hR, ?_⟩, ?_⟩
+  · exact ω.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg
+      (by simpa only [neg_neg, Pi.neg_def] using hy (-t))
   · simp only [cylindricalEndLift_negative_endSign_mul]
     exact huy.comp fun t ↦ -t
   -- Reversing a loop negates its action relative to the reversed Hamiltonian.
