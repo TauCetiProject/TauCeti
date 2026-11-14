@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.Order.KrullDimension
+import Mathlib.Topology.KrullDimension
 
 /-!
 # Codimension-one points of a scheme
@@ -25,11 +26,13 @@ field; this file holds only the common definition, independent of either theory.
 * `TauCeti.AlgebraicGeometry.CodimensionOnePoint`: the codimension-one points of a scheme.
 * `TauCeti.AlgebraicGeometry.CodimensionOnePoint.eq_of_specializes`: a codimension-one
   generization of a codimension-one point is equal to it.
+* `TauCeti.AlgebraicGeometry.CodimensionOnePoint.finite_setOfPred_notMem`: a nonempty open of an
+  irreducible Noetherian scheme misses only finitely many codimension-one points.
 -/
 
 public section
 
-open Order AlgebraicGeometry
+open Order AlgebraicGeometry TopologicalSpace
 
 namespace TauCeti
 
@@ -50,6 +53,18 @@ lemma CodimensionOnePoint.eq_of_specializes {X : Scheme.{u}} {x y : CodimensionO
   have := coheight_add_one_le <|
     lt_of_le_not_ge (Scheme.le_iff_specializes.mpr h) (mt Scheme.le_iff_specializes.mp hxy)
   norm_num [x.property, y.property] at this
+
+/-- A nonempty open subset of an irreducible scheme with Noetherian underlying space contains all
+but finitely many codimension-one points. -/
+lemma CodimensionOnePoint.finite_setOfPred_notMem {X : Scheme.{u}} [IrreducibleSpace X]
+    [NoetherianSpace X] (U : X.Opens) [Nonempty U] :
+    {x : CodimensionOnePoint X | (x : X) ∉ U}.Finite := by
+  have hU := U.isOpen.isClosed_compl
+  have : QuasiSober ((U : Set X)ᶜ : Set X) := hU.isClosedEmbedding_subtypeVal.quasiSober
+  refine ((NoetherianSpace.finite_coheight_one_of_closure_ne_univ (p := (U : Set X)ᶜ) ?_).preimage
+    Subtype.val_injective.injOn).subset fun x hx ↦ ⟨hx, x.2⟩
+  rw [hU.closure_eq]
+  exact fun h ↦ (Set.nonempty_coe_sort.mp ‹Nonempty U›).ne_empty (compl_eq_top.mp h)
 
 end AlgebraicGeometry
 
