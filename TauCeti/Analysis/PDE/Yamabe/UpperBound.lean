@@ -337,7 +337,7 @@ private lemma le_integral_abs_rpow {R t η : ℝ} (p : M) (hn : 2 < finrank ℝ 
   have hvz (z : EuclideanSpace ℝ (Fin (finrank ℝ E))) (hz : z ∉ tsupport v) :
       |v z| ^ criticalExponent (finrank ℝ E) = 0 :=
     hPz _ (image_eq_zero_of_notMem_tsupport hz)
-  have h := mul_integral_le_integral_riemannianVolume_of_support_subset p isOpen_ball hballt
+  have h := mul_integral_le_integral_riemannianVolume_of_support_subset p hballt
     (fun x ↦ Real.rpow_nonneg (abs_nonneg (u x)) _)
     ((hcontP.comp hu.continuous).integrable_of_hasCompactSupport (huc.mono' fun x hx ↦
       by_contra fun h ↦ hx (hPz _ (image_eq_zero_of_notMem_tsupport h))))
