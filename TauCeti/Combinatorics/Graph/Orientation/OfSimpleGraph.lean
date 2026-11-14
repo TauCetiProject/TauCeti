@@ -71,7 +71,7 @@ private theorem tail_head_eq_or_eq_symm (o : (Graph.ofSimpleGraph H).Orientation
 def toDartOrientation (o : (Graph.ofSimpleGraph H).Orientation) :
     DoubledQuiver.Orientation H where
   carrier := {d | (o.tail ⟨d.edge, d.edge_mem⟩).1 = d.fst}
-  symm_mem_iff_not_mem d := by
+  symm_mem_iff_notMem d := by
     have he := o.tail_head_eq_or_eq_symm d
     -- Reduce membership in the carrier being defined; its membership lemma is not available yet.
     change (o.tail ⟨d.symm.edge, d.symm.edge_mem⟩).1 = d.symm.fst ↔
@@ -135,7 +135,7 @@ noncomputable def ofDartOrientation (o : DoubledQuiver.Orientation H) :
     let d : H.Dart := ⟨(x, y), hxy⟩
     by_cases hd : d ∈ o
     · exact ⟨d, hd, he⟩
-    · exact ⟨d.symm, (o.symm_mem_iff_not_mem d).2 hd,
+    · exact ⟨d.symm, (o.symm_mem_iff_notMem d).2 hd,
         (SimpleGraph.Dart.edge_symm d).trans he⟩
   exact
     { tail := fun e ↦ ⟨(hex e).choose.fst, Set.mem_univ _⟩
@@ -157,7 +157,7 @@ theorem dart_ofDartOrientation (o : DoubledQuiver.Orientation H) {d : H.Dart} (h
   obtain h | h := (SimpleGraph.dart_edge_eq_iff _ d).mp
     ((ofDartOrientation o).dart_edge ⟨d.edge, d.edge_mem⟩)
   · exact h
-  · exact ((o.symm_mem_iff_not_mem d).1 (h ▸ hc) hd).elim
+  · exact ((o.symm_mem_iff_notMem d).1 (h ▸ hc) hd).elim
 
 /-- The recovered tail of a selected dart's edge is its first endpoint. -/
 @[simp]
@@ -184,7 +184,7 @@ theorem toDartOrientation_ofDartOrientation (o : DoubledQuiver.Orientation H) :
   obtain h | h := (SimpleGraph.dart_edge_eq_iff c d).mp he
   · have ht : ((ofDartOrientation o).tail e).1 = d.fst := congrArg (fun d : H.Dart ↦ d.fst) h
     exact iff_of_true ht (h ▸ hc)
-  · have hn : d ∉ o := (o.symm_mem_iff_not_mem d).1 (h ▸ hc)
+  · have hn : d ∉ o := (o.symm_mem_iff_notMem d).1 (h ▸ hc)
     have ht : ((ofDartOrientation o).tail e).1 = d.snd := congrArg (fun d : H.Dart ↦ d.fst) h
     rw [mem_toDartOrientation_iff]
     exact iff_of_false (fun htail ↦ d.snd_ne_fst (ht.symm.trans htail)) hn

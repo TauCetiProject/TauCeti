@@ -75,7 +75,7 @@ is not chosen. -/
 structure Orientation where
   /-- The set of darts belonging to the orientation. -/
   carrier : Set G.Dart
-  symm_mem_iff_not_mem : ∀ d, d.symm ∈ carrier ↔ d ∉ carrier
+  symm_mem_iff_notMem : ∀ d, d.symm ∈ carrier ↔ d ∉ carrier
 
 namespace Orientation
 
@@ -90,7 +90,7 @@ theorem ext {o₁ o₂ : Orientation G} (h : ∀ d, d ∈ o₁ ↔ d ∈ o₂) :
   apply SetLike.ext
   exact h
 
-attribute [simp] Orientation.symm_mem_iff_not_mem
+attribute [simp] Orientation.symm_mem_iff_notMem
 
 /-- A reversed dart is not chosen exactly when the original dart is chosen. -/
 @[simp]
@@ -98,15 +98,15 @@ theorem symm_notMem_iff_mem (o : Orientation G) (d : G.Dart) : d.symm ∉ o ↔ 
   constructor
   · intro h
     by_contra hd
-    exact h ((o.symm_mem_iff_not_mem d).2 hd)
+    exact h ((o.symm_mem_iff_notMem d).2 hd)
   · intro hd hs
-    exact ((o.symm_mem_iff_not_mem d).1 hs) hd
+    exact ((o.symm_mem_iff_notMem d).1 hs) hd
 
 /-- The orientation induced by a linear order, with each edge directed from its smaller endpoint
 to its larger endpoint. -/
 def ofLinearOrder [LinearOrder V] : Orientation G where
   carrier := {d | d.fst < d.snd}
-  symm_mem_iff_not_mem d := by
+  symm_mem_iff_notMem d := by
     -- `Dart.symm` stores the swapped endpoint pair, which reduces the orientation law to
     -- asymmetry and totality of the chosen linear order.
     change d.snd < d.fst ↔ ¬d.fst < d.snd
@@ -277,7 +277,7 @@ theorem card_hom_add_card_hom [DecidableRel G.Adj] (i j : V) :
       have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=
         @Nat.card_of_isEmpty _ ⟨fun p => ho' p.2⟩
       rw [h1, h2]
-    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_not_mem _).2 ho
+    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_notMem _).2 ho
       have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 0 :=
         @Nat.card_of_isEmpty _ ⟨fun p => ho p.2⟩
       have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 1 :=
@@ -407,7 +407,7 @@ noncomputable def unsymmetrifyMap : DoubledQuiver G ⥤q Symmetrify (OrientedQui
         (OrientedQuiver.vertexEquiv_apply G o _).symm
         (OrientedQuiver.vertexEquiv_apply G o _).symm
     · exact Quiver.homOfEq (Sum.inr (OrientedQuiver.arrow G o d.adj.symm
-          ((o.symm_mem_iff_not_mem d).2 hd)))
+          ((o.symm_mem_iff_notMem d).2 hd)))
         (OrientedQuiver.vertexEquiv_apply G o _).symm
         (OrientedQuiver.vertexEquiv_apply G o _).symm
 
@@ -436,14 +436,14 @@ instance instIsThinSymmetrifyOrientedQuiver :
       | inl f => exact congrArg Sum.inl (Subtype.ext (Subsingleton.elim e.1 f.1))
       | inr f =>
           exfalso
-          exact ((o.symm_mem_iff_not_mem
+          exact ((o.symm_mem_iff_notMem
             ⟨((OrientedQuiver.vertexEquiv G o).symm i,
               (OrientedQuiver.vertexEquiv G o).symm j), e.1⟩).1 f.2) e.2
   | inr e =>
       cases f with
       | inl f =>
           exfalso
-          exact ((o.symm_mem_iff_not_mem
+          exact ((o.symm_mem_iff_notMem
             ⟨((OrientedQuiver.vertexEquiv G o).symm i,
               (OrientedQuiver.vertexEquiv G o).symm j), f.1⟩).1 e.2) f.2
       | inr f => exact congrArg Sum.inr (Subtype.ext (Subsingleton.elim e.1 f.1))
@@ -466,7 +466,7 @@ theorem unsymmetrifyMap_arrow_of_not_mem {i j : V} (h : G.Adj i j)
     (unsymmetrifyMap G o).map (DoubledQuiver.arrow G h) =
       Quiver.homOfEq
         (Sum.inr (OrientedQuiver.arrow G o h.symm
-          ((o.symm_mem_iff_not_mem ⟨(i, j), h⟩).2 ho)))
+          ((o.symm_mem_iff_notMem ⟨(i, j), h⟩).2 ho)))
         (unsymmetrifyMap_obj G o i).symm (unsymmetrifyMap_obj G o j).symm := by
   apply Subsingleton.elim
 
@@ -567,7 +567,7 @@ theorem exists_forall_exists_nonempty_reorient_hom (o : Orientation G) {f : V �
     refine ⟨reorientKeep _ (OrientedQuiver.arrow G o hadj ho) ?_⟩
     simpa only [φ, OrientedQuiver.vertexEquiv_symm_vertex, decide_eq_true_eq] using hne
   · -- The edge is oriented `f u ⟶ u`, and is turned around.
-    have ho' : (⟨(f u, u), hadj.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_not_mem _).2 ho
+    have ho' : (⟨(f u, u), hadj.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_notMem _).2 ho
     refine ⟨reorientFlip _ (OrientedQuiver.arrow G o hadj.symm ho') ?_⟩
     simp only [φ, OrientedQuiver.vertexEquiv_symm_vertex, decide_true]
 
@@ -583,7 +583,7 @@ variable {V : Type*} {G : SimpleGraph V}
 endpoint of colour `true`. -/
 def sourceSink (C : G.Coloring Bool) : Orientation G where
   carrier := {d | C d.snd = true}
-  symm_mem_iff_not_mem d := by
+  symm_mem_iff_notMem d := by
     -- Unfolding membership exposes the two endpoint colours, which `C.valid` says are unequal.
     change C d.fst = true ↔ C d.snd ≠ true
     have h := C.valid d.adj
