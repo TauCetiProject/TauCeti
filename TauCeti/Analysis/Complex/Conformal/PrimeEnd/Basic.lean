@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.ChordalDist
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Basic
 public import TauCeti.Topology.Path.Separation
 import TauCeti.Topology.ConnectedComponents
@@ -22,9 +23,9 @@ either one contains a domain of the other. A **prime end** of `U` is an equivale
 
 Here the crosscuts of a chain are recorded as sets, the closed ranges of crosscut paths in the
 sense of `Path.IsCrosscut`, since every condition depends only on these sets. In particular a
-crosscut has two distinct endpoints. Diameters are chordal, measured by
-`‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2))`, so crosscuts with finite endpoints may run out to
-infinity, as the semicircles `|z| = R` of the upper half-plane do as `R → ∞`.
+crosscut has two distinct endpoints. Diameters are chordal, measured by `Complex.chordalDist`, so
+crosscuts with finite endpoints may run out to infinity, as the semicircles `|z| = R` of the upper
+half-plane do as `R → ∞`.
 
 Pommerenke requires instead that each crosscut `C n`, `n ≥ 1`, separates `C 0` from `C (n + 1)`,
 and then deduces that the domains are nested from the fact that a crosscut cuts a simply connected
@@ -43,10 +44,6 @@ nested-domain form makes the equivalence of chains visibly an equivalence relati
 * `IsPreconnected.subset_nullChainDomain` -- a preconnected set off a crosscut that meets its
   domain lies in it.
 * `TauCeti.IsNullChain` -- the null-chain predicate.
-* `TauCeti.chordalDist` -- the chordal distance `‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2))`.
-* `TauCeti.chordalDist_le_norm_sub`, `TauCeti.norm_sub_le_mul_chordalDist`,
-  `TauCeti.norm_sub_lt_of_chordalDist_lt` -- on a bounded set, chordal and Euclidean distances are
-  comparable.
 * `TauCeti.IsNullChain.nullChainDomain_eq_connectedComponentIn` -- each domain is the component
   of the cut set containing the next crosscut.
 * `TauCeti.IsNullChain.separatesIn` -- Pommerenke's separation condition.
@@ -124,12 +121,6 @@ theorem nullChainDomain_eq_connectedComponentIn_of_isPreconnected
   have hwU : w ∈ U := (connectedComponentIn_nonempty_iff.mp ⟨q, hqw⟩).1
   rwa [connectedComponentIn_eq (hsub ⟨hw, hwU⟩)]
 
-/-- The **chordal distance** `‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2))` between two complex
-numbers: the distance of their images on the Riemann sphere (of diameter one), so that crosscuts
-with finite endpoints may run out to `∞` while their chordal diameters stay finite. -/
-def chordalDist (z w : ℂ) : ℝ :=
-  ‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2))
-
 /-- A **null chain** of `U ⊆ ℂ`: a sequence of crosscuts of `U`, recorded by their closed ranges,
 each disjoint from the next, cutting off a decreasing sequence of domains, and with chordal
 diameters tending to zero. -/
@@ -141,34 +132,8 @@ structure IsNullChain (U : Set ℂ) (C : ℕ → Set ℂ) : Prop where
   /-- The domains cut off by the crosscuts decrease. -/
   nullChainDomain_succ_subset : ∀ n, nullChainDomain U C (n + 1) ⊆ nullChainDomain U C n
   /-- The chordal diameters of the crosscuts tend to zero. -/
-  eventually_chordalDist_lt : ∀ ε > 0, ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n, chordalDist z w < ε
-
-/-- The chordal distance is at most the Euclidean distance. -/
-theorem chordalDist_le_norm_sub (z w : ℂ) : chordalDist z w ≤ ‖z - w‖ :=
-  div_le_self (norm_nonneg _)
-    (Real.one_le_sqrt.mpr (by nlinarith [sq_nonneg ‖z‖, sq_nonneg ‖w‖]))
-
-/-- On the closed disc of radius `R` about `0`, the Euclidean distance is at most `1 + R ^ 2`
-times the chordal distance. -/
-theorem norm_sub_le_mul_chordalDist {R : ℝ} {z w : ℂ} (hz : ‖z‖ ≤ R) (hw : ‖w‖ ≤ R) :
-    ‖z - w‖ ≤ (1 + R ^ 2) * chordalDist z w := by
-  have hpos : 0 < √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) := Real.sqrt_pos.mpr (by positivity)
-  have hs : √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) ≤ 1 + R ^ 2 := by
-    rw [Real.sqrt_le_left (by positivity)]
-    have hz2 : ‖z‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hz 2
-    have hw2 : ‖w‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hw 2
-    nlinarith [sq_nonneg ‖z‖, sq_nonneg ‖w‖]
-  rw [chordalDist, mul_div_assoc', le_div_iff₀ hpos]
-  nlinarith [norm_nonneg (z - w)]
-
-/-- On the closed disc of radius `R` about `0`, a chordal distance below `ε / (1 + R ^ 2)` forces
-a Euclidean distance below `ε`. -/
-theorem norm_sub_lt_of_chordalDist_lt {R ε : ℝ} {z w : ℂ} (hz : ‖z‖ ≤ R) (hw : ‖w‖ ≤ R)
-    (h : chordalDist z w < ε / (1 + R ^ 2)) : ‖z - w‖ < ε :=
-  calc
-    ‖z - w‖ ≤ (1 + R ^ 2) * chordalDist z w := norm_sub_le_mul_chordalDist hz hw
-    _ < (1 + R ^ 2) * (ε / (1 + R ^ 2)) := mul_lt_mul_of_pos_left h (by positivity)
-    _ = ε := by field_simp
+  eventually_chordalDist_lt :
+    ∀ ε > 0, ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n, Complex.chordalDist z w < ε
 
 namespace IsNullChain
 
@@ -203,7 +168,8 @@ theorem eventually_norm_sub_lt (hC : IsNullChain U C) (hU : IsBounded U) {ε : �
   filter_upwards [hC.eventually_chordalDist_lt (ε / (1 + R ^ 2)) (by positivity)]
     with n hn z hz w hw
   have hsub := hC.subset_closure n
-  exact norm_sub_lt_of_chordalDist_lt (hbound z (hsub hz)) (hbound w (hsub hw)) (hn z hz w hw)
+  exact Complex.norm_sub_lt_of_chordalDist_lt (hbound z (hsub hz)) (hbound w (hsub hw))
+    (hn z hz w hw)
 
 /-- Crosscuts of a null chain eventually avoid each compact subset of the open domain. -/
 theorem eventually_disjoint_of_isCompact (hC : IsNullChain U C) (hU : IsOpen U) {K : Set ℂ}
@@ -234,7 +200,7 @@ theorem eventually_disjoint_of_isCompact (hC : IsNullChain U C) (hU : IsOpen U) 
     rw [← hwK, ← dist_eq_norm]
     exact infDist_le_dist_of_mem hzK
   exact hwz.not_gt
-    (norm_sub_lt_of_chordalDist_lt hw ((hKR z hzK).trans (by linarith)) (hn w hwC z hzC))
+    (Complex.norm_sub_lt_of_chordalDist_lt hw ((hKR z hzK).trans (by linarith)) (hn w hwC z hzC))
 
 /-- The next crosscut lies, inside `U`, in the domain cut off by the previous one. -/
 theorem inter_subset_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :
@@ -402,7 +368,7 @@ inside `U` from those of the next one. -/
 theorem isNullChain_iff_separatesIn (hUo : IsOpen U) (hUc : IsPreconnected U)
     (hcut : ∀ n, ∃ (x y : ℂ) (γ : Path x y), γ.IsCrosscut U ∧ range γ = C n)
     (hdisj : ∀ n, Disjoint (C n) (C (n + 1)))
-    (hdiam : ∀ ε > 0, ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n, chordalDist z w < ε) :
+    (hdiam : ∀ ε > 0, ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n, Complex.chordalDist z w < ε) :
     IsNullChain U C ↔ ∀ n {x y : ℂ} (γ : Path x y), range γ = C (n + 1) →
       ∀ z ∈ C 0 ∩ U, ∀ w ∈ C (n + 2) ∩ U, γ.SeparatesIn U z w :=
   ⟨fun hC _ _ _ _ hγ _ hz _ hw => hC.separatesIn hγ hz hw, fun hsep =>
