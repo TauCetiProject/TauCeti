@@ -44,12 +44,15 @@ used for this, not the presentation `PSL(2, ℤ) ≅ Δ(3, 2, ∞)`.
   the preimage of `Γ` in `Δ(3, 2, ∞)`, numbered through the induced bijection of cosets.
 * `TauCeti.ModularGroup.isConnected_modularTriple`: the modular triple is connected; in
   particular `n ≠ 0`, while `Nat.card_eq_of_equiv_fin e` gives `Γ.index = n`.
-* `TauCeti.ModularGroup.equivalent_modularTriple`: changing the numbering relabels the triple.
+* `TauCeti.ModularGroup.modularTriple_eq_smul` and `TauCeti.ModularGroup.equivalent_modularTriple`:
+  changing the numbering relabels the triple.
 * `TauCeti.ModularGroup.quotientNormalCoreMulEquivMonodromyGroup`: the monodromy group of the
   modular triple is `PSL(2, ℤ) ⧸ Γ.normalCore`, so its order is the index of the normal core
   (`TauCeti.ModularGroup.natCard_monodromyGroup_modularTriple`).
 * `TauCeti.ModularGroup.isRegular_modularTriple_iff`: the modular triple is regular exactly when
   `Γ` is normal.
+* `TauCeti.ModularGroup.isConnected_modularIsoClass`: the isomorphism class of the modular triple
+  is connected.
 
 ## References
 
@@ -151,24 +154,28 @@ theorem monodromyGroup_modularTriple :
 
 /-- The modular triple is connected: `PSL(2, ℤ)` acts transitively on the nonempty set of
 cosets. -/
+@[simp]
 theorem isConnected_modularTriple : (modularTriple Γ e).IsConnected := by
   rw [modularTriple_eq_cosetTriple]
   exact TriangleGroup.isConnected_cosetTriple _ _
 
+/-- Changing the numbering of the cosets from `e` to `e'` relabels the modular triple by the
+re-indexing permutation `e.symm.trans e'`. -/
+theorem modularTriple_eq_smul (e' : PSL(2, ℤ) ⧸ Γ ≃ Fin n) :
+    modularTriple Γ e' = (e.symm.trans e') • modularTriple Γ e := by
+  ext1 <;> simp [Equiv.permutationRepresentation_eq_conj e e']
+
 /-- Changing the numbering of the cosets relabels the modular triple, so its isomorphism class
 does not depend on the numbering. -/
 theorem equivalent_modularTriple (e' : PSL(2, ℤ) ⧸ Γ ≃ Fin n) :
-    (modularTriple Γ e).Equivalent (modularTriple Γ e') := by
-  rw [modularTriple_eq_cosetTriple, modularTriple_eq_cosetTriple]
-  exact TriangleGroup.equivalent_cosetTriple _ _ _
+    (modularTriple Γ e).Equivalent (modularTriple Γ e') :=
+  PermutationTriple.equivalent_iff_exists_smul_eq.mpr ⟨_, (modularTriple_eq_smul Γ e e').symm⟩
 
 /-- `PSL(2, ℤ) ⧸ Γ.normalCore` is the monodromy group of the modular triple, by the first
 isomorphism theorem for the action on the cosets, whose kernel is the normal core of `Γ`. -/
 noncomputable def quotientNormalCoreMulEquivMonodromyGroup :
     PSL(2, ℤ) ⧸ Γ.normalCore ≃* (modularTriple Γ e).monodromyGroup :=
-  ((QuotientGroup.quotientMulEquivOfEq
-      (by rw [Equiv.ker_permutationRepresentation, Subgroup.normalCore_eq_ker])).trans
-    (QuotientGroup.quotientKerEquivRange _)).trans
+  (Equiv.quotientNormalCoreMulEquivRange e).trans
     (MulEquiv.subgroupCongr (monodromyGroup_modularTriple Γ e)).symm
 
 /-- The coset of `g` modulo the normal core corresponds to the permutation of `g`. -/
@@ -176,21 +183,19 @@ noncomputable def quotientNormalCoreMulEquivMonodromyGroup :
 theorem coe_quotientNormalCoreMulEquivMonodromyGroup_mk (g : PSL(2, ℤ)) :
     (quotientNormalCoreMulEquivMonodromyGroup Γ e g : Perm (Fin n)) =
       e.permutationRepresentation g := by
-  simp only [quotientNormalCoreMulEquivMonodromyGroup, MulEquiv.trans_apply,
-    QuotientGroup.quotientMulEquivOfEq_mk, MulEquiv.subgroupCongr_symm_apply]
-  -- Mathlib states no evaluation lemma for `QuotientGroup.quotientKerEquivRange`; it is
-  -- `MulEquiv.ofBijective` of `QuotientGroup.rangeKerLift`, which sends the class of `g` to `φ g`.
-  rfl
+  simp [quotientNormalCoreMulEquivMonodromyGroup]
 
 /-- The order of the monodromy group of the modular triple is the index of the normal core of
 `Γ`. -/
 theorem natCard_monodromyGroup_modularTriple :
     Nat.card (modularTriple Γ e).monodromyGroup = Γ.normalCore.index := by
-  rw [← Nat.card_congr (quotientNormalCoreMulEquivMonodromyGroup Γ e).toEquiv, Subgroup.index]
+  rw [monodromyGroup_modularTriple,
+    Equiv.natCard_range_permutationRepresentation_eq_index_normalCore]
 
 /-- **The modular triple is regular exactly when `Γ` is normal**, that is, exactly when its
 monodromy group has order the index `n`
 (`TauCeti.PermutationTriple.isRegular_iff_card_monodromyGroup`). -/
+@[simp]
 theorem isRegular_modularTriple_iff : (modularTriple Γ e).IsRegular ↔ Γ.Normal := by
   rw [modularTriple_eq_cosetTriple, TriangleGroup.isRegular_cosetTriple_iff,
     Subgroup.normal_comap_iff_of_surjective modularHom_surjective]
@@ -200,19 +205,24 @@ theorem isRegular_modularTriple_iff : (modularTriple Γ e).IsRegular ↔ Γ.Norm
 theorem modularTriple_top (e : PSL(2, ℤ) ⧸ (⊤ : Subgroup PSL(2, ℤ)) ≃ Fin n) :
     modularTriple ⊤ e = 1 := by
   have := QuotientGroup.subsingleton_quotient_top (G := PSL(2, ℤ))
-  have h (g : PSL(2, ℤ)) : e.permutationRepresentation g = 1 :=
-    Equiv.ext fun i ↦ by simp [Subsingleton.elim (g • e.symm i) (e.symm i)]
-  ext1 <;> simp [h]
+  have := e.symm.subsingleton
+  exact Subsingleton.elim _ _
 
 /-- The isomorphism class of the modular triple of a finite-index subgroup `Γ`, a triple of
 degree the index of `Γ`. It is the class of `modularTriple Γ e` for every numbering `e`
 (`TauCeti.ModularGroup.modularIsoClass_eq_mk`). -/
 noncomputable def modularIsoClass [Γ.FiniteIndex] : PermutationTriple.IsoClass Γ.index :=
-  .mk (modularTriple Γ ((Finite.equivFin _).trans (finCongr Γ.index_eq_card.symm)))
+  .mk (modularTriple Γ (Finite.equivFinOfCardEq Γ.index_eq_card.symm))
 
 /-- The isomorphism class of the modular triple is that of the triple of any numbering. -/
 theorem modularIsoClass_eq_mk [Γ.FiniteIndex] (e : PSL(2, ℤ) ⧸ Γ ≃ Fin Γ.index) :
     modularIsoClass Γ = .mk (modularTriple Γ e) :=
   PermutationTriple.IsoClass.mk_eq_mk_iff.mpr (equivalent_modularTriple Γ _ e)
+
+/-- The isomorphism class of the modular triple is connected. -/
+@[simp]
+theorem isConnected_modularIsoClass [Γ.FiniteIndex] : (modularIsoClass Γ).IsConnected := by
+  rw [modularIsoClass, PermutationTriple.IsoClass.isConnected_mk]
+  exact isConnected_modularTriple Γ _
 
 end TauCeti.ModularGroup
