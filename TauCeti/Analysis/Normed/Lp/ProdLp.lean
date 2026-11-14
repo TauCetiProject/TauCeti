@@ -20,18 +20,24 @@ sum of the norms of its two components.  For `p = 1` the bound is an identity fo
 It also records that the `ℓ^p` norm is monotone and positively homogeneous in the component norms.
 
 It also records that taking a component of `WithLp p (α × β)` commutes with `Set.indicator`, as
-Mathlib's `norm_indicator_eq_indicator_norm` does for the norm.
+Mathlib's `norm_indicator_eq_indicator_norm` does for the norm, that an indexed family of pairs in
+`WithLp p (α × β)` has bounded range if and only if each coordinate family does, and that a graph
+map `x ↦ (f x, u x)` into `WithLp p (E × V)` is the sum of `f` and `u` followed by the inclusions
+of the two factors.
 
 Finally, it bundles the componentwise action of two continuous linear maps `f` and `g` on
 `WithLp p (α × β)` as a continuous linear map `f.withLpProdMap p g`, the continuous counterpart of
 Mathlib's `LinearIsometry.withLpProdMap`. For `p = 2` and inner product spaces this is the
 orthogonal block sum `f ⊕ g`. It is additive in the pair `(f, g)`, its rank is the sum of the
 ranks of `f` and `g`, and its operator norm is the larger of the two operator norms. The
-projections onto the factors and the inclusions of the factors are contractions.
+projections onto the factors and the inclusions of the factors are contractions, and fixing one
+coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
 
 ## Main statements
 
 * `WithLp.prod_norm_le_norm_fst_add_norm_snd` — the bound `‖x‖ ≤ ‖x.fst‖ + ‖x.snd‖`.
+* `WithLp.prod_norm_eq_norm_fst_of_snd_eq_zero`, `WithLp.prod_norm_eq_norm_snd_of_fst_eq_zero` —
+  a pair with one vanishing component has the norm of the other.
 * `WithLp.prod_norm_nonneg` — the norm of a pair is nonnegative, in possibly noncommutative
   seminormed groups.
 * `WithLp.prod_mul_norm_le_mul_norm` — componentwise bounds `c * ‖x.i‖ ≤ d * ‖y.i‖` give
@@ -40,6 +46,9 @@ projections onto the factors and the inclusions of the factors are contractions.
   strictly less than `1`.
 * `WithLp.fst_indicator`, `WithLp.snd_indicator` — a component of an indicator is the indicator
   of the component.
+* `TauCeti.isBounded_range_toLp` — `Set.range (fun i ↦ WithLp.toLp p (f i, g i))` is bounded if
+  and only if `Set.range f` and `Set.range g` are bounded.
+* `TauCeti.toLp_prodMk_eq_add` — `x ↦ (f x, u x)` is `x ↦ ι₁ (f x) + ι₂ (u x)`.
 * `ContinuousLinearMap.withLpProdMap` — the block sum `f ⊕ g` on `WithLp p (α × β)`.
 * `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
@@ -48,6 +57,8 @@ projections onto the factors and the inclusions of the factors are contractions.
   `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inl_le_one`,
   `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inr_le_one` — the projections onto and the
   inclusions of the factors are contractions.
+* `WithLp.isometry_toLp_prodMk_left`, `WithLp.isometry_toLp_prodMk_right` — fixing one coordinate
+  embeds the other factor isometrically into `WithLp p (α × β)`.
 -/
 
 public section
@@ -59,6 +70,22 @@ universe u v
 namespace TauCeti
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {α β : Type*}
+
+/-- A pair whose second component vanishes has the norm of its first component. -/
+theorem _root_.WithLp.prod_norm_eq_norm_fst_of_snd_eq_zero [SeminormedAddCommGroup α]
+    [SeminormedAddCommGroup β] {x : WithLp p (α × β)} (hx : x.snd = 0) : ‖x‖ = ‖x.fst‖ := by
+  obtain ⟨a, b⟩ := x
+  simp only [WithLp.toLp_snd] at hx
+  subst hx
+  simp only [WithLp.toLp_fst, WithLp.norm_toLp_fst]
+
+/-- A pair whose first component vanishes has the norm of its second component. -/
+theorem _root_.WithLp.prod_norm_eq_norm_snd_of_fst_eq_zero [SeminormedAddCommGroup α]
+    [SeminormedAddCommGroup β] {x : WithLp p (α × β)} (hx : x.fst = 0) : ‖x‖ = ‖x.snd‖ := by
+  obtain ⟨a, b⟩ := x
+  simp only [WithLp.toLp_fst] at hx
+  subst hx
+  simp only [WithLp.toLp_snd, WithLp.norm_toLp_snd]
 
 /-- The `ℓ^p` norm of a pair is at most the sum of the norms of its two components. -/
 theorem _root_.WithLp.prod_norm_le_norm_fst_add_norm_snd [SeminormedAddCommGroup α]
@@ -163,6 +190,44 @@ theorem _root_.WithLp.snd_indicator (f : ι → WithLp p (α × β)) (x : ι) :
   (congr_fun (Set.indicator_comp_of_zero (g := WithLp.snd) WithLp.zero_snd) x).symm
 
 end Indicator
+
+section Bornology
+
+variable {p : ℝ≥0∞} {ι : Sort*} {α β : Type*} [Bornology α] [Bornology β]
+
+/-- A family of pairs in `WithLp p (α × β)` has bounded range if and only if each coordinate
+family has bounded range. -/
+@[simp]
+theorem isBounded_range_toLp {f : ι → α} {g : ι → β} :
+    Bornology.IsBounded (Set.range fun i ↦ WithLp.toLp p (f i, g i)) ↔
+      Bornology.IsBounded (Set.range f) ∧ Bornology.IsBounded (Set.range g) := by
+  have hfst : Prod.fst '' (WithLp.ofLp '' Set.range fun i ↦ WithLp.toLp p (f i, g i)) =
+      Set.range f := by
+    rw [Set.image_image, ← Set.range_comp]; rfl
+  have hsnd : Prod.snd '' (WithLp.ofLp '' Set.range fun i ↦ WithLp.toLp p (f i, g i)) =
+      Set.range g := by
+    rw [Set.image_image, ← Set.range_comp]; rfl
+  rw [Bornology.isBounded_induced, ← Bornology.isBounded_image_fst_and_snd, hfst, hsnd]
+
+end Bornology
+
+section Graph
+
+variable {p : ℝ≥0∞} {𝕜 : Type*} [NormedField 𝕜]
+
+/-- The map `x ↦ (f x, u x)` into the `Lᵖ` product is `x ↦ ι₁ (f x) + ι₂ (u x)`, read through the
+identification `WithLp p (E × V) ≃L E × V`; for `f = id` this is the graph of `u`. -/
+theorem toLp_prodMk_eq_add {α E V : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup V] [NormedSpace 𝕜 V] (f : α → E) (u : α → V) :
+    (fun x ↦ WithLp.toLp p (f x, u x)) = fun x ↦
+      (WithLp.prodContinuousLinearEquiv p 𝕜 E V).symm.toContinuousLinearMap
+          (ContinuousLinearMap.inl 𝕜 E V (f x)) +
+        (WithLp.prodContinuousLinearEquiv p 𝕜 E V).symm.toContinuousLinearMap
+          (ContinuousLinearMap.inr 𝕜 E V (u x)) := by
+  funext x
+  simp [WithLp.ext_iff]
+
+end Graph
 
 end TauCeti
 
@@ -325,5 +390,24 @@ theorem norm_prodContinuousLinearEquiv_symm_comp_inr_le_one :
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by simp
 
 end Contraction
+
+/-- Fixing the first coordinate, `y ↦ WithLp.toLp p (x, y)` is an isometry into
+`WithLp p (α × β)`. -/
+theorem isometry_toLp_prodMk_left (p : ℝ≥0∞) [Fact (1 ≤ p)] {α β : Type*}
+    [PseudoEMetricSpace α] [PseudoEMetricSpace β] (x : α) :
+    Isometry fun y : β ↦ toLp p (x, y) := by
+  intro y₁ y₂
+  rcases p.dichotomy with rfl | hp
+  · simp [prod_edist_eq_sup]
+  · have hp₀ : 0 < p.toReal := zero_lt_one.trans_le hp
+    simp [prod_edist_eq_add hp₀, ENNReal.zero_rpow_of_pos hp₀, ENNReal.rpow_rpow_inv hp₀.ne']
+
+/-- Fixing the second coordinate, `x ↦ WithLp.toLp p (x, y)` is an isometry into
+`WithLp p (α × β)`. -/
+theorem isometry_toLp_prodMk_right (p : ℝ≥0∞) [Fact (1 ≤ p)] {α β : Type*}
+    [PseudoEMetricSpace α] [PseudoEMetricSpace β] (y : β) :
+    Isometry fun x : α ↦ toLp p (x, y) := by
+  simpa [Function.comp_def] using
+    (IsometryEquiv.withLpProdComm p β α).isometry.comp (isometry_toLp_prodMk_left p y)
 
 end WithLp

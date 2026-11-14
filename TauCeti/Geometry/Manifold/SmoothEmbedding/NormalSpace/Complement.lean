@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Coordinates
 public import TauCeti.Analysis.Calculus.QuotientRange
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # Fixed complementary coordinates for intrinsic normal spaces
@@ -172,9 +173,14 @@ theorem exists_contMDiffOn_inTangentCoordinates_quotientRangeCoordinate
     (mfderiv I J (f : M → N)) x₀
   have hA : ContMDiffAt I 𝓘(𝕜, E →L[𝕜] F) m A x₀ :=
     f.contMDiff.contMDiffAt.mfderiv_const hm
-  obtain ⟨Q, hQ, W, hW, hxW, hInv⟩ := hA.continuousAt.exists_isInvertible_coprod_subtypeL
-    (f.hasLeftInverse_inTangentCoordinates_mfderiv hn (mem_chart_source H x₀)
-      (mem_chart_source G (f x₀)))
+  -- The differential at `x₀` is split-injective, hence so is its tangent-coordinate expression.
+  have hleft : (inTangentCoordinates I J _root_.id (f : M → N)
+      (mfderiv I J (f : M → N)) x₀ x₀).HasLeftInverse := by
+    rw [inTangentCoordinates, id_eq, ContinuousLinearMap.hasLeftInverse_inCoordinates_iff
+      (FiberBundle.mem_baseSet_trivializationAt' x₀)
+      (FiberBundle.mem_baseSet_trivializationAt' (f x₀))]
+    exact isDiffImmersionAt_iff.1 (f.isImmersion.isDiffImmersionAt hn x₀)
+  obtain ⟨Q, hQ, W, hW, hxW, hInv⟩ := hA.continuousAt.exists_isInvertible_coprod_subtypeL hleft
   obtain ⟨V, hV, hAV⟩ := (contMDiffAt_iff_contMDiffOn_nhds hm').mp hA
   let S := (chartAt H x₀).source ∩ f ⁻¹' (chartAt G (f x₀)).source
   have hS : IsOpen S := (chartAt H x₀).open_source.inter

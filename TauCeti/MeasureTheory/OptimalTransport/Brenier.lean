@@ -236,7 +236,6 @@ private theorem IsCoupling.integrable_toReal_of_ae_mem_subdifferential [IsFinite
       Integrable (fun y => (fenchelConjugate (innerₗ E) u y).toReal) ν := by
   have := hπ.isFiniteMeasure
   have : IsFiniteMeasure ν := hπ.snd_eq ▸ inferInstance
-  have hbot (x : E) : u x ≠ ⊥ := apply_ne_bot_of_mem_subdifferential (innerₗ E) h₀ x
   have hx₀ := ne_top_of_mem_subdifferential (innerₗ E) h₀
   have hy₀ := fenchelConjugate_ne_top_of_mem_subdifferential (innerₗ E) h₀
   have hμ1 : Integrable (fun z : E × E => z.1) π :=
@@ -289,7 +288,6 @@ private theorem IsCoupling.integral_inner_le_of_ae_mem_subdifferential [IsFinite
     simp [hσ0]
   have := ae_neBot.2 hπ0
   obtain ⟨⟨x₀, y₀⟩, h₀⟩ := h.exists
-  have hbot (x : E) : u x ≠ ⊥ := apply_ne_bot_of_mem_subdifferential (innerₗ E) h₀ x
   have hgraph : ∀ᵐ z ∂π, u z.1 ≠ ⊤ ∧ fenchelConjugate (innerₗ E) u z.2 ≠ ⊤ ∧
       (u z.1).toReal + (fenchelConjugate (innerₗ E) u z.2).toReal = ⟪z.1, z.2⟫ :=
     h.mono fun z hz =>

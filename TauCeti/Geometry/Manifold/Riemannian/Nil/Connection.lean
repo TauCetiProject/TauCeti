@@ -138,7 +138,7 @@ private theorem leviCivitaConnection_eq_fderiv_add (p : Nil)
       form y.1 (tangentSpaceCastModel 𝓘(ℝ, R3) y v) (tangentSpaceCastModel 𝓘(ℝ, R3) y w) :=
     (inner_def y v w).trans (form_apply _ _ _).symm
   exact TauCeti.Manifold.leviCivitaConnection_model_space_eq_fderiv_add
-    (F := R3) (g := fun r ↦ form r.1) (x := toProd p) (V := V) hg (differentiableAt_form _) hV u
+    (F := R3) (g := fun r ↦ form r.1) (x := toProd p) (V := V) hg hV u
     _ fun w ↦ two_mul_form_christoffel (toProd p) u _ w
 
 /-- The Levi-Civita derivative of the constant field `v` of `Nil` in the direction `u`, at a point
