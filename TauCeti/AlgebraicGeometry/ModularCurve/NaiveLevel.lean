@@ -359,7 +359,6 @@ theorem isRigid_gammaOneNaive (hN : 4 ≤ N) : (gammaOneNaive B N).IsRigid := by
   · rw [← ofAdd_neg, Ne, Multiplicative.ofAdd.injective.eq_iff, ← sub_eq_zero, sub_neg_eq_add]
     exact_mod_cast h 3 (by omega) (by omega)
 
-
 /-- The morphism `[Γ(N)] ⟶ [Γ₁(N)]` of naive moduli problems which keeps the first component `P`
 of a naive `[Γ(N)]`-structure `(P, Q)`, that is, restricts it along `z ↦ (z, 0)`. When `N` is
 invertible, `P` is the first vector of the basis `(P, Q)` of the `N`-torsion. -/
@@ -603,6 +602,8 @@ noncomputable def naiveLocusHom {T : Over X.base} (y : T ⟶ naiveLocusOver u) :
     map_one' := by simp
     map_mul' a b := by simp [MonObj.comp_mul] }
 
+/-- Under `baseChangePointsEquiv`, the point `naiveLocusHom u y a` of the base change `E_T` is
+the point `y ≫ naiveLocusι u ≫ u a` of `E` with values in `T`. -/
 @[simp]
 theorem baseChangePointsEquiv_naiveLocusHom {T : Over X.base} (y : T ⟶ naiveLocusOver u) (a : A) :
     X.baseChangePointsEquiv T (naiveLocusHom u y a) = y ≫ naiveLocusι u ≫ u a :=
@@ -655,6 +656,7 @@ noncomputable def naiveLocusEquiv (T : Over X.base) :
     (T ⟶ naiveLocusOver u) ≃ (naiveLevel B A).obj (op (X.baseChangeFunctor.obj T)) :=
   Equiv.ofBijective _ (bijective_naiveLocusHom u hu T)
 
+/-- The naive structure corresponding to a point `y` of the naive locus is `naiveLocusHom u y`. -/
 @[simp]
 theorem naiveLevelEquiv_naiveLocusEquiv {T : Over X.base} (y : T ⟶ naiveLocusOver u) :
     (naiveLevelEquiv _ (naiveLocusEquiv u hu T y)).1 = naiveLocusHom u y := by
@@ -727,6 +729,8 @@ noncomputable def gammaOneNaiveRelRepData : (gammaOneNaive B N).RelRepData where
   representableBy X :=
     naiveLevelRepresentableBy _ fun _ ↦ X.curve.existsUnique_comp_torsionPointHom N
 
+/-- The object representing the naive problem `[Γ₁(N)]` over `X = (E/S)` is the naive locus of
+the universal point `torsionPointHom` of `E[N]`. -/
 @[simp]
 theorem gammaOneNaiveRelRepData_rep (X : EllObj B) :
     (gammaOneNaiveRelRepData (B := B) (N := N)).rep X =
@@ -792,6 +796,8 @@ noncomputable def gammaNaiveRelRepData : (gammaNaive B N).RelRepData where
   representableBy X :=
     naiveLevelRepresentableBy _ fun _ ↦ X.curve.existsUnique_comp_torsionPairHom N
 
+/-- The object representing the naive problem `[Γ(N)]` over `X = (E/S)` is the naive locus of
+the universal pair `torsionPairHom` of points of `E[N]`. -/
 @[simp]
 theorem gammaNaiveRelRepData_rep (X : EllObj B) :
     (gammaNaiveRelRepData (B := B) (N := N)).rep X =
