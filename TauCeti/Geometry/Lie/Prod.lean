@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Functor
+public import TauCeti.Geometry.Manifold.Algebra.Prod
 public import Mathlib.Algebra.Lie.Prod
 
 /-!
@@ -21,6 +22,10 @@ arbitrary models with corners and independent model and carrier universes.
 * `TauCeti.Lie.prodLieEquiv_apply`: its two components are the native Lie maps of the projections.
 * `TauCeti.Lie.lieMap_fst_prodLieEquiv_symm` and
   `TauCeti.Lie.lieMap_snd_prodLieEquiv_symm`: the projections recover the two input derivations.
+* `TauCeti.Lie.prodLieEquiv_symm_eq_add`: the inverse equivalence sums the Lie maps of the two
+  smooth factor inclusions.
+* `TauCeti.Lie.prodLieEquiv_lieMap_prod`: the Lie map of a paired homomorphism splits into the pair
+  of Lie maps.
 
 ## References
 
@@ -127,5 +132,68 @@ theorem lieMap_snd_prodLieEquiv_symm
   have h := congrArg Prod.snd
     ((prodLieEquiv (I := I) (I' := I') (G := G) (G' := G')).apply_symm_apply p)
   simpa only [prodLieEquiv_apply] using h
+
+/-- The first factor inclusion maps into the first Lie-algebra summand under `prodLieEquiv`. -/
+theorem prodLieEquiv_lieMap_inl (X : LeftInvariantDerivation I G) :
+    prodLieEquiv (lieMap (ContMDiffMonoidMorphism.inl (I := I) (I' := I') (G' := G')) X) =
+      (X, 0) := by
+  rw [prodLieEquiv_apply]
+  refine Prod.ext ?_ ?_
+  · have h := DFunLike.congr_fun
+      (lieMap_comp (ContMDiffMonoidMorphism.inl (I := I) (I' := I') (G' := G'))
+        ContMDiffMonoidMorphism.fst) X
+    simpa only [LieHom.comp_apply, ContMDiffMonoidMorphism.fst_comp_inl, lieMap_id,
+      one_apply_eq_self] using h.symm
+  · have h := DFunLike.congr_fun
+      (lieMap_comp (ContMDiffMonoidMorphism.inl (I := I) (I' := I') (G' := G'))
+        ContMDiffMonoidMorphism.snd) X
+    simpa only [LieHom.comp_apply, ContMDiffMonoidMorphism.snd_comp_inl, lieMap_one,
+      zero_apply] using h.symm
+
+/-- The second factor inclusion maps into the second Lie-algebra summand under `prodLieEquiv`. -/
+theorem prodLieEquiv_lieMap_inr (Y : LeftInvariantDerivation I' G') :
+    prodLieEquiv (lieMap (ContMDiffMonoidMorphism.inr (I := I) (I' := I') (G := G)) Y) =
+      (0, Y) := by
+  rw [prodLieEquiv_apply]
+  refine Prod.ext ?_ ?_
+  · have h := DFunLike.congr_fun
+      (lieMap_comp (ContMDiffMonoidMorphism.inr (I := I) (I' := I') (G := G))
+        ContMDiffMonoidMorphism.fst) Y
+    simpa only [LieHom.comp_apply, ContMDiffMonoidMorphism.fst_comp_inr, lieMap_one,
+      zero_apply] using h.symm
+  · have h := DFunLike.congr_fun
+      (lieMap_comp (ContMDiffMonoidMorphism.inr (I := I) (I' := I') (G := G))
+        ContMDiffMonoidMorphism.snd) Y
+    simpa only [LieHom.comp_apply, ContMDiffMonoidMorphism.snd_comp_inr, lieMap_id,
+      one_apply_eq_self] using h.symm
+
+/-- The inverse product Lie equivalence reconstructs a derivation as the sum of the Lie maps of
+the two smooth factor inclusions. -/
+theorem prodLieEquiv_symm_eq_add
+    (p : LeftInvariantDerivation I G × LeftInvariantDerivation I' G') :
+    prodLieEquiv.symm p =
+      lieMap (ContMDiffMonoidMorphism.inl (I := I) (I' := I') (G' := G')) p.1 +
+        lieMap (ContMDiffMonoidMorphism.inr (I := I) (I' := I') (G := G)) p.2 := by
+  apply (prodLieEquiv (I := I) (I' := I') (G := G) (G' := G')).injective
+  simp only [LieEquiv.coe_toLieHom, LieEquiv.apply_symm_apply, map_add, prodLieEquiv_lieMap_inl,
+    prodLieEquiv_lieMap_inr]
+  exact (Prod.fst_add_snd p).symm
+
+/-- Under `prodLieEquiv`, the Lie map of a paired smooth homomorphism is the pair of Lie maps. -/
+theorem prodLieEquiv_lieMap_prod
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+    {G'' : Type*} [TopologicalSpace G''] [ChartedSpace H'' G''] [Group G'']
+    [LieGroup I'' ∞ G''] [FiniteDimensional ℝ E'']
+    (φ : ContMDiffMonoidMorphism I'' I ∞ G'' G)
+    (ψ : ContMDiffMonoidMorphism I'' I' ∞ G'' G')
+    (D : LeftInvariantDerivation I'' G'') :
+    prodLieEquiv (lieMap (φ.prod ψ) D) = (lieMap φ D, lieMap ψ D) := by
+  rw [prodLieEquiv_apply]
+  refine Prod.ext ?_ ?_
+  · have h := DFunLike.congr_fun (lieMap_comp (φ.prod ψ) ContMDiffMonoidMorphism.fst) D
+    simpa only [LieHom.comp_apply, ContMDiffMonoidMorphism.fst_comp_prod] using h.symm
+  · have h := DFunLike.congr_fun (lieMap_comp (φ.prod ψ) ContMDiffMonoidMorphism.snd) D
+    simpa only [LieHom.comp_apply, ContMDiffMonoidMorphism.snd_comp_prod] using h.symm
 
 end TauCeti.Lie
