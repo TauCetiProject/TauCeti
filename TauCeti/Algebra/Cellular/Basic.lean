@@ -267,7 +267,7 @@ theorem map_refl : c.map (AlgEquiv.refl : A ≃ₐ[R] A) = c := by
 
 /-- Transporting along `e` and then `e'` is transporting along `e.trans e'`. -/
 @[simp]
-theorem map_trans (e : A ≃ₐ[R] B) (e' : B ≃ₐ[R] C) :
+theorem map_map (e : A ≃ₐ[R] B) (e' : B ≃ₐ[R] C) :
     (c.map e).map e' = c.map (e.trans e') := by
   ext i
   simp
