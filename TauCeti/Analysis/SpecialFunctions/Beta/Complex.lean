@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Euler's second beta integral with complex parameters
@@ -37,11 +38,8 @@ private lemma betaKernel_scale (a b : ℂ) {x t : ℝ} (hx : 0 < x) :
       (x : ℂ) ^ (-b - 1) * ((t : ℂ) ^ (a - 1) * (1 + (t : ℂ)) ^ (-(a + b))) := by
   have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx.ne'
   have hfactor : x + x * t = x * (1 + t) := by ring
-  have harg (z : ℂ) : (x : ℂ).arg + z.arg ∈ Ioc (-Real.pi) Real.pi := by
-    simpa only [arg_ofReal_of_nonneg hx.le, zero_add] using
-      (mem_Ioc.mpr ⟨neg_pi_lt_arg z, arg_le_pi z⟩)
-  rw [hfactor, ofReal_mul, ofReal_mul, mul_cpow (harg _) _, mul_cpow (harg _) _,
-    ofReal_add, ofReal_one]
+  rw [hfactor, ofReal_mul, ofReal_mul, TauCeti.ofReal_mul_cpow hx.le,
+    TauCeti.ofReal_mul_cpow hx.le, ofReal_add, ofReal_one]
   calc
     _ = ((x : ℂ) ^ (a - 1) * (x : ℂ) ^ (-(a + b))) *
         ((t : ℂ) ^ (a - 1) * (1 + (t : ℂ)) ^ (-(a + b))) := by ring
