@@ -23,6 +23,7 @@ import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import Mathlib.Topology.UniformSpace.Completion
 import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Topology.UniformSpace.Ascoli
 import Mathlib.Topology.MetricSpace.UniformConvergence
 
@@ -424,8 +425,8 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_of_holderOnWith {Z M : Type*}
   obtain ⟨φ, hφ, v, hv, hconv⟩ :=
     exists_subseq_tendstoLocallyUniformlyOn_of_equicontinuousOn hU hequi hpt
   -- A common Hölder bound passes to the pointwise limit.
-  exact ⟨φ, hφ, v, hv, hconv, fun K hKU C hC x hx y hy ↦ le_of_tendsto'
-    ((hconv.tendsto_at (hKU hx)).edist (hconv.tendsto_at (hKU hy))) fun n ↦ hC (φ n) x hx y hy⟩
+  exact ⟨φ, hφ, v, hv, hconv, fun K hKU C hC ↦ HolderOnWith.of_tendsto
+    (fun x hx ↦ hconv.tendsto_at (hKU hx)) (Eventually.of_forall fun n ↦ hC (φ n))⟩
 
 section Lipschitz
 
