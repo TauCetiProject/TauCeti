@@ -38,6 +38,8 @@ The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_mon
   zero at infinity.
 * `Polynomial.memLp_inv_one_add_norm_eval_sq`: `(1 + ‖P‖²)⁻¹` is square integrable when `P` is
   nonconstant.
+* `Polynomial.exists_forall_one_le_norm_eval`: a nonconstant polynomial over a normed ring with
+  multiplicative norm has modulus at least one outside a closed ball.
 -/
 
 public section
@@ -198,5 +200,15 @@ theorem memLp_inv_one_add_norm_eval_sq (hm : 0 < P.natDegree) :
     rw [← pow_mul]
     exact pow_le_pow_right₀ h₁ (by omega)
   linarith [hpow.trans ha]
+
+/-- A nonconstant polynomial over a normed ring with multiplicative norm has modulus at least one
+outside a closed ball about the origin. -/
+theorem exists_forall_one_le_norm_eval {R : Type*} [NormedRing R] [NormMulClass R]
+    {Q : Polynomial R} (hm : 0 < Q.natDegree) :
+    ∃ r : ℝ, ∀ z ∉ Metric.closedBall (0 : R) r, 1 ≤ ‖Q.eval z‖ := by
+  obtain ⟨r, -, hr⟩ := (Metric.hasBasis_cobounded_compl_closedBall (0 : R)).eventually_iff.mp
+    ((Q.tendsto_norm_atTop (natDegree_pos_iff_degree_pos.mp hm)
+      tendsto_norm_cobounded_atTop).eventually_ge_atTop 1)
+  exact ⟨r, hr⟩
 
 end Polynomial

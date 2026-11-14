@@ -27,6 +27,10 @@ of the functional `I` of `TauCeti.Vortex.sobolevReducedFunctional` on `H¹(ℂ) 
 
 This file carries out the direct method of the calculus of variations:
 
+* `TauCeti.Vortex.lowerSemicontinuous_add_lintegral_ofReal_mul_exp_sub_one_sub`: functionals of the
+  form of `I`, with an arbitrary a.e.-measurable weight in the potential (where the weight is
+  negative, `ENNReal.ofReal` cuts the integrand off at zero) and an arbitrary square-integrable
+  coefficient in the linear term, are lower semicontinuous for the weak topology of `H¹(ℂ)`.
 * `TauCeti.Vortex.lowerSemicontinuous_sobolevReducedFunctional`: `I` is lower semicontinuous for
   the weak topology of `H¹(ℂ)`. The Dirichlet energy and the potential are convex integral
   functionals of the weak gradient and of the value, and the linear term is a continuous linear
@@ -57,32 +61,46 @@ namespace TauCeti.Vortex
 open MeasureTheory Set TopologicalSpace
 open scoped ENNReal
 
-/-- Taubes's functional as the sum of an extended nonnegative energy, the Dirichlet energy and the
-potential, and the linear term. -/
-private theorem sobolevReducedFunctional_eq_add (P : Polynomial ℂ)
-    (u : W1p (volume : Measure ℂ) ⊤ 2) :
-    sobolevReducedFunctional P u =
+/-- A functional of the form of Taubes's,
+`(‖∇u‖₂² / 2 + ∫ c u) + (1 / 16) ∫⁻ h (exp (2u) - 1 - 2u)`, as the sum of an extended
+nonnegative energy, the Dirichlet energy and the potential, and the linear term. -/
+private theorem add_lintegral_eq_add (h c : ℂ → ℝ) (u : W1p (volume : Measure ℂ) ⊤ 2) :
+    ((‖W1p.gradient u‖ ^ 2 / 2 + ∫ z, c z * W1p.value u z : ℝ) : EReal) +
+      (((∫⁻ z, ENNReal.ofReal (h z *
+        (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z))) / 16 : ℝ≥0∞) : EReal) =
       (((∫⁻ z, ENNReal.ofReal (‖W1p.gradient u z‖ ^ 2) ∂(volume : Measure ℂ).restrict
           ((⊤ : Opens ℂ) : Set ℂ)) / 2 +
-        (∫⁻ z, ENNReal.ofReal (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+        (∫⁻ z, ENNReal.ofReal (h z *
           (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z))) / 16 : ℝ≥0∞) : EReal) +
-        ((∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
-          (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value u z : ℝ) : EReal) := by
+        ((∫ z, c z * W1p.value u z : ℝ) : EReal) := by
   have hgrad : (∫⁻ z, ENNReal.ofReal (‖W1p.gradient u z‖ ^ 2) ∂(volume : Measure ℂ).restrict
       ((⊤ : Opens ℂ) : Set ℂ)) / 2 =
       ENNReal.ofReal (‖W1p.gradient u‖ ^ 2 / 2) := by
     rw [← ofReal_integral_eq_lintegral_ofReal (W1p.integrable_norm_gradient_sq u)
       (ae_of_all _ fun z ↦ sq_nonneg _), Lp.integral_norm_sq_eq_norm_sq,
       ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_ofNat]
-  rw [sobolevReducedFunctional_def, EReal.coe_ennreal_add, hgrad, EReal.coe_ennreal_ofReal,
+  rw [EReal.coe_ennreal_add, hgrad, EReal.coe_ennreal_ofReal,
     max_eq_left (by positivity), EReal.coe_add, add_right_comm]
 
-/-- **Weak lower semicontinuity of Taubes's functional.** For a complex polynomial `P` of degree
-at least one, the functional `TauCeti.Vortex.sobolevReducedFunctional P` is lower semicontinuous
-for the weak topology of `H¹(ℂ) = W^{1,2}(ℂ)`. -/
-theorem lowerSemicontinuous_sobolevReducedFunctional {P : Polynomial ℂ} (hm : 0 < P.natDegree) :
+/-- **Weak lower semicontinuity of functionals of Taubes's form.** For an a.e.-measurable weight
+`h` and a square-integrable coefficient `c`, the functional
+
+`u ↦ (‖∇u‖₂² / 2 + ∫ c u) + (1 / 16) ∫⁻ ENNReal.ofReal (h (exp (2u) - 1 - 2u))`
+
+is lower semicontinuous for the weak topology of `H¹(ℂ) = W^{1,2}(ℂ)`. Where `h` is negative, the
+integrand of the potential is cut off at zero by `ENNReal.ofReal`. Taubes's functional
+`TauCeti.Vortex.sobolevReducedFunctional P` is the case `h = ‖P‖² / (1 + ‖P‖²)`,
+`c = 2 ‖P'‖² / (1 + ‖P‖²)² - (1 + ‖P‖²)⁻¹ / 8`. -/
+theorem lowerSemicontinuous_add_lintegral_ofReal_mul_exp_sub_one_sub {h c : ℂ → ℝ}
+    (hh : AEMeasurable h) (hc : MemLp c 2) :
     LowerSemicontinuous fun u : WeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2) ↦
-      sobolevReducedFunctional P ((toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2)).symm u) := by
+      ((‖W1p.gradient ((toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2)).symm u)‖ ^ 2 / 2 +
+          ∫ z, c z * W1p.value ((toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2)).symm u) z :
+            ℝ) : EReal) +
+        (((∫⁻ z, ENNReal.ofReal (h z *
+          (Real.exp (2 * W1p.value ((toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2)).symm u) z) -
+            1 - 2 * W1p.value ((toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2)).symm u) z))) /
+              16 : ℝ≥0∞) : EReal) := by
   set e := (toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2)).symm
   -- The value and the weak gradient are weakly continuous.
   have hval (u : WeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2)) :
@@ -96,31 +114,31 @@ theorem lowerSemicontinuous_sobolevReducedFunctional {P : Polynomial ℂ} (hm : 
     rw [← W1p.gradientL_apply]
     rfl
   -- The energy is a sum of two weakly lower semicontinuous convex integrals.
-  have hpot := (lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub P _).comp
+  have hh' : AEMeasurable h ((volume : Measure ℂ).restrict ((⊤ : Opens ℂ) : Set ℂ)) :=
+    hh.restrict
+  have hpot := (lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub hh').comp
     (WeakSpace.map (W1p.valueL (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2))).continuous
   have hdir := lowerSemicontinuous_lintegral_norm_sq_comp_toWeakSpace_symm.comp
     (WeakSpace.map (W1p.gradientL (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2))).continuous
   simp only [Function.comp_def, hval, hgrad] at hpot hdir
   simp only [Opens.coe_top, Measure.restrict_univ] at hpot
-  have hdiv (c : ℝ≥0∞) (hc : c ≠ 0) : Continuous fun x : ℝ≥0∞ ↦ x / c :=
-    ENNReal.continuous_div_const c hc
-  have hdiv_mono (c : ℝ≥0∞) : Monotone fun x : ℝ≥0∞ ↦ x / c :=
-    fun _ _ h ↦ ENNReal.div_le_div_right h c
+  have hdiv (a : ℝ≥0∞) (ha : a ≠ 0) : Continuous fun x : ℝ≥0∞ ↦ x / a :=
+    ENNReal.continuous_div_const a ha
+  have hdiv_mono (a : ℝ≥0∞) : Monotone fun x : ℝ≥0∞ ↦ x / a :=
+    fun _ _ hxy ↦ ENNReal.div_le_div_right hxy a
   have henergy := continuous_coe_ennreal_ereal.comp_lowerSemicontinuous
     (((hdiv 2 two_ne_zero).comp_lowerSemicontinuous hdir (hdiv_mono 2)).add
       ((hdiv 16 (by norm_num)).comp_lowerSemicontinuous hpot (hdiv_mono 16)))
     fun _ _ h ↦ EReal.coe_ennreal_le_coe_ennreal_iff.mpr h
   -- The linear term is a continuous linear functional of the value.
-  have hc := (memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm).restrict
-    ((⊤ : Opens ℂ) : Set ℂ)
-  set ℓ : StrongDual ℝ (Lp ℝ 2 ((volume : Measure ℂ).restrict ((⊤ : Opens ℂ) : Set ℂ))) :=
-    innerSL ℝ (hc.toLp _)
+  have hc' := hc.restrict ((⊤ : Opens ℂ) : Set ℂ)
+  let ℓ : StrongDual ℝ (Lp ℝ 2 ((volume : Measure ℂ).restrict ((⊤ : Opens ℂ) : Set ℂ))) :=
+    innerSL ℝ (hc'.toLp _)
   have hℓ (v : Lp ℝ 2 ((volume : Measure ℂ).restrict ((⊤ : Opens ℂ) : Set ℂ))) :
-      ℓ v = ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
-        (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * v z := by
-    have h := integral_congr_ae (hc.coeFn_toLp.mono fun z hz ↦ congrArg (· * v z) hz)
-    simp only [Opens.coe_top, Measure.restrict_univ] at h
-    rw [← h, innerSL_apply_apply, L2.inner_def]
+      ℓ v = ∫ z, c z * v z := by
+    have hint := integral_congr_ae (hc'.coeFn_toLp.mono fun z hz ↦ congrArg (· * v z) hz)
+    simp only [Opens.coe_top, Measure.restrict_univ] at hint
+    rw [← hint, innerSL_apply_apply, L2.inner_def]
     simp only [Opens.coe_top, Measure.restrict_univ, RCLike.inner_apply, conj_trivial]
     exact integral_congr_ae (ae_of_all _ fun z ↦ mul_comm _ _)
   have hℓc : Continuous fun v : WeakSpace ℝ
@@ -133,8 +151,20 @@ theorem lowerSemicontinuous_sobolevReducedFunctional {P : Polynomial ℂ} (hm : 
   have hsum := henergy.add' hlin.lowerSemicontinuous fun _ ↦
     EReal.continuousAt_add (Or.inr (EReal.coe_ne_bot _)) (Or.inl (EReal.coe_ennreal_ne_bot _))
   simp only [Function.comp_def] at hsum
-  rw [funext fun u ↦ sobolevReducedFunctional_eq_add P (e u)]
-  exact hsum
+  convert hsum using 1
+  exact funext fun u ↦ add_lintegral_eq_add h c (e u)
+
+/-- **Weak lower semicontinuity of Taubes's functional.** For a complex polynomial `P` of degree
+at least one, the functional `TauCeti.Vortex.sobolevReducedFunctional P` is lower semicontinuous
+for the weak topology of `H¹(ℂ) = W^{1,2}(ℂ)`. -/
+theorem lowerSemicontinuous_sobolevReducedFunctional {P : Polynomial ℂ} (hm : 0 < P.natDegree) :
+    LowerSemicontinuous fun u : WeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2) ↦
+      sobolevReducedFunctional P ((toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2)).symm u) := by
+  have hh : Continuous fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) := by
+    fun_prop (disch := intro z; positivity)
+  simpa only [sobolevReducedFunctional_def] using
+    lowerSemicontinuous_add_lintegral_ofReal_mul_exp_sub_one_sub hh.aemeasurable
+      (memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm)
 
 /-- **Existence of a minimizer of Taubes's functional.** For a complex polynomial `P` of degree
 at least one, the functional `TauCeti.Vortex.sobolevReducedFunctional P` attains its minimum on
