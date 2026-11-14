@@ -47,7 +47,10 @@ estimates follow in a basis of `F`.
 * `TauCeti.exists_eLpNorm_le_mul_eLpNormWkp_one`: the local Sobolev inequality
   `‖u‖_{L^s(V)} ≤ C ‖u‖_{W^{1,q}(W)}`.
 * `TauCeti.exists_eLpNorm_top_le_mul_eLpNormWkp_one`: the order-one `L^∞` bound for `q > 2`.
+* `TauCeti.MemWkpLoc.memLpLoc_top`: the local `L^∞` embedding `W^{1,q}_loc ⊂ L^∞_loc` for `q > 2`.
 * `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le`: the embedding `W^{1,q}_loc ⊂ L^s_loc`.
+* `TauCeti.MemWkpLoc.exists_two_lt_le_memLpLoc_of_one_lt`: for `p > 2` and `s > 1`, membership of
+  `W^{1,s}_loc` in `L^r_loc` for some finite `2 < r ≤ p`.
 * `TauCeti.MemWkpLoc.of_succ_of_inv_sub_inv_le`: order lowering `W^{k+1,q}_loc ⊂ W^{k,s}_loc`.
 * `TauCeti.exists_eLpNormWkp_le_mul_eLpNormWkp_succ`: the estimate for order lowering.
 * `TauCeti.MemWkpLoc.exists_two_lt_memWkpLoc_one_of_two_lt_mul`: for `kp > 2`, membership in
@@ -166,6 +169,18 @@ theorem exists_eLpNorm_top_le_mul_eLpNormWkp_one {q : ℝ≥0∞} (hq : 2 < q)
   rw [← eLpNorm_congr_ae (hS v), ← Lp.eNorm_def, ← eNorm_eq_nnNorm]
   exact S.le_opENorm v
 
+/-- **The local `L^∞` Sobolev embedding for `q > 2`.** Every `u ∈ W^{1,q}_loc(Ω, F)` with
+`2 < q ≤ ∞` is locally `L^∞` on `Ω`. -/
+theorem MemWkpLoc.memLpLoc_top {q : ℝ≥0∞} (hu : MemWkpLoc q Ω 1 u) (hq : 2 < q) :
+    MemLpLoc ∞ Ω u := by
+  refine memLpLoc_iff.2 fun K hKΩ hK => ?_
+  obtain ⟨W, hKW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
+  have hKc : closure K = K := hK.isClosed.closure_eq
+  obtain ⟨C, hC⟩ := exists_eLpNorm_top_le_mul_eLpNormWkp_one (F := F) (W := W) hq
+    (by rwa [hKc]) (by rwa [hKc])
+  exact memLp_iff.2 ((hC u).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
+    (lt_top_iff_ne_top.2 (hu.eLpNormWkp_ne_top_of_closure_subset hWc hWΩ))))
+
 /-- **The local Sobolev embedding.** If `1 ≤ q ≤ s < ∞` and `1/q - 1/s ≤ 1/2`, every
 `u ∈ W^{1,q}_loc(Ω, F)` is locally `L^s` on `Ω`. This includes the critical exponent
 `1/s = 1/q - 1/2` for `q < 2`. -/
@@ -178,6 +193,33 @@ theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le (hu : MemWkpLoc q Ω 1 u) (hq : 1 �
     (by rwa [hKc]) (by rwa [hKc])
   exact memLp_iff.2 ((hC u).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
     (lt_top_iff_ne_top.2 (hu.eLpNormWkp_ne_top_of_closure_subset hWc hWΩ))))
+
+/-- **Order-one Sobolev upgrade above `2`.** If `2 < p ≤ ∞` and `1 < s ≤ ∞`, every
+`u ∈ W^{1,s}_loc(Ω, F)` belongs to `L^r_loc(Ω, F)` for some finite exponent `r` with
+`2 < r ≤ p`. -/
+theorem MemWkpLoc.exists_two_lt_le_memLpLoc_of_one_lt {p s : ℝ≥0∞} (hu : MemWkpLoc s Ω 1 u)
+    (hp : 2 < p) (hs : 1 < s) : ∃ r : ℝ≥0, 2 < r ∧ (r : ℝ≥0∞) ≤ p ∧ MemLpLoc r Ω u := by
+  let p' : ℝ≥0 := (min p 3).toNNReal
+  have hp'_coe : (p' : ℝ≥0∞) = min p 3 :=
+    ENNReal.coe_toNNReal (ne_top_of_le_ne_top ENNReal.ofNat_ne_top (min_le_right p 3))
+  have hp' : 2 < p' := by
+    rw [← ENNReal.coe_lt_coe, hp'_coe]
+    exact lt_min hp (by exact_mod_cast (by norm_num : 2 < 3))
+  let s' : ℝ≥0 := (min s 2).toNNReal
+  have hs'_coe : (s' : ℝ≥0∞) = min s 2 :=
+    ENNReal.coe_toNNReal (ne_top_of_le_ne_top ENNReal.ofNat_ne_top (min_le_right s 2))
+  have hs'1 : 1 < s' := by
+    rw [← ENNReal.coe_lt_coe, hs'_coe]
+    exact lt_min hs ENNReal.one_lt_two
+  have hs'2 : s' ≤ 2 := ENNReal.coe_le_coe.1 (hs'_coe.le.trans (min_le_right s 2))
+  have hu' : MemWkpLoc s' Ω 1 u := hu.mono_exponent (hs'_coe.le.trans (min_le_left s 2))
+  obtain ⟨t, hs't, hgap, ht2⟩ :=
+    exists_le_and_inv_sub_inv_le_and_lt_mul (k := 1) (p := s') (n := 2) hs'2
+      (by rw [← NNReal.coe_lt_coe]; push_cast; linarith [(by exact_mod_cast hs'1 : (1 : ℝ) < s')])
+  have hut : MemLpLoc t Ω u := hu'.memLpLoc_of_inv_sub_inv_le hs'1.le hs't (by simpa using hgap)
+  exact ⟨min t p', lt_min (by simpa using ht2) hp',
+    (ENNReal.coe_le_coe.2 (min_le_right t p')).trans (hp'_coe.le.trans (min_le_left p 3)),
+    hut.mono_exponent (ENNReal.coe_le_coe.2 (min_le_left t p'))⟩
 
 /-- **Order lowering.** If `1 ≤ q ≤ s < ∞` and `1/q - 1/s ≤ 1/2`, then
 `W^{k+1,q}_loc(Ω, F) ⊂ W^{k,s}_loc(Ω, F)`: the function and its weak derivatives through order `k`

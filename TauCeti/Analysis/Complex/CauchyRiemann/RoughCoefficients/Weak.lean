@@ -167,10 +167,16 @@ theorem mono (h : IsWeakCRSolution q Ω J DJ S ξ η) (hΩ : Ω' ≤ Ω) :
   ⟨h.memLpLoc.mono_set hΩ, h.locallyIntegrableOn.mono_set hΩ, fun φ =>
     h.2.2 ⟨φ, φ.contDiff, φ.hasCompactSupport, φ.tsupport_subset.trans hΩ⟩⟩
 
+/-- Replacing the local integrability exponent of a weak solution requires only `MemLpLoc r Ω ξ`,
+since the integral identity itself is independent of the exponent. -/
+theorem of_memLpLoc (h : IsWeakCRSolution q Ω J DJ S ξ η) (hξ : MemLpLoc r Ω ξ) :
+    IsWeakCRSolution r Ω J DJ S ξ η :=
+  ⟨hξ, h.locallyIntegrableOn, h.2.2⟩
+
 /-- A weak solution for the exponent `q` is a weak solution for every smaller exponent. -/
 theorem mono_exponent (h : IsWeakCRSolution q Ω J DJ S ξ η) (hrq : r ≤ q) :
     IsWeakCRSolution r Ω J DJ S ξ η :=
-  ⟨h.memLpLoc.mono_exponent hrq, h.locallyIntegrableOn, h.2.2⟩
+  h.of_memLpLoc (h.memLpLoc.mono_exponent hrq)
 
 /-- The weak equation is homogeneous in `(ξ, η)`. -/
 theorem const_smul (h : IsWeakCRSolution q Ω J DJ S ξ η) (c : ℝ) :
@@ -268,8 +274,9 @@ theorem IsSobolevCRCoefficients.integrable_inner_crFormalAdjoint
   simp only [inner_crFormalAdjoint]
   exact ((h₁.neg.sub h₂).sub h₃).add h₄
 
-/-- The integral of `⟪D* φ, ξ⟫` splits into the integrals of its four terms. -/
-private theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_eq_terms
+/-- Under Sobolev coefficients and the Hölder condition `1/p + 1/q ≤ 1`, the integral of
+`⟪D* φ, ξ⟫` splits into the integrals of its four terms. -/
+theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_eq_terms
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
     (hξ : MemLpLoc q Ω ξ) (φ : 𝓓(Ω, V)) :
     ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ =

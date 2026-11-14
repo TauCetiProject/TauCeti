@@ -61,6 +61,10 @@ integrability or compact support assumption on the function.
   convolutions converge in `L¹`, written with lower Lebesgue integrals.
 * `TauCeti.tendsto_setLIntegral_enorm_normed_convolution_sub`: for a locally integrable function
   these convolutions converge in `L¹(K)` on every compact set `K`.
+* `ContinuousLinearMap.tendsto_integral_bilin_normed_convolution`,
+  `TauCeti.tendsto_integral_smul_normed_convolution`: pairing an `Lᵖ` mollification with a fixed
+  conjugate-`Lᵠ` factor via a continuous bilinear map (or scalar multiplication) converges in the
+  codomain.
 * `ContinuousLinearMap.tendsto_setLIntegral_enorm_bilin_normedBump_sub`: mollifying both factors
   of a bilinear product of `Lᵖ` and `Lᵠ` functions converges in `L¹(W)` to the product of the
   limits.
@@ -183,6 +187,32 @@ theorem tendsto_normedBumpLp [CompleteSpace F] {I : Type*} {l : Filter I}
     tendsto_normedBumpAverageL (F := Lp F p mu) hphi mu (mu.translateLp p)
       (Measure.continuous_translateLp hp) f
 
+/-- Pairing an `Lᵖ` mollification with any fixed conjugate-`Lᵠ` factor via a continuous bilinear
+map `B : G →L[ℝ] F →L[ℝ] H` converges in the Banach codomain `H`. The bump family and convergence
+filter are arbitrary. -/
+theorem _root_.ContinuousLinearMap.tendsto_integral_bilin_normed_convolution
+    {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup H]
+    [NormedSpace ℝ H] [CompleteSpace F] [CompleteSpace H] (B : G →L[ℝ] F →L[ℝ] H)
+    {q : ℝ≥0∞} [Fact (1 ≤ q)] [p.HolderConjugate q] {I : Type*} {l : Filter I}
+    (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {a : E → G} (ha : MemLp a q mu)
+    {f : E → F} (hf : MemLp f p mu) :
+    Tendsto (fun i ↦ ∫ x, B (a x) (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x) ∂mu)
+      l (nhds (∫ x, B (a x) (f x) ∂mu)) := by
+  let L : Lp F p mu →L[ℝ] H := B.lpPairing mu q p (ha.toLp a)
+  have hpair (g : Lp F p mu) (f₀ : E → F) (hg : g =ᵐ[mu] f₀) :
+      L g = ∫ x, B (a x) (f₀ x) ∂mu := by
+    dsimp only [L]
+    rw [lpPairing_eq_integral]
+    refine integral_congr_ae ?_
+    filter_upwards [ha.coeFn_toLp, hg] with x hx hf₀
+    rw [hx, hf₀]
+  have hlim := (L.continuous.tendsto (hf.toLp f)).comp (tendsto_normedBumpLp hp hphi (hf.toLp f))
+  have hpairphi (i : I) : L (normedBumpLp hp (phi i) mu (hf.toLp f)) =
+      ∫ x, B (a x) (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x) ∂mu :=
+    hpair _ _ (normedBumpLp_ae_eq_convolution hp (phi i) hf)
+  simpa only [Function.comp_def, hpairphi, hpair _ _ hf.coeFn_toLp] using hlim
+
 /-- Pairing an `Lᵖ` mollification with any fixed conjugate-`Lᵠ` scalar coefficient converges
 in the Banach codomain. The bump family and convergence filter are arbitrary. -/
 theorem tendsto_integral_smul_normed_convolution [CompleteSpace F] {q : ℝ≥0∞}
@@ -191,20 +221,8 @@ theorem tendsto_integral_smul_normed_convolution [CompleteSpace F] {q : ℝ≥0�
     (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {a : E → ℝ} (ha : MemLp a q mu)
     {f : E → F} (hf : MemLp f p mu) :
     Tendsto (fun i ↦ ∫ x, a x • ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x ∂mu)
-      l (nhds (∫ x, a x • f x ∂mu)) := by
-  let L : Lp F p mu →L[ℝ] F := (lsmul ℝ ℝ).lpPairing mu q p (ha.toLp a)
-  have hpair (g : Lp F p mu) (G : E → F) (hg : g =ᵐ[mu] G) :
-      L g = ∫ x, a x • G x ∂mu := by
-    dsimp only [L]
-    rw [lpPairing_eq_integral]
-    apply integral_congr_ae
-    filter_upwards [ha.coeFn_toLp, hg] with x hx hG
-    simp only [lsmul_apply, hx, hG]
-  have hlim := L.continuous.tendsto (hf.toLp f) |>.comp (tendsto_normedBumpLp hp hphi (hf.toLp f))
-  have hpairphi (i : I) : L (normedBumpLp hp (phi i) mu (hf.toLp f)) =
-      ∫ x, a x • ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x ∂mu :=
-    hpair _ _ (normedBumpLp_ae_eq_convolution hp (phi i) hf)
-  simpa only [Function.comp_def, hpairphi, hpair _ _ hf.coeFn_toLp] using hlim
+      l (nhds (∫ x, a x • f x ∂mu)) :=
+  (lsmul ℝ ℝ).tendsto_integral_bilin_normed_convolution hp hphi ha hf
 
 /-- **Mollification converges in `Lᵖ`.** For `f ∈ Lᵖ` with `1 ≤ p < ∞` and normalized smooth bumps
 `phi i` centred at zero whose outer radii tend to zero, the classical convolutions
