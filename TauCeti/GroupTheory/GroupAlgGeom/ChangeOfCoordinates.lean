@@ -43,7 +43,7 @@ carries its solutions, the centralizer of `ι g`, onto themselves.
 * `TauCeti.GroupAlgGeom.image_coordinateChangeEquiv_V`: a change of coordinates `σ` carries
   `V_H(S)` onto `V_H(σ⁻¹(S))`.
 * `TauCeti.GroupAlgGeom.mem_V_image_mulEquiv_iff`,
-  `TauCeti.GroupAlgGeom.mem_V_singleton_of_conj_mulEquiv_iff`: membership in the solutions of the
+  `TauCeti.GroupAlgGeom.mem_V_singleton_iff_of_conj_mulEquiv`: membership in the solutions of the
   image of a system under a `G`-isomorphism, and under a `G`-isomorphism followed by conjugation.
 * `TauCeti.GroupAlgGeom.Rad_image_mulEquiv`,
   `TauCeti.GroupAlgGeom.Rad_singleton_of_conj_mulEquiv`: a `G`-isomorphism carries the radical of
@@ -301,13 +301,13 @@ theorem equivVOfConjMulEquiv_symm_apply_coe (hw' : u * φ w * u⁻¹ = w') (v : 
 include hφ in
 /-- When `u * φ w * u⁻¹ = w'` for a `G`-isomorphism `φ`, a point solves `w' = 1` if and only if
 the tuple of its values at the words `φ x` solves `w = 1`. -/
-theorem mem_V_singleton_of_conj_mulEquiv_iff (hw' : u * φ w * u⁻¹ = w') (v : Y → H) :
+theorem mem_V_singleton_iff_of_conj_mulEquiv (hw' : u * φ w * u⁻¹ = w') (v : Y → H) :
     v ∈ V ι {w'} ↔ wordMap ι (fun x => φ (inr (FreeGroup.of x))) v ∈ V ι {w} := by
   rw [← hw', V_singleton_conj, ← Set.image_singleton, mem_V_image_mulEquiv_iff ι φ hφ]
 
 include hφ in
 /-- A `G`-isomorphism followed by conjugation preserves consistency of a single equation. -/
-theorem nonempty_V_singleton_of_conj_mulEquiv_iff (hw' : u * φ w * u⁻¹ = w') :
+theorem nonempty_V_singleton_iff_of_conj_mulEquiv (hw' : u * φ w * u⁻¹ = w') :
     (V ι {w}).Nonempty ↔ (V ι {w'}).Nonempty := by
   simp_rw [← Set.nonempty_coe_sort]
   exact (equivVOfConjMulEquiv ι φ hφ hw').nonempty_congr
@@ -391,9 +391,30 @@ noncomputable def gHomOfConjMulEquiv (hw' : u * φ w * u⁻¹ = w') :
   GHom.ofMulEquiv (mulEquivOfConjMulEquiv ι φ hφ hw')
     (mulEquivOfConjMulEquiv_coeff ι φ hφ hw')
 
+theorem gHomOfConjMulEquiv_def (hw' : u * φ w * u⁻¹ = w') :
+    gHomOfConjMulEquiv ι φ hφ hw' =
+      GHom.ofMulEquiv (mulEquivOfConjMulEquiv ι φ hφ hw')
+        (mulEquivOfConjMulEquiv_coeff ι φ hφ hw') :=
+  (rfl)
+
+@[simp]
+theorem coe_gHomOfConjMulEquiv (hw' : u * φ w * u⁻¹ = w') :
+    ⇑(gHomOfConjMulEquiv ι φ hφ hw') = mulEquivOfConjMulEquiv ι φ hφ hw' :=
+  GHom.coe_ofMulEquiv _ _
+
 theorem gHomOfConjMulEquiv_bijective (hw' : u * φ w * u⁻¹ = w') :
     Function.Bijective (gHomOfConjMulEquiv ι φ hφ hw') :=
   GHom.ofMulEquiv_bijective _ _
+
+@[simp]
+theorem symmOfBijective_gHomOfConjMulEquiv (hw' : u * φ w * u⁻¹ = w')
+    (h : Function.Bijective (gHomOfConjMulEquiv ι φ hφ hw')) :
+    (gHomOfConjMulEquiv ι φ hφ hw').symmOfBijective h =
+      GHom.ofMulEquiv (mulEquivOfConjMulEquiv ι φ hφ hw').symm
+        (mulEquivOfConjMulEquiv_symm_coeff ι φ hφ hw') := by
+  ext x
+  apply h.1
+  simp [gHomOfConjMulEquiv_def]
 
 include hφ in
 /-- If `ι` is injective and the transformed equation `w' = u * φ w * u⁻¹` has a solution in `H`,
@@ -401,7 +422,7 @@ the coefficient map into the coordinate group of `{w}` is injective. -/
 theorem coeff_injective_of_conj_mulEquiv (hι : Function.Injective ι)
     (hw' : u * φ w * u⁻¹ = w') (hV : (V ι {w'}).Nonempty) :
     Function.Injective (coeff ι {w}) :=
-  coeff_injective hι ((nonempty_V_singleton_of_conj_mulEquiv_iff ι φ hφ hw').2 hV)
+  coeff_injective hι ((nonempty_V_singleton_iff_of_conj_mulEquiv ι φ hφ hw').2 hV)
 
 end CoordGroup
 

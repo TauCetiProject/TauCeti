@@ -196,6 +196,45 @@ theorem countVar_map_inr [DecidableEq X] (x : X) (L : List (X × Bool)) :
     countVar x (L.map Sum.inr : List (G ⊕ X × Bool)) = L.countP fun p => p.1 = x := by
   simp [countVar_eq_countP, Function.comp_def]
 
+@[simp]
+theorem countVar_flatten (x : X) (L : List (List (G ⊕ X × Bool))) :
+    countVar x L.flatten = (L.map (countVar x)).sum := by
+  induction L with
+  | nil => simp
+  | cons l L ih => simp [ih]
+
+theorem le_countVar_flatten {L : List (List (G ⊕ X × Bool))} {l : List (G ⊕ X × Bool)}
+    (hl : l ∈ L) (x : X) : countVar x l ≤ countVar x L.flatten := by
+  classical
+  simp_rw [countVar_eq_countP]
+  exact (List.sublist_flatten_of_mem hl).countP_le
+
+/-- A word in which `x` occurs splits at its first letter `x^{±1}`. -/
+theorem exists_split_of_countVar_pos {x : X} {l : List (G ⊕ X × Bool)} (h : 0 < countVar x l) :
+    ∃ l₁ b l₂, l = l₁ ++ .inr (x, b) :: l₂ ∧ countVar x l₁ = 0 := by
+  induction l with
+  | nil => simp at h
+  | cons a t ih =>
+    rcases a with g | ⟨y, b⟩
+    · obtain ⟨l₁, b', l₂, rfl, h₀⟩ := ih (by simpa using h)
+      exact ⟨.inl g :: l₁, b', l₂, rfl, by simp [h₀]⟩
+    · by_cases hyx : y = x
+      · subst hyx
+        exact ⟨[], b, t, rfl, by simp⟩
+      · obtain ⟨l₁, b', l₂, rfl, h₀⟩ := ih (by simpa [hyx] using h)
+        exact ⟨.inr (y, b) :: l₁, b', l₂, rfl, by simp [hyx, h₀]⟩
+
+/-- A word in which `x` occurs twice splits at its two letters `x^{±1}`. -/
+theorem exists_two_split_of_countVar_eq_two {x : X} {l : List (G ⊕ X × Bool)}
+    (h : countVar x l = 2) :
+    ∃ l₁ b₁ l₂ b₂ l₃, l = l₁ ++ [.inr (x, b₁)] ++ l₂ ++ [.inr (x, b₂)] ++ l₃ ∧
+      countVar x l₁ = 0 ∧ countVar x l₂ = 0 ∧ countVar x l₃ = 0 := by
+  obtain ⟨l₁, b₁, rest, rfl, h₁⟩ := exists_split_of_countVar_pos (x := x) (by rw [h]; decide)
+  have hrest : countVar x rest = 1 := by simp [h₁] at h; omega
+  obtain ⟨l₂, b₂, l₃, rfl, h₂⟩ :=
+    exists_split_of_countVar_pos (x := x) (l := rest) (by rw [hrest]; decide)
+  exact ⟨l₁, b₁, l₂, b₂, l₃, by simp [List.append_assoc], h₁, h₂, by simp [h₂] at hrest; omega⟩
+
 end CountVar
 
 /-! ### Reduced words -/
@@ -288,6 +327,24 @@ theorem IsReduced.infix {l₁ l₂ : List (G ⊕ X × Bool)} (h : IsReduced l₂
 theorem isReduced_map_inr {L : List (X × Bool)} :
     IsReduced (L.map Sum.inr : List (G ⊕ X × Bool)) ↔ FreeGroup.IsReduced L := by
   simp [IsReduced, FreeGroup.IsReduced, List.isChain_map]
+
+/-- A flatten of nonempty words is reduced if and only if each word is reduced and consecutive
+words do not combine across boundaries. -/
+theorem isReduced_flatten_iff {L : List (List (G ⊕ X × Bool))} (hne : ∀ l ∈ L, l ≠ []) :
+    IsReduced L.flatten ↔ (∀ l ∈ L, IsReduced l) ∧
+      L.IsChain fun l₁ l₂ => ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬Combines a b := by
+  simp only [isReduced_iff, List.mem_flatten, List.isChain_flatten fun h => hne [] h rfl,
+    forall_exists_index, and_imp]
+  exact ⟨fun ⟨h1, h2, h3⟩ => ⟨fun l hl => ⟨fun g hg => h1 g l hl hg, h2 l hl⟩, h3⟩,
+    fun ⟨h, h3⟩ => ⟨fun g l hl hg => (h l hl).1 g hg, fun l hl => (h l hl).2, h3⟩⟩
+
+/-- A flatten of nonempty reduced words whose adjacent boundary letters do not combine is
+reduced. -/
+theorem isReduced_flatten {L : List (List (G ⊕ X × Bool))} (hne : ∀ l ∈ L, l ≠ [])
+    (hred : ∀ l ∈ L, IsReduced l)
+    (hchain : L.IsChain fun l₁ l₂ => ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬Combines a b) :
+    IsReduced L.flatten :=
+  (isReduced_flatten_iff hne).2 ⟨hred, hchain⟩
 
 end Reduced
 
@@ -836,6 +893,54 @@ theorem IsReduced.exists_isCyclicallyReduced {l : List (G ⊕ X × Bool)} (hl : 
       by_cases hx : z = x
       · subst hx; simp
       · simp [hx]
+
+/-- A cyclically reduced word whose product in `G[X]` is conjugate to a coefficient has no
+variable letters. -/
+theorem IsCyclicallyReduced.countVar_eq_zero_of_eq_conj_inl {l : List (G ⊕ X × Bool)}
+    (hl : IsCyclicallyReduced l) {v : GX G X} {c : G}
+    (hv : (l.map letter).prod = v * inl c * v⁻¹) (x : X) : countVar x l = 0 := by
+  suffices ∀ (n : ℕ) (p : List (G ⊕ X × Bool)) (c : G), p.length ≤ n → IsReduced p →
+      (l.map letter).prod = (p.map letter).prod * inl c * ((p.map letter).prod)⁻¹ →
+      countVar x l = 0 from
+    this _ (reducedWord v) c le_rfl (isReduced_reducedWord v) (by simpa using hv)
+  intro n
+  induction n with
+  | zero =>
+    intro p c hn _ hprod
+    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.eq_zero_of_le_zero hn)
+    have hl' : l = reducedWord (inl c) :=
+      ((reducedWord_eq_iff hl.isReduced).2 (by simpa using hprod)).symm
+    by_cases hc : c = 1 <;> simp [hl', hc]
+  | succ n ih =>
+    intro p c hn hp hprod
+    by_cases hc : c = 1
+    · have hl' : l = reducedWord 1 :=
+        ((reducedWord_eq_iff hl.isReduced).2 (by simpa [hc] using hprod)).symm
+      simp [hl']
+    rcases p.eq_nil_or_concat with rfl | ⟨q, d, hq⟩
+    · exact ih [] c (by simp) hp hprod
+    rw [List.concat_eq_append] at hq
+    subst hq
+    have hq_red : IsReduced q := (isReduced_append.1 hp).1
+    have hq_len : q.length ≤ n := by simp at hn; omega
+    rcases d with g | ⟨y, b⟩
+    · exact ih q (g * c * g⁻¹) hq_len hq_red (by simpa [mul_assoc] using hprod)
+    · exfalso
+      have hm_red :
+          IsReduced ((q ++ [.inr (y, b)]) ++ [.inl c] ++ invRev (q ++ [.inr (y, b)])) := by
+        rw [isReduced_append, isReduced_append]
+        refine ⟨⟨hp, isReduced_singleton_inl.2 hc, by simp⟩, isReduced_invRev.2 hp, ?_⟩
+        simp [invRev_append]
+      have hm_eq : l = (q ++ [.inr (y, b)]) ++ [.inl c] ++ invRev (q ++ [.inr (y, b)]) := by
+        rw [← hl.isReduced.reducedWord_prod, ← hm_red.reducedWord_prod]
+        congr 1
+        cases b <;> simpa [mul_assoc] using hprod
+      rcases hqp : q ++ [.inr (y, b)] with _ | ⟨a, r⟩
+      · simp at hqp
+      rw [hqp, invRev_cons] at hm_eq
+      have hnc := (isCyclicallyReduced_iff.1 hl).2 a (Sum.map (·⁻¹) (fun s => (s.1, !s.2)) a)
+        (r ++ [.inl c] ++ invRev r) (by simpa [invRev_def, List.append_assoc] using hm_eq)
+      rcases a with _ | ⟨_, _⟩ <;> simp at hnc
 
 end CyclicReduction
 
