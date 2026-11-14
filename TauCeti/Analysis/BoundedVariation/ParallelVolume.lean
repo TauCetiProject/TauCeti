@@ -344,7 +344,7 @@ private theorem _root_.Convex.perimeter_add_smul_closedBall_le {K : Set E} (hKc 
         (hKc.add ((convex_closedBall 0 1).smul t)).perimeter_le_of_subset hsub
           hLc.measurableSet.nullMeasurableSet hLμ
     _ = _ := by
-        rw [perimeter_preimage_add_right htop htop, perimeter_preimage_smul ha htop htop,
+        rw [perimeter_preimage_add_right htop htop, perimeter_preimage_smul ha.le htop htop,
           perimeter_preimage_add_right htop htop]
 
 /-- **The first variation of the parallel volume of a convex body is its perimeter.** Against an
