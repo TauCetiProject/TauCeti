@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.HomogeneousLittlewoodPaley
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
@@ -255,6 +255,17 @@ theorem mem_homogeneousBesovSubmodule_iff {v : lp (fun _ : ℤ ↦ Lp F p (volum
       (((2 : ℝ) ^ (s * j) : ℝ) : ℂ) • homogeneousLittlewoodPaleyBlock F φ j u :=
   Iff.rfl
 
+/-- **Extensionality.** Two elements of `\dot B^s_{p,q}` are equal when their entries agree as
+tempered distributions. -/
+@[ext]
+theorem HomogeneousBesovSpace.ext {v w : HomogeneousBesovSpace F φ s p q}
+    (h : ∀ j, (((v : lp (fun _ : ℤ ↦ Lp F p (volume : Measure E)) q) j :
+      Lp F p (volume : Measure E)) : 𝓢'(E, F)) =
+      (((w : lp (fun _ : ℤ ↦ Lp F p (volume : Measure E)) q) j :
+        Lp F p (volume : Measure E)) : 𝓢'(E, F))) :
+    v = w :=
+  Subtype.ext (lp.ext (funext fun j ↦ Lp.toTemperedDistribution_injective (h j)))
+
 end TauCeti
 
 namespace TemperedDistribution.MemHomogeneousBesov
@@ -292,10 +303,8 @@ theorem toHomogeneousBesovSpace_eq_iff
     (Complex.ofReal_ne_zero.2 (Real.rpow_pos_of_pos two_pos (s * j)).ne') ?_, fun h ↦ ?_⟩
   · dsimp only
     rw [← hu.coe_toHomogeneousBesovSpace_apply, ← hv.coe_toHomogeneousBesovSpace_apply, h]
-  · refine Subtype.ext (lp.ext (funext fun j ↦ ?_))
-    exact LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
-        MemHomogeneousBesov.coe_toHomogeneousBesovSpace_apply, h]
+  · ext j
+    simp only [coe_toHomogeneousBesovSpace_apply, h]
 
 /-- The image in `\dot B^s_{p,q}` of a distribution does not change when a polynomial is added. -/
 theorem toHomogeneousBesovSpace_add_eq
@@ -305,24 +314,44 @@ theorem toHomogeneousBesovSpace_add_eq
       hu.toHomogeneousBesovSpace := by
   rwa [MemHomogeneousBesov.toHomogeneousBesovSpace_eq_iff, add_sub_cancel_left]
 
+@[simp]
+theorem toHomogeneousBesovSpace_zero (h : (0 : 𝓢'(E, F)).MemHomogeneousBesov φ s p q) :
+    h.toHomogeneousBesovSpace = 0 := by
+  ext j
+  simp
+
+@[simp]
 theorem toHomogeneousBesovSpace_add
     {u v : 𝓢'(E, F)} (hu : u.MemHomogeneousBesov φ s p q) (hv : v.MemHomogeneousBesov φ s p q) :
     (hu.add hv).toHomogeneousBesovSpace =
       hu.toHomogeneousBesovSpace + hv.toHomogeneousBesovSpace := by
-  refine Subtype.ext (lp.ext (funext fun j ↦ ?_))
-  refine LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot ?_
-  simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
-    MemHomogeneousBesov.coe_toHomogeneousBesovSpace_apply, Submodule.coe_add, lp.coeFn_add,
-    Pi.add_apply, map_add, smul_add]
+  ext j
+  simp only [coe_toHomogeneousBesovSpace_apply, Submodule.coe_add, lp.coeFn_add, Pi.add_apply,
+    Lp.toTemperedDistribution_add, map_add, smul_add]
 
+@[simp]
 theorem toHomogeneousBesovSpace_smul
     {u : 𝓢'(E, F)} (hu : u.MemHomogeneousBesov φ s p q) (c : ℂ) :
     (hu.smul c).toHomogeneousBesovSpace = c • hu.toHomogeneousBesovSpace := by
-  refine Subtype.ext (lp.ext (funext fun j ↦ ?_))
-  refine LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot ?_
-  simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
-    MemHomogeneousBesov.coe_toHomogeneousBesovSpace_apply, Submodule.coe_smul, lp.coeFn_smul,
-    Pi.smul_apply, map_smul, smul_comm c]
+  ext j
+  simp only [coe_toHomogeneousBesovSpace_apply, Submodule.coe_smul, lp.coeFn_smul, Pi.smul_apply,
+    Lp.toTemperedDistribution_smul, map_smul, smul_comm c]
+
+@[simp]
+theorem toHomogeneousBesovSpace_neg {u : 𝓢'(E, F)} (hu : u.MemHomogeneousBesov φ s p q) :
+    hu.neg.toHomogeneousBesovSpace = -hu.toHomogeneousBesovSpace := by
+  ext j
+  simp only [coe_toHomogeneousBesovSpace_apply, Submodule.coe_neg, lp.coeFn_neg, Pi.neg_apply,
+    Lp.toTemperedDistribution_neg, map_neg, smul_neg]
+
+@[simp]
+theorem toHomogeneousBesovSpace_sub
+    {u v : 𝓢'(E, F)} (hu : u.MemHomogeneousBesov φ s p q) (hv : v.MemHomogeneousBesov φ s p q) :
+    (hu.sub hv).toHomogeneousBesovSpace =
+      hu.toHomogeneousBesovSpace - hv.toHomogeneousBesovSpace := by
+  ext j
+  simp only [coe_toHomogeneousBesovSpace_apply, Submodule.coe_sub, lp.coeFn_sub, Pi.sub_apply,
+    Lp.toTemperedDistribution_sub, map_sub, smul_sub]
 
 /-- If the blocks `\dot Δⱼ u` are the `Lᵖ` functions `fⱼ`, the entries of the image of `u` in
 `\dot B^s_{p,q}` are the weighted blocks `2^{js} fⱼ`. -/
@@ -331,9 +360,8 @@ theorem coe_toHomogeneousBesovSpace_apply_eq
     (hf : ∀ j, homogeneousLittlewoodPaleyBlock F φ j u = f j) (j : ℤ) :
     (hu.toHomogeneousBesovSpace : lp (fun _ : ℤ ↦ Lp F p (volume : Measure E)) q) j =
       (((2 : ℝ) ^ (s * j) : ℝ) : ℂ) • f j :=
-  LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-    simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
-      MemHomogeneousBesov.coe_toHomogeneousBesovSpace_apply, hf, Lp.toTemperedDistribution_smul]
+  Lp.toTemperedDistribution_injective <| by
+    simp only [coe_toHomogeneousBesovSpace_apply, hf, Lp.toTemperedDistribution_smul]
 
 theorem norm_coe_toHomogeneousBesovSpace_apply
     {u : 𝓢'(E, F)} (hu : u.MemHomogeneousBesov φ s p q) {f : ℤ → Lp F p (volume : Measure E)}
@@ -393,9 +421,7 @@ theorem HomogeneousBesovSpace.exists_toHomogeneousBesovSpace_eq
     (v : HomogeneousBesovSpace F φ s p q) :
     ∃ (u : 𝓢'(E, F)) (hu : u.MemHomogeneousBesov φ s p q), hu.toHomogeneousBesovSpace = v := by
   obtain ⟨v, u, hu⟩ := v
-  refine ⟨u, ⟨v, hu⟩, Subtype.ext (lp.ext (funext fun j ↦ ?_))⟩
-  exact LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-    simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, hu]
-    exact MemHomogeneousBesov.coe_toHomogeneousBesovSpace_apply _ j
+  exact ⟨u, ⟨v, hu⟩, HomogeneousBesovSpace.ext fun j ↦
+    (MemHomogeneousBesov.coe_toHomogeneousBesovSpace_apply _ j).trans (hu j).symm⟩
 
 end TauCeti

@@ -148,12 +148,12 @@ theorem exists_homogeneousLittlewoodPaleyBlock_eq_sum_Ico (φ' : ContDiffBump (0
         homogeneousLittlewoodPaleyBlock F φ' j (homogeneousLittlewoodPaleyBlock F φ k u) := by
   obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_sum_Ico_eq φ'
   refine ⟨L, fun j u ↦ ?_⟩
+  rw [homogeneousLittlewoodPaleyBlock_apply φ' j u]
   simp_rw [← ContinuousLinearMap.comp_apply,
     homogeneousLittlewoodPaleyBlock_compL_homogeneousLittlewoodPaleyBlock φ',
     ← _root_.sum_apply]
   rw [← fourierMultiplierCLM_sum F fun k _ ↦ by fun_prop]
   simp_rw [← Complex.ofReal_sum, ← Finset.mul_sum, hL j]
-  rfl
 
 /-- **The low-frequency blocks see only the low frequencies.** If the cutoff `ψⱼ` is carried by
 the ball where `φ (2^{-N} ·) = 1`, that is `2^j φ.rOut ≤ 2^N φ.rIn`, then `\dot Δⱼ` does not see the
@@ -163,7 +163,6 @@ theorem homogeneousLittlewoodPaleyBlock_sum_littlewoodPaleyBlock_range {j : ℤ}
     homogeneousLittlewoodPaleyBlock F φ j
         (∑ k ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ k u) =
       homogeneousLittlewoodPaleyBlock F φ j u := by
-  have hφ : (⇑φ).HasTemperateGrowth := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
   have hc : (fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ)).HasTemperateGrowth := by fun_prop
   rw [← _root_.sum_apply, sum_littlewoodPaleyBlock_range,
     homogeneousLittlewoodPaleyBlock_apply, homogeneousLittlewoodPaleyBlock_apply,
@@ -226,17 +225,10 @@ theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_le [CompleteSpace F]
   · rw [hL j u]
     simp_rw [hf, hg]
     exact (map_sum (Lp.toTemperedDistributionCLM F volume p) _ _).symm
-  · refine (mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans ?_
-    rw [Finset.mul_sum, Finset.mul_sum]
-    refine Finset.sum_le_sum fun k hk ↦ ?_
-    calc 2 ^ (s * j) * ‖g j k‖ ≤ 2 ^ (|s| * L) * 2 ^ (s * k) * (max C 0 * ‖f k‖) := by
-          gcongr
-          · rw [Finset.mem_Ico] at hk
-            refine Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s
-              (abs_sub_le_iff.2 ⟨?_, ?_⟩)
-            all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
-          · exact (hgC j k).trans (by gcongr; exact le_max_left C 0)
-      _ = _ := by ring
+  · refine TauCeti.two_rpow_mul_norm_sum_le s (hgC j) fun k hk ↦ ?_
+    rw [Finset.mem_Ico] at hk
+    refine abs_sub_le_iff.2 ⟨?_, ?_⟩
+    all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
 
 variable {φ} in
 /-- **The low-frequency homogeneous blocks are bounded in `Lᵖ`.** If the inhomogeneous blocks
@@ -281,21 +273,15 @@ theorem homogeneousLittlewoodPaleyBlock_eq_zero_of_isVanishingOn {u : 𝓢'(E, F
     rw [this, tsupport_neg, Set.subset_compl_singleton_iff]
     exact fun h ↦ φ.zero_notMem_tsupport_littlewoodPaley j
       (tsupport_comp_subset Complex.ofReal_zero _ h)
+  -- Split `1 - ψⱼ` as `1 + (-1) • ψⱼ`; the second multiplier is `-\dot Δⱼ`.
   have h2 : (fun ξ ↦ 1 - (φ.littlewoodPaley j ξ : ℂ)) =
-      (fun _ ↦ (1 : ℂ)) + -fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) := by
+      (fun _ ↦ (1 : ℂ)) + (-1 : ℂ) • fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) := by
     funext ξ
     simp [sub_eq_add_neg]
-  rw [h2, fourierMultiplierCLM_add (by fun_prop) hψ.neg] at h1
-  have h3 : fourierMultiplierCLM F (-fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) =
-      -homogeneousLittlewoodPaleyBlock F φ j := by
-    rw [show (-fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) =
-        (-1 : ℂ) • fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) by funext; simp,
-      fourierMultiplierCLM_smul hψ, neg_one_smul,
-      homogeneousLittlewoodPaleyBlock_eq_fourierMultiplierCLM]
-  rw [_root_.add_apply, fourierMultiplierCLM_const, h3,
-    _root_.neg_apply, one_smul, ContinuousLinearMap.id_apply, add_eq_left,
-    neg_eq_zero] at h1
-  exact h1
+  rw [h2, fourierMultiplierCLM_add (by fun_prop) (by rw [neg_one_smul]; exact hψ.neg),
+    fourierMultiplierCLM_smul hψ,
+    ← homogeneousLittlewoodPaleyBlock_eq_fourierMultiplierCLM] at h1
+  simpa using h1
 
 /-- **The common kernel of the homogeneous blocks.** All the homogeneous blocks of a tempered
 distribution `u` vanish exactly when its Fourier transform vanishes away from the origin, that
@@ -324,7 +310,6 @@ theorem forall_homogeneousLittlewoodPaleyBlock_eq_zero_iff {u : 𝓢'(E, F)} :
     fun j ↦ by
       rw [← smulLeftCLM_apply_apply, ← fourier_homogeneousLittlewoodPaleyBlock, h j,
         FourierTransform.fourier_zero, zero_apply]
-  have hφ : (⇑φ).HasTemperateGrowth := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
   -- For `N ≥ a`, the truncation `φ (2^{-N} ·) ψ` is the sum of the pieces `ψⱼ ψ`, `a < j ≤ N`.
   have hsum : ∀ N : ℕ, SchwartzMap.smulLeftCLM ℂ (fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ)) ψ =
       ∑ j ∈ Finset.Ioc a N,

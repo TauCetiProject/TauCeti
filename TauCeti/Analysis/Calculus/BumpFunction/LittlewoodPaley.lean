@@ -750,6 +750,13 @@ theorem hasCompactSupport_inhomogeneousLittlewoodPaley (j : ℕ) :
     φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm
       (not_le.1 (by simpa [mem_closedBall_zero_iff] using hξ)).le
 
+/-- A smooth bump function is compactly supported, so it has temperate growth; its dilates
+`φ (2^{-N} ·)` are then Fourier multipliers on Schwartz functions and on tempered
+distributions. -/
+@[fun_prop]
+protected theorem hasTemperateGrowth : (⇑φ).HasTemperateGrowth :=
+  φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
+
 /-- Each piece of the inhomogeneous partition has temperate growth, so it is a Fourier multiplier
 on Schwartz functions and on tempered distributions. -/
 @[fun_prop]
