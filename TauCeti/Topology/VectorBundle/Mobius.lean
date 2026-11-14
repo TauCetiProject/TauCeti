@@ -20,11 +20,12 @@ The **Möbius line bundle** over the circle `AddCircle p` has as fibre over `θ`
 `ℝ u ⊆ ℂ`, where `u² = z = toCircle θ` (`TauCeti.MobiusLine`). It is the range of the real
 projection `w ↦ (w + z * conj w) / 2` (`TauCeti.mobiusProjection`), so it is the image bundle of a
 continuous family of projections of the trivial bundle with fibre `ℂ`, and a topological vector
-bundle with model fibre `ℝ` (`TauCeti.rangeFiberBundle`, `TauCeti.rangeVectorBundle`). Going once
-around the circle turns `u` through half a turn, so each fibre comes back with its orientation
-reversed. Its unit vectors
-`u` lie over `u²`: the unit circle bundle is a circle, and the projection restricted to it is the
-double cover `θ ↦ 2 • θ` (`TauCeti.mobiusSphereHomeomorph`).
+bundle with model fibre `ℝ` (`TauCeti.rangeFiberBundle`, `TauCeti.rangeVectorBundle`). For
+`p ≠ 0`, going once around the circle turns `u` through half a turn, so each fibre comes back with
+its orientation reversed; for `p = 0` the map `toCircle` is constant and the bundle is trivial.
+From here on the period is positive, `0 < p` (`[Fact (0 < p)]`). Its unit vectors `u` lie over
+`u²`: the unit circle bundle is a circle, and the projection restricted to it is the double cover
+`θ ↦ 2 • θ` (`TauCeti.mobiusSphereHomeomorph`).
 
 The Thom pair `(E, E₀)` of the bundle is its total space relative to the nonzero vectors
 (`TauCeti.thomPair`). The total space retracts onto the circle and the nonzero vectors retract onto
@@ -93,14 +94,11 @@ theorem isIdempotentElem_mobiusProjection (θ : AddCircle p) :
 /-- The fibre over `θ` consists of the `v` with `z * conj v = v`, `z = toCircle θ`. -/
 theorem mem_range_mobiusProjection_iff {θ : AddCircle p} {v : ℂ} :
     v ∈ (mobiusProjection θ).range ↔ (AddCircle.toCircle θ : ℂ) * conj v = v := by
-  simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe]
-  refine ⟨?_, fun hv ↦ ⟨v, ?_⟩⟩
-  · rintro ⟨w, rfl⟩
-    simp only [mobiusProjection_apply, map_mul, map_add, map_inv₀, Complex.conj_conj,
-      Complex.conj_ofNat]
-    linear_combination (2⁻¹ * w) * Circle.coe_mul_conj (AddCircle.toCircle θ)
-  · rw [mobiusProjection_apply, hv]
-    ring
+  rw [LinearMap.IsIdempotentElem.mem_range_iff (ContinuousLinearMap.IsIdempotentElem.toLinearMap
+    (isIdempotentElem_mobiusProjection θ)), ContinuousLinearMap.coe_coe, mobiusProjection_apply]
+  constructor <;> intro h
+  · linear_combination 2 * h
+  · linear_combination 2⁻¹ * h
 
 /-- The fibre over `2 • θ` contains `toCircle θ`. -/
 theorem toCircle_mem_range_mobiusProjection_two_zsmul (θ : AddCircle p) :
@@ -108,7 +106,7 @@ theorem toCircle_mem_range_mobiusProjection_two_zsmul (θ : AddCircle p) :
   rw [mem_range_mobiusProjection_iff, AddCircle.toCircle_zsmul, zpow_two, Circle.coe_mul]
   linear_combination (AddCircle.toCircle θ : ℂ) * Circle.coe_mul_conj (AddCircle.toCircle θ)
 
-/-- The fibre over `2 • θ` is spanned by `toCircle θ`. -/
+/-- The fibre over `2 • θ` is a real line: it is continuously linearly equivalent to `ℝ`. -/
 private theorem nonempty_continuousLinearEquiv_range_mobiusProjection_two_zsmul (θ : AddCircle p) :
     Nonempty (ℝ ≃L[ℝ] (mobiusProjection ((2 : ℤ) • θ)).range) := by
   let f : ℝ →ₗ[ℝ] (mobiusProjection ((2 : ℤ) • θ)).range :=
@@ -146,8 +144,8 @@ theorem nonempty_continuousLinearEquiv_range_mobiusProjection (θ : AddCircle p)
 
 variable (p) in
 /-- The fibre over `θ` of the **Möbius line bundle** over the circle `AddCircle p`: the real line
-`ℝ u ⊆ ℂ` for `u² = toCircle θ`. As `θ` goes once around the circle, `u` turns through half a
-turn, so the line returns to itself with its orientation reversed. -/
+`ℝ u ⊆ ℂ` for `u² = toCircle θ`. For `p ≠ 0`, as `θ` goes once around the circle, `u` turns
+through half a turn, so the line returns to itself with its orientation reversed. -/
 abbrev MobiusLine (θ : AddCircle p) : Type := (mobiusProjection θ).range
 
 /-- The Möbius line bundle is a fibre bundle with model fibre `ℝ`, trivialized by the intertwining
@@ -177,9 +175,10 @@ theorem continuous_norm_mobiusLine : Continuous fun v : TotalSpace ℝ (MobiusLi
 
 variable [Fact (0 < p)]
 
-/-- **The unit circle bundle of the Möbius line is a circle double covering the base**: the
-homeomorphism `θ ↦ (2 • θ, toCircle θ)` from `AddCircle p` onto the unit vectors, under which the
-bundle projection is `θ ↦ 2 • θ` (`TauCeti.proj_mobiusSphereHomeomorph`). -/
+/-- **The unit circle bundle of the Möbius line is a circle double covering the base**: for a
+positive period `0 < p`, the homeomorphism `θ ↦ (2 • θ, toCircle θ)` from `AddCircle p` onto the
+unit vectors, under which the bundle projection is `θ ↦ 2 • θ`
+(`TauCeti.proj_mobiusSphereHomeomorph`). -/
 noncomputable def mobiusSphereHomeomorph : AddCircle p ≃ₜ sphereBundle ℝ (MobiusLine p) where
   toFun θ := ⟨⟨(2 : ℤ) • θ, ⟨_, toCircle_mem_range_mobiusProjection_two_zsmul θ⟩⟩, by simp⟩
   invFun v := (AddCircle.homeomorphCircle (Fact.out : 0 < p).ne').symm
@@ -264,7 +263,7 @@ private instance (n : ℕ) : IsIso (SSet.homologyMap (TopCat.toSSet.map (mobiusC
   rw [h]
   exact this
 
-/-- The inclusion of the nonzero vectors induces an isomorphism on zeroth homology. -/
+/-- The inclusion of the nonzero vectors induces a monomorphism on zeroth homology. -/
 private theorem mono_homologyMap_map_thomPair_mobiusLine_zero :
     Mono (SSet.homologyMap (TopCat.toSSet.map (thomPair ℝ (MobiusLine p)).map)
       (ModuleCat.of ℤ ℤ) 0) := by
@@ -325,8 +324,9 @@ private theorem mem_range_homologyMap_map_thomPair_mobiusLine_one_iff
     refine (firstHomologyEquiv_homologyMap_thomPairProj_map_mobiusCircleHom _).trans ?_
     rw [LinearEquiv.apply_symm_apply, hn]
 
-/-- **The first relative integral homology of the Thom pair of the Möbius line is `ℤ/2`.** The
-Thom pair is the total space relative to the nonzero vectors. -/
+/-- **The first relative integral homology of the Thom pair of the Möbius line is `ℤ/2`**, for a
+circle of positive period `0 < p`. The Thom pair is the total space relative to the nonzero
+vectors. -/
 theorem nonempty_linearEquiv_singularHomology_thomPair_mobiusLine_one :
     Nonempty (((thomPair ℝ (MobiusLine p)).singularHomology (ModuleCat.of ℤ ℤ) 1 : ModuleCat.{0} ℤ)
       ≃ₗ[ℤ] ZMod 2) := by
@@ -378,8 +378,9 @@ theorem nonempty_linearEquiv_singularHomology_thomPair_mobiusLine_one :
     (QuotientAddGroup.quotientAddEquivOfEq hker).trans <|
       QuotientAddGroup.quotientKerEquivOfSurjective g hg).toIntLinearEquiv⟩
 
-/-- **Constant coefficients give the wrong group.** The first relative integral homology of the
-Thom pair of the Möbius line is not the zeroth integral homology `ℤ` of the base circle. -/
+/-- **Constant coefficients give the wrong group.** For a circle of positive period `0 < p`, the
+first relative integral homology of the Thom pair of the Möbius line is not the zeroth integral
+homology `ℤ` of the base circle. -/
 theorem not_nonempty_linearEquiv_singularHomology_thomPair_mobiusLine_one_zero :
     ¬ Nonempty (((thomPair ℝ (MobiusLine p)).singularHomology (ModuleCat.of ℤ ℤ) 1 :
       ModuleCat.{0} ℤ) ≃ₗ[ℤ] ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homology 0) := by

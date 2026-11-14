@@ -201,21 +201,6 @@ def firstHomologyEquiv :
       ((windingNumberIso ((0 : ℝ) : AddCircle p)).abelianizationCongr.trans
         Group.Abelianization.equivOfComm.symm))).toIntLinearEquiv
 
-/-- On the Hurewicz class of a loop based at `0`, `H₁(S¹; ℤ) ≃ ℤ` is its winding number. -/
-@[simp]
-theorem firstHomologyEquiv_hurewiczHomologyAddEquiv
-    (γ : FundamentalGroup (AddCircle p) 0) :
-    firstHomologyEquiv (hurewiczHomologyAddEquiv (X := TopCat.of (AddCircle p)) _
-      (Additive.ofMul (Group.Abelianization.of γ))) = windingNumber γ := by
-  -- `firstHomologyEquiv` is based at `((0 : ℝ) : AddCircle p)`, which is `0` by definition.
-  have h (γ' : FundamentalGroup (AddCircle p) ((0 : ℝ) : AddCircle p)) :
-      firstHomologyEquiv (hurewiczHomologyAddEquiv (X := TopCat.of (AddCircle p)) _
-        (Additive.ofMul (Group.Abelianization.of γ'))) = windingNumber γ' := by
-    rw [firstHomologyEquiv, AddEquiv.coe_toIntLinearEquiv, AddEquiv.trans_apply,
-      AddEquiv.symm_apply_apply]
-    simp [windingNumber]
-  exact h γ
-
 /-- The circuit class corresponds to `1` under `H₁(S¹; ℤ) ≃ ℤ`. -/
 @[simp]
 theorem firstHomologyEquiv_fundamentalClass : firstHomologyEquiv (fundamentalClass p) = 1 := by
@@ -225,7 +210,30 @@ theorem firstHomologyEquiv_fundamentalClass : firstHomologyEquiv (fundamentalCla
     fundamentalClass_def, h]
   simpa [windingNumber] using windingNumber_zsmulLoop (p := p) 0 1
 
-/-- Every class in `H₁(S¹; ℤ)` is a multiple of the circuit class. -/
+/-- On the Hurewicz class of a loop, `H₁(S¹; ℤ) ≃ ℤ` is its winding number. -/
+@[simp]
+theorem firstHomologyEquiv_hurewiczHomologyAddEquiv {x : AddCircle p}
+    (γ : FundamentalGroup (AddCircle p) x) :
+    firstHomologyEquiv (hurewiczHomologyAddEquiv (X := TopCat.of (AddCircle p)) x
+      (Additive.ofMul (Group.Abelianization.of γ))) = windingNumber γ := by
+  obtain ⟨y, rfl⟩ := QuotientAddGroup.mk_surjective x
+  -- `γ` is the class of the loop winding `windingNumber γ` times around the circle.
+  obtain ⟨n, rfl⟩ : ∃ n : ℤ, γ = .of (.mk (zsmulLoop p y n)) :=
+    ⟨windingNumber γ, (windingNumberIso _).injective (Multiplicative.toAdd.injective
+      (windingNumber_zsmulLoop y (windingNumber γ)).symm)⟩
+  -- That loop is the rotation by `y` of the loop based at `0` winding `n` times.
+  have h : loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p y n) =
+      loopClass (X := TopCat.of (AddCircle p))
+        ((zsmulLoop p 0 n).map (ContinuousMap.addRight (y : AddCircle p)).continuous) :=
+    loopClass_eq_of_apply_eq _ _ fun t ↦ by
+      rw [Path.map_coe, Function.comp_apply, zsmulLoop_apply, zsmulLoop_apply]
+      simp
+  rw [windingNumber_zsmulLoop, hurewiczHomologyAddEquiv_ofMul_of_mk, h,
+    ← ContinuousMap.singularHomologyMap_loopClass, H₁AddEquivHomology_loopClass_zsmulLoop,
+    singularHomologyMap_addRight, map_zsmul, firstHomologyEquiv_fundamentalClass, smul_eq_mul,
+    mul_one]
+
+/-- The inverse of `H₁(S¹; ℤ) ≃ ℤ` sends `n` to `n` times the circuit class. -/
 @[simp]
 theorem firstHomologyEquiv_symm_apply (n : ℤ) :
     firstHomologyEquiv.symm n = n • fundamentalClass p := by
