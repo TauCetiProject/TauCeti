@@ -30,6 +30,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   is the sum of its partial derivatives.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
   manifold-valued map on a normed space.
+* `HasMFDerivAt.hasDerivAt_comp_graph`: the chain rule `d/du f(u, γ u) = ∂_t f + d(f u)(γ')` along
+  a curve in a manifold.
 * `TauCeti.continuous_fderiv_of_contMDiff`: the derivative in the domain variable of a `C¹`
   family along a `C¹` manifold-valued map is continuous.
 * `TauCeti.mfderiv_apply_eq_zero_of_const_line`: the derivative of a map from a normed space
@@ -42,11 +44,16 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
 * `TauCeti.mvfderiv_const_smul_field`: the same for a scalar in the base field, without a
   differentiability hypothesis.
+* `TauCeti.mvfderiv_add_const`: adding a constant does not change `mvfderiv`, without a
+  differentiability hypothesis.
 * `TauCeti.mvfderiv_fun_sum`: `mvfderiv` of a finite sum of differentiable functions is the sum of
   their `mvfderiv`s.
 * `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
 * `TauCeti.mvfderiv_apply_of_eventuallyEq_extChartAt`: a map with the germ of the extended chart
   at `x` has the identity as derivative at `x`.
+* `TauCeti.mvfderiv_eq_fderivWithin_extChartAt_target`: the derivative at `x` of a map
+  differentiable at `x` is the derivative of its coordinate expression within the extended chart
+  target.
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
 * `TauCeti.range_mvfderiv`: the tangent-space identification transports derivative ranges.
 * `TauCeti.injective_mvfderiv_iff`:
@@ -121,6 +128,17 @@ theorem mvfderiv_apply_of_eventuallyEq_extChartAt {f : M → E} {x : M}
   simp only [mvfderiv, mfderiv_extChartAt_eq_id]
   -- Both tangent identifications are the identity of `E` across type synonyms.
   rfl
+
+/-- The derivative at `x` of a vector-valued map differentiable at `x` is the derivative within the
+extended chart target of its coordinate expression. -/
+theorem mvfderiv_eq_fderivWithin_extChartAt_target {f : M → F} {x : M}
+    (hf : MDifferentiableAt I 𝓘(𝕜, F) f x) :
+    mvfderiv I f x = fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x).target
+      (extChartAt I x x) := by
+  rw [hf.mvfderiv, fderivWithin_of_mem_nhdsWithin (extChartAt_target_mem_nhdsWithin x)
+    I.uniqueDiffWithinAt_image (hf.differentiableWithinAt_writtenInExtChartAt.mono
+      (extChartAt_target_subset_range x)), writtenInExtChartAt, extChartAt_model_space_eq_id,
+    PartialEquiv.refl_coe, Function.id_comp]
 
 /-- The chain rule for a vector-valued function on a manifold followed by a map between normed
 spaces that is differentiable at the relevant point, evaluated on a tangent vector. -/
@@ -202,6 +220,25 @@ theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M 
   simpa only [NormedSpace.fromTangentSpace_symm_apply,
     Function.uncurry_apply_pair, id_eq] using hc
 
+/-- **The chain rule along a curve for a time-dependent family.** If the curve `u` has velocity
+`w` at `t` and `f` is jointly differentiable at `(t, u t)`, then `s ↦ f s (u s)` has derivative
+`∂_t f(t, u t) + d(f t)(w)` at `t`: the derivative of `f` in the time variable plus the
+derivative of the slice `f t` along the velocity. -/
+theorem _root_.HasMFDerivAt.hasDerivAt_comp_graph {u : 𝕜 → M} {f : 𝕜 → M → F'} {t : 𝕜}
+    {w : TangentSpace I (u t)} (hu : HasMFDerivAt 𝓘(𝕜) I u t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w))
+    (hf : MDifferentiableAt (𝓘(𝕜).prod I) 𝓘(𝕜, F') (Function.uncurry f) (t, u t)) :
+    HasDerivAt (fun s ↦ f s (u s)) (deriv (fun s ↦ f s (u t)) t + mvfderiv I (f t) (u t) w) t := by
+  have hd : DifferentiableAt 𝕜 (fun s ↦ f s (u s)) t :=
+    mdifferentiableAt_iff_differentiableAt.1
+      (hf.comp t (mdifferentiableAt_id.prodMk hu.mdifferentiableAt))
+  -- The velocity map `r ↦ r • w` sends `1` to `w`.
+  have hw : mfderiv 𝓘(𝕜) I u t (1 : 𝕜) = w := by
+    rw [hu.mfderiv]
+    exact one_smul 𝕜 w
+  have h := fderiv_comp_graph_apply_of_mdifferentiableAt hu.mdifferentiableAt hf 1
+  rw [hw, fderiv_apply_one_eq_deriv, fderiv_apply_one_eq_deriv] at h
+  exact h ▸ hd.hasDerivAt
+
 /-- Along a `C¹` map `u : F → M` from a normed space to a manifold, the derivative in the domain
 variable of a `C¹` family `f : F → M → F'`, taken at `(y, u y)`, depends continuously on `y`. It is
 a partial derivative of the `C¹` map `(w, y) ↦ f w (u y)` on `F × F`. -/
@@ -243,6 +280,23 @@ theorem mvfderiv_const_smul_field (g : M → F) (x : M) (c : 𝕜) :
     hg (by simpa [smul_smul, inv_mul_cancel₀ hc] using hcg.const_smul c⁻¹)
   simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg,
     mfderiv_zero_of_not_mdifferentiableAt hcg]
+
+/-- Adding a constant does not change the derivative of a vector-valued function, read in the
+target space. No differentiability is needed: `g` and `g + c` are differentiable at the same
+points. This is the manifold version of `fderiv_add_const`. -/
+@[simp]
+theorem mvfderiv_add_const (g : M → F) (c : F) (x : M) :
+    mvfderiv I (fun y ↦ g y + c) x = mvfderiv I g x := by
+  by_cases hg : MDiffAt g x
+  · rw [mvfderiv_fun_add hg mdifferentiableAt_const, mvfderiv_const, add_zero]
+  -- Neither `g` nor `g + c` is differentiable at `x`, so both derivatives vanish.
+  have hgc : ¬MDiffAt (fun y ↦ g y + c) x := fun hgc ↦ by
+    have hfun : ((fun y ↦ g y + c) + fun _ : M ↦ -c) = g := by
+      funext y
+      simp
+    exact hg (hfun ▸ hgc.add mdifferentiableAt_const)
+  simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg,
+    mfderiv_zero_of_not_mdifferentiableAt hgc]
 
 /-- The derivative of a finite sum of vector-valued functions, read in the target space, is the
 sum of their derivatives at a point where each summand is differentiable. This is the manifold

@@ -23,20 +23,20 @@ for preconnected nonempty `E` the acting group *is* the deck group, `G ≃* deck
 
 Neither hypothesis is needed to see that the deck action of a quotient covering map is
 regular; that consequence is recorded in
-`TauCeti/AlgebraicTopology/UniversalCover/deck/Quotient/Covering.lean`, where it generalizes
+`TauCeti/AlgebraicTopology/UniversalCover/Deck/Quotient/Covering.lean`, where it generalizes
 the previous statement for the acting group `deck f` itself.
 
 ## Main declarations
 
-* `TauCeti.Deck.IsQuotientCoveringMap.toDeckHom`: translation by a group element, as a
+* `IsQuotientCoveringMap.toDeckHom`: translation by a group element, as a
   homomorphism from the acting group to the deck group.
-* `TauCeti.Deck.IsQuotientCoveringMap.toDeckHom_injective`: it is injective on a nonempty
+* `IsQuotientCoveringMap.toDeckHom_injective`: it is injective on a nonempty
   total space.
-* `TauCeti.Deck.IsQuotientCoveringMap.toDeckHom_surjective`: it is surjective on a
+* `IsQuotientCoveringMap.toDeckHom_surjective`: it is surjective on a
   preconnected total space.
-* `TauCeti.Deck.IsQuotientCoveringMap.toDeckHom_bijective`: it is bijective on a preconnected
+* `IsQuotientCoveringMap.toDeckHom_bijective`: it is bijective on a preconnected
   nonempty total space.
-* `TauCeti.Deck.IsQuotientCoveringMap.deckMulEquiv`: for a preconnected nonempty total space,
+* `IsQuotientCoveringMap.deckMulEquiv`: for a preconnected nonempty total space,
   the acting group is isomorphic to the deck group.
 
 ## References
@@ -52,23 +52,16 @@ Tau Ceti wrapper `TauCeti.Deck.eq_of_apply_eq`.
 
 public section
 
-namespace TauCeti
-
-namespace Deck
+namespace IsQuotientCoveringMap
 
 variable {E X G : Type*} [TopologicalSpace E] [TopologicalSpace X] {f : E → X}
 variable [Group G] [MulAction G E]
-
-namespace IsQuotientCoveringMap
-
-variable (hf : IsQuotientCoveringMap f G)
-include hf
 
 /-- Translation by a group element, as a homomorphism from the group of a quotient covering
 map to the deck transformation group of that map. Each translation is a homeomorphism
 because the action is continuous, and it lies over the base because the fibres of `f` are
 the orbits. -/
-def toDeckHom : G →* deck f :=
+def toDeckHom (hf : IsQuotientCoveringMap f G) : G →* deck f :=
   letI := hf.toContinuousConstSMul
   { toFun := fun g =>
       ⟨Homeomorph.smul g, deck.mem_iff.mpr (funext fun _ => hf.map_smul g)⟩
@@ -78,19 +71,22 @@ def toDeckHom : G →* deck f :=
 /-- On points, the deck transformation attached to a group element is translation by that
 element. -/
 @[simp]
-lemma toDeckHom_apply (g : G) (e : E) : (toDeckHom hf g).1 e = g • e := by
+lemma toDeckHom_apply (hf : IsQuotientCoveringMap f G) (g : G) (e : E) :
+    (hf.toDeckHom g).1 e = g • e := by
   let := hf.toContinuousConstSMul
   rw [toDeckHom, MonoidHom.coe_mk, OneHom.coe_mk, Homeomorph.smul_apply]
 
 /-- On points, the inverse of the deck transformation attached to a group element is
 translation by the inverse element. -/
 @[simp]
-lemma toDeckHom_symm_apply (g : G) (e : E) : (toDeckHom hf g).1.symm e = g⁻¹ • e := by
-  rw [Homeomorph.symm_apply_eq, toDeckHom_apply, smul_inv_smul]
+lemma toDeckHom_symm_apply (hf : IsQuotientCoveringMap f G) (g : G) (e : E) :
+    (hf.toDeckHom g).1.symm e = g⁻¹ • e := by
+  rw [Homeomorph.symm_apply_eq, hf.toDeckHom_apply, smul_inv_smul]
 
 /-- Passing from a group element to a deck transformation is injective, because the action
 of a quotient covering map is free. -/
-lemma toDeckHom_injective [Nonempty E] : Function.Injective (toDeckHom hf) := by
+lemma toDeckHom_injective (hf : IsQuotientCoveringMap f G) [Nonempty E] :
+    Function.Injective hf.toDeckHom := by
   have := hf.isCancelSMul
   intro g g' hgg
   obtain ⟨e⟩ := ‹Nonempty E›
@@ -101,41 +97,39 @@ lemma toDeckHom_injective [Nonempty E] : Function.Injective (toDeckHom hf) := by
 /-- Every deck transformation of a quotient covering map with preconnected total space is
 translation by a group element: it agrees with one such translation at a point, and deck
 transformations of a preconnected covering are determined by one value. -/
-lemma toDeckHom_surjective [PreconnectedSpace E] : Function.Surjective (toDeckHom hf) := by
+lemma toDeckHom_surjective (hf : IsQuotientCoveringMap f G) [PreconnectedSpace E] :
+    Function.Surjective hf.toDeckHom := by
   intro φ
   rcases isEmpty_or_nonempty E with hE | hne
   · exact ⟨1, Subtype.ext (Homeomorph.ext fun e => (hE.false e).elim)⟩
   · obtain ⟨e₀⟩ := hne
     obtain ⟨g, hg⟩ := hf.apply_eq_iff_mem_orbit.mp (deck.proj_smul φ e₀)
-    exact ⟨g, Deck.eq_of_apply_eq hf.isCoveringMap _ _
-      (by rw [toDeckHom_apply]; exact hg)⟩
+    exact ⟨g, TauCeti.Deck.eq_of_apply_eq hf.isCoveringMap _ _
+      (by rw [hf.toDeckHom_apply]; exact hg)⟩
 
 /-- On a preconnected nonempty total space, passing from a group element to a deck
 transformation is bijective. -/
-lemma toDeckHom_bijective [PreconnectedSpace E] [Nonempty E] :
-    Function.Bijective (toDeckHom hf) :=
-  ⟨toDeckHom_injective hf, toDeckHom_surjective hf⟩
+lemma toDeckHom_bijective (hf : IsQuotientCoveringMap f G) [PreconnectedSpace E] [Nonempty E] :
+    Function.Bijective hf.toDeckHom :=
+  ⟨hf.toDeckHom_injective, hf.toDeckHom_surjective⟩
 
 /-- **The acting group of a quotient covering map with preconnected nonempty total space is
 its deck transformation group.** The isomorphism is translation. -/
-noncomputable def deckMulEquiv [PreconnectedSpace E] [Nonempty E] : G ≃* deck f :=
-  MulEquiv.ofBijective (toDeckHom hf) (toDeckHom_bijective hf)
+noncomputable def deckMulEquiv (hf : IsQuotientCoveringMap f G) [PreconnectedSpace E]
+    [Nonempty E] : G ≃* deck f :=
+  MulEquiv.ofBijective hf.toDeckHom hf.toDeckHom_bijective
 
 /-- On points, the isomorphism between the acting group and the deck group is translation. -/
 @[simp]
-lemma deckMulEquiv_apply [PreconnectedSpace E] [Nonempty E] (g : G) (e : E) :
-    (deckMulEquiv hf g).1 e = g • e := by
-  rw [deckMulEquiv, MulEquiv.ofBijective_apply, toDeckHom_apply]
+lemma deckMulEquiv_apply (hf : IsQuotientCoveringMap f G) [PreconnectedSpace E] [Nonempty E]
+    (g : G) (e : E) : (hf.deckMulEquiv g).1 e = g • e := by
+  rw [deckMulEquiv, MulEquiv.ofBijective_apply, hf.toDeckHom_apply]
 
 /-- The inverse isomorphism returns the group element whose translation is the given deck
 transformation. -/
 @[simp]
-lemma deckMulEquiv_symm_apply [PreconnectedSpace E] [Nonempty E] (φ : deck f) (e : E) :
-    (deckMulEquiv hf).symm φ • e = φ.1 e :=
-  congrArg (fun ψ : deck f => ψ.1 e) ((deckMulEquiv hf).apply_symm_apply φ)
+lemma deckMulEquiv_symm_apply (hf : IsQuotientCoveringMap f G) [PreconnectedSpace E] [Nonempty E]
+    (φ : deck f) (e : E) : hf.deckMulEquiv.symm φ • e = φ.1 e :=
+  congrArg (fun ψ : deck f => ψ.1 e) (hf.deckMulEquiv.apply_symm_apply φ)
 
 end IsQuotientCoveringMap
-
-end Deck
-
-end TauCeti

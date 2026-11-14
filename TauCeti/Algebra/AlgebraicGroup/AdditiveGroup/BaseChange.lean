@@ -50,7 +50,7 @@ generators, and the one-dimensional additive group `𝔾ₐ`.
 ## References
 
 The coordinate-bialgebra equivalence is
-`TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv`.
+`SymmetricAlgebra.scalarTensorBialgEquiv`.
 The generic points base-change step is Tau Ceti's `AlgHom.baseChangePointsMulEquiv`; the
 vector-group points calculation is Tau Ceti's `AdditiveGroup.pointsMulEquiv`. This specialization
 follows the API pattern of `RootsOfUnityGroup.baseChangePointsMulEquiv`,
@@ -129,11 +129,11 @@ section GaCoordinateBialgebra
 /-- **Base change of the additive coordinate bialgebra is the additive coordinate bialgebra over
 the new base.**
 
-This is the rank-one specialization of `TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv`,
+This is the rank-one specialization of `SymmetricAlgebra.scalarTensorBialgEquiv`,
 transported along `K ⊗[k] k ≃ K`. -/
 noncomputable def gaScalarTensorBialgEquiv :
     K ⊗[k] SymmetricAlgebra k k ≃ₐc[K] SymmetricAlgebra K K :=
-  (TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv
+  (SymmetricAlgebra.scalarTensorBialgEquiv
       (k := k) (K := K) (M := k)).trans <|
     symmetricAlgebraBialgEquiv (K := K)
       (Algebra.TensorProduct.rid k K K).toLinearEquiv
@@ -153,7 +153,7 @@ theorem gaScalarTensorBialgEquiv_tmul_ι (s : K) (r : k) :
       exact congrArg
         (symmetricAlgebraBialgEquiv (K := K)
           (Algebra.TensorProduct.rid k K K).toLinearEquiv)
-        (TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv_tmul_ι
+        (SymmetricAlgebra.scalarTensorBialgEquiv_tmul_ι
           (k := k) (K := K) (M := k) s r)
     _ = SymmetricAlgebra.ι K K
         (Algebra.TensorProduct.rid k K K (s ⊗ₜ[k] r)) := by
@@ -177,7 +177,7 @@ theorem gaScalarTensorBialgEquiv_tmul_one (s : K) :
       exact congrArg
         (symmetricAlgebraBialgEquiv (K := K)
           (Algebra.TensorProduct.rid k K K).toLinearEquiv)
-        (TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv_tmul_one
+        (SymmetricAlgebra.scalarTensorBialgEquiv_tmul_one
           (k := k) (K := K) (M := k) s)
     _ = _ := AlgEquiv.commutes
       (symmetricAlgebraBialgEquiv (K := K)

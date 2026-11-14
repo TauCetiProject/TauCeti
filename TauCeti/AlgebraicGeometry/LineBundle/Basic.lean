@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTriviality
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Properties
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
 /-!
 # Invertible sheaves on a scheme

@@ -32,14 +32,25 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 
 /-- Two real functions with equal integrals of their squares (`∫ g₁² = ∫ g₂²`) and matching cross
 integral (`∫ g₂ g₁ = ∫ g₁²`) are a.e. equal: the `L²` distance polarises to
-`∫ (g₂ - g₁)² = ∫ g₂² - 2 ∫ g₂ g₁ + ∫ g₁² = 0`. The products `g₁²`, `g₂²`, `g₂ g₁` are assumed
-integrable. -/
+`∫ (g₂ - g₁)² = ∫ g₂² - 2 ∫ g₂ g₁ + ∫ g₁² = 0`. The squares `g₁²`, `g₂²` are assumed
+integrable; the product `g₂ g₁` is then integrable or has integral `0`, which forces both squares
+to have integral `0`. -/
 lemma ae_eq_of_integral_mul_eq_of_integral_sq_eq {g₁ g₂ : Ω → ℝ}
     (hg₁sq : Integrable (fun ω ↦ g₁ ω * g₁ ω) μ)
-    (hg₂sq : Integrable (fun ω ↦ g₂ ω * g₂ ω) μ) (hg₂g₁ : Integrable (fun ω ↦ g₂ ω * g₁ ω) μ)
+    (hg₂sq : Integrable (fun ω ↦ g₂ ω * g₂ ω) μ)
     (h_cross : ∫ ω, g₂ ω * g₁ ω ∂μ = ∫ ω, g₁ ω * g₁ ω ∂μ)
     (h_sq : ∫ ω, g₁ ω * g₁ ω ∂μ = ∫ ω, g₂ ω * g₂ ω ∂μ) :
     g₁ =ᵐ[μ] g₂ := by
+  by_cases hg₂g₁ : Integrable (fun ω ↦ g₂ ω * g₁ ω) μ
+  swap
+  · rw [integral_undef hg₂g₁] at h_cross
+    have h₁ := (integral_eq_zero_iff_of_nonneg (fun ω ↦ mul_self_nonneg (g₁ ω)) hg₁sq).mp
+      h_cross.symm
+    have h₂ := (integral_eq_zero_iff_of_nonneg (fun ω ↦ mul_self_nonneg (g₂ ω)) hg₂sq).mp
+      (h_sq.symm.trans h_cross.symm)
+    filter_upwards [h₁, h₂] with ω h₁ω h₂ω
+    simp only [Pi.zero_apply, mul_self_eq_zero] at h₁ω h₂ω
+    rw [h₁ω, h₂ω]
   have h_L2_zero : ∫ ω, (g₂ ω - g₁ ω) ^ 2 ∂μ = 0 := by
     have h_expand : ∀ᵐ ω ∂μ,
         (g₂ ω - g₁ ω) ^ 2 = g₂ ω * g₂ ω - 2 * (g₂ ω * g₁ ω) + g₁ ω * g₁ ω := by
@@ -81,14 +92,14 @@ theorem ae_eq_of_lintegral_mul_eq {u v : Ω → ℝ≥0∞} (hu : AEMeasurable u
     exact ⟨integrable_toReal_of_lintegral_ne_top (hw.mul hw') (h ▸ hT),
       h ▸ integral_toReal (hw.mul hw') (ae_lt_top' (hw.mul hw') (h ▸ hT))⟩
   obtain ⟨i1, e1⟩ := hI hu hu huu
-  obtain ⟨i2, e2⟩ := hI hu hv huv
+  obtain ⟨-, e2⟩ := hI hu hv huv
   obtain ⟨i3, e3⟩ := hI hv hv hvv
   have hfin : ∀ {w : Ω → ℝ≥0∞}, AEMeasurable w μ → ∫⁻ ω, w ω * w ω ∂μ = T →
       ∀ᵐ ω ∂μ, w ω ≠ ∞ := fun hw h => by
     filter_upwards [ae_lt_top' (hw.mul hw) (h ▸ hT)] with ω hω hinf
     simp [hinf] at hω
   filter_upwards [ae_eq_of_integral_mul_eq_of_integral_sq_eq i1 i3
-    (by simpa only [mul_comm] using i2) (by simpa only [mul_comm] using e2.trans e1.symm)
+    (by simpa only [mul_comm] using e2.trans e1.symm)
     (e1.trans e3.symm), hfin hu huu, hfin hv hvv] with ω hω hu' hv'
   exact (ENNReal.toReal_eq_toReal_iff' hu' hv').mp hω
 
