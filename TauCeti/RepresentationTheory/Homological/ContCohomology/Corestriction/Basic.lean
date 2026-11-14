@@ -296,9 +296,8 @@ theorem smul_apply_lWord_mul_of_isCocycle₁ {f : U → M} (hf : groupCohomology
     t u • f ⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩ =
       t u • f ⟨lWord U t u γ, lWord_mem U t ht u γ⟩ +
         (γ * t (γ⁻¹ • u)) • f ⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩ := by
-  have hmul : (⟨_, lWord_mem U t ht u γ⟩ : U) * ⟨_, lWord_mem U t ht (γ⁻¹ • u) η⟩ =
-      ⟨_, lWord_mem U t ht u (γ * η)⟩ := Subtype.ext (lWord_mul_lWord U t u γ η)
-  rw [← hmul, hf, Subgroup.smul_def, smul_add, smul_smul, transversal_mul_lWord, add_comm]
+  rw [← mk_lWord_mul_mk_lWord U t ht u γ η, hf, Subgroup.smul_def, smul_add, smul_smul,
+    transversal_mul_lWord, add_comm]
 
 /-- **The corestriction of a `1`-cocycle is a `1`-cocycle.** The factor `t u •` is what makes this
 true: the transversal identity `t u * ℓᵗ_u(γ) = γ * t (γ⁻¹ • u)` of
@@ -615,14 +614,8 @@ theorem cochainsCor2_isCocycle₂ {f : U × U → M} (hf : groupCohomology.IsCoc
         t u • f (⟨lWord U t u γ, lWord_mem U t ht u γ⟩,
           ⟨lWord U t (γ⁻¹ • u) (η * ζ), lWord_mem U t ht (γ⁻¹ • u) (η * ζ)⟩) := by
     intro u
-    have hab : (⟨lWord U t u γ, lWord_mem U t ht u γ⟩ : U) *
-        ⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩ =
-          ⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩ :=
-      Subtype.ext (lWord_mul_lWord U t u γ η)
-    have hbc : (⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩ : U) *
-        ⟨lWord U t (η⁻¹ • γ⁻¹ • u) ζ, lWord_mem U t ht (η⁻¹ • γ⁻¹ • u) ζ⟩ =
-          ⟨lWord U t (γ⁻¹ • u) (η * ζ), lWord_mem U t ht (γ⁻¹ • u) (η * ζ)⟩ :=
-      Subtype.ext (lWord_mul_lWord U t (γ⁻¹ • u) η ζ)
+    have hab := mk_lWord_mul_mk_lWord U t ht u γ η
+    have hbc := mk_lWord_mul_mk_lWord U t ht (γ⁻¹ • u) η ζ
     have hcc : (⟨lWord U t ((γ * η)⁻¹ • u) ζ, lWord_mem U t ht ((γ * η)⁻¹ • u) ζ⟩ : U) =
         ⟨lWord U t (η⁻¹ • γ⁻¹ • u) ζ, lWord_mem U t ht (η⁻¹ • γ⁻¹ • u) ζ⟩ :=
       Subtype.ext (by rw [mul_inv_rev, mul_smul])
@@ -647,10 +640,7 @@ theorem cochainsCor2_d1 (c : U → M) :
             t u • c ⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩ +
           t u • c ⟨lWord U t u γ, lWord_mem U t ht u γ⟩ := by
     intro u
-    have hab : (⟨lWord U t u γ, lWord_mem U t ht u γ⟩ : U) *
-        ⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩ =
-          ⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩ :=
-      Subtype.ext (lWord_mul_lWord U t u γ η)
+    have hab := mk_lWord_mul_mk_lWord U t ht u γ η
     rw [d1_apply, hab, smul_add, smul_sub, Subgroup.mk_smul, smul_smul,
       transversal_mul_lWord, mul_smul]
   rw [d1_apply]
@@ -689,14 +679,10 @@ private theorem cochainsCor2_changeTransversal_summand (t' : G ⧸ U → G)
       ⟨lWord U t v g, lWord_mem U t ht v g⟩ * D (g⁻¹ • v) := fun v g => Subtype.ext <| by
     rw [Subgroup.coe_mul, Subgroup.coe_mul, hD, hD]
     exact transversalDiff_mul_lWord U t t' v g
-  have hmul : ∀ (s : G ⧸ U → G) (hs : ∀ u : G ⧸ U, (QuotientGroup.mk (s u) : G ⧸ U) = u),
-      (⟨lWord U s u γ, lWord_mem U s hs u γ⟩ : U) *
-          ⟨lWord U s (γ⁻¹ • u) η, lWord_mem U s hs (γ⁻¹ • u) η⟩ =
-        ⟨lWord U s u (γ * η), lWord_mem U s hs u (γ * η)⟩ :=
-    fun s _ => Subtype.ext (lWord_mul_lWord U s u γ η)
   rw [← transversal_mul_transversalDiff U t t' u, ← hD, mul_smul, ← Subgroup.smul_def,
     groupCohomology.smul_map_eq_of_isCocycle₂_of_mul_eq_mul hf (hD' u γ) (hD' (γ⁻¹ • u) η),
-    hmul t' ht', hmul t ht, mul_inv_rev]
+    mk_lWord_mul_mk_lWord U t' ht' u γ η,
+    mk_lWord_mul_mk_lWord U t ht u γ η, mul_inv_rev]
   simp only [smul_add, smul_sub, Subgroup.mk_smul, smul_smul, transversal_mul_lWord]
   abel
 
