@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Chart
+import Mathlib.Analysis.Calculus.Deriv.Shift
 
 /-!
 # The covariant acceleration of a curve
@@ -184,19 +185,66 @@ theorem accelerationWithin_comp {φ : 𝕜 → 𝕜} {s u : Set 𝕜} {t : 𝕜}
     alongCurveWithin_comp cov γ _ φ (hφ t ht) hmaps hchart hV, accelerationWithin_def, smul_smul,
     sq]
 
-/-- **The chain rule for the unrestricted covariant acceleration**:
-`D_t (γ ∘ φ)' = φ''(t) γ'(φ t) + φ'(t)² D_t γ'(φ t)`. -/
-theorem acceleration_comp {φ : 𝕜 → 𝕜} {t : 𝕜} (hφ : Differentiable 𝕜 φ)
-    (hφ' : DifferentiableAt 𝕜 (deriv φ) t) (hγ : MDifferentiable 𝓘(𝕜, 𝕜) I γ)
+/-- **The local chain rule for covariant acceleration**:
+`D_t (γ ∘ φ)' = φ''(t) γ'(φ t) + φ'(t)² D_t γ'(φ t)`.
+Differentiability of the curve and the change of parameter is only needed near the
+parameters in question. -/
+theorem acceleration_comp {φ : 𝕜 → 𝕜} {t : 𝕜}
+    (hφ : ∀ᶠ r in 𝓝 t, DifferentiableAt 𝕜 φ r)
+    (hφ' : DifferentiableAt 𝕜 (deriv φ) t)
+    (hγ : ∀ᶠ r in 𝓝 (φ t), MDifferentiableAt 𝓘(𝕜, 𝕜) I γ r)
     (hV : DifferentiableAt 𝕜 (sectionCoord (F := E) γ (curveVelocity I γ) (γ (φ t))) (φ t)) :
     acceleration cov (γ ∘ φ) t =
       deriv (deriv φ) t • curveVelocity I γ (φ t) + deriv φ t ^ 2 • acceleration cov γ (φ t) := by
-  rw [← accelerationWithin_univ, ← accelerationWithin_univ, ← curveVelocityWithin_univ,
-    ← derivWithin_univ, ← derivWithin_univ]
-  rw [← curveVelocityWithin_univ] at hV
-  exact accelerationWithin_comp cov γ uniqueDiffOn_univ (mem_univ t) hφ.differentiableOn
-    (by rwa [derivWithin_univ, differentiableWithinAt_univ]) (mapsTo_univ φ univ)
-    hγ.mdifferentiableOn (hV.differentiableWithinAt)
+  have hvelocity : ∀ᶠ r in 𝓝 t, curveVelocity I (γ ∘ φ) r =
+      deriv φ r • curveVelocity I γ (φ r) := by
+    filter_upwards [hφ, hφ.self_of_nhds.continuousAt hγ] with r hr hγr
+    exact curveVelocity_comp hr.hasDerivAt hγr
+  have hVcomp : DifferentiableAt 𝕜 (sectionCoord (F := E) (γ ∘ φ)
+      (fun r ↦ curveVelocity I γ (φ r)) ((γ ∘ φ) t)) t := by
+    rw [sectionCoord_comp]
+    exact hV.comp t hφ.self_of_nhds
+  have hchart := (hasDerivAt_extChartAt_comp_curve
+    (hasMFDerivAt_curveVelocity hγ.self_of_nhds)).differentiableAt
+  rw [acceleration_def, ← alongCurveWithin_univ, alongCurveWithin_congr cov (γ ∘ φ) _
+    (by simpa only [nhdsWithin_univ] using hvelocity) hvelocity.self_of_nhds,
+    alongCurveWithin_smul cov (γ ∘ φ) _ _ Set.univ hφ'.differentiableWithinAt
+      hVcomp.differentiableWithinAt,
+    alongCurveWithin_comp cov γ _ φ hφ.self_of_nhds.differentiableWithinAt
+      (Set.mapsTo_univ φ Set.univ) hchart.differentiableWithinAt hV.differentiableWithinAt]
+  simp only [derivWithin_univ, alongCurveWithin_univ,
+    ← acceleration_def, smul_smul, sq]
+
+/-- Reversing the parameter preserves covariant acceleration, including at parameters where
+coordinate derivatives take their junk values. -/
+theorem acceleration_comp_const_sub (d t : 𝕜) :
+    acceleration cov (fun r ↦ γ (d - r)) t = acceleration cov γ (d - t) := by
+  have hcoord (x : M) :
+      sectionCoord (F := E) (fun r ↦ γ (d - r))
+        (curveVelocity I (fun r ↦ γ (d - r))) x =
+      fun r ↦ -sectionCoord (F := E) γ (curveVelocity I γ) x (d - r) := by
+    ext r
+    simp only [sectionCoord_apply, curveVelocity_comp_const_sub, map_neg]
+  rw [acceleration_def, acceleration_def, alongCurve_apply, alongCurve_apply,
+    alongCurveInChartWithin_apply, alongCurveInChartWithin_apply]
+  simp only [derivWithin_univ, hcoord, deriv.fun_neg, deriv_comp_const_sub,
+    Function.comp_def, neg_neg, map_neg, neg_apply]
+  rw [deriv_comp_const_sub (fun r ↦ extChartAt I (γ (d - t)) (γ r)) d t]
+  simp only [map_neg, neg_neg]
+
+/-- Translating the parameter preserves covariant acceleration without regularity assumptions. -/
+theorem acceleration_comp_add_const (a t : 𝕜) :
+    acceleration cov (fun r ↦ γ (r + a)) t = acceleration cov γ (t + a) := by
+  have hcoord (x : M) :
+      sectionCoord (F := E) (fun r ↦ γ (r + a))
+        (curveVelocity I (fun r ↦ γ (r + a))) x =
+      fun r ↦ sectionCoord (F := E) γ (curveVelocity I γ) x (r + a) := by
+    ext r
+    simp only [sectionCoord_apply, curveVelocity_comp_add_const]
+  rw [acceleration_def, acceleration_def, alongCurve_apply, alongCurve_apply,
+    alongCurveInChartWithin_apply, alongCurveInChartWithin_apply]
+  simp only [derivWithin_univ, hcoord, deriv_comp_add_const, Function.comp_def]
+  rw [deriv_comp_add_const (fun r ↦ extChartAt I (γ (t + a)) (γ r)) a t]
 
 end Basic
 

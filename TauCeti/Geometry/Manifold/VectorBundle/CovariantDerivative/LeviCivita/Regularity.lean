@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Regularity
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
@@ -73,7 +74,9 @@ merely to be written down, are carried for the same reason.
   with a `C²` tangent-bundle lift has a `C¹` lift and differentiable coordinate readings.
 * `TauCeti.Manifold.contMDiffWithinAt_alongCurveWithin_leviCivitaConnection` and
   `TauCeti.Manifold.contMDiffAt_alongCurve_leviCivitaConnection`: the pointwise forms, for a
-  section whose lift is `C²` at a single parameter.
+  section whose lift is `C^(n+1)` at a single parameter.
+* `TauCeti.Manifold.contMDiffAt_acceleration_leviCivitaConnection`: the acceleration of a
+  `C^(n+2)` curve has a `C^n` tangent-bundle lift at the parameter in question.
 
 ## References
 
@@ -379,52 +382,77 @@ open CovariantDerivative
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 3 M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)} {s : Set ℝ} {t : ℝ}
 
-/-- The Levi-Civita covariant derivative within a parameter set with unique derivatives of a
-section whose tangent-bundle lift is `C²` within that set at `t` has a lift that is `C¹` within
-the set at `t`. Only regularity at `t` is assumed, and only a `C³` manifold with a `C²` metric,
-which make the Levi-Civita connection `C¹`. -/
-theorem contMDiffWithinAt_alongCurveWithin_leviCivitaConnection (hs : UniqueDiffOn ℝ s)
-    (ht : t ∈ s)
-    (hV : ContMDiffWithinAt 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s t) :
-    ContMDiffWithinAt 𝓘(ℝ, ℝ) I.tangent 1
+section Regularity
+
+variable {n m k : ℕ∞ω} [IsManifold I m M]
+  [IsContMDiffRiemannianBundle I k E (fun x : M ↦ TangentSpace I x)]
+
+/-- Levi-Civita differentiation within a parameter set loses one derivative of a section lift.
+A `C^m` manifold and `C^k` metric suffice when `n + 2 ≤ m` and `n + 1 ≤ k`. -/
+theorem contMDiffWithinAt_alongCurveWithin_leviCivitaConnection
+    (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) (hs : UniqueDiffOn ℝ s) (ht : t ∈ s)
+    (hV : ContMDiffWithinAt 𝓘(ℝ, ℝ) I.tangent (n + 1)
+      (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s t) :
+    ContMDiffWithinAt 𝓘(ℝ, ℝ) I.tangent n
       (fun r ↦ TotalSpace.mk' E (γ r)
         (alongCurveWithin (leviCivitaConnection I M) γ V s r)) s t := by
-  let : IsManifold I (1 + 1) M := IsManifold.of_le (n := 3) (by norm_num)
-  let : IsManifold I (1 + 1 + 1) M := IsManifold.of_le (n := 3) (by norm_num)
-  let : ContMDiffVectorBundle (1 + 1) E (TangentSpace I : M → Type _) I :=
+  let : IsManifold I (n + 1) M := IsManifold.of_le (n := m)
+    (le_trans (add_le_add_right (by norm_num : (1 : ℕ∞ω) ≤ 2) n) hm)
+  let : IsManifold I (n + 1 + 1) M :=
+    IsManifold.of_le (n := m) (by simpa only [add_assoc, one_add_one_eq_two] using hm)
+  let : ContMDiffVectorBundle (n + 1) E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
-  let : ContMDiffCovariantDerivativeOn E 1 (leviCivitaConnection I M).toFun
+  let : ContMDiffCovariantDerivativeOn E n (leviCivitaConnection I M).toFun
       (trivializationAt E (TangentSpace I) (γ t)).baseSet :=
-    contMDiffCovariantDerivativeOn_leviCivitaConnection (m := 3) (k := 2)
-      (trivializationAt E (TangentSpace I) (γ t)).open_baseSet (by norm_num) (by norm_num)
-  exact CovariantDerivative.contMDiffWithinAt_alongCurveWithin (n := 1)
+    contMDiffCovariantDerivativeOn_leviCivitaConnection (m := m) (k := k)
+      (trivializationAt E (TangentSpace I) (γ t)).open_baseSet hm hk
+  exact CovariantDerivative.contMDiffWithinAt_alongCurveWithin (n := n)
     (leviCivitaConnection I M) γ V hs ht
     (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)) hV
 
-/-- The Levi-Civita covariant derivative of a section whose tangent-bundle lift is `C²` at `t`
-has a lift that is `C¹` at `t`. Only regularity at `t` is assumed; the section need not extend to
-a vector field. -/
-theorem contMDiffAt_alongCurve_leviCivitaConnection
-    (hV : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) t) :
-    ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 1
+/-- Levi-Civita differentiation loses one derivative of a section lift, locally at a parameter.
+The section need not extend to a vector field. -/
+theorem contMDiffAt_alongCurve_leviCivitaConnection (hm : n + 2 ≤ m) (hk : n + 1 ≤ k)
+    (hV : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent (n + 1)
+      (fun r ↦ TotalSpace.mk' E (γ r) (V r)) t) :
+    ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n
       (fun r ↦ TotalSpace.mk' E (γ r) (alongCurve (leviCivitaConnection I M) γ V r)) t := by
   simpa only [contMDiffWithinAt_univ, alongCurveWithin_univ] using
-    contMDiffWithinAt_alongCurveWithin_leviCivitaConnection uniqueDiffOn_univ (mem_univ t)
+    contMDiffWithinAt_alongCurveWithin_leviCivitaConnection hm hk uniqueDiffOn_univ (mem_univ t)
       hV.contMDiffWithinAt
 
-/-- The Levi-Civita covariant derivative of a section with a `C²` tangent-bundle lift, within a
-parameter set with unique derivatives, has a `C¹` tangent-bundle lift. -/
-theorem contMDiffOn_alongCurveWithin_leviCivitaConnection (hs : UniqueDiffOn ℝ s)
-    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s) :
-    ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+/-- Levi-Civita differentiation within a set with unique derivatives loses one derivative
+of a section lift. -/
+theorem contMDiffOn_alongCurveWithin_leviCivitaConnection (hm : n + 2 ≤ m) (hk : n + 1 ≤ k)
+    (hs : UniqueDiffOn ℝ s)
+    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent (n + 1)
+      (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s) :
+    ContMDiffOn 𝓘(ℝ, ℝ) I.tangent n
       (fun r ↦ TotalSpace.mk' E (γ r)
         (alongCurveWithin (leviCivitaConnection I M) γ V s r)) s :=
-  fun _ ht ↦ contMDiffWithinAt_alongCurveWithin_leviCivitaConnection hs ht (hV _ ht)
+  fun _ ht ↦ contMDiffWithinAt_alongCurveWithin_leviCivitaConnection hm hk hs ht (hV _ ht)
+
+/-- The Levi-Civita acceleration of a curve that is `C^(n+2)` at a parameter has a `C^n`
+tangent-bundle lift there, for a `C^m` manifold and `C^k` metric with `n + 2 ≤ m`, `n + 1 ≤ k`. -/
+theorem contMDiffAt_acceleration_leviCivitaConnection (hm : n + 2 ≤ m) (hk : n + 1 ≤ k)
+    (hγ : ContMDiffAt 𝓘(ℝ, ℝ) I (n + 2) γ t) :
+    ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n
+      (fun r ↦ TotalSpace.mk' E (γ r) (acceleration (leviCivitaConnection I M) γ r)) t := by
+  simp only [acceleration_def]
+  apply contMDiffAt_alongCurve_leviCivitaConnection hm hk
+  rw [← funext (curveVelocityLift_apply (I := I) γ)]
+  exact hγ.contMDiffAt_curveVelocityLift (m := n + 1)
+    (by simp only [add_assoc, one_add_one_eq_two, le_refl])
+
+end Regularity
+
+variable [IsManifold I 3 M]
+  [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)]
 
 /-- The Levi-Civita covariant derivative of a section with a `C²` tangent-bundle lift, within a
 parameter set with unique derivatives, has differentiable coordinate readings there. -/
@@ -435,7 +463,8 @@ theorem differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnectio
     DifferentiableWithinAt ℝ
       (sectionCoord (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
   TauCeti.Manifold.differentiableWithinAt_sectionCoord γ _
-    ((contMDiffOn_alongCurveWithin_leviCivitaConnection hs hV t ht).mdifferentiableWithinAt
+    ((contMDiffOn_alongCurveWithin_leviCivitaConnection (m := 3) (k := 2)
+      (by norm_num) (by norm_num) hs hV t ht).mdifferentiableWithinAt
       one_ne_zero)
     (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
 
