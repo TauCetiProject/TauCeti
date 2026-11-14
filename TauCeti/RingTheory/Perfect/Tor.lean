@@ -67,6 +67,9 @@ flat: the bound is the number of equations.
   ideal `I` of `A` and every perfect `A`-algebra `C`.
 * `TauCeti.isZero_Tor_succ_of_perfectRing`: `Tor_{n+1}^A(B, C) = 0` for all perfect `A`-algebras
   `B` and `C`.
+* `TauCeti.isZero_Tor_succ_restrictScalars_of_perfectRing`: along a ring homomorphism `f : A →+* B`
+  between perfect rings with `(restrictScalars f).Full` (such as a surjection or localization),
+  `Tor_{n+1}^A(M, B) = 0` for every `B`-module `M`.
 * `TauCeti.isZero_Tor_quotient_radical_span_range`: `Tor_n^A(A ⧸ √(f₁, …, f_m), M) = 0` for every
   `A`-module `M` and every `n > m`.
 * `TauCeti.isZero_Tor_restrictScalars_quotient_radical_span_range`: the same bound over `A` for
@@ -187,6 +190,32 @@ theorem isZero_Tor_succ_of_perfectRing (B C : Type u) [CommRing B] [CommRing C] 
   have : CharP (P ⊗[A] C) p := (CharP.charP_iff_prime_eq_zero hp).2 <| by
     rw [← map_natCast (algebraMap A (P ⊗[A] C)), CharP.cast_eq_zero, map_zero]
   exact isZero_Tor_succ_quotient_of_isRadical (p := p) (P ⊗[A] C) hker n
+
+include p in
+/-- **Homological epimorphisms of perfect rings.** Let `A` be a perfect ring of prime
+characteristic `p` and `f : A →+* B` a ring homomorphism to a perfect ring `B` whose restriction of
+scalars is full, such as a surjection onto a radical quotient or a localization. Then
+`Tor_{n+1}^A(M, B) = 0` for every `B`-module `M`, including when `B` is the zero ring. -/
+theorem isZero_Tor_succ_restrictScalars_of_perfectRing {B : Type u} [CommRing B] [PerfectRing B p]
+    (f : A →+* B) [(ModuleCat.restrictScalars.{u} f).Full] (M : ModuleCat.{u} B) (n : ℕ) :
+    IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj ((ModuleCat.restrictScalars f).obj M)).obj
+      ((ModuleCat.restrictScalars f).obj (ModuleCat.of B B))) := by
+  rcases subsingleton_or_nontrivial B with _ | _
+  · have : Subsingleton ((ModuleCat.restrictScalars f).obj (ModuleCat.of B B)) :=
+      inferInstanceAs (Subsingleton B)
+    have := (ModuleCat.isZero_of_subsingleton
+      ((ModuleCat.restrictScalars f).obj (ModuleCat.of B B))).projective
+    exact isZero_Tor_succ_of_projective (ModuleCat.{u} A) _ _ n
+  have hp := (Fact.out : p.Prime)
+  have : CharP A p := (expChar_prime_iff (R := A) hp).1 inferInstance
+  have : CharP B p := (CharP.charP_iff_prime_eq_zero hp).2 <| by
+    rw [← map_natCast f, CharP.cast_eq_zero, map_zero]
+  refine ModuleCat.isZero_Tor_succ_restrictScalars f M fun k _ ↦ ?_
+  let := f.toAlgebra
+  let eB := ModuleCat.restrictScalarsAlgebraMapIso (R := A) (S := B) B
+  refine IsZero.of_iso ?_ ((((Tor (ModuleCat.{u} A) (k + 1)).mapIso eB).app _).trans
+    (((Tor (ModuleCat.{u} A) (k + 1)).obj _).mapIso eB))
+  exact isZero_Tor_succ_of_perfectRing (p := p) B B k
 
 /-! ### Tor dimension of perfect presentations -/
 
