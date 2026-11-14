@@ -345,12 +345,8 @@ theorem finSumPerm_apply_natAdd (σ : Perm (Fin m)) (τ : Perm (Fin n))
     finSumFinEquiv_apply_right]
 
 /-- The block embedding is injective: a block permutation determines its two blocks. -/
-theorem finSumPermHom_injective (m n : ℕ) : Function.Injective (finSumPermHom m n) := by
-  intro p q hpq
-  simp only [finSumPermHom_apply] at hpq
-  refine Prod.ext (Equiv.ext fun i => ?_) (Equiv.ext fun j => ?_)
-  · simpa using congr($hpq (Fin.castAdd n i))
-  · simpa using congr($hpq (Fin.natAdd m j))
+theorem finSumPermHom_injective (m n : ℕ) : Function.Injective (finSumPermHom m n) :=
+  finSumFinEquiv.permCongrHom.injective.comp sumCongrHom_injective
 
 /-- `Sₘ × Sₙ` is isomorphic to the block subgroup, the range of the block embedding
 `Equiv.Perm.finSumPermHom m n`: the subgroup of permutations of `Fin (m + n)` preserving the first

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Group.Conj.Prod
 public import TauCeti.RepresentationTheory.Tensor.External
-public import TauCeti.RepresentationTheory.CharacterTable.ExternalProduct
+public import TauCeti.RepresentationTheory.CharacterTable.External.Product
 public import TauCeti.RepresentationTheory.CharacterTable.Table
 import TauCeti.RepresentationTheory.FDRep.Basic
 
@@ -61,6 +61,21 @@ public section
 
 open TauCeti
 
+/-! ### External products of class functions -/
+
+namespace TauCeti.ClassFunction
+
+/-- The class function of an external tensor product of finite-dimensional representations is the
+external product of the class functions of the factors. -/
+@[simp]
+theorem ofCharacter_externalTensor {k G H V W : Type*} [Field k] [Group G] [Group H]
+    [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W] [FiniteDimensional k V]
+    [FiniteDimensional k W] (ρ : Representation k G V) (σ : Representation k H W) :
+    ofCharacter (ρ.externalTensor σ) = externalProduct (ofCharacter ρ) (ofCharacter σ) :=
+  Subtype.ext (funext fun p => by simp)
+
+end TauCeti.ClassFunction
+
 namespace Representation
 
 section Pairing
@@ -74,22 +89,14 @@ variable {k G H V W V' W' : Type*} [Field k] [Group G] [Group H] [Fintype G] [Fi
   (ρ' : Representation k G V') (σ' : Representation k H W')
 
 /-- The character pairing of external products factors as the product of the two pairings. -/
-@[simp]
 theorem characterPairing_externalTensor :
     ClassFunction.characterPairing (ClassFunction.ofCharacter (ρ.externalTensor σ))
         (ClassFunction.ofCharacter (ρ'.externalTensor σ')) =
       ClassFunction.characterPairing (ClassFunction.ofCharacter ρ) (ClassFunction.ofCharacter ρ') *
         ClassFunction.characterPairing (ClassFunction.ofCharacter σ)
           (ClassFunction.ofCharacter σ') := by
-  simp only [ClassFunction.characterPairing_ofCharacter, char_externalTensor,
-    Nat.card_prod, Nat.cast_mul, mul_inv_rev, Fintype.sum_prod_type, Prod.fst_inv, Prod.snd_inv]
-  have hmul (g : G) (h : H) :
-      ρ.character g * σ.character h * (ρ'.character g⁻¹ * σ'.character h⁻¹) =
-        (ρ.character g * ρ'.character g⁻¹) * (σ.character h * σ'.character h⁻¹) :=
-    mul_mul_mul_comm ..
-  simp_rw [hmul]
-  rw [← Finset.sum_mul_sum]
-  ring
+  simp only [ClassFunction.ofCharacter_externalTensor,
+    ClassFunction.characterPairing_externalProduct]
 
 variable [IsAlgClosed k] [Invertible (Nat.card G : k)] [Invertible (Nat.card H : k)]
   [ρ.IsIrreducible] [σ.IsIrreducible] [ρ'.IsIrreducible] [σ'.IsIrreducible]
@@ -228,21 +235,6 @@ theorem externalTensor_classification (X : FDRep k (G × H)) [Simple X] :
 end FDRep
 
 namespace TauCeti
-
-/-! ### External products of class functions -/
-
-namespace ClassFunction
-
-/-- The class function of an external tensor product of finite-dimensional representations is the
-external product of the class functions of the factors. It is not a `simp` lemma, since
-`Representation.characterPairing_externalTensor` is stated on the left-hand side. -/
-theorem ofCharacter_externalTensor {k G H V W : Type*} [Field k] [Group G] [Group H]
-    [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W] [FiniteDimensional k V]
-    [FiniteDimensional k W] (ρ : Representation k G V) (σ : Representation k H W) :
-    ofCharacter (ρ.externalTensor σ) = externalProduct (ofCharacter ρ) (ofCharacter σ) :=
-  Subtype.ext (funext fun p => by simp)
-
-end ClassFunction
 
 /-! ### The character table of a product group -/
 

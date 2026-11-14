@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTable.ExternalProduct
+public import TauCeti.RepresentationTheory.CharacterTable.External.Product
 public import TauCeti.RepresentationTheory.Induction.ClassFunction
 public import TauCeti.RepresentationTheory.Symmetric.FrobeniusCharacteristic
 import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
