@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.Cofree
+public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!
@@ -48,14 +48,14 @@ variable {R : Type uR} {C : Type uC} {M : Type uM}
 `b` on the coalgebra, with twist parameter `q`. Homogeneity (including the degree of `D`)
 and square-zero conditions are separate: this predicate records exactly the compatibility
 with the coaction. -/
-def IsGradedCoderivationOver (G : InternalGrading R M) (q : ℤ)
+def IsGradedCoderivationOver (G : InternalGrading R M ℤ) (q : ℤ)
     (b : C →ₗ[R] C) (D : M →ₗ[R] M) : Prop :=
   coact (R := R) (C := C) (M := M) ∘ₗ D =
     D.rTensor C ∘ₗ coact (R := R) (C := C) (M := M) +
       (b.lTensor M ∘ₗ (G.koszulTwist q).rTensor C) ∘ₗ
         coact (R := R) (C := C) (M := M)
 
-variable {G : InternalGrading R M} {q : ℤ} {b : C →ₗ[R] C} {D : M →ₗ[R] M}
+variable {G : InternalGrading R M ℤ} {q : ℤ} {b : C →ₗ[R] C} {D : M →ₗ[R] M}
 
 /-- The signed co-Leibniz law evaluated on one comodule element. -/
 theorem IsGradedCoderivationOver.coact_apply (h : IsGradedCoderivationOver G q b D)
@@ -194,7 +194,7 @@ attribute [local instance] Comodule.cofree
 component obtained by applying the coalgebra counit vanishes.  This is the universal
 property that reduces module Stasheff identities to Taylor components. -/
 theorem IsGradedCoderivationOver.square_eq_zero_iff_counit_of_negOnePow_eq_neg_one {r : ℤ}
-    (G : InternalGrading R (N ⊗[R] C))
+    (G : InternalGrading R (N ⊗[R] C) ℤ)
     (b : C →ₗ[R] C) (D : (N ⊗[R] C) →ₗ[R] N ⊗[R] C)
     (h : IsGradedCoderivationOver G q b D)
     (hD : LinearMap.IsHomogeneous D G.piece G.piece r)
@@ -218,7 +218,7 @@ theorem IsGradedCoderivationOver.square_eq_zero_iff_counit_of_negOnePow_eq_neg_o
 /-- For a degree-one coderivation, the square vanishes if and only if its cofree
 counit component vanishes. -/
 theorem IsGradedCoderivationOver.square_eq_zero_iff_counit
-    (G : InternalGrading R (N ⊗[R] C))
+    (G : InternalGrading R (N ⊗[R] C) ℤ)
     (b : C →ₗ[R] C) (D : (N ⊗[R] C) →ₗ[R] N ⊗[R] C)
     (h : IsGradedCoderivationOver G 1 b D)
     (hD : LinearMap.IsHomogeneous D G.piece G.piece 1)
@@ -231,7 +231,7 @@ theorem IsGradedCoderivationOver.square_eq_zero_iff_counit
 /-- Two coderivations over the same coalgebra operator on a cofree comodule are equal when their
 counit components agree. -/
 theorem IsGradedCoderivationOver.eq_of_counit_comp_eq
-    (G : InternalGrading R (N ⊗[R] C))
+    (G : InternalGrading R (N ⊗[R] C) ℤ)
     (b : C →ₗ[R] C) (D E : (N ⊗[R] C) →ₗ[R] N ⊗[R] C)
     (hD : IsGradedCoderivationOver G q b D)
     (hE : IsGradedCoderivationOver G q b E)
@@ -276,7 +276,8 @@ variable {N : Type*} [AddCommGroup N] [Module R N]
 
 /-- The graded commutator of a degree-`r` comodule morphism with coderivations over the same
 coalgebra operator is a comodule morphism. The two coalgebra terms cancel by Koszul naturality. -/
-def coderivationComm {r : ℤ} (f : Hom R C M N) (G : InternalGrading R M) (H : InternalGrading R N)
+def coderivationComm {r : ℤ} (f : Hom R C M N) (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ)
     (hf : LinearMap.IsHomogeneous f.toLinearMap G.piece H.piece r)
     (D : M →ₗ[R] M) (E : N →ₗ[R] N)
     (hD : IsGradedCoderivationOver G q b D) (hE : IsGradedCoderivationOver H q b E) :
@@ -319,8 +320,8 @@ def coderivationComm {r : ℤ} (f : Hom R C M N) (G : InternalGrading R M) (H : 
 
 /-- The underlying map of the coderivation commutator is the signed operator commutator. -/
 @[simp]
-theorem coderivationComm_toLinearMap {r : ℤ} (f : Hom R C M N) (G : InternalGrading R M)
-    (H : InternalGrading R N) (hf D E hD hE) :
+theorem coderivationComm_toLinearMap {r : ℤ} (f : Hom R C M N) (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) (hf D E hD hE) :
     (f.coderivationComm (r := r) (q := q) (b := b) G H hf D E hD hE).toLinearMap =
       E ∘ₗ f.toLinearMap - (((q * r).negOnePow : ℤ) : R) • (f.toLinearMap ∘ₗ D) := (rfl)
 

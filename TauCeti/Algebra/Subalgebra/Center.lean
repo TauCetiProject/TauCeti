@@ -15,16 +15,14 @@ public import Mathlib.RingTheory.Noetherian.Basic
 /-!
 # Transporting and decomposing the center of an algebra
 
-Constructions on `Subalgebra.center` that Mathlib states only for `Subring.center`, or only
-as an equality of subalgebras, and that are needed whenever a structure theorem presents an algebra
-up to an algebra equivalence, together with the criterion for a commutative algebra to be central
-and the ring of scalars a central subalgebra provides.
+Constructions on `Subalgebra.center` that Mathlib states only as an equality of subalgebras,
+and that are needed whenever a structure theorem presents an algebra up to an algebra equivalence,
+together with the criterion for a commutative algebra to be central and the ring of scalars a
+central subalgebra provides. Transport of the center along an algebra equivalence is Mathlib's
+`Subalgebra.centerCongr`.
 
 * `Subalgebra.map_center_val` identifies the center of a subalgebra with its intersection
   with its centralizer in the ambient algebra.
-* `TauCeti.centerCongr` transports the center along an algebra equivalence. It is the
-  `Subalgebra` counterpart of Mathlib's `Subring.centerCongr`, which sees only the ring
-  structure and therefore cannot record `R`-linearity.
 * `TauCeti.centerPiAlgEquiv` splits the center of a product of algebras as the product of the
   centers, upgrading Mathlib's `Subalgebra.center_pi` from an equality of subalgebras of
   `Π i, S i` to an algebra equivalence with `Π i, Subalgebra.center R (S i)`.
@@ -126,23 +124,6 @@ end Subalgebra
 namespace TauCeti
 
 variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
-
-/-- The center of an algebra, transported along an algebra equivalence. -/
-def centerCongr (e : A ≃ₐ[R] B) :
-    Subalgebra.center R A ≃ₐ[R] Subalgebra.center R B :=
-  (e.subalgebraMap _).trans (Subalgebra.equivOfEq _ _ (Subalgebra.map_center_eq e))
-
-@[simp]
-theorem centerCongr_apply_coe (e : A ≃ₐ[R] B) (x : Subalgebra.center R A) :
-    (centerCongr e x : B) = e (x : A) := by
-  simp [centerCongr]
-
-/-- The inverse of `centerCongr e` transports the center back along `e.symm`. -/
-@[simp]
-theorem centerCongr_symm_apply_coe (e : A ≃ₐ[R] B) (y : Subalgebra.center R B) :
-    ((centerCongr e).symm y : A) = e.symm (y : B) := by
-  apply e.injective
-  rw [e.apply_symm_apply, ← centerCongr_apply_coe e, (centerCongr e).apply_symm_apply]
 
 section Pi
 
@@ -277,5 +258,16 @@ theorem isCentral_iff_surjective_algebraMap (K D : Type*) [CommSemiring K] [Comm
     exact ⟨a, ha.symm⟩
   · obtain ⟨a, rfl⟩ := h x
     exact Algebra.mem_bot.mpr ⟨a, rfl⟩
+
+/-- **Centrality transports along an algebra equivalence between algebras in different
+universes.** This is `Algebra.IsCentral.of_algEquiv` with the two algebras allowed to live in
+different universes, which that statement does not allow. -/
+theorem _root_.Algebra.IsCentral.of_algEquiv' (K : Type*) {D D' : Type*} [CommSemiring K]
+    [Semiring D] [Semiring D'] [Algebra K D] [Algebra K D'] [Algebra.IsCentral K D]
+    (e : D ≃ₐ[K] D') : Algebra.IsCentral K D' where
+  out x hx :=
+    have ⟨k, hk⟩ := Algebra.IsCentral.out (K := K)
+      ((MulEquivClass.apply_mem_center_iff e.symm).mpr hx)
+    ⟨k, by simpa [Algebra.ofId] using congr(e $hk)⟩
 
 end TauCeti

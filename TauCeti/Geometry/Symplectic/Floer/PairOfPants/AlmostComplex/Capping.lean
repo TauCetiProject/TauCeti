@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Plumbing
+import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 
 /-!
 # Almost complex structures on the negative PSS plane and the capping families
@@ -52,6 +53,11 @@ where `q'` is the other input, jointly in the neck length.
   `J(t, x)` on the part `s ≤ -2` of the end.
 * `TauCeti.Floer.contMDiff_negativePlaneAlmostComplex`: for a period-one `C^n` family `J`, it is
   `C^n` on all of `ℂ × M`.
+* `TauCeti.Floer.negativePlaneAlmostComplex_neg`: the half turn `w ↦ -w` carries the plane
+  structure of `J` to that of `t ↦ J(t + 1/2)`.
+* `TauCeti.Floer.cayley_pairOfPantsAlmostComplex_eq_add`: the Cayley transform of the pair-of-pants
+  structure is the sum of those of its input part, the pair-of-pants structure with output
+  structure `J₀`, and of the negative plane structure of its output structure.
 * `TauCeti.Floer.plumbedAlmostComplex_update_inf_eq`: the capped structure is `J₀` on the disc of
   radius `exp (-2π(L - 1)) / 2` about the capped puncture.
 * `TauCeti.Floer.contMDiffAt_plumbedAlmostComplex_update_inf`: for `L > 4` the capped structure is
@@ -184,6 +190,42 @@ theorem negativePlaneAlmostComplex_cylindricalEndLift (h₀ : ω.Compatible J₀
     (hJ := tames_update_inf h₀.tames hJ) h₀ (by simpa using hJp) (z := z)
     (by simp only [endSign_inf]; linarith) x
 
+/-- **The half turn of the negative plane.** The half turn `ρ(w) = -w` rotates the end at `∞` by
+half a period, so the negative plane structure of the rotated family `t ↦ J(t + 1/2)` at `-w` is
+the negative plane structure of `J` at `w`, when `J` has period one in `t`. -/
+theorem negativePlaneAlmostComplex_neg (h₀ : ω.Compatible J₀) (hJp : Periodic J 1)
+    (hJ' : ∀ t x, ω.Tames (J (t + 1 / 2) x)) (w : ℂ) (x : M) :
+    negativePlaneAlmostComplex h₀ (fun t => J (t + 1 / 2)) hJ' (-w) x =
+      negativePlaneAlmostComplex h₀ J hJ w x := by
+  refine h₀.eq_of_cayley_eq (tames_negativePlaneAlmostComplex h₀ _ x)
+    (tames_negativePlaneAlmostComplex h₀ w x) ?_
+  rw [cayley_negativePlaneAlmostComplex, cayley_negativePlaneAlmostComplex, re_endCoord_inf_neg]
+  rcases eq_or_ne w 0 with rfl | hw
+  · -- At the pole both cutoffs vanish.
+    have h : (inf.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter inf
+    simp [h, smoothTransition.zero_of_nonpos]
+  · rw [apply_im_endCoord_inf_neg_add_half hJp hw]
+
+/-! ### The input part and the plane part of the pair-of-pants structure -/
+
+section Split
+
+variable {Jb : Puncture → ℝ → M → AlmostComplexStructure V} {hJb : ∀ q t x, ω.Tames (Jb q t x)}
+
+/-- **The pair-of-pants structure splits into its input part and a plane part.** Relative to
+`J₀`, the Cayley transform of the pair-of-pants structure of `Jb` is the sum of the Cayley
+transforms of the pair-of-pants structure of its input structures, with the output structure
+replaced by `J₀`, and of the negative plane structure of its output structure `J_∞`. -/
+theorem cayley_pairOfPantsAlmostComplex_eq_add (h₀ : ω.Compatible J₀) (w : ℂ) (x : M) :
+    J₀.cayley (pairOfPantsAlmostComplex h₀ Jb hJb w x) =
+      J₀.cayley (pairOfPantsAlmostComplex h₀ (update Jb inf fun _ _ => J₀)
+          (tames_update_inf_base h₀.tames hJb) w x) +
+        J₀.cayley (negativePlaneAlmostComplex h₀ (Jb inf) (hJb inf) w x) := by
+  simp [cayley_pairOfPantsAlmostComplex, cayley_negativePlaneAlmostComplex, Puncture.sum_univ,
+    AlmostComplexStructure.cayley_self]
+
+end Split
+
 /-! ### Capping an input of the pair of pants -/
 
 variable {Jb : Puncture → ℝ → M → AlmostComplexStructure V} {hJb : ∀ r t x, ω.Tames (Jb r t x)}
@@ -292,14 +334,9 @@ theorem contMDiffAt_plumbedAlmostComplex_update_inf (h₀ : ω.Compatible J₀) 
     filter_upwards [hdisc, hlen] with p hp hp₂
     rw [plumbedAlmostComplex_update_inf_eq h₀ hq hp₂ hp.le]
   · -- Off it, the point lies in the plumbed four-punctured sphere.
-    have hc : w ≠ q.endCenter := fun h => by
-      rw [h, sub_self, norm_zero] at hge
-      exact (by positivity : 0 < ρ L).not_ge hge
-    have h₁ : w ≠ q.plumbingMap L 1 := fun h =>
-      (h ▸ norm_plumbingMap_one_sub_endCenter_lt hq L).not_ge hge
     have h := periodic_and_contMDiff_update_inf (J₀ := J₀) (hJbp q) (hJbs q)
     exact contMDiffAt_plumbedAlmostComplex h₀ h₀ hq (fun r => (h r).1) hJbp (fun r => (h r).2) hJbs
-      (by simp) hL ⟨hw.resolve_left hc, h₁⟩ x
+      (by simp) hL (mem_plumbedSphere_of_le_norm_sub_endCenter hw hge) x
 
 end Smooth
 

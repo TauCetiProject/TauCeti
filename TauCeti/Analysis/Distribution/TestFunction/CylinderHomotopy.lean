@@ -120,13 +120,16 @@ private theorem fst_image_inter_subset (hW : ∀ p ∈ W, p.2 ∈ Icc (0 : ℝ) 
 
 /-- **The slices are proper.** If the part of `W` over a set `S` of times lies over `Ω`, then
 for `t ∈ S` the slice `x ↦ (x, t)` is proper from `Ω` to `W`. -/
-theorem isCompact_inter_preimage_prodMk_left [T2Space X] {S : Set ℝ}
+theorem isCompact_inter_preimage_prodMk_left {S : Set ℝ}
     (hW : ∀ p ∈ W, p.2 ∈ S → p.1 ∈ Ω) {t : ℝ} (ht : t ∈ S)
     (K : Set (X × ℝ)) (hK : IsCompact K) (hKW : K ⊆ W) :
     IsCompact ((Ω : Set X) ∩ (fun x ↦ (x, t)) ⁻¹' K) := by
   rw [inter_eq_right.2 fun x hx ↦ hW (x, t) (hKW hx) ht]
-  exact (hK.image continuous_fst).of_isClosed_subset
-    (hK.isClosed.preimage (continuous_id.prodMk continuous_const)) fun x hx ↦ ⟨_, hx, rfl⟩
+  have : (fun x ↦ (x, t)) ⁻¹' K = Prod.fst '' (K ∩ univ ×ˢ {t}) := by
+    ext x
+    simp
+  rw [this]
+  exact (hK.inter_right (isClosed_univ.prod isClosed_singleton)).image continuous_fst
 
 end TauCeti
 
@@ -258,7 +261,7 @@ theorem pullbackCLM_prodMk_left_apply {S : Set ℝ} (hW : ∀ p ∈ W, p.2 ∈ S
   · rw [pullbackCLM_apply_of_mem _ hx, (hasFDerivAt_prodMk_left x t).fderiv]
   · have hxt : (x, t) ∉ tsupport ω := fun h ↦ hx (hW _ (ω.tsupport_subset h) ht)
     rw [pullbackCLM_apply_of_notMem _ hx, image_eq_zero_of_notMem_tsupport hxt]
-    ext v
+    ext _
     simp
 
 /-- **The homotopy formula on test forms**: `h ∘ d = ι₁^* - ι₀^* - d ∘ h` on test
@@ -379,7 +382,7 @@ private theorem pullbackCLM_reparam_apply (hab : a ≠ b) {m : ℕ}
       rw [SetLike.mem_coe.symm, coe_reparamPreimage, mem_preimage]
       exact ω.tsupport_subset h
     rw [pullbackCLM_apply_of_notMem _ hp, image_eq_zero_of_notMem_tsupport hp']
-    ext v
+    ext _
     simp
 
 variable {hW : ∀ p ∈ W, p.2 ∈ uIcc a b → p.1 ∈ Ω}
@@ -649,19 +652,25 @@ variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   {Ω : Opens E} {W : Opens (E × ℝ)} {k : ℕ}
 
-omit [CompleteSpace F] in
+omit [CompleteSpace F] [NormedSpace ℝ V] in
 /-- **The mass of a slice**: `M({t} × T) ≤ M(T)` for a `k`-current `T` on `Ω`, where
 `{t} × T = T ∘ ιₜ^*` is the pushforward along the slice `ιₜ : x ↦ (x, t)`, for the sup norm
 on `E × ℝ`. -/
 theorem mass_comp_pullbackCLM_prodMk_left_le {𝓕 : Type*}
-    [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V] [LinearMapClass 𝓕 ℝ 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V]
+    [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V]
     (T : 𝓕) {t : ℝ} {hp : ∀ K : Set (E × ℝ), IsCompact K → K ⊆ W →
       IsCompact ((Ω : Set E) ∩ (fun x ↦ (x, t)) ⁻¹' K)} :
     mass (T ∘ pullbackCLM (fun x ↦ (x, t)) (contDiffOn_id.prodMk contDiffOn_const) hp) ≤
       mass T := by
-  refine (mass_comp_pullbackCLM_le T (L := 1) fun x _ ↦ ?_).trans_eq (by simp)
-  rw [(hasFDerivAt_prodMk_left x t).fderiv, NNReal.coe_one]
-  exact ContinuousLinearMap.norm_inl_le_one ℝ E ℝ
+  refine mass_le_iff.2 fun ω hω ↦ enorm_le_mass (f := ⇑T) (φ := pullbackCLM _ _ _ ω) fun x ↦ ?_
+  by_cases hx : x ∈ Ω
+  · refine (norm_pullbackCLM_apply_le ω x).trans ?_
+    rw [(hasFDerivAt_prodMk_left x t).fderiv]
+    calc ‖ω (x, t)‖ * ‖ContinuousLinearMap.inl ℝ E ℝ‖ ^ k ≤ 1 * 1 ^ k := by
+          gcongr
+          exacts [hω _, ContinuousLinearMap.norm_inl_le_one ℝ E ℝ]
+      _ = 1 := by simp
+  · simp [hx]
 
 section Interval
 
@@ -680,7 +689,7 @@ theorem localMass_comp_intervalCylinderHomotopyCLM_le {𝓕 : Type*}
   refine enorm_apply_le_localMass_mul_of_forall_enorm_le T
     ((tsupport_intervalCylinderHomotopyCLM_subset ω).trans
       (image_mono (inter_subset_inter_left _ hωU))) fun x ↦ ?_
-  rw [← ofReal_norm, Real.enorm_eq_ofReal_abs]
+  rw [← ofReal_norm, Real.eNorm_eq_ofReal_abs]
   exact ENNReal.ofReal_le_ofReal ((norm_intervalCylinderHomotopyCLM_apply_le ω
     fun t _ ↦ hω _).trans_eq (mul_one _))
 
@@ -774,7 +783,7 @@ theorem IsNormal.comp_intervalCylinderHomotopyCLM
     {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V} (hT : IsNormal T) :
     IsNormal (T ∘L intervalCylinderHomotopyCLM a b hW) := by
   rw [isNormal_succ_iff, ContinuousLinearMap.coe_comp]
-  refine ⟨ne_top_of_le_ne_top (ENNReal.mul_ne_top enorm_ne_top hT.mass_ne_top)
+  refine ⟨ne_top_of_le_ne_top (ENNReal.mul_ne_top eNorm_ne_top hT.mass_ne_top)
     (mass_comp_intervalCylinderHomotopyCLM_le T), ?_⟩
   cases k with
   | zero =>
@@ -783,7 +792,7 @@ theorem IsNormal.comp_intervalCylinderHomotopyCLM
   | succ k =>
     have hT := isNormal_succ_iff.1 hT
     exact ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ENNReal.ofNat_ne_top hT.1,
-      ENNReal.mul_ne_top enorm_ne_top hT.2⟩)
+      ENNReal.mul_ne_top eNorm_ne_top hT.2⟩)
       (mass_comp_intervalCylinderHomotopyCLM_comp_extDerivCLM_le T)
 
 end Interval

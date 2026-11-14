@@ -171,12 +171,14 @@ lemma weightedE1_zero : weightedE1 (0 : (Fin 2 → ZMod N) → ℂ) = 0 := by
   simp [weightedE1]
 
 /-- The series is linear in the weight: sums. -/
+@[simp]
 lemma weightedE1_add (W W' : (Fin 2 → ZMod N) → ℂ) :
     weightedE1 (W + W') = weightedE1 W + weightedE1 W' := by
   ext z
   simp [weightedE1, add_mul, Finset.sum_add_distrib, mul_add]
 
 /-- The series is linear in the weight: scalar multiples. -/
+@[simp]
 lemma weightedE1_smul (c : ℂ) (W : (Fin 2 → ZMod N) → ℂ) :
     weightedE1 (c • W) = c • weightedE1 W := by
   ext z
@@ -342,6 +344,7 @@ theorem weightedE1_eq_zero_of_even {W : (Fin 2 → ZMod N) → ℂ} (hW : W.Even
 
 /-! ### Holomorphy -/
 
+omit [NeZero N] in
 /-- The corrected division values are holomorphic on `ℍ`: the quasi-periods are the division
 values `η₁ = 2 ζ(z / 2)` and `η₂ = 2 ζ(1 / 2)`. -/
 private lemma mdifferentiable_zetaValue (b : Fin 2 → ℤ) : MDiff (zetaValue N b) := by

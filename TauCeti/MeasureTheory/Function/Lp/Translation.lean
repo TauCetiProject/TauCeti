@@ -42,6 +42,8 @@ for a `C¹` function, and needs no integrability of the function itself.
 * `MeasureTheory.Measure.translateLp_zero`, `MeasureTheory.Measure.translateLp_symm`,
   `MeasureTheory.Measure.translateLp_add`: translation is an action of the additive group.
 * `MeasureTheory.Measure.continuous_translateLp`: strong continuity of `translateLp` for `p < ∞`.
+* `MeasureTheory.Measure.tendsto_translateLp_of_tendsto`: translates of convergent `Lᵖ` classes
+  by vanishing translations converge to the same limit.
 * `MeasureTheory.Measure.enorm_translateLp_sub`: identifies the norm of an `Lᵖ` translation
   increment with its pointwise `eLpNorm`.
 * `MeasureTheory.MemLp.comp_add_right_restrict_of_mapsTo`: translation preserves `Lᵖ` on a smaller
@@ -164,6 +166,24 @@ theorem continuous_translateLp [TopologicalSpace E] [ContinuousAdd E] [BorelSpac
   simpa only [translateLp, Lp.compMeasurePreservingₗᵢEquiv_apply] using
     Lp.continuous_compMeasurePreserving_add_right hp f
 
+/-- Translations by vectors tending to zero of `Lᵖ` classes converging to `g` converge to `g`,
+when `p < ∞`. -/
+theorem tendsto_translateLp_of_tendsto [TopologicalSpace E] [ContinuousAdd E] [BorelSpace E]
+    [R1Space E] [mu.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure mu] (hp : p ≠ ∞)
+    {I : Type*} {l : Filter I} {h : I → E} (hh : Filter.Tendsto h l (nhds 0))
+    {A : I → Lp F p mu} {g : Lp F p mu} (hA : Filter.Tendsto A l (nhds g)) :
+    Filter.Tendsto (fun i ↦ translateLp mu p (h i) (A i)) l (nhds g) := by
+  let T : E → C(E, E) := fun h ↦ ⟨(· + h), by fun_prop⟩
+  have hT : Continuous T := ContinuousMap.continuous_of_continuous_uncurry T <| by
+    dsimp only [T, Function.uncurry_apply_pair, ContinuousMap.coe_mk]
+    fun_prop
+  have key : Filter.Tendsto (fun i ↦ translateLp mu p (h i) (A i)) l
+      (nhds (translateLp mu p 0 g)) := by
+    simp only [translateLp, Lp.compMeasurePreservingₗᵢEquiv_apply]
+    exact hA.compMeasurePreservingLp ((hT.tendsto 0).comp hh)
+      (fun i ↦ measurePreserving_add_right mu (h i)) (measurePreserving_add_right mu 0) hp
+  rwa [translateLp_zero] at key
+
 /-- The `Lᵖ` extended norm of a translation increment is its pointwise `eLpNorm`. -/
 theorem enorm_translateLp_sub (h : E) (f : Lp F p mu) :
     ‖translateLp mu p h f - f‖ₑ = eLpNorm (fun x ↦ f (x + h) - f x) p mu := by
@@ -172,7 +192,7 @@ theorem enorm_translateLp_sub (h : E) (f : Lp F p mu) :
       coeFn_translateLp (mu := mu) h f] with x hx hy
     rw [hx, Pi.sub_apply, hy]
     rfl
-  rw [Lp.enorm_def, eLpNorm_congr_ae hae]
+  rw [Lp.eNorm_def, eLpNorm_congr_ae hae]
 
 end LpTranslation
 
@@ -286,24 +306,18 @@ theorem ContDiff.enorm_sub_rpow_le_lintegral_fderiv_apply (hu : ContDiff ℝ 1 u
     {r : ℝ} (hr : 1 ≤ r) (x h : E) :
     ‖u (x + h) - u x‖ₑ ^ r ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ ^ r := by
   have hr0 : (0 : ℝ) < r := one_pos.trans_le hr
-  have hmeas : AEMeasurable (fun t : ℝ => ‖fderiv ℝ u (x + t • h) h‖ₑ)
-      (volume.restrict (Icc (0 : ℝ) 1)) :=
-    (((hu.continuous_fderiv one_ne_zero).comp
-      (by fun_prop : Continuous fun t : ℝ => x + t • h)).clm_apply
-      continuous_const).enorm.aemeasurable
   have huniv : (volume.restrict (Icc (0 : ℝ) 1)) univ = 1 := by
     rw [Measure.restrict_apply_univ, Real.volume_Icc]
     simp
   have hsegment := TauCeti.enorm_sub_le_lintegral_enorm_fderiv_apply x h
     (fun t _ => (hu.differentiable one_ne_zero) (x + t • h))
-    (((hu.continuous_fderiv one_ne_zero).comp_continuousOn (by fun_prop)).clm_apply
-      continuousOn_const)
   -- Jensen's inequality costs no measure factor because `Icc 0 1` has volume one.
   calc ‖u (x + h) - u x‖ₑ ^ r
       ≤ (∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ) ^ r :=
         ENNReal.rpow_le_rpow hsegment hr0.le
     _ ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ ^ r := by
-        simpa [huniv] using TauCeti.rpow_lintegral_le_measure_univ_rpow_mul hmeas hr
+        simpa [huniv] using TauCeti.rpow_lintegral_le_measure_univ_rpow_mul
+          (μ := volume.restrict (Icc (0 : ℝ) 1)) (u := fun t : ℝ => ‖fderiv ℝ u (x + t • h) h‖ₑ) hr
 
 end Calculus
 
@@ -327,7 +341,7 @@ theorem ContDiff.setLIntegral_enorm_comp_add_sub_rpow_le (hu : ContDiff ℝ 1 u)
   set g : E → ℝ≥0∞ := T.indicator fun y => ‖fderiv ℝ u y h‖ₑ ^ r
   have hg : Measurable g :=
     (ENNReal.continuous_rpow_const.comp (((hu.continuous_fderiv one_ne_zero).clm_apply
-      continuous_const).enorm)).measurable.indicator hT
+      continuous_const).eNorm)).measurable.indicator hT
   have hjoint : Measurable fun z : E × ℝ => g (z.1 + z.2 • h) :=
     hg.comp (by fun_prop : Continuous fun z : E × ℝ => z.1 + z.2 • h).measurable
   calc ∫⁻ x in K, ‖u (x + h) - u x‖ₑ ^ r ∂mu
@@ -385,7 +399,7 @@ theorem ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply [SecondCountableTo
       eLpNorm_exponent_top hfd.aestronglyMeasurable]
     let C := eLpNormEssSup (fun x => fderiv ℝ u x h) (mu.restrict T)
     let g : E → ℝ≥0∞ := T.indicator fun x => ‖fderiv ℝ u x h‖ₑ
-    have hg : Measurable g := hfd.enorm.measurable.indicator hT
+    have hg : Measurable g := hfd.eNorm.measurable.indicator hT
     have hgC : ∀ᵐ x ∂mu, g x ≤ C := by
       filter_upwards [(ae_restrict_iff' hT).1
         (ae_le_eLpNormEssSup (f := fun x => fderiv ℝ u x h))] with x hx
@@ -402,8 +416,8 @@ theorem ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply [SecondCountableTo
         (measurableSet_le hjoint measurable_const)).2
         (Filter.Eventually.of_forall fun t =>
           (measurePreserving_add_right mu (t • h)).quasiMeasurePreserving.tendsto_ae.eventually hgC)
-    apply eLpNormEssSup_le_of_ae_enorm_bound
-    refine (ae_restrict_iff (measurableSet_le hsub.enorm.measurable measurable_const)).2 ?_
+    apply eLpNormEssSup_le_of_ae_eNorm_bound
+    refine (ae_restrict_iff (measurableSet_le hsub.eNorm.measurable measurable_const)).2 ?_
     filter_upwards [hsegments] with x hx hxK
     calc ‖u (x + h) - u x‖ₑ
         ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ := by
@@ -416,8 +430,8 @@ theorem ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply [SecondCountableTo
       _ = C := by simp [Real.volume_Icc]
   · have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
     have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hsub.aestronglyMeasurable,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hfd.aestronglyMeasurable]
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp' hsub.aestronglyMeasurable,
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp' hfd.aestronglyMeasurable]
     exact ENNReal.rpow_le_rpow (hu.setLIntegral_enorm_comp_add_sub_rpow_le hr h hT hKT)
       (by positivity)
 
@@ -456,7 +470,7 @@ continuously. -/
 theorem ContDiff.tendsto_eLpNorm_comp_add_sub [SecondCountableTopology E] (hu : ContDiff ℝ 1 u)
     {p : ℝ≥0∞} (hp : 1 ≤ p) (hfin : eLpNorm (fderiv ℝ u) p mu ≠ ∞) :
     Filter.Tendsto (fun h : E => eLpNorm (fun x => u (x + h) - u x) p mu) (nhds 0) (nhds 0) :=
-  TauCeti.tendsto_nhds_zero_of_le_enorm_mul hfin fun h =>
+  TauCeti.tendsto_nhds_zero_of_le_enorm_mul hfin <| .of_forall fun h =>
     hu.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv hp h
 
 /-- **The second-order translation estimate**: the mixed second difference of a `C²` function is

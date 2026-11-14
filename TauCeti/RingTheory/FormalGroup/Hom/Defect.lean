@@ -30,15 +30,17 @@ degree-`n` part of `Φ` is `r C_n` for the Lazard cocycle `C_n = ((X + Y)ⁿ - X
 * If `d_n` is a unit in `R`, replacing `g` by `g - r d_n⁻¹ Xⁿ` makes the defect vanish below
   degree `n + 1` (`FormalGroup.exists_succ_le_order_homDefect_sub_smul_X_pow`). This applies to
   every `n` that is not a power of `p` when `p = 0` in `R`.
-* If `p` is a prime with `p = 0` in `R` and `n = pᵏ` with `k ≥ 1`, the coefficient `r` is the
+* If `p` is a prime with `p = 0` in `R` and `n = pᵏ`, the coefficient `r` is the
   coefficient of `Xⁿ` in `[p]_G(g(X)) - g([p]_F(X))`
   (`FormalGroup.homogeneousComponent_homDefect_eq_smul_lazardCocycle`).
   For `g = X + ⋯`, if `[p]_F` and `[p]_G` have order at least `n` and the same coefficient of `Xⁿ`,
   then `r = 0` (`FormalGroup.succ_le_order_homDefect_of_coeff_nsmulSeries_eq`).
 
-Starting from `g = X`, these two steps reach every degree up to `pʰ` when the `p`-series of `F`
-and `G` have order at least `pʰ` and the same coefficient of `X^(pʰ)`: then some `g = X + ⋯` is a
-homomorphism from `F` to `G` up to terms of degree greater than `pʰ`
+Starting from `g = X`, these two steps reach every degree below `N` when the `p`-series of `F`
+and `G` have order at least `N`: then some `g = X + ⋯` is a homomorphism from `F` to `G` up to
+terms of degree `N` (`FormalGroup.exists_le_order_homDefect_of_le_order_nsmulSeries`). If
+`N = pʰ` and the `p`-series also have the same coefficient of `X^(pʰ)`, they reach degree `pʰ` as
+well
 (`FormalGroup.exists_le_order_homDefect_of_coeff_nsmulSeries_eq`). Over a field of
 characteristic `p` this applies to two formal group laws of height `h` whose `p`-series have the
 same leading coefficient. In the degrees `pᵏ` with `k > h` the obstruction no longer vanishes
@@ -55,6 +57,8 @@ equation. Those degrees are not treated in this file.
 * `FormalGroup.succ_le_order_homDefect_of_coeff_nsmulSeries_eq`: in a degree `pᵏ` where both
   `p`-series have order at least `pᵏ` and the same coefficient of `X^(pᵏ)`, the defect of
   `g = X + ⋯` vanishes automatically.
+* `FormalGroup.exists_le_order_homDefect_of_le_order_nsmulSeries`: commutative formal group laws
+  whose `p`-series have order at least `N` are strictly isomorphic below degree `N`.
 * `FormalGroup.exists_le_order_homDefect_of_coeff_nsmulSeries_eq`: commutative formal group laws
   whose `p`-series have order at least `pʰ` and the same coefficient of `X^(pʰ)` are strictly
   isomorphic up to degree `pʰ`.
@@ -176,17 +180,24 @@ theorem exists_succ_le_order_homDefect_sub_smul_X_pow {n : ℕ} (hn₂ : 2 ≤ n
   rw [homogeneousComponent_homDefect_sub_smul_X_pow (by omega) hg, hr, hc, sub_self]
 
 /-- **No defect in degree `pᵏ` when the `p`-series agree.** Let `F` and `G` be commutative and let
-the homomorphism defect of `g = X + ⋯` vanish below degree `n = pᵏ`, `k ≥ 1`. If the `p`-series of
+the homomorphism defect of `g = X + ⋯` vanish below degree `n = pᵏ`. If the `p`-series of
 `F` and `G` both have order at least `n` and the same coefficient of `Xⁿ`, the defect of `g`
 vanishes below degree `n + 1`. -/
 theorem succ_le_order_homDefect_of_coeff_nsmulSeries_eq {p : ℕ} (hp : p.Prime) {k : ℕ}
-    (hk : k ≠ 0) {g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0)
+    {g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0)
     (hg₁ : PowerSeries.coeff 1 g = 1) (hn : ((p ^ k : ℕ) : ℕ∞) ≤ (homDefect F G g).order)
     (hF : ((p ^ k : ℕ) : ℕ∞) ≤ (F.nsmulSeries p).order)
     (hG : ((p ^ k : ℕ) : ℕ∞) ≤ (G.nsmulSeries p).order)
     (hFG : PowerSeries.coeff (p ^ k) (F.nsmulSeries p) =
       PowerSeries.coeff (p ^ k) (G.nsmulSeries p)) :
     ((p ^ k + 1 : ℕ) : ℕ∞) ≤ (homDefect F G g).order := by
+  obtain rfl | hk := eq_or_ne k 0
+  · -- in degree `1` the defect vanishes, since `C₁ = 0`
+    rw [pow_zero] at hn ⊢
+    obtain ⟨c, hc⟩ := exists_homogeneousComponent_homDefect_eq_smul_lazardCocycle (F := F)
+      hg one_ne_zero hn
+    refine succ_le_order_of_homogeneousComponent_eq_zero hn ?_
+    rw [hc, TauCeti.lazardCocycle_eq_zero_of_lt_two one_lt_two, smul_zero, MvPolynomial.coe_zero]
   have hn₀ : p ^ k ≠ 0 := pow_ne_zero k hp.ne_zero
   have hn₂ : 2 ≤ p ^ k := Nat.one_lt_pow hk hp.one_lt
   -- `p` is the linear coefficient of `[p]_F`, which vanishes
@@ -197,59 +208,80 @@ theorem succ_le_order_homDefect_of_coeff_nsmulSeries_eq {p : ℕ} (hp : p.Prime)
   have hG' := congrArg (MvPowerSeries.coeff (Finsupp.single () (p ^ k)))
     (PowerSeries.homogeneousComponent_subst_left_eq_C_mul_X_pow hG hg hg₁)
   have hF' := congrArg (MvPowerSeries.coeff (Finsupp.single () (p ^ k)))
-    (PowerSeries.homogeneousComponent_subst_right_eq_C_mul_X_pow hn₀ hF hg hg₁)
+    (PowerSeries.homogeneousComponent_subst_right_eq_C_mul_X_pow hn₀ hF hg₁)
   simp only [coeff_homogeneousComponent, Finsupp.degree_single, ↓reduceIte, coeff_C_mul,
     coeff_X_pow, mul_one, Algebra.algebraMap_self, RingHom.id_apply] at hG' hF'
   rw [← PowerSeries.coeff_def Finsupp.single_eq_same] at hG' hF'
   refine succ_le_order_of_homogeneousComponent_eq_zero hn ?_
-  rw [homogeneousComponent_homDefect_eq_smul_lazardCocycle hg hp hpR hk hn, map_sub, hG', hF',
+  rw [homogeneousComponent_homDefect_eq_smul_lazardCocycle hg hp hpR hn, map_sub, hG', hF',
     hFG, sub_self, zero_smul, MvPolynomial.coe_zero]
 
 /-- The inductive step: a normalised `g` whose homomorphism defect vanishes below a degree
-`2 ≤ n ≤ pʰ` can be modified in degree `n` so that its defect vanishes below degree `n + 1`. -/
-private theorem exists_succ_le_order_homDefect {p : ℕ} (hp : p.Prime) {h : ℕ}
-    (hF : ((p ^ h : ℕ) : ℕ∞) ≤ (F.nsmulSeries p).order)
-    (hG : ((p ^ h : ℕ) : ℕ∞) ≤ (G.nsmulSeries p).order)
-    (hFG : PowerSeries.coeff (p ^ h) (F.nsmulSeries p) =
-      PowerSeries.coeff (p ^ h) (G.nsmulSeries p))
-    {n : ℕ} (hn₂ : 2 ≤ n) (hnh : n ≤ p ^ h) {g : PowerSeries R}
-    (hg : PowerSeries.constantCoeff g = 0) (hg₁ : PowerSeries.coeff 1 g = 1)
+`2 ≤ n ≤ N`, where both `p`-series have order at least `N`, can be modified in degree `n` so that
+its defect vanishes below degree `n + 1`. The `p`-series need to have the same coefficient of
+`X^N` only when `n = N`. -/
+private theorem exists_succ_le_order_homDefect {p : ℕ} (hp : p.Prime) {N : ℕ}
+    (hF : (N : ℕ∞) ≤ (F.nsmulSeries p).order) (hG : (N : ℕ∞) ≤ (G.nsmulSeries p).order)
+    {n : ℕ} (hn₂ : 2 ≤ n) (hnN : n ≤ N)
+    (hFG : n = N → PowerSeries.coeff N (F.nsmulSeries p) = PowerSeries.coeff N (G.nsmulSeries p))
+    {g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0) (hg₁ : PowerSeries.coeff 1 g = 1)
     (hn : n ≤ (homDefect F G g).order) :
     ∃ g' : PowerSeries R, PowerSeries.constantCoeff g' = 0 ∧ PowerSeries.coeff 1 g' = 1 ∧
       ((n + 1 : ℕ) : ℕ∞) ≤ (homDefect F G g').order := by
   by_cases hpow : ∃ k, n = p ^ k
-  · -- in degree `pᵏ` the defect vanishes, as both coefficients of `X^(pᵏ)` vanish below the height
+  · -- in degree `pᵏ < N` the defect vanishes, as both coefficients of `X^(pᵏ)` vanish
     obtain ⟨k, rfl⟩ := hpow
-    have hk₀ : k ≠ 0 := by
-      rintro rfl
-      simp at hn₂
-    have hkh : k ≤ h := (Nat.pow_le_pow_iff_right hp.one_lt).mp hnh
-    have hle (f : PowerSeries R) (hf : ((p ^ h : ℕ) : ℕ∞) ≤ f.order) :
-        ((p ^ k : ℕ) : ℕ∞) ≤ f.order :=
-      (Nat.cast_le.mpr hnh).trans hf
+    have hle (f : PowerSeries R) (hf : (N : ℕ∞) ≤ f.order) : ((p ^ k : ℕ) : ℕ∞) ≤ f.order :=
+      (Nat.cast_le.mpr hnN).trans hf
     have hcoeff : PowerSeries.coeff (p ^ k) (F.nsmulSeries p) =
         PowerSeries.coeff (p ^ k) (G.nsmulSeries p) := by
-      rcases hkh.lt_or_eq with hlt | rfl
-      · have hlt' : ((p ^ k : ℕ) : ℕ∞) < ((p ^ h : ℕ) : ℕ∞) :=
-          Nat.cast_lt.mpr (Nat.pow_lt_pow_right hp.one_lt hlt)
+      rcases hnN.lt_or_eq with hlt | heq
+      · have hlt' : ((p ^ k : ℕ) : ℕ∞) < (N : ℕ∞) := Nat.cast_lt.mpr hlt
         rw [PowerSeries.coeff_of_lt_order _ (hlt'.trans_le hF),
           PowerSeries.coeff_of_lt_order _ (hlt'.trans_le hG)]
-      · exact hFG
-    exact ⟨g, hg, hg₁, succ_le_order_homDefect_of_coeff_nsmulSeries_eq hp hk₀ hg hg₁ hn
+      · rw [heq]
+        exact hFG heq
+    exact ⟨g, hg, hg₁, succ_le_order_homDefect_of_coeff_nsmulSeries_eq hp hg hg₁ hn
       (hle _ hF) (hle _ hG) hcoeff⟩
   · -- otherwise `d_n` is prime to `p`, and `p = 0` in `R`, so `d_n` is a unit
     have hpR : (p : R) = 0 :=
-      F.natCast_eq_zero_of_two_le_order_nsmulSeries ((Nat.cast_le.mpr (hn₂.trans hnh)).trans hF)
+      F.natCast_eq_zero_of_two_le_order_nsmulSeries ((Nat.cast_le.mpr (hn₂.trans hnN)).trans hF)
     obtain ⟨c, hc⟩ := exists_succ_le_order_homDefect_sub_smul_X_pow hn₂
       (TauCeti.isUnit_lazardGcd hp hpR (by omega) hpow) hg hn
     exact ⟨g - c • PowerSeries.X ^ n, by simp [hg, show n ≠ 0 by omega],
       by simp [hg₁, PowerSeries.coeff_X_pow, show 1 ≠ n by omega], hc⟩
 
-/-- **Formal group laws with matching `p`-series agree up to degree `pʰ`.** Let `p` be a prime and
-let `F` and `G` be commutative formal group laws over a commutative ring `R` whose `p`-series both
-have order at least `pʰ` and the same coefficient of `X^(pʰ)`. Then some power series
-`g = X + ⋯` is a homomorphism from `F` to `G` up to terms of degree greater than `pʰ`:
-`g(F(X, Y)) - G(g(X), g(Y))` has order at least `pʰ + 1`.
+/-- **Formal group laws whose `p`-series vanish below degree `N` are strictly isomorphic below
+degree `N`.** Let `p` be a prime and let `F` and `G` be commutative formal group laws over a
+commutative ring `R` whose `p`-series both have order at least `N`. Then some power series
+`g = X + ⋯` is a homomorphism from `F` to `G` up to terms of degree `N`:
+`g(F(X, Y)) - G(g(X), g(Y))` has order at least `N`. -/
+theorem exists_le_order_homDefect_of_le_order_nsmulSeries {p : ℕ} (hp : p.Prime) {N : ℕ}
+    (hF : (N : ℕ∞) ≤ (F.nsmulSeries p).order) (hG : (N : ℕ∞) ≤ (G.nsmulSeries p).order) :
+    ∃ g : PowerSeries R, PowerSeries.constantCoeff g = 0 ∧ PowerSeries.coeff 1 g = 1 ∧
+      (N : ℕ∞) ≤ (homDefect F G g).order := by
+  -- by induction on `m`, the defect can be made to vanish below each degree `m + 2 ≤ N`
+  have key : ∀ m, m + 2 ≤ N → ∃ g : PowerSeries R, PowerSeries.constantCoeff g = 0 ∧
+      PowerSeries.coeff 1 g = 1 ∧ ((m + 2 : ℕ) : ℕ∞) ≤ (homDefect F G g).order := by
+    intro m
+    induction m with
+    | zero => exact fun _ ↦ ⟨PowerSeries.X, PowerSeries.constantCoeff_X,
+        PowerSeries.coeff_one_X, F.two_le_order_homDefect_X G⟩
+    | succ m ih =>
+      intro hm
+      obtain ⟨g, hg, hg₁, hgo⟩ := ih (by omega)
+      exact exists_succ_le_order_homDefect hp hF hG (by omega) (by omega) (by omega) hg hg₁ hgo
+  rcases Nat.lt_or_ge N 2 with hlt | hge
+  · exact ⟨PowerSeries.X, PowerSeries.constantCoeff_X, PowerSeries.coeff_one_X,
+      (Nat.cast_le.mpr hlt.le).trans (F.two_le_order_homDefect_X G)⟩
+  · obtain ⟨g, hg⟩ := key (N - 2) (by omega)
+    exact ⟨g, by rwa [Nat.sub_add_cancel hge] at hg⟩
+
+/-- **Formal group laws with matching `p`-series are strictly isomorphic up to degree `pʰ`.**
+Let `p` be a prime and let `F` and `G` be commutative formal group laws over a commutative ring
+`R` whose `p`-series both have order at least `pʰ` and the same coefficient of `X^(pʰ)`. Then
+some power series `g = X + ⋯` is a homomorphism from `F` to `G` up to terms of degree greater
+than `pʰ`: `g(F(X, Y)) - G(g(X), g(Y))` has order at least `pʰ + 1`.
 
 Over a field of characteristic `p`, this applies to two formal group laws of height `h` whose
 `p`-series have the same leading coefficient. -/
@@ -260,24 +292,12 @@ theorem exists_le_order_homDefect_of_coeff_nsmulSeries_eq {p : ℕ} (hp : p.Prim
       PowerSeries.coeff (p ^ h) (G.nsmulSeries p)) :
     ∃ g : PowerSeries R, PowerSeries.constantCoeff g = 0 ∧ PowerSeries.coeff 1 g = 1 ∧
       ((p ^ h + 1 : ℕ) : ℕ∞) ≤ (homDefect F G g).order := by
-  have hph : 1 ≤ p ^ h := Nat.one_le_pow _ _ hp.pos
-  -- by induction on `m`, the defect can be made to vanish below each degree `m + 2 ≤ pʰ + 1`
-  suffices key : ∀ m, m + 1 ≤ p ^ h → ∃ g : PowerSeries R, PowerSeries.constantCoeff g = 0 ∧
-      PowerSeries.coeff 1 g = 1 ∧ ((m + 2 : ℕ) : ℕ∞) ≤ (homDefect F G g).order by
-    obtain ⟨g, hg⟩ := key (p ^ h - 1) (by omega)
-    exact ⟨g, by rwa [show p ^ h - 1 + 2 = p ^ h + 1 by omega] at hg⟩
-  intro m
-  induction m with
-  | zero =>
-    -- the defect of `X` is `F(X, Y) - G(X, Y)`
-    refine fun _ ↦ ⟨PowerSeries.X, PowerSeries.constantCoeff_X, PowerSeries.coeff_one_X, ?_⟩
-    rw [homDefect_X, ← sub_sub_sub_cancel_right _ _ (X 0 + X 1)]
-    exact le_order_sub (two_le_order_sub_X_add_X F.zero_constantCoeff F.lin_coeff_X F.lin_coeff_Y)
-      (two_le_order_sub_X_add_X G.zero_constantCoeff G.lin_coeff_X G.lin_coeff_Y)
-  | succ m ih =>
-    intro hm
-    obtain ⟨g, hg, hg₁, hgo⟩ := ih (by omega)
-    exact exists_succ_le_order_homDefect hp hF hG hFG (by omega) (by omega) hg hg₁ hgo
+  rcases Nat.lt_or_ge (p ^ h) 2 with hlt | hge
+  · exact ⟨PowerSeries.X, PowerSeries.constantCoeff_X, PowerSeries.coeff_one_X,
+      (Nat.cast_le.mpr (by omega)).trans (F.two_le_order_homDefect_X G)⟩
+  -- the defect vanishes below degree `pʰ`, and then in degree `pʰ` too, as the `p`-series agree
+  obtain ⟨g, hg, hg₁, hgo⟩ := exists_le_order_homDefect_of_le_order_nsmulSeries hp hF hG
+  exact exists_succ_le_order_homDefect hp hF hG hge le_rfl (fun _ ↦ hFG) hg hg₁ hgo
 
 end Step
 
