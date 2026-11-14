@@ -229,14 +229,6 @@ end Hom
 
 namespace Etale
 
-/-- The identity morphism `Etale.mk (𝟙 S)` is terminal in `S.Etale`. -/
-noncomputable def mkIdTerminal (S : Scheme.{u}) : IsTerminal (Etale.mk (𝟙 S)) :=
-  let h : IsTerminal ((Etale.forget S).obj (Etale.mk (𝟙 S))) :=
-    IsTerminal.ofIso CategoryTheory.Over.mkIdTerminal (eqToIso (Etale.forget_mk (𝟙 S))).symm
-  IsTerminal.ofUniqueHom
-    (fun V ↦ (Etale.forget S).preimage (h.from ((Etale.forget S).obj V)))
-    (fun _ _ ↦ (Etale.forget S).map_injective (h.hom_ext _ _))
-
 variable {S : Scheme.{u}} (U : S.Etale) (A : Type*) [Category* A]
 
 /-- Restricting a sheaf on `S.Etale` to `CategoryTheory.Over U` and transporting across
