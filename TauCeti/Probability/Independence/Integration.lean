@@ -21,6 +21,12 @@ The product of two independent square-integrable real random variables is square
 mean-zero square-integrable `RCLike`-valued random variables `W` and `A : Matrix ι ι 𝕜`,
 `star W ⬝ᵥ A *ᵥ W` is integrable with expectation `∑ i, A i i * E[‖W i‖ ^ 2]`
 (`TauCeti.integral_star_dotProduct_mulVec_eq_sum_diag_of_pairwise_indepFun`).
+
+For an independent family `Y`, the expectation of a finite product of functions of members of
+`Y`, several factors possibly reading the same member, is the product over the members of the
+expectations of the products of the factors reading them
+(`ProbabilityTheory.iIndepFun.integral_fun_prod_comp_fiberwise`). This is the factorization
+used to evaluate expected products of entries of random matrices along trace words.
 -/
 
 public section
@@ -79,6 +85,60 @@ theorem memLp_two_mul {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
       hX.integrable_sq hY.integrable_sq
 
 end ProbabilityTheory.IndepFun
+
+namespace ProbabilityTheory.iIndepFun
+
+/-- **Expected products of functions of independent variables, grouped by fibers.**
+Only finitely many factors and members of the independent family are involved; `e` maps the
+factor indices in `s` to the member indices in `t`. Several factors may read the same member. -/
+theorem integral_fun_prod_comp_fiberwise_of_maps_to {Ω κ ι β 𝕜 : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace β] [RCLike 𝕜] [DecidableEq κ]
+    {P : Measure Ω} {Y : κ → Ω → β} (hY : iIndepFun Y P)
+    {s : Finset ι} {t : Finset κ} {e : ι → κ} (he : ∀ i ∈ s, e i ∈ t)
+    (mY : ∀ j ∈ t, AEMeasurable (Y j) P) {φ : ι → β → 𝕜}
+    (hφ : ∀ i ∈ s, AEStronglyMeasurable (φ i) (P.map (Y (e i)))) :
+    ∫ ω, ∏ i ∈ s, φ i (Y (e i) ω) ∂P =
+      ∏ j ∈ t, ∫ ω, ∏ i ∈ s with e i = j, φ i (Y j ω) ∂P := by
+  let ψ (j : κ) (b : β) := ∏ i ∈ s with e i = j, φ i b
+  have hψ (j : t) : AEStronglyMeasurable (ψ j) (P.map (Y j)) := by
+    exact Finset.aestronglyMeasurable_fun_prod _ fun i hi ↦ by
+      obtain ⟨his, hij⟩ := Finset.mem_filter.1 hi
+      simpa only [hij] using hφ i his
+  have hfactor := (hY.precomp Subtype.val_injective).integral_fun_prod_comp
+    (f := fun j : t ↦ ψ j) (fun j ↦ mY j j.property) hψ
+  have hfactor' : (∫ ω, ∏ j ∈ t, ψ j (Y j ω) ∂P) =
+      ∏ j ∈ t, ∫ ω, ψ j (Y j ω) ∂P := by
+    calc
+      _ = ∫ ω, ∏ j : t, ψ j (Y j ω) ∂P :=
+        integral_congr_ae (.of_forall fun ω ↦ (Finset.prod_coe_sort t
+          (fun j ↦ ψ j (Y j ω))).symm)
+      _ = _ := hfactor
+      _ = _ := Finset.prod_coe_sort t (fun j ↦ ∫ ω, ψ j (Y j ω) ∂P)
+  rw [← hfactor']
+  congr with ω
+  symm
+  dsimp only [ψ]
+  calc
+    _ = ∏ j ∈ t, ∏ i ∈ s with e i = j, φ i (Y (e i) ω) := by
+      refine Finset.prod_congr rfl fun j _ ↦ Finset.prod_congr rfl fun i hi ↦ ?_
+      rw [(Finset.mem_filter.1 hi).2]
+    _ = _ := Finset.prod_fiberwise_of_maps_to he _
+
+/-- **Expected products of functions of independent variables.** Let `Y` be an independent
+family indexed by a finite type, and let the factors `φ i (Y (e i))` of a finite product read
+members of `Y`, several factors possibly reading the same member. The expectation of the product
+is the product, over the members `j`, of the expectations of the products of the factors reading
+`j`. -/
+theorem integral_fun_prod_comp_fiberwise {Ω κ ι β 𝕜 : Type*} [MeasurableSpace Ω]
+    [MeasurableSpace β] [RCLike 𝕜] [Fintype κ] [DecidableEq κ] [Fintype ι]
+    {P : Measure Ω} {Y : κ → Ω → β} (hY : iIndepFun Y P) (mY : ∀ j, AEMeasurable (Y j) P)
+    (e : ι → κ) {φ : ι → β → 𝕜}
+    (hφ : ∀ i, AEStronglyMeasurable (φ i) (P.map (Y (e i)))) :
+    ∫ ω, ∏ i, φ i (Y (e i) ω) ∂P = ∏ j, ∫ ω, ∏ i with e i = j, φ i (Y j ω) ∂P :=
+  hY.integral_fun_prod_comp_fiberwise_of_maps_to (fun _ _ ↦ Finset.mem_univ _)
+    (fun j _ ↦ mY j) (fun i _ ↦ hφ i)
+
+end ProbabilityTheory.iIndepFun
 
 open ProbabilityTheory Matrix
 
