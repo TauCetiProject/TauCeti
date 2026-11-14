@@ -28,7 +28,7 @@ variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
 
 section Exponential
 
-variable [CharZero K] [LieAlgebra ℚ L]
+variable [LieAlgebra ℚ L]
 
 /-- The truncated exponential series of the matrix of `ad e` is the matrix of `exp (ad (t • e))`,
 once the truncation degree kills `ad e`. -/
@@ -38,6 +38,13 @@ theorem toMatrixAlgEquiv_expAd {ι : Type*} [Fintype ι] [DecidableEq ι]
     LinearMap.toMatrixAlgEquiv b
         (expAd (t • e) ht.exists_pow_apply_eq_zero).toLinearEquiv.toLinearMap =
       expSeries (LinearMap.toMatrixAlgEquiv b (ad K L e)) d t := by
+  -- the `ℚ`-module `L` is trivial unless `K` has characteristic zero
+  have : HasUniqueDiv L := .of_module_rat L
+  rcases subsingleton_or_nontrivial L with _ | _
+  · -- `L` is trivial, so `ι` is empty
+    have : IsEmpty ι := (linearIndependent_subsingleton_iff b).mp b.linearIndependent
+    exact Subsingleton.elim _ _
+  have := CharZero.of_hasUniqueDiv K L
   have hlin : (expAd (t • e) ht.exists_pow_apply_eq_zero).toLinearEquiv.toLinearMap =
       ∑ k ∈ Finset.range d, ((k.factorial : K)⁻¹) • (t • ad K L e) ^ k := by
     ext y
