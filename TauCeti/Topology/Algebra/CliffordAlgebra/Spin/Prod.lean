@@ -22,12 +22,12 @@ continuous.
 
 ## Main definitions
 
-* `CliffordAlgebra.spinGroupProdContinuousMonoidHom`: `spinGroupProd Q₁ Q₂` bundled as a continuous
+* `TauCeti.spinGroupProdContinuousMonoidHom`: `spinGroupProd Q₁ Q₂` bundled as a continuous
   monoid homomorphism `spinGroup Q₁ × spinGroup Q₂ →ₜ* spinGroup (Q₁.prod Q₂)`.
 
 ## Main results
 
-* `CliffordAlgebra.continuous_spinGroupProd`: continuity of `spinGroupProd Q₁ Q₂`.
+* `TauCeti.continuous_spinGroupProd`: continuity of `spinGroupProd Q₁ Q₂`.
 
 ## References
 
@@ -36,7 +36,9 @@ continuous.
 
 public section
 
-namespace CliffordAlgebra
+namespace TauCeti
+
+open _root_.CliffordAlgebra
 
 variable {R M₁ M₂ : Type*} [CommRing R] [TopologicalSpace R]
   [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
@@ -72,6 +74,6 @@ theorem spinGroupProdContinuousMonoidHom_apply (x : spinGroup Q₁ × spinGroup 
     spinGroupProdContinuousMonoidHom Q₁ Q₂ x = spinGroupProd Q₁ Q₂ x :=
   (rfl)
 
-end CliffordAlgebra
+end TauCeti
 
 end

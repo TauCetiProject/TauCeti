@@ -70,13 +70,16 @@ def realCliffordSpinInclusionIsometry (n : ℕ) :
     (QuadraticMap.Isometry.inl (realCliffordForm n 0)
       (QuadraticMap.sq (R := ℝ) (A := ℝ)))
 
-/-- `realCliffordSpinInclusionIsometry` embeds a vector as the first summand of
-`realCliffordPositiveSplitIsometry` with `0` in the last coordinate. -/
+/-- `realCliffordSpinInclusionIsometry` appends `0` in the last coordinate via `Fin.snoc`. -/
 @[simp]
 theorem realCliffordSpinInclusionIsometry_apply (n : ℕ) (v : Fin n → ℝ) :
-    realCliffordSpinInclusionIsometry n v =
-      (realCliffordPositiveSplitIsometry n 0).symm (v, 0) :=
-  (rfl)
+    realCliffordSpinInclusionIsometry n v = Fin.snoc v 0 := by
+  rw [realCliffordSpinInclusionIsometry, QuadraticMap.Isometry.comp_apply,
+    QuadraticMap.IsometryEquiv.toIsometry_apply, QuadraticMap.Isometry.inl_apply,
+    QuadraticMap.IsometryEquiv.symm_apply_eq]
+  refine (Prod.ext (funext fun i ↦ ?_) ?_).symm
+  · simpa [Fin.castAdd_zero] using realCliffordPositiveSplitIsometry_fst_pos n 0 (Fin.snoc v 0) i
+  · simpa [Fin.castAdd_zero] using realCliffordPositiveSplitIsometry_snd n 0 (Fin.snoc v 0)
 
 private def realCliffordSpinLastIsometry (n : ℕ) :
     QuadraticMap.sq (R := ℝ) (A := ℝ) →qᵢ realCliffordForm (n + 1) 0 :=

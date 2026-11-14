@@ -39,15 +39,15 @@ this gives the block subgroup `(Spin(p) × Spin(q)) / ⟨(-1, -1)⟩` of `Spin(p
 
 * `CliffordAlgebra.coe_spinGroupProd_apply`: its Clifford value is the product of the images of
   the two factors under the orthogonal inclusions.
-* `CliffordAlgebra.spinGroupProd_inl_one` and `CliffordAlgebra.spinGroupProd_one_inr`: restricting
+* `CliffordAlgebra.spinGroupProd_mk_one` and `CliffordAlgebra.spinGroupProd_one_mk`: restricting
   `spinGroupProd` to either factor recovers the Spin map of that orthogonal inclusion.
 * `CliffordAlgebra.spinGroupMap_prodMap_spinGroupProd` and
   `CliffordAlgebra.spinGroupEquiv_prod_spinGroupProd`: naturality of `spinGroupProd` with respect
   to products of quadratic isometries and isometric equivalences.
-* `CliffordAlgebra.uniqueProd_spinGroupEquiv_spinGroupProd`,
-  `CliffordAlgebra.prodUnique_spinGroupEquiv_spinGroupProd`,
-  `CliffordAlgebra.prodAssoc_spinGroupEquiv_spinGroupProd`, and
-  `CliffordAlgebra.prodComm_spinGroupEquiv_spinGroupProd`: left- and right-unit, associativity,
+* `CliffordAlgebra.spinGroupEquiv_uniqueProd_spinGroupProd`,
+  `CliffordAlgebra.spinGroupEquiv_prodUnique_spinGroupProd`,
+  `CliffordAlgebra.spinGroupEquiv_prodAssoc_spinGroupProd`, and
+  `CliffordAlgebra.spinGroupEquiv_prodComm_spinGroupProd`: left- and right-unit, associativity,
   and symmetry coherences of `spinGroupProd`.
 * `CliffordAlgebra.spinVectorAction_spinGroupProd`: it acts on the orthogonal sum componentwise.
 * `CliffordAlgebra.spinToOrthogonal_spinGroupProd` and
@@ -113,15 +113,13 @@ theorem coe_spinGroupProd_apply (x : spinGroup Q₁ × spinGroup Q₂) :
 
 /-- Restricting `spinGroupProd` to the first factor gives the Spin map of the left orthogonal
 inclusion. -/
-@[simp]
-theorem spinGroupProd_inl_one (x : spinGroup Q₁) :
+theorem spinGroupProd_mk_one (x : spinGroup Q₁) :
     spinGroupProd Q₁ Q₂ (x, 1) = (Isometry.inl Q₁ Q₂).spinGroupMap x := by
   rw [spinGroupProd_apply, map_one, mul_one]
 
 /-- Restricting `spinGroupProd` to the second factor gives the Spin map of the right orthogonal
 inclusion. -/
-@[simp]
-theorem spinGroupProd_one_inr (y : spinGroup Q₂) :
+theorem spinGroupProd_one_mk (y : spinGroup Q₂) :
     spinGroupProd Q₁ Q₂ (1, y) = (Isometry.inr Q₁ Q₂).spinGroupMap y := by
   rw [spinGroupProd_apply, map_one, one_mul]
 
@@ -148,14 +146,8 @@ theorem spinGroupMap_inl_injective [Module.Flat R (CliffordAlgebra Q₁)]
 is flat and scalar action on the left Clifford algebra is faithful. -/
 theorem spinGroupMap_inr_injective [Module.Flat R (CliffordAlgebra Q₂)]
     [FaithfulSMul R (CliffordAlgebra Q₁)] :
-    Function.Injective (Isometry.inr Q₁ Q₂).spinGroupMap := by
-  have hinr : Isometry.inr Q₁ Q₂ =
-      (IsometryEquiv.prodComm Q₂ Q₁).toIsometry.comp (Isometry.inl Q₂ Q₁) :=
-    Isometry.ext fun _ ↦ by simp
-  rw [hinr, ← Isometry.spinGroupMap_comp, MonoidHom.coe_comp]
-  exact ((IsometryEquiv.prodComm Q₂ Q₁).toIsometry.spinGroupMap_injective_of_leftInverse
-    (IsometryEquiv.prodComm Q₁ Q₂).toIsometry
-    (IsometryEquiv.prodComm Q₂ Q₁).symm_apply_apply).comp (spinGroupMap_inl_injective Q₂ Q₁)
+    Function.Injective (Isometry.inr Q₁ Q₂).spinGroupMap :=
+  (Isometry.inr Q₁ Q₂).spinGroupMap_injective (map_inr_injective Q₁ Q₂)
 
 /-- `spinGroupProd` is natural with respect to products of quadratic isometries. -/
 @[simp]
@@ -164,11 +156,9 @@ theorem spinGroupMap_prodMap_spinGroupProd {N₁ N₂ : Type*} [AddCommGroup N�
     (f₁ : Q₁ →qᵢ Q₁') (f₂ : Q₂ →qᵢ Q₂') (x : spinGroup Q₁ × spinGroup Q₂) :
     (f₁.prodMap f₂).spinGroupMap (spinGroupProd Q₁ Q₂ x) =
       spinGroupProd Q₁' Q₂' (f₁.spinGroupMap x.1, f₂.spinGroupMap x.2) := by
-  rw [spinGroupProd_apply, spinGroupProd_apply, map_mul, ← MonoidHom.comp_apply,
-    ← MonoidHom.comp_apply, Isometry.spinGroupMap_comp, Isometry.spinGroupMap_comp,
-    Isometry.prodMap_comp_inl, Isometry.prodMap_comp_inr, ← Isometry.spinGroupMap_comp,
-    ← Isometry.spinGroupMap_comp, MonoidHom.comp_apply, MonoidHom.comp_apply]
+  simp [spinGroupProd_apply]
 
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
 /-- `spinGroupProd` is natural with respect to products of isometric equivalences. -/
 theorem spinGroupEquiv_prod_spinGroupProd {N₁ N₂ : Type*} [AddCommGroup N₁] [Module R N₁]
     [AddCommGroup N₂] [Module R N₂] {Q₁' : QuadraticForm R N₁} {Q₂' : QuadraticForm R N₂}
@@ -179,9 +169,10 @@ theorem spinGroupEquiv_prod_spinGroupProd {N₁ N₂ : Type*} [AddCommGroup N₁
     spinGroupMap_prodMap_spinGroupProd, ← IsometryEquiv.spinGroupEquiv_apply,
     ← IsometryEquiv.spinGroupEquiv_apply]
 
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
 /-- Deleting a trivial left summand along `IsometryEquiv.uniqueProd` sends `spinGroupProd` to its
 second factor. -/
-theorem uniqueProd_spinGroupEquiv_spinGroupProd [Unique M₁] (x : spinGroup Q₁ × spinGroup Q₂) :
+theorem spinGroupEquiv_uniqueProd_spinGroupProd [Unique M₁] (x : spinGroup Q₁ × spinGroup Q₂) :
     (IsometryEquiv.uniqueProd Q₁ Q₂).spinGroupEquiv (spinGroupProd Q₁ Q₂ x) = x.2 := by
   have hx₁ : x.1 = 1 := Subsingleton.elim _ _
   have hid : (IsometryEquiv.uniqueProd Q₁ Q₂).toIsometry.comp (Isometry.inr Q₁ Q₂) =
@@ -189,12 +180,13 @@ theorem uniqueProd_spinGroupEquiv_spinGroupProd [Unique M₁] (x : spinGroup Q�
     Isometry.ext fun _ ↦ by simp
   obtain ⟨x₁, x₂⟩ := x
   subst hx₁
-  rw [spinGroupProd_one_inr, IsometryEquiv.spinGroupEquiv_apply, ← MonoidHom.comp_apply,
-    Isometry.spinGroupMap_comp, hid, Isometry.spinGroupMap_id, MonoidHom.id_apply]
+  rw [spinGroupProd_one_mk]
+  simp [hid]
 
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
 /-- Deleting a trivial right summand along `IsometryEquiv.prodUnique` sends `spinGroupProd` to its
 first factor. -/
-theorem prodUnique_spinGroupEquiv_spinGroupProd [Unique M₂] (x : spinGroup Q₁ × spinGroup Q₂) :
+theorem spinGroupEquiv_prodUnique_spinGroupProd [Unique M₂] (x : spinGroup Q₁ × spinGroup Q₂) :
     (IsometryEquiv.prodUnique Q₁ Q₂).spinGroupEquiv (spinGroupProd Q₁ Q₂ x) = x.1 := by
   have hx₂ : x.2 = 1 := Subsingleton.elim _ _
   have hid : (IsometryEquiv.prodUnique Q₁ Q₂).toIsometry.comp (Isometry.inl Q₁ Q₂) =
@@ -202,11 +194,12 @@ theorem prodUnique_spinGroupEquiv_spinGroupProd [Unique M₂] (x : spinGroup Q�
     Isometry.ext fun _ ↦ by simp
   obtain ⟨x₁, x₂⟩ := x
   subst hx₂
-  rw [spinGroupProd_inl_one, IsometryEquiv.spinGroupEquiv_apply, ← MonoidHom.comp_apply,
-    Isometry.spinGroupMap_comp, hid, Isometry.spinGroupMap_id, MonoidHom.id_apply]
+  rw [spinGroupProd_mk_one]
+  simp [hid]
 
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
 /-- **`spinGroupProd` is associative** up to transport along `IsometryEquiv.prodAssoc`. -/
-theorem prodAssoc_spinGroupEquiv_spinGroupProd {M₃ : Type*} [AddCommGroup M₃] [Module R M₃]
+theorem spinGroupEquiv_prodAssoc_spinGroupProd {M₃ : Type*} [AddCommGroup M₃] [Module R M₃]
     (Q₃ : QuadraticForm R M₃) (x : spinGroup Q₁) (y : spinGroup Q₂) (z : spinGroup Q₃) :
     (IsometryEquiv.prodAssoc Q₁ Q₂ Q₃).spinGroupEquiv
         (spinGroupProd (Q₁.prod Q₂) Q₃ (spinGroupProd Q₁ Q₂ (x, y), z)) =
@@ -224,11 +217,12 @@ theorem prodAssoc_spinGroupEquiv_spinGroupProd {M₃ : Type*} [AddCommGroup M₃
       (Isometry.inr Q₁ (Q₂.prod Q₃)).comp (Isometry.inr Q₂ Q₃) :=
     Isometry.ext fun _ ↦ by simp
   simp only [IsometryEquiv.spinGroupEquiv_apply, spinGroupProd_apply, map_mul,
-    ← MonoidHom.comp_apply, Isometry.spinGroupMap_comp, h₁, h₂, h₃, mul_assoc]
+    Isometry.spinGroupMap_spinGroupMap, h₁, h₂, h₃, mul_assoc]
 
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
 /-- **Swapping the two summands along `IsometryEquiv.prodComm` swaps the two factors of
 `spinGroupProd`**, with no Koszul sign because Spin elements have even Clifford parity. -/
-theorem prodComm_spinGroupEquiv_spinGroupProd (x : spinGroup Q₁ × spinGroup Q₂) :
+theorem spinGroupEquiv_prodComm_spinGroupProd (x : spinGroup Q₁ × spinGroup Q₂) :
     (IsometryEquiv.prodComm Q₁ Q₂).spinGroupEquiv (spinGroupProd Q₁ Q₂ x) =
       spinGroupProd Q₂ Q₁ x.swap := by
   have h₁ : (IsometryEquiv.prodComm Q₁ Q₂).toIsometry.comp (Isometry.inl Q₁ Q₂) =
@@ -237,9 +231,8 @@ theorem prodComm_spinGroupEquiv_spinGroupProd (x : spinGroup Q₁ × spinGroup Q
   have h₂ : (IsometryEquiv.prodComm Q₁ Q₂).toIsometry.comp (Isometry.inr Q₁ Q₂) =
       Isometry.inl Q₂ Q₁ :=
     Isometry.ext fun _ ↦ by simp
-  rw [IsometryEquiv.spinGroupEquiv_apply, spinGroupProd_apply, spinGroupProd_apply, map_mul,
-    ← MonoidHom.comp_apply, ← MonoidHom.comp_apply, Isometry.spinGroupMap_comp,
-    Isometry.spinGroupMap_comp, h₁, h₂, Prod.snd_swap, Prod.fst_swap,
+  simp only [IsometryEquiv.spinGroupEquiv_apply, spinGroupProd_apply, map_mul,
+    Isometry.spinGroupMap_spinGroupMap, h₁, h₂, Prod.snd_swap, Prod.fst_swap,
     (commute_spinGroupMap_inl_spinGroupMap_inr Q₂ Q₁ x.2 x.1).symm.eq]
 
 variable [Invertible (2 : R)]

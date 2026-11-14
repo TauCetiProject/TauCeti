@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
 import TauCeti.Algebra.Quaternion.Split
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
@@ -75,8 +76,9 @@ unfolding.
   coordinate from a standard signature form.
 * `TauCeti.realCliffordFirstSplitIsometry`: the isometry which separates the first coordinate from
   `realCliffordForm (n + 1) 0` via `Fin.cons`.
-* `TauCeti.realCliffordBlockSwapIsometry`: the block-swap isometry between
-  `realCliffordForm (p + q) 0` and `realCliffordForm (q + p) 0` along `finAddFlip`.
+* `TauCeti.realCliffordFormZeroReindex` and `TauCeti.realCliffordBlockSwapIsometry`: coordinate
+  reindexing of positive-definite signature forms along `Fin m ≃ Fin n` and its specialization to
+  the block swap `finAddFlip`.
 * `TauCeti.realBottSplitIsometry`: the two-coordinate specialization of the same signature
   splitter, separating a hyperbolic plane.
 * `TauCeti.realCliffordSignSwitchStandardIsometry`: the isometry which puts a sign-switched form
@@ -555,6 +557,16 @@ theorem realCliffordFirstSplitIsometry_symm_apply (n : ℕ) (x : ℝ × (Fin n �
   have h := (realCliffordFirstSplitIsometry n).symm_apply_apply (Fin.cons x.1 x.2)
   rwa [realCliffordFirstSplitIsometry_cons] at h
 
+/-- `realCliffordFirstSplitIsometry` sends `Pi.single 0 r` to `(r, 0)`. -/
+@[simp]
+theorem realCliffordFirstSplitIsometry_single_zero (n : ℕ) (r : ℝ) :
+    realCliffordFirstSplitIsometry n (Pi.single 0 r) = (r, 0) := by
+  have h : (Pi.single 0 r : Fin (n + 1) → ℝ) = Fin.cons r 0 :=
+    funext (Fin.cases (by simp) (by simp))
+  rw [h, realCliffordFirstSplitIsometry_cons]
+
+-- Not `@[simp]`: `realCliffordSplitIsometry p q 0 0` has domain `realCliffordForm (p + q) (0 + 0)`,
+-- so `Nat.add_zero` simplifies `0 + 0` inside `@DFunLike.coe`'s type parameter (`simpNF`).
 /-- On compact forms, `realCliffordSplitIsometry p q 0 0` splits `Fin.append u v` into `(u, v)`. -/
 theorem realCliffordSplitIsometry_zero_append (p q : ℕ) (u : Fin p → ℝ) (v : Fin q → ℝ) :
     realCliffordSplitIsometry p q 0 0 (Fin.append u v : Fin (p + q) → ℝ) = (u, v) := by
@@ -564,6 +576,8 @@ theorem realCliffordSplitIsometry_zero_append (p q : ℕ) (u : Fin p → ℝ) (v
   · simpa [Fin.castAdd_zero] using
       realCliffordSplitIsometry_snd_pos p q 0 0 (Fin.append u v : Fin (p + q) → ℝ) j
 
+-- Not `@[simp]`: `realCliffordSplitIsometry p q 0 0` has domain `realCliffordForm (p + q) (0 + 0)`,
+-- so `Nat.add_zero` simplifies `0 + 0` inside `@DFunLike.coe`'s type parameter (`simpNF`).
 /-- On compact forms, the inverse of `realCliffordSplitIsometry p q 0 0` concatenates vectors via
 `Fin.append`. -/
 theorem realCliffordSplitIsometry_zero_symm_apply (p q : ℕ)
@@ -574,25 +588,79 @@ theorem realCliffordSplitIsometry_zero_symm_apply (p q : ℕ)
     (Fin.append (x.1 : Fin p → ℝ) (x.2 : Fin q → ℝ) : Fin (p + q) → ℝ)
   rwa [realCliffordSplitIsometry_zero_append] at h
 
+/-- Deleting a rank-zero right block via `IsometryEquiv.prodUnique` agrees with
+`(realCliffordSplitIsometry p 0 0 0).symm`. -/
+theorem realCliffordSplitIsometry_zero_right_symm_eq_prodUnique (p : ℕ) :
+    -- `realCliffordForm 0 0` lives on `Fin (0 + 0) → ℝ`, which is `Fin 0 → ℝ` by definition;
+    -- spelling the carrier `Fin 0 → ℝ` exposes `Unique (Fin 0 → ℝ)` to typeclass search.
+    (realCliffordSplitIsometry p 0 0 0).symm =
+      IsometryEquiv.prodUnique (realCliffordForm p 0)
+        (show QuadraticForm ℝ (Fin 0 → ℝ) from realCliffordForm 0 0) :=
+  DFunLike.ext _ _ fun ⟨u, v⟩ ↦ funext fun i ↦ by
+    have hv : (v : Fin 0 → ℝ) = Fin.elim0 := funext fun j ↦ Fin.elim0 j
+    rw [realCliffordSplitIsometry_zero_symm_apply, IsometryEquiv.prodUnique_apply, hv,
+      Fin.append_elim0]
+    simp
+
+/-- Deleting a rank-zero left block via `IsometryEquiv.uniqueProd` agrees with
+`(realCliffordSplitIsometry 0 q 0 0).symm` followed by
+`realCliffordFormCongr (Nat.zero_add q) rfl`. -/
+theorem realCliffordSplitIsometry_zero_left_symm_trans_eq_uniqueProd (q : ℕ) :
+    -- `realCliffordForm 0 0` lives on `Fin (0 + 0) → ℝ`, which is `Fin 0 → ℝ` by definition;
+    -- spelling the carrier `Fin 0 → ℝ` exposes `Unique (Fin 0 → ℝ)` to typeclass search.
+    (realCliffordSplitIsometry 0 q 0 0).symm.trans
+        (realCliffordFormCongr (Nat.zero_add q) rfl) =
+      IsometryEquiv.uniqueProd
+        (show QuadraticForm ℝ (Fin 0 → ℝ) from realCliffordForm 0 0)
+        (realCliffordForm q 0) :=
+  DFunLike.ext _ _ fun ⟨u, v⟩ ↦ funext fun i ↦ by
+    have hu : (u : Fin 0 → ℝ) = Fin.elim0 := funext fun j ↦ Fin.elim0 j
+    rw [IsometryEquiv.trans_apply, realCliffordSplitIsometry_zero_symm_apply,
+      IsometryEquiv.uniqueProd_apply, hu, Fin.elim0_append, realCliffordFormCongr_apply,
+      Function.comp_apply, Fin.cast_cast, Fin.cast_eq_self]
+
+/-- Reindexing the coordinates of a positive-definite signature form `realCliffordForm n 0` along
+an equivalence `e : Fin m ≃ Fin n` gives an isometric equivalence to `realCliffordForm m 0`. -/
+def realCliffordFormZeroReindex {m n : ℕ} (e : Fin m ≃ Fin n) :
+    (realCliffordForm n 0).IsometryEquiv (realCliffordForm m 0) :=
+  -- `realCliffordForm k 0` is `weightedSumSquares ℝ (realCliffordWeight k 0)` by definition.
+  (_root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex
+      (realCliffordWeight n 0) e).trans
+    (_root_.QuadraticForm.weightedSumSquaresCongr
+      (funext fun i ↦ by
+        rw [Function.comp_apply, realCliffordWeight_of_lt (e i).isLt,
+          realCliffordWeight_of_lt i.isLt]))
+
+/-- `realCliffordFormZeroReindex e` acts on coordinates by precomposition with `e`. -/
+@[simp]
+theorem realCliffordFormZeroReindex_apply {m n : ℕ} (e : Fin m ≃ Fin n)
+    (x : Fin (n + 0) → ℝ) (i : Fin (m + 0)) :
+    realCliffordFormZeroReindex e x i = x (e i) :=
+  -- `QuadraticForm.weightedSumSquaresCongr` has underlying linear equivalence `LinearEquiv.refl`,
+  -- so composing with it leaves `isometryEquivWeightedSumSquaresReindex` unchanged on vectors.
+  _root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex_apply
+    (realCliffordWeight n 0) e x i
+
+/-- The inverse of `realCliffordFormZeroReindex e` is `realCliffordFormZeroReindex e.symm`. -/
+@[simp]
+theorem realCliffordFormZeroReindex_symm {m n : ℕ} (e : Fin m ≃ Fin n) :
+    (realCliffordFormZeroReindex e).symm = realCliffordFormZeroReindex e.symm :=
+  DFunLike.ext _ _ fun x ↦ (realCliffordFormZeroReindex e).symm_apply_eq.mpr <|
+    funext fun i ↦ by simp
+
 /-- Swapping the first `p` and last `q` coordinates of the positive-definite form along
 `finAddFlip` is an isometric equivalence between `realCliffordForm (p + q) 0` and
 `realCliffordForm (q + p) 0`. -/
 def realCliffordBlockSwapIsometry (p q : ℕ) :
-    (realCliffordForm (p + q) 0).IsometryEquiv (realCliffordForm (q + p) 0) where
-  toLinearEquiv := LinearEquiv.funCongrLeft ℝ ℝ (finAddFlip : Fin (q + p) ≃ Fin (p + q))
-  map_app' x := by
-    rw [realCliffordForm_zero_eq_weightedSumSquares_one,
-      realCliffordForm_zero_eq_weightedSumSquares_one, QuadraticMap.weightedSumSquares_apply,
-      QuadraticMap.weightedSumSquares_apply]
-    refine Fintype.sum_equiv (finAddFlip : Fin (q + p) ≃ Fin (p + q)) _ _ fun i ↦ ?_
-    simp [LinearEquiv.funCongrLeft_apply]
+    (realCliffordForm (p + q) 0).IsometryEquiv (realCliffordForm (q + p) 0) :=
+  realCliffordFormZeroReindex (finAddFlip : Fin (q + p) ≃ Fin (p + q))
 
 /-- `realCliffordBlockSwapIsometry` reads each coordinate through `finAddFlip`. -/
 @[simp]
 theorem realCliffordBlockSwapIsometry_apply (p q : ℕ)
     (x : Fin ((p + q) + 0) → ℝ) (i : Fin ((q + p) + 0)) :
-    realCliffordBlockSwapIsometry p q x i = x ((finAddFlip : Fin (q + p) ≃ Fin (p + q)) i) := by
-  simp [realCliffordBlockSwapIsometry, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+    realCliffordBlockSwapIsometry p q x i = x ((finAddFlip : Fin (q + p) ≃ Fin (p + q)) i) :=
+  realCliffordFormZeroReindex_apply (finAddFlip : Fin (q + p) ≃ Fin (p + q)) x i
 
 /-- `realCliffordBlockSwapIsometry` swaps the two blocks of `Fin.append`. -/
 @[simp]
@@ -609,14 +677,10 @@ theorem realCliffordBlockSwapIsometry_append (p q : ℕ) (u : Fin p → ℝ) (v 
 @[simp]
 theorem realCliffordBlockSwapIsometry_symm (p q : ℕ) :
     (realCliffordBlockSwapIsometry p q).symm = realCliffordBlockSwapIsometry q p := by
-  refine DFunLike.ext _ _ fun x ↦ funext fun (i : Fin (p + q)) ↦ ?_
-  have hflip : (finAddFlip : Fin (q + p) ≃ Fin (p + q))
-      ((finAddFlip : Fin (p + q) ≃ Fin (q + p)) i) = i := by
-    refine Fin.addCases (fun _ ↦ ?_) (fun _ ↦ ?_) i <;> simp
-  have h := congrFun ((realCliffordBlockSwapIsometry p q).apply_symm_apply x)
-    ((finAddFlip : Fin (p + q) ≃ Fin (q + p)) i)
-  rwa [realCliffordBlockSwapIsometry_apply, hflip, ← realCliffordBlockSwapIsometry_apply q p x i]
-    at h
+  have hflip : (finAddFlip : Fin (q + p) ≃ Fin (p + q)).symm = finAddFlip := by
+    ext i; simp [finAddFlip]
+  rw [realCliffordBlockSwapIsometry, realCliffordFormZeroReindex_symm, hflip,
+    realCliffordBlockSwapIsometry]
 
 /-- The coordinate isometry which separates the last positive and negative coordinates of the
 signature form as a hyperbolic plane. -/
