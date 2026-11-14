@@ -40,9 +40,8 @@ A quadratic character takes the value `1` or `-1` at every unit
 multiplication (`MulChar.IsQuadratic.mul`), and hence a
 finite product of quadratic characters is quadratic (`MulChar.isQuadratic_prod`).
 
-`MulChar.equivToUnitHom` and `MulChar.ofUnitHom` carry the trivial character `1` to the trivial
-unit homomorphism `1` (`MulChar.equivToUnitHom_one`, `MulChar.equivToUnitHom_symm_one`,
-`MulChar.toUnitHom_one`, `MulChar.ofUnitHom_one`).
+`MulChar.equivToUnitHom` and its inverse carry the trivial character `1` and the trivial unit
+homomorphism `1` to each other (`MulChar.equivToUnitHom_one`, `MulChar.equivToUnitHom_symm_one`).
 -/
 
 public section
@@ -163,16 +162,5 @@ theorem equivToUnitHom_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R']
 theorem equivToUnitHom_symm_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
     equivToUnitHom.symm (1 : Rˣ →* R'ˣ) = 1 :=
   map_one (mulEquivToUnitHom (R := R) (R' := R')).symm
-
-/-- Restricting the trivial multiplicative character `1` to units gives `1`. -/
-theorem toUnitHom_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
-    (1 : MulChar R R').toUnitHom = 1 := by
-  simp
-
-/-- Extending the trivial unit homomorphism `1` by zero gives the trivial multiplicative character
-`1`. -/
-theorem ofUnitHom_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
-    ofUnitHom (1 : Rˣ →* R'ˣ) = 1 := by
-  simp
 
 end MulChar

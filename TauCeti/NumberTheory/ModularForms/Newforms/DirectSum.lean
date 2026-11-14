@@ -332,8 +332,9 @@ theorem iSup_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace
     rintro _ ⟨x, rfl⟩
     simp only [Function.comp_apply, Submodule.coe_subtype,
       Newform.coe_levelRaiseBasisCharSpace_apply]
-    obtain ⟨hc, hψ⟩ := DirichletCharacter.conductor_dvd_and_eq_changeLevel_primitiveCharacter
-      (dvd_of_mul_left_dvd x.1.1.2) x.2
+    obtain ⟨hc, hψ⟩ :=
+      DirichletCharacter.conductor_dvd_and_eq_changeLevel_primitiveCharacter_toUnitHom
+        (dvd_of_mul_left_dvd x.1.1.2) x.2
     refine Submodule.mem_iSup_of_mem ⟨x.1.1.1, x.1.1.2, hc⟩ ?_
     rw [← CuspForm.levelRaiseₗ_apply]
     exact Submodule.mem_map_of_mem ⟨x.1.2.isNew, hψ ▸ x.1.2.mem_charSpace⟩

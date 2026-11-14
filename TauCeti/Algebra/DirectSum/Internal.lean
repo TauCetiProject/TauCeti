@@ -665,6 +665,8 @@ required by `DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top`). -/
 theorem DirectSum.isInternal_submodule_comap_subtype {R ι M : Type*} [Ring R] [AddCommGroup M]
     [Module R M] [DecidableEq ι] {A : ι → Submodule R M} {S : Submodule R M}
     (hind : iSupIndep A) (hsup : ⨆ i, A i = S) :
-    DirectSum.IsInternal fun i ↦ (A i).comap S.subtype :=
-  DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top hind.comap_subtype
-    (Submodule.iSup_comap_subtype_eq_top_of_iSup_eq hsup)
+    DirectSum.IsInternal fun i ↦ (A i).comap S.subtype := by
+  refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top hind.comap_subtype ?_
+  have hS : S = ⨆ i ∈ (Set.univ : Set ι), A i := by simp [← hsup]
+  subst hS
+  simpa using Submodule.biSup_comap_subtype_eq_top Set.univ A

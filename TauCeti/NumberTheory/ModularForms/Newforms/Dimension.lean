@@ -58,13 +58,20 @@ public section
 
 open Finset Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup ArithmeticFunction
 
-open scoped MatrixGroups Moebius
+open scoped MatrixGroups Moebius Pointwise
 
 namespace TauCeti
 
 open _root_.CuspForm
 
 /-! ### Forward divisor-count dimension convolutions -/
+
+/-- Level-raising preserves `finrank` on any submodule of cusp forms. -/
+private lemma finrank_map_levelRaiseₗ {𝒢 𝒢' : Subgroup (GL (Fin 2) ℝ)} [𝒢.HasDetOne]
+    [𝒢'.HasDetOne] {k : ℤ} (d : ℕ) [NeZero d]
+    (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (p : Submodule ℂ (CuspForm 𝒢 k)) :
+    Module.finrank ℂ ↥(p.map (CuspForm.levelRaiseₗ d h)) = Module.finrank ℂ p :=
+  (p.equivMapOfInjective _ (CuspForm.levelRaiseₗ_injective d h)).finrank_eq.symm
 
 /-- **Divisor-count dimension formula for `S_k(Γ₁(N))`** (Diamond–Shurman, Theorem 5.8.3):
 `dim S_k(Γ₁(N)) = ∑_{M ∣ N} #(N / M).divisors * dim S_k(Γ₁(M))ⁿᵉʷ`. -/
@@ -73,19 +80,10 @@ theorem finrank_cuspForm_Gamma1_eq_sum_card_divisors_mul {N : ℕ} [NeZero N] (k
       ∑ M : {M : ℕ+ // (M : ℕ) ∣ N},
         #(N / M.1).divisors * Module.finrank ℂ (cuspFormsNew M.1 k) := by
   rw [finrank_eq_sum_finrank_of_isInternal (isInternal_map_levelRaiseₗ_cuspFormsNew N k)]
-  have hmap (p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}) :
-      Module.finrank ℂ ↥((cuspFormsNew p.1.1 k).map
-        (CuspForm.levelRaiseₗ p.1.2 (Gamma1_map_le_conjAct_scaleGL_of_dvd p.2))) =
-        Module.finrank ℂ (cuspFormsNew p.1.1 k) :=
-    ((cuspFormsNew p.1.1 k).equivMapOfInjective _
-      (CuspForm.levelRaiseₗ_injective p.1.2
-        (Gamma1_map_le_conjAct_scaleGL_of_dvd p.2))).finrank_eq.symm
-  simp_rw [hmap]
-  rw [← (pnatMulDvdEquivSigma N).symm.sum_comp, Fintype.sum_sigma]
-  refine Finset.sum_congr rfl fun M _ ↦ ?_
-  let f : ℕ+ → ℕ := fun m ↦ Module.finrank ℂ (cuspFormsNew (m : ℕ) k)
-  exact (Finset.sum_congr rfl fun d _ ↦
-    congrArg f (fst_val_pnatMulDvdEquivSigma_symm_apply ⟨M, d⟩)).trans (by simp [f])
+  simp_rw [finrank_map_levelRaiseₗ]
+  simpa only [smul_eq_mul] using
+    sum_pnatMulDvd_eq_sum_card_divisors_smul (N := N)
+      (fun m ↦ Module.finrank ℂ (cuspFormsNew (m : ℕ) k))
 
 /-- **Divisor-count dimension formula for `S_k(N, χ)`** (Diamond–Shurman, Theorem 5.8.3):
 `dim S_k(N, χ) = ∑_{cond(χ) ∣ M ∣ N} #(N / M).divisors * dim S_k(M, χ_M)ⁿᵉʷ`. -/
@@ -99,48 +97,16 @@ theorem finrank_cuspFormCharSpace_eq_sum_dite_card_divisors_mul {N : ℕ} [NeZer
               (DirichletCharacter.changeLevel h
                 (DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ))).toUnitHom)
         else 0 := by
-  let c := DirichletCharacter.conductor (MulChar.ofUnitHom χ)
-  let ψ₀ := DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ)
   rw [← iSup_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace N k χ,
     finrank_iSup_eq_sum_finrank_of_iSupIndep
       (iSupIndep_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace N k χ)]
-  have hmap (p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N ∧ c ∣ p.1}) :
-      Module.finrank ℂ ↥((cuspFormsNew p.1.1 k ⊓ cuspFormCharSpace k
-        (DirichletCharacter.changeLevel p.2.2 ψ₀).toUnitHom).map
-        (CuspForm.levelRaiseₗ p.1.2 (Gamma1_map_le_conjAct_scaleGL_of_dvd p.2.1))) =
-        Module.finrank ℂ ↥(cuspFormsNew p.1.1 k ⊓
-          cuspFormCharSpace k (DirichletCharacter.changeLevel p.2.2 ψ₀).toUnitHom) :=
-    (Submodule.equivMapOfInjective _
-      (CuspForm.levelRaiseₗ_injective p.1.2
-        (Gamma1_map_le_conjAct_scaleGL_of_dvd p.2.1)) _).finrank_eq.symm
-  dsimp only [c, ψ₀] at hmap
-  simp_rw [hmap]
-  -- Reindex `(M, d)` with `d * M ∣ N` and `c ∣ M` as a sigma over `{M // c ∣ M}` and
-  -- `(N / M).divisors`, then sum the constant fiber and rewrite as a `dite` over all `M ∣ N`.
-  rw [← (pnatMulDvdAndEquivSigma N (fun M : ℕ+ ↦ c ∣ (M : ℕ))).symm.sum_comp,
-    Fintype.sum_sigma]
-  let f : {m : ℕ+ // c ∣ (m : ℕ)} → ℕ := fun m ↦
-    Module.finrank ℂ ↥(cuspFormsNew (m.1 : ℕ) k ⊓
-      cuspFormCharSpace k (DirichletCharacter.changeLevel m.2 ψ₀).toUnitHom)
-  have hinner (M : {M : {M : ℕ+ // (M : ℕ) ∣ N} // c ∣ M.1}) :
-      (∑ d : (N / M.1.1).divisors,
-        f ⟨((pnatMulDvdAndEquivSigma N (fun M : ℕ+ ↦ c ∣ (M : ℕ))).symm ⟨M, d⟩).1.1,
-          ((pnatMulDvdAndEquivSigma N (fun M : ℕ+ ↦ c ∣ (M : ℕ))).symm ⟨M, d⟩).2.2⟩) =
-        #(N / M.1.1).divisors * f ⟨M.1.1, M.2⟩ := by
-    have hterm (d : (N / M.1.1).divisors) :
-        f ⟨((pnatMulDvdAndEquivSigma N (fun M : ℕ+ ↦ c ∣ (M : ℕ))).symm ⟨M, d⟩).1.1,
-          ((pnatMulDvdAndEquivSigma N (fun M : ℕ+ ↦ c ∣ (M : ℕ))).symm ⟨M, d⟩).2.2⟩ =
-          f ⟨M.1.1, M.2⟩ :=
-      congrArg f (Subtype.ext
-        (fst_val_pnatMulDvdAndEquivSigma_symm_apply (P := fun M : ℕ+ ↦ c ∣ (M : ℕ)) ⟨M, d⟩))
-    rw [Finset.sum_congr rfl fun d _ ↦ hterm d, Finset.sum_const, Finset.card_univ,
-      Fintype.card_coe, smul_eq_mul]
-  rw [Finset.sum_congr rfl fun M _ ↦ hinner M, Finset.sum_dite, Finset.sum_const_zero, add_zero]
-  let e : {x : {M : ℕ+ // (M : ℕ) ∣ N} //
-      x ∈ ({x ∈ Finset.univ | c ∣ (x.1 : ℕ)} : Finset {M : ℕ+ // (M : ℕ) ∣ N})} ≃
-      {M : {M : ℕ+ // (M : ℕ) ∣ N} // c ∣ (M.1 : ℕ)} :=
-    Equiv.subtypeEquivRight fun x ↦ Finset.mem_filter_univ x
-  exact (e.sum_comp fun M ↦ #(N / M.1.1).divisors * f ⟨M.1.1, M.2⟩).symm
+  simp_rw [finrank_map_levelRaiseₗ]
+  simpa only [smul_eq_mul] using
+    sum_pnatMulDvdAnd_eq_sum_dite_card_divisors_smul
+      (N := N) (fun M : ℕ+ ↦ DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ M)
+      (fun M h ↦ Module.finrank ℂ ↥(cuspFormsNew M k ⊓ cuspFormCharSpace k
+        (DirichletCharacter.changeLevel h
+          (DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ))).toUnitHom))
 
 /-- **Divisor-count dimension formula for `S_k(Γ₀(N))`**:
 `dim S_k(Γ₀(N)) = ∑_{M ∣ N} #(N / M).divisors * dim S_k(M, 1)ⁿᵉʷ`. -/

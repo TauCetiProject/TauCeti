@@ -9,6 +9,7 @@ public import Mathlib.Data.Fintype.Sigma
 public import Mathlib.Data.PNat.Defs
 public import Mathlib.NumberTheory.Divisors
 import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 
@@ -40,7 +41,10 @@ by their sum and by a positive square discriminant.
 `TauCeti.pnatMulDvdEquivSigma`, and `TauCeti.pnatMulDvdAndEquivSigma` identify positive divisors
 `{M : ℕ+ // (M : ℕ) ∣ N}` with `N.divisors` and positive divisor pairs
 `{p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}` (and its filtered subtypes) with sigma types over
-`(N / M).divisors`, providing `Fintype` instances on these subtypes.
+`(N / M).divisors`, providing `Fintype` instances on these subtypes and collapsing sums that
+depend only on `M` to `#(N / M).divisors`-weighted divisor sums
+(`TauCeti.sum_pnatMulDvd_eq_sum_card_divisors_smul`,
+`TauCeti.sum_pnatMulDvdAnd_eq_sum_dite_card_divisors_smul`).
 -/
 
 public section
@@ -228,6 +232,8 @@ end Int
 
 namespace TauCeti
 
+open Finset
+
 variable {N : ℕ} [NeZero N]
 
 /-- Divisors greater than one correspond to positive divisors other than the unit divisor. -/
@@ -324,6 +330,16 @@ instance instFintypePNatMulDvd (N : ℕ) [NeZero N] :
     Fintype {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N} :=
   Fintype.ofEquiv _ (pnatMulDvdEquivSigma N).symm
 
+/-- Summing a function of `M` over positive integer pairs `(M, d)` with `d * M ∣ N` weights each
+positive divisor `M ∣ N` by `#(N / M).divisors`. -/
+theorem sum_pnatMulDvd_eq_sum_card_divisors_smul {A : Type*} [AddCommMonoid A] (F : ℕ+ → A) :
+    (∑ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, F p.1.1) =
+      ∑ M : {M : ℕ+ // (M : ℕ) ∣ N}, #(N / M.1).divisors • F M.1 := by
+  rw [← (pnatMulDvdEquivSigma N).symm.sum_comp, Fintype.sum_sigma]
+  refine Finset.sum_congr rfl fun M _ ↦ ?_
+  exact (Finset.sum_congr rfl fun d _ ↦
+    congrArg F (fst_val_pnatMulDvdEquivSigma_symm_apply ⟨M, d⟩)).trans (by simp)
+
 /-- For `N ≠ 0` and a decidable predicate `P`, the subtype of positive divisor pairs `(M, d)` with
 `d * M ∣ N` and `P (M, d)` is finite. -/
 instance instFintypePNatMulDvdAnd (N : ℕ) [NeZero N] (P : ℕ+ × ℕ+ → Prop) [DecidablePred P] :
@@ -372,5 +388,31 @@ theorem coe_snd_val_pnatMulDvdAndEquivSigma_symm_apply {P : ℕ+ → Prop}
     (x : Σ M : {M : {M : ℕ+ // (M : ℕ) ∣ N} // P M.1}, (N / M.1.1).divisors) :
     (((pnatMulDvdAndEquivSigma N P).symm x).1.2 : ℕ) = x.2 :=
   (rfl)
+
+/-- Summing a function of `(M, hM)` over positive integer pairs `(M, d)` with `d * M ∣ N` and
+`P M` gives the `dite` sum over positive divisors `M ∣ N` weighted by `#(N / M).divisors`. -/
+theorem sum_pnatMulDvdAnd_eq_sum_dite_card_divisors_smul {A : Type*} [AddCommMonoid A]
+    (P : ℕ+ → Prop) [DecidablePred P] (F : ∀ M : ℕ+, P M → A) :
+    (∑ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N ∧ P p.1}, F p.1.1 p.2.2) =
+      ∑ M : {M : ℕ+ // (M : ℕ) ∣ N},
+        if h : P M.1 then #(N / M.1).divisors • F M.1 h else 0 := by
+  let f : {m : ℕ+ // P m} → A := fun m ↦ F m.1 m.2
+  have hinner (M : {M : {M : ℕ+ // (M : ℕ) ∣ N} // P M.1}) :
+      (∑ d : (N / M.1.1).divisors,
+        f ⟨((pnatMulDvdAndEquivSigma N P).symm ⟨M, d⟩).1.1,
+          ((pnatMulDvdAndEquivSigma N P).symm ⟨M, d⟩).2.2⟩) =
+        #(N / M.1.1).divisors • f ⟨M.1.1, M.2⟩ := by
+    have hterm (d : (N / M.1.1).divisors) :
+        f ⟨((pnatMulDvdAndEquivSigma N P).symm ⟨M, d⟩).1.1,
+          ((pnatMulDvdAndEquivSigma N P).symm ⟨M, d⟩).2.2⟩ = f ⟨M.1.1, M.2⟩ :=
+      congrArg f (Subtype.ext (fst_val_pnatMulDvdAndEquivSigma_symm_apply ⟨M, d⟩))
+    rw [Finset.sum_congr rfl fun d _ ↦ hterm d, Finset.sum_const, Finset.card_univ,
+      Fintype.card_coe]
+  rw [← (pnatMulDvdAndEquivSigma N P).symm.sum_comp, Fintype.sum_sigma,
+    Finset.sum_congr rfl fun M _ ↦ hinner M, Finset.sum_dite, Finset.sum_const_zero, add_zero]
+  let e : {x : {M : ℕ+ // (M : ℕ) ∣ N} // x ∈ ({x ∈ Finset.univ | P x.1} : Finset _)} ≃
+      {M : {M : ℕ+ // (M : ℕ) ∣ N} // P M.1} :=
+    Equiv.subtypeEquivRight fun x ↦ Finset.mem_filter_univ x
+  exact (e.sum_comp fun M ↦ #(N / M.1.1).divisors • f ⟨M.1.1, M.2⟩).symm
 
 end TauCeti
