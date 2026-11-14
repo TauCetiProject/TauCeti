@@ -123,6 +123,7 @@ theorem adjointWeightSpace_root_eq_span
     erw [map_smul, map_smul, tangentMatrix_cotangentLinearEquiv_rootVector]
 
 /-- The distinguished matrix entry of `c • rootVector p` is the scalar `c`. -/
+@[simp]
 theorem tangentMatrix_cotangentLinearEquiv_smul_rootVector_apply
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) (c : R) :
     (tangentMatrix (r + 1)
