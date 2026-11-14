@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.StdBasis
-public import TauCeti.Algebra.Cellular.Basic
+public import TauCeti.Algebra.Cellular.CellModule
 
 /-!
 # The cellular basis of a matrix algebra
@@ -18,7 +18,8 @@ axiom `a * single s t 1 = ∑ u, a u s • single u t 1` holds on the nose.
 
 The cell representation of this cellular basis is the identity of `Matrix n n R`, and its Gram
 matrix is the identity matrix, because `single s t 1 * single u v 1` is `single s v 1` when
-`t = u` and zero otherwise.
+`t = u` and zero otherwise. Consequently, its cell radical is trivial and its cell bilinear form is
+nondegenerate (and nonzero whenever `R` is nontrivial and `n` is nonempty).
 
 ## Main definitions
 
@@ -28,6 +29,9 @@ matrix is the identity matrix, because `single s t 1 * single u v 1` is `single 
 
 * `TauCeti.CellularBasis.cellRep_matrix`: its cell representation is the identity.
 * `TauCeti.CellularBasis.gramMatrix_matrix`: its Gram matrix is the identity matrix.
+* `TauCeti.CellularBasis.cellRadical_matrix`, `TauCeti.CellularBasis.nondegenerate_cellForm_matrix`,
+  `TauCeti.CellularBasis.cellForm_matrix_ne_zero`: its cell radical is `⊥` and its cell form is
+  nondegenerate (and nonzero when `[Nontrivial R]` and `[Nonempty n]`).
 
 ## References
 
@@ -87,5 +91,28 @@ theorem gramMatrix_matrix : (matrix R n).gramMatrix () = 1 := by
   ext t u
   simpa [Matrix.one_apply, Matrix.single_apply] using
     ((matrix R n).cellRep_basis () t t u t).symm
+
+/-- The single cell of `CellularBasis.matrix R n` has trivial cell radical over any commutative
+ring `R`. -/
+@[simp]
+theorem cellRadical_matrix : (matrix R n).cellRadical () = ⊥ := by
+  rw [Submodule.eq_bot_iff]
+  intro x hx
+  apply ((matrix R n).cellModuleEquiv ()).injective
+  ext i
+  have h0 := ((matrix R n).mem_cellRadical () x).mp hx ((matrix R n).cellBasis () i)
+  simpa [cellForm_apply, dotProduct, Matrix.one_apply] using h0
+
+/-- Over any commutative ring `R`, the single cell of `CellularBasis.matrix R n` has nondegenerate
+bilinear form. -/
+theorem nondegenerate_cellForm_matrix : ((matrix R n).cellForm ()).Nondegenerate :=
+  ((matrix R n).nondegenerate_cellForm_iff_cellRadical_eq_bot ()).mpr cellRadical_matrix
+
+/-- Over a nontrivial commutative ring `R` and nonempty finite index type `n`, the single cell of
+`CellularBasis.matrix R n` has nonzero bilinear form. -/
+theorem cellForm_matrix_ne_zero [Nontrivial R] [Nonempty n] :
+    (matrix R n).cellForm () ≠ 0 := by
+  rw [ne_eq, (matrix R n).cellForm_eq_zero_iff, gramMatrix_matrix]
+  exact one_ne_zero
 
 end TauCeti.CellularBasis

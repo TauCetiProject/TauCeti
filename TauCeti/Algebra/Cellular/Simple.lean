@@ -21,12 +21,13 @@ bilinear forms `d.cellForm μ`:
   multiplication from `K` (`TauCeti.CellularBasis.endCellModuleQuotientAlgEquiv`), without assuming
   that `K` is algebraically closed.
 * **Triangularity of homomorphisms (Proposition 3.2):** a nonzero `B`-linear map from
-  `d.CellModule ν` into `L(μ)` (with `d.cellForm μ ≠ 0`) forces `ν = μ ∨ ν < μ`
+  `d.CellModule ν` into `d.CellModule μ ⧸ d.cellRadical μ` forces `ν = μ ∨ ν < μ`
   (`TauCeti.CellularBasis.eq_or_lt_of_linearMap_cellModule_quotient_ne_zero`).
 * **Pairwise non-isomorphism (Theorem 3.4(i)):** for cells with nonzero form, `L(μ)` and `L(ν)` are
   `B`-linearly equivalent if and only if `μ = ν`
-  (`TauCeti.CellularBasis.nonempty_cellModule_quotient_linearEquiv_iff`), and the hom space between
-  distinct simple cell quotients is a subsingleton.
+  (`TauCeti.CellularBasis.nonempty_cellModule_quotient_linearEquiv_iff`), and for any `ν ≠ μ` the
+  hom space between `d.CellModule ν ⧸ d.cellRadical ν` and `d.CellModule μ ⧸ d.cellRadical μ` is a
+  subsingleton (`TauCeti.CellularBasis.subsingleton_linearMap_cellModule_quotient_of_ne`).
 * **Exhaustiveness (Theorem 3.4(ii)):** when `<` on `Λ` is well-founded (in particular for any
   finite cell preorder), every simple `B`-module is `B`-linearly equivalent to `L(μ)` for a unique
   cell `μ` with `d.cellForm μ ≠ 0`
@@ -50,11 +51,8 @@ module (`TauCeti.CellularBasis.not_isSimpleModule_matrix_int_cellModule_quotient
 
 ## Main results
 
-* `TauCeti.CellularBasis.cellRep_basis_of_ne`, `TauCeti.CellularBasis.basis_smul_eq_zero_of_ne`:
-  basis vectors of a cell `ν ≠ μ` with `¬ μ < ν` annihilate `c.CellModule μ`.
 * `TauCeti.CellularBasis.eq_or_lt_of_linearMap_cellModule_quotient_ne_zero`: a nonzero map
-  `d.CellModule ν →ₗ[B] d.CellModule μ ⧸ d.cellRadical μ` with `d.cellForm μ ≠ 0` implies
-  `ν = μ ∨ ν < μ`.
+  `d.CellModule ν →ₗ[B] d.CellModule μ ⧸ d.cellRadical μ` implies `ν = μ ∨ ν < μ`.
 * `TauCeti.CellularBasis.nonempty_cellModule_quotient_linearEquiv_iff`: simple cell quotients at
   `μ` and `ν` are isomorphic if and only if `μ = ν`.
 * `TauCeti.CellularBasis.existsUnique_cellForm_ne_zero_and_nonempty_linearEquiv`: every simple
@@ -80,46 +78,6 @@ section CommRing
 variable {R A Λ : Type*} [CommRing R] [Ring A] [Algebra R A] [Preorder Λ]
   {M : Λ → Type*} [∀ μ, Fintype (M μ)] [∀ μ, DecidableEq (M μ)]
   (c : CellularBasis R A M)
-
-/-- The matrix of `c.cellForm μ` in the standard cell basis `c.cellBasis μ` is `c.gramMatrix μ`. -/
-@[simp]
-theorem toMatrix_cellBasis_cellForm (μ : Λ) :
-    LinearMap.BilinForm.toMatrix (c.cellBasis μ) (c.cellForm μ) = c.gramMatrix μ := by
-  ext s t
-  simp
-
-/-- The cell bilinear form vanishes if and only if its Gram matrix vanishes. -/
-theorem cellForm_eq_zero_iff (μ : Λ) : c.cellForm μ = 0 ↔ c.gramMatrix μ = 0 := by
-  rw [← (LinearMap.BilinForm.toMatrix (c.cellBasis μ)).map_eq_zero_iff,
-    toMatrix_cellBasis_cellForm]
-
-/-- A cell with nonzero bilinear form has a nonzero entry in its Gram matrix. -/
-theorem exists_gramMatrix_ne_zero {μ : Λ} (h : c.cellForm μ ≠ 0) :
-    ∃ s t : M μ, c.gramMatrix μ s t ≠ 0 := by
-  have hg : c.gramMatrix μ ≠ 0 := mt (c.cellForm_eq_zero_iff μ).mpr h
-  by_contra! h0
-  exact hg (Matrix.ext fun s t ↦ h0 s t)
-
-/-- A cellular basis vector from a cell `ν ≠ μ` not strictly above `μ` acts by zero in the cell
-representation at `μ`. -/
-theorem cellRep_basis_of_ne {μ ν : Λ} (hne : ν ≠ μ) (hnlt : ¬ μ < ν) (x y : M ν) :
-    c.cellRep μ (c.basis ⟨ν, x, y⟩) = 0 := by
-  have hsum (r : M ν → R) (u s : M μ) :
-      c.basis.repr (∑ v, r v • c.basis ⟨ν, x, v⟩) ⟨μ, u, s⟩ = 0 := by
-    simp [hne]
-  ext u s
-  rw [Matrix.zero_apply, cellRep_apply]
-  have hsub := c.basis_mul_sub_sum_mem (c.basis ⟨μ, s, s⟩) ν x y
-  have hzero := c.mem_lowerSpan_iff.1 hsub ⟨μ, u, s⟩ hnlt
-  rw [map_sub, Finsupp.sub_apply, sub_eq_zero] at hzero
-  exact hzero.trans (hsum _ u s)
-
-/-- A cellular basis vector from a cell `ν ≠ μ` not strictly above `μ` annihilates
-`c.CellModule μ`. -/
-theorem basis_smul_eq_zero_of_ne {μ ν : Λ} (hne : ν ≠ μ) (hnlt : ¬ μ < ν) (x y : M ν)
-    (w : c.CellModule μ) : c.basis ⟨ν, x, y⟩ • w = 0 := by
-  apply (c.cellModuleEquiv μ).injective
-  rw [cellModuleEquiv_smul, c.cellRep_basis_of_ne hne hnlt, Matrix.zero_mulVec, map_zero]
 
 /-- Given a left `A`-module `S`, an index `t₀ : M μ`, and a vector `x₀ : S` annihilated by
 `c.lowerSpan μ`, standard coordinates induce an `A`-linear homomorphism `c.CellModule μ →ₗ[A] S`
@@ -168,30 +126,21 @@ theorem cellModuleHom_cellBasis {S : Type*} [AddCommGroup S] [Module A S] {μ : 
 
 end CommRing
 
-section PartialOrder
-
-variable {R A Λ : Type*} [CommRing R] [Ring A] [Algebra R A] [PartialOrder Λ]
-  {M : Λ → Type*} [∀ μ, Fintype (M μ)] [∀ μ, DecidableEq (M μ)]
-  (c : CellularBasis R A M)
-
-/-- Over a partial order of cells, `c.basis ⟨ν, x, y⟩` acts as zero at `μ` whenever `¬ μ ≤ ν`. -/
-theorem cellRep_basis_of_not_le {μ ν : Λ} (h : ¬ μ ≤ ν) (x y : M ν) :
-    c.cellRep μ (c.basis ⟨ν, x, y⟩) = 0 :=
-  c.cellRep_basis_of_ne (fun hEq ↦ h hEq.ge) (fun hlt ↦ h hlt.le) x y
-
-/-- Over a partial order of cells, `c.basis ⟨ν, x, y⟩` annihilates `c.CellModule μ` whenever
-`¬ μ ≤ ν`. -/
-theorem basis_smul_eq_zero_of_not_le {μ ν : Λ} (h : ¬ μ ≤ ν) (x y : M ν)
-    (w : c.CellModule μ) : c.basis ⟨ν, x, y⟩ • w = 0 :=
-  c.basis_smul_eq_zero_of_ne (fun hEq ↦ h hEq.ge) (fun hlt ↦ h hlt.le) x y w
-
-end PartialOrder
-
 section Field
 
 variable {K B Λ : Type*} [Field K] [Ring B] [Algebra K B] [Preorder Λ]
   {M : Λ → Type*} [∀ μ, Fintype (M μ)] [∀ μ, DecidableEq (M μ)]
   (d : CellularBasis K B M)
+
+/-- A cell with nonzero form admits indices `s t : M μ` such that `d.gramMatrix μ s t ≠ 0` and the
+image of `d.cellBasis μ t` in `d.CellModule μ ⧸ d.cellRadical μ` is nonzero. -/
+private theorem exists_gramMatrix_ne_zero_and_mk_ne_zero {μ : Λ} (h : d.cellForm μ ≠ 0) :
+    ∃ s t : M μ, d.gramMatrix μ s t ≠ 0 ∧
+      (Submodule.Quotient.mk (d.cellBasis μ t) : d.CellModule μ ⧸ d.cellRadical μ) ≠ 0 := by
+  obtain ⟨s, t, hst⟩ := d.exists_gramMatrix_ne_zero h
+  have ht : d.cellBasis μ t ∉ d.cellRadical μ := fun hrad ↦
+    hst (by rw [← d.cellForm_cellBasis, (d.isSymm_cellForm μ).eq, (d.mem_cellRadical μ _).mp hrad])
+  exact ⟨s, t, hst, mt (Submodule.Quotient.mk_eq_zero (d.cellRadical μ)).mp ht⟩
 
 /-- **Graham–Lehrer Proposition 2.6 (scalar endomorphisms).** Over any field `K`, if
 `d.cellForm μ ≠ 0`, the structure map `K → Module.End B (d.CellModule μ ⧸ d.cellRadical μ)` is
@@ -202,11 +151,8 @@ theorem algebraMap_end_cellModule_quotient_bijective {μ : Λ} (h : d.cellForm �
   have hsimple : IsSimpleModule B Q := (d.isSimpleModule_cellModule_quotient_iff μ).mpr h
   have : Nontrivial Q := IsSimpleModule.nontrivial B Q
   refine ⟨(algebraMap K (Module.End B Q)).injective, fun f ↦ ?_⟩
-  obtain ⟨s, t, hst⟩ := d.exists_gramMatrix_ne_zero h
-  have ht : d.cellBasis μ t ∉ d.cellRadical μ := fun hrad ↦
-    hst (by rw [← d.cellForm_cellBasis, (d.isSymm_cellForm μ).eq, (d.mem_cellRadical μ _).mp hrad])
+  obtain ⟨s, t, hst, hq⟩ := d.exists_gramMatrix_ne_zero_and_mk_ne_zero h
   let q : Q := Submodule.Quotient.mk (d.cellBasis μ t)
-  have hq : q ≠ 0 := mt (Submodule.Quotient.mk_eq_zero (d.cellRadical μ)).mp ht
   obtain ⟨y, hy⟩ := Submodule.Quotient.mk_surjective (d.cellRadical μ) (f q)
   let r : K := (d.gramMatrix μ s t)⁻¹ * d.cellForm μ (d.cellBasis μ s) y
   have hfq : f q = r • q := by
@@ -218,7 +164,7 @@ theorem algebraMap_end_cellModule_quotient_bijective {μ : Λ} (h : d.cellForm �
     simpa [r, q, smul_smul, hst] using congrArg ((d.gramMatrix μ s t)⁻¹ • ·) hact
   refine ⟨r, ?_⟩
   have hker : ¬ Function.Injective (f - algebraMap K (Module.End B Q) r) := fun hinj ↦
-    hq (hinj (by simp [hfq, Algebra.algebraMap_eq_smul_one]))
+    hq (hinj (by simp [q, hfq, Algebra.algebraMap_eq_smul_one]))
   rcases (f - algebraMap K (Module.End B Q) r).bijective_or_eq_zero with ⟨hinj, -⟩ | hzero
   · exact (hker hinj).elim
   · exact (sub_eq_zero.mp hzero).symm
@@ -253,18 +199,19 @@ theorem finrank_end_cellModule_quotient {μ : Λ} (h : d.cellForm μ ≠ 0) :
     Module.finrank K (Module.End B (d.CellModule μ ⧸ d.cellRadical μ)) = 1 := by
   rw [(d.endCellModuleQuotientAlgEquiv h).toLinearEquiv.finrank_eq, Module.finrank_self]
 
-/-- **Graham–Lehrer Proposition 3.2 (ordering of homomorphisms).** If `d.cellForm μ ≠ 0` and
+/-- **Graham–Lehrer Proposition 3.2 (ordering of homomorphisms).** If
 `f : d.CellModule ν →ₗ[B] d.CellModule μ ⧸ d.cellRadical μ` is nonzero, then `ν = μ ∨ ν < μ`. -/
-theorem eq_or_lt_of_linearMap_cellModule_quotient_ne_zero {μ ν : Λ} (hμ : d.cellForm μ ≠ 0)
+theorem eq_or_lt_of_linearMap_cellModule_quotient_ne_zero {μ ν : Λ}
     {f : d.CellModule ν →ₗ[B] d.CellModule μ ⧸ d.cellRadical μ} (hf : f ≠ 0) :
     ν = μ ∨ ν < μ := by
+  have hμ : d.cellForm μ ≠ 0 := fun h0 ↦ hf <| by
+    have : Subsingleton (d.CellModule μ ⧸ d.cellRadical μ) :=
+      Submodule.Quotient.subsingleton_iff.mpr ((d.cellRadical_eq_top_iff μ).mpr h0)
+    exact Subsingleton.elim f 0
   have : IsSimpleModule B (d.CellModule μ ⧸ d.cellRadical μ) :=
     (d.isSimpleModule_cellModule_quotient_iff μ).mpr hμ
-  obtain ⟨s, t, hst⟩ := d.exists_gramMatrix_ne_zero hμ
-  have ht : d.cellBasis μ t ∉ d.cellRadical μ := fun hrad ↦
-    hst (by rw [← d.cellForm_cellBasis, (d.isSymm_cellForm μ).eq, (d.mem_cellRadical μ _).mp hrad])
+  obtain ⟨s, t, hst, hq⟩ := d.exists_gramMatrix_ne_zero_and_mk_ne_zero hμ
   let q : d.CellModule μ ⧸ d.cellRadical μ := Submodule.Quotient.mk (d.cellBasis μ t)
-  have hq : q ≠ 0 := mt (Submodule.Quotient.mk_eq_zero (d.cellRadical μ)).mp ht
   obtain ⟨w, hw⟩ := f.surjective_of_ne_zero hf q
   by_contra! h
   have hact : f (d.basis ⟨μ, t, s⟩ • w) = d.gramMatrix μ s t • q := by
@@ -282,7 +229,6 @@ theorem isEmpty_cellModule_quotient_linearEquiv_of_ne {μ ν : Λ} (hμ : d.cell
   have hsm : IsSimpleModule B (d.CellModule μ ⧸ d.cellRadical μ) :=
     (d.isSimpleModule_cellModule_quotient_iff μ).mpr hμ
   have hsn : IsSimpleModule B (d.CellModule ν ⧸ d.cellRadical ν) := IsSimpleModule.congr e.symm
-  have hν : d.cellForm ν ≠ 0 := (d.isSimpleModule_cellModule_quotient_iff ν).mp hsn
   have hf₁ : e.toLinearMap ∘ₗ (d.cellRadical μ).mkQ ≠ 0 := by
     have : Nontrivial (d.CellModule ν ⧸ d.cellRadical ν) := IsSimpleModule.nontrivial B _
     exact LinearMap.ne_zero_of_surjective (e.surjective.comp (Submodule.Quotient.mk_surjective _))
@@ -290,8 +236,8 @@ theorem isEmpty_cellModule_quotient_linearEquiv_of_ne {μ ν : Λ} (hμ : d.cell
     have : Nontrivial (d.CellModule μ ⧸ d.cellRadical μ) := IsSimpleModule.nontrivial B _
     exact LinearMap.ne_zero_of_surjective
       (e.symm.surjective.comp (Submodule.Quotient.mk_surjective _))
-  have h₁ := (d.eq_or_lt_of_linearMap_cellModule_quotient_ne_zero hν hf₁).resolve_left hne
-  have h₂ := (d.eq_or_lt_of_linearMap_cellModule_quotient_ne_zero hμ hf₂).resolve_left hne.symm
+  have h₁ := (d.eq_or_lt_of_linearMap_cellModule_quotient_ne_zero hf₁).resolve_left hne
+  have h₂ := (d.eq_or_lt_of_linearMap_cellModule_quotient_ne_zero hf₂).resolve_left hne.symm
   exact lt_asymm h₁ h₂
 
 /-- **Graham–Lehrer Theorem 3.4(i) (pairwise non-isomorphism).** For `d.cellForm μ ≠ 0`, the simple
@@ -305,11 +251,18 @@ theorem nonempty_cellModule_quotient_linearEquiv_iff {μ ν : Λ} (hμ : d.cellF
   rintro rfl
   exact ⟨LinearEquiv.refl B _⟩
 
-/-- For distinct cells with nonzero bilinear forms, every `B`-linear map between their simple
-quotients is zero. -/
-theorem subsingleton_linearMap_cellModule_quotient_of_ne {μ ν : Λ}
-    (hν : d.cellForm ν ≠ 0) (hμ : d.cellForm μ ≠ 0) (hne : ν ≠ μ) :
+/-- For distinct cells `ν ≠ μ`, the space of `B`-linear maps from `d.CellModule ν ⧸ d.cellRadical ν`
+to `d.CellModule μ ⧸ d.cellRadical μ` is a subsingleton. -/
+theorem subsingleton_linearMap_cellModule_quotient_of_ne {μ ν : Λ} (hne : ν ≠ μ) :
     Subsingleton ((d.CellModule ν ⧸ d.cellRadical ν) →ₗ[B] (d.CellModule μ ⧸ d.cellRadical μ)) := by
+  by_cases hν : d.cellForm ν = 0
+  · have : Subsingleton (d.CellModule ν ⧸ d.cellRadical ν) :=
+      Submodule.Quotient.subsingleton_iff.mpr ((d.cellRadical_eq_top_iff ν).mpr hν)
+    exact ⟨fun f g ↦ LinearMap.ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, map_zero]⟩
+  by_cases hμ : d.cellForm μ = 0
+  · have : Subsingleton (d.CellModule μ ⧸ d.cellRadical μ) :=
+      Submodule.Quotient.subsingleton_iff.mpr ((d.cellRadical_eq_top_iff μ).mpr hμ)
+    infer_instance
   have : IsSimpleModule B (d.CellModule ν ⧸ d.cellRadical ν) :=
     (d.isSimpleModule_cellModule_quotient_iff ν).mpr hν
   have : IsSimpleModule B (d.CellModule μ ⧸ d.cellRadical μ) :=
@@ -401,9 +354,8 @@ theorem algebraMap_end_bijective_of_isSimpleModule (d : CellularBasis K B M) (S 
   classical
   obtain ⟨μ, hμ, ⟨e⟩⟩ := d.exists_cellForm_ne_zero_and_nonempty_linearEquiv S
   have hcomp : algebraMap K (Module.End B S) =
-      (e.conjAlgEquiv K) ∘ algebraMap K (Module.End B (d.CellModule μ ⧸ d.cellRadical μ)) := by
-    ext k s
-    exact ((e.conjAlgEquiv K).commutes k).symm ▸ rfl
+      (e.conjAlgEquiv K) ∘ algebraMap K (Module.End B (d.CellModule μ ⧸ d.cellRadical μ)) :=
+    funext fun k ↦ by rw [Function.comp_apply, AlgEquiv.commutes]
   rw [hcomp]
   exact (e.conjAlgEquiv K).bijective.comp (d.algebraMap_end_cellModule_quotient_bijective hμ)
 
@@ -454,39 +406,15 @@ variable {K B Λ : Type*} [Field K] [Ring B] [Algebra K B] [PartialOrder Λ]
   (d : CellularBasis K B M)
 
 /-- Partial-order form of `eq_or_lt_of_linearMap_cellModule_quotient_ne_zero`: a nonzero `B`-linear
-map `d.CellModule ν →ₗ[B] d.CellModule μ ⧸ d.cellRadical μ` with `d.cellForm μ ≠ 0` implies
-`ν ≤ μ`. -/
-theorem le_of_linearMap_cellModule_quotient_ne_zero {μ ν : Λ} (hμ : d.cellForm μ ≠ 0)
+map `d.CellModule ν →ₗ[B] d.CellModule μ ⧸ d.cellRadical μ` implies `ν ≤ μ`. -/
+theorem le_of_linearMap_cellModule_quotient_ne_zero {μ ν : Λ}
     {f : d.CellModule ν →ₗ[B] d.CellModule μ ⧸ d.cellRadical μ} (hf : f ≠ 0) :
     ν ≤ μ := by
-  rcases d.eq_or_lt_of_linearMap_cellModule_quotient_ne_zero hμ hf with rfl | hlt
+  rcases d.eq_or_lt_of_linearMap_cellModule_quotient_ne_zero hf with rfl | hlt
   · exact le_rfl
   · exact hlt.le
 
 end FieldPartialOrder
-
-section Matrix
-
-/-- The single cell of `CellularBasis.matrix R n` has trivial cell radical over any commutative
-ring `R`. -/
-@[simp]
-theorem cellRadical_matrix {R n : Type*} [CommRing R] [Fintype n] [DecidableEq n] :
-    (CellularBasis.matrix R n).cellRadical () = ⊥ := by
-  rw [Submodule.eq_bot_iff]
-  intro x hx
-  apply ((CellularBasis.matrix R n).cellModuleEquiv ()).injective
-  ext i
-  have h0 := ((CellularBasis.matrix R n).mem_cellRadical () x).mp hx
-    ((CellularBasis.matrix R n).cellBasis () i)
-  simpa [cellForm_apply, dotProduct, Matrix.one_apply] using h0
-
-/-- Over a nontrivial commutative ring `R` and nonempty finite index type `n`, the single cell of
-`CellularBasis.matrix R n` has nonzero bilinear form. -/
-theorem cellForm_matrix_ne_zero {R n : Type*} [CommRing R] [Nontrivial R] [Fintype n]
-    [DecidableEq n] [Nonempty n] :
-    (CellularBasis.matrix R n).cellForm () ≠ 0 := by
-  rw [ne_eq, (CellularBasis.matrix R n).cellForm_eq_zero_iff, gramMatrix_matrix]
-  exact one_ne_zero
 
 /-- **Sharpness of the field hypothesis.** For `CellularBasis.matrix ℤ Unit` (whose cell form is
 nonzero by `cellForm_matrix_ne_zero` and whose cell radical is `⊥` by `cellRadical_matrix`), the
@@ -516,7 +444,5 @@ theorem not_isSimpleModule_matrix_int_cellModule_quotient :
     Pi.single_eq_same] at hcoord
   have : m () () * (1 + 1) = 1 := hcoord
   omega
-
-end Matrix
 
 end TauCeti.CellularBasis

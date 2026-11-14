@@ -29,7 +29,7 @@ Over an arbitrary commutative ring `R`, the cell representations `c.cellRep μ` 
 Because `c.cellForm μ` is symmetric, its nondegeneracy (`LinearMap.BilinForm.Nondegenerate`) is
 equivalent to triviality of `c.cellRadical μ` over any commutative ring, and further equivalent to
 `(c.gramMatrix μ).det ≠ 0` when `R` is an integral domain. Whenever every cell radical vanishes,
-`c.cellRepPiAlgHom` is injective (`TauCeti.CellularBasis.injective_cellRepPiAlgHom`), without any
+`c.cellRepPiAlgHom` is injective (`TauCeti.CellularBasis.cellRepPiAlgHom_injective`), without any
 finiteness hypothesis on `Λ`. Conversely, when `A` is semisimple and `R` is nontrivial, every
 nonempty cell has nonzero bilinear form
 (`TauCeti.CellularBasis.cellForm_ne_zero_of_isSemisimpleRing`).
@@ -64,12 +64,7 @@ with nondegenerate bilinear form and Gram determinant `1`, yet is not a semisimp
 
 ## Main results
 
-* `TauCeti.CellularBasis.nondegenerate_cellForm_iff_cellRadical_eq_bot`:
-  `(c.cellForm μ).Nondegenerate` holds if and only if `c.cellRadical μ = ⊥`.
-* `TauCeti.CellularBasis.nondegenerate_cellForm_iff_det_gramMatrix_ne_zero`,
-  `TauCeti.CellularBasis.cellRadical_eq_bot_iff_det_gramMatrix_ne_zero`: over an integral domain,
-  both are equivalent to `(c.gramMatrix μ).det ≠ 0`.
-* `TauCeti.CellularBasis.injective_cellRepPiAlgHom`: `c.cellRepPiAlgHom` is injective whenever
+* `TauCeti.CellularBasis.cellRepPiAlgHom_injective`: `c.cellRepPiAlgHom` is injective whenever
   `∀ μ, c.cellRadical μ = ⊥`.
 * `TauCeti.CellularBasis.isSemisimpleRing_iff_forall_cellRadical_eq_bot`,
   `TauCeti.CellularBasis.isSemisimpleRing_iff_forall_nondegenerate_cellForm`,
@@ -108,23 +103,39 @@ theorem cellRepPiAlgHom_apply (a : A) (μ : Λ) :
     c.cellRepPiAlgHom a μ = c.cellRep μ a :=
   (rfl)
 
-/-- Because `c.cellForm μ` is symmetric, it is nondegenerate (`SeparatingLeft ∧ SeparatingRight`)
-if and only if `c.cellRadical μ = ⊥`. -/
-theorem nondegenerate_cellForm_iff_cellRadical_eq_bot (μ : Λ) :
-    (c.cellForm μ).Nondegenerate ↔ c.cellRadical μ = ⊥ := by
-  rw [Submodule.eq_bot_iff]
-  refine ⟨fun h x hx ↦ h.1 x ((c.mem_cellRadical μ x).mp hx),
-    fun h ↦ ⟨fun x hx ↦ ?_, fun y hy ↦ ?_⟩⟩
-  · exact h x ((c.mem_cellRadical μ x).mpr hx)
-  · refine h y ((c.mem_cellRadical μ y).mpr fun x ↦ ?_)
-    rw [(c.isSymm_cellForm μ).eq]
-    exact hy x
+omit [∀ μ, DecidableEq (M μ)] in
+/-- Coordinates of a linear combination of standard cell basis vectors. -/
+private theorem cellModuleEquiv_sum_smul_cellBasis (μ : Λ) (r : M μ → R) (u : M μ) :
+    c.cellModuleEquiv μ (∑ s, r s • c.cellBasis μ s) u = r u := by
+  classical
+  simp [Pi.single_apply]
 
-/-- The Gram matrix `c.gramMatrix μ` is nondegenerate if and only if `c.cellRadical μ = ⊥`. -/
-theorem nondegenerate_gramMatrix_iff_cellRadical_eq_bot (μ : Λ) :
-    (c.gramMatrix μ).Nondegenerate ↔ c.cellRadical μ = ⊥ := by
-  rw [← c.toMatrix_cellBasis_cellForm μ, LinearMap.BilinForm.nondegenerate_toMatrix_iff,
-    c.nondegenerate_cellForm_iff_cellRadical_eq_bot]
+omit [∀ μ, DecidableEq (M μ)] in
+/-- Decompose `x : A` along `c.basis` into its `μ`-cell part and the remaining support terms in
+cells `ν ≠ μ`. -/
+private theorem eq_sum_cell_add_sum_support_ne [DecidableEq Λ] (x : A) (μ : Λ) :
+    x = (∑ s, ∑ t, c.basis.repr x ⟨μ, s, t⟩ • c.basis ⟨μ, s, t⟩) +
+      ∑ j ∈ (c.basis.repr x).support with j.1 ≠ μ, c.basis.repr x j • c.basis j := by
+  classical
+  have hcell : ∑ s, ∑ t, c.basis.repr x ⟨μ, s, t⟩ • c.basis ⟨μ, s, t⟩ =
+      ∑ j ∈ (c.basis.repr x).support with j.1 = μ, c.basis.repr x j • c.basis j := by
+    let T : Finset (Σ ν, M ν × M ν) := Finset.univ.image (Sigma.mk μ)
+    have himg : ∑ j ∈ T, c.basis.repr x j • c.basis j =
+        ∑ p : M μ × M μ, c.basis.repr x ⟨μ, p⟩ • c.basis ⟨μ, p⟩ := by
+      rw [Finset.sum_image (fun _ _ _ _ hp ↦ sigma_mk_injective hp)]
+    rw [← Fintype.sum_prod_type (f := fun p : M μ × M μ ↦ c.basis.repr x ⟨μ, p⟩ • c.basis ⟨μ, p⟩),
+      ← himg]
+    symm
+    refine Finset.sum_subset (fun j hj ↦ ?_) (fun j hj_img hj ↦ ?_)
+    · obtain ⟨_, rfl⟩ := Finset.mem_filter.mp hj
+      exact Finset.mem_image_of_mem _ (Finset.mem_univ j.2)
+    · rw [Finset.mem_filter, not_and_or, Finsupp.notMem_support_iff] at hj
+      rcases hj with h0 | hne
+      · rw [h0, zero_smul]
+      · obtain ⟨p, _, rfl⟩ := Finset.mem_image.mp hj_img
+        exact (hne rfl).elim
+  conv_lhs => rw [← c.basis.linearCombination_repr x, Finsupp.linearCombination_apply, Finsupp.sum]
+  rw [hcell, Finset.sum_filter_add_sum_filter_not]
 
 /-- If `x : A` acts trivially on `c.CellModule μ` and has no nonzero cellular coordinate in any
 cell strictly above `μ`, then for each row `s₀ : M μ` the vector
@@ -133,38 +144,22 @@ theorem sum_repr_cellBasis_mem_cellRadical {x : A} {μ : Λ} (hx0 : c.cellRep μ
     (hmax : ∀ j ∈ (c.basis.repr x).support, ¬ μ < j.1) (s₀ : M μ) :
     ∑ t, c.basis.repr x ⟨μ, s₀, t⟩ • c.cellBasis μ t ∈ c.cellRadical μ := by
   classical
-  let T : Finset (Σ ν, M ν × M ν) := Finset.univ.image (Sigma.mk μ)
-  have hx_sum : x = ∑ p : M μ × M μ, c.basis.repr x ⟨μ, p⟩ • c.basis ⟨μ, p⟩ +
-      ∑ j ∈ ((c.basis.repr x).support ∪ T) \ T, c.basis.repr x j • c.basis j := by
-    have hsub := Finsupp.sum_of_support_subset (c.basis.repr x)
-      (Finset.subset_union_left (s₂ := T)) (fun j r ↦ r • c.basis j)
-      (fun j _ ↦ zero_smul R (c.basis j))
-    have hexp : x = ∑ j ∈ (c.basis.repr x).support ∪ T, c.basis.repr x j • c.basis j := by
-      rw [← hsub, ← Finsupp.linearCombination_apply, c.basis.linearCombination_repr]
-    conv_lhs => rw [hexp]
-    rw [← Finset.sum_sdiff (Finset.subset_union_right (s₁ := (c.basis.repr x).support)),
-      add_comm, Finset.sum_image (fun _ _ _ _ hp ↦ sigma_mk_injective hp)]
   rw [mem_cellRadical]
   intro w
+  -- First, `x` annihilates `w` because `c.cellRep μ x = 0`.
   have hxw : x • w = 0 := by
     apply (c.cellModuleEquiv μ).injective
     rw [cellModuleEquiv_smul, hx0, Matrix.zero_mulVec, map_zero]
+  -- Split `x` into its `μ`-cell part and support terms in cells `ν ≠ μ`; the latter annihilate `w`
+  -- by `hmax` and `basis_smul_eq_zero_of_ne`.
   have hrest :
-      (∑ j ∈ ((c.basis.repr x).support ∪ T) \ T, c.basis.repr x j • c.basis j) • w = 0 := by
+      (∑ j ∈ (c.basis.repr x).support with j.1 ≠ μ, c.basis.repr x j • c.basis j) • w = 0 := by
     rw [Finset.sum_smul]
     refine Finset.sum_eq_zero fun j hj ↦ ?_
-    obtain ⟨hj_union, hj_notT⟩ := Finset.mem_sdiff.mp hj
-    have hj_supp : j ∈ (c.basis.repr x).support :=
-      (Finset.mem_union.mp hj_union).resolve_right hj_notT
-    have hne : j.1 ≠ μ := fun hEq ↦ hj_notT <| by
-      rcases j with ⟨ν, p⟩
-      cases hEq
-      exact Finset.mem_image_of_mem _ (Finset.mem_univ p)
+    obtain ⟨hj_supp, hne⟩ := Finset.mem_filter.mp hj
     rw [smul_assoc, c.basis_smul_eq_zero_of_ne hne (hmax j hj_supp), smul_zero]
-  have hcoord_sum (r : M μ → R) (u : M μ) :
-      c.cellModuleEquiv μ (∑ s, r s • c.cellBasis μ s) u = r u := by
-    simp [Pi.single_apply]
-  rw [hx_sum, add_smul, hrest, add_zero, Fintype.sum_prod_type] at hxw
+  rw [c.eq_sum_cell_add_sum_support_ne x μ, add_smul, hrest, add_zero] at hxw
+  -- Evaluate the `μ`-cell part on `w` via `basis_smul` and read off the `s₀`-coordinate.
   have hsum_eq : (∑ s, ∑ t, c.basis.repr x ⟨μ, s, t⟩ • c.basis ⟨μ, s, t⟩) • w =
       ∑ s, (∑ t, c.basis.repr x ⟨μ, s, t⟩ * c.cellForm μ (c.cellBasis μ t) w) •
         c.cellBasis μ s := by
@@ -175,12 +170,13 @@ theorem sum_repr_cellBasis_mem_cellRadical {x : A} {μ : Λ} (hx0 : c.cellRep μ
     rw [smul_assoc, c.basis_smul, smul_smul]
   rw [hsum_eq] at hxw
   have hcoord : ∑ t, c.basis.repr x ⟨μ, s₀, t⟩ * c.cellForm μ (c.cellBasis μ t) w = 0 := by
-    simpa [hcoord_sum] using congrFun (congrArg (c.cellModuleEquiv μ) hxw) s₀
+    simpa [cellModuleEquiv_sum_smul_cellBasis] using
+      congrFun (congrArg (c.cellModuleEquiv μ) hxw) s₀
   simpa [map_sum, map_smul, smul_eq_mul] using hcoord
 
 /-- Over any commutative ring, if every cell radical vanishes, the product of cell representations
 `c.cellRepPiAlgHom` is injective. -/
-theorem injective_cellRepPiAlgHom (h : ∀ μ, c.cellRadical μ = ⊥) :
+theorem cellRepPiAlgHom_injective (h : ∀ μ, c.cellRadical μ = ⊥) :
     Function.Injective c.cellRepPiAlgHom := by
   classical
   rw [injective_iff_map_eq_zero]
@@ -195,7 +191,8 @@ theorem injective_cellRepPiAlgHom (h : ∀ μ, c.cellRadical μ = ⊥) :
   have hv_rad := c.sum_repr_cellBasis_mem_cellRadical hxμ (fun _ hj ↦ hmax.not_gt hj) s₀
   have hv0 : ∑ t, c.basis.repr x ⟨μ, s₀, t⟩ • c.cellBasis μ t = 0 :=
     (Submodule.eq_bot_iff _).mp (h μ) _ hv_rad
-  exact hi₀ (by simpa [Pi.single_apply] using congrFun (congrArg (c.cellModuleEquiv μ) hv0) t₀)
+  have hcoord := congrFun (congrArg (c.cellModuleEquiv μ) hv0) t₀
+  exact hi₀ (by simpa [cellModuleEquiv_sum_smul_cellBasis] using hcoord)
 
 /-- When `c.gramMatrix μ = 0`, the `R`-span of cellular basis vectors in cells `ν < μ` or `ν = μ`
 is a left ideal `I` of `A` containing every `c.basis ⟨μ, s, t⟩` whose products land inside
@@ -265,27 +262,6 @@ theorem cellForm_ne_zero_of_isSemisimpleRing [Nontrivial R] [IsSemisimpleRing A]
 
 end CommRing
 
-section IsDomain
-
-variable {R A Λ : Type*} [CommRing R] [IsDomain R] [Ring A] [Algebra R A] [Preorder Λ]
-  {M : Λ → Type*} [∀ μ, Fintype (M μ)] [∀ μ, DecidableEq (M μ)]
-  (c : CellularBasis R A M)
-
-/-- Over an integral domain `R`, the cell bilinear form `c.cellForm μ` is nondegenerate if and only
-if its Gram determinant `(c.gramMatrix μ).det` is nonzero. -/
-theorem nondegenerate_cellForm_iff_det_gramMatrix_ne_zero (μ : Λ) :
-    (c.cellForm μ).Nondegenerate ↔ (c.gramMatrix μ).det ≠ 0 := by
-  rw [LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (c.cellBasis μ),
-    toMatrix_cellBasis_cellForm]
-
-/-- Over an integral domain `R`, `c.cellRadical μ = ⊥` if and only if `(c.gramMatrix μ).det ≠ 0`. -/
-theorem cellRadical_eq_bot_iff_det_gramMatrix_ne_zero (μ : Λ) :
-    c.cellRadical μ = ⊥ ↔ (c.gramMatrix μ).det ≠ 0 := by
-  rw [← c.nondegenerate_cellForm_iff_cellRadical_eq_bot,
-    c.nondegenerate_cellForm_iff_det_gramMatrix_ne_zero]
-
-end IsDomain
-
 section Field
 
 variable {K B Λ : Type*} [Field K] [Ring B] [Algebra K B] [Preorder Λ]
@@ -328,9 +304,9 @@ variable [Finite Λ]
 
 /-- Over a field `K` with a finite preorder `Λ` of cells, if every cell radical vanishes,
 `d.cellRepPiAlgHom` is bijective. -/
-theorem bijective_cellRepPiAlgHom_of_cellRadical_eq_bot (h : ∀ μ, d.cellRadical μ = ⊥) :
+theorem cellRepPiAlgHom_bijective_of_forall_cellRadical_eq_bot (h : ∀ μ, d.cellRadical μ = ⊥) :
     Function.Bijective d.cellRepPiAlgHom := by
-  have hinj : Function.Injective d.cellRepPiAlgHom := d.injective_cellRepPiAlgHom h
+  have hinj : Function.Injective d.cellRepPiAlgHom := d.cellRepPiAlgHom_injective h
   cases nonempty_fintype Λ
   have : FiniteDimensional K B := Module.Finite.of_basis d.basis
   have hdim : Module.finrank K B = Module.finrank K (∀ μ : Λ, Matrix (M μ) (M μ) K) := by
@@ -346,7 +322,8 @@ theorem bijective_cellRepPiAlgHom_of_cellRadical_eq_bot (h : ∀ μ, d.cellRadic
 vanishes. -/
 noncomputable def wedderburnAlgEquiv (h : ∀ μ, d.cellRadical μ = ⊥) :
     B ≃ₐ[K] ∀ μ : Λ, Matrix (M μ) (M μ) K :=
-  AlgEquiv.ofBijective d.cellRepPiAlgHom (d.bijective_cellRepPiAlgHom_of_cellRadical_eq_bot h)
+  AlgEquiv.ofBijective d.cellRepPiAlgHom
+    (d.cellRepPiAlgHom_bijective_of_forall_cellRadical_eq_bot h)
 
 /-- `wedderburnAlgEquiv` evaluates at each cell `μ` to `d.cellRep μ`. -/
 @[simp]
@@ -377,10 +354,10 @@ theorem isSemisimpleRing_iff_forall_det_gramMatrix_ne_zero :
 
 /-- Over a field `K` with finitely many cells, `d.cellRepPiAlgHom` is bijective if and only if `B`
 is semisimple. -/
-theorem bijective_cellRepPiAlgHom_iff_isSemisimpleRing :
+theorem cellRepPiAlgHom_bijective_iff_isSemisimpleRing :
     Function.Bijective d.cellRepPiAlgHom ↔ IsSemisimpleRing B :=
   ⟨fun hbij ↦ (AlgEquiv.ofBijective d.cellRepPiAlgHom hbij).symm.toRingEquiv.isSemisimpleRing,
-    fun _ ↦ d.bijective_cellRepPiAlgHom_of_cellRadical_eq_bot
+    fun _ ↦ d.cellRepPiAlgHom_bijective_of_forall_cellRadical_eq_bot
       d.cellRadical_eq_bot_of_isSemisimpleRing⟩
 
 end Finite
@@ -397,13 +374,6 @@ theorem nonempty_splitWedderburnAlgebraPresentation [WellFoundedLT Λ] [IsSemisi
 
 end Field
 
-/-- Over any commutative ring `R`, the single cell of `CellularBasis.matrix R n` has nondegenerate
-bilinear form. -/
-theorem nondegenerate_cellForm_matrix {R n : Type*} [CommRing R] [Fintype n] [DecidableEq n] :
-    ((CellularBasis.matrix R n).cellForm ()).Nondegenerate :=
-  ((CellularBasis.matrix R n).nondegenerate_cellForm_iff_cellRadical_eq_bot ()).mpr
-    cellRadical_matrix
-
 /-- **Sharpness of the field hypothesis in Theorem 3.8.** Over `ℤ`, there exists a cellular algebra
 (`Matrix Unit Unit ℤ` with `CellularBasis.matrix ℤ Unit`, isomorphic as a ring to `ℤ`) whose cell
 form is nondegenerate, yet which is not a semisimple ring. -/
@@ -412,24 +382,9 @@ theorem exists_cellularBasis_int_nondegenerate_and_not_isSemisimpleRing :
       (∀ μ, (c.cellForm μ).Nondegenerate) ∧ ¬ IsSemisimpleRing A := by
   refine ⟨Matrix Unit Unit ℤ, inferInstance, inferInstance, CellularBasis.matrix ℤ Unit,
     fun ⟨⟩ ↦ nondegenerate_cellForm_matrix, fun hss ↦ ?_⟩
-  have hZ : IsSemisimpleRing ℤ :=
-    (Matrix.uniqueRingEquiv (m := Unit) (A := ℤ)).isSemisimpleRing
-  obtain ⟨e, he_idem, he_span⟩ := IsSemisimpleRing.ideal_eq_span_idempotent (Ideal.span {(2 : ℤ)})
-  have he01 : e = 0 ∨ e = 1 := by
-    have hmul : e * (e - 1) = 0 := by rw [mul_sub, mul_one, he_idem.eq, sub_self]
-    rcases mul_eq_zero.mp hmul with rfl | h1
-    · exact Or.inl rfl
-    · exact Or.inr (sub_eq_zero.mp h1)
-  rcases he01 with rfl | rfl
-  · have h2 : (2 : ℤ) ∈ Ideal.span {(0 : ℤ)} :=
-      he_span ▸ Ideal.subset_span (Set.mem_singleton (2 : ℤ))
-    rw [Ideal.mem_span_singleton'] at h2
-    obtain ⟨k, hk⟩ := h2
-    omega
-  · have h1 : (1 : ℤ) ∈ Ideal.span {(2 : ℤ)} :=
-      he_span.symm ▸ Ideal.subset_span (Set.mem_singleton (1 : ℤ))
-    rw [Ideal.mem_span_singleton'] at h1
-    obtain ⟨k, hk⟩ := h1
-    omega
+  have : IsSemisimpleRing ℤ := (Matrix.uniqueRingEquiv (m := Unit) (A := ℤ)).isSemisimpleRing
+  have hunit : IsUnit (2 : ℤ) :=
+    IsArtinianRing.isUnit_of_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero two_ne_zero)
+  rcases Int.isUnit_iff.mp hunit with h | h <;> omega
 
 end TauCeti.CellularBasis

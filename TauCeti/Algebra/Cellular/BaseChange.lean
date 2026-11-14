@@ -68,6 +68,13 @@ variable {R A B C Λ : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Alge
   [Ring C] [Algebra R C] [Preorder Λ] {M : Λ → Type*} [∀ μ, Fintype (M μ)]
   (c : CellularBasis R A M)
 
+private theorem span_basis_map_image_lt (e : A ≃ₐ[R] B) (μ : Λ) :
+    span R (c.basis.map e.toLinearEquiv '' {i | i.1 < μ}) =
+      (c.lowerSpan μ).map e.toLinearMap := by
+  rw [lowerSpan_def, Submodule.map_span, ← Set.image_comp]
+  exact congrArg (span R) (congrArg (· '' _)
+    (funext fun i ↦ c.basis.map_apply e.toLinearEquiv i))
+
 /-- Transport a cellular basis along an `R`-algebra equivalence `e : A ≃ₐ[R] B`. -/
 noncomputable def map (e : A ≃ₐ[R] B) : CellularBasis R B M where
   basis := c.basis.map e.toLinearEquiv
@@ -76,12 +83,11 @@ noncomputable def map (e : A ≃ₐ[R] B) : CellularBasis R B M where
   exists_mul_basis b μ s := by
     obtain ⟨r, hr⟩ := c.exists_mul_basis (e.symm b) μ s
     refine ⟨r, fun t ↦ ?_⟩
-    have himg : (c.basis.map e.toLinearEquiv '' {i | i.1 < μ}) =
-        e.toLinearMap '' (c.basis '' {i | i.1 < μ}) := by
-      rw [← Set.image_comp]
-      exact congrArg (· '' _) (funext fun i ↦ c.basis.map_apply e.toLinearEquiv i)
-    rw [himg, ← Submodule.map_span]
-    refine ⟨e.symm b * c.basis ⟨μ, s, t⟩ - ∑ u, r u • c.basis ⟨μ, u, t⟩, hr t, ?_⟩
+    rw [c.span_basis_map_image_lt e μ]
+    have hmem : e.symm b * c.basis ⟨μ, s, t⟩ - ∑ u, r u • c.basis ⟨μ, u, t⟩ ∈ c.lowerSpan μ := by
+      rw [lowerSpan_def]
+      exact hr t
+    refine ⟨e.symm b * c.basis ⟨μ, s, t⟩ - ∑ u, r u • c.basis ⟨μ, u, t⟩, hmem, ?_⟩
     simp [map_sub, map_mul, map_sum, map_smul]
 
 /-- The cellular basis transported along `e` applies `e` to each basis vector. -/
@@ -94,8 +100,7 @@ theorem map_basis (e : A ≃ₐ[R] B) (i : Σ μ, M μ × M μ) :
 @[simp]
 theorem map_basis_repr (e : A ≃ₐ[R] B) (b : B) :
     (c.map e).basis.repr b = c.basis.repr (e.symm b) := by
-  rw [map, Basis.map_repr]
-  rfl
+  simp [map]
 
 /-- Transporting along the identity algebra equivalence does nothing. -/
 @[simp]
@@ -119,8 +124,7 @@ theorem unop_antiInvolution_map (e : A ≃ₐ[R] B) (b : B) :
 /-- Lower cell spans push forward under `e`. -/
 theorem lowerSpan_map (e : A ≃ₐ[R] B) (μ : Λ) :
     (c.map e).lowerSpan μ = (c.lowerSpan μ).map e.toLinearMap := by
-  rw [lowerSpan_def, lowerSpan_def, Submodule.map_span, ← Set.image_comp]
-  exact congrArg (span R) (congrArg (· '' _) (funext fun i ↦ (c.map_basis e i)))
+  rw [lowerSpan_def, map, c.span_basis_map_image_lt]
 
 /-- Membership in `(c.map e).lowerSpan μ` pulls back via `e.symm`. -/
 @[simp]
@@ -212,12 +216,11 @@ theorem cellForm_map_eq_zero_iff (e : A ≃ₐ[R] B) (μ : Λ) :
     (c.map e).cellForm μ = 0 ↔ c.cellForm μ = 0 := by
   refine ⟨fun h ↦ LinearMap.BilinForm.ext fun x y ↦ ?_,
     fun h ↦ LinearMap.BilinForm.ext fun x y ↦ ?_⟩
-  · rw [← c.cellForm_mapCellModuleEquiv e μ x y, h]
-    rfl
+  · rw [← c.cellForm_mapCellModuleEquiv e μ x y]
+    simp [h]
   · obtain ⟨x, rfl⟩ := (c.mapCellModuleEquiv e μ).surjective x
     obtain ⟨y, rfl⟩ := (c.mapCellModuleEquiv e μ).surjective y
-    rw [c.cellForm_mapCellModuleEquiv e μ x y, h]
-    rfl
+    simp [h]
 
 /-- Nondegeneracy of the cell form is invariant under `CellularBasis.map`. -/
 @[simp]
@@ -262,13 +265,7 @@ private noncomputable def baseChangeAntiHom : S ⊗[R] A →ₐ[S] (S ⊗[R] A)�
 
 private theorem unop_baseChangeAntiHom_tmul (s : S) (a : A) :
     (c.baseChangeAntiHom S (s ⊗ₜ[R] a)).unop = s ⊗ₜ[R] (c.antiInvolution a).unop := by
-  rw [baseChangeAntiHom, Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply,
-    MulOpposite.algebraMap_apply, Algebra.TensorProduct.algebraMap_apply,
-    ← MulOpposite.op_unop (c.antiInvolution a)]
-  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgHom.op_apply_apply,
-    MulOpposite.unop_mul, MulOpposite.unop_op, Algebra.TensorProduct.includeRight_apply,
-    Algebra.TensorProduct.tmul_mul_tmul, one_mul, mul_one]
-  rfl
+  simp [baseChangeAntiHom, Algebra.ofId_apply, Algebra.TensorProduct.algebraMap_apply]
 
 private theorem opComm_comp_baseChangeAntiHom :
     (AlgHom.opComm (c.baseChangeAntiHom S)).comp (c.baseChangeAntiHom S) =
@@ -288,6 +285,12 @@ private noncomputable def baseChangeAntiInvolution : S ⊗[R] A ≃ₐ[S] (S ⊗
       exact DFunLike.congr_fun (c.opComm_comp_baseChangeAntiHom S) x)
     (c.opComm_comp_baseChangeAntiHom S)
 
+private theorem span_basis_baseChange_image_lt (μ : Λ) :
+    span S (c.basis.baseChange S '' {i | i.1 < μ}) = (c.lowerSpan μ).baseChange S := by
+  rw [lowerSpan_def, Submodule.baseChange_span, ← Set.image_comp]
+  exact congrArg (span S) (congrArg (· '' _)
+    (funext fun i ↦ c.basis.baseChange_apply S i))
+
 /-- Extension of scalars of a cellular basis `c` of `A` over `R` to a cellular basis of `S ⊗[R] A`
 over `S`. -/
 noncomputable def baseChange : CellularBasis S (S ⊗[R] A) M where
@@ -296,15 +299,10 @@ noncomputable def baseChange : CellularBasis S (S ⊗[R] A) M where
   unop_antiInvolution_basis μ s t := by
     simp [baseChangeAntiInvolution, unop_baseChangeAntiHom_tmul]
   exists_mul_basis z μ s := by
-    have hspan : (c.lowerSpan μ).baseChange S =
-        span S (c.basis.baseChange S '' {i | i.1 < μ}) := by
-      rw [lowerSpan_def, Submodule.baseChange_span, ← Set.image_comp]
-      exact congrArg (span S) (congrArg (· '' _)
-        (funext fun i ↦ (c.basis.baseChange_apply S i).symm))
     refine TensorProduct.inductionOn z (fun s' a ↦ ?_) (fun x y hx hy ↦ ?_)
     · obtain ⟨r, hr⟩ := c.exists_mul_basis a μ s
       refine ⟨fun u ↦ r u • s', fun t ↦ ?_⟩
-      rw [← hspan]
+      rw [c.span_basis_baseChange_image_lt S μ]
       have hsmul (u : M μ) :
           (r u • s') • c.basis.baseChange S ⟨μ, u, t⟩ =
             s' ⊗ₜ[R] (r u • c.basis ⟨μ, u, t⟩) := by
@@ -355,8 +353,7 @@ theorem unop_antiInvolution_baseChange_tmul (s : S) (a : A) :
 @[simp]
 theorem lowerSpan_baseChange (μ : Λ) :
     (c.baseChange S).lowerSpan μ = (c.lowerSpan μ).baseChange S := by
-  rw [lowerSpan_def, lowerSpan_def, Submodule.baseChange_span, ← Set.image_comp]
-  exact congrArg (span S) (congrArg (· '' _) (funext fun i ↦ c.baseChange_basis S i))
+  rw [lowerSpan_def, baseChange, c.span_basis_baseChange_image_lt]
 
 /-- Pure tensors with right factor in `c.lowerSpan μ` lie in `(c.baseChange S).lowerSpan μ`. -/
 theorem tmul_mem_lowerSpan_baseChange {μ : Λ} (s : S) {a : A} (ha : a ∈ c.lowerSpan μ) :
