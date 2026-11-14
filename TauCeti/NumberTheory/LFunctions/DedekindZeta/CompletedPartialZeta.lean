@@ -125,7 +125,8 @@ section Unfolding
 
 /-- The action of `(𝓞 K)ˣ ⧸ torsion K` on `realSpace K` induced by `unitScale`. Roots of unity have
 absolute value `1` at every infinite place, so `unitScale` factors through the torsion quotient. -/
-local instance : MulAction ((𝓞 K)ˣ ⧸ torsion K) (realSpace K) where
+local instance instMulActionQuotientTorsionRealSpace :
+    MulAction ((𝓞 K)ˣ ⧸ torsion K) (realSpace K) where
   smul g y := Quotient.liftOn' g (fun u ↦ unitScale u y) fun u v huv ↦ by
     have hmem : u⁻¹ * v ∈ torsion K := QuotientGroup.leftRel_apply.mp huv
     have hv : v = u * (u⁻¹ * v) := (mul_inv_cancel_left u v).symm
