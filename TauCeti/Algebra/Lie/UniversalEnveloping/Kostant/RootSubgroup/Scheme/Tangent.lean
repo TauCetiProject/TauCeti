@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Differential
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.BaseChange
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
 
 /-!
@@ -47,6 +49,9 @@ both directions of the pinning are available in the form a consumer states its c
   vector.** The matrix of the tangent vector obtained by differentiating `x_α : 𝔾ₐ → GLₙ` along a
   tangent vector of `𝔾ₐ` is that tangent vector's value times the matrix of `X_α`. The entrywise
   form is `..._apply`.
+* `tangentMatrix_derivationComp_kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap`: the same
+  matrix normalization after base change of the root subgroup to an arbitrary base ring, with
+  values in every commutative algebra over that ring.
 
 ## References
 
@@ -197,5 +202,65 @@ theorem tangentMatrix_derivationComp_kostantRootSubgroupCoordinateMap
   simp
 
 end Differential
+
+section BaseChange
+
+variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
+variable {I : Type w} {κ : Type*}
+variable {V : Type} [AddCommGroup V] [Module ℚ V]
+variable (e : I → L) (h : κ → L)
+variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
+variable (M : AddSubgroup V)
+variable (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M)
+variable {n : ℕ}
+
+/-- The differential of a base-changed Kostant root subgroup is the additive tangent parameter
+times the integral root-operator matrix, over every commutative base ring and value algebra. -/
+theorem tangentMatrix_derivationComp_kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
+    (i : I) (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (b : Module.Basis (Fin n) ℤ M) (R : Type*) [CommRing R] {B : Type*} [CommRing B] [Algebra R B]
+    (d : Derivation R (AdditiveGroup.coordinateHopfAlgebra R)
+      (Bialgebra.CounitAlgebra R (AdditiveGroup.coordinateHopfAlgebra R) B)) :
+    GeneralLinear.tangentMatrix n
+      (derivationComp (B := B)
+        (kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap e h ρ M hM i hnil b R).hom d) =
+      AdditiveGroup.gaTangentLinearEquiv d •
+        (LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i)).map
+          (Int.cast : ℤ → B) := by
+  -- Linearity and coefficient naturality reduce all value algebras to the unit tangent over `R`.
+  suffices hunit : GeneralLinear.tangentMatrix n
+      (derivationComp (B := R)
+        (kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap e h ρ M hM i hnil b R).hom
+        ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1)) =
+      (LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i)).map
+        (Int.cast : ℤ → R) by
+    rw [AdditiveGroup.derivationComp_eq_smul, map_smul,
+      ← AdditiveGroup.mapValue_derivationComp_gaTangentLinearEquiv_symm_one (Algebra.ofId R B),
+      GeneralLinear.tangentMatrix_mapValue, hunit]
+    congr 1
+    ext a c
+    simp
+  rw [kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_def,
+    GeneralLinear.tangentMatrix_derivationComp_transportedBaseChange,
+    tangentMatrix_derivationComp_kostantRootSubgroupCoordinateMap]
+  simp only [algebraMap_int_eq, Int.coe_castRingHom]
+  suffices hparam : AdditiveGroup.gaTangentLinearEquiv
+      ((tangentBaseChangeLieEquiv (R := ℤ) (K := R)
+        (H := AdditiveGroup.coordinateHopfAlgebra ℤ)).symm
+          (derivationComp (B := R) (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ R).hom.hom
+            ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1))) = 1 by
+    rw [hparam, one_smul]
+  rw [AdditiveGroup.gaTangentLinearEquiv_apply,
+    tangentBaseChangeLieEquiv_symm_apply, AlgEquiv.apply_symm_apply,
+    algEquivSelf_derivationComp_apply]
+  -- The categorical additive base-change isomorphism is the symmetric-algebra equivalence.
+  change (Bialgebra.CounitAlgebra.algEquivSelf R (AdditiveGroup.coordinateHopfAlgebra R) R)
+    (((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1)
+      (AdditiveGroup.gaScalarTensorBialgEquiv
+        ((1 : R) ⊗ₜ[ℤ] SymmetricAlgebra.ι ℤ ℤ 1))) = _
+  rw [AdditiveGroup.gaScalarTensorBialgEquiv_tmul_ι, map_one (algebraMap ℤ R), one_smul,
+    ← AdditiveGroup.gaTangentLinearEquiv_apply, LinearEquiv.apply_symm_apply]
+
+end BaseChange
 
 end TauCeti.UniversalEnvelopingAlgebra

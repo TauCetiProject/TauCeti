@@ -265,7 +265,7 @@ theorem tangentMatrix_derivationComp_geckRootSubgroupBaseChangeCoordinateMap
         (t.geckRootIntMatrix ht i).map (Int.cast : ℤ → B) := by
   rw [geckRootSubgroupBaseChangeCoordinateMap_def, geckRootIntMatrix_eq_toMatrix]
   exact tangentMatrix_derivationComp_kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
-    _ _ _ _ _ _ R i _ d
+    _ _ _ _ _ i _ _ R d
 
 end
 

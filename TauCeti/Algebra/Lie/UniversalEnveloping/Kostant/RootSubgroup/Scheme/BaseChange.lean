@@ -387,6 +387,24 @@ theorem kostantGeneratedGeneralLinearBaseChangeIdeal_toIdeal_le_ker (i : I) :
     AlgHom.toRingHom_eq_coe, RingHom.coe_coe, BialgHom.comp_apply]
   rw [hbase', map_zero]
 
+/-- If the integral root-subgroup coordinate map is surjective, then so is its base change to any
+commutative ring, read in the coordinate Hopf algebras of `GLₙ` and `𝔾ₐ` over that ring. -/
+theorem kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_surjective_of_surjective
+    (e : I → L) (h : κ → L)
+    (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
+    (M : AddSubgroup V)
+    (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M)
+    (i : I) (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (A : Type*) [CommRing A]
+    (hi : Function.Surjective
+      (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom) :
+    Function.Surjective
+      (kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap e h ρ M hM i hnil b A).hom := by
+  rw [kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_def]
+  exact _root_.CommHopfAlgCat.baseChangeMap_surjective_of_iso _ hi
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso ℤ A n).symm
+    (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A)
+
 /-- The Chevalley carrier generated over `A` by the root subgroups over `A` is a closed subgroup
 scheme of the base change of the carrier over `ℤ`, now inside `GLₙ` over `A`.
 

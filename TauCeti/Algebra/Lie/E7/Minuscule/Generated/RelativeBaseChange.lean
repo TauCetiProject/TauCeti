@@ -71,36 +71,13 @@ theorem generatorCoordinateMap_baseChange (j : Sum (Fin 7 ⊕ Fin 7) Unit) :
       generatorCoordinateMap S j := by
   let _ : IsScalarTower ℤ R S := IsScalarTower.of_algebraMap_eq fun x ↦ by
     exact (map_intCast (algebraMap R S) x).symm
-  apply _root_.CommHopfAlgCat.hom_ext
-  apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext S 56
-  intro i k
-  cases j with
-  | inl j =>
-      rw [generatorCoordinateMap_inl, generatorCoordinateMap_inl,
-        GeneralLinear.coordinateHopfAlgebraBaseChangeMap_X]
-      rw [UniversalEnvelopingAlgebra.kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_def,
-        UniversalEnvelopingAlgebra.kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_def]
-      simp only [generatorCoordinateAlgebraBaseChangeIso,
-        _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
-      rw [GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
-        CommHopfAlgCat.baseChangeMap_apply_tmul,
-        GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
-        CommHopfAlgCat.baseChangeMap_apply_tmul]
-      exact AdditiveGroup.gaScalarTensorBialgEquiv_one_tmul_gaScalarTensorBialgEquiv_one_tmul _
-  | inr j =>
-      rw [generatorCoordinateMap_inr, generatorCoordinateMap_inr,
-        GeneralLinear.coordinateHopfAlgebraBaseChangeMap_X]
-      rw [GeneralLinear.weightTorusBaseChangeCoordinateMap_def,
-        GeneralLinear.weightTorusBaseChangeCoordinateMap_def]
-      simp only [generatorCoordinateAlgebraBaseChangeIso,
-        _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
-      rw [GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
-        CommHopfAlgCat.baseChangeMap_apply_tmul,
-        GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
-        CommHopfAlgCat.baseChangeMap_apply_tmul,
-        DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply,
-        DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply]
-      exact MonoidAlgebra.scalarTensorBialgEquiv_tmul_scalarTensorBialgEquiv_one_tmul _ _ 1 _
+  rcases j with j | _
+  · rw [generatorCoordinateMap_inl, generatorCoordinateMap_inl]
+    exact
+      UniversalEnvelopingAlgebra.kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_baseChange
+        _ _ _ _ _ j _ _ R S
+  · rw [generatorCoordinateMap_inr, generatorCoordinateMap_inr]
+    exact GeneralLinear.weightTorusBaseChangeCoordinateMap_baseChange ℤ R S _
 
 /-- The scalar extension of the generated subgroup's defining ideal is carried by the canonical
 general-linear coordinate isomorphism to the defining ideal generated over the extension ring. -/
