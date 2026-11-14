@@ -78,6 +78,9 @@ elementary transformations of the process act on generalised equations.
 * `TauCeti.GenEq.Solution.point_mem_V`: a solution of `Ω` is a solution of `Ω*` in `F(A)`.
 * `TauCeti.GenEq.substituteVars_eq_of_mem_V`: for a point of `Ω*`, the two sides of an equation
   are equal as words as soon as both are reduced as written.
+* `TauCeti.GenEq.forall_mem_equations_isReduced_iff`: a tuple of reduced words makes both sides of
+  every equation reduced as written if and only if it makes the word of every variable base reduced
+  as written.
 * `TauCeti.GenEq.Solution.isFormallyConsistent`: a generalised equation with a solution is
   formally consistent.
 * `TauCeti.GenEq.Solution.substituteVars_boundaryEquation_eq_iff`: under a solution, the
@@ -197,6 +200,19 @@ theorem segment_append {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) (hk : k ≤
   rw [hM]
   conv_rhs => rw [← List.take_append_drop j M]
   rw [List.drop_append_of_le_length (by simp [M]; omega)]
+
+/-- An empty segment `h[i, j] ^ ±1` with `j ≤ i` evaluates to `1` in every group. -/
+theorem lift_mk_segment_eq_one {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H) {i j : ℕ}
+    (h : j ≤ i) (s : Bool) : FreeGroup.lift f (FreeGroup.mk (Ω.segment i j s)) = 1 := by
+  rw [Ω.segment_eq_nil_of_le h, ← FreeGroup.one_eq_mk, map_one]
+
+/-- Evaluation of `h[i, k]` in a group factors as `h[i, j] * h[j, k]` for `i ≤ j ≤ k ≤ ρ`. -/
+theorem lift_mk_segment_append {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H) {i j k : ℕ}
+    (hij : i ≤ j) (hjk : j ≤ k) (hk : k ≤ Ω.numItems) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment i k true)) =
+      FreeGroup.lift f (FreeGroup.mk (Ω.segment i j true)) *
+        FreeGroup.lift f (FreeGroup.mk (Ω.segment j k true)) := by
+  rw [← Ω.segment_append hij hjk hk, ← FreeGroup.mul_mk, map_mul]
 
 /-- The word `h[i, j]` is a prefix of `h[i, k]` for `j ≤ k`. -/
 theorem segment_prefix_segment {i j k : ℕ} (hjk : j ≤ k) :
@@ -404,6 +420,33 @@ theorem substituteVars_eq_of_mem_V {w : Fin Ω.numItems → List (A × Bool)}
     substituteVars w e.1 = substituteVars w e.2 := by
   refine h₁.eq_of_mk_eq h₂ ?_
   simpa [mk_substituteVars] using Ω.mem_V_toSystem_iff.1 hV e he
+
+/-- For a tuple of reduced words, both sides of every equation of `Ω` are reduced as written after
+substitution if and only if the word `h[α(μ), β(μ)]` of every variable base is reduced as written:
+coefficient equations substitute to an item word or a single letter, and the two sides of a
+boundary equation are factors (or formal inverses of factors) of the words of its base and dual
+base. -/
+theorem forall_mem_equations_isReduced_iff {w : Fin Ω.numItems → List (A × Bool)}
+    (hw : ∀ k, FreeGroup.IsReduced (w k)) :
+    (∀ e ∈ Ω.equations, FreeGroup.IsReduced (substituteVars w e.1) ∧
+        FreeGroup.IsReduced (substituteVars w e.2)) ↔
+      ∀ μ, FreeGroup.IsReduced (substituteVars w (Ω.segment (Ω.left μ) (Ω.right μ) true)) := by
+  refine ⟨fun h μ => (Ω.isReduced_substituteVars_segment_iff w _ _ (Ω.sign μ)).1
+    (h _ (Ω.basicEquation_mem_equations μ)).1, fun h => Ω.forall_mem_equations.2 ⟨?_, ?_, ?_⟩⟩
+  · intro μ
+    exact ⟨(Ω.isReduced_substituteVars_segment_iff w _ _ _).2 (h μ),
+      (Ω.isReduced_substituteVars_segment_iff w _ _ _).2 (h (Ω.dual μ))⟩
+  · intro b _
+    simp [hw b.1, FreeGroup.IsReduced.singleton]
+  · intro c hc
+    obtain ⟨-, h₂, h₃, h₄⟩ := Ω.bounds_of_mem_connections c hc
+    rw [boundaryEquation_fst]
+    refine ⟨(h c.2.1).infix ((Ω.segment_prefix_segment h₂.le).flatMap _).isInfix, ?_⟩
+    by_cases hs : Ω.sign c.2.1 = Ω.sign (Ω.dual c.2.1)
+    · rw [Ω.boundaryEquation_snd_of_sign_eq hs]
+      exact (h (Ω.dual c.2.1)).infix ((Ω.segment_prefix_segment h₄.le).flatMap _).isInfix
+    · rw [Ω.boundaryEquation_snd_of_sign_ne hs, Ω.isReduced_substituteVars_segment_iff]
+      exact (h (Ω.dual c.2.1)).infix ((Ω.segment_suffix_segment h₃.le).flatMap _).isInfix
 
 /-- The coordinate group `F_{R(Ω)}` of a generalised equation: the coordinate group of the system
 `Ω*` over `F(A)`, with solutions taken in `F(A)`. -/
@@ -1017,6 +1060,56 @@ theorem substituteVars_boundaryEquation_dual_eq_iff (hp₁ : Ω.left μ ≤ p) (
   split_ifs <;> omega
 
 end Solution
+
+/-- Under any group assignment satisfying the basic equation of `μ`, the boundary equation of the
+dual triple `(q, Δ(μ), p)` holds in the group if and only if that of `(p, μ, q)` holds, for a
+boundary `p` of `μ` and a boundary `q` of `Δ(μ)`. -/
+theorem lift_mk_boundaryEquation_dual_iff {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H)
+    {p : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases} {q : Fin (Ω.numItems + 1)}
+    (hp₁ : Ω.left μ ≤ p) (hp₂ : p ≤ Ω.right μ)
+    (hq₁ : Ω.left (Ω.dual μ) ≤ q) (hq₂ : q ≤ Ω.right (Ω.dual μ))
+    (hb : FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
+      FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2)) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (q, Ω.dual μ, p)).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (q, Ω.dual μ, p)).2) ↔
+      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).2) := by
+  by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
+  · have hs' : Ω.sign (Ω.dual μ) = Ω.sign (Ω.dual (Ω.dual μ)) := by
+      rw [Ω.dual_involutive μ]
+      exact hs.symm
+    rw [boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_eq (c := (q, Ω.dual μ, p)) hs',
+      boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_eq (c := (p, μ, q)) hs,
+      Ω.dual_involutive μ]
+    exact eq_comm
+  · have hs' : Ω.sign (Ω.dual μ) ≠ Ω.sign (Ω.dual (Ω.dual μ)) := by
+      rw [Ω.dual_involutive μ]
+      exact Ne.symm hs
+    have hbase : FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) (Ω.right μ) true)) =
+        (FreeGroup.lift f
+          (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true)))⁻¹ := by
+      rw [basicEquation_fst, basicEquation_snd] at hb
+      cases h₁ : Ω.sign μ <;> cases h₂ : Ω.sign (Ω.dual μ) <;> rw [h₁, h₂] at hb hs
+      · exact absurd rfl hs
+      · rw [segment_false, ← FreeGroup.inv_mk, map_inv] at hb
+        exact inv_eq_iff_eq_inv.1 hb
+      · rwa [segment_false, ← FreeGroup.inv_mk, map_inv] at hb
+      · exact absurd rfl hs
+    rw [Ω.lift_mk_segment_append f hp₁ hp₂ (Ω.right μ).is_le,
+      Ω.lift_mk_segment_append f hq₁ hq₂ (Ω.right (Ω.dual μ)).is_le, mul_inv_rev] at hbase
+    rw [boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_ne (c := (q, Ω.dual μ, p)) hs',
+      boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_ne (c := (p, μ, q)) hs,
+      Ω.dual_involutive μ, segment_false, segment_false, ← FreeGroup.inv_mk, ← FreeGroup.inv_mk,
+      map_inv, map_inv]
+    refine ⟨fun h1 => ?_, fun h2 => ?_⟩
+    · have h1' : (FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual μ)) q true)))⁻¹ =
+          FreeGroup.lift f (FreeGroup.mk (Ω.segment p (Ω.right μ) true)) := by
+        rw [h1, inv_inv]
+      rw [h1'] at hbase
+      exact mul_right_cancel hbase
+    · rw [h2] at hbase
+      rw [← inv_inv (FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual μ)) q true))),
+        ← mul_left_cancel hbase]
 
 /-! ### Generalised equations with bases indexed by a finite type -/
 
