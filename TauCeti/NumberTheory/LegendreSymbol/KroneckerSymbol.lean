@@ -91,8 +91,8 @@ and with the standard values at `2`, `-1` and `0`: `(a / 2) = χ₈ a`, `(a / -1
 `|b| = 2 ^ e * m`, `m` odd, it is `(a / -1)^[b < 0] * χ₈ a ^ e * J(a | m)`. -/
 def kroneckerSym (a b : ℤ) : ℤ :=
   if b = 0 then if a = 1 ∨ a = -1 then 1 else 0
-  else (if a < 0 ∧ b < 0 then -1 else 1) * χ₈ a ^ b.natAbs.factorization 2 *
-    jacobiSym a (ordCompl[2] b.natAbs)
+  else (if a < 0 ∧ b < 0 then -1 else 1) * χ₈ a ^ padicValNat 2 b.natAbs *
+    jacobiSym a (b.natAbs.divMaxPow 2)
 
 /-- `(a / 0)` is `1` for `a = ±1` and `0` otherwise. It is not `jacobiSym a 0 = 1`. -/
 @[simp]
@@ -103,8 +103,11 @@ theorem kroneckerSym_zero_right (a : ℤ) :
 /-- The Kronecker symbol at a nonzero denominator `b`, with `|b| = 2 ^ e * m` and `m` odd. -/
 theorem kroneckerSym_of_ne_zero (a : ℤ) {b : ℤ} (hb : b ≠ 0) :
     kroneckerSym a b = (if a < 0 ∧ b < 0 then -1 else 1) * χ₈ a ^ b.natAbs.factorization 2 *
-      jacobiSym a (ordCompl[2] b.natAbs) :=
-  ite_eq_right hb
+      jacobiSym a (ordCompl[2] b.natAbs) := by
+  rw [Nat.factorization_def _ Nat.prime_two, ← Nat.padicValNat_def,
+    ← Nat.eq_div_of_mul_eq_left (pow_ne_zero _ two_ne_zero)
+      (Nat.divMaxPow_mul_pow_padicValNat 2 b.natAbs)]
+  exact ite_eq_right hb
 
 /-- At an odd denominator `b`, of either sign, the Kronecker symbol is the Jacobi symbol at `|b|`,
 times `-1` when both `a < 0` and `b < 0`. -/
