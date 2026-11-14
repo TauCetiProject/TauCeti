@@ -270,9 +270,9 @@ theorem ofReal_le_setLAverage_enorm_log_norm_sub_setAverage_ball_zero [Nontrivia
         ‖Real.log ‖y‖ - ⨍ z in ball (0 : E) r, Real.log ‖z‖ ∂μ‖ₑ ∂μ := by
   set a := ⨍ z in ball (0 : E) r, Real.log ‖z‖ ∂μ
   obtain ⟨z, hsub, hz⟩ := exists_forall_mem_ball_ofReal_le_enorm_log_norm_sub (E := E) a hr
-  have h := ofReal_mul_div_pow_le_setLAverage_enorm_sub (μ := μ) (by positivity : 0 < r / 8)
-    hsub hz
-  rwa [show r / 8 / r = 8⁻¹ by field_simp, inv_pow, ← div_eq_mul_inv, div_div] at h
+  have h := mul_ofReal_div_pow_le_setLAverage_ball (μ := μ) (by positivity : 0 < r / 8) hsub hz
+  rwa [← ENNReal.ofReal_mul (by positivity), show r / 8 / r = 8⁻¹ by field_simp, inv_pow,
+    ← div_eq_mul_inv, div_div] at h
 
 /-- **`log ‖x‖` does not have vanishing mean oscillation** on a nontrivial finite-dimensional real
 normed space with an additive Haar measure. -/

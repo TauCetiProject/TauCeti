@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Basic
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Radial coefficient fields
@@ -30,8 +31,8 @@ coefficients, in divergence form (Meyers) and in non-divergence form (Gilbarg–
 * `TauCeti.PDE.radialCoefficient_smul`, `TauCeti.PDE.not_continuousAt_radialCoefficient`: it is
   homogeneous of degree `0`, and for `β ≠ 0` discontinuous at the origin.
 * `TauCeti.PDE.dotProduct_radialCoefficient_mulVec`: its bilinear form.
-* `TauCeti.PDE.sum_radialCoefficient_mul_apply_single`: its contraction `aⁱʲ Hᵢⱼ` with a linear
-  map `H` is `α tr H + β ⟪H x, x⟫ / ‖x‖²`.
+* `TauCeti.PDE.sum_radialCoefficient_mul_inner_single`: its contraction `aⁱʲ ⟪H eᵢ, eⱼ⟫` with a
+  linear map `H` is `α tr H + β ⟪H x, x⟫ / ‖x‖²`.
 * `TauCeti.PDE.abs_dotProduct_radialCoefficient_mulVec_le_max`: its bilinear form is bounded by
   `max |α| |α + β|`, hence by `|α| + |β|`
   (`TauCeti.PDE.abs_dotProduct_radialCoefficient_mulVec_le`), and for `β ≤ 0 ≤ 2 α + β` by `α`
@@ -111,7 +112,7 @@ theorem not_continuousAt_radialCoefficient [Nonempty ι] (hβ : β ≠ 0) :
   have hconst : radialCoefficient α β e = radialCoefficient α β 0 :=
     tendsto_nhds_unique (tendsto_const_nhds.congr' (eventually_mem_nhdsWithin.mono
       fun t ht => (radialCoefficient_smul (ne_of_gt ht) e).symm)) hlim
-  have hii := congrFun (congrFun hconst i) i
+  have hii := Matrix.ext_iff.2 hconst i i
   exact hβ (by simpa [e] using hii)
 
 /-- The bilinear form of the radial coefficient:
@@ -126,22 +127,24 @@ theorem dotProduct_radialCoefficient_mulVec (x η ξ : EuclideanSpace ℝ ι) :
   ring
 
 /-- Contracting the radial coefficient against a linear map `H` gives `α` times the trace of `H`
-plus `β` times its radial value: `aⁱʲ(x) Hᵢⱼ = α tr H + β ⟪H x, x⟫ / ‖x‖²`. -/
-theorem sum_radialCoefficient_mul_apply_single (x : EuclideanSpace ℝ ι)
+plus `β` times its radial value: `aⁱʲ(x) ⟪H eᵢ, eⱼ⟫ = α tr H + β ⟪H x, x⟫ / ‖x‖²`. -/
+theorem sum_radialCoefficient_mul_inner_single (x : EuclideanSpace ℝ ι)
     (H : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) :
-    ∑ i, ∑ j, radialCoefficient α β x i j * H (EuclideanSpace.single j 1) i =
+    ∑ i, ∑ j, radialCoefficient α β x i j *
+        ⟪H (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
       α * ∑ i, ⟪H (EuclideanSpace.single i 1), EuclideanSpace.single i 1⟫_ℝ +
         β / ‖x‖ ^ 2 * ⟪H x, x⟫_ℝ := by
-  have hH : ∀ i, H x i = ∑ j, x j * H (EuclideanSpace.single j 1) i := fun i => by
+  have hH : ∀ j, H x j = ∑ i, x i * H (EuclideanSpace.single i 1) j := fun j => by
     conv_lhs => rw [← (EuclideanSpace.basisFun ι ℝ).sum_repr x]
     simp
-  have hin : ⟪H x, x⟫_ℝ = ∑ i, x i * H x i := by
+  have hin : ⟪H x, x⟫_ℝ = ∑ j, x j * H x j := by
     simp [PiLp.inner_apply]
   simp only [radialCoefficient_apply, add_mul, Finset.sum_add_distrib, ite_mul, zero_mul,
     Finset.sum_ite_eq, Finset.mem_univ, ite_true, EuclideanSpace.inner_single_right, conj_trivial,
     hin, hH, Finset.mul_sum, one_mul]
   congr 1
-  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun i _ => by ring
 
 /-- The radial coefficient is symmetric. -/
 theorem isSymm_radialCoefficient (x : EuclideanSpace ℝ ι) : (radialCoefficient α β x).IsSymm :=
@@ -260,8 +263,7 @@ theorem measurable_radialCoefficient : Measurable (radialCoefficient (ι := ι) 
 @[fun_prop]
 theorem stronglyMeasurable_radialCoefficient :
     StronglyMeasurable (radialCoefficient (ι := ι) α β) :=
-  -- The matrix space is metrizable through its underlying function type.
-  Measurable.stronglyMeasurable (β := ι → ι → ℝ) measurable_radialCoefficient
+  measurable_radialCoefficient.stronglyMeasurable
 
 end PDE
 

@@ -22,8 +22,8 @@ volumes is explicit. This comparison is the basic step of stopping-time argument
 
 * `TauCeti.setLAverage_ball_le`: the average over `B(x, ρ) ⊆ B(x₀, R)` is at most
   `(R / ρ) ^ dim E` times the average over `B(x₀, R)`.
-* `TauCeti.ofReal_mul_div_pow_le_setLAverage_enorm_sub`: if `‖f - a‖ ≥ δ` on `B(z, ρ) ⊆ B(c, r)`,
-  the average of `‖f - a‖` over `B(c, r)` is at least `δ (ρ / r) ^ dim E`.
+* `TauCeti.mul_ofReal_div_pow_le_setLAverage_ball`: if `g ≥ δ` on `B(z, ρ) ⊆ B(c, r)`, the
+  average of `g` over `B(c, r)` is at least `δ (ρ / r) ^ dim E`.
 -/
 
 public section
@@ -52,25 +52,24 @@ theorem setLAverage_ball_le (g : E → ℝ≥0∞) {x x₀ : E} {ρ R : ℝ} (h�
     rw [Measure.addHaar_ball_mul_of_pos μ x₀ (div_pos hR hρ), Measure.addHaar_ball_center μ x]
   rw [hball, ENNReal.mul_div_cancel_right (measure_ball_pos μ x hρ).ne' measure_ball_lt_top.ne]
 
-/-- **A lower bound from a sub-ball.** If `‖f - a‖ ≥ δ` on a ball `B(z, ρ) ⊆ B(c, r)`, then the
-mean of `‖f - a‖` over `B(c, r)` is at least `δ (ρ / r) ^ dim E`. With `a` the average of `f` over
-`B(c, r)`, this bounds the mean oscillation of `f` on `B(c, r)` from below. -/
-theorem ofReal_mul_div_pow_le_setLAverage_enorm_sub {F : Type*} [NormedAddCommGroup F]
-    {f : E → F} {a : F} {c z : E} {r ρ δ : ℝ} (hρ : 0 < ρ) (hsub : ball z ρ ⊆ ball c r)
-    (h : ∀ y ∈ ball z ρ, ENNReal.ofReal δ ≤ ‖f y - a‖ₑ) :
-    ENNReal.ofReal (δ * (ρ / r) ^ finrank ℝ E) ≤ ⨍⁻ y in ball c r, ‖f y - a‖ₑ ∂μ := by
+/-- **A lower bound from a sub-ball.** If `g ≥ δ` on a ball `B(z, ρ) ⊆ B(c, r)`, then the average
+of `g` over `B(c, r)` is at least `δ (ρ / r) ^ dim E`. With `g = ‖f - a‖ₑ` and `a` the average of
+`f` over `B(c, r)`, this bounds the mean oscillation of `f` on `B(c, r)` from below. -/
+theorem mul_ofReal_div_pow_le_setLAverage_ball {g : E → ℝ≥0∞} {c z : E} {r ρ : ℝ} {δ : ℝ≥0∞}
+    (hρ : 0 < ρ) (hsub : ball z ρ ⊆ ball c r) (h : ∀ y ∈ ball z ρ, δ ≤ g y) :
+    δ * ENNReal.ofReal ((ρ / r) ^ finrank ℝ E) ≤ ⨍⁻ y in ball c r, g y ∂μ := by
   have hr : 0 < r := pos_of_mem_ball (hsub (mem_ball_self hρ))
-  have hpos : μ (ball c r) ≠ 0 := (measure_ball_pos μ c hr).ne'
-  have htop : μ (ball c r) ≠ ∞ := measure_ball_lt_top.ne
-  have hball : μ (ball z ρ) = ENNReal.ofReal ((ρ / r) ^ finrank ℝ E) * μ (ball c r) := by
-    rw [μ.addHaar_ball_of_pos z hρ, μ.addHaar_ball_of_pos c hr, ← mul_assoc,
-      ← ENNReal.ofReal_mul (by positivity), div_pow, div_mul_cancel₀ _ (by positivity)]
-  rw [setLAverage_eq, ENNReal.le_div_iff_mul_le (Or.inl hpos) (Or.inl htop)]
-  calc ENNReal.ofReal (δ * (ρ / r) ^ finrank ℝ E) * μ (ball c r)
-      = ENNReal.ofReal δ * μ (ball z ρ) := by
-        rw [hball, ← mul_assoc, ← ENNReal.ofReal_mul' (by positivity)]
-    _ = ∫⁻ _ in ball z ρ, ENNReal.ofReal δ ∂μ := (setLIntegral_const _ _).symm
-    _ ≤ ∫⁻ y in ball z ρ, ‖f y - a‖ₑ ∂μ := setLIntegral_mono' measurableSet_ball h
-    _ ≤ ∫⁻ y in ball c r, ‖f y - a‖ₑ ∂μ := lintegral_mono_set hsub
+  have hδ : δ ≤ ⨍⁻ y in ball z ρ, g y ∂μ := by
+    rw [← setLAverage_const (μ := μ) (measure_ball_pos μ z hρ).ne' measure_ball_lt_top.ne δ]
+    exact laverage_mono_ae ((ae_restrict_iff' measurableSet_ball).2 (ae_of_all _ h))
+  calc δ * ENNReal.ofReal ((ρ / r) ^ finrank ℝ E)
+      ≤ ENNReal.ofReal ((r / ρ) ^ finrank ℝ E) * (⨍⁻ y in ball c r, g y ∂μ) *
+          ENNReal.ofReal ((ρ / r) ^ finrank ℝ E) := by
+        gcongr
+        exact hδ.trans (setLAverage_ball_le g hρ hsub)
+    _ = ⨍⁻ y in ball c r, g y ∂μ := by
+        rw [mul_comm, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), ← mul_pow,
+          div_mul_div_comm, mul_comm ρ r, div_self (by positivity), one_pow, ENNReal.ofReal_one,
+          one_mul]
 
 end TauCeti

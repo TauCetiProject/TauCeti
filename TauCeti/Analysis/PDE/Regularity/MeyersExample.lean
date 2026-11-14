@@ -504,24 +504,10 @@ private theorem lt_two_of_memLp_radialCoordGradient (hμ0 : 0 < μ) (hμ1 : μ �
     (hmem : MemLp (radialCoordGradient μ 0) p
       (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin 2))))) :
     p.toReal * (1 - μ) < 2 := by
-  have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 Ω.isOpen 0 h0
-  have hint : IntegrableOn (fun x => ‖radialCoordGradient μ 0 x‖ ^ p.toReal) (ball 0 r) :=
-    (hmem.integrable_norm_rpow hp0 hp).mono_measure (Measure.restrict_mono hball le_rfl)
-  -- `‖x‖ ^ (p (μ - 1)) ≤ μ ^ (-p) ‖∇u‖ ^ p` away from the origin.
-  have hpow : IntegrableOn (fun x : EuclideanSpace ℝ (Fin 2) => ‖x‖ ^ (p.toReal * (μ - 1)))
-      (ball 0 r) := by
-    refine (hint.const_mul (μ ^ (-p.toReal))).mono'
-      (by fun_prop : Measurable fun x : EuclideanSpace ℝ (Fin 2) =>
-        ‖x‖ ^ (p.toReal * (μ - 1))).aestronglyMeasurable ?_
-    filter_upwards [ae_restrict_of_ae (compl_mem_ae_iff.2
-      (measure_singleton (0 : EuclideanSpace ℝ (Fin 2))))] with x hx
-    rw [Real.norm_of_nonneg (by positivity), mul_comm p.toReal,
-      Real.rpow_mul (norm_nonneg x), Real.rpow_neg hμ0.le, le_inv_mul_iff₀ (by positivity),
-      ← Real.mul_rpow hμ0.le (by positivity)]
-    exact Real.rpow_le_rpow (by positivity)
-      (mul_rpow_le_norm_radialCoordGradient hμ0 hμ1 hx) hpr.le
-  have := (integrableOn_norm_rpow_ball_iff hr).1 hpow
+  -- `μ ‖x‖ ^ (μ - 1) ≤ ‖∇u‖` away from the origin.
+  have := neg_finrank_lt_mul_toReal_of_memLp_restrict hp0 hp (Ω.isOpen.mem_nhds h0) hμ0
+    (ae_restrict_of_ae ((volume.ae_ne 0).mono fun x hx =>
+      mul_rpow_le_norm_radialCoordGradient hμ0 hμ1 hx)) hmem
   rw [finrank_euclideanSpace_fin] at this
   push_cast at this
   nlinarith

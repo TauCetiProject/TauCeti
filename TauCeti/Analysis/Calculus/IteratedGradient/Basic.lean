@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 -- Private: the composition and derivative rules for `ContDiffAt` are used only in the proofs.
+import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 
 /-!
@@ -31,12 +32,19 @@ bundles each space with its normed structure in a `TauCeti.IteratedGradientModel
 because `TauCeti.IteratedGradient` is indexed by them: at a concrete order the space and its
 normed, complete structures are recovered by unfolding the recursion rather than by transport.
 
+The norm comparisons with multilinear derivatives are adapted from Tau Ceti contribution
+[#12418](https://github.com/TauCetiProject/TauCeti/pull/12418),
+*Bound smooth multiplication in higher-order zero-boundary Sobolev spaces*.
+
 ## Main declarations
 
 * `TauCeti.IteratedGradient`: the basis-free target of an iterated gradient.
 * `TauCeti.iteratedGradientChain`: the classical derivative fields of a scalar function.
 * `TauCeti.contDiffAt_iteratedGradientChain`: the `j`th field of a `Cⁿ` function is
   `Cᵐ` when `m + j + 1 ≤ n`.
+* `TauCeti.norm_iteratedFDeriv_iteratedGradientChain`, `TauCeti.norm_iteratedGradientChain`: the
+  fields and their derivatives have the same pointwise norms as Mathlib's multilinear
+  derivatives.
 * `TauCeti.hasCompactSupport_iteratedGradientChain`: every field of a compactly supported
   function is compactly supported.
 * `LinearIsometryEquiv.iteratedGradientCongr`: the push-forward of iterated gradients along a
@@ -133,6 +141,31 @@ theorem contDiffAt_iteratedGradientChain {f : F → ℝ} {x : F} {m n : ℕ∞ω
   | succ j ih =>
       rw [iteratedGradientChain_succ]
       exact (ih (m := m + 1) (by convert h using 2; push_cast; ring)).fderiv_right_succ
+
+/-- Taking `i` further derivatives of the `k`th iterated-gradient field has the same norm as
+taking `i + k + 1` derivatives of the original scalar function. No smoothness is needed. -/
+theorem norm_iteratedFDeriv_iteratedGradientChain (f : F → ℝ) (i k : ℕ) (x : F) :
+    ‖iteratedFDeriv ℝ i (iteratedGradientChain f k) x‖ =
+      ‖iteratedFDeriv ℝ (i + k + 1) f x‖ := by
+  induction k generalizing i with
+  | zero =>
+      rw [iteratedGradientChain_zero]
+      -- The gradient is the inverse Riesz isometry applied to the Fréchet derivative.
+      exact ((InnerProductSpace.toDual ℝ F).symm.norm_iteratedFDeriv_comp_left
+        (fderiv ℝ f) x i).trans norm_iteratedFDeriv_fderiv
+  | succ k ih =>
+      rw [iteratedGradientChain_succ, norm_iteratedFDeriv_fderiv]
+      exact (ih (i + 1)).trans (congrArg
+        (fun j => ‖iteratedFDeriv ℝ (j + 1) f x‖) (by omega))
+
+/-- The nested iterated-gradient field has the same norm as the corresponding multilinear
+derivative of the scalar function. -/
+@[simp]
+theorem norm_iteratedGradientChain (f : F → ℝ) (k : ℕ) (x : F) :
+    ‖iteratedGradientChain f k x‖ = ‖iteratedFDeriv ℝ (k + 1) f x‖ :=
+  (norm_iteratedFDeriv_zero (f := iteratedGradientChain f k) (x := x)).symm.trans
+    ((norm_iteratedFDeriv_iteratedGradientChain f 0 k x).trans
+      (congrArg (fun j => ‖iteratedFDeriv ℝ (j + 1) f x‖) (Nat.zero_add k)))
 
 /-- Iterated gradients do not enlarge the topological support of a scalar function.
 No differentiability assumption is needed. -/

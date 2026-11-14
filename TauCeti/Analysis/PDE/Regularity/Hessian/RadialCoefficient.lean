@@ -55,8 +55,9 @@ to `n - 1`.
   coefficient are not in VMO.
 * `TauCeti.PDE.sum_radialCoefficient_mul_iteratedGradientChain_norm_rpow`: the operator applied
   to `‖x‖ ^ γ` away from the origin.
-* `TauCeti.PDE.ae_sum_radialCoefficient_mul_iteratedGradient_eq`: the same identity almost
-  everywhere for the weak Hessian of every `W^{2,p}` function equal to `‖x‖ ^ γ`.
+* `TauCeti.PDE.ae_sum_radialCoefficient_mul_iteratedGradient_eq_of_value_ae_eq_norm_rpow`: the
+  same identity almost everywhere for the weak Hessian of every `W^{2,p}` function equal to
+  `‖x‖ ^ γ`.
 * `TauCeti.PDE.exists_wkp_two_value_ae_eq_norm_rpow_and_sum_radialCoefficient_eq_zero_iff`:
   `‖x‖ ^ γ` is a `W^{2,p}` strong solution exactly for `p < n / (2 - γ)`.
 
@@ -156,9 +157,9 @@ theorem not_memVMO_radialCoefficient_apply_self [Nontrivial ι] (hb : b ≠ 0) (
       ring
     rw [Real.eNorm_eq_ofReal_abs, heq, abs_mul]
     exact ENNReal.ofReal_le_ofReal (by nlinarith [hz y hy, abs_nonneg b])
-  have hlow := ofReal_mul_div_pow_le_setLAverage_enorm_sub (μ := volume)
+  have hlow := mul_ofReal_div_pow_le_setLAverage_ball (μ := volume)
     (by positivity : (0 : ℝ) < r / 8) hsub hfar
-  rw [show r / 8 / r = 1 / 8 by field_simp] at hlow
+  rw [← ENNReal.ofReal_mul (by positivity), show r / 8 / r = 1 / 8 by field_simp] at hlow
   exact (ENNReal.half_lt_self hδ ENNReal.ofReal_ne_top).not_ge
     (hlow.trans ((setLAverage_enorm_sub_setAverage_le_vmoModulus _ volume 0 le_rfl).trans hle))
 
@@ -170,13 +171,13 @@ theorem not_memVMO_radialCoefficient_apply_self [Nontrivial ι] (hb : b ≠ 0) (
 theorem sum_radialCoefficient_mul_iteratedGradientChain_norm_rpow (γ : ℝ)
     {x : EuclideanSpace ℝ ι} (hx : x ≠ 0) :
     ∑ i, ∑ j, radialCoefficient α b x i j *
-        iteratedGradientChain (fun y : EuclideanSpace ℝ ι => ‖y‖ ^ γ) 1 x
-          (EuclideanSpace.single j 1) i =
+        ⟪iteratedGradientChain (fun y : EuclideanSpace ℝ ι => ‖y‖ ^ γ) 1 x
+          (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
       γ * ‖x‖ ^ (γ - 2) * (α * (Fintype.card ι + γ - 2) + b * (γ - 1)) := by
   have htr := sum_inner_iteratedGradientChain_one_norm_rpow_apply (p := γ) hx
     (EuclideanSpace.basisFun ι ℝ)
   simp only [EuclideanSpace.basisFun_apply, finrank_euclideanSpace] at htr
-  rw [sum_radialCoefficient_mul_apply_single, htr,
+  rw [sum_radialCoefficient_mul_inner_single, htr,
     inner_iteratedGradientChain_one_norm_rpow_apply_self hx, Real.rpow_sub (norm_pos_iff.2 hx)]
   norm_cast
   field_simp
@@ -184,14 +185,15 @@ theorem sum_radialCoefficient_mul_iteratedGradientChain_norm_rpow (γ : ℝ)
 /-- Every element of `W^{2,p}(Ω)` equal to `‖x‖ ^ γ` satisfies
 `aⁱʲ ∂ᵢ∂ⱼu = γ ‖x‖ ^ (γ - 2) (α (n + γ - 2) + b (γ - 1))` almost everywhere with its weak Hessian,
 for `a = TauCeti.PDE.radialCoefficient α b`. -/
-theorem ae_sum_radialCoefficient_mul_iteratedGradient_eq [Nonempty ι] {γ : ℝ}
+theorem ae_sum_radialCoefficient_mul_iteratedGradient_eq_of_value_ae_eq_norm_rpow [Nonempty ι]
+    {γ : ℝ}
     {Ω : Opens (EuclideanSpace ℝ ι)} {p : ℝ≥0∞} [Fact (1 ≤ p)] (w : Wkp volume Ω p 2)
     (hw : (Wkp.value 2 w : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω] fun y => ‖y‖ ^ γ) :
     ∀ᵐ y ∂volume.restrict (Ω : Set (EuclideanSpace ℝ ι)),
       ∑ i, ∑ j, radialCoefficient α b y i j *
-          Wkp.iteratedGradient 1 w y (EuclideanSpace.single j 1) i =
+          ⟪Wkp.iteratedGradient 1 w y (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
         γ * ‖y‖ ^ (γ - 2) * (α * (Fintype.card ι + γ - 2) + b * (γ - 1)) := by
-  filter_upwards [Wkp.iteratedGradient_one_ae_eq_iteratedGradientChain_norm_rpow w hw,
+  filter_upwards [Wkp.iteratedGradient_ae_eq_iteratedGradientChain_norm_rpow 1 w hw,
     ae_restrict_of_ae (volume.ae_ne 0)] with y hy h0
   rw [hy]
   exact sum_radialCoefficient_mul_iteratedGradientChain_norm_rpow γ h0
@@ -212,7 +214,8 @@ theorem exists_wkp_two_value_ae_eq_norm_rpow_and_sum_radialCoefficient_eq_zero_i
       (Wkp.value 2 w : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω] (fun y => ‖y‖ ^ γ) ∧
       ∀ᵐ y ∂volume.restrict (Ω : Set (EuclideanSpace ℝ ι)),
         ∑ i, ∑ j, radialCoefficient 1 ((Fintype.card ι + γ - 2) / (1 - γ)) y i j *
-          Wkp.iteratedGradient 1 w y (EuclideanSpace.single j 1) i = 0) ↔
+          ⟪Wkp.iteratedGradient 1 w y (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
+            0) ↔
       p < ENNReal.ofReal (Fintype.card ι / (2 - γ)) := by
   have hcard : (2 : ℝ) ≤ Fintype.card ι := by exact_mod_cast Fintype.one_lt_card
   have hn : 2 < finrank ℝ (EuclideanSpace ℝ ι) + γ := by
@@ -227,7 +230,7 @@ theorem exists_wkp_two_value_ae_eq_norm_rpow_and_sum_radialCoefficient_eq_zero_i
       1 * (Fintype.card ι + γ - 2 : ℝ) + (Fintype.card ι + γ - 2) / (1 - γ) * (γ - 1) = 0 := by
     field_simp [(by linarith : (1 - γ) ≠ 0)]
     ring
-  filter_upwards [ae_sum_radialCoefficient_mul_iteratedGradient_eq
+  filter_upwards [ae_sum_radialCoefficient_mul_iteratedGradient_eq_of_value_ae_eq_norm_rpow
     (α := 1) (b := (Fintype.card ι + γ - 2) / (1 - γ)) w hw] with y hy
   rw [hy, hzero, mul_zero]
 
