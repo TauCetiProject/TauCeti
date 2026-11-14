@@ -143,7 +143,7 @@ theorem exists_lintegral_lintegral_enorm_inner_adjoint_le {p q : ℝ≥0} (hq : 
       _ = A * a s * I s := by
           rw [lintegral_const_mul'' _ hk]
           congr 1
-          simp only [I, rieszPotential_def, enorm_eq_self, Module.finrank_self]
+          simp only [I, rieszPotential_def, eNorm_eq_self, Module.finrank_self]
           refine lintegral_congr fun t ↦ ?_
           congr 2
           push_cast
@@ -155,11 +155,11 @@ theorem exists_lintegral_lintegral_enorm_inner_adjoint_le {p q : ℝ≥0} (hq : 
     _ ≤ A * (eLpNorm a p * eLpNorm I q) := by
         gcongr
         have h := ENNReal.lintegral_mul_le_Lp_mul_Lq volume hpq.coe ha hI
-        rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by positivity) ENNReal.coe_ne_top
+        rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal (by positivity) ENNReal.coe_ne_top
             ha.aestronglyMeasurable,
-          eLpNorm_eq_lintegral_rpow_enorm_toReal (by positivity) ENNReal.coe_ne_top
+          eLpNorm_eq_lintegral_rpow_eNorm_toReal (by positivity) ENNReal.coe_ne_top
             hI.aestronglyMeasurable]
-        simpa only [enorm_eq_self, ENNReal.coe_toReal, Pi.mul_apply] using h
+        simpa only [eNorm_eq_self, ENNReal.coe_toReal, Pi.mul_apply] using h
     _ ≤ A * (eLpNorm a p * (C * eLpNorm b p)) := by
         gcongr
         exact hC b
@@ -190,15 +190,15 @@ theorem exists_enorm_integral_adjoint_le {p q : ℝ≥0} (hq : 2 < q) (hpq : p.H
   -- `‖v‖² = ⟪v, v⟫` expands into the double integral of the time pairings.
   have hsq : ‖v‖ₑ ^ (2 : ℝ) ≤ C * A * a * a := by
     calc ‖v‖ₑ ^ (2 : ℝ) = ‖⟪v, v⟫_𝕜‖ₑ := by
-          rw [inner_self_eq_norm_sq_to_K, enorm_pow, ← ENNReal.rpow_natCast]
+          rw [inner_self_eq_norm_sq_to_K, eNorm_pow, ← ENNReal.rpow_natCast]
           simp
       _ = ‖∫ s, ⟪v, ((U s)†) (F s)⟫_𝕜‖ₑ := by rw [integral_inner hUF]
-      _ ≤ ∫⁻ s, ‖⟪v, ((U s)†) (F s)⟫_𝕜‖ₑ := enorm_integral_le_lintegral_enorm _
+      _ ≤ ∫⁻ s, ‖⟪v, ((U s)†) (F s)⟫_𝕜‖ₑ := eNorm_integral_le_lintegral_eNorm _
       _ = ∫⁻ s, ‖∫ t, ⟪((U s)†) (F s), ((U t)†) (F t)⟫_𝕜‖ₑ := by
           refine lintegral_congr fun s ↦ ?_
           rw [← ofReal_norm, norm_inner_symm, ofReal_norm, integral_inner hUF]
       _ ≤ ∫⁻ s, ∫⁻ t, ‖⟪((U s)†) (F s), ((U t)†) (F t)⟫_𝕜‖ₑ :=
-          lintegral_mono fun s ↦ enorm_integral_le_lintegral_enorm _
+          lintegral_mono fun s ↦ eNorm_integral_le_lintegral_eNorm _
       _ ≤ C * A * a * a := hC U A hU F F hF hF
   have hrhs : ((NNReal.sqrt C : ℝ≥0∞) * A ^ (2⁻¹ : ℝ) * a) ^ (2 : ℝ) = C * A * a * a := by
     rw [ENNReal.mul_rpow_of_nonneg _ _ zero_le_two, ENNReal.mul_rpow_of_nonneg _ _ zero_le_two,
@@ -231,7 +231,7 @@ theorem exists_enorm_integral_inner_apply_le {p q : ℝ≥0} (hq : 2 < q)
   refine ⟨C, fun U A hU f G hG hUG => ?_⟩
   simp_rw [← ContinuousLinearMap.adjoint_inner_right]
   rw [integral_inner hUG]
-  calc _ ≤ ‖f‖ₑ * ‖∫ t, ((U t)†) (G t)‖ₑ := enorm_inner_le_enorm _ _
+  calc _ ≤ ‖f‖ₑ * ‖∫ t, ((U t)†) (G t)‖ₑ := eNorm_inner_le_eNorm _ _
     _ ≤ ‖f‖ₑ * (C * A ^ (2⁻¹ : ℝ) * eLpNorm (fun t ↦ eLpNorm (G t) r' μ) p) := by
         gcongr
         exact hC U A hU G hG hUG

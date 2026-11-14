@@ -57,15 +57,15 @@ theorem eLpNorm_sqrt_smul_eq_eLpNorm_withDensity (hwm : AEMeasurable w μ) {g : 
     (hg : AEStronglyMeasurable g μ) :
     eLpNorm (fun x => √(w x) • g x) 2 μ
       = eLpNorm g 2 (μ.withDensity fun x => ENNReal.ofReal (w x)) := by
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal two_ne_zero ENNReal.ofNat_ne_top
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
       (f := fun x => √(w x) • g x) (hwm.sqrt.aestronglyMeasurable.smul hg),
-    eLpNorm_eq_lintegral_rpow_enorm_toReal two_ne_zero ENNReal.ofNat_ne_top
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
       (hg.mono_ac (withDensity_absolutelyContinuous _ _)),
     lintegral_withDensity_eq_lintegral_mul_non_measurable₀ μ hwm.ennreal_ofReal
       (.of_forall fun _ => ENNReal.ofReal_lt_top)]
   refine congrArg (· ^ _) (lintegral_congr fun x => ?_)
   rcases le_or_gt 0 (w x) with hx | hx
-  · simp [enorm_smul, Real.enorm_of_nonneg, mul_pow, ← ENNReal.ofReal_pow, hx]
+  · simp [eNorm_smul, Real.eNorm_of_nonneg, mul_pow, ← ENNReal.ofReal_pow, hx]
   · simp [Real.sqrt_eq_zero'.2 hx.le, ENNReal.ofReal_of_nonpos hx.le]
 
 /-- The forward direction `√w · f` of a class in `L²(w·μ)` is in `L²(μ)`. -/

@@ -242,10 +242,10 @@ theorem singularValue_eq_iInf_nnnorm_comp_orthogonal [CompleteSpace E] (T : E �
     rw [← Submodule.topologicalClosure_coe, ← Submodule.orthogonal_orthogonal_eq_closure]
     exact x.2
   have hRx : ‖R x‖₊ = 0 := by
-    rw [← NNReal.coe_eq_zero, coe_nnnorm, ← mem_closure_zero_iff_norm]
+    rw [← NNReal.coe_eq_zero, coe_nnNorm, ← mem_closure_zero_iff_norm]
     exact map_mem_closure R.continuous hx fun y hy ↦ hy
   calc ‖(T ∘L Vᗮ.subtypeL) x‖₊ = ‖(T - R) x + R x‖₊ := by simp
-    _ ≤ ‖(T - R) x‖₊ := by simpa [hRx] using nnnorm_add_le ((T - R) x) (R x)
+    _ ≤ ‖(T - R) x‖₊ := by simpa [hRx] using nnNorm_add_le ((T - R) x) (R x)
     _ ≤ ‖T - R‖₊ * ‖x‖₊ := (T - R).le_opNNNorm x
 
 end OrthogonalTail

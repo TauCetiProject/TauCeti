@@ -154,7 +154,7 @@ leading terms of the current family. -/
 theorem leadingTerm_notMem_adjoin_leadingTerm (h : m.IsSubduction b f Q r) (hr : r ≠ 0) :
     m.leadingTerm r ∉ Algebra.adjoin k (m.leadingTerm '' Set.range b) := by
   intro hmem
-  have hdeg := (m.leadingTerm_mem_adjoin_leadingTerm_iff hr).1 hmem
+  have hdeg := m.leadingTerm_mem_adjoin_leadingTerm_iff.1 hmem
   apply h.irreducible _ (m.degree_mem_support hr)
   apply AddSubmonoid.closure_mono (s := m.degree '' (Set.range b \ {0})) _ hdeg
   rintro _ ⟨_, ⟨⟨i, rfl⟩, _⟩, rfl⟩
