@@ -42,17 +42,17 @@ namespace TauCeti
 with its natural multiplicities. -/
 noncomputable def divisorProductOne (f : ℂ → ℂ) (z : ℂ) : ℂ :=
   ∏' ρ : (MeromorphicOn.divisor f Set.univ).support,
-    weierstrassFactorOne ((ρ : ℂ)⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat
+    weierstrassFactor 1 ((ρ : ℂ)⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat
 
 /-- The defining native-support product formula. -/
 theorem divisorProductOne_def (f : ℂ → ℂ) (z : ℂ) :
     divisorProductOne f z = ∏' ρ : (MeromorphicOn.divisor f Set.univ).support,
-      weierstrassFactorOne ((ρ : ℂ)⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat := (rfl)
+      weierstrassFactor 1 ((ρ : ℂ)⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat := (rfl)
 
 /-- The native divisor product as a function, in the form used by the generic product lemmas. -/
 theorem divisorProductOne_eq (f : ℂ → ℂ) :
     divisorProductOne f = fun z ↦ ∏' ρ : (MeromorphicOn.divisor f Set.univ).support,
-      weierstrassFactorOne ((ρ : ℂ)⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat :=
+      weierstrassFactor 1 ((ρ : ℂ)⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat :=
   funext (divisorProductOne_def f)
 
 /-- Points of the divisor support are nonzero when `0` is off the support. -/
@@ -80,7 +80,7 @@ private theorem logDerivWeierstrassFactorOneMul_inv_eq {f : ℂ → ℂ}
     (by intro h; exact hz (h ▸ ρ.property))
 
 private theorem mulSupport_divisor_factor_subset (f : ℂ → ℂ) (z : ℂ) :
-    Function.mulSupport (fun ρ : ℂ ↦ weierstrassFactorOne (ρ⁻¹ * z) ^
+    Function.mulSupport (fun ρ : ℂ ↦ weierstrassFactor 1 (ρ⁻¹ * z) ^
       (MeromorphicOn.divisor f Set.univ ρ).toNat) ⊆
         (MeromorphicOn.divisor f Set.univ).support := by
   intro ρ hρ
@@ -93,7 +93,7 @@ private theorem mulSupport_divisor_factor_subset (f : ℂ → ℂ) (z : ℂ) :
 all factors off the native support have exponent zero. -/
 theorem divisorProductOne_eq_tprod (f : ℂ → ℂ) (z : ℂ) :
     divisorProductOne f z = ∏' ρ : ℂ,
-      weierstrassFactorOne (ρ⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat := by
+      weierstrassFactor 1 (ρ⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat := by
   exact tprod_subtype_eq_of_mulSupport_subset (mulSupport_divisor_factor_subset f z)
 
 /-- The native divisor product is normalized to one at the origin. -/
@@ -128,7 +128,7 @@ theorem deriv_divisorProductOne_zero : deriv (divisorProductOne f) 0 = 0 := by
 include hsum in
 /-- The full complex-indexed product converges to the native divisor product at each point. -/
 theorem hasProd_divisorProductOne (z : ℂ) :
-    HasProd (fun ρ : ℂ ↦ weierstrassFactorOne (ρ⁻¹ * z) ^
+    HasProd (fun ρ : ℂ ↦ weierstrassFactor 1 (ρ⁻¹ * z) ^
       (MeromorphicOn.divisor f Set.univ ρ).toNat) (divisorProductOne f z) := by
   have h := (hasProdLocallyUniformlyOn_weierstrassFactorOne_pow
     (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦ (ρ : ℂ)⁻¹)

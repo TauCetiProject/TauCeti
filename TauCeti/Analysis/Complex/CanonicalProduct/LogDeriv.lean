@@ -81,10 +81,10 @@ end Complex
 
 namespace Complex
 
-private theorem logDeriv_weierstrassFactorOne_mul_pow (a z : ℂ) (m : ℕ) :
-    logDeriv (fun w ↦ weierstrassFactorOne (a * w) ^ m) z =
+private theorem logDeriv_weierstrassFactor_one_mul_pow (a z : ℂ) (m : ℕ) :
+    logDeriv (fun w ↦ weierstrassFactor 1 (a * w) ^ m) z =
       (m : ℂ) * (logDerivWeierstrassFactorOneMul a z) := by
-  rw [logDeriv_fun_pow (by fun_prop), logDeriv_weierstrassFactorOne_mul]
+  rw [logDeriv_fun_pow (by fun_prop), logDeriv_weierstrassFactor_one_mul]
 
 variable {ι : Type*} (a : ι → ℂ) (m : ι → ℕ)
   (hm : Summable (fun i ↦ (m i : ℝ) * ‖a i‖ ^ 2))
@@ -135,29 +135,29 @@ theorem hasSumLocallyUniformlyOn_natCast_mul_logDerivWeierstrassFactorOneMul :
 series. -/
 theorem logDeriv_tprod_weierstrassFactorOne_pow {z : ℂ}
     (hz : ∀ i, m i ≠ 0 → a i * z ≠ 1) :
-    logDeriv (fun w ↦ ∏' i, weierstrassFactorOne (a i * w) ^ m i) z =
+    logDeriv (fun w ↦ ∏' i, weierstrassFactor 1 (a i * w) ^ m i) z =
       ∑' i, (m i : ℂ) * (logDerivWeierstrassFactorOneMul (a i) z) := by
-  have hne : ∀ i, weierstrassFactorOne (a i * z) ^ m i ≠ 0 := by
+  have hne : ∀ i, weierstrassFactor 1 (a i * z) ^ m i ≠ 0 := by
     intro i
     by_cases hmi : m i = 0
     · simp [hmi]
     · apply pow_ne_zero
       intro hzero
-      exact hz i hmi (weierstrassFactorOne_eq_zero_iff.mp hzero)
-  have hp : (∏' i, weierstrassFactorOne (a i * z) ^ m i) ≠ 0 := by
+      exact hz i hmi ((weierstrassFactor_eq_zero_iff 1).mp hzero)
+  have hp : (∏' i, weierstrassFactor 1 (a i * z) ^ m i) ≠ 0 := by
     rw [ne_eq, tprod_weierstrassFactorOne_pow_eq_zero_iff a m hm]
     rintro ⟨i, hi, hzero⟩
     exact hz i hi hzero
-  have hs : Summable (fun i ↦ logDeriv (fun w ↦ weierstrassFactorOne (a i * w) ^ m i) z) := by
-    simpa only [logDeriv_weierstrassFactorOne_mul_pow] using
+  have hs : Summable (fun i ↦ logDeriv (fun w ↦ weierstrassFactor 1 (a i * w) ^ m i) z) := by
+    simpa only [logDeriv_weierstrassFactor_one_mul_pow] using
       (summable_norm_natCast_mul_logDerivWeierstrassFactorOneMul a m hm z).of_norm
-  have hd : ∀ i, DifferentiableOn ℂ (fun w ↦ weierstrassFactorOne (a i * w) ^ m i) Set.univ := by
+  have hd : ∀ i, DifferentiableOn ℂ (fun w ↦ weierstrassFactor 1 (a i * w) ^ m i) Set.univ := by
     intro i
     fun_prop
-  have ht := logDeriv_tprod_eq_tsum (f := fun i w ↦ weierstrassFactorOne (a i * w) ^ m i)
+  have ht := logDeriv_tprod_eq_tsum (f := fun i w ↦ weierstrassFactor 1 (a i * w) ^ m i)
     isOpen_univ (Set.mem_univ z) hne hd hs
     (hasProdLocallyUniformlyOn_weierstrassFactorOne_pow a m hm).multipliableLocallyUniformlyOn hp
-  simpa only [logDeriv_weierstrassFactorOne_mul_pow] using ht
+  simpa only [logDeriv_weierstrassFactor_one_mul_pow] using ht
 
 end Complex
 
