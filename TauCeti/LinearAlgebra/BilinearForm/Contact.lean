@@ -540,7 +540,7 @@ theorem IsContact.reebVector_notMem_ker (h : a.IsContact B) :
 `V = ker a ⊕ K r`. -/
 theorem IsContact.isCompl_ker_span_reebVector (h : a.IsContact B) :
     IsCompl (LinearMap.ker a) (K ∙ a.reebVector B) := by
-  refine isCompl_ker_of_disjoint_of_ne_bot h.ne_zero ?_ (by simpa using h.reebVector_ne_zero)
+  refine isCompl_ker_of_disjoint_of_ne_bot ?_ (by simpa using h.reebVector_ne_zero)
   rw [Submodule.disjoint_def]
   rintro v hv hvr
   obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.1 hvr

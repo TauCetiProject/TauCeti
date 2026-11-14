@@ -11,10 +11,12 @@ public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
 public import TauCeti.Analysis.Normed.Operator.Basic
 public import TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov
+public import TauCeti.Analysis.ODE.Linear
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Integral.ExpDecay
+import TauCeti.Analysis.InnerProductSpace.LyapunovForm.Inertia
 
 /-!
 # The index of the trajectory operator
@@ -91,6 +93,8 @@ computing the index with the forms `S` and `S'` at the two ends shows `n⁻(S) =
 * `index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner`, in
   `TauCeti.WeakDerivStep`: for limits with symmetric Lyapunov forms `S±`, the index is
   `n⁻(S⁻) - n⁻(S⁺)`.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_stableSubspace_sub_finrank`: for
+  hyperbolic limits, the index is the dimension of the stable subspace of `A⁻` minus that of `A⁺`.
 * `ContinuousLinearMap.finrank_pointSpectralSubspace_Iio_eq_of_forall_le_inner`: two symmetric
   Lyapunov forms of one operator have the same number of negative eigenvalues.
 
@@ -664,6 +668,31 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of
     (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (hgapminus v))
     (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (hgapplus v))
     hMbot hMtop ML hML
+
+/-- **The index of the trajectory operator with hyperbolic limits counts stable directions.** Let
+`A` be a continuous family of operators on a finite-dimensional real inner product space whose
+limits `A±` at `±∞` have Lyapunov forms, that is, are hyperbolic. Then the index of the trajectory
+operator `u ↦ u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is `dim Eˢ(A⁻) - dim Eˢ(A⁺)`, where
+the stable subspace `Eˢ(B)` (`ContinuousLinearMap.stableSubspace`) consists of the `v` with
+`exp (t • B) v → 0` as `t → ∞`. Neither `A` nor its limits need to be symmetric. For the operator
+`d/ds - A`, whose coefficient is `-A`, this reads `dim Eᵘ(A⁻) - dim Eᵘ(A⁺)` with the unstable
+subspaces `Eᵘ(B) = Eˢ(-B)`. -/
+theorem index_trajectoryOperator_eq_finrank_stableSubspace_sub_finrank (hA : Continuous A)
+    {Aminus Aplus : E →L[ℝ] E} (hminus : Aminus.HasLyapunovForm) (hplus : Aplus.HasLyapunovForm)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    (trajectoryOperator (p := 2) AL).index =
+      (Module.finrank ℝ Aminus.stableSubspace : ℤ) - Module.finrank ℝ Aplus.stableSubspace := by
+  obtain ⟨Sminus, hSminus, cminus, hcminus, hSAminus⟩ :=
+    ContinuousLinearMap.hasLyapunovForm_iff.1 hminus
+  obtain ⟨Splus, hSplus, cplus, hcplus, hSAplus⟩ := ContinuousLinearMap.hasLyapunovForm_iff.1 hplus
+  rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner hA
+      hSminus hSplus hcminus hcplus hSAminus hSAplus hbot htop AL hAL,
+    ContinuousLinearMap.finrank_stableSubspace_eq_finrank_pointSpectralSubspace_Iio hSminus hcminus
+      hSAminus,
+    ContinuousLinearMap.finrank_stableSubspace_eq_finrank_pointSpectralSubspace_Iio hSplus hcplus
+      hSAplus]
 
 end TauCeti.WeakDerivStep
 
