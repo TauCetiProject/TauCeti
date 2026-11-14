@@ -167,7 +167,6 @@ variable {c t : ℕ}
 
 /-- Two vertices are adjacent exactly when one is a row `i` and the other a column `j` with
 `i < c * (t - j / c)`. -/
-@[grind =]
 theorem staircaseGraph_adj {u v : Fin (c * t) ⊕ Fin (c * t) ⊕ Fin c} :
     (staircaseGraph c t).Adj u v ↔ ∃ i j : Fin (c * t), (i : ℕ) < c * (t - j / c) ∧
       (u = .inl i ∧ v = .inr (.inl j) ∨ u = .inr (.inl j) ∧ v = .inl i) := by
