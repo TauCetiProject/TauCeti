@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.RootSystem.RankTwo
 The Cartan integers of the pinned rational systems of simply-laced types and types B, C,
 and F₄ have absolute value at most two. These instances make the root-string bounds outside
 G₂ available for collecting positive root subgroups and for punctured-positive normalization.
-The proof specializes `HasCartanType.isNotG2` to the pinned rational root systems.
+The proof uses `hasCartanType_G2_of_isG2` and uniqueness of valid Cartan types to exclude G₂.
 
 ## References
 
@@ -30,7 +30,9 @@ namespace TauCeti.DynkinType
 root strings. -/
 theorem isNotG2_rationalRootSystem_of_ne_G2 {t : DynkinType} {ht : t.Valid}
     (h : t ≠ G2) : (t.rationalRootSystem ht).IsNotG2 :=
-  (hasCartanType_rationalRootSystem t ht).isNotG2 ht h
+  (t.rationalRootSystem ht).not_isG2_iff_isNotG2.mp fun hG2 =>
+    h ((hasCartanType_rationalRootSystem t ht).eq_of_valid
+      (hasCartanType_G2_of_isG2 hG2 (t.rationalBase ht)) ht valid_G2)
 
 /-- The Cartan integers of the rational type-B system lie between `-2` and `2`. -/
 instance instIsNotG2RationalRootSystemB (n : ℕ) (hn : (B n).Valid) :
