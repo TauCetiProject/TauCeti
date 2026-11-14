@@ -53,12 +53,12 @@ a field `𝕜`. The hypothesis `[NeZero (2 : 𝕜)]` is assumed only where `½ +
 ## Main results
 
 * `TauCeti.complexLinearPart_add_complexAntilinearPart`: the decomposition `∂ + ∂̄ = id`.
-* `TauCeti.complexLinearPart_isComplexLinear` /
-  `TauCeti.complexAntilinearPart_isComplexAntilinear`: the two parts land in their named classes.
+* `TauCeti.isComplexLinear_complexLinearPart` /
+  `TauCeti.isComplexAntilinear_complexAntilinearPart`: the two parts land in their named classes.
 * `TauCeti.isComplexLinear_iff_complexAntilinearPart_eq_zero`: `F` is complex linear iff its
   complex-antilinear part vanishes (the `∂̄ F = 0` characterization).
-* `TauCeti.isCompl_complexLinearMaps`: the complex-linear and complex-antilinear maps are
-  complementary submodules of all linear maps.
+* `TauCeti.isCompl_complexLinearMaps_complexAntilinearMaps`: the complex-linear and
+  complex-antilinear maps are complementary submodules of all linear maps.
 * `TauCeti.isComplexLinear_arrowCongr_iff`: complex-linearity is preserved and reflected by
   conjugating source, target, and map along linear equivalences.
 * `TauCeti.IsComplexLinear.symm`, `TauCeti.IsComplexAntilinear.symm`: the inverse of a
@@ -251,7 +251,7 @@ theorem IsComplexAntilinear.comp {F : V →ₗ[R] W} {G : W →ₗ[R] U}
     simp only [LinearMap.comp_apply, hF.apply v, map_neg, hG.apply (F v), _root_.neg_neg]
 
 /-- A complex-linear map after a complex-antilinear map is complex antilinear. -/
-theorem IsComplexLinear.comp_antilinear {F : V →ₗ[R] W} {G : W →ₗ[R] U}
+theorem IsComplexLinear.comp_isComplexAntilinear {F : V →ₗ[R] W} {G : W →ₗ[R] U}
     (hG : IsComplexLinear J' J'' G) (hF : IsComplexAntilinear J J' F) :
     IsComplexAntilinear J J'' (G ∘ₗ F) :=
   isComplexAntilinear_of_apply fun v => by
@@ -262,7 +262,7 @@ section Intermediate
 variable {W : Type*} [AddCommMonoid W] [Module R W] {J' : W →ₗ[R] W}
 
 /-- A complex-antilinear map after a complex-linear map is complex antilinear. -/
-theorem IsComplexAntilinear.comp_linear {F : V →ₗ[R] W} {G : W →ₗ[R] U}
+theorem IsComplexAntilinear.comp_isComplexLinear {F : V →ₗ[R] W} {G : W →ₗ[R] U}
     (hG : IsComplexAntilinear J' J'' G) (hF : IsComplexLinear J J' F) :
     IsComplexAntilinear J J'' (G ∘ₗ F) :=
   isComplexAntilinear_of_apply fun v => by
@@ -556,11 +556,11 @@ theorem IsComplexAntilinear.complexAntilinearPart_eq [NeZero (2 : 𝕜)] {F : V 
     complexLinearPart_add_complexAntilinearPart J J' F
 
 /-- Uniqueness of the complex-linear/antilinear decomposition: if `F = A + B` with `A` complex
-linear and `B` complex antilinear, then `A` and `B` are the canonical parts of `F`. -/
-theorem complexLinearPart_eq_and_complexAntilinearPart_eq_of_decomp [NeZero (2 : 𝕜)]
+linear and `B` complex antilinear, then the canonical parts of `F` are `A` and `B`. -/
+theorem complexLinearPart_eq_and_complexAntilinearPart_eq_of_eq_add [NeZero (2 : 𝕜)]
     (hJ' : J' ∘ₗ J' = -LinearMap.id) {F A B : V →ₗ[𝕜] W}
     (hA : IsComplexLinear J J' A) (hB : IsComplexAntilinear J J' B) (hF : F = A + B) :
-    A = complexLinearPart J J' F ∧ B = complexAntilinearPart J J' F := by
+    complexLinearPart J J' F = A ∧ complexAntilinearPart J J' F = B := by
   refine ⟨?_, ?_⟩
   · rw [hF, complexLinearPart_add, hA.complexLinearPart_eq hJ',
       hB.complexLinearPart_eq_zero hJ', add_zero]
@@ -572,7 +572,7 @@ section Source
 variable {V : Type*} [AddCommGroup V] [Module 𝕜 V] {J : V →ₗ[𝕜] V}
 
 /-- The complex-linear part really is complex linear. -/
-theorem complexLinearPart_isComplexLinear (hJ : J ∘ₗ J = -LinearMap.id)
+theorem isComplexLinear_complexLinearPart (hJ : J ∘ₗ J = -LinearMap.id)
     (hJ' : J' ∘ₗ J' = -LinearMap.id) (F : V →ₗ[𝕜] W) :
     IsComplexLinear J J' (complexLinearPart J J' F) := by
   refine isComplexLinear_of_apply fun v => ?_
@@ -580,7 +580,7 @@ theorem complexLinearPart_isComplexLinear (hJ : J ∘ₗ J = -LinearMap.id)
   module
 
 /-- The complex-antilinear part really is complex antilinear. -/
-theorem complexAntilinearPart_isComplexAntilinear (hJ : J ∘ₗ J = -LinearMap.id)
+theorem isComplexAntilinear_complexAntilinearPart (hJ : J ∘ₗ J = -LinearMap.id)
     (hJ' : J' ∘ₗ J' = -LinearMap.id) (F : V →ₗ[𝕜] W) :
     IsComplexAntilinear J J' (complexAntilinearPart J J' F) := by
   refine isComplexAntilinear_of_apply fun v => ?_
@@ -589,8 +589,8 @@ theorem complexAntilinearPart_isComplexAntilinear (hJ : J ∘ₗ J = -LinearMap.
 
 /-- For genuine almost complex structures, every linear map splits uniquely as a
 complex-linear plus a complex-antilinear map: the two submodules are complementary. -/
-theorem isCompl_complexLinearMaps [NeZero (2 : 𝕜)] (hJ : J ∘ₗ J = -LinearMap.id)
-    (hJ' : J' ∘ₗ J' = -LinearMap.id) :
+theorem isCompl_complexLinearMaps_complexAntilinearMaps [NeZero (2 : 𝕜)]
+    (hJ : J ∘ₗ J = -LinearMap.id) (hJ' : J' ∘ₗ J' = -LinearMap.id) :
     IsCompl (complexLinearMaps J J') (complexAntilinearMaps J J') := by
   constructor
   · refine Submodule.disjoint_def.mpr fun F hlin hanti => ?_
@@ -598,8 +598,8 @@ theorem isCompl_complexLinearMaps [NeZero (2 : 𝕜)] (hJ : J ∘ₗ J = -Linear
       (mem_complexLinearMaps.mp hlin).complexAntilinearPart_eq_zero hJ',
       (mem_complexAntilinearMaps.mp hanti).complexLinearPart_eq_zero hJ', add_zero]
   · refine codisjoint_iff.mpr <| eq_top_iff.mpr fun F _ => Submodule.mem_sup.mpr ?_
-    exact ⟨complexLinearPart J J' F, complexLinearPart_isComplexLinear hJ hJ' F,
-      complexAntilinearPart J J' F, complexAntilinearPart_isComplexAntilinear hJ hJ' F,
+    exact ⟨complexLinearPart J J' F, isComplexLinear_complexLinearPart hJ hJ' F,
+      complexAntilinearPart J J' F, isComplexAntilinear_complexAntilinearPart hJ hJ' F,
       complexLinearPart_add_complexAntilinearPart J J' F⟩
 
 end Source

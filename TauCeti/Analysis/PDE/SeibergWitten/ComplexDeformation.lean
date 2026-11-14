@@ -431,7 +431,7 @@ theorem isComplexLinearMap_complexDeformationOperator (o : Manifold.Orientation 
     IsComplexLinearMap J.covectorComplexStructure (deformationTargetComplexStructure o J hJo)
       (complexDeformationOperator o J hJo) :=
   (isComplexLinearMap_iff_isComplexLinear _ _ _).mpr <|
-    TauCeti.complexLinearPart_isComplexLinear J.covectorComplexStructure.square_neg
+    TauCeti.isComplexLinear_complexLinearPart J.covectorComplexStructure.square_neg
       (deformationTargetComplexStructure o J hJo).square_neg (asdDeformationOperator o)
 
 /-- The difference `δ_ω - δ₀` is minus the `(J₁, J′)`-complex-antilinear part of `δ₀`. -/

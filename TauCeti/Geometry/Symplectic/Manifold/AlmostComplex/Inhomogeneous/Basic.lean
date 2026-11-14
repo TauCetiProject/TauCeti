@@ -284,7 +284,7 @@ def compose (ν : InhomogeneousTerm j J)
       (J'.toEndomorphism q).toLinearMap (B q).toLinearMap) : InhomogeneousTerm j' J' :=
   ⟨B.clmComp (ν.val.clmComp A), fun q ↦ by
     simpa only [ContMDiffSection.clmComp_apply, ContinuousLinearMap.toLinearMap_comp] using
-      (hB q).comp_antilinear ((ν.isComplexAntilinear q).comp_linear (hA q))⟩
+      (hB q).comp_isComplexAntilinear ((ν.isComplexAntilinear q).comp_isComplexLinear (hA q))⟩
 
 @[simp]
 theorem compose_val_apply (ν : InhomogeneousTerm j J)
@@ -360,7 +360,7 @@ def project (j : ContMDiffAlmostComplexStructure IP n P)
       ContMDiffSection.coe_add, Pi.add_apply, add_apply, ContMDiffSection.clmComp_apply,
       ContinuousLinearMap.comp_apply, complexAntilinearPart_apply, ContinuousLinearMap.coe_coe]
   rw [he]
-  apply complexAntilinearPart_isComplexAntilinear
+  apply isComplexAntilinear_complexAntilinearPart
   · ext v
     exact j.horizontalEndomorphism_apply_apply q v
   · ext v
