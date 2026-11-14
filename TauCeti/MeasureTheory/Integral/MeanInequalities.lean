@@ -9,9 +9,11 @@ public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
+public import Mathlib.Basic.Real.ConjExponents
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
+import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Integral.MeanInequalities
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Variants of Hölder's inequality
@@ -26,25 +28,35 @@ variable and applying Tonelli's theorem gives the `Lᵖ → L^q` bound for the i
 
 The statement is in `ℝ≥0∞`, so it needs no integrability hypotheses.
 
-For a weight `0 ≤ w ≤ K` and Hölder conjugate exponents `p, q`, the bound `w ^ p ≤ K ^ (p - 1) w`
-turns Hölder's inequality into
-`∫ w g ≤ (K ^ (p - 1) ∫ w) ^ (1/p) (∫ g ^ q) ^ (1/q)` for `g ≥ 0`, which controls `∫ w g` by the
-`L¹` norm of the weight. With `w` the deviation of a coefficient from a constant, this is how a
-mean oscillation enters the error estimates of frozen-coefficient arguments.
+For conjugate exponents `p'` and `p` and `(γ - 1) p' = q`, Hölder's inequality also bounds
+`∫⁻ w ^ (γ - 1) ‖g‖ₑ` by `(∫⁻ w ^ q) ^ (1/p') ‖g‖_{Lᵖ}`. This is the step of Maz'ya's truncation
+method that bounds the gradient of a power `w ^ γ` of a truncation through the `Lᵖ` norm of the
+gradient of the original function.
 
 The file also records the weighted Young inequality for a pairing,
 `∫ w ⟪G, η⟫ ≤ (δ / 2) ∫ w ‖η‖² + (2 δ)⁻¹ ∫ w ‖G‖²` for a nonnegative weight `w` and `δ > 0`,
 which absorbs a pairing into a coercive term in energy estimates.
 
+On a finite measure space, a weight `0 ≤ θ ≤ K` and a function with `‖g‖ ∈ L^{2q}` satisfy
+
+`∫ θ² ‖g‖² ≤ (K^(2q' - 1) ∫ θ)^(1/q') (∫ ‖g‖^(2q))^(1/q)`
+
+for Hölder conjugate exponents `q, q'`, so the weighted integral is small when the mean of `θ` is
+small. This is how the mean oscillation of the coefficients enters regularity estimates for
+divergence-form equations.
+
+For a product of `k` functions, the norm of its integral is at most the average of their `k`th
+absolute moments. This form of the arithmetic-geometric mean inequality gives uniform bounds on
+expected products without any independence assumption.
+
 ## Main declarations
 
 * `TauCeti.lintegral_mul_le_of_inv_add_inv_eq`: the three-exponent Hölder inequality.
-* `TauCeti.integral_rpow_le_rpow_mul_integral_of_le`: `∫ w ^ p ≤ K ^ (p - 1) ∫ w` for
-  `0 ≤ w ≤ K` and `1 ≤ p`.
-* `TauCeti.integral_mul_le_L1_mul_Lq_of_le`: Hölder's inequality with a bounded weight.
-* `TauCeti.integral_sq_mul_norm_sq_le_L1_mul_L2q_of_le`: its squared form
-  `∫ w² ‖g‖² ≤ (K ^ (2p - 1) ∫ w) ^ (1/p) (∫ ‖g‖ ^ (2q)) ^ (1/q)`.
+* `TauCeti.lintegral_ofReal_rpow_mul_eNorm_le`: Hölder's inequality for `w ^ (γ - 1) ‖g‖ₑ`.
 * `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
+* `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`: Hölder's inequality with a bounded weight.
+* `MeasureTheory.norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow`:
+  the absolute-moment bound for an integral of a finite product.
 
 ## References
 
@@ -54,10 +66,10 @@ which absorbs a pairing into a coercive term in energy estimates.
 
 public section
 
+namespace TauCeti
+
 open MeasureTheory
 open scoped ENNReal InnerProductSpace
-
-namespace TauCeti
 
 variable {β : Type*} [MeasurableSpace β] {ν : Measure β}
 
@@ -104,74 +116,21 @@ theorem lintegral_mul_le_of_inv_add_inv_eq {k g : β → ℝ≥0∞} (hk : AEMea
           ENNReal.rpow_add_of_nonneg _ _ (mul_nonneg hp0.le ha) (mul_nonneg hp0.le hc)]
         ring
 
-/-- **Interpolation between `L^∞` and `L¹`.** If `0 ≤ w ≤ K` almost everywhere on a finite measure
-space and `1 ≤ p`, then `∫ w ^ p ≤ K ^ (p - 1) ∫ w`. -/
-theorem integral_rpow_le_rpow_mul_integral_of_le [IsFiniteMeasure ν] {p K : ℝ} {w : β → ℝ}
-    (hwm : AEStronglyMeasurable w ν) (hw : ∀ᵐ x ∂ν, 0 ≤ w x ∧ w x ≤ K) (hp : 1 ≤ p) :
-    ∫ x, w x ^ p ∂ν ≤ K ^ (p - 1) * ∫ x, w x ∂ν := by
-  rcases eq_zero_or_neZero ν with rfl | _
-  · simp
-  have hK : 0 ≤ K := by
-    obtain ⟨x, hx⟩ := hw.exists
-    exact hx.1.trans hx.2
-  have hwi : Integrable w ν := Integrable.of_bound hwm K
-    (hw.mono fun x hx => by rw [Real.norm_of_nonneg hx.1]; exact hx.2)
-  simpa only [Measure.restrict_univ, Real.rpow_one] using
-    MeasureTheory.setIntegral_rpow_le_rpow_mul_setIntegral_rpow (ν := ν) (s := Set.univ) (p := 1)
-      (q := p) hK subset_rfl hp (by positivity) (by simpa using hw.mono fun x hx => hx.1)
-      (by simpa using hwi) (by simpa using hw.mono fun x hx => hx.2)
-
-/-- **Hölder's inequality with a bounded weight.** Let `p, q` be Hölder conjugate exponents, let
-`w` be measurable with `0 ≤ w ≤ K` on a finite measure space and let `0 ≤ g ∈ L^q`. Then
-`∫ w g ≤ (K ^ (p - 1) ∫ w) ^ (1/p) (∫ g ^ q) ^ (1/q)`: the `Lᵖ` norm of the weight in Hölder's
-inequality is replaced by its `L¹` norm, since `w ^ p ≤ K ^ (p - 1) w`. -/
-theorem integral_mul_le_L1_mul_Lq_of_le [IsFiniteMeasure ν] {p q K : ℝ}
-    (hpq : p.HolderConjugate q) {w g : β → ℝ} (hwm : AEStronglyMeasurable w ν)
-    (hw : ∀ᵐ x ∂ν, 0 ≤ w x ∧ w x ≤ K) (hg0 : 0 ≤ᵐ[ν] g) (hg : MemLp g (ENNReal.ofReal q) ν) :
-    ∫ x, w x * g x ∂ν ≤ (K ^ (p - 1) * ∫ x, w x ∂ν) ^ p⁻¹ * (∫ x, g x ^ q ∂ν) ^ q⁻¹ := by
-  have hwK : ∀ᵐ x ∂ν, ‖w x‖ ≤ K := hw.mono fun x hx => by rw [Real.norm_of_nonneg hx.1]; exact hx.2
-  refine (integral_mul_le_Lp_mul_Lq_of_nonneg hpq (hw.mono fun x hx => hx.1) hg0
-    (MemLp.of_bound hwm K hwK) hg).trans ?_
-  rw [one_div, one_div]
-  exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow
-    (integral_nonneg_of_ae (hw.mono fun x hx => Real.rpow_nonneg hx.1 _))
-    (integral_rpow_le_rpow_mul_integral_of_le hwm hw hpq.lt.le) hpq.inv_nonneg)
-    (Real.rpow_nonneg (integral_nonneg_of_ae (hg0.mono fun x hx => Real.rpow_nonneg hx _)) _)
-
-/-- **Hölder's inequality with a bounded weight, squared.** Let `p, q` be Hölder conjugate
-exponents, let `w` be measurable with `0 ≤ w ≤ K` on a finite measure space and let
-`g ∈ L^{2q}`. Then
-`∫ w² ‖g‖² ≤ (K ^ (2p - 1) ∫ w) ^ (1/p) (∫ ‖g‖ ^ (2q)) ^ (1/q)`: the square of the `L²` norm of
-`w g` is controlled by the `L¹` norm of the weight and the `L^{2q}` norm of `g`. -/
-theorem integral_sq_mul_norm_sq_le_L1_mul_L2q_of_le [IsFiniteMeasure ν] {E : Type*}
-    [NormedAddCommGroup E] {p q K : ℝ} (hpq : p.HolderConjugate q) {w : β → ℝ} {g : β → E}
-    (hwm : AEStronglyMeasurable w ν) (hw : ∀ᵐ x ∂ν, 0 ≤ w x ∧ w x ≤ K)
-    (hg : MemLp g (ENNReal.ofReal (2 * q)) ν) :
-    ∫ x, w x ^ 2 * ‖g x‖ ^ 2 ∂ν ≤
-      (K ^ (2 * p - 1) * ∫ x, w x ∂ν) ^ p⁻¹ * (∫ x, ‖g x‖ ^ (2 * q) ∂ν) ^ q⁻¹ := by
-  -- Hölder's inequality for `w²` and `‖g‖²`, then `(w²) ^ p = w ^ (2p)` and
-  -- `∫ w ^ (2p) ≤ K ^ (2p - 1) ∫ w`.
-  have hw2 : ∀ᵐ x ∂ν, ‖w x ^ 2‖ ≤ K ^ 2 := hw.mono fun x hx => by
-    rw [Real.norm_of_nonneg (sq_nonneg _)]
-    exact pow_le_pow_left₀ hx.1 hx.2 2
-  have hg2 : MemLp (fun x => ‖g x‖ ^ 2) (ENNReal.ofReal q) ν := by
-    have h := hg.norm_rpow_div (ENNReal.ofReal 2)
-    rw [← ENNReal.ofReal_div_of_pos two_pos, ENNReal.toReal_ofReal zero_le_two,
-      show 2 * q / 2 = q by ring] at h
-    simpa only [Real.rpow_two] using h
-  have hrpow : ∀ {t : ℝ}, 0 ≤ t → ∀ s : ℝ, (t ^ 2) ^ s = t ^ (2 * s) := fun ht s => by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul ht, Nat.cast_ofNat]
-  have hwp : ∫ x, (w x ^ 2) ^ p ∂ν = ∫ x, w x ^ (2 * p) ∂ν :=
-    integral_congr_ae (hw.mono fun x hx => hrpow hx.1 p)
-  have hgq : ∫ x, (‖g x‖ ^ 2) ^ q ∂ν = ∫ x, ‖g x‖ ^ (2 * q) ∂ν :=
-    integral_congr_ae (ae_of_all _ fun x => hrpow (norm_nonneg _) q)
-  refine (integral_mul_le_Lp_mul_Lq_of_nonneg hpq (ae_of_all _ fun x => sq_nonneg (w x))
-    (ae_of_all _ fun x => sq_nonneg ‖g x‖) (MemLp.of_bound (hwm.pow 2) _ hw2) hg2).trans ?_
-  rw [one_div, one_div, hwp, hgq]
-  exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow
-    (integral_nonneg_of_ae (hw.mono fun x hx => Real.rpow_nonneg hx.1 _))
-    (integral_rpow_le_rpow_mul_integral_of_le hwm hw (by linarith [hpq.lt])) hpq.inv_nonneg)
-    (Real.rpow_nonneg (integral_nonneg fun x => by positivity) _)
+/-- **Hölder's inequality for a power times a norm.** If `p'` and `p` are conjugate exponents and
+`(γ - 1) p' = q`, then `∫⁻ w ^ (γ - 1) ‖g‖ₑ ≤ (∫⁻ w ^ q) ^ (1/p') ‖g‖_{Lᵖ}`. -/
+theorem lintegral_ofReal_rpow_mul_eNorm_le {F : Type*} [NormedAddCommGroup F] {w : β → ℝ}
+    {g : β → F} (hw : AEMeasurable w ν) (hg : AEStronglyMeasurable g ν) {p : ℝ≥0∞} {γ p' q : ℝ}
+    (hconj : p'.HolderConjugate p.toReal) (hγp' : (γ - 1) * p' = q) :
+    ∫⁻ x, ENNReal.ofReal (w x) ^ (γ - 1) * ‖g x‖ₑ ∂ν ≤
+      (∫⁻ x, ENNReal.ofReal (w x) ^ q ∂ν) ^ p'⁻¹ * eLpNorm g p ν := by
+  have hp : 0 < p.toReal := zero_lt_one.trans hconj.symm.lt
+  have h := ENNReal.lintegral_mul_le_Lp_mul_Lq ν hconj
+    (f := fun x => ENNReal.ofReal (w x) ^ (γ - 1)) (g := fun x => ‖g x‖ₑ)
+    ((ENNReal.measurable_ofReal.comp_aemeasurable hw).pow_const _) hg.eNorm
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal (ENNReal.toReal_pos_iff.1 hp).1.ne'
+    (ENNReal.toReal_pos_iff.1 hp).2.ne hg]
+  refine h.trans_eq ?_
+  simp_rw [← ENNReal.rpow_mul, hγp', one_div]
 
 /-- **Weighted Young inequality for a pairing.** For a nonnegative weight `w` and `δ > 0`,
 
@@ -203,4 +162,84 @@ theorem integral_mul_inner_le {F : Type*} [NormedAddCommGroup F] [InnerProductSp
       have := hw z
       positivity
 
+/-- **Hölder's inequality with a bounded weight.** On a finite measure space, let `θ` be a
+measurable weight with `0 ≤ θ ≤ K` almost everywhere, and let `‖g‖ ∈ L^{2q}` for a pair of Hölder
+conjugate exponents `q, q'`. Then
+`∫ θ² ‖g‖² ≤ (K^(2q' - 1) ∫ θ)^(1/q') (∫ ‖g‖^(2q))^(1/q)`. -/
+theorem integral_sq_mul_norm_sq_le_of_ae_le {E : Type*} [NormedAddCommGroup E]
+    [IsFiniteMeasure ν] {θ : β → ℝ} {g : β → E} {K q q' : ℝ} (hq : q.HolderConjugate q')
+    (hθm : AEStronglyMeasurable θ ν) (hθ : ∀ᵐ x ∂ν, 0 ≤ θ x ∧ θ x ≤ K)
+    (hg : MemLp g (ENNReal.ofReal (2 * q)) ν) :
+    ∫ x, θ x ^ 2 * ‖g x‖ ^ 2 ∂ν ≤
+      (K ^ (2 * q' - 1) * ∫ x, θ x ∂ν) ^ q'⁻¹ * (∫ x, ‖g x‖ ^ (2 * q) ∂ν) ^ q⁻¹ := by
+  have hθi : Integrable θ ν := Integrable.of_bound hθm K (hθ.mono fun x hx => by
+    rw [Real.norm_of_nonneg hx.1]
+    exact hx.2)
+  -- Hölder's inequality with exponents `q'` and `q`.
+  have hg2 : MemLp (fun x => ‖g x‖ ^ 2) (ENNReal.ofReal q) ν := by
+    have h := hg.norm_rpow_div (ENNReal.ofReal 2)
+    rw [← ENNReal.ofReal_div_of_pos two_pos, ENNReal.toReal_ofReal zero_le_two,
+      show 2 * q / 2 = q by ring] at h
+    simpa only [Real.rpow_two] using h
+  have hθ2 : MemLp (fun x => θ x ^ 2) (ENNReal.ofReal q') ν :=
+    MemLp.of_bound (hθm.pow 2) (K ^ 2) (hθ.mono fun x hx => by
+      rw [Real.norm_of_nonneg (sq_nonneg _)]
+      exact pow_le_pow_left₀ hx.1 hx.2 2)
+  have hHolder := integral_mul_le_Lp_mul_Lq_of_nonneg hq.symm
+    (ae_of_all _ fun x => sq_nonneg (θ x)) (ae_of_all _ fun x => sq_nonneg ‖g x‖) hθ2 hg2
+  -- Since `0 ≤ θ ≤ K`, `(θ²)^q' = θ^(2q' - 1) θ ≤ K^(2q' - 1) θ`.
+  have hθq : ∫ x, (θ x ^ 2) ^ q' ∂ν ≤ K ^ (2 * q' - 1) * ∫ x, θ x ∂ν := by
+    rw [← integral_const_mul]
+    refine integral_mono_of_nonneg (ae_of_all _ fun x => by positivity) (hθi.const_mul _)
+      (hθ.mono fun x hx => ?_)
+    have h1 : 0 < 2 * q' - 1 := by linarith [hq.symm.lt]
+    calc (θ x ^ 2) ^ q' = θ x ^ (2 * q' - 1) * θ x := by
+          rw [← Real.rpow_natCast, ← Real.rpow_mul hx.1, ← Real.rpow_add_one' hx.1 (by linarith)]
+          norm_num
+      _ ≤ K ^ (2 * q' - 1) * θ x :=
+          mul_le_mul_of_nonneg_right (Real.rpow_le_rpow hx.1 hx.2 h1.le) hx.1
+  have hgq : ∫ x, (‖g x‖ ^ 2) ^ q ∂ν = ∫ x, ‖g x‖ ^ (2 * q) ∂ν := by
+    refine integral_congr_ae (ae_of_all _ fun x => ?_)
+    simp only
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _)]
+    norm_num
+  refine hHolder.trans ?_
+  rw [hgq, one_div, one_div]
+  exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (integral_nonneg fun x => by positivity)
+    hθq hq.symm.inv_nonneg) (Real.rpow_nonneg (integral_nonneg fun x => by positivity) _)
+
 end TauCeti
+
+namespace MeasureTheory
+
+/-- For a nonempty finite set `s` of cardinality `k`, the norm of the integral of the product
+over `s` is bounded by the average of the `k`th absolute moments. No independence or finiteness
+of the underlying measure is needed. -/
+theorem norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow {Ω ι 𝕜 : Type*}
+    [MeasurableSpace Ω] {μ : Measure Ω} [NormedCommRing 𝕜] [NormedSpace ℝ 𝕜]
+    (f : ι → Ω → 𝕜) {s : Finset ι} (hs : s.Nonempty)
+    (hf : ∀ i ∈ s, Integrable (fun x ↦ ‖f i x‖ ^ s.card) μ) :
+    ‖∫ x, ∏ i ∈ s, f i x ∂μ‖ ≤
+      (s.card : ℝ)⁻¹ * ∑ i ∈ s, ∫ x, ‖f i x‖ ^ s.card ∂μ := by
+  classical
+  have hk : (s.card : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hs.card_ne_zero
+  have hpoint (x : Ω) : ‖∏ i ∈ s, f i x‖ ≤
+      ∑ i ∈ s, (s.card : ℝ)⁻¹ * ‖f i x‖ ^ s.card := by
+    refine (Finset.norm_prod_le' s hs (fun i ↦ f i x)).trans ?_
+    have h := Real.geom_mean_le_arith_mean_weighted s
+      (fun _ : ι ↦ (s.card : ℝ)⁻¹)
+      (fun i ↦ ‖f i x‖ ^ s.card)
+      (fun _ _ ↦ inv_nonneg.mpr (Nat.cast_nonneg _))
+      (by simp [hk]) (fun _ _ ↦ by positivity)
+    convert h using 1
+    apply Finset.prod_congr rfl
+    intro i _
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _), mul_inv_cancel₀ hk,
+      Real.rpow_one]
+  have hbound := norm_integral_le_of_norm_le
+    (integrable_finsetSum _ fun i hi ↦ (hf i hi).const_mul (s.card : ℝ)⁻¹)
+    (Filter.Eventually.of_forall hpoint)
+  simpa only [integral_finsetSum _ fun i hi ↦ (hf i hi).const_mul _, integral_const_mul,
+    Finset.mul_sum] using hbound
+
+end MeasureTheory

@@ -67,7 +67,7 @@ replaced by `2 (∫_{B_r} f² + ∫_{B_r} θ² ‖D²u‖²)`
 (`TauCeti.PDE.setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_abs_sub_le`).
 No continuity of `a` is used. If `|aᵢⱼ - Aᵢⱼ| ≤ M` and `D²u ∈ L^{2q}(B_r)`, Hölder's inequality with
 the conjugate exponent `q'` and `θ^(2q') ≤ ((n + 1)² M)^(2q' - 1) θ` bound the error by the mean
-deviation `⨍_{B_r} θ` (`TauCeti.integral_sq_mul_norm_sq_le_L1_mul_L2q_of_le`), which gives
+deviation `⨍_{B_r} θ` (`TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`), which gives
 Krylov's estimate in scale-invariant form
 (`TauCeti.PDE.setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_abs_sub_le`):
 
@@ -550,7 +550,7 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_abs_sub_le
   -- term `∫ θ² ‖D²u‖²` of the frozen comparison.
   have hΘ : ∫ x in ball x₀ r, θ x ^ 2 * ‖H x‖ ^ 2 ≤
       (K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * IH ^ q⁻¹ :=
-    integral_sq_mul_norm_sq_le_L1_mul_L2q_of_le hq.symm (by fun_prop) hθ hHq
+    integral_sq_mul_norm_sq_le_of_ae_le hq (by fun_prop) hθ hHq
   have key := setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_abs_sub_le
     hA u hball ham haM heq hρ hρr
   -- Pass to averages: `|B_ρ| = (ρ / r)^(n + 1) |B_r|`.

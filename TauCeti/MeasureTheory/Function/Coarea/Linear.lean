@@ -298,7 +298,10 @@ This permits null modifications of Borel representatives before taking sections.
 theorem ae_nullMeasurableSet_restrict_preimage_singleton (L : E →ₗ[ℝ] F)
     {s : Set E} (hs : NullMeasurableSet s volume) :
     ∀ᵐ y : F, NullMeasurableSet s (μHE[finrank ℝ E - finrank ℝ F].restrict (L ⁻¹' {y})) := by
-  filter_upwards [ae_ae_eq_restrict_preimage_singleton L hs.toMeasurable_ae_eq] with y hy
-  exact (measurableSet_toMeasurable volume s).nullMeasurableSet.congr hy
+  -- The function form applies to the membership predicates of the two sets.
+  filter_upwards [ae_ae_eq_restrict_preimage_singleton L (f := (· ∈ toMeasurable volume s))
+    (g := (· ∈ s)) (hs.toMeasurable_ae_eq.mono fun _ h ↦ propext h)] with y hy
+  exact (measurableSet_toMeasurable volume s).nullMeasurableSet.congr
+    (hy.mono fun _ h ↦ Iff.of_eq h)
 
 end LinearMap

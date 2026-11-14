@@ -17,10 +17,11 @@ import TauCeti.Analysis.Normed.Module.Convex
 
 The frontier of a convex set in a finite-dimensional real normed space is null for any additive
 Haar measure (`Convex.addHaar_frontier`). Consequently, almost every point of the set is in its
-interior (`Convex.ae_mem_interior`), so the interior meets every set that the convex set meets in
-positive measure (`Convex.interior_inter_nonempty_of_addHaar_inter_ne_zero`). A convex set has
-positive Haar measure exactly when its interior is nonempty, equivalently when its affine span is
-the whole space
+interior (`Convex.ae_mem_interior`), so a subset of the convex set agrees almost everywhere with
+its intersection with the interior (`Convex.inter_interior_ae_eq`), and the interior meets every
+set that the convex set meets in positive measure
+(`Convex.interior_inter_nonempty_of_addHaar_inter_ne_zero`). A convex set has positive Haar
+measure exactly when its interior is nonempty, equivalently when its affine span is the whole space
 (`Convex.addHaar_pos_iff_interior_nonempty`, `Convex.addHaar_pos_iff_affineSpan_eq_top`).
 
 For the same reason, convex sets with disjoint interiors are almost everywhere disjoint
@@ -60,7 +61,15 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 /-- Almost every point of a convex set in a finite-dimensional real normed space is an interior
 point, since the frontier of the set is null for every additive Haar measure. -/
 theorem Convex.ae_mem_interior (hs : Convex ℝ s) : ∀ᵐ x ∂μ, x ∈ s → x ∈ interior s :=
-  (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ)).symm.le
+  (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ)).symm.subset
+
+/-- A subset of a convex set `s` in a finite-dimensional real normed space differs from its
+intersection with `interior s` by a null set, since the frontier of `s` is null for every additive
+Haar measure. -/
+theorem Convex.inter_interior_ae_eq (hs : Convex ℝ s) {t : Set E} (ht : t ⊆ s) :
+    t ∩ interior s =ᵐ[μ] t := by
+  simpa [inter_eq_left.2 ht] using ae_eq_set_inter (Filter.EventuallyEqSet.rfl : t =ᵐ[μ] t)
+    (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ))
 
 /-- If a convex set in a finite-dimensional real normed space meets a set `t` in positive additive
 Haar measure, then its interior meets `t`, since almost every point of the convex set is

@@ -61,8 +61,9 @@ of the root strings through a path in `TauCeti.RepresentationTheory.LSPath.Strin
 * `TauCeti.PLPath.exists_listMinHeight_eq`, `TauCeti.PLPath.listMinHeight_le_apply_sum_take`:
   the minimal height of a presentation is the minimum of the heights of its vertices.
 * `TauCeti.PLPath.minHeight_ofSegments`, `TauCeti.PLPath.minHeight_mul`,
-  `TauCeti.PLPath.minHeight_reverse`: the minimal height is independent of the presentation, and
-  its behaviour under concatenation and reversal.
+  `TauCeti.PLPath.minHeight_reverse`, `TauCeti.PLPath.minHeight_straight_neg_mul_straight`: the
+  minimal height is independent of the presentation, and its behaviour under concatenation,
+  reversal, and back-and-forth straight excursions.
 * `TauCeti.PLPath.reflectRecords_append`: capped reflection `TauCeti.PLPath.reflectRecords` of a
   concatenation.
 * `TauCeti.PLPath.reflectRecords_of_le_listMinHeight`: capped reflection is the identity when
@@ -316,6 +317,11 @@ theorem minHeight_reverse (p : PLPath 𝕜 V) :
 @[simp]
 theorem minHeight_straight (v : V) : (straight 𝕜 v).minHeight f = min 0 (f v) := by
   simp [straight_def]
+
+/-- An excursion along `-v` followed by `v` has minimum height `min 0 (-f v)`. -/
+theorem minHeight_straight_neg_mul_straight (v : V) :
+    (straight 𝕜 (-v) * straight 𝕜 v).minHeight f = min 0 (-f v) := by
+  simp [← min_add_add_left]
 
 end MinHeight
 
