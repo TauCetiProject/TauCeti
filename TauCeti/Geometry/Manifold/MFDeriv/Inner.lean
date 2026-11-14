@@ -19,15 +19,16 @@ differentiable at `x`, the derivative of `y ↦ ⟪g y, g' y⟫` obeys the produ
 
 On an open subset of a real inner product space, the derivative of the squared distance
 `y ↦ ‖y - a‖ ^ 2` vanishes exactly at the centre `a`.
-The squared-norm chain rule gives the differential for any differentiable vector-valued map;
-at a zero of the map, this differential vanishes.
+The squared-norm chain rule gives the differential for any differentiable map into a real inner
+product space; at a zero of the map, this differential vanishes.
 
 ## Main results
 
 * `TauCeti.mvfderiv_inner_apply`: the product rule for the inner product.
-* `TauCeti.mvfderiv_norm_sq_comp`: the chain rule for the squared norm.
+* `TauCeti.mvfderiv_norm_sq_comp`: the chain rule for the squared norm in a real inner product
+  space.
 * `TauCeti.mvfderiv_norm_sq_comp_eq_zero_of_eq_zero`: the squared norm of a differentiable
-  vector-valued map has vanishing differential at a zero.
+  map into a real inner product space has vanishing differential at a zero.
 * `TauCeti.mvfderiv_norm_sq_sub_subtypeVal_eq_zero_iff`: along the inclusion of an open subset,
   the only critical point of squared distance is the centre.
 -/
@@ -73,8 +74,8 @@ section Real
 
 variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] {p : M}
 
-/-- The differential of the squared norm of a differentiable vector-valued map is twice the
-inner product with the value of the map, composed with its differential. -/
+/-- The differential of the squared norm of a differentiable map into a real inner product
+space is twice the inner product with the value of the map, composed with its differential. -/
 theorem mvfderiv_norm_sq_comp {f : M → G} (hf : MDiffAt f p) :
     mvfderiv I (fun q ↦ ‖f q‖ ^ 2) p =
       2 • (innerSL ℝ (f p)).comp (mvfderiv I f p) := by
@@ -84,8 +85,8 @@ theorem mvfderiv_norm_sq_comp {f : M → G} (hf : MDiffAt f p) :
     mvfderiv_comp_apply_of_differentiableAt (φ := fun z : G ↦ ‖z‖ ^ 2)
       ((contDiff_norm_sq ℝ (n := 2)).differentiable (by norm_num)).differentiableAt hf v
 
-/-- At a zero of a differentiable vector-valued map, its squared norm has vanishing
-differential. -/
+/-- At a zero of a differentiable map into a real inner product space, its squared norm has
+vanishing differential. -/
 theorem mvfderiv_norm_sq_comp_eq_zero_of_eq_zero {f : M → G} (hf : MDiffAt f p)
     (hzero : f p = 0) : mvfderiv I (fun q ↦ ‖f q‖ ^ 2) p = 0 := by
   simp [mvfderiv_norm_sq_comp hf, hzero]

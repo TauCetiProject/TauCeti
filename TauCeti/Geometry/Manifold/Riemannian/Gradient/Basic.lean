@@ -38,6 +38,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 * `TauCeti.Manifold.mgradient_eq_zero_iff`: the gradient vanishes exactly where the
   differential does, and `TauCeti.Manifold.norm_mgradient_eq_norm_mvfderiv`: it has the same
   length as the differential.
+* `TauCeti.Manifold.mgradient_dist_sq_self`: the gradient of squared distance for any
+  pseudometric vanishes at its centre.
 * `TauCeti.Manifold.contMDiffAt_mgradient`: the gradient of a function that is `C^{n+1}` at a
   point for a `C^n` metric is `C^n` at that point.
 * `TauCeti.Manifold.contMDiff_mgradient`: the gradient of a `C^{n+1}` function for a `C^n`
@@ -114,6 +116,18 @@ theorem mvfderiv_apply_mgradient :
 @[simp]
 theorem mgradient_eq_zero_iff : mgradient I f x = 0 ↔ mvfderiv I f x = 0 := by
   rw [mgradient, LinearIsometryEquiv.map_eq_zero_iff]
+
+section SquaredDistance
+
+variable {M : Type*} [PseudoMetricSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [I.Boundaryless]
+
+/-- The gradient of squared distance for any pseudometric on a boundaryless Riemannian manifold
+vanishes at its centre. -/
+@[simp] theorem mgradient_dist_sq_self (p : M) : mgradient I (fun q ↦ dist p q ^ 2) p = 0 :=
+  mgradient_eq_zero_iff.2 (mvfderiv_dist_sq_self p)
+
+end SquaredDistance
 
 variable (I) in
 /-- The gradient of a compactly supported function is compactly supported, since it vanishes off

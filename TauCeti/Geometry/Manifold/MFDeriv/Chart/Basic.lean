@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 
 /-!
@@ -62,6 +63,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   coordinate expression is differentiable at the chart image of the point.
 * `TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
   vector-valued manifold derivative is the Fréchet derivative of the coordinate expression.
+* `TauCeti.Manifold.mvfderiv_dist_sq_self`: for any pseudometric on a boundaryless manifold,
+  the differential of squared distance vanishes at its centre.
 * `MDifferentiableAt.mfderiv_eq_fderiv_extChartAt_conj`: on a boundaryless manifold, the manifold
   derivative of a map between manifolds is the Fréchet derivative of its expression in the extended
   charts at the point and at its image.
@@ -502,6 +505,22 @@ theorem TauCeti.mdifferentiableAt_symm_of_differentiableAt_comp {e : OpenPartial
 end SelfModel
 
 end Boundaryless
+
+section SquaredDistance
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [PseudoMetricSpace M] [ChartedSpace H M]
+
+/-- The differential of squared distance for any pseudometric on a boundaryless manifold
+vanishes at its centre. -/
+@[simp] theorem TauCeti.Manifold.mvfderiv_dist_sq_self (p : M) :
+    mvfderiv I (fun q ↦ dist p q ^ 2) p = 0 := by
+  rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
+  apply IsLocalMin.fderiv_eq_zero
+  exact Filter.Eventually.of_forall fun y ↦ by simp
+
+end SquaredDistance
 
 /-! ### Preferred charts of a composite charted space -/
 

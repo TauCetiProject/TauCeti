@@ -12,19 +12,19 @@ import TauCeti.Geometry.Manifold.Riemannian.Hessian.NormSq
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
-# Squared distance on a normal ball
+# The Hessian of squared distance at its centre
 
-Let `U` be a normal domain at `p` containing the open tangent ball of radius `r`. On the metric
-ball of radius `r > 0` about `p`, the distance from `p` is the norm of the Riemannian logarithm.
-The logarithm is smooth across `p`, as is the squared norm on the tangent space, so the squared
-distance `q ↦ dist p q ^ 2` is smooth on that ball. Since the logarithm vanishes
-at `p` with identity differential there, and every point is the centre of such a ball, the
-Hessian of the squared distance from any point `p` at `p` is twice the Riemannian metric.
+The Hessian of the squared Riemannian distance from any point `p`, evaluated at `p`, is twice
+the Riemannian metric: `Hess(d_p²)_p = 2 g_p`. Its Laplace–Beltrami trace is twice the dimension.
+These values supply the centre terms for local convexity and Hessian comparison of squared
+distance.
 
 ## Main results
 
 * `TauCeti.Manifold.hessian_dist_sq_self`: the Hessian of the squared distance from any point at
   that point is `2 g_p`.
+* `TauCeti.Manifold.laplaceBeltrami_dist_sq_self`: its Laplace–Beltrami operator at that point is
+  twice the dimension.
 
 ## References
 
@@ -51,11 +51,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 /-- The Hessian of the squared distance from `p` at `p` is twice the Riemannian inner product. -/
 @[simp] theorem hessian_dist_sq_self (p : M) (v w : TangentSpace I p) :
     hessian I (fun q ↦ dist p q ^ 2) p v w = 2 * inner ℝ v w := by
-  obtain ⟨r, hr, h⟩ := exists_isNormalDomain_ball (I := I) p
+  obtain ⟨r, _, h⟩ := exists_isNormalDomain_ball (I := I) p
   have hlog : ContMDiffAt I 𝓘(ℝ, TangentSpace I p) 2 (riemannianLog I M p (Metric.ball 0 r)) p :=
     (h.contMDiffOn_riemannianLog.contMDiffAt
       (h.isOpen_image.mem_nhds h.self_mem_image)).of_le (by simp)
-  have heq := h.dist_sq_eventuallyEq_norm_riemannianLog_sq subset_rfl hr
+  have heq := h.dist_sq_eventuallyEq_norm_riemannianLog_sq
   have hdist : ContMDiffAt I 𝓘(ℝ) 2 (fun q ↦ dist p q ^ 2) p :=
     (contMDiffAt_dist_sq_self p).of_le (by simp)
   have hnorm : ContMDiffAt I 𝓘(ℝ) 2
@@ -67,5 +67,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
     criticalHessian_congr_of_eventuallyEq heq, ← hessian_eq_criticalHessian hnorm hcrit,
     hessian_norm_sq_comp_of_eq_zero hlog h.riemannianLog_self]
   simp only [h.mvfderiv_riemannianLog_self, ContinuousLinearMap.id_apply]
+
+/-- The Laplace–Beltrami operator of squared distance at its centre is twice the dimension. -/
+@[simp] theorem laplaceBeltrami_dist_sq_self (p : M) :
+    laplaceBeltrami I (fun q ↦ dist p q ^ 2) p = 2 * (Module.finrank ℝ E : ℝ) := by
+  simpa only [mul_comm] using
+    laplaceBeltrami_eq_finrank_mul_of_hessian_eq_mul_inner (hessian_dist_sq_self p)
 
 end TauCeti.Manifold

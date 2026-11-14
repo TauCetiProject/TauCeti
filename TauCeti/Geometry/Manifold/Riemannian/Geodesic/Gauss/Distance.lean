@@ -8,9 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Completeness
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Escape
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Minimization
-public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Geometry.Manifold.MFDeriv.Inner
 
 /-!
 # The Riemannian distance on a normal ball
@@ -55,7 +53,6 @@ In the namespace `TauCeti.Manifold.IsNormalDomain`:
 In the namespace `TauCeti.Manifold`:
 
 * `contMDiffAt_dist_sq_self`: squared distance is smooth at the centre.
-* `mvfderiv_dist_sq_self` and `mgradient_dist_sq_self`: its differential and gradient vanish there.
 * `exists_dist_riemannianExp_eq_dist_sub`: a sufficiently small geodesic sphere about `x` has a
   point whose distance to any `q` decreases by the radius.
 
@@ -321,13 +318,20 @@ theorem IsNormalDomain.dist_eq_norm_riemannianLog_of_mem_ball (h : IsNormalDomai
   rw [dist_edist, h.edist_eq_enorm_riemannianLog_of_mem_ball hU hq]
   simp
 
-/-- Near the centre of a positive-radius normal ball, squared distance agrees with the
-squared norm of the Riemannian logarithm. -/
-theorem IsNormalDomain.dist_sq_eventuallyEq_norm_riemannianLog_sq
-    (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r ⊆ U) (hr : 0 < r) :
-    (fun q ↦ dist p q ^ 2) =ᶠ[𝓝 p] fun q ↦ ‖riemannianLog I M p U q‖ ^ 2 := by
+/-- Near the centre of a normal domain, distance agrees with the norm of the Riemannian
+logarithm. -/
+theorem IsNormalDomain.dist_eventuallyEq_norm_riemannianLog (h : IsNormalDomain I M p U) :
+    (fun q ↦ dist p q) =ᶠ[𝓝 p] fun q ↦ ‖riemannianLog I M p U q‖ := by
+  obtain ⟨r, hr, hU⟩ := Metric.isOpen_iff.1 h.isOpen 0 h.zero_mem
   filter_upwards [Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr)] with q hq
-  rw [h.dist_eq_norm_riemannianLog_of_mem_ball hU hq]
+  exact h.dist_eq_norm_riemannianLog_of_mem_ball hU hq
+
+/-- Near the centre of a normal domain, squared distance agrees with the squared norm of the
+Riemannian logarithm. -/
+theorem IsNormalDomain.dist_sq_eventuallyEq_norm_riemannianLog_sq
+    (h : IsNormalDomain I M p U) :
+    (fun q ↦ dist p q ^ 2) =ᶠ[𝓝 p] fun q ↦ ‖riemannianLog I M p U q‖ ^ 2 :=
+  h.dist_eventuallyEq_norm_riemannianLog.fun_comp (· ^ 2)
 
 /-- If the open tangent ball of radius `r` lies in a normal domain at `p`, then the squared
 distance from `p` is smooth on the metric ball of radius `r` about `p`, including at `p`
@@ -347,17 +351,6 @@ theorem contMDiffAt_dist_sq_self (p : M) :
   obtain ⟨r, hr, h⟩ := exists_isNormalDomain_ball (I := I) p
   exact (h.contMDiffOn_dist_sq subset_rfl).contMDiffAt
     (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr))
-
-/-- The differential of the squared distance from a point vanishes at that point. -/
-@[simp] theorem mvfderiv_dist_sq_self (p : M) : mvfderiv I (fun q ↦ dist p q ^ 2) p = 0 := by
-  obtain ⟨r, hr, h⟩ := exists_isNormalDomain_ball (I := I) p
-  have heq := h.dist_sq_eventuallyEq_norm_riemannianLog_sq subset_rfl hr
-  exact heq.mvfderiv_eq.trans (mvfderiv_norm_sq_comp_eq_zero_of_eq_zero
-    (h.mdifferentiableAt_riemannianLog h.self_mem_image) h.riemannianLog_self)
-
-/-- The gradient of the squared distance from a point vanishes at that point. -/
-@[simp] theorem mgradient_dist_sq_self (p : M) : mgradient I (fun q ↦ dist p q ^ 2) p = 0 :=
-  mgradient_eq_zero_iff.2 (mvfderiv_dist_sq_self p)
 
 /-- If the closed tangent ball of radius `r` lies in a normal domain at `p`, then the distance
 from `p` to `exp_p v` is `‖v‖` for every `v` in that ball; see `edist_riemannianExp_eq`. -/
