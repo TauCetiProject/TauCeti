@@ -9,7 +9,6 @@ public import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalMonoid
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 public import TauCeti.Topology.PathSpace.Moore.Comparison.HomotopyGroup
 public import TauCeti.Topology.QuaternionicProjectiveSpace.Hopf.Exact
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 
 /-!
@@ -445,28 +444,6 @@ private theorem hopfLoopBoundaryHom_map_hopfLoop (k : ℕ)
 
 end Splitting
 
-/-- For `n ≥ 1` there is a unit vector of `ℍⁿ⁺¹` orthogonal to the quaternionic line of `x`: a
-unit vector orthogonal to `x 1, x i, x j, x k` is orthogonal to `x a` for every `a`, by real
-linearity of `a ↦ x a`. -/
-private theorem exists_norm_eq_one_forall_inner_op_smul_eq_zero (hn : n ≠ 0)
-    (x : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) :
-    ∃ w : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ, ‖w‖ = 1 ∧ ∀ a : ℍ, inner ℝ (op a • x) w = 0 := by
-  classical
-  let b := Quaternion.orthonormalBasisOneIJK
-  let L : ℍ →ₗ[ℝ] PiLp 2 fun _ : Fin (n + 1) ↦ ℍ := (opLinearEquiv ℝ).toLinearMap.smulRight x
-  have hcard :
-      (Finset.univ.image (L ∘ b)).card < Module.finrank ℝ (PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) := by
-    refine Finset.card_image_le.trans_lt ?_
-    rw [finrank_piLp_quaternion, Fintype.card_fin, Finset.card_univ, Fintype.card_fin]
-    omega
-  obtain ⟨w, hw, hLw⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank _ hcard
-  refine ⟨w, hw, fun a ↦ ?_⟩
-  have hL : L a = op a • x := by simp [L, LinearMap.smulRight_apply]
-  rw [← hL, ← b.sum_repr a, map_sum, sum_inner]
-  refine Finset.sum_eq_zero fun i _ ↦ ?_
-  rw [map_smul, real_inner_smul_left,
-    hLw (L (b i)) (Finset.mem_image_of_mem (L ∘ b) (Finset.mem_univ i)), mul_zero]
-
 /-- **The boundary map of the Hopf fibration splits on the loop space.** For `n ≥ 1` there is a
 based map `j : S³ → ΩHPⁿ` such that `∂ (j_* a) = a` for every class `a` of `π_{k+1}(S³, 1)`,
 where `∂ : π_{k+1}(ΩHPⁿ, 1) → π_{k+1}(S³, 1)` is the loop-space shift followed by the boundary
@@ -475,7 +452,10 @@ theorem exists_hopfLoopBoundaryHom_map_eq (hn : n ≠ 0) :
     ∃ (j : C(sphere (0 : ℍ) 1, MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v)))
       (hj : j 1 = 1),
       ∀ k a, hopfLoopBoundaryHom v k (HomotopyGroup.map (N := Fin (k + 1)) j hj a) = a := by
-  obtain ⟨w, hw, hvw⟩ := exists_norm_eq_one_forall_inner_op_smul_eq_zero hn v
+  obtain ⟨w, hw, hvw⟩ :=
+    exists_norm_eq_one_forall_inner_op_smul_eq_zero (F := PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) (by
+      rw [← Module.finrank_eq_rank, finrank_piLp_quaternion, Fintype.card_fin]
+      exact_mod_cast (by omega : 4 < 4 * (n + 1))) v
   exact ⟨hopfLoop v w hw hvw, hopfLoop_one hw hvw, hopfLoopBoundaryHom_map_hopfLoop hw hvw⟩
 
 /-- **The based Hopf product realizes the splitting.** For `n ≥ 1` there is a based map
