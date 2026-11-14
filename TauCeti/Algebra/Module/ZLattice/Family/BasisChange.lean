@@ -68,14 +68,12 @@ variable {Y : Type*} {Λ : Type*} [AddCommGroup Λ]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
-  {ι κ : Type*} [Fintype ι] [Fintype κ] (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ)
-  (hinj : ∀ y, Injective (P y))
 
-omit [Fintype ι] [Fintype κ] in
 /-- **The period change-of-basis matrix is constant.** At every `y`, the matrix expressing the
 period basis for `b` in the period basis for `c` is the integral change-of-basis matrix
 `c.toMatrix b`, independently of `y` and of the periods. -/
-@[simp] theorem periodBasis_toMatrix_periodBasis (y : Y) :
+@[simp] theorem periodBasis_toMatrix_periodBasis {ι κ : Type*} (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ)
+    (hinj : ∀ y, Injective (P y)) (y : Y) :
     (periodBasis P c hinj y).toMatrix (periodBasis P b hinj y) =
       (c.toMatrix b).map ((↑) : ℤ → ℝ) := by
   ext j i
@@ -84,7 +82,8 @@ period basis for `b` in the period basis for `c` is the integral change-of-basis
 /-- **Change of basis for period coordinates.** The coordinates of `v` in the period basis
 `P y (c j)` are obtained from its coordinates in the period basis `P y (b i)` by the integral
 change of coordinates from `b` to `c`, which depends neither on `y` nor on the periods. -/
-theorem realCoordChange_periodBasis_equivFun (y : Y) (v : E) :
+theorem realCoordChange_periodBasis_equivFun {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) (hinj : ∀ y, Injective (P y)) (y : Y) (v : E) :
     b.realCoordChange c ((periodBasis P b hinj y).equivFun v) =
       (periodBasis P c hinj y).equivFun v := by
   -- Both sides are real linear in `v`, so it suffices to compare them on the period basis at `y`
