@@ -55,42 +55,32 @@ variable {R : Type*} [CommRing R] {r : R} {k l m : ℕ}
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   [AddCommGroup P] [Module R P]
 
-/-- An inclusion remains injective after principal-adic completion if the parameter-power
-torsion of its cokernel is killed by a fixed power. No finiteness assumptions are needed. -/
-theorem map_span_singleton_injective_of_bounded_torsion {f : M →ₗ[R] N}
-    (hf : Function.Injective f)
-    (hbound : ∀ x : N ⧸ f.range, (∃ n : ℕ, r ^ n • x = 0) → r ^ k • x = 0) :
-    Function.Injective (map (Ideal.span {r}) f) :=
-  map_injective_of_comap_pow_smul_le
-    (f.comap_span_singleton_pow_smul_le_of_bounded_torsion hf hbound)
-
 /-- An inclusion in an exact pair remains injective after principal-adic completion when
 parameter-power torsion in the last map's range is bounded. -/
 theorem map_span_singleton_injective_of_bounded_torsion_range {f : L →ₗ[R] M}
     {g : M →ₗ[R] N} (hf : Function.Injective f) (hfg : Function.Exact f g)
     (hrange : ∀ y ∈ g.range, (∃ n : ℕ, r ^ n • y = 0) → r ^ l • y = 0) :
     Function.Injective (map (Ideal.span {r}) f) := by
-  apply map_span_singleton_injective_of_bounded_torsion hf (k := l)
-  have hb := g.pow_smul_eq_zero_quotient_ker_of_bounded_torsion_range hrange
-  rwa [hfg.linearMap_ker_eq] at hb
+  apply map_span_singleton_injective_of_bounded_torsion hf hfg.rangeRestrict (k := l)
+  intro n y hy
+  apply Subtype.ext
+  exact hrange y y.property ⟨n, congrArg Subtype.val hy⟩
 
 /-- Completion preserves middle exactness when parameter-power torsion is bounded in both
 the last map's range and its cokernel. The last map need not be surjective. -/
-theorem map_span_singleton_exact_of_bounded_torsion {f : L →ₗ[R] M} {g : M →ₗ[R] N}
+theorem map_span_singleton_exact_of_bounded_torsion_range
+    {f : L →ₗ[R] M} {g : M →ₗ[R] N}
     (hfg : Function.Exact f g)
     (hrange : ∀ y ∈ g.range, (∃ n : ℕ, r ^ n • y = 0) → r ^ l • y = 0)
     (hbound : ∀ x : N ⧸ g.range, (∃ n : ℕ, r ^ n • x = 0) → r ^ k • x = 0) :
     Function.Exact (map (Ideal.span {r}) f) (map (Ideal.span {r}) g) := by
-  have hi := map_span_singleton_injective_of_bounded_torsion
-    (f := g.range.subtype) g.range.injective_subtype (k := k) (r := r) (by
-      rw [Submodule.range_subtype]
-      exact hbound)
-  have hb := g.pow_smul_eq_zero_quotient_ker_of_bounded_torsion_range hrange
-  rw [hfg.linearMap_ker_eq] at hb
-  have hc := map_exact_of_comap_pow_smul_le hfg.range_subtype.rangeRestrict
-    g.surjective_rangeRestrict
-    (f.range.subtype.comap_span_singleton_pow_smul_le_of_bounded_torsion (r := r) (k := l)
-      f.range.injective_subtype (by rw [Submodule.range_subtype]; exact hb))
+  have hi := map_span_singleton_injective_of_bounded_torsion g.range.injective_subtype
+    (LinearMap.exact_subtype_mkQ g.range) (k := k) (r := r)
+    (fun n x hx ↦ hbound x ⟨n, hx⟩)
+  have hc := map_span_singleton_exact_of_bounded_torsion hfg.range_subtype.rangeRestrict
+    g.surjective_rangeRestrict (k := l) (r := r) (fun n y hy ↦ by
+      apply Subtype.ext
+      exact hrange y y.property ⟨n, congrArg Subtype.val hy⟩)
   apply hi.comp_exact_iff_exact.mpr at hc
   rw [← f.subtype_comp_rangeRestrict, ← map_comp]
   apply (map_surjective _ f.surjective_rangeRestrict).comp_exact_iff_exact.mpr
@@ -105,7 +95,7 @@ theorem map_span_singleton_exact_of_bounded_torsion_homology
     (hrangeP : ∀ z ∈ h.range, (∃ n : ℕ, r ^ n • z = 0) → r ^ m • z = 0)
     (hH : ∀ y ∈ h.ker, (∃ n : ℕ, r ^ n • y ∈ g.range) → r ^ k • y ∈ g.range) :
     Function.Exact (map (Ideal.span {r}) f) (map (Ideal.span {r}) g) :=
-  map_span_singleton_exact_of_bounded_torsion hfg hrange
+  map_span_singleton_exact_of_bounded_torsion_range hfg hrange
     (g.pow_smul_eq_zero_coker_of_bounded_torsion_homology hgh hrangeP hH)
 
 /-- In an exact sequence `L → M → N` extending to a complex `M → N → P`, completion

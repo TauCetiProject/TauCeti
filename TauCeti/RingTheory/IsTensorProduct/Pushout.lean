@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import Mathlib.RingTheory.FiniteStability
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
 public import Mathlib.RingTheory.IsTensorProduct

@@ -6,57 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
-public import Mathlib.RingTheory.Ideal.Operations
 
 /-!
 # Bounded power torsion in quotients
 
-A uniform bound on parameter-power torsion in a cokernel controls the induced filtration on
-an inclusion. For a complex, bounds on power torsion in its homology and in the last map's
-range give a bound in the preceding cokernel. These statements require no finiteness or
-regularity assumptions and are independent of completion.
+A power-torsion bound on the range of a map gives the same bound on its source modulo its
+kernel. For a complex, bounds on power torsion in its homology and in the last map's range
+give a bound in the preceding cokernel. These statements require no finiteness or regularity
+assumptions and are independent of completion.
 
 ## References
 
 * [Stacks Project, Lemma 52.12.7](https://stacks.math.columbia.edu/tag/0EII),
-  for the bounded-torsion filtration shift and the three-term complex cokernel bound.
+  for the three-term complex cokernel bound.
 -/
 
 public section
 
-open scoped Pointwise
-
 namespace LinearMap
-
-section
-
-variable {R : Type*} [CommRing R] {r : R} {k l : ℕ}
-  {M N P : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  [AddCommGroup P] [Module R P]
-
-/-- Bounded power torsion in the cokernel of an inclusion gives a uniform shift between
-its induced principal-ideal filtration and its own principal-ideal filtration. -/
-theorem comap_span_singleton_pow_smul_le_of_bounded_torsion (f : M →ₗ[R] N)
-    (hf : Function.Injective f)
-    (hbound : ∀ x : N ⧸ f.range, (∃ n : ℕ, r ^ n • x = 0) → r ^ k • x = 0)
-    (n : ℕ) :
-    ((Ideal.span {r}) ^ (n + k) • ⊤ : Submodule R N).comap f ≤
-      (Ideal.span {r}) ^ n • ⊤ := by
-  intro x hx
-  rw [Submodule.mem_comap] at hx
-  rw [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul,
-    Submodule.mem_smul_pointwise_iff_exists] at hx ⊢
-  obtain ⟨y, -, hy⟩ := hx
-  have hq : r ^ k • (Submodule.Quotient.mk y : N ⧸ f.range) = 0 := by
-    apply hbound _ ⟨n + k, ?_⟩
-    rw [← Submodule.Quotient.mk_smul, hy, Submodule.Quotient.mk_eq_zero]
-    exact LinearMap.mem_range_self f x
-  rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hq
-  obtain ⟨z, hz⟩ := hq
-  refine ⟨z, Submodule.mem_top, hf ?_⟩
-  rw [map_smul, hz, smul_smul, ← pow_add, hy]
-
-end
 
 variable {R : Type*} [Ring R] {r : R} {k l : ℕ}
   {M N P : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]

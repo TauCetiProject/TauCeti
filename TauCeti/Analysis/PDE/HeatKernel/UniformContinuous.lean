@@ -116,7 +116,7 @@ theorem exists_contDiff_bounded_derivatives_approximation
   obtain ⟨t, ht, htg⟩ := ((hclose.and self_mem_nhdsWithin).exists)
   refine ⟨heatCauchyPotentialBUC t g, ?_, ?_, ?_, fun m => ?_⟩
   · rw [coe_heatCauchyPotentialBUC, coe_heatCauchyPotentialBCF_of_pos htg]
-    exact contDiff_heatKernel_convolution htg g.val.continuous.aestronglyMeasurable
+    exact contDiff_heatKernel_convolution htg
       (ae_of_all _ g.val.norm_coe_le_norm)
   · simpa only [Metric.mem_ball, dist_eq_norm] using ht
   · simpa only [one_mul] using

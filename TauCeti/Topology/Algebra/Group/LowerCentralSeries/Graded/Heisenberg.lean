@@ -202,41 +202,45 @@ theorem gradedRestrict_gradedBracket_gradedMkZero (g g' : G) :
   rw [gradedBracket_gradedMkZero, gradedRestrict_gradedMk, coe_mk,
     hh.apply_commutatorElement_of_smul_eq_self htrivM htrivA htrivP]
 
+omit htrivM in
 /-- **The graded restriction on a `p`-th power** of a degree-zero class is the diagonal value of
 the cup pairing, weighted by `p choose 2`: `π x ↦ (p choose 2) • μ (a x) (b x)`. -/
 theorem gradedRestrict_gradedPow_gradedMkZero (g : G) :
     hh.gradedRestrict htrivP haN hbN hP (gradedPow p G 0 (gradedMkZero p G g)) =
       p.choose 2 • μ ((a : G → M) g) ((b : G → A) g) := by
   rw [gradedPow_gradedMkZero, gradedRestrict_gradedMk, coe_mk,
-    hh.apply_pow_of_smul_eq_self htrivM htrivA htrivP, hP, zero_add]
+    hh.apply_pow_of_smul_eq_self htrivA htrivP, hP, zero_add]
 
+omit htrivM in
 /-- For odd `p`, the graded restriction vanishes on the `p`-th powers of degree-zero classes:
 `p` divides `p choose 2`, and `P` is killed by `p`. -/
 theorem gradedRestrict_gradedPow_gradedMkZero_of_odd (hp : Odd p) (g : G) :
     hh.gradedRestrict htrivP haN hbN hP (gradedPow p G 0 (gradedMkZero p G g)) = 0 := by
-  rw [gradedRestrict_gradedPow_gradedMkZero hh htrivP haN hbN hP htrivM htrivA,
+  rw [gradedRestrict_gradedPow_gradedMkZero hh htrivP haN hbN hP htrivA,
     Nat.choose_two_right, Nat.mul_div_assoc _ (Nat.Odd.sub_odd hp odd_one).two_dvd, mul_nsmul, hP,
     nsmul_zero]
 
+omit htrivM in
 /-- For `p = 2`, the graded restriction on the square of a degree-zero class is the diagonal value
 `μ (a x) (b x)` of the cup pairing. -/
 theorem gradedRestrict_gradedPow_gradedMkZero_of_two (hp : p = 2) (g : G) :
     hh.gradedRestrict htrivP haN hbN hP (gradedPow p G 0 (gradedMkZero p G g)) =
       μ ((a : G → M) g) ((b : G → A) g) := by
-  rw [gradedRestrict_gradedPow_gradedMkZero hh htrivP haN hbN hP htrivM htrivA, hp,
+  rw [gradedRestrict_gradedPow_gradedMkZero hh htrivP haN hbN hP htrivA, hp,
     Nat.choose_self, one_nsmul]
 
 section DegreeOneFamily
 
 variable {ι : Type*} [LT ι] (y : ι → G)
 
+omit htrivM in
 /-- **The graded restriction on the `p`-power members of a degree-one family**:
 `π (y i) ↦ (p choose 2) • μ (a (y i)) (b (y i))`. -/
 theorem gradedRestrict_degreeOneFamily_inl (i : ι) :
     hh.gradedRestrict htrivP haN hbN hP (degreeOneFamily p y (Sum.inl i)) =
       p.choose 2 • μ ((a : G → M) (y i)) ((b : G → A) (y i)) := by
   rw [degreeOneFamily_inl,
-    gradedRestrict_gradedPow_gradedMkZero hh htrivP haN hbN hP htrivM htrivA]
+    gradedRestrict_gradedPow_gradedMkZero hh htrivP haN hbN hP htrivA]
 
 /-- **The graded restriction on the bracket members of a degree-one family**:
 `[y i, y j] ↦ μ (a (y i)) (b (y j)) - μ (a (y j)) (b (y i))`. -/

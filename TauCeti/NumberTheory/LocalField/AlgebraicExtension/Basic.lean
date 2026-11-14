@@ -42,7 +42,8 @@ For finite-dimensional extensions, completeness and local compactness are proved
 * `TauCeti.algebraicExtensionValuativeRel_eq`: uniqueness of the extended valuative relation.
 * `TauCeti.algebraicExtensionNormedFieldTopology_eq`: compatibility with a given valuative
   topology.
-* `AlgHom.valuativeExtension`: algebra maps preserve the extended valuation.
+* `AlgHom.valuativeExtension` and `RingHom.map_vle_map_iff_of_vle_iff`: algebra maps and ring
+  homomorphisms extending valuation-preserving base maps preserve the extended valuation.
 * `TauCeti.integerRing_eq_integralClosure`: identification of the valuation ring with the integral
   closure of `𝒪[K]`.
 
@@ -338,6 +339,26 @@ theorem _root_.ValuativeExtension.of_isScalarTower {N : Type*} [CommRing N] [Val
     [Algebra M N] [IsScalarTower K M N] : ValuativeExtension M N :=
   ⟨fun {_ _} ↦ (IsScalarTower.toAlgHom K M N).valuativeExtension.vle_iff_vle⟩
 
+/-- **Ring homomorphisms extending valuation-preserving maps preserve the extended valuation.** Let
+`M` be an algebraic extension of a nonarchimedean local field `K`, with a valuative relation
+extending that of `K`, and let `N` be a valuative extension of a commutative ring `K'`. Any ring
+homomorphism `g : M →+* N` commuting with a valuation-preserving homomorphism `f : K →+* K'`
+satisfies `g x ≤ᵥ g y ↔ x ≤ᵥ y`. For `K' = K` and `f = RingHom.id K`, this is
+`AlgHom.valuativeExtension`. -/
+theorem _root_.RingHom.map_vle_map_iff_of_vle_iff {K' N : Type*}
+    [CommRing K'] [ValuativeRel K'] [CommRing N] [ValuativeRel N]
+    [Algebra K' N] [ValuativeExtension K' N] [ValuativeRel M] [ValuativeExtension K M]
+    (g : M →+* N) (f : K →+* K') (hf : ∀ a b : K, f a ≤ᵥ f b ↔ a ≤ᵥ b)
+    (hg : ∀ c : K, g (algebraMap K M c) = algebraMap K' N (f c)) (x y : M) :
+    g x ≤ᵥ g y ↔ x ≤ᵥ y := by
+  have heq : (((valuation N).comap g).comap (algebraMap K M)).IsEquiv (valuation K) := fun a b ↦ by
+    simp only [Valuation.comap_apply, hg]
+    rw [← (valuation N).vle_iff_le, ValuativeExtension.vle_iff_vle, hf, (valuation K).vle_iff_le]
+  have hExt := algebraicExtensionValuation_isEquiv heq
+    (ValuativeRel.isEquiv ((valuation M).comap (algebraMap K M)) (valuation K))
+  rw [(valuation N).vle_iff_le, (valuation M).vle_iff_le]
+  exact hExt x y
+
 end Uniqueness
 
 /-! ### The ring of integers is the integral closure -/
@@ -491,7 +512,7 @@ instance isLocalHom_integerRingHom (ι : L →ₐ[K] M) : IsLocalHom ι.integerR
   have := ι.valuativeExtension
   have hmap : (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) = algebraMap 𝒪[L] 𝒪[M] := by
     ext x
-    rw [TauCeti.coe_algebraMap_integerRing]
+    rw [Valuation.HasExtension.val_algebraMap]
     rfl
   have hlocal : IsLocalHom (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) :=
     hmap.symm ▸ (inferInstance : IsLocalHom (algebraMap 𝒪[L] 𝒪[M]))
