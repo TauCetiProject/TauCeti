@@ -471,6 +471,14 @@ theorem mpullback_proj_injective {F' : Type*} [NormedAddCommGroup F'] [NormedSpa
       (mpullback (I := I.prod 𝓘(ℝ, F')) (I' := I) (F := F) (k := k) (π F' V) (contMDiff_proj V)) :=
   mpullback_injective_of_rightInverse _ (contMDiff_zeroSection ℝ V) fun _ ↦ rfl
 
+/-- Pullback along the second projection `M × M' → M'` is injective when `M` is nonempty: any
+slice `y ↦ (x, y)` is a smooth right inverse of the projection. -/
+theorem mpullback_snd_injective [Nonempty M] :
+    Function.Injective (mpullback (I := I.prod I') (F := F) (k := k) (Prod.snd : M × M' → M')
+      contMDiff_snd) :=
+  mpullback_injective_of_rightInverse _ (g := Prod.mk (Classical.arbitrary M))
+    (contMDiff_const.prodMk contMDiff_id) fun _ ↦ rfl
+
 /-- If a diffeomorphism `φ` pulls `β` back to `α`, then its inverse pulls `α` back to `β`. -/
 theorem mpullback_symm_eq_of_mpullback_eq {φ : M ≃ₘ⟮I, I'⟯ M'} {α : SmoothForm I M F k}
     {β : SmoothForm I' M' F k} (h : mpullback φ φ.contMDiff β = α) :
