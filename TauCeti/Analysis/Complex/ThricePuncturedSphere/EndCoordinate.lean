@@ -306,6 +306,16 @@ theorem neg_re_endCoord_inf_le {R : ℝ} (hR : 0 ≤ R) {w : ℂ}
   · rw [Real.log_le_iff_le_exp (by simpa using hw₀), norm_div, Complex.norm_ofNat, mul_comm R]
     linarith
 
+/-- Off the open disc `‖w‖ < 2 exp (2πR)`, the longitudinal coordinate `s` of the end at `∞` is at
+most `-R`: the complement of the disc is the part `s ≤ -R` of that end. -/
+theorem re_endCoord_inf_le_neg {R : ℝ} {w : ℂ} (hw : 2 * Real.exp (2 * π * R) ≤ ‖w‖) :
+    (inf.endCoord w).re ≤ -R := by
+  have hw₀ : 0 < ‖w‖ := lt_of_lt_of_le (by positivity) hw
+  rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero, norm_div, Complex.norm_ofNat,
+    div_le_iff₀ (by positivity), neg_mul, neg_le_neg_iff, mul_comm R,
+    Real.le_log_iff_exp_le (by positivity), le_div_iff₀ (by norm_num)]
+  linarith
+
 /-- On the punctured disc `0 < ‖w - c_q‖ ≤ exp (-2πr) / 2` about the center of a positive end `q`,
 the longitudinal coordinate of that end is at least `r`: the disc is bounded by the circle `s = r`
 of the end. -/

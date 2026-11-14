@@ -212,21 +212,6 @@ private theorem measurableSet_image_endPiece (q : Puncture) (R : ℝ) :
     (fun w _ => (hasFDerivAt_endChart q w).hasFDerivWithinAt)
     ((injOn_endChart q).mono (endPiece_subset_endStrip q R))
 
-/-- **The boundary circle of an end piece.** By periodicity, the integral of the end Hamiltonian
-over the circle `±s = R` may be taken over `[0, 1]` instead of `[-1/2, 1/2]`. -/
-private theorem intervalIntegral_endChart_boundary_eq {M : Type*} {H : Puncture → ℝ → M → ℝ}
-    (hH : ∀ q, Periodic (H q) 1) {u : ℝ × ℝ → M} {R : ℝ} (q : Puncture) :
-    ∫ t in (-1 / 2 : ℝ)..1 / 2, H q t (u (endChart q (q.endSign * R, t))) =
-      ∫ t in (0 : ℝ)..1, H q t (u (Complex.equivRealProdCLM
-        (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) := by
-  have hper : Periodic (fun t : ℝ => H q t (u (Complex.equivRealProdCLM
-      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))) 1 := fun t => by
-    simp only [q.periodic_cylindricalEndLift (q.endSign * R) t, hH q t]
-  have h := Function.Periodic.intervalIntegral_add_eq hper (-1 / 2) 0
-  norm_num at h
-  simp only [endChart_apply, Complex.equivRealProdCLM_symm_apply]
-  convert h using 1 <;> norm_num
-
 end Floer
 
 namespace SmoothTwoForm
@@ -838,7 +823,15 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
     Finset.sum_congr rfl fun q _ => hω.integral_floerEnergyDensity_image_endPiece hH hHs hVo hTV
       hu hR q (hE.mono_set (hAT q)),
     Finset.sum_sub_distrib, Finset.sum_add_distrib, Finset.mul_sum]
-  simp only [intervalIntegral_endChart_boundary_eq hH]
+  -- By periodicity, each boundary circle may be integrated over `[0, 1]`.
+  have hbd (q : Puncture) :
+      ∫ t in (-1 / 2 : ℝ)..1 / 2, H q t (u (endChart q (q.endSign * R, t))) =
+        ∫ t in (0 : ℝ)..1, H q t (u (Complex.equivRealProdCLM
+          (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) := by
+    rw [endChart_eq_realChart]
+    exact intervalIntegral_realChart_eq_of_periodic
+      (q.periodic_cylindricalEndLift (q.endSign * R)) (hH q) u
+  simp only [hbd]
   ring
 
 /-- **The energy bound on the truncated pair of pants, for a manifold target.** If the end

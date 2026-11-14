@@ -141,14 +141,13 @@ theorem add_mul_cylindricalEndLift_zero_mem_puncturedSphereTruncation
     nlinarith [norm_nonneg (a i)]
   refine ⟨?_, fun j => ?_⟩
   · have h₂ : Real.exp (2 * π) ≤ Real.exp (2 * π * R) := Real.exp_le_exp.2 (by nlinarith)
-    have h₃ : ‖w‖ ≤ ‖c i‖ + ‖w - c i‖ := by simpa using norm_add_le (c i) (w - c i)
-    linarith [hout i]
+    linarith [hout i, norm_le_norm_add_norm_sub' w (c i)]
   · rcases eq_or_ne j i with rfl | hji
     · rw [hn]
       nlinarith [norm_nonneg (a j)]
     · have h₁ := hsep hji.symm
       have h₂ : ‖c i - c j‖ ≤ ‖w - c i‖ + ‖w - c j‖ := by
-        simpa [norm_sub_rev] using norm_sub_le (c i - w) (c j - w)
+        simpa only [dist_eq_norm] using dist_triangle_left (c i) (c j) w
       nlinarith [norm_nonneg (a j)]
 
 /-- The image of the band `-R ≤ s ≤ -1` of the output end lies in the truncation. -/
@@ -208,11 +207,6 @@ theorem exists_cylindricalEndLift_inf_eq {w : ℂ} {R : ℝ}
   refine ⟨inf.endCoord w, ⟨⟨?_, ?_⟩, inf.im_endCoord_mem_Ico w⟩,
     inf.cylindricalEndLift_endCoord hw⟩
   · linarith [neg_re_endCoord_inf_le hR hw₁]
-  · have hlog : 2 * π ≤ Real.log (‖w‖ / 2) := by
-      rw [Real.le_log_iff_exp_le (div_pos hw0 two_pos), le_div_iff₀ (by norm_num)]
-      linarith
-    rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero, norm_div, Complex.norm_ofNat,
-      div_le_iff₀ (by positivity)]
-    linarith
+  · exact re_endCoord_inf_le_neg (by rwa [mul_one])
 
 end TauCeti.ThricePuncturedSphere
