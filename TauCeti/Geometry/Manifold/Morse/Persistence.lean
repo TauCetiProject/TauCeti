@@ -325,7 +325,7 @@ theorem eventually_forall_isManifoldNondegenerateCriticalPoint {f : C^n⟮I, M; 
   -- Near each point of `K` all critical points of `f` are nondegenerate.
   choose! U hU hUg using fun x hx ↦
     exists_mem_nhds_eventually_forall_isManifoldNondegenerateCriticalPoint hn
-      (eventually_mem_criticalPoints_imp_isManifoldNondegenerateCriticalPoint
+      (eventually_isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
         ((f.contMDiff.of_le (one_le_two.trans hn)) x) (hf x hx))
   obtain ⟨t, htK, hKt⟩ := hK.elim_nhds_subcover U hU
   filter_upwards [(eventually_all_finset t).2 fun x hx ↦ hUg x (htK x hx)] with g hg y hy hcrit
