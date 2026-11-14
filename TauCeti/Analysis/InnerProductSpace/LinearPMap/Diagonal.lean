@@ -22,9 +22,9 @@ square-summable,
 
 and it is unbounded unless `c` is. For a bounded family `m ∈ ℓ^∞` it is the bounded diagonal
 operator `b.diagonal m` (`HilbertBasis.diagonalPMap_eq_toPMap`). Its graph is described
-coordinatewise (`HilbertBasis.mem_graph_diagonalPMap_iff`), its domain contains every basis vector
-and is dense, its adjoint is the diagonal operator of the conjugate family
-(`HilbertBasis.adjoint_diagonalPMap`), so it is closed, and self-adjoint for a real family.
+coordinatewise (`HilbertBasis.mem_graph_diagonalPMap_iff`), so it is closed. Its domain contains
+every basis vector and is dense, and its adjoint is the diagonal operator of the conjugate family
+(`HilbertBasis.adjoint_diagonalPMap`), so it is self-adjoint for a real family.
 Composition multiplies the families (`HilbertBasis.diagonalPMap_apply_diagonalPMap_apply`) and
 addition adds them on the common domain (`HilbertBasis.diagonalPMap_add_diagonalPMap_le`).
 
@@ -57,10 +57,10 @@ so `f` only enters through its values `f (λ i)` at the eigenvalues.
   `b.diagonalPMap c x = ∑ᵢ c i ⟪b i, x⟫ • b i`.
 * `HilbertBasis.diagonalPMap_domain_eq_top`: a bounded family gives an everywhere defined operator,
   and `HilbertBasis.diagonalPMap_eq_toPMap` identifies it with the bounded diagonal operator.
-* `HilbertBasis.adjoint_diagonalPMap`, `HilbertBasis.isClosed_diagonalPMap`,
-  `HilbertBasis.isSelfAdjoint_diagonalPMap`: the adjoint of `b.diagonalPMap c` is
-  `b.diagonalPMap (star c)`, so diagonal operators are closed, and self-adjoint for self-adjoint
-  coefficient families.
+* `HilbertBasis.isClosed_diagonalPMap`: diagonal operators are closed.
+* `HilbertBasis.adjoint_diagonalPMap`, `HilbertBasis.isSelfAdjoint_diagonalPMap`: the adjoint of
+  `b.diagonalPMap c` is `b.diagonalPMap (star c)`, so diagonal operators are self-adjoint for
+  self-adjoint coefficient families.
 * `HilbertBasis.le_diagonalPMap_iff`: the restrictions of a diagonal operator.
 * `HilbertBasis.diagonalPMap_apply_mem_diagonalPMap_domain_iff`,
   `HilbertBasis.diagonalPMap_apply_diagonalPMap_apply`,
@@ -276,6 +276,17 @@ theorem diagonalPMap_add_diagonalPMap_le :
     rw [LinearPMap.add_apply, inner_add_right, inner_diagonalPMap_apply, inner_diagonalPMap_apply,
       Pi.add_apply, add_mul]
 
+/-- A diagonal operator is closed: its graph is cut out by the closed conditions
+`⟪b i, y⟫ = c i * ⟪b i, x⟫` (`HilbertBasis.mem_graph_diagonalPMap_iff`). -/
+theorem isClosed_diagonalPMap : (b.diagonalPMap c).IsClosed := by
+  have h : ((b.diagonalPMap c).graph : Set (E × E)) =
+      ⋂ i, {p | ⟪b i, p.2⟫_𝕜 = c i * ⟪b i, p.1⟫_𝕜} := by
+    ext ⟨x, y⟩
+    simp only [SetLike.mem_coe, Set.mem_iInter, Set.mem_ofPred_eq]
+    exact b.mem_graph_diagonalPMap_iff c
+  rw [LinearPMap.IsClosed, h]
+  exact isClosed_iInter fun i ↦ isClosed_eq (by fun_prop) (by fun_prop)
+
 variable [CompleteSpace E]
 
 /-- **The adjoint of a diagonal operator** is the diagonal operator of the conjugate coefficients.
@@ -301,11 +312,6 @@ theorem adjoint_diagonalPMap : (b.diagonalPMap c)† = b.diagonalPMap (star c) :
       ring
     have hy : y ∈ (b.diagonalPMap c)†.domain := mem_adjoint_domain_of_exists y ⟨z, key⟩
     exact ⟨⟨y, hy⟩, rfl, adjoint_apply_eq hdense _ key⟩
-
-/-- A diagonal operator is closed. -/
-theorem isClosed_diagonalPMap : (b.diagonalPMap c).IsClosed := by
-  have h := adjoint_isClosed (b.dense_diagonalPMap_domain (star c))
-  rwa [adjoint_diagonalPMap, star_star] at h
 
 /-- A diagonal operator with a self-adjoint coefficient family, that is, with real coefficients, is
 self-adjoint. -/
