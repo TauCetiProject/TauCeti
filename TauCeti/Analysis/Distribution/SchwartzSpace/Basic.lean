@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Weighted bounds and integrability of Schwartz functions
@@ -39,6 +40,9 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
   integral of its squared norm does, for a measure charging every nonempty open set.
+* `IsOpen.eqOn_of_integral_clm_apply_eq`: two operator families continuous on an open set `U`
+  agree there if they have the same integrals against compactly supported Schwartz functions
+  supported in `U`.
 * `TauCeti.eq_zero_of_forall_integral_apply_eq_zero`: a continuous operator-valued function that
   integrates to zero against every Schwartz function vanishes.
 * `HasCompactSupport.toSchwartzMap_toLp`: the `Lᵖ` class of a smooth compactly supported function
@@ -258,22 +262,44 @@ open scoped SchwartzMap
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [IsLocallyFiniteMeasure μ]
   [μ.IsOpenPosMeasure]
-  {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
-  [CompleteSpace W]
+  {𝕜 V W : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace ℝ W] [NormedSpace 𝕜 W] [CompleteSpace W]
+  [LinearMap.CompatibleSMul V W ℝ 𝕜]
 
-/-- A continuous function `g : E → V →L[ℂ] W` such that `∫ g ζ (f ζ) ∂μ = 0` for every Schwartz
-function `f`, against a locally finite measure charging every nonempty open set, vanishes. -/
-theorem eq_zero_of_forall_integral_apply_eq_zero {g : E → V →L[ℂ] W} (hg : Continuous g)
-    (h : ∀ f : 𝓢(E, V), ∫ ζ, g ζ (f ζ) ∂μ = 0) (ζ : E) : g ζ = 0 := by
+/-- **Operator families are determined by Schwartz test functions.** Two families `K₁`, `K₂`
+continuous on an open set `U` agree on `U` if `∫ K₁(y) u(y) ∂μ = ∫ K₂(y) u(y) ∂μ` for every
+compactly supported Schwartz function `u` with support in `U`, against a locally finite measure
+charging every nonempty open set. -/
+theorem _root_.IsOpen.eqOn_of_integral_clm_apply_eq {K₁ K₂ : E → V →L[𝕜] W} {U : Set E}
+    (hU : IsOpen U) (hK₁ : ContinuousOn K₁ U) (hK₂ : ContinuousOn K₂ U)
+    (h : ∀ u : 𝓢(E, V), HasCompactSupport u → tsupport u ⊆ U →
+      ∫ y, K₁ y (u y) ∂μ = ∫ y, K₂ y (u y) ∂μ) :
+    Set.EqOn K₁ K₂ U := by
+  intro y hy
   ext v
-  -- Test against `f = φ • v` with `φ` real, smooth and compactly supported.
-  have hgv : Continuous fun ζ ↦ g ζ v := hg.clm_apply continuous_const
-  have hae : ∀ᵐ η ∂μ, g η v = 0 := by
-    refine ae_eq_zero_of_integral_contDiff_smul_eq_zero hgv.locallyIntegrable fun φ hφ hφc ↦ ?_
-    have hf : HasCompactSupport fun η ↦ φ η • v := hφc.smul_right
-    simpa [ContinuousLinearMap.map_smul_of_tower] using
-      h (hf.toSchwartzMap (hφ.smul contDiff_const))
-  exact congrFun ((hgv.ae_eq_iff_eq μ continuous_zero).1 hae) ζ
+  set f : E → W := fun z ↦ K₁ z v - K₂ z v
+  have hf : ContinuousOn f U :=
+    (hK₁.clm_apply continuousOn_const).sub (hK₂.clm_apply continuousOn_const)
+  have hae := hU.ae_eq_zero_of_integral_contDiff_smul_eq_zero
+    (hf.locallyIntegrableOn (μ := μ) hU.measurableSet) fun g hg hgs hgU ↦ ?_
+  · exact sub_eq_zero.1 (Measure.eqOn_open_of_ae_eq ((ae_restrict_iff' hU.measurableSet).2 hae)
+      hU hf continuousOn_const hy)
+  -- Test against `z ↦ g(z) • v`, a compactly supported Schwartz function with support in `U`.
+  have hgcs : HasCompactSupport fun z ↦ g z • v := hgs.smul_right
+  set u := hgcs.toSchwartzMap (hg.smul contDiff_const)
+  have huU : tsupport u ⊆ U := (tsupport_smul_subset_left _ _).trans hgU
+  have hpt (L : E → V →L[𝕜] W) (z : E) : g z • L z v = L z (u z) := by
+    rw [HasCompactSupport.toSchwartzMap_toFun, ContinuousLinearMap.map_smul_of_tower]
+  simp only [f, smul_sub, hpt K₁, hpt K₂]
+  rw [integral_sub (u.continuous.integrable_clm_apply_of_continuousOn hgcs huU hK₁)
+    (u.continuous.integrable_clm_apply_of_continuousOn hgcs huU hK₂), h u hgcs huU, sub_self]
+
+/-- A continuous function `g : E → V →L[𝕜] W` such that `∫ g ζ (f ζ) ∂μ = 0` for every Schwartz
+function `f`, against a locally finite measure charging every nonempty open set, vanishes. -/
+theorem eq_zero_of_forall_integral_apply_eq_zero {g : E → V →L[𝕜] W} (hg : Continuous g)
+    (h : ∀ f : 𝓢(E, V), ∫ ζ, g ζ (f ζ) ∂μ = 0) (ζ : E) : g ζ = 0 :=
+  isOpen_univ.eqOn_of_integral_clm_apply_eq (μ := μ) (K₂ := 0) hg.continuousOn continuousOn_const
+    (fun f _ _ ↦ by simp [h f]) (Set.mem_univ ζ)
 
 end TauCeti
 
