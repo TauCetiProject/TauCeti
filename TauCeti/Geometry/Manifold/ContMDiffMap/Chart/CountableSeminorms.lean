@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CoordinateChange
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.WithSeminorms
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Metrizable.Uniformity
 import Mathlib.Topology.Separation.Basic
@@ -18,6 +19,9 @@ A chart cover controls every compact chart C^k seminorm by finitely many chart s
 the cover. Compact pieces subordinate to a finite subcover reduce the estimate to the native
 quantitative coordinate-change bounds. Compact exhaustions then give a countable cofinal family
 when the chosen chart index is countable. The coefficient space may be any normed space.
+Restricting the coordinate derivatives to the compact pieces of the exhaustions gives the linear
+map `ContMDiffMap.chartExhaustionJet` into a product of supremum-norm spaces of continuous maps,
+which induces the weak Whitney topology (`ContMDiffMap.isInducing_chartExhaustionJet`).
 
 These are the compact-cover estimates for the weak Whitney topology, as in Hirsch,
 *Differential Topology*, Chapter 2, §1.
@@ -176,6 +180,91 @@ theorem withSeminorms_chartExhaustion
     simpa only [LinearMap.id_apply, chartSeminormFamily_apply] using
       hderiv.trans (hbound f)
 
+/-- The coordinate derivatives of order at most `n` in the charts at the points `c i`, restricted
+to the compact pieces of chosen exhaustions `A i` of the chart targets, each in its
+supremum-norm space of continuous maps. The component at `(i, l, m)` is the `m`-th derivative in
+the chart at `c i`, restricted to the `l`-th compact piece of `A i`. -/
+noncomputable def chartExhaustionJet (A : ∀ i, CompactExhaustion (extChartAt I (c i)).target) :
+    C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜]
+      ∀ j : ι × ℕ × {m : ℕ // m ≤ n},
+        C((⟨A j.1 j.2.1, (A j.1).isCompact j.2.1⟩ :
+          TopologicalSpace.Compacts (extChartAt I (c j.1)).target), E [×j.2.2.1]→L[𝕜] F) :=
+  (LinearMap.pi fun j ↦ LinearMap.proj
+    (⟨c j.1, j.2.2, ⟨A j.1 j.2.1, (A j.1).isCompact j.2.1⟩⟩ :
+      Σ x : M, {m : ℕ // m ≤ n} × TopologicalSpace.Compacts (extChartAt I x).target)) ∘ₗ
+    compactChartJet
+
+/-- A component of `chartExhaustionJet` is the corresponding chart derivative, restricted to
+the corresponding compact piece. -/
+-- Spell out the chart target in the coercion type, as for compactChartJet_apply.
+@[simp]
+theorem chartExhaustionJet_apply (A : ∀ i, CompactExhaustion (extChartAt I (c i)).target)
+    (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (j : ι × ℕ × {m : ℕ // m ≤ n}) :
+    DFunLike.coe (F := C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜]
+      ∀ j : ι × ℕ × {m : ℕ // m ≤ n},
+        C((⟨A j.1 j.2.1, (A j.1).isCompact j.2.1⟩ : TopologicalSpace.Compacts
+          ↥(I.target ∩ I.symm ⁻¹' (chartAt H (c j.1)).target)), E [×j.2.2.1]→L[𝕜] F))
+      (chartExhaustionJet c A) f j =
+      (chartIteratedFDeriv f (c j.1) j.2.2.1 j.2.2.2).restrict (A j.1 j.2.1) :=
+  -- The compact piece, bundled as a compact set, coerces back to the same set.
+  compactChartJet_apply f ⟨c j.1, j.2.2, ⟨A j.1 j.2.1, (A j.1).isCompact j.2.1⟩⟩
+
+/-- The supremum norm of a component of `chartExhaustionJet` is the compact chart derivative
+seminorm on the corresponding compact piece. -/
+theorem norm_chartExhaustionJet_apply (A : ∀ i, CompactExhaustion (extChartAt I (c i)).target)
+    (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (i : ι) (l m : ℕ) (hm : m ≤ n) :
+    ‖chartExhaustionJet c A f (i, l, ⟨m, hm⟩)‖ =
+      chartDerivativeSeminorm (c i) ⟨A i l, (A i).isCompact l⟩ m hm f := by
+  rw [chartDerivativeSeminorm_apply]
+  -- The compact piece, bundled as a compact set, coerces back to the same set.
+  exact congrArg norm (chartExhaustionJet_apply c A f (i, l, ⟨m, hm⟩))
+
+include hcover in
+/-- For charts whose sources cover the manifold, the coordinate derivatives restricted to the
+compact pieces of exhaustions of the chart targets induce the weak Whitney topology. -/
+theorem isInducing_chartExhaustionJet (A : ∀ i, CompactExhaustion (extChartAt I (c i)).target) :
+    IsInducing (chartExhaustionJet (F := F) (n := n) c A) := by
+  classical
+  let Φ := chartExhaustionJet (F := F) (n := n) c A
+  let P (j : ι × ℕ × {m : ℕ // m ≤ n}) := C((⟨A j.1 j.2.1, (A j.1).isCompact j.2.1⟩ :
+    TopologicalSpace.Compacts (extChartAt I (c j.1)).target), E [×j.2.2.1]→L[𝕜] F)
+  let q : SeminormFamily 𝕜 C^n⟮I, M; 𝓘(𝕜, F), F⟯ ((_ : ι × ℕ × {m : ℕ // m ≤ n}) × Unit) :=
+    (SeminormFamily.sigma fun j ↦
+      SeminormFamily.comp (fun _ : Unit ↦ normSeminorm 𝕜 (P j)) (LinearMap.proj j)).comp Φ
+  -- The norms of the components generate the induced topology.
+  have hind : WithSeminorms (topology := .induced Φ inferInstance) q :=
+    Φ.withSeminorms_induced (withSeminorms_pi fun j ↦ norm_withSeminorms 𝕜 (P j))
+  -- They are the compact chart derivative seminorms, which are equivalent to the compact chart
+  -- `C^k` seminorms generating the weak Whitney topology.
+  have hnorm (i : ι) (l m : ℕ) (hm : m ≤ n) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+      q ⟨(i, l, ⟨m, hm⟩), ()⟩ f =
+        chartDerivativeSeminorm (c i) ⟨A i l, (A i).isCompact l⟩ m hm f := by
+    simp only [q, SeminormFamily.comp_apply, SeminormFamily.sigma, Seminorm.comp_apply,
+      coe_normSeminorm, LinearMap.proj_apply]
+    exact norm_chartExhaustionJet_apply c A f i l m hm
+  have hWW : WithSeminorms q := (withSeminorms_chartExhaustion (F := F) (n := n) c hcover A).congr
+    (Seminorm.IsBounded.of_real fun j ↦ ⟨{(j.1.1, j.1.2.1, j.1.2.2)}, 1, fun f ↦ ?_⟩)
+    (Seminorm.IsBounded.of_real fun j ↦
+      ⟨Finset.univ.image fun m : Fin (j.2.2.1 + 1) ↦
+        (⟨(j.1, j.2.1, ⟨m, (Nat.cast_le.mpr (Nat.le_of_lt_succ m.isLt)).trans j.2.2.2⟩), ()⟩ :
+          (_ : ι × ℕ × {m : ℕ // m ≤ n}) × Unit), 1, fun f ↦ ?_⟩)
+  · exact ⟨hWW.1.trans
+      (WithSeminorms.topology_eq_withSeminorms (topology := .induced Φ inferInstance) hind).symm⟩
+  · -- A derivative seminorm is at most the `C^k` seminorm of the same order.
+    obtain ⟨⟨i, l, m, hm⟩, -⟩ := j
+    dsimp only
+    rw [LinearMap.id_apply, hnorm, one_mul, Finset.sup_singleton,
+      chartExhaustionSeminormFamily_apply]
+    refine (chartDerivativeSeminorm_le_iff _ _ m hm f (apply_nonneg _ _)).mpr fun z hz ↦ ?_
+    exact (chartCkSeminorm_le_iff _ _ m hm f (apply_nonneg _ _)).mp le_rfl m le_rfl z hz
+  · -- A `C^k` seminorm is the maximum of the derivative seminorms of order at most `k`.
+    obtain ⟨i, l, k, hk⟩ := j
+    rw [LinearMap.id_apply, one_mul, chartExhaustionSeminormFamily_apply]
+    refine (chartCkSeminorm_le_iff _ _ k hk f (apply_nonneg _ _)).mpr fun m hmk z hz ↦ ?_
+    refine ((chartDerivativeSeminorm_le_iff _ _ m _ f (apply_nonneg _ _)).mp le_rfl z hz).trans ?_
+    refine (hnorm i l m _ f).symm.le.trans (Seminorm.le_finset_sup_apply ?_)
+    exact Finset.mem_image.mpr ⟨⟨m, Nat.lt_succ_of_le hmk⟩, Finset.mem_univ _, rfl⟩
+
 
 include hcover in
 /-- A countable covering chart system with compact exhaustions makes the native weak Whitney
@@ -201,26 +290,14 @@ theorem metrizableSpace_chartExhaustion [Countable ι]
   exact UniformSpace.metrizableSpace
 
 
-/-- On a sigma-compact manifold with locally compact, second-countable model,
+/-- On a sigma-compact manifold with locally compact model,
 the existing vector-valued weak Whitney topology is metrizable. Arbitrary normed targets are
 allowed; no finite-dimensionality of the coefficient space or completeness is required. -/
-theorem metrizableSpace_manifoldWeakWhitney_of_sigmaCompact
-    [LocallyCompactSpace E] [SecondCountableTopology E]
+theorem metrizableSpace_manifoldWeakWhitney_of_sigmaCompact [LocallyCompactSpace E]
     [SigmaCompactSpace M] :
     TopologicalSpace.MetrizableSpace C^n⟮I, M; 𝓘(𝕜, F), F⟯ := by
-  obtain ⟨s, hs, hcover⟩ := countable_cover_nhds_of_sigmaCompact
-    (fun x : M ↦ extChartAt_source_mem_nhds (I := I) x)
+  obtain ⟨s, hs, hc, ⟨A⟩⟩ := TauCeti.exists_countable_chartExhaustion (I := I) (M := M)
   let _ := hs.to_subtype
-  have hc : ∀ x : M, ∃ i : s, x ∈ (extChartAt I (i : M)).source := by
-    intro x
-    have hx : x ∈ ⋃ y ∈ s, (extChartAt I y).source := by rw [hcover]; trivial
-    obtain ⟨y, hy, hx⟩ := mem_iUnion₂.mp hx
-    exact ⟨⟨y, hy⟩, hx⟩
-  let _ (i : s) : LocallyCompactSpace (extChartAt I (i : M)).target := by
-    rw [extChartAt_target]
-    exact ((chartAt H (i : M)).open_target.preimage I.continuous_symm).isLocallyClosed.inter
-      I.isClosed_range.isLocallyClosed |>.locallyCompactSpace
-  exact metrizableSpace_chartExhaustion (F := F) (n := n) (fun i : s ↦ (i : M)) hc
-    (fun i ↦ CompactExhaustion.choice (extChartAt I (i : M)).target)
+  exact metrizableSpace_chartExhaustion (F := F) (n := n) (fun i : s ↦ (i : M)) hc A
 
 end ContMDiffMap
