@@ -33,6 +33,13 @@ then turns Serre's `∑ (q ^ f) ^ (-c) = e` into the formula above.
 
 ## Main results
 
+* `TauCeti.map_mem_totallyRamifiedOfDegree_iff`: over an unramified base `F`, transporting an
+  intermediate field of `SeparableClosure K / F` to `SeparableClosure F` lands in `σ_F(e)`
+  precisely when its restriction of scalars to `K` has degree `[F : K] * e` and residue degree
+  `f(F / K)`.
+* `TauCeti.one_div_natCard_residueField_pow_discriminantExponent_restrictScalars`: the discriminant
+  weight `q ^ (-d)` over `K` factors into the wild-exponent weight `(q ^ f) ^ (-c)` over `F` times
+  `q ^ (-f(e - 1))`.
 * `TauCeti.tsum_inertiaDegree_eq`: the subextensions of degree `f * e` and residue degree `f`
   satisfy `∑_L q ^ (-d(L)) = e · q ^ (-f(e - 1))`.
 
@@ -123,7 +130,7 @@ private theorem inertiaDegree_restrictScalars_and_discriminantExponent_restrictS
 
 /-- Over an unramified base `F`, the transported intermediate field lies in `σ_F(e)` exactly when
 `E.restrictScalars K` has degree `[F : K] * e` and residue degree `f(F / K)` over `K`. -/
-private theorem map_mem_totallyRamifiedOfDegree_iff (e : ℕ) :
+theorem map_mem_totallyRamifiedOfDegree_iff (e : ℕ) :
     E.map Φ.symm.toAlgHom ∈ totallyRamifiedOfDegree F e ↔
       Module.finrank K (E.restrictScalars K) = Module.finrank K F * e ∧
         (E.restrictScalars K).inertiaDegree = inertiaDegree K F := by
@@ -163,7 +170,7 @@ private theorem map_mem_totallyRamifiedOfDegree_iff (e : ℕ) :
 splits as `(q ^ f) ^ (-c) · q ^ (-f(e - 1))`, where `f = f(F / K)`, `q ^ f` is the residue
 cardinality of `F` and `c` is the wild exponent of the transport over `F`: indeed
 `d(E / K) = f · d(E / F)` and `d(E / F) = c + e - 1`. -/
-private theorem one_div_natCard_residueField_pow_discriminantExponent_restrictScalars {e : ℕ}
+theorem one_div_natCard_residueField_pow_discriminantExponent_restrictScalars {e : ℕ}
     (hE : E.map Φ.symm.toAlgHom ∈ totallyRamifiedOfDegree F e) :
     1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (E.restrictScalars K).discriminantExponent =
       1 / (Nat.card 𝓀[F] : ℝ≥0∞) ^ (E.map Φ.symm.toAlgHom).wildExponent *
