@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.RingTheory.MvPolynomial.Basic
+import TauCeti.LinearAlgebra.LinearMap.Ker
 public import TauCeti.KnotTheory.Grid.Differential.Square.Annulus
 public import TauCeti.KnotTheory.Grid.Differential.Square.DoubleTransposition
 public import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Pairing
@@ -50,6 +51,8 @@ the constant terms of `∂⁻` over `ZMod 2`.
 * `TauCeti.GridDiagram.sum_unblockedCoefficient_mul_unblockedCoefficient_eq_zero`: every matrix
   entry of the square of `∂⁻` vanishes.
 * `TauCeti.GridDiagram.unblockedDifferential_comp_self_eq_zero`: `∂⁻ ∘ ∂⁻ = 0`.
+* `TauCeti.GridDiagram.unblockedDifferential_eq_zero_of_eq_X_smul`: if `∂⁻ c = V_i a`, then `a`
+  is a cycle.
 * `TauCeti.GridDiagram.simplyBlockedDifferential_comp_self_eq_zero`: the same for the
   specialization at `V_i = 0`.
 * `TauCeti.GridDiagram.fullyBlockedDecompositionCount_eq_zero`,
@@ -192,6 +195,16 @@ theorem unblockedDifferential_comp_self_eq_zero :
   simp only [LinearMap.comp_apply, Finsupp.lsingle_apply, LinearMap.zero_comp,
     LinearMap.zero_apply]
   exact G.unblockedDifferential_sq_single_eq_zero R x
+
+/-- If `∂⁻ c = V_i a`, then `a` is a cycle, since `V_i` acts injectively. -/
+theorem unblockedDifferential_eq_zero_of_eq_X_smul {i : Fin n} {c a : GridChainMinus R n}
+    (hc : G.unblockedDifferential R c = (MvPolynomial.X i : MvPolynomial (Fin n) R) • a) :
+    G.unblockedDifferential R a = 0 :=
+  LinearMap.apply_eq_zero_of_apply_eq
+    (f := DistribSMul.toLinearMap _ _ (MvPolynomial.X i : MvPolynomial (Fin n) R))
+    (f' := DistribSMul.toLinearMap _ _ (MvPolynomial.X i : MvPolynomial (Fin n) R))
+    (G.unblockedDifferential_comp_self_eq_zero R) (LinearMap.ext fun x => by simp)
+    (X_smul_gridChainMinus_injective R i) hc
 
 /-- The simply blocked grid map squares to zero in characteristic two: it is the specialization
 of `∂⁻` at `V_i = 0`, and specialization intertwines the two maps. -/

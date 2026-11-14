@@ -69,14 +69,6 @@ theorem apply_snd_mem_range_of_mem_ker_mappingCone {x : M × N}
 
 variable {d e f} in
 include he hf in
-/-- If `f` is an injective chain map and `e c = f a`, then `a` is a cycle. -/
-private theorem apply_eq_zero_of_apply_eq (hinj : Function.Injective f) {c : N} {a : M}
-    (hc : e c = f a) : d a = 0 := by
-  apply hinj
-  rw [map_zero, ← comp_apply, hf, comp_apply, ← hc, ← comp_apply, he, LinearMap.zero_apply]
-
-variable {d e f} in
-include he hf in
 /-- If `f` is an injective chain map and `e c = f a`, then `(-a, c)` is a cycle of the mapping
 cone. -/
 theorem mk_neg_mem_ker_mappingCone (hinj : Function.Injective f) {c : N} {a : M}

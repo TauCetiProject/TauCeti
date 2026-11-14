@@ -13,7 +13,8 @@ public import Mathlib.Algebra.Module.Submodule.Ker
 Two commuting squares of linear maps whose horizontal sides are linear isomorphisms and which
 share a vertical side paste to a commuting square. In a commuting square `f' ∘ d = e ∘ f`, `f`
 sends the kernel of `d` into the kernel of `e`; with `f' = f`, this is how a chain map acts on
-cycles. In a commuting square `g ∘ e₁ = e₂ ∘ f` whose source side `e₁` is surjective and whose
+cycles. If moreover `e ∘ e = 0` and `f'` is injective, then `e c = f a` forces `d a = 0`.
+In a commuting square `g ∘ e₁ = e₂ ∘ f` whose source side `e₁` is surjective and whose
 target side `e₂` is injective, `e₁` carries the kernel of `f` onto the kernel of `g`.
 -/
 
@@ -39,6 +40,14 @@ kernel of `e`. -/
 theorem map_mem_ker_of_comp_eq {d : M →ₗ[R] M'} {e : N →ₗ[R] N'} (f : M →ₗ[R] N)
     {f' : M' →ₗ[R] N'} (hf : f' ∘ₗ d = e ∘ₗ f) {x : M} (hx : x ∈ ker d) : f x ∈ ker e := by
   rw [mem_ker, ← comp_apply e f, ← hf, comp_apply, mem_ker.mp hx, map_zero]
+
+/-- In a commuting square `f' ∘ d = e ∘ f` with `e ∘ e = 0` and `f'` injective, if `e c = f a`
+then `d a = 0`. For a chain map `f' = f`, an element mapped to a boundary is a cycle. -/
+theorem apply_eq_zero_of_apply_eq {d : M →ₗ[R] M'} {e : N →ₗ[R] N} {f : M →ₗ[R] N}
+    {f' : M' →ₗ[R] N} (he : e ∘ₗ e = 0) (hf : f' ∘ₗ d = e ∘ₗ f) (hinj : Function.Injective f')
+    {c : N} {a : M} (hc : e c = f a) : d a = 0 := by
+  apply hinj
+  rw [map_zero, ← comp_apply, hf, comp_apply, ← hc, ← comp_apply, he, LinearMap.zero_apply]
 
 /-- In a commuting square `g ∘ e₁ = e₂ ∘ f` of linear maps with `e₁` surjective and `e₂`
 injective, `e₁` carries the kernel of `f` onto that of `g`. -/

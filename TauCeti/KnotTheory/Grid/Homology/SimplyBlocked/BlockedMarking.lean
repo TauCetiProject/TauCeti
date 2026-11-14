@@ -38,56 +38,6 @@ open MvPolynomial
 
 variable {n : ℕ}
 
-section Differential
-
-variable {R : Type*} [CommRing R] [CharP R 2] {G : GridDiagram n}
-
-/-- If `∂c = V_i a`, then `a` is a cycle, since `V_i` acts injectively. -/
-private theorem unblockedDifferential_eq_zero_of_eq_X_smul {i : Fin n} {c a : GridChainMinus R n}
-    (hc : G.unblockedDifferential R c = (MvPolynomial.X i : MvPolynomial (Fin n) R) • a) :
-    G.unblockedDifferential R a = 0 := by
-  apply X_smul_gridChainMinus_injective R i
-  dsimp only
-  rw [← map_smul, ← hc, smul_zero]
-  exact congr($(G.unblockedDifferential_comp_self_eq_zero R) c)
-
-namespace IsKnot
-
-variable (hG : G.IsKnot) (i j : Fin n)
-
-/-- On a cycle `a`, the chosen homotopy has boundary `∂(H a) = (V_i + V_j) a`. -/
-private theorem unblockedDifferential_XSmulHomotopy_of_eq_zero {a : GridChainMinus R n}
-    (ha : G.unblockedDifferential R a = 0) :
-    G.unblockedDifferential R (hG.XSmulHomotopy R i j a) =
-      (MvPolynomial.X i + MvPolynomial.X j : MvPolynomial (Fin n) R) • a := by
-  have h := congr($(hG.unblockedDifferential_comp_XSmulHomotopy_add_XSmulHomotopy_comp R i j) a)
-  simpa only [LinearMap.add_apply, LinearMap.comp_apply, ha, map_zero, add_zero,
-    LinearMap.smul_apply, LinearMap.id_apply] using h
-
-/-- If `∂c = V_i a`, then `∂(c + H a) = V_j a` for the chosen homotopy `H` between the
-actions of `V_i` and `V_j`. -/
-theorem unblockedDifferential_add_XSmulHomotopy_left (c a : GridChainMinus R n)
-    (hc : G.unblockedDifferential R c = (MvPolynomial.X i : MvPolynomial (Fin n) R) • a) :
-    G.unblockedDifferential R (c + hG.XSmulHomotopy R i j a) =
-      (MvPolynomial.X j : MvPolynomial (Fin n) R) • a := by
-  rw [map_add, hc, hG.unblockedDifferential_XSmulHomotopy_of_eq_zero i j
-    (unblockedDifferential_eq_zero_of_eq_X_smul hc), add_smul, ← add_assoc, ← add_smul,
-    CharTwo.add_self_eq_zero, zero_smul, zero_add]
-
-/-- If `∂c = V_j a`, then `∂(c + H a) = V_i a` for the chosen homotopy `H` between the
-actions of `V_i` and `V_j`. -/
-theorem unblockedDifferential_add_XSmulHomotopy_right (c a : GridChainMinus R n)
-    (hc : G.unblockedDifferential R c = (MvPolynomial.X j : MvPolynomial (Fin n) R) • a) :
-    G.unblockedDifferential R (c + hG.XSmulHomotopy R i j a) =
-      (MvPolynomial.X i : MvPolynomial (Fin n) R) • a := by
-  rw [map_add, hc, hG.unblockedDifferential_XSmulHomotopy_of_eq_zero i j
-    (unblockedDifferential_eq_zero_of_eq_X_smul hc), add_smul, add_comm, add_assoc, ← add_smul,
-    CharTwo.add_self_eq_zero, zero_smul, add_zero]
-
-end IsKnot
-
-end Differential
-
 local notation "F" => ZMod 2
 local notation "P" => MvPolynomial (Fin n) F
 local notation "M" => GridChainMinus F n
@@ -187,7 +137,7 @@ theorem partiallyBlockedHomologyChangeBlockedColumnEquiv_quotientHomologyClass (
       LinearMap.quotientHomologyClass hd
         (G.blockedChains_le_comap_unblockedDifferential {j}) (c + hG.XSmulHomotopy F i j a)
         (by rw [LinearMap.restrictScalars_apply,
-              unblockedDifferential_add_XSmulHomotopy_left hG i j c a hc]
+              hG.unblockedDifferential_add_XSmulHomotopy_left F i j c a hc]
             exact X_smul_mem_blockedChains (Finset.mem_singleton_self j) a) := by
   have hc' : d c = variableMap i a := by
     rw [LinearMap.restrictScalars_apply, hc, variableMap_apply]
@@ -215,11 +165,11 @@ theorem partiallyBlockedHomologyChangeBlockedColumnEquiv_symm_quotientHomologyCl
       LinearMap.quotientHomologyClass hd
         (G.blockedChains_le_comap_unblockedDifferential {i}) (c + hG.XSmulHomotopy F i j a)
         (by rw [LinearMap.restrictScalars_apply,
-              unblockedDifferential_add_XSmulHomotopy_right hG i j c a hc]
+              hG.unblockedDifferential_add_XSmulHomotopy_right F i j c a hc]
             exact X_smul_mem_blockedChains (Finset.mem_singleton_self i) a) := by
   rw [LinearEquiv.symm_apply_eq,
     partiallyBlockedHomologyChangeBlockedColumnEquiv_quotientHomologyClass hG i j _ a
-      (unblockedDifferential_add_XSmulHomotopy_right hG i j c a hc)]
+      (hG.unblockedDifferential_add_XSmulHomotopy_right F i j c a hc)]
   congr 1
   rw [add_assoc, ZModModule.add_self, add_zero]
 
@@ -262,7 +212,6 @@ theorem simplyBlockedHomologyChangeBlockedColumnEquiv_symm_partiallyBlockedHomol
 
 /-- On a simply blocked cycle with unblocked lift `c`, where `∂c = V_i a`, the categorical
 comparison gives the class of the lift `c + H a`, for the chosen variable homotopy `H`. -/
-@[simp]
 theorem simplyBlockedHomologyChangeBlockedColumnEquiv_oneVariableSpecializationHomologyClass
     (c a : M) (hc : G.unblockedDifferential F c = (MvPolynomial.X i : P) • a) :
     hG.simplyBlockedHomologyChangeBlockedColumnEquiv i j
@@ -277,12 +226,12 @@ theorem simplyBlockedHomologyChangeBlockedColumnEquiv_oneVariableSpecializationH
             (simplyBlockedSpecialization F j (c + hG.XSmulHomotopy F i j a)),
           (G.mem_ker_simplyBlockedComplex_d_iff F j _).mpr (by
             rw [LinearEquiv.apply_symm_apply, ← simplyBlockedSpecialization_unblockedDifferential,
-              unblockedDifferential_add_XSmulHomotopy_left hG i j c a hc]
+              hG.unblockedDifferential_add_XSmulHomotopy_left F i j c a hc]
             exact (exact_X_smul_simplyBlockedSpecialization F j).apply_apply_eq_zero a)⟩ := by
   have hsrc := hG.partiallyBlockedHomologySingletonEquiv_mk i c (by
     rw [hc]; exact X_smul_mem_blockedChains (Finset.mem_singleton_self i) a)
   have htgt := hG.partiallyBlockedHomologySingletonEquiv_mk j (c + hG.XSmulHomotopy F i j a) (by
-    rw [unblockedDifferential_add_XSmulHomotopy_left hG i j c a hc]
+    rw [hG.unblockedDifferential_add_XSmulHomotopy_left F i j c a hc]
     exact X_smul_mem_blockedChains (Finset.mem_singleton_self j) a)
   rw [← hsrc, ← htgt,
     simplyBlockedHomologyChangeBlockedColumnEquiv_partiallyBlockedHomologySingletonEquiv]
@@ -293,7 +242,6 @@ theorem simplyBlockedHomologyChangeBlockedColumnEquiv_oneVariableSpecializationH
 /-- On a simply blocked cycle with unblocked lift `c`, where `∂c = V_j a`, the inverse
 categorical comparison gives the class of the lift `c + H a`, for the chosen variable
 homotopy `H`. -/
-@[simp]
 theorem simplyBlockedHomologyChangeBlockedColumnEquiv_symm_oneVariableSpecializationHomologyClass
     (c a : M) (hc : G.unblockedDifferential F c = (MvPolynomial.X j : P) • a) :
     (hG.simplyBlockedHomologyChangeBlockedColumnEquiv i j).symm
@@ -308,12 +256,12 @@ theorem simplyBlockedHomologyChangeBlockedColumnEquiv_symm_oneVariableSpecializa
             (simplyBlockedSpecialization F i (c + hG.XSmulHomotopy F i j a)),
           (G.mem_ker_simplyBlockedComplex_d_iff F i _).mpr (by
             rw [LinearEquiv.apply_symm_apply, ← simplyBlockedSpecialization_unblockedDifferential,
-              unblockedDifferential_add_XSmulHomotopy_right hG i j c a hc]
+              hG.unblockedDifferential_add_XSmulHomotopy_right F i j c a hc]
             exact (exact_X_smul_simplyBlockedSpecialization F i).apply_apply_eq_zero a)⟩ := by
   have hsrc := hG.partiallyBlockedHomologySingletonEquiv_mk j c (by
     rw [hc]; exact X_smul_mem_blockedChains (Finset.mem_singleton_self j) a)
   have htgt := hG.partiallyBlockedHomologySingletonEquiv_mk i (c + hG.XSmulHomotopy F i j a) (by
-    rw [unblockedDifferential_add_XSmulHomotopy_right hG i j c a hc]
+    rw [hG.unblockedDifferential_add_XSmulHomotopy_right F i j c a hc]
     exact X_smul_mem_blockedChains (Finset.mem_singleton_self i) a)
   rw [← hsrc, ← htgt,
     simplyBlockedHomologyChangeBlockedColumnEquiv_symm_partiallyBlockedHomologySingletonEquiv]
