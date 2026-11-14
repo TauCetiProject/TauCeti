@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Martingale.QuadraticSums
 public import Mathlib.Probability.Process.Indistinguishable
-public import TauCeti.Analysis.BoundedVariation.QuadraticSums
+public import TauCeti.Analysis.QuadraticSums.BoundedVariation
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.MeasureTheory.Function.DeLaValleePoussin
 import TauCeti.Topology.Instances.NNReal
