@@ -24,6 +24,8 @@ homotopy.
 
 * `GenLoop.homotopic_of_continuousMap`: a map `I × I^N → X` between two generalized loops that is
   stationary at the basepoint over the cube boundary is a homotopy relative to the boundary.
+* `GenLoop.homotopic_of_forall_apply_eq_comp`: reparametrizing the cube coordinates by self-maps
+  of the unit interval fixing `0` and `1` does not change the class of a generalized loop.
 * `GenLoop.homotopic_iff_joined`: homotopy relative to the cube boundary is path connectedness.
 * `Homeomorph.genLoopHomotopic_iff`: a homeomorphism of generalized-loop spaces preserves and
   reflects homotopy.
@@ -48,6 +50,26 @@ theorem homotopic_of_continuousMap {p q : Ω^ N X x} (H : C(I × I^N, X))
      map_zero_left := h₀
      map_one_left := h₁
      prop' t z hz := (hb t z hz).trans (_root_.GenLoop.boundary p z hz).symm }⟩
+
+/-- **Reparametrizing the cube coordinates does not change the class of a generalized loop.** If
+`q` is `p` precomposed with self-maps `f i` of the unit interval in the coordinates `i`, each
+fixing `0` and `1`, then `p` and `q` are homotopic relative to the cube boundary. -/
+theorem homotopic_of_forall_apply_eq_comp {p q : Ω^ N X x} (f : N → C(I, I))
+    (h₀ : ∀ i, f i 0 = 0) (h₁ : ∀ i, f i 1 = 1) (hq : ∀ z, q z = p fun i ↦ f i (z i)) :
+    _root_.GenLoop.Homotopic p q := by
+  -- The homotopy moves each coordinate `zᵢ` along the segment to `f i zᵢ`; a coordinate equal to
+  -- `0` or `1` stays there, so the cube boundary stays in the boundary.
+  have hg : Continuous fun q : I × I^N ↦ fun i ↦ Set.Icc.convexComb (q.2 i) (f i (q.2 i)) q.1 :=
+    continuous_pi fun i ↦ Set.Icc.continuous_convexComb_prod.comp
+      (f := fun q : I × I^N ↦ (q.2 i, f i (q.2 i), q.1)) (by fun_prop)
+  refine homotopic_of_continuousMap
+    ⟨fun q ↦ p fun i ↦ Set.Icc.convexComb (q.2 i) (f i (q.2 i)) q.1, p.1.continuous.comp hg⟩
+    (fun z ↦ by simp [Set.Icc.convexComb_zero])
+    (fun z ↦ by simp [Set.Icc.convexComb_one, hq])
+    fun c z ⟨i, hi⟩ ↦ _root_.GenLoop.boundary p _ ⟨i, ?_⟩
+  rcases hi with hi | hi
+  · exact Or.inl (by simp [hi, h₀, Set.Icc.convexComb_eq])
+  · exact Or.inr (by simp [hi, h₁, Set.Icc.convexComb_eq])
 
 /-- **Two generalized loops are homotopic relative to the cube boundary exactly when they are
 joined by a path in the space of generalized loops.** The compact-open topology on `Ω^ N X x`
