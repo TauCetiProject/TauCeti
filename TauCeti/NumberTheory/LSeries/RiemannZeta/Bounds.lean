@@ -7,13 +7,13 @@ module
 
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.Analysis.Complex.Convex
-import Mathlib.Analysis.MellinTransform
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 import Mathlib.NumberTheory.LSeries.RiemannZeta
-import Mathlib.NumberTheory.LSeries.SumCoeff
+import TauCeti.Analysis.MellinTransform.Basic
+import TauCeti.NumberTheory.LSeries.SumCoeff
 
 /-!
 # Right-half-plane integral representation and vertical bounds for `riemannZeta`
@@ -66,42 +66,21 @@ private lemma norm_sub_natFloor_le_one {t : ℝ} (ht : 0 ≤ t) :
   rw [norm_real, Real.norm_eq_abs, abs_of_nonneg (sub_nonneg.mpr (Nat.floor_le ht))]
   linarith [Nat.lt_floor_add_one t]
 
-/-- The integral `∫_{t > 1} (t - ⌊t⌋₊) t^{-(s + 1)} dt` is the Mellin transform at `-s` of the
-indicator on `[1, ∞)` of `t ↦ t - ⌊t⌋₊`. -/
-private lemma integral_sub_natFloor_eq_mellin (s : ℂ) :
-    ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) =
-      mellin ((Set.Ici (1 : ℝ)).indicator fun t : ℝ ↦ ((t - ⌊t⌋₊ : ℝ) : ℂ)) (-s) := by
-  have hEq : Set.EqOn
-      (fun t : ℝ ↦ (t : ℂ) ^ (-s - 1) •
-        (Set.Ici (1 : ℝ)).indicator (fun u : ℝ ↦ ((u - ⌊u⌋₊ : ℝ) : ℂ)) t)
-      ((Set.Ici (1 : ℝ)).indicator fun t : ℝ ↦
-        ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))) (Set.Ioi 0) := by
-    intro t _
-    dsimp only
-    by_cases h1 : 1 ≤ t
-    · rw [Set.indicator_of_mem (Set.mem_Ici.mpr h1), Set.indicator_of_mem (Set.mem_Ici.mpr h1),
-        smul_eq_mul, mul_comm, neg_add']
-    · rw [Set.indicator_of_notMem (by simpa using h1), Set.indicator_of_notMem (by simpa using h1),
-        smul_zero]
-  rw [mellin, setIntegral_congr_fun measurableSet_Ioi hEq,
-    setIntegral_indicator measurableSet_Ici,
-    Set.inter_eq_right.mpr (Set.Ici_subset_Ioi.mpr zero_lt_one), integral_Ici_eq_integral_Ioi]
-
 /-- The fractional-part integral `s ↦ s ∫_{t > 1} (t - ⌊t⌋₊) t^{-(s + 1)} dt` is holomorphic on the
 open right half-plane `Re s > 0`. -/
 private lemma differentiableOn_mul_integral_sub_natFloor :
     DifferentiableOn ℂ
       (fun s : ℂ ↦ s * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
       {s | 0 < s.re} := by
-  set u : ℝ → ℂ := (Set.Ici (1 : ℝ)).indicator fun t : ℝ ↦ ((t - ⌊t⌋₊ : ℝ) : ℂ)
+  set u : ℝ → ℂ := (Set.Ioi (1 : ℝ)).indicator fun t : ℝ ↦ ((t - ⌊t⌋₊ : ℝ) : ℂ)
   have hfl_meas : Measurable fun t : ℝ ↦ (⌊t⌋₊ : ℝ) := measurable_from_nat.comp Nat.measurable_floor
   have hu_meas : Measurable u :=
-    (Complex.measurable_ofReal.comp (measurable_id.sub hfl_meas)).indicator measurableSet_Ici
+    (Complex.measurable_ofReal.comp (measurable_id.sub hfl_meas)).indicator measurableSet_Ioi
   have hu_norm (t : ℝ) : ‖u t‖ ≤ 1 := by
     dsimp only [u]
-    by_cases ht : 1 ≤ t
-    · rw [Set.indicator_of_mem (Set.mem_Ici.mpr ht)]
-      exact norm_sub_natFloor_le_one (zero_le_one.trans ht)
+    by_cases ht : 1 < t
+    · rw [Set.indicator_of_mem (Set.mem_Ioi.mpr ht)]
+      exact norm_sub_natFloor_le_one (zero_lt_one.trans ht).le
     · rw [Set.indicator_of_notMem (by simpa using ht)]
       simp
   have hloc : LocallyIntegrableOn u (Set.Ioi 0) :=
@@ -110,37 +89,20 @@ private lemma differentiableOn_mul_integral_sub_natFloor :
   have hO_top : u =O[atTop] fun t : ℝ ↦ t ^ (-(0 : ℝ)) := by
     refine isBigO_iff.mpr ⟨1, Eventually.of_forall fun t ↦ ?_⟩
     simpa using hu_norm t
+  have hint_eq (z : ℂ) :
+      ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1)) = mellin u (-z) := by
+    rw [mellin_indicator_Ioi _ zero_le_one (-z)]
+    congr 1; ext t; rw [smul_eq_mul, mul_comm, neg_add']
   intro s (hs : 0 < s.re)
   have hO_bot : u =O[𝓝[>] 0] fun t : ℝ ↦ t ^ (-((-s).re - 1)) := by
     refine (isBigO_zero _ _).congr' ?_ EventuallyEq.rfl
     filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
-    exact (Set.indicator_of_notMem (by simpa using ht.2.not_ge) _).symm
+    exact (Set.indicator_of_notMem (by simpa using ht.2.le) _).symm
   have hmellin : DifferentiableAt ℂ (fun z : ℂ ↦ mellin u (-z)) s :=
     (mellin_differentiableAt_of_isBigO_rpow (a := 0) hloc hO_top (by simpa using hs) hO_bot
       (by linarith)).comp s differentiableAt_id.neg
-  simp_rw [integral_sub_natFloor_eq_mellin]
+  simp_rw [hint_eq]
   exact (differentiableAt_id.mul hmellin).differentiableWithinAt
-
-/-- On `Re z > 1`, `t ↦ ⌊t⌋₊ t^{-(z + 1)}` is integrable on `(1, ∞)`, since it is majorized by
-`t ↦ t^{-z}`. -/
-private lemma integrableOn_natFloor_mul_cpow {z : ℂ} (hz : 1 < z.re) :
-    IntegrableOn (fun t : ℝ ↦ (⌊t⌋₊ : ℂ) * (t : ℂ) ^ (-(z + 1))) (Set.Ioi 1) := by
-  have hfl_meas : Measurable fun t : ℝ ↦ (⌊t⌋₊ : ℂ) := measurable_from_nat.comp Nat.measurable_floor
-  have hc : ContinuousOn (fun t : ℝ ↦ (t : ℂ) ^ (-(z + 1))) (Set.Ioi 1) := fun t ht ↦
-    (ContinuousAt.cpow continuous_ofReal.continuousAt continuousAt_const
-      (ofReal_mem_slitPlane.mpr (zero_lt_one.trans ht))).continuousWithinAt
-  refine (integrableOn_Ioi_cpow_of_lt (a := -z) (by simpa using hz) zero_lt_one).integrable.mono
-    (hfl_meas.aestronglyMeasurable.mul (hc.aestronglyMeasurable measurableSet_Ioi)) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 1 < t)
-  have ht0 : 0 < t := zero_lt_one.trans ht
-  rw [norm_mul, Complex.norm_natCast, norm_cpow_eq_rpow_re_of_pos ht0,
-    norm_cpow_eq_rpow_re_of_pos ht0]
-  simp only [neg_re, add_re, one_re]
-  calc (⌊t⌋₊ : ℝ) * t ^ (-(z.re + 1)) ≤ t * t ^ (-(z.re + 1)) :=
-        mul_le_mul_of_nonneg_right (Nat.floor_le ht0.le) (Real.rpow_nonneg ht0.le _)
-    _ = t ^ (-z.re) := by
-        rw [← Real.rpow_one_add' ht0.le (by linarith)]
-        ring_nf
 
 /-- **Fractional-part integral representation of `riemannZeta₀`.** For every `s` with `Re s > 0`,
 `riemannZeta₀ s = 1 - s * ∫_{t > 1} (t - ⌊t⌋₊) t^{-(s + 1)} dt`. -/
@@ -168,10 +130,12 @@ theorem riemannZeta₀_eq_one_sub_mul_integral {s : ℂ} (hs : 0 < s.re) :
     simp
   have hint_t : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (-z)) (Set.Ioi 1) :=
     integrableOn_Ioi_cpow_of_lt (by simpa using hz) zero_lt_one
+  have hint_fl : IntegrableOn (fun t : ℝ ↦ (⌊t⌋₊ : ℂ) * (t : ℂ) ^ (-(z + 1))) (Set.Ioi 1) := by
+    simpa using LSeries.integrableOn_sum_mul_cpow_of_isBigO (fun _ ↦ (1 : ℂ)) hO1 hz
   have hsub_eq : ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1)) =
       (∫ t in Set.Ioi (1 : ℝ), (t : ℂ) ^ (-z)) -
         ∫ t in Set.Ioi (1 : ℝ), (⌊t⌋₊ : ℂ) * (t : ℂ) ^ (-(z + 1)) := by
-    rw [← integral_sub hint_t (integrableOn_natFloor_mul_cpow hz)]
+    rw [← integral_sub hint_t hint_fl]
     refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 1 < t) ↦ ?_
     have ht_ne : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr (zero_lt_one.trans ht).ne'
     have hpow : (t : ℂ) * (t : ℂ) ^ (-(z + 1)) = (t : ℂ) ^ (-z) :=

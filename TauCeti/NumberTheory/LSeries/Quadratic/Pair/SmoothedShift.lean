@@ -8,10 +8,10 @@ module
 public import Mathlib.Analysis.MellinInversion
 public import TauCeti.Analysis.Contour.Residue.Basic
 public import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Basic
-import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 import TauCeti.Analysis.MellinInversion
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Residue
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 import TauCeti.NumberTheory.DirichletCharacter.Basic
@@ -84,22 +84,6 @@ variable (χ : DirichletCharacter ℂ M) (ψ : DirichletCharacter ℂ N)
 
 private noncomputable abbrev pairLFunction (s : ℂ) : ℂ :=
   riemannZeta s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s
-
-omit [NeZero M] [NeZero N] in
-private theorem ne_neg_natCast_of_re_gt_neg_one {z : ℂ} (hz₀ : -1 < z.re) (hz : z ≠ 0) (n : ℕ) :
-    z ≠ -n := by
-  rcases n with _ | k
-  · simpa using hz
-  · intro hn
-    have hre := congrArg re hn
-    simp only [neg_re, Nat.cast_add, Nat.cast_one, add_re, natCast_re, one_re] at hre
-    linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
-
-omit [NeZero M] [NeZero N] in
-private theorem ne_neg_natCast_of_gt_neg_one {σ : ℝ} (hσ₀ : -1 < σ) (hσ : σ ≠ 0) (n : ℕ) :
-    σ ≠ -n := fun hn ↦
-  ne_neg_natCast_of_re_gt_neg_one (z := σ) (by simpa using hσ₀) (ofReal_ne_zero.mpr hσ) n
-    (by exact_mod_cast hn)
 
 /-- **Mellin integral representation of the twisted smoothed four-factor sum.** On any vertical line
 `Re w = σ > 0` with `σ + β > 1` and `x > 0`, the exponentially smoothed twisted Dirichlet series
@@ -232,7 +216,7 @@ theorem tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq {β x : ℝ} (hβ₀ : 1 / 2 
       (hzS : z ∉ ({0, 1 - (β : ℂ)} : Finset ℂ)) : AnalyticAt ℂ f z := by
     simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hzS
     exact analyticAt_Gamma_mul_pair χ ψ
-      (ne_neg_natCast_of_re_gt_neg_one (by linarith [hz.1]) hzS.1)
+      (ne_neg_natCast_of_neg_one_lt_re_of_ne_zero (by linarith [hz.1]) hzS.1)
       fun h1 ↦ hzS.2 (by linear_combination h1)
   have hv {σ : ℝ} (h1 : 1 / 2 ≤ σ + β) (h2 : 1 / 2 ≤ |σ + β - 1|) (hσ : ∀ n : ℕ, σ ≠ -n) :
       VerticalIntegrable f σ := by
@@ -257,8 +241,10 @@ theorem tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq {β x : ℝ} (hβ₀ : 1 / 2 
       rcases Finset.mem_insert.mp hs with rfl | hs'
       · simp; constructor <;> linarith
       · rw [Finset.mem_singleton.mp hs']; simp; linarith)
-    (hv (by linarith) (by norm_num) (ne_neg_natCast_of_gt_neg_one (by linarith) (by linarith)))
-    (hv (by linarith) (by norm_num) (ne_neg_natCast_of_gt_neg_one (by linarith) (by linarith)))
+    (hv (by linarith) (by norm_num)
+      (Real.ne_neg_natCast_of_neg_one_lt_of_ne_zero (by linarith) (by linarith)))
+    (hv (by linarith) (by norm_num)
+      (Real.ne_neg_natCast_of_neg_one_lt_of_ne_zero (by linarith) (by linarith)))
     hB hbound
   rw [hshift, Finset.sum_pair hne01, residue_cpow_mul_Gamma_mul_pair_zero χ ψ hβ hx.ne',
     residue_cpow_mul_Gamma_mul_pair_one_sub χ ψ β x]
@@ -277,7 +263,7 @@ private theorem analyticAt_Gamma_sub_mul_cpow {β : ℝ} (x : ℝ) (hβ₁ : β 
       (((differentiable_const (β : ℂ)).sub differentiable_id).const_cpow
         (.inl (ofReal_ne_zero.mpr hx))).analyticAt 1
     exact (AnalyticAt.comp (g := Gamma) (f := fun s : ℂ ↦ s - β) (x := 1)
-      (analyticAt_Gamma (ne_neg_natCast_of_re_gt_neg_one (by simp; linarith)
+      (analyticAt_Gamma (ne_neg_natCast_of_neg_one_lt_re_of_ne_zero (by simp; linarith)
         (sub_ne_zero.mpr (ofReal_ne_one.mpr hβ).symm))) (by fun_prop)).mul hcpow
 
 /-- **Goldfeld's shifted contour formula (simple-pole case).** When `χ ≠ 1`, `ψ ≠ 1`, and
@@ -368,20 +354,17 @@ theorem exp_neg_le_tsum_zetaMulPairCoeffs_div_cpow_mul_exp {χ : DirichletCharac
       χ.zetaMulPairCoeffs ψ n / (n : ℂ) ^ (β : ℂ) * Real.exp (-n * x)) :
     (Real.exp (-x) : ℂ) ≤
       ∑' n : ℕ, χ.zetaMulPairCoeffs ψ n / (n : ℂ) ^ (β : ℂ) * Real.exp (-n * x) := by
-  set u : ℕ → ℂ := fun n ↦ χ.zetaMulPairCoeffs ψ n / (n : ℂ) ^ (β : ℂ) * Real.exp (-n * x)
-  have hu_nonneg (n : ℕ) : 0 ≤ u n := by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp [u]
-    · have hc : (n : ℂ) ^ (β : ℂ) = ((n : ℝ) ^ β : ℝ) := by
-        rw [ofReal_cpow n.cast_nonneg, ofReal_natCast]
-      have hd : 0 ≤ ((n : ℂ) ^ (β : ℂ))⁻¹ := by
-        rw [hc, ← ofReal_inv]
-        exact zero_le_real.mpr (by positivity)
-      have he : 0 ≤ (Real.exp (-n * x) : ℂ) := zero_le_real.mpr (Real.exp_pos _).le
-      dsimp [u]
-      rw [div_eq_mul_inv]
-      exact mul_nonneg (mul_nonneg (zetaMulPairCoeffs_nonneg hχ hψ n) hd) he
-  simpa [u] using hsum.le_tsum 1 fun n _ ↦ hu_nonneg n
+  have hu_nonneg (n : ℕ) :
+      0 ≤ χ.zetaMulPairCoeffs ψ n / (n : ℂ) ^ (β : ℂ) * Real.exp (-n * x) := by
+    have hterm : χ.zetaMulPairCoeffs ψ n / (n : ℂ) ^ (β : ℂ) =
+        LSeries.term (χ.zetaMulPairCoeffs ψ) β n := by
+      rcases eq_or_ne n 0 with rfl | hn
+      · simp
+      · simp [hn]
+    rw [hterm]
+    exact mul_nonneg (LSeries.term_nonneg (zetaMulPairCoeffs_nonneg hχ hψ n) β)
+      (zero_le_real.mpr (Real.exp_pos _).le)
+  simpa using hsum.le_tsum 1 fun n _ ↦ hu_nonneg n
 
 /-- **Goldfeld's real-part lower bound (simple-pole case).** For nonprincipal quadratic characters
 `χ` and `ψ` with `χ.mul ψ ≠ 1`, `1 / 2 < β < 3 / 2` with `β ≠ 1`, and `x > 0`,
