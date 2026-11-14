@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 public import Mathlib.RingTheory.Binomial
 import TauCeti.Algebra.BigOperators.Finset.Range
-import TauCeti.Analysis.Analytic.Binomial
+import Mathlib.Analysis.Analytic.Binomial
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.RingTheory.Binomial
@@ -39,10 +39,13 @@ Write `u = ‖ξ / 2π‖ ^ 2`, `a = s / 2` and, for a frequency cutoff `χ`,
 
 `r_a(ξ) = (1 + u) ^ a - χ(ξ) ∑_{k<K} (a choose k) u ^ (a - k)`
 
-for the remainder after the first `K` nonzero terms. Where `‖ξ‖ ≥ 2π`, so that `u ≥ 1`, it equals
-`u ^ a e(1 / u)` with the error `e(t) = (1 + t) ^ a - ∑_{k<K} (a choose k) t ^ k` of the binomial
-series (`TauCeti.binomialError`), and `|e(t)| ≤ C t ^ K` on `[0, 1]`
-(`TauCeti.exists_abs_binomialError_le`). Hence `|r_a(ξ)| ≤ C ⟨ξ⟩ ^ (2a - 2K)`.
+for the remainder after the first `K` nonzero terms. Where `‖ξ‖ ≥ 2`, it equals `u ^ a e(1 / u)`
+with the error `e(t) = (1 + t) ^ a - ∑_{k<K} (a choose k) t ^ k` of Mathlib's binomial series
+`binomialSeries ℝ a`. Where `‖ξ‖ > 4π`, so that `1 / u < 1 / 4`, the uniform geometric bound for
+the partial sums of a power series inside its radius of convergence
+(`HasFPowerSeriesOnBall.uniform_geometric_approx'`, applied to
+`Real.one_add_rpow_hasFPowerSeriesOnBall_zero`) gives `|e(t)| ≤ C t ^ K`. Hence
+`|r_a(ξ)| ≤ C ⟨ξ⟩ ^ (2a - 2K)`.
 For the derivatives, the absorption identities of the binomial coefficients give
 
 `∂ⱼ r_a = 2 (2π)⁻² a ξⱼ r_{a - 1}` at frequencies of norm greater than `2`,
@@ -155,12 +158,20 @@ private theorem hasFDerivAt_besselRem (χ : FrequencyCutoff (CoordinateSpace n))
     rw [← Ring.succ_nsmul_choose_succ_eq_choose_mul_sub, Ring.succ_nsmul_choose_succ]
   rw [← mul_assoc, ← mul_assoc, hk, show a - k - 1 = a - 1 - k by ring]
 
-/-- Where the cutoff is one, the remainder is `u ^ a` times the binomial error at `1 / u`. -/
-private theorem besselRem_eq_mul_binomialError (χ : FrequencyCutoff (CoordinateSpace n)) (a : ℝ)
-    (K : ℕ) {ξ : CoordinateSpace n} (hξ : 2 ≤ ‖ξ‖) :
-    besselRem χ a K ξ = besselSq ξ ^ a * binomialError a K (besselSq ξ)⁻¹ := by
+/-- The partial sums of the real binomial series are `∑_{k<K} (a choose k) t ^ k`. -/
+private theorem partialSum_binomialSeries (a : ℝ) (K : ℕ) (t : ℝ) :
+    (binomialSeries ℝ a).partialSum K t = ∑ k ∈ Finset.range K, Ring.choose a k * t ^ k := by
+  simp [FormalMultilinearSeries.partialSum, -FormalMultilinearSeries.apply_eq_prod_smul_coeff,
+    mul_comm]
+
+/-- Where the cutoff is one, the remainder is `u ^ a` times the error of the binomial series at
+`1 / u`. -/
+private theorem besselRem_eq_mul_sub_partialSum (χ : FrequencyCutoff (CoordinateSpace n))
+    (a : ℝ) (K : ℕ) {ξ : CoordinateSpace n} (hξ : 2 ≤ ‖ξ‖) :
+    besselRem χ a K ξ = besselSq ξ ^ a *
+      ((1 + (besselSq ξ)⁻¹) ^ a - (binomialSeries ℝ a).partialSum K (besselSq ξ)⁻¹) := by
   have hu := besselSq_pos (norm_pos_iff.1 (by linarith) : ξ ≠ 0)
-  rw [besselRem, χ.apply_eq_one_of_two_le_norm hξ, one_mul, binomialError_def, mul_sub,
+  rw [besselRem, χ.apply_eq_one_of_two_le_norm hξ, one_mul, partialSum_binomialSeries, mul_sub,
     ← Real.mul_rpow hu.le (by positivity), mul_add, mul_one, mul_inv_cancel₀ hu.ne', add_comm,
     besselSum, Finset.mul_sum]
   refine congrArg (_ - ·) (Finset.sum_congr rfl fun k _ ↦ ?_)
@@ -168,38 +179,53 @@ private theorem besselRem_eq_mul_binomialError (χ : FrequencyCutoff (Coordinate
   ring
 
 /-- The remainder after `K` terms is `O(⟨ξ⟩ ^ (2a - 2K))` at frequencies of norm greater than
-`2π`. -/
+`4π`. -/
 private theorem exists_norm_besselRem_le (χ : FrequencyCutoff (CoordinateSpace n)) (a : ℝ)
     (K : ℕ) :
-    ∃ C, ∀ ξ : CoordinateSpace n, 2 * π < ‖ξ‖ →
+    ∃ C, ∀ ξ : CoordinateSpace n, 4 * π < ‖ξ‖ →
       ‖besselRem χ a K ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (a - K) := by
-  obtain ⟨C, hC0, hC⟩ := exists_abs_binomialError_le a K (l := 0) (u := 1) (by norm_num)
+  -- On `|t| < 1 / 2` the error of the binomial series after `K` terms is `O((2 |t|) ^ K)`.
+  obtain ⟨c, hc, C, hC0, hC⟩ := (Real.one_add_rpow_hasFPowerSeriesOnBall_zero (a := a))
+    |>.uniform_geometric_approx' (r' := 2⁻¹) (by norm_num)
   set p : ℝ := a - K
   obtain ⟨C', hC'⟩ := exists_one_add_norm_smul_sq_rpow_le (E := CoordinateSpace n)
     (inv_ne_zero (by positivity : (2 * π : ℝ) ≠ 0)) p
-  refine ⟨C * (2 ^ |p| * C'), fun ξ hξ ↦ ?_⟩
+  refine ⟨C * 2 ^ K * (2 ^ |p| * C'), fun ξ hξ ↦ ?_⟩
   have h2π : 2 ≤ 2 * π := by linarith [Real.two_le_pi]
   have hu := besselSq_pos (norm_pos_iff.1 (by linarith) : ξ ≠ 0)
-  have hη1 : 1 ≤ ‖(2 * π)⁻¹ • ξ‖ := by
+  have hη2 : 2 < ‖(2 * π)⁻¹ • ξ‖ := by
     rw [norm_smul, Real.norm_of_nonneg (by positivity), inv_mul_eq_div,
-      le_div_iff₀ (by positivity)]
+      lt_div_iff₀ (by positivity)]
     linarith
-  have hu1 : 1 ≤ besselSq ξ := one_le_pow₀ hη1
+  have hη1 : 1 ≤ ‖(2 * π)⁻¹ • ξ‖ := by linarith
+  have hu2 : 2 < besselSq ξ := by
+    unfold besselSq
+    nlinarith
   -- Since `u ≥ 1`, `u` is comparable with `1 + u = 1 + ‖(2π)⁻¹ • ξ‖ ^ 2`.
   have hpow : besselSq ξ ^ p ≤ 2 ^ |p| * (1 + besselSq ξ) ^ p := by
     have h := norm_rpow_le_one_add_norm_sq_rpow hη1 (2 * p)
     rwa [abs_mul, abs_two, mul_div_cancel_left₀ _ two_ne_zero,
       mul_div_cancel_left₀ _ two_ne_zero, Real.rpow_mul (norm_nonneg _), Real.rpow_two] at h
-  have he := hC (besselSq ξ)⁻¹ ⟨by positivity, inv_le_one_of_one_le₀ hu1⟩
-  rw [abs_of_pos (inv_pos.2 hu)] at he
-  rw [Real.norm_eq_abs, besselRem_eq_mul_binomialError χ a K (by linarith), abs_mul,
+  have ht : (besselSq ξ)⁻¹ ∈ Metric.ball (0 : ℝ) ((2⁻¹ : NNReal) : ℝ) := by
+    rw [mem_ball_zero_iff, Real.norm_of_nonneg (by positivity), NNReal.coe_inv, NNReal.coe_ofNat]
+    exact inv_strictAnti₀ two_pos hu2
+  have he := hC _ ht K
+  rw [zero_add, Real.norm_eq_abs, Real.norm_of_nonneg (by positivity), NNReal.coe_inv,
+    NNReal.coe_ofNat, div_inv_eq_mul] at he
+  rw [Real.norm_eq_abs, besselRem_eq_mul_sub_partialSum χ a K (by linarith), abs_mul,
     abs_of_pos (Real.rpow_pos_of_pos hu a)]
-  calc besselSq ξ ^ a * |binomialError a K (besselSq ξ)⁻¹|
-      ≤ besselSq ξ ^ a * (C * (besselSq ξ)⁻¹ ^ K) := by gcongr
-    _ = C * besselSq ξ ^ p := by
+  calc besselSq ξ ^ a *
+        |(1 + (besselSq ξ)⁻¹) ^ a - (binomialSeries ℝ a).partialSum K (besselSq ξ)⁻¹|
+      ≤ besselSq ξ ^ a * (C * 2 ^ K * (besselSq ξ)⁻¹ ^ K) := by
+        refine mul_le_mul_of_nonneg_left (he.trans ?_) (by positivity)
+        rw [mul_assoc, ← mul_pow]
+        refine mul_le_mul_of_nonneg_left
+          (pow_le_pow_left₀ (mul_pos hc.1 (by positivity)).le ?_ K) hC0.le
+        nlinarith [hc.2, inv_pos.2 hu]
+    _ = C * 2 ^ K * besselSq ξ ^ p := by
         rw [Real.rpow_sub hu, Real.rpow_natCast, inv_pow, div_eq_mul_inv]
         ring
-    _ ≤ C * (2 ^ |p| * (C' * (1 + ‖ξ‖ ^ 2) ^ p)) := by
+    _ ≤ C * 2 ^ K * (2 ^ |p| * (C' * (1 + ‖ξ‖ ^ 2) ^ p)) := by
         gcongr
         exact hpow.trans (mul_le_mul_of_nonneg_left (hC' ξ) (by positivity))
     _ = _ := by ring
@@ -215,7 +241,7 @@ private theorem exists_norm_iteratedFDeriv_besselRem_le (χ : FrequencyCutoff (C
   have hcont := (contDiff_besselRem χ a K).continuous_iteratedFDeriv (m := k) (mod_cast le_top)
   rcases k with _ | k
   · obtain ⟨C, hC⟩ := exists_norm_besselRem_le χ a K
-    refine hcont.exists_norm_le_one_add_norm_sq_rpow_of_lt_norm (R := 2 * π) (C := C)
+    refine hcont.exists_norm_le_one_add_norm_sq_rpow_of_lt_norm (R := 4 * π) (C := C)
       fun ξ hξ ↦ ?_
     simpa using hC ξ hξ
   · -- At large frequencies `D r_a = r_{a - 1} • (a • L)` with `L` linear, so the Leibniz rule and
