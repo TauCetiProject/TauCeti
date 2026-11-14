@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.IntUnitsPower
 public import TauCeti.Algebra.Module.GradedModule.Coarsen
-import TauCeti.Data.ZMod.IntUnitsPower
+import TauCeti.RingTheory.GradedAlgebra.Coarsen
 
 /-!
 # The parity reduction of a signed derivation
@@ -62,14 +62,8 @@ Leibniz rule with the sign `(-1) ^ i` on a left factor of parity `i`. -/
 theorem leibniz_parityGrading_of_leibniz
     (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
     {i : ZMod 2} {a : A} (ha : a ∈ parityGrading 𝒜 i) (b : A) :
-    d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b) := by
-  -- Both sides are additive in `a`, so it suffices to treat homogeneous elements.
-  refine coarsenGrading_induction
-    (motive := fun a ↦ d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b)) ha
-    (fun p hp a ha ↦ ?_) (by simp) fun x y hx hy ↦ ?_
-  · rw [hl ha b, ← hp, Int.coe_castAddHom, uzpow_intCast_eq_negOnePow]
-  · rw [add_mul, map_add, hx, hy, map_add, add_mul, add_mul, smul_add]
-    abel
+    d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b) :=
+  leibniz_coarsenGrading_of_leibniz (fun p ↦ uzpow_intCast (-1) p) hl ha b
 
 end Leibniz
 
