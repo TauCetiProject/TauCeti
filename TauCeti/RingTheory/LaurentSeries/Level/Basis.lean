@@ -41,6 +41,8 @@ The contraction and decomposition API follows the design proposed in
 
 * `LaurentSeries.contract`: the exponent-congruence component of a Laurent series.
 * `TauCeti.LaurentSeries.Level`: the level-`d` Laurent field with base map `X ↦ X ^ d`.
+* `TauCeti.LaurentSeries.Level.algEquivLaurentSeries`: the `K`-algebra equivalence with `K⸨X⸩`
+  reading a level element in its parameter `u`.
 * `TauCeti.LaurentSeries.Level.powerBasis`: the power basis `1, u, ..., u ^ (d - 1)`.
 * `TauCeti.puiseuxField.level`: the actual level-`d` intermediate field in the Puiseux field.
 * `TauCeti.puiseuxField.levelPowerBasis`: its transported power basis.
@@ -116,6 +118,40 @@ theorem algebraMap_apply (f : K⸨X⸩) :
 @[simp]
 theorem ringEquivLaurentSeries_ofLaurentSeries (f : K⸨X⸩) :
     ringEquivLaurentSeries K d (.ofLaurentSeries f) = f := (rfl)
+
+/-- Level `d` is a `K`-algebra through the base-field map `K → K⸨X⸩ → Level K d`, equivalently
+through the constant-series inclusion on underlying Laurent series. -/
+noncomputable instance : Algebra K (Level K d) :=
+  ((Algebra.algebraMap K⸨X⸩ (Level K d)).comp (Algebra.algebraMap K K⸨X⸩)).toAlgebra
+
+instance : IsScalarTower K K⸨X⸩ (Level K d) :=
+  -- Coefficientwise scalar multiplication on `K⸨X⸩` agrees with multiplication by `algebraMap`.
+  ⟨fun a f x ↦ by rw [← laurentSeries_algebraMap_mul_eq_smul, mul_smul]; rfl⟩
+
+/-- On underlying Laurent series, the `K`-algebra map into a ramified level is the constant-series
+map. -/
+@[simp]
+theorem ringEquivLaurentSeries_algebraMap_coeff (a : K) :
+    ringEquivLaurentSeries K d (Algebra.algebraMap K (Level K d) a) =
+      Algebra.algebraMap K K⸨X⸩ a := by
+  rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, algebraMap_apply, AlgHom.commutes]
+
+/-- Reading a ramified level in its Laurent variable `u` is a `K`-algebra equivalence. -/
+noncomputable def algEquivLaurentSeries : Level K d ≃ₐ[K] K⸨X⸩ :=
+  AlgEquiv.ofRingEquiv (f := ringEquivLaurentSeries K d)
+    (ringEquivLaurentSeries_algebraMap_coeff K d)
+
+@[simp]
+theorem toRingEquiv_algEquivLaurentSeries :
+    (algEquivLaurentSeries K d).toRingEquiv = ringEquivLaurentSeries K d := (rfl)
+
+@[simp]
+theorem algEquivLaurentSeries_apply (x : Level K d) :
+    algEquivLaurentSeries K d x = ringEquivLaurentSeries K d x := (rfl)
+
+@[simp]
+theorem algEquivLaurentSeries_symm_apply (f : K⸨X⸩) :
+    (algEquivLaurentSeries K d).symm f = (ringEquivLaurentSeries K d).symm f := (rfl)
 
 end Level
 

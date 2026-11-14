@@ -28,6 +28,8 @@ base and extension are arbitrary commutative rings and the derivations are modul
 
 * `Derivation.eq_of_formallyUnramified`: two derivations of a formally unramified extension
   agreeing on the base are equal;
+* `Derivation.algHom_apply_of_formallyUnramified`: algebra homomorphisms out of a formally
+  unramified extension intertwine derivations agreeing on the base;
 * `Derivation.extendOfFormallyEtale`: the extension of a derivation to a formally étale
   extension, with `Derivation.extendOfFormallyEtale_algebraMap` stating that it extends.
 -/
@@ -65,6 +67,38 @@ theorem eq_of_formallyUnramified [Algebra.FormallyUnramified S T] {δ₁ δ₂ :
   ext x
   -- `δ x` is `δ₁ x - δ₂ x` by construction of `δ`.
   exact sub_eq_zero.mp (hδ x)
+
+/-- **Algebra maps out of a formally unramified extension intertwine compatible derivations.** Let
+`T` and `U` be `S`-algebras over `R` with `T` formally unramified over `S`. If `δ_T` and `δ_U` are
+`R`-derivations of `T` and `U` such that `δ_U (algebraMap S U s) = φ (δ_T (algebraMap S T s))` for
+all `s : S`, then `δ_U (φ t) = φ (δ_T t)` for all `t : T`. -/
+theorem algHom_apply_of_formallyUnramified {U : Type*} [CommRing U] [Algebra R S] [Algebra R U]
+    [Algebra S U] [IsScalarTower R S T] [IsScalarTower R S U] [Algebra.FormallyUnramified S T]
+    (δ_T : Derivation R T T) (δ_U : Derivation R U U) (φ : T →ₐ[S] U)
+    (h : ∀ s : S, δ_U (algebraMap S U s) = φ (δ_T (algebraMap S T s))) (t : T) :
+    δ_U (φ t) = φ (δ_T t) := by
+  let _ : Algebra T U := φ.toRingHom.toAlgebra
+  have hφR (r : R) : φ (algebraMap R T r) = algebraMap R U r := by
+    rw [IsScalarTower.algebraMap_apply R S T, AlgHom.commutes,
+      ← IsScalarTower.algebraMap_apply R S U]
+  let d₁ : Derivation R T U :=
+    { toFun x := δ_U (φ x)
+      map_add' x y := by simp
+      map_smul' r x := by
+        rw [Algebra.smul_def, map_mul, hφR, ← Algebra.smul_def, δ_U.map_smul]
+        rfl
+      map_one_eq_zero' := by simp
+      leibniz' x y := by simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra] }
+  let d₂ : Derivation R T U :=
+    { toFun x := φ (δ_T x)
+      map_add' x y := by simp
+      map_smul' r x := by
+        rw [δ_T.map_smul, Algebra.smul_def, map_mul, hφR, ← Algebra.smul_def]
+        rfl
+      map_one_eq_zero' := by simp
+      leibniz' x y := by simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra] }
+  have hd : d₁ = d₂ := eq_of_formallyUnramified (S := S) fun s ↦ by simp [d₁, d₂, h]
+  exact congr($hd t)
 
 end Unramified
 

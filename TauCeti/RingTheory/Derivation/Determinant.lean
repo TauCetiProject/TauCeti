@@ -12,24 +12,25 @@ public import TauCeti.RingTheory.Derivation.Basic
 public import TauCeti.RingTheory.Derivation.Matrix
 
 /-!
-# Derivations of determinants and norms
+# Derivations of determinants, traces and norms
 
 A derivation `D` differentiates a finite product termwise (`Derivation.leibniz_prod`), and hence
 a determinant by **Jacobi's formula** `D (det M) = tr (adj M * D M)`, where `D M` applies `D` to
 every entry of the square matrix `M` (`Derivation.leibniz_det`).
 
-Let `S` be a finite free algebra over a commutative ring `A`, and let `D'` be a derivation of `S`
-extending a derivation `D` of `A`, in the sense that `D' (algebraMap A S a) = algebraMap A S (D a)`.
-Then the norm of a unit `u` of `S` has logarithmic derivative the trace of the logarithmic
-derivative of `u` (`Derivation.leibniz_norm`):
+Let `S` be an algebra over a commutative ring `A`, and let `D'` be a derivation of `S` extending a
+derivation `D` of `A`, in the sense that `D' (algebraMap A S a) = algebraMap A S (D a)`. Then `D`
+commutes with `Algebra.trace A S` (`Derivation.map_trace`), and when `S` is finite free over `A`,
+the norm of a unit `u` of `S` has logarithmic derivative the trace of the logarithmic derivative of
+`u` (`Derivation.leibniz_norm`):
 
 `D (Algebra.norm A u) = Algebra.norm A u * Algebra.trace A S (u⁻¹ * D' u)`.
 
 In a basis of `S` over `A`, the derivation `D'` acts on coordinates as `D` plus a connection
 matrix `Γ`, so `D` applied to the matrix of multiplication by `u` is the matrix of
 multiplication by `D' u` plus the commutator of that matrix with `Γ`
-(`Derivation.map_leftMulMatrix`). The commutator does not contribute to Jacobi's formula. This
-is the infinitesimal form of the identity
+(`Derivation.map_leftMulMatrix`). The commutator has trace zero and does not contribute to Jacobi's
+formula. This is the infinitesimal form of the identity
 `log (Algebra.norm A (1 + x)) = Algebra.trace A S (log (1 + x))` in complete filtered algebras
 where both logarithms converge, such as Novikov rings.
 
@@ -69,6 +70,19 @@ variable {S : Type*} [CommRing S] [Algebra A S] [Algebra R S] (D' : Derivation R
   (hD : ∀ a, D' (algebraMap A S a) = algebraMap A S (D a))
 
 include hD
+
+/-- **Derivations commute with trace**: if `D'` is a derivation of an `A`-algebra `S` extending the
+derivation `D` of `A`, then `D (Algebra.trace A S s) = Algebra.trace A S (D' s)`. When `S` has no
+finite `A`-basis, both sides vanish by convention. -/
+theorem map_trace (s : S) :
+    D (Algebra.trace A S s) = Algebra.trace A S (D' s) := by
+  classical
+  by_cases h : ∃ t : Finset S, Nonempty (Module.Basis t A S)
+  · obtain ⟨t, ⟨b⟩⟩ := h
+    rw [Algebra.trace_eq_matrix_trace b, Algebra.trace_eq_matrix_trace b,
+      AddMonoidHom.map_trace, map_leftMulMatrix D D' hD,
+      Matrix.trace_add, Matrix.trace_sub, Matrix.trace_mul_comm, sub_self, add_zero]
+  · simp [Algebra.trace_eq_zero_of_not_exists_basis A h]
 
 /-- **Logarithmic derivative of the norm**: if `D'` is a derivation of a finite free `A`-algebra
 `S` extending the derivation `D` of `A`, then for every unit `u` of `S`,
