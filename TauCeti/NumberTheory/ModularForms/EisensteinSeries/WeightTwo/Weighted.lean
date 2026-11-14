@@ -389,15 +389,9 @@ private lemma tendstoLocallyUniformly_weierstrassP_divisionPoint (b : Fin 2 → 
   have hl : r₀ * ‖y‖ ≤ ‖(y 0 : ℂ) * z + y 1‖ :=
     (mul_le_mul_of_nonneg_right (r_lower_bound_on_verticalStrip z hB (HABK hz))
       (norm_nonneg _)).trans (r_mul_max_le z hy0)
-  have hx : ‖divisionPoint N b z‖ < R := by
-    have hN : (1 : ℝ) ≤ N := by exact_mod_cast NeZero.one_le
-    have hz' : ‖(z : ℂ)‖ ≤ |M| := (hM z hz).trans (le_abs_self M)
-    rw [divisionPoint, norm_div, Complex.norm_natCast]
-    refine (div_le_self (norm_nonneg _) hN).trans_lt ?_
-    refine (norm_add_le _ _).trans_lt ?_
-    rw [norm_mul, Complex.norm_intCast, Complex.norm_intCast]
-    have := mul_le_mul_of_nonneg_left hz' (abs_nonneg (b 0 : ℝ))
-    linarith
+  have hx : ‖divisionPoint N b z‖ < R :=
+    TauCeti.UpperHalfPlane.norm_intCast_mul_add_intCast_div_lt N b
+      ((hM z hz).trans (le_abs_self M))
   refine (weierstrassP_bound R hR _ hx _ (hy'.trans hl)).trans ?_
   rw [mul_assoc (10 * R), ← Real.mul_rpow hr₀.le (norm_nonneg _)]
   exact mul_le_mul_of_nonneg_left
