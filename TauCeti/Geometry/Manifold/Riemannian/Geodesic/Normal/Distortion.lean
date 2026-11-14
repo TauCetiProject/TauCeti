@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Distance
+import TauCeti.Geometry.Manifold.Riemannian.MetricBridge
 
 /-!
 # Norm distortion in normal coordinates
@@ -18,7 +20,10 @@ tangent directions. These estimates allow derivative bounds to be transferred be
 Riemannian manifold and its normal coordinates, for example in local smoothing arguments.
 They require neither completeness nor a curvature bound. When the manifold carries its
 intrinsic Riemannian distance, the exponential map on such a ball also has Lipschitz constant
-arbitrarily close to one.
+arbitrarily close to one; on a metric space it distorts distances by a factor arbitrarily close
+to one in both directions
+(`TauCeti.Manifold.exists_isNormalDomain_ball_dist_riemannianExp_bounds`). This two-sided bound
+shows that a map preserving the Riemannian distance is linear in normal coordinates.
 
 The logarithm bounds are differential estimates on the image of the normal ball under the
 exponential map.
@@ -33,7 +38,7 @@ exponential map.
 public section
 
 open Bundle Filter Manifold Set
-open scoped ContDiff Manifold Topology NNReal
+open scoped ContDiff ENNReal Manifold Topology NNReal
 
 noncomputable section
 
@@ -162,5 +167,94 @@ theorem exists_isNormalDomain_ball_lipschitzOnWith_riemannianExp (p : M) {c : �
   simpa [edist_dist, dist_eq_norm, norm_sub_rev, ENNReal.ofReal_mul] using hle
 
 end EMetric
+
+section Metric
+
+variable {M : Type*} [MetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsRiemannianManifold I M]
+
+/-- If the logarithm of a normal ball of radius `R` at `p` stretches tangent vectors by at most
+`c`, then it moves by at most `c * δ` between two points `q, q'` with `dist q q' < δ`, as long as
+`dist p q + δ ≤ R`: a `C¹` path from `q` to `q'` of length less than `δ` stays in the normal
+ball. -/
+private theorem norm_riemannianLog_sub_le_of_dist_lt {R c : ℝ}
+    (hn : IsNormalDomain I M p (Metric.ball 0 R)) (hc0 : 0 < c)
+    (hlog : ∀ q ∈ riemannianExp I M p '' Metric.ball 0 R, ∀ w : TangentSpace I q,
+      ‖mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p (Metric.ball 0 R)) q w‖ ≤ c * ‖w‖)
+    {q q' : M} {δ : ℝ} (hqδ : dist p q + δ ≤ R) (hδ : dist q q' < δ) :
+    ‖riemannianLog I M p (Metric.ball 0 R) q' - riemannianLog I M p (Metric.ball 0 R) q‖ ≤
+      c * δ := by
+  have hδ0 : 0 < δ := dist_nonneg.trans_lt hδ
+  have hE : riemannianEDist I q q' < ENNReal.ofReal δ := by
+    rwa [← IsRiemannianManifold.out (I := I), edist_dist, ENNReal.ofReal_lt_ofReal_iff hδ0]
+  obtain ⟨γ, hγ0, hγ1, hγ, hlen, -, -⟩ :=
+    exists_lt_locally_constant_of_riemannianEDist_lt hE zero_lt_one
+  have hmem : ∀ s ∈ Icc (0 : ℝ) 1, γ s ∈ riemannianExp I M p '' Metric.ball 0 R := by
+    intro s hs
+    rw [hn.image_riemannianExp_ball_eq_ball subset_rfl, Metric.mem_ball, dist_comm]
+    have h1 : riemannianEDist I q (γ s) < ENNReal.ofReal δ :=
+      calc riemannianEDist I q (γ s) ≤ pathELength I γ 0 s :=
+            riemannianEDist_le_pathELength hγ.contMDiffOn hγ0 rfl hs.1
+        _ ≤ pathELength I γ 0 1 := pathELength_mono le_rfl hs.2
+        _ < ENNReal.ofReal δ := hlen
+    rw [← IsRiemannianManifold.out (I := I), edist_dist, ENNReal.ofReal_lt_ofReal_iff hδ0] at h1
+    linarith [dist_triangle p q (γ s)]
+  have hC : ((c.toNNReal : ℝ≥0) : ℝ≥0∞) = ENNReal.ofReal c := rfl
+  have hbound := enorm_sub_le_mul_pathELength (I := I)
+    (f := riemannianLog I M p (Metric.ball 0 R)) zero_le_one
+    (hγ.contMDiffOn.mdifferentiableOn one_ne_zero)
+    ((hn.contMDiffOn_riemannianLog.of_le (by simp)).comp hγ.contMDiffOn fun s hs ↦ hmem s hs)
+    (fun t ht ↦ hn.mdifferentiableAt_riemannianLog (hmem t ht)) (C := c.toNNReal)
+    fun t ht ↦ by
+      rw [hC, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul hc0.le]
+      exact ENNReal.ofReal_le_ofReal (hlog _ (hmem t ht) _)
+  rw [hγ0, hγ1, hC] at hbound
+  have hle := hbound.trans (mul_le_mul_right hlen.le _)
+  rwa [← ofReal_norm, ← ENNReal.ofReal_mul hc0.le,
+    ENNReal.ofReal_le_ofReal_iff (by positivity)] at hle
+
+/-- **The exponential map nearly preserves distances near the origin.** For every `c > 1`, on a
+sufficiently small normal ball the exponential map distorts distances by at most the factor `c`
+in each direction: `‖v - w‖ ≤ c * dist (exp_p v) (exp_p w)` and
+`dist (exp_p v) (exp_p w) ≤ c * ‖v - w‖`. Distances on `M` are its intrinsic Riemannian
+distances. -/
+theorem exists_isNormalDomain_ball_dist_riemannianExp_bounds (p : M) {c : ℝ} (hc : 1 < c) :
+    ∃ r > 0, IsNormalDomain I M p (Metric.ball 0 r) ∧
+      ∀ v ∈ Metric.ball (0 : TangentSpace I p) r, ∀ w ∈ Metric.ball (0 : TangentSpace I p) r,
+        ‖v - w‖ ≤ c * dist (riemannianExp I M p v) (riemannianExp I M p w) ∧
+          dist (riemannianExp I M p v) (riemannianExp I M p w) ≤ c * ‖v - w‖ := by
+  have hc0 : 0 < c := zero_lt_one.trans hc
+  obtain ⟨R, hR, hn, -, hlog⟩ := exists_isNormalDomain_ball_norm_mfderiv_bounds (I := I) p hc
+  obtain ⟨R', hR', -, hlip⟩ := exists_isNormalDomain_ball_lipschitzOnWith_riemannianExp
+    (I := I) (M := M) p (c := c.toNNReal) (Real.one_lt_toNNReal.2 hc)
+  set r := min (R / 3) R'
+  have hr : 0 < r := lt_min (by positivity) hR'
+  have hrR : r ≤ R / 3 := min_le_left _ _
+  refine ⟨r, hr, hn.ball (Metric.ball_subset_ball (by linarith)) hr, fun v hv w hw ↦ ⟨?_, ?_⟩⟩
+  · have hball : Metric.ball (0 : TangentSpace I p) r ⊆ Metric.ball 0 R :=
+      Metric.ball_subset_ball (by linarith)
+    have hpv : dist p (riemannianExp I M p v) < r :=
+      (dist_riemannianExp_le p v).trans_lt (mem_ball_zero_iff.1 hv)
+    have hpw : dist p (riemannianExp I M p w) < r :=
+      (dist_riemannianExp_le p w).trans_lt (mem_ball_zero_iff.1 hw)
+    have hd : dist (riemannianExp I M p v) (riemannianExp I M p w) < 2 * r := by
+      linarith [dist_triangle_left (riemannianExp I M p v) (riemannianExp I M p w) p]
+    -- Between `exp_p v` and `exp_p w` the logarithm moves by at most `c * δ` for every `δ`
+    -- between their distance and `2 r`.
+    rw [← div_le_iff₀' hc0]
+    refine le_of_forall_gt_imp_ge_of_dense fun a ha ↦ ?_
+    have key := norm_riemannianLog_sub_le_of_dist_lt hn hc0 (fun q hq u ↦ (hlog q hq u).2)
+      (δ := min a (2 * r)) (by linarith [min_le_right a (2 * r)]) (lt_min ha hd)
+    rw [hn.riemannianLog_riemannianExp (hball hv), hn.riemannianLog_riemannianExp (hball hw),
+      norm_sub_rev] at key
+    rw [div_le_iff₀' hc0]
+    exact key.trans (mul_le_mul_of_nonneg_left (min_le_left _ _) hc0.le)
+  · have h := hlip.dist_le_mul v (Metric.ball_subset_ball (min_le_right _ _) hv) w
+      (Metric.ball_subset_ball (min_le_right _ _) hw)
+    rwa [Real.coe_toNNReal _ hc0.le, dist_eq_norm] at h
+
+end Metric
 
 end TauCeti.Manifold
