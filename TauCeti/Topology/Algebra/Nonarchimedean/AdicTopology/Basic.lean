@@ -60,8 +60,9 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   without requiring completeness or finite generation of the tested ideals.
 * `IsAdic.of_radical_eq` and `Ideal.adicTopology_eq_of_radical_eq` : finitely generated ideals
   with the same radical define the same adic topology.
-* `IsAdic.isAdic_iff_isOpen_and_exists_pow_le` : an ideal of definition is characterized by
-  openness and containment of one of its powers in a fixed ideal of definition.
+* `IsAdic.isAdic_iff_isOpen_and_exists_pow_le` and `IsAdic.pow` : an ideal of definition is
+  characterized by openness and containment of one of its powers in a fixed ideal of definition;
+  in particular every positive power of an ideal of definition is an ideal of definition.
 * `IsAdic.exists_pow_succ_le` : some positive power of an ideal of definition lies in any open
   ideal.
 * `IsAdic.exists_pow_succ_le_comap` : a continuous ring homomorphism carries some positive power
@@ -212,6 +213,12 @@ theorem isAdic_iff_isOpen_and_exists_pow_le {J : Ideal R} (hI : IsAdic I) :
       refine ⟨k * n, subset_trans ?_ hn⟩
       rw [pow_mul]
       exact Ideal.pow_right_mono hk n
+
+/-- Every positive power of an ideal of definition is again an ideal of definition. No finite
+generation hypothesis is needed (EGA I, Ch. 0, 7.1.4). -/
+theorem pow (hI : IsAdic I) {n : ℕ} (hn : n ≠ 0) : IsAdic (I ^ n) :=
+  hI.isAdic_iff_isOpen_and_exists_pow_le.mpr
+    ⟨hI.isOpen_pow n, 1, (pow_one (I ^ n)).trans_le (Ideal.pow_le_self hn)⟩
 
 /-- Some positive power of an ideal of definition lies in any open ideal. -/
 theorem exists_pow_succ_le {J : Ideal R} (hI : IsAdic I) (hJ : IsOpen (J : Set R)) :
