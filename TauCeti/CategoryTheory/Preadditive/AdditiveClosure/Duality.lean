@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
 public import Mathlib.CategoryTheory.Preadditive.Opposite
 public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure
 
@@ -24,7 +25,7 @@ projective objects is dualized to one about injective objects.
 * `TauCeti.additiveClosure_iff_exists_sum_comp_eq_id`: `X ∈ add M` exactly when `𝟙 X` is a finite
   sum of composites `X ⟶ M ⟶ X`.
 * `TauCeti.additiveClosure_le_of_retract`: `add M ≤ add N` when `M` is a direct summand of `N`.
-* `TauCeti.additiveClosure_functor_obj_op_iff`: an additive duality `Cᵒᵖ ≌ D` preserves and reflects
+* `TauCeti.additiveClosure_functor_obj_op_iff`: a duality `Cᵒᵖ ≌ D` preserves and reflects
   membership in additive closures.
 -/
 
@@ -62,11 +63,13 @@ theorem additiveClosure_le_of_retract {M N : C} (h : Retract M N) :
 
 variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasFiniteBiproducts D]
 
-/-- **Additive closures under a duality**: for an additive equivalence `e : Cᵒᵖ ≌ D`, `e (op X)`
-lies in `add (e (op M))` exactly when `X` lies in `add M`. Sums of composites `X ⟶ M ⟶ X` and
-`e (op X) ⟶ e (op M) ⟶ e (op X)` correspond under `e` with the order of composition reversed. -/
-theorem additiveClosure_functor_obj_op_iff (e : Cᵒᵖ ≌ D) [e.functor.Additive] {M X : C} :
+/-- **Additive closures under a duality**: for an equivalence `e : Cᵒᵖ ≌ D`, `e (op X)` lies in
+`add (e (op M))` exactly when `X` lies in `add M`. Sums of composites `X ⟶ M ⟶ X` and
+`e (op X) ⟶ e (op M) ⟶ e (op X)` correspond under `e` with the order of composition reversed;
+`e` is additive, as it preserves binary products. -/
+theorem additiveClosure_functor_obj_op_iff (e : Cᵒᵖ ≌ D) {M X : C} :
     additiveClosure (e.functor.obj (op M)) (e.functor.obj (op X)) ↔ additiveClosure M X := by
+  have : e.functor.Additive := Functor.additive_of_preserves_binary_products _
   simp only [additiveClosure_iff_exists_sum_comp_eq_id]
   constructor
   · rintro ⟨n, a, b, h⟩

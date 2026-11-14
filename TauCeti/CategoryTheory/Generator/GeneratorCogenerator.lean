@@ -19,11 +19,12 @@ generated modules over an Artin algebra these are the modules `M` with `A` and `
 (`TauCeti/Algebra/Category/FGModuleCat/GeneratorCogenerator.lean`); their endomorphism rings are
 the subject of the Morita-Tachikawa correspondence.
 
-In a preadditive category with finite biproducts, separators and coseparators pass up additive
-closures: if a separator `G` lies in `add M`, then `M` is a separator
-(`CategoryTheory.IsSeparator.of_additiveClosure`), and dually. Hence generator-cogenerators are
-invariant under isomorphism and under adding direct summands, and an equivalence of categories
-carries them to generator-cogenerators.
+In any category, separators and coseparators are invariant under isomorphism and pass to every
+object having them as a direct summand, so generator-cogenerators are invariant under isomorphism
+and under adding direct summands, and an equivalence of categories carries them to
+generator-cogenerators. In a preadditive category with finite biproducts, separators and
+coseparators also pass up additive closures: if a separator `G` lies in `add M`, then `M` is a
+separator (`CategoryTheory.IsSeparator.of_additiveClosure`), and dually.
 
 ## Main definitions
 
@@ -34,6 +35,8 @@ carries them to generator-cogenerators.
 * `CategoryTheory.IsSeparator.of_additiveClosure` and
   `CategoryTheory.IsCoseparator.of_additiveClosure`: `M` is a separator (coseparator) as soon as
   `add M` contains one.
+* `CategoryTheory.IsSeparator.of_retract` and `CategoryTheory.IsCoseparator.of_retract`: an object
+  having a separator (coseparator) as a direct summand is one.
 * `TauCeti.IsGeneratorCogenerator.of_retract`: adding direct summands keeps a generator-cogenerator.
 * `TauCeti.isGeneratorCogenerator_functor_obj_iff`: invariance under equivalences of categories.
 -/
@@ -57,6 +60,22 @@ theorem IsSeparator.of_iso {G M : C} (hG : IsSeparator G) (e : G ≅ M) : IsSepa
 theorem IsCoseparator.of_iso {G M : C} (hG : IsCoseparator G) (e : G ≅ M) : IsCoseparator M := by
   rw [isCoseparator_iff_faithful_yoneda_obj] at hG ⊢
   exact Functor.Faithful.of_iso (yoneda.mapIso e)
+
+/-- **Separators pass to objects having them as retracts**: if `M` is a separator and a direct
+summand of `N`, then `N` is a separator. -/
+theorem IsSeparator.of_retract {M N : C} (hM : IsSeparator M) (h : Retract M N) :
+    IsSeparator N := by
+  rw [isSeparator_def] at hM ⊢
+  exact fun X Y f g hfg ↦ hM f g fun a ↦ by
+    simpa [Category.assoc] using congrArg (h.i ≫ ·) (hfg (h.r ≫ a))
+
+/-- **Coseparators pass to objects having them as retracts**: if `M` is a coseparator and a direct
+summand of `N`, then `N` is a coseparator. -/
+theorem IsCoseparator.of_retract {M N : C} (hM : IsCoseparator M) (h : Retract M N) :
+    IsCoseparator N := by
+  rw [isCoseparator_def] at hM ⊢
+  exact fun X Y f g hfg ↦ hM f g fun a ↦ by
+    simpa using congrArg (· ≫ h.r) (hfg (a ≫ h.i))
 
 section Preadditive
 
@@ -124,6 +143,12 @@ theorem isGeneratorCogenerator_functor_obj_iff {D : Type u'} [Category.{v'} D] (
     (M : C) : IsGeneratorCogenerator (e.functor.obj M) ↔ IsGeneratorCogenerator M :=
   ⟨fun h ↦ (h.functor_obj e.symm).of_iso (e.unitIso.app M).symm, fun h ↦ h.functor_obj e⟩
 
+/-- **Adding direct summands keeps a generator-cogenerator**: if `M` is a generator-cogenerator and
+a direct summand of `N`, then `N` is a generator-cogenerator. -/
+theorem IsGeneratorCogenerator.of_retract {M N : C} (hM : IsGeneratorCogenerator M)
+    (h : Retract M N) : IsGeneratorCogenerator N :=
+  ⟨hM.1.of_retract h, hM.2.of_retract h⟩
+
 variable [Preadditive C] [HasFiniteBiproducts C]
 
 /-- **Adding objects to a generator-cogenerator**: if `add M` contains a generator-cogenerator, then
@@ -131,11 +156,5 @@ variable [Preadditive C] [HasFiniteBiproducts C]
 theorem IsGeneratorCogenerator.of_additiveClosure {G M : C} (hG : IsGeneratorCogenerator G)
     (h : additiveClosure M G) : IsGeneratorCogenerator M :=
   ⟨hG.1.of_additiveClosure h, hG.2.of_additiveClosure h⟩
-
-/-- **Adding direct summands keeps a generator-cogenerator**: if `M` is a generator-cogenerator and
-a direct summand of `N`, then `N` is a generator-cogenerator. -/
-theorem IsGeneratorCogenerator.of_retract {M N : C} (hM : IsGeneratorCogenerator M)
-    (h : Retract M N) : IsGeneratorCogenerator N :=
-  hM.of_additiveClosure ((additiveClosure N).prop_of_retract h (additiveClosure_self N))
 
 end TauCeti

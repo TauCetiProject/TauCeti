@@ -12,8 +12,6 @@ public import TauCeti.Algebra.Category.FGModuleCat.Projective
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.AdditiveClosure
 public import TauCeti.RingTheory.MatlisDuality.Semilocal
 
-import TauCeti.CategoryTheory.Functor.RingEquivEnd
-
 /-!
 # Generator-cogenerators of `mod A` for an Artin algebra
 
@@ -109,19 +107,24 @@ theorem _root_.FGModuleCat.additiveClosure_regular_of_projective (P : FGModuleCa
     simpa using hgi i
   exact additiveClosure_iff.2 ⟨n, ⟨⟨Projective.factorThru (𝟙 P) p, p, by simp⟩⟩⟩
 
-variable [IsArtinianRing A]
-
-/-- Over a left Artinian ring, a finitely generated module is indecomposable as a module exactly
-when it is an indecomposable object of `mod A`. -/
+/-- A finitely generated module is indecomposable in the category of all modules exactly when it
+is an indecomposable object of `mod A`. Both categories are idempotent complete, and the
+inclusion is fully faithful, so both sides say that the module is nonzero and has no idempotent
+endomorphism other than `0` and the identity. -/
 theorem _root_.FGModuleCat.indecomposable_obj_iff (P : FGModuleCat.{u} A) :
     Indecomposable P.obj ↔ Indecomposable P := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have := FGModuleCat.isLocalRing_end_of_indecomposable h
-    exact indecomposable_of_isLocalRing_end
-  · have := (IsKrullSchmidt.indecomposable_iff_isLocalRing_end P).1 h
-    have : IsLocalRing (End ((ObjectProperty.ι _).obj P)) :=
-      ((ObjectProperty.fullyFaithfulι _).ringEquivEnd P).isLocalRing
-    exact indecomposable_of_isLocalRing_end (X := (ObjectProperty.ι _).obj P)
+  have hz {Y : FGModuleCat.{u} A} : IsZero Y.obj ↔ IsZero Y := by
+    simp only [IsZero.iff_id_eq_zero]
+    exact ⟨fun h ↦ (ObjectProperty.fullyFaithfulι _).map_injective (by simpa using h),
+      fun h ↦ by simpa using congrArg (ObjectProperty.ι _).map h⟩
+  rw [indecomposable_iff_idempotent_eq_zero_or_id, indecomposable_iff_idempotent_eq_zero_or_id, hz]
+  refine and_congr_right fun _ ↦ ⟨fun h e he ↦ ?_, fun h e he ↦ ?_⟩
+  · exact (h e.hom (by rw [← ObjectProperty.FullSubcategory.comp_hom, he])).imp
+      (ObjectProperty.hom_ext _) (ObjectProperty.hom_ext _)
+  · exact (h (ObjectProperty.homMk e) (ObjectProperty.hom_ext _ he)).imp
+      (congrArg InducedCategory.Hom.hom) (congrArg InducedCategory.Hom.hom)
+
+variable [IsArtinianRing A]
 
 /-- **The separators of `mod A` through indecomposables**: over a left Artinian ring, `M` is a
 separator of `mod A` exactly when every indecomposable projective object is a direct summand of
@@ -144,11 +147,6 @@ section Artin
 
 variable {R : Type u} [CommRing R] [IsArtinianRing R] {E : Type u} [AddCommGroup E] [Module R E]
   {f : R ⧸ Ring.jacobson R →ₗ[R] E} {A : Type u} [Ring A] [Algebra R A] [Module.Finite R A]
-
-/-- The Matlis duality on `mod A` is an additive functor. -/
-instance IsInjectiveEnvelope.additive_fgModuleCatMatlisDuality_functor
-    (hf : IsInjectiveEnvelope f) : (hf.fgModuleCatMatlisDuality (A := A)).functor.Additive :=
-  Functor.additive_of_preserves_binary_products _
 
 /-- The dual `D A = Hom_R(A, E)` of the right regular module, as a finitely generated left
 `A`-module: the image of the regular right module `Aᵐᵒᵖ` under the Matlis duality
