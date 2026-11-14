@@ -34,11 +34,15 @@ graded abelian category, whose canonical exact structure is
 
 ## Main definitions
 
-* `TauCeti.GradedModuleCat.kernelCone` and `TauCeti.GradedModuleCat.cokernelCocone`: the kernel
-  and cokernel of a morphism of graded modules, formed on underlying modules.
+* `TauCeti.GradedModuleCat.kernelObj`, `TauCeti.GradedModuleCat.kernelι` and
+  `TauCeti.GradedModuleCat.kernelCone`: the kernel of a morphism of graded modules, its inclusion
+  and the corresponding kernel fork, formed on underlying modules.
 * `TauCeti.GradedModuleCat.cokernelGrading`: the grading of `N ⧸ range f` induced from `N`.
-* `TauCeti.GradedModuleCat.productFan`: the product of finitely many graded modules, formed as
-  their direct sum.
+* `TauCeti.GradedModuleCat.cokernelObj`, `TauCeti.GradedModuleCat.cokernelπ` and
+  `TauCeti.GradedModuleCat.cokernelCocone`: the cokernel of a morphism of graded modules, the
+  projection onto it and the corresponding cokernel cofork.
+* `TauCeti.GradedModuleCat.directSumObj` and `TauCeti.GradedModuleCat.productFan`: the direct sum
+  of a family of graded modules, graded degreewise, and the product fan it forms.
 
 ## Main results
 
@@ -55,6 +59,10 @@ graded abelian category, whose canonical exact structure is
   respectively.
 * `TauCeti.GradedModuleCat.isIso_biprod_desc_of_bijective`: a map out of a binary biproduct is an
   isomorphism when the induced map out of the product of underlying modules is bijective.
+* The instances `PreservesFiniteLimits`, `PreservesFiniteColimits` and `PreservesHomology` of the
+  forgetful functor `TauCeti.GradedModuleCat.toModuleCat`.
+* `TauCeti.GradedModuleCat.exact_iff`: a short complex of graded modules is exact exactly when its
+  underlying linear maps are exact.
 * `TauCeti.GradedModuleCat.shortExact_cokernelπ`: a monomorphism and the projection onto its
   cokernel form a short exact sequence.
 -/
