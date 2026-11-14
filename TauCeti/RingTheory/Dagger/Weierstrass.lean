@@ -102,10 +102,8 @@ theorem eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished {g q q' : W'} {s : �
   obtain ⟨hqq, hrr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add zero_lt_one
     (fun _ ↦ norm_mul _ _) (restrictedOptionEquiv (toTate _ K q)).2
     (restrictedOptionEquiv (toTate _ K q')).2 (hz r hr) (hz r' hr') hmap
-  refine ⟨washnitzerAlgebra.optionSeries_injective ?_, ?_⟩
-  · apply PowerSeries.map_injective (toTate σ K : washnitzerAlgebra σ K →+*
-      IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))) washnitzerAlgebra.toTate_injective
-    simpa only [washnitzerAlgebra.map_toTate_optionSeries] using hqq
+  refine ⟨washnitzerAlgebra.toTate_injective (restrictedOptionEquiv.injective (Subtype.ext hqq)),
+    ?_⟩
   · have he := PowerSeries.map_injective (toTate σ K : washnitzerAlgebra σ K →+*
       IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ)))
       washnitzerAlgebra.toTate_injective hrr
