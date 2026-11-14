@@ -37,8 +37,13 @@ the endpoint `∞` itself is `MeasureTheory.eLpNorm_exponent_top`.
 
 * `TauCeti.eLpNorm_exponent_top_le_liminf` — `eLpNorm f ∞ μ` is at most the `liminf` of the
   finite-exponent seminorms, for every measure;
+* `TauCeti.eLpNorm_exponent_top_le_of_eventually_le` — an eventual bound
+  `eLpNorm f p μ ≤ M * a ^ (1 / p)` as `p → ∞` with `a ≠ ∞` gives `eLpNorm f ∞ μ ≤ M`;
 * `TauCeti.tendsto_eLpNorm_atTop` — for a finite measure, the finite-exponent seminorms converge
-  to `eLpNorm f ∞ μ`.
+  to `eLpNorm f ∞ μ`;
+* `TauCeti.ae_norm_le_of_eventually_nnreal_eLpNorm_le` — an eventual bound
+  `eLpNorm f q μ ≤ ENNReal.ofReal (M * a ^ (1 / q))` as `q → ∞` with `0 ≤ M` and `0 ≤ a` gives
+  `‖f y‖ ≤ M` almost everywhere.
 
 ## References
 
@@ -53,6 +58,14 @@ open Filter MeasureTheory
 open scoped ENNReal NNReal Topology
 
 namespace TauCeti
+
+private theorem tendsto_mul_rpow_one_div_atTop (M : ℝ≥0∞) {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞) :
+    Tendsto (fun p : ℝ≥0 ↦ M * c ^ (1 / (p : ℝ))) atTop (𝓝 M) := by
+  simpa only [mul_one, Function.comp_def, id] using ENNReal.Tendsto.const_mul
+    ((ENNReal.tendsto_rpow_one_div_atTop hc0 hc).comp
+      (NNReal.tendsto_coe_atTop.2 tendsto_id)) (.inl one_ne_zero)
+
+section ENorm
 
 variable {α ε : Type*} [MeasurableSpace α] [TopologicalSpace ε] [ContinuousENorm ε]
   {μ : Measure α} {f : α → ε}
@@ -76,12 +89,7 @@ theorem eLpNorm_exponent_top_le_liminf :
       fun _ ↦ le_of_lt
   -- Chebyshev gives `s * min c 1 ^ (1 / p) ≤ eLpNorm f p μ`, and the left side tends to `s`.
   set c' := min c 1
-  have hc'0 : c' ≠ 0 := by simp [c', hc0]
-  have hc'top : c' ≠ ∞ := by simp [c']
-  have hlim : Tendsto (fun p : ℝ≥0 ↦ s * c' ^ (1 / (p : ℝ))) atTop (𝓝 s) := by
-    simpa only [mul_one, Function.comp_def, id] using ENNReal.Tendsto.const_mul
-      ((ENNReal.tendsto_rpow_one_div_atTop hc'0 hc'top).comp
-        (NNReal.tendsto_coe_atTop.2 tendsto_id)) (.inl one_ne_zero)
+  have hlim := tendsto_mul_rpow_one_div_atTop s (c := c') (by simp [c', hc0]) (by simp [c'])
   refine le_liminf_of_le (by isBoundedDefault) ?_
   filter_upwards [hlim.eventually (lt_mem_nhds hrs), eventually_ne_atTop 0] with p hp hp0
   refine hp.le.trans ?_
@@ -92,6 +100,19 @@ theorem eLpNorm_exponent_top_le_liminf :
   rw [← ENNReal.rpow_le_rpow_iff hppos, ENNReal.mul_rpow_of_nonneg _ _ hppos.le,
     ← ENNReal.rpow_mul, one_div_mul_cancel hppos.ne', ENNReal.rpow_one]
   exact (mul_le_mul' le_rfl (min_le_left c 1)).trans hcheb
+
+/-- **`L^∞` seminorm bound from eventual `Lᵖ` seminorm bounds.** If `a ≠ ∞` and
+`eLpNorm f p μ ≤ M * a ^ (1 / p)` for all sufficiently large `p : ℝ≥0`, then
+`eLpNorm f ∞ μ ≤ M`. -/
+theorem eLpNorm_exponent_top_le_of_eventually_le {M a : ℝ≥0∞} (ha : a ≠ ∞)
+    (h : ∀ᶠ p : ℝ≥0 in atTop, eLpNorm f p μ ≤ M * a ^ (1 / (p : ℝ))) :
+    eLpNorm f ∞ μ ≤ M := by
+  set a' := max 1 a
+  have hlim := tendsto_mul_rpow_one_div_atTop M (c := a')
+    (zero_lt_one.trans_le (le_max_left 1 a)).ne' (max_ne_top ENNReal.one_ne_top ha)
+  refine eLpNorm_exponent_top_le_liminf.trans ((liminf_le_liminf ?_).trans_eq hlim.liminf_eq)
+  exact h.mono fun p hp ↦ hp.trans
+    (mul_le_mul' le_rfl (ENNReal.rpow_le_rpow (le_max_right 1 a) (by positivity)))
 
 /-- **The `Lᵖ` seminorms converge to the `L^∞` seminorm.** Against a finite measure, for every
 `f`, `eLpNorm f p μ` tends to `eLpNorm f ∞ μ` as `p → ∞`. For almost everywhere strongly
@@ -105,12 +126,26 @@ theorem tendsto_eLpNorm_atTop [IsFiniteMeasure μ] :
   · simp
   refine tendsto_of_le_liminf_of_limsup_le eLpNorm_exponent_top_le_liminf ?_
   -- The comparison with the `L^∞` seminorm weighted by the root of the total mass.
-  have hlim : Tendsto (fun p : ℝ≥0 ↦ eLpNorm f ∞ μ * μ Set.univ ^ (1 / (p : ℝ))) atTop
-      (𝓝 (eLpNorm f ∞ μ)) := by
-    simpa only [mul_one, Function.comp_def, id] using ENNReal.Tendsto.const_mul
-      ((ENNReal.tendsto_rpow_one_div_atTop (by simp [NeZero.ne μ]) (measure_ne_top μ _)).comp
-        (NNReal.tendsto_coe_atTop.2 tendsto_id)) (.inl one_ne_zero)
+  have hlim := tendsto_mul_rpow_one_div_atTop (eLpNorm f ∞ μ) (c := μ Set.univ)
+    (by simp [NeZero.ne μ]) (measure_ne_top μ _)
   refine (limsup_le_limsup (.of_forall fun p ↦ ?_)).trans_eq hlim.limsup_eq
   simpa using eLpNorm_le_eLpNorm_mul_rpow_measure_univ (le_top : (p : ℝ≥0∞) ≤ ∞) hf
+
+end ENorm
+
+/-- **Pointwise `L^∞` bound from eventual `L^q` seminorm bounds.** If `0 ≤ M`, `0 ≤ a`, and
+`eLpNorm f q μ ≤ ENNReal.ofReal (M * a ^ (1 / q))` for all sufficiently large `q : ℝ≥0`, then
+`‖f y‖ ≤ M` for `μ`-almost every `y`. -/
+theorem ae_norm_le_of_eventually_nnreal_eLpNorm_le {α F : Type*} [MeasurableSpace α]
+    [SeminormedAddGroup F] {μ : Measure α} {f : α → F} {M a : ℝ} (hM : 0 ≤ M) (ha : 0 ≤ a)
+    (h : ∀ᶠ q : ℝ≥0 in atTop, eLpNorm f q μ ≤ ENNReal.ofReal (M * a ^ (1 / (q : ℝ)))) :
+    ∀ᵐ y ∂μ, ‖f y‖ ≤ M := by
+  have htop : eLpNorm f ∞ μ ≤ ENNReal.ofReal M :=
+    eLpNorm_exponent_top_le_of_eventually_le (a := ENNReal.ofReal a) ENNReal.ofReal_ne_top <|
+      h.mono fun q hq ↦ hq.trans_eq <| by
+        rw [ENNReal.ofReal_mul hM, ENNReal.ofReal_rpow_of_nonneg ha (by positivity)]
+  filter_upwards [ae_le_eLpNormEssSup (f := f) (μ := μ)] with y hy
+  exact (ENNReal.ofReal_le_ofReal_iff hM).1
+    (by simpa only [ofReal_norm] using hy.trans (eLpNormEssSup_le_eLpNorm_top.trans htop))
 
 end TauCeti
