@@ -31,6 +31,8 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
 * `TauCeti.pow_mul_exp_neg_mul_le`: `t ^ m exp (-a t) ≤ m! / a ^ m` for `0 < a`, `0 ≤ t`.
+* `TauCeti.one_add_pow_mul_exp_neg_two_mul_le`:
+  `(1 + t) ^ n exp (-2 a t) ≤ (n! exp a / a ^ n) exp (-a t)` for `0 < a`, `0 ≤ t`.
 -/
 
 public section
@@ -117,5 +119,20 @@ theorem pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : 0 ≤ t) (m : ℕ)
   rw [neg_mul, exp_neg, ← div_eq_mul_inv, div_le_iff₀ (exp_pos _), div_mul_eq_mul_div,
     le_div_iff₀ (pow_pos ha m)]
   linarith
+
+/-- For `0 < a` and `0 ≤ t`, `(1 + t) ^ n * exp (-2 * a * t)` is bounded by the integrable
+exponential majorant `((n ! * exp a) / a ^ n) * exp (-a * t)`. -/
+theorem one_add_pow_mul_exp_neg_two_mul_le {a t : ℝ} (ha : 0 < a) (ht : 0 ≤ t) (n : ℕ) :
+    (1 + t) ^ n * exp (-2 * a * t) ≤ ((n ! : ℝ) * exp a / a ^ n) * exp (-a * t) := by
+  have hpow := pow_mul_exp_neg_mul_le ha (by linarith : 0 ≤ 1 + t) n
+  have hsplit : exp (-2 * a * t) = exp (-a * (1 + t)) * (exp a * exp (-a * t)) := by
+    rw [← exp_add, ← exp_add]
+    congr 1
+    ring
+  calc (1 + t) ^ n * exp (-2 * a * t)
+      = ((1 + t) ^ n * exp (-a * (1 + t))) * (exp a * exp (-a * t)) := by rw [hsplit, mul_assoc]
+    _ ≤ ((n ! : ℝ) / a ^ n) * (exp a * exp (-a * t)) :=
+        mul_le_mul_of_nonneg_right hpow (by positivity)
+    _ = ((n ! : ℝ) * exp a / a ^ n) * exp (-a * t) := by ring
 
 end TauCeti

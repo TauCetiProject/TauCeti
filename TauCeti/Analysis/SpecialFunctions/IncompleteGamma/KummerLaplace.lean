@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -38,7 +39,7 @@ incomplete Gamma combination `z^{-a} e^z Γ(a, z)` on `Complex.slitPlane`; in ge
   the rotated-ray Kummer-Laplace integrand (`|θ| ≤ π / 2`, `0 < Re (z e^{iθ})`) and of the
   positive-axis integrand (`0 < Re z`).
 * `Complex.kummerLaplace_eq_ray_integral` — Cauchy-Goursat ray independence: for any angle
-  `|θ| < π / 2` with `0 < Re (z e^{iθ})`, the integral along `r e^{iθ}` agrees with
+  `|θ| ≤ π / 2` with `0 < Re (z e^{iθ})`, the integral along `r e^{iθ}` agrees with
   `kummerLaplace c d z`.
 * `Complex.kummerLaplace_eq_integral_of_re_pos` — on `0 < Re z`, `kummerLaplace c d z` equals the
   unrotated positive-axis integral `∫ t in Ioi 0, cexp (-z * t) * t ^ c * (1 + t) ^ d`.
@@ -103,6 +104,9 @@ private theorem kummerLaplace_eq_canonical_ray (c : ℕ) (d z : ℂ) :
 private def kummerLaplaceLogIntegrand (c : ℕ) (d z w : ℂ) : ℂ :=
   cexp (((c : ℂ) + 1) * w - z * cexp w) * (1 + cexp w) ^ d
 
+private def kummerLaplaceMajorantConst (c : ℕ) (d : ℂ) (η : ℝ) : ℝ :=
+  Real.exp (π * |d.im|) * (((c + ⌈d.re⌉₊)! : ℝ) * Real.exp η / η ^ (c + ⌈d.re⌉₊))
+
 private theorem norm_kummerLaplaceRayIntegrand_le_mul_exp (c m : ℕ) {d z : ℂ} {θ B s r : ℝ}
     (hθ : |θ| ≤ π / 2) (hr : 0 ≤ r) (hd_im : |d.im| ≤ B) (hd_re : ⌈d.re⌉₊ ≤ m)
     (hre : s ≤ (z * cexp (θ * I)).re) :
@@ -130,35 +134,21 @@ private theorem norm_kummerLaplaceRayIntegrand_le_mul_exp (c m : ℕ) {d z : ℂ
     _ = Real.exp (π * B) * (1 + r) ^ (c + m) * Real.exp (-s * r) := by
         rw [pow_add]; ring
 
-private theorem one_add_pow_mul_exp_neg_two_mul_le (n : ℕ) {η r : ℝ} (hη : 0 < η) (hr : 0 ≤ r) :
-    (1 + r) ^ n * Real.exp (-2 * η * r) ≤
-      ((n ! : ℝ) * Real.exp η / η ^ n) * Real.exp (-η * r) := by
-  have hpow := TauCeti.pow_mul_exp_neg_mul_le hη (by linarith : 0 ≤ 1 + r) n
-  have hsplit : Real.exp (-2 * η * r) =
-      Real.exp (-η * (1 + r)) * (Real.exp η * Real.exp (-η * r)) := by
-    rw [← Real.exp_add, ← Real.exp_add]
-    congr 1
-    ring
-  calc (1 + r) ^ n * Real.exp (-2 * η * r)
-      = ((1 + r) ^ n * Real.exp (-η * (1 + r))) * (Real.exp η * Real.exp (-η * r)) := by
-        rw [hsplit, mul_assoc]
-    _ ≤ ((n ! : ℝ) / η ^ n) * (Real.exp η * Real.exp (-η * r)) :=
-        mul_le_mul_of_nonneg_right hpow (by positivity)
-    _ = ((n ! : ℝ) * Real.exp η / η ^ n) * Real.exp (-η * r) := by ring
-
 private theorem norm_kummerLaplaceRayIntegrand_le (c : ℕ) (d : ℂ) {z : ℂ} {θ η r : ℝ}
     (hθ : |θ| ≤ π / 2) (hη : 0 < η) (hre : 2 * η ≤ (z * cexp (θ * I)).re) (hr : 0 ≤ r) :
     ‖kummerLaplaceRayIntegrand c d z θ r‖ ≤
-      (Real.exp (π * |d.im|) * (((c + ⌈d.re⌉₊)! : ℝ) * Real.exp η / η ^ (c + ⌈d.re⌉₊))) *
-        Real.exp (-η * r) := by
+      kummerLaplaceMajorantConst c d η * Real.exp (-η * r) := by
+  have hneg : (-2 : ℝ) * η * r = -(2 * η) * r := by ring
   calc ‖kummerLaplaceRayIntegrand c d z θ r‖
       ≤ Real.exp (π * |d.im|) * ((1 + r) ^ (c + ⌈d.re⌉₊) * Real.exp (-2 * η * r)) := by
-        rw [← mul_assoc, show (-2 : ℝ) * η * r = -(2 * η) * r by ring]
+        rw [← mul_assoc, hneg]
         exact norm_kummerLaplaceRayIntegrand_le_mul_exp c ⌈d.re⌉₊ hθ hr le_rfl le_rfl hre
     _ ≤ Real.exp (π * |d.im|) *
           ((((c + ⌈d.re⌉₊)! : ℝ) * Real.exp η / η ^ (c + ⌈d.re⌉₊)) * Real.exp (-η * r)) :=
-        mul_le_mul_of_nonneg_left (one_add_pow_mul_exp_neg_two_mul_le _ hη hr) (by positivity)
-    _ = _ := (mul_assoc _ _ _).symm
+        mul_le_mul_of_nonneg_left (TauCeti.one_add_pow_mul_exp_neg_two_mul_le hη hr _)
+          (by positivity)
+    _ = kummerLaplaceMajorantConst c d η * Real.exp (-η * r) :=
+        (mul_assoc _ _ _).symm
 
 private theorem continuousOn_kummerLaplaceRayIntegrand (c : ℕ) (d z : ℂ) {θ : ℝ}
     (hθ : |θ| ≤ π / 2) :
@@ -181,17 +171,13 @@ theorem integrableOn_exp_neg_mul_mul_exp_mul_I_mul_pow_mul_one_add_cpow_Ioi (c :
       (Ioi 0) := by
   set η := (z * cexp (θ * I)).re / 2
   have hη : 0 < η := half_pos hre
-  set C := Real.exp (π * |d.im|) * (((c + ⌈d.re⌉₊)! : ℝ) * Real.exp η / η ^ (c + ⌈d.re⌉₊))
-  refine Integrable.mono' ((integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hη) 0).const_mul C)
+  refine Integrable.mono'
+    ((integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hη) 0).const_mul
+      (kummerLaplaceMajorantConst c d η))
     ((continuousOn_kummerLaplaceRayIntegrand c d z hθ).mono Ioi_subset_Ici_self
       |>.aestronglyMeasurable measurableSet_Ioi)
     (ae_restrict_of_forall_mem measurableSet_Ioi fun r hr => ?_)
   exact norm_kummerLaplaceRayIntegrand_le c d hθ hη (by dsimp only [η]; linarith) hr.out.le
-
-private theorem integrableOn_kummerLaplaceRayIntegrand (c : ℕ) (d : ℂ) {z : ℂ} {θ : ℝ}
-    (hθ : |θ| ≤ π / 2) (hre : 0 < (z * cexp (θ * I)).re) :
-    IntegrableOn (kummerLaplaceRayIntegrand c d z θ) (Ioi 0) :=
-  integrableOn_exp_neg_mul_mul_exp_mul_I_mul_pow_mul_one_add_cpow_Ioi c d hθ hre
 
 /-- For `0 < z.re`, the Kummer-Laplace integrand `t ↦ cexp (-z * t) * t ^ c * (1 + t) ^ d` is
 Bochner-integrable on `(0, ∞)`. -/
@@ -200,6 +186,19 @@ theorem integrableOn_exp_neg_mul_mul_pow_mul_one_add_cpow_Ioi (c : ℕ) (d : ℂ
     IntegrableOn (fun t : ℝ => cexp (-z * t) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d) (Ioi 0) := by
   simpa using integrableOn_exp_neg_mul_mul_exp_mul_I_mul_pow_mul_one_add_cpow_Ioi c d
     (θ := 0) (by rw [abs_zero]; positivity) (by simpa using hz)
+
+private theorem continuousOn_kummerLaplaceRayIntegrand_neg_arg_div_two (c : ℕ) (d w : ℂ) {z : ℂ}
+    (hz : z ∈ slitPlane) :
+    ContinuousOn (kummerLaplaceRayIntegrand c d w (-(z.arg / 2))) (Ici 0) :=
+  continuousOn_kummerLaplaceRayIntegrand c d w
+    (by simpa using (abs_arg_div_two_lt_pi_div_two (slitPlane_arg_ne_pi hz)).le)
+
+private theorem integrableOn_kummerLaplaceRayIntegrand_neg_arg_div_two (c : ℕ) (d : ℂ) {z : ℂ}
+    (hz : z ∈ slitPlane) :
+    IntegrableOn (kummerLaplaceRayIntegrand c d z (-(z.arg / 2))) (Ioi 0) :=
+  integrableOn_exp_neg_mul_mul_exp_mul_I_mul_pow_mul_one_add_cpow_Ioi c d
+    (by simpa using (abs_arg_div_two_lt_pi_div_two (slitPlane_arg_ne_pi hz)).le)
+    (re_mul_exp_neg_arg_div_two_mul_I_pos hz)
 
 /-! ### Cauchy-Goursat ray independence -/
 
@@ -216,151 +215,145 @@ private theorem kummerLaplaceLogIntegrand_eq_ray (c : ℕ) (d z : ℂ) (θ x : �
   rw [hlin, Complex.exp_add, Complex.exp_add, Complex.exp_nat_mul, hexp, real_smul]
   ring
 
+private theorem integrable_kummerLaplaceLogIntegrand_horizontal (c : ℕ) (d : ℂ) {z : ℂ} {θ : ℝ}
+    (hθ : |θ| ≤ π / 2) (hre : 0 < (z * cexp (θ * I)).re) :
+    Integrable fun x : ℝ => kummerLaplaceLogIntegrand c d z ((x : ℂ) + θ * I) := by
+  simp_rw [kummerLaplaceLogIntegrand_eq_ray]
+  exact ((integrable_comp_exp _).mpr
+    (integrableOn_exp_neg_mul_mul_exp_mul_I_mul_pow_mul_one_add_cpow_Ioi c d hθ hre)).const_mul _
+
+private theorem integral_kummerLaplaceLogIntegrand_horizontal (c : ℕ) (d z : ℂ) (θ : ℝ) :
+    (∫ x : ℝ, kummerLaplaceLogIntegrand c d z ((x : ℂ) + θ * I)) =
+      cexp (θ * I) * ∫ r in Ioi (0 : ℝ), kummerLaplaceRayIntegrand c d z θ r := by
+  simp_rw [kummerLaplaceLogIntegrand_eq_ray, integral_const_mul, integral_comp_exp]
+
 private theorem differentiableOn_kummerLaplaceLogIntegrand (c : ℕ) (d z : ℂ) :
-    DifferentiableOn ℂ (kummerLaplaceLogIntegrand c d z) {w : ℂ | |w.im| < π / 2} := by
+    DifferentiableOn ℂ (kummerLaplaceLogIntegrand c d z) {w : ℂ | |w.im| < π} := by
   intro w hw
   unfold kummerLaplaceLogIntegrand
-  have hw_im : |w.im| < π := by
-    have hlt : |w.im| < π / 2 := hw
-    linarith [Real.pi_pos]
   have hslit : 1 + cexp w ∈ slitPlane := by
-    have hsplit : cexp w = (Real.exp w.re : ℂ) * cexp (w.im * I) := by
-      conv_lhs => rw [← re_add_im w, Complex.exp_add, ← ofReal_exp]
-    rw [hsplit]
-    exact one_add_ofReal_mul_exp_mul_I_mem_slitPlane hw_im (Real.exp_pos w.re).le
+    simpa using TauCeti.ofReal_add_mem_slitPlane (exp_mem_slitPlane_of_abs_im_lt hw) zero_le_one
   exact ((((differentiableAt_id.const_mul _).sub
     (differentiableAt_id.cexp.const_mul z)).cexp).mul
     ((differentiableAt_const (1 : ℂ)).add differentiableAt_id.cexp |>.cpow_const hslit))
     |>.differentiableWithinAt
 
+private theorem norm_integral_kummerLaplaceLogIntegrand_vertical_le (c : ℕ) (d : ℂ) {z : ℂ}
+    {θ₁ θ₂ η : ℝ} (hη : 0 < η)
+    (hstrip : ∀ θ ∈ [[θ₁, θ₂]], |θ| ≤ π / 2 ∧ 2 * η ≤ (z * cexp (θ * I)).re) (x : ℝ) :
+    ‖∫ y in θ₁..θ₂, kummerLaplaceLogIntegrand c d z ((x : ℂ) + y * I)‖ ≤
+      kummerLaplaceMajorantConst c d η * |θ₂ - θ₁| * Real.exp x *
+        Real.exp (-η * Real.exp x) := by
+  calc ‖∫ y in θ₁..θ₂, kummerLaplaceLogIntegrand c d z ((x : ℂ) + y * I)‖
+      ≤ (Real.exp x * (kummerLaplaceMajorantConst c d η * Real.exp (-η * Real.exp x))) *
+          |θ₂ - θ₁| := by
+        refine intervalIntegral.norm_integral_le_of_norm_le_const fun y hy => ?_
+        obtain ⟨hy_abs, hy_re⟩ := hstrip y (uIoc_subset_uIcc hy)
+        rw [kummerLaplaceLogIntegrand_eq_ray, norm_mul, norm_exp_ofReal_mul_I, one_mul,
+          norm_smul, Real.norm_of_nonneg (Real.exp_pos x).le]
+        exact mul_le_mul_of_nonneg_left
+          (norm_kummerLaplaceRayIntegrand_le c d hy_abs hη hy_re (Real.exp_pos x).le)
+          (Real.exp_pos x).le
+    _ = kummerLaplaceMajorantConst c d η * |θ₂ - θ₁| * Real.exp x *
+          Real.exp (-η * Real.exp x) := by ring
+
 private theorem tendsto_vertical_right_kummerLaplaceLogIntegrand (c : ℕ) (d : ℂ) {z : ℂ}
     {θ₁ θ₂ η : ℝ} (hη : 0 < η)
-    (hstrip : ∀ θ ∈ [[θ₁, θ₂]], |θ| < π / 2 ∧ 2 * η ≤ (z * cexp (θ * I)).re) :
+    (hstrip : ∀ θ ∈ [[θ₁, θ₂]], |θ| ≤ π / 2 ∧ 2 * η ≤ (z * cexp (θ * I)).re) :
     Tendsto (fun R : ℝ => ∫ y in θ₁..θ₂, kummerLaplaceLogIntegrand c d z ((R : ℂ) + y * I))
       atTop (𝓝 0) := by
-  set C := Real.exp (π * |d.im|) * (((c + ⌈d.re⌉₊)! : ℝ) * Real.exp η / η ^ (c + ⌈d.re⌉₊))
-  have hzero : Tendsto (fun R : ℝ => (C * |θ₂ - θ₁|) * Real.exp (R - η * Real.exp R))
-      atTop (𝓝 0) := by
-    have h1 : Tendsto (fun R : ℝ => R - η * Real.exp R) atTop atBot := by
-      have := (Real.tendsto_exp_div_pow_atTop 1).const_mul_atTop hη
-      refine tendsto_atBot.mpr fun B => ?_
-      filter_upwards [eventually_gt_atTop (max 0 (-B)),
-        this.eventually_gt_atTop 2] with R hRB hR
-      have hR0 : 0 < R := (le_max_left 0 (-B)).trans_lt hRB
-      have hRB' : -B < R := (le_max_right 0 (-B)).trans_lt hRB
-      rw [pow_one, mul_div_assoc', lt_div_iff₀ hR0] at hR
-      linarith
-    simpa using (Real.tendsto_exp_atBot.comp h1).const_mul (C * |θ₂ - θ₁|)
-  refine squeeze_zero_norm' ?_ hzero
-  filter_upwards [eventually_ge_atTop (0 : ℝ)] with R _
-  calc ‖∫ y in θ₁..θ₂, kummerLaplaceLogIntegrand c d z ((R : ℂ) + y * I)‖
-      ≤ (C * Real.exp (R - η * Real.exp R)) * |θ₂ - θ₁| := by
-        refine intervalIntegral.norm_integral_le_of_norm_le_const fun y hy => ?_
-        have hy' := uIoc_subset_uIcc hy
-        rw [kummerLaplaceLogIntegrand_eq_ray, norm_mul, norm_exp_ofReal_mul_I, one_mul,
-          norm_smul, Real.norm_of_nonneg (Real.exp_pos R).le]
-        calc Real.exp R * ‖kummerLaplaceRayIntegrand c d z y (Real.exp R)‖
-            ≤ Real.exp R * (C * Real.exp (-η * Real.exp R)) := by
-              gcongr
-              exact norm_kummerLaplaceRayIntegrand_le c d (hstrip y hy').1.le hη (hstrip y hy').2
-                (Real.exp_pos R).le
-          _ = C * Real.exp (R - η * Real.exp R) := by
-              rw [mul_left_comm, ← Real.exp_add]; ring_nf
-    _ = (C * |θ₂ - θ₁|) * Real.exp (R - η * Real.exp R) := by ring
+  have hdecay : Tendsto (fun R : ℝ => Real.exp R * Real.exp (-η * Real.exp R)) atTop (𝓝 0) := by
+    simpa [Function.comp_def, Real.rpow_one, ← neg_mul] using
+      (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero 1 η hη).comp Real.tendsto_exp_atTop
+  refine squeeze_zero_norm (fun R => ?_)
+    (by simpa [mul_assoc] using
+      hdecay.const_mul (kummerLaplaceMajorantConst c d η * |θ₂ - θ₁|))
+  simpa only [mul_assoc, neg_mul] using
+    norm_integral_kummerLaplaceLogIntegrand_vertical_le c d hη hstrip R
 
 private theorem tendsto_vertical_left_kummerLaplaceLogIntegrand (c : ℕ) (d : ℂ) {z : ℂ}
     {θ₁ θ₂ η : ℝ} (hη : 0 < η)
-    (hstrip : ∀ θ ∈ [[θ₁, θ₂]], |θ| < π / 2 ∧ 2 * η ≤ (z * cexp (θ * I)).re) :
+    (hstrip : ∀ θ ∈ [[θ₁, θ₂]], |θ| ≤ π / 2 ∧ 2 * η ≤ (z * cexp (θ * I)).re) :
     Tendsto (fun R : ℝ => ∫ y in θ₁..θ₂, kummerLaplaceLogIntegrand c d z (-(R : ℂ) + y * I))
       atTop (𝓝 0) := by
-  set C := Real.exp (π * |d.im|) * (((c + ⌈d.re⌉₊)! : ℝ) * Real.exp η / η ^ (c + ⌈d.re⌉₊))
-  have hzero : Tendsto (fun R : ℝ => (C * |θ₂ - θ₁|) * Real.exp (-R)) atTop (𝓝 0) := by
-    simpa using (Real.tendsto_exp_atBot.comp tendsto_neg_atTop_atBot).const_mul (C * |θ₂ - θ₁|)
-  refine squeeze_zero_norm' ?_ hzero
-  filter_upwards [eventually_ge_atTop (0 : ℝ)] with R _
-  calc ‖∫ y in θ₁..θ₂, kummerLaplaceLogIntegrand c d z (-(R : ℂ) + y * I)‖
-      ≤ (C * Real.exp (-R)) * |θ₂ - θ₁| := by
-        refine intervalIntegral.norm_integral_le_of_norm_le_const fun y hy => ?_
-        have hy' := uIoc_subset_uIcc hy
-        have hnegR : -(R : ℂ) = ((-R : ℝ) : ℂ) := by push_cast; rfl
-        rw [hnegR, kummerLaplaceLogIntegrand_eq_ray, norm_mul, norm_exp_ofReal_mul_I, one_mul,
-          norm_smul, Real.norm_of_nonneg (Real.exp_pos (-R)).le]
-        calc Real.exp (-R) * ‖kummerLaplaceRayIntegrand c d z y (Real.exp (-R))‖
-            ≤ Real.exp (-R) * (C * Real.exp (-η * Real.exp (-R))) := by
-              gcongr
-              exact norm_kummerLaplaceRayIntegrand_le c d (hstrip y hy').1.le hη (hstrip y hy').2
-                (Real.exp_pos (-R)).le
-          _ ≤ Real.exp (-R) * (C * 1) := by
-              gcongr
-              exact Real.exp_le_one_iff.mpr (by nlinarith [Real.exp_pos (-R)])
-          _ = C * Real.exp (-R) := by ring
-    _ = (C * |θ₂ - θ₁|) * Real.exp (-R) := by ring
+  have hzero : Tendsto
+      (fun R : ℝ => kummerLaplaceMajorantConst c d η * |θ₂ - θ₁| * Real.exp (-R))
+      atTop (𝓝 0) := by
+    simpa using (Real.tendsto_exp_atBot.comp tendsto_neg_atTop_atBot).const_mul
+      (kummerLaplaceMajorantConst c d η * |θ₂ - θ₁|)
+  refine squeeze_zero_norm (fun R => ?_) hzero
+  have hnegR : -(R : ℂ) = ((-R : ℝ) : ℂ) := by push_cast; rfl
+  rw [hnegR]
+  refine (norm_integral_kummerLaplaceLogIntegrand_vertical_le c d hη hstrip (-R)).trans ?_
+  have hM : 0 ≤ kummerLaplaceMajorantConst c d η := by
+    unfold kummerLaplaceMajorantConst; positivity
+  exact mul_le_of_le_one_right (by positivity)
+    (Real.exp_le_one_iff.mpr (by nlinarith [Real.exp_pos (-R)]))
 
-/-- **Ray independence of `kummerLaplace`.** For any angle `|θ| < π / 2` such that
+private theorem tendsto_sub_horizontal_kummerLaplaceLogIntegrand (c : ℕ) (d : ℂ) {z : ℂ}
+    {θ₁ θ₂ : ℝ} (hθ₁ : |θ₁| ≤ π / 2) (hre₁ : 0 < (z * cexp (θ₁ * I)).re)
+    (hθ₂ : |θ₂| ≤ π / 2) (hre₂ : 0 < (z * cexp (θ₂ * I)).re) :
+    Tendsto (fun R : ℝ =>
+      (∫ x in (-R)..R, kummerLaplaceLogIntegrand c d z ((x : ℂ) + θ₁ * I)) -
+        (∫ x in (-R)..R, kummerLaplaceLogIntegrand c d z ((x : ℂ) + θ₂ * I)))
+      atTop (𝓝 0) := by
+  obtain ⟨h₁l, h₁r⟩ := abs_le.mp hθ₁
+  obtain ⟨h₂l, h₂r⟩ := abs_le.mp hθ₂
+  obtain ⟨θm, hθm_mem, hθm_min⟩ := isCompact_uIcc.exists_isMinOn nonempty_uIcc
+    (f := fun y : ℝ => (z * cexp (y * I)).re) (by fun_prop)
+  set η := (z * cexp (θm * I)).re / 2
+  have hη : 0 < η := half_pos (re_mul_exp_mul_I_pos_of_mem_uIcc hθ₁ hre₁ hθ₂ hre₂ hθm_mem)
+  have hstrip : ∀ y ∈ [[θ₁, θ₂]], |y| ≤ π / 2 ∧ 2 * η ≤ (z * cexp (y * I)).re := fun y hy => by
+    have hy_abs : |y| ≤ π / 2 := by
+      rcases mem_uIcc.mp hy with ⟨hl, hr⟩ | ⟨hl, hr⟩ <;> exact abs_le.mpr ⟨by linarith, by linarith⟩
+    have hmin : (z * cexp (θm * I)).re ≤ (z * cexp (y * I)).re := hθm_min hy
+    exact ⟨hy_abs, by dsimp only [η]; linarith⟩
+  have hrect : ∀ R : ℝ,
+      ((∫ x in (-R)..R, kummerLaplaceLogIntegrand c d z ((x : ℂ) + θ₁ * I)) -
+        (∫ x in (-R)..R, kummerLaplaceLogIntegrand c d z ((x : ℂ) + θ₂ * I))) +
+        I • (∫ y in θ₁..θ₂, kummerLaplaceLogIntegrand c d z ((R : ℂ) + y * I)) -
+        I • (∫ y in θ₁..θ₂, kummerLaplaceLogIntegrand c d z (-(R : ℂ) + y * I)) = 0 := fun R => by
+    have := integral_boundary_rect_eq_zero_of_differentiableOn
+      (kummerLaplaceLogIntegrand c d z) ((-R : ℝ) + θ₁ * I) ((R : ℝ) + θ₂ * I)
+      ((differentiableOn_kummerLaplaceLogIntegrand c d z).mono fun w hw =>
+        (hstrip w.im (by simpa using hw.2)).1.trans_lt (half_lt_self Real.pi_pos))
+    simpa using this
+  have hcomb :=
+    ((tendsto_vertical_left_kummerLaplaceLogIntegrand c d hη hstrip).const_smul I).sub
+      ((tendsto_vertical_right_kummerLaplaceLogIntegrand c d hη hstrip).const_smul I)
+  rw [sub_self] at hcomb
+  exact hcomb.congr fun R => by linear_combination -(hrect R)
+
+/-- **Ray independence of `kummerLaplace`.** For any angle `|θ| ≤ π / 2` such that
 `0 < Re (z e^{iθ})`, the rotated Laplace integral along the ray `r e^{iθ}` (`r > 0`) equals
-`kummerLaplace c d z`. Note that `0 < Re (z e^{iθ})` together with `|θ| < π / 2` forces
+`kummerLaplace c d z`. Note that `0 < Re (z e^{iθ})` together with `|θ| ≤ π / 2` forces
 `z ∈ slitPlane`. -/
 theorem kummerLaplace_eq_ray_integral (c : ℕ) (d : ℂ) {z : ℂ} {θ : ℝ}
-    (hθ : |θ| < π / 2) (hre : 0 < (z * cexp (θ * I)).re) :
+    (hθ : |θ| ≤ π / 2) (hre : 0 < (z * cexp (θ * I)).re) :
     kummerLaplace c d z =
       cexp (θ * I) *
         ∫ r in Ioi (0 : ℝ),
           cexp (-z * (r * cexp (θ * I))) * (r * cexp (θ * I)) ^ c *
             (1 + r * cexp (θ * I)) ^ d := by
-  have hz : z ∈ slitPlane := mem_slitPlane_of_abs_le_of_re_mul_exp_mul_I_pos hθ.le hre
-  set θ₀ : ℝ := -(z.arg / 2)
-  have hθ₀ : |θ₀| < π / 2 := by
-    simpa only [θ₀, abs_neg] using abs_arg_div_two_lt_pi_div_two (slitPlane_arg_ne_pi hz)
-  have hre₀ : 0 < (z * cexp (θ₀ * I)).re := re_mul_exp_neg_arg_div_two_mul_I_pos hz
-  have huIcc_abs : ∀ y ∈ [[θ₀, θ]], |y| < π / 2 := fun y hy => by
-    obtain ⟨h₀l, h₀r⟩ := abs_lt.mp hθ₀
-    obtain ⟨h₁l, h₁r⟩ := abs_lt.mp hθ
-    rcases le_total θ₀ θ with hle | hle
-    · obtain ⟨hl, hr⟩ := (uIcc_of_le hle ▸ hy : y ∈ Icc θ₀ θ)
-      exact abs_lt.mpr ⟨by linarith, by linarith⟩
-    · obtain ⟨hl, hr⟩ := (uIcc_of_ge hle ▸ hy : y ∈ Icc θ θ₀)
-      exact abs_lt.mpr ⟨by linarith, by linarith⟩
-  obtain ⟨θm, hθm_mem, hθm_min⟩ := isCompact_uIcc.exists_isMinOn nonempty_uIcc
-    (f := fun y : ℝ => (z * cexp (y * I)).re) (by fun_prop)
-  set η := (z * cexp (θm * I)).re / 2
-  have hη : 0 < η := half_pos (re_mul_exp_mul_I_pos_of_mem_uIcc hθ₀.le hre₀ hθ.le hre hθm_mem)
-  have hstrip : ∀ y ∈ [[θ₀, θ]], |y| < π / 2 ∧ 2 * η ≤ (z * cexp (y * I)).re := fun y hy => by
-    have hmin : (z * cexp (θm * I)).re ≤ (z * cexp (y * I)).re := hθm_min hy
-    exact ⟨huIcc_abs y hy, by dsimp only [η]; linarith⟩
-  have hlog_int : ∀ y, |y| < π / 2 → 0 < (z * cexp (y * I)).re →
-      Integrable (fun x : ℝ => kummerLaplaceLogIntegrand c d z ((x : ℂ) + y * I)) ∧
-      (∫ x : ℝ, kummerLaplaceLogIntegrand c d z ((x : ℂ) + y * I)) =
-        cexp (y * I) * ∫ r in Ioi (0 : ℝ), kummerLaplaceRayIntegrand c d z y r :=
-    fun y hy hyre => by
-      simp_rw [kummerLaplaceLogIntegrand_eq_ray]
-      exact ⟨((integrable_comp_exp _).mpr
-        (integrableOn_kummerLaplaceRayIntegrand c d hy.le hyre)).const_mul _,
-        by rw [integral_const_mul, integral_comp_exp]⟩
-  have h₀ := hlog_int θ₀ hθ₀ hre₀
-  have h₁ := hlog_int θ hθ hre
-  unfold kummerLaplaceRayIntegrand at h₁
-  rw [kummerLaplace_eq_canonical_ray, ← h₀.2, ← h₁.2]
-  have hlim₀ := intervalIntegral_tendsto_integral h₀.1 tendsto_neg_atTop_atBot tendsto_id
-  have hlim₁ := intervalIntegral_tendsto_integral h₁.1 tendsto_neg_atTop_atBot tendsto_id
-  have hrect : ∀ R : ℝ,
-      ((∫ x in (-R)..R, kummerLaplaceLogIntegrand c d z ((x : ℂ) + θ₀ * I)) -
-        (∫ x in (-R)..R, kummerLaplaceLogIntegrand c d z ((x : ℂ) + θ * I))) +
-        I • (∫ y in θ₀..θ, kummerLaplaceLogIntegrand c d z ((R : ℂ) + y * I)) -
-        I • (∫ y in θ₀..θ, kummerLaplaceLogIntegrand c d z (-(R : ℂ) + y * I)) = 0 := fun R => by
-    have := integral_boundary_rect_eq_zero_of_differentiableOn
-      (kummerLaplaceLogIntegrand c d z) ((-R : ℝ) + θ₀ * I) ((R : ℝ) + θ * I)
-      ((differentiableOn_kummerLaplaceLogIntegrand c d z).mono fun w hw =>
-        (hstrip w.im (by simpa using hw.2)).1)
-    simpa using this
-  have hdiff_zero : Tendsto (fun R : ℝ =>
-      (∫ x in (-R)..R, kummerLaplaceLogIntegrand c d z ((x : ℂ) + θ₀ * I)) -
-        (∫ x in (-R)..R, kummerLaplaceLogIntegrand c d z ((x : ℂ) + θ * I))) atTop (𝓝 0) := by
-    have hcomb :=
-      ((tendsto_vertical_left_kummerLaplaceLogIntegrand c d hη hstrip).const_smul I).sub
-        ((tendsto_vertical_right_kummerLaplaceLogIntegrand c d hη hstrip).const_smul I)
-    rw [sub_self] at hcomb
-    exact hcomb.congr fun R => by linear_combination -(hrect R)
-  exact sub_eq_zero.mp (tendsto_nhds_unique (hlim₀.sub hlim₁) hdiff_zero)
+  -- Express both ray integrals as horizontal integrals in logarithmic coordinates.
+  have hz : z ∈ slitPlane := mem_slitPlane_of_abs_le_of_re_mul_exp_mul_I_pos hθ hre
+  have hθ₀ : |-(z.arg / 2)| ≤ π / 2 := by
+    simpa using (abs_arg_div_two_lt_pi_div_two (slitPlane_arg_ne_pi hz)).le
+  have hre₀ : 0 < (z * cexp ((-(z.arg / 2) : ℝ) * I)).re := re_mul_exp_neg_arg_div_two_mul_I_pos hz
+  -- Exhaust both horizontal lines by `[-R, R]` and cancel their difference via Cauchy-Goursat.
+  have hlim₀ := intervalIntegral_tendsto_integral
+    (integrable_kummerLaplaceLogIntegrand_horizontal c d hθ₀ hre₀)
+    tendsto_neg_atTop_atBot tendsto_id
+  have hlim₁ := intervalIntegral_tendsto_integral
+    (integrable_kummerLaplaceLogIntegrand_horizontal c d hθ hre)
+    tendsto_neg_atTop_atBot tendsto_id
+  have hline : (∫ x : ℝ, kummerLaplaceLogIntegrand c d z ((x : ℂ) + (-(z.arg / 2) : ℝ) * I)) =
+      ∫ x : ℝ, kummerLaplaceLogIntegrand c d z ((x : ℂ) + θ * I) :=
+    sub_eq_zero.mp (tendsto_nhds_unique (hlim₀.sub hlim₁)
+      (tendsto_sub_horizontal_kummerLaplaceLogIntegrand c d hθ₀ hre₀ hθ hre))
+  exact (kummerLaplace_eq_canonical_ray c d z).trans <|
+    (integral_kummerLaplaceLogIntegrand_horizontal c d z _).symm.trans <|
+      hline.trans (integral_kummerLaplaceLogIntegrand_horizontal c d z θ)
 
 /-- On the open right half-plane `0 < Re z`, `kummerLaplace c d z` equals the unrotated Laplace
 integral along `(0, ∞)`. -/
@@ -368,7 +361,7 @@ theorem kummerLaplace_eq_integral_of_re_pos (c : ℕ) (d : ℂ) {z : ℂ} (hz : 
     kummerLaplace c d z =
       ∫ t in Ioi (0 : ℝ), cexp (-z * t) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d := by
   have h := kummerLaplace_eq_ray_integral c d (z := z) (θ := 0)
-    (by simp [Real.pi_pos]) (by simpa using hz)
+    (by rw [abs_zero]; positivity) (by simpa using hz)
   simpa using h
 
 /-- For a positive real argument `x > 0` and any complex `a`, `kummerLaplace 0 (a - 1) x` is
@@ -408,11 +401,11 @@ theorem kummerLaplace_zero_eq_ofReal_cpow_mul_integral (a : ℂ) {x : ℝ} (hx :
 theorem hasDerivAt_kummerLaplace (c : ℕ) (d : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
     HasDerivAt (kummerLaplace c d) (-kummerLaplace (c + 1) d z) z := by
   set θ₀ : ℝ := -(z.arg / 2)
-  have hθ₀ : |θ₀| < π / 2 := by
-    simpa only [θ₀, abs_neg] using abs_arg_div_two_lt_pi_div_two (slitPlane_arg_ne_pi hz)
+  have hθ₀ : |θ₀| ≤ π / 2 :=
+    (abs_neg _).trans_le (abs_arg_div_two_lt_pi_div_two (slitPlane_arg_ne_pi hz)).le
   have hre₀ : 0 < (z * cexp (θ₀ * I)).re := re_mul_exp_neg_arg_div_two_mul_I_pos hz
   set η := (z * cexp (θ₀ * I)).re / 4
-  have hη : 0 < η := by positivity
+  have hη : 0 < η := by dsimp only [η]; linarith
   set U : Set ℂ := {w : ℂ | 2 * η < (w * cexp (θ₀ * I)).re}
   have hU_open : IsOpen U :=
     isOpen_lt continuous_const (continuous_re.comp (continuous_id.mul continuous_const))
@@ -422,25 +415,25 @@ theorem hasDerivAt_kummerLaplace (c : ℕ) (d : ℂ) {z : ℂ} (hz : z ∈ slitP
     filter_upwards [hU_open.mem_nhds hzU] with w hw
     have hw' : 2 * η < (w * cexp (θ₀ * I)).re := hw
     exact kummerLaplace_eq_ray_integral c d hθ₀ (by linarith)
-  set B := Real.exp (π * |d.im|) * (((c + 1 + ⌈d.re⌉₊)! : ℝ) * Real.exp η / η ^ (c + 1 + ⌈d.re⌉₊))
   have hderiv := hasDerivAt_integral_of_dominated_loc_of_deriv_le (s := U)
     (F := fun w r => kummerLaplaceRayIntegrand c d w θ₀ r)
     (F' := fun w r => -kummerLaplaceRayIntegrand (c + 1) d w θ₀ r)
-    (bound := fun r => B * Real.exp (-η * r))
+    (bound := fun r => kummerLaplaceMajorantConst (c + 1) d η * Real.exp (-η * r))
     (hU_open.mem_nhds hzU)
-    (.of_forall fun w => (continuousOn_kummerLaplaceRayIntegrand c d w hθ₀.le).mono
+    (.of_forall fun w => (continuousOn_kummerLaplaceRayIntegrand_neg_arg_div_two c d w hz).mono
       Ioi_subset_Ici_self |>.aestronglyMeasurable measurableSet_Ioi)
-    (integrableOn_kummerLaplaceRayIntegrand c d hθ₀.le hre₀)
-    ((continuousOn_kummerLaplaceRayIntegrand (c + 1) d z hθ₀.le).neg.mono
+    (integrableOn_kummerLaplaceRayIntegrand_neg_arg_div_two c d hz)
+    ((continuousOn_kummerLaplaceRayIntegrand_neg_arg_div_two (c + 1) d z hz).neg.mono
       Ioi_subset_Ici_self |>.aestronglyMeasurable measurableSet_Ioi)
     (ae_restrict_of_forall_mem measurableSet_Ioi fun r hr w hw => ?_)
-    ((integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hη) 0).const_mul B)
+    ((integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hη) 0).const_mul
+      (kummerLaplaceMajorantConst (c + 1) d η))
     (ae_restrict_of_forall_mem measurableSet_Ioi fun r _ w _ => ?_)
   · have hmul := (hderiv.2.const_mul (cexp (θ₀ * I))).congr_of_eventuallyEq heq
     convert hmul using 1
     rw [integral_neg, mul_neg, kummerLaplace_eq_canonical_ray]
   · rw [norm_neg]
-    exact norm_kummerLaplaceRayIntegrand_le (c + 1) d hθ₀.le hη (le_of_lt hw) hr.out.le
+    exact norm_kummerLaplaceRayIntegrand_le (c + 1) d hθ₀ hη (le_of_lt hw) hr.out.le
   · unfold kummerLaplaceRayIntegrand
     set t : ℂ := (r : ℂ) * cexp (θ₀ * I)
     have hd := (((hasDerivAt_id w).neg.mul_const t).cexp.mul_const (t ^ c)).mul_const ((1 + t) ^ d)
@@ -473,9 +466,8 @@ private theorem norm_kummerLaplaceRayIntegrand_mul_log_le (c m : ℕ) {d d₀ z 
   have hd_im : |d.im| ≤ |d₀.im| + 1 :=
     abs_le.mpr ⟨by linarith [neg_abs_le d₀.im], by linarith [le_abs_self d₀.im]⟩
   set w : ℂ := 1 + r * cexp (θ * I)
-  have hw1 : 1 ≤ ‖w‖ := (one_le_re_one_add_ofReal_mul_exp_mul_I hθ hr).trans (re_le_norm w)
-  have hwu : ‖w‖ ≤ 1 + r :=
-    (norm_add_le _ _).trans_eq (by simp [norm_exp_ofReal_mul_I, abs_of_nonneg hr])
+  have hw1 : 1 ≤ ‖w‖ := one_le_norm_one_add_ofReal_mul_exp_mul_I hθ hr
+  have hwu : ‖w‖ ≤ 1 + r := norm_one_add_ofReal_mul_exp_mul_I_le θ hr
   have hlog_le : ‖log w‖ ≤ (1 + π) * (1 + r) := by
     have hlr : |Real.log ‖w‖| ≤ r := by
       rw [abs_of_nonneg (Real.log_nonneg hw1)]
@@ -483,32 +475,45 @@ private theorem norm_kummerLaplaceRayIntegrand_mul_log_le (c m : ℕ) {d d₀ z 
     calc ‖log w‖ ≤ |(log w).re| + |(log w).im| := norm_le_abs_re_add_abs_im (log w)
       _ = |Real.log ‖w‖| + |w.arg| := by rw [log_re, log_im]
       _ ≤ (1 + π) * (1 + r) := by nlinarith [abs_arg_le_pi w, Real.pi_pos]
+  have hneg : (-2 : ℝ) * η * r = -(2 * η) * r := by ring
+  have hidx : c + 1 + m = (c + m) + 1 := by omega
   rw [norm_mul]
   calc ‖kummerLaplaceRayIntegrand c d z θ r‖ * ‖log w‖
       ≤ (Real.exp (π * (|d₀.im| + 1)) * (1 + r) ^ (c + m) * Real.exp (-2 * η * r)) *
           ((1 + π) * (1 + r)) := by
-        rw [show (-2 : ℝ) * η * r = -(2 * η) * r by ring]
+        rw [hneg]
         exact mul_le_mul (norm_kummerLaplaceRayIntegrand_le_mul_exp c m hθ hr hd_im hd_re hre)
           hlog_le (norm_nonneg _) (by positivity)
     _ = (1 + π) * Real.exp (π * (|d₀.im| + 1)) *
           ((1 + r) ^ (c + 1 + m) * Real.exp (-2 * η * r)) := by
-        rw [show c + 1 + m = (c + m) + 1 by omega, pow_succ]; ring
+        rw [hidx, pow_succ]; ring
     _ ≤ (1 + π) * Real.exp (π * (|d₀.im| + 1)) *
           ((((c + 1 + m)! : ℝ) * Real.exp η / η ^ (c + 1 + m)) * Real.exp (-η * r)) :=
-        mul_le_mul_of_nonneg_left (one_add_pow_mul_exp_neg_two_mul_le _ hη hr) (by positivity)
+        mul_le_mul_of_nonneg_left (TauCeti.one_add_pow_mul_exp_neg_two_mul_le hη hr _)
+          (by positivity)
     _ = _ := (mul_assoc _ _ _).symm
+
+private theorem hasDerivAt_kummerLaplaceRayIntegrand_middle (c : ℕ) (d z : ℂ) {θ r : ℝ}
+    (hθ : |θ| ≤ π / 2) (hr : 0 ≤ r) :
+    HasDerivAt (fun w => kummerLaplaceRayIntegrand c w z θ r)
+      (kummerLaplaceRayIntegrand c d z θ r * log (1 + r * cexp (θ * I))) d := by
+  unfold kummerLaplaceRayIntegrand
+  have hw0 : 1 + (r : ℂ) * cexp (θ * I) ≠ 0 :=
+    norm_pos_iff.mp (zero_lt_one.trans_le (one_le_norm_one_add_ofReal_mul_exp_mul_I hθ hr))
+  simpa [mul_assoc] using
+    ((hasDerivAt_id d).const_cpow (Or.inl hw0)).const_mul
+      (cexp (-z * (r * cexp (θ * I))) * (r * cexp (θ * I)) ^ c)
 
 /-- For every `c : ℕ` and `z ∈ slitPlane`, `d ↦ kummerLaplace c d z` is entire. -/
 theorem differentiable_kummerLaplace_middle (c : ℕ) {z : ℂ} (hz : z ∈ slitPlane) :
     Differentiable ℂ fun d => kummerLaplace c d z := by
   intro d₀
   set θ₀ : ℝ := -(z.arg / 2)
-  have hθ₀ : |θ₀| < π / 2 := by
-    simpa only [θ₀, abs_neg] using abs_arg_div_two_lt_pi_div_two (slitPlane_arg_ne_pi hz)
-  have hθ₀_pi : |θ₀| < π := by linarith [Real.pi_pos]
+  have hθ₀ : |θ₀| ≤ π / 2 :=
+    (abs_neg _).trans_le (abs_arg_div_two_lt_pi_div_two (slitPlane_arg_ne_pi hz)).le
   have hre₀ : 0 < (z * cexp (θ₀ * I)).re := re_mul_exp_neg_arg_div_two_mul_I_pos hz
   set η := (z * cexp (θ₀ * I)).re / 4
-  have hη : 0 < η := by positivity
+  have hη : 0 < η := by dsimp only [η]; linarith
   have h2η : 2 * η ≤ (z * cexp (θ₀ * I)).re := by dsimp only [η]; linarith
   set m : ℕ := ⌈|d₀.re| + 1⌉₊
   set K : ℝ := (1 + π) * Real.exp (π * (|d₀.im| + 1)) *
@@ -518,53 +523,53 @@ theorem differentiable_kummerLaplace_middle (c : ℕ) {z : ℂ} (hz : z ∈ slit
     (F' := fun d r => kummerLaplaceRayIntegrand c d z θ₀ r * log (1 + r * cexp (θ₀ * I)))
     (bound := fun r => K * Real.exp (-η * r))
     (Metric.ball_mem_nhds d₀ one_pos)
-    (.of_forall fun d => (continuousOn_kummerLaplaceRayIntegrand c d z hθ₀.le).mono
+    (.of_forall fun d => (continuousOn_kummerLaplaceRayIntegrand_neg_arg_div_two c d z hz).mono
       Ioi_subset_Ici_self |>.aestronglyMeasurable measurableSet_Ioi)
-    (integrableOn_kummerLaplaceRayIntegrand c d₀ hθ₀.le hre₀)
-    (((continuousOn_kummerLaplaceRayIntegrand c d₀ z hθ₀.le).mul fun r hr =>
+    (integrableOn_kummerLaplaceRayIntegrand_neg_arg_div_two c d₀ hz)
+    (((continuousOn_kummerLaplaceRayIntegrand_neg_arg_div_two c d₀ z hz).mul fun r hr =>
         ((continuousAt_const.add (continuous_ofReal.continuousAt.mul continuousAt_const)).clog
-          (one_add_ofReal_mul_exp_mul_I_mem_slitPlane hθ₀_pi hr)).continuousWithinAt).mono
+          (one_add_ofReal_mul_exp_mul_I_mem_slitPlane
+            (hθ₀.trans_lt (half_lt_self Real.pi_pos)) hr)).continuousWithinAt).mono
       Ioi_subset_Ici_self |>.aestronglyMeasurable measurableSet_Ioi)
     (ae_restrict_of_forall_mem measurableSet_Ioi fun r hr d hd =>
-      norm_kummerLaplaceRayIntegrand_mul_log_le c m hθ₀.le hη h2η hr.out.le
+      norm_kummerLaplaceRayIntegrand_mul_log_le c m hθ₀ hη h2η hr.out.le
         (by simpa [dist_eq_norm] using hd) le_rfl)
     ((integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hη) 0).const_mul K)
-    (ae_restrict_of_forall_mem measurableSet_Ioi fun r hr d _ => ?_)
-  · simp_rw [kummerLaplace_eq_canonical_ray]
-    exact (hderiv.2.const_mul (cexp (θ₀ * I))).differentiableAt
-  · unfold kummerLaplaceRayIntegrand
-    have hw0 : 1 + (r : ℂ) * cexp (θ₀ * I) ≠ 0 :=
-      slitPlane_ne_zero (one_add_ofReal_mul_exp_mul_I_mem_slitPlane hθ₀_pi hr.out.le)
-    simpa [mul_assoc] using
-      ((hasDerivAt_id d).const_cpow (Or.inl hw0)).const_mul
-        (cexp (-z * (r * cexp (θ₀ * I))) * (r * cexp (θ₀ * I)) ^ c)
+    (ae_restrict_of_forall_mem measurableSet_Ioi fun r hr d _ =>
+      hasDerivAt_kummerLaplaceRayIntegrand_middle c d z hθ₀ hr.out.le)
+  simp_rw [kummerLaplace_eq_canonical_ray]
+  exact (hderiv.2.const_mul (cexp (θ₀ * I))).differentiableAt
 
 /-! ### Contiguous and integration-by-parts recurrences -/
+
+private theorem kummerLaplaceRayIntegrand_sub_sub_one (c : ℕ) (d z : ℂ) {θ r : ℝ}
+    (hθ : |θ| ≤ π / 2) (hr : 0 ≤ r) :
+    kummerLaplaceRayIntegrand c d z θ r - kummerLaplaceRayIntegrand c (d - 1) z θ r =
+      kummerLaplaceRayIntegrand (c + 1) (d - 1) z θ r := by
+  unfold kummerLaplaceRayIntegrand
+  set t : ℂ := (r : ℂ) * cexp (θ * I)
+  have ht1 : 1 + t ≠ 0 :=
+    norm_pos_iff.mp (zero_lt_one.trans_le (one_le_norm_one_add_ofReal_mul_exp_mul_I hθ hr))
+  have hd_eq : d = d - 1 + 1 := by ring
+  have hpow : (1 + t) ^ d = (1 + t) ^ (d - 1) * (1 + t) := by
+    nth_rw 1 [hd_eq]
+    rw [cpow_add _ _ ht1, cpow_one]
+  rw [hpow, pow_succ]
+  ring
 
 /-- **Contiguous difference relation**:
 `K(c, d; z) - K(c, d - 1; z) = K(c + 1, d - 1; z)` on `slitPlane`. -/
 theorem kummerLaplace_sub_kummerLaplace_sub_one (c : ℕ) (d : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
     kummerLaplace c d z - kummerLaplace c (d - 1) z = kummerLaplace (c + 1) (d - 1) z := by
-  set θ₀ : ℝ := -(z.arg / 2)
-  have hθ₀ : |θ₀| < π / 2 := by
-    simpa only [θ₀, abs_neg] using abs_arg_div_two_lt_pi_div_two (slitPlane_arg_ne_pi hz)
-  have hθ₀_pi : |θ₀| < π := by linarith [Real.pi_pos]
-  have hre₀ : 0 < (z * cexp (θ₀ * I)).re := re_mul_exp_neg_arg_div_two_mul_I_pos hz
+  have hθ₀ : |-(z.arg / 2)| ≤ π / 2 :=
+    (abs_neg _).trans_le (abs_arg_div_two_lt_pi_div_two (slitPlane_arg_ne_pi hz)).le
   rw [kummerLaplace_eq_canonical_ray, kummerLaplace_eq_canonical_ray,
     kummerLaplace_eq_canonical_ray, ← mul_sub]
   congr 1
-  rw [← integral_sub (integrableOn_kummerLaplaceRayIntegrand c d hθ₀.le hre₀)
-    (integrableOn_kummerLaplaceRayIntegrand c (d - 1) hθ₀.le hre₀)]
-  refine setIntegral_congr_fun measurableSet_Ioi fun r hr => ?_
-  unfold kummerLaplaceRayIntegrand
-  set t : ℂ := (r : ℂ) * cexp (θ₀ * I)
-  have ht1 : 1 + t ≠ 0 :=
-    slitPlane_ne_zero (one_add_ofReal_mul_exp_mul_I_mem_slitPlane hθ₀_pi hr.out.le)
-  have hpow : (1 + t) ^ d = (1 + t) ^ (d - 1) * (1 + t) := by
-    conv_lhs => rw [show d = d - 1 + 1 by ring]
-    rw [cpow_add _ _ ht1, cpow_one]
-  rw [hpow, pow_succ]
-  ring
+  rw [← integral_sub (integrableOn_kummerLaplaceRayIntegrand_neg_arg_div_two c d hz)
+    (integrableOn_kummerLaplaceRayIntegrand_neg_arg_div_two c (d - 1) hz)]
+  exact setIntegral_congr_fun measurableSet_Ioi fun r hr =>
+    kummerLaplaceRayIntegrand_sub_sub_one c d z hθ₀ hr.out.le
 
 private theorem tendsto_kummerLaplaceRayIntegrand_atTop (c : ℕ) (d : ℂ) {z : ℂ} {θ : ℝ}
     (hθ : |θ| ≤ π / 2) (hre : 0 < (z * cexp (θ * I)).re) :
@@ -572,46 +577,50 @@ private theorem tendsto_kummerLaplaceRayIntegrand_atTop (c : ℕ) (d : ℂ) {z :
   set η := (z * cexp (θ * I)).re / 2
   have hη : 0 < η := half_pos hre
   have h2η : 2 * η ≤ (z * cexp (θ * I)).re := by dsimp only [η]; linarith
-  set C := Real.exp (π * |d.im|) * (((c + ⌈d.re⌉₊)! : ℝ) * Real.exp η / η ^ (c + ⌈d.re⌉₊))
-  have hzero : Tendsto (fun r : ℝ => C * Real.exp (-η * r)) atTop (𝓝 0) := by
+  have hzero : Tendsto (fun r : ℝ => kummerLaplaceMajorantConst c d η * Real.exp (-η * r))
+      atTop (𝓝 0) := by
     simpa using (Real.tendsto_exp_atBot.comp
-      (tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.mpr hη))).const_mul C
+      (tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.mpr hη))).const_mul
+      (kummerLaplaceMajorantConst c d η)
   refine squeeze_zero_norm' ?_ hzero
   filter_upwards [eventually_ge_atTop (0 : ℝ)] with r hr
   exact norm_kummerLaplaceRayIntegrand_le c d hθ hη h2η hr
+
+private theorem hasDerivAt_kummerLaplaceRayIntegrand_zero (d z : ℂ) {θ r : ℝ}
+    (hθ : |θ| ≤ π / 2) (hr : 0 ≤ r) :
+    HasDerivAt (kummerLaplaceRayIntegrand 0 d z θ)
+      (cexp (θ * I) * (-z * kummerLaplaceRayIntegrand 0 d z θ r +
+        d * kummerLaplaceRayIntegrand 0 (d - 1) z θ r)) r := by
+  set ω : ℂ := cexp (θ * I)
+  unfold kummerLaplaceRayIntegrand
+  simp only [pow_zero, mul_one]
+  have hd1 : HasDerivAt (fun s : ℝ => cexp (-z * ((s : ℂ) * ω)))
+      ((-z * ω) * cexp (-z * ((r : ℂ) * ω))) r := by
+    simpa [mul_assoc, mul_comm, mul_left_comm] using
+      (((hasDerivAt_id (r : ℂ)).mul_const ω).const_mul (-z)).cexp.comp_ofReal
+  have hd2 : HasDerivAt (fun s : ℝ => (1 + (s : ℂ) * ω) ^ d)
+      (d * (1 + (r : ℂ) * ω) ^ (d - 1) * ω) r := by
+    simpa [mul_assoc] using
+      (((hasDerivAt_id (r : ℂ)).mul_const ω).const_add 1 |>.cpow_const
+        (one_add_ofReal_mul_exp_mul_I_mem_slitPlane
+          (hθ.trans_lt (half_lt_self Real.pi_pos)) hr)).comp_ofReal
+  refine (hd1.fun_mul hd2).congr_deriv ?_
+  ring
 
 /-- **Integration by parts at `c = 0`**:
 `z * K(0, d; z) = 1 + d * K(0, d - 1; z)` on `slitPlane`. -/
 theorem mul_kummerLaplace_zero (d : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
     z * kummerLaplace 0 d z = 1 + d * kummerLaplace 0 (d - 1) z := by
   set θ₀ : ℝ := -(z.arg / 2)
-  set ω : ℂ := cexp (θ₀ * I)
-  have hθ₀ : |θ₀| < π / 2 := by
-    simpa only [θ₀, abs_neg] using abs_arg_div_two_lt_pi_div_two (slitPlane_arg_ne_pi hz)
-  have hθ₀_pi : |θ₀| < π := by linarith [Real.pi_pos]
-  have hre₀ : 0 < (z * ω).re := re_mul_exp_neg_arg_div_two_mul_I_pos hz
-  have hderiv : ∀ r ∈ Ici (0 : ℝ),
-      HasDerivAt (kummerLaplaceRayIntegrand 0 d z θ₀)
-        (ω * (-z * kummerLaplaceRayIntegrand 0 d z θ₀ r +
-          d * kummerLaplaceRayIntegrand 0 (d - 1) z θ₀ r)) r := by
-    intro r hr
-    unfold kummerLaplaceRayIntegrand
-    simp only [pow_zero, mul_one]
-    have hd1 : HasDerivAt (fun s : ℝ => cexp (-z * ((s : ℂ) * ω)))
-        ((-z * ω) * cexp (-z * ((r : ℂ) * ω))) r := by
-      simpa [mul_assoc, mul_comm, mul_left_comm] using
-        (((hasDerivAt_id (r : ℂ)).mul_const ω).const_mul (-z)).cexp.comp_ofReal
-    have hd2 : HasDerivAt (fun s : ℝ => (1 + (s : ℂ) * ω) ^ d)
-        (d * (1 + (r : ℂ) * ω) ^ (d - 1) * ω) r := by
-      simpa [mul_assoc] using
-        (((hasDerivAt_id (r : ℂ)).mul_const ω).const_add 1 |>.cpow_const
-          (one_add_ofReal_mul_exp_mul_I_mem_slitPlane hθ₀_pi hr)).comp_ofReal
-    refine (hd1.fun_mul hd2).congr_deriv ?_
-    ring
-  have hint_0 := (integrableOn_kummerLaplaceRayIntegrand 0 d hθ₀.le hre₀).const_mul (-z)
-  have hint_d := (integrableOn_kummerLaplaceRayIntegrand 0 (d - 1) hθ₀.le hre₀).const_mul d
-  have hftc := integral_Ioi_of_hasDerivAt_of_tendsto' hderiv ((hint_0.add hint_d).const_mul ω)
-    (tendsto_kummerLaplaceRayIntegrand_atTop 0 d hθ₀.le hre₀)
+  have hθ₀ : |θ₀| ≤ π / 2 :=
+    (abs_neg _).trans_le (abs_arg_div_two_lt_pi_div_two (slitPlane_arg_ne_pi hz)).le
+  have hint_0 := (integrableOn_kummerLaplaceRayIntegrand_neg_arg_div_two 0 d hz).const_mul (-z)
+  have hint_d :=
+    (integrableOn_kummerLaplaceRayIntegrand_neg_arg_div_two 0 (d - 1) hz).const_mul d
+  have hftc := integral_Ioi_of_hasDerivAt_of_tendsto'
+    (fun r hr => hasDerivAt_kummerLaplaceRayIntegrand_zero d z hθ₀ hr)
+    ((hint_0.add hint_d).const_mul (cexp (θ₀ * I)))
+    (tendsto_kummerLaplaceRayIntegrand_atTop 0 d hθ₀ (re_mul_exp_neg_arg_div_two_mul_I_pos hz))
   have h0 : kummerLaplaceRayIntegrand 0 d z θ₀ 0 = 1 := by simp [kummerLaplaceRayIntegrand]
   rw [h0, zero_sub, integral_const_mul, integral_add hint_0 hint_d,
     integral_const_mul, integral_const_mul] at hftc

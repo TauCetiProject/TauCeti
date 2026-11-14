@@ -92,8 +92,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`. Continuity holds for arbitrary `x` and
   `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
-* `Complex.log_inv_cpow_half`, `Complex.inv_cpow_half_cpow` -- `log ((z ^ (1/2))⁻¹) = -log z / 2`
-  and `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
+* `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
 * `Complex.norm_one_add_ofReal_mul_exp_mul_I_cpow_le` -- for `|θ| ≤ π / 2` and `0 ≤ r`,
   `‖(1 + r e^{iθ}) ^ d‖ ≤ exp (π |d.im|) (1 + r) ^ ⌈d.re⌉₊`.
 -/
@@ -630,19 +629,6 @@ theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
     rw [abs_mul]
     exact mul_le_mul_of_nonneg_left (abs_re_le_norm w) (abs_nonneg _)
 
-/-- The principal logarithm of the reciprocal `(z ^ (1 / 2))⁻¹` of the principal half-power is
-`-log z / 2` for every complex `z` (including at `z = 0` and on the negative real axis, since
-`-arg z / 2 ∈ [-π / 2, π / 2) ⊂ (-π, π]`). -/
-theorem log_inv_cpow_half (z : ℂ) : log ((z ^ (1 / 2 : ℂ))⁻¹) = -log z / 2 := by
-  rcases eq_or_ne z 0 with rfl | hz
-  · simp
-  rw [← cpow_neg, cpow_def_of_ne_zero hz]
-  have hmul : log z * -(1 / 2 : ℂ) = -log z / 2 := by ring
-  have him : (-log z / 2).im = -arg z / 2 := by simp [div_eq_mul_inv, log_im]
-  rw [hmul]
-  exact log_exp (by rw [him]; linarith [arg_le_pi z, Real.pi_pos])
-    (by rw [him]; linarith [neg_pi_lt_arg z, Real.pi_pos])
-
 /-- Raising the reciprocal `(z ^ (1 / 2))⁻¹` of the principal half-power to any complex exponent `w`
 gives `z ^ (-w / 2)` for all `z, w : ℂ`. -/
 theorem inv_cpow_half_cpow (z w : ℂ) : (z ^ (1 / 2 : ℂ))⁻¹ ^ w = z ^ (-w / 2) := by
@@ -659,10 +645,8 @@ theorem norm_one_add_ofReal_mul_exp_mul_I_cpow_le {θ r : ℝ} (hθ : |θ| ≤ R
     (hr : 0 ≤ r) (d : ℂ) :
     ‖(1 + (r : ℂ) * exp ((θ : ℂ) * I)) ^ d‖ ≤ Real.exp (Real.pi * |d.im|) * (1 + r) ^ ⌈d.re⌉₊ := by
   set w : ℂ := 1 + (r : ℂ) * exp ((θ : ℂ) * I)
-  have hw1 : 1 ≤ ‖w‖ := (one_le_re_one_add_ofReal_mul_exp_mul_I hθ hr).trans (re_le_norm w)
-  have hwu : ‖w‖ ≤ 1 + r := by
-    calc ‖w‖ ≤ ‖(1 : ℂ)‖ + ‖(r : ℂ) * exp ((θ : ℂ) * I)‖ := norm_add_le _ _
-      _ = 1 + r := by simp [norm_exp_ofReal_mul_I, abs_of_nonneg hr]
+  have hw1 : 1 ≤ ‖w‖ := one_le_norm_one_add_ofReal_mul_exp_mul_I hθ hr
+  have hwu : ‖w‖ ≤ 1 + r := norm_one_add_ofReal_mul_exp_mul_I_le θ hr
   have hrpow : ‖w‖ ^ d.re ≤ (1 + r) ^ ⌈d.re⌉₊ := by
     rcases le_or_gt d.re 0 with hd | hd
     · calc ‖w‖ ^ d.re ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos hw1 hd
