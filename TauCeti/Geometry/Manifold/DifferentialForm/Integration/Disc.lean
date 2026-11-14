@@ -39,11 +39,11 @@ sphere representing it. Gluing `D` to `D'` run backwards along their common edge
 (`TauCeti.rectangleIntegral_rectangleTrans`). Reparametrizing both of its coordinates by a
 smooth profile `τ` (`TauCeti.collaredSmoothTransitionUnit`) that is `0` on `(-∞, 1/4]` and `1`
 on `[3/4, ∞)` makes it constant equal to `x` off `[1/4, 3/4]²`, so a smooth sphere in the sense
-of `TauCeti.IsSmoothSphere`. The reparametrization does not change the integral, by homotopy invariance along the straight-line
-homotopy of parameters (`TauCeti.rectangleIntegral_eq_of_homotopy`); and the generalized loop of
-the sphere is that of the double loop with its two cube coordinates reparametrized by self-maps
-of the unit interval fixing `0` and `1`, which does not change its class
-(`GenLoop.homotopic_of_forall_apply_eq_comp`).
+of `TauCeti.IsSmoothSphere`. The reparametrization does not change the integral, by homotopy
+invariance along the straight-line homotopy of parameters
+(`TauCeti.rectangleIntegral_eq_of_homotopy`); and the generalized loop of the sphere is that of
+the double loop with its two cube coordinates reparametrized by self-maps of the unit interval
+fixing `0` and `1`, which does not change its class (`GenLoop.homotopic_of_forall_apply_eq_comp`).
 
 ## Main definitions
 
@@ -219,7 +219,8 @@ private theorem rectangleIntegral_discSphere [IsManifold I 2 M]
       (1 - q.2) * q.1.2 + q.2 * collaredSmoothTransitionUnit q.1.2)
   have hΦ : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × ℝ) I 2 Φ :=
     ((contMDiff_discGlue hD hD').comp (ContDiff.contMDiff (by
-      have := contDiff_coe_collaredSmoothTransitionUnit (n := ⊤)
+      have := Real.smoothTransition.contDiff (n := ⊤)
+      simp only [coe_collaredSmoothTransitionUnit]
       fun_prop))).of_le (by norm_cast)
   have hmem {r c : ℝ} (hr : r ∈ Icc (0 : ℝ) 1) (hc : c ∈ Icc (0 : ℝ) 1) :
       (1 - c) * r + c * collaredSmoothTransitionUnit r ∈ Icc (0 : ℝ) 1 :=
@@ -300,7 +301,7 @@ private theorem discSphere_eq (hD : IsSmoothDisc I γ D) (hD' : IsSmoothDisc I �
           (z i)) := by
   simp only [discSphere, GenLoop.fromDoubleLoop_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_fin_one, sphereParam₁, sphereParam₂, ContinuousMap.coe_mk]
-  set w : ℝ := collaredSmoothTransitionUnit (z 0)
+  set w : ℝ := ↑(collaredSmoothTransitionUnit (z 0))
   set t := collaredSmoothTransitionUnit (z 1)
   -- `set` cannot abstract `w` inside the membership proof of the first parameter: restate it.
   change discGlue D D' (w, t) =
@@ -359,9 +360,11 @@ theorem sphereIntegral_loopPath_symm_trans {φ : RoughForm I M F 2} (hφ : IsSmo
     GenLoop.homotopic_of_forall_apply_eq_comp ![sphereParam₁, sphereParam₂]
       (fun i ↦ by
         fin_cases i <;> ext <;> simp [sphereParam₁, sphereParam₂, glueParam_zero,
+          -coe_collaredSmoothTransitionUnit,
           collaredSmoothTransitionUnit_eq_zero_of_le (show (0 : ℝ) ≤ 1 / 4 by norm_num)])
       (fun i ↦ by
         fin_cases i <;> ext <;> simp [sphereParam₁, sphereParam₂, glueParam_one,
+          -coe_collaredSmoothTransitionUnit,
           collaredSmoothTransitionUnit_eq_one_of_ge (show 3 / 4 ≤ (1 : ℝ) by norm_num)])
       fun z ↦ by rw [IsSmoothSphere.genLoop_apply]; exact discSphere_eq hD hD' z
   rw [HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk, Quotient.sound hloop,

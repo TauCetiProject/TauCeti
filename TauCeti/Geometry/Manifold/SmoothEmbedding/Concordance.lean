@@ -441,12 +441,12 @@ def ofSourceDiffeotopy (hn : n ≤ ∞) (Ψ : Diffeotopy I n M) (f : SmoothEmbed
     { exists_pos_apply_eq_left := by
         refine ⟨1 / 4, by norm_num, fun x t ht => ?_⟩
         have : collaredSmoothTransitionUnit t = 0 :=
-          Subtype.ext (Real.smoothTransition.zero_of_nonpos (by linarith))
+          collaredSmoothTransitionUnit_eq_zero_of_le (by linarith)
         simp [this]
       exists_pos_apply_eq_right := by
         refine ⟨1 / 4, by norm_num, fun x t ht => ?_⟩
         have : collaredSmoothTransitionUnit t = 1 :=
-          Subtype.ext (Real.smoothTransition.one_of_one_le (by linarith))
+          collaredSmoothTransitionUnit_eq_one_of_ge (by linarith)
         simp [this, Diffeotopy.final_apply]
       snd_apply_mem_Ioo := fun _ _ ht => by simpa using ht }
 

@@ -73,7 +73,7 @@ namespace TauCeti
 /-- The time reparametrization `t ↦ Real.smoothTransition (2 * t - 1 / 2)`, as a map into the
 unit interval: a smooth transition from `0` to `1` which is constant on neighborhoods of both ends
 of the unit interval. -/
-def collaredSmoothTransitionUnit (t : ℝ) : unitInterval :=
+noncomputable def collaredSmoothTransitionUnit (t : ℝ) : unitInterval :=
   ⟨Real.smoothTransition (2 * t - 1 / 2), Real.smoothTransition.nonneg _,
     Real.smoothTransition.le_one _⟩
 
