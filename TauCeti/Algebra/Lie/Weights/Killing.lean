@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Basis.Base
 public import Mathlib.Algebra.Lie.Weights.RootSystem
+import TauCeti.Algebra.Lie.Weights.Basic
 -- Proof-only: a Killing Lie algebra is finite over the base ring.
 import TauCeti.Algebra.Lie.Killing.Basic
 
@@ -21,6 +23,8 @@ splitting Cartan subalgebra.
   nonzero Killing pairing.
 * `TauCeti.root_add_zsmul_mem_range_iff`: `β + n • α` is a root of `rootSystem H` exactly when
   the weight space of `n • α + β` is non-trivial.
+* `TauCeti.mem_rootSpace_iff_forall_lie_coroot`: membership in a root space can be checked on the
+  simple coroots of a base.
 * `TauCeti.rootSpace_neg_eq_bot_iff`: the roots are closed under negation, so a functional on the
   Cartan subalgebra is a root exactly when its negative is.
 -/
@@ -90,5 +94,13 @@ theorem rootSpace_neg_eq_bot_iff (χ : H → K) :
   have key (ψ : H → K) (hψ : rootSpace H ψ ≠ ⊥) : rootSpace H (-ψ) ≠ ⊥ :=
     (-(⟨ψ, hψ⟩ : Weight K H L)).genWeightSpace_ne_bot
   exact not_iff_not.mp ⟨fun h ↦ neg_neg χ ▸ key (-χ) h, key χ⟩
+
+/-- **Membership in a root space can be checked on the simple coroots**, because they form a basis
+of the Cartan subalgebra. -/
+theorem mem_rootSpace_iff_forall_lie_coroot (b : (rootSystem H).Base) (χ : Module.Dual K H)
+    {x : L} : x ∈ rootSpace H (χ : H → K) ↔
+      ∀ k : b.support, ⁅(((rootSystem H).coroot k : H) : L), x⁆ = χ ((rootSystem H).coroot k) • x :=
+  ⟨fun hx _ ↦ lie_eq_smul_of_mem_rootSpace hx _, fun hx ↦ weightSpace_le_genWeightSpace L _
+    ((b.toCoweightBasis.mem_weightSpace_iff_forall_basis χ x).2 fun k ↦ by simpa using hx k)⟩
 
 end TauCeti
