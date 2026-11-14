@@ -15,6 +15,8 @@ The fibre `TopCat.Hom.fiber p b` of a morphism `p : E ⟶ B` over a point `b` is
 `p ⁻¹' {b}` with the subspace topology, and `TopCat.Hom.fiberι p b` is its inclusion into `E`.
 A commutative square from `p` to `p'`, such as a map of fibrations, induces maps between the
 fibres (`CategoryTheory.CommSq.fiberMap`), functorially in horizontal composition of squares.
+More generally, a map `f` over `B` restricts to maps between the parts over any subset of `B`
+(`TopCat.Hom.preimageMap`).
 
 The names and the dot-notation shape follow Mathlib's scheme-theoretic fibres
 `AlgebraicGeometry.Scheme.Hom.fiber` and `AlgebraicGeometry.Scheme.Hom.fiberι`.
@@ -49,6 +51,25 @@ lemma apply_coe_fiber (p : E ⟶ B) (b : B) (x : p.fiber b) : p x.1 = b :=
 lemma fiberι_comp (p : E ⟶ B) (b : B) : p.fiberι b ≫ p = TopCat.const b := by
   ext x
   exact x.2
+
+/-- A map `f` over `B`, that is with `f ≫ p' = p`, carries the part of `E` over a subset of `B`
+into the part of `E'` over it. -/
+lemma mapsTo_preimage_of_comp_eq {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
+    (hf : f ≫ p' = p) (S : Set B) : Set.MapsTo f (p ⁻¹' S) (p' ⁻¹' S) := fun e he ↦ by
+  rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, hf]
+  exact he
+
+/-- The restriction `p⁻¹(S) ⟶ p'⁻¹(S)` of a map `f` over `B`, that is with `f ≫ p' = p`, to the
+parts over a subset `S` of `B`. -/
+def preimageMap {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
+    (hf : f ≫ p' = p) (S : Set B) : TopCat.of (p ⁻¹' S) ⟶ TopCat.of (p' ⁻¹' S) :=
+  TopCat.ofHom ⟨(f.mapsTo_preimage_of_comp_eq hf S).restrict,
+    f.hom.continuous.restrict (f.mapsTo_preimage_of_comp_eq hf S)⟩
+
+@[simp]
+lemma coe_preimageMap_apply {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
+    (hf : f ≫ p' = p) (S : Set B) (x : TopCat.of (p ⁻¹' S)) : (f.preimageMap hf S x : E') = f x :=
+  (rfl)
 
 /-- The composite of two maps with finite fibres has finite fibres. -/
 theorem finite_fibers_comp {E B X : TopCat.{u}} (p : E ⟶ B) (q : B ⟶ X)
