@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Module.Injective.Envelope.Basic
 import TauCeti.Algebra.Module.Injective.Basic
 import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
-import Mathlib.Algebra.Category.ModuleCat.Injective
 
 /-!
 # Existence of injective envelopes
@@ -16,7 +15,8 @@ import Mathlib.Algebra.Category.ModuleCat.Injective
 Every module has an injective envelope (Eckmann–Schopf). More precisely, every embedding
 `i : M →ₗ[R] Q` into an injective module restricts to an injective envelope of `M` inside `Q`
 (`LinearMap.exists_isInjectiveEnvelope_submodule`), and since every module embeds into an injective
-module, every module has an injective envelope in its own universe
+module, every module has an injective envelope in its own universe, for a ring small relative to
+that universe, which is automatic when the ring and the module share a universe
 (`TauCeti.exists_isInjectiveEnvelope`). By `TauCeti.IsInjectiveEnvelope.exists_linearEquiv` this
 envelope is unique up to isomorphism. In particular this provides the injective hull `E(k)` of the
 residue field of a local ring, the dualizing module of Matlis duality.
@@ -105,7 +105,8 @@ theorem _root_.LinearMap.exists_isInjectiveEnvelope_submodule [Module.Injective 
 
 variable (R M) in
 /-- **Existence of injective envelopes.** Every module has an injective envelope, in its own
-universe. -/
+universe, for a ring small relative to that universe (automatic when `R` and `M` share a
+universe). -/
 theorem exists_isInjectiveEnvelope [Small.{v} R] :
     ∃ (Q : Type v) (_ : AddCommGroup Q) (_ : Module R Q) (i : M →ₗ[R] Q),
       IsInjectiveEnvelope i := by
