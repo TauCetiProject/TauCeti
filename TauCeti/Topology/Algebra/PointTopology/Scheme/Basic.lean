@@ -50,9 +50,16 @@ being a morphism over `Spec k`. -/
 abbrev Points :=
   {x : Spec (.of R) ⟶ X // x ≫ f = Spec.algebraMap k R}
 
-/-- The base `Spec k` has exactly one `R`-point over itself. -/
-instance : Subsingleton (Points (R := R) (𝟙 (Spec (.of k)))) :=
-  ⟨fun x y ↦ Subtype.ext (by simpa using x.property.trans y.property.symm)⟩
+/-- A scheme whose structure morphism is a monomorphism, for instance the base `Spec k` itself,
+has at most one `R`-point. -/
+instance [Mono f] : Subsingleton (Points (R := R) f) :=
+  ⟨fun x y ↦ Subtype.ext ((cancel_mono f).mp (x.property.trans y.property.symm))⟩
+
+/-- A scheme whose structure morphism is an isomorphism, for instance the base `Spec k` itself,
+has exactly one `R`-point. -/
+noncomputable instance [IsIso f] : Unique (Points (R := R) f) where
+  default := ⟨Spec.algebraMap k R ≫ inv f, by simp⟩
+  uniq _ := Subsingleton.elim _ _
 
 section Map
 
