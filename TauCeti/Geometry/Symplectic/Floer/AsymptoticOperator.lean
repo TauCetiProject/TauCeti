@@ -453,12 +453,6 @@ theorem stationaryCylinderOperator_eq_add_asymptoticOperator (hξ : Differentiab
     exact (hasDerivAt_slice_right hξ).deriv
   rw [stationaryCylinderOperator_def, asymptoticOperator_def, hξt]
 
-/-- A map of period one in the second coordinate has a derivative of period one in it. -/
-private theorem fderiv_add_one_snd (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (s t : ℝ) :
-    fderiv ℝ ξ (s, t + 1) = fderiv ℝ ξ (s, t) := by
-  have hp : Periodic ξ ((0 : ℝ), (1 : ℝ)) := fun ⟨p, q⟩ ↦ by simpa using hper p q
-  simpa using hp.fderiv (s, t)
-
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V}
 
 /-- **Shifting the stationary cylinder operator by a weight.** Replacing `S_t` by `S_t - δ J_t`
@@ -584,7 +578,7 @@ private theorem setIntegral_rect_apply_fderiv_fst_snd_eq_zero (hξ : ContDiff �
         ω (fderiv ℝ ξ z (0, 1)) (fderiv ℝ ξ z (1, 0))) = 0 := by
   have hχp (s : ℝ) : ω (ξ (s, 1)) (fderiv ℝ ξ (s, 1) (1, 0)) =
       ω (ξ (s, 0)) (fderiv ℝ ξ (s, 0) (1, 0)) := by
-    have h1 := fderiv_add_one_snd hper s 0
+    have h1 := fderiv_add_snd_of_periodic_snd (𝕜 := ℝ) hper s 0
     rw [zero_add] at h1
     have hξ1 : ξ (s, 1) = ξ (s, 0) := by simpa using hper s 0
     simp only [h1, hξ1]
@@ -765,7 +759,7 @@ theorem eq_zero_of_stationaryCylinderOperator_eq_zero (hJ : ∀ t, ω.Compatible
   have hs (z : ℝ × ℝ) : fderiv ℝ ξ z (1, 0) = 0 := by
     obtain ⟨s, t⟩ := z
     have hp : Periodic (fun t ↦ fderiv ℝ ξ (s, t) (1, 0)) 1 := fun t ↦ by
-      simp only [fderiv_add_one_snd hper]
+      simp only [fderiv_add_snd_of_periodic_snd hper]
     obtain ⟨t₀, ht₀, h⟩ := hp.exists_mem_Ico₀ one_pos t
     simpa [h, stdComplexLineReal_eq] using hs0 s t₀ (Ico_subset_Icc_self ht₀)
   -- A map independent of `s` which decays as `s → ∞` vanishes.

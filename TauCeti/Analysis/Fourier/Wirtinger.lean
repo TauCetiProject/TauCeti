@@ -52,6 +52,8 @@ the estimate behind removal of singularities and energy quantization for holomor
 
 * `TauCeti.integral_norm_sub_average_sq_le`: Wirtinger's inequality.
 * `TauCeti.integral_norm_sub_average_sq_eq_iff`: its equality case.
+* `TauCeti.integral_norm_sq_le_of_integral_eq_zero`: Wirtinger's inequality for mean-zero `C¹`
+  loops.
 * `TauCeti.integral_norm_sq_eq_sum_integral_inner_sq`: the interval integral of `‖F‖ ^ 2` is the
   sum of those of the squared coordinates of `F` in an orthonormal basis.
 * `ContinuousLinearMap.norm_integral_apply_apply_le`: the bound on the integral of a bilinear form
@@ -256,6 +258,22 @@ theorem integral_norm_sub_average_sq_le (hab : a < b)
   rw [h₁, h₂, Finset.mul_sum]
   exact Finset.sum_le_sum fun i _ =>
     (integral_inner_sub_average_sq_le_and_eq_iff hab hf hff' hfab hf' _).1
+
+/-- **Wirtinger's inequality for mean-zero `C¹` loops.** If `f` has a continuous derivative `f'`,
+`f a = f b` and `f` has mean zero on `[a, b]`, then
+`∫ₐᵇ ‖f‖² ≤ ((b - a) / (2π))² ∫ₐᵇ ‖f'‖²`. -/
+theorem integral_norm_sq_le_of_integral_eq_zero (hab : a < b)
+    (hff' : ∀ t, HasDerivAt f (f' t) t) (hf' : Continuous f') (hfab : f a = f b)
+    (hmean : ∫ x in a..b, f x = 0) :
+    ∫ x in a..b, ‖f x‖ ^ 2 ≤ ((b - a) / (2 * π)) ^ 2 * ∫ x in a..b, ‖f' x‖ ^ 2 := by
+  have hderiv : deriv f = f' := funext fun t ↦ (hff' t).deriv
+  have hf : ContDiff ℝ 1 f :=
+    contDiff_one_iff_deriv.2 ⟨fun t ↦ (hff' t).differentiableAt, hderiv ▸ hf'⟩
+  have h := integral_norm_sub_average_sq_le hab hf.contDiffOn.absolutelyContinuousOnInterval
+    (Filter.Eventually.of_forall fun t _ ↦ hff' t) hfab
+    (hf'.continuousOn.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioc
+      Ioc_subset_Icc_self 2)
+  simpa [interval_average_eq, hmean] using h
 
 /-- **Equality in Wirtinger's inequality.** Equality holds exactly when, on `[a, b]`, the function
 is its mean plus a first harmonic `cos (2π t / (b - a)) • u + sin (2π t / (b - a)) • v`. -/
