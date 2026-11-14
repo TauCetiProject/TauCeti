@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.RicciFlow.StandardCap.PuncturedMetric
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.WarpedProd.Nonnegative
-import TauCeti.Geometry.Manifold.Riemannian.Restriction.Real
 
 /-!
 # Nonnegative sectional curvature of the punctured standard cap
@@ -33,7 +31,7 @@ open scoped ContDiff InnerProductSpace Manifold
 namespace TauCeti.IsStandardCapProfile
 
 variable {f : ℝ → ℝ} (hf : IsStandardCapProfile f)
-  (V : Type*) [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
+  {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
   [Fact (Module.finrank ℝ V = n + 1)]
 
 /-- The punctured standard cap has nonnegative sectional curvature on every tangent
@@ -41,43 +39,28 @@ plane, in any sphere dimension. The assertion includes dependent spanning vector
 theorem sectionalCurvature_puncturedMetric_nonneg
     (p : standardCapRadialDomain × Metric.sphere (0 : V) 1)
     (u v : TangentSpace (𝓘(ℝ).prod (𝓡 n)) p) :
-    let : RiemannianBundle (fun q : standardCapRadialDomain × Metric.sphere (0 : V) 1 ↦
+    letI : RiemannianBundle (fun q : standardCapRadialDomain × Metric.sphere (0 : V) 1 ↦
       TangentSpace (𝓘(ℝ).prod (𝓡 n)) q) := ⟨(hf.puncturedMetric (n := n) V).toRiemannianMetric⟩
     0 ≤ (leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))
       (standardCapRadialDomain × Metric.sphere (0 : V) 1)).sectionalCurvature
       (isMetricCompatible_leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))) p u v := by
-  dsimp only
-  let g := (riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top
-  let g₁ := g.restrictOpenTangentSpace standardCapRadialDomain
-  let g₂ := (sphereRoundMetric (E := V) (n := n)).ofLE (m := ∞) le_top
-  let : RiemannianBundle (fun r : standardCapRadialDomain ↦ TangentSpace 𝓘(ℝ) r) :=
-    ⟨g₁.toRiemannianMetric⟩
-  let : RiemannianBundle (fun s : Metric.sphere (0 : V) 1 ↦ TangentSpace (𝓡 n) s) :=
-    ⟨g₂.toRiemannianMetric⟩
-  let : RiemannianBundle (fun q : standardCapRadialDomain × Metric.sphere (0 : V) 1 ↦
-    TangentSpace (𝓘(ℝ).prod (𝓡 n)) q) := ⟨(hf.puncturedMetric (n := n) V).toRiemannianMetric⟩
-  have h : IsWarpedProduct 𝓘(ℝ) (𝓡 n) (Metric.sphere (0 : V) 1)
-      (fun r : standardCapRadialDomain ↦ f r) :=
-    ⟨fun q a b ↦ hf.puncturedMetric_inner q a b⟩
-  apply h.sectionalCurvature_nonneg_of_finrank_eq_one
-    (hf.contDiff.contMDiff.comp contMDiff_subtype_val) (by simp) p (hf.apply_pos p.1.property)
-  · rw [laplaceBeltrami_restrictOpenTangentSpace_real_eq_deriv_deriv
-      standardCapRadialDomain (hf.contDiff.contDiffAt.of_le (by simp))]
-    exact hf.deriv_deriv_nonpos p.1.property.le
-  · intro a b
-    have hR := g₂.isConstantCurvatureTensor_iff 1 |>.mp
-      isConstantCurvatureTensor_sphereRoundMetric_ofLE p.2 a b b
-    rw [hR, one_smul]
-    simp only [inner_sub_left, real_inner_smul_left]
-    rw [sq_norm_mgradient_restrictOpenTangentSpace_real_eq_sq_deriv
-      standardCapRadialDomain (hf.differentiable _), Matrix.real_det_gram_fin_two]
-    have h₀ := hf.deriv_nonneg p.1.property.le
+  have hmetric : hf.puncturedMetric (n := n) V =
+      (((riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top).restrictOpenTangentSpace
+        standardCapRadialDomain).warpedProdTangentSpace (fun r ↦ f r)
+        (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
+        (fun r ↦ (hf.apply_pos r.property).ne')
+        ((sphereRoundMetric (E := V) (n := n)).ofLE (m := ∞) le_top) := by
+    ext q a b
+    rw [hf.puncturedMetric_inner, ContMDiffRiemannianMetric.warpedProdTangentSpace_inner]
+  rw [hmetric]
+  apply sectionalCurvature_warpedProdTangentSpace_real_sphere_nonneg (n := n)
+    standardCapRadialDomain
+    (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
+    (fun r ↦ (hf.apply_pos r.property).ne') p
+  · exact mul_nonpos_of_nonneg_of_nonpos (hf.apply_nonneg p.1.property.le)
+      (hf.deriv_deriv_nonpos p.1.property.le)
+  · have h₀ := hf.deriv_nonneg p.1.property.le
     have h₁ := hf.deriv_le_one p.1.property.le
-    have hgram := (Matrix.posSemidef_gram ℝ ![a, b]).det_nonneg
-    rw [Matrix.real_det_gram_fin_two] at hgram
-    have hsq : deriv f p.1 ^ 2 ≤ 1 := by nlinarith
-    have hbound := mul_le_mul_of_nonneg_right hsq hgram
-    simp only [real_inner_comm b a] at *
     nlinarith
 
 end TauCeti.IsStandardCapProfile

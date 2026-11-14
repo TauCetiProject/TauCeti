@@ -7,11 +7,12 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
 # Hessians on one-dimensional manifolds
 
-In dimension one the trace determines the whole Hessian: it is the Laplace–Beltrami
+In dimension at most one the trace determines the whole Hessian: it is the Laplace–Beltrami
 operator multiplied by the metric. This identifies the Hessian term in warped-product
 curvature with the scalar radial second derivative.
 -/
@@ -29,21 +30,22 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
-/-- In dimension one the Hessian is its trace times the metric. No regularity of the
+/-- In dimension at most one the Hessian is its trace times the metric. No regularity of the
 function is needed for this identity between the totalized differential operators. -/
-theorem hessian_eq_laplaceBeltrami_mul_inner_of_finrank_eq_one
-    (hn : Module.finrank ℝ E = 1) (f : M → ℝ) (x : M)
+theorem hessian_eq_laplaceBeltrami_mul_inner_of_finrank_le_one
+    (hn : Module.finrank ℝ E ≤ 1) (f : M → ℝ) (x : M)
     (v w : TangentSpace I x) :
     hessian I f x v w = laplaceBeltrami I f x * inner ℝ v w := by
-  let b := (stdOrthonormalBasis ℝ (TangentSpace I x)).reindex
-    (finCongr ((finrank_tangentSpace x).trans hn))
-  have hb : b (0 : Fin 1) ≠ 0 := b.orthonormal.ne_zero 0
-  obtain ⟨a, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' (b 0) hb).1
-    ((finrank_tangentSpace x).trans hn) v
-  obtain ⟨c, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' (b 0) hb).1
-    ((finrank_tangentSpace x).trans hn) w
-  rw [laplaceBeltrami_eq_sum_hessian I f x b]
-  simp [hessian_smul_left, hessian_smul_right, real_inner_smul_left, real_inner_smul_right]
-  ring
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp [hessian_def]
+  have hn' : Module.finrank ℝ (TangentSpace I x) = 1 := by
+    have hpos := (Module.finrank_pos_iff_exists_ne_zero (R := ℝ)).2 ⟨v, hv⟩
+    have hle := (finrank_tangentSpace (I := I) x).le.trans hn
+    omega
+  rw [hessian_def, laplaceBeltrami_def, divergence_def]
+  have h := LinearMap.congr_fun (LinearMap.eq_trace_smul_one_of_finrank_eq_one hn'
+    (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x).toLinearMap) v
+  simpa only [ContinuousLinearMap.coe_coe, LinearMap.smul_apply, one_apply_eq_self,
+    real_inner_smul_left] using congrArg (fun z ↦ inner ℝ z w) h
 
 end TauCeti.Manifold
