@@ -109,7 +109,7 @@ theorem f4ShortRootBaseChangeQuotient_rootExponential_tmul
           f4ShortRootSubspace.mkQ (1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), x⁆)) +
         t ^ 2 • ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootSubspace.mkQ
             (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k x)) := by
-  simp only [f4RootExponential_tmul, map_add, map_smul, f4ShortRootBaseChangeQuotient_tmul]
+  simp only [f4RootExponential_one_tmul, map_add, map_smul, f4ShortRootBaseChangeQuotient_tmul]
 
 /-- The canonical integral lift of a quotient basis coordinate: a long root vector, or the long
 simple coroot `h₁`, `h₀` at coordinates `12`, `13`. -/
