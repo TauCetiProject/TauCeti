@@ -147,8 +147,8 @@ private noncomputable def generatorSeven : (model (0 : ZMod 7) 1).toAffine.Point
 private theorem four_nsmul_generatorSeven_ne_zero : (4 : ℕ) • generatorSeven ≠ 0 := by
   have hD : (4 : ZMod 7) ≠ 0 := by decide
   have hND : 4 * (2 : ZMod 7) = (0 + 2) * 4 := by decide
-  obtain ⟨h₁, h₂⟩ := double_coordinates one_ne_zero hD hND generatorSeven
-  have h₄ := (double_coordinates_of_cross_eq_zero one_ne_zero hD hND h₁ h₂).2
+  obtain ⟨h₁, h₂⟩ := double_coordinates hD hND generatorSeven
+  have h₄ := (double_coordinates_of_cross_eq_zero hD hND h₁ h₂).2
   intro h
   rw [← two_nsmul, ← two_nsmul, ← mul_nsmul, h, coordinates_zero] at h₄
   simp only [generatorSeven, coordinates_some, Pair.cross_def, double_x, double_z] at h₄
@@ -166,9 +166,9 @@ example : addOrderOf generatorSeven = 8 :=
 -- Two doublings of `(3 : 1)` with `(N, D) = (2, 4)` give `(4 : 4)` and then `(0 : 2)`, the
 -- projective `x`-coordinate of the distinguished `2`-torsion point, so `[4](3, 3) = (0, 0)`.
 example : (4 : ℕ) • generatorSeven = twoTorsionPoint 0 one_ne_zero := by
-  have h₁ := double_coordinates (N := (2 : ZMod 7)) (D := 4) one_ne_zero (by decide)
+  have h₁ := double_coordinates (N := (2 : ZMod 7)) (D := 4) (by decide)
     (by decide) generatorSeven
-  obtain ⟨-, h₂⟩ := double_coordinates_of_cross_eq_zero (N := (2 : ZMod 7)) (D := 4) one_ne_zero
+  obtain ⟨-, h₂⟩ := double_coordinates_of_cross_eq_zero (N := (2 : ZMod 7)) (D := 4)
     (by decide) (by decide) h₁.1 h₁.2
   have e : double (2 : ZMod 7) 4 (double 2 4 ⟨3, 1⟩) = ⟨0, 2⟩ := by
     ext <;> simp only [double_x, double_z] <;> decide

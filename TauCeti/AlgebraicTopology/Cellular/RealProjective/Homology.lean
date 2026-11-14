@@ -46,8 +46,9 @@ computes the singular homology of `RPᴺ`. The undetermined units do not affect 
   `N`.
 * `TauCeti.RealProjectiveSpace.singularHomologyIsoProjectivization`: the homology of `RPᴺ` is
   that of the projectivization `ℙ ℝ (Fin (N + 1) → ℝ)`.
-* `TauCeti.RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_eq_zero` and
-  `TauCeti.RealProjectiveSpace.isZero_singularHomology_projectivization_of_even`: the same
+* `TauCeti.RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_eq_zero`,
+  `TauCeti.RealProjectiveSpace.isZero_singularHomology_projectivization_of_even` and
+  `TauCeti.RealProjectiveSpace.singularHomologyProjectivizationIntLinearEquivOfOdd`: the same
   statements on the projectivization, transported along
   `TauCeti.RealProjectiveSpace.singularHomologyIsoProjectivization`.
 
@@ -347,5 +348,13 @@ theorem isZero_singularHomology_projectivization_of_even (h2 : IsRightRegular (2
       (ModuleCat.of R R)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) :=
   (isZero_singularHomology_of_even (N := N) R h2 hk hk0).of_iso
     (singularHomologyIsoProjectivization N (ModuleCat.of R R) k).symm
+
+/-- **Odd-degree integral homology of `ℙ ℝ (Fin (N + 1) → ℝ)`.** For odd `k < N`,
+`Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); ℤ) ≅ ℤ/2`. -/
+def singularHomologyProjectivizationIntLinearEquivOfOdd (hk : Odd k) (hkN : k < N) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ ℤ)).obj
+      (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) ≃ₗ[ℤ] ZMod 2 :=
+  (singularHomologyIsoProjectivization N (ModuleCat.of ℤ ℤ) k).symm.toLinearEquiv ≪≫ₗ
+    singularHomologyIntLinearEquivOfOdd hk hkN
 
 end TauCeti.RealProjectiveSpace
