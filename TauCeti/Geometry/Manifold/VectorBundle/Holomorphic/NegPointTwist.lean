@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Complex.RemovableSingularity
 public import Mathlib.Geometry.Manifold.Complex
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist
+public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Basic
 
 /-!
 # Twisting a holomorphic vector bundle by the dual of a point
