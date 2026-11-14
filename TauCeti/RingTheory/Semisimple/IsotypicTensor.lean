@@ -46,6 +46,16 @@ combines injectivity on each summand with the independence of the isotypic compo
 (`TauCeti.iSupIndep_isotypicComponent`). Again nothing is asked of `M` beyond semisimplicity; in
 particular infinitely many `S j` may occur, with infinite-dimensional multiplicity spaces.
 
+The decomposition computes maps out of a semisimple `M`. An `A`-linear map `g : M →ₗ[A] N` into an
+arbitrary module `N` is determined by what it does to the multiplicity spaces, and every family of
+`k`-linear maps between multiplicity spaces arises this way, so postcomposition is an isomorphism
+
+`Hom_A(M, N) ≃ₗ[k] ∏ⱼ Hom_k(S j →ₗ[A] M, S j →ₗ[A] N)`, `g ↦ (j ↦ (φ ↦ g ∘ φ))`.
+
+This is the tensor-hom adjunction applied summand by summand. Taking `N = M` gives the commutant
+`Module.End A M ≃ₐ[k] ∏ⱼ Module.End k (S j →ₗ[A] M)`: the endomorphisms of a semisimple module
+are the families of arbitrary endomorphisms of its multiplicity spaces.
+
 ## Main definitions
 
 * `TauCeti.isotypicComponentTensorEquiv`: **the isotypic component is `S` tensored with its
@@ -58,6 +68,10 @@ particular infinitely many `S j` may occur, with infinite-dimensional multiplici
 * `TauCeti.directSumIsotypicEval`: the sum of the evaluation maps of a family of modules `S j`.
 * `TauCeti.directSumIsotypicTensorEquiv`: **the isotypic decomposition of a semisimple module**,
   `⨁ⱼ S j ⊗[k] (S j →ₗ[A] M) ≃ₗ[A] M`.
+* `TauCeti.isotypicHomEquiv`: **maps out of a semisimple module are maps of multiplicity spaces**,
+  `(M →ₗ[A] N) ≃ₗ[k] Π j, (S j →ₗ[A] M) →ₗ[k] (S j →ₗ[A] N)`, by postcomposition.
+* `TauCeti.isotypicEndAlgEquiv`: **the commutant of a semisimple module**,
+  `Module.End A M ≃ₐ[k] Π j, Module.End k (S j →ₗ[A] M)`.
 
 ## Main results
 
@@ -452,5 +466,101 @@ theorem directSumIsotypicTensorEquiv_symm_apply_map [IsSemisimpleModule A M]
     LinearEquiv.apply_symm_apply]
 
 end DirectSumEquiv
+
+/-! ### Maps out of a semisimple module -/
+
+section HomEquiv
+
+variable (k : Type*) {A : Type*} [Field k] [IsAlgClosed k] [Ring A] [Algebra k A]
+  {κ : Type*} (S : κ → Type*) [∀ j, AddCommGroup (S j)] [∀ j, Module k (S j)]
+  [∀ j, Module A (S j)] [∀ j, IsScalarTower k A (S j)] [∀ j, IsSimpleModule A (S j)]
+  [∀ j, FiniteDimensional k (S j)]
+  {M : Type*} [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+  [IsSemisimpleModule A M]
+  {N : Type*} [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
+
+omit [IsAlgClosed k] [∀ j, IsSimpleModule A (S j)] [∀ j, FiniteDimensional k (S j)]
+  [IsSemisimpleModule A M] in
+/-- Postcomposition on every multiplicity space, `g ↦ (j ↦ (φ ↦ g ∘ φ))`. -/
+private def compRightPi : (M →ₗ[A] N) →ₗ[k] Π j, (S j →ₗ[A] M) →ₗ[k] (S j →ₗ[A] N) where
+  toFun g _ := LinearMap.compRight k g
+  map_add' _ _ := by ext; simp
+  map_smul' _ _ := by ext; simp
+
+omit [IsAlgClosed k] [∀ j, IsSimpleModule A (S j)]
+  [∀ j, FiniteDimensional k (S j)] in
+/-- A map out of `M` killing every multiplicity space vanishes, since the images of the maps
+`S j → M` span `M`. -/
+private theorem compRightPi_injective
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m)) :
+    Function.Injective (compRightPi k (A := A) S (M := M) (N := N)) := by
+  classical
+  refine (injective_iff_map_eq_zero _).mpr fun g hg ↦ LinearMap.ext fun y ↦ ?_
+  obtain ⟨x, rfl⟩ := directSumIsotypicEval_surjective k S hcover y
+  have h : g ∘ₗ directSumIsotypicEval k A S M = 0 := by
+    ext j s φ
+    simpa [compRightPi] using LinearMap.congr_fun (LinearMap.congr_fun (congrFun hg j) φ) s
+  exact LinearMap.congr_fun h x
+
+/-- A family `T` of maps of multiplicity spaces is realized by the map acting as `1 ⊗ T j` on the
+`j`-th summand of the isotypic decomposition of `M`. -/
+private theorem compRightPi_surjective (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m)) :
+    Function.Surjective (compRightPi k (A := A) S (M := M) (N := N)) := by
+  classical
+  intro T
+  let e := directSumIsotypicTensorEquiv k S hS hcover
+  refine ⟨directSumIsotypicEval k A S N ∘ₗ (DFinsupp.mapRange.linearMap fun j ↦
+    AlgebraTensorModule.map (LinearMap.id (R := A) (M := S j)) (T j)) ∘ₗ e.symm.toLinearMap, ?_⟩
+  ext j φ s
+  have : e.symm (φ s) = DFinsupp.single j (s ⊗ₜ[k] φ) := by
+    rw [LinearEquiv.symm_apply_eq]
+    simp [e]
+  simp [compRightPi, this]
+
+/-- **Maps out of a semisimple module are maps of multiplicity spaces.** Let `S j` be pairwise
+non-isomorphic simple modules, finite-dimensional over the algebraically closed field `k`, such
+that every simple submodule of the semisimple module `M` is isomorphic to one of them. Then for
+every `A`-module `N`, postcomposition `g ↦ (j ↦ (φ ↦ g ∘ φ))` is an isomorphism
+`Hom_A(M, N) ≃ ∏ⱼ Hom_k(S j →ₗ[A] M, S j →ₗ[A] N)`. Nothing is asked of `N`. -/
+noncomputable def isotypicHomEquiv (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m)) :
+    (M →ₗ[A] N) ≃ₗ[k] Π j, (S j →ₗ[A] M) →ₗ[k] (S j →ₗ[A] N) :=
+  .ofBijective (compRightPi k S)
+    ⟨compRightPi_injective k S hcover, compRightPi_surjective k S hS hcover⟩
+
+@[simp]
+theorem isotypicHomEquiv_apply (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    (g : M →ₗ[A] N) (j : κ) (φ : S j →ₗ[A] M) :
+    isotypicHomEquiv k S hS hcover g j φ = g ∘ₗ φ :=
+  (rfl)
+
+/-- The inverse of `TauCeti.isotypicHomEquiv` is characterized on each multiplicity space: the map
+it assigns to a family `T` composes with `φ : S j →ₗ[A] M` to `T j φ`. -/
+@[simp]
+theorem isotypicHomEquiv_symm_apply_comp (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    (T : Π j, (S j →ₗ[A] M) →ₗ[k] (S j →ₗ[A] N)) (j : κ) (φ : S j →ₗ[A] M) :
+    (isotypicHomEquiv k S hS hcover).symm T ∘ₗ φ = T j φ := by
+  rw [← isotypicHomEquiv_apply k S hS hcover, LinearEquiv.apply_symm_apply]
+
+/-- **The commutant of a semisimple module.** Under the hypotheses of
+`TauCeti.isotypicHomEquiv`, postcomposition is an isomorphism of `k`-algebras from the
+endomorphisms of `M` onto the product of the full endomorphism algebras of its multiplicity spaces,
+`End_A(M) ≃ ∏ⱼ End_k(S j →ₗ[A] M)`. -/
+noncomputable def isotypicEndAlgEquiv (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m)) :
+    Module.End A M ≃ₐ[k] Π j, Module.End k (S j →ₗ[A] M) :=
+  .ofLinearEquiv (isotypicHomEquiv k S hS hcover) (by ext; simp) fun _ _ ↦ by ext; simp
+
+@[simp]
+theorem isotypicEndAlgEquiv_apply (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    (g : Module.End A M) (j : κ) (φ : S j →ₗ[A] M) :
+    isotypicEndAlgEquiv k S hS hcover g j φ = g ∘ₗ φ :=
+  (rfl)
+
+end HomEquiv
 
 end TauCeti

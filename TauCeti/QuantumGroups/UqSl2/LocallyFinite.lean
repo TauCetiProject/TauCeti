@@ -117,6 +117,16 @@ theorem exists_linearEquiv_pi_ladderModule (hq : IsGenericQuantumParameter q)
   exact ⟨n, m, ε, ⟨e.trans (DFinsupp.linearEquivFunOnFintype.trans
     (LinearEquiv.piCongrRight fun i => (e' i).some.symm))⟩⟩
 
+/-- At a generic parameter, every simple submodule of a locally finite `UqSl2 q`-module is
+isomorphic to a signed ladder module `L_m^ε`. -/
+theorem exists_linearEquiv_ladderModule_submodule (hq : IsGenericQuantumParameter q)
+    [IsLocallyFiniteModule ℂ (UqSl2 q) V] (N : Submodule (UqSl2 q) V)
+    [IsSimpleModule (UqSl2 q) N] :
+    ∃ p : ℕ × ℤˣ, Nonempty (LadderModule q p.1 p.2 ≃ₗ[UqSl2 q] N) := by
+  have := IsLocallyFiniteModule.finite_of_isSimpleModule (k := ℂ) N
+  obtain ⟨m, ε, e⟩ := exists_linearEquiv_ladderModule hq (V := N)
+  exact ⟨(m, ε), e⟩
+
 /-- At a generic parameter, a `UqSl2 q`-module is locally finite exactly when it is isomorphic to a
 direct sum of signed ladder modules `L_m^ε`. -/
 theorem isLocallyFiniteModule_iff_exists_linearEquiv_dfinsupp_ladderModule
@@ -138,10 +148,7 @@ noncomputable def ladderModuleTensorHomEquiv (hq : IsGenericQuantumParameter q)
   have (p : ℕ × ℤˣ) := LadderModule.isSimpleModule (m := p.1) (ε := p.2) hq
   directSumIsotypicTensorEquiv ℂ (fun p : ℕ × ℤˣ => LadderModule q p.1 p.2)
     (fun _ _ h => Prod.ext_iff.mpr ((LadderModule.nonempty_linearEquiv_iff hq).mp h))
-    (fun N _ => by
-      have := IsLocallyFiniteModule.finite_of_isSimpleModule (k := ℂ) N
-      obtain ⟨m, ε, e⟩ := exists_linearEquiv_ladderModule hq (V := N)
-      exact ⟨(m, ε), e⟩)
+    (fun N _ => exists_linearEquiv_ladderModule_submodule hq N)
 
 /-- The evaluation isomorphism sends `v ⊗ φ` in the `(m, ε)` summand to `φ v`. -/
 @[simp]
