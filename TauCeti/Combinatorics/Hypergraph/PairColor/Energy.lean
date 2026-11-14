@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.Finset.WeightedCauchySchwarz
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Density
-public import Mathlib.Order.Partition.Finpartition
-public import Mathlib.Basic.Real.Basic
+public import TauCeti.Order.Partition.Finpartition
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Data.Rat.BigOperators
 import Mathlib.Tactic.Linarith
-import TauCeti.Order.Partition.Finpartition
 
 /-!
 # The energy of a vertex partition for a pair-color system
@@ -32,9 +31,11 @@ summing it over the pairs of color `c` (`TauCeti.PairColorSystem.sum_pairColorDe
 Consequently, for a refinement `Q ≤ P`, the mean square deviation of the fine block densities
 from the coarse ones is exactly the energy gap
 (`TauCeti.PairColorSystem.sum_sq_pairColorDensity_sub_div_eq_energy_sub`), so the energy does not
-decrease under refinement and lies in `[0, 1]`. Since each block contributes a term in `[0, 1]`,
-moving a few points between parts changes the energy only a little, even when neither partition
-refines the other.
+decrease under refinement, lies in `[0, 1]`, and an energy gap of at most `g` bounds the mean
+absolute deviation of each color density by `√g`
+(`TauCeti.PairColorSystem.sum_abs_pairColorDensity_sub_le`). Since each block contributes a term in
+`[0, 1]`, moving a few points between parts changes the energy only a little, even when neither
+partition refines the other.
 
 If a family of coarse blocks has rectangles `X ×ˢ Y` inside them whose sides are unions of parts
 of `Q`, each carrying a positive proportion of its block and a color density far from the block
@@ -57,6 +58,9 @@ pairs of parts, this is the energy increment of the regularity lemma for pair-co
   identity.
 * `TauCeti.PairColorSystem.energy_mono_of_refines`: refining the partition does not decrease the
   energy.
+* `TauCeti.PairColorSystem.sum_abs_pairColorDensity_sub_le` and
+  `TauCeti.PairColorSystem.sum_card_mul_abs_pairColorDensity_sub_refinementParent_le`: the
+  absolute-deviation bounds from an energy gap.
 * `TauCeti.PairColorSystem.card_mul_sq_pairColorDensity_sub_le_sum`: Cauchy–Schwarz on a rectangle
   whose sides are unions of parts.
 * `TauCeti.PairColorSystem.mul_card_le_sum_sq_pairColorDensity_sub_of_witness`: the deviation gain
@@ -335,6 +339,89 @@ energy of `P`. -/
 theorem energy_mono_of_refines : S.energy P ≤ S.energy Q := by
   rw [← sub_nonneg, ← S.sum_sq_pairColorDensity_sub_div_eq_energy_sub h]
   exact div_nonneg (sum_nonneg fun _ _ ↦ sum_nonneg fun _ _ ↦ sq_nonneg _) (Nat.cast_nonneg _)
+
+/-- **Energy gap controls absolute deviation.** If `Q` refines `P` and the energy gap is at most
+`g`, then for each color `c` the block densities of `c` at `Q` and at `P` differ by at most `√g`
+on average over the ordered distinct pairs. -/
+theorem sum_abs_pairColorDensity_sub_le {g : ℝ} (hgap : S.energy Q - S.energy P ≤ g) (c : κ) :
+    ∑ p ∈ (univ : Finset V).offDiag,
+        |(pairColorDensity S c (Q.part p.1) (Q.part p.2) : ℝ) -
+          pairColorDensity S c (P.part p.1) (P.part p.2)| ≤
+      √g * #(univ : Finset V).offDiag := by
+  classical
+  obtain hD | hD := eq_or_ne #(univ : Finset V).offDiag 0
+  · rw [card_eq_zero.1 hD, sum_empty, card_empty, Nat.cast_zero, mul_zero]
+  set D : ℝ := (#(univ : Finset V).offDiag : ℝ)
+  have hD₀ : 0 < D := Nat.cast_pos.2 (Nat.pos_of_ne_zero hD)
+  rw [← S.sum_sq_pairColorDensity_sub_div_eq_energy_sub h] at hgap
+  have hw : ∑ _p ∈ (univ : Finset V).offDiag, D⁻¹ ≤ 1 := by
+    rw [sum_const, nsmul_eq_mul, mul_inv_cancel₀ hD₀.ne']
+  have hg : ∑ p ∈ (univ : Finset V).offDiag, D⁻¹ *
+      ((pairColorDensity S c (Q.part p.1) (Q.part p.2) : ℝ) -
+        pairColorDensity S c (P.part p.1) (P.part p.2)) ^ 2 ≤ g := by
+    refine le_trans ?_ hgap
+    rw [← mul_sum, inv_mul_eq_div]
+    gcongr with p
+    exact single_le_sum (f := fun k ↦ ((pairColorDensity S k (Q.part p.1) (Q.part p.2) : ℝ) -
+      pairColorDensity S k (P.part p.1) (P.part p.2)) ^ 2) (fun _ _ ↦ sq_nonneg _) (mem_univ c)
+  have hcs := weighted_sum_abs_le_sqrt (univ : Finset V).offDiag (fun _ ↦ D⁻¹) _
+    (fun _ _ ↦ inv_nonneg.2 hD₀.le) hw hg
+  rw [← mul_sum, inv_mul_le_iff₀ hD₀] at hcs
+  linarith
+
+/-- **Cell-pair form of the absolute-deviation bound.** If `Q` refines `P` and the energy gap is
+at most `g`, then for each color `c` the size-weighted deviations of the densities on distinct
+fine cell pairs `(C, D)` from those on their coarse parent pairs sum to at most
+`√g |V| (|V| - 1)`. -/
+theorem sum_card_mul_abs_pairColorDensity_sub_refinementParent_le {g : ℝ}
+    (hgap : S.energy Q - S.energy P ≤ g) (c : κ) :
+    ∑ CD ∈ (univ : Finset Q.parts).offDiag,
+        (#CD.1.1 * #CD.2.1 : ℝ) *
+          |(pairColorDensity S c CD.1.1 CD.2.1 : ℝ) -
+            pairColorDensity S c (Finpartition.refinementParent h CD.1).1
+              (Finpartition.refinementParent h CD.2).1| ≤
+      √g * #(univ : Finset V).offDiag := by
+  set U := (univ : Finset Q.parts).offDiag
+  let rect (CD : Q.parts × Q.parts) : Finset (V × V) := CD.1.1 ×ˢ CD.2.1
+  let dev (p : V × V) : ℝ :=
+    |(pairColorDensity S c (Q.part p.1) (Q.part p.2) : ℝ) -
+      pairColorDensity S c (P.part p.1) (P.part p.2)|
+  have hdisj : (U : Set (Q.parts × Q.parts)).PairwiseDisjoint rect := by
+    intro CD₁ _ CD₂ _ hne
+    refine disjoint_product.2 ?_
+    by_cases h₁ : CD₁.1 = CD₂.1
+    · exact Or.inr (Q.disjoint CD₁.2.2 CD₂.2.2 (Subtype.coe_injective.ne fun h₂ ↦
+        hne (Prod.ext h₁ h₂)))
+    · exact Or.inl (Q.disjoint CD₁.1.2 CD₂.1.2 (Subtype.coe_injective.ne h₁))
+  have hsub : U.biUnion rect ⊆ (univ : Finset V).offDiag := fun p hp ↦ by
+    obtain ⟨CD, hCD, hp⟩ := mem_biUnion.1 hp
+    have hd := Q.disjoint CD.1.2 CD.2.2 (Subtype.coe_injective.ne (mem_offDiag.1 hCD).2.2)
+    exact mem_offDiag.2 ⟨mem_univ _, mem_univ _,
+      hd.forall_ne_finset (mem_product.1 hp).1 (mem_product.1 hp).2⟩
+  have hblock (CD : Q.parts × Q.parts) :
+      (#CD.1.1 * #CD.2.1 : ℝ) *
+        |(pairColorDensity S c CD.1.1 CD.2.1 : ℝ) -
+          pairColorDensity S c (Finpartition.refinementParent h CD.1).1
+            (Finpartition.refinementParent h CD.2).1| =
+      ∑ p ∈ rect CD, dev p := by
+    symm
+    calc ∑ p ∈ rect CD, dev p
+        = ∑ _p ∈ rect CD,
+            |(pairColorDensity S c CD.1.1 CD.2.1 : ℝ) -
+              pairColorDensity S c (Finpartition.refinementParent h CD.1).1
+                (Finpartition.refinementParent h CD.2).1| :=
+          sum_congr rfl fun p hp ↦ by
+            obtain ⟨hp₁, hp₂⟩ := mem_product.1 hp
+            dsimp only [dev]
+            rw [Q.part_eq_of_mem CD.1.2 hp₁, Q.part_eq_of_mem CD.2.2 hp₂,
+              Finpartition.part_eq_refinementParent h CD.1 hp₁,
+              Finpartition.part_eq_refinementParent h CD.2 hp₂]
+      _ = _ := by rw [sum_const, card_product, nsmul_eq_mul, Nat.cast_mul]
+  calc _ = ∑ CD ∈ U, ∑ p ∈ rect CD, dev p := sum_congr rfl fun CD _ ↦ hblock CD
+    _ = ∑ p ∈ U.biUnion rect, dev p := (sum_biUnion hdisj).symm
+    _ ≤ ∑ p ∈ (univ : Finset V).offDiag, dev p :=
+        sum_le_sum_of_subset_of_nonneg hsub fun _ _ _ ↦ abs_nonneg _
+    _ ≤ √g * #(univ : Finset V).offDiag := S.sum_abs_pairColorDensity_sub_le h hgap c
 
 omit h in
 /-- **A resolved witness forces a gain on its block.** Let `A ×ˢ B` be a block of parts of `P`,

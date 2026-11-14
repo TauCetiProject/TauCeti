@@ -25,8 +25,9 @@ vertex partition, with one fresh reversal-fixed color. The edit bound charges ir
 rectangles and within-cell distinct pairs separately. These constructions are used to replace
 a lower skeleton that is regular outside a small exceptional set by an everywhere regular one.
 
-The two existence theorems are `PairColorSystem.exists_recoloring_regular_offDiag` and
-`PairColorSystem.exists_recoloring_isPairColorRegular`. Neither requires equitable cells;
+The main existence theorems are `PairColorSystem.exists_cellwise_recoloring`,
+`PairColorSystem.exists_recoloring_regular_offDiag`, and
+`PairColorSystem.exists_recoloring_isPairColorRegular`. None requires equitable cells;
 the size assumption depends only on the tolerance and the size of the original palette.
 
 ## References
@@ -70,7 +71,10 @@ private theorem exists_local_recoloring [Fintype κ] (hε : 0 < ε)
 
 variable (order : LinearOrder P.parts) (T : P.parts → P.parts → PairColorSystem κ V)
 
-private theorem exists_cellwise_recoloring
+/-- Glue a family `T A B` of pair-color systems sharing the reversal of `S` along a linear order on
+`P.parts`, using `T A B` in the forward orientation `A ≤ B` and its reversed colors in the opposite
+orientation. -/
+theorem exists_cellwise_recoloring
     (hrev : ∀ A B, (T A B).rev = S.rev) :
     ∃ R : PairColorSystem κ V, R.rev = S.rev ∧
       ∀ A B : P.parts, order.le A B → ∀ x ∈ A.1, ∀ y ∈ B.1,
