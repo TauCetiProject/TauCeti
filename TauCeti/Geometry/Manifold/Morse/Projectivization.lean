@@ -47,6 +47,8 @@ block of the same sign to its inertia.
 ## Main declarations
 
 * `TauCeti.projectiveMomentFunction`: the moment function with weights `w`.
+* `TauCeti.le_projectiveMomentFunction`, `TauCeti.projectiveMomentFunction_le`,
+  `TauCeti.projectiveMomentFunction_mem_Icc`: its values lie between the bounds of the weights.
 * `TauCeti.contMDiff_projectiveMomentFunction`: it is smooth.
 * `TauCeti.mk_mem_criticalPoints_projectiveMomentFunction_iff`: for arbitrary weights its critical
   points are the eigenlines of the diagonal form.
@@ -368,6 +370,35 @@ def projectiveMomentFunction (w : Fin (n + 1) → ℝ) : ℙ 𝕜 (Fin (n + 1) �
 theorem projectiveMomentFunction_mk (w : Fin (n + 1) → ℝ) (v : Fin (n + 1) → 𝕜) (hv : v ≠ 0) :
     projectiveMomentFunction 𝕜 w (mk 𝕜 v hv) = (∑ i, w i * ‖v i‖ ^ 2) / ∑ i, ‖v i‖ ^ 2 :=
   (rfl)
+
+/-- The moment function is at least any lower bound of the weights. -/
+theorem le_projectiveMomentFunction {w : Fin (n + 1) → ℝ} {a : ℝ} (hw : ∀ i, a ≤ w i)
+    (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) : a ≤ projectiveMomentFunction 𝕜 w x := by
+  induction x using Projectivization.ind with
+  | h v hv =>
+    obtain ⟨j, hj⟩ := Function.ne_iff.1 hv
+    have hpos : 0 < ∑ i, ‖v i‖ ^ 2 :=
+      Finset.sum_pos' (fun i _ ↦ by positivity)
+        ⟨j, Finset.mem_univ j, pow_pos (norm_pos_iff.2 hj) 2⟩
+    rw [projectiveMomentFunction_mk, le_div_iff₀ hpos, Finset.mul_sum]
+    exact Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (hw i) (by positivity)
+
+/-- The moment function is at most any upper bound of the weights. -/
+theorem projectiveMomentFunction_le {w : Fin (n + 1) → ℝ} {b : ℝ} (hw : ∀ i, w i ≤ b)
+    (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) : projectiveMomentFunction 𝕜 w x ≤ b := by
+  have h := le_projectiveMomentFunction (𝕜 := 𝕜) (w := -w) (a := -b) (fun i ↦ by simpa using hw i) x
+  induction x using Projectivization.ind with
+  | h v hv =>
+    rw [projectiveMomentFunction_mk] at h ⊢
+    simp only [Pi.neg_apply, neg_mul, Finset.sum_neg_distrib, neg_div] at h
+    linarith
+
+/-- The moment function takes its values between any lower and upper bounds of the weights. -/
+theorem projectiveMomentFunction_mem_Icc {w : Fin (n + 1) → ℝ} {a b : ℝ}
+    (hw : ∀ i, w i ∈ Icc a b) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    projectiveMomentFunction 𝕜 w x ∈ Icc a b :=
+  ⟨le_projectiveMomentFunction (fun i ↦ (hw i).1) x,
+    projectiveMomentFunction_le (fun i ↦ (hw i).2) x⟩
 
 /-- In the affine chart at the coordinate `k`, the moment function with weights `w` is the chart
 model with `a = w k` and `ν = w ∘ k.succAbove`. -/

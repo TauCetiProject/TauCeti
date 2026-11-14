@@ -9,15 +9,23 @@ public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Group.Units.Opposite
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
+public import Mathlib.Data.ZMod.QuotientRing
 
 /-!
-# Units from automorphisms of the rank-one free module
+# Endomorphisms of the rank-one free module
 
 An automorphism of a ring as a module over itself sends one to a unit. Consequently,
 the scalar comparing the images of one under two isomorphisms is a unit as well.
 
 A natural number `e` kills a module `M` exactly when the endomorphism `e • 𝟙 M` vanishes
 (`ModuleCat.nsmul_id_eq_zero_iff`).
+
+Over a commutative ring `R`, an endomorphism of `R` is multiplication by its value at one
+(`ModuleCat.eq_apply_one_smul_id`). Multiplication by a scalar that is regular on `M` is a
+monomorphism of `M` (`ModuleCat.mono_smul_id`); in particular, multiplication by a nonzero scalar
+on a torsion-free module over a ring without zero divisors is a monomorphism
+(`ModuleCat.mono_smul_id_of_neZero`). An endomorphism of `ℤ` whose cokernel has `n` elements
+is multiplication by `n` or by `-n` (`ModuleCat.eq_natCast_smul_id_or_eq_neg_natCast_smul_id`).
 -/
 
 public noncomputable section
@@ -27,6 +35,8 @@ open CategoryTheory
 namespace ModuleCat
 
 universe u
+
+section Ring
 
 variable {R : Type u} [Ring R]
 
@@ -48,5 +58,43 @@ theorem isUnit_of_apply_one_eq_smul {M : ModuleCat R}
 `e • x = 0` for every element `x` of `M`. -/
 theorem nsmul_id_eq_zero_iff {M : ModuleCat R} {e : ℕ} : e • 𝟙 M = 0 ↔ ∀ x : M, e • x = 0 :=
   ⟨fun h x ↦ by simpa using congr($h x), fun h ↦ by ext x; simpa using h x⟩
+
+end Ring
+
+section CommRing
+
+variable {R : Type u} [CommRing R]
+
+/-- An endomorphism of a commutative ring as a module over itself is multiplication by its value
+at one. -/
+theorem eq_apply_one_smul_id (g : ModuleCat.of R R ⟶ ModuleCat.of R R) : g = g 1 • 𝟙 _ := by
+  ext
+  simp
+
+/-- Multiplication by a scalar `c` that is regular on `M` is a monomorphism of `M`. -/
+theorem mono_smul_id {M : ModuleCat R} {c : R} (hc : IsSMulRegular M c) : Mono (c • 𝟙 M) :=
+  ConcreteCategory.mono_of_injective _ fun x y hxy ↦ hc (by simpa using hxy)
+
+/-- Multiplication by a nonzero scalar on a torsion-free module over a ring without zero divisors
+is a monomorphism. -/
+instance mono_smul_id_of_neZero [IsCancelMulZero R] {M : ModuleCat R} [Module.IsTorsionFree R M]
+    (c : R) [NeZero c] : Mono (c • 𝟙 M) :=
+  mono_smul_id (IsSMulRegular.of_ne_zero (NeZero.ne c))
+
+end CommRing
+
+/-- An endomorphism of `ℤ` whose cokernel has `n` elements is multiplication by `n` or by
+`-n`: it is multiplication by `m = g 1`, whose image is the ideal `(m)` (`Ideal.range_mul'`),
+and `ℤ/m` has `n` elements only if `|m| = n`. -/
+theorem eq_natCast_smul_id_or_eq_neg_natCast_smul_id (g : ModuleCat.of ℤ ℤ ⟶ ModuleCat.of ℤ ℤ)
+    {n : ℕ} (h : Nat.card (ℤ ⧸ LinearMap.range g.hom) = n) :
+    g = (n : ℤ) • 𝟙 _ ∨ g = -(n : ℤ) • 𝟙 _ := by
+  rw [eq_apply_one_smul_id g] at h ⊢
+  -- The underlying linear map of `g 1 • 𝟙 _` is `LinearMap.mul ℤ ℤ (g 1)` by definition.
+  rw [← h, show LinearMap.range (g 1 • 𝟙 (ModuleCat.of ℤ ℤ)).hom = Ideal.span {g 1} from
+    Ideal.range_mul' _, Nat.card_congr (Int.quotientSpanEquivZMod _).toEquiv, Nat.card_zmod]
+  rcases Int.natAbs_eq (g 1) with h' | h'
+  · exact Or.inl (by rw [← h'])
+  · exact Or.inr (by rw [neg_smul, ← neg_smul, ← h'])
 
 end ModuleCat
