@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Tensor
+public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
 public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 public import Mathlib.CategoryTheory.Monoidal.Preadditive
 
@@ -204,5 +205,11 @@ theorem braiding_def (A D : FiniteRankBundleCore 𝕜 B) :
 @[simp] theorem fiberMap_braiding_inv (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
     (β_ A D).inv.fiberMap x = (kroneckerComm 𝕜 D.rank A.rank).toContinuousLinearMap :=
   fiberMap_tensorComm_inv A D x
+
+@[simp] theorem rank_tensorPow (A : FiniteRankBundleCore 𝕜 B) :
+    ∀ m : ℕ, (tensorPow A m).rank = A.rank ^ m
+  | 0 => (pow_zero A.rank).symm
+  | m + 1 => by
+    rw [tensorPow_succ, rank_tensorObj, rank_tensorPow A m, pow_succ']
 
 end TauCeti.FiniteRankBundleCore
