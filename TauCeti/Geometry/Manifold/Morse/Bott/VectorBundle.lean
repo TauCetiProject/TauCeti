@@ -46,8 +46,8 @@ In the chart of the total space at a zero vector, `g` is a family `G (y, w)` on 
 base model with the model fibre, and the parametric Morse lemma along the zero section
 (`TauCeti.exists_parametricMorseCoord_partialDiffeomorph_prod_ball`) puts it in normal form by the
 canonical coordinate `(y, w) ↦ (y, TauCeti.parametricMorseCoord G (y, w))`. This coordinate is
-built from Palais's square root near the identity, which depends on the norm of the model fibre,
-so the coordinates of two charts only agree near the zero section
+natural for fibrewise linear changes of coordinates, so the coordinates of two charts agree near
+the zero section, where both charts read the same family
 (`TauCeti.eventually_parametricMorseCoord_transition`). They are glued along a locally finite
 closed cover of the base subordinate to the charts: over each base point the coordinate of the
 chart at one chosen member of the cover is used. Near a zero vector `0_a` only the finitely many
@@ -191,7 +191,7 @@ private def localCoord (g : TotalSpace F E → ℝ) (a : B) (x : TotalSpace F E)
     (parametricMorseCoord (chartFamily IB g a)
       (extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a) x))
 
-omit [FiniteDimensional ℝ EB] [IB.Boundaryless] in
+omit [FiniteDimensional ℝ EB] [FiniteDimensional ℝ F] [IB.Boundaryless] in
 /-- The coordinate read in the chart at `0_i` vanishes at the zero vectors over the base set of the
 trivialization at `i`. -/
 private theorem localCoord_zeroSection (i : B) {b : B}
@@ -268,26 +268,17 @@ private theorem exists_partialDiffeomorph_localCoord (a : B) (hW : IsOpen W)
     -- `zeroSection F E x.proj` is `⟨x.proj, 0⟩` by definition.
     rfl
 
+omit [FiniteDimensional ℝ EB] [IB.Boundaryless] in
 /-- **The coordinates of two charts agree near the zero section.** If the base point `a` lies over
 the base set of the trivialization at `i` and in the chart at `i`, the coordinates read in the
 charts of the total space at `0_i` and at `0_a` agree near `0_a`. -/
 private theorem eventually_localCoord_eq {a i : B} (hai : a ∈ (trivializationAt F E i).baseSet)
-    (hai' : a ∈ (extChartAt IB i).source) (hW : IsOpen W) (hzero : ∀ b, zeroSection F E b ∈ W)
-    (hg : ContMDiffOn (IB.prod 𝓘(ℝ, F)) 𝓘(ℝ) (n + 2) g W)
-    (hH : ∀ b, (fderiv ℝ (fderiv ℝ fun v : E b ↦ g ⟨b, v⟩) 0).IsInvertible) :
+    (hai' : a ∈ (extChartAt IB i).source) :
     ∀ᶠ x in 𝓝 (zeroSection F E a), localCoord IB g i x = localCoord IB g a x := by
   set c := extChartAt IB a
   set ea := trivializationAt F E a
   set ei := trivializationAt F E i
   have ha : a ∈ ea.baseSet := mem_baseSet_trivializationAt F E a
-  -- A globally `C²` family `G` agreeing with the chart family at `0_a` near `(c a, 0)`.
-  obtain ⟨G, hG, -, hGeq⟩ := ContDiffOn.exists_contDiff_eventuallyEq_of_finiteDimensional (n := 2)
-    ((chartFamily_contDiffOn a hg).of_le le_add_self) (chartDomain_mem_nhds a hW hzero)
-  have hGH : (fderiv ℝ (fderiv ℝ fun w ↦ G (c a, w)) 0).IsInvertible := by
-    have hsl : (fun w ↦ G (c a, w)) =ᶠ[𝓝 0] fun w ↦ chartFamily IB g a (c a, w) :=
-      ((continuous_const.prodMk continuous_id).tendsto (0 : F)).eventually hGeq
-    rw [hsl.fderiv.fderiv_eq]
-    exact isInvertible_fderiv_fderiv_chartFamily_slice a (extChartAt_to_inv a) ha (hH a)
   -- The chart at `0_i` reads the chart at `0_a` through the change of base chart `σ` and the
   -- coordinate change `T` of the trivializations.
   let σ : EB → EB := fun y ↦ extChartAt IB i (c.symm y)
@@ -301,12 +292,13 @@ private theorem eventually_localCoord_eq {a i : B} (hai : a ∈ (trivializationA
       rw [extChartAt_to_inv]
       exact inter_mem (inter_mem (ea.open_baseSet.mem_nhds ha) (ei.open_baseSet.mem_nhds hai))
         ((isOpen_extChartAt_source i).mem_nhds hai'))
-  have hcomp : ∀ᶠ z in 𝓝 (c a, (0 : F)), chartFamily IB g i (σ z.1, T z.1 z.2) = G z := by
-    filter_upwards [hGeq, continuousAt_fst.preimage_mem_nhds hbase] with z hz hzb
+  have hcomp : ∀ᶠ z in 𝓝 (c a, (0 : F)),
+      chartFamily IB g i (σ z.1, T z.1 z.2) = chartFamily IB g a z := by
+    filter_upwards [continuousAt_fst.preimage_mem_nhds hbase] with z hzb
     obtain ⟨⟨hb₁, hb₂⟩, hb₃⟩ := hzb
-    rw [hz, chartFamily_apply i ((extChartAt IB i).left_inv hb₃) hb₂, chartFamily_apply a rfl hb₁,
+    rw [chartFamily_apply i ((extChartAt IB i).left_inv hb₃) hb₂, chartFamily_apply a rfl hb₁,
       Trivialization.coordChangeL_apply ea ei ⟨hb₁, hb₂⟩, ei.symm_apply_apply_mk hb₂]
-  have htrans := eventually_parametricMorseCoord_transition hG hGH hT hcomp
+  have htrans := eventually_parametricMorseCoord_transition hT hcomp
   -- Pull back to the total space along the chart at `0_a`.
   have hτ : Tendsto (extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a))
       (𝓝 (zeroSection F E a)) (𝓝 (c a, 0)) := by
@@ -318,24 +310,24 @@ private theorem eventually_localCoord_eq {a i : B} (hai : a ∈ (trivializationA
       (inter_mem (inter_mem (inter_mem (ea.open_baseSet.mem_nhds ha)
         ((isOpen_extChartAt_source a).mem_nhds (mem_extChartAt_source a)))
         (ei.open_baseSet.mem_nhds hai)) ((isOpen_extChartAt_source i).mem_nhds hai'))
-  filter_upwards [hτ.eventually (htrans.and hGeq.parametricMorseCoord), hproj] with x hx hxb
+  filter_upwards [hτ.eventually htrans, hproj] with x ht hxb
   obtain ⟨b, v⟩ := x
   obtain ⟨⟨⟨hba, hbc⟩, hbi⟩, hbci⟩ := hxb
-  obtain ⟨ht, hgerm⟩ := hx
   dsimp only at hba hbc hbi hbci
   have hτa : extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a) ⟨b, v⟩ = (c b, (ea ⟨b, v⟩).2) :=
     Bundle.extChartAt_apply_of_mem_baseSet _ hba
   have hτi : extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E i) ⟨b, v⟩ =
       (extChartAt IB i b, (ei ⟨b, v⟩).2) :=
     Bundle.extChartAt_apply_of_mem_baseSet _ hbi
-  rw [hτa] at ht hgerm
-  dsimp only [σ, T] at ht hgerm
+  rw [hτa] at ht
+  dsimp only [σ, T] at ht
   rw [(extChartAt IB a).left_inv hbc,
     Trivialization.coordChangeL_apply_snd ℝ ea ei (p := ⟨b, v⟩) hba hbi] at ht
   rw [localCoord, localCoord, hτi, hτa]
   dsimp only
-  rw [ht, hgerm, Trivialization.coordChangeL_apply ea ei ⟨hba, hbi⟩, ei.symm_apply_apply_mk hbi]
+  rw [ht, Trivialization.coordChangeL_apply ea ei ⟨hba, hbi⟩, ei.symm_apply_apply_mk hbi]
 
+omit [FiniteDimensional ℝ EB] [IB.Boundaryless] in
 /-- **Gluing the chart coordinates.** Let `K` be a locally finite family of closed sets of the
 base, each inside the base set of the trivialization and the source of the chart at its index,
 and let `j b` be an index with `b ∈ K (j b)`. Near `0_a`, the coordinate read over each base point
@@ -343,15 +335,13 @@ and let `j b` be an index with `b ∈ K (j b)`. Near `0_a`, the coordinate read 
 private theorem eventually_localCoord_choice_eq {K : B → Set B} (hKc : ∀ i, IsClosed (K i))
     (hKlf : LocallyFinite K)
     (hKsub : ∀ i, K i ⊆ (trivializationAt F E i).baseSet ∩ (extChartAt IB i).source)
-    {j : B → B} (hj : ∀ b, b ∈ K (j b)) (hW : IsOpen W) (hzero : ∀ b, zeroSection F E b ∈ W)
-    (hg : ContMDiffOn (IB.prod 𝓘(ℝ, F)) 𝓘(ℝ) (n + 2) g W)
-    (hH : ∀ b, (fderiv ℝ (fderiv ℝ fun v : E b ↦ g ⟨b, v⟩) 0).IsInvertible) (a : B) :
+    {j : B → B} (hj : ∀ b, b ∈ K (j b)) (a : B) :
     ∀ᶠ x in 𝓝 (zeroSection F E a), localCoord IB g (j x.proj) x = localCoord IB g a x := by
   -- Only the finitely many members containing `a` are chosen near `a`.
   have hall : ∀ᶠ x in 𝓝 (zeroSection F E a), ∀ i ∈ {i | a ∈ K i},
       localCoord IB g i x = localCoord IB g a x :=
     ((hKlf.point_finite a).eventually_all).2 fun i hi ↦
-      eventually_localCoord_eq (hKsub i hi).1 (hKsub i hi).2 hW hzero hg hH
+      eventually_localCoord_eq (hKsub i hi).1 (hKsub i hi).2
   filter_upwards [hall, ((FiberBundle.continuous_proj F E).tendsto
     (zeroSection F E a)).eventually (hKlf.eventually_subset hKc a)] with x hx hxK
   exact hx (j x.proj) (hxK (hj x.proj))
@@ -435,7 +425,7 @@ theorem exists_parametric_morse_partialDiffeomorph (hW : IsOpen W)
   let NF : TotalSpace F E → Prop := fun x ↦ g x = g (zeroSection F E x.proj) + 2⁻¹ *
     fderiv ℝ (fderiv ℝ fun v : E x.proj ↦ g ⟨x.proj, v⟩) 0 (ψ x) (ψ x)
   have hlocal (a : B) := isLocalDiffeomorphAt_and_eventually_normalForm a hW hzero hg hcrit hH hn
-    (eventually_localCoord_choice_eq hKc hKlf hKsub hj hW hzero hg hH a)
+    (eventually_localCoord_choice_eq hKc hKlf hKsub hj a)
   -- On the open set `O` where `Φ₀` is a local diffeomorphism and `g` is in normal form, which
   -- contains the zero section, `Φ₀` is injective near the zero section, which it fixes.
   let O : Set (TotalSpace F E) :=

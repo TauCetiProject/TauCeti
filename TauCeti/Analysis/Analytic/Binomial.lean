@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Binomial
+public import TauCeti.Analysis.Analytic.OfScalars
 
 /-!
 # Convergence of multichoose power series
@@ -23,6 +24,9 @@ integrability domain of the negative-binomial probability-generating function.
   multichoose binomial series on the open unit disk.
 * `TauCeti.summable_multichoose_mul_geometric_iff_norm_lt_one` — exact summability of
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
+* `TauCeti.one_le_radius_binomialSeries` — the binomial series `binomialSeries A a` has radius at
+  least `1` in every normed algebra `A`, not only in a normed division ring.
+* `TauCeti.summable_norm_choose_smul_pow` — its terms are absolutely summable on the unit ball.
 -/
 
 public section
@@ -82,6 +86,25 @@ theorem summable_multichoose_mul_geometric_iff_norm_lt_one
   refine ⟨fun hs => not_le.1 fun hq => hnot (hs.of_nonneg_of_le (fun n => (hcoeff_pos n).le)
     fun n => le_mul_of_one_le_right (hcoeff_pos n).le (one_le_pow₀ hq)), fun hq => ?_⟩
   exact (hasSum_multichoose_mul_geometric_of_abs_lt_one (by simpa using hq)).summable
+
+section NormedAlgebra
+
+variable {𝕂 : Type*} [RCLike 𝕂] {A : Type*} [NormedRing A] [NormedAlgebra 𝕂 A] {a : 𝕂}
+
+/-- The binomial series has radius at least `1` in any normed algebra, not only in a normed
+division ring as in `binomialSeries_radius_ge_one`. -/
+theorem one_le_radius_binomialSeries : 1 ≤ (binomialSeries A a).radius :=
+  (binomialSeries_radius_ge_one (𝔸 := 𝕂)).trans
+    (FormalMultilinearSeries.ofScalars_radius_le_ofScalars_radius (Ring.choose a ·))
+
+/-- On the unit ball of a normed algebra, the terms `Ring.choose a n • x ^ n` of the binomial
+series are absolutely summable. -/
+theorem summable_norm_choose_smul_pow {x : A} (hx : ‖x‖ < 1) :
+    Summable fun n ↦ ‖Ring.choose a n • x ^ n‖ :=
+  FormalMultilinearSeries.summable_norm_smul_pow_of_lt_ofScalars_radius (Ring.choose a ·) <|
+    (by exact_mod_cast hx : (‖x‖₊ : ℝ≥0∞) < 1).trans_le (binomialSeries_radius_ge_one (𝔸 := 𝕂))
+
+end NormedAlgebra
 
 end TauCeti
 
