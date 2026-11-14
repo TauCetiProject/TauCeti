@@ -296,7 +296,6 @@ instance isClosedImmersion_positiveRootSubgroup (i : Fin 7) :
     rw [positiveRootSubgroup_comp_positiveSubsystemInclusion]
     infer_instance
   simp only [Grp.comp', Mon.comp_hom', Over.comp_left] at hcomp
-  have _ := hcomp
   exact IsClosedImmersion.of_comp
     (f := (positiveRootSubgroup i).hom.hom.left)
     (g := positiveSubsystemInclusion.hom.hom.left)
@@ -337,7 +336,6 @@ instance isClosedImmersion_positiveWeightTorus :
     rw [positiveWeightTorus_comp_positiveSubsystemInclusion]
     infer_instance
   simp only [Grp.comp', Mon.comp_hom', Over.comp_left] at hcomp
-  have _ := hcomp
   exact IsClosedImmersion.of_comp
     (f := positiveWeightTorus.hom.hom.left)
     (g := positiveSubsystemInclusion.hom.hom.left)
