@@ -83,12 +83,17 @@ theorem ContinuousLinearMap.cfc_indicator_eq_starProjection_range (T : H →L[�
   (isStarProjection_iff_eq_starProjection_range.mp
     (TauCeti.isStarProjection_cfc_indicator T Ω)).2
 
-/-- If `Ω' ⊆ Ω` and both indicators are continuous on the spectrum of `T`, the spectral projection
-onto `Ω'` maps into the range of the spectral projection onto `Ω`. -/
+/-- If `Ω' ⊆ Ω` and the indicator of `Ω` is continuous on the spectrum of `T`, the spectral
+projection onto `Ω'` maps into the range of the spectral projection onto `Ω`. When the indicator of
+`Ω'` is not continuous on the spectrum, the spectral projection onto `Ω'` is `0`. -/
 theorem TauCeti.range_cfc_indicator_le_of_subset {T : H →L[𝕜] H} {Ω Ω' : Set ℝ} (hsub : Ω' ⊆ Ω)
-    (hΩ : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ T))
-    (hΩ' : ContinuousOn (Ω'.indicator (1 : ℝ → ℝ)) (spectrum ℝ T)) :
+    (hΩ : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ T)) :
     (cfc (Ω'.indicator 1) T).range ≤ (cfc (Ω.indicator 1) T).range := by
+  by_cases hΩ' : ContinuousOn (Ω'.indicator (1 : ℝ → ℝ)) (spectrum ℝ T)
+  swap
+  · rw [cfc_apply_of_not_continuousOn T hΩ', ContinuousLinearMap.toLinearMap_zero,
+      LinearMap.range_zero]
+    exact bot_le
   have h : cfc (Ω'.indicator (1 : ℝ → ℝ)) T = cfc (Ω.indicator 1) T * cfc (Ω'.indicator 1) T := by
     rw [← cfc_mul _ _ T hΩ hΩ', ← Pi.mul_def, ← inter_indicator_one, inter_eq_right.2 hsub]
   rw [h, ContinuousLinearMap.toLinearMap_mul]

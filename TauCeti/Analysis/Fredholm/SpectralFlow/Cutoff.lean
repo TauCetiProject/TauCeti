@@ -237,13 +237,13 @@ theorem continuousOn_indicator_Ico (h : IsFiniteSpectralCutoff T c) :
       exact hx' ⟨hle, not_le.1 h0⟩
     simp [indicator_of_notMem, h0, show ¬ -δ < x by linarith]
 
+omit [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] in
 /-- The spectral projection onto `[0, c)` below a finite spectral cutoff `c` has finite rank. -/
 theorem finiteDimensional_range_cfc_indicator_Ico (h : IsFiniteSpectralCutoff T c) :
     FiniteDimensional 𝕜 (cfc ((Ico 0 c).indicator 1) T).range :=
   have := h.finiteDimensional_range
   Submodule.finiteDimensional_of_le <| range_cfc_indicator_le_of_subset
     (Ico_subset_Ioo_left (by linarith [h.pos])) h.continuousOn_indicator_Ioo
-    h.continuousOn_indicator_Ico
 
 end IsFiniteSpectralCutoff
 
@@ -299,7 +299,7 @@ theorem spectralCount_eq_add (h₁ : IsFiniteSpectralCutoff T c₁) (h₂ : IsFi
   have : FiniteDimensional 𝕜 Q.range := by
     have := h₁.finiteDimensional_range_cfc_indicator_Ico
     exact Submodule.finiteDimensional_of_le <| range_cfc_indicator_le_of_subset
-      (Ico_subset_Ico_left h₂.pos.le) h₁.continuousOn_indicator_Ico hQc
+      (Ico_subset_Ico_left h₂.pos.le) h₁.continuousOn_indicator_Ico
   have hPQ' : P.toLinearMap * Q.toLinearMap = 0 := by
     rw [← ContinuousLinearMap.toLinearMap_mul, hPQ, ContinuousLinearMap.toLinearMap_zero]
   have hQP' : Q.toLinearMap * P.toLinearMap = 0 := by
@@ -354,7 +354,6 @@ theorem _root_.IsSelfAdjoint.exists_isFiniteSpectralCutoff_of_isFredholm
     continuousOn_const.continuousOn_indicator_of_disjoint_frontier
       (disjoint_frontier_of_Ioo_subset_of_subset_Icc h₁ h₂ hcT' hcT).symm
   exact ⟨c, hT, hc, hcT, hcT', Submodule.finiteDimensional_of_le <|
-    range_cfc_indicator_le_of_subset Ioo_subset_Icc_self (hfr Ioo_subset_Icc_self subset_rfl)
-      (hfr subset_rfl Ioo_subset_Icc_self)⟩
+    range_cfc_indicator_le_of_subset Ioo_subset_Icc_self (hfr Ioo_subset_Icc_self subset_rfl)⟩
 
 end TauCeti
