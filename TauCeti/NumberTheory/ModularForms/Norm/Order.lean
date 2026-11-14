@@ -9,7 +9,6 @@ public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.NumberTheory.ModularForms.Order.OfVanishing
 import TauCeti.GroupTheory.DoubleCoset.Orbits
 import TauCeti.NumberTheory.ModularForms.Norm.Trace
-import Mathlib.GroupTheory.GroupAction.Quotient
 import TauCeti.NumberTheory.ModularForms.Order.Orbits
 
 /-!
@@ -127,8 +126,8 @@ private lemma orbit_sl_eq_orbit_slGL (z : ℍ) :
     exact ⟨g, rfl⟩
 
 -- Step 2, and the crux: a single `SL(2, ℤ)`-orbit meets only finitely many `𝒢`-orbits. This is
--- purely group-theoretic — `𝒢 ⊓ 𝒮ℒ` is a finite-index subgroup of `𝒮ℒ`, so the coset-translate
--- map from the `𝒮ℒ`-orbit has finite range, which contains the image.
+-- purely group-theoretic — `𝒢 ⊓ 𝒮ℒ` has finite index in `𝒮ℒ`, so the coset-translate map
+-- `𝒮ℒ ⧸ (𝒢 ⊓ 𝒮ℒ) → 𝒢 \ ℍ` has finite range, and that range contains the image of the orbit.
 private lemma finite_image_orbit_mk_orbit (𝒢 : Subgroup (GL (Fin 2) ℝ))
     [𝒢.IsFiniteRelIndex 𝒮ℒ] (z : ℍ) :
     Set.Finite ((Quotient.mk'' : ℍ → MulAction.orbitRel.Quotient 𝒢 ℍ) ''
