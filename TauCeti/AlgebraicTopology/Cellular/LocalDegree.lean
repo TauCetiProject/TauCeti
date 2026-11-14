@@ -530,9 +530,7 @@ theorem isIso_singularHomologyMap_characteristicCellPairMap_comp_skeletonPairToC
     rfl
   have := isIso_diskBoundaryPairToDiskSphere.{w} n
   have : IsIso (TopPair.singularHomologyMap (diskBoundaryPairToDiskSphere.{w} n) R k) :=
-    ⟨TopPair.singularHomologyMap (inv (diskBoundaryPairToDiskSphere.{w} n)) R k,
-      by rw [← TopPair.singularHomologyMap_comp, IsIso.hom_inv_id, TopPair.singularHomologyMap_id],
-      by rw [← TopPair.singularHomologyMap_comp, IsIso.inv_hom_id, TopPair.singularHomologyMap_id]⟩
+    inferInstance
   have := isIso_singularHomologyMap_diskSphere C R x hx k
   have := isIso_singularHomologyMap_cellDiskHom C R x hx k
   have := isIso_singularHomologyMap_compl_cellBall C R x hx k
@@ -698,17 +696,12 @@ theorem cellularIncidence_eq_zero_of_not_mem_cellFrontier {i : cell C n}
   have hzero :
       SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) (ModuleCat.of R R) n ≫
         P.singularHomologyπ (ModuleCat.of R R) n = 0 := by
-    let Q := TopPair.ofSubset (∅ : Set (TopCat.diskBoundary.{w} (n + 1)))
-    have hmaps : Set.MapsTo (cellAttachingMap j) (∅ : Set (TopCat.diskBoundary.{w} (n + 1)))
-        ({x}ᶜ : Set (skeletonObj C (n + 1))) := fun _ hz ↦ hz.elim
-    have hf : Q.singularHomologyMap (TopPair.ofSubsetMap (cellAttachingMap j) hmaps)
-        (ModuleCat.of R R) n = 0 :=
-      TopPair.singularHomologyMap_eq_zero_of_fac _ (ModuleCat.of R R) g
-        (hfac.trans (TopPair.ofSubsetMap_fst _ _).symm) n
-    have hπ := TopPair.singularHomologyπ_naturality (R := ModuleCat.of R R)
-      (f := TopPair.ofSubsetMap (cellAttachingMap j) hmaps) n
-    rw [TopPair.ofSubsetMap_fst, hf, comp_zero] at hπ
-    exact hπ
+    have h := SSet.homologyMap (TopCat.toSSet.map g) (ModuleCat.of R R) n ≫=
+      P.homologyMap_comp_singularHomologyπ (ModuleCat.of R R) n
+    rw [comp_zero] at h
+    refine Eq.trans ?_ ((Category.assoc _ _ _).trans h)
+    rw [← SSet.homologyMap_comp, ← Functor.map_comp, hfac]
+    rfl
   rw [cellularIncidence_eq_inv_cellLocalClass C R x hx j]
   erw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← Category.assoc, hzero, zero_comp]
   rfl
