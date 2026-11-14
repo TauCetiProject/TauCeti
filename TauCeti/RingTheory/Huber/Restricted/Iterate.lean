@@ -124,34 +124,6 @@ private theorem iterateSplitHom_gauss_comm
 
 end GeneralComm
 
-private theorem weightedMapCompletionEquiv_coe_weightedC {m : ℕ} {A B : Type*} [CommRing A]
-    [TopologicalSpace A] [NonarchimedeanRing A] [CommRing B] [TopologicalSpace B]
-    [NonarchimedeanRing B] {T : Fin m → Set A} {S : Fin m → Set B} (e : A ≃+* B)
-    (he : Continuous e) (he' : Continuous e.symm) (hT : IsWeightFamily T) (hS : IsWeightFamily S)
-    (hTS : ∀ i, (e : A →+* B) '' T i ⊆ S i) (hST : ∀ i, (e.symm : B →+* A) '' S i ⊆ T i)
-    (b : A) :
-    weightedMapCompletionEquiv e he he' hT hS hTS hST (weightedC T hT b) =
-      weightedC S hS (e b) :=
-  (weightedMapCompletionEquiv_apply e he he' hT hS hTS hST _).trans
-    ((weightedMapCompletion_coe he hT hS hTS _).trans
-      (congrArg ((↑) : weightedRestrictedSubring S hS →
-          Completion (weightedRestrictedSubring S hS))
-        (weightedMap_weightedC he hTS b)))
-
-private theorem weightedMapCompletionEquiv_coe_weightedX {m : ℕ} {A B : Type*} [CommRing A]
-    [TopologicalSpace A] [NonarchimedeanRing A] [CommRing B] [TopologicalSpace B]
-    [NonarchimedeanRing B] {T : Fin m → Set A} {S : Fin m → Set B} (e : A ≃+* B)
-    (he : Continuous e) (he' : Continuous e.symm) (hT : IsWeightFamily T) (hS : IsWeightFamily S)
-    (hTS : ∀ i, (e : A →+* B) '' T i ⊆ S i) (hST : ∀ i, (e.symm : B →+* A) '' S i ⊆ T i)
-    (j : Fin m) :
-    weightedMapCompletionEquiv e he he' hT hS hTS hST (weightedX T hT j) =
-      weightedX S hS j :=
-  (weightedMapCompletionEquiv_apply e he he' hT hS hTS hST _).trans
-    ((weightedMapCompletion_coe he hT hS hTS _).trans
-      (congrArg ((↑) : weightedRestrictedSubring S hS →
-          Completion (weightedRestrictedSubring S hS))
-        (weightedMap_weightedX he hTS j)))
-
 /-! ### Unit-radius iteration compatibility -/
 
 section OneWeight
@@ -376,9 +348,8 @@ include hc in
 private theorem norm_innerUnits_mul (j : Fin m) :
     ‖(innerUnits u (c := c) j :
       IsRestricted.subring (R := R) (c ∘ Fin.castAdd m))‖ * (c ∘ Fin.natAdd k) j = 1 := by
-  change ‖algebraMap R (IsRestricted.subring (R := R) (c ∘ Fin.castAdd m))
-    (u (Fin.natAdd k j))‖ * c (Fin.natAdd k j) = 1
-  rw [norm_algebraMap_isRestrictedSubring]
+  rw [innerUnits, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+    Function.comp_apply, norm_algebraMap_isRestrictedSubring]
   exact hc (Fin.natAdd k j)
 
 variable [CompleteSpace R]
@@ -442,15 +413,13 @@ noncomputable def weightedRestrictedIterateGaussEquiv
     (weightedRestrictedCompletionGaussAlgEquiv (fun i ↦ u (Fin.castAdd m i))
       (fun i ↦ hu (Fin.castAdd m i)) (c := c ∘ Fin.castAdd m)
       (fun i ↦ hc (Fin.castAdd m i))).toRingEquiv
-    (show Continuous (weightedRestrictedCompletionGaussAlgEquiv (fun i ↦ u (Fin.castAdd m i))
-        (fun i ↦ hu (Fin.castAdd m i)) (c := c ∘ Fin.castAdd m)
-        (fun i ↦ hc (Fin.castAdd m i))).toRingEquiv from
-      continuous_weightedRestrictedCompletionGaussAlgEquiv (fun i ↦ u (Fin.castAdd m i))
+    (by
+      rw [AlgEquiv.coe_toRingEquiv]
+      exact continuous_weightedRestrictedCompletionGaussAlgEquiv (fun i ↦ u (Fin.castAdd m i))
         (fun i ↦ hu (Fin.castAdd m i)) (fun i ↦ hc (Fin.castAdd m i)))
-    (show Continuous (weightedRestrictedCompletionGaussAlgEquiv (fun i ↦ u (Fin.castAdd m i))
-        (fun i ↦ hu (Fin.castAdd m i)) (c := c ∘ Fin.castAdd m)
-        (fun i ↦ hc (Fin.castAdd m i))).toRingEquiv.symm from
-      continuous_weightedRestrictedCompletionGaussAlgEquiv_symm
+    (by
+      rw [← AlgEquiv.symm_toRingEquiv, AlgEquiv.coe_toRingEquiv]
+      exact continuous_weightedRestrictedCompletionGaussAlgEquiv_symm
         (fun i ↦ u (Fin.castAdd m i)) (fun i ↦ hu (Fin.castAdd m i))
         (fun i ↦ hc (Fin.castAdd m i)))
     hW (isWeightFamily_units (innerUnits u (c := c)))

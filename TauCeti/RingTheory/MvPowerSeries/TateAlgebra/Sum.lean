@@ -537,19 +537,16 @@ theorem restrictedFinAddEquiv_restrictedFinAddFirstBlockAlgHom
     restrictedFinAddEquiv (restrictedFinAddFirstBlockAlgHom f) =
       algebraMap (IsRestricted.subring (R := R) (r ∘ Fin.castAdd m)) _ f := by
   apply eq_of_map_subtype_eq
-  have hcomp : ((finSumFinEquiv.symm.trans (Equiv.sumComm (Fin k) (Fin m)) : _ → _) ∘
-      Fin.castAddEmb m) = Function.Embedding.inr := funext fun i ↦ by simp
+  have hcomp : (Sum.swap ∘ ⇑finSumFinEquiv.symm) ∘ Fin.castAdd m =
+      ⇑(Function.Embedding.inr (α := Fin m) (β := Fin k)) :=
+    funext fun i ↦ by simp
   have hren : ((IsRestricted.renameAlgEquivOfEq
       (finSumFinEquiv.symm.trans (Equiv.sumComm (Fin k) (Fin m)))
       (Sum.elim (r ∘ Fin.natAdd k) (r ∘ Fin.castAdd m))
       (funext fun l ↦ Fin.addCases (fun i ↦ by simp) (fun j ↦ by simp) l)).toRingEquiv
       (restrictedFinAddFirstBlockAlgHom f) : MvPowerSeries (Fin m ⊕ Fin k) R) =
       rename Function.Embedding.inr (f : MvPowerSeries (Fin k) R) := by
-    rw [AlgEquiv.coe_toRingEquiv, IsRestricted.coe_renameAlgEquivOfEq,
-      coe_restrictedFinAddFirstBlockAlgHom]
-    change rename _ (rename _ _) = _
-    rw [rename_rename]
-    simp only [hcomp]
+    simp [renameEquiv_apply, rename_rename, hcomp]
   rw [restrictedFinAddEquiv, RingEquiv.trans_apply, map_subtype_restrictedSumEquiv, hren]
   ext a b
   rw [coeff_coeff_sumAlgEquiv, coe_algebraMap_isRestrictedSubring_apply, map_C,

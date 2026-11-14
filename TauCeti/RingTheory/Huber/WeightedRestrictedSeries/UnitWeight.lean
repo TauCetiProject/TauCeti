@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 
+import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
+
 /-!
 # Weighted restricted series with unit weights
 
@@ -38,9 +40,11 @@ Gauss-norm bound at the radii `‖uᵢ‖⁻¹`; that comparison is in
 * `TauCeti.Huber.isWeightedRestricted_units_iff`: `f` is restricted for the unit weights exactly
   when `f(u⁻¹ X)` is restricted for the trivial weight.
 * `TauCeti.Huber.mem_weightedNhd_units_iff`: the neighbourhoods `U⟨X⟩` in the same terms.
-* `TauCeti.Huber.t0Space_weightedRestrictedSubring_singleton` and
-  `TauCeti.Huber.completeSpace_weightedRestrictedSubring_singleton`: Hausdorffness and
-  completeness of `A⟨X⟩_T` for singleton weights.
+* `TauCeti.Huber.t0Space_weightedRestrictedSubring_singleton`,
+  `TauCeti.Huber.completeSpace_weightedRestrictedSubring_singleton`, and
+  `TauCeti.Huber.isDomain_completion_weightedRestrictedSubring_singleton`: Hausdorffness and
+  completeness of `A⟨X⟩_T` for singleton weights, and the resulting domain instance on its
+  completion over a complete Hausdorff domain.
 
 ## References
 
@@ -174,6 +178,14 @@ instance completeSpace_weightedRestrictedSubring_singleton [CompleteSpace B]
     {u : Fin k → B} {hT : IsWeightFamily (fun i ↦ ({u i} : Set B))} :
     CompleteSpace (weightedRestrictedSubring (fun i ↦ ({u i} : Set B)) hT) :=
   completeSpace_weightedRestrictedSubring hT (isBounded_weightPow_singleton u)
+
+/-- **Completed singleton-weight restricted series over a complete Hausdorff domain form a
+domain.** -/
+instance isDomain_completion_weightedRestrictedSubring_singleton [CompleteSpace B] [T0Space B]
+    [IsDomain B] {u : Fin k → B} {hT : IsWeightFamily (fun i ↦ ({u i} : Set B))} :
+    IsDomain (UniformSpace.Completion
+      (weightedRestrictedSubring (fun i ↦ ({u i} : Set B)) hT)) :=
+  (UniformSpace.Completion.completeRingEquivSelf _).toMulEquiv.isDomain _
 
 end Uniform
 

@@ -11,6 +11,8 @@ public import TauCeti.RingTheory.Huber.WeightedEval.Finite
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Rename
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.BoundedEval
 
+import Mathlib.Analysis.Normed.Unbundled.IsPowMulFaithful
+
 /-!
 # Completed comparison, weight bounds, and naturality for unit weights
 
@@ -110,31 +112,16 @@ private theorem norm_le_of_isWeightBounded_units {R S : Type*} [SeminormedCommRi
   have hinv : ‖(((u i)⁻¹ : Rˣ) : R)‖ = c i := by
     rw [(Units.isNormMulUnit_iff_norm_inv (u i)).mp (hu i)]
     exact mul_left_cancel₀ hu0 ((mul_inv_cancel₀ hu0).trans (hc i).symm)
-  have hci : 0 < c i := lt_of_le_of_ne (hinv ▸ norm_nonneg _) fun h0 ↦ by
-    simpa [← h0] using hc i
-  by_contra! hgt
-  have hdiv : 1 < ‖a i‖ / c i := (one_lt_div hci).mpr hgt
-  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (max C 1) hdiv
-  have hcancel : a i ^ (n + 1) =
-      φ ((((u i)⁻¹ : Rˣ) : R) ^ (n + 1)) * (φ (u i) * a i) ^ (n + 1) := by
-    rw [map_pow, mul_pow, ← mul_assoc, ← mul_pow, ← map_mul, Units.inv_mul, map_one, one_pow,
-      one_mul]
-  have hpow : ‖a i‖ ^ (n + 1) ≤ max C 1 * c i ^ (n + 1) := by
-    calc ‖a i‖ ^ (n + 1) = ‖a i ^ (n + 1)‖ := (hS (a i) n.succ_pos).symm
-      _ = ‖φ ((((u i)⁻¹ : Rˣ) : R) ^ (n + 1)) * (φ (u i) * a i) ^ (n + 1)‖ :=
-          congrArg norm hcancel
-      _ ≤ ‖φ ((((u i)⁻¹ : Rˣ) : R) ^ (n + 1))‖ * ‖(φ (u i) * a i) ^ (n + 1)‖ := norm_mul_le _ _
-      _ ≤ (max C 1 * c i ^ (n + 1)) * 1 := by
-          refine mul_le_mul ?_ ?_ (norm_nonneg _) (by positivity)
-          · exact (hφ _).trans (by
-              rw [(hu i).units_inv.norm_pow, hinv]
-              exact mul_le_mul_of_nonneg_right (le_max_left C 1) (by positivity))
-          · exact (norm_pow_le' _ n.succ_pos).trans (pow_le_one₀ (norm_nonneg _) hle1)
-      _ = max C 1 * c i ^ (n + 1) := mul_one _
-  have hdiv_le : (‖a i‖ / c i) ^ (n + 1) ≤ max C 1 := by
-    rw [div_pow, div_le_iff₀ (by positivity)]
-    exact hpow
-  exact (hn.trans_le (pow_le_pow_right₀ hdiv.le n.le_succ)).not_ge hdiv_le
+  have hφ_bdd : φ.IsBounded :=
+    ⟨max C 1, by positivity, fun r ↦
+      (hφ r).trans (mul_le_mul_of_nonneg_right (le_max_left C 1) (norm_nonneg r))⟩
+  have hcancel : a i = φ (((u i)⁻¹ : Rˣ) : R) * (φ (u i) * a i) := by
+    rw [← mul_assoc, ← map_mul, Units.inv_mul, map_one, one_mul]
+  calc ‖a i‖ = ‖φ (((u i)⁻¹ : Rˣ) : R) * (φ (u i) * a i)‖ := congrArg norm hcancel
+    _ ≤ ‖φ (((u i)⁻¹ : Rˣ) : R)‖ * ‖φ (u i) * a i‖ := norm_mul_le _ _
+    _ ≤ c i * 1 := mul_le_mul ((contraction_of_isPowMul hS hφ_bdd _).trans_eq hinv) hle1
+        (norm_nonneg _) (hinv ▸ norm_nonneg _)
+    _ = c i := mul_one _
 
 /-- **Weight bounds equal polydisc bounds under a pseudouniformiser and a power-multiplicative
 norm.** Along any bounded ring homomorphism `φ : R →+* S` into a seminormed commutative ring with a
@@ -299,39 +286,25 @@ theorem weightedRestrictedCompletionGaussAlgEquiv_symm_comp_polynomialToRestrict
         (weightedPolynomialHom _ (isWeightFamily_units u)) :=
   RingHom.ext fun p ↦ by simp [UniformSpace.Completion.coeRingHom]
 
-include hu in
-/-- Over a complete ultrametric normed domain, the completion of `R⟨X⟩_T` at multiplicative-unit
-weights `Tᵢ = {uᵢ}` is an integral domain. -/
-theorem isDomain_completion_weightedRestrictedSubring_units [IsDomain R] :
-    IsDomain (UniformSpace.Completion
-      (weightedRestrictedSubring (fun i ↦ ({(u i : R)} : Set R)) (isWeightFamily_units u))) :=
-  (weightedRestrictedCompletionGaussAlgEquiv u hu
-    (c := fun i ↦ ‖(u i : R)‖⁻¹)
-    (fun i ↦ mul_inv_cancel₀ (norm_ne_zero_iff.mpr (u i).ne_zero))).toMulEquiv.isDomain _
-
 variable [∀ i, Fact (0 < c i)]
 
 /-- The completed unit-weight Gauss comparison is continuous from the completion topology to the
 Gauss norm topology. -/
 theorem continuous_weightedRestrictedCompletionGaussAlgEquiv :
     Continuous (weightedRestrictedCompletionGaussAlgEquiv u hu hc) := by
-  change Continuous ((weightedRestrictedGaussAlgEquiv u hu hc) ∘
-    (UniformSpace.Completion.completeAlgEquivSelf
-      (weightedRestrictedSubring (fun i ↦ ({(u i : R)} : Set R)) (isWeightFamily_units u)) R))
-  rw [UniformSpace.Completion.coe_completeAlgEquivSelf]
+  rw [weightedRestrictedCompletionGaussAlgEquiv, AlgEquiv.coe_trans,
+    UniformSpace.Completion.coe_completeAlgEquivSelf]
   exact (continuous_weightedRestrictedGaussAlgEquiv u hu hc).comp
     (UniformSpace.Completion.uniformContinuous_completeRingEquivSelf _).continuous
 
 /-- The inverse completed unit-weight Gauss comparison is continuous from the Gauss norm topology
 to the completion topology. -/
 theorem continuous_weightedRestrictedCompletionGaussAlgEquiv_symm :
-    Continuous (weightedRestrictedCompletionGaussAlgEquiv u hu hc).symm := by
-  change Continuous ((UniformSpace.Completion.completeAlgEquivSelf
-      (weightedRestrictedSubring (fun i ↦ ({(u i : R)} : Set R)) (isWeightFamily_units u))
-      R).symm ∘ (weightedRestrictedGaussAlgEquiv u hu hc).symm)
-  rw [UniformSpace.Completion.coe_completeAlgEquivSelf_symm]
-  exact (UniformSpace.Completion.uniformContinuous_completeRingEquivSelf_symm _).continuous.comp
-    (continuous_weightedRestrictedGaussAlgEquiv_symm u hu hc)
+    Continuous (weightedRestrictedCompletionGaussAlgEquiv u hu hc).symm :=
+  ((UniformSpace.Completion.uniformContinuous_completeRingEquivSelf_symm _).continuous.comp
+    (continuous_weightedRestrictedGaussAlgEquiv_symm u hu hc)).congr fun _ ↦ by
+    simp only [weightedRestrictedCompletionGaussAlgEquiv, AlgEquiv.symm_trans_apply,
+      UniformSpace.Completion.coe_completeAlgEquivSelf_symm, Function.comp_apply]
 
 /-- On completions, the unit-weight Gauss comparison commutes with renaming variables along an
 equivalence `e : Fin k ≃ Fin m`. -/
