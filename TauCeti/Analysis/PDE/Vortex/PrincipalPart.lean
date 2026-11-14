@@ -63,9 +63,9 @@ dimensional, of real dimension at most `2 m`
 (`TauCeti.Vortex.finiteDimensional_gaugeFixedKernel`, `TauCeti.Vortex.finrank_gaugeFixedKernel_le`).
 At a framed vortex, `2 m` is the real dimension of the tangent space of the divisor space
 `Sym^m ℂ`; this is the upper bound in the identification of the kernel with that tangent space.
-Surjectivity of the principal-part map, which needs the existence theory of vortices, and the
-comparison of this classical kernel with the kernel of the Sobolev realization of `L_x`, which
-needs elliptic regularity, are not treated here.
+Surjectivity of the principal-part map at a smooth vortex is established in
+`TauCeti.Analysis.PDE.Vortex.Kernel.Dimension`, and the identification of this classical kernel
+with the Sobolev and weak `L²` kernels is in `TauCeti.Analysis.PDE.Vortex.Kernel.Sobolev`.
 
 ## References
 
