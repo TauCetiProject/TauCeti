@@ -5,27 +5,51 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Algebra.ApproximateDiagonal
 public import TauCeti.Analysis.Normed.Algebra.HochschildCohomology.Complex
-public import TauCeti.Analysis.Normed.Module.Dual.Bimodule
+public import TauCeti.Analysis.Normed.Algebra.VirtualDiagonal
+import Mathlib.Analysis.Normed.Module.HahnBanach
+import TauCeti.Analysis.Normed.Module.Dual.Bidual
+import TauCeti.Analysis.Normed.Module.Dual.ClusterPt
+import TauCeti.Analysis.Normed.Operator.Restrict
+import TauCeti.Analysis.Normed.Ring.ApproximateUnit
 
 /-!
-# Amenable Banach algebras
+# Amenable Banach algebras and Johnson's diagonal characterizations
 
 A normed algebra `A` over `𝕜` is *amenable*, in the sense of B. E. Johnson, if for every Banach
-`A`-bimodule `E` every bounded derivation `D : A → E*` into the dual bimodule is inner. Here a
-bimodule is given by bounded bilinear actions `L R : A →L[𝕜] E →L[𝕜] E`, with `a · x = L a x` and
-`x · a = R a x`, and the dual `E*` carries the dual actions of
+`A`-bimodule `E` in the universe of `A` every bounded derivation `D : A → E*` into the dual
+bimodule is inner. Here a bimodule is given by bounded bilinear actions `L R : A →L[𝕜] E →L[𝕜] E`,
+with `a · x = L a x` and `x · a = R a x`, and the dual `E*` carries the dual actions of
 `TauCeti.Analysis.Normed.Module.Dual.Bimodule`: the left action is `dualAction R` and the right
 action is `dualAction L`. A bounded derivation is a bounded operator `D` with
 `D (a * b) = a · D b + D a · b`, and it is inner when `D a = a · φ - φ · a` for some `φ ∈ E*`.
-For `A : Type u` the test bimodules range over `Type u`. Equivalently, the first bounded
-Hochschild cohomology `H¹(A, E*)` vanishes for every such `E`.
+Equivalently, the first bounded Hochschild cohomology `H¹(A, E*)` vanishes for every such `E`.
 
-The main result is Johnson's sufficient condition: a Banach algebra with a bounded approximate
-diagonal is amenable, and in fact every bounded derivation into the dual of a bimodule in any
-universe is inner. This is one implication of Johnson's characterization of amenability by
-bounded approximate diagonals.
+This file proves Johnson's equivalent characterizations of amenability:
+
+1. **Sufficiency of virtual and approximate diagonals.** Over any complete nontrivially normed
+   field `𝕜`, if a Banach algebra `A` has a virtual diagonal `M ∈ (A ⊗̂π A)**`, then every bounded
+   derivation `D : A →L[𝕜] E*` into the dual of a normed `A`-bimodule `E` (in any universe, without
+   requiring completeness of `E` or essentiality of the actions) is inner. Over a proper scalar
+   field, a bounded approximate diagonal gives a virtual diagonal by Banach–Alaoglu and hence also
+   implies amenability.
+2. **Bounded approximate identities from amenability.** Over `ℝ` or `ℂ`, applying amenability to
+   the canonical inclusion `J_A : A →L[𝕜] A**` for the one-sided actions `(mul, 0)` and
+   `(0, mul.flip)` produces elements in `A**` that Goldstine's theorem approximates in norm on
+   finite subsets, yielding bounded left and right approximate identities and hence a bounded
+   two-sided approximate identity by Dixon's combination.
+3. **Necessity of virtual and approximate diagonals.** Over `ℝ` or `ℂ`, given a bounded two-sided
+   approximate identity `(eᵢ)` of an amenable Banach algebra `A`, a weak-star cluster point `E₀` of
+   `eᵢ ⊗ eᵢ` in `(A ⊗̂π A)**` satisfies `a · Δ** E₀ = J_A a = Δ** E₀ · a`, so `a ↦ a · E₀ - E₀ · a`
+   is a bounded derivation with values in `ker Δ**`. By Cohen–Hewitt factorization `Δ = mul' 𝕜 A`
+   is surjective, so `(ker Δ).subtypeL**` identifies `(ker Δ)**` isometrically with `ker Δ**`.
+   Innerness on `(ker Δ)**` supplies `N ∈ ker Δ**` such that `M = E₀ - N` is a virtual diagonal,
+   and Goldstine's theorem turns `M` into a bounded approximate diagonal.
+
+Consequently, for a Banach algebra `A` over `ℝ` or `ℂ`, amenability is equivalent to the existence
+of a virtual diagonal and to the existence of a bounded approximate diagonal, and implies innerness
+of bounded derivations into `E*` (hence `H¹(A, E*) = 0`) for normed bimodules `E` in arbitrary
+universes.
 
 ## Main definitions
 
@@ -33,38 +57,51 @@ bounded approximate diagonals.
 
 ## Main results
 
-* `TauCeti.IsApproximateDiagonal.exists_eq_dualAction_sub_dualAction`: if `A` has a bounded
-  approximate diagonal, every bounded derivation of `A` into the dual of a bounded bimodule is
-  inner.
-* `TauCeti.isAmenable_def` and `TauCeti.IsAmenable.exists_eq_dualAction_sub_dualAction`: the
-  characteristic property of amenability, and its use on a given bounded derivation.
+* `TauCeti.IsVirtualDiagonal.exists_eq_dualAction_sub_dualAction` and
+  `TauCeti.IsApproximateDiagonal.exists_eq_dualAction_sub_dualAction`: virtual diagonals (over a
+  complete field) and bounded approximate diagonals (over a proper field) force all bounded
+  derivations into dual bimodules to be inner.
 * `TauCeti.isAmenable_iff_forall_subsingleton_hochschildBimoduleCohomology_one`: amenability is
-  the vanishing of `H¹(A, E*)` for all Banach bimodules `E`.
-* `TauCeti.IsApproximateDiagonal.isAmenable`: a Banach algebra with a bounded approximate
-  diagonal is amenable.
-* `TauCeti.isAmenable_self`: the base field is amenable over itself.
+  the vanishing of `H¹(A, E*)` for all Banach bimodules `E` in the universe of `A`.
+* `TauCeti.IsVirtualDiagonal.isAmenable` and `TauCeti.IsApproximateDiagonal.isAmenable`:
+  sufficiency of virtual and bounded approximate diagonals for amenability.
+* `TauCeti.IsAmenable.exists_isApproximateUnit`: every amenable Banach algebra over `ℝ` or `ℂ` has
+  a bounded two-sided approximate identity.
+* `TauCeti.IsAmenable.exists_isVirtualDiagonal` and
+  `TauCeti.IsAmenable.exists_isApproximateDiagonal`: every amenable Banach algebra over `ℝ` or `ℂ`
+  has a virtual diagonal and a bounded approximate diagonal.
+* `TauCeti.isAmenable_iff_exists_isVirtualDiagonal` and
+  `TauCeti.isAmenable_iff_exists_isApproximateDiagonal`: Johnson's diagonal characterizations of
+  amenable Banach algebras over `ℝ` or `ℂ`.
+* `TauCeti.IsAmenable.exists_eq_dualAction_sub_dualAction'` and
+  `TauCeti.IsAmenable.subsingleton_hochschildBimoduleCohomology_one`: universe-polymorphic
+  innerness and `H¹(A, E*) = 0` for amenable Banach algebras over `ℝ` or `ℂ`.
+* `TauCeti.isAmenable_self` and `TauCeti.isAmenable_of_subsingleton`: the base field and the zero
+  algebra are amenable.
 
 ## Implementation notes
 
-The proof is the classical one, except that it needs no reduction to essential bimodules. Fix an
-ultrafilter finer than the approximate diagonal, write `e = Δ m` for the image
-of `m` under the multiplication map, and let `Φ : A ⊗̂π A → E*` be the bounded operator induced
-by the bilinear map `(a, b) ↦ a · D b`. The derivation rule gives
+Two technical devices avoid both an essential-bimodule reduction and any universe restriction
+between `A : Type u` and `𝕜 : Type v`:
 
-`a · Φ m - Φ m · a = Φ (a · m - m · a) + e · D a` and `e · D a = D (e * a) - D e · a`.
-
-By Banach–Alaoglu, the bounded families `Φ m`, `D e` and `e · ψ` have weak-star limits `φ`, `ψ`
-and `ρ` along the ultrafilter. The two identities give `D a = a · φ - φ · a + ψ · a`. Since `D`
-and the inner derivation of `φ` are derivations, `a · (ψ · b) = 0`, whence `a · ρ = a · ψ` and
-`ρ · a = 0`. Thus `D` is the inner derivation of `φ + ρ - ψ`.
+* For sufficiency, pushing the operator `Φ : A ⊗̂π A →L[𝕜] E*` induced by `(a, b) ↦ a · D b`
+  through a virtual diagonal `M` directly produces functionals `φ`, `ψ`, `ρ ∈ E*` with
+  `D a = a · φ - φ · a + ψ · a`, `a · ρ = a · ψ`, and `ρ · a = 0`, so `φ + ρ - ψ` witnesses
+  innerness without assuming `E` is essential.
+* For necessity, `IsAmenable 𝕜 A` quantifies over Banach bimodules in `Type u`, whereas for
+  `X : Type u` and `𝕜 : Type v` the dual `X* = X →L[𝕜] 𝕜` lies in `Type (max u v)`. When `A` is
+  nontrivial, Hahn–Banach supplies `e : A` and `π ∈ A*` with `π e = 1`, exhibiting `X*` as a
+  bounded bimodule retract of the Banach bimodule `X →L[𝕜] A : Type u`; when `A` is subsingleton,
+  every derivation is zero. Thus `IsAmenable 𝕜 A` applies directly to derivations into `A**` and
+  `(ker Δ)**` without tying `u` and `v`.
 
 ## References
 
 * B. E. Johnson, *Cohomology in Banach algebras*, Mem. Amer. Math. Soc. 127 (1972).
 * B. E. Johnson, *Approximate diagonals and cohomology of certain annihilator Banach algebras*,
   Amer. J. Math. 94 (1972), 685–698.
-* V. Runde, *Lectures on Amenability*, Springer, 2002, §2.1 and Theorem 2.2.4.
-* H. G. Dales, *Banach Algebras and Automatic Continuity*, §2.8.
+* V. Runde, *Lectures on Amenability*, Springer, 2002, §2.1 and §2.2, Theorem 2.2.4.
+* H. G. Dales, *Banach Algebras and Automatic Continuity*, §§2.8–2.9.
 -/
 
 public section
@@ -73,11 +110,17 @@ noncomputable section
 
 universe u v
 
-open Filter Topology ContinuousLinearMap
+open Filter NormedSpace Topology ContinuousLinearMap
 
 namespace TauCeti
 
 open CompletedProjectiveTensor
+
+-- Shorten instance search for submodules and operators on iterated duals.
+attribute [local instance] ContinuousLinearMap.strongDualSeminormedAddCommGroup
+  ContinuousLinearMap.strongDualNormedSpace
+  ContinuousLinearMap.strongBidualSeminormedAddCommGroup
+  ContinuousLinearMap.strongBidualNormedSpace
 
 section Derivation
 
@@ -111,97 +154,77 @@ private theorem dualAction_leftDerivationLift_sub [CompleteSpace 𝕜]
   ext x
   simpa using congr($key m x)
 
-variable {l : Filter (CompletedProjectiveTensor 𝕜 A A)}
-
-/-- Let `φ` and `ψ` be pointwise limits of `Φ m` and `D (Δ m)` along a proper filter finer than
-an approximate diagonal, where `Φ` is induced by `(a, b) ↦ a · D b`. Then
-`D a = a · φ - φ · a + ψ · a`. -/
-private theorem apply_eq_of_tendsto [CompleteSpace 𝕜] (h : IsApproximateDiagonal 𝕜 l)
-    {U : Filter (CompletedProjectiveTensor 𝕜 A A)} [U.NeBot] (hU : U ≤ l)
-    (hR : ∀ a b x, R (a * b) x = R b (R a x)) (hLR : ∀ a b x, L a (R b x) = R b (L a x))
-    {D : A →L[𝕜] StrongDual 𝕜 E}
-    (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a)) {φ ψ : StrongDual 𝕜 E}
-    (hφ : ∀ x, Tendsto (leftDerivationLift R D · x) U (𝓝 (φ x)))
-    (hψ : ∀ x, Tendsto (fun m ↦ D (mul' 𝕜 A m) x) U (𝓝 (ψ x))) (a : A) (x : E) :
-    D a x = φ (R a x) - φ (L a x) + ψ (L a x) := by
+/-- If a Banach algebra `A` over a complete scalar field has a virtual diagonal `M`, then every
+bounded derivation `D` of `A` into the dual `E*` of a normed `A`-bimodule `E` is inner:
+`D a = a · φ - φ · a` for some `φ ∈ E*`, where `E*` has left action `dualAction R` and right action
+`dualAction L`. Neither `A` nor the actions need to be unital or contractive, and `E` need not be
+complete or essential. -/
+theorem IsVirtualDiagonal.exists_eq_dualAction_sub_dualAction [CompleteSpace 𝕜]
+    {M : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A))}
+    (hM : IsVirtualDiagonal 𝕜 M)
+    (hL : ∀ a b x, L (a * b) x = L a (L b x)) (hR : ∀ a b x, R (a * b) x = R b (R a x))
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) (D : A →L[𝕜] StrongDual 𝕜 E)
+    (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a)) :
+    ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ := by
   set Φ := leftDerivationLift R D
-  -- `a · Φ m - Φ m · a` tends to `a · φ - φ · a`.
-  have h₁ : Tendsto (fun m ↦ (dualAction R a (Φ m) - dualAction L a (Φ m)) x) U
-      (𝓝 (φ (R a x) - φ (L a x))) := by
-    simpa using (hφ (R a x)).sub (hφ (L a x))
-  -- `Φ (a · m - m · a) → 0`, `D (Δ m * a) → D a` and `D (Δ m) · a → ψ · a`.
-  have hcomm : Tendsto (fun m ↦ Φ (mulLeft 𝕜 A a m - mulRight 𝕜 A a m) x) U (𝓝 0) :=
-    (((Φ.continuous.clm_apply (continuous_const (y := x))).tendsto' 0 0 (by simp)).comp
-      (h.tendsto_mulLeft_sub_mulRight a)).mono_left hU
-  have hDe : Tendsto (fun m ↦ D (mul' 𝕜 A m * a) x) U (𝓝 (D a x)) :=
-    ((D.continuous.clm_apply (continuous_const (y := x))).tendsto a).comp <|
-      (tendsto_map'_iff.1 (h.isApproximateUnit_map.tendsto_mul_right a)).mono_left hU
-  have h₂ : Tendsto (fun m ↦ (dualAction R a (Φ m) - dualAction L a (Φ m)) x) U
-      (𝓝 (0 + (D a x - ψ (L a x)))) := by
-    refine (hcomm.add (hDe.sub (hψ (L a x)))).congr fun m ↦ ?_
-    rw [dualAction_leftDerivationLift_sub hR hLR hD, hD]
-    simp [Φ]
-  rw [tendsto_nhds_unique h₁ h₂]
+  set J := inclusionInDoubleDual 𝕜 E
+  let φ : StrongDual 𝕜 E := M ∘L precomp 𝕜 Φ ∘L J
+  let ψ : StrongDual 𝕜 E := M ∘L precomp 𝕜 (D ∘L mul' 𝕜 A) ∘L J
+  let ρ : StrongDual 𝕜 E := M ∘L precomp 𝕜 ((dualAction R).flip ψ ∘L mul' 𝕜 A) ∘L J
+  -- Pushing `a · Φ m - Φ m · a = Φ (a · m - m · a) + D (Δ m * a) - D (Δ m) · a` through `M`
+  -- gives `D a = a · φ - φ · a + ψ · a`.
+  have hDφψ (a : A) (x : E) : D a x = φ (R a x) - φ (L a x) + ψ (L a x) := by
+    have hkey : (J (R a x)).comp Φ - (J (L a x)).comp Φ =
+        ((J x).comp Φ).comp (mulLeft 𝕜 A a) - ((J x).comp Φ).comp (mulRight 𝕜 A a) +
+          (((J x).comp D).comp ((ContinuousLinearMap.mul 𝕜 A).flip a)).comp (mul' 𝕜 A) -
+            (J (L a x)).comp (D ∘L mul' 𝕜 A) := by
+      refine ContinuousLinearMap.ext fun m ↦ ?_
+      have hm := congr($(dualAction_leftDerivationLift_sub hR hLR hD a m) x)
+      have hDm := congr($(hD (mul' 𝕜 A m) a) x)
+      simp only [Φ, J, map_sub, sub_apply, add_apply, comp_apply, dual_def, flip_apply,
+        mul_apply', dualAction_apply_apply] at hm hDm ⊢
+      linear_combination hm - hDm
+    have hMkey := congrArg M hkey
+    simp only [map_sub, map_add, hM.apply_comp_mulLeft_eq_mulRight, sub_self, zero_add,
+      hM.apply_comp_mul_flip_comp_mul', J, comp_apply, dual_def] at hMkey
+    simp only [φ, ψ, J, comp_apply, precomp_apply]
+    linear_combination -hMkey
+  -- Since `D` and the inner derivation of `φ` are derivations, `ψ (b · x · a) = 0`.
+  have hψLR (a b : A) (x : E) : ψ (R a (L b x)) = 0 := by
+    have := congr($(hD a b) x)
+    simp only [dualAction_apply_apply, add_apply, hDφψ, hL, hR, hLR] at this
+    linear_combination -this
+  -- Hence `a · ρ = a · ψ` and `ρ · a = 0`, so `φ + ρ - ψ` implements `D`.
+  have hρR (a : A) (x : E) : ρ (R a x) = ψ (R a x) := by
+    have hEq : (J (R a x)).comp ((dualAction R).flip ψ ∘L mul' 𝕜 A) =
+        ((ψ.comp (R.flip x)).comp (ContinuousLinearMap.mul 𝕜 A a)).comp (mul' 𝕜 A) :=
+      ContinuousLinearMap.ext fun m ↦ by simp [J, hR]
+    simpa only [ρ, comp_apply, precomp_apply, flip_apply, hEq] using
+      hM.apply_comp_mul_comp_mul' a (ψ.comp (R.flip x))
+  have hρL (a : A) (x : E) : ρ (L a x) = 0 := by
+    have hEq : (J (L a x)).comp ((dualAction R).flip ψ) = 0 := by
+      ext b
+      simp [J, hψLR]
+    simp [ρ, ← comp_assoc, hEq]
+  refine ⟨φ + ρ - ψ, fun a ↦ ?_⟩
+  ext x
+  simp only [dualAction_apply_apply, sub_apply, add_apply, hDφψ, hρR, hρL]
   ring
-
-variable [ProperSpace 𝕜]
 
 /-- If a Banach algebra `A` has a bounded approximate diagonal, then every bounded derivation `D`
 of `A` into the dual `E*` of a bounded `A`-bimodule `E` is inner. The left and right actions of
 `A` on `E*` are `dualAction R` and `dualAction L`, so the conclusion says `D a = a · φ - φ · a`
 for some `φ ∈ E*`. Neither `A` nor the actions need to be unital, the actions need not be
 contractive, and `E` need not be essential. -/
-theorem IsApproximateDiagonal.exists_eq_dualAction_sub_dualAction
-    (h : IsApproximateDiagonal 𝕜 l) {C : ℝ} (hC : ∀ᶠ m in l, ‖m‖ ≤ C)
+theorem IsApproximateDiagonal.exists_eq_dualAction_sub_dualAction [ProperSpace 𝕜]
+    {l : Filter (CompletedProjectiveTensor 𝕜 A A)} (h : IsApproximateDiagonal 𝕜 l) {C : ℝ}
+    (hC : ∀ᶠ m in l, ‖m‖ ≤ C)
     (hL : ∀ a b x, L (a * b) x = L a (L b x)) (hR : ∀ a b x, R (a * b) x = R b (R a x))
     (hLR : ∀ a b x, L a (R b x) = R b (L a x)) (D : A →L[𝕜] StrongDual 𝕜 E)
     (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a)) :
     ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ := by
-  have := h.neBot
-  set U := Ultrafilter.of l
-  have hU : (U : Filter _) ≤ l := Ultrafilter.of_le l
-  -- Banach–Alaoglu: an eventually bounded family of functionals has a weak-star limit along `U`.
-  have lim : ∀ (g : CompletedProjectiveTensor 𝕜 A A → StrongDual 𝕜 E) (r : ℝ),
-      (∀ᶠ m in l, ‖g m‖ ≤ r) → ∃ φ : StrongDual 𝕜 E, ∀ x, Tendsto (g · x) U (𝓝 (φ x)) := by
-    intro g r hg
-    obtain ⟨φ, -, hφ⟩ := (WeakDual.isCompact_closedBall (0 : StrongDual 𝕜 E) r).ultrafilter_le_nhds'
-      (U.map (StrongDual.toWeakDual ∘ g))
-      (Ultrafilter.mem_map.2 <| mem_of_superset (hU hg) fun m hm ↦ by simpa using hm)
-    exact ⟨WeakDual.toStrongDual φ, fun x ↦ ((WeakDual.eval_continuous x).tendsto φ).comp hφ⟩
-  have hCe : ∀ᶠ m in l, ‖mul' 𝕜 A m‖ ≤ C := hC.mono fun m hm ↦ (norm_mul'_apply_le m).trans hm
-  have hC0 : ∀ᶠ _ in l, 0 ≤ C := hC.mono fun m hm ↦ (norm_nonneg m).trans hm
-  obtain ⟨φ, hφ⟩ := lim (leftDerivationLift R D) (‖leftDerivationLift R D‖ * C) <|
-    (hC.and hC0).mono fun m hm ↦ ((leftDerivationLift R D).le_opNorm m).trans
-      (mul_le_mul_of_nonneg_left hm.1 (norm_nonneg _))
-  obtain ⟨ψ, hψ⟩ := lim (fun m ↦ D (mul' 𝕜 A m)) (‖D‖ * C) <| hCe.mono fun m hm ↦
-    (D.le_opNorm _).trans (mul_le_mul_of_nonneg_left hm (norm_nonneg D))
-  obtain ⟨ρ, hρ⟩ := lim (fun m ↦ dualAction R (mul' 𝕜 A m) ψ) (‖R‖ * C * ‖ψ‖) <|
-    (hCe.and hC0).mono fun m hm ↦ by
-      rw [dualAction_apply]
-      refine (le_opNorm _ ψ).trans ?_
-      gcongr
-      exact (norm_precomp_le _).trans ((R.le_opNorm _).trans (by gcongr; exact hm.1))
-  -- First, `D a = a · φ - φ · a + ψ · a`.
-  have hDφψ := apply_eq_of_tendsto h hU hR hLR hD hφ hψ
-  -- Since `D` is a derivation, `a · (ψ · b) = 0`, that is `ψ (b · x · a) = 0`.
-  have hψLR (a b : A) (x : E) : ψ (R a (L b x)) = 0 := by
-    have := congr($(hD a b) x)
-    simp only [dualAction_apply_apply, add_apply, hDφψ, hL, hR, hLR] at this
-    linear_combination -this
-  -- Hence `a · ρ = a · ψ` and `ρ · a = 0`.
-  have hρR (a : A) (x : E) : ρ (R a x) = ψ (R a x) := by
-    refine tendsto_nhds_unique (hρ (R a x)) ?_
-    have := ((ψ.continuous.comp (R.continuous.clm_apply (continuous_const (y := x)))).tendsto
-      a).comp ((h.tendsto_mul_mul' a).mono_left hU)
-    simpa [Function.comp_def, hR] using this
-  have hρL (a : A) (x : E) : ρ (L a x) = 0 := by
-    refine tendsto_nhds_unique (hρ (L a x)) ?_
-    simp [hψLR]
-  -- Therefore `D` is the inner derivation of `φ + ρ - ψ`.
-  refine ⟨φ + ρ - ψ, fun a ↦ ?_⟩
-  ext x
-  simp only [dualAction_apply_apply, sub_apply, add_apply, hDφψ, hρR, hρL]
-  ring
+  obtain ⟨M, hM, -⟩ := h.exists_isVirtualDiagonal hC
+  exact hM.exists_eq_dualAction_sub_dualAction hL hR hLR D hD
 
 end Derivation
 
@@ -269,18 +292,358 @@ theorem IsAmenable.exists_eq_dualAction_sub_dualAction (h : IsAmenable 𝕜 A) {
     ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ :=
   h E L R hL hR hLR D hD
 
+/-- A Banach algebra over a complete scalar field with a virtual diagonal is amenable. -/
+theorem IsVirtualDiagonal.isAmenable [CompleteSpace 𝕜] [CompleteSpace A]
+    {M : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A))}
+    (hM : IsVirtualDiagonal 𝕜 M) : IsAmenable 𝕜 A :=
+  fun _ _ _ _ _ _ hL hR hLR D hD ↦ hM.exists_eq_dualAction_sub_dualAction hL hR hLR D hD
+
 /-- A Banach algebra with a bounded approximate diagonal is amenable. -/
 theorem IsApproximateDiagonal.isAmenable [ProperSpace 𝕜] [CompleteSpace A]
     {l : Filter (CompletedProjectiveTensor 𝕜 A A)} (h : IsApproximateDiagonal 𝕜 l) {C : ℝ}
     (hC : ∀ᶠ m in l, ‖m‖ ≤ C) : IsAmenable 𝕜 A :=
   fun _ _ _ _ _ _ hL hR hLR D hD ↦ h.exists_eq_dualAction_sub_dualAction hC hL hR hLR D hD
 
+variable (𝕜 A) in
+omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
+/-- A subsingleton normed algebra (in particular, the zero algebra) is amenable: every derivation
+out of it vanishes, so `0` witnesses innerness. -/
+theorem isAmenable_of_subsingleton [Subsingleton A] : IsAmenable 𝕜 A :=
+  fun _ _ _ _ _ _ _ _ _ D _ ↦ ⟨0, fun a ↦ by simp [Subsingleton.elim a 0]⟩
+
 variable (𝕜) in
 /-- The base field, with the diagonal `1 ⊗ 1`, is amenable over itself. -/
-theorem isAmenable_self [ProperSpace 𝕜] : IsAmenable 𝕜 𝕜 :=
-  (isApproximateDiagonal_pure_one_tmul_one 𝕜).isAmenable (C := 1) <|
-    eventually_pure.2 <| (norm_coe_tmul_le _ _).trans (by simp)
+theorem isAmenable_self [CompleteSpace 𝕜] : IsAmenable 𝕜 𝕜 :=
+  (isVirtualDiagonal_inclusionInDoubleDual_one_tmul_one 𝕜).isAmenable
 
 end Amenable
+
+section DiagonalCharacterization
+
+variable {𝕜 : Type v} {A : Type u} [RCLike 𝕜] [NonUnitalNormedRing A]
+  [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A]
+
+omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
+/-- In an amenable Banach algebra `A : Type u` over `𝕜 : Type v` (`ℝ` or `ℂ`), every bounded
+derivation into the bidual `X**` of a normed `A`-bimodule `X : Type u` is inner. When `A` is
+nontrivial, Hahn–Banach realizes `X* : Type (max u v)` as a bounded bimodule retract of the Banach
+bimodule `X →L[𝕜] A : Type u`, avoiding any universe constraint between `u` and `v`. -/
+private theorem IsAmenable.exists_eq_bidual_dualAction_sub_dualAction
+    (h : IsAmenable 𝕜 A) {X : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    {L R : A →L[𝕜] X →L[𝕜] X}
+    (hL : ∀ a b x, L (a * b) x = L a (L b x))
+    (hR : ∀ a b x, R (a * b) x = R b (R a x))
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x))
+    (D : A →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 X))
+    (hD : ∀ a b, D (a * b) =
+      dualAction (dualAction L) a (D b) + dualAction (dualAction R) b (D a)) :
+    ∃ Φ : StrongDual 𝕜 (StrongDual 𝕜 X),
+      ∀ a, D a = dualAction (dualAction L) a Φ - dualAction (dualAction R) a Φ := by
+  by_cases hA : Subsingleton A
+  · exact ⟨0, fun a ↦ by simp [hA.elim a 0]⟩
+  rw [not_subsingleton_iff_nontrivial] at hA
+  obtain ⟨a₀, ha₀⟩ := exists_ne (0 : A)
+  have hnorm : ‖a₀‖ ≠ 0 := norm_ne_zero_iff.2 ha₀
+  obtain ⟨π, -, hπ⟩ := exists_dual_vector 𝕜 a₀ hnorm
+  let e : A := ((‖a₀‖ : 𝕜))⁻¹ • a₀
+  have hπe : π e = 1 := by
+    rw [map_smul, hπ, smul_eq_mul, inv_mul_cancel₀ (RCLike.ofReal_ne_zero.2 hnorm)]
+  let L₀ : A →L[𝕜] (X →L[𝕜] A) →L[𝕜] (X →L[𝕜] A) := (compL 𝕜 X X A).flip ∘L R
+  let R₀ : A →L[𝕜] (X →L[𝕜] A) →L[𝕜] (X →L[𝕜] A) := (compL 𝕜 X X A).flip ∘L L
+  have hL₀ (a b : A) (T : X →L[𝕜] A) : L₀ (a * b) T = L₀ a (L₀ b T) := by ext x; simp [L₀, hR]
+  have hR₀ (a b : A) (T : X →L[𝕜] A) : R₀ (a * b) T = R₀ b (R₀ a T) := by ext x; simp [R₀, hL]
+  have hLR₀ (a b : A) (T : X →L[𝕜] A) : L₀ a (R₀ b T) = R₀ b (L₀ a T) := by
+    ext x; simp [L₀, R₀, hLR]
+  let p : (X →L[𝕜] A) →L[𝕜] StrongDual 𝕜 X := compL 𝕜 X A 𝕜 π
+  let ι : StrongDual 𝕜 X →L[𝕜] (X →L[𝕜] A) :=
+    compL 𝕜 X 𝕜 A ((ContinuousLinearMap.id 𝕜 𝕜).smulRight e)
+  have hpι (f : StrongDual 𝕜 X) : p (ι f) = f := by ext x; simp [p, ι, hπe]
+  have hpL (a : A) (T : X →L[𝕜] A) : p (L₀ a T) = dualAction R a (p T) := by ext x; simp [p, L₀]
+  have hpR (a : A) (T : X →L[𝕜] A) : p (R₀ a T) = dualAction L a (p T) := by ext x; simp [p, R₀]
+  have hιL (a : A) (f : StrongDual 𝕜 X) : ι (dualAction R a f) = L₀ a (ι f) := by
+    ext x; simp [ι, L₀]
+  have hιR (a : A) (f : StrongDual 𝕜 X) : ι (dualAction L a f) = R₀ a (ι f) := by
+    ext x; simp [ι, R₀]
+  let D₀ : A →L[𝕜] StrongDual 𝕜 (X →L[𝕜] A) := precomp 𝕜 p ∘L D
+  have hD₀ (a b : A) : D₀ (a * b) = dualAction R₀ a (D₀ b) + dualAction L₀ b (D₀ a) := by
+    simp only [D₀, comp_apply, hD, map_add, precomp_dualAction_apply hpR,
+      precomp_dualAction_apply hpL]
+  obtain ⟨Ψ, hΨ⟩ := h.exists_eq_dualAction_sub_dualAction hL₀ hR₀ hLR₀ D₀ hD₀
+  refine ⟨precomp 𝕜 ι Ψ, fun a ↦ ?_⟩
+  have hDa : D a = precomp 𝕜 ι (D₀ a) := by ext f; simp [D₀, hpι]
+  rw [hDa, hΨ a, map_sub, precomp_dualAction_apply hιR, precomp_dualAction_apply hιL]
+
+/-- An amenable Banach algebra over `ℝ` or `ℂ` has a bounded right approximate identity, obtained
+by applying innerness to `J_A : A →L[𝕜] A**` for `(mul, 0)` and approximating in norm via
+Goldstine's theorem. -/
+private theorem IsAmenable.exists_tendsto_mul_left (h : IsAmenable 𝕜 A) :
+    ∃ (C : ℝ) (l : Filter A), l.NeBot ∧ (∀ᶠ e in l, ‖e‖ ≤ C) ∧ ∀ a, Tendsto (a * ·) l (𝓝 a) := by
+  have hD (a b : A) : inclusionInDoubleDual 𝕜 A (a * b) =
+      dualAction (dualAction (ContinuousLinearMap.mul 𝕜 A)) a (inclusionInDoubleDual 𝕜 A b) +
+        dualAction (dualAction (0 : A →L[𝕜] A →L[𝕜] A)) b (inclusionInDoubleDual 𝕜 A a) := by
+    ext f; simp
+  obtain ⟨Φ, hΦ⟩ := h.exists_eq_bidual_dualAction_sub_dualAction
+    (fun a b x ↦ mul_assoc a b x) (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)
+    (inclusionInDoubleDual 𝕜 A) hD
+  refine ⟨‖Φ‖, exists_tendsto_mul_left_iff_forall_finset.2 fun s ε hε ↦ ?_⟩
+  have hΦf (a : s) (f : StrongDual 𝕜 A) : Φ (f.comp (ContinuousLinearMap.mul 𝕜 A a.1)) = f a.1 := by
+    have ha := congr($(hΦ a.1) f)
+    simpa only [sub_apply, dualAction_apply_apply, dualAction_apply, comp_apply, precomp_apply,
+      zero_apply, comp_zero, map_zero, sub_zero, dual_def] using ha.symm
+  obtain ⟨e, he, happrox⟩ := Φ.exists_norm_le_and_forall_norm_sub_lt
+    (fun a : s ↦ ContinuousLinearMap.mul 𝕜 A a.1) (fun a : s ↦ a.1) hΦf le_rfl hε
+  exact ⟨e, he, fun a ha ↦ happrox ⟨a, ha⟩⟩
+
+/-- An amenable Banach algebra over `ℝ` or `ℂ` has a bounded left approximate identity, obtained
+by applying innerness to `-J_A : A →L[𝕜] A**` for `(0, mul.flip)` and approximating in norm via
+Goldstine's theorem. -/
+private theorem IsAmenable.exists_tendsto_mul_right (h : IsAmenable 𝕜 A) :
+    ∃ (C : ℝ) (l : Filter A), l.NeBot ∧ (∀ᶠ e in l, ‖e‖ ≤ C) ∧ ∀ a, Tendsto (· * a) l (𝓝 a) := by
+  have hD (a b : A) : (-inclusionInDoubleDual 𝕜 A) (a * b) =
+      dualAction (dualAction (0 : A →L[𝕜] A →L[𝕜] A)) a ((-inclusionInDoubleDual 𝕜 A) b) +
+        dualAction (dualAction (ContinuousLinearMap.mul 𝕜 A).flip) b
+          ((-inclusionInDoubleDual 𝕜 A) a) := by
+    ext f; simp
+  obtain ⟨Φ, hΦ⟩ := h.exists_eq_bidual_dualAction_sub_dualAction
+    (fun _ _ _ ↦ by simp) (fun a b x ↦ (mul_assoc x a b).symm) (fun _ _ _ ↦ by simp)
+    (-inclusionInDoubleDual 𝕜 A) hD
+  refine ⟨‖Φ‖, exists_tendsto_mul_right_iff_forall_finset.2 fun s ε hε ↦ ?_⟩
+  have hΦf (a : s) (f : StrongDual 𝕜 A) :
+      Φ (f.comp ((ContinuousLinearMap.mul 𝕜 A).flip a.1)) = f a.1 := by
+    have ha := congr($(hΦ a.1) f)
+    simpa only [neg_apply, sub_apply, dualAction_apply_apply, dualAction_apply, comp_apply,
+      precomp_apply, zero_apply, comp_zero, map_zero, zero_sub, neg_inj, dual_def] using ha.symm
+  obtain ⟨e, he, happrox⟩ := Φ.exists_norm_le_and_forall_norm_sub_lt
+    (fun a : s ↦ (ContinuousLinearMap.mul 𝕜 A).flip a.1) (fun a : s ↦ a.1) hΦf le_rfl hε
+  exact ⟨e, he, fun a ha ↦ happrox ⟨a, ha⟩⟩
+
+/-- Every amenable Banach algebra over `ℝ` or `ℂ` has a bounded two-sided approximate identity. -/
+theorem IsAmenable.exists_isApproximateUnit (h : IsAmenable 𝕜 A) :
+    ∃ (C : ℝ) (l : Filter A), l.IsApproximateUnit ∧ ∀ᶠ e in l, ‖e‖ ≤ C := by
+  obtain ⟨C, hleft⟩ := h.exists_tendsto_mul_right
+  obtain ⟨D, hright⟩ := h.exists_tendsto_mul_left
+  exact ⟨C + D + C * D, exists_isApproximateUnit_of_left_of_right hleft hright⟩
+
+/-- Weak-star cluster point `E₀ ∈ (A ⊗̂π A)**` of `e ⊗ₜ e` along a bounded two-sided approximate
+identity: its pushforward `Δ** E₀` acts as a two-sided identity on `J_A (A)`. -/
+private theorem exists_bidual_mul_comp_mul'_eq_of_isApproximateUnit
+    {l : Filter A} (hl : l.IsApproximateUnit) {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C) :
+    ∃ E₀ : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A)),
+      (∀ (a : A) (f : StrongDual 𝕜 A),
+        E₀ ((f.comp (ContinuousLinearMap.mul 𝕜 A a)).comp (mul' 𝕜 A)) = f a) ∧
+      (∀ (a : A) (f : StrongDual 𝕜 A),
+        E₀ ((f.comp ((ContinuousLinearMap.mul 𝕜 A).flip a)).comp (mul' 𝕜 A)) = f a) := by
+  have := hl.neBot
+  obtain ⟨e₀, he₀⟩ := hC.exists
+  have hC0 : 0 ≤ C := (norm_nonneg e₀).trans he₀
+  have hsq : ∀ᶠ m in l.map (fun e ↦ tmulL (𝕜 := 𝕜) e e), ‖m‖ ≤ C * C :=
+    eventually_map.2 <| hC.mono fun e he ↦ by
+      rw [tmulL_apply]
+      exact (norm_coe_tmul_le e e).trans (mul_le_mul he he (norm_nonneg e) hC0)
+  obtain ⟨E₀, -, hE₀⟩ := hsq.exists_mapClusterPt_inclusionInDoubleDual (𝕜 := 𝕜)
+  refine ⟨E₀, fun a f ↦ ?_, fun a f ↦ ?_⟩
+  · have haee : Tendsto (fun e ↦ a * (e * e)) l (𝓝 a) := by
+      rw [tendsto_iff_norm_sub_tendsto_zero]
+      have h0 : Tendsto (fun e ↦ ‖a * e - a‖ * (C + 1)) l (𝓝 0) := by
+        simpa using (tendsto_iff_norm_sub_tendsto_zero.1 (hl.tendsto_mul_left a)).mul_const (C + 1)
+      refine squeeze_zero' (.of_forall fun _ ↦ norm_nonneg _) (hC.mono fun e he ↦ ?_) h0
+      have hdecomp : a * (e * e) - a = (a * e - a) * e + (a * e - a) := by
+        simp only [sub_mul, mul_assoc]; abel
+      rw [hdecomp, mul_add, mul_one]
+      exact (norm_add_le _ _).trans <| add_le_add_left
+        ((norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left he (norm_nonneg _))) _
+    refine hE₀.apply_eq_of_tendsto_inclusionInDoubleDual _ (tendsto_map'_iff.2 ?_)
+    simpa only [Function.comp_def, comp_apply, tmulL_apply, mul'_coe_tmul, mul_apply'] using
+      (f.continuous.tendsto a).comp haee
+  · have heea : Tendsto (fun e ↦ (e * e) * a) l (𝓝 a) := by
+      rw [tendsto_iff_norm_sub_tendsto_zero]
+      have h0 : Tendsto (fun e ↦ (C + 1) * ‖e * a - a‖) l (𝓝 0) := by
+        simpa using (tendsto_iff_norm_sub_tendsto_zero.1 (hl.tendsto_mul_right a)).const_mul (C + 1)
+      refine squeeze_zero' (.of_forall fun _ ↦ norm_nonneg _) (hC.mono fun e he ↦ ?_) h0
+      have hdecomp : (e * e) * a - a = e * (e * a - a) + (e * a - a) := by
+        simp only [mul_sub, mul_assoc]; abel
+      rw [hdecomp, add_mul, one_mul]
+      exact (norm_add_le _ _).trans <| add_le_add_left
+        ((norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right he (norm_nonneg _))) _
+    refine hE₀.apply_eq_of_tendsto_inclusionInDoubleDual _ (tendsto_map'_iff.2 ?_)
+    simpa only [Function.comp_def, comp_apply, tmulL_apply, mul'_coe_tmul, flip_apply,
+      mul_apply'] using (f.continuous.tendsto a).comp heea
+
+omit [CompleteSpace A] in
+/-- The inner derivation `a ↦ a · E₀ - E₀ · a` of any `E₀ ∈ (A ⊗̂π A)**` satisfies the derivation
+identity for the bidual outer actions. -/
+private theorem commutatorDerivation_mulLeft_mulRight_mul
+    (E₀ : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A))) (a b : A) :
+    ((dualAction (dualAction (mulLeft 𝕜 A))).flip E₀ -
+      (dualAction (dualAction (mulRight 𝕜 A))).flip E₀) (a * b) =
+      dualAction (dualAction (mulLeft 𝕜 A)) a
+        (((dualAction (dualAction (mulLeft 𝕜 A))).flip E₀ -
+          (dualAction (dualAction (mulRight 𝕜 A))).flip E₀) b) +
+        dualAction (dualAction (mulRight 𝕜 A)) b
+          (((dualAction (dualAction (mulLeft 𝕜 A))).flip E₀ -
+            (dualAction (dualAction (mulRight 𝕜 A))).flip E₀) a) := by
+  ext φ
+  simp only [sub_apply, add_apply, flip_apply, dualAction_apply_apply,
+    dualAction_mul_apply_of_left (mulLeft_mul_apply (𝕜 := 𝕜) (A := A)),
+    dualAction_mul_apply_of_right (mulRight_mul_apply (𝕜 := 𝕜) (A := A)),
+    dualAction_apply_dualAction_apply_comm (mulLeft_mulRight_apply_comm (𝕜 := 𝕜) (A := A)) b a φ]
+  ring
+
+/-- When `Δ = mul' 𝕜 A` is surjective and the commutator derivation `a ↦ a · E₀ - E₀ · a` vanishes
+on `range Δ*`, pulling it back along `(ker Δ)** ≃ₗᵢ ker Δ**` and applying amenability on `(ker Δ)**`
+produces `N ∈ ker Δ**` with the same outer commutator as `E₀`. -/
+private theorem IsAmenable.exists_ker_mul'_eq_commutator
+    (h : IsAmenable 𝕜 A) (hsurj : Function.Surjective (mul' 𝕜 A))
+    (E₀ : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A)))
+    (hE₀ : ∀ (a : A) (f : StrongDual 𝕜 A),
+      E₀ ((f.comp (mul' 𝕜 A)).comp (mulLeft 𝕜 A a)) =
+        E₀ ((f.comp (mul' 𝕜 A)).comp (mulRight 𝕜 A a))) :
+    ∃ N : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A)),
+      (∀ (a : A) (f : StrongDual 𝕜 A),
+        N ((f.comp (ContinuousLinearMap.mul 𝕜 A a)).comp (mul' 𝕜 A)) = 0) ∧
+      ∀ (a : A) (φ : StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A)),
+        N (φ.comp (mulLeft 𝕜 A a)) - N (φ.comp (mulRight 𝕜 A a)) =
+          E₀ (φ.comp (mulLeft 𝕜 A a)) - E₀ (φ.comp (mulRight 𝕜 A a)) := by
+  have hclosed : IsClosed ((mul' 𝕜 A).range : Set A) := by
+    rw [LinearMap.range_eq_top.mpr hsurj]; exact isClosed_univ
+  have hKL (a : A) (m : CompletedProjectiveTensor 𝕜 A A) (hm : m ∈ (mul' 𝕜 A).ker) :
+      mulLeft 𝕜 A a m ∈ (mul' 𝕜 A).ker := by
+    simp only [LinearMap.mem_ker, coe_coe] at hm ⊢; simp [hm]
+  have hKR (a : A) (m : CompletedProjectiveTensor 𝕜 A A) (hm : m ∈ (mul' 𝕜 A).ker) :
+      mulRight 𝕜 A a m ∈ (mul' 𝕜 A).ker := by
+    simp only [LinearMap.mem_ker, coe_coe] at hm ⊢; simp [hm]
+  let LK := (mulLeft 𝕜 A).restrictAction (mul' 𝕜 A).ker hKL
+  let RK := (mulRight 𝕜 A).restrictAction (mul' 𝕜 A).ker hKR
+  have hLK (a b : A) (x : (mul' 𝕜 A).ker) : LK (a * b) x = LK a (LK b x) := by
+    ext; simp [LK, mulLeft_mul_apply]
+  have hRK (a b : A) (x : (mul' 𝕜 A).ker) : RK (a * b) x = RK b (RK a x) := by
+    ext; simp [RK, mulRight_mul_apply]
+  have hLRK (a b : A) (x : (mul' 𝕜 A).ker) : LK a (RK b x) = RK b (LK a x) := by
+    ext; simp [LK, RK, mulLeft_mulRight_apply_comm]
+  let Δ₂ : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A)) →L[𝕜]
+      StrongDual 𝕜 (StrongDual 𝕜 A) :=
+    precomp 𝕜
+      (precomp 𝕜 (mul' 𝕜 A) : StrongDual 𝕜 A →L[𝕜] StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A))
+  let D₀ : A →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A)) :=
+    (dualAction (dualAction (mulLeft 𝕜 A))).flip E₀ -
+      (dualAction (dualAction (mulRight 𝕜 A))).flip E₀
+  have hD₀_ker (a : A) : D₀ a ∈ Δ₂.ker := by
+    rw [LinearMap.mem_ker]; ext f
+    simpa only [Δ₂, D₀, coe_coe, precomp_apply, comp_apply, sub_apply, flip_apply,
+      dualAction_apply, sub_eq_zero, zero_apply] using hE₀ a f
+  let DK : A →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 (mul' 𝕜 A).ker) :=
+    ((mul' 𝕜 A).bidualKerEquivKerPrecompPrecomp hclosed).symm.toLinearIsometry.toContinuousLinearMap
+      ∘L D₀.codRestrict Δ₂.ker hD₀_ker
+  have hDK_coe (a : A) : precomp 𝕜 (precomp 𝕜 (mul' 𝕜 A).ker.subtypeL) (DK a) = D₀ a := by
+    rw [← (mul' 𝕜 A).coe_bidualKerEquivKerPrecompPrecomp hclosed]
+    simp [DK]
+  have hSL := precomp_dualAction_apply (T := (mul' 𝕜 A).ker.subtypeL) (M := LK) (N := mulLeft 𝕜 A)
+    fun a x ↦ by simp [LK]
+  have hSR := precomp_dualAction_apply (T := (mul' 𝕜 A).ker.subtypeL) (M := RK) (N := mulRight 𝕜 A)
+    fun a x ↦ by simp [RK]
+  have hDK (a b : A) :
+      DK (a * b) = dualAction (dualAction LK) a (DK b) + dualAction (dualAction RK) b (DK a) := by
+    apply (mul' 𝕜 A).ker.bidualEquivAnnihilator.injective
+    apply Subtype.ext
+    simp only [map_add, Submodule.coe_add, (mul' 𝕜 A).ker.coe_bidualEquivAnnihilator,
+      precomp_dualAction_apply hSL, precomp_dualAction_apply hSR, hDK_coe]
+    exact commutatorDerivation_mulLeft_mulRight_mul E₀ a b
+  obtain ⟨N₀, hN₀⟩ := h.exists_eq_bidual_dualAction_sub_dualAction hLK hRK hLRK DK hDK
+  refine ⟨precomp 𝕜 (precomp 𝕜 (mul' 𝕜 A).ker.subtypeL) N₀, fun a f ↦ ?_, fun a φ ↦ ?_⟩
+  · have hzero :
+        ((f.comp (ContinuousLinearMap.mul 𝕜 A a)).comp (mul' 𝕜 A)).comp
+          (mul' 𝕜 A).ker.subtypeL = 0 := by
+      ext x
+      have hx : mul' 𝕜 A x.1 = 0 := x.2
+      simp [hx]
+    simp [hzero]
+  · have hNφ := congr($(hN₀ a) (φ.comp (mul' 𝕜 A).ker.subtypeL))
+    have hDKφ : DK a (φ.comp (mul' 𝕜 A).ker.subtypeL) =
+        E₀ (φ.comp (mulLeft 𝕜 A a)) - E₀ (φ.comp (mulRight 𝕜 A a)) := by
+      have hc := congr($(hDK_coe a) φ)
+      simpa only [D₀, precomp_apply, comp_apply, sub_apply, flip_apply, dualAction_apply] using hc
+    have hLφ : (φ.comp (mul' 𝕜 A).ker.subtypeL).comp (LK a) =
+        (φ.comp (mulLeft 𝕜 A a)).comp (mul' 𝕜 A).ker.subtypeL := by
+      ext x; simp [LK]
+    have hRφ : (φ.comp (mul' 𝕜 A).ker.subtypeL).comp (RK a) =
+        (φ.comp (mulRight 𝕜 A a)).comp (mul' 𝕜 A).ker.subtypeL := by
+      ext x; simp [RK]
+    simp only [hDKφ, sub_apply, dualAction_apply, comp_apply, precomp_apply, hLφ, hRφ] at hNφ ⊢
+    exact hNφ.symm
+
+/-- **Amenability implies the existence of a virtual diagonal.** Every amenable Banach algebra over
+`ℝ` or `ℂ` has a virtual diagonal `M ∈ (A ⊗̂π A)**`. -/
+theorem IsAmenable.exists_isVirtualDiagonal (h : IsAmenable 𝕜 A) :
+    ∃ M : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A)),
+      IsVirtualDiagonal 𝕜 M := by
+  obtain ⟨C, l, hl, hC⟩ := h.exists_isApproximateUnit
+  have := hl.neBot
+  obtain ⟨E₀, hE₀L, hE₀R⟩ :=
+    exists_bidual_mul_comp_mul'_eq_of_isApproximateUnit (𝕜 := 𝕜) hl hC
+  have hE₀ (a : A) (f : StrongDual 𝕜 A) :
+      E₀ ((f.comp (mul' 𝕜 A)).comp (mulLeft 𝕜 A a)) =
+        E₀ ((f.comp (mul' 𝕜 A)).comp (mulRight 𝕜 A a)) := by
+    have hL' : (f.comp (mul' 𝕜 A)).comp (mulLeft 𝕜 A a) =
+        (f.comp (ContinuousLinearMap.mul 𝕜 A a)).comp (mul' 𝕜 A) := by ext; simp [mul_assoc]
+    have hR' : (f.comp (mul' 𝕜 A)).comp (mulRight 𝕜 A a) =
+        (f.comp ((ContinuousLinearMap.mul 𝕜 A).flip a)).comp (mul' 𝕜 A) := by ext; simp [mul_assoc]
+    rw [hL', hR', hE₀L, hE₀R]
+  obtain ⟨N, hN0, hNcomm⟩ :=
+    h.exists_ker_mul'_eq_commutator (mul'_surjective hC hl.tendsto_mul_right) E₀ hE₀
+  refine ⟨E₀ - N, .of_forall_apply (fun a φ ↦ ?_) (fun a f ↦ ?_)⟩
+  · simp only [sub_apply]
+    linear_combination -(hNcomm a φ)
+  · simp only [sub_apply, hN0, sub_zero, hE₀L]
+
+/-- **Amenability implies the existence of a bounded approximate diagonal.** Every amenable Banach
+algebra over `ℝ` or `ℂ` has a bounded approximate diagonal. -/
+theorem IsAmenable.exists_isApproximateDiagonal (h : IsAmenable 𝕜 A) :
+    ∃ (C : ℝ) (l : Filter (CompletedProjectiveTensor 𝕜 A A)),
+      IsApproximateDiagonal 𝕜 l ∧ ∀ᶠ m in l, ‖m‖ ≤ C :=
+  let ⟨M, hM⟩ := h.exists_isVirtualDiagonal
+  ⟨‖M‖, hM.exists_isApproximateDiagonal⟩
+
+/-- **Johnson's virtual-diagonal characterization of amenability.** A Banach algebra over `ℝ` or
+`ℂ` is amenable if and only if it has a virtual diagonal in `(A ⊗̂π A)**`. -/
+theorem isAmenable_iff_exists_isVirtualDiagonal :
+    IsAmenable 𝕜 A ↔
+      ∃ M : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A)),
+        IsVirtualDiagonal 𝕜 M :=
+  ⟨fun h ↦ h.exists_isVirtualDiagonal, fun ⟨_, hM⟩ ↦ hM.isAmenable⟩
+
+/-- **Johnson's approximate-diagonal characterization of amenability.** A Banach algebra over `ℝ`
+or `ℂ` is amenable if and only if it has a bounded approximate diagonal. -/
+theorem isAmenable_iff_exists_isApproximateDiagonal :
+    IsAmenable 𝕜 A ↔
+      ∃ (C : ℝ) (l : Filter (CompletedProjectiveTensor 𝕜 A A)),
+        IsApproximateDiagonal 𝕜 l ∧ ∀ᶠ m in l, ‖m‖ ≤ C :=
+  isAmenable_iff_exists_isVirtualDiagonal.trans
+    exists_isVirtualDiagonal_iff_exists_isApproximateDiagonal
+
+/-- Universe-polymorphic innerness for amenable Banach algebras over `ℝ` or `ℂ`: every bounded
+derivation into the dual `E*` of a normed `A`-bimodule `E` in *any* universe (without requiring
+completeness of `E`) is inner. -/
+theorem IsAmenable.exists_eq_dualAction_sub_dualAction' (h : IsAmenable 𝕜 A) {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {L R : A →L[𝕜] E →L[𝕜] E}
+    (hL : ∀ a b x, L (a * b) x = L a (L b x)) (hR : ∀ a b x, R (a * b) x = R b (R a x))
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) (D : A →L[𝕜] StrongDual 𝕜 E)
+    (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a)) :
+    ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ :=
+  let ⟨_, hM⟩ := h.exists_isVirtualDiagonal
+  hM.exists_eq_dualAction_sub_dualAction hL hR hLR D hD
+
+/-- For an amenable Banach algebra `A` over `ℝ` or `ℂ`, the first bounded Hochschild cohomology
+`H¹(A, E*)` vanishes for every normed `A`-bimodule `E` in any universe. -/
+theorem IsAmenable.subsingleton_hochschildBimoduleCohomology_one (h : IsAmenable 𝕜 A)
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    (L R : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b x, L (a * b) x = L a (L b x))
+    (hR : ∀ a b x, R (a * b) x = R b (R a x)) (hLR : ∀ a b x, L a (R b x) = R b (L a x)) :
+    Subsingleton (hochschildBimoduleCohomology (dualAction R) (dualAction L)
+      (dualAction_mul_apply_of_right hR) (dualAction_mul_apply_of_left hL)
+      (dualAction_apply_dualAction_apply_comm hLR) 1) :=
+  (hochschildBimoduleCohomology.subsingleton_one_iff _ _ _ _ _).2
+    (h.exists_eq_dualAction_sub_dualAction' hL hR hLR)
+
+end DiagonalCharacterization
 
 end TauCeti
