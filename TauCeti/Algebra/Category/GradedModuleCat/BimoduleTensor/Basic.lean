@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Basic
 public import TauCeti.Algebra.TensorProduct.Module
-public import TauCeti.Algebra.Module.GradedModule.Opposite
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Actions
-public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
 
 /-!
@@ -24,8 +22,7 @@ enveloping algebra, with the tensor-product internal grading. Restricting the
 enveloping action supplies the actions used to balance. The quotient has the sum
 internal grading and the two outer actions.
 
-The construction uses the existing balanced quotient, grading, map, and lift APIs.
-Its internal grading introduces no Koszul sign. Cohomological tensor signs come
+The internal grading introduces no Koszul sign. Cohomological tensor signs come
 from Mathlib's totalization when this bifunctor is applied to cochain complexes.
 Taking all three algebras and gradings equal gives tensor composition of
 endobimodules; heterogeneous composition also supplies the tensors needed for
