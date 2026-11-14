@@ -54,8 +54,7 @@ elliptic curve over a field `F` that is complete with respect to `v`, or more ge
 with perfect residue field, this is the local Tamagawa number `c_v`. Over other fields it is the
 index over `F` itself, which can be smaller than `c_v`; for a global field, apply it to the
 completion, as `WeierstrassCurve.tamagawaNumberAt` does. -/
-noncomputable def tamagawaNumber (E : WeierstrassCurve F)
-    (v : Valuation F Γ₀) [IsDiscreteValuationRing v.valuationSubring] : ℕ :=
+noncomputable def tamagawaNumber : ℕ :=
   ((E.minimal v.valuationSubring).toAffine.nonsingularReduction v).index
 
 open scoped Classical in
