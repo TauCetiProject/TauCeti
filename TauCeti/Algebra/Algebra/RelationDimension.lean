@@ -17,11 +17,6 @@ quotients by compatible subspaces, provided the relevant quotients are finite-di
 the dimension-counting step of the Golod–Shafarevich inequality, used by
 `TauCeti.card_sq_lt_four_mul_card_of_relations_le_span`.
 
-The proof replaces `T` by the space `T'` of `U`-combinations of the `x` (so `T ≤ T' ≤ S`) and
-considers the induced linear maps `(A ⧸ W)^κ → (A ⧸ U)^ι → A ⧸ T'`: the kernel of the right-hand
-map lies in the range of the left-hand map, and the image of the right-hand map is killed by
-`A ⧸ T' → A ⧸ S`.
-
 ## Main results
 
 * `TauCeti.card_mul_finrank_quotient_add_le`: a bound on quotient dimensions from generators
