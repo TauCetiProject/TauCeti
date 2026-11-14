@@ -349,39 +349,24 @@ private theorem inner_mfderiv_mul_left (p q : Nil) (v w : TangentSpace 𝓘(ℝ,
     ContinuousLinearMap.coe_comp, Function.comp_apply, smul_eq_mul]
   ring
 
-/-- Left multiplication by `p`, as an isometry of `Nil`. -/
-private def mulLeft (p : Nil) : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil where
-  toFun := (p * ·)
-  invFun := (p⁻¹ * ·)
-  left_inv q := inv_mul_cancel_left p q
-  right_inv q := mul_inv_cancel_left p q
-  contMDiff_toFun := contMDiff_mul_left p
-  contMDiff_invFun := contMDiff_mul_left p⁻¹
-  inner_mfderiv' q v w := by
-    -- The underlying map of the diffeomorphism under construction is `(p * ·)` by definition;
-    -- `change` states the goal in terms of that function, so that its differential applies.
-    change inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (p * ·) q v)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (p * ·) q w) = inner ℝ v w
-    exact inner_mfderiv_mul_left p q v w
-
-private theorem mulLeft_apply (p q : Nil) : mulLeft p q = p * q := (rfl)
+/-- Left multiplication by an element of `Nil` is smooth. -/
+instance contMDiffConstSMul : ContMDiffConstSMul 𝓘(ℝ, ℝ × ℝ × ℝ) ∞ Nil Nil :=
+  ⟨fun p ↦ contMDiff_mul_left p⟩
 
 /-- Left multiplication, as a group homomorphism from `Nil` to its isometry group: the metric
 of `Nil` is left-invariant. -/
-def toIsom : Nil →* Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil where
-  toFun := mulLeft
-  map_one' := RiemannianIsometry.ext fun q ↦ by
-    rw [mulLeft_apply, RiemannianIsometry.one_apply, one_mul]
-  map_mul' p p' := RiemannianIsometry.ext fun q ↦ by
-    rw [RiemannianIsometry.mul_apply, mulLeft_apply, mulLeft_apply, mulLeft_apply, mul_assoc]
+def toIsom : Nil →* Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil :=
+  RiemannianIsometry.constSMulHom inner_mfderiv_mul_left
 
 /-- The isometry `toIsom p` is left multiplication by `p`. -/
 @[simp]
-theorem toIsom_apply (p q : Nil) : toIsom p q = p * q := (rfl)
+theorem toIsom_apply (p q : Nil) : toIsom p q = p * q := by
+  rw [toIsom, RiemannianIsometry.constSMulHom_apply, RiemannianIsometry.constSMul_apply,
+    smul_eq_mul]
 
 /-- Distinct elements of `Nil` act by distinct isometries. -/
-theorem toIsom_injective : Function.Injective toIsom := fun p p' h ↦ by
-  simpa using DFunLike.congr_fun h 1
+theorem toIsom_injective : Function.Injective toIsom :=
+  RiemannianIsometry.constSMulHom_injective _
 
 /-- The isometry group of `Nil` acts transitively: `Nil` is a homogeneous Riemannian manifold.
 This is transferred along `toIsom` from the transitive action of `Nil` on itself by left
