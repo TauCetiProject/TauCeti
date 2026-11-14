@@ -8,10 +8,13 @@ module
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
+public import TauCeti.Analysis.Normed.Module.Dual.Bilinear
+public import TauCeti.Analysis.Normed.Module.Dual.Functoriality
+public import TauCeti.Analysis.Normed.Module.Dual.Quotient
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 
 /-!
-# The dual of a submodule
+# The dual and bidual of a submodule
 
 Restricting continuous linear functionals from `E` to a submodule `S` is precomposition with the
 inclusion `S.subtypeL`. Its kernel is the annihilator of `S`, and by the Hahn–Banach theorem it is
@@ -19,7 +22,9 @@ surjective. Moreover, the quotient norm of a functional modulo the annihilator e
 its restriction, since a norm-preserving extension of the restriction is a representative of the
 same class. Hence restriction descends to an isometric identification of the quotient of the
 continuous dual of `E` by the annihilator of `S` with the continuous dual of `S`. This is the
-counterpart of the identification of the dual of `E ⧸ S` with the annihilator of `S`.
+counterpart of the identification of the dual of `E ⧸ S` with the annihilator of `S`. Dualizing
+once more identifies the bidual of `S` isometrically with the double annihilator `(Sᗮ)ᗮ` in the
+bidual of `E`, via the bidual adjoint of `S.subtypeL` (`Submodule.bidualEquivDoubleAnnihilator`).
 
 The annihilator is Mathlib's `Submodule.orthogonalBilin` for `topDualPairing`, and the duals carry
 the topology of bounded convergence. The kernel computation holds over any normed field, for any
@@ -71,6 +76,11 @@ section HahnBanach
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+attribute [local instance] ContinuousLinearMap.strongDualSeminormedAddCommGroup
+  ContinuousLinearMap.strongDualNormedSpace
+  ContinuousLinearMap.strongBidualSeminormedAddCommGroup
+  ContinuousLinearMap.strongBidualNormedSpace
 
 /-- A vector outside a closed submodule is sent to `1` by a continuous linear functional vanishing
 on the submodule. -/
@@ -141,6 +151,106 @@ theorem quotientAnnihilatorEquivDual_naturality (S : Submodule 𝕜 E) (R : Subm
     (R.quotientAnnihilatorEquivDual (Submodule.Quotient.mk f)).comp Ts =
       S.quotientAnnihilatorEquivDual (Submodule.Quotient.mk (f.comp T)) := by
   simp only [quotientAnnihilatorEquivDual_mk, ContinuousLinearMap.comp_assoc, h]
+
+/-- Precomposing a bidual functional with restriction to `S` preserves its operator norm. -/
+@[simp]
+theorem norm_comp_precomp_subtypeL (S : Submodule 𝕜 E)
+    (Φ : StrongDual 𝕜 (StrongDual 𝕜 S)) :
+    ‖Φ.comp (ContinuousLinearMap.precomp 𝕜 S.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 S)‖ =
+      ‖Φ‖ := by
+  let Ψ := Φ.comp S.quotientAnnihilatorEquivDual.toLinearIsometry.toContinuousLinearMap
+  have heq : Φ.comp
+      (ContinuousLinearMap.precomp 𝕜 S.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 S) =
+      ((S.orthogonalBilin (topDualPairing 𝕜 E).flip).quotientDualEquivAnnihilator Ψ :
+        StrongDual 𝕜 (StrongDual 𝕜 E)) := by
+    ext f
+    simp [Ψ]
+  rw [heq, Submodule.norm_coe, LinearIsometryEquiv.norm_map]
+  refine le_antisymm
+    ((Φ.opNorm_comp_le _).trans <| mul_le_of_le_one_right (norm_nonneg Φ)
+      S.quotientAnnihilatorEquivDual.toLinearIsometry.norm_toContinuousLinearMap_le) ?_
+  have hΦ : Φ =
+      Ψ.comp S.quotientAnnihilatorEquivDual.symm.toLinearIsometry.toContinuousLinearMap := by
+    ext g
+    simp [Ψ]
+  conv_lhs => rw [hΦ]
+  exact (Ψ.opNorm_comp_le _).trans <| mul_le_of_le_one_right (norm_nonneg Ψ)
+    S.quotientAnnihilatorEquivDual.symm.toLinearIsometry.norm_toContinuousLinearMap_le
+
+/-- The bidual adjoint of `S.subtypeL` is an isometry. -/
+theorem norm_precomp_precomp_subtypeL_apply (S : Submodule 𝕜 E)
+    (Φ : StrongDual 𝕜 (StrongDual 𝕜 S)) :
+    ‖ContinuousLinearMap.precomp 𝕜
+      (ContinuousLinearMap.precomp 𝕜 S.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 S) Φ‖ =
+      ‖Φ‖ :=
+  S.norm_comp_precomp_subtypeL Φ
+
+/-- The bidual of a submodule is isometrically the double annihilator `(Sᗮ)ᗮ` of the submodule in
+the bidual of the ambient space. The forward map is the bidual adjoint of `S.subtypeL`. -/
+noncomputable def bidualEquivDoubleAnnihilator (S : Submodule 𝕜 E) :
+    StrongDual 𝕜 (StrongDual 𝕜 S) ≃ₗᵢ[𝕜]
+      (S.orthogonalBilin (topDualPairing 𝕜 E).flip).orthogonalBilin
+        (topDualPairing 𝕜 (StrongDual 𝕜 E)).flip where
+  toFun Φ :=
+    ⟨ContinuousLinearMap.precomp 𝕜
+        (ContinuousLinearMap.precomp 𝕜 S.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 S) Φ,
+      fun f hf ↦ by
+        have hf0 : f.comp S.subtypeL = 0 := by
+          ext x
+          simpa using mem_orthogonalBilin.mp hf x x.2
+        simp [ContinuousLinearMap.precomp_apply, hf0]⟩
+  invFun Ψ :=
+    ((S.orthogonalBilin (topDualPairing 𝕜 E).flip).quotientDualEquivAnnihilator.symm Ψ).comp
+      S.quotientAnnihilatorEquivDual.symm.toLinearIsometry.toContinuousLinearMap
+  left_inv Φ := by
+    ext g
+    obtain ⟨f, rfl⟩ := S.surjective_precomp_subtypeL g
+    simp [ContinuousLinearMap.precomp_apply]
+  right_inv Ψ := by
+    apply Subtype.ext
+    ext f
+    simp [ContinuousLinearMap.precomp_apply]
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  norm_map' Φ := S.norm_precomp_precomp_subtypeL_apply Φ
+
+/-- Forgetting the double-annihilator subtype recovers the bidual adjoint of `S.subtypeL`. -/
+@[simp]
+theorem coe_bidualEquivDoubleAnnihilator_apply (S : Submodule 𝕜 E)
+    (Φ : StrongDual 𝕜 (StrongDual 𝕜 S)) :
+    (S.bidualEquivDoubleAnnihilator Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) =
+      ContinuousLinearMap.precomp 𝕜
+        (ContinuousLinearMap.precomp 𝕜 S.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 S) Φ :=
+  (rfl)
+
+/-- Evaluating the inverse identification on the restriction of an ambient functional gives the
+value of the double-annihilating bidual element on that functional. -/
+@[simp]
+theorem bidualEquivDoubleAnnihilator_symm_apply_comp_subtypeL (S : Submodule 𝕜 E)
+    (Ψ : (S.orthogonalBilin (topDualPairing 𝕜 E).flip).orthogonalBilin
+      (topDualPairing 𝕜 (StrongDual 𝕜 E)).flip)
+    (f : StrongDual 𝕜 E) :
+    S.bidualEquivDoubleAnnihilator.symm Ψ (f.comp S.subtypeL) =
+      (Ψ : StrongDual 𝕜 (StrongDual 𝕜 E)) f := by
+  have h := congr($(S.coe_bidualEquivDoubleAnnihilator_apply
+    (S.bidualEquivDoubleAnnihilator.symm Ψ)) f)
+  simpa [ContinuousLinearMap.precomp_apply] using h.symm
+
+/-- The range of the bidual adjoint of `S.subtypeL` is the double annihilator `(Sᗮ)ᗮ`. -/
+theorem range_precomp_precomp_subtypeL (S : Submodule 𝕜 E) :
+    (ContinuousLinearMap.precomp 𝕜
+      (ContinuousLinearMap.precomp 𝕜 S.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 S)).range =
+      (S.orthogonalBilin (topDualPairing 𝕜 E).flip).orthogonalBilin
+        (topDualPairing 𝕜 (StrongDual 𝕜 E)).flip := by
+  ext Ψ
+  constructor
+  · rintro ⟨Φ, rfl⟩
+    rw [ContinuousLinearMap.coe_coe, ← S.coe_bidualEquivDoubleAnnihilator_apply]
+    exact (S.bidualEquivDoubleAnnihilator Φ).2
+  · intro hΨ
+    refine ⟨S.bidualEquivDoubleAnnihilator.symm ⟨Ψ, hΨ⟩, ?_⟩
+    rw [ContinuousLinearMap.coe_coe, ← S.coe_bidualEquivDoubleAnnihilator_apply]
+    simp
 
 end HahnBanach
 

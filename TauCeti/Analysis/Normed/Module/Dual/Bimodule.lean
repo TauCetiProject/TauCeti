@@ -57,6 +57,11 @@ weak-star closed submodules of `E*`.
   continuous in the dual variable.
 * `ContinuousLinearMap.precomp_dualAction_apply`: the adjoint of a module map intertwines the
   dual actions.
+* `ContinuousLinearMap.dualAction_dualAction_apply`,
+  `ContinuousLinearMap.dualAction_dualAction_inclusionInDoubleDual`, and
+  `ContinuousLinearMap.precomp_precomp_dualAction_dualAction_apply`: the iterated dual action on
+  the bidual `E**` is the bidual adjoint `(M a)**`, extends `M` along the canonical embedding,
+  and is intertwined by bidual adjoints of module maps.
 
 ## References
 
@@ -137,5 +142,31 @@ theorem precomp_dualAction_apply {M : A →L[𝕜] E →L[𝕜] E} {N : A →L[�
     precomp 𝕜 T (dualAction N a ψ) = dualAction M a (precomp 𝕜 T ψ) := by
   ext x
   simp [hT]
+
+/-- The iterated dual action of `a` on the bidual `E**` is the bidual adjoint `(M a)**`. -/
+theorem dualAction_dualAction_apply (M : A →L[𝕜] E →L[𝕜] E) (a : A) :
+    dualAction (dualAction M) a =
+      precomp 𝕜 (precomp 𝕜 (M a) : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 E) := by
+  rw [dualAction_apply, dualAction_apply]
+
+/-- The iterated dual action on the bidual extends the original action along the canonical
+embedding `NormedSpace.inclusionInDoubleDual`. -/
+@[simp]
+theorem dualAction_dualAction_inclusionInDoubleDual (M : A →L[𝕜] E →L[𝕜] E) (a : A) (x : E) :
+    dualAction (dualAction M) a (NormedSpace.inclusionInDoubleDual 𝕜 E x) =
+      NormedSpace.inclusionInDoubleDual 𝕜 E (M a x) := by
+  ext φ
+  simp [NormedSpace.dual_def]
+
+/-- The bidual adjoint `T**` of a bounded module map intertwines the iterated dual actions on the
+biduals. -/
+theorem precomp_precomp_dualAction_dualAction_apply {M : A →L[𝕜] E →L[𝕜] E}
+    {N : A →L[𝕜] F →L[𝕜] F} {T : E →L[𝕜] F} (hT : ∀ a x, T (M a x) = N a (T x)) (a : A)
+    (Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) :
+    precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)
+        (dualAction (dualAction M) a Φ) =
+      dualAction (dualAction N) a
+        (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) Φ) :=
+  precomp_dualAction_apply (precomp_dualAction_apply hT) a Φ
 
 end ContinuousLinearMap
