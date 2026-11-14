@@ -31,9 +31,13 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.memLp_cdf_comp` proves `Lᵖ` membership of a cdf composed with an
   a.e. measurable function on a finite measure space;
 * `MeasureTheory.Measure.cdf_map` computes the cdf of an almost-everywhere measurable pushforward;
-* `ProbabilityTheory.cdf_zero` computes the cdf of the zero measure;
-* `MeasureTheory.Measure.nonempty_setOf_le_cdf` shows that a level below one is reached by the cdf
-  at some point;
+* `ProbabilityTheory.cdf_zero` computes the cdf of the zero measure, and
+  `ProbabilityTheory.continuousOn_cdf_zero` shows that it is continuous away from zero;
+* `MeasureTheory.Measure.nonempty_setOf_le_cdf` and `MeasureTheory.Measure.nonempty_setOf_lt_cdf`
+  show that a level below one is reached, respectively strictly exceeded, by the cdf at some
+  point, and `MeasureTheory.Measure.bddBelow_setOf_le_cdf` and
+  `MeasureTheory.Measure.bddBelow_setOf_lt_cdf` show that the points where a level above zero is
+  reached, respectively strictly exceeded, are bounded below;
 * `MeasureTheory.Measure.continuousAt_cdf_iff` characterizes continuity of a real probability
   law's cdf at a point by vanishing singleton mass;
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
@@ -50,9 +54,11 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.cdf_eq_zero_of_ae_lt` and `MeasureTheory.Measure.cdf_eq_one_of_ae_le`
   show that the cdf is zero at a point below almost every sample and one at a point bounding
   almost every sample from above;
-* `MeasureTheory.Measure.measureReal_Iio_le_iff_forall_cdf_le` bounds the mass of an open ray by
-  the cdf at all points to its left, and `MeasureTheory.Measure.measureReal_Ioc_eq_cdf_sub`
-  computes the mass of a half-open interval as a cdf increment;
+* `MeasureTheory.Measure.measureReal_Iio_le_iff_forall_cdf_le` characterizes an upper bound on the
+  mass of an open ray by the same upper bound on the cdf at every point strictly to its left,
+  `MeasureTheory.Measure.measureReal_Ioc_eq_cdf_sub` computes the mass of a half-open interval as
+  a cdf increment, and `MeasureTheory.Measure.measureReal_Ioi_eq_one_sub_cdf` computes the mass of
+  an open upper ray as one minus the cdf;
 * `TauCeti.Probability.one_sub_cdf_zero_eq_one` and
   `TauCeti.Probability.one_sub_cdf_zero_eq_one_of_absolutelyContinuous` show that survival starts
   at one for an atomless or absolutely continuous law carried by the nonnegative half-line;
@@ -67,7 +73,9 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   support point on the appropriate side of the cutoff;
 * `MeasureTheory.Measure.cdf_pos_iff_of_support_eq_Icc` and
   `MeasureTheory.Measure.cdf_lt_one_iff_of_support_eq_Icc` characterize where the cdf of a law
-  with full closed-interval support is positive and where it is below one;
+  with closed-interval support `Icc a b` is below one (for the second, no further assumption) and
+  positive (for the first, when the law is also carried by the open interval `Ioo a b`, since an
+  atom at `a` would give positive cdf at `a`);
 * `MeasureTheory.Measure.cdf_lt_one_of_strictMonoOn_Ici` gives a strict upper bound for cdfs
   that increase strictly on a right half-line;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
