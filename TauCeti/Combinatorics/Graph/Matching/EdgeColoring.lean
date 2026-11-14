@@ -83,7 +83,8 @@ theorem chromaticNumber_lineGraph_le_iff_forall_incidenceCount_le [Finite E(G)]
   exact hLR.nonempty_edgeColoring_iff_forall_incidenceCount_le
 
 /-- In a finite bipartite multigraph, the chromatic number of the line graph is the largest
-incidence count of an actual vertex. The supremum over the empty vertex type is zero. -/
+incidence count over the bipartition sides `L` and `R`, which cover all actual vertices. This
+supremum is zero for the empty graph, when `L = R = ∅`. -/
 theorem chromaticNumber_lineGraph_eq_sup_incidenceCount [Finite E(G)]
     (hLR : G.IsBipartition L R) :
     G.lineGraph.chromaticNumber =
