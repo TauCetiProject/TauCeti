@@ -164,44 +164,35 @@ variable {C D}
 def of (F : C ⥤ D) [F.Monoidal] : MonoidalFunctor C D where
   toFunctor := F
 
-/-- The underlying lax monoidal functor of a strong monoidal functor. -/
-@[expose, simps! toFunctor]
-def toLaxMonoidalFunctor (F : MonoidalFunctor C D) : LaxMonoidalFunctor C D :=
-  LaxMonoidalFunctor.of F.toFunctor
+/-- The underlying lax monoidal functor of a strong monoidal functor. It is reducible, so that
+instance search sees the strong monoidal structure on the functor underlying it. -/
+abbrev toLaxMonoidalFunctor (F : MonoidalFunctor C D) : LaxMonoidalFunctor C D where
+  toFunctor := F.toFunctor
 
-/-- The type of monoidal natural transformations between strong monoidal functors. -/
-@[ext]
-structure Hom (F G : MonoidalFunctor C D) where
-  /-- The underlying natural transformation. -/
-  hom : F.toFunctor ⟶ G.toFunctor
-  isMonoidal : NatTrans.IsMonoidal hom := by infer_instance
-
-attribute [instance] Hom.isMonoidal
-
-/-- Strong monoidal functors and monoidal natural transformations. -/
-instance : Category (MonoidalFunctor C D) where
-  Hom := Hom
-  comp α β := ⟨α.hom ≫ β.hom, inferInstance⟩
-  id _ := ⟨𝟙 _, inferInstance⟩
+/-- Strong monoidal functors and monoidal natural transformations: the category induced from
+`LaxMonoidalFunctor C D` along `toLaxMonoidalFunctor`. -/
+instance : Category (MonoidalFunctor C D) :=
+  inferInstanceAs (Category (InducedCategory _ toLaxMonoidalFunctor))
 
 @[ext]
-theorem hom_ext {F G : MonoidalFunctor C D} {α β : F ⟶ G} (h : α.hom = β.hom) : α = β :=
-  Hom.ext h
+theorem hom_ext {F G : MonoidalFunctor C D} {α β : F ⟶ G} (h : α.hom.hom = β.hom.hom) : α = β :=
+  InducedCategory.hom_ext (LaxMonoidalFunctor.hom_ext h)
 
 @[simp]
-theorem id_hom (F : MonoidalFunctor C D) : Hom.hom (𝟙 F) = 𝟙 F.toFunctor :=
+theorem id_hom (F : MonoidalFunctor C D) :
+    LaxMonoidalFunctor.Hom.hom (InducedCategory.Hom.hom (𝟙 F)) = 𝟙 F.toFunctor :=
   (rfl)
 
 @[reassoc, simp]
 theorem comp_hom {F G H : MonoidalFunctor C D} (α : F ⟶ G) (β : G ⟶ H) :
-    (α ≫ β).hom = α.hom ≫ β.hom :=
+    (α ≫ β).hom.hom = α.hom.hom ≫ β.hom.hom :=
   (rfl)
 
 /-- Constructor for morphisms of strong monoidal functors. -/
 @[expose, simps]
 def homMk {F G : MonoidalFunctor C D} (f : F.toFunctor ⟶ G.toFunctor) [NatTrans.IsMonoidal f] :
     F ⟶ G :=
-  ⟨f, inferInstance⟩
+  ⟨⟨f, ‹NatTrans.IsMonoidal f›⟩⟩
 
 /-- Constructor for isomorphisms of strong monoidal functors. -/
 @[expose, simps]
@@ -209,18 +200,19 @@ def isoMk {F G : MonoidalFunctor C D} (e : F.toFunctor ≅ G.toFunctor)
     [NatTrans.IsMonoidal e.hom] : F ≅ G where
   hom := homMk e.hom
   inv := homMk e.inv
+  hom_inv_id := hom_ext e.hom_inv_id
+  inv_hom_id := hom_ext e.inv_hom_id
 
 variable (C D) in
 /-- The forgetful functor from strong to lax monoidal functors. -/
-@[expose, simps]
-def forget : MonoidalFunctor C D ⥤ LaxMonoidalFunctor C D where
-  obj F := F.toLaxMonoidalFunctor
-  map α := ⟨α.hom, α.isMonoidal⟩
+@[expose, simps! obj map]
+def forget : MonoidalFunctor C D ⥤ LaxMonoidalFunctor C D :=
+  inducedFunctor _
 
 variable (C D) in
 /-- The forgetful functor from strong to lax monoidal functors is fully faithful. -/
-def fullyFaithfulForget : (forget C D).FullyFaithful where
-  preimage α := ⟨α.hom, α.isMonoidal⟩
+def fullyFaithfulForget : (forget C D).FullyFaithful :=
+  fullyFaithfulInducedFunctor _
 
 instance : (forget C D).Full :=
   (fullyFaithfulForget C D).full
@@ -232,13 +224,13 @@ instance : (forget C D).Faithful :=
 functors. -/
 @[expose, simps]
 def toFunctorIso {F G : MonoidalFunctor C D} (e : F ≅ G) : F.toFunctor ≅ G.toFunctor where
-  hom := e.hom.hom
-  inv := e.inv.hom
-  hom_inv_id := by rw [← comp_hom, e.hom_inv_id, id_hom]
-  inv_hom_id := by rw [← comp_hom, e.inv_hom_id, id_hom]
+  hom := e.hom.hom.hom
+  inv := e.inv.hom.hom
+  hom_inv_id := congrArg (fun α ↦ α.hom.hom) e.hom_inv_id
+  inv_hom_id := congrArg (fun α ↦ α.hom.hom) e.inv_hom_id
 
 instance {F G : MonoidalFunctor C D} (e : F ≅ G) : NatTrans.IsMonoidal (toFunctorIso e).hom :=
-  e.hom.isMonoidal
+  e.hom.hom.isMonoidal
 
 end MonoidalFunctor
 
