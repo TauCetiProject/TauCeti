@@ -53,6 +53,9 @@ comparisons of quantum divided-power relations at opposite parameters.
   `q ≠ 0`.
 * `TauCeti.coeff_prod_range_one_add_C_mul_X`: Cauchy's binomial theorem in coefficient form, the
   coefficient of `X ^ k` in `∏_{j < n} (1 + q^(2j) X)` is `q^(k(n-1)) [n choose k]_q`.
+* `TauCeti.sum_neg_one_pow_mul_zpow_mul_quantumBinomial` and
+  `TauCeti.sum_neg_one_pow_mul_zpow_neg_mul_quantumBinomial`: the alternating Cauchy sums
+  `∑_k (-1)^k q^(±k(n-1)) [n choose k]_q = δ_{n, 0}` for `q ≠ 0`.
 
 ## References
 
@@ -367,5 +370,38 @@ theorem add_pow_of_mul_eq_smul_mul {A : Type*} [Semiring A] [Algebra K A] {q : K
       intro k hk
       rw [Nat.add_sub_add_right, ← add_smul,
         ← pow_mul_quantumBinomial_add_pow_mul_quantumBinomial hq (Nat.lt_succ_iff.mp hk), add_comm]
+
+open Polynomial in
+/-- **Alternating Cauchy binomial identity**: for `q ≠ 0`, evaluating
+`∏_{j < n} (1 + q^(2j) X)` at `X = -1` gives
+`∑_{k = 0}^n (-1)^k q^(k(n-1)) [n choose k]_q = δ_{n, 0}`. -/
+theorem sum_neg_one_pow_mul_zpow_mul_quantumBinomial {q : K} (hq : q ≠ 0) (n : ℕ) :
+    ∑ k ∈ range (n + 1),
+      (-1 : K) ^ k * q ^ ((k : ℤ) * (n - 1)) * quantumBinomial q n k =
+      if n = 0 then 1 else 0 := by
+  have hdeg : (∏ j ∈ range n, (1 + C ((q ^ 2) ^ j) * X)).natDegree < n + 1 := by
+    refine (natDegree_prod_le _ _).trans_lt ?_
+    refine (sum_le_sum (g := fun _ => 1) fun j _ => ?_).trans_lt (by simp)
+    exact (natDegree_add_le _ _).trans (max_le (by simp) ((natDegree_C_mul_le _ _).trans (by simp)))
+  have heval := eval_eq_sum_range' hdeg (-1 : K)
+  rw [eval_prod] at heval
+  have hprod : (∏ j ∈ range n, (1 + C ((q ^ 2) ^ j) * X).eval (-1)) =
+      if n = 0 then 1 else 0 := by
+    cases n with
+    | zero => simp
+    | succ n => simp [prod_range_succ']
+  rw [← hprod, heval]
+  refine sum_congr rfl fun k _ => ?_
+  rw [coeff_prod_range_one_add_C_mul_X hq]
+  ring
+
+/-- The `q ↦ q⁻¹` form of the alternating Cauchy binomial identity: for `q ≠ 0`,
+`∑_{k = 0}^n (-1)^k q^(-k(n-1)) [n choose k]_q = δ_{n, 0}`. -/
+theorem sum_neg_one_pow_mul_zpow_neg_mul_quantumBinomial {q : K} (hq : q ≠ 0) (n : ℕ) :
+    ∑ k ∈ range (n + 1),
+      (-1 : K) ^ k * q ^ (-((k : ℤ) * (n - 1))) * quantumBinomial q n k =
+      if n = 0 then 1 else 0 := by
+  simpa only [inv_zpow, ← zpow_neg, quantumBinomial_inv] using
+    sum_neg_one_pow_mul_zpow_mul_quantumBinomial (inv_ne_zero hq) n
 
 end TauCeti
