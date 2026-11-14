@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.CompactSublevel
-public import TauCeti.Dynamics.Flow.Convergence
+public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Analysis.Calculus.Morse.Stable
 import TauCeti.Analysis.Calculus.Morse.Transversality
 
@@ -261,7 +261,8 @@ theorem exists_subseq_unbroken_or_broken_of_morseIndex_eq_add_two
   · subst a
     by_cases hbq : b = q
     · subst b
-      exact ⟨n, y, hn, hyc, φ.tendstoLocallyUniformly_orbit hlim, Or.inl ⟨hya, hyb⟩⟩
+      exact ⟨n, y, hn, hyc, tendstoLocallyUniformly_of_forall_continuousAt
+        (fun _ ↦ φ.cont'.continuousAt) hlim, Or.inl ⟨hya, hyb⟩⟩
     · have hqb' := hqb hbq
       have hpb : morseIndex f p = morseIndex f b + 1 := by omega
       have hbq' : morseIndex f b = morseIndex f q + 1 := by omega
@@ -269,15 +270,18 @@ theorem exists_subseq_unbroken_or_broken_of_morseIndex_eq_add_two
         exists_forward_break_of_index_one hfs hf hM hcompact htr hb (Ne.symm hbq)
           hbq' hyb hlim (fun k ↦ (hu (n k)).1.2)
       exact ⟨n ∘ m, y, hn.comp hm, hyc,
-        φ.tendstoLocallyUniformly_orbit (hlim.comp hm.tendsto_atTop),
+        tendstoLocallyUniformly_of_forall_continuousAt (fun _ ↦ φ.cont'.continuousAt)
+          (hlim.comp hm.tendsto_atTop),
         Or.inr ⟨b, z, t, hb, hpb, hbq',
-          (φ.tendstoLocallyUniformly_orbit hzlim).congr
+          (tendstoLocallyUniformly_of_forall_continuousAt (fun _ ↦ φ.cont'.continuousAt)
+            hzlim).congr
             (fun k s ↦ (φ.map_add s (t k) (u (n (m k)))).symm),
           Or.inl ⟨⟨hya, hyb⟩, hz, ht⟩⟩⟩
   · subst b
     by_cases hap : a = p
     · subst a
-      exact ⟨n, y, hn, hyc, φ.tendstoLocallyUniformly_orbit hlim, Or.inl ⟨hya, hyb⟩⟩
+      exact ⟨n, y, hn, hyc, tendstoLocallyUniformly_of_forall_continuousAt
+        (fun _ ↦ φ.cont'.continuousAt) hlim, Or.inl ⟨hya, hyb⟩⟩
     · have hpa' := hpa hap
       have hpa'' : morseIndex f p = morseIndex f a + 1 := by omega
       have haq : morseIndex f a = morseIndex f q + 1 := by omega
@@ -285,9 +289,11 @@ theorem exists_subseq_unbroken_or_broken_of_morseIndex_eq_add_two
         exists_backward_break_of_index_one hfs hf hM hcompact htr ha (Ne.symm hap)
           hpa'' hya hlim (fun k ↦ (hu (n k)).1.1)
       exact ⟨n ∘ m, y, hn.comp hm, hyc,
-        φ.tendstoLocallyUniformly_orbit (hlim.comp hm.tendsto_atTop),
+        tendstoLocallyUniformly_of_forall_continuousAt (fun _ ↦ φ.cont'.continuousAt)
+          (hlim.comp hm.tendsto_atTop),
         Or.inr ⟨a, z, t, ha, hpa'', haq,
-          (φ.tendstoLocallyUniformly_orbit hzlim).congr
+          (tendstoLocallyUniformly_of_forall_continuousAt (fun _ ↦ φ.cont'.continuousAt)
+            hzlim).congr
             (fun k s ↦ (φ.map_add s (t k) (u (n (m k)))).symm),
           Or.inr ⟨⟨hya, hyb⟩, hz, ht⟩⟩⟩
 

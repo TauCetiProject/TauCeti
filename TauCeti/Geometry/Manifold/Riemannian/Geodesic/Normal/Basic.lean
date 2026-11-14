@@ -54,6 +54,8 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
   differential of the exponential map along a fixed vector is smooth on a normal domain.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_riemannianExp` and
   `TauCeti.Manifold.riemannianExp_riemannianLog`: the two inverse identities.
+* `TauCeti.Manifold.IsNormalDomain.riemannianLog_eq_of_subset`: the logarithm does not depend on
+  the normal domain.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_self`: the logarithm vanishes at the base point.
 * `TauCeti.Manifold.IsNormalDomain.contMDiffOn_riemannianLog`: the logarithm is smooth on the
   normal neighbourhood.
@@ -289,6 +291,14 @@ variable {p : M} {U : Set (TangentSpace I p)} {v : TangentSpace I p} {q : M}
     riemannianLog I M p U (riemannianExp I M p v) = v := by
   rw [riemannianLog_def]
   exact h.injOn.leftInvOn_invFunOn hv
+
+/-- The logarithm does not depend on the normal domain: on the normal neighbourhood of a smaller
+set `U ⊆ V`, the logarithms relative to `U` and to the normal domain `V` agree. -/
+theorem riemannianLog_eq_of_subset {V : Set (TangentSpace I p)} (h : IsNormalDomain I M p V)
+    (hUV : U ⊆ V) (hq : q ∈ riemannianExp I M p '' U) :
+    riemannianLog I M p U q = riemannianLog I M p V q := by
+  conv_rhs => rw [← riemannianExp_riemannianLog hq]
+  exact (h.riemannianLog_riemannianExp (hUV (riemannianLog_mem hq))).symm
 
 /-- **The Riemannian logarithm is smooth** on the normal neighbourhood it inverts. -/
 theorem contMDiffOn_riemannianLog (h : IsNormalDomain I M p U) :
