@@ -61,8 +61,7 @@ subgroup isomorphic to `ℤ`.
 * V. Guirardel, G. Levitt, *JSJ decompositions of groups*, Astérisque 395 (2017), §5.1.2 (an
   essential two-sided simple closed curve on a surface defines a cyclic splitting of its
   fundamental group relative to the boundary subgroups).
-* J.-P. Serre, *Trees*, Springer, 1980, Chapter I, §4.1 (amalgams as fundamental groups of
-  segments of groups).
+* J.-P. Serre, *Trees*, Springer, 1980, Chapter I, §1.1 (amalgams and their universal property).
 -/
 
 public section

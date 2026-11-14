@@ -37,8 +37,10 @@ available in an arbitrary group (`TauCeti.SurfaceGroup.orientableWord` and
 `TauCeti.SurfaceGroup.nonorientableWord`), so that the universal properties read: homomorphisms
 out of a surface group correspond to tuples of elements at which the surface word is trivial.
 The product of two orientable surface words is again an orientable surface word once the handle
-elements of the second are conjugated (`TauCeti.SurfaceGroup.orientableWord_mul_orientableWord`):
-this is the relation of a surface glued from two pieces along a boundary curve.
+elements of the second are conjugated (`TauCeti.SurfaceGroup.orientableWord_mul_orientableWord`),
+and likewise for nonorientable surface words and crosscap elements
+(`TauCeti.SurfaceGroup.nonorientableWord_mul_nonorientableWord`): this is the relation of a
+surface glued from two pieces along a boundary curve.
 
 ## Main definitions
 
@@ -163,6 +165,23 @@ theorem nonorientableWord_snoc (κ : Fin g → M) (γ : Fin m → M) (x : M) :
     nonorientableWord κ (Fin.snoc (α := fun _ ↦ M) γ x) = nonorientableWord κ γ * x := by
   rw [nonorientableWord_def, List.ofFn_succ', List.prod_concat]
   simp [nonorientableWord_def, mul_assoc]
+
+/-- **The nonorientable surface word of a glued surface.** The product of the nonorientable
+surface words of two pieces is the nonorientable surface word of the concatenated families, once
+the crosscap elements of the second piece are conjugated by the product `P = (List.ofFn γ₁).prod`
+of the boundary elements of the first: `W(κ₁, γ₁) * W(κ₂, γ₂) = W(κ₁ ++ P κ₂ P⁻¹, γ₁ ++ γ₂)`. -/
+theorem nonorientableWord_mul_nonorientableWord {g₁ g₂ m₁ m₂ : ℕ} (κ₁ : Fin g₁ → G)
+    (γ₁ : Fin m₁ → G) (κ₂ : Fin g₂ → G) (γ₂ : Fin m₂ → G) :
+    nonorientableWord κ₁ γ₁ * nonorientableWord κ₂ γ₂ =
+      nonorientableWord (Fin.append κ₁ fun i ↦ (List.ofFn γ₁).prod * κ₂ i * (List.ofFn γ₁).prod⁻¹)
+        (Fin.append γ₁ γ₂) := by
+  have hconj (P : G) : (List.ofFn fun i ↦ (P * κ₂ i * P⁻¹) ^ 2).prod =
+      P * (List.ofFn fun i ↦ κ₂ i ^ 2).prod * P⁻¹ := by
+    rw [← MulAut.conj_apply, map_list_prod, List.map_ofFn]
+    simp [Function.comp_def, conj_pow]
+  simp only [nonorientableWord_def, List.ofFn_add, List.prod_append, Fin.append_left',
+    Fin.append_right, hconj]
+  group
 
 end Nonorientable
 
