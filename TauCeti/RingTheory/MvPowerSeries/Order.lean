@@ -323,11 +323,10 @@ theorem homogeneousComponent_one_subst (f : MvPowerSeries σ R) {a : σ → MvPo
       (homogeneousComponent 1 f).subst fun i ↦ homogeneousComponent 1 (a i) := by
   have hg : 1 ≤ (f - C (constantCoeff f)).order :=
     one_le_order_iff_constCoeff_eq_zero.mpr (by simp)
-  have hf : f = (f - C (constantCoeff f)) + C (constantCoeff f) := by simp
-  rw [hf, subst_add ha, ← MvPolynomial.coe_C, subst_coe, MvPolynomial.aeval_C, algebraMap_apply,
-    map_add, homogeneousComponent_C_of_ne_zero one_ne_zero, add_zero,
-    homogeneousComponent_subst_of_le_order (by exact_mod_cast hg) ha ha₀, MvPolynomial.coe_C,
-    map_add, homogeneousComponent_C_of_ne_zero one_ne_zero, add_zero]
+  have hC : (C (constantCoeff f) : MvPowerSeries σ R).subst a =
+      C (algebraMap R S (constantCoeff f)) := by
+    rw [← MvPolynomial.coe_C, subst_coe, MvPolynomial.aeval_C, algebraMap_apply]
+  simpa [subst_sub ha, hC] using homogeneousComponent_subst_of_le_order hg ha ha₀
 
 end Subst
 
