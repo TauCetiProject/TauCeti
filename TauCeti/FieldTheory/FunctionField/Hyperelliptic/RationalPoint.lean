@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Genus.Basic
+-- Proof-only: every place of `k(x)` has a place of `F` above it.
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 -- Proof-only: the action of `Aut(F / k(x))` on places.
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
 import TauCeti.FieldTheory.FunctionField.Place.Extension.RatFunc

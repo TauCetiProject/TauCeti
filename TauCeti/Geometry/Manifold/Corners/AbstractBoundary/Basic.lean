@@ -21,9 +21,10 @@ are the pairs of a point `x` of `M` and a local face through `x`, so the fibre o
 points it looks like a single face of a chart, which is what makes it a manifold with corners one
 dimension down.
 
-This file constructs `∂ₐM` as a topological space; its charts are not constructed here. It works
-for models with corners `J` on `EuclideanSpace ℝ ι` whose range is cut out by the nonnegativity of
-some coordinates, such as the quadrant `𝓡c n` and the half-space `𝓡∂ n`. In a chart `e`, the
+This file constructs `∂ₐM` as a topological space; for the quadrant model its charts are in
+`TauCeti.Geometry.Manifold.Corners.AbstractBoundary.Manifold`. It works for models with
+corners `J` on `EuclideanSpace ℝ ι` whose range is cut out by the nonnegativity of some
+coordinates, such as the quadrant `𝓡c n` and the half-space `𝓡∂ n`. In a chart `e`, the
 faces of `range J` through `e.extend J x` are the hyperplanes `z i = 0` for the vanishing
 coordinates `i` that are nonnegative on `range J`. The corresponding local face of `M` through `x`
 is the germ at `x` of the set `{p | e.extend J p i = 0}` (`ModelWithCorners.faceGerm`), and

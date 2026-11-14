@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Algebra.Group.Nat.Even
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 public import TauCeti.Data.List.CommonPrefix
+public import TauCeti.Data.List.Unsplit
 import TauCeti.GroupTheory.FreeGroup.Basic
 import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 
@@ -18,9 +19,10 @@ import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 Elementary facts about reduced words complementing `Mathlib.GroupTheory.FreeGroup.Reduce`:
 the formal inverse of a one-letter word, uniqueness of reduced representatives, reducedness of
 formal inverses and of words of constant sign, powers of a letter, compatibility of formal
-inversion with subwords, and reducedness of words `w u w⁻¹` in which no letter cancels at either
-join. The reduced word of a product `of a * of b` of two generators is `[(a, true), (b, true)]`
-(`FreeGroup.toWord_of_mul_of`).
+inversion with subwords and with factorisations splitting no occurrence of a word
+(`FreeGroup.invRev_isUnsplit`), and reducedness of words `w u w⁻¹` in which no letter cancels at
+either join. The reduced word of a product `of a * of b` of two generators is
+`[(a, true), (b, true)]` (`FreeGroup.toWord_of_mul_of`).
 A word without repeated generators is reduced, a reduced word representing the identity is
 empty, a word that is not reduced admits a step of free reduction, and inserting a letter followed
 by its inverse does not change the element represented.
@@ -99,6 +101,18 @@ theorem invRev_isInfix_invRev {u v : List (α × Bool)} : invRev u <:+: invRev v
     ⟨fun huv ↦ by simpa using h huv, h⟩
   rintro u v ⟨s, t, rfl⟩
   exact ⟨invRev t, invRev s, by simp [List.append_assoc]⟩
+
+/-- The formal inverses of the members of `L`, in the reverse order, split no occurrence of the
+formal inverse of `l` exactly when `L` splits no occurrence of `l`. -/
+@[simp]
+theorem invRev_isUnsplit {l : List (α × Bool)} {L : List (List (α × Bool))} :
+    (invRev l).IsUnsplit (L.map invRev).reverse ↔ l.IsUnsplit L := by
+  have hf : Function.Injective fun c : α × Bool ↦ (c.1, !c.2) := fun c c' h ↦ by
+    simpa [Prod.ext_iff] using h
+  have e : L.map invRev = (L.map (List.map fun c : α × Bool ↦ (c.1, !c.2))).map List.reverse := by
+    simp [invRev, Function.comp_def]
+  rw [e]
+  exact List.reverse_isUnsplit.trans (List.map_isUnsplit_iff hf)
 
 /-- If `w` and the nonempty word `u` are reduced, the last letter of `w` does not cancel against
 the first letter of `u`, and the last letter of `u` does not cancel against the first letter of

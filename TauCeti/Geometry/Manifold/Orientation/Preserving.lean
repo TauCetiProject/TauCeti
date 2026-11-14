@@ -718,7 +718,7 @@ theorem signAt_mul_signAt_mul_det_pos
     (l : OrientationLift I M (Fin k)) (l' : OrientationLift J N (Fin k)) (C : E ≃L[ℝ] E')
     (hl : l'.modelOrientation =
       _root_.Orientation.map (Fin k) C.toLinearEquiv l.modelOrientation)
-    {f : M → N} {x : M} (hf : MDifferentiableAt I J f x)
+    {f : M → N} {x : M}
     (ho : Manifold.Orientation.IsOrientationPreservingAt (Manifold.Orientation.mk l)
       (Manifold.Orientation.mk l') f x)
     {β : M} {α : N} (hx : x ∈ (chartAt H β).source) (hfx : f x ∈ (chartAt H' α).source) :
@@ -746,12 +746,24 @@ theorem signAt_mul_signAt_mul_det_pos
   -- The tangent spaces at `x` and `f x` are the model spaces, so the manifold derivative of `f`
   -- is a map `D : E → E'`, which composes with the tangent coordinate changes.
   obtain ⟨D, hD₀⟩ : ∃ D : E →L[ℝ] E', D = mfderiv I J f x := ⟨_, rfl⟩
+  -- If `f` is not differentiable at `x`, then `D = 0` is an equivalence, so `E` is trivial and
+  -- every map out of `E` is zero; otherwise `f` is continuous at `x`.
   have hD : fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I)
       (extChartAt I β x) = tangentCoordChange J (f x) α (f x) ∘L D ∘L
         tangentCoordChange I β x x := by
-    subst hD₀
-    exact hf.fderivWithin_extChartAt_comp_extChartAt_symm
-      (by simpa only [extChartAt_source] using hx) (by simpa only [extChartAt_source] using hfx)
+    by_cases hd : MDifferentiableAt I J f x
+    · subst hD₀
+      exact hd.continuousAt.fderivWithin_extChartAt_comp_extChartAt_symm
+        (by simpa only [extChartAt_source] using hx) (by simpa only [extChartAt_source] using hfx)
+    · have hsub : Subsingleton E := by
+        refine ⟨fun v w ↦ ?_⟩
+        have h0 : (e : TangentSpace I x →L[ℝ] TangentSpace J (f x)) = 0 :=
+          he.trans (mfderiv_zero_of_not_mdifferentiableAt hd)
+        exact sub_eq_zero.1 (e.injective
+          ((DFunLike.congr_fun h0 (v - w)).trans (map_zero e).symm))
+      ext v
+      rw [Subsingleton.elim v 0]
+      simp
   -- `e` is the derivative `D`, read as a linear equivalence of the model spaces; this is `rfl`
   -- because `TangentSpace I x` and `TangentSpace J (f x)` are by definition `E` and `E'`.
   have hDA : (D : E →ₗ[ℝ] E') = A := by
