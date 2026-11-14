@@ -28,6 +28,7 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
 * `SchwartzMap.integrable_one_add_norm_sq_rpow_mul_norm`: `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is integrable
   for every real `r`.
+* `SchwartzMap.integrable_rpow_mul_norm`: `‖x‖ ^ r ‖f x‖` is integrable for every real `r ≥ 0`.
 * `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
   against any measure of temperate growth.
 * `SchwartzMap.integrable_norm_iteratedFDeriv`: `‖D^k f x‖` is integrable.
@@ -169,6 +170,25 @@ theorem integrable_one_add_norm_sq_rpow_mul_norm {V : Type*} [NormedAddCommGroup
     (.of_forall fun x ↦ ?_)
   dsimp only
   rw [smulLeftCLM_apply_apply hg, norm_smul, Real.norm_of_nonneg (by positivity)]
+
+omit [SecondCountableTopology E] in
+/-- For a Schwartz function `f` and every real `r ≥ 0`, the moment `‖x‖ ^ r ‖f x‖` is
+integrable. -/
+theorem integrable_rpow_mul_norm {r : ℝ} (hr : 0 ≤ r) (f : 𝓢(E, F)) :
+    Integrable (fun x ↦ ‖x‖ ^ r * ‖f x‖) μ := by
+  -- `‖x‖ ^ r ≤ 1 + ‖x‖ ^ ⌈r⌉₊`, and both integer moments are integrable.
+  refine ((f.integrable_pow_mul_norm_iteratedFDeriv (μ := μ) 0 0).add
+    (f.integrable_pow_mul_norm_iteratedFDeriv (μ := μ) ⌈r⌉₊ 0)).mono'
+    ((continuous_norm.rpow_const fun _ ↦ Or.inr hr).mul f.continuous.norm).aestronglyMeasurable
+    (.of_forall fun x ↦ ?_)
+  simp only [pow_zero, one_mul, norm_iteratedFDeriv_zero, Pi.add_apply]
+  rw [Real.norm_of_nonneg (by positivity), ← one_add_mul]
+  gcongr
+  rcases le_or_gt ‖x‖ 1 with hx | hx
+  · exact (Real.rpow_le_one (norm_nonneg x) hx hr).trans (le_add_of_nonneg_right (by positivity))
+  · calc ‖x‖ ^ r ≤ ‖x‖ ^ (⌈r⌉₊ : ℝ) := Real.rpow_le_rpow_of_exponent_le hx.le (Nat.le_ceil r)
+      _ = ‖x‖ ^ ⌈r⌉₊ := Real.rpow_natCast _ _
+      _ ≤ 1 + ‖x‖ ^ ⌈r⌉₊ := le_add_of_nonneg_left zero_le_one
 
 omit [SecondCountableTopology E] in
 /-- For a Schwartz function `f` and real `c`, `m`, the function

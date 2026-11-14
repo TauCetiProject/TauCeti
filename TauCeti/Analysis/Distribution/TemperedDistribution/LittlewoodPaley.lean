@@ -114,6 +114,10 @@ blocks `Δⱼ u`.
   `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ`: their `Lʳ` norms grow like
   `2^{j n (1 - 1/r)}`; `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero`:
   each kernel `𝓕⁻ ψⱼ` is nonzero in every `Lʳ`.
+* `ContDiffBump.integral_fourierInv_inhomogeneousLittlewoodPaley_succ`: the dyadic kernels have
+  integral zero.
+* `ContDiffBump.integral_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ`: the
+  `α`-th moments `∫ ‖x‖ ^ α ‖𝓕⁻ ψ_{j+1} x‖` are `2^{-jα}` times that of `𝓕⁻ ψ₁`.
 * `ContDiffBump.integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ` and
   `ContDiffBump.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le`: the
   `k`-th moments of the kernels `𝓕⁻ ψⱼ` are `O(2^{-jk})`.
@@ -153,6 +157,19 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 namespace ContDiffBump
 
 variable (φ : ContDiffBump (0 : E))
+
+/-- **The moments of the dyadic kernels decay geometrically.** Since `𝓕⁻ ψ_{j+1}` is the
+`L¹`-normalised dilate of `𝓕⁻ ψ₁` by `2^j`, its `α`-th moment is `2^{-jα}` times that of
+`𝓕⁻ ψ₁`. -/
+theorem integral_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ (α : ℝ) (j : ℕ) :
+    ∫ x, ‖x‖ ^ α * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) x‖ =
+      (2 ^ (α * j))⁻¹ *
+        ∫ x, ‖x‖ ^ α * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) x‖ := by
+  simp_rw [φ.inhomogeneousLittlewoodPaley_succ_apply_eq_one_apply j]
+  rw [TauCeti.integral_rpow_mul_norm_fourierInv_comp_smul
+    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) (inv_ne_zero (pow_ne_zero _ two_ne_zero)),
+    abs_of_pos (by positivity), Real.inv_rpow (by positivity), ← Real.rpow_natCast,
+    ← Real.rpow_mul zero_le_two, mul_comm (j : ℝ)]
 
 /-- **The moments of the dyadic kernels scale with `j`.** Since `𝓕⁻ ψ_{j+1}` is the
 `L¹`-normalised dilate `2^{jn} 𝓕⁻ ψ₁ (2^j ·)` in dimension `n`, its `k`-th moment
@@ -226,6 +243,19 @@ theorem eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero [Nontrivial E] (
   have := congrFun hσ ξ
   rw [hσ0, zero_apply] at this
   exact hξ.ne' (Complex.ofReal_eq_zero.1 this.symm)
+
+/-- **The dyadic kernels have integral zero.** For `j ≥ 1`, `∫ 𝓕⁻ ψⱼ = ψⱼ 0 = 0`, since `ψⱼ`
+vanishes near the origin. -/
+theorem integral_fourierInv_inhomogeneousLittlewoodPaley_succ (j : ℕ) :
+    ∫ x, 𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) x = 0 := by
+  set σ := φ.inhomogeneousLittlewoodPaleySchwartz (j + 1)
+  have h : ∫ x, 𝓕⁻ (σ : E → ℂ) x = σ 0 := by
+    have h0 := congrFun (σ.continuous.fourier_fourierInv_eq σ.integrable
+      (by simpa only [SchwartzMap.fourier_coe] using (𝓕 σ).integrable)) 0
+    rw [Real.fourier_eq] at h0
+    simpa using h0
+  rw [← coe_inhomogeneousLittlewoodPaleySchwartz, h, inhomogeneousLittlewoodPaleySchwartz_apply]
+  simp [inhomogeneousLittlewoodPaley_succ_apply]
 
 end ContDiffBump
 
