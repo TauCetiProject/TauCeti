@@ -254,15 +254,7 @@ theorem weightSpace_eq_comap_of_injective (π : C →ₗc[R] MonoidAlgebra R X)
     weightSpace W π x = (weightSpace V π x).comap f.toLinearMap := by
   let : Comodule R (MonoidAlgebra R X) V := Comodule.Corestrict (M := V) π
   let : Comodule R (MonoidAlgebra R X) W := Comodule.Corestrict (M := W) π
-  ext w
-  rw [Submodule.mem_comap, weightSpace_eq_comoduleWeightSpace, weightSpace_eq_comoduleWeightSpace]
-  refine ⟨Comodule.Hom.map_mem_weightSpace (Comodule.corestrictHom π f), fun hw ↦ ?_⟩
-  have h : f (Comodule.weightProj R X W x w) = f w := by
-    rw [← Comodule.corestrictHom_apply π f, Comodule.Hom.map_weightProj,
-      Comodule.corestrictHom_apply]
-    exact Comodule.weightProj_of_mem hw
-  rw [← hf h]
-  exact Comodule.weightProj_mem_weightSpace x w
+  exact (Comodule.corestrictHom π f).weightSpace_eq_comap_of_injective hf x
 
 variable [Module.Flat R C]
 
