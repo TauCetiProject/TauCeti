@@ -84,11 +84,12 @@ For minimal equations and a finite residue field of order `q`, this gives the lo
 
 `[E₂(F_u) : φ E₁(F_u)] / #E₁(F_u)[φ] = |c|_u⁻¹ · c_u(E₂) / c_u(E₁)`,
 
-where `|c|_u⁻¹ = q ^ ord(c)` and `c_u` is the local Tamagawa number. Indeed
-`[E(F_u) : E_(k+1)(F_u)] = q ^ k · #Ẽ_ns(k_u) · c_u(E)`
+where `|c|_u⁻¹ = q ^ ord(c)` and `c_u` is the local Tamagawa number. Writing `E_ns` for the
+nonsingular points of the reduced equation,
+`[E(F_u) : E_(k+1)(F_u)] = q ^ k · #E_ns(k_u) · c_u(E)`
 (`WeierstrassCurve.index_formalPointFiltration_eq_mul_tamagawaNumber`), and isogenous minimal
 equations have reductions with equally many nonsingular points
-(`TauCeti.Isogeny.natCard_point_reduction_eq`), so the counts `#Ẽ_ns(k_u)` cancel and the
+(`TauCeti.Isogeny.natCard_point_reduction_eq`), so the counts `#E_ns(k_u)` cancel and the
 powers of `q` leave `q ^ (j - k) = q ^ ord(c)`.
 
 ## Main results
@@ -490,12 +491,12 @@ theorem index_range_pointMapHom_div_card_ker_eq_zpow_mul_tamagawaNumber_div
   have h := hk j (by rw [← exp_log hvc, ← exp_add, hj, add_sub_cancel])
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : k ≠ 0)
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : j ≠ 0)
-  -- `[E : E_(k+1)] = q ^ k · #Ẽ_ns · c_u(E)`, with the same count `#Ẽ_ns` for `E₁` and `E₂`
+  -- `[E : E_(k+1)] = q ^ k · #E_ns · c_u(E)`, with the same count `#E_ns` for `E₁` and `E₂`
   have hN := (C₁.natCard_point_reduction_baseChange_adicCompletion).symm.trans
     (φ.natCard_point_reduction_eq.trans C₂.natCard_point_reduction_baseChange_adicCompletion)
   rw [C₁.index_formalPointFiltration_eq_mul_tamagawaNumber u,
     C₂.index_formalPointFiltration_eq_mul_tamagawaNumber u, ← hN] at h
-  -- the level index of `E₁` is finite, so `#Ẽ_ns` and `c_u(E₁)` are nonzero; so is `#E₁(F_u)[φ]`
+  -- the level index of `E₁` is finite, so `#E_ns` and `c_u(E₁)` are nonzero; so is `#E₁(F_u)[φ]`
   have hI := (C₁.formalPointFiltration u (k + 1)).index_ne_zero_of_finite
   rw [C₁.index_formalPointFiltration_eq_mul_tamagawaNumber u] at hI
   obtain ⟨hqN, hc₁⟩ := mul_ne_zero_iff.mp hI
