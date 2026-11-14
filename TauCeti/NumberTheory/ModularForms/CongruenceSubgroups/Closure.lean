@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Wohlfahrt
+import TauCeti.Data.Int.CongrAllPrimes
 import TauCeti.NumberTheory.ModularForms.WithCenter
 
 /-!
@@ -21,14 +22,16 @@ containing `Γ` has strict level dividing `Γ.strictLevel` and therefore contain
 `Γ(Γ.strictLevel)`, while `Γ ⊔ Γ(Γ.strictLevel)` is itself a congruence subgroup containing `Γ`.
 Thus `Γ.congruenceClosure = Γ ⊔ Γ(Γ.strictLevel)` (`Subgroup.congruenceClosure_eq_sup_Gamma`),
 it is the preimage in `SL(2, ℤ)` of the image of `Γ` in `SL(2, ZMod N)` at `N = Γ.strictLevel`
-and at every nonzero multiple of `Γ.strictLevel` (`Subgroup.congruenceClosure_eq_comap_map`,
-`Subgroup.congruenceClosure_eq_comap_map_of_dvd`), and `Γ` is a congruence subgroup if and only if
-`Γ.congruenceClosure = Γ` (`Subgroup.congruenceClosure_eq_self_iff`).
+and at every nonzero multiple of `Γ.strictLevel`
+(`Subgroup.congruenceClosure_eq_comap_map_intCast_zmod`,
+`Subgroup.congruenceClosure_eq_comap_map_intCast_zmod_of_dvd`), and `Γ` is a congruence subgroup
+if and only if `Γ.congruenceClosure = Γ` (`Subgroup.congruenceClosure_eq_self_iff`).
 
 Two extreme cases occur among noncongruence subgroups:
-* `Γ.congruenceClosure = ⊤` holds if and only if `Γ` surjects onto `SL(2, ZMod Γ.strictLevel)`
-  (`Subgroup.congruenceClosure_eq_top_iff`), in which case `Γ` surjects onto `SL(2, ZMod N)` at
-  every nonzero modulus `N`;
+* `Γ.congruenceClosure = ⊤` holds if and only if `Γ` surjects onto `SL(2, ZMod N)` for any nonzero
+  multiple `N` of `Γ.strictLevel` (`Subgroup.congruenceClosure_eq_top_iff_of_dvd`,
+  `Subgroup.congruenceClosure_eq_top_iff`), in which case `Γ` surjects onto `SL(2, ZMod N)` at
+  every nonzero modulus `N` (`Subgroup.map_map_intCast_zmod_eq_top_of_congruenceClosure_eq_top`);
 * if `Γ·{±I}` is a congruence subgroup while `Γ` itself is not (a noncongruence lift of a
   projective congruence group), then `Γ.congruenceClosure = Γ·{±I}`
   (`Subgroup.congruenceClosure_eq_withCenter_of_not_isCongruenceSubgroup`).
@@ -37,28 +40,33 @@ Two extreme cases occur among noncongruence subgroups:
 
 * `Subgroup.congruenceClosure`: the intersection of all congruence subgroups containing `Γ`.
 * `Subgroup.le_congruenceClosure`, `Subgroup.congruenceClosure_le`,
-  `Subgroup.congruenceClosure_mono`, `Subgroup.congruenceClosure_congruenceClosure`: Moore closure
-  properties on `Subgroup SL(2, ℤ)`.
+  `Subgroup.congruenceClosure_le_iff`, `Subgroup.congruenceClosure_mono`,
+  `Subgroup.congruenceClosure_congruenceClosure`, `Subgroup.le_congruenceClosure_iff`: Moore
+  closure properties on `Subgroup SL(2, ℤ)`.
 * `Subgroup.pointwise_smul_congruenceClosure`, `Subgroup.instNormalCongruenceClosure`,
   `Subgroup.congruenceClosure_withCenter`: compatibility with conjugation, normality, and
   adjoining `{±I}`.
-* `Subgroup.congruenceClosure_eq_sup_Gamma`: `Γ.congruenceClosure = Γ ⊔ Γ(Γ.strictLevel)` for
-  `[NeZero Γ.strictLevel]`.
+* `Subgroup.congruenceClosure_eq_sup_Gamma_of_dvd`, `Subgroup.congruenceClosure_eq_sup_Gamma`:
+  `Γ.congruenceClosure = Γ ⊔ Γ(N)` for every nonzero multiple `N` of `Γ.strictLevel`, and in
+  particular `Γ ⊔ Γ(Γ.strictLevel)` when `[NeZero Γ.strictLevel]`.
 * `Subgroup.isCongruenceSubgroup_congruenceClosure`, `Subgroup.instFiniteIndexCongruenceClosure`,
   `Subgroup.congruenceClosure_eq_self_iff`: for `[NeZero Γ.strictLevel]`, the congruence closure is
   a congruence subgroup (hence of finite index), and equals `Γ` iff `Γ` is congruence.
-* `Subgroup.map_congruenceClosure`, `Subgroup.congruenceClosure_eq_comap_map_of_dvd`,
-  `Subgroup.congruenceClosure_eq_comap_map`: `Γ` and `Γ.congruenceClosure` have identical images in
-  `SL(2, ZMod N)` for every nonzero `N`, and the closure is the preimage of that image whenever
-  `Γ.strictLevel ∣ N`.
-* `Subgroup.congruenceClosure_eq_top_iff`,
+* `Subgroup.map_map_intCast_zmod_congruenceClosure`,
+  `Subgroup.congruenceClosure_eq_comap_map_intCast_zmod_of_dvd`,
+  `Subgroup.congruenceClosure_eq_comap_map_intCast_zmod`: `Γ` and `Γ.congruenceClosure` have
+  identical images in `SL(2, ZMod N)` for every nonzero `N`, and the closure is the preimage of
+  that image whenever `Γ.strictLevel ∣ N`.
+* `Subgroup.map_map_intCast_zmod_eq_top_of_congruenceClosure_eq_top`,
+  `Subgroup.congruenceClosure_eq_top_iff_of_dvd`, `Subgroup.congruenceClosure_eq_top_iff`,
   `Subgroup.congruenceClosure_eq_withCenter_of_not_isCongruenceSubgroup`,
   `Subgroup.congruenceClosure_eq_self_or_withCenter`: characterizations of full congruence closure
   and of congruence closures of lifts of projective congruence groups.
-* `CongruenceSubgroup.congruenceClosure_Gamma`, `CongruenceSubgroup.congruenceClosure_Gamma0`,
+* `Subgroup.congruenceClosure_bot`, `Subgroup.congruenceClosure_eq_bot_iff`,
+  `CongruenceSubgroup.congruenceClosure_Gamma`, `CongruenceSubgroup.congruenceClosure_Gamma0`,
   `CongruenceSubgroup.congruenceClosure_Gamma1`,
-  `Subgroup.congruenceClosure_normalClosure_T_pow`: evaluations on `Γ(N)`, `Γ₀(N)`, `Γ₁(N)` and
-  `normalClosure {T ^ N}` at every `N : ℕ` (`0` included).
+  `Subgroup.congruenceClosure_normalClosure_T_pow`: evaluations on `⊥`, `Γ(N)`, `Γ₀(N)`, `Γ₁(N)`
+  and `normalClosure {T ^ N}` at every `N : ℕ` (`0` included).
 
 ## References
 
@@ -102,12 +110,18 @@ theorem congruenceClosure_le {Γ Δ : Subgroup SL(2, ℤ)} (hΔ : IsCongruenceSu
     (hle : Γ ≤ Δ) : Γ.congruenceClosure ≤ Δ :=
   fun _ hγ ↦ mem_congruenceClosure_iff.mp hγ Δ hΔ hle
 
+/-- For a congruence subgroup `Δ`, `Γ.congruenceClosure ≤ Δ` holds if and only if `Γ ≤ Δ`. -/
+theorem congruenceClosure_le_iff {Γ Δ : Subgroup SL(2, ℤ)} (hΔ : IsCongruenceSubgroup Δ) :
+    Γ.congruenceClosure ≤ Δ ↔ Γ ≤ Δ :=
+  ⟨Γ.le_congruenceClosure.trans, congruenceClosure_le hΔ⟩
+
 /-- A congruence subgroup equals its own congruence closure. -/
 theorem _root_.CongruenceSubgroup.IsCongruenceSubgroup.congruenceClosure_eq
     {Γ : Subgroup SL(2, ℤ)} (hΓ : IsCongruenceSubgroup Γ) : Γ.congruenceClosure = Γ :=
   le_antisymm (congruenceClosure_le hΓ le_rfl) Γ.le_congruenceClosure
 
 /-- `Subgroup.congruenceClosure` is monotone. -/
+@[gcongr]
 theorem congruenceClosure_mono {Γ₁ Γ₂ : Subgroup SL(2, ℤ)} (h : Γ₁ ≤ Γ₂) :
     Γ₁.congruenceClosure ≤ Γ₂.congruenceClosure :=
   fun _ hγ ↦ mem_congruenceClosure_iff.mpr fun Δ hΔ hle ↦
@@ -120,6 +134,13 @@ theorem congruenceClosure_congruenceClosure (Γ : Subgroup SL(2, ℤ)) :
   refine le_antisymm (fun _ h ↦ ?_) Γ.congruenceClosure.le_congruenceClosure
   exact mem_congruenceClosure_iff.mpr fun Δ hΔ hle ↦
     mem_congruenceClosure_iff.mp h Δ hΔ (congruenceClosure_le hΔ hle)
+
+/-- A subgroup lies in the congruence closure of another if and only if its congruence closure
+does. -/
+theorem le_congruenceClosure_iff {Γ₁ Γ₂ : Subgroup SL(2, ℤ)} :
+    Γ₁ ≤ Γ₂.congruenceClosure ↔ Γ₁.congruenceClosure ≤ Γ₂.congruenceClosure :=
+  ⟨fun h ↦ congruenceClosure_congruenceClosure Γ₂ ▸ congruenceClosure_mono h,
+    Γ₁.le_congruenceClosure.trans⟩
 
 /-- The congruence closure of an intersection lies in the intersection of the congruence
 closures. -/
@@ -136,16 +157,12 @@ theorem strictLevel_congruenceClosure_dvd (Γ : Subgroup SL(2, ℤ)) :
 
 private lemma pointwise_smul_congruenceClosure_le (g : ConjAct SL(2, ℤ))
     (Γ : Subgroup SL(2, ℤ)) : g • Γ.congruenceClosure ≤ (g • Γ).congruenceClosure := by
-  intro γ hγ
-  rw [← inv_inv g, mem_inv_pointwise_smul_iff] at hγ
-  refine mem_congruenceClosure_iff.mpr fun Δ hΔ hle ↦ ?_
-  have hle' : Γ ≤ g⁻¹ • Δ := fun x hx ↦
-    mem_inv_pointwise_smul_iff.mpr (hle (smul_mem_pointwise_smul x g Γ hx))
-  simpa using mem_inv_pointwise_smul_iff.mp
-    (mem_congruenceClosure_iff.mp hγ (g⁻¹ • Δ) (conj_cong_is_cong g⁻¹ Δ hΔ) hle')
+  rw [congruenceClosure_def]
+  exact le_iInf fun Δ ↦ le_iInf₂ fun hΔ hle ↦
+    pointwise_smul_subset_iff.mpr
+      (congruenceClosure_le (conj_cong_is_cong g⁻¹ Δ hΔ) (pointwise_smul_subset_iff.mp hle))
 
 /-- Conjugation in `SL(2, ℤ)` commutes with `Subgroup.congruenceClosure`. -/
-@[simp]
 theorem pointwise_smul_congruenceClosure (g : ConjAct SL(2, ℤ)) (Γ : Subgroup SL(2, ℤ)) :
     g • Γ.congruenceClosure = (g • Γ).congruenceClosure := by
   refine le_antisymm (pointwise_smul_congruenceClosure_le g Γ) ?_
@@ -206,18 +223,26 @@ theorem congruenceClosure_withCenter (Γ : Subgroup SL(2, ℤ)) :
 
 /-! ### Explicit Wohlfahrt description of the congruence closure -/
 
-/-- **Explicit formula for the congruence closure**: when `Γ` has nonzero strict level (in
-particular, when `Γ` has finite index), its congruence closure is `Γ ⊔ Γ(Γ.strictLevel)`. -/
-theorem congruenceClosure_eq_sup_Gamma (Γ : Subgroup SL(2, ℤ)) [NeZero Γ.strictLevel] :
-    Γ.congruenceClosure = Γ ⊔ Gamma Γ.strictLevel := by
+/-- **Explicit formula for the congruence closure**: for every nonzero multiple `N` of
+`Γ.strictLevel`, `Γ.congruenceClosure` equals `Γ ⊔ Γ(N)`. -/
+theorem congruenceClosure_eq_sup_Gamma_of_dvd {Γ : Subgroup SL(2, ℤ)} {N : ℕ} [NeZero N]
+    (hdvd : Γ.strictLevel ∣ N) : Γ.congruenceClosure = Γ ⊔ Gamma N := by
   refine le_antisymm
     (congruenceClosure_le
-      (isCongruenceSubgroup_trans _ _ le_sup_right (Gamma_is_cong_sub Γ.strictLevel)) le_sup_left)
+      (isCongruenceSubgroup_trans _ _ le_sup_right (Gamma_is_cong_sub N)) le_sup_left)
     (sup_le Γ.le_congruenceClosure fun γ hγ ↦ mem_congruenceClosure_iff.mpr fun Δ hΔ hle ↦ ?_)
-  exact hΔ.Gamma_strictLevel_le (Gamma_le_Gamma_of_dvd (strictLevel_dvd_of_le hle) hγ)
+  exact hΔ.Gamma_strictLevel_le
+    (Gamma_le_Gamma_of_dvd ((strictLevel_dvd_of_le hle).trans hdvd) hγ)
+
+/-- When `Γ` has nonzero strict level (in particular, when `Γ` has finite index), its congruence
+closure is `Γ ⊔ Γ(Γ.strictLevel)`. -/
+theorem congruenceClosure_eq_sup_Gamma (Γ : Subgroup SL(2, ℤ)) [NeZero Γ.strictLevel] :
+    Γ.congruenceClosure = Γ ⊔ Gamma Γ.strictLevel :=
+  congruenceClosure_eq_sup_Gamma_of_dvd dvd_rfl
 
 /-- When `Γ` has nonzero strict level (in particular, when `Γ` has finite index),
 `Γ.congruenceClosure` is a congruence subgroup. -/
+@[simp]
 theorem isCongruenceSubgroup_congruenceClosure (Γ : Subgroup SL(2, ℤ)) [NeZero Γ.strictLevel] :
     IsCongruenceSubgroup Γ.congruenceClosure := by
   rw [congruenceClosure_eq_sup_Gamma]
@@ -251,29 +276,18 @@ theorem congruenceClosure_sup (Γ₁ Γ₂ : Subgroup SL(2, ℤ)) [NeZero Γ₁.
 /-- Any subgroup `Γ ≤ SL(2, ℤ)` and its congruence closure have the exact same image in
 `SL(2, ZMod N)` for every nonzero modulus `N`. -/
 @[simp]
-theorem map_congruenceClosure (Γ : Subgroup SL(2, ℤ)) (N : ℕ) [NeZero N] :
+theorem map_map_intCast_zmod_congruenceClosure (Γ : Subgroup SL(2, ℤ)) (N : ℕ) [NeZero N] :
     Γ.congruenceClosure.map (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N))) =
       Γ.map (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N))) := by
-  set π : SL(2, ℤ) →* SL(2, ZMod N) := Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N))
   refine le_antisymm (map_le_iff_le_comap.mpr ?_) (map_mono Γ.le_congruenceClosure)
   rw [comap_map_eq, ker_map_intCast_zmod]
   exact congruenceClosure_le
     (isCongruenceSubgroup_trans _ _ le_sup_right (Gamma_is_cong_sub N)) le_sup_left
 
-/-- For every nonzero multiple `N` of `Γ.strictLevel`, `Γ.congruenceClosure` equals `Γ ⊔ Γ(N)`. -/
-theorem congruenceClosure_eq_sup_Gamma_of_dvd {Γ : Subgroup SL(2, ℤ)} {N : ℕ} [NeZero N]
-    (hdvd : Γ.strictLevel ∣ N) : Γ.congruenceClosure = Γ ⊔ Gamma N := by
-  have : NeZero Γ.strictLevel := ⟨ne_zero_of_dvd_ne_zero (NeZero.ne N) hdvd⟩
-  refine le_antisymm
-    (congruenceClosure_le
-      (isCongruenceSubgroup_trans _ _ le_sup_right (Gamma_is_cong_sub N)) le_sup_left) ?_
-  rw [congruenceClosure_eq_sup_Gamma]
-  exact sup_le_sup_left (Gamma_le_Gamma_of_dvd hdvd) Γ
-
 /-- For every nonzero multiple `N` of `Γ.strictLevel`, `Γ.congruenceClosure` is the preimage in
 `SL(2, ℤ)` of the image of `Γ` in `SL(2, ZMod N)`. -/
-theorem congruenceClosure_eq_comap_map_of_dvd {Γ : Subgroup SL(2, ℤ)} {N : ℕ} [NeZero N]
-    (hdvd : Γ.strictLevel ∣ N) :
+theorem congruenceClosure_eq_comap_map_intCast_zmod_of_dvd {Γ : Subgroup SL(2, ℤ)} {N : ℕ}
+    [NeZero N] (hdvd : Γ.strictLevel ∣ N) :
     Γ.congruenceClosure =
       (Γ.map (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)))).comap
         (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N))) := by
@@ -281,33 +295,38 @@ theorem congruenceClosure_eq_comap_map_of_dvd {Γ : Subgroup SL(2, ℤ)} {N : �
 
 /-- When `Γ` has nonzero strict level, `Γ.congruenceClosure` is the preimage in `SL(2, ℤ)` of the
 image of `Γ` in `SL(2, ZMod Γ.strictLevel)`. -/
-theorem congruenceClosure_eq_comap_map (Γ : Subgroup SL(2, ℤ)) [NeZero Γ.strictLevel] :
+theorem congruenceClosure_eq_comap_map_intCast_zmod (Γ : Subgroup SL(2, ℤ))
+    [NeZero Γ.strictLevel] :
     Γ.congruenceClosure =
       (Γ.map (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod Γ.strictLevel)))).comap
         (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod Γ.strictLevel))) :=
-  congruenceClosure_eq_comap_map_of_dvd dvd_rfl
+  congruenceClosure_eq_comap_map_intCast_zmod_of_dvd dvd_rfl
 
 /-! ### Extreme behaviours: full congruence closure and noncongruence lifts -/
+
+/-- If `Γ.congruenceClosure = ⊤`, then `Γ` surjects onto `SL(2, ZMod N)` at every nonzero modulus
+`N`. -/
+theorem map_map_intCast_zmod_eq_top_of_congruenceClosure_eq_top {Γ : Subgroup SL(2, ℤ)}
+    (h : Γ.congruenceClosure = ⊤) (N : ℕ) [NeZero N] :
+    Γ.map (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N))) = ⊤ := by
+  rw [← map_map_intCast_zmod_congruenceClosure, h]
+  exact map_top_of_surjective _ map_intCast_zmod_surjective
+
+/-- For every nonzero multiple `N` of `Γ.strictLevel`, `Γ.congruenceClosure = ⊤` holds if and only
+if `Γ` surjects onto `SL(2, ZMod N)`. -/
+theorem congruenceClosure_eq_top_iff_of_dvd {Γ : Subgroup SL(2, ℤ)} {N : ℕ} [NeZero N]
+    (hdvd : Γ.strictLevel ∣ N) :
+    Γ.congruenceClosure = ⊤ ↔
+      Γ.map (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N))) = ⊤ :=
+  ⟨fun h ↦ map_map_intCast_zmod_eq_top_of_congruenceClosure_eq_top h N, fun h ↦ by
+    rw [congruenceClosure_eq_comap_map_intCast_zmod_of_dvd hdvd, h, comap_top]⟩
 
 /-- When `Γ` has nonzero strict level, its congruence closure is all of `SL(2, ℤ)` if and only if
 `Γ` surjects onto `SL(2, ZMod Γ.strictLevel)`. -/
 theorem congruenceClosure_eq_top_iff (Γ : Subgroup SL(2, ℤ)) [NeZero Γ.strictLevel] :
     Γ.congruenceClosure = ⊤ ↔
-      Γ.map (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod Γ.strictLevel))) = ⊤ := by
-  constructor
-  · intro h
-    rw [← map_congruenceClosure, h]
-    exact map_top_of_surjective _ map_intCast_zmod_surjective
-  · intro h
-    rw [congruenceClosure_eq_comap_map, h, comap_top]
-
-/-- If `Γ.congruenceClosure = ⊤`, then `Γ` surjects onto `SL(2, ZMod N)` at every nonzero modulus
-`N`. -/
-theorem map_eq_top_of_congruenceClosure_eq_top {Γ : Subgroup SL(2, ℤ)}
-    (h : Γ.congruenceClosure = ⊤) (N : ℕ) [NeZero N] :
-    Γ.map (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N))) = ⊤ := by
-  rw [← map_congruenceClosure, h]
-  exact map_top_of_surjective _ map_intCast_zmod_surjective
+      Γ.map (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod Γ.strictLevel))) = ⊤ :=
+  congruenceClosure_eq_top_iff_of_dvd dvd_rfl
 
 /-- **Congruence closure of a noncongruence lift**: if `Γ·{±I}` is a congruence subgroup while `Γ`
 itself is not, then `Γ.congruenceClosure = Γ·{±I}`. -/
@@ -345,14 +364,21 @@ theorem congruenceClosure_top : (⊤ : Subgroup SL(2, ℤ)).congruenceClosure = 
   top_unique (le_congruenceClosure ⊤)
 
 /-- The congruence closure of the trivial subgroup is trivial, because `SL(2, ℤ)` is residually
-finite with respect to principal congruence subgroups (`CongruenceSubgroup.iInf_Gamma_ne_zero`). -/
+finite with respect to principal congruence subgroups
+(`CongruenceSubgroup.iInf_Gamma_ne_zero_eq_bot`). -/
 @[simp]
 theorem congruenceClosure_bot : (⊥ : Subgroup SL(2, ℤ)).congruenceClosure = ⊥ := by
   have hle : (⊥ : Subgroup SL(2, ℤ)).congruenceClosure ≤ ⨅ (N : ℕ) (_ : N ≠ 0), Gamma N :=
     le_iInf₂ fun N hN ↦
       have : NeZero N := ⟨hN⟩
       congruenceClosure_le (Gamma_is_cong_sub N) bot_le
-  rwa [CongruenceSubgroup.iInf_Gamma_ne_zero, le_bot_iff] at hle
+  rwa [CongruenceSubgroup.iInf_Gamma_ne_zero_eq_bot, le_bot_iff] at hle
+
+/-- The congruence closure of `Γ` is trivial if and only if `Γ` is trivial. -/
+@[simp]
+theorem congruenceClosure_eq_bot_iff {Γ : Subgroup SL(2, ℤ)} :
+    Γ.congruenceClosure = ⊥ ↔ Γ = ⊥ :=
+  ⟨fun h ↦ le_bot_iff.mp (h ▸ Γ.le_congruenceClosure), fun h ↦ h ▸ congruenceClosure_bot⟩
 
 /-- The congruence closure of the normal closure of `T ^ N` in `SL(2, ℤ)` is `Γ(N)`, at every
 `N : ℕ` (`0` included). -/
@@ -382,10 +408,6 @@ theorem isCongruenceSubgroup_iff_strictLevel_ne_zero_and_congruenceClosure_eq
     fun ⟨hne, heq⟩ ↦ have : NeZero Γ.strictLevel := ⟨hne⟩;
       (Subgroup.congruenceClosure_eq_self_iff Γ).mp heq⟩
 
-private lemma eq_zero_of_forall_natCast_dvd {x : ℤ} (h : ∀ N : ℕ, N ≠ 0 → (N : ℤ) ∣ x) :
-    x = 0 :=
-  Int.eq_zero_of_dvd_of_natAbs_lt_natAbs (h (x.natAbs + 1) (Nat.succ_ne_zero _)) (by omega)
-
 /-- `Γ(N)` equals its congruence closure at every `N : ℕ` (`0` included). -/
 @[simp]
 theorem congruenceClosure_Gamma (N : ℕ) : (Gamma N).congruenceClosure = Gamma N := by
@@ -399,10 +421,11 @@ theorem congruenceClosure_Gamma (N : ℕ) : (Gamma N).congruenceClosure = Gamma 
 theorem congruenceClosure_Gamma0 (N : ℕ) : (Gamma0 N).congruenceClosure = Gamma0 N := by
   rcases eq_or_ne N 0 with rfl | hN
   · refine le_antisymm (fun γ hγ ↦ mem_Gamma0_iff_dvd.mpr ?_) (Gamma0 0).le_congruenceClosure
-    have h0 : γ 1 0 = 0 := eq_zero_of_forall_natCast_dvd fun M hM ↦ by
-      have : NeZero M := ⟨hM⟩
-      exact mem_Gamma0_iff_dvd.mp (Subgroup.mem_congruenceClosure_iff.mp hγ (Gamma0 M)
-        (Gamma0_is_congruence M) (Gamma0_le_Gamma0_of_dvd (dvd_zero M)))
+    have h0 : γ 1 0 = 0 :=
+      Int.eq_zero_of_eventually_prime_dvd (Filter.Eventually.of_forall fun p hp ↦ by
+        have : NeZero p := ⟨hp.ne_zero⟩
+        exact mem_Gamma0_iff_dvd.mp (Subgroup.mem_congruenceClosure_iff.mp hγ (Gamma0 p)
+          (Gamma0_is_congruence p) (Gamma0_le_Gamma0_of_dvd (dvd_zero p))))
     simp [h0]
   · have : NeZero N := ⟨hN⟩
     exact (Gamma0_is_congruence N).congruenceClosure_eq
@@ -413,12 +436,14 @@ theorem congruenceClosure_Gamma1 (N : ℕ) : (Gamma1 N).congruenceClosure = Gamm
   rcases eq_or_ne N 0 with rfl | hN
   · refine le_antisymm (fun γ hγ ↦ mem_Gamma1_iff_dvd_lowerRow.mpr ?_)
       (Gamma1 0).le_congruenceClosure
-    have hmem : ∀ M : ℕ, M ≠ 0 → (M : ℤ) ∣ γ 1 0 ∧ (M : ℤ) ∣ γ 1 1 - 1 := fun M hM ↦ by
-      have : NeZero M := ⟨hM⟩
-      exact mem_Gamma1_iff_dvd_lowerRow.mp (Subgroup.mem_congruenceClosure_iff.mp hγ (Gamma1 M)
-        (Gamma1_is_congruence M) (Gamma1_le_Gamma1_of_dvd (dvd_zero M)))
-    have h10 : γ 1 0 = 0 := eq_zero_of_forall_natCast_dvd fun M hM ↦ (hmem M hM).1
-    have h11 : γ 1 1 - 1 = 0 := eq_zero_of_forall_natCast_dvd fun M hM ↦ (hmem M hM).2
+    have hmem : ∀ p : ℕ, p.Prime → (p : ℤ) ∣ γ 1 0 ∧ (p : ℤ) ∣ γ 1 1 - 1 := fun p hp ↦ by
+      have : NeZero p := ⟨hp.ne_zero⟩
+      exact mem_Gamma1_iff_dvd_lowerRow.mp (Subgroup.mem_congruenceClosure_iff.mp hγ (Gamma1 p)
+        (Gamma1_is_congruence p) (Gamma1_le_Gamma1_of_dvd (dvd_zero p)))
+    have h10 : γ 1 0 = 0 :=
+      Int.eq_zero_of_eventually_prime_dvd (Filter.Eventually.of_forall fun p hp ↦ (hmem p hp).1)
+    have h11 : γ 1 1 - 1 = 0 :=
+      Int.eq_zero_of_eventually_prime_dvd (Filter.Eventually.of_forall fun p hp ↦ (hmem p hp).2)
     simp [h10, h11]
   · have : NeZero N := ⟨hN⟩
     exact (Gamma1_is_congruence N).congruenceClosure_eq

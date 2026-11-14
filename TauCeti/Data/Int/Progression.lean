@@ -85,16 +85,12 @@ coprimality to `m` means `±1`, which `3 + 5 * ℤ` never attains. -/
 theorem IsCoprime.exists_isCoprime_add_mul {a b m : ℤ} (hab : IsCoprime a b) (hm : m ≠ 0) :
     ∃ k : ℤ, IsCoprime (a + k * b) m := by
   have : NeZero m.natAbs := ⟨Int.natAbs_ne_zero.mpr hm⟩
-  have hgcd : Int.gcd a b.natAbs = 1 := by
-    rw [Int.gcd, Int.natAbs_natCast, ← Int.gcd]
-    exact Int.isCoprime_iff_gcd_eq_one.mp hab
-  obtain ⟨u, hu⟩ := Int.isUnit_intCast_iff_gcd_eq_one.mpr hgcd
+  let u : (ZMod b.natAbs)ˣ :=
+    ZMod.unitOfIsCoprime a (hab.of_isCoprime_of_dvd_right Int.natAbs_dvd_self)
   obtain ⟨t, ht_cop, ht_eq⟩ := ZMod.exists_isCoprime_mul_intCast_eq m.natAbs u
-  have hdvd : b ∣ t - a := Int.natAbs_dvd.mp
-    ((ZMod.intCast_eq_intCast_iff_dvd_sub a t b.natAbs).mp (hu.symm.trans ht_eq.symm))
-  obtain ⟨k, hk⟩ := hdvd
-  refine ⟨k, ?_⟩
+  rw [ZMod.coe_unitOfIsCoprime] at ht_eq
+  obtain ⟨k, hk⟩ : b ∣ t - a := Int.natAbs_dvd.mp
+    ((ZMod.intCast_eq_intCast_iff_dvd_sub a t b.natAbs).mp ht_eq.symm)
   have ht : a + k * b = t := by linarith
   have hcop' : IsCoprime t ((m.natAbs : ℤ) * b.natAbs) := by simpa only [Nat.cast_mul] using ht_cop
-  rw [ht, Int.isCoprime_iff_gcd_eq_one, Int.gcd, ← Int.natAbs_natCast m.natAbs, ← Int.gcd]
-  exact Int.isCoprime_iff_gcd_eq_one.mp hcop'.of_mul_right_left
+  exact ⟨k, ht ▸ hcop'.of_mul_right_left.of_isCoprime_of_dvd_right Int.dvd_natAbs_self⟩

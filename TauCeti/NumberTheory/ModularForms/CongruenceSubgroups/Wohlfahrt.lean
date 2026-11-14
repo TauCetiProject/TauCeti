@@ -31,26 +31,21 @@ at `ν = 0` (`Γ(0) = ⊥`), the normal closure of `T ^ N` has infinite index in
 
 ## Main results
 
-* `CongruenceSubgroup.mem_Gamma_iff_dvd`: entrywise integer-divisibility characterization of
-  `Γ(N)`, valid at every `N` (`0` included).
 * `CongruenceSubgroup.Gamma_le_normalClosure_T_pow_sup_Gamma`,
   `CongruenceSubgroup.normalClosure_T_pow_sup_Gamma_eq`,
   `CongruenceSubgroup.Gamma_eq_normalClosure_T_pow_sup_Gamma`: the normal closure of `T ^ N`
   together with `Γ(ν)` (`ν ≠ 0`) generates `Γ(gcd N ν)`, and equals `Γ(N)` when `N ∣ ν`.
 * `CongruenceSubgroup.Gamma_le_of_normal_of_T_pow_mem`: a normal subgroup containing `T ^ N` and
-  `Γ(ν)` (`ν ≠ 0`, `N ∣ ν`) contains `Γ(N)`.
+  `Γ(ν)` (`ν ≠ 0`) contains `Γ(N)`.
 * `CongruenceSubgroup.IsCongruenceSubgroup.Gamma_strictLevel_le_normalCore`,
   `CongruenceSubgroup.IsCongruenceSubgroup.Gamma_strictLevel_le`: every congruence subgroup `Γ`
   contains `Γ(Γ.strictLevel)` inside its normal core.
 * `CongruenceSubgroup.isCongruenceSubgroup_iff_strictLevel_ne_zero_and_Gamma_le`,
+  `CongruenceSubgroup.isCongruenceSubgroup_iff_Gamma_le_of_dvd`,
   `CongruenceSubgroup.isCongruenceSubgroup_iff_Gamma_strictLevel_le`: **Wohlfahrt's theorem in
   strict form**.
 * `CongruenceSubgroup.IsCongruenceSubgroup.Gamma_two_mul_strictLevel_withCenter_le`: Kiming,
   Schütt and Verrill's bound `Γ(2 · (Γ·{±I}).strictLevel) ≤ Γ`.
-* `CongruenceSubgroup.IsCongruenceSubgroup.inf`,
-  `CongruenceSubgroup.isCongruenceSubgroup_normalCore_iff`,
-  `CongruenceSubgroup.iInf_Gamma_ne_zero`: closure of congruence subgroups under binary
-  intersections and normal cores, and triviality of the intersection of all `Γ(N)` (`N ≠ 0`).
 
 ## References
 
@@ -67,26 +62,6 @@ open scoped MatrixGroups
 
 namespace CongruenceSubgroup
 
-/-- The principal congruence subgroup `Γ(N)` is the kernel of entrywise reduction modulo `N`. -/
-theorem ker_map_intCast_zmod (N : ℕ) :
-    (map (Int.castRingHom (ZMod N)) : SL(2, ℤ) →* SL(2, ZMod N)).ker = Gamma N := (rfl)
-
-/-- **Membership in `Γ(N)` as four integer divisibilities**, the principal-subgroup counterpart of
-`mem_Gamma0_iff_dvd` and `mem_Gamma1_iff_dvd_lowerRow`. Valid at every `N`, `N = 0` included. -/
-theorem mem_Gamma_iff_dvd {N : ℕ} {γ : SL(2, ℤ)} :
-    γ ∈ Gamma N ↔
-      (N : ℤ) ∣ γ 0 0 - 1 ∧ (N : ℤ) ∣ γ 0 1 ∧ (N : ℤ) ∣ γ 1 0 ∧ (N : ℤ) ∣ γ 1 1 - 1 := by
-  rw [Gamma_mem]
-  simp only [eq_comm (b := (1 : ZMod N)), ← ZMod.intCast_eq_intCast_iff_dvd_sub, Int.cast_one,
-    ZMod.intCast_zmod_eq_zero_iff_dvd]
-
-/-- The normal closure of `T ^ N` in `SL(2, ℤ)` is contained in `Γ(N)` for every `N : ℕ`. -/
-theorem normalClosure_T_pow_le_Gamma (N : ℕ) :
-    Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ)) ≤ Gamma N := by
-  have := Gamma_normal N
-  exact Subgroup.normalClosure_le_normal
-    (Set.singleton_subset_iff.mpr (by simpa using ModularGroup_T_pow_mem_Gamma N N dvd_rfl))
-
 /-! ### Elementary shears in the normal closure of `T ^ N` -/
 
 /-- The lower-unitriangular shear `!![1, 0; m, 1] = S T⁻ᵐ S⁻¹` in `SL(2, ℤ)`. -/
@@ -95,10 +70,7 @@ private def lowerShear (m : ℤ) : SL(2, ℤ) :=
 
 private lemma coe_lowerShear (m : ℤ) :
     (lowerShear m : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; m, 1] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [lowerShear, ModularGroup.coe_S, ModularGroup.coe_T_zpow,
-      Matrix.adjugate_fin_two, Matrix.mul_apply, Fin.sum_univ_two]
+  simpa [lowerShear, ModularGroup.coe_S] using ModularGroup.S.coe_conj_T_zpow (-m)
 
 /-- The conjugate `!![1 + m, -m; m, 1 - m] = !![1, 0; 1, 1] T⁻ᵐ !![1, 0; 1, 1]⁻¹` in
 `SL(2, ℤ)`, realizing any diagonal residue `1 + m` congruent to `1` modulo `N`. -/
@@ -107,31 +79,14 @@ private def diagShear (m : ℤ) : SL(2, ℤ) :=
 
 private lemma coe_diagShear (m : ℤ) :
     (diagShear m : Matrix (Fin 2) (Fin 2) ℤ) = !![1 + m, -m; m, 1 - m] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [diagShear, coe_lowerShear, ModularGroup.coe_T_zpow,
-      Matrix.adjugate_fin_two, Matrix.mul_apply, Fin.sum_univ_two]
-  ring
+  simpa [diagShear, coe_lowerShear, ← sub_eq_add_neg] using (lowerShear 1).coe_conj_T_zpow (-m)
 
-private lemma T_zpow_mul_mem_normalClosure (N : ℕ) (m : ℤ) :
-    ModularGroup.T ^ ((N : ℤ) * m) ∈
-      Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ)) := by
-  rw [_root_.zpow_mul, zpow_natCast]
-  exact zpow_mem (Subgroup.subset_normalClosure rfl) m
-
-private lemma lowerShear_mul_mem_normalClosure (N : ℕ) (m : ℤ) :
-    lowerShear ((N : ℤ) * m) ∈
-      Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ)) := by
-  have hneg : -((N : ℤ) * m) = (N : ℤ) * (-m) := by ring
-  exact (inferInstance : (Subgroup.normalClosure _).Normal).conj_mem _
-    (hneg ▸ T_zpow_mul_mem_normalClosure N (-m)) ModularGroup.S
-
-private lemma diagShear_mul_mem_normalClosure (N : ℕ) (m : ℤ) :
-    diagShear ((N : ℤ) * m) ∈
-      Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ)) := by
-  have hneg : -((N : ℤ) * m) = (N : ℤ) * (-m) := by ring
-  exact (inferInstance : (Subgroup.normalClosure _).Normal).conj_mem _
-    (hneg ▸ T_zpow_mul_mem_normalClosure N (-m)) (lowerShear 1)
+private lemma conj_T_zpow_mem_normalClosure {N : ℕ} {m : ℤ} (hm : (N : ℤ) ∣ m)
+    (σ : SL(2, ℤ)) :
+    σ * ModularGroup.T ^ m * σ⁻¹ ∈
+      Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ)) :=
+  Subgroup.strictLevel_dvd_iff_zpow.mp
+    (by simpa [Subgroup.strictLevel_normalClosure_T_pow] using hm) σ
 
 /-- Multiplying `A ∈ Γ(N)` with `IsCoprime (A 0 0) ν` on the right by a power of `T ^ N` and on
 the left by a conjugate of `T ^ N` clears both off-diagonal entries modulo `ν` without changing
@@ -146,8 +101,8 @@ private lemma exists_mul_mem_normalClosure_offDiag_zero {N ν : ℕ} {A : SL(2, 
   obtain ⟨u, v, huv⟩ := hcop
   obtain ⟨b', hb'⟩ := (mem_Gamma_iff_dvd.mp hA).2.1
   set x₂ := ModularGroup.T ^ ((N : ℤ) * (-b' * u))
-  have hx₂ : x₂ ∈ Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ)) :=
-    T_zpow_mul_mem_normalClosure N (-b' * u)
+  have hx₂ : x₂ ∈ Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ)) := by
+    simpa [x₂] using conj_T_zpow_mem_normalClosure (dvd_mul_right (N : ℤ) (-b' * u)) 1
   set A₁ := A * x₂
   have hA₁ : A₁ ∈ Gamma N := mul_mem hA (normalClosure_T_pow_le_Gamma N hx₂)
   have hA₁00 : A₁ 0 0 = A 0 0 := by
@@ -160,7 +115,7 @@ private lemma exists_mul_mem_normalClosure_offDiag_zero {N ν : ℕ} {A : SL(2, 
   obtain ⟨c', hc'⟩ := (mem_Gamma_iff_dvd.mp hA₁).2.2.1
   set x₁ := lowerShear ((N : ℤ) * (-c' * u))
   have hx₁ : x₁ ∈ Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ)) :=
-    lowerShear_mul_mem_normalClosure N (-c' * u)
+    conj_T_zpow_mem_normalClosure (dvd_neg.mpr (dvd_mul_right (N : ℤ) (-c' * u))) ModularGroup.S
   refine ⟨x₁, hx₁, x₂, hx₂, ?_, ?_, ?_⟩
   · rw [mul_assoc, ← hA₁00]
     simp [A₁, x₁, coe_lowerShear, Matrix.mul_apply, Fin.sum_univ_two]
@@ -203,12 +158,11 @@ theorem Gamma_le_normalClosure_T_pow_sup_Gamma (N ν : ℕ) [NeZero ν] :
   -- Step 1: shear the first column by a multiple of `N` so that the `(0, 0)` entry is prime to `ν`.
   obtain ⟨q, hq⟩ := (mem_Gamma_iff_dvd.mp hg).1
   have hcopN : IsCoprime (g 0 0) (N : ℤ) := ⟨1, -q, by linear_combination hq⟩
-  have hcop01 : IsCoprime (g 0 0) (g 0 1) :=
-    ⟨g 1 1, -g 1 0, by linear_combination g.fin_two_mul_sub_mul_eq_one⟩
-  obtain ⟨k, hk⟩ := (hcopN.mul_right hcop01).exists_isCoprime_add_mul
+  obtain ⟨k, hk⟩ := (hcopN.mul_right (g.isCoprime_row 0)).exists_isCoprime_add_mul
     (Int.natCast_ne_zero.mpr (NeZero.ne ν))
   set s := lowerShear ((N : ℤ) * k)
-  have hsK : s ∈ K := lowerShear_mul_mem_normalClosure N k
+  have hsK : s ∈ K :=
+    conj_T_zpow_mem_normalClosure (dvd_neg.mpr (dvd_mul_right (N : ℤ) k)) ModularGroup.S
   set g₁ := g * s
   have hg₁ : g₁ ∈ Gamma N := mul_mem hg (normalClosure_T_pow_le_Gamma N hsK)
   have hg₁_cop : IsCoprime (g₁ 0 0) (ν : ℤ) := by
@@ -222,7 +176,8 @@ theorem Gamma_le_normalClosure_T_pow_sup_Gamma (N ν : ℕ) [NeZero ν] :
   -- Step 3: build `M ∈ K` with the same `(0, 0)` entry as `g₁` and diagonalize `M` modulo `ν`.
   obtain ⟨m, hm⟩ := (mem_Gamma_iff_dvd.mp hg₁).1
   set M := diagShear ((N : ℤ) * m)
-  have hMK : M ∈ K := diagShear_mul_mem_normalClosure N m
+  have hMK : M ∈ K :=
+    conj_T_zpow_mem_normalClosure (dvd_neg.mpr (dvd_mul_right (N : ℤ) m)) (lowerShear 1)
   have hM00 : M 0 0 = g₁ 0 0 := by
     have : M 0 0 = 1 + (N : ℤ) * m := by simp [M, coe_diagShear]
     linarith
@@ -260,24 +215,12 @@ theorem Gamma_eq_normalClosure_T_pow_sup_Gamma {N ν : ℕ} [NeZero ν] (hdvd : 
     Gamma N = Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ)) ⊔ Gamma ν := by
   rw [normalClosure_T_pow_sup_Gamma_eq, Nat.gcd_eq_left hdvd]
 
-/-- Any normal subgroup of `SL(2, ℤ)` containing `T ^ N` and `Γ(ν)` (`ν ≠ 0`, `N ∣ ν`) contains
-`Γ(N)`. -/
+/-- Any normal subgroup of `SL(2, ℤ)` containing `T ^ N` and `Γ(ν)` (`ν ≠ 0`) contains `Γ(N)`. -/
 theorem Gamma_le_of_normal_of_T_pow_mem {H : Subgroup SL(2, ℤ)} [H.Normal] {N ν : ℕ}
-    [NeZero ν] (hdvd : N ∣ ν) (hT : ModularGroup.T ^ N ∈ H) (hν : Gamma ν ≤ H) :
-    Gamma N ≤ H := by
-  rw [Gamma_eq_normalClosure_T_pow_sup_Gamma hdvd]
-  exact sup_le (Subgroup.normalClosure_le_normal (Set.singleton_subset_iff.mpr hT)) hν
-
-/-- Every congruence subgroup of `SL(2, ℤ)` has positive strict level. -/
-theorem IsCongruenceSubgroup.strictLevel_pos {Γ : Subgroup SL(2, ℤ)}
-    (h : IsCongruenceSubgroup Γ) : 0 < Γ.strictLevel := by
-  have := h.finiteIndex
-  exact Γ.strictLevel_pos
-
-/-- Every congruence subgroup of `SL(2, ℤ)` has nonzero strict level. -/
-theorem IsCongruenceSubgroup.strictLevel_ne_zero {Γ : Subgroup SL(2, ℤ)}
-    (h : IsCongruenceSubgroup Γ) : Γ.strictLevel ≠ 0 :=
-  h.strictLevel_pos.ne'
+    [NeZero ν] (hT : ModularGroup.T ^ N ∈ H) (hν : Gamma ν ≤ H) :
+    Gamma N ≤ H :=
+  (Gamma_le_normalClosure_T_pow_sup_Gamma N ν).trans
+    (sup_le (Subgroup.normalClosure_le_normal (Set.singleton_subset_iff.mpr hT)) hν)
 
 /-- **Strict Wohlfahrt theorem, normal-core form**: if `Γ ≤ SL(2, ℤ)` is a congruence subgroup,
 its normal core contains `Γ(Γ.strictLevel)`. -/
@@ -286,7 +229,7 @@ theorem IsCongruenceSubgroup.Gamma_strictLevel_le_normalCore {Γ : Subgroup SL(2
   obtain ⟨ν, hν, hle⟩ := h
   have : NeZero ν := ⟨hν⟩
   have := Gamma_normal ν
-  exact Gamma_le_of_normal_of_T_pow_mem (strictLevel_dvd_of_Gamma_le hle)
+  exact Gamma_le_of_normal_of_T_pow_mem
     (Subgroup.strictLevel_dvd_iff_T_pow_mem_normalCore.mp dvd_rfl)
     (Subgroup.normal_le_normalCore.mpr hle)
 
@@ -303,14 +246,21 @@ theorem isCongruenceSubgroup_iff_strictLevel_ne_zero_and_Gamma_le {Γ : Subgroup
   ⟨fun h ↦ ⟨h.strictLevel_ne_zero, h.Gamma_strictLevel_le⟩,
     fun ⟨hne, hle⟩ ↦ ⟨Γ.strictLevel, hne, hle⟩⟩
 
+/-- For any nonzero multiple `N` of `Γ.strictLevel`, `Γ` is a congruence subgroup if and only if
+it contains `Γ(N)`. -/
+theorem isCongruenceSubgroup_iff_Gamma_le_of_dvd {Γ : Subgroup SL(2, ℤ)} {N : ℕ} [NeZero N]
+    (hdvd : Γ.strictLevel ∣ N) :
+    IsCongruenceSubgroup Γ ↔ Gamma N ≤ Γ :=
+  ⟨fun h ↦ (Gamma_le_Gamma_of_dvd hdvd).trans h.Gamma_strictLevel_le,
+    fun h ↦ ⟨N, NeZero.ne N, h⟩⟩
+
 /-- **Wohlfahrt's theorem in strict form**: a subgroup `Γ ≤ SL(2, ℤ)` of nonzero strict level (in
 particular any subgroup of finite index, via `Subgroup.instNeZeroStrictLevel`) is a congruence
 subgroup if and only if it contains `Γ(Γ.strictLevel)`. -/
 theorem isCongruenceSubgroup_iff_Gamma_strictLevel_le (Γ : Subgroup SL(2, ℤ))
     [NeZero Γ.strictLevel] :
-    IsCongruenceSubgroup Γ ↔ Gamma Γ.strictLevel ≤ Γ := by
-  rw [isCongruenceSubgroup_iff_strictLevel_ne_zero_and_Gamma_le,
-    and_iff_right (NeZero.ne Γ.strictLevel)]
+    IsCongruenceSubgroup Γ ↔ Gamma Γ.strictLevel ≤ Γ :=
+  isCongruenceSubgroup_iff_Gamma_le_of_dvd dvd_rfl
 
 /-- **Kiming–Schütt–Verrill's level-doubling containment**: every congruence subgroup `Γ` contains
 `Γ(2 · (Γ·{±I}).strictLevel)`. -/
@@ -319,82 +269,6 @@ theorem IsCongruenceSubgroup.Gamma_two_mul_strictLevel_withCenter_le {Γ : Subgr
     Gamma (2 * Γ.withCenter.strictLevel) ≤ Γ :=
   (Gamma_le_Gamma_of_dvd Γ.strictLevel_dvd_two_mul_strictLevel_withCenter).trans
     h.Gamma_strictLevel_le
-
-/-! ### Lattice and family properties of `IsCongruenceSubgroup` -/
-
-/-- `SL(2, ℤ)` is a congruence subgroup. -/
-@[simp]
-theorem isCongruenceSubgroup_top : IsCongruenceSubgroup ⊤ :=
-  Gamma_one_top ▸ Gamma_is_cong_sub 1
-
-/-- The trivial subgroup of `SL(2, ℤ)` is not a congruence subgroup. -/
-@[simp]
-theorem not_isCongruenceSubgroup_bot : ¬ IsCongruenceSubgroup ⊥ :=
-  fun h ↦ h.strictLevel_ne_zero Subgroup.strictLevel_bot
-
-/-- `Γ(N)` is a congruence subgroup if and only if `N ≠ 0`. -/
-@[simp]
-theorem isCongruenceSubgroup_Gamma_iff {N : ℕ} :
-    IsCongruenceSubgroup (Gamma N) ↔ N ≠ 0 :=
-  ⟨fun h ↦ strictLevel_Gamma N ▸ h.strictLevel_ne_zero, fun h ↦
-    letI : NeZero N := ⟨h⟩
-    Gamma_is_cong_sub N⟩
-
-/-- `Γ₀(N)` is a congruence subgroup if and only if `N ≠ 0`. -/
-@[simp]
-theorem isCongruenceSubgroup_Gamma0_iff {N : ℕ} :
-    IsCongruenceSubgroup (Gamma0 N) ↔ N ≠ 0 :=
-  ⟨fun h ↦ strictLevel_Gamma0 N ▸ h.strictLevel_ne_zero, fun h ↦
-    letI : NeZero N := ⟨h⟩
-    Gamma0_is_congruence N⟩
-
-/-- `Γ₁(N)` is a congruence subgroup if and only if `N ≠ 0`. -/
-@[simp]
-theorem isCongruenceSubgroup_Gamma1_iff {N : ℕ} :
-    IsCongruenceSubgroup (Gamma1 N) ↔ N ≠ 0 :=
-  ⟨fun h ↦ strictLevel_Gamma1 N ▸ h.strictLevel_ne_zero, fun h ↦
-    letI : NeZero N := ⟨h⟩
-    Gamma1_is_congruence N⟩
-
-/-- The intersection of two congruence subgroups is a congruence subgroup. -/
-theorem IsCongruenceSubgroup.inf {Γ₁ Γ₂ : Subgroup SL(2, ℤ)}
-    (h₁ : IsCongruenceSubgroup Γ₁) (h₂ : IsCongruenceSubgroup Γ₂) :
-    IsCongruenceSubgroup (Γ₁ ⊓ Γ₂) := by
-  obtain ⟨N₁, hN₁, hle₁⟩ := h₁
-  obtain ⟨N₂, hN₂, hle₂⟩ := h₂
-  exact ⟨Nat.lcm N₁ N₂, Nat.lcm_ne_zero hN₁ hN₂,
-    Gamma_lcm_eq_inf N₁ N₂ ▸ inf_le_inf hle₁ hle₂⟩
-
-/-- Adjoining `{±I}` to a congruence subgroup produces a congruence subgroup. -/
-theorem IsCongruenceSubgroup.withCenter {Γ : Subgroup SL(2, ℤ)}
-    (h : IsCongruenceSubgroup Γ) : IsCongruenceSubgroup Γ.withCenter :=
-  isCongruenceSubgroup_trans _ _ Γ.le_withCenter h
-
-/-- A subgroup of `SL(2, ℤ)` is a congruence subgroup if and only if its normal core is. -/
-@[simp]
-theorem isCongruenceSubgroup_normalCore_iff {Γ : Subgroup SL(2, ℤ)} :
-    IsCongruenceSubgroup Γ.normalCore ↔ IsCongruenceSubgroup Γ :=
-  ⟨isCongruenceSubgroup_trans _ _ Γ.normalCore_le,
-    fun h ↦ ⟨Γ.strictLevel, h.strictLevel_ne_zero, h.Gamma_strictLevel_le_normalCore⟩⟩
-
-/-- The intersection of all principal congruence subgroups `Γ(N)` (`N ≠ 0`) is trivial:
-`SL(2, ℤ)` is residually finite with respect to principal congruence subgroups. -/
-@[simp]
-theorem iInf_Gamma_ne_zero : (⨅ (N : ℕ) (_ : N ≠ 0), Gamma N) = ⊥ := by
-  refine eq_bot_iff.mpr fun γ hγ ↦ ?_
-  rw [Subgroup.mem_bot]
-  ext i j
-  have hdvd : ∀ N : ℕ, N ≠ 0 →
-      (N : ℤ) ∣ (γ : Matrix (Fin 2) (Fin 2) ℤ) i j - if i = j then 1 else 0 := by
-    intro N hN
-    have hmem : γ ∈ Gamma N := (Subgroup.mem_iInf.mp (Subgroup.mem_iInf.mp hγ N)) hN
-    exact (mem_ker_map_intCast_zmod_iff.mp hmem) i j
-  set d : ℤ := (γ : Matrix (Fin 2) (Fin 2) ℤ) i j - if i = j then 1 else 0
-  have hd0 : d = 0 := Int.eq_zero_of_dvd_of_natAbs_lt_natAbs
-    (hdvd (d.natAbs + 1) (Nat.succ_ne_zero _)) (by omega)
-  have h1 : ((1 : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) i j = if i = j then 1 else 0 := by
-    simp [Matrix.one_apply]
-  linarith
 
 /-! ### The odd lift `{γ ∈ Γ(2) | γ₀₀ ≡ 1 (mod 4)}`
 
@@ -407,7 +281,7 @@ private def oddGamma2Lift : Subgroup SL(2, ℤ) where
   carrier := {γ | γ ∈ Gamma 2 ∧ ((γ 0 0 : ℤ) : ZMod 4) = 1}
   one_mem' := ⟨one_mem _, by simp⟩
   mul_mem' := by
-    have h4 : (4 : ZMod 4) = 0 := rfl
+    have h4 : (4 : ZMod 4) = 0 := by decide
     rintro a b ⟨ha, ha00⟩ ⟨hb, hb00⟩
     refine ⟨mul_mem ha hb, ?_⟩
     obtain ⟨u, hu⟩ := (mem_Gamma_iff_dvd.mp ha).2.1
@@ -421,7 +295,7 @@ private def oddGamma2Lift : Subgroup SL(2, ℤ) where
     push_cast at hcast
     simpa [ha00, hb00, h4] using hcast
   inv_mem' := by
-    have h4 : (4 : ZMod 4) = 0 := rfl
+    have h4 : (4 : ZMod 4) = 0 := by decide
     rintro a ⟨ha, ha00⟩
     refine ⟨inv_mem ha, ?_⟩
     obtain ⟨u, hu⟩ := (mem_Gamma_iff_dvd.mp ha).2.1
@@ -459,8 +333,7 @@ example :
           (ZMod.intCast_eq_intCast_iff_dvd_sub (γ 0 0) 1 4).mpr ⟨-m, by omega⟩⟩
       · refine Subgroup.mem_withCenter_iff_exists_eq_or_eq_neg.mpr
           ⟨-γ, ⟨by simpa using mul_mem hneg2 hγ, ?_⟩, Or.inr (neg_neg γ).symm⟩
-        have hneg_entry : (-γ : SL(2, ℤ)) 0 0 = -(γ 0 0) := rfl
-        rw [hneg_entry]
+        rw [coe_neg, Matrix.neg_apply]
         exact (ZMod.intCast_eq_intCast_iff_dvd_sub (-(γ 0 0)) 1 4).mpr ⟨m + 1, by omega⟩
   have hT2 : ModularGroup.T ^ 2 ∈ oddGamma2Lift :=
     ⟨by simpa using ModularGroup_T_pow_mem_Gamma 2 2 dvd_rfl,
@@ -470,8 +343,8 @@ example :
     rintro ⟨_, h00⟩
     have hentry : ((ModularGroup.T * ModularGroup.S) * ModularGroup.T ^ 2 *
         (ModularGroup.T * ModularGroup.S)⁻¹) 0 0 = -1 := by
-      simp [sq, ModularGroup.coe_S, ModularGroup.coe_T, Matrix.adjugate_fin_two,
-        Matrix.mul_apply, Fin.sum_univ_two]
+      rw [← zpow_ofNat, (ModularGroup.T * ModularGroup.S).coe_conj_T_zpow 2]
+      simp [ModularGroup.coe_T, ModularGroup.coe_S, Matrix.mul_apply, Fin.sum_univ_two]
     exact absurd (hentry ▸ h00) (by decide)
   have hG4 : Gamma 4 ≤ oddGamma2Lift := fun γ hγ ↦
     ⟨Gamma_le_Gamma_of_dvd (by decide : 2 ∣ 4) hγ, (Gamma_mem.mp hγ).1⟩

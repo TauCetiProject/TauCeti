@@ -47,6 +47,9 @@ lie in `Γ`.
   `CongruenceSubgroup.strictLevel_Gamma1`: `Γ(N)`, `Γ₀(N)` and `Γ₁(N)` have strict level `N`.
 * `CongruenceSubgroup.strictLevel_dvd_of_Gamma_le`: a subgroup containing `Γ(N)` has strict level
   dividing `N`.
+* `CongruenceSubgroup.IsCongruenceSubgroup.strictLevel_pos`,
+  `CongruenceSubgroup.IsCongruenceSubgroup.strictLevel_ne_zero`: every congruence subgroup has
+  positive (hence nonzero) strict level.
 
 ## References
 
@@ -231,14 +234,10 @@ theorem strictLevel_dvd_of_Gamma_le {Γ : Subgroup SL(2, ℤ)} {N : ℕ} (h : Ga
 included). -/
 @[simp]
 theorem _root_.Subgroup.strictLevel_normalClosure_T_pow (N : ℕ) :
-    (Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ))).strictLevel = N := by
-  refine Nat.dvd_antisymm ?_ ?_
-  · exact Subgroup.strictLevel_dvd_iff_of_normal.mpr (Subgroup.subset_normalClosure rfl)
-  · have := Gamma_normal N
-    have hle : Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ)) ≤ Gamma N :=
-      Subgroup.normalClosure_le_normal (Set.singleton_subset_iff.mpr
-        (by simpa using ModularGroup_T_pow_mem_Gamma N N dvd_rfl))
-    simpa using Subgroup.strictLevel_dvd_of_le hle
+    (Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ))).strictLevel = N :=
+  Nat.dvd_antisymm
+    (Subgroup.strictLevel_dvd_iff_of_normal.mpr (Subgroup.subset_normalClosure rfl))
+    (by simpa using Subgroup.strictLevel_dvd_of_le (normalClosure_T_pow_le_Gamma N))
 
 /-- `Γ₀(N)` has strict level `N`. -/
 @[simp]
@@ -254,5 +253,16 @@ theorem strictLevel_Gamma0 (N : ℕ) : (Gamma0 N).strictLevel = N := by
 theorem strictLevel_Gamma1 (N : ℕ) : (Gamma1 N).strictLevel = N :=
   Nat.dvd_antisymm (strictLevel_dvd_of_Gamma_le (Gamma_le_Gamma1 N))
     (by simpa using Subgroup.strictLevel_dvd_of_le (Gamma1_in_Gamma0 N))
+
+/-- Every congruence subgroup of `SL(2, ℤ)` has positive strict level. -/
+theorem IsCongruenceSubgroup.strictLevel_pos {Γ : Subgroup SL(2, ℤ)}
+    (h : IsCongruenceSubgroup Γ) : 0 < Γ.strictLevel := by
+  have := h.finiteIndex
+  exact Γ.strictLevel_pos
+
+/-- Every congruence subgroup of `SL(2, ℤ)` has nonzero strict level. -/
+theorem IsCongruenceSubgroup.strictLevel_ne_zero {Γ : Subgroup SL(2, ℤ)}
+    (h : IsCongruenceSubgroup Γ) : Γ.strictLevel ≠ 0 :=
+  h.strictLevel_pos.ne'
 
 end CongruenceSubgroup
