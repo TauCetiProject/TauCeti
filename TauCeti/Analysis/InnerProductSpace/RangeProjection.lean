@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 
 /-!
 # The orthogonal projection onto the range of an operator
@@ -74,7 +75,7 @@ private theorem continuousAt_gramLeftInverse {A : F →L[𝕜] V}
     (ha.clm_comp continuousAt_id)).clm_comp ha
 
 private theorem contDiffAt_gramLeftInverse
-    [NormedSpace ℝ F] [IsScalarTower ℝ 𝕜 F] [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V]
+    [NormedSpace ℝ F] [NormedSpace ℝ V]
     {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) {n : WithTop ℕ∞} :
     ContDiffAt ℝ n (gramLeftInverse : (F →L[𝕜] V) → V →L[𝕜] F) A := by
   have ha : ContDiff ℝ n (adjoint : (F →L[𝕜] V) → V →L[𝕜] F) := by
@@ -284,9 +285,9 @@ section ContDiffAt
 open ContinuousLinearMap UniformSpace UniformSpace.Completion
 
 variable {𝕜 X E V : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace ℝ X]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [FiniteDimensional 𝕜 E] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
-  [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V]
+  [NormedSpace ℝ V]
 
 /-- The orthogonal projection onto the range of a real `C^n` family of real or complex operators
 out of a finite-dimensional space is real `C^n` wherever the operator is injective. The inner
@@ -298,8 +299,7 @@ theorem ContDiffAt.starProjection_range {A : X → E →L[𝕜] V} {u₀ : X} {n
   let F := EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))
   let j : F ≃L[𝕜] E := .ofFinrankEq (by simp [F])
   have hj : ContDiffAt ℝ n (fun u ↦ A u ∘L (j : F →L[𝕜] E)) u₀ :=
-    (((compL 𝕜 F E V).bilinearRestrictScalars ℝ).contDiff.contDiffAt.comp u₀ hA).clm_apply
-      contDiffAt_const
+    (((compL 𝕜 F E V).flip (j : F →L[𝕜] E)).restrictScalars ℝ).contDiff.contDiffAt.comp u₀ hA
   have hB : ContDiffAt ℝ n (fun u ↦ toComplL ∘L A u ∘L (j : F →L[𝕜] E)) u₀ := by
     simpa only [Function.comp_def, bilinearRestrictScalars_apply_apply, compL_apply,
       comp_assoc] using
