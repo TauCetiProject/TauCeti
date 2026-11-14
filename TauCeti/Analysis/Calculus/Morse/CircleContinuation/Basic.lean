@@ -360,8 +360,9 @@ theorem exists_hasDerivWithinAt_circleContinuationSlope_Icc (δ : ℝ) {r : ℝ 
   have hmt : ∀ t ∈ Icc a b, m ≤ t * (1 - t ^ 2) := fun t ht ↦
     mul_le_mul ht.1 (by nlinarith [ht.1, ht.2]) (by nlinarith) (hmem t ht).1.le
   have hPL : IsPicardLindelof (circleContinuationSlope δ r) ⟨t₀, ht₀⟩ θ₀
-      ⟨2 * |δ| * m⁻¹ * (b - a), by have := sub_nonneg.2 hab; positivity⟩ 0
-      ⟨2 * |δ| * m⁻¹, by positivity⟩ (4 * |δ| / m).toNNReal := by
+      (2 * |δ| * m⁻¹ * (b - a)).toNNReal 0 (2 * |δ| * m⁻¹).toNNReal (4 * |δ| / m).toNNReal := by
+    have hL : 0 ≤ 2 * |δ| * m⁻¹ := by positivity
+    have hA : 0 ≤ 2 * |δ| * m⁻¹ * (b - a) := mul_nonneg hL (sub_nonneg.2 hab)
     refine ⟨fun t ht ↦ (lipschitzWith_circleContinuationSlope δ r ha hb ht).lipschitzOnWith,
       fun θ _ ↦ ?_, fun t ht θ _ ↦ ?_, ?_⟩
     · simp only [circleContinuationSlope_def]
@@ -370,13 +371,10 @@ theorem exists_hasDerivWithinAt_circleContinuationSlope_Icc (δ : ℝ) {r : ℝ 
       exact (baseSpeed_pos (hmem t ht).1 (hmem t ht).2).ne'
     · rw [Real.norm_eq_abs]
       refine (abs_circleContinuationSlope_le δ r (hmem t ht).1 (hmem t ht).2 θ).trans ?_
-      -- Unfold the coercion of the `ℝ≥0` bound.
-      change _ ≤ 2 * |δ| * m⁻¹
+      rw [Real.coe_toNNReal _ hL]
       gcongr
       exact hmt t ht
-    · -- Unfold the coercions of the `ℝ≥0` constants and of the initial time.
-      change (2 * |δ| * m⁻¹) * max (b - t₀) (t₀ - a) ≤ 2 * |δ| * m⁻¹ * (b - a) - 0
-      rw [sub_zero]
+    · rw [Real.coe_toNNReal _ hL, Real.coe_toNNReal _ hA, NNReal.coe_zero, sub_zero]
       gcongr
       exact max_le (by linarith [ht₀.1]) (by linarith [ht₀.2])
   exact hPL.exists_eq_forall_mem_Icc_hasDerivWithinAt₀
@@ -515,30 +513,16 @@ private theorem exists_hasDerivAt_circleContinuationSlope_of_window {δ : ℝ} {
   have hzero₁ : ∀ t, 2 / 3 ≤ t → circleContinuationSlope δ r t π = 0 := fun t ht ↦
     circleContinuationSlope_eq_zero (by
       simp only [r]; rw [h1 t ht, mul_one, sub_self, mul_zero, sin_zero])
-  -- First glue the window solution to the constant `π`, on `[1/3, ∞)`.
-  have hright : ∀ t, 1 / 3 ≤ t → HasDerivWithinAt (fun t ↦ if t ≤ 5 / 6 then Θ t else π)
-      (circleContinuationSlope δ r t (if t ≤ 5 / 6 then Θ t else π)) (Ici (1 / 3)) t :=
-    fun t ht ↦ by
-      rw [apply_ite (circleContinuationSlope δ r t)]
-      exact hasDerivWithinAt_if_le (f' := fun t ↦ circleContinuationSlope δ r t (Θ t))
-        (g' := fun t ↦ circleContinuationSlope δ r t π) (mem_Ici.2 ht)
-        (fun htb ↦ (hΘ t ⟨ht, htb⟩).mono fun y (hy : y ∈ Ici (1 / 3) ∩ Iic (5 / 6)) ↦ hy)
-        (fun hbt ↦ by
-          rw [hzero₁ t (by linarith)]
-          exact hasDerivWithinAt_const _ _ _) hΘb (by rw [hΘb])
-  -- Then glue the constant `π / 2` to it, on the whole line.
   refine ⟨Θg, hΘg₀, hΘg₁, fun t ↦ ?_⟩
-  have hglue : (if (1 / 3 : ℝ) ≤ 5 / 6 then Θ (1 / 3) else π) = π / 2 := by
-    rw [ite_eq_left (by norm_num), hΘa]
   rw [← hasDerivWithinAt_univ]
-  simp only [Θg]
-  rw [apply_ite (circleContinuationSlope δ r t)]
-  exact hasDerivWithinAt_if_le (f' := fun t ↦ circleContinuationSlope δ r t (π / 2))
-    (g' := fun t ↦ circleContinuationSlope δ r t (if t ≤ 5 / 6 then Θ t else π)) (mem_univ t)
+  exact hasDerivWithinAt_if_le_if_le (by norm_num)
     (fun hta ↦ by
       rw [hzero₀ t hta]
       exact hasDerivWithinAt_const _ _ _)
-    (fun hat ↦ (hright t hat).mono inter_subset_right) hglue.symm (by rw [hglue])
+    (fun ht ↦ (hΘ t ht).mono inter_subset_right)
+    (fun hbt ↦ by
+      rw [hzero₁ t (by linarith)]
+      exact hasDerivWithinAt_const _ _ _) hΘa.symm hΘb
 
 /-- **A slice-wise Morse–Smale continuation whose parameter field is not transverse.** Let `ρ` be
 `C¹`, nondecreasing, `0` for `t ≤ 1/3` and `1` for `t ≥ 2/3`, and consider the half-turn path

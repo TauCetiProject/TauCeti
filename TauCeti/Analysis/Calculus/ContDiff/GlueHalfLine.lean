@@ -14,7 +14,9 @@ public import Mathlib.Topology.Piecewise
 The piecewise function on the nonnegative and negative half-lines preserves derivatives when
 the two branches match at zero. Matching jets yield finite-order continuous differentiability.
 Within a set, one-sided derivatives of two branches which match at the gluing point glue to a
-derivative of the piecewise function (`TauCeti.hasDerivWithinAt_if_le`).
+derivative of the piecewise function (`TauCeti.hasDerivWithinAt_if_le`), and three solutions of an
+equation `x' = v t x` on consecutive intervals glue to a solution
+(`TauCeti.hasDerivWithinAt_if_le_if_le`).
 -/
 
 public section
@@ -24,62 +26,74 @@ open scoped Topology
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+/-- **Gluing one-sided derivatives within a set.** Let `f` have derivative `f'` within
+`s ∩ Iic c` at `t` if `t ≤ c`, and `g` have derivative `g'` within `s ∩ Ici c` at `t` if `c ≤ t`,
+the values and the derivatives agreeing if `t = c`. Then the function equal to `f` on `Iic c` and
+to `g` elsewhere has derivative `f'` or `g'` within `s` at `t`. -/
+theorem TauCeti.hasDerivWithinAt_if_le {f g : ℝ → F} {f' g' : F} {s : Set ℝ} {c t : ℝ}
+    (hf : t ≤ c → HasDerivWithinAt f f' (s ∩ Iic c) t)
+    (hg : c ≤ t → HasDerivWithinAt g g' (s ∩ Ici c) t) (h₀ : t = c → f c = g c)
+    (h₁ : t = c → f' = g') :
+    HasDerivWithinAt (fun y ↦ if y ≤ c then f y else g y) (if t ≤ c then f' else g') s t := by
+  have hhf : EqOn (fun y ↦ if y ≤ c then f y else g y) f (Iic c) := fun y hy ↦ ite_eq_left hy
+  rcases lt_trichotomy t c with htc | rfl | htc
+  · rw [ite_eq_left htc.le]
+    exact ((hf htc.le).congr (hhf.mono inter_subset_right) (hhf htc.le)).mono_of_mem_nhdsWithin
+      (inter_mem_nhdsWithin s (Iic_mem_nhds htc))
+  · have hhg : EqOn (fun y ↦ if y ≤ t then f y else g y) g (Ici t) := fun y hy ↦ by
+      rcases hy.eq_or_lt with rfl | hlt
+      · simpa using h₀ rfl
+      · exact ite_eq_right hlt.not_ge
+    rw [ite_eq_left le_rfl,
+      show s = s ∩ Iic t ∪ s ∩ Ici t by rw [← inter_union_distrib_left, Iic_union_Ici, inter_univ]]
+    refine ((hf le_rfl).congr (hhf.mono inter_subset_right) (hhf le_rfl)).union ?_
+    rw [h₁ rfl]
+    exact (hg le_rfl).congr (hhg.mono inter_subset_right) (hhg le_rfl)
+  · have hhg : EqOn (fun y ↦ if y ≤ c then f y else g y) g (Ioi c) := fun y hy ↦
+      ite_eq_right (not_le.2 hy)
+    rw [ite_eq_right htc.not_ge]
+    exact (((hg htc.le).mono (inter_subset_inter_right s Ioi_subset_Ici_self)).congr
+      (hhg.mono inter_subset_right) (hhg htc)).mono_of_mem_nhdsWithin
+      (inter_mem_nhdsWithin s (Ioi_mem_nhds htc))
+
+/-- **Gluing three solutions of an equation `x' = v t x`.** Let `a ≤ b`, and let `f`, `g` and `h`
+solve the equation at `t` within `s ∩ Iic a`, `s ∩ Icc a b` and `s ∩ Ici b` respectively, whenever
+`t` lies in the corresponding interval, with `f a = g a` and `g b = h b`. Then the function equal
+to `f` on `Iic a`, to `g` on `Ioc a b` and to `h` on `Ioi b` solves the equation at `t` within
+`s`. -/
+theorem TauCeti.hasDerivWithinAt_if_le_if_le {v : ℝ → F → F} {f g h : ℝ → F} {s : Set ℝ}
+    {a b t : ℝ} (hab : a ≤ b) (hf : t ≤ a → HasDerivWithinAt f (v t (f t)) (s ∩ Iic a) t)
+    (hg : t ∈ Icc a b → HasDerivWithinAt g (v t (g t)) (s ∩ Icc a b) t)
+    (hh : b ≤ t → HasDerivWithinAt h (v t (h t)) (s ∩ Ici b) t) (hfg : f a = g a)
+    (hgh : g b = h b) :
+    HasDerivWithinAt (fun y ↦ if y ≤ a then f y else if y ≤ b then g y else h y)
+      (v t (if t ≤ a then f t else if t ≤ b then g t else h t)) s t := by
+  have hga : (if a ≤ b then g a else h a) = f a := by rw [ite_eq_left hab, hfg]
+  rw [apply_ite (v t)]
+  refine TauCeti.hasDerivWithinAt_if_le hf (fun hat ↦ ?_) (fun _ ↦ hga.symm)
+    (fun hta ↦ by rw [hta, hga])
+  rw [apply_ite (v t)]
+  exact TauCeti.hasDerivWithinAt_if_le
+    (fun htb ↦ (hg ⟨hat, htb⟩).mono fun y hy ↦ ⟨hy.1.1, hy.1.2, hy.2⟩)
+    (fun hbt ↦ (hh hbt).mono fun y hy ↦ ⟨hy.1.1, hy.2⟩) (fun _ ↦ hgh)
+    (fun htb ↦ by rw [htb, hgh])
+
 /-- Equal values and derivatives at zero allow gluing the one-sided derivatives. -/
 theorem TauCeti.hasDerivAt_if_nonneg {f g f' g' : ℝ → F}
     (hf : ∀ t, HasDerivAt f (f' t) t) (hg : ∀ t, HasDerivAt g (g' t) t)
     (h₀ : f 0 = g 0) (h₁ : f' 0 = g' 0) (t : ℝ) :
     HasDerivAt (fun t ↦ if 0 ≤ t then f t else g t)
       (if 0 ≤ t then f' t else g' t) t := by
-  rcases lt_trichotomy t 0 with ht | rfl | ht
-  · simp only [ite_eq_right ht.not_ge]
-    exact (hg t).congr_of_eventuallyEq (by
-      filter_upwards [eventually_lt_nhds ht] with x hx
-      exact ite_eq_right hx.not_ge)
-  · simp only [le_refl, ite_true]
-    have hpos : HasDerivWithinAt (fun t ↦ if 0 ≤ t then f t else g t) (f' 0) (Ici 0) 0 :=
-      (hf 0).hasDerivWithinAt.congr (fun _ hx ↦ ite_eq_left hx) (ite_eq_left le_rfl)
-    have hneg : HasDerivWithinAt (fun t ↦ if 0 ≤ t then f t else g t) (f' 0) (Iic 0) 0 := by
-      rw [h₁]
-      apply (hg 0).hasDerivWithinAt.congr
-      · intro x hx
-        by_cases hx' : 0 ≤ x
-        · have : x = 0 := le_antisymm hx hx'
-          subst x
-          simpa using h₀
-        · exact ite_eq_right hx'
-      · simpa using h₀
-    simpa only [Ici_union_Iic, hasDerivWithinAt_univ] using hpos.union hneg
-  · simp only [ite_eq_left ht.le]
-    exact (hf t).congr_of_eventuallyEq (by
-      filter_upwards [eventually_gt_nhds ht] with x hx
-      exact ite_eq_left hx.le)
-
-/-- **Gluing one-sided derivatives within a set.** Let `f` and `g` agree, with their derivatives
-`f'` and `g'`, at `c`. If `f` has derivative `f' t` within `s ∩ Iic c` at `t ≤ c` and `g` has
-derivative `g' t` within `s ∩ Ici c` at `t ≥ c`, then the function equal to `f` on `Iic c` and to
-`g` elsewhere has the glued derivative within `s` at every `t ∈ s`. -/
-theorem TauCeti.hasDerivWithinAt_if_le {f g f' g' : ℝ → F} {s : Set ℝ} {c t : ℝ} (ht : t ∈ s)
-    (hf : t ≤ c → HasDerivWithinAt f (f' t) (s ∩ Iic c) t)
-    (hg : c ≤ t → HasDerivWithinAt g (g' t) (s ∩ Ici c) t) (h₀ : f c = g c) (h₁ : f' c = g' c) :
-    HasDerivWithinAt (fun t ↦ if t ≤ c then f t else g t) (if t ≤ c then f' t else g' t) s t := by
-  have hhf : EqOn (fun t ↦ if t ≤ c then f t else g t) f (s ∩ Iic c) := fun y hy ↦
-    ite_eq_left hy.2
-  have hhg : EqOn (fun t ↦ if t ≤ c then f t else g t) g (s ∩ Ici c) := fun y hy ↦ by
-    rcases hy.2.eq_or_lt with rfl | hlt
-    · simpa using h₀
-    · exact ite_eq_right hlt.not_ge
-  rcases lt_trichotomy t c with htc | rfl | htc
-  · rw [ite_eq_left htc.le]
-    exact ((hf htc.le).congr hhf (hhf ⟨ht, htc.le⟩)).mono_of_mem_nhdsWithin
-      (inter_mem_nhdsWithin s (Iic_mem_nhds htc))
-  · rw [ite_eq_left le_rfl,
-      show s = s ∩ Iic t ∪ s ∩ Ici t by rw [← inter_union_distrib_left, Iic_union_Ici, inter_univ]]
-    refine ((hf le_rfl).congr hhf (hhf ⟨ht, le_rfl⟩)).union ?_
-    rw [h₁]
-    exact (hg le_rfl).congr hhg (hhg ⟨ht, le_rfl⟩)
-  · rw [ite_eq_right htc.not_ge]
-    exact ((hg htc.le).congr hhg (hhg ⟨ht, htc.le⟩)).mono_of_mem_nhdsWithin
-      (inter_mem_nhdsWithin s (Ici_mem_nhds htc))
+  -- Swap the branches, so that the branch on `Iic 0` comes first.
+  have hswap : ∀ (u w : ℝ → F), u 0 = w 0 → ∀ x : ℝ,
+      (if 0 ≤ x then u x else w x) = if x ≤ 0 then w x else u x := fun u w h x ↦ by
+    rcases lt_trichotomy x 0 with hx | rfl | hx
+    · simp [hx.not_ge, hx.le]
+    · simp [h]
+    · simp [hx.le, hx.not_ge]
+  rw [funext (hswap f g h₀), hswap f' g' h₁, ← hasDerivWithinAt_univ]
+  exact TauCeti.hasDerivWithinAt_if_le (fun _ ↦ (hg t).hasDerivWithinAt)
+    (fun _ ↦ (hf t).hasDerivWithinAt) (fun _ ↦ h₀.symm) (fun ht ↦ by rw [ht, h₁])
 
 /-- Gluing `Cⁿ` functions with matching jets through order `n`. -/
 theorem ContDiff.if_nonneg {n : ℕ} {f g : ℝ → F}
