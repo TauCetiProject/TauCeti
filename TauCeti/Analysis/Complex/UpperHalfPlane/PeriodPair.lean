@@ -493,6 +493,21 @@ lemma intCast_sub_nsmul_mul_add_intCast {N : ℕ} [NeZero N] (b y : Fin 2 → �
   field_simp
   ring
 
+/-- The division point `(b₀ z + b₁) / M` has norm less than `|b₀| |C| + |b₁| + 1` when
+`‖z‖ ≤ |C|`. -/
+lemma norm_intCast_mul_add_intCast_div_lt (M : ℕ) (b : Fin 2 → ℤ) {z : ℂ} {C : ℝ}
+    (hz : ‖z‖ ≤ |C|) :
+    ‖((b 0 : ℂ) * z + b 1) / M‖ < |(b 0 : ℝ)| * |C| + |(b 1 : ℝ)| + 1 := by
+  have hdiv : ‖((b 0 : ℂ) * z + b 1) / M‖ ≤ ‖(b 0 : ℂ) * z + b 1‖ := by
+    rcases M.eq_zero_or_pos with rfl | hM
+    · simp
+    · rw [norm_div, Complex.norm_natCast]
+      exact div_le_self (norm_nonneg _) (Nat.one_le_cast.2 hM)
+  refine hdiv.trans_lt <| (norm_add_le _ _).trans_lt ?_
+  rw [norm_mul, Complex.norm_intCast, Complex.norm_intCast]
+  have := mul_le_mul_of_nonneg_left hz (abs_nonneg (b 0 : ℝ))
+  linarith
+
 /-- The lattice series of `ζ` at the division point `(b₀ z + b₁) / M` converges locally uniformly
 in `z`. -/
 theorem tendstoLocallyUniformly_weierstrassZeta_periodPair_div (M : ℕ) (b : Fin 2 → ℤ) :
@@ -537,15 +552,8 @@ theorem tendstoLocallyUniformly_weierstrassZeta_periodPair_div (M : ℕ) (b : Fi
   have hl : r₀ * ‖y‖ ≤ ‖(y 0 : ℂ) * z + y 1‖ :=
     (mul_le_mul_of_nonneg_right (r_lower_bound_on_verticalStrip z hB (HABK hz))
       (norm_nonneg _)).trans (r_mul_max_le z hy0)
-  have hx : ‖((b 0 : ℂ) * z + b 1) / M‖ < R := by
-    have hM : (1 : ℝ) ≤ M := by exact_mod_cast NeZero.one_le
-    have hz' : ‖(z : ℂ)‖ ≤ |C| := (hC z hz).trans (le_abs_self C)
-    rw [norm_div, Complex.norm_natCast]
-    refine (div_le_self (norm_nonneg _) hM).trans_lt ?_
-    refine (norm_add_le _ _).trans_lt ?_
-    rw [norm_mul, Complex.norm_intCast, Complex.norm_intCast]
-    have := mul_le_mul_of_nonneg_left hz' (abs_nonneg (b 0 : ℝ))
-    linarith
+  have hx : ‖((b 0 : ℂ) * z + b 1) / M‖ < R :=
+    norm_intCast_mul_add_intCast_div_lt M b ((hC z hz).trans (le_abs_self C))
   refine (weierstrassZeta_bound hx (hy'.trans hl)).trans ?_
   rw [mul_assoc (2 * R ^ 2), ← Real.mul_rpow hr₀.le (norm_nonneg _)]
   exact mul_le_mul_of_nonneg_left
