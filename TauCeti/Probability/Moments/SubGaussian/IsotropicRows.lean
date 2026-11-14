@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Matrix.SingularValues
 public import TauCeti.Analysis.Normed.Module.CoveringNumber
 public import Mathlib.Analysis.Matrix.Hermitian
 public import Mathlib.Analysis.Matrix.MeasurableSpace
-import Mathlib.Analysis.Complex.ExponentialBounds
+import TauCeti.Probability.Moments.SubGaussian.Net
 
 /-!
 # Matrices with independent isotropic sub-Gaussian rows
@@ -98,20 +98,9 @@ private lemma row_tail_rate (m : ℕ) {c s : ℝ} (hm : 0 < m) (hc : 0 < c) (hs 
 
 private lemma one_net_card_exp_le (n : ℕ) {a t : ℝ} (ha : a ≤ 9 ^ n) (ht : 0 ≤ t) :
     a * exp (-(4 * (√n + t) ^ 2)) ≤ exp (-(t ^ 2)) := by
-  have h9 : (9 : ℝ) ≤ exp 3 := by
-    have he : (2.7 : ℝ) ≤ exp 1 := by linarith [Real.exp_one_gt_d9]
-    have h3 : exp 3 = exp 1 ^ 3 := by rw [← Real.exp_nat_mul]; norm_num
-    rw [h3]
-    exact (by norm_num : (9 : ℝ) ≤ 2.7 ^ 3).trans (pow_le_pow_left₀ (by norm_num) he 3)
-  calc
-    a * exp (-(4 * (√n + t) ^ 2)) ≤ exp 3 ^ n * exp (-(4 * (√n + t) ^ 2)) := by
-      gcongr
-      exact ha.trans (pow_le_pow_left₀ (by norm_num) h9 n)
-    _ = exp (n * 3 - 4 * (√n + t) ^ 2) := by rw [← exp_nat_mul, ← exp_add]; ring_nf
-    _ ≤ exp (-(t ^ 2)) := by
-      apply exp_le_exp.mpr
-      nlinarith [Real.sq_sqrt (Nat.cast_nonneg n : (0 : ℝ) ≤ n),
-        mul_nonneg (Real.sqrt_nonneg (n : ℝ)) ht]
+  simpa only [Nat.cast_zero, Real.sqrt_zero, zero_add, mul_one] using
+    TauCeti.net_card_mul_exp_le (m := 0) ha (by simp : (1 : ℝ) ≤ 9 ^ (0 : ℕ))
+      zero_le_one ht
 
 variable {Ω m n : Type*} [MeasurableSpace Ω] [Fintype m] [Fintype n] [DecidableEq n]
   {P : Measure Ω} [IsProbabilityMeasure P] {A : Ω → Matrix m n ℝ} {c : ℝ≥0}
