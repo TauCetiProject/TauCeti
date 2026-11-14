@@ -22,27 +22,19 @@ binomial series `PowerSeries.binomialSeries A r` representing `(1 + X) ^ r` and 
 addition law `binomialSeries A (r + s) = binomialSeries A r * binomialSeries A s`.
 
 For any series `f : A⟦X⟧` with constant coefficient `1`, substituting `f - 1` into
-`binomialSeries A r` defines the formal binomial power
-
-`f.binomialPow r = (binomialSeries A r).subst (f - 1)`.
-
-This file develops the differential and algebraic laws of `binomialSeries` and `binomialPow`.
-In particular, formal exponentiation makes the multiplicative group
-`{f : A⟦X⟧ | constantCoeff f = 1}` of principal units into an `R`-module, without any additive
-torsion-freeness hypothesis on `A`:
+`binomialSeries A r` defines the formal binomial power `f.binomialPow r =
+(binomialSeries A r).subst (f - 1)`. This file develops the differential and algebraic laws of
+`binomialSeries` and `binomialPow`, making the multiplicative group `{f : A⟦X⟧ | constantCoeff f =
+1}` of principal units into an `R`-module without any additive torsion-freeness hypothesis on `A`:
 
 * `PowerSeries.binomialPow_add`: `f ^ (r + s) = f ^ r * f ^ s`,
 * `PowerSeries.binomialPow_binomialPow`: `(f ^ r) ^ s = f ^ (r * s)`,
 * `PowerSeries.binomialPow_mul`: `(f * g) ^ r = f ^ r * g ^ r`.
 
-The iterated-power and base-multiplicativity identities are proved over rings with unique division
-by positive integers (`HasUniqueDiv`) from uniqueness of solutions to the logarithmic differential
-equation `u * P' = w * P` (`PowerSeries.eq_of_mul_derivative_eq`), applied to the universal rings
-`R` and `MvPolynomial (Bool × ℕ) R`, and then specialized to an arbitrary `R`-algebra `A` along
-coefficient homomorphisms.
-
-Over a `ℚ`-algebra `A`, `binomialPow` agrees with `exp (r • logOf f)`
-(`PowerSeries.logOf_binomialPow`, `PowerSeries.subst_exp_smul_logOf`).
+Iterated powers and base multiplicativity are proved over rings with `HasUniqueDiv` via uniqueness
+for `u * P' = w * P` (`PowerSeries.eq_of_mul_derivative_eq`) on `R` and `MvPolynomial (Bool × ℕ) R`,
+then specialized to any `R`-algebra `A`. Over `ℚ`-algebras, `binomialPow` agrees with
+`exp (r • logOf f)` (`PowerSeries.logOf_binomialPow`, `PowerSeries.subst_exp_smul_logOf`).
 
 ## Main definitions
 
@@ -57,19 +49,16 @@ Over a `ℚ`-algebra `A`, `binomialPow` agrees with `exp (r • logOf f)`
 * `PowerSeries.eq_of_mul_derivative_eq`: over a ring with `HasUniqueDiv`, a series `P` solving
   `u * d⁄dX P = w * P` for `u` with unit constant coefficient is uniquely determined by
   `constantCoeff P`.
-* `PowerSeries.derivative_binomialSeries` and
-  `PowerSeries.one_add_X_mul_derivative_binomialSeries`: `d⁄dX (1 + X) ^ r = r • (1 + X) ^ (r - 1)`
-  and `(1 + X) * d⁄dX (1 + X) ^ r = r • (1 + X) ^ r`.
-* `PowerSeries.subst_binomialSeries_sub_one`: substituting `(1 + X) ^ r - 1` into `(1 + X) ^ s`
-  yields `(1 + X) ^ (r * s)`.
+* `PowerSeries.derivative_binomialSeries`, `PowerSeries.one_add_X_mul_derivative_binomialSeries`,
+  and `PowerSeries.subst_binomialSeries_sub_one`: derivative, logarithmic ODE, and composition law
+  of `binomialSeries`.
 * `PowerSeries.binomialPow_add`, `PowerSeries.binomialPow_binomialPow`,
-  `PowerSeries.binomialPow_mul`: the `R`-module laws on principal units `1 + X A⟦X⟧`.
-* `PowerSeries.derivative_binomialPow` and `PowerSeries.mul_derivative_binomialPow`: the chain rule
-  for formal binomial powers.
+  `PowerSeries.binomialPow_mul`, `PowerSeries.derivative_binomialPow`,
+  `PowerSeries.mul_derivative_binomialPow`: `R`-module laws and chain rules for `binomialPow`.
 * `PowerSeries.subst_binomialPow`, `PowerSeries.rescale_binomialPow`,
   `PowerSeries.map_binomialPow`, `PowerSeries.binomialPow_eq_iff`,
   `PowerSeries.trunc_binomialPow_eq_iff`: compatibility with substitution, rescaling, coefficient
-  homomorphisms, unit-exponent cancellation, and finite truncation.
+  maps, unit-exponent cancellation, and truncation.
 * `PowerSeries.binomialPow_binomialReversion_mul_subst`, `PowerSeries.eq_binomialReversion_iff`,
   `PowerSeries.subst_X_mul_binomialPow_binomialReversion_of_mul_deriv`, and
   `PowerSeries.X_pow_dvd_sub_binomialReversion`: existence, uniqueness, differential identity, and
@@ -104,26 +93,21 @@ theorem eq_of_mul_derivative_eq {u P Q w : A⟦X⟧} (hu : IsUnit (constantCoeff
   suffices hD : P - Q = 0 from sub_eq_zero.mp hD
   set D := P - Q
   have hD₀ : constantCoeff D = 0 := sub_eq_zero.mpr hc
-  have hdeq : u * d⁄dX D = w * D := by
-    rw [map_sub, mul_sub, mul_sub, hP, hQ]
+  have hdeq : u * d⁄dX D = w * D := by rw [map_sub, mul_sub, mul_sub, hP, hQ]
   ext n
   rw [map_zero]
   induction n using Nat.strong_induction_on with
   | _ n ih =>
     rcases n with _ | m
     · simpa [coeff_zero_eq_constantCoeff_apply] using hD₀
-    · -- Compare degree-`m` coefficients of `u * D' = w * D`; lower coefficients of `D` vanish.
-      have hm := congrArg (coeff m) hdeq
-      have hrhs : coeff m (w * D) = 0 := by
-        rw [coeff_mul]
-        refine sum_eq_zero fun p hp => ?_
-        rw [mem_antidiagonal] at hp
-        rw [ih p.2 (by omega), mul_zero]
+    · have hm := congrArg (coeff m) hdeq
+      have hrhs : coeff m (w * D) = 0 :=
+        (coeff_mul m w D).trans <| sum_eq_zero fun p hp => by
+          rw [mem_antidiagonal] at hp; rw [ih p.2 (by omega), mul_zero]
       have hlhs : coeff m (u * d⁄dX D) = (m + 1) • (constantCoeff u * coeff (m + 1) D) := by
         rw [coeff_mul, sum_eq_single (0, m)]
         · simp only [coeff_zero_eq_constantCoeff_apply, coeff_derivative, nsmul_eq_mul]
-          push_cast
-          ring
+          push_cast; ring
         · intro p hp hne
           rw [mem_antidiagonal] at hp
           have hp0 : p.1 ≠ 0 ∨ p.2 ≠ m := not_and_or.mp (by simpa [Prod.ext_iff] using hne)
@@ -169,38 +153,30 @@ theorem isUnit_binomialSeries (r : R) : IsUnit (binomialSeries A r) :=
   isUnit_iff_exists.mpr ⟨binomialSeries A (-r), binomialSeries_mul_neg r, binomialSeries_neg_mul r⟩
 
 /-- At exponent `-1`, the binomial series is the formal inverse of `1 + X`. -/
-theorem binomialSeries_neg_one :
-    binomialSeries A (-1 : R) = invOfUnit (1 + X) 1 := by
-  have h1 : constantCoeff (1 + X : A⟦X⟧) = (1 : Aˣ) := by simp
-  calc
-    binomialSeries A (-1 : R) =
-        binomialSeries A (-1 : R) * ((1 + X) * invOfUnit (1 + X) 1) := by
-      rw [mul_invOfUnit (1 + X) 1 h1, mul_one]
-    _ = (binomialSeries A (-1 : R) * binomialSeries A (1 : R)) * invOfUnit (1 + X) 1 := by
-      rw [binomialSeries_one, mul_assoc]
-    _ = invOfUnit (1 + X) 1 := by rw [binomialSeries_neg_mul, one_mul]
+theorem binomialSeries_neg_one : binomialSeries A (-1 : R) = invOfUnit (1 + X) 1 := by
+  have h1 : (1 + X) * invOfUnit (1 + X : A⟦X⟧) 1 = 1 := mul_invOfUnit (1 + X) 1 (by simp)
+  have h2 : binomialSeries A (-1 : R) * (1 + X) = 1 := by
+    simpa [binomialSeries_one] using binomialSeries_neg_mul (A := A) (1 : R)
+  linear_combination invOfUnit (1 + X : A⟦X⟧) 1 * h2 - binomialSeries A (-1 : R) * h1
 
 /-- Mapping coefficients along `algebraMap R A` sends `binomialSeries R r` to
 `binomialSeries A r`. -/
 @[simp]
 theorem map_algebraMap_binomialSeries (r : R) :
     (binomialSeries R r).map (algebraMap R A) = binomialSeries A r := by
-  ext n
-  simp [Algebra.smul_def]
+  ext n; simp [Algebra.smul_def]
 
 /-- Mapping coefficients along an `R`-algebra homomorphism preserves `binomialSeries`. -/
 @[simp]
 theorem map_algHom_binomialSeries [CommRing B] [Algebra R B] (φ : A →ₐ[R] B) (r : R) :
     (binomialSeries A r).map (φ : A →+* B) = binomialSeries B r := by
-  ext n
-  simp
+  ext n; simp
 
 /-- Mapping coefficients along a ring homomorphism between binomial rings maps the exponent of
 `binomialSeries`. -/
 theorem map_binomialSeries [CommRing S] [BinomialRing S] (φ : R →+* S) (r : R) :
     (binomialSeries R r).map φ = binomialSeries S (φ r) := by
-  ext n
-  simp [Ring.map_choose]
+  ext n; simp [Ring.map_choose]
 
 /-- **Derivative of the binomial series**: `d⁄dX (1 + X) ^ r = r • (1 + X) ^ (r - 1)`. -/
 theorem derivative_binomialSeries (r : R) :
@@ -209,8 +185,7 @@ theorem derivative_binomialSeries (r : R) :
   rw [coeff_derivative, coeff_smul]
   simp only [binomialSeries_coeff, Algebra.smul_def, mul_one]
   have hchoose : (n + 1) • Ring.choose r (n + 1) = r * Ring.choose (r - 1) n := by
-    simpa [Nat.choose_one_right] using
-      Ring.choose_smul_choose r (n := n + 1) (k := 1) (by omega)
+    simpa [Nat.choose_one_right] using Ring.choose_smul_choose r (n := n + 1) (k := 1) (by omega)
   rw [nsmul_eq_mul, Nat.cast_add, Nat.cast_one] at hchoose
   simpa [mul_comm] using congrArg (algebraMap R A) hchoose
 
@@ -228,28 +203,21 @@ private theorem subst_binomialSeries_sub_one_self (r s : R) :
   let := BinomialRing.toHasUniqueDiv (R := R)
   have hsub : HasSubst (binomialSeries R r - 1) := TauCeti.hasSubst_binomialSeries_sub_one r
   refine eq_of_mul_derivative_eq (u := 1 + X) (w := C (r * s)) (by simp) ?_ ?_ ?_
-  · rw [constantCoeff_eq,
-      constantCoeff_subst_of_constantCoeff_zero (by simp [← constantCoeff_eq])]
+  · rw [constantCoeff_eq, constantCoeff_subst_of_constantCoeff_zero (by simp [← constantCoeff_eq])]
     simp
-  · -- Differentiate the composite and recombine `(1 + X) ^ (s - 1)` with `(1 + X) ^ r`.
-    have hsplit : (binomialSeries R s).subst (binomialSeries R r - 1) =
+  · have hsplit : (binomialSeries R s).subst (binomialSeries R r - 1) =
         (binomialSeries R (s - 1)).subst (binomialSeries R r - 1) * binomialSeries R r := by
       conv_lhs => rw [show s = (s - 1) + 1 by ring, binomialSeries_add, binomialSeries_one]
       rw [subst_mul hsub, subst_add hsub, subst_one, subst_X hsub, add_sub_cancel]
     have hderiv := one_add_X_mul_derivative_binomialSeries (A := R) r
     rw [derivative_subst hsub, map_sub, derivative_one, sub_zero, derivative_binomialSeries,
       subst_smul hsub]
-    calc
-      (1 + X) * (s • (binomialSeries R (s - 1)).subst (binomialSeries R r - 1) *
+    calc (1 + X) * (s • (binomialSeries R (s - 1)).subst (binomialSeries R r - 1) *
           d⁄dX (binomialSeries R r))
-        = s • (binomialSeries R (s - 1)).subst (binomialSeries R r - 1) *
-            ((1 + X) * d⁄dX (binomialSeries R r)) := by
-          simp only [smul_eq_C_mul]
-          ring
+      _ = s • (binomialSeries R (s - 1)).subst (binomialSeries R r - 1) *
+            ((1 + X) * d⁄dX (binomialSeries R r)) := by simp only [smul_eq_C_mul]; ring
       _ = C (r * s) * (binomialSeries R s).subst (binomialSeries R r - 1) := by
-          rw [hderiv, hsplit]
-          simp only [smul_eq_C_mul, map_mul]
-          ring
+          rw [hderiv, hsplit]; simp only [smul_eq_C_mul, map_mul]; ring
   · simpa only [smul_eq_C_mul] using one_add_X_mul_derivative_binomialSeries (A := R) (r * s)
 
 /-- **Iterated binomial series**: substituting `(1 + X) ^ r - 1` into `(1 + X) ^ s` gives
@@ -282,8 +250,7 @@ noncomputable def binomialPow (f : A⟦X⟧) (r : R) : A⟦X⟧ :=
 
 /-- The formal binomial power `f.binomialPow r` is `(binomialSeries A r).subst (f - 1)`. -/
 theorem binomialPow_def (f : A⟦X⟧) (r : R) :
-    f.binomialPow r = (binomialSeries A r).subst (f - 1) :=
-  (rfl)
+    f.binomialPow r = (binomialSeries A r).subst (f - 1) := (rfl)
 
 private theorem hasSubst_sub_one {f : A⟦X⟧} (hf : constantCoeff f = 1) : HasSubst (f - 1) :=
   .of_constantCoeff_zero' (by simp [hf])
@@ -317,14 +284,12 @@ theorem binomialPow_one_add_X (r : R) :
 
 /-- At exponent `0`, the formal binomial power of any series is `1`. -/
 @[simp]
-theorem binomialPow_zero (f : A⟦X⟧) :
-    f.binomialPow (0 : R) = 1 := by
+theorem binomialPow_zero (f : A⟦X⟧) : f.binomialPow (0 : R) = 1 := by
   rw [binomialPow_def, binomialSeries_zero, subst_one]
 
 /-- At exponent `1`, the formal binomial power is the series itself. -/
 @[simp]
-theorem binomialPow_one {f : A⟦X⟧} (hf : constantCoeff f = 1) :
-    f.binomialPow (1 : R) = f := by
+theorem binomialPow_one {f : A⟦X⟧} (hf : constantCoeff f = 1) : f.binomialPow (1 : R) = f := by
   have hsub := hasSubst_sub_one hf
   rw [binomialPow_def, binomialSeries_one, subst_add hsub, subst_one, subst_X hsub, add_sub_cancel]
 
@@ -368,13 +333,10 @@ theorem isUnit_binomialPow {f : A⟦X⟧} (hf : constantCoeff f = 1) (r : R) :
 /-- At exponent `-1`, the formal binomial power is `invOfUnit f 1`. -/
 theorem binomialPow_neg_one {f : A⟦X⟧} (hf : constantCoeff f = 1) :
     f.binomialPow (-1 : R) = invOfUnit f 1 := by
-  have hf1 : constantCoeff f = (1 : Aˣ) := hf
-  calc
-    f.binomialPow (-1 : R) = f.binomialPow (-1 : R) * (f * invOfUnit f 1) := by
-      rw [mul_invOfUnit f 1 hf1, mul_one]
-    _ = (f.binomialPow (-1 : R) * f.binomialPow (1 : R)) * invOfUnit f 1 := by
-      rw [binomialPow_one hf, mul_assoc]
-    _ = invOfUnit f 1 := by rw [binomialPow_neg_mul hf, one_mul]
+  have h1 : f * invOfUnit f 1 = 1 := mul_invOfUnit f 1 hf
+  have h2 : f.binomialPow (-1 : R) * f = 1 := by
+    simpa [binomialPow_one hf] using binomialPow_neg_mul hf (1 : R)
+  linear_combination invOfUnit f 1 * h2 - f.binomialPow (-1 : R) * h1
 
 /-- At a negated natural number `-(n : R)`, the formal binomial power is `(invOfUnit f 1) ^ n`. -/
 theorem binomialPow_neg_natCast {f : A⟦X⟧} (hf : constantCoeff f = 1) (n : ℕ) :
@@ -422,8 +384,7 @@ theorem binomialPow_pow {f : A⟦X⟧} (hf : constantCoeff f = 1) (n : ℕ) (r :
 /-- The linear coefficient of `f.binomialPow r` is `r • coeff 1 f`. -/
 theorem coeff_one_binomialPow {f : A⟦X⟧} (hf : constantCoeff f = 1) (r : R) :
     coeff 1 (f.binomialPow r) = r • coeff 1 f := by
-  rw [binomialPow_def, coeff_one_subst (by simp [hf])]
-  simp [Algebra.smul_def]
+  rw [binomialPow_def, coeff_one_subst (by simp [hf])]; simp [Algebra.smul_def]
 
 /-- **Chain rule for formal binomial powers**:
 `d⁄dX (f.binomialPow r) = r • (f.binomialPow (r - 1) * d⁄dX f)`. -/
@@ -443,8 +404,7 @@ theorem mul_derivative_binomialPow {f : A⟦X⟧} (hf : constantCoeff f = 1) (r 
 
 /-- Substituting a series `g` of zero constant coefficient commutes with `binomialPow`. -/
 theorem subst_binomialPow {f g : A⟦X⟧} (hf : constantCoeff f = 1) (hg : constantCoeff g = 0)
-    (r : R) :
-    (f.binomialPow r).subst g = binomialPow (f.subst g) r := by
+    (r : R) : (f.binomialPow r).subst g = binomialPow (f.subst g) r := by
   have hg' : HasSubst g := .of_constantCoeff_zero' hg
   rw [binomialPow_def, subst_comp_subst_apply (hasSubst_sub_one hf) hg',
     subst_sub hg', subst_one, ← binomialPow_def]
@@ -467,12 +427,8 @@ theorem map_algHom_binomialPow [CommRing B] [Algebra R B] {f : A⟦X⟧} (hf : c
 /-- Mapping coefficients along `algebraMap R A` commutes with `binomialPow`. -/
 @[simp]
 theorem map_algebraMap_binomialPow {f : R⟦X⟧} (hf : constantCoeff f = 1) (r : R) :
-    (f.binomialPow r).map (algebraMap R A) = (f.map (algebraMap R A)).binomialPow r := by
-  rw [binomialPow_def, binomialPow_def]
-  refine (map_subst (hasSubst_sub_one hf) (h := algebraMap R A) (binomialSeries R r)).trans ?_
-  rw [map_algebraMap_binomialSeries]
-  congr 1
-  exact ((map (algebraMap R A)).map_sub _ _).trans (by simp)
+    (f.binomialPow r).map (algebraMap R A) = (f.map (algebraMap R A)).binomialPow r :=
+  map_algHom_binomialPow hf (Algebra.ofId R A) r
 
 /-- Mapping coefficients along a ring homomorphism between binomial rings maps both base and
 exponent of `binomialPow`. -/
@@ -490,27 +446,22 @@ private theorem binomialPow_mul_of_hasUniqueDiv [HasUniqueDiv A] {f g : A⟦X⟧
     (hf : constantCoeff f = 1) (hg : constantCoeff g = 1) (r : R) :
     (f * g).binomialPow r = f.binomialPow r * g.binomialPow r := by
   have hfg : constantCoeff (f * g) = 1 := by rw [map_mul, hf, hg, one_mul]
-  refine eq_of_mul_derivative_eq (u := f * g) (w := r • d⁄dX (f * g))
-    (by simp [hfg]) ?_ ?_ ?_
+  refine eq_of_mul_derivative_eq (u := f * g) (w := r • d⁄dX (f * g)) (by simp [hfg]) ?_ ?_ ?_
   · rw [constantCoeff_binomialPow hfg, map_mul, constantCoeff_binomialPow hf,
       constantCoeff_binomialPow hg, one_mul]
   · rw [mul_derivative_binomialPow hfg, smul_mul_assoc, mul_comm (d⁄dX (f * g))]
-  · have hdf := mul_derivative_binomialPow hf r
-    have hdg := mul_derivative_binomialPow hg r
-    have hcalc : (f * g) * d⁄dX (f.binomialPow r * g.binomialPow r) =
+  · have hcalc : (f * g) * d⁄dX (f.binomialPow r * g.binomialPow r) =
         f * f.binomialPow r * (g * d⁄dX (g.binomialPow r)) +
           g * g.binomialPow r * (f * d⁄dX (f.binomialPow r)) := by
-      rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul]
-      ring
-    rw [hcalc, hdg, hdf, Derivation.leibniz, smul_eq_mul, smul_eq_mul]
-    simp only [Algebra.smul_def (R := R)]
-    ring
+      rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul]; ring
+    rw [hcalc, mul_derivative_binomialPow hg r, mul_derivative_binomialPow hf r,
+      Derivation.leibniz, smul_eq_mul, smul_eq_mul]
+    simp only [Algebra.smul_def (R := R)]; ring
 
 /-- **Multiplicativity of formal binomial powers in the base**: `(f * g) ^ r = f ^ r * g ^ r` for
 any principal units `f, g : A⟦X⟧`, without any torsion hypothesis on `A`. -/
 theorem binomialPow_mul {f g : A⟦X⟧} (hf : constantCoeff f = 1) (hg : constantCoeff g = 1)
-    (r : R) :
-    (f * g).binomialPow r = f.binomialPow r * g.binomialPow r := by
+    (r : R) : (f * g).binomialPow r = f.binomialPow r * g.binomialPow r := by
   let := BinomialRing.toHasUniqueDiv (R := R)
   have : HasUniqueDiv (MvPolynomial (Bool × ℕ) R) :=
     ⟨fun {n} hn a b hab => MvPolynomial.ext _ _ fun m =>
@@ -518,7 +469,6 @@ theorem binomialPow_mul {f g : A⟦X⟧} (hf : constantCoeff f = 1) (hg : consta
         ((map_nsmul (MvPolynomial.coeffAddMonoidHom m) n a).symm.trans
           ((congrArg (MvPolynomial.coeffAddMonoidHom m) hab).trans
             (map_nsmul (MvPolynomial.coeffAddMonoidHom m) n b)))⟩
-  -- Specialize the identity from two generic principal units over `MvPolynomial (Bool × ℕ) R`.
   let F : (MvPolynomial (Bool × ℕ) R)⟦X⟧ := 1 + X * mk fun n => MvPolynomial.X (false, n)
   let G : (MvPolynomial (Bool × ℕ) R)⟦X⟧ := 1 + X * mk fun n => MvPolynomial.X (true, n)
   let φ : MvPolynomial (Bool × ℕ) R →ₐ[R] A :=
@@ -527,13 +477,9 @@ theorem binomialPow_mul {f g : A⟦X⟧} (hf : constantCoeff f = 1) (hg : consta
   have hG0 : constantCoeff G = 1 := by simp [G]
   have hFG0 : constantCoeff (F * G) = 1 := by rw [map_mul, hF0, hG0, one_mul]
   have hF : F.map (φ : MvPolynomial (Bool × ℕ) R →+* A) = f := by
-    ext (_ | n)
-    · simp [F, hf]
-    · simp [F, φ, coeff_succ_X_mul]
+    ext (_ | n) <;> simp [F, φ, hf, coeff_succ_X_mul]
   have hG : G.map (φ : MvPolynomial (Bool × ℕ) R →+* A) = g := by
-    ext (_ | n)
-    · simp [G, hg]
-    · simp [G, φ, coeff_succ_X_mul]
+    ext (_ | n) <;> simp [G, φ, hg, coeff_succ_X_mul]
   have h := congrArg (map (φ : MvPolynomial (Bool × ℕ) R →+* A))
     (binomialPow_mul_of_hasUniqueDiv hF0 hG0 r)
   rwa [map_algHom_binomialPow hFG0 φ, (map _).map_mul, (map _).map_mul,
@@ -544,8 +490,7 @@ theorem binomialPow_eq_iff {f g : A⟦X⟧} (hf : constantCoeff f = 1)
     (hg : constantCoeff g = 1) (u : Rˣ) :
     f.binomialPow (u : R) = g.binomialPow (u : R) ↔ f = g := by
   refine ⟨fun h => ?_, fun h => h ▸ rfl⟩
-  have h' := congrArg (fun p : A⟦X⟧ => p.binomialPow (↑u⁻¹ : R)) h
-  simpa [hf, hg] using h'
+  simpa [hf, hg] using congrArg (fun p : A⟦X⟧ => p.binomialPow (↑u⁻¹ : R)) h
 
 /-- For a unit exponent `u : Rˣ`, `f.binomialPow (u : R) = 1` if and only if `f = 1`. -/
 @[simp]
@@ -567,21 +512,18 @@ theorem X_pow_dvd_binomialPow_sub_binomialPow_iff {f g : A⟦X⟧} (hf : constan
     (hg : constantCoeff g = 1) (u : Rˣ) {m : ℕ} :
     X ^ m ∣ f.binomialPow (u : R) - g.binomialPow (u : R) ↔ X ^ m ∣ f - g := by
   refine ⟨fun h => ?_, fun h => X_pow_dvd_binomialPow_sub_binomialPow hf h (u : R)⟩
-  have h' := X_pow_dvd_binomialPow_sub_binomialPow (constantCoeff_binomialPow hf _) h (↑u⁻¹ : R)
-  simpa [hf, hg] using h'
+  simpa [hf, hg] using
+    X_pow_dvd_binomialPow_sub_binomialPow (constantCoeff_binomialPow hf _) h (↑u⁻¹ : R)
 
 /-- The `m`-truncation of `f.binomialPow r` depends only on `trunc m f`. -/
 theorem trunc_binomialPow_eq_of_trunc_eq {f g : A⟦X⟧} (hf : constantCoeff f = 1) {m : ℕ}
     (hfg : trunc m f = trunc m g) (r : R) :
     trunc m (f.binomialPow r) = trunc m (g.binomialPow r) := by
-  have hdvd : X ^ m ∣ f - g := by
-    rw [X_pow_dvd_iff]
-    intro n hn
+  have hdvd : X ^ m ∣ f - g := X_pow_dvd_iff.mpr fun n hn => by
     rw [map_sub, coeff_eq_of_trunc_eq hfg hn, sub_self]
   have hout := X_pow_dvd_binomialPow_sub_binomialPow hf hdvd r
-  rw [trunc_eq_trunc_iff]
-  intro n hn
-  exact sub_eq_zero.mp (by simpa only [map_sub] using X_pow_dvd_iff.mp hout n hn)
+  exact trunc_eq_trunc_iff.mpr fun n hn =>
+    sub_eq_zero.mp (by simpa only [map_sub] using X_pow_dvd_iff.mp hout n hn)
 
 /-- For a unit exponent `u : Rˣ`, two principal units have the same `m`-truncation of their
 `u`-th binomial powers if and only if they have the same `m`-truncation. -/
@@ -590,8 +532,8 @@ theorem trunc_binomialPow_eq_iff {f g : A⟦X⟧} (hf : constantCoeff f = 1)
     trunc m (f.binomialPow (u : R)) = trunc m (g.binomialPow (u : R)) ↔
       trunc m f = trunc m g := by
   refine ⟨fun h => ?_, fun h => trunc_binomialPow_eq_of_trunc_eq hf h (u : R)⟩
-  have h' := trunc_binomialPow_eq_of_trunc_eq (constantCoeff_binomialPow hf _) h (↑u⁻¹ : R)
-  simpa [hf, hg] using h'
+  simpa [hf, hg] using
+    trunc_binomialPow_eq_of_trunc_eq (constantCoeff_binomialPow hf _) h (↑u⁻¹ : R)
 
 /-- Product-chain formula for `d⁄dX (X * f ^ (-r))`:
 `d⁄dX (X * f.binomialPow (-r)) = f.binomialPow (-r - 1) * (f - r • (X * d⁄dX f))`. -/
@@ -602,8 +544,7 @@ theorem derivative_X_mul_binomialPow_neg {f : A⟦X⟧} (hf : constantCoeff f = 
     rw [← binomialPow_add hf, sub_add_cancel]
   rw [Derivation.leibniz, derivative_X, derivative_binomialPow hf, smul_eq_mul, smul_eq_mul,
     mul_one, ← hsplit]
-  simp only [Algebra.smul_def (R := R), map_neg]
-  ring
+  simp only [Algebra.smul_def (R := R), map_neg]; ring
 
 end BinomialPow
 
@@ -631,22 +572,21 @@ theorem binomialReversion_def (f : A⟦X⟧) (a b : Rˣ) :
       let P : A⟦X⟧ :=
         X * (1 + X * mk fun n => coeff (n + 1) f).binomialPow (-(b : R) * (↑a⁻¹ : R))
       let G : A⟦X⟧ := P.substInvOfIsUnit (by simp [P])
-      (mk fun n => coeff (n + 1) G).binomialPow (-(↑b⁻¹ : R)) :=
-  (rfl)
+      (mk fun n => coeff (n + 1) G).binomialPow (-(↑b⁻¹ : R)) := (rfl)
+
+private theorem constantCoeff_shift_substInvOfIsUnit {P : A⟦X⟧} (hP : P.coeff 1 = 1) :
+    constantCoeff (mk fun n => coeff (n + 1) (P.substInvOfIsUnit (by simp [hP]))) = 1 := by
+  have hP1 : IsUnit (P.coeff 1) := by simp [hP]
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_mk, coeff_one_substInvOfIsUnit]
+  have hspec : (hP1.unit : A) = 1 := (IsUnit.unit_spec hP1).trans hP
+  have hinv := hP1.unit.mul_inv
+  rwa [hspec, one_mul] at hinv
 
 /-- Every formal binomial reversion has constant coefficient `1`. -/
 @[simp]
 theorem constantCoeff_binomialReversion (f : A⟦X⟧) (a b : Rˣ) :
-    constantCoeff (f.binomialReversion a b) = 1 := by
-  rw [binomialReversion_def]
-  dsimp only
-  set P : A⟦X⟧ := X * (1 + X * mk fun n => coeff (n + 1) f).binomialPow (-(b : R) * (↑a⁻¹ : R))
-  have hP1 : IsUnit (P.coeff 1) := by simp [P]
-  refine constantCoeff_binomialPow ?_ _
-  rw [← coeff_zero_eq_constantCoeff_apply, coeff_mk, coeff_one_substInvOfIsUnit]
-  have hspec : (hP1.unit : A) = 1 := by rw [IsUnit.unit_spec]; simp [P]
-  have hinv := hP1.unit.mul_inv
-  rwa [hspec, one_mul] at hinv
+    constantCoeff (f.binomialReversion a b) = 1 :=
+  constantCoeff_binomialPow (constantCoeff_shift_substInvOfIsUnit (by simp)) _
 
 /-- With `S = f.binomialReversion a b` (`constantCoeff f = 1`), `X * S ^ (-b)` is the
 compositional inverse of `X * f ^ (-b * a⁻¹)`. -/
@@ -654,17 +594,13 @@ theorem subst_X_mul_binomialPow_binomialReversion {f : A⟦X⟧} (hf : constantC
     (a b : Rˣ) :
     (X * f.binomialPow (-(b : R) * (↑a⁻¹ : R))).subst
       (X * (f.binomialReversion a b).binomialPow (-(b : R))) = X := by
-  rw [binomialReversion_def]
-  dsimp only
+  rw [binomialReversion_def]; dsimp only
   set P : A⟦X⟧ := X * (1 + X * mk fun n => coeff (n + 1) f).binomialPow (-(b : R) * (↑a⁻¹ : R))
   have hP1 : IsUnit (P.coeff 1) := by simp [P]
   set G : A⟦X⟧ := P.substInvOfIsUnit hP1
   have hG0 : constantCoeff G = 0 := constantCoeff_substInvOfIsUnit P hP1
-  have hGtilde0 : constantCoeff (mk fun n => coeff (n + 1) G) = 1 := by
-    rw [← coeff_zero_eq_constantCoeff_apply, coeff_mk, coeff_one_substInvOfIsUnit]
-    have hspec : (hP1.unit : A) = 1 := by rw [IsUnit.unit_spec]; simp [P]
-    have hinv := hP1.unit.mul_inv
-    rwa [hspec, one_mul] at hinv
+  have hGtilde0 : constantCoeff (mk fun n => coeff (n + 1) G) = 1 :=
+    constantCoeff_shift_substInvOfIsUnit (by simp [P])
   have hSpow : ((mk fun n => coeff (n + 1) G).binomialPow (-(↑b⁻¹ : R))).binomialPow (-(b : R)) =
       mk fun n => coeff (n + 1) G := by
     rw [binomialPow_binomialPow hGtilde0, neg_mul_neg, Units.inv_mul, binomialPow_one hGtilde0]
@@ -691,13 +627,8 @@ theorem binomialPow_binomialReversion_mul_subst {f : A⟦X⟧} (hf : constantCoe
   have hsub := subst_X_mul_binomialPow_binomialReversion hf a b
   rw [subst_mul hG, subst_X hG, subst_binomialPow hf hG0] at hsub
   have hmul : S.binomialPow (-(b : R)) *
-      binomialPow (f.subst G) (-(b : R) * (↑a⁻¹ : R)) = 1 := by
-    refine X_mul_cancel ?_
-    calc
-      X * (S.binomialPow (-(b : R)) * binomialPow (f.subst G) (-(b : R) * (↑a⁻¹ : R))) =
-          G * binomialPow (f.subst G) (-(b : R) * (↑a⁻¹ : R)) := by rw [← mul_assoc]
-      _ = X := hsub
-      _ = X * 1 := (mul_one X).symm
+      binomialPow (f.subst G) (-(b : R) * (↑a⁻¹ : R)) = 1 :=
+    X_mul_cancel (by rw [← mul_assoc, hsub, mul_one])
   have hSrew : S.binomialPow (-(b : R)) =
       (S.binomialPow (a : R)).binomialPow (-(b : R) * (↑a⁻¹ : R)) := by
     rw [binomialPow_binomialPow hS0, mul_comm (a : R), mul_assoc, Units.inv_mul, mul_one]
@@ -732,10 +663,9 @@ theorem X_pow_dvd_sub_binomialReversion {f g : A⟦X⟧} (hf : constantCoeff f =
       rw [mul_comm (a : R), mul_assoc, Units.inv_mul, mul_one],
     ← subst_binomialPow hf hH0] at hpow
   have hXP : X ^ (m + 1) ∣ P.subst H - X := by
-    have hmul : X * (g.binomialPow (-(b : R)) *
-        (f.binomialPow (-(b : R) * (↑a⁻¹ : R))).subst H - 1) = P.subst H - X := by
-      rw [subst_mul hH, subst_X hH, mul_sub, mul_one, mul_assoc]
-    rw [← hmul, pow_succ']
+    rw [show P.subst H - X = X * (g.binomialPow (-(b : R)) *
+        (f.binomialPow (-(b : R) * (↑a⁻¹ : R))).subst H - 1) by
+      rw [subst_mul hH, subst_X hH, mul_sub, mul_one, mul_assoc], pow_succ']
     exact mul_dvd_mul_left X hpow
   have hinv := X_pow_dvd_subst_sub_subst
     (by rw [constantCoeff_eq,
@@ -759,9 +689,8 @@ theorem eq_binomialReversion_iff {f g : A⟦X⟧} (hf : constantCoeff f = 1) (a 
     constantCoeff g = 1 ∧
       g.binomialPow (a : R) * f.subst (X * g.binomialPow (-(b : R))) = 1 ↔
       g = f.binomialReversion a b := by
-  refine ⟨fun ⟨hg0, hg⟩ => ?_, fun h => h ▸ ⟨constantCoeff_binomialReversion f a b,
-    binomialPow_binomialReversion_mul_subst hf a b⟩⟩
-  refine sub_eq_zero.mp (ext fun n => ?_)
+  refine ⟨fun ⟨hg0, hg⟩ => sub_eq_zero.mp (ext fun n => ?_), fun h =>
+    h ▸ ⟨constantCoeff_binomialReversion f a b, binomialPow_binomialReversion_mul_subst hf a b⟩⟩
   have hdvd := X_pow_dvd_sub_binomialReversion hf hg0 a b (m := n + 1)
     (by rw [hg, sub_self]; exact dvd_zero _)
   simpa only [map_zero] using X_pow_dvd_iff.mp hdvd n (Nat.lt_succ_self n)
@@ -774,9 +703,8 @@ theorem map_algHom_binomialReversion [CommRing B] [Algebra R B] {f : A⟦X⟧}
   have hfφ : constantCoeff (f.map (φ : A →+* B)) = 1 := by
     rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff, hf, map_one]
   rw [← eq_binomialReversion_iff hfφ a b]
-  refine ⟨?_, ?_⟩
-  · rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff,
-      constantCoeff_binomialReversion, map_one]
+  refine ⟨by rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff,
+    constantCoeff_binomialReversion, map_one], ?_⟩
   have hchar := congrArg (map (φ : A →+* B)) (binomialPow_binomialReversion_mul_subst hf a b)
   rw [(map _).map_mul, (map _).map_one,
     map_algHom_binomialPow (constantCoeff_binomialReversion f a b) φ] at hchar
@@ -821,17 +749,10 @@ theorem subst_X_mul_binomialPow_binomialReversion_of_mul_deriv {M f : A⟦X⟧}
     rwa [show X * f.binomialPow (-(b : R) * (↑a⁻¹ : R)) = P by simp [P, r],
       derivative_subst hG, derivative_X] at hPG
   have hMG : M.subst G = binomialPow (f.subst G) (-r - 1) * d⁄dX G := by
-    calc
-      M.subst G = M.subst G * ((d⁄dX P).subst G * d⁄dX G) := by rw [hchain, mul_one]
-      _ = (M * d⁄dX P).subst G * d⁄dX G := by rw [← mul_assoc, ← subst_mul hG]
-      _ = binomialPow (f.subst G) (-r - 1) * d⁄dX G := by
-        rw [hMP, subst_binomialPow hf hG0]
+    rw [← subst_binomialPow hf hG0, ← hMP, subst_mul hG, mul_assoc, hchain, mul_one]
   have hfG : f.subst G = S.binomialPow (-(a : R)) := by
-    have hchar := binomialPow_binomialReversion_mul_subst hf a b
-    calc
-      f.subst G = S.binomialPow (-(a : R)) * (S.binomialPow (a : R) * f.subst G) := by
-        rw [← mul_assoc, binomialPow_neg_mul hS0, one_mul]
-      _ = S.binomialPow (-(a : R)) := by rw [hchar, mul_one]
+    rw [← one_mul (f.subst G), ← binomialPow_neg_mul hS0 (a : R), mul_assoc,
+      binomialPow_binomialReversion_mul_subst hf a b, mul_one]
   have hexp : (-(a : R)) * (-r - 1) + (-(b : R) - 1) = (a : R) - 1 := by
     have har : (a : R) * r = (b : R) := by
       rw [mul_comm (a : R), show r = (b : R) * (↑a⁻¹ : R) from rfl, mul_assoc, Units.inv_mul,
@@ -851,16 +772,13 @@ variable {R A : Type*} [CommRing R] [BinomialRing R] [CommRing A] [Algebra ℚ A
 
 /-- Over a `ℚ`-algebra, the formal logarithm of `binomialSeries A r` is `r • log A`. -/
 @[simp]
-theorem logOf_binomialSeries (r : R) :
-    logOf (binomialSeries A r) = r • log A := by
+theorem logOf_binomialSeries (r : R) : logOf (binomialSeries A r) = r • log A := by
   have : HasUniqueDiv A := .of_module_rat A
   refine derivative.ext ?_ (by simp [constantCoeff_logOf])
   have hunit : IsUnit (1 + X : A⟦X⟧) := isUnit_iff_constantCoeff.mpr (by simp)
-  have hbunit : IsUnit (binomialSeries A r) := isUnit_binomialSeries r
-  refine hunit.mul_left_cancel (hbunit.mul_right_cancel ?_)
-  calc
-    (1 + X) * d⁄dX (logOf (binomialSeries A r)) * binomialSeries A r =
-        (1 + X) * (logDeriv (binomialSeries A r) * binomialSeries A r) := by
+  refine hunit.mul_left_cancel ((isUnit_binomialSeries r).mul_right_cancel ?_)
+  calc (1 + X) * d⁄dX (logOf (binomialSeries A r)) * binomialSeries A r
+    _ = (1 + X) * (logDeriv (binomialSeries A r) * binomialSeries A r) := by
       rw [logDeriv_def, mul_assoc]
     _ = (1 + X) * d⁄dX (binomialSeries A r) := by
       rw [logDeriv_mul _ (binomialSeries_constantCoeff r)]
@@ -893,4 +811,3 @@ theorem subst_exp_smul_logOf {f : A⟦X⟧} (hf : constantCoeff f = 1) (r : R) :
 end RatAlgebra
 
 end PowerSeries
-
