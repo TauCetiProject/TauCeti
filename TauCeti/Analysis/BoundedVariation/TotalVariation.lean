@@ -489,12 +489,8 @@ theorem HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm {U : E → E →L
     rw [h.integral_divergenceCLM_smul_eq_neg_integral φ, ← integral_neg]
     simp
   simp_rw [key]
-  refine le_antisymm (iSup₂_le fun φ hφ => ?_) (iSup₂_le fun φ hφ => ?_)
-  · exact le_iSup₂_of_le (f := fun (φ : 𝓓(Ω, E)) (_ : ∀ x, ‖φ x‖ ≤ 1) =>
-      ENNReal.ofReal (∫ x, U x (φ x) ∂μ)) (-φ) (fun x => by simpa using hφ x) le_rfl
-  · exact le_iSup₂_of_le (f := fun (φ : 𝓓(Ω, E)) (_ : ∀ x, ‖φ x‖ ≤ 1) =>
-      ENNReal.ofReal (∫ x, U x ((-φ : 𝓓(Ω, E)) x) ∂μ)) (-φ) (fun x => by simpa using hφ x)
-      (by simp)
+  simpa using (Equiv.neg 𝓓(Ω, E)).iSup_comp (g := fun φ => ⨆ (_ : ∀ x, ‖φ x‖ ≤ 1),
+    ENNReal.ofReal (∫ x, U x (φ x) ∂μ))
 
 /-- A weakly differentiable function has finite total variation on `Ω`, against an additive Haar
 measure, exactly when its weak derivative is integrable on `Ω`. -/
