@@ -9,6 +9,7 @@ public import TauCeti.Probability.Process.Poisson.Filtered
 public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.MeasureTheory.Measure.NNReal
 import TauCeti.MeasureTheory.Measure.IntegerValued.CountPath
+import TauCeti.Probability.Independence.Process.HasIndepIncrements
 import TauCeti.Probability.PointProcess.Poisson.Construction
 import TauCeti.Probability.PointProcess.Poisson.Count
 import TauCeti.Probability.PointProcess.Poisson.IntegerValued
@@ -52,7 +53,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {M : Ω → Measure 
 
 /-- The real-valued cumulative counts of a Poisson random measure on the half-line are
 measurable. -/
-theorem stronglyMeasurable_count (h : IsPoissonRandomMeasure P M Λ) (t : ℝ≥0) :
+theorem stronglyMeasurable_natCast_nat_count (h : IsPoissonRandomMeasure P M Λ) (t : ℝ≥0) :
     StronglyMeasurable fun ω ↦ (⌊(M ω (Ioc 0 t)).toNNReal⌋₊ : ℝ) :=
   (Measurable.of_discrete.comp (h.measurable_nat_count t)).stronglyMeasurable
 
@@ -61,18 +62,13 @@ Poisson process of rate `α` relative to their natural filtration. The rate may 
 path regularity of the realizations is assumed. -/
 theorem isFilteredPoissonProcess_natural
     (h : IsPoissonRandomMeasure P M ((α : ℝ≥0∞) • nnvolume)) :
-    IsFilteredPoissonProcess (Filtration.natural _ h.stronglyMeasurable_count) α
+    IsFilteredPoissonProcess (Filtration.natural _ h.stronglyMeasurable_natCast_nat_count) α
       (fun t ω ↦ (⌊(M ω (Ioc 0 t)).toNNReal⌋₊ : ℝ)) P := by
   have : IsLocallyFiniteMeasure ((α : ℝ≥0∞) • nnvolume) :=
     nnvolume.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
   have hmono := h.ae_monotone_nat_count
-  refine HasIndepIncrements.isFilteredPoissonProcess_natural ?_ _ ?_ fun s t hst ↦ ?_
-  · -- Monotone paths make truncated natural subtraction agree with real subtraction.
-    intro n t ht
-    refine ((h.hasIndepIncrements_nat_count n t ht).comp (fun _ (x : ℕ) ↦ (x : ℝ))
-      fun _ ↦ Measurable.of_discrete).congr fun i ↦ ?_
-    filter_upwards [hmono] with ω hω
-    exact Nat.cast_sub (hω (ht i.castSucc_le_succ))
+  refine HasIndepIncrements.isFilteredPoissonProcess_natural
+    (h.hasIndepIncrements_nat_count.natCast hmono) _ ?_ fun s t hst ↦ ?_
   · exact Eventually.of_forall fun _ ↦ by simp
   · refine ((hasLaw_map (X := (Nat.cast : ℕ → ℝ)) Measurable.of_discrete.aemeasurable).comp
       (h.hasLaw_nat_count_sub_smul_nnvolume hst)).congr ?_
@@ -116,14 +112,14 @@ theorem exists_isFilteredPoissonProcess (α : ℝ≥0) :
     · simp only [M, piecewise_eq_of_notMem _ _ _ hμ, id_eq]
       by_contra hbad'
       exact hμ (hbad hbad')
-  refine ⟨Measure ℝ≥0, inferInstance, Λ.poissonLaw, _, hPM.stronglyMeasurable_count,
+  refine ⟨Measure ℝ≥0, inferInstance, Λ.poissonLaw, _, hPM.stronglyMeasurable_natCast_nat_count,
     hPM.isFilteredPoissonProcess_natural, fun μ ↦ ?_⟩
   obtain ⟨hloc, hint, hsimple⟩ := hreg μ
   refine ⟨by simp, fun t ↦ ⟨_, rfl⟩, fun s t hst ↦ ?_, fun t ↦ ?_, fun t ↦ ?_⟩
-  · exact Nat.cast_le.2 (Measure.monotone_natFloor_Ioc hst)
+  · exact Nat.cast_le.2 ((M μ).monotone_natFloor_Ioc 0 hst)
   · exact (continuous_of_discreteTopology (f := fun n : ℕ ↦ (n : ℝ))).continuousAt
-      |>.comp_continuousWithinAt (hint.continuousWithinAt_natFloor_Ioc t)
-  · filter_upwards [hint.eventually_natFloor_Ioc_le_add_one (hsimple t)] with s hs
+      |>.comp_continuousWithinAt ((M μ).continuousWithinAt_natFloor_Ioc_Ici 0 t)
+  · filter_upwards [hint.eventually_natFloor_Ioc_le_add_one_nhdsLT (hsimple t)] with s hs
     exact_mod_cast hs
 
 end TauCeti.Probability

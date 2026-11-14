@@ -19,7 +19,8 @@ import Mathlib.Topology.Order.AtTopBotIxx
 
 Mathlib's `MeasureTheory.tendsto_measure_Ioc_atBot` lets the left endpoint of `(x, a]` go to
 `-∞`. This file adds the analogous limits for `(x, a)` and `[x, a]`, and the right-continuity of
-`x ↦ μ (-∞, x]` and `x ↦ μ (-∞, x)` at `a` from the right, where both tend to `μ (-∞, a]`.
+`x ↦ μ (-∞, x]` and `x ↦ μ (-∞, x)` at `a` from the right, where both tend to `μ (-∞, a]`, and
+the limit `μ (x, a] → μ {a}` as `x → a⁻`.
 Reflection exchanges the two open tails, and a negation-invariant measure gives `(-∞, x]` and
 `(-x, ∞)` the same mass when `{-x}` is null.
 
@@ -33,6 +34,8 @@ longer windows linearly in their length, and so makes the measure locally finite
 * `MeasureTheory.tendsto_measure_Iio_nhdsGT`, `MeasureTheory.tendsto_measure_Iic_nhdsGT`:
   `μ (-∞, x) → μ (-∞, a]` and `μ (-∞, x] → μ (-∞, a]` as `x → a⁺`, provided some `μ (-∞, r)`,
   respectively `μ (-∞, r]`, with `r > a` is finite.
+* `MeasureTheory.tendsto_measure_Ioc_nhdsLT`: `μ (x, a] → μ {a}` as `x → a⁻`, provided some
+  `μ (r, a]` with `r < a` is finite.
 * `MeasureTheory.Measure.continuousWithinAt_Iio_measure_Iic`: the cumulative function of an
   atomless measure is left-continuous, without a finiteness assumption.
 * `MeasureTheory.Measure.continuous_cumulative_restrict_lt_top`: restricting an atomless
@@ -132,6 +135,26 @@ theorem tendsto_measure_Iic_nhdsGT (hf : ∃ r > a, μ (Iic r) ≠ ∞) :
   rw [← h]
   exact tendsto_measure_biInter_gt (fun _ _ => measurableSet_Iic.nullMeasurableSet)
     (fun _ _ _ hij => Iic_subset_Iic.2 hij) hf
+
+/-- If some `μ (r, a]` with `r < a` is finite, then the measure of `(x, a]` tends to the measure
+of `{a}` as `x → a⁻`. -/
+theorem tendsto_measure_Ioc_nhdsLT (hf : ∃ r < a, μ (Ioc r a) ≠ ∞) :
+    Tendsto (fun x => μ (Ioc x a)) (𝓝[<] a) (𝓝 (μ {a})) := by
+  by_cases hbot : 𝓝[<] a = ⊥
+  · rw [hbot]
+    exact tendsto_bot
+  have h : ⋂ r < a, Ioc r a = {a} := by
+    ext x
+    simp only [mem_iInter, mem_Ioc, mem_singleton_iff]
+    refine ⟨fun h => ?_, fun hx r hr => ⟨hx ▸ hr, hx.le⟩⟩
+    obtain ⟨r, hr, -⟩ := hf
+    refine (h r hr).2.antisymm (not_lt.1 fun hx => ?_)
+    have hcov : ¬ x ⋖ a := fun hcov => hbot (nhdsLT_eq_bot_iff.2 (.inr ⟨x, hcov⟩))
+    obtain ⟨c, hxc, hca⟩ := (not_covBy_iff hx).1 hcov
+    exact (h c hca).1.not_gt hxc
+  rw [← h]
+  exact tendsto_measure_biInter_gt (ι := αᵒᵈ) (s := fun r => Ioc (OrderDual.ofDual r) a)
+    (fun _ _ => measurableSet_Ioc.nullMeasurableSet) (fun _ _ _ hij => Ioc_subset_Ioc_left hij) hf
 
 namespace Measure
 
