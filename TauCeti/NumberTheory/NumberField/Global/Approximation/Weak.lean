@@ -492,7 +492,7 @@ theorem exists_fieldUnit_valuation_sub_lt_and_signHom_eq
     (fun _ => 1) (fun _ => one_pos)
   have hxi' : ∀ w : InfinitePlace K, w (x - b w) < w (b w) := fun w =>
     (hxi ⟨w, Finset.mem_univ w⟩).trans_eq (hbabs w).symm
-  have hx0 := NumberField.ne_zero_of_infinitePlace_sub_lt (hxi' w₀)
+  have hx0 := NumberField.InfinitePlace.ne_zero_of_apply_sub_lt (hxi' w₀)
   refine ⟨Units.mk0 x hx0, fun v hv => by simpa using hxf ⟨v, hv⟩, ?_⟩
   funext w
   have h := w.2.mul_pos_of_apply_sub_lt (hxi' w.1)
