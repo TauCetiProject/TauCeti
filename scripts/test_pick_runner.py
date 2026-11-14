@@ -26,7 +26,7 @@ def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"'
     """Evaluate the actual YAML expression's boolean/format/JSON subset."""
     source = source.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
-    source = source.replace("!contains", "not contains").replace("!(", "not (").replace(".labels.*.name", ".label_names")
+    source = source.replace("!contains", "not contains").replace("!startsWith", "not startsWith").replace("!(", "not (").replace(".labels.*.name", ".label_names")
     github = SimpleNamespace(repository="TauCetiProject/TauCeti", run_attempt=attempt, run_id=42, event_name=event, event=SimpleNamespace(
         action=action, workflow_run=SimpleNamespace(event=upstream_event, display_title=upstream_title), label=SimpleNamespace(name=label), pull_request=SimpleNamespace(number=7, label_names=labels, user=SimpleNamespace(type=author_type),
             head=SimpleNamespace(sha="a" * 40, ref=head_ref, repo=SimpleNamespace(full_name=head_repo))),
@@ -51,18 +51,17 @@ class PickerWorkflow(unittest.TestCase):
             self.assertEqual({expression(group, hosted_slot=str(i)) for i in range(19)},
                              {"tauceti-hosted-bulk-" + str(i) for i in range(19)})
             self.assertEqual(expression(group, picker_attempt="", target="", hosted_slot=""), "tauceti-hosted-bulk-0")
-            for target in (["nscloud-ubuntu-24.04-amd64-8x16-with-features"],
-                           dict(group="TauCetiFleet", labels=["self-hosted", "tauceti-fleet-pr"])):
+            for target in (dict(group="TauCetiFleet", labels=["self-hosted", "tauceti-fleet-pr"]),):
                 self.assertFalse(expression(group, target=json.dumps(target)).startswith("tauceti-hosted-bulk-"))
                 # A stale picker falls back to GitHub, so it must regain the cap.
                 self.assertEqual(expression(group, target=json.dumps(target), attempt=2), "tauceti-hosted-bulk-0")
             self.assertEqual(concurrency["queue"], "max")
             self.assertFalse(concurrency["cancel-in-progress"])
 
-    def test_priority_overrides_do_not_wait_for_hosted_bulk_slots(self):
+    def test_hosted_maintenance_obeys_bulk_cap_and_staging_keeps_reserved_slots(self):
         group = BUILD["jobs"]["sandboxed-build"]["concurrency"]["group"]
-        self.assertFalse(expression(group, maintenance=True).startswith("tauceti-hosted-bulk-"))
-        self.assertFalse(expression(group, author_type="Bot", head_ref="bump-mathlib/abc").startswith("tauceti-hosted-bulk-"))
+        self.assertTrue(expression(group, maintenance=True).startswith("tauceti-hosted-bulk-"))
+        self.assertTrue(expression(group, author_type="Bot", head_ref="bump-mathlib/abc").startswith("tauceti-hosted-bulk-"))
         self.assertFalse(expression(group, event="repository_dispatch", action="tauceti-bors-staging",
                                     staging_target='["nscloud-ubuntu-24.04-amd64-16x32-with-features"]')
                          .startswith("tauceti-hosted-bulk-"))
@@ -93,7 +92,7 @@ class PickerWorkflow(unittest.TestCase):
         self.assertTrue(expression(condition, upstream_event="repository_dispatch",
                                    upstream_title="bors branch=main batch=12 head=" + "a" * 40))
 
-    def test_namespace_target_and_fallback_obey_the_same_attempt_fence(self):
+    def test_legacy_namespace_target_is_rejected_even_for_a_current_attempt(self):
         target = ["nscloud-ubuntu-24.04-amd64-16x32-with-features;job.priority=1", "namespace-features:container.privileged=true;github.run-id=42"]
         for name, job, picker in [
             ("pr-build.yml", "sandboxed-build", "pick-runner"),
@@ -101,15 +100,12 @@ class PickerWorkflow(unittest.TestCase):
         ]:
             workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
             source = workflow["jobs"][job]["runs-on"].replace("needs." + picker, "needs.pick-runner")
-            self.assertEqual(expression(source, target=json.dumps(target)), target)
+            self.assertEqual(expression(source, target=json.dumps(target)), "ubuntu-24.04")
             self.assertEqual(expression(source, target=json.dumps(target), attempt=2), "ubuntu-24.04")
 
     def test_maintenance_build_capacity_is_limited_to_explicit_or_same_repo_bot_work(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
-        priority_build = [
-            "nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1",
-            "namespace-features:container.privileged=true;github.run-id=42",
-        ]
+        priority_build = "ubuntu-24.04"
         self.assertEqual(expression(source, maintenance=True), priority_build)
         for branch in ("bump-mathlib/abc", "lint-repair/main"):
             self.assertEqual(expression(source, author_type="Bot", head_ref=branch), priority_build)
@@ -122,17 +118,20 @@ class PickerWorkflow(unittest.TestCase):
         self.assertEqual(expression(BUILD["run-name"], event="repository_dispatch", action="tauceti-bors-pr-approved"), "pr-build pr=7 head=" + "a" * 40)
         self.assertEqual(expression(BUILD["run-name"], event="repository_dispatch", action="tauceti-bors-staging"), "bors branch=main batch=12 head=" + "a" * 40 + " base=" + "b" * 40)
 
-    def test_label_events_only_route_self_tested_prs(self):
+    def test_self_tested_prs_skip_picker_before_allocating_any_runner(self):
         condition = BUILD["jobs"]["pick-runner"]["if"]
+        self.assertTrue(expression(condition))
+        for action in ("labeled", "unlabeled", "synchronize", "opened"):
+            self.assertFalse(expression(condition, action=action, label="self-tested", labels=("self-tested",)))
+        self.assertTrue(expression(condition, action="unlabeled", label="self-tested"))
+        for label in ("full-lint", "lint-repair"):
+            self.assertTrue(expression(condition, action="labeled", label=label, labels=("self-tested", label)))
+        self.assertTrue(expression(condition, event="repository_dispatch", action="tauceti-bors-staging",
+                                   labels=("self-tested",)))
+        self.assertTrue(expression(condition, labels=("self-tested",), head_ref="lint-repair/main"))
         for action in ("labeled", "unlabeled"):
             self.assertFalse(expression(condition, action=action))
-            self.assertTrue(expression(condition, action=action, label="self-tested"))
-            self.assertFalse(expression(condition, action=action, labels=("self-tested",)))
-            self.assertFalse(expression(condition, action=action, label="full-lint"))
-            for label in ("full-lint", "lint-repair"):
-                self.assertTrue(expression(condition, action=action, label=label, labels=("self-tested",)))
             self.assertEqual(expression(BUILD["run-name"], action=action), "Ignored label event 42")
-        self.assertTrue(expression(condition))
 
     def test_staging_uses_only_tauchonki2_and_waits_there_on_picker_failure(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
@@ -156,29 +155,33 @@ class PickerWorkflow(unittest.TestCase):
         self.assertEqual(expression(source, picker_attempt="", target="", **common), fallback)
         self.assertNotIn("fleet-instance-", " ".join(fallback))
 
-    def test_maintenance_build_keeps_its_explicit_namespace_runner(self):
+    def test_staging_publisher_and_finalizer_retain_reserved_queue_control_slots(self):
+        publisher = yaml.safe_load((ROOT / ".github/workflows/publish-lake-cache.yml").read_text())
+        jobs = [BUILD["jobs"]["finalize-merge-group-build"], publisher["jobs"]["publish"]]
+        for job in jobs:
+            self.assertEqual(expression(job["runs-on"]), "ubuntu-24.04")
+            target = expression(job["runs-on"], event="repository_dispatch", action="tauceti-bors-staging")
+            self.assertIn("tauceti-fleet-queue-control", target)
+            self.assertIn("fleet-74773fc7f54d4877add11d80113fe340", target)
+
+    def test_maintenance_build_uses_github_on_every_attempt(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
-        expected = ["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1",
-                    "namespace-features:container.privileged=true;github.run-id=42"]
+        expected = "ubuntu-24.04"
         self.assertEqual(expression(source, maintenance=True), expected)
         self.assertEqual(expression(source, maintenance=True, hosted_picker=True, attempt=2), expected)
 
     def test_picker_is_small_control_job_and_calls_the_existing_selector(self):
         pick = PICKER["jobs"]["pick"]
-        priority_control = [
-            "nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0",
-            "namespace-features:github.run-id=42",
-        ]
+        priority_control = "ubuntu-24.04"
         self.assertEqual(expression(pick["runs-on"]), priority_control)
         self.assertEqual(expression(pick["runs-on"], hosted_picker=True), "ubuntu-24.04")
         self.assertEqual(expression(pick["runs-on"], staging=True), [
             "self-hosted", "linux", "x64", "tauceti-fleet-queue-control",
             "fleet-74773fc7f54d4877add11d80113fe340"])
         self.assertEqual(expression(pick["runs-on"], maintenance=True), priority_control)
-        token = next(s for s in pick["steps"] if "create-github-app-token" in s.get("uses", ""))
-        self.assertTrue(token["continue-on-error"])
-        self.assertIn("inputs.pr-number > 0", token["if"])
-        self.assertIn("'self-tested'", token["if"])
+        self.assertFalse(any("create-github-app-token" in s.get("uses", "") for s in pick["steps"]))
+        self.assertFalse(any("self_tested.py" in s.get("run", "") for s in pick["steps"]))
+        self.assertNotIn("skip-pr-build", pick["outputs"])
         self.assertTrue(pick["continue-on-error"])
         step = next(s for s in pick["steps"] if s.get("id") == "pick")
         self.assertEqual(step["run"], "python3 scripts/fleet_runner.py --route")

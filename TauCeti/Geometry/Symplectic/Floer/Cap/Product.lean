@@ -77,9 +77,12 @@ on the completed capped modules. This file proves:
   (`novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_coefficientComparison`).
   If moreover the classes counted by `K` satisfy the index condition of rigid members of the
   family, whose Fredholm index at a fixed parameter is `-1`, then `K` lowers the cochain degree by
-  one, and for cocycles `a` and `b` the graded commutator is the coboundary of `K(a, b)`, so the
-  two products agree on cohomology up to the sign `(-1)^(e f)`
+  one, and for cocycles `a` and `b` the graded commutator is the coboundary of `K(a, b)`
   (`novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_mem_coboundaries`).
+* **Graded commutativity on cohomology.** Hence the products induced on the cohomology of the
+  cylinder differentials satisfy `[a] ⋆ [b] = (-1)^(e f) [b] ⋆' [a]` for classes of cochain
+  degrees `e` and `f`
+  (`cohomologyProduct_kernelProduct_coefficientComparison_eq_negOnePowCast_smul_cohomologyProduct`).
 * **The associativity homotopy from the count identity.** The rigid elements of the
   one-parameter family of four-punctured spheres between the two broken triple products are
   counted by generating series `K` indexed by three input orbits and an output orbit; their
@@ -487,6 +490,87 @@ theorem novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_mem
       r₁ r₂ r₀ q hq hF₁ hF₂ hF₀ hμ₁ hμ₂ Q Q' K D₁ D₂ D₀ n hC ha.2 hb.2,
     hDa, hDb, map_zero, LinearMap.zero_apply, map_zero, smul_zero, add_zero, add_zero,
     novikovMapOfMatrix_eq_kernelMap hF₀ hF₀ r₀ r₀ _ hδ₀]
+
+section Cohomology
+
+variable {μ₀ : (Σ k, P₀ k) → ℤ}
+  (hμ₀ : ∀ k γ (D : P₀ k), μ₀ ⟨k, γ +ᵥ D⟩ = degree ω c γ + μ₀ ⟨k, D⟩) {C₁ C₂ C₀ : ℝ}
+  (hδ₁ : ∀ p p',
+    mapKernelOfMatrix r₁ r₁ (fun i k => coefficientComparison q hq (D₁ i k)) p p' ≠ 0 →
+      F₁ p' ≤ F₁ p + C₁)
+  (hδ₂ : ∀ p p',
+    mapKernelOfMatrix r₂ r₂ (fun j k => coefficientComparison q hq (D₂ j k)) p p' ≠ 0 →
+      F₂ p' ≤ F₂ p + C₂)
+  (hδ₀ : ∀ p p',
+    mapKernelOfMatrix r₀ r₀ (fun k l => coefficientComparison q hq (D₀ k l)) p p' ≠ 0 →
+      F₀ p' ≤ F₀ p + C₀)
+  {CQ CQ' : ℝ}
+  (hnQ : ∀ p₁ p₂ p₀,
+    kernelOfMatrix r₁ r₂ r₀ (fun i j k => coefficientComparison q hq (Q i j k)) p₁ p₂ p₀ ≠ 0 →
+      F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + CQ)
+  (hnQ' : ∀ p₂ p₁ p₀,
+    kernelOfMatrix r₂ r₁ r₀ (fun j i k => coefficientComparison q hq (Q' j i k)) p₂ p₁ p₀ ≠ 0 →
+      F₀ p₀ ≤ F₂ p₂ + F₁ p₁ + CQ')
+  {ε ε' : ℤ}
+  {hQdeg : ∀ {i j : ℤ} {a : NovikovModule R F₁} {b : NovikovModule R F₂},
+    a ∈ gradeBy R F₁ (fun p => n - μ₁ p) i → b ∈ gradeBy R F₂ (fun p => n - μ₂ p) j →
+      kernelProduct hnQ (kernelOfMatrix_mem hF₀ r₁ r₂ r₀ _) a b ∈
+        gradeBy R F₀ (fun p => n - μ₀ p) (i + j + ε)}
+  {hQL : ∀ {i : ℤ} {a : NovikovModule R F₁}, a ∈ gradeBy R F₁ (fun p => n - μ₁ p) i → ∀ b,
+    kernelMap hδ₀ (mapKernelOfMatrix_mem hF₀ r₀ r₀ _)
+        (kernelProduct hnQ (kernelOfMatrix_mem hF₀ r₁ r₂ r₀ _) a b) =
+      kernelProduct hnQ (kernelOfMatrix_mem hF₀ r₁ r₂ r₀ _)
+          (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _) a) b +
+        negOnePowCast R i • kernelProduct hnQ (kernelOfMatrix_mem hF₀ r₁ r₂ r₀ _) a
+          (kernelMap hδ₂ (mapKernelOfMatrix_mem hF₂ r₂ r₂ _) b)}
+  {hQ'deg : ∀ {i j : ℤ} {a : NovikovModule R F₂} {b : NovikovModule R F₁},
+    a ∈ gradeBy R F₂ (fun p => n - μ₂ p) i → b ∈ gradeBy R F₁ (fun p => n - μ₁ p) j →
+      kernelProduct hnQ' (kernelOfMatrix_mem hF₀ r₂ r₁ r₀ _) a b ∈
+        gradeBy R F₀ (fun p => n - μ₀ p) (i + j + ε')}
+  {hQ'L : ∀ {i : ℤ} {a : NovikovModule R F₂}, a ∈ gradeBy R F₂ (fun p => n - μ₂ p) i → ∀ b,
+    kernelMap hδ₀ (mapKernelOfMatrix_mem hF₀ r₀ r₀ _)
+        (kernelProduct hnQ' (kernelOfMatrix_mem hF₀ r₂ r₁ r₀ _) a b) =
+      kernelProduct hnQ' (kernelOfMatrix_mem hF₀ r₂ r₁ r₀ _)
+          (kernelMap hδ₂ (mapKernelOfMatrix_mem hF₂ r₂ r₂ _) a) b +
+        negOnePowCast R i • kernelProduct hnQ' (kernelOfMatrix_mem hF₀ r₂ r₁ r₀ _) a
+          (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _) b)}
+
+include hμ₁ hμ₂ hμ₀ in
+/-- **Graded commutativity of class-indexed counts on cohomology.** Let the product `⋆` of
+class-indexed counts and the product `⋆'` with exchanged inputs, as ground-ring bilinear maps for
+any potential bounds of their kernels, induce products on the cohomology of the cylinder
+differentials, graded by the cochain degrees `n - μ`. The degree shift `ε` of `⋆` must be zero, as
+the shift of the product of rigid counts is. Under the identity and the index condition of
+`novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_mem_coboundaries`, the
+induced products are graded commutative: `[a] ⋆ [b] = (-1)^(e f) [b] ⋆' [a]` for classes of
+cochain degrees `e` and `f`. -/
+theorem
+    cohomologyProduct_kernelProduct_coefficientComparison_eq_negOnePowCast_smul_cohomologyProduct
+    (hK : ∀ i j k, ∀ A ∈ (K i j k).support,
+      μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩ + μ₂ ⟨j, r₂ j⟩ - n + 1)
+    (hC : ∀ i j l, Q i j l -
+        negOnePowCast R ((n - μ₁ ⟨i, r₁ i⟩) * (n - μ₂ ⟨j, r₂ j⟩)) • Q' j i l =
+      ∑ k, K i j k * D₀ k l + ∑ k, D₁ i k * K k j l +
+        negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ k, D₂ j k * K i k l)
+    (hε : ε = 0) {e f e₀ : ℤ} (h₀ : e + f + ε = e₀) (h₀' : f + e + ε' = e₀)
+    (x : (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _)).cohomology
+      (gradeBy R F₁ fun p => n - μ₁ p) e)
+    (y : (kernelMap hδ₂ (mapKernelOfMatrix_mem hF₂ r₂ r₂ _)).cohomology
+      (gradeBy R F₂ fun p => n - μ₂ p) f) :
+    LinearMap.cohomologyProduct (kernelProduct hnQ (kernelOfMatrix_mem hF₀ r₁ r₂ r₀ _)) hQdeg
+        hQL h₀ x y =
+      negOnePowCast R (e * f) •
+        LinearMap.cohomologyProduct (kernelProduct hnQ' (kernelOfMatrix_mem hF₀ r₂ r₁ r₀ _))
+          hQ'deg hQ'L h₀' y x := by
+  refine LinearMap.cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct h₀ h₀'
+    (fun ha hb => ?_) x y
+  have h := novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_mem_coboundaries
+    r₁ r₂ r₀ q hq hF₁ hF₂ hF₀ hμ₁ hμ₂ Q Q' K D₁ D₂ D₀ n hμ₀ hK hC hδ₁ hδ₂ hδ₀ ha hb
+  rw [novikovProductOfMatrix_eq_kernelProduct hF₁ hF₂ hF₀ r₁ r₂ r₀ _ hnQ,
+    novikovProductOfMatrix_eq_kernelProduct hF₂ hF₁ hF₀ r₂ r₁ r₀ _ hnQ'] at h
+  rwa [← h₀, hε, add_zero]
+
+end Cohomology
 
 end Commutativity
 

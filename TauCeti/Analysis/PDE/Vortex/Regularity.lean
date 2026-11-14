@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.Inhomogeneous.Basic
+public import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 public import TauCeti.Analysis.PDE.Vortex.Variational
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Calculus.Gradient

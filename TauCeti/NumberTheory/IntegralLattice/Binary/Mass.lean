@@ -29,9 +29,9 @@ It is the proper class number, not the class number `h(L)`, that enters the mass
 is not constant on the genus: it is `2w` when `M` has an improper automorphism and `w` otherwise.
 Writing `a` for the number of classes of the first kind, `h⁺ + a = 2h`
 (`TauCeti.IntegralLattice.properClassNumber_add_card_eq_two_mul_classNumber`), and the mass does
-not depend on `a`. Classically, the genus of the lattice `!![4, 1; 1, 6]` of determinant `23` has
+not depend on `a`. For example, the genus of the lattice `!![4, 1; 1, 6]` of determinant `23` has
 `Δ = -23`, `w = 2`, `h⁺ = 3` and `a = 1`, so `h = 2` and its mass is `3/4 = h⁺/(2w)` rather than
-`h/(2w) = 1/2`; these class counts are not formalized here.
+`h/(2w) = 1/2` (`TauCeti.IntegralLattice.mass_binaryDeterminant23`).
 
 ## Main results
 

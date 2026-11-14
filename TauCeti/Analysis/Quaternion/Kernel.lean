@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
+public import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 public import TauCeti.Analysis.Quaternion.Fueter
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -14,10 +15,11 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 # The Cauchy–Fueter kernel
 
 The kernel `cauchyFueterKernel q q₀` is `(q - q₀)⁻¹ / ‖q - q₀‖²`, with value zero at
-its pole. We use the equivalent expression `‖q - q₀‖⁻⁴ • star (q - q₀)` to compute its
-real derivative and prove both Fueter equations away from the pole. Together with
-`RightFueterAt.sum_fderiv_mul_leftFueterAt`, these give zero divergence for both ordered
-kernel-weighted boundary forms in the Cauchy–Fueter formula.
+its pole. We use the equivalent expression `‖q - q₀‖⁻⁴ • star (q - q₀)` to factor a displaced
+pole `cauchyFueterKernel q (q₀ + h)` around `q₀`, compute its real derivative, and prove both
+Fueter equations away from the pole. Together with `RightFueterAt.sum_fderiv_mul_leftFueterAt`,
+these give zero divergence for both ordered kernel-weighted boundary forms in the Cauchy–Fueter
+formula.
 
 ## References
 
@@ -57,6 +59,21 @@ theorem cauchyFueterKernel_eq_inv (q q₀ : ℍ) :
 theorem cauchyFueterKernel_add_right (q q₀ a : ℍ) :
     cauchyFueterKernel (q + a) (q₀ + a) = cauchyFueterKernel q q₀ := by
   simp [cauchyFueterKernel_eq]
+
+/-- Exact algebraic factorization of `cauchyFueterKernel q (q₀ + h)` around `q₀` for `q ≠ q₀`.
+This holds for every `h : ℍ`, including the displaced pole `h = q - q₀` where both sides vanish. -/
+theorem cauchyFueterKernel_add_eq {q q₀ : ℍ} (hq : q ≠ q₀) (h : ℍ) :
+    cauchyFueterKernel q (q₀ + h) =
+      ((1 - (2 * ⟪q - q₀, h⟫ - ‖h‖ ^ 2) / ‖q - q₀‖ ^ 2) ^ 2)⁻¹ •
+        ((‖q - q₀‖ ^ 4)⁻¹ • (star (q - q₀) - star h)) := by
+  have hsq := norm_sub_add_sq_eq hq h
+  have h4 : ‖q - (q₀ + h)‖ ^ 4 =
+      (1 - (2 * ⟪q - q₀, h⟫ - ‖h‖ ^ 2) / ‖q - q₀‖ ^ 2) ^ 2 * ‖q - q₀‖ ^ 4 := by
+    calc ‖q - (q₀ + h)‖ ^ 4
+      _ = (‖q - (q₀ + h)‖ ^ 2) ^ 2 := by ring
+      _ = (‖q - q₀‖ ^ 2 * (1 - (2 * ⟪q - q₀, h⟫ - ‖h‖ ^ 2) / ‖q - q₀‖ ^ 2)) ^ 2 := by rw [hsq]
+      _ = (1 - (2 * ⟪q - q₀, h⟫ - ‖h‖ ^ 2) / ‖q - q₀‖ ^ 2) ^ 2 * ‖q - q₀‖ ^ 4 := by ring
+  rw [cauchyFueterKernel_eq, h4, mul_inv, sub_add_eq_sub_sub, star_sub, smul_smul]
 
 /-- Quaternion conjugation conjugates the kernel without changing its magnitude. -/
 @[simp]
