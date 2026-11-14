@@ -49,6 +49,8 @@ two and three marked points: `ℂ ⋊ ℂˣ`, `ℂˣ` and the trivial group.
   and `∞` is the multiplicative group of dilations.
 * `OnePoint.fixingSubgroup_pgl_eq_bot`, `OnePoint.fixingSubgroup_psl_eq_bot`: the subgroup fixing
   three distinct points is trivial.
+* `OnePoint.comap_mk_stabilizer`: the projection from `GL(2, K)` to `PGL(2, K)` pulls point
+  stabilizers back to point stabilizers.
 
 ## References
 
@@ -224,7 +226,15 @@ theorem fixingSubgroup_pgl_eq_bot {x y z : OnePoint K} (hxy : x ≠ y) (hxz : x 
   have hgh : g * h = h := huniq _ <| by simp only [mul_smul, hh.1, hh.2.1, hh.2.2, hg, and_self]
   simpa using hgh
 
-/-! ### Transfer to `PSL(2, K)` -/
+/-! ### Transfer along the projective group maps -/
+
+/-- The projection `GL(2, K) → PGL(2, K)` pulls the stabilizer of a point back to its stabilizer
+in `GL(2, K)`. -/
+@[simp]
+theorem comap_mk_stabilizer (x : OnePoint K) :
+    (stabilizer PGL(2, K) x).comap ProjGenLinGroup.mk = stabilizer (GL (Fin 2) K) x := by
+  ext g
+  simp [pglMk_smul]
 
 /-- The inclusion `PSL(2, K) → PGL(2, K)` pulls the stabilizer of a point back to its stabilizer
 in `PSL(2, K)`. -/

@@ -14,9 +14,8 @@ public import TauCeti.Algebra.Coalgebra.Subcomodule.Lattice
 Every subcoalgebra of a coalgebra is, by the same underlying submodule, a subcomodule of the
 regular right comodule. This file records that bridge and its basic order and finiteness API.
 
-This is a Layer 1 prerequisite for the reductive-groups roadmap target on finite-dimensional
-subcoalgebras and subcomodules: once an element is placed in a finite-dimensional subcoalgebra,
-the same object is available as a finite-dimensional subcomodule of the regular comodule.
+In particular, a finitely generated subcoalgebra containing an element is also a finitely
+generated subcomodule of the regular comodule containing it.
 
 ## Main declarations
 

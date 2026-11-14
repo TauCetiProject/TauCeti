@@ -28,7 +28,7 @@ three pointwise coefficient forms already available
 into a single bundled continuous bilinear form on jets, `energyIntegrand (a x) (b x) (c x)`,
 matching `(U, V) ↦ ⟨a(x) U.2, V.2⟩ + ⟪b(x), U.2⟫ V.1 + c(x) U.1 V.1`, where `U.2 = ∇u`,
 `U.1 = u`. Integrating this jet form over `Ω` against the jets of `u` and `v` recovers the
-energy bilinear form, so this is the pointwise seed of Lane D's weak formulation.
+energy bilinear form.
 
 The two estimates the energy method needs are proved pointwise, with their constants left
 explicit (never hidden in a `∃ C`):

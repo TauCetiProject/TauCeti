@@ -75,12 +75,10 @@ exclusion of `D̃₄` that `TauCeti.not_isFiniteType_affineD₄` gets from the d
 
 ## References
 
-This file supplies the fork half of the "chain/fork length constraints" step of the classification
-of finite-type Cartan matrices, Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See
-J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, step (7), where
-the inequality `1/p + 1/q + 1/r > 1` is obtained from the same linear weighting of the arms, and
-Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4.
+This file supplies the fork half of the chain and fork length constraints of the classification of
+finite-type Cartan matrices. See J. E. Humphreys, *Introduction to Lie Algebras and Representation
+Theory*, §11.4, step (7), where the inequality `1/p + 1/q + 1/r > 1` is obtained from the same
+linear weighting of the arms, and Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4.
 -/
 
 public section
@@ -321,6 +319,48 @@ private theorem sum_starIndex (f : StarIndex ℓ → ℚ) :
     ∑ v, f v = f none + ∑ i, ∑ s : Fin (ℓ i), f (some ⟨i, s⟩) := by
   rw [Fintype.sum_option, ← Finset.univ_sigma_univ, Finset.sum_sigma]
 
+/-- **The arm of a star other than the one of `v` is annihilated by the row at `v`**, and along the
+arm of `v` the row is the chain row at the abstract weight `g` that agrees with the marks. -/
+private lemma sum_arm_starCartanMatrix_some_mul_starMark (v : (i : α) × Fin (ℓ i)) (i : α)
+    (g : ℕ → ℚ) (hgarm : ∀ s : Fin (ℓ v.1), g ((s : ℕ) + 1) = starMark ℓ (some ⟨v.1, s⟩)) :
+    ∑ s : Fin (ℓ i), (starCartanMatrix ℓ (some v) (some ⟨i, s⟩) : ℚ) * starMark ℓ (some ⟨i, s⟩)
+      = if i = v.1 then
+          ∑ s ∈ Finset.range (ℓ v.1), (chainEntry ((v.2 : ℕ) + 1) (s + 1) : ℚ) * g (s + 1)
+        else 0 := by
+  rcases eq_or_ne i v.1 with rfl | hi
+  · rw [ite_eq_left rfl, ← Fin.sum_univ_eq_sum_range
+      (fun s ↦ (chainEntry ((v.2 : ℕ) + 1) (s + 1) : ℚ) * g (s + 1)) (ℓ v.1)]
+    exact Finset.sum_congr rfl fun s _ ↦ by
+      rw [starCartanMatrix_some_some_chain, ite_eq_left rfl, hgarm s]
+  · refine (Finset.sum_eq_zero fun s _ ↦ ?_).trans (ite_eq_right hi).symm
+    rw [starCartanMatrix_some_some_chain, ite_eq_right (Ne.symm hi)]
+    norm_num
+
+/-- **The arm `i` of a star contributes `-ℓ i · ∏_{j ≠ i} (ℓ j + 1)` to the centre row.** -/
+private lemma sum_arm_starCartanMatrix_none_mul_starMark (i : α) :
+    ∑ s : Fin (ℓ i), (starCartanMatrix ℓ none (some ⟨i, s⟩) : ℚ) * starMark ℓ (some ⟨i, s⟩)
+      = -((ℓ i : ℚ) * ∏ j ∈ ({i}ᶜ : Finset α), ((ℓ j : ℚ) + 1)) := by
+  set Q : ℚ := ∏ j ∈ ({i}ᶜ : Finset α), ((ℓ j : ℚ) + 1)
+  set g : ℕ → ℚ := fun u ↦ ((ℓ i : ℚ) + 1 - u) * Q with hg
+  have hgarm : ∀ s : Fin (ℓ i), g ((s : ℕ) + 1) = starMark ℓ (some ⟨i, s⟩) := by
+    intro s
+    rw [hg, starMark_some_eq_mul_prod_compl]
+    push_cast
+    ring
+  have hstep : ∑ s : Fin (ℓ i), (starCartanMatrix ℓ none (some ⟨i, s⟩) : ℚ)
+        * starMark ℓ (some ⟨i, s⟩)
+      = ∑ s : Fin (ℓ i), (chainEntry 0 ((s : ℕ) + 1) : ℚ) * g ((s : ℕ) + 1) :=
+    Finset.sum_congr rfl fun s _ ↦ by rw [starCartanMatrix_none_some_chain, hgarm s]
+  rw [hstep, Fin.sum_univ_eq_sum_range (fun s ↦ (chainEntry 0 (s + 1) : ℚ) * g (s + 1)) (ℓ i),
+    chainEntry_center_row]
+  rcases eq_or_ne (ℓ i) 0 with h0 | h0
+  · rw [ite_eq_left h0, h0]
+    norm_num
+  · rw [ite_eq_right h0]
+    simp only [hg]
+    push_cast
+    ring
+
 /-- **The rows of a star at an arm vertex annihilate the marks.** The marks are linear along each
 arm, and the centre supplies exactly the value the linear function takes at position `0`, so the
 three-term recurrence of a chain closes at both ends.
@@ -346,21 +386,8 @@ theorem sum_starCartanMatrix_mul_starMark_some_eq_zero (v : (i : α) × Fin (ℓ
     ring
   rw [sum_starIndex]
   -- Only the arm of `v` and the centre contribute.
-  have harms : ∀ i ∈ Finset.univ, ∑ s : Fin (ℓ i),
-      (starCartanMatrix ℓ (some v) (some ⟨i, s⟩) : ℚ) * starMark ℓ (some ⟨i, s⟩)
-        = if i = v.1 then
-            ∑ s ∈ Finset.range (ℓ v.1), (chainEntry ((v.2 : ℕ) + 1) (s + 1) : ℚ) * g (s + 1)
-          else 0 := by
-    intro i _
-    rcases eq_or_ne i v.1 with rfl | hi
-    · rw [ite_eq_left rfl, ← Fin.sum_univ_eq_sum_range
-        (fun s ↦ (chainEntry ((v.2 : ℕ) + 1) (s + 1) : ℚ) * g (s + 1)) (ℓ v.1)]
-      exact Finset.sum_congr rfl fun s _ ↦ by
-        rw [starCartanMatrix_some_some_chain, ite_eq_left rfl, hgarm s]
-    · refine (Finset.sum_eq_zero fun s _ ↦ ?_).trans (ite_eq_right hi).symm
-      rw [starCartanMatrix_some_some_chain, ite_eq_right (Ne.symm hi)]
-      norm_num
-  rw [Finset.sum_congr rfl harms, Finset.sum_ite_eq' Finset.univ v.1,
+  rw [Finset.sum_congr rfl fun i _ ↦ sum_arm_starCartanMatrix_some_mul_starMark v i g hgarm,
+    Finset.sum_ite_eq' Finset.univ v.1,
     ite_eq_left (Finset.mem_univ _), starCartanMatrix_some_none_chain, ← hg0]
   rw [chainEntry_arm_row v.2.isLt g]
   -- The three-term recurrence of a linear function vanishes, and so does its truncation at the end
@@ -387,31 +414,8 @@ theorem sum_starCartanMatrix_mul_starMark_none :
       = ∑ i, (∏ j ∈ ({i}ᶜ : Finset α), ((ℓ j : ℚ) + 1))
         - ((Fintype.card α : ℚ) - 2) * ∏ i, ((ℓ i : ℚ) + 1) := by
   rw [sum_starIndex]
-  have harms : ∀ i ∈ Finset.univ, ∑ s : Fin (ℓ i),
-      (starCartanMatrix ℓ none (some ⟨i, s⟩) : ℚ) * starMark ℓ (some ⟨i, s⟩)
-        = -((ℓ i : ℚ) * ∏ j ∈ ({i}ᶜ : Finset α), ((ℓ j : ℚ) + 1)) := by
-    intro i _
-    set Q : ℚ := ∏ j ∈ ({i}ᶜ : Finset α), ((ℓ j : ℚ) + 1)
-    set g : ℕ → ℚ := fun u ↦ ((ℓ i : ℚ) + 1 - u) * Q with hg
-    have hgarm : ∀ s : Fin (ℓ i), g ((s : ℕ) + 1) = starMark ℓ (some ⟨i, s⟩) := by
-      intro s
-      rw [hg, starMark_some_eq_mul_prod_compl]
-      push_cast
-      ring
-    have hstep : ∑ s : Fin (ℓ i), (starCartanMatrix ℓ none (some ⟨i, s⟩) : ℚ)
-          * starMark ℓ (some ⟨i, s⟩)
-        = ∑ s : Fin (ℓ i), (chainEntry 0 ((s : ℕ) + 1) : ℚ) * g ((s : ℕ) + 1) :=
-      Finset.sum_congr rfl fun s _ ↦ by rw [starCartanMatrix_none_some_chain, hgarm s]
-    rw [hstep, Fin.sum_univ_eq_sum_range (fun s ↦ (chainEntry 0 (s + 1) : ℚ) * g (s + 1)) (ℓ i),
-      chainEntry_center_row]
-    rcases eq_or_ne (ℓ i) 0 with h0 | h0
-    · rw [ite_eq_left h0, h0]
-      norm_num
-    · rw [ite_eq_right h0]
-      simp only [hg]
-      push_cast
-      ring
-  rw [Finset.sum_congr rfl harms, starCartanMatrix_none_none]
+  rw [Finset.sum_congr rfl fun i _ ↦ sum_arm_starCartanMatrix_none_mul_starMark i,
+    starCartanMatrix_none_none]
   -- `ℓ i · ∏_{j ≠ i} pⱼ = ∏ⱼ pⱼ - ∏_{j ≠ i} pⱼ`, so the arms subtract
   -- `n · ∏ⱼ pⱼ - ∑ᵢ ∏_{j ≠ i} pⱼ`.
   have hsplit : ∀ i ∈ Finset.univ, -((ℓ i : ℚ) * ∏ j ∈ ({i}ᶜ : Finset α), ((ℓ j : ℚ) + 1))
@@ -507,9 +511,13 @@ theorem not_isFiniteType_starCartanMatrix_three_of_sum_inv_le_one {a b c : ℕ}
 `a ≤ b ≤ c` vertices besides the centre is a chain (`a = 0`), a fork of type `D` (`a = b = 1`), or
 one of `E₆`, `E₇`, `E₈` (`a = 1`, `b = 2` and `c ≤ 4`).
 
-This is the exclusion half of the classification of forks. The converse, that each of these shapes
-is the diagram of an actual root system, is the separate realization target of the same layer and
-is not proved here. -/
+This is the exclusion half of the classification of forks, and the converse is not proved here. It
+is in `TauCeti/LinearAlgebra/RootSystem/FiniteType/Star/Classification.lean`:
+`TauCeti.isFiniteType_starCartanMatrix_three_iff` shows that each of these shapes is of finite
+type, and `TauCeti.starHasCartanType_D`, `TauCeti.starHasCartanType_E6`,
+`TauCeti.starHasCartanType_E7` and `TauCeti.starHasCartanType_E8` identify the non-chain shapes
+with their standard Cartan matrices. That every valid Dynkin type is the type of an actual root
+system is `TauCeti.DynkinType.hasCartanType_rationalRootSystem`. -/
 theorem eq_zero_or_eq_one_one_or_eq_one_two_le_four_of_isFiniteType_star_three
     {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c)
     (h : IsFiniteType (starCartanMatrix ![a, b, c])) :
