@@ -11,7 +11,8 @@ public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import TauCeti.Analysis.Analytic.Order
+import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Analytic.ExtractZeros
 import Mathlib.Data.Finsupp.Multiset
 import Mathlib.Topology.Algebra.Polynomial
 
@@ -29,7 +30,8 @@ of `∂bar f = a f`, for instance for the section of a plane vortex, and it is t
 topological argument principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow`. The exponent of such a
 factorization is unique (`TauCeti.eq_of_eventually_sub_pow_mul_eq`), so `f` has at most one zero
 multiplicity function (`TauCeti.IsZeroMultiplicity.unique`); it is positive exactly at the zeros of
-`f`.
+`f`, and when `f` is holomorphic at `z` it coincides with the analytic order of `f` there
+(`TauCeti.IsZeroMultiplicity.analyticOrderAt_eq`).
 
 Near `z`, `f` vanishes to every order `k ≤ n z`: `‖f w‖ ≤ C ‖w - z‖ ^ k`
 (`TauCeti.IsZeroMultiplicity.exists_eventually_norm_le_mul_pow`).
@@ -49,7 +51,9 @@ This file proves how zero multiplicities transform:
 If `f` has no zeros near infinity, its multiplicities are the counts of a multiset of points,
 which they determine: the divisor of zeros of `f` (`TauCeti.IsZeroMultiplicity.exists_eq_count`).
 Then `f` is `exp L` times the product of the linear factors of its divisor, for a continuous `L`
-(`TauCeti.IsZeroMultiplicity.exists_continuous_eq_exp_mul_prod_pow`).
+(`TauCeti.IsZeroMultiplicity.exists_continuous_eq_exp_mul_prod_pow`), and when `f` is entire it
+factors as that product times a zero-free entire function
+(`TauCeti.IsZeroMultiplicity.exists_differentiable_eq_prod_pow_mul`).
 When moreover `f(z) (z / |z|)⁻ᵐ → 1` at infinity, that divisor has `m` points
 (`TauCeti.IsZeroMultiplicity.card_eq_of_tendsto_mul_inv_pow`).
 
@@ -254,6 +258,55 @@ theorem isZeroMultiplicity_prod_sub (D : Multiset ℂ) :
     simp [eval_multiset_prod, Multiset.map_map]
   · funext z
     rw [← count_roots, roots_multiset_prod_X_sub_C]
+
+/-- The zero multiplicities of `w ↦ ∏ z ∈ D.toFinset, (w - z) ^ count z D` are the counts of the
+multiset `D`. -/
+theorem isZeroMultiplicity_prod_pow_sub (D : Multiset ℂ) :
+    IsZeroMultiplicity (fun w ↦ ∏ z ∈ D.toFinset, (w - z) ^ D.count z) fun z ↦ D.count z := by
+  simpa only [Finset.prod_multiset_map_count] using isZeroMultiplicity_prod_sub D
+
+/-- If `f` is analytic at `z` and has zero multiplicity function `n`, then its analytic order at `z`
+is `n z`. -/
+theorem IsZeroMultiplicity.analyticOrderAt_eq (h : IsZeroMultiplicity f n) {z : ℂ}
+    (hf : AnalyticAt ℂ f z) : analyticOrderAt f z = n z := by
+  obtain ⟨v, hv, hv₀, hfv⟩ := h z
+  obtain ⟨ρ, hρ, hball⟩ := Metric.eventually_nhds_iff_ball.1 (hfv.and (hv.eventually_ne hv₀))
+  have htop : analyticOrderAt f z ≠ ⊤ :=
+    analyticOrderAt_ne_top_of_forall_ne_zero hρ fun w hw hwz ↦ by
+      rw [(hball w hw).1]
+      exact mul_ne_zero (pow_ne_zero _ (sub_ne_zero.2 hwz)) (hball w hw).2
+  have hn : analyticOrderAt f z = (analyticOrderNatAt f z : ℕ∞) :=
+    (Nat.cast_analyticOrderNatAt htop).symm
+  have heq : n z = analyticOrderNatAt f z :=
+    eq_of_eventually_mul_eq_sub_pow_mul (Φ := 1) continuousAt_const one_ne_zero hf hn hv hv₀
+      (hfv.mono fun w hw ↦ by simpa using hw)
+  rw [heq, hn]
+
+/-- **Holomorphic factorization through the divisor of zeros.** An entire function whose zero
+multiplicities are the counts of a multiset `D` factors globally as
+`(∏ z ∈ D.toFinset, (w - z) ^ count z D) * g w` for a zero-free entire function `g`. -/
+theorem IsZeroMultiplicity.exists_differentiable_eq_prod_pow_mul {D : Multiset ℂ}
+    (h : IsZeroMultiplicity f fun z ↦ D.count z) (hf : Differentiable ℂ f) :
+    ∃ g : ℂ → ℂ, Differentiable ℂ g ∧ (∀ z, g z ≠ 0) ∧
+      ∀ w, f w = (∏ z ∈ D.toFinset, (w - z) ^ D.count z) * g w := by
+  have hf_an : AnalyticOnNhd ℂ f Set.univ := fun z _ ↦ hf.analyticAt z
+  obtain ⟨g, hg, hfg⟩ := hf_an.exists_eq_prod_pow_smul D.toFinset (fun z ↦ D.count z)
+    fun z _ ↦ (h.analyticOrderAt_eq (hf.analyticAt z)).symm.le
+  refine ⟨g, fun z ↦ (hg z (Set.mem_univ z)).differentiableAt, fun z ↦ ?_,
+    fun w ↦ by simpa only [smul_eq_mul] using hfg w⟩
+  let P : ℂ → ℂ := fun w ↦ ∏ a ∈ D.toFinset, (w - a) ^ D.count a
+  have hP : AnalyticAt ℂ P z :=
+    D.toFinset.analyticAt_fun_prod fun a _ ↦ (analyticAt_id.sub analyticAt_const).pow _
+  have hfeq : f = P * g := funext fun w ↦ by simpa only [P, Pi.mul_apply, smul_eq_mul] using hfg w
+  have hord : (D.count z : ℕ∞) + analyticOrderAt g z = (D.count z : ℕ∞) + 0 := calc
+    (D.count z : ℕ∞) + analyticOrderAt g z
+        = analyticOrderAt P z + analyticOrderAt g z := by
+          rw [(isZeroMultiplicity_prod_pow_sub D).analyticOrderAt_eq hP]
+      _ = analyticOrderAt (P * g) z := (analyticOrderAt_mul hP (hg z (Set.mem_univ z))).symm
+      _ = analyticOrderAt f z := by rw [hfeq]
+      _ = (D.count z : ℕ∞) + 0 := by rw [h.analyticOrderAt_eq (hf.analyticAt z), add_zero]
+  have hg₀ : analyticOrderAt g z = 0 := WithTop.add_left_cancel WithTop.coe_ne_top hord
+  exact (analyticOrderAt_eq_zero.1 hg₀).resolve_left (not_not.2 (hg z (Set.mem_univ z)))
 
 /-- **Dividing by a local power factorization.** If `H` is holomorphic at `z` and vanishes there
 to order at least `n`, and `f = (w - z) ^ n v` near `z` with `v` of class `Cᵏ` at `z` and nonzero
