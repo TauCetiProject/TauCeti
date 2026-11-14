@@ -7,14 +7,23 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Regular
 public import Mathlib.Topology.UrysohnsLemma
+import Mathlib.Data.Nat.Pairing
+import Mathlib.Topology.Separation.PerfectlyNormal
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Prod
 
 /-!
 # Baire sets and hulls
 
 The Baire σ-algebra is the smallest σ-algebra making every continuous real-valued function
-measurable. It is contained in the Borel σ-algebra, but the two need not coincide without
-countability assumptions. This notion is different from having the Baire property (agreement
-with an open set modulo a meagre set).
+measurable. It is contained in the Borel σ-algebra, and coincides with it on perfectly normal
+(in particular pseudometrizable) spaces, though the two need not coincide without countability or
+separation assumptions. Every Baire set is pulled back from a Borel subset of `ℕ → ℝ` along a
+countable sequence of continuous real-valued functions, and every clopen set is Baire measurable
+with subtype Baire σ-algebra induced from the ambient space. Because continuous real-valued
+functions on `X × Y` are measurable for the product σ-algebra when `X` and `Y` are σ-compact with
+`Y` Hausdorff (or when `X` is σ-compact and `Y` is compact), any continuous map out of such a
+product is measurable into the Baire σ-algebra of its target. This notion is different from having
+the Baire property (agreement with an open set modulo a meagre set).
 
 For an outer regular measure on a locally compact Hausdorff space, every compact set of
 finite measure has a compact Baire-measurable superset of the same measure, inside any
@@ -22,8 +31,7 @@ prescribed open neighbourhood. The hull is a countable intersection of level set
 supported continuous functions. This supplies compact Baire approximations for comparing Borel
 and Baire measure theory, in particular for Haar measures on groups without second countability.
 For measures finite on compact sets, countable unions of these hulls give σ-compact Baire
-hulls of σ-compact sets with null excess. These results do not assert that every Borel set
-belongs to the completion of the Baire σ-algebra.
+hulls of σ-compact sets with null excess.
 
 ## References
 
@@ -32,11 +40,11 @@ belongs to the completion of the Baire σ-algebra.
 
 public section
 
-open Set MeasureTheory Filter Topology
+open Set MeasureTheory Filter Topology TopologicalSpace
 
 namespace TauCeti
 
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
 
 /-- The Baire σ-algebra: the smallest σ-algebra making continuous real-valued functions
 measurable. This is not the σ-algebra of sets with the Baire property. -/
@@ -53,6 +61,11 @@ theorem baire_le_iff {m : MeasurableSpace X} :
 theorem baire_le_borel : baire X ≤ borel X :=
   baire_le_iff.2 fun f => f.continuous.borel_measurable
 
+/-- Every Baire set is measurable in any `OpensMeasurableSpace`. -/
+theorem baire_le [MeasurableSpace X] [OpensMeasurableSpace X] :
+    baire X ≤ ‹MeasurableSpace X› :=
+  baire_le_iff.2 fun f => f.continuous.measurable
+
 /-- A continuous real-valued function is measurable for the Baire σ-algebra. -/
 theorem _root_.ContinuousMap.measurable_baire (f : C(X, ℝ)) :
     Measurable[TauCeti.baire X] f :=
@@ -65,6 +78,110 @@ theorem _root_.Continuous.measurable_baire {f : X → Y} (hf : Continuous f) :
   rw [measurable_iff_le_map, baire_le_iff]
   intro g
   exact (g.comp ⟨f, hf⟩).measurable_baire
+
+/-- On a perfectly normal space (for instance, any pseudometrizable space), the Baire and Borel
+σ-algebras coincide. -/
+theorem baire_eq_borel [PerfectlyNormalSpace X] : baire X = borel X := by
+  refine le_antisymm baire_le_borel ?_
+  rw [borel_eq_generateFrom_isClosed]
+  refine MeasurableSpace.generateFrom_le fun s hs => ?_
+  obtain ⟨f, rfl, -⟩ := perfectlyNormalSpace_iff_forall_isClosed_preimage_zero.1 ‹_› s hs
+  exact f.measurable_baire (measurableSet_singleton 0)
+
+/-- Every Baire set is the preimage of a measurable subset of `ℕ → ℝ` under a sequence of
+continuous real-valued functions. -/
+theorem measurableSet_baire_iff_exists_continuousMap {s : Set X} :
+    MeasurableSet[baire X] s ↔
+      ∃ (f : ℕ → C(X, ℝ)) (t : Set (ℕ → ℝ)), MeasurableSet t ∧
+        s = (fun x k => f k x) ⁻¹' t := by
+  refine ⟨?_, ?_⟩
+  · let m : MeasurableSpace X :=
+      { MeasurableSet' u := ∃ (f : ℕ → C(X, ℝ)) (t : Set (ℕ → ℝ)), MeasurableSet t ∧
+          u = (fun x k => f k x) ⁻¹' t
+        measurableSet_empty := ⟨fun _ => ContinuousMap.const X 0, ∅, MeasurableSet.empty, rfl⟩
+        measurableSet_compl := fun u ⟨f, t, ht, hu⟩ =>
+          ⟨f, tᶜ, ht.compl, by rw [hu, preimage_compl]⟩
+        measurableSet_iUnion := fun u hu => by
+          choose f t ht hu_eq using hu
+          let e := Nat.pairEquiv.symm
+          refine ⟨fun k => f (e k).1 (e k).2,
+            ⋃ n, (fun (v : ℕ → ℝ) k => v (e.symm (n, k))) ⁻¹' t n,
+            MeasurableSet.iUnion fun n =>
+              (measurable_pi_iff.2 fun _ => measurable_pi_apply _) (ht n), ?_⟩
+          ext x
+          simp [hu_eq, e] }
+    have hm : baire X ≤ m := baire_le_iff.2 fun g u hu =>
+      ⟨fun _ => g, (fun v : ℕ → ℝ => v 0) ⁻¹' u, measurable_pi_apply 0 hu, rfl⟩
+    exact fun hs => hm s hs
+  · rintro ⟨f, t, ht, rfl⟩
+    let _ : MeasurableSpace X := baire X
+    exact (measurable_pi_iff.2 fun k => (f k).measurable_baire) ht
+
+/-- Every clopen set is Baire measurable. -/
+theorem _root_.IsClopen.measurableSet_baire {s : Set X} (hs : IsClopen s) :
+    MeasurableSet[TauCeti.baire X] s := by
+  let f : C(X, ℝ) :=
+    ⟨s.indicator 1, continuous_indicator (by simp [hs]) continuous_const.continuousOn⟩
+  have hsf : s = f ⁻¹' {1} := by
+    ext x
+    by_cases hx : x ∈ s <;> simp [f, hx]
+  rw [hsf]
+  exact f.measurable_baire (measurableSet_singleton 1)
+
+/-- On a clopen subset `s`, the intrinsic Baire σ-algebra `baire s` coincides with the subtype
+pullback of `baire X`. -/
+theorem _root_.IsClopen.baire_subtype {s : Set X} (hs : IsClopen s) :
+    TauCeti.baire s = (TauCeti.baire X).comap ((↑) : s → X) := by
+  refine le_antisymm (baire_le_iff.2 fun g u hu => ?_)
+    continuous_subtype_val.measurable_baire.comap_le
+  classical
+  let F : C(X, ℝ) :=
+    { toFun x := if hx : x ∈ s then g ⟨x, hx⟩ else 0
+      continuous_toFun := by
+        refine continuous_def.2 fun V hV => ?_
+        have hpre : (fun x => if hx : x ∈ s then g ⟨x, hx⟩ else 0) ⁻¹' V =
+            ((↑) : s → X) '' (g ⁻¹' V) ∪ (if (0 : ℝ) ∈ V then sᶜ else ∅) := by
+          ext x
+          by_cases hxs : x ∈ s
+          · lift x to s using hxs
+            simp
+          · simp [hxs]
+        rw [hpre]
+        refine (hs.2.isOpenMap_subtype_val _ (g.continuous.isOpen_preimage V hV)).union ?_
+        split_ifs
+        · exact hs.1.isOpen_compl
+        · exact isOpen_empty }
+  refine ⟨F ⁻¹' u, F.measurable_baire hu, ?_⟩
+  ext x
+  simp [F]
+
+/-- The inclusion of a clopen subset `s` into `X` is a measurable embedding between Baire
+σ-algebras. -/
+theorem _root_.IsClopen.measurableEmbedding_baire_subtype_coe {s : Set X} (hs : IsClopen s) :
+    @MeasurableEmbedding s X (TauCeti.baire s) (TauCeti.baire X) ((↑) : s → X) := by
+  let _ : MeasurableSpace X := TauCeti.baire X
+  exact hs.baire_subtype ▸ MeasurableEmbedding.subtype_coe hs.measurableSet_baire
+
+/-- A continuous map from a product `X × Y` with `X` σ-compact and `Y` compact into any topological
+space `Z` is measurable from the product σ-algebra into the Baire σ-algebra `TauCeti.baire Z`. -/
+theorem _root_.Continuous.measurable_baire_prod_of_sigmaCompact_of_compact
+    [SigmaCompactSpace X] [CompactSpace Y] [MeasurableSpace X] [OpensMeasurableSpace X]
+    [MeasurableSpace Y] [OpensMeasurableSpace Y] {f : X × Y → Z} (hf : Continuous f) :
+    @Measurable (X × Y) Z Prod.instMeasurableSpace (TauCeti.baire Z) f := by
+  rw [measurable_iff_le_map, baire_le_iff]
+  intro g
+  exact (g.continuous.comp hf).measurable_prod_of_sigmaCompact_of_compact
+
+/-- A continuous map from a product `X × Y` of σ-compact spaces, with `Y` Hausdorff, into any
+topological space `Z` is measurable from the product σ-algebra into `TauCeti.baire Z`. -/
+theorem _root_.Continuous.measurable_baire_prod_of_sigmaCompact
+    [SigmaCompactSpace X] [SigmaCompactSpace Y] [T2Space Y]
+    [MeasurableSpace X] [OpensMeasurableSpace X] [MeasurableSpace Y] [OpensMeasurableSpace Y]
+    {f : X × Y → Z} (hf : Continuous f) :
+    @Measurable (X × Y) Z Prod.instMeasurableSpace (TauCeti.baire Z) f := by
+  rw [measurable_iff_le_map, baire_le_iff]
+  intro g
+  exact (g.continuous.comp hf).measurable_prod_of_sigmaCompact
 
 /-- A compact set admits a compact Baire-measurable hull inside any open neighbourhood,
 with null excess for any outer regular measure for which the compact set has finite measure.
