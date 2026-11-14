@@ -450,13 +450,7 @@ theorem stableToHomotopyCategory_map_stableConflationTriangle_mem_distTriang
       (HomotopyCategory.quotient C _).obj (hE.completeResolution S.X₃).complex :=
     eqToIso (hE.completeResolutionFunctor_obj S.X₃)
   refine isomorphic_distinguished _ (CochainComplex.trianglehOfDegreewiseSplit_distinguished
-    _ σ) _ (Triangle.isoMk _ _ i₁ i₂ i₃ ?_ ?_ ?_) <;>
-    dsimp only [Functor.mapTriangle_obj, Triangle.mk_obj₁, Triangle.mk_obj₂, Triangle.mk_obj₃,
-      Triangle.mk_mor₁, Triangle.mk_mor₂, Triangle.mk_mor₃,
-      stableToHomotopyCategory_obj_projectiveStableFunctor_obj,
-      CochainComplex.triangleOfDegreewiseSplit_obj₁, CochainComplex.triangleOfDegreewiseSplit_obj₂,
-      CochainComplex.triangleOfDegreewiseSplit_obj₃, CochainComplex.triangleOfDegreewiseSplit_mor₁,
-      CochainComplex.triangleOfDegreewiseSplit_mor₂, CochainComplex.triangleOfDegreewiseSplit_mor₃]
+    _ σ) _ (Triangle.isoMk _ _ i₁ i₂ i₃ ?_ ?_ ?_)
   · exact hE.completeResolutionFunctor_map_f_comp_isoOfHomotopyEquiv_hom h
   · exact hE.completeResolutionFunctor_map_g_comp_eqToIso_hom h
   · exact hE.stableToHomotopyCategory_map_connectingMap_comp_eq hS h σ
