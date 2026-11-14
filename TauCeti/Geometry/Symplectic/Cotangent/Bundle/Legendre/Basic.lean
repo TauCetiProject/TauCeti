@@ -365,17 +365,26 @@ theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) 
   -- On the fibre through `v`, the Legendre map is the derivative `D` of the restricted
   -- Lagrangian, whose own derivative at `v` is the fibre Hessian `Hs`, read on `E`.
   let D : E → E →L[𝕜] 𝕜 := fderiv 𝕜 (fun u : E ↦ L (TotalSpace.mk' E v.proj u))
-  let Hs : E →L[𝕜] E →L[𝕜] 𝕜 := fiberHessian L v
+  let Hs : E →L[𝕜] E →L[𝕜] 𝕜 := fderiv 𝕜 D a₀
   have hD : HasFDerivAt D Hs a₀ :=
     (((contMDiff_iff_contDiff.1 (hL.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id v.proj))
       ).fderiv_right (m := 1) hn1).differentiable one_ne_zero _).hasFDerivAt
   -- `HasLineDerivAt` unfolds to the derivative at `0` along the line `r ↦ a₀ + r • b`.
   have hline : HasDerivAt (fun r : 𝕜 ↦ D (a₀ + r • b)) (Hs b) 0 := hD.hasLineDerivAt b
-  -- So the Legendre map sends the line to a curve of covectors in the fibre over `v.proj`, whose
-  -- velocity at `0` is `(0, ∂²L/∂v∂v w)` in the bundle chart.
+  -- The Legendre map sends the line to the curve of covectors `r ↦ D (a₀ + r • b)` in the fibre
+  -- over `v.proj`. The step after `legendreMap_def` is `rfl` because `TangentSpace I v.proj` is
+  -- `E`.
+  have hcurve : legendreMap L ∘ γ =
+      fun r : 𝕜 ↦ TotalSpace.mk' (E →L[𝕜] 𝕜) v.proj (D (a₀ + r • b)) := by
+    funext r
+    rw [Function.comp_apply, legendreMap_def]
+    rfl
+  -- The velocity of this curve at `0` is `(0, ∂²L/∂v∂v w)` in the bundle chart.
   have hFLγ : HasMFDerivAt 𝓘(𝕜) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L ∘ γ) 0
-      ((ContinuousLinearMap.inr 𝕜 E (E →L[𝕜] 𝕜)).comp ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (Hs b))) :=
-    CotangentBundle.hasMFDerivAt_mk (I := I) v.proj hline.hasFDerivAt.hasMFDerivAt
+      ((ContinuousLinearMap.inr 𝕜 E (E →L[𝕜] 𝕜)).comp
+        (ContinuousLinearMap.toSpanSingleton 𝕜 (Hs b))) := by
+    rw [hcurve]
+    exact CotangentBundle.hasMFDerivAt_mk (I := I) v.proj hline.hasFDerivAt.hasMFDerivAt
   have hTγ : HasMFDerivAt I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L) (γ 0) T := by
     rw [hγ0, ← hT]
     exact ((contMDiff_legendreMap (m := 1) hL hn1 v).mdifferentiableAt one_ne_zero).hasMFDerivAt
@@ -383,12 +392,14 @@ theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) 
   -- are the derivative of `legendreMap L ∘ γ` at `0`.
   have hEq : T.comp ((1 : 𝕜 →L[𝕜] 𝕜).smulRight
         ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt 𝕜 v.proj w)) =
-      (ContinuousLinearMap.inr 𝕜 E (E →L[𝕜] 𝕜)).comp ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (Hs b)) :=
+      (ContinuousLinearMap.inr 𝕜 E (E →L[𝕜] 𝕜)).comp
+        (ContinuousLinearMap.toSpanSingleton 𝕜 (Hs b)) :=
     (hTγ.comp 0 hγ).mfderiv.symm.trans hFLγ.mfderiv
   have h := DFunLike.congr_fun hEq 1
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply,
-    one_apply_eq_self, one_smul, ContinuousLinearMap.inr_apply] at h
-  rw [CotangentBundle.continuousLinearMapAt_trivializationAt_self]
+    one_apply_eq_self, one_smul, ContinuousLinearMap.inr_apply,
+    ContinuousLinearMap.toSpanSingleton_apply] at h
+  rw [CotangentBundle.continuousLinearMapAt_trivializationAt_self, fiberHessian_def]
   exact h
 
 /-- **The derivative of the energy on vertical vectors.** The derivative of the energy along the
