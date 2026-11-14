@@ -72,11 +72,13 @@ global `ChartedSpace` instance: its model space `Fin (dim E - dim EG) → ℝ` d
 which cannot be inferred from `MulAction.orbitRel.Quotient G M`, and when `G` is discrete
 (`dim EG = 0`) a global instance would create a diamond with `MulAction.instChartedSpaceQuotient`.
 
-For a free proper smooth action of `G` on `M`, by `Equiv.diffeomorphOfSubmersions` any surjective
-smooth submersion `p : M → Q` whose fibres are the `G`-orbits induces a canonical diffeomorphism
-`(M ⧸ G) ≃ₘ Q` (`TauCeti.diffeomorphOfOrbitSubmersion`), and any `C^m` (`m ≠ 0`) submersion at `x`
-whose fibres are the `G`-orbits has vertical kernel `𝔤 · x`
-(`TauCeti.ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt`). Smoothness of `G`-invariant
+For a proper smooth action of `G` on `M`, at any free point `x` (`MulAction.stabilizer G x = ⊥`),
+any `C^m` (`m ≠ 0`) submersion `p : M → Q` at `x` that is locally invariant along the `G`-orbit of
+`x` and whose fibres near `(x, x)` lie in single `G`-orbits has vertical kernel `𝔤 · x`
+(`TauCeti.ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt`). When the proper smooth action
+is globally free, by `Equiv.diffeomorphOfSubmersions` any surjective smooth submersion `p : M → Q`
+whose fibres are the `G`-orbits induces a canonical diffeomorphism `(M ⧸ G) ≃ₘ Q`
+(`TauCeti.diffeomorphOfOrbitSubmersion`). Smoothness of `G`-invariant
 `C^m` maps (`m ≤ ∞`) descends to the orbit space
 (`TauCeti.contMDiff_orbitRelQuotientLift_iff_of_properSMul_of_isCancelSMul`,
 `TauCeti.existsUnique_contMDiff_comp_freeProperQuotientMk_eq`), equivariant maps and `C^m`
@@ -109,9 +111,10 @@ diffeomorphisms descend functorially
   `TauCeti.exists_freeProperQuotient_isSubmersion`: the quotient manifold theorem for free proper
   Lie group actions.
 * `TauCeti.ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt`,
-  `TauCeti.ker_mfderiv_eq_orbitTangent_fundamental_multiplicative_of_isSubmersionAt`: for a free
-  proper smooth (multiplicative or additive) Lie group action, identification of `ker dp_x` with
-  `𝔤 · x` for any `C^m` (`m ≠ 0`) submersion at `x` whose fibres are the orbits.
+  `TauCeti.ker_mfderiv_eq_orbitTangent_fundamental_multiplicative_of_isSubmersionAt`: for a proper
+  smooth (multiplicative or additive) Lie group action and a point `x` with trivial stabilizer,
+  identification of `ker dp_x` with `𝔤 · x` for any `C^m` (`m ≠ 0`) submersion at `x` that is
+  locally invariant along the orbit of `x` and whose fibres near `(x, x)` lie in single orbits.
 * `TauCeti.contMDiffAt_orbitRelQuotientLift_iff_of_properSMul_of_isCancelSMul`,
   `TauCeti.contMDiff_orbitRelQuotientLift_iff_of_properSMul_of_isCancelSMul`,
   `TauCeti.existsUnique_contMDiff_comp_freeProperQuotientMk_eq`,
@@ -180,35 +183,38 @@ private structure SliceData (x : M) where
     IsLocalDiffeomorphOn (IG.prod 𝓘(ℝ, ModelSpace E EG)) I ∞
       (fun p : G × ModelSpace E EG ↦ p.1 • τ p.2) (univ ×ˢ U)
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ EG] [I.Boundaryless] [IsManifold I ∞ M] in
-/-- Shrink a smooth slice `τ : S → M` whose slice map `(g, s) ↦ g • τ s` is a smooth local
-diffeomorphism at `(1, s₀)` to an open neighbourhood `U ⊆ D` of `s₀` on which `τ` is smooth and the
-slice map is injective and a smooth local diffeomorphism on `G × U`. -/
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ EG] [I.Boundaryless] [IsManifold I ∞ M]
+  [IsCancelSMul G M] in
+/-- Shrink a smooth slice `τ : S → M` at a point `τ s₀` with trivial stabilizer whose slice map
+`(g, s) ↦ g • τ s` is a smooth local diffeomorphism at `(1, s₀)` to an open neighbourhood `U ⊆ D`
+of `s₀` on which `τ` is smooth and the slice map is injective and a smooth local diffeomorphism on
+`G × U`. -/
 private theorem exists_isOpen_slice_of_isLocalDiffeomorphAt {ES HS S : Type*}
     [NormedAddCommGroup ES] [NormedSpace ℝ ES] [TopologicalSpace HS]
     {JS : ModelWithCorners ℝ ES HS} [TopologicalSpace S] [ChartedSpace HS S]
-    {τ : S → M} {D : Set S} {s₀ : S} (hD_open : IsOpen D) (hs₀D : s₀ ∈ D)
-    (hτ_smooth : ContMDiffOn JS I ∞ τ D)
+    {τ : S → M} {D : Set S} {s₀ : S} (hfree : MulAction.stabilizer G (τ s₀) = ⊥)
+    (hD_open : IsOpen D) (hs₀D : s₀ ∈ D) (hτ_smooth : ContMDiffOn JS I ∞ τ D)
     (hloc : IsLocalDiffeomorphAt (IG.prod JS) I ∞ (fun p : G × S ↦ p.1 • τ p.2) (1, s₀)) :
     ∃ U : Set S, IsOpen U ∧ s₀ ∈ U ∧ ContMDiffOn JS I ∞ τ U ∧
       InjOn (fun p : G × S ↦ p.1 • τ p.2) (univ ×ˢ U) ∧
       IsLocalDiffeomorphOn (IG.prod JS) I ∞ (fun p : G × S ↦ p.1 • τ p.2) (univ ×ˢ U) := by
   obtain ⟨N, hN, hinjN⟩ := hloc.exists_mem_nhds_injOn
   have hτ_cont : ContinuousAt τ s₀ := (hτ_smooth.contMDiffAt (hD_open.mem_nhds hs₀D)).continuousAt
-  obtain ⟨V, hV, hinjV⟩ := ProperSMul.exists_mem_nhds_injOn_smul_slice hτ_cont
-    (IsCancelSMul.stabilizer_eq_bot (τ s₀)) hN hinjN
+  obtain ⟨V, hV, hinjV⟩ := ProperSMul.exists_mem_nhds_injOn_smul_slice hτ_cont hfree hN hinjN
   obtain ⟨U, hU_sub, hU_open, hs₀U⟩ := mem_nhds_iff.1
     (inter_mem (hD_open.mem_nhds hs₀D) (inter_mem hloc.eventually_forall_smul_slice hV))
   exact ⟨U, hU_open, hs₀U, hτ_smooth.mono fun _ hu ↦ (hU_sub hu).1,
     hinjV.mono (prod_mono_right fun _ hu ↦ (hU_sub hu).2.2),
     fun ⟨⟨g, _⟩, _, hu⟩ ↦ (hU_sub hu).2.1 g⟩
 
-/-- Existence of a transverse slice chart through any `x : M`. -/
-private theorem nonempty_sliceData (x : M) : Nonempty (SliceData I IG (G := G) x) := by
+omit [IsCancelSMul G M] in
+/-- Existence of a transverse slice chart through any free point `x : M`. -/
+private theorem nonempty_sliceData {x : M} (hfree : MulAction.stabilizer G x = ⊥) :
+    Nonempty (SliceData I IG (G := G) x) := by
   have := FiniteDimensional.completeSpace ℝ E
   have := FiniteDimensional.completeSpace ℝ EG
   have hx := isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot (I := IG) (I' := I)
-    (IsCancelSMul.stabilizer_eq_bot (G := G) x)
+    hfree
   -- `TangentSpace I x` is `E` by definition, so `orbitTangent x` is a submodule of `E`.
   let O : Submodule ℝ E := (InfinitesimalAction.fundamental IG G I M).orbitTangent x
   obtain ⟨W, hW⟩ := O.exists_isCompl
@@ -246,15 +252,70 @@ private theorem nonempty_sliceData (x : M) : Nonempty (SliceData I IG (G := G) x
       (hg := hT0.symm ▸ isLocalDiffeomorphAt_smul_extChartAt_symm (I := IG) (I' := I) (G := G)
         hx hW)
   obtain ⟨U, hU_open, h0U, hτ_on, hinj, hloc⟩ :=
-    exists_isOpen_slice_of_isLocalDiffeomorphAt I IG
+    exists_isOpen_slice_of_isLocalDiffeomorphAt I IG (τ := τ) (by rwa [hτ0])
       ((isOpen_extChartAt_target x).preimage hα_smooth.continuous)
       (by rw [mem_preimage, hα0]; exact mem_extChartAt_target x)
       ((contMDiffOn_extChartAt_symm x).comp hα_smooth.contMDiffOn fun _ hu ↦ hu) hloc0
   exact ⟨⟨τ, U, hU_open, h0U, hτ0, hτ_on, hinj, hloc⟩⟩
 
+omit [IsCancelSMul G M] in
+/-- Near a point `x : M` with trivial stabilizer, the transverse-slice coordinate
+`t : M → ℝ^(dim M - dim G)` is smooth at `x`, identifies points on the same `G`-orbit near
+`(x, x)`, and has vertical tangent kernel `(mfderiv I _ t x).ker = 𝔤 · x`. -/
+private theorem exists_contMDiffAt_ker_mfderiv_eq_orbitTangent {x : M}
+    (hfree : MulAction.stabilizer G x = ⊥) :
+    ∃ t : M → ModelSpace E EG,
+      ContMDiffAt I 𝓘(ℝ, ModelSpace E EG) ∞ t x ∧
+      (∀ᶠ yz : M × M in 𝓝 (x, x),
+        Quotient.mk (MulAction.orbitRel G M) yz.1 = Quotient.mk _ yz.2 → t yz.1 = t yz.2) ∧
+      (mfderiv I 𝓘(ℝ, ModelSpace E EG) t x).ker =
+        (InfinitesimalAction.fundamental IG G I M).orbitTangent x := by
+  have := FiniteDimensional.completeSpace ℝ E
+  have : ContinuousSMul G M := ContMDiffSMul.continuousSMul (I := IG) (I' := I) ∞
+  obtain ⟨sd⟩ := nonempty_sliceData I IG hfree
+  let J0 := 𝓘(ℝ, ModelSpace E EG)
+  obtain ⟨t, ht_diff, -, ht_ev⟩ := exists_contMDiffAt_quotientMk_slice_eq_iff sd.isOpen_U
+    sd.injOn_smul sd.isLocalDiffeomorphOn_smul (contMDiffAt_id (I := I) (x := x)) sd.zero_mem_U
+    (congrArg (Quotient.mk (MulAction.orbitRel G M)) sd.τ_zero)
+  have ht_orb : ∀ᶠ yz : M × M in 𝓝 (x, x),
+      Quotient.mk (MulAction.orbitRel G M) yz.1 = Quotient.mk _ yz.2 → t yz.1 = t yz.2 := by
+    filter_upwards [prod_mem_nhds ht_ev ht_ev] with ⟨y, z⟩ ⟨⟨hty, hy⟩, ⟨_, hz⟩⟩ hyz
+    exact (hz (t y) hty).1 (hyz ▸ (hy (t y) hty).2 rfl)
+  have hx_iso := isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot (I := IG) (I' := I)
+    hfree
+  have ht_inv : ∀ᶠ g in 𝓝 (1 : G), t (g • x) = t x := by
+    have hsmul : Tendsto (fun g : G ↦ (g • x, x)) (𝓝 1) (𝓝 (x, x)) := by
+      have hgx : Tendsto (fun g : G ↦ g • x) (𝓝 1) (𝓝 x) := by
+        simpa only [id_eq, one_smul] using
+          (tendsto_id (x := 𝓝 (1 : G))).smul (tendsto_const_nhds (x := x))
+      exact hgx.prodMk_nhds (tendsto_const_nhds (x := x))
+    exact (hsmul.eventually ht_orb).mono fun g hg ↦ hg MulAction.orbitRel.Quotient.quotient_smul_eq
+  have ht_surj : Surjective (mfderiv I J0 t x) := by
+    have hτ_diff : ContMDiffAt J0 I ∞ sd.τ 0 :=
+      sd.contMDiffOn_τ.contMDiffAt (sd.isOpen_U.mem_nhds sd.zero_mem_U)
+    have hτ_tendsto : Tendsto sd.τ (𝓝 0) (𝓝 x) := by
+      simpa only [sd.τ_zero] using hτ_diff.continuousAt.tendsto
+    have hτ_ev : t ∘ sd.τ =ᶠ[𝓝 0] id := by
+      filter_upwards [sd.isOpen_U.mem_nhds sd.zero_mem_U,
+        hτ_tendsto.eventually ht_ev] with u huU ⟨_, hu⟩
+      exact ((hu u huU).1 rfl).symm
+    have ht_diff_τ0 : MDifferentiableAt I J0 t (sd.τ 0) := by
+      simpa only [sd.τ_zero] using ht_diff.mdifferentiableAt (by simp)
+    have hid : mfderiv J0 J0 (t ∘ sd.τ) 0 = .id ℝ _ :=
+      ((hasMFDerivAt_id (I := J0) 0).congr_of_eventuallyEq hτ_ev).mfderiv
+    rw [mfderiv_comp 0 ht_diff_τ0 (hτ_diff.mdifferentiableAt (by simp)), sd.τ_zero] at hid
+    exact Function.RightInverse.surjective (DFunLike.congr_fun hid)
+  have hle : Module.finrank ℝ EG ≤ Module.finrank ℝ E := by
+    have h := (InfinitesimalAction.fundamental IG G I M).finrank_le_of_isotropy_eq_bot hx_iso
+    rwa [finrank_tangentSpace] at h
+  refine ⟨t, ht_diff, ht_orb, ker_mfderiv_eq_orbitTangent_fundamental hx_iso
+    (ht_diff.mdifferentiableAt (by simp)) ht_inv ht_surj ?_⟩
+  rw [Module.finrank_fin_fun]
+  omega
+
 /-- Chosen transverse slice data through `x : M`. -/
 private def sliceData (x : M) : SliceData I IG (G := G) x :=
-  (nonempty_sliceData I IG x).some
+  (nonempty_sliceData I IG (IsCancelSMul.stabilizer_eq_bot (G := G) x)).some
 
 /-- The open slice domain `U ⊆ ℝ^(dim M - dim G)` of `sliceData x`, bundled as `Opens`. -/
 private def sliceOpens (x : M) : TopologicalSpace.Opens (ModelSpace E EG) :=
@@ -456,6 +517,43 @@ theorem isSubmersion_freeProperQuotientMk :
   letI := freeProperQuotientChartedSpace I IG G M
   (isSubmersionOfComplement_freeProperQuotientMk I IG (G := G) (M := M)).isSubmersion
 
+omit [IsCancelSMul G M] in
+/-- For a proper smooth action of a finite-dimensional real Lie group `G` on `M` and a point `x : M`
+with trivial stabilizer, if `p : M → Q` is a `C^m` (`m ≠ 0`) submersion at `x` that is locally
+invariant along the orbit of `x` and whose fibres near `(x, x)` lie in single `G`-orbits, then its
+vertical tangent space at `x` is the orbit tangent space `ker dp_x = 𝔤 · x`. -/
+theorem ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt
+    {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
+    {JQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
+    {m : ℕ∞ω} {p : M → Q} {x : M} (hx : MulAction.stabilizer G x = ⊥)
+    (hp : IsSubmersionAt I JQ m p x) (hm₀ : m ≠ 0)
+    (hinv : ∀ᶠ g in 𝓝 (1 : G), p (g • x) = p x)
+    (hfib : ∀ᶠ yz : M × M in 𝓝 (x, x), p yz.1 = p yz.2 → ∃ g : G, g • yz.2 = yz.1) :
+    (mfderiv I JQ p x).ker = (InfinitesimalAction.fundamental IG G I M).orbitTangent x := by
+  obtain ⟨t, ht_diff, ht_orb, ht_ker⟩ :=
+    FreeProperQuotient.exists_contMDiffAt_ker_mfderiv_eq_orbitTangent I IG hx
+  have hp_diff : MDifferentiableAt I JQ p x := hp.contMDiffAt.mdifferentiableAt hm₀
+  refine le_antisymm ?_ (orbitTangent_fundamental_le_ker_mfderiv hp_diff hinv)
+  obtain ⟨U, hU, hxU, s, hsx, hs, hps⟩ := hp.exists_contMDiffOn_section
+  have hs_cont : ContinuousAt s (p x) := (hs.contMDiffAt (hU.mem_nhds hxU)).continuousAt
+  have hsp : Tendsto (fun y ↦ (s (p y), y)) (𝓝 x) (𝓝 (x, x)) := by
+    have hspx : Tendsto (s ∘ p) (𝓝 x) (𝓝 x) := by
+      simpa only [comp_apply, hsx] using (hs_cont.comp hp.contMDiffAt.continuousAt).tendsto
+    exact hspx.prodMk_nhds tendsto_id
+  have heq : ((t ∘ s) ∘ p) =ᶠ[𝓝 x] t := by
+    filter_upwards [hp.contMDiffAt.continuousAt.preimage_mem_nhds (hU.mem_nhds hxU),
+      hsp.eventually (ht_orb.and hfib)] with y hyU ⟨ht_eq, hfib_y⟩
+    obtain ⟨g, hg⟩ := hfib_y (hps (p y) hyU)
+    exact ht_eq (Quotient.sound (MulAction.orbitRel_apply.2 (MulAction.mem_orbit_iff.2 ⟨g, hg⟩)))
+  have hs_diff : MDifferentiableAt JQ I s (p x) :=
+    (hs.contMDiffAt (hU.mem_nhds hxU)).mdifferentiableAt hm₀
+  have ht_s_diff : MDifferentiableAt I 𝓘(ℝ, FreeProperQuotient.ModelSpace E EG) t (s (p x)) := by
+    simpa only [hsx] using ht_diff.mdifferentiableAt (by simp)
+  have ht_congr := ((ht_s_diff.hasMFDerivAt.comp (p x) hs_diff.hasMFDerivAt).comp x
+    hp_diff.hasMFDerivAt).congr_of_eventuallyEq heq.symm
+  rw [← ht_ker, ht_congr.mfderiv]
+  exact (LinearMap.ker_le_ker_comp _ _).trans (LinearMap.ker_le_ker_comp _ _)
+
 /-- **The vertical tangent space of `M → M ⧸ G` is the orbit tangent space.** At every `x : M`, the
 kernel of the differential of `Quotient.mk (MulAction.orbitRel G M)` equals `𝔤 · x`. -/
 theorem ker_mfderiv_freeProperQuotientMk (x : M) :
@@ -464,18 +562,12 @@ theorem ker_mfderiv_freeProperQuotientMk (x : M) :
       (Quotient.mk (MulAction.orbitRel G M)) x).ker =
       (InfinitesimalAction.fundamental IG G I M).orbitTangent x := by
   let := freeProperQuotientChartedSpace I IG G M
-  have := isManifold_freeProperQuotient I IG (G := G) (M := M)
-  have : Nonempty M := ⟨x⟩
-  have hle : Module.finrank ℝ EG ≤ Module.finrank ℝ E :=
-    finrank_le_of_properSMul_of_isCancelSMul I IG (G := G) (M := M)
-  refine ker_mfderiv_eq_orbitTangent_fundamental
-    (isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot (I := IG) (I' := I)
-      (IsCancelSMul.stabilizer_eq_bot x))
-    (((contMDiff_freeProperQuotientMk I IG (G := G) (M := M)) x).mdifferentiableAt (by simp))
+  exact ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt I IG
+    (IsCancelSMul.stabilizer_eq_bot x)
+    ((isSubmersion_freeProperQuotientMk I IG (G := G) (M := M)).isSubmersionAt x) (by simp)
     (Eventually.of_forall fun g ↦ MulAction.orbitRel.Quotient.quotient_smul_eq)
-    (surjective_mfderiv_freeProperQuotientMk I IG x) ?_
-  rw [Module.finrank_fin_fun]
-  omega
+    (Eventually.of_forall fun _ h ↦
+      MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 (Quotient.exact h)))
 
 /-- Over an open neighbourhood of `[x]` in `M ⧸ G`, the orbit projection admits a smooth local
 section sending `[x]` to `x`. -/
@@ -650,36 +742,6 @@ theorem diffeomorphOfOrbitSubmersion_symm_apply
   let := freeProperQuotientChartedSpace I IG G M
   exact (diffeomorphOfOrbitSubmersion I IG p hp hp_surj hfib).symm_apply_eq.2
     (diffeomorphOfOrbitSubmersion_mk I IG p hp hp_surj hfib x).symm
-
-/-- For a free proper smooth Lie group action of `G` on `M`, if `p : M → Q` is a `C^m` (`m ≠ 0`)
-submersion at `x` whose fibres are the `G`-orbits, then its vertical tangent space at `x` is the
-orbit tangent space `ker dp_x = 𝔤 · x`. -/
-theorem ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt
-    {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
-    {JQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
-    {p : M → Q} {x : M} (hp : IsSubmersionAt I JQ m p x) (hm₀ : m ≠ 0)
-    (hfib : ∀ y z : M, p y = p z ↔ ∃ g : G, g • z = y) :
-    (mfderiv I JQ p x).ker = (InfinitesimalAction.fundamental IG G I M).orbitTangent x := by
-  let := freeProperQuotientChartedSpace I IG G M
-  let J0 := 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ)
-  let π := Quotient.mk (MulAction.orbitRel G M)
-  have hp_diff : MDifferentiableAt I JQ p x := hp.contMDiffAt.mdifferentiableAt hm₀
-  refine le_antisymm ?_
-    (orbitTangent_fundamental_le_ker_mfderiv hp_diff
-      (Eventually.of_forall fun g ↦ (hfib (g • x) x).2 ⟨g, rfl⟩))
-  obtain ⟨U, hU, hxU, s, -, hs, hps⟩ := hp.exists_contMDiffOn_section
-  have hs_diff : MDifferentiableAt JQ I s (p x) :=
-    (hs.contMDiffAt (hU.mem_nhds hxU)).mdifferentiableAt hm₀
-  have hπ_diff : MDifferentiableAt I J0 π (s (p x)) :=
-    ((contMDiff_freeProperQuotientMk I IG (G := G) (M := M)) (s (p x))).mdifferentiableAt (by simp)
-  have heq : ((π ∘ s) ∘ p) =ᶠ[𝓝 x] π := by
-    filter_upwards [hp.contMDiffAt.continuousAt.preimage_mem_nhds (hU.mem_nhds hxU)] with y hy
-    obtain ⟨g, hg⟩ := (hfib (s (p y)) y).1 (hps (p y) hy)
-    exact Quotient.sound (MulAction.orbitRel_apply.2 (MulAction.mem_orbit_iff.2 ⟨g, hg⟩))
-  have hπ_congr := ((hπ_diff.hasMFDerivAt.comp (p x) hs_diff.hasMFDerivAt).comp x
-    hp_diff.hasMFDerivAt).congr_of_eventuallyEq heq.symm
-  rw [← ker_mfderiv_freeProperQuotientMk I IG (G := G) x, hπ_congr.mfderiv]
-  exact (LinearMap.ker_le_ker_comp _ _).trans (LinearMap.ker_le_ker_comp _ _)
 
 section Equivariant
 
@@ -925,18 +987,27 @@ theorem exists_contMDiffOn_section_freeProperAddQuotientMk (x : M) :
   ((isSubmersion_freeProperAddQuotientMk I IG (G := G) (M := M)).isSubmersionAt
     x).exists_contMDiffOn_section
 
-/-- For a free proper smooth action of an additive Lie group `G` on `M`, if `p : M → Q` is a `C^m`
-(`m ≠ 0`) submersion at `x` whose fibres are the additive `G`-orbits, then `ker dp_x` is the orbit
-tangent space of `Multiplicative G` at `x`. -/
+omit [IsCancelVAdd G M] in
+/-- For a proper smooth action of a finite-dimensional additive real Lie group `G` on `M` and a
+point `x : M` with trivial stabilizer, if `p : M → Q` is a `C^m` (`m ≠ 0`) submersion at `x` that
+is locally invariant along the additive orbit of `x` and whose fibres near `(x, x)` lie in single
+additive `G`-orbits, then `ker dp_x` is the orbit tangent space of `Multiplicative G` at `x`. -/
 theorem ker_mfderiv_eq_orbitTangent_fundamental_multiplicative_of_isSubmersionAt
     {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
     {JQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
-    {m : ℕ∞ω} {p : M → Q} {x : M} (hp : IsSubmersionAt I JQ m p x) (hm₀ : m ≠ 0)
-    (hfib : ∀ y z : M, p y = p z ↔ ∃ g : G, g +ᵥ z = y) :
+    {m : ℕ∞ω} {p : M → Q} {x : M} (hx : _root_.AddAction.stabilizer G x = ⊥)
+    (hp : IsSubmersionAt I JQ m p x) (hm₀ : m ≠ 0)
+    (hinv : ∀ᶠ g in 𝓝 (0 : G), p (g +ᵥ x) = p x)
+    (hfib : ∀ᶠ yz : M × M in 𝓝 (x, x), p yz.1 = p yz.2 → ∃ g : G, g +ᵥ yz.2 = yz.1) :
     (mfderiv I JQ p x).ker =
-      (InfinitesimalAction.fundamental IG (Multiplicative G) I M).orbitTangent x :=
-  ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt I IG (G := Multiplicative G) hp hm₀
-    fun y z ↦ (hfib y z).trans Multiplicative.ofAdd.exists_congr_left
+      (InfinitesimalAction.fundamental IG (Multiplicative G) I M).orbitTangent x := by
+  have hx' : MulAction.stabilizer (Multiplicative G) x = ⊥ := by
+    rw [Subgroup.eq_bot_iff_forall]
+    intro g hg
+    exact Multiplicative.toAdd.injective ((AddSubgroup.eq_bot_iff_forall _).1 hx g.toAdd hg)
+  exact ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt I IG (G := Multiplicative G) hx'
+    hp hm₀ ((continuous_toAdd.tendsto (1 : Multiplicative G)).eventually hinv)
+    (hfib.mono fun _ hyz h ↦ Multiplicative.ofAdd.exists_congr_left.1 (hyz h))
 
 /-- At every `x : M`, the kernel of the differential of the additive orbit projection is the orbit
 tangent space of `Multiplicative G` at `x`. -/
@@ -947,9 +1018,11 @@ theorem ker_mfderiv_freeProperAddQuotientMk (x : M) :
       (InfinitesimalAction.fundamental IG (Multiplicative G) I M).orbitTangent x := by
   let := freeProperAddQuotientChartedSpace I IG G M
   exact ker_mfderiv_eq_orbitTangent_fundamental_multiplicative_of_isSubmersionAt I IG
+    (IsCancelVAdd.stabilizer_eq_bot x)
     ((isSubmersion_freeProperAddQuotientMk I IG (G := G) (M := M)).isSubmersionAt x) (by simp)
-    fun y z ↦ Quotient.eq.trans
-      (_root_.AddAction.orbitRel_apply.trans _root_.AddAction.mem_orbit_iff)
+    (Eventually.of_forall fun g ↦ _root_.AddAction.orbitRel.Quotient.quotient_vadd_eq)
+    (Eventually.of_forall fun _ h ↦
+      _root_.AddAction.mem_orbit_iff.1 (_root_.AddAction.orbitRel_apply.1 (Quotient.exact h)))
 
 /-- Pointwise smooth descent (`m ≤ ∞`) for a `G`-invariant map out of a free proper smooth additive
 Lie group action. -/

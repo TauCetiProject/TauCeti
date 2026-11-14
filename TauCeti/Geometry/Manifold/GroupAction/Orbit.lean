@@ -34,7 +34,7 @@ when the action is locally free at `x`, that is, `𝔤_x = 0`
 (`TauCeti.isImmersion_smul_const_iff`). For finite-dimensional `G`, by
 `TauCeti.Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot` this means that the stabilizer `G_x`
 is discrete; in particular, where the stabilizer is trivial on a Hausdorff manifold, `𝔤_x = 0`
-(`TauCeti.isotropy_fundamental_eq_bot_of_stabilizer_eq_bot`) and the orbit map is an immersion
+(`TauCeti.Lie.isotropy_fundamental_eq_bot_of_stabilizer_eq_bot`) and the orbit map is an immersion
 (`TauCeti.isImmersion_smul_const_of_stabilizer_eq_bot`). For a proper action the orbit map is
 moreover a closed topological embedding at such a point
 (`ProperSMul.isClosedEmbedding_smul_const`), and `𝔤_x = 0` holds at such a point without an
@@ -90,18 +90,6 @@ theorem isImmersion_smul_const_iff {x : M} :
 
 variable [FiniteDimensional ℝ E]
 
-omit [FiniteDimensional ℝ E'] [I.Boundaryless] [I'.Boundaryless] in
-/-- Where the stabilizer of `x` is trivial, the isotropy Lie algebra `𝔤_x` of a smooth action on a
-Hausdorff boundaryless manifold vanishes. -/
-theorem isotropy_fundamental_eq_bot_of_stabilizer_eq_bot [BoundarylessManifold I' M] [T2Space M]
-    {x : M} (hx : MulAction.stabilizer G x = ⊥) :
-    (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
-  have : T2Space G := I.t2Space_of_lieGroup ∞
-  have : Subsingleton (MulAction.stabilizer G x) := by
-    rw [hx]
-    infer_instance
-  exact (Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot (I := I) (I' := I')).1 inferInstance
-
 omit [CompleteSpace E] [CompleteSpace E'] in
 /-- **Orbit maps of free points are immersions.** Where the stabilizer of `x` is trivial, the
 orbit map `g ↦ g • x` of a smooth action on a Hausdorff manifold is an immersion. -/
@@ -109,7 +97,7 @@ theorem isImmersion_smul_const_of_stabilizer_eq_bot [T2Space M] {x : M}
     (hx : MulAction.stabilizer G x = ⊥) : IsImmersion I I' ∞ (fun g : G ↦ g • x) :=
   letI := FiniteDimensional.completeSpace ℝ E
   letI := FiniteDimensional.completeSpace ℝ E'
-  isImmersion_smul_const_iff.2 (isotropy_fundamental_eq_bot_of_stabilizer_eq_bot hx)
+  isImmersion_smul_const_iff.2 (Lie.isotropy_fundamental_eq_bot_of_stabilizer_eq_bot hx)
 
 omit [CompleteSpace E] [CompleteSpace E'] in
 /-- **Free orbits of proper smooth actions are closed embedded submanifolds.** Where the stabilizer
@@ -131,6 +119,6 @@ theorem isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot [Boundary
     (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
   have : T2Space G := I.t2Space_of_lieGroup ∞
   have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
-  exact isotropy_fundamental_eq_bot_of_stabilizer_eq_bot hx
+  exact Lie.isotropy_fundamental_eq_bot_of_stabilizer_eq_bot hx
 
 end TauCeti
