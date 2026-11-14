@@ -5,36 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.GroupExtension.Basic
-public import TauCeti.GroupTheory.SemidirectProduct
-public import TauCeti.GroupTheory.GroupExtension.Quotient.Local
+public import Mathlib.GroupTheory.SemidirectProduct
+public import TauCeti.GroupTheory.Complement.Local
 
 /-!
-# Complements, quotient splittings, and semidirect products
+# Local complements and semidirect products
 
-A complement `D` of a normal subgroup `N` in `G` determines two semidirect-product models of `G`:
-`SemidirectProduct.mulEquivSubgroup` on `N ⋊ D` and
-`GroupExtension.Splitting.semidirectProductMulEquiv` on `N ⋊ (G ⧸ N)` attached to
-`Subgroup.IsComplement'.quotientSplitting`. This file connects both models to the quotient
-extension `N.quotientExtension` and extends the semidirect-product decomposition to local
-complements `N.IsLocalComplement K H` inside an intermediate subgroup `H` in which `N` is normal.
+A local complement `K` of `N` inside an intermediate subgroup `H` in which `N` is normal determines
+an internal semidirect-product isomorphism `N ⋊ K ≃* H`, extending
+`SemidirectProduct.mulEquivSubgroup` from global complements (`Subgroup.IsComplement'`) to local
+complements (`Subgroup.IsLocalComplement`).
 
 ## Main definitions
 
-* `Subgroup.IsComplement'.toGroupExtensionEquiv`: `SemidirectProduct.mulEquivSubgroup` promoted to
-  an equivalence of group extensions from `SemidirectProduct.toGroupExtension` to
-  `N.quotientExtension` relabelled along `G ⧸ N ≃* D`.
 * `Subgroup.IsLocalComplement.semidirectProductMulEquiv`: the internal semidirect-product
   isomorphism `N ⋊ K ≃* H` determined by a local complement `K` of `N` in `H` when `N` is normal
   in `H`.
 
 ## Main results
 
-* `Subgroup.IsComplement'.congr_quotientMulEquiv_trans_mulEquivSubgroup`:
-  `SemidirectProduct.mulEquivSubgroup` agrees with the semidirect-product isomorphism of
-  `Subgroup.IsComplement'.quotientSplitting` along `G ⧸ N ≃* D`.
-* `Subgroup.IsComplement'.toMonoidHom_splittingEquiv_toGroupExtensionEquiv_inr_splitting`:
-  transporting `SemidirectProduct.inr_splitting` along `toGroupExtensionEquiv` yields `D.subtype`.
 * `Subgroup.IsLocalComplement.toEquiv_semidirectProductMulEquiv`,
   `Subgroup.IsLocalComplement.toEquiv_semidirectProductMulEquiv_symm`:
   `semidirectProductMulEquiv` and `Subgroup.IsLocalComplement.equiv` are mutually inverse up to
@@ -49,113 +38,10 @@ complements `N.IsLocalComplement K H` inside an intermediate subgroup `H` in whi
 
 public section
 
-namespace Subgroup
+namespace Subgroup.IsLocalComplement
 
-variable {G : Type*} [Group G]
-
-namespace IsComplement'
-
-variable {N D : Subgroup G} [N.Normal] (h : N.IsComplement' D)
-
-/-- Coercing the `D`-component of `(SemidirectProduct.mulEquivSubgroup h).symm g` to `G` recovers
-the quotient splitting of `D` evaluated at the coset of `g`. -/
-theorem coe_mulEquivSubgroup_symm_right_eq_quotientSplitting (g : G) :
-    (((SemidirectProduct.mulEquivSubgroup h).symm g).right : G) =
-      h.quotientSplitting (g : G ⧸ N) := by
-  rw [SemidirectProduct.mulEquivSubgroup_symm_right, h.quotientSplitting_mk_eq_coe_equiv_snd]
-
-/-- Projecting `(SemidirectProduct.mulEquivSubgroup h).symm` to `D` and including into `G` agrees
-with `Subgroup.IsComplement'.quotientSplitting` composed with the quotient map `G →* G ⧸ N`. -/
-theorem subtype_comp_rightHom_comp_mulEquivSubgroup_symm :
-    D.subtype.comp (SemidirectProduct.rightHom.comp
-        (SemidirectProduct.mulEquivSubgroup h).symm.toMonoidHom) =
-      h.quotientSplitting.toMonoidHom.comp (QuotientGroup.mk' N) := by
-  ext g
-  exact h.coe_mulEquivSubgroup_symm_right_eq_quotientSplitting g
-
-/-- Conjugation by `Subgroup.IsComplement'.quotientSplitting` on `N` intertwines with the
-normalizer action of `D` along `G ⧸ N ≃* D`. -/
-theorem quotientSplitting_conjAct_comm (q : G ⧸ N) :
-    (h.quotientSplitting.conjAct q).trans (MulEquiv.refl N) =
-      (MulEquiv.refl N).trans
-        (((N.normalizerMonoidHom).comp (inclusion (N.normalizer_eq_top ▸ le_top)))
-          (h.symm.QuotientMulEquiv q)) := by
-  ext n
-  have hconj := N.quotientExtension.inl_conjAct_comm (e := h.quotientSplitting q) (n := n)
-  rw [quotientExtension_inl, subtype_apply, quotientSplitting_apply] at hconj
-  simpa [GroupExtension.Splitting.conjAct, quotientSplitting_apply] using hconj
-
-/-- Transporting the acting factor along `G ⧸ N ≃* D` identifies
-`SemidirectProduct.mulEquivSubgroup` with the semidirect-product isomorphism attached to
-`Subgroup.IsComplement'.quotientSplitting`. -/
-theorem congr_quotientMulEquiv_trans_mulEquivSubgroup :
-    (SemidirectProduct.congr (MulEquiv.refl N) h.symm.QuotientMulEquiv
-        h.quotientSplitting_conjAct_comm).trans (SemidirectProduct.mulEquivSubgroup h) =
-      h.quotientSplitting.semidirectProductMulEquiv := by
-  ext x
-  rw [GroupExtension.Splitting.semidirectProductMulEquiv,
-    GroupExtension.Splitting.semidirectProductToGroupExtensionEquiv]
-  simp [quotientSplitting_apply]
-
-/-- `SemidirectProduct.mulEquivSubgroup` as an equivalence from the semidirect-product extension
-`1 → N → N ⋊ D → D → 1` to `N.quotientExtension` with quotient relabelled along `G ⧸ N ≃* D`. -/
-noncomputable def toGroupExtensionEquiv :
-    (SemidirectProduct.toGroupExtension
-      ((N.normalizerMonoidHom).comp (inclusion (N.normalizer_eq_top ▸ le_top)))).Equiv
-      (N.quotientExtension.relabelQuotient h.symm.QuotientMulEquiv) where
-  toMulEquiv := SemidirectProduct.mulEquivSubgroup h
-  inl_comm := by
-    ext n
-    simp [SemidirectProduct.toGroupExtension_inl]
-  rightHom_comm := by
-    ext x
-    have hx := DFunLike.congr_fun
-      (SemidirectProduct.rightHom_comp_mulEquivSubgroup_symm h).symm
-      (SemidirectProduct.mulEquivSubgroup h x)
-    simpa only [Function.comp_apply, GroupExtension.relabelQuotient_rightHom,
-      quotientExtension_rightHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-      MonoidHom.coe_ofClass, MulEquiv.symm_apply_apply,
-      SemidirectProduct.toGroupExtension_rightHom] using congrArg Subtype.val hx
-
-/-- The underlying isomorphism of `Subgroup.IsComplement'.toGroupExtensionEquiv` is
-`SemidirectProduct.mulEquivSubgroup`. -/
-theorem toMulEquiv_toGroupExtensionEquiv :
-    h.toGroupExtensionEquiv.toMulEquiv = SemidirectProduct.mulEquivSubgroup h :=
-  (rfl)
-
-/-- Evaluating `Subgroup.IsComplement'.toGroupExtensionEquiv` applies
-`SemidirectProduct.mulEquivSubgroup`. -/
-@[simp]
-theorem toGroupExtensionEquiv_apply
-    (x : N ⋊[(N.normalizerMonoidHom).comp (inclusion (N.normalizer_eq_top ▸ le_top))] D) :
-    h.toGroupExtensionEquiv x = SemidirectProduct.mulEquivSubgroup h x :=
-  (rfl)
-
-/-- Evaluating the inverse of `Subgroup.IsComplement'.toGroupExtensionEquiv` applies the inverse of
-`SemidirectProduct.mulEquivSubgroup`. -/
-@[simp]
-theorem toGroupExtensionEquiv_symm_apply (g : G) :
-    h.toGroupExtensionEquiv.symm g = (SemidirectProduct.mulEquivSubgroup h).symm g :=
-  (rfl)
-
-/-- Transporting the canonical splitting `SemidirectProduct.inr_splitting` along
-`Subgroup.IsComplement'.toGroupExtensionEquiv` gives the subgroup inclusion `D →* G`. -/
-@[simp]
-theorem toMonoidHom_splittingEquiv_toGroupExtensionEquiv_inr_splitting :
-    (h.toGroupExtensionEquiv.splittingEquiv
-      (SemidirectProduct.inr_splitting _)).toMonoidHom = D.subtype := by
-  ext d
-  have hinr : SemidirectProduct.inr_splitting
-      ((N.normalizerMonoidHom).comp (inclusion (N.normalizer_eq_top ▸ le_top))) d =
-      SemidirectProduct.inr d := by
-    rw [← GroupExtension.Splitting.toMonoidHom_apply, SemidirectProduct.inr_splitting]
-  simp [hinr]
-
-end IsComplement'
-
-namespace IsLocalComplement
-
-variable {N K H : Subgroup G} [(N.subgroupOf H).Normal] (h : N.IsLocalComplement K H)
+variable {G : Type*} [Group G] {N K H : Subgroup G}
+  [(N.subgroupOf H).Normal] (h : N.IsLocalComplement K H)
 
 /-- The internal semidirect-product isomorphism `N ⋊ K ≃* H` determined by a local complement `K`
 of `N` in `H`, when `N` is normal in `H`. -/
@@ -185,7 +71,7 @@ theorem subtype_comp_semidirectProductMulEquiv :
       N ⋊[(N.normalizerMonoidHom).comp (inclusion h.right_le_normalizer)] K →* H) =
       SemidirectProduct.monoidHomSubgroup h.right_le_normalizer := by
   ext x
-  exact h.coe_semidirectProductMulEquiv_apply x
+  simp
 
 /-- As an equivalence of types, `Subgroup.IsLocalComplement.semidirectProductMulEquiv` is
 `SemidirectProduct.equivProd` followed by the inverse of `Subgroup.IsLocalComplement.equiv`. -/
@@ -297,18 +183,6 @@ theorem semidirectProductMulEquiv_symm_comp_inclusion_right :
   intro k
   exact h.semidirectProductMulEquiv_symm_inclusion_right k
 
-/-- For any local complement `K` of a subgroup `N` normal in `H` (not necessarily abelian), the
-left projection of a product twists the second factor by conjugation by the right projection of the
-first. -/
-theorem leftProjection_mul_apply (x y : H) :
-    h.leftProjection (x * y) =
-      h.leftProjection x *
-        ((N.normalizerMonoidHom).comp (inclusion h.right_le_normalizer)
-          (h.rightProjection x) (h.leftProjection y)) := by
-  simpa only [semidirectProductMulEquiv_symm_left, semidirectProductMulEquiv_symm_right,
-    SemidirectProduct.mul_left] using
-    congrArg SemidirectProduct.left (h.semidirectProductMulEquiv.symm.map_mul x y)
-
 /-- Identifying `N.subgroupOf H` with `N` and `K.subgroupOf H` with `K` intertwines their
 normalizer actions. -/
 theorem subgroupOfEquivOfLe_normalizer_comm (k : K.subgroupOf H) :
@@ -319,7 +193,7 @@ theorem subgroupOfEquivOfLe_normalizer_comm (k : K.subgroupOf H) :
         (((N.normalizerMonoidHom).comp (inclusion h.right_le_normalizer))
           (K.subgroupOfEquivOfLe h.right_le k)) := by
   ext n
-  rfl
+  simp
 
 /-- Under `N.subgroupOf H ≃* N` and `K.subgroupOf H ≃* K`, the local isomorphism
 `Subgroup.IsLocalComplement.semidirectProductMulEquiv` agrees with
@@ -329,8 +203,6 @@ theorem congr_subgroupOfEquivOfLe_trans_semidirectProductMulEquiv :
         h.subgroupOfEquivOfLe_normalizer_comm).trans h.semidirectProductMulEquiv =
       SemidirectProduct.mulEquivSubgroup h.isComplement'_subgroupOf := by
   ext x
-  exact h.coe_semidirectProductMulEquiv_apply _
+  simp
 
-end IsLocalComplement
-
-end Subgroup
+end Subgroup.IsLocalComplement

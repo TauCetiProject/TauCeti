@@ -299,3 +299,21 @@ theorem mulAutCongr_characterTwist (F : S.Equiv S') (hcentral : S.inl.range ≤ 
 end Equiv
 
 end GroupExtension
+
+namespace SemidirectProduct
+
+variable {N G : Type*} [Group N] [Group G] (φ : G →* MulAut N)
+
+/-- Evaluating the canonical splitting `SemidirectProduct.inr_splitting` applies
+`SemidirectProduct.inr`. -/
+@[simp]
+theorem inr_splitting_apply (g : G) : inr_splitting φ g = inr g :=
+  (rfl)
+
+/-- The underlying monoid homomorphism of `SemidirectProduct.inr_splitting` is
+`SemidirectProduct.inr`. -/
+@[simp]
+theorem toMonoidHom_inr_splitting : (inr_splitting φ).toMonoidHom = inr :=
+  (rfl)
+
+end SemidirectProduct

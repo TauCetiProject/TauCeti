@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.SemidirectProduct
+import TauCeti.GroupTheory.Complement.Basic
 
 /-!
 # Semidirect products and multiplication of normalizing subgroups
@@ -31,7 +32,7 @@ factor is normal in the full semidirect product (`Subgroup.normal_map_inl`).
 * `SemidirectProduct.mem_ker_monoidHomSubgroup_iff`: its kernel consists of antidiagonal pairs.
 * `SemidirectProduct.ker_monoidHomSubgroup_eq_bot_iff`: its kernel is trivial precisely when `H`
   and `K` are disjoint.
-* `SemidirectProduct.bijective_monoidHomSubgroup_iff`: multiplication from `H ⋊ K` is bijective
+* `SemidirectProduct.monoidHomSubgroup_bijective_iff`: multiplication from `H ⋊ K` is bijective
   precisely when `H.IsComplement' K`.
 * `SemidirectProduct.ker_monoidHomSubgroup_le_ker_lift_iff`: an external lift kills this kernel
   precisely when the two maps agree on the intersection.
@@ -120,7 +121,7 @@ theorem range_monoidHomSubgroup :
 
 /-- Multiplication from the semidirect product of a subgroup with a normalizing subgroup is
 surjective precisely when the two subgroups generate the ambient group. -/
-theorem surjective_monoidHomSubgroup_iff :
+theorem monoidHomSubgroup_surjective_iff :
     Function.Surjective (monoidHomSubgroup hLE) ↔ H ⊔ K = ⊤ := by
   rw [← MonoidHom.range_eq_top, range_monoidHomSubgroup]
 
@@ -135,34 +136,22 @@ trivial kernel precisely when the two subgroups are disjoint. -/
 @[simp]
 theorem ker_monoidHomSubgroup_eq_bot_iff :
     (monoidHomSubgroup hLE).ker = ⊥ ↔ Disjoint H K := by
-  rw [Subgroup.eq_bot_iff_forall, disjoint_iff_inf_le]
-  constructor
-  · intro hker g ⟨hgH, hgK⟩
-    let x : H ⋊[(H.normalizerMonoidHom).comp (Subgroup.inclusion hLE)] K :=
-      ⟨⟨g, hgH⟩, ⟨g⁻¹, K.inv_mem hgK⟩⟩
-    have hx : x = 1 := hker x ((mem_ker_monoidHomSubgroup_iff hLE x).mpr (inv_inv g).symm)
-    exact congrArg Subtype.val (congrArg left hx)
-  · intro hdisj x hx
-    have hpair := (mem_ker_monoidHomSubgroup_iff hLE x).mp hx
-    have hmem : (x.right : G) ∈ H ⊓ K := by
-      refine ⟨?_, x.right.property⟩
-      rw [← inv_inv (x.right : G), ← hpair]
-      exact H.inv_mem x.left.property
-    have hr : (x.right : G) = 1 := hdisj hmem
-    have hl : (x.left : G) = 1 := by rw [hpair, hr, inv_one]
-    ext
-    · simpa using hl
-    · simpa using hr
+  rw [Subgroup.eq_bot_iff_forall, Subgroup.disjoint_iff_mul_eq_one]
+  refine ⟨fun h x y hx hy hxy ↦ ?_, fun h x hx ↦ ?_⟩
+  · have h1 := h ⟨⟨x, hx⟩, ⟨y, hy⟩⟩ (by simpa [MonoidHom.mem_ker] using hxy)
+    exact ⟨by simpa using congrArg left h1, by simpa using congrArg right h1⟩
+  · obtain ⟨hl, hr⟩ := h x.left.2 x.right.2 (by simpa [MonoidHom.mem_ker] using hx)
+    ext <;> assumption
 
 /-- Multiplication from the semidirect product of a subgroup with a normalizing subgroup is
 injective precisely when the two subgroups are disjoint. -/
-theorem injective_monoidHomSubgroup_iff :
+theorem monoidHomSubgroup_injective_iff :
     Function.Injective (monoidHomSubgroup hLE) ↔ Disjoint H K := by
   rw [← MonoidHom.ker_eq_bot_iff, ker_monoidHomSubgroup_eq_bot_iff]
 
 /-- Multiplication from the semidirect product of a subgroup with a normalizing subgroup is
 bijective precisely when the two subgroups are complements. -/
-theorem bijective_monoidHomSubgroup_iff :
+theorem monoidHomSubgroup_bijective_iff :
     Function.Bijective (monoidHomSubgroup hLE) ↔ H.IsComplement' K :=
   equivProd.bijective_comp (fun x : H × K => (x.1 : G) * x.2)
 
@@ -210,15 +199,18 @@ variable [H.Normal] (h : H.IsComplement' K)
 /-- The underlying homomorphism of `SemidirectProduct.mulEquivSubgroup` is
 `SemidirectProduct.monoidHomSubgroup`. -/
 theorem toMonoidHom_mulEquivSubgroup :
-    (mulEquivSubgroup h).toMonoidHom = monoidHomSubgroup (H.normalizer_eq_top ▸ le_top) :=
-  (rfl)
+    (mulEquivSubgroup h).toMonoidHom = monoidHomSubgroup (H.normalizer_eq_top ▸ le_top) := by
+  ext x
+  simp
 
 /-- As an equivalence of types, `SemidirectProduct.mulEquivSubgroup` is `equivProd` followed by
 the inverse of the complement decomposition `Subgroup.IsComplement.equiv`. -/
 theorem toEquiv_mulEquivSubgroup :
     (mulEquivSubgroup h).toEquiv = equivProd.trans h.equiv.symm := by
   ext x
-  exact mulEquivSubgroup_apply h x
+  simp only [MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv, mulEquivSubgroup_apply,
+    Equiv.trans_apply, equivProd_apply]
+  exact (h.equiv_symm_apply (x.left, x.right)).symm
 
 /-- As an equivalence of types, `(SemidirectProduct.mulEquivSubgroup h).symm` is the complement
 decomposition `Subgroup.IsComplement.equiv` followed by `equivProd.symm`. -/
@@ -305,16 +297,8 @@ theorem rightHom_comp_mulEquivSubgroup_symm :
       G →* H ⋊[(H.normalizerMonoidHom).comp (Subgroup.inclusion (H.normalizer_eq_top ▸ le_top))]
         K) =
       (h.symm.QuotientMulEquiv : G ⧸ H →* K).comp (QuotientGroup.mk' H) := by
-  apply MonoidHom.ext
-  intro g
-  have hg : (g : G ⧸ H) = (((h.equiv g).2 : G) : G ⧸ H) := by
-    conv_lhs => rw [← h.equiv_fst_mul_equiv_snd g]
-    rw [QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff _).mpr (h.equiv g).1.property, one_mul]
-  have hd : h.symm.QuotientMulEquiv.symm (h.equiv g).2 = (((h.equiv g).2 : G) : G ⧸ H) :=
-    h.symm.QuotientMulEquiv_symm_apply (h.equiv g).2
-  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.coe_ofClass,
-    MonoidHom.coe_ofClass, rightHom_eq_right, mulEquivSubgroup_symm_right,
-    QuotientGroup.mk'_apply, hg, ← hd, MulEquiv.apply_symm_apply]
+  ext g
+  simp [mulEquivSubgroup_symm_right, h.symm_quotientMulEquiv_mk, -mulEquivSubgroup_symm_apply]
 
 end MulEquivSubgroup
 
