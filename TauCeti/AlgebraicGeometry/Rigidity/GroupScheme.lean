@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import TauCeti.AlgebraicGeometry.Rigidity.Relative
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.CommGrp
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.StructureSheaf
+import TauCeti.AlgebraicGeometry.GroupScheme.Separated
 
 /-!
 # Pointed morphisms, uniqueness of group laws, and commutativity of proper flat group schemes
@@ -213,10 +214,10 @@ section Field
 variable {K : Type u} [Field K]
 
 /-- A morphism of monoid schemes over a field `K` from a proper geometrically integral source to a
-separated locally finite type group scheme is a homomorphism if it preserves the identity. -/
+locally finite type group scheme is a homomorphism if it preserves the identity. -/
 theorem isMonHom_of_one_hom {A B : Over (Spec (.of K))} [MonObj A] [GrpObj B]
     [IsProper A.hom] [GeometricallyIntegral A.hom]
-    [IsSeparated B.hom] [LocallyOfFiniteType B.hom]
+    [LocallyOfFiniteType B.hom]
     (f : A ⟶ B) (hf : η[A] ≫ f = η[B]) : IsMonHom f :=
   isMonHom_of_one_hom_of_flat
     (fun V ↦ A.hom.isIso_app_of_universallyClosed_of_geometricallyIntegral V) f hf
