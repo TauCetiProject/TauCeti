@@ -54,7 +54,7 @@ namespace CategoryTheory.ShortComplex.IsAlmostSplit
 universe v u
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C]
-  {S : ShortComplex C} [IsLocalRing (End S.X₁)] [IsLocalRing (End S.X₃)]
+  {S : ShortComplex C}
   (k : Type*) [Ring k] [Linear k C]
 
 /-- The identification of morphisms into the middle term, modulo the radical, with irreducible
