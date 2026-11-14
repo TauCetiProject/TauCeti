@@ -34,21 +34,6 @@ rather than restricting scalars, so that no algebra diamond arises.
 
 public section
 
-namespace ContinuousLinearMap
-
-/-- The inverse Euclidean matrix equivalence gives the coordinate matrix in the standard
-orthonormal basis. -/
-theorem toEuclideanCLM_symm_eq_toMatrix {ι 𝕜 : Type*} [RCLike 𝕜] [Fintype ι]
-    [DecidableEq ι] (f : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :
-    (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm f =
-      LinearMap.toMatrix (EuclideanSpace.basisFun ι 𝕜).toBasis
-        (EuclideanSpace.basisFun ι 𝕜).toBasis f.toLinearMap := by
-  apply Matrix.toEuclideanLin.injective
-  rw [← Matrix.coe_toEuclideanCLM_eq_toEuclideanLin, StarAlgEquiv.apply_symm_apply,
-    Matrix.toEuclideanLin_eq_toLin_orthonormal, Matrix.toLin_toMatrix]
-
-end ContinuousLinearMap
-
 namespace Matrix
 
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Projection.Trace
 public import TauCeti.Probability.Moments.HansonWright
 import TauCeti.Probability.Independence.Integration
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.InnerProductSpace.Positive
 
 /-!
@@ -24,8 +25,8 @@ These estimates supply distance bounds in invertibility arguments for random mat
 ## Main results
 
 * `Submodule.integral_infDist_sq_eq_finrank_orthogonal`: the mean squared distance.
-* `ProbabilityTheory.iIndepFun.measureReal_abs_infDist_sub_sqrt_finrank_gt_le`: concentration
-  around the square root of codimension for a fixed subspace.
+* `ProbabilityTheory.iIndepFun.measureReal_abs_infDist_sub_sqrt_finrank_orthogonal_gt_le`:
+  concentration around the square root of codimension for a fixed subspace.
 * `ProbabilityTheory.iIndepFun.measureReal_infDist_lt_one_sub_mul_sqrt_le_of_indepFun`: the
   lower-tail bound under lower bounds on codimension and coordinate second moments.
 
@@ -79,7 +80,7 @@ variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {P : Measure Ω} {X :
 
 /-- Squared distance to an independent random subspace of codimension at most `d` satisfies the
 Hanson–Wright bound. The coordinate variance proxy is `K`, rather than its square root. -/
-theorem measureReal_abs_infDist_sq_sub_gt_le_of_indepFun
+theorem measureReal_abs_infDist_sq_sub_finrank_orthogonal_gt_le_of_indepFun
     (hindep : iIndepFun X P) {K : ℝ≥0} (hX : ∀ i, HasSubgaussianMGF (X i) K P)
     (hvar : ∀ i, ∫ ω, X i ω ^ 2 ∂P = 1)
     (U : Ω → Submodule ℝ (EuclideanSpace ℝ ι))
@@ -93,26 +94,22 @@ theorem measureReal_abs_infDist_sq_sub_gt_le_of_indepFun
   let e := Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)
   let A (ω : Ω) := e.symm ((U ω)ᗮ.starProjection)
   have he : Measurable e.symm :=
-    e.symm.toAlgEquiv.toLinearMap.continuous_of_finiteDimensional.measurable
+    Matrix.continuous_toEuclideanCLM_symm.measurable
   have hA : AEMeasurable A P := he.comp_aemeasurable hU
   have hAX : IndepFun A (fun ω i ↦ X i ω) P := hUX.comp he measurable_id
-  have hAeq (ω : Ω) : A ω = LinearMap.toMatrix
-      (EuclideanSpace.basisFun ι ℝ).toBasis (EuclideanSpace.basisFun ι ℝ).toBasis
-      (U ω)ᗮ.starProjection.toLinearMap :=
-    ((U ω)ᗮ.starProjection).toEuclideanCLM_symm_eq_toMatrix
   have hF : ∀ᵐ ω ∂P, ∑ i, ∑ j, A ω i j ^ 2 ≤ (d : ℝ) := by
     filter_upwards [hd] with ω hω
     calc
       ∑ i, ∑ j, A ω i j ^ 2 = (Module.finrank ℝ (U ω)ᗮ : ℝ) := by
-        simpa only [hAeq, Real.norm_eq_abs, sq_abs] using
-          (U ω)ᗮ.sum_norm_sq_toMatrix_starProjection (EuclideanSpace.basisFun ι ℝ)
+        simpa only [Real.norm_eq_abs, sq_abs] using
+          (U ω)ᗮ.sum_norm_sq_toEuclideanCLM_symm_starProjection
       _ ≤ d := by exact_mod_cast hω
-  have hop : ∀ᵐ ω ∂P, ‖A ω‖ ≤ 1 := .of_forall fun ω ↦ by
-    rw [← Matrix.l2_opNorm_toEuclideanCLM, e.apply_symm_apply]
-    exact (U ω)ᗮ.starProjection_norm_le
+  have hop : ∀ᵐ ω ∂P, ‖A ω‖ ≤ 1 := .of_forall fun ω ↦
+    (U ω)ᗮ.l2_opNorm_toEuclideanCLM_symm_starProjection_le
   have hquad (ω : Ω) : (fun i ↦ X i ω) ⬝ᵥ A ω *ᵥ (fun i ↦ X i ω) =
       Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U ω : Set _) ^ 2 := by
-    exact (U ω).re_star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal _
+    simpa only [RCLike.re_to_real, star_trivial] using
+      (U ω).re_star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal (fun i ↦ X i ω)
   have htr (ω : Ω) : ∑ i, A ω i i * ∫ ω', X i ω' ^ 2 ∂P =
       (Module.finrank ℝ (U ω)ᗮ : ℝ) := by
     simpa only [hvar, mul_one, Matrix.trace, Matrix.diag] using
@@ -123,7 +120,7 @@ theorem measureReal_abs_infDist_sq_sub_gt_le_of_indepFun
   simpa only [hquad, htr] using hbound
 
 /-- Squared distance to a fixed subspace concentrates around its codimension. -/
-theorem measureReal_abs_infDist_sq_sub_finrank_gt_le
+theorem measureReal_abs_infDist_sq_sub_finrank_orthogonal_gt_le
     (hindep : iIndepFun X P) {K : ℝ≥0} (hX : ∀ i, HasSubgaussianMGF (X i) K P)
     (hvar : ∀ i, ∫ ω, X i ω ^ 2 ∂P = 1)
     (U : Submodule ℝ (EuclideanSpace ℝ ι)) {t : ℝ} (ht : 0 ≤ t) :
@@ -131,13 +128,45 @@ theorem measureReal_abs_infDist_sq_sub_finrank_gt_le
         Module.finrank ℝ Uᗮ|} ≤
       2 * exp (-(1 / 3200) * min (t ^ 2 / ((K : ℝ) ^ 2 * Module.finrank ℝ Uᗮ)) (t / K)) := by
   have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  exact hindep.measureReal_abs_infDist_sq_sub_gt_le_of_indepFun hX hvar (fun _ ↦ U)
+  exact hindep.measureReal_abs_infDist_sq_sub_finrank_orthogonal_gt_le_of_indepFun
+    hX hvar (fun _ ↦ U)
     aemeasurable_const (indepFun_const_left _ _) (.of_forall fun _ ↦ le_rfl) ht
+
+-- Relate the distance event to the particular normalization used in its concentration proof.
+private lemma distance_deviation_subset [DecidableEq ι]
+    (hvar : ∀ i, ∫ ω, X i ω ^ 2 ∂P = 1)
+    (U : Ω → Submodule ℝ (EuclideanSpace ℝ ι)) {t : ℝ} (ht : 0 < t) :
+    let A (ω : Ω) := (Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)).symm (U ω)ᗮ.starProjection
+    let s (M : Matrix ι ι ℝ) := max (√M.trace * t) (t ^ 2)
+    let B (ω : Ω) := (s (A ω))⁻¹ • A ω
+    {ω | t < |Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U ω : Set _) -
+        √(Module.finrank ℝ (U ω)ᗮ : ℝ)|} ⊆
+      {ω | 1 < |(fun i ↦ X i ω) ⬝ᵥ B ω *ᵥ (fun i ↦ X i ω) -
+        ∑ i, B ω i i * ∫ ω', X i ω' ^ 2 ∂P|} := by
+  intro A s B
+  have hs (M : Matrix ι ι ℝ) : 0 < s M := (sq_pos_of_pos ht).trans_le (le_max_right _ _)
+  have htr (ω : Ω) : (A ω).trace = (Module.finrank ℝ (U ω)ᗮ : ℝ) :=
+    (U ω)ᗮ.trace_toEuclideanCLM_symm_starProjection
+  intro ω hω
+  have hquad : (fun i ↦ X i ω) ⬝ᵥ A ω *ᵥ (fun i ↦ X i ω) =
+      Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U ω : Set _) ^ 2 := by
+    simpa only [RCLike.re_to_real, star_trivial] using
+      (U ω).re_star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal (fun i ↦ X i ω)
+  have hdiag : ∑ i, A ω i i = (A ω).trace := by simp only [Matrix.trace, Matrix.diag]
+  simp only [Set.mem_ofPred_eq, B, Matrix.smul_mulVec, dotProduct_smul,
+    Matrix.smul_apply, smul_eq_mul, hvar, mul_one, ← Finset.mul_sum, hdiag,
+    hquad, ← mul_sub, abs_mul, abs_of_pos (inv_pos.mpr (hs _))]
+  rw [inv_mul_eq_div, lt_div_iff₀ (hs _), one_mul]
+  let a := Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U ω : Set _)
+  have ha : 0 ≤ a := Metric.infDist_nonneg
+  have hr : 0 ≤ (A ω).trace := by rw [htr]; positivity
+  have hω' : t < |a - √(A ω).trace| := by simpa only [Set.mem_ofPred_eq, htr, a] using hω
+  exact Real.max_sqrt_mul_sq_lt_abs_sq_sub ha hr ht hω'
 
 /-- Distance to an independent random subspace concentrates around the square root of its
 codimension, which may vary with the subspace. The harmless enlargement `max K 1` also covers
 empty coordinate types and zero variance proxies. -/
-theorem measureReal_abs_infDist_sub_sqrt_gt_le_of_indepFun
+theorem measureReal_abs_infDist_sub_sqrt_finrank_orthogonal_gt_le_of_indepFun
     (hindep : iIndepFun X P) {K : ℝ≥0} (hX : ∀ i, HasSubgaussianMGF (X i) K P)
     (hvar : ∀ i, ∫ ω, X i ω ^ 2 ∂P = 1)
     (U : Ω → Submodule ℝ (EuclideanSpace ℝ ι))
@@ -152,13 +181,10 @@ theorem measureReal_abs_infDist_sub_sqrt_gt_le_of_indepFun
   rcases ht.eq_or_lt with rfl | ht
   · simp only [sq, zero_mul, neg_zero, zero_div, exp_zero, mul_one]
     exact (measureReal_mono (Set.subset_univ _)).trans (by rw [probReal_univ]; norm_num)
-  let C : ℝ≥0 := max K 1
-  have hC : 1 ≤ (C : ℝ) := by exact_mod_cast le_max_right K 1
-  have hCp : 0 < (C : ℝ) := by positivity
   let e := Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)
   let A (ω : Ω) := e.symm ((U ω)ᗮ.starProjection)
   have he : Measurable e.symm :=
-    e.symm.toAlgEquiv.toLinearMap.continuous_of_finiteDimensional.measurable
+    Matrix.continuous_toEuclideanCLM_symm.measurable
   have hA : AEMeasurable A P := he.comp_aemeasurable hU
   have hAX : IndepFun A (fun ω i ↦ X i ω) P := hUX.comp he measurable_id
   have htr (ω : Ω) : (A ω).trace = (Module.finrank ℝ (U ω)ᗮ : ℝ) :=
@@ -174,9 +200,8 @@ theorem measureReal_abs_infDist_sub_sqrt_gt_le_of_indepFun
     have hr : 0 ≤ (A ω).trace := by rw [htr]; positivity
     have hsum : ∑ i, ∑ j, A ω i j ^ 2 = (A ω).trace := by
       rw [htr]
-      simpa only [A, e, ContinuousLinearMap.toEuclideanCLM_symm_eq_toMatrix,
-        Real.norm_eq_abs, sq_abs] using
-        (U ω)ᗮ.sum_norm_sq_toMatrix_starProjection (EuclideanSpace.basisFun ι ℝ)
+      simpa only [Real.norm_eq_abs, sq_abs] using
+        (U ω)ᗮ.sum_norm_sq_toEuclideanCLM_symm_starProjection
     have hst : (A ω).trace * t ^ 2 ≤ s (A ω) ^ 2 := by
       have hh := (sq_le_sq₀ (mul_nonneg (sqrt_nonneg _) ht.le) (hs _).le).2
         (le_max_left (√(A ω).trace * t) (t ^ 2))
@@ -185,66 +210,18 @@ theorem measureReal_abs_infDist_sub_sqrt_gt_le_of_indepFun
     rw [inv_pow, inv_mul_eq_div, ← one_div (t ^ 2)]
     exact (div_le_div_iff₀ (sq_pos_of_pos (hs _)) (sq_pos_of_pos ht)).2 (by simpa using hst)
   have hop : ∀ᵐ ω ∂P, ‖B ω‖ ≤ (t ^ 2)⁻¹ := .of_forall fun ω ↦ by
-    have hAn : ‖A ω‖ ≤ 1 := by
-      rw [← Matrix.l2_opNorm_toEuclideanCLM, e.apply_symm_apply]
-      exact (U ω)ᗮ.starProjection_norm_le
+    have hAn : ‖A ω‖ ≤ 1 := (U ω)ᗮ.l2_opNorm_toEuclideanCLM_symm_starProjection_le
     simp only [B, norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr (hs _))]
     exact (mul_le_of_le_one_right (inv_nonneg.mpr (hs _).le) hAn).trans
       (inv_anti₀ (sq_pos_of_pos ht) (le_max_right _ _))
-  have hbound := hindep.measureReal_abs_dotProduct_mulVec_sub_sum_diag_gt_le_of_ae_bound
-    (fun i ↦ (hX i).mono (le_max_left K 1)) hB hBX hF hop (by norm_num : (0 : ℝ) ≤ 1)
-  -- A distance deviation exceeds both squared-distance thresholds before normalization.
-  have hsub : {ω | t < |Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U ω : Set _) -
-        √(Module.finrank ℝ (U ω)ᗮ : ℝ)|} ⊆
-      {ω | 1 < |(fun i ↦ X i ω) ⬝ᵥ B ω *ᵥ (fun i ↦ X i ω) -
-        ∑ i, B ω i i * ∫ ω', X i ω' ^ 2 ∂P|} := by
-    intro ω hω
-    have hquad : (fun i ↦ X i ω) ⬝ᵥ A ω *ᵥ (fun i ↦ X i ω) =
-        Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U ω : Set _) ^ 2 :=
-      (U ω).re_star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal _
-    have hdiag : ∑ i, A ω i i = (A ω).trace := by simp only [Matrix.trace, Matrix.diag]
-    simp only [Set.mem_ofPred_eq, B, Matrix.smul_mulVec, dotProduct_smul,
-      Matrix.smul_apply, smul_eq_mul, hvar, mul_one, ← Finset.mul_sum, hdiag,
-      hquad, ← mul_sub, abs_mul, abs_of_pos (inv_pos.mpr (hs _))]
-    rw [inv_mul_eq_div, lt_div_iff₀ (hs _), one_mul]
-    let a := Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U ω : Set _)
-    have ha : 0 ≤ a := Metric.infDist_nonneg
-    have hr : 0 ≤ (A ω).trace := by rw [htr]; positivity
-    have hω' : t < |a - √(A ω).trace| := by simpa only [Set.mem_ofPred_eq, htr, a] using hω
-    have hab : |a - √(A ω).trace| ≤ a + √(A ω).trace :=
-      abs_le.mpr ⟨by linarith, by nlinarith [sqrt_nonneg (A ω).trace]⟩
-    have heq : |a ^ 2 - (A ω).trace| = |a - √(A ω).trace| * (a + √(A ω).trace) := by
-      rw [← abs_of_nonneg (by positivity : 0 ≤ a + √(A ω).trace), ← abs_mul]
-      congr 1
-      nlinarith [sq_sqrt hr]
-    rw [heq]
-    refine max_lt_iff.mpr ⟨?_, ?_⟩
-    · by_cases hr0 : (A ω).trace = 0
-      · simp only [hr0, sqrt_zero, zero_mul, add_zero, sub_zero, abs_of_nonneg ha] at hω' ⊢
-        have ha' : 0 < a := ht.trans hω'
-        positivity
-      · simpa only [mul_comm] using
-          (mul_lt_mul_of_pos_right hω' (sqrt_pos.mpr (lt_of_le_of_ne hr (Ne.symm hr0)))).trans_le
-            (mul_le_mul_of_nonneg_left (le_add_of_nonneg_left ha)
-              (abs_nonneg (a - √(A ω).trace)))
-    · nlinarith [mul_self_lt_mul_self ht.le hω',
-        mul_le_mul_of_nonneg_left hab (abs_nonneg (a - √(A ω).trace))]
-  -- Both normalized matrix parameters give an exponent at least `t² / C²`.
-  refine (measureReal_mono hsub).trans (hbound.trans ?_)
-  have hmin : t ^ 2 / (C : ℝ) ^ 2 ≤
-      min (1 ^ 2 / ((C : ℝ) ^ 2 * (t ^ 2)⁻¹)) (1 / ((C : ℝ) * (t ^ 2)⁻¹)) := by
-    refine le_min (by field_simp; rfl) ?_
-    apply (div_le_div_iff₀ (by positivity) (by positivity)).2
-    field_simp
-    nlinarith [mul_nonneg (sq_nonneg t) (by nlinarith : 0 ≤ (C : ℝ) ^ 2 - C)]
-  gcongr
-  convert mul_le_mul_of_nonpos_left hmin (by norm_num : -(1 / 3200 : ℝ) ≤ 0) using 1
-  simp only [C, NNReal.coe_max, NNReal.coe_one, div_eq_mul_inv, mul_inv_rev]
-  ring
+  have hbound := hindep.measureReal_abs_dotProduct_mulVec_sub_sum_diag_gt_le_of_ae_inv_bound
+    hX hB hBX (sq_pos_of_pos ht) hF hop (by norm_num : (0 : ℝ) ≤ 1) le_rfl
+  have hsub := distance_deviation_subset hvar U ht
+  simpa only [one_pow, one_mul] using (measureReal_mono hsub).trans hbound
 
 /-- Distance to a fixed subspace has a dimension-free sub-Gaussian deviation bound around the
 square root of its codimension. -/
-theorem measureReal_abs_infDist_sub_sqrt_finrank_gt_le
+theorem measureReal_abs_infDist_sub_sqrt_finrank_orthogonal_gt_le
     (hindep : iIndepFun X P) {K : ℝ≥0} (hX : ∀ i, HasSubgaussianMGF (X i) K P)
     (hvar : ∀ i, ∫ ω, X i ω ^ 2 ∂P = 1)
     (U : Submodule ℝ (EuclideanSpace ℝ ι)) {t : ℝ} (ht : 0 ≤ t) :
@@ -252,8 +229,52 @@ theorem measureReal_abs_infDist_sub_sqrt_finrank_gt_le
         √(Module.finrank ℝ Uᗮ : ℝ)|} ≤
       2 * exp (-t ^ 2 / (3200 * (max (K : ℝ) 1) ^ 2)) := by
   have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  exact hindep.measureReal_abs_infDist_sub_sqrt_gt_le_of_indepFun hX hvar (fun _ ↦ U)
+  exact hindep.measureReal_abs_infDist_sub_sqrt_finrank_orthogonal_gt_le_of_indepFun
+    hX hvar (fun _ ↦ U)
     aemeasurable_const (indepFun_const_left _ _) ht
+
+-- The normalized quadratic-form mean dominates one under the lower second-moment bounds.
+private lemma lower_tail_subset [DecidableEq ι]
+    (hvar : ∀ i, 1 ≤ ∫ ω, X i ω ^ 2 ∂P)
+    (U : Ω → Submodule ℝ (EuclideanSpace ℝ ι)) {d : ℕ} (hdpos : 0 < (d : ℝ))
+    (hd : ∀ᵐ ω ∂P, d ≤ Module.finrank ℝ (U ω)ᗮ) {ε : ℝ} (hε : 0 ≤ ε) (hεle : ε ≤ 1) :
+    let A (ω : Ω) := (Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)).symm (U ω)ᗮ.starProjection
+    let B (ω : Ω) := (A ω).trace⁻¹ • A ω
+    {ω | Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U ω : Set _) < (1 - ε) * √d} ≤ᵐ[P]
+      {ω | ε < |(fun i ↦ X i ω) ⬝ᵥ B ω *ᵥ (fun i ↦ X i ω) -
+        ∑ i, B ω i i * ∫ ω', X i ω' ^ 2 ∂P|} := by
+  intro A B
+  have htr (ω : Ω) : (A ω).trace = (Module.finrank ℝ (U ω)ᗮ : ℝ) :=
+    (U ω)ᗮ.trace_toEuclideanCLM_symm_starProjection
+  filter_upwards [hd] with ω hω hdist
+  have hr : 0 < (A ω).trace := by rw [htr]; exact hdpos.trans_le (by exact_mod_cast hω)
+  have hdiag (i : ι) : 0 ≤ A ω i i := by
+    simp only [A, ContinuousLinearMap.toEuclideanCLM_symm_eq_toMatrix]
+    exact ((LinearMap.posSemidef_toMatrix_iff (EuclideanSpace.basisFun ι ℝ)).mpr
+      (U ω)ᗮ.isSymmetricProjection_starProjection.isPositive).diag_nonneg
+  have hm : 1 ≤ ∑ i, B ω i i * ∫ ω', X i ω' ^ 2 ∂P := by
+    calc
+      1 = ∑ i, B ω i i := by
+        simp only [B, Matrix.smul_apply, smul_eq_mul, ← Finset.mul_sum]
+        simpa only [Matrix.trace, Matrix.diag] using (inv_mul_cancel₀ hr.ne').symm
+      _ ≤ _ := Finset.sum_le_sum fun i _ ↦ le_mul_of_one_le_right
+        (mul_nonneg (inv_nonneg.mpr hr.le) (hdiag i)) (hvar i)
+  have hquad : (fun i ↦ X i ω) ⬝ᵥ B ω *ᵥ (fun i ↦ X i ω) =
+      (A ω).trace⁻¹ * Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U ω : Set _) ^ 2 := by
+    simp only [B, Matrix.smul_mulVec, dotProduct_smul, smul_eq_mul]
+    congr 1
+    simpa only [RCLike.re_to_real, star_trivial] using
+      (U ω).re_star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal (fun i ↦ X i ω)
+  have hsq := (sq_lt_sq₀ Metric.infDist_nonneg (by positivity : 0 ≤ (1 - ε) * √d)).2 hdist
+  rw [mul_pow, sq_sqrt (Nat.cast_nonneg d)] at hsq
+  have hrd : (d : ℝ) ≤ (A ω).trace := by rw [htr]; exact_mod_cast hω
+  have hq : (A ω).trace⁻¹ * Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω))
+      (U ω : Set _) ^ 2 < 1 - ε := by
+    rw [inv_mul_eq_div, div_lt_iff₀ hr]
+    nlinarith [mul_nonneg (sub_nonneg.mpr hεle) (sub_nonneg.mpr hrd),
+      mul_nonneg (mul_nonneg hε (sub_nonneg.mpr hεle)) (Nat.cast_nonneg d)]
+  rw [hquad]
+  exact lt_abs.mpr (.inr (by linarith))
 
 /-- The lower tail is exponentially small in any lower bound `d` on the codimension.
 Coordinate second moments may exceed one, and the independent subspace may have varying rank. -/
@@ -283,12 +304,10 @@ theorem measureReal_infDist_lt_one_sub_mul_sqrt_le_of_indepFun
     positivity
   have hdpos : 0 < (d : ℝ) := by exact_mod_cast Nat.pos_of_ne_zero hd0
   have hεle : ε ≤ 1 := (lt_of_not_ge hε1).le
-  let C : ℝ≥0 := max K 1
-  have hC : 1 ≤ (C : ℝ) := by exact_mod_cast le_max_right K 1
   let e := Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)
   let A (ω : Ω) := e.symm ((U ω)ᗮ.starProjection)
   have he : Measurable e.symm :=
-    e.symm.toAlgEquiv.toLinearMap.continuous_of_finiteDimensional.measurable
+    Matrix.continuous_toEuclideanCLM_symm.measurable
   have hA : AEMeasurable A P := he.comp_aemeasurable hU
   have hAX : IndepFun A (fun ω i ↦ X i ω) P := hUX.comp he measurable_id
   have htr (ω : Ω) : (A ω).trace = (Module.finrank ℝ (U ω)ᗮ : ℝ) :=
@@ -303,9 +322,8 @@ theorem measureReal_infDist_lt_one_sub_mul_sqrt_le_of_indepFun
     have hr : 0 < (A ω).trace := by rw [htr]; exact hdpos.trans_le (by exact_mod_cast hω)
     have hsum : ∑ i, ∑ j, A ω i j ^ 2 = (A ω).trace := by
       rw [htr]
-      simpa only [A, e, ContinuousLinearMap.toEuclideanCLM_symm_eq_toMatrix,
-        Real.norm_eq_abs, sq_abs] using
-        (U ω)ᗮ.sum_norm_sq_toMatrix_starProjection (EuclideanSpace.basisFun ι ℝ)
+      simpa only [Real.norm_eq_abs, sq_abs] using
+        (U ω)ᗮ.sum_norm_sq_toEuclideanCLM_symm_starProjection
     simp only [B, Matrix.smul_apply, smul_eq_mul, mul_pow, ← Finset.mul_sum, hsum]
     calc
       (A ω).trace⁻¹ ^ 2 * (A ω).trace = (A ω).trace⁻¹ := by field_simp
@@ -313,65 +331,18 @@ theorem measureReal_infDist_lt_one_sub_mul_sqrt_le_of_indepFun
   have hop : ∀ᵐ ω ∂P, ‖B ω‖ ≤ (d : ℝ)⁻¹ := by
     filter_upwards [hd] with ω hω
     have hr : 0 < (A ω).trace := by rw [htr]; exact hdpos.trans_le (by exact_mod_cast hω)
-    have hAn : ‖A ω‖ ≤ 1 := by
-      rw [← Matrix.l2_opNorm_toEuclideanCLM, e.apply_symm_apply]
-      exact (U ω)ᗮ.starProjection_norm_le
+    have hAn : ‖A ω‖ ≤ 1 := (U ω)ᗮ.l2_opNorm_toEuclideanCLM_symm_starProjection_le
     simp only [B, norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hr)]
     exact (mul_le_of_le_one_right (inv_nonneg.mpr hr.le) hAn).trans
       (inv_anti₀ hdpos (by rw [htr]; exact_mod_cast hω))
-  have hbound := hindep.measureReal_abs_dotProduct_mulVec_sub_sum_diag_gt_le_of_ae_bound
-    (fun i ↦ (hX i).mono (le_max_left K 1)) hB hBX hF hop hε
-  -- The mean of the normalized quadratic form is at least one, even without isotropy.
-  have hsub : {ω | Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U ω : Set _) <
-      (1 - ε) * √d} ≤ᵐ[P] {ω | ε < |(fun i ↦ X i ω) ⬝ᵥ B ω *ᵥ (fun i ↦ X i ω) -
-        ∑ i, B ω i i * ∫ ω', X i ω' ^ 2 ∂P|} := by
-    filter_upwards [hd] with ω hω hdist
-    have hr : 0 < (A ω).trace := by rw [htr]; exact hdpos.trans_le (by exact_mod_cast hω)
-    have hdiag (i : ι) : 0 ≤ A ω i i := by
-      simp only [A, e, ContinuousLinearMap.toEuclideanCLM_symm_eq_toMatrix]
-      exact ((LinearMap.posSemidef_toMatrix_iff (EuclideanSpace.basisFun ι ℝ)).mpr
-        ⟨(U ω)ᗮ.starProjection_isSymmetric, (U ω)ᗮ.re_inner_starProjection_nonneg⟩).diag_nonneg
-    have hm : 1 ≤ ∑ i, B ω i i * ∫ ω', X i ω' ^ 2 ∂P := by
-      calc
-        1 = ∑ i, B ω i i := by
-          simp only [B, Matrix.smul_apply, smul_eq_mul, ← Finset.mul_sum]
-          simpa only [Matrix.trace, Matrix.diag] using (inv_mul_cancel₀ hr.ne').symm
-        _ ≤ _ := Finset.sum_le_sum fun i _ ↦ le_mul_of_one_le_right
-          (mul_nonneg (inv_nonneg.mpr hr.le) (hdiag i)) (hvar i)
-    have hquad : (fun i ↦ X i ω) ⬝ᵥ B ω *ᵥ (fun i ↦ X i ω) =
-        (A ω).trace⁻¹ * Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U ω : Set _) ^ 2 := by
-      simp only [B, Matrix.smul_mulVec, dotProduct_smul, smul_eq_mul]
-      congr 1
-      exact (U ω).re_star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal _
-    have hsq := (sq_lt_sq₀ Metric.infDist_nonneg (by positivity : 0 ≤ (1 - ε) * √d)).2 hdist
-    rw [mul_pow, sq_sqrt (Nat.cast_nonneg d)] at hsq
-    have hrd : (d : ℝ) ≤ (A ω).trace := by rw [htr]; exact_mod_cast hω
-    have hq : (A ω).trace⁻¹ * Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω))
-        (U ω : Set _) ^ 2 < 1 - ε := by
-      rw [inv_mul_eq_div, div_lt_iff₀ hr]
-      nlinarith [mul_nonneg (sub_nonneg.mpr hεle) (sub_nonneg.mpr hrd),
-        mul_nonneg (mul_nonneg hε (sub_nonneg.mpr hεle)) (Nat.cast_nonneg d)]
-    rw [hquad]
-    exact lt_abs.mpr (.inr (by linarith))
-  refine (ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono_ae hsub)).trans
-    (hbound.trans ?_)
-  have hCp : 0 < (C : ℝ) := by positivity
-  have hmin : ε ^ 2 * d / (C : ℝ) ^ 2 ≤
-      min (ε ^ 2 / ((C : ℝ) ^ 2 * (d : ℝ)⁻¹)) (ε / ((C : ℝ) * (d : ℝ)⁻¹)) := by
-    refine le_min (by field_simp; rfl) ?_
-    apply (div_le_div_iff₀ (by positivity) (by positivity)).2
-    have hεsq : ε ^ 2 ≤ ε := by nlinarith
-    field_simp
-    nlinarith [mul_le_mul_of_nonneg_right hεsq (by positivity : 0 ≤ (C : ℝ)),
-      mul_nonneg hε (sub_nonneg.mpr hC)]
-  gcongr
-  convert mul_le_mul_of_nonpos_left hmin (by norm_num : -(1 / 3200 : ℝ) ≤ 0) using 1
-  simp only [C, NNReal.coe_max, NNReal.coe_one, div_eq_mul_inv, mul_inv_rev]
-  ring
+  have hbound := hindep.measureReal_abs_dotProduct_mulVec_sub_sum_diag_gt_le_of_ae_inv_bound
+    hX hB hBX hdpos hF hop hε hεle
+  have hsub := lower_tail_subset hvar U hdpos hd hε hεle
+  exact (ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono_ae hsub)).trans hbound
 
 /-- For a fixed subspace, the lower tail is exponentially small in its codimension.
 The coordinate second moments need only be bounded below by one. -/
-theorem measureReal_infDist_lt_one_sub_mul_sqrt_finrank_le
+theorem measureReal_infDist_lt_one_sub_mul_sqrt_finrank_orthogonal_le
     (hindep : iIndepFun X P) {K : ℝ≥0} (hX : ∀ i, HasSubgaussianMGF (X i) K P)
     (hvar : ∀ i, 1 ≤ ∫ ω, X i ω ^ 2 ∂P)
     (U : Submodule ℝ (EuclideanSpace ℝ ι)) {ε : ℝ} (hε : 0 ≤ ε) :

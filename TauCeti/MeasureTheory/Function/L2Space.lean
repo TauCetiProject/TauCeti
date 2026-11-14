@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.MeasureTheory.Integral.PiSystem
+public import TauCeti.MeasureTheory.Function.Lp.Basic
 import Mathlib.Analysis.Normed.Affine.MazurUlam
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Algebra.Order.Ring.PosPartSq
@@ -65,16 +66,13 @@ public section
 open Function MeasureTheory
 open scoped ComplexConjugate ENNReal InnerProductSpace
 
-namespace Submodule
-
-/-- A square-integrable random vector has integrable squared distance to every submodule. -/
-theorem integrable_infDist_sq {Ω R E : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    [Semiring R] [NormedAddCommGroup E] [Module R E] (U : Submodule R E) {Y : Ω → E}
-    (hY : MemLp Y 2 P) : Integrable (fun ω ↦ Metric.infDist (Y ω) (U : Set E) ^ 2) P :=
-  ((Metric.lipschitz_infDist_pt (U : Set E)).comp_memLp
-    (Metric.infDist_zero_of_mem U.zero_mem) hY).integrable_sq
-
-end Submodule
+/-- A square-integrable function has integrable squared distance to a set whose closure
+contains zero. -/
+theorem MeasureTheory.MemLp.integrable_infDist_sq {Ω E : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} [NormedAddCommGroup E] {Y : Ω → E}
+    (hY : MemLp Y 2 P) {s : Set E} (hs : (0 : E) ∈ closure s) :
+    Integrable (fun ω ↦ Metric.infDist (Y ω) s ^ 2) P :=
+  (hY.infDist_of_mem_closure hs).integrable_sq
 
 namespace MeasureTheory
 
