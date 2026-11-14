@@ -47,6 +47,8 @@ the union of the conjugates of a maximal torus; for `SU(2)` the same statement i
 ## Main results
 
 * `TauCeti.mem_unitaryTorus_iff`: the diagonal torus consists of the diagonal unitary matrices.
+* `TauCeti.diagonal_exp_mul_I_mem_unitaryGroup`: the diagonal matrix
+  `diag (e^{i ψ₁}, …, e^{i ψₙ})` is unitary.
 * `TauCeti.comap_toUnits_upperTriangularGroup_eq_unitaryTorus`: the diagonal torus consists of the
   upper triangular unitary matrices.
 * `TauCeti.centralizer_unitaryTorus`: the diagonal torus is its own centralizer.
@@ -114,6 +116,12 @@ theorem continuous_unitaryTorusHom : Continuous (unitaryTorusHom n) := by
   apply continuous_induced_rng.2
   simp only [Function.comp_def, coe_unitaryTorusHom]
   fun_prop
+
+/-- The diagonal matrix `diag (e^{i ψ₁}, …, e^{i ψₙ})` is unitary: it is the image under
+`TauCeti.unitaryTorusHom n` of the points `e^{i ψⱼ}` of the circle. -/
+theorem diagonal_exp_mul_I_mem_unitaryGroup (ψ : n → ℝ) :
+    diagonal (fun j => Complex.exp (ψ j * Complex.I)) ∈ unitaryGroup n ℂ := by
+  simpa using (unitaryTorusHom n fun j => Circle.exp (ψ j)).2
 
 variable (n) in
 /-- The **diagonal torus** of the unitary group `U(n)`: the subgroup of diagonal unitary matrices,

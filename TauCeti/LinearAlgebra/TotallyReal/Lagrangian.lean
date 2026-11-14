@@ -39,7 +39,8 @@ contraction of `M` need not close up.
 ## Main declarations
 
 * `Matrix.GeneralLinearGroup.realOrthonormalize`: the frame `M Re (Mᴴ M) ^ (-1/2)`, with the same
-  real span as `M`, columns orthonormal for `Re ⟪·, ·⟫`, and continuous in `M`.
+  real span as `M`, columns orthonormal for `Re ⟪·, ·⟫`, and continuous in `M`. It is unitary when
+  `Mᴴ M` is real (`Matrix.GeneralLinearGroup.realOrthonormalize_mem_unitaryGroup`).
 * `TauCeti.exists_realImage_homotopy_unitaryGroup`: a closed frame deforms through closed frames
   to a path of unitary matrices.
 
@@ -121,6 +122,29 @@ theorem map_re_conjTranspose_mul_self_realOrthonormalize (M : GL n ℂ) :
     ((realOrthonormalize M : Matrix n n ℂ)ᴴ * realOrthonormalize M).map Complex.re = 1 := by
   rw [coe_realOrthonormalize, map_re_conjTranspose_mul_self_mul_map_ofReal,
     gramNormalizer_mul_realGram_mul]
+
+/-- If the Gram matrix `Mᴴ M` of `M` is real, the real orthonormalization of `M` is unitary. -/
+theorem realOrthonormalize_mem_unitaryGroup {M : GL n ℂ} {K : Matrix n n ℝ}
+    (hK : (M : Matrix n n ℂ)ᴴ * M = K.map ((↑) : ℝ → ℂ)) :
+    (realOrthonormalize M : Matrix n n ℂ) ∈ unitaryGroup n ℂ := by
+  -- With `N = Re (Mᴴ M) ^ (-1/2)`, the Gram matrix of `M N` is the real matrix `Nᵀ K N`.
+  have hG : (realOrthonormalize M : Matrix n n ℂ)ᴴ * realOrthonormalize M =
+      Complex.ofRealHom.mapMatrix ((gramNormalizer M)ᵀ * K * gramNormalizer M) := by
+    have hU : (realOrthonormalize M : Matrix n n ℂ) =
+        M * (gramNormalizer M).map ((↑) : ℝ → ℂ) :=
+      coe_realOrthonormalize M
+    rw [map_mul, map_mul, hU, conjTranspose_mul,
+      ← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
+      conjTranspose_eq_transpose_of_trivial, Matrix.mul_assoc,
+      ← Matrix.mul_assoc (M : Matrix n n ℂ)ᴴ, hK, ← Matrix.mul_assoc]
+    -- `Complex.ofRealHom.mapMatrix` is the entrywise coercion `(↑)`.
+    have hc : (⇑Complex.ofRealHom : ℝ → ℂ) = (↑) := funext Complex.ofRealHom_eq_coe
+    simp only [RingHom.mapMatrix_apply, hc]
+  -- Its real part is `1`, so it is `1`.
+  have h1 := map_re_conjTranspose_mul_self_realOrthonormalize M
+  rw [hG, RingHom.mapMatrix_apply, Matrix.map_map, Function.comp_def] at h1
+  simp only [Complex.ofRealHom_eq_coe, Complex.ofReal_re, Matrix.map_id'] at h1
+  rw [mem_unitaryGroup_iff', star_eq_conjTranspose, hG, h1, map_one]
 
 /-- The real orthonormalization of a continuous family of frames is continuous. -/
 theorem continuous_realOrthonormalize {X : Type*} [TopologicalSpace X] {M : X → GL n ℂ}
