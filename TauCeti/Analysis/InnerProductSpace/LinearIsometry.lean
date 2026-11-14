@@ -36,10 +36,10 @@ the product of its orthogonal hyperplane and the scalar line. The `L²` product 
 isometric; the ordinary product version is a continuous linear equivalence used for line
 sections and product integration.
 
-Along a smooth family of linear isometries of a finite-dimensional inner product space, the
-inverses again depend smoothly on the parameter: expanding in an orthonormal basis `bᵢ`,
-`(R p)⁻¹ x = ∑ i, ⟪R p bᵢ, x⟫ bᵢ`. So a smooth path of linear isometries moves the unit sphere by
-diffeomorphisms.
+Along a continuous (respectively smooth) family of linear isometries of a finite-dimensional inner
+product space, the inverses again depend continuously (respectively smoothly) on the parameter:
+expanding in an orthonormal basis `bᵢ`, `(R p)⁻¹ x = ∑ i, ⟪R p bᵢ, x⟫ bᵢ`. So a smooth path of
+linear isometries moves the unit sphere by diffeomorphisms.
 
 ## Main definitions
 
@@ -61,8 +61,10 @@ diffeomorphisms.
   its orthogonal complement are equal, without a unit-norm assumption.
 * `LinearIsometryEquiv.eq_extendOrthogonalComplement_iff`: a linear isometry equals the
   extension if and only if it agrees with it on the unit vector and its orthogonal complement.
-* `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
-  isometries of a finite-dimensional space form a smooth family.
+* `TauCeti.continuous_linearIsometryEquiv_symm_apply`,
+  `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a continuous (respectively
+  smooth) family of linear isometries of a finite-dimensional space form a continuous
+  (respectively smooth) family.
 -/
 
 public section
@@ -296,7 +298,25 @@ theorem inner_add_smul (e : E) (he : ‖e‖ = 1) (y : (ℝ ∙ e)ᗮ) (t : ℝ)
 
 end TauCeti
 
-/-! ### Smooth paths of linear isometries -/
+/-! ### Continuous and smooth paths of linear isometries -/
+
+open scoped InnerProductSpace in
+/-- Along a family of linear isometries of a finite-dimensional inner product space that depends
+continuously on the parameter at each vector, the inverses depend jointly continuously on the
+parameter and the vector: expanding in an orthonormal basis `bᵢ`, `(R p)⁻¹ x = ∑ i, ⟪R p bᵢ, x⟫ bᵢ`.
+-/
+theorem TauCeti.continuous_linearIsometryEquiv_symm_apply {𝕜 F P : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [TopologicalSpace P]
+    {R : P → F ≃ₗᵢ[𝕜] F} (hR : ∀ v, Continuous fun p ↦ R p v) :
+    Continuous fun p : P × F ↦ (R p.1).symm p.2 := by
+  let b := stdOrthonormalBasis 𝕜 F
+  have hexp : (fun p : P × F ↦ (R p.1).symm p.2) = fun p ↦ ∑ i, ⟪R p.1 (b i), p.2⟫_𝕜 • b i := by
+    funext p
+    conv_lhs => rw [← b.sum_repr' ((R p.1).symm p.2)]
+    simp only [LinearIsometryEquiv.inner_map_eq_flip]
+  rw [hexp]
+  exact continuous_finsetSum _ fun i _ ↦
+    (((hR (b i)).comp continuous_fst).inner continuous_snd).smul continuous_const
 
 open scoped InnerProductSpace in
 /-- Along a smooth family of linear isometries of a finite-dimensional inner product space, the
