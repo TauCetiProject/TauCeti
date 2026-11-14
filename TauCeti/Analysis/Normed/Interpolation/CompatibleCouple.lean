@@ -41,8 +41,9 @@ We realise both spaces without choosing a norm on `V`:
 * `TauCeti.CompatibleCouple.norm_sumSpace_lt_iff`, `TauCeti.CompatibleCouple.le_norm_sumSpace_iff`:
   the infimum description of the sum norm.
 * `TauCeti.CompatibleCouple.refl`: the couple `(X, X)`, for which both norms are the norm of `X`.
-* `TauCeti.CompatibleCouple.swap`, `TauCeti.CompatibleCouple.sumSwap`: reversal of the endpoints
-  and the canonical isometric identification of their sum spaces.
+* `TauCeti.CompatibleCouple.swap`, `TauCeti.CompatibleCouple.interSwap`,
+  `TauCeti.CompatibleCouple.sumSwap`: reversal of the endpoints and the canonical isometric
+  identifications of their intersection and sum spaces.
 
 ## References
 
@@ -466,6 +467,29 @@ theorem swap_embed₁ : C.swap.embed₁ = C.embed₀ := (rfl)
 
 @[simp]
 theorem swap_swap : C.swap.swap = C := (rfl)
+
+/-- Exchanging the endpoints preserves the intersection norm and swaps the two coordinates. -/
+def interSwap : C.inter ≃ₗᵢ[𝕜] C.swap.inter where
+  toFun x := ⟨(x.1.2, x.1.1), C.swap.mem_inter_iff.2 (C.mem_inter_iff.1 x.2).symm⟩
+  invFun x := ⟨(x.1.2, x.1.1), C.mem_inter_iff.2 (C.swap.mem_inter_iff.1 x.2).symm⟩
+  left_inv _ := by apply Subtype.ext; ext <;> rfl
+  right_inv _ := by apply Subtype.ext; ext <;> rfl
+  map_add' _ _ := by apply Subtype.ext; ext <;> rfl
+  map_smul' _ _ := by apply Subtype.ext; ext <;> rfl
+  norm_map' x := by rw [C.swap.norm_inter, C.norm_inter]; exact max_comm _ _
+
+@[simp]
+theorem coe_interSwap_fst (x : C.inter) : (C.interSwap x : X₁ × X₀).1 = (x : X₀ × X₁).2 := (rfl)
+
+@[simp]
+theorem coe_interSwap_snd (x : C.inter) : (C.interSwap x : X₁ × X₀).2 = (x : X₀ × X₁).1 := (rfl)
+
+theorem interFst_interSwap (x : C.inter) : C.swap.interFst (C.interSwap x) = C.interSnd x := (rfl)
+
+theorem interSnd_interSwap (x : C.inter) : C.swap.interSnd (C.interSwap x) = C.interFst x := (rfl)
+
+@[simp]
+theorem interSwap_symm : C.interSwap.symm = C.swap.interSwap := by ext x <;> rfl
 
 section SwapSum
 

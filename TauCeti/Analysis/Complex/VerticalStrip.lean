@@ -68,4 +68,15 @@ theorem closure_verticalStrip_subset (a b : ℝ) :
   rw [verticalStrip, closure_preimage_re]
   exact preimage_mono (closure_minimal Ioo_subset_Icc_self isClosed_Icc)
 
+/-- The closure of a nondegenerate open vertical strip is the corresponding closed strip. -/
+theorem closure_verticalStrip (hab : a ≠ b) :
+    closure (verticalStrip a b) = verticalClosedStrip a b := by
+  rw [verticalStrip, closure_preimage_re, closure_Ioo hab]; rfl
+
+/-- The closure of the open unit vertical strip `verticalStrip 0 1` is `verticalClosedStrip 0 1`. -/
+@[simp]
+theorem closure_verticalStrip_zero_one :
+    closure (verticalStrip 0 1) = verticalClosedStrip 0 1 :=
+  closure_verticalStrip zero_ne_one
+
 end TauCeti.Complex.HadamardThreeLines

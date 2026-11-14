@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Analysis.Normed.Operator.Banach
 public import TauCeti.LinearAlgebra.Dual.Annihilator
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.Normed.Module.Annihilator
 import TauCeti.Analysis.Normed.Module.Dual.Basic
 
 /-!
@@ -45,6 +46,8 @@ into `ℓ²` has dense proper range, while its adjoint is surjective.
 ## Main declarations
 
 * `ContinuousLinearMap.ker_precomp_eq_orthogonalBilin_range`: `ker T* = (range T)ᗮ`.
+* `ContinuousLinearMap.injective_precomp_iff_denseRange`: `T*` is injective iff `T` has dense
+  range.
 * `ContinuousLinearMap.ker_eq_orthogonalBilin_range_precomp`: `ker T = (range T*)_⊥`.
 * `ContinuousLinearMap.range_precomp_eq_orthogonalBilin_ker`: if `range T` is closed, then
   `range T* = (ker T)ᗮ`.
@@ -101,6 +104,12 @@ theorem ker_eq_orthogonalBilin_range_precomp [SeparatingDual 𝕜 F] (T : E →L
     topDualPairing_apply, forall_exists_index, forall_apply_eq_imp_iff,
     precomp_apply, comp_apply, coe_coe]
   exact SeparatingDual.eq_zero_iff_forall_dual_eq_zero (T x)
+
+/-- If `T` has dense range, then its transpose `precomp 𝕜 T` on strong duals is injective. -/
+theorem injective_precomp_of_denseRange {T : E →L[𝕜] F} (hT : DenseRange T) :
+    Injective (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :=
+  fun f g hfg ↦ DFunLike.coe_injective <|
+    hT.equalizer f.continuous g.continuous (funext fun x ↦ DFunLike.congr_fun hfg x)
 
 end Algebraic
 
@@ -210,8 +219,7 @@ theorem isClosed_range_of_isClosed_range_precomp [CompleteSpace E]
     rwa [← Set.range_comp, hT₀, ← coe_coe, ← LinearMap.coe_range]
   -- The adjoint of `T₀` is injective, and by Hahn–Banach it has the same range as that of `T`.
   let A : StrongDual 𝕜 Z →L[𝕜] StrongDual 𝕜 E := precomp 𝕜 T₀
-  have hinj : Injective A := fun ψ₁ ψ₂ hψ ↦ DFunLike.coe_injective <|
-    hdense.equalizer ψ₁.continuous ψ₂.continuous (funext fun x ↦ DFunLike.congr_fun hψ x)
+  have hinj : Injective A := injective_precomp_of_denseRange hdense
   have hrange : Set.range A =
       ((precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).range : Set (StrongDual 𝕜 E)) := by
     ext φ
@@ -231,6 +239,16 @@ theorem isClosed_range_of_isClosed_range_precomp [CompleteSpace E]
     exact ⟨x, by simpa [T₀] using congrArg Subtype.val hx⟩
   rw [hZ]
   exact T.range.isClosed_topologicalClosure
+
+/-- Over `ℝ` or `ℂ`, the transpose `precomp 𝕜 T` on strong duals is injective if and only if `T`
+has dense range. -/
+@[simp]
+theorem injective_precomp_iff_denseRange [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (T : E →L[𝕜] F) :
+    Injective (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) ↔ DenseRange T := by
+  rw [← coe_coe, ← LinearMap.ker_eq_bot, ker_precomp_eq_orthogonalBilin_range,
+    ← Submodule.dense_iff_orthogonalBilin_topDualPairing_flip_eq_bot, LinearMap.coe_range, coe_coe]
+  rfl
 
 end RCLike
 
