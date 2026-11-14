@@ -49,10 +49,12 @@ comparisons of quantum divided-power relations at opposite parameters.
   `[n choose k]_{-q} = (-1)^{k(n-k)} [n choose k]_q`.
 * `TauCeti.quantumBinomial_one_right`: `[n choose 1]_q = [n]_q` when `q - q⁻¹ ≠ 0`.
 * `TauCeti.quantumBinomial_one`: the classical specialization `[n choose k]_1 = n.choose k`.
-* `TauCeti.add_pow_of_mul_eq_smul_mul`: the `q`-binomial theorem for `y x = q² x y` with
-  `q ≠ 0`.
+* `TauCeti.mul_pow_of_mul_eq_smul_mul` and `TauCeti.add_pow_of_mul_eq_smul_mul`: straightening
+  `(x y)^n` for `y x = c • (x y)`, and the `q`-binomial theorem for `y x = q² x y` with `q ≠ 0`.
 * `TauCeti.coeff_prod_range_one_add_C_mul_X`: Cauchy's binomial theorem in coefficient form, the
-  coefficient of `X ^ k` in `∏_{j < n} (1 + q^(2j) X)` is `q^(k(n-1)) [n choose k]_q`.
+  coefficient of `X ^ k` in `∏_{j < n} (1 + q^(2j) X)` is `q^(k(n-1)) [n choose k]_q`, and
+  `TauCeti.sum_range_neg_one_pow_mul_zpow_mul_quantumBinomial`, its vanishing evaluation at
+  `X = -1` for `n ≠ 0`.
 
 ## References
 
@@ -367,5 +369,52 @@ theorem add_pow_of_mul_eq_smul_mul {A : Type*} [Semiring A] [Algebra K A] {q : K
       intro k hk
       rw [Nat.add_sub_add_right, ← add_smul,
         ← pow_mul_quantumBinomial_add_pow_mul_quantumBinomial hq (Nat.lt_succ_iff.mp hk), add_comm]
+
+open Polynomial in
+/-- The alternating `q`-binomial identity
+`∑_{k=0}^n (-1)^k q^(k(n-1)) [n choose k]_q = 0` for `n ≠ 0` and `q ≠ 0`, obtained by evaluating
+Cauchy's product `∏_{j < n} (1 + q^(2j) X)` at `X = -1`, where the `j = 0` factor `1 + X`
+vanishes. -/
+theorem sum_range_neg_one_pow_mul_zpow_mul_quantumBinomial {q : K} (hq : q ≠ 0) {n : ℕ}
+    (hn : n ≠ 0) :
+    ∑ k ∈ range (n + 1), (-1 : K) ^ k * q ^ ((k : ℤ) * (n - 1)) * quantumBinomial q n k = 0 := by
+  set P : Polynomial K := ∏ j ∈ range n, (1 + C ((q ^ 2) ^ j) * X)
+  have hdeg : P.natDegree < n + 1 := Nat.lt_succ_of_le <|
+    natDegree_le_iff_coeff_eq_zero.mpr fun k hk ↦ by
+      rw [coeff_prod_range_one_add_C_mul_X hq, quantumBinomial_eq_zero_of_lt q hk, mul_zero]
+  have heval : P.eval (-1) = 0 := by
+    rw [eval_prod]
+    refine prod_eq_zero (mem_range.mpr (Nat.pos_of_ne_zero hn)) ?_
+    simp
+  rw [eval_eq_sum_range' hdeg] at heval
+  rw [← heval]
+  refine sum_congr rfl fun k _ ↦ ?_
+  rw [coeff_prod_range_one_add_C_mul_X hq]
+  ring
+
+/-- In an algebra where `y x = c • (x y)`, powers of `x y` straighten as
+`(x y)^n = c^(n(n-1)/2) • (x^n y^n)`. -/
+theorem mul_pow_of_mul_eq_smul_mul {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    {c : R} {x y : A} (h : y * x = c • (x * y)) (n : ℕ) :
+    (x * y) ^ n = c ^ (n * (n - 1) / 2) • (x ^ n * y ^ n) := by
+  have hpow (m : ℕ) : y ^ m * x = c ^ m • (x * y ^ m) := by
+    have hxy : SemiconjBy x (c • y) y := by rw [SemiconjBy, mul_smul_comm, h]
+    rw [← (hxy.pow_right m).eq, smul_pow, mul_smul_comm]
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hexp : (n + 1) * n / 2 = n * (n - 1) / 2 + n := by
+      rcases n with _ | k
+      · rfl
+      · have : (k + 1 + 1) * (k + 1) = (k + 1) * k + (k + 1) * 2 := by ring
+        rw [this, Nat.add_sub_cancel, Nat.add_mul_div_right _ _ zero_lt_two]
+    rw [pow_succ, ih, Nat.add_sub_cancel, hexp, pow_add]
+    calc
+      c ^ (n * (n - 1) / 2) • (x ^ n * y ^ n) * (x * y)
+        = c ^ (n * (n - 1) / 2) • (x ^ n * (y ^ n * x) * y) := by
+          simp only [smul_mul_assoc, mul_assoc]
+      _ = (c ^ (n * (n - 1) / 2) * c ^ n) • (x ^ (n + 1) * y ^ (n + 1)) := by
+          rw [hpow, mul_smul_comm, smul_mul_assoc, smul_smul]
+          simp only [pow_succ, mul_assoc]
 
 end TauCeti
