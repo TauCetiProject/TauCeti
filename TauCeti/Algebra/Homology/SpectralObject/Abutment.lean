@@ -150,7 +150,7 @@ theorem isZero_abutmentFiltration_of_isZero_cokernel {a q n : ℤ}
   · clear h
     induction q, hqa using Int.leInductionDown with
     | base => exact ha
-    | pred j hj ih =>
+    | pred j _ ih =>
       have hj' : IsZero (X.abutmentFiltration (j - 1 + 1) n) := (sub_add_cancel j 1).symm ▸ ih
       exact IsZero.of_mono (X.abutmentFiltrationMap (j - 1) n) hj'
   suffices ∀ j, a ≤ j → j ≤ q → IsZero (X.abutmentFiltration j n) from this q haq.le le_rfl
@@ -175,7 +175,7 @@ theorem isIso_abutmentFiltrationι_of_isZero_cokernel {q b n : ℤ}
   · clear h
     induction q, hbq using Int.leInduction with
     | base => exact hb
-    | succ j hj ih =>
+    | succ j _ ih =>
       have : Epi (X.abutmentFiltrationι (j + 1) n) :=
         epi_of_epi_fac (X.abutmentFiltrationMap_ι j n)
       exact isIso_of_mono_of_epi _
