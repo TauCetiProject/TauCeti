@@ -40,6 +40,8 @@ compatibility with composition characterizes the transport
 * `TauCeti.localHomologyMap`: for a continuous map `j : M → N` with `j ⁻¹' T ⊆ S`, the map
   `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`. It is functorial, is the restriction map for `j`
   the identity, and is compatible with restriction on both sides.
+* `TauCeti.localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom`: the
+  local homology isomorphism of a chart is the map induced by the chart on its source.
 * `TauCeti.isZero_localHomology_empty`: `Hₖ(M, M) = 0`.
 * `TauCeti.isIso_localHomologyRestriction_symm_image`: the restriction from a compact set in a
   chart, star-convex about one of its points, to that point is an isomorphism.
@@ -244,6 +246,55 @@ theorem localHomologyMap_eq_of_homotopy {j₀ j₁ : C(M, N)} (F : j₀.Homotopy
     fun τ y hy ↦ hF τ y hy).congr_singularHomologyMap R k
 
 end Map
+
+section ChartIso
+
+variable {M : Type w} [TopologicalSpace M] [T1Space M] {E : Type w} [TopologicalSpace E]
+  [T1Space E] (φ : OpenPartialHomeomorph M E)
+
+/-- **The chart isomorphism through the source.** The local homology isomorphism of a chart `φ`
+at `a` (`TauCeti.singularHomologyComplSingletonIsoOfChart`) is the inverse of the excision
+isomorphism of the source of `φ`, followed by the map induced by any continuous map `σ` on the
+source agreeing with `φ`. -/
+theorem localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom
+    {a : M} (ha : a ∈ φ.source) (σ : C(φ.source, E)) (hσ : ∀ z, σ z = φ z)
+    (h : σ ⁻¹' {φ a} ⊆ ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (k : ℕ) :
+    localHomologyMap R (ContinuousMap.subtypeVal φ.source)
+        (S := ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (T := {a}) subset_rfl k ≫
+          (singularHomologyComplSingletonIsoOfChart R φ ha k).hom =
+      localHomologyMap R σ h k := by
+  obtain rfl : σ = ⟨φ.source.domRestrict φ, φ.continuousOn.domRestrict⟩ := ContinuousMap.ext hσ
+  have h₁ : localHomologyMap R (ContinuousMap.subtypeVal φ.source)
+      (S := ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (T := {a}) subset_rfl k =
+        TopPair.singularHomologyMap
+        (TopPair.excisionMap (X := TopCat.of M) φ.source {a}ᶜ) R k := by
+    -- The pairs agree only after unfolding the preimages of complements.
+    erw [localHomologyMap_def]
+    congr 1
+    apply TopPair.hom_ext_of_fst
+    ext z
+    erw [TopPair.excisionMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
+    rfl
+  have h₂ : localHomologyMap R ⟨φ.source.domRestrict φ, φ.continuousOn.domRestrict⟩ h k =
+      TopPair.singularHomologyMap ((TopPair.ofSubsetIso (X := TopCat.of φ.source)
+          (Y := TopCat.of φ.target) φ.toHomeomorphSourceTarget
+          (B := Subtype.val ⁻¹' {a}ᶜ) (B' := Subtype.val ⁻¹' {φ a}ᶜ)
+          fun z ↦ (φ.injOn.eq_iff z.2 ha).not.symm).hom ≫
+        TopPair.excisionMap (X := TopCat.of E) φ.target {φ a}ᶜ) R k := by
+    -- The pairs agree only after unfolding the preimages of complements.
+    erw [localHomologyMap_def]
+    congr 1
+    apply TopPair.hom_ext_of_fst
+    ext z
+    rw [TopPair.Hom.fst_comp]
+    erw [ConcreteCategory.comp_apply, TopPair.excisionMap_fst_apply, TopPair.ofSubsetIso_hom,
+      TopPair.ofSubsetMap_fst_apply,
+      TopPair.ofSubsetMap_fst_apply]
+    rfl
+  rw [h₁, h₂, TopPair.singularHomologyMap_comp]
+  exact singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom R φ ha k
+
+end ChartIso
 
 section Chart
 

@@ -229,7 +229,7 @@ private def dualClass [FiniteDimensional ℝ F] {d : ℕ} (hd : finrank ℝ F = 
       (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) d := by
   subst hd
   exact o.cohomologyClass (OpenPartialHomeomorph.refl F)
-    (by rw [OpenPartialHomeomorph.refl_source]; exact Set.mem_univ _)
+    (OpenPartialHomeomorph.mem_refl_source _)
 
 private theorem eq_dualClass_iff [FiniteDimensional ℝ F] {d : ℕ} (hd : finrank ℝ F = d)
     (o : LocalOrientation F 0 d)

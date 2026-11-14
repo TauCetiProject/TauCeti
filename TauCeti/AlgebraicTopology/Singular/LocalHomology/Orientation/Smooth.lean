@@ -77,6 +77,8 @@ noncomputable section
 
 open CategoryTheory Limits Metric Module Set Topology
 open scoped Manifold
+open OpenPartialHomeomorph (mem_refl_source sourceRestrict sourceRestrict_apply
+  sourceRestrict_preimage)
 
 universe w v u
 
@@ -86,11 +88,6 @@ section Model
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 variable {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-omit [NormedSpace ℝ E] in
-private theorem mem_refl_source (p : E) : p ∈ (OpenPartialHomeomorph.refl E).source := by
-  rw [OpenPartialHomeomorph.refl_source]
-  exact mem_univ p
 
 /-- Radial projection about a point `p` of `K`, on the complement of `K`. -/
 private def complRadial {K : Set E} {p : E} (hp : p ∈ K) : C((Kᶜ : Set E), sphere (0 : E) 1) :=
@@ -157,17 +154,8 @@ end Model
 
 section ChartPullback
 
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 variable {M : Type w} [TopologicalSpace M] [T1Space M]
   {E : Type w} [TopologicalSpace E] [T1Space E] (φ : OpenPartialHomeomorph M E)
-
-/-- The restriction of a chart to its source, as a continuous map. -/
-private def sourceRestrict : C(φ.source, E) :=
-  ⟨φ.source.domRestrict φ, φ.continuousOn.domRestrict⟩
-
-omit [T1Space M] [T1Space E] in
-private theorem sourceRestrict_apply (z : φ.source) : sourceRestrict φ z = φ z :=
-  (rfl)
 
 omit [T1Space M] [T1Space E] in
 /-- The source of `φ` meets the preimage of a subset `K` of its target in the preimage of
@@ -176,50 +164,6 @@ private theorem sourceRestrict_preimage_eq {K : Set E} (hKφ : K ⊆ φ.target) 
     sourceRestrict φ ⁻¹' K = ContinuousMap.subtypeVal φ.source ⁻¹' (φ.symm '' K) := by
   ext z
   simp [φ.symm_image_eq_source_inter_preimage hKφ, sourceRestrict_apply, z.2]
-
-omit [T1Space M] [T1Space E] in
-private theorem sourceRestrict_preimage {a : M} (ha : a ∈ φ.source) :
-    sourceRestrict φ ⁻¹' {φ a} ⊆ ContinuousMap.subtypeVal φ.source ⁻¹' {a} :=
-  fun x hx ↦ φ.injOn x.2 ha hx
-
-/-- **The chart isomorphism through the source.** The local homology isomorphism of a chart `φ`
-at `a` is the inverse of the excision isomorphism of the source of `φ`, followed by the map
-induced by `φ` on the source. -/
-private theorem localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom
-    {a : M} (ha : a ∈ φ.source) (k : ℕ) :
-    localHomologyMap R (ContinuousMap.subtypeVal φ.source)
-        (S := ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (T := {a}) subset_rfl k ≫
-          (singularHomologyComplSingletonIsoOfChart R φ ha k).hom =
-      localHomologyMap R (sourceRestrict φ) (sourceRestrict_preimage φ ha) k := by
-  have h₁ : localHomologyMap R (ContinuousMap.subtypeVal φ.source)
-      (S := ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (T := {a}) subset_rfl k =
-        TopPair.singularHomologyMap
-        (TopPair.excisionMap (X := TopCat.of M) φ.source {a}ᶜ) R k := by
-    -- The pairs agree only after unfolding the preimages of complements.
-    erw [localHomologyMap_def]
-    congr 1
-    apply TopPair.hom_ext_of_fst
-    ext z
-    erw [TopPair.excisionMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
-    rfl
-  have h₂ : localHomologyMap R (sourceRestrict φ) (sourceRestrict_preimage φ ha) k =
-      TopPair.singularHomologyMap ((TopPair.ofSubsetIso (X := TopCat.of φ.source)
-          (Y := TopCat.of φ.target) φ.toHomeomorphSourceTarget
-          (B := Subtype.val ⁻¹' {a}ᶜ) (B' := Subtype.val ⁻¹' {φ a}ᶜ)
-          fun z ↦ (φ.injOn.eq_iff z.2 ha).not.symm).hom ≫
-        TopPair.excisionMap (X := TopCat.of E) φ.target {φ a}ᶜ) R k := by
-    -- The pairs agree only after unfolding the preimages of complements.
-    erw [localHomologyMap_def]
-    congr 1
-    apply TopPair.hom_ext_of_fst
-    ext z
-    rw [TopPair.Hom.fst_comp]
-    erw [ConcreteCategory.comp_apply, TopPair.excisionMap_fst_apply, TopPair.ofSubsetIso_hom,
-      TopPair.ofSubsetMap_fst_apply,
-      TopPair.ofSubsetMap_fst_apply]
-    rfl
-  rw [h₁, h₂, TopPair.singularHomologyMap_comp]
-  exact singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom R φ ha k
 
 end ChartPullback
 
@@ -287,7 +231,8 @@ private theorem localHomologyMap_subtypeVal_eq_localOrientationOfOrientedChart {
       localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) (sourceRestrict φ)
         (sourceRestrict_preimage φ ha) (n + 1) w := by
     rw [← ConcreteCategory.comp_apply,
-      localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom]
+      localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom _ φ ha
+        (sourceRestrict φ) (sourceRestrict_apply φ)]
   rw [OpenPartialHomeomorph.coe_localOrientationOfOrientedChart] at hw ⊢
   apply (ConcreteCategory.bijective_of_isIso e.hom).1
   rw [Iso.inv_hom_id_apply,
