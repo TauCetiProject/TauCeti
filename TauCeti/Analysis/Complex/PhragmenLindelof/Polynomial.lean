@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.PhragmenLindelof.VerticalStrip
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.SpecialFunctions.Complex.LogBounds
 
 /-!
 # Polynomial edge bounds in the Phragmén–Lindelöf strip principle
@@ -106,35 +107,6 @@ private theorem diffContOnCl_cexp_neg_stripLogWeight (a b p q : ℝ) :
     exact ⟨by linarith [hs.1], by linarith [hs.2]⟩
   exact ⟨hdiff.mono (subset_closure.trans hcl), hdiff.continuousOn.mono hcl⟩
 
-/-- Uniform comparison between `log ‖x + i t‖` and `log (1 + |t|)` for `x ∈ [2, M]`. -/
-private theorem abs_log_norm_ofReal_add_mul_I_sub_le {x M : ℝ} (hx2 : 2 ≤ x) (hxM : x ≤ M)
-    (t : ℝ) :
-    |Real.log ‖(x : ℂ) + t * I‖ - Real.log (1 + |t|)| ≤ Real.log M := by
-  set z : ℂ := (x : ℂ) + t * I
-  have hM2 : 2 ≤ M := hx2.trans hxM
-  have hM0 : 0 < M := by positivity
-  have ht1 : 0 < 1 + |t| := by positivity
-  have hx_le : x ≤ ‖z‖ := by
-    simpa [z, abs_of_pos (by positivity : 0 < x)] using abs_re_le_norm z
-  have ht_le : |t| ≤ ‖z‖ := by simpa [z] using abs_im_le_norm z
-  have hhalf : (1 + |t|) / 2 ≤ ‖z‖ := by
-    rcases le_total |t| 2 with _ | _ <;> linarith
-  have hlo : (1 + |t|) / M ≤ ‖z‖ :=
-    (div_le_div_of_nonneg_left ht1.le two_pos hM2).trans hhalf
-  have hhi : ‖z‖ ≤ M * (1 + |t|) := by
-    have hsum : ‖z‖ ≤ x + |t| := by
-      simpa [z, abs_of_pos (by positivity : 0 < x)] using norm_le_abs_re_add_abs_im z
-    nlinarith [abs_nonneg t]
-  have hz0 : 0 < ‖z‖ := (div_pos ht1 hM0).trans_le hlo
-  rw [abs_le]
-  refine ⟨?_, ?_⟩
-  · have h := Real.log_le_log (div_pos ht1 hM0) hlo
-    rw [Real.log_div ht1.ne' hM0.ne'] at h
-    linarith
-  · have h := Real.log_le_log hz0 hhi
-    rw [Real.log_mul hM0.ne' ht1.ne'] at h
-    linarith
-
 /-- Real derivative of `x ↦ Re (logPrim (x + i t)) - x * log (1 + |t|)` for `0 < x`. -/
 private theorem hasDerivAt_re_logPrim_sub {t x : ℝ} (hx : 0 < x) :
     HasDerivAt (fun y : ℝ ↦ (logPrim ((y : ℂ) + t * I)).re - y * Real.log (1 + |t|))
@@ -167,7 +139,9 @@ private theorem abs_re_logPrim_sub_le {M x₁ x₂ : ℝ} (hx₁ : x₁ ∈ Icc 
     (C := Real.log M)
     (fun y hy ↦ (hasDerivAt_re_logPrim_sub (by linarith [hy.1])).hasDerivWithinAt)
     (fun y hy ↦ by
-      simpa only [Real.norm_eq_abs] using abs_log_norm_ofReal_add_mul_I_sub_le hy.1 hy.2 t)
+      simpa only [Real.norm_eq_abs] using
+        (Complex.abs_log_norm_ofReal_add_mul_I_sub_le hy.1 t).trans
+          (Real.log_le_log (by linarith [hy.1]) hy.2))
     hx₂ hx₁
   have hsub : g x₁ - g x₂ =
       (logPrim ((x₁ : ℂ) + t * I)).re - (logPrim ((x₂ : ℂ) + t * I)).re -
@@ -243,8 +217,10 @@ private theorem abs_re_stripLogWeight_sub_le {a b : ℝ} (hab : a < b) (p q : �
     have hlogM : 0 ≤ Real.log M := Real.log_nonneg (by linarith [hab])
     exact (abs_re_logPrim_sub_le hx₁ hx₂ s.im).trans (by gcongr)
   have hE₂₃ : |E₂ + E₃| ≤ 2 * Real.log M := by
-    have h₂ := abs_log_norm_ofReal_add_mul_I_sub_le hx₁.1 hx₁.2 s.im
-    have h₃ := abs_log_norm_ofReal_add_mul_I_sub_le hx₂.1 hx₂.2 s.im
+    have h₂ := (Complex.abs_log_norm_ofReal_add_mul_I_sub_le hx₁.1 s.im).trans
+      (Real.log_le_log (by linarith [hx₁.1]) hx₁.2)
+    have h₃ := (Complex.abs_log_norm_ofReal_add_mul_I_sub_le hx₂.1 s.im).trans
+      (Real.log_le_log (by linarith [hx₂.1]) hx₂.2)
     linarith [abs_add_le E₂ E₃]
   have hpq : |q - p| / 2 + |p + q| / 2 ≤ max |p| |q| := by
     rcases abs_cases (q - p) with ⟨_, _⟩ | ⟨_, _⟩ <;>
@@ -438,41 +414,6 @@ private theorem norm_le_one_add_interp_of_lt
       dsimp [K₀]
       rw [← Real.rpow_add (by linarith : 0 < b - a + 2), two_mul]
 
-/-- Dilation `u ↦ d * u` (`d > 0`) transfers Mathlib's sharp Phragmén–Lindelöf strip growth from
-`(a, b)` to `(a / d, b / d)`. -/
-private theorem exists_isBigO_comp_ofReal_mul_exp_exp
-    {E : Type*} [NormedAddCommGroup E] {f : ℂ → E} {a b d : ℝ} (hab : a < b) (hd_pos : 0 < d)
-    (hg : ∃ c < Real.pi / (b - a), ∃ B,
-      f =O[comap (fun w : ℂ ↦ |w.im|) atTop ⊓ 𝓟 (re ⁻¹' Ioo a b)]
-        fun w ↦ Real.exp (B * Real.exp (c * |w.im|))) :
-    ∃ c' < Real.pi / (b / d - a / d), ∃ B',
-      (fun u ↦ f ((d : ℂ) * u))
-        =O[comap (fun u : ℂ ↦ |u.im|) atTop ⊓ 𝓟 (re ⁻¹' Ioo (a / d) (b / d))]
-        fun u ↦ Real.exp (B' * Real.exp (c' * |u.im|)) := by
-  obtain ⟨c, hc, B, hO⟩ := hg
-  have hmaps : MapsTo (fun u : ℂ ↦ (d : ℂ) * u)
-      (re ⁻¹' Ioo (a / d) (b / d)) (re ⁻¹' Ioo a b) := fun u hu ↦ by
-    simpa only [mem_preimage, mem_Ioo, mul_re, ofReal_re, ofReal_im, zero_mul, sub_zero,
-      lt_div_iff₀' hd_pos, div_lt_iff₀' hd_pos] using hu
-  have htend : Tendsto (fun u : ℂ ↦ (d : ℂ) * u)
-      (comap (fun u : ℂ ↦ |u.im|) atTop ⊓ 𝓟 (re ⁻¹' Ioo (a / d) (b / d)))
-      (comap (fun w : ℂ ↦ |w.im|) atTop ⊓ 𝓟 (re ⁻¹' Ioo a b)) := by
-    refine (tendsto_comap_iff.mpr ?_).inf hmaps.tendsto
-    have him : (fun w : ℂ ↦ |w.im|) ∘ (fun u : ℂ ↦ (d : ℂ) * u) = fun u : ℂ ↦ d * |u.im| := by
-      ext u; simp [abs_of_pos hd_pos]
-    rw [him]
-    exact tendsto_comap.const_mul_atTop' hd_pos
-  have hc_d : c * d < Real.pi / (b / d - a / d) := by
-    calc
-      c * d < (Real.pi / (b - a)) * d := mul_lt_mul_of_pos_right hc hd_pos
-      _ = Real.pi / (b / d - a / d) := by
-        have hba_ne : b - a ≠ 0 := sub_ne_zero.mpr hab.ne'
-        have hd_ne : d ≠ 0 := hd_pos.ne'
-        rw [← sub_div]
-        field_simp
-  refine ⟨c * d, hc_d, B, (hO.comp_tendsto htend).congr' EventuallyEq.rfl ?_⟩
-  exact Eventually.of_forall fun u ↦ by simp [abs_of_pos hd_pos, mul_assoc]
-
 /-! ### Pointwise polynomial-edge interpolation -/
 
 section NormedSpace
@@ -513,7 +454,7 @@ private theorem norm_le_mul_rpow_interp_of_lt {f : ℂ → E} {a b C₁ C₂ d p
     exact ⟨div_le_div_of_nonneg_right hz.1 hd_pos.le, div_le_div_of_nonneg_right hz.2 hd_pos.le⟩
   have hmain := norm_le_one_add_interp_of_lt (div_lt_div_of_pos_right hab hd_pos)
     (hd.comp ((differentiable_id.const_mul (d : ℂ)).diffContOnCl) hmaps)
-    (exists_isBigO_comp_ofReal_mul_exp_exp hab hd_pos hg) (hedge ha) (hedge hb) hu_cc
+    (exists_isBigO_comp_ofReal_mul_exp_exp hd_pos hg) (hedge ha) (hedge hb) hu_cc
   dsimp only [Function.comp_def] at hmain
   have hdu : (d : ℂ) * u = z := mul_div_cancel₀ z (Complex.ofReal_ne_zero.mpr hd_pos.ne')
   have hθ : (u.re - a / d) / (b / d - a / d) = (z.re - a) / (b - a) := by
@@ -596,55 +537,6 @@ theorem norm_le_mul_rpow_interp_of_isBigO_exp_rpow {f : ℂ → E} {a b C₁ C�
 
 /-! ### Asymptotic vertical-line bounds along `cocompact ℝ` -/
 
-/-- On a closed boundary or interior vertical line `Re w = σ` of a nondegenerate strip `a < b`, an
-asymptotic `O(|t| ^ p)` bound along `cocompact ℝ` combines with continuity from `DiffContOnCl` to
-give a global bound in `(d + |Im w|) ^ p`. -/
-private theorem exists_vertical_line_bound_of_isBigO_cocompact {f : ℂ → E} {a b σ d p : ℝ}
-    (hab : a < b) (hd_pos : 0 < d) (hd : DiffContOnCl ℂ f (re ⁻¹' Ioo a b))
-    (hσ : σ ∈ Icc a b)
-    (hO : (fun t : ℝ ↦ f (σ + t * I)) =O[cocompact ℝ] fun t : ℝ ↦ |t| ^ p) :
-    ∃ C : ℝ, ∀ w : ℂ, w.re = σ → ‖f w‖ ≤ C * (d + |w.im|) ^ p := by
-  have hcont_line : Continuous fun t : ℝ ↦ f (σ + t * I) := by
-    have hcl : re ⁻¹' Icc a b ⊆ closure (re ⁻¹' Ioo a b) := by
-      rw [closure_preimage_re, closure_Ioo hab.ne]
-    exact (hd.continuousOn.mono hcl).comp_continuous (by fun_prop) fun t ↦ by simpa using hσ
-  let q : ℝ → ℝ := fun t ↦ ‖f (σ + t * I)‖ / (d + |t|) ^ p
-  have hcont_q : Continuous q := by
-    refine hcont_line.norm.div ?_ fun t ↦
-      (Real.rpow_pos_of_pos (add_pos_of_pos_of_nonneg hd_pos (abs_nonneg t)) p).ne'
-    exact (continuous_const.add continuous_abs).rpow_const fun t ↦
-      Or.inl (add_pos_of_pos_of_nonneg hd_pos (abs_nonneg t)).ne'
-  have hdom : (fun t : ℝ ↦ |t| ^ p) =O[cocompact ℝ] fun t : ℝ ↦ (d + |t|) ^ p := by
-    refine IsBigO.of_bound (max 1 ((2 : ℝ) ^ (-p))) ?_
-    filter_upwards [(tendsto_norm_cocompact_atTop (E := ℝ)).eventually_ge_atTop d] with t ht
-    rw [Real.norm_eq_abs] at ht
-    have ht_pos : 0 < |t| := hd_pos.trans_le ht
-    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos (Real.rpow_pos_of_pos ht_pos p),
-      abs_of_pos (Real.rpow_pos_of_pos (by positivity) p)]
-    rcases le_total 0 p with hp | hp
-    · calc
-        |t| ^ p ≤ 1 * (d + |t|) ^ p := by
-          rw [one_mul]
-          exact Real.rpow_le_rpow ht_pos.le (by linarith) hp
-        _ ≤ max 1 ((2 : ℝ) ^ (-p)) * (d + |t|) ^ p := by gcongr; exact le_max_left _ _
-    · have h2 : (2 * |t|) ^ p ≤ (d + |t|) ^ p :=
-        Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) hp
-      rw [Real.mul_rpow two_pos.le ht_pos.le] at h2
-      have hmul : |t| ^ p ≤ (2 : ℝ) ^ (-p) * (d + |t|) ^ p := by
-        calc
-          |t| ^ p = (2 : ℝ) ^ (-p) * ((2 : ℝ) ^ p * |t| ^ p) := by
-            rw [← mul_assoc, ← Real.rpow_add two_pos, neg_add_cancel, Real.rpow_zero, one_mul]
-          _ ≤ (2 : ℝ) ^ (-p) * (d + |t|) ^ p := by gcongr
-      exact hmul.trans (by gcongr; exact le_max_right _ _)
-  have hqO : q =O[cocompact ℝ] (1 : ℝ → ℝ) :=
-    (div_isBoundedUnder_of_isBigO (hO.norm_left.trans hdom)).isBigO_const one_ne_zero
-  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp (hcont_q.isBounded_range_iff_isBigO.mpr hqO)
-  refine ⟨C, fun w hw ↦ ?_⟩
-  have hw_eq : (σ : ℂ) + w.im * I = w := by apply Complex.ext <;> simp [hw]
-  have hle : q w.im ≤ C :=
-    (le_abs_self _).trans (by simpa [Real.norm_eq_abs] using hC _ (mem_range_self w.im))
-  simpa only [q, hw_eq] using (div_le_iff₀ (Real.rpow_pos_of_pos (by positivity) p)).mp hle
-
 /-- Shared upgrade from `cocompact ℝ` boundary-line bounds to an existential closed-strip bound
 given any pointwise polynomial-edge interpolation scheme for `f`. -/
 private theorem exists_norm_le_of_cocompact_of_interp {f : ℂ → E} {a b d p q : ℝ}
@@ -661,10 +553,12 @@ private theorem exists_norm_le_of_cocompact_of_interp {f : ℂ → E} {a b d p q
     ∃ C : ℝ, 0 < C ∧ ∀ z : ℂ, z.re ∈ Icc a b →
       ‖f z‖ ≤ C *
         (d + |z.im|) ^ ((1 - (z.re - a) / (b - a)) * p + (z.re - a) / (b - a) * q) := by
-  obtain ⟨C₁, hC₁⟩ := exists_vertical_line_bound_of_isBigO_cocompact hab hd_pos hd
-    (left_mem_Icc.mpr hab.le) ha
-  obtain ⟨C₂, hC₂⟩ := exists_vertical_line_bound_of_isBigO_cocompact hab hd_pos hd
-    (right_mem_Icc.mpr hab.le) hb
+  have hcl : ContinuousOn f (re ⁻¹' Icc a b) := by
+    simpa only [closure_preimage_re, closure_Ioo hab.ne] using hd.continuousOn
+  obtain ⟨C₁, hC₁⟩ := exists_norm_le_mul_rpow_of_isBigO_cocompact hd_pos
+    (hcl.comp_continuous (by fun_prop) fun t ↦ by simp [hab.le]) ha
+  obtain ⟨C₂, hC₂⟩ := exists_norm_le_mul_rpow_of_isBigO_cocompact hd_pos
+    (hcl.comp_continuous (by fun_prop) fun t ↦ by simp [hab.le]) hb
   let M : ℝ := max (max C₁ C₂) 1
   have hM0 : 0 < M := lt_of_lt_of_le one_pos (le_max_right _ _)
   have ha' : ∀ w : ℂ, w.re = a → ‖f w‖ ≤ M * (d + |w.im|) ^ p := fun w hw ↦

@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import TauCeti.Analysis.SpecificLimits.WeightedGeometric
 
 /-!
-# Taylor series bounds for `-log (1 - ·)` and `log (1 + ·)`
+# Taylor series and vertical-line bounds for the complex logarithm
 
 Mathlib's `Complex.hasSum_taylorSeries_neg_log'` expands `-log (1 - z)` as `∑' e, z ^ (e+1)/(e+1)`
 for a single `z` of modulus less than one.  This file first sums that over a family `r : ι → ℂ`: the
@@ -32,9 +32,13 @@ The file also gives an explicit truncation error for a single `z`: the `n`-th pa
 factor `1 - w / p` is nonzero.  These are the estimates used to compare an Euler factor
 `(1 - w / p)⁻¹` with the prime-power partial sums of its logarithm.
 
-Finally, Mathlib's `Complex.hasSum_taylorSeries_log` has a vanishing constant term; dropping it
-re-indexes the Taylor series of `log (1 + z)` from `0`, the form a power series without constant
-term takes.
+Mathlib's `Complex.hasSum_taylorSeries_log` has a vanishing constant term; dropping it re-indexes
+the Taylor series of `log (1 + z)` from `0`, the form a power series without constant term takes.
+
+Away from the branch cut, on any vertical line `Re z = x` with `x ≥ 2`, the real part
+`Real.log ‖x + t I‖` of `Complex.log (x + t I)` differs from `Real.log (1 + |t|)` by at most
+`Real.log x`, comparing holomorphic logarithmic strip weights with the real height scale
+`1 + |Im z|`.
 
 ## Main results
 
@@ -54,6 +58,8 @@ term takes.
   `‖z‖ < 1`.
 * `Complex.norm_neg_one_pow_div_add_one`: the coefficients of that series have norm
   `(n + 1)⁻¹`.
+* `Complex.abs_log_norm_ofReal_add_mul_I_sub_le`: for `2 ≤ x` and `t : ℝ`,
+  `|Real.log ‖(x : ℂ) + t * I‖ - Real.log (1 + |t|)| ≤ Real.log x`.
 -/
 
 public section
@@ -184,5 +190,34 @@ theorem one_sub_div_natCast_ne_zero {p : ℕ} (hp : 1 < p) {w : ℂ} (hw : ‖w�
   have h2 : (1 : ℝ) < p := mod_cast hp
   rw [norm_div, norm_natCast, div_eq_one_iff_eq (by positivity)] at h1
   linarith
+
+/-- For `x ≥ 2`, the real part `Real.log ‖(x : ℂ) + t * I‖` of `Complex.log (x + t * I)` differs
+from `Real.log (1 + |t|)` by at most `Real.log x`, with equality at `t = 0`. The integer threshold
+`2` is sharp, since the bound fails at `x = t = 1`. -/
+theorem abs_log_norm_ofReal_add_mul_I_sub_le {x : ℝ} (hx : 2 ≤ x) (t : ℝ) :
+    |Real.log ‖(x : ℂ) + t * I‖ - Real.log (1 + |t|)| ≤ Real.log x := by
+  set z : ℂ := (x : ℂ) + t * I
+  have hx0 : 0 < x := by positivity
+  have ht1 : 0 < 1 + |t| := by positivity
+  have hx_le : x ≤ ‖z‖ := by
+    simpa [z, abs_of_pos hx0] using abs_re_le_norm z
+  have ht_le : |t| ≤ ‖z‖ := by simpa [z] using abs_im_le_norm z
+  have hhalf : (1 + |t|) / 2 ≤ ‖z‖ := by
+    rcases le_total |t| 2 with _ | _ <;> linarith
+  have hlo : (1 + |t|) / x ≤ ‖z‖ :=
+    (div_le_div_of_nonneg_left ht1.le two_pos hx).trans hhalf
+  have hhi : ‖z‖ ≤ x * (1 + |t|) := by
+    have hsum : ‖z‖ ≤ x + |t| := by
+      simpa [z, abs_of_pos hx0] using norm_le_abs_re_add_abs_im z
+    nlinarith [abs_nonneg t]
+  have hz0 : 0 < ‖z‖ := (div_pos ht1 hx0).trans_le hlo
+  rw [abs_le]
+  refine ⟨?_, ?_⟩
+  · have h := Real.log_le_log (div_pos ht1 hx0) hlo
+    rw [Real.log_div ht1.ne' hx0.ne'] at h
+    linarith
+  · have h := Real.log_le_log hz0 hhi
+    rw [Real.log_mul hx0.ne' ht1.ne'] at h
+    linarith
 
 end Complex
