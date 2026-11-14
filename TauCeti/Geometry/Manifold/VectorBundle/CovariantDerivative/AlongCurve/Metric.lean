@@ -120,8 +120,8 @@ private lemma HasPairingProductRuleWithinAt.add_left
     {V V' W : ∀ r, TangentSpace I (γ r)}
     (hV : HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t) B V W)
     (hV' : HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t) B V' W)
-    (hcoordV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hcoordV' : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V' (γ t)) s t) :
+    (hcoordV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hcoordV' : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V' (γ t)) s t) :
     HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t) B
       (fun r ↦ V r + V' r) W := by
   dsimp only [HasPairingProductRuleWithinAt] at hV hV' ⊢
@@ -136,7 +136,7 @@ private lemma HasPairingProductRuleWithinAt.smul_left
     {V W : ∀ r, TangentSpace I (γ r)} {f : ℝ → ℝ}
     (hV : HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t) B V W)
     (hf : DifferentiableWithinAt ℝ f s t)
-    (hcoordV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t) :
+    (hcoordV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t) :
     HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t) B
       (fun r ↦ f r • V r) W := by
   dsimp only [HasPairingProductRuleWithinAt] at hV ⊢
@@ -151,7 +151,7 @@ private lemma HasPairingProductRuleWithinAt.smul_right
     {V W : ∀ r, TangentSpace I (γ r)} {f : ℝ → ℝ}
     (hW : HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t) B V W)
     (hf : DifferentiableWithinAt ℝ f s t)
-    (hcoordW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
+    (hcoordW : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t) :
     HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t) B V
       (fun r ↦ f r • W r) :=
   (hW.flip.smul_left hf hcoordW).of_flip
@@ -163,7 +163,7 @@ private lemma HasPairingProductRuleWithinAt.finsetSum_left
     (hU : ∀ i ∈ A,
       HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t) B (U i) W)
     (hcoordU : ∀ i ∈ A,
-      DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (U i) (γ t)) s t) :
+      DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ (U i) (γ t)) s t) :
     HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t) B
       (fun r ↦ ∑ i ∈ A, U i r) W := by
   classical
@@ -188,7 +188,7 @@ private lemma HasPairingProductRuleWithinAt.finsetSum_right
     (hU : ∀ i ∈ A,
       HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t) B V (U i))
     (hcoordU : ∀ i ∈ A,
-      DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (U i) (γ t)) s t) :
+      DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ (U i) (γ t)) s t) :
     HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t) B V
       (fun r ↦ ∑ i ∈ A, U i r) :=
   (HasPairingProductRuleWithinAt.finsetSum_left
@@ -252,7 +252,7 @@ private theorem hasPairingProductRuleWithinAt_frameSum
     {ι : Type*} [Fintype ι] {X : ι → (x : M) → TangentSpace I x}
     (hframe : ∀ i, MDiffAt (T% (X i)) (γ t))
     (hcoordX : ∀ i, DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ (fun r ↦ X i (γ r)) (γ t)) s t)
+      (sectionCoord ℝ (F := E) γ (fun r ↦ X i (γ r)) (γ t)) s t)
     {aV aW : ι → ℝ → ℝ} (haV : ∀ i, DifferentiableWithinAt ℝ (aV i) s t)
     (haW : ∀ i, DifferentiableWithinAt ℝ (aW i) s t) :
     HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t)
@@ -260,7 +260,7 @@ private theorem hasPairingProductRuleWithinAt_frameSum
       (fun r ↦ ∑ i, aV i r • X i (γ r)) (fun r ↦ ∑ j, aW j r • X j (γ r)) := by
   have hcoordTerm {a : ι → ℝ → ℝ} (ha : ∀ i, DifferentiableWithinAt ℝ (a i) s t) (i : ι) :
       DifferentiableWithinAt ℝ
-        (sectionCoord (F := E) γ (fun r ↦ a i r • X i (γ r)) (γ t)) s t := by
+        (sectionCoord ℝ (F := E) γ (fun r ↦ a i r • X i (γ r)) (γ t)) s t := by
     rw [sectionCoord_smul]
     exact (ha i).smul (hcoordX i)
   have hterm (i j : ι) : HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t)
@@ -290,8 +290,8 @@ theorem hasDerivWithinAt_apply_alongCurveWithin
           b (γ t) (cov Y (γ t) v) (Z (γ t)) + b (γ t) (Y (γ t)) (cov Z (γ t) v))
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
     {V W : ∀ r, TangentSpace I (γ r)}
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t) :
     HasDerivWithinAt (fun r ↦ b (γ r) (V r) (W r))
       (b (γ t) (alongCurveWithin cov γ V s t) (W t) +
         b (γ t) (V t) (alongCurveWithin cov γ W s t)) s t := by
@@ -307,22 +307,22 @@ theorem hasDerivWithinAt_apply_alongCurveWithin
   have hnear : ∀ᶠ r in 𝓝[s] t, γ r ∈ e.baseSet :=
     hγ.continuousWithinAt.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hbase)
   have hcoord (a : ∀ r, TangentSpace I (γ r))
-      (ha : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ a (γ t)) s t) (i : Fin _) :
+      (ha : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ a (γ t)) s t) (i : Fin _) :
       DifferentiableWithinAt ℝ
-        (fun r ↦ β.coord i (sectionCoord (F := E) γ a (γ t) r)) s t :=
+        (fun r ↦ β.coord i (sectionCoord ℝ (F := E) γ a (γ t) r)) s t :=
     (LinearMap.toContinuousLinearMap (β.coord i)).differentiableAt.comp_differentiableWithinAt t ha
   have hframe (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (e.localFrame β i)) (γ t) :=
     (((e.isLocalFrameOn_localFrame_baseSet I 1 β).contMDiffOn i).mdifferentiableOn
       one_ne_zero).mdifferentiableAt (e.open_baseSet.mem_nhds hbase)
   have hcoordX (i : Fin (Module.finrank ℝ E)) : DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ (fun r ↦ e.localFrame β i (γ r)) (γ t)) s t :=
+      (sectionCoord ℝ (F := E) γ (fun r ↦ e.localFrame β i (γ r)) (γ t)) s t :=
     differentiableWithinAt_sectionCoord γ (fun r ↦ e.localFrame β i (γ r))
       ((hframe i).comp_mdifferentiableWithinAt t hγ) hbase
   have hsum := hasPairingProductRuleWithinAt_frameSum (cov := cov) hdiff hcompat hu hγ hframe
     hcoordX (hcoord V hV) (hcoord W hW)
   simp only [β.coord_apply] at hsum
   have hexp (Q : ∀ r, TangentSpace I (γ r)) (r : ℝ) (hr : γ r ∈ e.baseSet) :
-      ∑ i, β.repr (sectionCoord (F := E) γ Q (γ t) r) i • e.localFrame β i (γ r) = Q r := by
+      ∑ i, β.repr (sectionCoord ℝ (F := E) γ Q (γ t) r) i • e.localFrame β i (γ r) = Q r := by
     rw [sectionCoord_apply]
     exact (β.eq_sum_repr_continuousLinearMapAt_smul_localFrame hr (Q r)).symm
   refine HasPairingProductRuleWithinAt.congr_of_eventuallyEq hsum ?_ ?_ (hexp V t hbase)
@@ -344,8 +344,8 @@ theorem IsMetricCompatible.hasDerivWithinAt_inner_alongCurveWithin
       (V := fun x : M ↦ TangentSpace I x) cov)
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
     {V W : ∀ r, TangentSpace I (γ r)}
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t) :
     HasDerivWithinAt (fun r ↦ inner ℝ (V r) (W r))
       (inner ℝ (alongCurveWithin cov γ V s t) (W t) +
         inner ℝ (V t) (alongCurveWithin cov γ W s t)) s t := by
@@ -374,8 +374,8 @@ theorem IsMetricCompatible.differentiableWithinAt_inner
       (V := fun x : M ↦ TangentSpace I x) cov)
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
     {V W : ∀ r, TangentSpace I (γ r)}
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t) :
     DifferentiableWithinAt ℝ (fun r ↦ inner ℝ (V r) (W r)) s t :=
   (hcov.hasDerivWithinAt_inner_alongCurveWithin hγ hV hW).differentiableWithinAt
 
@@ -385,8 +385,8 @@ theorem IsMetricCompatible.derivWithin_inner_alongCurveWithin
       (V := fun x : M ↦ TangentSpace I x) cov)
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
     {V W : ∀ r, TangentSpace I (γ r)}
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t) :
     derivWithin (fun r ↦ inner ℝ (V r) (W r)) s t =
       inner ℝ (alongCurveWithin cov γ V s t) (W t) +
         inner ℝ (V t) (alongCurveWithin cov γ W s t) := by
@@ -402,8 +402,8 @@ theorem IsMetricCompatible.hasDerivAt_inner_alongCurve
       (V := fun x : M ↦ TangentSpace I x) cov)
     (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
     {V W : ∀ r, TangentSpace I (γ r)}
-    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
-    (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t) :
+    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t) :
     HasDerivAt (fun r ↦ inner ℝ (V r) (W r))
       (inner ℝ (alongCurve cov γ V t) (W t) +
         inner ℝ (V t) (alongCurve cov γ W t)) t := by
@@ -419,8 +419,8 @@ theorem IsMetricCompatible.differentiableAt_inner
       (V := fun x : M ↦ TangentSpace I x) cov)
     (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
     {V W : ∀ r, TangentSpace I (γ r)}
-    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
-    (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t) :
+    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t) :
     DifferentiableAt ℝ (fun r ↦ inner ℝ (V r) (W r)) t :=
   (hcov.hasDerivAt_inner_alongCurve hγ hV hW).differentiableAt
 
@@ -431,8 +431,8 @@ theorem IsMetricCompatible.deriv_inner_alongCurve
       (V := fun x : M ↦ TangentSpace I x) cov)
     (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
     {V W : ∀ r, TangentSpace I (γ r)}
-    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
-    (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t) :
+    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t) :
     deriv (fun r ↦ inner ℝ (V r) (W r)) t =
       inner ℝ (alongCurve cov γ V t) (W t) +
         inner ℝ (V t) (alongCurve cov γ W t) :=
@@ -448,7 +448,7 @@ theorem IsMetricCompatible.inner_alongCurveWithin_self_eq_zero_of_eventually_nor
     (hu : UniqueDiffWithinAt ℝ s t)
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
     {V : ∀ r, TangentSpace I (γ r)}
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
     (hnorm : ∀ᶠ r in 𝓝[s] t, ‖V r‖ = ‖V t‖) :
     inner ℝ (alongCurveWithin cov γ V s t) (V t) = 0 := by
   have hconst : HasDerivWithinAt (fun r ↦ inner ℝ (V r) (V r)) 0 s t :=
@@ -465,7 +465,7 @@ theorem IsMetricCompatible.inner_alongCurve_self_eq_zero_of_eventually_norm_eq
       (V := fun x : M ↦ TangentSpace I x) cov)
     (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
     {V : ∀ r, TangentSpace I (γ r)}
-    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
+    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
     (hnorm : ∀ᶠ r in 𝓝 t, ‖V r‖ = ‖V t‖) :
     inner ℝ (alongCurve cov γ V t) (V t) = 0 := by
   simpa only [alongCurveWithin_univ] using
@@ -481,8 +481,8 @@ theorem IsMetricCompatible.inner_eq_of_alongCurveWithin_eq_zero
       (V := fun x : M ↦ TangentSpace I x) cov)
     (hconn : IsPreconnected s)
     (hγ : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s) {V W : ∀ r, TangentSpace I (γ r)}
-    (hV : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
+    (hV : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hW : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t)
     (hV₀ : ∀ t ∈ s, alongCurveWithin cov γ V s t = 0)
     (hW₀ : ∀ t ∈ s, alongCurveWithin cov γ W s t = 0) {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) :
     inner ℝ (V a) (W a) = inner ℝ (V b) (W b) := by
@@ -499,8 +499,8 @@ theorem IsMetricCompatible.eq_of_alongCurveWithin_eq_zero
       (V := fun x : M ↦ TangentSpace I x) cov)
     (hconn : IsPreconnected s)
     (hγ : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s) {V W : ∀ r, TangentSpace I (γ r)}
-    (hV : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
+    (hV : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hW : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t)
     (hV₀ : ∀ t ∈ s, alongCurveWithin cov γ V s t = 0)
     (hW₀ : ∀ t ∈ s, alongCurveWithin cov γ W s t = 0)
     {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) (hinit : V a = W a) : V b = W b := by
@@ -521,8 +521,8 @@ theorem IsMetricCompatible.eq_of_alongCurve_eq_zero
       (V := fun x : M ↦ TangentSpace I x) cov)
     (hconn : IsPreconnected s)
     (hγ : ∀ t ∈ s, MDifferentiableAt 𝓘(ℝ, ℝ) I γ t) {V W : ∀ r, TangentSpace I (γ r)}
-    (hV : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
-    (hW : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t)
+    (hV : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
+    (hW : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t)
     (hV₀ : ∀ t ∈ s, alongCurve cov γ V t = 0)
     (hW₀ : ∀ t ∈ s, alongCurve cov γ W t = 0)
     {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) (hinit : V a = W a) : V b = W b := by
@@ -533,7 +533,7 @@ theorem IsMetricCompatible.eq_of_alongCurve_eq_zero
     ((mdifferentiableAt_extChartAt (I := I) (mem_chart_source H (γ t))).comp t
       (hγ t ht)).differentiableAt
   have hrestrict (Y : ∀ r, TangentSpace I (γ r))
-      (hY : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord (F := E) γ Y (γ t)) t)
+      (hY : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ Y (γ t)) t)
       (hY₀ : ∀ t ∈ s, alongCurve cov γ Y t = 0) (t : ℝ) (ht : t ∈ s) :
       alongCurveWithin cov γ Y s t = 0 := by
     rw [alongCurveWithin_subset cov γ Y (Set.subset_univ s) (hs t ht)

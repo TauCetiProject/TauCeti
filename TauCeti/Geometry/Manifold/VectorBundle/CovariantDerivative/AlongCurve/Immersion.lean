@@ -53,7 +53,7 @@ theorem inner_alongCurve_eq_inner (hcov : cov.IsLeviCivitaConnection)
     (hg : ∀ x (v w : TangentSpace I x),
       inner ℝ v w = inner ℝ (mvfderiv I f x v) (mvfderiv I f x w))
     (hγ : MDifferentiableAt 𝓘(ℝ) I γ t)
-    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
+    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
     (ha : HasDerivAt (fun r ↦ mvfderiv I f (γ r) (V r)) a t)
     (w : TangentSpace I (γ t)) :
     inner ℝ (alongCurve cov γ V t) w = inner ℝ a (mvfderiv I f (γ t) w) := by
@@ -63,7 +63,7 @@ theorem inner_alongCurve_eq_inner (hcov : cov.IsLeviCivitaConnection)
   let Z := extend E w
   have hZ : MDiffAt (T% Z) (γ t) := mdifferentiableAt_extend I E w
   have hZcoord : DifferentiableAt ℝ
-      (sectionCoord (F := E) γ (fun r ↦ Z (γ r)) (γ t)) t :=
+      (sectionCoord ℝ (F := E) γ (fun r ↦ Z (γ r)) (γ t)) t :=
     differentiableAt_sectionCoord γ _ (hZ.comp t hγ)
       (mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
   have hsource := hcov.isMetricCompatible.hasDerivAt_inner_alongCurve hγ hV hZcoord

@@ -79,7 +79,7 @@ theorem exists_contMDiffWithinAt_alongCurveWithin_eq {γ : 𝕜 → M} {s : Set 
       (hBp.mdifferentiableWithinAt (by simp))
       (mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
     have hcoordMul : DifferentiableWithinAt 𝕜
-        (sectionCoord (F := E) γ (fun r ↦ (r - t) • B (γ r)) (γ t)) s t := by
+        (sectionCoord 𝕜 (F := E) γ (fun r ↦ (r - t) • B (γ r)) (γ t)) s t := by
       rw [sectionCoord_smul]
       exact (differentiableWithinAt_id.sub_const t).smul hcoordB
     have hdt : derivWithin (fun r : 𝕜 ↦ r - t) s t = 1 := by
