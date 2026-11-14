@@ -65,6 +65,17 @@ namespace Polynomial
 
 variable {R S : Type*}
 
+/-- Reflection permutes the coefficients, hence preserves the evaluation at one. -/
+@[simp] theorem eval_one_reflect [Semiring R] (p : R[X]) (N : ℕ) :
+    (p.reflect N).eval 1 = p.eval 1 := by
+  simp [eval_eq_sum, Polynomial.sum, reflect_support,
+    Finset.sum_image (revAt N).injective.injOn, coeff_reflect, revAt_invol]
+
+/-- Reversal preserves the evaluation at one. -/
+@[simp] theorem eval_one_reverse [Semiring R] (p : R[X]) :
+    p.reverse.eval 1 = p.eval 1 :=
+  eval_one_reflect p p.natDegree
+
 /-- Evaluating a reflection at the inverse of an invertible point, then multiplying on the right
 by the bound's power of that point, recovers the original evaluation. The coefficients need
 not commute with each other or with the evaluation point. -/
