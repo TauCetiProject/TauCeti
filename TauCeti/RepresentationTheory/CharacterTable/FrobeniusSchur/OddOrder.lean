@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.Conj.OddOrder
-public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.RealCount
+public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.InvolutionCount
 public import TauCeti.RepresentationTheory.FDRep.FrobeniusSchur
 
 /-!
@@ -21,7 +20,7 @@ is invertible. Hence **every nontrivial irreducible representation of a group of
 Frobenius-Schur indicator `0`**: it carries no nonzero invariant bilinear form. In a group of odd
 order the identity class is the only real conjugacy class (`TauCeti.card_realClasses_of_odd_card`),
 so over `ℂ` the trivial character is the only real-valued irreducible character, a theorem of
-Burnside.
+Burnside (`TauCeti.card_realValued_of_odd_card`).
 
 The smallest example is the cyclic group `C₃`: its two nontrivial characters `χ` satisfy
 `χ(g²) = χ(g)²`, and `∑_g χ(g)² = 1 + ω² + ω = 0` for a primitive cube root of unity `ω`. For a
@@ -37,8 +36,6 @@ standard pivotal structure, takes the same values (`FDRep.frobeniusSchurIndicato
   group of odd order has indicator `0` exactly when its character is nontrivial.
 * `TauCeti.sum_frobeniusSchurIndicatorRow_of_odd_card`: the unweighted sum of the row indicators of
   a group of odd order is `1`.
-* `TauCeti.card_realValued_of_odd_card`: a group of odd order has exactly one real-valued
-  irreducible complex character.
 * `Representation.frobeniusSchurIndicator_eq_zero_iff_of_odd_card` and
   `FDRep.frobeniusSchurIndicator_fdRep_two_eq_zero_iff_of_odd_card`: the same criterion for an
   arbitrary irreducible representation, and for the categorical indicator of a simple object of
@@ -92,14 +89,6 @@ theorem sum_frobeniusSchurIndicatorRow_of_odd_card (hG : Odd (Nat.card G)) :
 
 end Rows
 
-/-- **A group of odd order has exactly one real-valued irreducible complex character** (Burnside),
-necessarily the trivial one: real-valued rows are as many as real classes. -/
-theorem card_realValued_of_odd_card {G : Type v} [Group G] [Finite G] (hG : Odd (Nat.card G)) :
-    Nat.card {i : Fin (Nat.card (ConjClasses G)) //
-        ∀ C : ConjClasses G, (starRingEnd ℂ) (characterTable ℂ G i C) = characterTable ℂ G i C} =
-      1 :=
-  (card_realValued_eq_card_realClasses G).trans (card_realClasses_of_odd_card hG)
-
 end TauCeti
 
 namespace Representation
@@ -107,7 +96,7 @@ namespace Representation
 open TauCeti
 
 variable {k : Type} {G : Type v} {V : Type w} [Field k] [IsAlgClosed k] [Group G] [Fintype G]
-  [Invertible (Nat.card G : k)] [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+  [Invertible (Nat.card G : k)] [AddCommGroup V] [Module k V]
 
 /-- **An irreducible representation of a group of odd order has Frobenius-Schur indicator `0`
 exactly when its character is nontrivial.** So every nontrivial irreducible representation of a
@@ -115,6 +104,7 @@ group of odd order is of complex type. -/
 theorem frobeniusSchurIndicator_eq_zero_iff_of_odd_card (ρ : Representation k G V)
     [ρ.IsIrreducible] (hG : Odd (Nat.card G)) :
     TauCeti.Representation.frobeniusSchurIndicator ρ = 0 ↔ ρ.character ≠ fun _ => 1 := by
+  have : FiniteDimensional k V := ρ.asModuleEquiv.finiteDimensional
   obtain ⟨i, hi⟩ := exists_irreducibleCharacter_eq k (character_mem_irreducibleCharacters ρ)
   have hrow :
       TauCeti.Representation.frobeniusSchurIndicator ρ = frobeniusSchurIndicatorRow k i := by

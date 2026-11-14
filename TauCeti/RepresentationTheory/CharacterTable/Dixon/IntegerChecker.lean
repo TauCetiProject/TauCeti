@@ -131,16 +131,8 @@ theorem exists_equiv_characterTable :
     ∃ τ : Fin d.numClasses ≃ Fin (Nat.card (ConjClasses G)),
       (∀ j g, characterTable ℂ G (τ j) (ConjClasses.mk g) = (table j (d.index g) : ℂ)) ∧
         ∀ j, characterDegree ℂ (τ j) = degree j := by
-  obtain ⟨σ, hσ⟩ := characterTable_unique_rows h.isCharacterTableSpec
-  let τ := (finCongr d.numClasses_eq_card_conjClasses).trans σ
-  have hval (j : Fin d.numClasses) (g : G) :
-      characterTable ℂ G (τ j) (ConjClasses.mk g) = (table j (d.index g) : ℂ) := by
-    have hj := congrFun (congrFun hσ (finCongr d.numClasses_eq_card_conjClasses j))
-      (d.classOf (d.index g))
-    rw [complexTableOfInteger_apply_classOf, d.classOf_index] at hj
-    exact hj.symm
-  refine ⟨τ, hval, fun j => Nat.cast_injective (R := ℂ) ?_⟩
-  rw [← characterTable_one, hval, h.table_index_one, Int.cast_natCast]
+  simpa only [eq_intCast] using
+    IsExactCharacterTableSpec.exists_equiv_characterTable h (Int.castRingHom ℂ) fun x ↦ by simp
 
 end IsIntegerCharacterTableSpec
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Conj.OddOrder
 public import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
 
 /-!
@@ -48,6 +49,8 @@ no irreducibility of the dual representation is needed as an input.
   algebraically closed field of characteristic zero.
 * `TauCeti.card_realValued_eq_card_realClasses`: over `ℂ`, the rows of the character table fixed
   by complex conjugation are as many as the real conjugacy classes.
+* `TauCeti.card_realValued_of_odd_card`: a group of odd order has exactly one real-valued
+  irreducible complex character (Burnside).
 
 ## References
 
@@ -273,6 +276,14 @@ theorem card_realValued_eq_card_realClasses (G : Type v) [Group G] [Finite G] :
   rw [← card_inversionInvariant_eq_card_realClasses ℂ G]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun i =>
     forall_congr' fun C => by rw [conj_characterTable])
+
+/-- **A group of odd order has exactly one real-valued irreducible complex character** (Burnside),
+necessarily the trivial one: real-valued rows are as many as real classes. -/
+theorem card_realValued_of_odd_card {G : Type v} [Group G] [Finite G] (hG : Odd (Nat.card G)) :
+    Nat.card {i : Fin (Nat.card (ConjClasses G)) //
+        ∀ C : ConjClasses G, (starRingEnd ℂ) (characterTable ℂ G i C) = characterTable ℂ G i C} =
+      1 :=
+  (card_realValued_eq_card_realClasses G).trans (card_realClasses_of_odd_card hG)
 
 end Counting
 
