@@ -8,8 +8,10 @@ module
 public import Mathlib.Algebra.MvPolynomial.Degrees
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.MvPolynomial
+import Mathlib.Algebra.Polynomial.AlgebraMap
 import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.Analysis.Complex.AbsMax
+import Mathlib.Topology.Algebra.Polynomial
 import Mathlib.Topology.MetricSpace.ProperSpace
 import Mathlib.Topology.Order.Compact
 import TauCeti.Topology.Algebra.MvPolynomial.Nonvanishing
@@ -80,6 +82,8 @@ The two main results are the following.
   the polynomial polyhedron neighbourhoods can be cut out by nonconstant polynomials.
 * `TauCeti.interior_setOfPred_norm_eval_le`: the interior of `{|p| ≤ c}` is `{|p| < c}` for a
   nonconstant polynomial `p`.
+* `TauCeti.polynomialHull_image_const_range_ofReal`: in one complex variable (`[Subsingleton ι]`),
+  the polynomial hull of the real axis is all of `ι → ℂ`.
 
 ## References
 
@@ -442,5 +446,52 @@ theorem IsPolynomiallyConvex.exists_polynomialPolyhedron_subset_of_nonempty [Fin
     rw [totalDegree_eq_zero_iff_eq_C.1 hpd, eval_C] at hpk ⊢
     exact hpk.le
   · exact hw.2 p (Finset.mem_filter.2 ⟨hp, hpd⟩)
+
+/-- For any index type `ι` and any `K ⊆ ℂ`, the polynomial hull of the diagonal image
+`Function.const ι '' K` lies in the diagonal `range (Function.const ι)`. -/
+theorem polynomialHull_image_const_subset_range (K : Set ℂ) :
+    polynomialHull (Function.const ι '' K) ⊆ range (Function.const ι) := by
+  intro u hu
+  rcases isEmpty_or_nonempty ι with _ | ⟨⟨i₀⟩⟩
+  · exact ⟨0, Subsingleton.elim _ _⟩
+  · refine ⟨u i₀, funext fun i ↦ ?_⟩
+    have h0 : ‖eval u (X i - X i₀)‖ ≤ 0 :=
+      mem_polynomialHull_iff.mp hu _ 0 (by rintro _ ⟨_, -, rfl⟩; simp)
+    exact (sub_eq_zero.mp (norm_le_zero_iff.mp (by simpa using h0))).symm
+
+/-- For a subsingleton index type `ι` (such as `Fin 1`), the polynomial hull of the real axis
+`Function.const ι '' range Complex.ofReal` is all of `ι → ℂ`. -/
+@[simp]
+theorem polynomialHull_image_const_range_ofReal [Subsingleton ι] :
+    polynomialHull (Function.const ι '' range Complex.ofReal) = univ := by
+  refine eq_univ_of_forall fun u ↦ ?_
+  rcases isEmpty_or_nonempty ι with _ | ⟨⟨i₀⟩⟩
+  · have hu : u = Function.const ι (0 : ℂ) := Subsingleton.elim _ _
+    exact hu ▸ subset_polynomialHull _ ⟨0, ⟨0, rfl⟩, rfl⟩
+  · have hu : u = Function.const ι (u i₀) :=
+      funext fun i ↦ congrArg u (Subsingleton.elim i i₀)
+    rw [hu, mem_polynomialHull_iff]
+    intro p c hc
+    have heval (w : ℂ) : eval (Function.const ι w) p =
+        (aeval (Function.const ι Polynomial.X) p).eval w := by
+      change eval (fun _ ↦ w) p = _
+      simpa [Polynomial.aeval_X, Polynomial.coe_aeval_eq_eval, aeval_eq_eval] using
+        (MvPolynomial.comp_aeval_apply
+          (f := Function.const ι Polynomial.X) (Polynomial.aeval w) p).symm
+    rw [heval]
+    set q : Polynomial ℂ := aeval (Function.const ι Polynomial.X) p
+    have hq_le (n : ℕ) : ‖q.eval (n : ℂ)‖ ≤ c := by
+      have h := hc (Function.const ι ((n : ℝ) : ℂ)) (mem_image_of_mem _ ⟨n, rfl⟩)
+      rwa [heval, Complex.ofReal_natCast] at h
+    have hdeg : q.degree ≤ 0 := by
+      by_contra hlt
+      rw [not_le] at hlt
+      have htend : Tendsto (fun n : ℕ ↦ ‖q.eval (n : ℂ)‖) atTop atTop :=
+        q.tendsto_norm_atTop hlt
+          (by simpa only [Complex.norm_natCast] using tendsto_natCast_atTop_atTop)
+      obtain ⟨n, hn⟩ := (htend.eventually_gt_atTop c).exists
+      exact hn.not_ge (hq_le n)
+    rw [Polynomial.eq_C_of_degree_le_zero hdeg] at hq_le ⊢
+    simpa using hq_le 0
 
 end TauCeti
