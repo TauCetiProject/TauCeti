@@ -33,8 +33,9 @@ cut out by the reducible equation `f = x * y`, is not a domain, so a second equa
 zero divisor on it, and the curve itself is a ring of infinite length. What
 `TauCeti.exists_nat_length_quotient_span_pair` makes finite is the quotient by an `𝔪`-primary pair,
 which for the two axes together with the second equation `g = x + y` has length two.
-Additivity over the components of a curve of infinite length would need a theory of the associated
-primes of such a module, which this file does not have.
+For a two-dimensional Cohen–Macaulay local ring, finite additivity over products of equations
+meeting a possibly reducible first curve properly is proved in
+`TauCeti.RingTheory.Intersection.Proper`.
 
 The four statements for such a first equation in a two-dimensional noetherian local ring are
 below: they ask that `(R, 𝔪)` be of Krull dimension two, that `f` be a non-zero-divisor, and that
@@ -235,8 +236,9 @@ here. The curve itself, `k[[x, y]] ⧸ (x * y)`, is a one-dimensional ring of in
 what is finite is the proper-intersection quotient by `x * y` and a second equation through the
 closed point, by `TauCeti.exists_nat_length_quotient_span_pair`. The hypothesis of this theorem
 is not met there, `k[[x, y]] ⧸ (x * y)` being not a domain, so additivity over the components of
-such a curve is not reached by this route: it would need a theory of the associated primes of a
-module of infinite length, which this file does not have. -/
+such a curve is not reached by this domain argument. The Cohen–Macaulay argument in
+`TauCeti.RingTheory.Intersection.Proper` proves additivity for proper intersections without
+requiring either equation to be prime. -/
 theorem length_quotient_span_pair_mul_eq_add {f g h : R} (_ : (Ideal.span {f}).IsPrime)
     (hh : h ∉ Ideal.span {f}) :
     Module.length R (R ⧸ Ideal.span {f, g * h})
