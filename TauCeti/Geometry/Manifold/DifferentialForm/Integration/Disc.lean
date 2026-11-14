@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Sphere
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Manifold.Instances.Icc
 import TauCeti.Topology.Homotopy.GenLoop.Homotopic
 
 /-!
@@ -36,9 +37,9 @@ The double loop is only continuous, so the integral over its class is computed o
 sphere representing it. Gluing `D` to `D'` run backwards along their common edge `γ`
 (`TauCeti.rectangleTrans`) gives a smooth map whose integral is `∫_D φ - ∫_{D'} φ`
 (`TauCeti.rectangleIntegral_rectangleTrans`). Reparametrizing both of its coordinates by a
-smooth profile `τ` that is `0` on `(-∞, 1/4]` and `1` on `[3/4, ∞)` makes it constant equal to
-`x` off `[1/4, 3/4]²`, so a smooth sphere in the sense of `TauCeti.IsSmoothSphere`. The
-reparametrization does not change the integral, by homotopy invariance along the straight-line
+smooth profile `τ` (`TauCeti.collaredSmoothTransitionUnit`) that is `0` on `(-∞, 1/4]` and `1`
+on `[3/4, ∞)` makes it constant equal to `x` off `[1/4, 3/4]²`, so a smooth sphere in the sense
+of `TauCeti.IsSmoothSphere`. The reparametrization does not change the integral, by homotopy invariance along the straight-line
 homotopy of parameters (`TauCeti.rectangleIntegral_eq_of_homotopy`); and the generalized loop of
 the sphere is that of the double loop with its two cube coordinates reparametrized by self-maps
 of the unit interval fixing `0` and `1`, which does not change its class
@@ -142,29 +143,6 @@ end IsSmoothDisc
 
 section Glue
 
-/-- The smooth profile `τ(r) = β(2 r - 1/2)`, for `β = Real.smoothTransition`: it is `0` on
-`(-∞, 1/4]`, `1` on `[3/4, ∞)`, and takes values in the unit interval. -/
-private def flat (r : ℝ) : ℝ :=
-  Real.smoothTransition (2 * r - 1 / 2)
-
-private theorem contDiff_flat : ContDiff ℝ ∞ flat :=
-  (Real.smoothTransition.contDiff (n := ⊤)).comp (by fun_prop)
-
-private theorem flat_of_le {r : ℝ} (hr : r ≤ 1 / 4) : flat r = 0 :=
-  Real.smoothTransition.zero_of_nonpos (by linarith)
-
-private theorem flat_of_ge {r : ℝ} (hr : 3 / 4 ≤ r) : flat r = 1 :=
-  Real.smoothTransition.one_of_one_le (by linarith)
-
-private theorem flat_zero : flat 0 = 0 :=
-  flat_of_le (by norm_num)
-
-private theorem flat_one : flat 1 = 1 :=
-  flat_of_ge (by norm_num)
-
-private theorem flat_mem (r : ℝ) : flat r ∈ Icc (0 : ℝ) 1 :=
-  ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
-
 /-- The reversal `(s, t) ↦ (1 - s, t)` of the first coordinate. -/
 private def rev : ℝ × ℝ → ℝ × ℝ :=
   Prod.map (fun s ↦ 1 - s) id
@@ -210,22 +188,23 @@ private theorem discGlue_apply_end (hD : IsSmoothDisc I γ D) (hD' : IsSmoothDis
   · simpa [discGlue, rev] using hD'.apply_zero ⟨t, ht⟩
 
 /-- The sphere glued from two discs: the glued map with both coordinates reparametrized by the
-profile `τ`, constant equal to `x` off `[1/4, 3/4]²`. -/
+profile `τ = collaredSmoothTransitionUnit`, constant equal to `x` off `[1/4, 3/4]²`. -/
 private def discSphere (D D' : ℝ × ℝ → M) (z : ℝ × ℝ) : M :=
-  discGlue D D' (flat z.1, flat z.2)
+  discGlue D D' (collaredSmoothTransitionUnit z.1, collaredSmoothTransitionUnit z.2)
 
 private theorem isSmoothSphere_discSphere (hD : IsSmoothDisc I γ D)
     (hD' : IsSmoothDisc I γ D') : IsSmoothSphere I x (discSphere D D') := by
-  refine ⟨(contMDiff_discGlue hD hD').comp (contDiff_flat.prodMap contDiff_flat).contMDiff,
-    1 / 4, by norm_num, fun z hz ↦ ?_⟩
-  have hvert {r : ℝ} (hr : r ∉ Icc (1 / 4 : ℝ) (1 - 1 / 4)) : flat r = 0 ∨ flat r = 1 := by
+  refine ⟨(contMDiff_discGlue hD hD').comp (contDiff_coe_collaredSmoothTransitionUnit.prodMap
+    contDiff_coe_collaredSmoothTransitionUnit).contMDiff, 1 / 4, by norm_num, fun z hz ↦ ?_⟩
+  have hvert {r : ℝ} (hr : r ∉ Icc (1 / 4 : ℝ) (1 - 1 / 4)) :
+      (collaredSmoothTransitionUnit r : ℝ) = 0 ∨ (collaredSmoothTransitionUnit r : ℝ) = 1 := by
     simp only [mem_Icc, not_and_or, not_le] at hr
     rcases hr with hr | hr
-    · exact Or.inl (flat_of_le hr.le)
-    · exact Or.inr (flat_of_ge (by linarith))
+    · exact Or.inl (Icc.coe_eq_zero.mpr (collaredSmoothTransitionUnit_eq_zero_of_le hr.le))
+    · exact Or.inr (Icc.coe_eq_one.mpr (collaredSmoothTransitionUnit_eq_one_of_ge (by linarith)))
   simp only [mem_prod, not_and_or] at hz
   rcases hz with hz | hz
-  · exact discGlue_apply_end hD hD' (hvert hz) (flat_mem _)
+  · exact discGlue_apply_end hD hD' (hvert hz) (collaredSmoothTransitionUnit _).2
   · exact discGlue_apply_seam hD hD' _ (hvert hz)
 
 /-- Reparametrizing the glued map by the profile `τ` does not change its integral. -/
@@ -236,16 +215,19 @@ private theorem rectangleIntegral_discSphere [IsManifold I 2 M]
       rectangleIntegral φ (discGlue D D') (0, 0) (1, 1) := by
   -- The straight-line homotopy from the identity to `τ`, in both coordinates.
   let Φ : (ℝ × ℝ) × ℝ → M := fun q ↦ discGlue D D'
-    ((1 - q.2) * q.1.1 + q.2 * flat q.1.1, (1 - q.2) * q.1.2 + q.2 * flat q.1.2)
+    ((1 - q.2) * q.1.1 + q.2 * collaredSmoothTransitionUnit q.1.1,
+      (1 - q.2) * q.1.2 + q.2 * collaredSmoothTransitionUnit q.1.2)
   have hΦ : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × ℝ) I 2 Φ :=
     ((contMDiff_discGlue hD hD').comp (ContDiff.contMDiff (by
-      have := contDiff_flat
+      have := contDiff_coe_collaredSmoothTransitionUnit (n := ⊤)
       fun_prop))).of_le (by norm_cast)
   have hmem {r c : ℝ} (hr : r ∈ Icc (0 : ℝ) 1) (hc : c ∈ Icc (0 : ℝ) 1) :
-      (1 - c) * r + c * flat r ∈ Icc (0 : ℝ) 1 :=
-    (Icc.convexComb ⟨r, hr⟩ ⟨flat r, flat_mem r⟩ ⟨c, hc⟩).2
-  have h0 (c : ℝ) : (1 - c) * 0 + c * flat 0 = 0 := by simp [flat_of_le]
-  have h1 (c : ℝ) : (1 - c) * 1 + c * flat 1 = 1 := by rw [flat_of_ge (by norm_num)]; ring
+      (1 - c) * r + c * collaredSmoothTransitionUnit r ∈ Icc (0 : ℝ) 1 :=
+    (Icc.convexComb ⟨r, hr⟩ (collaredSmoothTransitionUnit r) ⟨c, hc⟩).2
+  have h0 (c : ℝ) : (1 - c) * 0 + c * collaredSmoothTransitionUnit 0 = 0 := by
+    rw [collaredSmoothTransitionUnit_eq_zero_of_le (by norm_num)]; simp
+  have h1 (c : ℝ) : (1 - c) * 1 + c * collaredSmoothTransitionUnit 1 = 1 := by
+    rw [collaredSmoothTransitionUnit_eq_one_of_ge (by norm_num)]; simp
   have key := rectangleIntegral_eq_of_homotopy hφ hdφ hΦ (a := (0, 0)) (b := (1, 1))
     (Or.inr fun t ht c hc ↦ by
       simp only [Φ, h0]
@@ -300,17 +282,14 @@ private theorem glueParam_one : glueParam 1 = 1 := by
 
 /-- The self-map `w ↦ glueParam (τ w)` of the unit interval. -/
 private def sphereParam₁ : C(unitInterval, unitInterval) :=
-  ⟨fun w ↦ ⟨glueParam (flat w), glueParam_mem _⟩, by
+  ⟨fun w ↦ ⟨glueParam (collaredSmoothTransitionUnit w), glueParam_mem _⟩, by
     refine Continuous.subtype_mk ?_ _
-    unfold glueParam flat
+    unfold glueParam
     fun_prop⟩
 
 /-- The self-map `τ` of the unit interval. -/
 private def sphereParam₂ : C(unitInterval, unitInterval) :=
-  ⟨fun w ↦ ⟨flat w, flat_mem _⟩, by
-    refine Continuous.subtype_mk ?_ _
-    unfold flat
-    fun_prop⟩
+  ⟨fun w ↦ collaredSmoothTransitionUnit w, by fun_prop⟩
 
 /-- The glued sphere is the double loop `D⁻¹ ⬝ D'` with its cube coordinates reparametrized. -/
 private theorem discSphere_eq (hD : IsSmoothDisc I γ D) (hD' : IsSmoothDisc I γ D')
@@ -321,8 +300,8 @@ private theorem discSphere_eq (hD : IsSmoothDisc I γ D) (hD' : IsSmoothDisc I �
           (z i)) := by
   simp only [discSphere, GenLoop.fromDoubleLoop_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_fin_one, sphereParam₁, sphereParam₂, ContinuousMap.coe_mk]
-  set w := flat (z 0)
-  set t : unitInterval := ⟨flat (z 1), flat_mem _⟩
+  set w : ℝ := collaredSmoothTransitionUnit (z 0)
+  set t := collaredSmoothTransitionUnit (z 1)
   -- `set` cannot abstract `w` inside the membership proof of the first parameter: restate it.
   change discGlue D D' (w, t) =
     (hD.loopPath.symm.trans hD'.loopPath) ⟨glueParam w, glueParam_mem _⟩ t
@@ -379,9 +358,11 @@ theorem sphereIntegral_loopPath_symm_trans {φ : RoughForm I M F 2} (hφ : IsSmo
       hv.genLoop :=
     GenLoop.homotopic_of_forall_apply_eq_comp ![sphereParam₁, sphereParam₂]
       (fun i ↦ by
-        fin_cases i <;> ext <;> simp [sphereParam₁, sphereParam₂, flat_zero, glueParam_zero])
+        fin_cases i <;> ext <;> simp [sphereParam₁, sphereParam₂, glueParam_zero,
+          collaredSmoothTransitionUnit_eq_zero_of_le (show (0 : ℝ) ≤ 1 / 4 by norm_num)])
       (fun i ↦ by
-        fin_cases i <;> ext <;> simp [sphereParam₁, sphereParam₂, flat_one, glueParam_one])
+        fin_cases i <;> ext <;> simp [sphereParam₁, sphereParam₂, glueParam_one,
+          collaredSmoothTransitionUnit_eq_one_of_ge (show 3 / 4 ≤ (1 : ℝ) by norm_num)])
       fun z ↦ by rw [IsSmoothSphere.genLoop_apply]; exact discSphere_eq hD hD' z
   rw [HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk, Quotient.sound hloop,
     sphereIntegral_mk hφ hdφ hv, rectangleIntegral_discSphere hφ hdφ hD hD',

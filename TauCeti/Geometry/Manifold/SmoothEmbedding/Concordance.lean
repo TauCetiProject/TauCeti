@@ -47,8 +47,6 @@ source is the circle.
   source, a concordance from an embedding to its reparametrization by the final diffeomorphism.
 * `TauCeti.SmoothEmbedding.Concordance.ofDiffeotopies`: the trace of a diffeotopy of the target
   and one of the source run together, a concordance from `f` to `Φ.final ∘ f ∘ Ψ.final`.
-* `TauCeti.SmoothEmbedding.Concordance.collaredSmoothTransitionUnit`: the time reparametrization
-  of these traces, a smooth transition from `0` to `1` constant near both ends.
 * `TauCeti.SmoothEmbedding.Concordant`: the concordance relation.
 
 ## Main results
@@ -314,50 +312,6 @@ theorem trans_apply_of_lt [FiniteDimensional ℝ E'] (F : Concordance f g) (G : 
 
 /-! ### Diffeotopies -/
 
-
-/-- The time reparametrization of a diffeotopy trace: `Real.smoothTransition`, as a map into the
-unit interval. -/
-private def smoothTransitionUnit (t : ℝ) : unitInterval :=
-  ⟨Real.smoothTransition t, Real.smoothTransition.nonneg t, Real.smoothTransition.le_one t⟩
-
-private theorem contMDiff_smoothTransitionUnit (hn : n ≤ ∞) :
-    ContMDiff 𝓘(ℝ) (𝓡∂ 1) n smoothTransitionUnit := by
-  refine contMDiff_iff_comp_subtypeVal_Icc.2 ⟨?_, ?_⟩
-  · exact Real.smoothTransition.continuous.subtype_mk _
-  · exact (Real.smoothTransition.contDiff.of_le hn).contMDiff
-
-/-- The time reparametrization `t ↦ Real.smoothTransition (2 * t - 1 / 2)` of the traces of
-diffeotopies, as a map into the unit interval: a smooth transition from `0` to `1` which is
-constant on neighborhoods of both ends of the unit interval. -/
-def collaredSmoothTransitionUnit (t : ℝ) : unitInterval :=
-  smoothTransitionUnit (2 * t - 1 / 2)
-
-/-- The collared smooth transition at `t` is `Real.smoothTransition (2 * t - 1 / 2)`. -/
-@[simp]
-theorem coe_collaredSmoothTransitionUnit (t : ℝ) :
-    (collaredSmoothTransitionUnit t : ℝ) = Real.smoothTransition (2 * t - 1 / 2) :=
-  (rfl)
-
-/-- The collared smooth transition is `C^n` for every `n ≤ ∞`. -/
-theorem contMDiff_collaredSmoothTransitionUnit (hn : n ≤ ∞) :
-    ContMDiff 𝓘(ℝ) (𝓡∂ 1) n collaredSmoothTransitionUnit :=
-  (contMDiff_smoothTransitionUnit hn).comp
-    (((contDiff_const.mul contDiff_id).sub contDiff_const).contMDiff)
-
-/-- The collared smooth transition is continuous. -/
-@[continuity, fun_prop]
-theorem continuous_collaredSmoothTransitionUnit : Continuous collaredSmoothTransitionUnit :=
-  (Real.smoothTransition.continuous.comp (by fun_prop)).subtype_mk _
-
-/-- The collared smooth transition is `0` up to time `1 / 4`. -/
-theorem collaredSmoothTransitionUnit_eq_zero_of_le {t : ℝ} (ht : t ≤ 1 / 4) :
-    collaredSmoothTransitionUnit t = 0 :=
-  Subtype.ext (Real.smoothTransition.zero_of_nonpos (by linarith))
-
-/-- The collared smooth transition is `1` from time `3 / 4` on. -/
-theorem collaredSmoothTransitionUnit_eq_one_of_ge {t : ℝ} (ht : 3 / 4 ≤ t) :
-    collaredSmoothTransitionUnit t = 1 :=
-  Subtype.ext (Real.smoothTransition.one_of_one_le (by linarith))
 
 /-- The diffeomorphism `(y, t) ↦ (Φ (ρ t, y), t)` of `N × ℝ`, where `ρ` is the smooth transition
 from `0` to `1`. -/
