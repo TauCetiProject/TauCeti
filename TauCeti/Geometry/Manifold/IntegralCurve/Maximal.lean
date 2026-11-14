@@ -505,30 +505,32 @@ theorem Ici_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo [Complete
   obtain ⟨s, hs, hts⟩ := not_bddAbove_iff.mp hup t
   exact ordConnected_maximalIntegralCurveInterval.out h0 hs ⟨ht, hts.le⟩
 
-omit [IsManifold I 1 M] [BoundarylessManifold I M] in
+namespace TauCeti
+
+omit [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] in
 /-- **A maximal integral curve that converges to a zero of the field is defined for all positive
 time.** If the maximal integral curve of `v` through `x` converges to a point `p` with `v p = 0` as
 `t → ∞`, then the maximal interval of existence contains every `t ≥ 0`. -/
 theorem Ici_subset_maximalIntegralCurveInterval_of_tendsto {p : M} (hvp : v p = 0)
     (hconv : Tendsto (maximalIntegralCurve v x) atTop (𝓝 p)) :
     Ici 0 ⊆ maximalIntegralCurveInterval v x := by
+  have : T1Space M := I.t1Space M
   by_contra hsub
   obtain ⟨t, ht, htn⟩ := not_subset.1 hsub
   -- If the maximal interval is bounded above, the maximal integral curve is constantly `x` after
   -- that time, so its limit `p` is `x`.
   have hxp : x = p := by
-    refine tendsto_nhds_unique (tendsto_const_nhds.congr' ?_) hconv
+    refine tendsto_const_nhds_iff.mp (hconv.congr' ?_)
     filter_upwards [eventually_ge_atTop t] with s hs
-    exact (maximalIntegralCurve_eq_of_not_mem fun hsm ↦
+    exact maximalIntegralCurve_eq_of_not_mem fun hsm ↦
       htn (ordConnected_maximalIntegralCurveInterval.out
-        (TauCeti.zero_mem_maximalIntegralCurveInterval_of_nonempty ⟨s, hsm⟩) hsm ⟨ht, hs⟩)).symm
+        (zero_mem_maximalIntegralCurveInterval_of_mem hsm) hsm ⟨ht, hs⟩)
   subst hxp
-  -- The constant curve at the zero `x` of `v` then extends the maximal interval to all positive
-  -- times, a contradiction.
-  have ht0 : 0 ≤ t := ht
-  have hγ := (isMIntegralCurve_const hvp).isMIntegralCurveOn (Ioo (-(t + 1)) (t + 1))
-  exact htn (hγ.subset_maximalIntegralCurveInterval ⟨by linarith, by linarith⟩ rfl
-    ⟨by linarith, by linarith⟩)
+  -- The constant curve at the zero `x` of `v` is a global integral curve, so the maximal interval
+  -- is all of `ℝ`, a contradiction.
+  exact htn ((isMIntegralCurve_const hvp).maximalIntegralCurveInterval_eq_univ rfl ▸ mem_univ t)
+
+end TauCeti
 
 /-- **A maximal integral curve confined to a compact set is defined for all time.** Neither
 endpoint of the maximal interval can be finite, since the escape lemma would force the curve out of

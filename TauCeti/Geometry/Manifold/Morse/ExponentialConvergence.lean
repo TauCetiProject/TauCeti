@@ -156,19 +156,6 @@ theorem le_comp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2
   filter_upwards [eventually_ge_atTop t] with s hs
   exact antitoneOn_comp_maximalIntegralCurve_neg_mgradient hf (hx ht) (hx (ht.trans hs)) hs
 
-omit [BoundarylessManifold I M] [IsContMDiffRiemannianBundle I 1 E fun x : M ↦ TangentSpace I x] in
-/-- A negative gradient trajectory converging to a nondegenerate critical point is defined for all
-positive time. -/
-private theorem Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto
-    (hp : IsManifoldNondegenerateCriticalPoint I f p)
-    (hconv : Tendsto (maximalIntegralCurve (-mgradient I f) x) atTop (𝓝 p)) :
-    Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x :=
-  Ici_subset_maximalIntegralCurveInterval_of_tendsto
-    (by
-      rw [Pi.neg_apply, neg_eq_zero, mgradient_eq_zero_iff, ← mem_criticalPoints]
-      exact hp.mem_criticalPoints)
-    hconv
-
 /-- **The energy along a trajectory converging to a nondegenerate critical point decays
 exponentially.** If the maximal integral curve `γ` of `-grad f` through `x` converges to a
 nondegenerate critical point `p`, then `f (γ t) - f p ≤ C * exp (-μ * t)` for some `μ, C > 0` and
@@ -181,7 +168,8 @@ theorem exists_sub_le_mul_exp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
   have : IsManifold I 1 M := IsManifold.of_le one_le_two
-  have hx := Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto hp hconv
+  have hx := Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto
+    hp.mem_criticalPoints hconv
   set γ := maximalIntegralCurve (-mgradient I f) x
   obtain ⟨lam, hlam, hloj⟩ := hp.exists_mul_abs_sub_le_norm_mgradient_sq
   -- After some time `T ≥ 0` the trajectory stays where the Łojasiewicz inequality holds.
@@ -214,7 +202,8 @@ theorem exists_pathELength_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
   have : IsManifold I 1 M := IsManifold.of_le one_le_two
-  have hx := Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto hp hconv
+  have hx := Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto
+    hp.mem_criticalPoints hconv
   set γ := maximalIntegralCurve (-mgradient I f) x
   set e : ℝ → ℝ := fun s ↦ f (γ s) - f p
   obtain ⟨lam, hlam, hloj⟩ := hp.exists_mul_abs_sub_le_norm_mgradient_sq
@@ -304,7 +293,8 @@ theorem exists_riemannianEDist_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
   set γ := maximalIntegralCurve (-mgradient I f) x
   obtain ⟨K, hK, hlen⟩ := exists_pathELength_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
     hp hconv hf
-  have hx := Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto hp hconv
+  have hx := Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto
+    hp.mem_criticalPoints hconv
   refine ⟨K, hK, ?_⟩
   filter_upwards [hlen, eventually_ge_atTop 0] with t ht ht0
   refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
