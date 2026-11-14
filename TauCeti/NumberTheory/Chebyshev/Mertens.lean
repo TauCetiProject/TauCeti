@@ -393,11 +393,8 @@ theorem not_summable_prime_log_div :
 
 end Chebyshev
 
-/-- The logarithmic prime series `∑' p : Nat.Primes, log p / p` is not summable. -/
+/-- The logarithmic prime series `Σ_p log p / p` over `Nat.Primes` is not summable. -/
 theorem Nat.Primes.not_summable_log_div :
-    ¬Summable (fun p : Nat.Primes ↦ Real.log p / p) := by
-  intro hs
-  refine Chebyshev.not_summable_prime_log_div ?_
-  refine ((summable_subtype_iff_indicator (s := {p : ℕ | p.Prime})
-    (f := fun n : ℕ ↦ Real.log n / n)).mp hs).congr fun n ↦ ?_
-  by_cases hn : n.Prime <;> simp [hn]
+    ¬Summable (fun p : Nat.Primes ↦ Real.log p / p) :=
+  mt (Nat.Primes.summable_iff_summable_ite (fun n : ℕ ↦ Real.log n / n)).mp
+    Chebyshev.not_summable_prime_log_div

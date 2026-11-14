@@ -378,8 +378,8 @@ theorem summable_weightedPrimeSeries [CompleteSpace E] {a : ℕ → E}
     Summable (fun p : Nat.Primes ↦ (log p / (p : ℝ) ^ (1 + η)) • a p) :=
   summable_subtype_iff_indicator.2 (summable_indicator_weightedPrimeSeries ha hη)
 
-/-- For `η > 0`, the shifted logarithmic prime series `∑' p : Nat.Primes, log p / p ^ (1 + η)` is
-summable. -/
+/-- For `η > 0`, the shifted logarithmic prime series `Σ_p log p / p ^ (1 + η)` over `Nat.Primes`
+is summable. -/
 theorem summable_primes_log_div_rpow {η : ℝ} (hη : 0 < η) :
     Summable fun p : Nat.Primes ↦ log p / (p : ℝ) ^ (1 + η) := by
   simpa using summable_weightedPrimeSeries (a := fun _ ↦ (1 : ℝ)) (fun _ _ ↦ by norm_num) hη
