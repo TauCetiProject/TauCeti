@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 
 import TauCeti.Geometry.Manifold.MFDeriv.Graph
+import TauCeti.LinearAlgebra.Submodule.Prod
 
 /-!
 # Moment maps of products
@@ -25,7 +26,8 @@ moment map for the product form `σ₁.prod σ₂ = pr₁^* σ₁ + pr₂^* σ�
 (`TauCeti.SmoothTwoForm.momentCocycle_prodMap`; for the diagonal action of a single Lie algebra,
 `TauCeti.SmoothTwoForm.momentCocycle_prod`), so it vanishes exactly where both cocycles vanish
 (`TauCeti.SmoothTwoForm.momentCocycle_prodMap_eq_zero_iff`). Its differential is componentwise
-(`TauCeti.SmoothTwoForm.IsMomentMap.differential_prodMap_apply`), so the tangent spaces `ker dμ`
+(`TauCeti.SmoothTwoForm.IsMomentMap.differential_prodMap_apply`; for the diagonal action,
+`TauCeti.SmoothTwoForm.IsMomentMap.differential_prod_apply`), so the tangent spaces `ker dμ`
 of its levels are the products of those of the factors
 (`TauCeti.SmoothTwoForm.IsMomentMap.ker_differential_prodMap`).
 
@@ -34,11 +36,10 @@ The hypotheses on level data of
 products. For maps `i_k : Z_k → M_k`, the tangent images of `i₁ × i₂` lie in, or are equal to,
 `ker dμ` exactly when those of `i₁` and `i₂` lie in, or are equal to, `ker dμ₁` and `ker dμ₂`
 (`TauCeti.SmoothTwoForm.IsMomentMap.range_mfderiv_prodMap_le_ker_differential_prodMap_iff`,
-`TauCeti.SmoothTwoForm.IsMomentMap.range_mfderiv_prodMap_eq_ker_differential_prodMap_iff`). For
-maps `p_k : Z_k → Q_k` and subspaces `S_k ⊆ 𝔤_k`, the vertical vectors of `p₁ × p₂` are sent by
-`d(i₁ × i₂)` into the orbit directions `(S₁ × S₂) · (i₁ × i₂)(z)` exactly when the same holds for
-both factors (`TauCeti.InfinitesimalAction.ker_mfderiv_prodMap_le_comap_map_eval_prodMap_iff`,
-`TauCeti.InfinitesimalAction.ker_mfderiv_prodMap_eq_comap_map_eval_prodMap_iff`). The reduced
+`TauCeti.SmoothTwoForm.IsMomentMap.range_mfderiv_prodMap_eq_ker_differential_prodMap_iff`). The
+vertical condition passes to products by
+`TauCeti.InfinitesimalAction.ker_mfderiv_prodMap_eq_comap_map_eval_prodMap_iff` in
+`TauCeti.Geometry.Manifold.VectorField.InfinitesimalAction`. The reduced
 symplectic form of a product of level data is
 `TauCeti.SmoothTwoForm.IsMomentMap.existsUnique_isSymplectic_mpullback_prodMap_eq_mpullback_prodMap`
 in `TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.ReducedForm`.
@@ -50,9 +51,8 @@ in `TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.ReducedForm`.
 * `TauCeti.SmoothTwoForm.momentCocycle_prodMap`: the cocycle of the product is the sum of the
   cocycles of the factors.
 * `TauCeti.SmoothTwoForm.IsMomentMap.ker_differential_prodMap`: `ker dμ = ker dμ₁ × ker dμ₂`.
-* `TauCeti.SmoothTwoForm.IsMomentMap.range_mfderiv_prodMap_eq_ker_differential_prodMap_iff` and
-  `TauCeti.InfinitesimalAction.ker_mfderiv_prodMap_eq_comap_map_eval_prodMap_iff`: the tangent and
-  vertical conditions on level data hold for a product exactly when they hold for both factors.
+* `TauCeti.SmoothTwoForm.IsMomentMap.range_mfderiv_prodMap_eq_ker_differential_prodMap_iff`: the
+  tangent condition on level data holds for a product exactly when it holds for both factors.
 
 ## References
 
@@ -143,7 +143,23 @@ on `M₁ × M₂` for the product form. -/
 theorem prodMap (h₁ : σ₁.IsMomentMap a₁ μ₁) (h₂ : σ₂.IsMomentMap a₂ μ₂) :
     (σ₁.prod σ₂).IsMomentMap (a₁.prodMap a₂) fun p ↦ (μ₁ p.1).coprod (μ₂ p.2) := by
   rw [InfinitesimalAction.prodMap_def]
-  exact (h₁.comp (LieHom.fst ℝ 𝔤₁ 𝔤₂)).prod (h₂.comp (LieHom.snd ℝ 𝔤₁ 𝔤₂))
+  convert (h₁.comp (LieHom.fst ℝ 𝔤₁ 𝔤₂)).prod (h₂.comp (LieHom.snd ℝ 𝔤₁ 𝔤₂)) using 2 with p
+  refine LinearMap.ext fun Z ↦ ?_
+  simp only [LinearMap.coprod_apply, LinearMap.add_apply, LinearMap.coe_comp,
+    LieHom.coe_toLinearMap, LieHom.coe_fst, comp_apply, LieHom.coe_snd]
+
+/-- The differential of the moment map `(x, y) ↦ μ(x) + ν(y)` of a diagonal action is the sum of
+the differentials of the factors: `dμ_(x, y)(v, w) = dμ_x(v) + dν_y(w)`. -/
+@[simp]
+theorem differential_prod_apply {b : InfinitesimalAction 𝔤₁ I₂ M₂} {ν : M₂ → Module.Dual ℝ 𝔤₁}
+    (h₁ : σ₁.IsMomentMap a₁ μ₁) (h₂ : σ₂.IsMomentMap b ν) (p : M₁ × M₂)
+    (v : TangentSpace (I₁.prod I₂) p) :
+    (h₁.prod h₂).differential p v =
+      h₁.differential p.1 (Manifold.tangentSpaceProdEquiv p v).1 +
+        h₂.differential p.2 (Manifold.tangentSpaceProdEquiv p v).2 := by
+  refine LinearMap.ext fun Z ↦ ?_
+  simp only [differential_apply_eq_eval₂, LinearMap.add_apply, eval₂_prod,
+    InfinitesimalAction.prod_apply, Manifold.tangentSpaceProdEquiv_prodVectorField]
 
 /-- The differential of the moment map of a product is componentwise:
 `dμ_(x₁, x₂)(v₁, v₂) = (dμ₁)_{x₁}(v₁).coprod (dμ₂)_{x₂}(v₂)`. -/
@@ -188,10 +204,8 @@ theorem range_mfderiv_prodMap_le_ker_differential_prodMap_iff (h₁ : σ₁.IsMo
     (Manifold.tangentSpaceProdEquiv (Prod.map i₁ i₂ z)).injective (LinearMap.range _),
     Manifold.map_range_mfderiv_prodMap hi₁ hi₂, ker_differential_prodMap h₁ h₂,
     Submodule.comap_le_comap_iff_of_surjective
-    (Manifold.tangentSpaceProdEquiv (Prod.map i₁ i₂ z)).surjective]
-  exact ⟨fun h ↦ ⟨by simpa using Submodule.comap_mono (f := LinearMap.inl ℝ _ _) h,
-    by simpa using Submodule.comap_mono (f := LinearMap.inr ℝ _ _) h⟩,
-    fun h ↦ Submodule.prod_mono h.1 h.2⟩
+    (Manifold.tangentSpaceProdEquiv (Prod.map i₁ i₂ z)).surjective, Submodule.prod_le_prod_iff,
+    Prod.map_fst, Prod.map_snd]
 
 /-- **The product of levels is a level of the product.** The tangent images of `i₁ × i₂` at
 `(z₁, z₂)` are the kernel of the differential of the moment map of the product exactly when the
@@ -210,92 +224,11 @@ theorem range_mfderiv_prodMap_eq_ker_differential_prodMap_iff (h₁ : σ₁.IsMo
     (Manifold.tangentSpaceProdEquiv (Prod.map i₁ i₂ z)).injective (LinearMap.range _),
     Manifold.map_range_mfderiv_prodMap hi₁ hi₂, ker_differential_prodMap h₁ h₂,
     (Submodule.comap_injective_of_surjective
-    (Manifold.tangentSpaceProdEquiv (Prod.map i₁ i₂ z)).surjective).eq_iff]
-  exact ⟨fun h ↦ ⟨by simpa using congrArg (Submodule.comap (LinearMap.inl ℝ _ _)) h,
-    by simpa using congrArg (Submodule.comap (LinearMap.inr ℝ _ _)) h⟩,
-    fun h ↦ h.1 ▸ h.2 ▸ rfl⟩
+    (Manifold.tangentSpaceProdEquiv (Prod.map i₁ i₂ z)).surjective).eq_iff, Submodule.prod_inj,
+    Prod.map_fst, Prod.map_snd]
 
 end IsMomentMap
 
 end SmoothTwoForm
-
-namespace InfinitesimalAction
-
-variable {EQ₁ HQ₁ Q₁ : Type*} [NormedAddCommGroup EQ₁] [NormedSpace ℝ EQ₁] [TopologicalSpace HQ₁]
-  {JQ₁ : ModelWithCorners ℝ EQ₁ HQ₁} [TopologicalSpace Q₁] [ChartedSpace HQ₁ Q₁]
-  {EQ₂ HQ₂ Q₂ : Type*} [NormedAddCommGroup EQ₂] [NormedSpace ℝ EQ₂] [TopologicalSpace HQ₂]
-  {JQ₂ : ModelWithCorners ℝ EQ₂ HQ₂} [TopologicalSpace Q₂] [ChartedSpace HQ₂ Q₂]
-  {p₁ : Z₁ → Q₁} {p₂ : Z₂ → Q₂}
-
-/-- The tangent vectors at `(z₁, z₂)` sent by `d(i₁ × i₂)` into the image of `S₁ × S₂` under the
-orbit map of the componentwise action are, read in the product tangent spaces, the products of
-those sent by `di₁` and `di₂` into the images of `S₁` and `S₂`. -/
-theorem comap_mfderiv_prodMap_map_eval_prodMap (a₁ : InfinitesimalAction 𝔤₁ I₁ M₁)
-    (a₂ : InfinitesimalAction 𝔤₂ I₂ M₂) (S₁ : Submodule ℝ 𝔤₁) (S₂ : Submodule ℝ 𝔤₂)
-    {z : Z₁ × Z₂} (hi₁ : MDifferentiableAt J₁ I₁ i₁ z.1)
-    (hi₂ : MDifferentiableAt J₂ I₂ i₂ z.2) :
-    ((S₁.prod S₂).map ((a₁.prodMap a₂).eval (Prod.map i₁ i₂ z))).comap
-        (mfderiv (J₁.prod J₂) (I₁.prod I₂) (Prod.map i₁ i₂) z).toLinearMap =
-      (((S₁.map (a₁.eval (i₁ z.1))).comap (mfderiv J₁ I₁ i₁ z.1).toLinearMap).prod
-        ((S₂.map (a₂.eval (i₂ z.2))).comap (mfderiv J₂ I₂ i₂ z.2).toLinearMap)).comap
-        (Manifold.tangentSpaceProdEquiv z).toLinearMap := by
-  rw [map_eval_prodMap, Prod.map_fst, Prod.map_snd, ← Submodule.comap_comp,
-    ← LinearMap.prodMap_comap_prod, ← Submodule.comap_comp]
-  congr 1
-  refine LinearMap.ext fun v ↦ ?_
-  obtain ⟨w, rfl⟩ := (Manifold.tangentSpaceProdEquiv z).symm.surjective v
-  simp only [LinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.coe_coe,
-    Manifold.mfderiv_prodMap_apply hi₁ hi₂, LinearEquiv.coe_coe,
-    ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.apply_symm_apply,
-    LinearMap.prodMap_apply]
-  -- `Prod.map i₁ i₂ z` is `(i₁ z.1, i₂ z.2)` by definition.
-  exact (Manifold.tangentSpaceProdEquiv (Prod.map i₁ i₂ z)).apply_symm_apply _
-
-/-- **Vertical directions of products.** The vertical tangent vectors of `p₁ × p₂` at `(z₁, z₂)`
-are sent by `d(i₁ × i₂)` into the orbit directions `(S₁ × S₂) · (i₁ × i₂)(z₁, z₂)` of the
-componentwise action exactly when the vertical vectors of `p₁` at `z₁` and of `p₂` at `z₂` are sent
-by `di₁` and `di₂` into `S₁ · i₁(z₁)` and `S₂ · i₂(z₂)`. -/
-theorem ker_mfderiv_prodMap_le_comap_map_eval_prodMap_iff (a₁ : InfinitesimalAction 𝔤₁ I₁ M₁)
-    (a₂ : InfinitesimalAction 𝔤₂ I₂ M₂) (S₁ : Submodule ℝ 𝔤₁) (S₂ : Submodule ℝ 𝔤₂)
-    {z : Z₁ × Z₂} (hi₁ : MDifferentiableAt J₁ I₁ i₁ z.1) (hi₂ : MDifferentiableAt J₂ I₂ i₂ z.2)
-    (hp₁ : MDifferentiableAt J₁ JQ₁ p₁ z.1) (hp₂ : MDifferentiableAt J₂ JQ₂ p₂ z.2) :
-    (mfderiv (J₁.prod J₂) (JQ₁.prod JQ₂) (Prod.map p₁ p₂) z).ker ≤
-        ((S₁.prod S₂).map ((a₁.prodMap a₂).eval (Prod.map i₁ i₂ z))).comap
-          (mfderiv (J₁.prod J₂) (I₁.prod I₂) (Prod.map i₁ i₂) z).toLinearMap ↔
-      (mfderiv J₁ JQ₁ p₁ z.1).ker ≤
-          (S₁.map (a₁.eval (i₁ z.1))).comap (mfderiv J₁ I₁ i₁ z.1).toLinearMap ∧
-        (mfderiv J₂ JQ₂ p₂ z.2).ker ≤
-          (S₂.map (a₂.eval (i₂ z.2))).comap (mfderiv J₂ I₂ i₂ z.2).toLinearMap := by
-  rw [Manifold.ker_mfderiv_prodMap hp₁ hp₂,
-    comap_mfderiv_prodMap_map_eval_prodMap a₁ a₂ S₁ S₂ hi₁ hi₂,
-    Submodule.comap_le_comap_iff_of_surjective (Manifold.tangentSpaceProdEquiv z).surjective]
-  exact ⟨fun h ↦ ⟨by simpa using Submodule.comap_mono (f := LinearMap.inl ℝ _ _) h,
-    by simpa using Submodule.comap_mono (f := LinearMap.inr ℝ _ _) h⟩,
-    fun h ↦ Submodule.prod_mono h.1 h.2⟩
-
-/-- **The vertical directions of a product of reduction data.** The vertical tangent vectors of
-`p₁ × p₂` at `(z₁, z₂)` are exactly those sent by `d(i₁ × i₂)` into the orbit directions
-`(S₁ × S₂) · (i₁ × i₂)(z₁, z₂)` of the componentwise action exactly when the vertical vectors of
-`p₁` at `z₁` and of `p₂` at `z₂` are exactly those sent by `di₁` and `di₂` into `S₁ · i₁(z₁)` and
-`S₂ · i₂(z₂)`. -/
-theorem ker_mfderiv_prodMap_eq_comap_map_eval_prodMap_iff (a₁ : InfinitesimalAction 𝔤₁ I₁ M₁)
-    (a₂ : InfinitesimalAction 𝔤₂ I₂ M₂) (S₁ : Submodule ℝ 𝔤₁) (S₂ : Submodule ℝ 𝔤₂)
-    {z : Z₁ × Z₂} (hi₁ : MDifferentiableAt J₁ I₁ i₁ z.1) (hi₂ : MDifferentiableAt J₂ I₂ i₂ z.2)
-    (hp₁ : MDifferentiableAt J₁ JQ₁ p₁ z.1) (hp₂ : MDifferentiableAt J₂ JQ₂ p₂ z.2) :
-    (mfderiv (J₁.prod J₂) (JQ₁.prod JQ₂) (Prod.map p₁ p₂) z).ker =
-        ((S₁.prod S₂).map ((a₁.prodMap a₂).eval (Prod.map i₁ i₂ z))).comap
-          (mfderiv (J₁.prod J₂) (I₁.prod I₂) (Prod.map i₁ i₂) z).toLinearMap ↔
-      (mfderiv J₁ JQ₁ p₁ z.1).ker =
-          (S₁.map (a₁.eval (i₁ z.1))).comap (mfderiv J₁ I₁ i₁ z.1).toLinearMap ∧
-        (mfderiv J₂ JQ₂ p₂ z.2).ker =
-          (S₂.map (a₂.eval (i₂ z.2))).comap (mfderiv J₂ I₂ i₂ z.2).toLinearMap := by
-  rw [Manifold.ker_mfderiv_prodMap hp₁ hp₂,
-    comap_mfderiv_prodMap_map_eval_prodMap a₁ a₂ S₁ S₂ hi₁ hi₂,
-    (Submodule.comap_injective_of_surjective (Manifold.tangentSpaceProdEquiv z).surjective).eq_iff]
-  exact ⟨fun h ↦ ⟨by simpa using congrArg (Submodule.comap (LinearMap.inl ℝ _ _)) h,
-    by simpa using congrArg (Submodule.comap (LinearMap.inr ℝ _ _)) h⟩,
-    fun h ↦ h.1 ▸ h.2 ▸ rfl⟩
-
-end InfinitesimalAction
 
 end TauCeti

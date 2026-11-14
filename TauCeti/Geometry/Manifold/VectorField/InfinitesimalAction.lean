@@ -12,7 +12,9 @@ public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Geometry.Manifold.VectorField.Prod
 
+import TauCeti.Geometry.Manifold.MFDeriv.Graph
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.LinearAlgebra.Submodule.Prod
 
 /-!
 # Infinitesimal actions of Lie algebras by vector fields
@@ -31,8 +33,11 @@ the same Lie algebra on `M` and on `N` give the diagonal action `Z ↦ (Z_M, Z_N
 (`TauCeti.InfinitesimalAction.prod`), because Lie brackets of product vector fields are computed
 factor by factor. Infinitesimal actions of `𝔤` on `M` and of `𝔥` on `N` give the componentwise
 action `(Z, Z') ↦ (Z_M, Z'_N)` of `𝔤 × 𝔥` on `M × N` (`TauCeti.InfinitesimalAction.prodMap`),
-whose orbit tangent spaces and isotropy algebras are the products of those of the factors. The
-basic example is the
+whose orbit tangent spaces and isotropy algebras are the products of those of the factors. For
+maps `i₁ × i₂` and `p₁ × p₂` out of a product, the vertical vectors of `p₁ × p₂` are sent by
+`d(i₁ × i₂)` into the orbit directions of `S × S'` exactly when the same holds for both factors
+(`TauCeti.InfinitesimalAction.ker_mfderiv_prodMap_eq_comap_map_eval_prodMap_iff`). The basic
+example is the
 action of the Lie algebra of all endomorphisms of a finite-dimensional real vector space `V` on `V`
 by the linear vector fields `x ↦ A x` (`TauCeti.InfinitesimalAction.linear`), which restricts to
 the linear actions of the classical subalgebras, such as the symplectic Lie algebra. An abelian Lie
@@ -322,11 +327,8 @@ theorem toSubmodule_isotropy_prodMap (a : InfinitesimalAction 𝔤 I M)
     (b : InfinitesimalAction 𝔥 J N) (p : M × N) :
     ((a.prodMap b).isotropy p).toSubmodule =
       (a.isotropy p.1).toSubmodule.prod (b.isotropy p.2).toSubmodule := by
-  ext Z
-  rw [Submodule.mem_prod, LieSubalgebra.mem_toSubmodule, LieSubalgebra.mem_toSubmodule,
-    LieSubalgebra.mem_toSubmodule, mem_isotropy_iff, mem_isotropy_iff, mem_isotropy_iff,
-    prodMap_apply, ← (Manifold.tangentSpaceProdEquiv p).map_eq_zero_iff,
-    Manifold.tangentSpaceProdEquiv_prodVectorField, Prod.mk_eq_zero]
+  rw [prodMap_def, isotropy_prod, isotropy_comp, isotropy_comp]
+  exact (LinearMap.prod_eq_inf_comap _ _).symm
 
 /-- The componentwise action is locally free at `(x, y)` exactly when both factors are locally
 free, at `x` and at `y`. -/
@@ -334,9 +336,76 @@ free, at `x` and at `y`. -/
 theorem isotropy_prodMap_eq_bot_iff (a : InfinitesimalAction 𝔤 I M)
     (b : InfinitesimalAction 𝔥 J N) (p : M × N) :
     (a.prodMap b).isotropy p = ⊥ ↔ a.isotropy p.1 = ⊥ ∧ b.isotropy p.2 = ⊥ := by
-  rw [← LieSubalgebra.toSubmodule_inj, toSubmodule_isotropy_prodMap, LieSubalgebra.bot_toSubmodule,
-    Submodule.prod_eq_bot_iff, ← LieSubalgebra.bot_toSubmodule, ← LieSubalgebra.bot_toSubmodule,
-    LieSubalgebra.toSubmodule_inj, LieSubalgebra.toSubmodule_inj]
+  simp only [← LieSubalgebra.toSubmodule_eq_bot, toSubmodule_isotropy_prodMap,
+    Submodule.prod_eq_bot_iff]
+
+section vertical
+
+variable {EZ₁ HZ₁ Z₁ : Type*} [NormedAddCommGroup EZ₁] [NormedSpace ℝ EZ₁] [TopologicalSpace HZ₁]
+  {J₁ : ModelWithCorners ℝ EZ₁ HZ₁} [TopologicalSpace Z₁] [ChartedSpace HZ₁ Z₁]
+  {EZ₂ HZ₂ Z₂ : Type*} [NormedAddCommGroup EZ₂] [NormedSpace ℝ EZ₂] [TopologicalSpace HZ₂]
+  {J₂ : ModelWithCorners ℝ EZ₂ HZ₂} [TopologicalSpace Z₂] [ChartedSpace HZ₂ Z₂]
+  {EQ₁ HQ₁ Q₁ : Type*} [NormedAddCommGroup EQ₁] [NormedSpace ℝ EQ₁] [TopologicalSpace HQ₁]
+  {JQ₁ : ModelWithCorners ℝ EQ₁ HQ₁} [TopologicalSpace Q₁] [ChartedSpace HQ₁ Q₁]
+  {EQ₂ HQ₂ Q₂ : Type*} [NormedAddCommGroup EQ₂] [NormedSpace ℝ EQ₂] [TopologicalSpace HQ₂]
+  {JQ₂ : ModelWithCorners ℝ EQ₂ HQ₂} [TopologicalSpace Q₂] [ChartedSpace HQ₂ Q₂]
+  {i₁ : Z₁ → M} {i₂ : Z₂ → N} {p₁ : Z₁ → Q₁} {p₂ : Z₂ → Q₂}
+
+/-- The tangent vectors at `(z₁, z₂)` sent by `d(i₁ × i₂)` into the image of `S × S'` under the
+orbit map of the componentwise action are, read in the product tangent spaces, the products of
+those sent by `di₁` and `di₂` into the images of `S` and `S'`. -/
+theorem comap_mfderiv_prodMap_map_eval_prodMap (a : InfinitesimalAction 𝔤 I M)
+    (b : InfinitesimalAction 𝔥 J N) (S : Submodule ℝ 𝔤) (S' : Submodule ℝ 𝔥)
+    {z : Z₁ × Z₂} (hi₁ : MDifferentiableAt J₁ I i₁ z.1) (hi₂ : MDifferentiableAt J₂ J i₂ z.2) :
+    ((S.prod S').map ((a.prodMap b).eval (Prod.map i₁ i₂ z))).comap
+        (mfderiv (J₁.prod J₂) (I.prod J) (Prod.map i₁ i₂) z).toLinearMap =
+      (((S.map (a.eval (i₁ z.1))).comap (mfderiv J₁ I i₁ z.1).toLinearMap).prod
+        ((S'.map (b.eval (i₂ z.2))).comap (mfderiv J₂ J i₂ z.2).toLinearMap)).comap
+        (Manifold.tangentSpaceProdEquiv z).toLinearMap := by
+  rw [map_eval_prodMap, Prod.map_fst, Prod.map_snd, ← Submodule.comap_comp,
+    ← LinearMap.prodMap_comap_prod, ← Submodule.comap_comp,
+    Manifold.tangentSpaceProdEquiv_comp_mfderiv_prodMap hi₁ hi₂]
+
+/-- **Vertical directions of products.** The vertical tangent vectors of `p₁ × p₂` at `(z₁, z₂)`
+are sent by `d(i₁ × i₂)` into the orbit directions `(S × S') · (i₁ × i₂)(z₁, z₂)` of the
+componentwise action exactly when the vertical vectors of `p₁` at `z₁` and of `p₂` at `z₂` are sent
+by `di₁` and `di₂` into `S · i₁(z₁)` and `S' · i₂(z₂)`. -/
+theorem ker_mfderiv_prodMap_le_comap_map_eval_prodMap_iff (a : InfinitesimalAction 𝔤 I M)
+    (b : InfinitesimalAction 𝔥 J N) (S : Submodule ℝ 𝔤) (S' : Submodule ℝ 𝔥)
+    {z : Z₁ × Z₂} (hi₁ : MDifferentiableAt J₁ I i₁ z.1) (hi₂ : MDifferentiableAt J₂ J i₂ z.2)
+    (hp₁ : MDifferentiableAt J₁ JQ₁ p₁ z.1) (hp₂ : MDifferentiableAt J₂ JQ₂ p₂ z.2) :
+    (mfderiv (J₁.prod J₂) (JQ₁.prod JQ₂) (Prod.map p₁ p₂) z).ker ≤
+        ((S.prod S').map ((a.prodMap b).eval (Prod.map i₁ i₂ z))).comap
+          (mfderiv (J₁.prod J₂) (I.prod J) (Prod.map i₁ i₂) z).toLinearMap ↔
+      (mfderiv J₁ JQ₁ p₁ z.1).ker ≤
+          (S.map (a.eval (i₁ z.1))).comap (mfderiv J₁ I i₁ z.1).toLinearMap ∧
+        (mfderiv J₂ JQ₂ p₂ z.2).ker ≤
+          (S'.map (b.eval (i₂ z.2))).comap (mfderiv J₂ J i₂ z.2).toLinearMap := by
+  rw [Manifold.ker_mfderiv_prodMap hp₁ hp₂, comap_mfderiv_prodMap_map_eval_prodMap a b S S' hi₁ hi₂,
+    Submodule.comap_le_comap_iff_of_surjective (Manifold.tangentSpaceProdEquiv z).surjective,
+    Submodule.prod_le_prod_iff]
+
+/-- **The vertical directions of a product of reduction data.** The vertical tangent vectors of
+`p₁ × p₂` at `(z₁, z₂)` are exactly those sent by `d(i₁ × i₂)` into the orbit directions
+`(S × S') · (i₁ × i₂)(z₁, z₂)` of the componentwise action exactly when the vertical vectors of
+`p₁` at `z₁` and of `p₂` at `z₂` are exactly those sent by `di₁` and `di₂` into `S · i₁(z₁)` and
+`S' · i₂(z₂)`. -/
+theorem ker_mfderiv_prodMap_eq_comap_map_eval_prodMap_iff (a : InfinitesimalAction 𝔤 I M)
+    (b : InfinitesimalAction 𝔥 J N) (S : Submodule ℝ 𝔤) (S' : Submodule ℝ 𝔥)
+    {z : Z₁ × Z₂} (hi₁ : MDifferentiableAt J₁ I i₁ z.1) (hi₂ : MDifferentiableAt J₂ J i₂ z.2)
+    (hp₁ : MDifferentiableAt J₁ JQ₁ p₁ z.1) (hp₂ : MDifferentiableAt J₂ JQ₂ p₂ z.2) :
+    (mfderiv (J₁.prod J₂) (JQ₁.prod JQ₂) (Prod.map p₁ p₂) z).ker =
+        ((S.prod S').map ((a.prodMap b).eval (Prod.map i₁ i₂ z))).comap
+          (mfderiv (J₁.prod J₂) (I.prod J) (Prod.map i₁ i₂) z).toLinearMap ↔
+      (mfderiv J₁ JQ₁ p₁ z.1).ker =
+          (S.map (a.eval (i₁ z.1))).comap (mfderiv J₁ I i₁ z.1).toLinearMap ∧
+        (mfderiv J₂ JQ₂ p₂ z.2).ker =
+          (S'.map (b.eval (i₂ z.2))).comap (mfderiv J₂ J i₂ z.2).toLinearMap := by
+  rw [Manifold.ker_mfderiv_prodMap hp₁ hp₂, comap_mfderiv_prodMap_map_eval_prodMap a b S S' hi₁ hi₂,
+    (Submodule.comap_injective_of_surjective (Manifold.tangentSpaceProdEquiv z).surjective).eq_iff,
+    Submodule.prod_inj]
+
+end vertical
 
 end prod
 
