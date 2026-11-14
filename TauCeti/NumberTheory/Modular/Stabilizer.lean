@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import TauCeti.NumberTheory.Modular.Orbits
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+public import TauCeti.Topology.Algebra.ConstMulAction
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
 import Mathlib.NumberTheory.ModularForms.ProperlyDiscontinuous
 
@@ -41,8 +42,9 @@ positive-determinant matrix fixing a point as elliptic.
 * `TauCeti.ModularGroup.trace_sq_lt_four_of_smul_eq_self_of_not_mem_center`: a noncentral
   integral matrix fixing a point has trace strictly between `-2` and `2`; this detects the
   absence of elliptic points in congruence subgroups via congruences on the trace.
-* `TauCeti.ModularGroup.finite_stabilizer`: every point stabiliser is finite, so the elliptic
-  order is defined at every point of `ℍ`.
+* `TauCeti.ModularGroup.properlyDiscontinuousSMul`: `SL(2, ℤ)` acts properly discontinuously on
+  `ℍ`, so by `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul` every point stabiliser is
+  finite and the elliptic order is defined at every point of `ℍ`.
 * `TauCeti.ModularGroup.card_stabilizer_I` and `TauCeti.ModularGroup.card_stabilizer_ρ`: the
   orders `4` and `6` at the two elliptic points themselves.
 * `TauCeti.ModularGroup.card_stabilizer_of_orbit_eq_I` and
@@ -107,19 +109,16 @@ theorem trace_sq_lt_four_of_smul_eq_self_of_not_mem_center {γ : SL(2, ℤ)}
       exact hfix w
     exact hγ ((QuotientGroup.eq_one_iff γ).mp hq)
 
-/-- **Every point stabiliser is finite**, so the elliptic order `e_P` is defined at every point
-of `ℍ` and not only inside the fundamental domain. -/
-instance finite_stabilizer (z : ℍ) : Finite (stabilizer SL(2, ℤ) z) :=
-  -- `SL(2, ℤ)` acts on `ℍ` through the injective `mapGL ℝ`, so its stabiliser is the preimage of
-  -- the stabiliser in Mathlib's image group `𝒮ℒ`, which acts properly discontinuously.
-  Set.Finite.to_subtype (s := (stabilizer SL(2, ℤ) z : Set SL(2, ℤ))) <|
-    ((ProperlyDiscontinuousSMul.finite_stabilizer' 𝒮ℒ z).preimage
-      (f := (Matrix.SpecialLinearGroup.mapGL ℝ : SL(2, ℤ) →* GL (Fin 2) ℝ).rangeRestrict)
-      (MonoidHom.rangeRestrict_injective_iff.2
-        (Matrix.SpecialLinearGroup.mapGL_injective (R := ℤ) (S := ℝ))).injOn).subset fun _ hg ↦ by
-      simpa only [SetLike.mem_coe, MulAction.mem_stabilizer_iff, MulAction.compHom_smul_def,
-        Set.mem_preimage, Set.mem_ofPred_eq, Subgroup.smul_def,
-        MonoidHom.coe_rangeRestrict] using hg
+/-- **`SL(2, ℤ)` acts properly discontinuously on `ℍ`**, and hence so does each of its subgroups.
+In particular every point stabiliser is finite, through
+`TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`, so the elliptic order `e_P` is defined
+at every point of `ℍ` and not only inside the fundamental domain. -/
+instance properlyDiscontinuousSMul : ProperlyDiscontinuousSMul SL(2, ℤ) ℍ :=
+  -- `SL(2, ℤ)` acts through the injective `mapGL ℝ`, onto Mathlib's image group `𝒮ℒ`
+  (MonoidHom.rangeRestrict_injective_iff.2
+    (Matrix.SpecialLinearGroup.mapGL_injective (R := ℤ) (S := ℝ))).properlyDiscontinuousSMul
+    fun _ _ ↦ by
+      simp only [Subgroup.smul_def, MonoidHom.coe_rangeRestrict, MulAction.compHom_smul_def]
 
 private theorem card_stabilizer_of_coe_eq {s : Finset SL(2, ℤ)}
     (h : (stabilizer SL(2, ℤ) w : Set SL(2, ℤ)) = ↑s) :
