@@ -24,8 +24,9 @@ property under the original measure, without completing the ambient space.
 
 For right-continuation, increments starting strictly after `s` are independent of every
 right-continuous event at `s`. Taking their almost sure limit as their starting times decrease
-to `s` gives independence of the increment starting at `s`. Only right continuity of paths
-at the starting time is needed, and its exceptional set may depend on that time.
+to `s` gives independence of the increment starting at `s` (and hence of the entire shifted
+increment process `t ↦ W (s + t) - W s`). Only right continuity of paths at each fixed time is
+needed, and its exceptional set may depend on that time.
 
 ## References
 
@@ -67,6 +68,13 @@ theorem rightCont (hW : IsFilteredPreBrownianReal ℱ W P)
   have hu' : Tendsto u atTop (nhdsWithin s (Ioi s)) :=
     tendsto_nhdsWithin_iff.2 ⟨hlim, Eventually.of_forall fun n => (hu n).1⟩
   exact tendsto_const_nhds.sub (hω.tendsto.comp hu')
+
+/-- If paths are almost surely right-continuous at each fixed time, the entire shifted increment
+process `t ↦ W (s + t) - W s` is independent of the right-continuous slice `ℱ.rightCont s`. -/
+theorem indep_shift_rightCont (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ t, ∀ᵐ ω ∂P, ContinuousWithinAt (W · ω) (Ioi t) t) (s : ℝ≥0) :
+    Indep (.comap (fun ω t ↦ W (s + t) ω - W s ω) inferInstance) (ℱ.rightCont s) P :=
+  (hW.rightCont hcont).indep_shift s
 
 /-- Adjoining ambient-measurable null events preserves the filtered pre-Brownian property
 on the original probability space, without completing its measurable space. -/

@@ -24,8 +24,10 @@ file derives the consequences that do not depend on the law of the increments.
   on `[s, u]` and on `[u, t]` give an increment independent of the past on `[s, t]`.
 * `MeasureTheory.Adapted.hasIndepIncrements`: increments independent of the past are independent
   increments in the sense of `ProbabilityTheory.HasIndepIncrements`.
-* `MeasureTheory.Adapted.indep_comap_sub_Ici`: increments independent of the past make the whole
-  future increment process `(X t - X s)_{t ≥ s}` independent of `ℱ s`.
+* `MeasureTheory.Adapted.indep_comap_sub_Ici` and
+  `MeasureTheory.Adapted.indep_comap_shift_sub`: increments independent of the past make the whole
+  future increment process `(X t - X s)_{t ≥ s}`, and on a canonically ordered additive index type
+  the shifted process `t ↦ X (s + t) - X s`, independent of `ℱ s`.
 -/
 
 public section
@@ -136,5 +138,18 @@ theorem indep_comap_sub_Ici (hX : Adapted ℱ X)
     exact iSup₂_le fun t ht ↦
       le_iSup₂_of_le (t : ι) (Finset.mem_map_of_mem _ ht) le_rfl
   · exact iSup₂_le fun _ _ ↦ (hX.measurable.sub hX.measurable).comap_le
+
+/-- On a canonically ordered additive index type, if the increments of an adapted process are
+independent of the past, then the shifted increment process `t ↦ X (s + t) - X s` is
+independent of `ℱ s`. -/
+theorem indep_comap_shift_sub [AddCommMonoid ι] [CanonicallyOrderedAdd ι] (hX : Adapted ℱ X)
+    (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ) (s : ι) :
+    Indep (.comap (fun ω t ↦ X (s + t) ω - X s ω) inferInstance) (ℱ s) μ := by
+  refine indep_of_indep_of_le_left (hX.indep_comap_sub_Ici hindep s) ?_
+  have hcomp : (fun ω t ↦ X (s + t) ω - X s ω) =
+      (fun (f : Set.Ici s → E) t ↦ f ⟨s + t, le_self_add⟩) ∘
+        fun ω (u : Set.Ici s) ↦ X u ω - X s ω := rfl
+  rw [hcomp, ← MeasurableSpace.comap_comp]
+  exact MeasurableSpace.comap_mono (Measurable.of_eval fun t ↦ measurable_pi_apply _).comap_le
 
 end MeasureTheory.Adapted

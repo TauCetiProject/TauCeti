@@ -5,13 +5,22 @@ Authors: Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
+import TauCeti.Probability.HasLaw
 
 /-!
-# Independence of almost surely constant coordinates
+# Basic criteria for independence
 
 A dependent family of random variables is independent if all but at most one coordinate are
-almost surely constant. No measurability assumption or restriction on the index type is needed.
+almost surely constant; no measurability assumption or restriction on the index type is needed
+(`TauCeti.Probability.iIndepFun_of_ae_eq_const_outside_subsingleton`).
+
+A random variable `Z` is independent of a sub-σ-algebra `m` whenever restricting `P` to every
+`m`-measurable event `A` (or `A ∩ F` for an almost-surely holding event `F` under a probability
+measure) gives `Z` the scalar-multiple law `P A • ν` (respectively `P (A ∩ F) • ν`): see
+`ProbabilityTheory.indep_comap_of_forall_hasLaw_restrict` and
+`ProbabilityTheory.indep_comap_of_forall_hasLaw_restrict_inter`.
 -/
 
 public section
@@ -82,3 +91,41 @@ theorem iIndepFun_of_ae_eq_const_outside_subsingleton {f : ∀ i, Ω → β i} {
       exact (Finset.prod_eq_one fun i hi => by rw [hfull' i hi, measure_univ]).symm
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+open Set
+
+variable {Ω β : Type*} [MeasurableSpace β]
+
+/-- If restricting `P` to every event `A` of a sub-σ-algebra `m` gives `Z` the law `P A • ν`,
+then `Z` is independent of `m`. Measurability of `Z` in the ambient σ-algebra is not required
+beyond the almost-everywhere measurability carried by `HasLaw`. -/
+theorem indep_comap_of_forall_hasLaw_restrict {m mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    {ν : Measure β} {Z : Ω → β} (hm : m ≤ mΩ) (hZ : HasLaw Z ν P)
+    (h : ∀ A, MeasurableSet[m] A → HasLaw Z (P A • ν) (P.restrict A)) :
+    Indep (.comap Z inferInstance) m P := by
+  rw [Indep_iff]
+  rintro _ A ⟨C, hC, rfl⟩ hA
+  have hZA := h A hA
+  calc
+    P (Z ⁻¹' C ∩ A) = P.restrict A (Z ⁻¹' C) := (Measure.restrict_apply' (hm A hA)).symm
+    _ = Measure.map Z (P.restrict A) C :=
+      (Measure.map_apply_of_aemeasurable hZA.aemeasurable hC).symm
+    _ = (P A • ν) C := by rw [hZA.map_eq]
+    _ = ν C * P A := by simp [mul_comm]
+    _ = Measure.map Z P C * P A := by rw [hZ.map_eq]
+    _ = P (Z ⁻¹' C) * P A := by rw [Measure.map_apply_of_aemeasurable hZ.aemeasurable hC]
+
+/-- Under a probability measure, restricted scalar-multiple laws on `A ∩ F` for every `m`-event
+`A` and an almost-surely holding event `F` imply that `Z` is independent of `m`. -/
+theorem indep_comap_of_forall_hasLaw_restrict_inter {m mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    [IsProbabilityMeasure P] {ν : Measure β} {Z : Ω → β} {F : Set Ω} (hm : m ≤ mΩ)
+    (hF : ∀ᵐ ω ∂P, ω ∈ F)
+    (h : ∀ A, MeasurableSet[m] A → HasLaw Z (P (A ∩ F) • ν) (P.restrict (A ∩ F))) :
+    Indep (.comap Z inferInstance) m P :=
+  have hall (A : Set Ω) (hA : MeasurableSet[m] A) : HasLaw Z (P A • ν) (P.restrict A) :=
+    (h A hA).of_restrict_inter_of_ae_mem hF
+  indep_comap_of_forall_hasLaw_restrict hm (by simpa using hall univ .univ) hall
+
+end ProbabilityTheory
