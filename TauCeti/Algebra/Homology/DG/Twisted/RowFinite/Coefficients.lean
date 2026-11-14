@@ -285,9 +285,7 @@ def coefficientCochainComplexMap (f : DGRightModuleHom hM hN) :
     m.coefficientCochainComplex hM ⟶ m.coefficientCochainComplex hN :=
   gradedCochainComplexHom (Finsupp.mapRange.linearMap (f.toLinearMap.restrictScalars R))
     (f.isHomogeneous_mapRange (ind := ind))
-    (LinearMap.ext fun g ↦ by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply]
-      exact m.coefficientDifferential_mapRange hM hN f g)
+    fun _ g ↦ m.coefficientDifferential_mapRange hM hN f g
 
 /-- In the identifications of the complex terms with the total-degree pieces, the coefficient map
 applies `f` to every coefficient. -/
@@ -390,7 +388,7 @@ def coefficientCochainComplexHom (Φ : (P →₀ M) →ₗ[R] (Q →₀ M))
     (hΦ : LinearMap.IsHomogeneous Φ (rowFiniteTotalGrading ℳ ind) (rowFiniteTotalGrading ℳ indQ) 0)
     (hcomm : mQ.coefficientDifferential hM ∘ₗ Φ = Φ ∘ₗ m.coefficientDifferential hM) :
     m.coefficientCochainComplex hM ⟶ mQ.coefficientCochainComplex hM :=
-  gradedCochainComplexHom Φ hΦ hcomm
+  gradedCochainComplexHom Φ hΦ fun _ x ↦ LinearMap.congr_fun hcomm x
 
 /-- The components of the morphism of a linear map are that linear map. -/
 @[simp]
@@ -402,7 +400,8 @@ theorem coefficientCochainComplexXEquiv_coefficientCochainComplexHom_f_apply
     (mQ.coefficientCochainComplexXEquiv hM n
         (((coefficientCochainComplexHom hM Φ hΦ hcomm).f n).hom x) : Q →₀ M) =
       Φ (m.coefficientCochainComplexXEquiv hM n x) :=
-  gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply Φ hΦ hcomm n x
+  gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply Φ hΦ
+    (fun _ x ↦ LinearMap.congr_fun hcomm x) n x
 
 /-- Two morphisms of coefficient complexes agree when their components agree on coefficient
 vectors. -/
@@ -426,7 +425,8 @@ def coefficientCochainComplexHomotopy {Φ Ψ : (P →₀ M) →ₗ[R] (Q →₀ 
     (hΦΨ : Φ = mQ.coefficientDifferential hM ∘ₗ H + H ∘ₗ m.coefficientDifferential hM + Ψ) :
     Homotopy (coefficientCochainComplexHom hM Φ hΦ hcommΦ)
       (coefficientCochainComplexHom hM Ψ hΨ hcommΨ) :=
-  gradedCochainComplexHomotopy hΦ hΨ hcommΦ hcommΨ H hH hΦΨ
+  gradedCochainComplexHomotopy hΦ hΨ (fun _ x ↦ LinearMap.congr_fun hcommΦ x)
+    (fun _ x ↦ LinearMap.congr_fun hcommΨ x) H hH fun _ x ↦ LinearMap.congr_fun hΦΨ x
 
 /-- The components of the homotopy of a linear map `H` are `H`. -/
 theorem coefficientCochainComplexXEquiv_coefficientCochainComplexHomotopy_hom_apply
@@ -444,8 +444,9 @@ theorem coefficientCochainComplexXEquiv_coefficientCochainComplexHomotopy_hom_ap
         (((coefficientCochainComplexHomotopy hM hΦ hΨ hcommΦ hcommΨ H hH hΦΨ).hom p q).hom x) :
         Q →₀ M) =
       H (m.coefficientCochainComplexXEquiv hM p x) :=
-  gradedCochainComplexXEquiv_gradedCochainComplexHomotopy_hom_apply hΦ hΨ hcommΦ hcommΨ H hH
-    hΦΨ p q hpq x
+  gradedCochainComplexXEquiv_gradedCochainComplexHomotopy_hom_apply hΦ hΨ
+    (fun _ x ↦ LinearMap.congr_fun hcommΦ x) (fun _ x ↦ LinearMap.congr_fun hcommΨ x) H hH
+    (fun _ x ↦ LinearMap.congr_fun hΦΨ x) p q hpq x
 
 end RowFiniteTwistingCocycle
 
