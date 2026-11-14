@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Inverse
 public import TauCeti.Analysis.PDE.Spectrum.Sequence
+public import Mathlib.Analysis.InnerProductSpace.Laplacian
+import TauCeti.Analysis.PDE.WeakLaplacian
+import TauCeti.MeasureTheory.Function.Lp.Integral
 
 /-!
 # The Dirichlet realization of a divergence-form operator
@@ -20,9 +23,11 @@ weak sense, and it sends `u` to `L u`: `(u, f)` lies on its graph exactly when
 `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`,
 
 that is, when `u` is the weak solution of the Dirichlet problem `L u = f` in `Ω`, `u = 0` on `∂Ω`
-(`TauCeti.PDE.mem_graph_dirichletOperator_iff`). For `L = -Δ` the domain is
-`{u ∈ H¹₀(Ω) : Δu ∈ L²(Ω)}`. The boundary condition is membership in `H¹₀(Ω)`, so no regularity
-of `∂Ω` enters.
+(`TauCeti.PDE.mem_graph_dirichletOperator_iff`). For `L = -Δ` the weak condition is the
+distributional one, so the domain is `{u ∈ H¹₀(Ω) : Δu ∈ L²(Ω)}`, the values of `H¹₀(Ω)` whose
+distributional Laplacian on `Ω` is an `L²(Ω)` function
+(`TauCeti.PDE.mem_domain_dirichletOperator_laplacian_iff`). The boundary condition is
+membership in `H¹₀(Ω)`, so no regularity of `∂Ω` enters.
 
 By coercivity the Dirichlet problem is uniquely solvable, and the realization is defined as the
 inverse of the injective solution operator `S = TauCeti.PDE.dirichletSolutionOperator`. Its
@@ -56,6 +61,14 @@ eigenvalues `0 < λ₀ ≤ λ₁ ≤ ⋯ → ∞` and which is diagonal in an or
 * `TauCeti.PDE.spectrum_dirichletOperator`: the spectrum is the Dirichlet spectrum.
 * `TauCeti.PDE.resolvent_dirichletOperator_apply`: the resolvent solves the shifted Dirichlet
   problem.
+* `TauCeti.PDE.mem_graph_dirichletOperator_laplacian_iff` and
+  `TauCeti.PDE.mem_domain_dirichletOperator_laplacian_iff`: for `-Δ`, the graph and domain
+  through distributional Laplacians.
+* `TauCeti.PDE.neg_setIntegral_laplacian_mul_eq_setIntegral_dirichletOperator_mul`,
+  `TauCeti.PDE.dirichletOperator_apply_eq_of_forall_neg_setIntegral_laplacian_mul_eq` and their
+  unsigned forms `TauCeti.PDE.setIntegral_laplacian_mul_eq_setIntegral_neg_dirichletOperator_mul`,
+  `TauCeti.PDE.dirichletOperator_apply_eq_neg_of_forall_setIntegral_laplacian_mul_eq`: on its
+  domain, the Dirichlet Laplacian is the distributional `-Δ`.
 * `TauCeti.PDE.exists_isSelfAdjoint_dirichletOperator_laplacian`: the Dirichlet Laplacian.
 
 ## References
@@ -287,6 +300,113 @@ theorem spectrum_dirichletOperator
   Set.ext fun _ => mem_spectrum_dirichletOperator_iff hcoeff hcoercive hOmega
 
 end Domain
+
+/-! ### The domain of the Dirichlet Laplacian -/
+
+section LaplacianDomain
+
+open Laplacian
+open scoped Distributions
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+  [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
+
+/-- **The graph of the Dirichlet Laplacian.** For `-Δ`, `x = (f, g)` lies on the graph of the
+Dirichlet realization exactly when `f` is the value of some `u ∈ H¹₀(Ω)` and `-Δf = g` in the
+sense of distributions on `Ω`. -/
+theorem mem_graph_dirichletOperator_laplacian_iff
+    (hcoeff : MemLp (fun x ↦ energyIntegrand ((fun _ ↦ (1 : Matrix ι ι ℝ)) x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+    {x : Lp ℝ 2 (mu.restrict Omega) × Lp ℝ 2 (mu.restrict Omega)} :
+    x ∈ (dirichletOperator hcoeff hcoercive).graph ↔
+      (∃ u : W1p0 mu Omega 2, W1p.value (u : W1p mu Omega 2) = x.1) ∧
+        ∀ φ : 𝓓(Omega, ℝ), -∫ y in Omega, Δ (φ : EuclideanSpace ℝ ι → ℝ) y * x.1 y ∂mu =
+          ∫ y in Omega, x.2 y * φ y ∂mu := by
+  obtain ⟨f, g⟩ := x
+  simp only [mem_graph_dirichletOperator_iff,
+    isWeakSolutionDirichlet_one_zero_zero_iff_forall_neg_setIntegral_laplacian_mul_eq]
+  constructor
+  · rintro ⟨u, rfl, h⟩
+    exact ⟨⟨u, rfl⟩, h⟩
+  · rintro ⟨⟨u, rfl⟩, h⟩
+    exact ⟨u, rfl, h⟩
+
+/-- **The domain of the Dirichlet Laplacian** is `{u ∈ H¹₀(Ω) : Δu ∈ L²(Ω)}`: the values of
+`H¹₀(Ω)` whose distributional Laplacian on `Ω` is an `L²(Ω)` function. -/
+theorem mem_domain_dirichletOperator_laplacian_iff
+    (hcoeff : MemLp (fun x ↦ energyIntegrand ((fun _ ↦ (1 : Matrix ι ι ℝ)) x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) {f : Lp ℝ 2 (mu.restrict Omega)} :
+    f ∈ (dirichletOperator hcoeff hcoercive).domain ↔
+      (∃ u : W1p0 mu Omega 2, W1p.value (u : W1p mu Omega 2) = f) ∧
+        ∃ g : Lp ℝ 2 (mu.restrict Omega), ∀ φ : 𝓓(Omega, ℝ),
+          ∫ x in Omega, Δ (φ : EuclideanSpace ℝ ι → ℝ) x * f x ∂mu =
+            ∫ x in Omega, g x * φ x ∂mu := by
+  simp only [LinearPMap.mem_domain_iff, mem_graph_dirichletOperator_laplacian_iff,
+    exists_and_left]
+  refine and_congr_right' <| (Equiv.neg _).exists_congr fun g ↦ forall_congr' fun φ ↦ ?_
+  rw [Equiv.neg_apply, Lp.integral_neg_mul, neg_eq_iff_eq_neg]
+
+/-- On its domain, the Dirichlet Laplacian is the distributional `-Δ`: for `f` in the domain,
+`-∫_Ω Δφ f = ∫_Ω (A f) φ` for every test function `φ` on `Ω`. -/
+theorem neg_setIntegral_laplacian_mul_eq_setIntegral_dirichletOperator_mul
+    (hcoeff : MemLp (fun x ↦ energyIntegrand ((fun _ ↦ (1 : Matrix ι ι ℝ)) x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+    (f : (dirichletOperator hcoeff hcoercive).domain) (φ : 𝓓(Omega, ℝ)) :
+    -∫ x in Omega, Δ (φ : EuclideanSpace ℝ ι → ℝ) x * (f : Lp ℝ 2 (mu.restrict Omega)) x ∂mu =
+      ∫ x in Omega, dirichletOperator hcoeff hcoercive f x * φ x ∂mu :=
+  ((mem_graph_dirichletOperator_laplacian_iff hcoeff hcoercive).1
+    ((dirichletOperator hcoeff hcoercive).mem_graph f)).2 φ
+
+/-- The Dirichlet Laplacian sends `f` in its domain to `g` when `-Δf = g` in the sense of
+distributions on `Ω`. -/
+theorem dirichletOperator_apply_eq_of_forall_neg_setIntegral_laplacian_mul_eq
+    (hcoeff : MemLp (fun x ↦ energyIntegrand ((fun _ ↦ (1 : Matrix ι ι ℝ)) x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+    {f : (dirichletOperator hcoeff hcoercive).domain} {g : Lp ℝ 2 (mu.restrict Omega)}
+    (hg : ∀ φ : 𝓓(Omega, ℝ),
+      -∫ x in Omega, Δ (φ : EuclideanSpace ℝ ι → ℝ) x * (f : Lp ℝ 2 (mu.restrict Omega)) x ∂mu =
+        ∫ x in Omega, g x * φ x ∂mu) :
+    dirichletOperator hcoeff hcoercive f = g :=
+  ((LinearPMap.image_iff f.2).2 ((mem_graph_dirichletOperator_laplacian_iff hcoeff hcoercive).2
+    ⟨((mem_domain_dirichletOperator_laplacian_iff hcoeff hcoercive).1 f.2).1, hg⟩)).symm
+
+/-- On its domain, the Dirichlet Laplacian is the distributional `-Δ`, in unsigned form: for `f`
+in the domain, `∫_Ω Δφ f = ∫_Ω (-A f) φ` for every test function `φ` on `Ω`. -/
+theorem setIntegral_laplacian_mul_eq_setIntegral_neg_dirichletOperator_mul
+    (hcoeff : MemLp (fun x ↦ energyIntegrand ((fun _ ↦ (1 : Matrix ι ι ℝ)) x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+    (f : (dirichletOperator hcoeff hcoercive).domain) (φ : 𝓓(Omega, ℝ)) :
+    ∫ x in Omega, Δ (φ : EuclideanSpace ℝ ι → ℝ) x * (f : Lp ℝ 2 (mu.restrict Omega)) x ∂mu =
+      ∫ x in Omega, (-dirichletOperator hcoeff hcoercive f) x * φ x ∂mu := by
+  rw [Lp.integral_neg_mul,
+    ← neg_setIntegral_laplacian_mul_eq_setIntegral_dirichletOperator_mul, neg_neg]
+
+/-- The Dirichlet Laplacian sends `f` in its domain to `-g` when `Δf = g` in the sense of
+distributions on `Ω`. -/
+theorem dirichletOperator_apply_eq_neg_of_forall_setIntegral_laplacian_mul_eq
+    (hcoeff : MemLp (fun x ↦ energyIntegrand ((fun _ ↦ (1 : Matrix ι ι ℝ)) x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+    {f : (dirichletOperator hcoeff hcoercive).domain} {g : Lp ℝ 2 (mu.restrict Omega)}
+    (hg : ∀ φ : 𝓓(Omega, ℝ),
+      ∫ x in Omega, Δ (φ : EuclideanSpace ℝ ι → ℝ) x * (f : Lp ℝ 2 (mu.restrict Omega)) x ∂mu =
+        ∫ x in Omega, g x * φ x ∂mu) :
+    dirichletOperator hcoeff hcoercive f = -g :=
+  dirichletOperator_apply_eq_of_forall_neg_setIntegral_laplacian_mul_eq hcoeff hcoercive
+    fun φ ↦ by rw [hg, Lp.integral_neg_mul]
+
+end LaplacianDomain
 
 /-! ### The Dirichlet Laplacian -/
 
