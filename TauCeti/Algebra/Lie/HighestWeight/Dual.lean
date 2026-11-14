@@ -10,10 +10,15 @@ public import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
 public import TauCeti.Algebra.Lie.HighestWeight.Irreducible
 public import TauCeti.Algebra.Lie.HighestWeight.LowestWeight
 public import TauCeti.Algebra.Lie.HighestWeight.Verma
+public import TauCeti.Algebra.Lie.Multiplicity
 public import TauCeti.Algebra.Lie.Weights.Diagonalizable
+-- Non-public: these supply the inputs of the proofs, never the vocabulary of a statement.
+import TauCeti.Algebra.Lie.HighestWeight.CompleteReducibility
+import TauCeti.Algebra.Lie.HighestWeight.Decomposition
+import TauCeti.Algebra.Lie.Multiplicity.Dual
 
 /-!
-# Self-duality of a finite-dimensional irreducible highest weight module
+# Duals of highest weight modules and self-duality
 
 Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form over a field of
 characteristic zero, let `H` be a split Cartan subalgebra and `b` a base of its root system, and
@@ -23,7 +28,9 @@ self-duality criterion:
 
 `M` carries a nonzero invariant bilinear form ↔ `M ≃ M*` ↔ `-(w₀ • lam) = lam`,
 
-with `w₀` the longest element of the Weyl group.
+with `w₀` the longest element of the Weyl group. It then computes the multiplicities of the dual of
+an arbitrary finite-dimensional module, and, over an algebraically closed field, reads off the
+self-duality criterion for such a module.
 
 ## The highest weight of the dual
 
@@ -49,6 +56,19 @@ At the named carrier `L(lam)` the criterion needs only dominance of `lam`: `L(la
 irreducible with a highest weight vector of weight `lam`, because the Verma module `M(lam)` is
 nonzero (`TauCeti.vermaGenerator_ne_zero`), and dominance makes it finite-dimensional.
 
+## Multiplicities in the dual
+
+For dominant integral `lam`, the dual of `L(lam)` is `L(-(w₀ • lam))`. For a finite-dimensional
+module `V`, complete reducibility makes the dual of a finite-dimensional irreducible occur in `V*`
+as often as the irreducible occurs in `V` (`LieModule.isotypicMultiplicity_dual_dual`). Hence,
+writing `m_V(lam)` for the multiplicity of `L(lam)` in `V`,
+
+`m_{V*}(lam) = m_V(-(w₀ • lam))`.
+
+Over an algebraically closed field a finite-dimensional module is determined by its
+multiplicities, through the packaged decomposition `V ≃ ⨁ L(lam)^{m_V(lam)}`, so `V ≃ V*` exactly
+when `m_V(lam) = m_V(-(w₀ • lam))` for every dominant integral `lam`.
+
 ## Main results
 
 * `TauCeti.exists_isHighestWeightVector_dual`: **the dual module has a highest weight vector of
@@ -58,6 +78,12 @@ nonzero (`TauCeti.vermaGenerator_ne_zero`), and dominance makes it finite-dimens
   criterion**, in its module and its bilinear-form form.
 * `TauCeti.exists_ne_zero_lieInvariant_irreducibleQuotient_iff`: the same criterion at the named
   carrier `L(lam)`.
+* `TauCeti.nonempty_lieModuleEquiv_dual_irreducibleQuotient`: **the dual of `L(lam)` is
+  `L(-(w₀ • lam))`.**
+* `TauCeti.isotypicMultiplicity_dual_irreducibleQuotient`: **the multiplicity of `L(lam)` in `V*`
+  is the multiplicity of `L(-(w₀ • lam))` in `V`.**
+* `TauCeti.nonempty_lieModuleEquiv_dual_iff_isotypicMultiplicity`: **a finite-dimensional module
+  is self-dual exactly when `L(lam)` and `L(-(w₀ • lam))` occur in it equally often.**
 
 ## References
 
@@ -71,12 +97,17 @@ namespace TauCeti
 
 open LieAlgebra Module _root_.LieModule
 
+open scoped DirectSum
+
 universe u v w
 
 variable {K : Type u} {L : Type v} [Field K] [CharZero K]
   [LieRing L] [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
-  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
-  {b : (IsKilling.rootSystem H).Base} {lam : Dual K H}
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
+
+section Irreducible
+
+variable [IsTriangularizable K H L] {b : (IsKilling.rootSystem H).Base} {lam : Dual K H}
 
 variable {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] {v : M}
   [_root_.LieModule.IsIrreducible K L M]
@@ -172,5 +203,92 @@ theorem exists_ne_zero_lieInvariant_irreducibleQuotient_iff (hlam : IsDominantIn
   have hgen := isHighestWeightVector_irreducibleQuotientGenerator b lam
   have _j := finiteDimensional_of_isHighestWeightVector_of_isDominantIntegral hgen hlam
   exact exists_ne_zero_lieInvariant_iff_neg_longestElement_smul_eq hgen
+
+/-! ### The dual of `L(lam)` -/
+
+variable (b) in
+/-- **The dual of `L(lam)` is `L(-(w₀ • lam))`**, for dominant integral `lam`. The dual is
+irreducible and has a highest weight vector of weight `-(w₀ • lam)`, and irreducible highest
+weight modules are classified by their weight. -/
+theorem nonempty_lieModuleEquiv_dual_irreducibleQuotient (hlam : IsDominantIntegral b lam) :
+    Nonempty (Dual K (irreducibleQuotient b lam) ≃ₗ⁅K,L⁆
+      irreducibleQuotient b (-(longestElement (IsKilling.rootSystem H) b • lam))) := by
+  have hgen := isHighestWeightVector_irreducibleQuotientGenerator b lam
+  have _i := finiteDimensional_of_isHighestWeightVector_of_isDominantIntegral hgen hlam
+  have _j := TauCeti.LieModule.isIrreducible_dual (K := K) (L := L)
+    (M := irreducibleQuotient b lam)
+  obtain ⟨f, hf⟩ := exists_isHighestWeightVector_dual hgen
+  exact (nonempty_lieModuleEquiv_iff_eq_of_isHighestWeightVector hf
+    (isHighestWeightVector_irreducibleQuotientGenerator b _)).mpr rfl
+
+end Irreducible
+
+/-! ### Multiplicities in the dual of an arbitrary module -/
+
+variable {V : Type w} [AddCommGroup V] [Module K V] [LieRingModule L V] [LieModule K L V]
+  [FiniteDimensional K V]
+
+section Multiplicity
+
+variable [IsTriangularizable K H L] {b : (IsKilling.rootSystem H).Base} {lam : Dual K H}
+
+variable (b) in
+/-- **The multiplicity of `L(lam)` in the dual `V*` is the multiplicity of `L(-(w₀ • lam))` in
+`V`**, for every finite-dimensional module `V` and dominant integral `lam`. Writing
+`mu = -(w₀ • lam)`, the module `L(lam)` is the dual of `L(mu)`, and the dual of an irreducible
+occurs in `V*` as often as the irreducible occurs in `V`, by complete reducibility. -/
+theorem isotypicMultiplicity_dual_irreducibleQuotient (hlam : IsDominantIntegral b lam) :
+    LieModule.isotypicMultiplicity K L (Dual K V) (irreducibleQuotient b lam) =
+      LieModule.isotypicMultiplicity K L V
+        (irreducibleQuotient b (-(longestElement (IsKilling.rootSystem H) b • lam))) := by
+  set mu := -(longestElement (IsKilling.rootSystem H) b • lam)
+  have hmu : IsDominantIntegral b mu := hlam.neg_longestElement_smul
+  have hmu' : -(longestElement (IsKilling.rootSystem H) b • mu) = lam := by
+    rw [smul_neg, smul_smul_longestElement, neg_neg]
+  have _i := finiteDimensional_irreducibleQuotient_of_isDominantIntegral hmu
+  have _j := complementedLattice_lieSubmodule_of_isKilling K L V
+  obtain ⟨e⟩ := nonempty_lieModuleEquiv_dual_irreducibleQuotient b hmu
+  rw [hmu'] at e
+  rw [← LieModule.isotypicMultiplicity_eq_of_lieModuleEquiv_type e,
+    LieModule.isotypicMultiplicity_dual_dual]
+
+end Multiplicity
+
+section SelfDual
+
+variable [IsAlgClosed K] {b : (IsKilling.rootSystem H).Base}
+
+variable (b) in
+/-- **The self-duality criterion for an arbitrary finite-dimensional module.** A
+finite-dimensional module `V` is equivalent to its dual exactly when, for every dominant integral
+`lam`, the modules `L(lam)` and `L(-(w₀ • lam))` occur in `V` equally often.
+
+Both directions read the multiplicities of `V*` off those of `V`
+(`TauCeti.isotypicMultiplicity_dual_irreducibleQuotient`); the reverse direction then compares
+the packaged decompositions `V ≃ ⨁ L(lam)^{m lam}` of `V` and of `V*`
+(`TauCeti.nonempty_lieModuleEquiv_directSum_irreducibleQuotient`). -/
+theorem nonempty_lieModuleEquiv_dual_iff_isotypicMultiplicity :
+    Nonempty (V ≃ₗ⁅K,L⁆ Dual K V) ↔ ∀ lam : Dual K H, IsDominantIntegral b lam →
+      LieModule.isotypicMultiplicity K L V (irreducibleQuotient b lam) =
+        LieModule.isotypicMultiplicity K L V
+          (irreducibleQuotient b (-(longestElement (IsKilling.rootSystem H) b • lam))) := by
+  refine ⟨fun ⟨e⟩ lam hlam ↦ ?_, fun h ↦ ?_⟩
+  · rw [← isotypicMultiplicity_dual_irreducibleQuotient b hlam,
+      LieModule.isotypicMultiplicity_eq_of_lieModuleEquiv e]
+  · -- The two packaged decompositions are indexed by the same multiplicities.
+    have key : ∀ m m' : {l : Dual K H // IsDominantIntegral b l} → ℕ, m = m' →
+        Nonempty ((⨁ q : (Σ lam : {l : Dual K H // IsDominantIntegral b l}, Fin (m lam)),
+          irreducibleQuotient b q.1.1) ≃ₗ⁅K,L⁆
+          ⨁ q : (Σ lam : {l : Dual K H // IsDominantIntegral b l}, Fin (m' lam)),
+            irreducibleQuotient b q.1.1) := by
+      rintro m _ rfl
+      exact ⟨LieModuleEquiv.refl⟩
+    obtain ⟨e⟩ := nonempty_lieModuleEquiv_directSum_irreducibleQuotient (M := V) b
+    obtain ⟨e'⟩ := nonempty_lieModuleEquiv_directSum_irreducibleQuotient (M := Dual K V) b
+    obtain ⟨f⟩ := key _ _ (funext fun lam ↦
+      ((h lam.1 lam.2).trans (isotypicMultiplicity_dual_irreducibleQuotient b lam.2).symm))
+    exact ⟨(e.trans f).trans e'.symm⟩
+
+end SelfDual
 
 end TauCeti
