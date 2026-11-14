@@ -39,8 +39,9 @@ coefficients and are not treated here.
   invariance of local `Lᵖ` membership.
 * `TauCeti.MemWkpLoc.comp_contDiffOn_diffeo`: invariance of the local classes of order at most one.
 * `TauCeti.MemWkpLoc.comp_contDiffOn_diffeo_halfPlane`: the half-disc version.
-* `TauCeti.MemWkpLoc.comp_continuousLinearEquiv_add`: invariance of every order under real-affine
-  maps.
+* `TauCeti.MemLpLoc.comp_continuousLinearEquiv_add`,
+  `TauCeti.MemWkpLoc.comp_continuousLinearEquiv_add`: invariance of local `Lᵖ` membership and of
+  every order under real-affine maps.
 
 ## References
 
@@ -136,6 +137,19 @@ theorem MemWkpLoc.comp_contDiffOn_diffeo_halfPlane {U' V' : Set ℂ} {u : ℂ �
   · exact hupper z hz.1 h
   · exact (hreal z hz.1 h.symm).ge
 
+omit [NormedSpace ℝ F] in
+/-- Real-affine changes of variables preserve local `Lᵖ` membership: for `A : ℂ ≃L[ℝ] ℂ`, `b : ℂ`
+and `z ↦ A z + b` mapping `U` into `V`, precomposition maps `MemLpLoc p V` into `MemLpLoc p U`. -/
+theorem MemLpLoc.comp_continuousLinearEquiv_add {u : ℂ → F} (hu : MemLpLoc p V u)
+    (A : ℂ ≃L[ℝ] ℂ) (b : ℂ) (hmaps : MapsTo (fun z => A z + b) U V) :
+    MemLpLoc p U (fun z => u (A z + b)) :=
+  hu.comp_contDiffOn_diffeo isOpen_univ (A.contDiff.add contDiff_const).contDiffOn
+    ((add_left_injective b).comp A.injective).injOn
+    (fun z _ => by
+      rw [fderiv_add_const, A.fderiv]
+      exact A.toLinearEquiv.isUnit_det'.ne_zero)
+    (subset_univ _) hmaps
+
 /-- **Real-affine changes of variables preserve every order.** For `A : ℂ ≃L[ℝ] ℂ`, `b : ℂ` and
 `z ↦ A z + b` mapping `U` into `V`, precomposition maps `MemWkpLoc p V k` into
 `MemWkpLoc p U k`. The first weak derivative is given by
@@ -145,22 +159,18 @@ theorem MemWkpLoc.comp_continuousLinearEquiv_add {u : ℂ → F} (hu : MemWkpLoc
     MemWkpLoc p U k (fun z => u (A z + b)) := by
   set Φ : ℂ → ℂ := fun z => A z + b
   have hΦ : ContDiffOn ℝ 1 Φ univ := (A.contDiff.add contDiff_const).contDiffOn
-  have hinj : InjOn Φ U := ((add_left_injective b).comp A.injective).injOn
   have hfd : ∀ z, fderiv ℝ Φ z = (A : ℂ →L[ℝ] ℂ) := fun z => by
     simp only [Φ, fderiv_add_const, A.fderiv]
-  have hdet : ∀ z ∈ U, (fderiv ℝ Φ z).det ≠ 0 := fun z _ => by
-    rw [hfd]
-    exact A.toLinearEquiv.isUnit_det'.ne_zero
   have hint : MapsTo Φ (interior U) (interior V) :=
     hmaps.interior_of_contDiffOn (hΦ.mono (subset_univ U)) le_rfl fun z _ => ⟨A, (hfd z).symm⟩
   induction k generalizing F with
-  | zero => exact memWkpLoc_zero_iff.2 (MemLpLoc.comp_contDiffOn_diffeo
-      (memWkpLoc_zero_iff.1 hu) isOpen_univ hΦ hinj hdet (subset_univ _) hmaps)
+  | zero =>
+    exact memWkpLoc_zero_iff.2 ((memWkpLoc_zero_iff.1 hu).comp_continuousLinearEquiv_add A b hmaps)
   | succ k ih =>
     obtain ⟨hLp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hu
     have := hD.completeSpace
     refine memWkpLoc_succ_iff.2
-      ⟨hLp.comp_contDiffOn_diffeo isOpen_univ hΦ hinj hdet (subset_univ _) hmaps,
+      ⟨hLp.comp_continuousLinearEquiv_add A b hmaps,
       fun z => ((ContinuousLinearMap.compL ℝ ℂ ℂ F).flip (A : ℂ →L[ℝ] ℂ)) (D (Φ z)), ?_,
       (ih hk).clm_comp _⟩
     simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply, Φ] using
