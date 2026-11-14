@@ -49,6 +49,8 @@ and then the latitude map reaches no point.
   of radius `r` in `(ℝ ∙ p)ᗮ` into the sphere of radius `r` in `E`.
 * `TauCeti.latitude p u t`: the point `√(1 - t²) • u + t • p` of the unit sphere at height `t`
   over the point `u` of the equator, with `t` clamped to `[-1, 1]`.
+* `TauCeti.latitudeHomeomorphComplPair p`: `TauCeti.latitude p` as a homeomorphism from
+  `S((ℝ ∙ p)ᗮ) × (-1, 1)` onto the complement of `{p, -p}` in `S(E)`.
 
 ## Main results
 
@@ -67,6 +69,10 @@ and then the latitude map reaches no point.
   coordinates.
 * `TauCeti.exists_latitude_eq` and `TauCeti.eq_and_eq_of_latitude_eq`: the latitude map is
   surjective when the equator is nonempty, and injective off the poles.
+* `TauCeti.coe_latitudeHomeomorphComplPair_apply`,
+  `TauCeti.coe_fst_latitudeHomeomorphComplPair_symm_apply`, and
+  `TauCeti.coe_snd_latitudeHomeomorphComplPair_symm_apply`: the formulas for
+  `TauCeti.latitudeHomeomorphComplPair` and its inverse.
 
 ## References
 
@@ -343,6 +349,111 @@ theorem frontier_setOf_inner_nonneg :
     refine ⟨subset_closure (by simp [coe_projIcc]), map_mem_closure (s := Iio 0)
       (continuous_latitude p continuous_const continuous_id) (by simp) fun t (ht : t < 0) ↦ ?_⟩
     simp [coe_projIcc, ht]
+
+/-- The inner product of `z : S(E)` against `p : S(E)` lies strictly between `-1` and `1` if and
+only if `z` is neither `p` nor `-p`. -/
+theorem inner_mem_Ioo_iff_notMem_pair {z : sphere (0 : E) 1} :
+    ⟪(z : E), (p : E)⟫ ∈ Ioo (-1 : ℝ) 1 ↔ z ∉ ({p, -p} : Set (sphere (0 : E) 1)) := by
+  refine ⟨fun hz hmem ↦ ?_, fun hz ↦ ?_⟩
+  · rcases hmem with h | (h : z = -p) <;> simp [h] at hz
+  · have hs : ⟪(z : E), (p : E)⟫ ∈ Icc (-1 : ℝ) 1 :=
+      abs_le.1 (by simpa using abs_real_inner_le_norm (z : E) (p : E))
+    have hsq := (sub_inner_smul_mem_closedBall p z).2
+    refine ⟨hs.1.lt_of_ne fun h ↦ hz (.inr (Subtype.ext ?_)),
+      hs.2.lt_of_ne fun h ↦ hz (.inl (Subtype.ext ?_))⟩
+    · have h0 : (z : E) - ⟪(z : E), (p : E)⟫ • (p : E) = 0 :=
+        norm_eq_zero.1 ((pow_eq_zero_iff two_ne_zero).1 (by nlinarith [h]))
+      rw [← h, neg_one_smul, sub_neg_eq_add, add_eq_zero_iff_eq_neg] at h0
+      simpa [coe_neg_sphere] using h0
+    · have h0 : (z : E) - ⟪(z : E), (p : E)⟫ • (p : E) = 0 :=
+        norm_eq_zero.1 ((pow_eq_zero_iff two_ne_zero).1 (by nlinarith [h]))
+      rwa [h, one_smul, sub_eq_zero] at h0
+
+/-- Inverse of `TauCeti.latitudeHomeomorphComplPair`: recovers the equatorial direction and height
+from a non-polar point of the unit sphere. -/
+private def latitudeComplPairInv
+    (z : (({p, -p} : Set (sphere (0 : E) 1))ᶜ : Set (sphere (0 : E) 1))) :
+    sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × Ioo (-1 : ℝ) 1 :=
+  let s := ⟪((z : sphere (0 : E) 1) : E), (p : E)⟫
+  let hs := (inner_mem_Ioo_iff_notMem_pair p).2 z.2
+  let w : (ℝ ∙ (p : E))ᗮ := ⟨(z : E) - s • (p : E), (sub_inner_smul_mem_closedBall p z).1⟩
+  ⟨⟨(√(1 - s ^ 2))⁻¹ • w, mem_sphere_zero_iff_norm.2 <| by
+      have hpos : 0 < √(1 - s ^ 2) := Real.sqrt_pos.2 (by nlinarith [hs.1, hs.2])
+      have hwn : ‖w‖ = √(1 - s ^ 2) := by
+        rw [← Real.sqrt_sq (norm_nonneg w), ← Submodule.norm_coe,
+          (sub_inner_smul_mem_closedBall p z).2]
+      rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hpos, hwn,
+        inv_mul_cancel₀ hpos.ne']⟩,
+    ⟨s, hs⟩⟩
+
+private lemma continuous_latitudeComplPairInv : Continuous (latitudeComplPairInv p) := by
+  let P : Set (sphere (0 : E) 1) := ({p, -p} : Set (sphere (0 : E) 1))ᶜ
+  have hs_cont : Continuous fun z : P ↦ ⟪((z : sphere (0 : E) 1) : E), (p : E)⟫ := by fun_prop
+  have hw_cont : Continuous fun z : P ↦
+      (⟨(z : E) - ⟪((z : sphere (0 : E) 1) : E), (p : E)⟫ • (p : E),
+        (sub_inner_smul_mem_closedBall p z).1⟩ : (ℝ ∙ (p : E))ᗮ) :=
+    Continuous.subtype_mk (by fun_prop) _
+  have hinv_cont : Continuous fun z : P ↦
+      (√(1 - ⟪((z : sphere (0 : E) 1) : E), (p : E)⟫ ^ 2))⁻¹ := by
+    refine Continuous.inv₀ (by fun_prop) fun z ↦ ?_
+    have hs := (inner_mem_Ioo_iff_notMem_pair p).2 z.2
+    exact (Real.sqrt_pos.2 (by nlinarith [hs.1, hs.2])).ne'
+  exact ((hinv_cont.smul hw_cont).subtype_mk _).prodMk (hs_cont.subtype_mk _)
+
+/-- **The latitude map is a homeomorphism off the poles.** `TauCeti.latitude p` identifies
+`S((ℝ ∙ p)ᗮ) × (-1, 1)` with the complement of `{p, -p}` in `S(E)`. -/
+def latitudeHomeomorphComplPair :
+    (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × Ioo (-1 : ℝ) 1) ≃ₜ
+      (({p, -p} : Set (sphere (0 : E) 1))ᶜ : Set (sphere (0 : E) 1)) where
+  toFun q := ⟨latitude p q.1 q.2, fun h ↦ (latitude_mem_pair_iff p q.1 q.2).1 h q.2.2⟩
+  invFun := latitudeComplPairInv p
+  left_inv q := by
+    obtain ⟨u, ⟨t, ht⟩⟩ := q
+    have hlat : ⟪(latitude p u t : E), (p : E)⟫ = t := by
+      rw [inner_latitude, projIcc_of_mem _ (Ioo_subset_Icc_self ht)]
+    have hpos : 0 < √(1 - t ^ 2) := Real.sqrt_pos.2 (by nlinarith [ht.1, ht.2])
+    refine Prod.ext (Subtype.ext (Subtype.ext ?_)) (Subtype.ext hlat)
+    dsimp only [latitudeComplPairInv]
+    simp only [Submodule.coe_smul]
+    rw [hlat, coe_latitude_of_mem p u (Ioo_subset_Icc_self ht), add_sub_cancel_right,
+      inv_smul_smul₀ hpos.ne']
+  right_inv z := by
+    have hs := (inner_mem_Ioo_iff_notMem_pair p).2 z.2
+    have hpos : 0 < √(1 - ⟪((z : sphere (0 : E) 1) : E), (p : E)⟫ ^ 2) :=
+      Real.sqrt_pos.2 (by nlinarith [hs.1, hs.2])
+    refine Subtype.ext (Subtype.ext ?_)
+    dsimp only [latitudeComplPairInv]
+    rw [coe_latitude_of_mem p _ (Ioo_subset_Icc_self hs), Submodule.coe_smul]
+    simp only [smul_inv_smul₀ hpos.ne', sub_add_cancel]
+  continuous_toFun :=
+    (continuous_latitude p continuous_fst (continuous_subtype_val.comp continuous_snd)).subtype_mk _
+  continuous_invFun := continuous_latitudeComplPairInv p
+
+/-- `TauCeti.latitudeHomeomorphComplPair p` evaluates `TauCeti.latitude p`. -/
+@[simp]
+theorem coe_latitudeHomeomorphComplPair_apply
+    (q : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × Ioo (-1 : ℝ) 1) :
+    (latitudeHomeomorphComplPair p q : sphere (0 : E) 1) = latitude p q.1 q.2 :=
+  (rfl)
+
+/-- The equatorial component of `(TauCeti.latitudeHomeomorphComplPair p).symm z` rescales the
+orthogonal projection of `z` onto `(ℝ ∙ p)ᗮ` to unit length. -/
+@[simp]
+theorem coe_fst_latitudeHomeomorphComplPair_symm_apply
+    (z : (({p, -p} : Set (sphere (0 : E) 1))ᶜ : Set (sphere (0 : E) 1))) :
+    ((((latitudeHomeomorphComplPair p).symm z).1 : (ℝ ∙ (p : E))ᗮ) : E) =
+      (√(1 - ⟪((z : sphere (0 : E) 1) : E), (p : E)⟫ ^ 2))⁻¹ •
+        (((z : sphere (0 : E) 1) : E) - ⟪((z : sphere (0 : E) 1) : E), (p : E)⟫ • (p : E)) :=
+  (rfl)
+
+/-- The height component of `(TauCeti.latitudeHomeomorphComplPair p).symm z` is the inner product
+with `p`. -/
+@[simp]
+theorem coe_snd_latitudeHomeomorphComplPair_symm_apply
+    (z : (({p, -p} : Set (sphere (0 : E) 1))ᶜ : Set (sphere (0 : E) 1))) :
+    (((latitudeHomeomorphComplPair p).symm z).2 : ℝ) =
+      ⟪((z : sphere (0 : E) 1) : E), (p : E)⟫ :=
+  (rfl)
 
 end Latitude
 
