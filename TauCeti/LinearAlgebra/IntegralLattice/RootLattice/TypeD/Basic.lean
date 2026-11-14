@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Unit
 
 import Mathlib.Algebra.BigOperators.Field
 import TauCeti.Algebra.Group.Subgroup.ZPowers
+import TauCeti.LinearAlgebra.IntegralLattice.Restriction
 
 /-!
 # The checkerboard lattice and the type `Dₙ` discriminant form
@@ -215,14 +216,13 @@ private theorem checkerboardCarrier_span_eq_top :
 /-- The checkerboard carrier is a full lattice in `ℚⁿ`. -/
 instance instIsLatticeCheckerboardCarrier : (checkerboardCarrier n).IsLattice ℚ where
   -- a submodule of the finitely generated module `ℤⁿ` over the Noetherian ring `ℤ`
-  fg := (Submodule.fg_span (Set.finite_range _)).of_le
-    (unitLattice_carrier_eq_span_basisFun (Fin n) ▸ checkerboardCarrier_le_unitLattice_carrier n)
+  fg := Submodule.IsLattice.fg.of_le (checkerboardCarrier_le_unitLattice_carrier n)
   span_eq_top := checkerboardCarrier_span_eq_top n
 
 /-! ## The lattice -/
 
-/-- The ambient form of the checkerboard lattice, the standard dot product on `Fin n → ℚ`,
-expanded in coordinates.  This is a construction helper: once the lattice is available, use
+/-- The identity Gram form on `Fin n → ℚ` is the standard dot product, expanded in coordinates.
+This is a helper for `checkerboardLattice_form`; for the lattice itself use
 `checkerboardLattice_form_apply` instead. -/
 private theorem checkerboardAmbientForm_apply (x y : Fin n → ℚ) :
     Matrix.toBilin' (1 : Matrix (Fin n) (Fin n) ℚ) x y = ∑ i, x i * y i := by
@@ -231,46 +231,38 @@ private theorem checkerboardAmbientForm_apply (x y : Fin n → ℚ) :
 
 /-- **The checkerboard lattice** in the Conway–Sloane coordinate model: the integer vectors of
 `ℚⁿ` whose coordinate sum is even, with the standard dot product.  For `n ≥ 4` this is the
-positive root lattice of type `Dₙ`. -/
+positive root lattice of type `Dₙ`.  It is the full restriction of the standard lattice
+`Iₙ = unitLattice (Fin n)` to the checkerboard carrier, so it keeps the form of `Iₙ`. -/
 noncomputable def checkerboardLattice : IntegralLattice (Fin n → ℚ) :=
-  ofSubmodule (checkerboardCarrier n) (Matrix.toBilin' 1)
-    (Matrix.isSymm_toBilin'_iff_isSymm.mpr Matrix.isSymm_one) (by
-    rintro x ⟨hx, -⟩ y ⟨hy, -⟩
-    choose zx hzx using hx
-    choose zy hzy using hy
-    refine Submodule.mem_one.mpr ⟨∑ i, zx i * zy i, ?_⟩
-    rw [checkerboardAmbientForm_apply]
-    push_cast [hzx, hzy]
-    rfl)
+  (unitLattice (Fin n)).restrictFull (checkerboardCarrier n)
+    (checkerboardCarrier_le_unitLattice_carrier n)
 
 /-- The carrier of the checkerboard lattice. -/
 @[simp]
 theorem checkerboardLattice_carrier : (checkerboardLattice n).carrier = checkerboardCarrier n :=
-  ofSubmodule_carrier _ _ _ _
-
-/-- The rational form of the checkerboard lattice is the identity Gram form. -/
-@[simp]
-theorem checkerboardLattice_form : (checkerboardLattice n).form = Matrix.toBilin' 1 :=
-  ofSubmodule_form _ _ _ _
-
-/-- The form of the checkerboard lattice is the standard dot product. -/
-theorem checkerboardLattice_form_apply (x y : Fin n → ℚ) :
-    (checkerboardLattice n).form x y = ∑ i, x i * y i := by
-  rw [checkerboardLattice_form, checkerboardAmbientForm_apply]
+  restrictFull_carrier ..
 
 /-- The checkerboard lattice carries the form of the standard lattice `Iₙ`. -/
 theorem checkerboardLattice_form_eq_unitLattice_form :
     (checkerboardLattice n).form = (unitLattice (Fin n)).form :=
-  LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ by
-    rw [checkerboardLattice_form_apply, unitLattice_form_apply]
+  restrictFull_form ..
+
+/-- The form of the checkerboard lattice is the standard dot product. -/
+theorem checkerboardLattice_form_apply (x y : Fin n → ℚ) :
+    (checkerboardLattice n).form x y = ∑ i, x i * y i := by
+  rw [checkerboardLattice_form_eq_unitLattice_form, unitLattice_form_apply]
+
+/-- The rational form of the checkerboard lattice is the identity Gram form. -/
+@[simp]
+theorem checkerboardLattice_form : (checkerboardLattice n).form = Matrix.toBilin' 1 :=
+  LinearMap.ext₂ fun x y ↦ by rw [checkerboardLattice_form_apply, checkerboardAmbientForm_apply]
 
 /-- **The checkerboard lattice `Dₙ` is positive definite**: its form is the standard dot product
 of `ℚⁿ`. -/
 theorem isPosDef_checkerboardLattice : (checkerboardLattice n).IsPosDef := by
-  rw [isPosDef_iff]
-  intro x hx
-  rw [checkerboardLattice_form_apply]
-  simpa [dotProduct] using Matrix.dotProduct_star_self_pos_iff.mpr hx
+  unfold IsPosDef
+  rw [checkerboardLattice_form_eq_unitLattice_form]
+  exact isPosDef_unitLattice _
 
 variable {n} in
 /-- Membership in the checkerboard lattice: every coordinate is an integer and their sum is
@@ -281,11 +273,10 @@ theorem mem_checkerboardLattice_carrier_iff (x : Fin n → ℚ) :
   rw [checkerboardLattice_carrier]
   exact mem_checkerboardCarrier_iff x
 
-/-- The checkerboard lattice is nondegenerate, the identity Gram matrix being invertible. -/
-instance instIsNondegenerateCheckerboardLattice : (checkerboardLattice n).IsNondegenerate := by
-  refine ⟨?_⟩
-  rw [checkerboardLattice_form]
-  exact LinearMap.BilinForm.nondegenerate_toBilin'_of_det_ne_zero' 1 (by simp)
+/-- The checkerboard lattice is nondegenerate, being a full restriction of the nondegenerate
+standard lattice `Iₙ`. -/
+instance instIsNondegenerateCheckerboardLattice : (checkerboardLattice n).IsNondegenerate :=
+  instIsNondegenerateRestrictFull ..
 
 /-- **The checkerboard lattice is even**: the sum of squares of integers with even sum is
 itself even. -/
