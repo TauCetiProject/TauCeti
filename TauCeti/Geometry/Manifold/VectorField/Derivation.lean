@@ -157,8 +157,8 @@ theorem tsupport_vectorFieldDerivation_apply_subset
   refine closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport _)
   by_contra h
   have hf : (f : M → 𝕜) =ᶠ[𝓝 x] fun _ ↦ 0 := notMem_tsupport_iff_eventuallyEq.1 h
-  simp [Function.mem_support, ContMDiffSection.vectorFieldDerivation_apply_apply, mvfderiv,
-    hf.mfderiv_eq, mfderiv_const] at hx
+  simp [Function.mem_support, ContMDiffSection.vectorFieldDerivation_apply_apply, hf.mvfderiv_eq,
+    mvfderiv_const] at hx
 
 end VectorFieldDerivation
 
