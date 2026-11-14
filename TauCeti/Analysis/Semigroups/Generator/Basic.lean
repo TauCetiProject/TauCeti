@@ -10,7 +10,6 @@ public import Mathlib.LinearAlgebra.LinearPMap
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Analysis.Semigroups.GrowthBound
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Algebra.Group.Order
 
 /-!
@@ -254,15 +253,15 @@ theorem StronglyContinuousSemigroup.continuous_intervalIntegral_orbit
       (continuous_snd.prodMk (continuous_snd.comp continuous_fst))) continuous_fst
 
 omit [CompleteSpace X] in
-/-- `‖∫_0^τ S(σ) y dσ‖ ≤ C ‖y‖ τ` when `S` is bounded by `C` up to time `τ`. -/
+/-- `‖∫_0^τ S(σ) y dσ‖ ≤ C ‖y‖ τ` when `S` is bounded by `C` on `(0, τ]`. -/
 theorem StronglyContinuousSemigroup.norm_intervalIntegral_orbit_le
     (S : StronglyContinuousSemigroup X) {C τ : ℝ} (hτ : 0 ≤ τ)
-    (hC : ∀ σ ≤ τ, ‖S.realOperator σ‖ ≤ C) (y : X) :
+    (hC : ∀ σ ∈ Set.Ioc 0 τ, ‖S.realOperator σ‖ ≤ C) (y : X) :
     ‖∫ σ in (0 : ℝ)..τ, S.realOperator σ y‖ ≤ C * ‖y‖ * τ := by
   have h := intervalIntegral.norm_integral_le_of_norm_le_const
     (a := 0) (b := τ) (f := fun σ => S.realOperator σ y) (C := C * ‖y‖) fun σ hσ => by
       rw [Set.uIoc_of_le hτ] at hσ
-      exact (S.realOperator σ).le_of_opNorm_le (hC _ hσ.2) _
+      exact (S.realOperator σ).le_of_opNorm_le (hC _ hσ) _
   rwa [sub_zero, abs_of_nonneg hτ] at h
 
 /-- `S(a) ∫_0^b S(σ) y dσ = ∫_a^{a+b} S(σ) y dσ` for `a, b ≥ 0`. -/

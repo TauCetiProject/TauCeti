@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Semigroups.CauchyProblem.Uniqueness
 public import TauCeti.Analysis.Semigroups.GrowthBound
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -56,9 +55,11 @@ the same forcing and initial value is a mild solution of `u' = A u`, `u(0) = 0`.
 
 * `TauCeti.Semigroups.IsForcedMildSolution`: mild solutions of `u' = A u + F`, `u(0) = x`.
 * `TauCeti.Semigroups.StronglyContinuousSemigroup.duhamel`: the Duhamel integral, with
-  `continuous_duhamel` and the bound `norm_duhamel_le`.
+  `continuousOn_duhamel_Iic`, `continuous_duhamel` and the bound `norm_duhamel_le`.
 * `TauCeti.Semigroups.StronglyContinuousSemigroup.generator_integral_duhamel`: the generator
   applied to the time integral of the Duhamel integral.
+* `TauCeti.Semigroups.StronglyContinuousSemigroup.isForcedMildSolution_duhamel`: the Duhamel
+  integral is the mild solution with initial value `0`.
 * `TauCeti.Semigroups.StronglyContinuousSemigroup.isForcedMildSolution_realOperator_add_duhamel`
   and `TauCeti.Semigroups.IsForcedMildSolution.eq_realOperator_add_duhamel`: existence and
   uniqueness of the mild solution, given by Duhamel's formula.
@@ -179,6 +180,17 @@ theorem duhamel_zero_left (t : ℝ) : S.duhamel 0 t = 0 := by
 theorem duhamel_smul (c : ℝ) (F : ℝ → X) (t : ℝ) : S.duhamel (c • F) t = c • S.duhamel F t := by
   simp only [duhamel_def, Pi.smul_apply, map_smul, integral_smul]
 
+/-- The Duhamel integral of the negated forcing term is the negated Duhamel integral. -/
+theorem duhamel_neg (F : ℝ → X) (t : ℝ) : S.duhamel (-F) t = -S.duhamel F t := by
+  simp only [duhamel_def, Pi.neg_apply, map_neg, integral_neg]
+
+/-- The Duhamel integral at time `t` only depends on the forcing term almost everywhere on
+`(0, t]`. -/
+theorem duhamel_congr_ae (h : F =ᵐ[volume.restrict (Ioc 0 t)] G) :
+    S.duhamel F t = S.duhamel G t := by
+  rw [duhamel_def, duhamel_def]
+  exact integral_congr_ae (h.mono fun s hs => by simp only [hs])
+
 /-- The Duhamel integrand `s ↦ S(t - s) F(s)` is bounded a.e. on `(0, t]` by the bound of `S` on
 `[0, t]` times `‖F s‖`. -/
 private theorem ae_norm_realOperator_sub_apply_le {M : ℝ}
@@ -223,41 +235,49 @@ theorem duhamel_add (hF : IntegrableOn F (Ioc 0 t)) (hG : IntegrableOn G (Ioc 0 
     (S.integrableOn_realOperator_sub_apply hF) (S.integrableOn_realOperator_sub_apply hG)]
   simp only [Pi.add_apply, ContinuousLinearMap.map_add]
 
+/-- The Duhamel integral is subtractive in integrable forcing terms. -/
+theorem duhamel_sub (hF : IntegrableOn F (Ioc 0 t)) (hG : IntegrableOn G (Ioc 0 t)) :
+    S.duhamel (F - G) t = S.duhamel F t - S.duhamel G t := by
+  rw [sub_eq_add_neg, S.duhamel_add hF hG.neg, duhamel_neg, ← sub_eq_add_neg]
+
+/-- The Duhamel integral of a forcing term integrable on `(0, T]` is continuous on `(-∞, T]`. -/
+theorem continuousOn_duhamel_Iic {T : ℝ} (hF : IntegrableOn F (Ioc 0 T)) :
+    ContinuousOn (S.duhamel F) (Iic T) := by
+  obtain ⟨C, hC0, hC⟩ := S.exists_norm_realOperator_le T
+  refine ContinuousOn.congr (f := fun t => ∫ s in Ioc 0 T,
+      (Iic t).indicator (fun s => S.realOperator (t - s) (F s)) s) (fun t₀ _ => ?_)
+    fun t ht => S.duhamel_eq_setIntegral_indicator ht
+  refine continuousWithinAt_of_dominated (bound := fun s => C * ‖F s‖)
+    (Eventually.of_forall fun t => (S.aestronglyMeasurable_realOperator_sub_apply
+      hF.aestronglyMeasurable t).indicator measurableSet_Iic) ?_ (hF.norm.const_mul C) ?_
+  · filter_upwards [self_mem_nhdsWithin] with t ht
+    refine (ae_restrict_iff' measurableSet_Ioc).2 (Eventually.of_forall fun s hs => ?_)
+    simp only [indicator_apply, mem_Iic]
+    split_ifs
+    · exact (S.realOperator (t - s)).le_of_opNorm_le (hC _ (by linarith [hs.1, mem_Iic.1 ht])) _
+    · rw [norm_zero]
+      positivity
+  · -- Off the single time `t₀`, the integrand is eventually constant in `t` or eventually
+    -- `S(t - s) F(s)`, which is continuous in `t`.
+    have hne : ∀ᵐ s ∂(volume.restrict (Ioc 0 T)), s ≠ t₀ :=
+      ae_restrict_of_ae (by rw [ae_iff]; simp)
+    filter_upwards [hne] with s hs
+    refine ContinuousAt.continuousWithinAt ?_
+    rcases hs.lt_or_gt with hlt | hgt
+    · refine ContinuousAt.congr (f := fun t => S.realOperator (t - s) (F s)) ?_ ?_
+      · exact (S.continuous_realOperator_uncurry.comp
+          ((continuous_id.sub continuous_const).prodMk continuous_const)).continuousAt
+      · filter_upwards [eventually_gt_nhds hlt] with t ht
+        simp only [indicator_apply, mem_Iic, ht.le, ite_true]
+    · refine ContinuousAt.congr (f := fun _ => (0 : X)) continuousAt_const ?_
+      filter_upwards [eventually_lt_nhds hgt] with t ht
+      simp only [indicator_apply, mem_Iic, not_le.2 ht, ite_false]
+
 /-- The Duhamel integral of a locally integrable forcing term is continuous in time. -/
-theorem continuous_duhamel (hF : LocallyIntegrableOn F (Ici 0)) : Continuous (S.duhamel F) := by
-  refine continuous_iff_continuousAt.2 fun t₀ => ?_
-  set R := max t₀ 0 + 1
-  have hFR : IntegrableOn F (Ioc 0 R) := hF.integrableOn_Ioc_of_Ici R
-  obtain ⟨C, hC0, hC⟩ := S.exists_norm_realOperator_le R
-  have hnear : ∀ᶠ t in 𝓝 t₀, t < R := eventually_lt_nhds (by linarith [le_max_left t₀ 0])
-  refine ContinuousAt.congr (f := fun t => ∫ s in Ioc 0 R,
-      (Iic t).indicator (fun s => S.realOperator (t - s) (F s)) s) ?_ ?_
-  · refine continuousAt_of_dominated (bound := fun s => C * ‖F s‖)
-      (Eventually.of_forall fun t => (S.aestronglyMeasurable_realOperator_sub_apply
-        hFR.aestronglyMeasurable t).indicator measurableSet_Iic) ?_ (hFR.norm.const_mul C) ?_
-    · filter_upwards [hnear] with t ht
-      refine (ae_restrict_iff' measurableSet_Ioc).2 (Eventually.of_forall fun s hs => ?_)
-      simp only [indicator_apply, mem_Iic]
-      split_ifs
-      · exact (S.realOperator (t - s)).le_of_opNorm_le (hC _ (by linarith [hs.1])) _
-      · rw [norm_zero]
-        positivity
-    · -- Off the single time `t₀`, the integrand is eventually constant in `t` or eventually
-      -- `S(t - s) F(s)`, which is continuous in `t`.
-      have hne : ∀ᵐ s ∂(volume.restrict (Ioc 0 R)), s ≠ t₀ :=
-        ae_restrict_of_ae (by rw [ae_iff]; simp)
-      filter_upwards [hne] with s hs
-      rcases hs.lt_or_gt with hlt | hgt
-      · refine ContinuousAt.congr (f := fun t => S.realOperator (t - s) (F s)) ?_ ?_
-        · exact (S.continuous_realOperator_uncurry.comp
-            ((continuous_id.sub continuous_const).prodMk continuous_const)).continuousAt
-        · filter_upwards [eventually_gt_nhds hlt] with t ht
-          simp only [indicator_apply, mem_Iic, ht.le, ite_true]
-      · refine ContinuousAt.congr (f := fun _ => (0 : X)) continuousAt_const ?_
-        filter_upwards [eventually_lt_nhds hgt] with t ht
-        simp only [indicator_apply, mem_Iic, not_le.2 ht, ite_false]
-  · filter_upwards [hnear] with t ht
-    exact (S.duhamel_eq_setIntegral_indicator ht.le).symm
+theorem continuous_duhamel (hF : LocallyIntegrableOn F (Ici 0)) : Continuous (S.duhamel F) :=
+  continuous_iff_continuousAt.2 fun t₀ =>
+    (S.continuousOn_duhamel_Iic (hF.integrableOn_Ioc_of_Ici (t₀ + 1))).continuousAt
+      (Iic_mem_nhds (lt_add_one t₀))
 
 /-! ### The generator on the time integral of the Duhamel integral -/
 
@@ -332,7 +352,7 @@ private theorem tendsto_setIntegral_realOperator_sub_average (hF : IntegrableOn 
     rw [havg_def, norm_smul, Real.norm_of_nonneg hh₀]
     calc 1 / h * ‖∫ σ in (0 : ℝ)..h, S.realOperator σ y‖ ≤ 1 / h * (C * ‖y‖ * h) :=
           mul_le_mul_of_nonneg_left (S.norm_intervalIntegral_orbit_le hh.1.le
-            (fun σ hσ => hC σ (hσ.trans (hh.2.le.trans (le_max_right t 1)))) y) hh₀
+            (fun σ hσ => hC σ (hσ.2.trans (hh.2.le.trans (le_max_right t 1)))) y) hh₀
       _ = C * ‖y‖ := by field_simp [hh.1.ne']
   have havg_lim (y : X) : Tendsto (fun h => avg h y) (𝓝[>] 0) (𝓝 y) := by
     refine (S.tendsto_average_orbit_zero y).congr' ?_
@@ -374,7 +394,7 @@ private theorem tendsto_quot_integral_duhamel (hF : IntegrableOn F (Ioc 0 t)) :
     refine (ae_restrict_iff' measurableSet_Ioc).2 (Eventually.of_forall fun s hs => ?_)
     calc ‖∫ σ in (0 : ℝ)..(t - s), S.realOperator σ (F s)‖ ≤ C * ‖F s‖ * (t - s) :=
           S.norm_intervalIntegral_orbit_le (by linarith [hs.2])
-            (fun σ hσ => hC σ (by linarith [hs.1])) _
+            (fun σ hσ => hC σ (by linarith [hσ.2, hs.1])) _
       _ ≤ C * t * ‖F s‖ := by
           nlinarith [mul_nonneg (mul_nonneg hC0 (norm_nonneg (F s))) hs.1.le]
   -- Since `(S(h) - 1) K(t - s) = (S(t - s) - 1) K(h)`, the difference quotient is an integral of
@@ -436,6 +456,12 @@ theorem isForcedMildSolution_realOperator_add_duhamel (hF : LocallyIntegrableOn 
   rw [hsplit, LinearPMap.map_add, S.generator_integral_orbit, S.generator_integral_duhamel hFt]
   beta_reduce
   abel
+
+/-- The Duhamel integral of a locally integrable forcing term `F` is the mild solution of
+`u' = A u + F`, `u(0) = 0`. -/
+theorem isForcedMildSolution_duhamel (hF : LocallyIntegrableOn F (Ici 0)) :
+    IsForcedMildSolution S.generator F 0 (S.duhamel F) :=
+  (S.isForcedMildSolution_realOperator_add_duhamel hF 0).congr fun t _ => by simp
 
 end StronglyContinuousSemigroup
 
