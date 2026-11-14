@@ -23,6 +23,8 @@ integrability domain of the negative-binomial probability-generating function.
   multichoose binomial series on the open unit disk.
 * `TauCeti.summable_multichoose_mul_geometric_iff_norm_lt_one` — exact summability of
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
+* `TauCeti.norm_ascPochhammer_eval_le`, `TauCeti.norm_multichoose_le` — triangle-inequality
+  comparison `‖(w)_n‖ ≤ (‖w‖)_n` and `‖multichoose w n‖ ≤ multichoose ‖w‖ n`.
 -/
 
 public section
@@ -82,6 +84,35 @@ theorem summable_multichoose_mul_geometric_iff_norm_lt_one
   refine ⟨fun hs => not_le.1 fun hq => hnot (hs.of_nonneg_of_le (fun n => (hcoeff_pos n).le)
     fun n => le_mul_of_one_le_right (hcoeff_pos n).le (one_le_pow₀ hq)), fun hq => ?_⟩
   exact (hasSum_multichoose_mul_geometric_of_abs_lt_one (by simpa using hq)).summable
+
+/-- In any seminormed commutative ring with `‖1‖ = 1`, evaluating the rising factorial polynomial
+at `w` has norm at most its value at `‖w‖`. -/
+theorem norm_ascPochhammer_eval_le {R : Type*} [SeminormedCommRing R] [NormOneClass R]
+    (w : R) (n : ℕ) :
+    ‖(ascPochhammer R n).eval w‖ ≤ (ascPochhammer ℝ n).eval ‖w‖ := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    simp only [ascPochhammer_succ_right, Polynomial.eval_mul, Polynomial.eval_add,
+      Polynomial.eval_X, Polynomial.eval_natCast]
+    exact (norm_mul_le _ _).trans (mul_le_mul ih
+      ((norm_add_le w n).trans (add_le_add_right ((Nat.norm_cast_le n).trans_eq (by simp)) ‖w‖))
+      (norm_nonneg _) ((norm_nonneg _).trans ih))
+
+/-- Over `ℝ` or `ℂ`, the generalized multichoose coefficient satisfies
+`‖multichoose w n‖ ≤ multichoose ‖w‖ n`. -/
+theorem norm_multichoose_le {𝕂 : Type*} [RCLike 𝕂] (w : 𝕂) (n : ℕ) :
+    ‖Ring.multichoose w n‖ ≤ Ring.multichoose ‖w‖ n := by
+  have hw := Ring.factorial_nsmul_multichoose_eq_ascPochhammer w n
+  rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at hw
+  have hr := Ring.factorial_nsmul_multichoose_eq_ascPochhammer ‖w‖ n
+  rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at hr
+  have hfac_pos : (0 : ℝ) < n.factorial := Nat.cast_pos.2 (Nat.factorial_pos n)
+  refine le_of_mul_le_mul_left ?_ hfac_pos
+  have hnorm : (n.factorial : ℝ) * ‖Ring.multichoose w n‖ = ‖(ascPochhammer 𝕂 n).eval w‖ := by
+    rw [← hw, norm_mul, RCLike.norm_natCast]
+  rw [hnorm, hr]
+  exact norm_ascPochhammer_eval_le w n
 
 end TauCeti
 
