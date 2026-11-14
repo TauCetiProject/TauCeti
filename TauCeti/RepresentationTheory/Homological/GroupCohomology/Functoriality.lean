@@ -27,8 +27,13 @@ induced by its inclusions give the inverse.
 
 * `TauCeti.groupCohomology.mapCocycles₁_apply`: the value of a pulled-back `1`-cocycle.
 * `TauCeti.groupCohomology.mapCocycles₂_apply`: the value of a pulled-back `2`-cocycle.
-* `TauCeti.groupCohomology.map_id_add`: the map induced on cohomology is additive in the
-  morphism of representations.
+* `TauCeti.groupCohomology.map_id_add` and `TauCeti.groupCohomology.map_id_nsmul`: the map induced
+  on cohomology is additive in the morphism of representations.
+* `TauCeti.groupCohomology.nsmul_eq_zero_of_forall_nsmul_eq_zero` and
+  `TauCeti.groupCohomology.natCard_coe_nsmul_eq_zero`: a natural number annihilating a
+  representation annihilates its cohomology in every degree; in particular `Nat.card A` does.
+* `TauCeti.groupCohomology.nsmul_bijective`: bijective multiplication by a natural number on a
+  representation induces bijective multiplication on its cohomology in every degree.
 * `CategoryTheory.Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv`: the cohomology of a
   biproduct is the product of the cohomologies.
 -/
@@ -77,6 +82,44 @@ theorem map_id_add {A B : Rep k G} (φ ψ : A ⟶ B) (n : ℕ) :
 @[simp]
 theorem map_id_zero (A B : Rep k G) (n : ℕ) : map (MonoidHom.id G) (0 : A ⟶ B) n = 0 :=
   (functor k G n).map_zero A B
+
+/-- The map induced on `Hⁿ(G, -)` by a natural-number multiple `m • φ` of a morphism of
+representations is `m` times the map induced by `φ`. -/
+@[simp]
+theorem map_id_nsmul {A B : Rep k G} (m : ℕ) (φ : A ⟶ B) (n : ℕ) :
+    map (MonoidHom.id G) (m • φ) n = m • map (MonoidHom.id G) φ n :=
+  (functor k G n).map_nsmul
+
+/-- If `m : ℕ` annihilates every element of the representation `A`, then `m` annihilates
+`Hⁿ(G, A)` in every degree `n`. -/
+theorem nsmul_eq_zero_of_forall_nsmul_eq_zero {A : Rep k G} {m : ℕ}
+    (hA : ∀ a : A, m • a = 0) {n : ℕ} (x : groupCohomology A n) : m • x = 0 := by
+  have h0 : m • (𝟙 A : A ⟶ A) = 0 :=
+    Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext hA
+  simpa using congr((map (MonoidHom.id G) $h0 n).hom x)
+
+/-- The cardinality of the underlying module of `A` annihilates `Hⁿ(G, A)` in every degree `n`
+(when `A` is infinite, `Nat.card A = 0` and the statement is trivial). -/
+theorem natCard_coe_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A n) :
+    Nat.card A • x = 0 :=
+  nsmul_eq_zero_of_forall_nsmul_eq_zero (fun _ ↦ card_nsmul_eq_zero') x
+
+/-- If multiplication by `m : ℕ` is bijective on `A`, then it is bijective on `Hⁿ(G, A)` in every
+degree `n`. -/
+theorem nsmul_bijective {A : Rep k G} {m : ℕ}
+    (hA : Function.Bijective fun a : A ↦ m • a) (n : ℕ) :
+    Function.Bijective fun x : groupCohomology A n ↦ m • x := by
+  let e : A.V ≃ₗ[k] A.V := LinearEquiv.ofBijective (m • LinearMap.id) hA
+  let eA : A ≅ A := Rep.mkIso (.mk e fun g ↦ LinearMap.ext fun x ↦ by simp [e])
+  have heA : eA.hom = m • 𝟙 A :=
+    Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext fun _ ↦ rfl
+  have hfun : (fun x : groupCohomology A n ↦ m • x) =
+      ⇑((functor k G n).mapIso eA).toLinearEquiv := by
+    ext x
+    change m • x = ((((functor k G n).mapIso eA).hom).hom) x
+    rw [CategoryTheory.Functor.mapIso_hom, functor_map, heA, map_id_nsmul, map_id]
+    rfl
+  exact hfun ▸ ((functor k G n).mapIso eA).toLinearEquiv.bijective
 
 end TauCeti.groupCohomology
 

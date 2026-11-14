@@ -22,7 +22,10 @@ cohomological triviality criterion.
 ## Main statements
 
 * `TauCeti.groupCohomology.eq_zero_of_pow_nsmul_eq_zero_of_map_sylow_eq_zero`: an element of
-  `Hⁿ(G, A)` killed by a power of `p` and by restriction to a Sylow `p`-subgroup is zero.
+  `Hⁿ(G, A)` killed by a power of `p` and by restriction to a finite-index Sylow `p`-subgroup is
+  zero.
+* `TauCeti.groupCohomology.map_sylow_injective_of_isAddPGroup`: restriction to a finite-index
+  Sylow `p`-subgroup is injective in every degree on `p`-primary torsion coefficients.
 * `TauCeti.groupCohomology.eq_zero_of_map_sylow_eq_zero`: an element of `Hⁿ⁺¹(G, A)` whose
   restriction to a Sylow `p`-subgroup vanishes for every prime `p` is zero.
 * `TauCeti.groupCohomology.isZero_of_isZero_sylow`: `Hⁿ⁺¹(G, A) = 0` if, for every prime `p`
@@ -52,18 +55,35 @@ open _root_.groupCohomology
 
 variable (A : Rep k G) (n : ℕ)
 
-/-- **Restriction to a Sylow `p`-subgroup is injective on the `p`-primary part** (Milne II 1.33):
-an element of `Hⁿ(G, A)` killed by a power of `p` whose restriction to a Sylow `p`-subgroup `P`
-vanishes is zero. -/
+omit [Finite G] in
+/-- **Restriction to a finite-index Sylow `p`-subgroup is injective on the `p`-primary part**
+(Milne II 1.33): an element of `Hⁿ(G, A)` killed by a power of `p` whose restriction to a Sylow
+`p`-subgroup `P` of finite index vanishes is zero. -/
 theorem eq_zero_of_pow_nsmul_eq_zero_of_map_sylow_eq_zero
-    (p : ℕ) [Fact p.Prime] (P : Sylow p G)
+    (p : ℕ) [Fact p.Prime] (P : Sylow p G) [P.FiniteIndex]
     {x : groupCohomology A n} {j : ℕ} (hx : p ^ j • x = 0)
     (h : map (P : Subgroup G).subtype (𝟙 (res (P : Subgroup G).subtype A)) n x = 0) :
-    x = 0 := by
-  -- `[G : P]` kills `x` and is prime to `p`, hence to `p ^ j`; the two annihilators force `x = 0`.
-  exact (nsmul_eq_zero_iff_of_coprime <| Nat.Coprime.pow_left j <|
-    (Nat.Prime.coprime_iff_not_dvd ‹Fact p.Prime›.out).2 (Sylow.not_dvd_index P)).1
-    ⟨hx, index_nsmul_eq_zero_of_map_eq_zero (P : Subgroup G) h⟩
+    x = 0 :=
+  eq_zero_of_nsmul_eq_zero_of_map_eq_zero (P : Subgroup G)
+    (((Nat.Prime.coprime_iff_not_dvd Fact.out).2 P.not_dvd_index).symm.pow_right j) hx h
+
+omit [Finite G] in
+/-- Restriction `Hⁿ(G, A) ⟶ Hⁿ(P, Res_P A)` to a Sylow `p`-subgroup `P` of finite index is
+injective in every degree `n` when `A` is `p`-primary torsion (`IsAddPGroup p A`). -/
+theorem map_sylow_injective_of_isAddPGroup
+    (p : ℕ) [Fact p.Prime] (P : Sylow p G) [P.FiniteIndex] (hA : IsAddPGroup p A) :
+    Function.Injective (map (P : Subgroup G).subtype (𝟙 (res (P : Subgroup G).subtype A)) n) := by
+  have hcop : Nat.Coprime (P : Subgroup G).index p :=
+    ((Nat.Prime.coprime_iff_not_dvd Fact.out).2 P.not_dvd_index).symm
+  refine map_subtype_injective_of_bijective_nsmul (P : Subgroup G) ⟨?_, fun a ↦ ?_⟩ n
+  · refine (injective_iff_map_eq_zero (nsmulAddMonoidHom (P : Subgroup G).index : A →+ A)).2
+      fun a ha ↦ ?_
+    obtain ⟨j, hj⟩ := hA a
+    exact (nsmul_eq_zero_iff_of_coprime (hcop.pow_right j)).1 ⟨ha, hj⟩
+  · obtain ⟨j, hj⟩ := hA a
+    obtain ⟨m, hm⟩ := exists_nsmul_eq_self_of_coprime
+      ((hcop.pow_right j).of_dvd_right (addOrderOf_dvd_of_nsmul_eq_zero hj))
+    exact ⟨m • a, (smul_comm (P : Subgroup G).index m a).trans hm⟩
 
 /-- **Restriction to the Sylow subgroups is jointly injective** (Milne II 1.33): an element of
 `Hⁿ⁺¹(G, A)` whose restriction vanishes, for every prime `p` dividing the order of `G`, on some
