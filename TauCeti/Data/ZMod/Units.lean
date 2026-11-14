@@ -44,6 +44,16 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `n d`, for every `n ≠ 0`. Its consumers move a diamond label across `diag(1, n)` in
   `TauCeti/NumberTheory/HeckeRing/GL2/Gamma1/CoprimeCosets.lean` and
   `TauCeti/NumberTheory/HeckeRing/GL2/Gamma1/CoprimeMul.lean`.
+* `IsCoprime.exists_sub_mul_isCoprime` — if the integers `a` and `c` are coprime, some translate
+  `a - i c` is coprime to a prescribed `l ≠ 0`; it is `ZMod.exists_isCoprime_mul_intCast_eq` read
+  at the class of `a` modulo `|c|`. Its consumer is the `T`-factorisation of `Γ₀(N / l)`,
+  `TauCeti.exists_eq_T_zpow_mul_conjScale_mul_T_zpow`, in
+  `TauCeti/NumberTheory/ModularForms/Degeneracy.lean`. The statement is `exists_shift_isCoprime`
+  (:430) of the AINTLIB `LeanModularForms` project
+  (`LeanModularForms/HeckeRIngs/GL2/LevelRaise.lean`, Chris Birkbeck, Apache-2.0,
+  <https://github.com/CBirkbeck/AINTLIB> @ `2baa76f742bdb4fb8ee323fabba41203bd390e08`); the source
+  proves it through a product of primes of `l` (`primeProductCoprime` and two supports), which is
+  not ported.
 * `ZMod.unitOfCoprime_mul` — `ZMod.unitOfCoprime` is multiplicative in its numerator.
 * `ZMod.unitsMap_unitOfCoprime` — `ZMod.unitsMap` sends the class of `a` modulo `n` to the
   class of `a` modulo a divisor of `n`.
@@ -216,6 +226,19 @@ theorem ZMod.exists_isCoprime_mul_intCast_eq (n : ℕ) [NeZero n] (u : (ZMod d)�
       ZMod.cast_eq_val] at this
     rw [Int.cast_natCast]
     exact this
+
+/-- **A coprime shift.** If `a` and `c` are coprime integers, then some translate `a - i * c` is
+coprime to a prescribed nonzero `l`: an integer `t` lifting the unit `a` modulo `|c|` and coprime
+to `l * |c|` (`ZMod.exists_isCoprime_mul_intCast_eq`) is such a translate. -/
+theorem IsCoprime.exists_sub_mul_isCoprime {a c : ℤ} (hac : IsCoprime a c) (l : ℕ) [NeZero l] :
+    ∃ i : ℤ, IsCoprime (a - i * c) l := by
+  obtain ⟨t, ht, hta⟩ := ZMod.exists_isCoprime_mul_intCast_eq l
+    (ZMod.unitOfIsCoprime a (by rw [Int.natCast_natAbs]; exact hac.abs_right))
+  rw [ZMod.coe_unitOfIsCoprime, ZMod.intCast_eq_intCast_iff_dvd_sub, Int.natAbs_dvd] at hta
+  obtain ⟨i, hi⟩ := hta
+  refine ⟨i, ?_⟩
+  rw [show a - i * c = t by linear_combination hi]
+  exact (Nat.cast_mul (α := ℤ) l c.natAbs ▸ ht).of_mul_right_left
 
 -- Deliberately not `@[simp]`: the right-hand side needs coprimality proofs for `m` and `n`
 -- separately, which `simp` cannot synthesise from the left-hand side, so Mathlib's `simpNF`

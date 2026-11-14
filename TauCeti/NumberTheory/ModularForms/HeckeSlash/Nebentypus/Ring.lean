@@ -5,44 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Basic
 
 /-!
-# The `ℤ`-linear extension of the twisted slash sum, and the `χ`-invariant function space
+# The `ℤ`-linear extension of the twisted slash sum
 
 `HeckeSlash/Nebentypus/Basic.lean` attaches a `ℂ`-linear endomorphism `twistedHeckeSlashSumEnd` of
 `ℍ → ℂ` to a single double coset of `Γ₀(N)`, weighting each summand by the nebentypus character
-of its own representative. This file does the two things that assignment needs before it can be
-called an action of the Hecke ring on a space of forms.
-
-First it extends the assignment `ℤ`-linearly over the basis of the Hecke ring
-`𝕋 Δ₀(N) Γ₀(N) ℤ`, exactly as `HeckeSlash/Ring.lean` does for the untwisted `Γ₁(N)` sum: the
-extension is `Finsupp.linearCombination` at the coefficient ring `ℤ`, so linearity in the ring
-element is inherited rather than reproved — `map_zero` and `map_add` apply directly, and the one
-lemma proved here is the value on a basis element.
-
-Second it names the subspace of `ℍ → ℂ` that the twisting exists to serve: the functions
-satisfying the nebentypus relation `f ∣[k] g = χ(d_g) • f` for `g ∈ Γ₀(N)`.
+of its own representative. This file extends that assignment `ℤ`-linearly over the basis of the
+Hecke ring `𝕋 Δ₀(N) Γ₀(N) ℤ`, exactly as `HeckeSlash/Ring.lean` does for the untwisted `Γ₁(N)`
+sum: the extension is `Finsupp.linearCombination` at the coefficient ring `ℤ`, so linearity in the
+ring element is inherited rather than reproved — `map_zero` and `map_add` apply directly, and the
+one lemma proved here is the value on a basis element.
 
 ## This is not yet a ring action, and not yet an operator on the character space
 
 Two things are deliberately absent. Multiplicativity of the extension is Shimura §3.4 and is not
 proved here, so what is delivered is the `ℤ`-linear assignment only. And the twisted sum is *not*
-shown to preserve `functionCharSpace` — that is the pay-off of the weighting and the content of
-the next rung; here the extension lands in `Module.End ℂ (ℍ → ℂ)`, endomorphisms of *all*
-functions.
-
-## Why the character space is stated for plain functions
-
-`modFormCharSpace` (`ModularForms/DiamondOperators.lean`) is the same condition on bundled
-`ModularForm`s, cut out as a joint diamond eigenspace. The twisted slash sum acts on plain
-functions and is not yet known to preserve modularity, so it needs the condition at the level of
-functions. To keep that from becoming a second, unrelated spelling of a relation the library
-already has, `TauCeti.functionCharSpace` (`ModularForms/DiamondOperators.lean`) is defined by
-*the very relation* that `mem_modFormCharSpace_iff_nebentypus` puts on the right-hand side, and
-`TauCeti.coe_mem_functionCharSpace_iff` records that a modular form lies in the character space
-exactly when its underlying function lies there.
+shown here to preserve the `χ`-invariant functions `TauCeti.functionCharSpace`
+(`ModularForms/DiamondOperators.lean`) — that is the pay-off of the weighting, proved in
+`HeckeSlash/Nebentypus/Invariance.lean`; here the extension lands in `Module.End ℂ (ℍ → ℂ)`,
+endomorphisms of *all* functions.
 
 ## Main definitions
 
@@ -51,10 +34,6 @@ exactly when its underlying function lies there.
 
 ## Main results
 
-* `TauCeti.slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1`,
-  `TauCeti.slash_mapGL_eq_of_mem_functionCharSpace_of_dvd_sub`: a `χ`-invariant function is
-  invariant under `Γ₁(N)`, so its slash by a matrix of `SL(2, ℤ)` depends only on the lower row
-  modulo `N`.
 * `HeckeRing.GL2.twistedHeckeSlashRingLinearMap_single`: the value on a basis element is the
   scaled twisted sum of that double coset. With `map_zero`/`map_add` this determines the map.
 
@@ -66,11 +45,9 @@ exactly when its underlying function lies there.
 Adapted from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/HeckeRIngs/GL2/Unified/TwistedHeckeRing.lean`, Chris Birkbeck, Apache-2.0,
 <https://github.com/CBirkbeck/AINTLIB> @ `2baa76f742bdb4fb8ee323fabba41203bd390e08`), whose
-`twistedHeckeSlashExtGen` and `gamma0TwistedInvariantFunctionSubmodule` these realize. The source
-extends by a hand-rolled `Finsupp.sum` and proves additivity separately; here the extension is a
-bundled `Finsupp.linearCombination`, so that additivity is `map_add`. The source's
-`IsGamma0TwistedInvariant` predicate is not reproduced: its relation is already the right-hand
-side of `mem_modFormCharSpace_iff_nebentypus`.
+`twistedHeckeSlashExtGen` this realizes. The source extends by a hand-rolled `Finsupp.sum` and
+proves additivity separately; here the extension is a bundled `Finsupp.linearCombination`, so that
+additivity is `map_add`.
 -/
 
 public section
@@ -82,33 +59,9 @@ open scoped MatrixGroups ModularForm HeckeCosetModule
 
 variable {N : ℕ} (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ)
 
-namespace TauCeti
-
-variable {k χ} in
-/-- A `χ`-invariant function for `Γ₀(N)` is invariant under `Γ₁(N)`, on which `χ(d_g)` is `1`. -/
-lemma slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1 {f : ℍ → ℂ}
-    (hf : f ∈ functionCharSpace k χ) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) :
-    f ∣[k] mapGL ℝ γ = f := by
-  have h := (mem_functionCharSpace_iff k χ f).mp hf ⟨γ, Gamma1_in_Gamma0 N hγ⟩
-  rwa [(mem_Gamma1_iff_toHomUnits_eq_one _).mp hγ, map_one, Units.val_one, one_smul] at h
-
-variable {k χ} in
-/-- A `χ`-invariant function for `Γ₀(N)` has the same slash by two matrices of `SL(2, ℤ)` whose
-lower rows agree modulo `N`, since these lie in one right coset of `Γ₁(N)`
-(`CongruenceSubgroup.mul_inv_mem_Gamma1_iff_dvd_sub`). -/
-lemma slash_mapGL_eq_of_mem_functionCharSpace_of_dvd_sub {f : ℍ → ℂ}
-    (hf : f ∈ functionCharSpace k χ) {A B : SL(2, ℤ)} (h10 : (N : ℤ) ∣ A 1 0 - B 1 0)
-    (h11 : (N : ℤ) ∣ A 1 1 - B 1 1) : f ∣[k] mapGL ℝ A = f ∣[k] mapGL ℝ B := by
-  conv_lhs => rw [← inv_mul_cancel_right A B]
-  rw [map_mul, SlashAction.slash_mul, slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1 hf
-    (mul_inv_mem_Gamma1_iff_dvd_sub.mpr ⟨h10, h11⟩)]
-
-end TauCeti
-
 namespace HeckeRing.GL2
 
--- `twistedHeckeSlashSumEnd` needs `[NeZero N]` to know its index type is finite; the
--- function-space material above does not, so the instance is introduced only here.
+-- `twistedHeckeSlashSumEnd` needs `[NeZero N]` to know its index type is finite.
 variable [NeZero N]
 
 /-- The `ℤ`-linear extension of `twistedHeckeSlashSumEnd` to formal `ℤ`-combinations of double
