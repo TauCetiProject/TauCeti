@@ -87,7 +87,7 @@ diffeomorphism of the model space read through it has explicit source and forwar
   compact set is injective, and a local diffeomorphism, on an open neighbourhood of it.
 * `IsLocalDiffeomorphAt.of_comp_right`: a map whose composite with a local diffeomorphism is a local
   diffeomorphism is itself one.
-* `IsLocalDiffeomorphAt.isLocalDiffeomorphAt_comp_iff`: the resulting characterisation of local
+* `IsLocalDiffeomorphAt.comp_iff_right`: the resulting characterisation of local
   diffeomorphisms out of the target of a local diffeomorphism.
 * `IsLocalDiffeomorphAt.of_comp_left`: a continuous map followed by a local diffeomorphism is a
   local diffeomorphism if the composite is one.
@@ -543,7 +543,7 @@ theorem _root_.IsLocalDiffeomorphAt.of_comp_right {F' : Type*} [NormedAddCommGro
 
 /-- **Composing with a local diffeomorphism on the right.** If `e` is a `C^n` local diffeomorphism
 at `x`, then `f ∘ e` is a `C^n` local diffeomorphism at `x` exactly when `f` is one at `e x`. -/
-theorem _root_.IsLocalDiffeomorphAt.isLocalDiffeomorphAt_comp_iff {F' : Type*}
+theorem _root_.IsLocalDiffeomorphAt.comp_iff_right {F' : Type*}
     [NormedAddCommGroup F'] [NormedSpace 𝕂 F'] {G' : Type*} [TopologicalSpace G']
     {K : ModelWithCorners 𝕂 F' G'} {P : Type*} [TopologicalSpace P] [ChartedSpace G' P]
     {e : M → N} {f : N → P} {x : M} (he : IsLocalDiffeomorphAt I J n e x) :
