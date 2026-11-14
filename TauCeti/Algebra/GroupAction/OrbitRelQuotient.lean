@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Action.Sigma
 public import Mathlib.Algebra.Group.Action.Sum
+public import Mathlib.Algebra.Group.Action.TypeTags
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.GroupTheory.GroupAction.Transitive
@@ -88,6 +89,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `MulAction.orbitRel.Quotient.instMulActionQuotientGroup`: for a normal subgroup `H`, the
   quotient group `G ⧸ H` acts on the space of `H`-orbits by translating representatives
   (`MulAction.orbitRel.Quotient.mk_smul_mk`), and its additive version.
+* `TauCeti.AddAction.orbitRelQuotientEquivMultiplicative` and
+  `TauCeti.MulAction.orbitRelQuotientEquivAdditive`: the canonical equivalences of orbit spaces
+  identifying an action of `G` with the corresponding action of `Multiplicative G` or `Additive G`.
 -/
 
 public section
@@ -1105,3 +1109,63 @@ theorem orbitRelQuotientMap_injective
     (mem_orbit_subMul_iff.mpr ⟨⟨g, hgS⟩, hg⟩))
 
 end SubMulAction
+
+namespace TauCeti
+
+/-! ### Orbit spaces of `Multiplicative` and `Additive` actions -/
+
+/-- Canonical equivalence identifying the orbit space of an additive action of `G` on `X` with the
+orbit space of the corresponding multiplicative action of `Multiplicative G` on `X`. -/
+def AddAction.orbitRelQuotientEquivMultiplicative {G X : Type*} [AddGroup G] [AddAction G X] :
+    _root_.AddAction.orbitRel.Quotient G X ≃ MulAction.orbitRel.Quotient (Multiplicative G) X :=
+  Quotient.congrRight fun _ _ ↦ by
+    rw [_root_.AddAction.orbitRel_apply, _root_.AddAction.mem_orbit_iff,
+      MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
+    exact Multiplicative.ofAdd.exists_congr_left
+
+/-- `AddAction.orbitRelQuotientEquivMultiplicative` preserves orbit representatives. -/
+@[simp]
+theorem AddAction.orbitRelQuotientEquivMultiplicative_mk {G X : Type*} [AddGroup G]
+    [AddAction G X] (x : X) :
+    AddAction.orbitRelQuotientEquivMultiplicative
+      (Quotient.mk (_root_.AddAction.orbitRel G X) x) =
+      Quotient.mk (MulAction.orbitRel (Multiplicative G) X) x :=
+  (rfl)
+
+/-- The inverse of `AddAction.orbitRelQuotientEquivMultiplicative` preserves orbit
+representatives. -/
+@[simp]
+theorem AddAction.orbitRelQuotientEquivMultiplicative_symm_mk {G X : Type*} [AddGroup G]
+    [AddAction G X] (x : X) :
+    (AddAction.orbitRelQuotientEquivMultiplicative (G := G) (X := X)).symm
+      (Quotient.mk (MulAction.orbitRel (Multiplicative G) X) x) =
+      Quotient.mk (_root_.AddAction.orbitRel G X) x :=
+  (rfl)
+
+/-- Canonical equivalence identifying the orbit space of a multiplicative action of `G` on `X` with
+the orbit space of the corresponding additive action of `Additive G` on `X`. -/
+def MulAction.orbitRelQuotientEquivAdditive {G X : Type*} [Group G] [MulAction G X] :
+    MulAction.orbitRel.Quotient G X ≃ _root_.AddAction.orbitRel.Quotient (Additive G) X :=
+  Quotient.congrRight fun _ _ ↦ by
+    rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff,
+      _root_.AddAction.orbitRel_apply, _root_.AddAction.mem_orbit_iff]
+    exact Additive.ofMul.exists_congr_left
+
+/-- `MulAction.orbitRelQuotientEquivAdditive` preserves orbit representatives. -/
+@[simp]
+theorem MulAction.orbitRelQuotientEquivAdditive_mk {G X : Type*} [Group G] [MulAction G X]
+    (x : X) :
+    MulAction.orbitRelQuotientEquivAdditive (Quotient.mk (MulAction.orbitRel G X) x) =
+      Quotient.mk (_root_.AddAction.orbitRel (Additive G) X) x :=
+  (rfl)
+
+/-- The inverse of `MulAction.orbitRelQuotientEquivAdditive` preserves orbit representatives. -/
+@[simp]
+theorem MulAction.orbitRelQuotientEquivAdditive_symm_mk {G X : Type*} [Group G] [MulAction G X]
+    (x : X) :
+    (MulAction.orbitRelQuotientEquivAdditive (G := G) (X := X)).symm
+      (Quotient.mk (_root_.AddAction.orbitRel (Additive G) X) x) =
+      Quotient.mk (MulAction.orbitRel G X) x :=
+  (rfl)
+
+end TauCeti

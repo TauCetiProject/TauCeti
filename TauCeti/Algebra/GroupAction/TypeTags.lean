@@ -34,11 +34,31 @@ The inverse transport `Multiplicative.mulDistribMulAction` reads a distributive 
 additive monoid `A` as an action by monoid endomorphisms on `Multiplicative A`. It is what lets an
 additive coefficient module enter a construction stated for multiplicative ones, such as the
 twisted product of a factor set.
+
+This file also transfers cancellativity on the *acting* side (`Additive.isLeftCancelVAdd`,
+`Additive.isCancelVAdd`, `Multiplicative.isLeftCancelSMul`, `Multiplicative.isCancelSMul`),
+complementing `Additive.vadd` and `Multiplicative.smul`.
 -/
 
 public section
 
 namespace Additive
+
+section Cancel
+
+variable {G X : Type*} [SMul G X]
+
+/-- Left-cancellative scalar multiplication becomes left-cancellative vector addition on the
+additive type tag. -/
+instance isLeftCancelVAdd [IsLeftCancelSMul G X] : IsLeftCancelVAdd (Additive G) X where
+  left_cancel' g := IsLeftCancelSMul.left_cancel (toMul g)
+
+/-- Cancellative scalar multiplication becomes cancellative vector addition on the additive type
+tag. -/
+instance isCancelVAdd [IsCancelSMul G X] : IsCancelVAdd (Additive G) X where
+  right_cancel' g h x hgh := toMul.injective (IsCancelSMul.right_cancel (toMul g) (toMul h) x hgh)
+
+end Cancel
 
 variable {M A : Type*} [Monoid M] [Monoid A] [MulDistribMulAction M A]
 
@@ -68,6 +88,22 @@ theorem ofMul_image_smul (s : Set M) (t : Set A) : ofMul '' (s • t) = s • (o
 end Additive
 
 namespace Multiplicative
+
+section Cancel
+
+variable {G X : Type*} [VAdd G X]
+
+/-- Left-cancellative vector addition becomes left-cancellative scalar multiplication on the
+multiplicative type tag. -/
+instance isLeftCancelSMul [IsLeftCancelVAdd G X] : IsLeftCancelSMul (Multiplicative G) X where
+  left_cancel' g := IsLeftCancelVAdd.left_cancel (toAdd g)
+
+/-- Cancellative vector addition becomes cancellative scalar multiplication on the multiplicative
+type tag. -/
+instance isCancelSMul [IsCancelVAdd G X] : IsCancelSMul (Multiplicative G) X where
+  right_cancel' g h x hgh := toAdd.injective (IsCancelVAdd.right_cancel (toAdd g) (toAdd h) x hgh)
+
+end Cancel
 
 variable {M A : Type*} [Monoid M] [AddMonoid A] [DistribMulAction M A]
 

@@ -12,13 +12,14 @@ import TauCeti.Geometry.Manifold.Submersion.Basic
 /-!
 # Recognizing diffeomorphisms through surjective submersions
 
-A bijection commuting with two surjective `C^n` submersions out of a common boundaryless manifold is
-a `C^n` diffeomorphism (`Equiv.diffeomorphOfSubmersions`). Unlike the immersion counterpart
-`Homeomorph.diffeomorphOfImmersions`, no continuity hypothesis on the bijection is required: local
-`C^n` sections of each submersion descend smoothness of both directions directly
-(`Manifold.IsSubmersion.contMDiff_comp_iff`). In particular, two atlases on the same space making a
-common surjective map out of a boundaryless manifold a `C^n` submersion are `C^n`-diffeomorphic by
-the identity (`ChartedSpace.exists_diffeomorph_apply_eq_self_of_isSubmersion`).
+A bijection commuting with two `C^n` submersions out of a common boundaryless manifold, the first
+of which is surjective, is a `C^n` diffeomorphism (`Equiv.diffeomorphOfSubmersions`). Unlike the
+immersion counterpart `Homeomorph.diffeomorphOfImmersions`, no continuity hypothesis on the
+bijection is required: local `C^n` sections of each submersion descend smoothness of both
+directions directly (`Manifold.IsSubmersion.contMDiff_comp_iff`). In particular, two atlases on the
+same space making a common surjective map out of a boundaryless manifold a `C^n` submersion are
+`C^n`-diffeomorphic by the identity
+(`ChartedSpace.exists_diffeomorph_apply_eq_self_of_isSubmersion`).
 
 ## References
 
@@ -45,15 +46,17 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 namespace Equiv
 
 /-- **Recognizing diffeomorphisms through surjective submersions.** A bijection commuting with two
-surjective `C^n` submersions out of a common boundaryless manifold is a `C^n` diffeomorphism. No
-continuity assumption on `e` and no finite-dimensionality or separation hypotheses are required. -/
+`C^n` submersions out of a common boundaryless manifold, the first of which is surjective, is a
+`C^n` diffeomorphism. No continuity assumption on `e` and no finite-dimensionality or separation
+hypotheses are required. -/
 def diffeomorphOfSubmersions (e : M ≃ N)
     (hp : IsSubmersion K I n p) (hp_surj : Surjective p)
-    (hq : IsSubmersion K J n q) (hq_surj : Surjective q)
+    (hq : IsSubmersion K J n q)
     (h : e ∘ p = q) : M ≃ₘ^n⟮I, J⟯ N where
   toEquiv := e
   contMDiff_toFun := (hp.contMDiff_comp_iff hp_surj le_rfl).1 (h.symm ▸ hq.contMDiff)
   contMDiff_invFun := by
+    have hq_surj : Surjective q := h ▸ e.surjective.comp hp_surj
     refine (hq.contMDiff_comp_iff hq_surj le_rfl).1 ?_
     have h' : e.symm ∘ q = p := by
       ext z
@@ -64,25 +67,25 @@ def diffeomorphOfSubmersions (e : M ≃ N)
 @[simp]
 theorem diffeomorphOfSubmersions_toEquiv (e : M ≃ N)
     (hp : IsSubmersion K I n p) (hp_surj : Surjective p)
-    (hq : IsSubmersion K J n q) (hq_surj : Surjective q)
-    (h : e ∘ p = q) : (e.diffeomorphOfSubmersions hp hp_surj hq hq_surj h).toEquiv = e :=
+    (hq : IsSubmersion K J n q)
+    (h : e ∘ p = q) : (e.diffeomorphOfSubmersions hp hp_surj hq h).toEquiv = e :=
   (rfl)
 
 /-- `diffeomorphOfSubmersions` acts by the original bijection. -/
 @[simp]
 theorem diffeomorphOfSubmersions_apply (e : M ≃ N)
     (hp : IsSubmersion K I n p) (hp_surj : Surjective p)
-    (hq : IsSubmersion K J n q) (hq_surj : Surjective q)
-    (h : e ∘ p = q) (x : M) : e.diffeomorphOfSubmersions hp hp_surj hq hq_surj h x = e x :=
+    (hq : IsSubmersion K J n q)
+    (h : e ∘ p = q) (x : M) : e.diffeomorphOfSubmersions hp hp_surj hq h x = e x :=
   (rfl)
 
 /-- The inverse of `diffeomorphOfSubmersions` acts by the inverse bijection. -/
 @[simp]
 theorem diffeomorphOfSubmersions_symm_apply (e : M ≃ N)
     (hp : IsSubmersion K I n p) (hp_surj : Surjective p)
-    (hq : IsSubmersion K J n q) (hq_surj : Surjective q)
+    (hq : IsSubmersion K J n q)
     (h : e ∘ p = q) (y : N) :
-    (e.diffeomorphOfSubmersions hp hp_surj hq hq_surj h).symm y = e.symm y :=
+    (e.diffeomorphOfSubmersions hp hp_surj hq h).symm y = e.symm y :=
   (rfl)
 
 end Equiv
@@ -99,6 +102,6 @@ theorem exists_diffeomorph_apply_eq_self_of_isSubmersion (a : ChartedSpace H M)
     (hb : letI := b; IsSubmersion K J n p) :
     ∃ e : @Diffeomorph 𝕜 _ _ _ _ _ _ _ _ _ _ _ I J M _ a M _ b n, ∀ x, e x = x :=
   ⟨Equiv.diffeomorphOfSubmersions (cM := a) (cN := b)
-    (Equiv.refl M) ha hp_surj hb hp_surj rfl, fun _ ↦ rfl⟩
+    (Equiv.refl M) ha hp_surj hb rfl, fun _ ↦ rfl⟩
 
 end ChartedSpace

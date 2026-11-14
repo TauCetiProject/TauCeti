@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.TypeTags
 public import Mathlib.Topology.Algebra.ProperAction.Basic
 
 /-!
@@ -16,13 +17,28 @@ particular the orbit space `X ⧸ G` is Hausdorff (`t2Space_quotient_mulAction_o
 is how quotients such as complex projective space, the orbit space of the circle acting on an odd
 sphere, are shown to be Hausdorff.
 
+This file also transfers `ProperVAdd` and `ProperSMul` across the `Multiplicative` and `Additive`
+type tags (`Multiplicative.properSMul`, `Additive.properVAdd`).
+
 ## Main results
 
 * `TauCeti.properSMul_of_compactSpace`, `TauCeti.properVAdd_of_compactSpace`: a continuous action
   of a compact group, or of a compact additive group, on a Hausdorff space is proper.
+* `Multiplicative.properSMul`, `Additive.properVAdd`: properness transfers across the
+  `Multiplicative` and `Additive` type tags on the acting group.
 -/
 
 public section
+
+/-- A proper additive group action becomes a proper multiplicative action of `Multiplicative G`. -/
+instance Multiplicative.properSMul {G X : Type*} [TopologicalSpace G] [TopologicalSpace X]
+    [AddGroup G] [AddAction G X] [ProperVAdd G X] : ProperSMul (Multiplicative G) X where
+  isProperMap_smul_pair := ProperVAdd.isProperMap_vadd_pair (G := G) (X := X)
+
+/-- A proper multiplicative group action becomes a proper additive action of `Additive G`. -/
+instance Additive.properVAdd {G X : Type*} [TopologicalSpace G] [TopologicalSpace X]
+    [Group G] [MulAction G X] [ProperSMul G X] : ProperVAdd (Additive G) X where
+  isProperMap_vadd_pair := ProperSMul.isProperMap_smul_pair (G := G) (X := X)
 
 namespace TauCeti
 
