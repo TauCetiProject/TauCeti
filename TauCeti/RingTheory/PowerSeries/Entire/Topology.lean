@@ -38,6 +38,11 @@ constant multiple of the Gauss norm at the radius `2 ‖b‖ + 1`
 * `TauCeti.PowerSeries.IsEntire.denseRange_polynomialHom`: polynomials are dense.
 * `TauCeti.PowerSeries.IsEntire.range_restrictFamily`: the image of the restriction embedding.
 * `TauCeti.PowerSeries.IsEntire.continuous_evalAtHom`: evaluation is continuous.
+* `TauCeti.PowerSeries.IsEntire.hasProd_iff`,
+  `TauCeti.PowerSeries.IsEntire.multipliable_iff`,
+  `TauCeti.PowerSeries.IsEntire.restrict_tprod` and
+  `TauCeti.PowerSeries.IsEntire.constantCoeff_tprod`: unconditional infinite products of entire
+  series.
 * Instances: `IsUniformAddGroup`, `IsTopologicalRing`, `T2Space` and, over complete coefficients,
   `CompleteSpace` on `PowerSeries.IsEntire.subring R`.
 
@@ -206,5 +211,39 @@ theorem continuous_evalAtHom (b : A) : Continuous (IsEntire.evalAtHom R b) := by
   · simpa using (h.norm.const_mul (‖(1 : A)‖ + 1)).mul_const (1 - 2⁻¹ : ℝ)⁻¹
 
 end Eval
+
+section InfiniteProd
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
+
+/-- An unconditional product of entire series converges in the Gauss topology exactly when its
+restriction to every positive-radius closed disc converges. -/
+theorem hasProd_iff {ι : Type*} {f : ι → IsEntire.subring R} {g : IsEntire.subring R} :
+    HasProd f g ↔
+      ∀ r : Set.Ioi (0 : ℝ), HasProd (fun i ↦ restrict r (f i)) (restrict r g) :=
+  GaussFamily.hasProd_iff isUniformInducing_restrictFamily
+
+/-- A family of entire series is unconditionally multipliable in the Gauss topology exactly when
+its restriction to every positive-radius closed disc is multipliable. -/
+theorem multipliable_iff {ι : Type*} {f : ι → IsEntire.subring R} :
+    Multipliable f ↔ ∀ r : Set.Ioi (0 : ℝ), Multipliable fun i ↦ restrict r (f i) :=
+  GaussFamily.multipliable_iff isUniformInducing_restrictFamily
+
+/-- Restriction to a positive-radius closed disc commutes with convergent infinite products of
+entire series. -/
+theorem restrict_tprod {ι : Type*} {f : ι → IsEntire.subring R} (hf : Multipliable f)
+    (r : Set.Ioi (0 : ℝ)) :
+    restrict r (∏' i, f i) = ∏' i, restrict r (f i) :=
+  GaussFamily.restrict_tprod isUniformInducing_restrictFamily hf r
+
+/-- The constant coefficient of a convergent infinite product of entire series is the infinite
+product of the constant coefficients. -/
+theorem constantCoeff_tprod {ι : Type*} {f : ι → IsEntire.subring R} (hf : Multipliable f) :
+    constantCoeff ((∏' i, f i : IsEntire.subring R) : R⟦X⟧) =
+      ∏' i, constantCoeff (f i : R⟦X⟧) :=
+  have : Nonempty (Set.Ioi (0 : ℝ)) := ⟨⟨1, one_pos⟩⟩
+  GaussFamily.constantCoeff_tprod isUniformInducing_restrictFamily hf
+
+end InfiniteProd
 
 end TauCeti.PowerSeries.IsEntire
