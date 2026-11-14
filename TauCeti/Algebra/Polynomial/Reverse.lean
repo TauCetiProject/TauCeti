@@ -46,7 +46,10 @@ finite products (`Polynomial.reflect_prod`), which computes the reflection of a 
 polynomials term by term. The reverse of a scalar multiple of a product of linear factors with
 nonzero roots is again such a product in the reciprocal roots
 (`Polynomial.reverse_C_mul_prod_X_sub_C`). Reflection at a degree bound stays within that bound,
-also after a coefficient map, and its coefficient at the bound is the constant coefficient.
+also after a coefficient map, and its coefficient at the bound is the constant coefficient; when a
+coefficient map preserves the degree—in particular when the leading coefficient is a unit—it
+commutes with reversal (`Polynomial.reverse_map_of_leadingCoeff_ne_zero`,
+`Polynomial.reverse_map_of_isUnit_leadingCoeff`).
 The reverse of
 `(X - C a) ^ n` is `(1 - C a * X) ^ n`, and over a nontrivial ring its factor `1 - X` (for `a = 1`)
 is nonzero.
@@ -181,6 +184,20 @@ theorem natDegree_map_reflect_le_of_natDegree_le [Semiring R] [Semiring S] (f : 
 theorem coeff_reflect_self [Semiring R] (p : R[X]) (N : ℕ) :
     (p.reflect N).coeff N = p.coeff 0 := by
   rw [coeff_reflect, revAt_le le_rfl, Nat.sub_self]
+
+/-- When a ring homomorphism does not kill `p.leadingCoeff`, polynomial reversal commutes with
+`Polynomial.map f`. -/
+theorem reverse_map_of_leadingCoeff_ne_zero [Semiring R] [Semiring S] {p : R[X]}
+    (f : R →+* S) (hf : f p.leadingCoeff ≠ 0) :
+    (p.map f).reverse = p.reverse.map f := by
+  rw [reverse, reverse, natDegree_map_of_leadingCoeff_ne_zero f hf, reflect_map]
+
+/-- When `p.leadingCoeff` is a unit, polynomial reversal commutes with `Polynomial.map f`. -/
+theorem reverse_map_of_isUnit_leadingCoeff [Semiring R] [Semiring S] {p : R[X]}
+    (hp : IsUnit p.leadingCoeff) (f : R →+* S) :
+    (p.map f).reverse = p.reverse.map f := by
+  nontriviality S
+  exact reverse_map_of_leadingCoeff_ne_zero f (hp.map f).ne_zero
 
 /-- Reflection exchanges an invertible root with its inverse, preserving its multiplicity.
 The degree bound can exceed the actual degree, and the zero polynomial is included. -/
