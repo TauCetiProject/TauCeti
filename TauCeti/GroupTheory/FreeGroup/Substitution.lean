@@ -170,6 +170,14 @@ theorem substituteVars_map_inl (U : X → List (A × Bool)) (l : List X) :
     substituteVars U (l.map fun x => (Sum.inl x, true)) = l.flatMap U := by
   simp [substituteVars, List.flatMap_map]
 
+/-- Renaming the variables of a word along `g` and then substituting `U` is substituting
+`U ∘ g`. -/
+@[simp]
+theorem substituteVars_map {Y : Type*} (U : X → List (A × Bool)) (g : Y → X)
+    (w : List ((Y ⊕ A) × Bool)) :
+    substituteVars U (w.map (Prod.map (Sum.map g id) id)) = substituteVars (U ∘ g) w := by
+  simp [substituteVars, Sum.elim_comp_map]
+
 /-- Substitution without free reduction commutes with formal inverses. -/
 theorem substituteVars_invRev (U : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
     substituteVars U (invRev w) = invRev (substituteVars U w) :=
