@@ -250,31 +250,6 @@ theorem manifoldDiffeology_eq_of_contMDiff_id
   rw [isPlot_manifoldDiffeology_iff, isPlot_manifoldDiffeology_iff]
   exact ⟨fun hp => h.comp hp, fun hp => h'.comp hp⟩
 
-/-- On an open submanifold `U` of `M`, the manifold diffeology agrees with the subspace diffeology
-induced from `manifoldDiffeology E M`. -/
-theorem manifoldDiffeology_opens_eq_induced (U : TopologicalSpace.Opens M) :
-    manifoldDiffeology E U =
-      @Diffeology.inducedDiffeology M U (manifoldDiffeology E M) Subtype.val := by
-  let : DiffeologicalSpace M := manifoldDiffeology E M
-  exact ((isContMDiffCompatible_iff_eq_manifoldDiffeology (E := E) (M := U)).mp inferInstance).symm
-
-/-- For two finite-dimensional boundaryless smooth manifolds `M` and `N`, the manifold diffeology on
-`M × N` (charted by `TauCeti.chartedSpaceProd E F M N`) equals the product of their manifold
-diffeologies. -/
-theorem manifoldDiffeology_prod_eq
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-    {N : Type*} [TopologicalSpace N] [ChartedSpace F N] [IsManifold 𝓘(ℝ, F) ∞ N] :
-    @manifoldDiffeology (E × F) _ _ _ (M × N) _ (chartedSpaceProd E F M N)
-        isManifold_chartedSpaceProd =
-      @Diffeology.instDiffeologicalSpaceProd M N
-        (manifoldDiffeology E M) (manifoldDiffeology F N) := by
-  let : DiffeologicalSpace M := manifoldDiffeology E M
-  let : DiffeologicalSpace N := manifoldDiffeology F N
-  let : ChartedSpace (E × F) (M × N) := chartedSpaceProd E F M N
-  have : IsManifold 𝓘(ℝ, E × F) ∞ (M × N) := isManifold_chartedSpaceProd
-  have h : IsContMDiffCompatible (E × F) (M × N) := isContMDiffCompatible_chartedSpaceProd
-  exact (isContMDiffCompatible_iff_eq_manifoldDiffeology.mp h).symm
-
 variable [DiffeologicalSpace M] [IsContMDiffCompatible (E := E) (M := M)]
 
 /-- The D-topology of a manifold-compatible diffeology equals its original topology. -/

@@ -5,14 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Instances.Sphere
+public import Mathlib.Geometry.Manifold.Algebra.Monoid
 public import TauCeti.Geometry.Diffeology.Functional
 public import TauCeti.Geometry.Diffeology.Manifold
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.ManifoldFamily
-
-import Mathlib.Analysis.Calculus.Deriv.Abs
-import Mathlib.Analysis.Calculus.Deriv.Pow
 
 /-!
 # Functional diffeologies on bundled smooth manifold maps
@@ -26,25 +23,22 @@ diffeologically smooth maps `M → N` coincide with ordinary smooth manifold map
   compatible charted spaces, and `TauCeti.Diffeology.DSmoothMap.equivContMDiffMap` upgrades this to
   a diffeological isomorphism when `M` is a finite-dimensional smooth manifold.
 * `TauCeti.Diffeology.instDiffeologicalSpaceContMDiffMap` equips `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` with
-  the functional diffeology induced along `ContMDiffMap.toDSmoothMap`. When `M` is a
-  finite-dimensional smooth manifold, its plots `p : 𝔼ⁿ → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` are
-  precisely the parametrizations whose uncurried evaluation `𝔼ⁿ × M → N` is `C^∞`
-  (`TauCeti.Diffeology.isPlot_contMDiffMap_iff`), and
-  `TauCeti.Diffeology.contMDiffMapFunctionalDiffeology` constructs the same diffeology directly on
-  manifolds without pre-installed diffeology instances.
-* Because every finite-dimensional charted space is locally compact
-  (`ChartedSpace.locallyCompactSpace`), the product D-topology identity holds on
-  `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ × M` without any Hausdorff assumption on `M`, making evaluation
-  jointly continuous for the functional D-topology
+  the functional diffeology induced along `ContMDiffMap.toDSmoothMap`. Smooth maps from any
+  diffeological space `Z` into `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` correspond to smooth uncurried maps
+  `Z × M → N` (`TauCeti.Diffeology.dSmooth_contMDiffMap_iff`). When `M` is a finite-dimensional
+  smooth manifold, plots `p : 𝔼ⁿ → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` are precisely the parametrizations
+  whose uncurried evaluation `𝔼ⁿ × M → N` is `C^∞` (`TauCeti.Diffeology.isPlot_contMDiffMap_iff`),
+  and `TauCeti.Diffeology.contMDiffMapFunctionalDiffeology` constructs the same diffeology directly
+  on manifolds without pre-installed diffeology instances.
+* For any finite-dimensional smooth manifold `M` with a compatible diffeology, the product
+  D-topology identity holds on `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ × M` without any Hausdorff assumption on
+  `M`, making evaluation jointly continuous for the functional D-topology
   (`TauCeti.Diffeology.continuous_eval_contMDiffMap`).
 * Moreover, every weak-Whitney open set of `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` is open in the functional
   D-topology (`TauCeti.Diffeology.dTopology_le_manifoldWeakWhitneyTopology`), via
   `ContMDiff.continuous_manifoldWeakWhitney`.
-* Left and right translations on any manifold with smooth multiplication (`ContMDiffMul`) vary
-  diffeologically smoothly in `C^∞⟮𝓘(ℝ, E), G; 𝓘(ℝ, E), G⟯`, specializing to the rotation family on
-  `Circle`. Concrete counterexamples on `ℝ` (`abs` and `x ↦ x ^ 3`) record that non-smooth maps are
-  not plots and that a smooth bijection with non-smooth inverse is neither an induction nor a
-  subduction.
+* Left and right translations (`smoothLeftMul`, `smoothRightMul`) on any manifold with smooth
+  multiplication (`ContMDiffMul`) vary diffeologically smoothly in `C^∞⟮𝓘(ℝ, E), G; 𝓘(ℝ, E), G⟯`.
 
 ## Main declarations
 
@@ -54,17 +48,15 @@ diffeologically smooth maps `M → N` coincide with ordinary smooth manifold map
 * `TauCeti.Diffeology.instDiffeologicalSpaceContMDiffMap` and
   `TauCeti.Diffeology.contMDiffMapFunctionalDiffeology`: functional diffeology on
   `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯`.
-* `TauCeti.Diffeology.isPlot_contMDiffMap_iff` and
-  `TauCeti.Diffeology.dSmooth_contMDiffMap_iff_contMDiff`: characterization of plots and smooth
-  families via uncurried `ContMDiff` regularity.
+* `TauCeti.Diffeology.dSmooth_contMDiffMap_iff`, `ContMDiff.dSmooth_contMDiffMap`,
+  `TauCeti.Diffeology.isPlot_contMDiffMap_iff`, and
+  `TauCeti.Diffeology.dSmooth_contMDiffMap_iff_contMDiff`: exponential law and characterization of
+  plots and smooth families via uncurried regularity.
 * `TauCeti.Diffeology.continuous_eval_contMDiffMap` and
   `TauCeti.Diffeology.dTopology_le_manifoldWeakWhitneyTopology`: joint continuity of evaluation and
   comparison with the weak Whitney `C^∞` topology.
-* `TauCeti.Diffeology.dSmooth_mulLeftContMDiffMap`,
-  `TauCeti.Diffeology.dSmooth_mulRightContMDiffMap`, and `TauCeti.Diffeology.isPlot_circleRotation`:
-  smooth translation families and circle rotation plot.
-* `TauCeti.Diffeology.not_isPlot_abs`, `TauCeti.Diffeology.not_isInduction_cubeEquiv`, and
-  `TauCeti.Diffeology.not_isSubduction_cubeEquiv`: non-plot and non-diffeomorphism witnesses on `ℝ`.
+* `TauCeti.Diffeology.dSmooth_smoothLeftMul` and `TauCeti.Diffeology.dSmooth_smoothRightMul`:
+  diffeological smoothness of left and right translation families.
 
 ## References
 
@@ -95,10 +87,15 @@ variable {E F G : Type*}
   [TopologicalSpace N] [ChartedSpace F N] [DiffeologicalSpace N] [IsContMDiffCompatible F N]
   [TopologicalSpace P] [ChartedSpace G P] [DiffeologicalSpace P] [IsContMDiffCompatible G P]
 
+/-- Every bundled `C^∞` manifold map between compatible charted spaces is diffeologically smooth. -/
+@[fun_prop]
+protected theorem dSmooth (f : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯) : _root_.Diffeology.DSmooth f :=
+  f.contMDiff.dSmooth
+
 /-- Turn a bundled `C^∞` manifold map between compatible charted spaces into a bundled
 diffeologically smooth map. Neither finite-dimensionality nor atlas smoothness is required. -/
 def toDSmoothMap (f : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯) : DSmoothMap M N :=
-  ⟨f, f.contMDiff.dSmooth⟩
+  ⟨f, f.dSmooth⟩
 
 /-- Coercing `f.toDSmoothMap` recovers `f`. -/
 @[simp]
@@ -180,6 +177,22 @@ theorem dSmooth_eval_contMDiffMap :
     _root_.Diffeology.DSmooth (fun fx : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ × M ↦ fx.1 fx.2) :=
   (dSmooth_toDSmoothMap.comp dSmooth_fst).eval dSmooth_snd
 
+/-- Pointwise evaluation of a smooth family in `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` along a smooth
+argument is diffeologically smooth. -/
+@[fun_prop]
+protected theorem _root_.Diffeology.DSmooth.eval_contMDiffMap {Z : Type*} [DiffeologicalSpace Z]
+    {f : Z → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯} {g : Z → M}
+    (hf : _root_.Diffeology.DSmooth f) (hg : _root_.Diffeology.DSmooth g) :
+    _root_.Diffeology.DSmooth (fun z ↦ f z (g z)) :=
+  dSmooth_eval_contMDiffMap.comp (hf.prodMk hg)
+
+/-- Evaluation at a fixed point `x : M` is diffeologically smooth on
+`C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯`. -/
+@[fun_prop]
+theorem dSmooth_evalAt_contMDiffMap (x : M) :
+    _root_.Diffeology.DSmooth (fun f : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ ↦ f x) :=
+  _root_.Diffeology.dSmooth_id.eval_contMDiffMap _root_.Diffeology.dSmooth_const
+
 /-- Composition `C^∞⟮𝓘(ℝ, F), N; 𝓘(ℝ, G), P⟯ × C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ →
 C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, G), P⟯` is diffeologically smooth. -/
 @[fun_prop]
@@ -191,13 +204,49 @@ theorem dSmooth_comp_contMDiffMap :
     ((dSmooth_toDSmoothMap (M := N) (N := P)).prodMap (dSmooth_toDSmoothMap (M := M) (N := N)))
   simpa only [Function.comp_def, Prod.map_fst, Prod.map_snd, ContMDiffMap.toDSmoothMap_comp] using h
 
+/-- Pointwise composition of two smooth families of bundled `C^∞` manifold maps is
+diffeologically smooth. -/
+@[fun_prop]
+protected theorem _root_.Diffeology.DSmooth.comp_contMDiffMap {Z : Type*} [DiffeologicalSpace Z]
+    {g : Z → C^∞⟮𝓘(ℝ, F), N; 𝓘(ℝ, G), P⟯} {f : Z → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯}
+    (hg : _root_.Diffeology.DSmooth g) (hf : _root_.Diffeology.DSmooth f) :
+    _root_.Diffeology.DSmooth (fun z ↦ (g z).comp (f z)) :=
+  dSmooth_comp_contMDiffMap.comp (hg.prodMk hf)
+
 /-- Sending `y : N` to the constant map `ContMDiffMap.const y` is diffeologically smooth. -/
 @[fun_prop]
 theorem dSmooth_const_contMDiffMap :
     _root_.Diffeology.DSmooth (ContMDiffMap.const : N → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯) := by
   refine isInduction_toDSmoothMap.dSmooth_iff.mpr ?_
   simpa only [Function.comp_def, toDSmoothMap_const] using
-    (DSmoothMap.dSmooth_constMap (X := M) (Y := N))
+    (DSmoothMap.dSmooth_const (X := M) (Y := N))
+
+/-- **Exponential law on `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯`.** A map from any diffeological space `Z`
+into `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` is diffeologically smooth if and only if its uncurried
+evaluation `Z × M → N` is diffeologically smooth. -/
+theorem dSmooth_contMDiffMap_iff {Z : Type*} [DiffeologicalSpace Z]
+    {f : Z → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯} :
+    _root_.Diffeology.DSmooth f ↔
+      _root_.Diffeology.DSmooth (fun zm : Z × M ↦ f zm.1 zm.2) := by
+  rw [isInduction_toDSmoothMap.dSmooth_iff, DSmoothMap.dSmooth_iff]
+  simp only [Function.comp_apply, ContMDiffMap.toDSmoothMap_apply]
+
+/-- A parametrization `p : 𝔼ⁿ → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` is a plot of the functional
+diffeology if and only if its uncurried evaluation `𝔼ⁿ × M → N` is diffeologically smooth. -/
+theorem isPlot_contMDiffMap_iff_dSmooth {n : ℕ} {p : 𝔼ⁿ → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯} :
+    _root_.Diffeology.IsPlot p ↔
+      _root_.Diffeology.DSmooth (fun ux : 𝔼ⁿ × M ↦ p ux.1 ux.2) := by
+  rw [isPlot_inducedDiffeology_iff, DSmoothMap.isPlot_iff]
+  simp only [Function.comp_apply, ContMDiffMap.toDSmoothMap_apply]
+
+/-- Any family `f : P → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` whose uncurried evaluation `P × M → N` is
+`C^∞` is diffeologically smooth, without requiring finite-dimensionality or atlas smoothness on
+`P`, `M`, or `N`. -/
+protected theorem _root_.ContMDiff.dSmooth_contMDiffMap
+    {f : P → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯}
+    (hf : ContMDiff (𝓘(ℝ, G).prod 𝓘(ℝ, E)) 𝓘(ℝ, F) ∞ (fun pm : P × M ↦ f pm.1 pm.2)) :
+    _root_.Diffeology.DSmooth f :=
+  dSmooth_contMDiffMap_iff.mpr hf.dSmooth_prod
 
 end Compatible
 
@@ -263,11 +312,44 @@ theorem equivContMDiffMap_symm_apply (f : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F),
     equivContMDiffMap.symm f = f.toDSmoothMap :=
   (rfl)
 
+/-- Converting `DSmoothMap M N` into `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` is injective. -/
+theorem toContMDiffMap_injective :
+    Injective (toContMDiffMap : DSmoothMap M N → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯) :=
+  equivContMDiffMap.injective
+
+/-- `DSmoothMap.toContMDiffMap` sends `DSmoothMap.id` to `ContMDiffMap.id`. -/
+@[simp]
+theorem toContMDiffMap_id :
+    (DSmoothMap.id : DSmoothMap M M).toContMDiffMap = ContMDiffMap.id := by
+  ext x
+  simp
+  rfl
+
+/-- `DSmoothMap.toContMDiffMap` sends `DSmoothMap.const y` to `ContMDiffMap.const y`. -/
+@[simp]
+theorem toContMDiffMap_const (y : N) :
+    (DSmoothMap.const y : DSmoothMap M N).toContMDiffMap = ContMDiffMap.const y := by
+  ext x
+  simp
+
+/-- `DSmoothMap.toContMDiffMap` commutes with composition when the intermediate space is also a
+finite-dimensional smooth manifold. -/
+@[simp]
+theorem toContMDiffMap_comp {G P : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [TopologicalSpace P] [ChartedSpace G P] [DiffeologicalSpace P] [IsContMDiffCompatible G P]
+    [FiniteDimensional ℝ F] [IsManifold 𝓘(ℝ, F) ∞ N]
+    (g : DSmoothMap N P) (f : DSmoothMap M N) :
+    (g.comp f).toContMDiffMap = g.toContMDiffMap.comp f.toContMDiffMap := by
+  ext x
+  simp
+
 /-- `DSmoothMap.toContMDiffMap` is diffeologically smooth. -/
 @[fun_prop]
 theorem dSmooth_toContMDiffMap :
-    _root_.Diffeology.DSmooth (toContMDiffMap : DSmoothMap M N → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯) :=
-  isInduction_toDSmoothMap.dSmooth_iff.mpr _root_.Diffeology.dSmooth_id
+    _root_.Diffeology.DSmooth (toContMDiffMap : DSmoothMap M N → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯) := by
+  refine isInduction_toDSmoothMap.dSmooth_iff.mpr ?_
+  simpa only [Function.comp_def, toDSmoothMap_toContMDiffMap] using
+    (_root_.Diffeology.dSmooth_id' (X := DSmoothMap M N))
 
 /-- `DSmoothMap.toContMDiffMap` is an induction, hence a diffeological isomorphism between
 `DSmoothMap M N` and `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯`. -/
@@ -313,32 +395,31 @@ variable [DiffeologicalSpace M] [IsContMDiffCompatible E M]
 diffeology if and only if its uncurried evaluation `(u, x) ↦ p u x` is `C^∞` on `𝔼ⁿ × M`. -/
 theorem isPlot_contMDiffMap_iff {n : ℕ} {p : 𝔼ⁿ → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯} :
     _root_.Diffeology.IsPlot p ↔
-      ContMDiff (𝓘(ℝ, 𝔼ⁿ).prod 𝓘(ℝ, E)) 𝓘(ℝ, F) ∞ (fun ux : 𝔼ⁿ × M ↦ p ux.1 ux.2) := by
-  rw [isPlot_inducedDiffeology_iff, DSmoothMap.isPlot_iff, dSmooth_prod_iff_contMDiff]
-  rfl
+      ContMDiff (𝓘(ℝ, 𝔼ⁿ).prod 𝓘(ℝ, E)) 𝓘(ℝ, F) ∞ (fun ux : 𝔼ⁿ × M ↦ p ux.1 ux.2) :=
+  isPlot_contMDiffMap_iff_dSmooth.trans dSmooth_prod_iff_contMDiff
 
 /-- When `M` and `N` carry compatible diffeologies, `contMDiffMapFunctionalDiffeology E M F N`
 equals the canonical instance `instDiffeologicalSpaceContMDiffMap`. -/
 @[simp]
 theorem contMDiffMapFunctionalDiffeology_eq [FiniteDimensional ℝ F] [IsManifold 𝓘(ℝ, F) ∞ N] :
     contMDiffMapFunctionalDiffeology E M F N = instDiffeologicalSpaceContMDiffMap := by
-  ext n p
-  exact (@isPlot_contMDiffMap_iff E F _ _ _ _ _ M N _ _ _ _ _
-    (manifoldDiffeology E M) inferInstance (manifoldDiffeology F N) inferInstance n p).trans
-    isPlot_contMDiffMap_iff.symm
+  obtain rfl : ‹DiffeologicalSpace M› = manifoldDiffeology E M :=
+    isContMDiffCompatible_iff_eq_manifoldDiffeology.mp inferInstance
+  obtain rfl : ‹DiffeologicalSpace N› = manifoldDiffeology F N :=
+    isContMDiffCompatible_iff_eq_manifoldDiffeology.mp inferInstance
+  rfl
 
 /-- A map `f : P → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` from a finite-dimensional smooth manifold `P` is
 diffeologically smooth if and only if its uncurried evaluation `P × M → N` is `C^∞`. -/
 theorem dSmooth_contMDiffMap_iff_contMDiff [DiffeologicalSpace P] [IsContMDiffCompatible G P]
     {f : P → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯} :
     _root_.Diffeology.DSmooth f ↔
-      ContMDiff (𝓘(ℝ, G).prod 𝓘(ℝ, E)) 𝓘(ℝ, F) ∞ (fun pm : P × M ↦ f pm.1 pm.2) := by
-  rw [isInduction_toDSmoothMap.dSmooth_iff, dSmooth_curry_iff, dSmooth_prod_iff_contMDiff]
-  rfl
+      ContMDiff (𝓘(ℝ, G).prod 𝓘(ℝ, E)) 𝓘(ℝ, F) ∞ (fun pm : P × M ↦ f pm.1 pm.2) :=
+  dSmooth_contMDiffMap_iff.trans dSmooth_prod_iff_contMDiff
 
-/-- Every finite-dimensional charted space `M` is locally compact, so the D-topology of
-`C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ × M` equals the product of the functional D-topology with the
-manifold topology of `M` (without requiring `M` to be Hausdorff). -/
+/-- For a finite-dimensional smooth manifold `M` with a compatible diffeology (without requiring
+`M` to be Hausdorff), the D-topology of `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ × M` equals the product of the
+functional D-topology with the manifold topology of `M`. -/
 theorem dTopology_contMDiffMap_prod_eq :
     (_root_.Diffeology.dTopology :
         TopologicalSpace (C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ × M)) =
@@ -390,171 +471,26 @@ section ContMDiffMul
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [Mul G] [TopologicalSpace G] [ChartedSpace E G] [ContMDiffMul 𝓘(ℝ, E) ∞ G]
+  [DiffeologicalSpace G] [IsContMDiffCompatible E G]
 
-/-- Left multiplication `x ↦ g * x` as a bundled `C^∞` map `G → G`. -/
-@[to_additive /-- Left addition `x ↦ g + x` as a bundled `C^∞` map `G → G`. -/]
-def mulLeftContMDiffMap (g : G) : C^∞⟮𝓘(ℝ, E), G; 𝓘(ℝ, E), G⟯ :=
-  ⟨(g * ·), contMDiff_mul_left (I := 𝓘(ℝ, E)) (n := ∞)⟩
+/-- Left multiplication `g ↦ smoothLeftMul 𝓘(ℝ, E) g` into `C^∞⟮𝓘(ℝ, E), G; 𝓘(ℝ, E), G⟯` on a
+manifold with smooth multiplication is diffeologically smooth. -/
+@[fun_prop]
+theorem dSmooth_smoothLeftMul :
+    _root_.Diffeology.DSmooth (fun g : G ↦ smoothLeftMul 𝓘(ℝ, E) g) := by
+  refine ContMDiff.dSmooth_contMDiffMap ?_
+  simpa only [L_apply] using (contMDiff_mul (I := 𝓘(ℝ, E)) (n := ∞) (G := G))
 
-/-- Evaluating `mulLeftContMDiffMap g` at `x` returns `g * x`. -/
-@[to_additive (attr := simp) /-- Evaluating `addLeftContMDiffMap g` at `x` returns `g + x`. -/]
-theorem mulLeftContMDiffMap_apply (g x : G) : mulLeftContMDiffMap (E := E) g x = g * x :=
-  (rfl)
-
-/-- Right multiplication `x ↦ x * g` as a bundled `C^∞` map `G → G`. -/
-@[to_additive /-- Right addition `x ↦ x + g` as a bundled `C^∞` map `G → G`. -/]
-def mulRightContMDiffMap (g : G) : C^∞⟮𝓘(ℝ, E), G; 𝓘(ℝ, E), G⟯ :=
-  ⟨(· * g), contMDiff_mul_right (I := 𝓘(ℝ, E)) (n := ∞)⟩
-
-/-- Evaluating `mulRightContMDiffMap g` at `x` returns `x * g`. -/
-@[to_additive (attr := simp) /-- Evaluating `addRightContMDiffMap g` at `x` returns `x + g`. -/]
-theorem mulRightContMDiffMap_apply (g x : G) : mulRightContMDiffMap (E := E) g x = x * g :=
-  (rfl)
-
-variable [DiffeologicalSpace G] [IsContMDiffCompatible E G]
-
-/-- Left multiplication `G → C^∞⟮𝓘(ℝ, E), G; 𝓘(ℝ, E), G⟯` is diffeologically smooth. -/
-@[to_additive (attr := fun_prop)
-  /-- Left addition `G → C^∞⟮𝓘(ℝ, E), G; 𝓘(ℝ, E), G⟯` is diffeologically smooth. -/]
-theorem dSmooth_mulLeftContMDiffMap :
-    _root_.Diffeology.DSmooth (mulLeftContMDiffMap : G → C^∞⟮𝓘(ℝ, E), G; 𝓘(ℝ, E), G⟯) :=
-  isInduction_toDSmoothMap.dSmooth_iff.mpr <|
-    dSmooth_curry_iff.mpr (contMDiff_mul (I := 𝓘(ℝ, E)) (n := ∞)).dSmooth_prod
-
-/-- Right multiplication `G → C^∞⟮𝓘(ℝ, E), G; 𝓘(ℝ, E), G⟯` is diffeologically smooth. -/
-@[to_additive (attr := fun_prop)
-  /-- Right addition `G → C^∞⟮𝓘(ℝ, E), G; 𝓘(ℝ, E), G⟯` is diffeologically smooth. -/]
-theorem dSmooth_mulRightContMDiffMap :
-    _root_.Diffeology.DSmooth (mulRightContMDiffMap : G → C^∞⟮𝓘(ℝ, E), G; 𝓘(ℝ, E), G⟯) :=
-  isInduction_toDSmoothMap.dSmooth_iff.mpr <|
-    dSmooth_curry_iff.mpr
-      ((contMDiff_mul (I := 𝓘(ℝ, E)) (n := ∞)).comp
-        (contMDiff_snd.prodMk contMDiff_fst)).dSmooth_prod
+/-- Right multiplication `g ↦ smoothRightMul 𝓘(ℝ, E) g` into `C^∞⟮𝓘(ℝ, E), G; 𝓘(ℝ, E), G⟯` on a
+manifold with smooth multiplication is diffeologically smooth. -/
+@[fun_prop]
+theorem dSmooth_smoothRightMul :
+    _root_.Diffeology.DSmooth (fun g : G ↦ smoothRightMul 𝓘(ℝ, E) g) := by
+  refine ContMDiff.dSmooth_contMDiffMap ?_
+  simpa only [R_apply, Function.comp_def] using
+    ((contMDiff_mul (I := 𝓘(ℝ, E)) (n := ∞) (G := G)).comp
+      (contMDiff_snd.prodMk contMDiff_fst))
 
 end ContMDiffMul
-
-/-! ### Circle rotation plots and non-smooth / non-diffeomorphism witnesses -/
-
-/-- The standard manifold diffeology on the unit circle `Circle` in `ℂ`. -/
-instance instDiffeologicalSpaceCircle : DiffeologicalSpace Circle :=
-  manifoldDiffeology (𝔼¹) Circle
-
-/-- `Circle` with `instDiffeologicalSpaceCircle` is compatible with its standard manifold
-structure modelled on `𝔼¹`. -/
-instance instIsContMDiffCompatibleCircle : IsContMDiffCompatible (𝔼¹) Circle :=
-  inferInstanceAs (@IsContMDiffCompatible (𝔼¹) _ _ Circle _ _ (manifoldDiffeology (𝔼¹) Circle))
-
-/-- The exponential map `Circle.exp : ℝ → Circle` is diffeologically smooth. -/
-@[fun_prop]
-theorem dSmooth_circleExp : _root_.Diffeology.DSmooth Circle.exp :=
-  contMDiff_circleExp.dSmooth
-
-/-- Rotation of `Circle` by angle `t : ℝ`, bundled in `C^∞⟮𝓡 1, Circle; 𝓡 1, Circle⟯`. -/
-def circleRotation (t : ℝ) : C^∞⟮𝓡 1, Circle; 𝓡 1, Circle⟯ :=
-  mulRightContMDiffMap (Circle.exp t)
-
-/-- Evaluating `circleRotation t` at `z` returns `z * Circle.exp t`. -/
-@[simp]
-theorem circleRotation_apply (t : ℝ) (z : Circle) : circleRotation t z = z * Circle.exp t :=
-  (rfl)
-
-/-- The circle rotation family `ℝ → C^∞⟮𝓡 1, Circle; 𝓡 1, Circle⟯` is diffeologically smooth. -/
-@[fun_prop]
-theorem dSmooth_circleRotation : _root_.Diffeology.DSmooth circleRotation :=
-  dSmooth_mulRightContMDiffMap.comp dSmooth_circleExp
-
-/-- Reparametrizing `circleRotation` by `𝔼¹` via `u ↦ u 0` yields a plot of the functional
-diffeology on `C^∞⟮𝓡 1, Circle; 𝓡 1, Circle⟯`. -/
-theorem isPlot_circleRotation :
-    _root_.Diffeology.IsPlot (fun u : 𝔼¹ ↦ circleRotation (u 0)) := by
-  have hcoord : ContDiff ℝ ∞ (fun u : 𝔼¹ ↦ u 0) :=
-    (contDiff_apply ℝ (fun _ : Fin 1 ↦ ℝ) 0).comp (EuclideanSpace.equiv (Fin 1) ℝ).contDiff
-  exact (dSmooth_circleRotation.comp hcoord.dSmooth).isPlot
-
-/-- The absolute value `abs : ℝ → ℝ` is continuous (`C⁰`) on `ℝ` without being diffeologically
-smooth. -/
-theorem not_dSmooth_abs : ¬ _root_.Diffeology.DSmooth (abs : ℝ → ℝ) := fun h ↦
-  not_differentiableAt_abs_zero ((_root_.Diffeology.dSmooth_iff_contDiff.mp h).differentiable
-    (by simp) 0)
-
-/-- The `C⁰` curve `u ↦ |u 0|` from `𝔼¹` to `ℝ` is not a plot of `ℝ`. -/
-theorem not_isPlot_abs : ¬ _root_.Diffeology.IsPlot (fun u : 𝔼¹ ↦ |u 0|) := by
-  intro hp
-  have h1 : ContDiff ℝ ∞ (fun t : ℝ ↦ (EuclideanSpace.equiv (Fin 1) ℝ).symm (fun _ ↦ t)) :=
-    (EuclideanSpace.equiv (Fin 1) ℝ).symm.contDiff.comp (contDiff_pi.mpr fun _ ↦ contDiff_id)
-  have habs : ContDiff ℝ ∞ (abs : ℝ → ℝ) :=
-    (_root_.Diffeology.isPlot_iff_contDiff.mp hp).comp h1
-  exact not_differentiableAt_abs_zero (habs.differentiable (by simp) 0)
-
-/-- The cubing bijection `x ↦ x ^ 3` on `ℝ`, bundled as an equivalence `ℝ ≃ ℝ`. -/
-def cubeEquiv : ℝ ≃ ℝ :=
-  Equiv.ofBijective (fun x : ℝ ↦ x ^ 3) <| by
-    refine ⟨(Nat.odd_iff.mpr rfl : Odd 3).strictMono_pow.injective, fun y ↦ ?_⟩
-    let a : ℝ := min (-1) y
-    let b : ℝ := max 1 y
-    have ha : a ≤ -1 := min_le_left (-1) y
-    have hay : a ≤ y := min_le_right (-1) y
-    have hb : 1 ≤ b := le_max_left 1 y
-    have hby : y ≤ b := le_max_right 1 y
-    have hab : a ≤ b := by linarith
-    have ha2 : 1 ≤ a ^ 2 := by nlinarith
-    have hb2 : 1 ≤ b ^ 2 := by nlinarith
-    have ha3 : a ^ 3 ≤ y := by
-      have hmul : a * a ^ 2 ≤ a * 1 := mul_le_mul_of_nonpos_left ha2 (by linarith)
-      nlinarith
-    have hb3 : y ≤ b ^ 3 := by
-      have hmul : b * 1 ≤ b * b ^ 2 := mul_le_mul_of_nonneg_left hb2 (by linarith)
-      nlinarith
-    obtain ⟨x, -, hx⟩ := intermediate_value_Icc hab (continuous_pow 3).continuousOn ⟨ha3, hb3⟩
-    exact ⟨x, hx⟩
-
-/-- Evaluating `cubeEquiv` at `x` returns `x ^ 3`. -/
-@[simp]
-theorem cubeEquiv_apply (x : ℝ) : cubeEquiv x = x ^ 3 :=
-  (rfl)
-
-/-- `cubeEquiv` maps `0` to `0`. -/
-theorem cubeEquiv_zero : cubeEquiv 0 = 0 := by
-  simp
-
-/-- `cubeEquiv.symm` maps `0` to `0`. -/
-@[simp]
-theorem cubeEquiv_symm_zero : cubeEquiv.symm 0 = 0 :=
-  cubeEquiv.symm_apply_eq.mpr cubeEquiv_zero.symm
-
-/-- `cubeEquiv : ℝ ≃ ℝ` is diffeologically smooth. -/
-@[fun_prop]
-theorem dSmooth_cubeEquiv : _root_.Diffeology.DSmooth cubeEquiv :=
-  _root_.Diffeology.dSmooth_iff_contDiff.mpr (contDiff_id.pow 3)
-
-/-- The inverse of `cubeEquiv` (`y ↦ y ^ (1 / 3)`) is not diffeologically smooth, even though
-`cubeEquiv` is a smooth bijection. -/
-theorem not_dSmooth_cubeEquiv_symm : ¬ _root_.Diffeology.DSmooth cubeEquiv.symm := by
-  intro h
-  have hg : DifferentiableAt ℝ cubeEquiv.symm 0 :=
-    (_root_.Diffeology.dSmooth_iff_contDiff.mp h).differentiable (by simp) 0
-  have hf : HasDerivAt cubeEquiv (3 * (0 : ℝ) ^ (3 - 1)) 0 := hasDerivAt_pow 3 (0 : ℝ)
-  have hcomp : HasDerivAt (cubeEquiv.symm ∘ cubeEquiv)
-      (deriv cubeEquiv.symm 0 * (3 * (0 : ℝ) ^ (3 - 1))) 0 := by
-    have hg0 : HasDerivAt cubeEquiv.symm (deriv cubeEquiv.symm 0) (cubeEquiv 0) := by
-      simpa only [cubeEquiv_zero] using hg.hasDerivAt
-    exact hg0.comp 0 hf
-  have hid : HasDerivAt (cubeEquiv.symm ∘ cubeEquiv) 1 0 := by
-    have heq : cubeEquiv.symm ∘ cubeEquiv = id := funext cubeEquiv.left_inv
-    simpa only [heq] using hasDerivAt_id (0 : ℝ)
-  have h10 : (1 : ℝ) = deriv cubeEquiv.symm 0 * (3 * (0 : ℝ) ^ (3 - 1)) := hid.unique hcomp
-  norm_num at h10
-
-/-- `cubeEquiv : ℝ → ℝ` is a smooth bijection that is not an induction. -/
-theorem not_isInduction_cubeEquiv : ¬ IsInduction (cubeEquiv : ℝ → ℝ) := fun h ↦
-  not_dSmooth_cubeEquiv_symm <| h.dSmooth_iff.mpr <| by
-    have heq : (cubeEquiv : ℝ → ℝ) ∘ cubeEquiv.symm = id := funext cubeEquiv.right_inv
-    simpa only [heq] using _root_.Diffeology.dSmooth_id
-
-/-- `cubeEquiv : ℝ → ℝ` is a smooth bijection that is not a subduction. -/
-theorem not_isSubduction_cubeEquiv : ¬ IsSubduction (cubeEquiv : ℝ → ℝ) := fun h ↦
-  not_dSmooth_cubeEquiv_symm <| (h.dSmooth_iff cubeEquiv.symm).mpr <| by
-    have heq : cubeEquiv.symm ∘ (cubeEquiv : ℝ → ℝ) = id := funext cubeEquiv.left_inv
-    simpa only [heq] using _root_.Diffeology.dSmooth_id
 
 end TauCeti.Diffeology
