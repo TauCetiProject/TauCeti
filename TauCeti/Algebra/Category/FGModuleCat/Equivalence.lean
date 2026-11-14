@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.FGModuleCat.Generator
+public import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Projective
 public import TauCeti.Algebra.Module.Generator
 public import TauCeti.CategoryTheory.Adjunction.Additive
@@ -56,21 +56,8 @@ variable {A B : Type u} [Ring A] [Ring B] (e : FGModuleCat.{u} A ≌ FGModuleCat
 /-- An equivalence between the categories of finitely generated modules carries the regular module
 to a generator. -/
 theorem isGenerator_functor_obj_regular :
-    Module.IsGenerator B (e.functor.obj (FGModuleCat.of A A)) := by
-  -- A proper trace ideal `T` would make `B ⟶ B ⧸ T` a nonzero morphism killed by every map out of
-  -- the image of the regular module, which is a separator because the regular module is one.
-  rw [Module.isGenerator_iff_iSup_range_eq_top]
-  set P := e.functor.obj (FGModuleCat.of A A)
-  set T : Submodule B B := ⨆ φ : P →ₗ[B] B, LinearMap.range φ
-  let π : FGModuleCat.of B B ⟶ FGModuleCat.of B (B ⧸ T) := FGModuleCat.ofHom T.mkQ
-  have hπ : ∀ ψ : P ⟶ FGModuleCat.of B B, ψ ≫ π = 0 := fun ψ ↦ by
-    ext x
-    refine (Submodule.Quotient.mk_eq_zero T).mpr ?_
-    exact Submodule.mem_iSup_of_mem ψ.hom.hom ⟨x, rfl⟩
-  have hπ₀ : π = 0 :=
-    (Preadditive.isSeparator_iff _).mp ((FGModuleCat.isSeparator A).of_equivalence e) π hπ
-  have hmk : T.mkQ = 0 := by simpa [π] using congr(($hπ₀).hom.hom)
-  rw [← Submodule.ker_mkQ T, hmk, LinearMap.ker_zero]
+    Module.IsGenerator B (e.functor.obj (FGModuleCat.of A A)) :=
+  FGModuleCat.isGenerator_of_isSeparator ((FGModuleCat.isSeparator A).of_equivalence e)
 
 variable (R : Type*) [CommSemiring R] [Algebra R A] [Algebra R B] [e.functor.Linear R]
 

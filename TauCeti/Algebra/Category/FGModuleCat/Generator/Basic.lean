@@ -78,9 +78,7 @@ theorem _root_.FGModuleCat.additiveClosure_of_isGenerator (M : FGModuleCat.{u} R
   simpa using h
 
 /-- **A separator of `mod R` is a generator of the module category**: the trace of `M`, spanned by
-the images of the linear forms on `M`, is all of `R`. Otherwise the quotient map `R ⟶ R ⧸ τ` onto
-the finitely generated module `R ⧸ τ` would be a nonzero morphism killed by every morphism out of
-`M`. -/
+the images of the linear forms on `M`, is all of `R`. -/
 theorem _root_.FGModuleCat.isGenerator_of_isSeparator {M : FGModuleCat.{u} R}
     (hM : IsSeparator M) : Module.IsGenerator R M := by
   rw [Module.isGenerator_iff_iSup_range_eq_top]

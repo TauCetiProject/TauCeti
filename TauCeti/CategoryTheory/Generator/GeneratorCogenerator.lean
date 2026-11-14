@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Generator.Preadditive
-public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Duality
+public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Basic
 
 /-!
 # Generator-cogenerators
@@ -16,15 +16,18 @@ it is both a separator and a coseparator (`CategoryTheory.IsSeparator`,
 `CategoryTheory.IsCoseparator`): morphisms are distinguished by their composites with morphisms
 out of `M`, and by their composites with morphisms into `M`. In the category `mod A` of finitely
 generated modules over an Artin algebra these are the modules `M` with `A` and `D A` in `add M`
-(`TauCeti/Algebra/Category/FGModuleCat/GeneratorCogenerator.lean`); their endomorphism rings are
+(`TauCeti/Algebra/Category/FGModuleCat/Generator/Cogenerator.lean`); their endomorphism rings are
 the subject of the Morita-Tachikawa correspondence.
 
 In any category, separators and coseparators are invariant under isomorphism and pass to every
 object having them as a direct summand, so generator-cogenerators are invariant under isomorphism
 and under adding direct summands, and an equivalence of categories carries them to
-generator-cogenerators. In a preadditive category with finite biproducts, separators and
-coseparators also pass up additive closures: if a separator `G` lies in `add M`, then `M` is a
-separator (`CategoryTheory.IsSeparator.of_additiveClosure`), and dually.
+generator-cogenerators. Since separators of `Cᵒᵖ` are the coseparators of `C`, the notion is
+self-dual: `op M` is a generator-cogenerator of `Cᵒᵖ` exactly when `M` is one of `C`.
+
+In a preadditive category with finite biproducts, separators and coseparators also pass up
+additive closures: if a separator `G` lies in `add M`, then `M` is a separator
+(`CategoryTheory.IsSeparator.of_additiveClosure`), and dually.
 
 ## Main definitions
 
@@ -38,7 +41,9 @@ separator (`CategoryTheory.IsSeparator.of_additiveClosure`), and dually.
 * `CategoryTheory.IsSeparator.of_retract` and `CategoryTheory.IsCoseparator.of_retract`: an object
   having a separator (coseparator) as a direct summand is one.
 * `TauCeti.IsGeneratorCogenerator.of_retract`: adding direct summands keeps a generator-cogenerator.
-* `TauCeti.isGeneratorCogenerator_functor_obj_iff`: invariance under equivalences of categories.
+* `CategoryTheory.Equivalence.isGeneratorCogenerator_functor_obj_iff`: invariance under
+  equivalences of categories.
+* `TauCeti.isGeneratorCogenerator_op_iff`: generator-cogenerators are self-dual.
 -/
 
 public section
@@ -134,14 +139,29 @@ theorem IsGeneratorCogenerator.of_iso {M N : C} (hM : IsGeneratorCogenerator M) 
   ⟨hM.1.of_iso e, hM.2.of_iso e⟩
 
 /-- **Equivalences carry generator-cogenerators to generator-cogenerators.** -/
-theorem IsGeneratorCogenerator.functor_obj {D : Type u'} [Category.{v'} D] {M : C}
+theorem IsGeneratorCogenerator.of_equivalence {D : Type u'} [Category.{v'} D] {M : C}
     (hM : IsGeneratorCogenerator M) (e : C ≌ D) : IsGeneratorCogenerator (e.functor.obj M) :=
   ⟨hM.1.of_equivalence e, hM.2.of_equivalence e⟩
 
 /-- **Generator-cogenerators are invariant under equivalences of categories.** -/
-theorem isGeneratorCogenerator_functor_obj_iff {D : Type u'} [Category.{v'} D] (e : C ≌ D)
-    (M : C) : IsGeneratorCogenerator (e.functor.obj M) ↔ IsGeneratorCogenerator M :=
-  ⟨fun h ↦ (h.functor_obj e.symm).of_iso (e.unitIso.app M).symm, fun h ↦ h.functor_obj e⟩
+theorem _root_.CategoryTheory.Equivalence.isGeneratorCogenerator_functor_obj_iff {D : Type u'}
+    [Category.{v'} D] (e : C ≌ D) (M : C) :
+    IsGeneratorCogenerator (e.functor.obj M) ↔ IsGeneratorCogenerator M :=
+  ⟨fun h ↦ (h.of_equivalence e.symm).of_iso (e.unitIso.app M).symm, fun h ↦ h.of_equivalence e⟩
+
+/-- **Generator-cogenerators are self-dual**: `op M` is a generator-cogenerator of `Cᵒᵖ` exactly
+when `M` is one of `C`. -/
+@[simp]
+theorem isGeneratorCogenerator_op_iff (M : C) :
+    IsGeneratorCogenerator (op M) ↔ IsGeneratorCogenerator M := by
+  simp only [isGeneratorCogenerator_iff, isSeparator_op_iff, isCoseparator_op_iff, and_comm]
+
+/-- **Generator-cogenerators are self-dual**: `unop M` is a generator-cogenerator of `C` exactly
+when `M` is one of `Cᵒᵖ`. -/
+@[simp]
+theorem isGeneratorCogenerator_unop_iff (M : Cᵒᵖ) :
+    IsGeneratorCogenerator (unop M) ↔ IsGeneratorCogenerator M := by
+  rw [← isGeneratorCogenerator_op_iff, op_unop]
 
 /-- **Adding direct summands keeps a generator-cogenerator**: if `M` is a generator-cogenerator and
 a direct summand of `N`, then `N` is a generator-cogenerator. -/
