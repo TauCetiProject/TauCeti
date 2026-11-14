@@ -80,18 +80,10 @@ private noncomputable def trailArrow {i j : DoubledQuiver G} (e : i ⟶ j) : Mat
 
 private theorem completeOrthogonalIdempotents_trailVertex :
     CompleteOrthogonalIdempotents (trailVertex k (G := G)) := by
-  rw [CompleteOrthogonalIdempotents.iff_ortho_complete]
-  refine ⟨fun v w hvw => ?_, ?_⟩
-  · simp [trailVertex, (vertexEquiv G).symm.injective.ne hvw]
-  · ext a b
-    rw [← (vertexEquiv G).sum_comp]
-    simp only [trailVertex, Equiv.symm_apply_apply, Matrix.sum_apply, Matrix.single_apply,
-      Matrix.one_apply]
-    by_cases hab : a = b
-    · subst hab
-      simp
-    · simp only [hab, ite_false]
-      exact Finset.sum_eq_zero fun c _ => by by_cases hc : c = a <;> simp_all
+  unfold trailVertex
+  simpa only [Function.comp_def, Matrix.diagonalRingHom_apply, Matrix.diagonal_single] using
+    (CompleteOrthogonalIdempotents.equiv (vertexEquiv G).symm).mpr
+      ((CompleteOrthogonalIdempotents.single (fun _ : V => k)).map (Matrix.diagonalRingHom V k))
 
 private theorem trailVertex_mul_trailArrow {i j : DoubledQuiver G} (e : i ⟶ j) :
     trailVertex k j * trailArrow k p e = trailArrow k p e := by
@@ -201,13 +193,9 @@ theorem exists_mem_preprojectiveGrade_length_notMem_commutatorSubmodule_of_isTra
   classical
   let := Fintype.ofFinite V
   let w : pathAlgebra k (DoubledQuiver G) := ofPath ⟨vertex G u, vertex G u, walkToPath G p⟩
-  refine ⟨preprojectiveMk k (OrientedQuiver G o) (orientationPathAlgebraEquiv o k w), ?_, ?_⟩
-  · apply preprojectiveMk_mem_preprojectiveGrade
-    have hw : w ∈ grade k (DoubledQuiver G) p.length :=
-      ofPath_mem_grade_of_length (length_walkToPath G p)
-    rw [orientationPathAlgebraEquiv_apply]
-    rw [← gradeBy_const_one] at hw ⊢
-    exact mapAlgHom_mem_gradeBy k _ _ (fun {_ _} _ => (1 : ℕ)) hw
+  refine ⟨preprojectiveMk k (OrientedQuiver G o) (orientationPathAlgebraEquiv o k w),
+    preprojectiveMk_mem_preprojectiveGrade k _ ((orientationPathAlgebraEquiv_mem_grade_iff o k).mpr
+      (ofPath_mem_grade_of_length (length_walkToPath G p))), ?_⟩
   · intro hcomm
     have htr := trace_map_eq_zero_of_mem_commutatorSubmodule
       (preprojectiveTrailRepresentation k p o hp) hcomm

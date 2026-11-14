@@ -42,6 +42,8 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
+section E6
+
 local notation "G" => diagramGraph (CartanMatrix.E 6)
 
 /-- Signed necklaces supporting the degree-six trace; a missing necklace has weight zero. -/
@@ -385,67 +387,14 @@ theorem mkQ_signlessWord_E6_cyclicWord_ne_zero :
   exact signlessWord_E6_cyclicWord_not_mem_commutatorSubmodule k neighborFintype
     ((Submodule.Quotient.mk_eq_zero _).mp h)
 
-private theorem exists_preprojective_E6_cyclicClass (o : Orientation G)
-    [instV : Fintype (OrientedQuiver G o)]
-    [instHom : ∀ i j : OrientedQuiver G o, Fintype (i ⟶ j)] :
-    ∃ x : preprojectiveAlgebra k (OrientedQuiver G o),
-      x ∈ preprojectiveGrade k (OrientedQuiver G o) 6 ∧
-        x ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
-  have hv : instV = OrientedQuiver.instFintypeOfFinite G o := Subsingleton.elim _ _
-  cases hv
-  have hh : instHom = OrientedQuiver.instFintypeHom G o := Subsingleton.elim _ _
-  cases hh
-  let neighborFintype (v : Fin 6) := Fintype.ofFinite ((G).neighborSet v)
-  let := neighborFintype
-  let C := eColoring G diagramGraph_E_adj
-  let e := C.signlessPreprojectiveAlgebraEquiv k o
-  let w := signlessWord k G [3, 2, 3, 2, 3, 1, 3]
-  refine ⟨e w, C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o
-    (signlessWord_E6_cyclicWord_mem_grade_six k neighborFintype), ?_⟩
-  intro hw
-  have hh := map_mem_commutatorSubmodule e.symm hw
-  rw [AlgEquiv.symm_apply_apply] at hh
-  exact signlessWord_E6_cyclicWord_not_mem_commutatorSubmodule k neighborFintype hh
+end E6
 
-/-- Every orientation of `E₆` has a degree-six class outside the commutator submodule in
-characteristic three, with the caller's vertex and arrow enumerations retained. -/
-theorem exists_mem_preprojectiveGrade_E6_six_notMem_commutatorSubmodule
-    (o : Orientation (diagramGraph DynkinType.E6.cartanMatrix))
-    [instV : Fintype (OrientedQuiver (diagramGraph DynkinType.E6.cartanMatrix) o)]
-    [instHom : ∀ i j : OrientedQuiver (diagramGraph DynkinType.E6.cartanMatrix) o,
-      Fintype (i ⟶ j)] :
-    ∃ x : preprojectiveAlgebra k (OrientedQuiver (diagramGraph DynkinType.E6.cartanMatrix) o),
-      x ∈ preprojectiveGrade k (OrientedQuiver (diagramGraph DynkinType.E6.cartanMatrix) o) 6 ∧
-        x ∉ commutatorSubmodule k
-          (preprojectiveAlgebra k
-            (OrientedQuiver (diagramGraph DynkinType.E6.cartanMatrix) o)) := by
-  have key : ∀ C : Matrix (Fin 6) (Fin 6) ℤ, C = CartanMatrix.E 6 →
-      ∀ (o : Orientation (diagramGraph C))
-        [Fintype (OrientedQuiver (diagramGraph C) o)]
-        [∀ i j : OrientedQuiver (diagramGraph C) o, Fintype (i ⟶ j)],
-      ∃ x : preprojectiveAlgebra k (OrientedQuiver (diagramGraph C) o),
-        x ∈ preprojectiveGrade k (OrientedQuiver (diagramGraph C) o) 6 ∧
-          x ∉ commutatorSubmodule k
-            (preprojectiveAlgebra k (OrientedQuiver (diagramGraph C) o)) := by
-    rintro C rfl
-    exact exists_preprojective_E6_cyclicClass k
-  exact @key _ DynkinType.cartanMatrix_E6 o instV instHom
-
-end TauCeti
-
-namespace TauCeti
-
-open DoubledQuiver
-
-attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
+section Embedding
 
 private def e6PrefixEmbedding {n : ℕ} (hn : 6 ≤ n) :
     diagramGraph (CartanMatrix.E 6) ↪g diagramGraph (CartanMatrix.E n) where
   toEmbedding := Fin.castLEEmb hn
-  map_rel_iff' := by
-    intro i j
-    rw [diagramGraph_E_adj, diagramGraph_E_adj]
-    rfl
+  map_rel_iff' := by simp [diagramGraph_E_adj, -diagramGraph_adj]
 
 variable (k : Type*) [CommRing k] [Nontrivial k]
 
@@ -457,6 +406,7 @@ theorem exists_mem_signlessPreprojectiveGrade_six_notMem_commutatorSubmodule_of_
     ∃ z : signlessPreprojectiveAlgebra k (DoubledQuiver H),
       z ∈ signlessPreprojectiveGrade k (DoubledQuiver H) 6 ∧
         z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H)) := by
+  let := SimpleGraph.neighborSetFintypeOfFinite (diagramGraph (CartanMatrix.E 6))
   have : CharP k 3 := ringChar.of_eq (CharP.ringChar_of_prime_eq_zero Nat.prime_three h3)
   exact exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_embedding k f
     ⟨signlessWord k (diagramGraph (CartanMatrix.E 6)) [3, 2, 3, 2, 3, 1, 3],
@@ -467,7 +417,8 @@ theorem exists_mem_signlessPreprojectiveGrade_six_notMem_commutatorSubmodule_of_
 graph, `n ≥ 6`, has a degree-six element which is not a sum of commutators. In particular this
 applies to each of `E₆`, `E₇`, and `E₈`. -/
 theorem exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule
-    {n : ℕ} (hn : 6 ≤ n) (h3 : (3 : k) = 0) :
+    {n : ℕ} [∀ i, Fintype ((diagramGraph (CartanMatrix.E n)).neighborSet i)]
+    (hn : 6 ≤ n) (h3 : (3 : k) = 0) :
     ∃ z : signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E n))),
       z ∈ signlessPreprojectiveGrade k (DoubledQuiver (diagramGraph (CartanMatrix.E n))) 6 ∧
         z ∉ commutatorSubmodule k
@@ -483,13 +434,11 @@ theorem exists_mem_preprojectiveGrade_E_six_notMem_commutatorSubmodule
       z ∈ preprojectiveGrade k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o) 6 ∧
         z ∉ commutatorSubmodule k
           (preprojectiveAlgebra k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o)) := by
-  obtain ⟨z, hz, hz0⟩ :=
-    exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule k hn h3
-  let C := eColoring _ (diagramGraph_E_adj (n := n))
-  let E := C.signlessPreprojectiveAlgebraEquiv k o
-  refine ⟨E z, C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hz, ?_⟩
-  intro h
-  apply hz0
-  simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm h
+  let := SimpleGraph.neighborSetFintypeOfFinite (diagramGraph (CartanMatrix.E n))
+  let c := eColoring _ (diagramGraph_E_adj (n := n))
+  exact (c.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_iff k o).mpr
+    (exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule k hn h3)
+
+end Embedding
 
 end TauCeti

@@ -364,14 +364,11 @@ theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_isBadPrime
     (hp0 : (p : k) = 0) (o : Orientation G) :
     ∃ d ∈ ({4, 6, 10} : Finset ℕ), ∃ z ∈ preprojectiveGrade k (OrientedQuiver G o) d,
       z ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
-  obtain ⟨d, hd, z, hz, hz0⟩ :=
+  obtain ⟨d, hd, hz⟩ :=
     exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_isBadPrime k e ht hp hp0
   have hb : G.IsBipartite :=
     (e.isAcyclic_iff.mpr t.isAcyclic_diagramGraph_cartanMatrix).isBipartite
-  let F := hb.signlessPreprojectiveAlgebraEquiv k o
-  refine ⟨d, hd, F z, hb.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hz, ?_⟩
-  intro h
-  exact hz0 (by simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule F.symm h)
+  exact ⟨d, hd, (hb.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_iff k o).mpr hz⟩
 
 end Nonvanishing
 
@@ -395,18 +392,13 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule
       z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   by_cases hac : G.IsAcyclic
   · classical
-    let fV : Fintype V := Fintype.ofFinite V
-    let instSub : ∀ v, Fintype (G.neighborSet v) := fun v => Subtype.fintype _
-    have htree : G.IsTree := ⟨hG, hac⟩
-    obtain ⟨d, hd, z, hz, hz0⟩ :=
-      @SimpleGraph.IsTree.exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule
-        k _ V fV G _ _ htree hD
-    let E := @signlessPreprojectiveAlgebraEquiv V V _ _ G G k _ instSub instG
-      SimpleGraph.Iso.refl
-    refine ⟨d, by simp only [Finset.mem_insert, Finset.mem_singleton] at hd; omega, E z,
-      (@signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade_iff V V _ _ G G k _
-        instSub instG SimpleGraph.Iso.refl d z).mpr hz, fun h => hz0 ?_⟩
-    simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm h
+    let := Fintype.ofFinite V
+    have hG' : instG = fun _ => Subtype.fintype _ := Subsingleton.elim _ _
+    cases hG'
+    obtain ⟨d, hd, hz⟩ :=
+      SimpleGraph.IsTree.exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule
+        (k := k) ⟨hG, hac⟩ hD
+    exact ⟨d, by simp only [Finset.mem_insert, Finset.mem_singleton] at hd; omega, hz⟩
   · exact exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_not_isAcyclic k hac
 
 /-- **Every orientation of a connected non-Dynkin finite simple graph has a nonzero cyclic class in
@@ -419,13 +411,10 @@ theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule
     ∃ d : ℕ, 3 ≤ d ∧ ∃ z ∈ preprojectiveGrade k (OrientedQuiver G o) d,
       z ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
   by_cases hac : G.IsAcyclic
-  · obtain ⟨d, hd, z, hz, hz0⟩ :=
+  · obtain ⟨d, hd, hz⟩ :=
       hG.exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule k hD
-    let F := hac.isBipartite.signlessPreprojectiveAlgebraEquiv k o
-    refine ⟨d, hd, F z,
-      hac.isBipartite.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hz,
-      fun h => hz0 ?_⟩
-    simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule F.symm h
+    exact ⟨d, hd,
+      (hac.isBipartite.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_iff k o).mpr hz⟩
   · exact exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_not_isAcyclic k hac o
 
 end SimpleGraph.Connected

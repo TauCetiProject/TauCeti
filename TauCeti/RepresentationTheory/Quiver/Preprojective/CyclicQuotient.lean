@@ -17,10 +17,10 @@ This file collects the steps of a vanishing argument for the cyclic quotient in 
 which do not depend on the graph: once every path of positive length is known to be a sum of
 commutators, the same holds for the graded pieces of positive degree, the commutator submodule is
 the kernel of the augmentation, so that the cyclic quotient is the module of vertex coefficients,
-and, for a two-coloured graph, the vanishing transfers to the additive preprojective algebra of
-every orientation. The only paths which need a graph-specific
-argument are the closed ones: a path between distinct vertices is a commutator with its target
-idempotent.
+and, for a two-coloured graph, both vanishing and homogeneous nonvanishing transfer between the
+signless algebra and the additive preprojective algebra of every orientation. The only paths which
+need a graph-specific argument are the closed ones: a path between distinct vertices is a
+commutator with its target idempotent.
 
 ## Main results
 
@@ -38,6 +38,10 @@ idempotent.
 * `SimpleGraph.Coloring.preprojectiveMk_ofPath_mem_commutatorSubmodule`: for a two-coloured graph,
   the vanishing for paths of positive length transfers from the signless algebra to the additive
   preprojective algebra of every orientation.
+* `SimpleGraph.Coloring.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_iff` and
+  `SimpleGraph.IsBipartite.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_iff`: for a
+  two-coloured or bipartite graph, homogeneous nonvanishing in the cyclic quotient agrees between
+  the signless algebra and the additive preprojective algebra of any orientation.
 
 ## References
 
@@ -162,9 +166,11 @@ open TauCeti TauCeti.DoubledQuiver TauCeti.PathAlgebra _root_.Quiver
 
 universe u w
 
-attribute [local instance] Fintype.ofFinite
-
 variable {V : Type u} {G : SimpleGraph V} (k : Type w) [CommRing k] [Finite V]
+
+section Vanishing
+
+attribute [local instance] Fintype.ofFinite
 
 /-- **The vanishing of cyclic classes of paths transfers to every orientation.** If every path of
 positive length in the signless algebra of a two-coloured graph is a sum of commutators, then so is
@@ -186,4 +192,50 @@ theorem preprojectiveMk_ofPath_mem_commutatorSubmodule (C : G.Coloring Bool) (o 
   have hmap := map_mem_commutatorSubmodule e hsymm
   rwa [AlgEquiv.apply_symm_apply] at hmap
 
+end Vanishing
+
+/-- **For a two-coloured graph, the existence of a homogeneous element of degree `d` outside the
+commutator submodule agrees between the signless algebra and the additive preprojective algebra of
+any orientation.** -/
+theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_iff
+    [instG : ∀ i, Fintype (G.neighborSet i)] (C : G.Coloring Bool) (o : Orientation G) {d : ℕ} :
+    (∃ x ∈ preprojectiveGrade k (OrientedQuiver G o) d,
+      x ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o))) ↔
+    (∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) d,
+      x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G))) := by
+  have hG : instG = fun _ => Fintype.ofFinite _ := Subsingleton.elim _ _
+  cases hG
+  let e := C.signlessPreprojectiveAlgebraEquiv k o
+  constructor
+  · rintro ⟨x, hx, hx0⟩
+    refine ⟨e.symm x, ?_, fun h => hx0 ?_⟩
+    · rwa [← C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade_iff k o,
+        AlgEquiv.apply_symm_apply]
+    · simpa only [AlgEquiv.apply_symm_apply] using map_mem_commutatorSubmodule e h
+  · rintro ⟨x, hx, hx0⟩
+    refine ⟨e x, (C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade_iff k o).mpr hx,
+      fun h => hx0 ?_⟩
+    simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule e.symm h
+
 end SimpleGraph.Coloring
+
+namespace SimpleGraph.IsBipartite
+
+open TauCeti TauCeti.DoubledQuiver
+
+universe u w
+
+variable {V : Type u} {G : SimpleGraph V} (k : Type w) [CommRing k] [Finite V]
+
+/-- **For a bipartite graph, the existence of a homogeneous element of degree `d` outside the
+commutator submodule agrees between the signless algebra and the additive preprojective algebra of
+any orientation.** -/
+theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_iff
+    [∀ i, Fintype (G.neighborSet i)] (hG : G.IsBipartite) (o : Orientation G) {d : ℕ} :
+    (∃ x ∈ preprojectiveGrade k (OrientedQuiver G o) d,
+      x ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o))) ↔
+    (∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) d,
+      x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G))) :=
+  hG.coloringBool.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_iff k o
+
+end SimpleGraph.IsBipartite
