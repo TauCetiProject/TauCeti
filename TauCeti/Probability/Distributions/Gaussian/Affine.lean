@@ -22,8 +22,9 @@ allowed, so the result applies both to embeddings and to possibly singular proje
 
 ## Main results
 
-* `TauCeti.Probability.gaussianReal_map_const_add_const_mul`: the affine pushforward formula for
-  a real Gaussian measure.
+* `TauCeti.Probability.gaussianReal_zero_one_map_const_mul`,
+  `TauCeti.Probability.gaussianReal_map_const_add_const_mul`: linear and affine pushforward formulas
+  for a real Gaussian measure.
 * `TauCeti.Probability.gaussianReal_map_linear_combination`: orthogonal combinations of two
   independent standard Gaussians remain standard Gaussian.
 * `TauCeti.Probability.map_affine_multivariateGaussian`: the affine pushforward formula for a
@@ -49,6 +50,12 @@ open MeasureTheory ProbabilityTheory
 open scoped MatrixOrder RealInnerProductSpace NNReal
 
 namespace TauCeti.Probability
+
+/-- Scaling the standard real Gaussian `N(0, 1)` by `c` yields `N(0, v)` whenever `c ^ 2 = v`. -/
+theorem gaussianReal_zero_one_map_const_mul (c : ℝ) {v : ℝ≥0} (hv : c ^ 2 = v) :
+    (gaussianReal 0 1).map (c * ·) = gaussianReal 0 v := by
+  rw [gaussianReal_map_const_mul, mul_zero, mul_one]
+  exact congrArg (gaussianReal 0) (NNReal.eq hv)
 
 /-- An orthogonal combination of two independent standard Gaussians is standard Gaussian. -/
 theorem gaussianReal_map_linear_combination (a b : ℝ) (hab : a ^ 2 + b ^ 2 = 1) :

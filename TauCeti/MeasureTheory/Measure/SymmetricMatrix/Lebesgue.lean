@@ -32,8 +32,8 @@ have Frobenius norm `√2`, so Frobenius volume is `2 ^ (p * (p - 1) / 4)` times
   measure, as required by Mathlib's Jacobian API.
 * `TauCeti.symmetricOrthonormalBasis` — the Frobenius orthonormal basis obtained by rescaling the
   off-diagonal coordinate basis vectors by `(√2)⁻¹`.
-* `TauCeti.volume_symmetricMatrix_eq_smul_symmetricLebesgue` — comparison with the Frobenius
-  volume.
+* `TauCeti.volume_symmetricMatrix_eq_smul_symmetricLebesgue`,
+  `TauCeti.symmetricLebesgue_eq_smul_volume` — comparison with the Frobenius volume.
 * `TauCeti.symmetricLebesgue_zero` — in dimension zero, `symmetricLebesgue` is the Dirac
   measure on the unique symmetric matrix.
 * `TauCeti.measurePreserving_symmetricFinOneEquiv` — in dimension one, reading the single entry
@@ -184,7 +184,7 @@ private theorem two_mul_card_offDiag (p : ℕ) :
 
 private theorem prod_symScale_inv (p : ℕ) :
     (((∏ ij, symScale p ij)⁻¹ : ℝˣ) : ℝ) =
-      Real.rpow 2 (((p : ℝ) * ((p : ℝ) - 1)) / 4) := by
+      (2 : ℝ) ^ (((p : ℝ) * ((p : ℝ) - 1)) / 4) := by
   set N : ℕ := ∑ i ∈ Finset.range p, i with hN
   have hprod : ((∏ ij, symScale p ij : ℝˣ) : ℝ) = (Real.sqrt 2)⁻¹ ^ N := by
     rw [← Units.coeHom_apply, map_prod]
@@ -200,7 +200,7 @@ private theorem prod_symScale_inv (p : ℕ) :
 private theorem volume_parallelepiped_symmetricBasis (p : ℕ) :
     (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)))
         (symmetricBasis p).parallelepiped =
-      ENNReal.ofReal (Real.rpow 2 (((p : ℝ) * ((p : ℝ) - 1)) / 4)) := by
+      ENNReal.ofReal ((2 : ℝ) ^ (((p : ℝ) * ((p : ℝ) - 1)) / 4)) := by
   rw [Basis.coe_parallelepiped, ← addHaar_symScaled p, Measure.addHaar_parallelepiped,
     Basis.det_unitsSMul]
   simp only [_root_.smul_apply, Basis.det_self, smul_eq_mul, mul_one]
@@ -214,9 +214,18 @@ end comparison
 coordinate directions `Eᵢⱼ + Eⱼᵢ` has Frobenius norm `√2`. -/
 theorem volume_symmetricMatrix_eq_smul_symmetricLebesgue (p : ℕ) :
     (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))) =
-      ENNReal.ofReal (Real.rpow 2 (((p : ℝ) * ((p : ℝ) - 1)) / 4)) • symmetricLebesgue p := by
+      ENNReal.ofReal ((2 : ℝ) ^ (((p : ℝ) * ((p : ℝ) - 1)) / 4)) • symmetricLebesgue p := by
   rw [symmetricLebesgue_eq_addHaar, Basis.addHaar_def, ← volume_parallelepiped_symmetricBasis]
   exact Measure.addHaarMeasure_unique _ _
+
+/-- Conversely, `symmetricLebesgue p` is `2 ^ (-(p * (p - 1) / 4))` times the Frobenius `volume`. -/
+theorem symmetricLebesgue_eq_smul_volume (p : ℕ) :
+    symmetricLebesgue p =
+      ENNReal.ofReal ((2 : ℝ) ^ (-(((p : ℝ) * ((p : ℝ) - 1)) / 4))) •
+        (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))) := by
+  rw [volume_symmetricMatrix_eq_smul_symmetricLebesgue, smul_smul,
+    ← ENNReal.ofReal_mul (Real.rpow_nonneg (by norm_num) _),
+    ← Real.rpow_add two_pos, neg_add_cancel, Real.rpow_zero, ENNReal.ofReal_one, one_smul]
 
 /-- In dimension zero, the symmetric subspace is a single point and `symmetricLebesgue` is the
 Dirac measure there, so the dimension-zero Wishart laws need no special casing. -/

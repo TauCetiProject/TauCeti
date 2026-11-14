@@ -7,40 +7,32 @@ module
 
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Measure
-import TauCeti.MeasureTheory.Constructions.Pi
+import TauCeti.Probability.Distributions.Gaussian.Affine
 import TauCeti.Probability.Distributions.Gaussian.Density
 
 /-!
 # Explicit invariant densities and entry characterizations of the GOE and GUE
 
 For `0 < n`, `TauCeti.Probability.goeMeasure n` and `TauCeti.Probability.gueMeasure n` are
-nonsingular scalar multiples of `ProbabilityTheory.stdGaussian` on the finite-dimensional real
-Frobenius inner product spaces `selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)` and
+nonsingular scalar multiples of `ProbabilityTheory.stdGaussian` on the real Frobenius spaces
+`selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)` and
 `selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)`. Rescaling `stdGaussian` via
 `TauCeti.Probability.map_smul_stdGaussian_eq_withDensity_norm` and comparing `volume` with
-`TauCeti.symmetricLebesgue n` and `TauCeti.hermitianLebesgue n` yields the classical coordinate
-densities (AGZ (2.5.1), rescaled by `√n`) and the equivalence between the independent-entry and
-invariant-density characterizations.
+`TauCeti.symmetricLebesgue n` and `TauCeti.hermitianLebesgue n` yields the AGZ (2.5.1) densities
+(rescaled by `√n`) and equivalence with the independent-entry characterizations.
 
 ## Main definitions and results
 
 * `TauCeti.Probability.goePDFReal`, `TauCeti.Probability.goePDF`, `TauCeti.Probability.guePDFReal`,
-  `TauCeti.Probability.guePDF` — GOE and GUE densities against `symmetricLebesgue` and
-  `hermitianLebesgue`.
+  `TauCeti.Probability.guePDF` — GOE and GUE densities.
 * `TauCeti.Probability.goeMeasure_eq_withDensity_symmetricLebesgue`,
-  `TauCeti.Probability.goeMeasure_eq_withDensity_volume`,
   `TauCeti.Probability.gueMeasure_eq_withDensity_hermitianLebesgue`,
-  `TauCeti.Probability.gueMeasure_eq_withDensity_volume` — explicit densities for `0 < n`.
-* `TauCeti.Probability.hasPDF_of_hasLaw_goeMeasure`, `TauCeti.Probability.rnDeriv_goeMeasure`,
-  `TauCeti.Probability.hasPDF_of_hasLaw_gueMeasure`, `TauCeti.Probability.rnDeriv_gueMeasure`,
   `TauCeti.Probability.hasLaw_goeMeasure_iff`, `TauCeti.Probability.hasLaw_withDensity_goePDF_iff`,
-  `TauCeti.Probability.hasLaw_gueMeasure_iff`, `TauCeti.Probability.hasLaw_withDensity_guePDF_iff` —
-  `HasPDF`, Radon–Nikodym, and independent-entry characterizations.
+  `TauCeti.Probability.hasLaw_gueMeasure_iff`, `TauCeti.Probability.hasLaw_withDensity_guePDF_iff`.
 
 ## References
 
-* G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*, Cambridge
-  University Press (2010), §2.5.1, (2.5.1).
+* G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*, §2.5.1, (2.5.1).
 -/
 
 public section
@@ -81,15 +73,16 @@ theorem goePDF_def (n : ℕ) (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin
 theorem goePDFReal_nonneg (n : ℕ) (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) :
     0 ≤ goePDFReal n H := by unfold goePDFReal; positivity
 
-/-- For `0 < n`, the real-valued GOE density is strictly positive everywhere. -/
-theorem goePDFReal_pos {n : ℕ} (hn : 0 < n)
-    (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) : 0 < goePDFReal n H := by
-  unfold goePDFReal; positivity
+/-- The real-valued GOE density is strictly positive everywhere. -/
+theorem goePDFReal_pos (n : ℕ) (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) :
+    0 < goePDFReal n H := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp [goePDFReal]
+  · unfold goePDFReal; positivity
 
-/-- For `0 < n`, the `ℝ≥0∞`-valued GOE density is strictly positive everywhere. -/
-theorem goePDF_pos {n : ℕ} (hn : 0 < n)
-    (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) : 0 < goePDF n H :=
-  ENNReal.ofReal_pos.mpr (goePDFReal_pos hn H)
+/-- The `ℝ≥0∞`-valued GOE density is strictly positive everywhere. -/
+theorem goePDF_pos (n : ℕ) (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) :
+    0 < goePDF n H := ENNReal.ofReal_pos.mpr (goePDFReal_pos n H)
 
 /-- The `ℝ≥0∞`-valued GOE density is finite everywhere. -/
 @[simp] theorem goePDF_ne_top (n : ℕ) (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) :
@@ -117,13 +110,13 @@ theorem continuous_goePDFReal (n : ℕ) : Continuous (goePDFReal n) := by
 /-- `TauCeti.Probability.goePDFReal` is invariant under orthogonal conjugation. -/
 @[simp] theorem goePDFReal_symmetricConj {n : ℕ} (U : Matrix.orthogonalGroup (Fin n) ℝ)
     (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) :
-    goePDFReal n (Matrix.unitaryGroup.symmetricConj U H) = goePDFReal n H := by
+    goePDFReal n (Matrix.UnitaryGroup.symmetricConj U H) = goePDFReal n H := by
   simp only [goePDFReal, ← selfAdjoint.norm_sq_eq_trace_sq, LinearIsometryEquiv.norm_map]
 
 /-- `TauCeti.Probability.goePDF` is invariant under orthogonal conjugation. -/
 @[simp] theorem goePDF_symmetricConj {n : ℕ} (U : Matrix.orthogonalGroup (Fin n) ℝ)
     (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) :
-    goePDF n (Matrix.unitaryGroup.symmetricConj U H) = goePDF n H := by simp [goePDF]
+    goePDF n (Matrix.UnitaryGroup.symmetricConj U H) = goePDF n H := by simp [goePDF]
 
 /-- For `0 < n`, `TauCeti.Probability.goeMeasure n` has density
 `((n / (4π)) ^ (n(n + 1)/4)) * exp (-(n / 4) * tr(H ^ 2))` against the Frobenius `volume`. -/
@@ -137,8 +130,10 @@ theorem goeMeasure_eq_withDensity_volume {n : ℕ} (hn : 0 < n) :
       (n : ℝ) * ((n : ℝ) + 1) / 2 := by
     rw [finrank_symmetricMatrix,
       Nat.cast_div (even_iff_two_dvd.mp (Nat.even_mul_succ_self n)) (by norm_num)]
-    push_cast; rfl
-  rw [goeMeasure_eq_map_stdGaussian, map_smul_stdGaussian_eq_withDensity_norm _ hc]
+    push_cast; ring
+  rw [goeMeasure_eq_map_stdGaussian,
+    map_smul_stdGaussian_eq_withDensity_norm
+      (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) hc]
   refine withDensity_congr_ae (.of_forall fun H ↦ congrArg ENNReal.ofReal ?_)
   rw [div_pow, Real.sq_sqrt (by norm_num), Real.sq_sqrt hnR.le, hfinrank,
     selfAdjoint.norm_sq_eq_trace_sq,
@@ -156,9 +151,7 @@ theorem goeMeasure_eq_withDensity_symmetricLebesgue {n : ℕ} (hn : 0 < n) :
     withDensity_smul_measure, ← withDensity_smul' _ _ ENNReal.ofReal_ne_top]
   refine withDensity_congr_ae (.of_forall fun H ↦ ?_)
   simp only [Pi.smul_apply, smul_eq_mul, goePDF, goePDFReal]
-  rw [show Real.rpow 2 (((n : ℝ) * ((n : ℝ) - 1)) / 4) =
-      (2 : ℝ) ^ (((n : ℝ) * ((n : ℝ) - 1)) / 4) from rfl,
-    ← ENNReal.ofReal_mul (Real.rpow_nonneg (by norm_num) _)]
+  rw [← ENNReal.ofReal_mul (Real.rpow_nonneg (by norm_num) _)]
   refine congrArg ENNReal.ofReal ?_
   have hsplit : ((n : ℝ) / (4 * Real.pi)) ^ (((n : ℝ) * ((n : ℝ) + 1)) / 4) =
       (2 : ℝ) ^ (-2 * ((n : ℝ) * ((n : ℝ) + 1)) / 4) *
@@ -220,68 +213,60 @@ theorem guePDF_def (n : ℕ) (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin
 theorem guePDFReal_nonneg (n : ℕ) (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
     0 ≤ guePDFReal n H := by unfold guePDFReal; positivity
 
-/-- For `0 < n`, the real-valued GUE density is strictly positive everywhere. -/
-theorem guePDFReal_pos {n : ℕ} (hn : 0 < n)
-    (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) : 0 < guePDFReal n H := by
-  unfold guePDFReal; positivity
+/-- The real-valued GUE density is strictly positive everywhere. -/
+theorem guePDFReal_pos (n : ℕ) (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
+    0 < guePDFReal n H := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp [guePDFReal]
+  · unfold guePDFReal; positivity
 
-/-- For `0 < n`, the `ℝ≥0∞`-valued GUE density is strictly positive everywhere. -/
-theorem guePDF_pos {n : ℕ} (hn : 0 < n)
-    (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) : 0 < guePDF n H :=
-  ENNReal.ofReal_pos.mpr (guePDFReal_pos hn H)
+/-- The `ℝ≥0∞`-valued GUE density is strictly positive everywhere. -/
+theorem guePDF_pos (n : ℕ) (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
+    0 < guePDF n H := ENNReal.ofReal_pos.mpr (guePDFReal_pos n H)
 
 /-- The `ℝ≥0∞`-valued GUE density is finite everywhere. -/
 @[simp] theorem guePDF_ne_top (n : ℕ) (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
     guePDF n H ≠ ⊤ := ENNReal.ofReal_ne_top
 
 /-- `ENNReal.toReal` of `TauCeti.Probability.guePDF` recovers `TauCeti.Probability.guePDFReal`. -/
-@[simp]
-theorem toReal_guePDF (n : ℕ) (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
+@[simp] theorem toReal_guePDF (n : ℕ) (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
     (guePDF n H).toReal = guePDFReal n H := ENNReal.toReal_ofReal (guePDFReal_nonneg n H)
 
 /-- `TauCeti.Probability.guePDFReal` is continuous on the complex Hermitian subspace. -/
 theorem continuous_guePDFReal (n : ℕ) : Continuous (guePDFReal n) := by
-  simp only [show guePDFReal n = fun H ↦
-      (2 : ℝ) ^ (-(n : ℝ) / 2) * ((n : ℝ) / Real.pi) ^ (((n : ℝ) ^ 2) / 2) *
-        Real.exp (-((n : ℝ) / 2) * ‖H‖ ^ 2)
-    from funext fun H ↦ by rw [guePDFReal, selfAdjoint.norm_sq_eq_re_trace_sq]]
-  fun_prop
+  simp only [show guePDFReal n = fun H ↦ (2 : ℝ) ^ (-(n : ℝ) / 2) *
+      ((n : ℝ) / Real.pi) ^ (((n : ℝ) ^ 2) / 2) * Real.exp (-((n : ℝ) / 2) * ‖H‖ ^ 2)
+    from funext fun H ↦ by rw [guePDFReal, selfAdjoint.norm_sq_eq_re_trace_sq]]; fun_prop
 
 /-- `TauCeti.Probability.guePDFReal` is measurable. -/
-@[fun_prop]
-theorem measurable_guePDFReal (n : ℕ) : Measurable (guePDFReal n) :=
+@[fun_prop] theorem measurable_guePDFReal (n : ℕ) : Measurable (guePDFReal n) :=
   (continuous_guePDFReal n).measurable
 
 /-- `TauCeti.Probability.guePDF` is measurable. -/
-@[fun_prop]
-theorem measurable_guePDF (n : ℕ) : Measurable (guePDF n) :=
+@[fun_prop] theorem measurable_guePDF (n : ℕ) : Measurable (guePDF n) :=
   (measurable_guePDFReal n).ennreal_ofReal
 
 /-- `TauCeti.Probability.guePDFReal` is invariant under unitary conjugation. -/
-@[simp]
-theorem guePDFReal_hermitianConj {n : ℕ} (U : Matrix.unitaryGroup (Fin n) ℂ)
+@[simp] theorem guePDFReal_hermitianConj {n : ℕ} (U : Matrix.unitaryGroup (Fin n) ℂ)
     (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
-    guePDFReal n (Matrix.unitaryGroup.hermitianConj U H) = guePDFReal n H := by
+    guePDFReal n (Matrix.UnitaryGroup.hermitianConj U H) = guePDFReal n H := by
   simp only [guePDFReal, ← selfAdjoint.norm_sq_eq_re_trace_sq, LinearIsometryEquiv.norm_map]
 
 /-- `TauCeti.Probability.guePDF` is invariant under unitary conjugation. -/
-@[simp]
-theorem guePDF_hermitianConj {n : ℕ} (U : Matrix.unitaryGroup (Fin n) ℂ)
+@[simp] theorem guePDF_hermitianConj {n : ℕ} (U : Matrix.unitaryGroup (Fin n) ℂ)
     (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
-    guePDF n (Matrix.unitaryGroup.hermitianConj U H) = guePDF n H := by simp [guePDF]
+    guePDF n (Matrix.UnitaryGroup.hermitianConj U H) = guePDF n H := by simp [guePDF]
 
 /-- For `0 < n`, `TauCeti.Probability.gueMeasure n` has density
-`((n / (2π)) ^ (n ^ 2 / 2)) * exp (-(n / 2) * Re tr(H ^ 2))` against the trace-inner-product
-`volume`. -/
+`((n / (2π)) ^ (n ^ 2 / 2)) * exp (-(n / 2) * Re tr(H ^ 2))` against `volume`. -/
 theorem gueMeasure_eq_withDensity_volume {n : ℕ} (hn : 0 < n) :
-    gueMeasure n =
-      volume.withDensity fun H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ) ↦
-        ENNReal.ofReal
-          (((n : ℝ) / (2 * Real.pi)) ^ (((n : ℝ) ^ 2) / 2) *
-            Real.exp (-((n : ℝ) / 2) * ((H : Matrix (Fin n) (Fin n) ℂ) ^ 2).trace.re)) := by
+    gueMeasure n = volume.withDensity fun H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ) ↦
+      ENNReal.ofReal (((n : ℝ) / (2 * Real.pi)) ^ (((n : ℝ) ^ 2) / 2) *
+        Real.exp (-((n : ℝ) / 2) * ((H : Matrix (Fin n) (Fin n) ℂ) ^ 2).trace.re)) := by
   have hnR : (0 : ℝ) < n := Nat.cast_pos.2 hn
   have hc : (Real.sqrt n)⁻¹ ≠ 0 := by positivity
-  rw [gueMeasure_eq_map_stdGaussian, map_smul_stdGaussian_eq_withDensity_norm _ hc]
+  rw [gueMeasure_eq_map_stdGaussian, map_smul_stdGaussian_eq_withDensity_norm
+    (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) hc]
   refine withDensity_congr_ae (.of_forall fun H ↦ congrArg ENNReal.ofReal ?_)
   rw [inv_pow, Real.sq_sqrt hnR.le, finrank_hermitianMatrix, Nat.cast_pow,
     selfAdjoint.norm_sq_eq_re_trace_sq,
@@ -308,17 +293,16 @@ theorem gueMeasure_eq_withDensity_hermitianLebesgue {n : ℕ} (hn : 0 < n) :
 
 /-- For `0 < n`, a random matrix with law `TauCeti.Probability.gueMeasure n` has a PDF with
 respect to `TauCeti.hermitianLebesgue n`. -/
-theorem hasPDF_of_hasLaw_gueMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    {n : ℕ} (hn : 0 < n) {H : Ω → selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)}
-    (hH : HasLaw H (gueMeasure n) P) :
-    HasPDF H P (hermitianLebesgue n) :=
+theorem hasPDF_of_hasLaw_gueMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {n : ℕ}
+    (hn : 0 < n) {H : Ω → selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)}
+    (hH : HasLaw H (gueMeasure n) P) : HasPDF H P (hermitianLebesgue n) :=
   hasPDF_of_hasLaw_withDensity (measurable_guePDF n).aemeasurable
     (gueMeasure_eq_withDensity_hermitianLebesgue hn ▸ hH)
 
 /-- For `0 < n`, the PDF of a GUE random matrix against `TauCeti.hermitianLebesgue n` coincides
 almost everywhere with `TauCeti.Probability.guePDF n`. -/
-theorem pdf_eq_guePDF_of_hasLaw_gueMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    {n : ℕ} (hn : 0 < n) {H : Ω → selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)}
+theorem pdf_eq_guePDF_of_hasLaw_gueMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {n : ℕ}
+    (hn : 0 < n) {H : Ω → selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)}
     (hH : HasLaw H (gueMeasure n) P) :
     pdf H P (hermitianLebesgue n) =ᵐ[hermitianLebesgue n] guePDF n :=
   pdf_eq_of_hasLaw_withDensity (measurable_guePDF n).aemeasurable
@@ -333,40 +317,28 @@ theorem rnDeriv_gueMeasure {n : ℕ} (hn : 0 < n) :
 
 /-! ### Equivalence of the independent-entry and invariant-density characterizations -/
 
-private theorem map_const_mul_gaussianReal_std (c : ℝ) {v : ℝ≥0} (hv : c ^ 2 = v) :
-    (gaussianReal 0 1).map (c * ·) = gaussianReal 0 v := by
-  rw [gaussianReal_map_const_mul, mul_zero, mul_one]
-  exact congrArg (gaussianReal 0) (NNReal.eq hv)
-
 /-- Under `TauCeti.Probability.goeMeasure n`, the upper-triangular coordinates are independent real
 Gaussians: `N(0, 2 / n)` on the diagonal and `N(0, 1 / n)` above it. -/
 theorem map_symmetricCoordinates_goeMeasure (n : ℕ) :
     (goeMeasure n).map (symmetricCoordinates n) =
       Measure.pi fun ij : upperTriangle n ↦
         if ij.1.1 = ij.1.2 then gaussianReal 0 (2 / n) else gaussianReal 0 (1 / n) := by
-  have hproj := measurePreserving_pi_comp_embedding
-    (fun _ : Fin n × Fin n ↦ gaussianReal 0 1)
-    (Function.Embedding.subtype fun ij : Fin n × Fin n ↦ ij.1 ≤ ij.2)
   let scale : upperTriangle n → ℝ → ℝ := fun ij t ↦
     (Real.sqrt n)⁻¹ * ((if ij.1.1 = ij.1.2 then Real.sqrt 2 else 1) * t)
   have hfactor (ij : upperTriangle n) : (gaussianReal 0 1).map (scale ij) =
       if ij.1.1 = ij.1.2 then gaussianReal 0 (2 / n) else gaussianReal 0 (1 / n) := by
     simp only [scale, ← mul_assoc]
-    split_ifs with hd <;> refine map_const_mul_gaussianReal_std _ ?_
-    · rw [NNReal.coe_div, NNReal.coe_ofNat, NNReal.coe_natCast, mul_pow, inv_pow,
-        Real.sq_sqrt (Nat.cast_nonneg n), Real.sq_sqrt (by norm_num), div_eq_inv_mul]
-    · rw [mul_one, NNReal.coe_div, NNReal.coe_one, NNReal.coe_natCast, inv_pow,
-        Real.sq_sqrt (Nat.cast_nonneg n), one_div]
+    split_ifs with hd <;> refine gaussianReal_zero_one_map_const_mul _ ?_
+    · simp [mul_pow, div_eq_inv_mul]
+    · simp [one_div]
   have : ∀ ij : upperTriangle n, SigmaFinite ((gaussianReal 0 1).map (scale ij)) :=
-    fun ij ↦ hfactor ij ▸ inferInstance
-  have hm_scale : Measurable fun (x : upperTriangle n → ℝ) ij ↦ scale ij (x ij) := by fun_prop
-  rw [goeMeasure_def, Measure.map_map (symmetricCoordinates n).continuous.measurable
-    (measurable_goeMatrix n),
-    show (symmetricCoordinates n ∘ goeMatrix n : (Fin n × Fin n → ℝ) → upperTriangle n → ℝ) =
-      (fun (x : upperTriangle n → ℝ) ij ↦ scale ij (x ij)) ∘
-        fun g ij ↦ g ((Function.Embedding.subtype fun ij : Fin n × Fin n ↦ ij.1 ≤ ij.2) ij)
-      from funext fun g ↦ funext (symmetricCoordinates_goeMatrix n g),
-    ← Measure.map_map hm_scale hproj.measurable, hproj.map_eq,
+    fun ij ↦ by rw [hfactor ij]; infer_instance
+  rw [goeMeasure_eq_map_pi_upperTriangle,
+    Measure.map_map (symmetricCoordinates n).continuous.measurable (by fun_prop),
+    show (symmetricCoordinates n ∘ fun x : upperTriangle n → ℝ ↦
+        (symmetricCoordinates n).symm fun ij ↦ scale ij (x ij)) =
+      fun x ij ↦ scale ij (x ij)
+      from funext fun x ↦ (symmetricCoordinates n).apply_symm_apply _,
     Measure.pi_map_pi fun ij ↦ by fun_prop]
   exact congrArg Measure.pi (funext hfactor)
 
@@ -381,14 +353,11 @@ theorem map_hermitianCoordinates_gueMeasure (n : ℕ) :
   have hfactor (ij : Fin n × Fin n) : (gaussianReal 0 1).map (scale ij) =
       if ij.1 = ij.2 then gaussianReal 0 (1 / n) else gaussianReal 0 (1 / (2 * n)) := by
     simp only [scale, ← mul_assoc]
-    split_ifs with hd <;> refine map_const_mul_gaussianReal_std _ ?_
-    · rw [mul_one, NNReal.coe_div, NNReal.coe_one, NNReal.coe_natCast, inv_pow,
-        Real.sq_sqrt (Nat.cast_nonneg n), one_div]
-    · rw [NNReal.coe_div, NNReal.coe_one, NNReal.coe_mul, NNReal.coe_ofNat, NNReal.coe_natCast,
-        mul_pow, inv_pow, inv_pow, Real.sq_sqrt (Nat.cast_nonneg n), Real.sq_sqrt (by norm_num),
-        one_div, mul_inv, mul_comm (2 : ℝ)⁻¹]
+    split_ifs with hd <;> refine gaussianReal_zero_one_map_const_mul _ ?_
+    · simp [one_div]
+    · simp [mul_pow, one_div]
   have : ∀ ij : Fin n × Fin n, SigmaFinite ((gaussianReal 0 1).map (scale ij)) :=
-    fun ij ↦ hfactor ij ▸ inferInstance
+    fun ij ↦ by rw [hfactor ij]; infer_instance
   rw [gueMeasure_def, Measure.map_map (hermitianCoordinates n).continuous.measurable
     (measurable_gueMatrix n),
     show (hermitianCoordinates n ∘ gueMatrix n : (Fin n × Fin n → ℝ) → Fin n × Fin n → ℝ) =

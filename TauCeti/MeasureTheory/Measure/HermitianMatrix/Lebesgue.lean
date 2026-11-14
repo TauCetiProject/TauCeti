@@ -21,21 +21,18 @@ unitary conjugation preserves both measures.
 
 ## Main declarations
 
-* `TauCeti.hermitianLebesgue`, `TauCeti.hermitianLebesgueIsAddHaarMeasure` — coordinate Lebesgue
-  measure on the complex Hermitian subspace and its `IsAddHaarMeasure` instance.
-* `TauCeti.measurePreserving_hermitianCoordinates_symm`,
-  `TauCeti.measurePreserving_hermitianCoordinates` — coordinate maps preserve measure.
+* `TauCeti.hermitianLebesgue`, `TauCeti.hermitianLebesgueIsAddHaarMeasure`,
+  `TauCeti.measurePreserving_hermitianCoordinates_symm`,
+  `TauCeti.measurePreserving_hermitianCoordinates`.
 * `TauCeti.hermitianOrthonormalBasis`, `TauCeti.volume_hermitianMatrix_eq_smul_hermitianLebesgue`,
-  `TauCeti.hermitianLebesgue_eq_smul_volume` — Frobenius orthonormal basis and volume rescaling.
-* `TauCeti.hermitianLebesgue_zero`, `TauCeti.measurePreserving_hermitianFinOneEquiv`,
-  `Matrix.unitaryGroup.measurePreserving_hermitianConj_volume`,
-  `Matrix.unitaryGroup.measurePreserving_hermitianConj_hermitianLebesgue` — low dimensions and
-  unitary invariance.
+  `TauCeti.hermitianLebesgue_eq_smul_volume`, `TauCeti.hermitianLebesgue_zero`,
+  `TauCeti.measurePreserving_hermitianFinOneEquiv`.
+* `Matrix.UnitaryGroup.measurePreserving_hermitianConj_volume`,
+  `Matrix.UnitaryGroup.measurePreserving_hermitianConj_hermitianLebesgue`.
 
 ## References
 
-* G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*, Cambridge
-  University Press (2010), §2.5.1.
+* G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*, §2.5.1.
 -/
 
 public section
@@ -67,9 +64,10 @@ theorem measurePreserving_hermitianCoordinates_symm (p : ℕ) :
 /-- `TauCeti.hermitianCoordinates` maps `hermitianLebesgue` to product Lebesgue measure. -/
 theorem measurePreserving_hermitianCoordinates (p : ℕ) :
     MeasurePreserving (hermitianCoordinates p) (hermitianLebesgue p) volume := by
-  have h := hermitianCoordinatesMeasurableEquiv_symm_coe p ▸
-    measurePreserving_hermitianCoordinates_symm p
-  simpa using h.symm (hermitianCoordinatesMeasurableEquiv p).symm
+  have h := measurePreserving_hermitianCoordinates_symm p
+  rw [← hermitianCoordinatesMeasurableEquiv_symm_coe] at h
+  have h' := h.symm (hermitianCoordinatesMeasurableEquiv p).symm
+  rwa [MeasurableEquiv.symm_symm, hermitianCoordinatesMeasurableEquiv_coe] at h'
 
 /-- `hermitianLebesgue` is an additive Haar measure. -/
 instance hermitianLebesgueIsAddHaarMeasure (p : ℕ) :
@@ -146,24 +144,18 @@ theorem hermitianOrthonormalBasis_apply (p : ℕ) (ij : Fin p × Fin p) :
 private theorem card_hermOffDiag (p : ℕ) :
     ((Finset.univ.filter fun ij : Fin p × Fin p ↦ ij.1 ≠ ij.2).card : ℝ) =
       (p : ℝ) * ((p : ℝ) - 1) := by
-  have hdiag : (Finset.univ.filter fun ij : Fin p × Fin p ↦ ij.1 = ij.2).card = p := by
-    rw [show (Finset.univ.filter fun ij : Fin p × Fin p ↦ ij.1 = ij.2) =
-        Finset.univ.image (fun i : Fin p ↦ (i, i)) by ext ⟨i, j⟩; simp [eq_comm],
-      Finset.card_image_of_injective _ fun a b h ↦ (Prod.mk.inj h).1, Finset.card_fin]
-  have hsum : p + (Finset.univ.filter fun ij : Fin p × Fin p ↦ ij.1 ≠ ij.2).card = p * p := by
-    simpa [hdiag, Fintype.card_prod, Fintype.card_fin] using
-      Finset.card_filter_add_card_filter_not (s := Finset.univ)
-        (p := fun ij : Fin p × Fin p ↦ ij.1 = ij.2)
-  have hcast : (p : ℝ) + ((Finset.univ.filter fun ij : Fin p × Fin p ↦ ij.1 ≠ ij.2).card : ℝ) =
-      (p : ℝ) * (p : ℝ) := by exact_mod_cast hsum
-  linarith
+  have heq : (Finset.univ.filter fun ij : Fin p × Fin p ↦ ij.1 ≠ ij.2) =
+      (Finset.univ : Finset (Fin p)).offDiag := by
+    ext; simp [Finset.mem_offDiag]
+  rw [heq, Finset.offDiag_card, Finset.card_fin, Nat.cast_sub (Nat.le_mul_self p), Nat.cast_mul]
+  ring
 
 private theorem volume_parallelepiped_hermitianBasis (p : ℕ) :
     (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)))
         (hermitianBasis p).parallelepiped =
       ENNReal.ofReal ((2 : ℝ) ^ (((p : ℝ) * ((p : ℝ) - 1)) / 2)) := by
   have hhaar : ((hermitianBasis p).unitsSMul (hermScale p)).addHaar =
-      (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ))) := by
+       (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ))) := by
     rw [← Basis.toBasis_toOrthonormalBasis _ (orthonormal_hermScaled p),
       OrthonormalBasis.addHaar_eq_volume]
   set N : ℕ := (Finset.univ.filter fun ij : Fin p × Fin p ↦ ij.1 ≠ ij.2).card with hN
@@ -215,12 +207,13 @@ theorem measurePreserving_hermitianFinOneEquiv :
   have h : (hermitianFinOneEquiv : _ → ℝ) =
       MeasurableEquiv.funUnique (Fin 1 × Fin 1) ℝ ∘ hermitianCoordinates 1 :=
     funext fun A ↦ by simp [Subsingleton.elim (default : Fin 1 × Fin 1) (0, 0)]
-  exact h ▸ (volume_preserving_funUnique (Fin 1 × Fin 1) ℝ).comp
+  rw [h]
+  exact (volume_preserving_funUnique (Fin 1 × Fin 1) ℝ).comp
     (measurePreserving_hermitianCoordinates 1)
 
 end TauCeti
 
-namespace Matrix.unitaryGroup
+namespace Matrix.UnitaryGroup
 
 open TauCeti
 
@@ -228,7 +221,7 @@ open TauCeti
 subspace. -/
 theorem measurePreserving_hermitianConj_volume {p : ℕ} (U : Matrix.unitaryGroup (Fin p) ℂ) :
     MeasurePreserving (hermitianConj U) volume volume :=
-  (hermitianConj U).measurePreserving
+  measurePreserving_selfAdjointConj_volume U
 
 /-- Unitary conjugation preserves coordinate Lebesgue measure `TauCeti.hermitianLebesgue`. -/
 theorem measurePreserving_hermitianConj_hermitianLebesgue {p : ℕ}
@@ -237,4 +230,4 @@ theorem measurePreserving_hermitianConj_hermitianLebesgue {p : ℕ}
   rw [hermitianLebesgue_eq_smul_volume]
   exact (measurePreserving_hermitianConj_volume U).smul_measure _
 
-end Matrix.unitaryGroup
+end Matrix.UnitaryGroup
