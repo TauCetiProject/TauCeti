@@ -226,7 +226,9 @@ theorem coe_twoFieldSphereFamily_sphereCollapse (xq : twoFieldEquators u v) (y :
 tangent to `u x` and through the points of the inner circle `twoFieldInnerLoop`. -/
 theorem twoFieldSphereFamily_sphereCollapse (xq : twoFieldEquators u v) (y : I^(Fin 2)) :
     twoFieldSphereFamily h hu hv xq (sphereCollapse 2 Sphere2.north y) =
-      tangentCircleGenLoop (norm_u_eq_one h xq.1.1) (twoFieldInnerLoop h xq) y :=
+      -- A term in a public statement cannot name the private `norm_u_eq_one`; the tactic proof is
+      -- elaborated into an auxiliary theorem, whose body may.
+      tangentCircleGenLoop (by exact norm_u_eq_one h xq.1.1) (twoFieldInnerLoop h xq) y :=
   Subtype.ext (by
     rw [coe_twoFieldSphereFamily_sphereCollapse, coe_tangentCircleGenLoop_apply,
       coe_twoFieldInnerLoop_apply]
