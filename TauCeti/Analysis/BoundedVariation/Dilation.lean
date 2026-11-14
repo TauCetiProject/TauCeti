@@ -13,13 +13,14 @@ import TauCeti.Analysis.BoundedVariation.Translation
 /-!
 # Dilation of distributional variation and perimeter
 
-Pulling a function and its open domain back by a positive dilation of ratio `r` multiplies its
+Pulling a function and its open domain back by a nonnegative dilation of ratio `r` multiplies its
 variation by `r / r ^ n`, where `n` is the dimension. Equivalently, dilating a set and its
-ambient open domain multiplies its perimeter by `r ^ (n - 1)` in positive dimension.
+ambient open domain multiplies its perimeter by `r ^ (n - 1)`.
 
 The quantities are extended nonnegative reals, so the statements apply to infinite perimeter
 and do not require finite volume. The coefficient written as a quotient also covers dimension
-zero. A one-sided domain inclusion gives the corresponding localization inequality.
+zero and the degenerate dilation `r = 0`, where both sides vanish. A one-sided domain inclusion
+gives the corresponding localization inequality.
 
 Combined with translation invariance, the perimeter in `ball 0 R` of the blow-up
 `(fun y => x + r • y) ⁻¹' s` is `r / r ^ n` times the perimeter of `s` in `ball x (r * R)`
@@ -47,11 +48,13 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   {Ω V : Opens E} {r : ℝ} {u : E → ℝ} {s : Set E}
 
-/-- Pullback by a positive dilation scales variation by at most its inverse surface factor
+/-- Pullback by a nonnegative dilation scales variation by at most its inverse surface factor
 when the dilated domain lies in the original domain. -/
-theorem totalVariationOn_comp_smul_le (hr : 0 < r) (hVO : MapsTo (fun x : E => r • x) V Ω) :
+theorem totalVariationOn_comp_smul_le (hr : 0 ≤ r) (hVO : MapsTo (fun x : E => r • x) V Ω) :
     totalVariationOn μ V (fun x => u (r • x)) ≤
       ENNReal.ofReal (r / r ^ Module.finrank ℝ E) * totalVariationOn μ Ω u := by
+  rcases hr.eq_or_lt with rfl | hr
+  · simp [totalVariationOn_const (μ := μ) (Ω := V) (u 0)]
   refine totalVariationOn_le_iff.mpr fun φ hφ => ?_
   let ψ := dilateTestFunction hr.ne' hVO φ
   have hpair : (∫ y, divergenceCLM ψ y * u y ∂μ) =
@@ -75,15 +78,17 @@ theorem totalVariationOn_comp_smul_le (hr : 0 < r) (hVO : MapsTo (fun x : E => r
   exact mul_le_mul_right (ofReal_integral_le_totalVariationOn ψ fun y => by
     simpa only [ψ, dilateTestFunction_apply] using hφ (r⁻¹ • y)) _
 
-/-- Pulling a function and its open domain back by a positive dilation gives the exact
+/-- Pulling a function and its open domain back by a nonnegative dilation gives the exact
 inverse surface scaling of its distributional variation. The quotient coefficient includes
-dimension zero. -/
-theorem totalVariationOn_comp_smul (hr : 0 < r) (hVO : MapsTo (fun x : E => r • x) V Ω)
+dimension zero and the degenerate dilation `r = 0`, where both sides vanish. -/
+theorem totalVariationOn_comp_smul (hr : 0 ≤ r) (hVO : MapsTo (fun x : E => r • x) V Ω)
     (hOV : MapsTo (fun y : E => r⁻¹ • y) Ω V) :
     totalVariationOn μ V (fun x => u (r • x)) =
       ENNReal.ofReal (r / r ^ Module.finrank ℝ E) * totalVariationOn μ Ω u := by
-  refine le_antisymm (totalVariationOn_comp_smul_le hr hVO) ?_
-  have hle := totalVariationOn_comp_smul_le (μ := μ) (inv_pos.mpr hr) hOV
+  rcases hr.eq_or_lt with rfl | hr
+  · simp [totalVariationOn_const (μ := μ) (Ω := V) (u 0)]
+  refine le_antisymm (totalVariationOn_comp_smul_le hr.le hVO) ?_
+  have hle := totalVariationOn_comp_smul_le (μ := μ) (inv_nonneg.mpr hr.le) hOV
     (u := fun x => u (r • x))
   simp only [smul_inv_smul₀ hr.ne'] at hle
   have hcancel : ENNReal.ofReal (r / r ^ Module.finrank ℝ E) *
@@ -102,10 +107,12 @@ theorem totalVariationOn_comp_smul (hr : 0 < r) (hVO : MapsTo (fun x : E => r �
     _ = _ := by rw [← mul_assoc, hcancel, one_mul]
 
 /-- Canonical preimage-domain form of the variation scaling law. -/
-theorem totalVariationOn_comap_smul (hr : 0 < r) :
+theorem totalVariationOn_comap_smul (hr : 0 ≤ r) :
     totalVariationOn μ (Opens.comap ⟨(r • ·), by fun_prop⟩ Ω) (fun x => u (r • x)) =
       ENNReal.ofReal (r / r ^ Module.finrank ℝ E) * totalVariationOn μ Ω u := by
-  apply totalVariationOn_comp_smul hr
+  rcases hr.eq_or_lt with rfl | hr
+  · simp [totalVariationOn_const (μ := μ) (u 0)]
+  apply totalVariationOn_comp_smul hr.le
   · intro x hx
     exact Opens.mem_comap.mp hx
   · intro y hy
@@ -117,18 +124,18 @@ private theorem perimeter_preimage_smul_eq_totalVariationOn :
     perimeter μ V ((r • ·) ⁻¹' s) = totalVariationOn μ V (fun x => s.indicator 1 (r • x)) := by
   simp only [perimeter_def, ← Set.indicator_comp_right, Function.comp_def, Pi.one_def]
 
-/-- Pulling a set back by a positive dilation bounds perimeter by its inverse surface factor
+/-- Pulling a set back by a nonnegative dilation bounds perimeter by its inverse surface factor
 when the dilated domain is contained in the original domain. -/
-theorem perimeter_preimage_smul_le (hr : 0 < r)
+theorem perimeter_preimage_smul_le (hr : 0 ≤ r)
     (hVO : MapsTo (fun x : E => r • x) V Ω) :
     perimeter μ V ((r • ·) ⁻¹' s) ≤
       ENNReal.ofReal (r / r ^ Module.finrank ℝ E) * perimeter μ Ω s := by
   rw [perimeter_preimage_smul_eq_totalVariationOn, perimeter_def]
   exact totalVariationOn_comp_smul_le hr hVO
 
-/-- Pulling back a set and its open domain by a positive dilation scales perimeter by the
+/-- Pulling back a set and its open domain by a nonnegative dilation scales perimeter by the
 inverse surface factor. No finite-volume assumption is needed. -/
-theorem perimeter_preimage_smul (hr : 0 < r) (hVO : MapsTo (fun x : E => r • x) V Ω)
+theorem perimeter_preimage_smul (hr : 0 ≤ r) (hVO : MapsTo (fun x : E => r • x) V Ω)
     (hOV : MapsTo (fun y : E => r⁻¹ • y) Ω V) :
     perimeter μ V ((r • ·) ⁻¹' s) =
       ENNReal.ofReal (r / r ^ Module.finrank ℝ E) * perimeter μ Ω s := by
@@ -136,19 +143,31 @@ theorem perimeter_preimage_smul (hr : 0 < r) (hVO : MapsTo (fun x : E => r • x
   exact totalVariationOn_comp_smul hr hVO hOV
 
 /-- Perimeter scaling with the preimage domain written canonically. -/
-theorem perimeter_comap_smul (hr : 0 < r) :
+theorem perimeter_comap_smul (hr : 0 ≤ r) :
     perimeter μ (Opens.comap ⟨(r • ·), by fun_prop⟩ Ω) ((r • ·) ⁻¹' s) =
       ENNReal.ofReal (r / r ^ Module.finrank ℝ E) * perimeter μ Ω s := by
   rw [perimeter_preimage_smul_eq_totalVariationOn, perimeter_def]
   exact totalVariationOn_comap_smul hr
 
 /-- Dilating a set and its ambient open domain by a positive ratio scales perimeter by
-`r ^ (n - 1)` in positive dimension. This includes sets of infinite volume or perimeter. -/
-theorem perimeter_smul [Nontrivial E] (hr : 0 < r)
+`r ^ (n - 1)`, with truncated subtraction, so the factor is `1` in dimension zero. This includes
+sets of infinite volume or perimeter. -/
+theorem perimeter_smul (hr : 0 < r)
     (hVO : MapsTo (fun x : E => r • x) V Ω) (hOV : MapsTo (fun y : E => r⁻¹ • y) Ω V) :
     perimeter μ Ω (r • s) =
       ENNReal.ofReal (r ^ (Module.finrank ℝ E - 1)) * perimeter μ V s := by
-  have h := perimeter_preimage_smul (μ := μ) (s := s) (inv_pos.mpr hr) hOV
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have hVΩ : V = Ω := by
+      ext x
+      exact ⟨fun hx => by simpa [Subsingleton.elim (r • x) x] using hVO hx,
+        fun hx => by simpa [Subsingleton.elim (r⁻¹ • x) x] using hOV hx⟩
+    have hs : r • s = s := by
+      ext x
+      simp only [Set.mem_smul_set]
+      exact ⟨fun ⟨y, hy, _⟩ => Subsingleton.elim y x ▸ hy, fun hx =>
+        ⟨x, hx, Subsingleton.elim _ _⟩⟩
+    simp [hVΩ, hs, Module.finrank_zero_of_subsingleton]
+  have h := perimeter_preimage_smul (μ := μ) (s := s) (inv_nonneg.mpr hr.le) hOV
     (by simpa only [inv_inv] using hVO)
   rw [preimage_smul_inv₀ hr.ne'] at h
   have hfactor : r⁻¹ / (r⁻¹) ^ Module.finrank ℝ E = r ^ (Module.finrank ℝ E - 1) := by
@@ -157,17 +176,19 @@ theorem perimeter_smul [Nontrivial E] (hr : 0 < r)
     simp [mul_comm]
   rwa [hfactor] at h
 
-/-- **The perimeter of a blow-up in a ball.** Against an additive Haar measure and for `r > 0`, the
+/-- **The perimeter of a blow-up in a ball.** Against an additive Haar measure and for `r ≥ 0`, the
 perimeter in `ball 0 R` of the blow-up `(fun y => x + r • y) ⁻¹' s` is `r / r ^ n` times the
-perimeter of `s` in `ball x (r * R)`, where `n = dim E`. -/
-theorem perimeter_ball_zero_preimage_add_smul {x : E} (hr : 0 < r) (R : ℝ) :
+perimeter of `s` in `ball x (r * R)`, where `n = dim E`. For `r = 0` both sides vanish. -/
+theorem perimeter_ball_zero_preimage_add_smul {x : E} (hr : 0 ≤ r) (R : ℝ) :
     perimeter μ ⟨Metric.ball 0 R, Metric.isOpen_ball⟩ ((fun y => x + r • y) ⁻¹' s) =
       ENNReal.ofReal (r / r ^ Module.finrank ℝ E) *
         perimeter μ ⟨Metric.ball x (r * R), Metric.isOpen_ball⟩ s := by
+  rcases hr.eq_or_lt with rfl | hr
+  · by_cases hx : x ∈ s <;> simp [hx]
   have h : (fun y => x + r • y) ⁻¹' s = (r • ·) ⁻¹' ((· + x) ⁻¹' s) := by
     ext y
     simp [add_comm]
-  rw [h, perimeter_preimage_smul (Ω := ⟨Metric.ball 0 (r * R), Metric.isOpen_ball⟩) hr ?_ ?_,
+  rw [h, perimeter_preimage_smul (Ω := ⟨Metric.ball 0 (r * R), Metric.isOpen_ball⟩) hr.le ?_ ?_,
     perimeter_preimage_add_right (Ω := ⟨Metric.ball x (r * R), Metric.isOpen_ball⟩) ?_ ?_]
   · intro y hy
     simpa using hy
@@ -179,13 +200,23 @@ theorem perimeter_ball_zero_preimage_add_smul {x : E} (hr : 0 < r) (R : ℝ) :
     simpa [norm_smul, abs_of_pos hr, inv_mul_lt_iff₀ hr] using hy
 
 /-- **The perimeter of a blow-up in a ball, normalized.** Against an additive Haar measure on a
-space of dimension `n` and for `r > 0`, the perimeter in `ball 0 R` of the blow-up
+space of dimension `n` and for `r ≥ 0`, the perimeter in `ball 0 R` of the blow-up
 `(fun y => x + r • y) ⁻¹' s` is the perimeter of `s` in `ball x (r * R)` divided by
-`r ^ (n - 1)`. -/
-theorem perimeter_ball_zero_preimage_add_smul_eq_div {x : E} (hr : 0 < r) (R : ℝ) :
+`r ^ (n - 1)`. For `r = 0` both sides vanish, since `ball x 0` is empty. -/
+theorem perimeter_ball_zero_preimage_add_smul_eq_div {x : E} (hr : 0 ≤ r) (R : ℝ) :
     perimeter μ ⟨Metric.ball 0 R, Metric.isOpen_ball⟩ ((fun y => x + r • y) ⁻¹' s) =
       perimeter μ ⟨Metric.ball x (r * R), Metric.isOpen_ball⟩ s /
         ENNReal.ofReal (r ^ (Module.finrank ℝ E - 1)) := by
+  rcases hr.eq_or_lt with rfl | hr
+  · -- The domain `ball x 0` is empty, so the only test vector field on it is zero.
+    have h0 : perimeter μ ⟨Metric.ball x (0 * R), Metric.isOpen_ball⟩ s = 0 := by
+      rw [perimeter_def]
+      refine nonpos_iff_eq_zero.1 (totalVariationOn_le_iff.2 fun φ _ => ?_)
+      have hφ : φ = 0 := TestFunction.ext fun y =>
+        image_eq_zero_of_notMem_tsupport fun hy => by simpa using φ.tsupport_subset hy
+      simp [hφ]
+    rw [perimeter_ball_zero_preimage_add_smul le_rfl, h0]
+    simp
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- In dimension zero every set is `∅` or `univ`, so both perimeters vanish.
     have h0 : ∀ (U : Opens E) (t : Set E), perimeter μ U t = 0 := fun U t => by
@@ -195,7 +226,7 @@ theorem perimeter_ball_zero_preimage_add_smul_eq_div {x : E} (hr : 0 < r) (R : �
     simp [h0]
   obtain ⟨m, hm⟩ : ∃ m, Module.finrank ℝ E = m + 1 :=
     ⟨_, (Nat.sub_add_cancel Module.finrank_pos).symm⟩
-  rw [perimeter_ball_zero_preimage_add_smul hr, ENNReal.div_eq_inv_mul,
+  rw [perimeter_ball_zero_preimage_add_smul hr.le, ENNReal.div_eq_inv_mul,
     ← ENNReal.ofReal_inv_of_pos (by positivity)]
   congr 2
   rw [hm, Nat.add_sub_cancel, pow_succ]
