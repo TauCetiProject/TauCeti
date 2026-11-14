@@ -52,8 +52,9 @@ make this explicit data available without requiring downstream users to unfold t
 * `TauCeti.DynkinType.coroot'_simpleIndex_apply`: evaluation at a simple coroot extracts the
   corresponding fundamental-weight coordinate.
 * `TauCeti.DynkinType.simpleIndex_B`, `simpleIndex_F4` and `simpleIndex_G2`: the simple-root
-  index of the dispatcher is the family module's own simple-root index, for the three families
-  carrying a special isogeny.
+  index of the dispatcher is the type-`B` simple-root index `typeBSimpleIndex`, resp. the first
+  four (`Fin.castAdd 44`) and two (`Fin.castAdd 10`) root indices of the `F₄` and `G₂` modules,
+  for the three families carrying a special isogeny.
 
 ## References
 
@@ -216,10 +217,10 @@ def simpleIndex (t : DynkinType) (ht : t.Valid) (i : Fin t.rank) : Fin t.numRoot
 @[simp] theorem simpleIndex_val (t : DynkinType) (ht : t.Valid) (i : Fin t.rank) :
     (t.simpleIndex ht i : ℕ) = i := (rfl)
 
-/-! Each family module enumerates its own roots and names its own simple-root index. The
-equations below identify the dispatcher with those names, so a statement proved for one family
-about its own index transfers to the uniform one. They are stated by `Fin.ext` against
-`simpleIndex_val` rather than by unfolding either side. -/
+/-! The families `A` to `E₈` each enumerate their own roots and name their own simple-root index.
+The equations below identify the dispatcher with those names, so a statement proved for one family
+about its own index transfers to the uniform one. The `F₄` and `G₂` modules name no such index;
+for them the equations give the dispatcher index as `Fin.castAdd`. -/
 
 private theorem simpleIndex_A (n : ℕ) (ht : (A n).Valid) (i : Fin n) :
     (A n).simpleIndex ht i = typeASimpleIndex n i := by
@@ -264,11 +265,13 @@ private theorem simpleIndex_E8 (ht : E8.Valid) (i : Fin 8) :
   rw [e8SimpleIndex_val]
   exact simpleIndex_val E8 ht i
 
-/-- The simple-root index of the dispatcher at type `F₄` is type `F₄`'s own simple-root index. -/
+/-- The simple-root index of the dispatcher at type `F₄` is the first four root indices of the `F₄`
+module, `Fin.castAdd 44`. -/
 @[simp] theorem simpleIndex_F4 (ht : F4.Valid) (i : Fin 4) :
     F4.simpleIndex ht i = Fin.castAdd 44 i := Fin.ext rfl
 
-/-- The simple-root index of the dispatcher at type `G₂` is type `G₂`'s own simple-root index. -/
+/-- The simple-root index of the dispatcher at type `G₂` is the first two root indices of the `G₂`
+module, `Fin.castAdd 10`. -/
 @[simp] theorem simpleIndex_G2 (ht : G2.Valid) (i : Fin 2) :
     G2.simpleIndex ht i = Fin.castAdd 10 i := Fin.ext rfl
 
