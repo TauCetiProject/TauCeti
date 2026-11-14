@@ -39,6 +39,8 @@ vanish, rather than being unconstrained data hidden from the bar construction.
 * `TauCeti.AInfinityAlgebra.taylor_of_two` and
   `TauCeti.AInfinityAlgebra.barDifferential_of_two`: the Taylor map and the bar differential on a
   two-letter word.
+* `TauCeti.AInfinityAlgebra.taylor_eq_of_m_eq_zero`: the Taylor map when the operations of arity
+  at least three vanish.
 
 ## References
 
@@ -548,6 +550,40 @@ theorem taylor_of_three (𝒜 : AInfinityAlgebra R A) (a b c : A) :
   congr 1
   funext i
   fin_cases i <;> simp [InternalGrading.koszulTwist_zero]
+
+/-- If the operations of arity at least three vanish, the Taylor map is the unary operation on the
+letter component plus the binary operation on the two halves of each cut, with the degree-one
+Koszul twist of the left half carrying the suspension sign.  Only words of length one and two
+contribute: every cut of a longer word has a half of length at least two. -/
+theorem taylor_eq_of_m_eq_zero (𝒜 : AInfinityAlgebra R A) (h₃ : ∀ n, 3 ≤ n → 𝒜.m n = 0) :
+    𝒜.taylor = 𝒜.differential ∘ₗ ReducedTensorWords.letter R A +
+      TensorProduct.lift 𝒜.mul ∘ₗ
+        TensorProduct.map (𝒜.grading.koszulTwist 1 ∘ₗ ReducedTensorWords.letter R A)
+          (ReducedTensorWords.letter R A) ∘ₗ ReducedTensorWords.deconcatenation R A := by
+  refine ReducedTensorWords.linearMap_ext R A fun ⟨n, hn⟩ x ↦ ?_
+  match n, hn, x with
+  | 1, hn, x =>
+    rw [ReducedTensorWords.of_tprod_eq_subword R hn, ReducedTensorWords.subword_one R A x hn]
+    simp
+  | 2, hn, x =>
+    rw [ReducedTensorWords.of_tprod_eq_subword R hn, ReducedTensorWords.subword_two_eq R x le_rfl]
+    simp [taylor_of_two, ReducedTensorWords.deconcatenation_of_two, (𝒜.m 1).map_coord_zero 0]
+  | n + 3, hn, x =>
+    have h₀ := LinearMap.congr_fun
+      (𝒜.taylor_comp_of_eq_zero_of_m_eq_zero ⟨n + 3, hn⟩ (h₃ (n + 3) (by omega)))
+      (PiTensorProduct.tprod R x)
+    rw [LinearMap.comp_apply] at h₀
+    rw [h₀, LinearMap.zero_apply, ReducedTensorWords.of_tprod_eq_subword R hn, LinearMap.add_apply,
+      LinearMap.comp_apply, ReducedTensorWords.letter_subword_of_ne_one R A x _ (by omega),
+      map_zero, zero_add, LinearMap.comp_apply, LinearMap.comp_apply,
+      ReducedTensorWords.deconcatenation_subword, map_sum, map_sum]
+    refine (Finset.sum_eq_zero fun c hc ↦ ?_).symm
+    rw [Finset.mem_Ioo] at hc
+    rw [TensorProduct.map_tmul, TensorProduct.lift.tmul]
+    rcases eq_or_ne c 1 with rfl | hc₁
+    · rw [ReducedTensorWords.letter_subword_of_ne_one R A x _ (by omega), map_zero]
+    · rw [LinearMap.comp_apply, ReducedTensorWords.letter_subword_of_ne_one R A x _ hc₁, map_zero,
+        map_zero, LinearMap.zero_apply]
 
 /-- The bar differential of a two-letter word: the unary operation applied to either letter, and
 the collapse of both letters to the binary operation.  Koszul twists carry the suspension signs. -/
