@@ -114,7 +114,7 @@ instance (n : ℕ∞ω) : LieGroup 𝓘(ℝ, ℂ) n (Multiplicative W.Point) :=
 section Exp
 
 local instance : ConnectedSpace (Multiplicative W.Point) :=
-  inferInstanceAs (ConnectedSpace W.Point)
+  Homeomorph.ofAdd.connectedSpace_iff.mp inferInstance
 
 /-- The real left-invariant derivations of `E(ℂ)` are identified with its tangent space `ℂ` at the
 origin. -/
