@@ -147,58 +147,14 @@ private theorem HasWeakFDerivOn.integral_inner_fderiv_one_eq {Dξ : ℂ → ℂ 
     (hDξ : HasWeakFDerivOn volume Ω ξ Dξ) (Ψ : 𝓓(Ω, V)) :
     ∫ z, ⟪fderiv ℝ (Ψ : ℂ → V) z 1, Dξ z I⟫_ℝ =
       ∫ z, ⟪fderiv ℝ (Ψ : ℂ → V) z I, Dξ z 1⟫_ℝ := by
-  let Ψ₁ : 𝓓(Ω, V) := ∂_{(I : ℂ)} Ψ
-  let Ψ₂ : 𝓓(Ω, V) := ∂_{(1 : ℂ)} Ψ
-  have h1 := (hDξ.hasWeakLineDerivOn 1).integral_inner_lineDeriv_eq_neg Ψ₁
-  have h2 := (hDξ.hasWeakLineDerivOn I).integral_inner_lineDeriv_eq_neg Ψ₂
-  simp only [TestFunction.lineDeriv_eq_fderiv] at h1 h2
-  have hlhs : ∫ z, ⟪fderiv ℝ (Ψ₁ : ℂ → V) z 1, ξ z⟫_ℝ =
-      ∫ z, ⟪fderiv ℝ (Ψ₂ : ℂ → V) z I, ξ z⟫_ℝ := by
-    refine integral_congr_ae (.of_forall fun z => ?_)
-    have heq : fderiv ℝ (Ψ₁ : ℂ → V) z 1 = fderiv ℝ (Ψ₂ : ℂ → V) z I := by
-      rw [← TestFunction.lineDerivOp_apply_eq_fderiv Ψ₁ 1 z,
-        ← TestFunction.lineDerivOp_apply_eq_fderiv Ψ₂ I z]
-      exact congrArg (fun φ : 𝓓(Ω, V) => (φ : ℂ → V) z) (TestFunction.lineDerivOp_comm Ψ 1 I)
-    dsimp only
-    rw [heq]
-  have heq_int := neg_inj.1 (h1.symm.trans (hlhs.trans h2))
-  have hΨ₁ (z : ℂ) : (Ψ₁ : ℂ → V) z = fderiv ℝ (Ψ : ℂ → V) z I :=
-    TestFunction.lineDerivOp_apply_eq_fderiv Ψ I z
-  have hΨ₂ (z : ℂ) : (Ψ₂ : ℂ → V) z = fderiv ℝ (Ψ : ℂ → V) z 1 :=
-    TestFunction.lineDerivOp_apply_eq_fderiv Ψ 1 z
-  simpa only [hΨ₁, hΨ₂] using heq_int.symm
-
-private def smulAdjointTest (G : ℂ → V →L[ℝ] V) (hG : ContDiff ℝ ∞ G)
-    (α : 𝓓(Ω, ℝ)) (v : V) : 𝓓(Ω, V) :=
-  let adjV : (V →L[ℝ] V) →L[ℝ] V :=
-    (ContinuousLinearMap.apply ℝ V v).comp
-      ((ContinuousLinearMap.adjoint : (V →L[ℝ] V) ≃ₗᵢ⋆[ℝ] (V →L[ℝ] V)).toContinuousLinearEquiv
-        |> ContinuousLinearEquiv.toContinuousLinearMap)
-  ⟨fun z => (α : ℂ → ℝ) z • adjV (G z),
-    α.contDiff.smul (adjV.contDiff.comp hG),
-    α.hasCompactSupport.smul_right,
-    (tsupport_smul_subset_left (α : ℂ → ℝ) (fun z => adjV (G z))).trans α.tsupport_subset⟩
-
-private theorem fderiv_smulAdjointTest (G : ℂ → V →L[ℝ] V) (hG : ContDiff ℝ ∞ G)
-    (α : 𝓓(Ω, ℝ)) (v : V) (u : ℂ) (z : ℂ) :
-    fderiv ℝ (smulAdjointTest G hG α v : ℂ → V) z u =
-      (∂_{u} α : 𝓓(Ω, ℝ)) z • ContinuousLinearMap.adjoint (G z) v +
-        (α : ℂ → ℝ) z • ContinuousLinearMap.adjoint (fderiv ℝ G z u) v := by
-  let adjV : (V →L[ℝ] V) →L[ℝ] V :=
-    (ContinuousLinearMap.apply ℝ V v).comp
-      ((ContinuousLinearMap.adjoint : (V →L[ℝ] V) ≃ₗᵢ⋆[ℝ] (V →L[ℝ] V)).toContinuousLinearEquiv
-        |> ContinuousLinearEquiv.toContinuousLinearMap)
-  have h1 : HasFDerivAt (α : ℂ → ℝ) (fderiv ℝ (α : ℂ → ℝ) z) z :=
-    (α.contDiff.differentiable (by simp) z).hasFDerivAt
-  have h2 : HasFDerivAt (fun w => adjV (G w)) (adjV.comp (fderiv ℝ G z)) z :=
-    adjV.hasFDerivAt.comp z ((hG.differentiable (by simp) z).hasFDerivAt)
-  have hcoe : (smulAdjointTest G hG α v : ℂ → V) =
-      ((α : ℂ → ℝ) • fun w => adjV (G w)) := rfl
-  rw [TestFunction.lineDerivOp_apply_eq_fderiv α u z, hcoe, (h1.smul h2).fderiv]
-  simp only [adjV, add_apply, ContinuousLinearMap.smulRight_apply, smul_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv, ContinuousLinearEquiv.coe_coe]
-  abel
+  have h1 := (hDξ.hasWeakLineDerivOn 1).integral_inner_lineDeriv_eq_neg (∂_{(I : ℂ)} Ψ)
+  have h2 := (hDξ.hasWeakLineDerivOn I).integral_inner_lineDeriv_eq_neg (∂_{(1 : ℂ)} Ψ)
+  have hlhs : ∫ z, ⟪(∂_{(1 : ℂ)} (∂_{(I : ℂ)} Ψ) : 𝓓(Ω, V)) z, ξ z⟫_ℝ =
+      ∫ z, ⟪(∂_{(I : ℂ)} (∂_{(1 : ℂ)} Ψ) : 𝓓(Ω, V)) z, ξ z⟫_ℝ := by
+    rw [TestFunction.lineDerivOp_comm Ψ 1 I]
+  simp only [TestFunction.lineDeriv_eq_fderiv,
+    ← TestFunction.lineDerivOp_apply_eq_fderiv] at h1 h2 ⊢
+  linarith
 
 /-- Scalar test-function form of the commutator identity for `J ∈ W^{1,p}_loc(Ω)` and
 `ξ ∈ W^{1,q}_loc(Ω)` (`2 < p < ∞`, `1/p + 1/q < 1`). -/
@@ -210,61 +166,12 @@ private theorem integral_mul_inner_clm_apply_comm_scalar (hp : 2 < p) (hp_top : 
         (∫ z, (α : ℂ → ℝ) z * ⟪v, DJ z 1 (Dξ z I)⟫_ℝ) =
       (∫ z, (∂_{(I : ℂ)} α : 𝓓(Ω, ℝ)) z * ⟪v, J z (Dξ z 1)⟫_ℝ) +
         ∫ z, (α : ℂ → ℝ) z * ⟪v, DJ z I (Dξ z 1)⟫_ℝ := by
-  have hp1 : 1 < p := (by norm_num : (1 : ℝ≥0∞) < 2).trans hp
-  have hJi : MemLpLoc ∞ Ω J := by
-    lift p to ℝ≥0 using hp_top
-    have : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨hp1.le⟩
-    exact hJ.memLpLoc_of_holderTriple (by exact_mod_cast hp) le_rfl
-  have hDJp : MemLpLoc p Ω DJ := hJ.memLpLoc_of_hasWeakFDerivOn hDJ
-  have hloc := Ω.isOpen.isLocallyClosed
-  have hp'_le_q : p.conjExponent ≤ q := by
-    have : Fact (1 ≤ p) := ⟨hp1.le⟩
-    rw [← ENNReal.inv_le_inv, ← ENNReal.HolderConjugate.one_sub_inv p p.conjExponent]
-    exact ENNReal.le_sub_of_add_le_left (ENNReal.inv_ne_top.2 (zero_lt_one.trans hp1).ne') hpq.le
-  have hq1_le : 1 ≤ q := ENNReal.inv_le_one.1 ((le_add_self : q⁻¹ ≤ p⁻¹ + q⁻¹).trans hpq.le)
-  have hq_min_gt : 1 < min q p :=
-    lt_min (ENNReal.inv_lt_one.1 (lt_of_le_of_lt (le_add_self : q⁻¹ ≤ p⁻¹ + q⁻¹) hpq)) hp1
-  have hq_min_top : min q p ≠ ⊤ := ne_top_of_le_ne_top hp_top (min_le_right q p)
-  obtain ⟨Jn, hJn_smooth, hlim_J, hlim_DJ⟩ :=
-    exists_smooth_approx_of_hasWeakFDerivOn hp1 hp_top hJi hDJ hDJp
-      α.hasCompactSupport.isCompact α.tsupport_subset
-  let Ψ : ℕ → 𝓓(Ω, V) := fun n => smulAdjointTest (Jn n) (hJn_smooth n) α v
-  have hlim_side (u w_dir : ℂ) :
-      Tendsto (fun n => ∫ z, ⟪fderiv ℝ (Ψ n : ℂ → V) z u, Dξ z w_dir⟫_ℝ) atTop
-        (𝓝 ((∫ z, (∂_{u} α : 𝓓(Ω, ℝ)) z * ⟪v, J z (Dξ z w_dir)⟫_ℝ) +
-          ∫ z, (α : ℂ → ℝ) z * ⟪v, DJ z u (Dξ z w_dir)⟫_ℝ)) := by
-    have hw : MemLpLoc q Ω (fun z => Dξ z w_dir) :=
-      hDξq.clm_comp (ContinuousLinearMap.apply ℝ V w_dir)
-    let αu : 𝓓(Ω, ℝ) := ∂_{u} α
-    have heq (n : ℕ) : ∫ z, ⟪fderiv ℝ (Ψ n : ℂ → V) z u, Dξ z w_dir⟫_ℝ =
-        (∫ z, (αu : ℂ → ℝ) z * ⟪v, Jn n z (Dξ z w_dir)⟫_ℝ) +
-          ∫ z, (α : ℂ → ℝ) z * ⟪v, fderiv ℝ (Jn n) z u (Dξ z w_dir)⟫_ℝ := by
-      have htop_q : (⊤ : ℝ≥0∞)⁻¹ + q⁻¹ ≤ 1 := by simpa using ENNReal.inv_le_one.2 hq1_le
-      have hi1 : Integrable (fun z => (αu : ℂ → ℝ) z * ⟪v, Jn n z (Dξ z w_dir)⟫_ℝ) :=
-        αu.integrable_mul_inner
-          (((hJn_smooth n).continuous.continuousOn.memLpLoc (p := ⊤)).locallyIntegrableOn_clm_apply
-            hw htop_q hloc) v
-      have hi2 : Integrable (fun z => (α : ℂ → ℝ) z * ⟪v, fderiv ℝ (Jn n) z u (Dξ z w_dir)⟫_ℝ) := by
-        have hJn1 : ContDiff ℝ 1 (Jn n) :=
-          (hJn_smooth n).of_le (WithTop.coe_le_coe.2 (le_top : (1 : ℕ∞) ≤ ⊤))
-        have hDJn_c : Continuous fun z => fderiv ℝ (Jn n) z u :=
-          (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) u).continuous.comp
-            (hJn1.continuous_fderiv one_ne_zero)
-        exact α.integrable_mul_inner
-          ((hDJn_c.continuousOn.memLpLoc (p := ⊤)).locallyIntegrableOn_clm_apply
-            hw htop_q hloc) v
-      rw [← integral_add hi1 hi2]
-      refine integral_congr_ae (.of_forall fun z => ?_)
-      dsimp only [Ψ]
-      rw [fderiv_smulAdjointTest]
-      simp only [αu, inner_add_left, inner_smul_left, RCLike.conj_to_real,
-        ContinuousLinearMap.adjoint_inner_left]
-    exact ((hlim_J hq_min_gt hq_min_top αu (α.tsupport_lineDerivOp_subset u)
-        (hw.mono_exponent (min_le_left q p)) v).add
-      (hlim_DJ u α Subset.rfl (hw.mono_exponent hp'_le_q) v)).congr fun n => (heq n).symm
-  have hL := hlim_side 1 I
-  have hR := (hlim_side I 1).congr fun n => (hDξ.integral_inner_fderiv_one_eq (Ψ n)).symm
-  exact tendsto_nhds_unique hL hR
+  obtain ⟨Ψ, hderiv, -⟩ :=
+    exists_adjoint_testFunction_tendsto_of_hasWeakFDerivOn hp hp_top hpq hJ hDJ α v
+  have hw (u : ℂ) : MemLpLoc q Ω (fun z => Dξ z u) :=
+    hDξq.clm_comp (ContinuousLinearMap.apply ℝ V u)
+  exact tendsto_nhds_unique (hderiv 1 (hw I))
+    ((hderiv I (hw 1)).congr fun n => (hDξ.integral_inner_fderiv_one_eq (Ψ n)).symm)
 
 /-- **Mixed-derivative commutator with a Sobolev coefficient.** If `2 < p < ∞`, `1/p + 1/q < 1`,
 `J ∈ W^{1,p}_loc(Ω)` has weak derivative `DJ` and `ξ ∈ W^{1,q}_loc(Ω)` has weak derivative `Dξ`,
@@ -282,10 +189,7 @@ theorem integral_inner_fderiv_one_clm_apply_eq (hp : 2 < p) (hp_top : p ≠ ⊤)
   let α : Fin (Module.finrank ℝ V) → 𝓓(Ω, ℝ) :=
     fun i => TestFunction.postcompCLM (innerSL ℝ (b i)) φ
   have hloc := Ω.isOpen.isLocallyClosed
-  have hJp : MemLpLoc p Ω J := hJ.memLpLoc
   have hDJp : MemLpLoc p Ω DJ := hJ.memLpLoc_of_hasWeakFDerivOn hDJ
-  have hα_coe (i : Fin (Module.finrank ℝ V)) (z : ℂ) :
-      (α i : ℂ → ℝ) z = ⟪b i, (φ : ℂ → V) z⟫_ℝ := rfl
   have hα_deriv (i : Fin (Module.finrank ℝ V)) (u : ℂ) (z : ℂ) :
       (∂_{u} (α i) : 𝓓(Ω, ℝ)) z = ⟪b i, fderiv ℝ (φ : ℂ → V) z u⟫_ℝ := by
     rw [TestFunction.lineDerivOp_apply_eq_fderiv]
@@ -296,31 +200,22 @@ theorem integral_inner_fderiv_one_clm_apply_eq (hp : 2 < p) (hp_top : p ≠ ⊤)
     conv_lhs => rw [← b.sum_repr' x]
     simp only [sum_inner, real_inner_smul_left]
   have hsum_val {w : ℂ → V} (hw : LocallyIntegrableOn w Ω) :
-      ∫ z, ⟪(φ : ℂ → V) z, w z⟫_ℝ =
-        ∑ i, ∫ z, (α i : ℂ → ℝ) z * ⟪b i, w z⟫_ℝ := by
+      ∫ z, ⟪(φ : ℂ → V) z, w z⟫_ℝ = ∑ i, ∫ z, (α i : ℂ → ℝ) z * ⟪b i, w z⟫_ℝ := by
     rw [← integral_finsetSum _ fun i _ => (α i).integrable_mul_inner hw (b i)]
-    exact integral_congr_ae (.of_forall fun z => by
-      dsimp only
-      simpa only [hα_coe] using hparseval ((φ : ℂ → V) z) (w z))
+    exact integral_congr_ae (.of_forall fun z => hparseval ((φ : ℂ → V) z) (w z))
   have hsum_deriv (u : ℂ) {w : ℂ → V} (hw : LocallyIntegrableOn w Ω) :
       ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z u, w z⟫_ℝ =
         ∑ i, ∫ z, (∂_{u} (α i) : 𝓓(Ω, ℝ)) z * ⟪b i, w z⟫_ℝ := by
-    rw [← integral_finsetSum _ fun i _ =>
-      (∂_{u} (α i)).integrable_mul_inner hw (b i)]
+    rw [← integral_finsetSum _ fun i _ => (∂_{u} (α i)).integrable_mul_inner hw (b i)]
     exact integral_congr_ae (.of_forall fun z => by
-      dsimp only
-      simpa only [hα_deriv] using hparseval (fderiv ℝ (φ : ℂ → V) z u) (w z))
-  have hJDξI : LocallyIntegrableOn (fun z => J z (Dξ z I)) Ω :=
-    hJp.locallyIntegrableOn_clm_apply (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V I)) hpq.le hloc
-  have hJDξ1 : LocallyIntegrableOn (fun z => J z (Dξ z 1)) Ω :=
-    hJp.locallyIntegrableOn_clm_apply (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V 1)) hpq.le hloc
-  have hDJ1DξI : LocallyIntegrableOn (fun z => DJ z 1 (Dξ z I)) Ω :=
-    (hDJp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) 1)).locallyIntegrableOn_clm_apply
-      (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V I)) hpq.le hloc
-  have hDJIDξ1 : LocallyIntegrableOn (fun z => DJ z I (Dξ z 1)) Ω :=
-    (hDJp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)).locallyIntegrableOn_clm_apply
-      (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V 1)) hpq.le hloc
-  rw [hsum_deriv 1 hJDξI, hsum_val hDJ1DξI, hsum_deriv I hJDξ1, hsum_val hDJIDξ1,
+      dsimp only; simpa only [hα_deriv] using hparseval (fderiv ℝ (φ : ℂ → V) z u) (w z))
+  have hADξ {A : ℂ → V →L[ℝ] V} (hA : MemLpLoc p Ω A) (u : ℂ) :
+      LocallyIntegrableOn (fun z => A z (Dξ z u)) Ω :=
+    hA.locallyIntegrableOn_clm_apply (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V u)) hpq.le hloc
+  have hDJu (v : ℂ) : MemLpLoc p Ω (fun z => DJ z v) :=
+    hDJp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) v)
+  rw [hsum_deriv 1 (hADξ hJ.memLpLoc I), hsum_val (hADξ (hDJu 1) I),
+    hsum_deriv I (hADξ hJ.memLpLoc 1), hsum_val (hADξ (hDJu I) 1),
     ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
   exact Finset.sum_congr rfl fun i _ =>
     integral_mul_inner_clm_apply_comm_scalar hp hp_top hpq hJ hDJ hDξ hDξq (α i) (b i)
@@ -347,10 +242,8 @@ private theorem integral_inner_postcomp_prodL2 {f g : ℂ → V}
         ∫ z, ⟪(sndTestProdL2 Φ : ℂ → V) z, g z⟫_ℝ := by
   rw [← integral_add ((fstTestProdL2 Φ).integrable_inner hf)
     ((sndTestProdL2 Φ).integrable_inner hg)]
-  refine integral_congr_ae (.of_forall fun z => ?_)
-  dsimp only
-  rw [WithLp.prod_inner_apply]
-  simp [fstTestProdL2, sndTestProdL2]
+  exact integral_congr_ae (.of_forall fun z => by
+    dsimp only; rw [WithLp.prod_inner_apply]; simp [fstTestProdL2, sndTestProdL2])
 
 omit [FiniteDimensional ℝ V] in
 private theorem integral_inner_postcomp_prodL2_add {f₁ f₂ g₁ g₂ : ℂ → V}
@@ -382,13 +275,9 @@ private theorem integral_inner_postcomp_prodL2_sub {f₁ f₂ g₁ g₂ : ℂ �
           ∫ z, ⟪(fstTestProdL2 Φ : ℂ → V) z, f₂ z⟫_ℝ) +
         ((∫ z, ⟪(sndTestProdL2 Φ : ℂ → V) z, g₁ z⟫_ℝ) -
           ∫ z, ⟪(sndTestProdL2 Φ : ℂ → V) z, g₂ z⟫_ℝ) := by
-  rw [integral_inner_postcomp_prodL2 (f := fun z => f₁ z - f₂ z) (g := fun z => g₁ z - g₂ z)
-    (hf₁.sub hf₂) (hg₁.sub hg₂) Φ]
-  simp only [inner_sub_right]
-  rw [integral_sub ((fstTestProdL2 Φ).integrable_inner hf₁)
-      ((fstTestProdL2 Φ).integrable_inner hf₂),
-    integral_sub ((sndTestProdL2 Φ).integrable_inner hg₁)
-      ((sndTestProdL2 Φ).integrable_inner hg₂)]
+  simpa only [← sub_eq_add_neg, inner_neg_right, integral_neg] using
+    integral_inner_postcomp_prodL2_add (f₂ := fun z => -f₂ z) (g₂ := fun z => -g₂ z)
+      hf₁ hf₂.neg hg₁ hg₂.neg Φ
 
 omit [FiniteDimensional ℝ V] in
 private theorem integral_inner_fderiv_postcomp_prodL2 {f g : ℂ → V}
@@ -401,23 +290,13 @@ private theorem integral_inner_fderiv_postcomp_prodL2 {f g : ℂ → V}
   rw [← integral_add ((fstTestProdL2 Φ).integrable_inner_fderiv hf u)
     ((sndTestProdL2 Φ).integrable_inner_fderiv hg u)]
   refine integral_congr_ae (.of_forall fun z => ?_)
-  dsimp only
-  let L₁ : WithLp 2 (V × V) →L[ℝ] V :=
-    (ContinuousLinearMap.fst ℝ V V).comp
-      (WithLp.prodContinuousLinearEquiv 2 ℝ V V).toContinuousLinearMap
-  let L₂ : WithLp 2 (V × V) →L[ℝ] V :=
-    (ContinuousLinearMap.snd ℝ V V).comp
-      (WithLp.prodContinuousLinearEquiv 2 ℝ V V).toContinuousLinearMap
-  have h1 : fderiv ℝ (fstTestProdL2 Φ : ℂ → V) z u =
-      L₁ (fderiv ℝ (Φ : ℂ → WithLp 2 (V × V)) z u) := by
-    have hd := (L₁.hasFDerivAt.comp z ((Φ.contDiff.differentiable (by simp) z).hasFDerivAt)).fderiv
-    exact congr($hd u)
-  have h2 : fderiv ℝ (sndTestProdL2 Φ : ℂ → V) z u =
-      L₂ (fderiv ℝ (Φ : ℂ → WithLp 2 (V × V)) z u) := by
-    have hd := (L₂.hasFDerivAt.comp z ((Φ.contDiff.differentiable (by simp) z).hasFDerivAt)).fderiv
-    exact congr($hd u)
-  rw [WithLp.prod_inner_apply, h1, h2]
-  simp [L₁, L₂]
+  have hfderiv (L : WithLp 2 (V × V) →L[ℝ] V) :
+      fderiv ℝ (TestFunction.postcompCLM L Φ : ℂ → V) z u =
+        L (fderiv ℝ (Φ : ℂ → WithLp 2 (V × V)) z u) :=
+    congr($((L.hasFDerivAt.comp z ((Φ.contDiff.differentiable (by simp) z).hasFDerivAt)).fderiv) u)
+  dsimp only [fstTestProdL2, sndTestProdL2]
+  rw [WithLp.prod_inner_apply, hfderiv, hfderiv]
+  simp
 
 omit [FiniteDimensional ℝ V] in
 private theorem locallyIntegrableOn_symm_prodL2 {f g : ℂ → V}
@@ -425,14 +304,14 @@ private theorem locallyIntegrableOn_symm_prodL2 {f g : ℂ → V}
     LocallyIntegrableOn
       (fun z => (WithLp.prodContinuousLinearEquiv 2 ℝ V V).symm (f z, g z)) Ω := by
   let e := WithLp.prodContinuousLinearEquiv 2 ℝ V V
-  have h1 := (e.symm.toContinuousLinearMap.comp
-    (ContinuousLinearMap.inl ℝ V V)).locallyIntegrableOn_comp hf
-  have h2 := (e.symm.toContinuousLinearMap.comp
-    (ContinuousLinearMap.inr ℝ V V)).locallyIntegrableOn_comp hg
-  refine (h1.add h2).congr (.of_forall fun z => ?_)
-  simp only [Function.comp_apply, Pi.add_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, ← map_add]
-  simp [e]
+  refine (((e.symm.toContinuousLinearMap.comp
+      (ContinuousLinearMap.inl ℝ V V)).locallyIntegrableOn_comp hf).add
+    ((e.symm.toContinuousLinearMap.comp
+      (ContinuousLinearMap.inr ℝ V V)).locallyIntegrableOn_comp hg)).congr (.of_forall fun z => ?_)
+  simp only [Pi.add_apply, Function.comp_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.inl_apply, ContinuousLinearMap.inr_apply, ContinuousLinearEquiv.coe_coe,
+    ← map_add, Prod.mk_add_mk, add_zero, zero_add]
+  rfl
 
 private theorem memLpLoc_symm_prodL2 {Dξ : ℂ → ℂ →L[ℝ] V} (hDξq : MemLpLoc q Ω Dξ) :
     MemLpLoc q Ω
@@ -449,16 +328,11 @@ private theorem isSobolevCRCoefficients_prodL2 (hJ : MemWkpLoc p Ω 1 J)
       (fun z => (prodMapL2L V).comp (DJ z))
       (fun z => conjProdL2L V (differentiatedCRCoefficient (S z) (DJ z))) := by
   have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
-  have hS₂_p : MemLpLoc p Ω
-      (fun z => conjProdL2L V (differentiatedCRCoefficient (S z) (DJ z))) :=
+  have hJ₂_one := hJ.clm_comp (G := WithLp 2 (V × V) →L[ℝ] WithLp 2 (V × V)) (prodMapL2L V)
+  have hDJ₂ := hDJ.clm_comp (G := WithLp 2 (V × V) →L[ℝ] WithLp 2 (V × V)) (prodMapL2L V)
+  exact ⟨hDJ₂, hJ₂_one.memLpLoc, hJ₂_one.memLpLoc_of_hasWeakFDerivOn hDJ₂,
     ((memWkpLoc_zero_iff.2 hSp).differentiatedCRCoefficient hJ hDJ).memLpLoc.clm_comp
-      (G := WithLp 2 (V × V) →L[ℝ] WithLp 2 (V × V)) (conjProdL2L V)
-  have hJ₂_one : MemWkpLoc p Ω 1 (fun z => prodMapL2L V (J z)) :=
-    hJ.clm_comp (G := WithLp 2 (V × V) →L[ℝ] WithLp 2 (V × V)) (prodMapL2L V)
-  have hDJ₂ : HasWeakFDerivOn volume Ω (fun z => prodMapL2L V (J z))
-      (fun z => (prodMapL2L V).comp (DJ z)) :=
-    hDJ.clm_comp (G := WithLp 2 (V × V) →L[ℝ] WithLp 2 (V × V)) (prodMapL2L V)
-  exact ⟨hDJ₂, hJ₂_one.memLpLoc, hJ₂_one.memLpLoc_of_hasWeakFDerivOn hDJ₂, hS₂_p⟩
+      (G := WithLp 2 (V × V) →L[ℝ] WithLp 2 (V × V)) (conjProdL2L V)⟩
 
 /-- Testing the almost-everywhere equation `∂_s ξ + J ∂_t ξ + S ξ = η` against `∂_{u} ψ` and
 integrating the `S ξ` and `η` terms by parts. -/
@@ -475,8 +349,7 @@ private theorem integral_fderiv_test_eq {Dξ Dη : ℂ → ℂ →L[ℝ] V}
         (∫ z, ⟪(ψ : ℂ → V) z, S z (Dξ z u)⟫_ℝ) =
       -∫ z, ⟪(ψ : ℂ → V) z, Dη z u⟫_ℝ := by
   have hq_top : q ≠ ⊤ := ne_top_of_le_ne_top hp_top hqp
-  have hq1 : 1 < q :=
-    ENNReal.inv_lt_one.1 (lt_of_le_of_lt (le_add_self : q⁻¹ ≤ p⁻¹ + q⁻¹) hpq)
+  have hq1 : 1 < q := ENNReal.inv_lt_one.1 (lt_of_le_of_lt le_add_self hpq)
   have hloc := Ω.isOpen.isLocallyClosed
   have hJp : MemLpLoc p Ω J := hJ.memLpLoc
   have hDJp : MemLpLoc p Ω DJ := hJ.memLpLoc_of_hasWeakFDerivOn hDJ
@@ -484,35 +357,29 @@ private theorem integral_fderiv_test_eq {Dξ Dη : ℂ → ℂ →L[ℝ] V}
   have hDSp : MemLpLoc p Ω DS := hS.memLpLoc_of_hasWeakFDerivOn hDS
   have hDξq : MemLpLoc q Ω Dξ := hξ.memLpLoc_of_hasWeakFDerivOn hDξ
   have hc : IsSobolevCRCoefficients p Ω J DJ S := ⟨hDJ, hJp, hDJp, hSp⟩
-  have hae : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z :=
-    (hc.isWeakCRSolution_iff_ae hpq.le hp_top hq_top hDξ hξ.memLpLoc hDξq
-      hsol.locallyIntegrableOn).1 hsol
+  have hae := (hc.isWeakCRSolution_iff_ae hpq.le hp_top hq_top hDξ hξ.memLpLoc hDξq
+    hsol.locallyIntegrableOn).1 hsol
   have hSξ : HasWeakFDerivOn volume Ω (fun z => S z (ξ z))
       (fun z => (ContinuousLinearMap.id ℝ (V →L[ℝ] V)).precompL ℂ (DS z) (ξ z) +
         (ContinuousLinearMap.id ℝ (V →L[ℝ] V)).precompR ℂ (S z) (Dξ z)) := by
     lift p to ℝ≥0 using hp_top
     lift q to ℝ≥0 using hq_top
     have hpR : 2 < p := by exact_mod_cast hp
-    have hqR : 1 < q := by exact_mod_cast hq1
-    have hqpR : q ≤ p := by exact_mod_cast hqp
     have : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨by exact_mod_cast (one_lt_two.trans hpR).le⟩
-    exact hDS.bilin_of_memLpLoc (ContinuousLinearMap.id ℝ (V →L[ℝ] V)) hpR hqR hqpR
-      ((hS.memLpLoc_of_holderTriple hpR le_rfl).mono_exponent le_top)
+    exact hDS.bilin_of_memLpLoc (ContinuousLinearMap.id ℝ (V →L[ℝ] V)) hpR (by exact_mod_cast hq1)
+      (by exact_mod_cast hqp) ((hS.memLpLoc_of_holderTriple hpR le_rfl).mono_exponent le_top)
       hDSp hDξ hξ.memLpLoc hDξq
   let ψu : 𝓓(Ω, V) := ∂_{u} ψ
   have hψu (z : ℂ) : (ψu : ℂ → V) z = fderiv ℝ (ψ : ℂ → V) z u :=
     TestFunction.lineDerivOp_apply_eq_fderiv ψ u z
-  have hiA : Integrable (fun z => ⟪(ψu : ℂ → V) z, Dξ z 1⟫_ℝ) :=
-    ψu.integrable_inner
-      ((hDξq.clm_comp (ContinuousLinearMap.apply ℝ V 1)).locallyIntegrableOn hq1.le hloc)
+  have hiA : Integrable (fun z => ⟪(ψu : ℂ → V) z, Dξ z 1⟫_ℝ) := ψu.integrable_inner
+    ((hDξq.clm_comp (ContinuousLinearMap.apply ℝ V 1)).locallyIntegrableOn hq1.le hloc)
   have hiB : Integrable (fun z => ⟪(ψu : ℂ → V) z, J z (Dξ z I)⟫_ℝ) :=
-    ψu.integrable_inner
-      (hJp.locallyIntegrableOn_clm_apply
-        (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V I)) hpq.le hloc)
-  have hiAB : Integrable (fun z => ⟪(ψu : ℂ → V) z, Dξ z 1⟫_ℝ +
-      ⟪(ψu : ℂ → V) z, J z (Dξ z I)⟫_ℝ) := hiA.add hiB
-  have hiC : Integrable (fun z => ⟪(ψu : ℂ → V) z, S z (ξ z)⟫_ℝ) :=
-    ψu.integrable_inner (hSp.locallyIntegrableOn_clm_apply hξ.memLpLoc hpq.le hloc)
+    ψu.integrable_inner (hJp.locallyIntegrableOn_clm_apply
+      (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V I)) hpq.le hloc)
+  have hiAB : Integrable (fun z =>
+      ⟪(ψu : ℂ → V) z, Dξ z 1⟫_ℝ + ⟪(ψu : ℂ → V) z, J z (Dξ z I)⟫_ℝ) := hiA.add hiB
+  have hiC := ψu.integrable_inner (hSp.locallyIntegrableOn_clm_apply hξ.memLpLoc hpq.le hloc)
   have hae_int : ∫ z, ⟪(ψu : ℂ → V) z, Dξ z 1 + J z (Dξ z I) + S z (ξ z)⟫_ℝ =
       ∫ z, ⟪(ψu : ℂ → V) z, η z⟫_ℝ := by
     refine integral_congr_ae ?_
@@ -539,16 +406,14 @@ private theorem integral_fderiv_test_eq {Dξ Dη : ℂ → ℂ →L[ℝ] V}
         ((hDSp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) u)).locallyIntegrableOn_clm_apply
           hξ.memLpLoc hpq.le hloc)
     have hi2 : Integrable (fun z => ⟪(ψ : ℂ → V) z, S z (Dξ z u)⟫_ℝ) :=
-      ψ.integrable_inner
-        (hSp.locallyIntegrableOn_clm_apply
-          (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V u)) hpq.le hloc)
+      ψ.integrable_inner (hSp.locallyIntegrableOn_clm_apply
+        (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V u)) hpq.le hloc)
     rwa [integral_add hi1 hi2] at h
   have hη_ibp : ∫ z, ⟪(ψu : ℂ → V) z, η z⟫_ℝ = -∫ z, ⟪(ψ : ℂ → V) z, Dη z u⟫_ℝ := by
-    have h := (hDη.hasWeakLineDerivOn u).integral_inner_lineDeriv_eq_neg ψ
-    simpa only [TestFunction.lineDeriv_eq_fderiv, hψu] using h
+    simpa only [TestFunction.lineDeriv_eq_fderiv, hψu] using
+      (hDη.hasWeakLineDerivOn u).integral_inner_lineDeriv_eq_neg ψ
   rw [hlhs_split, hSξ_ibp, hη_ibp] at hae_int
-  have halg {a b c d r : ℝ} (h : a + b + -(c + d) = -r) : a + b - c - d = -r := by linarith
-  exact halg hae_int
+  linarith
 
 /-- **The weak differentiated Cauchy–Riemann system.** Let `2 < p < ∞`, `q ≤ p` with
 `1/p + 1/q < 1`, and `1 ≤ s`. If `J, S ∈ W^{1,p}_loc(Ω)` have weak derivatives `DJ, DS`,
@@ -572,29 +437,22 @@ theorem IsWeakCRSolution.differentiated {Dξ Dη : ℂ → ℂ →L[ℝ] V}
       (fun z => e.symm (Dξ z 1, Dξ z I))
       (fun z => e.symm (Dη z 1 - DS z 1 (ξ z), Dη z I - DS z I (ξ z))) := by
   intro e
-  have hq1 : 1 < q :=
-    ENNReal.inv_lt_one.1 (lt_of_le_of_lt (le_add_self : q⁻¹ ≤ p⁻¹ + q⁻¹) hpq)
+  have hq1 : 1 < q := ENNReal.inv_lt_one.1 (lt_of_le_of_lt le_add_self hpq)
   have hloc := Ω.isOpen.isLocallyClosed
-  have hJp : MemLpLoc p Ω J := hJ.memLpLoc
   have hDJp : MemLpLoc p Ω DJ := hJ.memLpLoc_of_hasWeakFDerivOn hDJ
-  have hSp : MemLpLoc p Ω S := hS.memLpLoc
   have hDSp : MemLpLoc p Ω DS := hS.memLpLoc_of_hasWeakFDerivOn hDS
   have hDξq : MemLpLoc q Ω Dξ := hξ.memLpLoc_of_hasWeakFDerivOn hDξ
   have hDηs : MemLpLoc s Ω Dη := hη.memLpLoc_of_hasWeakFDerivOn hDη
-  have hDη1_loc : LocallyIntegrableOn (fun z => Dη z 1) Ω :=
-    (hDηs.clm_comp (ContinuousLinearMap.apply ℝ V 1)).locallyIntegrableOn hs1 hloc
-  have hDηI_loc : LocallyIntegrableOn (fun z => Dη z I) Ω :=
-    (hDηs.clm_comp (ContinuousLinearMap.apply ℝ V I)).locallyIntegrableOn hs1 hloc
-  have hDS1ξ_loc : LocallyIntegrableOn (fun z => DS z 1 (ξ z)) Ω :=
-    (hDSp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) 1)).locallyIntegrableOn_clm_apply
+  have hDη_loc (u : ℂ) : LocallyIntegrableOn (fun z => Dη z u) Ω :=
+    (hDηs.clm_comp (ContinuousLinearMap.apply ℝ V u)).locallyIntegrableOn hs1 hloc
+  have hDSξ_loc (u : ℂ) : LocallyIntegrableOn (fun z => DS z u (ξ z)) Ω :=
+    (hDSp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) u)).locallyIntegrableOn_clm_apply
       hξ.memLpLoc hpq.le hloc
-  have hDSIξ_loc : LocallyIntegrableOn (fun z => DS z I (ξ z)) Ω :=
-    (hDSp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)).locallyIntegrableOn_clm_apply
-      hξ.memLpLoc hpq.le hloc
-  have hc₂ := isSobolevCRCoefficients_prodL2 hJ hDJ hSp
+  have hc₂ := isSobolevCRCoefficients_prodL2 hJ hDJ hS.memLpLoc
   have hΞq := memLpLoc_symm_prodL2 hDξq
   refine isWeakCRSolution_iff.2
-    ⟨hΞq, locallyIntegrableOn_symm_prodL2 (hDη1_loc.sub hDS1ξ_loc) (hDηI_loc.sub hDSIξ_loc),
+    ⟨hΞq, locallyIntegrableOn_symm_prodL2
+      ((hDη_loc 1).sub (hDSξ_loc 1)) ((hDη_loc I).sub (hDSξ_loc I)),
       fun Φ => ⟨hc₂.integrable_inner_crFormalAdjoint hpq.le hΞq Φ, ?_⟩⟩
   have hrow1 :=
     integral_fderiv_test_eq hp hp_top hqp hpq hJ hDJ hS hDS hξ hDξ hDη hsol 1 (fstTestProdL2 Φ)
@@ -603,49 +461,24 @@ theorem IsWeakCRSolution.differentiated {Dξ Dη : ℂ → ℂ →L[ℝ] V}
   have hrow2 :=
     integral_fderiv_test_eq hp hp_top hqp hpq hJ hDJ hS hDS hξ hDξ hDη hsol I (sndTestProdL2 Φ)
   have hsymm := (hDξ.integral_inner_fderiv_one_eq (sndTestProdL2 Φ)).symm
-  have hDξ1_loc : LocallyIntegrableOn (fun z => Dξ z 1) Ω :=
-    (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V 1)).locallyIntegrableOn hq1.le hloc
-  have hDξI_loc : LocallyIntegrableOn (fun z => Dξ z I) Ω :=
-    (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V I)).locallyIntegrableOn hq1.le hloc
-  have hJDξ1_loc : LocallyIntegrableOn (fun z => J z (Dξ z 1)) Ω :=
-    hJp.locallyIntegrableOn_clm_apply
-      (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V 1)) hpq.le hloc
-  have hJDξI_loc : LocallyIntegrableOn (fun z => J z (Dξ z I)) Ω :=
-    hJp.locallyIntegrableOn_clm_apply
-      (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V I)) hpq.le hloc
-  have hDJ1DξI_loc : LocallyIntegrableOn (fun z => DJ z 1 (Dξ z I)) Ω :=
-    (hDJp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) 1)).locallyIntegrableOn_clm_apply
-      (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V I)) hpq.le hloc
-  have hDJIDξ1_loc : LocallyIntegrableOn (fun z => DJ z I (Dξ z 1)) Ω :=
-    (hDJp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)).locallyIntegrableOn_clm_apply
-      (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V 1)) hpq.le hloc
-  have hDJIDξI_loc : LocallyIntegrableOn (fun z => DJ z I (Dξ z I)) Ω :=
-    (hDJp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)).locallyIntegrableOn_clm_apply
-      (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V I)) hpq.le hloc
-  have hSDξ1_loc : LocallyIntegrableOn (fun z => S z (Dξ z 1)) Ω :=
-    hSp.locallyIntegrableOn_clm_apply
-      (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V 1)) hpq.le hloc
-  have hSDξI_loc : LocallyIntegrableOn (fun z => S z (Dξ z I)) Ω :=
-    hSp.locallyIntegrableOn_clm_apply
-      (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V I)) hpq.le hloc
+  have hDξ_loc (u : ℂ) : LocallyIntegrableOn (fun z => Dξ z u) Ω :=
+    (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V u)).locallyIntegrableOn hq1.le hloc
+  have hDJu (v : ℂ) : MemLpLoc p Ω (fun z => DJ z v) :=
+    hDJp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) v)
+  have hADξ_loc {A : ℂ → V →L[ℝ] V} (hA : MemLpLoc p Ω A) (u : ℂ) :
+      LocallyIntegrableOn (fun z => A z (Dξ z u)) Ω :=
+    hA.locallyIntegrableOn_clm_apply (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V u)) hpq.le hloc
   rw [hc₂.integral_inner_crFormalAdjoint_eq_terms hpq.le hΞq Φ]
   dsimp only [e]
   simp only [ContinuousLinearMap.comp_apply, prodMapL2L_apply_symm, conjProdL2L_apply_symm,
     differentiatedCRCoefficient_apply]
-  rw [integral_inner_fderiv_postcomp_prodL2 hDξ1_loc hDξI_loc 1 Φ,
-    integral_inner_fderiv_postcomp_prodL2 hJDξ1_loc hJDξI_loc I Φ,
-    integral_inner_postcomp_prodL2 hDJIDξ1_loc hDJIDξI_loc Φ,
-    integral_inner_postcomp_prodL2_add hSDξ1_loc hDJ1DξI_loc hSDξI_loc hDJIDξI_loc Φ,
-    integral_inner_postcomp_prodL2_sub hDη1_loc hDS1ξ_loc hDηI_loc hDSIξ_loc Φ]
-  have halg {a1 a2 b1 b2 b2_2 c1 c2 d1 d2 e1 f1 f2 f_cancel g1 g2 : ℝ}
-      (hr1 : a1 + e1 - g1 - d1 = -f1)
-      (hc : e1 + b2 = b1 + c1)
-      (hr2 : c2 + b2_2 - g2 - d2 = -f2)
-      (hs : c2 = a2) :
-      -(a1 + a2) - (b1 + b2_2) - (c1 + f_cancel) + ((d1 + b2) + (d2 + f_cancel)) =
-        (f1 - g1) + (f2 - g2) := by
-    linarith
-  exact halg hrow1 hcomm hrow2 hsymm
+  rw [integral_inner_fderiv_postcomp_prodL2 (hDξ_loc 1) (hDξ_loc I) 1 Φ,
+    integral_inner_fderiv_postcomp_prodL2 (hADξ_loc hJ.memLpLoc 1) (hADξ_loc hJ.memLpLoc I) I Φ,
+    integral_inner_postcomp_prodL2 (hADξ_loc (hDJu I) 1) (hADξ_loc (hDJu I) I) Φ,
+    integral_inner_postcomp_prodL2_add (hADξ_loc hS.memLpLoc 1) (hADξ_loc (hDJu 1) I)
+      (hADξ_loc hS.memLpLoc I) (hADξ_loc (hDJu I) I) Φ,
+    integral_inner_postcomp_prodL2_sub (hDη_loc 1) (hDSξ_loc 1) (hDη_loc I) (hDSξ_loc I) Φ]
+  linarith
 
 /-! ### Interior regularity at all orders (McDuff–Salamon Proposition B.4.9) -/
 

@@ -68,16 +68,6 @@ open scoped ContDiff ENNReal Manifold NNReal
 
 namespace TauCeti
 
-private theorem inv_add_inv_lt_one_of_two_lt {p : ℝ≥0} (hp : (2 : ℝ≥0∞) < p) :
-    (p : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ < 1 := by
-  have hpR : (2 : ℝ) < p := by exact_mod_cast hp
-  have hp0 : (0 : ℝ) < p := by linarith
-  have hinv : (p : ℝ)⁻¹ < 2⁻¹ := (inv_lt_inv₀ hp0 two_pos).2 hpR
-  have hsum : (p : ℝ)⁻¹ + (p : ℝ)⁻¹ < 1 := by linarith
-  rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_inv_of_pos hp0,
-    ← ENNReal.ofReal_add (by positivity) (by positivity), ← ENNReal.ofReal_one]
-  exact (ENNReal.ofReal_lt_ofReal_iff zero_lt_one).2 hsum
-
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-! ### Finite-regularity and smooth interior bootstrapping -/
@@ -100,7 +90,7 @@ theorem IsWeakCauchyRiemannOn.memWkpLoc_of_contDiffOn [FiniteDimensional ℝ V] 
   have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   have hpNN : 2 < p := by exact_mod_cast hp
   have hp1 : (1 : ℝ≥0∞) < p := (by norm_num : (1 : ℝ≥0∞) < 2).trans hp
-  have hpp : (p : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ < 1 := inv_add_inv_lt_one_of_two_lt hp
+  have hpp : (p : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ < 1 := inv_add_inv_lt_one_of_two_lt hp ENNReal.coe_ne_top
   obtain ⟨huc, -, D, hD, -, hae⟩ := isWeakCauchyRiemannOn_iff_of_isOpen.1 hu
   have hu1 : MemWkpLoc p Ω 1 u := hu.memWkpLoc_one
   have hJsq_ae : ∀ᵐ z ∂volume.restrict Ω,
