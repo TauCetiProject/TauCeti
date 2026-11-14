@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Fintype.Sigma
+public import Mathlib.Data.PNat.Defs
 public import Mathlib.NumberTheory.Divisors
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.Linarith
@@ -34,7 +36,10 @@ strictly increasing factors. `Nat.injOn_add_divisorsAntidiagonal_filter_lt` and
 by their sum and by a positive square discriminant.
 
 `TauCeti.nontrivialDivisorEquiv` identifies divisors greater than one with the subtype of
-`N.divisors` omitting the unit divisor.
+`N.divisors` omitting the unit divisor. `TauCeti.pnatDvdEquivDivisors` and
+`TauCeti.pnatMulDvdEquivSigma` identify positive divisors `{M : ℕ+ // (M : ℕ) ∣ N}` with
+`N.divisors` and positive divisor pairs `{p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}` with
+`Σ M, (N / M).divisors`, providing `Fintype` instances on both subtypes.
 -/
 
 public section
@@ -247,5 +252,51 @@ theorem nontrivialDivisorEquiv_apply_val (d : {d : ℕ // 1 < d ∧ d ∣ N}) :
 theorem nontrivialDivisorEquiv_symm_apply_val
     (d : {d : N.divisors // d ≠ ⟨1, Nat.one_mem_divisors.mpr (NeZero.ne N)⟩}) :
     (nontrivialDivisorEquiv.symm d).val = d.val.val := by rfl
+
+/-- For `N ≠ 0`, positive integers dividing `N` correspond to `N.divisors`. -/
+@[expose]
+def pnatDvdEquivDivisors (N : ℕ) [NeZero N] : {M : ℕ+ // (M : ℕ) ∣ N} ≃ N.divisors where
+  toFun M := ⟨M.1, Nat.mem_divisors.mpr ⟨M.2, NeZero.ne N⟩⟩
+  invFun M := ⟨⟨M.1, Nat.pos_of_mem_divisors M.2⟩, Nat.dvd_of_mem_divisors M.2⟩
+  left_inv _ := Subtype.ext (PNat.eq rfl)
+  right_inv _ := Subtype.ext rfl
+
+/-- `pnatDvdEquivDivisors` preserves the underlying natural number. -/
+@[simp]
+theorem coe_pnatDvdEquivDivisors_apply (M : {M : ℕ+ // (M : ℕ) ∣ N}) :
+    ((pnatDvdEquivDivisors N M : N.divisors) : ℕ) = M.1 :=
+  rfl
+
+/-- `(pnatDvdEquivDivisors N).symm` preserves the underlying natural number. -/
+@[simp]
+theorem coe_pnatDvdEquivDivisors_symm_apply (M : N.divisors) :
+    (((pnatDvdEquivDivisors N).symm M).1 : ℕ) = M :=
+  rfl
+
+/-- For `N ≠ 0`, the subtype of positive divisors of `N` is finite. -/
+instance instFintypePNatDvd (N : ℕ) [NeZero N] : Fintype {M : ℕ+ // (M : ℕ) ∣ N} :=
+  Fintype.ofEquiv N.divisors (pnatDvdEquivDivisors N).symm
+
+/-- For `N ≠ 0`, pairs `(M, d)` of positive integers with `d * M ∣ N` correspond to a positive
+divisor `M` of `N` together with a divisor `d` of `N / M`. -/
+@[expose]
+def pnatMulDvdEquivSigma (N : ℕ) [NeZero N] :
+    {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N} ≃
+      Σ M : {M : ℕ+ // (M : ℕ) ∣ N}, (N / M.1).divisors where
+  toFun p :=
+    have hMN : (p.1.1 : ℕ) ∣ N := dvd_of_mul_left_dvd p.2
+    ⟨⟨p.1.1, hMN⟩, ⟨p.1.2, Nat.mem_divisors.mpr
+      ⟨(Nat.dvd_div_iff_mul_dvd hMN).mpr (mul_comm (p.1.2 : ℕ) p.1.1 ▸ p.2),
+        Nat.div_ne_zero_iff.mpr ⟨p.1.1.ne_zero, Nat.le_of_dvd (NeZero.pos N) hMN⟩⟩⟩⟩
+  invFun x := ⟨(x.1.1, ⟨x.2.1, Nat.pos_of_mem_divisors x.2.2⟩),
+    mul_comm (x.1.1 : ℕ) x.2.1 ▸
+      (Nat.dvd_div_iff_mul_dvd x.1.2).mp (Nat.dvd_of_mem_divisors x.2.2)⟩
+  left_inv _ := Subtype.ext (Prod.ext rfl (PNat.eq rfl))
+  right_inv x := by obtain ⟨_, ⟨_, _⟩⟩ := x; rfl
+
+/-- For `N ≠ 0`, the subtype of positive divisor pairs `(M, d)` with `d * M ∣ N` is finite. -/
+instance instFintypePNatMulDvd (N : ℕ) [NeZero N] :
+    Fintype {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N} :=
+  Fintype.ofEquiv _ (pnatMulDvdEquivSigma N).symm
 
 end TauCeti

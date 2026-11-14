@@ -18,6 +18,8 @@ public import TauCeti.RingTheory.PowerSeries.Support
 
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
+import TauCeti.RingTheory.PowerSeries.Expand
 
 /-!
 # The level-raising degeneracy maps `V_d`
@@ -108,6 +110,10 @@ the lower level. The `q`-expansion results go up only.
   `CuspForm.isSupportedOnDvd_qExpansion_levelRaise`: the same fact as a support statement — the
   `q`-expansion of `V_d f` is supported on the multiples of `d`. This is the forward half of the
   Atkin–Lehner description of the old subspace.
+* `ModularForm.linearIndependent_levelRaise`, `CuspForm.linearIndependent_levelRaise`: the
+  level-raises `V_{d i} f` at pairwise distinct positive indices `d i` of a modular form with a
+  nonzero positive-degree `q`-expansion coefficient (in particular, of any nonzero cusp form) are
+  `ℂ`-linearly independent.
 
 The old subspace is spanned by the images of the `V_d`.
 
@@ -1239,7 +1245,8 @@ theorem ModularForm.qExpansion_levelRaise [𝒢'.HasDetOne] [NeZero d]
       simp only [Function.comp_apply, PowerSeries.coeff_expand_mul, smul_eq_mul, pow_mul,
         ← qParam_scaleGL_smul]
   have hana := ModularForm.analyticAt_cuspFunction_levelRaise (by simpa using nsmul_mem h𝒢 d) hle f
-  exact PowerSeries.ext fun n ↦ (UpperHalfPlane.qExpansion_coeff_unique _ one_pos hana key n).symm
+  exact PowerSeries.ext fun n ↦
+    (_root_.UpperHalfPlane.qExpansion_coeff_unique _ one_pos hana key n).symm
 
 /-- **The `q`-expansion of a level-raise, on coefficients.** `aₙ(V_d f) = a_{n/d}(f)` when
 `d ∣ n`, and `0` otherwise. -/
@@ -1336,6 +1343,54 @@ theorem _root_.CuspForm.isSupportedOnDvd_qExpansion_levelRaise [𝒢'.HasDetOne]
     PowerSeries.IsSupportedOnDvd d (qExpansion 1 (CuspForm.levelRaise d hle f)) := by
   rw [CuspForm.qExpansion_levelRaise h𝒢 hle f]
   exact PowerSeries.isSupportedOnDvd_expand (NeZero.ne d) _
+
+/-- **Level-raises of a nonconstant modular form at distinct indices are linearly independent.**
+If `f` has a nonzero `q`-expansion coefficient of positive degree and `d : ι → ℕ` is an injective
+family of positive integers, then the level-raises `V_{d i} f` in `M_k(𝒢')` are `ℂ`-linearly
+independent. -/
+theorem _root_.ModularForm.linearIndependent_levelRaise [𝒢'.HasDetOne]
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (h𝒢' : (1 : ℝ) ∈ 𝒢'.strictPeriods)
+    {ι : Type*} {d : ι → ℕ} [∀ i, NeZero (d i)] (hd : Function.Injective d)
+    (hle : ∀ i, 𝒢' ≤ ConjAct.toConjAct (scaleGL (d i))⁻¹ • 𝒢)
+    {f : ModularForm 𝒢 k} (hf : ∃ n ≠ 0, (qExpansion 1 f).coeff n ≠ 0) :
+    LinearIndependent ℂ (fun i ↦ ModularForm.levelRaise (d i) (hle i) f) := by
+  refine LinearIndependent.of_comp (ModularForm.qExpansionLinearMap one_pos h𝒢' k) ?_
+  have hcomp : (ModularForm.qExpansionLinearMap one_pos h𝒢' k ∘
+      fun i ↦ ModularForm.levelRaise (d i) (hle i) f) =
+      fun i ↦ (qExpansion 1 f).expand (d i) (NeZero.ne (d i)) :=
+    funext fun i ↦ (ModularForm.qExpansionLinearMap_apply one_pos h𝒢' _).trans
+      (ModularForm.qExpansion_levelRaise h𝒢 (hle i) f)
+  rw [hcomp]
+  exact (PowerSeries.linearIndependent_expand_of_exists_coeff_ne_zero hf).comp
+    (fun i ↦ (⟨d i, NeZero.pos (d i)⟩ : ℕ+)) fun _ _ h ↦ hd (congrArg Subtype.val h)
+
+/-- **Level-raises of a nonzero cusp form at distinct indices are linearly independent.** A nonzero
+cusp form vanishes at `∞`, so its `q`-expansion has a nonzero coefficient of positive degree, and
+its level-raises `V_{d i} f` at pairwise distinct positive indices `d i` are `ℂ`-linearly
+independent. -/
+theorem _root_.CuspForm.linearIndependent_levelRaise [𝒢'.HasDetOne]
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (h𝒢' : (1 : ℝ) ∈ 𝒢'.strictPeriods)
+    {ι : Type*} {d : ι → ℕ} [∀ i, NeZero (d i)] (hd : Function.Injective d)
+    (hle : ∀ i, 𝒢' ≤ ConjAct.toConjAct (scaleGL (d i))⁻¹ • 𝒢)
+    {f : CuspForm 𝒢 k} (hf : f ≠ 0) :
+    LinearIndependent ℂ (fun i ↦ CuspForm.levelRaise (d i) (hle i) f) := by
+  have hpos : ∃ n ≠ 0, (qExpansion 1 (f : ModularForm 𝒢 k)).coeff n ≠ 0 := by
+    by_contra! h0
+    refine hf (CuspForm.qExpansion_injective one_pos h𝒢 (PowerSeries.ext fun n ↦ ?_))
+    simp only [FunLike.coe_zero, _root_.UpperHalfPlane.qExpansion_zero, map_zero]
+    rcases eq_or_ne n 0 with rfl | hn
+    · exact CuspFormClass.qExpansion_coeff_zero f one_pos h𝒢
+    · exact h0 n hn
+  refine LinearIndependent.of_comp CuspForm.toModularFormₗ ?_
+  have hcomp : (CuspForm.toModularFormₗ ∘ fun i ↦ CuspForm.levelRaise (d i) (hle i) f) =
+      fun i ↦ ModularForm.levelRaise (d i) (hle i) (f : ModularForm 𝒢 k) :=
+    funext fun i ↦ DFunLike.ext _ _ fun τ ↦ by
+      rw [Function.comp_apply, CuspForm.toModularFormₗ_apply,
+        congrFun (CuspForm.coe_levelRaise (hle i) f) τ,
+        congrFun (ModularForm.coe_levelRaise (hle i) (f : ModularForm 𝒢 k)) τ]
+      rfl
+  rw [hcomp]
+  exact _root_.ModularForm.linearIndependent_levelRaise h𝒢 h𝒢' hd hle hpos
 
 end QExpansion
 
