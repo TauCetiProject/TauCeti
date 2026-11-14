@@ -8,10 +8,13 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.EuclideanDomain.Int
+import Mathlib.Data.ZMod.QuotientRing
 import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.RingTheory.ZMod.LocalRing
 public import Mathlib.Data.Nat.Totient
 public import Mathlib.Data.ZMod.Units
 public import TauCeti.Data.Nat.GCD
+import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
 # Units and coprimality over `ZMod d`
@@ -33,6 +36,10 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck); its consumer is the
   strong approximation theorem `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective` in
   `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Basic.lean`.
+* `IsCoprime.exists_isUnit_add_mul` — Bass stable range one for `ZMod d` (`d ≠ 0`): if `a` and `b`
+  are coprime mod `d`, some shift `a + k * b` is a unit; its consumer is the normal-closure
+  generation of principal congruence subgroups in
+  `TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Wohlfahrt.lean`.
 * `TauCeti.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left` — a lowered unit homomorphism
   stays lowered after restricting to a multiple of its modulus.
 * `ZMod.exists_unitOfCoprime_eq` — every unit of `ZMod d` is `ZMod.unitOfCoprime` of a natural
@@ -177,6 +184,27 @@ theorem IsCoprime.exists_int_lifts {a c : ZMod d}
     conv_rhs => rw [← Int.emod_add_ediv_mul a₁ c₁]
     push_cast
     rw [hr₀, hc₀]
+
+/-- **Bass stable range one for `ZMod d`**: if `a` and `b` are coprime in `ZMod d` for `d ≠ 0`,
+some affine shift `a + k * b` is a unit.
+
+Needs `d ≠ 0`: in `ZMod 0 ≃+* ℤ`, `2` and `5` are coprime while `2 + 5 * k` is never `±1`. -/
+theorem IsCoprime.exists_isUnit_add_mul [NeZero d] {a b : ZMod d} (hab : IsCoprime a b) :
+    ∃ k : ZMod d, IsUnit (a + k * b) := by
+  -- Split `ZMod d` into prime-power local rings via `ZMod.equivPi` and pick a shift in each factor.
+  let e := ZMod.equivPi (n := d) (NeZero.ne d)
+  have hfactor : ∀ p : d.primeFactors,
+      ∃ k : ZMod (p.1 ^ d.factorization p.1), IsUnit (e a p + k * e b p) := fun p ↦ by
+    have : Fact p.1.Prime := ⟨Nat.prime_of_mem_primeFactors p.2⟩
+    have : NeZero (d.factorization p.1) :=
+      ⟨Finsupp.mem_support_iff.mp (by simp [Nat.support_factorization])⟩
+    exact (hab.map ((Pi.evalRingHom _ p).comp e.toRingHom)).exists_isUnit_add_mul_of_isLocalRing
+  choose c hc using hfactor
+  refine ⟨e.symm c, ?_⟩
+  convert (Pi.isUnit_iff.mpr hc).map e.symm
+  refine e.injective ?_
+  ext p
+  simp [map_add, map_mul]
 
 /-- **Every unit of `ZMod d` is `ZMod.unitOfCoprime` of a natural number coprime to `d`.**
 A property of all units may therefore be checked on the units of this shape. -/

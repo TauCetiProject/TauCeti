@@ -33,7 +33,8 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
 * `Nat.Coprime.isUnit_natCast`: if a natural number is not a unit, every coprime natural
   number is a unit.
 * `IsCoprime.isUnit_or_isUnit`: of two coprime elements of a commutative local semiring, one is a
-  unit.
+  unit, and `IsCoprime.exists_isUnit_add_mul_of_isLocalRing`: over a commutative local ring, some
+  shift `a + k * b` is a unit.
 * `IsLocalRing.sub_one_mem_maximalIdeal_of_card_residueField_eq_two`: when the residue field has
   two elements, every unit is congruent to `1` modulo the maximal ideal, and
   `IsLocalRing.two_mem_maximalIdeal_of_card_residueField_eq_two`: `2` lies in the maximal ideal,
@@ -96,6 +97,19 @@ theorem IsCoprime.isUnit_or_isUnit {R : Type*} [CommSemiring R] [IsLocalRing R] 
   obtain ⟨u, v, huv⟩ := h
   exact (IsLocalRing.isUnit_or_isUnit_of_add_one huv).imp isUnit_of_mul_isUnit_right
     isUnit_of_mul_isUnit_right
+
+/-- **Bass stable range one for a commutative local ring**: for coprime `a` and `b`, some affine
+shift `a + k * b` is a unit.
+
+Needs `CommRing R`: in the commutative local semiring `{0} ∪ [1, ∞)` under usual addition and
+multiplication, `IsCoprime 2 1` holds (`0 * 2 + 1 * 1 = 1`) while `2 + k * 1 ≥ 2` is never the sole
+unit `1`. -/
+theorem IsCoprime.exists_isUnit_add_mul_of_isLocalRing {R : Type*} [CommRing R] [IsLocalRing R]
+    {a b : R} (h : IsCoprime a b) : ∃ k : R, IsUnit (a + k * b) := by
+  by_cases ha : IsUnit a
+  · exact ⟨0, by simpa using ha⟩
+  · exact ⟨1, by simpa [add_comm] using
+      TauCeti.isUnit_add_of_isUnit_of_not_isUnit (h.isUnit_or_isUnit.resolve_left ha) ha⟩
 
 /-- In a possibly noncommutative local ring, a natural number coprime to a nonunit natural
 number is a unit. -/
