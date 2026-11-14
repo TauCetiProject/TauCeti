@@ -32,7 +32,8 @@ example the round sphere of radius `r` has sectional curvature `1 / r²`.
 
 The gradient of a function is the dual of its differential through the metric, so
 `grad_{c g} f = c⁻¹ grad_g f`; since the Levi-Civita connections agree, the Laplace–Beltrami
-operator `Δ = div ∘ grad` scales in the same way, `Δ_{c g} = c⁻¹ Δ_g`.
+operator `Δ = div ∘ grad` scales in the same way, `Δ_{c g} = c⁻¹ Δ_g`. Lengths of tangent
+vectors scale by `√c`, and hence so do the lengths of paths and the Riemannian distance.
 
 Both metrics are installed in turn as the `RiemannianBundle` instance of the tangent bundle of
 `M`. Connections and curvature tensors do not depend on the metric, so they are compared directly
@@ -61,6 +62,9 @@ differentiable fields; this determines the curvature tensor.
 * `Bundle.ContMDiffRiemannianMetric.mgradient_rescale_const` and
   `Bundle.ContMDiffRiemannianMetric.laplaceBeltrami_rescale_const`: `grad_{c g} = c⁻¹ grad_g`
   and `Δ_{c g} = c⁻¹ Δ_g`.
+* `Bundle.ContMDiffRiemannianMetric.pathELength_rescale_const` and
+  `Bundle.ContMDiffRiemannianMetric.riemannianEDist_rescale_const`: the lengths of paths and the
+  Riemannian distance of `c g` are `√c` times those of `g`.
 
 ## References
 
@@ -253,6 +257,65 @@ theorem laplaceBeltrami_rescale_const [IsManifold I 2 M]
   simp
 
 end Laplacian
+
+section Length
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V] {n : ℕ∞ω}
+
+omit [FiniteDimensional ℝ E] in
+/-- Multiplying a bundle metric by a positive constant `c` multiplies the length of every vector
+by `√c`. -/
+theorem eNorm_rescale_const (g : ContMDiffRiemannianMetric I n F V) {c : ℝ} (hc : 0 < c)
+    {x : M} (v : V x) :
+    (letI : RiemannianBundle V :=
+        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩; ‖v‖ₑ) =
+    ENNReal.ofReal √c * (letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩; ‖v‖ₑ) := by
+  have hg : (letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩; ‖v‖ₑ) =
+      ENNReal.ofReal √(g.inner x v v) := by
+    let _ : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
+    rw [← ofReal_norm, norm_eq_sqrt_real_inner, inner_riemannianBundle]
+  let _ : RiemannianBundle V :=
+    ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
+  rw [hg, ← ofReal_norm, ← ENNReal.ofReal_mul (Real.sqrt_nonneg _), ← Real.sqrt_mul hc.le,
+    norm_eq_sqrt_real_inner, inner_riemannianBundle, rescale_inner]
+
+variable [IsManifold I 1 M]
+
+omit [FiniteDimensional ℝ E] in
+/-- Multiplying a metric by a positive constant `c` multiplies the length of every path by
+`√c`. -/
+theorem pathELength_rescale_const
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) {c : ℝ} (hc : 0 < c)
+    (γ : ℝ → M) (a b : ℝ) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+      Manifold.pathELength I γ a b) =
+    ENNReal.ofReal √c * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨g.toRiemannianMetric⟩; Manifold.pathELength I γ a b) := by
+  simp only [Manifold.pathELength_eq_lintegral_mfderiv_Icc, eNorm_rescale_const g hc]
+  exact MeasureTheory.lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+
+omit [FiniteDimensional ℝ E] in
+/-- **Scaling of the Riemannian distance.** Multiplying a metric by a positive constant `c`
+multiplies the Riemannian distance by `√c`. -/
+theorem riemannianEDist_rescale_const
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) {c : ℝ} (hc : 0 < c)
+    (x y : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+      Manifold.riemannianEDist I x y) =
+    ENNReal.ofReal √c * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨g.toRiemannianMetric⟩; Manifold.riemannianEDist I x y) := by
+  have h0 : ENNReal.ofReal √c ≠ 0 := by simpa using hc
+  simp only [Manifold.riemannianEDist_def, eNorm_rescale_const g hc,
+    MeasureTheory.lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+    ENNReal.mul_iInf_of_ne h0 ENNReal.ofReal_ne_top]
+
+end Length
 
 section Curvature
 
