@@ -288,7 +288,7 @@ noncomputable def zigzagAlgebraIntegerGradedAlgebra :
   Graded.gradedAlgebraExtendByZero (zigzagAlgebraGrade k G)
 
 /-- The signed path-length grading of the public zigzag algebra as an internal grading. -/
-noncomputable abbrev zigzagAlgebraInternalGrading : InternalGrading k (zigzagAlgebra k G) :=
+noncomputable abbrev zigzagAlgebraInternalGrading : InternalGrading k (zigzagAlgebra k G) ℤ :=
   ⟨zigzagAlgebraIntegerGrade k G, isInternal_zigzagAlgebraIntegerGrade k G⟩
 
 end TauCeti

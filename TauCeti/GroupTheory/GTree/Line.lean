@@ -13,15 +13,15 @@ public import TauCeti.GroupTheory.GTree.Basic
 
 The integers act on the line by translation without inversions, so the line is a `G`-tree for
 the infinite cyclic group, the free group of rank one; it is the Cayley tree of that group. It is
-a minimal tree on which every nontrivial translation is hyperbolic and the generator has
-translation length one. The integers act freely on its darts, and the line is not dominated by
-the one-vertex tree, although it dominates it.
+a minimal tree on which the translation by `k` moves every vertex by `|k|`, so that it has
+translation length `|k|` and is hyperbolic when `k ≠ 0`. The integers act freely on its darts,
+and the line is not dominated by the one-vertex tree, although it dominates it.
 
 ## Main declarations
 
 * `TauCeti.GTree.line`: the line as a tree for `Multiplicative ℤ`.
-* `TauCeti.GTree.line_translationLength_ofAdd_one`, `TauCeti.GTree.line_isMinimal`,
-  `TauCeti.GTree.not_point_dominates_line`.
+* `TauCeti.GTree.line_dist_smul`, `TauCeti.GTree.line_translationLength`,
+  `TauCeti.GTree.line_isMinimal`, `TauCeti.GTree.not_point_dominates_line`.
 
 ## References
 
@@ -44,10 +44,7 @@ infinite cyclic group, the free group of rank one. -/
   toSerreGraph := SerreGraph.line
   isTree := line_isTree
   action := lineShift
-  action_smul_ne_rev k e h := by
-    -- Translation keeps the orientation of a dart, while reversal changes it.
-    rw [← Aut.smul_dart_def, lineShift_smul_dart] at h
-    exact (Bool.eq_not_self _).mp (congrArg Prod.snd (h.trans (line_rev e)))
+  action_smul_ne_rev := lineShift_smul_ne_rev
 
 /-- The source of a dart of the line, as an integer. -/
 @[simp] theorem lineVertexEquiv_line_src (e : ℤ × Bool) :
@@ -78,21 +75,17 @@ theorem line_isHyperbolic {k : Multiplicative ℤ} (hk : k ≠ 1) : line.IsHyper
   rw [lineVertexEquiv_line_smul] at this
   omega
 
-/-- The generator of the integers translates the line by one step. -/
-theorem line_translationLength_ofAdd_one :
-    line.translationLength (Multiplicative.ofAdd (1 : ℤ)) = 1 := by
-  refine le_antisymm ?_ (Nat.one_le_iff_ne_zero.mpr fun h =>
-    not_isHyperbolic_iff.mpr (translationLength_eq_zero_iff.mp h) (line_isHyperbolic (by decide)))
-  -- The generator carries the source of the dart `(0, true)` to its target.
-  have hv : Multiplicative.ofAdd (1 : ℤ) • line.src ((0 : ℤ), true) =
-      line.tgt ((0 : ℤ), true) := by
-    apply lineVertexEquiv.injective
-    simp
-  calc line.translationLength (Multiplicative.ofAdd 1)
-      ≤ line.dist (line.src ((0 : ℤ), true)) (Multiplicative.ofAdd 1 • line.src ((0 : ℤ), true)) :=
-        translationLength_le _ _
-    _ = line.dist (line.src ((0 : ℤ), true)) (line.tgt ((0 : ℤ), true)) := by rw [hv]
-    _ ≤ 1 := dist_src_tgt_le_one _
+/-- The translation by `k` moves every vertex of the line by `|k|`. -/
+theorem line_dist_smul (k : Multiplicative ℤ) (v : line.V) :
+    line.dist v (k • v) = k.toAdd.natAbs :=
+  Int.ofNat_inj.mp <| (line_dist _ _).trans <| by
+    rw [lineVertexEquiv_line_smul, Int.natCast_natAbs, sub_add_cancel_right, abs_neg]
+
+/-- The translation of the line by `k` has translation length `|k|`. -/
+@[simp] theorem line_translationLength (k : Multiplicative ℤ) :
+    line.translationLength k = k.toAdd.natAbs := by
+  obtain ⟨v, hv⟩ := exists_dist_eq_translationLength (T := line) k
+  rw [← hv, line_dist_smul]
 
 /-- The line is a minimal tree. -/
 theorem line_isMinimal : line.IsMinimal := by
@@ -109,9 +102,16 @@ theorem line_stabilizer_dart (e : line.E) : stabilizer (Multiplicative ℤ) e = 
   have h₁ : k.toAdd + Prod.fst e = Prod.fst e := congrArg Prod.fst h
   omega
 
-/-- The line is relative to the trivial edge family and the trivial elliptic family. -/
-theorem line_isRelative : line.IsRelative {⊥} {⊥} :=
-  isRelative_iff.mpr ⟨fun e => line_stabilizer_dart e, fun _ hH => hH ▸ isEllipticSubgroup_bot line⟩
+/-- The integers act freely on the vertices of the line. -/
+theorem line_stabilizer_vertex (v : line.V) : stabilizer (Multiplicative ℤ) v = ⊥ :=
+  eq_bot_iff.mpr fun _ hk => Subgroup.mem_bot.mpr <| of_not_not fun h =>
+    isHyperbolic_iff.mp (line_isHyperbolic h) v (mem_stabilizer_iff.mp hk)
+
+/-- The line is relative to any family of subgroups containing the trivial subgroup and any family
+of trivial subgroups. -/
+theorem line_isRelative {𝒜 ℋ : Set (Subgroup (Multiplicative ℤ))} (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
+    line.IsRelative 𝒜 ℋ :=
+  isRelative_of_forall_stabilizer_eq_bot h𝒜 hℋ line_stabilizer_vertex
 
 /-- The one-vertex tree does not dominate the line, although the line dominates it. -/
 theorem not_point_dominates_line : ¬(point.{u, v} (Multiplicative ℤ)).Dominates line := by

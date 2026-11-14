@@ -38,7 +38,7 @@ open CategoryTheory
 universe uR uA v
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
-  (G : InternalGrading R A)
+  (G : InternalGrading R A ℤ)
 
 local notation "B" => (GradedOpposite G)ᵐᵒᵖ
 

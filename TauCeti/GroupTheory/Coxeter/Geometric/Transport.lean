@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.Intertwining
+public import TauCeti.GroupTheory.Coxeter.Geometric.Sign
 public import TauCeti.GroupTheory.Coxeter.Restriction
 
 /-!
@@ -30,7 +32,14 @@ the inverse of `CoxeterMatrix.reindexGroupEquiv`
 `Subtype.val` of a set of indices `J`, the map is extension by zero, and the geometric
 representation of the standard parabolic subgroup on the span of the simple roots indexed by `J`
 is the restriction of the ambient one. Composites of such maps are handled by
-`Finsupp.lmapDomain_comp` together with `CoxeterSystem.parabolicHom_comp`.
+`Finsupp.lmapDomain_comp` together with `CoxeterSystem.parabolicHom_comp`, and composites of
+reindexings by `CoxeterSystem.geometricRepresentation_reindex_reindex`.
+
+When `B` is finite, the coordinate equivalence `Finsupp.linearEquivFunOnFinite` identifies
+`B →₀ ℝ` with the space `B → ℝ` of all coordinate functions. The transported representation
+`CoxeterSystem.geometricRepresentationFun` acts by `T ρ(w) T⁻¹`, where `T` is that equivalence. It
+has the same reflection formula `v ↦ v - 2 (∑ⱼ -cos (π / M i j) vⱼ) eᵢ`, and it is still
+faithful.
 
 ## Main results
 
@@ -40,6 +49,15 @@ is the restriction of the ambient one. Composites of such maps are handled by
 * `CoxeterSystem.geometricRepresentation_reindex` and
   `CoxeterMatrix.geometricRepresentation_reindexGroupEquiv_symm`: reindexing conjugates the
   geometric representation by the coordinate equivalence.
+* `CoxeterSystem.geometricRepresentation_reindex_refl` and
+  `CoxeterSystem.geometricRepresentation_reindex_reindex`: the identity reindexing changes nothing,
+  and two reindexings conjugate by the coordinate equivalence of the composite bijection.
+* `CoxeterSystem.geometricRepresentationFun`: the geometric representation of a Coxeter system with
+  finitely many generators on `B → ℝ`. `CoxeterSystem.geometricRepresentationFun_apply` says that
+  it is the conjugate by `Finsupp.linearEquivFunOnFinite`, and
+  `CoxeterSystem.geometricRepresentationEquivFun` is the resulting equivalence of representations.
+  `CoxeterSystem.geometricRepresentationFun_simple_apply` gives its reflection formula and
+  `CoxeterSystem.geometricRepresentationFun_injective` its faithfulness.
 
 ## References
 
@@ -92,6 +110,105 @@ theorem geometricRepresentation_reindex (e : B ≃ B') (w : W) :
   rw [parabolicHom_reindex, MonoidHom.id_apply] at h
   rw [LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply]
   simpa [Finsupp.equivMapDomain_eq_mapDomain] using h.symm
+
+/-- **The identity reindexing does not change the geometric representation.** -/
+@[simp]
+theorem geometricRepresentation_reindex_refl :
+    (cs.reindex (Equiv.refl B)).geometricRepresentation = cs.geometricRepresentation :=
+  MonoidHom.ext fun w ↦ by
+    rw [geometricRepresentation_reindex, Finsupp.domLCongr_refl, LinearEquiv.conj_refl]
+
+/-- **Reindexings compose**: reindexing along `e` and then along `e'` conjugates the geometric
+representation by the coordinate equivalence of the composite bijection `e.trans e'`. -/
+theorem geometricRepresentation_reindex_reindex {B'' : Type*} (e : B ≃ B') (e' : B' ≃ B'')
+    (w : W) :
+    ((cs.reindex e).reindex e').geometricRepresentation w =
+      (Finsupp.domLCongr (e.trans e')).conj (cs.geometricRepresentation w) := by
+  rw [geometricRepresentation_reindex, geometricRepresentation_reindex,
+    ← Finsupp.domLCongr_trans, ← LinearEquiv.conj_trans, LinearEquiv.trans_apply]
+
+/-! ### Coordinate functions on a finite index set -/
+
+section Finite
+
+variable [Finite B]
+
+/-- **The geometric representation on coordinate functions.** For a finite index set `B`, this is
+`CoxeterSystem.geometricRepresentation` transported along the coordinate equivalence
+`Finsupp.linearEquivFunOnFinite` from `B →₀ ℝ` to `B → ℝ`, which sends the simple root `αᵢ` to
+`Pi.single i 1`. -/
+noncomputable def geometricRepresentationFun : Representation ℝ W (B → ℝ) :=
+  ((Finsupp.linearEquivFunOnFinite ℝ ℝ B).conjAlgEquiv ℝ).toAlgHom.toMonoidHom.comp
+    cs.geometricRepresentation
+
+/-- **The transported representation is the conjugate** `T ρ(w) T⁻¹` by the coordinate
+equivalence `T = Finsupp.linearEquivFunOnFinite`. -/
+theorem geometricRepresentationFun_apply (w : W) :
+    cs.geometricRepresentationFun w =
+      (Finsupp.linearEquivFunOnFinite ℝ ℝ B).conj (cs.geometricRepresentation w) :=
+  LinearMap.ext fun _ ↦ rfl
+
+/-- The transported representation in coordinates: `ρ(w)` applied to the finitely supported
+function with coordinates `v`. -/
+@[simp]
+theorem geometricRepresentationFun_apply_apply (w : W) (v : B → ℝ) :
+    cs.geometricRepresentationFun w v =
+      ⇑(cs.geometricRepresentation w (Finsupp.equivFunOnFinite.symm v)) :=
+  (rfl)
+
+/-- **The coordinate equivalence is an equivalence of representations** from the geometric
+representation on `B →₀ ℝ` to its transport to `B → ℝ`. -/
+noncomputable def geometricRepresentationEquivFun :
+    Representation.Equiv cs.geometricRepresentation cs.geometricRepresentationFun :=
+  .mk (Finsupp.linearEquivFunOnFinite ℝ ℝ B) fun w ↦ LinearMap.ext fun v ↦ by
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, geometricRepresentationFun_apply,
+      LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply]
+
+/-- The underlying linear equivalence of `CoxeterSystem.geometricRepresentationEquivFun` is the
+coordinate equivalence. -/
+@[simp]
+theorem geometricRepresentationEquivFun_toLinearEquiv :
+    cs.geometricRepresentationEquivFun.toLinearEquiv = Finsupp.linearEquivFunOnFinite ℝ ℝ B :=
+  (rfl)
+
+/-- The underlying linear equivalence of the inverse of
+`CoxeterSystem.geometricRepresentationEquivFun` is the inverse coordinate equivalence. -/
+@[simp]
+theorem geometricRepresentationEquivFun_symm_toLinearEquiv :
+    cs.geometricRepresentationEquivFun.symm.toLinearEquiv =
+      (Finsupp.linearEquivFunOnFinite ℝ ℝ B).symm :=
+  (rfl)
+
+@[simp]
+theorem geometricRepresentationEquivFun_apply (v : B →₀ ℝ) :
+    cs.geometricRepresentationEquivFun v = ⇑v :=
+  (rfl)
+
+@[simp]
+theorem geometricRepresentationEquivFun_symm_apply (v : B → ℝ) :
+    cs.geometricRepresentationEquivFun.symm v = Finsupp.equivFunOnFinite.symm v :=
+  (rfl)
+
+/-- **The transported geometric representation is faithful**, by Tits' theorem
+`CoxeterSystem.geometricRepresentation_injective`. -/
+theorem geometricRepresentationFun_injective : Function.Injective cs.geometricRepresentationFun :=
+  ((Finsupp.linearEquivFunOnFinite ℝ ℝ B).conjAlgEquiv ℝ).injective.comp
+    cs.geometricRepresentation_injective
+
+end Finite
+
+/-- **The reflection formula on coordinate functions**: the `i`-th simple reflection acts by
+`v ↦ v - 2 (∑ⱼ -cos (π / M i j) vⱼ) eᵢ`, where `eᵢ = Pi.single i 1` is the `i`-th simple root and
+the sum is the value of the canonical form on `αᵢ` and `v`. -/
+theorem geometricRepresentationFun_simple_apply [Fintype B] [DecidableEq B] (i : B)
+    (v : B → ℝ) :
+    cs.geometricRepresentationFun (cs.simple i) v =
+      v - (2 * ∑ j, -Real.cos (Real.pi / M i j) * v j) • Pi.single i 1 := by
+  have hform : M.geometricForm (Finsupp.single i 1) (Finsupp.equivFunOnFinite.symm v) =
+      ∑ j, -Real.cos (Real.pi / M i j) * v j := by
+    simp [Finsupp.equivFunOnFinite_symm_eq_sum, mul_comm]
+  ext k
+  simp [hform, Pi.single_apply, Finsupp.single_apply, eq_comm]
 
 end CoxeterSystem
 

@@ -22,6 +22,8 @@ is combined with a deformation of the surrounding annulus, as in cell reattachme
 * `TauCeti.TopCat.annulusParam`, `TauCeti.TopCat.annulusDir`: the annulus coordinates.
 * `TauCeti.TopCat.add_one_sub_mul_annulusParam_smul_annulusDir`: a point of the annulus is
   recovered from its coordinates.
+* `TauCeti.TopCat.annulusPoint`: the point with given annulus coordinates, with the round trips
+  `TauCeti.TopCat.annulusParam_annulusPoint` and `TauCeti.TopCat.annulusDir_annulusPoint`.
 * `TauCeti.TopCat.discGlue`: the gluing of a map on the ball of radius `d` and a map on the
   annulus, with a parameter space `P`.
 -/
@@ -116,6 +118,58 @@ theorem annulusParam_of_norm_le (hd₁ : d ≤ 1) {w : TopCat.disk.{u} k} (hw : 
 theorem annulusParam_of_norm_eq_one (hd₁ : d < 1) {w : TopCat.disk.{u} k}
     (hw : ‖w.down.1‖ = 1) : annulusParam d w = 1 :=
   projIcc_of_right_le _ (by rw [hw, div_self (by linarith)])
+
+/-- The point `(d + (1 - d) s) • θ` of the annulus `d ≤ ‖w‖ ≤ 1` of the disk with annulus
+coordinates `s` and `θ`, for `0 ≤ d ≤ 1`. -/
+def annulusPoint (hd : 0 ≤ d) (hd₁ : d ≤ 1) (s : I) (θ : TopCat.diskBoundary.{u} k) :
+    TopCat.disk.{u} k :=
+  ULift.up ⟨(d + (1 - d) * s) • θ.down.1, by
+    have h₀ : 0 ≤ d + (1 - d) * s := by nlinarith [s.2.1]
+    rw [mem_closedBall_zero_iff, norm_smul, mem_sphere_zero_iff_norm.1 θ.down.2, mul_one,
+      Real.norm_of_nonneg h₀]
+    nlinarith [s.2.2]⟩
+
+@[simp]
+theorem coe_annulusPoint (hd : 0 ≤ d) (hd₁ : d ≤ 1) (s : I) (θ : TopCat.diskBoundary.{u} k) :
+    (annulusPoint hd hd₁ s θ).down.1 = (d + (1 - d) * s) • (θ.down : EuclideanSpace ℝ (Fin k)) :=
+  (rfl)
+
+@[continuity, fun_prop]
+theorem continuous_annulusPoint (hd : 0 ≤ d) (hd₁ : d ≤ 1) :
+    Continuous fun x : I × TopCat.diskBoundary.{u} k ↦ annulusPoint hd hd₁ x.1 x.2 :=
+  continuous_uliftUp.comp (Continuous.subtype_mk (by fun_prop) _)
+
+/-- The norm of the point with annulus coordinates `s` and `θ` is `d + (1 - d) s`. -/
+theorem norm_annulusPoint (hd : 0 ≤ d) (hd₁ : d ≤ 1) (s : I) (θ : TopCat.diskBoundary.{u} k) :
+    ‖(annulusPoint hd hd₁ s θ).down.1‖ = d + (1 - d) * s := by
+  have h₀ : 0 ≤ d + (1 - d) * s := by nlinarith [s.2.1]
+  rw [coe_annulusPoint, norm_smul, mem_sphere_zero_iff_norm.1 θ.down.2, mul_one,
+    Real.norm_of_nonneg h₀]
+
+/-- The point with annulus coordinates `s` and `θ` lies in the annulus `d ≤ ‖w‖`. -/
+theorem le_norm_annulusPoint (hd : 0 ≤ d) (hd₁ : d ≤ 1) (s : I) (θ : TopCat.diskBoundary.{u} k) :
+    d ≤ ‖(annulusPoint hd hd₁ s θ).down.1‖ := by
+  rw [norm_annulusPoint]
+  nlinarith [s.2.1]
+
+/-- The radial parameter of the point with annulus coordinates `s` and `θ` is `s`, for `d < 1`. -/
+@[simp]
+theorem annulusParam_annulusPoint (hd : 0 ≤ d) (hd₁ : d < 1) (s : I)
+    (θ : TopCat.diskBoundary.{u} k) : annulusParam d (annulusPoint hd hd₁.le s θ) = s := by
+  have h : (‖(annulusPoint hd hd₁.le s θ).down.1‖ - d) / (1 - d) = s := by
+    rw [norm_annulusPoint, div_eq_iff (by linarith)]
+    ring
+  rw [annulusParam, h, projIcc_val]
+
+/-- The direction of the point with annulus coordinates `s` and `θ` is `θ`, for `0 < d`. -/
+@[simp]
+theorem annulusDir_annulusPoint (hd : 0 < d) (hd₁ : d ≤ 1) (s : I)
+    (θ : TopCat.diskBoundary.{u} k) :
+    annulusDir hd ⟨annulusPoint hd.le hd₁ s θ, le_norm_annulusPoint hd.le hd₁ s θ⟩ = θ := by
+  have h₀ : 0 < d + (1 - d) * s := by nlinarith [s.2.1]
+  refine ULift.ext (Subtype.ext ?_)
+  rw [coe_annulusDir, norm_annulusPoint, coe_annulusPoint, smul_smul, inv_mul_cancel₀ h₀.ne',
+    one_smul]
 
 /-- The point `d • θ` of a point `θ` of the boundary sphere lies in the ball of radius `d`. -/
 theorem smul_diskBoundary_mem_closedBall (hd : 0 ≤ d) (θ : TopCat.diskBoundary.{u} k) :

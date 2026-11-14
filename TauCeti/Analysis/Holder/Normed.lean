@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Holder.Basic
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # The Banach space of global Hölder functions
@@ -38,7 +39,7 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace.compLipschitzL`: precomposition with a `K`-Lipschitz map, of operator norm
   at most `max 1 (K ^ α)`.
 * `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
-  norm at most `‖g‖`.
+  norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry.
 
 ## References
 
@@ -313,19 +314,15 @@ private theorem holderWith_sub_of_tendsto_of_norm_sub_le {u : ℕ → HolderSpac
     {F : X →ᵇ Y} (hF : Tendsto (fun n ↦ (u n).toBoundedContinuousFunction) atTop (𝓝 F))
     (N : ℕ) (C : ℝ≥0) (hbound : ∀ n ≥ N, ‖u n - u N‖ ≤ C) :
     HolderWith C α (fun x ↦ F x - u N x) := by
-  intro x y
-  have hx : Tendsto (fun n ↦ (u n).toBoundedContinuousFunction x) atTop (𝓝 (F x)) :=
-    ((BoundedContinuousFunction.evalCLM ℝ x).continuous.tendsto F).comp hF
-  have hy : Tendsto (fun n ↦ (u n).toBoundedContinuousFunction y) atTop (𝓝 (F y)) :=
-    ((BoundedContinuousFunction.evalCLM ℝ y).continuous.tendsto F).comp hF
-  refine le_of_tendsto ((hx.sub tendsto_const_nhds).edist (hy.sub tendsto_const_nhds)) ?_
+  refine HolderWith.of_tendsto (u := fun n x ↦ (u n).toBoundedContinuousFunction x - u N x)
+    (fun x ↦ ((((BoundedContinuousFunction.evalCLM ℝ x).continuous.tendsto F).comp hF).sub
+      tendsto_const_nhds)) ?_
   filter_upwards [eventually_ge_atTop N] with n hn
   have hseminorm :
       nnHolderNorm α ((u n - u N).toBoundedContinuousFunction : X → Y) ≤ C := by
     exact_mod_cast (nnHolderNorm_le_holderNorm
       (u n - u N).toBoundedContinuousFunction).trans (hbound n hn)
-  refine ((u n - u N).memHolder.holderWith x y).trans ?_
-  gcongr
+  exact (u n - u N).memHolder.holderWith.mono hseminorm
 
 private theorem norm_sub_limit_toBoundedContinuousFunction_le
     {u : ℕ → HolderSpace α X Y} {F : X →ᵇ Y}
@@ -619,6 +616,20 @@ theorem compLeftL_apply (g : Y →L[ℝ] Y') (f : HolderSpace α X Y) (x : X) :
 /-- Postcomposition with a continuous linear map `g` has operator norm at most `‖g‖`. -/
 theorem norm_compLeftL_le (g : Y →L[ℝ] Y') : ‖compLeftL (α := α) (X := X) g‖ ≤ ‖g‖ :=
   LinearMap.mkContinuous_norm_le _ (norm_nonneg g) _
+
+/-- Postcomposition with a linear isometry preserves the Hölder-space norm. -/
+theorem norm_compLeftL_linearIsometry (e : Y →ₗᵢ[ℝ] Y') (f : HolderSpace α X Y) :
+    ‖compLeftL e.toContinuousLinearMap f‖ = ‖f‖ := by
+  have hcoe : ((compLeftL e.toContinuousLinearMap f).toBoundedContinuousFunction : X → Y') =
+      e ∘ f.toBoundedContinuousFunction := by
+    ext x
+    simp
+  have hsup : ‖(compLeftL e.toContinuousLinearMap f).toBoundedContinuousFunction‖ =
+      ‖f.toBoundedContinuousFunction‖ := by
+    simp only [BoundedContinuousFunction.norm_eq_iSup_norm, hcoe, Function.comp_apply,
+      LinearIsometry.norm_map]
+  rw [norm_def, norm_def, hsup, hcoe, nnHolderNorm, nnHolderNorm, eHolderNorm, eHolderNorm]
+  simp only [HolderWith, Function.comp_apply, LinearIsometry.edist_map]
 
 end compLeft
 

@@ -167,7 +167,7 @@ theorem eqOn_sum_residue_div_sub {f : ℂ → ℂ} {S : Finset ℂ}
     (hlim : Tendsto f (cobounded ℂ) (𝓝 0)) :
     EqOn f (fun z => ∑ s ∈ S, residue f s / (z - s)) (↑S)ᶜ := by
   rw [compl_eq_univ_sdiff] at hf ⊢
-  obtain ⟨g, hg, hfg⟩ := exists_simplePoleDecomposition isOpen_univ hf hmero horder
+  obtain ⟨g, hg, hfg⟩ := exists_simplePoleDecomposition hf hmero horder
   -- The entire remainder `g` agrees with `f` minus the principal parts near infinity.
   have hgf : (fun z => f z - ∑ s ∈ S, residue f s / (z - s)) =ᶠ[cobounded ℂ] g := by
     filter_upwards [isBounded_def.mp S.finite_toSet.isBounded] with z hz

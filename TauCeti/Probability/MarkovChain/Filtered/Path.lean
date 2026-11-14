@@ -6,6 +6,7 @@ Authors: pi
 module
 
 public import TauCeti.Probability.MarkovChain.Filtered.Basic
+import TauCeti.Probability.Process.Filtration.Comp
 
 /-!
 # Future-path laws relative to a filtration
@@ -51,13 +52,14 @@ theorem map_processShift_restrict (h : IsMarkovChain ℱ X κ μ) (n : ℕ)
     rw [borel_eq_top_of_discrete]
     exact top_unique fun s _ => s.to_countable.measurableSet⟩
   let Y : ℕ → Ω → S := fun k => X (n + k)
-  let 𝒢 : Filtration ℕ mΩ :=
-    ⟨fun k => ℱ (n + k), fun _ _ hkl => ℱ.mono (Nat.add_le_add_left hkl n),
-      fun k => ℱ.le (n + k)⟩
+  have hshift : Monotone (fun k : ℕ ↦ n + k) := fun _ _ hkl ↦ Nat.add_le_add_left hkl n
+  let 𝒢 : Filtration ℕ mΩ := ℱ.comp hshift
   have hY : ∀ k, StronglyMeasurable (Y k) :=
     fun k => h.adapted.measurable.stronglyMeasurable
   have hg : IsMarkovChain 𝒢 Y κ (μ.restrict A) := by
-    refine ⟨fun k => h.adapted (n + k), fun k f hf hb => ?_⟩
+    refine ⟨h.adapted.comp _, fun k f hf hb => ?_⟩
+    dsimp only [𝒢]
+    rw [Filtration.comp_apply]
     obtain ⟨C, hC⟩ := hb
     have hi : Integrable (fun ω => f (X (n + k + 1) ω)) μ :=
       ⟨(hf.comp h.adapted.measurable).aestronglyMeasurable,
@@ -68,6 +70,8 @@ theorem map_processShift_restrict (h : IsMarkovChain ℱ X κ μ) (n : ℕ)
       hr.trans (ae_restrict_of_ae (h.condExp_eq (n + k) f hf ⟨C, hC⟩))
   have hle : Filtration.natural Y hY ≤ 𝒢 := by
     intro k
+    dsimp only [𝒢]
+    rw [Filtration.comp_apply]
     exact iSup_le fun j => iSup_le fun hj =>
       ((h.adapted (n + j)).mono (ℱ.mono (Nat.add_le_add_left hj n)) le_rfl).comap_le
   have hlaw := (hasLaw_markovChainLaw_iff_isMarkovChain_natural

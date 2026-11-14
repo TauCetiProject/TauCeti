@@ -40,7 +40,7 @@ open scoped TensorProduct
 variable (R A : Type*) [CommRing R] [AddCommGroup A] [Module R A] [One A]
 
 private def coordinateTensor (n : ℕ) :
-    MultilinearMap R (fun _ : Fin (n + 1) ↦ A)
+    MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
       (A ⊗[R] (⨂[R] (_ : Fin n), A ⧸ Submodule.span R {(1 : A)})) :=
   LinearMap.uncurryLeft
     { toFun := fun a ↦ ((TensorProduct.mk R A _) a).compMultilinearMap
@@ -73,7 +73,7 @@ private theorem tensor_curryLeft_update_span {n : ℕ} (a : A)
   rw [tensor_eq_zero R A _ i.succ (Fin.succ_ne_zero _) h, smul_zero]
 
 private def quotientTensor (n : ℕ) : A →ₗ[R]
-    MultilinearMap R (fun _ : Fin n ↦ A ⧸ Submodule.span R {(1 : A)})
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A ⧸ Submodule.span R {(1 : A)})
       (normalizedHochschildChains R A n) where
   toFun a := ((tensor R A n).curryLeft a).liftQ
     (fun _ ↦ Submodule.span R {(1 : A)}) (tensor_curryLeft_update_span R A a)
