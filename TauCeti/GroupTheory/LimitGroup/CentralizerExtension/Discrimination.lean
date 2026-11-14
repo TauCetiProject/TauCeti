@@ -9,7 +9,6 @@ public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
 public import TauCeti.GroupTheory.LimitGroup.ResiduallyFree
 public import Mathlib.Data.Matrix.Mul
 import TauCeti.Data.Matrix.DotProduct
-import TauCeti.GroupTheory.PushoutI.Reduced
 
 /-!
 # Extensions of centralizers are discriminated by the base group
@@ -20,11 +19,17 @@ and let `u ≠ 1`. The retractions `G(u, ℤⁿ) →* G`, `tᵢ ↦ u ^ kᵢ`, o
 precisely, a nonidentity element of `G(u, ℤⁿ)` survives under `tᵢ ↦ u ^ (m * wᵢ)` for all large
 `m`, along every direction `w ∈ ℤⁿ` off finitely many hyperplanes. Since finitely many hyperplanes
 never cover `ℤⁿ`, any finite family of nonidentity elements survives under a single such
-retraction. In particular `G(u, ℤⁿ)` is fully residually free whenever `G` is. The hypothesis
-`u ≠ 1` cannot be dropped: for `u = 1` every retraction kills the new letters.
+retraction. In particular `G(u, ℤⁿ)` is fully residually free whenever `G` is.
 
 For `n = 1` every nonzero direction qualifies, so a nonidentity element of `G(u, ℤ)` survives
-under `t ↦ u ^ k` for every large `k`.
+under `t ↦ u ^ k` for every large `k`. For `n ≥ 2` the directions matter: the retractions with all
+exponents equal kill `t₀ * t₁⁻¹ ≠ 1`.
+
+The hypothesis `u ≠ 1` cannot be dropped. For central `u`, for instance `u = 1`, the new letters
+commute with all of `G`. So a retraction onto a group `G` with trivial centre, such as a nonabelian
+free group, kills them (`CentralizerExt.map_t_eq_one_of_center_eq_bot`), and a homomorphism to a
+free group that keeps a new letter nontrivial kills every commutator of `G`. For nonabelian `G`,
+such an extension is therefore not fully residually free.
 
 ## Main results
 
@@ -37,14 +42,21 @@ under `t ↦ u ^ k` for every large `k`.
   `G`.
 * `TauCeti.LimitGroup.isFullyResiduallyFree_centralizerExt`: an extension of the centralizer of a
   nonidentity element of a fully residually free group is fully residually free.
+* `TauCeti.LimitGroup.CentralizerExt.exists_ne_one_forall_retraction_const_eq_one`: in rank at
+  least two, the retractions with one common exponent do not separate `G(u, ℤⁿ)`.
+* `TauCeti.LimitGroup.CentralizerExt.commute_map_of_of_map_t_ne_one`: a homomorphism to a
+  commutative transitive group keeping a new letter nontrivial makes the image of `C_G(u)`
+  commutative.
+* `TauCeti.LimitGroup.not_isFullyResiduallyFree_centralizerExt_of_mem_center`: for central `u`
+  and nonabelian `G`, the extension `G(u, ℤⁿ)` of positive rank is not fully residually free.
 
 ## Implementation notes
 
-An element of the amalgam `G(u, ℤⁿ)` is `h * a₁ * ⋯ * aᵣ` with `h ∈ C_G(u)` and letters `aⱼ`
-alternately in `G ∖ C_G(u)` and in `(C_G(u) × ℤⁿ) ∖ C_G(u)`
-(`Monoid.PushoutI.exists_eq_base_mul_ofCoprodI_prod`). A letter `(c, v)` of the second factor,
-with `v ≠ 0`, maps to `c * u ^ (m * (w ⬝ᵥ v))`. Since `c` commutes with `u`, the image of the
-element is an alternating product `g * u ^ (m * e₁) * g₁ * ⋯ * u ^ (m * eₛ) * gₛ` with
+An element of the amalgam `G(u, ℤⁿ)` is `h * a₁ * ⋯ * aᵣ` with `h ∈ G` and letters `aⱼ`
+alternately in `(C_G(u) × ℤⁿ) ∖ C_G(u)` and in `G ∖ C_G(u)`
+(`TauCeti.LimitGroup.CentralizerExt.exists_eq_of_mul_list_prod`). A letter `(c, v)` of the second
+factor, with `v ≠ 0`, maps to `c * u ^ (m * (w ⬝ᵥ v))`. Since `c` commutes with `u`, the image of
+the element is an alternating product `g * u ^ (m * e₁) * g₁ * ⋯ * u ^ (m * eₛ) * gₛ` with
 `eⱼ = w ⬝ᵥ vⱼ` and separators `gⱼ` outside `C_G(u)`, except possibly the last. It is nontrivial
 for all large `m` by the big powers property (`Group.IsBP.exists_forall_mul_prod_ne_one`) as soon
 as every `eⱼ` is nonzero. When no letter of the second factor occurs, the element lies in `G` and
@@ -97,7 +109,8 @@ private theorem retraction_pushoutI_of_true (k : Fin n → ℤ)
     (p : centralizer {u} × (Fin n → Multiplicative ℤ)) :
     retraction k (Monoid.PushoutI.of (φ := centralizerExtMap u n) true p) =
       p.1 * u ^ (k ⬝ᵥ fun i => (p.2 i).toAdd) := by
-  rw [pushoutI_of_true, map_mul, retraction_of, retraction_zpowersPiHom]
+  obtain ⟨c, v⟩ := p
+  rw [← ofProd_def, ofProd_apply, map_mul, retraction_of, retraction_zpowersPiHom]
 
 /-- The data fed to the big powers property by a list of letters of `G(u, ℤⁿ)`: a leading factor,
 and for every letter `(c, v)` of `C_G(u) × ℤⁿ` its exponent vector `v` together with the separator
@@ -184,18 +197,6 @@ private theorem isChain_bpData_snd {L : List (Σ b, CentralizerExtFactor u n b)}
         exact fun h => ha (by simpa using mul_mem (inv_mem p.1.2) h)
       · exact absurd (List.isChain_cons_cons.1 hc).1 (by simp)
 
-/-- The normal form for the amalgam `G(u, ℤⁿ)`: every element is `h * a₁ * ⋯ * aᵣ` with `h ∈ G`
-and letters `aⱼ` alternately in the two factors, none of them in `C_G(u)`. -/
-private theorem exists_eq_of_mul_prod (x : CentralizerExt u n) :
-    ∃ (h : G) (L : List (Σ b, CentralizerExtFactor u n b)),
-      L.IsChain (fun l l' => l.1 ≠ l'.1) ∧ (∀ l ∈ L, l.2 ∉ (centralizerExtMap u n l.1).range) ∧
-      x = of h * (L.map fun l => Monoid.PushoutI.of (φ := centralizerExtMap u n) l.1 l.2).prod := by
-  obtain ⟨h, w, hw, rfl⟩ := Monoid.PushoutI.exists_eq_base_mul_ofCoprodI_prod x
-  refine ⟨h, w.toList, w.chain_ne, hw, ?_⟩
-  rw [← Monoid.PushoutI.of_apply_eq_base _ false, Monoid.CoprodI.Word.prod, map_list_prod,
-    List.map_map]
-  simp [Function.comp_def, of_def]
-
 /-- A product of letters of the factor `G` lies in `G`. -/
 private theorem prod_mem_range_of {L : List (Σ b, CentralizerExtFactor u n b)}
     (hL : ∀ l ∈ L, l.1 = false) :
@@ -214,7 +215,7 @@ theorem exists_finset_forall_retraction_smul_ne_one (hBP : IsBP G) (hG : IsCSA G
     ∃ V : Finset (Fin n → ℤ), (∀ v ∈ V, v ≠ 0) ∧ ∀ w : Fin n → ℤ, (∀ v ∈ V, w ⬝ᵥ v ≠ 0) →
       ∃ N : ℕ, ∀ m : ℕ, N ≤ m → retraction ((m : ℤ) • w) x ≠ 1 := by
   classical
-  obtain ⟨h, L, hc, hred, rfl⟩ := exists_eq_of_mul_prod x
+  obtain ⟨h, L, hc, hred, -, rfl⟩ := exists_eq_of_mul_list_prod x
   have hρ (k : Fin n → ℤ) : retraction k (of h * (L.map fun l =>
       Monoid.PushoutI.of (φ := centralizerExtMap u n) l.1 l.2).prod) =
       h * (bpData L).1 * ((bpData L).2.map fun q => u ^ (k ⬝ᵥ q.1) * q.2).prod := by
@@ -275,6 +276,23 @@ theorem isDiscriminatedBy (hBP : IsBP G) (hG : IsCSA G) (hu : u ≠ 1) :
   exact ⟨retractionGHom (((s.sup N : ℕ) : ℤ) • w), fun x hx => by
     simpa using hN x hx _ (Finset.le_sup hx)⟩
 
+/-- In rank at least two, the retractions `tᵢ ↦ u ^ k` with one common exponent `k` do not
+separate `G(u, ℤⁿ)`: all of them kill `t₀ * t₁⁻¹ ≠ 1`. So discriminating finite families requires
+retractions along directions avoiding finitely many hyperplanes, as in `isDiscriminatedBy`. -/
+theorem exists_ne_one_forall_retraction_const_eq_one (hn : 1 < n) :
+    ∃ x : CentralizerExt u n, x ≠ 1 ∧ ∀ k : ℤ, retraction (fun _ => k) x = 1 :=
+  ⟨t ⟨0, by lia⟩ * (t ⟨1, hn⟩)⁻¹, by simp [mul_inv_eq_one], fun k => by simp⟩
+
+/-- The new letters of `G(u, ℤⁿ)` commute with `C_G(u)`. So a homomorphism to a commutative
+transitive group, such as a free group, that keeps a new letter nontrivial makes the images of any
+two elements of `C_G(u)` commute. For central `u`, for instance `u = 1`, this is all of `G`: such a
+homomorphism kills the commutators of `G`. -/
+theorem commute_map_of_of_map_t_ne_one {K : Type*} [Group K] (hK : IsCommTransitive K)
+    {φ : CentralizerExt u n →* K} {i : Fin n} (hi : φ (t i) ≠ 1) {g h : G}
+    (hg : g ∈ centralizer {u}) (hh : h ∈ centralizer {u}) : Commute (φ (of g)) (φ (of h)) :=
+  (isCommTransitive_iff K).1 hK _ _ _ hi ((commute_of_t hg i).map φ)
+    ((commute_of_t hh i).map φ).symm
+
 end CentralizerExt
 
 /-- An extension `G(u, ℤⁿ)` of the centralizer of a nonidentity element `u` of a fully residually
@@ -282,5 +300,23 @@ free group `G` is fully residually free. -/
 theorem isFullyResiduallyFree_centralizerExt {G : Type*} [Group G] (h : IsFullyResiduallyFree G)
     {u : G} (hu : u ≠ 1) {n : ℕ} : IsFullyResiduallyFree (CentralizerExt u n) :=
   h.of_isDiscriminatedBy (CentralizerExt.isDiscriminatedBy h.isBP h.isCSA hu)
+
+/-- Extending, in positive rank, the centralizer of a central element `u` of a nonabelian group `G`
+(for instance `u = 1`) never gives a fully residually free group: for noncommuting `a, b ∈ G`, a
+homomorphism to a free group keeps the new letter `t₀` nontrivial only if it kills `[a, b]`. As
+iterated extensions of centralizers over a free group are fully residually free
+(`ICE.isFullyResiduallyFree`), such an extension embeds in none of them. -/
+theorem not_isFullyResiduallyFree_centralizerExt_of_mem_center {G : Type*} [Group G]
+    (hG : ¬IsMulCommutative G) {u : G} (hu : u ∈ center G) {n : ℕ} (hn : 0 < n) :
+    ¬IsFullyResiduallyFree (CentralizerExt u n) := fun h => by
+  -- `G(u, ℤⁿ)` would be commutative transitive, and `t₀ ≠ 1` commutes with all of `G`.
+  have hmem (g : G) : g ∈ centralizer {u} :=
+    mem_centralizer_singleton_iff.2 (mem_center_iff.1 hu g)
+  have ht : (CentralizerExt.t ⟨0, hn⟩ : CentralizerExt u n) ≠ 1 := fun h1 =>
+    CentralizerExt.t_notMem_range_of _ (h1 ▸ one_mem _)
+  refine hG ⟨⟨fun a b => CentralizerExt.of_injective (u := u) (n := n) ?_⟩⟩
+  rw [map_mul, map_mul]
+  exact (CentralizerExt.commute_map_of_of_map_t_ne_one (φ := .id _) h.isCommTransitive ht
+    (hmem a) (hmem b)).eq
 
 end TauCeti.LimitGroup
