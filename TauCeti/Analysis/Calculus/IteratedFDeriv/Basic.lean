@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Topology.MetricSpace.Holder
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 
 /-!
 # Iterated derivatives of iterated derivatives
@@ -22,11 +23,13 @@ curried bilinear maps, and the corresponding exact comparison for differences of
 derivatives, which transfers Hölder bounds between the two forms of the second derivative.
 Where a function `ζ` equals one on a neighbourhood of a point, every iterated derivative of
 `ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`). Bounded derivatives up
-to a finite order have a common bound
-(`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`), and such a
-common bound is nonnegative and bounds the function itself
-(`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`). Adding a constant to a function does not
-change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`).
+to a finite order, or of positive orders up to a finite order, have a common bound
+(`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`,
+`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_pos`), and a bound from order zero is nonnegative
+and bounds the function itself (`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`). Adding a
+constant to a function does not change its iterated derivatives of positive order
+(`TauCeti.iteratedFDeriv_succ_add_const`), so right translations have iterated derivatives of
+positive order of norm at most one (`TauCeti.norm_iteratedFDeriv_addRight_le`).
 -/
 
 public section
@@ -134,6 +137,16 @@ theorem iteratedFDeriv_succ_add_const (f : E → F) (c : F) (n : ℕ) :
   funext x
   simp only [iteratedFDeriv_succ_eq_comp_right, fderiv_add_const]
 
+/-- Right translation `Equiv.addRight a` has iterated derivatives of every positive order of norm
+at most one. -/
+theorem norm_iteratedFDeriv_addRight_le (a : E) {n : ℕ} (hn : 1 ≤ n) (x : E) :
+    ‖iteratedFDeriv 𝕜 n (Equiv.addRight a) x‖ ≤ 1 := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  have hfn : (Equiv.addRight a : E → E) = fun y ↦ ContinuousLinearMap.id 𝕜 E y + a := rfl
+  rw [hfn, iteratedFDeriv_succ_add_const]
+  exact ((ContinuousLinearMap.id 𝕜 E).norm_iteratedFDeriv_le_norm (by omega) x).trans
+    ContinuousLinearMap.norm_id_le
+
 /-- Bounded derivatives up to order `N` have a common bound. -/
 theorem exists_forall_norm_iteratedFDeriv_le_of_forall_exists {f : E → F} {N : ℕ}
     (hbd : ∀ n ≤ N, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) :
@@ -143,6 +156,19 @@ theorem exists_forall_norm_iteratedFDeriv_le_of_forall_exists {f : E → F} {N :
   exact ⟨∑ n ∈ Finset.range (N + 1), max (C n) 0, fun n hn x ↦ (hC n hn x).trans
     ((le_max_left _ _).trans (Finset.single_le_sum (f := fun n ↦ max (C n) 0)
       (fun _ _ ↦ le_max_right _ _) (Finset.mem_range.2 (by omega))))⟩
+
+/-- Bounded derivatives of positive orders `1 ≤ n ≤ N` have a common bound. -/
+theorem exists_forall_norm_iteratedFDeriv_le_of_pos {f : E → F} {N : ℕ}
+    (hbd : ∀ n, 1 ≤ n → n ≤ N → ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) :
+    ∃ L, ∀ n, 1 ≤ n → n ≤ N → ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ L := by
+  rcases N with _ | N
+  · exact ⟨0, fun n hn₁ hn₂ ↦ absurd (hn₁.trans hn₂) (by omega)⟩
+  · obtain ⟨L, hL⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists (𝕜 := 𝕜)
+      (f := fderiv 𝕜 f) (N := N) fun m hm ↦ by
+        simpa only [norm_iteratedFDeriv_fderiv] using hbd (m + 1) (by omega) (by omega)
+    refine ⟨L, fun n hn₁ hn₂ x ↦ ?_⟩
+    obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn₁
+    simpa only [norm_iteratedFDeriv_fderiv] using hL m (by omega) x
 
 /-- A bound `G` on the derivatives of `f` of order at most `N` is nonnegative and bounds `f`. -/
 theorem nonneg_and_norm_le_of_norm_iteratedFDeriv_le {f : E → F} {N : ℕ} {G : ℝ}

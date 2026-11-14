@@ -56,6 +56,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
 * `ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear`: the Leibniz bound for
   `x ↦ B (f x) (g x)` when the derivatives of `f` and `g` have uniform bounds.
+* `TauCeti.norm_iteratedFDeriv_mul_le_two_pow_mul`: the resulting uniform bound `2 ^ N * (C * D)`
+  for a product in a normed algebra.
 * `ContDiff.norm_iteratedFDeriv_comp_const_smul_le`: rescaling the variable by `c` with
   `1 ≤ ‖c‖` multiplies uniform derivative bounds of order at most `N` by at most `‖c‖ ^ N`.
 * `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear`: along any filter, if the derivatives of
@@ -337,5 +339,19 @@ theorem norm_iteratedFDeriv_comp_le_of_contDiffAt {n : ℕ} {f : E → F}
   · intro j hj₁ hj
     rw [iteratedFDerivWithin_of_isOpen j hU hxU]
     exact hD j hj₁ hj
+
+/-- **Leibniz bound for a product with uniform derivative bounds.** If the derivatives of order at
+most `N` of `f` and `g` are bounded by `C` and `D` everywhere, those of `f * g` of order `n ≤ N`
+are bounded by `2 ^ N * (C * D)`. -/
+theorem norm_iteratedFDeriv_mul_le_two_pow_mul {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A]
+    {N : ℕ} {f g : E → A} {C D : ℝ} (hf : ContDiff 𝕜 N f) (hg : ContDiff 𝕜 N g)
+    (hfC : ∀ n ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C)
+    (hgD : ∀ n ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 n g x‖ ≤ D) {n : ℕ} (hn : n ≤ N) (x : E) :
+    ‖iteratedFDeriv 𝕜 n (f * g) x‖ ≤ 2 ^ N * (C * D) := by
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hfC 0 (Nat.zero_le _) x)
+  have hD0 : 0 ≤ D := (norm_nonneg _).trans (hgD 0 (Nat.zero_le _) x)
+  exact ((ContinuousLinearMap.mul 𝕜 A).norm_iteratedFDeriv_le_two_pow_mul_of_bilinear
+    (ContinuousLinearMap.opNorm_mul_le 𝕜 A) hf hg hfC hgD hn x).trans
+    (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hn) (mul_nonneg hC0 hD0))
 
 end TauCeti

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
+import Mathlib.Analysis.RCLike.Lemmas
 
 /-!
 # Weighted bounds and integrability of Schwartz functions
@@ -39,6 +40,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
   integral of its squared norm does, for a measure charging every nonempty open set.
+* `SchwartzMap.eq_of_forall_integral_mul_eq`: two `𝕜`-valued Schwartz functions with the same
+  integral pairing against every Schwartz function are equal.
 * `TauCeti.eq_zero_of_forall_integral_apply_eq_zero`: a continuous operator-valued function that
   integrates to zero against every Schwartz function vanishes.
 * `HasCompactSupport.toSchwartzMap_toLp`: the `Lᵖ` class of a smooth compactly supported function
@@ -145,6 +148,26 @@ theorem integral_norm_sq_eq_zero_iff [μ.IsOpenPosMeasure] {f : 𝓢(E, F)} :
   have hcont : Continuous fun x => ‖f x‖ ^ 2 := by fun_prop
   have := (hcont.ae_eq_iff_eq μ continuous_zero).mp hae
   exact SchwartzMap.ext fun x => by simpa using congrFun this x
+
+omit [SecondCountableTopology E] in
+/-- Two `𝕜`-valued Schwartz functions that have the same integral pairing against every `𝕜`-valued
+Schwartz function are equal, for a measure of temperate growth that charges every nonempty open
+set. -/
+theorem eq_of_forall_integral_mul_eq {𝕜 : Type*} [RCLike 𝕜] [μ.IsOpenPosMeasure] {f g : 𝓢(E, 𝕜)}
+    (h : ∀ θ : 𝓢(E, 𝕜), ∫ x, f x * θ x ∂μ = ∫ x, g x * θ x ∂μ) : f = g := by
+  have hmul_int (s₁ s₂ : 𝓢(E, 𝕜)) : Integrable (fun x ↦ s₁ x * s₂ x) μ :=
+    memLp_one_iff_integrable.1 ((s₁.pairing (ContinuousLinearMap.mul ℝ 𝕜) s₂).memLp 1 μ)
+  set δ : 𝓢(E, 𝕜) := f - g
+  set θ : 𝓢(E, 𝕜) := δ.postcompCLM (RCLike.conjCLE (K := 𝕜)).toContinuousLinearMap
+  have hδ0 : ∫ x, δ x * θ x ∂μ = 0 := by
+    have hsub : (fun x ↦ δ x * θ x) = fun x ↦ f x * θ x - g x * θ x :=
+      funext fun x ↦ sub_mul (f x) (g x) (θ x)
+    rw [hsub, integral_sub (hmul_int f θ) (hmul_int g θ), h θ, sub_self]
+  have hnorm : ∫ x, ‖δ x‖ ^ 2 ∂μ = 0 := by
+    have hcongr : (fun x ↦ δ x * θ x) = fun x ↦ ((‖δ x‖ ^ 2 : ℝ) : 𝕜) :=
+      funext fun x ↦ by simp [θ, mul_comm (δ x), RCLike.conj_mul]
+    rwa [hcongr, integral_ofReal, RCLike.ofReal_eq_zero] at hδ0
+  exact sub_eq_zero.1 ((integral_norm_sq_eq_zero_iff (μ := μ)).1 hnorm)
 
 omit [SecondCountableTopology E] in
 /-- For Schwartz functions `f` and `g` with values in a real inner product space, the pointwise
