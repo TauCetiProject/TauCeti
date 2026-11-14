@@ -258,6 +258,20 @@ theorem dart_ωArrow {b c : Γ.V} (p : 𝔸.Path x ⟨b⟩) (e : b ⟶ c)
   obtain ⟨e, rfl, rfl⟩ := e
   simpa [Γ.dart_def] using Homotopic.dart_ω e c₀ p
 
+/-- Moving an edge group element across the dart of the letters `x, e, y`, for a dart
+`e : a ⟶ b` of the quiver of `Γ`: `x α_e(c)⁻¹, e, ω_e(c) y ~ x, e, y`. -/
+theorem dart_αArrow_ωArrow {a b : Γ.V} (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1))
+    (x : 𝔸.vertexGroup a) (y : 𝔸.vertexGroup b) :
+    Homotopic (((ofVertex (x * (𝔸.αArrow e c)⁻¹)).comp (ofDart e)).comp
+      (ofVertex (𝔸.ωArrow e c * y))) (((ofVertex x).comp (ofDart e)).comp (ofVertex y)) := by
+  simp only [ofVertex_eq_nil_cons, ofDart_eq_nil_cons, Quiver.Path.comp_cons,
+    Quiver.Path.comp_nil]
+  have h := dart_ωArrow (Quiver.Path.nil.cons (Letter.vertex (x * (𝔸.αArrow e c)⁻¹))) e c
+  refine (Homotopic.mul _ _ _).symm.trans ((h.cons _).trans ?_)
+  refine (((Homotopic.mul _ _ _).cons _).cons _).trans ?_
+  rw [inv_mul_cancel_right]
+  exact .refl _
+
 /-- The vertex group letter `1` is homotopic to the empty path. -/
 theorem ofVertex_one {a : Γ.V} : Homotopic (ofVertex (1 : 𝔸.vertexGroup a)) Quiver.Path.nil :=
   .one .nil
