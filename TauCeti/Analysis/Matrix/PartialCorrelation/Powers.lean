@@ -6,14 +6,22 @@ Authors: Codex
 module
 
 public import TauCeti.Analysis.Matrix.PartialCorrelation.Basic
+public import TauCeti.LinearAlgebra.Matrix.Triangular.GramPowers
 
 /-!
-# Powers of partial-correlation Cholesky entries
+# Powers of partial-correlation Cholesky and Gram entries
 
 On the closed partial-correlation cube, natural powers and joint monomials of lower-triangular
 entries of the partial-correlation Cholesky factor split into coordinate and residual powers of
-the individual partial correlations. This file records the deterministic factorization used by
-moment calculations.
+the individual partial correlations. Combining this coordinatewise factorization with the
+lower-triangular Gram multinomial expansion of `partialCorrelationGram z = L * Lᵀ` expresses every
+natural mixed entry monomial of the Gram matrix as a finite sum of coordinatewise products of
+powers of `z ij` and nonnegative half-integer powers of `1 - z ij ^ 2`.
+
+## References
+
+* D. Lewandowski, D. Kurowicka, H. Joe, *Generating random correlation matrices based on vines
+  and extended onion method*, J. Multivariate Anal. 100 (2009), 1989–2001.
 -/
 
 public section
@@ -418,5 +426,46 @@ theorem prod_pow_partialCorrelationCholesky_eq_prod
         (sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).2 (hz ij)))
         (fun q _ ↦ partialCorrelationCholeskyEntryResidualPower_nonneg
           q.1 q.2 (m q) ij)).symm
+
+/-- Each entry of the partial-correlation Gram matrix sums triangular column products up to
+`min i j`. -/
+theorem partialCorrelationGram_apply_eq_sum_Iic_min (z : strictLowerTriangle p → ℝ)
+    (i j : Fin p) :
+    partialCorrelationGram z i j =
+      ∑ k ∈ Finset.Iic (min i j),
+        partialCorrelationCholesky z i k * partialCorrelationCholesky z j k := by
+  rw [partialCorrelationGram_def,
+    (isLowerTriangular_partialCorrelationCholesky z).mul_transpose_apply_eq_sum_Iic_min]
+
+/-- Every mixed natural monomial in the entries of `partialCorrelationGram z` expands as a
+multinomial sum of lower-triangular Cholesky monomials indexed by column compositions on
+`Finset.Iic (min q.1 q.2)`. -/
+theorem prod_pow_partialCorrelationGram_eq_sum (z : strictLowerTriangle p → ℝ)
+    (n : Fin p × Fin p → ℕ) :
+    (∏ q, partialCorrelationGram z q.1 q.2 ^ n q) =
+      ∑ c ∈ Fintype.piFinset
+          (fun q : Fin p × Fin p ↦ Finset.piAntidiag (Finset.Iic (min q.1 q.2)) (n q)),
+        (∏ q, (Nat.multinomial (Finset.Iic (min q.1 q.2)) (c q) : ℝ)) *
+          ∏ rk, partialCorrelationCholesky z rk.1 rk.2 ^ gramFactorMultiIndex c rk := by
+  rw [partialCorrelationGram_def]
+  exact (isLowerTriangular_partialCorrelationCholesky z).prod_pow_mul_transpose_eq_sum n
+
+/-- On the closed partial-correlation cube, every mixed natural monomial in the entries of
+`partialCorrelationGram z` expands into a finite multinomial sum of coordinatewise products of
+natural powers of `z ij` and nonnegative half-integer powers of `1 - z ij ^ 2`. -/
+theorem prod_pow_partialCorrelationGram_eq_sum_prod
+    {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| ≤ 1)
+    (n : Fin p × Fin p → ℕ) :
+    (∏ q, partialCorrelationGram z q.1 q.2 ^ n q) =
+      ∑ c ∈ Fintype.piFinset
+          (fun q : Fin p × Fin p ↦ Finset.piAntidiag (Finset.Iic (min q.1 q.2)) (n q)),
+        (∏ q, (Nat.multinomial (Finset.Iic (min q.1 q.2)) (c q) : ℝ)) *
+          ∏ ij, z ij ^ gramFactorMultiIndex c ij.1 *
+            (1 - z ij ^ 2) ^
+              partialCorrelationCholeskyMonomialResidualPower (gramFactorMultiIndex c) ij := by
+  rw [prod_pow_partialCorrelationGram_eq_sum]
+  refine Finset.sum_congr rfl fun c hc ↦ ?_
+  rw [prod_pow_partialCorrelationCholesky_eq_prod hz (gramFactorMultiIndex c)
+    fun _ ↦ le_of_gramFactorMultiIndex_ne_zero hc]
 
 end TauCeti
