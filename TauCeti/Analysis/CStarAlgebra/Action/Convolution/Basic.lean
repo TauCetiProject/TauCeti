@@ -41,6 +41,8 @@ The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter
 
 ## Main statements
 
+* `TauCeti.integral_norm_le_mul_of_norm_le_integral`: pointwise domination of `‖F s‖` by the scalar
+  convolution `∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ` implies `∫ ‖F‖ ≤ (∫ ‖f‖) * ∫ ‖g‖`.
 * `TauCeti.CStarAction.support_convolution_subset`: the support of a twisted convolution lies in
   the product of the supports.
 * `TauCeti.CStarAction.smul_convolution`: left multiplication by a coefficient commutes with
@@ -56,6 +58,44 @@ open scoped CompactlySupported Pointwise
 
 namespace TauCeti
 
+/-- If `F : C_c(G, E₃)` is bounded in norm pointwise by the scalar convolution
+`s ↦ ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ` of `f : C_c(G, E₁)` and `g : C_c(G, E₂)` against a
+left-invariant measure `μ` finite on compacts, then
+`∫ s, ‖F s‖ ∂μ ≤ (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ`. -/
+theorem integral_norm_le_mul_of_norm_le_integral {G E₁ E₂ E₃ : Type*}
+    [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [MeasurableSpace G]
+    [OpensMeasurableSpace G] [MeasurableMul G]
+    [SeminormedAddCommGroup E₁] [SeminormedAddCommGroup E₂] [SeminormedAddCommGroup E₃]
+    (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant]
+    (F : C_c(G, E₃)) (f : C_c(G, E₁)) (g : C_c(G, E₂))
+    (hF : ∀ s, ‖F s‖ ≤ ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ) :
+    ∫ s, ‖F s‖ ∂μ ≤ (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ := by
+  have hsupp : ∀ s r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ≠ 0 → r ∈ tsupport f ∧ r⁻¹ * s ∈ tsupport g :=
+    fun _ _ h => mem_tsupport_and_inv_mul_mem_tsupport h (by intro hf; simp [hf])
+      (by intro hg; simp [hg])
+  have hcont : Continuous (uncurry fun s r => ‖f r‖ * ‖g (r⁻¹ * s)‖) := by
+    rw [uncurry_def]
+    fun_prop
+  have hNcont := continuous_integral_of_compact_support μ f.hasCompactSupport hcont
+    fun s r h => (hsupp s r h).1
+  have hNsupp := hasCompactSupport_integral_of_inv_mul_mem μ f.hasCompactSupport
+    g.hasCompactSupport hsupp
+  calc ∫ s, ‖F s‖ ∂μ
+      ≤ ∫ s, ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ ∂μ :=
+        integral_mono
+          (F.continuous.norm.integrable_of_hasCompactSupport
+            (F.hasCompactSupport.comp_left norm_zero))
+          (hNcont.integrable_of_hasCompactSupport hNsupp) hF
+    _ = ∫ r, ∫ s, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ ∂μ :=
+        integral_integral_swap_of_hasCompactSupport hcont
+          (hasCompactSupport_uncurry_of_inv_mul_mem f.hasCompactSupport g.hasCompactSupport hsupp)
+    _ = ∫ r, ‖f r‖ * ∫ s, ‖g s‖ ∂μ ∂μ := by
+        congr 1 with r
+        rw [integral_const_mul]
+        congr 1
+        exact integral_mul_left_eq_self (fun s => ‖g s‖) r⁻¹
+    _ = (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ := integral_mul_const _ _
+
 namespace CStarAction
 
 variable {G A : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
@@ -70,11 +110,11 @@ variable (α : CStarAction G A) (f g : C_c(G, A))
 and `r⁻¹ * s ∈ support g`. -/
 private theorem mem_support_of_integrand_ne_zero {s r : G}
     (hsr : f r * α r (g (r⁻¹ * s)) ≠ 0) : r ∈ support f ∧ r⁻¹ * s ∈ support g :=
-  ⟨mem_support.2 fun hf => hsr (by simp [hf]), mem_support.2 fun hg => hsr (by simp [hg])⟩
+  mem_support_and_inv_mul_mem_support hsr (by intro h; simp [h]) (by intro h; simp [h])
 
 private theorem mem_tsupport_of_integrand_ne_zero {s r : G}
     (hsr : f r * α r (g (r⁻¹ * s)) ≠ 0) : r ∈ tsupport f ∧ r⁻¹ * s ∈ tsupport g :=
-  (mem_support_of_integrand_ne_zero α f g hsr).imp (subset_tsupport _ ·) (subset_tsupport _ ·)
+  mem_tsupport_and_inv_mul_mem_tsupport hsr (by intro h; simp [h]) (by intro h; simp [h])
 
 variable [IsTopologicalGroup G]
 
@@ -178,38 +218,13 @@ theorem convolution_assoc :
 /-- The `L¹` norm is submultiplicative for twisted convolution with respect to a left-invariant
 measure. -/
 theorem integral_norm_convolution_le :
-    ∫ s, ‖α.convolution μ f g s‖ ∂μ ≤ (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ := by
-  -- Dominate pointwise by the scalar convolution `s ↦ ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖`, then use
-  -- Fubini and left invariance.
-  have hsupp : ∀ s r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ≠ 0 → r ∈ tsupport f ∧ r⁻¹ * s ∈ tsupport g :=
-    fun s r hsr => ⟨subset_tsupport _ (mem_support.2 fun hf => hsr (by simp [hf])),
-      subset_tsupport _ (mem_support.2 fun hg => hsr (by simp [hg]))⟩
-  have hcont : Continuous (uncurry fun s r => ‖f r‖ * ‖g (r⁻¹ * s)‖) := by
-    rw [uncurry_def]
-    fun_prop
-  have hNcont := continuous_integral_of_compact_support μ f.hasCompactSupport hcont
-    fun s r h => (hsupp s r h).1
-  have hNsupp := hasCompactSupport_integral_of_inv_mul_mem μ f.hasCompactSupport
-    g.hasCompactSupport hsupp
-  calc ∫ s, ‖α.convolution μ f g s‖ ∂μ
-      ≤ ∫ s, ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ ∂μ := by
-        refine integral_mono ((α.convolution μ f g).continuous.norm.integrable_of_hasCompactSupport
-          (α.convolution μ f g).hasCompactSupport.norm)
-          (hNcont.integrable_of_hasCompactSupport hNsupp) fun s => ?_
-        rw [convolution_apply]
-        refine norm_integral_le_of_norm_le
-          ((hcont.comp (.prodMk_right s)).integrable_of_hasCompactSupport
-            (f.hasCompactSupport.mono' fun r hr => (hsupp s r hr).1)) (.of_forall fun r => ?_)
-        simpa [StarAlgEquiv.norm_map] using norm_mul_le (f r) (α r (g (r⁻¹ * s)))
-    _ = ∫ r, ∫ s, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ ∂μ :=
-        integral_integral_swap_of_hasCompactSupport hcont
-          (hasCompactSupport_uncurry_of_inv_mul_mem f.hasCompactSupport g.hasCompactSupport hsupp)
-    _ = ∫ r, ‖f r‖ * ∫ s, ‖g s‖ ∂μ ∂μ := by
-        congr 1 with r
-        rw [integral_const_mul]
-        congr 1
-        exact integral_mul_left_eq_self (fun s => ‖g s‖) r⁻¹
-    _ = (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ := integral_mul_const _ _
+    ∫ s, ‖α.convolution μ f g s‖ ∂μ ≤ (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ :=
+  integral_norm_le_mul_of_norm_le_integral μ (α.convolution μ f g) f g fun s =>
+    norm_integral_le_of_norm_le
+      ((by fun_prop : Continuous fun r => ‖f r‖ * ‖g (r⁻¹ * s)‖).integrable_of_hasCompactSupport
+        f.hasCompactSupport.norm.mul_right)
+      (.of_forall fun r => by
+        simpa [StarAlgEquiv.norm_map] using norm_mul_le (f r) (α r (g (r⁻¹ * s))))
 
 end CStarAction
 

@@ -65,6 +65,11 @@ either side vanishes.
   `DoubleCentralizer.norm_coe_snd_of_tendsto_mul_right`: the contractive case.
 * `DoubleCentralizer.eq_zero_of_forall_mul_coe_eq_zero`,
   `DoubleCentralizer.eq_zero_of_forall_coe_mul_eq_zero`: the image of `A` is an essential ideal.
+* `DoubleCentralizer.continuous_fst_of_opNorm_le`, `DoubleCentralizer.continuous_snd_of_opNorm_le`:
+  pointwise strict continuity on a norm-bounded family upgrades to joint continuity on `X × A`.
+* `DoubleCentralizer.forall_commute_iff_fst_eq_snd`, `DoubleCentralizer.mem_center_iff`:
+  with zero annihilators, a multiplier is central if and only if its left and right centralizers
+  agree on `A`.
 
 ## References
 
@@ -398,6 +403,22 @@ theorem norm_coe_snd_of_tendsto_mul_right [l.NeBot] (h1 : ∀ᶠ e in l, ‖e‖
         _ ≤ ‖(a : 𝓜(𝕜, A)).snd‖ * ‖e‖ := (a : 𝓜(𝕜, A)).snd.le_opNorm e
         _ ≤ ‖(a : 𝓜(𝕜, A)).snd‖ := mul_le_of_le_one_right (norm_nonneg _) he
 
+/-- A pointwise continuous family of operator-norm-bounded left centralizers is jointly continuous
+on `X × A`. -/
+theorem continuous_fst_of_opNorm_le {X : Type*} [TopologicalSpace X] {m : X → 𝓜(𝕜, A)}
+    (hC : ∀ x, ‖(m x).fst‖ ≤ C) (hm : ∀ a, Continuous fun x => (m x).fst a) :
+    Continuous fun p : X × A => (m p.1).fst p.2 :=
+  continuous_prod_of_continuous_lipschitzWith' _ C.toNNReal
+    (fun x => (m x).fst.lipschitzWith.weaken <| (hC x).trans (Real.le_coe_toNNReal C)) hm
+
+/-- A pointwise continuous family of operator-norm-bounded right centralizers is jointly continuous
+on `X × A`. -/
+theorem continuous_snd_of_opNorm_le {X : Type*} [TopologicalSpace X] {m : X → 𝓜(𝕜, A)}
+    (hC : ∀ x, ‖(m x).snd‖ ≤ C) (hm : ∀ a, Continuous fun x => (m x).snd a) :
+    Continuous fun p : X × A => (m p.1).snd p.2 :=
+  continuous_prod_of_continuous_lipschitzWith' _ C.toNNReal
+    (fun x => (m x).snd.lipschitzWith.weaken <| (hC x).trans (Real.le_coe_toNNReal C)) hm
+
 end Norm
 
 /-! ### Essentiality of the canonical ideal -/
@@ -421,6 +442,31 @@ theorem eq_zero_of_forall_coe_mul_eq_zero {m : 𝓜(𝕜, A)} (h : ∀ a : A, (a
     FaithfulSMul.eq_of_smul_eq_smul (α := A) fun c => ?_) fun a => by simp [hsnd]
   rw [op_smul_eq_mul, op_smul_eq_mul]
   simp [← m.central, hsnd]
+
+/-- With zero left and right annihilators, a multiplier commutes with every multiplier if and only
+if its left and right centralizers agree on `A`. -/
+theorem forall_commute_iff_fst_eq_snd {m : 𝓜(𝕜, A)} :
+    (∀ n : 𝓜(𝕜, A), Commute m n) ↔ ∀ a : A, m.fst a = m.snd a := by
+  refine ⟨fun h a => coe_injective (𝕜 := 𝕜) ?_, fun h n => ext_fst fun c =>
+    MulOpposite.op_injective <| FaithfulSMul.eq_of_smul_eq_smul (α := A) fun d => ?_⟩
+  · rw [← mul_coe_eq_coe_fst, ← coe_mul_eq_coe_snd]
+    exact h a
+  · simp only [op_smul_eq_mul, mul_fst, mul_apply_eq_comp]
+    calc d * m.fst (n.fst c)
+        = d * m.snd (n.fst c) := by rw [h]
+      _ = m.snd (d * n.fst c) := (snd_mul m d (n.fst c)).symm
+      _ = m.snd (n.snd d * c) := by rw [n.central]
+      _ = n.snd d * m.snd c := snd_mul m (n.snd d) c
+      _ = d * n.fst (m.snd c) := n.central d (m.snd c)
+      _ = d * n.fst (m.fst c) := by rw [h]
+
+/-- With zero left and right annihilators, a multiplier lies in the center of `𝓜(𝕜, A)` if and
+only if its left and right centralizers agree on `A`. -/
+theorem mem_center_iff {m : 𝓜(𝕜, A)} :
+    m ∈ Subring.center 𝓜(𝕜, A) ↔ ∀ a : A, m.fst a = m.snd a :=
+  Subring.mem_center_iff.trans <|
+    (forall_congr' fun g => (commute_iff_eq (a := g) (b := m)).symm.trans Commute.symm_iff).trans
+      forall_commute_iff_fst_eq_snd
 
 end Essential
 
