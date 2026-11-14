@@ -58,18 +58,15 @@ theorem smul_map_vecCons_eq {N : Type*} [AddCommGroup N] [Module K N]
     omega
   -- The difference and all the `u i` lie in the `n`-dimensional kernel.
   let v : LinearMap.ker f := ⟨f W • W' - f W' • W, by simp [mul_comm]⟩
-  let u' : Fin n → LinearMap.ker f := fun i ↦ ⟨u i, hu i⟩
+  let u' : Fin n → LinearMap.ker f := fun i ↦ ⟨u i, LinearMap.mem_ker.mpr (hu i)⟩
   have hz := (ω.compLinearMap (LinearMap.ker f).subtype).map_linearDependent
     (Matrix.vecCons v u') (by
       intro hli
       have := hli.fintype_card_le_finrank
       simp only [Fintype.card_fin, hker] at this
       omega)
-  have hcomp : (fun i ↦ (LinearMap.ker f).subtype (Matrix.vecCons v u' i)) =
-      Matrix.vecCons (f W • W' - f W' • W) u :=
-    Fin.comp_cons (LinearMap.ker f).subtype v u'
-  rw [compLinearMap_apply, hcomp, ← curryLeft_apply_apply, map_sub, map_smul, map_smul] at hz
-  simpa only [sub_apply, smul_apply, curryLeft_apply_apply, sub_eq_zero] using hz
+  rw [← curryLeft_apply_apply] at hz
+  simpa [v, u', sub_eq_zero] using hz
 
 /-- **A top-degree form is determined by an interior product on a hyperplane.** On a space of
 dimension `n + 1`, let `f v = 1`. A top-degree alternating form `ω` vanishes exactly when the
