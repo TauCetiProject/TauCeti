@@ -381,8 +381,9 @@ theorem exists_plucker_eq_mul_plucker_compl_or_eq_neg (hm : p + q = Fintype.card
   have hsurj : Function.Surjective (Matrix.of y).mulVec := hy.mulVec_surjective
   choose w hw using fun j ↦ hsurj (Pi.single j 1)
   -- The vectors orthogonal to every `y j` are the span of `x`, by counting dimensions.
-  have hker := (Matrix.ker_mulVecLin_eq_span_of_dotProduct_eq_zero
-    (by simpa only [Fintype.card_fin] using hm) hx hy hxy).le
+  have hker := (Matrix.ker_mulVecLin_eq_span_of_dotProduct_eq_zero (A := Matrix.of y)
+    (by simpa only [Fintype.card_fin] using hm) hx (by rwa [Matrix.row_of])
+    (by simpa only [Matrix.row_of] using hxy)).le
   obtain ⟨e⟩ : Nonempty (Fin p ⊕ Fin q ≃ ι) := ⟨Fintype.equivOfCardEq (by simp [hm])⟩
   set D := (Matrix.of fun a b ↦ Sum.elim x w a (e b)).det
   have key : ∀ t, ∃ ε : ℤˣ, plucker y t * D = ((ε : ℤ) : K) * plucker x (compl hm t) := by
