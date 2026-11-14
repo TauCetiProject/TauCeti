@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.Complement.Local
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle
 public import TauCeti.GroupTheory.GroupAction.ConjAct
+import TauCeti.GroupTheory.SemidirectProduct
 
 /-!
 # Complements and normalized crossed projections
@@ -34,8 +35,9 @@ projections differ by that principal crossed map
 The conjugation action is explicit rather than a global instance. The additive
 coefficient action uses `Additive.distribMulAction`, and kernels use the existing
 `groupCohomology.zeroLocus` rather than a second notion of cocycle kernel.
-The crossed projection is the first component of Mathlib's complement decomposition;
-its quotient-splitting formula supplies the crossed identity.
+The crossed projection is the first component of Mathlib's complement decomposition
+(and of the inverse of `SemidirectProduct.mulEquivSubgroup`); its quotient-splitting
+formula supplies the crossed identity.
 
 ## References
 
@@ -64,6 +66,14 @@ variable {D : Subgroup G} (h : N.IsComplement' D)
 It is generally not a homomorphism. -/
 noncomputable def crossedProjection (g : G) : N :=
   (h.equiv g).1
+
+omit [N.Normal] in
+theorem crossedProjection_apply (g : G) : h.crossedProjection g = (h.equiv g).1 := (rfl)
+
+/-- The left component of `(SemidirectProduct.mulEquivSubgroup h).symm` is `h.crossedProjection`. -/
+theorem mulEquivSubgroup_symm_left_eq_crossedProjection (g : G) :
+    ((SemidirectProduct.mulEquivSubgroup h).symm g).left = h.crossedProjection g :=
+  SemidirectProduct.mulEquivSubgroup_symm_left h g
 
 omit [N.Normal] in
 /-- The projection of a product of the two factors is its normal component. -/
@@ -150,6 +160,13 @@ theorem eq_conj_smul_iff_crossedProjection_eq {D' : Subgroup G} (h' : N.IsComple
       h.crossedProjection_conj_coe_smul]
 
 end IsComplement'
+
+/-- For `H = ⊤`, the local left projection agrees with
+`Subgroup.IsComplement'.crossedProjection`. -/
+theorem IsLocalComplement.leftProjection_top_eq_crossedProjection {D : Subgroup G}
+    (h : N.IsLocalComplement D ⊤) (x : (⊤ : Subgroup G)) :
+    h.leftProjection x = (isLocalComplement_top_iff.mp h).crossedProjection x :=
+  h.leftProjection_top x
 
 /-- The left projection of a local complement `K` of `N` in `H` satisfies the crossed identity
 for the conjugation action of `H` on `N`. -/
