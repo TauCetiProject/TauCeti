@@ -11,9 +11,9 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Capped
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.Rectangle
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # The energy of Floer cylinders in a manifold and the action of their loops
@@ -807,13 +807,11 @@ theorem IsNondegenerate.integral_floerEnergyDensity_univ_prod (hω : ω.IsNondeg
       (hB : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, |H t x| ≤ B)
       {d : ι → ℝ} {x : ℝ → M} (hx : ∀ t, Tendsto (fun i ↦ u (d i, t)) l (𝓝 (x t))) :
       Tendsto (fun i ↦ ∫ t in 0..1, H t (u (d i, t))) l (𝓝 (∫ t in 0..1, H t (x t))) :=
-    intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ ↦ B)
-      (Eventually.of_forall fun i ↦ (hHc.comp (continuous_id.prodMk
-        (hu.continuous.comp (continuous_const.prodMk continuous_id)))).aestronglyMeasurable)
-      (Eventually.of_forall fun i ↦ ae_of_all _ fun t ht ↦ (Real.norm_eq_abs _).trans_le
+    tendsto_intervalIntegral_comp_of_tendsto_of_norm_le hHc
+      (Eventually.of_forall fun i ↦ (hu.continuous.comp (by fun_prop)).continuousOn)
+      (Eventually.of_forall fun i t ht ↦ (Real.norm_eq_abs _).trans_le
         (hB t (Ioc_subset_Icc_self (uIoc_of_le (zero_le_one (α := ℝ)) ▸ ht)) _))
-      intervalIntegrable_const
-      (ae_of_all _ fun t _ ↦ (hHc.tendsto (t, x t)).comp (tendsto_const_nhds.prodMk_nhds (hx t)))
+      fun t _ ↦ hx t
   -- Far out on the ends, the identity holds on the rectangle `[a i, b i] × [0, 1]`.
   have hrect : ∀ᶠ i in l, ∫ z in Icc (a i) (b i) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z =
       (∫ z in Icc (a i) (b i) ×ˢ Icc 0 1, (SmoothBundleForm.eval₂ ω (u z)
