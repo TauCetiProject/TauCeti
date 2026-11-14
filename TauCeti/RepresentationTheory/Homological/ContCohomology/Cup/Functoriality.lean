@@ -195,7 +195,8 @@ theorem cup_coeffMap_left_id {Y' Z' : TopRep.{max v w} R G} (P' : TopPairing X Y
 
 /-- Naturality of the cup product of homogeneous cochains in the coefficients of the left factor
 only: coefficient morphisms `f`, `h` with `h (P.bil x y) = P'.bil (f x) y` satisfy
-`h (a ⌣ b) = f a ⌣' b`. This is `cupCochain_cochainsMap` with `fY = 𝟙 Y`. -/
+`h (a ⌣ b) = f a ⌣' b`. This is `cupCochain_cochainsMap` at `φ = ContinuousMonoidHom.id G` and
+`fY = 𝟙 Y`. -/
 theorem cupCochain_cochainsMap_right_id {X' Z' : TopRep.{max v w} R G} (P' : TopPairing X' Y Z')
     (f : X ⟶ X') (h : Z ⟶ Z')
     (hcompat : ∀ (x : X.V) (y : Y.V), h (P.bil x y) = P'.bil (f x) y) (m n : ℕ)
@@ -208,7 +209,8 @@ theorem cupCochain_cochainsMap_right_id {X' Z' : TopRep.{max v w} R G} (P' : Top
 
 /-- Naturality of the cup product of homogeneous cochains in the coefficients of the right factor
 only: coefficient morphisms `g`, `h` with `h (P.bil x y) = P'.bil x (g y)` satisfy
-`h (a ⌣ b) = a ⌣' g b`. This is `cupCochain_cochainsMap` with `fX = 𝟙 X`. -/
+`h (a ⌣ b) = a ⌣' g b`. This is `cupCochain_cochainsMap` at `φ = ContinuousMonoidHom.id G` and
+`fX = 𝟙 X`. -/
 theorem cupCochain_cochainsMap_left_id {Y' Z' : TopRep.{max v w} R G} (P' : TopPairing X Y' Z')
     (g : Y ⟶ Y') (h : Z ⟶ Z')
     (hcompat : ∀ (x : X.V) (y : Y.V), h (P.bil x y) = P'.bil x (g y)) (m n : ℕ)
