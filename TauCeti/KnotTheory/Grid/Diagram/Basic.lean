@@ -98,14 +98,17 @@ theorem subdiagonal_apply (c : Fin n) :
   rfl
 
 /-- Moving the subdiagonal point of a column up one row reaches the diagonal. -/
-theorem subdiagonal_apply_add_one [NeZero n] (c : Fin n) :
+theorem subdiagonal_apply_add_one (c : Fin n) :
+    haveI := c.neZero
     subdiagonal n c + 1 = c := by
   rw [← finRotate_apply, subdiagonal_apply, Equiv.Perm.inv_def, Equiv.apply_symm_apply]
 
 /-- The subdiagonal state sends each column to the preceding row. -/
 @[simp]
-theorem subdiagonal_apply_eq_sub_one [NeZero n] (c : Fin n) :
+theorem subdiagonal_apply_eq_sub_one (c : Fin n) :
+    haveI := c.neZero
     subdiagonal n c = c - 1 :=
+  haveI := c.neZero
   eq_sub_iff_add_eq.mpr (subdiagonal_apply_add_one c)
 
 /-- The finite set of occupied grid points of a grid state. The first coordinate is the column and
@@ -305,6 +308,16 @@ theorem disjoint_map_relabelColumns_pointSet_iff (x : GridState n) (κ : Equiv.P
       Disjoint S (x.relabelColumns κ).pointSet := by
   rw [x.pointSet_eq_map_relabelColumns κ, Finset.disjoint_map]
 
+/-- The permutation underlying a row relabeling is the old permutation followed by `ρ`. -/
+theorem relabelRows_toPerm (ρ : Equiv.Perm (Fin n)) (x : GridState n) :
+    (x.relabelRows ρ).toPerm = ρ * x.toPerm :=
+  rfl
+
+/-- The permutation underlying a column relabeling is `κ⁻¹` followed by the old permutation. -/
+theorem relabelColumns_toPerm (κ : Equiv.Perm (Fin n)) (x : GridState n) :
+    (x.relabelColumns κ).toPerm = x.toPerm * κ⁻¹ :=
+  rfl
+
 /-- Swapping two rows in a grid state. -/
 def swapRows (a b : Fin n) (x : GridState n) : GridState n :=
   x.relabelRows (Equiv.swap a b)
@@ -324,6 +337,12 @@ theorem swapRows_apply (a b : Fin n) (x : GridState n) (c : Fin n) :
 theorem swapColumns_apply (a b : Fin n) (x : GridState n) (c : Fin n) :
     x.swapColumns a b c = x (Equiv.swap a b c) := by
   simp [swapColumns, relabelColumns]
+
+/-- Swapping rows `a`, `b` and then columns `c`, `d` multiplies the underlying permutation by
+the row transposition on the left and the column transposition on the right. -/
+theorem swapRows_swapColumns_toPerm (a b c d : Fin n) (x : GridState n) :
+    ((x.swapRows a b).swapColumns c d).toPerm = Equiv.swap a b * x.toPerm * Equiv.swap c d := by
+  rw [swapColumns, relabelColumns_toPerm, swapRows, relabelRows_toPerm, Equiv.swap_inv]
 
 /-- A column read off the row it occupies after a column swap. -/
 theorem eq_swap_of_swapColumns_apply_eq {x : GridState n} {a b c d : Fin n}
@@ -764,22 +783,6 @@ theorem swapColumns_O (a b : Fin n) : (G.swapColumns a b).O = G.O.swapColumns a 
 @[simp]
 theorem swapColumns_X (a b : Fin n) : (G.swapColumns a b).X = G.X.swapColumns a b :=
   rfl
-
-/-- Exchanging two rows and the same two columns conjugates the `X`-permutation by the
-transposition. -/
-theorem swapRows_swapColumns_X_toPerm (a b : Fin n) :
-    ((G.swapRows a b).swapColumns a b).X.toPerm =
-      Equiv.swap a b * G.X.toPerm * Equiv.swap a b := by
-  ext c
-  simp
-
-/-- Exchanging two rows and the same two columns conjugates the `O`-permutation by the
-transposition. -/
-theorem swapRows_swapColumns_O_toPerm (a b : Fin n) :
-    ((G.swapRows a b).swapColumns a b).O.toPerm =
-      Equiv.swap a b * G.O.toPerm * Equiv.swap a b := by
-  ext c
-  simp
 
 /-- Row swaps transport the `O` marking set by the row transposition. -/
 theorem mem_OSet_swapRows (a b : Fin n) (p : Fin n × Fin n) :
