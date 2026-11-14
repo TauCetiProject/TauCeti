@@ -32,6 +32,11 @@ def partialSumsLinearMap (R : Type*) [CommRing R] (n : ℕ) :
     (Fin n → R) →ₗ[R] (Fin n → R) :=
   LinearMap.pi fun i ↦ ∑ j ∈ Finset.Iic i, LinearMap.proj j
 
+/-- The inclusive initial-sum description, without unfolding the linear map. -/
+theorem partialSumsLinearMap_apply_eq_sum_Iic (x : Fin n → R) (i : Fin n) :
+    partialSumsLinearMap R n x i = ∑ j ∈ Iic i, x j := by
+  simp [partialSumsLinearMap]
+
 @[simp]
 theorem partialSumsLinearMap_apply (x : Fin n → R) (i : Fin n) :
     partialSumsLinearMap R n x i = Fin.partialSum x i.succ := by
