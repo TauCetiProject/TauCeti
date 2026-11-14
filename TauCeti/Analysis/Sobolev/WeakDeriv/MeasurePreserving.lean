@@ -54,6 +54,12 @@ multiplied by a Lipschitz constant of `Φ` on `closure W`, and these tend to zer
 * `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv`,
   `ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff`: the case of a measure-preserving
   continuous linear equivalence, such as a linear isometry between inner product spaces.
+* `TauCeti.hasWeakFDerivOn_iff_of_isAddHaarMeasure`: independence of the choice of additive Haar
+  measure on a finite-dimensional domain.
+* `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_of_isAddHaarMeasure`,
+  `ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff_of_isAddHaarMeasure`: transport of weak
+  derivatives along arbitrary continuous linear equivalences between finite-dimensional spaces with
+  additive Haar measures.
 
 ## References
 
@@ -251,5 +257,43 @@ theorem _root_.ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff {U : Opens E} {V :
   have hVU : MapsTo e.symm V U := fun y hy => by simpa [hUV] using hy
   simpa [Function.comp_def, ContinuousLinearMap.comp_assoc] using
     h.comp_continuousLinearEquiv e.symm he' hVU
+
+omit [μ.IsAddHaarMeasure] in
+/-- **Haar-measure independence of `HasWeakFDerivOn`.** On a finite-dimensional real normed space,
+weak Fréchet differentiability does not depend on the choice of additive Haar measure. -/
+theorem hasWeakFDerivOn_iff_of_isAddHaarMeasure (μ₁ μ₂ : Measure E)
+    [μ₁.IsAddHaarMeasure] [μ₂.IsAddHaarMeasure] {Ω : Opens E} {u : E → F}
+    {Du : E → E →L[ℝ] F} :
+    HasWeakFDerivOn μ₁ Ω u Du ↔ HasWeakFDerivOn μ₂ Ω u Du := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · rw [Measure.isAddLeftInvariant_eq_smul μ₂ μ₁]
+    exact h.smul_measure_nnreal (Measure.addHaarScalarFactor μ₂ μ₁)
+  · rw [Measure.isAddLeftInvariant_eq_smul μ₁ μ₂]
+    exact h.smul_measure_nnreal (Measure.addHaarScalarFactor μ₁ μ₂)
+
+/-- **Weak chain rule for arbitrary continuous linear equivalences.** Any continuous linear
+equivalence `e : E ≃L[ℝ] E'` between finite-dimensional real normed spaces with additive Haar
+measures `μ` and `ν` transports weak Fréchet derivatives by `x ↦ D (e x) ∘L e`, with no
+measure-preserving restriction on `e`. -/
+theorem HasWeakFDerivOn.comp_continuousLinearEquiv_of_isAddHaarMeasure {U : Opens E}
+    {V : Opens E'} {u : E' → F} {D : E' → E' →L[ℝ] F} (h : HasWeakFDerivOn ν V u D)
+    (e : E ≃L[ℝ] E') (hUV : MapsTo e U V) :
+    HasWeakFDerivOn μ U (u ∘ e) fun x => (D (e x)).comp (e : E →L[ℝ] E') := by
+  have : (μ.map e).IsAddHaarMeasure := e.isAddHaarMeasure_map μ
+  exact ((hasWeakFDerivOn_iff_of_isAddHaarMeasure ν (μ.map e)).1 h).comp_continuousLinearEquiv
+    e ⟨e.continuous.measurable, rfl⟩ hUV
+
+/-- **Two-sided weak chain rule for continuous linear equivalences** between finite-dimensional
+spaces with arbitrary additive Haar measures. -/
+theorem _root_.ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff_of_isAddHaarMeasure {U : Opens E}
+    {V : Opens E'} {u : E' → F} {D : E' → E' →L[ℝ] F} (e : E ≃L[ℝ] E')
+    (hUV : (U : Set E) = e ⁻¹' V) :
+    HasWeakFDerivOn μ U (u ∘ e) (fun x => (D (e x)).comp (e : E →L[ℝ] E')) ↔
+      HasWeakFDerivOn ν V u D := by
+  refine ⟨fun h => ?_, fun h =>
+    h.comp_continuousLinearEquiv_of_isAddHaarMeasure e (hUV ▸ mapsTo_preimage e V)⟩
+  have hVU : MapsTo e.symm V U := fun y hy => by simpa [hUV] using hy
+  simpa [Function.comp_def, ContinuousLinearMap.comp_assoc] using
+    h.comp_continuousLinearEquiv_of_isAddHaarMeasure e.symm hVU
 
 end TauCeti
