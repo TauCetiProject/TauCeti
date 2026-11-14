@@ -22,7 +22,11 @@ cohomological triviality criterion.
 ## Main statements
 
 * `TauCeti.groupCohomology.eq_zero_of_pow_nsmul_eq_zero_of_map_sylow_eq_zero`: an element of
-  `Hⁿ(G, A)` killed by a power of `p` and by restriction to a Sylow `p`-subgroup is zero.
+  `Hⁿ(G, A)` killed by a power of `p` and by restriction to a finite-index Sylow `p`-subgroup is
+  zero.
+* `TauCeti.groupCohomology.map_sylow_injective_of_isAddPGroup`: restriction to a finite-index
+  Sylow `p`-subgroup is injective on `Hⁿ(G, A)` when the underlying additive group of `A` is a
+  `p`-group.
 * `TauCeti.groupCohomology.eq_zero_of_map_sylow_eq_zero`: an element of `Hⁿ⁺¹(G, A)` whose
   restriction to a Sylow `p`-subgroup vanishes for every prime `p` is zero.
 * `TauCeti.groupCohomology.isZero_of_isZero_sylow`: `Hⁿ⁺¹(G, A) = 0` if, for every prime `p`
@@ -44,7 +48,7 @@ universe u
 
 open CategoryTheory Limits Rep
 
-variable {k G : Type u} [CommRing k] [Group G] [Finite G]
+variable {k G : Type u} [CommRing k] [Group G]
 
 namespace TauCeti.groupCohomology
 
@@ -53,17 +57,28 @@ open _root_.groupCohomology
 variable (A : Rep k G) (n : ℕ)
 
 /-- **Restriction to a Sylow `p`-subgroup is injective on the `p`-primary part** (Milne II 1.33):
-an element of `Hⁿ(G, A)` killed by a power of `p` whose restriction to a Sylow `p`-subgroup `P`
-vanishes is zero. -/
+an element of `Hⁿ(G, A)` killed by a power of `p` whose restriction to a finite-index Sylow
+`p`-subgroup `P` vanishes is zero. -/
 theorem eq_zero_of_pow_nsmul_eq_zero_of_map_sylow_eq_zero
-    (p : ℕ) [Fact p.Prime] (P : Sylow p G)
+    (p : ℕ) [Fact p.Prime] (P : Sylow p G) [P.FiniteIndex]
     {x : groupCohomology A n} {j : ℕ} (hx : p ^ j • x = 0)
     (h : map (P : Subgroup G).subtype (𝟙 (res (P : Subgroup G).subtype A)) n x = 0) :
-    x = 0 := by
+    x = 0 :=
   -- `[G : P]` kills `x` and is prime to `p`, hence to `p ^ j`; the two annihilators force `x = 0`.
-  exact (nsmul_eq_zero_iff_of_coprime <| Nat.Coprime.pow_left j <|
-    (Nat.Prime.coprime_iff_not_dvd ‹Fact p.Prime›.out).2 (Sylow.not_dvd_index P)).1
-    ⟨hx, index_nsmul_eq_zero_of_map_eq_zero (P : Subgroup G) h⟩
+  eq_zero_of_nsmul_eq_zero_of_map_eq_zero (P : Subgroup G)
+    (Nat.Coprime.pow_left j <|
+      (Nat.Prime.coprime_iff_not_dvd ‹Fact p.Prime›.out).2 (Sylow.not_dvd_index P))
+    hx h
+
+/-- Restriction `Hⁿ(G, A) ⟶ Hⁿ(P, Res_P A)` to a finite-index Sylow `p`-subgroup `P` is injective
+in every degree `n` when the underlying additive group of `A` is a `p`-group (possibly infinite). -/
+theorem map_sylow_injective_of_isAddPGroup
+    (p : ℕ) [Fact p.Prime] (P : Sylow p G) [P.FiniteIndex] (hA : IsAddPGroup p A) :
+    Function.Injective (map (P : Subgroup G).subtype (𝟙 (res (P : Subgroup G).subtype A)) n) :=
+  map_subtype_injective_of_isAddPGroup (P : Subgroup G) hA
+    ((Nat.Prime.coprime_iff_not_dvd ‹Fact p.Prime›.out).2 (Sylow.not_dvd_index P)) n
+
+variable [Finite G]
 
 /-- **Restriction to the Sylow subgroups is jointly injective** (Milne II 1.33): an element of
 `Hⁿ⁺¹(G, A)` whose restriction vanishes, for every prime `p` dividing the order of `G`, on some
