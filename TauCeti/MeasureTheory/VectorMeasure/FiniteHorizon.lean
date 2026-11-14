@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.VectorMeasure.BoundedVariation
 public import Mathlib.MeasureTheory.VectorMeasure.Variation.Basic
+public import TauCeti.MeasureTheory.Measure.Stieltjes
 public import TauCeti.Topology.Order.ProjIcc
 public import TauCeti.Topology.EMetricSpace.BoundedVariation
 
@@ -20,6 +21,11 @@ This gives a finite-horizon Stieltjes measure without making assumptions on the 
 interval. The initial time never carries an atom because of the restriction to `(a,b]`, while a
 jump at the terminal time is retained. Right continuity within the horizon yields the usual
 increment formulas. These are the endpoint conventions for pathwise finite-variation integration.
+
+An increasing-part decomposition identifies this signed measure with the difference of the
+parts' restricted Stieltjes measures, even if the parts have infinite mass on the whole line.
+For BV paths in a complete normed group with strongly measurable evaluations within the
+horizon, evaluation of the finite-horizon vector measure on any fixed set is strongly measurable.
 
 The construction uses Mathlib's `BoundedVariationOn.vectorMeasure` and `Set.IccExtend`.
 
@@ -217,5 +223,112 @@ theorem vectorMeasureIcc_congr (hf : BoundedVariationOn f (Icc a b))
     funext fun x ↦ hfg (projIcc a b hab x).property
   simp only [vectorMeasureIcc_def]
   congr 2
+
+/-- A decomposition of the path's increments into two increasing right-continuous parts
+identifies its finite-horizon signed measure with the difference of their Stieltjes measures
+restricted to `(a, b]`. Neither increasing part needs finite mass outside the horizon. -/
+theorem vectorMeasureIcc_eq_toSignedMeasure_sub
+    {f : α → ℝ} (hf : BoundedVariationOn f (Icc a b)) (hab : a ≤ b)
+    (p q : StieltjesFunction α)
+    (hpq : ∀ x ∈ Icc a b, f x - f a = (p x - p a) - (q x - q a)) :
+    hf.vectorMeasureIcc hab =
+      (p.measure.restrict (Ioc a b)).toSignedMeasure -
+        (q.measure.restrict (Ioc a b)).toSignedMeasure := by
+  have hfr (x : α) (hx : x ∈ Icc a b) : ContinuousWithinAt f (Icc x b) x := by
+    have h := (((p.right_continuous x).sub (q.right_continuous x)).add_const
+      (f a - p a + q a)).mono (Icc_subset_Ici_self : Icc x b ⊆ Ici x)
+    apply h.congr_of_mem ?_ (left_mem_Icc.mpr hx.2)
+    intro y hy
+    have := hpq y ⟨hx.1.trans hy.1, hy.2⟩
+    dsimp only [Pi.sub_apply]
+    linarith
+  apply VectorMeasure.ext_of_restrict_Ioc hab (hf.vectorMeasureIcc_restrict hab)
+  · rw [VectorMeasure.restrict_sub, VectorMeasure.restrict_toSignedMeasure measurableSet_Ioc,
+      VectorMeasure.restrict_toSignedMeasure measurableSet_Ioc]
+    simp [Measure.restrict_restrict, measurableSet_Ioc]
+  · intro x hx
+    simpa only [hf.vectorMeasureIcc_Ioc hab (hfr a (left_mem_Icc.mpr hab)) (hfr x hx)
+      (left_mem_Icc.mpr hab) hx hx.1, _root_.sub_apply,
+      Measure.toSignedMeasure_apply_measurable measurableSet_Ioc,
+      measureReal_restrict_apply measurableSet_Ioc,
+      inter_eq_left.mpr (Ioc_subset_Ioc le_rfl hx.2), measureReal_def,
+      StieltjesFunction.measure_Ioc,
+      ENNReal.toReal_ofReal (sub_nonneg.mpr (p.mono hx.1)),
+      ENNReal.toReal_ofReal (sub_nonneg.mpr (q.mono hx.1))] using hpq x hx
+
+/-- Fixed-set evaluations of finite-horizon Stieltjes vector measures are strongly measurable
+when the BV paths have strongly measurable evaluations within the horizon.
+No measurability or regularity outside the horizon is required. -/
+theorem stronglyMeasurable_vectorMeasureIcc_apply {Ω : Type*} [MeasurableSpace Ω]
+    {X : α → Ω → E} (hab : a ≤ b)
+    (hX : ∀ t ∈ Icc a b, StronglyMeasurable (X t))
+    (hv : ∀ ω, BoundedVariationOn (fun t => X t ω) (Icc a b)) (s : Set α) :
+    StronglyMeasurable (fun ω => (hv ω).vectorMeasureIcc hab s) := by
+  -- First obtain measurable right limits, using constant extension at the terminal endpoint.
+  have hlim (z : α) (hz : z ∈ Icc a b) :
+      StronglyMeasurable (fun ω => (Set.IccExtend hab ((X · ω) ∘ Subtype.val)).rightLim z) := by
+    by_cases hzb : z = b
+    · subst z
+      have heq (ω) : (Set.IccExtend hab ((X · ω) ∘ Subtype.val)).rightLim b = X b ω := by
+        rw [(TauCeti.continuousWithinAt_IccExtend_Ici hab (by simp)).rightLim_eq,
+          IccExtend_of_mem hab _ hz]
+        rfl
+      simpa only [heq] using hX b hz
+    · obtain ⟨u, -, hu, hut⟩ := exists_seq_strictAnti_tendsto' (lt_of_le_of_ne hz.2 hzb)
+      apply stronglyMeasurable_of_tendsto atTop
+        (fun n => hX (u n) ⟨hz.1.trans (hu n).1.le, (hu n).2.le⟩)
+      apply tendsto_pi_nhds.mpr
+      intro ω
+      convert (((hv ω).IccExtend hab).tendsto_rightLim z).comp
+        (tendsto_nhdsWithin_iff.mpr ⟨hut, Eventually.of_forall fun n => (hu n).1⟩) using 1
+      funext n
+      exact (IccExtend_of_mem hab ((X · ω) ∘ Subtype.val)
+        ⟨hz.1.trans (hu n).1.le, (hu n).2.le⟩).symm
+  -- Interval evaluations are differences of these limits; extend to Borel sets by induction.
+  have huniv : StronglyMeasurable (fun ω => (hv ω).vectorMeasureIcc hab univ) := by
+    simpa only [vectorMeasureIcc_def, VectorMeasure.restrict_apply_univ,
+      vectorMeasure_Ioc _ hab] using
+      (hlim b (right_mem_Icc.mpr hab)).fun_sub (hlim a (left_mem_Icc.mpr hab))
+  by_cases hs : MeasurableSet s
+  · induction s, hs using MeasurableSpace.induction_on_inter
+      (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic α)) isPiSystem_Iic with
+    | empty => simpa only [VectorMeasure.empty] using (stronglyMeasurable_const (b := (0 : E)))
+    | basic s hs =>
+      obtain ⟨x, rfl⟩ := hs
+      have heval (ω) : (hv ω).vectorMeasureIcc hab (Iic x) =
+          (hv ω).vectorMeasureIcc hab (Ioc a (min b x)) := by
+        rw [← vectorMeasureIcc_restrict _ hab,
+          VectorMeasure.restrict_apply _ measurableSet_Ioc measurableSet_Iic,
+          inter_comm (Iic x), Ioc_inter_Iic, vectorMeasureIcc_restrict]
+      simp_rw [heval]
+      by_cases hax : a ≤ min b x
+      · simp_rw [vectorMeasureIcc_def,
+          VectorMeasure.restrict_eq_self _ measurableSet_Ioc measurableSet_Ioc
+            (Ioc_subset_Ioc le_rfl (min_le_left b x)), vectorMeasure_Ioc _ hax]
+        exact (hlim _ ⟨hax, min_le_left _ _⟩).fun_sub (hlim a (left_mem_Icc.mpr hab))
+      · simp only [Ioc_eq_empty (not_lt.mpr (le_of_not_ge hax)), VectorMeasure.empty]
+        exact stronglyMeasurable_const
+    | compl s hs ih =>
+      simp_rw [VectorMeasure.of_compl hs]
+      exact huniv.fun_sub ih
+    | iUnion f hfd hfm ih =>
+      exact stronglyMeasurable_of_tendsto atTop
+        (fun n => (Finset.stronglyMeasurable_fun_sum _ fun i _ => ih i))
+        (tendsto_pi_nhds.mpr fun ω =>
+          ((hv ω).vectorMeasureIcc hab |>.hasSum_of_disjoint_iUnion hfm hfd).tendsto_sum_nat)
+  · simp only [VectorMeasure.not_measurable _ hs]
+    exact stronglyMeasurable_const
+
+/-- Fixed-set evaluations of finite-horizon Stieltjes vector measures are measurable when
+BV paths in a second-countable Borel space have measurable evaluations within
+the horizon. No measurability or regularity outside the horizon is required. -/
+theorem measurable_vectorMeasureIcc_apply {Ω : Type*} [MeasurableSpace Ω]
+    [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+    {X : α → Ω → E} (hab : a ≤ b)
+    (hX : ∀ t ∈ Icc a b, Measurable (X t))
+    (hv : ∀ ω, BoundedVariationOn (fun t => X t ω) (Icc a b)) (s : Set α) :
+    Measurable (fun ω => (hv ω).vectorMeasureIcc hab s) :=
+  (stronglyMeasurable_vectorMeasureIcc_apply hab
+    (fun t ht => (hX t ht).stronglyMeasurable) hv s).measurable
 
 end BoundedVariationOn

@@ -123,6 +123,12 @@ variable {Ω R : Type*} {mΩ : MeasurableSpace Ω}
   [LinearOrder R] [TopologicalSpace R] [OrderTopology R] [CompactIccSpace R]
   [MeasurableSpace R] [BorelSpace R] [SecondCountableTopology R] [DenselyOrdered R]
 
+/-- A bounded half-open interval has finite Stieltjes mass, even when the whole measure is
+infinite. -/
+instance isFiniteMeasure_restrict_Ioc (f : StieltjesFunction R) (a b : R) :
+    IsFiniteMeasure (f.measure.restrict (Ioc a b)) :=
+  ⟨by simp [measure_Ioc]⟩
+
 /-- The Stieltjes measure restricted to `(a,b]` is a measurable family if evaluations inside
 `[a,b]` are measurable. No uniform bound on the random interval mass is required. -/
 theorem measurable_restrict_measure_Ioc {f : Ω → StieltjesFunction R} {a b : R}
