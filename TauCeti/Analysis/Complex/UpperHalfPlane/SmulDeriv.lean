@@ -53,10 +53,11 @@ Viewing `ℍ` as a real manifold, every `g ∈ GL(2, ℝ)` acts, antiholomorphic
   `g ∈ SL(2, ℝ)` the automorphy factor is unimodular, so its conjugate is its inverse.
 * `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_dilation`: the dilation `z ↦ exp s * z` has
   derivative `exp s`.
-* `UpperHalfPlane.tangentSpaceCastModel_mfderiv_smul`: in model coordinates, the differential of
-  the action of `g ∈ GL(2, ℝ)`, smooth by `UpperHalfPlane.instContMDiffConstSMulGL2Real`, is
-  `UpperHalfPlane.smulFDeriv`.
-* `UpperHalfPlane.norm_smulFDeriv_apply` and `UpperHalfPlane.inner_smulFDeriv_apply`:
+* `Matrix.GeneralLinearGroup.tangentSpaceCastModel_mfderiv_smul`: in model coordinates, the
+  differential of the action of `g ∈ GL(2, ℝ)` is `UpperHalfPlane.smulFDeriv`; its smoothness is
+  `UpperHalfPlane.instContMDiffConstSMulGL2Real`.
+* `Matrix.GeneralLinearGroup.norm_smulFDeriv_apply` and
+  `Matrix.GeneralLinearGroup.inner_smulFDeriv_apply`:
   `UpperHalfPlane.smulFDeriv g z` multiplies lengths by `Im(g • z)/Im z` and real inner products
   by `(Im(g • z)/Im z)²`.
 
@@ -252,7 +253,7 @@ theorem smulDeriv_dilation (s : ℝ) (z : ℍ) : smulDeriv (↑(dilation s)) z =
 
 end Matrix.ProjectiveSpecialLinearGroup
 
-namespace UpperHalfPlane
+namespace Matrix.GeneralLinearGroup
 
 open Manifold
 
@@ -285,11 +286,7 @@ theorem norm_smulFDeriv_apply (g : GL (Fin 2) ℝ) (z : ℍ) (v : ℂ) :
   have hz := z.im_pos.ne'
   have hd := denom_ne_zero g z
   rw [im_smul_eq_div_normSq, Complex.normSq_eq_norm_sq]
-  simp only [smulFDeriv, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe,
-    ContinuousAlgEquiv.toContinuousLinearEquiv_apply, Function.comp_apply,
-    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.toSpanSingleton_apply, norm_σ,
-    norm_smul, norm_div, norm_pow, Complex.norm_real, Real.norm_eq_abs]
-  field_simp
+  simp [smulFDeriv, norm_σ, norm_pow, field]
 
 /-- The real derivative of the action of `g ∈ GL(2, ℝ)` multiplies real inner products by
 `(Im(g • z)/Im z)²`. -/
@@ -300,4 +297,4 @@ theorem inner_smulFDeriv_apply (g : GL (Fin 2) ℝ) (z : ℍ) (v w : ℂ) :
     norm_smulFDeriv_apply, norm_smulFDeriv_apply, norm_smulFDeriv_apply]
   ring
 
-end UpperHalfPlane
+end Matrix.GeneralLinearGroup

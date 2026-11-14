@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Group
 -- supplies the `FaithfulSMul PGL(2, ℝ) ℍ` instance behind `pglIsom_injective`
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
+import TauCeti.Geometry.Manifold.Algebra.SMul
 
 /-!
 # `GL(2, ℝ)` acts on the upper half-plane by Riemannian isometries
@@ -22,9 +23,9 @@ metric `(Re v Re w + Im v Im w)/y²`, so that the action is a group homomorphism
 Riemannian isometry group `TauCeti.Isom 𝓘(ℝ, ℂ) ℍ`.
 
 The differential of `z ↦ g • z` is Mathlib's real derivative `UpperHalfPlane.smulFDeriv g z`
-(`UpperHalfPlane.tangentSpaceCastModel_mfderiv_smul`), which multiplies real inner products by
-`(Im(g • z)/Im z)²` (`UpperHalfPlane.inner_smulFDeriv_apply`). The Poincaré tensor divides the
-Euclidean one by the squared height, so these two factors cancel.
+(`Matrix.GeneralLinearGroup.tangentSpaceCastModel_mfderiv_smul`), which multiplies real inner
+products by `(Im(g • z)/Im z)²` (`Matrix.GeneralLinearGroup.inner_smulFDeriv_apply`). The Poincaré
+tensor divides the Euclidean one by the squared height, so these two factors cancel.
 
 ## Main declarations
 
@@ -55,27 +56,28 @@ private theorem inner_mfderiv_smul (g : GL (Fin 2) ℝ) (z : ℍ) (v w : Tangent
         (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • ·) z w) =
       poincareRiemannianMetric.inner z v w := by
   rw [_root_.UpperHalfPlane.poincareRiemannianMetric_inner,
-    _root_.UpperHalfPlane.poincareRiemannianMetric_inner, tangentSpaceCastModel_mfderiv_smul,
-    tangentSpaceCastModel_mfderiv_smul, inner_smulFDeriv_apply]
+    _root_.UpperHalfPlane.poincareRiemannianMetric_inner,
+    Matrix.GeneralLinearGroup.tangentSpaceCastModel_mfderiv_smul,
+    Matrix.GeneralLinearGroup.tangentSpaceCastModel_mfderiv_smul,
+    Matrix.GeneralLinearGroup.inner_smulFDeriv_apply]
   have hz := z.im_pos.ne'
   have hgz := (g • z).im_pos.ne'
   field_simp
 
 /-- The action of `g ∈ GL(2, ℝ)` on `ℍ` as a Riemannian isometry of the Poincaré metric. -/
 private def smulIsom (g : GL (Fin 2) ℝ) : Isom 𝓘(ℝ, ℂ) ℍ where
-  toEquiv := MulAction.toPerm g
-  contMDiff_toFun := contMDiff_const_smul g
-  contMDiff_invFun := contMDiff_const_smul g⁻¹
+  toDiffeomorph := Diffeomorph.constSmul 𝓘(ℝ, ℂ) ∞ g
   inner_mfderiv' z v w := by
-    -- The diffeomorphism under construction is `(g • ·)` by definition, and the inner product on
-    -- `TangentSpace 𝓘(ℝ, ℂ) z` is `poincareRiemannianMetric.inner z` by `instRiemannianBundle`;
-    -- `change` states the goal in these terms, so that `inner_mfderiv_smul` applies.
+    rw [Diffeomorph.coe_constSmul]
+    -- The inner product on `TangentSpace 𝓘(ℝ, ℂ) z` is `poincareRiemannianMetric.inner z` by
+    -- `instRiemannianBundle`; `change` states the goal in these terms so the metric lemma applies.
     change poincareRiemannianMetric.inner (g • z) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • ·) z v)
         (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • ·) z w) = poincareRiemannianMetric.inner z v w
     exact inner_mfderiv_smul g z v w
 
 /-- The Riemannian isometry attached to `g ∈ GL(2, ℝ)` acts by `g`. -/
-private theorem smulIsom_apply (g : GL (Fin 2) ℝ) (z : ℍ) : smulIsom g z = g • z := (rfl)
+private theorem smulIsom_apply (g : GL (Fin 2) ℝ) (z : ℍ) : smulIsom g z = g • z :=
+  Diffeomorph.constSmul_apply g z
 
 /-- **`GL(2, ℝ)` acts on `ℍ` by Riemannian isometries of the Poincaré metric**: the action of
 Mathlib's `UpperHalfPlane.glAction`, including its antiholomorphic elements of negative
@@ -86,6 +88,12 @@ def glIsom : GL (Fin 2) ℝ →* Isom 𝓘(ℝ, ℂ) ℍ where
     rw [smulIsom_apply, one_smul, RiemannianIsometry.one_apply]
   map_mul' g h := RiemannianIsometry.ext fun z ↦ by
     rw [RiemannianIsometry.mul_apply, smulIsom_apply, smulIsom_apply, smulIsom_apply, mul_smul]
+
+end TauCeti.UpperHalfPlane
+
+open TauCeti TauCeti.UpperHalfPlane
+
+namespace Matrix.GeneralLinearGroup
 
 /-- The Riemannian isometry attached to `g ∈ GL(2, ℝ)` acts by `g`. -/
 @[simp]
@@ -106,31 +114,52 @@ theorem coe_glIsom (g : GL (Fin 2) ℝ) : ⇑(glIsom g) = (g • ·) :=
 theorem coe_glIsom_symm (g : GL (Fin 2) ℝ) : ⇑(glIsom g).symm = (g⁻¹ • ·) :=
   funext (glIsom_symm_apply g)
 
+end Matrix.GeneralLinearGroup
+
+namespace Units
+
 /-- Nonzero scalar matrices act on `ℍ` by the identity isometry. -/
 @[simp]
 theorem glIsom_scalar (u : ℝˣ) : glIsom (Matrix.GeneralLinearGroup.scalar (Fin 2) u) = 1 :=
-  RiemannianIsometry.ext fun z ↦ by rw [glIsom_apply, glScalar_smul, RiemannianIsometry.one_apply]
+  RiemannianIsometry.ext fun z ↦ by
+    rw [Matrix.GeneralLinearGroup.glIsom_apply, glScalar_smul, RiemannianIsometry.one_apply]
+
+end Units
+
+namespace TauCeti.UpperHalfPlane
 
 /-- **`PGL(2, ℝ)` acts on `ℍ` by Riemannian isometries of the Poincaré metric**: the descent of
 `glIsom` to the quotient by the centre, which acts trivially. -/
 def pglIsom : PGL(2, ℝ) →* Isom 𝓘(ℝ, ℂ) ℍ :=
-  Matrix.ProjGenLinGroup.lift glIsom (MonoidHom.ext glIsom_scalar)
+  Matrix.ProjGenLinGroup.lift glIsom (MonoidHom.ext Units.glIsom_scalar)
+
+end TauCeti.UpperHalfPlane
+
+namespace Matrix.GeneralLinearGroup
 
 /-- On the class of `g ∈ GL(2, ℝ)`, the isometry attached to `PGL(2, ℝ)` is that of `g`. -/
 @[simp]
 theorem pglIsom_mk (g : GL (Fin 2) ℝ) : pglIsom (Matrix.ProjGenLinGroup.mk g) = glIsom g :=
   Matrix.ProjGenLinGroup.lift_mk _ g
 
+end Matrix.GeneralLinearGroup
+
+namespace TauCeti.UpperHalfPlane
+
 /-- `glIsom` factors through the quotient map `GL(2, ℝ) → PGL(2, ℝ)`. -/
 @[simp]
 theorem pglIsom_comp_mk : pglIsom.comp Matrix.ProjGenLinGroup.mk = glIsom :=
   Matrix.ProjGenLinGroup.lift_comp_mk _
 
+end TauCeti.UpperHalfPlane
+
+namespace Matrix.ProjGenLinGroup
+
 /-- The Riemannian isometry attached to `g ∈ PGL(2, ℝ)` acts by `g`. -/
 @[simp]
 theorem pglIsom_apply (g : PGL(2, ℝ)) (z : ℍ) : pglIsom g z = g • z := by
-  induction g using Matrix.ProjGenLinGroup.induction_on with | mk g =>
-  rw [pglIsom_mk, glIsom_apply, pglMk_smul]
+  induction g using induction_on with | mk g =>
+  rw [Matrix.GeneralLinearGroup.pglIsom_mk, Matrix.GeneralLinearGroup.glIsom_apply, pglMk_smul]
 
 /-- The inverse of the Riemannian isometry attached to `g ∈ PGL(2, ℝ)` acts by `g⁻¹`. -/
 @[simp]
@@ -146,10 +175,14 @@ theorem coe_pglIsom (g : PGL(2, ℝ)) : ⇑(pglIsom g) = (g • ·) :=
 theorem coe_pglIsom_symm (g : PGL(2, ℝ)) : ⇑(pglIsom g).symm = (g⁻¹ • ·) :=
   funext (pglIsom_symm_apply g)
 
+end Matrix.ProjGenLinGroup
+
+namespace TauCeti.UpperHalfPlane
+
 /-- Distinct elements of `PGL(2, ℝ)` give distinct isometries of `ℍ`. -/
 theorem pglIsom_injective : Function.Injective pglIsom := fun g h hgh ↦
   eq_of_smul_eq_smul fun z : ℍ ↦ by
-    rw [← pglIsom_apply, ← pglIsom_apply, hgh]
+    rw [← Matrix.ProjGenLinGroup.pglIsom_apply, ← Matrix.ProjGenLinGroup.pglIsom_apply, hgh]
 
 /-- The elements of `GL(2, ℝ)` acting on `ℍ` by the identity isometry are the scalar matrices,
 which form the centre. -/
@@ -163,28 +196,45 @@ theorem ker_glIsom : glIsom.ker = Subgroup.center (GL (Fin 2) ℝ) := by
 def pslIsom : PSL(2, ℝ) →* Isom 𝓘(ℝ, ℂ) ℍ :=
   pglIsom.comp Matrix.ProjectiveSpecialLinearGroup.toPGL
 
+end TauCeti.UpperHalfPlane
+
+namespace Matrix.ProjectiveSpecialLinearGroup
+
 /-- Along `toPGL`, the isometry attached to `PGL(2, ℝ)` is that attached to `PSL(2, ℝ)`. -/
 @[simp]
 theorem pglIsom_toPGL (g : PSL(2, ℝ)) :
-    pglIsom (Matrix.ProjectiveSpecialLinearGroup.toPGL g) = pslIsom g :=
+    pglIsom (toPGL g) = pslIsom g :=
   (MonoidHom.comp_apply _ _ g).symm
+
+end Matrix.ProjectiveSpecialLinearGroup
+
+namespace TauCeti.UpperHalfPlane
 
 /-- `pslIsom` factors through `toPGL : PSL(2, ℝ) → PGL(2, ℝ)`. -/
 @[simp]
 theorem pglIsom_comp_toPGL : pglIsom.comp Matrix.ProjectiveSpecialLinearGroup.toPGL = pslIsom :=
-  MonoidHom.ext pglIsom_toPGL
+  MonoidHom.ext Matrix.ProjectiveSpecialLinearGroup.pglIsom_toPGL
+
+end TauCeti.UpperHalfPlane
+
+namespace Matrix.SpecialLinearGroup
 
 /-- On the class of `g ∈ SL(2, ℝ)`, the isometry attached to `PSL(2, ℝ)` is that of `g` viewed
 in `GL(2, ℝ)`. -/
 @[simp]
 theorem pslIsom_mk (g : SL(2, ℝ)) :
-    pslIsom (g : PSL(2, ℝ)) = glIsom (Matrix.SpecialLinearGroup.toGL g) := by
-  rw [← pglIsom_toPGL, Matrix.ProjectiveSpecialLinearGroup.toPGL_mk, pglIsom_mk]
+    pslIsom (g : PSL(2, ℝ)) = glIsom (toGL g) := by
+  rw [← Matrix.ProjectiveSpecialLinearGroup.pglIsom_toPGL,
+    Matrix.ProjectiveSpecialLinearGroup.toPGL_mk, Matrix.GeneralLinearGroup.pglIsom_mk]
+
+end Matrix.SpecialLinearGroup
+
+namespace Matrix.ProjectiveSpecialLinearGroup
 
 /-- The Riemannian isometry attached to `g ∈ PSL(2, ℝ)` acts by `g`. -/
 @[simp]
 theorem pslIsom_apply (g : PSL(2, ℝ)) (z : ℍ) : pslIsom g z = g • z := by
-  rw [← pglIsom_toPGL, pglIsom_apply, toPGL_smul]
+  rw [← pglIsom_toPGL, Matrix.ProjGenLinGroup.pglIsom_apply, toPGL_smul]
 
 /-- The inverse of the Riemannian isometry attached to `g ∈ PSL(2, ℝ)` acts by `g⁻¹`. -/
 @[simp]
@@ -199,6 +249,10 @@ theorem coe_pslIsom (g : PSL(2, ℝ)) : ⇑(pslIsom g) = (g • ·) :=
 `(g⁻¹ • ·)`. -/
 theorem coe_pslIsom_symm (g : PSL(2, ℝ)) : ⇑(pslIsom g).symm = (g⁻¹ • ·) :=
   funext (pslIsom_symm_apply g)
+
+end Matrix.ProjectiveSpecialLinearGroup
+
+namespace TauCeti.UpperHalfPlane
 
 /-- Distinct elements of `PSL(2, ℝ)` give distinct isometries of `ℍ`. -/
 theorem pslIsom_injective : Function.Injective pslIsom :=
