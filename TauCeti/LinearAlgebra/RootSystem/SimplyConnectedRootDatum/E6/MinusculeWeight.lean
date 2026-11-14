@@ -332,43 +332,19 @@ theorem span_range_e6MinusculeWeight_eq_top :
   rw [← (Pi.basisFun ℤ (Fin 6)).span_eq, Submodule.span_le]
   rintro _ ⟨i, rfl⟩
   rw [Pi.basisFun_apply]
-  let S := Submodule.span ℤ (Set.range e6MinusculeWeight)
-  have h (a : Fin 27) : e6MinusculeWeight a ∈ S :=
-    Submodule.subset_span (Set.mem_range_self a)
-  fin_cases i
-  -- In each branch `Pi.basisFun` is definitionally the corresponding `Pi.single`, while `S`
-  -- unfolds to the span in the goal. The displayed equalities are explicit identities from the
-  -- weight table, after which submodule closure proves membership.
-  · change Pi.single (0 : Fin 6) 1 ∈ S
-    rw [show Pi.single (0 : Fin 6) 1 = e6MinusculeWeight 0 by decide +kernel]
-    exact h 0
-  · change Pi.single (1 : Fin 6) 1 ∈ S
-    rw [show Pi.single (1 : Fin 6) 1 =
-        e6MinusculeWeight 3 + e6MinusculeWeight 5 + e6MinusculeWeight 9 by
-      decide +kernel]
-    exact S.add_mem (S.add_mem (h 3) (h 5)) (h 9)
-  · change Pi.single (2 : Fin 6) 1 ∈ S
-    rw [show Pi.single (2 : Fin 6) 1 =
-        e6MinusculeWeight 0 + e6MinusculeWeight 1 by decide +kernel]
-    exact S.add_mem (h 0) (h 1)
-  · change Pi.single (3 : Fin 6) 1 ∈ S
-    rw [show Pi.single (3 : Fin 6) 1 =
-        e6MinusculeWeight 0 + e6MinusculeWeight 1 + e6MinusculeWeight 2 by
-      decide +kernel]
-    exact S.add_mem (S.add_mem (h 0) (h 1)) (h 2)
-  · change Pi.single (4 : Fin 6) 1 ∈ S
-    rw [show Pi.single (4 : Fin 6) 1 =
-        e6MinusculeWeight 0 + e6MinusculeWeight 1 + e6MinusculeWeight 2 -
-          e6MinusculeWeight 5 - e6MinusculeWeight 9 by decide +kernel]
-    exact S.sub_mem (S.sub_mem (S.add_mem (S.add_mem (h 0) (h 1)) (h 2)) (h 5)) (h 9)
-  · change Pi.single (5 : Fin 6) 1 ∈ S
-    rw [show Pi.single (5 : Fin 6) 1 =
-        e6MinusculeWeight 0 + e6MinusculeWeight 1 + e6MinusculeWeight 2 -
-          e6MinusculeWeight 3 - e6MinusculeWeight 5 - 2 • e6MinusculeWeight 9 by
-      decide +kernel]
-    exact S.sub_mem
-      (S.sub_mem (S.sub_mem (S.add_mem (S.add_mem (h 0) (h 1)) (h 2)) (h 3)) (h 5))
-      (S.smul_mem 2 (h 9))
+  -- Each coordinate vector is an explicit integer combination of table weights, checked by
+  -- kernel evaluation against this coefficient table; submodule closure then proves membership.
+  let c : Fin 6 → Fin 27 → ℤ := ![
+    ![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ![0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ![1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ![1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ![1, 1, 1, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ![1, 1, 1, -1, 0, -1, 0, 0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+  have hc : ∀ i : Fin 6, Pi.single i 1 = ∑ a, c i a • e6MinusculeWeight a := by decide +kernel
+  rw [hc i]
+  exact Submodule.sum_mem _ fun a _ ↦
+    Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_range_self a))
 
 /-! ## The diagram symmetry on the weight table -/
 
