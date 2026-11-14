@@ -311,6 +311,6 @@ theorem exists_contDiff_abs_sub_le_and_eLpNorm_fderiv_gradient_sub_le (hp : p �
       ((eLpNorm_mono_measure _ (Measure.restrict_mono hKΩ le_rfl)).trans hj)
     filter_upwards [ae_restrict_mem hK.measurableSet] with y hy
     rw [Pi.sub_apply, fderiv_gradient_smoothField_value u (phi j)
-      (Filter.eventually_of_mem (Metric.ball_mem_nhds y (hrδ j)) fun z hz => hball j hy hz)]
+      (hball j hy (Metric.mem_ball_self (hrδ j)))]
 
 end TauCeti.Wkp
