@@ -52,12 +52,12 @@ open SimplicialThickening (Path chainMk chainMk_obj monotone_chain)
 
 /-! ### Simplices of mapping simplicial sets together with their endpoints -/
 
+/-- The `q`-simplices of all mapping simplicial sets of `D`, with their sources and targets. -/
+private abbrev Arr (D : Type*) [EnrichedCategory SSet.{v} D] (q : SimplexCategoryᵒᵖ) : Type _ :=
+  Σ (a b : D), (a ⟶[SSet] b).obj q
+
 variable {D : Type*} [EnrichedCategory SSet.{v} D] {E : Type*} [EnrichedCategory SSet.{v} E]
   {q q' : SimplexCategoryᵒᵖ}
-
-variable (D q) in
-/-- The `q`-simplices of all mapping simplicial sets of `D`, with their sources and targets. -/
-private abbrev Arr : Type _ := Σ (a b : D), (a ⟶[SSet] b).obj q
 
 namespace Arr
 
@@ -87,9 +87,9 @@ private lemma mk_eqToHom {a a' b b' : D} (ha : a = a') (hb : b = b')
 private def map (g : q ⟶ q') (u : Arr D q) : Arr D q' :=
   ⟨u.1, u.2.1, (u.1 ⟶[SSet] u.2.1).map g u.2.2⟩
 
-variable (D) in
 /-- The identity of `a` as an element of `Arr D q`. -/
-private def id (a : D) (q : SimplexCategoryᵒᵖ) : Arr D q :=
+private def id (D : Type*) [EnrichedCategory SSet.{v} D] (a : D) (q : SimplexCategoryᵒᵖ) :
+    Arr D q :=
   ⟨a, a, (eId SSet a).app q PUnit.unit⟩
 
 open scoped Classical in
@@ -463,13 +463,9 @@ private def IsCompat
     (δF (k.pred (Fin.ne_zero_of_lt hjk))).comp SSet.{v} (σ j hj) =
       (δF (j.castPred (Fin.ne_last_of_lt hjk))).comp SSet.{v} (σ k hk)
 
-variable
-  (σ : ∀ j, j ≠ i → EnrichedFunctor SSet.{v} (SimplicialThickening (ULift.{v} (Fin (n + 2)))) D)
-  (hσ : IsCompat σ) (h₀ : 0 < i)
-
-variable (i) in
 /-- A chain of paths of `C[Δ^{n+2}]` lies in a face of the horn opposite `i`. -/
-private def InFace (u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q) : Prop :=
+private def InFace (i : Fin (n + 3))
+    (u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q) : Prop :=
   ∃ (j : Fin (n + 3)) (_ : j ≠ i) (w : Arr (SimplicialThickening (ULift.{v} (Fin (n + 2)))) q),
     arrMap (δF j) w = u
 
@@ -503,8 +499,10 @@ private lemma exists_arrMap_δF_comp {j : Fin (n + 3)}
     (ULift.map_injective.2 Fin.succAbove_right_injective)
     ((arrMap_comp _ h₁₂).trans h.symm)⟩
 
-include hσ in
-private lemma arrMap_σ_eq {j k : Fin (n + 3)} (hj : j ≠ i) (hk : k ≠ i)
+variable
+  (σ : ∀ j, j ≠ i → EnrichedFunctor SSet.{v} (SimplicialThickening (ULift.{v} (Fin (n + 2)))) D)
+
+private lemma arrMap_σ_eq (hσ : IsCompat σ) {j k : Fin (n + 3)} (hj : j ≠ i) (hk : k ≠ i)
     {w w' : Arr (SimplicialThickening (ULift.{v} (Fin (n + 2)))) q}
     (h : arrMap (δF j) w = arrMap (δF k) w') : arrMap (σ j hj) w = arrMap (σ k hk) w' := by
   rcases lt_trichotomy j k with hjk | rfl | hjk
@@ -516,6 +514,8 @@ private lemma arrMap_σ_eq {j k : Fin (n + 3)} (hj : j ≠ i) (hk : k ≠ i)
     have := hσ k j hk hj hjk
     exact (congrArg (fun F ↦ arrMap F z) this).symm
 
+variable (h₀ : 0 < i)
+
 open scoped Classical in
 /-- The value of the face functors `σ` on a chain of paths lying in a face of the horn. -/
 private noncomputable def faceVal (u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q) :
@@ -523,8 +523,7 @@ private noncomputable def faceVal (u : Arr (SimplicialThickening (ULift.{v} (Fin
   if h : InFace i u then arrMap (σ h.choose h.choose_spec.choose) h.choose_spec.choose_spec.choose
   else Arr.id D ((σ 0 h₀.ne).obj ⟨⟨0⟩⟩) q
 
-include hσ in
-private lemma faceVal_arrMap {j : Fin (n + 3)} (hj : j ≠ i)
+private lemma faceVal_arrMap (hσ : IsCompat σ) {j : Fin (n + 3)} (hj : j ≠ i)
     (w : Arr (SimplicialThickening (ULift.{v} (Fin (n + 2)))) q) :
     faceVal σ h₀ (arrMap (δF j) w) = arrMap (σ j hj) w := by
   have hu : InFace i (arrMap (δF j) w) := ⟨j, hj, w, rfl⟩
@@ -535,75 +534,72 @@ private lemma faceVal_arrMap {j : Fin (n + 3)} (hj : j ≠ i)
 private noncomputable def glueObj (x : ULift.{v} (Fin (n + 3))) : D :=
   (faceVal σ h₀ (Arr.id _ (SimplicialThickening.mk x) (op ⦋0⦌))).1
 
-include hσ in
-private lemma obj_eq_glueObj {j : Fin (n + 3)} (hj : j ≠ i)
+private lemma obj_eq_glueObj (hσ : IsCompat σ) {j : Fin (n + 3)} (hj : j ≠ i)
     (a : SimplicialThickening (ULift.{v} (Fin (n + 2)))) :
     (σ j hj).obj a = glueObj σ h₀ ((δF j).obj a).as := by
-  have := faceVal_arrMap σ hσ h₀ hj (Arr.id _ a (op ⦋0⦌))
+  have := faceVal_arrMap σ h₀ hσ hj (Arr.id _ a (op ⦋0⦌))
   rw [arrMap_id, arrMap_id] at this
   exact (congrArg Sigma.fst this).symm
 
-include hσ in
-private lemma faceVal_fst {u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
+private lemma faceVal_fst (hσ : IsCompat σ)
+    {u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
     (h : InFace i u) : (faceVal σ h₀ u).1 = glueObj σ h₀ u.1.as := by
   obtain ⟨j, hj, w, rfl⟩ := h
-  rw [faceVal_arrMap σ hσ h₀ hj]
-  exact obj_eq_glueObj σ hσ h₀ hj _
+  rw [faceVal_arrMap σ h₀ hσ hj]
+  exact obj_eq_glueObj σ h₀ hσ hj _
 
-include hσ in
-private lemma faceVal_snd {u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
+private lemma faceVal_snd (hσ : IsCompat σ)
+    {u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
     (h : InFace i u) : (faceVal σ h₀ u).2.1 = glueObj σ h₀ u.2.1.as := by
   obtain ⟨j, hj, w, rfl⟩ := h
-  rw [faceVal_arrMap σ hσ h₀ hj]
-  exact obj_eq_glueObj σ hσ h₀ hj _
+  rw [faceVal_arrMap σ h₀ hσ hj]
+  exact obj_eq_glueObj σ h₀ hσ hj _
 
-include hσ in
-private lemma faceVal_map {u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
+private lemma faceVal_map (hσ : IsCompat σ)
+    {u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
     (h : InFace i u) (g : q ⟶ q') : faceVal σ h₀ (u.map g) = (faceVal σ h₀ u).map g := by
   obtain ⟨j, hj, w, rfl⟩ := h
-  rw [← arrMap_map, faceVal_arrMap σ hσ h₀ hj, faceVal_arrMap σ hσ h₀ hj, arrMap_map]
+  rw [← arrMap_map, faceVal_arrMap σ h₀ hσ hj, faceVal_arrMap σ h₀ hσ hj, arrMap_map]
 
-include hσ in
 /-- The face values are compatible with composition. -/
-private lemma faceVal_comp {u v : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
+private lemma faceVal_comp (hσ : IsCompat σ)
+    {u v : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
     (huv : u.2.1 = v.1) (h : InFace i (Arr.comp u v)) :
     InFace i u ∧ InFace i v ∧
       faceVal σ h₀ (Arr.comp u v) = Arr.comp (faceVal σ h₀ u) (faceVal σ h₀ v) := by
   obtain ⟨j, hj, w, hw⟩ := h
   obtain ⟨w₁, w₂, h₁₂, rfl, rfl, rfl⟩ := exists_arrMap_δF_comp huv hw
   refine ⟨⟨j, hj, w₁, rfl⟩, ⟨j, hj, w₂, rfl⟩, ?_⟩
-  rw [← hw, faceVal_arrMap σ hσ h₀ hj, faceVal_arrMap σ hσ h₀ hj, faceVal_arrMap σ hσ h₀ hj,
+  rw [← hw, faceVal_arrMap σ h₀ hσ hj, faceVal_arrMap σ h₀ hσ hj, faceVal_arrMap σ h₀ hσ hj,
     arrMap_comp _ h₁₂]
 
-include hσ in
-private lemma comp_faceVal_eq_of_le
+private lemma comp_faceVal_eq_of_le (hσ : IsCompat σ)
     {u₁ u₂ v₁ v₂ : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
     (hu : u₁.2.1 = u₂.1) (hv : v₁.2.1 = v₂.1) (h : Arr.comp u₁ u₂ = Arr.comp v₁ v₂)
     (hle : u₁.2.1.as ≤ v₁.2.1.as) (hv₁ : InFace i v₁) (hu₂ : InFace i u₂) :
     Arr.comp (faceVal σ h₀ u₁) (faceVal σ h₀ u₂) =
       Arr.comp (faceVal σ h₀ v₁) (faceVal σ h₀ v₂) := by
   obtain ⟨m, hum, hmv, h₁, h₂⟩ := exists_comp_eq_comp hu hv h hle
-  obtain ⟨hu₁, hm, e₁⟩ := faceVal_comp σ hσ h₀ hum (h₁ ▸ hv₁)
-  obtain ⟨-, hv₂, e₂⟩ := faceVal_comp σ hσ h₀ hmv (h₂ ▸ hu₂)
+  obtain ⟨hu₁, hm, e₁⟩ := faceVal_comp σ h₀ hσ hum (h₁ ▸ hv₁)
+  obtain ⟨-, hv₂, e₂⟩ := faceVal_comp σ h₀ hσ hmv (h₂ ▸ hu₂)
   rw [← h₁, ← h₂, e₁, e₂, Arr.assoc]
-  · rw [faceVal_snd σ hσ h₀ hu₁, faceVal_fst σ hσ h₀ hm, hum]
-  · rw [faceVal_snd σ hσ h₀ hm, faceVal_fst σ hσ h₀ hv₂, hmv]
+  · rw [faceVal_snd σ h₀ hσ hu₁, faceVal_fst σ h₀ hσ hm, hum]
+  · rw [faceVal_snd σ h₀ hσ hm, faceVal_fst σ h₀ hσ hv₂, hmv]
 
-include hσ in
-private lemma comp_faceVal_eq
+private lemma comp_faceVal_eq (hσ : IsCompat σ)
     {u₁ u₂ v₁ v₂ : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
     (hu : u₁.2.1 = u₂.1) (hv : v₁.2.1 = v₂.1) (h : Arr.comp u₁ u₂ = Arr.comp v₁ v₂)
     (hu₁ : InFace i u₁) (hu₂ : InFace i u₂) (hv₁ : InFace i v₁) (hv₂ : InFace i v₂) :
     Arr.comp (faceVal σ h₀ u₁) (faceVal σ h₀ u₂) =
       Arr.comp (faceVal σ h₀ v₁) (faceVal σ h₀ v₂) := by
   rcases le_total u₁.2.1.as v₁.2.1.as with hle | hle
-  · exact comp_faceVal_eq_of_le σ hσ h₀ hu hv h hle hv₁ hu₂
-  · exact (comp_faceVal_eq_of_le σ hσ h₀ hv hu h.symm hle hu₁ hv₂).symm
+  · exact comp_faceVal_eq_of_le σ h₀ hσ hu hv h hle hv₁ hu₂
+  · exact (comp_faceVal_eq_of_le σ h₀ hσ hv hu h.symm hle hu₁ hv₂).symm
 
-variable (i) in
 /-- A chain of paths of `C[Δ^{n+2}]` that lies in a face of the horn opposite `i` or is a composite
 of two such chains. -/
-private def Gluable (u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q) : Prop :=
+private def Gluable (i : Fin (n + 3))
+    (u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q) : Prop :=
   InFace i u ∨ ∃ u₁ u₂, u₁.2.1 = u₂.1 ∧ Arr.comp u₁ u₂ = u ∧ InFace i u₁ ∧ InFace i u₂
 
 open scoped Classical in
@@ -619,52 +615,49 @@ private lemma glue_of_inFace {u : Arr (SimplicialThickening (ULift.{v} (Fin (n +
     (h : InFace i u) : glue σ h₀ u = faceVal σ h₀ u :=
   ite_eq_left h
 
-include hσ in
-private lemma glue_comp {u₁ u₂ : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
+private lemma glue_comp (hσ : IsCompat σ)
+    {u₁ u₂ : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
     (hu : u₁.2.1 = u₂.1) (hu₁ : InFace i u₁) (hu₂ : InFace i u₂) :
     glue σ h₀ (Arr.comp u₁ u₂) = Arr.comp (faceVal σ h₀ u₁) (faceVal σ h₀ u₂) := by
   by_cases hc : InFace i (Arr.comp u₁ u₂)
   · rw [glue_of_inFace σ h₀ hc]
-    exact (faceVal_comp σ hσ h₀ hu hc).2.2
+    exact (faceVal_comp σ h₀ hσ hu hc).2.2
   · have hex : ∃ v₁ v₂, v₁.2.1 = v₂.1 ∧ Arr.comp v₁ v₂ = Arr.comp u₁ u₂ ∧ InFace i v₁ ∧
         InFace i v₂ := ⟨u₁, u₂, hu, rfl, hu₁, hu₂⟩
     rw [glue, ite_eq_right hc, dite_eq_left_of_eq_true (eq_true hex)]
     obtain ⟨hv, hvc, hv₁, hv₂⟩ := hex.choose_spec.choose_spec
-    exact comp_faceVal_eq σ hσ h₀ hv hu hvc hv₁ hv₂ hu₁ hu₂
+    exact comp_faceVal_eq σ h₀ hσ hv hu hvc hv₁ hv₂ hu₁ hu₂
 
-include hσ in
-private lemma glue_fst {u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
+private lemma glue_fst (hσ : IsCompat σ)
+    {u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
     (hu : Gluable i u) : (glue σ h₀ u).1 = glueObj σ h₀ u.1.as := by
   rcases hu with hu | ⟨u₁, u₂, h₁₂, rfl, hu₁, hu₂⟩
-  · rw [glue_of_inFace σ h₀ hu, faceVal_fst σ hσ h₀ hu]
-  · rw [glue_comp σ hσ h₀ h₁₂ hu₁ hu₂, Arr.comp_fst (by
-      rw [faceVal_snd σ hσ h₀ hu₁, faceVal_fst σ hσ h₀ hu₂, h₁₂]), faceVal_fst σ hσ h₀ hu₁,
+  · rw [glue_of_inFace σ h₀ hu, faceVal_fst σ h₀ hσ hu]
+  · rw [glue_comp σ h₀ hσ h₁₂ hu₁ hu₂, Arr.comp_fst (by
+      rw [faceVal_snd σ h₀ hσ hu₁, faceVal_fst σ h₀ hσ hu₂, h₁₂]), faceVal_fst σ h₀ hσ hu₁,
       Arr.comp_fst h₁₂]
 
-include hσ in
-private lemma glue_snd {u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
+private lemma glue_snd (hσ : IsCompat σ)
+    {u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
     (hu : Gluable i u) : (glue σ h₀ u).2.1 = glueObj σ h₀ u.2.1.as := by
   rcases hu with hu | ⟨u₁, u₂, h₁₂, rfl, hu₁, hu₂⟩
-  · rw [glue_of_inFace σ h₀ hu, faceVal_snd σ hσ h₀ hu]
-  · rw [glue_comp σ hσ h₀ h₁₂ hu₁ hu₂, Arr.comp_snd (by
-      rw [faceVal_snd σ hσ h₀ hu₁, faceVal_fst σ hσ h₀ hu₂, h₁₂]), faceVal_snd σ hσ h₀ hu₂,
+  · rw [glue_of_inFace σ h₀ hu, faceVal_snd σ h₀ hσ hu]
+  · rw [glue_comp σ h₀ hσ h₁₂ hu₁ hu₂, Arr.comp_snd (by
+      rw [faceVal_snd σ h₀ hσ hu₁, faceVal_fst σ h₀ hσ hu₂, h₁₂]), faceVal_snd σ h₀ hσ hu₂,
       Arr.comp_snd h₁₂]
 
-include hσ in
-private lemma glue_map {u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
+private lemma glue_map (hσ : IsCompat σ)
+    {u : Arr (SimplicialThickening (ULift.{v} (Fin (n + 3)))) q}
     (hu : Gluable i u) (g : q ⟶ q') : glue σ h₀ (u.map g) = (glue σ h₀ u).map g := by
   rcases hu with hu | ⟨u₁, u₂, h₁₂, rfl, hu₁, hu₂⟩
-  · rw [glue_of_inFace σ h₀ hu, glue_of_inFace σ h₀ (hu.map g), faceVal_map σ hσ h₀ hu]
+  · rw [glue_of_inFace σ h₀ hu, glue_of_inFace σ h₀ (hu.map g), faceVal_map σ h₀ hσ hu]
   · rw [Arr.map_comp g h₁₂,
-      glue_comp σ hσ h₀ (u₁ := u₁.map g) (u₂ := u₂.map g) h₁₂ (hu₁.map g) (hu₂.map g),
-      glue_comp σ hσ h₀ h₁₂ hu₁ hu₂, Arr.map_comp g, faceVal_map σ hσ h₀ hu₁,
-      faceVal_map σ hσ h₀ hu₂]
-    rw [faceVal_snd σ hσ h₀ hu₁, faceVal_fst σ hσ h₀ hu₂, h₁₂]
+      glue_comp σ h₀ hσ (u₁ := u₁.map g) (u₂ := u₂.map g) h₁₂ (hu₁.map g) (hu₂.map g),
+      glue_comp σ h₀ hσ h₁₂ hu₁ hu₂, Arr.map_comp g, faceVal_map σ h₀ hσ hu₁,
+      faceVal_map σ h₀ hσ hu₂]
+    rw [faceVal_snd σ h₀ hσ hu₁, faceVal_fst σ h₀ hσ hu₂, h₁₂]
 
-variable (h₁ : i < Fin.last _)
-
-include hσ h₁ in
-private lemma glue_id (x : ULift.{v} (Fin (n + 3))) :
+private lemma glue_id (hσ : IsCompat σ) (h₁ : i < Fin.last _) (x : ULift.{v} (Fin (n + 3))) :
     glue σ h₀ (Arr.id _ (SimplicialThickening.mk x) q) = Arr.id D (glueObj σ h₀ x) q := by
   obtain ⟨j, hj, hxj⟩ : ∃ j, j ≠ i ∧ x.down ≠ j := by
     by_cases hx : x.down = 0
@@ -676,13 +669,13 @@ private lemma glue_id (x : ULift.{v} (Fin (n + 3))) :
   calc glue σ h₀ (Arr.id _ (.mk ((SimplexCategory.δ j).toOrderHom.uliftMap a)) q)
       = glue σ h₀ (arrMap (δF j) (Arr.id _ ⟨a⟩ q)) := by rw [arrMap_id]; rfl
     _ = arrMap (σ j hj) (Arr.id _ ⟨a⟩ q) := by
-      rw [glue_of_inFace σ h₀ ⟨j, hj, _, rfl⟩, faceVal_arrMap σ hσ h₀ hj]
-    _ = _ := by rw [arrMap_id, obj_eq_glueObj σ hσ h₀ hj]; rfl
+      rw [glue_of_inFace σ h₀ ⟨j, hj, _, rfl⟩, faceVal_arrMap σ h₀ hσ hj]
+    _ = _ := by rw [arrMap_id, obj_eq_glueObj σ h₀ hσ hj]; rfl
 
-include h₀ h₁ in
 /-- Every chain of paths of the horn `C[Λ^{n+2}_i]` lies in a face or is a composite of chains in
 faces. -/
-private lemma gluable_of_mem {x y : ULift.{v} (Fin (n + 3))}
+private lemma gluable_of_mem (h₀ : 0 < i) (h₁ : i < Fin.last _)
+    {x y : ULift.{v} (Fin (n + 3))}
     {s : (SimplicialThickening.mk x ⟶[SSet] SimplicialThickening.mk y).obj q}
     (hs : s ∈ (hornHom (⟨i⟩ : ULift.{v} (Fin (n + 3))) x y).obj q) :
     Gluable i ⟨.mk x, .mk y, s⟩ := by
@@ -706,8 +699,8 @@ private lemma gluable_of_mem {x y : ULift.{v} (Fin (n + 3))}
   · exact Or.inl (inFace_of_notMem (j := 0) h₀.ne fun t ht ↦
       hx (le_bot_iff.1 (fst_le_of_mem_paths ht)))
 
-include hσ h₁ in
-private lemma glue_comp_of_mem {x y z : ULift.{v} (Fin (n + 3))}
+private lemma glue_comp_of_mem (hσ : IsCompat σ) (h₁ : i < Fin.last _)
+    {x y z : ULift.{v} (Fin (n + 3))}
     {s : (SimplicialThickening.mk x ⟶[SSet] SimplicialThickening.mk y).obj q}
     {t : (SimplicialThickening.mk y ⟶[SSet] SimplicialThickening.mk z).obj q}
     (hs : s ∈ (hornHom (⟨i⟩ : ULift.{v} (Fin (n + 3))) x y).obj q)
@@ -720,50 +713,52 @@ private lemma glue_comp_of_mem {x y z : ULift.{v} (Fin (n + 3))}
         fun _ h ↦ (not_top_lt ((le_snd_of_mem_paths h).trans_lt hyz))
       have hv : InFace i ⟨.mk y, .mk z, t⟩ := inFace_of_notMem (j := 0) h₀.ne
         fun _ h ↦ (not_lt_bot (hxy.trans_le (fst_le_of_mem_paths h)))
-      rw [glue_comp σ hσ h₀ rfl hu hv, glue_of_inFace σ h₀ hu, glue_of_inFace σ h₀ hv]
+      rw [glue_comp σ h₀ hσ rfl hu hv, glue_of_inFace σ h₀ hu, glue_of_inFace σ h₀ hv]
     · rw [eq_id_mk t, Arr.comp_id (b := SimplicialThickening.mk y) (u := ⟨_, _, s⟩) rfl,
-        glue_id σ hσ h₀ h₁,
-        Arr.comp_id (glue_snd σ hσ h₀ (gluable_of_mem h₀ h₁ hs))]
+        glue_id σ h₀ hσ h₁,
+        Arr.comp_id (glue_snd σ h₀ hσ (gluable_of_mem h₀ h₁ hs))]
     · exact absurd (Path.le (t.obj 0 : Path y z)) (not_le.2 hyz)
   · rw [eq_id_mk s, Arr.id_comp (a := SimplicialThickening.mk x) (u := ⟨_, _, t⟩) rfl,
-      glue_id σ hσ h₀ h₁,
-      Arr.id_comp (glue_fst σ hσ h₀ (gluable_of_mem h₀ h₁ ht))]
+      glue_id σ h₀ hσ h₁,
+      Arr.id_comp (glue_fst σ h₀ hσ (gluable_of_mem h₀ h₁ ht))]
   · exact absurd (Path.le (s.obj 0 : Path x y)) (not_le.2 hxy)
 
 /-- The action of the glued functor on mapping simplicial sets. -/
-private noncomputable def glueMap (x y : ULift.{v} (Fin (n + 3))) :
+private noncomputable def glueMap (hσ : IsCompat σ) (h₁ : i < Fin.last _)
+    (x y : ULift.{v} (Fin (n + 3))) :
     (hornHom (⟨i⟩ : ULift.{v} (Fin (n + 3))) x y : SSet.{v}) ⟶
       (glueObj σ h₀ x ⟶[SSet] glueObj σ h₀ y) where
   app q := ↾fun s ↦ (glue σ h₀ ⟨.mk x, .mk y, s.1⟩).hom
-    (glue_fst σ hσ h₀ (gluable_of_mem h₀ h₁ s.2)) (glue_snd σ hσ h₀ (gluable_of_mem h₀ h₁ s.2))
+    (glue_fst σ h₀ hσ (gluable_of_mem h₀ h₁ s.2)) (glue_snd σ h₀ hσ (gluable_of_mem h₀ h₁ s.2))
   naturality q q' g := by
     ext s
     apply Arr.mk_injective (a := glueObj σ h₀ x) (b := glueObj σ h₀ y)
-    refine (Arr.mk_hom _ _ _).trans ((glue_map σ hσ h₀ (gluable_of_mem h₀ h₁ s.2) g).trans ?_)
+    refine (Arr.mk_hom _ _ _).trans ((glue_map σ h₀ hσ (gluable_of_mem h₀ h₁ s.2) g).trans ?_)
     exact congrArg (Arr.map g) (Arr.mk_hom _ _ _).symm
 
-private lemma mk_glueMap_app (x y : ULift.{v} (Fin (n + 3)))
+private lemma mk_glueMap_app (hσ : IsCompat σ) (h₁ : i < Fin.last _)
+    (x y : ULift.{v} (Fin (n + 3)))
     (s : (hornHom (⟨i⟩ : ULift.{v} (Fin (n + 3))) x y : SSet.{v}).obj q) :
-    (⟨glueObj σ h₀ x, glueObj σ h₀ y, (glueMap σ hσ h₀ h₁ x y).app q s⟩ : Arr D q) =
+    (⟨glueObj σ h₀ x, glueObj σ h₀ y, (glueMap σ h₀ hσ h₁ x y).app q s⟩ : Arr D q) =
       glue σ h₀ ⟨.mk x, .mk y, s.1⟩ :=
   Arr.mk_hom _ _ _
 
 /-- The simplicial functor `C[Λ^{n+2}_i] ⥤ D` glued from the faces `σ`. -/
-private noncomputable def glueFunctor :
+private noncomputable def glueFunctor (hσ : IsCompat σ) (h₁ : i < Fin.last _) :
     EnrichedFunctor SSet.{v} (HornThickening (ULift.{v} (Fin (n + 3))) ⟨i⟩) D where
   obj x := glueObj σ h₀ x.as
-  map x y := glueMap σ hσ h₀ h₁ x.as y.as
+  map x y := glueMap σ h₀ hσ h₁ x.as y.as
   map_id x := by
     ext q ⟨⟩
     apply Arr.mk_injective (a := glueObj σ h₀ x.as) (b := glueObj σ h₀ x.as)
-    exact (mk_glueMap_app σ hσ h₀ h₁ _ _ _).trans (glue_id σ hσ h₀ h₁ x.as)
+    exact (mk_glueMap_app σ h₀ hσ h₁ _ _ _).trans (glue_id σ h₀ hσ h₁ x.as)
   map_comp x y z := by
     ext q ⟨s, t⟩
     apply Arr.mk_injective (a := glueObj σ h₀ x.as) (b := glueObj σ h₀ z.as)
-    refine (mk_glueMap_app σ hσ h₀ h₁ _ _ _).trans ?_
+    refine (mk_glueMap_app σ h₀ hσ h₁ _ _ _).trans ?_
     refine ((congrArg (glue σ h₀) (Arr.comp_mk s.1 t.1).symm).trans
-      (glue_comp_of_mem σ hσ h₀ h₁ s.2 t.2)).trans ?_
-    rw [← mk_glueMap_app σ hσ h₀ h₁ _ _ s, ← mk_glueMap_app σ hσ h₀ h₁ _ _ t, Arr.comp_mk]
+      (glue_comp_of_mem σ h₀ hσ h₁ s.2 t.2)).trans ?_
+    rw [← mk_glueMap_app σ h₀ hσ h₁ _ _ s, ← mk_glueMap_app σ h₀ hσ h₁ _ _ t, Arr.comp_mk]
     rfl
 
 end Glue
@@ -785,13 +780,11 @@ namespace TauCeti.HornThickening
 
 variable {n : ℕ} {i : Fin (n + 3)}
 
-variable (h₀ : 0 < i) (h₁ : i < Fin.last _) {D : Type*} [EnrichedCategory SSet.{u} D]
-
-include h₀ h₁ in
 /-- Simplicial functors `σ j : C[Δ^{n+1}] ⥤ D` on the faces `j ≠ i` of an inner horn which agree on
 the faces of codimension two glue to a simplicial functor `F : C[Λ^{n+2}_i] ⥤ D` with faces `σ`. The
 compatibility condition is the one of `SSet.horn.IsCompatible`. -/
-theorem exists_desc
+theorem exists_desc (h₀ : 0 < i) (h₁ : i < Fin.last _)
+    {D : Type*} [EnrichedCategory SSet.{u} D]
     (σ : ∀ j, j ≠ i → EnrichedFunctor SSet.{u} (SimplicialThickening (ULift.{u} (Fin (n + 2)))) D)
     (hσ : ∀ (j k : Fin (n + 3)) (hj : j ≠ i) (hk : k ≠ i) (hjk : j < k),
       (SimplicialThickening.functor
@@ -802,18 +795,18 @@ theorem exists_desc
             (σ k hk)) :
     ∃ F : EnrichedFunctor SSet.{u} (HornThickening (ULift.{u} (Fin (n + 3))) ⟨i⟩) D,
       ∀ j hj, (δ j hj).comp SSet F = σ j hj := by
-  refine ⟨glueFunctor σ hσ h₀ h₁, fun j hj ↦ ext_arrMap fun q w ↦ ?_⟩
-  refine (mk_glueMap_app σ hσ h₀ h₁ _ _ _).trans ?_
+  refine ⟨glueFunctor σ h₀ hσ h₁, fun j hj ↦ ext_arrMap fun q w ↦ ?_⟩
+  refine (mk_glueMap_app σ h₀ hσ h₁ _ _ _).trans ?_
   -- The underlying chain of paths of the image of `w` in `C[Λ^{n+2}_i]` is its image under `δF j`.
   have h : arrMap ((δ j hj).comp SSet (ι _ _)) w = arrMap (δF j) w := by rw [δ_comp_ι]
   exact ((congrArg (glue σ h₀) h).trans (glue_of_inFace σ h₀ ⟨j, hj, w, rfl⟩)).trans
-    (faceVal_arrMap σ hσ h₀ hj w)
+    (faceVal_arrMap σ h₀ hσ hj w)
 
-include h₀ h₁ in
 /-- Simplicial functors out of `C[Λ^{n+2}_i]` which agree on all faces `δ j`, `j ≠ i`, of the inner
 horn are equal. Together with `exists_desc`, this says that `C[Λ^{n+2}_i]` is glued from its faces.
 -/
-theorem enrichedFunctor_ext
+theorem enrichedFunctor_ext (h₀ : 0 < i) (h₁ : i < Fin.last _)
+    {D : Type*} [EnrichedCategory SSet.{u} D]
     {F G : EnrichedFunctor SSet.{u} (HornThickening (ULift.{u} (Fin (n + 3))) ⟨i⟩) D}
     (h : ∀ j hj, (δ j hj).comp SSet F = (δ j hj).comp SSet G) : F = G := by
   -- A chain of paths lying in a face is the image of a chain of paths of that face.
