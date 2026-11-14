@@ -290,6 +290,13 @@ theorem lowerRamificationGroupReal_def (u : ℝ) :
     lowerRamificationGroupReal K L u = lowerRamificationGroup K L ⌈u⌉ :=
   TauCeti.IsLocalRing.ramificationGroupReal_def _ _ u
 
+/-- The real-indexed lower ramification groups of `L/K` are those of the action of `Gal(L/K)` on
+the integer ring `𝒪[L]`. -/
+theorem lowerRamificationGroupReal_eq_ramificationGroupReal (u : ℝ) :
+    lowerRamificationGroupReal K L u =
+      TauCeti.IsLocalRing.ramificationGroupReal (L ≃ₐ[K] L) 𝒪[L] u :=
+  (rfl)
+
 variable {K L} in
 /-- Membership in the real-indexed lower ramification groups. -/
 @[simp]
