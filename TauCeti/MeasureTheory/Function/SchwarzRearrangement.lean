@@ -71,6 +71,11 @@ rearrangement, which gives the case `p = ∞`.
 * `MeasureTheory.Integrable.ae_schwarzRearrangement_ofReal_ne_top`,
   `MeasureTheory.Integrable.toReal_schwarzRearrangement`: almost-everywhere finiteness and
   integrability of the real-valued rearrangement of the positive part of an integrable function.
+* `TauCeti.ae_schwarzRearrangement_ofReal_ne_top`: almost-everywhere finiteness of the
+  rearrangement of the positive part of an a.e.-measurable function with one superlevel set of
+  finite measure.
+* `TauCeti.addHaar_setOf_lt_toReal_schwarzRearrangement`: equimeasurability of the real-valued
+  rearrangement at nonnegative levels.
 * `TauCeti.lintegral_mul_le_lintegral_schwarzRearrangement_mul`: the Hardy--Littlewood
   rearrangement inequality.
 * `TauCeti.schwarzRearrangement_add_const`: rearrangement commutes with adding a constant.
@@ -384,6 +389,50 @@ theorem _root_.MeasureTheory.Integrable.toReal_schwarzRearrangement {u : E → �
     Integrable (fun x ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x).toReal) μ := by
   exact integrable_toReal_of_lintegral_ne_top (measurable_schwarzRearrangement μ _).aemeasurable
     hu.lintegral_schwarzRearrangement_ofReal_ne_top
+
+/-- The Schwarz rearrangement of the positive part of an a.e.-measurable real function is finite
+almost everywhere as soon as one superlevel set `{u > t}` has finite measure. -/
+theorem ae_schwarzRearrangement_ofReal_ne_top {u : E → ℝ} (hu : AEMeasurable u μ) {t : ℝ}
+    (ht : μ {x | t < u x} ≠ ∞) :
+    ∀ᵐ x ∂μ, schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x ≠ ∞ := by
+  have hlim := tendsto_measure_iInter_atTop (μ := μ) (s := fun n : ℕ ↦ {x | (n : ℝ) < u x})
+    (fun n ↦ nullMeasurableSet_lt aemeasurable_const hu)
+    (fun m n hmn x (hx : (n : ℝ) < u x) ↦ (Nat.cast_le.2 hmn).trans_lt hx)
+    ⟨⌈t⌉₊, ne_top_of_le_ne_top ht (measure_mono fun x (hx : (⌈t⌉₊ : ℝ) < u x) ↦
+      (Nat.le_ceil t).trans_lt hx)⟩
+  have hempty : ⋂ n : ℕ, {x | (n : ℝ) < u x} = ∅ :=
+    eq_empty_of_forall_notMem fun x hx ↦ by
+      obtain ⟨n, hn⟩ := exists_nat_ge (u x)
+      exact (mem_iInter.1 hx n).not_ge hn
+  rw [hempty, measure_empty] at hlim
+  refine ae_iff.2 (le_antisymm (ge_of_tendsto' hlim fun n ↦ ?_) zero_le)
+  calc μ {x | ¬schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x ≠ ∞}
+      ≤ μ {x | ENNReal.ofReal n < schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x} :=
+        measure_mono fun x (hx : ¬_ ≠ ∞) ↦ by simp_all [mem_ofPred_eq]
+    _ = μ {x | (n : ℝ) < u x} := by
+        rw [addHaar_setOf_lt_schwarzRearrangement]
+        congr 1
+        ext x
+        exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg n.cast_nonneg
+
+/-- At a nonnegative level `s`, the real-valued Schwarz rearrangement of the positive part of `u`
+has the same superlevel measure as `u`, provided the extended rearrangement is finite almost
+everywhere. -/
+theorem addHaar_setOf_lt_toReal_schwarzRearrangement {u : E → ℝ}
+    (hu : ∀ᵐ x ∂μ, schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x ≠ ∞) {s : ℝ}
+    (hs : 0 ≤ s) :
+    μ {x | s < (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x).toReal} =
+      μ {x | s < u x} := by
+  calc μ {x | s < (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x).toReal}
+      = μ {x | ENNReal.ofReal s < schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x} := by
+        refine measure_congr ?_
+        filter_upwards [hu] with x hx
+        exact (ENNReal.ofReal_lt_iff_lt_toReal hs hx).symm
+    _ = μ {x | s < u x} := by
+        rw [addHaar_setOf_lt_schwarzRearrangement]
+        congr 1
+        ext x
+        exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg hs
 
 variable (μ)
 
