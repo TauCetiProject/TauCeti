@@ -53,6 +53,9 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
 * `TauCeti.UpperHalfPlane.rowSum`: a row `∑_n (w + n)⁻²` of the lattice series.
 * `PeriodPair.instMulActionUnitsComplex`: the rescaling action `c • (ω₁, ω₂) = (c ω₁, c ω₂)`.
 * `PeriodPair.latticeSMulEquiv`: multiplication by `c` from the lattice of `L` to that of `c • L`.
+* `PeriodPair.Homothetic`: homothety `∃ c : ℂˣ, L'.lattice = (c • L).lattice` between period pairs.
+* `TauCeti.PeriodPair.HomothetyClass`: the quotient of `PeriodPair` by homothety, with universal map
+  `TauCeti.PeriodPair.HomothetyClass.lift`.
 
 ## Main results
 
@@ -94,6 +97,8 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
 * `UpperHalfPlane.intCast_mul_add_intCast_eq_zero_iff`: `z` and `1` are linearly independent
   over `ℤ`.
 * `PeriodPair.exists_lattice_eq_smul_periodPair`: every lattice is homothetic to `ℤ τ + ℤ`.
+* `UpperHalfPlane.homothetic_periodPair_iff`: `ℤ τ + ℤ` and `ℤ τ' + ℤ` are homothetic iff `τ'` lies
+  in the `SL(2, ℤ)`-orbit of `τ`.
 * `PeriodPair.lattice_smul_eq_self_of_pow_eq_one`: if a primitive `n`-th root of unity preserves a
   lattice, so does every `n`-th root of unity.
 * `UpperHalfPlane.lattice_I_smul_periodPair_I`, `UpperHalfPlane.lattice_ρ_smul_periodPair_ρ`: the
@@ -870,6 +875,119 @@ lemma lattice_ρ_smul_periodPair_ρ :
   · exact ⟨⟨0, 1, by simp⟩, ⟨-1, -1, by push_cast; linear_combination -ρ_sq⟩⟩
 
 end UpperHalfPlane
+
+namespace PeriodPair
+
+/-- Two period pairs `L` and `L'` are **homothetic** when `L'.lattice = (c • L).lattice` for some
+nonzero complex number `c ∈ ℂˣ`. -/
+def Homothetic (L L' : PeriodPair) : Prop := ∃ c : ℂˣ, L'.lattice = (c • L).lattice
+
+/-- Unfolding `PeriodPair.Homothetic`. -/
+theorem homothetic_def {L L' : PeriodPair} :
+    L.Homothetic L' ↔ ∃ c : ℂˣ, L'.lattice = (c • L).lattice := Iff.rfl
+
+/-- Period pairs with the same underlying lattice are homothetic. -/
+theorem Homothetic.of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) :
+    L.Homothetic L' := ⟨1, by rw [one_smul, h]⟩
+
+/-- Homothety of period pairs is reflexive. -/
+@[refl, simp] theorem Homothetic.refl (L : PeriodPair) : L.Homothetic L := .of_lattice_eq rfl
+
+/-- Homothety of period pairs is symmetric. -/
+@[symm] theorem Homothetic.symm {L L' : PeriodPair} (h : L.Homothetic L') : L'.Homothetic L :=
+  let ⟨c, hc⟩ := h; ⟨c⁻¹, by rw [lattice_smul_eq_of_lattice_eq c⁻¹ hc, inv_smul_smul]⟩
+
+/-- Homothety of period pairs is transitive. -/
+@[trans] theorem Homothetic.trans {L₁ L₂ L₃ : PeriodPair}
+    (h₁ : L₁.Homothetic L₂) (h₂ : L₂.Homothetic L₃) : L₁.Homothetic L₃ :=
+  let ⟨c₁, hc₁⟩ := h₁; let ⟨c₂, hc₂⟩ := h₂
+  ⟨c₂ * c₁, by rw [hc₂, lattice_smul_eq_of_lattice_eq c₂ hc₁, mul_smul]⟩
+
+/-- Every period pair is homothetic to any nonzero complex rescaling of itself. -/
+@[simp] theorem homothetic_smul_right (c : ℂˣ) (L : PeriodPair) : L.Homothetic (c • L) := ⟨c, rfl⟩
+
+/-- Any nonzero complex rescaling of a period pair is homothetic to the original pair. -/
+@[simp] theorem homothetic_smul_left (c : ℂˣ) (L : PeriodPair) : (c • L).Homothetic L :=
+  (L.homothetic_smul_right c).symm
+
+end PeriodPair
+
+namespace UpperHalfPlane
+
+/-- **Two upper-half-plane lattices `ℤ τ + ℤ` and `ℤ τ' + ℤ` are homothetic if and only if `τ'`
+lies in the `SL(2, ℤ)`-orbit of `τ`.** -/
+theorem homothetic_periodPair_iff {τ τ' : ℍ} :
+    τ.periodPair.Homothetic τ'.periodPair ↔ ∃ γ : SL(2, ℤ), γ • τ = τ' := by
+  refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun ⟨γ, hγ⟩ ↦ hγ ▸ ⟨(Units.mk0 _ (denom_ne_zero γ τ))⁻¹,
+    lattice_periodPair_smul γ τ⟩⟩
+  obtain ⟨γ, hγ, -⟩ := exists_smul_eq_and_denom_eq_of_lattice_periodPair_eq hc
+  exact ⟨γ⁻¹, by rw [← hγ, inv_smul_smul]⟩
+
+end UpperHalfPlane
+
+namespace TauCeti.PeriodPair
+
+/-- The equivalence relation of homothety on `PeriodPair`. -/
+private def homotheticSetoid : Setoid _root_.PeriodPair :=
+  ⟨Homothetic, Homothetic.refl, Homothetic.symm, Homothetic.trans⟩
+
+/-- A **homothety class** of complex period lattices: the quotient of `PeriodPair` by
+`PeriodPair.Homothetic`. -/
+def HomothetyClass : Type := Quotient homotheticSetoid
+
+namespace HomothetyClass
+
+/-- The homothety class of a period pair `L`. -/
+def mk (L : _root_.PeriodPair) : HomothetyClass := Quotient.mk homotheticSetoid L
+
+/-- Every homothety class is represented by a period pair. -/
+theorem mk_surjective : Function.Surjective mk := Quotient.mk_surjective
+
+/-- Induction principle for `TauCeti.PeriodPair.HomothetyClass`. -/
+@[elab_as_elim] protected theorem ind {motive : HomothetyClass → Prop} (h : ∀ L, motive (mk L))
+    (x : HomothetyClass) : motive x := Quotient.ind h x
+
+/-- Lift a homothety-invariant function on `PeriodPair` to `TauCeti.PeriodPair.HomothetyClass`. -/
+def lift {α : Sort*} (f : _root_.PeriodPair → α) (hf : ∀ L L', L.Homothetic L' → f L = f L') :
+    HomothetyClass → α := Quotient.lift f hf
+
+/-- Evaluating `HomothetyClass.lift` on `mk L` applies the underlying function to `L`. -/
+@[simp] theorem lift_mk {α : Sort*} (f : _root_.PeriodPair → α)
+    (hf : ∀ L L', L.Homothetic L' → f L = f L') (L : _root_.PeriodPair) :
+    lift f hf (mk L) = f L := (rfl)
+
+/-- Two period pairs determine the same homothety class if and only if they are homothetic. -/
+theorem mk_eq_mk_iff {L L' : _root_.PeriodPair} : mk L = mk L' ↔ L.Homothetic L' := Quotient.eq
+
+/-- Rescaling a period pair does not change its homothety class. -/
+@[simp] theorem mk_smul (c : ℂˣ) (L : _root_.PeriodPair) : mk (c • L) = mk L :=
+  mk_eq_mk_iff.mpr (homothetic_smul_left c L)
+
+/-- Period pairs with the same lattice determine the same homothety class. -/
+theorem mk_eq_of_lattice_eq {L L' : _root_.PeriodPair} (h : L.lattice = L'.lattice) :
+    mk L = mk L' :=
+  mk_eq_mk_iff.mpr (.of_lattice_eq h)
+
+/-- Every homothety class is represented by `ℤ τ + ℤ` for some `τ ∈ ℍ`. -/
+theorem mk_periodPair_surjective : Function.Surjective fun τ : ℍ ↦ mk τ.periodPair := fun x ↦ by
+  obtain ⟨L, rfl⟩ := mk_surjective x
+  obtain ⟨c, τ, hL⟩ := L.exists_lattice_eq_smul_periodPair
+  exact ⟨τ, (mk_smul c τ.periodPair).symm.trans (mk_eq_of_lattice_eq hL.symm)⟩
+
+-- Not `@[simp]`: `ModularGroup.sl_moeb` simplifies its left side, so it fails `simpNF`.
+/-- The Möbius action of `SL(2, ℤ)` preserves the homothety class of `ℤ τ + ℤ`. -/
+theorem mk_periodPair_smul (γ : SL(2, ℤ)) (τ : ℍ) : mk (γ • τ).periodPair = mk τ.periodPair :=
+  mk_eq_mk_iff.mpr (UpperHalfPlane.homothetic_periodPair_iff.mpr ⟨γ⁻¹, inv_smul_smul γ τ⟩)
+
+/-- Upper-half-plane points have the same lattice homothety class iff they lie in the same
+`SL(2, ℤ)`-orbit. -/
+theorem mk_periodPair_eq_mk_periodPair_iff {τ τ' : ℍ} :
+    mk τ.periodPair = mk τ'.periodPair ↔ ∃ γ : SL(2, ℤ), γ • τ = τ' :=
+  mk_eq_mk_iff.trans UpperHalfPlane.homothetic_periodPair_iff
+
+end HomothetyClass
+
+end TauCeti.PeriodPair
 
 namespace TauCeti
 
