@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
 public import TauCeti.Geometry.Manifold.VectorField.Derivation
 public import TauCeti.RingTheory.Derivation.PrincipalSymbol
-import Mathlib.Data.Nat.Choose.Cast
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 
 /-!
@@ -37,6 +36,9 @@ square, such as the second derivative on `ℝ`, has principal symbol `ξ ↦ ξ(
 In the Fourier convention of pseudodifferential operators, where `∂ⱼ` has symbol `i ξⱼ`, the
 principal symbol of an operator of order `m` is `i ^ m` times this one.
 
+Both are instances of the point symbols `TauCeti.pointCommutatorSymbol` and
+`TauCeti.pointPrincipalSymbol` of evaluation at `x`, read through `I_x / I_x² ≃ T_x*M`, which also
+give the complex-valued symbols of `TauCeti.complexSmoothPrincipalSymbol`.
 The commutator symbol at `x` is the cotangent symbol `TauCeti.cotangentSymbol` of the vanishing
 ideal `I_x`, read through the identification `I_x / I_x² ≃ T_x*M`
 (`TauCeti.smoothCotangentEquiv`) and evaluation at `x`
@@ -98,64 +100,25 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   {x : M}
 
-/-! ### Lifting covectors to functions -/
-
-/-- The differential at `x` of the functions vanishing at `x`, as a real-linear map. -/
-private def vanishingIdealDifferential (hx : I.IsInteriorPoint x) :
-    smoothVanishingIdeal I x →ₗ[ℝ] (TangentSpace I x →L[ℝ] ℝ) :=
-  (smoothCotangentEquiv hx).toLinearMap ∘ₗ
-    ((smoothVanishingIdeal I x).toCotangent.restrictScalars ℝ)
-
-private theorem vanishingIdealDifferential_apply (hx : I.IsInteriorPoint x)
-    (f : smoothVanishingIdeal I x) :
-    vanishingIdealDifferential hx f = mvfderiv I (f : C^∞⟮I, M; ℝ⟯) x :=
-  smoothCotangentEquiv_toCotangent hx f
-
-private theorem exists_vanishingIdealDifferential_comp_eq_id (hx : I.IsInteriorPoint x) :
-    ∃ s : (TangentSpace I x →L[ℝ] ℝ) →ₗ[ℝ] smoothVanishingIdeal I x,
-      vanishingIdealDifferential hx ∘ₗ s = LinearMap.id :=
-  (vanishingIdealDifferential hx).exists_rightInverse_of_surjective <| LinearMap.range_eq_top.2 <|
-    (smoothCotangentEquiv hx).surjective.comp (smoothVanishingIdeal I x).toCotangent_surjective
-
-/-- A real-linear choice of a smooth function vanishing at `x` with prescribed differential at
-`x`. -/
-private def covectorLift (hx : I.IsInteriorPoint x) :
-    (TangentSpace I x →L[ℝ] ℝ) →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ :=
-  (smoothVanishingIdeal I x).subtype.restrictScalars ℝ ∘ₗ
-    (exists_vanishingIdealDifferential_comp_eq_id hx).choose
-
-private theorem covectorLift_apply_self (hx : I.IsInteriorPoint x)
-    (ξ : TangentSpace I x →L[ℝ] ℝ) : covectorLift hx ξ x = 0 :=
-  mem_smoothVanishingIdeal_iff.mp ((exists_vanishingIdealDifferential_comp_eq_id hx).choose ξ).2
-
-private theorem mvfderiv_covectorLift (hx : I.IsInteriorPoint x)
-    (ξ : TangentSpace I x →L[ℝ] ℝ) : mvfderiv I (covectorLift hx ξ) x = ξ := by
-  have h := congr($((exists_vanishingIdealDifferential_comp_eq_id hx).choose_spec) ξ)
-  rwa [LinearMap.comp_apply, vanishingIdealDifferential_apply] at h
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
+private theorem ker_evalAlgHom (x : M) :
+    RingHom.ker (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ) = smoothVanishingIdeal I x :=
+  Ideal.ext fun _ ↦ by simp
 
 /-! ### The commutator symbol -/
-
-/-- Evaluation at `x` of the image of `1` under a linear map of smooth functions. -/
-private def evalOneAt (x : M) : (C^∞⟮I, M; ℝ⟯ →ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯) →ₗ[ℝ] ℝ where
-  toFun L := L 1 x
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
 
 variable (I) in
 /-- The commutator symbol of a differential operator `D` of order at most `m` on smooth functions
 at an interior point `x`: the real multilinear form on the cotangent space `T_x*M` sending
 `(df₁(x), …, dfₘ(x))` to the value at `x` of the iterated commutator `[⋯[D, f₁], …, fₘ] 1`
-(`TauCeti.smoothCommutatorSymbol_mvfderiv`). It is symmetric
-(`TauCeti.smoothCommutatorSymbol_comp_perm`) and `m!` times the polarization of the principal
-symbol `TauCeti.smoothPrincipalSymbol`. -/
+(`TauCeti.smoothCommutatorSymbol_mvfderiv`). It is the point commutator symbol
+`TauCeti.pointCommutatorSymbol` of evaluation at `x`, read through `I_x / I_x² ≃ T_x*M`. It is
+symmetric (`TauCeti.smoothCommutatorSymbol_comp_perm`) and `m!` times the polarization of the
+principal symbol `TauCeti.smoothPrincipalSymbol`. -/
 def smoothCommutatorSymbol (hx : I.IsInteriorPoint x) {m : ℕ} :
     differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m →ₗ[ℝ]
-      MultilinearMap (RingHom.id ℝ) (fun _ : Fin m ↦ TangentSpace I x →L[ℝ] ℝ) ℝ where
-  toFun D := ((evalOneAt x).compMultilinearMap
-      ((commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) D)).compLinearMap
-    fun _ ↦ covectorLift hx
-  map_add' D₁ D₂ := by ext; simp
-  map_smul' c D := by ext; simp
+      MultilinearMap (RingHom.id ℝ) (fun _ : Fin m ↦ TangentSpace I x →L[ℝ] ℝ) ℝ :=
+  pointCommutatorSymbol (ContMDiffMap.evalAlgHom x) (smoothCotangentEquiv hx)
 
 /-- The commutator symbol at `x`, evaluated on the differentials at `x` of smooth functions
 `f₁, …, fₘ`, is the value at `x` of the iterated commutator `[⋯[D, f₁], …, fₘ] 1`. -/
@@ -164,32 +127,24 @@ theorem smoothCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : ℕ}
     (f : Fin m → C^∞⟮I, M; ℝ⟯) :
     smoothCommutatorSymbol I hx D (fun i ↦ mvfderiv I (f i) x) =
       commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m D f 1 x := by
-  -- The lifts `gᵢ` of the differentials differ from `fᵢ - fᵢ(x)` by elements of `I_x²`.
-  set g : Fin m → C^∞⟮I, M; ℝ⟯ := fun i ↦ covectorLift hx (mvfderiv I (f i) x)
+  -- The differential of `fᵢ` is that of `fᵢ - fᵢ(x)`, which lies in `I_x`.
   have hc (c : ℝ) : ⇑(algebraMap ℝ C^∞⟮I, M; ℝ⟯ c) = fun _ ↦ c := funext fun _ ↦ by simp
-  have hd (h : C^∞⟮I, M; ℝ⟯) : MDifferentiableAt I 𝓘(ℝ, ℝ) h x :=
-    (h.contMDiff.mdifferentiable (by simp)).mdifferentiableAt
-  have hg : ∀ i, (fun i ↦ g i + algebraMap ℝ C^∞⟮I, M; ℝ⟯ (f i x)) i - f i ∈
-      smoothVanishingIdeal I x ^ 2 := fun i ↦ by
-    refine mem_smoothVanishingIdeal_sq_of_mvfderiv_eq_zero hx ?_ ?_
-    · simp [g, hc, covectorLift_apply_self]
-    · rw [ContMDiffMap.coe_sub, ContMDiffMap.coe_add, hc,
-        mvfderiv_sub ((hd _).add mdifferentiableAt_const) (hd _), mvfderiv_add (hd _)
-          mdifferentiableAt_const, mvfderiv_const, add_zero, mvfderiv_covectorLift, sub_self]
-  have h := commutatorSymbol_apply_sub_mem_smul_top D hg 1
-  rw [commutatorSymbol_add_algebraMap, smul_eq_mul, Ideal.mul_top, mem_smoothVanishingIdeal_iff,
-    ContMDiffMap.coe_sub, Pi.sub_apply, sub_eq_zero] at h
-  exact h
+  have hd (i : Fin m) : mvfderiv I (f i) x = smoothCotangentEquiv hx
+      ((smoothVanishingIdeal I x).toCotangent
+        ⟨f i + algebraMap ℝ C^∞⟮I, M; ℝ⟯ (-f i x), by simp⟩) := by
+    rw [smoothCotangentEquiv_toCotangent, ContMDiffMap.coe_add, hc,
+      mvfderiv_add ((f i).contMDiff.mdifferentiable (by simp) x) mdifferentiableAt_const,
+      mvfderiv_const, add_zero]
+  simp only [hd]
+  rw [smoothCommutatorSymbol, pointCommutatorSymbol_toCotangent _ (ker_evalAlgHom x).ge,
+    commutatorSymbol_add_algebraMap, ContMDiffMap.evalAlgHom_apply]
 
 /-- The commutator symbol is symmetric. -/
 theorem smoothCommutatorSymbol_comp_perm (hx : I.IsInteriorPoint x) {m : ℕ}
     (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
     (ξ : Fin m → TangentSpace I x →L[ℝ] ℝ) (σ : Equiv.Perm (Fin m)) :
-    smoothCommutatorSymbol I hx D (ξ ∘ σ) = smoothCommutatorSymbol I hx D ξ := by
-  choose f _ hf using fun i ↦ exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) (ξ i)
-  obtain rfl : (fun i ↦ mvfderiv I (f i) x) = ξ := funext hf
-  have h := smoothCommutatorSymbol_mvfderiv hx D (f ∘ σ)
-  rwa [commutatorSymbol_comp_perm, ← smoothCommutatorSymbol_mvfderiv hx D f] at h
+    smoothCommutatorSymbol I hx D (ξ ∘ σ) = smoothCommutatorSymbol I hx D ξ :=
+  pointCommutatorSymbol_comp_perm _ (ker_evalAlgHom x).ge D ξ σ
 
 /-- **Comparison with the cotangent symbol.** The commutator symbol at `x` is the cotangent symbol
 `TauCeti.cotangentSymbol` of the vanishing ideal `I_x`, read through the identification
@@ -202,13 +157,8 @@ theorem mk_algebraMap_smoothCommutatorSymbol (hx : I.IsInteriorPoint x) {m : ℕ
     Submodule.Quotient.mk (p := (smoothVanishingIdeal I x • ⊤ : Submodule C^∞⟮I, M; ℝ⟯ _))
         (algebraMap ℝ C^∞⟮I, M; ℝ⟯
           (smoothCommutatorSymbol I hx D fun i ↦ smoothCotangentEquiv hx (u i))) =
-      cotangentSymbol ℝ (smoothVanishingIdeal I x) D u (Submodule.Quotient.mk 1) := by
-  choose a ha using fun i ↦ (smoothVanishingIdeal I x).toCotangent_surjective (u i)
-  obtain rfl : (fun i ↦ (smoothVanishingIdeal I x).toCotangent (a i)) = u := funext ha
-  simp only [smoothCotangentEquiv_toCotangent, cotangentSymbol_toCotangent]
-  rw [smoothCommutatorSymbol_mvfderiv, Submodule.Quotient.eq, smul_eq_mul, Ideal.mul_top,
-    mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub, Pi.sub_apply,
-    ContMDiffMap.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply, sub_self]
+      cotangentSymbol ℝ (smoothVanishingIdeal I x) D u (Submodule.Quotient.mk 1) :=
+  mk_algebraMap_pointCommutatorSymbol _ (ker_evalAlgHom x) D u
 
 /-- The commutator symbol of an operator of order at most `m + 1` vanishes at every interior point
 if the operator has order at most `m`. -/
@@ -216,11 +166,8 @@ theorem smoothCommutatorSymbol_eq_zero_of_mem_differentialOperators (hx : I.IsIn
     {m : ℕ} (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ (m + 1))
     (hD : (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∈
       differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) :
-    smoothCommutatorSymbol I hx D = 0 := by
-  ext ξ
-  choose f _ hf using fun i ↦ exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) (ξ i)
-  obtain rfl : (fun i ↦ mvfderiv I (f i) x) = ξ := funext hf
-  simp [smoothCommutatorSymbol_mvfderiv, (commutatorSymbol_eq_zero_iff D).2 hD]
+    smoothCommutatorSymbol I hx D = 0 :=
+  pointCommutatorSymbol_eq_zero_of_mem_differentialOperators _ (ker_evalAlgHom x).ge D hD
 
 /-- On a boundaryless manifold, an operator of order at most `m + 1` has vanishing commutator
 symbol at every point if and only if it has order at most `m`. -/
@@ -251,14 +198,14 @@ commutator symbol `TauCeti.smoothCommutatorSymbol`. -/
 def smoothPrincipalSymbol (hx : I.IsInteriorPoint x) {m : ℕ}
     (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℝ) : ℝ :=
-  (m.factorial : ℝ)⁻¹ * smoothCommutatorSymbol I hx D fun _ ↦ ξ
+  pointPrincipalSymbol (ContMDiffMap.evalAlgHom x) (smoothCotangentEquiv hx) D ξ
 
 theorem smoothPrincipalSymbol_def (hx : I.IsInteriorPoint x) {m : ℕ}
     (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx D ξ =
       (m.factorial : ℝ)⁻¹ * smoothCommutatorSymbol I hx D fun _ ↦ ξ :=
-  (rfl)
+  pointPrincipalSymbol_def _ _ D ξ
 
 /-- The principal symbol at the differential of `f` is `1 / m!` times the value at `x` of the
 `m`-fold commutator `[⋯[D, f], …, f] 1`. -/
@@ -274,35 +221,30 @@ theorem smoothPrincipalSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : ℕ}
 theorem smoothPrincipalSymbol_zero (hx : I.IsInteriorPoint x) {m : ℕ}
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx
-      (0 : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) ξ = 0 := by
-  simp [smoothPrincipalSymbol_def]
+      (0 : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) ξ = 0 :=
+  pointPrincipalSymbol_zero _ _ ξ
 
 @[simp]
 theorem smoothPrincipalSymbol_add (hx : I.IsInteriorPoint x) {m : ℕ}
     (D₁ D₂ : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx (D₁ + D₂) ξ =
-      smoothPrincipalSymbol I hx D₁ ξ + smoothPrincipalSymbol I hx D₂ ξ := by
-  simp [smoothPrincipalSymbol_def, mul_add]
+      smoothPrincipalSymbol I hx D₁ ξ + smoothPrincipalSymbol I hx D₂ ξ :=
+  pointPrincipalSymbol_add _ _ D₁ D₂ ξ
 
 @[simp]
 theorem smoothPrincipalSymbol_smul (hx : I.IsInteriorPoint x) {m : ℕ} (c : ℝ)
     (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
-    smoothPrincipalSymbol I hx (c • D) ξ = c * smoothPrincipalSymbol I hx D ξ := by
-  simp only [smoothPrincipalSymbol_def, map_smul, smul_apply, smul_eq_mul]
-  ring
+    smoothPrincipalSymbol I hx (c • D) ξ = c * smoothPrincipalSymbol I hx D ξ :=
+  pointPrincipalSymbol_smul _ _ c D ξ
 
 /-- The principal symbol of an operator of order at most `m` is homogeneous of degree `m`. -/
 theorem smoothPrincipalSymbol_smul_covector (hx : I.IsInteriorPoint x) {m : ℕ}
     (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) (c : ℝ)
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
-    smoothPrincipalSymbol I hx D (c • ξ) = c ^ m * smoothPrincipalSymbol I hx D ξ := by
-  have h := (smoothCommutatorSymbol I hx D).map_smul_univ (fun _ ↦ c) fun _ ↦ ξ
-  simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul,
-    RingHom.id_apply] at h
-  rw [smoothPrincipalSymbol_def, smoothPrincipalSymbol_def, h]
-  ring
+    smoothPrincipalSymbol I hx D (c • ξ) = c ^ m * smoothPrincipalSymbol I hx D ξ :=
+  pointPrincipalSymbol_smul_covector _ _ D c ξ
 
 /-- The principal symbol of an operator of order at most `m + 1` vanishes if the operator has
 order at most `m`. -/
@@ -311,9 +253,8 @@ theorem smoothPrincipalSymbol_eq_zero_of_mem_differentialOperators (hx : I.IsInt
     (hD : (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∈
       differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
-    smoothPrincipalSymbol I hx D ξ = 0 := by
-  simp [smoothPrincipalSymbol_def,
-    smoothCommutatorSymbol_eq_zero_of_mem_differentialOperators hx D hD]
+    smoothPrincipalSymbol I hx D ξ = 0 :=
+  pointPrincipalSymbol_eq_zero_of_mem_differentialOperators _ (ker_evalAlgHom x).ge D hD ξ
 
 /-- **Principal symbols multiply under composition.** For operators `P` and `Q` of orders at most
 `m` and `k`, the principal symbol of `P ∘ Q`, as an operator of order at most `m + k`, is the
@@ -325,20 +266,8 @@ theorem smoothPrincipalSymbol_comp (hx : I.IsInteriorPoint x) {m k : ℕ}
     smoothPrincipalSymbol I hx
         ⟨(P : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∘ₗ (Q : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯),
           comp_mem_differentialOperators P.2 Q.2⟩ ξ =
-      smoothPrincipalSymbol I hx P ξ * smoothPrincipalSymbol I hx Q ξ := by
-  obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_covectorLift hx ξ⟩
-  -- The `(m + k)`-fold commutator of `P ∘ Q` with `f` is `(m + k).choose m` times the product of
-  -- the commutators of `P` and `Q`, and `(m + k).choose m / (m + k)! = 1 / (m! k!)`.
-  have key := congr($(commutatorSymbol_comp_const P Q f) 1 x)
-  rw [LinearMap.smul_apply, ← Nat.cast_smul_eq_nsmul ℝ, ContMDiffMap.coe_smul, Pi.smul_apply,
-    smul_eq_mul, LinearMap.comp_apply, ← Dual.apply_one_mul_eq
-      (commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m P fun _ ↦ f),
-    ContMDiffMap.coe_mul, Pi.mul_apply] at key
-  simp only [smoothPrincipalSymbol_def]
-  rw [smoothCommutatorSymbol_mvfderiv hx _ fun _ ↦ f,
-    smoothCommutatorSymbol_mvfderiv hx P fun _ ↦ f, smoothCommutatorSymbol_mvfderiv hx Q fun _ ↦ f,
-    key, Nat.cast_add_choose]
-  field_simp
+      smoothPrincipalSymbol I hx P ξ * smoothPrincipalSymbol I hx Q ξ :=
+  pointPrincipalSymbol_comp _ (ker_evalAlgHom x).ge P Q ξ
 
 /-! ### Naturality under diffeomorphisms -/
 
@@ -402,7 +331,7 @@ theorem smoothPrincipalSymbol_vectorFieldDerivation (hx : I.IsInteriorPoint x)
     (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx ⟨vectorFieldDerivation X,
       (vectorFieldDerivation X).mem_differentialOperators_one⟩ ξ = ξ (X x) := by
-  obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_covectorLift hx ξ⟩
+  obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) ξ
   rw [smoothPrincipalSymbol_derivation_mvfderiv, ContMDiffSection.vectorFieldDerivation_apply_apply]
 
 /-- On a boundaryless manifold, a derivation `δ` of the smooth functions has principal symbol
@@ -412,8 +341,7 @@ theorem smoothPrincipalSymbol_derivation [BoundarylessManifold I M]
     (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯) (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I BoundarylessManifold.isInteriorPoint
       ⟨δ, δ.mem_differentialOperators_one⟩ ξ = ξ (δ.vectorField x) := by
-  obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ :=
-    ⟨_, mvfderiv_covectorLift BoundarylessManifold.isInteriorPoint ξ⟩
+  obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) ξ
   rw [smoothPrincipalSymbol_derivation_mvfderiv, Derivation.mvfderiv_vectorField]
 
 end TauCeti
