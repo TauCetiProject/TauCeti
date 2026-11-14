@@ -503,7 +503,7 @@ private theorem eq_zero_of_inl_mem_lieSpan_prod
     (hv' : IsGlHighestWeightVector mu v') {x : M}
     (hx : ((x, 0) : M × M') ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) :
     x = 0 :=
-  eq_zero_of_apply_mem (f := LieModuleHom.inl R (Matrix n n R) M M')
+  eq_zero_of_apply_notMem_of_apply_mem (f := LieModuleHom.inl R (Matrix n n R) M M')
     (D := LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) (x₀ := v)
     (by simpa using inl_notMem_lieSpan_prod hv hv') (by simpa using hx)
 
@@ -513,7 +513,7 @@ private theorem eq_zero_of_inr_mem_lieSpan_prod
     (hv' : IsGlHighestWeightVector mu v') {y : M'}
     (hy : ((0, y) : M × M') ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) :
     y = 0 :=
-  eq_zero_of_apply_mem (f := LieModuleHom.inr R (Matrix n n R) M M')
+  eq_zero_of_apply_notMem_of_apply_mem (f := LieModuleHom.inr R (Matrix n n R) M M')
     (D := LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) (x₀ := v')
     (by simpa using inr_notMem_lieSpan_prod hv hv') (by simpa using hy)
 

@@ -38,8 +38,8 @@ coatom statement runs the same way along the projection `LieSubmodule.Quotient.m
   cyclic Lie module is proper if and only if it misses the generator.
 * `TauCeti.lieSpan_apply_eq_top_of_lieSpan_eq_top`: the image of a generator of a cyclic Lie module
   under a surjective morphism of Lie modules, such as a quotient map, generates the target.
-* `TauCeti.eq_zero_of_apply_mem`: a morphism of Lie modules out of an irreducible module that
-  does not land inside a Lie submodule `D` sends only zero into `D`.
+* `TauCeti.eq_zero_of_apply_notMem_of_apply_mem`: a morphism of Lie modules out of an irreducible
+  module that does not land inside a Lie submodule `D` sends only zero into `D`.
 * `TauCeti.isIrreducible_quotient_iff_isCoatom`: the quotient of a Lie module by a Lie submodule is
   irreducible exactly when that submodule is a coatom of the lattice of Lie submodules.
 -/
@@ -107,13 +107,12 @@ theorem lieSpan_apply_eq_top_of_lieSpan_eq_top {M₂ : Type*} [AddCommGroup M₂
   obtain ⟨m, rfl⟩ := hf q
   exact LieSubmodule.mem_comap.mp (hcomap (hgen ▸ LieSubmodule.mem_top m))
 
-/-- **A Lie module map out of an irreducible module is zero on the preimage of a submodule it does
-not land in.** If `M` is irreducible, `f : M →ₗ⁅R,L⁆ M₂` and `D` is a Lie submodule of `M₂` with
-`f x₀ ∉ D` for some `x₀`, then every `x` with `f x ∈ D` is zero: the preimage `D.comap f` is a Lie
-submodule of `M` other than `⊤`, hence `⊥`. -/
-theorem eq_zero_of_apply_mem [LieModule.IsIrreducible R L M] {M₂ : Type*} [AddCommGroup M₂]
-    [Module R M₂] [LieRingModule L M₂] {f : M →ₗ⁅R,L⁆ M₂} {D : LieSubmodule R L M₂} {x₀ : M}
-    (h₀ : f x₀ ∉ D) {x : M} (hx : f x ∈ D) : x = 0 := by
+/-- **A Lie module map out of an irreducible module sends only zero into a submodule it does not
+land in.** If `M` is irreducible, `f : M →ₗ⁅R,L⁆ M₂`, and `D` is a Lie submodule of `M₂` with
+`f x₀ ∉ D` for some `x₀`, then every `x` with `f x ∈ D` is zero. -/
+theorem eq_zero_of_apply_notMem_of_apply_mem [LieModule.IsIrreducible R L M] {M₂ : Type*}
+    [AddCommGroup M₂] [Module R M₂] [LieRingModule L M₂] {f : M →ₗ⁅R,L⁆ M₂}
+    {D : LieSubmodule R L M₂} {x₀ : M} (h₀ : f x₀ ∉ D) {x : M} (hx : f x ∈ D) : x = 0 := by
   rcases IsSimpleOrder.eq_bot_or_eq_top (D.comap f) with hb | ht
   · have hxS : x ∈ D.comap f := LieSubmodule.mem_comap.mpr hx
     rw [hb, LieSubmodule.mem_bot] at hxS
