@@ -134,14 +134,10 @@ without boundary is a Noetherian ring. -/
 instance stalkIsNoetherianRing (x : X) :
     IsNoetherianRing ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
   let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  -- The model `E` may live in any universe, while the stalks of the model spaces compared above
-  -- live in `Type`: compose the chart at `x` with a linear isomorphism onto a space in `Type`.
-  obtain ⟨E', _, _, _, ⟨e⟩⟩ : ∃ (E' : Type) (_ : NormedAddCommGroup E') (_ : NormedSpace ℂ E')
-      (_ : FiniteDimensional ℂ E'), Nonempty (E ≃L[ℂ] E') :=
-    ⟨Fin (finrank ℂ E) → ℂ, inferInstance, inferInstance, inferInstance,
-      ⟨ContinuousLinearEquiv.ofFinrankEq (by simp)⟩⟩
-  have := isNoetherianRing_stalk_of_finrank_eq _ E' rfl ((e ∘ extChartAt I x) x)
-  exact isNoetherianRing_of_surjective _ _ _ (stalkPullback_comp_extChartAt_bijective x e).2
+  refine @isNoetherianRing_of_ringEquiv _ _ _ _
+    (stalkEquivModelSpace (I := I) (V := Fin (finrank ℂ E) → ℂ) x
+      (ContinuousLinearEquiv.ofFinrankEq (by simp))).symm ?_
+  exact isNoetherianRing_stalk_of_finrank_eq _ (Fin (finrank ℂ E) → ℂ) rfl _
 
 /-- A stalk of Mathlib's complex-smooth structure sheaf on a finite-dimensional complex manifold
 without boundary is a Noetherian ring, via its comparison with holomorphic germs. -/
