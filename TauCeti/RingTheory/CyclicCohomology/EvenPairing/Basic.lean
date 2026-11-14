@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.GroupWithZero.Idempotent
 public import Mathlib.Data.Nat.Factorial.Basic
 public import TauCeti.Data.Matrix.Block
-public import TauCeti.RingTheory.CyclicCohomology.Matrix
+public import TauCeti.RingTheory.CyclicCohomology.Matrix.Basic
 
 /-!
 # The even pairing of cyclic cohomology with idempotents

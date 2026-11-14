@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.CyclicCohomology.Matrix
+public import TauCeti.RingTheory.CyclicCohomology.Matrix.Basic
 public import TauCeti.RingTheory.CyclicCohomology.Relative.Basic
 
 /-!
