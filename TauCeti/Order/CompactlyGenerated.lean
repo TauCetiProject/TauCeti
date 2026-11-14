@@ -89,7 +89,7 @@ theorem iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and {α ι : Type*} [CompleteLa
 
 /-- **An irredundant finite family realizing a compact element.** If a compact element `a` is the
 supremum of a set `s`, then `a` is the supremum of finitely many members of `s` none of which can
-be omitted: a family of minimal size works. -/
+be omitted. -/
 theorem IsCompactElement.exists_fin_iSup_eq_of_sSup_eq {α : Type*} [CompleteLattice α] {a : α}
     (ha : IsCompactElement a) {s : Set α} (hs : sSup s = a) :
     ∃ (n : ℕ) (u : Fin n → α), (∀ i, u i ∈ s) ∧ ⨆ i, u i = a ∧

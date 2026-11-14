@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.MinimalProjectivePresentation.Existence
+public import TauCeti.Algebra.Module.MinimalProjectivePresentation.Basic
 public import TauCeti.Algebra.Module.Projective.FinitePresentation
 public import TauCeti.Algebra.Module.ProjectiveCover.Semiperfect
 

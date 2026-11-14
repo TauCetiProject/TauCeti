@@ -293,13 +293,9 @@ theorem isSuperfluous_pi_univ_iff {ι : Type*} [Finite ι] {M : ι → Type*}
     [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] {K : ∀ i, Submodule R (M i)} :
     IsSuperfluous (Submodule.pi Set.univ K) ↔ ∀ i, IsSuperfluous (K i) := by
   classical
-  refine ⟨fun h i ↦ (h.map (LinearMap.proj i)).mono fun x hx ↦ ⟨Pi.single i x, ?_, by simp⟩,
+  exact ⟨fun h i ↦ (h.map (LinearMap.proj i)).mono fun x hx ↦
+    ⟨Pi.single i x, Submodule.le_comap_single_pi (I := Set.univ) K hx, by simp⟩,
     isSuperfluous_pi_univ⟩
-  intro j _
-  by_cases hj : j = i
-  · subst hj
-    simpa using hx
-  · simp [Pi.single_eq_of_ne hj]
 
 end AddCommGroup
 

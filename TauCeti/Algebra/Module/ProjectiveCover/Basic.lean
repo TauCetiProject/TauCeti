@@ -65,8 +65,9 @@ Nothing here proves or assumes it; every statement below is conditional on a cov
   cut out by a projective cover of `M` is independent of the cover.
 * `TauCeti.IsProjectiveCover.comp`: composing a projective cover with a surjection that itself
   has superfluous kernel again gives a projective cover.
-* `TauCeti.IsProjectiveCover.exists_isProjectiveCover_comp_subtype`: a projective cover sits inside
-  every surjection from a projective module, as a direct summand of its source.
+* `TauCeti.IsProjectiveCover.exists_isProjectiveCover_comp_subtype`: if `M` has a projective
+  cover, every surjection onto `M` from a projective module restricts to a projective cover on a
+  submodule of its source.
 * `TauCeti.IsProjectiveCover.le_ker_of_ne_top`: for a cover of a simple module, every proper
   submodule of the source lies in the kernel.
 * `TauCeti.IsProjectiveCover.ker_le_jacobson`: the kernel of a projective cover lies in the radical
@@ -185,8 +186,7 @@ theorem IsProjectiveCover.bijective_of_comp_eq {P' : Type*} [AddCommGroup P'] [M
       (by rw [hσ]; exact Function.surjective_id)
   exact (hsplit.rightInverse_of_surjective hσsurj).injective
 
-/-- **A projective cover of a projective module is an isomorphism**: compare it with the identity,
-which is a projective cover of the projective target (`TauCeti.isProjectiveCover_id`). -/
+/-- **A projective cover of a projective module is an isomorphism.** -/
 theorem IsProjectiveCover.bijective_of_projective [Module.Projective R M] {f : P →ₗ[R] M}
     (hf : IsProjectiveCover f) : Function.Bijective f :=
   hf.bijective_of_comp_eq isProjectiveCover_id (LinearMap.id_comp f)
@@ -227,9 +227,10 @@ theorem IsProjectiveCover.comp {N : Type*} [AddCommMonoid N] [Module R N] {f : P
     rw [LinearMap.ker_comp]
     exact hgker.comap hf.surjective hf.isSuperfluous_ker
 
-/-- **A projective cover sits inside every projective presentation.** If `f : P → M` is a
-projective cover and `g : Q → M` a surjection from a projective module, then `g` restricted to a
-direct summand of `Q` is a projective cover of `M`. This moves a cover into the universe of `Q`. -/
+/-- **A projective cover sits inside every surjection from a projective module.** If `f : P → M`
+is a projective cover and `g : Q' → M` a surjection from a projective module, then `g` restricted
+to a submodule `Q₀` of `Q'` is a projective cover of `M`. This moves a cover into the universe of
+`Q'`. -/
 theorem IsProjectiveCover.exists_isProjectiveCover_comp_subtype {Q' : Type*} [AddCommGroup Q']
     [Module R Q'] [Module.Projective R Q'] {f : P →ₗ[R] M} (hf : IsProjectiveCover f)
     {g : Q' →ₗ[R] M} (hg : Function.Surjective g) :
@@ -260,8 +261,7 @@ variable {R : Type u} {M : Type v} {P : Type w}
   [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup P] [Module R P]
 
 /-- **A cover of a simple module is local**: every proper submodule of the source of a projective
-cover of a simple module lies in the kernel. Its image is `0` or the simple module, and in the
-second case it is everything, because the kernel is superfluous. -/
+cover of a simple module lies in the kernel. -/
 theorem IsProjectiveCover.le_ker_of_ne_top {S : Type*} [AddCommGroup S] [Module R S]
     [IsSimpleModule R S] {p : P →ₗ[R] S} (hp : IsProjectiveCover p) {U : Submodule R P}
     (hU : U ≠ ⊤) : U ≤ LinearMap.ker p := by
