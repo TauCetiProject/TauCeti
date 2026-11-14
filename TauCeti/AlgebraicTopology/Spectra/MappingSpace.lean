@@ -346,9 +346,17 @@ lemma levelSmashFunctor_map_app_comp_levelSmashUnitIso_hom {X X' : SymmetricSpec
     Mod.tensorLeftUnitIso_hom_hom, Category.assoc]
   rw [← whisker_exchange_assoc, rightUnitor_naturality]
 
-/-- Precomposing the vertex classified by `X' ⟶ Y` with `Map(f, Y)` classifies `X ⟶ X' ⟶ Y`. -/
+/-- Precomposition on mapping spaces is level zero of precomposition on internal function
+spectra. -/
+lemma mappingSpaceFunctor_map_app {X X' : SymmetricSpectrum} (f : X ⟶ X')
+    (Y : SymmetricSpectrum) :
+    (mappingSpaceFunctor.map f.op).app Y = (evaluation 0).map ((MonoidalClosed.pre f).app Y) :=
+  congrArg (fun g ↦ g.natTrans.app (FiniteBijection.mk 0))
+    (Mod.pre_app_hom_eq_ihomPre_app f Y).symm
+
+/-- Postcomposing the vertex classified by `X' ⟶ Y` with `Map(f, Y)` classifies `X ⟶ X' ⟶ Y`. -/
 @[reassoc]
-lemma unitHomMappingSpaceEquiv_symm_comp {X X' Y : SymmetricSpectrum}
+lemma unitHomMappingSpaceEquiv_symm_comp_mappingSpaceFunctor_map_app {X X' Y : SymmetricSpectrum}
     (f : X ⟶ X') (g : X' ⟶ Y) :
     (unitHomMappingSpaceEquiv X' Y).symm g ≫ (mappingSpaceFunctor.map f.op).app Y =
       (unitHomMappingSpaceEquiv X Y).symm (f ≫ g) := by
@@ -360,38 +368,42 @@ lemma unitHomMappingSpaceEquiv_symm_comp {X X' Y : SymmetricSpectrum}
     ← Category.assoc, levelSmashFunctor_map_app_comp_levelSmashUnitIso_hom, Category.assoc] at h
   exact h.symm
 
-/-- Precomposing a vertex `S⁰ ⟶ Map(X', Y)` with `Map(f, Y)` precomposes the corresponding
+/-- Postcomposing a vertex `S⁰ ⟶ Map(X', Y)` with `Map(f, Y)` precomposes the corresponding
 spectrum map `X' ⟶ Y` with `f : X ⟶ X'`. -/
 lemma unitHomMappingSpaceEquiv_comp_mappingSpaceFunctor_map_app {X X' Y : SymmetricSpectrum}
     (f : X ⟶ X') (g : 𝟙_ PointedSSet.{0} ⟶ (mappingSpace X').obj Y) :
     unitHomMappingSpaceEquiv X Y (g ≫ (mappingSpaceFunctor.map f.op).app Y) =
       f ≫ unitHomMappingSpaceEquiv X' Y g := by
   apply (unitHomMappingSpaceEquiv X Y).symm.injective
-  rw [Equiv.symm_apply_apply, ← unitHomMappingSpaceEquiv_symm_comp, Equiv.symm_apply_apply]
+  rw [Equiv.symm_apply_apply, ← unitHomMappingSpaceEquiv_symm_comp_mappingSpaceFunctor_map_app,
+    Equiv.symm_apply_apply]
 
-/-- Precomposing an `m`-simplex of `Map(X', Y)` with `Map(f, Y)` precomposes the corresponding
+/-- Applying `Map(f, Y)` to an `m`-simplex of `Map(X', Y)` precomposes the corresponding
 spectrum map `X' ∧ Δ[m]₊ ⟶ Y` with `f ∧ Δ[m]₊`. -/
 lemma mappingSpaceSimplexEquiv_mappingSpaceFunctor_map_app {X X' Y : SymmetricSpectrum}
     (f : X ⟶ X') (m : SimplexCategory)
     (x : ((mappingSpace X').obj Y).right.obj (Opposite.op m)) :
     mappingSpaceSimplexEquiv X Y m (((mappingSpaceFunctor.map f.op).app Y).right.app _ x) =
       (levelSmashFunctor.map f).app _ ≫ mappingSpaceSimplexEquiv X' Y m x := by
-  rw [mappingSpaceSimplexEquiv_apply, mappingSpaceSimplexEquiv_apply]
-  have hy : SSet.yonedaEquiv.symm (((mappingSpaceFunctor.map f.op).app Y).right.app _ x) =
-      SSet.yonedaEquiv.symm x ≫ ((mappingSpaceFunctor.map f.op).app Y).right := by
-    apply SSet.yonedaEquiv.injective
-    simp [SSet.yonedaEquiv_comp]
-  have hb : (PointedSSet.addBasepointHomEquiv (SSet.stdSimplex.obj m) ((mappingSpace X).obj Y)).symm
-      (SSet.yonedaEquiv.symm x ≫ ((mappingSpaceFunctor.map f.op).app Y).right) =
-      (PointedSSet.addBasepointHomEquiv (SSet.stdSimplex.obj m) ((mappingSpace X').obj Y)).symm
-        (SSet.yonedaEquiv.symm x) ≫ (mappingSpaceFunctor.map f.op).app Y := by
-    apply (PointedSSet.addBasepointHomEquiv _ _).injective
-    rw [PointedSSet.addBasepointHomEquiv_comp, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
-  rw [hy, hb]
+  rw [mappingSpaceSimplexEquiv_apply, mappingSpaceSimplexEquiv_apply,
+    ← SSet.yonedaEquiv_symm_comp,
+    ← PointedSSet.addBasepointHomEquiv_symm_comp (X := (mappingSpace X').obj Y)]
   simpa only [ParametrizedAdjunction.homEquiv_eq, levelSmashMappingSpaceAdjunction₂_adj] using
     levelSmashMappingSpaceAdjunction₂.homEquiv_symm_naturality_one f
       ((PointedSSet.addBasepointHomEquiv (SSet.stdSimplex.obj m) ((mappingSpace X').obj Y)).symm
         (SSet.yonedaEquiv.symm x))
+
+/-- Applying `Map(f, Y)` to the `m`-simplex classified by `X' ∧ Δ[m]₊ ⟶ Y` classifies its
+precomposition with `f ∧ Δ[m]₊`. -/
+lemma mappingSpaceFunctor_map_app_mappingSpaceSimplexEquiv_symm {X X' Y : SymmetricSpectrum}
+    (f : X ⟶ X') (m : SimplexCategory)
+    (g : (levelSmash X').obj (PointedSSet.addBasepoint.obj (SSet.stdSimplex.obj m)) ⟶ Y) :
+    ((mappingSpaceFunctor.map f.op).app Y).right.app _
+        ((mappingSpaceSimplexEquiv X' Y m).symm g) =
+      (mappingSpaceSimplexEquiv X Y m).symm ((levelSmashFunctor.map f).app _ ≫ g) := by
+  apply (mappingSpaceSimplexEquiv X Y m).injective
+  rw [mappingSpaceSimplexEquiv_mappingSpaceFunctor_map_app, Equiv.apply_symm_apply,
+    Equiv.apply_symm_apply]
 
 end SymmetricSpectrum
 

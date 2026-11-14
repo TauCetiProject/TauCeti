@@ -204,6 +204,7 @@ lemma pre_app_hom_comp_ihomι {M M' : Mod C A} (f : M ⟶ M') (N : Mod C A) :
 
 /-- Over a commutative monoid, precomposition on the internal hom module agrees on underlying
 objects with `Mod.ihomPre`. -/
+@[simp]
 lemma pre_app_hom_eq_ihomPre_app {M M' : Mod C A} (f : M ⟶ M') (N : Mod C A) :
     ((MonoidalClosed.pre f).app N).hom = (ihomPre f).app N :=
   ihom_hom_ext ((pre_app_hom_comp_ihomι f N).trans (ihomPre_app_comp_ihomι f N).symm)

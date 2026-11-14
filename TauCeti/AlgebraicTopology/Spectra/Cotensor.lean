@@ -409,14 +409,6 @@ lemma cotensorLevelIso_hom_naturality_left {K L : PointedSSet.{0}} (f : K ⟶ L)
   rw [cotensorLevelIso_hom, cotensorLevelIso_hom]
   exact h'.trans hday
 
-/-- Precomposition on mapping spaces is level zero of precomposition on internal function
-spectra. -/
-lemma mappingSpaceFunctor_map_app {X X' : SymmetricSpectrum} (f : X ⟶ X')
-    (Y : SymmetricSpectrum) :
-    (mappingSpaceFunctor.map f.op).app Y = (evaluation 0).map ((MonoidalClosed.pre f).app Y) :=
-  congrArg (fun g ↦ g.natTrans.app (FiniteBijection.mk 0))
-    (Mod.pre_app_hom_eq_ihomPre_app f Y).symm
-
 /-- The point-set cotensor `(K, E) ↦ E^K` as a bifunctor, contravariant in `K` and covariant
 in `E`. -/
 noncomputable abbrev cotensorFunctor :

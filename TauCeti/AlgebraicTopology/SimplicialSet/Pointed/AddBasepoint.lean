@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Basic
 public import Mathlib.CategoryTheory.Functor.EpiMono
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
@@ -19,8 +20,8 @@ import all TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
 The functor `K ↦ K₊` adjoins a disjoint basepoint degreewise to a simplicial set. It is left
 adjoint to forgetting the basepoint of a pointed simplicial set: based maps `K₊ ⟶ X` are the
 same as unpointed maps `K ⟶ X`. On underlying simplicial sets, `K₊` is the disjoint union of `K`
-with a point, so `K ↦ K₊` preserves monomorphisms and sends every map `K ⟶ L` to a pushout of `K`
-along the inclusion `K ⟶ K₊`.
+with a point, so `K ↦ K₊` preserves monomorphisms, sends every map `f : K ⟶ L` to a pushout of
+`f` along the inclusion `K ⟶ K₊`, and preserves anodyne extensions on underlying simplicial sets.
 
 ## Main definitions
 
@@ -28,7 +29,8 @@ along the inclusion `K ⟶ K₊`.
 * `PointedSSet.addBasepointHomEquiv`: based maps from `K₊` are unpointed maps from `K`.
 * `PointedSSet.addBasepointForgetAdjunction`: the adjunction `(-)₊ ⊣ forget`.
 * `PointedSSet.addBasepointι`: the inclusion `K ⟶ K₊` of non-basepoint simplices, with
-  `PointedSSet.isPushout_addBasepoint_map`.
+  `PointedSSet.isPushout_addBasepoint_map` and
+  `PointedSSet.anodyneExtensions_addBasepoint_map_right`.
 -/
 
 public section
@@ -151,6 +153,26 @@ lemma addBasepointHomEquiv_comp {K : SSet.{u}} {X Y : PointedSSet.{u}}
     addBasepointHomEquiv K Y (f ≫ g) = addBasepointHomEquiv K X f ≫ g.right :=
   (rfl)
 
+/-- Extending an unpointed map to `K₊` is natural in the source: precomposing with `g₊`
+corresponds to precomposing with `g`. -/
+@[reassoc]
+lemma addBasepoint_map_comp_addBasepointHomEquiv_symm {K' K : SSet.{u}} {X : PointedSSet.{u}}
+    (g : K' ⟶ K) (f : K ⟶ X.right) :
+    addBasepoint.map g ≫ (addBasepointHomEquiv K X).symm f =
+      (addBasepointHomEquiv K' X).symm (g ≫ f) := by
+  apply (addBasepointHomEquiv K' X).injective
+  rw [addBasepointHomEquiv_map_comp, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+
+/-- Extending an unpointed map to `K₊` is natural in the target: postcomposing with a based map
+`g` corresponds to postcomposing with `g.right`. -/
+@[reassoc]
+lemma addBasepointHomEquiv_symm_comp {K : SSet.{u}} {X Y : PointedSSet.{u}}
+    (f : K ⟶ X.right) (g : X ⟶ Y) :
+    (addBasepointHomEquiv K X).symm f ≫ g =
+      (addBasepointHomEquiv K Y).symm (f ≫ g.right) := by
+  apply (addBasepointHomEquiv K Y).injective
+  rw [addBasepointHomEquiv_comp, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+
 /-- Forget the basepoint of a pointed simplicial set. -/
 abbrev forgetBasepoint : PointedSSet.{u} ⥤ SSet.{u} :=
   Under.forget _
@@ -161,9 +183,21 @@ def addBasepointForgetAdjunction :
   Adjunction.mkOfHomEquiv
     { homEquiv := addBasepointHomEquiv
       homEquiv_naturality_right := addBasepointHomEquiv_comp
-      homEquiv_naturality_left_symm := fun f g ↦ by
-        ext n x
-        cases x <;> rfl }
+      homEquiv_naturality_left_symm := fun f g ↦
+        (addBasepoint_map_comp_addBasepointHomEquiv_symm f g).symm }
+
+/-- The hom-set bijection of `addBasepointForgetAdjunction` is `addBasepointHomEquiv`. -/
+@[simp]
+lemma addBasepointForgetAdjunction_homEquiv :
+    addBasepointForgetAdjunction.{u}.homEquiv = addBasepointHomEquiv :=
+  Adjunction.mkOfHomEquiv_homEquiv _
+
+/-- The counit of `addBasepointForgetAdjunction` sends the adjoined basepoint to the basepoint of
+`X` and is the identity on non-basepoint simplices. -/
+@[simp]
+lemma addBasepointForgetAdjunction_counit_app (X : PointedSSet.{u}) :
+    addBasepointForgetAdjunction.counit.app X = (addBasepointHomEquiv X.right X).symm (𝟙 X.right) :=
+  Adjunction.mkOfHomEquiv_counit_app _ X
 
 instance : addBasepoint.{u}.IsLeftAdjoint :=
   addBasepointForgetAdjunction.isLeftAdjoint
@@ -190,6 +224,27 @@ lemma addBasepointι_app (K : SSet.{u}) (n : SimplexCategoryᵒᵖ) (x : K.obj n
 lemma addBasepointι_naturality {K L : SSet.{u}} (f : K ⟶ L) :
     f ≫ addBasepointι L = addBasepointι K ≫ (addBasepoint.map f).right :=
   (rfl)
+
+/-- `addBasepointHomEquiv` restricts a based map `K₊ ⟶ X` along the inclusion `K ⟶ K₊`. -/
+lemma addBasepointHomEquiv_apply {K : SSet.{u}} {X : PointedSSet.{u}}
+    (f : addBasepoint.obj K ⟶ X) :
+    addBasepointHomEquiv K X f = addBasepointι K ≫ f.right :=
+  (rfl)
+
+/-- Extending an unpointed map `K ⟶ X` to `K₊ ⟶ X` recovers the original map on `K`. -/
+@[reassoc (attr := simp)]
+lemma addBasepointι_comp_addBasepointHomEquiv_symm_right {K : SSet.{u}} {X : PointedSSet.{u}}
+    (f : K ⟶ X.right) :
+    addBasepointι K ≫ ((addBasepointHomEquiv K X).symm f).right = f := by
+  simpa only [addBasepointHomEquiv_apply] using (addBasepointHomEquiv K X).apply_symm_apply f
+
+/-- Based maps out of `K₊` are determined by their restrictions along `K ⟶ K₊`. -/
+@[ext]
+lemma addBasepoint_hom_ext {K : SSet.{u}} {X : PointedSSet.{u}}
+    {f g : addBasepoint.obj K ⟶ X}
+    (h : addBasepointι K ≫ f.right = addBasepointι K ≫ g.right) : f = g := by
+  apply (addBasepointHomEquiv K X).injective
+  simpa only [addBasepointHomEquiv_apply] using h
 
 instance (K : SSet.{u}) : Mono (addBasepointι K) :=
   ⟨fun _ _ e ↦ by
@@ -223,19 +278,16 @@ lemma isPushout_addBasepoint_map {K L : SSet.{u}} (f : K ⟶ L) :
 instance {K L : SSet.{u}} (f : K ⟶ L) [Mono f] : Mono (addBasepoint.map f).right := by
   rw [NatTrans.mono_iff_mono_app]
   intro n
-  rw [mono_iff_injective]
-  have hf : Function.Injective (f.app n) :=
-    (mono_iff_injective (f.app n)).1 ((NatTrans.mono_iff_mono_app f).1 inferInstance n)
-  rintro (_ | x) (_ | y) h
-  · rfl
-  · cases h
-  · cases h
-  · exact congrArg some (hf (Option.some.inj h))
-
-instance {K L : SSet.{u}} (f : K ⟶ L) [Mono f] : Mono (addBasepoint.map f) :=
-  (Under.forget _).mono_of_mono_map (inferInstance : Mono (addBasepoint.map f).right)
+  exact (mono_iff_injective _).2
+    (Option.map_injective ((mono_iff_injective (f.app n)).1 inferInstance))
 
 instance : addBasepoint.{u}.PreservesMonomorphisms where
-  preserves _ _ := inferInstance
+  preserves f _ :=
+    (Under.forget _).mono_of_mono_map (inferInstance : Mono (addBasepoint.map f).right)
+
+/-- Adjoining a disjoint basepoint preserves anodyne extensions on underlying simplicial sets. -/
+lemma anodyneExtensions_addBasepoint_map_right {K L : SSet.{u}} {i : K ⟶ L}
+    (hi : SSet.anodyneExtensions i) : SSet.anodyneExtensions (addBasepoint.map i).right :=
+  MorphismProperty.of_isPushout (isPushout_addBasepoint_map i) hi
 
 end TauCeti.PointedSSet

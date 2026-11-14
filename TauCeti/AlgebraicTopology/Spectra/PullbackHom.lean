@@ -9,7 +9,6 @@ public import Mathlib.CategoryTheory.LiftingProperties.ParametrizedAdjunction
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.TrivialFibration
 public import TauCeti.AlgebraicTopology.Spectra.Cotensor
 public import TauCeti.AlgebraicTopology.Spectra.LevelFactorization
-public import TauCeti.AlgebraicTopology.Spectra.Limits
 
 import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 
@@ -68,10 +67,10 @@ and Smith.
   `SymmetricSpectrum.levelTrivialFibrations_cotensorFunctor_pullbackObjObjπ`, and
   `levelTrivialFibrations_cotensorFunctor_pullbackObjObjπ_of_levelTrivialFibrations`:
   the three cotensor pullback-hom lifting theorems.
-* `SymmetricSpectrum.projectiveCofibrations_pushoutObjObjι`,
-  `SymmetricSpectrum.llp_levelFibrations_pushoutObjObjι_of_anodyneExtensions`, and
-  `SymmetricSpectrum.llp_levelFibrations_pushoutObjObjι`: the three levelwise-smash pushout-product
-  lifting theorems.
+* `SymmetricSpectrum.projectiveCofibrations_levelSmashFunctor_pushoutObjObjι`,
+  `SymmetricSpectrum.llp_levelFibrations_levelSmashFunctor_pushoutObjObjι_of_anodyneExtensions`,
+  and `SymmetricSpectrum.llp_levelFibrations_levelSmashFunctor_pushoutObjObjι`: the three
+  levelwise-smash pushout-product lifting theorems.
 * `SymmetricSpectrum.fibration_mappingSpaceFunctor_pullbackObjObjπ`,
   `SymmetricSpectrum.rlp_monomorphisms_mappingSpaceFunctor_pullbackObjObjπ_of_llp`, and
   `SymmetricSpectrum.rlp_monomorphisms_mappingSpaceFunctor_pullbackObjObjπ`: the three
@@ -98,43 +97,22 @@ namespace TauCeti.SymmetricSpectrum
 
 /-! ### Fibrant levels and levelwise cotensor corners -/
 
-/-- The map `E ⟶ ⊤` to the terminal symmetric spectrum is a level fibration exactly when every
-level of `E` is a Kan complex. -/
-lemma levelFibrations_terminal_from_iff (E : SymmetricSpectrum) :
-    levelFibrations (terminal.from E) ↔
-      ∀ n, SSet.KanComplex ((evaluation n).obj E).right := by
-  rw [levelFibrations_iff]
-  refine forall_congr' fun n ↦ ?_
-  have : (evaluation n ⋙ PointedSSet.forgetBasepoint).IsRightAdjoint :=
-    (freeAddBasepointAdjunction n).isRightAdjoint
-  have hT := terminalIsTerminal.isTerminalObj
-    (evaluation n ⋙ PointedSSet.forgetBasepoint) (⊤_ SymmetricSpectrum)
-  exact (isFibrant_iff_of_isTerminal _ hT).symm
-
 /-- If level `n` of `E` is a Kan complex, then level `n` of the cotensor `E^K` is a Kan complex,
 with no hypothesis on `K` or on the other levels of `E`. -/
 instance kanComplex_evaluation_cotensor (K : PointedSSet.{0}) (E : SymmetricSpectrum) (n : ℕ)
     [SSet.KanComplex ((evaluation n).obj E).right] :
     SSet.KanComplex ((evaluation n).obj ((cotensor K).obj E)).right := by
-  let i : Under.mk (𝟙 (Δ[0] : SSet.{0})) ⟶ K := Under.homMk K.hom
-  have : Mono i.right := SSet.stdSimplex.isTerminalObj₀.mono_from K.hom
-  let g := (cotensorLevelIso K E n).hom ≫ (MonoidalClosed.pre i).app ((evaluation n).obj E)
-  have : IsIso (cotensorLevelIso K E n).hom.right :=
-    inferInstanceAs (IsIso (PointedSSet.forgetBasepoint.map (cotensorLevelIso K E n).hom))
-  have hg : Fibration g.right := by
-    rw [Under.comp_right, SSet.modelCategoryQuillen.fibration_iff]
-    exact MorphismProperty.comp_mem _ _ _ (MorphismProperty.of_isIso _ _)
-      ((SSet.modelCategoryQuillen.fibration_iff _).1 inferInstance)
-  have hT₀ := Under.mkIdInitial.op.isTerminalObj
-    (MonoidalClosed.internalHom.flip.obj ((evaluation n).obj E)) _
-  have hT := hT₀.isTerminalObj PointedSSet.forgetBasepoint _
-  exact (isFibrant_iff_of_isTerminal g.right hT).2 hg
+  let e : ((evaluation n).obj ((cotensor K).obj E)).right ≅
+      ((PointedSSet.ihom K).obj ((evaluation n).obj E)).right :=
+    PointedSSet.forgetBasepoint.mapIso (cotensorLevelIso K E n)
+  exact isFibrant_of_fibration e.hom
 
 /-- Evaluating a cotensor pullback-hom corner `E^L ⟶ E^K ×[B^K] B^L` at level `n` gives a pointed
 simplicial pullback-hom corner `Map_*(L, E_n) ⟶ Map_*(K, E_n) ×[Map_*(K, B_n)] Map_*(L, B_n)` via
 `cotensorLevelIso`. The body is exposed so that its pullback carrier `(evaluation n).obj P.pt`
 agrees definitionally with level `n` of `P.pt`. -/
-@[expose] noncomputable def cotensorPullbackObjObjLevel {K L : PointedSSet.{0}} {i : K ⟶ L}
+@[expose, simps pt fst snd π]
+noncomputable def cotensorPullbackObjObjLevel {K L : PointedSSet.{0}} {i : K ⟶ L}
     {E B : SymmetricSpectrum} {p : E ⟶ B} (P : cotensorFunctor.PullbackObjObj i p) (n : ℕ) :
     MonoidalClosed.internalHom.PullbackObjObj i ((evaluation n).map p) where
   pt := (evaluation n).obj P.pt
@@ -168,7 +146,7 @@ agrees definitionally with level `n` of `P.pt`. -/
 
 /-- In level `n`, the corner map of `P` factors as `cotensorLevelIso` followed by the pointed
 simplicial corner map of `cotensorPullbackObjObjLevel P n`. -/
-@[reassoc, simp]
+@[reassoc]
 lemma cotensorLevelIso_hom_comp_cotensorPullbackObjObjLevel_π {K L : PointedSSet.{0}}
     {i : K ⟶ L} {E B : SymmetricSpectrum} {p : E ⟶ B}
     (P : cotensorFunctor.PullbackObjObj i p) (n : ℕ) :
@@ -176,7 +154,10 @@ lemma cotensorLevelIso_hom_comp_cotensorPullbackObjObjLevel_π {K L : PointedSSe
       (evaluation n).map P.π :=
   Iso.hom_inv_id_assoc (cotensorLevelIso L E n) ((evaluation n).map P.π)
 
-private lemma cotensorPullbackObjObjLevel_mem_iff (W : MorphismProperty SSet.{0}) [W.RespectsIso]
+/-- For any isomorphism-invariant class `W` of simplicial maps, level `n` of the corner map `P.π`
+lies in `W` on underlying simplicial sets exactly when the pointed simplicial corner map of
+`cotensorPullbackObjObjLevel P n` does. -/
+lemma cotensorPullbackObjObjLevel_mem_iff (W : MorphismProperty SSet.{0}) [W.RespectsIso]
     {K L : PointedSSet.{0}} {i : K ⟶ L} {E B : SymmetricSpectrum} {p : E ⟶ B}
     (P : cotensorFunctor.PullbackObjObj i p) (n : ℕ) :
     W ((evaluation n).map P.π).right ↔ W (cotensorPullbackObjObjLevel P n).π.right := by
@@ -273,8 +254,8 @@ lemma levelEquivalences_cotensorFunctor_map_app {K L : PointedSSet.{0}} {i : K �
 
 /-- The pushout-product of a projective cofibration of symmetric spectra with a based monomorphism
 is a projective cofibration. -/
-lemma projectiveCofibrations_pushoutObjObjι {X Y : SymmetricSpectrum} {f : X ⟶ Y}
-    (hf : projectiveCofibrations f) {K L : PointedSSet.{0}} (i : K ⟶ L) [Mono i.right]
+lemma projectiveCofibrations_levelSmashFunctor_pushoutObjObjι {X Y : SymmetricSpectrum}
+    {f : X ⟶ Y} (hf : projectiveCofibrations f) {K L : PointedSSet.{0}} (i : K ⟶ L) [Mono i.right]
     (Q : levelSmashFunctor.PushoutObjObj f i) : projectiveCofibrations Q.ι := by
   rw [← llp_eq_of_wfs projectiveCofibrations levelTrivialFibrations]
   intro E B p hp
@@ -285,10 +266,10 @@ lemma projectiveCofibrations_pushoutObjObjι {X Y : SymmetricSpectrum} {f : X �
 
 /-- The pushout-product of a projective cofibration of symmetric spectra with a based anodyne
 extension lifts against every level fibration. -/
-lemma llp_levelFibrations_pushoutObjObjι_of_anodyneExtensions {X Y : SymmetricSpectrum}
-    {f : X ⟶ Y} (hf : projectiveCofibrations f) {K L : PointedSSet.{0}} {i : K ⟶ L}
-    (hi : SSet.anodyneExtensions i.right) (Q : levelSmashFunctor.PushoutObjObj f i) :
-    levelFibrations.llp Q.ι := by
+lemma llp_levelFibrations_levelSmashFunctor_pushoutObjObjι_of_anodyneExtensions
+    {X Y : SymmetricSpectrum} {f : X ⟶ Y} (hf : projectiveCofibrations f)
+    {K L : PointedSSet.{0}} {i : K ⟶ L} (hi : SSet.anodyneExtensions i.right)
+    (Q : levelSmashFunctor.PushoutObjObj f i) : levelFibrations.llp Q.ι := by
   intro E B p hp
   let P := Functor.PullbackObjObj.ofHasPullback cotensorFunctor i p
   have : HasLiftingProperty f P.π := hasLiftingProperty_of_wfs f P.π hf
@@ -297,7 +278,7 @@ lemma llp_levelFibrations_pushoutObjObjι_of_anodyneExtensions {X Y : SymmetricS
 
 /-- The pushout-product of a map lifting against all level fibrations with a based monomorphism
 also lifts against all level fibrations. -/
-lemma llp_levelFibrations_pushoutObjObjι {X Y : SymmetricSpectrum} {f : X ⟶ Y}
+lemma llp_levelFibrations_levelSmashFunctor_pushoutObjObjι {X Y : SymmetricSpectrum} {f : X ⟶ Y}
     (hf : levelFibrations.llp f) {K L : PointedSSet.{0}} (i : K ⟶ L) [Mono i.right]
     (Q : levelSmashFunctor.PushoutObjObj f i) : levelFibrations.llp Q.ι := by
   intro E B p hp
@@ -312,7 +293,7 @@ lemma projectiveCofibrations_levelSmashRight_map {X Y : SymmetricSpectrum} {f : 
     projectiveCofibrations ((levelSmashRight K).map f) := by
   let i : Under.mk (𝟙 (Δ[0] : SSet.{0})) ⟶ K := Under.homMk K.hom
   have : Mono i.right := SSet.stdSimplex.isTerminalObj₀.mono_from K.hom
-  exact projectiveCofibrations_pushoutObjObjι hf i
+  exact projectiveCofibrations_levelSmashFunctor_pushoutObjObjι hf i
     (Functor.PushoutObjObj.ofIsInitialRight levelSmashFunctor f i Under.mkIdInitial)
 
 /-- Smashing any pointed simplicial set on the right preserves the maps lifting against all level
@@ -322,7 +303,7 @@ lemma llp_levelFibrations_levelSmashRight_map {X Y : SymmetricSpectrum} {f : X �
     levelFibrations.llp ((levelSmashRight K).map f) := by
   let i : Under.mk (𝟙 (Δ[0] : SSet.{0})) ⟶ K := Under.homMk K.hom
   have : Mono i.right := SSet.stdSimplex.isTerminalObj₀.mono_from K.hom
-  exact llp_levelFibrations_pushoutObjObjι hf i
+  exact llp_levelFibrations_levelSmashFunctor_pushoutObjObjι hf i
     (Functor.PushoutObjObj.ofIsInitialRight levelSmashFunctor f i Under.mkIdInitial)
 
 /-- Smashing a projectively cofibrant spectrum `X` with a based monomorphism gives a projective
@@ -330,7 +311,7 @@ cofibration. -/
 lemma projectiveCofibrations_levelSmash_map {X : SymmetricSpectrum}
     (hX : projectiveCofibrations (initial.to X)) {K L : PointedSSet.{0}} (i : K ⟶ L)
     [Mono i.right] : projectiveCofibrations ((levelSmash X).map i) :=
-  projectiveCofibrations_pushoutObjObjι hX i
+  projectiveCofibrations_levelSmashFunctor_pushoutObjObjι hX i
     (Functor.PushoutObjObj.ofIsInitialLeft levelSmashFunctor (initial.to X) i initialIsInitial)
 
 /-- Smashing a projectively cofibrant spectrum `X` with a based anodyne extension gives a map
@@ -338,7 +319,7 @@ lifting against all level fibrations. -/
 lemma llp_levelFibrations_levelSmash_map_of_anodyneExtensions {X : SymmetricSpectrum}
     (hX : projectiveCofibrations (initial.to X)) {K L : PointedSSet.{0}} {i : K ⟶ L}
     (hi : SSet.anodyneExtensions i.right) : levelFibrations.llp ((levelSmash X).map i) :=
-  llp_levelFibrations_pushoutObjObjι_of_anodyneExtensions hX hi
+  llp_levelFibrations_levelSmashFunctor_pushoutObjObjι_of_anodyneExtensions hX hi
     (Functor.PushoutObjObj.ofIsInitialLeft levelSmashFunctor (initial.to X) i initialIsInitial)
 
 /-- If `⊥ ⟶ X` lifts against all level fibrations, then smashing `X` with any based monomorphism
@@ -346,16 +327,17 @@ lifts against all level fibrations. -/
 lemma llp_levelFibrations_levelSmash_map {X : SymmetricSpectrum}
     (hX : levelFibrations.llp (initial.to X)) {K L : PointedSSet.{0}} (i : K ⟶ L) [Mono i.right] :
     levelFibrations.llp ((levelSmash X).map i) :=
-  llp_levelFibrations_pushoutObjObjι hX i
+  llp_levelFibrations_levelSmashFunctor_pushoutObjObjι hX i
     (Functor.PushoutObjObj.ofIsInitialLeft levelSmashFunctor (initial.to X) i initialIsInitial)
 
 /-- The pushout-product of a projective cofibration `f` with `j₊` for an anodyne extension `j` of
 simplicial sets lifts against all level fibrations. -/
-lemma llp_levelFibrations_pushoutObjObjι_addBasepoint_map {X Y : SymmetricSpectrum} {f : X ⟶ Y}
-    (hf : projectiveCofibrations f) {A B : SSet.{0}} {j : A ⟶ B} (hj : SSet.anodyneExtensions j)
+lemma llp_levelFibrations_levelSmashFunctor_pushoutObjObjι_addBasepoint_map
+    {X Y : SymmetricSpectrum} {f : X ⟶ Y} (hf : projectiveCofibrations f)
+    {A B : SSet.{0}} {j : A ⟶ B} (hj : SSet.anodyneExtensions j)
     (Q : levelSmashFunctor.PushoutObjObj f (PointedSSet.addBasepoint.map j)) :
     levelFibrations.llp Q.ι :=
-  llp_levelFibrations_pushoutObjObjι_of_anodyneExtensions hf
+  llp_levelFibrations_levelSmashFunctor_pushoutObjObjι_of_anodyneExtensions hf
     (PointedSSet.anodyneExtensions_addBasepoint_map_right hj) Q
 
 /-- Smashing a projectively cofibrant spectrum `X` with `j₊` for an anodyne extension `j` gives a
@@ -365,7 +347,7 @@ lemma llp_levelFibrations_levelSmash_addBasepoint_map {X : SymmetricSpectrum}
     (hX : projectiveCofibrations (initial.to X)) {A B : SSet.{0}} {j : A ⟶ B}
     (hj : SSet.anodyneExtensions j) :
     levelFibrations.llp ((levelSmash X).map (PointedSSet.addBasepoint.map j)) :=
-  llp_levelFibrations_pushoutObjObjι_addBasepoint_map hX hj
+  llp_levelFibrations_levelSmashFunctor_pushoutObjObjι_addBasepoint_map hX hj
     (Functor.PushoutObjObj.ofIsInitialLeft levelSmashFunctor (initial.to X)
       (PointedSSet.addBasepoint.map j) initialIsInitial)
 
@@ -391,7 +373,7 @@ lemma fibration_mappingSpaceFunctor_pullbackObjObjπ {X Y : SymmetricSpectrum} {
   intro A C j hj
   let Q := Functor.PushoutObjObj.ofHasPushout levelSmashFunctor f (PointedSSet.addBasepoint.map j)
   have : HasLiftingProperty Q.ι p :=
-    llp_levelFibrations_pushoutObjObjι_addBasepoint_map hf
+    llp_levelFibrations_levelSmashFunctor_pushoutObjObjι_addBasepoint_map hf
       (SSet.anodyneExtensions_eq_llp_rlp.symm ▸ le_llp_rlp _ _ hj) Q p hp
   exact (hasLiftingProperty_mappingSpaceFunctor_pullbackObjObjπ_iff P j Q).2 this
 
@@ -405,7 +387,7 @@ lemma rlp_monomorphisms_mappingSpaceFunctor_pullbackObjObjπ_of_llp {X Y : Symme
   have : Mono j := hj
   let Q := Functor.PushoutObjObj.ofHasPushout levelSmashFunctor f (PointedSSet.addBasepoint.map j)
   have : HasLiftingProperty Q.ι p :=
-    llp_levelFibrations_pushoutObjObjι hf (PointedSSet.addBasepoint.map j) Q p hp
+    llp_levelFibrations_levelSmashFunctor_pushoutObjObjι hf (PointedSSet.addBasepoint.map j) Q p hp
   exact (hasLiftingProperty_mappingSpaceFunctor_pullbackObjObjπ_iff P j Q).2 this
 
 /-- The mapping-space pullback-hom corner of a projective cofibration and a level trivial fibration
@@ -419,7 +401,8 @@ lemma rlp_monomorphisms_mappingSpaceFunctor_pullbackObjObjπ {X Y : SymmetricSpe
   let Q := Functor.PushoutObjObj.ofHasPushout levelSmashFunctor f (PointedSSet.addBasepoint.map j)
   have : HasLiftingProperty Q.ι p :=
     hasLiftingProperty_of_wfs Q.ι p
-      (projectiveCofibrations_pushoutObjObjι hf (PointedSSet.addBasepoint.map j) Q) hp
+      (projectiveCofibrations_levelSmashFunctor_pushoutObjObjι hf
+        (PointedSSet.addBasepoint.map j) Q) hp
   exact (hasLiftingProperty_mappingSpaceFunctor_pullbackObjObjπ_iff P j Q).2 this
 
 /-- Precomposition `Map(Y, E) ⟶ Map(X, E)` along a projective cofibration `f : X ⟶ Y` is a Kan
