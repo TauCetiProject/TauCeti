@@ -68,14 +68,11 @@ variable {C : Type*} [Category* C] {R X : C} {p₁ p₂ : R ⟶ X}
 relation. -/
 theorem EquivalenceRelation.equivalence_ofPairHom (e : EquivalenceRelation p₁ p₂) (T : C) :
     _root_.Equivalence (Rel.ofPairHom p₁ p₂ T) where
-  refl a := ⟨a ≫ e.r, by rw [Category.assoc, e.reflexivity₁, Category.comp_id],
-    by rw [Category.assoc, e.reflexivity₂, Category.comp_id]⟩
-  symm := fun ⟨r, h₁, h₂⟩ ↦ ⟨r ≫ e.s, by rw [Category.assoc, e.symmetry₁, h₂],
-    by rw [Category.assoc, e.symmetry₂, h₁]⟩
+  refl a := ⟨a ≫ e.r, by simp [e.reflexivity₁], by simp [e.reflexivity₂]⟩
+  symm := fun ⟨r, h₁, h₂⟩ ↦ ⟨r ≫ e.s, by simp [e.symmetry₁, h₂], by simp [e.symmetry₂, h₁]⟩
   trans := fun ⟨r, h₁, h₂⟩ ⟨r', h₁', h₂'⟩ ↦
     ⟨PullbackCone.IsLimit.lift e.isLimit r r' (h₂.trans h₁'.symm) ≫ e.t,
-      by rw [Category.assoc, e.transitivity₁, PullbackCone.IsLimit.lift_fst_assoc, h₁],
-      by rw [Category.assoc, e.transitivity₂, PullbackCone.IsLimit.lift_snd_assoc, h₂']⟩
+      by simp [e.transitivity₁, h₁], by simp [e.transitivity₂, h₂']⟩
 
 end CategoryTheory
 
@@ -101,7 +98,13 @@ theorem isEquivalenceRelation_iff [HasPullback p₂ p₁] :
             s := s
             c := PullbackCone.mk _ _ pullback.condition
             isLimit := pullbackIsPullback p₂ p₁
-            t := t }⟩⟩
+            t := t
+            reflexivity₁ := hr₁
+            reflexivity₂ := hr₂
+            symmetry₁ := hs₁
+            symmetry₂ := hs₂
+            transitivity₁ := ht₁
+            transitivity₂ := ht₂ }⟩⟩
 
 end TauCeti.CategoryTheory
 
