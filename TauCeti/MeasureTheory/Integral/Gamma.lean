@@ -15,10 +15,11 @@ import TauCeti.MeasureTheory.Integral.Bochner.Basic
 # Two-sided Gamma integrals on the real line
 
 For `0 < p`, the even function `x ↦ |x| ^ q * exp (-|x| ^ p)` is Lebesgue integrable on `ℝ`
-exactly when `-1 < q`, and then its integral is `2 / p * Γ ((q + 1) / p)`.
+exactly when `-1 < q`, and then its integral is `2 / p * Γ ((q + 1) / p)`. More generally, for
+`0 < b`, `∫ x, |x| ^ q * exp (-b * |x| ^ p) = 2 / p * b ^ (-(q + 1) / p) * Γ ((q + 1) / p)`.
 
-Mathlib's `integral_rpow_mul_exp_neg_rpow` evaluates the half-line integral; folding the line onto
-the positive half-line by `integral_comp_abs` doubles it. Below the threshold the integrand is
+Mathlib's `integral_rpow_mul_exp_neg_mul_rpow` evaluates the half-line integral; folding the line
+onto the positive half-line by `integral_comp_abs` doubles it. Below the threshold the integrand is
 comparable to `x ^ q` near the origin, which is not integrable there.
 
 These integrals normalize the generalized normal (exponential power) densities
@@ -51,12 +52,20 @@ theorem integrable_abs_rpow_mul_exp_neg_abs_rpow_iff {p q : ℝ} (hp : 0 < p) :
       (Real.exp_ne_zero (-1)))] using hscaled
   exact (intervalIntegral.integrableOn_Ioo_rpow_iff one_pos).mp hpow
 
+/-- **The scaled two-sided Gamma integral.** For `0 < p`, `-1 < q` and `0 < b`,
+`∫ x, |x| ^ q * exp (-b * |x| ^ p) = 2 / p * b ^ (-(q + 1) / p) * Γ ((q + 1) / p)`. -/
+theorem integral_abs_rpow_mul_exp_neg_mul_abs_rpow {p q b : ℝ} (hp : 0 < p) (hq : -1 < q)
+    (hb : 0 < b) :
+    ∫ x : ℝ, |x| ^ q * Real.exp (-b * |x| ^ p) =
+      2 / p * b ^ (-(q + 1) / p) * Real.Gamma ((q + 1) / p) := by
+  rw [integral_comp_abs (f := fun x : ℝ => x ^ q * Real.exp (-b * x ^ p)),
+    integral_rpow_mul_exp_neg_mul_rpow hp hq hb]
+  ring
+
 /-- **The two-sided Gamma integral.** For `0 < p` and `-1 < q`,
 `∫ x, |x| ^ q * exp (-|x| ^ p) = 2 / p * Γ ((q + 1) / p)`. -/
 theorem integral_abs_rpow_mul_exp_neg_abs_rpow {p q : ℝ} (hp : 0 < p) (hq : -1 < q) :
     ∫ x : ℝ, |x| ^ q * Real.exp (-|x| ^ p) = 2 / p * Real.Gamma ((q + 1) / p) := by
-  rw [integral_comp_abs (f := fun x : ℝ => x ^ q * Real.exp (-x ^ p)),
-    integral_rpow_mul_exp_neg_rpow hp hq]
-  ring
+  simpa using integral_abs_rpow_mul_exp_neg_mul_abs_rpow hp hq one_pos
 
 end TauCeti

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.SchwartzSpace.PlaneShear
-public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
+public import TauCeti.Analysis.Sobolev.BesselPotential.LineDeriv
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 
