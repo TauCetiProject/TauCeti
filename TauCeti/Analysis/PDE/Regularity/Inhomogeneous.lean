@@ -30,13 +30,16 @@ Let `a` be measurable and uniformly elliptic on an open set `Ω ⊆ ℝⁿ`, `n 
 * `-∂ᵢ(aⁱʲ ∂ⱼu) = f` with `f ∈ Lʳ`, `r > 1` and `r > n/2`, that is `a(u, v) = ∫_Ω f v` for every
   `v ∈ H¹₀(Ω)`;
 * `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ` with `F ∈ L^q(Ω; ℝⁿ)`, `q > 2` and `q > n`, that is
-  `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`.
+  `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`;
+* `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`, combining the two, that is `a(u, v) = ∫_Ω f v - ∫_Ω ⟪F, ∇v⟫` for
+  every `v ∈ H¹₀(Ω)`.
 
 Such a solution is locally bounded and has a locally Hölder continuous representative, with an
 exponent depending only on `λ`, `Λ`, `n`, the exponent of the datum and the normalization of the
 Haar measure, and with constants controlled by `‖u‖_{L²}` and the norm of the datum divided by `λ`.
-The datum enters with the Morrey gain `2 - n/r`, respectively `1 - n/q`, of its exponent. No
-regularity of the coefficients beyond measurability is assumed.
+The datum enters with the Morrey gain `2 - n/r`, respectively `1 - n/q`, of its exponent; for the
+combined datum the Hölder exponent is limited by the smaller gain. No regularity of the
+coefficients beyond measurability is assumed.
 
 The right-hand side is split off one ball at a time. On `B = B(x₀, ρ) ⊆ Ω`, the Dirichlet problem
 `-∂ᵢ(aⁱʲ ∂ⱼw) = f` (or `= ∂ᵢFⁱ`) in `B`, `w ∈ H¹₀(B)`, has a solution, and Stampacchia's bounds
@@ -44,7 +47,8 @@ The right-hand side is split off one ball at a time. On `B = B(x₀, ρ) ⊆ Ω`
 `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow_divergence` give
 `|w| ≤ C ρ^γ ‖f‖_{Lʳ(B)} / λ` with `γ = 2 - n/r` (or `|w| ≤ C ρ^γ ‖F‖_{L^q(B)} / λ` with
 `γ = 1 - n/q`). The difference `h = u - w` solves the homogeneous equation on `B`, so De Giorgi's
-local boundedness and oscillation decay apply to it.
+local boundedness and oscillation decay apply to it. For the combined datum `f + ∂ᵢFⁱ` the two
+splittings are applied in turn, to the solution `w` for `f` and to `u - w`.
 
 Everything after the splitting depends only on the outcome: on every ball `B(x, ρ)` of radius at
 most `R`, `u` lies within `ρ^γ A` of a solution of the homogeneous equation, for some `γ > 0`.
@@ -88,6 +92,12 @@ All in the namespace `TauCeti.PDE`.
 * `exists_holderOnWith_preciseRepresentative_of_memLp` and
   `exists_holderOnWith_preciseRepresentative_of_memLp_divergence`: **De Giorgi's theorem with a
   right-hand side**, the Hölder continuity of the precise representative.
+* `exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_add_divergence`,
+  `exists_ae_abs_value_le_mul_add_of_memLp_add_divergence`,
+  `exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp_add_divergence` and
+  `exists_holderOnWith_preciseRepresentative_of_memLp_add_divergence`: the splitting on a ball,
+  local boundedness, the interior oscillation estimate and Hölder continuity for the combined
+  datum `f + ∂ᵢFⁱ`, with error `(R^(2 - n/r) ‖f‖_{Lʳ} + R^(1 - n/q) ‖F‖_{L^q}) / λ`.
 * `continuousOn_preciseRepresentative_of_forall_memLp`: for a weak solution with a right-hand
   side in `Lʳ` on compact subsets of `Ω`, `r ≥ 2` and `r > n/2`, the precise representative is
   continuous on `Ω`.
@@ -814,6 +824,21 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp_divergence [Nonempty 
 
 /-! ### A right-hand side `f + ∂ᵢFⁱ` -/
 
+/-- Adding the errors of two splittings, `|w - g₁| ≤ K₁ a₁ b₁ / λ` and
+`|(u - w) - g₂| ≤ K₂ a₂ b₂ / λ`, gives `|u - (g₁ + g₂)| ≤ max K₁ K₂ (a₁ b₁ + a₂ b₂) / λ`. -/
+private theorem abs_sub_le_max_mul_add_div {U W X V G₁ G₂ K₁ K₂ a₁ b₁ a₂ b₂ lam : ℝ}
+    (hlam : 0 ≤ lam) (h₁₀ : 0 ≤ a₁ * b₁) (h₂₀ : 0 ≤ a₂ * b₂) (hV : V = G₁ + G₂) (hX : X = U - W)
+    (h₁ : |W - G₁| ≤ K₁ * a₁ * b₁ / lam) (h₂ : |X - G₂| ≤ K₂ * a₂ * b₂ / lam) :
+    |U - V| ≤ max K₁ K₂ * (a₁ * b₁ + a₂ * b₂) / lam := by
+  subst hV hX
+  have hm₁ : K₁ * a₁ * b₁ / lam ≤ max K₁ K₂ * (a₁ * b₁) / lam := by
+    rw [mul_assoc]; gcongr; exact le_max_left _ _
+  have hm₂ : K₂ * a₂ * b₂ / lam ≤ max K₁ K₂ * (a₂ * b₂) / lam := by
+    rw [mul_assoc]; gcongr; exact le_max_right _ _
+  calc |U - (G₁ + G₂)| = |(U - W - G₂) + (W - G₁)| := by congr 1; ring
+    _ ≤ |U - W - G₂| + |W - G₁| := abs_add_le _ _
+    _ ≤ _ := by rw [mul_add, add_div]; linarith
+
 /-- **Splitting off a right-hand side `f + ∂ᵢFⁱ` on a ball.** Let `n ≥ 1` be the dimension, let
 `r > 1` with `r > n/2`, and let `q > 2` with `q > n`. There is `K > 0`, depending only on `n`,
 `r`, `q` and the normalization of `mu`, such that the following holds. Let `a` be measurable and
@@ -877,31 +902,17 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_add_divergence [Nonempt
   have hu' : ∀ v : W1p0 mu B 2,
       energyFormH1 a 0 0 (W1p.restrictL hB u - (w : W1p mu B 2)) (v : W1p mu B 2) =
         -∫ x in B, ⟪F x, W1p.gradient (v : W1p mu B 2) x⟫ ∂mu := fun v => by
-    rw [energyFormH1_sub_left hcoeff, hw v,
-      energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_inner hB hu v]
-    ring
+    linarith [energyFormH1_sub_left hcoeff (W1p.restrictL hB u) (v : W1p mu B 2) (w : W1p mu B 2),
+      hw v, energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_inner hB hu v]
   obtain ⟨g₁, hg₁, hwg₁⟩ := hsplit₁ hBell hBmeas hf hw hρ subset_rfl
   obtain ⟨g₂, hg₂, hug₂⟩ := hsplit₂ hBell hBmeas hF hu' hρ subset_rfl
-  refine ⟨g₁ + g₂, fun v => by rw [energyFormH1_add_left hcoeff, hg₁ v, hg₂ v, add_zero], ?_⟩
-  have hlam := h.pos
+  refine ⟨g₁ + g₂, fun v => by
+    linarith [energyFormH1_add_left hcoeff g₁ (v : W1p mu B 2) g₂, hg₁ v, hg₂ v], ?_⟩
   filter_upwards [hwg₁, hug₂, W1p.value_add_ae g₁ g₂,
     W1p.value_sub_ae (W1p.restrictL hB u) (w : W1p mu B 2), W1p.value_restrictL_ae hB u]
     with x h₁ h₂ hadd hsub hres
-  rw [hsub, Pi.sub_apply, hres] at h₂
-  rw [hadd, Pi.add_apply]
-  set P₁ := ρ ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal
-  set P₂ := ρ ^ (1 - (Fintype.card ι : ℝ) / q) * (eLpNorm F q (mu.restrict (ball x₀ ρ))).toReal
-  have hP₁ : 0 ≤ P₁ / lam := by positivity
-  have hP₂ : 0 ≤ P₂ / lam := by positivity
-  calc |W1p.value u x - (W1p.value g₁ x + W1p.value g₂ x)|
-      ≤ |W1p.value u x - W1p.value (w : W1p mu B 2) x - W1p.value g₂ x| +
-          |W1p.value (w : W1p mu B 2) x - W1p.value g₁ x| :=
-        (abs_add_le _ _).trans_eq' (by ring_nf)
-    _ ≤ K₂ * (P₂ / lam) + K₁ * (P₁ / lam) := by
-        rw [mul_div_assoc', mul_div_assoc']
-        exact add_le_add (h₂.trans_eq (by ring)) (h₁.trans_eq (by ring))
-    _ ≤ max K₁ K₂ * (P₂ / lam) + max K₁ K₂ * (P₁ / lam) := by gcongr <;> simp
-    _ = _ := by ring
+  exact abs_sub_le_max_mul_add_div h.pos.le (by positivity) (by positivity) hadd
+    (hsub.trans (congrArg (· - W1p.value (w : W1p mu B 2) x) hres)) h₁ h₂
 
 omit [DecidableEq ι] in
 /-- The smaller Morrey gain `min (2 - n/r) (1 - n/q)` of `f ∈ Lʳ` and `F ∈ L^q` is positive. -/
@@ -965,6 +976,7 @@ private theorem exists_forall_exists_ae_abs_sub_le_of_memLp_add_divergence [None
   have h₁ := hpow _ (min_le_left _ _)
   have h₂ := hpow _ (min_le_right _ _)
   have := h.pos
+  have hR : 0 < R := hρ.trans_le hρR
   filter_upwards [hug] with x hx
   refine hx.trans ?_
   calc _ ≤ K * (R ^ (2 - (Fintype.card ι : ℝ) / r - γ) * ρ ^ γ *
