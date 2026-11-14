@@ -25,6 +25,9 @@ spoke leaving the center and one dart of each petal.
 
 * `TauCeti.SerreGraph.starRose`: the graph, with its vertices `starRose.center`, `starRose.tip i`
   and its darts `starRose.spoke i`, `starRose.petal x`.
+* `TauCeti.SerreGraph.starRose.vertexCases`, `TauCeti.SerreGraph.starRose.dartCases`: definition
+  by cases on the vertices (the center and the tips) and on the darts (the spokes, the petals and
+  their reverses).
 * `TauCeti.SerreGraph.starRoseGeomEdgeEquiv`: the geometric edges are indexed by `ι ⊕ X`.
 * `TauCeti.SerreGraph.starRoseSpokes`: the darts of the spokes.
 * `TauCeti.SerreGraph.starRoseTree`: the spanning tree formed by the spokes.
@@ -35,7 +38,6 @@ spoke leaving the center and one dart of each petal.
 
 ## Main results
 
-* `TauCeti.SerreGraph.starRose.dart_cases`: every dart is a spoke, a petal, or the reverse of one.
 * `TauCeti.SerreGraph.isTree_restrict_starRoseSpokes`: the spokes form a tree on all vertices.
 * the instance `Unique (starRose ι X).SpanningTree`: the spokes form the only spanning tree.
 * `TauCeti.SerreGraph.starRose_connected`: the star of a rose is connected.
@@ -47,13 +49,13 @@ spoke leaving the center and one dart of each petal.
 ## Implementation notes
 
 The vertices are `Option ι` and the darts `(ι ⊕ X) × Bool`, the dart `(a, true)` being the one
-chosen by the orientation, as for `rose`. The graph and its named vertices and darts are exposed,
-so that a family indexed by the vertices, such as the vertex groups of a graph of groups, can be
-defined by cases and reduces at `starRose.center` and `starRose.tip i`. Vertices should be written
-with these names rather than as `none` or `some i`: the type `(starRose ι X).V` is not unfolded
-to `Option ι` by instance search or by `simp`, which is why its instances are declared here.
-Darts are likewise handled through their names: `starRose.dart_cases` and the `simp` lemmas on
-`starRose.spoke`, `starRose.petal` and their reverses stand in for the coordinates of a dart.
+chosen by the orientation, as for `rose`. Vertices and darts should be written through their
+names rather than as `none`, `some i` or pairs: the types `(starRose ι X).V` and `(starRose ι X).E`
+are not unfolded by instance search or by `simp`, which is why their instances are declared here.
+A family indexed by the vertices or the darts, such as the vertex groups of a graph of groups, is
+defined with `starRose.vertexCases` or `starRose.dartCases`; these and the named vertices and darts
+are exposed, so that such a family reduces definitionally, and by `simp`, at each named vertex or
+dart.
 
 ## References
 
@@ -114,10 +116,26 @@ variable {X} in
 
 variable {ι X}
 
+/-- Definition by cases on the vertices of the star of a rose: a value at the center and one at
+each tip. -/
+@[expose, elab_as_elim] def starRose.vertexCases {motive : (starRose ι X).V → Sort*}
+    (center : motive (starRose.center ι X)) (tip : ∀ i, motive (starRose.tip X i)) :
+    ∀ a, motive a
+  | none => center
+  | some i => tip i
+
+@[simp] theorem starRose.vertexCases_center {motive : (starRose ι X).V → Sort*}
+    (center : motive (starRose.center ι X)) (tip : ∀ i, motive (starRose.tip X i)) :
+    starRose.vertexCases (motive := motive) center tip (starRose.center ι X) = center := rfl
+
+@[simp] theorem starRose.vertexCases_tip {motive : (starRose ι X).V → Sort*}
+    (center : motive (starRose.center ι X)) (tip : ∀ i, motive (starRose.tip X i)) (i : ι) :
+    starRose.vertexCases (motive := motive) center tip (starRose.tip X i) = tip i := rfl
+
 /-- Every vertex of the star of a rose is the center or a tip. -/
 theorem starRose.eq_center_or_eq_tip (a : (starRose ι X).V) :
-    a = starRose.center ι X ∨ ∃ i, a = starRose.tip X i :=
-  Option.eq_none_or_eq_some a
+    a = starRose.center ι X ∨ ∃ i, a = starRose.tip X i := by
+  cases a using starRose.vertexCases <;> simp
 
 /-- Distinct elements of `ι` give distinct tips. -/
 theorem starRose.tip_injective : Function.Injective (starRose.tip X : ι → (starRose ι X).V) :=
@@ -132,15 +150,42 @@ theorem starRose.tip_injective : Function.Injective (starRose.tip X : ι → (st
 @[simp] theorem starRose.center_ne_tip (i : ι) : starRose.center ι X ≠ starRose.tip X i :=
   (starRose.tip_ne_center i).symm
 
-/-- Every dart of the star of a rose is a spoke, a petal, or the reverse of one. -/
-@[elab_as_elim] theorem starRose.dart_cases {motive : (starRose ι X).E → Prop}
+/-- Definition by cases on the darts of the star of a rose: every dart is a spoke, a petal, or the
+reverse of one. -/
+@[expose, elab_as_elim] def starRose.dartCases {motive : (starRose ι X).E → Sort*}
     (spoke : ∀ i, motive (starRose.spoke X i))
     (rev_spoke : ∀ i, motive ((starRose ι X).rev (starRose.spoke X i)))
     (petal : ∀ x, motive (starRose.petal ι x))
-    (rev_petal : ∀ x, motive ((starRose ι X).rev (starRose.petal ι x))) (e : (starRose ι X).E) :
-    motive e := by
-  obtain ⟨i | x, _ | _⟩ := e
-  exacts [rev_spoke i, spoke i, rev_petal x, petal x]
+    (rev_petal : ∀ x, motive ((starRose ι X).rev (starRose.petal ι x))) : ∀ e, motive e
+  | (.inl i, true) => spoke i
+  | (.inl i, false) => rev_spoke i
+  | (.inr x, true) => petal x
+  | (.inr x, false) => rev_petal x
+
+section dartCases
+
+variable {motive : (starRose ι X).E → Sort*} (spoke : ∀ i, motive (starRose.spoke X i))
+  (rev_spoke : ∀ i, motive ((starRose ι X).rev (starRose.spoke X i)))
+  (petal : ∀ x, motive (starRose.petal ι x))
+  (rev_petal : ∀ x, motive ((starRose ι X).rev (starRose.petal ι x)))
+
+@[simp] theorem starRose.dartCases_spoke (i : ι) :
+    starRose.dartCases (motive := motive) spoke rev_spoke petal rev_petal (starRose.spoke X i) =
+      spoke i := rfl
+
+@[simp] theorem starRose.dartCases_rev_spoke (i : ι) :
+    starRose.dartCases (motive := motive) spoke rev_spoke petal rev_petal
+      ((starRose ι X).rev (starRose.spoke X i)) = rev_spoke i := rfl
+
+@[simp] theorem starRose.dartCases_petal (x : X) :
+    starRose.dartCases (motive := motive) spoke rev_spoke petal rev_petal (starRose.petal ι x) =
+      petal x := rfl
+
+@[simp] theorem starRose.dartCases_rev_petal (x : X) :
+    starRose.dartCases (motive := motive) spoke rev_spoke petal rev_petal
+      ((starRose ι X).rev (starRose.petal ι x)) = rev_petal x := rfl
+
+end dartCases
 
 /-- Distinct elements of `ι` give distinct spokes. -/
 theorem starRose.spoke_injective :
@@ -203,12 +248,12 @@ theorem starRose.petal_injective :
 /-- The only dart ending at the tip `i` is the spoke `i`. -/
 @[simp] theorem starRose_tgt_eq_tip_iff {e : (starRose ι X).E} {i : ι} :
     (starRose ι X).tgt e = starRose.tip X i ↔ e = starRose.spoke X i := by
-  cases e using starRose.dart_cases <;> simp
+  cases e using starRose.dartCases <;> simp
 
 /-- The only dart starting at the tip `i` is the reverse of the spoke `i`. -/
 @[simp] theorem starRose_src_eq_tip_iff {e : (starRose ι X).E} {i : ι} :
     (starRose ι X).src e = starRose.tip X i ↔ e = (starRose ι X).rev (starRose.spoke X i) := by
-  cases e using starRose.dart_cases <;> simp [(starRose ι X).rev_injective.eq_iff]
+  cases e using starRose.dartCases <;> simp
 
 variable (ι X)
 
@@ -220,7 +265,7 @@ def starRoseGeomEdgeEquiv : (starRose ι X).GeomEdge ≃ ι ⊕ X where
   left_inv g := by
     obtain ⟨e, rfl⟩ := (starRose ι X).toGeomEdge_surjective g
     refine (congrArg (Sum.elim _ _) (GeomEdge.lift_toGeomEdge ..)).trans ?_
-    cases e using starRose.dart_cases
+    cases e using starRose.dartCases
     exacts [rfl, ((starRose ι X).toGeomEdge_rev _).symm, rfl,
       ((starRose ι X).toGeomEdge_rev _).symm]
   right_inv a := by cases a <;> exact GeomEdge.lift_toGeomEdge ..
@@ -267,20 +312,21 @@ theorem rev_mem_starRoseSpokes (e : (starRose ι X).E) (he : e ∈ starRoseSpoke
 theorem mem_starRoseSpokes_iff {e : (starRose ι X).E} :
     e ∈ starRoseSpokes ι X ↔
       ∃ i, e = starRose.spoke X i ∨ e = (starRose ι X).rev (starRose.spoke X i) := by
-  cases e using starRose.dart_cases <;> simp [(starRose ι X).rev_injective.eq_iff, eq_comm]
+  cases e using starRose.dartCases <;> simp [eq_comm]
 
 -- A dart of a spoke is not a loop.
 private theorem ne_of_mem_starRoseSpokes {a b : (starRose ι X).V} (e : a ⟶ b)
     (he : e.1 ∈ starRoseSpokes ι X) : a ≠ b := by
   obtain ⟨e, rfl, rfl⟩ := e
-  cases e using starRose.dart_cases <;> simp_all
+  cases e using starRose.dartCases <;> simp_all
 
 -- Two consecutive darts, the second not reversing the first, meet at the center.
 private theorem eq_center_of_ne_rev {a b c : (starRose ι X).V} (e : a ⟶ b) (f : b ⟶ c)
     (hef : f.1 ≠ (starRose ι X).rev e.1) : b = starRose.center ι X := by
-  obtain rfl | ⟨i, rfl⟩ := starRose.eq_center_or_eq_tip b
-  · rfl
-  · rw [starRose_src_eq_tip_iff.mp f.2.1, starRose_tgt_eq_tip_iff.mp e.2.2] at hef
+  cases b using starRose.vertexCases with
+  | center => rfl
+  | tip i =>
+    rw [starRose_src_eq_tip_iff.mp f.2.1, starRose_tgt_eq_tip_iff.mp e.2.2] at hef
     exact absurd rfl hef
 
 variable (ι X)
@@ -324,7 +370,7 @@ instance : Unique (starRose ι X).SpanningTree where
     -- A spanning tree contains no petal, since a petal is a loop.
     have hT : T.darts ⊆ starRoseSpokes ι X := fun e he => by
       have := T.src_ne_tgt he
-      cases e using starRose.dart_cases <;> simp_all
+      cases e using starRose.dartCases <;> simp_all
     -- The last dart of the tree path from the center to the tip `i` is the spoke `i`.
     have hspoke (i : ι) : starRose.spoke X i ∈ T.darts := by
       obtain ⟨p, -, hpT⟩ := T.exists_path (starRose.center ι X) (starRose.tip X i)
@@ -359,7 +405,7 @@ the star of a rose. -/
 theorem isOrientation_starRoseOrientation :
     (starRose ι X).IsOrientation (starRoseOrientation ι X) :=
   ((starRose ι X).isOrientation_iff _).mpr fun e => by
-    cases e using starRose.dart_cases <;>
+    cases e using starRose.dartCases <;>
       simp only [rev_rev, spoke_mem_starRoseOrientation, petal_mem_starRoseOrientation,
         not_true_eq_false, true_iff, iff_false] <;> exact nofun
 
@@ -370,7 +416,7 @@ theorem isOrientation_starRoseOrientation :
 theorem mem_starRoseOrientation_iff {e : (starRose ι X).E} :
     e ∈ starRoseOrientation ι X ↔
       (∃ i, e = starRose.spoke X i) ∨ ∃ x, e = starRose.petal ι x := by
-  cases e using starRose.dart_cases <;> simp [eq_comm]
+  cases e using starRose.dartCases <;> simp [eq_comm]
 
 variable (ι X)
 
@@ -378,12 +424,19 @@ variable (ι X)
 theorem starRoseOrientation_diff_starRoseSpokes :
     starRoseOrientation ι X \ starRoseSpokes ι X = Set.range (starRose.petal ι) := by
   ext e
-  cases e using starRose.dart_cases <;> simp
+  cases e using starRose.dartCases <;> simp
 
 /-- The petals of the star of a rose, as the darts of the orientation outside the spanning tree. -/
-noncomputable def starRose.petalEquiv : X ≃ ↥(starRoseOrientation ι X \ starRoseSpokes ι X) :=
-  (Equiv.ofInjective _ starRose.petal_injective).trans
-    (Equiv.subtypeEquivRight (Set.ext_iff.mp (starRoseOrientation_diff_starRoseSpokes ι X).symm))
+def starRose.petalEquiv : X ≃ ↥(starRoseOrientation ι X \ starRoseSpokes ι X) where
+  toFun x := ⟨starRose.petal ι x, by simp⟩
+  invFun e := starRose.dartCases
+    (motive := fun d => d ∈ starRoseOrientation ι X \ starRoseSpokes ι X → X)
+    (fun _ h => absurd (by simp) h.2) (fun _ h => absurd (by simp) h.2) (fun x _ => x)
+    (fun _ h => absurd h.1 (by simp)) e.1 e.2
+  left_inv _ := rfl
+  right_inv e := by
+    obtain ⟨e, he⟩ := e
+    cases e using starRose.dartCases <;> simp at he ⊢
 
 variable {ι X}
 
@@ -393,6 +446,11 @@ variable {ι X}
 @[simp] theorem starRose.petalEquiv_symm_apply (x : X)
     (h : starRose.petal ι x ∈ starRoseOrientation ι X \ starRoseSpokes ι X) :
     (starRose.petalEquiv ι X).symm ⟨starRose.petal ι x, h⟩ = x :=
-  (starRose.petalEquiv ι X).symm_apply_eq.mpr (Subtype.ext (rfl))
+  (rfl)
+
+@[simp] theorem starRose.petal_petalEquiv_symm
+    (e : ↥(starRoseOrientation ι X \ starRoseSpokes ι X)) :
+    starRose.petal ι ((starRose.petalEquiv ι X).symm e) = e :=
+  congrArg Subtype.val ((starRose.petalEquiv ι X).apply_symm_apply e)
 
 end TauCeti.SerreGraph
