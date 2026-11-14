@@ -507,7 +507,7 @@ theorem isClosed_criticalPoints (hf : ContMDiff I 𝓘(ℝ) 1 f) : IsClosed (cri
       ← fderivWithin_of_mem_nhdsWithin (extChartAt_target_mem_nhdsWithin_of_mem hyt)
         (I.uniqueDiffOn _ (extChartAt_target_subset_range x hyt))
         ((hg _ hyt).differentiableWithinAt one_ne_zero),
-      (hf.mdifferentiableAt one_ne_zero).fderivWithin_comp_extChartAt_symm x hy]
+      TauCeti.fderivWithin_comp_extChartAt_symm x hy]
     -- The change of tangent coordinates is invertible, so it can be cancelled.
     have hsurj : ∀ w, tangentCoordChange I x y y (tangentCoordChange I y x y w) = w := fun w ↦ by
       rw [tangentCoordChange_comp (w := y) ⟨⟨mem_extChartAt_source y, hy⟩,
@@ -574,6 +574,18 @@ theorem IsMorse.finite_criticalPoints_inter (hf : IsMorse I f) {K : Set M} (hK :
   finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint
     (hf.contMDiff.of_le (by simp)) hK
     fun _ hx ↦ hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hx.1
+
+omit [IsManifold I 1 M] in
+/-- If only finitely many critical points lie in `S`, then only finitely many pairs of an index `m`
+and a critical point of index `m` in `S` exist. -/
+theorem finite_sigma_criticalPoints_inter {S : Set M} (hS : (criticalPoints I f ∩ S).Finite) :
+    Finite (Σ m, ↥{x ∈ criticalPoints I f ∩ S | manifoldMorseIndex I f x = m}) :=
+  have := hS.to_subtype
+  .of_injective (fun x ↦ (⟨x.2, x.2.2.1⟩ : ↥(criticalPoints I f ∩ S)))
+    fun ⟨_, _, hx⟩ ⟨_, _, hy⟩ hxy ↦ by
+      cases Subtype.ext_iff.1 hxy
+      cases hx.2.symm.trans hy.2
+      rfl
 
 /-- **The critical points of a Morse function are isolated.** Near any point `x` there is no
 critical point of a Morse function other than `x` itself. -/

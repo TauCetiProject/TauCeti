@@ -198,6 +198,24 @@ theorem mk_substituteVars (U : X → List (A × Bool)) (w : List ((X ⊕ A) × B
   -- `of a` is the one-letter word `mk [(a, true)]` by definition.
   cases y <;> rfl
 
+/-- If substituting nonempty words for the variables, without free reduction, gives a reduced
+word, then the word in variables and letters was already reduced: a cancelling pair of letters
+is replaced by a nonempty word followed by its formal inverse. -/
+theorem IsReduced.of_substituteVars {U : X → List (A × Bool)} (hU : ∀ x, U x ≠ [])
+    {w : List ((X ⊕ A) × Bool)} (h : IsReduced (substituteVars U w)) : IsReduced w := by
+  refine IsReduced.of_forall_not_step fun w' hstep => ?_
+  obtain @⟨L₁, L₂, y, b⟩ := hstep
+  have hinv : substituteVars U [(y, !b)] = FreeGroup.invRev (substituteVars U [(y, b)]) := by
+    rw [← substituteVars_invRev]
+    simp [FreeGroup.invRev]
+  have hred : IsReduced (substituteVars U [(y, b)] ++ substituteVars U [(y, !b)]) := by
+    refine h.infix ⟨substituteVars U L₁, substituteVars U L₂, ?_⟩
+    rw [← substituteVars_append, ← substituteVars_append, ← substituteVars_append]
+    simp
+  have hnil := hred.eq_of_mk_eq .nil <| by
+    rw [hinv, ← mul_mk, ← inv_mk, mul_inv_cancel, one_eq_mk]
+  obtain x | a := y <;> cases b <;> simp [hU] at hnil
+
 end Vars
 
 variable [Primcodable α] [Primcodable β]
