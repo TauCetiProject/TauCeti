@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Pompeiu.Weak
 public import TauCeti.Analysis.Complex.Wirtinger.Beurling.Cauchy
 public import TauCeti.Analysis.Complex.Wirtinger.Lp
 public import TauCeti.Analysis.Sobolev.Local.Basic
+import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Normed.Lp.SmoothApprox
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
@@ -45,7 +46,9 @@ Consequences:
 * the bound `T : Lᵖ(D_r) → W^{1,p}(D_R)` with explicit constant `2 (r + R) + ‖B‖ + 1`
   (`TauCeti.eLpNorm_cauchyTransform_add_eLpNorm_wirtingerPartsCLM_beurlingLp_le`), and membership
   of `T f` in the local Sobolev class `W^{1,p}_loc` on every subset of the plane
-  (`TauCeti.memWkpLoc_one_cauchyTransform_of_memLp`);
+  (`TauCeti.memWkpLoc_one_cauchyTransform_of_memLp`), also for data with values in a
+  finite-dimensional complex normed space, read in a Euclidean model
+  (`TauCeti.memWkpLoc_one_cauchyTransform_of_memLp_of_finiteDimensional`);
 * continuity in parameters of the derivative term: for a family of data depending continuously
   on a parameter in `Lᵖ`, the fields `w ↦ wirtingerPartsCLM (B f w) (f w)` depend continuously on
   it in `Lᵖ(ℂ)` (`TauCeti.continuous_toLp_wirtingerPartsCLM_beurlingLp`). The function term is
@@ -279,5 +282,34 @@ theorem continuous_toLp_wirtingerPartsCLM_beurlingLp (hp : 1 < p) (hp_top : p �
       (fun y ↦ ((hf y).sub (hf x)).aestronglyMeasurable) hB h)
 
 end Weak
+
+/-! ### Finite-dimensional data -/
+
+section FiniteDimensional
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
+  {p : ℝ≥0∞}
+
+/-- **The Cauchy transform of finite-dimensional `Lᵖ` data is locally `W^{1,p}`.** For
+`1 < p < ∞` and `f ∈ Lᵖ(ℂ)` supported in a closed disc, with values in a finite-dimensional complex
+normed space, `T f` belongs to the local Sobolev class `W^{1,p}_loc` on every subset of the plane.
+The data are read in a Euclidean model, where `TauCeti.memWkpLoc_one_cauchyTransform_of_memLp`
+applies. -/
+theorem memWkpLoc_one_cauchyTransform_of_memLp_of_finiteDimensional (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) {f : ℂ → F} (hf : MemLp f p volume) {c : ℂ} {r : ℝ}
+    (hs : support f ⊆ closedBall c r) (U : Set ℂ) : MemWkpLoc p U 1 (cauchyTransform f) := by
+  have : Fact (1 ≤ p) := ⟨hp.le⟩
+  have := FiniteDimensional.completeSpace ℂ F
+  let e : F ≃L[ℂ] EuclideanSpace ℂ (Fin (Module.finrank ℂ F)) :=
+    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  have hT : cauchyTransform f = fun w ↦ e.symm (cauchyTransform (fun z ↦ e (f z)) w) := by
+    ext1 w
+    simp only [cauchyTransform_apply, map_smul, ← e.symm.integral_comp_comm,
+      ContinuousLinearEquiv.symm_apply_apply]
+  rw [hT]
+  exact (memWkpLoc_one_cauchyTransform_of_memLp hp hp_top (e.toContinuousLinearMap.comp_memLp' hf)
+    (fun z hz ↦ hs fun h ↦ hz (by simp [h])) U).clm_comp ((e.symm : _ →L[ℂ] F).restrictScalars ℝ)
+
+end FiniteDimensional
 
 end TauCeti
