@@ -43,6 +43,7 @@ The results hold for characters with values in any commutative ring.
   character of level `N ≠ 0` is the character of a unique fundamental discriminant of absolute
   value `N`.
 * `DirichletCharacter.eq_conductor_ite_of_isFundamentalDiscr`,
+  `DirichletCharacter.IsPrimitive.eq_ite_of_natAbs_eq_of_forall_apply_eq`,
   `DirichletCharacter.IsPrimitive.isFundamentalDiscr_ite`,
   `DirichletCharacter.IsPrimitive.apply_eq_fundamentalDiscriminantCharCast_ite`: that fundamental
   discriminant is `if χ (-1) = 1 then N else -N`.
@@ -179,8 +180,7 @@ theorem eq_conductor_ite_of_isFundamentalDiscr [DecidableEq R] {N : ℕ} [NeZero
   · obtain rfl := hχ.eq_one_of_two_eq_zero h2
     rw [conductor_one] at hDc ⊢
     rw [MulChar.one_apply isUnit_one.neg, ite_eq_left rfl, Nat.cast_one]
-    have hmod := hD.emod_four_eq_zero_or_one
-    omega
+    exact hD.natAbs_eq_one_iff.mp hDc
   · split_ifs with h1 <;> rw [hsign] at h1 <;> rcases hD.ne_zero.lt_or_gt with h | h
     · rw [Int.sign_eq_neg_one_of_neg h, Int.cast_neg, Int.cast_one, neg_eq_iff_add_eq_zero,
         one_add_one_eq_two] at h1
@@ -189,6 +189,25 @@ theorem eq_conductor_ite_of_isFundamentalDiscr [DecidableEq R] {N : ℕ} [NeZero
     · omega
     · rw [Int.sign_eq_one_of_pos h, Int.cast_one] at h1
       exact absurd rfl h1
+
+/-- For a primitive Dirichlet character `χ` of level `N`, any fundamental discriminant `D` of
+absolute value `N` whose character agrees with `χ` at all integers equals
+`if χ (-1) = 1 then (N : ℤ) else -N`. -/
+theorem IsPrimitive.eq_ite_of_natAbs_eq_of_forall_apply_eq [DecidableEq R] {N : ℕ}
+    {χ : DirichletCharacter R N} (hχ : χ.IsPrimitive) {D : ℤ} (hD : Int.IsFundamentalDiscr D)
+    (hDN : D.natAbs = N)
+    (hval : ∀ n : ℤ, χ n = fundamentalDiscriminantCharCast R D hD n) :
+    D = if χ (-1) = 1 then (N : ℤ) else -N := by
+  have : NeZero N := hDN ▸ hD.neZero_natAbs
+  have hq : χ.IsQuadratic := fun a ↦ by
+    obtain ⟨n, rfl⟩ := ZMod.intCast_surjective a
+    rw [hval]
+    exact fundamentalDiscriminantCharCast_isQuadratic hD n
+  have hc : χ.conductor = N := (isPrimitive_def χ).mp hχ
+  have hsign : χ (-1) = D.sign := by
+    simpa [fundamentalDiscriminantChar_neg_one] using hval (-1)
+  have hite := eq_conductor_ite_of_isFundamentalDiscr hq hD (hDN.trans hc.symm) hsign
+  rwa [hc] at hite
 
 /-- **Uniqueness of the fundamental discriminant of a primitive quadratic character.** Every
 primitive quadratic Dirichlet character `χ` of nonzero level `N` is the character of a unique
@@ -200,11 +219,8 @@ theorem IsPrimitive.existsUnique_isFundamentalDiscr_apply_eq {N : ℕ} [NeZero N
   classical
   obtain ⟨D, hD, hDN, hval⟩ := hχ.exists_isFundamentalDiscr_apply_eq hq
   refine ⟨D, ⟨hD, hDN, hval⟩, fun D' ⟨hD', hD'N, hval'⟩ ↦ ?_⟩
-  have hc : χ.conductor = N := hχ
-  have hsign : χ (-1) = D.sign := by simpa [fundamentalDiscriminantChar_neg_one] using hval (-1)
-  have hsign' : χ (-1) = D'.sign := by simpa [fundamentalDiscriminantChar_neg_one] using hval' (-1)
-  exact (eq_conductor_ite_of_isFundamentalDiscr hq hD' (hD'N.trans hc.symm) hsign').trans
-    (eq_conductor_ite_of_isFundamentalDiscr hq hD (hDN.trans hc.symm) hsign).symm
+  exact (hχ.eq_ite_of_natAbs_eq_of_forall_apply_eq hD' hD'N hval').trans
+    (hχ.eq_ite_of_natAbs_eq_of_forall_apply_eq hD hDN hval).symm
 
 section Sign
 
@@ -216,12 +232,7 @@ private theorem IsPrimitive.exists_eq_ite_apply_eq (hχ : χ.IsPrimitive) (hq : 
     ∃ (D : ℤ) (hD : Int.IsFundamentalDiscr D), D = (if χ (-1) = 1 then (N : ℤ) else -N) ∧
       ∀ n : ℤ, χ n = fundamentalDiscriminantCharCast R D hD n := by
   obtain ⟨D, hD, hDN, hval⟩ := hχ.exists_isFundamentalDiscr_apply_eq hq
-  have hc : χ.conductor = N := hχ
-  have hsign : χ (-1) = D.sign := by
-    simpa [fundamentalDiscriminantChar_neg_one] using hval (-1)
-  have hite := eq_conductor_ite_of_isFundamentalDiscr hq hD (hDN.trans hc.symm) hsign
-  rw [hc] at hite
-  exact ⟨D, hD, hite, hval⟩
+  exact ⟨D, hD, hχ.eq_ite_of_natAbs_eq_of_forall_apply_eq hD hDN hval, hval⟩
 
 /-- The integer `N` if `χ (-1) = 1` and `-N` otherwise is a fundamental discriminant for every
 primitive quadratic character `χ` of nonzero level `N`. -/

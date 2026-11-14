@@ -170,6 +170,13 @@ theorem fundamentalDiscriminant_eq_one_iff {d : ℤ} :
   rw [fundamentalDiscriminant_def]
   split_ifs <;> omega
 
+/-- `fundamentalDiscriminant d` has absolute value `1` if and only if `d = 1`. -/
+@[simp]
+theorem natAbs_fundamentalDiscriminant_eq_one_iff {d : ℤ} :
+    (fundamentalDiscriminant d).natAbs = 1 ↔ d = 1 := by
+  rw [fundamentalDiscriminant_def]
+  split_ifs <;> omega
+
 /-- `fundamentalDiscriminant d` is positive if and only if `d` is positive. -/
 @[simp]
 theorem fundamentalDiscriminant_pos_iff {d : ℤ} :
