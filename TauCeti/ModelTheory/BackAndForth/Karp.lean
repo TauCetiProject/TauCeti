@@ -188,6 +188,29 @@ theorem exists_forall_realize_snoc_iff_of_forall_realize_iff_right {κ : Type u�
   · exact (hf x φ).trans (h φ).symm
   · exact absurd ((hf x _).1 (hx (f x))) h
 
+/-- **Carrier transfer for tuples.** If two tuples agree on every infinitary formula with carrier
+`κ` and the second structure is coded into `κ`, then they agree on every infinitary formula, with
+a carrier `μ` in any universe. No relational hypothesis is needed: the atomic formulas of `μ` are
+formulas with carrier `κ`. -/
+theorem realize_iff_of_forall_realize_iff {κ : Type uκ} {μ : Type uμ} (cN : IndexCoding N κ)
+    {n : ℕ} {a : Fin n → M} {b : Fin n → N}
+    (hab : ∀ φ : L.BoundedFormulaInf κ Empty n, φ.Realize Empty.elim a ↔ φ.Realize Empty.elim b)
+    (ψ : L.BoundedFormulaInf μ Empty n) : ψ.Realize Empty.elim a ↔ ψ.Realize Empty.elim b := by
+  induction ψ with
+  | falsum => simp
+  | equal t₁ t₂ => simpa using hab (.equal t₁ t₂)
+  | rel R ts => simpa using hab (.rel R ts)
+  | imp φ ψ ihφ ihψ => simp only [BoundedFormulaInf.realize_imp, ihφ hab, ihψ hab]
+  | all φ ih =>
+    simp only [BoundedFormulaInf.realize_all]
+    refine ⟨fun h y => ?_, fun h x => ?_⟩
+    · obtain ⟨x, hx⟩ := exists_forall_realize_snoc_iff_of_forall_realize_iff_right cN hab y
+      exact (ih hx).1 (h x)
+    · obtain ⟨y, hy⟩ := exists_forall_realize_snoc_iff_of_forall_realize_iff cN hab x
+      exact (ih hy).2 (h y)
+  | iSup φs ih => simpa only [BoundedFormulaInf.realize_iSup] using exists_congr fun i => ih i hab
+  | iInf φs ih => simpa only [BoundedFormulaInf.realize_iInf] using forall_congr' fun i => ih i hab
+
 variable [L.IsRelational]
 
 section Atomic
@@ -353,17 +376,20 @@ theorem karp_theorem : PotentialIso (L := L) M N ↔ InfEquivW (L := L) M N :=
   ⟨fun h κ => h.infEquivAt κ,
     fun h => (h (M ⊕ N)).potentialIso (IndexCoding.sumInr M N)⟩
 
-/-- In a relational language, agreement at one carrier into which the second structure is coded
-gives full infinitary equivalence. -/
-theorem InfEquivAt.infEquivW (cN : IndexCoding N κ)
-    (h : InfEquivAt (L := L) κ M N) : InfEquivW (L := L) M N :=
-  karp_theorem.1 (h.potentialIso cN)
+omit [L.IsRelational] in
+/-- Agreement at one carrier into which the second structure is coded gives full infinitary
+equivalence. -/
+theorem InfEquivAt.infEquivW {κ : Type uκ} (cN : IndexCoding N κ)
+    (h : InfEquivAt (L := L) κ M N) : InfEquivW (L := L) M N := fun _ =>
+  infEquivAt_iff_forall_realize.2 (realize_iff_of_forall_realize_iff cN
+    (infEquivAt_iff_forall_realize.1 h))
 
-/-- In a relational language, full infinitary equivalence gives agreement at a carrier in any
-universe. -/
+omit [L.IsRelational] in
+/-- Full infinitary equivalence gives agreement at a carrier in any universe. -/
 theorem InfEquivW.infEquivAt (h : InfEquivW (L := L) M N) (μ : Type uμ) :
     InfEquivAt (L := L) μ M N :=
-  (karp_theorem.2 h).infEquivAt μ
+  infEquivAt_iff_forall_realize.2 (realize_iff_of_forall_realize_iff (IndexCoding.sumInr M N)
+    (infEquivAt_iff_forall_realize.1 (h (M ⊕ N))))
 
 /-- **Karp's theorem for countable structures.** Countable structures in a relational language are
 isomorphic exactly when they satisfy the same `L_{ω₁ω}` sentences, the infinitary sentences whose
