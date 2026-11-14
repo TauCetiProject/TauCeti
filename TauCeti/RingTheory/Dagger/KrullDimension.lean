@@ -143,8 +143,11 @@ private theorem natCard_add_one_le_height_option {σ : Type*} [Finite σ]
     exact Nat.succ_ne_zero (Nat.card σ) (by exact_mod_cast this)
   obtain ⟨f, hfM, hf⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hM
   obtain ⟨E, s, ω, hd, hm, v, hv⟩ := exists_associated_polynomialToOption f hf
-  let N : Ideal (W (Option σ)) := M.comap E
-  have : N.IsMaximal := Ideal.comap_isMaximal_of_surjective E E.surjective
+  -- Only the ring structure of the automorphism `E` is used.
+  rw [← AlgEquiv.coe_toRingEquiv] at hv
+  set e : W (Option σ) ≃+* W (Option σ) := E.toRingEquiv
+  let N : Ideal (W (Option σ)) := M.comap e
+  have : N.IsMaximal := Ideal.comap_isMaximal_of_surjective e e.surjective
   -- `K⟨X, Y⟩† ⧸ (ω) ≅ K⟨X⟩†[Y] ⧸ (ω)` is finite free over `K⟨X⟩†`, so it is integral with going
   -- down; as `ω` is a non-zero-divisor, `N` has height at least one more than some maximal ideal
   -- of `K⟨X⟩†`.
@@ -156,7 +159,7 @@ private theorem natCard_add_one_le_height_option {σ : Type*} [Finite σ]
   obtain ⟨p, _, hp⟩ := N.exists_isMaximal_height_add_one_le_of_ringEquiv_quotient (R := W σ)
     (Ideal.mem_comap.mpr (hv ▸ M.mul_mem_right _ hfM)) hg
     (polynomialQuotientEquiv hd hm).toRingEquiv
-  rw [← RingEquiv.height_comap E.toRingEquiv M, Finite.card_option, Nat.cast_add, Nat.cast_one]
+  rw [← RingEquiv.height_comap e M, Finite.card_option, Nat.cast_add, Nat.cast_one]
   exact le_trans (by gcongr; exact IH p) hp
 
 end washnitzerAlgebra
