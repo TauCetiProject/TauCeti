@@ -105,6 +105,23 @@ private theorem glueKey_of_gt {y : α} (hy : x < y) :
 private theorem glueKey_snd (y : α) : (glueKey m x L R y).2 = R.part y :=
   rfl
 
+/-- If the last of four increasing positions is `x` and the glued keys of the first and third and
+of the second and last agree, then the keys of the first two agree: `b` lies in the part of `m`. -/
+private theorem glueKey_eq_of_lt_self (hm : ∀ y ∈ s, m ≤ y) (hL : L.IsNoncrossing) {a b c : α}
+    (ha : a ∈ s) (hb : b ∈ s) (hab : a < b) (hbc : b < c) (hcx : c < x)
+    (hac : glueKey m x L R a = glueKey m x L R c)
+    (hbx : glueKey m x L R b = glueKey m x L R x) :
+    glueKey m x L R a = glueKey m x L R b := by
+  have hbx' := hbc.trans hcx
+  have hax := hab.trans hbx'
+  simp only [glueKey_of_lt hax, glueKey_of_lt hbx', glueKey_of_lt hcx, glueKey_self,
+    Prod.mk.injEq, and_true] at hac hbx ⊢
+  rw [hbx]
+  rcases (hm a ha).eq_or_lt with rfl | hma
+  · rfl
+  · have hmL := L.part_nonempty.1 (hbx ▸ L.part_nonempty.2 (mem_filter.2 ⟨hb, hbx'⟩))
+    exact (hL.part_eq_part hmL (mem_filter.2 ⟨ha, hax⟩) hbx.symm hac hma hab hbc).symm
+
 /-- The glued partition is noncrossing when its two pieces are. -/
 private theorem isNoncrossing_glue (hm : ∀ y ∈ s, m ≤ y) (hL : L.IsNoncrossing)
     (hR : R.IsNoncrossing) : (glue s m x L R).IsNoncrossing := by
@@ -123,16 +140,7 @@ private theorem isNoncrossing_glue (hm : ∀ y ∈ s, m ≤ y) (hL : L.IsNoncros
     simp only [glueKey_of_lt hax, glueKey_of_lt hbx, glueKey_of_lt hcx, glueKey_of_lt hdx,
       Prod.mk.injEq, and_true] at hac hbd ⊢
     exact hL.part_eq_part (mem_filter.2 ⟨ha, hax⟩) (mem_filter.2 ⟨hb, hbx⟩) hac hbd hab hbc hcd
-  · -- The last position is `x`, so `b` lies in the part of `m`.
-    have hbx := hbc.trans hcd
-    have hax := hab.trans hbx
-    simp only [glueKey_of_lt hax, glueKey_of_lt hbx, glueKey_of_lt hcd, glueKey_self,
-      Prod.mk.injEq, and_true] at hac hbd ⊢
-    rw [hbd]
-    rcases (hm a ha).eq_or_lt with rfl | hma
-    · rfl
-    · have hmL := L.part_nonempty.1 (hbd ▸ L.part_nonempty.2 (mem_filter.2 ⟨hb, hbx⟩))
-      exact (hL.part_eq_part hmL (mem_filter.2 ⟨ha, hax⟩) hbd.symm hac hma hab hbc).symm
+  · exact glueKey_eq_of_lt_self hm hL ha hb hab hbc hcd hac hbd
   · -- The last position is after `x`, which forces all four positions after `x`.
     have hgt {y : α} (hne : (glueKey m x L R y).2.Nonempty) : x < y := by
       rw [glueKey_snd, R.part_nonempty] at hne
@@ -336,57 +344,87 @@ private theorem part_subset_filter_between (hP : P.IsNoncrossing) (hm : ∀ y �
   refine mem_filter.2 ⟨mem_filter.2 ⟨hzs, hzx.lt_of_ne fun h => hzm (h ▸ hxm)⟩, ?_⟩
   exact (hm z hzs).lt_of_ne fun h => hzm (h ▸ P.mem_part_self.2 hms)
 
+/-- A part through a position after `x` is a part of the restriction there. -/
+private theorem part_restrict_after (hP : P.IsNoncrossing) (hm : ∀ y ∈ s, m ≤ y)
+    (hxm : x ∈ P.part m) (hmax : ∀ y ∈ P.part m, y ≤ x) {a : α} (ha : a ∈ {y ∈ s | x < y}) :
+    (P.restrict (filter_subset (x < ·) s)).part a = P.part a := by
+  rw [Finpartition.part_restrict _ _ ha,
+    inter_eq_left.2 (part_subset_filter_gt hP hm hxm hmax (mem_filter.1 ha).2)]
+
+/-- A part through a position before `x` outside the part of `m` is a part of the restriction
+there. -/
+private theorem part_restrict_before (hP : P.IsNoncrossing) (hm : ∀ y ∈ s, m ≤ y)
+    (hxm : x ∈ P.part m) (hmax : ∀ y ∈ P.part m, y ≤ x) {a : α} (ha : a ∈ {y ∈ s | y < x})
+    (ham : a ∉ P.part m) : (P.restrict (filter_subset (· < x) s)).part a = P.part a := by
+  rw [Finpartition.part_restrict _ _ ha, inter_eq_left.2
+    ((part_subset_filter_between hP hm hxm hmax (mem_filter.1 ha).1 (mem_filter.1 ha).2.le
+      ham).trans (filter_subset _ _))]
+
+/-- Let `x` be the last position of the part of the first position `m` of a noncrossing partition.
+Then its parts other than the part of `m` are parts of its restriction to the positions before
+`x` other than the part of `m`, or parts of its restriction to the positions after `x`. -/
+private theorem filter_parts_subset_union (hP : P.IsNoncrossing) (hm : ∀ y ∈ s, m ≤ y)
+    (hxm : x ∈ P.part m) (hmax : ∀ y ∈ P.part m, y ≤ x) :
+    {B ∈ P.parts | m ∉ B} ⊆ {B ∈ (P.restrict (filter_subset (· < x) s)).parts | m ∉ B} ∪
+      (P.restrict (filter_subset (x < ·) s)).parts := by
+  intro B hB
+  simp only [mem_union, mem_filter] at hB ⊢
+  obtain ⟨hB, hmB⟩ := hB
+  obtain ⟨a, ha⟩ := P.nonempty_of_mem_parts hB
+  have has := P.le hB ha
+  rw [← P.part_eq_of_mem hB ha] at hmB ⊢
+  rcases lt_or_ge x a with hxa | hax
+  · right
+    have hat : a ∈ {y ∈ s | x < y} := mem_filter.2 ⟨has, hxa⟩
+    rw [← part_restrict_after hP hm hxm hmax hat]
+    exact (P.restrict _).part_mem.2 hat
+  · left
+    have ham : a ∉ P.part m := fun h => hmB (P.mem_part_comm.1 h)
+    have hat : a ∈ {y ∈ s | y < x} :=
+      (mem_filter.1 (part_subset_filter_between hP hm hxm hmax has hax ham
+        (P.mem_part_self.2 has))).1
+    rw [← part_restrict_before hP hm hxm hmax hat ham] at hmB ⊢
+    exact ⟨(P.restrict _).part_mem.2 hat, hmB⟩
+
+/-- Let `x` be the last position of the part of the first position `m` of a noncrossing partition.
+Then the parts of its restriction to the positions before `x` other than the part of `m`, and the
+parts of its restriction to the positions after `x`, are parts of the partition other than the part
+of `m`. -/
+private theorem union_subset_filter_parts (hP : P.IsNoncrossing) (hm : ∀ y ∈ s, m ≤ y)
+    (hxm : x ∈ P.part m) (hmax : ∀ y ∈ P.part m, y ≤ x) :
+    {B ∈ (P.restrict (filter_subset (· < x) s)).parts | m ∉ B} ∪
+      (P.restrict (filter_subset (x < ·) s)).parts ⊆ {B ∈ P.parts | m ∉ B} := by
+  have hms : m ∈ s := P.part_nonempty.1 ⟨x, hxm⟩
+  intro B hB
+  simp only [mem_union, mem_filter] at hB ⊢
+  rcases hB with ⟨hB, hmB⟩ | hB
+  · obtain ⟨a, ha⟩ := (P.restrict _).nonempty_of_mem_parts hB
+    have hat := (P.restrict _).le hB ha
+    obtain ⟨has, hax⟩ := mem_filter.1 hat
+    rw [← (P.restrict _).part_eq_of_mem hB ha] at hmB ⊢
+    -- The position `a` is not in the part of `m`, which would otherwise meet the positions
+    -- before `x` in `m`.
+    have ham : m ∉ P.part a := fun h => hmB <| by
+      rw [Finpartition.part_restrict _ _ hat]
+      exact mem_inter.2 ⟨h, mem_filter.2 ⟨hms, (hm a has).trans_lt hax⟩⟩
+    rw [part_restrict_before hP hm hxm hmax hat fun h => ham (P.mem_part_comm.1 h)] at hmB ⊢
+    exact ⟨P.part_mem.2 has, hmB⟩
+  · obtain ⟨a, ha⟩ := (P.restrict _).nonempty_of_mem_parts hB
+    have hat := (P.restrict _).le hB ha
+    obtain ⟨has, hxa⟩ := mem_filter.1 hat
+    rw [← (P.restrict _).part_eq_of_mem hB ha, part_restrict_after hP hm hxm hmax hat]
+    exact ⟨P.part_mem.2 has, fun h =>
+      (mem_filter.1 (part_subset_filter_gt hP hm hxm hmax hxa h)).2.not_ge
+        (hmax m (P.mem_part_self.2 hms))⟩
+
 /-- Let `x` be the last position of the part of the first position `m` of a noncrossing partition.
 Then its parts other than the part of `m` are those of its restriction to the positions before `x`
 and those of its restriction to the positions after `x`. -/
 private theorem filter_parts_eq_union (hP : P.IsNoncrossing) (hm : ∀ y ∈ s, m ≤ y)
     (hxm : x ∈ P.part m) (hmax : ∀ y ∈ P.part m, y ≤ x) :
     {B ∈ P.parts | m ∉ B} = {B ∈ (P.restrict (filter_subset (· < x) s)).parts | m ∉ B} ∪
-      (P.restrict (filter_subset (x < ·) s)).parts := by
-  have hms : m ∈ s := P.part_nonempty.1 ⟨x, hxm⟩
-  -- A position outside the part of `m` is not in the same part as `m`.
-  have hnot {a : α} (ham : m ∉ P.part a) : a ∉ P.part m := fun h =>
-    ham (P.mem_part_comm.1 h)
-  ext B
-  simp only [mem_union, mem_filter]
-  constructor
-  · rintro ⟨hB, hmB⟩
-    obtain ⟨a, ha⟩ := P.nonempty_of_mem_parts hB
-    have has := P.le hB ha
-    rw [← P.part_eq_of_mem hB ha] at hmB ⊢
-    rcases lt_or_ge x a with hxa | hax
-    · right
-      have hat : a ∈ {y ∈ s | x < y} := mem_filter.2 ⟨has, hxa⟩
-      rw [← inter_eq_left.2 (part_subset_filter_gt hP hm hxm hmax hxa),
-        ← Finpartition.part_restrict P (filter_subset _ s) hat]
-      exact (P.restrict _).part_mem.2 hat
-    · left
-      have hsub := part_subset_filter_between hP hm hxm hmax has hax (hnot hmB)
-      have hat : a ∈ {y ∈ s | y < x} := (mem_filter.1 (hsub (P.mem_part_self.2 has))).1
-      have hL : (P.restrict (filter_subset (· < x) s)).part a = P.part a := by
-        rw [Finpartition.part_restrict _ _ hat, inter_eq_left.2 (hsub.trans (filter_subset _ _))]
-      rw [← hL] at hmB ⊢
-      exact ⟨(P.restrict _).part_mem.2 hat, hmB⟩
-  · rintro (⟨hB, hmB⟩ | hB)
-    · obtain ⟨a, ha⟩ := (P.restrict _).nonempty_of_mem_parts hB
-      have hat := (P.restrict _).le hB ha
-      obtain ⟨has, hax⟩ := mem_filter.1 hat
-      rw [← (P.restrict _).part_eq_of_mem hB ha, Finpartition.part_restrict _ _ hat] at hmB ⊢
-      -- The position `a` is not in the part of `m`, which would otherwise meet the positions
-      -- before `x` in `m`.
-      have ham : m ∉ P.part a := fun h => hmB <| mem_inter.2
-        ⟨h, mem_filter.2 ⟨hms, (hm a has).trans_lt hax⟩⟩
-      rw [inter_eq_left.2 ((part_subset_filter_between hP hm hxm hmax has hax.le
-        (hnot ham)).trans (filter_subset _ _))]
-      exact ⟨P.part_mem.2 has, ham⟩
-    · obtain ⟨a, ha⟩ := (P.restrict _).nonempty_of_mem_parts hB
-      have hat := (P.restrict _).le hB ha
-      obtain ⟨has, hxa⟩ := mem_filter.1 hat
-      have hsub := part_subset_filter_gt hP hm hxm hmax hxa
-      rw [← (P.restrict _).part_eq_of_mem hB ha, Finpartition.part_restrict _ _ hat,
-        inter_eq_left.2 hsub]
-      exact ⟨P.part_mem.2 has, fun h =>
-        (mem_filter.1 (hsub h)).2.not_ge (hmax m (P.mem_part_self.2 hms))⟩
+      (P.restrict (filter_subset (x < ·) s)).parts :=
+  (filter_parts_subset_union hP hm hxm hmax).antisymm (union_subset_filter_parts hP hm hxm hmax)
 
 /-- The weighted recurrence of noncrossing partitions by the part containing the first position
 `m`, with the part of `m` weighted by `G` and every other part weighted by `F`: the noncrossing
@@ -468,15 +506,8 @@ private theorem part_restrict_between (hP : P.IsNoncrossing) (hm : ∀ y ∈ s, 
       P.part a := by
   have hsub := part_subset_filter_between hP hm hxm hmax (mem_filter.1 (mem_filter.1 ha).1).1
     (mem_filter.1 (mem_filter.1 ha).1).2.le ham
-  rw [Finpartition.part_restrict _ _ ha, Finpartition.part_restrict _ _ (mem_filter.1 ha).1,
-    inter_eq_left.2 (hsub.trans (filter_subset _ _)), inter_eq_left.2 hsub]
-
-/-- A part through a position after `x` is a part of the restriction there. -/
-private theorem part_restrict_after (hP : P.IsNoncrossing) (hm : ∀ y ∈ s, m ≤ y)
-    (hxm : x ∈ P.part m) (hmax : ∀ y ∈ P.part m, y ≤ x) {a : α} (ha : a ∈ {y ∈ s | x < y}) :
-    (P.restrict (filter_subset (x < ·) s)).part a = P.part a := by
   rw [Finpartition.part_restrict _ _ ha,
-    inter_eq_left.2 (part_subset_filter_gt hP hm hxm hmax (mem_filter.1 ha).2)]
+    part_restrict_before hP hm hxm hmax (mem_filter.1 ha).1 ham, inter_eq_left.2 hsub]
 
 /-- Let `x > m` be the last position of the part of the first position `m` of a noncrossing
 partition `P`. Then `P` is a pairing iff `m` is the only position before `x` in its part, and the
