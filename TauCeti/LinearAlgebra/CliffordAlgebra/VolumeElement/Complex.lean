@@ -53,7 +53,9 @@ the positive orientation and `-1` for the negative one.
   `CliffordAlgebra.complexVolume_positiveOrientation`: in rank zero, `Γ = 1`.
 * `CliffordAlgebra.map_complexVolume`: the complexification of an isometry of quadratic forms that
   also preserves the norms carries `Γ` to `Γ` for the transported orientation.
-* `CliffordAlgebra.complexVolume_mul_self`: `Γ² = 1` for `Q v = -‖v‖²`.
+* `CliffordAlgebra.complexVolume_mul_self`: `Γ² = 1` for `Q v = -‖v‖²`, while
+  `CliffordAlgebra.complexVolume_mul_self_of_forall_eq_zero`: `Γ² = 0` for the zero form in
+  positive dimension.
 * `CliffordAlgebra.complexVolume_smul_complexVolume_smul`,
   `CliffordAlgebra.lsmul_complexVolume_involutive`: `Γ` acts as an involution on every module.
 * `CliffordAlgebra.conjStar_complexVolume`: `Γ` is fixed by the conjugate-linear Clifford
@@ -68,7 +70,8 @@ the positive orientation and `-1` for the negative one.
 * `CliffordAlgebra.commute_complexVolume_of_mem_even`: in every dimension, `Γ` commutes with even
   elements.
 
-Only the statements involving `Γ²` assume `Q v = -‖v‖²`; the others hold for every `Q`.
+Only `Γ² = 1` and the statements built on it assume `Q v = -‖v‖²`; the zero-form square assumes
+`Q = 0`, and the others hold for every `Q`.
 
 ## References
 
@@ -283,6 +286,13 @@ theorem commute_complexVolume_of_mem_even {x : CliffordAlgebra (Q.baseChange ℂ
   rcases Nat.even_or_odd n with hn | hn
   · rw [Commute, SemiconjBy, complexVolume_mul_eq_involute_mul o hn, involute_eq_of_mem_even hx]
   · exact ((Subalgebra.mem_center_iff.mp (complexVolume_mem_center o hn) x).symm)
+
+/-- For the zero quadratic form `Γ` squares to zero in positive dimension, in contrast to
+`CliffordAlgebra.complexVolume_mul_self`. -/
+theorem complexVolume_mul_self_of_forall_eq_zero (hn : n ≠ 0) (hQ : ∀ v, Q v = 0) :
+    complexVolume Q o * complexVolume Q o = 0 := by
+  rw [complexVolume_def, smul_mul_smul_comm, ← map_mul,
+    volumeElement_mul_self_of_forall_eq_zero o hn hQ, map_zero, smul_zero]
 
 section Form
 

@@ -17,11 +17,14 @@ import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.Algebra.Module.SpanRank
 
 /-!
-# Rank of finitely generated abelian and cyclic groups
+# Rank of cyclic groups, subgroup joins, and finitely generated abelian groups
 
-`Group.rank G` and `AddGroup.rank M` count the minimal size of a generating set. For a finitely
-generated abelian group `M`, subgroup generation agrees with `ℤ`-submodule span, identifying
-`AddGroup.rank M` with `(⊤ : Submodule ℤ M).spanFinrank`. Through this bridge:
+`Group.rank G` and `AddGroup.rank M` count the minimal size of a generating set. Cyclic groups have
+rank at most `1`, and the join of two finitely generated subgroups (or the product of two finitely
+generated groups) has rank at most the sum of the two ranks.
+
+For a finitely generated abelian group `M`, subgroup generation agrees with `ℤ`-submodule span,
+identifying `AddGroup.rank M` with `(⊤ : Submodule ℤ M).spanFinrank`. Through this bridge:
 
 * a finitely generated free abelian group has `AddGroup.rank M = finrank ℤ M`;
 * a finite-dimensional vector space over `ZMod p` has `AddGroup.rank V = finrank (ZMod p) V`;
@@ -31,9 +34,12 @@ generated abelian group `M`, subgroup generation agrees with `ℤ`-submodule spa
 
 * `Group.rank_le_one_of_isCyclic`, `Group.rank_eq_one_of_isCyclic`: cyclic groups are finitely
   generated of rank at most `1`, and equal to `1` when nontrivial.
+* `Subgroup.rank_sup_le`, `Group.rank_prod_le`: `rank (H ⊔ K) ≤ rank H + rank K` for finitely
+  generated subgroups (`AddSubgroup.rank_sup_le` for additive subgroups), and
+  `rank (G × H) ≤ rank G + rank H` for finitely generated groups.
 * `AddGroup.rank_eq_spanFinrank_top`: `AddGroup.rank M = (⊤ : Submodule ℤ M).spanFinrank`.
-* `AddGroup.rank_eq_finrank`: `AddGroup.rank M = finrank ℤ M` for a finitely generated free abelian
-  group `M`.
+* `AddGroup.rank_eq_finrank`, `AddGroup.rank_le_finrank`: `AddGroup.rank M = finrank ℤ M` for a
+  finitely generated free abelian group `M`.
 * `AddGroup.rank_eq_finrank_zmod`: `AddGroup.rank V = finrank (ZMod p) V` for a finitely generated
   `𝔽_p`-vector space `V`.
 * `AddGroup.rank_pi_zmod_prime_pow`: `AddGroup.rank (ι → ZMod (p ^ k)) = Fintype.card ι` for prime
@@ -41,6 +47,25 @@ generated abelian group `M`, subgroup generation agrees with `ℤ`-submodule spa
 -/
 
 public section
+
+namespace Subgroup
+
+/-- The rank of the join of two finitely generated subgroups is at most the sum of their ranks. -/
+@[to_additive /-- The rank of the join of two finitely generated additive subgroups is at most the
+sum of their ranks. -/]
+theorem rank_sup_le {G : Type*} [Group G] (H K : Subgroup G) [Group.FG H] [Group.FG K] :
+    Group.rank ↥(H ⊔ K) ≤ Group.rank H + Group.rank K := by
+  classical
+  obtain ⟨S, hS, hSc⟩ := Group.rank_spec H
+  obtain ⟨T, hT, hTc⟩ := Group.rank_spec K
+  -- the images in `G` of minimal generating sets of `H` and `K` generate `H ⊔ K`
+  have h : closure ↑(S.image H.subtype ∪ T.image K.subtype) = H ⊔ K := by
+    simp [closure_union, ← MonoidHom.map_closure, hSc, hTc, ← MonoidHom.range_eq_map, -coe_subtype]
+  rw [← rank_congr h, ← hS, ← hT]
+  exact (rank_closure_finset_le_card _).trans
+    ((Finset.card_union_le _ _).trans (add_le_add Finset.card_image_le Finset.card_image_le))
+
+end Subgroup
 
 namespace Group
 
@@ -74,22 +99,18 @@ theorem rank_eq_one_of_isCyclic (G : Type*) [Group G] [Nontrivial G] [IsCyclic G
 at most the sum of their ranks. -/]
 theorem rank_prod_le (G H : Type*) [Group G] [Group H] [Group.FG G] [Group.FG H] :
     Group.rank (G × H) ≤ Group.rank G + Group.rank H := by
-  classical
-  obtain ⟨S, hScard, hS⟩ := Group.rank_spec G
-  obtain ⟨T, hTcard, hT⟩ := Group.rank_spec H
-  let U : Finset (G × H) := S.image (MonoidHom.inl G H) ∪ T.image (MonoidHom.inr G H)
-  have hU : Subgroup.closure (U : Set (G × H)) = ⊤ := by
-    rw [Finset.coe_union, Finset.coe_image, Finset.coe_image, Subgroup.closure_union,
-      ← MonoidHom.map_closure, ← MonoidHom.map_closure, hS, hT, eq_top_iff]
-    rintro ⟨g, h⟩ _
-    have hg : (g, (1 : H)) ∈ Subgroup.map (MonoidHom.inl G H) ⊤ := ⟨g, trivial, rfl⟩
-    have hh : ((1 : G), h) ∈ Subgroup.map (MonoidHom.inr G H) ⊤ := ⟨h, trivial, rfl⟩
-    simpa using mul_mem (Subgroup.mem_sup_left hg) (Subgroup.mem_sup_right hh)
-  calc Group.rank (G × H) ≤ U.card := Group.rank_le hU
-    _ ≤ (S.image (MonoidHom.inl G H)).card + (T.image (MonoidHom.inr G H)).card :=
-      Finset.card_union_le _ _
-    _ ≤ S.card + T.card := Nat.add_le_add Finset.card_image_le Finset.card_image_le
-    _ = Group.rank G + Group.rank H := by rw [hScard, hTcard]
+  have htop : (MonoidHom.inl G H).range ⊔ (MonoidHom.inr G H).range = ⊤ :=
+    eq_top_iff.mpr <| by
+      rw [← Subgroup.top_prod_top, Subgroup.prod_le_iff]
+      exact ⟨by simp [MonoidHom.range_eq_map], by simp [MonoidHom.range_eq_map]⟩
+  calc Group.rank (G × H)
+      = Group.rank (⊤ : Subgroup (G × H)) := (Group.rank_congr Subgroup.topEquiv).symm
+    _ = Group.rank ↥((MonoidHom.inl G H).range ⊔ (MonoidHom.inr G H).range) :=
+        Subgroup.rank_congr htop.symm
+    _ ≤ Group.rank (MonoidHom.inl G H).range + Group.rank (MonoidHom.inr G H).range :=
+        Subgroup.rank_sup_le _ _
+    _ ≤ Group.rank G + Group.rank H :=
+        Nat.add_le_add Group.rank_range_le Group.rank_range_le
 
 end Group
 
