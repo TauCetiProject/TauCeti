@@ -9,17 +9,19 @@ public import TauCeti.Geometry.Manifold.Morse.Stable.SequentialCompactness
 public import TauCeti.Geometry.Manifold.Morse.Stable.TrajectorySpace
 import Mathlib.Geometry.Manifold.Metrizable
 import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Fin.StrictAnti
 
 /-!
-# Compactified spaces of trajectories, recorded on finitely many levels
+# Compactified spaces of trajectories, recorded on countably many levels
 
 Let `f` be a Morse function on a compact boundaryless manifold `M`, `X` a pseudo-gradient field
-adapted to `f`, and `p`, `r` critical points. Choose levels `c i`, for `i` in a finite type `ι`,
+adapted to `f`, and `p`, `r` critical points. Choose levels `c i`, for `i` in a type `ι`,
 strictly between `f r` and `f p` and containing no critical point. A trajectory from `p` to `r`
 crosses each level `c i` exactly once, so it is recorded by the family `w : ι → M` of its points
 on the levels (`TauCeti.IsAdaptedPseudoGradient.morseTrajectoryRecords`). Its compactified space
 is the closure of these records in the compact Hausdorff space `ι → M`; it is compact and
-Hausdorff because `ι → M` is.
+Hausdorff because `ι → M` is. For countable `ι` the space `ι → M` is moreover metrizable, so the
+closure is described by limits of sequences.
 
 A *broken trajectory* from `p` to `r` is a chain of critical points `p = x 0, x 1, …, x k = r`,
 consecutive ones distinct, with a point `z j` on a trajectory from `x j` to `x (j + 1)` for each
@@ -56,9 +58,9 @@ broken trajectory from `p` to `r` has at most `ind p - ind r` components
 
 This generalizes the compactified space of index-two trajectories of
 `TauCeti.Geometry.Manifold.Morse.Boundary.Compactification`, which records them on two levels in
-`M × M`, to any index difference and any finite family of levels. That every broken trajectory is a
-limit of unbroken ones, and the charts of the compactified space near broken trajectories, need
-gluing; beyond index two they are not proved here.
+`M × M`, to any index difference and any family of levels, countable for the closure result. That
+every broken trajectory is a limit of unbroken ones, and the charts of the compactified space near
+broken trajectories, need gluing; beyond index two they are not proved here.
 
 ## Main declarations
 
@@ -200,34 +202,42 @@ theorem exists_homeomorph_morseTrajectoryRecords {p r : M} (hpr : p ≠ r) {c : 
     ∃ Φ : hX.morseTrajectoryRecords p r c ≃ₜ
         ↥(hX.flow.unstableSet p ∩ hX.flow.stableSet r ∩ {y | f y = c i₀}),
       ∀ w, (Φ w : M) = (w : ι → M) i₀ := by
-  set S := hX.flow.unstableSet p ∩ hX.flow.stableSet r ∩ {y | f y = c i₀}
-  -- The orbit of each point of the slice meets the level `c i` at a unique time `τ i y`.
-  have hτ (i : ι) (y : S) : ∃! t, f (hX.flow t y) = c i :=
-    hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr y.2.1 (hc i).1 (hc i).2
-  choose τ hτ' using fun i y ↦ (hτ i y).exists
+  set C := hX.flow.unstableSet p ∩ hX.flow.stableSet r
+  set S := C ∩ {y | f y = c i₀}
+  -- The orbit of each point of `W^u(p) ∩ W^s(r)` meets the level `c i` at the unique time
+  -- `τ i y`.
+  set τ := fun i ↦ Flow.levelCrossingTime hX.flow f (c i)
+  have hanti (y) (hy : y ∈ C) := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr hy
+  have hex (i) (y) (hy : y ∈ C) : ∃ t, f (hX.flow t y) = c i :=
+    (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr hy (hc i).1 (hc i).2).exists
+  have hτ' (i) (y) (hy : y ∈ C) : f (hX.flow (τ i y) y) = c i :=
+    Flow.apply_flow_levelCrossingTime (hex i y hy)
   -- The points on the other levels depend continuously on the point of the level `c i₀`.
-  have hg : Continuous fun (y : S) i ↦ hX.flow (τ i y) (y : M) := by
-    refine continuous_pi fun i ↦ continuous_iff_continuousAt.2 fun y ↦ ?_
-    obtain ⟨σ, hσ, hlim⟩ := hX.exists_tendsto_flow_of_tendsto y.2.1 (hc i).1 (hc i).2
-      (continuous_subtype_val.tendsto y) (s := τ i) (hτ' i)
-    rwa [(hτ i y).unique hσ (hτ' i y)] at hlim
+  have hg : Continuous fun (y : S) i ↦ hX.flow (τ i y) (y : M) :=
+    continuous_pi fun i ↦ hX.flow.continuous ((Flow.continuousOn_levelCrossingTime
+      hX.mdifferentiable.continuous.continuousOn hanti (hex i)).comp_continuous
+      continuous_subtype_val fun y ↦ y.2.1) continuous_subtype_val
   -- The point on the level `c i₀` is the point itself.
-  have hτ₀ (y : S) : τ i₀ y = 0 := (hτ i₀ y).unique (hτ' i₀ y) (by simpa using y.2.2)
+  have hτ₀ (y : S) : τ i₀ y = 0 :=
+    (Flow.levelCrossingTime_eq_zero_iff (hanti y y.2.1) (hex i₀ y y.2.1)).2 y.2.2
   -- The point of a record on the level `c i₀` lies in the slice, and determines the record.
   have hmem : ∀ w ∈ hX.morseTrajectoryRecords p r c, w i₀ ∈ S := by
     rintro w ⟨y, hy, hw⟩
     obtain ⟨hwc, t, ht⟩ := hw i₀
     exact ⟨ht ▸ hX.flow.isInvariant_unstableSet_inter_stableSet p r t hy, hwc⟩
-  have hrec : ∀ (w) (hw : w ∈ hX.morseTrajectoryRecords p r c) (i),
-      hX.flow (τ i ⟨w i₀, hmem w hw⟩) (w i₀) = w i := by
-    rintro w ⟨y, hy, hw⟩ i
+  have hrec : ∀ w ∈ hX.morseTrajectoryRecords p r c, ∀ i, hX.flow (τ i (w i₀)) (w i₀) = w i := by
+    intro w hw i
+    obtain ⟨y, hy, hw⟩ := hw
     obtain ⟨hwi, t, ht⟩ := hw i
     obtain ⟨-, t₀, ht₀⟩ := hw i₀
     have hflow : hX.flow (t - t₀) (w i₀) = w i := by rw [← ht₀, ← Flow.map_add, sub_add_cancel, ht]
-    rw [(hτ i ⟨w i₀, _⟩).unique (hτ' i _) (by rw [hflow]; exact hwi), hflow]
+    have hC : w i₀ ∈ C := ht₀ ▸ hX.flow.isInvariant_unstableSet_inter_stableSet p r t₀ hy
+    have hτi : t - t₀ = τ i (w i₀) :=
+      (Flow.eq_levelCrossingTime_iff (hanti _ hC) (hex i _ hC)).2 (by rw [hflow]; exact hwi)
+    rw [← hτi, hflow]
   refine ⟨
     { toFun w := ⟨w.1 i₀, hmem w.1 w.2⟩
-      invFun y := ⟨fun i ↦ hX.flow (τ i y) y, y, y.2.1, fun i ↦ ⟨hτ' i y, τ i y, rfl⟩⟩
+      invFun y := ⟨fun i ↦ hX.flow (τ i y) y, y, y.2.1, fun i ↦ ⟨hτ' i y y.2.1, τ i y, rfl⟩⟩
       left_inv w := Subtype.ext (funext (hrec w.1 w.2))
       right_inv y := Subtype.ext (by simp only [hτ₀, Flow.map_zero_apply])
       continuous_toFun := ((continuous_apply i₀).comp continuous_subtype_val).subtype_mk _
@@ -265,27 +275,20 @@ theorem add_manifoldMorseIndex_le_of_chain (h : hX.IsMorseSmale) (hf : IsMorse �
     (hxk : x (Fin.last k) = r) (hxne : ∀ j : Fin k, x j.castSucc ≠ x j.succ)
     (hz : ∀ j : Fin k, z j ∈ hX.flow.unstableSet (x j.castSucc) ∩ hX.flow.stableSet (x j.succ)) :
     k + manifoldMorseIndex 𝓘(ℝ, E) f r ≤ manifoldMorseIndex 𝓘(ℝ, E) f p := by
-  have hlt :=
-    Fin.strictAnti_iff_succ_lt.1 (h.strictAnti_manifoldMorseIndex_of_chain hf hxne hz)
   -- Each step of the chain lowers the index by at least one.
-  have key : ∀ j : Fin (k + 1),
-      (j : ℕ) + manifoldMorseIndex 𝓘(ℝ, E) f (x j) ≤ manifoldMorseIndex 𝓘(ℝ, E) f (x 0) := by
-    intro j
-    induction j using Fin.induction with
-    | zero => simp
-    | succ j ih =>
-      have := hlt j
-      simp only [Fin.val_succ, Fin.val_castSucc] at ih ⊢
-      omega
-  simpa [hx0, hxk] using key (Fin.last k)
+  have := (h.strictAnti_manifoldMorseIndex_of_chain hf hxne hz).add_sub_le_nat
+    (Fin.zero_le (Fin.last k))
+  simp only [Fin.val_last, Fin.val_zero, Nat.sub_zero, hx0, hxk] at this
+  omega
 
 /-- **The compactified space of trajectories adds only broken trajectories.** Let `X` satisfy the
-Morse–Smale condition, and record the trajectories from `p` to `r` on finitely many levels `c i`
+Morse–Smale condition, and record the trajectories from `p` to `r` on countably many levels `c i`
 strictly between `f r` and `f p` that contain no critical point. Then every limit of records of
 trajectories from `p` to `r` is the record of a broken trajectory from `p` to `r`. The Morse
 indices along its chain of critical points decrease strictly
 (`IsMorseSmale.strictAnti_manifoldMorseIndex_of_chain`), so a limit with `k` components has
-`k + ind r ≤ ind p` (`IsMorseSmale.add_manifoldMorseIndex_le_of_chain`). -/
+`k + ind r ≤ ind p` (`IsMorseSmale.add_manifoldMorseIndex_le_of_chain`). Countability makes
+`ι → M` metrizable, so that its closure is sequential. -/
 theorem closure_morseTrajectoryRecords_subset [Countable ι] (h : hX.IsMorseSmale)
     (hf : IsMorse 𝓘(ℝ, E) f) {p r : M} {c : ι → ℝ}
     (hreg : ∀ i y, f y = c i → mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0)
