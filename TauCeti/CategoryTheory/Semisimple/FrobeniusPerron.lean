@@ -355,26 +355,35 @@ theorem frobeniusPerronDim_pos_iff [MonoidalLinear k C] (X : C) :
     0 < frobeniusPerronDim k X ↔ ¬IsZero X := by
   rw [(frobeniusPerronDim_nonneg k X).lt_iff_ne', Ne, frobeniusPerronDim_eq_zero_iff]
 
+end Dim
+
+section GlobalDim
+
+variable (k : Type w') [Field k] [IsAlgClosed k] {C : Type u} [Category.{v} C] [Abelian C]
+  [MonoidalCategory C] [MonoidalPreadditive C] [RigidCategory C] [Linear k C]
+  [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] [Simple (𝟙_ C)]
+  [EssentiallySmall.{w} C] [Fintype (SimpleClasses C)]
+
 variable (C) in
 /-- The **Frobenius–Perron dimension of a fusion category**: the sum, over the simple classes, of
 the squared Frobenius–Perron dimensions of their chosen representatives. -/
-def frobeniusPerronGlobalDim [Fintype (SimpleClasses C)] : ℝ :=
+def frobeniusPerronGlobalDim : ℝ :=
   ∑ S : SimpleClasses C, frobeniusPerronDim k S.repr ^ 2
 
 /-- The defining formula of the Frobenius–Perron dimension of a fusion category. -/
-theorem frobeniusPerronGlobalDim_def [Fintype (SimpleClasses C)] :
+theorem frobeniusPerronGlobalDim_def :
     frobeniusPerronGlobalDim k C = ∑ S : SimpleClasses C, frobeniusPerronDim k S.repr ^ 2 :=
   (rfl)
 
 /-- The Frobenius–Perron dimension of a fusion category is at least one: the class of the tensor
 unit contributes `1`. -/
-theorem one_le_frobeniusPerronGlobalDim [Fintype (SimpleClasses C)] :
+theorem one_le_frobeniusPerronGlobalDim :
     1 ≤ frobeniusPerronGlobalDim k C := by
   have h := Finset.single_le_sum (f := fun S : SimpleClasses C ↦ frobeniusPerronDim k S.repr ^ 2)
     (fun S _ ↦ sq_nonneg _) (Finset.mem_univ (SimpleClasses.classOf (𝟙_ C)))
   rwa [frobeniusPerronDim_eq_of_iso k (SimpleClasses.classOfReprIso (𝟙_ C)),
     frobeniusPerronDim_tensorUnit, one_pow] at h
 
-end Dim
+end GlobalDim
 
 end TauCeti
