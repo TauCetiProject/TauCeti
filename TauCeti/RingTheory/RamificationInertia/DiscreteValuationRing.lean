@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Taylor Dupuy, Thomas Tucker, Zhuoran Wang. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
+Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang, The Tau Ceti contributors
 -/
 module
 
@@ -16,7 +16,8 @@ maximal ideal `𝔪_S` of `S` does not map to zero. Then `𝔪_S T` is a nonzero
 power `𝔪_T ^ e` of the maximal ideal of `T`, and `e` is Mathlib's ramification index
 `(maximalIdeal T).ramificationIdx S`, the length of `T ⧸ 𝔪_S T`. For an extension of discrete
 valuation rings this is the ramification index of Stacks, Definition 15.113.1 (09E4): the
-exponent `e` with `π_S = u π_T ^ e` for uniformizers `π_S`, `π_T` and a unit `u`.
+exponent `e` with `π_S = u π_T ^ e` for uniformizers `π_S`, `π_T` and a unit `u`, and the
+additive valuation scales by `e` along `algebraMap S T`.
 
 ## Main results
 
@@ -24,6 +25,8 @@ exponent `e` with `π_S = u π_T ^ e` for uniformizers `π_S`, `π_T` and a unit
   `e` the ramification index of `𝔪_T` over `S`.
 * `TauCeti.IsDiscreteValuationRing.ramificationIdx_eq_of_map_maximalIdeal_eq_pow`: the index equals
   any exponent satisfying this maximal-ideal identity.
+* `TauCeti.IsDiscreteValuationRing.addVal_algebraMap`: for an injective local homomorphism of
+  discrete valuation rings `S → T`, `addVal T (algebraMap S T x) = e • addVal S x`.
 
 ## References
 
@@ -41,6 +44,8 @@ public section
 open IsLocalRing IsDiscreteValuationRing
 
 namespace TauCeti.IsDiscreteValuationRing
+
+section
 
 variable {S T : Type*} [CommRing S] [CommRing T] [IsLocalRing S] [IsDomain T]
   [IsDiscreteValuationRing T] [Algebra S T] [IsLocalHom (algebraMap S T)]
@@ -80,5 +85,42 @@ theorem ramificationIdx_eq_of_map_maximalIdeal_eq_pow {exponent : ℕ}
     rw [hexponent]
     exact ne_of_gt (lt_of_le_of_lt bot_le (hpowers (Nat.lt_succ_self exponent)))
   exact hpowers.injective ((map_maximalIdeal_eq_pow_ramificationIdx hmap).symm.trans hexponent)
+
+end
+
+section AddVal
+
+/-- Under an injective local homomorphism of discrete valuation rings `S → T`, the additive
+valuation scales by the ramification index `(maximalIdeal T).ramificationIdx S`.
+
+Not marked `@[simp]` so it does not compete with `TauCeti.addVal_algebraMap` (whose right-hand side
+uses `ramificationIndex K L`) on integer rings of local fields; this generalizes that scaling
+formula to arbitrary discrete valuation rings. -/
+theorem addVal_algebraMap {S T : Type*} [CommRing S] [CommRing T] [IsDomain S] [IsDomain T]
+    [IsDiscreteValuationRing S] [IsDiscreteValuationRing T] [Algebra S T]
+    [IsLocalHom (algebraMap S T)] [FaithfulSMul S T] (x : S) :
+    addVal T (algebraMap S T x) = (maximalIdeal T).ramificationIdx S • addVal S x := by
+  obtain ⟨π, hπ⟩ := exists_irreducible S
+  obtain ⟨ϖ, hϖ⟩ := exists_irreducible T
+  have hπT : algebraMap S T π ≠ 0 := fun h ↦
+    hπ.ne_zero (FaithfulSMul.algebraMap_injective S T (h.trans (map_zero _).symm))
+  obtain ⟨e, v, hπe⟩ := eq_unit_mul_pow_irreducible hπT hϖ
+  have hmap : (maximalIdeal S).map (algebraMap S T) = maximalIdeal T ^ e := by
+    rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton, hπe,
+      Ideal.span_singleton_mul_left_unit v.isUnit, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq]
+  have he : (maximalIdeal T).ramificationIdx S = e :=
+    ramificationIdx_eq_of_map_maximalIdeal_eq_pow hmap
+  have he0 : e ≠ 0 := by
+    rintro rfl
+    exact hπ.not_isUnit
+      (isUnit_of_map_unit (algebraMap S T) π (by simp [hπe]))
+  by_cases hx : x = 0
+  · simp [hx, he, nsmul_eq_mul, ENat.mul_top (Nat.cast_ne_zero.2 he0)]
+  obtain ⟨n, u, rfl⟩ := eq_unit_mul_pow_irreducible hx hπ
+  rw [addVal_def' u hπ n, he, map_mul, map_pow, addVal_mul,
+    addVal_eq_zero_iff.2 (u.isUnit.map (algebraMap S T)), zero_add, addVal_pow, hπe,
+    addVal_def' v hϖ e, nsmul_eq_mul, nsmul_eq_mul, mul_comm]
+
+end AddVal
 
 end TauCeti.IsDiscreteValuationRing

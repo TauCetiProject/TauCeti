@@ -36,6 +36,8 @@ in `M ^ H`, the subgroup `H` is a Galois group of `B / C`.
   of the integral closures of a common base in `M ^ H` and in `M`.
 * `TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul`: the same, bundled with
   the injectivity of `C → B`, as used to set up instances for the fixed-field integral closure.
+* `TauCeti.fixedPointsSubalgebraIntegralClosureEquiv`: `(integralClosure A L)^H ≃ₐ[A]
+  integralClosure A (fixedField H)`.
 -/
 
 public section
@@ -146,3 +148,53 @@ theorem _root_.TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSM
 end FixedField
 
 end IsGaloisGroup
+
+namespace TauCeti
+
+section FixedFieldIntegralClosure
+
+open IntermediateField
+
+variable (A : Type*) {K L : Type*} [CommRing A] [Field K] [Field L]
+  [Algebra A K] [Algebra K L] [Algebra A L] [IsScalarTower A K L]
+
+/-- The `A`-subalgebra of `H`-fixed elements of `integralClosure A L` is isomorphic as an
+`A`-algebra to `integralClosure A (IntermediateField.fixedField H)`. -/
+def fixedPointsSubalgebraIntegralClosureEquiv (H : Subgroup (L ≃ₐ[K] L)) :
+    FixedPoints.subalgebra A (integralClosure A L) H ≃ₐ[A]
+      integralClosure A (fixedField H) where
+  toFun x := ⟨⟨(x.1 : L), fun h ↦ congrArg Subtype.val (x.2 h)⟩, by
+    have : IsScalarTower A (fixedField H) L := IsScalarTower.of_algebraMap_eq' rfl
+    exact (isIntegral_algHom_iff (IsScalarTower.toAlgHom A (fixedField H) L)
+      (fixedField H).val.injective).mp x.1.2⟩
+  invFun y := ⟨⟨(y.1 : L), by
+    have : IsScalarTower A (fixedField H) L := IsScalarTower.of_algebraMap_eq' rfl
+    exact y.2.map (IsScalarTower.toAlgHom A (fixedField H) L)⟩,
+    fun h ↦ Subtype.ext (y.1.2 h)⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+  map_add' _ _ := rfl
+  commutes' r := Subtype.ext <| Subtype.ext <| by
+    simp [IsScalarTower.algebraMap_apply A K L r,
+      IsScalarTower.algebraMap_apply A K (fixedField H) r]
+
+/-- Forward coercion to `L` of `fixedPointsSubalgebraIntegralClosureEquiv`. -/
+@[simp]
+theorem coe_fixedPointsSubalgebraIntegralClosureEquiv_apply (H : Subgroup (L ≃ₐ[K] L))
+    (x : FixedPoints.subalgebra A (integralClosure A L) H) :
+    (((fixedPointsSubalgebraIntegralClosureEquiv A H x :
+      integralClosure A (fixedField H)) : fixedField H) : L) = ((x : integralClosure A L) : L) := by
+  rfl
+
+/-- Inverse coercion to `L` of `fixedPointsSubalgebraIntegralClosureEquiv`. -/
+@[simp]
+theorem coe_fixedPointsSubalgebraIntegralClosureEquiv_symm_apply (H : Subgroup (L ≃ₐ[K] L))
+    (y : integralClosure A (fixedField H)) :
+    (((fixedPointsSubalgebraIntegralClosureEquiv A H).symm y :
+      integralClosure A L) : L) = ((y : fixedField H) : L) := by
+  rfl
+
+end FixedFieldIntegralClosure
+
+end TauCeti

@@ -422,6 +422,32 @@ theorem min_le_lowerIndex_mul (σ τ : G) :
     (natCast_le_lowerIndex_iff_mem_ramificationGroup (n := n) (σ := τ) |>.mp
       (le_trans hn (min_le_right ..)))
 
+/-- The lower index of an element of a subgroup `H ≤ G` agrees with its lower index in `G`. -/
+@[simp]
+theorem lowerIndex_coe_subgroup {H : Subgroup G} (h : H) :
+    lowerIndex S (h : G) = lowerIndex S h := by
+  simp only [lowerIndex_def, Subgroup.smul_def]
+
+/-- If `g` has maximal lower index in its coset `g H`, then `i_G(g h) = min (i_H(h), i_G(g))` for
+every `h ∈ H`. -/
+theorem lowerIndex_mul_of_forall_le {H : Subgroup G} (g : G)
+    (hg : ∀ h : H, lowerIndex S (g * h) ≤ lowerIndex S g) (h : H) :
+    lowerIndex S (g * h) = min (lowerIndex S h) (lowerIndex S g) := by
+  rw [← lowerIndex_coe_subgroup h]
+  have h₁ := min_le_lowerIndex_mul (S := S) g (h : G)
+  have h₂ := min_le_lowerIndex_mul (S := S) g⁻¹ (g * h)
+  rw [inv_mul_cancel_left, lowerIndex_inv, min_eq_right (hg h)] at h₂
+  exact le_antisymm (le_min h₂ (hg h)) (min_comm (lowerIndex S g) _ ▸ h₁)
+
+variable (S) in
+/-- Every coset `g H` of a finite subgroup `H ≤ G` contains an element of largest lower index. -/
+theorem exists_forall_lowerIndex_mul_le (H : Subgroup G) [Finite H] (g : G) :
+    ∃ h₀ : H, ∀ h : H, lowerIndex S (g * h₀ * h) ≤ lowerIndex S (g * h₀) := by
+  let _ := Fintype.ofFinite H
+  obtain ⟨h₀, -, hh₀⟩ := Finset.exists_max_image (Finset.univ : Finset H)
+    (fun h : H ↦ lowerIndex S (g * h)) Finset.univ_nonempty
+  exact ⟨h₀, fun h ↦ by simpa [Subgroup.coe_mul, mul_assoc] using hh₀ (h₀ * h) (Finset.mem_univ _)⟩
+
 variable (S) in
 /-- The identity has lower index `⊤`. -/
 @[simp]
@@ -711,6 +737,25 @@ theorem ramificationGroup_eq_comap_of_comap_maximalIdeal_pow (φ : G →* H) (f 
   · rw [← hcomap, Ideal.mem_comap, map_sub, hf]
     exact h (f x)
 
+/-- If a ring isomorphism `e : S ≃+* T` is equivariant along `φ : G →* H`, then every lower
+ramification group on `S` is the preimage under `φ` of the corresponding group on `T`. -/
+theorem ramificationGroup_eq_comap_of_ringEquiv {φ : G →* H} {e : S ≃+* T}
+    (he : ∀ (g : G) (x : S), e (g • x) = φ g • e x) (i : ℤ) :
+    ramificationGroup G S i = (ramificationGroup H T i).comap φ := by
+  have hpow : ∀ n : ℕ, (maximalIdeal T ^ n).comap (e : S →+* T) = maximalIdeal S ^ n := fun n ↦ by
+    rw [Ideal.comap_coe, ← Ideal.map_symm e, Ideal.map_pow, map_ringEquiv_maximalIdeal]
+  ext σ; rw [Subgroup.mem_comap, mem_ramificationGroup_iff, mem_ramificationGroup_iff]
+  exact ⟨fun h y ↦ by simpa only [← hpow, Ideal.mem_comap, RingHom.coe_coe, map_sub, he,
+      e.apply_symm_apply] using h (e.symm y),
+    fun h x ↦ by simpa only [← hpow, Ideal.mem_comap, RingHom.coe_coe, map_sub, he] using h (e x)⟩
+
+/-- If `e : G →* H` is compatible with the actions on `S`, then `G_i = (H_i).comap e`. -/
+theorem ramificationGroup_eq_comap_of_smul_eq {e : G →* H}
+    {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S] [MulSemiringAction H S]
+    (he : ∀ (g : G) (x : S), g • x = e g • x) (i : ℤ) :
+    ramificationGroup G S i = (ramificationGroup H S i).comap e := by
+  ext g; simp [mem_ramificationGroup_iff, he g]
+
 end Comap
 
 section Real
@@ -744,6 +789,12 @@ instance instNormalRamificationGroupReal (u : ℝ) : (ramificationGroupReal G S 
 theorem ramificationGroupReal_antitone : Antitone (ramificationGroupReal G S) :=
   fun _ _ huv ↦ ramificationGroup_antitone G S (Int.ceil_mono huv)
 
+/-- Below `-1`, the real-indexed ramification filtration is constantly `⊤`. -/
+theorem ramificationGroupReal_eq_top_of_le_neg_one {u : ℝ} (hu : u ≤ -1) :
+    ramificationGroupReal G S u = ⊤ :=
+  (ramificationGroupReal_def G S u).trans
+    (ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by push_cast; exact hu)))
+
 /-- The real-indexed filtration of a subgroup is the trace on it of the real-indexed filtration of
 the ambient group. -/
 @[simp]
@@ -761,6 +812,51 @@ theorem ramificationGroupReal_intCast (i : ℤ) :
 theorem ramificationGroupReal_eq_of_sub_one_lt_of_le {i : ℤ} {u : ℝ} (hleft : (i : ℝ) - 1 < u)
     (hright : u ≤ i) : ramificationGroupReal G S u = ramificationGroup G S i := by
   rw [ramificationGroupReal_def, Int.ceil_eq_iff.2 ⟨hleft, hright⟩]
+
+variable {G S} in
+/-- On any subinterval `(m, u] ⊆ (m, m + 1]`, the real-indexed filtration is constant. -/
+theorem ramificationGroupReal_eq_of_mem_Ioc {m : ℕ} {u t : ℝ} (h₂ : u ≤ m + 1)
+    (ht₁ : (m : ℝ) < t) (ht₂ : t ≤ u) :
+    ramificationGroupReal G S t = ramificationGroupReal G S u := by
+  rw [ramificationGroupReal_eq_of_sub_one_lt_of_le G S (i := m + 1) (by push_cast; linarith)
+      (by push_cast; linarith),
+    ramificationGroupReal_eq_of_sub_one_lt_of_le G S (i := m + 1) (by push_cast; linarith)
+      (by push_cast; linarith)]
+
+/-- A **lower break** of the ramification filtration: `G_v < G_u` for every `v > u`. -/
+def LowerJump (u : ℝ) : Prop :=
+  ∀ v : ℝ, u < v → ramificationGroupReal G S v < ramificationGroupReal G S u
+
+/-- Defining criterion for `LowerJump`. -/
+theorem lowerJump_iff (u : ℝ) : LowerJump G S u ↔
+    ∀ v : ℝ, u < v → ramificationGroupReal G S v < ramificationGroupReal G S u := Iff.rfl
+
+variable {G S} in
+/-- Every lower break is at least `-1`. -/
+theorem LowerJump.neg_one_le {u : ℝ} (hu : LowerJump G S u) : -1 ≤ u := by
+  by_contra! hlt
+  have hdrop := hu (-1) hlt
+  rw [ramificationGroupReal_eq_top_of_le_neg_one G S le_rfl,
+    ramificationGroupReal_eq_top_of_le_neg_one G S hlt.le] at hdrop
+  exact hdrop.false
+
+variable {G S} in
+/-- Every lower break is an integer `i ≥ -1`. -/
+theorem lowerJump_eq_intCast {u : ℝ} (hu : LowerJump G S u) : ∃ i : ℤ, -1 ≤ i ∧ u = i := by
+  refine ⟨⌈u⌉, Int.le_ceil_iff.2 (by push_cast; linarith [hu.neg_one_le]),
+    (eq_or_lt_of_le (Int.le_ceil u)).resolve_right fun hlt ↦ ?_⟩
+  have hstrict := hu ⌈u⌉ hlt
+  rw [ramificationGroupReal_intCast, ← ramificationGroupReal_def] at hstrict; exact hstrict.false
+
+/-- An integer `i` is a lower break if and only if `G_{i+1} < G_i`. -/
+@[simp]
+theorem lowerJump_intCast_iff (i : ℤ) :
+    LowerJump G S i ↔ ramificationGroup G S (i + 1) < ramificationGroup G S i :=
+  ⟨fun h ↦ by
+      simpa only [ramificationGroupReal_intCast] using h ((i + 1 : ℤ) : ℝ) (by push_cast; linarith),
+    fun h _ hv ↦ by
+      rw [ramificationGroupReal_intCast, ramificationGroupReal_def]
+      exact (ramificationGroup_antitone G S (Int.add_one_le_iff.2 (Int.lt_ceil.2 hv))).trans_lt h⟩
 
 end Real
 
