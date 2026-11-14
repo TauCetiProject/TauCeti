@@ -22,9 +22,8 @@ Near a point where a complex test function `φ` does not vanish, every complex t
 supported close enough to the point is a smooth multiple of `φ`
 (`TestFunction.exists_mem_nhds_forall_exists_contDiff_eq_mul`); this is how localization
 arguments replace one cutoff by another.
-In a finite-dimensional space, a compact set `K` in the interior of a compact set `K'` has a
-complex smooth cutoff supported in `K'` and equal to one on `K`
-(`ContDiffMapSupportedIn.exists_eqOn_one_of_subset_interior`).
+A compact set `K` in the interior of a compact set `K'` has a complex smooth cutoff supported in
+`K'` and equal to one on `K` (`ContDiffMapSupportedIn.exists_eqOn_one_of_subset_interior`).
 
 Multiplication by a smooth function `χ` whose closed support meets `Ω` only inside an open set `U`
 sends tests on `Ω` to tests on `U`. This is `TestFunction.cutoffCLM`, a continuous linear map
@@ -232,10 +231,14 @@ namespace ContDiffMapSupportedIn
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- A compact set `K` in the interior of a compact set `K'` of a finite-dimensional space has a
-smooth cutoff supported in `K'` and equal to one on `K`. -/
-theorem exists_eqOn_one_of_subset_interior [FiniteDimensional ℝ E] {K K' : Compacts E}
+/-- A compact set `K` in the interior of a compact set `K'` has a smooth cutoff supported in `K'`
+and equal to one on `K`. In infinite dimension `K'` has empty interior (Riesz), so `K` is empty. -/
+theorem exists_eqOn_one_of_subset_interior {K K' : Compacts E}
     (h : (K : Set E) ⊆ interior K') : ∃ χ : 𝓓_{K'}(E, ℂ), EqOn χ 1 K := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · exact ⟨0, fun x hx => absurd (FiniteDimensional.of_totallyBounded_nhds ℝ
+      (mem_interior_iff_mem_nhds.1 (h hx)) K'.isCompact.totallyBounded) hE⟩
   obtain ⟨ψ, hψ, -, hψ1, -, hψK'⟩ := K.isCompact.exists_contDiff_cutoff isOpen_interior h
   have hsmooth : ContDiff ℝ ∞ fun x ↦ (ψ x : ℂ) := Complex.ofRealCLM.contDiff.comp hψ
   have hsupp : Function.support (fun x ↦ (ψ x : ℂ)) ⊆ K' := fun x hx ↦
