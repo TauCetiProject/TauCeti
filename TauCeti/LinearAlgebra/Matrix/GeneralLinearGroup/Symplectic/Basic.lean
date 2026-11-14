@@ -329,17 +329,7 @@ theorem JFin_two_eq : JFin 2 R = !![0, 0, -1, 0; 0, 0, 0, -1; 1, 0, 0, 0; 0, 1, 
 /-- The transported alternating form squares to `-1`, which is Mathlib's `Matrix.J_squared` read
 through the reindexing. -/
 theorem JFin_mul_self : JFin m R * JFin m R = -1 := by
-  have h : ((JFin m R).submatrix finSumFinEquiv finSumFinEquiv) *
-      ((JFin m R).submatrix finSumFinEquiv finSumFinEquiv) = -1 := by
-    rw [JFin_submatrix]
-    exact Matrix.J_squared (Fin m) R
-  rw [Matrix.submatrix_mul_equiv] at h
-  have hone : ((-1 : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R).submatrix finSumFinEquiv.symm
-      finSumFinEquiv.symm) = (-1 : Matrix (Fin (m + m)) (Fin (m + m)) R) := by
-    ext a b
-    simp [Matrix.one_apply, finSumFinEquiv.symm.injective.eq_iff]
-  have h' := congrArg (fun M => M.submatrix finSumFinEquiv.symm finSumFinEquiv.symm) h
-  simpa [Matrix.submatrix_submatrix, hone] using h'
+  simp [JFin, Matrix.J_squared, Matrix.submatrix_neg]
 
 /-- The transported alternating form is antisymmetric, which is Mathlib's `Matrix.J_transpose` read
 through the reindexing. -/
