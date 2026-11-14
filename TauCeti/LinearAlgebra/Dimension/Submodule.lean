@@ -35,7 +35,8 @@ surjective one, and composing on the left with a map that does not lower the dim
 does not enlarge the kernel. Conjugating an endomorphism by a linear equivalence preserves the
 dimension of its kernel.
 The kernel of a surjection from a finite-dimensional space has dimension the difference of the
-dimensions.
+dimensions, and the preimage of a submodule `p` inside another submodule `q` has the same
+`finrank` as the intersection `p ⊓ q` (`Submodule.finrank_comap_subtype`).
 -/
 
 public section
@@ -217,6 +218,13 @@ theorem rank_prod [Semiring 𝕜] [StrongRankCondition 𝕜] {M : Type u} {N : T
     Module.rank 𝕜 (V.prod W) =
       Cardinal.lift.{v} (Module.rank 𝕜 V) + Cardinal.lift.{u} (Module.rank 𝕜 W) := by
   rw [(V.prodEquiv W).rank_eq, _root_.rank_prod]
+
+/-- The dimension of a submodule `p` pulled back to `q` via `q.subtype` equals the dimension of the
+intersection `p ⊓ q`. -/
+theorem finrank_comap_subtype {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    (p q : Submodule R M) :
+    finrank R ↥(p.comap q.subtype) = finrank R ↥(p ⊓ q) := by
+  rw [← q.finrank_map_subtype_eq, map_comap_eq, range_subtype, inf_comm]
 
 end Submodule
 
