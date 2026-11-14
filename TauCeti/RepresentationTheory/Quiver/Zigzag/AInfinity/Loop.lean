@@ -98,12 +98,13 @@ open PathAlgebra DoubledQuiver AInfinity _root_.MultilinearMap
 
 universe u w
 
-variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
-  (hns : ∀ i : V, ∃ j, G.Adj i j)
+variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V)
 
 /-! ### Loop operations -/
 
-variable {n : ℕ} [NeZero n]
+section
+
+variable [Finite V] (hns : ∀ i : V, ∃ j, G.Adj i j) {n : ℕ} [NeZero n]
 
 /-- The **loop operation** of `n` darts `w`: the product of the `w i`-arrow coordinates of the
 `n` inputs, times the volume class at the head of `w 0`. -/
@@ -137,25 +138,27 @@ theorem zigzagLoopOperation_ofArrow (w d : Fin n → G.Dart) :
     Sum.inl.injEq, Finset.prod_boole, Finset.mem_univ, true_implies]
   split_ifs with h h' h' <;> simp_all [funext_iff]
 
+end
+
 /-! ### The cocycle identity -/
+
+section
+
+variable {n : ℕ} [NeZero n]
 
 /-- The darts of `w`, extended periodically to all natural numbers. -/
 private def walkNat (w : Fin n → G.Dart) (i : ℕ) : G.Dart :=
   w ⟨i % n, Nat.mod_lt _ (NeZero.pos n)⟩
 
-omit [Finite V] in
 private theorem walkNat_coe (w : Fin n → G.Dart) (i : Fin n) : walkNat G w i = w i := by
   simp [walkNat, Nat.mod_eq_of_lt i.isLt]
 
-omit [Finite V] in
 private theorem walkNat_zero (w : Fin n → G.Dart) : walkNat G w 0 = w 0 := by
   simp [walkNat]
 
-omit [Finite V] in
 private theorem walkNat_self (w : Fin n → G.Dart) : walkNat G w n = w 0 := by
   simp [walkNat]
 
-omit [Finite V] in
 private theorem walkNat_fst {w : Fin n → G.Dart} (hw : ∀ i, (w i).fst = (w (i + 1)).snd)
     (i : ℕ) : (walkNat G w i).fst = (walkNat G w (i + 1)).snd := by
   have h : (⟨i % n, Nat.mod_lt _ (NeZero.pos n)⟩ : Fin n) + 1 =
@@ -163,6 +166,12 @@ private theorem walkNat_fst {w : Fin n → G.Dart} (hw : ∀ i, (w i).fst = (w (
     ext
     simp only [Fin.val_add, Fin.val_one', Nat.mod_add_mod, Nat.add_mod_mod]
   rw [walkNat, walkNat, hw, h]
+
+end
+
+section
+
+variable [Finite V] (hns : ∀ i : V, ∃ j, G.Adj i j) {n : ℕ} [NeZero n]
 
 private theorem evalNat_zigzagLoopOperation (w : Fin n → G.Dart)
     (y : ℕ → nonisolatedZigzagQuotient k G) :
@@ -484,7 +493,12 @@ noncomputable def zigzagLoopAInfinityAlgebra
     (AInfinity.suspensionTaylor _ _) (AInfinity.isSuspension_suspensionTaylor _ _)
     (fun r _ e x hx ↦ stasheffSum_loopOps c hc r e x hx)
 
-omit [Finite V] in
+end
+
+section
+
+variable {k G} {n : ℕ} [NeZero n]
+
 /-- A single coefficient on a closed walk is supported on closed walks, so it defines a loop
 deformation. -/
 theorem fst_eq_snd_of_mem_support_single {w : Fin n → G.Dart}
@@ -494,7 +508,10 @@ theorem fst_eq_snd_of_mem_support_single {w : Fin n → G.Dart}
   rw [Finset.mem_singleton.mp (Finsupp.support_single_subset hw')]
   exact hw
 
-variable (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
+end
+
+variable {k G} [Finite V] {hns : ∀ i : V, ∃ j, G.Adj i j} {n : ℕ} [NeZero n]
+  (c : (Fin n → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
 
 private theorem zigzagLoopAInfinityAlgebra_m :
     (zigzagLoopAInfinityAlgebra hns c hc).m = loopOps k G hns c := by
