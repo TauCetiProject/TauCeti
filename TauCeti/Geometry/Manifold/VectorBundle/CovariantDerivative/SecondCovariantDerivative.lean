@@ -170,14 +170,14 @@ private theorem secondDerivAux_congr (hσ : CMDiff ∞ (T% σ)) (x : M)
 
 /-- The value of `∇²σ` at `(u, v)`, computed with a chosen smooth extension of `v`. -/
 private def secondDerivValue (σ : Π y : M, V y) (x : M) (u v : TangentSpace I x) : V x :=
-  secondDerivAux cov covT σ x (Classical.choose (exists_contMDiff_section_eq I E ∞ v)) u
+  secondDerivAux cov covT σ x (globalSection I E ∞ v) u
 
 private theorem secondDerivValue_eq (hσ : CMDiff ∞ (T% σ)) (x : M)
     {Y : Π y : M, TangentSpace I y} (hY : CMDiff ∞ (T% Y)) (u : TangentSpace I x) :
     secondDerivValue cov covT σ x u (Y x) = secondDerivAux cov covT σ x Y u :=
   secondDerivAux_congr cov covT hσ x
-    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Y x))).1 hY
-    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Y x))).2 u
+    (contMDiff_globalSection I E ∞ (Y x)) hY
+    (globalSection_apply_self I E ∞ (Y x)) u
 
 /-- The second covariant derivative of a smooth section, as a bilinear map. -/
 private def secondCovariantDerivativeOfContMDiff (hσ : CMDiff ∞ (T% σ)) (x : M) :
