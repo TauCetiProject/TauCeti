@@ -27,8 +27,8 @@ not be finitely generated on it, let alone finitely presented.
 
 ## Main results
 
-* `ModuleCat.isFinitelyGeneratedFunctor_restrictedPreadditiveYoneda_obj_iff_finite`: the functor
-  `(-, K)|_fg` is finitely generated exactly when `K` is a finitely generated module.
+* `ModuleCat.isFinitelyGeneratedFunctor_restrictedPreadditiveYoneda_isFG_obj_iff_finite`: the
+  functor `(-, K)|_fg` is finitely generated exactly when `K` is a finitely generated module.
 
 ## References
 
@@ -49,18 +49,20 @@ variable {R : Type u} [Ring R]
 /-- **Restricted Hom functors of modules.** For a module `K`, the restriction `(-, K)|_fg` of
 `Hom(-, K)` to the finitely generated modules is a finitely generated functor on `FGModuleCat R`
 exactly when `K` is a finitely generated module. -/
-theorem isFinitelyGeneratedFunctor_restrictedPreadditiveYoneda_obj_iff_finite
+theorem isFinitelyGeneratedFunctor_restrictedPreadditiveYoneda_isFG_obj_iff_finite
     (K : ModuleCat.{v} R) :
     IsFinitelyGeneratedFunctor ((isFG R).restrictedPreadditiveYoneda.obj K) ↔
       Module.Finite R K := by
   refine ⟨fun hK ↦ ?_,
-    fun hK ↦ (isFG R).isFinitelyGeneratedFunctor_restrictedPreadditiveYoneda_obj hK⟩
+    fun hK ↦ (isFG R).isFinitelyGeneratedFunctor_restrictedPreadditiveYoneda_obj
+      ((isFG_iff K).2 hK)⟩
   obtain ⟨Y, hY, u, hu⟩ :=
     ((isFG R).isFinitelyGeneratedFunctor_restrictedPreadditiveYoneda_obj_iff K).1 hK
-  have : Module.Finite R Y := hY
+  have := (isFG_iff Y).1 hY
   refine Module.Finite.of_surjective u.hom fun x ↦ ?_
-  obtain ⟨h, hh⟩ := hu (of R (R ∙ x)) (inferInstanceAs (Module.Finite R (R ∙ x)))
+  obtain ⟨h, hh⟩ := hu (of R (R ∙ x)) ((isFG_iff _).2 (inferInstanceAs (Module.Finite R (R ∙ x))))
     (ofHom (R ∙ x).subtype)
-  exact ⟨h.hom ⟨x, Submodule.mem_span_singleton_self x⟩, congr(($hh).hom ⟨x, _⟩)⟩
+  exact ⟨h.hom ⟨x, Submodule.mem_span_singleton_self x⟩,
+    by simpa using congr(($hh).hom ⟨x, Submodule.mem_span_singleton_self x⟩)⟩
 
 end ModuleCat

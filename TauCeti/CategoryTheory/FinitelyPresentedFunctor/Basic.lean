@@ -295,11 +295,12 @@ theorem isFinitelyGeneratedFunctor_restrictedPreadditiveYoneda_obj_iff (X : C) :
   · rintro ⟨Y, p, hp⟩
     refine ⟨Y.obj, Y.property, p.app (op Y) (𝟙 Y), fun Z hZ g ↦ ?_⟩
     rw [NatTrans.epi_iff_epi_app] at hp
-    obtain ⟨h, rfl⟩ := (AddCommGrpCat.epi_iff_surjective _).1 (hp (op ⟨Z, hZ⟩)) g
+    obtain ⟨(h : (⟨Z, hZ⟩ : P.FullSubcategory) ⟶ Y), rfl⟩ :=
+      (AddCommGrpCat.epi_iff_surjective _).1 (hp (op ⟨Z, hZ⟩)) g
     refine ⟨h.hom, ?_⟩
     have := NatTrans.naturality_apply p h.op (𝟙 Y)
     simp only [preadditiveYoneda_obj_map_apply, Category.comp_id] at this
-    exact this.symm
+    exact (this.trans (P.restrictedPreadditiveYoneda_obj_map_apply X h.op _)).symm
   · rintro ⟨Y, hY, u, hu⟩
     have : Epi (P.restrictedPreadditiveYoneda.map u) := by
       rw [NatTrans.epi_iff_epi_app]
