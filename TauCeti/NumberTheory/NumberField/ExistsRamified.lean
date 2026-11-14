@@ -13,8 +13,10 @@ public import Mathlib.RingTheory.Unramified.Locus
 
 Mathlib's `Mathlib/NumberTheory/NumberField/ExistsRamified.lean` records Minkowski's theorem in
 the form `NumberField.exists_not_isUnramifiedAt_int`: a number field of degree greater than one
-over `ℚ` has a maximal ideal of its ring of integers that is ramified over `ℤ`. This file adds the
-trivial converse and the relative form of Minkowski's theorem over a base of degree one.
+over `ℚ` has a maximal ideal of its ring of integers that is ramified over `ℤ`, and
+`NumberField.finrank_eq_one_of_unramified`: a number field whose ring of integers is unramified
+over `ℤ` has degree one. This file adds the converse of the latter and the relative form of
+Minkowski's theorem over a base of degree one.
 
 The relative form is what a statement about extensions unramified over a subfield `ℚ(√d)` needs
 in the degenerate case where `d` is a rational square: then the subfield is `ℚ`, and an extension
@@ -35,13 +37,12 @@ open scoped NumberField
 namespace NumberField
 
 /-- **The ring of integers of a degree-one number field is unramified over `ℤ`.** If `F` has
-degree one over `ℚ` and `𝒪` is the integral closure of `ℤ` in `F`, then `ℤ → 𝒪` is bijective,
-since `𝒪` is free of rank `Module.finrank ℚ F = 1` over `ℤ`; so `𝒪` is unramified over `ℤ`, and
-in particular every prime of `𝒪` is. This is the converse of
-`NumberField.exists_not_isUnramifiedAt_int`. -/
+degree one over `ℚ` and `𝒪` is the integral closure of `ℤ` in `F`, then `𝒪` is unramified over
+`ℤ`. This is the converse of `NumberField.finrank_eq_one_of_unramified`. -/
 theorem unramified_of_finrank_eq_one {F : Type*} (𝒪 : Type*) [Field F] [CharZero F] [CommRing 𝒪]
     [Algebra 𝒪 F] [IsIntegralClosure 𝒪 ℤ F] (h : Module.finrank ℚ F = 1) :
     Algebra.Unramified ℤ 𝒪 := by
+  -- `ℤ → 𝒪` is bijective, as `𝒪` is free of rank `Module.finrank ℚ F = 1` over `ℤ`.
   have : NumberField F := { to_finiteDimensional := Module.finite_of_finrank_eq_succ h }
   have := IsIntegralClosure.module_free ℤ ℚ F 𝒪
   have := IsIntegralClosure.finite ℤ ℚ F 𝒪
@@ -53,14 +54,14 @@ theorem unramified_of_finrank_eq_one {F : Type*} (𝒪 : Type*) [Field F] [CharZ
 
 /-- **Minkowski's theorem over a degree-one base.** Let `M` be a number field that is an algebra
 over a field `F` of degree one over `ℚ`. If `M` is unramified over `F` at every nonzero prime of
-`𝓞 F`, then `M` has degree one over `ℚ`: every prime of `𝓞 M` is then unramified over `ℤ`, by
-`NumberField.unramified_of_finrank_eq_one` and transitivity, which
-`NumberField.exists_not_isUnramifiedAt_int` rules out unless `Module.finrank ℚ M = 1`. -/
+`𝓞 F`, then `M` has degree one over `ℚ`. -/
 theorem finrank_eq_one_of_finrank_eq_one_of_isUnramifiedIn {F M : Type*} [Field F] [CharZero F]
     [Field M] [NumberField M] [Algebra F M] (hF : Module.finrank ℚ F = 1)
     (hunr : ∀ q : Ideal (𝓞 F), q.IsPrime → q ≠ ⊥ → Algebra.IsUnramifiedIn (𝓞 M) q) :
     Module.finrank ℚ M = 1 := by
   by_contra H
+  -- Every prime of `𝓞 M` would be unramified over `ℤ` by transitivity, contradicting
+  -- Minkowski's theorem `exists_not_isUnramifiedAt_int`.
   obtain ⟨P, _, hP⟩ := exists_not_isUnramifiedAt_int (K := M) (𝒪 := 𝓞 M) H
   have : Algebra.IsUnramifiedAt (𝓞 F) P := hunr (P.under (𝓞 F)) inferInstance
     (Ideal.under_ne_bot (𝓞 F) (Ideal.IsMaximal.ne_bot_of_isIntegral_int P)) P inferInstance
