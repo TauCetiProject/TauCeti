@@ -5,15 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Flow
+public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
+import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Flow
 public import TauCeti.Geometry.Manifold.VectorField.Chart.Basic
 
 /-!
 # Homogeneity of connected manifolds
 
 For any two points `x` and `y` of a connected open subset `U` of a finite-dimensional
-boundaryless manifold `M`, some diffeotopy of `M` which fixes every point outside a compact subset
-of `U` carries `x` to `y`.
+Hausdorff boundaryless manifold `M`, some diffeotopy of `M` which fixes every point outside a
+compact subset of `U` carries `x` to `y`.
 In particular the diffeomorphisms of a connected manifold isotopic to the identity act
 transitively on it.
 
@@ -95,8 +96,8 @@ theorem eventually_exists_diffeotopy_final_apply_eq (hm : 1 ≤ m)
   exact e.left_inv hys
 
 /-- **Homogeneity lemma.** For two points `x` and `y` of a preconnected open subset `U` of a
-finite-dimensional boundaryless manifold, some diffeotopy fixing everything outside a compact
-subset of `U` has final map sending `x` to `y`. For a `C^n` manifold the diffeotopy is `C^m`
+finite-dimensional Hausdorff boundaryless manifold, some diffeotopy fixing everything outside a
+compact subset of `U` has final map sending `x` to `y`. For a `C^n` manifold the diffeotopy is `C^m`
 for every `m` with `1 ≤ m` and `m + 1 ≤ n`; in particular it is smooth on a smooth manifold. -/
 theorem exists_diffeotopy_final_apply_eq_of_isPreconnected (hm : 1 ≤ m)
     (hmn : (m : ℕ∞ω) + 1 ≤ n) {U : Set M} (hU : IsOpen U) (hUc : IsPreconnected U) {x y : M}
@@ -114,7 +115,7 @@ theorem exists_diffeotopy_final_apply_eq_of_isPreconnected (hm : 1 ≤ m)
     refine ⟨Φ.symm, K, hK, hKU, fun t z hz ↦ Φ.symm_apply_eq_self_iff.2 (hΦK t hz), ?_⟩
     rw [Diffeotopy.final_symm, ← hab, Diffeomorph.symm_apply_apply]
 
-/-- **Homogeneity lemma.** For two points `x` and `y` of a connected finite-dimensional
+/-- **Homogeneity lemma.** For two points `x` and `y` of a connected finite-dimensional Hausdorff
 boundaryless manifold, some compactly supported diffeotopy has final map sending `x` to `y`.
 For a `C^n` manifold the diffeotopy is `C^m` for every `m` with `1 ≤ m` and `m + 1 ≤ n`. -/
 theorem exists_diffeotopy_final_apply_eq [PreconnectedSpace M] (hm : 1 ≤ m)

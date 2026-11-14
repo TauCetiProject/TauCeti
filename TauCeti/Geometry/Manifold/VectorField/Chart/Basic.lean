@@ -81,8 +81,8 @@ theorem chartField_of_notMem (hz : z ∉ (extChartAt I x).source) :
     chartField (I := I) x w z = 0 := by
   simp only [chartField, hz, ↓reduceIte]
 
-/-- If `w` vanishes outside `K ⊆ target`, the chart field vanishes outside the preimage of
-`K`. -/
+/-- If `w` vanishes outside `K`, the chart field vanishes outside the image of `K` under the
+inverse chart `(extChartAt I x).symm`. -/
 theorem chartField_eq_zero {K : Set E}
     (hwK : ∀ p ∉ K, w p = 0) (hz : z ∉ (extChartAt I x).symm '' K) :
     chartField (I := I) x w z = 0 := by
