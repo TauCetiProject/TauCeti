@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
 public import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 
 /-!
 # Algebraic curvature tensors
@@ -21,8 +24,19 @@ interchanging the two pairs, and satisfies the first Bianchi identity
 an *algebraic curvature tensor*, `TauCeti.FourTensor.IsAlgebraicCurvature`, and these tensors form
 the closed submodule `TauCeti.FourTensor.algebraicCurvatureSubmodule`. It is stable under pullback
 by every continuous linear map, in particular under the orthogonal group of `V`, and pullback along
-a continuous linear equivalence also reflects the curvature symmetries. With this sign
-convention `r(u, v, u, v)` is positive on the round sphere.
+a continuous linear equivalence also reflects the curvature symmetries. By the first Bianchi
+identity, contracting an algebraic curvature tensor against itself across two slots satisfies
+`2 ∑ p, ∑ q, r(u, v, f p, f q) r(z, f p, w, f q) = ∑ p, ∑ q, r(u, v, f p, f q) r(z, w, f p, f q)`
+(`TauCeti.FourTensor.IsAlgebraicCurvature.two_mul_sum_mul_eq`). With this sign convention
+`r(u, v, u, v)` is positive on the round sphere.
+
+On a real inner product space, `TauCeti.FourTensor.coordFourTensor` attaches to four vectors of a
+family `b` the rank-one four-tensor `(u, v, z, w) ↦ ⟪b i, u⟫ ⟪b j, v⟫ ⟪b k, z⟫ ⟪b l, w⟫`, in which
+every four-tensor expands along any finite orthonormal basis
+(`TauCeti.FourTensor.sum_smul_coordFourTensor`). To any pair of vectors `u, v : V`,
+`TauCeti.FourTensor.planeCurvature u v` attaches the rank-one algebraic curvature tensor
+`(a, b, c, d) ↦ (⟪u, a⟫ ⟪v, b⟫ - ⟪u, b⟫ ⟪v, a⟫) (⟪u, c⟫ ⟪v, d⟫ - ⟪u, d⟫ ⟪v, c⟫)`, which represents
+the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
 
 On a finite-dimensional real inner product space the *Ricci contraction*
 `Ric(u, v) = ∑ᵢ r(eᵢ, u, eᵢ, v)` and the *scalar contraction* `Scal = ∑ᵢ Ric(eᵢ, eᵢ)` do not depend
@@ -39,9 +53,12 @@ of the inner product with itself is the constant-curvature tensor
 `r(u, v, z, w) = ⟪u, z⟫ ⟪v, w⟫ - ⟪u, w⟫ ⟪v, z⟫`, the curvature four-tensor of the unit sphere.
 It is positive on `(u, v, u, v)`, where it is the Gram determinant, exactly for linearly
 independent `u, v`, and it is invariant under linear isometries.
-Its Ricci contraction is `(n - 1) g` and its scalar contraction is `n (n - 1)`, and `κ` times it
-is the four-tensor of every curvature operator satisfying `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`,
-the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
+Its Ricci contraction is `(n - 1) g`, its scalar contraction is `n (n - 1)`, contracting an
+algebraic curvature tensor against it in an orthonormal basis recovers the tensor and its Ricci
+contraction (`TauCeti.FourTensor.sum_mul_constantCurvature_last`,
+`TauCeti.FourTensor.sum_mul_constantCurvature_even`), and `κ` times it is the four-tensor of every
+curvature operator satisfying `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`, the identity recorded by
+`Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 
 ## Main definitions
 
@@ -51,6 +68,10 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 * `TauCeti.FourTensor.algebraicCurvatureSubmodule`: the submodule of algebraic curvature tensors.
 * `TauCeti.FourTensor.ofLinearMap₄`: on a finite-dimensional space, the four-tensor of a curried
   four-linear form.
+* `TauCeti.FourTensor.coordFourTensor`: the rank-one four-tensor
+  `(u, v, z, w) ↦ ⟪b i, u⟫ ⟪b j, v⟫ ⟪b k, z⟫ ⟪b l, w⟫`.
+* `TauCeti.FourTensor.planeCurvature`: the rank-one algebraic curvature four-tensor of a pair of
+  vectors `u, v`.
 * `TauCeti.FourTensor.ricci` and `TauCeti.FourTensor.scalar`: the Ricci and scalar contractions.
 * `TauCeti.FourTensor.kulkarniNomizu`: the Kulkarni–Nomizu product of two bilinear forms, as a
   four-tensor.
@@ -58,12 +79,15 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 
 ## Main statements
 
+* `TauCeti.FourTensor.IsAlgebraicCurvature.two_mul_sum_mul_eq`: the first-Bianchi quadratic
+  contraction identity.
 * `TauCeti.FourTensor.isClosed_algebraicCurvatureSubmodule`: the submodule is closed.
 * `TauCeti.FourTensor.IsAlgebraicCurvature.compContinuousLinearMap`: pullback preserves algebraic
   curvature tensors.
 * `TauCeti.FourTensor.isAlgebraicCurvature_compContinuousLinearMap_iff` and
   `TauCeti.FourTensor.comap_compContinuousLinearMapL_algebraicCurvatureSubmodule`: a continuous
   linear equivalence identifies the algebraic curvature tensors of the two spaces.
+* `TauCeti.FourTensor.sum_smul_coordFourTensor`: orthonormal-basis expansion of a four-tensor.
 * `TauCeti.FourTensor.ricci_apply_orthonormalBasis` and
   `TauCeti.FourTensor.scalar_apply_orthonormalBasis`: the contractions in an orthonormal basis.
 * `TauCeti.FourTensor.ricci_compContinuousLinearMap_linearIsometryEquiv` and
@@ -74,7 +98,10 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
   constant-curvature tensor exactly on a linearly independent pair.
 * `TauCeti.FourTensor.constantCurvature_compContinuousLinearMap_linearIsometry`: linear isometries
   pull the constant-curvature tensor back to the constant-curvature tensor.
-* `TauCeti.FourTensor.ricci_constantCurvature` and `TauCeti.FourTensor.scalar_constantCurvature`.
+* `TauCeti.FourTensor.ricci_constantCurvature`, `TauCeti.FourTensor.scalar_constantCurvature`,
+  `TauCeti.FourTensor.sum_mul_constantCurvature_last`, and
+  `TauCeti.FourTensor.sum_mul_constantCurvature_even`.
+* `TauCeti.FourTensor.ricci_planeCurvature` and `TauCeti.FourTensor.scalar_planeCurvature`.
 * `TauCeti.FourTensor.inner_eq_mul_constantCurvature`: a curvature operator of constant curvature
   `κ` has four-tensor `κ` times the constant-curvature tensor.
 
@@ -229,6 +256,42 @@ structure IsAlgebraicCurvature (r : FourTensor V) : Prop where
   swap_pairs : ∀ u v z w, r ![u, v, z, w] = r ![z, w, u, v]
   /-- The first Bianchi identity. -/
   cyclic_eq_zero : ∀ u v z w, r ![u, v, z, w] + r ![v, z, u, w] + r ![z, u, v, w] = 0
+
+/-- Bianchi contraction identity for an algebraic curvature tensor `r` and a family `f : ι → V`
+indexed by `s : Finset ι`:
+`2 ∑ p ∈ s, ∑ q ∈ s, r(u, v, f p, f q) r(z, f p, w, f q) =
+  ∑ p ∈ s, ∑ q ∈ s, r(u, v, f p, f q) r(z, w, f p, f q)`. -/
+theorem IsAlgebraicCurvature.two_mul_sum_mul_eq {ι : Type*} {r : FourTensor V}
+    (hr : IsAlgebraicCurvature r) (s : Finset ι) (f : ι → V) (u v z w : V) :
+    2 * (∑ p ∈ s, ∑ q ∈ s, r ![u, v, f p, f q] * r ![z, f p, w, f q]) =
+      ∑ p ∈ s, ∑ q ∈ s, r ![u, v, f p, f q] * r ![z, w, f p, f q] := by
+  have hswap : (∑ p ∈ s, ∑ q ∈ s, r ![u, v, f p, f q] * r ![z, f p, w, f q]) =
+      -∑ p ∈ s, ∑ q ∈ s, r ![u, v, f p, f q] * r ![z, f q, w, f p] := by
+    conv_lhs => rw [Finset.sum_comm]
+    rw [← Finset.sum_neg_distrib]
+    refine Finset.sum_congr rfl fun p _ ↦ ?_
+    rw [← Finset.sum_neg_distrib]
+    refine Finset.sum_congr rfl fun q _ ↦ ?_
+    rw [hr.antisymm_last u v (f q) (f p), neg_mul]
+  have hbianchi (p q : ι) :
+      r ![z, f p, w, f q] - r ![z, f q, w, f p] = r ![z, w, f p, f q] := by
+    have hcyc := hr.cyclic_eq_zero (f p) w (f q) z
+    have h1 : r ![f p, w, f q, z] = r ![z, f q, w, f p] := by
+      rw [hr.antisymm_first, hr.antisymm_last, neg_neg, hr.swap_pairs]
+    have h2 : r ![w, f q, f p, z] = -r ![z, f p, w, f q] := by
+      rw [hr.antisymm_last, hr.swap_pairs]
+    have h3 : r ![f q, f p, w, z] = r ![z, w, f p, f q] := by
+      rw [hr.antisymm_first, hr.antisymm_last, neg_neg, hr.swap_pairs]
+    linear_combination -hcyc + h1 + h2 + h3
+  have hsum : 2 * (∑ p ∈ s, ∑ q ∈ s, r ![u, v, f p, f q] * r ![z, f p, w, f q]) =
+      (∑ p ∈ s, ∑ q ∈ s, r ![u, v, f p, f q] * r ![z, f p, w, f q]) -
+        ∑ p ∈ s, ∑ q ∈ s, r ![u, v, f p, f q] * r ![z, f q, w, f p] := by
+    linear_combination hswap
+  rw [hsum, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  rw [← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  rw [← mul_sub, hbianchi]
 
 variable (V) in
 /-- The submodule of algebraic curvature tensors. -/
@@ -401,7 +464,169 @@ end FiniteDimensional
 
 section InnerProductSpace
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- The rank-one four-tensor `(u, v, z, w) ↦ ⟪b i, u⟫ ⟪b j, v⟫ ⟪b k, z⟫ ⟪b l, w⟫` attached to four
+vectors of a family `b`. -/
+def coordFourTensor {ι : Type*} (b : ι → V) (i j k l : ι) : FourTensor V :=
+  (ContinuousMultilinearMap.mkPiAlgebraFin ℝ 4 ℝ).compContinuousLinearMap
+    ![innerSL ℝ (b i), innerSL ℝ (b j), innerSL ℝ (b k), innerSL ℝ (b l)]
+
+/-- Evaluation of `coordFourTensor` on a four-tuple of vectors. -/
+@[simp]
+theorem coordFourTensor_apply {ι : Type*} (b : ι → V) (i j k l : ι) (u v z w : V) :
+    coordFourTensor b i j k l ![u, v, z, w] =
+      ⟪b i, u⟫_ℝ * ⟪b j, v⟫_ℝ * ⟪b k, z⟫_ℝ * ⟪b l, w⟫_ℝ := by
+  simp only [coordFourTensor, ContinuousMultilinearMap.compContinuousLinearMap_apply,
+    ContinuousMultilinearMap.mkPiAlgebraFin_apply, List.ofFn_succ, List.ofFn_zero, List.prod_cons,
+    List.prod_nil, mul_one, Matrix.cons_val_zero, Matrix.cons_val_succ, innerSL_apply_apply]
+  ring
+
+/-- The operator norm of `coordFourTensor b i j k l` is at most `‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖`. -/
+theorem norm_coordFourTensor_le {ι : Type*} (b : ι → V) (i j k l : ι) :
+    ‖coordFourTensor b i j k l‖ ≤ ‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖ := by
+  simpa [coordFourTensor, Fin.prod_univ_four, innerSL_apply_norm, mul_assoc] using
+    (ContinuousMultilinearMap.mkPiAlgebraFin ℝ 4 ℝ).norm_compContinuousLinearMap_le
+      ![innerSL ℝ (b i), innerSL ℝ (b j), innerSL ℝ (b k), innerSL ℝ (b l)]
+
+/-- Every four-tensor expands in an orthonormal basis `b` as the linear combination of
+`coordFourTensor b i j k l` weighted by its entries `r ![b i, b j, b k, b l]`. -/
+theorem sum_smul_coordFourTensor {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    (r : FourTensor V) :
+    ∑ i, ∑ j, ∑ k, ∑ l, r ![b i, b j, b k, b l] • coordFourTensor b i j k l = r := by
+  refine ext_vec fun u v z w ↦ ?_
+  simp only [sum_apply, smul_apply, coordFourTensor_apply, smul_eq_mul]
+  conv_rhs => rw [← b.sum_repr' u, apply_sum_first]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  conv_rhs => rw [apply_smul_first, ← b.sum_repr' v, apply_sum_second, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  conv_rhs => rw [apply_smul_second, ← b.sum_repr' z, apply_sum_third]
+  simp_rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  conv_rhs => rw [apply_smul_third, ← b.sum_repr' w, apply_sum_fourth]
+  simp_rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun l _ ↦ ?_
+  rw [apply_smul_fourth]
+  ring
+
+/-- The rank-one algebraic curvature four-tensor attached to two vectors `u, v : V`, sending
+`(a, b, c, d)` to `(⟪u, a⟫ ⟪v, b⟫ - ⟪u, b⟫ ⟪v, a⟫) (⟪u, c⟫ ⟪v, d⟫ - ⟪u, d⟫ ⟪v, c⟫)`. For an
+orthonormal pair `u, v` this is the curvature four-tensor of `S² × ℝⁿ⁻²` along the two-plane
+spanned by `u` and `v`. -/
+def planeCurvature (u v : V) : FourTensor V :=
+  coordFourTensor ![u, v] 0 1 0 1 - coordFourTensor ![u, v] 0 1 1 0 -
+    coordFourTensor ![u, v] 1 0 0 1 + coordFourTensor ![u, v] 1 0 1 0
+
+/-- Evaluation of the rank-one plane curvature tensor `planeCurvature u v`. -/
+@[simp]
+theorem planeCurvature_apply (u v a b c d : V) :
+    planeCurvature u v ![a, b, c, d] =
+      (⟪u, a⟫_ℝ * ⟪v, b⟫_ℝ - ⟪u, b⟫_ℝ * ⟪v, a⟫_ℝ) *
+        (⟪u, c⟫_ℝ * ⟪v, d⟫_ℝ - ⟪u, d⟫_ℝ * ⟪v, c⟫_ℝ) := by
+  simp only [planeCurvature, add_apply, sub_apply, coordFourTensor_apply, Fin.isValue,
+    Matrix.cons_val_zero, Matrix.cons_val_one]
+  ring
+
+/-- `planeCurvature u v` is symmetric in `u` and `v`. -/
+theorem planeCurvature_comm (u v : V) : planeCurvature u v = planeCurvature v u := by
+  refine ext_vec fun a b c d ↦ ?_
+  rw [planeCurvature_apply, planeCurvature_apply]
+  ring
+
+/-- A degenerate pair `(u, u)` gives the zero plane curvature tensor. -/
+@[simp]
+theorem planeCurvature_self (u : V) : planeCurvature u u = 0 := by
+  refine ext_vec fun a b c d ↦ ?_
+  rw [planeCurvature_apply, zero_apply]
+  ring
+
+/-- Scaling the first vector scales `planeCurvature` quadratically. -/
+theorem planeCurvature_smul_left (t : ℝ) (u v : V) :
+    planeCurvature (t • u) v = (t ^ 2) • planeCurvature u v := by
+  refine ext_vec fun a b c d ↦ ?_
+  simp only [smul_apply, planeCurvature_apply, real_inner_smul_left, smul_eq_mul]
+  ring
+
+/-- Scaling the second vector scales `planeCurvature` quadratically. -/
+theorem planeCurvature_smul_right (u : V) (t : ℝ) (v : V) :
+    planeCurvature u (t • v) = (t ^ 2) • planeCurvature u v := by
+  rw [planeCurvature_comm, planeCurvature_smul_left, planeCurvature_comm]
+
+/-- `planeCurvature` vanishes when its first vector is zero. -/
+@[simp]
+theorem planeCurvature_zero_left (v : V) : planeCurvature 0 v = 0 := by
+  simpa using planeCurvature_smul_left 0 0 v
+
+/-- `planeCurvature` vanishes when its second vector is zero. -/
+@[simp]
+theorem planeCurvature_zero_right (u : V) : planeCurvature u 0 = 0 := by
+  simpa using planeCurvature_smul_right u 0 0
+
+/-- Negating the first vector leaves `planeCurvature` unchanged. -/
+@[simp]
+theorem planeCurvature_neg_left (u v : V) : planeCurvature (-u) v = planeCurvature u v := by
+  simpa using planeCurvature_smul_left (-1) u v
+
+/-- Negating the second vector leaves `planeCurvature` unchanged. -/
+@[simp]
+theorem planeCurvature_neg_right (u v : V) : planeCurvature u (-v) = planeCurvature u v := by
+  simpa using planeCurvature_smul_right u (-1) v
+
+/-- For every pair `u, v`, `planeCurvature u v` is an algebraic curvature tensor. -/
+theorem isAlgebraicCurvature_planeCurvature (u v : V) :
+    IsAlgebraicCurvature (planeCurvature u v) := by
+  refine ⟨fun a b c d ↦ ?_, fun a b c d ↦ ?_, fun a b c d ↦ ?_, fun a b c d ↦ ?_⟩ <;>
+    simp only [planeCurvature_apply] <;> ring
+
+/-- On repeated arguments `(a, b, a, b)`, `planeCurvature u v` is a square. -/
+theorem planeCurvature_apply_self (u v a b : V) :
+    planeCurvature u v ![a, b, a, b] = (⟪u, a⟫_ℝ * ⟪v, b⟫_ℝ - ⟪u, b⟫_ℝ * ⟪v, a⟫_ℝ) ^ 2 := by
+  rw [planeCurvature_apply, sq]
+
+/-- `planeCurvature u v` has nonnegative sectional values on every pair of vectors. -/
+theorem planeCurvature_apply_self_nonneg (u v a b : V) :
+    0 ≤ planeCurvature u v ![a, b, a, b] := by
+  rw [planeCurvature_apply_self]
+  exact sq_nonneg _
+
+/-- Pulling `planeCurvature (f u) (f v)` back along a linear isometry `f` gives
+`planeCurvature u v`. -/
+@[simp]
+theorem planeCurvature_compContinuousLinearMap_linearIsometry {W : Type*}
+    [NormedAddCommGroup W] [InnerProductSpace ℝ W] (f : W →ₗᵢ[ℝ] V) (u v : W) :
+    (planeCurvature (f u) (f v)).compContinuousLinearMap (fun _ ↦ f.toContinuousLinearMap) =
+      planeCurvature u v := by
+  refine ext_vec fun a b c d ↦ ?_
+  rw [compContinuousLinearMap_apply_vec]
+  simp
+
+/-- Zero-extending `planeCurvature u v` from `V` to `WithLp 2 (V × U)` along `WithLp.fstL` produces
+`planeCurvature` of the included vectors `(u, 0)` and `(v, 0)`. -/
+theorem planeCurvature_compContinuousLinearMap_fstL {U : Type*} [NormedAddCommGroup U]
+    [InnerProductSpace ℝ U] (u v : V) :
+    (planeCurvature u v).compContinuousLinearMap (fun _ ↦ WithLp.fstL 2 ℝ V U) =
+      planeCurvature (WithLp.toLp 2 (u, 0)) (WithLp.toLp 2 (v, 0)) := by
+  refine ext_vec fun a b c d ↦ ?_
+  rw [compContinuousLinearMap_apply_vec]
+  simp
+
+/-- Expanding a bilinear form across both arguments in an orthonormal basis `b`. -/
+private theorem sum_apply_mul_inner_mul_inner {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ V) (B : BilinForm ℝ V) (u v : V) :
+    (∑ p, ∑ q, B (b p) (b q) * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ)) = B u v := by
+  have hq (p : ι) :
+      (∑ q, B (b p) (b q) * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ)) = B (b p) v * ⟪b p, u⟫_ℝ := by
+    calc (∑ q, B (b p) (b q) * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ))
+        = (∑ q, B (b p) (b q) * ⟪b q, v⟫_ℝ) * ⟪b p, u⟫_ℝ := by
+          rw [Finset.sum_mul]
+          exact Finset.sum_congr rfl fun q _ ↦ by
+            rw [real_inner_comm u (b p), real_inner_comm v (b q)]
+            ring
+      _ = B (b p) v * ⟪b p, u⟫_ℝ := by rw [b.sum_apply_mul_inner]
+  simp_rw [hq]
+  exact b.sum_apply_mul_inner (B.flip v) u
+
+variable [FiniteDimensional ℝ V]
 
 /-- The Ricci contraction `Ric(u, v) = tr (x, y ↦ r(x, u, y, v))` of a four-tensor, the metric
 trace over its first and third arguments. In an orthonormal basis it is
@@ -574,6 +799,117 @@ theorem inner_eq_mul_constantCurvature {R : V → V → V → V} {κ : ℝ}
     ⟪R u v w, z⟫_ℝ = κ * constantCurvature V ![u, v, z, w] := by
   rw [hR, constantCurvature_apply, real_inner_smul_left, inner_sub_left, real_inner_smul_left,
     real_inner_smul_left]
+  ring
+
+/-- Contracting the last two slots of an algebraic curvature tensor `r` against
+`constantCurvature V` in an orthonormal basis `b` evaluates `2 * r ![a, c, x, y]`. -/
+theorem sum_mul_constantCurvature_last {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    {r : FourTensor V} (hr : IsAlgebraicCurvature r) (a c x y : V) :
+    (∑ p, ∑ q, r ![a, c, b p, b q] * constantCurvature V ![x, y, b p, b q]) =
+      2 * r ![a, c, x, y] := by
+  let B : BilinForm ℝ V :=
+    LinearMap.mk₂ ℝ (fun u v ↦ r ![a, c, u, v])
+      (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
+      (fun _ _ _ ↦ apply_add_fourth ..) (fun _ _ _ ↦ apply_smul_fourth ..)
+  have heval (u v : V) :
+      (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ)) = r ![a, c, u, v] :=
+    sum_apply_mul_inner_mul_inner b B u v
+  have hsub : (∑ p, ∑ q, r ![a, c, b p, b q] * constantCurvature V ![x, y, b p, b q]) =
+      (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪x, b p⟫_ℝ * ⟪y, b q⟫_ℝ)) -
+        ∑ p, ∑ q, r ![a, c, b p, b q] * (⟪x, b q⟫_ℝ * ⟪y, b p⟫_ℝ) := by
+    simp_rw [constantCurvature_apply, mul_sub, Finset.sum_sub_distrib]
+  have h2 : (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪x, b q⟫_ℝ * ⟪y, b p⟫_ℝ)) = r ![a, c, y, x] := by
+    convert heval y x using 2 with p
+    exact Finset.sum_congr rfl fun q _ ↦ by ring
+  rw [hsub, heval, h2, hr.antisymm_last a c y x]
+  ring
+
+/-- Contracting the second and fourth slots of an algebraic curvature tensor `r` against
+`constantCurvature V` in an orthonormal basis `b` yields
+`ricci r a c * ⟪x, y⟫ - r ![a, y, c, x]`. -/
+theorem sum_mul_constantCurvature_even {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    {r : FourTensor V} (hr : IsAlgebraicCurvature r) (a c x y : V) :
+    (∑ p, ∑ q, r ![a, b p, c, b q] * constantCurvature V ![x, b p, y, b q]) =
+      ricci r a c * ⟪x, y⟫_ℝ - r ![a, y, c, x] := by
+  have heven (u v : V) : r ![a, u, c, v] = ricciSlice r a c u v := by
+    rw [ricciSlice_apply, hr.antisymm_first a u, hr.antisymm_last u a c v, neg_neg]
+  have heval (u v : V) :
+      (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ)) = r ![a, u, c, v] := by
+    simp_rw [heven]
+    exact sum_apply_mul_inner_mul_inner b (ricciSlice r a c) u v
+  have hsub : (∑ p, ∑ q, r ![a, b p, c, b q] * constantCurvature V ![x, b p, y, b q]) =
+      (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, y⟫_ℝ * ⟪b p, b q⟫_ℝ)) -
+        ∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, b q⟫_ℝ * ⟪b p, y⟫_ℝ) := by
+    simp_rw [constantCurvature_apply, mul_sub, Finset.sum_sub_distrib]
+  have h1 : (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, y⟫_ℝ * ⟪b p, b q⟫_ℝ)) =
+      ricci r a c * ⟪x, y⟫_ℝ := by
+    have hdiag (p : ι) :
+        (∑ q, r ![a, b p, c, b q] * (⟪x, y⟫_ℝ * ⟪b p, b q⟫_ℝ)) =
+          r ![b p, a, b p, c] * ⟪x, y⟫_ℝ := by
+      rw [Finset.sum_eq_single p]
+      · rw [real_inner_self_eq_norm_sq, b.norm_eq_one, one_pow, mul_one, heven, ricciSlice_apply]
+      · intro q _ hqp
+        rw [b.orthonormal.2 hqp.symm, mul_zero, mul_zero]
+      · intro hp
+        exact absurd (Finset.mem_univ p) hp
+    simp_rw [hdiag, ← Finset.sum_mul, ricci_apply_orthonormalBasis b]
+  have h2 : (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, b q⟫_ℝ * ⟪b p, y⟫_ℝ)) = r ![a, y, c, x] := by
+    convert heval y x using 2 with p
+    refine Finset.sum_congr rfl fun q _ ↦ ?_
+    rw [real_inner_comm y (b p)]
+    ring
+  rw [hsub, h1, h2]
+
+/-- The Ricci contraction of `planeCurvature u v`. -/
+theorem ricci_planeCurvature (u v x y : V) :
+    ricci (planeCurvature u v) x y =
+      ‖u‖ ^ 2 * ⟪v, x⟫_ℝ * ⟪v, y⟫_ℝ - ⟪u, v⟫_ℝ * (⟪u, x⟫_ℝ * ⟪v, y⟫_ℝ + ⟪v, x⟫_ℝ * ⟪u, y⟫_ℝ) +
+        ‖v‖ ^ 2 * ⟪u, x⟫_ℝ * ⟪u, y⟫_ℝ := by
+  set b := stdOrthonormalBasis ℝ V
+  rw [ricci_apply_orthonormalBasis b]
+  have expand (i : Fin (Module.finrank ℝ V)) :
+      planeCurvature u v ![b i, x, b i, y] =
+        (⟪u, b i⟫_ℝ ^ 2) * (⟪v, x⟫_ℝ * ⟪v, y⟫_ℝ) -
+          (⟪u, b i⟫_ℝ * ⟪b i, v⟫_ℝ) * (⟪u, x⟫_ℝ * ⟪v, y⟫_ℝ + ⟪v, x⟫_ℝ * ⟪u, y⟫_ℝ) +
+          (⟪v, b i⟫_ℝ ^ 2) * (⟪u, x⟫_ℝ * ⟪u, y⟫_ℝ) := by
+    rw [planeCurvature_apply, real_inner_comm (b i) v]
+    ring
+  simp_rw [expand, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.sum_mul,
+    b.sum_sq_inner_left, b.sum_inner_mul_inner]
+  ring
+
+/-- For an orthonormal pair `u, v`, `ricci (planeCurvature u v)` is the orthogonal projection form
+onto `span {u, v}`: `(x, y) ↦ ⟪u, x⟫ ⟪u, y⟫ + ⟪v, x⟫ ⟪v, y⟫`. -/
+theorem ricci_planeCurvature_of_orthonormal {u v : V} (huv : Orthonormal ℝ ![u, v]) (x y : V) :
+    ricci (planeCurvature u v) x y = ⟪u, x⟫_ℝ * ⟪u, y⟫_ℝ + ⟪v, x⟫_ℝ * ⟪v, y⟫_ℝ := by
+  have hu : ‖u‖ = 1 := huv.1 0
+  have hv : ‖v‖ = 1 := huv.1 1
+  have horth : ⟪u, v⟫_ℝ = 0 := huv.2 (by decide : (0 : Fin 2) ≠ 1)
+  rw [ricci_planeCurvature, hu, hv, horth]
+  ring
+
+/-- The scalar contraction of `planeCurvature u v` is `2 (‖u‖² ‖v‖² - ⟪u, v⟫²)`. -/
+theorem scalar_planeCurvature (u v : V) :
+    scalar (planeCurvature u v) = 2 * constantCurvature V ![u, v, u, v] := by
+  set b := stdOrthonormalBasis ℝ V
+  rw [scalar_apply, bilinFormTrace_eq_sum _ b]
+  have expand (i : Fin (Module.finrank ℝ V)) :
+      ricci (planeCurvature u v) (b i) (b i) =
+        ‖u‖ ^ 2 * ⟪v, b i⟫_ℝ ^ 2 - 2 * ⟪u, v⟫_ℝ * (⟪u, b i⟫_ℝ * ⟪b i, v⟫_ℝ) +
+          ‖v‖ ^ 2 * ⟪u, b i⟫_ℝ ^ 2 := by
+    rw [ricci_planeCurvature, real_inner_comm (b i) v]
+    ring
+  simp_rw [expand, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
+    b.sum_sq_inner_left, b.sum_inner_mul_inner, constantCurvature_apply_self]
+  ring
+
+/-- For an orthonormal pair `u, v`, `scalar (planeCurvature u v) = 2`. -/
+theorem scalar_planeCurvature_of_orthonormal {u v : V} (huv : Orthonormal ℝ ![u, v]) :
+    scalar (planeCurvature u v) = 2 := by
+  have hu : ‖u‖ = 1 := huv.1 0
+  have hv : ‖v‖ = 1 := huv.1 1
+  have horth : ⟪u, v⟫_ℝ = 0 := huv.2 (by decide : (0 : Fin 2) ≠ 1)
+  rw [scalar_planeCurvature, constantCurvature_apply_self, hu, hv, horth]
   ring
 
 end InnerProductSpace
