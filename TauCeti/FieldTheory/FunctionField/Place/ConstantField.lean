@@ -73,9 +73,8 @@ theorem isFunctionField_of_place {k : Type u} {k' : Type u'} {F' : Type v'}
     [Field k] [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F']
     [IsScalarTower k k' F'] (hFk : IsFunctionField k F') (P' : Place k' F') :
     IsFunctionField k' F' := by
-  have hnot : ¬ Algebra.IsAlgebraic k' F' := fun h ↦ by
-    obtain ⟨t, ht⟩ := P'.ord_surjective 1
-    exact P'.transcendental_of_ord_ne_zero (by rw [ht]; norm_num) (h.isAlgebraic t)
+  have hnot : ¬ Algebra.IsAlgebraic k' F' := fun _ ↦
+    (Place.isEmpty_of_isAlgebraic (k := k') (F := F')).false P'
   have : Algebra.EssFiniteType k F' := hFk.essFiniteType
   have : Algebra.EssFiniteType k' F' := Algebra.EssFiniteType.of_comp k k' F'
   have hb : 1 ≤ Algebra.trdeg k' F' := by

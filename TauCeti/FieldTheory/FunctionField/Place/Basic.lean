@@ -357,6 +357,16 @@ theorem ord_eq_zero_of_isAlgebraic {f : F} (hf : IsAlgebraic k f) : P.ord f = 0 
 theorem transcendental_of_ord_ne_zero {f : F} (hf : P.ord f ≠ 0) : Transcendental k f :=
   fun h => hf (P.ord_eq_zero_of_isAlgebraic h)
 
+/-- An algebraic extension of the constants has no places: an element of order one would be
+transcendental (`TauCeti.Place.transcendental_of_ord_ne_zero`).
+
+This is not an instance: as one, every search for `IsEmpty (Place k F)`, for example inside
+`DecidableEq (Place k F)`, would look for `Algebra.IsAlgebraic k F`, which can time out. -/
+theorem isEmpty_of_isAlgebraic [Algebra.IsAlgebraic k F] : IsEmpty (Place k F) :=
+  ⟨fun P ↦ by
+    obtain ⟨f, hf⟩ := P.ord_surjective 1
+    exact P.transcendental_of_ord_ne_zero (hf ▸ one_ne_zero) (Algebra.IsAlgebraic.isAlgebraic f)⟩
+
 /-- The constant field `algebraicClosure k F` is contained in the valuation ring of every
 place: constants are everywhere regular. -/
 theorem mem_integers_of_mem_algebraicClosure {f : F} (hf : f ∈ algebraicClosure k F) :
