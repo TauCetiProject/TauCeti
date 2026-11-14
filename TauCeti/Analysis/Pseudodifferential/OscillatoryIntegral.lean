@@ -117,10 +117,12 @@ section Amplitude
 
 variable {b : E × E → W} {m C : ℝ} {N : ℕ}
 
-/-- **Integration by parts in the position.** The position integral of an amplitude whose `C^N`
-position slices satisfy `∫ ‖b(y, ξ)‖ dy ≤ C ⟨ξ⟩ ^ m` and `∫ ‖D_y^N b(y, ξ)‖ dy ≤ C ⟨ξ⟩ ^ m` is
+/-- **Integration by parts in the position.** If the position derivatives below `N` are
+differentiable and the position slices satisfy `∫ ‖b(y, ξ)‖ dy ≤ C ⟨ξ⟩ ^ m` and
+`∫ ‖D_y^N b(y, ξ)‖ dy ≤ C ⟨ξ⟩ ^ m`, the position integral is
 bounded by `2 ^ (N + 1) C ⟨ξ⟩ ^ (m - N)`. -/
-theorem norm_integral_exp_smul_le (hdiff : ∀ ξ, ContDiff ℝ N fun y ↦ b (y, ξ))
+theorem norm_integral_exp_smul_le
+    (hdiff : ∀ ξ, ∀ k < N, Differentiable ℝ (iteratedFDeriv ℝ k fun y ↦ b (y, ξ)))
     (hint : ∀ ξ, ∀ k ≤ N, Integrable (iteratedFDeriv ℝ k fun y ↦ b (y, ξ)))
     (h₀ : ∀ ξ, ∫ y, ‖b (y, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
     (hN : ∀ ξ, ∫ y, ‖iteratedFDeriv ℝ N (fun y ↦ b (y, ξ)) y‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
@@ -134,7 +136,7 @@ theorem norm_integral_exp_smul_le (hdiff : ∀ ξ, ContDiff ℝ N fun y ↦ b (y
   have hA : ‖F‖ ≤ C * w ^ (m / 2) := (Real.norm_fourier_le_integral_norm _ _).trans (h₀ ξ)
   have hB : ‖ξ‖ ^ N * ‖F‖ ≤ C * w ^ (m / 2) := by
     have h := pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv
-      (fun n hn ↦ (hdiff ξ).differentiable_iteratedFDeriv (by exact_mod_cast hn)) (hint ξ)
+      (hdiff ξ) (hint ξ)
       ((2 * π)⁻¹ • ξ)
     rw [norm_smul, Real.norm_of_nonneg (by positivity), ← mul_assoc,
       mul_inv_cancel₀ (by positivity), one_mul] at h
@@ -178,7 +180,9 @@ theorem integrable_integral_exp_smul (hb : AEStronglyMeasurable b)
     Integrable fun ξ ↦ ∫ y, Complex.exp (-(⟪y, ξ⟫ * Complex.I)) • b (y, ξ) := by
   exact ((integrable_one_add_norm_sq_rpow_sub hNm).const_mul (2 ^ (N + 1) * C)).mono'
     (aestronglyMeasurable_exp_smul hb).prod_swap.integral_prod_right'
-    (ae_of_all _ (norm_integral_exp_smul_le hdiff hint h₀ hN))
+    (ae_of_all _ (norm_integral_exp_smul_le
+      (fun ξ k hk ↦ (hdiff ξ).differentiable_iteratedFDeriv (by exact_mod_cast hk))
+      hint h₀ hN))
 
 /-- **Bound on the oscillatory integral.** Under the hypotheses of
 `integrable_integral_exp_smul`,
@@ -191,7 +195,9 @@ theorem norm_oscillatoryIntegral_le (hdiff : ∀ ξ, ContDiff ℝ N fun y ↦ b 
     ‖oscillatoryIntegral b‖ ≤ 2 ^ (N + 1) * C * ∫ ξ : E, (1 + ‖ξ‖ ^ 2) ^ ((m - N) / 2) := by
   rw [oscillatoryIntegral_def, ← integral_const_mul]
   exact norm_integral_le_of_norm_le ((integrable_one_add_norm_sq_rpow_sub hNm).const_mul _)
-    (ae_of_all _ (norm_integral_exp_smul_le hdiff hint h₀ hN))
+    (ae_of_all _ (norm_integral_exp_smul_le
+      (fun ξ k hk ↦ (hdiff ξ).differentiable_iteratedFDeriv (by exact_mod_cast hk))
+      hint h₀ hN))
 
 variable {χ : E → ℂ}
 
