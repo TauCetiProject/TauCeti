@@ -184,7 +184,7 @@ example : (derivative^[2] (X ^ 2 : (ZMod 3)[X])).eval 0 = 2 ∧
     simpa using eval_hasseDeriv_X_sub_C_pow (0 : ZMod 3) 2 2
   refine ⟨?_, h2, iterate_derivative_eq_zero_of_charP (p := 3) (by decide) le_rfl _, ?_⟩
   · rw [eval_iterate_derivative_eq_factorial_mul, h2]
-    rfl
+    simp [Nat.factorial]
   · simp [← monomial_one_one_eq_X, monomial_pow]
 
 end Polynomial

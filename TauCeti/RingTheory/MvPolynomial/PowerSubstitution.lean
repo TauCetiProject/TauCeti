@@ -205,9 +205,8 @@ theorem aeval_powerSubstitution [Algebra R S] (B : ℕ) (a : S) (F : MvPolynomia
 @[simp]
 theorem eval_powerSubstitution (B : ℕ) (a : R) (F : MvPolynomial (Fin 2) R) :
     (powerSubstitution B F).eval a = eval ![a, a ^ B] F := by
-  induction F using MvPolynomial.induction_on' with
-  | monomial μ c => simp [eval_monomial, Finsupp.prod_fintype, pow_add, pow_mul]
-  | add F G hF hG => simp [hF, hG]
+  rw [← Polynomial.coe_aeval_eq_eval, ← aeval_eq_eval]
+  exact aeval_powerSubstitution B a F
 
 /-- When `(B : R) = 0`, differentiating `F(X, X ^ B)` in `X` suppresses the `W`-term
 `B · X ^ (B - 1) = 0` and computes `(∂_Z F)(X, X ^ B)`. -/
@@ -224,12 +223,9 @@ theorem derivative_powerSubstitution_of_natCast_eq_zero {B : ℕ} (hB : (B : R) 
 theorem iterate_derivative_powerSubstitution_of_natCast_eq_zero {B : ℕ} (hB : (B : R) = 0)
     (k : ℕ) (F : MvPolynomial (Fin 2) R) :
     Polynomial.derivative^[k] (powerSubstitution B F) =
-      powerSubstitution B ((pderiv 0)^[k] F) := by
-  induction k generalizing F with
-  | zero => rfl
-  | succ k ih =>
-    rw [Function.iterate_succ_apply, derivative_powerSubstitution_of_natCast_eq_zero hB, ih,
-      ← Function.iterate_succ_apply]
+      powerSubstitution B ((pderiv 0)^[k] F) :=
+  ((Function.Semiconj.iterate_right
+    (fun G ↦ (derivative_powerSubstitution_of_natCast_eq_zero hB G).symm) k) F).symm
 
 section CharP
 
@@ -249,8 +245,7 @@ theorem iterate_derivative_powerSubstitution {e : ℕ} (he : 0 < e) (k : ℕ)
     (F : MvPolynomial (Fin 2) R) :
     Polynomial.derivative^[k] (powerSubstitution (p ^ e) F) =
       powerSubstitution (p ^ e) ((pderiv 0)^[k] F) :=
-  iterate_derivative_powerSubstitution_of_natCast_eq_zero
-    (by rw [Nat.cast_pow, CharP.cast_eq_zero, zero_pow he.ne']) k F
+  ((Function.Semiconj.iterate_right (fun G ↦ (derivative_powerSubstitution he G).symm) k) F).symm
 
 /-- Evaluating `D^k (F(X, X ^ (p ^ e)))` at `a` in an `R`-algebra `S` (for `0 < e` in
 characteristic `p`) gives `(∂_Z^k F)(a, a ^ (p ^ e))`. -/
@@ -288,12 +283,9 @@ theorem hasseDeriv_powerSubstitution {e k : ℕ} (hk : k < p ^ e) (F : MvPolynom
     have hmon : powerSubstitution (p ^ e) (monomial μ c) =
         Polynomial.expand R (p ^ e) (Polynomial.monomial (μ 1) 1) *
           Polynomial.monomial (μ 0) c := by
-      rw [powerSubstitution_monomial, Polynomial.expand_monomial,
-        Polynomial.monomial_mul_monomial, one_mul, mul_comm, add_comm]
-    rw [hmon, Polynomial.hasseDeriv_expand_mul hk, Polynomial.expand_monomial,
-      Polynomial.hasseDeriv_monomial, Polynomial.monomial_mul_monomial, one_mul,
-      hasseDeriv_monomial, prod_single_index (by simp), powerSubstitution_monomial]
-    simp [add_comm, mul_comm]
+      simp [Polynomial.monomial_mul_monomial, mul_comm]
+    rw [hmon, Polynomial.hasseDeriv_expand_mul hk]
+    simp [Polynomial.monomial_mul_monomial, prod_single_index, add_comm, mul_comm]
 
 /-- Evaluating `D^[k] (F(X, X ^ (p ^ e)))` at `a` in an `R`-algebra `S` (for `k < p ^ e` in
 exponential characteristic `p`) gives `(∂_Z^[k] F)(a, a ^ (p ^ e))`. -/
