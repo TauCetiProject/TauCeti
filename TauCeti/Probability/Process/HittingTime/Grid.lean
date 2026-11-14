@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Process.HittingTime
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+public import TauCeti.Topology.Instances.Real.DyadicGrid
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Integral.Indicator
 
@@ -22,7 +23,10 @@ detect the lower level no later than that time. Consequently the probability of 
 measurable higher-level barrier tends to zero. One can select a grid for each of countably
 many lower levels so that the miss probabilities are summable. The barrier need not itself
 be a stopping time: this distinction is useful for constructing raw-filtration localizers
-from processes whose paths are continuous only almost surely.
+from processes whose paths are continuous only almost surely. On finite intervals `[0, t]`,
+uniform continuity on compact intervals makes dyadic oscillation probabilities vanish as the
+mesh refines and expresses strict supremum events as countable unions over
+`TauCeti.nnrealDyadicPoint`.
 
 ## References
 
@@ -219,5 +223,57 @@ theorem exists_gridLevelHit_summable_misses {m : MeasurableSpace Ω} {P : Measur
   refine ⟨q, hq, lt_of_le_of_lt (tsum_le_tsum fun j ↦ hN j (q j) (hbound j)) ?_⟩
   rw [ENNReal.tsum_geometric_two]
   norm_num
+
+/-- On a finite measure space, the measure of outcomes where an almost-surely continuous process
+with almost everywhere measurable fixed-time evaluations oscillates by at least `δ > 0` across
+consecutive points of the level-`n` dyadic grid on `[0, t]` tends to `0` as `n → ∞`. -/
+theorem tendsto_measure_nnrealDyadicPoint_osc {m : MeasurableSpace Ω} (P : Measure Ω)
+    [IsFiniteMeasure P] (hX : ∀ s, AEMeasurable (X s) P) (hc : ∀ᵐ ω ∂P, Continuous (X · ω))
+    (t : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) :
+    Tendsto (fun n : ℕ ↦ P {ω | ∃ k : Fin (2 ^ n), δ ≤
+      |X (nnrealDyadicPoint t n k.succ) ω - X (nnrealDyadicPoint t n k.castSucc) ω|}) atTop
+      (𝓝 0) := by
+  let Y (s : ℝ≥0) : Ω → ℝ := (hX s).mk (X s)
+  let OscY (n : ℕ) : Set Ω := {ω | ∃ k : Fin (2 ^ n),
+    δ ≤ |Y (nnrealDyadicPoint t n k.succ) ω - Y (nnrealDyadicPoint t n k.castSucc) ω|}
+  have hm (n : ℕ) : MeasurableSet (OscY n) := by
+    simpa only [OscY, Y, ofPred_exists, Function.comp_apply, Pi.sub_apply] using
+      MeasurableSet.iUnion fun _ ↦ measurableSet_le measurable_const
+        (continuous_abs.measurable.comp ((hX _).measurable_mk.sub (hX _).measurable_mk))
+  have hXY (n : ℕ) : ∀ᵐ ω ∂P, ∀ j : Fin (2 ^ n + 1),
+      X (nnrealDyadicPoint t n j) ω = Y (nnrealDyadicPoint t n j) ω :=
+    ae_all_iff.mpr fun j ↦ (hX (nnrealDyadicPoint t n j)).ae_eq_mk
+  have he : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ω ∈ OscY n ↔ ω ∈ (∅ : Set Ω) := by
+    filter_upwards [hc, ae_all_iff.mpr hXY] with ω hcont hω
+    obtain ⟨η, hη, hmod⟩ := Metric.uniformContinuousOn_iff.mp
+      (isCompact_Icc.uniformContinuousOn_of_continuous hcont.continuousOn) δ hδ
+    filter_upwards [(tendsto_const_nhds.div_atTop (tendsto_pow_atTop_atTop_of_one_lt one_lt_two)
+      : Tendsto (fun n : ℕ ↦ (t : ℝ) / 2 ^ n) atTop (𝓝 0)).eventually (gt_mem_nhds hη)] with n hn
+    simp only [OscY, mem_ofPred_eq, mem_empty_iff_false, iff_false, not_exists]
+    intro k hk; rw [← hω n k.succ, ← hω n k.castSucc] at hk
+    exact hk.not_gt <| by
+      simpa only [Real.dist_eq] using hmod _ ⟨bot_le, nnrealDyadicPoint_le t n _⟩
+        _ ⟨bot_le, nnrealDyadicPoint_le t n _⟩ ((dist_nnrealDyadicPoint_succ t n k).trans_lt hn)
+  rw [← measure_empty (μ := P)]
+  refine (tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure
+    atTop MeasurableSet.empty hm he).congr fun n ↦ measure_congr (eventuallyEqSet_iff.mpr
+      ((hXY n).mono fun _ hω ↦ exists_congr fun k ↦ by rw [← hω k.succ, ← hω k.castSucc]))
+
+/-- For an everywhere-continuous real process, exceeding `b` somewhere on `[0, t]` is equivalent
+to exceeding `b` at a point of some level-`n` dyadic grid on `[0, t]`. -/
+theorem setOf_exists_le_gt_eq_iUnion_nnrealDyadicPoint (hc : ∀ ω, Continuous (X · ω)) (t : ℝ≥0)
+    (b : ℝ) : {ω | ∃ s ≤ t, b < X s ω} =
+      ⋃ n : ℕ, {ω | ∃ k : Fin (2 ^ n + 1), b < X (nnrealDyadicPoint t n k) ω} := by
+  ext ω; simp only [mem_iUnion, mem_ofPred_eq]; exact ⟨fun ⟨s, hst, hs⟩ ↦
+      exists_nnrealDyadicPoint_mem_open hst (isOpen_lt continuous_const (hc ω)) hs,
+    fun ⟨n, k, hk⟩ ↦ ⟨nnrealDyadicPoint t n k, nnrealDyadicPoint_le t n k, hk⟩⟩
+
+/-- For an everywhere-continuous real process with measurable fixed-time evaluations, the event of
+exceeding `b` somewhere on `[0, t]` is measurable. -/
+theorem measurableSet_exists_le_gt {m : MeasurableSpace Ω} (hX : ∀ s, Measurable (X s))
+    (hc : ∀ ω, Continuous (X · ω)) (t : ℝ≥0) (b : ℝ) : MeasurableSet {ω | ∃ s ≤ t, b < X s ω} := by
+  rw [setOf_exists_le_gt_eq_iUnion_nnrealDyadicPoint hc t b]
+  refine .iUnion fun _ ↦ ?_
+  rw [ofPred_exists]; exact .iUnion fun _ ↦ measurableSet_lt measurable_const (hX _)
 
 end TauCeti

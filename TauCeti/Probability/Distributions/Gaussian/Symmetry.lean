@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Gaussian.Fernique
 public import TauCeti.MeasureTheory.Integral.OddSymmetric
 public import Mathlib.Probability.Distributions.Gaussian.Real
+import TauCeti.MeasureTheory.Measure.Interval
 
 /-!
 # Symmetry of Gaussian measures
@@ -16,9 +17,10 @@ A centered Gaussian measure on a real separable Banach space is invariant under 
 Consequently, an odd function of a Gaussian vector centered at its mean has integral zero.
 This applies in particular to odd products of centered linear observables, without assuming
 independence or a nonsingular covariance.
-The standard real Gaussian product law is also invariant under planar reflections, and centered
-real Gaussian laws and their independent products are invariant under multiplication by
-deterministic scalars of unit modulus.
+The standard real Gaussian product law is also invariant under planar reflections, centered
+real Gaussian laws assign equal mass to opposite half-lines (giving positive-variance half-line
+mass `2⁻¹`), and centered real Gaussian laws and their independent products are invariant under
+multiplication by deterministic scalars of unit modulus.
 -/
 
 public section
@@ -70,7 +72,46 @@ end ProbabilityTheory.IsGaussian
 
 namespace TauCeti.Probability
 
-open ProbabilityTheory Real
+open ProbabilityTheory Real Set
+open scoped NNReal ENNReal
+
+/-- Every centered real Gaussian law is invariant under negation. -/
+instance isNegInvariant_gaussianReal_zero (v : ℝ≥0) : (gaussianReal 0 v).IsNegInvariant :=
+  ⟨by simp [Measure.neg_def]⟩
+
+/-- A centered real Gaussian law assigns equal measure to `Iic (-x)` and `Ici x`. -/
+theorem gaussianReal_zero_Iic_neg (v : ℝ≥0) (x : ℝ) :
+    gaussianReal 0 v (Iic (-x)) = gaussianReal 0 v (Ici x) :=
+  (gaussianReal 0 v).measure_Iic_neg_eq_measure_Ici x
+
+/-- A centered real Gaussian law assigns equal measure to `Iio (-x)` and `Ioi x`. -/
+theorem gaussianReal_zero_Iio_neg (v : ℝ≥0) (x : ℝ) :
+    gaussianReal 0 v (Iio (-x)) = gaussianReal 0 v (Ioi x) :=
+  (gaussianReal 0 v).measure_Iio_neg_eq_measure_Ioi x
+
+/-- The closed upper half-line mass of any centered real Gaussian law is at least `2⁻¹`,
+including the degenerate case `v = 0`. -/
+theorem inv_two_le_gaussianReal_zero_Ici_zero (v : ℝ≥0) :
+    (2⁻¹ : ℝ≥0∞) ≤ gaussianReal 0 v (Ici 0) :=
+  (gaussianReal 0 v).inv_two_le_measure_Ici_zero
+
+/-- The strict upper half-line mass of any centered real Gaussian law is at most `2⁻¹`,
+including the degenerate case `v = 0`. -/
+theorem gaussianReal_zero_Ioi_zero_le_inv_two (v : ℝ≥0) :
+    gaussianReal 0 v (Ioi 0) ≤ 2⁻¹ :=
+  (gaussianReal 0 v).measure_Ioi_zero_le_inv_two
+
+/-- A nondegenerate centered real Gaussian law assigns measure `2⁻¹` to `(0, ∞)`. -/
+@[simp] theorem gaussianReal_zero_Ioi_zero {v : ℝ≥0} (hv : v ≠ 0) :
+    gaussianReal 0 v (Ioi 0) = 2⁻¹ :=
+  have := nullSingletonClass_gaussianReal (μ := 0) hv
+  (gaussianReal 0 v).measure_Ioi_zero_eq_inv_two (measure_singleton 0)
+
+/-- A nondegenerate centered real Gaussian law assigns measure `2⁻¹` to `[0, ∞)`. -/
+@[simp] theorem gaussianReal_zero_Ici_zero {v : ℝ≥0} (hv : v ≠ 0) :
+    gaussianReal 0 v (Ici 0) = 2⁻¹ :=
+  have := nullSingletonClass_gaussianReal (μ := 0) hv
+  (gaussianReal 0 v).measure_Ici_zero_eq_inv_two (measure_singleton 0)
 
 /-- The standard Gaussian product law is invariant under reflection across a line. -/
 theorem measurePreserving_reflection_gaussianReal (θ : ℝ) :
