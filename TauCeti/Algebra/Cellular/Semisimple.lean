@@ -12,6 +12,7 @@ import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Matrix.Unique
 import Mathlib.Order.Preorder.Finite
+import TauCeti.Algebra.Cellular.Matrix
 import TauCeti.RingTheory.Semisimple.Wedderburn.Split
 
 /-!
@@ -34,9 +35,11 @@ finiteness hypothesis on `Λ`. Conversely, when `A` is semisimple and `R` is non
 nonempty cell has nonzero bilinear form
 (`TauCeti.CellularBasis.cellForm_ne_zero_of_isSemisimpleRing`).
 
-Over a field `K` with a finite preorder `Λ` of cells, dimension counting upgrades injectivity of
-`d.cellRepPiAlgHom` to an explicit `K`-algebra isomorphism
-(`TauCeti.CellularBasis.wedderburnAlgEquiv`)
+Over a field `K`, when `B` is semisimple every cell radical vanishes, so the nonempty cell modules
+`d.CellModule μ` themselves are simple, pairwise non-isomorphic, and (when `<` on `Λ` is
+well-founded) classify all simple `B`-modules up to isomorphism. With a finite preorder `Λ` of
+cells, dimension counting upgrades injectivity of `d.cellRepPiAlgHom` to an explicit `K`-algebra
+isomorphism (`TauCeti.CellularBasis.wedderburnAlgEquiv`)
 
 `B ≃ₐ[K] ∀ μ : Λ, Matrix (M μ) (M μ) K`,
 
@@ -66,6 +69,11 @@ with nondegenerate bilinear form and Gram determinant `1`, yet is not a semisimp
 
 * `TauCeti.CellularBasis.cellRepPiAlgHom_injective`: `c.cellRepPiAlgHom` is injective whenever
   `∀ μ, c.cellRadical μ = ⊥`.
+* `TauCeti.CellularBasis.isSimpleModule_cellModule_of_isSemisimpleRing`,
+  `TauCeti.CellularBasis.nonempty_cellModule_linearEquiv_iff_of_isSemisimpleRing`,
+  `TauCeti.CellularBasis.existsUnique_nonempty_and_nonempty_linearEquiv_of_isSemisimpleRing`:
+  simplicity and classification of simple modules directly by nonempty cell modules `d.CellModule μ`
+  when `[IsSemisimpleRing B]`.
 * `TauCeti.CellularBasis.isSemisimpleRing_iff_forall_cellRadical_eq_bot`,
   `TauCeti.CellularBasis.isSemisimpleRing_iff_forall_nondegenerate_cellForm`,
   `TauCeti.CellularBasis.isSemisimpleRing_iff_forall_det_gramMatrix_ne_zero`: Graham–Lehrer
@@ -102,13 +110,6 @@ noncomputable def cellRepPiAlgHom : A →ₐ[R] ∀ μ : Λ, Matrix (M μ) (M μ
 theorem cellRepPiAlgHom_apply (a : A) (μ : Λ) :
     c.cellRepPiAlgHom a μ = c.cellRep μ a :=
   (rfl)
-
-omit [∀ μ, DecidableEq (M μ)] in
-/-- Coordinates of a linear combination of standard cell basis vectors. -/
-private theorem cellModuleEquiv_sum_smul_cellBasis (μ : Λ) (r : M μ → R) (u : M μ) :
-    c.cellModuleEquiv μ (∑ s, r s • c.cellBasis μ s) u = r u := by
-  classical
-  simp [Pi.single_apply]
 
 omit [∀ μ, DecidableEq (M μ)] in
 /-- Decompose `x : A` along `c.basis` into its `μ`-cell part and the remaining support terms in
@@ -151,13 +152,13 @@ theorem sum_repr_cellBasis_mem_cellRadical {x : A} {μ : Λ} (hx0 : c.cellRep μ
     apply (c.cellModuleEquiv μ).injective
     rw [cellModuleEquiv_smul, hx0, Matrix.zero_mulVec, map_zero]
   -- Split `x` into its `μ`-cell part and support terms in cells `ν ≠ μ`; the latter annihilate `w`
-  -- by `hmax` and `basis_smul_eq_zero_of_ne`.
+  -- by `hmax` and `basis_smul_eq_zero_of_ne_of_not_lt`.
   have hrest :
       (∑ j ∈ (c.basis.repr x).support with j.1 ≠ μ, c.basis.repr x j • c.basis j) • w = 0 := by
     rw [Finset.sum_smul]
     refine Finset.sum_eq_zero fun j hj ↦ ?_
     obtain ⟨hj_supp, hne⟩ := Finset.mem_filter.mp hj
-    rw [smul_assoc, c.basis_smul_eq_zero_of_ne hne (hmax j hj_supp), smul_zero]
+    rw [smul_assoc, c.basis_smul_eq_zero_of_ne_of_not_lt hne.symm (hmax j hj_supp), smul_zero]
   rw [c.eq_sum_cell_add_sum_support_ne x μ, add_smul, hrest, add_zero] at hxw
   -- Evaluate the `μ`-cell part on `w` via `basis_smul` and read off the `s₀`-coordinate.
   have hsum_eq : (∑ s, ∑ t, c.basis.repr x ⟨μ, s, t⟩ • c.basis ⟨μ, s, t⟩) • w =
@@ -169,9 +170,8 @@ theorem sum_repr_cellBasis_mem_cellRadical {x : A} {μ : Λ} (hx0 : c.cellRep μ
     refine Finset.sum_congr rfl fun t _ ↦ ?_
     rw [smul_assoc, c.basis_smul, smul_smul]
   rw [hsum_eq] at hxw
-  have hcoord : ∑ t, c.basis.repr x ⟨μ, s₀, t⟩ * c.cellForm μ (c.cellBasis μ t) w = 0 := by
-    simpa [cellModuleEquiv_sum_smul_cellBasis] using
-      congrFun (congrArg (c.cellModuleEquiv μ) hxw) s₀
+  have hcoord := congrFun (congrArg (fun v : c.CellModule μ ↦ ⇑((c.cellBasis μ).repr v)) hxw) s₀
+  rw [(c.cellBasis μ).repr_sum_self, map_zero, Finsupp.coe_zero, Pi.zero_apply] at hcoord
   simpa [map_sum, map_smul, smul_eq_mul] using hcoord
 
 /-- Over any commutative ring, if every cell radical vanishes, the product of cell representations
@@ -191,8 +191,9 @@ theorem cellRepPiAlgHom_injective (h : ∀ μ, c.cellRadical μ = ⊥) :
   have hv_rad := c.sum_repr_cellBasis_mem_cellRadical hxμ (fun _ hj ↦ hmax.not_gt hj) s₀
   have hv0 : ∑ t, c.basis.repr x ⟨μ, s₀, t⟩ • c.cellBasis μ t = 0 :=
     (Submodule.eq_bot_iff _).mp (h μ) _ hv_rad
-  have hcoord := congrFun (congrArg (c.cellModuleEquiv μ) hv0) t₀
-  exact hi₀ (by simpa [cellModuleEquiv_sum_smul_cellBasis] using hcoord)
+  have hcoord := congrFun (congrArg (fun v : c.CellModule μ ↦ ⇑((c.cellBasis μ).repr v)) hv0) t₀
+  rw [(c.cellBasis μ).repr_sum_self, map_zero, Finsupp.coe_zero, Pi.zero_apply] at hcoord
+  exact hi₀ hcoord
 
 /-- When `c.gramMatrix μ = 0`, the `R`-span of cellular basis vectors in cells `ν < μ` or `ν = μ`
 is a left ideal `I` of `A` containing every `c.basis ⟨μ, s, t⟩` whose products land inside
@@ -298,6 +299,23 @@ theorem det_gramMatrix_ne_zero_of_isSemisimpleRing [IsSemisimpleRing B] (μ : Λ
   (d.cellRadical_eq_bot_iff_det_gramMatrix_ne_zero μ).mp
     (d.cellRadical_eq_bot_of_isSemisimpleRing μ)
 
+/-- Over a field `K`, if `B` is semisimple, every nonempty cell module `d.CellModule μ` is
+simple. -/
+theorem isSimpleModule_cellModule_of_isSemisimpleRing [IsSemisimpleRing B] (μ : Λ)
+    [Nonempty (M μ)] : IsSimpleModule B (d.CellModule μ) :=
+  d.isSimpleModule_cellModule_of_cellRadical_eq_bot (d.cellRadical_eq_bot_of_isSemisimpleRing μ)
+
+/-- Over a field `K`, if `B` is semisimple and `M μ` is nonempty, `d.CellModule μ` is `B`-linearly
+equivalent to `d.CellModule ν` if and only if `μ = ν`. -/
+theorem nonempty_cellModule_linearEquiv_iff_of_isSemisimpleRing [IsSemisimpleRing B] {μ ν : Λ}
+    [Nonempty (M μ)] : Nonempty (d.CellModule μ ≃ₗ[B] d.CellModule ν) ↔ μ = ν := by
+  have eμ := (d.cellRadical μ).quotEquivOfEqBot (d.cellRadical_eq_bot_of_isSemisimpleRing μ)
+  have eν := (d.cellRadical ν).quotEquivOfEqBot (d.cellRadical_eq_bot_of_isSemisimpleRing ν)
+  refine ⟨fun ⟨e⟩ ↦ (d.nonempty_cellModule_quotient_linearEquiv_iff
+    (d.cellForm_ne_zero_of_isSemisimpleRing μ)).mp ⟨eμ.trans (e.trans eν.symm)⟩, ?_⟩
+  rintro rfl
+  exact ⟨LinearEquiv.refl B _⟩
+
 section Finite
 
 variable [Finite Λ]
@@ -331,6 +349,32 @@ theorem wedderburnAlgEquiv_apply (h : ∀ μ, d.cellRadical μ = ⊥) (b : B) (�
     d.wedderburnAlgEquiv h b μ = d.cellRep μ b :=
   (rfl)
 
+/-- Coercing `wedderburnAlgEquiv` to an algebra homomorphism recovers `d.cellRepPiAlgHom`. -/
+@[simp, norm_cast]
+theorem toAlgHom_wedderburnAlgEquiv (h : ∀ μ, d.cellRadical μ = ⊥) :
+    (d.wedderburnAlgEquiv h : B →ₐ[K] ∀ μ : Λ, Matrix (M μ) (M μ) K) = d.cellRepPiAlgHom :=
+  (rfl)
+
+/-- `d.cellRepPiAlgHom` is a right inverse to `(d.wedderburnAlgEquiv h).symm`. -/
+@[simp]
+theorem cellRepPiAlgHom_wedderburnAlgEquiv_symm (h : ∀ μ, d.cellRadical μ = ⊥)
+    (m : ∀ μ : Λ, Matrix (M μ) (M μ) K) :
+    d.cellRepPiAlgHom ((d.wedderburnAlgEquiv h).symm m) = m :=
+  (d.wedderburnAlgEquiv h).apply_symm_apply m
+
+/-- The cell representation at `μ` of `(d.wedderburnAlgEquiv h).symm m` is `m μ`. -/
+@[simp]
+theorem cellRep_wedderburnAlgEquiv_symm (h : ∀ μ, d.cellRadical μ = ⊥)
+    (m : ∀ μ : Λ, Matrix (M μ) (M μ) K) (μ : Λ) :
+    d.cellRep μ ((d.wedderburnAlgEquiv h).symm m) = m μ :=
+  congrFun (d.cellRepPiAlgHom_wedderburnAlgEquiv_symm h m) μ
+
+/-- `(d.wedderburnAlgEquiv h).symm` is a left inverse to `d.cellRepPiAlgHom`. -/
+@[simp]
+theorem wedderburnAlgEquiv_symm_cellRepPiAlgHom (h : ∀ μ, d.cellRadical μ = ⊥) (b : B) :
+    (d.wedderburnAlgEquiv h).symm (d.cellRepPiAlgHom b) = b :=
+  (d.wedderburnAlgEquiv h).symm_apply_apply b
+
 /-- **Graham–Lehrer Theorem 3.8 (radical form).** Over a field `K` with finitely many cells, `B` is
 a semisimple ring if and only if every cell radical `d.cellRadical μ` is trivial. -/
 theorem isSemisimpleRing_iff_forall_cellRadical_eq_bot :
@@ -361,6 +405,23 @@ theorem cellRepPiAlgHom_bijective_iff_isSemisimpleRing :
       d.cellRadical_eq_bot_of_isSemisimpleRing⟩
 
 end Finite
+
+/-- Over a field `K` with well-founded cell order, when `B` is semisimple every simple `B`-module is
+`B`-linearly equivalent to `d.CellModule μ` for a unique nonempty cell `μ`. -/
+theorem existsUnique_nonempty_and_nonempty_linearEquiv_of_isSemisimpleRing
+    [WellFoundedLT Λ] [IsSemisimpleRing B] (S : Type*) [AddCommGroup S] [Module B S]
+    [IsSimpleModule B S] :
+    ∃! μ : Λ, Nonempty (M μ) ∧ Nonempty (d.CellModule μ ≃ₗ[B] S) := by
+  obtain ⟨μ, ⟨hμ, ⟨e⟩⟩, huniq⟩ := d.existsUnique_cellForm_ne_zero_and_nonempty_linearEquiv S
+  have eμ := (d.cellRadical μ).quotEquivOfEqBot (d.cellRadical_eq_bot_of_isSemisimpleRing μ)
+  have hneμ : Nonempty (M μ) := by
+    by_contra hE
+    have : IsEmpty (M μ) := not_nonempty_iff.mp hE
+    exact hμ ((d.cellForm_eq_zero_iff μ).mpr (Matrix.ext fun i ↦ isEmptyElim i))
+  refine ⟨μ, ⟨hneμ, ⟨eμ.symm.trans e⟩⟩, fun ν ⟨hneν, ⟨e'⟩⟩ ↦ huniq ν ⟨?_, ⟨?_⟩⟩⟩
+  · exact d.cellForm_ne_zero_of_isSemisimpleRing ν
+  · exact ((d.cellRadical ν).quotEquivOfEqBot
+      (d.cellRadical_eq_bot_of_isSemisimpleRing ν)).trans e'
 
 omit [∀ μ, DecidableEq (M μ)] in
 /-- Every semisimple cellular `K`-algebra with well-founded cell order (in particular, with

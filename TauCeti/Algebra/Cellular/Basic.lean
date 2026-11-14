@@ -45,6 +45,7 @@ modules and their forms:
 * `TauCeti.CellularBasis.lowerSpan c μ`: the span `A(<μ)` of the basis vectors in lower cells.
 * `TauCeti.CellularBasis.cellRep c μ`: the cell representation of `A` on the cell `μ`.
 * `TauCeti.CellularBasis.gramMatrix c μ`: the Gram matrix of the bilinear form of the cell `μ`.
+* `TauCeti.CellularBasis.map`: transport a cellular basis along an `R`-algebra isomorphism.
 
 ## Main results
 
@@ -53,10 +54,13 @@ modules and their forms:
 * `TauCeti.CellularBasis.mul_basis_sub_sum_mem`, `TauCeti.CellularBasis.basis_mul_sub_sum_mem`:
   the cellular axiom and its right-handed form, with coefficients given by `cellRep`.
 * `TauCeti.CellularBasis.basis_mul_basis_sub_mem`: `C μ s t * C μ u v ≡ φ_μ(t, u) • C μ s v`.
-* `TauCeti.CellularBasis.cellRep_basis`: `C μ s t` acts on the cell module by
-  `C μ u ↦ φ_μ(t, u) • C μ s`.
+* `TauCeti.CellularBasis.cellRep_basis`, `TauCeti.CellularBasis.cellRep_basis_of_ne_of_not_lt`,
+  `TauCeti.CellularBasis.cellRep_basis_of_not_le`: `C μ s t` acts on the cell module by
+  `C μ u ↦ φ_μ(t, u) • C μ s`, and basis vectors from cells `ν ≠ μ` with `¬ μ < ν` act by zero.
 * `TauCeti.CellularBasis.isSymm_gramMatrix`: the Gram matrix is symmetric.
 * `TauCeti.CellularBasis.cellRep_transpose_mul_gramMatrix`: the Gram matrix is invariant.
+* `TauCeti.CellularBasis.cellRep_map`, `TauCeti.CellularBasis.gramMatrix_map`: `map` intertwines
+  `cellRep` and preserves `gramMatrix`.
 
 ## Implementation notes
 
@@ -217,6 +221,77 @@ theorem mem_lowerSpan_mul (a : A) {μ : Λ} {x : A} (hx : x ∈ c.lowerSpan μ) 
   simpa using c.unop_antiInvolution_mem_lowerSpan
     (c.mul_mem_lowerSpan (c.antiInvolution a).unop (c.unop_antiInvolution_mem_lowerSpan hx))
 
+section Map
+
+variable {B C : Type*} [Ring B] [Algebra R B] [Ring C] [Algebra R C]
+
+private theorem span_basis_map_image_lt (e : A ≃ₐ[R] B) (μ : Λ) :
+    span R (c.basis.map e.toLinearEquiv '' {i | i.1 < μ}) =
+      (c.lowerSpan μ).map e.toLinearMap := by
+  rw [lowerSpan_def, Submodule.map_span, ← Set.image_comp]
+  exact congrArg (span R) (congrArg (· '' _)
+    (funext fun i ↦ c.basis.map_apply e.toLinearEquiv i))
+
+/-- Transport a cellular basis along an `R`-algebra equivalence `e : A ≃ₐ[R] B`. -/
+noncomputable def map (e : A ≃ₐ[R] B) : CellularBasis R B M where
+  basis := c.basis.map e.toLinearEquiv
+  antiInvolution := e.symm.trans (c.antiInvolution.trans (AlgEquiv.op e))
+  unop_antiInvolution_basis μ s t := by simp
+  exists_mul_basis b μ s := by
+    obtain ⟨r, hr⟩ := c.exists_mul_basis (e.symm b) μ s
+    refine ⟨r, fun t ↦ ?_⟩
+    rw [c.span_basis_map_image_lt e μ]
+    have hmem : e.symm b * c.basis ⟨μ, s, t⟩ - ∑ u, r u • c.basis ⟨μ, u, t⟩ ∈ c.lowerSpan μ := by
+      rw [lowerSpan_def]
+      exact hr t
+    refine ⟨e.symm b * c.basis ⟨μ, s, t⟩ - ∑ u, r u • c.basis ⟨μ, u, t⟩, hmem, ?_⟩
+    simp [map_sub, map_mul, map_sum, map_smul]
+
+/-- The cellular basis transported along `e` applies `e` to each basis vector. -/
+@[simp]
+theorem map_basis (e : A ≃ₐ[R] B) (i : Σ μ, M μ × M μ) :
+    (c.map e).basis i = e (c.basis i) :=
+  c.basis.map_apply e.toLinearEquiv i
+
+/-- Coordinates in the transported cellular basis pull back along `e.symm`. -/
+@[simp]
+theorem map_basis_repr (e : A ≃ₐ[R] B) (b : B) :
+    (c.map e).basis.repr b = c.basis.repr (e.symm b) := by
+  simp [map]
+
+/-- Transporting along the identity algebra equivalence does nothing. -/
+@[simp]
+theorem map_refl : c.map (AlgEquiv.refl : A ≃ₐ[R] A) = c := by
+  ext i
+  simp
+
+/-- Transporting along `e` and then `e'` is transporting along `e.trans e'`. -/
+@[simp]
+theorem map_trans (e : A ≃ₐ[R] B) (e' : B ≃ₐ[R] C) :
+    (c.map e).map e' = c.map (e.trans e') := by
+  ext i
+  simp
+
+/-- The anti-involution of `c.map e` conjugates `c.antiInvolution` by `e`. -/
+@[simp]
+theorem unop_antiInvolution_map (e : A ≃ₐ[R] B) (b : B) :
+    ((c.map e).antiInvolution b).unop = e (c.antiInvolution (e.symm b)).unop :=
+  (rfl)
+
+/-- Lower cell spans push forward under `e`. -/
+theorem lowerSpan_map (e : A ≃ₐ[R] B) (μ : Λ) :
+    (c.map e).lowerSpan μ = (c.lowerSpan μ).map e.toLinearMap := by
+  rw [lowerSpan_def, map, c.span_basis_map_image_lt]
+
+/-- Membership in `(c.map e).lowerSpan μ` pulls back via `e.symm`. -/
+@[simp]
+theorem mem_lowerSpan_map_iff (e : A ≃ₐ[R] B) {μ : Λ} {b : B} :
+    b ∈ (c.map e).lowerSpan μ ↔ e.symm b ∈ c.lowerSpan μ := by
+  rw [mem_lowerSpan_iff, mem_lowerSpan_iff]
+  simp
+
+end Map
+
 variable [∀ μ, DecidableEq (M μ)]
 
 private theorem repr_mul_basis' (a : A) (μ : Λ) (s t u v : M μ) :
@@ -335,6 +410,49 @@ theorem cellRep_transpose_mul_gramMatrix (a : A) (μ : Λ) :
   have h := congrFun (congrFun
     (c.cellRep_eq_of_sub_mem_lowerSpan (c.basis_mul_sub_sum_mem a μ t t)) t) u
   simpa [Matrix.mul_apply, Matrix.sum_apply, cellRep_basis, mul_comm] using h.symm
+
+/-- A cellular basis vector from a cell `ν` with `μ ≠ ν` and `¬ μ < ν` acts by zero in the cell
+representation at `μ`. -/
+theorem cellRep_basis_of_ne_of_not_lt {μ ν : Λ} (hne : μ ≠ ν) (hnlt : ¬ μ < ν) (x y : M ν) :
+    c.cellRep μ (c.basis ⟨ν, x, y⟩) = 0 := by
+  have hsum (r : M ν → R) (u s : M μ) :
+      c.basis.repr (∑ v, r v • c.basis ⟨ν, x, v⟩) ⟨μ, u, s⟩ = 0 := by
+    simp [hne.symm]
+  ext u s
+  rw [Matrix.zero_apply, cellRep_apply]
+  have hsub := c.basis_mul_sub_sum_mem (c.basis ⟨μ, s, s⟩) ν x y
+  have hzero := c.mem_lowerSpan_iff.1 hsub ⟨μ, u, s⟩ hnlt
+  rw [map_sub, Finsupp.sub_apply, sub_eq_zero] at hzero
+  exact hzero.trans (hsum _ u s)
+
+/-- A cellular basis vector from a cell `ν` with `¬ μ ≤ ν` acts by zero in the cell representation
+at `μ`. -/
+theorem cellRep_basis_of_not_le {μ ν : Λ} (h : ¬ μ ≤ ν) (x y : M ν) :
+    c.cellRep μ (c.basis ⟨ν, x, y⟩) = 0 :=
+  c.cellRep_basis_of_ne_of_not_lt (fun hEq ↦ h hEq.le) (fun hlt ↦ h hlt.le) x y
+
+section MapDecidable
+
+variable {B : Type*} [Ring B] [Algebra R B]
+
+/-- The cell representation of `c.map e` pulls back `c.cellRep` along `e.symm`. -/
+@[simp]
+theorem cellRep_map (e : A ≃ₐ[R] B) (μ : Λ) (b : B) :
+    (c.map e).cellRep μ b = c.cellRep μ (e.symm b) := by
+  ext u s
+  rw [cellRep_apply, cellRep_apply, map_basis_repr, map_basis, map_mul, e.symm_apply_apply]
+
+/-- Transporting a cellular basis along an algebra isomorphism preserves every Gram matrix. -/
+@[simp]
+theorem gramMatrix_map (e : A ≃ₐ[R] B) (μ : Λ) :
+    (c.map e).gramMatrix μ = c.gramMatrix μ := by
+  ext t u
+  have h₁ := (c.map e).cellRep_basis μ t t u t
+  have h₂ := c.cellRep_basis μ t t u t
+  simp only [↓reduceIte, cellRep_map, map_basis, AlgEquiv.symm_apply_apply] at h₁ h₂
+  exact h₁.symm.trans h₂
+
+end MapDecidable
 
 end CellularBasis
 

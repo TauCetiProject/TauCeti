@@ -32,6 +32,9 @@ nondegenerate (and nonzero whenever `R` is nontrivial and `n` is nonempty).
 * `TauCeti.CellularBasis.cellRadical_matrix`, `TauCeti.CellularBasis.nondegenerate_cellForm_matrix`,
   `TauCeti.CellularBasis.cellForm_matrix_ne_zero`: its cell radical is `⊥` and its cell form is
   nondegenerate (and nonzero when `[Nontrivial R]` and `[Nonempty n]`).
+* `TauCeti.CellularBasis.not_isSimpleModule_matrix_int_cellModule_quotient`: over `ℤ`, the radical
+  quotient of `CellularBasis.matrix ℤ Unit` is not simple, showing that the field hypothesis in
+  `TauCeti.CellularBasis.isSimpleModule_cellModule_quotient_iff` is sharp.
 
 ## References
 
@@ -114,5 +117,34 @@ theorem cellForm_matrix_ne_zero [Nontrivial R] [Nonempty n] :
     (matrix R n).cellForm () ≠ 0 := by
   rw [ne_eq, (matrix R n).cellForm_eq_zero_iff, gramMatrix_matrix]
   exact one_ne_zero
+
+/-- **Sharpness of the field hypothesis.** For `CellularBasis.matrix ℤ Unit` (whose cell form is
+nonzero by `cellForm_matrix_ne_zero` and whose cell radical is `⊥` by `cellRadical_matrix`), the
+radical quotient is isomorphic to `ℤ` and is not a simple module. -/
+theorem not_isSimpleModule_matrix_int_cellModule_quotient :
+    ¬ IsSimpleModule (Matrix Unit Unit ℤ)
+      ((CellularBasis.matrix ℤ Unit).CellModule () ⧸
+        (CellularBasis.matrix ℤ Unit).cellRadical ()) := by
+  let c := CellularBasis.matrix ℤ Unit
+  intro hsimple
+  have hcoatom : IsCoatom (c.cellRadical ()) := isSimpleModule_iff_isCoatom.mp hsimple
+  let v := c.cellBasis () () + c.cellBasis () ()
+  let N : Submodule (Matrix Unit Unit ℤ) (c.CellModule ()) :=
+    Submodule.span (Matrix Unit Unit ℤ) {v}
+  have hne_zero : v ≠ 0 := fun h0 ↦ by
+    have := congrFun (congrArg (c.cellModuleEquiv ()) h0) ()
+    simp [v] at this
+  have hlt : c.cellRadical () < N := by
+    rw [cellRadical_matrix, bot_lt_iff_ne_bot, Submodule.ne_bot_iff]
+    exact ⟨v, Submodule.subset_span (Set.mem_singleton _), hne_zero⟩
+  have hmem : c.cellBasis () () ∈ N := hcoatom.2 N hlt ▸ Submodule.mem_top
+  rw [Submodule.mem_span_singleton] at hmem
+  obtain ⟨m, hm⟩ := hmem
+  have hcoord := congrFun (congrArg (c.cellModuleEquiv ()) hm) ()
+  simp only [c, v, cellModuleEquiv_smul, cellRep_matrix, map_add, cellModuleEquiv_cellBasis,
+    Matrix.mulVec, dotProduct, Fintype.univ_punit, Finset.sum_singleton, Pi.add_apply,
+    Pi.single_eq_same] at hcoord
+  have : m () () * (1 + 1) = 1 := hcoord
+  omega
 
 end TauCeti.CellularBasis

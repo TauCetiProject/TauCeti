@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import TauCeti.Algebra.Cellular.CellModule
-public import TauCeti.Algebra.Cellular.Matrix
+import TauCeti.RingTheory.Semisimple.Schur
 
 /-!
 # Classification of simple modules of a cellular algebra
@@ -22,7 +22,8 @@ bilinear forms `d.cellForm μ`:
   that `K` is algebraically closed.
 * **Triangularity of homomorphisms (Proposition 3.2):** a nonzero `B`-linear map from
   `d.CellModule ν` into `d.CellModule μ ⧸ d.cellRadical μ` forces `ν = μ ∨ ν < μ`
-  (`TauCeti.CellularBasis.eq_or_lt_of_linearMap_cellModule_quotient_ne_zero`).
+  (`TauCeti.CellularBasis.eq_or_lt_of_linearMap_cellModule_quotient_ne_zero`), and hence `ν ≤ μ`
+  (`TauCeti.CellularBasis.le_of_linearMap_cellModule_quotient_ne_zero`).
 * **Pairwise non-isomorphism (Theorem 3.4(i)):** for cells with nonzero form, `L(μ)` and `L(ν)` are
   `B`-linearly equivalent if and only if `μ = ν`
   (`TauCeti.CellularBasis.nonempty_cellModule_quotient_linearEquiv_iff`), and for any `ν ≠ μ` the
@@ -35,15 +36,8 @@ bilinear forms `d.cellForm μ`:
   `B`-endomorphism algebra is isomorphic to `K`
   (`TauCeti.CellularBasis.endAlgEquivOfIsSimpleModule`).
 
-The field hypothesis is essential: `Matrix Unit Unit ℤ` (isomorphic to `ℤ`) has one cell with unit
-Gram matrix `(1)` and trivial radical, yet its radical quotient is `ℤ`, which is not a simple
-module (`TauCeti.CellularBasis.not_isSimpleModule_matrix_int_cellModule_quotient`).
-
 ## Main definitions
 
-* `TauCeti.CellularBasis.cellModuleHom`: the `A`-linear evaluation map `c.CellModule μ →ₗ[A] S`
-  sending `c.cellBasis μ s` to `c.basis ⟨μ, s, t₀⟩ • x₀` for `x₀ : S` annihilated by
-  `c.lowerSpan μ`.
 * `TauCeti.CellularBasis.endCellModuleQuotientAlgEquiv`: the `K`-algebra isomorphism
   `Module.End B (d.CellModule μ ⧸ d.cellRadical μ) ≃ₐ[K] K` for a cell with `d.cellForm μ ≠ 0`.
 * `TauCeti.CellularBasis.endAlgEquivOfIsSimpleModule`: the `K`-algebra isomorphism
@@ -51,8 +45,9 @@ module (`TauCeti.CellularBasis.not_isSimpleModule_matrix_int_cellModule_quotient
 
 ## Main results
 
-* `TauCeti.CellularBasis.eq_or_lt_of_linearMap_cellModule_quotient_ne_zero`: a nonzero map
-  `d.CellModule ν →ₗ[B] d.CellModule μ ⧸ d.cellRadical μ` implies `ν = μ ∨ ν < μ`.
+* `TauCeti.CellularBasis.eq_or_lt_of_linearMap_cellModule_quotient_ne_zero`,
+  `TauCeti.CellularBasis.le_of_linearMap_cellModule_quotient_ne_zero`: a nonzero map
+  `d.CellModule ν →ₗ[B] d.CellModule μ ⧸ d.cellRadical μ` implies `ν = μ ∨ ν < μ` (and `ν ≤ μ`).
 * `TauCeti.CellularBasis.nonempty_cellModule_quotient_linearEquiv_iff`: simple cell quotients at
   `μ` and `ν` are isomorphic if and only if `μ = ν`.
 * `TauCeti.CellularBasis.existsUnique_cellForm_ne_zero_and_nonempty_linearEquiv`: every simple
@@ -72,59 +67,6 @@ open Module Submodule
 open scoped Matrix
 
 namespace TauCeti.CellularBasis
-
-section CommRing
-
-variable {R A Λ : Type*} [CommRing R] [Ring A] [Algebra R A] [Preorder Λ]
-  {M : Λ → Type*} [∀ μ, Fintype (M μ)] [∀ μ, DecidableEq (M μ)]
-  (c : CellularBasis R A M)
-
-/-- Given a left `A`-module `S`, an index `t₀ : M μ`, and a vector `x₀ : S` annihilated by
-`c.lowerSpan μ`, standard coordinates induce an `A`-linear homomorphism `c.CellModule μ →ₗ[A] S`
-sending `c.cellBasis μ u` to `c.basis ⟨μ, u, t₀⟩ • x₀`. -/
-noncomputable def cellModuleHom {S : Type*} [AddCommGroup S] [Module A S] {μ : Λ} (t₀ : M μ)
-    (x₀ : S) (hlow : ∀ z ∈ c.lowerSpan μ, z • x₀ = 0) : c.CellModule μ →ₗ[A] S where
-  toFun w := ∑ u, algebraMap R A (c.cellModuleEquiv μ w u) • (c.basis ⟨μ, u, t₀⟩ • x₀)
-  map_add' w₁ w₂ := by
-    simp only [map_add, Pi.add_apply, add_smul, Finset.sum_add_distrib]
-  map_smul' a w := by
-    have hstep (u : M μ) : (a * c.basis ⟨μ, u, t₀⟩) • x₀ =
-        ∑ q, algebraMap R A (c.cellRep μ a q u) • (c.basis ⟨μ, q, t₀⟩ • x₀) := by
-      have hmem := hlow _ (c.mul_basis_sub_sum_mem a μ u t₀)
-      rw [sub_smul, sub_eq_zero] at hmem
-      rw [hmem, Finset.sum_smul]
-      refine Finset.sum_congr rfl fun q _ ↦ ?_
-      rw [Algebra.smul_def, mul_smul]
-    rw [RingHom.id_apply, Finset.smul_sum]
-    have lhs_eq : ∑ u, a • (algebraMap R A (c.cellModuleEquiv μ w u) •
-        (c.basis ⟨μ, u, t₀⟩ • x₀)) =
-        ∑ u, ∑ q, (algebraMap R A (c.cellModuleEquiv μ w u) *
-          algebraMap R A (c.cellRep μ a q u)) • (c.basis ⟨μ, q, t₀⟩ • x₀) := by
-      refine Finset.sum_congr rfl fun u _ ↦ ?_
-      calc a • (algebraMap R A (c.cellModuleEquiv μ w u) • (c.basis ⟨μ, u, t₀⟩ • x₀))
-          = (algebraMap R A (c.cellModuleEquiv μ w u) * a) • (c.basis ⟨μ, u, t₀⟩ • x₀) := by
-              rw [← mul_smul, Algebra.commutes]
-        _ = algebraMap R A (c.cellModuleEquiv μ w u) • ((a * c.basis ⟨μ, u, t₀⟩) • x₀) := by
-              rw [mul_smul, mul_smul]
-        _ = _ := by
-              rw [hstep u, Finset.smul_sum]
-              exact Finset.sum_congr rfl fun q _ ↦ (mul_smul _ _ _).symm
-    rw [lhs_eq, Finset.sum_comm]
-    refine Finset.sum_congr rfl fun q _ ↦ ?_
-    rw [cellModuleEquiv_smul, Matrix.mulVec, dotProduct, map_sum, Finset.sum_smul]
-    exact Finset.sum_congr rfl fun u _ ↦
-      congrArg (· • (c.basis ⟨μ, q, t₀⟩ • x₀))
-        ((congrArg (algebraMap R A) (mul_comm _ _)).trans (map_mul _ _ _))
-
-/-- `cellModuleHom` sends the standard basis vector `c.cellBasis μ s` to
-`c.basis ⟨μ, s, t₀⟩ • x₀`. -/
-@[simp]
-theorem cellModuleHom_cellBasis {S : Type*} [AddCommGroup S] [Module A S] {μ : Λ} (t₀ : M μ)
-    (x₀ : S) (hlow : ∀ z ∈ c.lowerSpan μ, z • x₀ = 0) (s : M μ) :
-    c.cellModuleHom t₀ x₀ hlow (c.cellBasis μ s) = c.basis ⟨μ, s, t₀⟩ • x₀ := by
-  simp [cellModuleHom, Pi.single_apply]
-
-end CommRing
 
 section Field
 
@@ -217,8 +159,15 @@ theorem eq_or_lt_of_linearMap_cellModule_quotient_ne_zero {μ ν : Λ}
   have hact : f (d.basis ⟨μ, t, s⟩ • w) = d.gramMatrix μ s t • q := by
     rw [map_smul, hw, ← Submodule.Quotient.mk_smul, d.basis_smul, d.cellForm_cellBasis,
       Submodule.Quotient.mk_smul]
-  rw [d.basis_smul_eq_zero_of_ne h.1.symm h.2, map_zero] at hact
+  rw [d.basis_smul_eq_zero_of_ne_of_not_lt h.1 h.2, map_zero] at hact
   exact (smul_ne_zero hst hq) hact.symm
+
+/-- Order form of `eq_or_lt_of_linearMap_cellModule_quotient_ne_zero`: a nonzero `B`-linear map
+`d.CellModule ν →ₗ[B] d.CellModule μ ⧸ d.cellRadical μ` implies `ν ≤ μ`. -/
+theorem le_of_linearMap_cellModule_quotient_ne_zero {μ ν : Λ}
+    {f : d.CellModule ν →ₗ[B] d.CellModule μ ⧸ d.cellRadical μ} (hf : f ≠ 0) :
+    ν ≤ μ :=
+  le_of_eq_or_lt (d.eq_or_lt_of_linearMap_cellModule_quotient_ne_zero hf)
 
 /-- There is no `B`-linear equivalence between `d.CellModule μ ⧸ d.cellRadical μ` and
 `d.CellModule ν ⧸ d.cellRadical ν` when `d.cellForm μ ≠ 0` and `μ ≠ ν`. -/
@@ -258,7 +207,7 @@ theorem subsingleton_linearMap_cellModule_quotient_of_ne {μ ν : Λ} (hne : ν 
   by_cases hν : d.cellForm ν = 0
   · have : Subsingleton (d.CellModule ν ⧸ d.cellRadical ν) :=
       Submodule.Quotient.subsingleton_iff.mpr ((d.cellRadical_eq_top_iff ν).mpr hν)
-    exact ⟨fun f g ↦ LinearMap.ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, map_zero]⟩
+    infer_instance
   by_cases hμ : d.cellForm μ = 0
   · have : Subsingleton (d.CellModule μ ⧸ d.cellRadical μ) :=
       Submodule.Quotient.subsingleton_iff.mpr ((d.cellRadical_eq_top_iff μ).mpr hμ)
@@ -267,11 +216,8 @@ theorem subsingleton_linearMap_cellModule_quotient_of_ne {μ ν : Λ} (hne : ν 
     (d.isSimpleModule_cellModule_quotient_iff ν).mpr hν
   have : IsSimpleModule B (d.CellModule μ ⧸ d.cellRadical μ) :=
     (d.isSimpleModule_cellModule_quotient_iff μ).mpr hμ
-  refine ⟨fun f g ↦ sub_eq_zero.mp ?_⟩
-  rcases (f - g).bijective_or_eq_zero with hbij | hzero
-  · exact ((d.isEmpty_cellModule_quotient_linearEquiv_of_ne hν hne).false
-      (LinearEquiv.ofBijective (f - g) hbij)).elim
-  · exact hzero
+  exact subsingleton_linearMap_of_isEmpty_linearEquiv
+    (d.isEmpty_cellModule_quotient_linearEquiv_of_ne hν hne)
 
 section WellFounded
 
@@ -398,51 +344,5 @@ theorem finrank_end_eq_one_of_isSimpleModule (d : CellularBasis K B M) (S : Type
 end WellFounded
 
 end Field
-
-section FieldPartialOrder
-
-variable {K B Λ : Type*} [Field K] [Ring B] [Algebra K B] [PartialOrder Λ]
-  {M : Λ → Type*} [∀ μ, Fintype (M μ)] [∀ μ, DecidableEq (M μ)]
-  (d : CellularBasis K B M)
-
-/-- Partial-order form of `eq_or_lt_of_linearMap_cellModule_quotient_ne_zero`: a nonzero `B`-linear
-map `d.CellModule ν →ₗ[B] d.CellModule μ ⧸ d.cellRadical μ` implies `ν ≤ μ`. -/
-theorem le_of_linearMap_cellModule_quotient_ne_zero {μ ν : Λ}
-    {f : d.CellModule ν →ₗ[B] d.CellModule μ ⧸ d.cellRadical μ} (hf : f ≠ 0) :
-    ν ≤ μ := by
-  rcases d.eq_or_lt_of_linearMap_cellModule_quotient_ne_zero hf with rfl | hlt
-  · exact le_rfl
-  · exact hlt.le
-
-end FieldPartialOrder
-
-/-- **Sharpness of the field hypothesis.** For `CellularBasis.matrix ℤ Unit` (whose cell form is
-nonzero by `cellForm_matrix_ne_zero` and whose cell radical is `⊥` by `cellRadical_matrix`), the
-radical quotient is isomorphic to `ℤ` and is not a simple module. -/
-theorem not_isSimpleModule_matrix_int_cellModule_quotient :
-    ¬ IsSimpleModule (Matrix Unit Unit ℤ)
-      ((CellularBasis.matrix ℤ Unit).CellModule () ⧸
-        (CellularBasis.matrix ℤ Unit).cellRadical ()) := by
-  let c := CellularBasis.matrix ℤ Unit
-  intro hsimple
-  have hcoatom : IsCoatom (c.cellRadical ()) := isSimpleModule_iff_isCoatom.mp hsimple
-  let v := c.cellBasis () () + c.cellBasis () ()
-  let N : Submodule (Matrix Unit Unit ℤ) (c.CellModule ()) :=
-    Submodule.span (Matrix Unit Unit ℤ) {v}
-  have hne_zero : v ≠ 0 := fun h0 ↦ by
-    have := congrFun (congrArg (c.cellModuleEquiv ()) h0) ()
-    simp [v] at this
-  have hlt : c.cellRadical () < N := by
-    rw [cellRadical_matrix, bot_lt_iff_ne_bot, Submodule.ne_bot_iff]
-    exact ⟨v, Submodule.subset_span (Set.mem_singleton _), hne_zero⟩
-  have hmem : c.cellBasis () () ∈ N := hcoatom.2 N hlt ▸ Submodule.mem_top
-  rw [Submodule.mem_span_singleton] at hmem
-  obtain ⟨m, hm⟩ := hmem
-  have hcoord := congrFun (congrArg (c.cellModuleEquiv ()) hm) ()
-  simp only [c, v, cellModuleEquiv_smul, cellRep_matrix, map_add, cellModuleEquiv_cellBasis,
-    Matrix.mulVec, dotProduct, Fintype.univ_punit, Finset.sum_singleton, Pi.add_apply,
-    Pi.single_eq_same] at hcoord
-  have : m () () * (1 + 1) = 1 := hcoord
-  omega
 
 end TauCeti.CellularBasis

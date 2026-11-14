@@ -10,39 +10,30 @@ public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.Algebra.Cellular.CellModule
+import Mathlib.LinearAlgebra.TensorProduct.Opposite
 
 /-!
-# Transport and base change of cellular bases
+# Base change of cellular bases
 
-Cellular bases are functorial under algebra isomorphisms and commute with extension of scalars.
-Given a cellular basis `c` of an `R`-algebra `A`:
+Cellular bases commute with extension of scalars. Given a cellular basis `c` of an `R`-algebra `A`
+and any commutative `R`-algebra `S`, `c.baseChange S` is a cellular basis of `S ⊗[R] A` with basis
+vectors `1 ⊗ₜ c.basis i`, anti-involution `s ⊗ₜ a ↦ s ⊗ₜ a*`, cell representations obtained by
+applying `algebraMap R S` to `c.cellRep μ`, Gram matrices `(c.gramMatrix μ).map (algebraMap R S)`,
+and cell modules `S`-linearly equivalent to `S ⊗[R] c.CellModule μ` intertwining the base-changed
+bilinear form `(c.cellForm μ).baseChange S`.
 
-* for any `R`-algebra equivalence `e : A ≃ₐ[R] B`, `c.map e` is a cellular basis of `B` whose Gram
-  matrices coincide with those of `c` and whose cell modules are `R`-linearly equivalent to those of
-  `c` compatibly with the algebra actions and cell forms;
-* for any commutative `R`-algebra `S`, `c.baseChange S` is a cellular basis of `S ⊗[R] A` with basis
-  vectors `1 ⊗ₜ c.basis i`, anti-involution `s ⊗ₜ a ↦ s ⊗ₜ a*`, cell representations obtained by
-  applying `algebraMap R S` to `c.cellRep μ`, Gram matrices `(c.gramMatrix μ).map (algebraMap R S)`,
-  and cell modules `S`-linearly equivalent to `S ⊗[R] c.CellModule μ` intertwining the base-changed
-  bilinear form `(c.cellForm μ).baseChange S`.
-
-Composing `(c.baseChange S).map e` transports a universal cellular basis constructed over a generic
-coefficient ring `R` across a concrete base-change equivalence `e : S ⊗[R] A ≃ₐ[S] B`, carrying Gram
-determinants along `algebraMap R S`.
+Composing `(c.baseChange S).map e` (`TauCeti.CellularBasis.map`) transports a universal cellular
+basis constructed over a generic coefficient ring `R` across a concrete base-change equivalence
+`e : S ⊗[R] A ≃ₐ[S] B`, carrying Gram determinants along `algebraMap R S`.
 
 ## Main definitions
 
-* `TauCeti.CellularBasis.map`: transport a cellular basis along an `R`-algebra isomorphism.
-* `TauCeti.CellularBasis.mapCellModuleEquiv`: the `R`-linear equivalence between cell modules
-  induced by `CellularBasis.map`.
 * `TauCeti.CellularBasis.baseChange`: extend scalars of a cellular basis to `S ⊗[R] A`.
 * `TauCeti.CellularBasis.baseChangeCellModuleEquiv`: the `S`-linear equivalence
   `S ⊗[R] c.CellModule μ ≃ₗ[S] (c.baseChange S).CellModule μ`.
 
 ## Main results
 
-* `TauCeti.CellularBasis.cellRep_map`, `TauCeti.CellularBasis.gramMatrix_map`: `map` intertwines
-  `cellRep` and preserves `gramMatrix`.
 * `TauCeti.CellularBasis.cellRep_baseChange_tmul`, `TauCeti.CellularBasis.gramMatrix_baseChange`,
   `TauCeti.CellularBasis.det_gramMatrix_baseChange`: `baseChange` maps `cellRep`, `gramMatrix`, and
   Gram determinants along `algebraMap R S`.
@@ -62,228 +53,11 @@ open scoped Matrix TensorProduct
 
 namespace TauCeti.CellularBasis
 
-section Map
-
-variable {R A B C Λ : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra R B]
-  [Ring C] [Algebra R C] [Preorder Λ] {M : Λ → Type*} [∀ μ, Fintype (M μ)]
-  (c : CellularBasis R A M)
-
-private theorem span_basis_map_image_lt (e : A ≃ₐ[R] B) (μ : Λ) :
-    span R (c.basis.map e.toLinearEquiv '' {i | i.1 < μ}) =
-      (c.lowerSpan μ).map e.toLinearMap := by
-  rw [lowerSpan_def, Submodule.map_span, ← Set.image_comp]
-  exact congrArg (span R) (congrArg (· '' _)
-    (funext fun i ↦ c.basis.map_apply e.toLinearEquiv i))
-
-/-- Transport a cellular basis along an `R`-algebra equivalence `e : A ≃ₐ[R] B`. -/
-noncomputable def map (e : A ≃ₐ[R] B) : CellularBasis R B M where
-  basis := c.basis.map e.toLinearEquiv
-  antiInvolution := e.symm.trans (c.antiInvolution.trans (AlgEquiv.op e))
-  unop_antiInvolution_basis μ s t := by simp
-  exists_mul_basis b μ s := by
-    obtain ⟨r, hr⟩ := c.exists_mul_basis (e.symm b) μ s
-    refine ⟨r, fun t ↦ ?_⟩
-    rw [c.span_basis_map_image_lt e μ]
-    have hmem : e.symm b * c.basis ⟨μ, s, t⟩ - ∑ u, r u • c.basis ⟨μ, u, t⟩ ∈ c.lowerSpan μ := by
-      rw [lowerSpan_def]
-      exact hr t
-    refine ⟨e.symm b * c.basis ⟨μ, s, t⟩ - ∑ u, r u • c.basis ⟨μ, u, t⟩, hmem, ?_⟩
-    simp [map_sub, map_mul, map_sum, map_smul]
-
-/-- The cellular basis transported along `e` applies `e` to each basis vector. -/
-@[simp]
-theorem map_basis (e : A ≃ₐ[R] B) (i : Σ μ, M μ × M μ) :
-    (c.map e).basis i = e (c.basis i) :=
-  c.basis.map_apply e.toLinearEquiv i
-
-/-- Coordinates in the transported cellular basis pull back along `e.symm`. -/
-@[simp]
-theorem map_basis_repr (e : A ≃ₐ[R] B) (b : B) :
-    (c.map e).basis.repr b = c.basis.repr (e.symm b) := by
-  simp [map]
-
-/-- Transporting along the identity algebra equivalence does nothing. -/
-@[simp]
-theorem map_refl : c.map (AlgEquiv.refl : A ≃ₐ[R] A) = c := by
-  ext i
-  simp
-
-/-- Transporting along `e` and then `e'` is transporting along `e.trans e'`. -/
-@[simp]
-theorem map_trans (e : A ≃ₐ[R] B) (e' : B ≃ₐ[R] C) :
-    (c.map e).map e' = c.map (e.trans e') := by
-  ext i
-  simp
-
-/-- The anti-involution of `c.map e` conjugates `c.antiInvolution` by `e`. -/
-@[simp]
-theorem unop_antiInvolution_map (e : A ≃ₐ[R] B) (b : B) :
-    ((c.map e).antiInvolution b).unop = e (c.antiInvolution (e.symm b)).unop :=
-  (rfl)
-
-/-- Lower cell spans push forward under `e`. -/
-theorem lowerSpan_map (e : A ≃ₐ[R] B) (μ : Λ) :
-    (c.map e).lowerSpan μ = (c.lowerSpan μ).map e.toLinearMap := by
-  rw [lowerSpan_def, map, c.span_basis_map_image_lt]
-
-/-- Membership in `(c.map e).lowerSpan μ` pulls back via `e.symm`. -/
-@[simp]
-theorem mem_lowerSpan_map_iff (e : A ≃ₐ[R] B) {μ : Λ} {b : B} :
-    b ∈ (c.map e).lowerSpan μ ↔ e.symm b ∈ c.lowerSpan μ := by
-  rw [mem_lowerSpan_iff, mem_lowerSpan_iff]
-  simp
-
-/-- The canonical `R`-linear equivalence between the cell modules of `c` and `c.map e`, preserving
-coordinates in the standard cell basis. -/
-noncomputable def mapCellModuleEquiv (e : A ≃ₐ[R] B) (μ : Λ) :
-    c.CellModule μ ≃ₗ[R] (c.map e).CellModule μ :=
-  (c.cellModuleEquiv μ).trans ((c.map e).cellModuleEquiv μ).symm
-
-/-- `mapCellModuleEquiv` preserves standard coordinates. -/
-@[simp]
-theorem cellModuleEquiv_mapCellModuleEquiv (e : A ≃ₐ[R] B) (μ : Λ) (x : c.CellModule μ) :
-    (c.map e).cellModuleEquiv μ (c.mapCellModuleEquiv e μ x) = c.cellModuleEquiv μ x := by
-  simp [mapCellModuleEquiv]
-
-/-- The inverse of `mapCellModuleEquiv` preserves standard coordinates. -/
-@[simp]
-theorem cellModuleEquiv_mapCellModuleEquiv_symm (e : A ≃ₐ[R] B) (μ : Λ)
-    (x : (c.map e).CellModule μ) :
-    c.cellModuleEquiv μ ((c.mapCellModuleEquiv e μ).symm x) = (c.map e).cellModuleEquiv μ x := by
-  simp [mapCellModuleEquiv]
-
-/-- `mapCellModuleEquiv` carries each standard cell basis vector to the corresponding one. -/
-@[simp]
-theorem mapCellModuleEquiv_cellBasis (e : A ≃ₐ[R] B) (μ : Λ) (s : M μ) :
-    c.mapCellModuleEquiv e μ (c.cellBasis μ s) = (c.map e).cellBasis μ s := by
-  classical
-  apply ((c.map e).cellModuleEquiv μ).injective
-  simp
-
-/-- The inverse of `mapCellModuleEquiv` carries each standard cell basis vector back to `c`. -/
-@[simp]
-theorem mapCellModuleEquiv_symm_cellBasis (e : A ≃ₐ[R] B) (μ : Λ) (s : M μ) :
-    (c.mapCellModuleEquiv e μ).symm ((c.map e).cellBasis μ s) = c.cellBasis μ s :=
-  (c.mapCellModuleEquiv e μ).symm_apply_eq.mpr (c.mapCellModuleEquiv_cellBasis e μ s).symm
-
-section Decidable
-
-variable [∀ μ, DecidableEq (M μ)]
-
-/-- The cell representation of `c.map e` pulls back `c.cellRep` along `e.symm`. -/
-@[simp]
-theorem cellRep_map (e : A ≃ₐ[R] B) (μ : Λ) (b : B) :
-    (c.map e).cellRep μ b = c.cellRep μ (e.symm b) := by
-  ext u s
-  rw [cellRep_apply, cellRep_apply, map_basis_repr, map_basis, map_mul, e.symm_apply_apply]
-
-/-- Transporting a cellular basis along an algebra isomorphism preserves every Gram matrix. -/
-@[simp]
-theorem gramMatrix_map (e : A ≃ₐ[R] B) (μ : Λ) :
-    (c.map e).gramMatrix μ = c.gramMatrix μ := by
-  ext t u
-  have h₁ := (c.map e).cellRep_basis μ t t u t
-  have h₂ := c.cellRep_basis μ t t u t
-  simp only [↓reduceIte, cellRep_map, map_basis, AlgEquiv.symm_apply_apply] at h₁ h₂
-  exact h₁.symm.trans h₂
-
-/-- `mapCellModuleEquiv` intertwines the action of `a : A` with the action of `e a : B`. -/
-@[simp]
-theorem mapCellModuleEquiv_smul (e : A ≃ₐ[R] B) (μ : Λ) (a : A) (x : c.CellModule μ) :
-    c.mapCellModuleEquiv e μ (a • x) = e a • c.mapCellModuleEquiv e μ x := by
-  apply ((c.map e).cellModuleEquiv μ).injective
-  simp
-
-/-- `mapCellModuleEquiv` is an isometry for the cell bilinear forms. -/
-@[simp]
-theorem cellForm_mapCellModuleEquiv (e : A ≃ₐ[R] B) (μ : Λ) (x y : c.CellModule μ) :
-    (c.map e).cellForm μ (c.mapCellModuleEquiv e μ x) (c.mapCellModuleEquiv e μ y) =
-      c.cellForm μ x y := by
-  simp [cellForm_apply]
-
-/-- `mapCellModuleEquiv` identifies the cell radicals of `c` and `c.map e`. -/
-theorem mem_cellRadical_mapCellModuleEquiv (e : A ≃ₐ[R] B) (μ : Λ) (x : c.CellModule μ) :
-    c.mapCellModuleEquiv e μ x ∈ (c.map e).cellRadical μ ↔ x ∈ c.cellRadical μ := by
-  simp only [mem_cellRadical]
-  refine ⟨fun hx y ↦ ?_, fun hx y ↦ ?_⟩
-  · simpa using hx (c.mapCellModuleEquiv e μ y)
-  · obtain ⟨y, rfl⟩ := (c.mapCellModuleEquiv e μ).surjective y
-    simpa using hx y
-
-/-- Vanishing of the cell form is invariant under `CellularBasis.map`. -/
-@[simp]
-theorem cellForm_map_eq_zero_iff (e : A ≃ₐ[R] B) (μ : Λ) :
-    (c.map e).cellForm μ = 0 ↔ c.cellForm μ = 0 := by
-  refine ⟨fun h ↦ LinearMap.BilinForm.ext fun x y ↦ ?_,
-    fun h ↦ LinearMap.BilinForm.ext fun x y ↦ ?_⟩
-  · rw [← c.cellForm_mapCellModuleEquiv e μ x y]
-    simp [h]
-  · obtain ⟨x, rfl⟩ := (c.mapCellModuleEquiv e μ).surjective x
-    obtain ⟨y, rfl⟩ := (c.mapCellModuleEquiv e μ).surjective y
-    simp [h]
-
-/-- Nondegeneracy of the cell form is invariant under `CellularBasis.map`. -/
-@[simp]
-theorem nondegenerate_cellForm_map_iff (e : A ≃ₐ[R] B) (μ : Λ) :
-    ((c.map e).cellForm μ).Nondegenerate ↔ (c.cellForm μ).Nondegenerate := by
-  have hcongr : LinearMap.BilinForm.congr (c.mapCellModuleEquiv e μ).symm ((c.map e).cellForm μ) =
-      c.cellForm μ := by
-    ext x y
-    exact c.cellForm_mapCellModuleEquiv e μ x y
-  rw [← hcongr, LinearMap.BilinForm.nondegenerate_congr_iff]
-
-/-- Triviality of the cell radical is invariant under `CellularBasis.map`. -/
-@[simp]
-theorem cellRadical_map_eq_bot_iff (e : A ≃ₐ[R] B) (μ : Λ) :
-    (c.map e).cellRadical μ = ⊥ ↔ c.cellRadical μ = ⊥ := by
-  simp only [Submodule.eq_bot_iff]
-  refine ⟨fun h x hx ↦ (c.mapCellModuleEquiv e μ).injective ?_,
-    fun h y hy ↦ ?_⟩
-  · simpa using h (c.mapCellModuleEquiv e μ x) ((c.mem_cellRadical_mapCellModuleEquiv e μ x).2 hx)
-  · obtain ⟨x, rfl⟩ := (c.mapCellModuleEquiv e μ).surjective y
-    rw [h x ((c.mem_cellRadical_mapCellModuleEquiv e μ x).1 hy), map_zero]
-
-end Decidable
-
-end Map
-
 section BaseChange
 
 variable {R A Λ : Type*} [CommRing R] [Ring A] [Algebra R A] [Preorder Λ]
   {M : Λ → Type*} [∀ μ, Fintype (M μ)] (c : CellularBasis R A M)
   (S : Type*) [CommRing S] [Algebra R S]
-
-/-- Auxiliary `S`-algebra homomorphism `S ⊗[R] A →ₐ[S] (S ⊗[R] A)ᵐᵒᵖ` sending `s ⊗ₜ a` to
-`op (s ⊗ₜ a*)`. -/
-private noncomputable def baseChangeAntiHom : S ⊗[R] A →ₐ[S] (S ⊗[R] A)ᵐᵒᵖ :=
-  Algebra.TensorProduct.lift (Algebra.ofId S _)
-    ((Algebra.TensorProduct.includeRight (R := R) (A := S) (B := A)).op.comp
-      c.antiInvolution.toAlgHom)
-    fun s _ ↦ by
-      rw [Algebra.ofId_apply]
-      exact Algebra.commute_algebraMap_left s _
-
-private theorem unop_baseChangeAntiHom_tmul (s : S) (a : A) :
-    (c.baseChangeAntiHom S (s ⊗ₜ[R] a)).unop = s ⊗ₜ[R] (c.antiInvolution a).unop := by
-  simp [baseChangeAntiHom, Algebra.ofId_apply, Algebra.TensorProduct.algebraMap_apply]
-
-private theorem opComm_comp_baseChangeAntiHom :
-    (AlgHom.opComm (c.baseChangeAntiHom S)).comp (c.baseChangeAntiHom S) =
-      AlgHom.id S (S ⊗[R] A) :=
-  Algebra.TensorProduct.ext' fun s a ↦ by
-    rw [AlgHom.comp_apply, AlgHom.id_apply,
-      ← MulOpposite.op_unop (c.baseChangeAntiHom S (s ⊗ₜ[R] a))]
-    simp [unop_baseChangeAntiHom_tmul]
-
-/-- Base change of the anti-involution of `c` to `S ⊗[R] A`. -/
-private noncomputable def baseChangeAntiInvolution : S ⊗[R] A ≃ₐ[S] (S ⊗[R] A)ᵐᵒᵖ :=
-  AlgEquiv.ofAlgHom (c.baseChangeAntiHom S) (AlgHom.opComm (c.baseChangeAntiHom S))
-    (AlgHom.ext fun y ↦ by
-      obtain ⟨x, rfl⟩ := MulOpposite.op_surjective y
-      apply MulOpposite.unop_injective
-      simp only [AlgHom.comp_apply, AlgHom.id_apply, AlgHom.opComm_apply_apply]
-      exact DFunLike.congr_fun (c.opComm_comp_baseChangeAntiHom S) x)
-    (c.opComm_comp_baseChangeAntiHom S)
 
 private theorem span_basis_baseChange_image_lt (μ : Λ) :
     span S (c.basis.baseChange S '' {i | i.1 < μ}) = (c.lowerSpan μ).baseChange S := by
@@ -295,9 +69,9 @@ private theorem span_basis_baseChange_image_lt (μ : Λ) :
 over `S`. -/
 noncomputable def baseChange : CellularBasis S (S ⊗[R] A) M where
   basis := c.basis.baseChange S
-  antiInvolution := c.baseChangeAntiInvolution S
-  unop_antiInvolution_basis μ s t := by
-    simp [baseChangeAntiInvolution, unop_baseChangeAntiHom_tmul]
+  antiInvolution := (Algebra.TensorProduct.congr (AlgEquiv.toOpposite S S) c.antiInvolution).trans
+    (Algebra.TensorProduct.opAlgEquiv R S S A)
+  unop_antiInvolution_basis μ s t := by simp
   exists_mul_basis z μ s := by
     refine TensorProduct.inductionOn z (fun s' a ↦ ?_) (fun x y hx hy ↦ ?_)
     · obtain ⟨r, hr⟩ := c.exists_mul_basis a μ s
@@ -346,8 +120,8 @@ theorem baseChange_basis_repr_tmul (s : S) (a : A) (i : Σ μ, M μ × M μ) :
 /-- The base-changed anti-involution acts on pure tensors by `s ⊗ₜ a ↦ s ⊗ₜ a*`. -/
 @[simp]
 theorem unop_antiInvolution_baseChange_tmul (s : S) (a : A) :
-    ((c.baseChange S).antiInvolution (s ⊗ₜ[R] a)).unop = s ⊗ₜ[R] (c.antiInvolution a).unop :=
-  c.unop_baseChangeAntiHom_tmul S s a
+    ((c.baseChange S).antiInvolution (s ⊗ₜ[R] a)).unop = s ⊗ₜ[R] (c.antiInvolution a).unop := by
+  simp [baseChange]
 
 /-- Lower cell spans commute with submodule base change. -/
 @[simp]
