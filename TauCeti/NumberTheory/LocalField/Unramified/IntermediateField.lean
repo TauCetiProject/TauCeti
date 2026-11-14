@@ -140,6 +140,20 @@ theorem inertiaDegree_bot :
   rw [IntermediateField.finrank_bot] at h
   exact Nat.eq_one_of_mul_eq_one_left h
 
+/-- The totalized residue degree divides `Module.finrank K L`, including on infinite subextensions
+where both vanish. -/
+theorem inertiaDegree_dvd_finrank (L : IntermediateField K (SeparableClosure K)) :
+    L.inertiaDegree ∣ Module.finrank K L := by
+  by_cases h : Module.Finite K L
+  · rw [inertiaDegree_eq]
+    let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+    let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
+    have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+    have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+    exact ⟨ramificationIndex K L,
+      (ramificationIndex_mul_inertiaDegree K L).symm.trans (mul_comm _ _)⟩
+  · rw [inertiaDegree_of_not_finite h, Module.finrank_of_not_finite h]
+
 /-- The canonical unramified extension of degree `f(L/K)` is contained in every finite
 subextension `L`. -/
 theorem unramifiedExtension_inertiaDegree_le (L : IntermediateField K (SeparableClosure K))
