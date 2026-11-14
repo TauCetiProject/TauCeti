@@ -8,9 +8,12 @@ module
 public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.Order.Fin.Basic
 public import Mathlib.Order.Hom.PowersetCard
+public import TauCeti.Data.Set.PowersetCard
 
+import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.FinCases
 import TauCeti.Data.Finset.Sort
+import TauCeti.GroupTheory.Perm.Inversion
 
 /-!
 # Fixed-cardinality subsets of linear orders
@@ -33,9 +36,13 @@ enumeration is `a ↦ k + a`, an index lies in it exactly when it is at least `k
 `p`-subset meets the first `k` indices.
 
 The shuffle of two disjoint fixed-cardinality subsets lists the increasing enumeration of the first
-followed by that of the second. The shuffle of a singleton `{i}` with `s.erase i` lists `i` first
-and then `s.erase i`, and in the presentation `Fin (n + 1)` it is the inverse cycle moving the
-position of `i` in `s` to the front.
+followed by that of the second, and mapping along an order embedding or order isomorphism commutes
+with increasing enumerations and preserves shuffle signs. The shuffle of a singleton `{i}` with
+`s.erase i` lists `i` first and then `s.erase i`, and in the presentation `Fin (n + 1)` it is the
+inverse cycle moving the position of `i` in `s` to the front. For an `r`-subset `T` of `Fin m`, the
+shuffle sorting `T` followed by its complement `Tᶜ` has sign
+`(-1) ^ (∑ i ∈ T, i - r * (r - 1) / 2)`, so the product of the shuffle signs of two `r`-subsets
+`S` and `T` is `(-1) ^ (∑ i ∈ S, i + ∑ j ∈ T, j)`.
 -/
 
 public section
@@ -198,6 +205,165 @@ theorem conj_permOfDisjoint_singleton_erase (i : I) (s : Finset I) (hi : i ∈ s
   rw [hremove]
   rw [hec]
   exact orderEmbOfFin_permOfDisjoint_singleton_erase i s hn hdisj j
+
+/-- The unique increasing enumeration of `Set.powersetCard.ofSingleton a` is constant at `a`. -/
+@[simp]
+theorem ofFinEmbEquiv_symm_ofSingleton (a : I) (i : Fin 1) :
+    ofFinEmbEquiv.symm (ofSingleton a) i = a :=
+  _root_.Finset.orderEmbOfFin_singleton a i
+
+/-- The increasing enumeration of a two-element subset `{a, b}` with `a < b` is `![a, b]`. -/
+theorem coe_ofFinEmbEquiv_symm_pair {s : powersetCard I 2} {a b : I} (hab : a < b)
+    (hs : s.val = {a, b}) : ⇑(ofFinEmbEquiv.symm s) = ![a, b] := by
+  rw [ofFinEmbEquiv_symm_apply]
+  exact (_root_.Finset.orderEmbOfFin_unique s.prop
+    (fun x ↦ by fin_cases x <;> simp [hs])
+    (Fin.strictMono_iff_lt_succ.mpr fun x ↦ by fin_cases x; exact hab)).symm
+
+/-- Mapping a fixed-cardinality subset along an order embedding composes its increasing
+enumeration with that order embedding. -/
+@[simp]
+theorem ofFinEmbEquiv_symm_map_orderEmbedding {J : Type*} [LinearOrder J] {n : ℕ}
+    (e : I ↪o J) (s : powersetCard I n) :
+    ofFinEmbEquiv.symm (map n e.toEmbedding s) = (ofFinEmbEquiv.symm s).trans e := by
+  apply ofFinEmbEquiv.injective
+  rw [Equiv.apply_symm_apply]
+  apply Subtype.ext
+  have hs : Subtype.val (ofFinEmbEquiv (ofFinEmbEquiv.symm s)) = s.val :=
+    congrArg Subtype.val (ofFinEmbEquiv.apply_symm_apply s)
+  rw [ofFinEmbEquiv_apply, val_ofFinEmb, val_map, ← hs, ofFinEmbEquiv_apply, val_ofFinEmb,
+    _root_.Finset.map_map]
+  rfl
+
+/-- An order isomorphism preserves the shuffle sign of a fixed-cardinality subset. -/
+@[simp]
+theorem sign_map_orderIso {J : Type*} [LinearOrder J] [Fintype I] [Fintype J] {n : ℕ}
+    (e : I ≃o J) (s : powersetCard I n) :
+    powersetCard.sign (map n e.toEmbedding s) = powersetCard.sign s := by
+  have hm := sub_add_eq_card s
+  have hmn : n + (Fintype.card I - n) = Fintype.card I := Nat.add_comm _ n ▸ hm
+  have hmn' : n + (Fintype.card I - n) = Fintype.card J :=
+    hmn.trans (Fintype.card_congr e.toEquiv)
+  let t := compl hm s
+  have hst : Disjoint s.val t.val := disjoint_compl_right
+  have hst' : Disjoint (map n e.toEmbedding s).val
+      (map (Fintype.card I - n) e.toEmbedding t).val := by
+    rw [show e.toEmbedding = e.toEquiv.toEmbedding from rfl, map_compl_equiv hm e.toEquiv]
+    exact disjoint_compl_right
+  have hunion : disjUnion hst' =
+      map (n + (Fintype.card I - n)) e.toOrderEmbedding.toEmbedding (disjUnion hst) := by
+    refine eq_iff_subset.mpr fun x hx ↦ ?_
+    obtain ⟨a, rfl⟩ := e.surjective x
+    simpa [show e.toOrderEmbedding.toEmbedding = e.toEmbedding from rfl] using hx
+  rw [sign_eq_permOfDisjoint_sign hmn s t hst, sign_eq_permOfDisjoint_sign hmn' _ _ hst']
+  congr 1
+  apply Equiv.ext
+  intro j
+  apply (ofFinEmbEquiv.symm (disjUnion hst')).injective
+  have hlhs := orderEmbOfFin_permOfDisjoint (map n e.toEmbedding s)
+    (map (Fintype.card I - n) e.toEmbedding t) hst' j
+  have hrhs := congrArg e (orderEmbOfFin_permOfDisjoint s t hst j)
+  simp only [← ofFinEmbEquiv_symm_apply] at hlhs hrhs
+  refine hlhs.trans ?_
+  rw [hunion, ofFinEmbEquiv_symm_map_orderEmbedding, RelEmbedding.trans_apply,
+    OrderIso.coe_toOrderEmbedding, hrhs]
+  rcases finSumFinEquiv.symm j with a | b <;>
+    simp [show e.toEmbedding = e.toOrderEmbedding.toEmbedding from rfl]
+
+section Fin
+
+variable {m r : ℕ}
+
+/-- The increasing enumeration of `{i}ᶜ` inside `Fin (n + 1)` is `i.succAboveOrderEmb`. -/
+@[simp]
+theorem ofFinEmbEquiv_symm_compl_ofSingleton {n : ℕ}
+    (hk : n + 1 = Fintype.card (Fin (n + 1))) (i : Fin (n + 1)) :
+    ofFinEmbEquiv.symm (compl hk (ofSingleton i)) = i.succAboveOrderEmb := by
+  simp [ofFinEmbEquiv_symm_apply]
+
+/-- The sum of the elements of an `r`-subset of `Fin m`, as natural numbers, is at least
+`r * (r - 1) / 2`. -/
+theorem mul_pred_div_two_le_sum_fin (T : powersetCard (Fin m) r) :
+    r * (r - 1) / 2 ≤ ∑ i ∈ (T : _root_.Finset (Fin m)), (i : ℕ) := by
+  rw [← sum_comp_ofFinEmbEquiv_symm T (fun i : Fin m ↦ (i : ℕ)), ← _root_.Finset.sum_range_id,
+    ← Fin.sum_univ_eq_sum_range]
+  exact _root_.Finset.sum_le_sum fun a _ ↦ T.val.val_le_val_orderEmbOfFin T.prop a
+
+/-- The shuffle sign of an `r`-subset `T` of `Fin m`, written without natural-number subtraction as
+`(-1) ^ (∑ i ∈ T, i + r * (r - 1) / 2)`. -/
+theorem sign_fin_eq_neg_one_pow_add (T : powersetCard (Fin m) r) :
+    powersetCard.sign T =
+      (-1 : ℤˣ) ^ (∑ i ∈ (T : _root_.Finset (Fin m)), (i : ℕ) + r * (r - 1) / 2) := by
+  have hr : r + (m - r) = m := Nat.add_sub_of_le (le_of_fin T)
+  let T' := compl (sub_add_eq_card_fin T) T
+  have hdisj : Disjoint T.val T'.val := disjoint_compl_right
+  have huniv : (disjUnion hdisj).val = _root_.Finset.univ := by
+    simp [T']
+  let p : Equiv.Perm (Fin (r + (m - r))) := permOfDisjoint hdisj
+  let c : Fin (r + (m - r)) ≃ Fin m := finCongr hr
+  -- The increasing enumeration of `univ` is `finCongr hr`.
+  have hcMono : StrictMono c := fun _ _ hxy ↦ hxy
+  have hunivEmb : ⇑((disjUnion hdisj).val.orderEmbOfFin (disjUnion hdisj).prop) = c :=
+    (_root_.Finset.orderEmbOfFin_unique (disjUnion hdisj).prop
+      (fun q ↦ huniv.symm ▸ _root_.Finset.mem_univ (c q)) hcMono).symm
+  -- Read through `finSumFinEquiv` and `finCongr hr`, `p` lists `T` followed by `T'`.
+  let e : Fin r ⊕ Fin (m - r) ≃ Fin m := finSumFinEquiv.trans (p.trans c)
+  have he (z : Fin r ⊕ Fin (m - r)) :
+      e z = Sum.elim (ofFinEmbEquiv.symm T) (ofFinEmbEquiv.symm T') z := by
+    have hperm := orderEmbOfFin_permOfDisjoint T T' hdisj (finSumFinEquiv z)
+    have hfun := congrFun hunivEmb (p (finSumFinEquiv z))
+    rw [hfun, Equiv.symm_apply_apply] at hperm
+    simpa [e, p, ofFinEmbEquiv_symm_apply] using hperm
+  have hconj : (finSumFinEquiv.trans c).symm.trans e = c.permCongr p := by
+    ext x
+    simp [e]
+  have hsign := TauCeti.sign_shuffle hr e
+    (by simpa [Function.comp_def, he] using (ofFinEmbEquiv.symm T).strictMono)
+    (by simpa [Function.comp_def, he] using (ofFinEmbEquiv.symm T').strictMono)
+  rw [hconj, Equiv.Perm.sign_permCongr] at hsign
+  rw [sign_eq_permOfDisjoint_sign (by simp [hr]) T T' hdisj, hsign]
+  congr 1
+  simp only [he, Sum.elim_inl, sum_comp_ofFinEmbEquiv_symm T (fun i : Fin m ↦ (i : ℕ)),
+    Fin.sum_univ_eq_sum_range (fun a : ℕ ↦ a), _root_.Finset.sum_range_id]
+
+/-- For an `r`-subset `T` of `Fin m`, the shuffle sign `Set.powersetCard.sign T` is
+`(-1) ^ (∑ i ∈ T, i - r * (r - 1) / 2)`. -/
+theorem sign_fin (T : powersetCard (Fin m) r) :
+    powersetCard.sign T =
+      (-1 : ℤˣ) ^ (∑ i ∈ (T : _root_.Finset (Fin m)), (i : ℕ) - r * (r - 1) / 2) := by
+  have hle := mul_pred_div_two_le_sum_fin T
+  have hadd : ∑ i ∈ (T : _root_.Finset (Fin m)), (i : ℕ) + r * (r - 1) / 2 =
+      (∑ i ∈ (T : _root_.Finset (Fin m)), (i : ℕ) - r * (r - 1) / 2) + 2 * (r * (r - 1) / 2) := by
+    omega
+  rw [sign_fin_eq_neg_one_pow_add T, hadd, pow_add, pow_mul]
+  simp
+
+/-- **The sign of the complement shuffle.** For an `r`-subset `T` of `Fin m`, the shuffle
+`Set.powersetCard.permOfDisjoint` sorting `T` followed by `Tᶜ` has sign
+`(-1) ^ (∑ i ∈ T, i - r * (r - 1) / 2)`. -/
+theorem sign_permOfDisjoint_compl {k : ℕ} (hk : k + r = Fintype.card (Fin m))
+    (T : powersetCard (Fin m) r)
+    (hdisj : Disjoint T.val (compl hk T).val := disjoint_compl_right) :
+    (permOfDisjoint hdisj).sign =
+      (-1 : ℤˣ) ^ (∑ i ∈ (T : _root_.Finset (Fin m)), (i : ℕ) - r * (r - 1) / 2) := by
+  rw [← sign_eq_permOfDisjoint_sign (Nat.add_comm k r ▸ hk) T (compl hk T) hdisj, sign_fin]
+
+/-- The shuffle signs of two `r`-subsets `S` and `T` of `Fin m` multiply to
+`(-1) ^ (∑ i ∈ S, i + ∑ j ∈ T, j)`. -/
+theorem sign_mul_sign_fin (S T : powersetCard (Fin m) r) :
+    powersetCard.sign S * powersetCard.sign T =
+      (-1 : ℤˣ) ^ (∑ i ∈ (S : _root_.Finset (Fin m)), (i : ℕ) +
+        ∑ j ∈ (T : _root_.Finset (Fin m)), (j : ℕ)) := by
+  have hsum : (∑ i ∈ (S : _root_.Finset (Fin m)), (i : ℕ) + r * (r - 1) / 2) +
+      (∑ j ∈ (T : _root_.Finset (Fin m)), (j : ℕ) + r * (r - 1) / 2) =
+      (∑ i ∈ (S : _root_.Finset (Fin m)), (i : ℕ) + ∑ j ∈ (T : _root_.Finset (Fin m)), (j : ℕ)) +
+        2 * (r * (r - 1) / 2) := by
+    ring
+  rw [sign_fin_eq_neg_one_pow_add S, sign_fin_eq_neg_one_pow_add T, ← pow_add, hsum,
+    pow_add, pow_mul]
+  simp
+
+end Fin
 
 end Set.powersetCard
 

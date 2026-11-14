@@ -14,8 +14,11 @@ public import Mathlib.Data.Set.PowersetCard
 fixed-cardinality subsets. `Set.powersetCard.map_refl` and `Set.powersetCard.map_map` show that
 these induced maps respect identities and composition of embeddings.
 
-`Set.powersetCard.coe_ofSingleton` identifies the finite set underlying the singleton
-equivalence. It lets computations with fixed-cardinality subsets use the usual singleton API.
+`Set.powersetCard.coe_ofSingleton`, `Set.powersetCard.mem_ofSingleton`, and
+`Set.powersetCard.map_ofSingleton` relate the singleton equivalence to finite sets and embeddings,
+`Set.powersetCard.map_compl_equiv` commutes `map` along an equivalence with `compl`, and
+`Set.powersetCard.le_card` and `Set.powersetCard.sub_add_eq_card` record the cardinality bound
+witnessed by an `r`-element subset of a finite type.
 
 `Set.powersetCard.finChooseEquiv m j` enumerates the `j`-element subsets of `Fin m` by
 `Fin (m.choose j)`.
@@ -48,6 +51,46 @@ theorem map_map {α β γ : Type*} (n : ℕ) (f : α ↪ β) (g : β ↪ γ) (s 
 @[simp]
 theorem coe_ofSingleton {α : Type*} (a : α) :
     ((ofSingleton a : powersetCard α 1) : Finset α) = {a} := rfl
+
+/-- Membership in `Set.powersetCard.ofSingleton a` is equality with `a`. -/
+@[simp]
+theorem mem_ofSingleton {α : Type*} {a b : α} : b ∈ ofSingleton a ↔ b = a :=
+  Finset.mem_singleton
+
+/-- Mapping a singleton subset along an embedding sends `ofSingleton a` to `ofSingleton (f a)`. -/
+@[simp]
+theorem map_ofSingleton {α β : Type*} (f : α ↪ β) (a : α) :
+    map 1 f (ofSingleton a) = ofSingleton (f a) :=
+  Subtype.ext (Finset.map_singleton f a)
+
+/-- Mapping along an equivalence commutes with complementation of fixed-cardinality subsets. -/
+@[simp]
+theorem map_compl_equiv {α β : Type*} [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
+    {m n : ℕ} (hm : m + n = Fintype.card α) (e : α ≃ β) (s : powersetCard α n) :
+    map m e.toEmbedding (compl hm s) =
+      compl (hm.trans (Fintype.card_congr e)) (map n e.toEmbedding s) := by
+  refine eq_iff_subset.mpr fun b hb ↦ ?_
+  obtain ⟨a, rfl⟩ := e.surjective b
+  simpa using hb
+
+/-- Every `r`-element subset of a finite type `α` satisfies `r ≤ Fintype.card α`. -/
+theorem le_card {α : Type*} [Fintype α] {r : ℕ} (T : powersetCard α r) :
+    r ≤ Fintype.card α :=
+  nonempty_iff.mp ⟨T⟩
+
+/-- The complementary cardinality `Fintype.card α - r` and `r` sum to `Fintype.card α`. -/
+theorem sub_add_eq_card {α : Type*} [Fintype α] {r : ℕ} (T : powersetCard α r) :
+    Fintype.card α - r + r = Fintype.card α :=
+  Nat.sub_add_cancel (le_card T)
+
+/-- Every `r`-element subset of `Fin m` satisfies `r ≤ m`. -/
+theorem le_of_fin {m r : ℕ} (T : powersetCard (Fin m) r) : r ≤ m := by
+  simpa using le_card T
+
+/-- The complementary cardinality `m - r` and `r` sum to `Fintype.card (Fin m)`. -/
+theorem sub_add_eq_card_fin {m r : ℕ} (T : powersetCard (Fin m) r) :
+    m - r + r = Fintype.card (Fin m) := by
+  simpa using sub_add_eq_card T
 
 /-- An enumeration of the `j`-element subsets of `Fin m` by `Fin (m.choose j)`. -/
 noncomputable def finChooseEquiv (m j : ℕ) : powersetCard (Fin m) j ≃ Fin (m.choose j) :=
