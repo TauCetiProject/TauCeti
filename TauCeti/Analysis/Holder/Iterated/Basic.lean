@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Normed.Lp.ProdLp
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
+import TauCeti.Analysis.Holder.Iterated.Jet
 import TauCeti.Analysis.Holder.JetBounds
 
 /-!
@@ -135,71 +136,38 @@ namespace CkHolderSpace
 
 variable {k α E F}
 
-variable (k α E F) in
-/-- The ambient jet space of bounded `C^{k,α}` maps: bounded continuous derivative fields of
-orders below `k`, with the `ℓ¹` norm, together with a bounded Hölder field of order `k`. -/
-private abbrev Jet := WithLp 1
-  ((PiLp 1 fun i : Fin k ↦ E →ᵇ (E [×i]→L[ℝ] F)) × HolderSpace α E (E [×k]→L[ℝ] F))
-
-/-- The derivative field of order `i ≤ k` of a jet; this is the map `field` in the definition of
-`CkHolderSpace`. -/
-private def fieldL (i : Fin (k + 1)) : Jet k α E F →L[ℝ] (E →ᵇ (E [×i]→L[ℝ] F)) :=
-  Fin.lastCases (motive := fun i : Fin (k + 1) ↦ Jet k α E F →L[ℝ] (E →ᵇ (E [×i]→L[ℝ] F)))
-    (HolderSpace.toBoundedContinuousFunctionCLM.comp (WithLp.sndL 1 ℝ _ _))
-    (fun j ↦ (PiLp.proj 1 _ j).comp (WithLp.fstL 1 ℝ _ _)) i
-
-private theorem fieldL_castSucc (j : Fin k) (J : Jet k α E F) :
-    fieldL j.castSucc J = J.ofLp.1 j :=
-  congrArg (· J) (Fin.lastCases_castSucc (motive := fun i : Fin (k + 1) ↦
-    Jet k α E F →L[ℝ] (E →ᵇ (E [×i]→L[ℝ] F))) j)
-
-private theorem fieldL_last (J : Jet k α E F) :
-    fieldL (Fin.last k) J = J.ofLp.2.toBoundedContinuousFunction :=
-  (congrArg (· J) (Fin.lastCases_last (motive := fun i : Fin (k + 1) ↦
-    Jet k α E F →L[ℝ] (E →ᵇ (E [×i]→L[ℝ] F)))
-    (last := HolderSpace.toBoundedContinuousFunctionCLM.comp (WithLp.sndL 1 ℝ _ _))
-    (cast := fun j ↦ (PiLp.proj 1 _ j).comp (WithLp.fstL 1 ℝ _ _)))).trans (by simp)
-
-variable (E F) in
-/-- Left currying of `(j + 1)`-multilinear maps, as a continuous linear map. -/
-private def curryLeftL (j : ℕ) : (E [×j + 1]→L[ℝ] F) →L[ℝ] E →L[ℝ] (E [×j]→L[ℝ] F) :=
-  (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F).toContinuousLinearEquiv
-
-private theorem curryLeftL_apply (j : ℕ) (g : E [×j + 1]→L[ℝ] F) :
-    curryLeftL E F j g = g.curryLeft := by
-  ext x v
-  simp [curryLeftL]
+open HolderJet
 
 /-- The derivative identities of a jet: each field below order `k` has the next field, curried on
 the left, as its Fréchet derivative. -/
-private def IsJetGraph (J : Jet k α E F) : Prop :=
+private def IsJetGraph (J : HolderJet k α E E F) : Prop :=
   ∀ (j : Fin k) (x : E), HasFDerivAt (fieldL j.castSucc J : E → E [×j]→L[ℝ] F)
-    (curryLeftL E F j (fieldL j.succ J x)) x
+    (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F (fieldL j.succ J x)) x
 
 /-- Elements are the jets satisfying the derivative identities. This is the identity map: the
-carrier of `CkHolderSpace` states the identities through its local `field`, which is `fieldL`, and
-through `continuousMultilinearCurryLeftEquiv`, whose underlying continuous linear map is
-`curryLeftL`. Besides this map, the carrier is unfolded only by `toJetL`, the two norm instances,
+carrier of `CkHolderSpace` states the identities through its local `field`, which is `fieldL`.
+Besides this map, the carrier is unfolded only by `toJetL`, the two norm instances,
 `norm_toJet` and `instCompleteSpace`, which use that it is a submodule of the jet space. -/
-private def equivSubtype : CkHolderSpace k α E F ≃ {J : Jet k α E F // IsJetGraph J} :=
+private def equivSubtype : CkHolderSpace k α E F ≃ {J : HolderJet k α E E F // IsJetGraph J} :=
   Equiv.refl _
 
 /-- The underlying jet of an element. -/
-private def toJet (f : CkHolderSpace k α E F) : Jet k α E F := (equivSubtype f).1
+private def toJet (f : CkHolderSpace k α E F) : HolderJet k α E E F := (equivSubtype f).1
 
 /-- An element from a jet satisfying the derivative identities. -/
-private def mk (J : Jet k α E F) (hJ : IsJetGraph J) : CkHolderSpace k α E F :=
+private def mk (J : HolderJet k α E E F) (hJ : IsJetGraph J) : CkHolderSpace k α E F :=
   equivSubtype.symm ⟨J, hJ⟩
 
 private theorem toJet_injective : Function.Injective (toJet (k := k) (α := α) (E := E) (F := F)) :=
   fun _ _ h ↦ equivSubtype.injective (Subtype.ext h)
 
-private theorem toJet_mk (J : Jet k α E F) (hJ) : toJet (mk J hJ) = J := by
+private theorem toJet_mk (J : HolderJet k α E E F) (hJ) : toJet (mk J hJ) = J := by
   rw [toJet, mk, Equiv.apply_symm_apply]
 
 private theorem hasFDerivAt_fieldL (f : CkHolderSpace k α E F) (j : Fin k) (x : E) :
     HasFDerivAt (fieldL j.castSucc (toJet f) : E → E [×j]→L[ℝ] F)
-      (curryLeftL E F j (fieldL j.succ (toJet f) x)) x :=
+      (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F
+        (fieldL j.succ (toJet f) x)) x :=
   (equivSubtype f).2 j x
 
 instance instNormedAddCommGroup : NormedAddCommGroup (CkHolderSpace k α E F) := by
@@ -215,7 +183,7 @@ private theorem norm_toJet (f : CkHolderSpace k α E F) : ‖toJet f‖ = ‖f�
 
 /-- The underlying jet, as a continuous linear map: the inclusion of the submodule `CkHolderSpace`
 into the jet space. -/
-private def toJetL : CkHolderSpace k α E F →L[ℝ] Jet k α E F := by
+private def toJetL : CkHolderSpace k α E F →L[ℝ] HolderJet k α E E F := by
   unfold CkHolderSpace
   exact Submodule.subtypeL _
 
@@ -256,7 +224,7 @@ private theorem hasFTaylorSeriesUpTo (f : CkHolderSpace k α E F) :
     have hmk : m < k := by exact_mod_cast hm
     have hfun : (fun y ↦ series f y m) = (fieldL (⟨m, hmk⟩ : Fin k).castSucc (toJet f) : _) :=
       funext fun y ↦ series_of_lt f y (by omega)
-    rw [hfun, series_of_lt f x (by omega), ← curryLeftL_apply]
+    rw [hfun, series_of_lt f x (by omega)]
     exact hasFDerivAt_fieldL f ⟨m, hmk⟩ x
   cont m hm := by
     have hmk : m < k + 1 := by
@@ -278,19 +246,7 @@ theorem toFun_injective : Function.Injective (toFun (k := k) (α := α) (E := E)
   have hfield : ∀ i, f.iteratedFDeriv i = g.iteratedFDeriv i := fun i ↦ by
     ext1 x
     rw [← iteratedFDeriv_toFun, ← iteratedFDeriv_toFun, hfg]
-  apply toJet_injective
-  apply WithLp.ofLp_injective 1
-  apply Prod.ext
-  · apply WithLp.ofLp_injective 1
-    funext j
-    have := hfield j.castSucc
-    rwa [iteratedFDeriv, iteratedFDeriv, fieldL_castSucc, fieldL_castSucc] at this
-  · apply HolderSpace.ext
-    intro x
-    have := DFunLike.congr_fun (hfield (Fin.last k)) x
-    rwa [iteratedFDeriv, iteratedFDeriv, fieldL_last, fieldL_last,
-      HolderSpace.toBoundedContinuousFunction_apply,
-      HolderSpace.toBoundedContinuousFunction_apply] at this
+  exact toJet_injective (ext_fieldL hfield)
 
 instance instFunLike : FunLike (CkHolderSpace k α E F) E F where
   coe := toFun
@@ -351,11 +307,8 @@ order `k` and the `α`-Hölder seminorm of the `k`-th iterated derivative. -/
 theorem norm_eq (f : CkHolderSpace k α E F) :
     ‖f‖ = ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i‖ +
       nnHolderNorm α (_root_.iteratedFDeriv ℝ k f) := by
-  rw [← norm_toJet, WithLp.prod_norm_eq_of_L1, PiLp.norm_eq_of_L1, Fin.sum_univ_castSucc,
-    HolderSpace.norm_def, ← coe_iteratedFDerivHolder, ← HolderSpace.coe_toBoundedContinuousFunction,
-    add_assoc]
-  simp only [iteratedFDeriv, fieldL_castSucc, fieldL_last, iteratedFDerivHolder,
-    WithLp.ofLp_fst, WithLp.ofLp_snd]
+  rw [← norm_toJet, HolderJet.norm_eq, ← coe_iteratedFDerivHolder]
+  rfl
 
 /-- The supremum norm of each iterated derivative field is controlled by the `C^{k,α}` norm. -/
 theorem norm_iteratedFDeriv_le (f : CkHolderSpace k α E F) (i : Fin (k + 1)) :
@@ -556,6 +509,16 @@ theorem iteratedFDeriv_smul (c : ℝ) (f : CkHolderSpace k α E F) (i : Fin (k +
   simpa only [iteratedFDerivL_apply] using (iteratedFDerivL i).map_smul c f
 
 @[simp]
+theorem iteratedFDeriv_neg (f : CkHolderSpace k α E F) (i : Fin (k + 1)) :
+    (-f).iteratedFDeriv i = -f.iteratedFDeriv i := by
+  simpa only [iteratedFDerivL_apply] using (iteratedFDerivL i).map_neg f
+
+@[simp]
+theorem iteratedFDeriv_sub (f g : CkHolderSpace k α E F) (i : Fin (k + 1)) :
+    (f - g).iteratedFDeriv i = f.iteratedFDeriv i - g.iteratedFDeriv i := by
+  simpa only [iteratedFDerivL_apply] using (iteratedFDerivL i).map_sub f g
+
+@[simp]
 theorem iteratedFDerivHolder_zero : (0 : CkHolderSpace k α E F).iteratedFDerivHolder = 0 := by
   simpa only [iteratedFDerivHolderL_apply] using
     (iteratedFDerivHolderL (k := k) (α := α) (E := E) (F := F)).map_zero
@@ -569,6 +532,16 @@ theorem iteratedFDerivHolder_add (f g : CkHolderSpace k α E F) :
 theorem iteratedFDerivHolder_smul (c : ℝ) (f : CkHolderSpace k α E F) :
     (c • f).iteratedFDerivHolder = c • f.iteratedFDerivHolder := by
   simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_smul c f
+
+@[simp]
+theorem iteratedFDerivHolder_neg (f : CkHolderSpace k α E F) :
+    (-f).iteratedFDerivHolder = -f.iteratedFDerivHolder := by
+  simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_neg f
+
+@[simp]
+theorem iteratedFDerivHolder_sub (f g : CkHolderSpace k α E F) :
+    (f - g).iteratedFDerivHolder = f.iteratedFDerivHolder - g.iteratedFDerivHolder := by
+  simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_sub f g
 
 @[simp]
 theorem coe_zero : ⇑(0 : CkHolderSpace k α E F) = 0 := by
@@ -589,6 +562,20 @@ theorem coe_smul (c : ℝ) (f : CkHolderSpace k α E F) : ⇑(c • f) = c • �
   ext x
   simp only [← toFun_eq_coe, toFun, iteratedFDeriv_smul, Pi.smul_apply,
     _root_.smul_apply]
+  simp
+
+@[simp]
+theorem coe_neg (f : CkHolderSpace k α E F) : ⇑(-f) = -⇑f := by
+  ext x
+  simp only [← toFun_eq_coe, toFun, iteratedFDeriv_neg, Pi.neg_apply,
+    _root_.neg_apply]
+  simp
+
+@[simp]
+theorem coe_sub (f g : CkHolderSpace k α E F) : ⇑(f - g) = f - g := by
+  ext x
+  simp only [← toFun_eq_coe, toFun, iteratedFDeriv_sub, Pi.sub_apply,
+    _root_.sub_apply]
   simp
 
 /-- The underlying bounded continuous function of a sum. -/
@@ -633,25 +620,15 @@ private def bcfOf {G : Type*} [NormedAddCommGroup G] (g : E → G) (hg : Continu
 `k` and globally `α`-Hölder `k`-th derivative. -/
 private def jetOf (f : E → F) (hf : ContDiff ℝ k f)
     (hbdd : ∀ i ≤ k, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i f x‖ ≤ C)
-    (hholder : MemHolder α (_root_.iteratedFDeriv ℝ k f)) : Jet k α E F :=
-  WithLp.toLp 1
-    (WithLp.toLp 1 fun j : Fin k ↦ bcfOf (_root_.iteratedFDeriv ℝ j f)
-        (hf.continuous_iteratedFDeriv (by exact_mod_cast j.2.le)) (hbdd j j.2.le),
-      HolderSpace.ofBoundedContinuousFunction
-        (bcfOf (_root_.iteratedFDeriv ℝ k f) (hf.continuous_iteratedFDeriv le_rfl)
-          (hbdd k le_rfl)) hholder)
+    (hholder : MemHolder α (_root_.iteratedFDeriv ℝ k f)) : HolderJet k α E E F :=
+  ofFields (fun i ↦ bcfOf (_root_.iteratedFDeriv ℝ i f)
+    (hf.continuous_iteratedFDeriv (by exact_mod_cast i.is_le)) (hbdd i i.is_le)) hholder
 
 private theorem fieldL_jetOf (f : E → F) (hf : ContDiff ℝ k f)
     (hbdd : ∀ i ≤ k, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i f x‖ ≤ C)
     (hholder : MemHolder α (_root_.iteratedFDeriv ℝ k f)) (i : Fin (k + 1)) (x : E) :
-    fieldL i (jetOf f hf hbdd hholder) x = _root_.iteratedFDeriv ℝ i f x := by
-  induction i using Fin.lastCases with
-  | last =>
-    rw [fieldL_last]
-    simp [jetOf, bcfOf]
-  | cast j =>
-    rw [fieldL_castSucc]
-    simp [jetOf, bcfOf]
+    fieldL i (jetOf f hf hbdd hholder) x = _root_.iteratedFDeriv ℝ i f x :=
+  DFunLike.congr_fun (fieldL_ofFields _ _ i) x
 
 private theorem isJetGraph_jetOf (f : E → F) (hf : ContDiff ℝ k f)
     (hbdd : ∀ i ≤ k, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i f x‖ ≤ C)
@@ -683,18 +660,19 @@ theorem coe_ofContDiff (f : E → F) (hf : ContDiff ℝ k f)
   simp
 
 /-- The derivative identities are closed under uniform convergence of the fields. -/
-private theorem isClosed_isJetGraph : IsClosed {J : Jet k α E F | IsJetGraph J} := by
-  have hset : {J : Jet k α E F | IsJetGraph J} =
-      ⋂ j : Fin k, (fun J : Jet k α E F ↦ (fieldL j.castSucc J, fieldL j.succ J)) ⁻¹'
-        {J | ∀ x, HasFDerivAt (J.1 : E → E [×j]→L[ℝ] F) (curryLeftL E F j (J.2 x)) x} := by
+private theorem isClosed_isJetGraph : IsClosed {J : HolderJet k α E E F | IsJetGraph J} := by
+  have hset : {J : HolderJet k α E E F | IsJetGraph J} =
+      ⋂ j : Fin k, (fun J : HolderJet k α E E F ↦ (fieldL j.castSucc J, fieldL j.succ J)) ⁻¹'
+        {J | ∀ x, HasFDerivAt (J.1 : E → E [×j]→L[ℝ] F)
+          (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F (J.2 x)) x} := by
     ext J
     simp [IsJetGraph]
   rw [hset]
   exact isClosed_iInter fun j ↦
-    (isClosed_setOf_hasFDerivAt_comp (curryLeftL E F j)
-      (curryLeftL E F j).uniformContinuous).preimage
-      ((fieldL (k := k) (α := α) (E := E) (F := F) _).continuous.prodMk
-        (fieldL (k := k) (α := α) (E := E) (F := F) _).continuous)
+    (isClosed_setOf_hasFDerivAt_comp _ (continuousMultilinearCurryLeftEquiv ℝ
+      (fun _ : Fin (j + 1) ↦ E) F).isometry.uniformContinuous).preimage
+      ((fieldL (k := k) (α := α) (X := E) (E := E) (F := F) _).continuous.prodMk
+        (fieldL (k := k) (α := α) (X := E) (E := E) (F := F) _).continuous)
 
 /-- Bounded `C^{k,α}` maps into a Banach space form a Banach space. -/
 instance instCompleteSpace [CompleteSpace F] : CompleteSpace (CkHolderSpace k α E F) := by

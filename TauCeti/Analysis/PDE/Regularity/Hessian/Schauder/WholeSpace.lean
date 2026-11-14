@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.Iterated
+public import TauCeti.Analysis.Holder.Iterated.Basic
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Interior
 import TauCeti.Analysis.Holder.Interpolation
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds

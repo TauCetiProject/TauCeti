@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.Leibniz
-public import TauCeti.Analysis.Holder.Iterated
+public import TauCeti.Analysis.Holder.Iterated.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Data.Nat.Choose.Sum
 

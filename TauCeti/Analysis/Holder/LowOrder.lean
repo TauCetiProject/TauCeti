@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.Iterated
+public import TauCeti.Analysis.Holder.Iterated.Basic
 public import TauCeti.Analysis.Holder.Two
 import TauCeti.Topology.MetricSpace.Holder
 

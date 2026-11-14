@@ -19,7 +19,10 @@ These results supply the closed graph used to construct complete spaces of diffe
 The corresponding one-dimensional graph on a closed interval includes the one-sided derivatives
 at both endpoints.
 
-The proofs use Mathlib's `hasFDerivAt_of_tendstoUniformly`.
+On an open set the identity may be stated for fields on the set, through an extension of the
+value field to the whole space.
+
+The proofs use Mathlib's `hasFDerivAt_of_tendstoUniformly` and `hasFDerivAt_of_tendstoUniformlyOn`.
 -/
 
 public section
@@ -61,6 +64,48 @@ theorem isClosed_setOf_hasFDerivAt {𝕜 : Type*} {E : Type u} {Y : Type v}
     IsClosed {J : (E →ᵇ Y) × (E →ᵇ (E →L[𝕜] Y)) |
       ∀ x, HasFDerivAt (J.1 : E → Y) (J.2 x) x} :=
   isClosed_setOf_hasFDerivAt_comp id uniformContinuous_id
+
+/-- On an open set `s`, the set of bounded continuous fields on `s` satisfying a Fréchet derivative
+identity at every point of `s` is closed. The value field is read through an extension
+`Function.extend (↑) J.1 e` to the whole space, whose values off `s` do not matter, and the
+derivative is read off the second field through a uniformly continuous map. -/
+theorem isClosed_setOf_hasFDerivAt_extend_comp {𝕜 : Type*} {E : Type u} {Y Z : Type*}
+    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [PseudoMetricSpace Z] {s : Set E} (hs : IsOpen s)
+    (e : E → Y) (L : Z → E →L[𝕜] Y) (hL : UniformContinuous L) :
+    IsClosed {J : (s →ᵇ Y) × (s →ᵇ Z) |
+      ∀ x : s, HasFDerivAt (Function.extend ((↑) : s → E) (J.1 : s → Y) e) (L (J.2 x)) x} := by
+  rw [← isSeqClosed_iff_isClosed]
+  intro J j hJ hjlim x
+  have hv := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp
+    ((continuous_fst.tendsto j).comp hjlim)
+  have hd := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp
+    ((continuous_snd.tendsto j).comp hjlim)
+  have hext (g : s → E →L[𝕜] Y) (y : E) (hy : y ∈ s) :
+      Function.extend ((↑) : s → E) g 0 y = g ⟨y, hy⟩ :=
+    Subtype.val_injective.extend_apply g 0 ⟨y, hy⟩
+  have hext' (g : s → Y) (y : E) (hy : y ∈ s) :
+      Function.extend ((↑) : s → E) g e y = g ⟨y, hy⟩ :=
+    Subtype.val_injective.extend_apply g e ⟨y, hy⟩
+  have h := hasFDerivAt_of_tendstoUniformlyOn (l := atTop) hs
+    (f := fun n ↦ Function.extend ((↑) : s → E) ((J n).1 : s → Y) e)
+    (f' := fun n ↦ Function.extend ((↑) : s → E) (L ∘ ((J n).2 : s → Z)) 0)
+    (g := Function.extend ((↑) : s → E) (j.1 : s → Y) e)
+    (g' := Function.extend ((↑) : s → E) (L ∘ (j.2 : s → Z)) 0) ?_ ?_ ?_ x.2
+  · rwa [hext _ _ x.2] at h
+  · rw [tendstoUniformlyOn_iff_tendstoUniformly_comp_coe]
+    convert hL.comp_tendstoUniformly hd using 1
+    · funext n y
+      exact hext _ _ y.2
+    · funext y
+      exact hext _ _ y.2
+  · intro n y hy
+    rw [hext _ _ hy]
+    exact hJ n ⟨y, hy⟩
+  · intro y hy
+    simp only [hext' _ _ hy]
+    exact hv.tendsto_at ⟨y, hy⟩
 
 /-- The derivative graph of bounded continuous fields on a nondegenerate closed interval is
 closed, including the one-sided derivative identities at its endpoints. The value field is
