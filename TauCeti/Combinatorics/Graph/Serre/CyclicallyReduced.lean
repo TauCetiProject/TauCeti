@@ -88,13 +88,9 @@ theorem Path.isCyclicallyReduced_of_nodup_map_toGeomEdge_darts {a : Γ.V} {p : �
     (hp : ((Path.darts Γ p).map Γ.toGeomEdge).Nodup) : Path.IsCyclicallyReduced Γ p := by
   have hred := Path.isReduced_of_nodup_map_toGeomEdge_darts Γ hp
   refine (Path.isCyclicallyReduced_iff Γ p).2 <|
-    (Path.isReduced_comp_iff Γ p p).2 ⟨hred, hred, fun e he f hf hfe => ?_⟩
-  obtain ⟨l, hl⟩ := List.head?_eq_some_iff.1 hf
-  rw [hl, List.map_cons, List.nodup_cons] at hp
-  rw [hl] at he
-  rcases List.mem_cons.1 (List.mem_of_mem_getLast? he) with rfl | he'
-  · exact Γ.rev_ne e hfe.symm
-  · exact hp.1 (List.mem_map.2 ⟨e, he', by rw [hfe, toGeomEdge_rev]⟩)
+    (Path.isReduced_comp_iff Γ p p).2 ⟨hred, hred, fun e he f hf hfe =>
+      rev_notMem_of_nodup_map_toGeomEdge Γ hp (List.mem_of_mem_getLast? he)
+        (hfe ▸ List.mem_of_mem_head? hf)⟩
 
 /-- A morphism injective on darts preserves and reflects cyclically reduced closed paths. -/
 theorem Hom.isCyclicallyReduced_mapPath_iff {Δ : SerreGraph} (f : Γ.Hom Δ)

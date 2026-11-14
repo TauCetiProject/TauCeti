@@ -262,11 +262,8 @@ private theorem boundaryClass_eq_mk_base {e : S.boundary.E}
 
 /-- A boundary circuit of `b` traverses every edge of `b`, in one of its two directions. -/
 theorem mem_darts_or_rev_mem_darts {e : S.boundary.E} (he : S.boundaryClass e = b) :
-    e ∈ SerreGraph.Path.darts _ c.path ∨ S.boundary.rev e ∈ SerreGraph.Path.darts _ c.path := by
-  obtain ⟨d, hd, hde⟩ := List.mem_map.1 (c.toGeomEdge_mem_map_darts e he)
-  rcases S.boundary.toGeomEdge_eq_toGeomEdge_iff.1 hde with rfl | rfl
-  · exact .inl hd
-  · exact .inr (by rwa [SerreGraph.rev_rev])
+    e ∈ SerreGraph.Path.darts _ c.path ∨ S.boundary.rev e ∈ SerreGraph.Path.darts _ c.path :=
+  (SerreGraph.toGeomEdge_mem_map_iff _).1 (c.toGeomEdge_mem_map_darts e he)
 
 /-- A boundary circuit of `b` starts in `b`. -/
 @[simp] theorem mk_base : StronglyConnectedComponent.mk c.base = b := by
@@ -292,23 +289,24 @@ theorem mem_darts_or_rev_mem_darts_iff {e : S.boundary.E} :
 /-- The geometric edges traversed by a boundary circuit of `b` are the edges of `b`. -/
 theorem toGeomEdge_mem_map_darts_iff {e : S.boundary.E} :
     S.boundary.toGeomEdge e ∈ (SerreGraph.Path.darts _ c.path).map S.boundary.toGeomEdge ↔
-      S.boundaryClass e = b := by
-  refine ⟨fun h => ?_, c.toGeomEdge_mem_map_darts e⟩
-  obtain ⟨d, hd, hde⟩ := List.mem_map.1 h
-  rcases S.boundary.toGeomEdge_eq_toGeomEdge_iff.1 hde with rfl | rfl
-  · exact c.boundaryClass_eq_of_mem_darts hd
-  · rw [boundaryClass_rev, c.boundaryClass_eq_of_mem_darts hd]
+      S.boundaryClass e = b :=
+  (SerreGraph.toGeomEdge_mem_map_iff _).trans c.mem_darts_or_rev_mem_darts_iff
 
 /-- A boundary circuit never traverses both directions of an edge. -/
 theorem rev_notMem_darts {e : S.boundary.E} (he : e ∈ SerreGraph.Path.darts _ c.path) :
-    S.boundary.rev e ∉ SerreGraph.Path.darts _ c.path := fun hr =>
-  S.boundary.rev_ne e <|
-    List.inj_on_of_nodup_map c.nodup_map_toGeomEdge_darts hr he (S.boundary.toGeomEdge_rev e)
+    S.boundary.rev e ∉ SerreGraph.Path.darts _ c.path :=
+  SerreGraph.rev_notMem_of_nodup_map_toGeomEdge _ c.nodup_map_toGeomEdge_darts he
 
 /-- A boundary circuit of `b` traverses exactly one of the two directions of each edge of `b`. -/
 theorem rev_mem_darts_iff {e : S.boundary.E} (he : S.boundaryClass e = b) :
     S.boundary.rev e ∈ SerreGraph.Path.darts _ c.path ↔ e ∉ SerreGraph.Path.darts _ c.path :=
   ⟨fun hr hm => c.rev_notMem_darts hm hr, (c.mem_darts_or_rev_mem_darts he).resolve_left⟩
+
+/-- A boundary circuit traverses each edge at most once, in at most one of its two directions. -/
+theorem count_add_count_rev_le_one [DecidableEq S.boundary.E] (e : S.boundary.E) :
+    (SerreGraph.Path.darts _ c.path).count e +
+      (SerreGraph.Path.darts _ c.path).count (S.boundary.rev e) ≤ 1 :=
+  SerreGraph.count_add_count_rev_le_one_of_nodup_map_toGeomEdge _ c.nodup_map_toGeomEdge_darts e
 
 /-- A boundary circuit of `b` traverses every edge of `b` exactly once, in one of its two
 directions. -/
@@ -316,21 +314,10 @@ theorem count_add_count_rev_eq_one [DecidableEq S.boundary.E] {e : S.boundary.E}
     (he : S.boundaryClass e = b) :
     (SerreGraph.Path.darts _ c.path).count e +
       (SerreGraph.Path.darts _ c.path).count (S.boundary.rev e) = 1 := by
-  by_cases hm : e ∈ SerreGraph.Path.darts _ c.path
-  · rw [List.count_eq_one_of_mem c.nodup_darts hm,
-      List.count_eq_zero_of_not_mem (c.rev_notMem_darts hm)]
-  · rw [List.count_eq_zero_of_not_mem hm,
-      List.count_eq_one_of_mem c.nodup_darts ((c.rev_mem_darts_iff he).2 hm)]
-
-/-- A boundary circuit traverses each edge at most once, in at most one of its two directions. -/
-theorem count_add_count_rev_le_one [DecidableEq S.boundary.E] (e : S.boundary.E) :
-    (SerreGraph.Path.darts _ c.path).count e +
-      (SerreGraph.Path.darts _ c.path).count (S.boundary.rev e) ≤ 1 := by
-  by_cases hm : e ∈ SerreGraph.Path.darts _ c.path
-  · rw [List.count_eq_one_of_mem c.nodup_darts hm,
-      List.count_eq_zero_of_not_mem (c.rev_notMem_darts hm)]
-  · rw [List.count_eq_zero_of_not_mem hm, zero_add]
-    exact List.nodup_iff_count_le_one.1 c.nodup_darts _
+  refine (c.count_add_count_rev_le_one e).antisymm ?_
+  rcases c.mem_darts_or_rev_mem_darts he with h | h
+  · exact (List.count_pos_iff.2 h).trans_le (Nat.le_add_right _ _)
+  · exact (List.count_pos_iff.2 h).trans_le (Nat.le_add_left _ _)
 
 /-- A boundary circuit of `b` traverses an edge exactly once, in one of its two directions,
 exactly when the edge lies in `b`. -/

@@ -211,6 +211,35 @@ theorem Path.isReduced_comp_iff {a b c : Γ.V} (p : Γ.Path a b) (q : Γ.Path b 
       ∀ e ∈ (Path.darts Γ p).getLast?, ∀ f ∈ (Path.darts Γ q).head?, f ≠ Γ.rev e := by
   simp only [Path.isReduced_iff_isChain, Path.darts_comp, List.isChain_append]
 
+/-- The geometric edge of a dart is the geometric edge of a dart of a list exactly when the dart or
+its reverse lies in the list. -/
+theorem toGeomEdge_mem_map_iff {l : List Γ.E} {e : Γ.E} :
+    Γ.toGeomEdge e ∈ l.map Γ.toGeomEdge ↔ e ∈ l ∨ Γ.rev e ∈ l := by
+  refine ⟨fun h => ?_, ?_⟩
+  · obtain ⟨d, hd, hde⟩ := List.mem_map.1 h
+    rcases Γ.toGeomEdge_eq_toGeomEdge_iff.1 hde with rfl | rfl
+    · exact .inl hd
+    · exact .inr (by rwa [rev_rev])
+  · rintro (h | h)
+    · exact List.mem_map_of_mem h
+    · exact List.mem_map.2 ⟨_, h, toGeomEdge_rev Γ e⟩
+
+/-- A list of darts with distinct geometric edges never contains a dart together with its
+reverse. -/
+theorem rev_notMem_of_nodup_map_toGeomEdge {l : List Γ.E} (hl : (l.map Γ.toGeomEdge).Nodup)
+    {e : Γ.E} (he : e ∈ l) : Γ.rev e ∉ l := fun hr =>
+  Γ.rev_ne e (List.inj_on_of_nodup_map hl hr he (toGeomEdge_rev Γ e))
+
+/-- A list of darts with distinct geometric edges contains a dart and its reverse at most once
+altogether. -/
+theorem count_add_count_rev_le_one_of_nodup_map_toGeomEdge [DecidableEq Γ.E] {l : List Γ.E}
+    (hl : (l.map Γ.toGeomEdge).Nodup) (e : Γ.E) : l.count e + l.count (Γ.rev e) ≤ 1 := by
+  by_cases hm : e ∈ l
+  · rw [List.count_eq_one_of_mem hl.of_map hm,
+      List.count_eq_zero_of_not_mem (rev_notMem_of_nodup_map_toGeomEdge Γ hl hm)]
+  · rw [List.count_eq_zero_of_not_mem hm, zero_add]
+    exact List.nodup_iff_count_le_one.1 hl.of_map _
+
 /-- A path traversing each geometric edge at most once is reduced: no dart of it is followed by its
 reverse. -/
 theorem Path.isReduced_of_nodup_map_toGeomEdge_darts {a b : Γ.V} {p : Γ.Path a b}

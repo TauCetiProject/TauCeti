@@ -16,10 +16,10 @@ import TauCeti.Combinatorics.Enumerative.PerfectMatching
 # Circuits through the components of 2-regular Serre graphs
 
 A path of a Serre graph traverses each geometric edge at most once when the list of the geometric
-edges of its darts has no duplicates. When at most two darts start at every vertex, a closed path
-of this kind also visits each vertex at most once: entering and leaving a vertex uses both darts
-starting there. A nonempty closed path at `a` traversing every geometric edge with an end reachable
-from `a` visits exactly the vertices reachable from `a`.
+edges of its darts has no duplicates. When at most two darts start at every vertex, a path of this
+kind also leaves each vertex at most once, so a closed one visits each vertex at most once: entering
+and leaving a vertex uses both darts starting there. A nonempty closed path at `a` traversing every
+geometric edge with an end reachable from `a` visits exactly the vertices reachable from `a`.
 
 In a finite Serre graph in which exactly two darts start at every vertex, the component of every
 vertex `a` is traversed by a circuit: some closed path at `a` traverses every geometric edge of the
@@ -32,8 +32,8 @@ and 2-regular, so each of its components is a circle, traversed by a circuit.
 ## Main results
 
 * `TauCeti.SerreGraph.Path.nodup_map_src_darts_of_nodup_map_toGeomEdge_darts`: when at most two
-  darts start at every vertex, a closed path traversing each geometric edge at most once visits
-  each vertex at most once.
+  darts start at every vertex, a path traversing each geometric edge at most once leaves each
+  vertex at most once.
 * `TauCeti.SerreGraph.Path.mem_map_src_darts_iff_nonempty_path`: a nonempty closed path at `a`
   traversing every geometric edge with an end reachable from `a` visits exactly the vertices
   reachable from `a`.
@@ -54,24 +54,26 @@ namespace TauCeti.SerreGraph
 
 variable {Γ : SerreGraph}
 
-/-! ### Closed paths traversing each geometric edge at most once -/
+/-! ### Paths traversing each geometric edge at most once -/
 
-/-- In a Serre graph in which at most two darts start at every vertex, a closed path traversing each
-geometric edge at most once visits each vertex at most once. -/
+/-- In a Serre graph in which at most two darts start at every vertex, a path traversing each
+geometric edge at most once leaves each vertex at most once: the sources of its darts are
+distinct. -/
 theorem Path.nodup_map_src_darts_of_nodup_map_toGeomEdge_darts
-    (hΓ : ∀ x, {e : Γ.E | Γ.src e = x}.encard ≤ 2) {a : Γ.V} {p : Γ.Path a a}
+    (hΓ : ∀ x, {e : Γ.E | Γ.src e = x}.encard ≤ 2) {a b : Γ.V} {p : Γ.Path a b}
     (hp : ((Path.darts Γ p).map Γ.toGeomEdge).Nodup) : ((Path.darts Γ p).map Γ.src).Nodup := by
   classical
   refine List.nodup_iff_count_le_one.2 fun x => ?_
   -- The darts of `p` starting at `x` and the reverses of the darts of `p` ending at `x` are
-  -- distinct darts starting at `x`, and there are as many of each kind.
+  -- distinct darts starting at `x`, and every dart of `p` starting at `x`, except possibly the
+  -- first dart of `p`, follows a dart of `p` ending at `x`.
   set L := (Path.darts Γ p).filter (Γ.src · == x) ++
     ((Path.darts Γ p).filter (Γ.tgt · == x)).map Γ.rev
   have hL : L.Nodup := by
     refine List.nodup_append.2 ⟨hp.of_map.filter _, (hp.of_map.filter _).map Γ.rev_injective, ?_⟩
     simp only [List.mem_filter, List.mem_map]
     rintro d ⟨hd, -⟩ _ ⟨d', ⟨hd', -⟩, rfl⟩ rfl
-    exact Γ.rev_ne d' (List.inj_on_of_nodup_map hp hd hd' (toGeomEdge_rev Γ d'))
+    exact rev_notMem_of_nodup_map_toGeomEdge Γ hp hd' hd
   have hsub : (L.toFinset : Set Γ.E) ⊆ {e | Γ.src e = x} := by
     intro e he
     simp only [L, List.coe_toFinset, Set.mem_ofPred_eq, List.mem_append, List.mem_filter,
@@ -82,12 +84,13 @@ theorem Path.nodup_map_src_darts_of_nodup_map_toGeomEdge_darts
   have hlen : (L.length : ℕ∞) ≤ 2 := by
     rw [← List.toFinset_card_of_nodup hL, ← Set.encard_coe_eq_coe_finsetCard]
     exact (Set.encard_le_encard hsub).trans (hΓ x)
-  have hcount : L.length = 2 * ((Path.darts Γ p).map Γ.src).count x := by
-    rw [two_mul]
-    nth_rw 2 [← (Path.map_tgt_darts_perm Γ p).count_eq x]
+  have hcount : L.length =
+      ((Path.darts Γ p).map Γ.src).count x + ((Path.darts Γ p).map Γ.tgt).count x := by
     simp [L, List.count_eq_length_filter, List.filter_map, Function.comp_def]
-  have : 2 * ((Path.darts Γ p).map Γ.src).count x ≤ 2 := by exact_mod_cast hcount ▸ hlen
-  omega
+  have hpath := congrArg (List.count x) (Path.cons_map_tgt_darts Γ p)
+  rw [List.count_cons, List.count_append] at hpath
+  have : L.length ≤ 2 := by exact_mod_cast hlen
+  split_ifs at hpath <;> omega
 
 /-- A nonempty closed path at `a` traversing every geometric edge with an end reachable from `a`
 visits exactly the vertices reachable from `a`. -/
@@ -106,11 +109,11 @@ theorem Path.mem_map_src_darts_iff_nonempty_path {a : Γ.V} {p : Γ.Path a a}
     exact List.mem_map.2 ⟨d, List.mem_of_mem_head? hd, Path.src_eq_of_mem_head?_darts Γ p hd⟩
   | cons q e =>
     obtain ⟨e, rfl, rfl⟩ := e
-    obtain ⟨d, hd, hde⟩ := List.mem_map.1 <| hp (Γ.rev e) ⟨by rw [src_rev]; exact q.cons (Γ.dart e)⟩
-    rcases Γ.toGeomEdge_eq_toGeomEdge_iff.1 hde with h | h
-    · exact List.mem_map.2 ⟨d, hd, by rw [← h, src_rev]⟩
-    · rw [Γ.rev_injective h]
-      exact (Path.map_tgt_darts_perm Γ p).subset (List.mem_map_of_mem hd)
+    have h := hp (Γ.rev e) ⟨by rw [src_rev]; exact q.cons (Γ.dart e)⟩
+    rcases (toGeomEdge_mem_map_iff Γ).1 h with h | h
+    · exact List.mem_map.2 ⟨_, h, src_rev Γ e⟩
+    · rw [rev_rev] at h
+      exact (Path.map_tgt_darts_perm Γ p).subset (List.mem_map_of_mem h)
 
 /-! ### Circuits in 2-regular graphs
 
@@ -241,8 +244,7 @@ theorem exists_path_nodup_map_toGeomEdge_darts_and_mem [Finite Γ.E]
     · exact h.symm
     · rw [mem_orbit_iff] at hx hy
       exact absurd (hx.symm.trans (h ▸ hy)) (not_sameCycle_rev hΓ x)
-  · rcases sameCycle_of_path hΓ q rfl with h | h
-    · exact List.mem_map_of_mem (mem_orbit_iff hΓ |>.2 h)
-    · exact List.mem_map.2 ⟨Γ.rev d, mem_orbit_iff hΓ |>.2 h, toGeomEdge_rev Γ d⟩
+  · exact (toGeomEdge_mem_map_iff Γ).2 <|
+      (sameCycle_of_path hΓ q rfl).imp (mem_orbit_iff hΓ).2 (mem_orbit_iff hΓ).2
 
 end TauCeti.SerreGraph
