@@ -154,10 +154,8 @@ exactly when `ad x` has rank at least that of `ad x₀`. -/
 theorem IsCentralizerRegular.isCentralizerRegular_iff_finrank_range_le [FiniteDimensional K L]
     {x₀ : L} (hx₀ : IsCentralizerRegular K x₀) {x : L} :
     IsCentralizerRegular K x ↔ finrank K (range (ad K L x₀)) ≤ finrank K (range (ad K L x)) := by
-  rw [hx₀.isCentralizerRegular_iff_rank_ker_le, ← finrank_eq_rank, ← finrank_eq_rank, Nat.cast_le]
-  have hx := (ad K L x).finrank_range_add_finrank_ker
-  have hx₀' := (ad K L x₀).finrank_range_add_finrank_ker
-  omega
+  rw [isCentralizerRegular_iff_forall_finrank_range_le] at hx₀ ⊢
+  exact ⟨fun h ↦ h x₀, fun h y ↦ (hx₀ y).trans h⟩
 
 /-- Regularity is invariant under multiplication by a nonzero scalar. -/
 @[simp]
@@ -228,13 +226,7 @@ theorem vanishingIdeal_setOfPred_isCentralizerRegular_eq_bot [Infinite K] :
     vanishingIdeal K (b.equivFun '' {x : L | IsCentralizerRegular K x}) = ⊥ := by
   have := Module.Finite.of_basis b
   obtain ⟨x₀, hx₀⟩ := exists_isCentralizerRegular K L
-  have hset : {x : L | IsCentralizerRegular K x} =
-      {x | finrank K (range ((ad K L).toLinearMap x₀)) ≤
-        finrank K (range ((ad K L).toLinearMap x))} := by
-    ext x
-    rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq]
-    exact hx₀.isCentralizerRegular_iff_finrank_range_le
-  rw [hset]
+  simp_rw [hx₀.isCentralizerRegular_iff_finrank_range_le]
   exact (ad K L).toLinearMap.vanishingIdeal_setOfPred_le_finrank_range_eq_bot b le_rfl
 
 end Module.Basis
