@@ -111,6 +111,11 @@ theorem memHolder (f : HolderSpace α X Y) :
     MemHolder α (f.toBoundedContinuousFunction : X → Y) :=
   (mem_holderSubmodule_iff f.toHolderSubmodule.1).mp f.toHolderSubmodule.2
 
+@[simp]
+theorem ofBoundedContinuousFunction_toBoundedContinuousFunction (f : HolderSpace α X Y) :
+    ofBoundedContinuousFunction f.toBoundedContinuousFunction f.memHolder = f :=
+  (rfl)
+
 /-- Two Hölder-space elements are equal when they agree pointwise. -/
 @[ext]
 theorem ext {f g : HolderSpace α X Y} (h : ∀ x, f x = g x) : f = g := by
@@ -174,6 +179,12 @@ theorem smul_apply (c : ℝ) (f : HolderSpace α X Y) (x : X) : (c • f) x = c 
 
 @[simp]
 theorem neg_apply (f : HolderSpace α X Y) (x : X) : (-f) x = -f x := (rfl)
+
+@[simp]
+theorem nsmul_apply (n : ℕ) (f : HolderSpace α X Y) (x : X) : (n • f) x = n • f x := (rfl)
+
+@[simp]
+theorem zsmul_apply (n : ℤ) (f : HolderSpace α X Y) (x : X) : (n • f) x = n • f x := (rfl)
 
 /-- A bounded Hölder function is Hölder with its canonical Hölder seminorm. -/
 theorem holderWith (f : HolderSpace α X Y) :
@@ -555,6 +566,11 @@ variable {g : X' → X}
 @[simp]
 theorem compLipschitzL_apply (hg : LipschitzWith K g) (f : HolderSpace α X Y) (x : X') :
     compLipschitzL g hg f x = f (g x) := (rfl)
+
+@[simp]
+theorem compLipschitzL_id (hg : LipschitzWith K (id : X → X)) :
+    compLipschitzL (α := α) (Y := Y) id hg = ContinuousLinearMap.id ℝ (HolderSpace α X Y) := by
+  ext; simp
 
 @[simp]
 theorem toBoundedContinuousFunction_compLipschitzL (hg : LipschitzWith K g)
