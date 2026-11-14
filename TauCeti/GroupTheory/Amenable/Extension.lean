@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Index
+public import Mathlib.GroupTheory.SemidirectProduct
 public import TauCeti.GroupTheory.Amenable.Subgroup
+import TauCeti.GroupTheory.Amenable.Finite
 
 /-!
 # Extensions of amenable discrete groups
@@ -23,6 +26,11 @@ function `q ↦ n (k ↦ f (s q * ψ k))` on `Q` is averaged by a mean `m` on `Q
 (`TauCeti.Mean.extension`). Translating `f` by `g` translates this function on `Q` by `φ g`, so
 the iterated mean is left invariant when `n` and `m` are.
 
+In particular, semidirect products of amenable discrete groups are amenable, and a discrete group
+containing an amenable subgroup `H` of finite index is amenable: the permutation action on the
+finite coset space `G ⧸ H` maps `G` into a finite group with kernel contained in `H`. Consequently,
+a discrete group acting with a finite orbit whose point stabilizer is amenable is itself amenable.
+
 ## Main definitions
 
 * `TauCeti.UCB.fiberAverage ψ n`: the fiber average `f ↦ (x ↦ n (k ↦ f (x * ψ k)))`.
@@ -36,6 +44,12 @@ the iterated mean is left invariant when `n` and `m` are.
   amenable.
 * `TauCeti.amenable_iff_subgroup_quotient`: a discrete group with a normal subgroup `N` is
   amenable exactly when `N` and `G ⧸ N` are.
+* `TauCeti.Amenable.semidirectProduct`: a semidirect product of amenable discrete groups is
+  amenable for every group topology.
+* `TauCeti.Amenable.of_finiteIndex`: a discrete group with a finite-index amenable subgroup is
+  amenable.
+* `TauCeti.Amenable.of_finite_orbit`: a discrete group acting with a finite orbit and amenable
+  point stabilizer is amenable.
 
 ## References
 
@@ -186,5 +200,35 @@ quotient. -/
 theorem Amenable.of_subgroup_quotient (N : Subgroup G) [N.Normal] [Amenable N]
     [Amenable (G ⧸ N)] : Amenable G :=
   (amenable_iff_subgroup_quotient N).2 ⟨‹_›, ‹_›⟩
+
+/-- A semidirect product of amenable discrete groups is amenable for every group topology. -/
+instance Amenable.semidirectProduct {N : Type*} [Group N] [TopologicalSpace N]
+    [DiscreteTopology N] [Amenable N] [Amenable G] {φ : G →* MulAut N}
+    [TopologicalSpace (N ⋊[φ] G)] [IsTopologicalGroup (N ⋊[φ] G)] :
+    Amenable (N ⋊[φ] G) := by
+  apply Amenable.of_discrete
+  let : TopologicalSpace (N ⋊[φ] G) := ⊥
+  have : DiscreteTopology (N ⋊[φ] G) := ⟨rfl⟩
+  exact .of_ker_le_range SemidirectProduct.inl SemidirectProduct.rightHom
+    SemidirectProduct.range_inl_eq_ker_rightHom.symm.le
+
+/-- A discrete group containing an amenable subgroup of finite index is amenable. -/
+theorem Amenable.of_finiteIndex (H : Subgroup G) [H.FiniteIndex] [Amenable H] : Amenable G := by
+  let : TopologicalSpace (Equiv.Perm (G ⧸ H)) := ⊥
+  have : DiscreteTopology (Equiv.Perm (G ⧸ H)) := ⟨rfl⟩
+  have : Finite (G ⧸ H) := Subgroup.finite_quotient_of_finiteIndex
+  refine .of_ker_le_range H.subtype (MulAction.toPermHom G (G ⧸ H)) fun g hg => ?_
+  have hfix : g ∈ H := by
+    simpa [eq_comm, QuotientGroup.eq] using
+      congrArg (fun p : Equiv.Perm (G ⧸ H) => p ((1 : G) : G ⧸ H)) (MonoidHom.mem_ker.mp hg)
+  exact ⟨⟨g, hfix⟩, rfl⟩
+
+/-- A discrete group acting with a finite orbit and amenable point stabilizer is amenable. -/
+theorem Amenable.of_finite_orbit {α : Type*} [MulAction G α] (x : α)
+    [Finite (MulAction.orbit G x)] [Amenable (MulAction.stabilizer G x)] : Amenable G := by
+  have : Finite (G ⧸ MulAction.stabilizer G x) :=
+    Finite.of_equiv (MulAction.orbit G x) (MulAction.orbitEquivQuotientStabilizer G x)
+  have : (MulAction.stabilizer G x).FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  exact .of_finiteIndex (MulAction.stabilizer G x)
 
 end TauCeti
