@@ -202,7 +202,7 @@ theorem ker_weightReesAeval_eq_span
       have h0 : Polynomial.mapAlgHom (aeval c) G = 0 := by
         rw [← AlgHom.comp_apply, ← weightReesAeval_eq_comp]
         exact hf
-      simpa using congr(Polynomial.coeff $h0 n)
+      simpa using congr(($h0).coeff n)
     obtain ⟨h, hsum, hdeg⟩ :=
       exists_finsupp_sum_eq_of_aeval_eq_zero_of_mem_weightFiltration hc hg hJ hr hQ hQc
         (f.coeff_weightReesHom_mem_weightFiltration n) hG0

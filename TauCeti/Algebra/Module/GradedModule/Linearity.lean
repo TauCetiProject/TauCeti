@@ -49,7 +49,7 @@ universe uk uA uM w
 variable {k : Type uk} {A : Type uA} [CommRing k] [Ring A] [Algebra k A]
 variable {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
 variable {M : Type uM} [AddCommGroup M] [Module k M] [Module A M]
-  {G : InternalGrading k M} {r : GradedProjectiveResolution.{uk, uA, uM, w} 𝒜 G}
+  {G : InternalGrading k M ℤ} {r : GradedProjectiveResolution.{uk, uA, uM, w} 𝒜 G}
 
 /-- **A resolution is linear exactly when every term modulo `A₊` is concentrated in its
 homological degree**, provided each term is bounded below. The explicit lower bounds may depend on

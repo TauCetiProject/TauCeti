@@ -62,7 +62,7 @@ private theorem exists_comp_eq_smul (c : SimpleClasses C → R) (X : C) :
       Linear.smul_comp]
     by_cases hs : s ≫ e.hom ≫ biproduct.π b i = 0
     · simp [hs]
-    · rw [SimpleClasses.classOf_eq_of_ne_zero hs]
+    · rw [SimpleClasses.classOf_eq_iff_exists_ne_zero.2 ⟨_, hs⟩]
   rw [reassoc_of% h, Linear.smul_comp, Category.assoc, e.hom_inv_id, Category.comp_id]
 
 variable {R C} in

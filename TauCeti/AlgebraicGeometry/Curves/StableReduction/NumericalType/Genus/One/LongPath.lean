@@ -171,7 +171,7 @@ private lemma multiplicity_eq_of_left_half {n : ℕ} {c : ℕ → T.Component}
     · subst i; omega
     · rw [hint i (by omega) (by omega)]
   have hone : (T.multiplicity (c 1) : ℤ) = T.multiplicity (c 0) := by
-    have h := left_fiber_relation hc.injOn hcard (by omega) hzero
+    have h := left_fiber_relation hc.injOn hcard hzero
     rw [hc.intersection_self 0 (by omega), hedge 0 (by omega)] at h
     apply mul_left_cancel₀ hW.ne'
     linear_combination h + (T.multiplicity (c 0) : ℤ) * hleft
@@ -198,7 +198,7 @@ private lemma multiplicity_eq_two_mul_of_left_double {n : ℕ} {c : ℕ → T.Co
     rw [edge_eq_max_weight hc hcard hn (by omega), hint i hi (by omega),
       hint (i + 1) (by omega) (by omega), max_self]
   have hone : (T.multiplicity (c 1) : ℤ) = 2 * T.multiplicity (c 0) := by
-    have h := left_fiber_relation hc.injOn hcard (by omega) hzero
+    have h := left_fiber_relation hc.injOn hcard hzero
     rw [hc.intersection_self 0 (by omega), hleft, hedge0] at h
     apply mul_left_cancel₀ (mul_ne_zero two_ne_zero hW.ne')
     linear_combination h
@@ -234,7 +234,7 @@ private lemma multiplicity_eq_succ_mul_of_left_equal {n : ℕ} {c : ℕ → T.Co
     · rw [hi0, hleft, max_self]
     · rw [hint i (by omega) (by omega), max_self]
   have hone : (T.multiplicity (c 1) : ℤ) = 2 * T.multiplicity (c 0) := by
-    have h := left_fiber_relation hc.injOn hcard (by omega) hzero
+    have h := left_fiber_relation hc.injOn hcard hzero
     rw [hc.intersection_self 0 (by omega), hleft, hedge 0 (by omega)] at h
     apply mul_left_cancel₀ hW.ne'
     linear_combination h
@@ -259,7 +259,7 @@ private lemma right_multiplicity_eq_of_right_half {n : ℕ} {c : ℕ → T.Compo
     rw [show n - 2 + 1 = n - 1 by omega] at h
     rw [hint (n - 2) (by omega) (by omega), max_eq_left (by omega)] at h
     exact h
-  have h := right_fiber_relation hc.injOn hcard (by omega) hzero
+  have h := right_fiber_relation hc.injOn hcard hzero
   rw [T.intersection_comm (c (n - 1)) (c (n - 2)), hedge,
     hc.intersection_self (n - 1) (by omega)] at h
   apply mul_left_cancel₀ hW.ne'
@@ -279,7 +279,7 @@ private lemma right_multiplicity_eq_of_right_double {n : ℕ} {c : ℕ → T.Com
     rw [show n - 2 + 1 = n - 1 by omega] at h
     rw [hint (n - 2) (by omega) (by omega), hright, max_eq_right (by omega)] at h
     exact h
-  have h := right_fiber_relation hc.injOn hcard (by omega) hzero
+  have h := right_fiber_relation hc.injOn hcard hzero
   rw [T.intersection_comm (c (n - 1)) (c (n - 2)), hedge,
     hc.intersection_self (n - 1) (by omega), hright] at h
   apply mul_left_cancel₀ (mul_ne_zero two_ne_zero hW.ne')
@@ -316,7 +316,7 @@ private lemma false_of_left_equal {n : ℕ} {c : ℕ → T.Component}
     T.intersection_comm (c (n - 2)) (c (n - 3)), hedgeBefore, hedgeLast,
     hc.intersection_self (n - 2) (by omega), hint (n - 2) (by omega) (by omega)] at hP
   rcases hright with hright | hright | hright
-  · have hR := right_fiber_relation hc.injOn hcard (by omega) hzero
+  · have hR := right_fiber_relation hc.injOn hcard hzero
     rw [T.intersection_comm (c (n - 1)) (c (n - 2)), hedgeLast,
       hc.intersection_self (n - 1) (by omega), hright, max_self] at hR
     rw [hright, max_self] at hP
@@ -327,7 +327,6 @@ private lemma false_of_left_equal {n : ℕ} {c : ℕ → T.Component}
         2 * T.multiplicity (c (n - 2)) := by
       apply mul_left_cancel₀ hW.ne'
       linear_combination hP
-    have hmlast : (0 : ℤ) < T.multiplicity (c (n - 1)) := by simp
     nlinarith
   · have eR := right_multiplicity_eq_of_right_double hc hcard hn hzero hW hint hright
     rw [hright, max_eq_right (by omega), eR] at hP
@@ -541,7 +540,7 @@ theorem isGenusOneLongPathShape_or_isGenusOneLongPathShape_of_isMinimal_and_arit
       T.IsGenusOneLongPathShape n (fun i ↦ c (n - 1 - i)) := by
   have h₂ := (T.isMinimal_and_arithmeticGenus_eq_one_iff (by omega)).mp ⟨hT, hg⟩
   apply T.isGenusOneLongPathShape_or_isGenusOneLongPathShape hcard hn
-  · exact ⟨hinj, fun i hi ↦ (T.isMinusTwoIndex_iff.mp (h₂ (c i))).2, hpos⟩
+  · exact ⟨hinj, fun i _ ↦ (T.isMinusTwoIndex_iff.mp (h₂ (c i))).2, hpos⟩
   · exact hzero
 
 /-- For a genus-one long path on a minus-two chain exhausting all components, some component's
