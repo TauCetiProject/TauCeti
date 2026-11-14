@@ -55,7 +55,8 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
   are conjugate, `Ad_g ξ ∈ 𝔤_{g • x}` exactly when `ξ ∈ 𝔤_x`, that is
   `𝔤_{g • x} = Ad_g 𝔤_x` (`TauCeti.isotropy_fundamental_smul`); in particular they vanish
   together (`TauCeti.isotropy_smul_eq_bot_iff`) and have the same dimension
-  (`TauCeti.finrank_isotropy_fundamental_smul`).
+  (`TauCeti.finrank_isotropy_fundamental_smul`). The stabilizer `G_x` maps `𝔤_x` into itself
+  under `Ad` (`TauCeti.adjointContinuousLinearMap_mem_isotropy_of_mem_stabilizer`).
 * `TauCeti.orbitTangent_fundamental_smul`: the orbit tangent spaces along an orbit correspond,
   `T_{g • x}(G • x) = d(y ↦ g • y)_x (T_x(G • x))`; in particular they have the same dimension
   (`TauCeti.finrank_orbitTangent_fundamental_smul`) and the fundamental vector fields span
@@ -499,6 +500,16 @@ theorem adjointContinuousLinearMap_mem_isotropy_smul_iff {g : G} {ξ : GroupLieA
   have := key g⁻¹ _ _ h
   rwa [inv_smul_smul, ← ContinuousLinearMap.comp_apply, ← Lie.adjointContinuousLinearMap_mul,
     inv_mul_cancel, Lie.adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply] at this
+
+/-- **The isotropy algebra is invariant under the stabilizer**: for `g` in the stabilizer `G_x`,
+`Ad_g` maps the isotropy algebra `𝔤_x` into itself. -/
+theorem adjointContinuousLinearMap_mem_isotropy_of_mem_stabilizer {g : G}
+    {x : M} (hg : g ∈ MulAction.stabilizer G x) {ξ : GroupLieAlgebra I G}
+    (hξ : ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x) :
+    Lie.adjointContinuousLinearMap (I := I) g ξ ∈
+      (InfinitesimalAction.fundamental I G I' M).isotropy x := by
+  have h := (adjointContinuousLinearMap_mem_isotropy_smul_iff (g := g)).mpr hξ
+  rwa [MulAction.mem_stabilizer_iff.mp hg] at h
 
 /-- **The isotropy algebras along an orbit are conjugate**: `𝔤_{g • x} = Ad_g 𝔤_x`. -/
 theorem isotropy_fundamental_smul (g : G) (x : M) :

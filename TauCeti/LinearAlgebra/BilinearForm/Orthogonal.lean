@@ -94,6 +94,12 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   subspace on which an injective bilinear map with values in a line vanishes.
 * `LinearMap.mem_of_apply_eq_zero_of_two_mul_finrank_eq`: such a subspace of exactly half the
   dimension is its own orthogonal.
+* `LinearMap.BilinForm.isCompl_orthogonal_of_anisotropic`: for an anisotropic form in finite
+  dimension, every subspace is complementary to its orthogonal complement.
+* `LinearMap.BilinForm.sup_inf_orthogonal_of_le`,
+  `LinearMap.BilinForm.inf_orthogonal_sup_orthogonal_of_le` and
+  `LinearMap.BilinForm.orthogonal_inf_orthogonal_of_le`: for such a form and subspaces `W ≤ U`,
+  the orthogonal splitting `V = W ⊕ (U ⊓ Wᗮ) ⊕ Uᗮ` of the flag.
 
 ## References
 
@@ -713,6 +719,54 @@ theorem two_mul_finrank_le_finrank_of_le_orthogonal (hB : B.Nondegenerate) {W : 
   have hmono := Submodule.finrank_mono h
   have hle := Submodule.finrank_le W
   omega
+
+/-- **Anisotropic forms split every subspace.** For a form with anisotropic diagonal on a
+finite-dimensional space, such as a real inner product, every subspace is complementary to its
+orthogonal complement. No reflexivity is needed: the orthogonal complement always has at least the
+complementary dimension (`LinearMap.BilinForm.finrank_le_finrank_add_finrank_orthogonal`). -/
+theorem isCompl_orthogonal_of_anisotropic (hani : B.toQuadraticMap.Anisotropic)
+    (W : Submodule K V) : IsCompl W (B.orthogonal W) := by
+  have hd : Disjoint W (B.orthogonal W) := disjoint_iff.2 <|
+    eq_bot_of_le_orthogonal hani fun _ hx _ hy ↦
+      (Submodule.mem_inf.1 hx).2 _ (Submodule.mem_inf.1 hy).1
+  refine ⟨hd, codisjoint_iff.2 (Submodule.eq_top_of_finrank_eq
+    ((Submodule.finrank_le _).antisymm ?_))⟩
+  rw [← add_zero (finrank K ↥(W ⊔ B.orthogonal W)), ← finrank_bot K V, ← hd.eq_bot,
+    Submodule.finrank_sup_add_finrank_inf_eq]
+  exact B.finrank_le_finrank_add_finrank_orthogonal W
+
+/-- For an anisotropic form and subspaces `W ≤ U`, the relative orthogonal complement `U ⊓ Wᗮ`
+complements `W` inside `U`: `W ⊔ (U ⊓ Wᗮ) = U`. It meets `W` only in zero, since `Wᗮ` does. -/
+theorem sup_inf_orthogonal_of_le (hani : B.toQuadraticMap.Anisotropic) {W U : Submodule K V}
+    (h : W ≤ U) : W ⊔ U ⊓ B.orthogonal W = U := by
+  rw [inf_comm, ← sup_inf_assoc_of_le _ h,
+    (isCompl_orthogonal_of_anisotropic hani W).sup_eq_top, top_inf_eq]
+
+/-- For an anisotropic form and subspaces `W ≤ U`, the orthogonal complement `Wᗮ` is the sum of
+the relative complement `U ⊓ Wᗮ` and of `Uᗮ`. -/
+theorem inf_orthogonal_sup_orthogonal_of_le (hani : B.toQuadraticMap.Anisotropic)
+    {W U : Submodule K V} (h : W ≤ U) :
+    U ⊓ B.orthogonal W ⊔ B.orthogonal U = B.orthogonal W := by
+  rw [inf_comm, inf_sup_assoc_of_le _ (orthogonal_le h),
+    (isCompl_orthogonal_of_anisotropic hani U).sup_eq_top, inf_top_eq]
+
+/-- For a reflexive anisotropic form and subspaces `W ≤ U`, the orthogonal complement of the
+relative complement `U ⊓ Wᗮ` is `W ⊔ Uᗮ`. Thus `V = W ⊕ (U ⊓ Wᗮ) ⊕ Uᗮ` is an orthogonal
+decomposition in which each summand is complementary to the sum of the other two. -/
+theorem orthogonal_inf_orthogonal_of_le (hB : B.IsRefl) (hani : B.toQuadraticMap.Anisotropic)
+    {W U : Submodule K V} (h : W ≤ U) :
+    B.orthogonal (U ⊓ B.orthogonal W) = W ⊔ B.orthogonal U := by
+  have hle : W ⊔ B.orthogonal U ≤ B.orthogonal (U ⊓ B.orthogonal W) := by
+    refine sup_le (fun w hw ↦ mem_orthogonal_iff.2 fun m hm ↦ ?_) (orthogonal_le inf_le_left)
+    exact hB _ _ (mem_orthogonal_iff.1 (Submodule.mem_inf.1 hm).2 w hw)
+  have hM := isCompl_orthogonal_of_anisotropic hani (U ⊓ B.orthogonal W)
+  -- Both sides complement `U ⊓ Wᗮ`, and one contains the other.
+  refine (eq_of_le_of_inf_le_of_sup_le (z := U ⊓ B.orthogonal W) hle ?_ ?_).symm
+  · rw [inf_comm, hM.inf_eq_bot]
+    exact bot_le
+  · rw [sup_right_comm, sup_inf_orthogonal_of_le hani h,
+      (isCompl_orthogonal_of_anisotropic hani U).sup_eq_top]
+    exact le_top
 
 /-- The orthogonal complement of the span of a hyperbolic pair has codimension two. -/
 theorem IsAlt.finrank_orthogonal_span_pair_add_two (hB : B.IsAlt) {e f : V} (hfe : B f e = 1) :
