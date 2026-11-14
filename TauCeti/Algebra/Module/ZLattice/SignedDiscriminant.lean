@@ -255,10 +255,8 @@ theorem signedDiscr_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι]
     signedDiscr (√(m : ℝ) • span ℤ (Set.range b)) =
       (-1) ^ (Fintype.card ι / 2) * (m : ℤ) ^ Fintype.card ι := by
   have := b.toBasis.finiteDimensional_of_finite
-  have hu := isUnimodular_span_orthonormalBasis b
-  rw [← b.coe_toBasis] at hu ⊢
-  rw [hu.isIntegral.signedDiscr_sqrt_smul, hu.signedDiscr_eq_neg_one_pow,
-    Module.finrank_eq_card_basis b.toBasis, mul_comm]
+  rw [(isUnimodular_span_orthonormalBasis b).isIntegral.signedDiscr_sqrt_smul,
+    signedDiscr_span_orthonormalBasis b, Module.finrank_eq_card_basis b.toBasis, mul_comm]
 
 /-- **Fricke partner product identity.** For an integral full lattice `L` of rank `n` and level `N`,
 the signed discriminants of `L` and of its Fricke partner `√N • L^∨` multiply to `Nⁿ`. -/

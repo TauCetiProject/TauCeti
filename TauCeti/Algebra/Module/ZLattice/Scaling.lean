@@ -54,7 +54,8 @@ first statement does not extend to `|c| < 1`.
   `ZLattice.IsIntegral.isEven_sqrt_smul`: `√m • L` is integral when `L` is, and even when `L` is
   even or when `L` is integral and `m` is even.
 * `ZLattice.det_sqrt_smul`, `ZLattice.IsIntegral.card_discriminantGroup_sqrt_smul`:
-  `det (√m • L) = mⁿ det L` (and `|A_{√m • L}| = mⁿ |A_L|` for integral `L` and `m ≠ 0`), and
+  `det (√m • L) = mⁿ det L` (and `|A_{√m • L}| = mⁿ |A_L|` for any integral submodule `L`, where
+  `Nat.card` is `0` for an infinite group), and
   `ZLattice.det_sqrt_smul_span_orthonormalBasis`: `det (√m • ℤⁿ) = mⁿ`.
 * `ZLattice.IsIntegral.not_isUnimodular_smul`, `ZLattice.IsIntegral.not_isUnimodular_sqrt_smul`,
   `ZLattice.IsUnimodular.not_isUnimodular_smul`: in positive dimension, scaling an integral lattice
@@ -313,9 +314,7 @@ theorem IsIntegral.card_discriminantGroup_sqrt_smul (h : IsIntegral L) {m : ℕ}
   rcases eq_or_ne m 0 with rfl | hm
   · rw [Nat.cast_zero, Real.sqrt_zero, zero_smul, Submodule.zero_eq_bot]
     rcases subsingleton_or_nontrivial E with _ | _
-    · have _ (M : Submodule ℤ E) : Unique (DiscriminantGroup M) :=
-        ⟨⟨0⟩, fun x ↦ Subsingleton.elim _ _⟩
-      rw [Module.finrank_zero_of_subsingleton, Nat.card_unique, Nat.card_unique, pow_zero, mul_one]
+    · simp [Module.finrank_zero_of_subsingleton]
     · rw [Nat.card_eq_zero_of_infinite, zero_pow Module.finrank_pos.ne', zero_mul]
   by_cases hfull : span ℝ (L : Set E) = ⊤
   · borelize E
@@ -346,7 +345,6 @@ theorem natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis {ι : Type*} [
     Nat.card (DiscriminantGroup (√(m : ℝ) • span ℤ (Set.range b))) = m ^ finrank ℝ E := by
   have := b.toBasis.finiteDimensional_of_finite
   have hu := isUnimodular_span_orthonormalBasis b
-  rw [← b.coe_toBasis] at hu ⊢
   rw [hu.isIntegral.card_discriminantGroup_sqrt_smul, hu.card_discriminantGroup_eq_one, mul_one]
 
 omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
