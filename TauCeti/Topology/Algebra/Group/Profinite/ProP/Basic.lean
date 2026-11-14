@@ -41,7 +41,11 @@ separate topological fact is supplied by `QuotientGroup.instTotallyDisconnectedS
   and pro-`q` for coprime `p`, `q`, in particular for distinct primes, is trivial.
 * `IsProP.of_surjective`: a continuous surjective image of a pro-`p` group is pro-`p`.
 * `IsProP.quotient`: a quotient of a pro-`p` group by a normal subgroup is pro-`p`.
+* `IsProP.topologicalAbelianization_self`: the topological abelianization of a pro-`p` group is
+  pro-`p`.
 * `IsProP.top`: the top subgroup of a pro-`p` group is pro-`p`.
+* `IsProP.of_equiv`: the target of a topological group isomorphism from a pro-`p` group is
+  pro-`p`.
 * `IsProP.isPGroup_range`: a homomorphism from a pro-`p` group with open kernel has a
   `p`-group as its range.
 * `IsProP.isPGroup_map_mk'`: the image of a pro-`p` subgroup in the quotient by an open normal
