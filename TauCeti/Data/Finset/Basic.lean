@@ -28,14 +28,15 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.exists_perm_eqOn_le_apply` gives a permutation of `ℕ` fixing one finite set pointwise
   and carrying a disjoint one past any bound.
 * `TauCeti.product_union_eq_union_product` rearranges a union of products of finsets.
-* `TauCeti.card_nonempty_finset` counts the nonempty finsets of a finite type.
+* `TauCeti.card_nonempty_finset` gives the `Nat.card` of the nonempty finsets of a type, counting
+  them when the type is finite.
 * `TauCeti.card_even_card_finset` and `TauCeti.card_odd_card_finset` count the finsets of a
   nonempty finite type by the parity of their cardinality: each parity accounts for exactly half
   of them.
 * `Finset.filter_lt_eq_insert_of_forall_lt` splits the elements of a finite set after `s` into its
   first such element and the elements after a later point.
-* `Finset.convex_filter_erase_le` shows that the elements of a finite set up to a given point, other
-  than its least element, contain every element of the set between two of them.
+* `Finset.convex_filter_erase_le` shows that the elements of a finite set up to a given point, once
+  a lower bound `m` of the set is removed, contain every element of the set between two of them.
 * `Finset.sum_powerset_neg_one_pow_card_of_ring` evaluates the alternating sum over the subsets of
   a finset in an arbitrary ring.
 * `Finset.sum_powerset_neg_one_pow_mul_eq_zero` pairs subsets that differ by one element
@@ -118,19 +119,25 @@ theorem product_union_eq_union_product {s s' : Finset α} {t t' : Finset β}
   rw [Finset.union_product, Finset.product_union]
   ac_rfl
 
-/-- **The number of nonempty subsets of a finite type is `2ⁿ - 1`.** The `2ⁿ` subsets of an
-`n`-element type are the nonempty ones together with the empty set, so the nonempty ones number
-`2ⁿ - 1`. -/
-theorem card_nonempty_finset {ι : Type*} [Finite ι] :
+/-- **The number of nonempty finsets of an `n`-element type is `2ⁿ - 1`.** The `2ⁿ` finsets of an
+`n`-element type are the nonempty ones together with the empty finset, so the nonempty ones number
+`2ⁿ - 1`. For an infinite type both sides are `0`, by the convention for `Nat.card`. -/
+theorem card_nonempty_finset {ι : Type*} :
     Nat.card {S : Finset ι // S.Nonempty} = 2 ^ Nat.card ι - 1 := by
-  classical
-  let := Fintype.ofFinite ι
-  have h : Fintype.card {S : Finset ι // S.Nonempty} = 2 ^ Fintype.card ι - 1 := by
-    rw [Fintype.card_subtype]
-    simp_rw [Finset.nonempty_iff_ne_empty]
-    rw [Finset.filter_ne', Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ,
-      Fintype.card_finset]
-  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, h]
+  cases finite_or_infinite ι
+  · classical
+    let := Fintype.ofFinite ι
+    have h : Fintype.card {S : Finset ι // S.Nonempty} = 2 ^ Fintype.card ι - 1 := by
+      rw [Fintype.card_subtype]
+      simp_rw [Finset.nonempty_iff_ne_empty]
+      rw [Finset.filter_ne', Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ,
+        Fintype.card_finset]
+    rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, h]
+  · have : Infinite {S : Finset ι // S.Nonempty} :=
+      Infinite.of_injective
+        (fun i : ι => (⟨{i}, Finset.singleton_nonempty i⟩ : {S : Finset ι // S.Nonempty}))
+        (fun a b h => by simpa using congrArg Subtype.val h)
+    simp [Nat.card_eq_zero_of_infinite]
 
 /-- Deleting a fixed point `i` from a subset that contains it, and adjoining it to one that does
 not. This is the parity-reversing involution of the subsets of `ι` behind
@@ -480,9 +487,10 @@ theorem sum_filter_le_sum_filter_le {α M : Type*} [Fintype α] [LE α] [AddComm
       ∑ c, ∑ b ∈ univ.filter (fun b => a ≤ b ∧ b ≤ c), f b c :=
   sum_comm' fun _ _ => by simp
 
-/-- The positions of `s` other than the least one `m`, up to a position `y`, contain every
-position of `s` between two of them. -/
-theorem convex_filter_erase_le {α : Type*} [LinearOrder α] {s : Finset α} {m : α}
+/-- Let `m` be a lower bound of `s`. The positions of `s` other than `m`, up to a position `y`,
+contain every position of `s` between two of them. -/
+theorem convex_filter_erase_le {α : Type*} [Preorder α] [DecidableEq α] [DecidableLE α]
+    {s : Finset α} {m : α}
     (hmin : ∀ z ∈ s, m ≤ z) (y : α) :
     ∀ a ∈ {z ∈ s.erase m | z ≤ y}, ∀ c ∈ {z ∈ s.erase m | z ≤ y}, ∀ b ∈ s,
       a < b → b < c → b ∈ {z ∈ s.erase m | z ≤ y} := by
@@ -699,7 +707,8 @@ theorem Nonempty.exists_subset_Ioi_insert_eq {α : Type*} [LinearOrder α]
 strictly between `f a` and `f b`, then it identifies two consecutive points `u < v` of
 `a < T < b`, at least one of which lies in `T`. -/
 theorem exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo {α β : Type*} [LinearOrder α]
-    [LocallyFiniteOrder α] [LinearOrder β] [LocallyFiniteOrder β] {f : α → β} (hf : Monotone f)
+    [LocallyFiniteOrder α] [PartialOrder β] [DecidableEq β] [LocallyFiniteOrder β] {f : α → β}
+    (hf : Monotone f)
     {a b : α} {T : Finset α} (hT : T ⊆ Ioo a b)
     (h : ¬ (#(T.image f) = #T ∧ T.image f ⊆ Ioo (f a) (f b))) :
     ∃ u v, u < v ∧ (u = a ∨ u ∈ T) ∧ (v = b ∨ v ∈ T) ∧ (u ∈ T ∨ v ∈ T) ∧ f u = f v ∧
@@ -717,10 +726,10 @@ theorem exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo {α β : Type*
     · obtain ⟨y, hy, hy'⟩ := not_subset.1 h
       obtain ⟨s, hs, rfl⟩ := mem_image.1 hy
       have hs' := mem_Ioo.1 (hT hs)
-      rw [mem_Ioo, not_and_or, not_lt, not_lt] at hy'
+      rw [mem_Ioo, not_and_or] at hy'
       rcases hy' with hy' | hy'
-      · exact ⟨a, s, hs'.1, Or.inl rfl, Or.inr hs, Or.inr hs, le_antisymm (hf hs'.1.le) hy'⟩
-      · exact ⟨s, b, hs'.2, Or.inr hs, Or.inl rfl, Or.inl hs, le_antisymm (hf hs'.2.le) hy'⟩
+      · exact ⟨a, s, hs'.1, Or.inl rfl, Or.inr hs, Or.inr hs, (hf hs'.1.le).eq_of_not_lt hy'⟩
+      · exact ⟨s, b, hs'.2, Or.inr hs, Or.inl rfl, Or.inl hs, (hf hs'.2.le).eq_of_not_lt hy'⟩
   -- Replace `v'` by the successor of `u` among `T ∪ {b}`.
   set V := {y ∈ insert b T | u < y}
   have hV : v' ∈ V := mem_filter.2 ⟨by rcases hv' with rfl | hv' <;> simp [*], huv'⟩
