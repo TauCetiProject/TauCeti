@@ -54,6 +54,15 @@ degree `u`, with extreme coefficients `lc(a_l)` and `lc(a_u)`. So the multiplici
 slope, which for a split polynomial counts its roots of order `-σ`, is the degree minus the
 order of vanishing of the initial polynomial at `σ`.
 
+Through initial polynomials, the translation `Y ↦ Y + c` acts on the Newton polygon. Its
+supporting lines of slope `σ ≥ -ord(c)` do not move, so the slopes `σ > -ord(c)` keep their
+multiplicities: for a split polynomial these belong to the roots `r` with `ord(r) < ord(c)`, and
+`ord(r - c) = ord(r)`. At the slope `σ = -ord(c)` the multiplicity drops by the multiplicity of
+`lc(c)` as a root of the initial polynomial at `σ`, and the slopes below `σ` gained by `P (Y + c)`
+are counted by that root multiplicity, less the multiplicity of `c` as a root of `P`. In
+particular, the leading coefficient of every root `c` of `P` is a root of the initial polynomial
+at `-ord(c)`.
+
 ## Main definitions
 
 * `Polynomial.initialPolynomial P σ`: the initial polynomial of `P` at slope `σ`.
@@ -94,6 +103,16 @@ order of vanishing of the initial polynomial at `σ`.
 * `Polynomial.count_newtonSlopes_eq_natDegree_sub_natTrailingDegree_initialPolynomial`: the
   multiplicity of a slope `σ` is the degree minus the order of vanishing at `Y = 0` of the
   initial polynomial at `σ`.
+* `Polynomial.supportingValue_newtonPolygon_taylor_of_le_realAddVal`: translating the unknown by
+  `c` does not change the supporting values of the Newton polygon at slopes `σ ≥ -ord(c)`.
+* `Polynomial.count_newtonSlopes_taylor_of_lt_realAddVal` and
+  `Polynomial.filter_newtonSlopes_taylor`: nor the slopes `σ > -ord(c)`, with their multiplicities.
+* `Polynomial.count_newtonSlopes_taylor_of_realAddVal_eq` and
+  `Polynomial.rootMultiplicity_initialPolynomial_of_realAddVal_eq`: at `σ = -ord(c)` and below,
+  the slopes of `P (Y + c)` are counted by the multiplicity of `lc(c)` as a root of the initial
+  polynomial at `σ`.
+* `Polynomial.isRoot_initialPolynomial_leadingCoeff_of_isRoot`: the leading coefficient of a root
+  `c` of `P` is a root of the initial polynomial of `P` at the slope `-ord(c)`.
 
 ## References
 
@@ -242,6 +261,26 @@ private theorem coeff_initialPolynomial_eq_coeff_embReal (hP : P ≠ 0) (n : ℕ
     exact h (le_antisymm (realAddVal_le_of_coeff_embReal_ne_zero (Ne.symm hc))
       (isSupportingLine_iff_forall.mp (isSupportingLine_intercept hP) n))
 
+/-- A recognition criterion for supporting lines: if every coefficient of `Q`, read in the Hahn
+series with real exponents, is supported on or above a line `μ + σ m`, and some coefficient has a
+nonzero coefficient on the line, then this line is the supporting line of `Q` at `σ`. -/
+private theorem intercept_eq_of_forall_le {μ : ℝ} {m : ℕ}
+    (hle : ∀ m, ∀ r ∈ (embReal R (Q.coeff m)).support, μ + σ * m ≤ r)
+    (hm : (embReal R (Q.coeff m)).coeff (μ + σ * m) ≠ 0) :
+    intercept Q σ = μ := by
+  have hQ : Q ≠ 0 := by
+    rintro rfl
+    exact hm (by simp)
+  -- The line lies below every height, and touches the height at `m`.
+  have hline : IsSupportingLine (fun n => realAddVal R (Q.coeff n)) σ μ :=
+    isSupportingLine_iff_forall.mpr fun n => le_realAddVal_iff_forall_mem_support.mpr (hle n)
+  have hface : m ∈ supportingFace (fun n => realAddVal R (Q.coeff n)) σ μ := by
+    rw [mem_supportingFace]
+    exact le_antisymm (realAddVal_le_of_coeff_embReal_ne_zero hm)
+      (isSupportingLine_iff_forall.mp hline m)
+  exact EReal.coe_eq_coe_iff.mp
+    ((coe_intercept hQ).trans (supportingValue_eq_coe_of_mem_supportingFace hline hface))
+
 /-- A recognition criterion for initial polynomials: if every coefficient of `Q`, read in the Hahn
 series with real exponents, is supported on or above a line `μ + σ m`, with coefficients on the line
 those of a nonzero polynomial `F`, then this line is the supporting line of `Q` at `σ` and `F` is
@@ -253,21 +292,12 @@ private theorem initialPolynomial_eq_of_forall_le {F : R[X]} {μ : ℝ}
   obtain ⟨m, hm⟩ : ∃ m, F.coeff m ≠ 0 := by
     by_contra! h
     exact hF (AddMonoidAlgebra.ext <| Finsupp.ext fun m => by simp [h m])
+  rw [← hcoeff] at hm
   have hQ : Q ≠ 0 := by
     rintro rfl
-    exact hm (by simpa using (hcoeff m).symm)
-  -- The line lies below every height, and touches the height at `m`.
-  have hline : IsSupportingLine (fun n => realAddVal R (Q.coeff n)) σ μ :=
-    isSupportingLine_iff_forall.mpr fun n => le_realAddVal_iff_forall_mem_support.mpr (hle n)
-  have hface : m ∈ supportingFace (fun n => realAddVal R (Q.coeff n)) σ μ := by
-    rw [mem_supportingFace]
-    refine le_antisymm (realAddVal_le_of_coeff_embReal_ne_zero ?_)
-      (isSupportingLine_iff_forall.mp hline m)
-    rwa [hcoeff]
-  have hμ : intercept Q σ = μ := EReal.coe_eq_coe_iff.mp
-    ((coe_intercept hQ).trans (supportingValue_eq_coe_of_mem_supportingFace hline hface))
+    exact hm (by simp)
   refine AddMonoidAlgebra.ext <| Finsupp.ext fun n => ?_
-  rw [coeff_initialPolynomial_eq_coeff_embReal hQ, hμ, hcoeff]
+  rw [coeff_initialPolynomial_eq_coeff_embReal hQ, intercept_eq_of_forall_le hle hm, hcoeff]
 
 variable (σ) in
 /-- A nonzero polynomial has a nonzero initial polynomial at every slope: the coefficient
@@ -388,6 +418,51 @@ theorem initialPolynomial_pow (P : R⸨X⸩[X]) (k : ℕ) (σ : ℝ) :
 
 section Taylor
 
+/-- After translating the unknown by `c` with `ord(c) ≥ -σ`, every coefficient of `P (Y + c)`, read
+in the Hahn series with real exponents, lies on or above the supporting line of `P` at `σ`, and its
+coefficient on that line is the corresponding coefficient of `in_σ (P) (Y + a)`, where `a` is the
+coefficient of `c` at `-σ`. -/
+private theorem forall_le_and_coeff_embReal_coeff_taylor (hP : P ≠ 0) {c : R⸨X⸩}
+    (hc : ((-σ : ℝ) : WithTop ℝ) ≤ realAddVal R c) (m : ℕ) :
+    (∀ r ∈ (embReal R ((taylor c P).coeff m)).support, intercept P σ + σ * m ≤ r) ∧
+      (embReal R ((taylor c P).coeff m)).coeff (intercept P σ + σ * m) =
+        (taylor ((embReal R c).coeff (-σ)) (P.initialPolynomial σ)).coeff m := by
+  set a := (embReal R c).coeff (-σ)
+  set μ := intercept P σ
+  have hcE := le_realAddVal_iff_forall_mem_support.mp hc
+  -- Each term `aₖ₊ₘ cᵏ` of the `m`-th coefficient of `P (Y + c)` lies above the supporting line
+  -- of `P` at `m`, with coefficient there the term `(in P)ₖ₊ₘ aᵏ` of `in P (Y + a)`.
+  have hshift (k : ℕ) : μ + σ * ↑(k + m) + k • (-σ) = μ + σ * m := by
+    rw [nsmul_eq_mul]
+    push_cast
+    ring
+  have hterm_le (k : ℕ) :
+      ∀ r ∈ (embReal R (P.coeff (k + m) * c ^ k)).support, μ + σ * m ≤ r := by
+    rw [map_mul, map_pow, ← hshift k]
+    exact HahnSeries.add_le_of_mem_support_mul (le_of_mem_support_embReal hP _)
+      (HahnSeries.nsmul_le_of_mem_support_pow hcE k)
+  have hterm_coeff (k : ℕ) :
+      (embReal R (P.coeff (k + m) * c ^ k)).coeff (μ + σ * m) =
+        (P.initialPolynomial σ).coeff (k + m) * a ^ k := by
+    rw [map_mul, map_pow, ← hshift k, HahnSeries.coeff_mul_add_of_forall_le
+      (le_of_mem_support_embReal hP _) (HahnSeries.nsmul_le_of_mem_support_pow hcE k),
+      HahnSeries.coeff_pow_nsmul_of_forall_le hcE,
+      coeff_initialPolynomial_eq_coeff_embReal hP]
+  have hsum : embReal R ((taylor c P).coeff m) =
+      ∑ k ∈ Finset.range (P.natDegree + 1),
+        (k + m).choose m • embReal R (P.coeff (k + m) * c ^ k) := by
+    rw [coeff_taylor_eq_sum (Nat.lt_add_one _), map_sum]
+    simp only [map_nsmul]
+  refine ⟨fun r hr => ?_, ?_⟩
+  · rw [HahnSeries.mem_support, hsum, HahnSeries.coeff_sum] at hr
+    obtain ⟨k, -, hk⟩ := Finset.exists_ne_zero_of_sum_ne_zero hr
+    rw [HahnSeries.coeff_nsmul, Pi.smul_apply] at hk
+    exact hterm_le k r ((HahnSeries.mem_support _ _).mpr (right_ne_zero_of_smul hk))
+  · rw [hsum, HahnSeries.coeff_sum, coeff_taylor_eq_sum
+      ((natDegree_initialPolynomial_le P σ).trans_lt (Nat.lt_add_one _))]
+    refine Finset.sum_congr rfl fun k _ => ?_
+    rw [HahnSeries.coeff_nsmul, Pi.smul_apply, hterm_coeff]
+
 /-- Translating the unknown by `c` with `ord(c) ≥ -σ` translates the initial polynomial at slope
 `σ` by the coefficient of `c` at `-σ`, read in the Hahn series with real exponents. -/
 private theorem initialPolynomial_taylor_of_le_realAddVal (P : R⸨X⸩[X]) {c : R⸨X⸩}
@@ -396,44 +471,38 @@ private theorem initialPolynomial_taylor_of_le_realAddVal (P : R⸨X⸩[X]) {c :
       taylor ((embReal R c).coeff (-σ)) (P.initialPolynomial σ) := by
   rcases eq_or_ne P 0 with rfl | hP
   · simp
-  set a := (embReal R c).coeff (-σ)
-  set μ := intercept P σ
-  have hcE := le_realAddVal_iff_forall_mem_support.mp hc
-  -- Each term `aₖ₊ₘ cᵏ` of the `m`-th coefficient of `P (Y + c)` lies above the supporting line
-  -- of `P` at `m`, with coefficient there the term `(in P)ₖ₊ₘ aᵏ` of `in P (Y + a)`.
-  have hshift (k m : ℕ) : μ + σ * ↑(k + m) + k • (-σ) = μ + σ * m := by
-    rw [nsmul_eq_mul]
-    push_cast
-    ring
-  have hterm_le (k m : ℕ) :
-      ∀ r ∈ (embReal R (P.coeff (k + m) * c ^ k)).support, μ + σ * m ≤ r := by
-    rw [map_mul, map_pow, ← hshift k m]
-    exact HahnSeries.add_le_of_mem_support_mul (le_of_mem_support_embReal hP _)
-      (HahnSeries.nsmul_le_of_mem_support_pow hcE k)
-  have hterm_coeff (k m : ℕ) :
-      (embReal R (P.coeff (k + m) * c ^ k)).coeff (μ + σ * m) =
-        (P.initialPolynomial σ).coeff (k + m) * a ^ k := by
-    rw [map_mul, map_pow, ← hshift k m, HahnSeries.coeff_mul_add_of_forall_le
-      (le_of_mem_support_embReal hP _) (HahnSeries.nsmul_le_of_mem_support_pow hcE k),
-      HahnSeries.coeff_pow_nsmul_of_forall_le hcE,
-      coeff_initialPolynomial_eq_coeff_embReal hP]
-  have hsum (m : ℕ) : embReal R ((taylor c P).coeff m) =
-      ∑ k ∈ Finset.range (P.natDegree + 1),
-        (k + m).choose m • embReal R (P.coeff (k + m) * c ^ k) := by
-    rw [coeff_taylor_eq_sum (Nat.lt_add_one _), map_sum]
-    simp only [map_nsmul]
-  -- So the `m`-th coefficient of `P (Y + c)` lies above the supporting line of `P` at `m`, with
+  -- The `m`-th coefficient of `P (Y + c)` lies above the supporting line of `P` at `m`, with
   -- coefficient there the `m`-th coefficient of the nonzero polynomial `in P (Y + a)`.
-  refine initialPolynomial_eq_of_forall_le (μ := μ) (fun m r hr => ?_) (fun m => ?_)
-    ((map_ne_zero_iff _ (taylor_injective a)).mpr (initialPolynomial_ne_zero σ hP))
-  · rw [HahnSeries.mem_support, hsum, HahnSeries.coeff_sum] at hr
-    obtain ⟨k, -, hk⟩ := Finset.exists_ne_zero_of_sum_ne_zero hr
-    rw [HahnSeries.coeff_nsmul, Pi.smul_apply] at hk
-    exact hterm_le k m r ((HahnSeries.mem_support _ _).mpr (right_ne_zero_of_smul hk))
-  · rw [hsum, HahnSeries.coeff_sum, coeff_taylor_eq_sum
-      ((natDegree_initialPolynomial_le P σ).trans_lt (Nat.lt_add_one _))]
-    refine Finset.sum_congr rfl fun k _ => ?_
-    rw [HahnSeries.coeff_nsmul, Pi.smul_apply, hterm_coeff]
+  exact initialPolynomial_eq_of_forall_le
+    (fun m => (forall_le_and_coeff_embReal_coeff_taylor hP hc m).1)
+    (fun m => (forall_le_and_coeff_embReal_coeff_taylor hP hc m).2)
+    ((map_ne_zero_iff _ (taylor_injective _)).mpr (initialPolynomial_ne_zero σ hP))
+
+/-- Translating the unknown by `c` with `ord(c) ≥ -σ` does not move the supporting line of slope
+`σ`. -/
+private theorem intercept_taylor_of_le_realAddVal (hP : P ≠ 0) {c : R⸨X⸩}
+    (hc : ((-σ : ℝ) : WithTop ℝ) ≤ realAddVal R c) :
+    intercept (taylor c P) σ = intercept P σ := by
+  obtain ⟨m, hm⟩ : ∃ m,
+      (taylor ((embReal R c).coeff (-σ)) (P.initialPolynomial σ)).coeff m ≠ 0 := by
+    by_contra! h
+    exact (map_ne_zero_iff _ (taylor_injective ((embReal R c).coeff (-σ)))).mpr
+      (initialPolynomial_ne_zero σ hP) (AddMonoidAlgebra.ext <| Finsupp.ext fun m => by simp [h m])
+  exact intercept_eq_of_forall_le (fun m => (forall_le_and_coeff_embReal_coeff_taylor hP hc m).1)
+    (m := m) (by rwa [(forall_le_and_coeff_embReal_coeff_taylor hP hc m).2])
+
+/-- **Translation of the Newton polygon.** Translating the unknown by `c` does not change the
+supporting value of the Newton polygon at any slope `σ ≥ -ord(c)`: the Newton polygons of `P` and
+of `P (Y + c)` have the same supporting lines of slope at least `-ord(c)`. -/
+theorem supportingValue_newtonPolygon_taylor_of_le_realAddVal (P : R⸨X⸩[X]) {c : R⸨X⸩}
+    (hc : ((-σ : ℝ) : WithTop ℝ) ≤ realAddVal R c) :
+    supportingValue ((taylor c P).newtonPolygon (realAddVal R)) σ =
+      supportingValue (P.newtonPolygon (realAddVal R)) σ := by
+  rcases eq_or_ne P 0 with rfl | hP
+  · simp
+  rw [supportingValue_newtonPolygon, supportingValue_newtonPolygon,
+    ← coe_intercept ((map_ne_zero_iff _ (taylor_injective c)).mpr hP), ← coe_intercept hP,
+    intercept_taylor_of_le_realAddVal hP hc]
 
 /-- **Translation of the unknown, on the face.** If `c` has order `-σ`, translating the unknown
 by `c` translates the initial polynomial at slope `σ` by the leading coefficient of `c`:
@@ -672,5 +741,91 @@ theorem count_newtonSlopes_eq_natDegree_sub_natTrailingDegree_initialPolynomial 
     natTrailingDegree_initialPolynomial_of_isFiniteFace hface]
 
 end Face
+
+/-! ### Translation of the slopes -/
+
+section TaylorSlopes
+
+/-- **Translation of the slopes, above the face.** If `ord(c) > -σ`, translating the unknown by
+`c` does not change the multiplicity of `σ` as a slope of the Newton polygon. -/
+theorem count_newtonSlopes_taylor_of_lt_realAddVal (P : R⸨X⸩[X]) {c : R⸨X⸩}
+    (hσ : ((-σ : ℝ) : WithTop ℝ) < realAddVal R c) :
+    ((taylor c P).newtonSlopes (realAddVal R)).count σ =
+      (P.newtonSlopes (realAddVal R)).count σ := by
+  rw [count_newtonSlopes_eq_natDegree_sub_natTrailingDegree_initialPolynomial,
+    count_newtonSlopes_eq_natDegree_sub_natTrailingDegree_initialPolynomial,
+    initialPolynomial_taylor_of_lt_realAddVal P hσ]
+
+/-- **Translation of the slopes.** Translating the unknown by `c` does not change the slopes `σ`
+of the Newton polygon with `-σ < ord(c)`, counted with multiplicity. For a split polynomial these
+are the slopes of the roots `r` with `ord(r) < ord(c)`, whose orders `ord(r - c) = ord(r)` the
+translation preserves. -/
+theorem filter_newtonSlopes_taylor (P : R⸨X⸩[X]) (c : R⸨X⸩) :
+    ((taylor c P).newtonSlopes (realAddVal R)).filter
+        (fun σ => ((-σ : ℝ) : WithTop ℝ) < realAddVal R c) =
+      (P.newtonSlopes (realAddVal R)).filter
+        (fun σ => ((-σ : ℝ) : WithTop ℝ) < realAddVal R c) := by
+  ext σ
+  rw [Multiset.count_filter, Multiset.count_filter]
+  split_ifs with hσ
+  · exact count_newtonSlopes_taylor_of_lt_realAddVal P hσ
+  · rfl
+
+end TaylorSlopes
+
+section TaylorRoots
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- **Translation of the slopes, on the face.** If `ord(c) = -σ`, the multiplicity of `σ` as a
+slope of the Newton polygon of `P (Y + c)` is the degree of the initial polynomial `in_σ (P)` minus
+the multiplicity of `lc(c)` as a root of `in_σ (P)`. For a split polynomial, the translation raises
+the orders of exactly those roots of order `-σ` whose leading coefficient is `lc(c)`. -/
+theorem count_newtonSlopes_taylor_of_realAddVal_eq (P : R⸨X⸩[X]) {σ : ℝ} {c : R⸨X⸩}
+    (hσ : realAddVal R c = ((-σ : ℝ) : WithTop ℝ)) :
+    ((taylor c P).newtonSlopes (realAddVal R)).count σ =
+      (P.initialPolynomial σ).natDegree -
+        (P.initialPolynomial σ).rootMultiplicity c.leadingCoeff := by
+  rw [count_newtonSlopes_eq_natDegree_sub_natTrailingDegree_initialPolynomial,
+    initialPolynomial_taylor_of_realAddVal_eq P hσ, natDegree_taylor, natTrailingDegree_taylor]
+
+/-- **Translation of the slopes, below the face.** If `ord(c) = -σ`, the multiplicity of `lc(c)`
+as a root of the initial polynomial `in_σ (P)` is the multiplicity of `c` as a root of `P` plus the
+number of slopes of the Newton polygon of `P (Y + c)` below `σ`, counted with multiplicity. For a
+split polynomial, these slopes are those of the roots `r ≠ c` of `P` with `ord(r - c) > ord(c)`. -/
+theorem rootMultiplicity_initialPolynomial_of_realAddVal_eq (P : R⸨X⸩[X]) {σ : ℝ} {c : R⸨X⸩}
+    (hσ : realAddVal R c = ((-σ : ℝ) : WithTop ℝ)) :
+    (P.initialPolynomial σ).rootMultiplicity c.leadingCoeff =
+      P.rootMultiplicity c + (((taylor c P).newtonSlopes (realAddVal R)).filter (· < σ)).card := by
+  rw [← natTrailingDegree_taylor, ← natTrailingDegree_taylor,
+    ← initialPolynomial_taylor_of_realAddVal_eq P hσ, natTrailingDegree_initialPolynomial]
+
+/-- If `ord(c) = -σ`, the multiplicity of `c` as a root of `P` is at most the multiplicity of
+`lc(c)` as a root of the initial polynomial `in_σ (P)`. -/
+theorem rootMultiplicity_le_rootMultiplicity_initialPolynomial (P : R⸨X⸩[X]) {σ : ℝ}
+    {c : R⸨X⸩} (hσ : realAddVal R c = ((-σ : ℝ) : WithTop ℝ)) :
+    P.rootMultiplicity c ≤ (P.initialPolynomial σ).rootMultiplicity c.leadingCoeff := by
+  rw [rootMultiplicity_initialPolynomial_of_realAddVal_eq P hσ]
+  exact Nat.le_add_right _ _
+
+/-- **The leading term of a root is a root of the initial polynomial.** If `c` is a root of `P`,
+then its leading coefficient `lc(c)` is a root of the initial polynomial of `P` at the slope
+`-ord(c)`. This is the necessary condition behind the Newton–Puiseux algorithm: the leading terms
+`a t ^ γ` of the roots of `P` are read from the roots `a` of the initial polynomials. -/
+theorem isRoot_initialPolynomial_leadingCoeff_of_isRoot {P : R⸨X⸩[X]} {c : R⸨X⸩}
+    (h : P.IsRoot c) : (P.initialPolynomial (-c.order)).IsRoot c.leadingCoeff := by
+  rcases eq_or_ne P 0 with rfl | hP
+  · simp
+  rcases eq_or_ne c 0 with rfl | hc
+  · -- The zero root: the constant coefficient of `P` vanishes, and so does that of `in P`.
+    rw [IsRoot, ← coeff_zero_eq_eval_zero] at h
+    simp [IsRoot, ← coeff_zero_eq_eval_zero, coeff_initialPolynomial, h]
+  have hσ : realAddVal R c = ((-(-c.order : ℝ) : ℝ) : WithTop ℝ) := by
+    rw [neg_neg, realAddVal_of_ne_zero hc]
+  exact ((rootMultiplicity_pos (initialPolynomial_ne_zero _ hP)).mp <|
+    ((rootMultiplicity_pos hP).mpr h).trans_le
+      (rootMultiplicity_le_rootMultiplicity_initialPolynomial P hσ))
+
+end TaylorRoots
 
 end Polynomial
